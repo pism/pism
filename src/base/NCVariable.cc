@@ -26,7 +26,6 @@ NCVariable::NCVariable() {
 //! Initialize a NCVariable instance.
 void NCVariable::init(string name, MPI_Comm c, PetscMPIInt r) {
   short_name = name;
-  strings["short_name"] = name;
 
   com = c;
   rank = r;
@@ -985,13 +984,13 @@ PetscErrorCode NCTimeseries::define(int ncid, int &varid) {
  
   ierr = nc.find_dimension(dimension_name.c_str(), &dimid, dimension_exists); CHKERRQ(ierr);
 
-  if (!dimension_exists) {
-    SETERRQ1(1, "NCTimeseries::define(...): dimension %s does not exist.",
-	     dimension_name.c_str());
-  }
-
   if (rank == 0) {
     ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+    if (!dimension_exists) {
+      ierr = nc_def_dim(ncid, dimension_name.c_str(), NC_UNLIMITED, &dimid);
+      CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    }
 
     ierr = nc_def_var(ncid, short_name.c_str(), NC_DOUBLE, 1, &dimid, &varid);
     CHKERRQ(check_err(ierr,__LINE__,__FILE__));
@@ -1003,8 +1002,36 @@ PetscErrorCode NCTimeseries::define(int ncid, int &varid) {
   return 0;
 }
 
-PetscErrorCode NCTimeseries::write(const char /*filename*/[], vector<double> &/*data*/) {
-  SETERRQ(1, "not implemented");
+PetscErrorCode NCTimeseries::write(const char filename[], size_t start, vector<double> &data) {
+
+  PetscErrorCode ierr;
+  NCTool nc(com, rank);
+
+  // append = true, check_dims = false
+  ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr);
+
+  bool variable_exists = false;
+  int varid = -1;
+
+  ierr = nc.find_variable(short_name.c_str(), &varid, variable_exists); CHKERRQ(ierr);
+  if (!variable_exists) {
+    ierr = define(nc.ncid, varid); CHKERRQ(ierr);
+  }
+
+  // convert to glaciological units:
+  ierr = change_units(data, &units, &glaciological_units); CHKERRQ(ierr);
+
+  size_t count = static_cast<size_t>(data.size());
+  if (rank == 0) {
+    ierr = nc_put_vara_double(nc.ncid, varid, &start, &count, &data[0]);
+  }
+
+  ierr = write_attributes(nc.ncid, varid, NC_FLOAT, true);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  // restore internal units:
+  ierr = change_units(data, &glaciological_units, &units); CHKERRQ(ierr);
   return 0;
 }
 

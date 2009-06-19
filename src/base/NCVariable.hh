@@ -136,7 +136,7 @@ class NCTimeseries : public NCVariable {
 public:
   string dimension_name;
   virtual PetscErrorCode read(const char filename[], vector<double> &data);
-  virtual PetscErrorCode write(const char filename[], vector<double> &data);
+  virtual PetscErrorCode write(const char filename[], size_t start, vector<double> &data);
   virtual PetscErrorCode change_units(vector<double> &data, utUnit *from, utUnit *to);
 protected:
   virtual PetscErrorCode define(int ncid, int &varid);

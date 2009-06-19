@@ -942,7 +942,7 @@ bool NCTool::check_dimensions() {
   return (t & x & y & z & zb);
 }
 
-//! Create dimensions and coordinate variables.
+//! Create dimensions and coordinate variables for storing spatial data.
 /*! Assumes that the dataset is in the data mode. */
 PetscErrorCode NCTool::create_dimensions() {
   int stat, t, x, y, z, zb, dimid;
@@ -1133,7 +1133,7 @@ PetscErrorCode NCTool::open_for_writing(const char filename[], bool append,
 			  filename, tmp);
       }    
     } // end of if (rank == 0)
-  }
+  }   // end of if (append == false)
 
   stat = open_for_writing(filename); CHKERRQ(stat);
 

@@ -247,7 +247,7 @@ netcdf pism_config {
     pism_config:seconds_per_year_doc = "; should match the one used by UDUNITS (see src/udunits/pismudunits.dat).";
 
     pism_config:earth_gravity = 9.81;
-    pism_config:earth_gravity_doc = "m s-1; acceleration due to gravity on Earth geoid";
+    pism_config:earth_gravity_doc = "m s-2; acceleration due to gravity on Earth geoid";
 
     pism_config:gas_constant_R = 8.31441;
     pism_config:gas_constant_R_doc = "J mol-1 K-1; ideal gas constant";

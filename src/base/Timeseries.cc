@@ -21,8 +21,12 @@
 Timeseries::Timeseries(IceGrid *g, string name, string dimension_name) {
   com = g->com;
   rank = g->rank;
+
   dimension.init(dimension_name, com, rank);
+  dimension.dimension_name = dimension_name;
+
   var.init(name, com, rank);
+  var.dimension_name = dimension_name;
 }
 
 Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_name) {
@@ -51,14 +55,19 @@ PetscErrorCode Timeseries::read(const char filename[]) {
 }
 
 //! Write timeseries data to a NetCDF file \c filename.
-PetscErrorCode Timeseries::write(const char /*filename*/[]) {
-  SETERRQ(1, "not implemented");
+PetscErrorCode Timeseries::write(const char filename[]) {
+  PetscErrorCode ierr;
+
+  // write the dimensional variable; this call should go first
+  ierr = dimension.write(filename, 0, time); CHKERRQ(ierr);
+  ierr = var.write(filename, 0, values); CHKERRQ(ierr);
+
   return 0;
 }
 
 //! Get an (linearly interpolated) value of timeseries at time \c t.
-/*! Consecutive calls have to have monotonically increasing values of \c t (for
-  efficiency).
+/*! Returns the first value or the last value if t is out of range on the left
+  and right, respectively.
  */
 double Timeseries::operator()(double t) {
 
@@ -71,12 +80,6 @@ double Timeseries::operator()(double t) {
 
   int i = j - time.begin();
 
-//   if (rank == 0) {
-//     printf("i = %d\n", i);
-//     printf("time[i] = %f\n", time[i]);
-//     printf("values[i] = %f\n", values[i]);
-//   }
-
   if (i == 0) {
     return values[0];	// out of range (on the left)
   }
@@ -88,6 +91,9 @@ double Timeseries::operator()(double t) {
 }
 
 //! Get a value of timeseries by index.
+/*!
+  Stops if the index is out of range.
+ */
 double Timeseries::operator[](unsigned int j) const {
 
   if (j >= values.size()) {
@@ -136,6 +142,73 @@ PetscErrorCode Timeseries::set_attr(string name, double value) {
   return 0;
 }
 
+//! Returns the length of the time-series stored.
+/*!
+  This length is changed by read() and append().
+ */
 int Timeseries::length() {
   return values.size();
+}
+
+
+//----- DiagnosticTimeseries
+
+DiagnosticTimeseries::DiagnosticTimeseries(IceGrid *g, string name, string dimension_name)
+  : Timeseries(g, name, dimension_name) {
+
+  buffer_size = 10000;		// just a default
+  start = 0;
+  output_filename = name + ".nc";
+}
+
+DiagnosticTimeseries::DiagnosticTimeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_name)
+  : Timeseries(c, r, name, dimension_name) {
+
+  buffer_size = 10000;		// just a default
+  start = 0;
+  output_filename = name + ".nc";
+}
+
+DiagnosticTimeseries::~DiagnosticTimeseries() {
+  flush();
+}
+
+PetscErrorCode DiagnosticTimeseries::append(double t, double v) {
+  PetscErrorCode ierr;
+
+  time.push_back(t);
+  values.push_back(v);
+
+  if (time.size() == buffer_size) {
+    ierr = flush(); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode DiagnosticTimeseries::set_output_prefix(string prefix) {
+  PetscErrorCode ierr;
+  NCTool nc(com, rank);
+
+  output_filename = prefix + var.short_name + ".nc";
+
+  // This will move the file aside if it exists already.
+  ierr = nc.open_for_writing(output_filename.c_str(), false, false); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode DiagnosticTimeseries::flush() {
+  PetscErrorCode ierr;
+
+  // write the dimensional variable; this call should go first
+  ierr = dimension.write(output_filename.c_str(), start, time);   CHKERRQ(ierr);
+  ierr =       var.write(output_filename.c_str(), start, values); CHKERRQ(ierr);
+
+  start += buffer_size;
+  time.clear();
+  values.clear();
+
+  return 0;
 }

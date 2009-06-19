@@ -23,6 +23,15 @@
 #include "grid.hh"
 #include "nc_util.hh"
 
+//! A general class for reading and accessing time-series.
+/*!
+  Provides random access to time-series values.
+
+  Note that every processor stores the whole time-series and calling append()
+  repeatedly will use a lot of memory.
+
+  Please use DiagnosticTimeseries to output long time-series.
+ */
 class Timeseries {
 public:
   Timeseries(IceGrid * g, string name, string dimension_name);
@@ -46,6 +55,55 @@ protected:
 
   vector<double> time;
   vector<double> values;
+};
+
+//! A class for storing and writing diagnostic time-series.
+/*! This version of Timeseries only holds \c buffer_size entries in memory and
+  writes to a file every time this limit is exceeded.
+
+  Here is a usage example:
+
+  First, create the DiagnosticTimeseries object and set metadata. This will
+  prepare the offsets object to write delta_T(t) time-series to
+  pism-delta_T.nc, converting from degrees Celsius (internal units) to degrees
+  Kelvin ("glaciological" units). Time will be written in years (%i.e. there is
+  no unit conversion there).
+
+  \code
+  offsets = new DiagnosticTimeseries(g, "delta_T", "t");
+  offsets->set_units("Celsius", "Kelvin");
+  offsets->set_dimension_units("years", "");
+  offsets->buffer_size = 100; // only store 100 entries; default is 10000
+  offsets->set_output_prefix("pism-");
+  \endcode
+
+  Once this is set up, one can add calls like
+
+  \code
+  offsets->append(t_years, TsOffset);
+  \endcode
+
+  to the code. This will store the (t_years, TsOffset) pair, but not
+  necessarily cause any I/O.
+
+  Note that every time you exceed the \c buffer_size limit, all the entries are
+  written to a file <b> and removed from memory</b>.
+ */
+class DiagnosticTimeseries : public Timeseries {
+public:
+  DiagnosticTimeseries(IceGrid * g, string name, string dimension_name);
+  DiagnosticTimeseries(MPI_Comm com, PetscMPIInt rank, string name, string dimension_name);
+  ~DiagnosticTimeseries();
+
+  PetscErrorCode append(double time, double value);
+  PetscErrorCode set_output_prefix(string prefix);
+  PetscErrorCode flush();
+
+  size_t buffer_size;
+  string output_filename;
+
+protected:
+  size_t start;
 };
 
 #endif // __Timeseries_hh
