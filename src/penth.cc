@@ -23,14 +23,22 @@ static char help[] =
 
 /*
 
-suggested test procedure:  Use EISMINT II experiment A for only 20ka, so we do
-SIA only and no sliding, just to see effect of corrected conservation of energy on flow:
+one possible test procedure:  Use EISMINT II experiment A for only 20ka, so we do
+SIA only and no sliding, just to see effect of corrected conservation of energy on flow
+in case with nontrivial thickness:
 
-mpiexec -n 8 pisms -eisII A -Mx 61 -My 61 -Mz 101 -Mbz 51 -quadZ -y 6000.0 -o estart.nc  # nontrivial ice thickness
-mpiexec -n 4 pismr -temp_pa -i estart.nc -y 14000 -skip 10 -o coldice.nc >> out.cold &
-mpiexec -n 4 penth -i estart.nc -y 14000 -skip 10 -o polyice.nc >> out.poly &
+mpiexec -n $NN pisms -eisII A -Mx 61 -My 61 -Mz 101 -quadZ -y 6000.0 -o nobr_estart.nc
+mpiexec -n $NN pismr -temp_pa -i nobr_estart.nc -y 14000 -skip 10 -o nobr_coldice.nc
+mpiexec -n $NN penth -i nobr_estart.nc -y 14000 -skip 10 -o nobr_polyice.nc
+
+adding bedrock thermal:
+
+mpiexec -n $NN pisms -eisII A -Mx 61 -My 61 -Mz 101 -Mbz 51 -quadZ -y 6000.0 -o estart.nc
+mpiexec -n $NN pismr -temp_pa -i estart.nc -y 14000 -skip 10 -o coldice.nc
+mpiexec -n $NN penth -i estart.nc -y 14000 -skip 10 -o polyice.nc
 
 also, here is an example of regridding enthalpy, with 'y' flag in -regrid_vars:
+
 mpiexec -n 2 penth -boot_from estart.nc -Mx 121 -My 121 -Mz 101 -Mbz 51 -quadZ -Lz 5000 -regrid_from polyice.nc -regrid_vars THLey -y 1000 -o finepolyice.nc >> out.finepoly &
 
 */

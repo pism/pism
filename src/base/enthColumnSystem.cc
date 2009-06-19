@@ -18,13 +18,12 @@
 
 #include "enthColumnSystem.hh"
 #include "pism_const.hh"   // e.g. MASK_FLOATING and PismModMask()
-#include "enthalpyHelper.hh"
+#include "enthalpyConverter.hh"
 
 #define DEBUGVERB 2
 
-enthSystemCtx::enthSystemCtx(NCConfigVariable *my_config, int my_Mz, int my_Mbz)
+enthSystemCtx::enthSystemCtx(int my_Mz, int my_Mbz)
       : columnSystemCtx(my_Mz + my_Mbz - 1) {
-  config = my_config;
   Mz = my_Mz;
   Mbz = my_Mbz;
   k0 = Mbz - 1; // max size nmax of system is Mz + k0 = Mz + Mbz - 1
@@ -48,7 +47,7 @@ enthSystemCtx::enthSystemCtx(NCConfigVariable *my_config, int my_Mz, int my_Mbz)
   bed_thermal_k   = -1;
   Enth = NULL;
   Enth_s = NULL;
-  Tb = NULL;
+  Enth_b = NULL;
   u = NULL;
   v = NULL;
   w = NULL;
@@ -72,7 +71,7 @@ PetscErrorCode enthSystemCtx::initAllColumns() {
   if (bed_thermal_k <= 0.0) { SETERRQ(12,"un-initialized bed_thermal_k in enthSystemCtx"); }
   if (Enth == NULL) { SETERRQ(13,"un-initialized pointer Enth in enthSystemCtx"); }
   if (Enth_s == NULL) { SETERRQ(20,"un-initialized pointer Enth_s in enthSystemCtx"); }
-  if (Tb == NULL) { SETERRQ(14,"un-initialized pointer Tb in enthSystemCtx"); }
+  if (Enth_b == NULL) { SETERRQ(14,"un-initialized pointer Enth_b in enthSystemCtx"); }
   if (u == NULL) { SETERRQ(15,"un-initialized pointer u in enthSystemCtx"); }
   if (v == NULL) { SETERRQ(16,"un-initialized pointer v in enthSystemCtx"); }
   if (w == NULL) { SETERRQ(17,"un-initialized pointer w in enthSystemCtx"); }
@@ -224,17 +223,13 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
     to a temperature or enthalpy generally are multiplied by c (which has units J kg-1 K-1)
 */
 
-  const PetscScalar oldEnth_ice_base = Enth3->getValZ(i, j, 0.0),
-                    oldTemp_bedrock_top = Tb[k0];
-
   if (Mbz > 1) { // bedrock present: build k=0:Mbz-2 eqns
     // should gives O(\Delta t,\Delta z^2) convergence
     // note L[0] not an allocated location:
     D[0] = (1.0 + 2.0 * brR);
     U[0] = - 2.0 * brR;  
     //rhs[0] = Tb[0] + 2.0 * dtTemp * Ghf / (rho_c_br * dzbEQ);
-    rhs[0] = getEnthBedrock(*config, oldEnth_ice_base, oldTemp_bedrock_top, Tb[0])
-                + 2.0 * dtTemp * Ghf / (bed_thermal_rho * dzbEQ);
+    rhs[0] = Enth_b[0] + 2.0 * dtTemp * Ghf / (bed_thermal_rho * dzbEQ);
 
     // bedrock only; pure vertical conduction problem
     for (PetscInt k=1; k < k0; k++) {
@@ -242,7 +237,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
       D[k] = 1.0 + 2.0 * brR;
       U[k] = -brR;
       //rhs[k] = Tb[k];
-      rhs[k] = getEnthBedrock(*config, oldEnth_ice_base, oldTemp_bedrock_top, Tb[k]);
+      rhs[k] = Enth_b[k];
     }
   }
 

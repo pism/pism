@@ -225,6 +225,9 @@ netcdf pism_config {
     pism_config:enthalpy_temperate_diffusivity = 0.0;
     pism_config:enthalpy_temperate_diffusivity_doc = "m2 s-1; diffusivity units same as k/(rho c)";
                               
+    pism_config:gpbld_water_frac_coeff = 184.0;
+    pism_config:gpbld_water_frac_coeff_doc = "; coefficient in Glen-Paterson-Budd flow law for extra dependence of softness on liquid water fraction (omega) [\\ref AschwandenBlatter2009, \\ref LliboutryDuval1985]";
+                              
     pism_config:liquid_water_fraction_max = 0.01;
     pism_config:liquid_water_fraction_max_doc = "; pure number; in enthalpy model, drain once omega reaches this value [\\ref Greve97Greenland]";
 

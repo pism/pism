@@ -25,7 +25,7 @@
 class enthSystemCtx : public columnSystemCtx {
 
 public:
-  enthSystemCtx(NCConfigVariable *my_config, int my_Mz, int my_Mbz);
+  enthSystemCtx(int my_Mz, int my_Mbz);
   PetscErrorCode initAllColumns();
   PetscErrorCode setIndicesThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
   PetscErrorCode setSchemeParamsThisColumn(
@@ -53,7 +53,7 @@ public:
   // pointers which should be set before calling initForAllColumns()
   PetscScalar  *Enth,
                *Enth_s,
-               *Tb,
+               *Enth_b,
                *u,
                *v,
                *w,
@@ -61,7 +61,6 @@ public:
   IceModelVec3 *Enth3;
 
 protected: // used internally
-  NCConfigVariable *config;
   PetscInt    Mz, Mbz, k0;
   PetscInt    i, j, ks;
   PetscScalar mask, lambda, Enth_ks, Ghf, Enth_shelfbase, Rb;

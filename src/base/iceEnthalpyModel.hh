@@ -24,6 +24,7 @@
 #include "NCVariable.hh"
 #include "materials.hh"
 #include "iceModel.hh"
+#include "enthalpyConverter.hh"
 
 
 //! Glen (1955) and Paterson-Budd (1982) flow law with additional water fraction factor from Lliboutry & Duval (1985).
@@ -34,7 +35,8 @@ and \ref LliboutryDuval1985.
 class PolyThermalGPBLDIce : public ThermoGlenIce {
 public:
   PolyThermalGPBLDIce(MPI_Comm c,const char pre[]);
-  PetscErrorCode setConfig(NCConfigVariable *ptr_to_my_config);
+  virtual ~PolyThermalGPBLDIce();
+  virtual PetscErrorCode setFromConfig(NCConfigVariable *config);
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode view(PetscViewer viewer) const;
 
@@ -61,10 +63,8 @@ public:
   //    integratedStoreSize(), integratedStore(), integratedViscosity()
 
 protected:
-  PetscReal water_frac_coeff;
-
-private:
-  NCConfigVariable *config;
+  PetscReal T_0, water_frac_coeff;
+  EnthalpyConverter *EC;
 };
 
 
@@ -115,7 +115,7 @@ protected:
   
   virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
 
-  virtual PetscErrorCode drainageToBaseModelEnth(
+  virtual PetscErrorCode drainageToBaseModelEnth(EnthalpyConverter &EC,
                 const PetscScalar thickness, const PetscScalar z, const PetscScalar dz,
                 PetscScalar &enthalpy, PetscScalar &Hmelt);
 
