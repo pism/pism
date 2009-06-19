@@ -27,13 +27,13 @@ one possible test procedure:  Use EISMINT II experiment A for only 20ka, so we d
 SIA only and no sliding, just to see effect of corrected conservation of energy on flow
 in case with nontrivial thickness:
 
-mpiexec -n $NN pisms -eisII A -Mx 61 -My 61 -Mz 101 -quadZ -y 6000.0 -o nobr_estart.nc
+mpiexec -n $NN pisms -temp_pa -eisII A -Mx 61 -My 61 -Mz 101 -quadZ -y 6000.0 -o nobr_estart.nc
 mpiexec -n $NN pismr -temp_pa -i nobr_estart.nc -y 14000 -skip 10 -o nobr_coldice.nc
 mpiexec -n $NN penth -i nobr_estart.nc -y 14000 -skip 10 -o nobr_polyice.nc
 
 adding bedrock thermal:
 
-mpiexec -n $NN pisms -eisII A -Mx 61 -My 61 -Mz 101 -Mbz 51 -quadZ -y 6000.0 -o estart.nc
+mpiexec -n $NN pisms -temp_pa -eisII A -Mx 61 -My 61 -Mz 101 -Mbz 51 -quadZ -y 6000.0 -o estart.nc
 mpiexec -n $NN pismr -temp_pa -i estart.nc -y 14000 -skip 10 -o coldice.nc
 mpiexec -n $NN penth -i estart.nc -y 14000 -skip 10 -o polyice.nc
 

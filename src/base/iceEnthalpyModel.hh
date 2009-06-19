@@ -116,7 +116,8 @@ protected:
   virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
 
   virtual PetscErrorCode drainageToBaseModelEnth(EnthalpyConverter &EC,
-                const PetscScalar thickness, const PetscScalar z, const PetscScalar dz,
+                PetscScalar L, PetscScalar omega_max,
+                PetscScalar thickness, PetscScalar z, PetscScalar dz,
                 PetscScalar &enthalpy, PetscScalar &Hmelt);
 
 protected: // new data members

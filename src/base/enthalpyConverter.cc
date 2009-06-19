@@ -44,6 +44,7 @@ EnthalpyConverter::EnthalpyConverter(NCConfigVariable *config) {
   T_0   = config->get("water_melting_temperature");               // K  
 }
 
+
 //! Get pressure in ice from depth below surface using the hydrostatic assumption.
 /*! If \f$d\f$ is the depth then
      \f[ p = p_{\text{air}}  + \rho_i g d. \f]
@@ -100,19 +101,19 @@ We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we fail i
 \f$E \ge E_l(p)\f$.
  */
 double EnthalpyConverter::getAbsTemp(double E, double p) const {
-  const double T_m = getMeltingTemp(p);
   double E_s, E_l;
   getEnthalpyInterval(p, E_s, E_l);
   if (E < E_s) {
     return E / c_i;
   } else if (E < E_l) { // two cases in (12)
-    return T_m;
+    return getMeltingTemp(p);
   } else {
     PetscPrintf(PETSC_COMM_WORLD,
       "\n\n\n  EnthalpyConverter ERROR in getAbsTemp():\n"
-            "    enthalpy equals or exceeds that of liquid water; ending ... \n\n");
+            "    enthalpy E=%f J kg-1 equals or exceeds that of liquid water (E_l=%f); ending ... \n\n",
+      E,E_l);
     PetscEnd();
-    return T_m;
+    return 0.0;
   }
 }
 
@@ -197,15 +198,13 @@ double EnthalpyConverter::getEnth(double T, double omega, double p) const {
 
 
 //! Compute enthalpy more permissively in terms of meaning of input temperature and water fraction.  Compare getEnth().
-/*! Use this form of getEnth() when outside sources (e.g. information from a coupler) might generate
+/*! Computes enthalpy from absolute temperature, liquid water fraction, and pressure as before.
+Use this form of getEnth() when outside sources (e.g. information from a coupler) might generate
 a temperature above the pressure melting point or cold ice with a positive water fraction.
 
-Computes enthalpy from absolute temperature, liquid water fraction, and pressure as before.
-But treats temperatures above pressure-melting point as \e at the pressure-melting point,
-and interprets contradictory case of \f$T < T_m(p)\f$ and \f$\omega > 0\f$ \e as cold ice,
-ignoring water fraction \f$\omega > 0\f$.
-
-Computes:
+Treats temperatures above pressure-melting point as \e at the pressure-melting point.
+Interprets contradictory case of \f$T < T_m(p)\f$ and \f$\omega > 0\f$ \e as cold ice,
+ignoring water fraction \f$\omega > 0\f$.  Computes:
   \f[E_{\text{permissive}}(T,\omega,p)
        = \begin{cases}
             E(T,0.0,p),         & T < T_m(p) \quad \text{and} \quad \omega \ge 0,
@@ -247,5 +246,4 @@ double EnthalpyConverter::getEnthBedrock(double E_level_zero, double T_level_zer
 double EnthalpyConverter::getAbsTempBedrock(double E_level_zero, double T_level_zero, double Eb) const {
   return ((Eb - E_level_zero) / c_b) + T_level_zero;
 }
-
 

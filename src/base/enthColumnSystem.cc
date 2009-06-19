@@ -16,11 +16,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "enthColumnSystem.hh"
-#include "pism_const.hh"   // e.g. MASK_FLOATING and PismModMask()
+#include "pism_const.hh"        // e.g. for MASK_FLOATING and PismModMask()
 #include "enthalpyConverter.hh"
+#include "enthColumnSystem.hh"
 
-#define DEBUGVERB 2
 
 enthSystemCtx::enthSystemCtx(int my_Mz, int my_Mbz)
       : columnSystemCtx(my_Mz + my_Mbz - 1) {
@@ -256,18 +255,6 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
       rhs[k0] = Enth_ks; 
     }
   } else { // ks > 0; there is ice
-    planeStar ss;
-    // ierr = T3->getPlaneStarZ(i,j,0.0,&ss);
-    ierr = Enth3->getPlaneStarZ(i,j,0.0,&ss);
-    //const PetscScalar UpTu = (u[0] < 0) ? u[0] * (ss.ip1 -  ss.ij) / dx :
-    //                                      u[0] * (ss.ij  - ss.im1) / dx;
-    //const PetscScalar UpTv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
-    //                                      v[0] * (ss.ij  - ss.jm1) / dy;
-    const PetscScalar UpEnthu = (u[0] < 0) ? u[0] * (ss.ip1 -  ss.ij) / dx :
-                                             u[0] * (ss.ij  - ss.im1) / dx;
-    const PetscScalar UpEnthv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
-                                             v[0] * (ss.ij  - ss.jm1) / dy;
-    // for w, always difference *up* from base, but make it implicit
     if (PismModMask(mask) == MASK_FLOATING) {
       // just apply Dirichlet condition to base of column of ice in an ice shelf
       if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
@@ -280,14 +267,21 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
       //rhs[k0] = T[0] + dtTemp * (Rb / (rho_c_av * dzav));
       rhs[k0] = Enth[0] + dtTemp * (Rb / (rho_av * dzav));
       if (!isMarginal) {
-        //rhs[k0] += dtTemp * rho_c_ratio * 0.5 * (Sigma[0] / rho_c_I);
+        planeStar ss;
+        // ierr = T3->getPlaneStarZ(i,j,0.0,&ss);
+        ierr = Enth3->getPlaneStarZ(i,j,0.0,&ss);
+        const PetscScalar UpEnthu = (u[0] < 0) ? u[0] * (ss.ip1 -  ss.ij) / dx :
+                                                 u[0] * (ss.ij  - ss.im1) / dx;
+        const PetscScalar UpEnthv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
+                                                 v[0] * (ss.ij  - ss.jm1) / dy;
         // WARNING: subtle consequences of finite volume argument across interface
+        //rhs[k0] += dtTemp * rho_c_ratio * 0.5 * (Sigma[0] / rho_c_I);
         //rhs[k0] -= dtTemp * rho_c_ratio * (0.5 * (UpTu + UpTv));
         rhs[k0] += dtTemp * rho_c_ratio * 0.5 * ((Sigma[0] / ice_rho) - UpEnthu - UpEnthv);
       }
       const PetscScalar AA = dtTemp * rho_c_ratio * w[0] / (2.0 * dzEQ);
       if (Mbz > 1) { // there is bedrock; apply upwinding if w[0]<0, otherwise ignore advection;
-                     //   ntoe jump in diffusivity coefficient
+                     //   note jump in diffusivity coefficient
         L[k0] = - brReff;
         if (w[0] >= 0.0) {  // velocity upward
           D[k0] = 1.0 + iceReff + brReff;
@@ -313,12 +307,6 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
 
   // generic ice segment: build k0+1:k0+ks-1 eqns
   for (PetscInt k = 1; k < ks; k++) {
-    planeStar ss;
-    ierr = Enth3->getPlaneStarZ(i,j,k * dzEQ,&ss);
-    const PetscScalar UpEnthu = (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx :
-                                             u[k] * (ss.ij  - ss.im1) / dx;
-    const PetscScalar UpEnthv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :
-                                             v[k] * (ss.ij  - ss.jm1) / dy;
     const PetscScalar AA = nuEQ * w[k],
                       R = (Enth[k] > Enth_s[k]) ? 0.0 : iceR;   
     if (w[k] >= 0.0) {  // velocity upward
@@ -333,6 +321,12 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
     //rhs[k0+k] = T[k];
     rhs[k0+k] = Enth[k];
     if (!isMarginal) {
+      planeStar ss;
+      ierr = Enth3->getPlaneStarZ(i,j,k * dzEQ,&ss);
+      const PetscScalar UpEnthu = (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx :
+                                               u[k] * (ss.ij  - ss.im1) / dx;
+      const PetscScalar UpEnthv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :
+                                               v[k] * (ss.ij  - ss.jm1) / dy;
       //rhs[k0+k] += dtTemp * (Sigma[k] / rho_c_I - UpTu - UpTv);
       rhs[k0+k] += dtTemp * ((Sigma[k] / ice_rho) - UpEnthu - UpEnthv);
     }

@@ -51,9 +51,9 @@ public:
                bed_thermal_c,
                bed_thermal_k;
   // pointers which should be set before calling initForAllColumns()
-  PetscScalar  *Enth,
-               *Enth_s,
-               *Enth_b,
+  PetscScalar  *Enth,   // enthalpy in ice
+               *Enth_s, // enthalpy level for CTS; function only of pressure
+               *Enth_b, // enthalpy in bedrock
                *u,
                *v,
                *w,
