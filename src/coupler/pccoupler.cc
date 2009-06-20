@@ -56,7 +56,7 @@ PetscErrorCode PISMClimateCoupler::initFromOptions(IceGrid* g) {
   } else {
     ierr = config.read(PISM_DEFAULT_CONFIG_FILE); CHKERRQ(ierr);
   }
-  //config.print(); CHKERRQ(ierr); // FIXME: desired?
+  //config.print(); CHKERRQ(ierr); show if desired, but IceModel already prints
   printIfDebug("ending PISMClimateCoupler::initFromOptions()\n");
   return 0;
 }

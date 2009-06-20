@@ -18,13 +18,15 @@ print """
 - An alternate config file foo.nc can be specified at runtime by option "-config foo.nc".
 - Values are asked-for by name, by the PISM executable, \e when \e needed, so if there
   is no request for it then a flag or parameter could be missing and things could still run.
-- But the .nc config file must contain any requested values.  The PISM executable
+  But the .nc config file must contain any requested values.  The PISM executable
   will terminate if there is no flag or parameter with the requested name.
 - Valid boolean flag values are "yes", "true", "on" for TRUE and "no",
   "false", "off" for FALSE.  Lowercase only.  They have to be enclosed in quotes
   in pism_config.cdl.
   
-\par One way to create and use an alternate config file:
+\par To create and use an alternate config file:
+
+\par Method 1, by editing a .cdl text file:
 - Make a copy of src/pism_config.cdl:
   \code
     cp src/pism_config.cdl myconfig.cdl
@@ -32,17 +34,32 @@ print """
 - Edit the text file myconfig.cdl to have the values you want.  Generally values of parameters
   can be changed but it is dangerous to remove them entirely.  If you are building a derived class
   of IceModel then you might add new values.
-- Create a new configuration .nc file with ncgen:
+- Create a new configuration .nc file with ncgen, and do your run with the new values.  For example:
   \code
     ncgen -o myconfig.nc myconfig.cdl
-  \endcode
-- Do your run with the new values, for example:
-  \code
     pismr -config myconfig.nc -boot_from mydata.nc -Mx 101 -My 101 -Mz 101 -Lz 4000 -y 100 -o start.nc
     pismr -config myconfig.nc -i start.nc -y 10000 -o end.nc
   \endcode
-- Runtime option "-verbose 4" will report back your values as the PISM
-  executable starts.
+  (Runtime option "-verbose 4" will report back your values as the PISM
+  executable starts.)
+
+\par Method 2, using a netCDF Operator (NCO):
+- This illustration changes the Clausius-Clapeyron constant from its default value to
+  9.7008e-8 K Pa-1.  First you make a copy of lib/pism_config.nc, assuming the 
+  PISM source is built.  Then make your modification of the desired attribute
+  (of the only variable in myconfig.nc, namely \c pism_config), using ncatted
+  (see <a href="http://nco.sourceforge.net/">NCO homepage</a>).  Then view your handiwork
+  with ncdump:
+  \code
+    cp lib/pism_config.nc myconfig.nc
+    ncatted -a beta_CC,pism_config,m,d,9.7008e-8 myconfig.nc
+    ncdump -h myconfig.nc | grep beta_CC
+  \endcode
+  Now run with the new values as before:
+  \code
+    pismr -config myconfig.nc -boot_from mydata.nc -Mx 101 -My 101 -Mz 101 -Lz 4000 -y 100 -o start.nc
+    ...
+  \endcode
 """
 
 print """

@@ -42,7 +42,7 @@ LocalMassBalance::LocalMassBalance() {
   } else {
     config.read(PISM_DEFAULT_CONFIG_FILE);
   }
-  //config.print(); // FIXME: desired?
+  //config.print(); CHKERRQ(ierr); show if desired, but IceModel already prints
 }
 
 
