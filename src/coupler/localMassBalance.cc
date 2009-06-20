@@ -42,7 +42,7 @@ LocalMassBalance::LocalMassBalance() {
   } else {
     config.read(PISM_DEFAULT_CONFIG_FILE);
   }
-  config.print(); // FIXME: desired?
+  //config.print(); // FIXME: desired?
 }
 
 

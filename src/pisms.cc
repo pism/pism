@@ -43,20 +43,10 @@ int main(int argc, char *argv[]) {
   ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
-    IceGrid    g(com, rank, size);
-    PISMConstAtmosCoupler pcac;
-    PISMConstOceanCoupler pcoc;
-    
+  {    
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
-
-    // call constructors on all three, but m will point to the one we use
-    IceEISModel    mEISII(g);
-    IcePSTexModel  mPSTex(g);
-    IceMISMIPModel mMISMIP(g);
-    IceModel*      m;
 
     PetscTruth  pddSet, EISIIchosen, PSTexchosen, MISMIPchosen;
 
@@ -87,13 +77,19 @@ int main(int argc, char *argv[]) {
          CHKERRQ(ierr);
       PetscEnd();
     }
+
+    // actually construct the model
+    IceGrid               g(com, rank, size);
+    PISMConstAtmosCoupler pcac;
+    PISMConstOceanCoupler pcoc;
+    IceModel*             m;
     
     if (EISIIchosen == PETSC_TRUE) {
-      m = (IceModel*) &mEISII;
+      m = new IceEISModel(g);
     } else if (PSTexchosen == PETSC_TRUE) {
-      m = (IceModel*) &mPSTex;
+      m = new IcePSTexModel(g);
     } else if (MISMIPchosen == PETSC_TRUE) {
-      m = (IceModel*) &mMISMIP;
+      m = new IceMISMIPModel(g);
     } else {
       SETERRQ(3,"PISMS: how did I get here?");
     }
@@ -109,8 +105,12 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com, "done with run ... \n"); CHKERRQ(ierr);
     ierr = m->writeFiles("simp_exper.nc"); CHKERRQ(ierr);
     if (MISMIPchosen == PETSC_TRUE) {
-      ierr = mMISMIP.writeMISMIPFinalFiles(); CHKERRQ(ierr);
+      IceMISMIPModel* mMISMIP = dynamic_cast<IceMISMIPModel*>(m);
+      if (!mMISMIP) { SETERRQ(4, "PISMS: mismip write files ... how did I get here?"); }
+      ierr = mMISMIP->writeMISMIPFinalFiles(); CHKERRQ(ierr);
     }
+    
+    delete m;
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

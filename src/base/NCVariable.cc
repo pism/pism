@@ -866,7 +866,7 @@ PetscErrorCode NCConfigVariable::write_attributes(int ncid, int varid, nc_type n
 PetscErrorCode NCConfigVariable::print() {
   PetscErrorCode ierr;
 
-  ierr = verbPrintf(3, com, "PISM parameters read from %s:\n",
+  ierr = verbPrintf(4, com, "PISM parameters read from %s:\n",
 		    config_filename.c_str());
 
   // Print text attributes:
@@ -877,7 +877,7 @@ PetscErrorCode NCConfigVariable::print() {
 
     if (value.empty()) continue;
 
-    ierr = verbPrintf(3, com, "  %s = \"%s\"\n",
+    ierr = verbPrintf(4, com, "  %s = \"%s\"\n",
 		      name.c_str(), value.c_str()); CHKERRQ(ierr);
   }
 
@@ -889,8 +889,15 @@ PetscErrorCode NCConfigVariable::print() {
 
     if (values.empty()) continue;
     
-    ierr = verbPrintf(3, com, "  %s = %12.3f\n",
-		      name.c_str(), values[0]); CHKERRQ(ierr);
+    if ((fabs(values[0]) >= 1.0e7) || (fabs(values[0]) <= 1.0e-4)) {
+      // use scientific notation if a number is big or small
+      ierr = verbPrintf(4, com, "  %s = %12.3e\n",
+		        name.c_str(), values[0]); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(4, com, "  %s = %12.5f\n",
+		        name.c_str(), values[0]); CHKERRQ(ierr);
+    }
+
   }
 
   return 0;

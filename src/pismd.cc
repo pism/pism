@@ -47,22 +47,19 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(1,com, "PISMD %s (diagnostic velocity computation mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
-    IceModel*      m;
-    IceModel       mPlain(g);
-    IceROSSModel   mRoss(g);
-
     // re this option, see  src/eismint/iceROSSModel.hh|cc and:
     //     D. MacAyeal and five others (1996). "An ice-shelf model test based on the 
     //     Ross ice shelf," Ann. Glaciol. 23, 46--51
     PetscTruth  doRoss;
     ierr = check_option("-ross", doRoss); CHKERRQ(ierr);
 
-    if (doRoss == PETSC_TRUE) {
-      m = (IceModel*) &mRoss;
-    } else 
-      m = (IceModel*) &mPlain;
-    ierr = m->setExecName("pismd"); CHKERRQ(ierr);
+    IceModel*      m;
+    if (doRoss == PETSC_TRUE)
+      m = new IceROSSModel(g);
+    else 
+      m = new IceModel(g);
 
+    ierr = m->setExecName("pismd"); CHKERRQ(ierr);
     ierr = m->attachAtmospherePCC(pcac); CHKERRQ(ierr);
     ierr = m->attachOceanPCC(pcoc); CHKERRQ(ierr);
 
@@ -73,10 +70,14 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com, "... done\n"); CHKERRQ(ierr);
 
     if (doRoss == PETSC_TRUE) {
-      ierr = mRoss.finishROSS(); CHKERRQ(ierr);
+      IceROSSModel* mRoss = dynamic_cast<IceROSSModel*>(m);
+      if (!mRoss) { SETERRQ(1, "PISMD: ross finish files ... how did I get here?"); }
+      ierr = mRoss->finishROSS(); CHKERRQ(ierr);
     }
 
     ierr = m->writeFiles("unnamed_diag.nc",PETSC_TRUE); CHKERRQ(ierr);  // default filename if no -o
+    
+    delete m;
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
