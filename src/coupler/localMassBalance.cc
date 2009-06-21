@@ -54,16 +54,16 @@ PetscErrorCode LocalMassBalance::init() {
 
 
 PetscErrorCode LocalMassBalance::getNForTemperatureSeries(
-                   PetscScalar t, PetscScalar dt, PetscInt &N) {
+                   PetscScalar /* t */, PetscScalar /* dt */, PetscInt & /* N */) {
   PetscPrintf(PETSC_COMM_WORLD,"LocalMassBalance is a virtual class.  ENDING ...\n");
   PetscEnd();
-  return 0.0;
+  return 0;
 }
 
 
 PetscScalar LocalMassBalance::getMassFluxFromTemperatureTimeSeries(
-             PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N,
-             PetscScalar precip) {
+             PetscScalar /* t */, PetscScalar /* dt_series */, PetscScalar * /* T */, PetscInt /* N */,
+             PetscScalar /* precip */) {
   PetscPrintf(PETSC_COMM_WORLD,"LocalMassBalance is a virtual class.  ENDING ...\n");
   PetscEnd();
   return 0.0;
@@ -141,12 +141,12 @@ of times to be odd.  Numerical integration accuracy, assuming a smooth-in-time y
 suggests that 53 evals per year (i.e. approximately weekly) should be sufficiently accurate.
  */
 PetscErrorCode PDDMassBalance::getNForTemperatureSeries(
-                   PetscScalar t, PetscScalar dt, PetscInt &N) {
+                   PetscScalar /* t */, PetscScalar dt, PetscInt &N) {
   PetscScalar dt_years = dt / secpera;
   N = (int) ceil(52 * (dt_years) + 1);
   if (N < 3) N = 3;
   if ((N % 2) == 0)  N++;  // guarantee it is odd
-  return 0.0;
+  return 0;
 }
 
 
@@ -244,7 +244,7 @@ PetscScalar PDDMassBalance::CalovGreveIntegrand(
 
 
 PetscScalar PDDMassBalance::getPDDSumFromTemperatureTimeSeries(
-             PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
+             PetscScalar /* t */, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
   PetscScalar  pdd_sum = 0.0;  // return value has units  K day
   const PetscScalar sperd = 8.64e4, // exact seconds per day
                     h_days = dt_series / sperd;
@@ -314,16 +314,16 @@ however.
 to account for non-day sub-intervals.)
  */
 PetscErrorCode PDDrandMassBalance::getNForTemperatureSeries(
-                   PetscScalar t, PetscScalar dt, PetscInt &Nseries) {
+                   PetscScalar /* t */, PetscScalar dt, PetscInt &Nseries) {
   const PetscScalar sperd = 8.64e4;
   Nseries = (int) ceil(dt / sperd);
   if (Nseries < 2) Nseries = 2;
-  return 0.0;
+  return 0;
 }
 
 
 PetscScalar PDDrandMassBalance::getPDDSumFromTemperatureTimeSeries(
-             PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
+             PetscScalar /* t */, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
   PetscScalar       pdd_sum = 0.0;  // return value has units  K day
   const PetscScalar sperd = 8.64e4, // exact seconds per day
                     h_days = dt_series / sperd;

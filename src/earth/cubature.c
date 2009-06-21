@@ -426,7 +426,7 @@ static rule *make_rule75genzmalik(unsigned dim)
 /* 1d 15-point Gaussian quadrature rule, based on qk15.c and qk.c in
    GNU GSL (which in turn is based on QUADPACK). */
 
-static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
+static unsigned rule15gauss_evalError(rule * /* r */, integrand f, void *fdata,
                       const hypercube *h, esterr *ee)
 {
      /* Gauss quadrature weights and kronrod quadrature abscissae and

@@ -37,7 +37,7 @@
 #define rho      910.0
 #define n        3.0           /* Glen power */
 
-int funcL(double r, const double u[], double f[], void *params) {
+int funcL(double r, const double u[], double f[], void * /* params */) {
   /*
   RHS for differential equation:
       du                  5/8   / a_0  r  (L^2 - r^2) \ 1/3

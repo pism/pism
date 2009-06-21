@@ -79,7 +79,7 @@ PetscErrorCode IceModel::setDefaults() {
   doPlasticTill            = config.get_flag("do_plastic_till");
   doPseudoPlasticTill      = config.get_flag("do_pseudo_plastic_till");
   doSuperpose              = config.get_flag("do_superpose");
-  ssaMaxIterations         = config.get("max_iterations_ssa");
+  ssaMaxIterations         = (PetscInt) config.get("max_iterations_ssa");
   useConstantNuHForSSA     = config.get_flag("use_constant_nuh_for_ssa");
   ssaRelativeTolerance     = config.get("ssa_relative_convergence");
   ssaEpsilon               = config.get("epsilon_ssa");
@@ -117,10 +117,10 @@ PetscErrorCode IceModel::setDefaults() {
   doMassConserve                  = config.get_flag("do_mass_conserve");
   doTemp                          = config.get_flag("do_temp");
   doSkip                          = config.get_flag("do_skip");
-  skipMax                         = config.get("skip_max");
+  skipMax                         = (PetscInt) config.get("skip_max");
   reportHomolTemps = PETSC_TRUE;
   globalMinAllowedTemp            = config.get("global_min_allowed_temp");
-  maxLowTempCount                 = config.get("max_low_temp_count");
+  maxLowTempCount                 = (PetscInt) config.get("max_low_temp_count");
   min_temperature_for_SIA_sliding = config.get("minimum_temperature_for_sliding");
   includeBMRinContinuity          = config.get_flag("include_bmr_in_continuity");
   isDrySimulation                 = config.get_flag("is_dry_simulation");
