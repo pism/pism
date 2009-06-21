@@ -22,7 +22,7 @@
 #include "columnSystem.hh"
 
 
-columnSystemCtx::columnSystemCtx(int my_nmax) : nmax(my_nmax) {
+columnSystemCtx::columnSystemCtx(PetscInt my_nmax) : nmax(my_nmax) {
   if (nmax < 1) {
     PetscPrintf(PETSC_COMM_WORLD,
       "columnSystem ERROR: nmax of system too small\n");
@@ -48,6 +48,40 @@ columnSystemCtx::~columnSystemCtx() {
   delete [] U;
   delete [] rhs;
   delete [] work;
+}
+
+
+//! Utility for simple ascii view of column quantity.
+/*! Give first argument NULL to get standard out.  No binary viewer.
+ */
+PetscErrorCode columnSystemCtx::viewColumnValues(PetscViewer viewer,
+                                                 PetscScalar *v, PetscInt m, const char* info) const {
+  PetscErrorCode ierr;
+
+  if (v==NULL) {
+    SETERRQ1(2,"columnSystem ERROR: can't view '%s' by v=NULL pointer ... ending ...\n", info);
+  }
+  if ((m<1) || (m>1000)) {
+    SETERRQ1(3,"columnSystem ERROR: can't view '%s' because m<1 or m>1000 column values ... ending ...\n",info);
+  }
+
+  PetscTruth iascii;
+  if (!viewer) {
+    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
+  }
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii); CHKERRQ(ierr);
+  if (!iascii) { SETERRQ(1,"Only ASCII viewer for ColumnSystem\n"); }
+
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "<viewing ColumnSystem object with description '%s':\n"
+      "  k     value\n",info); CHKERRQ(ierr);
+  for (PetscInt k=0; k<m; k++) {
+    ierr = PetscViewerASCIIPrintf(viewer,
+      "  %5d %12.5e\n",k,v[k]); CHKERRQ(ierr);
+  }
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "end viewing>\n",info); CHKERRQ(ierr);
+  return 0;
 }
 
 

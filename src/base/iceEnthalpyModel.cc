@@ -884,7 +884,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
     fMz, fdz, fMbz, fdzb); CHKERRQ(ierr);
 
   EnthalpyConverter EC(&config);
-  
+  if (getVerbosityLevel() >= 4) { ierr = EC.viewConstants(NULL); CHKERRQ(ierr); }
+
   enthSystemCtx system(fMz,fMbz);
   system.dx              = grid.dx;
   system.dy              = grid.dy;
@@ -1039,7 +1040,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
         }
 
         // go though bedrock and set system enthalpy from temperature
-        for (PetscInt k=0; k < k0; k++) {
+        for (PetscInt k=0; k < fMbz; k++) {
           system.Enth_b[k] = EC.getEnthBedrock(system.Enth[0], Tb[k0], Tb[k]);
         }
 
@@ -1055,6 +1056,21 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
         ierr = system.setBasalBoundaryValuesThisColumn(
                  Ghf[i][j],Enth_shelfbase,Rb[i][j]); CHKERRQ(ierr);
 
+#if 0
+#define iSHOW 25
+#define jSHOW 25
+if ((i==iSHOW) && (j==jSHOW)) {
+  ierr = verbPrintf(1,grid.com,
+     "\n\n k0 = %d,  Tb[k0] = %12.5f, Tb[0] = %12.5f, Enth[0] = %12.5f, Enth_b[0] = %12.5f\n",
+     k0,Tb[k0],Tb[0],system.Enth[0],system.Enth_b[0]); CHKERRQ(ierr);
+  ierr = verbPrintf(1,grid.com,"\n\n SHOWING COLUMN (i,j)=(%d,%d) values:\n",i,j); CHKERRQ(ierr);
+  ierr = system.viewColumnValues(NULL,fzblev, fMbz, "z values (elevation) in bedrock"); CHKERRQ(ierr);
+  ierr = system.viewColumnValues(NULL,system.Enth, fMz, "ice enthalpy Enth[] before solve"); CHKERRQ(ierr);
+  ierr = system.viewColumnValues(NULL,Tb, fMbz, "bedrock temperature Tb[] before solve"); CHKERRQ(ierr);
+  ierr = system.viewColumnValues(NULL,system.Enth_b, fMbz, "bedrock enthalpy Enth_b[] before solve"); CHKERRQ(ierr);
+}
+#endif
+
         // solve the system for this column: x will contain new enthalpy in ice and in bedrock
         //   that is, x[k] is always an enthalpy
         ierr = system.solveThisColumn(&x); // no CHKERRQ(ierr) immediately because:
@@ -1062,13 +1078,21 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
           SETERRQ3(2,
             "Tridiagonal solve failed at (%d,%d) with zero pivot position %d.\n", i, j, ierr);
         } else { CHKERRQ(ierr); }
+
+#if 0
+if ((i==iSHOW) && (j==jSHOW)) {
+  ierr = system.viewColumnValues(NULL,x, fMz + k0, "x[] after solve"); CHKERRQ(ierr);
+  ierr = verbPrintf(1,grid.com,"DONE SHOWING COLUMN (i,j)=(%d,%d)\n",i,j); CHKERRQ(ierr);
+}
+#endif
+
       }
 
       // prepare for melting/refreezing
       PetscScalar Hmeltnew = Hmelt[i][j];
 
-      // top ice level
-      Enthnew[ks] = Enth_ks;
+      // top ice level; no possibility of drainage (a separate modeling issue!)
+      Enthnew[ks] = x[k0 + ks];
 
       // insert solution for generic ice segments, including draining to base
       for (PetscInt k=ks-1; k >= 1; k--) {

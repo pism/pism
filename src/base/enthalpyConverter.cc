@@ -45,6 +45,41 @@ EnthalpyConverter::EnthalpyConverter(NCConfigVariable *config) {
 }
 
 
+//! Simple view of state of EnthalpyConverter.  Give NULL to get stdout.
+PetscErrorCode EnthalpyConverter::viewConstants(PetscViewer viewer) const {
+  PetscErrorCode ierr;
+
+  PetscTruth iascii;
+  if (!viewer) {
+    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
+  }
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii); CHKERRQ(ierr);
+  if (!iascii) { SETERRQ(1,"Only ASCII viewer for EnthalpyConverter\n"); }
+
+  ierr = PetscViewerASCIIPrintf(viewer,
+    "\n<showing EnthalpyConverter constants:\n"); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "   beta  = %12.5e (K Pa-1)\n",    beta); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "   c_b   = %12.5f (J kg-1 K-1)\n",c_b); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "   c_i   = %12.5f (J kg-1 K-1)\n",c_i); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "   g     = %12.5f (m s-2)\n",     g); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "   L     = %12.5e (J kg-1)\n",    L); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "   p_air = %12.5e (Pa)\n",        p_air); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "   rho_i = %12.5f (kg m-3)\n",    rho_i); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "   T_0   = %12.5f (K)\n",         T_0); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+      ">\n"); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! Get pressure in ice from depth below surface using the hydrostatic assumption.
 /*! If \f$d\f$ is the depth then
      \f[ p = p_{\text{air}}  + \rho_i g d. \f]

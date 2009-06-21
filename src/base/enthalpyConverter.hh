@@ -46,6 +46,8 @@ class EnthalpyConverter {
 public:
   EnthalpyConverter(NCConfigVariable *config);
 
+  PetscErrorCode viewConstants(PetscViewer viewer) const;
+
   double getPressureFromDepth(double depth) const;
   double getMeltingTemp(double p) const;
   double getEnthalpyCTS(double p) const;

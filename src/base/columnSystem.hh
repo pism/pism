@@ -42,6 +42,9 @@ public:
                                  of maximum size nmax */
   ~columnSystemCtx();           //! deallocate it
 
+  PetscErrorCode viewColumnValues(PetscViewer viewer, 
+                                  PetscScalar *v, PetscInt m, const char* info) const;
+
 protected:
   PetscInt    nmax;
   PetscScalar *L, *Lp, *D, *U, *rhs, *work; // vectors for tridiagonal system
@@ -71,7 +74,7 @@ Call sequence like this:
 class ageSystemCtx : public columnSystemCtx {
 
 public:
-  ageSystemCtx(int my_Mz);
+  ageSystemCtx(PetscInt my_Mz);
   PetscErrorCode initAllColumns();
   PetscErrorCode setIndicesThisColumn(PetscInt my_i, PetscInt my_j, PetscInt my_ks);  
   PetscErrorCode solveThisColumn(PetscScalar **x);  
@@ -120,7 +123,7 @@ Call sequence like this:
 class tempSystemCtx : public columnSystemCtx {
 
 public:
-  tempSystemCtx(int my_Mz, int my_Mbz);
+  tempSystemCtx(PetscInt my_Mz, PetscInt my_Mbz);
   PetscErrorCode initAllColumns();
   PetscErrorCode setIndicesThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
   PetscErrorCode setSchemeParamsThisColumn(
