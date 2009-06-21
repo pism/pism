@@ -59,13 +59,15 @@ double dF_M(double x, double alpha, double r, double Q) {
 }
 
 
-int funcM_ode_G(double r, const double alpha[], double f[], void * /* params */) {
+int funcM_ode_G(double r, const double alpha[], double f[], void *params) {
   /*   RHS G for differential equation:
           alpha' = G(alpha,r)      
      but where we solve this equation to find alpha':
           F(alpha',alpha,r) = 0 
      heuristic: guess is about 1/7 th of solution to a nearby problem;
      no range checking on r, so use away from zero */
+  if (params == NULL) {} /* quash warning "unused parameters" */
+  
   const double Q = (1.0 - rho / rhow) * rho * g * Rc * H0 / (2.0 * barB),
                guess = 0.15 * (  pow(Q/r,n) - alpha[0]/r  );
   /* in Python (exactM.py):  f[0] = fsolve(F_M,guess,args=(alpha[0],r));

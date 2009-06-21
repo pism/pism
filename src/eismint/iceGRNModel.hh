@@ -31,7 +31,7 @@ we stop using formula (6) in [\ref Faustoetal2009].
 class EISGREENMassBalance : public PDDMassBalance {
 
 public:
-  EISGREENMassBalance();
+  EISGREENMassBalance(NCConfigVariable* myconfig);
 
   //! Leaves pddFactorIce and pddFactorSnow alone; different from base class action.
   virtual PetscErrorCode setDegreeDayFactorsFromSpecialInfo(

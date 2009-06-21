@@ -458,12 +458,12 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
       ierr = verbPrintf(2,grid->com,
          "    mass balance scheme chosen: PDD with simulated random daily variability ...\n");
          CHKERRQ(ierr);
-      mbscheme = new PDDrandMassBalance((pddRepeatableSet == PETSC_TRUE));
+      mbscheme = new PDDrandMassBalance(&config,(pddRepeatableSet == PETSC_TRUE));
     } else { // default case
       ierr = verbPrintf(2,grid->com,
          "    mass balance scheme chosen: PDD with expected value for daily variability ...\n");
          CHKERRQ(ierr);
-      mbscheme = new PDDMassBalance;
+      mbscheme = new PDDMassBalance(&config);
     }
   }
   ierr = mbscheme->init(); CHKERRQ(ierr);

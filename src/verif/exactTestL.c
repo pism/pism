@@ -37,13 +37,15 @@
 #define rho      910.0
 #define n        3.0           /* Glen power */
 
-int funcL(double r, const double u[], double f[], void * /* params */) {
+int funcL(double r, const double u[], double f[], void *params) {
   /*
   RHS for differential equation:
       du                  5/8   / a_0  r  (L^2 - r^2) \ 1/3
       -- = - (8/3) b'(r) u    - |---------------------|       
       dr                        \ 2 L^2 \tilde\Gamma  /
   */
+
+  if (params == NULL) {} /* quash warning "unused parameters" */
   
   const double Lsqr = L * L;
   const double a0 = 0.3 / SperA;   /* m/s;  i.e. 0.3 m/a */
