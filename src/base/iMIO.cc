@@ -708,7 +708,11 @@ PetscErrorCode IceModel::write_snapshot() {
   PetscErrorCode ierr;
   NCTool nc(&grid);
   bool save_now = false;
-  double saving_after;
+  double saving_after = -1.0e30; // initialize to avoid compiler warning; this
+				 // value is never used, because saving_after
+				 // is only used if save_now == true, and in
+				 // this case saving_after is guaranteed to be
+				 // initialized. See the code below.
   char filename[PETSC_MAX_PATH_LEN];
 
   // determine if the user set the -save_at and -save_to options
