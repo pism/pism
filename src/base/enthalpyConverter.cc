@@ -242,8 +242,8 @@ Interprets contradictory case of \f$T < T_m(p)\f$ and \f$\omega > 0\f$ \e as col
 ignoring water fraction \f$\omega > 0\f$.  Computes:
   \f[E_{\text{permissive}}(T,\omega,p)
        = \begin{cases}
-            E(T,0.0,p),         & T < T_m(p) \quad \text{and} \quad \omega \ge 0,
-            E(T_m(p),\omega,p), & T \ge T_m(p) \quad \text{and} \quad \omega \ge 0, \\
+            E(T,0.0,p),         & T < T_m(p) \quad \text{and} \quad \omega \ge 0, \\
+            E(T_m(p),\omega,p), & T \ge T_m(p) \quad \text{and} \quad \omega \ge 0, 
          \end{cases} \f]
 Calls getEnth() for \f$E(T,\omega,p)\f$.
  */

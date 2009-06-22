@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
-from netCDF3 import *
+# try different netCDF modules
+try:
+    from netCDF4 import *
+except:
+    from netCDF3 import *
 
 input = "../lib/pism_config.nc"
 
