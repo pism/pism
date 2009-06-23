@@ -866,7 +866,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 
   if (doColdIceMethods) {
     ierr = PetscPrintf(grid.com,
-      "\n\n    IceEnthalpyModel::enthalpyStep() called but doColdIceMethods==true ... ending\n");
+      "\n\n    IceEnthalpyModel::enthalpyAndDrainageStep() called but doColdIceMethods==true ... ending\n");
       CHKERRQ(ierr);
     PetscEnd();
   }
@@ -880,8 +880,11 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   ierr = grid.getFineEqualVertLevs(fMz,fMbz,fdz,fdzb,fzlev,fzblev); CHKERRQ(ierr);
 
   ierr = verbPrintf(4,grid.com,
-    "\n  [entering enthalpyStep(); fMz = %d, fdz = %5.3f, fMbz = %d, fdzb = %5.3f]",
+    "\n  [entering enthalpyAndDrainageStep(); fMz = %d, fdz = %5.3f, fMbz = %d, fdzb = %5.3f]",
     fMz, fdz, fMbz, fdzb); CHKERRQ(ierr);
+
+  PetscTruth viewOneColumn;
+  ierr = check_option("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
   EnthalpyConverter EC(&config);
   if (getVerbosityLevel() >= 4) { ierr = EC.viewConstants(NULL); CHKERRQ(ierr); }
@@ -1059,6 +1062,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 #if 0
 #define iSHOW 25
 #define jSHOW 25
+
 if ((i==iSHOW) && (j==jSHOW)) {
   ierr = verbPrintf(1,grid.com,
      "\n\n k0 = %d,  Tb[k0] = %12.5f, Tb[0] = %12.5f, Enth[0] = %12.5f, Enth_b[0] = %12.5f\n",
@@ -1079,12 +1083,20 @@ if ((i==iSHOW) && (j==jSHOW)) {
             "Tridiagonal solve failed at (%d,%d) with zero pivot position %d.\n", i, j, ierr);
         } else { CHKERRQ(ierr); }
 
-#if 0
-if ((i==iSHOW) && (j==jSHOW)) {
-  ierr = system.viewColumnValues(NULL,x, fMz + k0, "x[] after solve"); CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com,"DONE SHOWING COLUMN (i,j)=(%d,%d)\n",i,j); CHKERRQ(ierr);
-}
-#endif
+        // diagnostic/debug
+        if (viewOneColumn) {
+          if ((i==id) && (j==jd)) {
+            ierr = verbPrintf(1,grid.com,
+              "\nin IceEnthalpyModel::enthalpyDrainageStep();\n"
+                "   fMz = %d, fdz = %5.3f, fMbz = %d, fdzb = %5.3f, k0 = %d, ks = %d\n\n",
+              fMz, fdz, fMbz, fdzb, k0, ks); CHKERRQ(ierr);
+            ierr = verbPrintf(1,grid.com,
+              "viewing system and solution at (i,j)=(%d,%d):\n", i, j); CHKERRQ(ierr);
+            ierr = system.viewSystem(NULL,"system"); CHKERRQ(ierr);
+            ierr = system.viewColumnValues(NULL, x, fMz+k0, "solution x"); CHKERRQ(ierr);
+          }
+        }
+
 
       }
 
@@ -1134,7 +1146,8 @@ if ((i==iSHOW) && (j==jSHOW)) {
 
       // insert generic bedrock segments solution, which refers to z=0 segment
       for (PetscInt k=k0-1; k >= 0; k--) {
-        Tbnew[k] = EC.getAbsTempBedrock(Enthnew[0], Tbnew[k0], x[k]);
+        //Tbnew[k] = EC.getAbsTempBedrock(Enthnew[0], Tbnew[k0], x[k]);
+        Tbnew[k] = EC.getAbsTempBedrock(system.Enth[0], Tb[k0], x[k]);  // use same pt in E-T space as before
       }
 
       // transfer column into Tb3; neighboring columns will not reference so no need for communication

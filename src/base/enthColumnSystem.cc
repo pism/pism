@@ -308,7 +308,8 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
   // generic ice segment: build k0+1:k0+ks-1 eqns
   for (PetscInt k = 1; k < ks; k++) {
     const PetscScalar AA = nuEQ * w[k],
-                      R = (Enth[k] > Enth_s[k]) ? 0.0 : iceR;   
+                      // zero conduction if omega > 0  <==>  E > E_s(p) :
+                      R = (Enth[k] > Enth_s[k]) ? 0.0 : iceR;
     if (w[k] >= 0.0) {  // velocity upward
       L[k0+k] = - R - AA * (1.0 - lambda/2.0);
       D[k0+k] = 1.0 + 2.0 * R + AA * (1.0 - lambda);

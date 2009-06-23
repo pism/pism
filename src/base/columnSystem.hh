@@ -45,6 +45,10 @@ public:
   PetscErrorCode viewColumnValues(PetscViewer viewer, 
                                   PetscScalar *v, PetscInt m, const char* info) const;
 
+  PetscErrorCode viewMatrix(PetscViewer viewer, const char* info) const;
+
+  PetscErrorCode viewSystem(PetscViewer viewer, const char* info) const;
+
 protected:
   PetscInt    nmax;
   PetscScalar *L, *Lp, *D, *U, *rhs, *work; // vectors for tridiagonal system

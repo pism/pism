@@ -161,6 +161,10 @@ PetscErrorCode IceModel::temperatureStep(
     "\n  [entering temperatureStep(); fMz = %d, fdz = %5.3f, fMbz = %d, fdzb = %5.3f]",
     fMz, fdz, fMbz, fdzb); CHKERRQ(ierr);
 
+  // diagnostic/DEBUG; added for comparison to IceEnthalpyModel
+  PetscTruth viewOneColumn;
+  ierr = check_option("-view_sys", viewOneColumn); CHKERRQ(ierr);
+
   tempSystemCtx system(fMz,fMbz);
   system.dx              = grid.dx;
   system.dy              = grid.dy;
@@ -302,6 +306,21 @@ PetscErrorCode IceModel::temperatureStep(
             "Tridiagonal solve failed at (%d,%d) with zero pivot position %d.\n",
             i, j, ierr);
         } else { CHKERRQ(ierr); }
+
+        // diagnostic/DEBUG; added for comparison to IceEnthalpyModel
+        if (viewOneColumn) {
+          if ((i==id) && (j==jd)) {
+            ierr = verbPrintf(1,grid.com,
+              "\nin IceModel::temperatureStep();\n"
+                "   fMz = %d, fdz = %5.3f, fMbz = %d, fdzb = %5.3f, k0 = %d, ks = %d\n\n",
+              fMz, fdz, fMbz, fdzb, k0, ks); CHKERRQ(ierr);
+            ierr = verbPrintf(1,grid.com,
+              "viewing system and solution at (i,j)=(%d,%d):\n", i, j); CHKERRQ(ierr);
+            ierr = system.viewSystem(NULL,"system"); CHKERRQ(ierr);
+            ierr = system.viewColumnValues(NULL, x, fMz+k0, "solution x"); CHKERRQ(ierr);
+          }
+        }
+
       }
 
       // insert bedrock solution; check for too low below

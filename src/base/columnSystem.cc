@@ -39,6 +39,18 @@ columnSystemCtx::columnSystemCtx(PetscInt my_nmax) : nmax(my_nmax) {
   U    = new PetscScalar[nmax-1];
   rhs  = new PetscScalar[nmax];
   work = new PetscScalar[nmax];
+
+  // zero the entries; only useful for clean views
+  for (PetscInt k = 0; k < nmax-1; k++) {
+    Lp[k]   = 0.0;
+    D[k]    = 0.0;
+    U[k]    = 0.0;
+    rhs[k]  = 0.0;
+    work[k] = 0.0; 
+  }
+  D[nmax-1]    = 0.0;
+  rhs[nmax-1]  = 0.0;
+  work[nmax-1] = 0.0;
 }
 
 
@@ -52,7 +64,10 @@ columnSystemCtx::~columnSystemCtx() {
 
 
 //! Utility for simple ascii view of column quantity.
-/*! Give first argument NULL to get standard out.  No binary viewer.
+/*!
+Give first argument NULL to get standard out.  No binary viewer.
+
+Give description string as \c info argument.
  */
 PetscErrorCode columnSystemCtx::viewColumnValues(PetscViewer viewer,
                                                  PetscScalar *v, PetscInt m, const char* info) const {
@@ -73,14 +88,90 @@ PetscErrorCode columnSystemCtx::viewColumnValues(PetscViewer viewer,
   if (!iascii) { SETERRQ(1,"Only ASCII viewer for ColumnSystem\n"); }
 
   ierr = PetscViewerASCIIPrintf(viewer,
-      "<viewing ColumnSystem object with description '%s':\n"
+     "\n<viewing ColumnSystem column object with description '%s':\n"
       "  k     value\n",info); CHKERRQ(ierr);
   for (PetscInt k=0; k<m; k++) {
     ierr = PetscViewerASCIIPrintf(viewer,
       "  %5d %12.5e\n",k,v[k]); CHKERRQ(ierr);
   }
   ierr = PetscViewerASCIIPrintf(viewer,
-      "end viewing>\n",info); CHKERRQ(ierr);
+      "end viewing>\n"); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! View the tridiagonal matrix as a full matrix.  Unwise if size exceeds 20 or so. 
+/*! 
+Give first argument NULL to get standard out.  No binary viewer.
+
+Give description string as \c info argument.
+ */
+PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info) const {
+  PetscErrorCode ierr;
+  PetscTruth iascii;
+  if (!viewer) {
+    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
+  }
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii); CHKERRQ(ierr);
+  if (!iascii) { SETERRQ(1,"Only ASCII viewer for ColumnSystem\n"); }
+
+  if (L==NULL) {
+    SETERRQ1(2,"columnSystem ERROR: can't matrix '%s' because L==NULL ... ending ...\n", info);
+  }
+  if (D==NULL) {
+    SETERRQ1(3,"columnSystem ERROR: can't matrix '%s' because D==NULL ... ending ...\n", info);
+  }
+  if (U==NULL) {
+    SETERRQ1(4,"columnSystem ERROR: can't matrix '%s' because U==NULL ... ending ...\n", info);
+  }
+
+  if (nmax < 2) {
+    ierr = PetscViewerASCIIPrintf(viewer,
+      "\n\n<nmax >= 2 required to view ColumnSystem tridiagonal matrix '%s' ... skipping view\n",info);
+    CHKERRQ(ierr);
+    return 0;
+  }
+
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "\n<viewing ColumnSystem tridiagonal matrix, '%s':\n",info); CHKERRQ(ierr);
+  for (PetscInt k=0; k<nmax; k++) {    // k+1 is row  (while j+1 is column)
+    if (k == 0) {              // viewing first row
+      ierr = PetscViewerASCIIPrintf(viewer,"%8.5f %8.5f ",D[k],U[k]); CHKERRQ(ierr);
+      for (PetscInt j=2; j<nmax; j++) {
+        ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
+      }
+    } else if (k < nmax-1) {   // viewing generic row
+      for (PetscInt j=0; j<k-1; j++) {
+        ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
+      }
+      ierr = PetscViewerASCIIPrintf(viewer,"%8.5f %8.5f %8.5f ",L[k],D[k],U[k]); CHKERRQ(ierr);
+      for (PetscInt j=k+2; j<nmax; j++) {
+        ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
+      }
+    } else {                   // viewing last row
+      for (PetscInt j=0; j<k-1; j++) {
+        ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
+      }
+      ierr = PetscViewerASCIIPrintf(viewer,"%8.5f %8.5f ",L[k],D[k]); CHKERRQ(ierr);
+    }
+    ierr = PetscViewerASCIIPrintf(viewer,"\n"); CHKERRQ(ierr);  // end of row
+  }
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "end viewing tridiagonal matrix>\n"); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! View the tridiagonal system A x = b, both A as a full matrix and b as a vector.  Unwise if size exceeds 20 or so. 
+/*! 
+Calls viewMatrix() to view A and viewColumnValues() to view right-hand-side b.
+ */
+PetscErrorCode columnSystemCtx::viewSystem(PetscViewer viewer, const char* info) const {
+  PetscErrorCode ierr;
+  ierr = viewMatrix(viewer,info); CHKERRQ(ierr);
+  char  rhs_info[PETSC_MAX_PATH_LEN];
+  sprintf(rhs_info, "right-hand side vector for system '%s'", info);
+  ierr = viewColumnValues(viewer,rhs,nmax,rhs_info); CHKERRQ(ierr);
   return 0;
 }
 
