@@ -1,12 +1,19 @@
-/*! \page bombproof BOMBPROOF, a numerical scheme for temperature and age (DEPRECATED)
+/*! \page bombproofenth BOMBPROOF, a numerical scheme for conservation of energy (ENTHALPY DEV VERSION)
 
-One of the essential goals for any thermomechanically coupled numerical ice sheet model 
+One of the essential goals for any thermomechanically-coupled numerical ice sheet model 
 is a completely bombproof numerical 
-scheme for the advection-conduction-reaction problem for the temperature within the ice.  
-"Bombproof" means, roughly, as stable as possible in as many realistic modeling
+scheme for the advection-conduction-reaction problem for the conservation of
+energy within the ice and the bedrock.  The conservation of energy problem here
+is described in terms of the enthalpy field.  A similar, but strictly simpler, 
+problem describes the evolution of the age field.
+  
+"Bombproof" means being, roughly, as stable as possible in as many realistic modeling
 contexts as possible.  PISM illustrates this idea by including a scheme which is 
-observed to be highly robust in practice.  In this section we prove stability 
-properties of the scheme. 
+observed to be highly robust in practice.  The scheme is special to shallow ice sheets
+because it makes specific tradeoff choices with respect to vertical velocity, but
+it is generic and low order with respect to horizontal velocity.
+
+In this section we prove stability properties of the scheme. 
 
 Accuracy is also a goal, but it is necessarily a second goal.  It is partly achieved 
 here because our scheme has truncation error \f$O(\Delta z^2)\f$
@@ -21,16 +28,16 @@ is robust but it has a CFL condition on vertical advection, an avoidable time st
 restriction as a practical matter (because the scheme described here has been 
 implemented successfully!).  The CFL condition on horizontal advection
 remains in the new scheme, however.  The scheme here is conditionally stable 
-as an adaptive time-stepping technique for the 3D temperature equation.
+as an adaptive time-stepping technique for the 3D conservation of energy equation.
 The length of the time step is limited only by the maximum magnitude of the 
 horizontal velocities within the ice.
 
-The %region in which the temperature equation needs to be solved, namely within 
+The ice %region in which the energy equation needs to be solved, namely within 
 the ice sheet and attached ice shelves, generally changes over time.  This is an 
 essential complicating factor in ice sheet modeling.  According to user options, 
-there may also be a model for the temperature within a layer of bedrock 
-below the ice sheet.  The implementation must include this possibility, 
-although it is not addressed here.
+there may also be a model for the energy within a layer of bedrock 
+below the ice sheet.  The implementation must include this possibility; it is
+only addressed at the end.
 
 Equally essential is the fact that the velocity field has a
 complicated provenance.  It comes from a variety of stress
@@ -44,55 +51,82 @@ about the regularity of the velocity field in space or time.  Nor do we want
 the numerical scheme for advection to need any information about the velocity
 except its value at the beginning of the time step.  Thus we would not 
 accept a scheme which required the Jacobian
-of the velocity field with respect to changes in temperature, for example.
+of the velocity field with respect to changes in energy, for example.
 At very least we cannot implement a fully implicit scheme without some 
 blind iteration (%e.g. with no guarantee of convergence of the iteration), while 
 the scheme we propose involves no iteration.
 
-As described elsewhere in this manual, the temperature equation is
+In terms of the specific enthalpy field \f$E(x,y,z,t)\f$, which has units of 
+\f$J\,\text{kg}^{-1}\f$ in SI, the energy equation is [\ref AschwandenBlatter2009]
 
-\anchor basicConserve
+\anchor basicEnergy
+  \f[ \rho \frac{dE}{dt} = -\nabla \cdot \mathbf{q} + Q,\tag{basicEnergy} \f]
+The heat flux in cold ice, temperate ice, and in bedrock is
+  \f[ \mathbf{q} = \begin{cases}
+                      - k_i c_i^{-1} \nabla E, & \text{cold ice}, \\
+                      0, & \text{temperate ice}, \\
+                      - k_b c_b^{-1} \nabla E, & \text{bedrock}, \\
+                   \end{cases}, \f]
+where \f$k_i,c_i,k_b,c_b\f$ are all constant.  Note \f$dE/dt\f$ stands for the material
+derivative of the enthalpy field,
+  \f[ \frac{dE}{dt} = \frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E, \f] 
+so advection \e is present.  For historical reasons, and consistency 
+with [\ref BBL], we denote the bulk strain 
+heating term \f$Q\f$ in (\ref basicEnergy) as \f$\Sigma\f$.  The units of equation
+(\ref basicEnergy), and of the quantity \f$Q=\Sigma\f$, are \f$J\,\text{s}^{-1}\,\text{m}^{-3}\f$
+in SI.
+
+As suggested by the calculation at the bottom of this page, the shallow approximation 
+of this equation lacks horizontal conduction terms  [see also \ref Fowler].
+Also, for the analysis of the core BOMBPROOF scheme, we specialize the analysis to cold ice.
+Within the cold ice the coefficient in the heat flux is constant, so
+  \f[ \nabla \cdot \mathbf{q} = - k_i c_i^{-1} \frac{\partial^2 E}{\partial z^2}. \f]
+Therefore the equation we analyze is
+
+\anchor basicShallow
 \f[
-\rho c_p(T) \frac{dT}{dt} = k \frac{\partial^2 T}{\partial z^2} + \Sigma(T),\tag{basicConserve}
+\rho_i \frac{dE}{dt} = k_i c_i^{-1} \frac{\partial^2 E}{\partial z^2} + \Sigma,\tag{basicShallow}
 \f]
-where \f$T(t,x,y,z)\f$ is the temperature of the ice.  This equation is the shallow approximation
-of the full three-dimensional conservation of energy, so it does not include horizontal
-conduction [\ref Fowler].  The units of this equation are energy per time per volume, 
-thus \f$J\,\text{s}^{-1}\,\text{m}^{-3}\f$ in SI.
 
-We will assume, without exception, that \f$\rho,c_p(T),k\f$ are positive.
-Note \f$dT/dt\f$ stands for the material derivative, so advection 
-is present.  The function \f$\Sigma(T)\f$ is the strain-heating term, 
-the details of which will not affect the derivation in this note.  It is naturally
+We will assume, without exception, that \f$\rho_i,c_i,k_i\f$ are positive.
+The details of how \f$\Sigma\f$ is calculated does not affect the derivation
+here, and will not be given, but that term is naturally
 described as a (self-)reaction term [\ref Fowler].
 
-We will be focusing on the dimension in which the temperature has largest spatial gradient, 
-namely with respect to the vertical coordinate \f$z\f$.  Rewriting equation (\ref basicConserve)
+We will be focusing on the dimension in which the enthalpy and temperature has largest spatial gradient, 
+namely with respect to the vertical coordinate \f$z\f$.  Rewriting equation (\ref basicShallow)
 to emphasize the vertical terms we have
 
 \anchor vertProblem
 \f{align*}
-\rho c_p(T)\left(\frac{\partial T}{\partial t} + w \frac{\partial T}{\partial z}\right) 
-     &= k \frac{\partial^2 T}{\partial z^2} + \Phi \tag{vertProblem}
+\rho_i \left(\frac{\partial E}{\partial t} + w \frac{\partial E}{\partial z}\right) 
+     &= k_i c_i^{-1}  \frac{\partial^2 E}{\partial z^2} + \Phi \tag{vertProblem}
  \f}
 where
 \f[
-\Phi = \Sigma(T) - \rho c_p(T) \left(u \frac{\partial T}{\partial x}
-                         + v \frac{\partial T}{\partial y}\right)
+\Phi = \Sigma - \rho_i \left(u \frac{\partial E}{\partial x}
+                         + v \frac{\partial E}{\partial y}\right)
 \f]
+
 The boundary conditions to problem (\ref vertProblem) are a surface temperature
-condition at the top of the ice and a geothermal flux condition at the bottom of the ice:
+condition at the top of the ice and a geothermal flux condition at the bottom of the ice.
+(Until the end we shall assume that there is no bedrock thermal layer.)  Within cold ice
+the enthalpy and the temperature are linearly related,
+  \f[ T(H,p) = c_i^{-1} (E-E_s(p)) + T_m(p) = c_i^{-1} E, \f]
+because the enthalpy is normalized by \f$E_s(p) = c_i T_m(p)\f$.  (See documentation
+on the EnthalpyConverter class.)  We will assume that in reasonably realistic ice sheet modeling
+situations the surface temperature \f$T_s(t,x,y)\f$ (K) and the geothermal flux
+\f$G(t,x,y)\f$ (W m-2) are given.  Thus for cold ice surface and base, and no bedrock
+thermal layer,
 
 \anchor vPbcs
 \f[
-T(t,z=H) = T_s(t,x,y), \qquad -k \frac{\partial T}{\partial z}\Big|_{z=0} = G(t,x,y).\tag{vPbcs}
+E(t,z=H) = c_i T_s, \qquad -k_i c_i^{-1} \frac{\partial E}{\partial z}\Big|_{z=0} = G.\tag{vPbcs}
 \f]
-The case where there is a thermally-modeled layer of bedrock below the ice is not
-considered in this note, though that case is implemented in IceModel::temperatureStep().
 
-For the discussion of the numerical scheme below, let \f$T_{ijk}^n\f$ be our approximation to 
-the exact temperature \f$T\f$ at the grid point with coordinates \f$(x_i,y_j,z_k)\f$ at 
-time \f$t_n\f$.  When \f$i,j\f$ are uninteresting we will suppress them and write \f$T_k^n\f$.  
+For the discussion of the numerical scheme below, let \f$E_{ijk}^n\f$ be our approximation to 
+the exact enthalpy \f$E\f$ at the grid point with coordinates \f$(x_i,y_j,z_k)\f$ at 
+time \f$t_n\f$.  When \f$i,j\f$ are uninteresting we will suppress them and write \f$E_k^n\f$.  
 We will use similar notation for numerical approximations to the other quantities, like
 velocity components \f$u,v,w\f$ and \f$\Phi\f$.  We put the horizontal advection terms in 
 the source term \f$\Phi\f$ because (semi-)implicit treatment of horizontal advection would
@@ -110,6 +144,9 @@ To state the upwind scheme itself, let
 from that used in the appendices of [\ref BBL], though with exactly the same intent.)
 The approximate horizontal advection terms, and thus the approximation to the whole
 term \f$\Phi\f$, is stated using this upwind notation as
+
+[FIXME FROM HERE]
+
 	\f[\Phi_{ijk}^n = \Sigma(T_{ijk}^n) - \rho c_p(T_{ijk}^n) 
 	                   \left( u_{ijk}^n\,\frac{\Up{T_{\bullet jk}^n}{u_{ijk}^n}}{\Delta x}
 	                          + v_{ijk}^n\,\frac{\Up{T_{i\bullet k}^n}{v_{ijk}^n}}{\Delta y} \right).\f]

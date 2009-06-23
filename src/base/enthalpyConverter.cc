@@ -107,6 +107,11 @@ double EnthalpyConverter::getMeltingTemp(double p) const {
 //! Get enthalpy E_s(p) at cold-temperate transition point, which normalizes enthalpy, from pressure p.
 /*! Returns 
      \f[ E_s(p) = c_i T_m(p), \f]
+In particular,
+     \f[ E_s( p_{\text{air}}) = c_i (T_0 - \beta p_{\text{air}}) = 548743.22\, \frac{\text{J}}{\text{kg}} \f]
+is the enthalpy for surface ice (\f$p_{\text{air}} = 10^5\f$ Pa) at temperature 
+\f$T_0=273.15\f$ K, with standard choices \f$c_i=2009\f$ J kg-1 K-1 and
+\f$\beta=7.53\times 10^{-8}\f$ K Pa-1.
  */
 double EnthalpyConverter::getEnthalpyCTS(double p) const {
   return c_i * getMeltingTemp(p);

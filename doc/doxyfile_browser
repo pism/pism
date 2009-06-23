@@ -91,6 +91,7 @@ WARN_LOGFILE           =
 INPUT                  = doxybib.txt \
 		         browser_pages.txt \
 			 browser_bombproof.txt \
+			 browser_bombproof_enth.txt \
 			 std_names.html \
 			 config_doc.txt \
 		         ../src/ \
