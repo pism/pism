@@ -276,7 +276,7 @@ double EnthalpyConverter::getEnthBedrock(double E_level_zero, double T_level_zer
 
 //! Inverse function from getEnthBedrock().
 /*! In same notation as for getEnthBedrock(),
-\f[ T_b = \frac{E_b - H(z=0)}{c_b} + T(z=0) \f]
+\f[ T_b = \frac{E_b - E(z=0)}{c_b} + T(z=0) \f]
  */
 double EnthalpyConverter::getAbsTempBedrock(double E_level_zero, double T_level_zero, double Eb) const {
   return ((Eb - E_level_zero) / c_b) + T_level_zero;
