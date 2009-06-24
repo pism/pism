@@ -67,9 +67,10 @@ In terms of the specific enthalpy field \f$E(x,y,z,t)\f$, which has units of
 \anchor basicEnergy
   \f[ \rho \frac{dE}{dt} = -\nabla \cdot \mathbf{q} + Q,\tag{basicEnergy} \f]
 The heat flux in cold ice, temperate ice, and in bedrock is
+\anchor heatflux
   \f[ \mathbf{q} = \begin{cases}
                       - k_i c_i^{-1} \nabla E, & \text{cold ice}, \\
-                      0, & \text{temperate ice}, \\
+                      0, & \text{temperate ice}, \tag{heatflux} \\
                       - k_b c_b^{-1} \nabla E, & \text{bedrock}, \\
                    \end{cases} \f]
 where \f$k_i,c_i,k_b,c_b\f$ are all constant.  Note \f$dE/dt\f$ stands for the material
@@ -489,15 +490,116 @@ principle, without any further qualification [\ref MortonMayers].
 The ice/bedrock interface is another matter.  For this special location we must make
 a somewhat elaborate argument, a finite volume argument.  In particular, because 
 the enthalpy has different dependence on temperature in ice and bedrock, there is an
-inevitable enthalpy jump at the ice-bedrock transition.  In fact,
-  \f[ \frac{\partial E}{\partial T} = \begin{cases}
-                                        c_i, & \text{ice} \\
-                                        c_b, & \text{bedrock}.
-                                      \end{cases} \f]
+inevitable enthalpy jump at the ice-bedrock transition.  In fact, \f$\partial E/\partial T\f$
+has different values in ice and in bedrock, so we cannot choose normalizations in
+ice and in bedrock with the property that there is no jump in enthalpy at the
+ice-bedrock interface.
+
+Consider \ref figure1 "Figure 1" which has volume \f$V\f$ surrounded by a dotted line.
+We will integrate our conservation of energy equation
+  \f[ \rho \frac{dE}{dt} = -\nabla \cdot \mathbf{q} + Q \f]
+over \f$V\f$.  Volume \f$V\f$ is between levels \f$z=-\epsilon\f$ and 
+\f$z=+\epsilon\f$, where \f$\epsilon=\Delta z/2\f$, and we denote its upper and lower
+halves by \f$V^\pm\f$, respectively.
+
+\anchor figure1
+\image html enthinterface.png "Figure 1.  At the ice-bedrock transition."
+
+Before integrating, recall the different forms for heat flux \f$\mathbf{q}\f$
+(\ref heatflux), and the meaning of the material derivative \f$dE/dt\f$.  Also, 
+note that the lower half \f$V^-\f$ is boring (only vertical
+conduction) while the upper half \f$V^+\f$ is interesting (vertical conduction 
+\e plus advection \e plus strain heating).
+
+Now, by the divergence theorem [\ref Schey],
+  \f[ \int_{V} \rho \frac{dE}{dt}
+        = - \int_V \nabla \cdot \mathbf{q} + \int_V Q
+        = - \int_{\partial V} \mathbf{q} \cdot \mathbf{n} + \int_V Q \f]
+where \f$\partial V\f$ is the entire boundary
+of \f$V\f$ and \f$\mathbf{n}\f$ is the outward unit normal vector field.
+
+The fact that \f$\Delta z \ll \Delta x\f$, which is to say the shallowness of the
+continuum model, justifies neglecting the sides of \f$V\f$ and only integrating over
+the top and bottom, surfaces \f$S^\pm\f$ in \ref figure1 "Figure 1".  On \f$S^\pm\f$
+the outward unit normal is the vertical unit vector: \f$\mathbf{n}=\pm \mathbf{z}\f$.
+Also, the integral on the left side of the equation breaks into two parts in which
+the densities are constant, and only the upper part is a flowing material (with
+three-dimensional velocity \f$\mathbf{U}\f$).  Thus we have
+  \f[ \rho_i \int_{V^+} \frac{\partial E}{\partial t}
+         + \rho_i \int_{V^+} \mathbf{U} \cdot \nabla E
+         + \rho_b \int_{V^-} \frac{\partial E}{\partial t}
+        = - \int_{S^+} \mathbf{q} \cdot \mathbf{z}
+          - \int_{S^-} \mathbf{q} \cdot (-\mathbf{z}) + \int_V Q \f]
+
+Let \f$A=\Delta x\Delta y\f$, the cross-sectional area of our column of ice, so
+\f$2 \epsilon A\f$ is the volume of \f$V\f$.  Let 
+  \f[ \bar Q = (\epsilon A)^{-1} \int_V Q.  \f]
+This quantity will be addressed later.
+
+Also we will treat horizontal and vertical advection by different schemes.  We split
+the integral
+  \f[ \int_{V^+} \mathbf{U} \cdot \nabla E
+      = \int_{V^+} \left(u \frac{\partial E}{\partial x} + v \frac{\partial E}{\partial y}\right)
+       + \int_{V^+} w \frac{\partial E}{\partial z}.  \f] 
+Let
+  \f[ I = (\epsilon A)^{-1} \int_{V^+} \left(u \frac{\partial E}{\partial x} + v \frac{\partial E}{\partial y}\right). \f]
+
+Consider cold ice only.  In this case,
+  \f[ \mathbf{q} \cdot \mathbf{z} = \begin{cases}
+                                      - k_i c_i^{-1} \frac{\partial E}{\partial z}, & z>0, \\
+                                      - k_b c_b^{-1} \frac{\partial E}{\partial z}, & z<0.
+                                    \end{cases} \f]
+
+So, here is the equation from which we will produce a finite difference equation
+corresponding to the $z=0$ grid point in a vertical column of ice:
+  \f[ \rho_i \int_{V^+} \frac{\partial E}{\partial t}
+         + \rho_b \int_{V^-} \frac{\partial E}{\partial t}
+        = k_i c_i^{-1} \int_{S^+} \frac{\partial E}{\partial z}
+          - k_b c_b^{-1} \int_{S^-} \frac{\partial E}{\partial z}
+          - \rho_i \int_{V^+} w \frac{\partial E}{\partial z}
+          - \rho_i \epsilon A I + \epsilon A \bar Q. \f]
+
+Let \f$E_{0^+}^n\f$ be the value of the enthalpy in the ice
+at the grid point at \f$z=0\f$.  Let \f$E_{0^-}^n\f$ be the value of the enthalpy 
+in the bedrock at the grid point at \f$z=0\f$.  These are not generally the same value; 
+we will allow a jump at \f$z=0\f$ in the enthalpy, even as we enforce continuity of temperature
+at that location.
+
+The scheme will be implicit (backward Euler).  We use the same notation as in describing 
+the core of BOMBPROOF above.  For the left side of the equation, we approximate
+\f$E\f$ in \f$V^\pm\f$ by its value at \f$z=0\f$, respectively, making a \f$O(\Delta z)\f$
+error right away.  Then
+  \f[ \rho_i \epsilon A \frac{E_{0^+}^{n+1} - E_{0^+}^n}{\Delta t}
+         + \rho_b \epsilon A \frac{E_{0^-}^{n+1} - E_{0^-}^n}{\Delta t}
+        = k_i c_i^{-1} A \frac{E_{+1}^{n+1} - E_{0^+}^{n+1}}{\epsilon}
+          - k_b c_b^{-1} A \frac{E_{0^-}^{n+1} - E_{-1}^{n+1}}{\epsilon}
+          - \rho_i \epsilon A \frac{ \Up{w}{ E_\bullet^{n+1} } }{\epsilon}
+          - \rho_i \epsilon A I + \epsilon A \bar Q. \f]
+Divide by \f$\epsilon A\f$:
+  \f[ \rho_i \frac{E_{0^+}^{n+1} - E_{0^+}^n}{\Delta t}
+         + \rho_b \frac{E_{0^-}^{n+1} - E_{0^-}^n}{\Delta t}
+        = k_i c_i^{-1} \frac{E_{+1}^{n+1} - E_{0^+}^{n+1}}{\epsilon^2}
+          - k_b c_b^{-1} \frac{E_{0^-}^{n+1} - E_{-1}^{n+1}}{\epsilon^2}
+          - \rho_i \frac{ \Up{w}{ E_\bullet^{n+1} } }{\epsilon}
+          - \rho_i I + \bar Q. \f]
+Let
+  \f[ \hat\rho = \frac{\rho_i}{\rho_b} \f]
+and define
+  \f[ R_i = \frac{k_i \Delta t}{c_i \rho_i \epsilon^2}, \qquad
+      R_b = \frac{k_b \Delta t}{c_b \rho_b \epsilon^2}, \qquad
+      \nu = \frac{\Delta t}{\epsilon}.  \f]
+Multiply both sides of our evolving equation by \f$\Delta t/\rho_b\f$ to get:
+  \f[ \hat\rho (E_{0^+}^{n+1} - E_{0^+}^n) + (E_{0^-}^{n+1} - E_{0^-}^n)
+        = \hat\rho R_i (E_{+1}^{n+1} - E_{0^+}^{n+1}) - R_b (E_{0^-}^{n+1} - E_{-1}^{n+1})
+          - \hat\rho \nu \Up{w}{ E_\bullet^{n+1} }
+          - \Delta t \hat\rho I + \Delta t (\rho_b)^{-1} \bar Q. \f]
+
+Because this is a line in a system of equations for the new values, we re-arrange with the
+unknowns on the left:
 
 
 
 
 
-*/
+*/  /* <--- DON'T LOSE END-OF-COMMENT ... CONFUSION RESULTS ... */
 

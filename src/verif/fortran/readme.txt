@@ -14,4 +14,11 @@ thermomechanically coupled SIA exact solutions from
    thermomechanically coupled shallow ice approximation: effective tools
    for verification", J. Glaciol., vol. 53 no. 182, 499--516.
 for verification of other ice sheet simulations.
+
+Build this way:
+  $ gfortran -c testsFG.f90
+  $ gfortran -c simpleFG.f90
+  $ gfortran testsFG.o simpleFG.o -o simpleFG
+
+See simpleFG.f90 for example input and output.
    
