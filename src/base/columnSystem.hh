@@ -38,7 +38,7 @@ the system in each column.
 class columnSystemCtx {
 
 public:
-  columnSystemCtx(int my_nmax); /*! allocate a tridiagonal system
+  columnSystemCtx(PetscInt my_nmax); /*! allocate a tridiagonal system
                                  of maximum size nmax */
   ~columnSystemCtx();           //! deallocate it
 

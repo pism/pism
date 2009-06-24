@@ -1044,7 +1044,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 
         // go though bedrock and set system enthalpy from temperature
         for (PetscInt k=0; k < fMbz; k++) {
-          system.Enth_b[k] = EC.getEnthBedrock(system.Enth[0], Tb[k0], Tb[k]);
+          //system.Enth_b[k] = EC.getEnthBedrock(system.Enth[0], Tb[k0], Tb[k]);
+          system.Enth_b[k] = EC.getEnthBedrock(Tb[k]);
         }
 
         // if isMarginal then only do vertical conduction for ice;
@@ -1147,7 +1148,8 @@ if ((i==iSHOW) && (j==jSHOW)) {
       // insert generic bedrock segments solution, which refers to z=0 segment
       for (PetscInt k=k0-1; k >= 0; k--) {
         //Tbnew[k] = EC.getAbsTempBedrock(Enthnew[0], Tbnew[k0], x[k]);
-        Tbnew[k] = EC.getAbsTempBedrock(system.Enth[0], Tb[k0], x[k]);  // use same pt in E-T space as before
+        //Tbnew[k] = EC.getAbsTempBedrock(system.Enth[0], Tb[k0], x[k]);  // use same pt in E-T space as before
+        Tbnew[k] = EC.getAbsTempBedrock(x[k]);  // use same pt in E-T space as before
       }
 
       // transfer column into Tb3; neighboring columns will not reference so no need for communication

@@ -262,28 +262,25 @@ double EnthalpyConverter::getEnthPermissive(double T, double omega, double p) co
 }
 
 
-//! Compute enthalpy from absolute temperature within the bedrock using conditions at z=0 (bottom of ice and top of the bedrock) to set enthalpy scale.
-/*! If \f$c_b\f$ is the specific heat capacity of the bedrock, if \f$E(z=0)\f$ is
-the enthalpy at the bottom of the ice, and if \f$T(z=0)\f$ is the temperature at
-the top of the bedrock, and if \f$z<0\f$ then we compute and return
-  \f[ E_b = E(z=0) + c_b (T_b - T(z=0)) \f]
-where \f$T_b\f$ is the temperature at level \f$z<0\f$ in the bedrock.
+//! Compute enthalpy from absolute temperature within the bedrock.  The enthalpy scale is separate from that in ice.
+/*!
+If \f$c_b\f$ is the specific heat capacity of the bedrockthen we compute and return
+  \f[ E = c_b T \f]
+where \f$T\f$ is the temperature at level \f$z<0\f$ in the bedrock.
 
 Input temperatures are assumed to be absolute (not pressure-adjusted).
-Generally \f$T > T(z=0)\f$, in which case the resulting enthalpy
-value comes out higher than \f$E(z=0)\f$.  Enthalpy scales linearly
-with the temperature as we descend into the bedrock.
  */
-double EnthalpyConverter::getEnthBedrock(double E_level_zero, double T_level_zero, double Tb) const {
-  return E_level_zero + c_b * (Tb - T_level_zero);
+double EnthalpyConverter::getEnthBedrock(double T) const {
+  return c_b * T;
 }
 
 
 //! Inverse function from getEnthBedrock().
-/*! In same notation as for getEnthBedrock(),
-\f[ T_b = \frac{E_b - E(z=0)}{c_b} + T(z=0) \f]
+/*!
+In same notation as for getEnthBedrock(),
+  \f[ T = \frac{E}{c_b}.\f]
  */
-double EnthalpyConverter::getAbsTempBedrock(double E_level_zero, double T_level_zero, double Eb) const {
-  return ((Eb - E_level_zero) / c_b) + T_level_zero;
+double EnthalpyConverter::getAbsTempBedrock(double E) const {
+  return E / c_b;
 }
 

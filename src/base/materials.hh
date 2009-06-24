@@ -102,9 +102,9 @@ public:
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar flow(PetscScalar,PetscScalar,PetscScalar,PetscScalar) const;
-  virtual PetscScalar effectiveViscosityColumn(PetscScalar,PetscInt,const PetscScalar[],
+  virtual PetscScalar effectiveViscosityColumn(PetscScalar,PetscInt,const PetscScalar *,
                                                PetscScalar,PetscScalar,PetscScalar,PetscScalar,
-                                               const PetscScalar[],const PetscScalar[]) const;
+                                               const PetscScalar *,const PetscScalar *) const;
   virtual PetscInt integratedStoreSize() const;
   virtual void integratedStore(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
                                const PetscScalar T[], PetscScalar store[]) const;
@@ -125,9 +125,9 @@ public:
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
-  virtual PetscScalar effectiveViscosityColumn(PetscScalar,PetscInt,const PetscScalar[],
+  virtual PetscScalar effectiveViscosityColumn(PetscScalar,PetscInt,const PetscScalar *,
                                                PetscScalar,PetscScalar,PetscScalar,PetscScalar,
-                                               const PetscScalar[],const PetscScalar[]) const;
+                                               const PetscScalar *,const PetscScalar *) const;
   virtual PetscInt integratedStoreSize() const;
   virtual void integratedStore(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
                                const PetscScalar T[], PetscScalar store[]) const;

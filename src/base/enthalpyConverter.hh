@@ -57,8 +57,8 @@ public:
   double getWaterFraction(double E, double p) const;
   double getEnth(double T, double omega, double p) const;
   double getEnthPermissive(double T, double omega, double p) const;
-  double getEnthBedrock(double E_level_zero, double T_level_zero, double Tb) const;
-  double getAbsTempBedrock(double E_level_zero, double T_level_zero, double Eb) const;
+  double getEnthBedrock(double T) const;
+  double getAbsTempBedrock(double E) const;
 
 protected:
   double T_0, L, c_i, c_b, rho_i, g, p_air, beta;

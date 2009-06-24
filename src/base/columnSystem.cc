@@ -210,7 +210,7 @@ PetscErrorCode columnSystemCtx::solveTridiagonalSystem(
 }
 
 
-ageSystemCtx::ageSystemCtx(int my_Mz)
+ageSystemCtx::ageSystemCtx(PetscInt my_Mz)
       : columnSystemCtx(my_Mz) { // size of system is Mz
   initAllDone = false;
   indicesValid = false;
@@ -318,7 +318,7 @@ PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x) {
 }
 
 
-tempSystemCtx::tempSystemCtx(int my_Mz, int my_Mbz)
+tempSystemCtx::tempSystemCtx(PetscInt my_Mz, PetscInt my_Mbz)
       : columnSystemCtx(my_Mz + my_Mbz - 1) {
   Mz = my_Mz;
   Mbz = my_Mbz;
