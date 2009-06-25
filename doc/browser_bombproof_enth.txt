@@ -6,16 +6,17 @@ One of the essential goals for any thermomechanically-coupled numerical ice shee
 is a completely bombproof numerical 
 scheme for the advection-conduction-reaction problem for the conservation of
 energy within the ice and the bedrock.  The conservation of energy problem here
-is described in terms of the enthalpy field.  A similar, but strictly simpler, 
-problem describes the evolution of the age field.
+is described in terms of the enthalpy field.
   
 "Bombproof" means being, roughly, as stable as possible in as many realistic modeling
 contexts as possible.  PISM illustrates this idea by including a scheme which is 
-observed to be highly robust in practice.  The scheme is special to shallow ice sheets
-because it makes specific tradeoff choices with respect to vertical velocity, but
+observed to be highly robust in practice but also provably stable in a significant
+range of circumstances.  The scheme is special to shallow ice sheets
+because it makes specific tradeoff choices with respect to vertical velocity, though
 it is generic and low order with respect to horizontal velocity.
 
-In this section we prove stability properties of the scheme. 
+In this page we will state the scheme, prove its stability properties, and specify
+the nontrivial modifications needed at the ice-bedrock transition.
 
 Accuracy is also a goal, but it is necessarily a second goal.  It is partly achieved 
 here because our scheme has truncation error \f$O(\Delta z^2)\f$
@@ -27,28 +28,26 @@ ice flow velocity is small enough, relative to conductivity.
 The finite difference scheme in this section supercedes the PISM scheme for the 
 temperature equation described in the appendices of [\ref BBL].  That scheme 
 is robust but it has a CFL condition on vertical advection, an avoidable time step 
-restriction as a practical matter (because the scheme described here has been 
-implemented successfully!).  The CFL condition on horizontal advection
+restriction.  The CFL condition on horizontal advection
 remains in the new scheme, however.  The scheme here is conditionally stable 
 as an adaptive time-stepping technique for the 3D conservation of energy equation.
 The length of the time step is limited only by the maximum magnitude of the 
 horizontal velocities within the ice.
 
-The ice %region in which the energy equation needs to be solved, namely within 
+The ice %region in which the energy equation needs to be solved, at least within 
 the ice sheet and attached ice shelves, generally changes over time.  This is an 
 essential complicating factor in ice sheet modeling.  According to user options, 
 there may also be a model for the energy within a layer of bedrock 
-below the ice sheet.  The implementation must include this possibility; it is
-only addressed at the end.
+below the ice sheet.  The implementation must accommodate these possibilities.
 
 Equally essential is the fact that the velocity field has a
 complicated provenance.  It comes from a variety of stress
 balance equations.  These stress balances, especially where there is a transition 
 in stress balance type, like at grounding lines, are incompletely understood.
 The stress balance could be the SIA, the SSA, a mix of these in different parts of the
-ice sheet/shelf system, or a less shallow model in future PISM versions.
+ice sheet/shelf system, or an even less shallow model in future PISM versions.
 
-We will not make, and we need to not make, assumptions
+We will not make, and we need to \e not make, assumptions
 about the regularity of the velocity field in space or time.  Nor do we want 
 the numerical scheme for advection to need any information about the velocity
 except its value at the beginning of the time step.  Thus we would not 
@@ -77,29 +76,28 @@ where \f$k_i,c_i,k_b,c_b\f$ are all constant.  Note \f$dE/dt\f$ stands for the m
 derivative of the enthalpy field,
   \f[ \frac{dE}{dt} = \frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E, \f] 
 so advection \e is present.  For historical reasons, and consistency 
-with [\ref BBL], we denote the bulk strain 
+with [\ref BBL], we also denote the bulk strain 
 heating term \f$Q\f$ in (\ref basicEnergy) as \f$\Sigma\f$.  The units of equation
 (\ref basicEnergy), and of the quantity \f$Q=\Sigma\f$, are \f$J\,\text{s}^{-1}\,\text{m}^{-3}\f$
 in SI.
 
-As suggested by the calculation at the bottom of this page, the shallow approximation 
-of this equation lacks horizontal conduction terms  [see also \ref Fowler].
-Also, for the analysis of the core BOMBPROOF scheme, we specialize the analysis to cold ice.
-Within the cold ice the coefficient in the heat flux is constant, so
+The shallow approximation we use, of equation (\ref basicEnergy), lacks horizontal
+conduction terms  [\ref Fowler].  Also, for the initial analysis of the core BOMBPROOF
+scheme, we specialize to cold ice. Within the cold ice the coefficient in the heat flux is constant, so
   \f[ \nabla \cdot \mathbf{q} = - k_i c_i^{-1} \frac{\partial^2 E}{\partial z^2}. \f]
-Therefore the equation we analyze is
+Therefore the equation we initially analyze is
 
 \anchor basicShallow
 \f[
-\rho_i \frac{dE}{dt} = k_i c_i^{-1} \frac{\partial^2 E}{\partial z^2} + \Sigma,\tag{basicShallow}
+\rho_i \frac{dE}{dt} = k_i c_i^{-1} \frac{\partial^2 E}{\partial z^2} + Q,\tag{basicShallow}
 \f]
 
-We will assume, without exception, that \f$\rho_i,c_i,k_i\f$ are positive.
-The details of how \f$\Sigma\f$ is calculated does not affect the derivation
+We will assume, without exception, that \f$\rho_i\f$ and \f$c_i\f$ are positive.
+The details of how \f$Q\f$ is calculated does not affect the derivation
 here, and will not be given, but that term is naturally
 described as a (self-)reaction term [\ref Fowler].
 
-We will be focusing on the dimension in which the enthalpy and temperature has largest spatial gradient, 
+We will be focusing on the direction in which the enthalpy and temperature has largest spatial gradient, 
 namely with respect to the vertical coordinate \f$z\f$.  Rewriting equation (\ref basicShallow)
 to emphasize the vertical terms we have
 
@@ -110,19 +108,19 @@ to emphasize the vertical terms we have
  \f}
 where
 \f[
-\Phi = \Sigma - \rho_i \left(u \frac{\partial E}{\partial x}
+\Phi = Q - \rho_i \left(u \frac{\partial E}{\partial x}
                          + v \frac{\partial E}{\partial y}\right)
 \f]
 
 The boundary conditions to problem (\ref vertProblem) are a surface temperature
 condition at the top of the ice and a geothermal flux condition at the bottom of the ice.
-(Until the end we shall assume that there is no bedrock thermal layer.)  Within cold ice
+(Only at the end will we consider the bedrock thermal layer.)  Within cold ice
 the enthalpy and the temperature are linearly related,
   \f[ T(H,p) = c_i^{-1} (E-E_s(p)) + T_m(p) = c_i^{-1} E, \f]
 because the enthalpy is normalized by \f$E_s(p) = c_i T_m(p)\f$.  (See documentation
 on the EnthalpyConverter class.)  We will assume that in reasonably realistic ice sheet modeling
 situations the surface temperature \f$T_s(t,x,y)\f$ (K) and the geothermal flux
-\f$G(t,x,y)\f$ (W m-2) are given.  Thus for cold ice surface and base, and no bedrock
+\f$G(t,x,y)\f$ (W m-2) are given.  Thus for cold ice, and no bedrock
 thermal layer,
 
 \anchor vPbcs
@@ -138,9 +136,10 @@ the exact enthalpy \f$E\f$ at the grid point with coordinates \f$(x_i,y_j,z_k)\f
 time \f$t_n\f$.  When \f$i,j\f$ are uninteresting we will suppress them and write \f$E_k^n\f$.  
 We will use similar notation for numerical approximations to the other quantities, like
 velocity components \f$u,v,w\f$ and \f$\Phi\f$.  We put the horizontal advection terms in 
-the source term \f$\Phi\f$ because (semi-)implicit treatment of horizontal advection would
+the source term \f$\Phi\f$ because we treat it explicitly, evaluating at time \f$t_n\f$.
+(Implicit or semi-implicit treatment of horizontal advection would
 require a coupled system distributed across processors.  That kind of numerical difficulty
-can be avoided, even given the other constraints on accuracy and implementation.
+can be avoided, even given the other constraints on accuracy and implementation.)
 
 The scheme we use for horizontal advection is explicit first-order upwinding.  
 There is a CFL condition for the scheme to be stable, 
@@ -158,8 +157,6 @@ term \f$\Phi\f$, is stated using this upwind notation as
 	\f[\Phi_{ijk}^n = \Sigma_{ijk}^n - \rho_i 
 	                   \left( u_{ijk}^n\,\frac{\Up{E_{\bullet jk}^n}{u_{ijk}^n}}{\Delta x}
 	                          + v_{ijk}^n\,\frac{\Up{E_{i\bullet k}^n}{v_{ijk}^n}}{\Delta y} \right).\f]
-This is a completely explicit approximation of \f$\Phi\f$ at time \f$t_n\f$, the beginning 
-of the time step.
 
 The CFL stability condition for this part of the scheme is
 \anchor CFL
@@ -173,12 +170,13 @@ the above CFL condition.  Then IceModel::determineTimeStep()
 implements adaptive time-stepping based on this and other stability criteria.
 
 In the analysis below we will assume an equally-spaced grid \f$z_0,\dots,z_{M_z}\f$
-with \f$\Delta z = z_{k+1} - z_k\f$.  In fact PISM has a remapping scheme (options -quadZ and 
--chebZ), where the temperatures/ages in a column of ice are stored on an unequally-spaced 
-vertical grid, but they are mapped to a fine, equally-spaced grid for the conservation of energy
-computation described here, and for the age computation.  See procedures 
+with \f$\Delta z = z_{k+1} - z_k\f$.  In fact PISM has a remapping scheme in each 
+column, wherein the enthalpy in a column of ice is stored on an unequally-spaced 
+vertical grid, but is mapped to a fine, equally-spaced grid for the conservation of energy
+computation described here.  (Similar structure applies to the age computation.)  See procedures 
 IceEnthalpyModel::enthalpyAndDrainageStep() and IceModel::ageStep(), and see
-the IceModelVec3 class and IceGrid::getFineEqualVertLevsIce().
+the IceModelVec3 class and IceGrid::getFineEqualVertLevsIce().  (Options -quadZ and 
+-chebZ choose unequally-spaced storage vertical grids.)
 
 The \f$z\f$ derivative terms in (\ref vertProblem) will be approximated implicitly.  Let
 \f$\lambda\f$ be in the interval \f$0 \le \lambda \le 1\f$.  The scheme BOMBPROOF is
@@ -193,9 +191,9 @@ The \f$z\f$ derivative terms in (\ref vertProblem) will be approximated implicit
 with the value for \f$\lambda\f$ determined by (\ref lambdachoice) below.
 We have suppressed indices \f$i,j\f$.
 
-Equation (\ref bombone) has two approximations of vertical advection.  These
-two approximations are combined using nonnegative coefficients which sum to one.
-Both approximations are (semi-)implicit, but the centered formula has higher accuracy,
+Equation (\ref bombone) includes two approximations of vertical advection, combined 
+using nonnegative coefficients which sum to one.  Both approximations are
+(semi-)implicit, but the centered formula has higher accuracy,
 	\f[w_k^n \frac{E_{k+1}^{n+1} - E_{k-1}^{n+1}}{2 \Delta z}
 	   = w \frac{\partial E}{\partial z} + O(\Delta t,\Delta z^2),\f]
 while the first order upwind formula has lower accuracy,
@@ -208,37 +206,36 @@ it is needed for its added stability benefits.  This is done by the choice of
 
 Let
 	\f[ \nu = \frac{\Delta t}{\Delta z},
-	 \qquad \text{and} \qquad R_k^n = \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}.\f]
+	 \qquad \text{and} \qquad R = \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}.\f]
 We now rewrite (\ref bombone) for computational purposes as one of a system of equations 
-for the unknowns \f$\{E_k^{n+1}\}\f$.  In this system the coefficients are
+for the unknowns \f$\{E_k^{n+1}\}\f$.  In the new system the coefficients will be
 scaled so that the diagonal entries of the matrix have limit one as
 \f$\Delta t\to 0\f$.  That is, we multiply equation (\ref bombone) by
 \f$\Delta t\f$, divide it by \f$\rho_i\f$, and rearrange:
 \anchor bombtwo
 \f{align*}
-&\left(-R_k^n - \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) E_{k-1}^{n+1}  
-   + \left(1 + 2 R_k^n + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right) E_k^{n+1} \tag{bombtwo} \\
-&\qquad\qquad + \left(-R_k^n + \nu w_k^n \uppair{\lambda/2}{1-\lambda/2} \right) E_{k+1}^{n+1}
+&\left(-R - \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) E_{k-1}^{n+1}  
+   + \left(1 + 2 R + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right) E_k^{n+1} \tag{bombtwo} \\
+&\qquad\qquad + \left(-R + \nu w_k^n \uppair{\lambda/2}{1-\lambda/2} \right) E_{k+1}^{n+1}
     = E_k^n + \Delta t \rho_i^{-1}\Phi_k^n 
 \f}
 Here \f$\uppair{a}{b} = a\f$ when \f$w_k^n\ge 0\f$ and \f$\uppair{a}{b} = b\f$ when \f$w_k^n < 0\f$.
 
 Either of equivalent Equations (\ref bombone) or (\ref bombtwo) combines two unconditionally 
-stable ways of approximating advection, namely implicit centered difference 
+stable ways of approximating vertical advection, namely implicit centered difference 
 (\f$\lambda = 1\f$) and implicit first-order upwinding (\f$\lambda=0\f$).  The combination 
 is "convex" because the coefficients are nonnegative and sum to one.
 
 Regarding scaling of the equations and units, Equation (\ref bombtwo)
-has coefficients which are scaled to have no units.  The diagonal coefficients on the left side 
-(multiplying \f$E_k^{n+1}\f$) have continuum limit (\f$\lim_{\Delta z \to 0}\f$) of one,
-while the super- and sub-diagonal coefficients have continuum limit zero.
+has coefficients which are scaled to have no units.  Equation (\ref bombtwo) is 
+ready to be put in the system managed by an enthSystemCtx instance.
 
-The pure implicit centered difference scheme, namely
+The pure implicit centered difference scheme (\f$\lambda=1\f$), namely
 \anchor centered
 \f{align*}
-&\left(-R_k^n - \nu w_k^n/2\right) E_{k-1}^{n+1} + \left(1 + 2 R_k^n\right) E_k^{n+1} \tag{centered} \\
-&\qquad\qquad + \left(-R_k^n + \nu w_k^n/2\right) E_{k+1}^{n+1} 
-              = T_k^n + \Delta t \rho_i^{-1}\Phi_k^n 
+&\left(-R - \nu w_k^n/2\right) E_{k-1}^{n+1} + \left(1 + 2 R\right) E_k^{n+1} \tag{centered} \\
+&\qquad\qquad + \left(-R + \nu w_k^n/2\right) E_{k+1}^{n+1} 
+              = E_k^n + \Delta t \rho_i^{-1}\Phi_k^n 
 \f}
 is <i>less stable</i> than implicit first-order upwinding.  It is less stable 
 in the same sense that Crank-Nicolson is a less stable scheme than 
@@ -248,16 +245,16 @@ those modes <i>can</i> appear when none are present already, even in the homogen
 \f$\Phi_k^n=0\f$.
 
 One way of stating the greater stability of first-order upwinding is to say it satisfies a 
-"maximum principle."  An example of a maximum principle for this kind of finite difference 
-scheme is that if \f$U_{k-1}^n,U_k^n,U_{k+1}^n\f$ are adjacent gridded values at time step
-\f$t_n\f$, and if the next value satisfies the scheme
+"maximum principle" [\ref MortonMayers].  An example of a maximum principle for this kind of finite difference 
+scheme is that if \f$U_{k-1}^n,U_k^n,U_{k+1}^n\f$ are adjacent gridded values of some
+abstract quantity at time step \f$t_n\f$, and if the next value satisfies the scheme
 	\f[U_k^{n+1} = C_{-1} U_{k-1}^n + C_0 U_k^n + C_{+1} U_{k+1}^n\f]
 for <i>nonnegative</i> coefficients \f$C_i\f$ summing to one, \f$C_{-1} + C_0 + C_{+1} = 1\f$, 
 then it follows by the triangle inequality that
 	\f[\min\{|U_{k-1}^n|, |U_k^n|, |U_{k+1}^n|\} 
 	       \le |U_k^{n+1}| \le \max\{|U_{k-1}^n|, |U_k^n|, |U_{k+1}^n|\}.\f]
-Thus a "wiggle" cannot appear.  The proof below shows the corresponding "wiggle-free"
-property for scheme (\ref bombtwo).
+Thus a "wiggle" cannot appear in the abstract explicit scheme for \f$\{U_k^n\}\f$.
+The proof below shows the corresponding "wiggle-free" property for scheme (\ref bombtwo).
 
 
 \section theory Stability properties of the BOMBPROOF scheme
@@ -287,12 +284,11 @@ unconditionally-stable in the following two senses:
 
 <li>  A maximum principle applies without further assumptions.</li>
  
-<li>  Suppose we freeze the coefficients of the problem to have constant values in time and space.
-(Concretely, we assume that \f$R_k^n=R_0\f$ is a positive constant, that 
-\f$\lambda\f$ is chosen independent of time step \f$n\f$, and that \f$\Delta t\f$ is 
-the same for each time step.  We assume constant vertical velocity \f$w_k^n=w_0\f$.
-We also consider a spatially periodic or unbounded version of our problem, 
-with no boundary conditions.)
+<li>  Suppose we freeze the coefficients of the problem to have constant values in
+time and space.  (Concretely, we assume that \f$\lambda\f$ is chosen independently
+of the time step \f$n\f$, and that \f$\Delta t\f$ is the same for each time step.
+We assume constant vertical velocity \f$w_k^n=w_0\f$.  We also consider a spatially-periodic
+or unbounded version of our problem, with no boundary conditions.)
 Then a von Neumann  analysis of the constant coefficient problem yields 
 a growth factor less than one for all modes on the grid.
 </li>
@@ -308,24 +304,24 @@ These statements also apply in case \f$k_i=0\f$, in which case (\ref lambdachoic
 \f$\lambda=0\f$, and the method reduces to implicit first-order upwinding.  (Implicit
 first-order upwinding has properties 1 and 2 [\ref Strikwerda].)  The case \f$k_i=0\f$
 is relevant because it applies to temperate ice in which there is no enthalpy conduction.
-One reasonable model for temperate ice is to assume no transport of liquid fraction, diffusive
-or otherwise, and to ignor conduction along the temperature gradient, because the gradient
-is only from pressure-melting temperature differences.
+One reasonable model for temperate ice is to assume no transport of the liquid fraction,
+whether diffusive transport or otherwise, and to ignor conduction along the temperature
+gradient, because the gradient is only from pressure-melting temperature differences.
 
 \subsection proofone Proof of 1.
 
 In the case considered for the maximum principle, with \f$\Phi_k^n=0\f$, 
 we can rewrite (\ref bombtwo) as
-\anchor formformax
+\anchor formax
 \f{align*}
-&\left(1 + 2 R_k^n + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right) E_k^{n+1} \\
-&\qquad = E_k^n + \left(R_k^n + \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) E_{k-1}^{n+1}
-                + \left(R_k^n - \nu w_k^n \uppair{\lambda/2}{1-\lambda/2}\right) E_{k+1}^{n+1}.
-                \tag{formformax}
+&\left(1 + 2 R + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right) E_k^{n+1} \\
+&\qquad = E_k^n + \left(R + \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) E_{k-1}^{n+1}
+                + \left(R - \nu w_k^n \uppair{\lambda/2}{1-\lambda/2}\right) E_{k+1}^{n+1}.
+                \tag{formax}
 \f}
 
 We claim that with choice (\ref lambdachoice) for \f$0 \le \lambda \le 1\f$, all 
-coefficients in (\ref formformax) are nonnegative.  At one extreme, in 
+coefficients in (\ref formax) are nonnegative.  At one extreme, in 
 the upwinding case (\f$\lambda=0\f$), all the coefficients are nonnegative.  Otherwise, note that
 \f$\nu w_k^n (1-\lambda) \uppair{+1}{-1}\f$ is nonnegative for any valid value 
 of \f$\lambda\f$ and for any value of \f$w_k^n\f$, noting the meaning of the \f$\uppair{+1}{-1}\f$
@@ -338,7 +334,7 @@ Therefore the only concerns are for the coefficient of \f$E_{k-1}^{n+1}\f$ when 
 coefficient of \f$E_{k+1}^{n+1}\f$ when \f$w_k^n\ge 0\f$.  But if \f$\lambda\f$ is smaller than 
 \f$2k_i/(|w_k^n| \rho_i c_i \Delta z)\f$ then 
 \f{align*}
-R_k^n - \nu |w_k^n| (\lambda/2) &= \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}
+R - \nu |w_k^n| (\lambda/2) &= \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}
 	                                       - \frac{\Delta t |w_k^n|}{\Delta z} \frac{\lambda}{2}
 	        &\ge \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}
 	            - \frac{\Delta t |w_k^n|}{\Delta z} \frac{k_i}{|w_k^n| \rho_i c_i \Delta z} = 0.
@@ -348,38 +344,38 @@ Thus all the coefficients in (\ref formformax) are nonnegative, and a maximum pr
 <b> END OF PROOF OF 1. </b> 
 
 \subsection prooftwo Proof of 2.
-As a von Neumann analysis is much more restrictive 
-than the analysis above, we will be brief here.  
-Let's assume the velocity is downward, \f$w_0<0\f$; the other case 
-is very similar.  Equation (\ref bombtwo) becomes 
-\anchor prevonN
+As a von Neumann analysis is much more restrictive than the analysis above, we will be brief.  
+Let's assume the velocity is downward, \f$w_0<0\f$; the other case is similar.  Equation
+(\ref bombtwo) becomes 
+\anchor prevon
 \f{align*}
-&\left(-R_0 - \nu w_0 (\lambda/2)\right) E_{k-1}^{n+1}  
-   + \left(1 + 2 R_0 - \nu w_0 (1-\lambda)\right) E_k^{n+1} \\
-&\qquad\qquad + \left(-R_0 + \nu w_0 (1-\lambda/2) \right) E_{k+1}^{n+1}  = E_k^n.\tag{prevonN}
+&\left(-R - \nu w_0 (\lambda/2)\right) E_{k-1}^{n+1}  
+   + \left(1 + 2 R - \nu w_0 (1-\lambda)\right) E_k^{n+1} \\
+&\qquad\qquad + \left(-R + \nu w_0 (1-\lambda/2) \right) E_{k+1}^{n+1}  = E_k^n.\tag{prevonN}
 \f}
 
 The heart of the von Neumann analysis is the substitution of a growing or decaying
-(with \f$n\f$) oscillatory mode on the grid of spatial wave number \f$\mu\f$:
+(in time index \f$n\f$) oscillatory mode on the grid of spatial wave number \f$\mu\f$:
 	\f[E_k^n = \sigma^n e^{i\mu\,(k\Delta z)}.\f]
-Note \f$k\Delta z = z_k\f$ is a grid point.  Such a mode is a solution to (\ref prevonN) 
+Here \f$k\Delta z = z_k\f$ is a grid point.  Such a mode is a solution to (\ref prevon) 
 if and only if
 \f{align*}
-\sigma\Big[  &(-R_0-\nu w_0(\lambda/2)) e^{-i\mu\Delta z}
-	              + (1+2R_0 - \nu w_0 (1-\lambda)) \\
-	           &\quad   + (-R_0  + \nu w_0 (\lambda/2)) e^{+i\mu\Delta z}
+\sigma\Big[  &(-R - \nu w_0(\lambda/2)) e^{-i\mu\Delta z}
+	              + (1 + 2 R - \nu w_0 (1-\lambda)) \\
+	           &\quad   + (-R  + \nu w_0 (\lambda/2)) e^{+i\mu\Delta z}
 	                    + \nu w_0 (1-\lambda) e^{+i\mu\Delta z} \Big] = 1.
 \f}
 This equation reduces by standard manipulations to
-	\f[\sigma = \frac{1}{1 + \left(4 R_0 - 2 \nu w_0 (1-\lambda)\right)\cos^2(\mu \Delta z/2)
+	\f[\sigma = \frac{1}{1 + \left(4 R - 2 \nu w_0 (1-\lambda)\right)\cos^2(\mu \Delta z/2)
 	                      + i\,\nu w_0 (1-\lambda/2)\sin(\mu\Delta z)}.\f]
-Note \f$4 R_0 - 2 \nu w_0 (1-\lambda) \ge 0\f$ without restrictions on 
+Note \f$4 R - 2 \nu w_0 (1-\lambda) \ge 0\f$ without restrictions on 
 numerical parameters \f$\Delta t\f$, \f$\Delta z\f$, because \f$w_0<0\f$ in the 
 case under consideration.  Therefore
-	\f[|\sigma|^2 = \frac{1}{\left[1 + \left(4 R_0 - 2 \nu w_0 (1-\lambda)\right)
+	\f[|\sigma|^2 = \frac{1}{\left[1 + \left(4 R - 2 \nu w_0 (1-\lambda)\right)
 	                              \cos^2(\mu \Delta z/2)\right]^2
-	                      + \left[\nu w_0 (1-\lambda/2)\sin(\mu\Delta z)\right]^2} < 1,\f]
-and it follows that all modes decay exponentially.  <b> END OF PROOF OF 2. </b>
+	                      + \left[\nu w_0 (1-\lambda/2)\sin(\mu\Delta z)\right]^2}.\f]
+This positive number is less than one, so \f$|\sigma| < 1\f$.  It follows that all
+modes decay exponentially.  <b> END OF PROOF OF 2. </b>
 
 
 \subsection remarktwo Remark about our von Neumann stability analysis.
@@ -395,19 +391,19 @@ unconditionally stable in the same sense.
 
 \subsection maxconsequence Convergence: a consequence of the maximum principle.
  
-If we define the pointwise numerical error [\ref MortonMayers] 
-\f$e_k^n = E_k^n - E(t_n,x_i,y_j,z_k)\f$, where \f$E(\dots)\f$ is the unknown
-exact solution (exact enthalpy field), then (\ref formformax) implies an equality of the form
+If we define the pointwise numerical error \f$e_k^n = E_k^n - E(t_n,x_i,y_j,z_k)\f$,
+where \f$E(\dots)\f$ is the unknown exact solution (exact enthalpy field) [\ref MortonMayers],
+then (\ref formax) implies an equality of the form
 	\f[A e_k^{n+1} = e_k^n + B_- e_{k-1}^{n+1} + B_+ e_{k+1}^{n+1} + \Delta t\, \tau_k^n\f]
 where \f$\tau_k^n\f$ is the truncation error of the scheme and \f$A,B_\pm\f$ are nonnegative 
-coefficients.  Note that
-	\f[B_- + B_+ = 2 R_k^n + \nu w_k^n (1-\lambda) \uppair{+1}{-1}.\f]
+coefficients (which need no detail for now).  Note that
+	\f[B_- + B_+ = 2 R + \nu w_k^n (1-\lambda) \uppair{+1}{-1}.\f]
 
 Letting \f${\bar e}^n = \max_k |e_k^n|\f$ we have, because of the positivity of coefficients,
 \anchor prebound
 \f{align*}
-&\left(1 + 2 R_k^n + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right)|e_k^{n+1}|  \\
-& \qquad\qquad \le {\bar e}^n + \left(2 R_k^n + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right){\bar e}^{n+1}
+&\left(1 + 2 R + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right)|e_k^{n+1}|  \\
+& \qquad\qquad \le {\bar e}^n + \left(2 R + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right){\bar e}^{n+1}
      + \Delta t\,\bar\tau^n \tag{prebound}
 \f}
 for all \f$k\f$, where \f$\bar\tau^n = \max_k |\tau_k^n|\f$.  Now let \f$k\f$ be the index for 
@@ -417,10 +413,11 @@ each side of the resulting inequality gives
 \f[
 {\bar e}^{n+1} \le {\bar e}^n + \Delta t\,\bar\tau^n,
 \f]
-Thus have a maximum principle for BOMBPROOF, and have used it to prove convergence 
-in the standard way [\ref MortonMayers].  Of course, this convergence proof has the same
-assumptions as case 1. in the theorem, and thus does not actually prove convergence
-in a full range of glaciologically-interesting cases.
+It follows that \f$\bar e^n \le C \Delta t\f$, fo some finite \f$C\f$ if \f$\bar e^0\f$
+[\ref MortonMayers].  Thus a maximum principle for BOMBPROOF implies convergence 
+in the standard way [\ref MortonMayers].  This convergence proof has the same
+assumptions as case 1 in the theorem, and thus it only \e suggests convergence
+in any broad range of glaciologically-interesting cases.
 
 
 \subsection final Final remark: nonzero source term.
@@ -443,13 +440,13 @@ Nonetheless the maximum principle is a highly-desirable
 form of stability because we can exclude "wiggles" from the finite difference approximations
 of the conductive and advective terms, even if the complete physics, with strain heating in particular,
 is not yet shown to be non-explosive [\ref BBL].  Recall that, because we use first-order upwinding
-on the horizontal advection terms, we can expect maximum principle-type behavior of the 
+on the horizontal advection terms, we can expect maximum principle-type stability behavior of the 
 whole scheme.
 
 
 \section bedrock A finite difference scheme for the bedrock thermal layer
 
-Real ice sheet modeling includes the recognition that, because sensible heat flux is proportional
+Realistic ice sheet modeling requires the recognition that, because sensible heat flux is proportional
 to temperature differences, the time-dependent geothermal contribution to the energy in the ice sheet
 is related to the temperature in the ice itself.  This is a feedback mechanism that can,
 and should, for completeness, be modeled  [\ref RitzFabreLetreguilly].
@@ -460,9 +457,7 @@ because the temperature gradient is now greater in magnitude, between the warm b
 and the cooler ice, the ice will for some period receive more than the deep geothermal 
 flux rate. Similarly, if the ice warms from the equal state then the temperature difference
 with the bedrock has become smaller and the magnitude of the ice basal heat flux
-will be less than the deep geothermal rate.  Cooling and warming of the ice can occur
-because of atmospheric climate changes but also because of changes in the flow (%e.g.
-changes in strain heating, or the advection of cooler/warmer ice).
+will be less than the deep geothermal rate.
 
 Because the relevant layer of bedrock below an ice sheet is again very shallow, and
 because we can neglect all crustal flow, modeling the 
@@ -476,36 +471,38 @@ choosen is uninteresting.
 
 Because there is no advection, our scheme is easily "bombproof" without choosing 
 \f$\lambda\f$, or other complications.  In particular we use the simplest centered 
-implicit (backward Euler) scheme and quickly get this normalized form,
-  \f[ -R_b E_{k-1}^{n+1} + \left(1 + 2 R_b\right) E_k^{n+1} + -R_b E_{k+1}^{n+1}
-         = E_k^n, \f]
+implicit (backward Euler) scheme and quickly get this scaled form,
+\anchor bedrockeqn
+\f[ -R_b E_{k-1}^{n+1} + \left(1 + 2 R_b\right) E_k^{n+1} + -R_b E_{k+1}^{n+1}
+         = E_k^n, \tag{bedrockeqn} \f]
 where 
   \f[ R_b = \frac{k_b \Delta t}{\rho_b c_b \Delta z^2}. \f]
 This is unconditionally stable (for a pure bedrock problem), and has a maximum
 principle, without any further qualification [\ref MortonMayers].
 
+Equation (\ref bedrockeqn) is ready to be put in the system managed by an enthSystemCtx instance.
 
 \section icebedrock A finite difference scheme at the ice-bedrock transition
 
 The ice/bedrock interface is another matter.  For this special location we must make
 a somewhat elaborate argument, a finite volume argument.  In particular, because 
 the enthalpy has different dependence on temperature in ice and bedrock, there is an
-inevitable enthalpy jump at the ice-bedrock transition.  In fact, \f$\partial E/\partial T\f$
+inevitable enthalpy jump at the ice-bedrock transition.  (In fact, \f$\partial E/\partial T\f$
 has different values in ice and in bedrock, so we cannot choose normalizations in
 ice and in bedrock with the property that there is no jump in enthalpy at the
-ice-bedrock interface.
+ice-bedrock interface.)
 
 Consider \ref figure1 "Figure 1" which has volume \f$V\f$ surrounded by a dotted line.
 We will integrate our conservation of energy equation
   \f[ \rho \frac{dE}{dt} = -\nabla \cdot \mathbf{q} + Q \f]
 over \f$V\f$.  Volume \f$V\f$ is between levels \f$z=-\epsilon\f$ and 
-\f$z=+\epsilon\f$, where \f$\epsilon=\Delta z/2\f$, and we denote its upper and lower
-halves by \f$V^\pm\f$, respectively.
+\f$z=+\epsilon\f$, where \f$\epsilon=\Delta z/2\f$.  We denote the upper and lower
+halves of \f$V\f$ by \f$V^\pm\f$, respectively.
 
 \anchor figure1
 \image html enthinterface.png "Figure 1.  At the ice-bedrock transition."
 
-Before integrating, recall the different forms for heat flux \f$\mathbf{q}\f$
+Before integrating over \f$V\f$, recall the different forms for heat flux \f$\mathbf{q}\f$
 (\ref heatflux), and the meaning of the material derivative \f$dE/dt\f$.  Also, 
 note that the lower half \f$V^-\f$ is boring (only vertical
 conduction) while the upper half \f$V^+\f$ is interesting (vertical conduction 
@@ -516,27 +513,30 @@ Now, by the divergence theorem [\ref Schey],
         = - \int_V \nabla \cdot \mathbf{q} + \int_V Q
         = - \int_{\partial V} \mathbf{q} \cdot \mathbf{n} + \int_V Q \f]
 where \f$\partial V\f$ is the entire boundary
-of \f$V\f$ and \f$\mathbf{n}\f$ is the outward unit normal vector field.
+of \f$V\f$, with outward unit normal vector field \f$\mathbf{n}\f$.
 
 The fact that \f$\Delta z \ll \Delta x\f$, which is to say the shallowness of the
-continuum model, justifies neglecting the sides of \f$V\f$ and only integrating over
-the top and bottom, surfaces \f$S^\pm\f$ in \ref figure1 "Figure 1".  On \f$S^\pm\f$
-the outward unit normal is the vertical unit vector: \f$\mathbf{n}=\pm \mathbf{z}\f$.
+continuum model, justifies neglecting the conductive heat flux through the
+sides of \f$V\f$ and only integrating over the top and bottom, namely surfaces
+\f$S^\pm\f$ in \ref figure1 "Figure 1".  On \f$S^\pm\f$ the outward unit normal
+is the vertical unit vector: \f$\mathbf{n}=\pm \mathbf{z}\f$, respectively.
 Also, the integral on the left side of the equation breaks into two parts in which
 the densities are constant, and only the upper part is a flowing material (with
-three-dimensional velocity \f$\mathbf{U}\f$).  Thus we have
+three-dimensional velocity \f$\mathbf{U}\f$), so the material derivative is 
+just the partial derivative in the lower part.  Finally the term \f$Q\f$
+is identically zero on the lower part.  Thus we have
   \f[ \rho_i \int_{V^+} \frac{\partial E}{\partial t}
          + \rho_i \int_{V^+} \mathbf{U} \cdot \nabla E
          + \rho_b \int_{V^-} \frac{\partial E}{\partial t}
         = - \int_{S^+} \mathbf{q} \cdot \mathbf{z}
-          - \int_{S^-} \mathbf{q} \cdot (-\mathbf{z}) + \int_V Q \f]
+          - \int_{S^-} \mathbf{q} \cdot (-\mathbf{z}) + \int_{V^+} Q \f]
 
 Let \f$A=\Delta x\Delta y\f$, the cross-sectional area of our column of ice, so
-\f$2 \epsilon A\f$ is the volume of \f$V\f$.  Let 
-  \f[ \bar Q = (\epsilon A)^{-1} \int_V Q.  \f]
+\f$\epsilon A\f$ is the volume of \f$V^+\f$.  Let 
+  \f[ \bar Q = (\epsilon A)^{-1} \int_{V^+} Q.  \f]
 This quantity will be addressed later.
 
-Also we will treat horizontal and vertical advection by different schemes.  We split
+As with core BOMBPROOF we will treat horizontal and vertical advection by different schemes.  We split
 the integral
   \f[ \int_{V^+} \mathbf{U} \cdot \nabla E
       = \int_{V^+} \left(u \frac{\partial E}{\partial x} + v \frac{\partial E}{\partial y}\right)
@@ -544,14 +544,14 @@ the integral
 Let
   \f[ I = (\epsilon A)^{-1} \int_{V^+} \left(u \frac{\partial E}{\partial x} + v \frac{\partial E}{\partial y}\right). \f]
 
-Consider cold ice only.  In this case,
+Ignore the temperate ice case, for the moment, so
   \f[ \mathbf{q} \cdot \mathbf{z} = \begin{cases}
                                       - k_i c_i^{-1} \frac{\partial E}{\partial z}, & z>0, \\
                                       - k_b c_b^{-1} \frac{\partial E}{\partial z}, & z<0.
                                     \end{cases} \f]
 
-So, here is the equation from which we will produce a finite difference equation
-corresponding to the $z=0$ grid point in a vertical column of ice:
+Here is the equation from which we will produce a finite difference equation
+corresponding to the \f$z=0\f$ grid point in a vertical column of ice:
   \f[ \rho_i \int_{V^+} \frac{\partial E}{\partial t}
          + \rho_b \int_{V^-} \frac{\partial E}{\partial t}
         = k_i c_i^{-1} \int_{S^+} \frac{\partial E}{\partial z}
@@ -566,40 +566,114 @@ we will allow a jump at \f$z=0\f$ in the enthalpy, even as we enforce continuity
 at that location.
 
 The scheme will be implicit (backward Euler).  We use the same notation as in describing 
-the core of BOMBPROOF above.  For the left side of the equation, we approximate
+core BOMBPROOF.  For the left side of the equation, we approximate
 \f$E\f$ in \f$V^\pm\f$ by its value at \f$z=0\f$, respectively, making a \f$O(\Delta z)\f$
-error right away.  Then
+error right away.  The integrals \f$I\f$ and \f$\bar Q\f$ are evaluated explicitly,
+at time \f$t_n\f$.  Then
   \f[ \rho_i \epsilon A \frac{E_{0^+}^{n+1} - E_{0^+}^n}{\Delta t}
          + \rho_b \epsilon A \frac{E_{0^-}^{n+1} - E_{0^-}^n}{\Delta t}
-        = k_i c_i^{-1} A \frac{E_{+1}^{n+1} - E_{0^+}^{n+1}}{\epsilon}
-          - k_b c_b^{-1} A \frac{E_{0^-}^{n+1} - E_{-1}^{n+1}}{\epsilon}
-          - \rho_i \epsilon A \frac{ \Up{w}{ E_\bullet^{n+1} } }{\epsilon}
-          - \rho_i \epsilon A I + \epsilon A \bar Q. \f]
-Divide by \f$\epsilon A\f$:
+        = k_i c_i^{-1} A \frac{E_{+1}^{n+1} - E_{0^+}^{n+1}}{2\epsilon}
+          - k_b c_b^{-1} A \frac{E_{0^-}^{n+1} - E_{-1}^{n+1}}{2\epsilon}
+          - \rho_i \epsilon A w_0^n \frac{ \Up{w_0^n}{ E_\bullet^{n+1} } }{2\epsilon}
+          - \rho_i \epsilon A I^n + \epsilon A \bar Q^n. \f]
+Divide by \f$\epsilon A = \Delta z A / 2\f$:
   \f[ \rho_i \frac{E_{0^+}^{n+1} - E_{0^+}^n}{\Delta t}
          + \rho_b \frac{E_{0^-}^{n+1} - E_{0^-}^n}{\Delta t}
-        = k_i c_i^{-1} \frac{E_{+1}^{n+1} - E_{0^+}^{n+1}}{\epsilon^2}
-          - k_b c_b^{-1} \frac{E_{0^-}^{n+1} - E_{-1}^{n+1}}{\epsilon^2}
-          - \rho_i \frac{ \Up{w}{ E_\bullet^{n+1} } }{\epsilon}
-          - \rho_i I + \bar Q. \f]
+        = 2 k_i c_i^{-1} \frac{E_{+1}^{n+1} - E_{0^+}^{n+1}}{\Delta z^2}
+          - 2 k_b c_b^{-1} \frac{E_{0^-}^{n+1} - E_{-1}^{n+1}}{\Delta z^2}
+          - \rho_i w_0^n \frac{ \Up{w_0^n}{ E_\bullet^{n+1} } }{\Delta z}
+          - \rho_i I^n + \bar Q^n. \f]
 Let
   \f[ \hat\rho = \frac{\rho_i}{\rho_b} \f]
 and define
-  \f[ R_i = \frac{k_i \Delta t}{c_i \rho_i \epsilon^2}, \qquad
-      R_b = \frac{k_b \Delta t}{c_b \rho_b \epsilon^2}, \qquad
-      \nu = \frac{\Delta t}{\epsilon}.  \f]
+  \f[ R_i = \frac{k_i \Delta t}{c_i \rho_i \Delta z^2}, \qquad
+      R_b = \frac{k_b \Delta t}{c_b \rho_b \Delta z^2}, \qquad
+      \nu = \frac{\Delta t}{\Delta z}.  \f]
 Multiply both sides of our evolving equation by \f$\Delta t/\rho_b\f$ to get:
   \f[ \hat\rho (E_{0^+}^{n+1} - E_{0^+}^n) + (E_{0^-}^{n+1} - E_{0^-}^n)
-        = \hat\rho R_i (E_{+1}^{n+1} - E_{0^+}^{n+1}) - R_b (E_{0^-}^{n+1} - E_{-1}^{n+1})
-          - \hat\rho \nu \Up{w}{ E_\bullet^{n+1} }
-          - \Delta t \hat\rho I + \Delta t (\rho_b)^{-1} \bar Q. \f]
+        \stackrel{\ast}{=} \hat\rho 2 R_i (E_{+1}^{n+1} - E_{0^+}^{n+1}) - 2 R_b (E_{0^-}^{n+1} - E_{-1}^{n+1})
+          - \hat\rho \nu w_0^n \Up{w_0^n}{ E_\bullet^{n+1} }
+          - \Delta t \hat\rho I^n + \Delta t (\rho_b)^{-1} \bar Q^n. \f]
 
-Because this is a line in a system of equations for the new values, we re-arrange with the
-unknowns on the left:
+Because there is asymmetry of flow, with possibility of vertical velocity only
+in the ice and not in the bedrock, we must interpret the upwind term.  We choose
+to upwind only in the case of a downward vertical velocity, and we approximate
+the entire term by zero in the other case.  (Downward vertical velocity corresponds 
+to a positive basal melt rate.)  In terms of \f$\uppair{a}{b}\f$ notation, we choose
+  \f[ \Up{w_0^n}{ E_\bullet^{n+1} } = \uppair{0}{E_{+1}^{n+1} - E_{0^+}^{n+1}}. \f]
+The second case is when \f$w_0^n < 0\f$.
+
+Equation \f$\ast\f$ is one of a system of equations for the new values.  Thus we re-arrange
+it with the unknowns on the left, as with core BOMBPROOF:
+\anchor nearlythere
+\f{align*}
+- 2 R_b E_{-1}^{n+1} &+ (1 + 2 R_b) E_{0^-}^{n+1}
+      + \hat\rho \left(1 + 2 R_i - \nu w_0^n \uppair{0}{1}\right) E_{0^+}^{n+1}
+      + \hat\rho \left(-2 R_i + \nu w_0^n \uppair{0}{1}\right) E_{+1}^{n+1} \tag{nearlythere} \\
+     &= \hat\rho E_{0^+}^{n} + E_{0^-}^{n} - \Delta t \hat\rho I^n + \Delta t (\rho_b)^{-1} \bar Q^n. 
+\f}
+
+We decide, somewhat arbitrarily, that we will use the known value of the ice basal enthalpy
+as the value \f$E_{0^+}^{n}\f$.  Then there are actually five unknowns in the equation,
+four on the left and one on the right,
+  \f[ E_{-1}^{n+1}, \quad E_{0^-}^{n+1}, \quad E_{0^+}^{n+1}, \quad E_{+1}^{n+1}, \quad
+      \text{and} \quad E_{0^-}^n. \f]
+But we need to have an equation which can be part of a tridiagonal system, with three unknowns.
+<i>Therefore we need two additional pieces of information relating these five unknowns.</i>
+
+Those pieces are the continuity of temperature at \f$z=0\f$ at time \f$t_n\f$ 
+\e and at time \f$t_{n+1}\f$.  Note that the pressure at that location is known in this context
+(\f$p=\rho_i g H_{i,j}^n\f$, by the hydrostatic approximation).  The two additional equations are
+\f{align*}
+  T_b(E_{0^-}^n,p) &= T_i(E_{0^+}^n,p), \\
+  T_b(E_{0^-}^{n+1},p) &= T_i(E_{0^+}^{n+1},p).
+\f}
+The functions \f$T_b()\f$ and \f$T_i()\f$ are exactly EnthalpyConverter::getAbsTempBedrock() and
+EnthalpyConverter::getAbsTemp(), respectively.  In fact it is even simpler.  We invert the functions
+\f$T_b()\f$ on the left side of the temperature continuity equations, and we insert these expressions
+into (\ref nearlythere) to get
+\anchor evencloser
+\f{align*}
+- 2 R_b E_{-1}^{n+1} &+ (1 + 2 R_b) E_b(T_i(E_{0^+}^{n+1},p),p)
+      + \hat\rho \left(1 + 2 R_i - \nu w_0^n \uppair{0}{1}\right) E_{0^+}^{n+1}
+      + \hat\rho \left(-2 R_i + \nu w_0^n \uppair{0}{1}\right) E_{+1}^{n+1} \tag{evencloser}\\
+     &= \hat\rho E_{0^+}^{n} + E_b(T_i(E_{0^+}^n,p),p) - \Delta t \hat\rho I^n + \Delta t (\rho_b)^{-1} \bar Q^n. 
+\f}
+The function \f$E_b()\f$ is exactly EnthalpyConverter::getEnthBedrock() (which actually takes 
+no pressure variable because of how enthalpy is normalized).  This equation has only
+the three unknowns \f$E_{-1}^{n+1}\f$, \f$E_{0^+}^{n+1}\f$, and \f$E_{+1}^{n+1}\f$.  It is,
+essentially, ready to be inserted into the tridiagonal system of equations managed 
+by an enthSystemCtx instance.
+
+Now, for the current enthalpy normalization in EnthalpyConverter, 
+  \f[ E_b(T,p) = c_b T \qquad \text{and} \qquad T_i(E,p) = \frac{E}{c_i}. \f]
+Thus 
+  \f[ E_b(T_i(E,p),p) = \frac{c_b}{c_i} E. \f]
+This means we can simplify equation (\ref evencloser).
+
+Additionally it is worth returning to the horizontal advection term \f$I^n\f$ and
+specifying its discrete approximation:
+  \f[ I^n = u_{ij0}^n\,\frac{\Up{E_{\bullet j0}^n}{u_{ij0}^n}}{\Delta x}
+	                          + v_{ij0}^n\,\frac{\Up{E_{i\bullet 0}^n}{v_{ij0}^n}}{\Delta y}.  \f]
+Here the \f$i,j\f$ indices re-appear for (hoped) clarity.  And \f$E_{ij0}^n = E_{0^+}^n\f$
+is a known variable in our context, etc.
+
+FIXME:  ADD FRICTIONAL HEATING
+
+So here is the final form of our ice-bedrock interface finite difference equation,
+for insertion into the tridiagonal system managed by enthSystemCtx::solveThisColumn():
+\anchor icebedrockfinal
+\f{align*}
+- 2 R_b E_{-1}^{n+1} &+ \left[(1 + 2 R_b) \frac{c_b}{c_i} 
+      + \hat\rho \left(1 + 2 R_i - \nu w_0^n \uppair{0}{1}\right) \right] E_{0^+}^{n+1}
+      + \hat\rho \left(-2 R_i + \nu w_0^n \uppair{0}{1}\right) E_{+1}^{n+1} \tag{icebedrockfinal}\\
+   &= \left(\hat\rho + \frac{c_b}{c_i} \right) E_{0^+}^n 
+      - \Delta t \hat\rho I^n + \Delta t (\rho_b)^{-1} \bar Q^n. 
+\f}
 
 
 
 
 
-*/  /* <--- DON'T LOSE END-OF-COMMENT ... CONFUSION RESULTS ... */
+*/  /* <--- IF END-OF-COMMENT LOST, CONFUSION RESULTS ... */
 

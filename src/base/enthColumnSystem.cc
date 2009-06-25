@@ -196,23 +196,24 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
   if (!basalBCsValid) {  SETERRQ(3,
      "solveThisColumn() should only be called after setBasalBoundaryValuesThisColumn() in enthSystemCtx"); }
 
-/*  LISTED HERE TO RECALL WHAT THEY MEAN and compare to scribbled notes:
-  nuEQ = dtTemp / dzEQ;                         = nu
+/*  LISTED HERE TO RECALL WHAT THEY MEAN:
+  nuEQ = dtTemp / dzEQ;
   rho_c_I = ice_rho * ice_c;
   rho_c_br = bed_thermal_rho * bed_thermal_c;
   rho_c_av = (dzEQ * rho_c_I + dzbEQ * rho_c_br) / (dzEQ + dzbEQ);
-                                       [  theta = dtTemp / PetscSqr(dzbEQ)  ]
-  iceK = ice_k / rho_c_I;                       = kappa_i
-  iceR = iceK * dtTemp / PetscSqr(dzEQ);        = kappa_i * theta  [pure]
-  brK = bed_thermal_k / rho_c_br;               = kappa_b
-  brR = brK * dtTemp / PetscSqr(dzbEQ);         = kappa_b * theta  [pure]
+  iceK = ice_k / rho_c_I;
+  iceR = iceK * dtTemp / PetscSqr(dzEQ);
+  brK = bed_thermal_k / rho_c_br;
+  brR = brK * dtTemp / PetscSqr(dzbEQ);
   rho_c_ratio = rho_c_I / rho_c_av;
   dzav = 0.5 * (dzEQ + dzbEQ);
   iceReff = ice_k * dtTemp / (rho_c_av * dzEQ * dzEQ);
   brReff = bed_thermal_k * dtTemp / (rho_c_av * dzbEQ * dzbEQ);
 */
 
-  const PetscScalar rho_av = (dzEQ * ice_rho + dzbEQ * bed_thermal_rho) / (dzEQ + dzbEQ);
+  const PetscScalar rho_av = (dzEQ * ice_rho + dzbEQ * bed_thermal_rho) / (dzEQ + dzbEQ),
+                    rho_ratio = ice_rho / bed_thermal_rho,
+                    c_btoi_ratio = bed_thermal_c / ice_thermal_c;
 
 /* PRINCIPLES ABOUT THESE MODIFICATIONS: 
 1)  coefficients in system are unitless and therefore most D,L,U expressions are not altered
