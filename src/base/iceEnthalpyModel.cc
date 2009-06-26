@@ -279,6 +279,17 @@ PetscErrorCode IceEnthalpyModel::write_extra_fields(const char filename[]) {
   ierr = EnthNew3.shift(- config.get("water_melting_temperature")); CHKERRQ(ierr); // make deg C
   ierr = EnthNew3.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
+  // write CTS position (unitless) if command line option -cts is given
+  //   again use EnthNew3 (global) as temporary, allocated space for this purpose
+  PetscTruth userWantsCTS;
+  ierr = check_option("-cts", userWantsCTS); CHKERRQ(ierr);
+  if (userWantsCTS == PETSC_TRUE) {
+    ierr = verbPrintf(4, grid.com,
+		      "  writing CTS position E/Es (-) 'cts' ...\n"); CHKERRQ(ierr);
+    ierr = setCTSFromEnthalpy(EnthNew3); CHKERRQ(ierr); // returns K
+    ierr = EnthNew3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  }
+
   // reset attributes on EnthNew3, a temporary; probaly not needed
   ierr = EnthNew3.set_name("enthalpy_new"); CHKERRQ(ierr);
   ierr = EnthNew3.set_attrs(
@@ -1287,3 +1298,39 @@ PetscErrorCode IceEnthalpyModel::drainageToBaseModelEnth(EnthalpyConverter &EC,
   return 0;
 }
 
+//! Compute the CTS position from Enth3 and Es, and put in a global IceModelVec3 provided by user.
+PetscErrorCode IceEnthalpyModel::setCTSFromEnthalpy(IceModelVec3 &useForCTS) {
+  PetscErrorCode ierr;
+
+  ierr = useForCTS.set_name("cts"); CHKERRQ(ierr);
+  ierr = useForCTS.set_attrs(
+     "diagnostic",
+     "cts position ice (cts = 1)",
+     "",
+     ""); CHKERRQ(ierr);
+
+  EnthalpyConverter EC(&config);
+
+  PetscScalar **thickness;
+  PetscScalar *CTSij, *Enthij; // columns of these values
+  ierr = useForCTS.begin_access(); CHKERRQ(ierr);
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  ierr = vH.get_array(thickness); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = useForCTS.getInternalColumn(i,j,&CTSij); CHKERRQ(ierr);
+      ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+      for (PetscInt k=0; k<grid.Mz; ++k) {
+        const PetscScalar depth = thickness[i][j] - grid.zlevels[k];
+        CTSij[k] = EC.getCTS(Enthij[k], EC.getPressureFromDepth(depth));
+      }
+    }
+  }
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
+  ierr = useForCTS.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  // communication not done; we allow global IceModelVec3s as useForLiquidFrac
+
+  return 0;
+}

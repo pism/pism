@@ -59,6 +59,7 @@ public:
   double getEnthPermissive(double T, double omega, double p) const;
   double getEnthBedrock(double T) const;
   double getAbsTempBedrock(double E) const;
+  double getCTS(double E, double p) const;
 
 protected:
   double T_0, L, c_i, c_b, rho_i, g, p_air, beta;

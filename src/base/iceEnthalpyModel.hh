@@ -102,6 +102,8 @@ protected:
 
   virtual PetscErrorCode setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac);
 
+  virtual PetscErrorCode setCTSFromEnthalpy(IceModelVec3 &useForCTS);
+
   virtual PetscErrorCode setPATempFromEnthalpy(IceModelVec3 &useForPATemp);
 
   using IceModel::velocitySIAStaggered;
