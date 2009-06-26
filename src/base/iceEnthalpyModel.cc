@@ -1139,6 +1139,7 @@ if ((i==iSHOW) && (j==jSHOW)) {
           Tbnew[k0] = Tshelfbase[i][j];
       } else {
         if (ks > 0) { // grounded ice present
+          // get ice temperature at z=0; enforces continuity of temperature
           Tbnew[k0] = EC.getAbsTemp(Enthnew[0], EC.getPressureFromDepth(H[i][j]) );
         } else {      // no significant ice; top of bedrock sees atmosphere
           Tbnew[k0] = Ts[i][j];

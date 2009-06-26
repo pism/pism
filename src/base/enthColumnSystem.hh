@@ -66,17 +66,13 @@ protected: // used internally
   PetscScalar mask, lambda, Enth_ks, Ghf, Enth_shelfbase, Rb;
   bool        isMarginal;
   PetscScalar nuEQ,
+              dzav,
               rho_c_I,
               rho_c_br,
-              rho_c_av,
               iceK,
               iceR,
               brK,
-              brR,
-              rho_c_ratio,
-              dzav,
-              iceReff,
-              brReff;
+              brR;
   bool        initAllDone,
               indicesValid,
               schemeParamsValid,

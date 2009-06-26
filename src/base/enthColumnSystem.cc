@@ -80,15 +80,11 @@ PetscErrorCode enthSystemCtx::initAllColumns() {
   nuEQ = dtTemp / dzEQ;
   rho_c_I = ice_rho * ice_c;
   rho_c_br = bed_thermal_rho * bed_thermal_c;
-  rho_c_av = (dzEQ * rho_c_I + dzbEQ * rho_c_br) / (dzEQ + dzbEQ);
   iceK = ice_k / rho_c_I;
   iceR = iceK * dtTemp / PetscSqr(dzEQ);
   brK = bed_thermal_k / rho_c_br;
   brR = brK * dtTemp / PetscSqr(dzbEQ);
-  rho_c_ratio = rho_c_I / rho_c_av;
   dzav = 0.5 * (dzEQ + dzbEQ);
-  iceReff = ice_k * dtTemp / (rho_c_av * dzEQ * dzEQ);
-  brReff = bed_thermal_k * dtTemp / (rho_c_av * dzbEQ * dzbEQ);
   // done
   initAllDone = true;
   return 0;
@@ -164,14 +160,11 @@ PetscErrorCode enthSystemCtx::view(MPI_Comm &com) {
                      "  bed_thermal_rho,bed_thermal_c,bed_thermal_k = %10.3e,%10.3e,%10.3e\n",
                      bed_thermal_rho,bed_thermal_c,bed_thermal_k); CHKERRQ(ierr);
   ierr = PetscPrintf(com,
-                     "  nuEQ,rho_c_I,rho_c_br,rho_c_av = %10.3e,%10.3e,%10.3e,%10.3e\n",
-                     nuEQ,rho_c_I,rho_c_br,rho_c_av); CHKERRQ(ierr);
+                     "  nuEQ,dzav,rho_c_I,rho_c_br, = %10.3e,%10.3e,%10.3e,%10.3e\n",
+                     nuEQ,dzav,rho_c_I,rho_c_br); CHKERRQ(ierr);
   ierr = PetscPrintf(com,
                      "  iceK,iceR,brK,brR = %10.3e,%10.3e,%10.3e,%10.3e\n",
                      iceK,iceR,brK,brR); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,
-                     "  rho_c_ratio,dzav,iceReff,brReff = %10.3e,%10.3e,%10.3e,%10.3e\n",
-                     rho_c_ratio,dzav,iceReff,brReff); CHKERRQ(ierr);
   ierr = PetscPrintf(com,
                      "  i,j,ks = %d,%d,%d\n",
                      i,j,ks); CHKERRQ(ierr);
@@ -196,25 +189,6 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
   if (!basalBCsValid) {  SETERRQ(3,
      "solveThisColumn() should only be called after setBasalBoundaryValuesThisColumn() in enthSystemCtx"); }
 
-/*  LISTED HERE TO RECALL WHAT THEY MEAN:
-  nuEQ = dtTemp / dzEQ;
-  rho_c_I = ice_rho * ice_c;
-  rho_c_br = bed_thermal_rho * bed_thermal_c;
-  rho_c_av = (dzEQ * rho_c_I + dzbEQ * rho_c_br) / (dzEQ + dzbEQ);
-  iceK = ice_k / rho_c_I;
-  iceR = iceK * dtTemp / PetscSqr(dzEQ);
-  brK = bed_thermal_k / rho_c_br;
-  brR = brK * dtTemp / PetscSqr(dzbEQ);
-  rho_c_ratio = rho_c_I / rho_c_av;
-  dzav = 0.5 * (dzEQ + dzbEQ);
-  iceReff = ice_k * dtTemp / (rho_c_av * dzEQ * dzEQ);
-  brReff = bed_thermal_k * dtTemp / (rho_c_av * dzbEQ * dzbEQ);
-*/
-
-  const PetscScalar rho_av = (dzEQ * ice_rho + dzbEQ * bed_thermal_rho) / (dzEQ + dzbEQ),
-                    rho_ratio = ice_rho / bed_thermal_rho,
-                    c_btoi_ratio = bed_thermal_c / ice_thermal_c;
-
 /* PRINCIPLES ABOUT THESE MODIFICATIONS: 
 1)  coefficients in system are unitless and therefore most D,L,U expressions are not altered
 2)  old temperature equation had units of Kelvin on each side; new equation has units
@@ -228,15 +202,17 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
     // note L[0] not an allocated location:
     D[0] = (1.0 + 2.0 * brR);
     U[0] = - 2.0 * brR;  
-    //rhs[0] = Tb[0] + 2.0 * dtTemp * Ghf / (rho_c_br * dzbEQ);
     rhs[0] = Enth_b[0] + 2.0 * dtTemp * Ghf / (bed_thermal_rho * dzbEQ);
 
     // bedrock only; pure vertical conduction problem
     for (PetscInt k=1; k < k0; k++) {
       L[k] = -brR;
       D[k] = 1.0 + 2.0 * brR;
-      U[k] = -brR;
-      //rhs[k] = Tb[k];
+      if (k == k0-1) {
+        U[k] = -brR * (bed_thermal_c / ice_c);
+      } else {
+        U[k] = -brR;
+      }
       rhs[k] = Enth_b[k];
     }
   }
@@ -249,10 +225,8 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
     // if floating and no ice then worry only about bedrock temps
     if (PismModMask(mask) == MASK_FLOATING) {
       // essentially no ice but floating ... ask PISMOceanCoupler
-      // rhs[k0] = Tshelfbase;
       rhs[k0] = Enth_shelfbase;
     } else { // top of bedrock sees atmosphere
-      // rhs[k0] = Ts; 
       rhs[k0] = Enth_ks; 
     }
   } else { // ks > 0; there is ice
@@ -261,47 +235,56 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
       if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
       D[k0] = 1.0;
       U[k0] = 0.0;
-      // rhs[k0] = Tshelfbase; // set by PISMOceanCoupler
       rhs[k0] = Enth_shelfbase;
-    } else { 
-      // there is *grounded* ice; ice/bedrock interface; from FV across interface
-      //rhs[k0] = T[0] + dtTemp * (Rb / (rho_c_av * dzav));
-      rhs[k0] = Enth[0] + dtTemp * (Rb / (rho_av * dzav));
+    } else if (Mbz == 1) {
+      // grounded but no bedrock layer; apply geothermal flux here
+      const PetscScalar R = (Enth[k0] > Enth_s[k0]) ? 0.0 : iceR;
+      // L[k0] = 0.0;  (note this is not an allocated location!) 
+      D[k0] = 1.0 + 2.0 * R;
+      U[k0] = - 2.0 * R;
+      if (w[0] < 0.0) { // velocity downward: upwind vertical
+        const PetscScalar AA = nuEQ * w[0];
+        D[k0] -= AA;
+        U[k0] += AA;
+      }
+      rhs[k0] = Enth[k0];
+      rhs[k0] += (2.0 * nuEQ / ice_rho) * (Ghf + 0.5 * Rb); // geothermal and half of frictional heat
       if (!isMarginal) {
         planeStar ss;
-        // ierr = T3->getPlaneStarZ(i,j,0.0,&ss);
         ierr = Enth3->getPlaneStarZ(i,j,0.0,&ss);
         const PetscScalar UpEnthu = (u[0] < 0) ? u[0] * (ss.ip1 -  ss.ij) / dx :
                                                  u[0] * (ss.ij  - ss.im1) / dx;
         const PetscScalar UpEnthv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
                                                  v[0] * (ss.ij  - ss.jm1) / dy;
-        // WARNING: subtle consequences of finite volume argument across interface
-        //rhs[k0] += dtTemp * rho_c_ratio * 0.5 * (Sigma[0] / rho_c_I);
-        //rhs[k0] -= dtTemp * rho_c_ratio * (0.5 * (UpTu + UpTv));
-        rhs[k0] += dtTemp * rho_c_ratio * 0.5 * ((Sigma[0] / ice_rho) - UpEnthu - UpEnthv);
+        rhs[k0] -= dtTemp * (UpEnthu + UpEnthv); // hor. advection
+        rhs[k0] += dtTemp * Sigma[0] / ice_rho;      // strain heat
       }
-      const PetscScalar AA = dtTemp * rho_c_ratio * w[0] / (2.0 * dzEQ);
-      if (Mbz > 1) { // there is bedrock; apply upwinding if w[0]<0, otherwise ignore advection;
-                     //   note jump in diffusivity coefficient
-        L[k0] = - brReff;
-        if (w[0] >= 0.0) {  // velocity upward
-          D[k0] = 1.0 + iceReff + brReff;
-          U[k0] = - iceReff;
-        } else { // velocity downward
-          D[k0] = 1.0 + iceReff + brReff - AA;
-          U[k0] = - iceReff + AA;
-        }
-      } else { // no bedrock; apply geothermal flux here
-        // L[k0] = 0.0;  (note this is not an allocated location!) 
-        if (w[0] >= 0.0) {  // velocity upward
-          D[k0] = 1.0 + 2.0 * iceR;
-          U[k0] = - 2.0 * iceR;
-        } else { // velocity downward
-          D[k0] = 1.0 + 2.0 * iceR - AA;
-          U[k0] = - 2.0 * iceR + AA;
-        }
-        // rhs[k0] += 2.0 * dtTemp * Ghf / (rho_c_I * dzEQ);
-        rhs[k0] += 2.0 * dtTemp * Ghf / (ice_rho * dzEQ);
+    } else { 
+      // there is *grounded* ice AND there is bedrock at interface
+      // WARNING: subtle consequences of finite volume argument across interface;
+      // see BOMBPROOF docs
+      const PetscScalar rho_ratio  = ice_rho / bed_thermal_rho,
+                        c_ratioINV = bed_thermal_c / ice_c,
+                        R = (Enth[k0] > Enth_s[k0]) ? 0.0 : iceR;
+      L[k0] = - 2.0 * brR;
+      D[k0] = (1.0 + 2.0 * brR) * c_ratioINV + rho_ratio * (1.0 + 2.0 * R);
+      U[k0] = - rho_ratio * 2.0 * R;
+      if (w[0] < 0.0) { // velocity downward: upwind vertical
+        const PetscScalar AA = rho_ratio * dtTemp * w[0] / dzav;
+        D[k0] -= AA;
+        U[k0] += AA;
+      }
+      rhs[k0] = (rho_ratio + c_ratioINV) * Enth[0];            // prev enthalpy
+      rhs[k0] += 2.0 * dtTemp * Rb / (bed_thermal_rho * dzav); // frictional heat
+      if (!isMarginal) {
+        planeStar ss;
+        ierr = Enth3->getPlaneStarZ(i,j,0.0,&ss);
+        const PetscScalar UpEnthu = (u[0] < 0) ? u[0] * (ss.ip1 -  ss.ij) / dx :
+                                                 u[0] * (ss.ij  - ss.im1) / dx;
+        const PetscScalar UpEnthv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
+                                                 v[0] * (ss.ij  - ss.jm1) / dy;
+        rhs[k0] -= dtTemp * rho_ratio * (UpEnthu + UpEnthv); // hor. advection
+        rhs[k0] += dtTemp * Sigma[0] / bed_thermal_rho;      // strain heat
       }
     }
   }
@@ -320,7 +303,6 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
       D[k0+k] = 1.0 + 2.0 * R - AA * (1.0 - lambda);
       U[k0+k] = - R + AA * (1.0 - lambda/2.0);
     }
-    //rhs[k0+k] = T[k];
     rhs[k0+k] = Enth[k];
     if (!isMarginal) {
       planeStar ss;
@@ -329,7 +311,6 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
                                                u[k] * (ss.ij  - ss.im1) / dx;
       const PetscScalar UpEnthv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :
                                                v[k] * (ss.ij  - ss.jm1) / dy;
-      //rhs[k0+k] += dtTemp * (Sigma[k] / rho_c_I - UpTu - UpTv);
       rhs[k0+k] += dtTemp * ((Sigma[k] / ice_rho) - UpEnthu - UpEnthv);
     }
   }
@@ -339,7 +320,6 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
     L[k0+ks] = 0.0;
     D[k0+ks] = 1.0;
     // ignore U[k0+ks]
-    //rhs[k0+ks] = Ts;
     rhs[k0+ks] = Enth_ks;
   }
 

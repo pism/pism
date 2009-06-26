@@ -58,14 +58,15 @@ blind iteration (%e.g. with no guarantee of convergence of the iteration), while
 the scheme we propose involves no iteration.
 
 
-\section iceequations Equations for conservation of energy in ice
+\section iceequations Conservation of energy in ice and bedrock
 
 In terms of the specific enthalpy field \f$E(x,y,z,t)\f$, which has units of 
 \f$J\,\text{kg}^{-1}\f$ in SI, the energy equation is [\ref AschwandenBlatter2009]
 
 \anchor basicEnergy
   \f[ \rho \frac{dE}{dt} = -\nabla \cdot \mathbf{q} + Q,\tag{basicEnergy} \f]
-The heat flux in cold ice, temperate ice, and in bedrock is
+where \f$\rho\f$ is the material density.  The heat flux in cold ice, temperate ice,
+and bedrock is
 \anchor heatflux
   \f[ \mathbf{q} = \begin{cases}
                       - k_i c_i^{-1} \nabla E, & \text{cold ice}, \\
@@ -75,15 +76,48 @@ The heat flux in cold ice, temperate ice, and in bedrock is
 where \f$k_i,c_i,k_b,c_b\f$ are all constant.  Note \f$dE/dt\f$ stands for the material
 derivative of the enthalpy field,
   \f[ \frac{dE}{dt} = \frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E, \f] 
-so advection \e is present.  For historical reasons, and consistency 
-with [\ref BBL], we also denote the bulk strain 
-heating term \f$Q\f$ in (\ref basicEnergy) as \f$\Sigma\f$.  The units of equation
-(\ref basicEnergy), and of the quantity \f$Q=\Sigma\f$, are \f$J\,\text{s}^{-1}\,\text{m}^{-3}\f$
-in SI.
+so advection \e is present.
+
+In ice the additive quantity \f$Q\f$ is just the bulk strain (dissipation) heating.  For
+historical reasons (consistency with [\ref BBL, \ref BBssasliding]) we denote the strain
+heating term by \f$\Sigma\f$.  Without making any shallow approximations, the exact
+formula for this is
+  \f[ \Sigma = \sum_{i,j=1}^3 D_{ij} \tau_{ij} \f] 
+where \f$D_{ij}\f$ is the strain rate tensor and \f$\tau_{ij}\f$ is the deviatoric stress
+tensor.  References [\ref BBL, \ref BBssasliding] address how this term is computed in PISM,
+according to the shallow stress balance approximation which is active.
+Within the PISM source code, see methods IceModel::velocitySIAStaggered() and
+IceModel::correctSigma().
+
+In a sliding model with an ice-bedrock interface, the friction of the sliding also is a
+source of heating.  It has units of W m-2 = J s-1 m-2, that is, heating per area.
+In formulas we write
+  \f[ F_b = - \tau_b \cdot \mathbf{u}_b \,\delta_0(z), \f]
+where \f$\tau_b\f$ is the basal shear stress, \f$\mathbf{u}_b\f$ is the basal sliding velocity,
+and \f$\delta_0(z)\f$ is the usual Dirac delta "function", with the property that
+\f$\int_a^b \delta(z)\,dz = 1\f$ if \f$a<0<b\f$.  This delta function indicates that the
+friction heating is concentrated at \f$z=0\f$.  Note that the basal shear stress is
+oppositely-directed to the basal velocity.  For example,
+in the plastic case \f$\tau_b = - \tau_c \mathbf{u}_b / |\mathbf{u}_b|\f$ where
+\f$\tau_c\f$ is a positive scalar, the yield stress.  (Within the PISM source code, 
+see methods IceModel::basalSlidingHeatingSIA() and IceModel::correctBasalFrictionalHeating().
+The former is only called by IceModel::velocity() if IceModel::muSliding > 0, which is
+not generally recommended [see Appendix B of \ref BBssasliding].)
+
+When considering the ice-bedrock interface, the term \f$Q\f$ will appear only under a
+volume integral.  Therefore the delta function in the expression for \f$F_b\f$ will be
+correctly handled.  In summary, our additive heat sources have the form
+  \f[ Q = \Sigma + F_b, \f]
+and this is what appears in equation (\ref basicEnergy).  Note \f$Q=0\f$ in the bedrock
+thermal layer.
+
+The units of equation (\ref basicEnergy), and of the quantity \f$Q\f$, are
+\f$J\,\text{s}^{-1}\,\text{m}^{-3}\f$ in SI.
 
 The shallow approximation we use, of equation (\ref basicEnergy), lacks horizontal
 conduction terms  [\ref Fowler].  Also, for the initial analysis of the core BOMBPROOF
-scheme, we specialize to cold ice. Within the cold ice the coefficient in the heat flux is constant, so
+scheme, we specialize to cold ice and we do not consider the bedrock thermal layer.
+Within cold ice the coefficient in the heat flux is constant, so
   \f[ \nabla \cdot \mathbf{q} = - k_i c_i^{-1} \frac{\partial^2 E}{\partial z^2}. \f]
 Therefore the equation we initially analyze is
 
@@ -93,9 +127,6 @@ Therefore the equation we initially analyze is
 \f]
 
 We will assume, without exception, that \f$\rho_i\f$ and \f$c_i\f$ are positive.
-The details of how \f$Q\f$ is calculated does not affect the derivation
-here, and will not be given, but that term is naturally
-described as a (self-)reaction term [\ref Fowler].
 
 We will be focusing on the direction in which the enthalpy and temperature has largest spatial gradient, 
 namely with respect to the vertical coordinate \f$z\f$.  Rewriting equation (\ref basicShallow)
@@ -129,7 +160,7 @@ E(t,z=H) = c_i T_s, \qquad -k_i c_i^{-1} \frac{\partial E}{\partial z}\Big|_{z=0
 \f]
 
 
-\section The BOMBPROOF scheme itself
+\section The core BOMBPROOF scheme
 
 For the discussion of the numerical scheme below, let \f$E_{ijk}^n\f$ be our approximation to 
 the exact enthalpy \f$E\f$ at the grid point with coordinates \f$(x_i,y_j,z_k)\f$ at 
@@ -482,10 +513,14 @@ principle, without any further qualification [\ref MortonMayers].
 
 Equation (\ref bedrockeqn) is ready to be put in the system managed by an enthSystemCtx instance.
 
+
 \section icebedrock A finite difference scheme at the ice-bedrock transition
 
-The ice/bedrock interface is another matter.  For this special location we must make
-a somewhat elaborate argument, a finite volume argument.  In particular, because 
+The ice/bedrock interface requires careful, special analysis, because many physical
+processes are reflected in the conservation of energy equaiton.  For this special
+location we must make a somewhat elaborate argument, a finite volume argument, in
+order to derive the one algebraic equation, per column, which goes in the system
+of equations for that column (see enthSystemCtx).  In particular, because 
 the enthalpy has different dependence on temperature in ice and bedrock, there is an
 inevitable enthalpy jump at the ice-bedrock transition.  (In fact, \f$\partial E/\partial T\f$
 has different values in ice and in bedrock, so we cannot choose normalizations in
@@ -523,26 +558,32 @@ is the vertical unit vector: \f$\mathbf{n}=\pm \mathbf{z}\f$, respectively.
 Also, the integral on the left side of the equation breaks into two parts in which
 the densities are constant, and only the upper part is a flowing material (with
 three-dimensional velocity \f$\mathbf{U}\f$), so the material derivative is 
-just the partial derivative in the lower part.  Finally the term \f$Q\f$
-is identically zero on the lower part.  Thus we have
+just the partial derivative in the lower part.  Thus we have
+\anchor interface1
   \f[ \rho_i \int_{V^+} \frac{\partial E}{\partial t}
          + \rho_i \int_{V^+} \mathbf{U} \cdot \nabla E
          + \rho_b \int_{V^-} \frac{\partial E}{\partial t}
         = - \int_{S^+} \mathbf{q} \cdot \mathbf{z}
-          - \int_{S^-} \mathbf{q} \cdot (-\mathbf{z}) + \int_{V^+} Q \f]
+          - \int_{S^-} \mathbf{q} \cdot (-\mathbf{z}) + \int_V Q \tag{interface1}\f]
 
 Let \f$A=\Delta x\Delta y\f$, the cross-sectional area of our column of ice, so
-\f$\epsilon A\f$ is the volume of \f$V^+\f$.  Let 
-  \f[ \bar Q = (\epsilon A)^{-1} \int_{V^+} Q.  \f]
-This quantity will be addressed later.
+\f$\epsilon A\f$ is the volume of \f$V^+\f$.  We compute the integral of the additive
+heating \f$Q\f$: 
+  \f[ \int_V Q = \int_{V} \Sigma + \int_{V} F_b = \int_{V^+} \Sigma 
+                                   - \int_{z=0} \tau_b \cdot \mathbf{u}_b\,dx dy \f]
+because of the delta function in the expression for \f$F_b\f$.  Let
+  \f[ \bar \Sigma = (\epsilon A)^{-1} \int_{V^+} \Sigma, \f]
+  \f[ \bar F = - A^{-1} \int_{z=0} \tau_b \cdot \mathbf{u}_b\,dx dy.  \f]
+These quantities will be addressed later.
 
-As with core BOMBPROOF we will treat horizontal and vertical advection by different schemes.  We split
-the integral
+As with core BOMBPROOF we will treat horizontal and vertical advection by different schemes.
+We split the integral
   \f[ \int_{V^+} \mathbf{U} \cdot \nabla E
       = \int_{V^+} \left(u \frac{\partial E}{\partial x} + v \frac{\partial E}{\partial y}\right)
        + \int_{V^+} w \frac{\partial E}{\partial z}.  \f] 
 Let
-  \f[ I = (\epsilon A)^{-1} \int_{V^+} \left(u \frac{\partial E}{\partial x} + v \frac{\partial E}{\partial y}\right). \f]
+  \f[ I = (\epsilon A)^{-1} \int_{V^+} \left( u \frac{\partial E}{\partial x} 
+                                             + v \frac{\partial E}{\partial y}\right). \f]
 
 Ignore the temperate ice case, for the moment, so
   \f[ \mathbf{q} \cdot \mathbf{z} = \begin{cases}
@@ -550,14 +591,16 @@ Ignore the temperate ice case, for the moment, so
                                       - k_b c_b^{-1} \frac{\partial E}{\partial z}, & z<0.
                                     \end{cases} \f]
 
-Here is the equation from which we will produce a finite difference equation
-corresponding to the \f$z=0\f$ grid point in a vertical column of ice:
+Combining the above fragments by substitution into (\ref interface1), here is the 
+equation from which we will produce a finite
+difference equation corresponding to the \f$z=0\f$ grid point in a vertical column of ice:
+\anchor interface2
   \f[ \rho_i \int_{V^+} \frac{\partial E}{\partial t}
          + \rho_b \int_{V^-} \frac{\partial E}{\partial t}
         = k_i c_i^{-1} \int_{S^+} \frac{\partial E}{\partial z}
           - k_b c_b^{-1} \int_{S^-} \frac{\partial E}{\partial z}
           - \rho_i \int_{V^+} w \frac{\partial E}{\partial z}
-          - \rho_i \epsilon A I + \epsilon A \bar Q. \f]
+          - \rho_i \epsilon A I + \epsilon A \bar \Sigma + A \bar F. \tag{interface2}\f]
 
 Let \f$E_{0^+}^n\f$ be the value of the enthalpy in the ice
 at the grid point at \f$z=0\f$.  Let \f$E_{0^-}^n\f$ be the value of the enthalpy 
@@ -568,49 +611,55 @@ at that location.
 The scheme will be implicit (backward Euler).  We use the same notation as in describing 
 core BOMBPROOF.  For the left side of the equation, we approximate
 \f$E\f$ in \f$V^\pm\f$ by its value at \f$z=0\f$, respectively, making a \f$O(\Delta z)\f$
-error right away.  The integrals \f$I\f$ and \f$\bar Q\f$ are evaluated explicitly,
-at time \f$t_n\f$.  Then
+error right away.  The integrals \f$I\f$, \f$\bar \Sigma\f$, and \f$\bar F\f$ are
+evaluated explicitly, at time \f$t_n\f$.  From (\ref interface2),
   \f[ \rho_i \epsilon A \frac{E_{0^+}^{n+1} - E_{0^+}^n}{\Delta t}
          + \rho_b \epsilon A \frac{E_{0^-}^{n+1} - E_{0^-}^n}{\Delta t}
         = k_i c_i^{-1} A \frac{E_{+1}^{n+1} - E_{0^+}^{n+1}}{2\epsilon}
           - k_b c_b^{-1} A \frac{E_{0^-}^{n+1} - E_{-1}^{n+1}}{2\epsilon}
           - \rho_i \epsilon A w_0^n \frac{ \Up{w_0^n}{ E_\bullet^{n+1} } }{2\epsilon}
-          - \rho_i \epsilon A I^n + \epsilon A \bar Q^n. \f]
+          - \rho_i \epsilon A I^n + \epsilon A \bar \Sigma^n + A \bar F^n. \f]
 Divide by \f$\epsilon A = \Delta z A / 2\f$:
   \f[ \rho_i \frac{E_{0^+}^{n+1} - E_{0^+}^n}{\Delta t}
          + \rho_b \frac{E_{0^-}^{n+1} - E_{0^-}^n}{\Delta t}
         = 2 k_i c_i^{-1} \frac{E_{+1}^{n+1} - E_{0^+}^{n+1}}{\Delta z^2}
           - 2 k_b c_b^{-1} \frac{E_{0^-}^{n+1} - E_{-1}^{n+1}}{\Delta z^2}
           - \rho_i w_0^n \frac{ \Up{w_0^n}{ E_\bullet^{n+1} } }{\Delta z}
-          - \rho_i I^n + \bar Q^n. \f]
-Let
-  \f[ \hat\rho = \frac{\rho_i}{\rho_b} \f]
-and define
-  \f[ R_i = \frac{k_i \Delta t}{c_i \rho_i \Delta z^2}, \qquad
+          - \rho_i I^n + \bar \Sigma^n + \frac{2 \bar F}{\Delta z}. \f]
+Define
+  \f[ \hat\rho = \frac{\rho_i}{\rho_b}, \qquad 
+      R_i = \frac{k_i \Delta t}{c_i \rho_i \Delta z^2}, \qquad
       R_b = \frac{k_b \Delta t}{c_b \rho_b \Delta z^2}, \qquad
       \nu = \frac{\Delta t}{\Delta z}.  \f]
 Multiply both sides of our evolving equation by \f$\Delta t/\rho_b\f$ to get:
+\anchor scaledinter
   \f[ \hat\rho (E_{0^+}^{n+1} - E_{0^+}^n) + (E_{0^-}^{n+1} - E_{0^-}^n)
-        \stackrel{\ast}{=} \hat\rho 2 R_i (E_{+1}^{n+1} - E_{0^+}^{n+1}) - 2 R_b (E_{0^-}^{n+1} - E_{-1}^{n+1})
+         = \hat\rho 2 R_i (E_{+1}^{n+1} - E_{0^+}^{n+1})
+                           - 2 R_b (E_{0^-}^{n+1} - E_{-1}^{n+1})
           - \hat\rho \nu w_0^n \Up{w_0^n}{ E_\bullet^{n+1} }
-          - \Delta t \hat\rho I^n + \Delta t (\rho_b)^{-1} \bar Q^n. \f]
+          - \Delta t \hat\rho I^n 
+          + \frac{\Delta t \bar \Sigma^n}{\rho_b}
+          + \frac{2 \bar F^n}{\rho_b \nu}.  \tag{scaledinter}\f]
 
 Because there is asymmetry of flow, with possibility of vertical velocity only
-in the ice and not in the bedrock, we must interpret the upwind term.  We choose
-to upwind only in the case of a downward vertical velocity, and we approximate
-the entire term by zero in the other case.  (Downward vertical velocity corresponds 
+in the ice and not in the bedrock, we must interpret the vertical advection
+upwind term carefully.  We choose to actually upwind only in the case of
+a downward vertical velocity.  We approximate the entire term by zero
+in the upward velocity case.  (Downward vertical velocity corresponds 
 to a positive basal melt rate.)  In terms of \f$\uppair{a}{b}\f$ notation, we choose
   \f[ \Up{w_0^n}{ E_\bullet^{n+1} } = \uppair{0}{E_{+1}^{n+1} - E_{0^+}^{n+1}}. \f]
 The second case is when \f$w_0^n < 0\f$.
 
-Equation \f$\ast\f$ is one of a system of equations for the new values.  Thus we re-arrange
-it with the unknowns on the left, as with core BOMBPROOF:
+Equation (\ref scaledinter) is one of a system of equations for the new values.
+Thus we re-arrange it with the unknowns on the left, as with core BOMBPROOF:
 \anchor nearlythere
 \f{align*}
 - 2 R_b E_{-1}^{n+1} &+ (1 + 2 R_b) E_{0^-}^{n+1}
       + \hat\rho \left(1 + 2 R_i - \nu w_0^n \uppair{0}{1}\right) E_{0^+}^{n+1}
       + \hat\rho \left(-2 R_i + \nu w_0^n \uppair{0}{1}\right) E_{+1}^{n+1} \tag{nearlythere} \\
-     &= \hat\rho E_{0^+}^{n} + E_{0^-}^{n} - \Delta t \hat\rho I^n + \Delta t (\rho_b)^{-1} \bar Q^n. 
+     &= \hat\rho E_{0^+}^{n} + E_{0^-}^{n} - \Delta t \hat\rho I^n
+       + \frac{\Delta t \bar \Sigma^n}{\rho_b}
+       + \frac{2 \bar F^n}{\rho_b \nu}. 
 \f}
 
 We decide, somewhat arbitrarily, that we will use the known value of the ice basal enthalpy
@@ -629,15 +678,17 @@ Those pieces are the continuity of temperature at \f$z=0\f$ at time \f$t_n\f$
   T_b(E_{0^-}^{n+1},p) &= T_i(E_{0^+}^{n+1},p).
 \f}
 The functions \f$T_b()\f$ and \f$T_i()\f$ are exactly EnthalpyConverter::getAbsTempBedrock() and
-EnthalpyConverter::getAbsTemp(), respectively.  In fact it is even simpler.  We invert the functions
-\f$T_b()\f$ on the left side of the temperature continuity equations, and we insert these expressions
-into (\ref nearlythere) to get
+EnthalpyConverter::getAbsTemp(), respectively.
+
+In fact it gets even simpler.  We invert the functions \f$T_b()\f$ on the left side of the
+above temperature continuity equations, and we insert these expressions into (\ref nearlythere) to get
 \anchor evencloser
 \f{align*}
 - 2 R_b E_{-1}^{n+1} &+ (1 + 2 R_b) E_b(T_i(E_{0^+}^{n+1},p),p)
       + \hat\rho \left(1 + 2 R_i - \nu w_0^n \uppair{0}{1}\right) E_{0^+}^{n+1}
       + \hat\rho \left(-2 R_i + \nu w_0^n \uppair{0}{1}\right) E_{+1}^{n+1} \tag{evencloser}\\
-     &= \hat\rho E_{0^+}^{n} + E_b(T_i(E_{0^+}^n,p),p) - \Delta t \hat\rho I^n + \Delta t (\rho_b)^{-1} \bar Q^n. 
+     &= \hat\rho E_{0^+}^{n} + E_b(T_i(E_{0^+}^n,p),p) - \Delta t \hat\rho I^n
+      + \frac{\Delta t \bar \Sigma^n}{\rho_b} + \frac{2 \bar F^n}{\rho_b \nu}. 
 \f}
 The function \f$E_b()\f$ is exactly EnthalpyConverter::getEnthBedrock() (which actually takes 
 no pressure variable because of how enthalpy is normalized).  This equation has only
@@ -658,8 +709,6 @@ specifying its discrete approximation:
 Here the \f$i,j\f$ indices re-appear for (hoped) clarity.  And \f$E_{ij0}^n = E_{0^+}^n\f$
 is a known variable in our context, etc.
 
-FIXME:  ADD FRICTIONAL HEATING
-
 So here is the final form of our ice-bedrock interface finite difference equation,
 for insertion into the tridiagonal system managed by enthSystemCtx::solveThisColumn():
 \anchor icebedrockfinal
@@ -668,7 +717,8 @@ for insertion into the tridiagonal system managed by enthSystemCtx::solveThisCol
       + \hat\rho \left(1 + 2 R_i - \nu w_0^n \uppair{0}{1}\right) \right] E_{0^+}^{n+1}
       + \hat\rho \left(-2 R_i + \nu w_0^n \uppair{0}{1}\right) E_{+1}^{n+1} \tag{icebedrockfinal}\\
    &= \left(\hat\rho + \frac{c_b}{c_i} \right) E_{0^+}^n 
-      - \Delta t \hat\rho I^n + \Delta t (\rho_b)^{-1} \bar Q^n. 
+      - \Delta t \hat\rho I^n 
+      + \frac{\Delta t \bar \Sigma^n}{\rho_b} + \frac{2 \bar F^n}{\rho_b \nu}. 
 \f}
 
 
