@@ -176,6 +176,15 @@ PetscErrorCode enthSystemCtx::view(MPI_Comm &com) {
 }
 
 
+//! Solve the tridiagonal system which determines the new values of enthalpy in the column of ice and bedrock.
+/*!
+Highly nontrivial choices are made here, especially at the ice/bedrock
+transition.
+
+See the page documenting BOMBPROOF.  We implement equations (\ref bombtwo), (\ref bedrockeqn),
+(\ref geothermalbedeqn), (\ref icebedfinalcold), (\ref icebedfinaltemperate),
+(\ref neartopofbedrock), and (\ref icebasenobedrock).
+ */
 PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
   PetscErrorCode ierr;
   if (!initAllDone) {  SETERRQ(2,
@@ -198,6 +207,9 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
 */
 
   if (Mbz > 1) { // bedrock present: build k=0:Mbz-2 eqns
+
+    // case where Mbz==2 is different; it is stopped by IceEnthalpy model
+
     // should gives O(\Delta t,\Delta z^2) convergence
     // note L[0] not an allocated location:
     D[0] = (1.0 + 2.0 * brR);
@@ -205,7 +217,8 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
     rhs[0] = Enth_b[0] + 2.0 * dtTemp * Ghf / (bed_thermal_rho * dzbEQ);
 
     // bedrock only; pure vertical conduction problem
-    for (PetscInt k=1; k < k0; k++) {
+    // because Mbz >=3, k0 = Mbz-1 >= 2, and the loop goes at least once
+    for (PetscInt k = 1; k < k0; k++) {
       L[k] = -brR;
       D[k] = 1.0 + 2.0 * brR;
       if (k == k0-1) {
@@ -238,6 +251,8 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
       rhs[k0] = Enth_shelfbase;
     } else if (Mbz == 1) {
       // grounded but no bedrock layer; apply geothermal flux here
+      // WARNING: subtle consequences of finite volume argument for basal segment;
+      // see BOMBPROOF docs
       const PetscScalar R = (Enth[k0] > Enth_s[k0]) ? 0.0 : iceR;
       // L[k0] = 0.0;  (note this is not an allocated location!) 
       D[k0] = 1.0 + 2.0 * R;
@@ -256,7 +271,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
                                                  u[0] * (ss.ij  - ss.im1) / dx;
         const PetscScalar UpEnthv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
                                                  v[0] * (ss.ij  - ss.jm1) / dy;
-        rhs[k0] -= dtTemp * (UpEnthu + UpEnthv); // hor. advection
+        rhs[k0] -= dtTemp * (UpEnthu + UpEnthv);     // hor. advection
         rhs[k0] += dtTemp * Sigma[0] / ice_rho;      // strain heat
       }
     } else { 
@@ -267,14 +282,22 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
                         c_ratioINV = bed_thermal_c / ice_c,
                         R = (Enth[k0] > Enth_s[k0]) ? 0.0 : iceR;
       L[k0] = - 2.0 * brR;
-      D[k0] = (1.0 + 2.0 * brR) * c_ratioINV + rho_ratio * (1.0 + 2.0 * R);
+      if (Enth[k0] > Enth_s[k0]) {
+        D[k0] = rho_ratio * (1.0 + 2.0 * R);
+      } else {
+        D[k0] = (1.0 + 2.0 * brR) * c_ratioINV + rho_ratio * (1.0 + 2.0 * R);
+      }
       U[k0] = - rho_ratio * 2.0 * R;
       if (w[0] < 0.0) { // velocity downward: upwind vertical
         const PetscScalar AA = rho_ratio * dtTemp * w[0] / dzav;
         D[k0] -= AA;
         U[k0] += AA;
       }
-      rhs[k0] = (rho_ratio + c_ratioINV) * Enth[0];            // prev enthalpy
+      if (Enth[k0] > Enth_s[k0]) {                             // prev enthalpy
+        rhs[k0] = rho_ratio * Enth[0] - 2 * brR * c_ratioINV * Enth_s[k0];
+      } else {
+        rhs[k0] = (rho_ratio + c_ratioINV) * Enth[0];
+      }
       rhs[k0] += 2.0 * dtTemp * Rb / (bed_thermal_rho * dzav); // frictional heat
       if (!isMarginal) {
         planeStar ss;

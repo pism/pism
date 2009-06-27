@@ -48,6 +48,7 @@ public:
 
   PetscErrorCode viewConstants(PetscViewer viewer) const;
 
+  // ice conversion methods
   double getPressureFromDepth(double depth) const;
   double getMeltingTemp(double p) const;
   double getEnthalpyCTS(double p) const;
@@ -57,9 +58,11 @@ public:
   double getWaterFraction(double E, double p) const;
   double getEnth(double T, double omega, double p) const;
   double getEnthPermissive(double T, double omega, double p) const;
+  double getCTS(double E, double p) const;
+
+  // bedrock conversion methods
   double getEnthBedrock(double T) const;
   double getAbsTempBedrock(double E) const;
-  double getCTS(double E, double p) const;
 
 protected:
   double T_0, L, c_i, c_b, rho_i, g, p_air, beta;

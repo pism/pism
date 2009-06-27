@@ -78,6 +78,9 @@ class IceEnthalpyModel : public IceModel {
 public:
   IceEnthalpyModel(IceGrid &g);
 
+  using IceModel::setFromOptions;
+  PetscErrorCode setFromOptions();
+
   using IceModel::initFromFile;
   virtual PetscErrorCode initFromFile(const char *);
 
@@ -87,7 +90,7 @@ public:
   using IceModel::regrid;
   virtual PetscErrorCode regrid();
 
-  bool doColdIceMethods; //!< if true, just read and write additional enthalpy fields to and from file
+  PetscTruth doColdIceMethods; //!< if true, use cold ice internals but read and write additional enthalpy fields to and from file
 
 protected:
   using IceModel::createVecs;

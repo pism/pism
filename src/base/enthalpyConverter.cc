@@ -262,6 +262,18 @@ double EnthalpyConverter::getEnthPermissive(double T, double omega, double p) co
 }
 
 
+//! Computes the ratio CTS = E/Es.  The cold-temperate transition surface (CTS) is the level surface CTS = 1
+/*!
+If \f$E\f$ and \f$E_s\f$ are the enthalpy and the CTS enthalpy, respectively, then
+  \f[ CTS = \frac{E}{E_s}.\f]
+where CTS = 1 is the CTS contour line. Only used for postprocessing
+*/ 
+double EnthalpyConverter::getCTS(double E, double p) const {
+  const double E_s = getEnthalpyCTS(p);
+  return E / E_s;
+}
+
+
 //! Compute enthalpy from absolute temperature within the bedrock.  The enthalpy scale is separate from that in ice.
 /*!
 If \f$c_b\f$ is the specific heat capacity of the bedrockthen we compute and return
@@ -284,13 +296,3 @@ double EnthalpyConverter::getAbsTempBedrock(double E) const {
   return E / c_b;
 }
 
-//! Compute CTS position from E/Es, the CTS is then given by the contour line CTS = 1
-/*!
-If \f$E\f$ and \f$E_s\f$ are the enthalpy and the CTS enthalpy, respectively, then
-  \f[ CTS = \frac{E}{E_s}.\f]
-where CTS = 1 is the CTS contour line. Only used for postprocessing
-*/ 
-double EnthalpyConverter::getCTS(double E, double p) const {
-  const double E_s = getEnthalpyCTS(p);
-  return E / E_s;
-}
