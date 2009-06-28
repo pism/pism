@@ -216,6 +216,68 @@ PetscErrorCode IceEnthalpyModel::setFromOptions() {
 }
 
 
+PetscErrorCode IceEnthalpyModel::initFromFile(const char *fname) {
+  PetscErrorCode  ierr;
+
+  ierr = IceModel::initFromFile(fname); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+     "entering IceEnthalpyModel::initFromFile() after base class version;\n"
+     "  looking in '%s' for variable 'enthalpy' ... \n",fname);
+     CHKERRQ(ierr);
+
+  NCTool nc(&grid);
+  ierr = nc.open_for_reading(fname); CHKERRQ(ierr);
+
+/* if we were to require "enthalpy" to be present then the code would be simpler:
+  ierr = Enth3.read(fname, last_record); CHKERRQ(ierr);
+*/
+
+  grid_info g;
+  ierr = nc.get_grid_info(g); CHKERRQ(ierr);
+  bool enthExists=false;
+  ierr = nc.find_variable("enthalpy", NULL, enthExists); CHKERRQ(ierr);
+
+  if (enthExists) {
+    // act like we are regridding the variable
+    double *zlevs = NULL, *zblevs = NULL; // NULLs correspond to 2D-only regridding
+    if ((g.z_len != 0) && (g.zb_len != 0)) {
+      ierr = nc.get_vertical_dims(zlevs, zblevs); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(1, grid.com,
+         "PISM ERROR: -i file does not look right; at least one of 'z' and 'zb' is absent in '%s'.\n",
+         fname); CHKERRQ(ierr);
+      PetscEnd();
+    }
+    ierr = nc.close(); CHKERRQ(ierr);
+    LocalInterpCtx lic(g, zlevs, zblevs, grid);
+    ierr = Enth3.regrid(fname, lic, true); CHKERRQ(ierr);  // at this point, it is critical
+  } else {
+    ierr = verbPrintf(2, grid.com,
+      "  variable 'enthalpy' not found so setting it as cold ice, from temperature ...\n");
+      CHKERRQ(ierr);
+    ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+
+PetscErrorCode IceEnthalpyModel::bootstrapFromFile(const char *filename) {
+  PetscErrorCode ierr;
+  ierr = IceModel::bootstrapFromFile(filename); CHKERRQ(ierr);
+  
+  ierr = verbPrintf(2, grid.com, "continuing bootstrapping in IceEnthalpyModel ...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+      "  ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
+      CHKERRQ(ierr);
+  ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "bootstrapping done (IceEnthalpyModel)\n"); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
 PetscErrorCode IceEnthalpyModel::init_physics() {
   PetscErrorCode ierr;
 
@@ -303,53 +365,6 @@ PetscErrorCode IceEnthalpyModel::write_extra_fields(const char filename[]) {
      "ice enthalpy; temporary space during timestep",
      "J kg-1",
      ""); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
-PetscErrorCode IceEnthalpyModel::initFromFile(const char *fname) {
-  PetscErrorCode  ierr;
-
-  ierr = IceModel::initFromFile(fname); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, grid.com,
-     "entering IceEnthalpyModel::initFromFile() after base class version;\n"
-     "  looking in '%s' for variable 'enthalpy' ... \n",fname);
-     CHKERRQ(ierr);
-
-  NCTool nc(&grid);
-  ierr = nc.open_for_reading(fname); CHKERRQ(ierr);
-
-/* if we were to require "enthalpy" to be present then the code would be simpler:
-  ierr = Enth3.read(fname, last_record); CHKERRQ(ierr);
-*/
-
-  grid_info g;
-  ierr = nc.get_grid_info(g); CHKERRQ(ierr);
-  bool enthExists=false;
-  ierr = nc.find_variable("enthalpy", NULL, enthExists); CHKERRQ(ierr);
-
-  if (enthExists) {
-    // act like we are regridding the variable
-    double *zlevs = NULL, *zblevs = NULL; // NULLs correspond to 2D-only regridding
-    if ((g.z_len != 0) && (g.zb_len != 0)) {
-      ierr = nc.get_vertical_dims(zlevs, zblevs); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(1, grid.com,
-         "PISM ERROR: -i file does not look right; at least one of 'z' and 'zb' is absent in '%s'.\n",
-         fname); CHKERRQ(ierr);
-      PetscEnd();
-    }
-    ierr = nc.close(); CHKERRQ(ierr);
-    LocalInterpCtx lic(g, zlevs, zblevs, grid);
-    ierr = Enth3.regrid(fname, lic, true); CHKERRQ(ierr);  // at this point, it is critical
-  } else {
-    ierr = verbPrintf(2, grid.com,
-      "  variable 'enthalpy' not found so setting it as cold ice, from temperature ...\n");
-      CHKERRQ(ierr);
-    ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
-  }
 
   return 0;
 }
@@ -1180,7 +1195,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
         }
       } else {
         Hmeltnew = 0.0; // no stored water if no ice present
-        // Enthnew[0] = Enthnew[ks] already set
+        Enthnew[0] = Enth_air;
       }
 
       // bottom of ice is top of bedrock when grounded, so

@@ -58,7 +58,7 @@ blind iteration (%e.g. with no guarantee of convergence of the iteration), while
 the scheme we propose involves no iteration.
 
 
-\section iceequations Conservation of energy in ice and bedrock
+\section iceequations Conservation of energy in a shallow ice sheet
 
 In terms of the specific enthalpy field \f$E(x,y,z,t)\f$, which has units of 
 \f$J\,\text{kg}^{-1}\f$ in SI, the energy equation is [\ref AschwandenBlatter2009]
@@ -160,7 +160,7 @@ E(t,z=H) = c_i T_s, \qquad -k_i c_i^{-1} \frac{\partial E}{\partial z}\Big|_{z=0
 \f]
 
 
-\section The core BOMBPROOF scheme
+\section corebombproof The core BOMBPROOF scheme
 
 For the discussion of the numerical scheme below, let \f$E_{ijk}^n\f$ be our approximation to 
 the exact enthalpy \f$E\f$ at the grid point with coordinates \f$(x_i,y_j,z_k)\f$ at 

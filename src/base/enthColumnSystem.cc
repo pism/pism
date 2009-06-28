@@ -279,15 +279,14 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
       // WARNING: subtle consequences of finite volume argument across interface;
       // see BOMBPROOF docs
       const PetscScalar rho_ratio  = ice_rho / bed_thermal_rho,
-                        c_ratioINV = bed_thermal_c / ice_c,
-                        R = (Enth[k0] > Enth_s[k0]) ? 0.0 : iceR;
+                        c_ratioINV = bed_thermal_c / ice_c;
       L[k0] = - 2.0 * brR;
       if (Enth[k0] > Enth_s[k0]) {
-        D[k0] = rho_ratio * (1.0 + 2.0 * R);
+        D[k0] = rho_ratio * (1.0 + 2.0 * iceR);
       } else {
-        D[k0] = (1.0 + 2.0 * brR) * c_ratioINV + rho_ratio * (1.0 + 2.0 * R);
+        D[k0] = (1.0 + 2.0 * brR) * c_ratioINV + rho_ratio * (1.0 + 2.0 * iceR);
       }
-      U[k0] = - rho_ratio * 2.0 * R;
+      U[k0] = - rho_ratio * 2.0 * iceR;
       if (w[0] < 0.0) { // velocity downward: upwind vertical
         const PetscScalar AA = rho_ratio * dtTemp * w[0] / dzav;
         D[k0] -= AA;
