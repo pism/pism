@@ -281,47 +281,44 @@ PetscErrorCode IceModel::report_grid_parameters() {
 
   // report on computational box
   ierr = verbPrintf(2,grid.com, 
-           "[computational box for ice: %8.2f km x %8.2f km",
+           "computational box: %.2f km x %.2f km",
            2*grid.Lx/1000.0,2*grid.Ly/1000.0); CHKERRQ(ierr);
   if (grid.Mbz > 1) {
-    ierr = verbPrintf(2,grid.com,
-         "\n                               x (%8.2f m + %7.2f m bedrock)]\n"
+    ierr = verbPrintf(2,grid.com," x (%.2f m + %.2f m bedrock)\n"
          ,grid.Lz,grid.Lbz); CHKERRQ(ierr);
   } else {
-    ierr = verbPrintf(2,grid.com," x %8.2f m]\n",grid.Lz); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com," x %.2f m\n",grid.Lz); CHKERRQ(ierr);
   }
   
   // report on grid cell dims
   if (grid.vertical_spacing == EQUAL) {
     ierr = verbPrintf(2,grid.com, 
-           "[grid cell dims (equal dz): %8.2f km x %8.2f km x %8.2f m",
+           "grid cell dims (equal dz): %.2f km x %.2f km x %.2f m",
            grid.dx/1000.0,grid.dy/1000.0,grid.dzMIN); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com, 
-           "[hor. grid cell dimensions: %8.2f km x %8.2f km\n",
+           "horizontal grid cell dimensions: %.2f km x %.2f km\n",
            grid.dx/1000.0,grid.dy/1000.0); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com, 
-           " vertical grid spacing in ice not equal; range %.3f m < dz < %.3f m",
+           "  vertical grid spacing in ice not equal: %.3f m < dz < %.3f m",
            grid.dzMIN,grid.dzMAX); CHKERRQ(ierr);
-    PetscInt    myMz;
-    ierr = grid.getFineEqualVertCountIce(myMz); CHKERRQ(ierr);
+    PetscInt    fMz;
+    ierr = grid.getFineEqualVertCountIce(fMz); CHKERRQ(ierr);
     ierr = verbPrintf(3,grid.com, 
-         "\n fine equal spacing used in temperatureStep(): Mz = %d, fdz = %.3f m",
-           myMz,grid.Lz / ((PetscScalar) (myMz - 1))); CHKERRQ(ierr);
-    if (myMz > 1000) {
+         "\n  fine equal spacing used in temperatureStep(): fMz = %d, fdz = %.3f m",
+           fMz,grid.Lz / ((PetscScalar) (fMz - 1))); CHKERRQ(ierr);
+    if (fMz > 1000) {
       ierr = verbPrintf(1,grid.com,
-        "\n\n WARNING: Using more than 1000 vertical levels internally\n"
-        "   in temperatureStep()!\n\n");  CHKERRQ(ierr);
+        "\n\nWARNING: Using more than 1000 vertical levels internally in energy/age computation!\n\n");
+        CHKERRQ(ierr);
     }
   }
-
   if (grid.Mbz > 1) {
     ierr = verbPrintf(2,grid.com, 
-       "\n vertical spacing in bedrock: dz = %.3f m]\n",
+       "\n  vertical spacing in bedrock: dz = %.3f m\n",
          grid.zblevels[1]-grid.zblevels[0]); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2,grid.com,"]\n"); CHKERRQ(ierr);
   }
+  ierr = verbPrintf(2,grid.com,"\n"); CHKERRQ(ierr);
 
   // if -verbose (=-verbose 3) then actually list parameters of grid
   ierr = verbPrintf(3,grid.com,
