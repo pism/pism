@@ -395,14 +395,18 @@ protected:
   int cIndex(const char singleCharName);
 
   // see iMreport.cc
-  virtual PetscErrorCode computeFlowUbarStats
-                      (PetscScalar *gUbarmax, PetscScalar *gUbarSIAav,
+  virtual PetscErrorCode computeFlowUbarStats(
+                       PetscScalar *gUbarmax, PetscScalar *gUbarSIAav,
                        PetscScalar *gUbarstreamav, PetscScalar *gUbarshelfav,
                        PetscScalar *gicegridfrac, PetscScalar *gSIAgridfrac,
                        PetscScalar *gstreamgridfrac, PetscScalar *gshelfgridfrac);
-  virtual PetscErrorCode volumeArea(PetscScalar& gvolume,PetscScalar& garea,
-                            PetscScalar& gvolSIA, PetscScalar& gvolstream, 
-                            PetscScalar& gvolshelf);
+  virtual PetscErrorCode volumeArea(
+                       PetscScalar& gvolume,PetscScalar& garea,
+                       PetscScalar& gvolSIA, PetscScalar& gvolstream, 
+                       PetscScalar& gvolshelf);
+  virtual PetscErrorCode energyAgeStats(
+                       PetscScalar ivol, PetscScalar iarea, bool useHomoTemp, 
+                       PetscScalar &gmeltfrac, PetscScalar &gtemp0, PetscScalar &gorigfrac);
   virtual PetscErrorCode summary(bool tempAndAge, bool useHomoTemp);
   virtual PetscErrorCode summaryPrintLine(
               PetscTruth printPrototype, bool tempAndAge,

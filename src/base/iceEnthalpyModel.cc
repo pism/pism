@@ -627,6 +627,74 @@ PetscErrorCode IceEnthalpyModel::setCTSFromEnthalpy(IceModelVec3 &useForCTS) {
 }
 
 
+/*********** modified reporting to standard out ******************/
+
+PetscErrorCode IceEnthalpyModel::energyAgeStats(
+                    PetscScalar ivol, PetscScalar iarea, bool /* useHomoTemp */, 
+                    PetscScalar &gmeltfrac, PetscScalar &gtemp0, PetscScalar &gorigfrac) {
+  PetscErrorCode  ierr;
+  PetscScalar     **H, **Enthbase, *tau;
+  PetscScalar     meltarea, temp0, origvol;
+  
+  EnthalpyConverter EC(&config);
+
+  // put basal ice enthalpy in vWork2d[0]
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  ierr = Enth3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
+
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vWork2d[0].get_array(Enthbase); CHKERRQ(ierr);
+  ierr = tau3.begin_access(); CHKERRQ(ierr);
+
+  const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
+  const PetscScalar   currtime = grid.year * secpera;
+
+  meltarea = 0.0; temp0 = 0.0; origvol = 0.0;
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (H[i][j] > 0) {
+
+        // accumulate area of base which is at melt point
+        if (Enthbase[i][j] >= EC.getEnthalpyCTS( EC.getPressureFromDepth(H[i][j]) ) )
+          meltarea += a;
+
+        // accumulate volume of ice which is original
+        ierr = tau3.getInternalColumn(i,j,&tau); CHKERRQ(ierr);
+        const PetscInt  ks = grid.kBelowHeight(H[i][j]);
+        for (PetscInt k=1; k<=ks; k++) {
+          // ice is original if it is at least one year older than current time
+          if (0.5*(tau[k-1]+tau[k]) > currtime + secpera)
+            origvol += a * 1.0e-3 * (grid.zlevels[k] - grid.zlevels[k-1]);
+        }
+
+      }
+
+      // if you happen to be at center, record absolute basal temp there
+      if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
+        temp0 = EC.getAbsTemp( Enthbase[i][j], EC.getPressureFromDepth(H[i][j]) );
+      }
+    }
+  }
+  
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  ierr = tau3.end_access(); CHKERRQ(ierr);
+
+  ierr = PetscGlobalSum(&meltarea, &gmeltfrac, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&origvol,  &gorigfrac, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&temp0,    &gtemp0,    grid.com); CHKERRQ(ierr);
+
+  // normalize fractions correctly
+  if (ivol > 0.0)    gorigfrac = gorigfrac / ivol;
+  else gorigfrac = 0.0;
+  if (iarea > 0.0)   gmeltfrac = gmeltfrac / iarea;
+  else gmeltfrac = 0.0;
+
+  return 0;
+}
+
+
 /*********** velocity routines in which new flow law gets used ****************/
 
 //! Total code duplication with IceModel version, but checks flag doColdIceMethods and uses correct flow law.

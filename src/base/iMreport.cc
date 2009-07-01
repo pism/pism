@@ -144,74 +144,107 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
 }
 
 
-PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
-  PetscErrorCode  ierr;
-  PetscScalar     **H, **Tbase;
-  PetscScalar     melt, divideH, divideT, orig;
-  PetscScalar     gmelt, gdivideH, gdivideT, gorig, gvolume, garea;
-  PetscScalar     gvolSIA, gvolstream, gvolshelf;
-  PetscScalar     meltfrac = 0.0, origfrac = 0.0;
-  PetscScalar     *tau;
+/*!
+Computes fraction of the base which is melted, fraction of the ice which is as 
+old as the start of the run (original), and the ice basal temperature at the
+center of the ice sheet.
 
-  ierr = volumeArea(gvolume,garea,gvolSIA, gvolstream, gvolshelf); CHKERRQ(ierr);
+Communication occurs here.
+ */
+PetscErrorCode IceModel::energyAgeStats(
+                    PetscScalar ivol, PetscScalar iarea, bool useHomoTemp, 
+                    PetscScalar &gmeltfrac, PetscScalar &gtemp0, PetscScalar &gorigfrac) {
+  PetscErrorCode  ierr;
+  PetscScalar     **H, **Tbase, *tau;
+  PetscScalar     meltarea, temp0, origvol;
   
+  // put basal ice temperature in vWork2d[0]
+  ierr = T3.begin_access(); CHKERRQ(ierr);
+  ierr = T3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
+  ierr = T3.end_access(); CHKERRQ(ierr);
+
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  divideH = 0; 
-  if (tempAndAge || (getVerbosityLevel() >= 3)) {
-    ierr = T3.begin_access(); CHKERRQ(ierr);
-    ierr = T3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);
-    ierr = T3.end_access(); CHKERRQ(ierr);
-    ierr = vWork2d[0].get_array(Tbase); CHKERRQ(ierr);
-    ierr = tau3.begin_access(); CHKERRQ(ierr);
-    melt = 0; divideT = 0; orig = 0;
-  }
+  ierr = vWork2d[0].get_array(Tbase); CHKERRQ(ierr);
+  ierr = tau3.begin_access(); CHKERRQ(ierr);
+
   const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
   const PetscScalar   currtime = grid.year * secpera;
+
+  meltarea = 0.0; temp0 = 0.0; origvol = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-        divideH = H[i][j];
-      }
-      if (tempAndAge || (getVerbosityLevel() >= 3)) {
-        if (H[i][j] > 0) {
-          if (useHomoTemp) {
-            if (Tbase[i][j] + ice->beta_CC_grad * H[i][j] >= min_temperature_for_SIA_sliding)
-              melt += a;
-          } else {
-            if (Tbase[i][j] >= ice->meltingTemp)
-              melt += a;
-          }
+      if (H[i][j] > 0) {
+        // accumulate area of base which is at melt point
+        if (useHomoTemp) {
+          if (Tbase[i][j] + ice->beta_CC_grad * H[i][j] >= min_temperature_for_SIA_sliding)
+            meltarea += a;
+        } else {
+          if (Tbase[i][j] >= ice->meltingTemp)
+            meltarea += a;
         }
-        if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-          divideT = Tbase[i][j];
-        }
-        const PetscInt  ks = grid.kBelowHeight(H[i][j]);
+        // accumulate volume of ice which is original
         ierr = tau3.getInternalColumn(i,j,&tau); CHKERRQ(ierr);
+        const PetscInt  ks = grid.kBelowHeight(H[i][j]);
         for (PetscInt k=1; k<=ks; k++) {
           // ice is original if it is at least one year older than current time
-//          if (tau[k] > currtime + secpera)
-//            orig += v;
           if (0.5*(tau[k-1]+tau[k]) > currtime + secpera)
-            orig += a * 1.0e-3 * (grid.zlevels[k] - grid.zlevels[k-1]);
+            origvol += a * 1.0e-3 * (grid.zlevels[k] - grid.zlevels[k-1]);
         }
+      }
+      // if you happen to be at center, record basal temp
+      if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
+        temp0 = Tbase[i][j];
       }
     }
   }
   
   ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  ierr = tau3.end_access(); CHKERRQ(ierr);
+
+  ierr = PetscGlobalSum(&meltarea, &gmeltfrac, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&origvol,  &gorigfrac, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&temp0,    &gtemp0,    grid.com); CHKERRQ(ierr);
+
+  // normalize fractions correctly
+  if (ivol > 0.0)    gorigfrac = gorigfrac / ivol;
+  else gorigfrac = 0.0;
+  if (iarea > 0.0)   gmeltfrac = gmeltfrac / iarea;
+  else gmeltfrac = 0.0;
+
+  return 0;
+}
+
+
+PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
+  PetscErrorCode  ierr;
+  PetscScalar     **H;
+  PetscScalar     divideH;
+  PetscScalar     gdivideH, gdivideT, gvolume, garea;
+  PetscScalar     gvolSIA, gvolstream, gvolshelf;
+  PetscScalar     meltfrac = 0.0, origfrac = 0.0;
+
+  ierr = volumeArea(gvolume, garea, gvolSIA, gvolstream, gvolshelf); CHKERRQ(ierr);
+  
+  // get thick0 = gdivideH
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  divideH = 0;
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
+        divideH = H[i][j];
+      }
+    }
+  }  
+  ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&divideH, &gdivideH, grid.com); CHKERRQ(ierr);
+
   if (tempAndAge || (getVerbosityLevel() >= 3)) {
-    ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-    ierr = tau3.end_access(); CHKERRQ(ierr);
-    ierr = PetscGlobalSum(&melt, &gmelt, grid.com); CHKERRQ(ierr);
-    ierr = PetscGlobalSum(&orig, &gorig, grid.com); CHKERRQ(ierr);
-    ierr = PetscGlobalMax(&divideT, &gdivideT, grid.com); CHKERRQ(ierr);
-    if (gvolume>0) origfrac=gorig/gvolume;
-    else origfrac=0.0;
-    if (garea>0) meltfrac=gmelt/garea;
-    else meltfrac=0.0;
+    ierr = energyAgeStats(gvolume, garea, useHomoTemp, 
+                               meltfrac, gdivideT, origfrac); CHKERRQ(ierr);
   }
 
+  // report CFL violations is there are enough
   if (CFLviolcount > 0.0) {
     const PetscScalar CFLviolpercent = 100.0 * CFLviolcount / (grid.Mx * grid.Mz * grid.Mz);
     const PetscScalar CFLVIOL_REPORT_VERB2_PERCENT = 0.1; // only report (verbosity=2) if above 0.1%
@@ -224,31 +257,13 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     }
   }
    
-  // give summary data a la EISMINT II:
-  //    year (+ dt[NR]) (years),
-  //       [ note 
-  //            N = skipCountDown
-  //            R = on character reason for dt: 
-  //            m = maxdt applied, 
-  //            e = time to end, 
-  //            d = diffusive limit from mass continuity,
-  //            c = CFL for temperature equation,
-  //            f = forced by derived class,
-  //            t = temporarily truncated (e.g. to next integer yr) by derived class,
-  //            [space] = no time step taken]
-  //    volume (10^6 cubic km),
-  //    area (10^6 square km),
-  //    basal melt ratio [=(area of base at *absolute*  or *pressure* melting);
-  //                      depends on useHomoTemp],
-  //    divide thickness (m),
-  //    temp at base at divide (K)  (not homologous),
-  // NOTE DERIVED CLASSES MAY HAVE OTHER DISPLAYED QUANTITIES
+  // main report: 'S' line
   ierr = summaryPrintLine(PETSC_FALSE,(PetscTruth)tempAndAge,grid.year,dt,
                           gvolume,garea,meltfrac,gdivideH,gdivideT); CHKERRQ(ierr);
-  
+
+  // extra verbose report  
   const PetscScalar EXTRAS_VERB_LEVEL = 4;
   if (getVerbosityLevel() >= EXTRAS_VERB_LEVEL) {
-    // show additional info
     PetscScalar Ubarmax, UbarSIAav, Ubarstreamav, Ubarshelfav, icegridfrac,
          SIAgridfrac, streamgridfrac, shelfgridfrac;
     ierr = computeMaxDiffusivity(false); CHKERRQ(ierr); 
@@ -298,6 +313,41 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
 }
 
 
+//! Print a line to stdout which summarizes the state of the modeled ice sheet at the end of the time step.
+/*!
+Generally, a single line is printed to stdout, starting with the character 'S' in the 
+left-most column.
+
+If IceModel::printPrototype is TRUE then alternate lines with
+different left-most characters are printed:
+  - 'P' line gives names of the quantities reported in the 'S' line, the "prototype", while
+  - 'U' line gives units of these quantities.
+
+The left-most character convention allows automatic tools to read PISM stdout
+and produce time-series.  The 'P' and 'U' lines are intended to appear once at the
+beginning of the run, while an 'S' line appears at every time step.  Some 'S'
+lines report "<same>" when there is no change to a quantity.
+
+This base class version gives a report based on the information included in the 
+EISMINT II intercomparison of ice sheet models[\ref EISMINT00].  The 'P' and 'U' lines are \code
+  P         YEAR:     ivol   iarea    meltf     thick0     temp0
+  U        years 10^6_km^3 10^6_km^2 (none)          m         K
+\endcode
+The 'S' line gives the corresponding numbers.
+
+Note that \c ivol is the ice sheet volume and \c iarea is the area occupied 
+by positive thickness ice.  The pure number \c meltf is the fraction of \c iarea for which
+the base is at the melting temperature.  (xactly what this melting temperature refers to
+is determined in IceModel::summary().)  The final two quantities are
+simply values of two variable at the center of the computational domain, namely 
+the thickness (\c thick0) and basal ice absolute temperature (\c temp0) at that
+center point.
+
+For more description and examples, see the PISM User's Manual.
+  
+Derived classes of IceModel are encouraged to redefine this method and add 
+alternate information.
+ */
 PetscErrorCode IceModel::summaryPrintLine(
      PetscTruth printPrototype,  bool tempAndAge,
      PetscScalar year,  PetscScalar /* delta_t */,

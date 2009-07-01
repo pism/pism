@@ -112,6 +112,11 @@ protected:
 
   virtual PetscErrorCode setPATempFromEnthalpy(IceModelVec3 &useForPATemp);
 
+  using IceModel::energyAgeStats;
+  virtual PetscErrorCode energyAgeStats(
+                    PetscScalar ivol, PetscScalar iarea, bool useHomoTemp, 
+                    PetscScalar &gmeltfrac, PetscScalar &gtemp0, PetscScalar &gorigfrac);
+
   using IceModel::velocitySIAStaggered;
   virtual PetscErrorCode velocitySIAStaggered();
 
