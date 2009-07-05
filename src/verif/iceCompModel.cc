@@ -393,7 +393,6 @@ PetscScalar IceCompModel::basalVelocity(const PetscScalar xIN, const PetscScalar
     //PetscErrorCode  ierr = PetscPrintf(grid.com, 
     //        "   [IceCompModel::basal called with:   x=%f, y=%f, H=%f, T=%f, alpha=%f]\n",
     //        xIN,yIN,H,alpha);  CHKERRQ(ierr);
-    const PetscScalar pi = 3.14159265358979;
     const PetscScalar r1 = 200e3, r2 = 700e3,   /* define region of sliding */
                       theta1 = 10 * (pi/180), theta2 = 40 * (pi/180);
     const PetscScalar x = fabs(xIN), y = fabs(yIN);
@@ -936,7 +935,6 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
   ierr = PetscGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
   gavvecerr = gavvecerr/(grid.Mx*grid.My);
   
-  const PetscScalar pi = 3.14159265358979;
   const PetscScalar xpeak = 450e3 * cos(25.0*(pi/180.0)),
                     ypeak = 450e3 * sin(25.0*(pi/180.0));
   exactE(xpeak,ypeak,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact);

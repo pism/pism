@@ -48,9 +48,11 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
               double *H, double *M, double *TT, double *U, double *w,
               double *Sig, double *Sigc);
 
-// NOTE:  Units returned for Sig and Sigc are K/s (i.e. temperature) not J/s.
-//        This matches the published sources above but requires conversion in
-//        PISM as of revision 311.
+  /*
+  * NOTE:  Units returned for Sig and Sigc are K/s (i.e. temperature) not J/s.
+  * This matches the published sources above but requires conversion in
+  * PISM as of revision 311.
+  */
 
 #ifdef __cplusplus
 }

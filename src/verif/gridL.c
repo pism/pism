@@ -23,10 +23,12 @@
 #include <stdlib.h>
 #include "exactTestL.h"
 
-// heapsort from 
-//   http://en.wikibooks.org/wiki/Algorithm_implementation/Sorting/Heapsort
-// (found 7/7/07 by ELB;  see also http://en.wikipedia.org/wiki/Heapsort)
-//  modified to have two index arrays "follow along" and get rearranged the same way
+/*
+* heapsort from
+*   http://en.wikibooks.org/wiki/Algorithm_implementation/Sorting/Heapsort
+* (found 7/7/07 by ELB;  see also http://en.wikipedia.org/wiki/Heapsort)
+*  modified to have two index arrays "follow along" and get rearranged the same way
+*/
 void heapsort_double_2indfollow(double arr[], int ia[], int ib[], unsigned int N) {
    unsigned int n = N, i = n/2, parent, child;
    double t;
@@ -71,23 +73,23 @@ void heapsort_double_2indfollow(double arr[], int ia[], int ib[], unsigned int N
 
 int main() {
 
-// set SMALL 1 to see more info on smaller grid example
+  /* set SMALL 1 to see more info on smaller grid example */
 #define SMALL 0
 
 #if SMALL
-  const int Mx = 11, My = 7;  // good for looking at grid
+  const int Mx = 11, My = 7;  /* good for looking at grid */
 #else
   const int Mx = 36, My = 36;
 #endif
-  const double Lx = 700000, Ly = 700000;  // inside the actual margin
+  const double Lx = 700000, Ly = 700000;  /* inside the actual margin */
   const int imid = (Mx-1)/2, jmid = (My-1)/2;
   const double dx = (2.0*Lx)/(Mx-1), dy = (2.0*Ly)/(My-1);
 
-  // to fill from test L
-  double HH[Mx][My], bb[Mx][My], aa[Mx][My];  // slow method
-  double HHf[Mx][My], bbf[Mx][My], aaf[Mx][My];  // fast method
+  /* to fill from test L */
+  double HH[Mx][My], bb[Mx][My], aa[Mx][My];  /* slow method */
+  double HHf[Mx][My], bbf[Mx][My], aaf[Mx][My];  /* fast method */
   
-  // compute radius at each point
+  /* compute radius at each point */
   double rr[Mx][My];
   int i,j;
   double x,y;
@@ -100,7 +102,7 @@ int main() {
     }
   }
 
-  // slow method: re-solve ODE for each grid point
+  /* slow method: re-solve ODE for each grid point */
   printf(" ---- start slow method ----  (takes 10 to 30 seconds for Mx=My=36, perhaps)\n");
   const double EPS_ABS = 1.0e-9, EPS_REL = 0.0; 
   for (i = 0; i < Mx; i++) {
@@ -111,37 +113,41 @@ int main() {
   printf(" ---- end slow ----\n");
   
 #if SMALL
-  // test heapsort
+  /* test heapsort */
   double myra[8]   = { 1.0, 3.0, 0.0, -3.0, 4.0, 9.0, -2.0, 8.0 };
   int    myinda[8] = { 1, 1, 2, 2, 3, 3, 4, 4 };
   int    myindb[8] = { 1, 2, 1, 2, 1, 2, 1, 2 };
   for (i = 0; i < 8; i++)   { printf(" %6.2f",myra[i]); }   printf("\n");
   for (i = 0; i < 8; i++)   { printf(" %6d",myinda[i]); }   printf("\n");
   for (i = 0; i < 8; i++)   { printf(" %6d",myindb[i]); }   printf("\n");
-//  hpsort2xtra(8,myra-1,myinda-1,myindb-1);  // note Num. Recipes arrays are 1,...,N
+#  if 0
+  hpsort2xtra(8,myra-1,myinda-1,myindb-1);  /* note Num. Recipes arrays are 1,...,N */
+#  endif
   heapsort_double_2indfollow(myra,myinda,myindb,8);
   for (i = 0; i < 8; i++)   { printf(" %6.2f",myra[i]); }   printf("\n");
   for (i = 0; i < 8; i++)   { printf(" %6d",myinda[i]); }   printf("\n");
   for (i = 0; i < 8; i++)   { printf(" %6d",myindb[i]); }   printf("\n");
 #endif
 
-  // fast method: order r, over all the grid, and then solve ODE once
+  /* fast method: order r, over all the grid, and then solve ODE once */
   const int  MM = Mx * My;
   double  rraa[MM], HHaa[MM], bbaa[MM], aaaa[MM];
   int     iaa[MM], jaa[MM];
   printf(" ---- start fast method ----\n");
   for (i = 0; i < Mx; i++) {
     for (j = 0; j < My; j++) {
-      rraa[i*My + j] = - rr[i][j];  // note minus, so ascending --> descending
+      rraa[i*My + j] = - rr[i][j];  /* note minus, so ascending --> descending */
       iaa[i*My + j] = i;
       jaa[i*My + j] = j;
     }
   }
-//  hpsort2xtra(MM,rraa-1,iaa-1,jaa-1);  // sorts into ascending;  O(MM log MM)
-  heapsort_double_2indfollow(rraa,iaa,jaa,MM);  // sorts into ascending;  O(MM log MM)
+#  if 0
+  hpsort2xtra(MM,rraa-1,iaa-1,jaa-1);  /* sorts into ascending;  O(MM log MM) */
+#endif
+  heapsort_double_2indfollow(rraa,iaa,jaa,MM);  /* sorts into ascending;  O(MM log MM) */
   int k;
-  for (k = 0; k < MM; k++)   rraa[k] = - rraa[k];  // now rraa is decreasing
-  exactL_list(rraa, MM, HHaa, bbaa, aaaa);  // get soln to test L at these points; solves ODE only once 
+  for (k = 0; k < MM; k++)   rraa[k] = - rraa[k];  /* now rraa is decreasing */
+  exactL_list(rraa, MM, HHaa, bbaa, aaaa);  /* get soln to test L at these points; solves ODE only once */
   for (k = 0; k < MM; k++) {
     i = iaa[k];   j = jaa[k];
     rr[i][j] = rraa[k];
@@ -152,7 +158,7 @@ int main() {
   printf(" ---- end fast ----\n");
 
 #if SMALL
-  // print grid result
+  /* print grid result */
   for (i = 0; i < Mx; i++) {
     printf("(i = %d:)\n",i);
     printf("      j: ");

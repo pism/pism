@@ -23,12 +23,12 @@
 #include <math.h>
 #include "exactTestsFG.h"
 
-double p3(double x) {
+static double p3(double x) {
   /* p_3=x^3-3*x^2+6*x-6, using Horner's */
   return -6.0 + x*(6.0 + x*(-3.0 + x));
 }
 
-double p4(double x) {
+static double p4(double x) {
   /* p_4=x^4-4*x^3+12*x^2-24*x+24, using Horner's */
   return 24.0 + x*(-24.0 + x*(12.0 + x*(-4.0 + x)));
 }
@@ -107,10 +107,10 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
   for (i=0; i<Mz; i++) {
     if (z[i] < H) {
       TT[i] = Ts * (nu+H) / (nu+z[i]);
-    } else { // surface value above ice surface; matches numerical way
+    } else { /* surface value above ice surface; matches numerical way */
       TT[i] = Ts;
     }
-    //old way: extend formula above surface: TT[i] = Ts * (nu+H) / (nu+z[i]);
+    /* old way: extend formula above surface: TT[i] = Ts * (nu+H) / (nu+z[i]); */
   }
 
   /* compute surface slope and horizontal velocity */
@@ -132,8 +132,8 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
     if (z[i] < H) {
       I3[i] = p3(mu*H) * exp(mu*H) - p3(mu*(H-z[i])) * exp(mu*(H-z[i]));
       U[i] = omega * I3[i];
-    } else { // surface value above ice surface; matches numerical way
-      I3[i] = p3(mu*H) * exp(mu*H) - p3(0.0);  // z[i] = H case in above
+    } else { /* surface value above ice surface; matches numerical way */
+      I3[i] = p3(mu*H) * exp(mu*H) - p3(0.0);  /* z[i] = H case in above */
       U[i] = omega * I3[i];
     }
   }

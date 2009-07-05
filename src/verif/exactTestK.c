@@ -153,11 +153,11 @@ int print_alpha_k(const int N) {
      
   F.function = &coscross;
   F.params = &params;
-  solvT = gsl_root_fsolver_brent;  // faster than bisection but still bracketing
+  solvT = gsl_root_fsolver_brent;  /* faster than bisection but still bracketing */
   solv = gsl_root_fsolver_alloc(solvT);
 
   for (k = 0; k < N; k++) {
-    // these numbers bracket exactly one solution
+    /* these numbers bracket exactly one solution */
     alpha_lo = (double(k) * pi) / params.HZBsum;
     alpha_hi = (double(k + 1) * pi) / params.HZBsum;
     gsl_root_fsolver_set(solv, &F, alpha_lo, alpha_hi);
