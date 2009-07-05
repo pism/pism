@@ -53,7 +53,7 @@ PetscErrorCode IceModel::setDefaults() {
   if (use_alt_config) {
     ierr = config.read(alt_config); CHKERRQ(ierr);
   } else {
-    ierr = config.read(PISM_DEFAULT_CONFIG_FILE); CHKERRQ(ierr);
+    ierr = config.read(PISM_DefaultConfigFile); CHKERRQ(ierr);
   }
   config.print();
 

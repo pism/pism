@@ -1,9 +1,14 @@
-add_library (pismnum
-  num/cubature.c
-  num/extrasGSL.cc)
+add_library (pismearth
+  earth/cubature.c
+  earth/deformation.cc
+  earth/greens.cc
+  earth/matlablike.cc
+  )
 
 set_source_files_properties (base/pism_revision.cc
   PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION}\"')
+set_source_files_properties (base/pism_default_config.cc
+  PROPERTIES COMPILE_FLAGS -DPISM_DEFAULT_CONFIG_FILE='\"${Pism_DEFAULT_CONFIG_FILE}\"')
 set_source_files_properties (udunits/utlib.c
   PROPERTIES COMPILE_FLAGS
   "-DUT_INSTALL_PATH='\"${CMAKE_INSTALL_PREFIX}/lib/pismudunits.dat\"' -DUT_SOURCE_PATH='\"${CMAKE_SOURCE_DIR}/src/udunits/pismudunits.dat\"'")
@@ -11,8 +16,10 @@ set_source_files_properties (udunits/utlib.c
 include_directories (base udunits)
 
 add_library (pismbase
-  base/pism_revision.cc
-  base/beddefLC.cc
+  base/LocalInterpCtx.cc
+  base/NCVariable.cc
+  base/Timeseries.cc
+  base/columnSystem.cc
   base/grid.cc
   base/iMIO.cc
   base/iMadaptive.cc
@@ -22,6 +29,7 @@ add_library (pismbase
   base/iMdefaults.cc
   base/iMgeometry.cc
   base/iMgrainsize.cc
+  base/iMinit.cc
   base/iMinverse.cc
   base/iMinverseMat.cc
   base/iMmatlab.cc
@@ -40,17 +48,18 @@ add_library (pismbase
   base/iceModelVec.cc
   base/iceModelVec2.cc
   base/iceModelVec3.cc
-  base/LocalInterpCtx.cc
   base/materials.cc
   base/nc_util.cc
   base/pism_const.cc
+  base/pism_default_config.cc
+  base/pism_revision.cc
   base/pism_signal.c
   base/ssaJed/iceShelfExtension.cc
   base/ssaJed/ssa.cc
   base/ssaJed/ssafe.cc
-  coupler/forcing.cc
+  coupler/localMassBalance.cc
+  coupler/monthlyDataMaps.cc
   coupler/pccoupler.cc
-  coupler/pPDDcoupler.cc
   )
 
 add_library (pismverif
@@ -69,7 +78,15 @@ add_library (pismudunits
   udunits/utscan.c)
 
 # All Pism executables must link against this
-set (Pism_LIBS pismbase pismnum pismudunits ${Pism_EXTERNAL_LIBS})
+set (Pism_LIBS pismbase pismearth pismudunits ${Pism_EXTERNAL_LIBS})
+
+
+add_executable (penth penth.cc
+  base/iceEnthalpyModel.cc
+  base/enthColumnSystem.cc
+  base/enthalpyConverter.cc
+  )
+target_link_libraries (penth ${Pism_LIBS})
 
 add_executable (pismr pismr.cc)
 target_link_libraries (pismr ${Pism_LIBS})
@@ -99,8 +116,8 @@ add_executable (pcctest pcctest.cc)
 target_link_libraries (pcctest ${Pism_LIBS})
 
 install (TARGETS
-  pismr pisms pismv pismd pgrn ## executables
-  pismverif pismbase pismnum pismudunits # libraries
+  penth pismr pisms pismv pismd pgrn ## executables
+  pismverif pismbase pismearth pismudunits # libraries
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib)

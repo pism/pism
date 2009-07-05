@@ -23,6 +23,7 @@
 #include "materials.hh"
 
 extern const char *PISM_Revision;
+extern const char *PISM_DefaultConfigFile;
 
 const PetscScalar gasConst_R = 8.31441;      // J/(mol K)    Gas Constant
 const PetscScalar earth_grav = 9.81;         // m/s^2        acceleration of gravity

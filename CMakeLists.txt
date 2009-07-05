@@ -27,7 +27,7 @@ if (Pism_BUILD_TYPE MATCHES "Debug")
   option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings" ON)
 endif (Pism_BUILD_TYPE MATCHES "Debug")
 
-# Set PISM_REVISION
+# Set Pism_REVISION
 if (EXISTS ${Pism_SOURCE_DIR}/.git)
   find_program (GIT git DOC "Git executable")
   execute_process (COMMAND ${GIT} svn info
@@ -53,6 +53,11 @@ endif (EXISTS ${Pism_SOURCE_DIR}/.svn)
 if (NOT Pism_REVISION)
   set (Pism_REVISION "Unknown revision")
 endif (NOT Pism_REVISION)
+
+# set Pism_DEFAULT_CONFIG_FILE
+if (NOT Pism_DEFAULT_CONFIG_FILE)
+  set (Pism_DEFAULT_CONFIG_FILE "${Pism_SOURCE_DIR}/lib/pism_config.nc")
+endif ()
 
 # We could set this here, but it forces a full recompile if the version
 # changes, hence we'll define PISM_REVISION only for src/base/iMutil.cc
