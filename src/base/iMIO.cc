@@ -18,6 +18,7 @@
 
 #include <cstring>
 #include <cstdio>
+#include <ctime>
 #include <petscda.h>
 #include "iceModel.hh"
 
@@ -803,14 +804,24 @@ PetscErrorCode IceModel::write_snapshot() {
     }
 
     ierr = verbPrintf(2, grid.com, 
-       "Saving a model state snapshot at %3.5f (years), the time-step after goal %3.5f.\n",
+       "\nsaving a model state snapshot at %3.5f a, for time-step goal %3.5f a\n\n",
        grid.year,saving_after);
     CHKERRQ(ierr);
 
+    // create line for history in .nc file, including time of write
+    time_t now;
+    tm tm_now;
+    char date_str[50];
+    now = time(NULL);
+    localtime_r(&now, &tm_now);
+    // Format specifiers for strftime():
+    //   %F = ISO date format,  %T = Full 24 hour time,  %Z = Time Zone name
+    strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
+
     char tmp[TEMPORARY_STRING_LENGTH];
     snprintf(tmp, TEMPORARY_STRING_LENGTH,
-       " %s: saving model state snapshot at %10.5f (years), the time-step after goal %10.5f.\n",
-	     executable_short_name.c_str(), grid.year, saving_after);
+       "%s: %s snapshot at %10.5f a, for time-step goal %10.5f a\n",
+	     date_str, executable_short_name.c_str(), grid.year, saving_after);
 
     if (!file_is_ready) {
       // Prepare the snapshots file:
