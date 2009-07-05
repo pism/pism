@@ -258,7 +258,6 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
     ierr = verbPrintf(3,grid.com, "A:"); CHKERRQ(ierr);
     // call PETSc to solve linear system by iterative method
     ierr = KSPSetOperators(ksp, A, A, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
-    ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
     ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr); // SOLVE
     ierr = KSPGetIterationNumber(ksp, &kspits); CHKERRQ(ierr);
     ierr = KSPGetConvergedReason(ksp, &kspreason); CHKERRQ(ierr);

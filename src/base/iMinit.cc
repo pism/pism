@@ -418,7 +418,7 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   ierr = VecScatterCreate(SSAX, PETSC_NULL, SSAXLocal, PETSC_NULL,
                           &SSAScatterGlobalToLocal); CHKERRQ(ierr);
   ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
-
+  ierr = KSPSetFromOptions(SSAKSP); CHKERRQ(ierr);
 
   // various internal quantities
   // 2d work vectors
