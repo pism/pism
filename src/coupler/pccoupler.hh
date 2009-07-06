@@ -256,7 +256,7 @@ class PISMOceanCoupler : public PISMClimateCoupler {
 public:
   PISMOceanCoupler();
 
-  ~PISMOceanCoupler();
+  virtual ~PISMOceanCoupler();
 
   virtual PetscErrorCode initFromOptions(IceGrid* g);
 
