@@ -34,8 +34,8 @@ extern "C"
 !    Ed Bueler (March 2006) "Equilibrium ice sheets solve variational
 !       inequalities"
 !
-! in this case the exact solution requires solving an ODE numerically
-! (see src/verif/simpleL.c and src/verif/gridL.c)
+! in this case the exact solution requires solving an ODE numerically.
+! See src/verif/simpleL.c.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 

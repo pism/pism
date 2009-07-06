@@ -83,7 +83,7 @@ VPATH := $(subst src,../src,src/:src/base/:src/base/ssaJed/:src/earth/:src/verif
 # Variables:
 executables := penth pismr pismd pismv pisms pcctest
 extras := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
-	simpleL simpleM gridL flowTable tryLCbd
+	simpleL simpleM flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
 exec_extras := $(addprefix ../bin/, $(extras))
 config_file := ../lib/pism_config.nc
@@ -196,9 +196,6 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 
 ../bin/tryLCbd : tryLCbd.o deformation.o greens.o materials.o pism_const.o ${LIBPISMNAME}
 	${CXXLINKER} tryLCbd.o deformation.o greens.o materials.o pism_const.o ${ICE_LIB_FLAGS} -o $@
-
-../bin/gridL : gridL.o ${LIBTESTSNAME}
-	${CLINKER} $< ${TESTS_LIB_FLAGS} -o $@
 
 # pattern rule for building all the simple* executables.
 ../bin/simple% : simple%.o $(LIBTESTSNAME)
