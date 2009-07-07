@@ -16,7 +16,7 @@ Readers other than PISM programmers should ignore the final column, which gives 
   <tr><td> standard_name </td> <td> canonical units (SI) </td> <td> PISM short name (NetCDF variable name) </td> <td> PISM internal IceModelVec name </td></tr>
   <tr><td>bedrock_altitude</td> <td>m</td> <td>topg</td> <td>vbed</td></tr>
   <tr><td>land_ice_area_fraction</td><td>1</td><td></td><td></td></tr>
-  <tr><td>land_ice_basal_melt_rate</td><td>m s-1</td><td>basal_melt_rate</td><td>vbasalMeltRate</td></tr>
+  <tr><td>land_ice_basal_melt_rate</td><td>m s-1</td><td>bmelt</td><td>vbasalMeltRate</td></tr>
   <tr><td>land_ice_basal_x_velocity</td><td>m s-1</td><td>ub</td><td>vub</td></tr>
   <tr><td>land_ice_basal_y_velocity</td><td>m s-1</td><td>vb</td><td>vvb</td></tr>
   <tr><td>land_ice_calving_rate</td><td>m s-1</td><td></td><td></td></tr>
@@ -49,14 +49,13 @@ These are merely proposed by Bueler, for now.
   <tr><td>ice_shelf_basal_specific_mass_balance</td><td>m s-1</td><td>shelfbmassflux</td><td>POC.vshelfbmassflux</td><td>positive is loss of ice shelf mass (%i.e. use outward normal from ice shelf)</td></tr>
   <tr><td>ice_shelf_basal_temperature</td><td>K</td><td>shelfbtemp</td><td>POC.vshelfbasetemp</td><td>absolute (not pressure-adjusted) temperature</td></tr>
   <tr><td>land_ice_age</td><td>s</td><td>age</td><td>tau3</td><td>thought about units required!</td></tr>
-  <tr><td>land_ice_basal_frictional_heating</td><td>W m-2</td><td>Rb</td><td>vRb</td><td></td></tr>
+  <tr><td>land_ice_basal_frictional_heating</td><td>W m-2</td><td>bfrict</td><td>vRb</td><td></td></tr>
   <tr><td>land_ice_basal_material_yield_stress</td><td>Pa</td><td>tauc</td><td>vtauc</td><td></td></tr>
   <tr><td>land_ice_basal_material_friction_angle</td><td>degree</td><td>tillphi</td><td>vtillphi</td><td>majority of standard names with "angle" use canonical units "degree"</td></tr>
   <tr><td>land_ice_surface_temperature_below_firn</td><td>K</td><td>artm</td><td>PAC.vsurftemp</td><td></td></tr>
   <tr><td>land_ice_upward_velocity</td><td>m s-1</td><td>wvel</td><td>w3</td><td>compare CF 1.4 names "upward_air_velocity" and "upward_sea_water_velocity"</td></tr>
   <tr><td>lithosphere_temperature</td><td>K</td><td>litho_temp</td><td>Tb3</td><td>here top of lithosphere is at "bedrock_altitude"; is that standard?</td></tr>
-  <tr><td>lithosphere_upward_heat_flux</td><td>W m-2</td><td>bheatflx</td><td>vGhf</td><td>applied at depth in lithosphere, in 
-    most ice sheet models </td></tr>
+  <tr><td>lithosphere_upward_heat_flux</td><td>W m-2</td><td>bheatflx</td><td>vGhf</td><td>typically applied at depth in lithosphere</td></tr>
   </table>
 
 \section orphans Orphans
@@ -65,9 +64,11 @@ Used in PISM but no proposed standard name for now.  This is an incomplete list.
 
 <table style="width: 100%;" border="1">
   <tr><td> PISM long_name </td><td> canonical units (SI) </td><td> PISM short name in NetCDF </td><td> PISM internal IceModelVec name </td><td> comments</td></tr>  
-  <tr><td>rate of strain heating</td><td>W m-3</td><td>Sigma</td><td>Sigma3</td><td></td></tr>
-  <tr><td>grounded_dragging_floating integer mask</td><td></td><td>mask</td><td>vMask</td><td></td></tr>
+  <tr><td>rate of strain heating</td><td>W m-3</td><td>strainheat</td><td>Sigma3</td><td></td></tr>
+  <tr><td>grounded_dragging_floating integer mask</td><td></td><td>mask</td><td>vMask</td><td>assumes integer values (currently: 1,2,3,7)</td></tr>
   <tr><td>effective thickness of subglacial melt water</td><td>m</td><td>bwat</td><td>vHmelt</td><td></td></tr>
+  <tr><td>ice enthalpy (sensible plus latent heat, plus potential energy of pressure)</td><td>J kg-1</td><td>enthalpy</td><td>Enth3</td><td></td></tr>
+  <tr><td>liquid water fraction in ice (between 0 and 1)</td><td></td><td>liqfrac</td><td></td><td>diagnostic output; not stored during run</td></tr>
 </table>
 
 \section finaltech Final technical notes

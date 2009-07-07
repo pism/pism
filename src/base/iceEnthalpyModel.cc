@@ -189,7 +189,7 @@ PetscErrorCode IceEnthalpyModel::createVecs() {
   // POSSIBLE standard name = land_ice_enthalpy
   ierr = Enth3.set_attrs(
      "model_state",
-     "ice enthalpy (sensible heat plus latent heat of liquid fraction)",
+     "ice enthalpy (sensible plus latent heat, plus potential energy of pressure)",
      "J kg-1",
      ""); CHKERRQ(ierr);
 
@@ -366,6 +366,33 @@ PetscErrorCode IceEnthalpyModel::write_extra_fields(const char filename[]) {
      "J kg-1",
      ""); CHKERRQ(ierr);
 
+  // also write bfrict = friction heating, in units mW m-2 like geothermal heat
+  ierr = verbPrintf(4, grid.com,
+      "  writing basal frictional heating 'bfrict' ...\n"); CHKERRQ(ierr);
+  ierr = vRb.write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  // also write bmelt = ice basal melt rate in m a-1
+  ierr = verbPrintf(4, grid.com,
+      "  writing ice basal melt rate 'bmelt' ...\n"); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+/*
+EXAMPLE:  writes volume to a *separate file* (called "penth-finalivol.nc")
+
+  PetscScalar myvolume, a1, a2, a3, a4;  // aN is dummy
+  ierr = volumeArea(myvolume, a1,a2,a3,a4); CHKERRQ(ierr);
+  myvolume = myvolume * 1.0e9;  // convert to m3; of course volumeArea() should return in SI!
+  DiagnosticTimeseries* volume = new DiagnosticTimeseries(&grid, "ivol", "t_vol");
+  volume->set_units("m3", "km3");
+  volume->set_dimension_units("years", "");
+  volume->buffer_size = 10;
+  volume->set_output_prefix("penth-final");
+  volume->append(grid.year,myvolume);  // = 10^9 m^3 = 1 km^3
+  volume->write("volume.nc");
+  delete volume;
+
+*/
+
   return 0;
 }
 
@@ -425,8 +452,7 @@ PetscErrorCode IceEnthalpyModel::regrid() {
            filename); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com, 
-         "IceEnthalpyModel regridding enthalpy ('y') from NetCDF file '%s'\n", 
-         filename); CHKERRQ(ierr);
+         "  y: regridding enthalpy [IceEnthalpyModel] ...\n"); CHKERRQ(ierr);
       ierr = Enth3.regrid(filename, lic, true); CHKERRQ(ierr);
     }
   }
@@ -516,7 +542,7 @@ PetscErrorCode IceEnthalpyModel::setTnew3FromEnth3() {
 PetscErrorCode IceEnthalpyModel::setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac) {
   PetscErrorCode ierr;
 
-  ierr = useForLiquidFrac.set_name("liquid_frac"); CHKERRQ(ierr);
+  ierr = useForLiquidFrac.set_name("liqfrac"); CHKERRQ(ierr);
   ierr = useForLiquidFrac.set_attrs(
      "diagnostic",
      "liquid water fraction in ice (between 0 and 1)",
@@ -557,7 +583,7 @@ PetscErrorCode IceEnthalpyModel::setPATempFromEnthalpy(IceModelVec3 &useForPATem
   ierr = useForPATemp.set_name("temp_pa"); CHKERRQ(ierr);
   ierr = useForPATemp.set_attrs(
      "diagnostic",
-     "pressure-adjusted ice temperature",
+     "pressure-adjusted ice temperature (degrees above pressure-melting point)",
      "deg_C",
      ""); CHKERRQ(ierr);
 
@@ -1280,9 +1306,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
         }
       }
 
-      // insert generic bedrock segments solution, which refers to z=0 segment
+      // insert generic bedrock segments solution
       for (PetscInt k=k0-1; k >= 0; k--) {
-        Tbnew[k] = EC.getAbsTempBedrock(x[k]);  // use same pt in E-T space as before
+        Tbnew[k] = EC.getAbsTempBedrock(x[k]);
       }
 
       // transfer column into Tb3; neighboring columns will not reference so no need for communication

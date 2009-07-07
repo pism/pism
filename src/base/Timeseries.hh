@@ -71,7 +71,7 @@ protected:
 
   \code
   offsets = new DiagnosticTimeseries(g, "delta_T", "t");
-  offsets->set_units("Celsius", "Kelvin");
+  offsets->set_units("Kelvin", "Celsius");
   offsets->set_dimension_units("years", "");
   offsets->buffer_size = 100; // only store 100 entries; default is 10000
   offsets->set_output_prefix("pism-");

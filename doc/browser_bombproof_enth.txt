@@ -532,7 +532,7 @@ of a virtual value \f$E_{-1}^{n+1}\f$ [\ref MortonMayers].
 \section icebedrock A finite difference scheme at the ice-bedrock transition
 
 The ice/bedrock interface requires careful, special analysis, because many physical
-processes are reflected in the conservation of energy equaiton.  For this special
+processes are reflected in the conservation of energy equation.  For this special
 location we must make a somewhat elaborate argument, a finite volume argument, in
 order to derive the one algebraic equation, per column, which goes in the system
 of equations for that column (see enthSystemCtx).  In particular, because 
@@ -750,7 +750,7 @@ If \f$E_{0+}^n > E_s(p)\f$ then we assume that \f$E_{0+}^{n+1} > E_s(p)\f$ will 
 well, and therefore we compute the two terms which come from temperature continuity differently:
 \anchor icebedfinaltemperate
 \f{align*}
-- 2 R_b E_{-1}^{n+1} &+ \left[\hat\rho \left(1 + 2 R_i - \nu w_0^n \uppair{0}{1}\right) \right] E_{0^+}^{n+1}
+- 2 R_b E_{-1}^{n+1} &+ \hat\rho \left(1 + 2 R_i - \nu w_0^n \uppair{0}{1}\right) E_{0^+}^{n+1}
       + \hat\rho \left(-2 R_i + \nu w_0^n \uppair{0}{1}\right) E_{+1}^{n+1} \tag{icebedfinaltemperate}\\
    &= \hat\rho E_{0^+}^n - 2 R_b \frac{c_b}{c_i} E_s(p)
       - \Delta t \hat\rho I^n 
@@ -847,6 +847,17 @@ The result is a revised equation
   \f[ -R_b E_{-2}^{n+1} + \left(1 + 2 R_b\right) E_{-1}^{n+1} - R_b \frac{c_b}{c_i} E_{0^+}^{n+1}
          = E_{-1}^n. \tag{neartopofbedrock} \f]
 This equation is used in the tridiagonal system managed by enthSystemCtx::solveThisColumn().
+
+
+\section morebedrock Other concerns, continued: effect of temperate ice and frictional heating on bedrock temps
+
+Recall that the frictional heating rate, from sliding, contributes to the
+conservation of energy equation in the ice/bedrock transition segment.  (See equation
+(\ref interface1) and the definition of \f$\bar F\f$ following it.)  Though we believe
+that the scheme, as described above, is reasonable, its discrete time implementation can
+generate unreasonable temperature profiles in the bedrock.  In particular, continuity
+of temperature at the ice/bedrock interface is enforced at the end of the step:
+  \f[T_b(E_{0^-}^{n+1},p) = T_i(E_{0^+}^{n+1},p).\f]
 
 
 

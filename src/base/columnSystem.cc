@@ -132,30 +132,43 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
     return 0;
   }
 
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "\n<viewing ColumnSystem tridiagonal matrix, '%s':\n",info); CHKERRQ(ierr);
-  for (PetscInt k=0; k<nmax; k++) {    // k+1 is row  (while j+1 is column)
-    if (k == 0) {              // viewing first row
-      ierr = PetscViewerASCIIPrintf(viewer,"%8.5f %8.5f ",D[k],U[k]); CHKERRQ(ierr);
-      for (PetscInt j=2; j<nmax; j++) {
-        ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
+  if (nmax > 12) {
+    ierr = PetscViewerASCIIPrintf(viewer,
+      "\n\n<nmax > 12: matrix too big to display as full; viewing tridiagonal matrix '%s' by diagonals ...\n",info); CHKERRQ(ierr);
+    char diag_info[PETSC_MAX_PATH_LEN];
+    sprintf(diag_info, "super-diagonal U for system '%s'", info);
+    ierr = viewColumnValues(viewer,U,nmax,diag_info); CHKERRQ(ierr);
+    sprintf(diag_info, "main diagonal D for system '%s'", info);
+    ierr = viewColumnValues(viewer,D,nmax,diag_info); CHKERRQ(ierr);
+    sprintf(diag_info, "sub-diagonal L for system '%s'", info);
+    ierr = viewColumnValues(viewer,Lp,nmax-1,diag_info); CHKERRQ(ierr);
+  } else {
+    ierr = PetscViewerASCIIPrintf(viewer,
+        "\n<viewing ColumnSystem tridiagonal matrix, '%s':\n",info); CHKERRQ(ierr);
+    for (PetscInt k=0; k<nmax; k++) {    // k+1 is row  (while j+1 is column)
+      if (k == 0) {              // viewing first row
+        ierr = PetscViewerASCIIPrintf(viewer,"%8.5f %8.5f ",D[k],U[k]); CHKERRQ(ierr);
+        for (PetscInt j=2; j<nmax; j++) {
+          ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
+        }
+      } else if (k < nmax-1) {   // viewing generic row
+        for (PetscInt j=0; j<k-1; j++) {
+          ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
+        }
+        ierr = PetscViewerASCIIPrintf(viewer,"%8.5f %8.5f %8.5f ",L[k],D[k],U[k]); CHKERRQ(ierr);
+        for (PetscInt j=k+2; j<nmax; j++) {
+          ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
+        }
+      } else {                   // viewing last row
+        for (PetscInt j=0; j<k-1; j++) {
+          ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
+        }
+        ierr = PetscViewerASCIIPrintf(viewer,"%8.5f %8.5f ",L[k],D[k]); CHKERRQ(ierr);
       }
-    } else if (k < nmax-1) {   // viewing generic row
-      for (PetscInt j=0; j<k-1; j++) {
-        ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
-      }
-      ierr = PetscViewerASCIIPrintf(viewer,"%8.5f %8.5f %8.5f ",L[k],D[k],U[k]); CHKERRQ(ierr);
-      for (PetscInt j=k+2; j<nmax; j++) {
-        ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
-      }
-    } else {                   // viewing last row
-      for (PetscInt j=0; j<k-1; j++) {
-        ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
-      }
-      ierr = PetscViewerASCIIPrintf(viewer,"%8.5f %8.5f ",L[k],D[k]); CHKERRQ(ierr);
+      ierr = PetscViewerASCIIPrintf(viewer,"\n"); CHKERRQ(ierr);  // end of row
     }
-    ierr = PetscViewerASCIIPrintf(viewer,"\n"); CHKERRQ(ierr);  // end of row
   }
+  
   ierr = PetscViewerASCIIPrintf(viewer,
       "end viewing tridiagonal matrix>\n"); CHKERRQ(ierr);
   return 0;

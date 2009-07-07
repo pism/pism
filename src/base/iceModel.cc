@@ -153,8 +153,9 @@ PetscErrorCode IceModel::createVecs() {
   ierr =     w3.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   w3.write_in_glaciological_units = true;
 
-  ierr = Sigma3.create(grid, "Sigma", false); CHKERRQ(ierr); // never diff'ed in hor dirs
-  ierr = Sigma3.set_attrs("internal","rate of strain heating",
+  ierr = Sigma3.create(grid, "strainheat", false); CHKERRQ(ierr); // never diff'ed in hor dirs
+  ierr = Sigma3.set_attrs("internal",
+                          "rate of strain heating in ice (dissipation heating)",
 	        	  "W m-3", ""); CHKERRQ(ierr);
 
   // ice temperature
@@ -238,9 +239,10 @@ PetscErrorCode IceModel::createVecs() {
   vvb.write_in_glaciological_units = true;
 
   // basal frictional heating on regular grid
-  ierr = vRb.create(grid, "Rb", true); CHKERRQ(ierr);
+  ierr = vRb.create(grid, "bfrict", true); CHKERRQ(ierr);
   // PROPOSED standard_name = land_ice_basal_frictional_heating
-  ierr = vRb.set_attrs("diagnostic", "basal frictional heating",
+  ierr = vRb.set_attrs("diagnostic",
+                       "basal frictional heating from ice sliding (= till dissipation)",
 		       "W m-2", ""); CHKERRQ(ierr);
   ierr = vRb.set_glaciological_units("mW m-2");
   vRb.write_in_glaciological_units = true;
@@ -275,8 +277,9 @@ PetscErrorCode IceModel::createVecs() {
   vuplift.write_in_glaciological_units = true;
 
   // basal melt rate
-  ierr = vbasalMeltRate.create(grid, "basal_melt_rate", true); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.set_attrs("diagnostic", "basal melt rate",
+  ierr = vbasalMeltRate.create(grid, "bmelt", true); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.set_attrs("diagnostic",
+                                  "ice basal melt rate in ice thickness per time",
 				  "m s-1", "land_ice_basal_melt_rate"); CHKERRQ(ierr);
   ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);  // so vertical velocities do not use junk from 
                                                   //   uninitialized basal melt rate.
