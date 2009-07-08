@@ -11,7 +11,7 @@ set -e  # exit on error
 echo "-----  Download the ASCII files from the EISMINT web site:"
 for fname in "111by147Grid.dat" "kbc.dat" "inlets.dat"
 do
-  wget http://homepages.vub.ac.be/~phuybrec/eismint/$fname
+  wget -nc http://homepages.vub.ac.be/~phuybrec/eismint/$fname
 done
 
 echo "-----  Run eis_ross.py to turn ascii data into NetCDF file ross.nc:"

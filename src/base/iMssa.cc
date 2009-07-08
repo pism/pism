@@ -285,7 +285,8 @@ PetscErrorCode IceModel::assembleSSAMatrix(
                     const bool includeBasalShear, IceModelVec2 vNuH[2], Mat A) {
   const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
   const PetscScalar   dx=grid.dx, dy=grid.dy;
-  const PetscScalar   one = 1.0;
+  // next constant not too sensitive, but must match value in assembleSSARhs():
+  const PetscScalar   scaling = 1.0e9;  // comparable to typical beta for an ice stream
   PetscErrorCode  ierr;
   PetscScalar     **mask, **nuH[2], **u, **v, **tauc;
 
@@ -309,8 +310,8 @@ PetscErrorCode IceModel::assembleSSAMatrix(
       if (PismIntMask(mask[i][j]) == MASK_SHEET) {
         // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
         //   this is where boundary value to SSA is set
-        ierr = MatSetValues(A, 1, &rowU, 1, &rowU, &one, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = MatSetValues(A, 1, &rowV, 1, &rowV, &one, INSERT_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValues(A, 1, &rowU, 1, &rowU, &scaling, INSERT_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValues(A, 1, &rowV, 1, &rowV, &scaling, INSERT_VALUES); CHKERRQ(ierr);
       } else {
         const PetscInt im = (i + Mx - 1) % Mx, ip = (i + 1) % Mx;
         const PetscInt Jm = 2 * ((j + My - 1) % My), Jp = 2 * ((j + 1) % My);
@@ -426,6 +427,8 @@ certain to make sense on a period grid.  This applies to Test I and Test J, in p
 PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
   const PetscScalar   dx=grid.dx, dy=grid.dy;
+  // next constant not too sensitive, but must match value in assembleSSAMatrix():
+  const PetscScalar   scaling = 1.0e9;  // comparable to typical beta for an ice stream;
   PetscErrorCode  ierr;
   PetscScalar     **mask, **h, **H, **uvbar[2], **taudx, **taudy;
 
@@ -450,9 +453,9 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
       const PetscInt rowU = i*M + J;
       const PetscInt rowV = i*M + J+1;
       if (PismIntMask(mask[i][j]) == MASK_SHEET) {
-        ierr = VecSetValue(rhs, rowU, 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]),
+        ierr = VecSetValue(rhs, rowU, scaling * 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]),
                            INSERT_VALUES); CHKERRQ(ierr);
-        ierr = VecSetValue(rhs, rowV, 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]),
+        ierr = VecSetValue(rhs, rowV, scaling * 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]),
                            INSERT_VALUES); CHKERRQ(ierr);
       } else {
         bool edge = ((i == 0) || (i == Mx-1) || (j == 0) || (j == My-1));

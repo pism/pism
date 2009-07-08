@@ -441,24 +441,26 @@ PetscErrorCode IceModel::writeSSAsystemMatlab(IceModelVec2 vNu[2]) {
   // save coordinates (for viewing, primarily)
   ierr = PetscViewerASCIIPrintf(viewer,"year=%10.6f;\n",grid.year);  CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-            "x=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",grid.Lx,grid.dx,grid.Lx);
-  CHKERRQ(ierr);
+            "x=%12.3f + (0:%d)*%12.3f;\n",-grid.Lx,grid.Mx-1,grid.dx);
+            CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-            "y=(-%12.3f:%12.3f:%12.3f)/1000.0;\n",grid.Ly,grid.dy,grid.Ly);
-  CHKERRQ(ierr);
+            "y=%12.3f + (0:%d)*%12.3f;\n",-grid.Ly,grid.My-1,grid.dy);
+            CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n\n");  CHKERRQ(ierr);
 
   // also save thickness and effective viscosity
-  ierr = write2DToMatlab(viewer, 'H', vH, 1.0); CHKERRQ(ierr);
-  ierr = write2DToMatlab(viewer, 'h', vh, 1.0); CHKERRQ(ierr);
+  ierr = vH.copy_to_global(g2); CHKERRQ(ierr);
+  ierr = VecView_g2ToMatlab(viewer, "H", 
+            "ice thickness"); CHKERRQ(ierr);
+  ierr = vh.copy_to_global(g2); CHKERRQ(ierr);
+  ierr = VecView_g2ToMatlab(viewer, "h", 
+            "ice surface elevation"); CHKERRQ(ierr);
   ierr = vNu[0].copy_to_global(g2); CHKERRQ(ierr);
   ierr = VecView_g2ToMatlab(viewer, "nu_0", 
-            "effective viscosity times thickness (i offset)");
-  CHKERRQ(ierr);
+            "effective viscosity times thickness (i offset)"); CHKERRQ(ierr);
   ierr = vNu[1].copy_to_global(g2); CHKERRQ(ierr);
   ierr = VecView_g2ToMatlab(viewer, "nu_1", 
-            "effective viscosity times thickness (j offset)");
-  CHKERRQ(ierr);
+            "effective viscosity times thickness (j offset)"); CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
   ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
