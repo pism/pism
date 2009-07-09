@@ -34,7 +34,7 @@ PolyThermalGPBLDIce::PolyThermalGPBLDIce(MPI_Comm c,const char pre[]) : ThermoGl
 
 PetscErrorCode PolyThermalGPBLDIce::setFromConfig(NCConfigVariable *config) {
   if (config == NULL) {
-    PetscPrintf(PETSC_COMM_WORLD,
+    PetscPrintf(PETSC_COMM_SELF,
       "\n\n\n  PolyThermalGPBLDIce ERROR in setFromConfig():\n"
        "    config == NULL ... \n\n");
     PetscEnd();
@@ -100,7 +100,7 @@ The pressure-melting temperature \f$T_{pa}(E,p)\f$ is computed by getPATemp().
 PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(
                 PetscScalar enthalpy, PetscScalar pressure) const {
   if (EC == NULL) {
-    PetscPrintf(PETSC_COMM_WORLD,"EC is NULL in PolyThermalGPBLDIce::flowFromEnth()... ending\n");
+    PetscPrintf(PETSC_COMM_SELF,"EC is NULL in PolyThermalGPBLDIce::flowFromEnth()... ending\n");
     PetscEnd();
   }
   PetscScalar E_s, E_l;
@@ -112,7 +112,7 @@ PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(
     // next line implements eqn (23) in \ref AschwandenBlatter2009
     return softnessParameter(T_0) * (1.0 + water_frac_coeff * omega);  // uses ThermoGlenIce formula
   } else { // liquid water not allowed
-    PetscPrintf(PETSC_COMM_WORLD,
+    PetscPrintf(PETSC_COMM_SELF,
       "\n\n\n  PISM ERROR in PolyThermalGlenPBLDIce::flow(): liquid water not allowed; ending ... \n\n");
     PetscEnd();
     return 0.0;
@@ -139,7 +139,7 @@ PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
                 PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
                 const PetscScalar *enthalpy1, const PetscScalar *enthalpy2) const {
   if (EC == NULL) {
-    PetscPrintf(PETSC_COMM_WORLD,
+    PetscPrintf(PETSC_COMM_SELF,
        "EC is NULL in PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth()... ending\n");
     PetscEnd();
   }
@@ -244,10 +244,9 @@ PetscErrorCode IceEnthalpyModel::initFromFile(const char *fname) {
     if ((g.z_len != 0) && (g.zb_len != 0)) {
       ierr = nc.get_vertical_dims(zlevs, zblevs); CHKERRQ(ierr);
     } else {
-      ierr = verbPrintf(1, grid.com,
+      SETERRQ1(1,
          "PISM ERROR: -i file does not look right; at least one of 'z' and 'zb' is absent in '%s'.\n",
-         fname); CHKERRQ(ierr);
-      PetscEnd();
+         fname);
     }
     ierr = nc.close(); CHKERRQ(ierr);
     LocalInterpCtx lic(g, zlevs, zblevs, grid);
@@ -1037,10 +1036,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   PetscErrorCode  ierr;
 
   if (doColdIceMethods==PETSC_TRUE) {
-    ierr = PetscPrintf(grid.com,
-      "\n\n    IceEnthalpyModel::enthalpyAndDrainageStep() called but doColdIceMethods==true ... ending\n");
-      CHKERRQ(ierr);
-    PetscEnd();
+    SETERRQ(1,"\n\n    IceEnthalpyModel::enthalpyAndDrainageStep() called but doColdIceMethods==true ... ending\n");
   }
 
   // set up fine grid in ice and bedrock
@@ -1120,7 +1116,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
               grid.year, dtTempAge / secpera, &info_coupler, pccTs);
               CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+    SETERRQ(3,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
   if (oceanPCC != PETSC_NULL) {
     ierr = oceanPCC->updateShelfBaseTempAndProvide(
@@ -1130,7 +1126,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
               grid.year, dt / secpera, &info_coupler, pccsbmf);
               CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");
+    SETERRQ(4,"PISM ERROR: oceanPCC == PETSC_NULL");
   }
   PetscScalar  **Ts, **Tshelfbase, **bmr_float;
   ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);

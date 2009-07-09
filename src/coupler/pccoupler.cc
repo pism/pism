@@ -175,7 +175,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
 	    "m s-1",  // m *ice-equivalent* per second
 	    "land_ice_surface_specific_mass_balance");  // CF standard_name
 	    CHKERRQ(ierr);
-  ierr = vsurfmassflux.set_glaciological_units("m year-1");
+  ierr = vsurfmassflux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vsurfmassflux.write_in_glaciological_units = true;
   ierr = vsurfmassflux.set(0.0); CHKERRQ(ierr);  // merely a default value
 

@@ -39,5 +39,8 @@ ex5_petsc3: ex5_petsc3.o chkopts
 	-${CLINKER} -o ex5_petsc3 ex5_petsc3.o ${PETSC_SNES_LIB}
 	${RM} ex5_petsc3.o
 
+ex2_printsome: ex2_printsome.o   chkopts
+	-${CLINKER} -o ex2_printsome ex2_printsome.o  ${PETSC_SYS_LIB}
+	${RM} -f ex2_printsome.o
 
 

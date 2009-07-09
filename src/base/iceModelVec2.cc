@@ -37,7 +37,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
   }
 
   if (v != PETSC_NULL) {
-    SETERRQ1(1,"IceModelVec2 with name='%s' already allocated\n",my_name);
+    SETERRQ1(2,"IceModelVec2 with name='%s' already allocated\n",my_name);
   }
   PetscErrorCode ierr = create(my_grid, my_name, local, DA_STENCIL_BOX); CHKERRQ(ierr);
   return 0;

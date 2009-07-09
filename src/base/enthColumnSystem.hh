@@ -80,6 +80,49 @@ protected: // used internally
               basalBCsValid;
 };
 
+
+#if 0
+//! Tridiagonal linear system for bedrock conduction-only problem with Dirichlet boundary condition.
+/*!
+This class is currently only proposed for use when redoing the temperature calculation in the bed,
+after the enthSystemCtx has already done its solve, and only when the z=0 level is a the pressure-
+melting temperature.
+ */
+class bedrockOnlySystemCtx : public columnSystemCtx {
+
+public:
+  bedrockOnlySystemCtx(int my_Mbz);
+  PetscErrorCode initAllColumns();
+  PetscErrorCode setIndicesThisColumn(PetscInt i, PetscInt j);  
+  PetscErrorCode setTopBoundaryValueThisColumn(PetscScalar my_Ttop);
+  PetscErrorCode setBasalBoundaryValuesThisColumn(PetscScalar my_Ghf);
+  PetscErrorCode solveThisColumn(PetscScalar **x);
+  
+  PetscErrorCode view(MPI_Comm &com);
+
+public:
+  // constants which should be set before calling initForAllColumns()
+  PetscScalar  dtTemp,
+               dzbEQ,
+               bed_thermal_rho,
+               bed_thermal_c,
+               bed_thermal_k;
+  // pointers which should be set before calling initForAllColumns()
+  PetscScalar  *T_b; // temperature in bedrock
+
+protected: // used internally
+  PetscInt    Mbz, k0;
+  PetscInt    i, j;
+  PetscScalar Ttop, Ghf;
+  PetscScalar brK,
+              brR;
+  bool        initAllDone,
+              indicesValid,
+              schemeParamsValid,
+              surfBCValid,
+              basalBCValid;
+};
 #endif
 
+#endif
 

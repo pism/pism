@@ -29,7 +29,7 @@ NOW THE NORMALIZATION IS DIFFERENT
 
 EnthalpyConverter::EnthalpyConverter(NCConfigVariable *config) {
   if (config == NULL) {
-    PetscPrintf(PETSC_COMM_WORLD,
+    PetscPrintf(PETSC_COMM_SELF,
       "\n\n\n  EnthalpyConverter ERROR in constructor:\n"
        "    config == NULL ... \n\n");
     PetscEnd();
@@ -148,7 +148,7 @@ double EnthalpyConverter::getAbsTemp(double E, double p) const {
   } else if (E < E_l) { // two cases in (12)
     return getMeltingTemp(p);
   } else {
-    PetscPrintf(PETSC_COMM_WORLD,
+    PetscPrintf(PETSC_COMM_SELF,
       "\n\n\n  EnthalpyConverter ERROR in getAbsTemp():\n"
             "    enthalpy E=%f J kg-1 equals or exceeds that of liquid water (E_l=%f); ending ... \n\n",
       E,E_l);
@@ -186,7 +186,7 @@ double EnthalpyConverter::getWaterFraction(double E, double p) const {
   } else if (E < E_l) {
     return (E - E_s) / L;
   } else {
-    PetscPrintf(PETSC_COMM_WORLD,
+    PetscPrintf(PETSC_COMM_SELF,
       "\n\n\n  EnthalpyConverter ERROR in getWaterFraction():\n"
             "    enthalpy equals or exceeds that of liquid water; ending ... \n\n");
     PetscEnd();
@@ -214,20 +214,20 @@ Because of these not-allowed cases, the following expression is also valid:
  */
 double EnthalpyConverter::getEnth(double T, double omega, double p) const {
   if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
-    PetscPrintf(PETSC_COMM_WORLD,
+    PetscPrintf(PETSC_COMM_SELF,
       "\n\n\n  EnthalpyConverter ERROR in getEnth(): water fraction omega=%f not in range [0,1]; ending ... \n\n",
       omega);
     PetscEnd();
   }
   const double T_m = getMeltingTemp(p);
   if (T > T_m + 1.0e-6) {
-    PetscPrintf(PETSC_COMM_WORLD,
+    PetscPrintf(PETSC_COMM_SELF,
       "\n\n\n  EnthalpyConverter ERROR in getEnth(): T=%f exceeds T_m=%f so we have liquid water; ending ... \n\n",
       T,T_m);
     PetscEnd();
   }
   if ((T < T_m - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
-    PetscPrintf(PETSC_COMM_WORLD,
+    PetscPrintf(PETSC_COMM_SELF,
       "\n\n\n  EnthalpyConverter ERROR in getEnth(): T < T_m AND omega > 0 is contradictory;\n"
             "     here T=%f, T_m=%f, omega=%f; ending ... \n\n", T, T_m, omega);
     PetscEnd();
