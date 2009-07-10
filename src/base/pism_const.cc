@@ -21,26 +21,6 @@
 #include "nc_util.hh"
 #include "pism_const.hh"
 
-// Verbosity level version of PetscPrintf.  We print according to whether 
-// (thresh <= verbosityLevel), in which case print, or 
-// (thresh > verbosityLevel) in which case no print.
-//
-//   level  option        meaning
-//   -----  ------        -------
-//   0      -verbose 0    never print to std out AT ALL!
-//
-//   1      -verbose 1    less verbose than default: thresh must be 1 to print
-//
-//   2     [-verbose 2]   default
-//
-//   3      -verbose      somewhat verbose
-//         [-verbose 3]   
-//   4      -vverbose     fairly verbose
-//         [-verbose 4]
-//   5      -vvverbose    very verbose: if level this high then (thresh <= level) 
-//         [-verbose 5]       always, so print everything
-//
-// note: 1 <= thresh <= 5  enforced in verbPrintf() below
 
 static PetscInt verbosityLevel;
 
@@ -57,6 +37,26 @@ PetscInt getVerbosityLevel() {
 }
 
 
+//! Determine verbosity level from user options, like "-verbose 5".
+/*!
+\verbatim
+   level  option        meaning
+   -----  ------        -------
+   0      -verbose 0    never print to std out AT ALL!
+   1      -verbose 1    less verbose than default: thresh must be 1 to print
+   2     [-verbose 2]   default
+   3      -verbose      somewhat verbose
+         [-verbose 3]   
+   4      -vverbose     fairly verbose
+         [-verbose 4]
+   5      -vvverbose    very verbose: if level this high then (thresh <= level) 
+         [-verbose 5]       always, so print everything
+\endverbatim
+
+Sets the verbosity level to 2 if no user options are given.
+
+See verbPrintf().
+ */
 PetscErrorCode verbosityLevelFromOptions() {
   // verbosity options: more info to standard out
   PetscErrorCode ierr;
@@ -80,6 +80,22 @@ PetscErrorCode verbosityLevelFromOptions() {
 }
 
 
+//! Print messages to standard out according to verbosity threshhold.
+/*!
+Verbosity level version of PetscPrintf.  We print according to whether 
+(thresh <= verbosityLevel), in which case print, or (thresh > verbosityLevel)
+in which case no print.
+
+verbosityLevelFromOptions() actually reads the threshold.
+
+The range 1 <= thresh <= 5  is enforced.
+
+Use this method for messages and warnings which should
+- go to stdout and
+- appear only once (regardless of number of processors).
+
+Should not be used for reporting fatal errors.
+ */
 PetscErrorCode verbPrintf(const int thresh, 
                           MPI_Comm comm,const char format[],...)
 {
@@ -133,6 +149,31 @@ PetscErrorCode verbPrintf(const int thresh,
     if (sub1) {ierr = PetscFree(buffer);CHKERRQ(ierr);}
   }
   PetscFunctionReturn(0);
+}
+
+
+//! Prints rank (in process group PETSC_COMM_WORLD) to stderr.  Then attempts to end all processes.
+/*!
+Avoid using this if possible.  SETERRQ() should be used for all procedures that
+return PetscErrorCode.  Generally needed for errors in constructors.
+
+Printing the rank seems to be redundant because it will appear in brackets at start
+of each call to PetscErrorPrintf().  But emphasis is useful, perhaps ...
+
+Calls "MPI_Abort(PETSC_COMM_WORLD,3155)" to attempt to end all processes.
+If this works main() will return value 3155.  The problem with PetscEnd() for
+this purpose is that it is collective (presumably over PETSC_COMM_WORLD).
+ */
+void endPrintRank() {
+  PetscMPIInt rank;
+  if (!MPI_Comm_rank(PETSC_COMM_WORLD, &rank)) {
+    PetscErrorPrintf("\n\n    rank %d process called endPrintRank()\n"
+                         "    ending ...  \n\n",rank);
+  } else {
+    PetscErrorPrintf("\n\n    process with undeterminable rank called endPrintRank()\n"
+                         "    ending ...  \n\n");
+  }
+  MPI_Abort(PETSC_COMM_WORLD,3155);
 }
 
 //! Comparison function from the glibc manual

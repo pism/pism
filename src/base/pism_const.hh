@@ -69,13 +69,15 @@ PetscErrorCode setVerbosityLevel(PetscInt level);
 PetscInt getVerbosityLevel();
 PetscErrorCode verbosityLevelFromOptions();
 
+PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
+
+void endPrintRank();
+
 // handy functions for processing options:
 PetscErrorCode check_option(const char name[], PetscTruth &flag);
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]);
 PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], const char new_name[]);
 PetscErrorCode stop_if_set(MPI_Comm com, const char name[]);
-
-PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
 int compare_doubles (const void *a, const void *b);	// for sorting
 
 #endif

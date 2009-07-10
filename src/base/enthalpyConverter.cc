@@ -16,23 +16,16 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <petsc.h>  // for PetscPrintf, PetscEnd
+#include <petsc.h>  // for PetscErrorPrintf, etc.
+#include "pism_const.hh"
 #include "enthalpyConverter.hh"
-
-/*
-*PREVIOUSLY* (r719 and earlier): From draft of \ref AschwandenBlatter2009,
-     \f[ H_s(p) = -L + H_l(p), \f]
-     \f[ H_l(p) = c_w T_m(p). \f]
-NOW THE NORMALIZATION IS DIFFERENT
-*/
 
 
 EnthalpyConverter::EnthalpyConverter(NCConfigVariable *config) {
   if (config == NULL) {
-    PetscPrintf(PETSC_COMM_SELF,
-      "\n\n\n  EnthalpyConverter ERROR in constructor:\n"
-       "    config == NULL ... \n\n");
-    PetscEnd();
+    PetscErrorPrintf("\n\n\n  EnthalpyConverter ERROR in constructor:\n"
+                     "    config == NULL ... \n\n");
+    endPrintRank();
   }
   beta  = config->get("beta_CC");                                 // K Pa-1
   c_b   = config->get("bedrock_thermal_specific_heat_capacity");  // J kg-1 K-1
@@ -148,11 +141,11 @@ double EnthalpyConverter::getAbsTemp(double E, double p) const {
   } else if (E < E_l) { // two cases in (12)
     return getMeltingTemp(p);
   } else {
-    PetscPrintf(PETSC_COMM_SELF,
-      "\n\n\n  EnthalpyConverter ERROR in getAbsTemp():\n"
-            "    enthalpy E=%f J kg-1 equals or exceeds that of liquid water (E_l=%f); ending ... \n\n",
-      E,E_l);
-    PetscEnd();
+    PetscErrorPrintf("\n\n\n  EnthalpyConverter ERROR in getAbsTemp():\n"
+            "    enthalpy E=%f J kg-1 equals or exceeds that of liquid water (E_l=%f)\n"
+            "    ending ... \n\n",
+            E,E_l);
+    endPrintRank();
     return 0.0;
   }
 }
@@ -186,10 +179,9 @@ double EnthalpyConverter::getWaterFraction(double E, double p) const {
   } else if (E < E_l) {
     return (E - E_s) / L;
   } else {
-    PetscPrintf(PETSC_COMM_SELF,
-      "\n\n\n  EnthalpyConverter ERROR in getWaterFraction():\n"
+    PetscErrorPrintf("\n\n\n  EnthalpyConverter ERROR in getWaterFraction():\n"
             "    enthalpy equals or exceeds that of liquid water; ending ... \n\n");
-    PetscEnd();
+    endPrintRank();
     return 1.0;
   }
 }
@@ -213,24 +205,30 @@ Because of these not-allowed cases, the following expression is also valid:
   \f[E(T,\omega,p) = E_s(p) + c_i (T-T_m(p)) + \omega L.\f]
  */
 double EnthalpyConverter::getEnth(double T, double omega, double p) const {
+  if (T <= 0.0) {
+    PetscErrorPrintf(
+      "\n\n\n  EnthalpyConverter ERROR in getEnth():\n"
+            "    T = %f <= 0 is not a valid absolute temperature ... \n\n",T);
+    endPrintRank();
+  }
   if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
-    PetscPrintf(PETSC_COMM_SELF,
+    PetscErrorPrintf(
       "\n\n\n  EnthalpyConverter ERROR in getEnth(): water fraction omega=%f not in range [0,1]; ending ... \n\n",
       omega);
-    PetscEnd();
+    endPrintRank();
   }
   const double T_m = getMeltingTemp(p);
   if (T > T_m + 1.0e-6) {
-    PetscPrintf(PETSC_COMM_SELF,
+    PetscErrorPrintf(
       "\n\n\n  EnthalpyConverter ERROR in getEnth(): T=%f exceeds T_m=%f so we have liquid water; ending ... \n\n",
       T,T_m);
-    PetscEnd();
+    endPrintRank();
   }
   if ((T < T_m - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
-    PetscPrintf(PETSC_COMM_SELF,
+    PetscErrorPrintf(
       "\n\n\n  EnthalpyConverter ERROR in getEnth(): T < T_m AND omega > 0 is contradictory;\n"
             "     here T=%f, T_m=%f, omega=%f; ending ... \n\n", T, T_m, omega);
-    PetscEnd();
+    endPrintRank();
   }
   const double E_s = getEnthalpyCTS(p);
   return E_s + c_i * (T - T_m) + omega * L;
@@ -253,6 +251,12 @@ ignoring water fraction \f$\omega > 0\f$.  Computes:
 Calls getEnth() for \f$E(T,\omega,p)\f$.
  */
 double EnthalpyConverter::getEnthPermissive(double T, double omega, double p) const {
+  if (T <= 0.0) {
+    PetscErrorPrintf(
+      "\n\n\n  EnthalpyConverter ERROR in getEnthPermissive():\n"
+            "    T = %f <= 0 is not a valid absolute temperature ... \n\n",T);
+    endPrintRank();
+  }
   const double T_m = getMeltingTemp(p);
   if (T <= T_m) {
     return getEnth(T, 0.0, p);
@@ -283,6 +287,12 @@ where \f$T\f$ is the temperature at level \f$z<0\f$ in the bedrock.
 Input temperatures are assumed to be absolute (not pressure-adjusted).
  */
 double EnthalpyConverter::getEnthBedrock(double T) const {
+  if (T <= 0.0) {
+    PetscErrorPrintf(
+      "\n\n\n  EnthalpyConverter ERROR in getEnthBedrock():\n"
+            "    T = %f <= 0 is not a valid absolute temperature ... \n\n",T);
+    endPrintRank();
+  }
   return c_b * T;
 }
 

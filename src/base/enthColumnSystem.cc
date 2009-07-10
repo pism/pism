@@ -279,20 +279,23 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
       // WARNING: subtle consequences of finite volume argument across interface;
       // see BOMBPROOF docs
       const PetscScalar rho_ratio  = ice_rho / bed_thermal_rho,
-                        c_ratioINV = bed_thermal_c / ice_c;
+                        c_ratioINV = bed_thermal_c / ice_c,
+                        // zero conduction if omega > 0  <==>  E > E_s(p) :
+                        //R = (Enth[k0] > Enth_s[k0]) ? 0.0 : iceR;
+                        R = iceR;
       L[k0] = - 2.0 * brR;
       if (Enth[k0] > Enth_s[k0]) {
-        D[k0] = rho_ratio * (1.0 + 2.0 * iceR);
+        D[k0] = rho_ratio * (1.0 + 2.0 * R);
       } else {
-        D[k0] = (1.0 + 2.0 * brR) * c_ratioINV + rho_ratio * (1.0 + 2.0 * iceR);
+        D[k0] = (1.0 + 2.0 * brR) * c_ratioINV + rho_ratio * (1.0 + 2.0 * R);
       }
-      U[k0] = - rho_ratio * 2.0 * iceR;
+      U[k0] = - rho_ratio * 2.0 * R;
       if (w[0] < 0.0) { // velocity downward: upwind vertical
         const PetscScalar AA = rho_ratio * dtTemp * w[0] / dzav;
         D[k0] -= AA;
         U[k0] += AA;
       }
-      if (Enth[k0] > Enth_s[k0]) {                             // prev enthalpy
+      if (Enth[k0] > Enth_s[k0]) { // decide cold vs temperate using prev enthalpy
         rhs[k0] = rho_ratio * Enth[0] - 2 * brR * c_ratioINV * Enth_s[k0];
       } else {
         rhs[k0] = (rho_ratio + c_ratioINV) * Enth[0];
@@ -355,4 +358,134 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
   return solveTridiagonalSystem(k0+ks+1,x);
 }
 
+
+
+#if 1
+
+bedrockOnlySystemCtx::bedrockOnlySystemCtx(int my_Mbz)
+      : columnSystemCtx(my_Mbz) {
+  Mbz = my_Mbz;
+  if (Mbz <= 1) {
+    PetscErrorPrintf(
+       "\n\n\n  Mbz > 1 required in bedrockOnlySystemCtx (constructor error) \n\n");
+    endPrintRank();
+  }  
+  k0 = Mbz - 1;
+  // set flags to indicate nothing yet set
+  initAllDone = false;
+  topBCValid = false;
+  basalBCValid = false;
+  // set values so we can check if init was called on all
+  dtTemp = -1;
+  dzbEQ = -1;
+  bed_thermal_rho = -1;
+  bed_thermal_c   = -1;
+  bed_thermal_k   = -1;
+  T_b = NULL;
+}
+
+
+PetscErrorCode bedrockOnlySystemCtx::initAllColumns() {
+  // check whether each parameter & pointer got set
+  if (dtTemp <= 0.0) { SETERRQ(4,"un-initialized dtTemp in bedrockOnlySystemCtx"); }
+  if (dzbEQ <= 0.0) { SETERRQ(6,"un-initialized dzbEQ in bedrockOnlySystemCtx"); }
+  if (bed_thermal_rho <= 0.0) { SETERRQ(10,"un-initialized bed_thermal_rho in bedrockOnlySystemCtx"); }
+  if (bed_thermal_c <= 0.0) { SETERRQ(11,"un-initialized bed_thermal_c_p in bedrockOnlySystemCtx"); }
+  if (bed_thermal_k <= 0.0) { SETERRQ(12,"un-initialized bed_thermal_k in bedrockOnlySystemCtx"); }
+  if (T_b == NULL) { SETERRQ(14,"un-initialized pointer T_b in bedrockOnlySystemCtx"); }
+  // set derived constants
+  brK = bed_thermal_k / (bed_thermal_rho * bed_thermal_c);
+  brR = brK * dtTemp / PetscSqr(dzbEQ);
+  // done
+  initAllDone = true;
+  return 0;
+}
+
+
+PetscErrorCode bedrockOnlySystemCtx::setTopBoundaryValueThisColumn(PetscScalar my_Ttop) {
+  if (!initAllDone) {  SETERRQ(2,
+     "setTopBoundaryValueThisColumn() should only be called after initAllColumns() in bedrockOnlySystemCtx"); }
+  if (topBCValid) {  SETERRQ(3,
+     "setTopBoundaryValueThisColumn() called twice (?) in bedrockOnlySystemCtx"); }
+  Ttop = my_Ttop;
+  topBCValid = true;
+  return 0;
+}
+
+
+PetscErrorCode bedrockOnlySystemCtx::setBasalBoundaryValueThisColumn(PetscScalar my_Ghf) {
+  if (!initAllDone) {  SETERRQ(2,
+     "setBasalBoundaryValueThisColumn() should only be called after initAllColumns() in bedrockOnlySystemCtx"); }
+  if (basalBCValid) {  SETERRQ(3,
+     "setBasalBoundaryValueThisColumn() called twice (?) in bedrockOnlySystemCtx"); }
+  Ghf = my_Ghf;
+  basalBCValid = true;
+  return 0;
+}
+
+
+PetscErrorCode bedrockOnlySystemCtx::view(MPI_Comm &com) {
+  PetscErrorCode ierr;
+  
+  ierr = PetscPrintf(com,"\n\n<<VIEWING bedrockOnlySystemCtx:\n"); CHKERRQ(ierr);
+  ierr = PetscPrintf(com,
+                     "  initAllDone = %d\n",initAllDone); CHKERRQ(ierr);
+  ierr = PetscPrintf(com,
+                     "  dtTemp,dzbEQ = %10.3e,%8.2f\n",
+                     dtTemp,dzbEQ); CHKERRQ(ierr);
+  ierr = PetscPrintf(com,
+                     "  bed_thermal_rho,bed_thermal_c,bed_thermal_k = %10.3e,%10.3e,%10.3e\n",
+                     bed_thermal_rho,bed_thermal_c,bed_thermal_k); CHKERRQ(ierr);
+  ierr = PetscPrintf(com,
+                     "  brK,brR = %10.3e,%10.3e\n",
+                     brK,brR); CHKERRQ(ierr);
+  ierr = PetscPrintf(com,
+                     "  Ttop,Ghf = %10.3e,%10.3e\n",
+                     Ttop,Ghf); CHKERRQ(ierr);
+  ierr = PetscPrintf(com,">>\n\n"); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode bedrockOnlySystemCtx::solveThisColumn(PetscScalar **x) {
+  if (!initAllDone) {  SETERRQ(2,
+     "solveThisColumn() should only be called after initAllColumns() in bedrockOnlySystemCtx"); }
+  if (!topBCValid) {  SETERRQ(3,
+     "solveThisColumn() should only be called after setTopBoundaryValueThisColumn() in bedrockOnlySystemCtx"); }
+  if (!basalBCValid) {  SETERRQ(3,
+     "solveThisColumn() should only be called after setBasalBoundaryValueThisColumn() in bedrockOnlySystemCtx"); }
+
+  if (Mbz <= 1) { SETERRQ(1,"Mbz<=1; constructor should have caught; how did I get here?"); }
+
+  // geothermal flux at base; method should gives O(\Delta t,\Delta z^2)
+  //   local truncation error; comes from introducing one lower level, etc.
+  D[0] = (1.0 + 2.0 * brR);
+  U[0] = - 2.0 * brR;  
+  // L[0] not allocated anyway
+  rhs[0] = T_b[0] + 2.0 * dtTemp * Ghf / (bed_thermal_rho * bed_thermal_c * dzbEQ);
+
+  // generic segments; because Mbz >= 2, k0 = Mbz-1 >= 1
+  //   the loop does not go at all in Mbz==2 case
+  for (PetscInt k = 1; k < k0; k++) {
+    L[k] = -brR;
+    D[k] = 1.0 + 2.0 * brR;
+    U[k] = -brR;
+    rhs[k] = T_b[k];
+  }
+
+  // known temperature (Dirichlet condition) at top
+  L[k0] = 0.0;
+  D[k0] = 1.0;
+  // ignore U[k0]; not accessed
+  rhs[k0] = Ttop;
+
+  // mark column as done
+  topBCValid = false;
+  basalBCValid = false;
+
+  // solve it
+  return solveTridiagonalSystem(Mbz,x);
+}
+
+#endif
 

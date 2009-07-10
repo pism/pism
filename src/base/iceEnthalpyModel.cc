@@ -1054,6 +1054,11 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   PetscTruth viewOneColumn;
   ierr = check_option("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
+#if 1
+  PetscTruth viewOneRedoColumn;
+  ierr = check_option("-view_redo_sys", viewOneRedoColumn); CHKERRQ(ierr);
+#endif
+
   EnthalpyConverter EC(&config);
   if (getVerbosityLevel() >= 4) { ierr = EC.viewConstants(NULL); CHKERRQ(ierr); }
 
@@ -1107,7 +1112,22 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 
   // checks that all needed constants and pointers got set:
   ierr = system.initAllColumns(); CHKERRQ(ierr);
-  
+
+
+#if 1
+  PetscScalar *xredo;
+  xredo = new PetscScalar[fMbz];
+  bedrockOnlySystemCtx bedredosystem(fMbz);
+  bedredosystem.dtTemp          = dtTempAge; // same time step for temp and age, currently
+  bedredosystem.dzbEQ           = fdzb;
+  bedredosystem.bed_thermal_rho = config.get("bedrock_thermal_density"); // bed_thermal.rho;
+  bedredosystem.bed_thermal_c   = config.get("bedrock_thermal_specific_heat_capacity"); // bed_thermal.c_p;
+  bedredosystem.bed_thermal_k   = config.get("bedrock_thermal_conductivity"); // bed_thermal.k;
+  bedredosystem.T_b             = new PetscScalar[fMbz];
+  // checks that all needed constants and pointers got set:
+  ierr = bedredosystem.initAllColumns(); CHKERRQ(ierr);
+#endif
+
   // now get map-plane coupler fields
   IceModelVec2 *pccTs, *pccsbt, *pccsbmf;
   if (atmosPCC != PETSC_NULL) {
@@ -1157,6 +1177,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       // for fine grid; this should *not* be replaced by call to grid.kBelowHeight()
       const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/fdz));
 
+      const PetscScalar pbasal = EC.getPressureFromDepth(H[i][j]);
+
       // enthalpy at boundaries
       const PetscScalar
           Enth_air       = EC.getEnthPermissive(Ts[i][j], 0.0, p_air ),
@@ -1167,9 +1189,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
           // at underside of ice shelf, set enthalpy to that of max liquid water
           //   temperate ice; probably does not make much difference anyway because of
           //   no upward/downward liquid water transport:
-          Enth_shelfbase = EC.getEnthPermissive(Tshelfbase[i][j],
-                                                config.get("liquid_water_fraction_max"), 
-                                                EC.getPressureFromDepth(H[i][j]) );
+          Enth_shelfbase = EC.getEnthPermissive(Tshelfbase[i][j], omega_max, pbasal );
 
       if (k0+ks>0) { // if there are enough points in bedrock&ice to bother ...
         ierr = system.setIndicesThisColumn(i,j,ks); CHKERRQ(ierr);
@@ -1193,7 +1213,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
         // go through column and find appropriate lambda for BOMBPROOF;
         //   at the same time fill system.Enth_s[];
         PetscScalar lambda = 1.0;  // start with centered implicit for more accuracy
-        system.Enth_s[0] = EC.getEnthalpyCTS( EC.getPressureFromDepth(H[i][j]) );
+        system.Enth_s[0] = EC.getEnthalpyCTS( pbasal );
         for (PetscInt k = 1; k <= ks; k++) {
           system.Enth_s[k] = EC.getEnthalpyCTS( EC.getPressureFromDepth(H[i][j] - fzlev[k]) );
           if (system.Enth[k] > system.Enth_s[k]) {
@@ -1296,7 +1316,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       } else {
         if (ks > 0) { // grounded ice present
           // get ice temperature at z=0; enforces continuity of temperature
-          Tbnew[k0] = EC.getAbsTemp(Enthnew[0], EC.getPressureFromDepth(H[i][j]) );
+          Tbnew[k0] = EC.getAbsTemp(Enthnew[0], pbasal );
         } else {      // no significant ice; top of bedrock sees atmosphere
           Tbnew[k0] = Ts[i][j];
         }
@@ -1306,6 +1326,44 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       for (PetscInt k=k0-1; k >= 0; k--) {
         Tbnew[k] = EC.getAbsTempBedrock(x[k]);
       }
+
+#if 0
+      // in temperate base case, redo bedrock temperature solution
+      //    and put energy back into melting
+      if (EC.getWaterFraction(Enthnew[0], pbasal ) > 0.0) {
+        for (PetscInt k=0; k < fMbz; k++) {
+          bedredosystem.T_b[k] = Tb[k];
+        }
+        ierr = bedredosystem.setTopBoundaryValueThisColumn(
+                    EC.getMeltingTemp( pbasal )); CHKERRQ(ierr);
+        ierr = bedredosystem.setBasalBoundaryValueThisColumn(Ghf[i][j]); CHKERRQ(ierr);
+        // solve the system
+        ierr = bedredosystem.solveThisColumn(&xredo); // no CHKERRQ(ierr) immediately because:
+        if (ierr > 0) {
+          SETERRQ3(2,
+            "bedredosystem tridiagonal solve failed at (%d,%d)\n"
+            "   with zero pivot position %d.\n", i, j, ierr);
+        } else { CHKERRQ(ierr); }
+        // insert
+        for (PetscInt k=0; k < fMbz; k++) {
+          Tbnew[k] = xredo[k];
+        }
+        // FIXME:  need to subtract Tbnew - xredo and put into melting
+
+        // diagnostic/debug
+        if (viewOneRedoColumn) {
+          if ((i==id) && (j==jd)) {
+            ierr = verbPrintf(1,grid.com,
+              "viewing bedredosystem and solution at (i,j)=(%d,%d):\n", i, j); CHKERRQ(ierr);
+            ierr = bedredosystem.view(grid.com); CHKERRQ(ierr);
+            ierr = bedredosystem.viewSystem(NULL,"system"); CHKERRQ(ierr);
+            ierr = bedredosystem.viewColumnValues(NULL, xredo, fMbz, "solution xredo");
+              CHKERRQ(ierr);
+          }
+        }
+
+      }
+#endif
 
       // transfer column into Tb3; neighboring columns will not reference so no need for communication
       ierr = Tb3.setValColumn(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
@@ -1373,6 +1431,11 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   delete [] system.Sigma; delete [] system.Enth;  delete [] system.Enth_s; 
   delete [] system.Enth_b;
 
+#if 1
+  delete [] bedredosystem.T_b;
+  delete [] xredo;
+#endif
+
   delete [] x;
   delete [] Tb;     delete [] Tbnew;   delete [] Enthnew;
   delete [] fzlev;  delete [] fzblev;
@@ -1398,7 +1461,7 @@ up to temperate.
  */
 PetscErrorCode IceEnthalpyModel::drainageToBaseModelEnth(EnthalpyConverter &EC,
                 PetscScalar L, PetscScalar omega_max,
-                PetscScalar thickness, PetscScalar z, const PetscScalar dz,
+                PetscScalar thickness, PetscScalar z, PetscScalar dz,
                 PetscScalar &enthalpy, PetscScalar &Hmelt) {
 
   if (allowAboveMelting == PETSC_TRUE) {
