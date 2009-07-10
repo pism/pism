@@ -144,34 +144,42 @@ PetscErrorCode enthSystemCtx::setBasalBoundaryValuesThisColumn(
 }
 
 
-PetscErrorCode enthSystemCtx::view(MPI_Comm &com) {
+PetscErrorCode enthSystemCtx::viewConstants(PetscViewer viewer) {
   PetscErrorCode ierr;
+
+  if (!viewer) {
+    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF,&viewer); CHKERRQ(ierr);
+  }
+
+  PetscTruth iascii;
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii); CHKERRQ(ierr);
+  if (!iascii) { SETERRQ(1,"Only ASCII viewer for enthSystemCtx::viewConstants()\n"); }
   
-  ierr = PetscPrintf(com,"\n\n<<VIEWING enthSystemCtx:\n"); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,
+  ierr = PetscViewerASCIIPrintf(viewer,"\n\n<<VIEWING enthSystemCtx:\n"); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
                      "  initAllDone = %d\n",initAllDone); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,
+  ierr = PetscViewerASCIIPrintf(viewer,
                      "  dx,dy,dtTemp,dzEQ,dzbEQ = %8.2f,%8.2f,%10.3e,%8.2f,%8.2f\n",
                      dx,dy,dtTemp,dzEQ,dzbEQ); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,
+  ierr = PetscViewerASCIIPrintf(viewer,
                      "  ice_rho,ice_c,ice_k = %10.3e,%10.3e,%10.3e\n",
                      ice_rho,ice_c,ice_k); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,
+  ierr = PetscViewerASCIIPrintf(viewer,
                      "  bed_thermal_rho,bed_thermal_c,bed_thermal_k = %10.3e,%10.3e,%10.3e\n",
                      bed_thermal_rho,bed_thermal_c,bed_thermal_k); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,
+  ierr = PetscViewerASCIIPrintf(viewer,
                      "  nuEQ,dzav,rho_c_I,rho_c_br, = %10.3e,%10.3e,%10.3e,%10.3e\n",
                      nuEQ,dzav,rho_c_I,rho_c_br); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,
+  ierr = PetscViewerASCIIPrintf(viewer,
                      "  iceK,iceR,brK,brR = %10.3e,%10.3e,%10.3e,%10.3e\n",
                      iceK,iceR,brK,brR); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,
+  ierr = PetscViewerASCIIPrintf(viewer,
                      "  i,j,ks = %d,%d,%d\n",
                      i,j,ks); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,
+  ierr = PetscViewerASCIIPrintf(viewer,
                      "  Enth_ks,Ghf,Enth_shelfbase,Rb = %10.3e,%10.3e,%10.3e,%10.3e\n",
                      Enth_ks,Ghf,Enth_shelfbase,Rb); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,">>\n\n"); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,">>\n\n"); CHKERRQ(ierr);
   return 0;
 }
 
@@ -277,19 +285,17 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
     } else { 
       // there is *grounded* ice AND there is bedrock at interface
       // WARNING: subtle consequences of finite volume argument across interface;
+      // in this segment even temperate ice is conductive (same value as cold ice)
       // see BOMBPROOF docs
       const PetscScalar rho_ratio  = ice_rho / bed_thermal_rho,
-                        c_ratioINV = bed_thermal_c / ice_c,
-                        // zero conduction if omega > 0  <==>  E > E_s(p) :
-                        //R = (Enth[k0] > Enth_s[k0]) ? 0.0 : iceR;
-                        R = iceR;
+                        c_ratioINV = bed_thermal_c / ice_c;
       L[k0] = - 2.0 * brR;
       if (Enth[k0] > Enth_s[k0]) {
-        D[k0] = rho_ratio * (1.0 + 2.0 * R);
+        D[k0] = rho_ratio * (1.0 + 2.0 * iceR);
       } else {
-        D[k0] = (1.0 + 2.0 * brR) * c_ratioINV + rho_ratio * (1.0 + 2.0 * R);
+        D[k0] = (1.0 + 2.0 * brR) * c_ratioINV + rho_ratio * (1.0 + 2.0 * iceR);
       }
-      U[k0] = - rho_ratio * 2.0 * R;
+      U[k0] = - rho_ratio * 2.0 * iceR;
       if (w[0] < 0.0) { // velocity downward: upwind vertical
         const PetscScalar AA = rho_ratio * dtTemp * w[0] / dzav;
         D[k0] -= AA;
@@ -424,25 +430,33 @@ PetscErrorCode bedrockOnlySystemCtx::setBasalBoundaryValueThisColumn(PetscScalar
 }
 
 
-PetscErrorCode bedrockOnlySystemCtx::view(MPI_Comm &com) {
+PetscErrorCode bedrockOnlySystemCtx::viewConstants(PetscViewer viewer) {
   PetscErrorCode ierr;
   
-  ierr = PetscPrintf(com,"\n\n<<VIEWING bedrockOnlySystemCtx:\n"); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,
+  if (!viewer) {
+    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF,&viewer); CHKERRQ(ierr);
+  }
+
+  PetscTruth iascii;
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii); CHKERRQ(ierr);
+  if (!iascii) { SETERRQ(1,"Only ASCII viewer for bedrockOnlySystemCtx::viewConstants()\n"); }
+
+  ierr = PetscViewerASCIIPrintf(viewer,"\n\n<<VIEWING bedrockOnlySystemCtx:\n"); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
                      "  initAllDone = %d\n",initAllDone); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,
+  ierr = PetscViewerASCIIPrintf(viewer,
                      "  dtTemp,dzbEQ = %10.3e,%8.2f\n",
                      dtTemp,dzbEQ); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,
+  ierr = PetscViewerASCIIPrintf(viewer,
                      "  bed_thermal_rho,bed_thermal_c,bed_thermal_k = %10.3e,%10.3e,%10.3e\n",
                      bed_thermal_rho,bed_thermal_c,bed_thermal_k); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,
+  ierr = PetscViewerASCIIPrintf(viewer,
                      "  brK,brR = %10.3e,%10.3e\n",
                      brK,brR); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,
+  ierr = PetscViewerASCIIPrintf(viewer,
                      "  Ttop,Ghf = %10.3e,%10.3e\n",
                      Ttop,Ghf); CHKERRQ(ierr);
-  ierr = PetscPrintf(com,">>\n\n"); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,">>\n\n"); CHKERRQ(ierr);
   return 0;
 }
 

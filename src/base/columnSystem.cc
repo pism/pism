@@ -82,7 +82,7 @@ PetscErrorCode columnSystemCtx::viewColumnValues(PetscViewer viewer,
 
   PetscTruth iascii;
   if (!viewer) {
-    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF,&viewer); CHKERRQ(ierr);
   }
   ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii); CHKERRQ(ierr);
   if (!iascii) { SETERRQ(1,"Only ASCII viewer for ColumnSystem\n"); }
@@ -110,7 +110,7 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
   PetscErrorCode ierr;
   PetscTruth iascii;
   if (!viewer) {
-    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIGetStdout(PETSC_COMM_SELF,&viewer); CHKERRQ(ierr);
   }
   ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii); CHKERRQ(ierr);
   if (!iascii) { SETERRQ(1,"Only ASCII viewer for ColumnSystem\n"); }
@@ -499,12 +499,6 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x) {
       rhs[k0] = Ts; 
     }
   } else { // ks > 0; there is ice
-    planeStar ss;
-    ierr = T3->getPlaneStarZ(i,j,0.0,&ss);
-    const PetscScalar UpTu = (u[0] < 0) ? u[0] * (ss.ip1 -  ss.ij) / dx :
-                                          u[0] * (ss.ij  - ss.im1) / dx;
-    const PetscScalar UpTv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
-                                          v[0] * (ss.ij  - ss.jm1) / dy;
     // for w, always difference *up* from base, but make it implicit
     if (PismModMask(mask) == MASK_FLOATING) {
       // just apply Dirichlet condition to base of column of ice in an ice shelf
@@ -518,6 +512,12 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x) {
       if (!isMarginal) {
         rhs[k0] += dtTemp * rho_c_ratio * 0.5 * (Sigma[0] / rho_c_I);
         // WARNING: subtle consequences of finite volume argument across interface
+        planeStar ss;
+        ierr = T3->getPlaneStarZ(i,j,0.0,&ss);
+        const PetscScalar UpTu = (u[0] < 0) ? u[0] * (ss.ip1 -  ss.ij) / dx :
+                                              u[0] * (ss.ij  - ss.im1) / dx;
+        const PetscScalar UpTv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
+                                              v[0] * (ss.ij  - ss.jm1) / dy;
         rhs[k0] -= dtTemp * rho_c_ratio * (0.5 * (UpTu + UpTv));
       }
       const PetscScalar AA = dtTemp * rho_c_ratio * w[0] / (2.0 * dzEQ);

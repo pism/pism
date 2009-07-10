@@ -35,7 +35,7 @@ public:
                      PetscScalar my_Ghf, PetscScalar my_Enth_shelfbase, PetscScalar my_Rb);
   PetscErrorCode solveThisColumn(PetscScalar **x);
   
-  PetscErrorCode view(MPI_Comm &com);
+  PetscErrorCode viewConstants(PetscViewer viewer);
 
 public:
   // constants which should be set before calling initForAllColumns()
@@ -92,7 +92,7 @@ class bedrockOnlySystemCtx : public columnSystemCtx {
 
 public:
   bedrockOnlySystemCtx(int my_Mbz);
-  PetscErrorCode view(MPI_Comm &com);
+  PetscErrorCode viewConstants(PetscViewer viewer);
   PetscErrorCode initAllColumns();
   PetscErrorCode setTopBoundaryValueThisColumn(PetscScalar my_Ttop);
   PetscErrorCode setBasalBoundaryValueThisColumn(PetscScalar my_Ghf);

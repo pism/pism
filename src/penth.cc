@@ -86,6 +86,9 @@ int main(int argc, char *argv[]) {
         "penth attaching PISMConstAtmosCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
       ierr = m.attachAtmospherePCC(pcac); CHKERRQ(ierr);
     }
+
+    ierr = verbPrintf(2,com, 
+        "penth attaching PISMConstOceanCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
     ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
 
     ierr = m.init(); CHKERRQ(ierr);
