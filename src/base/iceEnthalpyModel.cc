@@ -34,10 +34,7 @@ PolyThermalGPBLDIce::PolyThermalGPBLDIce(MPI_Comm c,const char pre[]) : ThermoGl
 
 PetscErrorCode PolyThermalGPBLDIce::setFromConfig(NCConfigVariable *config) {
   if (config == NULL) {
-    PetscPrintf(PETSC_COMM_SELF,
-      "\n\n\n  PolyThermalGPBLDIce ERROR in setFromConfig():\n"
-       "    config == NULL ... \n\n");
-    PetscEnd();
+    SETERRQ(1,"config == NULL in PolyThermalGPBLDIce::setFromConfig()");
   }
   EC = new EnthalpyConverter(config);
   T_0  = config->get("water_melting_temperature");    // K
@@ -56,13 +53,13 @@ PetscErrorCode PolyThermalGPBLDIce::setFromOptions() {
 
   ierr = ThermoGlenIce::setFromOptions(); CHKERRQ(ierr);
   
-  ierr = PetscOptionsBegin(comm,prefix,"PolyThermalGPBLDIce options",NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(comm,prefix,"PolyThermalGPBLDIce options",NULL); CHKERRQ(ierr);
   {
     ierr = PetscOptionsReal("-ice_gpbld_water_frac_coeff",
       "coefficient of softness factor in temperate ice, as function of liquid water fraction (no units)",
-      "",water_frac_coeff,&water_frac_coeff,NULL);CHKERRQ(ierr);
+      "",water_frac_coeff,&water_frac_coeff,NULL); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsEnd();CHKERRQ(ierr);
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -99,22 +96,35 @@ The pressure-melting temperature \f$T_{pa}(E,p)\f$ is computed by getPATemp().
  */
 PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(
                 PetscScalar enthalpy, PetscScalar pressure) const {
+  PetscErrorCode ierr;
   if (EC == NULL) {
-    PetscPrintf(PETSC_COMM_SELF,"EC is NULL in PolyThermalGPBLDIce::flowFromEnth()... ending\n");
-    PetscEnd();
+    PetscErrorPrintf("EC is NULL in PolyThermalGPBLDIce::flowFromEnth()\n");
+    endPrintRank();
   }
   PetscScalar E_s, E_l;
   EC->getEnthalpyInterval(pressure, E_s, E_l);
   if (enthalpy <= E_s) {       // cold ice
-    return softnessParameter( EC->getPATemp(enthalpy,pressure) ); // uses ThermoGlenIce formula
+    PetscScalar T_pa;
+    ierr = EC->getPATemp(enthalpy,pressure,T_pa);
+    if (ierr) {
+      PetscErrorPrintf(
+        "getPATemp() returned ierr>0 in PolyThermalGPBLDIce::softnessParameterFromEnth()\n");
+      endPrintRank();
+    }
+    return softnessParameter( T_pa ); // uses ThermoGlenIce formula
   } else if (enthalpy < E_l) { // temperate ice
-    const PetscScalar omega = EC->getWaterFraction(enthalpy,pressure);
+    PetscScalar omega;
+    ierr = EC->getWaterFraction(enthalpy,pressure,omega);
+    if (ierr) {
+      PetscErrorPrintf(
+        "getWaterFraction() returned ierr>0 in PolyThermalGPBLDIce::softnessParameterFromEnth()\n");
+      endPrintRank();
+    }
     // next line implements eqn (23) in \ref AschwandenBlatter2009
     return softnessParameter(T_0) * (1.0 + water_frac_coeff * omega);  // uses ThermoGlenIce formula
   } else { // liquid water not allowed
-    PetscPrintf(PETSC_COMM_SELF,
-      "\n\n\n  PISM ERROR in PolyThermalGlenPBLDIce::flow(): liquid water not allowed; ending ... \n\n");
-    PetscEnd();
+    PetscErrorPrintf("ERROR in PolyThermalGlenPBLDIce::flow(): liquid water not allowed\n\n");
+    endPrintRank();
     return 0.0;
   }
 }
@@ -139,9 +149,9 @@ PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
                 PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
                 const PetscScalar *enthalpy1, const PetscScalar *enthalpy2) const {
   if (EC == NULL) {
-    PetscPrintf(PETSC_COMM_SELF,
-       "EC is NULL in PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth()... ending\n");
-    PetscEnd();
+    PetscErrorPrintf(
+      "EC is NULL in PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth()\n");
+    endPrintRank();
   }
 
   // result is \nu_e H, i.e. viscosity times thickness; B is really hardness times thickness
@@ -490,7 +500,8 @@ PetscErrorCode IceEnthalpyModel::setEnth3FromT3_ColdIce() {
         //   energy content in the air is set to the value ice would have if it a chunk of it
         //   occupied the air; the atmosphere actually has much lower energy content;
         //   done this way for regularity (i.e. dEnth/dz computations)
-        Enthij[k] = EC.getEnthPermissive(Tij[k],0.0, EC.getPressureFromDepth(depth) );
+        ierr = EC.getEnthPermissive(Tij[k],0.0,EC.getPressureFromDepth(depth), Enthij[k] );
+           CHKERRQ(ierr);
       }
     }
   }
@@ -526,7 +537,7 @@ PetscErrorCode IceEnthalpyModel::setTnew3FromEnth3() {
       ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
         const PetscScalar depth = thickness[i][j] - grid.zlevels[k];
-        Tij[k] = EC.getAbsTemp(Enthij[k], EC.getPressureFromDepth(depth));
+        ierr = EC.getAbsTemp(Enthij[k],EC.getPressureFromDepth(depth), Tij[k]); CHKERRQ(ierr);
       }
     }
   }
@@ -561,7 +572,8 @@ PetscErrorCode IceEnthalpyModel::setLiquidFracFromEnthalpy(IceModelVec3 &useForL
       ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
         const PetscScalar depth = thickness[i][j] - grid.zlevels[k];
-        omegaij[k] = EC.getWaterFraction(Enthij[k], EC.getPressureFromDepth(depth));
+        ierr = EC.getWaterFraction(Enthij[k],EC.getPressureFromDepth(depth), omegaij[k]);
+          CHKERRQ(ierr);
       }
     }
   }
@@ -599,7 +611,8 @@ PetscErrorCode IceEnthalpyModel::setPATempFromEnthalpy(IceModelVec3 &useForPATem
       ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
         const PetscScalar depth = thickness[i][j] - grid.zlevels[k];
-        Tpaij[k] = EC.getPATemp(Enthij[k], EC.getPressureFromDepth(depth));
+        ierr = EC.getPATemp(Enthij[k],EC.getPressureFromDepth(depth), Tpaij[k]);
+          CHKERRQ(ierr);
       }
     }
   }
@@ -681,7 +694,7 @@ PetscErrorCode IceEnthalpyModel::energyAgeStats(
       if (H[i][j] > 0) {
 
         // accumulate area of base which is at melt point
-        if (Enthbase[i][j] >= EC.getEnthalpyCTS( EC.getPressureFromDepth(H[i][j]) ) )
+        if (EC.isTemperate(Enthbase[i][j], EC.getPressureFromDepth(H[i][j]) ))  
           meltarea += a;
 
         // accumulate volume of ice which is original
@@ -697,7 +710,8 @@ PetscErrorCode IceEnthalpyModel::energyAgeStats(
 
       // if you happen to be at center, record absolute basal temp there
       if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-        temp0 = EC.getAbsTemp( Enthbase[i][j], EC.getPressureFromDepth(H[i][j]) );
+        ierr = EC.getAbsTemp(Enthbase[i][j],EC.getPressureFromDepth(H[i][j]), temp0);
+          CHKERRQ(ierr);
       }
     }
   }
@@ -1177,19 +1191,19 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       // for fine grid; this should *not* be replaced by call to grid.kBelowHeight()
       const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/fdz));
 
-      const PetscScalar pbasal = EC.getPressureFromDepth(H[i][j]);
-
-      // enthalpy at boundaries
-      const PetscScalar
-          Enth_air       = EC.getEnthPermissive(Ts[i][j], 0.0, p_air ),
-          // in theory we could have a water fraction at k=ks level, but for
-          //   now there is no case where we have that:
-          Enth_ks        = EC.getEnthPermissive(Ts[i][j], 0.0,
-                                                EC.getPressureFromDepth(H[i][j] - fzlev[ks]) ),
-          // at underside of ice shelf, set enthalpy to that of max liquid water
-          //   temperate ice; probably does not make much difference anyway because of
-          //   no upward/downward liquid water transport:
-          Enth_shelfbase = EC.getEnthPermissive(Tshelfbase[i][j], omega_max, pbasal );
+      // enthalpy and pressures at boundaries
+      const PetscScalar p_basal = EC.getPressureFromDepth(H[i][j]),
+                        p_ks   = EC.getPressureFromDepth(H[i][j] - fzlev[ks]);
+      PetscScalar Enth_air, Enth_ks, Enth_shelfbase;
+      ierr = EC.getEnthPermissive(Ts[i][j], 0.0, p_air, Enth_air ); CHKERRQ(ierr);
+      // in theory we could have a water fraction at k=ks level, but for
+      //   now there is no case where we have that:
+      ierr = EC.getEnthPermissive(Ts[i][j], 0.0, p_ks, Enth_ks ); CHKERRQ(ierr);
+      // at underside of ice shelf, set enthalpy to that of max liquid water
+      //   temperate ice; probably does not make much difference anyway because of
+      //   no upward/downward liquid water transport:
+      ierr = EC.getEnthPermissive(Tshelfbase[i][j], omega_max, p_basal,
+                              Enth_shelfbase); CHKERRQ(ierr);
 
       if (k0+ks>0) { // if there are enough points in bedrock&ice to bother ...
         ierr = system.setIndicesThisColumn(i,j,ks); CHKERRQ(ierr);
@@ -1213,7 +1227,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
         // go through column and find appropriate lambda for BOMBPROOF;
         //   at the same time fill system.Enth_s[];
         PetscScalar lambda = 1.0;  // start with centered implicit for more accuracy
-        system.Enth_s[0] = EC.getEnthalpyCTS( pbasal );
+        system.Enth_s[0] = EC.getEnthalpyCTS( p_basal );
         for (PetscInt k = 1; k <= ks; k++) {
           system.Enth_s[k] = EC.getEnthalpyCTS( EC.getPressureFromDepth(H[i][j] - fzlev[k]) );
           if (system.Enth[k] > system.Enth_s[k]) {
@@ -1233,7 +1247,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 
         // go though bedrock and set system enthalpy from temperature
         for (PetscInt k=0; k < fMbz; k++) {
-          system.Enth_b[k] = EC.getEnthBedrock(Tb[k]);
+          ierr = EC.getEnthBedrock(Tb[k], system.Enth_b[k]); CHKERRQ(ierr);
         }
 
         // if isMarginal then only do vertical conduction for ice;
@@ -1337,7 +1351,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       } else {
         if (ks > 0) { // grounded ice present
           // get ice temperature at z=0; enforces continuity of temperature
-          Tbnew[k0] = EC.getAbsTemp(Enthnew[0], pbasal );
+          ierr = EC.getAbsTemp(Enthnew[0], p_basal, Tbnew[k0]); CHKERRQ(ierr);
         } else {      // no significant ice; top of bedrock sees atmosphere
           Tbnew[k0] = Ts[i][j];
         }
@@ -1349,12 +1363,13 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       // FIXME:  and put energy back into melting
       if (    (bulgeLimiterTripped)
            || (    (PismModMask(mask[i][j]) != MASK_FLOATING)
-                && (EC.getWaterFraction(Enthnew[0], pbasal ) > 0.0) ) ) {
+                && (EC.isTemperate(Enthnew[0], p_basal )) ) ) {
         for (PetscInt k=0; k < fMbz; k++) {
           bedredosystem.T_b[k] = Tb[k];
         }
-        ierr = bedredosystem.setTopBoundaryValueThisColumn(
-                    EC.getAbsTemp(Enthnew[0], pbasal ) ); CHKERRQ(ierr);
+        PetscScalar T_basal_new;
+        ierr = EC.getAbsTemp(Enthnew[0], p_basal, T_basal_new); CHKERRQ(ierr);
+        ierr = bedredosystem.setTopBoundaryValueThisColumn(T_basal_new); CHKERRQ(ierr);
         ierr = bedredosystem.setBasalBoundaryValueThisColumn(Ghf[i][j]); CHKERRQ(ierr);
         // solve the system
         ierr = bedredosystem.solveThisColumn(&xredo); // no CHKERRQ(ierr) immediately because:
@@ -1467,6 +1482,7 @@ PetscErrorCode IceEnthalpyModel::drainageToBaseModelEnth(EnthalpyConverter &EC,
                 PetscScalar L, PetscScalar omega_max,
                 PetscScalar thickness, PetscScalar z, PetscScalar dz,
                 PetscScalar &enthalpy, PetscScalar &Hmelt) {
+  PetscErrorCode ierr;
 
   if (allowAboveMelting == PETSC_TRUE) {
     SETERRQ(1,"drainageToBaseModelEnth() called but allowAboveMelting==TRUE");
@@ -1475,15 +1491,17 @@ PetscErrorCode IceEnthalpyModel::drainageToBaseModelEnth(EnthalpyConverter &EC,
   // no change to either enthalpy or basal layer thickness in this case
   if (updateHmelt == PETSC_FALSE)  return 0;
 
-  const PetscScalar p     = EC.getPressureFromDepth(thickness - z),
-                    omega = EC.getWaterFraction(enthalpy, p);
+  const PetscScalar p     = EC.getPressureFromDepth(thickness - z);
 
   // if there is liquid water already, thus temperate, consider whether there
   //   is enough to cause drainage
+  const PetscScalar omega = EC.getWaterFractionLimited(enthalpy, p);
   if (omega > 1.0e-6) {
     const PetscScalar abovecap = omega - omega_max;
     if (abovecap > 0.0) {
-      enthalpy -= abovecap * L;
+      // alternative, but different if E > E_l: enthalpy -= abovecap * L;
+      //   following form is safer, but gives UNACCOUNTED ENERGY LOSS IF E>E_l
+      ierr = EC.getEnthAtWaterFraction(omega_max, p, enthalpy); CHKERRQ(ierr);
       Hmelt    += abovecap * dz;   // ice-equivalent water thickness change
     }
     return 0; // done with temperate case
@@ -1493,15 +1511,19 @@ PetscErrorCode IceEnthalpyModel::drainageToBaseModelEnth(EnthalpyConverter &EC,
   //   water to freeze on
   // FIXME: think about ocean case!?
   if ((z >= -1.0e-6) && (z <= 1.0e-6)) {
-    // only consider freeze-on if column segment is at base of ice; E_s = getEnthalpyCTS(config, p)
+    // only consider freeze-on if column segment is at base of ice;
+    //   E_s = getEnthalpyCTS(config, p)
     const PetscScalar dEnth_to_reach_temperate = EC.getEnthalpyCTS(p) - enthalpy;
     if (dEnth_to_reach_temperate > 0.0) {
-      // if below E_s, then freeze on, and bring up enthalpy to E_s if enough water is available
-      const PetscScalar dEnth_available = (Hmelt / dz) * L, // = ((rho Hmelt dx dy) * L) / (rho dx dy dz)
-                        dEnth_added     = PetscMin(dEnth_available, dEnth_to_reach_temperate);
+      // if below E_s, then freeze on, and bring up enthalpy to E_s if
+      //   enough water is available; first quantity is also
+      //   ((rho Hmelt dx dy) * L) / (rho dx dy dz)
+      const PetscScalar
+         dEnth_available = (Hmelt / dz) * L,
+         dEnth_added     = PetscMin(dEnth_available, dEnth_to_reach_temperate);
       enthalpy += dEnth_added;
-      Hmelt    -= (dEnth_added * dz) / L;  // will cause negative basal melt rate,
-                                           //   which can enter into mass continuity
+      Hmelt    -= (dEnth_added * dz) / L;  // will cause negative basal melt rate;
+                                           //   enters into mass continuity
     }
   }
 

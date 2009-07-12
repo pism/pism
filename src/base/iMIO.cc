@@ -804,8 +804,8 @@ PetscErrorCode IceModel::write_snapshot() {
     }
 
     ierr = verbPrintf(2, grid.com, 
-       "\nsaving a model state snapshot at %3.5f a, for time-step goal %3.5f a\n\n",
-       grid.year,saving_after);
+       "\nsaving snapshot to %s at %.5f a, for time-step goal %.5f a\n\n",
+       filename, grid.year,saving_after);
     CHKERRQ(ierr);
 
     // create line for history in .nc file, including time of write

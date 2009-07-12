@@ -122,151 +122,7 @@ void EnthalpyConverter::getEnthalpyInterval(double p, double &E_s, double &E_l) 
 }
 
 
-//! Get absolute ice temperature (K) from enthalpy and pressure.
-/*! From \ref AschwandenBlatter2009, equation (12)
-     \f[ T= T(E,p) = \begin{cases} 
-                       c_i^{-1} (E-E_s(p)) + T_m(p), & E < E_s(p), \\
-                       T_m(p), &                       E_s(p) \le E < E_l(p).
-                     \end{cases} \f]
-But the first case simplifies if we expand \f$E_s\f$:
-     \f[ c_i^{-1} (E-E_s(p)) + T_m(p) = c_i^{-1} (E-c_i T_m(p)) + T_m(p) = c_i^{-1} E.\f]
-We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we fail if
-\f$E \ge E_l(p)\f$.
- */
-double EnthalpyConverter::getAbsTemp(double E, double p) const {
-  double E_s, E_l;
-  getEnthalpyInterval(p, E_s, E_l);
-  if (E < E_s) {
-    return E / c_i;
-  } else if (E < E_l) { // two cases in (12)
-    return getMeltingTemp(p);
-  } else {
-    PetscErrorPrintf("\n\n\n  EnthalpyConverter ERROR in getAbsTemp():\n"
-            "    enthalpy E=%f J kg-1 equals or exceeds that of liquid water (E_l=%f)\n"
-            "    ending ... \n\n",
-            E,E_l);
-    endPrintRank();
-    return 0.0;
-  }
-}
-
-
-//! Get pressure-adjusted ice temperature (K) from enthalpy and pressure.
-/*! See getAbsTemp(), which computes \f$T(E,p)\f$, and getMeltingTemp(), which
-computes \f$T_m(p)\f$.  We define the pressure-adjusted temperature to be:
-     \f[ T_{pa} = T_{pa}(E,p) = T(E,p) - T_m(p) + T_0. \f]
- */
-double EnthalpyConverter::getPATemp(double E, double p) const {
-  return getAbsTemp(E,p) - getMeltingTemp(p) + T_0;
-}
-
-
-//! Get liquid water fraction from enthalpy and pressure.
-/*! From \ref AschwandenBlatter2009, equation (12),
-   \f[ \omega = \omega(E,p) = \begin{cases}
-                                 0.0,            & E \le E_s(p), \\
-                                 (E-E_s(p)) / L, & E_s(p) < E < E_l(p).
-                              \end{cases} \f]
-
-We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we fail if
-\f$E \ge E_l(p)\f$.
- */
-double EnthalpyConverter::getWaterFraction(double E, double p) const {
-  double E_s, E_l;
-  getEnthalpyInterval(p, E_s, E_l);
-  if (E <= E_s) { // two cases in (12)
-    return 0.0;
-  } else if (E < E_l) {
-    return (E - E_s) / L;
-  } else {
-    PetscErrorPrintf("\n\n\n  EnthalpyConverter ERROR in getWaterFraction():\n"
-            "    enthalpy equals or exceeds that of liquid water; ending ... \n\n");
-    endPrintRank();
-    return 1.0;
-  }
-}
-
-
-//! Compute enthalpy from absolute temperature, liquid water fraction, and pressure.
-/*! This is an inverse function to the functions \f$T(E,p)\f$ and \f$\omega(E,p)\f$.
-It returns this enthalpy value:
-  \f[E(T,\omega,p) = \begin{cases}
-                        E_s(p) + c_i (T-T_m(p)), & T \le T_m(p) \quad\text{and}\quad \omega = 0, \\
-                        E_s(p) + \omega L, &       T = T_m(p) \quad\text{and}\quad \omega \ge 0.
-                     \end{cases} \f]
-
-Certain cases are not allowed and are stopped:
-- \f$T>T_m(p)\f$ is not allowed,
-- \f$T<T_m(p)\f$ and \f$\omega > 0\f$ is not allowed,
-- \f$\omega < 0\f$ is not allowed, and
-- \f$\omega > 1\f$ is not allowed.
-
-Because of these not-allowed cases, the following expression is also valid:
-  \f[E(T,\omega,p) = E_s(p) + c_i (T-T_m(p)) + \omega L.\f]
- */
-double EnthalpyConverter::getEnth(double T, double omega, double p) const {
-  if (T <= 0.0) {
-    PetscErrorPrintf(
-      "\n\n\n  EnthalpyConverter ERROR in getEnth():\n"
-            "    T = %f <= 0 is not a valid absolute temperature ... \n\n",T);
-    endPrintRank();
-  }
-  if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
-    PetscErrorPrintf(
-      "\n\n\n  EnthalpyConverter ERROR in getEnth(): water fraction omega=%f not in range [0,1]; ending ... \n\n",
-      omega);
-    endPrintRank();
-  }
-  const double T_m = getMeltingTemp(p);
-  if (T > T_m + 1.0e-6) {
-    PetscErrorPrintf(
-      "\n\n\n  EnthalpyConverter ERROR in getEnth(): T=%f exceeds T_m=%f so we have liquid water; ending ... \n\n",
-      T,T_m);
-    endPrintRank();
-  }
-  if ((T < T_m - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
-    PetscErrorPrintf(
-      "\n\n\n  EnthalpyConverter ERROR in getEnth(): T < T_m AND omega > 0 is contradictory;\n"
-            "     here T=%f, T_m=%f, omega=%f; ending ... \n\n", T, T_m, omega);
-    endPrintRank();
-  }
-  const double E_s = getEnthalpyCTS(p);
-  return E_s + c_i * (T - T_m) + omega * L;
-}
-
-
-//! Compute enthalpy more permissively in terms of meaning of input temperature and water fraction.  Compare getEnth().
-/*! Computes enthalpy from absolute temperature, liquid water fraction, and pressure as before.
-Use this form of getEnth() when outside sources (e.g. information from a coupler) might generate
-a temperature above the pressure melting point or cold ice with a positive water fraction.
-
-Treats temperatures above pressure-melting point as \e at the pressure-melting point.
-Interprets contradictory case of \f$T < T_m(p)\f$ and \f$\omega > 0\f$ \e as cold ice,
-ignoring water fraction \f$\omega > 0\f$.  Computes:
-  \f[E_{\text{permissive}}(T,\omega,p)
-       = \begin{cases}
-            E(T,0.0,p),         & T < T_m(p) \quad \text{and} \quad \omega \ge 0, \\
-            E(T_m(p),\omega,p), & T \ge T_m(p) \quad \text{and} \quad \omega \ge 0, 
-         \end{cases} \f]
-Calls getEnth() for \f$E(T,\omega,p)\f$.
- */
-double EnthalpyConverter::getEnthPermissive(double T, double omega, double p) const {
-  if (T <= 0.0) {
-    PetscErrorPrintf(
-      "\n\n\n  EnthalpyConverter ERROR in getEnthPermissive():\n"
-            "    T = %f <= 0 is not a valid absolute temperature ... \n\n",T);
-    endPrintRank();
-  }
-  const double T_m = getMeltingTemp(p);
-  if (T <= T_m) {
-    return getEnth(T, 0.0, p);
-  } else { // T >= T_m(p) replaced with T = T_m(p)
-    return getEnth(T_m, omega, p);
-  }
-}
-
-
-//! Computes the ratio CTS = E/Es.  The cold-temperate transition surface (CTS) is the level surface CTS = 1
+//! Computes the ratio CTS = E / E_s(p).  The cold-temperate transition surface (CTS) is the level surface CTS = 1
 /*!
 If \f$E\f$ and \f$E_s\f$ are the enthalpy and the CTS enthalpy, respectively, then
   \f[ CTS = \frac{E}{E_s}.\f]
@@ -278,6 +134,189 @@ double EnthalpyConverter::getCTS(double E, double p) const {
 }
 
 
+//! Determines if E > E_s(p), that is, if the ice is at the pressure-melting point.
+bool EnthalpyConverter::isTemperate(double E, double p) const {
+  const double E_s = getEnthalpyCTS(p);
+  return (E > E_s);
+}
+
+
+//! Get absolute ice temperature (K) from enthalpy and pressure.
+/*! From \ref AschwandenBlatter2009, equation (12)
+     \f[ T= T(E,p) = \begin{cases} 
+                       c_i^{-1} (E-E_s(p)) + T_m(p), & E < E_s(p), \\
+                       T_m(p), &                       E_s(p) \le E < E_l(p).
+                     \end{cases} \f]
+But the first case simplifies if we expand \f$E_s\f$:
+     \f[ c_i^{-1} (E-E_s(p)) + T_m(p) = c_i^{-1} (E-c_i T_m(p)) + T_m(p) = c_i^{-1} E.\f]
+
+We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we fail if
+\f$E \ge E_l(p)\f$.
+ */
+PetscErrorCode EnthalpyConverter::getAbsTemp(double E, double p, double &T) const {
+  double E_s, E_l;
+  getEnthalpyInterval(p, E_s, E_l);
+  if (E < E_s) {
+    T = E / c_i;
+  } else if (E < E_l) { // two cases in (12)
+    T = getMeltingTemp(p);
+  } else {
+    SETERRQ2(3,
+      "\n\nenthalpy E=%f equals or exceeds that of liquid water (E_l=%f)\n\n",E,E_l);
+  }
+  return 0;
+}
+
+
+//! Get pressure-adjusted ice temperature (K) from enthalpy and pressure.
+/*!
+Calls getAbsTemp(), which computes \f$T(E,p)\f$, and getMeltingTemp(), which
+computes \f$T_m(p)\f$.
+
+We define the pressure-adjusted temperature to be:
+     \f[ T_{pa} = T_{pa}(E,p) = T(E,p) - T_m(p) + T_0. \f]
+ */
+PetscErrorCode EnthalpyConverter::getPATemp(double E, double p, double &T_pa) const {
+  PetscErrorCode ierr;
+  const double T_m = getMeltingTemp(p);
+  double T;
+  ierr = getAbsTemp(E,p,T); CHKERRQ(ierr);
+  T_pa = T - T_m + T_0;
+  return 0;
+}
+
+
+//! Get liquid water fraction from enthalpy and pressure.
+/*!
+From \ref AschwandenBlatter2009, equation (12),
+   \f[ \omega = \omega(E,p) = \begin{cases}
+                                 0.0,            & E \le E_s(p), \\
+                                 (E-E_s(p)) / L, & E_s(p) < E < E_l(p).
+                              \end{cases} \f]
+
+We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we fail if
+\f$E \ge E_l(p)\f$.
+ */
+PetscErrorCode EnthalpyConverter::getWaterFraction(double E, double p, double &omega) const {
+  double E_s, E_l;
+  getEnthalpyInterval(p, E_s, E_l);
+  if (E <= E_s) { // two cases in (12)
+    omega = 0.0;
+  } else if (E < E_l) {
+    omega = (E - E_s) / L;
+  } else {
+    SETERRQ1(2,"\n\nenthalpy E=%f equals or exceeds that of liquid water\n\n",E);
+  }
+  return 0;
+}
+
+//! Get liquid water fraction from enthalpy and pressure, but return omega=1 if high enthalpy.
+/*! 
+Same as getWaterFraction(), except if E > E_l(p) still succeeds and returns omega=1.
+
+Useful in allowing the computation of (appropriately) high basal melt rates.
+ */
+double EnthalpyConverter::getWaterFractionLimited(double E, double p) const {
+  double E_s, E_l;
+  getEnthalpyInterval(p, E_s, E_l);
+  if (E <= E_s) { // two cases in (12)
+    return 0.0;
+  } else if (E < E_l) {
+    return (E - E_s) / L;
+  } else {
+    return 1.0;
+  }
+}
+
+
+//! Compute enthalpy from absolute temperature, liquid water fraction, and pressure.
+/*! This is an inverse function to the functions \f$T(E,p)\f$ and \f$\omega(E,p)\f$.
+It returns this enthalpy value:
+  \f[E(T,\omega,p) =
+       \begin{cases}
+         E_s(p) + c_i (T-T_m(p)), & T \le T_m(p) \quad\text{and}\quad \omega = 0, \\
+         E_s(p) + \omega L, &       T = T_m(p) \quad\text{and}\quad \omega \ge 0.
+       \end{cases} \f]
+
+Certain cases are not allowed and return errors:
+- \f$T>T_m(p)\f$ is not allowed,
+- \f$T<T_m(p)\f$ and \f$\omega > 0\f$ is not allowed,
+- \f$\omega < 0\f$ or \f$\omega > 1\f$ is not allowed.
+
+Because of these not-allowed cases, the following expression is also valid:
+  \f[E(T,\omega,p) = E_s(p) + c_i (T-T_m(p)) + \omega L.\f]
+ */
+PetscErrorCode EnthalpyConverter::getEnth(
+                  double T, double omega, double p, double &E) const {
+  if (T <= 0.0) {
+    SETERRQ1(1,"\n\nT = %f <= 0 is not a valid absolute temperature\n\n",T);
+  }
+  if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
+    SETERRQ1(2,"\n\nwater fraction omega=%f not in range [0,1]\n\n",omega);
+  }
+  const double T_m = getMeltingTemp(p);
+  if (T > T_m + 1.0e-6) {
+    SETERRQ2(3,"T=%f exceeds T_m=%f so we have liquid water; not allowed\n\n",T,T_m);
+  }
+  if ((T < T_m - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
+    SETERRQ3(4,"T < T_m AND omega > 0 is contradictory\n\n",T,T_m,omega);
+  }
+  const double E_s = getEnthalpyCTS(p);
+  E = E_s + c_i * (T - T_m) + omega * L;
+  return 0;
+}
+
+
+//! Compute enthalpy more permissively from temperature and water fraction.  Compare getEnth().
+/*! Computes enthalpy from absolute temperature, liquid water fraction, and pressure as before.
+Use this form of getEnth() when outside sources (e.g. information from a coupler) might generate
+a temperature above the pressure melting point or cold ice with a positive water fraction.
+
+Treats temperatures above pressure-melting point as \e at the pressure-melting point.
+Interprets contradictory case of \f$T < T_m(p)\f$ and \f$\omega > 0\f$ \e as cold ice,
+ignoring water fraction \f$\omega > 0\f$.  
+
+Computes:
+  \f[E = \begin{cases}
+            E(T,0.0,p),         & T < T_m(p) \quad \text{and} \quad \omega \ge 0, \\
+            E(T_m(p),\omega,p), & T \ge T_m(p) \quad \text{and} \quad \omega \ge 0, 
+         \end{cases} \f]
+but ensures \f$0\le \omega \le 1\f$ in second case.  Calls getEnth() for
+\f$E(T,\omega,p)\f$.
+
+Checks that \f$T > 0\f$ and returns error if not.
+ */
+PetscErrorCode EnthalpyConverter::getEnthPermissive(
+                  double T, double omega, double p, double &E) const {
+  PetscErrorCode ierr;
+  if (T <= 0.0) {
+    SETERRQ1(1,"\n\nT = %f <= 0 is not a valid absolute temperature\n\n",T);
+  }
+  const double T_m = getMeltingTemp(p);
+  if (T <= T_m) {
+    ierr = getEnth(T, 0.0, p, E); CHKERRQ(ierr);
+  } else { // T >= T_m(p) replaced with T = T_m(p)
+    ierr = getEnth(T_m, PetscMax(0.0,PetscMin(omega,1.0)), p, E); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+
+//! Returns enthalpy for temperate ice with a given liquid fraction.
+/*! Computes
+  \f[E = E_s(p) + \omega L.\f]
+ */
+PetscErrorCode EnthalpyConverter::getEnthAtWaterFraction(
+                        double omega, double p, double &E) const {
+  if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
+    SETERRQ1(2,"\n\nwater fraction omega=%f not in range [0,1]\n\n",omega);
+  }
+  const PetscScalar E_s = getEnthalpyCTS(p);
+  E = E_s + omega * L;
+  return 0;
+}
+
+
 //! Compute enthalpy from absolute temperature within the bedrock.  The enthalpy scale is separate from that in ice.
 /*!
 If \f$c_b\f$ is the specific heat capacity of the bedrockthen we compute and return
@@ -285,15 +324,15 @@ If \f$c_b\f$ is the specific heat capacity of the bedrockthen we compute and ret
 where \f$T\f$ is the temperature at level \f$z<0\f$ in the bedrock.
 
 Input temperatures are assumed to be absolute (not pressure-adjusted).
+
+Checks that \f$T > 0\f$ and returns error if not.
  */
-double EnthalpyConverter::getEnthBedrock(double T) const {
+PetscErrorCode EnthalpyConverter::getEnthBedrock(double T, double &E) const {
   if (T <= 0.0) {
-    PetscErrorPrintf(
-      "\n\n\n  EnthalpyConverter ERROR in getEnthBedrock():\n"
-            "    T = %f <= 0 is not a valid absolute temperature ... \n\n",T);
-    endPrintRank();
+    SETERRQ1(1,"\n\nT = %f <= 0 is not a valid absolute temperature\n\n",T);
   }
-  return c_b * T;
+  E = c_b * T;
+  return 0;
 }
 
 

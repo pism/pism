@@ -23,9 +23,6 @@
 
 //! Converts enthalpy to-and-from temperature and water content.
 /*!
-THERE IS NO LONGER AN ATTEMPT TO INLINE THINGS.  IT WAS PREMATURE 
-OPTIMIZATION ...
-
 ONCE THIS CLASS IS CONFIRMED TO BE CORRECT, IT *CAN* GO IN src/base/pism_const.{hh|cc}
 
 Use this way, for example within IceModel with NCConfigVariable config member:
@@ -41,6 +38,13 @@ Use this way, for example within IceModel with NCConfigVariable config member:
     ... etc ...
   }   
 \endcode
+
+Some methods are functions returning the computed values, a boolean, or 
+return \c void.  These do no error checking.
+
+Others return PetscErrorCode (and set arguments).  These check
+either that the enthalpy is below that of liquid water, or that
+the temperature (in K) is positive.
 */
 class EnthalpyConverter {
 public:
@@ -49,20 +53,23 @@ public:
   PetscErrorCode viewConstants(PetscViewer viewer) const;
 
   // ice conversion methods
-  double getPressureFromDepth(double depth) const;
-  double getMeltingTemp(double p) const;
-  double getEnthalpyCTS(double p) const;
-  void   getEnthalpyInterval(double p, double &E_s, double &E_l) const;
-  double getAbsTemp(double E, double p) const;
-  double getPATemp(double E, double p) const;
-  double getWaterFraction(double E, double p) const;
-  double getEnth(double T, double omega, double p) const;
-  double getEnthPermissive(double T, double omega, double p) const;
-  double getCTS(double E, double p) const;
+  double         getPressureFromDepth(double depth) const;
+  double         getMeltingTemp(double p) const;
+  double         getEnthalpyCTS(double p) const;
+  void           getEnthalpyInterval(double p, double &E_s, double &E_l) const;
+  double         getCTS(double E, double p) const;
+  bool           isTemperate(double E, double p) const;
+  PetscErrorCode getAbsTemp(double E, double p, double &T) const;
+  PetscErrorCode getPATemp(double E, double p, double &T_pa) const;
+  PetscErrorCode getWaterFraction(double E, double p, double &omega) const;
+  double         getWaterFractionLimited(double E, double p) const;
+  PetscErrorCode getEnth(double T, double omega, double p, double &E) const;
+  PetscErrorCode getEnthPermissive(double T, double omega, double p, double &E) const;
+  PetscErrorCode getEnthAtWaterFraction(double omega, double p, double &E) const;
 
   // bedrock conversion methods
-  double getEnthBedrock(double T) const;
-  double getAbsTempBedrock(double E) const;
+  PetscErrorCode getEnthBedrock(double T, double &E) const;
+  double         getAbsTempBedrock(double E) const;
 
 protected:
   double T_0, L, c_i, c_b, rho_i, g, p_air, beta;
