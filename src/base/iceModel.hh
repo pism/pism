@@ -282,19 +282,17 @@ protected:
   virtual PetscErrorCode adaptTimeStepDiffusivity();
   virtual PetscErrorCode determineTimeStep(const bool doTemperatureCFL);
 
-  // see iMbasal.cc
+  // see iMbasal.cc: all relate to grounded SSA
   virtual PetscErrorCode initBasalTillModel();
   virtual PetscErrorCode computePhiFromBedElevation();
-  virtual PetscScalar    getEffectivePressureOnTill(
-            const PetscScalar thk, const PetscScalar melt_thk);
+  virtual PetscScalar    getEffectivePressureOnTill(PetscScalar thk, PetscScalar bwat) const;
   virtual PetscErrorCode updateYieldStressFromHmelt();
-  virtual PetscErrorCode diffuseHmelt();
-  virtual PetscScalar    basalVelocity(PetscScalar x, PetscScalar y,
-                                       PetscScalar H, PetscScalar T, PetscScalar alpha, PetscScalar mu) const;
   virtual PetscScalar basalDragx(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const;
   virtual PetscScalar basalDragy(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const;
+
+  virtual PetscErrorCode diffuseHmelt();
 
   // see iMbeddef.cc
   Vec            g2natural;
@@ -421,6 +419,9 @@ protected:
   virtual PetscErrorCode velocities2DSIAToRegular();
   virtual PetscErrorCode SigmaSIAToRegular();
   virtual PetscErrorCode horizontalVelocitySIARegular();
+  virtual PetscScalar    basalVelocitySIA( // not recommended, generally
+                             PetscScalar x, PetscScalar y, PetscScalar H, PetscScalar T,
+                             PetscScalar alpha, PetscScalar mu) const;
 
   // see iMssa.cc
   virtual PetscErrorCode initSSA();

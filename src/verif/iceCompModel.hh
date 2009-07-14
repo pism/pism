@@ -79,9 +79,9 @@ protected:
         PetscScalar &exactmaxspeed,
         PetscScalar &gmaxvecerr, PetscScalar &gavvecerr,
         PetscScalar &gmaxuberr, PetscScalar &gmaxvberr);
-  virtual PetscScalar basalVelocity(const PetscScalar x, const PetscScalar y,
-                                    const PetscScalar H, const PetscScalar T,
-                                    const PetscScalar alpha, const PetscScalar mu) const;
+  virtual PetscScalar basalVelocitySIA( // not recommended, generally
+                             PetscScalar x, PetscScalar y, PetscScalar H, PetscScalar T,
+                             PetscScalar alpha, PetscScalar mu) const;
 
   // related to test L
   IceModelVec2   vHexactL;

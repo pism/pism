@@ -20,36 +20,11 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
-
-//! Compute the coefficient of surface gradient, for basal sliding velocity as a function of driving stress in SIA regions.
-/*!
-THIS KIND OF SIA SLIDING LAW IS A BAD IDEA IN A THERMOMECHANICALLY COUPLED MODEL.
-THAT'S WHY \f$\mu\f$ IS SET TO ZERO BY DEFAULT.                
-
-In SIA regions a basal sliding law of the form
-  \f[ \mathbf{U}_b = (u_b,v_b) = - C \nabla h \f] 
-is allowed.  Here \f$\mathbf{U}_b\f$ is the horizontal velocity of the base of the ice
-(the "sliding velocity") and \f$h\f$ is the elevation of the ice surface.  This procedure 
-returns the \em positive coefficient \f$C\f$ in this relationship.  This coefficient can
-depend of the thickness, the basal temperature, and the horizontal location.
-
-This procedure is virtual and can be replaced by any derived class.
-
-The default version for IceModel here is location-independent 
-pressure-melting-temperature-activated linear sliding.  Here we pass
-\f$\mu\f$, which can be set by option \c -mu_sliding, and the pressure 
-at the base to BasalTypeSIA::velocity().
-
-The returned coefficient is used in basalSlidingHeatingSIA().
- */
-PetscScalar IceModel::basalVelocity(PetscScalar, PetscScalar, PetscScalar H, PetscScalar T, PetscScalar, PetscScalar mu) const {
-  if (T + ice->beta_CC_grad * H > min_temperature_for_SIA_sliding) {
-    return basalSIA->velocity(mu, ice->rho * earth_grav * H);
-  } else {
-    return 0;
-  }
-}
-
+/*
+This file collects procedures related to SSA-as-sliding law in grounded
+areas.  IceModel::basalVelocitySIA() is in iMsia.cc (and is not recommended,
+generally).
+*/
 
 /*** for ice stream regions (MASK_DRAGGING): ***/
 PetscScalar IceModel::basalDragx(PetscScalar **tauc,
@@ -212,21 +187,21 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
 
 //! Compute effective pressure on till using effective thickness of stored till water.
 /*!
-Uses ice thickness to compute overburden pressure.  Pore water pressure is assumed
+Uses ice thickness to compute overburden pressure.
+
+Provides very simple model of pore water pressure:  Pore water pressure is assumed
 to be a fixed fraction of the overburden pressure.
 
-Note \c melt_thk should be zero at points where base of ice is frozen.
+Note \c bwat is thickness of basal water.  It should be zero at points where
+base of ice is frozen.
 
-Also we always want \f$0 \le\f$ \c melt_thk \f$\le\f$ \c Hmelt_max 
-so \f$0 \le\f$ \c lambda \f$\le 1\f$ inside this routine.
+Need \f$0 \le\f$ \c bwat \f$\le\f$ \c Hmelt_max before calling this.  There is
+no error checking.
  */
 PetscScalar IceModel::getEffectivePressureOnTill(
-               const PetscScalar thk, const PetscScalar melt_thk) {
-  const PetscScalar
-     overburdenP = ice->rho * earth_grav * thk,
-     pwP = plastic_till_pw_fraction * overburdenP,
-     lambda = melt_thk / Hmelt_max;
-  return overburdenP - lambda * pwP;  
+               PetscScalar thk, PetscScalar bwat) const {
+  const PetscScalar  overburdenP = ice->rho * earth_grav * thk;
+  return overburdenP * (1.0 - plastic_till_pw_fraction * (bwat / Hmelt_max));
 }
 
 

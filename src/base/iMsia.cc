@@ -316,7 +316,7 @@ THIS KIND OF SIA SLIDING LAW IS A BAD IDEA.  THAT'S WHY \f$\mu\f$ IS SET TO
 ZERO BY DEFAULT.
 
 This routine calls the SIA-type sliding law, which may return zero in the frozen base
-case; see basalVelocity().  The basal sliding velocity is computed for all SIA 
+case; see basalVelocitySIA().  The basal sliding velocity is computed for all SIA 
 points.  This routine also computes the basal frictional heating.  The basal 
 velocity \c Vecs \c vub and \c vvb and the frictional heating \c Vec are fully 
 over-written.  Where the ice is floating, they all have value zero.  
@@ -356,8 +356,8 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
                   myhy = 0.25 * (  h_y[0][i][j] + h_y[0][i-1][j]
                                  + h_y[1][i][j] + h_y[1][i][j-1]),
                   alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy)),
-                  basalC = basalVelocity(myx, myy, H[i][j], T3.getValZ(i,j,0.0), 
-                                         alpha, muSliding);
+                  basalC = basalVelocitySIA(myx, myy, H[i][j], T3.getValZ(i,j,0.0), 
+                                            alpha, muSliding);
           ub[i][j] = - basalC * myhx;
           vb[i][j] = - basalC * myhy;
           // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
@@ -562,5 +562,37 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
   ierr = Istag3[1].end_access(); CHKERRQ(ierr);
 
   return 0;
+}
+
+
+//! Compute the coefficient of surface gradient, for basal sliding velocity as a function of driving stress in SIA regions.
+/*!
+THIS KIND OF SIA SLIDING LAW IS A BAD IDEA IN A THERMOMECHANICALLY-COUPLED MODEL.
+THAT'S WHY \f$\mu\f$ IS SET TO ZERO BY DEFAULT.                
+
+In SIA regions a basal sliding law of the form
+  \f[ \mathbf{U}_b = (u_b,v_b) = - C \nabla h \f] 
+is allowed.  Here \f$\mathbf{U}_b\f$ is the horizontal velocity of the base of the ice
+(the "sliding velocity") and \f$h\f$ is the elevation of the ice surface.  This procedure 
+returns the \em positive coefficient \f$C\f$ in this relationship.  This coefficient can
+depend of the thickness, the basal temperature, and the horizontal location.
+
+This procedure is virtual and can be replaced by any derived class.
+
+The default version for IceModel here is location-independent 
+pressure-melting-temperature-activated linear sliding.  Here we pass
+\f$\mu\f$, which can be set by option \c -mu_sliding, and the pressure 
+at the base to BasalTypeSIA::velocity().
+
+The returned coefficient is used in basalSlidingHeatingSIA().
+ */
+PetscScalar IceModel::basalVelocitySIA(
+               PetscScalar /*x*/, PetscScalar /*y*/, PetscScalar H, PetscScalar T,
+               PetscScalar /*alpha*/, PetscScalar mu) const {
+  if (T + ice->beta_CC_grad * H > min_temperature_for_SIA_sliding) {
+    return basalSIA->velocity(mu, ice->rho * earth_grav * H);
+  } else {
+    return 0;
+  }
 }
 

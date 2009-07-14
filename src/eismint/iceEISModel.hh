@@ -46,8 +46,9 @@ protected:
  
     PetscErrorCode initAccumTs();
     PetscErrorCode fillintemps();
-    virtual PetscScalar basalVelocity(PetscScalar x, PetscScalar y,
-         PetscScalar H, PetscScalar T, PetscScalar alpha, PetscScalar mu) const;
+    virtual PetscScalar basalVelocitySIA( // not recommended, generally
+                             PetscScalar x, PetscScalar y, PetscScalar H, PetscScalar T,
+                             PetscScalar alpha, PetscScalar mu) const;
 
     // for experiments I,J and K,L, respectively:
     PetscErrorCode generateTroughTopography();

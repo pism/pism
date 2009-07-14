@@ -383,16 +383,12 @@ void IceCompModel::mapcoords(const PetscInt i, const PetscInt j,
 }
 
 
-// reimplement IceModel::basalVelocity(), for E
-PetscScalar IceCompModel::basalVelocity(const PetscScalar xIN, const PetscScalar yIN,
-                                        const PetscScalar H, const PetscScalar /*T*/,
-                                        const PetscScalar /*alpha*/, const PetscScalar /*muIN*/) const {
-  // note: ignores T and muIN
+//! Reimplement IceModel::basalVelocitySIA(), for Test E.  Gives zero SIA-type sliding in other tests.
+PetscScalar IceCompModel::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
+                                           PetscScalar H, PetscScalar /*T*/,
+                                           PetscScalar /*alpha*/, PetscScalar /*muIN*/) const {
 
   if (testname == 'E') {
-    //PetscErrorCode  ierr = PetscPrintf(grid.com, 
-    //        "   [IceCompModel::basal called with:   x=%f, y=%f, H=%f, T=%f, alpha=%f]\n",
-    //        xIN,yIN,H,alpha);  CHKERRQ(ierr);
     const PetscScalar r1 = 200e3, r2 = 700e3,   /* define region of sliding */
                       theta1 = 10 * (pi/180), theta2 = 40 * (pi/180);
     const PetscScalar x = fabs(xIN), y = fabs(yIN);
@@ -440,7 +436,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
   
   ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
-  if (testname == 'E') {  // value is not used by IceCompModel::basalVelocity() below,
+  if (testname == 'E') {  // value is not used by IceCompModel::basalVelocitySIA(),
     muSliding = 1.0;      //    but this acts as flag to allow sliding
   } else {
     muSliding = 0.0;
@@ -542,7 +538,7 @@ PetscErrorCode IceCompModel::initTestL() {
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
   
   ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
-  muSliding = 0.0;  // note reimplementation of basalVelocity()
+  muSliding = 0.0;  // note reimplementation of basalVelocitySIA() in IceCompModel
 
   // setup to evaluate test L; requires solving an ODE numerically using sorted list
   //   of radii, sorted in decreasing radius order

@@ -9,16 +9,23 @@ for computation of the exact solutions corresponding to "pismv -test F"
 and "pismv -test G".
 
 The F90 sources are added here to help other ice sheet modellers use the
-thermomechanically coupled SIA exact solutions from 
+thermomechanically coupled SIA exact solutions from
+
    E. Bueler, J. Brown, and C. Lingle (2007).  "Exact solutions to the 
    thermomechanically coupled shallow ice approximation: effective tools
    for verification", J. Glaciol., vol. 53 no. 182, 499--516.
-for verification of other ice sheet simulations.
 
-Build this way:
+for verification of other ice sheet simulations.  For the full details
+of the exact solutions, see also the extended "appendix"
+
+   E. Bueler and J. Brown (2006).  "On exact solutions and numerics for
+   cold, shallow, and thermocoupled ice sheets", preprint
+   arXiv:physics/0610106.
+
+Build the sources here this way, for example:
   $ gfortran -c testsFG.f90
   $ gfortran -c simpleFG.f90
   $ gfortran testsFG.o simpleFG.o -o simpleFG
 
 See simpleFG.f90 for example input and output.
-   
+
