@@ -210,10 +210,6 @@ PetscScalar IceModel::getEffectivePressureOnTill(
 Expanded brief description: Update the till yield stress \e and the mask, for 
 the pseudo-plastic till model, based on pressure and stored till water.
 
-This procedure also modifies the mask.  In particular, it has the side effect
-of marking all grounded points as MASK_DRAGGING.  (FIXME:  This aspect should be
-refactored.  Unnecessary communication can probably be avoided.)
-
 We implement formula (2.4) in [\ref SchoofStream] .  That formula is
     \f[   \tau_c = \mu (\rho g H - p_w)\f]
 We modify it by:
@@ -245,26 +241,13 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
     SETERRQ(1,"doPlasticTill == PETSC_FALSE but updateYieldStressFromHmelt() called");
   }
 
-  if (holdTillYieldStress == PETSC_TRUE) {  // don't modify tauc; use stored
-    PetscScalar **mask; 
-    ierr = vMask.get_array(mask); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (PismModMask(mask[i][j]) != MASK_FLOATING) {
-          mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything grounded is dragging,
-                                       // so force this
-        }
-      }
-    }
-    ierr = vMask.end_access(); CHKERRQ(ierr);
-  } else { // usual case: use Hmelt to determine tauc
-    PetscScalar **mask, **tauc, **H, **Hmelt, **bed, **tillphi; 
+  if (holdTillYieldStress == PETSC_FALSE) { // usual case: use Hmelt to determine tauc
+    PetscScalar **mask, **tauc, **H, **Hmelt, **tillphi; 
 
     ierr =    vMask.get_array(mask);    CHKERRQ(ierr);
     ierr =    vtauc.get_array(tauc);    CHKERRQ(ierr);
     ierr =       vH.get_array(H);       CHKERRQ(ierr);
     ierr =   vHmelt.get_array(Hmelt);   CHKERRQ(ierr);
-    ierr =     vbed.get_array(bed);     CHKERRQ(ierr); // is this used at all?
     ierr = vtillphi.get_array(tillphi); CHKERRQ(ierr);
 
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -273,9 +256,7 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
           tauc[i][j] = 0.0;  
         } else if (H[i][j] == 0.0) {
           tauc[i][j] = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice
-          mask[i][j] = MASK_DRAGGING;  // mark it this way anyway
         } else { // grounded and there is some ice
-          mask[i][j] = MASK_DRAGGING;  // in Schoof model, everything is dragging, so force this
           const PetscScalar N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j]);
           if (useConstantTillPhi == PETSC_TRUE) {
             tauc[i][j] = plastic_till_c_0 + plastic_till_mu * N;
@@ -289,14 +270,10 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
     ierr =    vMask.end_access(); CHKERRQ(ierr);
     ierr =    vtauc.end_access(); CHKERRQ(ierr);
     ierr =       vH.end_access(); CHKERRQ(ierr);
-    ierr =     vbed.end_access(); CHKERRQ(ierr);
     ierr = vtillphi.end_access(); CHKERRQ(ierr);
     ierr =   vHmelt.end_access(); CHKERRQ(ierr);
   }
 
-  // communicate possibly updated mask; tauc does not need communication
-  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 

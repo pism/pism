@@ -133,8 +133,17 @@ protected:
                 PetscScalar thickness, PetscScalar z, PetscScalar dz,
                 PetscScalar &enthalpy, PetscScalar &Hmelt);
 
+  using IceModel::updateYieldStressFromHmelt;
+  virtual PetscErrorCode updateYieldStressFromHmelt();
+
+  using IceModel::getEffectivePressureOnTill;  // but does not override it; one more arg
+  virtual PetscScalar getEffectivePressureOnTill(
+               PetscScalar thk, PetscScalar bwat, PetscScalar bmr) const;
+
 protected: // new data members
   IceModelVec3  Enth3, EnthNew3;
+  
+  PetscTruth    bmr_used_in_pore_pressure;
 };
 
 #endif

@@ -142,7 +142,7 @@ neighbors).  When the \c MASK_DRAGGING points have plastic till bases this is no
  */
 PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   PetscErrorCode ierr;
-  PetscScalar **h, **bed, **H, **mask, **Tbase;
+  PetscScalar **h, **bed, **H, **mask;
 
   if (oceanPCC == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");  }
   PetscReal currentSeaLevel;
@@ -151,15 +151,10 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 
   const int MASK_GROUNDED_TO_DETERMINE = 999;
 
-  ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = T3.getHorSlice(vWork2d[0],0.0); CHKERRQ(ierr);  // values of T(x,y,z) at z=0.0
-  ierr = T3.end_access(); CHKERRQ(ierr);
-  
   ierr =    vh.get_array(h);    CHKERRQ(ierr);
   ierr =    vH.get_array(H);    CHKERRQ(ierr);
   ierr =  vbed.get_array(bed);  CHKERRQ(ierr);
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
-  ierr = vWork2d[0].get_array(Tbase); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -176,7 +171,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
         //   dragging ice shelf in dry case and/or ignore mean sea level elevation.
         h[i][j] = hgrounded;
       } else if (PismIntMask(mask[i][j]) == MASK_FLOATING_OCEAN0) {
-        // Mask takes priority over bed in this case (note sea level may change).
+        // mask takes priority over bed in this case (note sea level may change).
         // Example Greenland case: if mask say Ellesmere is OCEAN0,
         //   then never want ice on Ellesmere.
         // If mask says OCEAN0 then don't change the mask and also don't change
@@ -186,45 +181,51 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
       } else {
         if (PismModMask(mask[i][j]) == MASK_FLOATING) {
           // check whether you are actually floating or grounded
-          if (hgrounded > hfloating+1.0) { // hard floatation crit.
-            mask[i][j] = MASK_GROUNDED_TO_DETERMINE;
+          if (hgrounded > hfloating+1.0) {
             h[i][j] = hgrounded; // actually grounded so update h
+            if (useSSAVelocity == PETSC_TRUE) {
+              if (doPlasticTill == PETSC_TRUE) {
+                // we are using SSA-as-a-sliding-law, so we know what to do:
+                //   all grounded points become DRAGGING
+                mask[i][j] = MASK_DRAGGING;
+              } else {
+                // we do not know how to set this point, which just became grounded
+                mask[i][j] = MASK_GROUNDED_TO_DETERMINE;
+              }
+            } else {
+              // we do not have any ice handled by SSA, so it must be SHEET
+              mask[i][j] = MASK_SHEET;
+            }
           } else {
-            //h[i][j] = softFloatationSurface(H[i][j],bed[i][j]);
             h[i][j] = hfloating; // actually floating so update h
           }
-        } else { // deal with grounded ice according to mask
+        } else { 
+          // mask says it is grounded, so set everything according to 
+          //   newly-evaluated flotation criterion
           if (hgrounded > hfloating-1.0) {
             h[i][j] = hgrounded; // actually grounded so update h
           } else {
-            mask[i][j] = MASK_FLOATING;
-            //h[i][j] = softFloatationSurface(H[i][j],bed[i][j]);
             h[i][j] = hfloating; // actually floating so update h
+            mask[i][j] = MASK_FLOATING;
           }
         }
 
+        // deal with the confusing case, which is when it is grounded,
+        //   it was marked FLOATING, and the user wants some SIA points
+        //   and some SSA points
         if (PismIntMask(mask[i][j]) == MASK_GROUNDED_TO_DETERMINE) {
-          if (useSSAVelocity != PETSC_TRUE) {
-            mask[i][j] = MASK_SHEET;
-          } else {
-            // if frozen to bed or essentially frozen to bed then make it SHEET
-            if (Tbase[i][j] + ice->beta_CC_grad * H[i][j] < min_temperature_for_SIA_sliding) { 
-              mask[i][j] = MASK_SHEET;
-            } else {
-              // determine type of grounded ice by vote-by-neighbors
-              //   (BOX stencil neighbors!):
-              const PetscScalar neighmasksum = 
+          // determine type of grounded ice by vote-by-neighbors
+          //   (BOX stencil neighbors!):
+          const PetscScalar neighmasksum = 
                 PismModMask(mask[i-1][j+1]) + PismModMask(mask[i][j+1]) + PismModMask(mask[i+1][j+1]) +
                 PismModMask(mask[i-1][j])   +                           + PismModMask(mask[i+1][j])  +
                 PismModMask(mask[i-1][j-1]) + PismModMask(mask[i][j-1]) + PismModMask(mask[i+1][j-1]);
-              // make SHEET if either all neighbors are SHEET or at most one is 
-              //   DRAGGING; if any are floating then ends up DRAGGING:
-              if (neighmasksum <= (7*MASK_SHEET + MASK_DRAGGING + 0.1)) { 
-                mask[i][j] = MASK_SHEET;
-              } else { // otherwise make DRAGGING
-                mask[i][j] = MASK_DRAGGING;
-              }
-            }
+          // make SHEET if either all neighbors are SHEET or at most one is 
+          //   DRAGGING; if any are floating then ends up DRAGGING:
+          if (neighmasksum <= (7*MASK_SHEET + MASK_DRAGGING + 0.1)) { 
+            mask[i][j] = MASK_SHEET;
+          } else { // otherwise make DRAGGING
+            mask[i][j] = MASK_DRAGGING;
           }
         }
         
@@ -233,7 +234,6 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
     }
   }
 
-  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr =         vh.end_access(); CHKERRQ(ierr);
   ierr =         vH.end_access(); CHKERRQ(ierr);
   ierr =       vbed.end_access(); CHKERRQ(ierr);
@@ -241,6 +241,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 
   ierr = vh.beginGhostComm(); CHKERRQ(ierr);
   ierr = vh.endGhostComm(); CHKERRQ(ierr);
+
   ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
   ierr = vMask.endGhostComm(); CHKERRQ(ierr);
   return 0;
