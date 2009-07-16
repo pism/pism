@@ -204,6 +204,10 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
           //   newly-evaluated flotation criterion
           if (hgrounded > hfloating-1.0) {
             h[i][j] = hgrounded; // actually grounded so update h
+            if ((useSSAVelocity == PETSC_TRUE) && (doPlasticTill == PETSC_TRUE)) {
+              // we are using SSA-as-a-sliding-law, so grounded points become DRAGGING
+              mask[i][j] = MASK_DRAGGING;
+            }
           } else {
             h[i][j] = hfloating; // actually floating so update h
             mask[i][j] = MASK_FLOATING;
