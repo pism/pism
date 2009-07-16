@@ -762,7 +762,7 @@ with \f$E_s(p)\f$.  Also recall \f$k=0\f$ is the conductivity of the temperate i
 Again a small error results if \f$E_{0+}^n > E_s(p)\f$ while for the computed quantity
 at the next time, \f$E_{0+}^{n+1} < E_s(p)\f$; we accept it.
 
-Equations (\ref icebedfinal_cold) and (\ref icebedfinal_temperate) are only
+Equations (\ref icebedfinalcold) and (\ref icebedfinaltemperate) are only
 used in PISM if there is a positive bedrock thermal layer
 depth, which is the condition IceGrid::Mbz > 1 or, equivalently, IceGrid::Lbz > 0.0.
 
