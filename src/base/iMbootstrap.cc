@@ -96,7 +96,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 
 
   ierr = verbPrintf(2, grid.com, 
-		    "processing 2D model state variables...\n"); CHKERRQ(ierr);
+		    "  reading 2D model state variables by regridding ...\n"); CHKERRQ(ierr);
 
   ierr = vLongitude.regrid(filename, *bootstrapLIC, false); CHKERRQ(ierr);
   ierr =  vLatitude.regrid(filename, *bootstrapLIC, false); CHKERRQ(ierr);
@@ -252,13 +252,10 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
     "    and by floatation crit  usurf = (1-rho_i/rho_w) thk  where floating\n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-           "  determining mask:  grounded ice and ice-free land marked as 1,\n"); CHKERRQ(ierr);
+           "  preliminary determination of mask for grounded/floating and sheet/dragging\n"); CHKERRQ(ierr);
   if (doOceanKill == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com,
-           "    floating ice as 3, and ice free ocean as 7 (from -ocean_kill)\n"); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2, grid.com, 
-           "    floating ice and ice-free ocean as 3\n"); CHKERRQ(ierr);
+           "    option -ocean_kill seen: floating ice mask=3; ice free ocean mask=7\n"); CHKERRQ(ierr);
   }
 
   if (oceanPCC == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");  }
