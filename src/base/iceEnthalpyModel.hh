@@ -143,7 +143,9 @@ protected:
 protected: // new data members
   IceModelVec3  Enth3, EnthNew3;
   
-  PetscTruth    bmr_used_in_pore_pressure;
+  PetscTruth    bmr_in_pore_pressure, thk_affects_pore_pressure;
+  PetscScalar   bmr_enhance_scale, margin_pore_pressure_reduced,
+                margin_pore_pressure_H_high, margin_pore_pressure_H_low;
 };
 
 #endif
