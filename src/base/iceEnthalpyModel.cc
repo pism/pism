@@ -1096,8 +1096,27 @@ PetscErrorCode IceEnthalpyModel::temperatureStep(
   if (doColdIceMethods==PETSC_TRUE) {
     ierr = verbPrintf(4,grid.com,
       "    [IceEnthalpyModel::temperatureStep(): ENTHALPY IS OFF. CALLING IceModel::temperatureStep()]\n");
-      CHKERRQ(ierr);
+    CHKERRQ(ierr);
+
+    /*
+      BEGIN FIX
+      over-write constants in material.cc, use values from config instead
+      FIX ME: are these all constants used in temperatureStep()?
+      this code will become deprecated when all PISM code uses the config system
+     */
+    ice->beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("earth_gravity");
+    ice->rho = config.get("ice_density");
+    ice->c_p = config.get("ice_specific_heat_capacity");
+    ice->k = config.get("ice_thermal_conductivity");
+    bed_thermal.rho = config.get("bedrock_thermal_density");
+    bed_thermal.c_p = config.get("bedrock_thermal_specific_heat_capacity");
+    bed_thermal.k = config.get("bedrock_thermal_conductivity");
+    /*
+      END FIX
+    */
+
     ierr = IceModel::temperatureStep(vertSacrCount,bulgeCount);  CHKERRQ(ierr);
+
     // start & complete communication: THIS IS REDUNDANT WITH temperatureAgeStep(),
     //    BUT NEEDED TO GET UPDATED ENTHALPY AT END OF TIME STEP
     ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
