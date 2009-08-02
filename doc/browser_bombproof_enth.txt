@@ -62,7 +62,7 @@ The scheme we propose involves no such iteration.
 \section iceequations Conservation of energy in a shallow ice sheet
 
 In terms of the specific enthalpy field \f$E(x,y,z,t)\f$, which has units of 
-\f$J\,\text{kg}^{-1}\f$ in SI, the energy equation is [\ref AschwandenBlatter2009]
+\f$\text{J}\,\text{kg}^{-1}\f$ in SI, the energy equation is [\ref AschwandenBlatter2009]
 
 \anchor basicEnergy
   \f[ \rho \frac{dE}{dt} = -\nabla \cdot \mathbf{q} + Q,\tag{basicEnergy} \f]

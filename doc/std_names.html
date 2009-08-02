@@ -2,7 +2,7 @@
 
 \section existing Existing standard names
 
-We start by listing standard names from the CF 1.4 Standard Name Table.  The subset here
+We start by listing standard names from the CF 1.4 Standard Name Table. The subset here
 is a small subset of the <a href="http://cf-pcmdi.llnl.gov/documents/cf-standard-names/">CF 1.4 standard name table</a>.  We list only
 \li those with "land_ice" in the name and/or
 \li those currently used by the <a href="http://www.pism-docs.org/">Parallel Ice Sheet Model (PISM)</a>.
@@ -59,7 +59,7 @@ These are merely proposed by Bueler, for now.
   <tr><td>land_ice_upward_velocity</td><td>m s-1</td><td>wvel</td><td>w3</td><td>compare CF 1.4 names "upward_air_velocity" and "upward_sea_water_velocity"</td></tr>
   <tr><td>lithosphere_temperature</td><td>K</td><td>litho_temp</td><td>Tb3</td><td>here top of lithosphere is at "bedrock_altitude"; is that standard?</td></tr>
   <tr><td>upward_geothermal_flux_in_lithosphere</td><td>W m-2</td><td>bheatflx</td><td>vGhf</td><td>typically applied at depth in lithosphere; compare "upward_geothermal_heat_flux_at_sea_floor"</td></tr>
-  <tr><td>land_ice_enthalpy</td><td>J kg-1</td><td>enthalpy</td><td>Enth3</td><td>enthalpy is defined in PISM to be sensible plus latent heat, plus potential energy of pressure; there is a nontrivial issue of the scaling; the enthalpy value for 263.15 K (cold) ice at atmospheric pressure is BLAH is a possible standard</td></tr>
+  <tr><td>land_ice_enthalpy</td><td>J kg-1</td><td>enthalpy</td><td>Enth3</td><td>enthalpy is defined in PISM to be sensible plus latent heat, plus potential energy of pressure; there is a nontrivial issue of the scaling; the enthalpy value for 273.15 K (cold) ice at atmospheric pressure is a possible standard</td></tr>
   <tr><td>land_ice_liquid_fraction</td><td>1</td><td>liqfrac</td><td></td><td>liquid water fraction in ice, a pure number between 0 and 1; a diagnostic function of enthalpy which is not stored during run</td></tr>
   </table>
 
