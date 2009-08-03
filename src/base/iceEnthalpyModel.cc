@@ -1180,6 +1180,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   system.ice_rho         = config.get("ice_density"); // ice->rho;
   system.ice_c           = config.get("ice_specific_heat_capacity"); // ice->c_p;
   system.ice_k           = config.get("ice_thermal_conductivity"); // ice->k;
+  system.ice_nu          = config.get("enthalpy_temperate_diffusivity"); // diffusion in temperate ice
   system.bed_thermal_rho = config.get("bedrock_thermal_density"); // bed_thermal.rho;
   system.bed_thermal_c   = config.get("bedrock_thermal_specific_heat_capacity"); // bed_thermal.c_p;
   system.bed_thermal_k   = config.get("bedrock_thermal_conductivity"); // bed_thermal.k;

@@ -41,6 +41,7 @@ enthSystemCtx::enthSystemCtx(int my_Mz, int my_Mbz)
   ice_rho = -1;
   ice_c   = -1;
   ice_k   = -1;
+  ice_nu  = -1;
   bed_thermal_rho = -1;
   bed_thermal_c   = -1;
   bed_thermal_k   = -1;
@@ -65,6 +66,7 @@ PetscErrorCode enthSystemCtx::initAllColumns() {
   if (ice_rho <= 0.0) { SETERRQ(7,"un-initialized ice_rho in enthSystemCtx"); }
   if (ice_c <= 0.0) { SETERRQ(8,"un-initialized ice_c_p in enthSystemCtx"); }
   if (ice_k <= 0.0) { SETERRQ(9,"un-initialized ice_k in enthSystemCtx"); }
+  if (ice_nu < 0.0) { SETERRQ(21,"un-initialized ice_nu in enthSystemCtx"); } // 0.0 is allowed
   if (bed_thermal_rho <= 0.0) { SETERRQ(10,"un-initialized bed_thermal_rho in enthSystemCtx"); }
   if (bed_thermal_c <= 0.0) { SETERRQ(11,"un-initialized bed_thermal_c_p in enthSystemCtx"); }
   if (bed_thermal_k <= 0.0) { SETERRQ(12,"un-initialized bed_thermal_k in enthSystemCtx"); }
@@ -81,7 +83,8 @@ PetscErrorCode enthSystemCtx::initAllColumns() {
   rho_c_I = ice_rho * ice_c;
   rho_c_br = bed_thermal_rho * bed_thermal_c;
   iceK = ice_k / rho_c_I;
-  iceR = iceK * dtTemp / PetscSqr(dzEQ);
+  iceRcold = iceK * dtTemp / PetscSqr(dzEQ);
+  iceRtemp = ice_nu * dtTemp / PetscSqr(dzEQ);
   brK = bed_thermal_k / rho_c_br;
   brR = brK * dtTemp / PetscSqr(dzbEQ);
   dzav = 0.5 * (dzEQ + dzbEQ);
@@ -171,8 +174,8 @@ PetscErrorCode enthSystemCtx::viewConstants(PetscViewer viewer) {
                      "  nuEQ,dzav,rho_c_I,rho_c_br, = %10.3e,%10.3e,%10.3e,%10.3e\n",
                      nuEQ,dzav,rho_c_I,rho_c_br); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-                     "  iceK,iceR,brK,brR = %10.3e,%10.3e,%10.3e,%10.3e\n",
-                     iceK,iceR,brK,brR); CHKERRQ(ierr);
+                     "  iceK,iceRcold,iceRtemp,brK,brR = %10.3e,%10.3e,%10.3e,%10.3e,%10.3e\n",
+		     iceK,iceRcold,iceRtemp,brK,brR); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
                      "  i,j,ks = %d,%d,%d\n",
                      i,j,ks); CHKERRQ(ierr);
@@ -261,7 +264,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
       // grounded but no bedrock layer; apply geothermal flux here
       // WARNING: subtle consequences of finite volume argument for basal segment;
       // see BOMBPROOF docs
-      const PetscScalar R = (Enth[k0] > Enth_s[k0]) ? 0.0 : iceR;
+      const PetscScalar R = (Enth[k0] > Enth_s[k0]) ? iceRtemp : iceRcold;
       // L[k0] = 0.0;  (note this is not an allocated location!) 
       D[k0] = 1.0 + 2.0 * R;
       U[k0] = - 2.0 * R;
@@ -287,15 +290,16 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
       // WARNING: subtle consequences of finite volume argument across interface;
       // in this segment even temperate ice is conductive (same value as cold ice)
       // see BOMBPROOF docs
+      // note sure how to proceed here, keep cold value or replace with temperate?
       const PetscScalar rho_ratio  = ice_rho / bed_thermal_rho,
                         c_ratioINV = bed_thermal_c / ice_c;
       L[k0] = - 2.0 * brR;
       if (Enth[k0] > Enth_s[k0]) {
-        D[k0] = rho_ratio * (1.0 + 2.0 * iceR);
+        D[k0] = rho_ratio * (1.0 + 2.0 * iceRcold);
       } else {
-        D[k0] = (1.0 + 2.0 * brR) * c_ratioINV + rho_ratio * (1.0 + 2.0 * iceR);
+        D[k0] = (1.0 + 2.0 * brR) * c_ratioINV + rho_ratio * (1.0 + 2.0 * iceRcold);
       }
-      U[k0] = - rho_ratio * 2.0 * iceR;
+      U[k0] = - rho_ratio * 2.0 * iceRcold;
       if (w[0] < 0.0) { // velocity downward: upwind vertical
         const PetscScalar AA = rho_ratio * dtTemp * w[0] / dzav;
         D[k0] -= AA;
@@ -324,7 +328,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
   for (PetscInt k = 1; k < ks; k++) {
     const PetscScalar AA = nuEQ * w[k],
                       // zero conduction if omega > 0  <==>  E > E_s(p) :
-                      R = (Enth[k] > Enth_s[k]) ? 0.0 : iceR;
+                      R = (Enth[k] > Enth_s[k]) ? iceRtemp : iceRcold;
     if (w[k] >= 0.0) {  // velocity upward
       L[k0+k] = - R - AA * (1.0 - lambda/2.0);
       D[k0+k] = 1.0 + 2.0 * R + AA * (1.0 - lambda);

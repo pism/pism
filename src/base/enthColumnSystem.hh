@@ -47,6 +47,7 @@ public:
                ice_rho,
                ice_c,
                ice_k,
+               ice_nu,
                bed_thermal_rho,
                bed_thermal_c,
                bed_thermal_k;
@@ -70,7 +71,8 @@ protected: // used internally
               rho_c_I,
               rho_c_br,
               iceK,
-              iceR,
+              iceRcold,
+              iceRtemp,
               brK,
               brR;
   bool        initAllDone,
