@@ -439,9 +439,9 @@ PetscErrorCode IceHEINOModel::heinoCreateDat() {
                0.0, 0.0); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(tss[0],"%14.6E%14.6E\n", 
                0.0, 0.0); CHKERRQ(ierr);
-    // initial average homol basal temp is special; it is set by Ts(x,y)
+    // initial average pressure-adjusted basal temp is special; it is set by Ts(x,y)
     ierr = PetscViewerASCIIPrintf(tss[1],"%14.6E%14.6E\n", 
-               0.0, 2.366670e2); CHKERRQ(ierr);  // av homol basal temp
+               0.0, 2.366670e2); CHKERRQ(ierr);  // av pressure-adjusted basal temp
     ierr = PetscViewerASCIIPrintf(tss[2],"%14.6E%14.6E\n", 
                0.0, 0.0); CHKERRQ(ierr);
     for (PetscInt k=0; k<7; k++) {
@@ -450,7 +450,7 @@ PetscErrorCode IceHEINOModel::heinoCreateDat() {
       ierr = PetscViewerASCIIPrintf(tsp[k][2],"%14.6E%14.6E\n", 
                0.0, 0.0); CHKERRQ(ierr);
     }
-    // initial homol basal temp is special to each point; it is set by Ts(x,y)
+    // initial pressure-adjusted basal temp is special to each point; it is set by Ts(x,y)
     ierr = PetscViewerASCIIPrintf(tsp[0][1],"%14.6E%14.6E\n", 
                0.0, 2.502978e2); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(tsp[1][1],"%14.6E%14.6E\n", 
@@ -574,7 +574,7 @@ PetscErrorCode IceHEINOModel::planFormWrite(int nn) {
   ierr = putLocalOnProcZero(vvb,vbp0); CHKERRQ(ierr);
   ierr = VecScale(vbp0, secpera); CHKERRQ(ierr); // m/a
   
-  // put basal homol temp in 2D Vec and then put on proc zero
+  // put basal pressure-adjusted temp in 2D Vec and then put on proc zero
   {
   Vec             Thb;
   PetscScalar     **H, ***T, **valThb;
@@ -644,7 +644,7 @@ PetscErrorCode IceHEINOModel::planFormWrite(int nn) {
     ierr = VecRestoreArray2d(Hp0, Mx, My, 0, 0, &H); CHKERRQ(ierr);
     ierr = PetscViewerDestroy(pf); CHKERRQ(ierr);
 
-    // write    hbt = homologous basal temp (K)
+    // write    hbt = pressure-adjusted basal temp (K)
     strcpy(filename,basename);
     strcat(filename,"hbt.dat");
     ierr = PetscViewerASCIIOpen(PETSC_COMM_SELF, filename, &pf); CHKERRQ(ierr);
@@ -800,15 +800,15 @@ PetscErrorCode IceHEINOModel::additionalAtEndTimestep() {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         const PetscScalar dv = a * H[i][j] * 1e-3; // column vol (km^3)
         volume += dv;
-        const PetscScalar homT0 = T[i][j][0] + ice.beta_CC_grad * H[i][j];
-        const bool ismelted = ((H[i][j] > 0) && (homT0 > DEFAULT_MIN_TEMP_FOR_SLIDING));
+        const PetscScalar paT0 = T[i][j][0] + ice.beta_CC_grad * H[i][j];
+        const bool ismelted = ((H[i][j] > 0) && (paT0 > DEFAULT_MIN_TEMP_FOR_SLIDING));
         if (ismelted)
           meltedarea += a;
         const PetscScalar xIH = grid.p->dx * i, 
                           yIH = grid.p->dy * j;
         if (inSoftSediment(xIH,yIH)) {
           ssavthick += H[i][j] * a;  // see averaging below to remove area factor
-          ssavbasetemp += homT0 * a;
+          ssavbasetemp += paT0 * a;
           if (ismelted)
             ssmeltedarea += a;
           for (PetscInt k=0; k<7; k++) {
@@ -816,7 +816,7 @@ PetscErrorCode IceHEINOModel::additionalAtEndTimestep() {
               // ierr = PetscPrintf(grid.com,
               //          "  [at ISMIP-HEINO point P%d]\n",k+1); CHKERRQ(ierr);
               pnthick[k] = H[i][j];
-              pnbasetemp[k] = homT0;
+              pnbasetemp[k] = paT0;
               // note equation (10) in ISMIP-HEINO documentation [date: 19 July 2006]
               // is wrong; should read
               //     " \tau_b = - \rho g H \grad_H h " 

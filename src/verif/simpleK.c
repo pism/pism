@@ -26,7 +26,7 @@ Enter t in years:
 Enter z in m (0 < z < 3000 for ice and -1000 < z < 0 for bedrock):
 0
 Results from Test K:
-     T =   260.70501 (K) =   -12.44499 (deg C),   T_homol =    -9.84699 (deg C)
+     T =   260.70501 (K) =   -12.44499 (deg C),   T_pa =    -9.84699 (deg C)
 
 $ ./simpleK 
 Enter t in years:
@@ -34,7 +34,7 @@ Enter t in years:
 Enter z in m (0 < z < 3000 for ice and -1000 < z < 0 for bedrock):
 0
 Results from Test K:
-     T =   270.55200 (K) =    -2.59800 (deg C),   T_homol =     0.00000 (deg C)
+     T =   270.55200 (K) =    -2.59800 (deg C),   T_pa =     0.00000 (deg C)
 
 $ ./simpleK 
 Enter t in years:
@@ -42,7 +42,7 @@ Enter t in years:
 Enter z in m (0 < z < 3000 for ice and -1000 < z < 0 for bedrock):
 0
 Results from Test K:
-     T =   270.55200 (K) =    -2.59800 (deg C),   T_homol =     0.00000 (deg C)
+     T =   270.55200 (K) =    -2.59800 (deg C),   T_pa =     0.00000 (deg C)
 
 */
 
@@ -84,7 +84,7 @@ int main() {
   printf("Results from Test K:\n");
   printf("     T = %11.5f (K) = %11.5f (deg C)",TT,TT - 273.15);
   if (z >= 0) {
-    printf(",   T_homol = %11.5f (deg C)\n",(TT + beta * (H0 - z)) - 273.15);
+    printf(",   T_pa = %11.5f (deg C)\n",(TT + beta * (H0 - z)) - 273.15);
   } else {
     printf("\n");
   }

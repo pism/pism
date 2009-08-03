@@ -258,7 +258,7 @@ PetscErrorCode ThermoGlenIce::view(PetscViewer viewer) const {
 
 
 PetscScalar ThermoGlenIce::flow(PetscScalar stress,PetscScalar temp,PetscScalar pressure,PetscScalar) const {
-  const PetscScalar T = temp + (beta_CC_grad / (rho * earth_grav)) * pressure; // homologous temp
+  const PetscScalar T = temp + (beta_CC_grad / (rho * earth_grav)) * pressure; // pressure-adjusted temp
   return softnessParameter(T) * pow(stress,n-1);
 }
 
@@ -394,7 +394,7 @@ PetscScalar ThermoGlenArrIce::tempFromSoftness(PetscScalar myA) const {
 
 PetscScalar ThermoGlenArrIce::flow(PetscScalar stress, PetscScalar temp, PetscScalar,PetscScalar) const {
   // ignores pressure
-  return softnessParameter(temp) * pow(stress,n-1);  // uses NON-homologous temp
+  return softnessParameter(temp) * pow(stress,n-1);  // uses NON-pressure-adjusted temp
 }
 
 PetscScalar ThermoGlenArrIce::A() const {

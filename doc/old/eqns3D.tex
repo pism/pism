@@ -245,11 +245,11 @@ Equation \eqref{ss}, which combines \eqref{stressstrain}, \eqref{constitutive} a
 \begin{equation}\label{tradF}
 F(T,\sigma,P)=A(T^*) f(\sigma).
 \end{equation}
-Here $T^*$ is the homologous temperature
+Here $T^*$ is the pressure-adjusted temperature
     $$T^*(x,y,z,t) = T(x,y,z,t) - P(x,y,z,t) \Phi,$$
 where $\Phi$ is the constant rate of change of melting point with pressure \cite{PayneBaldwin}.  That is, $T^*$ is the absolute temperature shifted by pressure.\footnote{Recalling \eqref{pressure}, $T^*=T-\rho g (h-z) \Phi$ in the shallow ice approximation.  If $T_0$ is the triple point of water, $\Tpmp = T_0 - \rho g \Phi (h-z)$ is the \emph{pressure-melting temperature} at depth $h-z$ in the ice. One may combine constants and write $T^* = T - \beta (h-z)$ where $\beta = \rho g \Phi$; in PISM we use $\beta = 8.66\times 10^{-4}$ K/m.}
 
-We consider this separated form first, and then reconsider $F$ in light of work by Goldsby and Kohlstedt \cite{GoldsbyKohlstedt}.  Note that in the separated form there is dependence on the pressure $P$ through equation \eqref{stressatdepth} for $\sigma$ and through the formula for homologous temperature $T^*$.
+We consider this separated form first, and then reconsider $F$ in light of work by Goldsby and Kohlstedt \cite{GoldsbyKohlstedt}.  Note that in the separated form there is dependence on the pressure $P$ through equation \eqref{stressatdepth} for $\sigma$ and through the formula for pressure-adjusted temperature $T^*$.
 
 The most common separated form is Glen's flow law \cite{Glen}
     $$f(\sigma)=\sigma^{n-1}$$

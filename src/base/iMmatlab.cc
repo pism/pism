@@ -358,14 +358,14 @@ PetscErrorCode IceModel::writeMatlabVars(const char *fname) {
       ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
     }
     ierr = PetscViewerASCIIPrintf(viewer,
-           "%% to produce a 2D color map of homologous temp with white "
+           "%% to produce a 2D color map of pressure-adjusted temp with white "
            "for at pressure-melting do:\n");  CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,
-           "%%%%  >> Thomol = T_kd - (273.15 - H*8.66e-4);\n");  CHKERRQ(ierr);
+           "%%%%  >> Tpa = T_kd - (273.15 - H*8.66e-4);\n");  CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,
            "%%%%  >> hand1=figure;\n");  CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,
-           "%%%%  >> imagesc(x,y,flipud(Thomol')), axis square, colorbar\n");  CHKERRQ(ierr);
+           "%%%%  >> imagesc(x,y,flipud(Tpa')), axis square, colorbar\n");  CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,
            "%%%%  >> Tcmap = get(hand1,'ColorMap'); Tcmap(64,:)=[1 1 1];\n");  CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,

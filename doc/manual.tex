@@ -1487,17 +1487,17 @@ The time series for volume and melt fraction (the fraction of the base where the
 
 \begin{figure}[ht]
 \includegraphics[width=6.0in,keepaspectratio=true]{figs/eisgrn_meltfseries}
-\caption{Time series for the fraction of the base which is at the pressure-melting temperature from a 110k model year EISMINT-Greenland run.  See the right hand part of Figure \ref{fig:ssl2thickThomol} for a map of the basal temperature.}
+\caption{Time series for the fraction of the base which is at the pressure-melting temperature from a 110k model year EISMINT-Greenland run.  See the right hand part of Figure \ref{fig:ssl2thickTpa} for a map of the basal temperature.}
 \label{fig:eisgrnmeltfseries}
 \end{figure}
 
-We will use the final NetCDF file \verb|green_SSL2_110k.nc| to continue the EISMINT-Greenland experiments below.  The saved ice thickness, basal temperature, and vertically-averaged horizontal velocity maps are shown in Figure \ref{fig:ssl2thickThomol}.
+We will use the final NetCDF file \verb|green_SSL2_110k.nc| to continue the EISMINT-Greenland experiments below.  The saved ice thickness, basal temperature, and vertically-averaged horizontal velocity maps are shown in Figure \ref{fig:ssl2thickTpa}.
 
 \begin{figure}[ht]
-\mbox{\phantom{|}\hspace{-1.0in}\includegraphics[height=3.0in,keepaspectratio=true]{figs/greenH_SSL2}\,\includegraphics[height=3.0in,width=2.3in]{figs/greenThomol_SSL2}\,\includegraphics[height=3.0in,keepaspectratio=true]{figs/greencbar_SSL2}}
-%\includegraphics[height=3.7in,width=2.9in]{figs/greenThomol_SSL2}
+\mbox{\phantom{|}\hspace{-1.0in}\includegraphics[height=3.0in,keepaspectratio=true]{figs/greenH_SSL2}\,\includegraphics[height=3.0in,width=2.3in]{figs/greenTpa_SSL2}\,\includegraphics[height=3.0in,keepaspectratio=true]{figs/greencbar_SSL2}}
+%\includegraphics[height=3.7in,width=2.9in]{figs/greenTpa_SSL2}
 \caption{Ice thickness (meters; left), basal temperature (degrees C below 0; middle), and vertically-averaged horizontal velocity (m/a; right) at the end (110k model years) of a EISMINT-Greenland SSL2 run.  Note that in the temperature graph the pressure-melting temperature areas are white.}
-\label{fig:ssl2thickThomol}
+\label{fig:ssl2thickTpa}
 \end{figure}
 
 In addition to the more standardized EISMINT-Greenland intercomparison called ``SSL2'', a ``SSL3'' was proposed to allow each participant to choose additional parameters and adjust other aspects of the model.  (Sliding, for instance, is an outstanding omission here.)  We omit this run for tutorial purposes, however, and proceed to use climate forcing in runs ``CCL3'' and ``GWL3''.
@@ -1513,12 +1513,12 @@ $ mpiexec -n 8 pgrn -ccl3 -i green_SSL2_110k.nc -dTforcing grip_dT.nc \
 \end{verbatim}
 \noindent Note option \verb|-ccl3| also turns on the Lingle and Clark \cite{BLKfastearth,LingleClark} two layer, flat earth bed deformation model with an assumption of zero uplift rate at the start of the run.
 
-The resulting thickness difference, relative to the end of the SSL2 run, and the homologous basal temperature, are shown in Figure \ref{fig:cclthickThomol}.
+The resulting thickness difference, relative to the end of the SSL2 run, and the pressure-adjusted basal temperature, are shown in Figure \ref{fig:cclthickTpa}.
 
 \begin{figure}[h]
-\includegraphics[width=2.8in]{figs/Hdiff_CCLSSL}\quad\includegraphics[width=2.8in]{figs/Thomol_CCL}
-\caption{Left:  Ice thickness difference between end (year zero) of a CCL3 run and the end of an SSL2 run (meters).  Right:  Ice homologous basal temperature (degrees C below 0; right) at the end of a EISMINT-Greenland CCL3 run.  Compare Figure \ref{fig:ssl2thickThomol}.}
-\label{fig:cclthickThomol}
+\includegraphics[width=2.8in]{figs/Hdiff_CCLSSL}\quad\includegraphics[width=2.8in]{figs/Tpa_CCL}
+\caption{Left:  Ice thickness difference between end (year zero) of a CCL3 run and the end of an SSL2 run (meters).  Right:  Ice pressure-adjusted basal temperature (degrees C below 0; right) at the end of a EISMINT-Greenland CCL3 run.  Compare Figure \ref{fig:ssl2thickTpa}.}
+\label{fig:cclthickTpa}
 \end{figure}
 
 EISMINT-Greenland also calls for a baseline run for another 500 years which starts from the end of the CCL3 run and has steady current climate forcing (noting no GRIP or SPECMAP data are known from the future!):

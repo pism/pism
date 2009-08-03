@@ -77,7 +77,7 @@ where
 is the strain rate tensor and \f$B\f$ is an ice hardness related to 
 the ice softness \f$A(T^*)\f$ by
    \f[ B(T^*)=A(T^*)^{-1/n}  \f]
-in the case of a temperature dependent Glen-type law.  (Here \f$T^*\f$ is the homologous temperature.)
+in the case of a temperature dependent Glen-type law.  (Here \f$T^*\f$ is the pressure-adjusted temperature.)
 
 The effective viscosity is then
    \f[ \nu = \frac{\bar B}{2} \left[\left(\frac{\partial u}{\partial x}\right)^2 + 

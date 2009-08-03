@@ -38,7 +38,7 @@ for j=1:3
         ylab = 'average ice thickness (km)';
     elseif j==2
         varname = 'ahbt';
-        ylab = 'average homologous basal temp (K)';
+        ylab = 'average pressure-adjusted basal temp (K)';
     else % j==3
         varname = 'tba';
         ylab = 'temperate basal area (10^6 km^2)';
@@ -63,8 +63,8 @@ for j=1:3
         ylab = 'thickness (km)';
     elseif j==2
         varname = 'hbt';
-        jtitle = 'HOMOLOGOUS BASAL TEMPERATURE';
-        ylab = 'homologous temperature (K)';
+        jtitle = 'PRESSURE-ADJUSTED BASAL TEMPERATURE';
+        ylab = 'pressure-adjusted temperature (K)';
     else % j==3
         varname = 'bfh';
         jtitle = 'BASAL FRICTION HEATING';
