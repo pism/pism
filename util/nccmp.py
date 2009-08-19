@@ -33,12 +33,16 @@ def compare_vars(nc1, nc2, name, tol):
     
 
 def compare(file1, file2, variables, exclude, tol):
-    from netCDF3 import Dataset as CDF
+    try:
+        from netCDF4 import Dataset as NC
+    except:
+        from netCDF3 import Dataset as NC
+
     from numpy import unique, r_
 
     try:
-        nc1 = CDF(file1, 'r')
-        nc2 = CDF(file2, 'r')
+        nc1 = NC(file1, 'r')
+        nc2 = NC(file2, 'r')
     except:
         # This can happen if one of the files could not be open.
         failure()

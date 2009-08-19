@@ -1,6 +1,6 @@
 These software tests depend on the following:
 
-1) util/nccmp.py, which depends on the netCDF3 module from the netcdf4-python
+1) util/nccmp.py, which depends on the netCDF3 or netCDF5 module from the netcdf4-python
 package (see http://code.google.com/p/netcdf4-python/) and numpy.
 2) NetCDF Operators (NCO), see http://nco.sourceforge.net/
 

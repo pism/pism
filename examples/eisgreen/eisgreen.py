@@ -5,7 +5,10 @@ import sys
 import getopt
 import time
 from numpy import *
-from netCDF3 import Dataset as NC
+try:
+    from netCDF4 import Dataset as NC
+except:
+    from netCDF3 import Dataset as NC
 
 GRID_FILE = 'grid20-EISMINT'
 SUAQ_FILE = 'suaq20-EISMINT'

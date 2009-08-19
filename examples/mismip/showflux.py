@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
 from pylab import *
-from netCDF3 import Dataset as NC
+try:
+    from netCDF4 import Dataset as NC
+except:
+    from netCDF3 import Dataset as NC
 import os
 import sys
 from getopt import getopt, GetoptError

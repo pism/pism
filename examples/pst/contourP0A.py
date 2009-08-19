@@ -6,7 +6,10 @@
 # optionally produces image files  thkP0Acontour.png, bwatP0Aimage.png
 
 from pylab import *
-from netCDF3 import Dataset as NC
+try:
+    from netCDF4 import Dataset as NC
+except:
+    from netCDF3 import Dataset as NC
 
 filename = "P0A.nc"
 print "opening %s to make contour map of thickness and image of bwat" % filename

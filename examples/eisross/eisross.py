@@ -4,7 +4,10 @@ import sys
 import getopt
 import time
 from numpy import *
-from netCDF3 import Dataset as NC
+try:
+    from netCDF4 import Dataset as NC
+except:
+    from netCDF3 import Dataset as NC
 
 # set constants
 SECPERA = 3.1556926e7

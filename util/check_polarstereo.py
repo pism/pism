@@ -3,14 +3,17 @@
 # 1) pyproj (http://code.google.com/p/pyproj/)
 # 2) netcdf4-python (http://code.google.com/p/netcdf4-python/)
 
-from netCDF3 import Dataset as CDF
+try:
+    from netCDF4 import Dataset as NC
+except:
+    from netCDF3 import Dataset as NC
 from pyproj import Proj
 from sys import argv, exit
 from numpy import *
 from getopt import getopt, GetoptError
 
 def read_vars(filename, var1, var2):
-    nc = CDF(filename, "r")
+    nc = NC(filename, "r")
     try:
         x = nc.variables[var1][:]
         y = nc.variables[var2][:]
@@ -22,7 +25,7 @@ def read_vars(filename, var1, var2):
     return (squeeze(x), squeeze(y))
 
 def get_ps_info(filename):
-    nc = CDF(filename, "r")
+    nc = NC(filename, "r")
     
     # Get the projection info:
     try:
@@ -44,7 +47,7 @@ def get_ps_info(filename):
 
 def fix_latlon(filename):
     print "Fixing latitude and longitude..."
-    nc = CDF(filename, "a")
+    nc = NC(filename, "a")
 
     # Note the "fundamental transpose".
     x, y = read_vars(filename, "y", "x")
@@ -70,7 +73,7 @@ def fix_latlon(filename):
     nc.close()
 
 def write_polarstereo(filename, lon_0, lat_0, lat_ts):
-    nc = CDF(filename, "a")
+    nc = NC(filename, "a")
 
     name = "polar_stereographic"
 
@@ -87,7 +90,7 @@ def write_polarstereo(filename, lon_0, lat_0, lat_ts):
     nc.close()
 
 def fix_xy(filename):    
-    nc = CDF(filename, "a")
+    nc = NC(filename, "a")
 
     lon, lat = read_vars(filename, "lon", "lat")
     p,_ = get_ps_info(filename)

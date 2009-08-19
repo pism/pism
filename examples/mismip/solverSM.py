@@ -269,7 +269,10 @@ if len(ncfilename) == 0:
 ################## NetCDF write option #################
 #### write a PISM-readable file with thickness only ####
 
-from netCDF3 import Dataset as NC
+try:
+    from netCDF4 import Dataset as NC
+except:
+    from netCDF3 import Dataset as NC
 
 My = 3
 dy = (2. * LL) / (float(Mx-1))

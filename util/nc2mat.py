@@ -2,7 +2,10 @@
 
 from scipy.io.matlab.mio import savemat
 from sys import argv, exit
-from netCDF3 import Dataset as NC
+try:
+    from netCDF4 import Dataset as NC
+except:
+    from netCDF3 import Dataset as NC
 from getopt import getopt, GetoptError
 from os.path import splitext
 

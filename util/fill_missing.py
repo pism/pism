@@ -138,7 +138,11 @@ if __name__ == "__main__":
     from tempfile import mkstemp
     from os import close
     from time import time, asctime
-    from netCDF3 import Dataset as NC
+    try:
+        from netCDF4 import Dataset as NC
+    except:
+        from netCDF3 import Dataset as NC
+
 
     try:
         opts, args = getopt(argv[1:], "f:v:o:e:i:",

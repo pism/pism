@@ -25,7 +25,10 @@ from numpy import *
 from pylab import *
 from getopt import getopt, GetoptError
 from sys import argv, exit
-from netCDF3 import Dataset as NC
+try:
+    from netCDF4 import Dataset as NC
+except:
+    from netCDF3 import Dataset as NC
 from scikits.delaunay import *
 
 seconds_per_year = 3.1556926e7

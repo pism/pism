@@ -6,7 +6,10 @@
 from pylab import *
 import os
 import sys
-from netCDF3 import Dataset as NC
+try:
+    from netCDF4 import Dataset as NC
+except:
+    from netCDF3 import Dataset as NC
 
 ## a successful experiment with polyfit:
 #t=arange(0,1,.1)

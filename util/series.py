@@ -10,7 +10,11 @@
 ## to extract.
 
 from numpy import *
-from netCDF3 import Dataset as NC
+# try different netCDF modules
+try:
+    from netCDF4 import Dataset as NC
+except:
+    from netCDF3 import Dataset as NC
 import getopt
 import sys
 import time

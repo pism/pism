@@ -4,10 +4,13 @@ The figure gripDeltaT.png is used in "Example: Modeling the Greenland ice sheet"
 """
 
 from numpy import *
-from netCDF3 import Dataset as CDF
+try:
+    from netCDF4 import Dataset as NC
+except:
+    from netCDF3 import Dataset as NC
 from pylab import *
 
-nc = CDF("../examples/eisgreen/grip_dT.nc", "r")
+nc = NC("../examples/eisgreen/grip_dT.nc", "r")
 t = nc.variables["t"][:]
 delta_T = nc.variables["delta_T"][:]
 
