@@ -45,11 +45,11 @@ PetscErrorCode IceEISModel::set_grid_defaults() {
   if (EISIIchosen == PETSC_TRUE) {
     temp = eisIIexpername[0];
     if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
-    if ((temp >= 'A') && (temp <= 'L')) {
+    if (((temp >= 'A') && (temp <= 'L')) || (temp == 'S')) {
       expername = temp;
     } else {
       ierr = PetscPrintf(grid.com,
-			 "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
+			 "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, L, or S\n");
       CHKERRQ(ierr);
       PetscEnd();
     }
@@ -63,6 +63,7 @@ PetscErrorCode IceEISModel::set_grid_defaults() {
     case 'A':
     case 'E':
     case 'I':
+    case 'S':
       grid.Lx = grid.Ly = L;
       grid.Lz = 5e3;
       break;
@@ -207,15 +208,25 @@ PetscErrorCode IceEISModel::setFromOptions() {
       R_el = 450.0e3;
       T_min = 223.15;
       break;
+    case 'S':
+      // start with zero ice and:
+      M_max = 0.5 / secpera;  // Max accumulation
+      R_el = 450.0e3;           // Distance to equil line (accum=0)
+      R_cts = 100.0e3; // position where transition from temperate to cold surface upper boundary occurs
+      T_min = 238.15;
+      T_max = 273.15;
+      break;
     default:
       SETERRQ(999,"\n HOW DID I GET HERE?\n");
   }
 
-  // if user specifies Tmin, Mmax, Sb, ST, Rel, then use that (override above)
-  PetscScalar myTmin, myMmax, mySb, myST, myRel;
+  // if user specifies Tmin, Tmax, Mmax, Sb, ST, Rel, then use that (override above)
+  PetscScalar myTmin, myTmax, myMmax, mySb, myST, myRel, myRcts;
   PetscTruth  paramSet;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Tmin", &myTmin, &paramSet); CHKERRQ(ierr);
   if (paramSet == PETSC_TRUE)     T_min = myTmin;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Tmax", &myTmax, &paramSet); CHKERRQ(ierr);
+  if (paramSet == PETSC_TRUE)     T_max = myTmax;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Mmax", &myMmax, &paramSet); CHKERRQ(ierr);
   if (paramSet == PETSC_TRUE)     M_max = myMmax / secpera;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Sb", &mySb, &paramSet); CHKERRQ(ierr);
@@ -224,6 +235,8 @@ PetscErrorCode IceEISModel::setFromOptions() {
   if (paramSet == PETSC_TRUE)     S_T = myST * 1e-3;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Rel", &myRel, &paramSet); CHKERRQ(ierr);
   if (paramSet == PETSC_TRUE)     R_el = myRel * 1e3;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Rcts", &myRcts, &paramSet); CHKERRQ(ierr);
+  if (paramSet == PETSC_TRUE)     R_cts = myRcts;
 
   ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
   return 0;
@@ -283,7 +296,17 @@ PetscErrorCode IceEISModel::initAccumTs() {
       // set accumulation
       accum[i][j] = PetscMin(M_max, S_b * (R_el-r));  // formula (7) in (Payne et al 2000)
       // set surface temperature
-      Ts[i][j] = T_min + S_T * r;                 // formula (8) in (Payne et al 2000)
+      if (expername == 'S') {
+	// simplest possible Scandinavian-type upper surface boundary condition
+	// could be replace with more elaborate formula
+	if (r <= R_cts) {
+	  Ts[i][j] = T_max;
+	} else {
+	  Ts[i][j] = T_min;
+	}	  
+      } else {
+        Ts[i][j] = T_min + S_T * r;                 // formula (8) in (Payne et al 2000)
+      }
     }
   }
 

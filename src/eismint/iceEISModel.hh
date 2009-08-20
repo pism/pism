@@ -42,7 +42,7 @@ public:
 protected:
     int         expername;
     bool        infileused;
-    PetscScalar M_max, R_el, T_min, S_b, S_T;
+    PetscScalar M_max, R_el, R_cts, T_min, T_max, S_b, S_T;
  
     PetscErrorCode initAccumTs();
     PetscErrorCode fillintemps();
