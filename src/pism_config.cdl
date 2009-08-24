@@ -192,8 +192,8 @@ netcdf pism_config {
 
     // THESE CONSTANTS MAY DUPLICATE, AND MAY SUPERCEDE, CONSTANTS IN materials.cc
 
-    pism_config:beta_CC = 7.53e-8;
-    pism_config:beta_CC_doc = "K Pa-1; Clausius-Clapeyron constant [\\ref AschwandenBlatter2009]";
+    pism_config:beta_CC = 7.9e-8;
+    pism_config:beta_CC_doc = "K Pa-1; Clausius-Clapeyron constant [\\ref Luethi2002]";
     // in materials.cc we have:
     //   beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient
     // presumably for pure ice, but (beta_CC * ice.rho * grav) does not equal beta_CC_grad
@@ -212,15 +212,12 @@ netcdf pism_config {
 
     pism_config:ice_density = 910.0;
     pism_config:ice_density_doc = "kg m-3; = rho_i; density of ice in ice sheet";
-    // [\\ref AschwandenBlatter2009]  has 900.0
 
     pism_config:ice_thermal_conductivity = 2.10;
     pism_config:ice_thermal_conductivity_doc = "J m-1 K-1 s-1; = W m-1 K-1";
-    // [\\ref AschwandenBlatter2009]  has 2.22
 
     pism_config:ice_specific_heat_capacity = 2009.0;
     pism_config:ice_specific_heat_capacity_doc = "J kg-1 K-1; at triple point T_0";
-    // [\\ref AschwandenBlatter2009]  has 2008.0
 
     pism_config:enthalpy_temperate_diffusivity = 0.0;
     pism_config:enthalpy_temperate_diffusivity_doc = "m2 s-1; diffusivity units same as k/(rho c)";
