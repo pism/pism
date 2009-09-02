@@ -928,8 +928,9 @@ PetscErrorCode IceModel::correctSigma() {
             n_glen  = ice->exponent(),
             Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
             Tstar   = T[k] + ice->beta_CC_grad * (H[i][j] - grid.zlevels[k]),
-            // Use pressure-adjusted temperature and account for the enhancement factor Note, enhancement factor is not
-            // used in SSA anyway.  Should we get rid of it completely?  If not, what is most consistent here?
+            // Use pressure-adjusted temperature and account for the enhancement factor.
+            //   Note, enhancement factor is not used in SSA anyway.
+            //   Should we get rid of it completely?  If not, what is most consistent here?
             BofT    = ice->hardnessParameter(Tstar) * pow(enhancementFactor,-1/n_glen);
           if (addVels) {
             const PetscScalar D2sia = pow(Sigma[k] / (2 * BofT), 1.0 / Sig_pow);
