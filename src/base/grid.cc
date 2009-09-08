@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -77,6 +77,9 @@ IceGrid::IceGrid(MPI_Comm c,
   My = DEFAULT_ICEPARAM_My;
   Mz = DEFAULT_ICEPARAM_Mz;
   Mbz = DEFAULT_ICEPARAM_Mbz;
+
+  initial_Mz = 0;		// will be set to a correct value in
+				// IceModel::check_maximum_thickness()
 
   da2 = PETSC_NULL;
   zlevels = NULL;

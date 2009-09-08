@@ -116,7 +116,10 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
   ierr = vbed.set(0.0);
   ierr = vHmelt.set(0.0);
   ierr = vGhf.set(G_geothermal);
-  setInitialAgeYears(initial_age_years_default);
+
+  // set the initial age of the ice:
+  tau3.set(config.get("initial_age_of_ice_years") * secpera);
+
   ierr = vMask.set(MASK_SHEET);
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
 
@@ -156,7 +159,9 @@ PetscErrorCode IceEISModel::setFromOptions() {
   thermalBedrock = PETSC_FALSE;
   useSSAVelocity = PETSC_FALSE;
   isDrySimulation = PETSC_TRUE;
-  enhancementFactor = 1.0;
+
+  config.set("enhancement_factor", 1.0);
+
   includeBMRinContinuity = PETSC_FALSE; // so basal melt does not change 
                                         // computation of vertical velocity
 
@@ -429,7 +434,7 @@ For SIA regions (MASK_SHEET), and it is called within IceModel::basalSlidingHeat
  */
 PetscScalar IceEISModel::basalVelocitySIA(
                 PetscScalar /*x*/, PetscScalar /*y*/, PetscScalar H, PetscScalar T,
-                PetscScalar /*alpha*/, PetscScalar /*mu*/) const {
+                PetscScalar /*alpha*/, PetscScalar /*mu*/, PetscScalar /*min_T*/) const {
   const PetscScalar  Bfactor = 1e-3 / secpera; // units m s^-1 Pa^-1
   const PetscScalar  eismintII_temp_sliding = 273.15;
   

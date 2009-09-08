@@ -167,6 +167,8 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
   SSASNESCtx  user;
   Vec         X, R;
 
+  PetscReal ssaEpsilon = config.get("epsilon_ssa");
+
   ierr = SNESCreate(grid.com,&snes);CHKERRQ(ierr);
 
   // DA with dof = 2; otherwise same as grid.da2

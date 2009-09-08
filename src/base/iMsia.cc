@@ -186,6 +186,9 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   K = new PetscScalar[grid.Mz];
   Sigma = new PetscScalar[grid.Mz];
 
+  double enhancement_factor = config.get("enhancement_factor");
+  double constant_grain_size = config.get("constant_grain_size");
+
   PetscScalar **h_x[2], **h_y[2], **H, **uvbar[2];
 
   PetscScalar *Tij, *Toffset, *ageij, *ageoffset;
@@ -238,14 +241,14 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           I[0] = 0;   J[0] = 0;   K[0] = 0;
           for (PetscInt k=0; k<=ks; ++k) {
             const PetscScalar   pressure = ice->rho * earth_grav * (thickness - grid.zlevels[k]);
-            PetscScalar flow,grainsize = constantGrainSize;
+            PetscScalar flow,grainsize = constant_grain_size;
             if (usesGrainSize && realAgeForGrainSize) {
               grainsize = grainSizeVostok(0.5 * (ageij[k] + ageoffset[k]));
             }
             // If the flow law does not use grain size, it will just ignore it, no harm there
             flow = ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure, grainsize);
 
-            delta[k] = 2.0 * pressure * enhancementFactor * flow;
+            delta[k] = 2.0 * pressure * enhancement_factor * flow;
 
             // for Sigma, ignore mask value and assume SHEET; will be overwritten
             // by correctSigma() in iMssa.cc
@@ -310,7 +313,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
 //! Compute the basal sliding and frictional heating if (where) SIA sliding rule is used.
 /*!
-This routine is only called, by velocity(), if \f$\mu\f$=\c muSliding is non-zero.
+This routine is only called, by velocity(), if \f$\mu\f$=\c mu_sliding is non-zero.
 
 THIS KIND OF SIA SLIDING LAW IS A BAD IDEA.  THAT'S WHY \f$\mu\f$ IS SET TO 
 ZERO BY DEFAULT.
@@ -326,6 +329,9 @@ See correctBasalFrictionalHeating() for the SSA contribution.
 PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   PetscErrorCode  ierr;
   PetscScalar **h_x[2], **h_y[2], **ub, **vb, **Rb, **mask, **H;
+
+  double mu_sliding = config.get("mu_sliding");
+  double minimum_temperature_for_sliding = config.get("minimum_temperature_for_sliding");
 
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
@@ -357,7 +363,8 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
                                  + h_y[1][i][j] + h_y[1][i][j-1]),
                   alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy)),
                   basalC = basalVelocitySIA(myx, myy, H[i][j], T3.getValZ(i,j,0.0), 
-                                            alpha, muSliding);
+                                            alpha, mu_sliding,
+					    minimum_temperature_for_sliding);
           ub[i][j] = - basalC * myhx;
           vb[i][j] = - basalC * myhy;
           // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
@@ -406,11 +413,13 @@ PetscErrorCode IceModel::velocities2DSIAToRegular() {
   PetscErrorCode ierr;
   PetscScalar **ubar, **vbar, **uvbar[2];
 
+  double mu_sliding = config.get("mu_sliding");
+
   ierr = vubar.get_array(ubar); CHKERRQ(ierr);
   ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
   ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
-  if (muSliding == 0.0) {
+  if (mu_sliding == 0.0) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         // compute ubar,vbar on regular grid by averaging deformational on staggered grid
@@ -508,6 +517,8 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
   PetscScalar **h_x[2], **h_y[2];
   PetscScalar *u, *v, *IEAST, *IWEST, *INORTH, *ISOUTH;
 
+  double mu_sliding = config.get("mu_sliding");
+
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
   ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
@@ -534,7 +545,7 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
     }
   }
 
-  if (muSliding > 0.0) { // unusual case
+  if (mu_sliding > 0.0) { // unusual case
     PetscScalar **ub, **vb;
     ierr = vub.get_array(ub); CHKERRQ(ierr);
     ierr = vvb.get_array(vb); CHKERRQ(ierr);
@@ -588,8 +599,8 @@ The returned coefficient is used in basalSlidingHeatingSIA().
  */
 PetscScalar IceModel::basalVelocitySIA(
                PetscScalar /*x*/, PetscScalar /*y*/, PetscScalar H, PetscScalar T,
-               PetscScalar /*alpha*/, PetscScalar mu) const {
-  if (T + ice->beta_CC_grad * H > min_temperature_for_SIA_sliding) {
+               PetscScalar /*alpha*/, PetscScalar mu, PetscScalar min_T) const {
+  if (T + ice->beta_CC_grad * H > min_T) {
     return basalSIA->velocity(mu, ice->rho * earth_grav * H);
   } else {
     return 0;

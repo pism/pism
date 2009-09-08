@@ -41,7 +41,7 @@ IceExactSSAModel::IceExactSSAModel(IceGrid &g, char mytest) : IceModel(g) {
   test = mytest;
   
   useSSAVelocity = PETSC_TRUE;
-  ssaMaxIterations = 500;  
+  config.set("max_iterations_ssa", 500);
   useConstantNuHForSSA = PETSC_FALSE;
   doPlasticTill = PETSC_TRUE;  // correct for I, irrelevant for J and M
   doSuperpose = PETSC_FALSE;
@@ -100,19 +100,6 @@ PetscErrorCode IceExactSSAModel::createVecs() {
   return 0;
 }
 
-PetscErrorCode IceExactSSAModel::destroyVecs() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::destroyVecs(); CHKERRQ(ierr);
-
-  if (test == 'J') {
-    ierr = vNuForJ[0].destroy(); CHKERRQ(ierr);
-    ierr = vNuForJ[1].destroy(); CHKERRQ(ierr);
-  }
-
-  return 0;
-}
-
 PetscErrorCode IceExactSSAModel::misc_setup() {
   PetscErrorCode ierr;
 
@@ -129,14 +116,14 @@ PetscErrorCode IceExactSSAModel::misc_setup() {
       // so periodic grid works although h(-Lx,y) != h(Lx,y):
       computeSurfGradInwardSSA = PETSC_TRUE;
 
-      ssaEpsilon = 0.0;  // don't use this lower bound
+      config.set("epsilon_ssa", 0.0);  // don't use this lower bound
     break;
   case 'J':
     ierr = setInitStateJ(); CHKERRQ(ierr);
     isDrySimulation = PETSC_FALSE;
     leaveNuHAloneSSA = PETSC_TRUE; // will use already-computed nu instead of updating
     computeSurfGradInwardSSA = PETSC_FALSE;
-    ssaEpsilon = 0.0;  // don't use this lower bound
+    config.set("epsilon_ssa", 0.0);  // don't use this lower bound
     break;
   case 'M':
     ierr = setInitStateM(); CHKERRQ(ierr);

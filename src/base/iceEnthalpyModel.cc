@@ -827,6 +827,9 @@ PetscErrorCode IceEnthalpyModel::velocitySIAStaggered() {
 
   PetscScalar *Tij, *Toffset, *ageij, *ageoffset;
 
+  double enhancement_factor = config.get("enhancement_factor");
+  double constant_grain_size = config.get("constant_grain_size");
+
   const bool usetau3 = (IceTypeUsesGrainSize(ice) && (realAgeForGrainSize == PETSC_TRUE));
 
   const PetscTruth usesGrainSize = IceTypeUsesGrainSize(ice);
@@ -893,7 +896,7 @@ PetscErrorCode IceEnthalpyModel::velocitySIAStaggered() {
           I[0] = 0;   J[0] = 0;   K[0] = 0;
           for (PetscInt k=0; k<=ks; ++k) {
             const PetscScalar   pressure = ice->rho * earth_grav * (thickness - grid.zlevels[k]);
-            PetscScalar flow,grainsize = constantGrainSize;
+            PetscScalar flow,grainsize = constant_grain_size;
             if (usesGrainSize && realAgeForGrainSize) {
               grainsize = grainSizeVostok(0.5 * (ageij[k] + ageoffset[k]));
             }
@@ -905,7 +908,7 @@ PetscErrorCode IceEnthalpyModel::velocitySIAStaggered() {
                                           pressure, grainsize);
             }
 
-            delta[k] = 2.0 * pressure * enhancementFactor * flow;
+            delta[k] = 2.0 * pressure * enhancement_factor * flow;
 
             // for Sigma, ignore mask value and assume SHEET; will be overwritten
             // by correctSigma() in iMssa.cc
@@ -1643,7 +1646,7 @@ Because both \c bwat and \c bmr are zero at points where base of ice is frozen,
 the resulting effective pressure on the till, from this routine, equals
 the overburden pressure.
 
-Option \c -plastic_pwfrac controls parameter plastic_till_pw_fraction.
+Option \c -plastic_pwfrac controls parameter till_pw_fraction.
 
 Option \c -bmr_enhance turns on the basal melt rate dependency in pore pressure.
 Option \c -bmr_enhance_scale sets the value.  Default is equivalent to
@@ -1659,12 +1662,11 @@ Also, the method using "elevation of the bed at the grounding line"
 as in Lingle&Brown 1987 is not implementable because that elevation is
 at an unknowable location.  We are not doing a flow line model!
  */
-PetscScalar IceEnthalpyModel::getEffectivePressureOnTill(
-               PetscScalar thk, PetscScalar bwat, PetscScalar bmr) const {
+PetscScalar IceEnthalpyModel::getEffectivePressureOnTill(PetscScalar thk, PetscScalar bwat,
+							 PetscScalar bmr, PetscScalar frac) const {
 
   const PetscScalar
-               p_overburden = ice->rho * earth_grav * thk,
-               frac = plastic_till_pw_fraction;
+    p_overburden = ice->rho * earth_grav * thk;
 
   // base model for pore water pressure;  note  0 <= p_pw <= frac * p_overburden
   //   because  0 <= bwat <= Hmelt_max
@@ -1711,6 +1713,7 @@ is the effective pressure on the till.
  
 We modify Schoof's formula by (possibly) adding a small till cohesion \f$c_0\f$
 and by expressing the coefficient as the tangent of a till friction angle
+
 \f$\varphi\f$:
     \f[   \tau_c = c_0 + (\tan \varphi) N. \f]
 See [\ref Paterson] table 8.1) regarding values of \f$c_0\f$.
@@ -1738,6 +1741,10 @@ PetscErrorCode IceEnthalpyModel::updateYieldStressFromHmelt() {
   if (holdTillYieldStress == PETSC_FALSE) { // usual case: use Hmelt to determine tauc
     PetscScalar **mask, **tauc, **H, **Hmelt, **bmr, **tillphi; 
 
+    PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
+      till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
+      till_mu = tan((pi/180.0)*config.get("default_till_phi"));
+
     ierr =          vMask.get_array(mask);    CHKERRQ(ierr);
     ierr =          vtauc.get_array(tauc);    CHKERRQ(ierr);
     ierr =             vH.get_array(H);       CHKERRQ(ierr);
@@ -1752,11 +1759,11 @@ PetscErrorCode IceEnthalpyModel::updateYieldStressFromHmelt() {
           tauc[i][j] = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice
         } else { // grounded and there is some ice
           const PetscScalar
-            N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j], bmr[i][j]);
+            N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j], bmr[i][j], till_pw_fraction);
           if (useConstantTillPhi == PETSC_TRUE) {
-            tauc[i][j] = plastic_till_c_0 + N * plastic_till_mu;
+            tauc[i][j] = till_c_0 + N * till_mu;
           } else {
-            tauc[i][j] = plastic_till_c_0 + N * tan((pi/180.0) * tillphi[i][j]);
+            tauc[i][j] = till_c_0 + N * tan((pi/180.0) * tillphi[i][j]);
           }
         }
       }

@@ -195,14 +195,14 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr = vH.range(H_min, H_max); CHKERRQ(ierr);
   if (grid.Lz >= H_max) return 0;
 
-  if (initial_Mz == 0)
-    initial_Mz = grid.Mz;
-  else if (grid.Mz > initial_Mz * 2) {
+  if (grid.initial_Mz == 0)
+    grid.initial_Mz = grid.Mz;
+  else if (grid.Mz > grid.initial_Mz * 2) {
     ierr = PetscPrintf(grid.com,
 		       "\n"
 		       "PISM ERROR: Max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m)"
 		       " AND the grid has twice the initial number of vertical levels (%d) already. Exiting...\n",
-		       H_max, grid.Lz, initial_Mz); CHKERRQ(ierr);
+		       H_max, grid.Lz, grid.initial_Mz); CHKERRQ(ierr);
     PetscEnd();
   }
 

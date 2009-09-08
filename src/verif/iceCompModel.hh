@@ -41,7 +41,6 @@ public:
   virtual PetscErrorCode set_vars_from_options(); // called by IceModel::model_state_setup()
 
   virtual PetscErrorCode createViewers();
-  virtual PetscErrorCode destroyVecs();
   virtual PetscErrorCode destroyViewers();
 
   PetscErrorCode reportErrors();
@@ -81,7 +80,7 @@ protected:
         PetscScalar &gmaxuberr, PetscScalar &gmaxvberr);
   virtual PetscScalar basalVelocitySIA( // not recommended, generally
                              PetscScalar x, PetscScalar y, PetscScalar H, PetscScalar T,
-                             PetscScalar alpha, PetscScalar mu) const;
+                             PetscScalar alpha, PetscScalar mu, PetscScalar min_T) const;
 
   // related to test L
   IceModelVec2   vHexactL;

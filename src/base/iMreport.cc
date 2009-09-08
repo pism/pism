@@ -170,6 +170,7 @@ PetscErrorCode IceModel::energyAgeStats(
   const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
   const PetscScalar   currtime = grid.year * secpera;
 
+  double min_temperature_for_SIA_sliding = config.get("minimum_temperature_for_sliding");
   meltarea = 0.0; temp0 = 0.0; origvol = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {

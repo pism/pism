@@ -195,7 +195,7 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   ierr = verbPrintf(2, grid.com, 
      "  setting flags equivalent to '-e 3 -ocean_kill'; user options may override ...\n");
      CHKERRQ(ierr);
-  enhancementFactor = 3;  
+  config.set("enhancement_factor", 3.0);
   doOceanKill = PETSC_TRUE;
 
   if (exper != SSL2) { 
@@ -206,7 +206,7 @@ PetscErrorCode IceGRNModel::setFromOptions() {
     doBedIso = PETSC_FALSE;
   }
 
-  muSliding = 0.0;  // no SIA-type sliding!; see \ref RitzEISMINT
+  config.set("mu_sliding", 0.0);  // no SIA-type sliding!; see [\ref RitzEISMINT]
 
   // these flags turn off parts of the EISMINT-Greenland specification;
   //   use when extra/different data is available

@@ -35,7 +35,8 @@ IceROSSModel::IceROSSModel(IceGrid &g)
            // shear-thinning way (except will extend shelf using constantNuHForSSA below,
            // also as usual)
   shelvesDragToo = PETSC_FALSE;            // exactly zero drag under shelves
-  ssaEpsilon = 0.0;  // don't use this lower bound on effective viscosity
+
+  config.set("epsilon_ssa", 0.0);  // don't use this lower bound on effective viscosity
 
   iceFactory.setType(ICE_CUSTOM);  // ICE_CUSTOM has easy setting of ice hardness
   
@@ -77,19 +78,6 @@ PetscErrorCode IceROSSModel::createVecs() {
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
   return 0;
 }
-
-
-PetscErrorCode IceROSSModel::destroyVecs() {
-  PetscErrorCode ierr;
-
-  ierr = obsAzimuth.destroy(); CHKERRQ(ierr);
-  ierr = obsMagnitude.destroy(); CHKERRQ(ierr);
-  ierr = obsAccurate.destroy(); CHKERRQ(ierr);
-
-  ierr = IceModel::destroyVecs(); CHKERRQ(ierr);
-  return 0;
-}
-
 
 PetscErrorCode IceROSSModel::set_vars_from_options() {
   PetscErrorCode ierr;
@@ -178,7 +166,9 @@ PetscErrorCode IceROSSModel::finishROSS() {
                                PETSC_MAX_PATH_LEN, &ssaBCset); CHKERRQ(ierr);
   if (ssaBCset == PETSC_FALSE)
     return 0;
-    
+
+  double ssaEpsilon = config.get("epsilon_ssa");
+
   ierr = verbPrintf(2,grid.com, "\nEIS-Ross: reading observed velocities from %s...\n",
                     ssaBCfile); CHKERRQ(ierr);
   ierr = readObservedVels(ssaBCfile); CHKERRQ(ierr);

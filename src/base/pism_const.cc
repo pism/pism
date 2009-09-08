@@ -199,11 +199,11 @@ int compare_doubles (const void *a, const void *b)
   This unpredictability is bad. We want a function that does not depend on the
   argument given with an option.
  */
-PetscErrorCode check_option(const char name[], PetscTruth &flag) {
+PetscErrorCode check_option(string name, PetscTruth &flag) {
   PetscErrorCode ierr;
   char tmp[1];
 
-  ierr = PetscOptionsGetString(PETSC_NULL, name, tmp, 1, &flag); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, name.c_str(), tmp, 1, &flag); CHKERRQ(ierr);
 
   return 0;
 }

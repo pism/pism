@@ -354,10 +354,9 @@ PetscErrorCode IceMISMIPModel::set_time_from_options() {
       runtimeyears); CHKERRQ(ierr);
     if (ysSet == PETSC_FALSE) {
       grid.year = 0.0;
-      ierr = setStartYear(grid.year); CHKERRQ(ierr);
+      config.set("start_year", grid.year);
     }
-    ierr = setEndYear(startYear + runtimeyears); CHKERRQ(ierr);
-    yearsStartRunEndDetermined = PETSC_TRUE;
+    end_year = config.get("start_year") + runtimeyears;
   }
 
   return 0;
@@ -476,7 +475,10 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   // all of these relate to models which need to be turned off ...
   ierr = vHmelt.set(0.0); CHKERRQ(ierr);
   // none use Goldsby-Kohlstedt or do age calc
-  setInitialAgeYears(initial_age_years_default);
+
+  // set the initial age of the ice:
+  tau3.set(config.get("initial_age_of_ice_years") * secpera);
+
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no bed deformation
   ierr =  T3.set(ice->meltingTemp); CHKERRQ(ierr);
   ierr = Tb3.set(ice->meltingTemp); CHKERRQ(ierr);
@@ -703,8 +705,8 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
 
   if (rstats.dHdtnorm * secpera < dHdtnorm_atol) {  // if all points have dHdt < 10^-4 m/yr
     steadyOrGoalAchieved = PETSC_TRUE;
-    // set the IceModel goal of endYear to the current year; causes immediate stop
-    endYear = grid.year;  
+    // set the IceModel goal of end_year to the current year; causes immediate stop
+    end_year = grid.year;  
   }
 
   // apply an ad hoc calving criterion only under user option -try_calving

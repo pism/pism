@@ -51,9 +51,9 @@ using namespace std;
 
   Also:
 
-  \li empty string attributes are ignored (they are not written to the output
+  \li empty string attributes are ignored (they are not written to the output;
   file and has("foo") returns false if "foo" is absent or equal to an empty
-  string.
+  string).
  */
 class NCVariable {
 public:
@@ -125,6 +125,8 @@ public:
   virtual double get(string);
   virtual bool get_flag(string);
   virtual void set_flag(string, bool);
+  virtual PetscErrorCode flag_from_option(string, string);
+  virtual PetscErrorCode scalar_from_option(string, string);
 protected:
   string config_filename;
   virtual PetscErrorCode write_attributes(int ncid, int varid, nc_type nctype,
@@ -132,6 +134,7 @@ protected:
   virtual PetscErrorCode define(int ncid, int &varid);
 };
 
+//! An internal class for reading, writing and converting time-series.
 class NCTimeseries : public NCVariable {
 public:
   string dimension_name;

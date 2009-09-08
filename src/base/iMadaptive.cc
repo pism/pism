@@ -103,7 +103,7 @@ The maximum vertical velocity is computed but it does not affect
 PetscErrorCode IceModel::computeMax3DVelocities() {
   PetscErrorCode ierr;
   PetscScalar **H, *u, *v, *w;
-  PetscScalar locCFLmaxdt = maxdt;
+  PetscScalar locCFLmaxdt = config.get("maximum_time_step_years") * secpera;
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = u3.begin_access(); CHKERRQ(ierr);
@@ -157,7 +157,7 @@ sliding case we have a CFL condition.
 PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   PetscErrorCode ierr;
   PetscScalar **ub, **vb, **mask;
-  PetscScalar locCFLmaxdt2D = maxdt;
+  PetscScalar locCFLmaxdt2D = config.get("maximum_time_step_years") * secpera;
   
   ierr = vub.get_array(ub); CHKERRQ(ierr);
   ierr = vvb.get_array(vb); CHKERRQ(ierr);
@@ -194,6 +194,11 @@ adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so dt <= adapt_ratio * dx^2/maxD
 Reference: \ref MortonMayers pp 62--63.
  */
 PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
+
+  const PetscScalar adaptTimeStepRatio = config.get("adaptive_timestepping_ratio");
+
+  const PetscInt skip_max = static_cast<PetscInt>(config.get("skip_max"));
+
   const PetscScalar DEFAULT_ADDED_TO_GDMAX_ADAPT = 1.0e-2;
   const PetscScalar  
           gridfactor = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
@@ -205,7 +210,7 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
     //   but in fact it might be from other restrictions, e.g. CFL for mass continuity
     //   in basal sliding case, or max_dt
     skipCountDown = (PetscInt) floor(conservativeFactor * (dt / dt_from_diffus));
-    skipCountDown = ( skipCountDown >  skipMax) ?  skipMax :  skipCountDown;
+    skipCountDown = ( skipCountDown >  skip_max) ?  skip_max :  skipCountDown;
   } // if  skipCountDown > 0 then it will get decremented at the mass balance step
   if (dt_from_diffus < dt) {
     dt = dt_from_diffus;
@@ -229,7 +234,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
        || ( (doAdaptTimeStep == PETSC_TRUE) && (doMassConserve == PETSC_TRUE) ) ) {
     ierr = computeMaxDiffusivity(true); CHKERRQ(ierr);
   }
-  const PetscScalar timeToEnd = (endYear-grid.year) * secpera;
+  const PetscScalar timeToEnd = (end_year - grid.year) * secpera;
   if (dt_force > 0.0) {
     dt = dt_force; // override usual dt mechanism
     adaptReasonFlag = 'f';
@@ -238,7 +243,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
       adaptReasonFlag = 'e';
     }
   } else {
-    dt = maxdt;
+    dt = config.get("maximum_time_step_years") * secpera;
     adaptReasonFlag = 'm';
     if (doAdaptTimeStep == PETSC_TRUE) {
       if ((doTemp == PETSC_TRUE) && (doTemperatureCFL == PETSC_TRUE)) {

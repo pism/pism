@@ -128,7 +128,7 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
   }
 
   doSkip = PETSC_TRUE;
-  skipMax = 2;
+  config.set("skip_max", 2);
 
   ierr = IceEISModel::setFromOptions();  CHKERRQ(ierr);
 

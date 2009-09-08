@@ -30,6 +30,8 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   PetscErrorCode ierr;
   static PetscTruth firstTime = PETSC_TRUE;
 
+  double mu_sliding = config.get("mu_sliding");
+
 PetscLogEventBegin(siaEVENT,0,0,0,0);
 
   // do SIA
@@ -56,7 +58,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     ierr = vuvbar[1].endGhostComm();
     ierr = verbPrintf(5,grid.com, "{comm after velocitySIAStaggered()}"); CHKERRQ(ierr);
 
-    if (muSliding == 0.0) { // no need to spend time on nothing
+    if (mu_sliding == 0.0) { // no need to spend time on nothing
       ierr = vub.set(0.0); CHKERRQ(ierr);
       ierr = vvb.set(0.0); CHKERRQ(ierr);
       ierr = vRb.set(0.0); CHKERRQ(ierr);

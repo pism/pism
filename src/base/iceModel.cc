@@ -47,13 +47,12 @@ IceModel::IceModel(IceGrid &g)
   signal(SIGTERM, pism_signal_handler);
   signal(SIGUSR1, pism_signal_handler);
 
-  createBasal_done = PETSC_FALSE;
+  doAdaptTimeStep = PETSC_TRUE;
+  basal = NULL;
+  basalSIA = NULL;
   top0ctx = PETSC_NULL;
   g2natural = PETSC_NULL;
-  createVecs_done = PETSC_FALSE;
   CFLviolcount = 0;
-
-  initial_Mz = 0; // is used by the grid extension code only, and is set to a correct value there
 
   for (PetscInt nn = 0; nn < tnN; nn++) {
     runtimeViewers[nn] = PETSC_NULL;
@@ -69,7 +68,7 @@ IceModel::IceModel(IceGrid &g)
   info_coupler.surfelev = PETSC_NULL;
   info_coupler.topg = PETSC_NULL;
 
-  ierr = setDefaults();  // lots of parameters and flags set here
+  ierr = setDefaults();  // lots of parameters and flags set here, including by reading from a config file
   if (ierr != 0) {
     verbPrintf(1,grid.com, "Error setting defaults.\n");
     PetscEnd();
@@ -85,22 +84,19 @@ IceModel::IceModel(IceGrid &g)
 
 
 IceModel::~IceModel() {
-  // actions to de-allocate Vecs first
-  if (createVecs_done == PETSC_TRUE) {
-    destroyVecs();
-  }
+
+  deallocate_internal_objects();
+
   // other deallocations
   if (createViewers_done == PETSC_TRUE) {
     destroyViewers();
   }
-  if (createBasal_done == PETSC_TRUE) {
-    delete basal;
-    delete basalSIA;
-  }
-  if (bootstrapLIC != PETSC_NULL) {
-    delete bootstrapLIC;
-    bootstrapLIC = PETSC_NULL;
-  }
+
+  delete basal;
+  delete basalSIA;
+
+  delete bootstrapLIC;
+
   if (ssa) SSADestroy(ssa);
 
   delete ice;
@@ -108,7 +104,7 @@ IceModel::~IceModel() {
 }
 
 
-//! Allocate all Vecs defined in IceModel.
+//! Allocate all IceModelVecs defined in IceModel.
 /*!
 
   This procedure allocates the memory used to store model state, diagnostic and
@@ -123,10 +119,6 @@ PetscErrorCode IceModel::createVecs() {
 
   ierr = verbPrintf(3, grid.com,
 		    "Allocating memory...\n"); CHKERRQ(ierr);
-
-  if (createVecs_done == PETSC_TRUE) {
-    SETERRQ(1, "IceModel::createVecs(): IceModelVecs are created already.");
-  }
 
   // The following code creates (and documents -- to some extent) the
   // variables. The main (and only) principle here is using standard names from
@@ -320,14 +312,15 @@ PetscErrorCode IceModel::createVecs() {
                             "m s-1", ""); CHKERRQ(ierr);
   ierr = vvbarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
-
-  createVecs_done = PETSC_TRUE;
   return 0;
 }
 
 
-//! De-allocate all Vecs (but not IceModelVecs) defined in IceModel.
-PetscErrorCode IceModel::destroyVecs() {
+//! De-allocate internal objects.
+/*! This includes Vecs that are not in an IceModelVec, SSA tools and the bed
+  deformation model.
+ */
+PetscErrorCode IceModel::deallocate_internal_objects() {
   PetscErrorCode ierr;
 
   ierr = bedDefCleanup(); CHKERRQ(ierr);
@@ -344,58 +337,15 @@ PetscErrorCode IceModel::destroyVecs() {
   return 0;
 }
 
-
 PetscErrorCode IceModel::attachAtmospherePCC(PISMAtmosphereCoupler &aPCC) {
   atmosPCC = &aPCC;
   return 0;
 }
 
-
 PetscErrorCode IceModel::attachOceanPCC(PISMOceanCoupler &oPCC) {
   oceanPCC = &oPCC;
   return 0;
 }
-
-
-void IceModel::setMaxTimeStepYears(PetscScalar y) {
-  maxdt = y * secpera;
-  doAdaptTimeStep = PETSC_TRUE;
-}
-
-
-void IceModel::setAdaptTimeStepRatio(PetscScalar c) {
-  adaptTimeStepRatio = c;
-}
-
-
-PetscErrorCode IceModel::setStartYear(PetscScalar y0) {
-  startYear = y0;
-  return 0;
-}
-
-
-PetscErrorCode IceModel::setEndYear(PetscScalar ye) {    
-  if (ye < startYear)   {
-    PetscPrintf(grid.com,
-		"PISM ERROR: ye < startYear. PISM cannot run backward in time.\n");
-    PetscEnd();
-  }
-  endYear = ye;
-  return 0;
-}
-
-
-void  IceModel::setInitialAgeYears(PetscScalar d) {
-  tau3.set(d*secpera);
-}
-
-
-void IceModel::setAllGMaxVelocities(PetscScalar uvw_for_cfl) {
-  gmaxu=uvw_for_cfl;
-  gmaxv=uvw_for_cfl;
-  gmaxw=uvw_for_cfl;
-}
-
 
 void IceModel::setConstantNuHForSSA(PetscScalar nuH) {
   useConstantNuHForSSA = PETSC_TRUE;
@@ -449,8 +399,10 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   ierr = summary(doTemp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
   dtTempAge = 0.0;
 
+  double start_year = config.get("start_year");
+
   // main loop for time evolution
-  for (PetscScalar year = startYear; year < endYear; year += dt/secpera) {
+  for (PetscScalar year = start_year; year < end_year; year += dt/secpera) {
     write_snapshot();
 
     ierr = verbPrintf(2,grid.com, " "); CHKERRQ(ierr);

@@ -281,8 +281,7 @@ plastic till case \ref SchoofStream .
 This method assembles the matrix for the left side of the SSA equations.  The numerical method 
 is finite difference.  In particular [FIXME: explain f.d. approxs, esp. mixed derivatives]
  */
-PetscErrorCode IceModel::assembleSSAMatrix(
-                    const bool includeBasalShear, IceModelVec2 vNuH[2], Mat A) {
+PetscErrorCode IceModel::assembleSSAMatrix(bool includeBasalShear, IceModelVec2 vNuH[2], Mat A) {
   const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   // next constant not too sensitive, but must match value in assembleSSARhs():
@@ -293,6 +292,8 @@ PetscErrorCode IceModel::assembleSSAMatrix(
   CHECK_NOT_SSA_EXTERNAL(ssa);
 
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
+
+  PetscReal beta_shelves_drag_too = config.get("beta_shelves_drag_too");
 
   /* matrix assembly loop */
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
@@ -378,8 +379,8 @@ PetscErrorCode IceModel::assembleSSAMatrix(
         // make shelf drag a little bit if desired
         if ((shelvesDragToo == PETSC_TRUE) && (PismIntMask(mask[i][j]) == MASK_FLOATING)) {
           //ierr = verbPrintf(1,grid.com,"... SHELF IS DRAGGING ..."); CHKERRQ(ierr);
-          valU[5] += betaShelvesDragToo;
-          valV[7] += betaShelvesDragToo;
+          valU[5] += beta_shelves_drag_too;
+          valV[7] += beta_shelves_drag_too;
         }
 
         ierr = MatSetValues(A, 1, &rowU, stencilSize, colU, valU, INSERT_VALUES); CHKERRQ(ierr);
@@ -634,19 +635,23 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
   IceModelVec2 vNuHOld[2] = {vWork2d[2], vWork2d[3]};
   IceModelVec2 vubarSSAOld = vWork2d[4], 
                vvbarSSAOld = vWork2d[5];
-  PetscReal   norm, normChange, epsilon;
+  PetscReal   norm, normChange;
   PetscInt    its;
   KSPConvergedReason  reason;
 
+  PetscReal ssaRelativeTolerance = config.get("ssa_relative_convergence"),
+    epsilon = config.get("epsilon_ssa");
+
+  PetscInt ssaMaxIterations = static_cast<PetscInt>(config.get("max_iterations_ssa"));
+  
   CHECK_NOT_SSA_EXTERNAL(ssa);
 
   ierr = vubarSSA.copy_to(vubarSSAOld); CHKERRQ(ierr);
   ierr = vvbarSSA.copy_to(vvbarSSAOld); CHKERRQ(ierr);
-  epsilon = ssaEpsilon;
 
   ierr = verbPrintf(4,grid.com,
      "  [ssaEpsilon = %10.5e, ssaMaxIterations = %d, ssaRelativeTolerance = %10.5e]\n",
-     ssaEpsilon, ssaMaxIterations,ssaRelativeTolerance); CHKERRQ(ierr);
+     epsilon, ssaMaxIterations, ssaRelativeTolerance); CHKERRQ(ierr);
   ierr = ice->printInfo(4);CHKERRQ(ierr);
 
   // this only needs to be done once; right hand side of system
@@ -881,6 +886,8 @@ PetscErrorCode IceModel::correctSigma() {
   PetscScalar **H, **mask, **ubarssa, **vbarssa;
   PetscScalar *Sigma, *T;
 
+  double enhancement_factor = config.get("enhancement_factor");
+
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr = vubarSSA.get_array(ubarssa); CHKERRQ(ierr);
@@ -931,7 +938,7 @@ PetscErrorCode IceModel::correctSigma() {
             // Use pressure-adjusted temperature and account for the enhancement factor.
             //   Note, enhancement factor is not used in SSA anyway.
             //   Should we get rid of it completely?  If not, what is most consistent here?
-            BofT    = ice->hardnessParameter(Tstar) * pow(enhancementFactor,-1/n_glen);
+            BofT    = ice->hardnessParameter(Tstar) * pow(enhancement_factor,-1/n_glen);
           if (addVels) {
             const PetscScalar D2sia = pow(Sigma[k] / (2 * BofT), 1.0 / Sig_pow);
             Sigma[k] = 2.0 * BofT * pow(fv*fv*D2sia + omfv*omfv*D2ssa, Sig_pow);

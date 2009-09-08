@@ -42,8 +42,8 @@ PetscErrorCode  IceModel::set_time_from_options() {
   PetscScalar usrStartYear, usrEndYear, usrRunYears;
   PetscTruth ysSet, yeSet, ySet;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &usrStartYear, &ysSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ye", &usrEndYear, &yeSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-y", &usrRunYears, &ySet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ye", &usrEndYear,   &yeSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-y",  &usrRunYears,  &ySet); CHKERRQ(ierr);
 
   if (ysSet && yeSet && ySet) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: all of -y, -ys, -ye are set. Exiting...\n");
@@ -57,32 +57,29 @@ PetscErrorCode  IceModel::set_time_from_options() {
 
   // Set the start year:
   if (ysSet == PETSC_TRUE) {
-    ierr = setStartYear(usrStartYear); CHKERRQ(ierr);
+    config.set("start_year", usrStartYear);
     grid.year = usrStartYear;
   } else {
-    ierr = setStartYear(grid.year); CHKERRQ(ierr);
+    config.set("start_year", grid.year);
   }
 
+  double start_year = config.get("start_year");
+
   if (yeSet == PETSC_TRUE) {
-    if (usrEndYear < startYear) {
+    if (usrEndYear < start_year) {
       ierr = PetscPrintf(grid.com,
 			"PISM ERROR: -ye (%3.3f) is less than -ys (%3.3f) (or input file year or default).\n"
 			"PISM cannot run backward in time.\n",
-			usrEndYear, startYear); CHKERRQ(ierr);
+			 usrEndYear, start_year); CHKERRQ(ierr);
       PetscEnd();
     }
-    if (ySet == PETSC_TRUE) {
-      ierr = verbPrintf(1,grid.com,"WARNING: -y option ignored.  -ye used instead.\n"); CHKERRQ(ierr);
-      // this is an error
-    }
-    ierr = setEndYear(usrEndYear); CHKERRQ(ierr);
+    end_year = usrEndYear;
   } else if (ySet == PETSC_TRUE) {
-    ierr = setEndYear(usrRunYears + startYear); CHKERRQ(ierr);
+    end_year = start_year + usrRunYears;
+    config.set("run_length_years", usrRunYears);
   } else {
-    ierr = setEndYear(run_year_default + startYear); CHKERRQ(ierr);
+    end_year = start_year + config.get("run_length_years");
   }
-  
-  yearsStartRunEndDetermined = PETSC_TRUE;
   return 0;
 }
 
@@ -402,14 +399,13 @@ PetscErrorCode IceModel::setPATempFromT3(IceModelVec3 &useForPATemp) {
 }
 
 
-// Writes extra fields to the output file \c filename. Does nothing in the base
-// class.
+//! Writes extra fields to the output file \c filename. Does nothing in the base class.
 PetscErrorCode IceModel::write_extra_fields(const char /*filename*/[]) {
   // Do nothing.
   return 0;
 }
 
-
+//! Writes 3D velocity fields and components of the ice velocity at the ice surface to a file \c filename.
 PetscErrorCode IceModel::write3DPlusToFile(const char filename[]) {
   PetscErrorCode ierr;
 
@@ -496,12 +492,12 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
   if ((have_ssa_velocities == 1)  && (!dontreadSSAvels)) {
     ierr = verbPrintf(3,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
 
-    ierr = vubarSSA.read(filename, last_record);
-    ierr = vvbarSSA.read(filename, last_record);
+    ierr = vubarSSA.read(filename, last_record); CHKERRQ(ierr);
+    ierr = vvbarSSA.read(filename, last_record); CHKERRQ(ierr);
   }
 
   // 2-D earth quantity; like climate but owned by IceModel
-  ierr =     vGhf.read(filename, last_record); CHKERRQ(ierr);
+  ierr = vGhf.read(filename, last_record); CHKERRQ(ierr);
 
   // 3-D model quantities
   ierr =   T3.read(filename, last_record); CHKERRQ(ierr);
@@ -517,7 +513,7 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     ierr = polar_stereographic.print(); CHKERRQ(ierr);
   }
 
-  ierr = nc.get_att_text(NC_GLOBAL, "history", history);
+  ierr = nc.get_att_text(NC_GLOBAL, "history", history); CHKERRQ(ierr);
 
   ierr = nc.close(); CHKERRQ(ierr);
 

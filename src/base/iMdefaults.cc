@@ -64,8 +64,6 @@ PetscErrorCode IceModel::setDefaults() {
 
   ierr = setExecName("pism"); CHKERRQ(ierr);  // drivers typically override this
 
-  enhancementFactor = config.get("enhancement_factor");
-  muSliding         = config.get("mu_sliding");
   thermalBedrock    = config.get_flag("thermal_bedrock");
   doOceanKill       = config.get_flag("ocean_kill");
   floatingIceKilled = config.get_flag("floating_ice_killed");
@@ -79,60 +77,38 @@ PetscErrorCode IceModel::setDefaults() {
   doPlasticTill            = config.get_flag("do_plastic_till");
   doPseudoPlasticTill      = config.get_flag("do_pseudo_plastic_till");
   doSuperpose              = config.get_flag("do_superpose");
-  ssaMaxIterations         = (PetscInt) config.get("max_iterations_ssa");
   useConstantNuHForSSA     = config.get_flag("use_constant_nuh_for_ssa");
-  ssaRelativeTolerance     = config.get("ssa_relative_convergence");
-  ssaEpsilon               = config.get("epsilon_ssa");
   computeSurfGradInwardSSA = config.get_flag("compute_surf_grad_inward_ssa");
   ssaSystemToASCIIMatlab   = PETSC_FALSE;
   leaveNuHAloneSSA         = false;
 
   strcpy(ssaMatlabFilePrefix, "pism_SSA");
 
-  plastic_till_pw_fraction  = config.get("till_pw_fraction");
-  plastic_till_c_0          = config.get("till_c_0");
-  plastic_till_mu           = tan((pi/180.0)*config.get("default_till_phi"));
-  plasticRegularization     = config.get("plastic_regularization") / secpera;
-  tauc_default_value        = config.get("default_tauc");
-  pseudo_plastic_q          = config.get("pseudo_plastic_q");
-  pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera;
   holdTillYieldStress       = PETSC_FALSE;
   useConstantTillPhi        = PETSC_FALSE;
   
   shelvesDragToo = PETSC_FALSE;
-  betaShelvesDragToo = config.get("beta_shelves_drag_too");
   
   Hmelt_max          = config.get("max_hmelt");
 
-  setMaxTimeStepYears(config.get("maximum_time_step_years"));
-  setAdaptTimeStepRatio(config.get("adaptive_timestepping_ratio"));
-  setAllGMaxVelocities(-1.0);
+  // set maximum |u|,|v|,|w| in ice to an (obviously) invalid number
+  gmaxu = gmaxv = gmaxw = -1.0;
 
-  run_year_default = config.get("run_length_years");
-  setStartYear(config.get("start_year"));
-  setEndYear(run_year_default + config.get("start_year"));
-  yearsStartRunEndDetermined = PETSC_FALSE;
-  initial_age_years_default       = config.get("initial_age_of_ice_years");
+  end_year   = config.get("start_year") + config.get("run_length_years");
 
   doMassConserve                  = config.get_flag("do_mass_conserve");
   doTemp                          = config.get_flag("do_temp");
   doSkip                          = config.get_flag("do_skip");
-  skipMax                         = (PetscInt) config.get("skip_max");
   reportHomolTemps = PETSC_TRUE;
-  globalMinAllowedTemp            = config.get("global_min_allowed_temp");
-  maxLowTempCount                 = (PetscInt) config.get("max_low_temp_count");
-  min_temperature_for_SIA_sliding = config.get("minimum_temperature_for_sliding");
   includeBMRinContinuity          = config.get_flag("include_bmr_in_continuity");
   isDrySimulation                 = config.get_flag("is_dry_simulation");
   
   updateHmelt = PETSC_TRUE;
 
   realAgeForGrainSize = PETSC_FALSE;
-  constantGrainSize   = config.get("constant_grain_size");
 
   doBedDef            = config.get_flag("do_bed_deformation");
   doBedIso            = config.get_flag("do_bed_iso");
-  bedDefIntervalYears = config.get("bed_def_interval_years");
 
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;

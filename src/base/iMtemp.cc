@@ -252,7 +252,9 @@ PetscErrorCode IceModel::temperatureStep(
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
 
   // counts unreasonably low temperature values; deprecated?
-  PetscInt myLowTempCount = 0;  
+  PetscInt myLowTempCount = 0;
+  PetscInt maxLowTempCount = static_cast<PetscInt>(config.get("max_low_temp_count"));
+  PetscReal globalMinAllowedTemp = config.get("global_min_allowed_temp");
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {

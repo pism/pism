@@ -156,8 +156,6 @@ public:
 protected:
 
   IceGrid               &grid;
-  int initial_Mz; //!< the number of vertical grid levels at the start of the
-		  //! run; used by the grid extension code
 
   NCConfigVariable      polar_stereographic;
   NCConfigVariable      config;
@@ -210,26 +208,17 @@ protected:
         Tb3;		//!< temperature of lithosphere (bedrock) under ice or ocean; K
 
   // parameters
-  PetscReal   maxdt, muSliding, enhancementFactor, initial_age_years_default,
-              dt, dtTempAge,  // current mass cont. and temp/age; time steps in seconds
+  PetscReal   dt, dtTempAge,  // current mass cont. and temp/age; time steps in seconds
               dt_force,
-              ssaRelativeTolerance, ssaEpsilon, betaShelvesDragToo,
-              plastic_till_c_0, plastic_till_mu, plastic_till_pw_fraction, plasticRegularization,
-              tauc_default_value, pseudo_plastic_q, pseudo_plastic_uthreshold,
-              startYear, endYear, run_year_default, maxdt_temporary,
-              ssaIntervalYears, bedDefIntervalYears, adaptTimeStepRatio,
+              end_year, maxdt_temporary,
               CFLviolcount,    //!< really is just a count, but PetscGlobalSum requires this type
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax,
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
               gdHdtav,  //!< average value in map-plane (2D) of dH/dt, where there is ice; m s-1
               dvoldt,  //!< d(total ice volume)/dt; m3 s-1
-              min_temperature_for_SIA_sliding, Hmelt_max, globalMinAllowedTemp,
-              constantGrainSize;
-  PetscInt    skipCountDown,
-              skipMax,
-              noSpokesLevel,
-              maxLowTempCount,
-              ssaMaxIterations;
+              Hmelt_max;
+  PetscInt    skipCountDown;
+
 
   // flags
   bool doOceanKill, doPlasticTill, includeBMRinContinuity, doMassConserve, doTemp, doSkip, doBedDef, doBedIso,
@@ -238,11 +227,11 @@ protected:
   PetscTruth  updateHmelt,
               holdTillYieldStress, useConstantTillPhi,
               shelvesDragToo,
-              yearsStartRunEndDetermined, doAdaptTimeStep, 
+              doAdaptTimeStep, 
               realAgeForGrainSize,
               showViewers, ssaSystemToASCIIMatlab, reportHomolTemps,
               allowAboveMelting,
-              createVecs_done, createViewers_done, createBasal_done,
+              createViewers_done,
               computeSIAVelocities, transformForSurfaceGradient;
   char        adaptReasonFlag;
 
@@ -266,13 +255,7 @@ protected:
 protected:
   // see iceModel.cc
   virtual PetscErrorCode createVecs();
-  virtual PetscErrorCode destroyVecs();
-  virtual void setMaxTimeStepYears(PetscScalar); //!< use this value for adaptive stepping
-  virtual void setAdaptTimeStepRatio(PetscScalar);
-  virtual PetscErrorCode setStartYear(PetscScalar);
-  virtual PetscErrorCode setEndYear(PetscScalar);
-  virtual void setInitialAgeYears(PetscScalar d);
-  virtual void setAllGMaxVelocities(PetscScalar);
+  virtual PetscErrorCode deallocate_internal_objects();
   virtual void setConstantNuHForSSA(PetscScalar);
 
   // see iMadaptive.cc
@@ -285,7 +268,8 @@ protected:
   // see iMbasal.cc: all relate to grounded SSA
   virtual PetscErrorCode initBasalTillModel();
   virtual PetscErrorCode computePhiFromBedElevation();
-  virtual PetscScalar    getEffectivePressureOnTill(PetscScalar thk, PetscScalar bwat) const;
+  virtual PetscScalar    getEffectivePressureOnTill(PetscScalar thk, PetscScalar bwat,
+						    PetscScalar till_pw_fraction) const;
   virtual PetscErrorCode updateYieldStressFromHmelt();
   virtual PetscScalar basalDragx(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const;
@@ -421,7 +405,7 @@ protected:
   virtual PetscErrorCode horizontalVelocitySIARegular();
   virtual PetscScalar    basalVelocitySIA( // not recommended, generally
                              PetscScalar x, PetscScalar y, PetscScalar H, PetscScalar T,
-                             PetscScalar alpha, PetscScalar mu) const;
+                             PetscScalar alpha, PetscScalar mu, PetscScalar min_T) const;
 
   // see iMssa.cc
   virtual PetscErrorCode initSSA();
@@ -430,7 +414,7 @@ protected:
   virtual PetscErrorCode computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscReal epsilon);
   virtual PetscErrorCode testConvergenceOfNu(IceModelVec2 vNuH[2], IceModelVec2 vNuHOld[2],
                                              PetscReal *norm, PetscReal *normChange);
-  virtual PetscErrorCode assembleSSAMatrix(const bool includeBasalShear, IceModelVec2 vNuH[2], Mat A);
+  virtual PetscErrorCode assembleSSAMatrix(bool includeBasalShear, IceModelVec2 vNuH[2], Mat A);
   virtual PetscErrorCode assembleSSARhs(bool surfGradInward, Vec rhs);
   virtual PetscErrorCode moveVelocityToDAVectors(Vec x);
   virtual PetscErrorCode broadcastSSAVelocity(bool updateVelocityAtDepth);

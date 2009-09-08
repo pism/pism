@@ -146,6 +146,8 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
   // clear it out
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
+  PetscReal beta_shelves_drag_too = config.get("beta_shelves_drag_too");
+
   /* matrix assembly loop */
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr = vtauc.get_array(tauc); CHKERRQ(ierr);
@@ -256,8 +258,8 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
 
           // make shelf drag a little bit if desired
           if ((shelvesDragToo == PETSC_TRUE) && (PismIntMask(mask[i][j]) == MASK_FLOATING)) {
-            valU[5] += betaShelvesDragToo;
-            valV[7] += betaShelvesDragToo;
+            valU[5] += beta_shelves_drag_too;
+            valV[7] += beta_shelves_drag_too;
           }
 
           // now actually set the values in the matrix 

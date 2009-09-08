@@ -51,25 +51,25 @@ netcdf pism_config {
 
     // parameters:
     pism_config:enhancement_factor = 1.0;
-    pism_config:enhancement_factor_doc = "Flow enhancement factor";
+    pism_config:enhancement_factor_doc = "; Flow enhancement factor";
 
-    pism_config:constant_grain_size = 1.0e-3;
-    pism_config:constant_grain_size_doc = "Default constant grains size to use with the Goldsby-Kohlstedt [\\ref GoldsbyKohlstedt] flow law, meters";
+    pism_config:constant_grain_size = 1.0;
+    pism_config:constant_grain_size_doc = "mm; Default constant grains size to use with the Goldsby-Kohlstedt [\\ref GoldsbyKohlstedt] flow law";
 
     pism_config:start_year = 0;
     pism_config:start_year_doc = "Model year at which to start the run.";
 
     pism_config:run_length_years = 1000;
-    pism_config:run_length_years_doc = "Default run length, years";
+    pism_config:run_length_years_doc = "years; Default run length";
 
     pism_config:adaptive_timestepping_ratio = 0.12;
-    pism_config:adaptive_timestepping_ratio_doc = "Adaptive time stepping ratio for the explicit scheme for the mass balance equation";
+    pism_config:adaptive_timestepping_ratio_doc = "; Adaptive time stepping ratio for the explicit scheme for the mass balance equation";
 
     pism_config:initial_age_of_ice_years = 0.0;
-    pism_config:initial_age_of_ice_years_doc = "Initial age of ice, years";
+    pism_config:initial_age_of_ice_years_doc = "years; Initial age of ice";
 
     pism_config:maximum_time_step_years = 60.0;
-    pism_config:maximum_time_step_years_doc = "Maximum allowed time step length, years";
+    pism_config:maximum_time_step_years_doc = "years; Maximum allowed time step length";
 
     pism_config:epsilon_ssa = 1.0e15;
     pism_config:epsilon_ssa_doc = "initial amount of (denominator) regularization in computation of effective viscosity";
@@ -78,34 +78,34 @@ netcdf pism_config {
     pism_config:default_tauc_doc = "Pa; fill value for yield stress for basal till (plastic or pseudo-plastic model); note 10^4 Pa = 0.1 bar";
 
     pism_config:max_hmelt = 2.0;
-    pism_config:max_hmelt_doc = "maximum thickness of the basal melt water layer, meters";
+    pism_config:max_hmelt_doc = "meters; maximum thickness of the basal melt water layer";
 
     pism_config:minimum_temperature_for_sliding = 273.0;
-    pism_config:minimum_temperature_for_sliding_doc = "Kelvin. Note less than ice.meltingTemp; if above this value then decide to slide";
+    pism_config:minimum_temperature_for_sliding_doc = "Kelvin; Note less than ice.meltingTemp; if above this value then decide to slide";
 
     pism_config:skip_max = 10;
     pism_config:skip_max_doc = "Number of mass-balance steps, including SIA diﬀusivity updates, to perform before a the temperature, age, and SSA stress balance computations are done";
 
     pism_config:default_till_phi = 30.0;
-    pism_config:default_till_phi_doc = "(degrees); fill value for till friction angle";
+    pism_config:default_till_phi_doc = "degrees; fill value for till friction angle";
 
     pism_config:till_pw_fraction = 0.95;
     pism_config:till_pw_fraction_doc = "pure number; pore water pressure is this fraction of overburden";
 
     pism_config:till_c_0 = 0.0;
-    pism_config:till_c_0_doc = "Pa; cohesion of till; note Schoof uses zero but Paterson pp 168--169 gives range 0--40 kPa; but Paterson notes that '... all the pairs c_0 and phi in the table would give a yield stress for Ice Stream B that exceeds the basal shear stress there...'";
+    pism_config:till_c_0_doc = "kPa; cohesion of till; note Schoof uses zero but Paterson pp 168--169 gives range 0--40 kPa; but Paterson notes that '... all the pairs c_0 and phi in the table would give a yield stress for Ice Stream B that exceeds the basal shear stress there...'";
 
     pism_config:mu_sliding = 0.0;
     pism_config:mu_sliding_doc = "The sliding law parameter in SIA regions of the ice. <i>This kind of sliding is not recommended, which is why it is turned oﬀ by default.</i>";
 
     pism_config:bed_def_interval_years = 10.0;
-    pism_config:bed_def_interval_years_doc = "Interval between bed deformation updates, years";
+    pism_config:bed_def_interval_years_doc = "years; Interval between bed deformation updates";
 
     pism_config:max_iterations_ssa = 300;
     pism_config:max_iterations_ssa_doc = "Maximum number of iterations for the ice viscosity computation";
 
     pism_config:global_min_allowed_temp = 200.0;
-    pism_config:global_min_allowed_temp_doc = "Minimum allowed ice temperature, Kelvin";
+    pism_config:global_min_allowed_temp_doc = "Kelvin; Minimum allowed ice temperature";
 
     pism_config:max_low_temp_count = 10;
     pism_config:max_low_temp_count_doc = "Maximum number of grid points with ice temperature below global_min_allowed_temp.";
@@ -116,16 +116,16 @@ netcdf pism_config {
     pism_config:plastic_regularization_doc = "Set the value of \\f$\\epsilon\\f$ regularization of plastic till; this is the second \\f$\\epsilon\\f$ in formula (4.1) in [\\ref SchoofStream]";
 
     pism_config:pseudo_plastic_q = 0.25;
-    pism_config:pseudo_plastic_q_doc = "The exponent of the pseudo-plastic basal resistance model";
+    pism_config:pseudo_plastic_q_doc = "; The exponent of the pseudo-plastic basal resistance model";
 
     pism_config:pseudo_plastic_uthreshold = 100.0;
-    pism_config:pseudo_plastic_uthreshold_doc = "Units: m/a";
+    pism_config:pseudo_plastic_uthreshold_doc = "m a-1; ";
 
     pism_config:ssa_relative_convergence = 1.0e-4;
     pism_config:ssa_relative_convergence_doc = "Relative change tolerance for the eﬀective viscosity";
 
     pism_config:beta_shelves_drag_too = 180000.0;
-    pism_config:beta_shelves_drag_too_doc = "Pa s m^{-1}, (1/10000) of value stated in [\\ref HulbeMacAyeal] for ice stream E";
+    pism_config:beta_shelves_drag_too_doc = "Pa s m^{-1}; (1/10000) of value stated in [\\ref HulbeMacAyeal] for ice stream E";
 
     // The default values for the factors come from EISMINT-Greenland, [\\ref RitzEISMINT] .
     pism_config:pdd_factor_snow = 0.003;
@@ -135,13 +135,13 @@ netcdf pism_config {
     pism_config:pdd_factor_ice_doc = "m K-1 day-1; EISMINT-Greenland value [\\ref RitzEISMINT] ; = (8 mm ice-equivalent) / (pos degree day)";
 
     pism_config:pdd_refreeze = 0.6;
-    pism_config:pdd_refreeze_doc = "[pure fraction]; EISMINT-Greenland value [\\ref RitzEISMINT] ";
+    pism_config:pdd_refreeze_doc = "pure fraction; EISMINT-Greenland value [\\ref RitzEISMINT] ";
 
     pism_config:pdd_std_dev = 5.0;
-    pism_config:pdd_std_dev_doc = "K; std dev of daily temp variation; EISMINT-Greenland value [\\ref RitzEISMINT] ";
+    pism_config:pdd_std_dev_doc = "Kelvin; std dev of daily temp variation; EISMINT-Greenland value [\\ref RitzEISMINT] ";
 
     pism_config:pdd_fausto_latitude_beta_w = 72.0;
-    pism_config:pdd_fausto_latitude_beta_w_doc = "(degrees N); latitude below which to use warm case, in formula (6) in [\\ref Faustoetal2009] ";
+    pism_config:pdd_fausto_latitude_beta_w_doc = "degrees N; latitude below which to use warm case, in formula (6) in [\\ref Faustoetal2009] ";
 
     pism_config:pdd_fausto_beta_ice_w = 0.007;
     pism_config:pdd_fausto_beta_ice_w_doc = "m day-1 K-1; water-equivalent thickness; for formula (6) in [\\ref Faustoetal2009] ";
@@ -156,34 +156,34 @@ netcdf pism_config {
     pism_config:pdd_fausto_beta_snow_c_doc = "m day-1 K-1; water-equivalent thickness; for formula (6) in [\\ref Faustoetal2009] ";
 
     pism_config:pdd_fausto_T_w = 283.15;
-    pism_config:pdd_fausto_T_w_doc = "K; = 10 + 273.15; for formula (6) in [\\ref Faustoetal2009] ";
+    pism_config:pdd_fausto_T_w_doc = "Kelvin; = 10 + 273.15; for formula (6) in [\\ref Faustoetal2009] ";
 
     pism_config:pdd_fausto_T_c = 272.15;
-    pism_config:pdd_fausto_T_c_doc = "K; = -1 + 273.15; for formula (6) in [\\ref Faustoetal2009] ";
+    pism_config:pdd_fausto_T_c_doc = "Kelvin; = -1 + 273.15; for formula (6) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_d_ma = 314.98;
     pism_config:snow_temp_fausto_d_ma_doc = "K; = 41.83+273.15; base temperature for formula (1) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_gamma_ma = -0.006309;
-    pism_config:snow_temp_fausto_gamma_ma_doc = "K m-1; = -6.309 / 1km; mean slope lapse rate for formula (1) in [\\ref Faustoetal2009] ";
+    pism_config:snow_temp_fausto_gamma_ma_doc = "Kelvin m-1; = -6.309 / 1km; mean slope lapse rate for formula (1) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_c_ma = -0.7189;
-    pism_config:snow_temp_fausto_c_ma_doc = "K (degN)-1; latitude-dependence coefficient for formula (1) in [\\ref Faustoetal2009] ";
+    pism_config:snow_temp_fausto_c_ma_doc = "Kelvin (degN)-1; latitude-dependence coefficient for formula (1) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_kappa_ma = 0.0672;
-    pism_config:snow_temp_fausto_kappa_ma_doc = "K (degW)-1; longitude-dependence coefficient for formula (1) in [\\ref Faustoetal2009] ";
+    pism_config:snow_temp_fausto_kappa_ma_doc = "Kelvin (degW)-1; longitude-dependence coefficient for formula (1) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_d_mj = 287.85;
-    pism_config:snow_temp_fausto_d_mj_doc = "K; = 14.70+273.15; base temperature for formula (2) in [\\ref Faustoetal2009] ";
+    pism_config:snow_temp_fausto_d_mj_doc = "Kelvin; = 14.70+273.15; base temperature for formula (2) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_gamma_mj = -0.005426;
-    pism_config:snow_temp_fausto_gamma_mj_doc = "K m-1; = -5.426 / 1km; mean slope lapse rate for formula (2) in [[\\ref Faustoetal2009]] ";
+    pism_config:snow_temp_fausto_gamma_mj_doc = "Kelvin m-1; = -5.426 / 1km; mean slope lapse rate for formula (2) in [[\\ref Faustoetal2009]] ";
 
     pism_config:snow_temp_fausto_c_mj = -0.1585;
-    pism_config:snow_temp_fausto_c_mj_doc = "K (degN)-1; latitude-dependence coefficient for formula (2) in [\\ref Faustoetal2009] ";
+    pism_config:snow_temp_fausto_c_mj_doc = "Kelvin (degN)-1; latitude-dependence coefficient for formula (2) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_kappa_mj = 0.0518;
-    pism_config:snow_temp_fausto_kappa_mj_doc = "K (degW)-1; longitude-dependence coefficient for formula (2) in [\\ref Faustoetal2009] ";
+    pism_config:snow_temp_fausto_kappa_mj_doc = "Kelvin (degW)-1; longitude-dependence coefficient for formula (2) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_july_day = 196;
     pism_config:snow_temp_july_day_doc = "day; = Julian day for July 15; used in corrected formula (4) in [\\ref Faustoetal2009] ";
@@ -202,13 +202,13 @@ netcdf pism_config {
     pism_config:surface_pressure_doc = "Pa; = 1 atm = 1 bar; atmospheric pressure; = pressure at ice surface";
 
     pism_config:water_melting_temperature = 273.15;
-    pism_config:water_melting_temperature_doc = "K; triple point of pure water";
+    pism_config:water_melting_temperature_doc = "Kelvin; triple point of pure water";
 
     pism_config:water_latent_heat_fusion = 3.34e5;
     pism_config:water_latent_heat_fusion_doc = "J kg-1; latent heat of fusion for water [\\ref AschwandenBlatter2009]";
 
     pism_config:water_specific_heat_capacity = 4170.0;
-    pism_config:water_specific_heat_capacity_doc = "J kg-1 K-1; at triple point T_0 [\\ref AschwandenBlatter2009]";
+    pism_config:water_specific_heat_capacity_doc = "J kg-1 Kelvin-1; at triple point T_0 [\\ref AschwandenBlatter2009]";
 
     pism_config:ice_density = 910.0;
     pism_config:ice_density_doc = "kg m-3; = rho_i; density of ice in ice sheet";
@@ -226,7 +226,7 @@ netcdf pism_config {
     pism_config:gpbld_water_frac_coeff_doc = "; coefficient in Glen-Paterson-Budd flow law for extra dependence of softness on liquid water fraction (omega) [\\ref AschwandenBlatter2009, \\ref LliboutryDuval1985]";
                               
     pism_config:liquid_water_fraction_max = 0.01;
-    pism_config:liquid_water_fraction_max_doc = "; pure number; in enthalpy model, drain once omega reaches this value [\\ref Greve97Greenland]";
+    pism_config:liquid_water_fraction_max_doc = "pure number; in enthalpy model, drain once omega reaches this value [\\ref Greve97Greenland]";
 
     pism_config:fresh_water_density = 1000.0;
     pism_config:fresh_water_density_doc = "kg m-3;";

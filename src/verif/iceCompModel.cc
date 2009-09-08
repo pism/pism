@@ -43,7 +43,7 @@ IceCompModel::IceCompModel(IceGrid &g, int mytest)
   bedrock_is_ice_forK = PETSC_FALSE;
   
   // Override some defaults from parent class
-  enhancementFactor = 1.0;
+  config.set("enhancement_factor", 1.0);
 
   // set values of flags in run() 
   doMassConserve = PETSC_TRUE;
@@ -65,16 +65,6 @@ PetscErrorCode IceCompModel::createVecs() {
   ierr = SigmaComp3.create(grid,"SigmaComp", false); CHKERRQ(ierr);
   return 0;
 }
-
-PetscErrorCode IceCompModel::destroyVecs() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::destroyVecs(); CHKERRQ(ierr);
-  ierr = vHexactL.destroy(); CHKERRQ(ierr);
-  ierr = SigmaComp3.destroy(); CHKERRQ(ierr);
-  return 0;
-}
-
 
 PetscErrorCode IceCompModel::createViewers() {
   PetscErrorCode ierr;
@@ -214,9 +204,10 @@ PetscErrorCode IceCompModel::setFromOptions() {
 
   if ((testname == 'F') || (testname == 'G') || (testname == 'K')) {
     doTemp = PETSC_TRUE;
-    globalMinAllowedTemp = 0.0;  // essentially turn off run-time reporting of extremely
-    maxLowTempCount = 1000000;   // low computed temperatures; *they will be reported
-                                 // as errors* anyway
+    // essentially turn off run-time reporting of extremely low computed
+    // temperatures; *they will be reported as errors* anyway
+    config.set("global_min_allowed_temp", 0.0);
+    config.set("max_low_temp_count", 1000000);
   } else
     doTemp = PETSC_FALSE; 
 
@@ -336,7 +327,9 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
   ierr = verbPrintf(3,grid.com, "initializing Test %c from formulas ...\n",testname);  CHKERRQ(ierr);
 
   // none use Goldsby-Kohlstedt or do age calc
-  setInitialAgeYears(initial_age_years_default);
+
+  // set the initial age of the ice:
+  tau3.set(config.get("initial_age_of_ice_years") * secpera);
 
   // all have no uplift or Hmelt
   ierr = vuplift.set(0.0); CHKERRQ(ierr);
@@ -386,7 +379,8 @@ void IceCompModel::mapcoords(const PetscInt i, const PetscInt j,
 //! Reimplement IceModel::basalVelocitySIA(), for Test E.  Gives zero SIA-type sliding in other tests.
 PetscScalar IceCompModel::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
                                            PetscScalar H, PetscScalar /*T*/,
-                                           PetscScalar /*alpha*/, PetscScalar /*muIN*/) const {
+                                           PetscScalar /*alpha*/, PetscScalar /*muIN*/,
+					   PetscScalar /*min_T*/) const {
 
   if (testname == 'E') {
     const PetscScalar r1 = 200e3, r2 = 700e3,   /* define region of sliding */
@@ -436,10 +430,10 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
   
   ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
-  if (testname == 'E') {  // value is not used by IceCompModel::basalVelocitySIA(),
-    muSliding = 1.0;      //    but this acts as flag to allow sliding
+  if (testname == 'E') { // value is not used by IceCompModel::basalVelocitySIA(),
+    config.set("mu_sliding", 1.0); //    but this acts as flag to allow sliding
   } else {
-    muSliding = 0.0;
+    config.set("mu_sliding", 0.0);
   }
 
   ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
@@ -538,7 +532,7 @@ PetscErrorCode IceCompModel::initTestL() {
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
   
   ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
-  muSliding = 0.0;  // note reimplementation of basalVelocitySIA() in IceCompModel
+  config.set("mu_sliding", 0.0);  // note reimplementation of basalVelocitySIA() in IceCompModel
 
   // setup to evaluate test L; requires solving an ODE numerically using sorted list
   //   of radii, sorted in decreasing radius order
@@ -947,7 +941,7 @@ PetscErrorCode IceCompModel::additionalAtStartTimestep() {
                testname); CHKERRQ(ierr);
 
   if (exactOnly == PETSC_TRUE)
-    dt_force = maxdt;
+    dt_force = config.get("maximum_time_step_years") * secpera;
 
   // these have no changing boundary conditions or comp sources:
   if (strchr("ABEKL",testname) != NULL) 

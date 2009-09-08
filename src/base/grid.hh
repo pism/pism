@@ -79,6 +79,7 @@ public:
 
   PetscScalar Lz, Lbz; // extent of the ice, bedrock in z-direction (m)
   PetscInt    Mz, Mbz; // number of grid points in z-direction, ice and bedrock.
+  PetscInt initial_Mz; // initial number of grid levels; used by the grid extension code
 
   PetscScalar year;       // current time (years)
   

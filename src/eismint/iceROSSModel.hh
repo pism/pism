@@ -36,7 +36,6 @@ public:
 private:
     IceModelVec2    obsAzimuth, obsMagnitude, obsAccurate;    
     virtual PetscErrorCode  createVecs();
-    virtual PetscErrorCode  destroyVecs();
     PetscErrorCode  fillinTemps();
     PetscErrorCode  readObservedVels(const char *fname);
     PetscErrorCode  computeErrorsInAccurateRegion();

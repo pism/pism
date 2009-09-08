@@ -132,9 +132,6 @@ PetscErrorCode IceModel::bedDefCleanup() {
   PetscErrorCode  ierr;
 
   if (doBedDef == PETSC_TRUE) {
-    ierr = vHlast.destroy(); CHKERRQ(ierr);
-    ierr = vbedlast.destroy(); CHKERRQ(ierr);
-
     if (doBedIso == PETSC_FALSE) {
       ierr = VecDestroy(Hp0); CHKERRQ(ierr);
       ierr = VecDestroy(bedp0); CHKERRQ(ierr);
@@ -151,6 +148,9 @@ PetscErrorCode IceModel::bedDefCleanup() {
 
 PetscErrorCode IceModel::bedDefStepIfNeeded() {
   PetscErrorCode  ierr;
+
+  double bedDefIntervalYears = config.get("bed_def_interval_years"),
+    start_year = config.get("start_year");
 
   // This is a front end to the bed deformation update system.  It updates
   // no more often than bedDefIntervalYears.
@@ -170,7 +170,7 @@ PetscErrorCode IceModel::bedDefStepIfNeeded() {
       ierr =   vH.put_on_proc0(Hp0,   top0ctx, g2, g2natural); CHKERRQ(ierr);
       ierr = vbed.put_on_proc0(bedp0, top0ctx, g2, g2natural); CHKERRQ(ierr);
       if (grid.rank == 0) {  // only processor zero does the step
-        ierr = bdLC.step(dtBedDefYears, grid.year - startYear); CHKERRQ(ierr);
+        ierr = bdLC.step(dtBedDefYears, grid.year - start_year); CHKERRQ(ierr);
       }
       ierr = vbed.get_from_proc0(bedp0, top0ctx, g2, g2natural); CHKERRQ(ierr);
       ierr = vbed.beginGhostComm(); CHKERRQ(ierr);

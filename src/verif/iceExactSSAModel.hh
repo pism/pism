@@ -33,7 +33,6 @@ public:
   virtual PetscErrorCode set_grid_defaults();
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode createVecs();
-  virtual PetscErrorCode destroyVecs();
   virtual PetscErrorCode init_physics();
 
 

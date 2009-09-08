@@ -863,6 +863,64 @@ PetscErrorCode NCConfigVariable::write_attributes(int ncid, int varid, nc_type n
   return 0;
 }
 
+//! Get a flag from a command-line option.
+/*!
+  If called as flag_from_option("foo", "foo"), checks both -foo and -no_foo.
+
+  \li if -foo is set, calls set_flag("foo", true),
+
+  \li if -no_foo is set, calls set_flag("foo", false),
+  
+  \li if both are set, prints an error message and stops,
+
+  \li if none, does nothing.
+  
+ */
+PetscErrorCode NCConfigVariable::flag_from_option(string name, string flag) {
+  PetscErrorCode ierr;
+  PetscTruth foo, no_foo;
+
+  ierr = check_option("-" + name, foo); CHKERRQ(ierr);
+  ierr = check_option("-no_" + name, no_foo); CHKERRQ(ierr);
+
+  if (foo && no_foo) {
+    PetscPrintf(com, "PISM ERROR: Inconsistent command-line options: both -%s and -no_%s are set.\n",
+		name.c_str(), name.c_str());
+    PetscEnd();
+  }
+
+  if (foo)
+    set_flag(flag, true);
+
+  if (no_foo)
+    set_flag(flag, false);
+
+  return 0;
+}
+
+//! Sets a configuration parameter from a command-line option.
+/*!
+  If called as scalar_from_option("foo", "foo"), checks -foo and calls set("foo", value).
+
+  Does nothing if -foo was not set.
+
+  Note that no unit conversion is performed; parameters should be stored in
+  input units and converted as needed. (This allows saving parameters without
+  converting again.)
+ */
+PetscErrorCode NCConfigVariable::scalar_from_option(string name, string parameter) {
+  PetscErrorCode ierr;
+  PetscReal value;
+  PetscTruth flag;
+  string opt = "-" + name;
+  
+  ierr = PetscOptionsGetReal(PETSC_NULL, opt.c_str(), &value, &flag); CHKERRQ(ierr);
+  if (flag)
+    this->set(parameter, value);
+  
+  return 0;
+}
+
 //! Print all the attributes of a configuration variable.
 PetscErrorCode NCConfigVariable::print() {
   PetscErrorCode ierr;

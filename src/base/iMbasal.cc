@@ -55,19 +55,23 @@ and is turned off by default.
  */
 PetscErrorCode IceModel::initBasalTillModel() {
   PetscErrorCode ierr;
-  
-  if (createBasal_done == PETSC_FALSE) {
-    basal = new PlasticBasalType(plasticRegularization, doPseudoPlasticTill, 
-                                 pseudo_plastic_q, pseudo_plastic_uthreshold);
-    basalSIA = new BasalTypeSIA();  // initialize it; USE NOT RECOMMENDED!
-    createBasal_done = PETSC_TRUE;
-  }
 
+  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
+    pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera,
+    plastic_regularization = config.get("plastic_regularization") / secpera;
+
+  if (basal == NULL)
+    basal = new PlasticBasalType(plastic_regularization, doPseudoPlasticTill, 
+                                 pseudo_plastic_q, pseudo_plastic_uthreshold);
+
+  if (basalSIA == NULL)
+    basalSIA = new BasalTypeSIA();  // initialize it; USE NOT RECOMMENDED!
+  
   if (useSSAVelocity == PETSC_TRUE) {
     ierr = basal->printInfo(3,grid.com); CHKERRQ(ierr);
   }
 
-  ierr = vtauc.set(tauc_default_value); CHKERRQ(ierr);
+  ierr = vtauc.set(config.get("default_tauc")); CHKERRQ(ierr);
 
   // initialize till friction angle (vtillphi) from options
   PetscTruth  topgphiSet,svphiSet;
@@ -198,10 +202,10 @@ base of ice is frozen.
 Need \f$0 \le\f$ \c bwat \f$\le\f$ \c Hmelt_max before calling this.  There is
 no error checking.
  */
-PetscScalar IceModel::getEffectivePressureOnTill(
-               PetscScalar thk, PetscScalar bwat) const {
+PetscScalar IceModel::getEffectivePressureOnTill(PetscScalar thk, PetscScalar bwat,
+						 PetscScalar till_pw_fraction) const {
   const PetscScalar  overburdenP = ice->rho * earth_grav * thk;
-  return overburdenP * (1.0 - plastic_till_pw_fraction * (bwat / Hmelt_max));
+  return overburdenP * (1.0 - till_pw_fraction * (bwat / Hmelt_max));
 }
 
 
@@ -244,6 +248,10 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
   if (holdTillYieldStress == PETSC_FALSE) { // usual case: use Hmelt to determine tauc
     PetscScalar **mask, **tauc, **H, **Hmelt, **tillphi; 
 
+    PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
+      till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
+      till_mu  = tan((pi/180.0)*config.get("default_till_phi"));
+
     ierr =    vMask.get_array(mask);    CHKERRQ(ierr);
     ierr =    vtauc.get_array(tauc);    CHKERRQ(ierr);
     ierr =       vH.get_array(H);       CHKERRQ(ierr);
@@ -257,12 +265,13 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
         } else if (H[i][j] == 0.0) {
           tauc[i][j] = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice
         } else { // grounded and there is some ice
-          const PetscScalar N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j]);
+          const PetscScalar N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j],
+							   till_pw_fraction);
           if (useConstantTillPhi == PETSC_TRUE) {
-            tauc[i][j] = plastic_till_c_0 + plastic_till_mu * N;
+            tauc[i][j] = till_c_0 + till_mu * N;
           } else {
             const PetscScalar mymu = tan((pi/180.0) * tillphi[i][j]);
-            tauc[i][j] = plastic_till_c_0 + mymu * N;
+            tauc[i][j] = till_c_0 + mymu * N;
           }
         }
       }

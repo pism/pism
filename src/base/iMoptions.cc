@@ -43,25 +43,20 @@ and -d?forcing options.
  */
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
+
+  PetscTruth flag;
+
   PetscTruth  my_useConstantNuH, mybedDeflc, mydoBedIso, 
               myincludeBMRinContinuity, mydoOceanKill, floatkillSet,
               mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
-              pseudoplasticSet, pseudoplasticqSet, pseudoplasticuthresholdSet,
-              mydoSuperpose, mydoSkip, plasticRegSet,
-              plasticc0Set, plasticphiSet, myholdTillYieldStress, realageSet,
-              maxdtSet, noMassConserve, noTemp, etaSet, doShelvesDragToo,
-              mygsConstantSet;
-  PetscScalar my_maxdt, my_nuH,
-              myplastic_till_c_0, myplastic_phi, myPlasticRegularization,
-              mypseudo_plastic_q, mypseudo_plastic_uthreshold;
+              pseudoplasticSet,
+              mydoSuperpose,
+              myholdTillYieldStress, realageSet,
+              noMassConserve, noTemp, etaSet, doShelvesDragToo;
+  PetscScalar my_nuH;
 
   ierr = verbPrintf(3, grid.com,
 		    "Processing physics-related command-line options...\n"); CHKERRQ(ierr);
-
-  // OptionsBegin/End probably has no effect for now, but perhaps some day PETSc will show a GUI which
-  // allows users to set options using this.
-  ierr = PetscOptionsBegin(grid.com,PETSC_NULL,"IceModel options (PISM)",PETSC_NULL); 
-          CHKERRQ(ierr);
 
   /* 
   note on pass-by-reference for options:
@@ -76,8 +71,8 @@ PetscErrorCode  IceModel::setFromOptions() {
      member accordingly.
   */
 
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-adapt_ratio", &adaptTimeStepRatio,
-                               PETSC_NULL); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("adapt_ratio",
+				   "adaptive_timestepping_ratio"); CHKERRQ(ierr);
 
   ierr = check_option("-bed_def_iso", mydoBedIso); CHKERRQ(ierr);
   if (mydoBedIso == PETSC_TRUE) {
@@ -133,7 +128,7 @@ PetscErrorCode  IceModel::setFromOptions() {
     strcpy(diagnosticBIG, "\0");
   }
 
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-e", &enhancementFactor, PETSC_NULL); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("e", "enhancement_factor"); CHKERRQ(ierr);
 
   ierr = check_option("-eta", etaSet); CHKERRQ(ierr);
   if (etaSet == PETSC_TRUE)  transformForSurfaceGradient = PETSC_TRUE;
@@ -146,9 +141,10 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   // note "-gk" is used for specifying Goldsby-Kohlstedt ice
   //   this form allows a constant value of grain size to be input in mm
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-gk", &constantGrainSize, &mygsConstantSet); CHKERRQ(ierr);
-  if (mygsConstantSet == PETSC_TRUE)  {
-    constantGrainSize *= 1.0e-3;
+  ierr = config.scalar_from_option("gk", "constant_grain_size"); CHKERRQ(ierr);
+
+  ierr = check_option("-gk", flag); CHKERRQ(ierr);
+  if (flag) {
     ierr = iceFactory.setType(ICE_HYBRID);CHKERRQ(ierr);
   }
 
@@ -169,19 +165,15 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-kd", &kd, PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-low_temp", &globalMinAllowedTemp, 
-           PETSC_NULL); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("low_temp", "global_min_allowed_temp"); CHKERRQ(ierr);
 
 // note "-mato" caught in writeFiles() in iMIO.cc
 
 // note "-matv" caught in writeFiles() in iMIO.cc
 
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-max_dt", &my_maxdt, &maxdtSet); CHKERRQ(ierr);
-  if (maxdtSet == PETSC_TRUE)    setMaxTimeStepYears(my_maxdt);
-
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-max_low_temps", &maxLowTempCount, PETSC_NULL); CHKERRQ(ierr);
-
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-mu_sliding", &muSliding, PETSC_NULL); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("max_dt",        "maximum_time_step_years"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("mu_sliding",    "mu_sliding");              CHKERRQ(ierr);
+  ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count");      CHKERRQ(ierr);
 
   ierr = check_option("-no_mass", noMassConserve); CHKERRQ(ierr);
   if (noMassConserve == PETSC_TRUE)    doMassConserve = PETSC_FALSE;
@@ -203,30 +195,19 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
   // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
-  // option given in kPa so convert to Pa
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-plastic_c0", &myplastic_till_c_0, 
-     &plasticc0Set);  CHKERRQ(ierr);
-  if (plasticc0Set == PETSC_TRUE)   plastic_till_c_0 = myplastic_till_c_0 * 1.0e3;
+  // Note: option is given in kPa.
+  ierr = config.scalar_from_option("plastic_c0", "till_c_0");      CHKERRQ(ierr);
 
-  // plastic_till_pw_fraction is a parameter in the computation of the till yield stress tau_c
+  // till_pw_fraction is a parameter in the computation of the till yield stress tau_c
   // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
   // option a pure number (a fraction); no conversion
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-plastic_pwfrac", &plastic_till_pw_fraction, 
-     PETSC_NULL);  CHKERRQ(ierr);
+  ierr = config.scalar_from_option("plastic_pwfrac", "till_pw_fraction"); CHKERRQ(ierr);
 
   // controls regularization of plastic basal sliding law
-  // option given in m/a so convert to m/s
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-plastic_reg", &myPlasticRegularization, 
-     &plasticRegSet);  CHKERRQ(ierr);
-  if (plasticRegSet == PETSC_TRUE)  plasticRegularization = myPlasticRegularization / secpera;
+  ierr = config.scalar_from_option("plastic_reg", "plastic_regularization"); CHKERRQ(ierr);
 
-  // plastic_till_mu is a parameter in the computation of the till yield stress tau_c
-  // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
-  // option in degrees is the "friction angle"
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-plastic_phi", &myplastic_phi, 
-     &plasticphiSet);  CHKERRQ(ierr);
-  if (plasticphiSet == PETSC_TRUE)
-     plastic_till_mu = tan((pi/180.0) * myplastic_phi);
+  // "friction angle" in degrees
+  ierr = config.scalar_from_option("plastic_phi", "default_till_phi"); CHKERRQ(ierr);
 
   // use pseudo plastic instead of pure plastic; see iMbasal.cc
   ierr = check_option("-pseudo_plastic", pseudoplasticSet);  CHKERRQ(ierr);
@@ -235,20 +216,16 @@ PetscErrorCode  IceModel::setFromOptions() {
   }
 
   // power in denominator on pseudo_plastic_uthreshold; typical is q=0.25; q=0 is pure plastic
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-pseudo_plastic_q", &mypseudo_plastic_q, 
-     &pseudoplasticqSet);  CHKERRQ(ierr);
-  if (pseudoplasticqSet == PETSC_TRUE) {
+  ierr = config.scalar_from_option("pseudo_plastic_q", "pseudo_plastic_q"); CHKERRQ(ierr);
+  ierr = check_option("-pseudo_plastic_q", flag);  CHKERRQ(ierr);
+  if (flag)
      doPseudoPlasticTill = PETSC_TRUE;
-     pseudo_plastic_q = mypseudo_plastic_q;
-  }
 
   // threshold; at this velocity tau_c is basal shear stress
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-pseudo_plastic_uthreshold", 
-     &mypseudo_plastic_uthreshold, &pseudoplasticuthresholdSet);  CHKERRQ(ierr);
-  if (pseudoplasticuthresholdSet == PETSC_TRUE) {
+  ierr = config.scalar_from_option("pseudo_plastic_uthreshold", "pseudo_plastic_uthreshold"); CHKERRQ(ierr);
+  ierr = check_option("-pseudo_plastic_uthreshold", flag);  CHKERRQ(ierr);
+  if (flag)
      doPseudoPlasticTill = PETSC_TRUE;
-     pseudo_plastic_uthreshold = mypseudo_plastic_uthreshold;
-  }
 
   // see updateGrainSizeNow(); option to choose modeled age vtau instead of pseudo age in
   // computing grainsize through Vostok core correlation
@@ -271,8 +248,10 @@ PetscErrorCode  IceModel::setFromOptions() {
   
   ierr = check_option("-ssa", myuseSSAVelocity); CHKERRQ(ierr);
   if (myuseSSAVelocity == PETSC_TRUE)   useSSAVelocity = PETSC_TRUE;
-  
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-ssa_eps", &ssaEpsilon, PETSC_NULL); CHKERRQ(ierr);
+
+  ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssa"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssa"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("ssa_rtol", "ssa_relative_convergence"); CHKERRQ(ierr);
   
   // option to save linear system in Matlab-readable ASCII format at end of each
   // numerical solution of SSA equations; can be given with or without filename prefix
@@ -289,12 +268,6 @@ PetscErrorCode  IceModel::setFromOptions() {
     } // otherwise keep default prefix, whatever it was
   }
 
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-ssa_maxi", &ssaMaxIterations,
-           PETSC_NULL); CHKERRQ(ierr);
-           
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-ssa_rtol", &ssaRelativeTolerance,
-           PETSC_NULL); CHKERRQ(ierr);
-
 // -ssaBC used in IceROSSModel
   
   // apply "glaciological superposition to low order", i.e. add SIA results to those of 
@@ -304,15 +277,16 @@ PetscErrorCode  IceModel::setFromOptions() {
     doSuperpose = PETSC_TRUE;
   }
 
-  /* This controls allows more than one mass continuity steps per temperature/age and
-     SSA computation */
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-skip", &skipMax, &mydoSkip); CHKERRQ(ierr);
-  if (mydoSkip == PETSC_TRUE)   doSkip = PETSC_TRUE;
+  /* This allows more than one mass continuity step per temperature/age and SSA
+     computation */
+  ierr = config.scalar_from_option("skip", "skip_max"); CHKERRQ(ierr);
+
+  ierr = check_option("-skip", flag); CHKERRQ(ierr);
+  if (flag) doSkip = PETSC_TRUE;
 
   // Process -y, -ys, -ye. We are reading these options here because couplers
   // might need to know what year it is.
   ierr = set_time_from_options();
 
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
 }

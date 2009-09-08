@@ -573,9 +573,9 @@ their surface velocity.
  */
 PetscErrorCode IceModel::computeSIASurfaceVelocity() {
   PetscErrorCode ierr;
-  PetscScalar    OLDmuSliding = muSliding;
+  PetscScalar    old_mu_sliding = config.get("mu_sliding");
   
-  muSliding = 0.0;  // turn off SIA type sliding even if wanted for forward model (a bad idea ...)
+  config.set("mu_sliding", 0.0);  // turn off SIA type sliding even if wanted for forward model (a bad idea ...)
   
   ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here ...
   // surface gradient temporarily stored in vWork2d[0..3] ...
@@ -620,7 +620,7 @@ PetscErrorCode IceModel::computeSIASurfaceVelocity() {
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
   
-  muSliding = OLDmuSliding;
+  config.set("mu_sliding", old_mu_sliding);
   return 0;
 }
 
@@ -810,13 +810,16 @@ PetscErrorCode IceModel::removeSIApart() {
 PetscErrorCode IceModel::getEffectivePressureForInverse() {
   PetscErrorCode ierr;
 
+  PetscScalar till_pw_fraction = config.get("till_pw_fraction");
+
   PetscScalar **N, **H, **Hmelt;
   ierr = inv.effPressureN->get_array(N);  CHKERRQ(ierr);
   ierr = vH.get_array(H);  CHKERRQ(ierr);
   ierr = vHmelt.get_array(Hmelt);  CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      N[i][j] = getEffectivePressureOnTill(H[i][j], Hmelt[i][j]); // iMbasal.cc
+      N[i][j] = getEffectivePressureOnTill(H[i][j], Hmelt[i][j],
+					   till_pw_fraction); // iMbasal.cc
     }
   }
   ierr = vH.end_access();  CHKERRQ(ierr);

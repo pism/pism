@@ -21,6 +21,12 @@
 
 #include <petsc.h>
 #include "materials.hh"
+#include <string>
+
+// use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
+/// @cond NAMESPACE_BROWSER
+using namespace std;
+/// @endcond
 
 extern const char *PISM_Revision;
 extern const char *PISM_DefaultConfigFile;
@@ -74,7 +80,7 @@ PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],..
 void endPrintRank();
 
 // handy functions for processing options:
-PetscErrorCode check_option(const char name[], PetscTruth &flag);
+PetscErrorCode check_option(string name, PetscTruth &flag);
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]);
 PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], const char new_name[]);
 PetscErrorCode stop_if_set(MPI_Comm com, const char name[]);
