@@ -248,13 +248,15 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
     PetscErrorCode ierr;
   PetscScalar **h, **bed, **H, **mask;
 
+  bool do_ocean_kill = config.get_flag("ocean_kill");
+
   ierr = verbPrintf(2, grid.com, 
     "  determining surface elevation by  usurf = topg + thk  where grounded\n"
     "    and by floatation crit  usurf = (1-rho_i/rho_w) thk  where floating\n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
            "  preliminary determination of mask for grounded/floating and sheet/dragging\n"); CHKERRQ(ierr);
-  if (doOceanKill == PETSC_TRUE) {
+  if (do_ocean_kill) {
     ierr = verbPrintf(2, grid.com,
            "    option -ocean_kill seen: floating ice mask=3; ice free ocean mask=7\n"); CHKERRQ(ierr);
   }
@@ -278,7 +280,7 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
       if (H[i][j] < 0.001) {  // if no ice
         if (bed[i][j] < 0.0) {
           h[i][j] = 0.0;
-          mask[i][j] = (doOceanKill == PETSC_TRUE) ? MASK_FLOATING_OCEAN0 : MASK_FLOATING;
+          mask[i][j] = do_ocean_kill ? MASK_FLOATING_OCEAN0 : MASK_FLOATING;
         } else {
           h[i][j] = bed[i][j];
           mask[i][j] = MASK_SHEET;

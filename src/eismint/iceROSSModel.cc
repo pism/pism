@@ -27,7 +27,7 @@
 IceROSSModel::IceROSSModel(IceGrid &g)
   : IceModel(g) {  // do nothing; note derived classes must have constructors
 
-  useSSAVelocity= PETSC_TRUE;
+  config.set_flag("use_ssa_velocity", true);
   computeSIAVelocities = PETSC_FALSE;
 
   // further settings for velocity computation 

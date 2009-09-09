@@ -111,7 +111,10 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
               invRegEps = 1.0e23;
   char invfieldsname[PETSC_MAX_PATH_LEN];
 
-  if (doPseudoPlasticTill == PETSC_FALSE) {
+  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till"),
+    do_superpose = config.get_flag("do_superpose");
+
+  if (do_pseudo_plastic_till == PETSC_FALSE) {
     ierr = verbPrintf(1, grid.com, 
        "WARNING: inverse model and invertSurfaceVelocites() should only\n"
        "  be called with q > 0.0 in pseudo-plastic model;  here is \n"
@@ -175,14 +178,14 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
   ierr = computeSIASurfaceVelocity(); CHKERRQ(ierr);
 
   // compute f(|v|) factor, or set to constant if -super not used
-  if (doSuperpose == PETSC_TRUE) {
+  if (do_superpose) {
     ierr = verbPrintf(2, grid.com, 
-       "  flag doSuperpose (option -super) seen;  computing f(|v|) from observed\n"
+       "  flag do_superpose (option -super) seen;  computing f(|v|) from observed\n"
        "    surface velocities by solving transcendental equations ...\n"); CHKERRQ(ierr);
     ierr = computeFofVforInverse(); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, 
-       "  flag doSuperpose (option -super) NOT seen;  setting f(|v|) to 0.0, so NONE\n"
+       "  flag do_superpose (option -super) NOT seen;  setting f(|v|) to 0.0, so NONE\n"
        "    of SIA velocity is removed from observed surface velocity ...\n");
        CHKERRQ(ierr);
     ierr = inv.fofv->set(0.0); CHKERRQ(ierr);
@@ -810,7 +813,8 @@ PetscErrorCode IceModel::removeSIApart() {
 PetscErrorCode IceModel::getEffectivePressureForInverse() {
   PetscErrorCode ierr;
 
-  PetscScalar till_pw_fraction = config.get("till_pw_fraction");
+  PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
+    max_hmelt = config.get("max_hmelt");
 
   PetscScalar **N, **H, **Hmelt;
   ierr = inv.effPressureN->get_array(N);  CHKERRQ(ierr);
@@ -819,7 +823,7 @@ PetscErrorCode IceModel::getEffectivePressureForInverse() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       N[i][j] = getEffectivePressureOnTill(H[i][j], Hmelt[i][j],
-					   till_pw_fraction); // iMbasal.cc
+					   till_pw_fraction, max_hmelt); // iMbasal.cc
     }
   }
   ierr = vH.end_access();  CHKERRQ(ierr);

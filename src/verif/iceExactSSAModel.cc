@@ -40,11 +40,11 @@ const PetscScalar IceExactSSAModel::LforM = 750.0e3; // 750 km half-width
 IceExactSSAModel::IceExactSSAModel(IceGrid &g, char mytest) : IceModel(g) {
   test = mytest;
   
-  useSSAVelocity = PETSC_TRUE;
+  config.set_flag("use_ssa_velocity", true);
   config.set("max_iterations_ssa", 500);
   useConstantNuHForSSA = PETSC_FALSE;
-  doPlasticTill = PETSC_TRUE;  // correct for I, irrelevant for J and M
-  doSuperpose = PETSC_FALSE;
+  config.set_flag("do_plastic_till", true); // correct for I, irrelevant for J and M
+  config.set_flag("do_superpose", false);
 }
 
 PetscErrorCode IceExactSSAModel::init_physics() {
@@ -120,14 +120,14 @@ PetscErrorCode IceExactSSAModel::misc_setup() {
     break;
   case 'J':
     ierr = setInitStateJ(); CHKERRQ(ierr);
-    isDrySimulation = PETSC_FALSE;
+    config.set_flag("is_dry_simulation", false);
     leaveNuHAloneSSA = PETSC_TRUE; // will use already-computed nu instead of updating
     computeSurfGradInwardSSA = PETSC_FALSE;
     config.set("epsilon_ssa", 0.0);  // don't use this lower bound
     break;
   case 'M':
     ierr = setInitStateM(); CHKERRQ(ierr);
-    isDrySimulation = PETSC_FALSE;
+    config.set_flag("is_dry_simulation", false);
     computeSurfGradInwardSSA = PETSC_FALSE;
 
     ierr = ice->printInfo(3);CHKERRQ(ierr);
@@ -433,7 +433,7 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
               gmaxuerr = 0.0, gmaxverr = 0.0;
   PetscScalar **u, **v;
 
-  if (doPseudoPlasticTill == PETSC_TRUE) {
+  if (config.get_flag("do_pseudo_plastic_till")) {
     ierr = verbPrintf(1,grid.com, 
           "WARNING: numerical errors not valid for pseudo-plastic till\n"); CHKERRQ(ierr);
   }

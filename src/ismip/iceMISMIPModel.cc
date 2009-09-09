@@ -290,16 +290,14 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   // read option    -try_calving      [OFF]
   ierr = check_option("-try_calving", tryCalving); CHKERRQ(ierr);
 
-  doTemp                    = PETSC_FALSE;
-  doPlasticTill             = PETSC_FALSE;
-  doBedDef                  = PETSC_FALSE;
-
-  isDrySimulation           = PETSC_FALSE;
-  includeBMRinContinuity    = PETSC_FALSE;
+  config.set_flag("do_temp",                   false);
+  config.set_flag("do_plastic_till",           false);
+  config.set_flag("do_bed_deformation",        false);
+  config.set_flag("is_dry_simulation",         false);
+  config.set_flag("include_bmr_in_continuity", false);
+  config.set_flag("ocean_kill",                true);
+  config.set_flag("use_ssa_velocity",          true);
   
-  doOceanKill               = PETSC_TRUE;
-  
-  useSSAVelocity            = PETSC_TRUE;
   computeSurfGradInwardSSA  = PETSC_FALSE;
   transformForSurfaceGradient = PETSC_TRUE;
 
@@ -308,10 +306,10 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   // models 1 vs 2
   if (modelnum == 1) {
     computeSIAVelocities = PETSC_FALSE;
-    doSuperpose = PETSC_FALSE;
+    config.set_flag("do_superpose", false);
   } else if (modelnum == 2) {
     computeSIAVelocities = PETSC_TRUE;
-    doSuperpose = PETSC_TRUE;
+    config.set_flag("do_superpose", true);
   } else {
     SETERRQ(98, "how did I get here?");    
   }

@@ -158,7 +158,11 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   PetscErrorCode ierr;
   PetscScalar **ub, **vb, **mask;
   PetscScalar locCFLmaxdt2D = config.get("maximum_time_step_years") * secpera;
+
+  bool do_ocean_kill = config.get_flag("ocean_kill"),
+    floating_ice_killed = config.get_flag("floating_ice_killed");
   
+
   ierr = vub.get_array(ub); CHKERRQ(ierr);
   ierr = vvb.get_array(vb); CHKERRQ(ierr);
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
@@ -167,8 +171,8 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
       // the following conditionals, both -ocean_kill and -float_kill, are also applied in 
       //   IceModel::massContExplicitStep() when zeroing thickness
       const bool ignorableOcean =
-          (   ( (doOceanKill == PETSC_TRUE) && (PismIntMask(mask[i][j]) == MASK_FLOATING_OCEAN0) )
-           || ( (floatingIceKilled == PETSC_TRUE) && (PismModMask(mask[i][j]) == MASK_FLOATING)  )  );
+          (   ( do_ocean_kill && (PismIntMask(mask[i][j]) == MASK_FLOATING_OCEAN0) )
+           || ( floating_ice_killed && (PismModMask(mask[i][j]) == MASK_FLOATING)  )  );
       if (!ignorableOcean) {
         PetscScalar denom = PetscAbs(ub[i][j])/grid.dx + PetscAbs(vb[i][j])/grid.dy;
         denom += (0.01/secpera)/(grid.dx + grid.dy);  // make sure it's pos.
@@ -195,6 +199,8 @@ Reference: \ref MortonMayers pp 62--63.
  */
 PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
 
+  bool do_skip = config.get_flag("do_skip");
+  
   const PetscScalar adaptTimeStepRatio = config.get("adaptive_timestepping_ratio");
 
   const PetscInt skip_max = static_cast<PetscInt>(config.get("skip_max"));
@@ -204,7 +210,7 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
           gridfactor = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
   dt_from_diffus = adaptTimeStepRatio
                      * 2 / ((gDmax + DEFAULT_ADDED_TO_GDMAX_ADAPT) * gridfactor);
-  if ((doSkip == PETSC_TRUE) && (skipCountDown == 0)) {
+  if (do_skip && (skipCountDown == 0)) {
     const PetscScalar  conservativeFactor = 0.95;
     // typically "dt" in next line is from CFL for advection in temperature equation,
     //   but in fact it might be from other restrictions, e.g. CFL for mass continuity
@@ -230,8 +236,11 @@ by incorporating choices made by options (e.g. <c>-max_dt</c>) and by derived cl
 PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   PetscErrorCode ierr;
 
+  bool do_mass_conserve = config.get_flag("do_mass_conserve"),
+    do_temp = config.get_flag("do_temp");
+
   if ( (runtimeViewers[cIndex('D')] != PETSC_NULL) 
-       || ( (doAdaptTimeStep == PETSC_TRUE) && (doMassConserve == PETSC_TRUE) ) ) {
+       || ( (doAdaptTimeStep == PETSC_TRUE) && do_mass_conserve ) ) {
     ierr = computeMaxDiffusivity(true); CHKERRQ(ierr);
   }
   const PetscScalar timeToEnd = (end_year - grid.year) * secpera;
@@ -244,9 +253,11 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
     }
   } else {
     dt = config.get("maximum_time_step_years") * secpera;
+    bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
+
     adaptReasonFlag = 'm';
     if (doAdaptTimeStep == PETSC_TRUE) {
-      if ((doTemp == PETSC_TRUE) && (doTemperatureCFL == PETSC_TRUE)) {
+      if ((do_temp == PETSC_TRUE) && (doTemperatureCFL == PETSC_TRUE)) {
         // CFLmaxdt is set by computeMax3DVelocities() in call to velocity() iMvelocity.cc
         dt_from_cfl = CFLmaxdt;
         if (dt_from_cfl < dt) {
@@ -254,15 +265,15 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
           adaptReasonFlag = 'c';
         }
       }
-      if ((doMassConserve == PETSC_TRUE) && (useSSAVelocity == PETSC_TRUE)) {
+      if (do_mass_conserve && use_ssa_velocity) {
         // CFLmaxdt2D is set by broadcastSSAVelocity()
         if (CFLmaxdt2D < dt) {
           dt = CFLmaxdt2D;
           adaptReasonFlag = 'u';
         }
       }
-      if ((doMassConserve == PETSC_TRUE) && (computeSIAVelocities == PETSC_TRUE)) {
-        // note: if doSkip then skipCountDown = floor(dt_from_cfl/dt_from_diffus)
+      if (do_mass_conserve && (computeSIAVelocities == PETSC_TRUE)) {
+        // note: if do_skip then skipCountDown = floor(dt_from_cfl/dt_from_diffus)
         ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
       }
     }

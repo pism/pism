@@ -746,8 +746,8 @@ vertVelocityFromIncompressibility().  The three-dimensional velocity field
 is needed, for example, so that the temperature equation can include advection.
 Basal velocities also get updated.
 
-Here is where the flag doSuperpose controlled by option <tt>-super</tt> applies.
-If doSuperpose is true then the just-computed velocity \f$v\f$ from the SSA is
+Here is where the flag do_superpose controlled by option <tt>-super</tt> applies.
+If do_superpose is true then the just-computed velocity \f$v\f$ from the SSA is
 combined, in convex combination, to the stored velocity \f$u\f$ from the SIA 
 computation:
    \f[U = f(|v|)\, u + \left(1-f(|v|)\right)\, v.\f]
@@ -779,12 +779,13 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   const PetscScalar inC_fofv = 1.0e-4 * PetscSqr(secpera),
                     outC_fofv = 2.0 / pi;
 
+  bool do_superpose = config.get_flag("do_superpose");
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (PismIntMask(mask[i][j]) != MASK_SHEET) {
         // combine velocities if desired (and not floating)
-        const bool addVels = ( (doSuperpose == PETSC_TRUE) 
-                               && (PismModMask(mask[i][j]) == MASK_DRAGGING) );
+        const bool addVels = ( do_superpose && (PismModMask(mask[i][j]) == MASK_DRAGGING) );
         PetscScalar fv = 0.0, omfv = 1.0;  // case of formulas below where ssa
                                            // speed is infinity; i.e. when !addVels
                                            // we just pass through the SSA velocity
@@ -843,6 +844,8 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
   PetscErrorCode  ierr;
   PetscScalar **ub, **vb, **mask, **Rb, **tauc;
 
+  bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
+
   ierr = vub.get_array(ub); CHKERRQ(ierr);
   ierr = vvb.get_array(vb); CHKERRQ(ierr);
   ierr = vRb.get_array(Rb); CHKERRQ(ierr);
@@ -854,9 +857,9 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
       if (PismModMask(mask[i][j]) == MASK_FLOATING) {
         Rb[i][j] = 0.0;
       }
-      if ((PismModMask(mask[i][j]) == MASK_DRAGGING) && (useSSAVelocity)) {
+      if ((PismModMask(mask[i][j]) == MASK_DRAGGING) && use_ssa_velocity) {
         // note basalDrag[x|y]() produces a coefficient, not a stress;
-        //   uses *updated* ub,vb if doSuperpose == TRUE
+        //   uses *updated* ub,vb if do_superpose == TRUE
         const PetscScalar 
             basal_stress_x = - basalDragx(tauc, ub, vb, i, j) * ub[i][j],
             basal_stress_y = - basalDragy(tauc, ub, vb, i, j) * vb[i][j];
@@ -888,6 +891,8 @@ PetscErrorCode IceModel::correctSigma() {
 
   double enhancement_factor = config.get("enhancement_factor");
 
+  bool do_superpose = config.get_flag("do_superpose");
+
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr = vubarSSA.get_array(ubarssa); CHKERRQ(ierr);
@@ -906,8 +911,7 @@ PetscErrorCode IceModel::correctSigma() {
         // note vubarSSA, vvbarSSA *are* communicated for differencing by last
         //   call to moveVelocityToDAVectors()
         // apply glaciological-superposition-to-low-order if desired (and not floating)
-        bool addVels = ( (doSuperpose == PETSC_TRUE) 
-                         && (PismModMask(mask[i][j]) == MASK_DRAGGING) );
+        bool addVels = ( do_superpose && (PismModMask(mask[i][j]) == MASK_DRAGGING) );
         PetscScalar fv = 0.0, omfv = 1.0;  // case of formulas below where ssa
                                            // speed is infinity; i.e. when !addVels
                                            // we just pass through the SSA velocity

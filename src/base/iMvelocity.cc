@@ -32,6 +32,8 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
 
   double mu_sliding = config.get("mu_sliding");
 
+  bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
+
 PetscLogEventBegin(siaEVENT,0,0,0,0);
 
   // do SIA
@@ -121,10 +123,10 @@ PetscLogEventEnd(siaEVENT,0,0,0,0);
 PetscLogEventBegin(ssaEVENT,0,0,0,0);
   
   // do SSA
-  if ((firstTime == PETSC_TRUE) && (useSSAVelocity == PETSC_TRUE)) {
+  if ((firstTime == PETSC_TRUE) && use_ssa_velocity) {
     ierr = initSSA(); CHKERRQ(ierr);
   }
-  if (useSSAVelocity == PETSC_TRUE) { // communication happens within SSA
+  if (use_ssa_velocity) { // communication happens within SSA
     if ((firstTime == PETSC_TRUE) || (updateVelocityAtDepth)) {
       ierr = verbPrintf(2,grid.com, "SSA"); CHKERRQ(ierr);
       PetscInt numSSAiter;
@@ -237,6 +239,8 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   ierr = vuplift.get_array(dbdt); CHKERRQ(ierr);
   ierr = vbasalMeltRate.get_array(basalMeltRate); CHKERRQ(ierr);
 
+  bool include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity");
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
@@ -264,7 +268,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
           dbdy = (b[i][j+1] - b[i][j-1]) / (2.0*dy);
         }
         w[0] = ub[i][j] * dbdx + vb[i][j] * dbdy;
-        if (includeBMRinContinuity == PETSC_TRUE) {
+        if (include_bmr_in_continuity) {
           w[0] -= basalMeltRate[i][j];
         }
         // DEBUG?: should dbdt be added?

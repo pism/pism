@@ -156,14 +156,13 @@ PetscErrorCode IceEISModel::setFromOptions() {
   PetscErrorCode      ierr;
 
   // apply eismint defaults settings; options may overwrite
-  thermalBedrock = PETSC_FALSE;
-  useSSAVelocity = PETSC_FALSE;
-  isDrySimulation = PETSC_TRUE;
+  config.set_flag("is_dry_simulation", true);
+  config.set_flag("use_ssa_velocity", false);
 
   config.set("enhancement_factor", 1.0);
 
-  includeBMRinContinuity = PETSC_FALSE; // so basal melt does not change 
-                                        // computation of vertical velocity
+  config.set_flag("include_bmr_in_continuity", false);
+  // so basal melt does not change computation of vertical velocity
 
   // optionally allow override of updateHmelt == PETSC_FALSE for EISMINT II
   ierr = check_option("-track_Hmelt", updateHmelt); CHKERRQ(ierr);

@@ -381,6 +381,13 @@ derived classes to do extra work.  See additionalAtStartTimestep() and additiona
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
+  double start_year = config.get("start_year");
+  bool do_mass_conserve = config.get_flag("do_mass_conserve"),
+    do_temp = config.get_flag("do_temp"),
+    do_skip = config.get_flag("do_skip"),
+    do_bed_deformation = config.get_flag("do_bed_deformation"),
+    do_plastic_till = config.get_flag("do_plastic_till");
+
 #if PETSC_VERSION_MAJOR >= 3
 # define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((name),(cookie),(event))
 #else
@@ -393,13 +400,12 @@ PismLogEventRegister("bed deform",   0,&beddefEVENT);
 PismLogEventRegister("mass bal calc",0,&massbalEVENT);
 PismLogEventRegister("temp age calc",0,&tempEVENT);
 
-  ierr = summaryPrintLine(PETSC_TRUE,doTemp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
+  ierr = summaryPrintLine(PETSC_TRUE,do_temp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   skipCountDown = 0;
-  ierr = summary(doTemp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
+  ierr = summary(do_temp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
   dtTempAge = 0.0;
 
-  double start_year = config.get("start_year");
 
   // main loop for time evolution
   for (PetscScalar year = start_year; year < end_year; year += dt/secpera) {
@@ -413,7 +419,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
 PetscLogEventBegin(beddefEVENT,0,0,0,0);
 
     // compute bed deformation, which only depends on current thickness and bed elevation
-    if (doBedDef == PETSC_TRUE) {
+    if (do_bed_deformation) {
       ierr = bedDefStepIfNeeded(); CHKERRQ(ierr); // prints "b" or "$" as appropriate
     } else {
       ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
@@ -422,7 +428,7 @@ PetscLogEventBegin(beddefEVENT,0,0,0,0);
 PetscLogEventEnd(beddefEVENT,0,0,0,0);
 
     // update basal till yield stress if appropriate; will modify and communicate mask
-    if (doPlasticTill == PETSC_TRUE) {
+    if (do_plastic_till) {
       ierr = updateYieldStressFromHmelt();  CHKERRQ(ierr);
       ierr = verbPrintf(2,grid.com, "y"); CHKERRQ(ierr);
     } else {
@@ -438,7 +444,7 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
     ierr = verbPrintf(2,grid.com, updateAtDepth ? "v" : "V" ); CHKERRQ(ierr);
     
     // adapt time step using velocities and diffusivity, ..., just computed
-    bool useCFLforTempAgeEqntoGetTimestep = (doTemp == PETSC_TRUE);
+    bool useCFLforTempAgeEqntoGetTimestep = (do_temp == PETSC_TRUE);
     ierr = determineTimeStep(useCFLforTempAgeEqntoGetTimestep); CHKERRQ(ierr);
     dtTempAge += dt;
     grid.year += dt / secpera;  // adopt it
@@ -454,7 +460,7 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
 
 PetscLogEventBegin(tempEVENT,0,0,0,0);
     
-    bool tempAgeStep = (updateAtDepth && (doTemp == PETSC_TRUE));
+    bool tempAgeStep = (updateAtDepth && (do_temp == PETSC_TRUE));
     if (tempAgeStep) { // do temperature and age
       ierr = temperatureAgeStep(); CHKERRQ(ierr);
       dtTempAge = 0.0;
@@ -469,10 +475,10 @@ PetscLogEventBegin(tempEVENT,0,0,0,0);
 PetscLogEventEnd(tempEVENT,0,0,0,0);
 PetscLogEventBegin(massbalEVENT,0,0,0,0);
 
-    if (doMassConserve == PETSC_TRUE) {
+    if (do_mass_conserve) {
       ierr = massContExplicitStep(); CHKERRQ(ierr); // update H
       ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
-      if ((doSkip == PETSC_TRUE) && (skipCountDown > 0))
+      if ((do_skip == PETSC_TRUE) && (skipCountDown > 0))
         skipCountDown--;
       ierr = verbPrintf(2,grid.com, "h"); CHKERRQ(ierr);
     } else {
@@ -510,6 +516,8 @@ This procedure has no loop but the following actions are taken:
 PetscErrorCode IceModel::diagnosticRun() {
   PetscErrorCode  ierr;
 
+  bool do_plastic_till = config.get_flag("do_plastic_till");
+
   // print out some stats about input state
   ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
            CHKERRQ(ierr);
@@ -517,7 +525,7 @@ PetscErrorCode IceModel::diagnosticRun() {
   skipCountDown = 0;
 
   // update basal till yield stress if appropriate; will modify and communicate mask
-  if (doPlasticTill == PETSC_TRUE) {
+  if (do_plastic_till) {
     ierr = updateYieldStressFromHmelt();  CHKERRQ(ierr);
   }
 

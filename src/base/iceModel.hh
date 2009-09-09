@@ -215,15 +215,13 @@ protected:
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax,
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
               gdHdtav,  //!< average value in map-plane (2D) of dH/dt, where there is ice; m s-1
-              dvoldt,  //!< d(total ice volume)/dt; m3 s-1
-              Hmelt_max;
+    dvoldt;  //!< d(total ice volume)/dt; m3 s-1
   PetscInt    skipCountDown;
 
 
   // flags
-  bool doOceanKill, doPlasticTill, includeBMRinContinuity, doMassConserve, doTemp, doSkip, doBedDef, doBedIso,
-    doSuperpose, doPseudoPlasticTill, useSSAVelocity, floatingIceKilled, isDrySimulation, useConstantNuHForSSA,
-    leaveNuHAloneSSA, computeSurfGradInwardSSA, thermalBedrock;
+  bool useConstantNuHForSSA,
+    leaveNuHAloneSSA, computeSurfGradInwardSSA;
   PetscTruth  updateHmelt,
               holdTillYieldStress, useConstantTillPhi,
               shelvesDragToo,
@@ -269,7 +267,8 @@ protected:
   virtual PetscErrorCode initBasalTillModel();
   virtual PetscErrorCode computePhiFromBedElevation();
   virtual PetscScalar    getEffectivePressureOnTill(PetscScalar thk, PetscScalar bwat,
-						    PetscScalar till_pw_fraction) const;
+						    PetscScalar till_pw_fraction,
+						    PetscScalar max_hmelt) const;
   virtual PetscErrorCode updateYieldStressFromHmelt();
   virtual PetscScalar basalDragx(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
                                  PetscInt i, PetscInt j) const;

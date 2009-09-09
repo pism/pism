@@ -159,12 +159,14 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   PetscErrorCode ierr;
   NCTool nc(&grid);
 
+  bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
+
   // Prepare the file
   ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
   // append == false, check_dims == true
   ierr = nc.append_time(grid.year); CHKERRQ(ierr);
   ierr = nc.write_history(history.c_str()); CHKERRQ(ierr); // append the history
-  ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.4"); CHKERRQ(ierr);
+  ierr = nc.write_global_attrs(use_ssa_velocity, "CF-1.4"); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = polar_stereographic.write(filename); CHKERRQ(ierr);
@@ -210,7 +212,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr =       vbed.write(filename, NC_DOUBLE); CHKERRQ(ierr);
   ierr =    vuplift.write(filename, NC_DOUBLE); CHKERRQ(ierr);
 
-  if (useSSAVelocity) {
+  if (config.get_flag("use_ssa_velocity")) {
     ierr = vubarSSA.write(filename, NC_DOUBLE); CHKERRQ(ierr);
     ierr = vvbarSSA.write(filename, NC_DOUBLE); CHKERRQ(ierr);
   }
@@ -477,7 +479,7 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
   ierr =  vuplift.read(filename, last_record); CHKERRQ(ierr);
   ierr = vtillphi.read(filename, last_record); CHKERRQ(ierr);
 
-  if (useSSAVelocity) {
+  if (config.get_flag("use_ssa_velocity")) {
     vector<double> flag;
     ierr = nc.get_att_double(NC_GLOBAL, "ssa_velocities_are_valid", flag); CHKERRQ(ierr);
     if (flag.size() == 1)
@@ -820,11 +822,13 @@ PetscErrorCode IceModel::write_snapshot() {
 	     date_str, executable_short_name.c_str(), grid.year, saving_after);
 
     if (!file_is_ready) {
+      bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
+
       // Prepare the snapshots file:
       ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
       // append == false, check_dims == true
       ierr = nc.write_history(history.c_str()); CHKERRQ(ierr); // append the history
-      ierr = nc.write_global_attrs(useSSAVelocity, "CF-1.4"); CHKERRQ(ierr);
+      ierr = nc.write_global_attrs(use_ssa_velocity, "CF-1.4"); CHKERRQ(ierr);
       ierr = nc.close(); CHKERRQ(ierr);
 
       ierr = polar_stereographic.write(filename); CHKERRQ(ierr);

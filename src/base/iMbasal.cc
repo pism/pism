@@ -60,14 +60,17 @@ PetscErrorCode IceModel::initBasalTillModel() {
     pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera,
     plastic_regularization = config.get("plastic_regularization") / secpera;
 
+  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till"),
+    use_ssa_velocity = config.get_flag("use_ssa_velocity");
+
   if (basal == NULL)
-    basal = new PlasticBasalType(plastic_regularization, doPseudoPlasticTill, 
+    basal = new PlasticBasalType(plastic_regularization, do_pseudo_plastic_till, 
                                  pseudo_plastic_q, pseudo_plastic_uthreshold);
 
   if (basalSIA == NULL)
     basalSIA = new BasalTypeSIA();  // initialize it; USE NOT RECOMMENDED!
   
-  if (useSSAVelocity == PETSC_TRUE) {
+  if (use_ssa_velocity) {
     ierr = basal->printInfo(3,grid.com); CHKERRQ(ierr);
   }
 
@@ -199,13 +202,14 @@ to be a fixed fraction of the overburden pressure.
 Note \c bwat is thickness of basal water.  It should be zero at points where
 base of ice is frozen.
 
-Need \f$0 \le\f$ \c bwat \f$\le\f$ \c Hmelt_max before calling this.  There is
+Need \f$0 \le\f$ \c bwat \f$\le\f$ \c max_hmelt before calling this.  There is
 no error checking.
  */
 PetscScalar IceModel::getEffectivePressureOnTill(PetscScalar thk, PetscScalar bwat,
-						 PetscScalar till_pw_fraction) const {
+						 PetscScalar till_pw_fraction,
+						 PetscScalar max_hmelt) const {
   const PetscScalar  overburdenP = ice->rho * earth_grav * thk;
-  return overburdenP * (1.0 - till_pw_fraction * (bwat / Hmelt_max));
+  return overburdenP * (1.0 - till_pw_fraction * (bwat / max_hmelt));
 }
 
 
@@ -240,9 +244,10 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
   //      implementable because the "elevation of the bed at the grounding line"
   //      is at an unknowable location as we are not doing a flow line model!)
 
-  // only makes sense when doPlasticTill == TRUE
-  if (doPlasticTill == PETSC_FALSE) {
-    SETERRQ(1,"doPlasticTill == PETSC_FALSE but updateYieldStressFromHmelt() called");
+  bool do_plastic_till = config.get_flag("do_plastic_till");
+  // only makes sense when do_plastic_till == TRUE
+  if (do_plastic_till == PETSC_FALSE) {
+    SETERRQ(1,"do_plastic_till == PETSC_FALSE but updateYieldStressFromHmelt() called");
   }
 
   if (holdTillYieldStress == PETSC_FALSE) { // usual case: use Hmelt to determine tauc
@@ -250,7 +255,8 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
 
     PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
       till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
-      till_mu  = tan((pi/180.0)*config.get("default_till_phi"));
+      till_mu  = tan((pi/180.0)*config.get("default_till_phi")),
+      max_hmelt = config.get("max_hmelt");
 
     ierr =    vMask.get_array(mask);    CHKERRQ(ierr);
     ierr =    vtauc.get_array(tauc);    CHKERRQ(ierr);
@@ -266,7 +272,7 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
           tauc[i][j] = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice
         } else { // grounded and there is some ice
           const PetscScalar N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j],
-							   till_pw_fraction);
+							   till_pw_fraction, max_hmelt);
           if (useConstantTillPhi == PETSC_TRUE) {
             tauc[i][j] = till_c_0 + till_mu * N;
           } else {
@@ -306,7 +312,7 @@ PetscErrorCode IceModel::diffuseHmelt() {
   // NOTE: restriction that
   //    1 - 2 R_x - 2 R_y \ge 0
   // is a maximum principle restriction; therefore new Hmelt will be between
-  // zero and Hmelt_max if old Hmelt has that property
+  // zero and max_hmelt if old Hmelt has that property
   const PetscScalar oneM4R = 1.0 - 2.0 * Rx - 2.0 * Ry;
   if (oneM4R <= 0.0) {
     SETERRQ(1,

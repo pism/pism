@@ -46,13 +46,10 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   PetscTruth flag;
 
-  PetscTruth  my_useConstantNuH, mybedDeflc, mydoBedIso, 
-              myincludeBMRinContinuity, mydoOceanKill, floatkillSet,
-              mydoPlasticTill, myuseSSAVelocity, myssaSystemToASCIIMatlab,
-              pseudoplasticSet,
-              mydoSuperpose,
+  PetscTruth  my_useConstantNuH, 
+              myssaSystemToASCIIMatlab,
               myholdTillYieldStress, realageSet,
-              noMassConserve, noTemp, etaSet, doShelvesDragToo;
+              etaSet, doShelvesDragToo;
   PetscScalar my_nuH;
 
   ierr = verbPrintf(3, grid.com,
@@ -74,27 +71,27 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.scalar_from_option("adapt_ratio",
 				   "adaptive_timestepping_ratio"); CHKERRQ(ierr);
 
-  ierr = check_option("-bed_def_iso", mydoBedIso); CHKERRQ(ierr);
-  if (mydoBedIso == PETSC_TRUE) {
-    doBedDef = PETSC_TRUE;
-    doBedIso = PETSC_TRUE;
+  ierr = check_option("-bed_def_iso", flag); CHKERRQ(ierr);
+  if (flag) {
+    config.set_flag("do_bed_deformation", true);
+    config.set_flag("do_bed_iso", true);
   }
 
-  ierr = check_option("-bed_def_lc", mybedDeflc); CHKERRQ(ierr);  
-  if (mybedDeflc == PETSC_TRUE) {
-    doBedDef = PETSC_TRUE;
-    doBedIso = PETSC_FALSE;
+  bool bed_def_iso = flag;
+
+  ierr = check_option("-bed_def_lc", flag); CHKERRQ(ierr);  
+  if (flag) {
+    config.set_flag("do_bed_deformation", true);
+    config.set_flag("do_bed_iso", false);
   }
 
-  if ((mydoBedIso == PETSC_TRUE) && (mybedDeflc == PETSC_TRUE))  {
+  if (bed_def_iso && flag)  {
     ierr = verbPrintf(1,grid.com,
        "WARNING: both options -bed_def_iso and -bed_def_lc set; using Lingle & Clark model\n");
        CHKERRQ(ierr);
   }
 
-  ierr = check_option("-bmr_in_cont", myincludeBMRinContinuity);
-      CHKERRQ(ierr);
-  if (myincludeBMRinContinuity == PETSC_TRUE)   includeBMRinContinuity = PETSC_TRUE;
+  ierr = config.flag_from_option("bmr_in_cont", "include_bmr_in_continuity"); CHKERRQ(ierr);
 
 // "-cbar_to_till" read in invertVelocitiesFromNetCDF() in iMinverse.cc
 
@@ -136,8 +133,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 // note "-f3d" is read in writefiles() in iMIO.cc
 
   // whether or not to kill ice (zero thickness) if it is (or becomes) floating
-  ierr = check_option("-float_kill", floatkillSet); CHKERRQ(ierr);
-  if (floatkillSet == PETSC_TRUE)  floatingIceKilled = PETSC_TRUE;
+  ierr = config.flag_from_option("float_kill", "floating_ice_killed"); CHKERRQ(ierr);
 
   // note "-gk" is used for specifying Goldsby-Kohlstedt ice
   //   this form allows a constant value of grain size to be input in mm
@@ -175,23 +171,18 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.scalar_from_option("mu_sliding",    "mu_sliding");              CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count");      CHKERRQ(ierr);
 
-  ierr = check_option("-no_mass", noMassConserve); CHKERRQ(ierr);
-  if (noMassConserve == PETSC_TRUE)    doMassConserve = PETSC_FALSE;
-
-  ierr = check_option("-no_temp", noTemp); CHKERRQ(ierr);
-  if (noTemp == PETSC_TRUE)   doTemp = PETSC_FALSE;
+  ierr = config.flag_from_option("mass", "do_mass_conserve"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("temp", "do_temp"); CHKERRQ(ierr);
 
 // note "-o" is in use for output file name; see iMIO.cc
 
   // whether or not to kill ice at locations where mask=FLOATING_OCEAN0;
   //   also determines if mask=FLOATING_OCEAN0 or mask=FLOATING
   //   at bootstrapping (-boot_from), if original condition was ice-free ocean
-  ierr = check_option("-ocean_kill", mydoOceanKill); CHKERRQ(ierr);
-  if (mydoOceanKill == PETSC_TRUE)   doOceanKill = PETSC_TRUE;
+  ierr = config.flag_from_option("ocean_kill", "ocean_kill"); CHKERRQ(ierr);
 
   // use a plastic basal till mechanical model
-  ierr = check_option("-plastic", mydoPlasticTill); CHKERRQ(ierr);
-  if (mydoPlasticTill == PETSC_TRUE)   doPlasticTill = PETSC_TRUE;
+  ierr = config.flag_from_option("plastic", "do_plastic_till"); CHKERRQ(ierr);
 
   // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
   // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
@@ -210,22 +201,19 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.scalar_from_option("plastic_phi", "default_till_phi"); CHKERRQ(ierr);
 
   // use pseudo plastic instead of pure plastic; see iMbasal.cc
-  ierr = check_option("-pseudo_plastic", pseudoplasticSet);  CHKERRQ(ierr);
-  if (pseudoplasticSet == PETSC_TRUE) {
-     doPseudoPlasticTill = PETSC_TRUE;
-  }
+  ierr = config.flag_from_option("pseudo_plastic", "do_pseudo_plastic_till"); CHKERRQ(ierr);
 
   // power in denominator on pseudo_plastic_uthreshold; typical is q=0.25; q=0 is pure plastic
   ierr = config.scalar_from_option("pseudo_plastic_q", "pseudo_plastic_q"); CHKERRQ(ierr);
   ierr = check_option("-pseudo_plastic_q", flag);  CHKERRQ(ierr);
   if (flag)
-     doPseudoPlasticTill = PETSC_TRUE;
+    config.set_flag("do_pseudo_plastic_till", true);
 
   // threshold; at this velocity tau_c is basal shear stress
   ierr = config.scalar_from_option("pseudo_plastic_uthreshold", "pseudo_plastic_uthreshold"); CHKERRQ(ierr);
   ierr = check_option("-pseudo_plastic_uthreshold", flag);  CHKERRQ(ierr);
   if (flag)
-     doPseudoPlasticTill = PETSC_TRUE;
+    config.set_flag("do_pseudo_plastic_till", true);
 
   // see updateGrainSizeNow(); option to choose modeled age vtau instead of pseudo age in
   // computing grainsize through Vostok core correlation
@@ -246,8 +234,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = check_option("-shelves_drag_too", doShelvesDragToo); CHKERRQ(ierr);
   if (doShelvesDragToo == PETSC_TRUE)   shelvesDragToo = PETSC_TRUE;
   
-  ierr = check_option("-ssa", myuseSSAVelocity); CHKERRQ(ierr);
-  if (myuseSSAVelocity == PETSC_TRUE)   useSSAVelocity = PETSC_TRUE;
+  ierr = config.flag_from_option("ssa", "use_ssa_velocity"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssa"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssa"); CHKERRQ(ierr);
@@ -272,17 +259,12 @@ PetscErrorCode  IceModel::setFromOptions() {
   
   // apply "glaciological superposition to low order", i.e. add SIA results to those of 
   // SSA equations where DRAGGING; this version is  U = f(|v|) u + v   where u is SIA and v is SSA
-  ierr = check_option("-super", mydoSuperpose); CHKERRQ(ierr);
-  if (mydoSuperpose == PETSC_TRUE) {
-    doSuperpose = PETSC_TRUE;
-  }
-
+  ierr = config.flag_from_option("super", "do_superpose"); CHKERRQ(ierr);
+  
   /* This allows more than one mass continuity step per temperature/age and SSA
      computation */
   ierr = config.scalar_from_option("skip", "skip_max"); CHKERRQ(ierr);
-
-  ierr = check_option("-skip", flag); CHKERRQ(ierr);
-  if (flag) doSkip = PETSC_TRUE;
+  ierr = config.flag_from_option("skip",   "do_skip");  CHKERRQ(ierr);
 
   // Process -y, -ys, -ye. We are reading these options here because couplers
   // might need to know what year it is.

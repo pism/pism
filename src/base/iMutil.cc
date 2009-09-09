@@ -108,6 +108,7 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
            "PISM (%s) started on %d procs.", PISM_Revision, (int)grid.size);
   ierr = stampHistory(string(startstr)); CHKERRQ(ierr);
 
+  // Create a string with space-separated command-line arguments:
   string cmdstr;
   for (int j = 0; j < argc; j++)
     cmdstr += string(" ") + argv[j];

@@ -156,6 +156,10 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   ierr =  vbed.get_array(bed);  CHKERRQ(ierr);
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
 
+  bool is_dry_simulation = config.get_flag("is_dry_simulation"),
+    do_plastic_till = config.get_flag("do_plastic_till"),
+    use_ssa_velocity = config.get_flag("use_ssa_velocity");
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // take this opportunity to check that H[i][j] >= 0
@@ -166,7 +170,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
       const PetscScalar hgrounded = bed[i][j] + H[i][j],
                         hfloating = currentSeaLevel + (1.0 - ice->rho/ocean.rho) * H[i][j];
 
-      if (isDrySimulation == PETSC_TRUE) {
+      if (is_dry_simulation) {
         // Don't update mask; potentially one would want to do SSA
         //   dragging ice shelf in dry case and/or ignore mean sea level elevation.
         h[i][j] = hgrounded;
@@ -183,8 +187,8 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
           // check whether you are actually floating or grounded
           if (hgrounded > hfloating+1.0) {
             h[i][j] = hgrounded; // actually grounded so update h
-            if (useSSAVelocity == PETSC_TRUE) {
-              if (doPlasticTill == PETSC_TRUE) {
+            if (use_ssa_velocity) {
+              if (do_plastic_till) {
                 // we are using SSA-as-a-sliding-law, so we know what to do:
                 //   all grounded points become DRAGGING
                 mask[i][j] = MASK_DRAGGING;
@@ -204,7 +208,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
           //   newly-evaluated flotation criterion
           if (hgrounded > hfloating-1.0) {
             h[i][j] = hgrounded; // actually grounded so update h
-            if ((useSSAVelocity == PETSC_TRUE) && (doPlasticTill == PETSC_TRUE)) {
+            if (use_ssa_velocity && do_plastic_till) {
               // we are using SSA-as-a-sliding-law, so grounded points become DRAGGING
               mask[i][j] = MASK_DRAGGING;
             }
@@ -302,6 +306,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
   PetscScalar **ub, **vb, **accum, **bmr_gnded, **bmr_float, **mask;
   IceModelVec2 vHnew = vWork2d[0];
 
+  bool do_ocean_kill = config.get_flag("ocean_kill"),
+    floating_ice_killed = config.get_flag("floating_ice_killed"),
+    include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
+    do_superpose = config.get_flag("do_superpose");
+
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vbasalMeltRate.get_array(bmr_gnded); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
@@ -349,8 +358,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
       //    compare broadcastSSAVelocity(); note uvbar[o] is SIA result:
       //    uvbar[0] H = - D h_x
       PetscScalar He, Hw, Hn, Hs;
-      if ( (doSuperpose == PETSC_TRUE) 
-           && (PismModMask(mask[i][j]) == MASK_DRAGGING) ) {
+      if ( do_superpose && (PismModMask(mask[i][j]) == MASK_DRAGGING) ) {
         const PetscScalar
           fv  = 1.0 - outC_fofv * atan( inC_fofv *
                       ( PetscSqr(ubarssa[i][j]) + PetscSqr(vbarssa[i][j]) ) ),
@@ -394,7 +402,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
       Hnew[i][j] += (accum[i][j] - divQ) * dt; // include M
 
-      if (includeBMRinContinuity == PETSC_TRUE) { // include S
+      if (include_bmr_in_continuity) { // include S
         if (PismModMask(mask[i][j]) == MASK_FLOATING) {
            Hnew[i][j] -= bmr_float[i][j] * dt;
         } else {
@@ -411,12 +419,12 @@ PetscErrorCode IceModel::massContExplicitStep() {
       
       // force zero thickness at points which were originally ocean (if "-ocean_kill");
       //   this is calving at original calving front location
-      if ( (doOceanKill == PETSC_TRUE) && (PismIntMask(mask[i][j]) == MASK_FLOATING_OCEAN0) )
+      if ( do_ocean_kill && (PismIntMask(mask[i][j]) == MASK_FLOATING_OCEAN0) )
         Hnew[i][j] = 0.0;
 
       // force zero thickness at points which are floating (if "-float_kill");
       //   this is calving at grounding line
-      if ( (floatingIceKilled == PETSC_TRUE) && (PismModMask(mask[i][j]) == MASK_FLOATING) )
+      if ( floating_ice_killed && (PismModMask(mask[i][j]) == MASK_FLOATING) )
         Hnew[i][j] = 0.0;
 
     }

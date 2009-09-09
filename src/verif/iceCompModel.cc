@@ -36,8 +36,8 @@ const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
 IceCompModel::IceCompModel(IceGrid &g, int mytest)
   : IceModel(g), tgaIce(NULL) {
   
-  // note lots of defaults are set by the IceModel constructor
-  // defaults for IceCompModel:  
+  // note lots of defaults are set by the IceModel constructor defaults for
+  // IceCompModel:
   testname = mytest;
   exactOnly = PETSC_FALSE;
   bedrock_is_ice_forK = PETSC_FALSE;
@@ -46,10 +46,10 @@ IceCompModel::IceCompModel(IceGrid &g, int mytest)
   config.set("enhancement_factor", 1.0);
 
   // set values of flags in run() 
-  doMassConserve = PETSC_TRUE;
-  useSSAVelocity = PETSC_FALSE;
-  includeBMRinContinuity = PETSC_FALSE;
-  doPlasticTill = PETSC_FALSE;
+  config.set_flag("do_mass_conserve", true);
+  config.set_flag("use_ssa_velocity", false);
+  config.set_flag("include_bmr_in_continuity", false);
+  config.set_flag("do_plastic_till", false);
 }
 
 
@@ -197,35 +197,34 @@ PetscErrorCode IceCompModel::setFromOptions() {
   // options should be able to override parameter values set here.
 
   if (testname == 'H') {
-    doBedDef = PETSC_TRUE;
-    doBedIso = PETSC_TRUE;
+    config.set_flag("do_bed_deformation", true);
+    config.set_flag("do_bed_iso", true);
   } else
-    doBedDef = PETSC_FALSE;  
+    config.set_flag("do_bed_deformation", false);
 
   if ((testname == 'F') || (testname == 'G') || (testname == 'K')) {
-    doTemp = PETSC_TRUE;
+    config.set_flag("do_temp", true);
     // essentially turn off run-time reporting of extremely low computed
     // temperatures; *they will be reported as errors* anyway
     config.set("global_min_allowed_temp", 0.0);
     config.set("max_low_temp_count", 1000000);
   } else
-    doTemp = PETSC_FALSE; 
+    config.set_flag("do_temp", false);
 
   if ((testname == 'A') || (testname == 'E')) {
-    isDrySimulation = PETSC_TRUE;
-    doOceanKill = PETSC_TRUE;
+    config.set_flag("is_dry_simulation", true);
+    config.set_flag("ocean_kill", true);
   } else {
-    isDrySimulation = PETSC_TRUE;
-    doOceanKill = PETSC_FALSE;
+    config.set_flag("is_dry_simulation", true);
+    config.set_flag("ocean_kill", false);
   }
 
   // special considerations for K wrt thermal bedrock and pressure-melting
+  // (flag thermalBedrock was removed by CK around r783, because it was not used)
   if (testname == 'K') {
-    thermalBedrock = PETSC_TRUE;
     allowAboveMelting = PETSC_FALSE;
     reportHomolTemps = PETSC_TRUE;
   } else {
-    thermalBedrock = PETSC_FALSE;
     // note temps are generally allowed to go above pressure melting in verify
     allowAboveMelting = PETSC_TRUE;
     reportHomolTemps = PETSC_FALSE;
@@ -269,7 +268,10 @@ PetscErrorCode IceCompModel::init_physics() {
     bed_thermal.k = tgaIce->k;
   }
 
-  if ( (testname == 'H') && ((doBedDef == PETSC_FALSE) || (doBedIso == PETSC_FALSE)) ) {
+  bool do_bed_deformation = config.get_flag("do_bed_deformation"),
+    do_bed_iso = config.get_flag("do_bed_iso");
+
+  if ( (testname == 'H') && ((do_bed_deformation == PETSC_FALSE) || (do_bed_iso == PETSC_FALSE)) ) {
     ierr = verbPrintf(1,grid.com, 
            "IceCompModel WARNING: Test H should be run with option\n"
            "  -bed_def_iso  for the reported errors to be correct.\n"); CHKERRQ(ierr);

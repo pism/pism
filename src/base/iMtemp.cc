@@ -256,6 +256,8 @@ PetscErrorCode IceModel::temperatureStep(
   PetscInt maxLowTempCount = static_cast<PetscInt>(config.get("max_low_temp_count"));
   PetscReal globalMinAllowedTemp = config.get("global_min_allowed_temp");
 
+  PetscReal max_hmelt = config.get("max_hmelt");
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -441,7 +443,7 @@ PetscErrorCode IceModel::temperatureStep(
         Hmelt[i][j] = 0.0;
       } else {
         // limit Hmelt by default max and store
-        Hmelt[i][j] = PetscMin(Hmelt_max, Hmeltnew);
+        Hmelt[i][j] = PetscMin(max_hmelt, Hmeltnew);
       }
 
     } 

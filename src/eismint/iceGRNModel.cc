@@ -196,14 +196,14 @@ PetscErrorCode IceGRNModel::setFromOptions() {
      "  setting flags equivalent to '-e 3 -ocean_kill'; user options may override ...\n");
      CHKERRQ(ierr);
   config.set("enhancement_factor", 3.0);
-  doOceanKill = PETSC_TRUE;
+  config.set_flag("ocean_kill", true);
 
   if (exper != SSL2) { 
     // use Lingle-Clark bed deformation model for CCL3 and GWL3 but not SSL2
     ierr = verbPrintf(2, grid.com, 
       "  setting flags equivalent to: '-bed_def_lc'; user options may override ...\n"); CHKERRQ(ierr);
-    doBedDef = PETSC_TRUE;
-    doBedIso = PETSC_FALSE;
+    config.set_flag("do_bed_deformation", true);
+    config.set_flag("do_bed_iso", false);
   }
 
   config.set("mu_sliding", 0.0);  // no SIA-type sliding!; see [\ref RitzEISMINT]
@@ -243,7 +243,8 @@ PetscErrorCode IceGRNModel::init_couplers() {
   }
 
   // only report initialization on PISMOceanClimateCoupler if allowing ice shelves
-  oceanPCC->reportInitializationToStdOut = (doOceanKill == PETSC_FALSE);
+  bool do_ocean_kill = config.get_flag("ocean_kill");
+  oceanPCC->reportInitializationToStdOut = (do_ocean_kill == PETSC_FALSE);
 
   ierr = IceModel::init_couplers(); CHKERRQ(ierr);
 

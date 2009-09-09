@@ -138,7 +138,7 @@ protected:
 
   using IceModel::getEffectivePressureOnTill;  // but does not override it; one more arg
   virtual PetscScalar getEffectivePressureOnTill(PetscScalar thk, PetscScalar bwat, PetscScalar bmr,
-						 PetscScalar till_pw_frac) const;
+						 PetscScalar till_pw_frac, PetscScalar max_hmelt) const;
 
 protected: // new data members
   IceModelVec3  Enth3, EnthNew3;

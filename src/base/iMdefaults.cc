@@ -64,19 +64,11 @@ PetscErrorCode IceModel::setDefaults() {
 
   ierr = setExecName("pism"); CHKERRQ(ierr);  // drivers typically override this
 
-  thermalBedrock    = config.get_flag("thermal_bedrock");
-  doOceanKill       = config.get_flag("ocean_kill");
-  floatingIceKilled = config.get_flag("floating_ice_killed");
-
   grid.vertical_spacing = EQUAL;
   
   computeSIAVelocities = PETSC_TRUE;
   transformForSurfaceGradient = PETSC_FALSE;
 
-  useSSAVelocity           = config.get_flag("use_ssa_velocity");
-  doPlasticTill            = config.get_flag("do_plastic_till");
-  doPseudoPlasticTill      = config.get_flag("do_pseudo_plastic_till");
-  doSuperpose              = config.get_flag("do_superpose");
   useConstantNuHForSSA     = config.get_flag("use_constant_nuh_for_ssa");
   computeSurfGradInwardSSA = config.get_flag("compute_surf_grad_inward_ssa");
   ssaSystemToASCIIMatlab   = PETSC_FALSE;
@@ -89,26 +81,15 @@ PetscErrorCode IceModel::setDefaults() {
   
   shelvesDragToo = PETSC_FALSE;
   
-  Hmelt_max          = config.get("max_hmelt");
-
   // set maximum |u|,|v|,|w| in ice to an (obviously) invalid number
   gmaxu = gmaxv = gmaxw = -1.0;
 
   end_year   = config.get("start_year") + config.get("run_length_years");
 
-  doMassConserve                  = config.get_flag("do_mass_conserve");
-  doTemp                          = config.get_flag("do_temp");
-  doSkip                          = config.get_flag("do_skip");
   reportHomolTemps = PETSC_TRUE;
-  includeBMRinContinuity          = config.get_flag("include_bmr_in_continuity");
-  isDrySimulation                 = config.get_flag("is_dry_simulation");
   
   updateHmelt = PETSC_TRUE;
-
   realAgeForGrainSize = PETSC_FALSE;
-
-  doBedDef            = config.get_flag("do_bed_deformation");
-  doBedIso            = config.get_flag("do_bed_iso");
 
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;

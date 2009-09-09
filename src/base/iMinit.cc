@@ -391,7 +391,7 @@ PetscErrorCode IceModel::init_couplers() {
   } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }
  
  if (oceanPCC != PETSC_NULL) {
-    if (isDrySimulation == PETSC_TRUE) {  oceanPCC->reportInitializationToStdOut = false;  }
+   if (config.get_flag("is_dry_simulation")) {  oceanPCC->reportInitializationToStdOut = false;  }
     ierr = oceanPCC->initFromOptions(&grid); CHKERRQ(ierr);
   } else {  SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");  }
 

@@ -127,25 +127,25 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
     PetscEnd();
   }
 
-  doSkip = PETSC_TRUE;
+  config.set_flag("do_skip", true);
   config.set("skip_max", 2);
 
   ierr = IceEISModel::setFromOptions();  CHKERRQ(ierr);
 
   // different from EISMINT II conventions (even for P0A and P0I)
   updateHmelt = PETSC_TRUE;
-  includeBMRinContinuity = PETSC_TRUE;
+  config.set_flag("include_bmr_in_continuity", true);
   transformForSurfaceGradient = PETSC_TRUE;
 
   if (exper_chosen <= 1) { // P0A and P0I are nonsliding SIA
-    useSSAVelocity = PETSC_FALSE;
-    doSuperpose = PETSC_FALSE;
-    doPlasticTill = PETSC_FALSE;
+    config.set_flag("use_ssa_velocity", false);
+    config.set_flag("do_superpose", false);
+    config.set_flag("do_plastic_till", false);
   } else {
     // these options equiv to "-ssa -super -plastic"
-    useSSAVelocity = PETSC_TRUE;
-    doSuperpose = PETSC_TRUE;
-    doPlasticTill = PETSC_TRUE;
+    config.set_flag("use_ssa_velocity", true);
+    config.set_flag("do_superpose", true);
+    config.set_flag("do_plastic_till", true);
     useConstantTillPhi = PETSC_FALSE;
   }  
 

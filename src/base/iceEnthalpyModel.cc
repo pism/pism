@@ -1284,6 +1284,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   ierr = EnthNew3.begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
 
+  PetscScalar max_hmelt = config.get("max_hmelt");
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -1517,9 +1519,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
         // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO OCEAN)!!
         Hmelt[i][j] = 0.0;
       } else {
-        // limit Hmelt to be in [0.0, Hmelt_max]
+        // limit Hmelt to be in [0.0, max_hmelt]
         // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO INFINITY AND BEYOND)!!
-        Hmelt[i][j] = PetscMax(0.0, PetscMin(Hmelt_max, Hmeltnew) );
+        Hmelt[i][j] = PetscMax(0.0, PetscMin(max_hmelt, Hmeltnew) );
       }
 
     }
@@ -1653,7 +1655,7 @@ Option \c -bmr_enhance_scale sets the value.  Default is equivalent to
 \c -bmr_enhance_scale 0.10, for 10 cm/a as a significant enough level of
 basal melt rate to cause a big weakening effect.
 
-Need \f$0 \le\f$ \c bwat \f$\le\f$ \c Hmelt_max before calling this.  There is
+Need \f$0 \le\f$ \c bwat \f$\le\f$ \c max_hmelt before calling this.  There is
 no error checking.
 
 Compare the porewater pressure computed by formula (4) in [\ref Ritzetal2001],
@@ -1663,14 +1665,15 @@ as in Lingle&Brown 1987 is not implementable because that elevation is
 at an unknowable location.  We are not doing a flow line model!
  */
 PetscScalar IceEnthalpyModel::getEffectivePressureOnTill(PetscScalar thk, PetscScalar bwat,
-							 PetscScalar bmr, PetscScalar frac) const {
+							 PetscScalar bmr, PetscScalar frac,
+							 PetscScalar max_hmelt) const {
 
   const PetscScalar
     p_overburden = ice->rho * earth_grav * thk;
 
   // base model for pore water pressure;  note  0 <= p_pw <= frac * p_overburden
-  //   because  0 <= bwat <= Hmelt_max
-  PetscScalar  p_pw = frac * (bwat / Hmelt_max) * p_overburden;
+  //   because  0 <= bwat <= max_hmelt
+  PetscScalar  p_pw = frac * (bwat / max_hmelt) * p_overburden;
 
   if (bmr_in_pore_pressure) {
     // more weakening from instantaneous basal melt rate; additional
@@ -1725,7 +1728,7 @@ computing \f$N\f$.  See getEffectivePressureOnTill().
 See [\ref BBssasliding] for a discussion of a complete model using these tools.
 
 Note that IceModel::updateSurfaceElevationAndMask() also
-checks whether doPlasticTill is true and if so it sets all mask points to
+checks whether do_plastic_till is true and if so it sets all mask points to
 DRAGGING.
 
 FIXME: Should be renamed "updateYieldStressUsingBasalWater()"?
@@ -1733,9 +1736,10 @@ FIXME: Should be renamed "updateYieldStressUsingBasalWater()"?
 PetscErrorCode IceEnthalpyModel::updateYieldStressFromHmelt() {
   PetscErrorCode  ierr;
 
-  // only makes sense when doPlasticTill == TRUE
-  if (doPlasticTill == PETSC_FALSE) {
-    SETERRQ(1,"doPlasticTill == PETSC_FALSE but updateYieldStressFromHmelt() called");
+  bool do_plastic_till = config.get_flag("do_plastic_till");
+  // only makes sense when do_plastic_till == TRUE
+  if (do_plastic_till == PETSC_FALSE) {
+    SETERRQ(1,"do_plastic_till == PETSC_FALSE but updateYieldStressFromHmelt() called");
   }
 
   if (holdTillYieldStress == PETSC_FALSE) { // usual case: use Hmelt to determine tauc
@@ -1743,7 +1747,8 @@ PetscErrorCode IceEnthalpyModel::updateYieldStressFromHmelt() {
 
     PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
       till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
-      till_mu = tan((pi/180.0)*config.get("default_till_phi"));
+      till_mu = tan((pi/180.0)*config.get("default_till_phi")),
+      max_hmelt = config.get("max_hmelt");
 
     ierr =          vMask.get_array(mask);    CHKERRQ(ierr);
     ierr =          vtauc.get_array(tauc);    CHKERRQ(ierr);
@@ -1759,7 +1764,8 @@ PetscErrorCode IceEnthalpyModel::updateYieldStressFromHmelt() {
           tauc[i][j] = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice
         } else { // grounded and there is some ice
           const PetscScalar
-            N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j], bmr[i][j], till_pw_fraction);
+            N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j], bmr[i][j], till_pw_fraction,
+					   max_hmelt);
           if (useConstantTillPhi == PETSC_TRUE) {
             tauc[i][j] = till_c_0 + N * till_mu;
           } else {
