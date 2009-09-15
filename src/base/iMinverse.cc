@@ -443,7 +443,17 @@ PetscErrorCode IceModel::writeInvFields(const char *filename) {
   inv.vsIn->set_attr("_FillValue", fill_ma);
   ierr = inv.vsIn->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
-  ierr = getMagnitudeOf2dVectorField(*(inv.usIn), *(inv.usIn), vWork2d[0]); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_to_magnitude(*(inv.usIn), *(inv.usIn)); CHKERRQ(ierr); // FIXME:
+									       // should
+									       // this
+									       // really
+									       // be
+									       // *(inv.usIn),
+									       // *(inv.usIn)
+									       // and
+									       // not
+									       // *(inv.usIn),
+									       // *(inv.vsIn)?
   ierr = vWork2d[0].set_name("magvelsurf"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs("inverse_output",
              "magnitude of observed velocity of ice at ice surface",
@@ -482,13 +492,11 @@ PetscErrorCode IceModel::writeInvFields(const char *filename) {
 
   ierr = inv.effPressureN->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
-  ierr = getMagnitudeOf2dVectorField(*(inv.taubxComputed),*(inv.taubyComputed),
-                                     vWork2d[0]); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_to_magnitude(*(inv.taubxComputed),*(inv.taubyComputed)); CHKERRQ(ierr);
   ierr = vWork2d[0].set_name("magtaubComputed"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs("inverse_output",
              "magnitude of basal shear stress applied at base of ice",
 	     "Pa", ""); CHKERRQ(ierr);
-  vWork2d[0].write_in_glaciological_units = false;
   ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   inv.fofv->set_attr("more_info", "value of 1 means velocity is all SIA, value of 0 means velocity is all SSA");

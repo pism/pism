@@ -42,7 +42,7 @@ PISMClimateCoupler::~PISMClimateCoupler() {
 }
 
 
-PetscErrorCode PISMClimateCoupler::initFromOptions(IceGrid* g) {
+PetscErrorCode PISMClimateCoupler::initFromOptions(IceGrid* g, const PISMVars &/*variables*/) {
   PetscErrorCode ierr;
   printIfDebug("entering PISMClimateCoupler::initFromOptions()\n");
   grid = g;
@@ -118,7 +118,7 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
 
 //! A virtual method which just calls specific updates.
 PetscErrorCode PISMClimateCoupler::updateClimateFields(
-   PetscScalar /*t_years*/, PetscScalar /*dt_years*/, IceInfoNeededByCoupler* /*info*/) {
+   PetscScalar /*t_years*/, PetscScalar /*dt_years*/) {
   SETERRQ(1,"PISMClimateCoupler ERROR:  this method is VIRTUAL in PISMClimateCoupler and not implemented");
 }
 
@@ -159,11 +159,11 @@ Derived class implementations will check user options to configure further stuff
 
 g->year must be valid before this can be called.
  */
-PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g) {
+PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars &variables) {
   PetscErrorCode ierr;
   printIfDebug("entering PISMAtmosphereCoupler::initFromOptions()\n");
 
-  ierr = PISMClimateCoupler::initFromOptions(g); CHKERRQ(ierr);
+  ierr = PISMClimateCoupler::initFromOptions(g, variables); CHKERRQ(ierr);
   
   // mean annual net ice equivalent surface mass balance rate
   ierr = vsurfmassflux.create(*g, "acab", false); CHKERRQ(ierr);
@@ -259,7 +259,7 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(
 
 //! Provides access to vsurfmassflux.  No update of vsurfmassflux.  Derived class versions generally will update.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
-    PetscScalar /*t_years*/, PetscScalar /*dt_years*/, IceInfoNeededByCoupler* /*info*/,
+    PetscScalar /*t_years*/, PetscScalar /*dt_years*/,
     IceModelVec2* &pvsmf) {
   if (vsurfmassflux.was_created())
     pvsmf = &vsurfmassflux;
@@ -270,7 +270,7 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
 
 //! Updates vsurftemp using -dTforcing (if it is on) and provides access to vsurftemp.  Derived class versions may do more updating.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
-    PetscScalar t_years, PetscScalar /*dt_years*/, IceInfoNeededByCoupler* /*info*/,
+    PetscScalar t_years, PetscScalar /*dt_years*/,
     IceModelVec2* &pvst) {
   PetscErrorCode ierr;
   if (vsurftemp.was_created())
@@ -293,11 +293,11 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfTempAndProvide(
 
 //! Calls updateSurfMassFluxAndProvide() and updateSurfTempAndProvide(); ignores returned pointers.
 PetscErrorCode PISMAtmosphereCoupler::updateClimateFields(
-                 PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info) {
+                 PetscScalar t_years, PetscScalar dt_years) {
   PetscErrorCode ierr;
   IceModelVec2* ignored;
-  ierr = updateSurfMassFluxAndProvide(t_years, dt_years, info, ignored); CHKERRQ(ierr);
-  ierr = updateSurfTempAndProvide(t_years, dt_years, info, ignored); CHKERRQ(ierr);
+  ierr = updateSurfMassFluxAndProvide(t_years, dt_years, ignored); CHKERRQ(ierr);
+  ierr = updateSurfTempAndProvide(t_years, dt_years, ignored); CHKERRQ(ierr);
   return 0;
 }
 
@@ -318,11 +318,11 @@ Non-default case: if initializeFromFile==false then nothing happens, other than
 what happens in PISMAtmosphereCoupler::initFromOptions().  If you want this,
 set initializeFromFile=false before calling.
  */
-PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
+PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g, const PISMVars &variables) {
   PetscErrorCode ierr;
   printIfDebug("entering PISMConstAtmosCoupler::initFromOptions()\n");
 
-  ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr);
+  ierr = PISMAtmosphereCoupler::initFromOptions(g, variables); CHKERRQ(ierr);
 
   // these values will be written into output file unchanged; they should be read
   //   as the state of the climate by future runs using the same coupler
@@ -391,12 +391,12 @@ PetscErrorCode PISMSnowModelAtmosCoupler::setLMBScheme(LocalMassBalance *usethis
 }
 
 
-PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
+PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g, const PISMVars &variables) {
   PetscErrorCode ierr;
   PetscTruth   optSet;
   printIfDebug("entering PISMSnowModelAtmosCoupler::initFromOptions()\n");
 
-  ierr = PISMAtmosphereCoupler::initFromOptions(g); CHKERRQ(ierr);
+  ierr = PISMAtmosphereCoupler::initFromOptions(g, variables); CHKERRQ(ierr);
 
   char  filename[PETSC_MAX_PATH_LEN];
   LocalInterpCtx* lic;
@@ -404,6 +404,15 @@ PetscErrorCode PISMSnowModelAtmosCoupler::initFromOptions(IceGrid* g) {
 
   ierr = verbPrintf(2, g->com, 
        "  initializing atmospheric climate coupler with a snow process model ...\n"); CHKERRQ(ierr); 
+
+  surfelev = dynamic_cast<IceModelVec2*>(variables.get("surface_altitude"));
+  if (!surfelev) SETERRQ(1, "ERROR: surface_altitude is not available");
+
+  lat = dynamic_cast<IceModelVec2*>(variables.get("latitude"));
+  if (!lat) SETERRQ(1, "ERROR: latitude is not available");
+
+  lon = dynamic_cast<IceModelVec2*>(variables.get("longitude"));
+  if (!lon) SETERRQ(1, "ERROR: longitude is not available");
 
   // clear out; will be overwritten by mass balance model
   ierr = vsurfmassflux.set_attr("pism_intent","climate_diagnostic"); CHKERRQ(ierr);
@@ -586,7 +595,7 @@ PetscErrorCode PISMSnowModelAtmosCoupler::writeCouplingFieldsToFile(
   re-implement this procedure.
  */
 PetscErrorCode PISMSnowModelAtmosCoupler::parameterizedUpdateSnowSurfaceTemp(
-		PetscScalar /*t_years*/, PetscScalar /*dt_years*/, IceInfoNeededByCoupler* info) {
+		PetscScalar /*t_years*/, PetscScalar /*dt_years*/) {
   PetscErrorCode ierr;
   const PetscScalar 
     d_ma     = config.get("snow_temp_fausto_d_ma"),      // K
@@ -599,9 +608,9 @@ PetscErrorCode PISMSnowModelAtmosCoupler::parameterizedUpdateSnowSurfaceTemp(
     kappa_mj = config.get("snow_temp_fausto_kappa_mj");
   
   PetscScalar **lat_degN, **lon_degE, **h, **T_ma, **T_mj;
-  ierr = info->surfelev->get_array(h);   CHKERRQ(ierr);
-  ierr = info->lat->get_array(lat_degN); CHKERRQ(ierr);
-  ierr = info->lon->get_array(lon_degE); CHKERRQ(ierr);
+  ierr = surfelev->get_array(h);   CHKERRQ(ierr);
+  ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
+  ierr = lon->get_array(lon_degE); CHKERRQ(ierr);
   ierr = vsnowtemp_ma.get_array(T_ma);  CHKERRQ(ierr);
   ierr = vsnowtemp_mj.get_array(T_mj);  CHKERRQ(ierr);
 
@@ -612,9 +621,9 @@ PetscErrorCode PISMSnowModelAtmosCoupler::parameterizedUpdateSnowSurfaceTemp(
     }
   }
   
-  ierr = info->surfelev->end_access();   CHKERRQ(ierr);
-  ierr = info->lat->end_access(); CHKERRQ(ierr);
-  ierr = info->lon->end_access(); CHKERRQ(ierr);
+  ierr = surfelev->end_access();   CHKERRQ(ierr);
+  ierr = lat->end_access(); CHKERRQ(ierr);
+  ierr = lon->end_access(); CHKERRQ(ierr);
   ierr = vsnowtemp_ma.end_access();  CHKERRQ(ierr);
   ierr = vsnowtemp_mj.end_access();  CHKERRQ(ierr);
   return 0;
@@ -650,12 +659,12 @@ The surface mass balance is computed from the stored map of snow precipitation r
 by a call to the getMassFluxFromTemperatureTimeSeries() method of the LocalMassBalance object.
  */
 PetscErrorCode PISMSnowModelAtmosCoupler::updateSurfMassFluxAndProvide(
-             PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info,
+             PetscScalar t_years, PetscScalar dt_years,
              IceModelVec2* &pvsmf) {
   PetscErrorCode ierr;
   
   ierr = PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
-     t_years, dt_years, info, pvsmf); CHKERRQ(ierr);
+     t_years, dt_years, pvsmf); CHKERRQ(ierr);
  
   // set up snow temperature time series
   PetscInt     Nseries;
@@ -675,14 +684,14 @@ PetscErrorCode PISMSnowModelAtmosCoupler::updateSurfMassFluxAndProvide(
      julydaysec = sperd * config.get("snow_temp_july_day");
   
   // get access to snow temperatures (and update parameterization if appropriate)
-  PetscScalar **T_ma, **T_mj, **snowrate, **lat, **smflux;
+  PetscScalar **T_ma, **T_mj, **snowrate, **lat_degN, **smflux;
   if (monthlysnowtemps == NULL) {
-    ierr = parameterizedUpdateSnowSurfaceTemp(t_years,dt_years,info); CHKERRQ(ierr);
+    ierr = parameterizedUpdateSnowSurfaceTemp(t_years,dt_years); CHKERRQ(ierr);
   }
   ierr = vsnowtemp_ma.get_array(T_ma);  CHKERRQ(ierr);
   ierr = vsnowtemp_mj.get_array(T_mj);  CHKERRQ(ierr);
   ierr = vsnowprecip.get_array(snowrate);  CHKERRQ(ierr);
-  ierr = info->lat->get_array(lat); CHKERRQ(ierr);
+  ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
   ierr = vsurfmassflux.get_array(smflux);  CHKERRQ(ierr);
 
   // run through grid
@@ -718,7 +727,7 @@ PetscErrorCode PISMSnowModelAtmosCoupler::updateSurfMassFluxAndProvide(
       //   \ref Faustoetal2009
       PDDMassBalance* pddscheme = dynamic_cast<PDDMassBalance*>(mbscheme);
       if (pddscheme != NULL) {
-        ierr = pddscheme->setDegreeDayFactorsFromSpecialInfo(lat[i][j],T_mj[i][j]); CHKERRQ(ierr);
+        ierr = pddscheme->setDegreeDayFactorsFromSpecialInfo(lat_degN[i][j],T_mj[i][j]); CHKERRQ(ierr);
       }
 
       
@@ -731,7 +740,7 @@ PetscErrorCode PISMSnowModelAtmosCoupler::updateSurfMassFluxAndProvide(
   ierr = vsnowtemp_ma.end_access();  CHKERRQ(ierr);
   ierr = vsnowtemp_mj.end_access();  CHKERRQ(ierr);
   ierr = vsnowprecip.end_access();  CHKERRQ(ierr);
-  ierr = info->lat->end_access(); CHKERRQ(ierr);
+  ierr = lat->end_access(); CHKERRQ(ierr);
   ierr = vsurfmassflux.end_access(); CHKERRQ(ierr);
 
   delete [] Tseries;
@@ -743,7 +752,7 @@ PetscErrorCode PISMSnowModelAtmosCoupler::updateSurfMassFluxAndProvide(
 
 PISMOceanCoupler::PISMOceanCoupler() : PISMClimateCoupler() {
   reportInitializationToStdOut = true;  // derived classes etc. can turn off before calling
-                                        // initFromOptions(), but its on by default
+                                        // initFromOptions(), but it's on by default
   dSLforcing = PETSC_NULL;
   seaLevel = 0.0; // the obvious default value
 }
@@ -766,11 +775,11 @@ This version allocates space and sets attributes for the two essential fields.
 
 g->year must be valid before this can be called.
  */
-PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g) {
+PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g, const PISMVars &variables) {
   PetscErrorCode ierr;
   printIfDebug("entering PISMOceanCoupler::initFromOptions()\n");
 
-  ierr = PISMClimateCoupler::initFromOptions(g); CHKERRQ(ierr);
+  ierr = PISMClimateCoupler::initFromOptions(g, variables); CHKERRQ(ierr);
 
   // no report to std out; otherwise reportInitializationToStdOut should be checked before report
 
@@ -848,7 +857,7 @@ PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(
 
 //! Provides access to vshelfbasemassflux.  No update of vshelfbasemassflux.  Real ocean models in derived classes will update.
 PetscErrorCode PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(
-       PetscScalar /*t_years*/, PetscScalar /*dt_years*/, IceInfoNeededByCoupler* /*info*/,
+       PetscScalar /*t_years*/, PetscScalar /*dt_years*/,
        IceModelVec2* &pvsbmf) {
 
   if (vshelfbasemassflux.was_created())
@@ -863,7 +872,7 @@ PetscErrorCode PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(
 
 //! Provides access to vshelfbasetemp.  No update of vshelfbasetemp.  Real ocean models in derived classes will update.
 PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
-         PetscScalar /*t_years*/, PetscScalar /*dt_years*/, IceInfoNeededByCoupler* /*info*/,
+         PetscScalar /*t_years*/, PetscScalar /*dt_years*/,
          IceModelVec2* &pvsbt) {
   // printIfDebug("entering PISMOceanCoupler::updateShelfBaseTempAndProvide()\n");
 
@@ -880,11 +889,11 @@ PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
 
 //! Updates all the ocean climate fields.
 PetscErrorCode PISMOceanCoupler::updateClimateFields(
-        PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info) {
+        PetscScalar t_years, PetscScalar dt_years) {
   PetscErrorCode ierr;
   IceModelVec2* ignored;
-  ierr = updateShelfBaseMassFluxAndProvide(t_years, dt_years, info, ignored); CHKERRQ(ierr);
-  ierr = updateShelfBaseTempAndProvide(t_years, dt_years, info, ignored); CHKERRQ(ierr);
+  ierr = updateShelfBaseMassFluxAndProvide(t_years, dt_years, ignored); CHKERRQ(ierr);
+  ierr = updateShelfBaseTempAndProvide(t_years, dt_years, ignored); CHKERRQ(ierr);
   ierr = updateSeaLevelElevation(t_years, dt_years, NULL); CHKERRQ(ierr);
   return 0;
 }
@@ -940,11 +949,14 @@ PISMConstOceanCoupler::PISMConstOceanCoupler() : PISMOceanCoupler() {
 }
 
 
-PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g) {
+PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g, const PISMVars &variables) {
   PetscErrorCode ierr;
   printIfDebug("entering PISMConstOceanCoupler::initFromOptions()\n");
 
-  ierr = PISMOceanCoupler::initFromOptions(g); CHKERRQ(ierr);
+  ierr = PISMOceanCoupler::initFromOptions(g, variables); CHKERRQ(ierr);
+
+  thk = dynamic_cast<IceModelVec2*>(variables.get("land_ice_thickness"));
+  if (!thk) SETERRQ(1, "ERROR: land_ice_thickness is not available");
   
   if (reportInitializationToStdOut) {
     ierr = verbPrintf(2, g->com, 
@@ -981,7 +993,7 @@ PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(
 
 
 PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
-                  PetscScalar /*t_years*/, PetscScalar /*dt_years*/, IceInfoNeededByCoupler* info,
+                  PetscScalar /*t_years*/, PetscScalar /*dt_years*/,
                   IceModelVec2* &pvsbt) {
   PetscErrorCode ierr;
 
@@ -992,7 +1004,7 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
                     T0           = 273.15;  // K        triple point = naively assumed
                                             //          sea water temperature at sea level
   PetscScalar **H, **temp;
-  ierr = info->thk->get_array(H);   CHKERRQ(ierr);
+  ierr = thk->get_array(H);   CHKERRQ(ierr);
   ierr = vshelfbasetemp.get_array (temp); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
@@ -1001,7 +1013,7 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
       temp[i][j] = T0 + beta_CC_grad * shelfbaseelev;  // base elev negative here so this is below T0
     }
   }
-  ierr = info->thk->end_access(); CHKERRQ(ierr);
+  ierr = thk->end_access(); CHKERRQ(ierr);
   ierr = vshelfbasetemp.end_access(); CHKERRQ(ierr);
   
   pvsbt = &vshelfbasetemp;
@@ -1010,7 +1022,7 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
 
 
 PetscErrorCode PISMConstOceanCoupler::updateShelfBaseMassFluxAndProvide(
-         PetscScalar /*t_years*/, PetscScalar /*dt_years*/, IceInfoNeededByCoupler* /*info*/,
+         PetscScalar /*t_years*/, PetscScalar /*dt_years*/,
          IceModelVec2* &pvsbmf) {
   PetscErrorCode ierr;
 

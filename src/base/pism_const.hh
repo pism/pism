@@ -79,6 +79,9 @@ PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],..
 
 void endPrintRank();
 
+bool ends_with(string str, string suffix);
+PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, double *b);
+
 // handy functions for processing options:
 PetscErrorCode check_option(string name, PetscTruth &flag);
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]);

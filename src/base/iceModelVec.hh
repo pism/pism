@@ -84,7 +84,7 @@ protected:
 
   bool shallow_copy;
   Vec  v;
-  char name[PETSC_MAX_PATH_LEN];
+  string name;
 
   NCSpatialVariable var1;	//!< a NetCDF variable corresponding to this
 				//!IceModelVec; called var1 because some
@@ -125,7 +125,7 @@ public:
   virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   PetscErrorCode  get_array(PetscScalar** &a);
-
+  virtual PetscErrorCode set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v_y);
 protected:
   PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local, DAStencilType my_sten);
 };

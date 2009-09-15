@@ -40,11 +40,11 @@ const PetscScalar IceExactSSAModel::LforM = 750.0e3; // 750 km half-width
 IceExactSSAModel::IceExactSSAModel(IceGrid &g, char mytest) : IceModel(g) {
   test = mytest;
   
-  config.set_flag("use_ssa_velocity", true);
   config.set("max_iterations_ssa", 500);
-  useConstantNuHForSSA = PETSC_FALSE;
-  config.set_flag("do_plastic_till", true); // correct for I, irrelevant for J and M
-  config.set_flag("do_superpose", false);
+  config.set_flag("use_ssa_velocity",         true);
+  config.set_flag("use_constant_nuh_for_ssa", false);
+  config.set_flag("do_plastic_till",          true); // correct for I, irrelevant for J and M
+  config.set_flag("do_superpose",             false);
 }
 
 PetscErrorCode IceExactSSAModel::init_physics() {
@@ -114,28 +114,28 @@ PetscErrorCode IceExactSSAModel::misc_setup() {
       ierr = setInitStateAndBoundaryVelsI(); CHKERRQ(ierr);
       // set flags, parameters affecting solve of stream equations
       // so periodic grid works although h(-Lx,y) != h(Lx,y):
-      computeSurfGradInwardSSA = PETSC_TRUE;
-
+      config.set_flag("compute_surf_grad_inward_ssa", true);
       config.set("epsilon_ssa", 0.0);  // don't use this lower bound
     break;
   case 'J':
     ierr = setInitStateJ(); CHKERRQ(ierr);
     config.set_flag("is_dry_simulation", false);
     leaveNuHAloneSSA = PETSC_TRUE; // will use already-computed nu instead of updating
-    computeSurfGradInwardSSA = PETSC_FALSE;
+    config.set_flag("compute_surf_grad_inward_ssa", false);
     config.set("epsilon_ssa", 0.0);  // don't use this lower bound
     break;
   case 'M':
     ierr = setInitStateM(); CHKERRQ(ierr);
     config.set_flag("is_dry_simulation", false);
-    computeSurfGradInwardSSA = PETSC_FALSE;
+    config.set_flag("compute_surf_grad_inward_ssa", false);
 
     ierr = ice->printInfo(3);CHKERRQ(ierr);
     // EXPERIMENT WITH STRENGTH BEYOND CALVING FRONT:
     ierr = ssaStrengthExtend.set_notional_strength(6.5e+16);CHKERRQ(ierr); // about optimal; compare 4.74340e+15 usual
     ierr = verbPrintf(3,grid.com,
 		      "IceExactSSAModel::misc_setup, for test M:\n"
-		      "  useConstantNuHForSSA=%d\n", useConstantNuHForSSA); CHKERRQ(ierr);
+		      "  use_constant_nuh_for_ssa=%d\n",
+		      config.get_flag("use_constant_nuh_for_ssa")); CHKERRQ(ierr);
   }
 
   // Communicate so that we can differentiate surface, and to set boundary conditions
@@ -188,8 +188,8 @@ PetscErrorCode IceExactSSAModel::set_vars_from_options() {
 
   // We need a pointer to surface temp from PISMAtmosphereCoupler atmosPCC*
   IceModelVec2  *pccTs;
-  ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  &info_coupler, pccTs); CHKERRQ(ierr);  
+  ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt are irrelevant here 
+					    pccTs); CHKERRQ(ierr);  
 
   // fill in temperature and age; not critical
   const PetscScalar T0 = 263.15;  // completely arbitrary

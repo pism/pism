@@ -33,7 +33,7 @@ IceModelVec::IceModelVec() {
   dims = GRID_2D;		// default
   dof = 1;			// default
 
-  strcpy(name,"*****UNKNOWN***** variable name");
+  name = "*****UNKNOWN***** variable name";
 
   reset_attrs();
 }
@@ -61,7 +61,7 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
   use_interpolation_mask = other.use_interpolation_mask;
   interpolation_mask = other.interpolation_mask;
 
-  strcpy(name, other.name);
+  name = other.name;
 
   var1 = other.var1;
 }
@@ -148,7 +148,7 @@ PetscErrorCode IceModelVec::norm(NormType n, PetscReal &out) {
     if (n == NORM_1_AND_2) {
       SETERRQ1(1, 
          "IceModelVec::norm(...): NORM_1_AND_2 not implemented (called as %s.norm(...))\n",
-         name);
+         name.c_str());
     } else if (n == NORM_1) {
       ierr = PetscGlobalSum(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
     } else if (n == NORM_2) {
@@ -159,7 +159,7 @@ PetscErrorCode IceModelVec::norm(NormType n, PetscReal &out) {
       ierr = PetscGlobalMax(&my_norm, &gnorm, grid->com); CHKERRQ(ierr);
     } else {
       SETERRQ1(2, "IceModelVec::norm(...): unknown NormType (called as %s.norm(...))\n",
-         name);
+         name.c_str());
     }
     out = gnorm;
   } else {
@@ -257,7 +257,7 @@ PetscErrorCode  IceModelVec::copy_to_global(Vec destination) {
 
   if (!localp)
     SETERRQ2(1, "Use copy_to(...). (Called %s.copy_to_global(...) and %s is global)", 
-    name, name);
+    name.c_str(), name.c_str());
 
   ierr = DALocalToGlobal(da, v, INSERT_VALUES, destination); CHKERRQ(ierr);
   return 0;
@@ -288,7 +288,7 @@ PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
 //! Sets the variable name to \c name.
 PetscErrorCode  IceModelVec::set_name(const char new_name[]) {
   reset_attrs();
-  strcpy(name, new_name);
+  name = new_name;
   var1.short_name = new_name;
   return 0;
 }
@@ -447,7 +447,7 @@ PetscErrorCode IceModelVec::write(const char filename[], nc_type nctype) {
 PetscErrorCode  IceModelVec::checkAllocated() {
   if (v == PETSC_NULL) {
     SETERRQ1(1,"IceModelVec ERROR: IceModelVec with name='%s' WAS NOT allocated\n",
-             name);
+             name.c_str());
   }
   return 0;
 }
@@ -459,7 +459,7 @@ PetscErrorCode  IceModelVec::checkHaveArray() {
   if (array == PETSC_NULL) {
     SETERRQ1(1,"array for IceModelVec with name='%s' not available\n"
                "  (REMEMBER TO RUN begin_access() before access and end_access() after access)\n",
-               name);
+               name.c_str());
   }
   return 0;
 }
@@ -483,7 +483,7 @@ PetscErrorCode IceModelVec::checkCompatibility(const char* func, IceModelVec &ot
   ierr = VecGetSize(other.v, &Y_size); CHKERRQ(ierr);
   if (X_size != Y_size)
     SETERRQ3(1, "IceModelVec::%s(...): incompatible Vec sizes (called as %s.%s(...))\n",
-	     func, name, func);
+	     func, name.c_str(), func);
 
 
   return 0;
@@ -515,7 +515,7 @@ PetscErrorCode  IceModelVec::beginGhostComm() {
   PetscErrorCode ierr;
   if (!localp) {
     SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has name='%s')\n",
-               name);
+               name.c_str());
   }
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(da, v, INSERT_VALUES, v);  CHKERRQ(ierr);
@@ -527,7 +527,7 @@ PetscErrorCode  IceModelVec::endGhostComm() {
   PetscErrorCode ierr;
   if (!localp) {
     SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has name='%s')\n",
-               name);
+               name.c_str());
   }
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = DALocalToLocalEnd(da, v, INSERT_VALUES, v); CHKERRQ(ierr);
@@ -539,7 +539,7 @@ PetscErrorCode  IceModelVec::beginGhostComm(IceModelVec &destination) {
   PetscErrorCode ierr;
   if (!localp) {
     SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has name='%s')",
-               name);
+               name.c_str());
   }
 
   if (!destination.localp) {
@@ -560,7 +560,7 @@ PetscErrorCode  IceModelVec::endGhostComm(IceModelVec &destination) {
   PetscErrorCode ierr;
   if (!localp) {
     SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec! (has name='%s')\n",
-               name);
+               name.c_str());
   }
 
   if (!destination.localp) {
@@ -636,8 +636,10 @@ double IceModelVec::double_attr(string name) {
   return var1.get(name);
 }
 
-string IceModelVec::string_attr(string name) {
-  return var1.strings[name];
+string IceModelVec::string_attr(string n) {
+  if (n == "short_name")
+    return name;
+  return var1.strings[n];
 }
 
 vector<double> IceModelVec::array_attr(string name) {

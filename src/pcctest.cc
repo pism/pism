@@ -37,64 +37,73 @@ static PetscErrorCode setupIceGridFromFile(const char *filename, IceGrid &grid) 
   return 0;
 }
 
+static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
+  
+  PetscErrorCode ierr;
+  IceModelVec2 *lat, *lon, *mask, *thk, *surfelev, *topg;
 
-static PetscErrorCode readIceInfoFromFile(char *filename, IceGrid *grid, LocalInterpCtx* &lic,
-                                          IceInfoNeededByCoupler &info) {
+  lat = new IceModelVec2;
+  lon = new IceModelVec2;
+  mask = new IceModelVec2;
+  thk = new IceModelVec2;
+  surfelev = new IceModelVec2;
+  topg = new IceModelVec2;
+
+  ierr = lat->create(grid, "lat", true); CHKERRQ(ierr);
+  ierr = lat->set_attrs("mapping", "latitude", "degrees_north", "latitude"); CHKERRQ(ierr);
+  ierr = variables.add(*lat); CHKERRQ(ierr);
+
+  ierr = lon->create(grid, "lon", true); CHKERRQ(ierr);
+  ierr = lon->set_attrs("mapping", "longitude", "degrees_east", "longitude"); CHKERRQ(ierr);
+  ierr = variables.add(*lon); CHKERRQ(ierr);
+
+  ierr = mask->create(grid, "mask", true); CHKERRQ(ierr);
+  ierr = mask->set_attrs("", "grounded_dragging_floating integer mask",
+			      "", ""); CHKERRQ(ierr);
+  ierr = variables.add(*mask); CHKERRQ(ierr);
+
+  ierr = thk->create(grid, "thk", true); CHKERRQ(ierr);
+  ierr = thk->set_attrs("", "land ice thickness",
+		             "m", "land_ice_thickness"); CHKERRQ(ierr);
+  ierr = variables.add(*thk); CHKERRQ(ierr);
+
+  ierr = surfelev->create(grid, "usurf", true); CHKERRQ(ierr);
+  ierr = surfelev->set_attrs("", "ice upper surface elevation",
+		                  "m", "surface_altitude"); CHKERRQ(ierr);
+  ierr = variables.add(*surfelev); CHKERRQ(ierr);
+
+  ierr = topg->create(grid, "topg", true); CHKERRQ(ierr);
+  ierr = topg->set_attrs("", "bedrock surface elevation",
+			"m", "bedrock_altitude"); CHKERRQ(ierr);
+  ierr = variables.add(*topg); CHKERRQ(ierr);
+
+  return 0;
+}
+
+static PetscErrorCode readIceInfoFromFile(char *filename, LocalInterpCtx* &lic,
+                                          PISMVars &variables) {
   PetscErrorCode ierr;
 
-  info.lat = new IceModelVec2;
-  info.lon = new IceModelVec2;
-  info.mask = new IceModelVec2;
-  info.thk = new IceModelVec2;
-  info.surfelev = new IceModelVec2;
-  info.topg = new IceModelVec2;
+  ierr = variables.get("lat")->regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = variables.get("lon")->regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = variables.get("mask")->regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = variables.get("thk")->regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = variables.get("usurf")->regrid(filename, *lic, true); CHKERRQ(ierr);
+  ierr = variables.get("topg")->regrid(filename, *lic, true); CHKERRQ(ierr);
 
-  ierr = info.lat->create(*grid, "lat", true); CHKERRQ(ierr);
-  ierr = info.lat->set_attrs("mapping", "latitude", "degrees_north", "latitude"); CHKERRQ(ierr);
-
-  ierr = info.lon->create(*grid, "lon", true); CHKERRQ(ierr);
-  ierr = info.lon->set_attrs("mapping", "longitude", "degrees_east", "longitude"); CHKERRQ(ierr);
-
-  ierr = info.mask->create(*grid, "mask", true); CHKERRQ(ierr);
-  ierr = info.mask->set_attrs("", "grounded_dragging_floating integer mask",
-			      "", ""); CHKERRQ(ierr);
-
-  ierr = info.thk->create(*grid, "thk", true); CHKERRQ(ierr);
-  ierr = info.thk->set_attrs("", "land ice thickness",
-		             "m", "land_ice_thickness"); CHKERRQ(ierr);
-
-  ierr = info.surfelev->create(*grid, "usurf", true); CHKERRQ(ierr);
-  ierr = info.surfelev->set_attrs("", "ice upper surface elevation",
-		                  "m", "surface_altitude"); CHKERRQ(ierr);
-
-  ierr = info.topg->create(*grid, "topg", true); CHKERRQ(ierr);
-  ierr = info.topg->set_attrs("", "bedrock surface elevation",
-			"m", "bedrock_altitude"); CHKERRQ(ierr);
-
-  ierr = info.lat->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.lon->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.mask->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.thk->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.surfelev->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.topg->regrid(filename, *lic, true); CHKERRQ(ierr);
   return 0;
 }
 
 
-static PetscErrorCode doneWithIceInfo(IceInfoNeededByCoupler &info) {
-  PetscErrorCode ierr;
-  ierr = info.lat->destroy(); CHKERRQ(ierr);
-  ierr = info.lon->destroy(); CHKERRQ(ierr);
-  ierr = info.mask->destroy(); CHKERRQ(ierr);
-  ierr = info.thk->destroy(); CHKERRQ(ierr);
-  ierr = info.surfelev->destroy(); CHKERRQ(ierr);
-  ierr = info.topg->destroy(); CHKERRQ(ierr);
-  delete info.lat;
-  delete info.lon;
-  delete info.mask;
-  delete info.thk;
-  delete info.surfelev;
-  delete info.topg;
+static PetscErrorCode doneWithIceInfo(PISMVars &variables) {
+
+  delete variables.get("lat");
+  delete variables.get("lon");
+  delete variables.get("mask");
+  delete variables.get("thk");
+  delete variables.get("usurf");
+  delete variables.get("topg");
+  
   return 0;
 }
 
@@ -104,7 +113,6 @@ static PetscErrorCode writePCCStateAtTimes(
                  const char *filename, const MPI_Comm com, IceGrid* grid,
                  int argc, char *argv[],
                  PetscReal ys, PetscReal ye, PetscReal dt_years,
-                 IceInfoNeededByCoupler* info,
 		 NCConfigVariable &psparams) {
 
   PetscErrorCode ierr;
@@ -192,7 +200,7 @@ static PetscErrorCode writePCCStateAtTimes(
     ierr = nc.write_history(timestr); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = pcc->updateClimateFields(pccyear, dt_update_years, info); CHKERRQ(ierr);
+    ierr = pcc->updateClimateFields(pccyear, dt_update_years); CHKERRQ(ierr);
     ierr = pcc->writeCouplingFieldsToFile(pccyear, filename); CHKERRQ(ierr);
     ierr = PetscPrintf(com, "  coupler updated for [%11.3f a,%11.3f a]; result written to %s ...\n",
              pccyear, pccyear + dt_update_years, filename); CHKERRQ(ierr);
@@ -280,8 +288,12 @@ int main(int argc, char *argv[]) {
       ierr = PetscPrintf(com,"PCCTEST ERROR: how did I get here?  111\n"); CHKERRQ(ierr);
       PetscEnd();
     }
-    
-    ierr = PCC->initFromOptions(&grid); CHKERRQ(ierr);
+
+    // allocate IceModelVecs needed by couplers and put them in a dictionary:
+    PISMVars variables;
+    ierr = createVecs(grid, variables); CHKERRQ(ierr);
+
+    ierr = PCC->initFromOptions(&grid, variables); CHKERRQ(ierr);
 
     LocalInterpCtx* lic;
     ierr = PCC->findPISMInputFile(inname, lic); CHKERRQ(ierr); // allocates lic
@@ -299,10 +311,10 @@ int main(int argc, char *argv[]) {
 
     ierr = PetscPrintf(com, 
              "  reading fields lat,lon,mask,thk,topg,usurf from NetCDF file %s\n"
-             "    to fill fields in IceInfoNeededByCoupler ...\n",
+             "    to fill fields in PISMVars ...\n",
              inname); CHKERRQ(ierr);
-    IceInfoNeededByCoupler      info;
-    ierr = readIceInfoFromFile(inname,&grid,lic,info); CHKERRQ(ierr);
+
+    ierr = readIceInfoFromFile(inname, lic, variables); CHKERRQ(ierr);
     
     PetscTruth oSet;
     ierr = PetscOptionsGetString(PETSC_NULL, "-o", outname, 
@@ -312,9 +324,9 @@ int main(int argc, char *argv[]) {
     ierr = PetscPrintf(com, "  writing PISMClimateCoupler states to NetCDF file '%s'...\n",
                        outname); CHKERRQ(ierr);
     ierr = writePCCStateAtTimes(PCC,outname,com,&grid, argc,argv, ys,ye,dt_years,
-                                &info, psparams); CHKERRQ(ierr);
+                                psparams); CHKERRQ(ierr);
 
-    ierr = doneWithIceInfo(info); CHKERRQ(ierr);
+    ierr = doneWithIceInfo(variables); CHKERRQ(ierr);
 
     ierr = PetscPrintf(com, "... done\n"); CHKERRQ(ierr);
     

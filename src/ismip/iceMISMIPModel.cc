@@ -290,15 +290,15 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   // read option    -try_calving      [OFF]
   ierr = check_option("-try_calving", tryCalving); CHKERRQ(ierr);
 
-  config.set_flag("do_temp",                   false);
-  config.set_flag("do_plastic_till",           false);
-  config.set_flag("do_bed_deformation",        false);
-  config.set_flag("is_dry_simulation",         false);
-  config.set_flag("include_bmr_in_continuity", false);
-  config.set_flag("ocean_kill",                true);
-  config.set_flag("use_ssa_velocity",          true);
-  
-  computeSurfGradInwardSSA  = PETSC_FALSE;
+  config.set_flag("do_temp",                      false);
+  config.set_flag("do_plastic_till",              false);
+  config.set_flag("do_bed_deformation",           false);
+  config.set_flag("is_dry_simulation",            false);
+  config.set_flag("include_bmr_in_continuity",    false);
+  config.set_flag("ocean_kill",                   true);
+  config.set_flag("use_ssa_velocity",             true);
+  config.set_flag("compute_surf_grad_inward_ssa", false);
+
   transformForSurfaceGradient = PETSC_TRUE;
 
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  // call to set_time_from_options() occurs here
@@ -492,10 +492,10 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   if (atmosPCC != PETSC_NULL) {
     // call sets pccsmf to point to IceModelVec2 with current surface massflux
     ierr = atmosPCC->updateSurfMassFluxAndProvide(
-              grid.year, 0.0, &info_coupler, pccsmf); CHKERRQ(ierr);
+              grid.year, 0.0, pccsmf); CHKERRQ(ierr);
     // call sets pccTs to point to IceModelVec2 with current surface temps
     ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, 0.0, &info_coupler, pccTs); CHKERRQ(ierr);
+              grid.year, 0.0, pccTs); CHKERRQ(ierr);
   } else {
     SETERRQ(3,"PISM ERROR: atmosPCC == PETSC_NULL");
   }

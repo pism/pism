@@ -118,7 +118,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
      CHKERRQ(ierr);
   if (atmosPCC != PETSC_NULL) {
     IceModelVec2* ignored;
-    ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, &info_coupler, ignored);
+    ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, ignored);
                 CHKERRQ(ierr);
   } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }  
   ierr = putTempAtDepth(); CHKERRQ(ierr);
@@ -357,7 +357,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   if (atmosPCC != PETSC_NULL) {
     // call sets pccTs to point to IceModelVec2 with current surface temps
     ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, 0.0, &info_coupler, pccTs); CHKERRQ(ierr);
+              grid.year, 0.0, pccTs); CHKERRQ(ierr);
   } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }
 
   ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);

@@ -26,21 +26,9 @@
 #include "../base/LocalInterpCtx.hh"
 #include "../base/iceModelVec.hh"
 #include "../base/Timeseries.hh"
+#include "../base/PISMVars.hh"
 #include "localMassBalance.hh"
 #include "monthlyDataMaps.hh"
-
-
-//! A coupler might need to know these things about IceModel to update.  DEPRECATED MECHANISM.
-struct IceInfoNeededByCoupler {
-  // "might need to know" for these reasons:
-  IceModelVec2 *lat,      // location dependence
-               *lon,      // location dependence
-               *mask,     // ice surface type dependence (potentially; e.g. ice shelf vs interior)
-               *thk,      // thickness dependence (needed for ice shelf base)
-               *surfelev, // surface elevation dependence (surface of ice and of exposed bedrock)
-               *topg;     // bed elevation dependence (relatively unlikely)
-};
-
 
 //! A virtual base class for coupling PISM to other climate components.
 /*!
@@ -67,10 +55,10 @@ public:
   // normally only used by derived classes, but also in src/pcctest.cc
   virtual PetscErrorCode findPISMInputFile(char* filename, LocalInterpCtx* &lic);
 
-  virtual PetscErrorCode initFromOptions(IceGrid* g);
+  virtual PetscErrorCode initFromOptions(IceGrid* g, const PISMVars &variables);
   
   virtual PetscErrorCode updateClimateFields(
-             PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info);
+             PetscScalar t_years, PetscScalar dt_years);
 
   // the implementations of this in the base class just terminates; to use,
   //   re-implement in the derived class
@@ -124,17 +112,17 @@ public:
   virtual ~PISMAtmosphereCoupler(); // destroys IceModelVec2 below
 
   // next three redefine PISMClimateCoupler versions
-  virtual PetscErrorCode initFromOptions(IceGrid* g);
+  virtual PetscErrorCode initFromOptions(IceGrid* g, const PISMVars &variables);
   virtual PetscErrorCode writeCouplingFieldsToFile(
              PetscScalar t_years, const char *filename);
   virtual PetscErrorCode updateClimateFields(
-             PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info);
+             PetscScalar t_years, PetscScalar dt_years);
 
   virtual PetscErrorCode updateSurfMassFluxAndProvide(
-             PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info,
+             PetscScalar t_years, PetscScalar dt_years,
              IceModelVec2* &pvsmf);  // pvsmf = pointer to vsurfmassflux
   virtual PetscErrorCode updateSurfTempAndProvide(
-             PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info,
+             PetscScalar t_years, PetscScalar dt_years,
              IceModelVec2* &pvst);  // pvst = pointer to vsurftemp
 
 protected:
@@ -163,7 +151,7 @@ class PISMConstAtmosCoupler : public PISMAtmosphereCoupler {
 public:
   PISMConstAtmosCoupler();
 
-  virtual PetscErrorCode initFromOptions(IceGrid* g);
+  virtual PetscErrorCode initFromOptions(IceGrid* g, const PISMVars &variables);
 
   bool initializeFromFile;  // default is true
 };
@@ -198,7 +186,7 @@ public:
   PISMSnowModelAtmosCoupler();
   virtual ~PISMSnowModelAtmosCoupler();
 
-  virtual PetscErrorCode initFromOptions(IceGrid* g);
+  virtual PetscErrorCode initFromOptions(IceGrid* g, const PISMVars &variables);
 
   virtual PetscErrorCode setLMBScheme(LocalMassBalance *usethisscheme);
 
@@ -206,10 +194,12 @@ public:
              PetscScalar t_years, const char *filename);
 
   virtual PetscErrorCode updateSurfMassFluxAndProvide(
-             PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info,
+             PetscScalar t_years, PetscScalar dt_years,
              IceModelVec2* &pvsmf);
 
 protected:
+  //! Pointers to IceModelVecs provided by IceModel.
+  IceModelVec2 *surfelev, *lat, *lon;
   //! Defaults to the \ref Faustoetal2009 scheme.  Called when no monthly temperature maps are available.
   /*!
     Computes the mean annual temperature as function of latitude, longitude, 
@@ -217,9 +207,9 @@ protected:
     Depends on the current state of IceModel fields, through pointer info.
    */
   virtual PetscErrorCode parameterizedUpdateSnowSurfaceTemp(
-              PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info);
+              PetscScalar t_years, PetscScalar dt_years);
 
-  //! Instead of temperature parameterization we can used monthly temperature maps read from a file.
+  //! Instead of temperature parameterization we can use monthly temperature maps read from a file.
   MonthlyDataMaps  *monthlysnowtemps;
 
   LocalMassBalance *mbscheme;
@@ -258,21 +248,21 @@ public:
 
   virtual ~PISMOceanCoupler();
 
-  virtual PetscErrorCode initFromOptions(IceGrid* g);
+  virtual PetscErrorCode initFromOptions(IceGrid* g, const PISMVars &variables);
 
   virtual PetscErrorCode writeCouplingFieldsToFile(const PetscScalar t_years, const char *filename);
 
   // an ocean model could run non-trivially during these calls
   virtual PetscErrorCode updateShelfBaseMassFluxAndProvide(
-             PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info,
+             PetscScalar t_years, PetscScalar dt_years,
              IceModelVec2* &pvsbmf);  // pvsbmf = pointer to vshelfbasemassflux
 
   virtual PetscErrorCode updateShelfBaseTempAndProvide(
-             PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info,
+             PetscScalar t_years, PetscScalar dt_years,
              IceModelVec2* &pvsbt);  // pvsbt = pointer to vshelfbasetemp
 
   virtual PetscErrorCode updateClimateFields(
-             PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info);
+             PetscScalar t_years, PetscScalar dt_years);
 
   virtual PetscErrorCode updateSeaLevelElevation(PetscReal t_years, PetscReal dt_years,
 						 PetscReal *new_sea_level);
@@ -295,20 +285,22 @@ class PISMConstOceanCoupler : public PISMOceanCoupler {
 public:
   PISMConstOceanCoupler();
 
-  virtual PetscErrorCode initFromOptions(IceGrid* g);
+  virtual PetscErrorCode initFromOptions(IceGrid* g, const PISMVars &variables);
 
   virtual PetscErrorCode writeCouplingFieldsToFile(PetscScalar t_years, const char *filename);
 
   virtual PetscErrorCode updateShelfBaseMassFluxAndProvide(
-             PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info,
+             PetscScalar t_years, PetscScalar dt_years,
              IceModelVec2* &pvsbmf);  // pvsbmf = pointer to vshelfbasemassflux
 
   virtual PetscErrorCode updateShelfBaseTempAndProvide(
-             PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info,
+             PetscScalar t_years, PetscScalar dt_years,
              IceModelVec2* &pvsbt);  // pvsbt = pointer to vshelfbasetemp
 
   PetscReal constOceanHeatFlux;  // in W m-2; directly converted to constant mass flux
                                  //   by updateShelfBaseMassFluxAndProvide()
+protected:
+  IceModelVec2 *thk;
 };
 
 #endif

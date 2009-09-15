@@ -66,7 +66,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
   }
 
   localp = local;
-  strcpy(name,my_name);
+  name = my_name;
 
   var1.init(my_name, my_grid, GRID_2D);
 
@@ -93,7 +93,7 @@ PetscErrorCode IceModelVec2::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec 
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (!localp)
-    SETERRQ1(1, "Can't put a global IceModelVec '%s' on proc 0.", name);
+    SETERRQ1(1, "Can't put a global IceModelVec '%s' on proc 0.", name.c_str());
 
   ierr =        DALocalToGlobal(da, v,  INSERT_VALUES, g2);        CHKERRQ(ierr);
   ierr = DAGlobalToNaturalBegin(grid->da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
@@ -118,7 +118,7 @@ PetscErrorCode IceModelVec2::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Ve
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (!localp)
-    SETERRQ1(1, "Can't get a global IceModelVec '%s' from proc 0.", name);
+    SETERRQ1(1, "Can't get a global IceModelVec '%s' from proc 0.", name.c_str());
 
   ierr = VecScatterBegin(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
   ierr =   VecScatterEnd(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
@@ -128,5 +128,29 @@ PetscErrorCode IceModelVec2::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Ve
   ierr =   DAGlobalToLocalBegin(da, g2,               INSERT_VALUES, v);  CHKERRQ(ierr);
   ierr =     DAGlobalToLocalEnd(da, g2,               INSERT_VALUES, v);  CHKERRQ(ierr);
 
+  return 0;
+}
+
+//! Sets an IceModelVec2 to the magnitude of a 2D vector field with components \c v_x and \c v_y.
+/*! Computes the magnitude \b pointwise, so any of v_x, v_y and the IceModelVec
+  this is called on can be the same.
+
+  Does not communicate.
+ */
+PetscErrorCode IceModelVec2::set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v_y) {
+  PetscErrorCode ierr;
+  PetscScalar **fx, **fy, **mag;
+  ierr = v_x.get_array(fx); CHKERRQ(ierr);
+  ierr = v_y.get_array(fy); CHKERRQ(ierr);
+  ierr = get_array(mag); CHKERRQ(ierr);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+      mag[i][j] = sqrt(PetscSqr(fx[i][j]) + PetscSqr(fy[i][j]));
+    }
+  }
+  ierr = v_x.end_access(); CHKERRQ(ierr);
+  ierr = v_y.end_access(); CHKERRQ(ierr);
+  ierr = end_access(); CHKERRQ(ierr);
+  
   return 0;
 }

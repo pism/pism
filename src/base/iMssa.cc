@@ -107,7 +107,8 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
 
   CHECK_NOT_SSA_EXTERNAL(ssa);
 
-  if (useConstantNuHForSSA == PETSC_TRUE) {
+  bool use_constant_nuh_for_ssa = config.get_flag("use_constant_nuh_for_ssa");
+  if (use_constant_nuh_for_ssa) {
     // Intended only for debugging, this treats the entire domain as though it was the strength extension
     // (i.e. strength does not even depend on thickness)
     PetscReal nuH = ssaStrengthExtend.notional_strength();
@@ -657,7 +658,8 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
   // this only needs to be done once; right hand side of system
   //   does not depend on solution; note solution changes under nonlinear iteration
   //   so matrix must be recomputed in loop over k below
-  ierr = assembleSSARhs((computeSurfGradInwardSSA == PETSC_TRUE), rhs); CHKERRQ(ierr);
+  bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
+  ierr = assembleSSARhs(compute_surf_grad_inward_ssa, rhs); CHKERRQ(ierr);
 
   for (PetscInt l=0; ; ++l) {
     ierr = computeEffectiveViscosity(vNuH, epsilon); CHKERRQ(ierr);

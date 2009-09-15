@@ -23,27 +23,6 @@
 #include "pism_signal.h"
 #include <petscvec.h>
 
-
-//! Compute the scalar magnitude of a two-dimensional vector field.
-PetscErrorCode IceModel::getMagnitudeOf2dVectorField(IceModelVec2 &vfx, IceModelVec2 &vfy,
-						     IceModelVec2 &vmag) {
-  PetscErrorCode ierr;
-  PetscScalar **fx, **fy, **mag;
-  ierr = vfx.get_array(fx); CHKERRQ(ierr);
-  ierr = vfy.get_array(fy); CHKERRQ(ierr);
-  ierr = vmag.get_array(mag); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      mag[i][j] = sqrt(PetscSqr(fx[i][j]) + PetscSqr(fy[i][j]));
-    }
-  }
-  ierr = vfx.end_access(); CHKERRQ(ierr);
-  ierr = vfy.end_access(); CHKERRQ(ierr);
-  ierr = vmag.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
-
 //! Virtual.  Does nothing in \c IceModel.  Derived classes can do more computation in each time step.
 PetscErrorCode IceModel::additionalAtStartTimestep() {
   return 0;
@@ -253,7 +232,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   if (atmosPCC != PETSC_NULL) {
     // call sets pccTs to point to IceModelVec2 with current surface temps
     ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, 0.0, &info_coupler, pccTs); CHKERRQ(ierr);
+              grid.year, 0.0, pccTs); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }

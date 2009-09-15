@@ -985,7 +985,8 @@ PetscErrorCode IceEnthalpyModel::computeEffectiveViscosity(IceModelVec2 vNuH[2],
   //CHECK_NOT_SSA_EXTERNAL(ssa);
   if (ssa) {SETERRQ(1,"This should not be called when the external SSA solver is active");}
 
-  if (useConstantNuHForSSA == PETSC_TRUE) {
+  bool use_constant_nuh_for_ssa = config.get_flag("use_constant_nuh_for_ssa");
+  if (use_constant_nuh_for_ssa) {
     // Intended only for debugging, this treats the entire domain as though it was the strength extension
     // (i.e. strength does not even depend on thickness)
     PetscReal nuH = ssaStrengthExtend.notional_strength();
@@ -1246,17 +1247,17 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   if (atmosPCC != PETSC_NULL) {
     // call sets pccTs to point to IceModelVec2 with current surface temps
     ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, dtTempAge / secpera, &info_coupler, pccTs);
+              grid.year, dtTempAge / secpera, pccTs);
               CHKERRQ(ierr);
   } else {
     SETERRQ(3,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
   if (oceanPCC != PETSC_NULL) {
     ierr = oceanPCC->updateShelfBaseTempAndProvide(
-              grid.year, dt / secpera, &info_coupler, pccsbt);
+              grid.year, dt / secpera, pccsbt);
               CHKERRQ(ierr);
     ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(
-              grid.year, dt / secpera, &info_coupler, pccsbmf);
+              grid.year, dt / secpera, pccsbmf);
               CHKERRQ(ierr);
   } else {
     SETERRQ(4,"PISM ERROR: oceanPCC == PETSC_NULL");

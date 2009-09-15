@@ -254,4 +254,7 @@ netcdf pism_config {
 
     pism_config:pi = 3.14159265358979;
     pism_config:pi_doc = "; ratio of a circle's circumference to its diameter";
+
+    pism_config:max_number_of_snapshots = 200;
+    pism_config:max_number_of_snapshots_doc = "; Maximum number of unequally-spaced snapshots";
 }

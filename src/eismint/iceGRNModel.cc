@@ -31,9 +31,9 @@ PetscErrorCode EISGREENAtmosCoupler::startGreenhouseAtYear(PetscScalar year) {
 }
 
 
-PetscErrorCode EISGREENAtmosCoupler::initFromOptions(IceGrid* g) {
+PetscErrorCode EISGREENAtmosCoupler::initFromOptions(IceGrid* g, const PISMVars &variables) {
   PetscErrorCode ierr;
-  ierr = PISMSnowModelAtmosCoupler::initFromOptions(g); CHKERRQ(ierr);
+  ierr = PISMSnowModelAtmosCoupler::initFromOptions(g, variables); CHKERRQ(ierr);
   EISGREENMassBalance* eisg_scheme = dynamic_cast<EISGREENMassBalance*>(mbscheme);
   if (eisg_scheme == NULL) {
     ierr = verbPrintf(1, g->com, 
@@ -82,26 +82,26 @@ PetscScalar EISGREENAtmosCoupler::shiftForGreenhouse(PetscScalar t_years, PetscS
 
 
 PetscErrorCode EISGREENAtmosCoupler::parameterizedUpdateSnowSurfaceTemp(
-                       PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info) {
+                       PetscScalar t_years, PetscScalar dt_years) {
   PetscErrorCode ierr;
   ierr = verbPrintf(4, grid->com, 
       "entering EISGREENAtmosCoupler::parameterizedUpdateSnowTemp()\n"); CHKERRQ(ierr);
-  PetscScalar **lat, **h, **T_ma, **T_mj;
-  if (info == PETSC_NULL) { SETERRQ(1,"info == PETSC_NULL"); }
-  ierr = info->surfelev->get_array(h);   CHKERRQ(ierr);
-  ierr = info->lat->get_array(lat); CHKERRQ(ierr);
+  PetscScalar **lat_degN, **h, **T_ma, **T_mj;
+
+  ierr = surfelev->get_array(h);   CHKERRQ(ierr);
+  ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
   ierr = vsnowtemp_ma.get_array(T_ma);  CHKERRQ(ierr);
   ierr = vsnowtemp_mj.get_array(T_mj);  CHKERRQ(ierr);
   for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
       // T_ma, T_mj in K; T_ma is mean annual, T_mj is summer peak;
       //   note coupler builds sine wave yearly cycle from these
-      T_ma[i][j] = meanAnnualTemp(h[i][j], lat[i][j]);
-      T_mj[i][j] = 273.15 + 30.38 - 0.006277 * h[i][j] - 0.3262 * lat[i][j];
+      T_ma[i][j] = meanAnnualTemp(h[i][j], lat_degN[i][j]);
+      T_mj[i][j] = 273.15 + 30.38 - 0.006277 * h[i][j] - 0.3262 * lat_degN[i][j];
     }
   }  
-  ierr = info->surfelev->end_access();   CHKERRQ(ierr);
-  ierr = info->lat->end_access(); CHKERRQ(ierr);
+  ierr = surfelev->end_access();   CHKERRQ(ierr);
+  ierr = lat->end_access(); CHKERRQ(ierr);
   ierr = vsnowtemp_ma.end_access();  CHKERRQ(ierr);
   ierr = vsnowtemp_mj.end_access();  CHKERRQ(ierr);
 
@@ -116,7 +116,7 @@ PetscErrorCode EISGREENAtmosCoupler::parameterizedUpdateSnowSurfaceTemp(
 
 PetscErrorCode EISGREENAtmosCoupler::updateSurfTempAndProvide(
                   const PetscScalar t_years, const PetscScalar dt_years, 
-                  IceInfoNeededByCoupler* info, IceModelVec2* &pvst) {
+                  IceModelVec2* &pvst) {
   PetscErrorCode ierr;
   ierr = verbPrintf(4, grid->com, 
       "entering EISGREENAtmosCoupler::updateSurfTempAndProvide();\n"
@@ -124,21 +124,20 @@ PetscErrorCode EISGREENAtmosCoupler::updateSurfTempAndProvide(
       "  EISMINT-Greenland formulas ...\n"); CHKERRQ(ierr);
 
   ierr = PISMAtmosphereCoupler::updateSurfTempAndProvide(
-              t_years, dt_years, info, pvst); CHKERRQ(ierr);
+              t_years, dt_years, pvst); CHKERRQ(ierr);
 
-  if (info == PETSC_NULL) { SETERRQ(1,"info == PETSC_NULL"); }
-  PetscScalar **Ts, **lat, **h;
+  PetscScalar **Ts, **lat_degN, **h;
   ierr = vsurftemp.get_array(Ts); CHKERRQ(ierr);
-  ierr = info->lat->get_array(lat); CHKERRQ(ierr);
-  ierr = info->surfelev->get_array(h); CHKERRQ(ierr);
+  ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
+  ierr = surfelev->get_array(h); CHKERRQ(ierr);
   for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
-      Ts[i][j] = meanAnnualTemp(h[i][j], lat[i][j]);
+      Ts[i][j] = meanAnnualTemp(h[i][j], lat_degN[i][j]);
     }
   }
   ierr = vsurftemp.end_access(); CHKERRQ(ierr);
-  ierr = info->lat->end_access(); CHKERRQ(ierr);
-  ierr = info->surfelev->end_access(); CHKERRQ(ierr);
+  ierr = lat->end_access(); CHKERRQ(ierr);
+  ierr = surfelev->end_access(); CHKERRQ(ierr);
 
   if (doGreenhouse == PETSC_TRUE) {
     ierr = vsurftemp.shift(shiftForGreenhouse(t_years,dt_years)); CHKERRQ(ierr);

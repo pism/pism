@@ -31,9 +31,9 @@ IceROSSModel::IceROSSModel(IceGrid &g)
   computeSIAVelocities = PETSC_FALSE;
 
   // further settings for velocity computation 
-  useConstantNuHForSSA = PETSC_FALSE; // compute the effective viscosity in usual
-           // shear-thinning way (except will extend shelf using constantNuHForSSA below,
-           // also as usual)
+  config.set_flag("use_constant_nuh_for_ssa", false);
+  // compute the effective viscosity in usual shear-thinning way (except will
+  // extend shelf using constantNuHForSSA below, also as usual)
   shelvesDragToo = PETSC_FALSE;            // exactly zero drag under shelves
 
   config.set("epsilon_ssa", 0.0);  // don't use this lower bound on effective viscosity
@@ -208,7 +208,7 @@ PetscErrorCode IceROSSModel::fillinTemps() {
   if (atmosPCC != PETSC_NULL) {
     // call sets pccTs to point to IceModelVec2 with current surface temps
     ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, 0.0, &info_coupler, pccTs); CHKERRQ(ierr);
+              grid.year, 0.0, pccTs); CHKERRQ(ierr);
   } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL  in  IceROSSModel::fillinTemps()");  }
 
   ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);

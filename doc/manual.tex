@@ -1536,15 +1536,15 @@ Assuming that \verb|green20km_y1.nc| was produced by the run above (see section
 \ref{sect:green-bootstrapping}), one can run the following to check if the PDD
 model in PISM (see section \ref{subsect:pdd}) is ``reasonable'':
 \begin{verbatim}
-$ pcctest -i foo.nc -pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
+$ pcctest -i green20km_y1.nc -sma -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
 \end{verbatim}
 This produces the file \verb|pddmovie.nc| with four variables: \verb|acab|
 (instantaneous net ice equivalent accumulation (ablation) rate), \verb|artm|
-(mean annual temperature at ice surface but below firn), \verb|artmpdd|
-(instantaneous snow temperature) and \verb|snowaccum| (mean annual
+(mean annual temperature at ice surface but below firn), \verb|snowtemp|
+(instantaneous snow temperature) and \verb|snowprecip| (mean annual
 ice-equivalent snow accumulation rate).
 
-Variables \verb|artm| and \verb|snowaccum| do not evolve over time because the 
+Variables \verb|artm| and \verb|snowprecip| do not evolve over time because the 
 former is generated from ice sheet geometry and latitude by the EISMINT-Greenland
 formulas \cite{RitzEISMINT}, while the latter is part of the EISMINT-Greenland data
 itself.

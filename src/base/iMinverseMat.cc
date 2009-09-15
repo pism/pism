@@ -73,14 +73,14 @@ PetscErrorCode IceModel::computeBasalShearFromSSA() {
 
   // effective viscosity for ub_in, vb_in: save flags before changing them
   const bool leaveNuHAloneSSA_save = leaveNuHAloneSSA, 
-    useConstantNuHForSSA_save = useConstantNuHForSSA;
+    useConstantNuHForSSA_save = config.get_flag("use_constant_nuh_for_ssa");
   leaveNuHAloneSSA = PETSC_FALSE;
-  useConstantNuHForSSA = PETSC_FALSE;
+  config.set_flag("use_constant_nuh_for_ssa", false);
   IceModelVec2 myvNuH[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
   // eps=0.0 in bdd-below regularization; Schoof type regularization does occur;
   ierr = computeEffectiveViscosity(myvNuH, 0.0); CHKERRQ(ierr); // uses vubarSSA, vvbarSSA
   leaveNuHAloneSSA = leaveNuHAloneSSA_save;
-  useConstantNuHForSSA = useConstantNuHForSSA_save;
+  config.set_flag("use_constant_nuh_for_ssa", useConstantNuHForSSA_save);
 
   // allocate Mat and Vecs; compare setup in IceModel::createVecs() and
   //   IceModel::velocitySSA()

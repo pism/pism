@@ -201,7 +201,7 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
 
   //   fill in parameters and flags in app ctx
   user.schoofReg = PetscSqr((1/secpera)/1e6); // Now incorporated in the rheology (i.e. IceType)
-  user.useConstantNu = useConstantNuHForSSA;  
+  user.useConstantNu = config.get_flag("use_constant_nuh_for_ssa");  
   user.usePlasticBasalType = PETSC_TRUE;
   
   // set up SNES function
@@ -253,7 +253,8 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
     Vec x = SSAX, rhs = SSARHS; // solve  A x = rhs
     PetscInt    kspits;
     KSPConvergedReason  kspreason;
-    ierr = assembleSSARhs((computeSurfGradInwardSSA == PETSC_TRUE), rhs); CHKERRQ(ierr);
+    bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
+    ierr = assembleSSARhs(compute_surf_grad_inward_ssa, rhs); CHKERRQ(ierr);
     ierr = computeEffectiveViscosity(vNuH,ssaEpsilon); CHKERRQ(ierr);
     ierr = updateNuViewers(vNuH, vNuH, true); CHKERRQ(ierr);
     ierr = assembleSSAMatrix(true, vNuH, A); CHKERRQ(ierr);

@@ -53,6 +53,8 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2
   const PetscInt    Mx=grid.Mx, My=grid.My;
   const PetscScalar dx=grid.dx, dy=grid.dy;
 
+  bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
+
   ierr =    vh.get_array(h);    CHKERRQ(ierr);
   ierr =    vH.get_array(H);    CHKERRQ(ierr);
   ierr =  vbed.get_array(b);    CHKERRQ(ierr);
@@ -89,7 +91,7 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2
           h_x += (b[i+1][j] - b[i-1][j]) / (2*dx);
           h_y += (b[i][j+1] - b[i][j-1]) / (2*dy);
         } else {  // floating or whatever
-          if ((computeSurfGradInwardSSA == PETSC_TRUE) && edge) {
+          if (compute_surf_grad_inward_ssa && edge) {
             if (i == 0) {
               h_x = (h[i+1][j] - h[i][j]) / (dx);
               h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
@@ -322,7 +324,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   if (atmosPCC != PETSC_NULL) {
     // call sets pccsmf to point to IceModelVec2 with current surface mass flux
     ierr = atmosPCC->updateSurfMassFluxAndProvide(
-              grid.year, dt / secpera, &info_coupler, pccsmf); CHKERRQ(ierr);
+              grid.year, dt / secpera, pccsmf); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
@@ -331,7 +333,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   if (oceanPCC != PETSC_NULL) {
     // call sets pccsbmf to point to IceModelVec2 with current mass flux under shelf base
     ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(
-              grid.year, dt / secpera, &info_coupler, pccsbmf); CHKERRQ(ierr);
+              grid.year, dt / secpera, pccsbmf); CHKERRQ(ierr);
   } else {
     SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");
   }

@@ -263,13 +263,12 @@ PetscScalar ThermoGlenIce::flow(PetscScalar stress,PetscScalar temp,PetscScalar 
 }
 
 
+//! DESPITE NAME, does *not* return effective viscosity. The result is \f$\nu_e H\f$,
+//! i.e. viscosity times thickness. \f$B\f$ is really hardness times thickness.
 PetscScalar ThermoGlenIce::effectiveViscosityColumn(
                 PetscScalar H,  PetscInt kbelowH, const PetscScalar *zlevels,
                 PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
                 const PetscScalar *T1, const PetscScalar *T2) const {
-  // DESPITE NAME, does *not* return effective viscosity.
-  // The result is \nu_e H, i.e. viscosity times thickness.
-  // B is really hardness times thickness.
 //  const PetscInt  ks = static_cast<PetscInt>(floor(H/dz));
   // Integrate the hardness parameter using the trapezoid rule.
   PetscScalar B = 0;
@@ -474,13 +473,13 @@ HybridIce::HybridIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
 }
 
 
-PetscScalar HybridIce::flow(PetscScalar stress, PetscScalar temp,
-                            PetscScalar pressure, PetscScalar gs) const {
-  /*
+/*!
   This is the (forward) Goldsby-Kohlstedt flow law.  See:
   D. L. Goldsby & D. L. Kohlstedt (2001), "Superplastic deformation
   of ice: experimental observations", J. Geophys. Res. 106(M6), 11017-11030.
-  */
+*/
+PetscScalar HybridIce::flow(PetscScalar stress, PetscScalar temp,
+                            PetscScalar pressure, PetscScalar gs) const {
   PetscScalar eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
 
   if (PetscAbs(stress) < 1e-10) return 0;

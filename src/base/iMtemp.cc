@@ -216,17 +216,17 @@ PetscErrorCode IceModel::temperatureStep(
   if (atmosPCC != PETSC_NULL) {
     // call sets pccTs to point to IceModelVec2 with current surface temps
     ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, dtTempAge / secpera, &info_coupler, pccTs);
+              grid.year, dtTempAge / secpera, pccTs);
               CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
   }
   if (oceanPCC != PETSC_NULL) {
     ierr = oceanPCC->updateShelfBaseTempAndProvide(
-              grid.year, dt / secpera, &info_coupler, pccsbt);
+              grid.year, dt / secpera, pccsbt);
               CHKERRQ(ierr);
     ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(
-              grid.year, dt / secpera, &info_coupler, pccsbmf);
+              grid.year, dt / secpera, pccsbmf);
               CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");

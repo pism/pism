@@ -62,15 +62,13 @@ PetscErrorCode IceModel::setDefaults() {
   strcpy(diagnosticBIG, "");
   showViewers = PETSC_TRUE;
 
-  ierr = setExecName("pism"); CHKERRQ(ierr);  // drivers typically override this
+  executable_short_name = "pism"; // drivers typically override this
 
   grid.vertical_spacing = EQUAL;
   
   computeSIAVelocities = PETSC_TRUE;
   transformForSurfaceGradient = PETSC_FALSE;
 
-  useConstantNuHForSSA     = config.get_flag("use_constant_nuh_for_ssa");
-  computeSurfGradInwardSSA = config.get_flag("compute_surf_grad_inward_ssa");
   ssaSystemToASCIIMatlab   = PETSC_FALSE;
   leaveNuHAloneSSA         = false;
 

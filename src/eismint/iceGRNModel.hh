@@ -52,12 +52,12 @@ public:
 
   using PISMSnowModelAtmosCoupler::initFromOptions; // overrides but calls this
   //! Just checks correct attachment of new mass balance scheme.
-  virtual PetscErrorCode initFromOptions(IceGrid* g);
+  virtual PetscErrorCode initFromOptions(IceGrid* g, const PISMVars &variables);
 
   using PISMSnowModelAtmosCoupler::updateSurfTempAndProvide; // overrides this
   //! Implements ice surface temperature parameterization.
   virtual PetscErrorCode updateSurfTempAndProvide(
-               PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info,
+               PetscScalar t_years, PetscScalar dt_years,
                IceModelVec2* &pvst);
 
   //! Turns on and gives starting model year for greenhouse warming scenario in experiment GWL3.
@@ -68,7 +68,7 @@ protected:
   using PISMSnowModelAtmosCoupler::parameterizedUpdateSnowSurfaceTemp; // overrides this
   //! Implements snow surface temperature parameterization, for use in mass balance model.
   virtual PetscErrorCode parameterizedUpdateSnowSurfaceTemp(
-            PetscScalar t_years, PetscScalar dt_years, IceInfoNeededByCoupler* info);
+            PetscScalar t_years, PetscScalar dt_years);
 
   //! Implements mean annual temperature parameterization, used by parameterizedUpdateSnowSurfaceTemp().
   PetscScalar meanAnnualTemp(PetscScalar h, PetscScalar lat);

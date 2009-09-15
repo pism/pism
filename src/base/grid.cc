@@ -106,7 +106,7 @@ and \c zblevels[].
 Uses \c Mz, \c Lz, \c Mbz, and \c spacing_type.  Note that \c vertical_spacing
 cannot be UNKNOWN.
 
-This procedure is only called when a grid is determined from scratch, e.g. 
+This procedure is only called when a grid is determined from scratch, %e.g. 
 by a derived class or when bootstrapping from 2D data only, but not when 
 reading a model state input file (which will have its own grid,
 which may not even be a grid created by this routine).
@@ -116,7 +116,7 @@ which may not even be a grid created by this routine).
   - When \c vertical_spacing == CHEBYSHEV, the vertical grid in the ice is Chebyshev spaced.  
     Note that (generally speaking) the \f$N+1\f$ \e Chebyshev \e extreme 
     \e points are \f$x_j = \cos(j \pi/N)\f$ for \f$j=0,1,\dots,N\f$. 
-    (See \ref Trefethen .)
+    (See [\ref Trefethen].)
     These are concentrated at either end of the interval \f$[-1,1]\f$.  In our 
     case we want points concentrated near zero, and we use only half of the 
     Chebyshev points because we don't need concentration near the top

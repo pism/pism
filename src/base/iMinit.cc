@@ -375,24 +375,16 @@ PetscErrorCode IceModel::misc_setup() {
 PetscErrorCode IceModel::init_couplers() {
   PetscErrorCode ierr;
 
-  // so that we can let atmosPCC, oceanPCC know about these fields in IceModel state
-  info_coupler.lat = &vLatitude;
-  info_coupler.lon = &vLongitude;  
-  info_coupler.mask = &vMask;
-  info_coupler.thk = &vH;
-  info_coupler.surfelev = &vh;
-  info_coupler.topg = &vbed;
-
   ierr = verbPrintf(3, grid.com,
 		    "Initializing atmosphere and ocean couplers...\n"); CHKERRQ(ierr);
 
   if (atmosPCC != PETSC_NULL) {
-    ierr = atmosPCC->initFromOptions(&grid); CHKERRQ(ierr);
+    ierr = atmosPCC->initFromOptions(&grid, variables); CHKERRQ(ierr);
   } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }
  
  if (oceanPCC != PETSC_NULL) {
    if (config.get_flag("is_dry_simulation")) {  oceanPCC->reportInitializationToStdOut = false;  }
-    ierr = oceanPCC->initFromOptions(&grid); CHKERRQ(ierr);
+   ierr = oceanPCC->initFromOptions(&grid, variables); CHKERRQ(ierr);
   } else {  SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");  }
 
 

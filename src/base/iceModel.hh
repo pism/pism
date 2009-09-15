@@ -29,6 +29,7 @@
 #include "grid.hh"
 #include "iceModelVec.hh"
 #include "NCVariable.hh"
+#include "PISMVars.hh"
 
 #include "../earth/deformation.hh"
 
@@ -146,7 +147,6 @@ public:
   virtual PetscErrorCode additionalAtEndTimestep();
 
   // see iMIO.cc
-  bool hasSuffix(const char* fname, const char* suffix) const;  
   virtual PetscErrorCode initFromFile(const char *);
   virtual PetscErrorCode writeFiles(const char* default_filename, 
                                     const PetscTruth forceFullDiagnostics = PETSC_FALSE);
@@ -174,7 +174,10 @@ protected:
 
   PISMAtmosphereCoupler *atmosPCC;
   PISMOceanCoupler      *oceanPCC;
-  IceInfoNeededByCoupler info_coupler;
+
+  //! \brief A dictionary with pointers to IceModelVecs below, for passing them
+  //! from the IceModel core to other components (such as couplers)
+  PISMVars variables;
 
   InverseModelCtx       inv;
   
@@ -220,8 +223,7 @@ protected:
 
 
   // flags
-  bool useConstantNuHForSSA,
-    leaveNuHAloneSSA, computeSurfGradInwardSSA;
+  bool leaveNuHAloneSSA;
   PetscTruth  updateHmelt,
               holdTillYieldStress, useConstantTillPhi,
               shelvesDragToo,
@@ -439,8 +441,6 @@ protected:
                       PetscScalar *Texcess, PetscScalar *Hmelt);
 
   // see iMutil.cc
-  virtual PetscErrorCode getMagnitudeOf2dVectorField(IceModelVec2 &vfx, IceModelVec2 &vfy,
-						     IceModelVec2 &vmag);
   virtual int endOfTimeStepHook();
   virtual PetscErrorCode stampHistoryCommand();
   virtual PetscErrorCode stampHistoryEnd();
@@ -530,20 +530,21 @@ protected:
                                       
 
   // This is related to the snapshot saving feature
-  char snapshots_filename[PETSC_MAX_PATH_LEN];
+  string snapshots_filename;
   bool save_snapshots, file_is_ready, split_snapshots;
-
-  // equally spaced snapshots
-  PetscTruth save_at_equal_intervals;
-  double first_snapshot, snapshot_dt, next_snapshot, last_snapshot;
-
-  // unequally spaced snapshots
-  static const int max_n_snapshots = 200;
-  double save_at[max_n_snapshots];
-  int n_snapshots, current_snapshot;
+  vector<double> snapshot_times;
+  unsigned int current_snapshot;
 
   PetscErrorCode init_snapshots_from_options();
   PetscErrorCode write_snapshot();
+
+  // scalar time-series
+  bool save_scalar_ts;
+  string scalar_ts_filename;
+  vector<double> scalar_ts_times;
+  int current_scalar_ts;
+  PetscErrorCode init_scalar_timeseries();
+  PetscErrorCode write_scalar_timeseries();
 };
 
 #endif /* __iceModel_hh */

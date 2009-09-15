@@ -20,7 +20,7 @@
 #include <petscfix.h>
 #include "nc_util.hh"
 #include "pism_const.hh"
-
+#include <sstream>
 
 static PetscInt verbosityLevel;
 
@@ -254,6 +254,55 @@ PetscErrorCode stop_if_set(MPI_Comm com, const char name[]) {
 		       name); CHKERRQ(ierr);
     PetscEnd();
   }
+
+  return 0;
+}
+
+//! Returns true if \c str ends with \c suffix and false otherwise.
+bool ends_with(string str, string suffix) {
+  if (str.rfind(suffix) + suffix.size() == str.size())
+    return true;
+
+  return false;
+}
+
+//! Parses a MATLAB-style range (a:delta:b).
+PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, double *b) {
+  PetscErrorCode ierr;
+  istringstream arg(str);
+  vector<string> numbers;
+  double doubles[3];
+
+  // Split the string:
+  string tmp;
+  while (getline(arg, tmp, ':'))
+    numbers.push_back(tmp);
+
+  // Check if we have 3 numbers:
+  if (numbers.size() != 3) {
+      ierr = PetscPrintf(com,
+			 "PISM ERROR: A range has to consist of exactly three numbers, separated by colons.\n");
+      CHKERRQ(ierr);
+      return 1;
+  }
+
+  // Convert each number from a string to double:
+  for (int j = 0; j < 3; ++j) {
+    double d;
+    char *endptr;
+    d = strtod(numbers[j].c_str(), &endptr);
+    if (*endptr != '\0') {
+      ierr = PetscPrintf(com, "PISM ERROR: Can't parse %s (%s is not a number).\n",
+			 str.c_str(), numbers[j].c_str()); CHKERRQ(ierr);
+      return 1;
+    }
+    else
+      doubles[j] = d;
+  }
+
+  *a = doubles[0];
+  *delta = doubles[1];
+  *b = doubles[2];
 
   return 0;
 }

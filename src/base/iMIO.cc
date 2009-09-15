@@ -21,17 +21,7 @@
 #include <ctime>
 #include <petscda.h>
 #include "iceModel.hh"
-
-bool IceModel::hasSuffix(const char* fname, const char *suffix) const {
-  size_t flen = strlen(fname);
-  size_t slen = strlen(suffix);
-  if (strcmp(fname + flen - slen, suffix) == 0) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
+#include <algorithm>
 
 //! Determine the run length, starting and ending years using command-line options.
 PetscErrorCode  IceModel::set_time_from_options() {
@@ -104,7 +94,7 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename,
   if (!o_set)
     strncpy(filename, default_filename, PETSC_MAX_PATH_LEN);
 
-  if (!hasSuffix(filename, ".nc")) {
+  if (!ends_with(filename, ".nc")) {
     ierr = verbPrintf(2, grid.com,
 		      "PISM WARNING: output file name does not have the '.nc' suffix!\n");
     CHKERRQ(ierr);
@@ -199,15 +189,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vLongitude.write(filename, NC_DOUBLE); CHKERRQ(ierr);
   ierr =  vLatitude.write(filename, NC_DOUBLE); CHKERRQ(ierr);
 
-  vector<double> mask_values(4);
-  mask_values[0] = MASK_SHEET;
-  mask_values[1] = MASK_DRAGGING;
-  mask_values[2] = MASK_FLOATING;
-  mask_values[3] = MASK_FLOATING_OCEAN0;
-  ierr = vMask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
-  ierr = vMask.set_attr("flag_meanings", "sheet dragging floating floating_at_time_0"); CHKERRQ(ierr);
-  ierr = vMask.write(filename, NC_BYTE); CHKERRQ(ierr);
-
+  ierr =      vMask.write(filename, NC_BYTE);   CHKERRQ(ierr);
   ierr =     vHmelt.write(filename, NC_DOUBLE); CHKERRQ(ierr);
   ierr =       vbed.write(filename, NC_DOUBLE); CHKERRQ(ierr);
   ierr =    vuplift.write(filename, NC_DOUBLE); CHKERRQ(ierr);
@@ -255,7 +237,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   // compute cbar = sqrt(ubar^2 + vbar^2) and save it
-  ierr = getMagnitudeOf2dVectorField(vubar, vvbar, vWork2d[0]); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_to_magnitude(vubar, vvbar); CHKERRQ(ierr);
   ierr = vWork2d[0].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out ice-free areas
 
   ierr = vWork2d[0].set_name("cbar"); CHKERRQ(ierr);
@@ -286,7 +268,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
 
-  ierr = getMagnitudeOf2dVectorField(vWork2d[0],vWork2d[1],vWork2d[2]); CHKERRQ(ierr);
+  ierr = vWork2d[2].set_to_magnitude(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
   ierr = vWork2d[2].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out ice-free areas
 
   ierr = vWork2d[2].set_name("cbase"); CHKERRQ(ierr);
@@ -306,7 +288,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
 
-  ierr = getMagnitudeOf2dVectorField(vWork2d[0],vWork2d[1],vWork2d[0]); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_to_magnitude(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
   ierr = vWork2d[0].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out ice-free areas
 
   ierr = vWork2d[0].set_name("csurf"); CHKERRQ(ierr);
@@ -332,8 +314,8 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
 
   // compute magnitude of basal shear stress = rho g H |grad h|
   ierr = computeDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
-  ierr = getMagnitudeOf2dVectorField(vWork2d[0],vWork2d[1],vWork2d[2]); CHKERRQ(ierr);
 
+  ierr = vWork2d[2].set_to_magnitude(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
   ierr = vWork2d[2].set_name("taud"); CHKERRQ(ierr);
   ierr = vWork2d[2].set_attrs("diagnostic",
              "magnitude of driving shear stress at base of ice",
@@ -649,10 +631,15 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
   PetscErrorCode ierr;
   PetscTruth save_at_set = PETSC_FALSE, save_to_set = PETSC_FALSE;
   char tmp[TEMPORARY_STRING_LENGTH] = "\0";
-  first_snapshot = next_snapshot = last_snapshot = snapshot_dt = 0;
+  bool save_at_equal_intervals = false;
+  double a, delta, b;		// range (in the equal spacing case)
+  int N;			// number of snapshots
+  current_snapshot = 0;
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-save_to", snapshots_filename,
+  ierr = PetscOptionsGetString(PETSC_NULL, "-save_to", tmp,
 			       PETSC_MAX_PATH_LEN, &save_to_set); CHKERRQ(ierr);
+  snapshots_filename = tmp;
+
   ierr = PetscOptionsGetString(PETSC_NULL, "-save_at", tmp,
 			       TEMPORARY_STRING_LENGTH, &save_at_set); CHKERRQ(ierr);
 
@@ -668,58 +655,54 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
     PetscEnd();
   }
 
+  if (!save_to_set && !save_at_set) {
+    save_snapshots = false;
+    return 0;
+  }
+
   // check if the user specified a MATLAB-style range (a:dt:b). We assume that
   // any string containing a colon defines a range like this
-  char *endptr1, *endptr2;
-  bool parsing_failed = false;
   if (strchr(tmp, ':')) {	// if a string contains a colon...
 
-    // try to read the first number
-    first_snapshot = strtod(tmp, &endptr1);
-    if (tmp == endptr1)
-      parsing_failed = true;
+    ierr = parse_range(grid.com, tmp, &a, &delta, &b);
 
-    endptr1++;			// skip the colon separating a and dt (a:dt)
-    // try to read the second number
-    snapshot_dt = strtod(endptr1, &endptr2);
-    if (endptr1 == endptr2)
-      parsing_failed = true;
-
-    endptr2++;			// skip the colon separating dt and b (dt:b)
-    // try to read the third number
-    last_snapshot = strtod(endptr2, &endptr1);
-    if (endptr1 == endptr2)
-      parsing_failed = true;
-
-    if (parsing_failed) {
-      ierr = PetscPrintf(grid.com, "PISM ERROR: Parsing the -save_at argument failed.\n");
-         CHKERRQ(ierr);
+    if (ierr != 0) {
+      ierr = PetscPrintf(grid.com,
+         "PISM ERROR: Parsing the -save_at argument (%s) failed.\n",
+	 tmp); CHKERRQ(ierr);
       PetscEnd();
     }
 
-    if (first_snapshot >= last_snapshot) {
+    if (a >= b) {
       ierr = PetscPrintf(grid.com,
          "PISM ERROR: Error in the -save_at argument: a >= b in the range specification '%s'.\n",
 	 tmp); CHKERRQ(ierr);
       PetscEnd();
     }
 
-    if (snapshot_dt <= 0) {
+    if (delta <= 0) {
       ierr = PetscPrintf(grid.com,
 	 "PISM ERROR: Error in the -save_at argument: dt <= 0 in the range specification '%s'.\n",
 	 tmp); CHKERRQ(ierr);
       PetscEnd();
     }
 
-    save_at_equal_intervals = PETSC_TRUE;
-    next_snapshot = first_snapshot;
-    last_snapshot += snapshot_dt; // make it save after the last time in the range, too
+    // Compute the number of snapshots and the times to save after
+    N = floor((b - a)/delta) + 1; // number of snapshots
+    snapshot_times.resize(N);
+
+    for (int j = 0; j < N; ++j)
+      snapshot_times[j] = a + delta*j;
+
+    save_at_equal_intervals = true;
   } else {			// no colon; it must be a list of numbers
-    n_snapshots = max_n_snapshots;
-    ierr = PetscOptionsGetRealArray(PETSC_NULL, "-save_at", save_at, &n_snapshots, PETSC_NULL);
-    qsort(save_at, n_snapshots, sizeof(double), compare_doubles); // sort the values
-    save_at_equal_intervals = PETSC_FALSE;
-    current_snapshot = 0;
+    N = (int)config.get("max_number_of_snapshots");
+    snapshot_times.resize(N);
+
+    ierr = PetscOptionsGetRealArray(PETSC_NULL, "-save_at", &snapshot_times[0], &N, PETSC_NULL); CHKERRQ(ierr);
+    snapshot_times.resize(N);
+
+    sort(snapshot_times.begin(), snapshot_times.end());
   }
 
   if (save_to_set && save_at_set) {
@@ -731,25 +714,27 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
     ierr = check_option("-split_snapshots", split); CHKERRQ(ierr);
     if (split) {
       split_snapshots = true;
-    } else if (!hasSuffix(snapshots_filename, ".nc")) {
+    } else if (!ends_with(snapshots_filename, ".nc")) {
       ierr = verbPrintf(2, grid.com,
 			"PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
       CHKERRQ(ierr);
     }
 
     if (split) {
-      ierr = verbPrintf(2, grid.com, "saving snapshots to '%s+year.nc'; ", snapshots_filename); CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com, "saving snapshots to '%s+year.nc'; ",
+			snapshots_filename.c_str()); CHKERRQ(ierr);
     } else {
-      ierr = verbPrintf(2, grid.com, "saving snapshots to '%s'; ", snapshots_filename); CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com, "saving snapshots to '%s'; ",
+			snapshots_filename.c_str()); CHKERRQ(ierr);
     }
 
     if (save_at_equal_intervals) {
       ierr = verbPrintf(2, grid.com, "times requested: %3.3f:%3.3f:%3.3f\n",
-			first_snapshot, snapshot_dt, last_snapshot - snapshot_dt); CHKERRQ(ierr);
+			a, delta, b); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2, grid.com, "times requested: "); CHKERRQ(ierr);
-      for (int j = 0; j < n_snapshots; j++) {
-	ierr = verbPrintf(2, grid.com, "%3.3f, ", save_at[j]); CHKERRQ(ierr);
+      for (int j = 0; j < N; j++) {
+	ierr = verbPrintf(2, grid.com, "%3.3f, ", snapshot_times[j]); CHKERRQ(ierr);
       }
       ierr = verbPrintf(2, grid.com, "\b\b\n"); CHKERRQ(ierr);
     }
@@ -764,7 +749,6 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
 PetscErrorCode IceModel::write_snapshot() {
   PetscErrorCode ierr;
   NCTool nc(&grid);
-  bool save_now = false;
   double saving_after = -1.0e30; // initialize to avoid compiler warning; this
 				 // value is never used, because saving_after
 				 // is only used if save_now == true, and in
@@ -777,86 +761,79 @@ PetscErrorCode IceModel::write_snapshot() {
     return 0;
 
   // do we need to save *now*?
-  if (save_at_equal_intervals) {
-    if (grid.year >= next_snapshot && grid.year < last_snapshot) {
-      save_now = true;
-      saving_after = next_snapshot;
+  if ( (grid.year >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size()) ) {
+    saving_after = snapshot_times[current_snapshot];
 
-      while (next_snapshot <= grid.year)
-	next_snapshot += snapshot_dt;
-    }
-  } else if ( (grid.year >= save_at[current_snapshot]) && (current_snapshot < n_snapshots) ) {
-    save_now = true;
-    saving_after = save_at[current_snapshot];
-
-    while (save_at[current_snapshot] <= grid.year)
+    while (snapshot_times[current_snapshot] <= grid.year)
       current_snapshot++;
+  } else {
+    // we don't need to save now, so just return
+    return 0;
   }
 
-  if (save_now) {
-    if (split_snapshots) {
-      file_is_ready = false;	// each snapshot is written to a separate file
-      snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%06.0f.nc", snapshots_filename, grid.year);
-    } else {
-      strncpy(filename, snapshots_filename, PETSC_MAX_PATH_LEN);
-    }
+  if (split_snapshots) {
+    file_is_ready = false;	// each snapshot is written to a separate file
+    snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%06.0f.nc",
+	     snapshots_filename.c_str(), grid.year);
+  } else {
+    strncpy(filename, snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
+  }
 
-    ierr = verbPrintf(2, grid.com, 
-       "\nsaving snapshot to %s at %.5f a, for time-step goal %.5f a\n\n",
-       filename, grid.year,saving_after);
-    CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, 
+		    "\nsaving snapshot to %s at %.5f a, for time-step goal %.5f a\n\n",
+		    filename, grid.year,saving_after);
+  CHKERRQ(ierr);
 
-    // create line for history in .nc file, including time of write
-    time_t now;
-    tm tm_now;
-    char date_str[50];
-    now = time(NULL);
-    localtime_r(&now, &tm_now);
-    // Format specifiers for strftime():
-    //   %F = ISO date format,  %T = Full 24 hour time,  %Z = Time Zone name
-    strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
+  // create line for history in .nc file, including time of write
+  time_t now;
+  tm tm_now;
+  char date_str[50];
+  now = time(NULL);
+  localtime_r(&now, &tm_now);
+  // Format specifiers for strftime():
+  //   %F = ISO date format,  %T = Full 24 hour time,  %Z = Time Zone name
+  strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
 
-    char tmp[TEMPORARY_STRING_LENGTH];
-    snprintf(tmp, TEMPORARY_STRING_LENGTH,
-       "%s: %s snapshot at %10.5f a, for time-step goal %10.5f a\n",
-	     date_str, executable_short_name.c_str(), grid.year, saving_after);
+  char tmp[TEMPORARY_STRING_LENGTH];
+  snprintf(tmp, TEMPORARY_STRING_LENGTH,
+	   "%s: %s snapshot at %10.5f a, for time-step goal %10.5f a\n",
+	   date_str, executable_short_name.c_str(), grid.year, saving_after);
 
-    if (!file_is_ready) {
-      bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
+  if (!file_is_ready) {
+    bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
-      // Prepare the snapshots file:
-      ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
-      // append == false, check_dims == true
-      ierr = nc.write_history(history.c_str()); CHKERRQ(ierr); // append the history
-      ierr = nc.write_global_attrs(use_ssa_velocity, "CF-1.4"); CHKERRQ(ierr);
-      ierr = nc.close(); CHKERRQ(ierr);
-
-      ierr = polar_stereographic.write(filename); CHKERRQ(ierr);
-      file_is_ready = true;
-    }
-    
-    ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
-    // append == true, check_dims == true
-    ierr = nc.append_time(grid.year); CHKERRQ(ierr);
-    ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
+    // Prepare the snapshots file:
+    ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
+    // append == false, check_dims == true
+    ierr = nc.write_history(history.c_str()); CHKERRQ(ierr); // append the history
+    ierr = nc.write_global_attrs(use_ssa_velocity, "CF-1.4"); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = write_model_state(filename);  CHKERRQ(ierr);
-
-    if (atmosPCC != PETSC_NULL) {
-      ierr = atmosPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
-    } else {
-      SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
-    }
-
-    if (oceanPCC != PETSC_NULL) {
-      ierr = oceanPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
-    } else {
-      SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");
-    }
+    ierr = polar_stereographic.write(filename); CHKERRQ(ierr);
+    file_is_ready = true;
+  }
     
-    ierr = write_extra_fields(filename); CHKERRQ(ierr);
-  } // end of if (save_now)
+  ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
+  // append == true, check_dims == true
+  ierr = nc.append_time(grid.year); CHKERRQ(ierr);
+  ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  ierr = write_model_state(filename);  CHKERRQ(ierr);
+
+  if (atmosPCC != PETSC_NULL) {
+    ierr = atmosPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+  }
+
+  if (oceanPCC != PETSC_NULL) {
+    ierr = oceanPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");
+  }
+    
+  ierr = write_extra_fields(filename); CHKERRQ(ierr);
 
   return 0;
 }
