@@ -20,6 +20,7 @@
 #define __PISMVars_hh
 
 #include <map>
+#include <set>
 #include <string>
 #include "iceModelVec.hh"
 
@@ -31,6 +32,7 @@ public:
   PetscErrorCode add(IceModelVec &);
   void remove(string);
   IceModelVec* get(string) const;
+  set<IceModelVec*> get_variables() const;
 
 protected:
   mutable map<string, IceModelVec*> variables;

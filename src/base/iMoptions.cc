@@ -130,7 +130,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = check_option("-eta", etaSet); CHKERRQ(ierr);
   if (etaSet == PETSC_TRUE)  transformForSurfaceGradient = PETSC_TRUE;
 
-// note "-f3d" is read in writefiles() in iMIO.cc
+  ierr = config.flag_from_option("f3d", "force_full_diagnostics"); CHKERRQ(ierr);
 
   // whether or not to kill ice (zero thickness) if it is (or becomes) floating
   ierr = config.flag_from_option("float_kill", "floating_ice_killed"); CHKERRQ(ierr);

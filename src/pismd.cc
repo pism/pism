@@ -63,6 +63,8 @@ int main(int argc, char *argv[]) {
     ierr = m->attachAtmospherePCC(pcac); CHKERRQ(ierr);
     ierr = m->attachOceanPCC(pcoc); CHKERRQ(ierr);
 
+    ierr = PetscOptionsSetValue("-f3d", ""); CHKERRQ(ierr);
+
     ierr = m->init(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "computing velocity field (diagnostically) ...\n"); CHKERRQ(ierr);
@@ -75,7 +77,7 @@ int main(int argc, char *argv[]) {
       ierr = mRoss->finishROSS(); CHKERRQ(ierr);
     }
 
-    ierr = m->writeFiles("unnamed_diag.nc",PETSC_TRUE); CHKERRQ(ierr);  // default filename if no -o
+    ierr = m->writeFiles("unnamed_diag.nc"); CHKERRQ(ierr);  // default filename if no -o
     
     delete m;
   }

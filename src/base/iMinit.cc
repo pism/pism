@@ -353,6 +353,8 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = verbPrintf(3, grid.com, "Finishing initialization...\n"); CHKERRQ(ierr);
 
   ierr = init_snapshots_from_options(); CHKERRQ(ierr);
+  ierr = init_scalar_timeseries(); CHKERRQ(ierr);
+
   ierr = stampHistoryCommand(); CHKERRQ(ierr);
   ierr = createViewers(); CHKERRQ(ierr);
 

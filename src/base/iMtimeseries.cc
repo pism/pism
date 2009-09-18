@@ -23,9 +23,6 @@ PetscErrorCode IceModel::init_scalar_timeseries() {
   PetscErrorCode ierr;
   PetscTruth ts_file = PETSC_FALSE, ts_times = PETSC_FALSE;
   char tmp[TEMPORARY_STRING_LENGTH] = "\0";
-  bool save_at_equal_intervals = false;
-  double a, delta, b;
-  PetscInt N;
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-ts_filename", tmp,
 			       PETSC_MAX_PATH_LEN, &ts_file); CHKERRQ(ierr);
@@ -34,14 +31,10 @@ PetscErrorCode IceModel::init_scalar_timeseries() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-ts_times", tmp,
 			       TEMPORARY_STRING_LENGTH, &ts_times); CHKERRQ(ierr);
 
-  if (ts_file && !ts_times) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: -ts_filename is set, but -ts_times is not.\n");
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
-
-  if (ts_times && !ts_file) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: -ts_times is set, but -ts_filename is not.\n");
+  if (ts_file ^ ts_times) {
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: you need to specity both -ts_filename and -ts_times to save"
+		       "diagnostic time-seties.\n");
     CHKERRQ(ierr);
     PetscEnd();
   }
@@ -50,60 +43,52 @@ PetscErrorCode IceModel::init_scalar_timeseries() {
   if (!ts_file && !ts_times) {
     save_scalar_ts = false;
     return 0;
-  } else
-    save_scalar_ts = true;
+  }
+  
+  save_scalar_ts = true;
 
-  if (strchr(tmp, ':')) {	// if a string contains a colon...
-
-    ierr = parse_range(grid.com, tmp, &a, &delta, &b);
-
-    if (ierr != 0) {
-      ierr = PetscPrintf(grid.com,
-         "PISM ERROR: Parsing the -ts_times argument (%s) failed.\n",
-	 tmp); CHKERRQ(ierr);
-      PetscEnd();
-    }
-
-    if (a >= b) {
-      ierr = PetscPrintf(grid.com,
-         "PISM ERROR: Error in the -ts_times argument: a >= b in the range specification '%s'.\n",
-	 tmp); CHKERRQ(ierr);
-      PetscEnd();
-    }
-
-    if (delta <= 0) {
-      ierr = PetscPrintf(grid.com,
-	 "PISM ERROR: Error in the -ts_times argument: dt <= 0 in the range specification '%s'.\n",
-	 tmp); CHKERRQ(ierr);
-      PetscEnd();
-    }
-
-    // Compute the number of snapshots and the times to save after
-    N = floor((b - a)/delta) + 1; // number of snapshots
-    scalar_ts_times.resize(N);
-
-    for (int j = 0; j < N; ++j)
-      scalar_ts_times[j] = a + delta*j;
-
-    save_at_equal_intervals = true;
-  } else {			// no colon; it must be a list of numbers
-    N = (int)config.get("max_number_of_snapshots");
-    scalar_ts_times.resize(N);
-
-    ierr = PetscOptionsGetRealArray(PETSC_NULL, "-ts_times", &scalar_ts_times[0], &N, PETSC_NULL);
-    scalar_ts_times.resize(N);
-
-    sort(scalar_ts_times.begin(), scalar_ts_times.end());
+  ierr = parse_times(grid.com, tmp, scalar_ts_times);
+  if (ierr != 0) {
+    ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -ts_times argument failed.\n"); CHKERRQ(ierr);
+    PetscEnd();
   }
 
-  ierr = verbPrintf(2, grid.com, "saving snapshots to '%s'; ",
-		    snapshots_filename.c_str()); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "saving scalar time-series to '%s'; ",
+		    scalar_ts_filename.c_str()); CHKERRQ(ierr);
 
+  ierr = verbPrintf(2, grid.com, "times requested: %s\n", tmp); CHKERRQ(ierr);
 
+  current_scalar_ts = 0;
   return 0;
 }
 
+
 PetscErrorCode IceModel::write_scalar_timeseries() {
+  PetscErrorCode ierr;
+
+  // return if no time-series requested
+  if (!save_scalar_ts) return 0;
+
+  // return if wrote all the records already
+  if (current_scalar_ts == scalar_ts_times.size())
+    return 0;
+
+  // return if did not yet reach the time we need to save at
+  if (scalar_ts_times[current_scalar_ts] > grid.year)
+    return 0;
+
+  // compute_scalar_timeseries();
+
+  while ((scalar_ts_times[current_scalar_ts] <= grid.year) &&
+	 (current_scalar_ts < scalar_ts_times.size())) {
+    
+    // write_diagnostics();
+
+    ierr = PetscPrintf(grid.com, "Would save at t = %f\n",
+		       scalar_ts_times[current_scalar_ts]); CHKERRQ(ierr);
+
+    current_scalar_ts++;
+  }
 
   return 0;
 }

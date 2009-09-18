@@ -666,6 +666,16 @@ double NCVariable::get(string name) {
     return 0;
 }
 
+//! Set a string attribute.
+void NCVariable::set_string(string name, string value) {
+  strings[name] = value;
+}
+
+//! Get a string attribute.
+string NCVariable::get_string(string name) {
+  return strings[name];
+}
+
 //! Check if a value \c a is in the valid range defined by \c valid_min and \c valid_min attributes.
 bool NCVariable::is_valid(PetscScalar a) {
   

@@ -310,6 +310,7 @@ PetscErrorCode  IceModelVec::set_glaciological_units(string my_units) {
 PetscErrorCode IceModelVec::reset_attrs() {
 
   write_in_glaciological_units = false;
+  output_data_type = NC_DOUBLE;
 
   var1.reset();
 
@@ -331,7 +332,7 @@ PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
 				      string my_standard_name) {
 
   if (!my_long_name.empty()) {
-    var1.strings["long_name"] = my_long_name;
+    var1.set_string("long_name", my_long_name);
   }
 
   if (!my_units.empty()) {
@@ -339,11 +340,11 @@ PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
   }
 
   if (!my_pism_intent.empty()) {
-    var1.strings["pism_intent"] = my_pism_intent;
+    var1.set_string("pism_intent", my_pism_intent);
   }
 
   if (!my_standard_name.empty()) {
-    var1.strings["standard_name"] = my_standard_name;
+    var1.set_string("standard_name", my_standard_name);
   }
 
   return 0;
@@ -420,6 +421,15 @@ PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time)
   } else {
     ierr = var1.read(filename, time, v); CHKERRQ(ierr);
   }
+
+  return 0;
+}
+
+//! Writes an IceModelVec to a NetCDF file using the default output data type.
+PetscErrorCode IceModelVec::write(const char filename[]) {
+  PetscErrorCode ierr;
+  
+  ierr = write(filename, output_data_type); CHKERRQ(ierr);
 
   return 0;
 }
@@ -612,7 +622,7 @@ PetscErrorCode IceModelVec::set_attr(string attr, string value) {
     return 0;
   }
 
-  var1.strings[attr] = value;
+  var1.set_string(attr, value);
   return 0;
 }
 
@@ -639,7 +649,7 @@ double IceModelVec::double_attr(string name) {
 string IceModelVec::string_attr(string n) {
   if (n == "short_name")
     return name;
-  return var1.strings[n];
+  return var1.get_string(n);
 }
 
 vector<double> IceModelVec::array_attr(string name) {

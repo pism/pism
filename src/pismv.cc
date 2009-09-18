@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
       if (dontReport == PETSC_FALSE) {
         ierr = mCBC.reportErrors();  CHKERRQ(ierr);
       }
-      ierr = mCBC.writeFiles("verify.nc",PETSC_TRUE); CHKERRQ(ierr);
+      ierr = mCBC.writeFiles("verify.nc"); CHKERRQ(ierr);
       ierr = mCBC.writeCFfields("verify.nc"); CHKERRQ(ierr); // add three more fields
     } else if ((test == 'I') || (test == 'J') || (test == 'M')) {
       // run derived class for plastic till ice stream, or linearized ice shelf,
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
       if (dontReport == PETSC_FALSE) {
         ierr = mSSA.reportErrors();  CHKERRQ(ierr);
       }
-      ierr = mSSA.writeFiles("verify.nc",PETSC_TRUE); CHKERRQ(ierr);
+      ierr = mSSA.writeFiles("verify.nc"); CHKERRQ(ierr);
     } else { // run derived class for compensatory source SIA solutions
              // (i.e. compensatory accumulation or compensatory heating)
       IceCompModel mComp(g, test);
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
         }
         ierr = mComp.reportErrors();  CHKERRQ(ierr);
       }
-      ierr = mComp.writeFiles("verify.nc",PETSC_FALSE); CHKERRQ(ierr);
+      ierr = mComp.writeFiles("verify.nc"); CHKERRQ(ierr);
     }
     
   }

@@ -81,7 +81,8 @@ for attr in var.ncattrs():
     except:
       docstring = "[missing]"
 
-    if type(value) != str:
+    # ignore anything that does not represent a boolean:
+    if (value not in ["yes", "true", "on", "no", "false", "off"]):
         continue
 
     print "<tr><td>%s</td><td>\"%s\"</td><td>%s</td></tr>" % (attr, value, docstring)
@@ -91,7 +92,7 @@ print "</table>"
 print """
 \section params Scalar parameters
 <table style="width: 100%">
-<tr> <td> <b> Flag name </b> </td> <td> <b> Default value </b> </td> <td> <b> Description </b> </td> </tr>"""
+<tr> <td> <b>Parameter name </b> </td> <td> <b> Default value </b> </td> <td> <b> Description </b> </td> </tr>"""
 
 for attr in var.ncattrs():
     if attr.endswith("_doc"):
@@ -118,5 +119,28 @@ for attr in var.ncattrs():
         print "<td>%f</td>" % value,
     
     print "<td>%s</td></tr>" % docstring
+
+print "</table>"
+
+print """
+\section strings String parameters
+<table style="width: 100%">
+<tr> <td> <b> Parameter name </b> </td> <td> <b> Default value </b> </td> <td> <b> Description </b> </td> </tr>"""
+
+for attr in var.ncattrs():
+    if attr.endswith("_doc"):
+        continue
+
+    value = getattr(var, attr)
+    try:
+      docstring = getattr(var, attr + "_doc", "[missing]")
+    except:
+      docstring = "[missing]"
+
+    # ignore non-strings and strings representing booleans
+    if (type(value) != str) or (value in ["yes", "true", "on", "no", "false", "off"]):
+        continue
+
+    print "<tr><td>%s</td><td>\"%s\"</td><td>%s</td></tr>" % (attr, value, docstring)
 
 print "</table> */"

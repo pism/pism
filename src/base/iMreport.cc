@@ -374,3 +374,277 @@ PetscErrorCode IceModel::summaryPrintLine(
   return 0;
 }
 
+//! \brief Computes cbar, the magnitude of vertically-integrated horizontal
+//! velocity of ice and masks out ice-free areas.
+PetscErrorCode IceModel::compute_cbar(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+
+  ierr = result.set_to_magnitude(vubar, vvbar); CHKERRQ(ierr);
+  ierr = result.mask_by(vH); CHKERRQ(ierr); // mask out ice-free areas
+
+  ierr = result.set_name("cbar"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", 
+			  "magnitude of vertically-integrated horizontal velocity of ice",
+			  "m s-1", ""); CHKERRQ(ierr);
+  ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  result.write_in_glaciological_units = true;
+  ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief Computes cflx, the magnitude of vertically-integrated horizontal
+//! flux of ice.
+PetscErrorCode IceModel::compute_cflx(IceModelVec2 &result, IceModelVec2 &cbar) {
+  PetscErrorCode ierr;
+
+  ierr = cbar.multiply_by(vH, result); CHKERRQ(ierr);
+  ierr = result.set_name("cflx"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", 
+			  "magnitude of vertically-integrated horizontal flux of ice",
+			  "m2 s-1", ""); CHKERRQ(ierr);
+  ierr = result.set_glaciological_units("m2 year-1"); CHKERRQ(ierr);
+  result.write_in_glaciological_units = true;
+  ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief Computes cbase, the magnitude of horizontal velocity of ice at base
+//! of ice and masks out ice-free areas.
+//! Uses \c tmp as a preallocated temporary storage.
+PetscErrorCode IceModel::compute_cbase(IceModelVec2 &result, IceModelVec2 &tmp) {
+  PetscErrorCode ierr;
+
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = u3.getHorSlice(result, 0.0); CHKERRQ(ierr); // result = u_{z=0}
+  ierr = v3.getHorSlice(tmp, 0.0); CHKERRQ(ierr);    // tmp = v_{z=0}
+  ierr = u3.end_access(); CHKERRQ(ierr);
+  ierr = v3.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_to_magnitude(result,tmp); CHKERRQ(ierr);
+  ierr = result.mask_by(vH); CHKERRQ(ierr); // mask out ice-free areas
+
+  ierr = result.set_name("cbase"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", 
+			  "magnitude of horizontal velocity of ice at base of ice",
+			  "m s-1", ""); CHKERRQ(ierr);
+  ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  result.write_in_glaciological_units = true;
+  ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief Computes csurf, the magnitude of horizontal velocity of ice at ice
+//! surface and masks out ice-free areas. Uses \c tmp as a
+//! preallocated temporary storage.
+PetscErrorCode IceModel::compute_csurf(IceModelVec2 &result, IceModelVec2 &tmp) {
+  PetscErrorCode ierr;
+
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = u3.getSurfaceValues(result, vH); CHKERRQ(ierr);
+  ierr = v3.getSurfaceValues(tmp,    vH); CHKERRQ(ierr);
+  ierr = u3.end_access(); CHKERRQ(ierr);
+  ierr = v3.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_to_magnitude(result,tmp); CHKERRQ(ierr);
+  ierr = result.mask_by(vH); CHKERRQ(ierr); // mask out ice-free areas
+
+  ierr = result.set_name("csurf"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", 
+			  "magnitude of horizontal velocity of ice at ice surface",
+			  "m s-1", ""); CHKERRQ(ierr);
+  ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  result.write_in_glaciological_units = true;
+  result.set_attr("valid_min", 0.0);
+
+  return 0;
+}
+
+//! Computes uvelsurf, the x component of velocity of ice at ice surface.
+/*! Note that there is no need to mask out ice-free areas here, because
+  wvelsurf is zero at those locations.
+ */
+PetscErrorCode IceModel::compute_uvelsurf(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = u3.getSurfaceValues(result, vH); CHKERRQ(ierr);
+  ierr = u3.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_name("uvelsurf"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "x component of velocity of ice at ice surface",
+			  "m s-1", ""); CHKERRQ(ierr);
+  ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  result.write_in_glaciological_units = true;
+
+  return 0;
+}
+
+//! Computes vvelsurf, the y component of velocity of ice at ice surface.
+/*! Note that there is no need to mask out ice-free areas here, because
+  wvelsurf is zero at those locations.
+ */
+PetscErrorCode IceModel::compute_vvelsurf(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+
+  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.getSurfaceValues(result, vH); CHKERRQ(ierr);
+  ierr = v3.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_name("vvelsurf"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "y component of velocity of ice at ice surface",
+			  "m s-1", ""); CHKERRQ(ierr);
+  ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  result.write_in_glaciological_units = true;
+
+  return 0;
+}
+
+//! Computes wvelsurf, the vertical velocity of ice at ice surface.
+/*! Note that there is no need to mask out ice-free areas here, because
+  wvelsurf is zero at those locations.
+ */
+PetscErrorCode IceModel::compute_wvelsurf(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+
+  ierr = w3.begin_access(); CHKERRQ(ierr);
+  ierr = w3.getSurfaceValues(result, vH); CHKERRQ(ierr);
+  ierr = w3.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_name("wvelsurf"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "vertical velocity of ice at ice surface",
+			  "m s-1", ""); CHKERRQ(ierr);
+  ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  result.write_in_glaciological_units = true;
+
+  return 0;
+}
+
+//! \brief Computes taud, the magnitude of driving shear stress at base of ice.
+//! Uses tmp as a preallocated temporary storage.
+PetscErrorCode IceModel::compute_taud(IceModelVec2 &result, IceModelVec2 &tmp) {
+  PetscErrorCode ierr;
+
+  ierr = computeDrivingStress(result, tmp); CHKERRQ(ierr);
+
+  ierr = result.set_to_magnitude(result, tmp); CHKERRQ(ierr);
+  ierr = result.set_name("taud"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic",
+			  "magnitude of driving shear stress at base of ice",
+			  "Pa", ""); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! Compute the pressure-adjusted temperature in degrees C corresponding to T3, and put in a global IceModelVec3 provided by user.
+/*!
+This procedure is put here in IceModel to facilitate comparison of IceModel and IceEnthalpyModel
+results.  It is called by giving option -temp_pa.
+ */
+PetscErrorCode IceModel::compute_temp_pa(IceModelVec3 &useForPATemp) {
+  PetscErrorCode ierr;
+
+  PetscScalar **thickness;
+  PetscScalar *Tpaij, *Tij; // columns of these values
+  ierr = useForPATemp.begin_access(); CHKERRQ(ierr);
+  ierr = T3.begin_access(); CHKERRQ(ierr);
+  ierr = vH.get_array(thickness); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = useForPATemp.getInternalColumn(i,j,&Tpaij); CHKERRQ(ierr);
+      ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+      for (PetscInt k=0; k<grid.Mz; ++k) {
+        Tpaij[k] = Tij[k] - ice->meltingTemp;  // un-adjusted, but in deg_C
+        const PetscScalar depth = thickness[i][j] - grid.zlevels[k];
+        if (depth > 0.0)  Tpaij[k] += ice->beta_CC_grad * depth;
+      }
+    }
+  }
+  ierr = T3.end_access(); CHKERRQ(ierr);
+  ierr = useForPATemp.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  ierr = useForPATemp.set_name("temp_pa"); CHKERRQ(ierr);
+  ierr = useForPATemp.set_attrs("diagnostic",
+       "pressure-adjusted ice temperature (degrees C)", "", ""); CHKERRQ(ierr);
+
+  // communication not done; we allow global IceModelVec3s as useForPATemp
+  return 0;
+}
+
+//! \brief Computes a diagnostic quantity given by \c name and returns a
+//! pointer to a pre-allocated work vector containing it.
+/*! For 2D quantities, result will point to vWork2d[0].
+
+  For 3D -- to T3new, because we don't have a general-purpose 3D work vector.
+
+  Note that (depending on the quantity requested) vWork2d[1] might get used as
+  a temporary storage.
+ */
+PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
+  PetscErrorCode ierr;
+
+  result = NULL;		// if clauses can override this
+
+  if (name == "cbar") {
+    ierr = compute_cbar(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "cbase") {
+    ierr = compute_cbase(vWork2d[0], vWork2d[1]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "cflx") {
+    ierr = compute_cbar(vWork2d[1]); CHKERRQ(ierr);
+    ierr = compute_cflx(vWork2d[0], vWork2d[1]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "csurf") {
+    ierr = compute_csurf(vWork2d[0], vWork2d[1]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "taud") {
+    ierr = compute_taud(vWork2d[0], vWork2d[1]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "temp_pa") {
+    ierr = compute_temp_pa(Tnew3); CHKERRQ(ierr);
+    result = &Tnew3;
+    return 0;
+  }
+
+  if (name == "uvelsurf") {
+    ierr = compute_uvelsurf(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "vvelsurf") {
+    ierr = compute_vvelsurf(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "wvelsurf") {
+    ierr = compute_wvelsurf(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  return 0;
+}

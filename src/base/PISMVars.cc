@@ -62,3 +62,16 @@ void PISMVars::remove(string name) {
 IceModelVec* PISMVars::get(string name) const {
   return variables[name];
 }
+
+//! Returns a set of pointers to all the variables in the dictionary.
+set<IceModelVec*> PISMVars::get_variables() const {
+  set <IceModelVec*> result;
+
+  map<string,IceModelVec*>::iterator i = variables.begin();
+  while (i != variables.end()) {
+    result.insert((*i).second);
+    ++i;
+  }
+
+  return result;
+}

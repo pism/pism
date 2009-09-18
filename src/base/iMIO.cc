@@ -22,6 +22,8 @@
 #include <petscda.h>
 #include "iceModel.hh"
 #include <algorithm>
+#include <sstream>
+#include <set>
 
 //! Determine the run length, starting and ending years using command-line options.
 PetscErrorCode  IceModel::set_time_from_options() {
@@ -80,8 +82,7 @@ Optionally allows saving of full velocity field.
 
 Calls dumpToFile() and writeMatlabVars() to do the actual work.
  */
-PetscErrorCode  IceModel::writeFiles(const char* default_filename,
-                                     const PetscTruth forceFullDiagnostics) {
+PetscErrorCode  IceModel::writeFiles(const char* default_filename) {
   PetscErrorCode ierr;
   char filename[PETSC_MAX_PATH_LEN];
 
@@ -100,21 +101,9 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename,
     CHKERRQ(ierr);
   }
 
-  PetscTruth userWantsFull;
-  ierr = check_option("-f3d", userWantsFull); CHKERRQ(ierr);
-
-  if ((forceFullDiagnostics == PETSC_TRUE) || (userWantsFull == PETSC_TRUE)) {
-    ierr = verbPrintf(2, grid.com, 
-		      "Writing model state, with full 3D velocities, to file `%s'\n",
-		      filename); CHKERRQ(ierr);
-
-    ierr = dumpToFile(filename); CHKERRQ(ierr);
-    ierr = write3DPlusToFile(filename); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'\n",
-		      filename); CHKERRQ(ierr);
-    ierr = dumpToFile(filename); CHKERRQ(ierr);
-  }
+  ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'\n",
+		    filename); CHKERRQ(ierr);
+  ierr = dumpToFile(filename); CHKERRQ(ierr);
 
   // write out individual variables out to Matlab file
   char       matf[PETSC_MAX_PATH_LEN];
@@ -180,151 +169,76 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   return 0;
 }
 
+PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars) {
+  PetscErrorCode ierr;
+  IceModelVec *v;
+
+  set<string>::iterator i = vars.begin();
+  while (i != vars.end()) {
+    v = variables.get(*i);
+
+    if (v == NULL) {
+      ++i;
+    } else {
+      ierr = v->write(filename); CHKERRQ(ierr);
+      vars.erase(i++);		// note that it only erases variables that were
+				// found (and saved)
+    }
+  }
+
+  // All the remaining names in vars must be of diagnostic quantities.
+  i = vars.begin();
+  while (i != vars.end()) {
+    ierr = compute_by_name(*i, v); CHKERRQ(ierr);
+
+    if (v == NULL)
+      ++i;
+    else {
+      ierr = v->write(filename, NC_FLOAT); CHKERRQ(ierr); // diagnostic quantities are written in float
+      vars.erase(i++);
+    }
+  }
+
+  // check if we have any variables we didn't write
+  if (!vars.empty()) {
+    ierr = verbPrintf(2, grid.com,
+		      "PISM WARNING: skipping the following variables: "); CHKERRQ(ierr);
+    for (i = vars.begin(); i != vars.end(); ++i) {
+      ierr = verbPrintf(2, grid.com, "%s, ", (*i).c_str()); CHKERRQ(ierr);
+    }
+    ierr = verbPrintf(2, grid.com, "\b\b\n"); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
 
 PetscErrorCode IceModel::write_model_state(const char filename[]) {
   PetscErrorCode ierr;
 
-  // 2D model quantities
-  ierr =         vH.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-  ierr = vLongitude.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-  ierr =  vLatitude.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  string tmp = config.get_string("output_variables");
+  istringstream list(tmp);
+  set<string> vars;
+  
+  // split the list; note that this also removes any duplicate entries
+  while (getline(list, tmp, ' ')) {
+    if (!tmp.empty())		// this ignores multiple spaces separating variable names
+      vars.insert(tmp);
+  }
 
-  ierr =      vMask.write(filename, NC_BYTE);   CHKERRQ(ierr);
-  ierr =     vHmelt.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-  ierr =       vbed.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-  ierr =    vuplift.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-
+  // add more variables (if needed)
   if (config.get_flag("use_ssa_velocity")) {
-    ierr = vubarSSA.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-    ierr = vvbarSSA.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+    vars.insert("vubarSSA");
+    vars.insert("vvbarSSA");
   }
 
-  // 3D model quantities
-  ierr =   T3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-  ierr =  Tb3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-  ierr = tau3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-
-  // 2D earth quantity; like climate but always steady and always owned by IceModel
-  ierr =   vGhf.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-
-  // write tillphi = till friction angle in degrees
-  ierr = vtillphi.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-
-  // 2D diagnostic quantities
-  // note h is diagnostic because it is recomputed by h=H+b at each time step
-  // these are not written in MKS units because they are intended to be viewed,
-  // not read by programs; IS THIS THE RIGHT CHOICE?
-  ierr = vh.write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  ierr = vdHdt.write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  // Create the mask of zeros and ones
-  // 1 - ice thickness > 0
-  // 0 - ice-free location
-  PetscScalar **M, **H;
-  ierr = vWork2d[5].get_array(M);
-  ierr = vH.get_array(H);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (H[i][j] > 0.0) {
-	M[i][j] = 1.0;
-      } else {
-	M[i][j] = 0.0;
-      }
-    }
+  if (config.get_flag("force_full_diagnostics")) {
+    ierr = verbPrintf(2, grid.com, "Writing full 3D velocities...\n"); CHKERRQ(ierr);
+    vars.insert("uvel");
+    vars.insert("vvel");
+    vars.insert("wvel");
+    vars.insert("uvelsurf");
+    vars.insert("vvelsurf");
   }
-  ierr = vWork2d[5].end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
-
-  // compute cbar = sqrt(ubar^2 + vbar^2) and save it
-  ierr = vWork2d[0].set_to_magnitude(vubar, vvbar); CHKERRQ(ierr);
-  ierr = vWork2d[0].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out ice-free areas
-
-  ierr = vWork2d[0].set_name("cbar"); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_attrs("diagnostic", 
-            "magnitude of vertically-integrated horizontal velocity of ice",
-	    "m s-1", ""); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  vWork2d[0].write_in_glaciological_units = true;
-  vWork2d[0].set_attr("valid_min", 0.0);
-  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  // compute cflx = cbar .* thk and save it
-  ierr = vWork2d[0].multiply_by(vH, vWork2d[1]); CHKERRQ(ierr);
-  ierr = vWork2d[1].set_name("cflx"); CHKERRQ(ierr);
-  ierr = vWork2d[1].set_attrs("diagnostic", 
-             "magnitude of vertically-integrated horizontal flux of ice",
-	     "m2 s-1", ""); CHKERRQ(ierr);
-  ierr = vWork2d[1].set_glaciological_units("m2 year-1"); CHKERRQ(ierr);
-  vWork2d[1].write_in_glaciological_units = true;
-  vWork2d[1].set_attr("valid_min", 0.0);
-  ierr = vWork2d[1].write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  // compute cbase  = sqrt(u|_{z=0}^2 + v|_{z=0}^2) and save it
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = u3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr); // vWork2d[0] = u_{z=0}
-  ierr = v3.getHorSlice(vWork2d[1], 0.0); CHKERRQ(ierr); // vWork2d[1] = v_{z=0}
-  ierr = u3.end_access(); CHKERRQ(ierr);
-  ierr = v3.end_access(); CHKERRQ(ierr);
-
-  ierr = vWork2d[2].set_to_magnitude(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
-  ierr = vWork2d[2].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out ice-free areas
-
-  ierr = vWork2d[2].set_name("cbase"); CHKERRQ(ierr);
-  ierr = vWork2d[2].set_attrs("diagnostic", 
-             "magnitude of horizontal velocity of ice at base of ice",
-	     "m s-1", ""); CHKERRQ(ierr);
-  ierr = vWork2d[2].set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  vWork2d[2].write_in_glaciological_units = true;
-  vWork2d[2].set_attr("valid_min", 0.0);
-  ierr = vWork2d[2].write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  // compute csurf = sqrt(u|_surface^2 + v|_surface^2) and save it
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = u3.getSurfaceValues(vWork2d[0], vH); CHKERRQ(ierr);
-  ierr = v3.getSurfaceValues(vWork2d[1], vH); CHKERRQ(ierr);
-  ierr = u3.end_access(); CHKERRQ(ierr);
-  ierr = v3.end_access(); CHKERRQ(ierr);
-
-  ierr = vWork2d[0].set_to_magnitude(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
-  ierr = vWork2d[0].multiply_by(vWork2d[5]); CHKERRQ(ierr); // mask out ice-free areas
-
-  ierr = vWork2d[0].set_name("csurf"); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_attrs("diagnostic", 
-             "magnitude of horizontal velocity of ice at ice surface",
-	     "m s-1", ""); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  vWork2d[0].write_in_glaciological_units = true;
-  vWork2d[0].set_attr("valid_min", 0.0);
-  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  // compute wvelsurf, the surface values of vertical velocity
-  ierr = w3.begin_access(); CHKERRQ(ierr);
-  ierr = w3.getSurfaceValues(vWork2d[0], vH); CHKERRQ(ierr);
-  ierr = w3.end_access(); CHKERRQ(ierr);
-
-  ierr = vWork2d[0].set_name("wvelsurf"); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_attrs("diagnostic", "vertical velocity of ice at ice surface",
-			      "m s-1", ""); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  vWork2d[0].write_in_glaciological_units = true;
-  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  // compute magnitude of basal shear stress = rho g H |grad h|
-  ierr = computeDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
-
-  ierr = vWork2d[2].set_to_magnitude(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
-  ierr = vWork2d[2].set_name("taud"); CHKERRQ(ierr);
-  ierr = vWork2d[2].set_attrs("diagnostic",
-             "magnitude of driving shear stress at base of ice",
-	     "Pa", ""); CHKERRQ(ierr);
-  vWork2d[2].set_attr("valid_min", 0.0);
-  ierr = vWork2d[2].write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  // write out yield stress
-  ierr = vtauc.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   // FIXME: temporarily, so that we can compare to IceEnthalpyModel results;
   //   what to do with pressure-adjusted temp in longer term?
@@ -335,94 +249,18 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
     //   use Tnew3 (global) as temporary, allocated space for this purpose
     ierr = verbPrintf(2, grid.com,
       "  writing pressure-adjusted ice temperature (deg C) 'temp_pa' ...\n"); CHKERRQ(ierr);
-    ierr = Tnew3.set_name("temp_pa"); CHKERRQ(ierr);
-    ierr = Tnew3.set_attrs("diagnostic",
-       "pressure-adjusted ice temperature (degrees C)", "", ""); CHKERRQ(ierr);
-    ierr = setPATempFromT3(Tnew3); CHKERRQ(ierr); // returns in K
-    ierr = Tnew3.write(filename, NC_FLOAT); CHKERRQ(ierr);
-    // return to old attributes
-    ierr = Tnew3.set_name("temp_new"); CHKERRQ(ierr);
-    ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
-                           "K", ""); CHKERRQ(ierr);
+    vars.insert("temp_pa");
   }
+
+  ierr = write_variables(filename, vars);
 
   return 0;
 }
 
 
-//! Compute the pressure-adjusted temperature in degrees C corresponding to T3, and put in a global IceModelVec3 provided by user.
-/*!
-This procedure is put here in IceModel to facilitate comparison of IceModel and IceEnthalpyModel
-results.  It is called by giving option -temp_pa.
- */
-PetscErrorCode IceModel::setPATempFromT3(IceModelVec3 &useForPATemp) {
-  PetscErrorCode ierr;
-
-  PetscScalar **thickness;
-  PetscScalar *Tpaij, *Tij; // columns of these values
-  ierr = useForPATemp.begin_access(); CHKERRQ(ierr);
-  ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = vH.get_array(thickness); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = useForPATemp.getInternalColumn(i,j,&Tpaij); CHKERRQ(ierr);
-      ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
-      for (PetscInt k=0; k<grid.Mz; ++k) {
-        Tpaij[k] = Tij[k] - ice->meltingTemp;  // un-adjusted, but in deg_C
-        const PetscScalar depth = thickness[i][j] - grid.zlevels[k];
-        if (depth > 0.0)  Tpaij[k] += ice->beta_CC_grad * depth;
-      }
-    }
-  }
-  ierr = T3.end_access(); CHKERRQ(ierr);
-  ierr = useForPATemp.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
-
-  // communication not done; we allow global IceModelVec3s as useForPATemp
-  return 0;
-}
-
-
-//! Writes extra fields to the output file \c filename. Does nothing in the base class.
+//! \b DEPRECATED. Writes extra fields to the output file \c filename. Does nothing in the base class.
 PetscErrorCode IceModel::write_extra_fields(const char /*filename*/[]) {
   // Do nothing.
-  return 0;
-}
-
-//! Writes 3D velocity fields and components of the ice velocity at the ice surface to a file \c filename.
-PetscErrorCode IceModel::write3DPlusToFile(const char filename[]) {
-  PetscErrorCode ierr;
-
-  // 3D velocity fields
-  ierr = u3.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = v3.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = w3.write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  // horizontal components of surface values of velocity; note wvelsurf already written
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = u3.getSurfaceValues(vWork2d[0], vH); CHKERRQ(ierr);
-  ierr = u3.end_access(); CHKERRQ(ierr);
-
-  ierr = vWork2d[0].set_name("uvelsurf"); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_attrs(
-              "diagnostic", "x component of velocity of ice at ice surface",
-	      "m s-1", ""); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  vWork2d[0].write_in_glaciological_units = true;
-  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-  ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.getSurfaceValues(vWork2d[0], vH); CHKERRQ(ierr);
-  ierr = v3.end_access(); CHKERRQ(ierr);
-
-  ierr = vWork2d[0].set_name("vvelsurf"); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_attrs(
-              "diagnostic", "y component of velocity of ice at ice surface",
-	      "m s-1", ""); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  vWork2d[0].write_in_glaciological_units = true;
-  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -445,22 +283,23 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
   ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
   last_record -= 1;
 
-  // Read the model state variables:
+  // Read the model state, mapping and climate_steady variables:
+  set<IceModelVec*> vars = variables.get_variables();
+
+  set<IceModelVec*>::iterator i = vars.begin();
+  while (i != vars.end()) {
+
+    string intent = (*i)->string_attr("pism_intent");
+    if ((intent == "model_state") || (intent == "mapping") ||
+	(intent == "climate_steady")) {
+      ierr = (*i)->read(filename, last_record); CHKERRQ(ierr);
+    }
+
+    ++i;
+  }
  
-  // 2-D mapping
-  ierr = vLongitude.read(filename, last_record); CHKERRQ(ierr);
-  ierr =  vLatitude.read(filename, last_record); CHKERRQ(ierr);
-
-  // 2-D model quantities: discrete
-  ierr = vMask.read(filename, last_record); CHKERRQ(ierr);
-
-  // 2-D model quantities: double
-  ierr =   vHmelt.read(filename, last_record); CHKERRQ(ierr);
-  ierr =       vH.read(filename, last_record); CHKERRQ(ierr);
-  ierr =     vbed.read(filename, last_record); CHKERRQ(ierr);
-  ierr =  vuplift.read(filename, last_record); CHKERRQ(ierr);
-  ierr = vtillphi.read(filename, last_record); CHKERRQ(ierr);
-
+  // Read vubarSSA and vvbarSSA if SSA is on, if not asked to ignore them and
+  // if they are present in the input file.
   if (config.get_flag("use_ssa_velocity")) {
     vector<double> flag;
     ierr = nc.get_att_double(NC_GLOBAL, "ssa_velocities_are_valid", flag); CHKERRQ(ierr);
@@ -468,8 +307,6 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
       have_ssa_velocities = (int)flag[0];
   }
 
-  // Read vubarSSA and vvbarSSA if SSA is on, if not asked to ignore them and
-  // if they are present in the input file.
   PetscTruth dontreadSSAvels = PETSC_FALSE;
   ierr = check_option("-dontreadSSAvels", dontreadSSAvels); CHKERRQ(ierr);
   
@@ -480,16 +317,7 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     ierr = vvbarSSA.read(filename, last_record); CHKERRQ(ierr);
   }
 
-  // 2-D earth quantity; like climate but owned by IceModel
-  ierr = vGhf.read(filename, last_record); CHKERRQ(ierr);
-
-  // 3-D model quantities
-  ierr =   T3.read(filename, last_record); CHKERRQ(ierr);
-  ierr =  Tb3.read(filename, last_record); CHKERRQ(ierr);
-  ierr = tau3.read(filename, last_record); CHKERRQ(ierr);
-
   // read the polar_stereographic if present
-
   bool ps_exists;
   ierr = nc.find_variable("polar_stereographic", NULL, ps_exists); CHKERRQ(ierr);
   if (ps_exists) {
@@ -626,14 +454,11 @@ PetscErrorCode IceModel::regrid() {
   return 0;
 }
 
-
+//! Initializes the snapshot-saving mechanism.
 PetscErrorCode IceModel::init_snapshots_from_options() {
   PetscErrorCode ierr;
   PetscTruth save_at_set = PETSC_FALSE, save_to_set = PETSC_FALSE;
   char tmp[TEMPORARY_STRING_LENGTH] = "\0";
-  bool save_at_equal_intervals = false;
-  double a, delta, b;		// range (in the equal spacing case)
-  int N;			// number of snapshots
   current_snapshot = 0;
 
   ierr = PetscOptionsGetString(PETSC_NULL, "-save_to", tmp,
@@ -643,14 +468,9 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-save_at", tmp,
 			       TEMPORARY_STRING_LENGTH, &save_at_set); CHKERRQ(ierr);
 
-  if (save_to_set && !save_at_set) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: -save_to is set, but -save_at is not.\n");
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
-
-  if (save_at_set && !save_to_set) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: -save_at is set, but -save_to is not.\n");
+  if (save_to_set ^ save_at_set) {
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: you need to specify both -save_to and -save_at to save snapshots.\n");
     CHKERRQ(ierr);
     PetscEnd();
   }
@@ -660,92 +480,54 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
     return 0;
   }
 
-  // check if the user specified a MATLAB-style range (a:dt:b). We assume that
-  // any string containing a colon defines a range like this
-  if (strchr(tmp, ':')) {	// if a string contains a colon...
-
-    ierr = parse_range(grid.com, tmp, &a, &delta, &b);
-
-    if (ierr != 0) {
-      ierr = PetscPrintf(grid.com,
-         "PISM ERROR: Parsing the -save_at argument (%s) failed.\n",
-	 tmp); CHKERRQ(ierr);
-      PetscEnd();
-    }
-
-    if (a >= b) {
-      ierr = PetscPrintf(grid.com,
-         "PISM ERROR: Error in the -save_at argument: a >= b in the range specification '%s'.\n",
-	 tmp); CHKERRQ(ierr);
-      PetscEnd();
-    }
-
-    if (delta <= 0) {
-      ierr = PetscPrintf(grid.com,
-	 "PISM ERROR: Error in the -save_at argument: dt <= 0 in the range specification '%s'.\n",
-	 tmp); CHKERRQ(ierr);
-      PetscEnd();
-    }
-
-    // Compute the number of snapshots and the times to save after
-    N = floor((b - a)/delta) + 1; // number of snapshots
-    snapshot_times.resize(N);
-
-    for (int j = 0; j < N; ++j)
-      snapshot_times[j] = a + delta*j;
-
-    save_at_equal_intervals = true;
-  } else {			// no colon; it must be a list of numbers
-    N = (int)config.get("max_number_of_snapshots");
-    snapshot_times.resize(N);
-
-    ierr = PetscOptionsGetRealArray(PETSC_NULL, "-save_at", &snapshot_times[0], &N, PETSC_NULL); CHKERRQ(ierr);
-    snapshot_times.resize(N);
-
-    sort(snapshot_times.begin(), snapshot_times.end());
+  ierr = parse_times(grid.com, tmp, snapshot_times);
+  if (ierr != 0) {
+    ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -save_at argument failed.\n"); CHKERRQ(ierr);
+    PetscEnd();
   }
 
-  if (save_to_set && save_at_set) {
-    save_snapshots = true;
-    file_is_ready = false;
-    split_snapshots = false;
+  save_snapshots = true;
+  file_is_ready = false;
+  split_snapshots = false;
 
-    PetscTruth split;
-    ierr = check_option("-split_snapshots", split); CHKERRQ(ierr);
-    if (split) {
-      split_snapshots = true;
-    } else if (!ends_with(snapshots_filename, ".nc")) {
-      ierr = verbPrintf(2, grid.com,
-			"PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
-      CHKERRQ(ierr);
-    }
-
-    if (split) {
-      ierr = verbPrintf(2, grid.com, "saving snapshots to '%s+year.nc'; ",
-			snapshots_filename.c_str()); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2, grid.com, "saving snapshots to '%s'; ",
-			snapshots_filename.c_str()); CHKERRQ(ierr);
-    }
-
-    if (save_at_equal_intervals) {
-      ierr = verbPrintf(2, grid.com, "times requested: %3.3f:%3.3f:%3.3f\n",
-			a, delta, b); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2, grid.com, "times requested: "); CHKERRQ(ierr);
-      for (int j = 0; j < N; j++) {
-	ierr = verbPrintf(2, grid.com, "%3.3f, ", snapshot_times[j]); CHKERRQ(ierr);
-      }
-      ierr = verbPrintf(2, grid.com, "\b\b\n"); CHKERRQ(ierr);
-    }
+  PetscTruth split;
+  ierr = check_option("-split_snapshots", split); CHKERRQ(ierr);
+  if (split) {
+    split_snapshots = true;
+  } else if (!ends_with(snapshots_filename, ".nc")) {
+    ierr = verbPrintf(2, grid.com,
+		      "PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
+    CHKERRQ(ierr);
+  }
+  
+  if (split) {
+    ierr = verbPrintf(2, grid.com, "saving snapshots to '%s+year.nc'; ",
+		      snapshots_filename.c_str()); CHKERRQ(ierr);
   } else {
-    save_snapshots = false;
+    ierr = verbPrintf(2, grid.com, "saving snapshots to '%s'; ",
+		      snapshots_filename.c_str()); CHKERRQ(ierr);
+  }
+
+  ierr = verbPrintf(2, grid.com, "times requested: %s\n", tmp); CHKERRQ(ierr);
+
+  PetscTruth save_vars;
+  ierr = PetscOptionsGetString(PETSC_NULL, "-save_vars", tmp,
+			       TEMPORARY_STRING_LENGTH, &save_vars); CHKERRQ(ierr);
+  if (save_vars) {
+    ierr = verbPrintf(2, grid.com,
+		      "PISM WARNING: -save_vars is set; you may not be able to use snapshots for restarting.\n");
+    CHKERRQ(ierr);
+
+    istringstream arg(tmp);
+    string var_name;
+    while (getline(arg, var_name, ','))
+      snapshot_vars.insert(var_name);
   }
 
   return 0;
 }
 
-
+//! Writes a snapshot of the model state (if necessary)
 PetscErrorCode IceModel::write_snapshot() {
   PetscErrorCode ierr;
   NCTool nc(&grid);
@@ -819,8 +601,14 @@ PetscErrorCode IceModel::write_snapshot() {
   ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = write_model_state(filename);  CHKERRQ(ierr);
+  // Write the default set of variables or the set given by the user
+  if (snapshot_vars.empty()) {
+    ierr = write_model_state(filename);  CHKERRQ(ierr);
+  } else {
+    ierr = write_variables(filename, snapshot_vars);  CHKERRQ(ierr);
+  }
 
+  // Let couplers write their fields:
   if (atmosPCC != PETSC_NULL) {
     ierr = atmosPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
   } else {

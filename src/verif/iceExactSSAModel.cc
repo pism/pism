@@ -45,6 +45,7 @@ IceExactSSAModel::IceExactSSAModel(IceGrid &g, char mytest) : IceModel(g) {
   config.set_flag("use_constant_nuh_for_ssa", false);
   config.set_flag("do_plastic_till",          true); // correct for I, irrelevant for J and M
   config.set_flag("do_superpose",             false);
+  config.set_flag("force_full_diagnostics",   true);
 }
 
 PetscErrorCode IceExactSSAModel::init_physics() {

@@ -63,6 +63,7 @@ public:
   virtual PetscErrorCode  set_attrs(string my_pism_intent, string my_long_name,
 				    string my_units, string my_standard_name);
   virtual bool            is_valid(PetscScalar a);
+  virtual PetscErrorCode  write(const char filename[]);
   virtual PetscErrorCode  write(const char filename[], nc_type nctype);
   virtual PetscErrorCode  read(const char filename[], const unsigned int time);
   virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, bool critical);
@@ -80,6 +81,7 @@ public:
  
   MaskInterp interpolation_mask;
   bool   use_interpolation_mask, write_in_glaciological_units;
+  nc_type output_data_type;
 protected:
 
   bool shallow_copy;
@@ -126,6 +128,7 @@ public:
   virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   PetscErrorCode  get_array(PetscScalar** &a);
   virtual PetscErrorCode set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v_y);
+  virtual PetscErrorCode mask_by(IceModelVec2 &M, PetscScalar fill = 0.0);
 protected:
   PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local, DAStencilType my_sten);
 };

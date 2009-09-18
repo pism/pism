@@ -90,7 +90,7 @@ implicit first-order upwinding when necessary.  There is a CFL condition
 for the horizontal explicit upwinding [\ref MortonMayers].  We report 
 any CFL violations, but they are designed to not occur.
 
-The vertical conduction term is always handled implicitly (i.e. by backward Euler).
+The vertical conduction term is always handled implicitly (%i.e. by backward Euler).
 
 We work from the bottom of the column upward in building the system to solve
 (in the semi-implicit time-stepping scheme).  The excess energy above pressure melting
@@ -99,7 +99,7 @@ the ice base according to the scheme in excessToFromBasalMeltLayer().
 
 The method uses equally-spaced calculation but the methods getValColumn(), 
 setValColumn() interpolate back-and-forth from this equally-spaced calculational
-grid to the (usually) non-equally space storage grid.
+grid to the (usually) non-equally spaced storage grid.
 
 In this procedure four scalar fields are modified: vHmelt, vbasalMeltRate, Tb3, and Tnew3.
 But vbasalMeltRate and Tb3 will never need to communicate ghosted values (horizontal 

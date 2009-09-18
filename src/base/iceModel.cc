@@ -203,6 +203,7 @@ PetscErrorCode IceModel::createVecs() {
   mask_values[3] = MASK_FLOATING_OCEAN0;
   ierr = vMask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
   ierr = vMask.set_attr("flag_meanings", "sheet dragging floating floating_at_time_0"); CHKERRQ(ierr);
+  vMask.output_data_type = NC_BYTE;
   ierr = variables.add(vMask); CHKERRQ(ierr);
 
   // upward geothermal flux at bedrock surface
@@ -333,10 +334,13 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vubarSSA.set_attrs("internal_restart", "SSA model ice velocity in the X direction",
                             "m s-1", ""); CHKERRQ(ierr);
   ierr = vubarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = variables.add(vubarSSA); CHKERRQ(ierr);
+
   ierr = vvbarSSA.create(grid, "vvbarSSA", true);
   ierr = vvbarSSA.set_attrs("internal_restart", "SSA model ice velocity in the Y direction",
                             "m s-1", ""); CHKERRQ(ierr);
   ierr = vvbarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = variables.add(vvbarSSA); CHKERRQ(ierr);
 
   return 0;
 }
@@ -435,7 +439,6 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
 
   // main loop for time evolution
   for (PetscScalar year = start_year; year < end_year; year += dt/secpera) {
-    write_snapshot();
 
     ierr = verbPrintf(2,grid.com, " "); CHKERRQ(ierr);
     dt_force = -1.0;
@@ -512,6 +515,10 @@ PetscLogEventBegin(massbalEVENT,0,0,0,0);
     }
 
 PetscLogEventEnd(massbalEVENT,0,0,0,0);
+
+// Write snapshots and time-series:
+    ierr = write_snapshot(); CHKERRQ(ierr);
+    ierr = write_scalar_timeseries(); CHKERRQ(ierr);
     
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 

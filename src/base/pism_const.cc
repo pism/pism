@@ -300,9 +300,67 @@ PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, d
       doubles[j] = d;
   }
 
-  *a = doubles[0];
-  *delta = doubles[1];
-  *b = doubles[2];
+  if (a) *a = doubles[0];
+  if (delta) *delta = doubles[1];
+  if (b) *b = doubles[2];
+
+  return 0;
+}
+
+//! Parses a time specification.
+/*!
+  If it is a MATLAB-style range, then calls parse_range and computes all the points.
+
+  If it is a comma-separated list, converts to double (with error-checking).
+ */
+PetscErrorCode parse_times(MPI_Comm com, string str, vector<double> &result) {
+  PetscErrorCode ierr;
+  int N;
+
+  if (str.find(':') != string::npos) { // it's a range specification
+    
+    double a, delta, b;
+    ierr = parse_range(com, str, &a, &delta, &b);
+    if (ierr != 0) return 1;
+
+    if (a >= b) {
+      ierr = PetscPrintf(com, "PISM ERROR: a >= b in the range specification %s.\n",
+			 str.c_str()); CHKERRQ(ierr);
+      return 1;
+    }
+
+    if (delta <= 0) {
+      ierr = PetscPrintf(com, "PISM ERROR: delta <= 0 in the range specification %s.\n",
+			 str.c_str()); CHKERRQ(ierr);
+      return 1;
+    }
+
+    N = (int)floor((b - a)/delta) + 1; // number of points in the range
+    result.resize(N);
+
+    for (int j = 0; j < N; ++j)
+      result[j] = a + delta*j;
+    
+  } else {			// it's a list of times
+    istringstream arg(str);
+    string tmp;
+
+    result.clear();
+    while(getline(arg, tmp, ',')) {
+      double d;
+      char *endptr;
+
+      d = strtod(tmp.c_str(), &endptr);
+      if (*endptr != '\0') {
+	ierr = PetscPrintf(com, "PISM ERROR: Can't parse %s (%s is not a number).\n",
+			   str.c_str(), tmp.c_str()); CHKERRQ(ierr);
+	return 1;
+      }
+      else
+	result.push_back(d);
+    }
+    sort(result.begin(), result.end());
+  }
 
   return 0;
 }

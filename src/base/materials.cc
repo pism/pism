@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,12 +23,12 @@ IceType::IceType(MPI_Comm c,const char pre[]) : comm(c) {
   PetscMemzero(prefix,sizeof(prefix));
   if (pre) PetscStrncpy(prefix,pre,sizeof(prefix));
 
-  rho    = 910;          // kg/m^3       density
-  beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient
-  k      = 2.10;         // J/(m K s) = W/(m K)    thermal conductivity
-  c_p    = 2009;         // J/(kg K)     specific heat capacity
-  latentHeat = 3.35e5;   // J/kg         latent heat capacity
-  meltingTemp = 273.15;  // K            melting point
+  rho    = 910;          // kg/m^3       ice_density
+  beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient, beta_CC
+  k      = 2.10;         // J/(m K s) = W/(m K)    ice_thermal_conductivity
+  c_p    = 2009;         // J/(kg K)     ice_specific_heat_capacity
+  latentHeat = 3.35e5;   // J/kg         latent heat capacity, water_latent_heat_fusion
+  meltingTemp = 273.15;  // K            water_melting_temperature
 }
 
 

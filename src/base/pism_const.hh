@@ -22,6 +22,7 @@
 #include <petsc.h>
 #include "materials.hh"
 #include <string>
+#include <vector>
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -81,6 +82,7 @@ void endPrintRank();
 
 bool ends_with(string str, string suffix);
 PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, double *b);
+PetscErrorCode parse_times(MPI_Comm com, string str, vector<double> &result);
 
 // handy functions for processing options:
 PetscErrorCode check_option(string name, PetscTruth &flag);

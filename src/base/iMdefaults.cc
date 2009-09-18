@@ -95,8 +95,8 @@ PetscErrorCode IceModel::setDefaults() {
   kd = 0;
 
   // default polar stereographic projection settings: South Pole
-  polar_stereographic.strings["pism_intent"] = "mapping";
-  polar_stereographic.strings["grid_mapping_name"] = "polar_stereographic";
+  polar_stereographic.set_string("pism_intent", "mapping");
+  polar_stereographic.set_string("grid_mapping_name", "polar_stereographic");
   polar_stereographic.set("straight_vertical_longitude_from_pole", 0.0);
   polar_stereographic.set("latitude_of_projection_origin", -90.0);
   polar_stereographic.set("standard_parallel", -71.0);

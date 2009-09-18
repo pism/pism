@@ -148,9 +148,9 @@ public:
 
   // see iMIO.cc
   virtual PetscErrorCode initFromFile(const char *);
-  virtual PetscErrorCode writeFiles(const char* default_filename, 
-                                    const PetscTruth forceFullDiagnostics = PETSC_FALSE);
+  virtual PetscErrorCode writeFiles(const char* default_filename);
   virtual PetscErrorCode write_model_state(const char filename[]);
+  virtual PetscErrorCode write_variables(const char filename[], set<string> vars);
   virtual PetscErrorCode write_extra_fields(const char filename[]);
 
 protected:
@@ -343,9 +343,7 @@ protected:
   // see iMIO.cc
   virtual PetscErrorCode set_time_from_options();
   virtual PetscErrorCode dumpToFile(const char *filename);
-  virtual PetscErrorCode write3DPlusToFile(const char filename[]);
   virtual PetscErrorCode regrid();
-  virtual PetscErrorCode setPATempFromT3(IceModelVec3 &useForPATemp); // temporary for dev; FIXME
 
   // see iMmatlab.cc
   virtual bool           matlabOutWanted(const char name);
@@ -396,6 +394,18 @@ protected:
               PetscScalar year, PetscScalar dt, 
               PetscScalar volume_kmcube, PetscScalar area_kmsquare,
               PetscScalar meltfrac, PetscScalar H0, PetscScalar T0);
+
+  // Methods for computing diagnostic quantities:
+  virtual PetscErrorCode compute_cbar(IceModelVec2 &result);
+  virtual PetscErrorCode compute_cbase(IceModelVec2 &result, IceModelVec2 &tmp);
+  virtual PetscErrorCode compute_cflx(IceModelVec2 &result, IceModelVec2 &cbar);
+  virtual PetscErrorCode compute_csurf(IceModelVec2 &result, IceModelVec2 &tmp);
+  virtual PetscErrorCode compute_taud(IceModelVec2 &result, IceModelVec2 &tmp);
+  virtual PetscErrorCode compute_temp_pa(IceModelVec3 &useForPATemp); // temporary for dev; FIXME
+  virtual PetscErrorCode compute_uvelsurf(IceModelVec2 &result);
+  virtual PetscErrorCode compute_vvelsurf(IceModelVec2 &result);
+  virtual PetscErrorCode compute_wvelsurf(IceModelVec2 &result);
+  virtual PetscErrorCode compute_by_name(string name, IceModelVec* &result);
 
   // see iMsia.cc
   virtual PetscErrorCode surfaceGradientSIA();
@@ -534,6 +544,7 @@ protected:
   bool save_snapshots, file_is_ready, split_snapshots;
   vector<double> snapshot_times;
   unsigned int current_snapshot;
+  set<string> snapshot_vars;
 
   PetscErrorCode init_snapshots_from_options();
   PetscErrorCode write_snapshot();
@@ -542,8 +553,9 @@ protected:
   bool save_scalar_ts;
   string scalar_ts_filename;
   vector<double> scalar_ts_times;
-  int current_scalar_ts;
+  unsigned int current_scalar_ts;
   PetscErrorCode init_scalar_timeseries();
+  PetscErrorCode compute_scalar_quantities();
   PetscErrorCode write_scalar_timeseries();
 };
 

@@ -65,6 +65,8 @@ public:
   virtual PetscErrorCode reset();
   virtual void set(string, double);
   virtual double get(string);
+  virtual void set_string(string name, string value);
+  virtual string get_string(string);
   virtual bool has(string);
   virtual bool is_valid(PetscScalar a);
 			
@@ -79,7 +81,6 @@ public:
     \li units
     \li glaciological_units
    */
-  map<string, string> strings;
   map<string, vector<double> > doubles;
 
 protected:
@@ -88,6 +89,7 @@ protected:
   virtual PetscErrorCode read_valid_range(int ncid, int varid);
   MPI_Comm com;
   PetscMPIInt rank;
+  map<string, string> strings;
   utUnit units,		      //!< internal (PISM) units
          glaciological_units; //!< \brief for diagnostic variables: units to
 			      //!use when writing to a NetCDF file and for

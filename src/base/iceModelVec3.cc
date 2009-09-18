@@ -412,6 +412,9 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2
 }
 
 //! Copies the values of an IceModelVec3 at the ice surface (specified by the level myH) to a Vec gsurf.
+/*!
+  This version is used in iMviewers.cc
+ */
 PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2 &myH) {
   PetscErrorCode ierr;
   PetscScalar    **H, **surf_val;
@@ -685,8 +688,6 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, PetscScalar fill_valu
 
 
 //! Extends an IceModelVec3 and fills the new grid points with corresponding \c fill_values values.
-/*! Assumes that only one level was added to the grid (see the NB! comment).
- */
 PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2 &fill_values) {
   PetscErrorCode ierr;
 
@@ -717,8 +718,6 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2 &fill_va
 }
 
 //! Handles the memory allocatio/deallocation and copying. Does not fill the values of the new layer.
-/*! Assumes that the grid was extended by *one* level only (see the NB! comment).
- */
 PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   PetscErrorCode ierr;
   Vec v_new;

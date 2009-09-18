@@ -154,3 +154,21 @@ PetscErrorCode IceModelVec2::set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v
   
   return 0;
 }
+
+//! Masks out all the areas where \f$ M \le 0 \f$ by setting them to \c fill. 
+PetscErrorCode IceModelVec2::mask_by(IceModelVec2 &M, PetscScalar fill) {
+  PetscErrorCode ierr;
+  PetscScalar **mask, **a;
+  ierr = get_array(a);
+  ierr = M.get_array(mask);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+      if (mask[i][j] <= 0.0)
+	a[i][j] = fill;
+    }
+  }
+  ierr = end_access(); CHKERRQ(ierr);
+  ierr = M.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}

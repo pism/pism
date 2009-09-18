@@ -133,7 +133,7 @@ PetscErrorCode Timeseries::set_dimension_units(string units, string glaciologica
 
 //! Set a string attribute.
 PetscErrorCode Timeseries::set_attr(string name, string value) {
-  var.strings[name] = value;
+  var.set_string(name, value);
   return 0;
 }
 

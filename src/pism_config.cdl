@@ -24,10 +24,10 @@ netcdf pism_config {
     pism_config:thermal_bedrock_doc = "Use the bedrock thermal model";
 
     pism_config:do_bed_deformation = "no";
-    pism_config:do_bed_deformation_doc = "Use a bed defirmation model";
+    pism_config:do_bed_deformation_doc = "Use a bed deformation model";
 
     pism_config:do_bed_iso = "no";
-    pism_config:do_bed_iso_doc = "Compute bed deformations by simple pointwise isostasy.";
+    pism_config:do_bed_iso_doc = "Compute bed deformations by simple point-wise isostasy.";
 
     pism_config:ocean_kill = "false";
     pism_config:ocean_kill_doc = "If used with input from a NetCDF initialization ﬁle which has ice-free ocean mask (value MASK_FLOATING_OCEAN0=7), will zero out ice thicknesses in areas that were ice-free ocean at time zero. This is calving at the location of the original calving front.";
@@ -48,6 +48,9 @@ netcdf pism_config {
     pism_config:use_constant_nuh_for_ssa_doc = "Compute velocities in ice shelves and streams with a constant value for the product of viscosity \\f$\\nu\\f$ and thickness \\f$H\\f$, obtained from the shelf extension";
 
     pism_config:compute_surf_grad_inward_ssa = "no";
+
+    pism_config:force_full_diagnostics = "no";
+    pism_config:force_full_diagnostics_doc = "Force full diagnostic output (adds 3D velocity fields and velocity components at the surface";
 
     // parameters:
     pism_config:enhancement_factor = 1.0;
@@ -190,7 +193,7 @@ netcdf pism_config {
 
 
 
-    // THESE CONSTANTS MAY DUPLICATE, AND MAY SUPERCEDE, CONSTANTS IN materials.cc
+    // THESE CONSTANTS MAY DUPLICATE, AND MAY SUPERSEDE, CONSTANTS IN materials.cc
 
     pism_config:beta_CC = 7.9e-8;
     pism_config:beta_CC_doc = "K Pa-1; Clausius-Clapeyron constant [\\ref Luethi2002]";
@@ -255,6 +258,7 @@ netcdf pism_config {
     pism_config:pi = 3.14159265358979;
     pism_config:pi_doc = "; ratio of a circle's circumference to its diameter";
 
-    pism_config:max_number_of_snapshots = 200;
-    pism_config:max_number_of_snapshots_doc = "; Maximum number of unequally-spaced snapshots";
+// Strings:
+    pism_config:output_variables = "age bheatflx bwat dbdt lat litho_temp lon mask temp thk tillphi topg usurf dHdt cbar cflx cbase csurf wvelsurf taud tauc";
+    pism_config:output_variables_doc = "Space-separated list of variables to save in an output file (does not include fields written by couplers)";
 }
