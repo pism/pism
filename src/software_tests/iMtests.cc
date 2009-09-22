@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2008 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petscda.h>
-#include "iceModel.hh"
+#include "iMtests.hh"
 
 
 // Put these in a new 'software testing' executable; call by:
@@ -31,7 +31,7 @@
 //   pisms -eisII A -y 1 -Mx 5 -My 5 -Mz 501   # no errors
 //   pisms -eisII A -y 1 -Mx 5 -My 5 -Mz 500   # small errors 
 //                                               (appropriate; from linear interpolation)
-PetscErrorCode IceModel::testIceModelVec3()    {
+PetscErrorCode IceUnitModel::testIceModelVec3()    {
   PetscErrorCode ierr;
   IceModelVec3 test3;
 
@@ -95,7 +95,7 @@ PetscErrorCode IceModel::testIceModelVec3()    {
 //   pisms -eisII A -y 1 -Mz 11 -Mbz 11 -quadZ
 //   pisms -eisII A -y 1 -Mz 101 -Mbz 101 -quadZ
 //   pisms -eisII A -y 1 -Mz 102 -Mbz 102 -quadZ
-PetscErrorCode IceModel::testIceModelVec3Bedrock()    {
+PetscErrorCode IceUnitModel::testIceModelVec3Bedrock()    {
   PetscErrorCode ierr;
   IceModelVec3Bedrock test3b;
 

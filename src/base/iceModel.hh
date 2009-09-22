@@ -136,10 +136,6 @@ public:
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
   
-  // see iMtests.cc; FIXME: these should go in a derived class
-  virtual PetscErrorCode testIceModelVec3();
-  virtual PetscErrorCode testIceModelVec3Bedrock();
-
   // see iMutil.cc
   virtual PetscErrorCode attachAtmospherePCC(PISMAtmosphereCoupler &aPCC);
   virtual PetscErrorCode attachOceanPCC(PISMOceanCoupler &oPCC);

@@ -176,16 +176,6 @@ void endPrintRank() {
   MPI_Abort(PETSC_COMM_WORLD,3155);
 }
 
-//! Comparison function from the glibc manual
-//! http://www.gnu.org/software/libc/manual/index.html
-int compare_doubles (const void *a, const void *b)
-{
-  const double *da = (const double *) a;
-  const double *db = (const double *) b;
-  
-  return (*da > *db) - (*da < *db);
-}
-
 //! Checks if an option is present in the PETSc option database.
 /*!
 

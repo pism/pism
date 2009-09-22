@@ -78,7 +78,7 @@ ifeq ($(PISM_USE_MPICXX), 1)
 endif
 
 SHELL := /bin/sh
-VPATH := $(subst src,../src,src/:src/base/:src/base/ssaJed/:src/earth/:src/verif/:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
+VPATH := $(subst src,../src,src/:src/base/:src/base/ssaJed/:src/earth/:src/verif/:src/software_tests:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
 executables := penth pismr pismd pismv pisms pcctest
@@ -97,7 +97,7 @@ ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
 	iceModel.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc \
 	iMdefaults.cc iMgeometry.cc iMgrainsize.cc iMinit.cc iMinverse.cc \
 	iMinverseMat.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc \
-	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc iMtests.cc \
+	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc \
 	iMutil.cc iMvelocity.cc iMviewers.cc Timeseries.cc PISMVars.cc iMtimeseries.cc
 ice_csources := cubature.c pism_signal.c
 
@@ -109,7 +109,7 @@ other_sources := penth.cc pismr.cc pismd.cc pismv.cc pisms.cc \
 	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc \
 	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc iceCalvBCModel.cc \
 	iceEnthalpyModel.cc enthColumnSystem.cc enthalpyConverter.cc \
-	pcctest.cc flowTable.cc tryLCbd.cc
+	pcctest.cc flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
 
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\
 	simpleJ.c simpleK.c simpleL.c simpleM.c
@@ -188,6 +188,10 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 
 ../bin/pcctest : pcctest.o ${LIBPISMNAME}
 	${CXXLINKER} pcctest.o ${ICE_LIB_FLAGS} -o $@
+
+../bin/pismtests: pismtests.o iMtests.o ${LIBPISMNAME}
+	${CXXLINKER} pismtests.o iMtests.o ${ICE_LIB_FLAGS} -o $@
+
 
 #build extra executables
 
