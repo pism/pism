@@ -124,13 +124,13 @@ class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2();
   virtual PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local);
+  PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local,
+			 DAStencilType my_sten, int stencil_width);
   virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   PetscErrorCode  get_array(PetscScalar** &a);
   virtual PetscErrorCode set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v_y);
   virtual PetscErrorCode mask_by(IceModelVec2 &M, PetscScalar fill = 0.0);
-protected:
-  PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local, DAStencilType my_sten);
 };
 
 
