@@ -39,7 +39,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_short_name[
   if (v != PETSC_NULL) {
     SETERRQ1(1,"IceModelVec2 with short_name='%s' already allocated\n",my_short_name);
   }
-  PetscErrorCode ierr = create(my_grid, my_short_name, local, DA_STENCIL_BOX); CHKERRQ(ierr);
+  PetscErrorCode ierr = create(my_grid, my_short_name, local, DA_STENCIL_BOX, 1); CHKERRQ(ierr);
   return 0;
 }
 
@@ -76,9 +76,12 @@ PetscErrorCode  IceModelVec2::createSameDA(IceModelVec2 imv2_source,
 }
 
 PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_short_name[], bool local,
-                                     DAStencilType my_sten) {
+                                     DAStencilType my_sten, int stencil_width) {
   if (!utIsInit()) {
     SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
+  }
+  if (v != PETSC_NULL) {
+    SETERRQ1(1,"IceModelVec2 with short_name='%s' already allocated\n",my_short_name);
   }
 
   grid = &my_grid;
@@ -88,7 +91,9 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_short_name[
   PetscErrorCode ierr;
   ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, my_sten, N, M, n, m, 1, 1,
+  ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, my_sten, N, M, n, m,
+		    1,		// dof
+		    stencil_width,
                     PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
   IOwnDA = true;
 

@@ -147,12 +147,13 @@ class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2();
   virtual PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local);
+  PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local,
+			 DAStencilType my_sten, int stencil_width);
   virtual PetscErrorCode  createSameDA(IceModelVec2 imv2_source,
 				       IceGrid &my_grid, const char my_short_name[], bool local);
   PetscErrorCode  get_array(PetscScalar** &a);
 
 protected:
-  PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local, DAStencilType my_sten);
   virtual PetscErrorCode  define_netcdf_variable(int ncid, nc_type nctype, int *varidp);
 };
 
