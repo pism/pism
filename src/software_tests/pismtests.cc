@@ -51,6 +51,7 @@ int main(int argc, char *argv[]) {
 
     // Attach climate couplers:
     ierr = verbPrintf(2,com, "pismtests attaching PISMConstAtmosCoupler to IceModel\n"); CHKERRQ(ierr);
+    pcac.initializeFromFile = false;
     ierr = m.attachAtmospherePCC(pcac); CHKERRQ(ierr);
     ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
 

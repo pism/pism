@@ -266,9 +266,13 @@ PetscErrorCode IceModel::temperatureStep(
       
       if (k0+ks>0) { // if there are enough points in bedrock&ice to bother ...
         ierr = system.setIndicesThisColumn(i,j,ks); CHKERRQ(ierr);
-        ierr = Tb3.getValColumn(i,j,fMbz,fzblev,system.Tb); CHKERRQ(ierr);
+	if (grid.bed_vertical_spacing == EQUAL) {
+	  ierr = Tb3.getValColumnPL(i,j,fMbz,fzblev,system.Tb); CHKERRQ(ierr);
+	} else {
+	  ierr = Tb3.getValColumnQUAD(i,j,fMbz,fzblev,system.Tb); CHKERRQ(ierr);
+	}
 
-        if (grid.vertical_spacing == EQUAL) {
+        if (grid.ice_vertical_spacing == EQUAL) {
           ierr = u3.getValColumnPL(i,j,fMz,fzlev,system.u); CHKERRQ(ierr);
           ierr = v3.getValColumnPL(i,j,fMz,fzlev,system.v); CHKERRQ(ierr);
           ierr = w3.getValColumnPL(i,j,fMz,fzlev,system.w); CHKERRQ(ierr);
@@ -418,7 +422,7 @@ PetscErrorCode IceModel::temperatureStep(
       }
 
       // transfer column into Tb3; neighboring columns will not reference!
-      ierr = Tb3.setValColumn(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
+      ierr = Tb3.setValColumnPL(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
 
       // set to air temp above ice
       for (PetscInt k=ks; k<fMz; k++) {
@@ -610,7 +614,7 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
       if (ks == 0) { // if no ice, set the entire column to zero age
         ierr = taunew3.setColumn(i,j,0.0); CHKERRQ(ierr);
       } else { // general case: solve advection PDE; start by getting 3D velocity ...
-        if (grid.vertical_spacing == EQUAL) {
+        if (grid.ice_vertical_spacing == EQUAL) {
           ierr = u3.getValColumnPL(i,j,fMz,fzlev,system.u); CHKERRQ(ierr);
           ierr = v3.getValColumnPL(i,j,fMz,fzlev,system.v); CHKERRQ(ierr);
           ierr = w3.getValColumnPL(i,j,fMz,fzlev,system.w); CHKERRQ(ierr);

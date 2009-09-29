@@ -108,15 +108,14 @@ PetscErrorCode IceModel::set_grid_defaults() {
 }
 
 //! Initalizes the grid from options.
-/*! 
-  Reads all of -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -quadZ and -chebZ. Sets
-  corresponding grid parameters.
+/*! Reads all of -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -Lbz, -quadZ, -quadZ_bed
+  and -chebZ. Sets corresponding grid parameters.
  */
 PetscErrorCode IceModel::set_grid_from_options() {
   PetscErrorCode ierr;
-  PetscTruth Mx_set, My_set, Mz_set, Mbz_set, Lx_set, Ly_set, Lz_set,
-    quadZ_set, chebZ_set;
-  PetscScalar x_scale, y_scale, z_scale;
+  PetscTruth Mx_set, My_set, Mz_set, Mbz_set, Lx_set, Ly_set, Lz_set, Lbz_set,
+    quadZ_set, quadZ_bed_set, chebZ_set;
+  PetscScalar x_scale, y_scale, z_scale, zb_scale;
   int Mx, My, Mz, Mbz;
 
   // Process the options:
@@ -130,7 +129,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
   ierr = PetscOptionsScalar("-Ly", "Half of the grid extent in the Y direction, in km", "",
 			    x_scale, &x_scale, &Lx_set); CHKERRQ(ierr);
   // Vertical extent (in the ice):
-  ierr = PetscOptionsScalar("-Lz", "Grid extent in the Z (vertical) direction in the ice", "",
+  ierr = PetscOptionsScalar("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters", "",
 			    z_scale, &z_scale, &Lz_set); CHKERRQ(ierr);
 
   // Read -Mx, -My, -Mz and -Mbz. Note the transpose!
@@ -156,6 +155,27 @@ PetscErrorCode IceModel::set_grid_from_options() {
     PetscEnd();
   }
 
+  // Read -Lbz if -quadZ_bed is set.
+  ierr = PetscOptionsName("-quadZ_bed", "Chooses the quadratic vertical grid spacing in the bedrock",
+			  PETSC_NULL, &quadZ_bed_set); CHKERRQ(ierr);
+  if (quadZ_bed_set) {
+
+    ierr = ignore_option(grid.com, "-Mbz"); CHKERRQ(ierr);
+
+    ierr = PetscOptionsScalar("-Lbz", "Grid extent in the Z (vertical) direction in the bedrock, in meters", "",
+			      zb_scale, &zb_scale, &Lbz_set); CHKERRQ(ierr);
+    if (!Lbz_set) {
+      ierr = PetscPrintf(grid.com,
+			 "PISM ERROR: you need to specify -Lbz for -quadZ_bed to work.\n"); CHKERRQ(ierr);
+      PetscEnd();
+    }
+
+    grid.bed_vertical_spacing = QUADRATIC;
+    grid.Lbz = zb_scale;
+  } else {
+    ierr = ignore_option(grid.com, "-Lbz"); CHKERRQ(ierr);
+  }
+
   // Done with the options.
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -167,8 +187,8 @@ PetscErrorCode IceModel::set_grid_from_options() {
   if (My_set)    grid.My = My;
   if (Mz_set)    grid.Mz = Mz;
   if (Mbz_set)   grid.Mbz = Mbz;
-  if (quadZ_set) grid.vertical_spacing = QUADRATIC;
-  if (chebZ_set) grid.vertical_spacing = CHEBYSHEV;
+  if (quadZ_set) grid.ice_vertical_spacing = QUADRATIC;
+  if (chebZ_set) grid.ice_vertical_spacing = CHEBYSHEV;
 
   ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
   ierr = grid.compute_vertical_levels();    CHKERRQ(ierr);
@@ -352,8 +372,9 @@ PetscErrorCode IceModel::misc_setup() {
 
   ierr = verbPrintf(3, grid.com, "Finishing initialization...\n"); CHKERRQ(ierr);
 
-  ierr = init_snapshots_from_options(); CHKERRQ(ierr);
-  ierr = init_scalar_timeseries(); CHKERRQ(ierr);
+  ierr = init_snapshots(); CHKERRQ(ierr);
+  ierr = init_timeseries(); CHKERRQ(ierr);
+  ierr = init_extras(); CHKERRQ(ierr);
 
   ierr = stampHistoryCommand(); CHKERRQ(ierr);
   ierr = createViewers(); CHKERRQ(ierr);

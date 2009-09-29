@@ -455,7 +455,7 @@ PetscErrorCode IceModel::regrid() {
 }
 
 //! Initializes the snapshot-saving mechanism.
-PetscErrorCode IceModel::init_snapshots_from_options() {
+PetscErrorCode IceModel::init_snapshots() {
   PetscErrorCode ierr;
   PetscTruth save_at_set = PETSC_FALSE, save_to_set = PETSC_FALSE;
   char tmp[TEMPORARY_STRING_LENGTH] = "\0";
@@ -487,7 +487,7 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
   }
 
   save_snapshots = true;
-  file_is_ready = false;
+  snapshots_file_is_ready = false;
   split_snapshots = false;
 
   PetscTruth split;
@@ -509,20 +509,6 @@ PetscErrorCode IceModel::init_snapshots_from_options() {
   }
 
   ierr = verbPrintf(2, grid.com, "times requested: %s\n", tmp); CHKERRQ(ierr);
-
-  PetscTruth save_vars;
-  ierr = PetscOptionsGetString(PETSC_NULL, "-save_vars", tmp,
-			       TEMPORARY_STRING_LENGTH, &save_vars); CHKERRQ(ierr);
-  if (save_vars) {
-    ierr = verbPrintf(2, grid.com,
-		      "PISM WARNING: -save_vars is set; you may not be able to use snapshots for restarting.\n");
-    CHKERRQ(ierr);
-
-    istringstream arg(tmp);
-    string var_name;
-    while (getline(arg, var_name, ','))
-      snapshot_vars.insert(var_name);
-  }
 
   return 0;
 }
@@ -554,7 +540,7 @@ PetscErrorCode IceModel::write_snapshot() {
   }
 
   if (split_snapshots) {
-    file_is_ready = false;	// each snapshot is written to a separate file
+    snapshots_file_is_ready = false;	// each snapshot is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%06.0f.nc",
 	     snapshots_filename.c_str(), grid.year);
   } else {
@@ -581,7 +567,7 @@ PetscErrorCode IceModel::write_snapshot() {
 	   "%s: %s snapshot at %10.5f a, for time-step goal %10.5f a\n",
 	   date_str, executable_short_name.c_str(), grid.year, saving_after);
 
-  if (!file_is_ready) {
+  if (!snapshots_file_is_ready) {
     bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
     // Prepare the snapshots file:
@@ -592,7 +578,7 @@ PetscErrorCode IceModel::write_snapshot() {
     ierr = nc.close(); CHKERRQ(ierr);
 
     ierr = polar_stereographic.write(filename); CHKERRQ(ierr);
-    file_is_ready = true;
+    snapshots_file_is_ready = true;
   }
     
   ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
@@ -601,12 +587,7 @@ PetscErrorCode IceModel::write_snapshot() {
   ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
   ierr = nc.close(); CHKERRQ(ierr);
 
-  // Write the default set of variables or the set given by the user
-  if (snapshot_vars.empty()) {
-    ierr = write_model_state(filename);  CHKERRQ(ierr);
-  } else {
-    ierr = write_variables(filename, snapshot_vars);  CHKERRQ(ierr);
-  }
+  ierr = write_model_state(filename);  CHKERRQ(ierr);
 
   // Let couplers write their fields:
   if (atmosPCC != PETSC_NULL) {

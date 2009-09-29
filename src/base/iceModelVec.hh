@@ -65,7 +65,7 @@ public:
   virtual bool            is_valid(PetscScalar a);
   virtual PetscErrorCode  write(const char filename[]);
   virtual PetscErrorCode  write(const char filename[], nc_type nctype);
-  virtual PetscErrorCode  read(const char filename[], const unsigned int time);
+  virtual PetscErrorCode  read(const char filename[], unsigned int time);
   virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, bool critical);
   virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
 
@@ -77,7 +77,7 @@ public:
   virtual PetscErrorCode  endGhostComm(IceModelVec &destination);
 
 
-  virtual PetscErrorCode  set(const PetscScalar c);
+  virtual PetscErrorCode  set(PetscScalar c);
  
   MaskInterp interpolation_mask;
   bool   use_interpolation_mask, write_in_glaciological_units;
@@ -140,18 +140,19 @@ public:
   IceModelVec3Bedrock();
   virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local);
 
-  PetscErrorCode  setInternalColumn(const PetscInt i, const PetscInt j, PetscScalar *valsIN);
-  PetscErrorCode  setColumn(const PetscInt i, const PetscInt j,
-                                      const PetscScalar c);
-  PetscErrorCode  getInternalColumn(const PetscInt i, const PetscInt j, PetscScalar **valsOUT);
+  PetscErrorCode  setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN);
+  PetscErrorCode  setColumn(PetscInt i, PetscInt j, PetscScalar c);
+  PetscErrorCode  getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsOUT);
 
-  PetscErrorCode  setValColumn(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
-                               PetscScalar *levelsIN, PetscScalar *valsIN);
-  PetscErrorCode  getValColumn(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
-                               PetscScalar *levelsIN, PetscScalar *valsOUT);
+  PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscInt nlevels, 
+				 PetscScalar *levelsIN, PetscScalar *valsIN);
+  PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscInt nlevels, 
+				 PetscScalar *levelsIN, PetscScalar *valsOUT);
+  PetscErrorCode  getValColumnQUAD(PetscInt i, PetscInt j, PetscInt nlevels, 
+				   PetscScalar *levelsIN, PetscScalar *valsOUT);
 
 protected:  
-  PetscErrorCode  isLegalLevel(const PetscScalar z);
+  PetscErrorCode  isLegalLevel(PetscScalar z);
 };
 
 
@@ -166,30 +167,30 @@ public:
   virtual PetscErrorCode  endGhostCommTransfer(IceModelVec3 &imv3_source);
 
   // need call begin_access() before set...() or get...() *and* need call end_access() afterward
-  PetscErrorCode  setValColumnPL(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
+  PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscInt nlevels, 
                                PetscScalar *levelsIN, PetscScalar *valsIN);
-  PetscErrorCode  setColumn(const PetscInt i, const PetscInt j, const PetscScalar c);
-  PetscErrorCode  setInternalColumn(const PetscInt i, const PetscInt j, PetscScalar *valsIN);
+  PetscErrorCode  setColumn(PetscInt i, PetscInt j, PetscScalar c);
+  PetscErrorCode  setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN);
 
-  PetscScalar     getValZ(const PetscInt i, const PetscInt j, const PetscScalar z);
+  PetscScalar     getValZ(PetscInt i, PetscInt j, PetscScalar z);
 
-  PetscErrorCode  getPlaneStarZ(const PetscInt i, const PetscInt j, const PetscScalar z,
+  PetscErrorCode  getPlaneStarZ(PetscInt i, PetscInt j, PetscScalar z,
                                 planeStar *star);
 
 //Idea; see IceModel::horizontalVelocitySIARegular(), for example; would only work for 4 neighbors
 //   if used with two IceModelVec3:
-//  PetscErrorCode  averageStagNeighCol(const PetscInt i, const PetscInt j, 
-//                                      const PetscInt nlevels, PetscScalar *levelsIN, 
+//  PetscErrorCode  averageStagNeighCol(PetscInt i, PetscInt j, 
+//                                      PetscInt nlevels, PetscScalar *levelsIN, 
 //                                      PetscScalar *avOUT);
 
-  PetscErrorCode  getValColumnPL(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
+  PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscInt nlevels, 
                                  PetscScalar *levelsIN, PetscScalar *valsOUT);
-  PetscErrorCode  getValColumnQUAD(const PetscInt i, const PetscInt j, const PetscInt nlevels, 
+  PetscErrorCode  getValColumnQUAD(PetscInt i, PetscInt j, PetscInt nlevels, 
                                    PetscScalar *levelsIN, PetscScalar *valsOUT);
-  PetscErrorCode  getInternalColumn(const PetscInt i, const PetscInt j, PetscScalar **valsPTR);
+  PetscErrorCode  getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsPTR);
 
-  PetscErrorCode  getHorSlice(Vec &gslice, const PetscScalar z); // used in iMmatlab.cc
-  PetscErrorCode  getHorSlice(IceModelVec2 &gslice, const PetscScalar z);
+  PetscErrorCode  getHorSlice(Vec &gslice, PetscScalar z); // used in iMmatlab.cc
+  PetscErrorCode  getHorSlice(IceModelVec2 &gslice, PetscScalar z);
   PetscErrorCode  getSurfaceValues(Vec &gsurf, IceModelVec2 &myH); // used in iMviewers.cc
   PetscErrorCode  getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2 &myH);
   PetscErrorCode  getSurfaceValues(IceModelVec2 &gsurf, PetscScalar **H);
@@ -197,7 +198,7 @@ public:
   PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2 &fill_values);
 
 protected:  
-  PetscErrorCode  isLegalLevel(const PetscScalar z);
+  PetscErrorCode  isLegalLevel(PetscScalar z);
   virtual PetscErrorCode  extend_vertically_private(int old_Mz);
 };
 

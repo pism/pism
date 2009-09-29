@@ -392,6 +392,7 @@ protected:
               PetscScalar meltfrac, PetscScalar H0, PetscScalar T0);
 
   // Methods for computing diagnostic quantities:
+  // spatially-variable:
   virtual PetscErrorCode compute_cbar(IceModelVec2 &result);
   virtual PetscErrorCode compute_cbase(IceModelVec2 &result, IceModelVec2 &tmp);
   virtual PetscErrorCode compute_cflx(IceModelVec2 &result, IceModelVec2 &cbar);
@@ -402,6 +403,10 @@ protected:
   virtual PetscErrorCode compute_vvelsurf(IceModelVec2 &result);
   virtual PetscErrorCode compute_wvelsurf(IceModelVec2 &result);
   virtual PetscErrorCode compute_by_name(string name, IceModelVec* &result);
+  // scalar:
+  virtual PetscErrorCode compute_ivol(PetscScalar &result);
+  virtual PetscErrorCode compute_iarea(PetscScalar &result);
+  virtual PetscErrorCode compute_by_name(string name, PetscScalar &result);
 
   // see iMsia.cc
   virtual PetscErrorCode surfaceGradientSIA();
@@ -537,22 +542,28 @@ protected:
 
   // This is related to the snapshot saving feature
   string snapshots_filename;
-  bool save_snapshots, file_is_ready, split_snapshots;
+  bool save_snapshots, snapshots_file_is_ready, split_snapshots;
   vector<double> snapshot_times;
   unsigned int current_snapshot;
-  set<string> snapshot_vars;
-
-  PetscErrorCode init_snapshots_from_options();
+  PetscErrorCode init_snapshots();
   PetscErrorCode write_snapshot();
 
   // scalar time-series
-  bool save_scalar_ts;
-  string scalar_ts_filename;
-  vector<double> scalar_ts_times;
-  unsigned int current_scalar_ts;
-  PetscErrorCode init_scalar_timeseries();
-  PetscErrorCode compute_scalar_quantities();
-  PetscErrorCode write_scalar_timeseries();
+  bool save_ts;
+  string ts_filename;
+  vector<double> ts_times;
+  unsigned int current_ts;
+  PetscErrorCode init_timeseries();
+  PetscErrorCode write_timeseries();
+
+  //spatial time-series
+  bool save_extra, extra_file_is_ready, split_extra;
+  string extra_filename;
+  vector<double> extra_times;
+  unsigned int current_extra;
+  set<string> extra_vars;
+  PetscErrorCode init_extras();
+  PetscErrorCode write_extras();
 };
 
 #endif /* __iceModel_hh */

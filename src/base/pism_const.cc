@@ -354,3 +354,11 @@ PetscErrorCode parse_times(MPI_Comm com, string str, vector<double> &result) {
 
   return 0;
 }
+
+//! Checks if an array of \c len doubles is strictly increasing.
+bool is_increasing(int len, double *a) {
+  for (PetscInt k = 0; k < len-1; k++) {
+    if (a[k] >= a[k+1])  return false;
+  }
+  return true;
+}

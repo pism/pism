@@ -412,7 +412,7 @@ export PATH=/opt/local/bin:/opt/local/sbin:$PATH
 \end{verbatim}
 \item Note that it is not necessary to install Python, as it is bundled with the operating system (as are BLAS, LAPACK, OpenMPI and
   Subversion). The easiest way to get SciPy et al to work on an Intel-based Mac with Mac OS X is to use SciPy Superpack from
-  \url{http://macinscience.org/}. This package includes |numpy|, |SciPy| and |matplotlib|, as well as |ipython|, a very useful
+  \url{http://macinscience.org/?page_id=6/}. This package includes |numpy|, |SciPy| and |matplotlib|, as well as |ipython|, a very useful
   interactive Python shell. Unfortunately, Scipy Superpack does not support PowerPC-based Macs; we recommend using  \href{http://www.enthought.com/}{Enthought Python Distributions} on older Macs.
 \item After installing MacPorts, do
 \begin{verbatim}
@@ -420,7 +420,7 @@ $  sudo port install netcdf ncview gsl fftw-3
 \end{verbatim}
 to install NetCDF, ncview, GSL and FFTW.
 \item At this point, all the PISM prerequisites except PETSc are installed. Download the latest PETSc tarball from the
-  \href{ftp://ftp.mcs.anl.gov/pub/petsc/release-snapshots/}{PETSc website}\footnote{Version 3 is recommended; 2.3.3 will work, but building it on Mac OS X is tricky.}. Untar, then change to the directory just created.
+  \href{http://www.mcs.anl.gov/petsc/petsc-as/}{PETSc website}\footnote{Version 3 is recommended; 2.3.3 will work, but building it on Mac OS X is tricky.}. Untar, then change to the directory just created.
 The next three commands completed the PETSc installation:
 \begin{verbatim}
 $  export PETSC_DIR=$PWD; export PETSC_ARCH=macosx;

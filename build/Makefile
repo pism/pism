@@ -81,7 +81,7 @@ SHELL := /bin/sh
 VPATH := $(subst src,../src,src/:src/base/:src/base/ssaJed/:src/earth/:src/verif/:src/software_tests:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
-executables := penth pismr pismd pismv pisms pcctest
+executables := penth pismr pismd pismv pisms pcctest pismtests
 extras := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
 	simpleL simpleM flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))

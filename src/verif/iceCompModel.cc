@@ -136,6 +136,8 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
     grid.Mbz = 2;
     grid.Lx = grid.Ly = 1000e3;
     grid.Lz = 4000;
+//     grid.Lbz = 1000;
+//     grid.bed_vertical_spacing = QUADRATIC;
     grid.periodicity = XY_PERIODIC;
     break;
   default:
@@ -160,10 +162,10 @@ PetscErrorCode IceCompModel::set_grid_from_options() {
       CHKERRQ(ierr);
       PetscEnd();
     }
-
+    
     // now, if unequal spaced vertical then run special code to set bedrock vertical 
     //   levels so geothermal boundary condition is imposed at exact depth 1000m
-    if (grid.vertical_spacing != EQUAL) {
+    if (grid.ice_vertical_spacing != EQUAL) {
       ierr = verbPrintf(2,grid.com,"setting vertical levels so bottom at -1000 m ...\n"); 
       CHKERRQ(ierr);
       grid.Lbz = 1000.0;

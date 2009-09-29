@@ -95,7 +95,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // "-cbar_to_till" read in invertVelocitiesFromNetCDF() in iMinverse.cc
 
-// "-chebZ" read in determineSpacingTypeFromOptions()
+// "-chebZ" read in IceGrid::set_grid_from_options()
 
   ierr = PetscOptionsGetReal(PETSC_NULL, "-constant_nuH", &my_nuH, &my_useConstantNuH); CHKERRQ(ierr);
   // user gives nu*H in MPa yr m (e.g. Ritz et al 2001 value is 30.0 * 1.0)

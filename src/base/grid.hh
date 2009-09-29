@@ -46,15 +46,17 @@ public:
   PetscErrorCode createDA();  // destructor checks if DA was created, and destroys
   PetscErrorCode set_vertical_levels(int Mz, int Mbz, double *z_levels, double *zb_levels);
   PetscErrorCode compute_vertical_levels();
+  PetscErrorCode compute_ice_vertical_levels();
+  PetscErrorCode compute_bed_vertical_levels();
   PetscErrorCode compute_horizontal_spacing();
-  PetscErrorCode printVertLevels(const int verbosity); 
-  PetscInt       kBelowHeight(const PetscScalar height);
+  PetscErrorCode printVertLevels(int verbosity); 
+  PetscInt       kBelowHeight(PetscScalar height);
 
   PetscErrorCode getFineEqualVertCountIce(PetscInt &fMz);
   PetscErrorCode getFineEqualVertCounts(PetscInt &fMz, PetscInt &fMbz);
-  PetscErrorCode getFineEqualVertLevsIce(const PetscInt fMz,
+  PetscErrorCode getFineEqualVertLevsIce(PetscInt fMz,
                                          PetscScalar &fdz, PetscScalar *fzlev);
-  PetscErrorCode getFineEqualVertLevs(const PetscInt fMz, const PetscInt fMbz,
+  PetscErrorCode getFineEqualVertLevs(PetscInt fMz, PetscInt fMbz,
                                       PetscScalar &fdz, PetscScalar &fdzb, 
                                       PetscScalar *fzlev, PetscScalar *fzblev);
 
@@ -68,9 +70,10 @@ public:
 
   PetscScalar *zlevels, *zblevels; // z levels, in ice & bedrock; the storage grid for fields 
                                    // which are represented in 3d Vecs
-  SpacingType vertical_spacing;
+  SpacingType ice_vertical_spacing, bed_vertical_spacing;
   Periodicity periodicity;
   PetscScalar dzMIN, dzMAX;
+  PetscScalar dzbMIN, dzbMAX;
 
   PetscScalar x0, y0;	   // grid center (from an input or bootstrapping file)
   PetscScalar Lx, Ly; // half width of the ice model grid in x-direction, y-direction (m)
@@ -94,7 +97,7 @@ protected:
                            DEFAULT_ICEPARAM_Mbz;
 private:
   PetscErrorCode  get_dzMIN_dzMAX_spacingtype();
-  bool            isIncreasing(const PetscInt len, PetscScalar *vals);
+  bool            isIncreasing(PetscInt len, PetscScalar *vals);
 };
 
 #endif	/* __grid_hh */

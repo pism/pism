@@ -70,6 +70,9 @@ IceModel::IceModel(IceGrid &g)
 
   // Do not save snapshots by default:
   save_snapshots = false;
+  // Do not save time-series by default:
+  save_ts = false;
+  save_extra = false;
   dvoldt = gdHdtav = 0;
 
   // Default ice type:
@@ -518,7 +521,8 @@ PetscLogEventEnd(massbalEVENT,0,0,0,0);
 
 // Write snapshots and time-series:
     ierr = write_snapshot(); CHKERRQ(ierr);
-    ierr = write_scalar_timeseries(); CHKERRQ(ierr);
+    ierr = write_timeseries(); CHKERRQ(ierr);
+    ierr = write_extras(); CHKERRQ(ierr);
     
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 

@@ -648,3 +648,60 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 
   return 0;
 }
+
+//! Computes the ice volume, in m^3.
+PetscErrorCode IceModel::compute_ivol(PetscScalar &result) {
+  PetscScalar ierr;
+  PetscScalar     **H;
+  PetscScalar     volume=0.0;
+  const PetscScalar a = grid.dx * grid.dy; // cell area
+  
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (H[i][j] > 0) {
+        volume += a * H[i][j];
+      }
+    }
+  }  
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  ierr = PetscGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
+  return 0;
+}
+
+//! Computes ice area, in m^2.
+PetscErrorCode IceModel::compute_iarea(PetscScalar &result) {
+  PetscScalar ierr;
+  PetscScalar     **H;
+  PetscScalar     area=0.0;
+  const PetscScalar a = grid.dx * grid.dy; // cell area
+  
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (H[i][j] > 0)
+        area += a;
+    }
+  }  
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  ierr = PetscGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
+  PetscErrorCode ierr, errcode = 1;
+
+  if (name == "ivol") {
+    errcode = 0;
+    ierr = compute_ivol(result); CHKERRQ(ierr);
+  }
+
+  if (name == "iarea") {
+    errcode = 0;
+    ierr = compute_iarea(result); CHKERRQ(ierr);
+  }
+
+  return errcode;
+}

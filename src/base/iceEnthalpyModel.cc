@@ -1309,9 +1309,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 
       if (k0+ks>0) { // if there are enough points in bedrock&ice to bother ...
         ierr = system.setIndicesThisColumn(i,j,ks); CHKERRQ(ierr);
-        ierr = Tb3.getValColumn(i,j,fMbz,fzblev,Tb); CHKERRQ(ierr);
+        ierr = Tb3.getValColumnPL(i,j,fMbz,fzblev,Tb); CHKERRQ(ierr);
 
-        if (grid.vertical_spacing == EQUAL) {
+        if (grid.ice_vertical_spacing == EQUAL) {
           ierr = u3.getValColumnPL(i,j,fMz,fzlev,system.u); CHKERRQ(ierr);
           ierr = v3.getValColumnPL(i,j,fMz,fzlev,system.v); CHKERRQ(ierr);
           ierr = w3.getValColumnPL(i,j,fMz,fzlev,system.w); CHKERRQ(ierr);
@@ -1503,7 +1503,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 #endif
 
       // transfer column into Tb3; no need for communication, even later
-      ierr = Tb3.setValColumn(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
+      ierr = Tb3.setValColumnPL(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
 
       // basalMeltRate[][] is rate of mass loss from bottom of ice
       if (PismModMask(mask[i][j]) == MASK_FLOATING) {
