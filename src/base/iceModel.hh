@@ -30,6 +30,7 @@
 #include "iceModelVec.hh"
 #include "NCVariable.hh"
 #include "PISMVars.hh"
+#include "Timeseries.hh"
 
 #include "../earth/deformation.hh"
 
@@ -549,11 +550,14 @@ protected:
   PetscErrorCode write_snapshot();
 
   // scalar time-series
-  bool save_ts;
-  string ts_filename;
-  vector<double> ts_times;
-  unsigned int current_ts;
+  bool save_ts;			//! true if the user requested time-series output
+  string ts_filename;		//! file to write time-series to
+  vector<double> ts_times;	//! times requested
+  unsigned int current_ts;	//! index of the current time
+  set<string> ts_vars;		//! variables requested
+  vector<DiagnosticTimeseries*> timeseries;
   PetscErrorCode init_timeseries();
+  PetscErrorCode create_timeseries();
   PetscErrorCode write_timeseries();
 
   //spatial time-series

@@ -55,6 +55,7 @@ public:
   PetscErrorCode set_units(string units, string glaciological_units);
   PetscErrorCode set_dimension_units(string units, string glaciological_units);
 
+  string short_name;
 protected:
   MPI_Comm com;
   PetscMPIInt rank;
@@ -81,17 +82,18 @@ protected:
   offsets->set_units("Kelvin", "Celsius");
   offsets->set_dimension_units("years", "");
   offsets->buffer_size = 100; // only store 100 entries; default is 10000
-  offsets->set_output_prefix("pism-");
   \endcode
 
   Once this is set up, one can add calls like
 
   \code
   offsets->append(t_years, TsOffset);
+
+  offsets->interp(time);
   \endcode
 
-  to the code. This will store the (t_years, TsOffset) pair, but not
-  necessarily cause any I/O.
+  to the code. The first call will store the (t_years, TsOffset). The second
+  call will use linear interpolation to find the value at \c time years.
 
   Note that every time you exceed the \c buffer_size limit, all the entries are
   written to a file <b> and removed from memory</b>.
@@ -102,8 +104,8 @@ public:
   DiagnosticTimeseries(MPI_Comm com, PetscMPIInt rank, string name, string dimension_name);
   ~DiagnosticTimeseries();
 
-  PetscErrorCode append(double time, double value);
-  PetscErrorCode set_output_prefix(string prefix);
+  PetscErrorCode append(double T, double V);
+  PetscErrorCode interp(double time);
   PetscErrorCode flush();
 
   size_t buffer_size;

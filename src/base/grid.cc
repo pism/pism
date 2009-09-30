@@ -269,11 +269,19 @@ PetscErrorCode IceGrid::compute_bed_vertical_levels() {
 		    Lbz, z1);
 	PetscEnd();
       }
+
+      // this is the lambda we would like to have in bedrock; "2" below means
+      // that bedrock level thickness should increase with depth at about twice
+      // the rate of increase of ice levels.
       PetscScalar lam = 2*DEFAULT_QUADZ_LAMBDA;
+
       // this nasty formula was obtained using Maxima (solving the formula in
       // the documentation string above for Mbz)
-      Mbz = floor((sqrt(Lbz)*sqrt((4*lam*lam-4*lam)*z1+Lbz)+2*lam*z1+Lbz)/(2*lam*z1));
-      
+      Mbz = (PetscInt)floor((sqrt(Lbz)*sqrt((4*lam*lam-4*lam)*z1+Lbz)+2*lam*z1+Lbz)/(2*lam*z1));
+      if (Mbz < 3)
+	Mbz = 3;		// we can't match the spacing at the bottom of
+				// the ice using less than 3 levels
+
       delete [] zblevels;
       zblevels = new PetscScalar[Mbz];
 
@@ -284,7 +292,7 @@ PetscErrorCode IceGrid::compute_bed_vertical_levels() {
 	const PetscScalar zeta = ((PetscScalar) Mbz - 1 - k) / ((PetscScalar) Mbz - 1);
 	zblevels[k] = -Lbz * (zeta / lam) * (1.0 + (lam - 1.0) * zeta);
       }
-      zblevels[Mbz - 1] = 0;
+      zblevels[Mbz - 1] = 0;	// make sure this one is right on, too
 
       dzbMAX = zblevels[1] - zblevels[0];
       dzbMIN = zblevels[Mbz-1] - zblevels[Mbz-2];

@@ -136,8 +136,7 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
     grid.Mbz = 2;
     grid.Lx = grid.Ly = 1000e3;
     grid.Lz = 4000;
-//     grid.Lbz = 1000;
-//     grid.bed_vertical_spacing = QUADRATIC;
+    grid.Lbz = 1000;
     grid.periodicity = XY_PERIODIC;
     break;
   default:
@@ -157,23 +156,10 @@ PetscErrorCode IceCompModel::set_grid_from_options() {
   ierr = IceModel::set_grid_from_options(); CHKERRQ(ierr);
 
   if (testname == 'K') {
-    if (grid.Mbz == 1) {
-      ierr = PetscPrintf(grid.com, "PISM ERROR: grid.Mbz must be at least two in Test K\n");
+    if (PetscAbs(grid.Lbz - 1000.0) > 1e-8) {
+      ierr = PetscPrintf(grid.com, "PISM ERROR: grid.Lbz must be equal to 1000 in Test K\n");
       CHKERRQ(ierr);
       PetscEnd();
-    }
-    
-    // now, if unequal spaced vertical then run special code to set bedrock vertical 
-    //   levels so geothermal boundary condition is imposed at exact depth 1000m
-    if (grid.ice_vertical_spacing != EQUAL) {
-      ierr = verbPrintf(2,grid.com,"setting vertical levels so bottom at -1000 m ...\n"); 
-      CHKERRQ(ierr);
-      grid.Lbz = 1000.0;
-      const PetscScalar dzbEQ = grid.Lbz / ((PetscScalar) grid.Mbz - 1);
-      for (PetscInt kb=0; kb < grid.Mbz; kb++) {
-	grid.zblevels[kb] = -grid.Lbz + dzbEQ * ((PetscScalar) kb);
-      }
-      grid.zblevels[grid.Mbz - 1] = 0.0;
     }
   }
 

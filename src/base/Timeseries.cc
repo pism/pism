@@ -28,6 +28,8 @@ Timeseries::Timeseries(IceGrid *g, string name, string dimension_name) {
 
   var.init(name, com, rank);
   var.dimension_name = dimension_name;
+
+  short_name = name;
 }
 
 Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_name) {
@@ -35,6 +37,8 @@ Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_
   rank = r;
   dimension.init(dimension_name, com, rank);
   var.init(name, com, rank);
+
+  short_name = name;
 }
 
 //! Read timeseries data from a NetCDF file \c filename.
@@ -174,11 +178,49 @@ DiagnosticTimeseries::~DiagnosticTimeseries() {
   flush();
 }
 
-PetscErrorCode DiagnosticTimeseries::append(double t, double v) {
+//! Adds the (t,v) pair to the interpolation buffer.
+/*! The interpolation buffer only holds 2 values only (for linear
+  interpolation).
+ */
+PetscErrorCode DiagnosticTimeseries::append(double T, double V) {
+  // append to the interpolation buffer:
+  t.push_back(T);
+  v.push_back(V);
+
+  if (t.size() == 3) {
+    t.pop_front();
+    v.pop_front();
+  }
+
+  return 0;
+}
+
+PetscErrorCode DiagnosticTimeseries::interp(double T) {
   PetscErrorCode ierr;
 
-  time.push_back(t);
-  values.push_back(v);
+  if (t.empty()) {
+    SETERRQ(1, "DiagnosticTimeseries::interp(...): interpolation buffer is empty");
+  }
+
+  // Special case: allow requests that match the (only) available time.
+  if (t.size() == 1) {
+    if (PetscAbs(T - t[0]) < 1e-8) {
+      time.push_back(T);
+      values.push_back(v[0]);
+    }
+    return 0;
+  }
+
+  if ((T < t[0]) || (T > t[1])) {
+    SETERRQ1(1, "DiagnosticTimeseries::interp(...): requested time %f is not within the last time-step!",
+	     T);
+  }
+
+  // linear interpolation:
+  double tmp = v[0] + (T - t[0]) / (t[1] - t[0]) * (v[1] - v[0]);
+
+  time.push_back(T);
+  values.push_back(tmp);
 
   if (time.size() == buffer_size) {
     ierr = flush(); CHKERRQ(ierr);
@@ -187,24 +229,22 @@ PetscErrorCode DiagnosticTimeseries::append(double t, double v) {
   return 0;
 }
 
-PetscErrorCode DiagnosticTimeseries::set_output_prefix(string prefix) {
-  PetscErrorCode ierr;
-  NCTool nc(com, rank);
-
-  output_filename = prefix + var.short_name + ".nc";
-
-  // This will move the file aside if it exists already.
-  ierr = nc.open_for_writing(output_filename.c_str(), false, false); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
-
-  return 0;
-}
-
+//! Writes data to a file.
 PetscErrorCode DiagnosticTimeseries::flush() {
   PetscErrorCode ierr;
+  NCTool nc(com, rank);
+  int len;
 
-  // write the dimensional variable; this call should go first
-  ierr = dimension.write(output_filename.c_str(), start, time);   CHKERRQ(ierr);
+  // Get the length of the time dimension; if other time-series object was
+  // written at this time-step already, len will be greater than start, so we
+  // don't need to write the dimensional variable.
+  ierr = nc.open_for_reading(output_filename.c_str()); CHKERRQ(ierr);
+  ierr = nc.get_dim_length(dimension.short_name.c_str(), &len); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  if (len == (int)start) {
+    ierr = dimension.write(output_filename.c_str(), start, time);   CHKERRQ(ierr);
+  }
   ierr =       var.write(output_filename.c_str(), start, values); CHKERRQ(ierr);
 
   start += buffer_size;

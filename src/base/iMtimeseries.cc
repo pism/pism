@@ -22,10 +22,10 @@
 //! Initializes the code writing scalar time-series.
 PetscErrorCode IceModel::init_timeseries() {
   PetscErrorCode ierr;
-  PetscTruth ts_file_set = PETSC_FALSE, ts_times_set = PETSC_FALSE;
+  PetscTruth ts_file_set = PETSC_FALSE, ts_times_set = PETSC_FALSE, ts_vars_set = PETSC_FALSE;
   char tmp[TEMPORARY_STRING_LENGTH] = "\0";
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-ts_filename", tmp,
+  ierr = PetscOptionsGetString(PETSC_NULL, "-ts_file", tmp,
 			       PETSC_MAX_PATH_LEN, &ts_file_set); CHKERRQ(ierr);
   ts_filename = tmp;
 
@@ -60,9 +60,69 @@ PetscErrorCode IceModel::init_timeseries() {
   ierr = verbPrintf(2, grid.com, "times requested: %s\n", tmp); CHKERRQ(ierr);
 
   current_ts = 0;
+
+  ierr = PetscOptionsGetString(PETSC_NULL, "-ts_vars", tmp,
+			       TEMPORARY_STRING_LENGTH, &ts_vars_set); CHKERRQ(ierr);
+  string var_name;
+  if (ts_vars_set) {
+    ierr = verbPrintf(2, grid.com, "variables requested: %s\n", tmp); CHKERRQ(ierr);
+    istringstream arg(tmp);
+
+    while (getline(arg, var_name, ','))
+      ts_vars.insert(var_name);
+
+  } else {
+    var_name = config.get_string("ts_variables");
+    istringstream arg(var_name);
+  
+    while (getline(arg, var_name, ' ')) {
+      if (!var_name.empty()) // this ignores multiple spaces separating variable names
+	ts_vars.insert(var_name);
+    }
+  }
+
+  // This will move the file aside if it exists already.
+  NCTool nc(grid.com, grid.rank);
+  ierr = nc.open_for_writing(ts_filename.c_str(), false, false); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  ierr = create_timeseries(); CHKERRQ(ierr);
+  
   return 0;
 }
 
+//! \brief Creates DiagnosticTimeseries objects used to store and report scalar
+//! diagnostic quantities.
+PetscErrorCode IceModel::create_timeseries() {
+  
+  if (find(ts_vars.begin(), ts_vars.end(), "ivol") != ts_vars.end()) {
+    DiagnosticTimeseries *ivol = new DiagnosticTimeseries(&grid, "ivol", "t");
+
+    ivol->set_units("m3", "");
+    ivol->set_dimension_units("years", "");
+    ivol->output_filename = ts_filename;
+
+    ivol->set_attr("long_name", "ice volume");
+    ivol->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(ivol);
+  }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "iarea") != ts_vars.end()) {
+    DiagnosticTimeseries *iarea = new DiagnosticTimeseries(&grid, "iarea", "t");
+
+    iarea->set_units("m2", "");
+    iarea->set_dimension_units("years", "");
+    iarea->output_filename = ts_filename;
+
+    iarea->set_attr("long_name", "ice area");
+    iarea->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(iarea);
+  }
+
+  return 0;
+}
 
 PetscErrorCode IceModel::write_timeseries() {
   PetscErrorCode ierr;
@@ -78,15 +138,24 @@ PetscErrorCode IceModel::write_timeseries() {
   if (ts_times[current_ts] > grid.year)
     return 0;
 
-  // compute_scalar_timeseries();
+  // compute values of requested scalar quantities:
+  vector<DiagnosticTimeseries*>::iterator i;
+  for (i = timeseries.begin(); i < timeseries.end(); ++i) {
+    PetscScalar tmp;
 
+    ierr = compute_by_name((*i)->short_name, tmp); CHKERRQ(ierr);
+    
+    (*i)->append(grid.year, tmp);
+  }
+
+  // Interpolate to put them on requested times:
   while ((ts_times[current_ts] <= grid.year) &&
 	 (current_ts < ts_times.size())) {
     
-    // write_diagnostics();
-
-    ierr = PetscPrintf(grid.com, "Would save at t = %f\n",
-		       ts_times[current_ts]); CHKERRQ(ierr);
+    vector<DiagnosticTimeseries*>::iterator i;
+    for (i = timeseries.begin(); i < timeseries.end(); ++i) {
+      ierr = (*i)->interp(ts_times[current_ts]); CHKERRQ(ierr);
+    }
 
     current_ts++;
   }

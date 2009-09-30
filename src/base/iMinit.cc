@@ -114,7 +114,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
 PetscErrorCode IceModel::set_grid_from_options() {
   PetscErrorCode ierr;
   PetscTruth Mx_set, My_set, Mz_set, Mbz_set, Lx_set, Ly_set, Lz_set, Lbz_set,
-    quadZ_set, quadZ_bed_set, chebZ_set;
+    quadZ_set, chebZ_set;
   PetscScalar x_scale, y_scale, z_scale, zb_scale;
   int Mx, My, Mz, Mbz;
 
@@ -131,6 +131,8 @@ PetscErrorCode IceModel::set_grid_from_options() {
   // Vertical extent (in the ice):
   ierr = PetscOptionsScalar("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters", "",
 			    z_scale, &z_scale, &Lz_set); CHKERRQ(ierr);
+  ierr = PetscOptionsScalar("-Lbz", "Grid extent in the Z (vertical) direction in the bedrock, in meters", "",
+			    zb_scale, &zb_scale, &Lbz_set); CHKERRQ(ierr);
 
   // Read -Mx, -My, -Mz and -Mbz. Note the transpose!
   ierr = PetscOptionsInt("-Mx", "Number of grid points in the X direction", "",
@@ -155,25 +157,31 @@ PetscErrorCode IceModel::set_grid_from_options() {
     PetscEnd();
   }
 
-  // Read -Lbz if -quadZ_bed is set.
-  ierr = PetscOptionsName("-quadZ_bed", "Chooses the quadratic vertical grid spacing in the bedrock",
-			  PETSC_NULL, &quadZ_bed_set); CHKERRQ(ierr);
-  if (quadZ_bed_set) {
+  // Use -Lbz and ignore -Mbz if -quadZ is set and -no_quadZ_bed is not.
+  if (quadZ_set) {
+    PetscTruth no_quadZ_bed;
+    ierr = check_option("-no_quadZ_bed", no_quadZ_bed);
 
-    ierr = ignore_option(grid.com, "-Mbz"); CHKERRQ(ierr);
+    if (no_quadZ_bed) {
+      ierr = ignore_option(grid.com, "-Lbz"); CHKERRQ(ierr);
 
-    ierr = PetscOptionsScalar("-Lbz", "Grid extent in the Z (vertical) direction in the bedrock, in meters", "",
-			      zb_scale, &zb_scale, &Lbz_set); CHKERRQ(ierr);
-    if (!Lbz_set) {
-      ierr = PetscPrintf(grid.com,
-			 "PISM ERROR: you need to specify -Lbz for -quadZ_bed to work.\n"); CHKERRQ(ierr);
-      PetscEnd();
+      grid.bed_vertical_spacing = EQUAL;
+    } else {
+      ierr = ignore_option(grid.com, "-Mbz"); CHKERRQ(ierr);
+      if (!Lbz_set) {
+	ierr = PetscPrintf(grid.com, "PISM ERROR: you need to specify -Lbz.\n");
+	CHKERRQ(ierr);
+	PetscEnd();
+      }
+      grid.bed_vertical_spacing = QUADRATIC;
     }
+  }
 
+  PetscTruth quadZ_bed;
+  ierr = check_option("-quadZ_bed", quadZ_bed);
+  if (quadZ_bed) {
     grid.bed_vertical_spacing = QUADRATIC;
-    grid.Lbz = zb_scale;
-  } else {
-    ierr = ignore_option(grid.com, "-Lbz"); CHKERRQ(ierr);
+    ierr = ignore_option(grid.com, "-Mbz"); CHKERRQ(ierr);
   }
 
   // Done with the options.
@@ -183,6 +191,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
   if (Lx_set)    grid.Lx = x_scale * 1000.0; // convert to meters
   if (Ly_set)    grid.Ly = y_scale * 1000.0; // convert to meters
   if (Lz_set)    grid.Lz = z_scale;	     // in meters already
+  if (Lbz_set)   grid.Lbz = zb_scale;	     // in meters already
   if (Mx_set)    grid.Mx = Mx;
   if (My_set)    grid.My = My;
   if (Mz_set)    grid.Mz = Mz;

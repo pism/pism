@@ -651,7 +651,7 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 
 //! Computes the ice volume, in m^3.
 PetscErrorCode IceModel::compute_ivol(PetscScalar &result) {
-  PetscScalar ierr;
+  PetscErrorCode ierr;
   PetscScalar     **H;
   PetscScalar     volume=0.0;
   const PetscScalar a = grid.dx * grid.dy; // cell area
@@ -672,7 +672,7 @@ PetscErrorCode IceModel::compute_ivol(PetscScalar &result) {
 
 //! Computes ice area, in m^2.
 PetscErrorCode IceModel::compute_iarea(PetscScalar &result) {
-  PetscScalar ierr;
+  PetscErrorCode ierr;
   PetscScalar     **H;
   PetscScalar     area=0.0;
   const PetscScalar a = grid.dx * grid.dy; // cell area

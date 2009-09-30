@@ -89,6 +89,11 @@ IceModel::~IceModel() {
     destroyViewers();
   }
 
+  // deallocate (and write) time-series
+  vector<DiagnosticTimeseries*>::iterator i;
+  for (i = timeseries.begin(); i < timeseries.end(); ++i)
+    delete (*i);
+
   delete basal;
   delete basalSIA;
 
@@ -440,6 +445,11 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   dtTempAge = 0.0;
 
 
+  // Write snapshots and time-series at the beginning of the run.
+  ierr = write_snapshot(); CHKERRQ(ierr);
+  ierr = write_timeseries(); CHKERRQ(ierr);
+  ierr = write_extras(); CHKERRQ(ierr);
+
   // main loop for time evolution
   for (PetscScalar year = start_year; year < end_year; year += dt/secpera) {
 
@@ -519,12 +529,14 @@ PetscLogEventBegin(massbalEVENT,0,0,0,0);
 
 PetscLogEventEnd(massbalEVENT,0,0,0,0);
 
-// Write snapshots and time-series:
+    
+    ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
+
+    // Writing these fields here ensures that we do it after the last
+    // time-step, too.
     ierr = write_snapshot(); CHKERRQ(ierr);
     ierr = write_timeseries(); CHKERRQ(ierr);
     ierr = write_extras(); CHKERRQ(ierr);
-    
-    ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 
     // end the flag line and report a summary
     ierr = verbPrintf(2,grid.com, " %d%c  +%6.5f\n", skipCountDown, adaptReasonFlag,
