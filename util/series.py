@@ -1,13 +1,13 @@
 #! /usr/bin/env python
-## This script takes the standard out from a PISM evolution run executable, e.g.
-## pismr, pisms, pgrn, or pismv.  It extracts time series for the quantities 
-## in the summary, and saves these in a NetCDF file.
-## For example,
-##   $ pisms -eisII A -Mx 61 -My 61 -Mz 201 -y 5000 >> eisIIA.out
-##   $ series.py -f eisIIA.out -o eisIIA_series.nc
-##   $ ncview eisIIA_series.nc
-## It works for PISM diagnostic output, but there is no useful time series
-## to extract.
+# This script takes the standard out from a PISM evolution run executable, e.g.
+# pismr, pisms, pgrn, or pismv.  It extracts time series for the quantities 
+# in the summary, and saves these in a NetCDF file.
+# For example,
+#   $ pisms -eisII A -Mx 61 -My 61 -Mz 201 -y 5000 >> eisIIA.out
+#   $ series.py -f eisIIA.out -o eisIIA_series.nc
+#   $ ncview eisIIA_series.nc
+# It works for PISM diagnostic output, but there is no useful time series
+# to extract.
 
 from numpy import *
 # try different netCDF modules
@@ -15,7 +15,7 @@ try:
     from netCDF4 import Dataset as NC
 except:
     from netCDF3 import Dataset as NC
-import getopt
+from optparse import OptionParser
 import sys
 import time
 
@@ -23,21 +23,22 @@ import time
 IN_FILE = 'foo.txt'
 OUT_FILE = 'series_out.nc'
 
-##### process command line arguments #####
-infilename = IN_FILE
-outfilename = OUT_FILE
-ipismvout = False
-try:
-  opts, args = getopt.getopt(sys.argv[1:], "f:o:",
-                             ["file=", "out="])
-  for opt, arg in opts:
-    if opt in ("-f", "--file"):
-      infilename = arg
-    elif opt in ("-o", "--out"):
-      outfilename = arg
-except getopt.GetoptError:
-  print 'ERROR: incorrect command line arguments'
-  sys.exit(2)
+##### process command line arguments ###
+parser = OptionParser()
+parser.usage = "usage: %prog [options]"
+parser.description = "This script takes the standard out from a PISM evolution run executable, e.g. pismr, pisms, pgrn, or pismv.  It extracts time series for the quantities in the summary, and saves these in a NetCDF file. It works for PISM diagnostic output, but there is no useful time series to extract."
+parser.add_option("-i", "--infile",dest="infilename",
+                  help="specify input filename INFILE. INFILE must be text file containing PISM standard output.",
+                  metavar="INFILE",default=IN_FILE)
+parser.add_option("-f", "--file",dest="infilename",
+                  help="specify input filename INFILE (deprecated, use -i or --infile instead)",
+                  metavar="INFILE",default=IN_FILE)
+parser.add_option("-o", "--out",dest="outfilename",
+                  help="specify output filename OUTFILE. OUTFILE is a netCDF file",
+                  metavar="OUTFILE",default=OUT_FILE)
+(options, args) = parser.parse_args()
+infilename = options.infilename
+outfilename = options.outfilename
 
 # read file into an array of time and of vol
 print " reading PISM evolution run standard output from ",infilename
@@ -120,7 +121,7 @@ print ' ' + str(count) + ' summary lines read'
 infile.close()
 
 # open a NetCDF file to write to
-ncfile = NC(outfilename, "w")
+ncfile = NC(outfilename, "w",'NETCDF3_CLASSIC')
 
 # add history global attribute
 historysep = ' '
