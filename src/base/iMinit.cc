@@ -77,16 +77,28 @@ PetscErrorCode IceModel::set_grid_defaults() {
   grid.Lx = gi.Lx;
   grid.Ly = gi.Ly;
 
-  if (t_exists) {
-    grid.year = gi.time / secpera; // set year from read-in time variable
-    ierr = verbPrintf(2, grid.com, 
-		      "  time t = %5.4f years found; setting current year\n",
+  // read grid.year if no option overrides it
+  PetscTruth ys_set;
+  ierr = check_option("-ys", ys_set); CHKERRQ(ierr);
+  if (!ys_set) {
+    if (t_exists) {
+      grid.year = gi.time / secpera; // set year from read-in time variable
+      ierr = verbPrintf(2, grid.com, 
+  		      "  time t = %5.4f years found; setting current year\n",
 		      grid.year); CHKERRQ(ierr);
-  } else {
-    grid.year = 0.0;
-    ierr = verbPrintf(2, grid.com, 
+    } else {
+      grid.year = 0.0;
+      ierr = verbPrintf(2, grid.com, 
 		      "  time dimension was not found; setting current year to t = 0.0 years\n",
 		      grid.year); CHKERRQ(ierr);
+    }
+  } else {
+    // go ahead and read -ys option, possibly redundantly, but to assure that grid.year 
+    //   is set here; see set_time_from_options()
+    PetscScalar usrStartYear;
+    ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &usrStartYear, PETSC_NULL); CHKERRQ(ierr);
+    config.set("start_year", usrStartYear);
+    grid.year = usrStartYear;
   }
 
   // Grid dimensions and its vertical extent should not be deduced from a
@@ -375,33 +387,6 @@ PetscErrorCode IceModel::init_physics() {
   return 0;
 }
 
-//! Miscellaneous initialization tasks plus tasks that need the fields that can come from regridding.
-PetscErrorCode IceModel::misc_setup() {
-  PetscErrorCode ierr;
-
-  ierr = verbPrintf(3, grid.com, "Finishing initialization...\n"); CHKERRQ(ierr);
-
-  ierr = init_snapshots(); CHKERRQ(ierr);
-  ierr = init_timeseries(); CHKERRQ(ierr);
-  ierr = init_extras(); CHKERRQ(ierr);
-
-  ierr = stampHistoryCommand(); CHKERRQ(ierr);
-  ierr = createViewers(); CHKERRQ(ierr);
-
-  // consistency of geometry after initialization;
-  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
-
-  // allocate and setup bed deformation model
-  ierr = bedDefSetup(); CHKERRQ(ierr);
-
-  // init basal till model, possibly inverting for phi, if desired;
-  //   reads options "-topg_to_phi phi_min,phi_max,phi_ocean,topg_min,topg_max"
-  //   or "-surf_vel_to_phi foo.nc";
-  //   initializes PlasticBasalType* basal; sets fields vtauc, vtillphi
-  ierr = initBasalTillModel(); CHKERRQ(ierr);
-  
-  return 0;
-}
 
 //! Initializes atmosphere and ocean couplers.
 PetscErrorCode IceModel::init_couplers() {
@@ -470,6 +455,35 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   ierr = Istag3[1].create(grid,"I_stagy",true); CHKERRQ(ierr);
   ierr = Istag3[1].set_attrs("internal","","",""); CHKERRQ(ierr);
 
+  return 0;
+}
+
+
+//! Miscellaneous initialization tasks plus tasks that need the fields that can come from regridding.
+PetscErrorCode IceModel::misc_setup() {
+  PetscErrorCode ierr;
+
+  ierr = verbPrintf(3, grid.com, "Finishing initialization...\n"); CHKERRQ(ierr);
+
+  ierr = init_snapshots(); CHKERRQ(ierr);
+  ierr = init_timeseries(); CHKERRQ(ierr);
+  ierr = init_extras(); CHKERRQ(ierr);
+
+  ierr = stampHistoryCommand(); CHKERRQ(ierr);
+  ierr = createViewers(); CHKERRQ(ierr);
+
+  // consistency of geometry after initialization;
+  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
+
+  // allocate and setup bed deformation model
+  ierr = bedDefSetup(); CHKERRQ(ierr);
+
+  // init basal till model, possibly inverting for phi, if desired;
+  //   reads options "-topg_to_phi phi_min,phi_max,phi_ocean,topg_min,topg_max"
+  //   or "-surf_vel_to_phi foo.nc";
+  //   initializes PlasticBasalType* basal; sets fields vtauc, vtillphi
+  ierr = initBasalTillModel(); CHKERRQ(ierr);
+  
   return 0;
 }
 

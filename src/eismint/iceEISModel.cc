@@ -32,6 +32,7 @@ IceEISModel::IceEISModel(IceGrid &g)
   iceFactory.setType(ICE_PB);
 }
 
+
 PetscErrorCode IceEISModel::set_grid_defaults() {
   PetscErrorCode ierr;
 
@@ -100,6 +101,7 @@ PetscErrorCode IceEISModel::set_grid_defaults() {
   return 0;
 }
 
+
 PetscErrorCode IceEISModel::set_vars_from_options() {
   PetscErrorCode ierr;
 
@@ -135,6 +137,7 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
   return 0;
 }
 
+
 PetscErrorCode IceEISModel::init_physics() {
   PetscErrorCode ierr;
 
@@ -151,6 +154,7 @@ PetscErrorCode IceEISModel::init_physics() {
 
   return 0;
 }
+
 
 PetscErrorCode IceEISModel::setFromOptions() {
   PetscErrorCode      ierr;
@@ -247,14 +251,15 @@ PetscErrorCode IceEISModel::setFromOptions() {
 }
 
 
-PetscErrorCode IceEISModel::misc_setup() {
+PetscErrorCode IceEISModel::init_couplers() {
   PetscErrorCode      ierr;
 
-  ierr = IceModel::misc_setup(); CHKERRQ(ierr);
+  ierr = IceModel::init_couplers(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com,
     "  setting surface mass balance and surface temperature from EISMINT II formulas ...\n");
     CHKERRQ(ierr);
+
   PetscTruth i_set;
   char filename[PETSC_MAX_PATH_LEN];
   ierr = PetscOptionsGetString(PETSC_NULL, "-i",
@@ -263,19 +268,10 @@ PetscErrorCode IceEISModel::misc_setup() {
     ierr = verbPrintf(2,grid.com,
       "  (values from file %s ignored)\n", filename); CHKERRQ(ierr);
   }
-  ierr = initAccumTs(); CHKERRQ(ierr); // climate is always set to EISMINT II
-  
-  ierr = verbPrintf(2,grid.com, "running EISMINT II experiment %c ...\n",expername);
-  CHKERRQ(ierr);
-  return 0;
-}
 
-
-PetscErrorCode IceEISModel::initAccumTs() {
-  PetscErrorCode    ierr;
-  PetscScalar       **accum, **Ts;
-
+  PetscScalar  **accum, **Ts;
   IceModelVec2 *pccsmf, *pccTs;
+
   if (atmosPCC != PETSC_NULL) {
     // call sets pccsmf to point to IceModelVec2 with current surface massflux
     ierr = atmosPCC->updateSurfMassFluxAndProvide(

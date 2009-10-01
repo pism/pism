@@ -33,19 +33,19 @@ the effects of thermomechanical coupling</em>.  J. Glaciol. 46(153), 227--238.
 class IceEISModel : public IceModel {
 public:
     IceEISModel(IceGrid &g);
-  virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode set_grid_defaults();
-  virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode init_physics();
-  virtual PetscErrorCode misc_setup();
+    virtual PetscErrorCode setFromOptions();
+    virtual PetscErrorCode set_grid_defaults();
+    virtual PetscErrorCode set_vars_from_options();
+    virtual PetscErrorCode init_physics();
+    virtual PetscErrorCode init_couplers();
     
 protected:
     int         expername;
     bool        infileused;
     PetscScalar M_max, R_el, R_cts, T_min, T_max, S_b, S_T;
  
-    PetscErrorCode initAccumTs();
     PetscErrorCode fillintemps();
+
     virtual PetscScalar basalVelocitySIA( // not recommended, generally
                              PetscScalar x, PetscScalar y, PetscScalar H, PetscScalar T,
                              PetscScalar alpha, PetscScalar mu, PetscScalar min_T) const;

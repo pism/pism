@@ -443,8 +443,8 @@ PetscErrorCode IceModel::temperatureStep(
       }
 
       if (PismModMask(mask[i][j]) == MASK_FLOATING) {
-        // eliminate basal lubrication water if floating; 
-        Hmelt[i][j] = 0.0;
+        // if floating assume maximally saturated till
+        Hmelt[i][j] = max_hmelt;
       } else {
         // limit Hmelt by default max and store
         Hmelt[i][j] = PetscMin(max_hmelt, Hmeltnew);

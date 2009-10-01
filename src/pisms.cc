@@ -101,9 +101,11 @@ int main(int argc, char *argv[]) {
     ierr = m->init(); CHKERRQ(ierr);
 
     ierr = m->setExecName("pisms"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, "running chosen EISMINT II experiment ...\n"); CHKERRQ(ierr);
     ierr = m->run(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done with run ... \n"); CHKERRQ(ierr);
     ierr = m->writeFiles("simp_exper.nc"); CHKERRQ(ierr);
+
     if (MISMIPchosen == PETSC_TRUE) {
       IceMISMIPModel* mMISMIP = dynamic_cast<IceMISMIPModel*>(m);
       if (!mMISMIP) { SETERRQ(4, "PISMS: mismip write files ... how did I get here?"); }
