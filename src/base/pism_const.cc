@@ -21,6 +21,7 @@
 #include "nc_util.hh"
 #include "pism_const.hh"
 #include <sstream>
+#include <ctime>
 
 static PetscInt verbosityLevel;
 
@@ -361,4 +362,18 @@ bool is_increasing(int len, double *a) {
     if (a[k] >= a[k+1])  return false;
   }
   return true;
+}
+
+//! Creates a time-stamp used for the history NetCDF attribute.
+string timestamp() {
+  time_t now;
+  tm tm_now;
+  char date_str[50];
+  now = time(NULL);
+  localtime_r(&now, &tm_now);
+  // Format specifiers for strftime():
+  //   %F = ISO date format,  %T = Full 24 hour time,  %Z = Time Zone name
+  strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
+
+  return string(date_str);
 }

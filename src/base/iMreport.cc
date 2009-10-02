@@ -399,6 +399,7 @@ PetscErrorCode IceModel::compute_cflx(IceModelVec2 &result, IceModelVec2 &cbar) 
   PetscErrorCode ierr;
 
   ierr = cbar.multiply_by(vH, result); CHKERRQ(ierr);
+
   ierr = result.set_name("cflx"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", 
 			  "magnitude of vertically-integrated horizontal flux of ice",
@@ -466,7 +467,7 @@ PetscErrorCode IceModel::compute_csurf(IceModelVec2 &result, IceModelVec2 &tmp) 
 
 //! Computes uvelsurf, the x component of velocity of ice at ice surface.
 /*! Note that there is no need to mask out ice-free areas here, because
-  wvelsurf is zero at those locations.
+  uvelsurf is zero at those locations.
  */
 PetscErrorCode IceModel::compute_uvelsurf(IceModelVec2 &result) {
   PetscErrorCode ierr;
@@ -486,7 +487,7 @@ PetscErrorCode IceModel::compute_uvelsurf(IceModelVec2 &result) {
 
 //! Computes vvelsurf, the y component of velocity of ice at ice surface.
 /*! Note that there is no need to mask out ice-free areas here, because
-  wvelsurf is zero at those locations.
+  vvelsurf is zero at those locations.
  */
 PetscErrorCode IceModel::compute_vvelsurf(IceModelVec2 &result) {
   PetscErrorCode ierr;
@@ -650,7 +651,7 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 }
 
 //! Computes the ice volume, in m^3.
-PetscErrorCode IceModel::compute_ivol(PetscScalar &result) {
+PetscErrorCode IceModel::compute_ice_volume(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     **H;
   PetscScalar     volume=0.0;
@@ -671,7 +672,7 @@ PetscErrorCode IceModel::compute_ivol(PetscScalar &result) {
 }
 
 //! Computes ice area, in m^2.
-PetscErrorCode IceModel::compute_iarea(PetscScalar &result) {
+PetscErrorCode IceModel::compute_ice_area(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     **H;
   PetscScalar     area=0.0;
@@ -690,17 +691,71 @@ PetscErrorCode IceModel::compute_iarea(PetscScalar &result) {
   return 0;
 }
 
+//! Computes grounded ice area, in m^2.
+PetscErrorCode IceModel::compute_ice_area_grounded(PetscScalar &result) {
+  PetscErrorCode ierr;
+  PetscScalar     **H, **M;
+  PetscScalar     area=0.0;
+  const PetscScalar a = grid.dx * grid.dy; // cell area
+  
+  ierr = vMask.get_array(M); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if ((H[i][j] > 0) && ((M[i][j] == MASK_SHEET) || (M[i][j] == MASK_DRAGGING)))
+        area += a;
+    }
+  }  
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+
+  ierr = PetscGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  return 0;
+}
+
+//! Computes floating ice area, in m^2.
+PetscErrorCode IceModel::compute_ice_area_floating(PetscScalar &result) {
+  PetscErrorCode ierr;
+  PetscScalar     **H, **M;
+  PetscScalar     area=0.0;
+  const PetscScalar a = grid.dx * grid.dy; // cell area
+  
+  ierr = vMask.get_array(M); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if ((H[i][j] > 0) && (PismModMask(M[i][j]) == MASK_FLOATING))
+        area += a;
+    }
+  }  
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+
+  ierr = PetscGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
+  return 0;
+}
+
 PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
   PetscErrorCode ierr, errcode = 1;
 
   if (name == "ivol") {
     errcode = 0;
-    ierr = compute_ivol(result); CHKERRQ(ierr);
+    ierr = compute_ice_volume(result); CHKERRQ(ierr);
   }
 
   if (name == "iarea") {
     errcode = 0;
-    ierr = compute_iarea(result); CHKERRQ(ierr);
+    ierr = compute_ice_area(result); CHKERRQ(ierr);
+  }
+
+  if (name == "iareag") {
+    errcode = 0;
+    ierr = compute_ice_area_grounded(result); CHKERRQ(ierr);
+  }
+
+  if (name == "iareaf") {
+    errcode = 0;
+    ierr = compute_ice_area_floating(result); CHKERRQ(ierr);
   }
 
   return errcode;

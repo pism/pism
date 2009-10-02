@@ -174,13 +174,13 @@ DiagnosticTimeseries::DiagnosticTimeseries(MPI_Comm c, PetscMPIInt r, string nam
   output_filename = name + ".nc";
 }
 
+//! Destructor; makes sure that everything is written to a file.
 DiagnosticTimeseries::~DiagnosticTimeseries() {
   flush();
 }
 
 //! Adds the (t,v) pair to the interpolation buffer.
-/*! The interpolation buffer only holds 2 values only (for linear
-  interpolation).
+/*! The interpolation buffer holds 2 values only (for linear interpolation).
  */
 PetscErrorCode DiagnosticTimeseries::append(double T, double V) {
   // append to the interpolation buffer:
@@ -195,6 +195,8 @@ PetscErrorCode DiagnosticTimeseries::append(double T, double V) {
   return 0;
 }
 
+//! \brief Use linear interpolation to find the value of a scalar diagnostic
+//! quantity at time \c T and store the obtained pair (T, value).
 PetscErrorCode DiagnosticTimeseries::interp(double T) {
   PetscErrorCode ierr;
 
@@ -245,9 +247,9 @@ PetscErrorCode DiagnosticTimeseries::flush() {
   if (len == (int)start) {
     ierr = dimension.write(output_filename.c_str(), start, time);   CHKERRQ(ierr);
   }
-  ierr =       var.write(output_filename.c_str(), start, values); CHKERRQ(ierr);
+  ierr = var.write(output_filename.c_str(), start, values); CHKERRQ(ierr);
 
-  start += buffer_size;
+  start += time.size();
   time.clear();
   values.clear();
 

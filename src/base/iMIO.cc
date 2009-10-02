@@ -18,7 +18,6 @@
 
 #include <cstring>
 #include <cstdio>
-#include <ctime>
 #include <petscda.h>
 #include "iceModel.hh"
 #include <algorithm>
@@ -553,19 +552,12 @@ PetscErrorCode IceModel::write_snapshot() {
   CHKERRQ(ierr);
 
   // create line for history in .nc file, including time of write
-  time_t now;
-  tm tm_now;
-  char date_str[50];
-  now = time(NULL);
-  localtime_r(&now, &tm_now);
-  // Format specifiers for strftime():
-  //   %F = ISO date format,  %T = Full 24 hour time,  %Z = Time Zone name
-  strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
 
+  string date_str = timestamp();
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
 	   "%s: %s snapshot at %10.5f a, for time-step goal %10.5f a\n",
-	   date_str, executable_short_name.c_str(), grid.year, saving_after);
+	   date_str.c_str(), executable_short_name.c_str(), grid.year, saving_after);
 
   if (!snapshots_file_is_ready) {
     bool use_ssa_velocity = config.get_flag("use_ssa_velocity");

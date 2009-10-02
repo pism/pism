@@ -405,8 +405,10 @@ protected:
   virtual PetscErrorCode compute_wvelsurf(IceModelVec2 &result);
   virtual PetscErrorCode compute_by_name(string name, IceModelVec* &result);
   // scalar:
-  virtual PetscErrorCode compute_ivol(PetscScalar &result);
-  virtual PetscErrorCode compute_iarea(PetscScalar &result);
+  virtual PetscErrorCode compute_ice_volume(PetscScalar &result);
+  virtual PetscErrorCode compute_ice_area(PetscScalar &result);
+  virtual PetscErrorCode compute_ice_area_grounded(PetscScalar &result);
+  virtual PetscErrorCode compute_ice_area_floating(PetscScalar &result);
   virtual PetscErrorCode compute_by_name(string name, PetscScalar &result);
 
   // see iMsia.cc

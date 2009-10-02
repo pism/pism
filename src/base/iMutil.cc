@@ -18,7 +18,6 @@
 
 #include <sstream>
 #include <cstring>
-#include <ctime>
 #include "iceModel.hh"
 #include "pism_signal.h"
 #include <petscvec.h>
@@ -67,6 +66,12 @@ int IceModel::endOfTimeStepHook() {
        file_name);
     pism_signal = 0;
     dumpToFile(file_name);
+
+    // flush all the time-series buffers:
+    vector<DiagnosticTimeseries*>::iterator i;
+    for (i = timeseries.begin(); i < timeseries.end(); ++i) {
+      (*i)->flush();
+    }
   }
 
   return 0;
@@ -124,26 +129,13 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 PetscErrorCode  IceModel::stampHistory(string str) {
   PetscErrorCode ierr;
 
-  time_t now;
-  tm tm_now;
-  now = time(NULL);
-  localtime_r(&now, &tm_now);
-
-  char date_str[50];
-  // Format specifiers for strftime():
-  //   %F : ISO date format
-  //   %T : Full 24 hour time
-  //   %Z : Time Zone name
-  //   %z : Time zone offset
-  strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
-
   char username[50];
   ierr = PetscGetUserName(username, sizeof(username)); CHKERRQ(ierr);
   char hostname[100];
   ierr = PetscGetHostName(hostname, sizeof(hostname)); CHKERRQ(ierr);
   
   ostringstream message;
-  message << username << "@" << hostname << " " << date_str << ": " << str << endl;
+  message << username << "@" << hostname << " " << timestamp() << ": " << str << endl;
 
   ierr = stampHistoryAdd(message.str()); CHKERRQ(ierr);
   

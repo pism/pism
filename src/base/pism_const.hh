@@ -80,6 +80,8 @@ PetscErrorCode verbosityLevelFromOptions();
 PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
 void endPrintRank();
 
+string timestamp();
+
 bool ends_with(string str, string suffix);
 
 // handy functions for processing options:

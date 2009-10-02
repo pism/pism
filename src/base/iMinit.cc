@@ -169,31 +169,23 @@ PetscErrorCode IceModel::set_grid_from_options() {
     PetscEnd();
   }
 
-  // Use -Lbz and ignore -Mbz if -quadZ is set and -no_quadZ_bed is not.
-  if (quadZ_set) {
-    PetscTruth no_quadZ_bed;
-    ierr = check_option("-no_quadZ_bed", no_quadZ_bed);
-
-    if (no_quadZ_bed) {
-      ierr = ignore_option(grid.com, "-Lbz"); CHKERRQ(ierr);
-
-      grid.bed_vertical_spacing = EQUAL;
-    } else {
-      ierr = ignore_option(grid.com, "-Mbz"); CHKERRQ(ierr);
-      if (!Lbz_set) {
-	ierr = PetscPrintf(grid.com, "PISM ERROR: you need to specify -Lbz.\n");
-	CHKERRQ(ierr);
-	PetscEnd();
-      }
-      grid.bed_vertical_spacing = QUADRATIC;
-    }
+  // Only one of -Mbz and -Lbz is allowed.
+  if (Mbz_set && Lbz_set) {
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: at most one of -Lbz and -Mbz is allowed.\n"); CHKERRQ(ierr);
+    PetscEnd();
   }
 
-  PetscTruth quadZ_bed;
-  ierr = check_option("-quadZ_bed", quadZ_bed);
-  if (quadZ_bed) {
+  // -Lbz turns on quadratic bedrock spacing.
+  if (Lbz_set) {
     grid.bed_vertical_spacing = QUADRATIC;
-    ierr = ignore_option(grid.com, "-Mbz"); CHKERRQ(ierr);
+    grid.Lbz = zb_scale;	// in meters already
+  }
+
+  // -Mbz turns on equal spacing in the bedrock.
+  if (Mbz_set) {
+    grid.bed_vertical_spacing = EQUAL;
+    grid.Mbz = Mbz;
   }
 
   // Done with the options.
@@ -203,11 +195,9 @@ PetscErrorCode IceModel::set_grid_from_options() {
   if (Lx_set)    grid.Lx = x_scale * 1000.0; // convert to meters
   if (Ly_set)    grid.Ly = y_scale * 1000.0; // convert to meters
   if (Lz_set)    grid.Lz = z_scale;	     // in meters already
-  if (Lbz_set)   grid.Lbz = zb_scale;	     // in meters already
   if (Mx_set)    grid.Mx = Mx;
   if (My_set)    grid.My = My;
   if (Mz_set)    grid.Mz = Mz;
-  if (Mbz_set)   grid.Mbz = Mbz;
   if (quadZ_set) grid.ice_vertical_spacing = QUADRATIC;
   if (chebZ_set) grid.ice_vertical_spacing = CHEBYSHEV;
 

@@ -155,14 +155,6 @@ PetscErrorCode IceCompModel::set_grid_from_options() {
   // Allows user to set -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -chebZ and -quadZ.
   ierr = IceModel::set_grid_from_options(); CHKERRQ(ierr);
 
-  if (testname == 'K') {
-    if (PetscAbs(grid.Lbz - 1000.0) > 1e-8) {
-      ierr = PetscPrintf(grid.com, "PISM ERROR: grid.Lbz must be equal to 1000 in Test K\n");
-      CHKERRQ(ierr);
-      PetscEnd();
-    }
-  }
-
   return 0;
 }
 

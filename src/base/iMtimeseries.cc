@@ -121,9 +121,36 @@ PetscErrorCode IceModel::create_timeseries() {
     timeseries.push_back(iarea);
   }
 
+  if (find(ts_vars.begin(), ts_vars.end(), "iareag") != ts_vars.end()) {
+    DiagnosticTimeseries *iareag = new DiagnosticTimeseries(&grid, "iareag", "t");
+
+    iareag->set_units("m2", "");
+    iareag->set_dimension_units("years", "");
+    iareag->output_filename = ts_filename;
+
+    iareag->set_attr("long_name", "grounded ice area");
+    iareag->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(iareag);
+  }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "iareaf") != ts_vars.end()) {
+    DiagnosticTimeseries *iareaf = new DiagnosticTimeseries(&grid, "iareaf", "t");
+
+    iareaf->set_units("m2", "");
+    iareaf->set_dimension_units("years", "");
+    iareaf->output_filename = ts_filename;
+
+    iareaf->set_attr("long_name", "floating ice area");
+    iareaf->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(iareaf);
+  }
+
   return 0;
 }
 
+//! Write time-series.
 PetscErrorCode IceModel::write_timeseries() {
   PetscErrorCode ierr;
 
@@ -189,8 +216,6 @@ PetscErrorCode IceModel::init_extras() {
     save_extra = false;
     return 0;
   }
-
-
 
   ierr = parse_times(grid.com, tmp, extra_times);
   if (ierr != 0) {
@@ -298,19 +323,11 @@ PetscErrorCode IceModel::write_extras() {
   CHKERRQ(ierr);
 
   // create line for history in .nc file, including time of write
-  time_t now;
-  tm tm_now;
-  char date_str[50];
-  now = time(NULL);
-  localtime_r(&now, &tm_now);
-  // Format specifiers for strftime():
-  //   %F = ISO date format,  %T = Full 24 hour time,  %Z = Time Zone name
-  strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
-
+  string date_str = timestamp();
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
 	   "%s: %s saving time-series record at %10.5f a, for time-step goal %10.5f a\n",
-	   date_str, executable_short_name.c_str(), grid.year, saving_after);
+	   date_str.c_str(), executable_short_name.c_str(), grid.year, saving_after);
 
   if (!extra_file_is_ready) {
 
