@@ -107,8 +107,8 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
 
   // initialize from EISMINT II formulas
   ierr = verbPrintf(1,grid.com, 
-		    "initializing EISMINT II experiment %c from simplified geometry formulas ... \n", 
-		    expername); CHKERRQ(ierr);
+           "initializing EISMINT II experiment %c from simplified geometry formulas ... \n", 
+           expername); CHKERRQ(ierr);
 
   // following will be part of saved state; not reset if read from file
   // if no inFile then starts with zero ice

@@ -34,15 +34,6 @@ See chapter 4 of the User's Manual.  We read only 2D information from the bootst
 PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   PetscErrorCode  ierr;
 
-  const PetscScalar DEFAULT_H_VALUE_NO_VAR = 0.0,  // m
-                    DEFAULT_BED_VALUE_NO_VAR = 1.0, // m;  grounded if no bed topo
-                    DEFAULT_GEOTHERMAL_FLUX_VALUE_NO_VAR = 0.042, // J/m^2 s
-                    DEFAULT_UPLIFT_VALUE_NO_VAR = 0.0, // m/s
-                    DEFAULT_HMELT_VALUE_NO_VAR = 0.0, // m
-                    DEFAULT_TILL_PHI_VALUE_NO_VAR = 15.0; // degrees; tends not to slip
-                                                          //   (if -ssa -plastic, which is
-                                                          //    not default anyway)
-
   NCTool nc(&grid);
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
 
@@ -91,7 +82,8 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   }
   if (hExists) {
     ierr = verbPrintf(2, grid.com, 
-		      "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n"); CHKERRQ(ierr);
+		      "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n");
+		      CHKERRQ(ierr);
   }
 
 
@@ -100,12 +92,19 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 
   ierr = vLongitude.regrid(filename, *bootstrapLIC, false); CHKERRQ(ierr);
   ierr =  vLatitude.regrid(filename, *bootstrapLIC, false); CHKERRQ(ierr);
-  ierr =         vH.regrid(filename, *bootstrapLIC, DEFAULT_H_VALUE_NO_VAR); CHKERRQ(ierr);
-  ierr =       vbed.regrid(filename, *bootstrapLIC, DEFAULT_BED_VALUE_NO_VAR); CHKERRQ(ierr);
-  ierr =     vHmelt.regrid(filename, *bootstrapLIC, DEFAULT_HMELT_VALUE_NO_VAR); CHKERRQ(ierr);
-  ierr =   vtillphi.regrid(filename, *bootstrapLIC, DEFAULT_TILL_PHI_VALUE_NO_VAR); CHKERRQ(ierr);
-  ierr =       vGhf.regrid(filename, *bootstrapLIC, DEFAULT_GEOTHERMAL_FLUX_VALUE_NO_VAR); CHKERRQ(ierr);
-  ierr =    vuplift.regrid(filename, *bootstrapLIC, DEFAULT_UPLIFT_VALUE_NO_VAR); CHKERRQ(ierr);
+  ierr =         vH.regrid(filename, *bootstrapLIC,
+                           config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
+  ierr =       vbed.regrid(filename, *bootstrapLIC, 
+                           config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
+  ierr =     vHmelt.regrid(filename, *bootstrapLIC, 
+                           config.get("bootstrapping_Hmelt_value_no_var")); CHKERRQ(ierr);
+  ierr =   vtillphi.regrid(filename, *bootstrapLIC, 
+                           config.get("bootstrapping_tillphi_value_no_var")); CHKERRQ(ierr);
+  ierr =       vGhf.regrid(filename, *bootstrapLIC, 
+                           config.get("bootstrapping_geothermal_flux_value_no_var"));
+                           CHKERRQ(ierr);
+  ierr =    vuplift.regrid(filename, *bootstrapLIC, 
+                           config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
 
   // set mask and h; tell user what happened:
   ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);

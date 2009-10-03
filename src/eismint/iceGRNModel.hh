@@ -95,7 +95,6 @@ specification:
   of the default scheme from \ref Faustoetal2009, implemented in PISMSnowModelAtmosCoupler.
 - An enhancement factor of 3.0 is used.
 - -ocean_kill is used by default.
-- Constant geothermal flux, unless the user adds a map of it, and sets -have_geothermal.
 
 Which experiment to do is chosen by one of options -ssl2,-ccl3,-gwl3.  (Experiment
 SSL3 is not implemented; see User's Manual.)
@@ -108,11 +107,9 @@ public:
   IceGRNModel(IceGrid &g) : IceModel(g) {}
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode init_couplers();
-  virtual PetscErrorCode set_vars_from_options();
 
 private:
   EISGREENrun exper;
-  PetscTruth  haveGeothermalFlux;
 };
 #endif
 

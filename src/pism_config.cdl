@@ -53,6 +53,24 @@ netcdf pism_config {
     pism_config:force_full_diagnostics_doc = "Force full diagnostic output (adds 3D velocity fields and velocity components at the surface";
 
     // parameters:
+    pism_config:bootstrapping_H_value_no_var = 0.0;
+    pism_config:bootstrapping_H_value_no_var_doc = "m; thickness value to use if thk (land_ice_thickness) variable is absent in bootstrapping file";
+    
+    pism_config:bootstrapping_bed_value_no_var = 1.0;
+    pism_config:bootstrapping_bed_value_no_var_doc = "m; bed elevation value to use if topg (bedrock_altitude) variable is absent in bootstrapping file";
+    
+    pism_config:bootstrapping_geothermal_flux_value_no_var = 0.042;
+    pism_config:bootstrapping_geothermal_flux_value_no_var_doc = "W m-2; geothermal flux value to use if bheatflx variable is absent in bootstrapping file";
+    
+    pism_config:bootstrapping_uplift_value_no_var = 0.0;
+    pism_config:bootstrapping_uplift_value_no_var_doc = "m s-1; uplift value to use if dbdt variable is absent in bootstrapping file";
+    
+    pism_config:bootstrapping_Hmelt_value_no_var = 0.0;
+    pism_config:bootstrapping_Hmelt_value_no_var_doc = "m; basal melt water effective thickness value to use if variable Hmelt is absent in bootstrapping file";
+    
+    pism_config:bootstrapping_tillphi_value_no_var = 15.0;
+    pism_config:bootstrapping_tillphi_value_no_var_doc = "degrees; till friction angle value to use if variable tillphi is absent in bootstrapping file; tends not to slip";
+    
     pism_config:enhancement_factor = 1.0;
     pism_config:enhancement_factor_doc = "; Flow enhancement factor";
 

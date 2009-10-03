@@ -1310,7 +1310,7 @@ $ pgrn -boot_from eis_green_smoothed.nc \
 \scriptsize
 \begin{quote}
 \begin{verbatim}
-PGRN revision 794 trunk (PISM EISMINT-Greenland mode)
+PGRN revision 797M trunk (PISM EISMINT-Greenland mode)
   time dimension was not found; setting current year to t = 0.0 years
   setting flags equivalent to '-e 3 -ocean_kill'; user options may override ...
   initializing atmospheric climate coupler with a snow process model ...
@@ -1333,20 +1333,20 @@ bootstrapping by PISM default method from file eis_green_smoothed.nc
     [-1400.00 km, 1400.00 km] x [-820.00 km, 820.00 km] x [0 m, 4000.00 m]
   WARNING: surface elevation 'usurf' found; IGNORING IT!
   reading 2D model state variables by regridding ...
-  FOUND  lon       / standard_name=longitude                                                   
+  FOUND  lon       / standard_name=longitude                          
                    \ min,max =   -94.194,   12.889 (degree_east)
-  FOUND  lat       / standard_name=latitude                                                    
+  FOUND  lat       / standard_name=latitude         
                    \ min,max =    58.275,   84.458 (degree_north)
-  FOUND  thk       / standard_name=land_ice_thickness                                          
+  FOUND  thk       / standard_name=land_ice_thickness                              
                    \ min,max =     0.000, 3200.000 (m)
-  FOUND  topg      / standard_name=bedrock_altitude                                            
+  FOUND  topg      / standard_name=bedrock_altitude                  
                    \ min,max = -3859.000, 2151.000 (m)
   absent bwat      / effective thickness of subglacial melt water                
                    \ not found; using default constant    0.00 (m)
   absent tillphi   / friction angle for till under grounded ice sheet            
                    \ not found; using default constant   15.00 (degrees)
   absent bheatflx  / upward geothermal flux at bedrock surface                   
-                   \ not found; using default constant   42.00 (mW m-2)
+                   \ not found; using default constant   50.00 (mW m-2)
   absent dbdt      / bedrock uplift rate                                         
                    \ not found; using default constant    0.00 (m year-1)
   determining surface elevation by  usurf = topg + thk  where grounded
@@ -1355,7 +1355,6 @@ bootstrapping by PISM default method from file eis_green_smoothed.nc
     option -ocean_kill seen: floating ice mask=3; ice free ocean mask=7
   filling in ice and bedrock temperatures using surface temperatures and quartic guess
 done reading eis_green_smoothed.nc; bootstrapping done
-geothermal flux set to EISMINT-Greenland value 0.050000 W/m^2
 computational box: 2800.00 km x 1640.00 km x (4000.00 m + 2000.00 m bedrock)
 horizontal grid cell dimensions: 20.00 km x 20.00 km
   vertical grid spacing in ice: uneven, 51 levels, 21.200 m < dz < 138.800 m
@@ -1375,13 +1374,17 @@ horizontal grid cell dimensions: 20.00 km x 20.00 km
 \begin{verbatim}
 P         YEAR:     ivol   iarea    meltf     thick0     temp0
 U        years 10^6_km^3 10^6_km^2 (none)          m         K
-S      0.00000:  2.82500  1.6708   0.0124   3042.000  268.4823
- $$ SIA        vath 0d  +0.35875
-S      0.35875:  2.82472  1.6708   0.0127   3041.958  268.4830
- $$ SIA        vath 0d  +0.45783
-S      0.81658:  2.82510  2.2280   0.0219   3041.870  268.4839
- $$ SIA        vath 0e  +0.18342
-S      1.00000:  2.82525  2.2300   0.0228   3041.824  268.4843
+S      0.00000:  2.82500  1.6708   0.2071   3042.000  270.5156
+ $$ SIA        vath 0d  +0.18294
+S      0.18294:  2.82513  2.1068   0.1665   3041.887  270.5156
+ $$ SIA        vath 0d  +0.23543
+S      0.41837:  2.82480  1.6704   0.2079   3041.702  270.5157
+ $$ SIA        vath 0d  +0.26969
+S      0.68806:  2.82498  2.0444   0.1708   3041.457  270.5159
+ $$ SIA        vath 0d  +0.29958
+S      0.98765:  2.82522  2.2280   0.1682   3041.175  270.5161
+ $$ SIA        vath 0e  +0.01235
+S      1.00000:  2.82523  2.2300   0.1690   3041.164  270.5163
 done with run ... 
 Writing model state to file `green20km_y1.nc'
 \end{verbatim}

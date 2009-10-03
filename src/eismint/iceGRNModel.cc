@@ -186,7 +186,7 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   ierr = check_option("-ssl3", ssl3Set); CHKERRQ(ierr);
   if (ssl3Set == PETSC_TRUE) {
     ierr = PetscPrintf(grid.com,
-       "experiment SSL3 (-ssl3) is not implemented\n"
+       "experiment SSL3 (-ssl3) is not implemented ... ENDING\n"
        "  (choose parameters yourself, by runtime options)\n"); CHKERRQ(ierr);
     PetscEnd();
   }
@@ -200,17 +200,16 @@ PetscErrorCode IceGRNModel::setFromOptions() {
   if (exper != SSL2) { 
     // use Lingle-Clark bed deformation model for CCL3 and GWL3 but not SSL2
     ierr = verbPrintf(2, grid.com, 
-      "  setting flags equivalent to: '-bed_def_lc'; user options may override ...\n"); CHKERRQ(ierr);
+      "  setting flags equivalent to: '-bed_def_lc'; user options may override ...\n");
+      CHKERRQ(ierr);
     config.set_flag("do_bed_deformation", true);
     config.set_flag("do_bed_iso", false);
   }
 
   config.set("mu_sliding", 0.0);  // no SIA-type sliding!; see [\ref RitzEISMINT]
 
-  // these flags turn off parts of the EISMINT-Greenland specification;
-  //   use when extra/different data is available
-  ierr = check_option("-have_geothermal", haveGeothermalFlux);
-     CHKERRQ(ierr);
+  // use the EISMINT-Greenland value if no value in -boot_from file
+  config.set("bootstrapping_geothermal_flux_value_no_var", 0.050);
   
   // note: user value for -e, and -gk, and so on, will override settings above
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  
@@ -249,25 +248,4 @@ PetscErrorCode IceGRNModel::init_couplers() {
 
   return 0;
 }
-
-
-PetscErrorCode IceGRNModel::set_vars_from_options() {
-  PetscErrorCode ierr;
-
-  // Let the base class handle bootstrapping:
-  ierr = IceModel::set_vars_from_options(); CHKERRQ(ierr);
-
-  // though default bootstrapping has set the new temperatures, we usually need to set 
-  // the surface temp and geothermal flux at base and then set 3D temps again
-  const PetscScalar EISMINT_G_geothermal = 0.050;      // J/m^2 s; geothermal flux
-  if (haveGeothermalFlux == PETSC_FALSE) {
-    ierr = verbPrintf(2, grid.com,
-	"geothermal flux set to EISMINT-Greenland value %f W/m^2\n",
-	EISMINT_G_geothermal); CHKERRQ(ierr);
-    ierr = vGhf.set(EISMINT_G_geothermal); CHKERRQ(ierr);
-  }
-
-  return 0;
-}
-
 
