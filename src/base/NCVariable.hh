@@ -108,13 +108,13 @@ public:
   virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic,
 				bool critical, bool set_default_value,
 				PetscScalar default_value, MaskInterp *, Vec v);
-  virtual PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);
-
+  virtual PetscErrorCode to_glaciological_units(Vec v);
 protected:
   GridType dims;
   IceGrid *grid;
   PetscErrorCode define(int ncid, nc_type nctype, int &varid);
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
+  PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);
   PetscErrorCode check_range(Vec v);
 };
 

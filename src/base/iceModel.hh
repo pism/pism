@@ -348,8 +348,6 @@ protected:
                                     const char *varname, const char *shorttitle);
   virtual PetscErrorCode write2DToMatlab(PetscViewer v, const char singleCharName, 
                                  IceModelVec2 &l2, const PetscScalar scale);
-  virtual PetscErrorCode write2DToMatlab(PetscViewer v, const char singleCharName, 
-                                 Vec l2, const PetscScalar scale);
   virtual PetscErrorCode writeSliceToMatlab(PetscViewer v, const char singleCharName, 
                                     IceModelVec3 &imv3, const PetscScalar scale);
   virtual PetscErrorCode writeSurfaceValuesToMatlab(PetscViewer v, const char singleCharName, 

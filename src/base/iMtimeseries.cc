@@ -18,6 +18,7 @@
 
 #include "iceModel.hh"
 #include <sstream>
+#include <algorithm>
 
 //! Initializes the code writing scalar time-series.
 PetscErrorCode IceModel::init_timeseries() {
@@ -145,6 +146,19 @@ PetscErrorCode IceModel::create_timeseries() {
     iareaf->set_attr("valid_min", 0.0);
 
     timeseries.push_back(iareaf);
+  }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "dt") != ts_vars.end()) {
+    DiagnosticTimeseries *delta_t = new DiagnosticTimeseries(&grid, "dt", "t");
+
+    delta_t->set_units("s", "years");
+    delta_t->set_dimension_units("years", "");
+    delta_t->output_filename = ts_filename;
+
+    delta_t->set_attr("long_name", "mass continuity time-step");
+    delta_t->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(delta_t);
   }
 
   return 0;
@@ -352,7 +366,7 @@ PetscErrorCode IceModel::write_extras() {
 
   return 0;
 
-  // FIXME: should we let couplers write their fields?
+  /* FIXME: should we let couplers write their fields?
 
   if (atmosPCC != PETSC_NULL) {
     ierr = atmosPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
@@ -367,4 +381,5 @@ PetscErrorCode IceModel::write_extras() {
   }
     
   return 0;
+  */
 }

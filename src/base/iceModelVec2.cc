@@ -177,3 +177,20 @@ PetscErrorCode IceModelVec2::mask_by(IceModelVec2 &M, PetscScalar fill) {
 
   return 0;
 }
+
+/*
+PetscErrorCode IceModelVec2::view(PetscViewer V, Vec g2) {
+
+  if (localp) {
+    ierr = copy_to_global(g2); CHKERRQ(ierr);
+  } else {
+    ierr = VecCopy(v, g2); CHKERRQ(ierr);
+  }
+
+  ierr = var1.to_glaciological_units(g2); CHKERRQ(ierr);
+
+  ierr = g2_to_matlab(view, g2, grid->My, grid->Mx,
+		      name, string_attr("long_name")); CHKERRQ(ierr);
+
+}
+*/

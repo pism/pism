@@ -357,6 +357,11 @@ PetscErrorCode NCVariable::read_valid_range(int ncid, int varid) {
   return 0;
 }
 
+//! Converts \c v from internal to glaciological units.
+PetscErrorCode NCSpatialVariable::to_glaciological_units(Vec v) {
+  return change_units(v, &units, &glaciological_units);
+}
+
 //! Converts \c v from the units corresponding to \c from to the ones corresponding to \c to.
 /*!
   Does nothing if this transformation is trivial.

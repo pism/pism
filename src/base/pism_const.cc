@@ -22,6 +22,7 @@
 #include "pism_const.hh"
 #include <sstream>
 #include <ctime>
+#include <algorithm>
 
 static PetscInt verbosityLevel;
 
@@ -377,3 +378,4 @@ string timestamp() {
 
   return string(date_str);
 }
+

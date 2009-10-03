@@ -58,20 +58,6 @@ PetscErrorCode IceModel::write2DToMatlab(PetscViewer v, const char scName,
   return 0;
 }
 
-PetscErrorCode IceModel::write2DToMatlab(PetscViewer v, const char scName, 
-                               Vec l2, // a da2 Vec
-                               const PetscScalar scale) {
-  PetscErrorCode ierr;
-  
-  if (matlabOutWanted(scName)) {
-    ierr = DALocalToGlobal(grid.da2, l2, INSERT_VALUES, g2); CHKERRQ(ierr);
-    ierr = VecScale(g2,scale); CHKERRQ(ierr);
-    ierr = VecView_g2ToMatlab(v, tn[cIndex(scName)].name, tn[cIndex(scName)].title); CHKERRQ(ierr);
-  }
-  return 0;
-}
-
-
 PetscErrorCode IceModel::writeSliceToMatlab(PetscViewer v, const char scName, 
                                   IceModelVec3 &imv3, const PetscScalar scale) {
   PetscErrorCode ierr;

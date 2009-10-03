@@ -702,7 +702,8 @@ PetscErrorCode IceModel::compute_ice_area_grounded(PetscScalar &result) {
   ierr = vH.get_array(H); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ((H[i][j] > 0) && ((M[i][j] == MASK_SHEET) || (M[i][j] == MASK_DRAGGING)))
+      if ((H[i][j] > 0) &&
+	  ((PismIntMask(M[i][j]) == MASK_SHEET) || (PismIntMask(M[i][j]) == MASK_DRAGGING)))
         area += a;
     }
   }  
@@ -756,6 +757,11 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
   if (name == "iareaf") {
     errcode = 0;
     ierr = compute_ice_area_floating(result); CHKERRQ(ierr);
+  }
+
+  if (name == "dt") {
+    errcode = 0;
+    result = dt;
   }
 
   return errcode;

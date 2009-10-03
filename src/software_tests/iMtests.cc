@@ -88,7 +88,7 @@ PetscErrorCode IceUnitModel::testIceModelVec3()    {
   ierr = verbPrintf(1,grid.com,"done\n\n\n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com,
-    "\n\ntesting IceModelVec3::setValColumnQUAD() and getValColumnQUAD()\n");
+    "\n\ntesting IceModelVec3::setValColumnPL() and getValColumnQUAD()\n");
     CHKERRQ(ierr);
   ierr = T3.getValColumnQUAD(grid.xs, grid.ys, 10, levels, valsOUT); CHKERRQ(ierr);
   for (PetscInt k=0; k < 10; k++) {
