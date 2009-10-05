@@ -77,7 +77,6 @@ class LocalInterpCtx {
 public:
   double fstart[3], delta[3];
   int start[5], count[5];    // Indices in netCDF file.
-  double *a_raw;	     //!< temporary buffer (only used on processor zero)
   double *a;		     //!< temporary buffer
   int a_len;		     //!< the size of the buffer
   int nz,		     //!< number of z-levels

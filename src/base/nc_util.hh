@@ -107,10 +107,8 @@ public:
 private:
   PetscErrorCode open_for_writing(const char filename[]);
   int compute_block_size(GridType dims, int* count);
-  PetscErrorCode compute_start_and_count(int varid, int *pism_start, int *pism_count,
-					 size_t* &nc_start, size_t* &nc_count);
-  PetscErrorCode transpose(int varid, GridType dim_flag, int *count,
-			   double* in, double* out);
+  PetscErrorCode compute_start_and_count(int varid, int *pism_start, int *pism_count, GridType dims,
+					 size_t* &nc_start, size_t* &nc_count, ptrdiff_t* &imap);
   bool check_dimension(const char dim[], int len);
   bool check_dimensions();
   MaskInterp  *myMaskInterp;

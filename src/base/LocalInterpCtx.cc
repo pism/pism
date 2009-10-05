@@ -218,11 +218,6 @@ and \c delta entries in the struct will not be meaningful.
   int my_a_len = a_len;
   MPI_Reduce(&my_a_len, &(a_len), 1, MPI_INT, MPI_MAX, 0, com);
   PetscMalloc(a_len * sizeof(double), &(a));
-
-  // This array is used to hold the data in the input storage order. It is only
-  // used on processor zero.
-  if (rank == 0)
-    PetscMalloc(a_len * sizeof(double), &(a_raw));
 }
 
 
@@ -231,8 +226,6 @@ LocalInterpCtx::~LocalInterpCtx() {
   delete[] zlevs;
   delete[] zblevs;
   PetscFreeVoid(a);
-  if (rank == 0)
-    PetscFreeVoid(a_raw);
 }
 
 
