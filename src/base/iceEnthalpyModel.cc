@@ -1155,10 +1155,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   // set up fine grid in ice and bedrock
   PetscInt    fMz, fMbz;
   PetscScalar fdz, *fzlev, fdzb, *fzblev;
-  ierr = grid.getFineEqualVertCounts(fMz,fMbz); CHKERRQ(ierr);
-  fzlev = new PetscScalar[fMz];
-  fzblev = new PetscScalar[fMbz];
-  ierr = grid.getFineEqualVertLevs(fMz,fMbz,fdz,fdzb,fzlev,fzblev); CHKERRQ(ierr);
+
+  ierr = grid.get_fine_vertical_grid(fMz, fMbz, fdz, fdzb, fzlev, fzblev); CHKERRQ(ierr);
 
   ierr = verbPrintf(4,grid.com,
     "\n  [entering enthalpyAndDrainageStep(); fMz = %d, fdz = %5.3f, fMbz = %d, fdzb = %5.3f]",

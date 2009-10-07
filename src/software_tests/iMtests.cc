@@ -21,8 +21,9 @@
 
 //! Set grid defaults for a particular unit test.
 PetscErrorCode IceUnitModel::set_grid_defaults() {
-  grid.Mx = grid.My = 3;
+  grid.Mx  = grid.My = 3;
   grid.Mbz = 11;
+  grid.Lbz = 1000.0;
   return 0;
 }
 

@@ -152,10 +152,8 @@ PetscErrorCode IceModel::temperatureStep(
   // set up fine grid in ice and bedrock
   PetscInt    fMz, fMbz;
   PetscScalar fdz, *fzlev, fdzb, *fzblev;
-  ierr = grid.getFineEqualVertCounts(fMz,fMbz); CHKERRQ(ierr);
-  fzlev = new PetscScalar[fMz];
-  fzblev = new PetscScalar[fMbz];
-  ierr = grid.getFineEqualVertLevs(fMz,fMbz,fdz,fdzb,fzlev,fzblev); CHKERRQ(ierr);
+
+  ierr = grid.get_fine_vertical_grid(fMz, fMbz, fdz, fdzb, fzlev, fzblev); CHKERRQ(ierr);
 
   ierr = verbPrintf(5,grid.com,
     "\n  [entering temperatureStep(); fMz = %d, fdz = %5.3f, fMbz = %d, fdzb = %5.3f]",
@@ -564,11 +562,10 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
   PetscErrorCode  ierr;
 
   // set up fine grid in ice
-  PetscInt    fMz;
+  PetscInt    fMz = 0;		// will be computed by the call below
   PetscScalar fdz, *fzlev;
-  ierr = grid.getFineEqualVertCountIce(fMz); CHKERRQ(ierr);
-  fzlev = new PetscScalar[fMz];
-  ierr = grid.getFineEqualVertLevsIce(fMz,fdz,fzlev); CHKERRQ(ierr);
+
+  ierr = grid.get_fine_vertical_grid_ice(fMz, fdz, fzlev); CHKERRQ(ierr);
 
   // constants associated to CFL checking
   const PetscScalar cflx = grid.dx / dtTempAge,

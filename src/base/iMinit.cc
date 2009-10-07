@@ -104,7 +104,6 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // Grid dimensions and its vertical extent should not be deduced from a
   // bootstrapping file, so we check if these options are set and stop if they
   // are not.
-  // Note that here interpreting "-Mx 0" as "-Mx was not set" is OK.
   ierr = check_option("-Mx", Mx_set); CHKERRQ(ierr);
   ierr = check_option("-My", My_set); CHKERRQ(ierr);
   ierr = check_option("-Mz", Mz_set); CHKERRQ(ierr);
@@ -126,7 +125,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
 PetscErrorCode IceModel::set_grid_from_options() {
   PetscErrorCode ierr;
   PetscTruth Mx_set, My_set, Mz_set, Mbz_set, Lx_set, Ly_set, Lz_set, Lbz_set,
-    quadZ_set, chebZ_set;
+    quadZ_set, chebZ_set, no_quadZ_bed;
   PetscScalar x_scale, y_scale, z_scale, zb_scale;
   int Mx, My, Mz, Mbz;
 
@@ -153,7 +152,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
 			 grid.Mx, &Mx, &Mx_set); CHKERRQ(ierr);
   ierr = PetscOptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice", "",
 			 grid.Mz, &Mz, &Mz_set); CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-Mbz", "Number of grid points in the Z (vertical) direction in the bedrock", PETSC_NULL,
+  ierr = PetscOptionsInt("-Mbz", "Number of grid points in the Z (vertical) direction in the bedrock", "",
 			 grid.Mbz, &Mbz, &Mbz_set); CHKERRQ(ierr);
 
   // Determine the vertical grid spacing in the ice:
@@ -169,35 +168,22 @@ PetscErrorCode IceModel::set_grid_from_options() {
     PetscEnd();
   }
 
-  // Only one of -Mbz and -Lbz is allowed.
-  if (Mbz_set && Lbz_set) {
-    ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: at most one of -Lbz and -Mbz is allowed.\n"); CHKERRQ(ierr);
-    PetscEnd();
-  }
-
-  // -Lbz turns on quadratic bedrock spacing.
-  if (Lbz_set) {
-    grid.bed_vertical_spacing = QUADRATIC;
-    grid.Lbz = zb_scale;	// in meters already
-  }
-
-  // -Mbz turns on equal spacing in the bedrock.
-  if (Mbz_set) {
+  ierr = check_option("-no_quadZ_bed", no_quadZ_bed); CHKERRQ(ierr);
+  if (no_quadZ_bed)
     grid.bed_vertical_spacing = EQUAL;
-    grid.Mbz = Mbz;
-  }
-
+  
   // Done with the options.
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   // Use the information obtained above:
-  if (Lx_set)    grid.Lx = x_scale * 1000.0; // convert to meters
-  if (Ly_set)    grid.Ly = y_scale * 1000.0; // convert to meters
-  if (Lz_set)    grid.Lz = z_scale;	     // in meters already
-  if (Mx_set)    grid.Mx = Mx;
-  if (My_set)    grid.My = My;
-  if (Mz_set)    grid.Mz = Mz;
+  if (Lx_set)    grid.Lx  = x_scale * 1000.0; // convert to meters
+  if (Ly_set)    grid.Ly  = y_scale * 1000.0; // convert to meters
+  if (Lz_set)    grid.Lz  = z_scale;	      // in meters already
+  if (Lbz_set)   grid.Lbz = zb_scale;	      // in meters already
+  if (Mx_set)    grid.Mx  = Mx;
+  if (My_set)    grid.My  = My;
+  if (Mz_set)    grid.Mz  = Mz;
+  if (Mbz_set)   grid.Mbz = Mbz;
   if (quadZ_set) grid.ice_vertical_spacing = QUADRATIC;
   if (chebZ_set) grid.ice_vertical_spacing = CHEBYSHEV;
 

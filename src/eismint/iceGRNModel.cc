@@ -159,7 +159,7 @@ EISGREENMassBalance::EISGREENMassBalance(NCConfigVariable* myconfig) : PDDMassBa
   const PetscScalar iwfactor = config->get("fresh_water_density") / config->get("ice_density");
   pddFactorSnow *= iwfactor;
   pddFactorIce  *= iwfactor;
-};
+}
 
 
 PetscErrorCode EISGREENMassBalance::setDegreeDayFactorsFromSpecialInfo(

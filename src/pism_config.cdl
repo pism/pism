@@ -23,6 +23,9 @@ netcdf pism_config {
     pism_config:thermal_bedrock = "yes";
     pism_config:thermal_bedrock_doc = "Use the bedrock thermal model";
 
+    pism_config:use_quadratic_bedrock_spacing = "yes";
+    pism_config:use_quadratic_bedrock_spacing_doc = "Use quadratic vertical spacing in the bedrock.";
+
     pism_config:do_bed_deformation = "no";
     pism_config:do_bed_deformation_doc = "Use a bed deformation model";
 

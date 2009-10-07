@@ -274,11 +274,13 @@ PetscErrorCode IceModel::report_grid_parameters() {
     ierr = verbPrintf(2,grid.com, 
            "  vertical grid spacing in ice: uneven, %d levels, %.3f m < dz < %.3f m",
 		      grid.Mz, grid.dzMIN, grid.dzMAX); CHKERRQ(ierr);
-    PetscInt    fMz;
-    ierr = grid.getFineEqualVertCountIce(fMz); CHKERRQ(ierr);
+    PetscInt    fMz = 0;	// will be initialized by the call below
+    PetscScalar fdz, *fzlev;
+    ierr = grid.get_fine_vertical_grid_ice(fMz, fdz, fzlev); CHKERRQ(ierr);
+    delete[] fzlev;
     ierr = verbPrintf(3,grid.com, 
          "\n  fine equal spacing used in temperatureStep(): fMz = %d, fdz = %.3f m",
-           fMz,grid.Lz / ((PetscScalar) (fMz - 1))); CHKERRQ(ierr);
+           fMz, fdz); CHKERRQ(ierr);
     if (fMz > 1000) {
       ierr = verbPrintf(1,grid.com,
         "\n\nWARNING: Using more than 1000 vertical levels internally in energy/age computation!\n\n");

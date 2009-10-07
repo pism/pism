@@ -52,14 +52,10 @@ public:
   PetscErrorCode printVertLevels(int verbosity); 
   PetscInt       kBelowHeight(PetscScalar height);
 
-  PetscErrorCode getFineEqualVertCountIce(PetscInt &fMz);
-  PetscErrorCode getFineEqualVertCounts(PetscInt &fMz, PetscInt &fMbz);
-  PetscErrorCode getFineEqualVertLevsIce(PetscInt fMz,
-                                         PetscScalar &fdz, PetscScalar *fzlev);
-  PetscErrorCode getFineEqualVertLevs(PetscInt fMz, PetscInt fMbz,
-                                      PetscScalar &fdz, PetscScalar &fdzb, 
-                                      PetscScalar *fzlev, PetscScalar *fzblev);
-
+  PetscErrorCode get_fine_vertical_grid(PetscInt &fMz, PetscInt &fMbz,
+					PetscScalar &fdz, PetscScalar &fdzb,
+					PetscScalar* &fzlevs, PetscScalar* &fzblev);
+  PetscErrorCode get_fine_vertical_grid_ice(PetscInt &fMz, PetscScalar &fdz, PetscScalar* &fzlev);
   
   MPI_Comm    com;
   PetscMPIInt rank, size;
@@ -87,17 +83,16 @@ public:
   PetscScalar year;       // current time (years)
   
 protected:
-  static const SpacingType DEFAULT_SPACING_TYPE;
+  static const SpacingType DEFAULT_ICE_SPACING_TYPE, DEFAULT_BED_SPACING_TYPE;
   static const Periodicity DEFAULT_PERIODICITY;
   static const PetscScalar DEFAULT_QUADZ_LAMBDA;
   // FORMERLY IN IceParam:
-  static const PetscScalar DEFAULT_ICEPARAM_Lx, DEFAULT_ICEPARAM_Ly, DEFAULT_ICEPARAM_Lz, 
-                           DEFAULT_ICEPARAM_year;
+  static const PetscScalar DEFAULT_ICEPARAM_Lx, DEFAULT_ICEPARAM_Ly,
+    DEFAULT_ICEPARAM_Lz, DEFAULT_ICEPARAM_Lbz, DEFAULT_ICEPARAM_year;
   static const PetscInt    DEFAULT_ICEPARAM_Mx, DEFAULT_ICEPARAM_My, DEFAULT_ICEPARAM_Mz,
                            DEFAULT_ICEPARAM_Mbz;
 private:
   PetscErrorCode  get_dzMIN_dzMAX_spacingtype();
-  bool            isIncreasing(PetscInt len, PetscScalar *vals);
 };
 
 #endif	/* __grid_hh */

@@ -24,7 +24,9 @@
 #include "../udunits/udunits.h"
 
 //! Use equally-spaced vertical by default.
-const SpacingType IceGrid::DEFAULT_SPACING_TYPE = EQUAL;
+const SpacingType IceGrid::DEFAULT_ICE_SPACING_TYPE = EQUAL;
+
+const SpacingType IceGrid::DEFAULT_BED_SPACING_TYPE = QUADRATIC;
 
 //! Use non-periodic grid by default.
 const Periodicity IceGrid::DEFAULT_PERIODICITY = NONE;
@@ -41,9 +43,11 @@ const PetscScalar IceGrid::DEFAULT_ICEPARAM_Ly   = 1500.0e3;
 //! Default computational box for ice is 4000 m high.
 const PetscScalar IceGrid::DEFAULT_ICEPARAM_Lz   = 4000.0;
 
+//! Default thickness of the bedrock layer.
+const PetscScalar IceGrid::DEFAULT_ICEPARAM_Lbz   = 0.0;
+
 //! Start at year zero by default.
 const PetscScalar IceGrid::DEFAULT_ICEPARAM_year = 0.0;
-
 
 //! Default grid is 61 x 61 in horizontal.
 const PetscInt    IceGrid::DEFAULT_ICEPARAM_Mx   = 61;
@@ -67,12 +71,13 @@ IceGrid::IceGrid(MPI_Comm c,
   x0 = 0.0;
   y0 = 0.0;
 
-  ice_vertical_spacing = DEFAULT_SPACING_TYPE;
-  bed_vertical_spacing = DEFAULT_SPACING_TYPE;
+  ice_vertical_spacing = DEFAULT_ICE_SPACING_TYPE;
+  bed_vertical_spacing = DEFAULT_BED_SPACING_TYPE;
   periodicity = DEFAULT_PERIODICITY;
   Lx = DEFAULT_ICEPARAM_Lx;
   Ly = DEFAULT_ICEPARAM_Ly;
   Lz = DEFAULT_ICEPARAM_Lz;
+  Lbz = DEFAULT_ICEPARAM_Lbz;
   year = DEFAULT_ICEPARAM_year;
   Mx = DEFAULT_ICEPARAM_Mx;
   My = DEFAULT_ICEPARAM_My;
@@ -156,15 +161,11 @@ which may not even be a grid created by this routine).
 PetscErrorCode  IceGrid::compute_ice_vertical_levels() {
   
   if (Mz < 2) {
-    SETERRQ(2,"IceGrid::compute_vertical_levels(): Mz must be at least 2.");
-  }
-
-  if (Mbz < 1) {
-    SETERRQ(3, "IceGrid::compute_vertical_levesl(): Mbz must be at least 1.");
+    SETERRQ(2,"IceGrid::compute_ice_vertical_levels(): Mz must be at least 2.");
   }
 
   if (Lz <= 0) {
-    SETERRQ(4, "IceGrid::compute_vertical_levels(): Lz must be positive.");
+    SETERRQ(4, "IceGrid::compute_ice_vertical_levels(): Lz must be positive.");
   }
 
   // Fill the levels in the ice:
@@ -217,90 +218,64 @@ PetscErrorCode  IceGrid::compute_ice_vertical_levels() {
 /*!
   PISM supports equal and quadratic spacing of bedrock levels.
 
-  - In the equal case <tt>zblevels[k] = -Lbz + dzEQ * kb</tt> where <tt>dzEQ =
-    Lz / (Mz - 1)</tt> and <tt>Lbz = dzEQ * (Mbz - 1)</tt>. That is, both the
-    \c zblevels[] and the depth into the bedrock to which the computational box
-    extends (\c Lbz) are set according to the value of \c Mbz and according to
-    the equal spacing which would apply to the ice.
-
-  - In the quadratic case, both Lbz is used to compute Mbz and \f$\lambda\f$ so that 
-
-    \f[\lambda = \frac{Lbz ( Mbz-2 ) }{z_1 ( Mbz-1 )^2 - Lbz}.\f]
-
-    This will make the thickness of the topmost bedrock layer match the one of
-    the bottom layer of the ice.
-
-    Tries to find \f$\lambda\f$ and \c Mbz so that \f$\lambda\f$ is close to
-    2*DEFAULT_QUADZ_LAMBDA. This assumes that bedrock levels can be much
-    further apart than ice levels (just a heuristic).
+  
+  
+  Please see IceGrid::compute_ice_vertical_levels() for more.
  */
 PetscErrorCode IceGrid::compute_bed_vertical_levels() {
+
+  if (Mbz < 1) {
+    SETERRQ(3, "IceGrid::compute_bed_vertical_levels(): Mbz must be at least 1.");
+  }
+
+  if (Lbz < 0) {
+    SETERRQ(4, "IceGrid::compute_bed_vertical_levels(): Lz must be zero or positive.");
+  }
+
   // Fill the bedrock levels:
 
-  switch (bed_vertical_spacing) {
-  case EQUAL:
-    {
-      delete [] zblevels;
-      zblevels = new PetscScalar[Mbz];
-      // equally-spaced in bedrock with spacing determined by Lz, Mz and ice_vertical_spacing
-      const PetscScalar dzEQ = dzMIN;
-      if (Mbz == 1) {
-	zblevels[0] = 0.0;
-	Lbz = 0.0;
-      } else {
-	Lbz = dzEQ * ((PetscScalar) Mbz - 1);
-	for (PetscInt kb=0; kb < Mbz; kb++)
-	  zblevels[kb] = -Lbz + dzEQ * ((PetscScalar) kb);
+  delete [] zblevels;
+  zblevels = new PetscScalar[Mbz];
+
+  if (Mbz == 1) {		// we have no bedrock
+    zblevels[0] = 0.0;
+    Lbz = 0.0;
+    dzbMIN = dzbMAX = dzMIN;
+  } else {			// we have bedrock
+    switch (bed_vertical_spacing) {
+    case EQUAL:
+      {
+	// equally-spaced in bedrock with spacing determined by Lbz and Mbz
+	dzbMIN = dzbMAX = Lbz / (Mbz - 1);
+
+	zblevels[0] = -Lbz;
+	for (PetscInt kb=1; kb < Mbz - 1; kb++)
+	  zblevels[kb] = -Lbz + dzbMIN * ((PetscScalar) kb);
+	zblevels[Mbz - 1] = 0.0;
+	break;
       }
-      dzbMIN = dzEQ;
-      dzbMAX = dzEQ;
-      break;
+    case QUADRATIC:
+      {
+	// this is the lambda we have in bedrock; "2" below means that bedrock
+	// level thickness should increase with depth at about twice the rate of
+	// increase of ice levels.
+	PetscScalar lam = 2*DEFAULT_QUADZ_LAMBDA;
+
+	zblevels[0] = -Lbz;	// make sure it's right on
+	for (PetscInt k = 1; k < Mbz - 1; k++) {
+	  const PetscScalar zeta = ((PetscScalar) Mbz - 1 - k) / ((PetscScalar) Mbz - 1);
+	  zblevels[k] = -Lbz * (zeta / lam) * (1.0 + (lam - 1.0) * zeta);
+	}
+	zblevels[Mbz - 1] = 0;	// make sure this one is right on, too
+
+	dzbMAX = zblevels[1] - zblevels[0];
+	dzbMIN = zblevels[Mbz-1] - zblevels[Mbz-2];
+	break;
+      }
+    default:
+      SETERRQ(1, "PISM ERROR: Only equal and quadratic bedrock vertical spacing types are supported.");
     }
-  case QUADRATIC:
-    {
-      // Compute number of bedrock levels and lambda necessary to have matching
-      // dz at the bottom of the ice and at the top of the bedrock:
-      PetscScalar z1 = zlevels[1]; // the number we want to match
-
-      if (2*z1 > Lbz) {
-	PetscPrintf(com, 
-		    "PISM ERROR: Lbz (%3.3f m) has to be at least twice the vertical grid spacing near the bottom of the ice,\n"
-		    "            which is %3.3f m. Please choose a different -Lbz value.\n",
-		    Lbz, z1);
-	PetscEnd();
-      }
-
-      // this is the lambda we would like to have in bedrock; "2" below means
-      // that bedrock level thickness should increase with depth at about twice
-      // the rate of increase of ice levels.
-      PetscScalar lam = 2*DEFAULT_QUADZ_LAMBDA;
-
-      // this nasty formula was obtained using Maxima (solving the formula in
-      // the documentation string above for Mbz)
-      Mbz = (PetscInt)floor((sqrt(Lbz)*sqrt((4*lam*lam-4*lam)*z1+Lbz)+2*lam*z1+Lbz)/(2*lam*z1));
-      if (Mbz < 3)
-	Mbz = 3;		// we can't match the spacing at the bottom of
-				// the ice using less than 3 levels
-
-      delete [] zblevels;
-      zblevels = new PetscScalar[Mbz];
-
-      lam = Lbz * (Mbz - 2.0) / (z1 * (Mbz - 1)*(Mbz - 1) - Lbz);
-
-      zblevels[0] = -Lbz;	// make sure it's right on
-      for (PetscInt k = 1; k < Mbz - 1; k++) {
-	const PetscScalar zeta = ((PetscScalar) Mbz - 1 - k) / ((PetscScalar) Mbz - 1);
-	zblevels[k] = -Lbz * (zeta / lam) * (1.0 + (lam - 1.0) * zeta);
-      }
-      zblevels[Mbz - 1] = 0;	// make sure this one is right on, too
-
-      dzbMAX = zblevels[1] - zblevels[0];
-      dzbMIN = zblevels[Mbz-1] - zblevels[Mbz-2];
-      break;
-    }
-  default:
-    SETERRQ(1, "PISM ERROR: Only equal and quadratic bedrock vertical spacing types are supported.");
-  }
+  } // end of } else {...
   
   return 0;
 }
@@ -512,102 +487,96 @@ PetscErrorCode IceGrid::compute_horizontal_spacing() {
   return 0;
 }
 
+//! Computes fine vertical spacing in the ice and bedrock.
+/*! The computations in IceModel::temperatureStep() and IceModel::ageStep() use
+  a fine equally-spaced grid.
 
-//! \brief Return the number of vertical grid points in ice and bedrock for the
-//! fine, equally-spaced grid used in the temperature and age calculations.
-/*!
-If the main, storage grid has equally-spaced vertical, then
-the computation in temperatureStep() and ageStep() is done on that grid.  
+  This method computes the number of levels and the levels themselves so that
+  fine equally-spaced grids in ice and bedrock have the same spacing (if
+  bedrock is present).
 
-If IceGrid defines a not-equally-spaced grid, however, then, internally in temperatureStep()
-and ageStep(), we do computation on a fine and equally-spaced grid.  
+  Arrays fzlev and fzblev are allocated here and have to be freed by the
+  caller.
 
-This method determines the number of levels in the equally-spaced grid used within 
-temperatureStep() and ageStep() in either case.  The method getFineEqualVertLevs() sets 
-the spacing and the actual levels.
+  Mapping to and from the storage grid occurs in IceModelVec3 and
+  IceModelVec3Bedrock methods.
 
-The storage grid may have quite different levels.  The mapping to and from
-the storage grid occurs in getValColumn(), setValColumn() for IceModelVec3
-or IceModelVec3Bedrock.
+  Note that the computational grid in the ice is allowed to exceed Lz; we need
+  this to match spacings (see above). The temperature field is extrapolated to
+  the extra level using the value from the topmost level.
  */
-PetscErrorCode IceGrid::getFineEqualVertCounts(PetscInt &fMz, PetscInt &fMbz) {
-  // ice:
-  if (ice_vertical_spacing == EQUAL) {
-    fMz = Mz;
-  } else {
-    fMz = 1 + static_cast<PetscInt>(ceil(Lz / dzMIN));
+PetscErrorCode IceGrid::get_fine_vertical_grid(PetscInt &fMz, PetscInt &fMbz,
+					       PetscScalar &fdz, PetscScalar &fdzb,
+					       PetscScalar* &fzlev, PetscScalar* &fzblev) {
+
+  // the smallest of the spacings used in ice and bedrock:
+  PetscScalar dz_fine = PetscMin(dzMIN, dzbMIN);
+
+  if (Lbz > 1e-9) {		// we have bedrock
+
+    // the number of levels of the computational grid in bedrock:
+    fMbz = static_cast<PetscInt>(ceil(Lbz / dz_fine) + 1);
+
+    // recompute fine spacing so that Lbz is an integer multiple of dz_fine:
+    dz_fine = Lbz / (fMbz - 1);
+
+    // number of levels in the ice; this is one level too many, but spacing
+    // matches the one used in the bedrock and the extra level is in the air,
+    // anyway
+    fMz = static_cast<PetscInt>(ceil(Lz / dz_fine) + 2);
+  } else {			// we don't have bedrock
+
+    fMbz = 1;
+    fMz = static_cast<PetscInt>(ceil(Lz / dz_fine) + 1);
+    dz_fine = Lz / (fMz - 1);
   }
-  // bedrock:
-  if (bed_vertical_spacing == EQUAL) {
-    fMbz = Mbz;
-  } else {
-    fMbz = 1 + static_cast<PetscInt>(ceil(Lbz / dzbMIN));
-  }
+
+  // both ice and bedrock will have this spacing
+  fdz = fdzb = dz_fine;
+
+  // allocate arrays:
+  fzlev  = new PetscScalar[fMz];
+  fzblev = new PetscScalar[fMbz];
+
+  // compute levels in the ice:
+  for (PetscInt k = 0; k < fMz; k++)
+    fzlev[k] = ((PetscScalar) k) * dz_fine;
+  // Note that it's allowed to go over Lz.
+
+  // and bedrock:
+  for (PetscInt kb = 0; kb < fMbz-1; kb++)
+    fzblev[kb] = - Lbz + dz_fine * ((PetscScalar) kb);
+  fzblev[fMbz-1] = 0.0;  // make sure it is right on
+  
   return 0;
 }
 
-
-PetscErrorCode IceGrid::getFineEqualVertCountIce(PetscInt &fMz) {
-  PetscInt dummy;
-  return getFineEqualVertCounts(fMz,dummy);
-}
-
-
-/*!
-See comments for getFineEqualVertCounts().  The arrays fzlevEQ and fzblev must 
-already be allocated arrays of length fMz, fMbz, respectively.
+//! Computes fine vertical spacing in the ice.
+/*! Similar to IceGrid::get_fine_vertical_grid(), but used in the age
+  computation. The grid created by this method does not extend into the
+  bedrock, so neither matching the spacing nor extending past Lz is necessary.
  */
-PetscErrorCode IceGrid::getFineEqualVertLevs(PetscInt fMz, PetscInt fMbz,
-                                      PetscScalar &fdz, PetscScalar &fdzb, 
-                                      PetscScalar *fzlev, PetscScalar *fzblev) {
-  // ice:
+PetscErrorCode IceGrid::get_fine_vertical_grid_ice(PetscInt &fMz, PetscScalar &fdz,
+						   PetscScalar* &fzlev) {
   if (ice_vertical_spacing == EQUAL) {
     fdz = dzMIN;
-    for (PetscInt k = 0; k < fMz; k++) {
+    fMz = Mz;
+    fzlev = new PetscScalar[fMz];
+    for (PetscInt k = 0; k < fMz; k++)
       fzlev[k] = zlevels[k];
-    }
   } else {
-    // exactly Mz-1 steps for [0,Lz]:
-    fdz = Lz / ((PetscScalar) (fMz - 1));  
-    for (PetscInt k = 0; k < fMz-1; k++) {
-      fzlev[k] = ((PetscScalar) k) * fdz;
-    }
-    fzlev[fMz-1] = Lz;  // make sure it is right on
-  }  
+    PetscScalar dz_fine = dzMIN;
+    fMz = static_cast<PetscInt>(ceil(Lz / dz_fine) + 1);
+    dz_fine = Lz / (fMz - 1);
 
-  // bedrock:
-  if (bed_vertical_spacing == EQUAL) {
-    fdzb = dzbMIN;
-    for (PetscInt k = 0; k < fMbz; k++) {
-      fzblev[k] = zblevels[k];
-    }
-  } else {
-    if (fMbz > 1) {
-      // exactly Mbz-1 steps for [-Lbz,0]:
-      fdzb = Lbz / ((PetscScalar) (fMbz - 1));  
-      for (PetscInt kb = 0; kb < fMbz-1; kb++) {
-        fzblev[kb] = - Lbz + fdzb * ((PetscScalar) kb);
-      }
-    } else {
-      // we only have one bedrock level, so make the spacing "match" the one
-      // used for the ice
-      fdzb = fdz;
-    }
-    fzblev[fMbz-1] = 0.0;  // make sure it is right on
+    fdz = dz_fine;
+    fzlev  = new PetscScalar[fMz];
+
+    // compute levels in the ice:
+    for (PetscInt k = 0; k < fMz - 1; k++)
+      fzlev[k] = ((PetscScalar) k) * dz_fine;
+    fzlev[fMz - 1] = Lz;
   }
-  return 0;
-}
-
-
-PetscErrorCode IceGrid::getFineEqualVertLevsIce(PetscInt fMz, PetscScalar &fdz, PetscScalar *fzlev) {
-  PetscErrorCode ierr;
-  PetscInt       newfMz,fMbz;
-  ierr = getFineEqualVertCounts(newfMz,fMbz); CHKERRQ(ierr);
-  if (newfMz != fMz) { SETERRQ(2,"inconsistency in fMz"); }
-  PetscScalar    fdzb,*fzblev;
-  fzblev = new PetscScalar[fMbz];
-  ierr = getFineEqualVertLevs(fMz,fMbz,fdz,fdzb,fzlev,fzblev); CHKERRQ(ierr);
-  delete [] fzblev;
   return 0;
 }
 

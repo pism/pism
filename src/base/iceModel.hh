@@ -48,8 +48,7 @@ using namespace std;
 
 // see iMnames.cc
 struct titleNname {
-  char title[100]; // these short titles appear on PETSc graphical viewers and 
-                   //   in Matlab output file
+  char title[100]; // these short titles appear on PETSc graphical viewers
   char name[30];   // these names are for Matlab output vars
 };
 
@@ -240,8 +239,7 @@ protected:
   static const            titleNname tn[tnN];  // see iMnames.cc
   PetscViewer             runtimeViewers[tnN]; // see iMviewers.cc
   char         diagnostic[PETSC_MAX_PATH_LEN], // see iMviewers.cc
-               diagnosticBIG[PETSC_MAX_PATH_LEN], // see iMviewers.cc
-               matlabOutVars[PETSC_MAX_PATH_LEN]; // see iMmatlab.cc
+    diagnosticBIG[PETSC_MAX_PATH_LEN]; // see iMviewers.cc
   PetscDrawLG  kspLG;
   PetscInt     id, jd, kd;
   Vec          Td, wd, ud, vd, Sigmad, taud; // hold soundings
@@ -343,28 +341,8 @@ protected:
   virtual PetscErrorCode regrid();
 
   // see iMmatlab.cc
-  virtual bool           matlabOutWanted(const char name);
   virtual PetscErrorCode VecView_g2ToMatlab(PetscViewer v, 
                                     const char *varname, const char *shorttitle);
-  virtual PetscErrorCode write2DToMatlab(PetscViewer v, const char singleCharName, 
-                                 IceModelVec2 &l2, const PetscScalar scale);
-  virtual PetscErrorCode writeSliceToMatlab(PetscViewer v, const char singleCharName, 
-                                    IceModelVec3 &imv3, const PetscScalar scale);
-  virtual PetscErrorCode writeSurfaceValuesToMatlab(PetscViewer v, const char singleCharName, 
-                                            IceModelVec3 &imv3, const PetscScalar scale);
-  virtual PetscErrorCode writeSpeed2DToMatlab(PetscViewer v, const char scName, 
-                          IceModelVec2 &lu, IceModelVec2 &lv, const PetscScalar scale, 
-                          const PetscTruth doLog, const PetscScalar log_missing);
-  virtual PetscErrorCode writeSpeedSurfaceValuesToMatlab(PetscViewer v, const char scName, 
-                          IceModelVec3 &imv3_u, IceModelVec3 &imv3_v, const PetscScalar scale, 
-                          const PetscTruth doLog, const PetscScalar log_missing);
-  virtual PetscErrorCode writeLog2DToMatlab(PetscViewer v, const char scName, 
-                          IceModelVec2 &l, const PetscScalar scale, const PetscScalar thresh,
-                          const PetscScalar log_missing);
-  virtual PetscErrorCode writeSoundingToMatlab(PetscViewer v, const char scName, 
-                          IceModelVec3 &imv3,
-                          const PetscScalar scale, const PetscTruth doTandTb);
-  virtual PetscErrorCode writeMatlabVars(const char *fname);
   virtual PetscErrorCode writeSSAsystemMatlab(IceModelVec2 vNuH[2]);
 
   // see iMnames.cc; note tn is statically-initialized in iMnames.cc

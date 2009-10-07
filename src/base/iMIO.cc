@@ -75,7 +75,7 @@ PetscErrorCode  IceModel::set_time_from_options() {
 }
 
 
-//! Save model state in NetCDF format (and save variables in Matlab format if desired).
+//! Save model state in NetCDF format.
 /*! 
 Optionally allows saving of full velocity field.
 
@@ -100,28 +100,10 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename) {
     CHKERRQ(ierr);
   }
 
-  ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'\n",
-		    filename); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'\n", filename); CHKERRQ(ierr);
   ierr = dumpToFile(filename); CHKERRQ(ierr);
 
-  // write out individual variables out to Matlab file
-  char       matf[PETSC_MAX_PATH_LEN];
-  PetscTruth matoSet, matvSet;
-  ierr = PetscOptionsGetString(PETSC_NULL, "-mato", matf, PETSC_MAX_PATH_LEN, &matoSet); 
-           CHKERRQ(ierr);
-  if (matoSet == PETSC_FALSE) {// put default name in matf; perhaps user set "-matv" only
-    strcpy(matf, "pism_views");
-  }
-  strcpy(matlabOutVars, "\0");
-  ierr = PetscOptionsGetString(PETSC_NULL, "-matv", matlabOutVars, PETSC_MAX_PATH_LEN, &matvSet); 
-            CHKERRQ(ierr);
-  if (matvSet == PETSC_TRUE) {
-    strcat(matf, ".m");
-    ierr = verbPrintf(1, grid.com, 
-       "\n ... writing variables %s to Matlab file `%s'", matlabOutVars, matf); CHKERRQ(ierr);
-    ierr = writeMatlabVars(matf); CHKERRQ(ierr); // see iMmatlab.cc
-  }
-
+  // save the config file 
   char config_out[PETSC_MAX_PATH_LEN];
   PetscTruth dump_config;
   ierr = PetscOptionsGetString(PETSC_NULL, "-dump_config", config_out, PETSC_MAX_PATH_LEN, &dump_config);

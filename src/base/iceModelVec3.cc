@@ -263,8 +263,8 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(PetscInt i, PetscInt j, PetscScalar
 Input array \c levelsIN must be an allocated array of \c nlevels scalars 
 (\c PetscScalar).
 
-\c levelsIN must be strictly increasing and in the range 
-\f$0 <= z <= \mathtt{grid.Lz}\f$.
+\c levelsIN must be strictly increasing and positive. Exceeding Lz is allowed,
+extrapolation (by the value at the top-most level) is performed in this case.
 
 Return array \c valsOUT must be an allocated array of \c nlevels scalars 
 (\c PetscScalar).
@@ -280,7 +280,6 @@ PetscErrorCode  IceModelVec3::getValColumnPL(PetscInt i, PetscInt j, PetscInt nl
   // check if in ownership ?
 
   ierr = isLegalLevel(levelsIN[0]); CHKERRQ(ierr);
-  ierr = isLegalLevel(levelsIN[nlevelsIN - 1]); CHKERRQ(ierr);
   for (PetscInt k=0; k < nlevelsIN - 1; k++) {
     if (levelsIN[k] >= levelsIN[k+1]) {
       SETERRQ2(1,"levelsIN not *strictly increasing* at index %d\n"
@@ -293,9 +292,17 @@ PetscErrorCode  IceModelVec3::getValColumnPL(PetscInt i, PetscInt j, PetscInt nl
   
   PetscInt mcurr = 0;
   for (PetscInt k = 0; k < nlevelsIN; k++) {
+
+    // extrapolate (if necessary):
+    if (levelsIN[k] > levels[grid->Mz-1]) {
+      valsOUT[k] = arr[i][j][grid->Mz-1];
+      continue;
+    }
+
     while (levels[mcurr+1] < levelsIN[k]) {
       mcurr++;
     }
+
     const PetscScalar incr = (levelsIN[k] - levels[mcurr])
                               / (levels[mcurr+1] - levels[mcurr]);
     const PetscScalar valm = arr[i][j][mcurr];
@@ -327,7 +334,6 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt 
   // check if in ownership ?
 
   ierr = isLegalLevel(levelsIN[0]); CHKERRQ(ierr);
-  ierr = isLegalLevel(levelsIN[nlevelsIN - 1]); CHKERRQ(ierr);
   for (PetscInt k=0; k < nlevelsIN - 1; k++) {
     if (levelsIN[k] >= levelsIN[k+1]) {
       SETERRQ2(1,"levelsIN not *strictly increasing* at index %d\n"
@@ -340,6 +346,12 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt 
   
   PetscInt mcurr = 0;
   for (PetscInt k = 0; k < nlevelsIN; k++) {
+    // extrapolate (if necessary):
+    if (levelsIN[k] > levels[grid->Mz-1]) {
+      valsOUT[k] = arr[i][j][grid->Mz-1];
+      continue;
+    }
+
     while (levels[mcurr+1] < levelsIN[k]) {
       mcurr++;
     }
