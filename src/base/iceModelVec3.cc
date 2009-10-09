@@ -822,3 +822,16 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
 
   return 0;
 }
+
+PetscErrorCode IceModelVec3::view_surface(Vec g2, bool big) {
+  return 0;
+}
+
+PetscErrorCode IceModelVec3::view_horizontal_slice(Vec g2, bool big) {
+  return 0;
+}
+
+PetscErrorCode IceModelVec3::view_sounding(int i, int j) {
+
+  return 0;
+}

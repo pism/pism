@@ -178,8 +178,13 @@ PetscErrorCode IceModelVec2::mask_by(IceModelVec2 &M, PetscScalar fill) {
   return 0;
 }
 
-/*
-PetscErrorCode IceModelVec2::view(PetscViewer V, Vec g2) {
+
+PetscErrorCode IceModelVec2::view(Vec g2, bool big) {
+  PetscErrorCode ierr;
+
+  if (map_viewer == PETSC_NULL) {
+    ierr = create_map_viewer(big); CHKERRQ(ierr);
+  }
 
   if (localp) {
     ierr = copy_to_global(g2); CHKERRQ(ierr);
@@ -189,8 +194,8 @@ PetscErrorCode IceModelVec2::view(PetscViewer V, Vec g2) {
 
   ierr = var1.to_glaciological_units(g2); CHKERRQ(ierr);
 
-  ierr = g2_to_matlab(view, g2, grid->My, grid->Mx,
-		      name, string_attr("long_name")); CHKERRQ(ierr);
+  // actually view data
 
+  return 0;
 }
-*/
+

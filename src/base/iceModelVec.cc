@@ -29,6 +29,7 @@ IceModelVec::IceModelVec() {
   array = PETSC_NULL;
   localp = true;
   use_interpolation_mask = false;
+  map_viewer = PETSC_NULL;
 
   dims = GRID_2D;		// default
   dof = 1;			// default
@@ -654,6 +655,12 @@ string IceModelVec::string_attr(string n) {
 
 vector<double> IceModelVec::array_attr(string name) {
   return var1.doubles[name];
+}
+
+PetscErrorCode IceModelVec::create_map_viewer(bool big) {
+  PetscErrorCode ierr;
+
+  return 0;
 }
 
 /********* IceModelVec3 and IceModelVec3Bedrock: SEE SEPARATE FILE  iceModelVec3.cc    **********/

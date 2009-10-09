@@ -114,7 +114,7 @@ alltests = [
         ' -Mz 11 -ksp_rtol ' + str(KSPRTOL),
         '(refine dx=20,10,5,3.333,2.5, km; dx=dy and My=30,60,120,180,240)'],
    ['K',[41,81,161,321,641],
-        'pure conduction problem in ice and bedrock',3,' -Mx 6 -My 6 -y 130000.0 -Lbz 1000 -no_quadZ_bed',
+        'pure conduction problem in ice and bedrock',3,' -Mx 6 -My 6 -y 130000.0 -Lbz 1000 -quadZ',
         '(refine dz=100,50,25,12.5,6.25,m, Mz=41,81,161,321,641)',
         [15,28,55,108,215]],
    ['L',[31,61,91,121,181],

@@ -168,6 +168,14 @@ PetscErrorCode IceModel::set_grid_from_options() {
     PetscEnd();
   }
 
+  if (Mbz_set) {
+    if ((Mbz > 1) && !Lbz_set) {
+      ierr = PetscPrintf(grid.com,
+			 "PISM ERROR: Please specify bedrock layer thickness using -Lbz.\n"); CHKERRQ(ierr);
+      PetscEnd();
+    }
+  }
+
   ierr = check_option("-no_quadZ_bed", no_quadZ_bed); CHKERRQ(ierr);
   if (no_quadZ_bed)
     grid.bed_vertical_spacing = EQUAL;

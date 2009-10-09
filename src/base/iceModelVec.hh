@@ -97,6 +97,7 @@ protected:
   int dof;
   DA           da;
   bool         localp;
+  PetscViewer map_viewer;
 
   void         *array;  // will be PetscScalar** or PetscScalar*** in derived classes
 
@@ -104,6 +105,7 @@ protected:
   virtual PetscErrorCode checkHaveArray();
   virtual PetscErrorCode checkCompatibility(const char*, IceModelVec &other);
   virtual PetscErrorCode reset_attrs();
+  virtual PetscErrorCode create_map_viewer(bool big);
   // FIXME: consider adding 
   //   virtual PetscErrorCode  checkSelfOwnsIt(const PetscInt i, const PetscInt j);
   //   virtual PetscErrorCode  checkSelfOwnsItGhosted(const PetscInt i, const PetscInt j);
@@ -128,10 +130,10 @@ public:
 			 DAStencilType my_sten, int stencil_width);
   virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
-  //  virtual PetscErrorCode  view(PetscViewer V, Vec tmp);
   PetscErrorCode  get_array(PetscScalar** &a);
   virtual PetscErrorCode set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v_y);
   virtual PetscErrorCode mask_by(IceModelVec2 &M, PetscScalar fill = 0.0);
+  virtual PetscErrorCode view(Vec g2, bool big);
 };
 
 
@@ -197,6 +199,10 @@ public:
   PetscErrorCode  getSurfaceValues(IceModelVec2 &gsurf, PetscScalar **H);
   PetscErrorCode  extend_vertically(int old_Mz, PetscScalar fill_value);
   PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2 &fill_values);
+
+  PetscErrorCode view_surface(Vec g2, bool big);
+  PetscErrorCode view_horizontal_slice(Vec g2, bool big, PetscScalar level);
+  PetscErrorCode view_sounding(int i, int j);
 
 protected:  
   PetscErrorCode  isLegalLevel(PetscScalar z);

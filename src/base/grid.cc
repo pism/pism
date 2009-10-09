@@ -24,7 +24,7 @@
 #include "../udunits/udunits.h"
 
 //! Use equally-spaced vertical by default.
-const SpacingType IceGrid::DEFAULT_ICE_SPACING_TYPE = EQUAL;
+const SpacingType IceGrid::DEFAULT_ICE_SPACING_TYPE = QUADRATIC;
 
 const SpacingType IceGrid::DEFAULT_BED_SPACING_TYPE = QUADRATIC;
 
@@ -229,11 +229,14 @@ PetscErrorCode IceGrid::compute_bed_vertical_levels() {
   }
 
   if (Lbz < 0) {
-    SETERRQ(4, "IceGrid::compute_bed_vertical_levels(): Lz must be zero or positive.");
+    SETERRQ(4, "IceGrid::compute_bed_vertical_levels(): Lbz must be zero or positive.");
+  }
+
+  if ((Lbz < 1e-9) && (Mbz > 1)) {
+    SETERRQ(5, "IceGrid::compute_bed_vertical_levels(): Lbz must be positive if Mbz > 1.");
   }
 
   // Fill the bedrock levels:
-
   delete [] zblevels;
   zblevels = new PetscScalar[Mbz];
 
@@ -559,6 +562,7 @@ PetscErrorCode IceGrid::get_fine_vertical_grid(PetscInt &fMz, PetscInt &fMbz,
 PetscErrorCode IceGrid::get_fine_vertical_grid_ice(PetscInt &fMz, PetscScalar &fdz,
 						   PetscScalar* &fzlev) {
   if (ice_vertical_spacing == EQUAL) {
+    // just use the storage grid
     fdz = dzMIN;
     fMz = Mz;
     fzlev = new PetscScalar[fMz];
