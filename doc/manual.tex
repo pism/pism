@@ -656,18 +656,18 @@ Here the \verb|kill| command sent the signal to all four of the running PISM pro
 
 
 \subsection{Saving snapshots of the model state}\index{snapshots of the model state}\index{PISM!saving snapshots of the model state}
-\label{sec:snapshots}  Sometimes you want to check the model state every 1000 years, for example.  One possible solution is to run PISM for a thousand years, have it save all the fields at the end of the run, then restart, run for another thousand, etc.  Note this forces the adaptive time-stepping mechanism to stop \emph{exactly} at multiples of 1000 years, which may be desirable in some cases.
+\label{sec:snapshots}  Sometimes you want to check the model state every 1000 years, for example.  One possible solution is to run PISM for a thousand years, have it save all the fields at the end of the run, then restart and run for another thousand, and etc.  This forces the adaptive time-stepping mechanism to stop \emph{exactly} at multiples of 1000 years, which may be desirable in some cases.
 
-If saving exactly at specified times is not critical, then use of \verb|-save_to| and \verb|-save_at| options is recommended.  For example
+If saving exactly at specified times is not critical, then use the \verb|-save_to| and \verb|-save_at| options.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 10000 -o output.nc -save_to snapshots.nc \
         -save_at 1e3:1e3:1e4
 \end{verbatim}
 starts a PISM evolution run, initializing from \verb|foo.nc|, running for
 10000 years and saving snapshots to \verb|snapshots.nc| at the first time-step
-after years 1000,2000,\dots,10000.
+after each of the years 1000, 2000, \dots, 10000.
 
-We use a MATLAB-style range specification, $a:\Delta t:b$, where $a,\Delta t,b$ are in years.  The time-stepping scheme is not affected.  (As a consequence we cannot guarantee producing the exact number of snapshots requested, but this is not a problem if snapshot spacing is much greater than the length of a typical timestep.  One may use \verb|-max_dt| to limit time-steps if needed.)
+We use a MATLAB-style range specification, $a:\Delta t:b$, where $a,\Delta t,b$ are in years.  The time-stepping scheme is not affected, but as a consequence we do not guarantee producing the exact number of snapshots requested if the requested save times have spacing comparable to the model time-steps.  This is not a problem in the typical case in which snapshot spacing is much greater than the length of a typical timestep.
 
 It is also possible to save snapshots at intervals that are not equally-spaced
 by giving the \verb|-save_at| option a comma-separated list. For example,
@@ -675,24 +675,24 @@ by giving the \verb|-save_at| option a comma-separated list. For example,
 $ pismr -i foo.nc -y 10000 -o output.nc -save_to snapshots.nc \
         -save_at 1000,1500,2000,5000
 \end{verbatim}
-will save snapshots on the first time-step after years 1000,1500,2000 and 5000.
-The list given to the \verb|-save_at| option can be at most 200 numbers long.
+will save snapshots on the first time-step after years 1000, 1500, 2000 and 5000.
+The comma-separated list given to the \verb|-save_at| option can be at most 200 numbers long.
 
 If \verb|snapshots.nc| was created by the command above, running
 \begin{verbatim}
 $ pismr -i snapshots.nc -y 1000 -o output_2.nc
 \end{verbatim}
-will use the last record in the file, at about $5000$ years. To restart from $1500$ years (for example) it is necessary to extract the corresponding record using \verb|ncks|
+will initialize using the last record in the file, at about $5000$ years.  By contrast, to restart from $1500$ years (for example) it is necessary to extract the corresponding record using \verb|ncks|\index{NCO (NetCDF Operators)!ncks}
 \begin{verbatim}
 $ ncks -d t,1500years snapshots.nc foo.nc
 \end{verbatim}
-and then restart from \verb|foo.nc|. Note that \verb|-d t,N| means ``extract the $N$-th record'' (counting from zero). So, this command is equivalent to
+and then restart from \verb|foo.nc|.  Note that \verb|-d t,N| means ``extract the $N$-th record'' (counting from zero).  So, this command is equivalent to
 \begin{verbatim}
 $ ncks -d t,1 snapshots.nc foo.nc
 \end{verbatim}
 Also note that the second snapshot will probably be \emph{around} $1500$ years and \verb|ncks| handles this correctly: it takes the record closest to $1500$ years.
 
-Another possible use of snapshots is for restarting runs on a batch system which kills jobs.  Suppose that we know that we have a 8 wall-clock hours limit and a 1000 year long run will complete in this time.  We may run PISM with option \verb|-y 1500 -save_at 1000:100:1400|, in which case if the job is killed before completing the 1500 year run, we can restart from near the last multiple of $100$ years.  Restarting with option \intextoption{ye} will hit target years.
+Another possible use of snapshots is for restarting runs on a batch system which kills jobs which go over their allotted time.  Running PISM with option \verb|-y 1500| \verb|-save_at 1000:100:1400| would mean that if the job is killed before completing the whole 1500 year run, we can restart from near the last multiple of $100$ years.  Restarting with option \intextoption{ye} would finish the run on the desired year.
 
 It is also possible to save snapshots to separate files using the
 \verb|-split_snapshots| option.  For example, the run above can be changed to
@@ -700,26 +700,40 @@ It is also possible to save snapshots to separate files using the
 $ pismr -i foo.nc -y 10000 -o output.nc -save_to snapshots \
         -save_at 1000,1500,2000,5000 -split_snapshots
 \end{verbatim}
-for this purpose.  This will produce files called \verb|snapshots-|year\verb|.nc|.  This option is generally faster if many snapshots are needed, apparently because of the time necessary to reopen a large file at each snapshot in the \emph{sans} \verb|-split_snapshots| case.
+for this purpose.  This will produce files called \verb|snapshots-|year\verb|.nc|.  This option is generally faster if many snapshots are needed, apparently because of the time necessary to reopen a large file at each snapshot when \verb|-split_snapshots| is not used.  Note that tools like NCO\index{NCO (NetCDF Operators)!wildcards} and \verb|ncview|\index{ncview!wildcards} usually behave as desired with wildcards like ``\verb|snapshots-*.nc|''.
 
-Note that tools like NCO and \verb|ncview| usually behave as desired with wildcards like ``\verb|snapshots-*.nc|''.
+Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of the model state.
+
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}
+    \\\hline
+    \textbf{Option} & \textbf{Description} \\
+    \hline
+    \intextoption{save\und to} [file name] & Specifies the file to save to.\\
+    \intextoption{save\und at} [range or list] & Specifies times at which to save snapshots, by either a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
+    \intextoption{split\und snapshots} & Separate the snapshot output into files named \texttt{snapshots-}year\texttt{.nc}.  Faster if you are saving more than a dozen or so snapshots. \\
+    \hline
+  \end{tabular}
+  \caption{Command-line options controlling saving snapshots of the model state.}
+  \label{tab:snapshot-opts}
+\end{table}
+
 
 \subsection{Saving time-series of scalar diagnostic quantities}\index{time-series}\index{PISM!saving time-series}
 \label{sec:saving-time-series}
- It is also possible to save time-series of some scalar diagnostic quantities.
-
-For example,
+ It is also possible to save time-series of certain scalar diagnostic quantities.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 1e4 -o output.nc -ts_file time-series.nc \
         -ts_times 0:1:1e4 -ts_vars ivol,iareag
 \end{verbatim} %$ just to make the text editor happy
 will run for 10000 years, saving total ice volume and grounded ice area to \texttt{time-series.nc} \emph{yearly}. See tables \ref{tab:time-series-opts} for the list of options and \ref{tab:time-series} for the full list of supported time-series.
 
-Note that this (similarly to the snapshot-saving code) does not affect the time-stepping mechanism; PISM will save exactly the number of time-series records requested, \emph{linearly interpolated onto requested times}.
+Note that, similarly to the snapshot-saving code, this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, \emph{linearly interpolated onto requested times}.
 
 PISM buffers time-series data and writes it at the end of the run or once 10000 values are stored, whichever comes first. Sending an \texttt{USR1} signal to a PISM process flushes these buffers, making it possible to monitor the run. (See section \ref{subsect:signal} for more about PISM's signal handling.)
 
-Scalar time-series take very little storage space (compared to spatially-varying data), so omitting the \intextoption{ts\und vars} makes PISM save \emph{all} the variables listed in table \ref{tab:time-series}.
+Omitting the \intextoption{ts\und vars} option makes PISM save \emph{all} the variables listed in table \ref{tab:time-series}.  Because scalar time-series take very little storage space, compared to spatially-varying data, this is usually a reasonable choice.
 
 \begin{table}[ht]
   \centering
@@ -732,7 +746,7 @@ Scalar time-series take very little storage space (compared to spatially-varying
     \intextoption{ts\und vars} [list of variables] & Comma-separated list of variables, see table~\ref{tab:time-series}. Omitting this option is equivalent to listing all the possible variables.\\
     \hline
   \end{tabular}
-  \caption{Command-line options controlling saving scalar time-series}
+  \caption{Command-line options controlling saving scalar time-series.}
   \label{tab:time-series-opts}
 \end{table}
 
@@ -749,16 +763,16 @@ Scalar time-series take very little storage space (compared to spatially-varying
     \texttt{dt} & years & mass-continuity time-step\\
     \hline
   \end{tabular}
-  \caption{Scalar time-series supported by PISM}
+  \caption{Scalar time-series supported by PISM.}
   \label{tab:time-series}
 \end{table}
 
 \subsection{Saving spatially-varying diagnostic quantities}\index{PISM!saving diagnostic quantities regularly}
 \label{sec:saving-spat-vari}
 
-Sometimes it is useful to have PISM save a handful of diagnostic quantities every 10 years (or even every year). One can use snapshots (section \ref{sec:snapshots}), but doing so can easily fill your hard-drive. The set of options described here allows saving a \emph{subset} of variables present in an output file.
+Sometimes it is useful to have PISM save a handful of diagnostic quantities every 10 years (or even every year).  One can use snapshots (section \ref{sec:snapshots}), but doing so can easily fill your hard-drive because snapshots are complete (re-startable) model states.  Sometimes you want a \emph{subset} of model variables saved reasonably-frequently in an output file.
 
-For example,
+Use options \intextoption{extra\und file}, \intextoption{extra\und times}, and \intextoption{extra\und vars} for this.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 10000 -o output.nc -extra_file extras.nc \
         -extra_times 0:10:1e4 -extra_vars csurf,cbase
@@ -781,7 +795,7 @@ will run for 10000 years, saving the magnitude of horizontal velocities at the i
   \label{tab:extras}
 \end{table}
 
-Note that similar to the snapshot-saving mechanism, extra variables are saved \emph{on the first time-step after a requested time}. We do not guarantee saving at all the requested times.
+Note that similar to the snapshot-saving mechanism, extra variables are saved \emph{on the first time-step after a requested time}.  If the times given in \verb|extra_times| are as frequent as model time-steps then we do not guarantee saving at all the requested times.
 
 \begin{table}[ht]
   \centering
@@ -814,6 +828,7 @@ Note that similar to the snapshot-saving mechanism, extra variables are saved \e
   \caption{Diagnostic variables}
   \label{tab:extra-vars}
 \end{table}
+
 
 \subsection{Positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  The default atmospheric climate assumption made by the \verb|pismr| and \verb|pgrn| executables is that the input file will supply surface mass balance and ice surface temperature in variables \verb|acab| and \verb|artm|, respectively.  The supplied surface mass balance \verb|acab| is assumed to be the net surface balance, which is not the snow accumulation rate when melting can occur, and it must be in units of ice-equivalent thickness per time.  The supplied surface temperature \verb|artm| is regarded as the mean annual surface temperature, at a point in the ice below the completion of firn processes \cite{Hock05}.  The mass conservation equation for the ice sheet requires the surface mass balance, while the conservation of energy model requires the ice surface temperature as a boundary condition.
 
@@ -880,7 +895,7 @@ The velocity field saved by \verb|pismd| is the one which would be computed at t
 
 \verb|pisms -eisII A -i eisIIA200k.nc -y 0 -o eisIIA200k_plus.nc|
 
-\noindent then the horizontal velocity field computed in this single time step run is the same as that saved in \verb|eisIIA200k_diag.nc|.\footnote{For this example, one can use a NetCDF Operator\index{NCO (NetCDF Operators)} to check that the two saved NetCDF files contain the same vertically-averaged horizontal velocity field; just do \t{ncdiff -v cbar} \dots}
+\noindent then the horizontal velocity field computed in this single time step run is the same as that saved in \verb|eisIIA200k_diag.nc|.\footnote{For this example, one can use a NetCDF Operator\index{NCO (NetCDF Operators)!ncdiff} to check that the two saved NetCDF files contain the same vertically-averaged horizontal velocity field; just do \t{ncdiff -v cbar} \dots}
 
 This diagnostic mode is most frequently associated to the modeling of ice shelves and ice streams.  Subsection \ref{sect:ross} describes using \verb|pismd| to model the Ross ice shelf \cite{MacAyealetal}.  Verification tests I and J, section \ref{sect:verif}, are diagnostic calculations using the SSA.
 
@@ -971,7 +986,7 @@ climate at times \verb|ys:dt:ye|.  It is a boring ``movie.''
 The excuse for the executable \verb|pcctest| becomes clearer if we use a positive degree-day
 model (subsection \ref{subsect:pdd}).  The positive degree-day
 model uses a variable called \verb|snowaccum|, and a calculation of melting, to get the
-surface mass balance \verb|acab|.  As a demonstration here we use an NCO (subsection 
+surface mass balance \verb|acab|.  As a demonstration here we use an NCO\index{NCO (NetCDF Operators)!ncrename} (subsection 
 \ref{subsect:nctoolsintro}) to change a variable name in \verb|state.nc|.  Then we run \verb|pcctest|
 with option \verb|-pdd| to invoke the \verb|PISMPDDCoupler|
 object, which includes the parameterized PDD:
