@@ -442,16 +442,19 @@ PetscErrorCode IceModel::init_snapshots() {
   char tmp[TEMPORARY_STRING_LENGTH] = "\0";
   current_snapshot = 0;
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-save_to", tmp,
+  ierr = check_old_option_and_stop(grid.com, "-save_to", "-save_file"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(grid.com, "-save_at", "-save_times"); CHKERRQ(ierr);
+
+  ierr = PetscOptionsGetString(PETSC_NULL, "-save_file", tmp,
 			       PETSC_MAX_PATH_LEN, &save_to_set); CHKERRQ(ierr);
   snapshots_filename = tmp;
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-save_at", tmp,
+  ierr = PetscOptionsGetString(PETSC_NULL, "-save_times", tmp,
 			       TEMPORARY_STRING_LENGTH, &save_at_set); CHKERRQ(ierr);
 
   if (save_to_set ^ save_at_set) {
     ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: you need to specify both -save_to and -save_at to save snapshots.\n");
+		       "PISM ERROR: you need to specify both -save_file and -save_times to save snapshots.\n");
     CHKERRQ(ierr);
     PetscEnd();
   }
@@ -463,7 +466,7 @@ PetscErrorCode IceModel::init_snapshots() {
 
   ierr = parse_times(grid.com, tmp, snapshot_times);
   if (ierr != 0) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -save_at argument failed.\n"); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -save_times argument failed.\n"); CHKERRQ(ierr);
     PetscEnd();
   }
 

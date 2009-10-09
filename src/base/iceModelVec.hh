@@ -97,7 +97,7 @@ protected:
   int dof;
   DA           da;
   bool         localp;
-  PetscViewer map_viewer;
+  map<string,PetscViewer> map_viewers;
 
   void         *array;  // will be PetscScalar** or PetscScalar*** in derived classes
 
@@ -105,7 +105,7 @@ protected:
   virtual PetscErrorCode checkHaveArray();
   virtual PetscErrorCode checkCompatibility(const char*, IceModelVec &other);
   virtual PetscErrorCode reset_attrs();
-  virtual PetscErrorCode create_map_viewer(bool big);
+  virtual PetscErrorCode create_viewer(bool big, string title, PetscViewer &viewer);
   virtual PetscErrorCode compute_viewer_size(int target, int &x, int &y);
   // FIXME: consider adding 
   //   virtual PetscErrorCode  checkSelfOwnsIt(const PetscInt i, const PetscInt j);
@@ -202,14 +202,14 @@ public:
   PetscErrorCode  extend_vertically(int old_Mz, PetscScalar fill_value);
   PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2 &fill_values);
 
-  PetscErrorCode view_surface(Vec g2, bool big);
-  PetscErrorCode view_horizontal_slice(Vec g2, bool big, PetscScalar level);
+  PetscErrorCode view_surface(IceModelVec2 &thickness, Vec g2, bool big);
+  PetscErrorCode view_horizontal_slice(PetscScalar level, Vec g2, bool big);
   PetscErrorCode view_sounding(int i, int j);
 
 protected:  
   PetscErrorCode  isLegalLevel(PetscScalar z);
   virtual PetscErrorCode  extend_vertically_private(int old_Mz);
-  PetscViewer sounding_viewer;
+  map<string,PetscViewer> slice_viewers, sounding_viewers;
 };
 
 #endif /* __IceModelVec_hh */

@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <sstream>
 #include <cstring>
 #include <cstdlib>
 #include <petscda.h>
@@ -29,9 +30,7 @@
 // methods for base class IceModelVec and derived class IceModelVec2
 // are in "iceModelVec.cc"
 
-IceModelVec3::IceModelVec3() : IceModelVec() {
-  sounding_viewer = PETSC_NULL;
-}
+IceModelVec3::IceModelVec3() : IceModelVec() {}
 
 
 //! Allocate a DA and a Vec from information in IceGrid.
@@ -70,10 +69,24 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[], boo
 
 PetscErrorCode IceModelVec3::destroy() {
   PetscErrorCode ierr;
-  if (sounding_viewer != PETSC_NULL) {
-    ierr = PetscViewerDestroy(sounding_viewer); CHKERRQ(ierr);
-    sounding_viewer = PETSC_NULL;
+
+  ierr = IceModelVec::destroy(); CHKERRQ(ierr);
+
+  map<string,PetscViewer>::iterator i;
+  for (i = sounding_viewers.begin(); i != sounding_viewers.end(); ++i) {
+    if ((*i).second != PETSC_NULL) {
+      ierr = PetscViewerDestroy((*i).second); CHKERRQ(ierr);
+    }
   }
+  sounding_viewers.clear();
+
+  for (i = slice_viewers.begin(); i != slice_viewers.end(); ++i) {
+    if ((*i).second != PETSC_NULL) {
+      ierr = PetscViewerDestroy((*i).second); CHKERRQ(ierr);
+    }
+  }
+  slice_viewers.clear();
+
   return 0;
 }
 
@@ -392,6 +405,8 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt 
 PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, PetscScalar z) {
   PetscErrorCode ierr;
   PetscScalar    **slice_val;
+
+  ierr = begin_access(); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid->da2, gslice, &slice_val); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
@@ -399,6 +414,8 @@ PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, PetscScalar z) {
     }
   }
   ierr = DAVecRestoreArray(grid->da2, gslice, &slice_val); CHKERRQ(ierr);
+  ierr = end_access(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -406,6 +423,8 @@ PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, PetscScalar z) {
 PetscErrorCode  IceModelVec3::getHorSlice(IceModelVec2 &gslice, PetscScalar z) {
   PetscErrorCode ierr;
   PetscScalar    **slice_val;
+
+  ierr = begin_access(); CHKERRQ(ierr);
   ierr = gslice.get_array(slice_val); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
@@ -413,6 +432,8 @@ PetscErrorCode  IceModelVec3::getHorSlice(IceModelVec2 &gslice, PetscScalar z) {
     }
   }
   ierr = gslice.end_access(); CHKERRQ(ierr);
+  ierr = end_access(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -434,7 +455,8 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2
 PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2 &myH) {
   PetscErrorCode ierr;
   PetscScalar    **H, **surf_val;
-  ierr = DAVecGetArray(da, gsurf, &surf_val); CHKERRQ(ierr);
+  ierr = begin_access(); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid->da2, gsurf, &surf_val); CHKERRQ(ierr);
   ierr = myH.get_array(H); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
@@ -442,7 +464,8 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2 &myH) {
     }
   }
   ierr = myH.end_access(); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(da, gsurf, &surf_val); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid->da2, gsurf, &surf_val); CHKERRQ(ierr);
+  ierr = end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -450,6 +473,8 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2 &myH) {
 PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, PetscScalar **H) {
   PetscErrorCode ierr;
   PetscScalar    **surf_val;
+
+  ierr = begin_access(); CHKERRQ(ierr);
   ierr = gsurf.get_array(surf_val); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
@@ -457,6 +482,8 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, PetscScalar 
     }
   }
   ierr = gsurf.end_access(); CHKERRQ(ierr);
+  ierr = end_access(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -834,23 +861,51 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   return 0;
 }
 
-PetscErrorCode IceModelVec3::view_surface(Vec g2, bool big) {
-  /*
-    ierr = imv3.begin_access(); CHKERRQ(ierr);
-    ierr = imv3.getSurfaceValues(g2, vH); CHKERRQ(ierr);
-    ierr = imv3.end_access(); CHKERRQ(ierr);
-    ierr = VecScale(g2, scale); CHKERRQ(ierr);
-    ierr = VecView(g2, runtimeViewers[cIndex(scName)]); CHKERRQ(ierr);
-  */
+PetscErrorCode IceModelVec3::view_surface(IceModelVec2 &thickness, Vec g2, bool big) {
+  PetscErrorCode ierr;
+
+  if (map_viewers[name] == PETSC_NULL) {
+    string title;
+    if (big) {
+      title = string_attr("long_name") + " at the ice surface (" +
+	string_attr("glaciological_units") + ")";
+    } else {
+      title = string_attr("short_name") + " at ice surface (" +
+	string_attr("glaciological_units") + ")";
+    }
+    ierr = create_viewer(big, title, map_viewers[name]); CHKERRQ(ierr);
+  }
+
+  ierr = getSurfaceValues(g2, thickness); CHKERRQ(ierr);
+
+  ierr = var1.to_glaciological_units(g2); CHKERRQ(ierr);
+
+  ierr = VecView(g2, map_viewers[name]); CHKERRQ(ierr);
+
   return 0;
 }
 
-PetscErrorCode IceModelVec3::view_horizontal_slice(Vec g2, bool big, PetscScalar level) {
-  /*
-    ierr = imv3.begin_access(); CHKERRQ(ierr);
-    ierr = imv3.getHorSlice(g2, grid.zlevels[kd]); CHKERRQ(ierr);
-    ierr = imv3.end_access(); CHKERRQ(ierr);
-   */
+PetscErrorCode IceModelVec3::view_horizontal_slice(PetscScalar level, Vec g2, bool big) {
+  PetscErrorCode ierr;
+
+  if (slice_viewers[name] == PETSC_NULL) {
+    ostringstream title;
+    if (big) {
+      title << string_attr("long_name") << " at " << level << " m above the base of ice, (" << 
+	string_attr("glaciological_units") << ")";
+    } else {
+      title << string_attr("short_name") << " at " << level << " m above base of ice, (" << 
+	string_attr("glaciological_units") << ")";
+    }
+    ierr = create_viewer(big, title.str(), slice_viewers[name]); CHKERRQ(ierr);
+  }
+
+  ierr = getHorSlice(g2, level); CHKERRQ(ierr);
+
+  ierr = var1.to_glaciological_units(g2); CHKERRQ(ierr);
+
+  ierr = VecView(g2, slice_viewers[name]); CHKERRQ(ierr);
+
   return 0;
 }
 

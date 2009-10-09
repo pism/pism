@@ -183,8 +183,9 @@ PetscErrorCode IceModelVec2::mask_by(IceModelVec2 &M, PetscScalar fill) {
 PetscErrorCode IceModelVec2::view(Vec g2, bool big) {
   PetscErrorCode ierr;
 
-  if (map_viewer == PETSC_NULL) {
-    ierr = create_map_viewer(big); CHKERRQ(ierr);
+  if (map_viewers[name] == PETSC_NULL) {
+    string title = string_attr("long_name") + " (" + string_attr("glaciological_units") + ")";
+    ierr = create_viewer(big, title, map_viewers[name]); CHKERRQ(ierr);
   }
 
   if (localp) {
@@ -195,7 +196,7 @@ PetscErrorCode IceModelVec2::view(Vec g2, bool big) {
 
   ierr = var1.to_glaciological_units(g2); CHKERRQ(ierr);
 
-  ierr = VecView(g2, map_viewer); CHKERRQ(ierr);
+  ierr = VecView(g2, map_viewers[name]); CHKERRQ(ierr);
 
   return 0;
 }

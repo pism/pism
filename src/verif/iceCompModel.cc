@@ -63,6 +63,11 @@ PetscErrorCode IceCompModel::createVecs() {
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
   ierr = vHexactL.create(grid, "HexactL", true); CHKERRQ(ierr);
   ierr = SigmaComp3.create(grid,"SigmaComp", false); CHKERRQ(ierr);
+  ierr = SigmaComp3.set_attrs("internal","rate of compensatory strain heating in ice",
+			      "W m-3", ""); CHKERRQ(ierr);
+  ierr = SigmaComp3.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
+  variables.add(SigmaComp3);
+
   return 0;
 }
 

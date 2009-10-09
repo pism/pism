@@ -87,7 +87,7 @@ PetscErrorCode IceModel::setDefaults() {
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;
   jd = (grid.My - 1)/2;
-  kd = 0;
+  slice_level = 0.0;
 
   // default polar stereographic projection settings: South Pole
   polar_stereographic.set_string("pism_intent", "mapping");

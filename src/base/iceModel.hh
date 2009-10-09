@@ -228,9 +228,12 @@ protected:
 
   // KSP viewer
   PetscDrawLG  kspLG;
-  
-  PetscInt     id, jd;
-  PetscScalar  kd;		//!< \brief level used for "slicing" 3D fields (in
+
+  // other diagnostic viewers:
+  set<string> map_viewers, slice_viewers, sounding_viewers;
+  map<string,bool> big_viewers;	// the list of viewers that should be big
+  PetscInt     id, jd;	     // sounding indices
+  PetscScalar  slice_level;  //!< \brief level used for "slicing" 3D fields (in
 				//!< diagnostic viewers)
 
   string history; //!< history of commands used to generate this instance of IceModel
@@ -432,7 +435,8 @@ protected:
   virtual PetscErrorCode vertVelocityFromIncompressibility();
     
   // see iMviewers.cc
-  virtual PetscErrorCode update_viewers();  // it calls updateSoundings()
+  virtual PetscErrorCode init_viewers();
+  virtual PetscErrorCode update_viewers();
 
 protected:
   // working space (a convenience)

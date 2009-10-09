@@ -144,6 +144,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = Sigma3.set_attrs("internal",
                           "rate of strain heating in ice (dissipation heating)",
 	        	  "W m-3", ""); CHKERRQ(ierr);
+  ierr = Sigma3.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
   ierr = variables.add(Sigma3); CHKERRQ(ierr);
 
   // ice temperature

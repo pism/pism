@@ -29,7 +29,6 @@ IceModelVec::IceModelVec() {
   array = PETSC_NULL;
   localp = true;
   use_interpolation_mask = false;
-  map_viewer = PETSC_NULL;
 
   dims = GRID_2D;		// default
   dof = 1;			// default
@@ -99,10 +98,14 @@ PetscErrorCode  IceModelVec::destroy() {
     ierr = DADestroy(da); CHKERRQ(ierr);
     da = PETSC_NULL;
   }
-  if (map_viewer != PETSC_NULL) {
-    ierr = PetscViewerDestroy(map_viewer); CHKERRQ(ierr);
-    map_viewer = PETSC_NULL;
+  map<string,PetscViewer>::iterator i;
+  for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {
+    if ((*i).second != PETSC_NULL) {
+      ierr = PetscViewerDestroy((*i).second); CHKERRQ(ierr);
+    }
   }
+  map_viewers.clear();
+
   return 0;
 }
 
@@ -661,23 +664,22 @@ vector<double> IceModelVec::array_attr(string name) {
   return var1.doubles[name];
 }
 
-PetscErrorCode IceModelVec::create_map_viewer(bool big) {
+PetscErrorCode IceModelVec::create_viewer(bool big, string title, PetscViewer &viewer) {
   PetscErrorCode ierr;
   int x, y;
-  string title = string_attr("long_name");
 
   ierr = compute_viewer_size(big ? 600 : 320, x, y); CHKERRQ(ierr);
 
   // note we reverse x <-> y; see IceGrid::createDA() for original reversal
-  ierr = PetscViewerDrawOpen(grid->com, PETSC_NULL,
-			     title.c_str(),
-			     PETSC_DECIDE, PETSC_DECIDE, y, x, &map_viewer);  CHKERRQ(ierr);
+  ierr = PetscViewerDrawOpen(grid->com, PETSC_NULL, title.c_str(),
+			     PETSC_DECIDE, PETSC_DECIDE, y, x, &viewer);  CHKERRQ(ierr);
 
   // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
   // there is a no titles bug
   PetscDraw draw;
-  ierr = PetscViewerDrawGetDraw(map_viewer, 0, &draw); CHKERRQ(ierr);
+  ierr = PetscViewerDrawGetDraw(viewer, 0, &draw); CHKERRQ(ierr);
   ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
+
   return 0;
 }
 

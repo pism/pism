@@ -161,8 +161,6 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-jd", &jd, PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-kd", &kd, PETSC_NULL); CHKERRQ(ierr);
-
   ierr = config.scalar_from_option("low_temp", "global_min_allowed_temp"); CHKERRQ(ierr);
 
 // note "-mato" caught in writeFiles() in iMIO.cc

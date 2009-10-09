@@ -16,6 +16,7 @@
 \usepackage{amssymb,amsmath}
 \usepackage[pdftex]{graphicx}
 \usepackage[pdftex]{hyperref}
+\usepackage{longtable}
 
 %% uncomment to see locations of index entries
 %\usepackage{showidx}
@@ -555,13 +556,12 @@ Table \ref{tab:adaptiveflag} explains the meaning of the additional one characte
 
 \begin{table}[ht]
 \caption{Meaning of the adaptive time-stepping ``reason'' flag `\texttt{r}' in standard output flag line.}\label{tab:adaptiveflag}
-\begin{tabular}{@{}llll}\hline
+\begin{tabular}{p{0.1\linewidth}p{0.8\linewidth}}\hline
 \textbf{Flag} & \textbf{Active adaptive constraint} \\ \hline
 \verb|c| & three-dimensional CFL for temperature/age advection \cite{BBL} \\
 \verb|d| & diffusivity for SIA mass conservation \cite{BBL} \\
 \verb|e| & end of prescribed run time \\
-\verb|f| & \verb|-dt_force| set; generally option \verb|-dt_force|, which overrides \\
- & the adaptive scheme, should not be used  \\
+\verb|f| & \verb|-dt_force| set; generally option \verb|-dt_force|, which overrides the adaptive scheme, should not be used  \\
 \verb|m| & maximum allowed $\Delta t$ applies; set with \verb|-max_dt| \\
 \verb|t| & maximum $\Delta t$ was temporarily set by a derived class \\
 \verb|u| & 2D CFL for mass conservation in SSA regions (upwinded; \cite{BBssasliding})\\
@@ -616,13 +616,11 @@ Suppose, on the other hand, that the run needs to be stopped.  One may use the i
 \verb|kill -TERM 8920|
 
 \noindent Then the PISM run is stopped and the lines
-
-\verb|Caught signal SIGTERM: exiting early.|
-
-\verb|...|
-
-\verb|Writing model state to file `testGmillion.nc' ... done|
-
+\begin{verbatim}
+Caught signal SIGTERM: exiting early.
+...
+Writing model state to file `testGmillion.nc' ... done
+\end{verbatim}
 \noindent appear in the log file \verb|log.txt|.  The \verb|history| global attribute \verb|testGmillion.nc| records the point at which the run was stopped.  One can restart and finish the run by the command (for example)
 
 \begin{verbatim}
@@ -736,6 +734,7 @@ PISM buffers time-series data and writes it at the end of the run or once 10000 
 Omitting the \intextoption{ts\und vars} option makes PISM save \emph{all} the variables listed in table \ref{tab:time-series}.  Because scalar time-series take very little storage space, compared to spatially-varying data, this is usually a reasonable choice.
 
 \begin{table}[ht]
+  \caption{Command-line options controlling saving scalar time-series}
   \centering
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}
     \\\hline
@@ -746,11 +745,11 @@ Omitting the \intextoption{ts\und vars} option makes PISM save \emph{all} the va
     \intextoption{ts\und vars} [list of variables] & Comma-separated list of variables, see table~\ref{tab:time-series}. Omitting this option is equivalent to listing all the possible variables.\\
     \hline
   \end{tabular}
-  \caption{Command-line options controlling saving scalar time-series.}
-  \label{tab:time-series-opts}
+ \label{tab:time-series-opts}
 \end{table}
 
 \begin{table}[ht]
+  \caption{Scalar time-series supported by PISM}
   \centering
   \begin{tabular}{p{0.2\linewidth}p{0.1\linewidth}p{0.6\linewidth}}\\
     \hline
@@ -763,8 +762,7 @@ Omitting the \intextoption{ts\und vars} option makes PISM save \emph{all} the va
     \texttt{dt} & years & mass-continuity time-step\\
     \hline
   \end{tabular}
-  \caption{Scalar time-series supported by PISM.}
-  \label{tab:time-series}
+ \label{tab:time-series}
 \end{table}
 
 \subsection{Saving spatially-varying diagnostic quantities}\index{PISM!saving diagnostic quantities regularly}
@@ -780,6 +778,7 @@ $ pismr -i foo.nc -y 10000 -o output.nc -extra_file extras.nc \
 will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years. Times are specified using a comma-separated list or a MATLAB-style range. Please see table \ref{tab:extras} for all the options corresponding to this feature; table \ref{tab:extra-vars} lists all the variable choices. 
 
 \begin{table}[ht]
+  \caption{Command-line options controlling extra diagnostic output}
   \centering
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}
     \\\hline
@@ -791,42 +790,51 @@ will run for 10000 years, saving the magnitude of horizontal velocities at the i
     \intextoption{split\und extras} & save to separate files, similar to \intextoption{split\und snapshots}\\
     \hline
   \end{tabular}
-  \caption{Command-line options controlling extra diagnostic output}
-  \label{tab:extras}
+ \label{tab:extras}
 \end{table}
 
 Note that similar to the snapshot-saving mechanism, extra variables are saved \emph{on the first time-step after a requested time}.  If the times given in \verb|extra_times| are as frequent as model time-steps then we do not guarantee saving at all the requested times.
 
 \begin{table}[ht]
+  \caption{Diagnostic quantities}
   \centering
-  \begin{tabular}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
+  \begin{longtable}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
     \\\hline
     \textbf{Name} & \textbf{Units} & \textbf{Description}\\
+    \hline
     \texttt{age} & years & age of ice \\
+    \texttt{bfrict} & mW/m$^{2}$ & basal frictional heating from ice sliding (= till dissipation) \\
     \texttt{bheatflx} & W/m$^{2}$ & upward geothermal flux at bedrock surface \\
+    \texttt{bmelt} & m/year & ice basal melt rate in ice thickness per time \\
     \texttt{bwat} & m & effective thickness of subglacial melt water \\
+    \texttt{cbar} & m/year & magnitude of vertically-integrated horizontal velocity of ice \\
+    \texttt{cbase} & m/year & magnitude of horizontal velocity of ice at base of ice \\
+    \texttt{cflx} & m$^{2}$/year & magnitude of vertically-integrated horizontal flux of ice \\
+    \texttt{csurf} & m/year & magnitude of horizontal velocity of ice at ice surface \\
+    \texttt{dHdt} & m/year & rate of change of ice thickness \\
     \texttt{dbdt} & m/year& bedrock uplift rate \\
     \texttt{lat} & degrees north& latitude \\
     \texttt{litho\und temp} & K & lithosphere (bedrock) temperature\\
     \texttt{lon} & degrees east & longitude \\
     \texttt{mask} & none & grounded/dragging/floating integer mask \\
+    \texttt{strainheat} & W/m$^{3}$ & rate of strain heating in ice (dissipation heating) \\
+    \texttt{tauc} & Pa & yield stress for basal till (plastic or pseudo-plastic model) \\
+    \texttt{taud} & Pa & magnitude of driving shear stress at base of ice \\
     \texttt{temp} & K & ice temperature \\
     \texttt{thk} & m & ice thickness\\
     \texttt{tillphi} & degrees & friction angle for till under grounded ice sheet \\
     \texttt{topg} & m & bedrock surface elevation \\
+    \texttt{ubar} & m/year & vertical mean of horizontal ice velocity in the X direction \\
+    \texttt{ub} & m/year & basal ice velocity in the X direction \\
     \texttt{usurf} & m & ice upper surface elevation \\
-    \texttt{dHdt} & m/year & rate of change of ice thickness \\
-    \texttt{cbar} & m/year & magnitude of vertically-integrated horizontal velocity of ice \\
-    \texttt{cflx} & m$^{2}$/year & magnitude of vertically-integrated horizontal flux of ice \\
-    \texttt{cbase} & m/year & magnitude of horizontal velocity of ice at base of ice \\
-    \texttt{csurf} & m/year & magnitude of horizontal velocity of ice at ice surface \\
-    \texttt{wvelsurf} & m/year & vertical velocity of ice at ice surface \\
-    \texttt{taud} & Pa & magnitude of driving shear stress at base of ice \\
-    \texttt{tauc} & Pa & yield stress for basal till (plastic or pseudo-plastic model) \\
+    \texttt{uvel} & m/year & horizontal velocity of ice in the X direction \\
+    \texttt{vbar} & m/year & vertical mean of horizontal ice velocity in the Y direction \\
+    \texttt{vb} & m/year & basal ice velocity in the Y direction \\
+    \texttt{vvel} & m/year & horizontal velocity of ice in the Y direction \\
+    \texttt{wvel} & m/year & vertical velocity of ice \\
     \hline
-  \end{tabular}
-  \caption{Diagnostic variables}
-  \label{tab:extra-vars}
+  \end{longtable}
+ \label{tab:extra-vars}
 \end{table}
 
 
@@ -854,14 +862,12 @@ The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:mask
 \begin{table}[ht]
 \caption{The PISM mask\index{mask}, in combination with user options, determines the dynamical model.}\label{tab:maskvals} 
 \small
-\begin{tabular}{@{}llll}\hline
+\begin{tabular}{p{0.25\linewidth}p{0.65\linewidth}}\hline
 \textbf{Mask value} & \textbf{Meaning}\\ \hline
 1=\verb|SHEET| & ice is grounded (and only the SIA is always applied) \\
 2=\verb|DRAGGING| & ice is grounded (and the SSA is applied if option \verb|-ssa| is given) \\
 3=\verb|FLOATING| & ice is floating (and the SSA is applied if option \verb|-ssa| is given) \\
-7=\verb|FLOATING_OCEAN0| & same as \verb|FLOATING|, but the grid point was ice free ocean at  \\
- & initialization of the model by \verb|-boot_from|; ice with this value\\
- & will calve off if option \verb|-ocean_kill| is given.\\
+7=\verb|FLOATING_OCEAN0| & same as \verb|FLOATING|, but the grid point was ice free ocean at initialization of the model by \verb|-boot_from|; ice with this value will calve off if option \verb|-ocean_kill| is given.\\
 \hline\end{tabular}
 \normalsize
 \end{table}
@@ -914,17 +920,11 @@ In PISM the user gives the options \verb|-ssa -plastic -super| to turn on the us
 \begin{table}[ht]
 \caption{Using the SSA stress balance in PISM.}\label{tab:ssausage} 
 \small
-\begin{tabular}{@{}llll}\hline
+\begin{tabular}{p{0.25\linewidth}p{0.65\linewidth}}\hline
 \textbf{Option combination} & \textbf{Meaning}\\ \hline
-\intextoption{ssa} & Floating ice uses SSA, and at all points marked \t{DRAGGING}. \\
- & Basal resistance for grounded ice is plastic (see \\
- & \intextoption{pseudo\und plastic} to control parameters) but uses \\
- & fixed field \t{tauc} with no update. \\
-\t{-ssa} \intextoption{plastic} & As above, but all grounded points are forced to be \t{DRAGGING} \\
- & and \t{tauc} is updated at each time step using stored map \\
- & \t{tillphi} and evolving basal melt water effective thickness \t{bwat}. \\
-\t{-ssa -plastic} \intextoption{super} & The recommended default sliding law.  Combines SSA-computed \\
- & velocity, using plastic till, with SIA-computed velocity as in \cite{BBssasliding}. \\
+\intextoption{ssa} & Floating ice uses SSA, and at all points marked \t{DRAGGING}. Basal resistance for grounded ice is plastic (see \intextoption{pseudo\und plastic} to control parameters) but uses fixed field \t{tauc} with no update. \\
+\t{-ssa} \intextoption{plastic} & As above, but all grounded points are forced to be \t{DRAGGING} and \t{tauc} is updated at each time step using stored map \t{tillphi} and evolving basal melt water effective thickness \t{bwat}. \\
+\t{-ssa -plastic} \intextoption{super} & The recommended default sliding law.  Combines SSA-computed velocity, using plastic till, with SIA-computed velocity as in \cite{BBssasliding}. \\
 \hline\end{tabular}
 \normalsize
 \end{table}
@@ -1778,9 +1778,7 @@ Table \ref{tab:rossoptions} lists some of the options which are useful for this 
 \caption{Non-obvious options available and/or recommended with \texttt{pismd -ross}.\index{PISM!options for \texttt{pismd -ross}}}\label{tab:rossoptions}
 \begin{tabular}{@{}llll}\hline
 \textbf{Option} & \textbf{Explanation/Comments} \\ \hline
-  \verb|-d cnmu| &       a good way to see what is going on \\
-  \verb|-mato foo -matv cnmuvH|\pismoptionindex{mato}\pismoptionindex{matv} &  writes some model results to \\
-    & Matlab-readable file \verb|foo.m| \\
+  \verb|-d cnmu| &       a good way to see what is going on \\ % FIXME!
   \verb|-pause N| &      pause for N seconds when refreshing viewers \\
   \verb|-ross| &         only use with executable \verb|pismd| \\
   \verb|-verbose 4| &      shows information on nonlinear iteration and Krylov solve \\

@@ -286,7 +286,7 @@ PetscErrorCode IceCompModel::updateCompViewers() {
   PetscErrorCode ierr;
 
   ierr = update_viewers();  CHKERRQ(ierr);
-
+  /* FIXME!
   Vec myg2;
   ierr = DACreateGlobalVector(grid.da2, &myg2); CHKERRQ(ierr);
   IceModelVec2 myvWork2d[3];
@@ -295,9 +295,7 @@ PetscErrorCode IceCompModel::updateCompViewers() {
   ierr = myvWork2d[2].create(grid, "myvWork2d[2]", true); CHKERRQ(ierr);
   
   if (SigmaCompView != PETSC_NULL) {
-    ierr = SigmaComp3.begin_access(); CHKERRQ(ierr);
-    ierr = SigmaComp3.getHorSlice(myg2, kd * grid.Mz); CHKERRQ(ierr);
-    ierr = SigmaComp3.end_access(); CHKERRQ(ierr);
+    ierr = SigmaComp3.getHorSlice(myg2, slice_level); CHKERRQ(ierr);
     ierr = VecScale(myg2, secpera); CHKERRQ(ierr);
     ierr = VecView(myg2, SigmaCompView); CHKERRQ(ierr);
   }  
@@ -321,6 +319,7 @@ PetscErrorCode IceCompModel::updateCompViewers() {
   ierr = myvWork2d[1].destroy(); CHKERRQ(ierr);
   ierr = myvWork2d[2].destroy(); CHKERRQ(ierr);
   ierr = VecDestroy(myg2); CHKERRQ(ierr);
+  */
   return 0;
 }
 

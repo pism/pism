@@ -83,7 +83,7 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
   if (updateDiffusViewer) { // view diffusivity (m^2/s)
     ierr = vWork2d[0].set_name("diffusivity"); CHKERRQ(ierr);
     ierr = vWork2d[0].set_attrs("diagnostic",
-				"diffusivity", "m2/s", "m2/s"); CHKERRQ(ierr);
+				"diffusivity", "m2/s", ""); CHKERRQ(ierr);
     ierr = vWork2d[0].view(g2, false); CHKERRQ(ierr);
   }
 
