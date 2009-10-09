@@ -106,6 +106,7 @@ protected:
   virtual PetscErrorCode checkCompatibility(const char*, IceModelVec &other);
   virtual PetscErrorCode reset_attrs();
   virtual PetscErrorCode create_map_viewer(bool big);
+  virtual PetscErrorCode compute_viewer_size(int target, int &x, int &y);
   // FIXME: consider adding 
   //   virtual PetscErrorCode  checkSelfOwnsIt(const PetscInt i, const PetscInt j);
   //   virtual PetscErrorCode  checkSelfOwnsItGhosted(const PetscInt i, const PetscInt j);
@@ -164,6 +165,7 @@ class IceModelVec3 : public IceModelVec {
 public:
   IceModelVec3();
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
+  virtual PetscErrorCode  destroy();
 
   // note the IceModelVec3 with this method must be *local* while imv3_source must be *global*
   virtual PetscErrorCode  beginGhostCommTransfer(IceModelVec3 &imv3_source);
@@ -207,6 +209,7 @@ public:
 protected:  
   PetscErrorCode  isLegalLevel(PetscScalar z);
   virtual PetscErrorCode  extend_vertically_private(int old_Mz);
+  PetscViewer sounding_viewer;
 };
 
 #endif /* __IceModelVec_hh */

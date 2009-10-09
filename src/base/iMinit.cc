@@ -454,7 +454,7 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = init_extras(); CHKERRQ(ierr);
 
   ierr = stampHistoryCommand(); CHKERRQ(ierr);
-  ierr = createViewers(); CHKERRQ(ierr);
+  //  ierr = createViewers(); CHKERRQ(ierr); FIXME: this might be needed for the KSP viewer
 
   // consistency of geometry after initialization;
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);

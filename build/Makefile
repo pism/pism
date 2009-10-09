@@ -96,7 +96,7 @@ ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
 	matlablike.cc greens.cc deformation.cc localMassBalance.cc pccoupler.cc \
 	iceModel.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc \
 	iMdefaults.cc iMgeometry.cc iMgrainsize.cc iMinit.cc iMinverse.cc \
-	iMinverseMat.cc iMIO.cc iMmatlab.cc iMnames.cc iMoptions.cc \
+	iMinverseMat.cc iMIO.cc iMmatlab.cc iMoptions.cc \
 	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc \
 	iMutil.cc iMvelocity.cc iMviewers.cc Timeseries.cc PISMVars.cc iMtimeseries.cc
 ice_csources := cubature.c pism_signal.c

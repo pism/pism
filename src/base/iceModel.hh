@@ -44,13 +44,6 @@ typedef struct _p_SSA *SSA;
 /// @cond NAMESPACE_BROWSER
 using namespace std;
 /// @endcond
- 
-
-// see iMnames.cc
-struct titleNname {
-  char title[100]; // these short titles appear on PETSc graphical viewers
-  char name[30];   // these names are for Matlab output vars
-};
 
 struct SSASNESNode {
   PetscScalar u, v;
@@ -225,26 +218,22 @@ protected:
               shelvesDragToo,
               doAdaptTimeStep, 
               realAgeForGrainSize,
-              showViewers, ssaSystemToASCIIMatlab, reportHomolTemps,
+              ssaSystemToASCIIMatlab, reportPATemps,
               allowAboveMelting,
-              createViewers_done,
               computeSIAVelocities, transformForSurfaceGradient;
   char        adaptReasonFlag;
 
   // file names
   char         ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN];
 
-  // viewer and sounding
-  static const PetscInt   tnN = 75;
-  static const            titleNname tn[tnN];  // see iMnames.cc
-  PetscViewer             runtimeViewers[tnN]; // see iMviewers.cc
-  char         diagnostic[PETSC_MAX_PATH_LEN], // see iMviewers.cc
-    diagnosticBIG[PETSC_MAX_PATH_LEN]; // see iMviewers.cc
+  // KSP viewer
   PetscDrawLG  kspLG;
-  PetscInt     id, jd, kd;
-  Vec          Td, wd, ud, vd, Sigmad, taud; // hold soundings
+  
+  PetscInt     id, jd;
+  PetscScalar  kd;		//!< \brief level used for "slicing" 3D fields (in
+				//!< diagnostic viewers)
 
-  string history; // history of commands used to generate this instance of IceModel
+  string history; //!< history of commands used to generate this instance of IceModel
   string executable_short_name;
   
 protected:
@@ -369,7 +358,7 @@ protected:
               PetscScalar meltfrac, PetscScalar H0, PetscScalar T0);
 
   // Methods for computing diagnostic quantities:
-  // spatially-variable:
+  // spatially-varying:
   virtual PetscErrorCode compute_cbar(IceModelVec2 &result);
   virtual PetscErrorCode compute_cbase(IceModelVec2 &result, IceModelVec2 &tmp);
   virtual PetscErrorCode compute_cflx(IceModelVec2 &result, IceModelVec2 &cbar);
@@ -443,35 +432,7 @@ protected:
   virtual PetscErrorCode vertVelocityFromIncompressibility();
     
   // see iMviewers.cc
-  int isViewer(char name);
-  virtual PetscErrorCode updateSoundings();
-  virtual PetscErrorCode updateOneSounding(const char scName, Vec l, const PetscScalar scale);
-  virtual PetscErrorCode getViewerDims(const PetscInt target_size, 
-                               const PetscScalar Lx, const PetscScalar Ly,
-                               PetscInt *xdim, PetscInt *ydim);
-  virtual PetscErrorCode createOneViewerIfDesired(const char singleCharName);
-  virtual PetscErrorCode createOneViewerIfDesired(const char singleCharName, const char* title);
-  virtual PetscErrorCode createOneViewerIfDesired(PetscViewer* v, 
-                                          const char singleCharName, const char* title);
-  virtual PetscErrorCode createViewers();
-  virtual PetscErrorCode update2DViewer(const char scName, Vec l2, const PetscScalar scale);
-  virtual PetscErrorCode update2DViewer(const char scName, IceModelVec2 &l2, const PetscScalar scale);
-  virtual PetscErrorCode updateSliceViewer(const char scName, IceModelVec3 &imv3, const PetscScalar scale);
-  virtual PetscErrorCode updateSurfaceValuesViewer(const char scName, 
-                   IceModelVec3 &imv3, const PetscScalar scale);
-  virtual PetscErrorCode updateSpeed2DViewer(const char scName, IceModelVec2 &lu, IceModelVec2 &lv, 
-                   const PetscScalar scale, const PetscTruth doLog, 
-                   const PetscScalar log_missing);
-  virtual PetscErrorCode updateSpeedSurfaceValuesViewer(const char scName, 
-                   IceModelVec3 &imv3_u, IceModelVec3 &imv3_v, 
-                   const PetscScalar scale, const PetscTruth doLog, 
-                   const PetscScalar log_missing);
-  virtual PetscErrorCode updateLog2DViewer(const char scName, Vec l,
-                   const PetscScalar scale, const PetscScalar thresh, 
-                   const PetscScalar log_missing);
-  virtual PetscErrorCode updateViewers();  // it calls updateSoundings()
-  virtual PetscErrorCode updateNuViewers(IceModelVec2 vNu[2], IceModelVec2 vNuOld[2], bool updateNu_tView);
-  virtual PetscErrorCode destroyViewers();
+  virtual PetscErrorCode update_viewers();  // it calls updateSoundings()
 
 protected:
   // working space (a convenience)

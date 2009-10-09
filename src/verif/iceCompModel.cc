@@ -66,38 +66,38 @@ PetscErrorCode IceCompModel::createVecs() {
   return 0;
 }
 
-PetscErrorCode IceCompModel::createViewers() {
-  PetscErrorCode ierr;
+// PetscErrorCode IceCompModel::createViewers() {
+//   PetscErrorCode ierr;
 
-  ierr = IceModel::createViewers(); CHKERRQ(ierr);
+//   ierr = IceModel::createViewers(); CHKERRQ(ierr);
 
-  // must be called after IceModel::createViewers because diagnostic needs to be filled
-  if ((testname=='F') || (testname=='G')) {
-    ierr = createOneViewerIfDesired(&SigmaCompView, 'P',
-                   "Sigma_C (comPensatory heat; K/a) at kd");  CHKERRQ(ierr);
-  } else SigmaCompView = PETSC_NULL;
+//   // must be called after IceModel::createViewers because diagnostic needs to be filled
+//   if ((testname=='F') || (testname=='G')) {
+//     ierr = createOneViewerIfDesired(&SigmaCompView, 'P',
+//                    "Sigma_C (comPensatory heat; K/a) at kd");  CHKERRQ(ierr);
+//   } else SigmaCompView = PETSC_NULL;
   
-  // take over SigmaMapView to show only strain heating and not sum Sigma + Sigma_C
-  if (runtimeViewers[cIndex('S')] != PETSC_NULL) {
-    ierr = PetscViewerDestroy(runtimeViewers[cIndex('S')]); CHKERRQ(ierr);
-    runtimeViewers[cIndex('S')] = PETSC_NULL;
-    ierr = createOneViewerIfDesired(&compSigmaMapView, 'S',
-                   "Sigma (strain heat; K/a) at kd");  CHKERRQ(ierr);
-  } else compSigmaMapView = PETSC_NULL;
+//   // take over SigmaMapView to show only strain heating and not sum Sigma + Sigma_C
+//   if (runtimeViewers[cIndex('S')] != PETSC_NULL) {
+//     ierr = PetscViewerDestroy(runtimeViewers[cIndex('S')]); CHKERRQ(ierr);
+//     runtimeViewers[cIndex('S')] = PETSC_NULL;
+//     ierr = createOneViewerIfDesired(&compSigmaMapView, 'S',
+//                    "Sigma (strain heat; K/a) at kd");  CHKERRQ(ierr);
+//   } else compSigmaMapView = PETSC_NULL;
    
-  return 0;
-}
+//   return 0;
+// }
 
 
-PetscErrorCode IceCompModel::destroyViewers() {
-  PetscErrorCode ierr;
+// PetscErrorCode IceCompModel::destroyViewers() {
+//   PetscErrorCode ierr;
 
-  ierr = IceModel::destroyViewers(); CHKERRQ(ierr);
+//   ierr = IceModel::destroyViewers(); CHKERRQ(ierr);
 
-  if (SigmaCompView != PETSC_NULL) { ierr = PetscViewerDestroy(SigmaCompView); CHKERRQ(ierr); }
-  if (compSigmaMapView != PETSC_NULL) { ierr = PetscViewerDestroy(compSigmaMapView); CHKERRQ(ierr); }
-  return 0;
-}
+//   if (SigmaCompView != PETSC_NULL) { ierr = PetscViewerDestroy(SigmaCompView); CHKERRQ(ierr); }
+//   if (compSigmaMapView != PETSC_NULL) { ierr = PetscViewerDestroy(compSigmaMapView); CHKERRQ(ierr); }
+//   return 0;
+// }
 
 
 PetscErrorCode IceCompModel::set_grid_defaults() {
@@ -203,11 +203,11 @@ PetscErrorCode IceCompModel::setFromOptions() {
   // (flag thermalBedrock was removed by CK around r783, because it was not used)
   if (testname == 'K') {
     allowAboveMelting = PETSC_FALSE;
-    reportHomolTemps = PETSC_TRUE;
+    reportPATemps = PETSC_TRUE;
   } else {
     // note temps are generally allowed to go above pressure melting in verify
     allowAboveMelting = PETSC_TRUE;
-    reportHomolTemps = PETSC_FALSE;
+    reportPATemps = PETSC_FALSE;
   }
 
   ierr = IceModel::setFromOptions();CHKERRQ(ierr);

@@ -54,11 +54,6 @@ IceModel::IceModel(IceGrid &g)
   g2natural = PETSC_NULL;
   CFLviolcount = 0;
 
-  for (PetscInt nn = 0; nn < tnN; nn++) {
-    runtimeViewers[nn] = PETSC_NULL;
-  }
-  createViewers_done = PETSC_FALSE;
-
   atmosPCC = PETSC_NULL;
   oceanPCC = PETSC_NULL;
 
@@ -84,12 +79,7 @@ IceModel::~IceModel() {
 
   deallocate_internal_objects();
 
-  // other deallocations
-  if (createViewers_done == PETSC_TRUE) {
-    destroyViewers();
-  }
-
-  // deallocate (and write) time-series
+  // write (and deallocate) time-series
   vector<DiagnosticTimeseries*>::iterator i;
   for (i = timeseries.begin(); i < timeseries.end(); ++i)
     delete (*i);
@@ -441,7 +431,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   ierr = summaryPrintLine(PETSC_TRUE,do_temp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   skipCountDown = 0;
-  ierr = summary(do_temp,reportHomolTemps); CHKERRQ(ierr);  // report starting state
+  ierr = summary(do_temp,reportPATemps); CHKERRQ(ierr);  // report starting state
   dtTempAge = 0.0;
 
 
@@ -541,9 +531,9 @@ PetscLogEventEnd(massbalEVENT,0,0,0,0);
     // end the flag line and report a summary
     ierr = verbPrintf(2,grid.com, " %d%c  +%6.5f\n", skipCountDown, adaptReasonFlag,
                       dt / secpera); CHKERRQ(ierr);
-    ierr = summary(tempAgeStep,reportHomolTemps); CHKERRQ(ierr);
+    ierr = summary(tempAgeStep,reportPATemps); CHKERRQ(ierr);
 
-    ierr = updateViewers(); CHKERRQ(ierr);
+    ierr = update_viewers(); CHKERRQ(ierr);
 
     if (endOfTimeStepHook() != 0) break;
   }
@@ -583,7 +573,7 @@ PetscErrorCode IceModel::diagnosticRun() {
   ierr = summary(true,true); CHKERRQ(ierr);
   
   // update viewers and pause for a chance to view
-  ierr = updateViewers(); CHKERRQ(ierr);
+  ierr = update_viewers(); CHKERRQ(ierr);
   PetscInt    pause_time = 0;
   ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, PETSC_NULL); CHKERRQ(ierr);
   if (pause_time > 0) {

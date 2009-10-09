@@ -99,6 +99,10 @@ PetscErrorCode  IceModelVec::destroy() {
     ierr = DADestroy(da); CHKERRQ(ierr);
     da = PETSC_NULL;
   }
+  if (map_viewer != PETSC_NULL) {
+    ierr = PetscViewerDestroy(map_viewer); CHKERRQ(ierr);
+    map_viewer = PETSC_NULL;
+  }
   return 0;
 }
 
@@ -659,7 +663,49 @@ vector<double> IceModelVec::array_attr(string name) {
 
 PetscErrorCode IceModelVec::create_map_viewer(bool big) {
   PetscErrorCode ierr;
+  int x, y;
+  string title = string_attr("long_name");
 
+  ierr = compute_viewer_size(big ? 600 : 320, x, y); CHKERRQ(ierr);
+
+  // note we reverse x <-> y; see IceGrid::createDA() for original reversal
+  ierr = PetscViewerDrawOpen(grid->com, PETSC_NULL,
+			     title.c_str(),
+			     PETSC_DECIDE, PETSC_DECIDE, y, x, &map_viewer);  CHKERRQ(ierr);
+
+  // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
+  // there is a no titles bug
+  PetscDraw draw;
+  ierr = PetscViewerDrawGetDraw(map_viewer, 0, &draw); CHKERRQ(ierr);
+  ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceModelVec::compute_viewer_size(int target_size, int &x, int &y) {
+  PetscScalar Lx = grid->Lx, Ly = grid->Ly;
+
+  // aim for smaller dimension equal to target, larger dimension larger by Ly/Lx or Lx/Ly proportion
+  const double  yTOx = Ly / Lx;
+  if (Ly > Lx) {
+    x = target_size; 
+    y = (PetscInt) ((double)target_size * yTOx); 
+  } else {
+    y = target_size; 
+    x = (PetscInt) ((double)target_size / yTOx);
+  }
+  
+  // if either dimension is larger than twice the target, shrink appropriately
+  if (x > 2 * target_size) {
+    y = (PetscInt) ( (double)(y) * (2.0 * (double)target_size / (double)(x)) );
+    x = 2 * target_size;
+  } else if (y > 2 * target_size) {
+    x = (PetscInt) ( (double)(x) * (2.0 * (double)target_size / (double)(y)) );
+    y = 2 * target_size;
+  }
+  
+  // make sure minimum dimension is sufficient to see
+  if (x < 20)   x = 20;
+  if (y < 20)   y = 20;
   return 0;
 }
 

@@ -81,7 +81,10 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
 
   if (updateDiffusViewer) { // view diffusivity (m^2/s)
-    ierr = update2DViewer('D',vWork2d[0],1.0); CHKERRQ(ierr);
+    ierr = vWork2d[0].set_name("diffusivity"); CHKERRQ(ierr);
+    ierr = vWork2d[0].set_attrs("diagnostic",
+				"diffusivity", "m2/s", "m2/s"); CHKERRQ(ierr);
+    ierr = vWork2d[0].view(g2, false); CHKERRQ(ierr);
   }
 
   ierr = PetscGlobalMax(&Dmax, &gDmax, grid.com); CHKERRQ(ierr);
@@ -239,9 +242,9 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   bool do_mass_conserve = config.get_flag("do_mass_conserve"),
     do_temp = config.get_flag("do_temp");
 
-  if ( (runtimeViewers[cIndex('D')] != PETSC_NULL) 
-       || ( (doAdaptTimeStep == PETSC_TRUE) && do_mass_conserve ) ) {
-    ierr = computeMaxDiffusivity(true); CHKERRQ(ierr);
+  // FIXME: allow viewing diffusivity
+  if ( ( (doAdaptTimeStep == PETSC_TRUE) && do_mass_conserve ) ) {
+    ierr = computeMaxDiffusivity(false); CHKERRQ(ierr);
   }
   const PetscScalar timeToEnd = (end_year - grid.year) * secpera;
   if (dt_force > 0.0) {

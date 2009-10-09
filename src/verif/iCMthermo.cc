@@ -285,7 +285,7 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
 PetscErrorCode IceCompModel::updateCompViewers() {
   PetscErrorCode ierr;
 
-  ierr = updateViewers();  CHKERRQ(ierr);
+  ierr = update_viewers();  CHKERRQ(ierr);
 
   Vec myg2;
   ierr = DACreateGlobalVector(grid.da2, &myg2); CHKERRQ(ierr);

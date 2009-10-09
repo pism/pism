@@ -105,6 +105,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // "-csurf_to_till" read in invertVelocitiesFromNetCDF() in iMinverse.cc
 
+  /* FIXME: this is definitely needed, but needs work, too
   // regular size viewers
   ierr = PetscOptionsGetString(PETSC_NULL, "-d", diagnostic, PETSC_MAX_PATH_LEN, PETSC_NULL); 
             CHKERRQ(ierr);
@@ -124,6 +125,7 @@ PetscErrorCode  IceModel::setFromOptions() {
        CHKERRQ(ierr);
     strcpy(diagnosticBIG, "\0");
   }
+  */
 
   ierr = config.scalar_from_option("e", "enhancement_factor"); CHKERRQ(ierr);
 
@@ -159,7 +161,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PetscOptionsGetInt(PETSC_NULL, "-jd", &jd, PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-kd", &kd, PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-kd", &kd, PETSC_NULL); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("low_temp", "global_min_allowed_temp"); CHKERRQ(ierr);
 

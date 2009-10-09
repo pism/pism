@@ -179,6 +179,7 @@ PetscErrorCode IceModelVec2::mask_by(IceModelVec2 &M, PetscScalar fill) {
 }
 
 
+//! View a 2D field.
 PetscErrorCode IceModelVec2::view(Vec g2, bool big) {
   PetscErrorCode ierr;
 
@@ -194,7 +195,7 @@ PetscErrorCode IceModelVec2::view(Vec g2, bool big) {
 
   ierr = var1.to_glaciological_units(g2); CHKERRQ(ierr);
 
-  // actually view data
+  ierr = VecView(g2, map_viewer); CHKERRQ(ierr);
 
   return 0;
 }

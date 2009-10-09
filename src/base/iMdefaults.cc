@@ -57,11 +57,6 @@ PetscErrorCode IceModel::setDefaults() {
   }
   config.print();
 
-  // No X11 diagnostics by default, but allow them
-  strcpy(diagnostic, "");
-  strcpy(diagnosticBIG, "");
-  showViewers = PETSC_TRUE;
-
   executable_short_name = "pism"; // drivers typically override this
 
   grid.ice_vertical_spacing = EQUAL;
@@ -84,7 +79,7 @@ PetscErrorCode IceModel::setDefaults() {
 
   end_year   = config.get("start_year") + config.get("run_length_years");
 
-  reportHomolTemps = PETSC_TRUE;
+  reportPATemps = PETSC_TRUE;
   
   updateHmelt = PETSC_TRUE;
   realAgeForGrainSize = PETSC_FALSE;

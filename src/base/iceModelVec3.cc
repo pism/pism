@@ -29,7 +29,9 @@
 // methods for base class IceModelVec and derived class IceModelVec2
 // are in "iceModelVec.cc"
 
-IceModelVec3::IceModelVec3() : IceModelVec() {}
+IceModelVec3::IceModelVec3() : IceModelVec() {
+  sounding_viewer = PETSC_NULL;
+}
 
 
 //! Allocate a DA and a Vec from information in IceGrid.
@@ -63,6 +65,15 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[], boo
 
   var1.init(my_name, my_grid, GRID_3D);
 
+  return 0;
+}
+
+PetscErrorCode IceModelVec3::destroy() {
+  PetscErrorCode ierr;
+  if (sounding_viewer != PETSC_NULL) {
+    ierr = PetscViewerDestroy(sounding_viewer); CHKERRQ(ierr);
+    sounding_viewer = PETSC_NULL;
+  }
   return 0;
 }
 
@@ -824,14 +835,40 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
 }
 
 PetscErrorCode IceModelVec3::view_surface(Vec g2, bool big) {
+  /*
+    ierr = imv3.begin_access(); CHKERRQ(ierr);
+    ierr = imv3.getSurfaceValues(g2, vH); CHKERRQ(ierr);
+    ierr = imv3.end_access(); CHKERRQ(ierr);
+    ierr = VecScale(g2, scale); CHKERRQ(ierr);
+    ierr = VecView(g2, runtimeViewers[cIndex(scName)]); CHKERRQ(ierr);
+  */
   return 0;
 }
 
-PetscErrorCode IceModelVec3::view_horizontal_slice(Vec g2, bool big) {
+PetscErrorCode IceModelVec3::view_horizontal_slice(Vec g2, bool big, PetscScalar level) {
+  /*
+    ierr = imv3.begin_access(); CHKERRQ(ierr);
+    ierr = imv3.getHorSlice(g2, grid.zlevels[kd]); CHKERRQ(ierr);
+    ierr = imv3.end_access(); CHKERRQ(ierr);
+   */
   return 0;
 }
 
 PetscErrorCode IceModelVec3::view_sounding(int i, int j) {
+  /*
+  ierr = begin_access(); CHKERRQ(ierr);
+  ierr = getInternalColumn(id, jd, &ivals); CHKERRQ(ierr);
+  ierr = VecSetValues(ud, grid.Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+  ierr = end_access(); CHKERRQ(ierr);
+  ierr = VecAssemblyBegin(l); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(l); CHKERRQ(ierr);
+  // change units
 
+  ierr = VecView(l, runtimeViewers[cIndex(scName)]); CHKERRQ(ierr);
+  */
   return 0;
 }
+
+/*
+  ierr = VecCreateMPI(grid.com,PETSC_DECIDE, grid.Mbz + grid.Mz - 1, &Td); CHKERRQ(ierr);
+ */

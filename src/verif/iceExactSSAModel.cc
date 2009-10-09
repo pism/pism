@@ -644,7 +644,7 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
   // report on result of computation (i.e. to standard out and to viewers)
   ierr = computeMax3DVelocities(); CHKERRQ(ierr); 
   ierr = summary(true,true); CHKERRQ(ierr);
-  ierr = updateViewers(); CHKERRQ(ierr);
+  ierr = update_viewers(); CHKERRQ(ierr);
   PetscInt    pause_time = 0;
   ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, PETSC_NULL); CHKERRQ(ierr);
   if (pause_time > 0) {
