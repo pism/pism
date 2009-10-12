@@ -64,10 +64,10 @@ static inline int PismModMask(PetscScalar maskvalue) {
 
 
 // Standard C++ does not have a "NaN", or an "isnan()".  We need an alternative
-//   and this is an admittedly lame one.  If there is a realiable way to check if
+//   and this is an admittedly lame one.  If there is a reliable way to check if
 //   IEEE 754 NAN is available, then PISM_NAN could be set to that.  Note most
-//   negative number in IEEE double is ~= -1.8e308, and that if PetscScalar !=
-//   double, use of this may throw an error (and that would probably be good).
+//   negative number in IEEE double is ~= -1.8e308, and if PetscScalar != double
+//   then use of this may throw an error (and that would probably be good).
 const double PISM_DOUBLE_NAN = -1.234567890123456e308;
 
 const PetscInt TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
@@ -78,6 +78,7 @@ PetscErrorCode setVerbosityLevel(PetscInt level);
 PetscInt getVerbosityLevel();
 PetscErrorCode verbosityLevelFromOptions();
 PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],...);
+
 void endPrintRank();
 
 string timestamp();
@@ -87,9 +88,18 @@ bool ends_with(string str, string suffix);
 // handy functions for processing options:
 PetscErrorCode check_option(string name, PetscTruth &flag);
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]);
-PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], const char new_name[]);
+PetscErrorCode check_old_option_and_stop(
+    MPI_Comm com, const char old_name[], const char new_name[]);
 PetscErrorCode stop_if_set(MPI_Comm com, const char name[]);
-PetscErrorCode parse_range(MPI_Comm com, string str, double *a, double *delta, double *b);
+PetscErrorCode parse_range(
+    MPI_Comm com, string str, double *a, double *delta, double *b);
 PetscErrorCode parse_times(MPI_Comm com, string str, vector<double> &result);
+
+// usage message and required options; drivers use these
+PetscErrorCode show_usage_and_quit(
+    MPI_Comm com, const char execname[], const char usage[]);
+PetscErrorCode show_usage_check_req_opts(
+    MPI_Comm com, const char execname[], vector<string> required_options,
+    const char usage[]);
 
 #endif

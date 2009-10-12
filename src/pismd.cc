@@ -39,12 +39,16 @@ int main(int argc, char *argv[]) {
   ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
 
   { /* This explicit scoping forces destructors to be called before PetscFinalize() */
-    IceGrid    g(com, rank, size);
-    PISMConstAtmosCoupler pcac;
-    PISMConstOceanCoupler pcoc;
-    
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1,com, "PISMD %s (diagnostic velocity computation mode)\n",
+
+    vector<string> required;
+    required.clear();
+    ierr = show_usage_check_req_opts(com, "pismd", required,
+      "  pismd IS DEPRECATED\n\n  INTENDED REPLACEMENT IS 'pismr -y 0 -f3d '\n\n"
+      "  SEE 'pismr -usage'\n"
+      ); CHKERRQ(ierr);
+
+    ierr = verbPrintf(2,com, "PISMD %s (diagnostic velocity computation mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
     // re this option, see  src/eismint/iceROSSModel.hh|cc and:
@@ -53,15 +57,19 @@ int main(int argc, char *argv[]) {
     PetscTruth  doRoss;
     ierr = check_option("-ross", doRoss); CHKERRQ(ierr);
 
+    IceGrid    g(com, rank, size);
     IceModel*      m;
     if (doRoss == PETSC_TRUE)
       m = new IceROSSModel(g);
     else 
       m = new IceModel(g);
 
-    ierr = m->setExecName("pismd"); CHKERRQ(ierr);
+    PISMConstAtmosCoupler pcac;
+    PISMConstOceanCoupler pcoc;
     ierr = m->attachAtmospherePCC(pcac); CHKERRQ(ierr);
     ierr = m->attachOceanPCC(pcoc); CHKERRQ(ierr);
+
+    ierr = m->setExecName("pismd"); CHKERRQ(ierr);
 
     ierr = PetscOptionsSetValue("-f3d", ""); CHKERRQ(ierr);
 

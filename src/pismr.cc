@@ -40,19 +40,33 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
+    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+
+    vector<string> required;
+    required.clear(); // FIXME: either -boot_from or -i is required, but currently no
+                      //        way to enforce (option a)|(option b)
+                      // in fact, when -boot_from given then require
+    ierr = show_usage_check_req_opts(com, "pismr", required,
+      "  pismr {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n\n"
+      "where:\n"
+      "  -i          input file in NetCDF format: contains PISM-written model state\n"
+      "  -boot_from  input file in NetCDF format: contains a few fields, from which\n"
+      "              heuristics will build initial model state\n"
+      "notes:\n"
+      "  * one of -i or -boot_from is required\n"
+      "  * if -boot_from is used then in fact '-Mx A -My B -Mz C -Lz D' is also required\n"
+      ); CHKERRQ(ierr);
+
+    ierr = verbPrintf(2,com, "PISMR %s (basic evolution run mode)\n",
+		      PISM_Revision); CHKERRQ(ierr);
+
     IceGrid g(com, rank, size);
+    IceModel m(g);
+
+    // Attach climate couplers:
     PISMConstAtmosCoupler     pcac;
     PISMSnowModelAtmosCoupler ppdd;
     PISMConstOceanCoupler     pcoc;
-
-    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1,com, "PISMR %s (basic evolution run mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
-
-    IceModel m(g);
-    ierr = m.setExecName("pismr"); CHKERRQ(ierr);
-
-    // Attach climate couplers:
     PetscTruth  pddSet;
     ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
     if (pddSet == PETSC_TRUE) {
@@ -63,6 +77,8 @@ int main(int argc, char *argv[]) {
       ierr = m.attachAtmospherePCC(pcac); CHKERRQ(ierr);
     }
     ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
+
+    ierr = m.setExecName("pismr"); CHKERRQ(ierr);
 
     ierr = m.init(); CHKERRQ(ierr);
 

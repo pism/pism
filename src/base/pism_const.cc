@@ -357,6 +357,80 @@ PetscErrorCode parse_times(MPI_Comm com, string str, vector<double> &result) {
   return 0;
 }
 
+
+PetscErrorCode just_show_usage(
+    MPI_Comm com, const char execname[], const char usage[]) {
+  PetscErrorCode ierr;
+  ierr = verbPrintf(1,com,
+      "%s is a PISM (http://pism-docs.org) executable.", execname); CHKERRQ(ierr);
+  ierr = verbPrintf(1,com,"\nOptions cheat-sheet:\n\n");
+      CHKERRQ(ierr);
+  ierr = verbPrintf(1,com,usage); CHKERRQ(ierr);
+  ierr = verbPrintf(1,com,
+      "\nTo run in parallel using N processors (most MPI cases):\n"
+      "  mpiexec -n N %s ...\n"
+      "\nFor more help on %s and PISM,\n"
+      "  1. Download User's Manual for PISM: http://www.pism-docs.org/pdfs/manual0.2.pdf\n"
+      "  2. Read browser for technical details on PISM: http://www.pism-docs.org/doxy/html/index.html\n"
+      "  3. Search bugs and tasks at PISM source host: https://gna.org/projects/pism\n"
+      "  4. Run with '-help | grep foo' to see PETSc options which relate to 'foo'.\n"
+      "  5. Email for help:  help AT pism-docs.org\n", 
+      execname, execname, execname);
+      CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Show provided usage message and quit.  (Consider using show_usage_check_req_opts() in preference to this one.)
+PetscErrorCode show_usage_and_quit(
+    MPI_Comm com, const char execname[], const char usage[]) {
+  PetscErrorCode ierr;
+  ierr = just_show_usage(com, execname, usage); CHKERRQ(ierr);
+  PetscEnd();
+  return 0;
+}
+
+
+//! In a single call a driver program can provide a usage string to the user and check if required options are given, and if not, end.
+PetscErrorCode show_usage_check_req_opts(
+    MPI_Comm com, const char execname[], vector<string> required_options,
+    const char usage[]) {
+  PetscErrorCode ierr;
+  
+  PetscTruth usageSet;
+  ierr = check_option("-usage", usageSet); CHKERRQ(ierr);
+  if (usageSet == PETSC_TRUE) {
+    ierr = show_usage_and_quit(com, execname, usage); CHKERRQ(ierr);
+  }
+
+  // go through list of required options, and if not given, fail
+  bool req_absent = false;
+  for (size_t ii=0; ii < required_options.size(); ii++) {
+    PetscTruth set;
+    ierr = check_option(required_options[ii], set); CHKERRQ(ierr);
+    if (set == PETSC_FALSE) {
+      req_absent = true;
+      ierr = verbPrintf(1,com,
+        "PISM ERROR: option %s required\n",required_options[ii].c_str());
+        CHKERRQ(ierr);
+    }
+  }
+  if (req_absent == PETSC_TRUE) {
+    ierr = verbPrintf(1,com,"\n"); CHKERRQ(ierr);
+    ierr = show_usage_and_quit(com, execname, usage); CHKERRQ(ierr);
+  }
+     
+  // show usage message with -help, but don't fail
+  PetscTruth helpSet;
+  ierr = check_option("-help", helpSet); CHKERRQ(ierr);
+  if (helpSet == PETSC_TRUE) {
+    ierr = just_show_usage(com, execname, usage); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+
 //! Checks if an array of \c len doubles is strictly increasing.
 bool is_increasing(int len, double *a) {
   for (PetscInt k = 0; k < len-1; k++) {

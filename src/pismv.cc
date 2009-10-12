@@ -46,24 +46,37 @@ int main(int argc, char *argv[]) {
       
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    IceGrid      g(com, rank, size);
-    PISMConstAtmosCoupler  pcac;
-    pcac.initializeFromFile = false;  // even if user says -i, the surface climate still
-                                      //   comes from formulas and is not read from file
-    PISMConstOceanCoupler  pcoc;
-
-    char         testname[20];
-    PetscTruth   testchosen, dontReport;
-
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1, com, "PISMV %s (verification mode)\n",
+
+    vector<string> required;
+    required.push_back("-test");
+    ierr = show_usage_check_req_opts(com, "pismv", required,
+      "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n\n"
+      "where:\n"
+      "  -test x     verification test (x = A|B|...|L)\n"
+      "  -no_report  do not give error report at end of run\n"
+      "  -eo         do not do numerical run; exact solution only\n"
+      ); CHKERRQ(ierr);
+
+    ierr = verbPrintf(2, com, "PISMV %s (verification mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
+    IceGrid      g(com, rank, size);
+    PISMConstAtmosCoupler  pcac;
+    PISMConstOceanCoupler  pcoc;
+    pcac.initializeFromFile = false; // even if user says -i, the surface climate still
+                                     //   comes from formulas and is not read from file
+
     // determine test (and whether to report error)
-    ierr = PetscOptionsGetString(PETSC_NULL, "-test", testname, 1, &testchosen); CHKERRQ(ierr);
+    char         testname[20];
+    PetscTruth   testchosen;
+    ierr = PetscOptionsGetString(PETSC_NULL, "-test", testname, 1, 
+                                 &testchosen); CHKERRQ(ierr);
     char test = testname[0];  // only use the first letter
     if (testchosen == PETSC_FALSE)         test = 'A';       // default to test A
     if ((test >= 'a') && (test <= 'z'))    test += 'A'-'a';  // capitalize if lower    
+
+    PetscTruth   dontReport;
     ierr = check_option("-no_report", dontReport); CHKERRQ(ierr);
 
     // actually construct and run one of the derived classes of IceModel
@@ -130,3 +143,4 @@ int main(int argc, char *argv[]) {
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }
+

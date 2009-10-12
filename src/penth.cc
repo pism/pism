@@ -63,20 +63,27 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    IceGrid g(com, rank, size);
-    PISMConstAtmosCoupler     pcac;
-    PISMSnowModelAtmosCoupler ppdd;
-    PISMConstOceanCoupler     pcoc;
-
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1,com, "PENTH %s (development of ENTHALPY basic evolution run mode)\n",
+
+    vector<string> required;
+    required.clear();
+    ierr = show_usage_check_req_opts(com, "penth", required,
+      "  penth IS UNDER DEVELOPMENT AND WILL MERGE WITH pismr\n\n"
+      "  SEE 'pismr -usage'\n"
+      ); CHKERRQ(ierr);
+
+    ierr = verbPrintf(2,com, "PENTH %s (development of ENTHALPY basic evolution run mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
+    IceGrid g(com, rank, size);
     IceEnthalpyModel m(g);
     ierr = m.setExecName("penth"); CHKERRQ(ierr);
 
     PetscTruth  pddSet;
     ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
+    PISMConstAtmosCoupler     pcac;
+    PISMSnowModelAtmosCoupler ppdd;
+    PISMConstOceanCoupler     pcoc;
     if (pddSet == PETSC_TRUE) {
       ierr = verbPrintf(2,com, 
         "penth attaching PISMSnowModelAtmosCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
@@ -86,7 +93,6 @@ int main(int argc, char *argv[]) {
         "penth attaching PISMConstAtmosCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
       ierr = m.attachAtmospherePCC(pcac); CHKERRQ(ierr);
     }
-
     ierr = verbPrintf(2,com, 
         "penth attaching PISMConstOceanCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
     ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);

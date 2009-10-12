@@ -39,21 +39,34 @@ int main(int argc, char *argv[]){
   ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
   
   { // explicit scoping does destructors before PetscFinalize() 
-    IceGrid g(com, rank, size);
-    EISGREENAtmosCoupler   pegac;
-    PISMConstOceanCoupler  pcoc;
- 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
-    IceGRNModel    m(g);
+    vector<string> required;
+    required.clear();
+    ierr = show_usage_check_req_opts(com, "pgrn", required,
+      "  pgrn {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n\n"
+      "where:\n"
+      "  -i          input file in NetCDF format: contains PISM-written model state\n"
+      "  -boot_from  input file in NetCDF format: contains a few fields, from which\n"
+      "              heuristics will build initial model state\n"
+      "notes:\n"
+      "  * one of -i or -boot_from is required\n"
+      "  * if -boot_from is used then in fact '-Mx A -My B -Mz C -Lz D' is also required\n"
+      "  * generally behaves like pismr after initialization\n"
+      ); CHKERRQ(ierr);
 
-    ierr = verbPrintf(1, com, "PGRN %s (PISM EISMINT-Greenland mode)\n",
+    ierr = verbPrintf(2, com, "PGRN %s (PISM EISMINT-Greenland mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
+
+    IceGrid g(com, rank, size);
+    IceGRNModel    m(g);
     ierr = m.setExecName("pgrn"); CHKERRQ(ierr);
 
+    EISGREENAtmosCoupler   pegac;
+    PISMConstOceanCoupler  pcoc;
     ierr = m.attachAtmospherePCC(pegac); CHKERRQ(ierr);
     ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
-
+ 
     ierr = m.init(); CHKERRQ(ierr);
  
     ierr = m.run(); CHKERRQ(ierr);

@@ -20,7 +20,10 @@ static char help[] =
   "Driver for testing PISMClimateCoupler without IceModel.\n";
 
 #include <ctime>
+#include <string>
+#include <vector>
 #include <petscda.h>
+#include "base/pism_const.hh"
 #include "base/grid.hh"
 #include "base/LocalInterpCtx.hh"
 #include "base/nc_util.hh"
@@ -147,7 +150,7 @@ static PetscErrorCode writePCCStateAtTimes(
     SETERRQ(3, "PCCTEST ERROR: snprintf() is not C99 compliant?");
   }
   if (length > (int)sizeof(wwstr)) {
-    ierr = PetscPrintf(com,
+    ierr = verbPrintf(1,com,
        "PCCTEST WARNING: command line truncated to %d chars in history.\n",
        length + 1 - sizeof(wwstr)); CHKERRQ(ierr);
     wwstr[sizeof(wwstr) - 2] = '\n';
@@ -163,7 +166,7 @@ static PetscErrorCode writePCCStateAtTimes(
 
   PetscInt NN;  // get number of times at which PCC state is written
   if (dt_years < 0.0001) {
-    ierr = PetscPrintf(com,
+    ierr = verbPrintf(1,com,
       "PCCTEST WARNING: dt_years less than 10^-4 year so just writing state for year %f\n",
       ys); CHKERRQ(ierr);
     NN = 1;
@@ -179,7 +182,7 @@ static PetscErrorCode writePCCStateAtTimes(
   PISMSnowModelAtmosCoupler* pdd_pcc = dynamic_cast<PISMSnowModelAtmosCoupler*>(pcc);
   PetscScalar use_dt_years = dt_years;
   if ((pdd_pcc != NULL) && (dt_years > 1.0)) {
-    ierr = PetscPrintf(com,
+    ierr = verbPrintf(1,com,
       "PCCTEST ATTENTION: PISMSnowModelAtmosCoupler will be asked for results\n"
       "  from one year periods at the start of each desired time subinterval;\n"
       "  full subinterval evaluation is too slow ...\n");
@@ -202,8 +205,9 @@ static PetscErrorCode writePCCStateAtTimes(
 
     ierr = pcc->updateClimateFields(pccyear, dt_update_years); CHKERRQ(ierr);
     ierr = pcc->writeCouplingFieldsToFile(pccyear, filename); CHKERRQ(ierr);
-    ierr = PetscPrintf(com, "  coupler updated for [%11.3f a,%11.3f a]; result written to %s ...\n",
-             pccyear, pccyear + dt_update_years, filename); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com,
+      "  coupler updated for [%11.3f a,%11.3f a]; result written to %s ...\n",
+      pccyear, pccyear + dt_update_years, filename); CHKERRQ(ierr);
   }
 
   return 0;
@@ -224,39 +228,49 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
+    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
+
+    vector<string> required;
+    required.push_back("-i");
+    required.push_back("-o");
+    required.push_back("-ys");
+    required.push_back("-ye");
+    required.push_back("-dt");
+    ierr = show_usage_check_req_opts(com, "pcctest", required,
+      "  pcctest -i IN.nc -o OUT.nc -ys A -ye B -dt C [-sma|-ca|-co] [OTHER PISM & PETSc OPTIONS]\n\n"
+      "where:\n"
+      "  -i    input file in NetCDF format\n"
+      "  -o    output file in NetCDF format\n"
+      "  -ys   start time A (= positive float) in years\n"
+      "  -ye   end time B (= positive float), B > A, in years\n"
+      "  -dt   time step C (= positive float) in years\n"
+      "and choose instance of PISMClimateCoupler:\n"
+      "  -sma  apply PISMSnowModelAtmosCoupler (default)\n"
+      "  -ca   apply PISMConstAtmosCoupler\n"
+      "  -co   apply PISMConstOceanCoupler\n"
+      ); CHKERRQ(ierr);
+
+    ierr = verbPrintf(2,
+      com,"PCCTEST %s (test of PISMClimateCoupler offline from IceModel)\n",
+      PISM_Revision); CHKERRQ(ierr);
+    
     char inname[PETSC_MAX_PATH_LEN], outname[PETSC_MAX_PATH_LEN];
     IceGrid grid(com, rank, size);
     NCConfigVariable psparams;
     
-    ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = PetscPrintf(com, 
-		       "PCCTEST %s (test of PISMClimateCoupler offline from IceModel)\n",
-		       PISM_Revision); CHKERRQ(ierr);
-    
-    PetscTruth i_set;
     ierr = PetscOptionsGetString(PETSC_NULL, "-i", inname, 
-                               PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
-    if (!i_set) { SETERRQ(1,"PCCTEST ERROR: no -i file to initialize from\n"); }
-
-    ierr = PetscPrintf(com, 
+                                 PETSC_MAX_PATH_LEN, NULL); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, 
              "  initializing grid from NetCDF file %s...\n", inname); CHKERRQ(ierr);
     ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
 
     psparams.init("polar_stereographic", com, rank);
 
-    // Process -ys, -ye, -dt. This should happen *before*
-    // PCC->initFromOptions() is called.
+    // Process -ys, -ye, -dt *before* PCC->initFromOptions() is called.
     PetscReal ys = 0.0, ye = 0.0, dt_years = 0.0;
-    PetscTruth ysSet, yeSet, dtSet;
-    ierr = PetscOptionsGetReal(PETSC_NULL, "-ys", &ys, &ysSet); CHKERRQ(ierr);
-    ierr = PetscOptionsGetReal(PETSC_NULL, "-ye", &ye, &yeSet); CHKERRQ(ierr);
-    ierr = PetscOptionsGetReal(PETSC_NULL, "-dt", &dt_years, &dtSet); CHKERRQ(ierr);
-
-    if (!ysSet || !yeSet || !dtSet) {
-      ierr = PetscPrintf(com, "PCCTEST ERROR: All three of -ys, -ye, -dt are required.\n");
-      CHKERRQ(ierr);
-      PetscEnd();
-    }
+    ierr = PetscOptionsGetReal(PETSC_NULL, "-ys", &ys, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(PETSC_NULL, "-ye", &ye, NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(PETSC_NULL, "-dt", &dt_years, NULL); CHKERRQ(ierr);
     grid.year = ys;		// this value is used in PCC->initFromOptions()
 
     // set PCC from options
@@ -264,14 +278,6 @@ int main(int argc, char *argv[]) {
     ierr = check_option("-ca",  caSet); CHKERRQ(ierr);
     ierr = check_option("-sma", smaSet); CHKERRQ(ierr);
     ierr = check_option("-co",  coSet); CHKERRQ(ierr);
-    int  choiceSum = (int) caSet + (int) smaSet + (int) coSet;
-    if (choiceSum == 0) {
-      ierr = PetscPrintf(com,"PCCTEST ERROR: called with no chosen coupler class\n");
-         CHKERRQ(ierr);    PetscEnd();
-    } else if (choiceSum > 1) {
-      ierr = PetscPrintf(com,"PCCTEST ERROR: called with more than one chosen coupler class\n");
-         CHKERRQ(ierr);    PetscEnd();
-    }
 
     PISMConstAtmosCoupler     pcac;
     PISMSnowModelAtmosCoupler psmac;
@@ -279,14 +285,10 @@ int main(int argc, char *argv[]) {
     PISMClimateCoupler*       PCC;
     if (caSet == PETSC_TRUE) { 
       PCC = (PISMClimateCoupler*) &pcac;
-    } else if (smaSet == PETSC_TRUE) { 
-      PCC = (PISMClimateCoupler*) &psmac;
     } else if (coSet == PETSC_TRUE) { 
       PCC = (PISMClimateCoupler*) &pcoc;
-    } else {
-      PCC = PETSC_NULL;
-      ierr = PetscPrintf(com,"PCCTEST ERROR: how did I get here?  111\n"); CHKERRQ(ierr);
-      PetscEnd();
+    } else { 
+      PCC = (PISMClimateCoupler*) &psmac;
     }
 
     // allocate IceModelVecs needed by couplers and put them in a dictionary:
@@ -309,26 +311,25 @@ int main(int argc, char *argv[]) {
       ierr = psparams.print(); CHKERRQ(ierr);
     }
 
-    ierr = PetscPrintf(com, 
+    ierr = verbPrintf(2,com, 
              "  reading fields lat,lon,mask,thk,topg,usurf from NetCDF file %s\n"
              "    to fill fields in PISMVars ...\n",
              inname); CHKERRQ(ierr);
 
     ierr = readIceInfoFromFile(inname, lic, variables); CHKERRQ(ierr);
     
-    PetscTruth oSet;
     ierr = PetscOptionsGetString(PETSC_NULL, "-o", outname, 
-                               PETSC_MAX_PATH_LEN, &oSet); CHKERRQ(ierr);
-    if (oSet != PETSC_TRUE) { SETERRQ(2,"PCCTEST ERROR: no -o file to write to\n"); }
+                                 PETSC_MAX_PATH_LEN, NULL); CHKERRQ(ierr);
 
-    ierr = PetscPrintf(com, "  writing PISMClimateCoupler states to NetCDF file '%s'...\n",
-                       outname); CHKERRQ(ierr);
+    ierr = verbPrintf(2,
+      com, "  writing PISMClimateCoupler states to NetCDF file '%s'...\n",
+      outname); CHKERRQ(ierr);
     ierr = writePCCStateAtTimes(PCC,outname,com,&grid, argc,argv, ys,ye,dt_years,
                                 psparams); CHKERRQ(ierr);
 
     ierr = doneWithIceInfo(variables); CHKERRQ(ierr);
 
-    ierr = PetscPrintf(com, "... done\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, "... done\n"); CHKERRQ(ierr);
     
     delete lic;
   }

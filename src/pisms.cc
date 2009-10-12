@@ -45,18 +45,33 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {    
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
 
-    PetscTruth  pddSet, EISIIchosen, PSTexchosen, MISMIPchosen;
+    vector<string> required;
+    required.clear(); // no actually required options; "-eisII A" is default
+    ierr = show_usage_check_req_opts(com, "pisms", required,
+      "  pisms [-eisII x|-pst -xxx|-mismip N] [OTHER PISM & PETSc OPTIONS]\n\n"
+      "where major option chooses type of simplified experiment:\n"
+      "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n"
+      "  -pst -xxx   choose plastic till ice stream experiment; see Bueler & Brown (2009);\n"
+      "              (-xxx = -P0A|-P0I|-P1|-P2|-P3|-P4)\n"
+      "  -mismip Nx  choose MISMIP experiment (Nx = 1a|1b|2a|2b|3a|3b)\n"
+      "notes:\n"
+      "  -pdd        not allowed (because PISMConstAtmosCoupler is always used)\n"
+      ); CHKERRQ(ierr);
 
+    PetscTruth  pddSet;
     ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
     if (pddSet == PETSC_TRUE) {
-      ierr = PetscPrintf(com, "PISM ERROR: -pdd is not currently allowed as option to pisms\n");
-                CHKERRQ(ierr);
+      ierr = PetscPrintf(com,
+        "PISM ERROR: -pdd is not currently allowed as option to pisms\n");
+        CHKERRQ(ierr);
       PetscEnd();
     }
 
+    ierr = verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
+		      PISM_Revision); CHKERRQ(ierr);
+
+    PetscTruth  EISIIchosen, PSTexchosen, MISMIPchosen;
     /* This option determines the single character name of EISMINT II experiments:
     "-eisII F", for example. */
     ierr = check_option("-eisII", EISIIchosen); CHKERRQ(ierr);
@@ -66,42 +81,36 @@ int main(int argc, char *argv[]) {
     ierr = check_option("-mismip", MISMIPchosen); CHKERRQ(ierr);
     
     int  choiceSum = (int) EISIIchosen + (int) PSTexchosen + (int) MISMIPchosen;
-    if (choiceSum == 0) {
-      ierr = PetscPrintf(com, 
-         "PISM ERROR: pisms called with no simplified geometry experiment chosen.\n");
-         CHKERRQ(ierr);
-      PetscEnd();
-    } else if (choiceSum > 1) {
+    if (choiceSum > 1) {
       ierr = PetscPrintf(com,
-         "PISM ERROR: pisms called with more than one simplified geometry experiment chosen.\n");
+         "PISM ERROR: pisms called with more than one simplified geometry experiment chosen\n");
          CHKERRQ(ierr);
       PetscEnd();
     }
 
-    // actually construct the model
+    // actually construct the IceModel
     IceGrid               g(com, rank, size);
-    PISMConstAtmosCoupler pcac;
-    PISMConstOceanCoupler pcoc;
     IceModel*             m;
-    
-    if (EISIIchosen == PETSC_TRUE) {
-      m = new IceEISModel(g);
-    } else if (PSTexchosen == PETSC_TRUE) {
+    if (PSTexchosen == PETSC_TRUE) {
       m = new IcePSTexModel(g);
     } else if (MISMIPchosen == PETSC_TRUE) {
       m = new IceMISMIPModel(g);
     } else {
-      SETERRQ(3,"PISMS: how did I get here?");
+      m = new IceEISModel(g);
     }
 
-    pcac.initializeFromFile = false;  // climate will always come from intercomparison formulas, for pisms
+    // construct and attach the PISMClimateCouplers
+    PISMConstAtmosCoupler pcac;
+    PISMConstOceanCoupler pcoc;
+    // climate will always come from intercomparison formulas:
+    pcac.initializeFromFile = false; 
     ierr = m->attachAtmospherePCC(pcac); CHKERRQ(ierr);
     ierr = m->attachOceanPCC(pcoc); CHKERRQ(ierr);
 
     ierr = m->init(); CHKERRQ(ierr);
 
     ierr = m->setExecName("pisms"); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com, "running chosen EISMINT II experiment ...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, "running chosen simplified geometry experiment ...\n"); CHKERRQ(ierr);
     ierr = m->run(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done with run ... \n"); CHKERRQ(ierr);
     ierr = m->writeFiles("simp_exper.nc"); CHKERRQ(ierr);
@@ -118,3 +127,4 @@ int main(int argc, char *argv[]) {
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }
+
