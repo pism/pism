@@ -35,6 +35,7 @@ IceModelVec::IceModelVec() {
 
   name = "*****UNKNOWN***** variable name";
 
+  map_viewers = new map<string,PetscViewer>;
   reset_attrs();
 }
 
@@ -57,6 +58,8 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
   grid = other.grid;
   array = other.array;
   localp = other.localp;
+
+  map_viewers = other.map_viewers;
 
   use_interpolation_mask = other.use_interpolation_mask;
   interpolation_mask = other.interpolation_mask;
@@ -90,6 +93,7 @@ GridType IceModelVec::grid_type() {
 
 PetscErrorCode  IceModelVec::destroy() {
   PetscErrorCode ierr;
+
   if (v != PETSC_NULL) {
     ierr = VecDestroy(v); CHKERRQ(ierr);
     v = PETSC_NULL;
@@ -98,13 +102,18 @@ PetscErrorCode  IceModelVec::destroy() {
     ierr = DADestroy(da); CHKERRQ(ierr);
     da = PETSC_NULL;
   }
-  map<string,PetscViewer>::iterator i;
-  for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {
-    if ((*i).second != PETSC_NULL) {
-      ierr = PetscViewerDestroy((*i).second); CHKERRQ(ierr);
+
+  // map-plane viewers:
+  if (map_viewers != NULL) {
+    map<string,PetscViewer>::iterator i;
+    for (i = (*map_viewers).begin(); i != (*map_viewers).end(); ++i) {
+      if ((*i).second != PETSC_NULL) {
+	ierr = PetscViewerDestroy((*i).second); CHKERRQ(ierr);
+      }
     }
+    delete map_viewers;
+    map_viewers = NULL;
   }
-  map_viewers.clear();
 
   return 0;
 }

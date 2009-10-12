@@ -663,7 +663,7 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
 
   for (PetscInt l=0; ; ++l) {
     ierr = computeEffectiveViscosity(vNuH, epsilon); CHKERRQ(ierr);
-    //    ierr = updateNuViewers(vNuH, vNuHOld, true); CHKERRQ(ierr); FIXME!
+    ierr = update_nu_viewers(vNuH, vNuHOld, true); CHKERRQ(ierr);
     for (PetscInt k=0; k<ssaMaxIterations; ++k) {
     
       // in preparation of measuring change of effective viscosity:
@@ -700,7 +700,7 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
       }
       ierr = verbPrintf(3,grid.com,"|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
                          norm, normChange/norm); CHKERRQ(ierr);
-//       ierr = updateNuViewers(vNuH, vNuHOld, true); CHKERRQ(ierr); FIXME!
+      ierr = update_nu_viewers(vNuH, vNuHOld, true); CHKERRQ(ierr);
       if (getVerbosityLevel() < 3) {
         ierr = verbPrintf(2,grid.com, "%4d", k+1); CHKERRQ(ierr);
       }

@@ -33,7 +33,7 @@ procedure computes the maximum of the diffusivity on the grid.
 
 See determineTimeStep() and massContExplicitStep().
  */
-PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
+PetscErrorCode IceModel::computeMaxDiffusivity(bool update_diffusivity_viewer) {
   // assumes vuvbar holds correct deformational values of velocities
 
   PetscErrorCode ierr;
@@ -80,7 +80,7 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool updateDiffusViewer) {
   ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
 
-  if (updateDiffusViewer) { // view diffusivity (m^2/s)
+  if (update_diffusivity_viewer) { // view diffusivity (m^2/s)
     ierr = vWork2d[0].set_name("diffusivity"); CHKERRQ(ierr);
     ierr = vWork2d[0].set_attrs("diagnostic",
 				"diffusivity", "m2/s", ""); CHKERRQ(ierr);
@@ -242,9 +242,8 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   bool do_mass_conserve = config.get_flag("do_mass_conserve"),
     do_temp = config.get_flag("do_temp");
 
-  // FIXME: allow viewing diffusivity
   if ( ( (doAdaptTimeStep == PETSC_TRUE) && do_mass_conserve ) ) {
-    ierr = computeMaxDiffusivity(false); CHKERRQ(ierr);
+    ierr = computeMaxDiffusivity(view_diffusivity); CHKERRQ(ierr);
   }
   const PetscScalar timeToEnd = (end_year - grid.year) * secpera;
   if (dt_force > 0.0) {

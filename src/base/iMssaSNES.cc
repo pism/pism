@@ -241,7 +241,7 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
 
   // compute Nu from NuH if that is supposed to be the source
   if (leaveNuHAloneSSA == PETSC_TRUE) {
-    //    ierr = updateNuViewers(vNuH, vNuH, true); CHKERRQ(ierr); FIXME!
+    ierr = update_nu_viewers(vNuH, vNuH, true); CHKERRQ(ierr);
     ierr = getNuFromNuH(vNuH, &user); CHKERRQ(ierr);
     user.useStoredNu = PETSC_TRUE;
   } else {
@@ -256,7 +256,7 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
     bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
     ierr = assembleSSARhs(compute_surf_grad_inward_ssa, rhs); CHKERRQ(ierr);
     ierr = computeEffectiveViscosity(vNuH,ssaEpsilon); CHKERRQ(ierr);
-//     ierr = updateNuViewers(vNuH, vNuH, true); CHKERRQ(ierr); FIXME!
+    ierr = update_nu_viewers(vNuH, vNuH, true); CHKERRQ(ierr);
     ierr = assembleSSAMatrix(true, vNuH, A); CHKERRQ(ierr);
     ierr = verbPrintf(3,grid.com, "A:"); CHKERRQ(ierr);
     // call PETSc to solve linear system by iterative method
@@ -270,7 +270,7 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
 #endif
 
     ierr = computeEffectiveViscosity(vNuH,ssaEpsilon); CHKERRQ(ierr);
-//     ierr = updateNuViewers(vNuH, vNuH, true); CHKERRQ(ierr); FIXME!
+    ierr = update_nu_viewers(vNuH, vNuH, true); CHKERRQ(ierr);
     ierr = getNuFromNuH(vNuH, &user); CHKERRQ(ierr);
 
     user.useStoredNu = PETSC_TRUE;
@@ -279,7 +279,7 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
 
     ierr = mapSSASNESVecToUVbarSSA(user.ssada, X); CHKERRQ(ierr);
     ierr = computeEffectiveViscosity(vNuH,ssaEpsilon); CHKERRQ(ierr);
-//     ierr = updateNuViewers(vNuH, vNuH, true); CHKERRQ(ierr); FIXME!
+    ierr = update_nu_viewers(vNuH, vNuH, true); CHKERRQ(ierr);
     ierr = getNuFromNuH(vNuH, &user); CHKERRQ(ierr);
 
     user.useStoredNu = PETSC_TRUE;
@@ -288,7 +288,7 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
 
     ierr = mapSSASNESVecToUVbarSSA(user.ssada, X); CHKERRQ(ierr);
     ierr = computeEffectiveViscosity(vNuH,ssaEpsilon); CHKERRQ(ierr);
-//     ierr = updateNuViewers(vNuH, vNuH, true); CHKERRQ(ierr); FIXME!
+    ierr = update_nu_viewers(vNuH, vNuH, true); CHKERRQ(ierr);
     ierr = getNuFromNuH(vNuH, &user); CHKERRQ(ierr);
 
     user.useStoredNu = PETSC_TRUE;

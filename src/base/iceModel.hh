@@ -226,15 +226,6 @@ protected:
   // file names
   char         ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN];
 
-  // KSP viewer
-  PetscDrawLG  kspLG;
-
-  // other diagnostic viewers:
-  set<string> map_viewers, slice_viewers, sounding_viewers;
-  map<string,bool> big_viewers;	// the list of viewers that should be big
-  PetscInt     id, jd;	     // sounding indices
-  PetscScalar  slice_level;  //!< \brief level used for "slicing" 3D fields (in
-				//!< diagnostic viewers)
 
   string history; //!< history of commands used to generate this instance of IceModel
   string executable_short_name;
@@ -246,7 +237,7 @@ protected:
   virtual void setConstantNuHForSSA(PetscScalar);
 
   // see iMadaptive.cc
-  virtual PetscErrorCode computeMaxDiffusivity(bool updateDiffusViewer);
+  virtual PetscErrorCode computeMaxDiffusivity(bool update_diffusivity_viewer);
   virtual PetscErrorCode computeMax3DVelocities();
   virtual PetscErrorCode computeMax2DSlidingSpeed();
   virtual PetscErrorCode adaptTimeStepDiffusivity();
@@ -434,9 +425,7 @@ protected:
   virtual PetscErrorCode velocity(bool updateSIAVelocityAtDepth);    
   virtual PetscErrorCode vertVelocityFromIncompressibility();
     
-  // see iMviewers.cc
-  virtual PetscErrorCode init_viewers();
-  virtual PetscErrorCode update_viewers();
+
 
 protected:
   // working space (a convenience)
@@ -511,6 +500,17 @@ protected:
   set<string> extra_vars;
   PetscErrorCode init_extras();
   PetscErrorCode write_extras();
+
+  // diagnostic viewers; see iMviewers.cc
+  virtual PetscErrorCode init_viewers();
+  virtual PetscErrorCode update_viewers();
+  virtual PetscErrorCode update_nu_viewers(IceModelVec2 vNu[2], IceModelVec2[2], bool);
+  set<string> map_viewers, slice_viewers, sounding_viewers;
+  map<string,bool> big_viewers;	// the list of viewers that should be big
+  PetscInt     id, jd;	     // sounding indices
+  PetscScalar  slice_level;  //!< \brief level used for "slicing" 3D fields (in
+				//!< diagnostic viewers)
+  bool view_diffusivity, view_log_nuH, view_nuH;
 };
 
 #endif /* __iceModel_hh */

@@ -101,9 +101,6 @@ protected:
   
   IceModelVec3   SigmaComp3;
 
-  PetscViewer    SigmaCompView, compSigmaMapView;
-  PetscErrorCode updateCompViewers();
-
   // related to test K; see iCMthermo.cc
   PetscErrorCode initTestK();
   PetscErrorCode fillSolnTestK();  // only used with exactOnly == PETSC_TRUE

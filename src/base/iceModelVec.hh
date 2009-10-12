@@ -31,7 +31,7 @@
 class IceModelVec {
 public:
   IceModelVec();
-  IceModelVec(const IceModelVec &original);
+  IceModelVec(const IceModelVec &other);
   virtual ~IceModelVec();
 
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
@@ -97,7 +97,10 @@ protected:
   int dof;
   DA           da;
   bool         localp;
-  map<string,PetscViewer> map_viewers;
+  //! it is a map, because a temporary IceModelVec can be used to view
+  //! different quantities, and a pointer because "shallow copies" should have
+  //! the acces to the original map
+  map<string,PetscViewer> *map_viewers;
 
   void         *array;  // will be PetscScalar** or PetscScalar*** in derived classes
 
@@ -126,6 +129,8 @@ struct planeBox {
 class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2();
+  IceModelVec2(const IceModelVec2 &other);
+  // does not need a copy constructor, because it does not add any new data members
   virtual PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local);
   PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local,
 			 DAStencilType my_sten, int stencil_width);
@@ -142,7 +147,9 @@ public:
 class IceModelVec3Bedrock : public IceModelVec {
 public:
   IceModelVec3Bedrock();
+  IceModelVec3Bedrock(const IceModelVec3Bedrock &other);
   virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local);
+  virtual PetscErrorCode destroy();
 
   PetscErrorCode  setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN);
   PetscErrorCode  setColumn(PetscInt i, PetscInt j, PetscScalar c);
@@ -154,8 +161,11 @@ public:
 				 PetscScalar *levelsIN, PetscScalar *valsOUT);
   PetscErrorCode  getValColumnQUAD(PetscInt i, PetscInt j, PetscInt nlevels, 
 				   PetscScalar *levelsIN, PetscScalar *valsOUT);
+  PetscErrorCode view_sounding(int i, int j, bool big);
 
 protected:  
+  map<string,PetscViewer> *sounding_viewers;
+  Vec sounding_buffer;
   PetscErrorCode  isLegalLevel(PetscScalar z);
 };
 
@@ -164,6 +174,7 @@ protected:
 class IceModelVec3 : public IceModelVec {
 public:
   IceModelVec3();
+  IceModelVec3(const IceModelVec3 &other);
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
   virtual PetscErrorCode  destroy();
 
@@ -204,12 +215,13 @@ public:
 
   PetscErrorCode view_surface(IceModelVec2 &thickness, Vec g2, bool big);
   PetscErrorCode view_horizontal_slice(PetscScalar level, Vec g2, bool big);
-  PetscErrorCode view_sounding(int i, int j);
+  PetscErrorCode view_sounding(int i, int j, bool big);
 
 protected:  
   PetscErrorCode  isLegalLevel(PetscScalar z);
   virtual PetscErrorCode  extend_vertically_private(int old_Mz);
-  map<string,PetscViewer> slice_viewers, sounding_viewers;
+  map<string,PetscViewer> *slice_viewers, *sounding_viewers;
+  Vec sounding_buffer;
 };
 
 #endif /* __IceModelVec_hh */

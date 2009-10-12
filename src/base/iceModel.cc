@@ -63,6 +63,11 @@ IceModel::IceModel(IceGrid &g)
     PetscEnd();
   }
 
+  // Special diagnostic viewers are off by default:
+  view_diffusivity = false;
+  view_nuH = false;
+  view_log_nuH = false;
+
   // Do not save snapshots by default:
   save_snapshots = false;
   // Do not save time-series by default:

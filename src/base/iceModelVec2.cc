@@ -30,6 +30,8 @@
 
 IceModelVec2::IceModelVec2() : IceModelVec() {}
 
+IceModelVec2::IceModelVec2(const IceModelVec2 &other) : IceModelVec(other) {}
+
 
 PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], bool local) {
   if (!utIsInit()) {
@@ -183,9 +185,14 @@ PetscErrorCode IceModelVec2::mask_by(IceModelVec2 &M, PetscScalar fill) {
 PetscErrorCode IceModelVec2::view(Vec g2, bool big) {
   PetscErrorCode ierr;
 
-  if (map_viewers[name] == PETSC_NULL) {
-    string title = string_attr("long_name") + " (" + string_attr("glaciological_units") + ")";
-    ierr = create_viewer(big, title, map_viewers[name]); CHKERRQ(ierr);
+  if ((*map_viewers)[name] == PETSC_NULL) {
+    string title;
+    if (big) {
+      title = string_attr("long_name") + " (" + string_attr("glaciological_units") + ")";
+    } else {
+      title = string_attr("short_name") + " (" + string_attr("glaciological_units") + ")";
+    }
+    ierr = create_viewer(big, title, (*map_viewers)[name]); CHKERRQ(ierr);
   }
 
   if (localp) {
@@ -196,7 +203,7 @@ PetscErrorCode IceModelVec2::view(Vec g2, bool big) {
 
   ierr = var1.to_glaciological_units(g2); CHKERRQ(ierr);
 
-  ierr = VecView(g2, map_viewers[name]); CHKERRQ(ierr);
+  ierr = VecView(g2, (*map_viewers)[name]); CHKERRQ(ierr);
 
   return 0;
 }

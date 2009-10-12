@@ -23,40 +23,11 @@
 #include <petscksp.h>
 #include "iceModel.hh"
 
-/*
-PetscErrorCode IceModel::createViewers() {
-
-  if ( (strchr(diagnostic, 'k') != NULL) || (strchr(diagnosticBIG, 'k') != NULL) ) {
-    ierr = KSPMonitorLGCreate(PETSC_NULL, "KSP Monitor", PETSC_DECIDE, PETSC_DECIDE,
-                              PETSC_DECIDE, PETSC_DECIDE, &kspLG); CHKERRQ(ierr);
-    ierr = KSPMonitorSet(SSAKSP, KSPMonitorLG, kspLG, 0); CHKERRQ(ierr);
-  } else kspLG = PETSC_NULL;
-
-  return 0;
-}
-*/
-
-/*
-PetscErrorCode IceModel::destroyViewers() {
-  PetscErrorCode ierr;
-  
-  if (kspLG != PETSC_NULL) { ierr = KSPMonitorLGDestroy(kspLG); CHKERRQ(ierr); }
-
-  return 0;
-}
-*/
-
 //! Update the runtime graphical viewers.
-/*! At every time step the graphical viewers are updated.  The user specifies these viewers
-by the options <tt>-d</tt> \em list or <tt>-dbig</tt> \em list where \em list is a list of single
-character names of the viewers (a list with no spaces).  See an appendix of the User's Manual
-for the names.
-
+/*!
 Most viewers are updated by this routing, but some other are updated elsewhere:
-  \li see computeMaxDiffusivity() in iMutil.cc for  diffusView ("-d D")
-  \li see updateNuViewers() for   nuView  ("-d i" or "-d j")  and   lognuView  ("-d n")
-        and   NuView  ("-d N")
-  \li see iceCompModel.cc for compensatory Sigma viewer (and redo of Sigma viewer) "-d PS".
+  \li see computeMaxDiffusivity() in iMutil.cc for the diffusivity viewer.
+  \li see update_nu_viewers() for nuH and log_nuH viewers.
  */
 PetscErrorCode IceModel::update_viewers() {
   PetscErrorCode ierr;
@@ -133,10 +104,43 @@ PetscErrorCode IceModel::update_viewers() {
   }
 
   // sounding viewers:
-  // NOT IMPLEMENTED
+  for (i = sounding_viewers.begin(); i != sounding_viewers.end(); ++i) {
+    IceModelVec *v = variables.get(*i);
+
+    // if not found, try to compute:
+    if (v == NULL) {
+      ierr = compute_by_name(*i, v); CHKERRQ(ierr);
+    }
+
+    // if still not found, ignore
+    if (v == NULL)
+      continue;
+
+    GridType dims = v->grid_type();
+    bool big_viewer = (big_viewers[*i]) || (big_viewers[*i + "_sounding"]);
+
+    // if it's a 2D variable, stop
+    if (dims == GRID_2D) {
+      ierr = PetscPrintf(grid.com, "PISM ERROR: soundings of 2D quantities are not supported.\n");
+      PetscEnd();
+    }
+
+    if (dims == GRID_3D) {
+	IceModelVec3 *v3 = dynamic_cast<IceModelVec3*>(v);
+	if (v3 == NULL) SETERRQ(1,"grid_type() gives GRID_3D but dynamic_cast gives a NULL");
+	ierr = v3->view_sounding(id, jd, big_viewer); CHKERRQ(ierr);
+    }
+
+    if (dims == GRID_3D_BEDROCK) {
+	IceModelVec3Bedrock *v3 = dynamic_cast<IceModelVec3Bedrock*>(v);
+	if (v3 == NULL) SETERRQ(1,"grid_type() gives GRID_3D_BEDROCK but dynamic_cast gives a NULL");
+	ierr = v3->view_sounding(id, jd, big_viewer); CHKERRQ(ierr);
+    }
+  }
   return 0;
 }
 
+//! Initialize run-time diagnostic viewers.
 PetscErrorCode IceModel::init_viewers() {
   PetscErrorCode ierr;
   PetscTruth flag;
@@ -153,8 +157,16 @@ PetscErrorCode IceModel::init_viewers() {
   if (flag) {
     istringstream arg(tmp);
 
-    while (getline(arg, var_name, ','))
-      map_viewers.insert(var_name);
+    while (getline(arg, var_name, ',')) {
+      if (var_name == "diffusivity")
+	view_diffusivity = true;
+      else if (var_name == "log_nuH")
+	view_log_nuH = true;
+      else if (var_name == "nuH")
+	view_nuH = true;
+      else
+	map_viewers.insert(var_name);
+    }
   }
 
   // horizontal slice viewers:
@@ -203,13 +215,14 @@ PetscErrorCode IceModel::init_viewers() {
 }
 
 
-//PetscErrorCode IceModel::updateNuViewers(IceModelVec2 vNu[2], IceModelVec2 /*vNuOld*/[2], bool /*updateNu_tView*/) {
+//! Update nuH viewers.
+PetscErrorCode IceModel::update_nu_viewers(IceModelVec2 vNu[2], IceModelVec2 /*vNuOld*/[2], bool /*updateNu_tView*/) {
   // this one is called when solving an SSA system
-/*
+
   PetscErrorCode ierr;
-  if (runtimeViewers[cIndex('n')] != PETSC_NULL) {
+  if (view_log_nuH) {
     PetscScalar  **nui, **nuj, **gg;  
-    ierr = DAVecGetArray(grid.da2, g2, &gg); CHKERRQ(ierr);
+    ierr = vWork2d[5].get_array(gg); CHKERRQ(ierr);
     ierr = vNu[0].get_array(nui); CHKERRQ(ierr);
     ierr = vNu[1].get_array(nuj); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -224,22 +237,19 @@ PetscErrorCode IceModel::init_viewers() {
     }
     ierr = vNu[0].end_access(); CHKERRQ(ierr);
     ierr = vNu[1].end_access(); CHKERRQ(ierr);
-    ierr = DAVecRestoreArray(grid.da2, g2, &gg); CHKERRQ(ierr);
-    ierr = VecView(g2, runtimeViewers[cIndex('n')]); CHKERRQ(ierr);
+    ierr = vWork2d[5].end_access(); CHKERRQ(ierr);
+
+    ierr = vWork2d[5].set_name("log10(nuH)"); CHKERRQ(ierr);
+    ierr = vWork2d[5].view(g2, false); CHKERRQ(ierr);
   }
-  if (runtimeViewers[cIndex('i')] != PETSC_NULL && runtimeViewers[cIndex('j')] != PETSC_NULL) {
-    ierr = vNu[0].copy_to_global(g2); CHKERRQ(ierr);
-    ierr = VecView(g2, runtimeViewers[cIndex('i')]); CHKERRQ(ierr);
-    ierr = vNu[1].copy_to_global(g2); CHKERRQ(ierr);
-    ierr = VecView(g2, runtimeViewers[cIndex('j')]); CHKERRQ(ierr);
+
+  if (view_nuH) {
+    ierr = vNu[0].set_name("nuH[0]"); CHKERRQ(ierr);
+    ierr = vNu[0].view(g2, false); CHKERRQ(ierr);
+    ierr = vNu[1].set_name("nuH[1]"); CHKERRQ(ierr);
+    ierr = vNu[1].view(g2, false); CHKERRQ(ierr);
   }
-//   if ((NuView[0] != PETSC_NULL) && (NuView[1] != PETSC_NULL) && updateNu_tView) {
-//     // note vNuOld[] contain *difference* of nu after testConvergenceofNu()
-//     ierr = DALocalToGlobal(grid.da2, vNuOld[0], INSERT_VALUES, g2); CHKERRQ(ierr);
-//     ierr = VecView(g2, NuView[0]); CHKERRQ(ierr);
-//     ierr = DALocalToGlobal(grid.da2, vNuOld[1], INSERT_VALUES, g2); CHKERRQ(ierr);
-//     ierr = VecView(g2, NuView[1]); CHKERRQ(ierr);
-  }
+
   return 0;
 }
-*/
+
