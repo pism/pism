@@ -61,7 +61,7 @@ vfigs : verif/$(VFNOW_OUT)
 
 clean :
 	@rm -f *.aux *.blg *.idx *.ind *.ilg *.log *.out *.toc texput.* *.bbl
-	@rm -f config_doc.txt doxybib.txt
+	@rm -f config_doc.txt doxybib.txt revision.tex
 
 svn_update:
 	@echo "Running 'svn update' ($(shell svn info |grep 'Repository Root'))..."

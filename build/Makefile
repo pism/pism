@@ -265,7 +265,7 @@ clean: depclean
 endif
 
 depclean:
-	@rm -f $(depfiles)
+	@rm -f $(depfiles) src/revision
 
 distclean: clean
 	@rm -f ${LIBPISMNAME} ${LIBTESTSNAME} $(LIBUDUNITS) $(exec_default) $(exec_extras) \

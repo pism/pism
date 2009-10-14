@@ -265,7 +265,7 @@ PetscErrorCode IceModel::report_grid_parameters() {
   // report on grid cell dims
   if (grid.ice_vertical_spacing == EQUAL) {
     ierr = verbPrintf(2,grid.com, 
-           "grid cell dims (equal dz): %.2f km x %.2f km x %.2f m",
+           "grid cell dims (equal dz in ice): %.2f km x %.2f km x %.2f m",
            grid.dx/1000.0,grid.dy/1000.0,grid.dzMIN); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com, 
