@@ -216,6 +216,7 @@ PetscErrorCode IceEnthalpyModel::createVecs() {
      "ice enthalpy (sensible plus latent heat, plus potential energy of pressure)",
      "J kg-1",
      ""); CHKERRQ(ierr);
+  ierr = variables.add(Enth3); CHKERRQ(ierr);
 
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
 
@@ -461,92 +462,8 @@ PetscErrorCode IceEnthalpyModel::write_extra_fields(const char filename[]) {
       "  writing ice basal melt rate 'bmelt' ...\n"); CHKERRQ(ierr);
   ierr = vbasalMeltRate.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
-/*
-EXAMPLE:  writes volume to a *separate file* (called "penth-finalivol.nc")
-
-  PetscScalar myvolume, a1, a2, a3, a4;  // aN is dummy
-  ierr = volumeArea(myvolume, a1,a2,a3,a4); CHKERRQ(ierr);
-  myvolume = myvolume * 1.0e9;  // convert to m3; of course volumeArea() should return in SI!
-  DiagnosticTimeseries* volume = new DiagnosticTimeseries(&grid, "ivol", "t_vol");
-  volume->set_units("m3", "km3");
-  volume->set_dimension_units("years", "");
-  volume->buffer_size = 10;
-  volume->set_output_prefix("penth-final");
-  volume->append(grid.year,myvolume);  // = 10^9 m^3 = 1 km^3
-  volume->write("volume.nc");
-  delete volume;
-
-*/
-
   return 0;
 }
-
-
-PetscErrorCode IceEnthalpyModel::regrid() {
-  PetscErrorCode ierr;
-  
-  ierr = IceModel::regrid(); CHKERRQ(ierr);
-  
-  PetscTruth regridVarsSet, regrid_from_set;
-  char filename[PETSC_MAX_PATH_LEN], regridVars[PETSC_MAX_PATH_LEN];
-  NCTool nc(&grid);
-
-  // Get the regridding file name:
-  ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_from", filename, PETSC_MAX_PATH_LEN,
-                               &regrid_from_set); CHKERRQ(ierr);
-
-  // Return if no regridding is requested:
-  if (!regrid_from_set) return 0;
-
-  ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_vars", regridVars,
-                               PETSC_MAX_PATH_LEN, &regridVarsSet); CHKERRQ(ierr);
-  if (regridVarsSet == PETSC_FALSE) {
-    strcpy(regridVars, "");
-  }
-  if (!strchr(regridVars, 'y'))   return 0;
-
-  // create "local interpolation context" from dimensions, limits, and lengths
-  //   extracted from regridFile, and from information about the part of the
-  //   grid owned by this processor
-
-  ierr = nc.open_for_reading(filename);
-  
-  grid_info g;
-  // Note that after this call g.z_len and g.zb_len are zero if the
-  // corresponding dimension does not exist.
-  ierr = nc.get_grid_info(g); CHKERRQ(ierr);
-
-  double *zlevs = NULL, *zblevs = NULL; // NULLs correspond to 2D-only regridding
-  if ((g.z_len != 0) && (g.zb_len != 0)) {
-    ierr = nc.get_vertical_dims(zlevs, zblevs); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2, grid.com,
-		      "PISM WARNING: at least one of 'z' and 'zb' is absent in '%s'.\n"
-		      "              3D regridding is disabled.\n",
-		      filename);
-    CHKERRQ(ierr);
-  }
-  ierr = nc.close(); CHKERRQ(ierr);
-
-  { // explicit scoping means destructor will be called for lic
-    LocalInterpCtx lic(g, zlevs, zblevs, grid);
-
-    if (lic.regrid_2d_only) {
-      ierr = verbPrintf(2, grid.com,
-           "IceEnthalpyModel WARNING: unable to regrid enthalpy ('y') from NetCDF file '%s'!\n",
-           filename); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com, 
-         "  y: regridding enthalpy [IceEnthalpyModel] ...\n"); CHKERRQ(ierr);
-      ierr = Enth3.regrid(filename, lic, true); CHKERRQ(ierr);
-    }
-  }
-
-  // Note that deleting a NULL pointer is safe.
-  delete [] zlevs;  delete [] zblevs;
-  return 0;
-}
-
 
 /*********** setting fields ****************/
 

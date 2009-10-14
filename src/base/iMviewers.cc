@@ -47,21 +47,20 @@ PetscErrorCode IceModel::update_viewers() {
       continue;
 
     GridType dims = v->grid_type();
-    bool big_viewer = (big_viewers[*i]) || (big_viewers[*i + "_map"]);
 
     switch(dims) {
     case GRID_2D:
       {
 	IceModelVec2 *v2 = dynamic_cast<IceModelVec2*>(v);
-	if (v2 == NULL) SETERRQ(1,"grid_type() gives GRID_2D but dynamic_cast gives a NULL");
-	ierr = v2->view(g2, big_viewer); CHKERRQ(ierr);
+	if (v2 == NULL) SETERRQ(1,"grid_type() returns GRID_2D but dynamic_cast gives a NULL");
+	ierr = v2->view(g2, viewer_size); CHKERRQ(ierr);
 	break;
       }
     case GRID_3D:
       {
 	IceModelVec3 *v3 = dynamic_cast<IceModelVec3*>(v);
-	if (v3 == NULL) SETERRQ(1,"grid_type() gives GRID_3D but dynamic_cast gives a NULL");
-	ierr = v3->view_surface(vH, g2, big_viewer); CHKERRQ(ierr);
+	if (v3 == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
+	ierr = v3->view_surface(vH, g2, viewer_size); CHKERRQ(ierr);
 	break;
       }
     case GRID_3D_BEDROCK:
@@ -88,7 +87,6 @@ PetscErrorCode IceModel::update_viewers() {
       continue;
 
     GridType dims = v->grid_type();
-    bool big_viewer = (big_viewers[*i]) || (big_viewers[*i + "_slice"]);
 
     // warn about 2D variables and ignore them:
     if (dims == GRID_2D) {
@@ -98,8 +96,8 @@ PetscErrorCode IceModel::update_viewers() {
 
     if (dims == GRID_3D) {
 	IceModelVec3 *v3 = dynamic_cast<IceModelVec3*>(v);
-	if (v3 == NULL) SETERRQ(1,"grid_type() gives GRID_3D but dynamic_cast gives a NULL");
-	ierr = v3->view_horizontal_slice(slice_level, g2, big_viewer); CHKERRQ(ierr);
+	if (v3 == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
+	ierr = v3->view_horizontal_slice(slice_level, g2, viewer_size); CHKERRQ(ierr);
     }
   }
 
@@ -117,7 +115,6 @@ PetscErrorCode IceModel::update_viewers() {
       continue;
 
     GridType dims = v->grid_type();
-    bool big_viewer = (big_viewers[*i]) || (big_viewers[*i + "_sounding"]);
 
     // if it's a 2D variable, stop
     if (dims == GRID_2D) {
@@ -127,14 +124,14 @@ PetscErrorCode IceModel::update_viewers() {
 
     if (dims == GRID_3D) {
 	IceModelVec3 *v3 = dynamic_cast<IceModelVec3*>(v);
-	if (v3 == NULL) SETERRQ(1,"grid_type() gives GRID_3D but dynamic_cast gives a NULL");
-	ierr = v3->view_sounding(id, jd, big_viewer); CHKERRQ(ierr);
+	if (v3 == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
+	ierr = v3->view_sounding(id, jd, viewer_size); CHKERRQ(ierr);
     }
 
     if (dims == GRID_3D_BEDROCK) {
 	IceModelVec3Bedrock *v3 = dynamic_cast<IceModelVec3Bedrock*>(v);
-	if (v3 == NULL) SETERRQ(1,"grid_type() gives GRID_3D_BEDROCK but dynamic_cast gives a NULL");
-	ierr = v3->view_sounding(id, jd, big_viewer); CHKERRQ(ierr);
+	if (v3 == NULL) SETERRQ(1,"grid_type() returns GRID_3D_BEDROCK but dynamic_cast gives a NULL");
+	ierr = v3->view_sounding(id, jd, viewer_size); CHKERRQ(ierr);
     }
   }
   return 0;
@@ -189,14 +186,8 @@ PetscErrorCode IceModel::init_viewers() {
       sounding_viewers.insert(var_name);
   }
 
-  ierr = PetscOptionsString("-view_big", "specifies the comma-separated list of variables that should have big viewers",
-			    "", "empty", tmp, TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
-  if (flag) {
-    istringstream arg(tmp);
-
-    while (getline(arg, var_name, ','))
-      big_viewers[var_name] = true;
-  }
+  ierr = PetscOptionsInt("-viewer_size", "specifies desired viewer size",
+			 "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
 
   ierr = PetscOptionsReal("-slice_level", "sets the level (in meters above the base of ice) for slice viewers", "",
 			  slice_level, &slice_level, PETSC_NULL); CHKERRQ(ierr);

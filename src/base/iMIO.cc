@@ -313,7 +313,6 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
   return 0;
 }
 
-
 //! Manage regridding based on user options.  Call IceModelVec::regrid() to do each selected variable.
 /*!
 For each variable selected by option <tt>-regrid_vars</tt>, we regrid it onto the current grid from 
@@ -326,33 +325,46 @@ Most of the time the user should carefully specify which variables to regrid.
  */
 PetscErrorCode IceModel::regrid() {
   PetscErrorCode ierr;
+  char filename[PETSC_MAX_PATH_LEN], tmp[TEMPORARY_STRING_LENGTH];
   PetscTruth regridVarsSet, regrid_from_set;
-  char filename[PETSC_MAX_PATH_LEN], regridVars[PETSC_MAX_PATH_LEN];
   NCTool nc(&grid);
 
   ierr = check_old_option_and_stop(grid.com, "-regrid", "-regrid_from"); CHKERRQ(ierr);
 
+  ierr = PetscOptionsBegin(grid.com, PETSC_NULL,
+			   "Options controlling regridding",
+			   PETSC_NULL); CHKERRQ(ierr);
+
   // Get the regridding file name:
-  ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_from", filename, PETSC_MAX_PATH_LEN,
-                               &regrid_from_set); CHKERRQ(ierr);
+  ierr = PetscOptionsString("-regrid_from", "Specifies the file to regrid from", "", "",
+			    filename, PETSC_MAX_PATH_LEN,
+			    &regrid_from_set); CHKERRQ(ierr);
+
+  ierr = PetscOptionsString("-regrid_vars", "Specifies the list of variable to regrid", "",
+			    "age,temp,litho_temp",
+			    tmp, TEMPORARY_STRING_LENGTH,
+			    &regridVarsSet); CHKERRQ(ierr);
+
+  // Done with the options.
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   // Return if no regridding is requested:
   if (!regrid_from_set) return 0;
 
-  ierr = verbPrintf(3, grid.com, "Regridding...\n"); CHKERRQ(ierr);
-
-
-  const int  npossible = 7;
-  const char possible[20] = "bBehHLT";
+  ierr = verbPrintf(2, grid.com, "Regridding...\n"); CHKERRQ(ierr);
   
-  ierr = PetscOptionsGetString(PETSC_NULL, "-regrid_vars", regridVars,
-                               PETSC_MAX_PATH_LEN, &regridVarsSet); CHKERRQ(ierr);
-  if (regridVarsSet == PETSC_FALSE) {
-    strcpy(regridVars, "");
+  string var_name;
+  set<string> vars;
+  istringstream list(tmp);
+  if (regridVarsSet) {
+    // split the list; note that this also removes any duplicate entries
+    while (getline(list, var_name, ','))
+      vars.insert(var_name);
+  } else {
+    vars.insert("age");
+    vars.insert("temp");
+    vars.insert("litho_temp");
   }
-  ierr = verbPrintf(2,grid.com, 
-           "regridding variables with single character flags `%s' from NetCDF file `%s':\n", 
-           regridVars,filename); CHKERRQ(ierr);
 
   // create "local interpolation context" from dimensions, limits, and lengths
   //   extracted from regridFile, and from information about the part of the
@@ -377,56 +389,34 @@ PetscErrorCode IceModel::regrid() {
   }
   ierr = nc.close(); CHKERRQ(ierr);
 
-  { // explicit scoping means destructor will be called for lic
-    LocalInterpCtx lic(g, zlevs, zblevs, grid);
-    // ierr = lic.printGrid(grid.com); CHKERRQ(ierr);
-    
-    for (PetscInt k = 0; k < npossible; k++) {
-      if (strchr(regridVars, possible[k])) {
-       switch (possible[k]) {
-         case 'b':
-           ierr = verbPrintf(2, grid.com, "  b: regridding 'topg' ... \n"); CHKERRQ(ierr);
-	   ierr = vbed.regrid(filename, lic, true); CHKERRQ(ierr);
-           break;
-         case 'B':
-	   if (lic.regrid_2d_only || lic.no_regrid_bedrock) {
-	     ierr = verbPrintf(2, grid.com, "  WARNING: skipping regridding of B: 'litho_temp'...\n"); CHKERRQ(ierr);
-	   } else {
-	     ierr = verbPrintf(2, grid.com, "  B: regridding 'litho_temp' ... \n"); CHKERRQ(ierr);
-	     ierr = Tb3.regrid(filename, lic, true); CHKERRQ(ierr);
-	   }
-           break;
-         case 'e':
-	   if (lic.regrid_2d_only) {
-	     ierr = verbPrintf(2, grid.com, "  WARNING: skipping regridding of e: 'age'...\n"); CHKERRQ(ierr);
-	   } else {
-	     ierr = verbPrintf(2, grid.com, "  e: regridding 'age' ... \n"); CHKERRQ(ierr);
-	     ierr = tau3.regrid(filename, lic, true); CHKERRQ(ierr);
-	   }
-           break;
-         case 'h':
-           ierr = verbPrintf(2, grid.com, "  h: regridding 'usurf' ... \n"); CHKERRQ(ierr);
-	   ierr = vh.regrid(filename, lic, true); CHKERRQ(ierr);
-           break;
-         case 'H':
-           ierr = verbPrintf(2, grid.com, "  H: regridding 'thk' ... \n"); CHKERRQ(ierr);
-	   ierr = vH.regrid(filename, lic, true); CHKERRQ(ierr);
-           break;
-         case 'L':
-           ierr = verbPrintf(2, grid.com, "  L: regridding 'bwat' ... \n"); CHKERRQ(ierr);
-	   ierr = vHmelt.regrid(filename, lic, true); CHKERRQ(ierr);
-           break;
-         case 'T':
-	   if (lic.regrid_2d_only) {
-	     ierr = verbPrintf(2, grid.com, "  WARNING: skipping regridding of T: 'temp'...\n"); CHKERRQ(ierr);
-	   } else {
-	     ierr = verbPrintf(2, grid.com, "  T: regridding 'temp' ... \n"); CHKERRQ(ierr);
-	     ierr = T3.regrid(filename, lic, true); CHKERRQ(ierr);
-	   }
-           break;
-       }
-      }
+  LocalInterpCtx lic(g, zlevs, zblevs, grid); // will be de-allocated at 'return 0' below.
+
+  set<string>::iterator i;
+  for (i = vars.begin(); i != vars.end(); ++i) {
+    IceModelVec *v = variables.get(*i);
+
+    if (v == NULL) {
+      ierr = PetscPrintf(grid.com, "PISM ERROR: unknown variable name: %s\n",
+			 (*i).c_str()); CHKERRQ(ierr);
+      PetscEnd();
     }
+
+    string pism_intent = v->string_attr("pism_intent");
+    if (pism_intent != "model_state") {
+      ierr = verbPrintf(2, grid.com, "  WARNING: skipping '%s' (only model_state variables can be regridded)...\n",
+			(*i).c_str()); CHKERRQ(ierr);
+      continue;
+    }
+
+    if ( ((v->grid_type() == GRID_3D) && lic.regrid_2d_only) ||
+	 ((v->grid_type() == GRID_3D_BEDROCK) && lic.no_regrid_bedrock) )
+      {
+      ierr = verbPrintf(2, grid.com, "  WARNING: skipping '%s'...\n",
+			(*i).c_str()); CHKERRQ(ierr);
+      continue;
+    }
+
+    ierr = v->regrid(filename, lic, true); CHKERRQ(ierr);
 
   }
 

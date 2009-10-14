@@ -90,9 +90,6 @@ public:
   using IceModel::write_extra_fields;
   virtual PetscErrorCode write_extra_fields(const char filename[]);
 
-  using IceModel::regrid;
-  virtual PetscErrorCode regrid();
-
   PetscTruth doColdIceMethods; //!< if true, use cold ice internals but read and write additional enthalpy fields to and from file
 
 protected:

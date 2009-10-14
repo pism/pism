@@ -19,7 +19,7 @@ run_test ()
     run -n 2 pisms -eisII A -y 1000 -Mz 33 -Mmax 0.925 -Lz 960 -o bar.nc 
 
     # regrid from the extended grid onto the one in bar.nc:
-    run -n 2 pismr -i bar.nc -regrid_from foo.nc -regrid_vars T -y 0 -o baz.nc
+    run -n 2 pismr -i bar.nc -regrid_from foo.nc -regrid_vars temp -y 0 -o baz.nc
 
     # compare results
     run nccmp.py -v temp bar.nc baz.nc

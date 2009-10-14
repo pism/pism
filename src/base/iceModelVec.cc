@@ -643,12 +643,14 @@ PetscErrorCode IceModelVec::set_attr(string attr, string value) {
   return 0;
 }
 
+//! Sets a single-valued double attribute.
 PetscErrorCode IceModelVec::set_attr(string name, double value) {
   var1.set(name, value);
   
   return 0;
 }
 
+//! Sets an array attribute.
 PetscErrorCode IceModelVec::set_attr(string name, vector<double> values) {
   var1.doubles[name] = values;
 
@@ -659,25 +661,29 @@ bool IceModelVec::has_attr(string name) {
   return var1.has(name);
 }
 
+//! Returns a single-valued double attribute.
 double IceModelVec::double_attr(string name) {
   return var1.get(name);
 }
 
+//! Returns a string attribute.
 string IceModelVec::string_attr(string n) {
   if (n == "short_name")
     return name;
   return var1.get_string(n);
 }
 
+//! Returns an array attribute.
 vector<double> IceModelVec::array_attr(string name) {
   return var1.doubles[name];
 }
 
-PetscErrorCode IceModelVec::create_viewer(bool big, string title, PetscViewer &viewer) {
+//! Creates a run-time diagnostic viewer.
+PetscErrorCode IceModelVec::create_viewer(PetscInt viewer_size, string title, PetscViewer &viewer) {
   PetscErrorCode ierr;
   int x, y;
 
-  ierr = compute_viewer_size(big ? 600 : 320, x, y); CHKERRQ(ierr);
+  ierr = compute_viewer_size(viewer_size, x, y); CHKERRQ(ierr);
 
   // note we reverse x <-> y; see IceGrid::createDA() for original reversal
   ierr = PetscViewerDrawOpen(grid->com, PETSC_NULL, title.c_str(),
@@ -692,6 +698,7 @@ PetscErrorCode IceModelVec::create_viewer(bool big, string title, PetscViewer &v
   return 0;
 }
 
+//! Computes the size of a diagnostic viewer window.
 PetscErrorCode IceModelVec::compute_viewer_size(int target_size, int &x, int &y) {
   PetscScalar Lx = grid->Lx, Ly = grid->Ly;
 

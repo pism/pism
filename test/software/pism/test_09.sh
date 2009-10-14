@@ -16,13 +16,13 @@ run_test ()
     run -n 1 pisms -eisII I -Mx 61 -My 61 -Mz 201 -Mbz 21 -Lbz 1000 -y 0 -o foo.nc
 
     # Bootstrap from this file and run for 0 years:
-    run -n 2 pismr -boot_from foo.nc -Mx 61 -My 61 -Mz 201 -Lz 5000 -regrid_from foo.nc -regrid_vars bBehHLT -y 0 -o bar.nc
+    run -n 2 pismr -boot_from foo.nc -Mx 61 -My 61 -Mz 201 -Lz 5000 -regrid_from foo.nc -regrid_vars topg,litho_temp,age,thk,bwat,temp -y 0 -o bar.nc
 
     # Change the variable order in foo.nc to z,y,x:
     run ncpdq -O -a z,y,x foo.nc foo.nc
 
     # Bootstrap from this file and run for 0 years:
-    run -n 2 pismr -boot_from foo.nc -Mx 61 -My 61 -Mz 201 -Lz 5000 -regrid_from foo.nc -regrid_vars bBehHLT -y 0 -o baz.nc
+    run -n 2 pismr -boot_from foo.nc -Mx 61 -My 61 -Mz 201 -Lz 5000 -regrid_from foo.nc -regrid_vars topg,litho_temp,age,thk,bwat,temp -y 0 -o baz.nc
 
     set +e
 

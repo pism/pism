@@ -211,13 +211,16 @@ Another way to view the output file is graphically.  One of the most convenient 
 
 Alternatively, one can use PISM's ``diagnostic viewers'' for a time-dependent view of the evolving modeled ice sheet.  Note this requires X Windows:\index{pisms}\pismoptionindex{eisII}\pismoptionindex{d}
 
-\verb|$ pisms -eisII A -i simp_exper.nc -y 1000 -d HTt|
-
-\noindent Three figures should appear and be refreshed at each time step.  One figure is a map-plane view of thickness, another is a map-plane view of the basal temperature in Kelvin, and the third is a graph of temperature versus height above the bedrock.  When the full 200,000 year run finishes, one may watch its evolving, though essentially steady, state.  A view that includes the ice flow speed is:
-
-\verb|$ pisms -eisII A -i eisIIA200k.nc -d HTc|
-
-\noindent for example.  Figure \ref{fig:screenshot} will appear.
+\begin{verbatim}
+$ pisms -eisII A -i simp_exper.nc -y 1000 -view_map thk \
+        -view_slice temp -slice_level 0 -view_sounding temp
+\end{verbatim}%$
+Three figures should appear and be refreshed at each time step.  One figure is a map-plane view of thickness, another is a map-plane view of the basal temperature in Kelvin, and the third is a graph of temperature versus height above the bedrock.  When the full 200,000 year run finishes, one may watch its evolving, though essentially steady, state.  A view that includes the ice flow speed is:
+\begin{verbatim}
+$ pisms -eisII A -i simp_exper.nc -y 1000 -view_map thk,cbar \
+        -view_slice temp -slice_level 0 -view_sounding temp
+\end{verbatim}%$
+for example.  Figure \ref{fig:screenshot} will appear.
 
 \begin{figure}[ht]
 \includegraphics[height=3.5in,keepaspectratio=true]{figs/eisIIAshot}
@@ -225,7 +228,7 @@ Alternatively, one can use PISM's ``diagnostic viewers'' for a time-dependent vi
 \label{fig:screenshot}
 \end{figure}
 
-As shown by the ``\verb|-d|'' options above, runtime viewers can be specified by options of the form \intextoption{d} \emph{letters} or \intextoption{dbig} \emph{letters}.  The latter option shows larger windows but is otherwise identical.  See Appendix \ref{sect:viewers} for the single letter names of viewers.  These viewers are updated at each time step and are not used for runs in batch mode or where efficiency is needed.  (As they work under Xwindows, MPI must be told how to send data to the window, so PISM options are usually followed by ``\verb|-display :0|''\pismoptionindex{display} when PISM is run under MPI and runtime viewers are needed.)
+As shown by the ``\verb|-view_map|'', ``\verb|-view_slice|'' and ``\verb|-view_sounding|'' options above, it is possible to monitor PISM's model state during the run; see section \ref{sec:diagnostic-viewers} for more. These viewers are updated at each time step and are not used for runs in batch mode or where efficiency is needed.  (As they work under Xwindows, MPI must be told how to send data to the window, so PISM options are usually followed by ``\verb|-display :0|''\pismoptionindex{display} when PISM is run under MPI and runtime viewers are needed.)
 
 
 \subsection{PISM's standard output}   As seen already, at each time step PISM shows a summary\index{PISM!standard output summary of each time step} of the model state using a few numbers and some single character flags.  The format of the summary is partly explained by two lines near the beginning of the run:
@@ -325,16 +328,12 @@ By default, PISM does not numerically solve the SSA.  The user must add the opti
 \begin{table}[ht]
 \caption{Hierarchy of current and planned flow models in PISM, for the grounded parts of ice sheets, from most to fewest simplifying assumptions.  (\emph{Italicized} are planned for future versions of PISM but are not implemented in \texttt{stable0.2}.)}\label{tab:modelhierarchy} 
 \small
-\begin{tabular}{|l|l|l|l|}\hline
+\begin{tabular}{p{0.25\linewidth}p{0.25\linewidth}p{0.3\linewidth}p{0.1\linewidth}}\hline
 \textbf{Model} & \textbf{Assumptions} & \textbf{Needed data} & \textbf{Refs.} \\ \hline
-\emph{balance velocities} & \emph{steady state, ice flows down} & surf.~mass balance, ice & \cite{JoughinetalGrBal97} \\
- & \quad \emph{surface gradient} & \quad thickness, bed elevation & \\ \hline
-isothermal SIA & non-sliding lubrication flow, fixed & same, but possibly time- & \cite{EISMINT96,BLKCB} \\
- & \quad softness & \quad dependent &  \\ \hline
-thermomechanically & non-sliding lubrication flow, & same, plus surf.~temperature, & \cite{BBL} \\
-\quad -coupled SIA & \quad temperature-dependent softness & \quad geothermal flux &  \\ \hline
-SIA + SSA hybrid & SSA as a sliding law for thermo-  & same, plus basal layer (till) & \cite{BBssasliding} \\
-  & \quad mechanically-coupled SIA & \quad strength &  \\ \hline
+\emph{balance velocities} & \emph{steady state, ice flows down surface gradient} & surf.~mass balance, ice  thickness, bed elevation& \cite{JoughinetalGrBal97} \\
+isothermal SIA & non-sliding lubrication flow, fixed softness & same, but possibly time-dependent & \cite{EISMINT96,BLKCB} \\
+thermomechanically-coupled SIA & non-sliding lubrication flow, temperature-dependent softness & same, plus surf.~temperature,  geothermal flux & \cite{BBL} \\
+SIA + SSA hybrid & SSA as a sliding law for thermomechanically-coupled SIA  & same, plus basal layer (till) strength & \cite{BBssasliding} \\
 \emph{Blatter-Pattyn} & \emph{``higher-order'', bridging stresses} & same & \cite{Blatter,Pattyn03,SchoofCoulombBlatter} \\ \hline
 \end{tabular}
 \normalsize
@@ -508,24 +507,27 @@ Such ``regridding'' is done using the \intextoption{regrid\und from} and \intext
 
 \begin{verbatim}
 $  pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
-         -regrid_from foo.nc -regrid_vars HT -o bar.nc
+         -regrid_from foo.nc -regrid_vars thk,temp -o bar.nc
 \end{verbatim}
-\noindent By specifying regridded variables ``\verb|HT|'', the ice thickness and temperature values from the old grid are interpolated onto the new grid.  Here one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment A description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
+\noindent By specifying regridded variables ``\verb|thk,temp|'', the ice thickness and temperature values from the old grid are interpolated onto the new grid.  Here one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment A description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
 
 A slightly different use of regridding occurs when ``bootstrapping'', as described in section \ref{sect:boot} and illustrated by example in section \ref{sect:green}.
 
 See table \ref{tab:regridvar} for the regriddable variables using \intextoption{regrid\und from}.  Only model state variables are regriddable, while climate and boundary data generally are not explicitly regriddable.  (Bootstrapping, however, allows the same general interpolation as this explicit regrid.)
 
 \begin{table}[ht]
-\caption{Regriddable variables.\index{regrid}\index{regrid\und vars}  Use \texttt{-regrid$\underline{\phantom{b}}$vars} with given flag.}\label{tab:regridvar}
-\begin{tabular}{@{}llll}\hline
-\textbf{Flag} & \textbf{Name in NetCDF file} & \textbf{Description}\\ \hline
-\verb|b| & \texttt{topg}       & bed elevation \\
-\verb|B| & \texttt{litho\und temp} & temperature in bedrock \\
-\verb|e| & \texttt{age}        & age of ice \\
-\verb|H| & \texttt{thk}        & thickness \\
-\verb|L| & \texttt{bwat}       & effective (notional) thickness of basal melt water \\
-\verb|T| & \texttt{temp}       & temperature in ice \\
+\centering
+\caption{Regriddable variables.\index{regrid}\index{regrid\und vars}  Use \texttt{-regrid\und vars} with these names.}\label{tab:regridvar}
+\begin{tabular}{ll}\hline
+\textbf{Name} & \textbf{Description}\\ \hline
+\texttt{age} & age of ice\\
+\texttt{bwat} & effective thickness of subglacial melt water \\
+\texttt{dbdt} & bedrock uplift rate \\
+\texttt{litho\und temp} & lithosphere (bedrock) temperature \\
+\texttt{mask} & grounded/dragging/floating integer mask, see section \ref{subsect:floatmask} \\
+\texttt{temp} & ice temperature \\
+\texttt{thk} & land ice thickness \\
+\texttt{topg} & bedrock surface elevation \\
 \hline
 \normalsize
 \end{tabular}
@@ -534,9 +536,9 @@ See table \ref{tab:regridvar} for the regriddable variables using \intextoption{
 Here is another example: suppose you have an output of a PISM run on a fairly coarse grid (stored in \verb|foo.nc|) and you want to continue this run on a finer grid. This can be done using \intextoption{regrid\und from} along with \intextoption{boot\und from}:
 \begin{verbatim}
 $ pismr -boot_from foo.nc -Mx 201 -My 201 -Mz 21 -Mbz 21 -Lz 4000 -quadZ \
-        -regrid_from foo.nc -regrid_vars BeT -y 100 -o bar.nc
-\end{verbatim}
-In this case all the model-state 2D variables present in \verb|foo.nc| will be interpolated onto the new grid during bootstrapping, which happens first, while three-dimensional variables are filled using heuristics mentioned in section \ref{sect:boot}.  Then temperature in bedrock (\verb|B|)\footnote{Assumes that foo.nc has \t{Mbz}$>1$.}, age of the ice (\verb|e|) and ice temperature (\verb|T|) will be interpolated from \verb|foo.nc| onto the new grid during the regridding stage, overriding values set at the bootstrapping stage.  All of this, bootstrapping and regridding, occurs before the first timestep.
+        -regrid_from foo.nc -regrid_vars litho_temp,age,temp -y 100 -o bar.nc
+\end{verbatim}%$
+In this case all the model-state 2D variables present in \verb|foo.nc| will be interpolated onto the new grid during bootstrapping, which happens first, while three-dimensional variables are filled using heuristics mentioned in section \ref{sect:boot}.  Then temperature in bedrock (\verb|litho_temp|)\footnote{Assumes that foo.nc has \t{Mbz}$>1$.}, age of the ice (\verb|age|) and ice temperature (\verb|temp|) will be interpolated from \verb|foo.nc| onto the new grid during the regridding stage, overriding values set at the bootstrapping stage.  All of this, bootstrapping and regridding, occurs before the first timestep.
 
 
 \subsection{Adaptive time-stepping} \label{subsect:adapt}\index{PISM!adaptive time stepping scheme} Recall that at each time step the PISM standard output includes flags and a summary of the model state using a few numbers:
@@ -556,7 +558,7 @@ Table \ref{tab:adaptiveflag} explains the meaning of the additional one characte
 
 \begin{table}[ht]
 \caption{Meaning of the adaptive time-stepping ``reason'' flag `\texttt{r}' in standard output flag line.}\label{tab:adaptiveflag}
-\begin{tabular}{p{0.1\linewidth}p{0.8\linewidth}}\hline
+\begin{tabular}{p{0.05\linewidth}p{0.85\linewidth}}\hline
 \textbf{Flag} & \textbf{Active adaptive constraint} \\ \hline
 \verb|c| & three-dimensional CFL for temperature/age advection \cite{BBL} \\
 \verb|d| & diffusivity for SIA mass conservation \cite{BBL} \\
@@ -704,8 +706,8 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
 
 \begin{table}[ht]
   \centering
-  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}
-    \\\hline
+  \caption{Command-line options controlling saving snapshots of the model state.}
+  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\hline
     \textbf{Option} & \textbf{Description} \\
     \hline
     \intextoption{save\und to} [file name] & Specifies the file to save to.\\
@@ -713,8 +715,7 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
     \intextoption{split\und snapshots} & Separate the snapshot output into files named \texttt{snapshots-}year\texttt{.nc}.  Faster if you are saving more than a dozen or so snapshots. \\
     \hline
   \end{tabular}
-  \caption{Command-line options controlling saving snapshots of the model state.}
-  \label{tab:snapshot-opts}
+ \label{tab:snapshot-opts}
 \end{table}
 
 
@@ -736,8 +737,7 @@ Omitting the \intextoption{ts\und vars} option makes PISM save \emph{all} the va
 \begin{table}[ht]
   \caption{Command-line options controlling saving scalar time-series}
   \centering
-  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}
-    \\\hline
+  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\hline
     \textbf{Option} & \textbf{Description} \\
     \hline
     \intextoption{ts\und file} [file name] & Specifies the file to save to.\\
@@ -751,8 +751,7 @@ Omitting the \intextoption{ts\und vars} option makes PISM save \emph{all} the va
 \begin{table}[ht]
   \caption{Scalar time-series supported by PISM}
   \centering
-  \begin{tabular}{p{0.2\linewidth}p{0.1\linewidth}p{0.6\linewidth}}\\
-    \hline
+  \begin{tabular}{p{0.2\linewidth}p{0.1\linewidth}p{0.6\linewidth}}\hline
    \textbf{Variable name} & \textbf{Units} & \textbf{Description}\\
    \hline
     \texttt{ivol} & $m^{3}$ & total ice volume\\
@@ -777,14 +776,13 @@ $ pismr -i foo.nc -y 10000 -o output.nc -extra_file extras.nc \
 \end{verbatim}
 will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years. Times are specified using a comma-separated list or a MATLAB-style range. Please see table \ref{tab:extras} for all the options corresponding to this feature; table \ref{tab:extra-vars} lists all the variable choices. 
 
-\begin{table}[ht]
+\begin{table}[h]
   \caption{Command-line options controlling extra diagnostic output}
   \centering
-  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}
-    \\\hline
+  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\hline
     \textbf{Option} & \textbf{Description}\\
     \hline
-    \intextoption{extra\und file} [file name] & Specifies the file to save to; should be different from the output \intextoption{-o} file.\\
+    \intextoption{extra\und file} [file name] & Specifies the file to save to; should be different from the output \intextoption{o} file.\\
     \intextoption{extra\und times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list.\\
     \intextoption{extra\und vars} [list of variables]& Comma-separated list of variables, see table~\ref{tab:extra-vars}\\
     \intextoption{split\und extras} & save to separate files, similar to \intextoption{split\und snapshots}\\
@@ -795,11 +793,10 @@ will run for 10000 years, saving the magnitude of horizontal velocities at the i
 
 Note that similar to the snapshot-saving mechanism, extra variables are saved \emph{on the first time-step after a requested time}.  If the times given in \verb|extra_times| are as frequent as model time-steps then we do not guarantee saving at all the requested times.
 
-\begin{table}[ht]
+\begin{table}[h]
   \caption{Diagnostic quantities}
   \centering
-  \begin{longtable}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}
-    \\\hline
+  \begin{longtable}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}\hline
     \textbf{Name} & \textbf{Units} & \textbf{Description}\\
     \hline
     \texttt{age} & years & age of ice \\
@@ -817,7 +814,8 @@ Note that similar to the snapshot-saving mechanism, extra variables are saved \e
     \texttt{litho\und temp} & K & lithosphere (bedrock) temperature\\
     \texttt{lon} & degrees east & longitude \\
     \texttt{mask} & none & grounded/dragging/floating integer mask \\
-    \texttt{strainheat} & W/m$^{3}$ & rate of strain heating in ice (dissipation heating) \\
+    \texttt{strainheat} & mW/m$^{3}$ & rate of strain heating in ice (dissipation heating) \\
+    \texttt{SigmaComp} & mW/m$^{3}$ & rate of compensatory strain heating in ice (PISMV only)\\
     \texttt{tauc} & Pa & yield stress for basal till (plastic or pseudo-plastic model) \\
     \texttt{taud} & Pa & magnitude of driving shear stress at base of ice \\
     \texttt{temp} & K & ice temperature \\
@@ -837,6 +835,59 @@ Note that similar to the snapshot-saving mechanism, extra variables are saved \e
  \label{tab:extra-vars}
 \end{table}
 
+\subsection{Run-time diagnostic viewers}
+\label{sec:diagnostic-viewers}
+Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.
+All the quantities listed in table \ref{tab:extra-vars} are available.
+\begin{table}[ht]
+  \caption{Options controlling run-time diagnostic viewers}
+  \centering
+  \begin{tabular}{p{0.4\linewidth}p{0.5\linewidth}}\hline
+    \small
+   \textbf{Option} & \textbf{Description}\\
+    \hline
+    \intextoption{view\und map} [list of variables] & Turns on map-plane views of one or several variables, see tables \ref{tab:extra-vars}  \\
+    \intextoption{view\und slice} [list of variables] & Turns on viewers showing a slice of a 3D field at a certain level above the base of ice\\
+    \intextoption{slice\und level} number& Specifies the level for the previous option\\
+    \intextoption{viewer\und size} number & desired viewer size, in pixels\\
+    \intextoption{view\und sounding} [list of variables] &Turns on sounding viewers showing values in a column\\
+    \intextoption{id} number & Sounding row-index\\
+    \intextoption{jd} number & Sounding column-index\\
+    \hline
+  \normalsize
+  \end{tabular}
+ \label{tab:diag-viewers}
+\end{table}
+The option \verb|-view_map| shows map-plane views of 2D fields and surface views of 3D fields; for example:
+\begin{verbatim}
+$ pismr -i input.nc -y 1000 -o output.nc -view_map thk,temp 
+\end{verbatim}%$
+shows ice thickness and ice temperature at the surface.
+
+It is possible to view 3D fields \emph{at a certain level above the base of the ice}:
+\begin{verbatim}
+$ pismr -i input.nc -y 1000 -o output.nc -view_slice temp -slice_level 1000
+\end{verbatim}%$
+shows the view of the ice temperature at 1000 meters above the base. (This will show air temperature in areas where ice thickness is less than 1000 meters.)
+
+The option \verb|-view_sounding| allows viewing a \emph{sounding} of a variable at a given grid point:
+\begin{verbatim}
+$ pismr -i input.nc -y 1000 -o output.nc -view_sounding temp
+\end{verbatim}%$
+shows the dependence of the ice temperature on $z$ at the center of the domain. One can use options \verb|-id| and \verb|-jd| to choose a different point.
+
+Some diagnostic quantities are \emph{only} available as run-time viewers:
+\begin{center}
+  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\hline
+    \small
+    \textbf{Variable name or an option} & \textbf{Description}\\\hline
+    \texttt{diffusivity} & diﬀusivity coeﬃcient D in mass balance equation in $m^{2}/s$. Meaningful only in regions of shallow ice ﬂow.\\
+    \texttt{nuH} & two viewers: vertically-averaged eﬀective viscosity times thickness; on $i$ and $j$ oﬀset grids. Only meaningful in ice streams and shelves.\\
+    \texttt{log\und nuH} & log base ten of the vertically-averaged eﬀective viscosity times thickness on the regular grid. Only meaningful in ice streams and shelves.\\
+    \intextoption{ksp\und monitor\und draw} & Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Shows norm of residual versus iteration number.\\
+    \normalsize
+  \end{tabular}
+\end{center}
 
 \subsection{Positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  The default atmospheric climate assumption made by the \verb|pismr| and \verb|pgrn| executables is that the input file will supply surface mass balance and ice surface temperature in variables \verb|acab| and \verb|artm|, respectively.  The supplied surface mass balance \verb|acab| is assumed to be the net surface balance, which is not the snow accumulation rate when melting can occur, and it must be in units of ice-equivalent thickness per time.  The supplied surface temperature \verb|artm| is regarded as the mean annual surface temperature, at a point in the ice below the completion of firn processes \cite{Hock05}.  The mass conservation equation for the ice sheet requires the surface mass balance, while the conservation of energy model requires the ice surface temperature as a boundary condition.
 
@@ -954,20 +1005,26 @@ allows one to visualize climate inputs without invoking the ice dynamics core of
 This is helpful during the process of creating PISM-readable data files, and modeling 
 with such.
 
-\verb|pcctest| takes the following options:
+\verb|pcctest| takes options listed in table \ref{tab:pcctest}.
 
-\newcommand{\pccopt}[1]{\texttt{-#1}\qquad}
-\medskip
-\begin{itemize}
-\item[\pccopt{i}]   specifies an input file, which has been produced by PISM;
-\item[\pccopt{o}]   sets the output file name;
-\item[\pccopt{ca}]  chooses the constant atmosphere coupler (\verb|PISMConstAtmosCoupler|);
-\item[\pccopt{pdd}] chooses the PDD atmosphere coupler (\verb|PISMPDDCoupler|);
-\item[\pccopt{co}]  chooses the constant ocean coupler (\verb|PISMConstOceanCoupler|);
-\item[\pccopt{ys}]  sets the start time, in years;
-\item[\pccopt{ye}]  sets the final time, in years;
-\item[\pccopt{dt}]  sets the interval between saved climate snapshots.
-\end{itemize}
+\begin{table}[h]
+  \caption{\texttt{pcctest} command-line options}
+  \centering
+  \begin{tabular}{p{0.1\linewidth}p{0.8\linewidth}}\hline
+    \textbf{Option} & \textbf{Description}\\
+    \hline
+    \texttt{-i} & specifies an input file, which has been produced by PISM;\\
+    \texttt{-o} & sets the output file name;\\
+    \texttt{-ca} &chooses the constant atmosphere coupler (\verb|PISMConstAtmosCoupler|);\\
+    \texttt{-sma} & chooses the PDD atmosphere coupler (\verb|PISMPDDCoupler|);\\
+    \texttt{-co} & chooses the constant ocean coupler (\verb|PISMConstOceanCoupler|);\\
+    \texttt{-ys} & sets the start time, in years;\\
+    \texttt{-ye} & sets the final time, in years;\\
+    \texttt{-dt} & sets the interval between saved climate snapshots.\\
+    \hline
+ \end{tabular}
+ \label{tab:pcctest}\index{\texttt{pcctest} command-line options}
+\end{table}
 
 \bigskip
 As an example, set up an ice sheet state file and run \verb|pcctest| on it:
@@ -1021,26 +1078,21 @@ In PISM there is a separate executable \verb|pismv| which is used for verificati
 \begin{table}[ht]
 \caption{Exact solutions for verification.}\label{tab:tests}
 \small
-\begin{tabular}{@{}llll}\hline
+\begin{tabular}{p{0.1\linewidth}p{0.4\linewidth}p{0.25\linewidth}p{0.15\linewidth}}\hline
 \textbf{Test} & \textbf{Continuum model tested} & \textbf{Comments} & \textbf{Reference} \\ \hline
-A & isothermal SIA, steady, &  & \cite{BLKCB} \\
- & flat bed, constant accumulation &  &  \\
+A & isothermal SIA, steady,  flat bed, constant accumulation &  & \cite{BLKCB} \\
 B & isothermal SIA, flat bed, zero accum & similarity soln & \cite{BLKCB,Halfar83} \\
 C & isothermal SIA, flat bed, growing accum & similarity soln & \cite{BLKCB} \\
 D & isothermal SIA, flat bed, oscillating accum & compensatory accum & \cite{BLKCB} \\
-E & isothermal SIA; as A &  compensatory accum & \cite{BLKCB} \\
- & but with sliding in a sector &  &  \\
-F & thermomechanically coupled SIA (mass &  compensatory accum & \cite{BB,BBL} \\
- & and energy cons.), steady, flat bed & and comp~heating &  \\
-G & thermomechanically coupled SIA; as F  & ditto & \cite{BB,BBL} \\
- & but with oscillating accumulation &  &  \\
+E & isothermal SIA; as A  but with sliding in a sector &  compensatory accum & \cite{BLKCB} \\
+F & thermomechanically coupled SIA (mass and energy cons.), steady, flat bed &  compensatory accum and comp~heating& \cite{BB,BBL} \\
+G & thermomechanically coupled SIA; as F  but with oscillating accumulation  & ditto & \cite{BB,BBL} \\
 H & bed deformation coupled with isothermal SIA & joined similarity & \cite{BLKfastearth} \\
 I & stream velocity computation using SSA (plastic till) &  & \cite{SchoofStream,BBssasliding} \\
 J & shelf velocity computation using SSA  &  & [IN PREP] \\
 K & pure conduction in ice and bedrock & & \cite{BuelerTestK} \\
 L & isothermal SIA, steady, non-flat bed & numerical ODE soln & [IN PREP] \\
-M & velocity solution for circular, constant-thickness  & numerical ODE soln & [NOT READY] \\
- & ice shelf with grounding line and calving front &  &  \\
+M & velocity solution for circular, constant-thickness  ice shelf with grounding line and calving front & numerical ODE soln & [NOT READY] \\
 \hline
 \normalsize
 \end{tabular}
@@ -1071,10 +1123,10 @@ M & \emph{not ready} \\
 
 Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations; only Tests A, E, J, K are fixed boundary value problems.  Table \ref{tab:tests_exec} shows how to run each of them on minimally-refined grids (for relatively quick execution time).
 
-
 \subsubsection*{Refinement}  To meaningfully verify a numerical code one must go down a grid refinement path and measure numerical error for each grid \cite{Roache}.  By ``a refinement path''\index{refinement path!definition} we mean the specification of a sequence of grid cell sizes which decrease toward the refinement limit of zero size.  For example, in the two spatial and one time dimension case this means a sequence of triples $(\Delta x,\Delta y,\Delta t)$ which decrease toward the (unreachable!) limit $(0,0,0)$.  By ``measuring the error for each grid'' we will mean computing a norm (or norms) of the difference between the numerical solution and the exact solution.   Concretely, we usually compute both the maximum and average numerical error of the measured quantity over the whole grid.
 
-The goal is not to see that the error is zero at any stage on the refinement path, or even that the error is small in a predetermined absolute sense (generally).  Rather the goals are \begin{itemize}
+The goal is not to see that the error is zero at any stage on the refinement path, or even that the error is small in a predetermined absolute sense (generally).  Rather the goals are
+\begin{itemize}
 \item to see that the error is decreasing,
 \item to measure the rate at which it is decreasing,
 \item and to develop a realistic sense of the magnitude of numerical error, compared to other errors, in a realistic ice sheet model run.
@@ -1188,7 +1240,6 @@ The vertical grid is not specified in the EISMINT II writeup.  It seems that goo
 
 \begin{verbatim}
 pisms -eisII A -Mx 61 -My 61 -Mz 201 -skip 5 -y 2e5 -o eisIIA_equal.nc
-
 pisms -eisII A -Mx 61 -My 61 -Mz 61 -quadZ -skip 5 -y 2e5 -o eisIIA_quadZ.nc
 \end{verbatim}
 \noindent The latter run is faster for memory reasons.  These SIA-only simulations parallelize well, and we see speedups up to at least 30 processors for the standard $61\times 61$ horizontal grid.
@@ -1254,33 +1305,23 @@ There are many runs for a complete MISMIP intercomparison submission.  There are
 \begin{table}[ht]
 \caption{Special MISMIP run options in PISM.  Below the line are special interpretations of standard PISM options (Appendix \ref{sect:options}).\index{PISM!special options for MISMIP experiments}}\label{tab:MISMIPoptions}
 \small
-\begin{tabular}{@{}lll}\hline
+\begin{tabular}{p{0.15\linewidth}p{0.1\linewidth}p{0.65\linewidth}}\hline
 \textbf{Option} & \textbf{Default} & \textbf{Meaning} \\ \hline
-\verb|-extras| &  & if this flag is set then, once steady state is reached, surface \\
-               &  & and bed elevation are written to an extra file with name \\
-               &  & ending ``\verb|_extras|''; script \verb|figsMISMIP.py| reads them \\
+\verb|-extras| &  & if this flag is set then, once steady state is reached, surface and bed elevation are written to an extra file with name ending ``\verb|_extras|''; script \verb|figsMISMIP.py| reads them\\
 \verb|-initials| & \verb|ABC| & initials to prepend to ASCII output file names \\
 \verb|-initialthk| & 10.0 & initial thickness (m) at start of run \\
-\verb|-mismip| & \verb|1a| & experiment number followed by sliding flag; allowed values \\
-               &  & are \verb|1a,1b,2a,2b,3a,3b| \\
-\verb|-model| & 1 & model 1 is SSA only and model 2 combines SIA and SSA  \\
-              &   & velocities; see text \\
+\verb|-mismip| & \verb|1a| & experiment number followed by sliding flag; allowed values are \verb|1a,1b,2a,2b,3a,3b| \\
+\verb|-model| & 1 & model 1 is SSA only and model 2 combines SIA and SSA velocities; see text \\
 \verb|-no_shelf_drag| &  & flag to turn off small drag on shelves \\
-\verb|-steady_atol| & \verb|1.0e-4| & m/a; tolerance for steady state; criterion is \\
-                    & & $\|dH/dt\|_\infty <$(\verb|steady_atol| value) \\
-\verb|-step| & 1 & allowed values are $\{1,\dots,9\}$ for experiments 1 and 2, $\{1,\dots,13\}$ for \\
-             &  & exper.~3a, and $\{1,\dots,15\}$ for exper.~3b; note typo in table 6 in  \\
-             &  & \verb|mismip_4.pdf|: ``step 15'' skipped \\
-\verb|-try_calving| &  & flag to turn on experimental calving law which keeps  \\
-                    &  & calving front thickness in range $[100\text{ m},200\text{ m}]$ \\
+\verb|-steady_atol| & \verb|1.0e-4| & m/a; tolerance for steady state; criterion is  $\|dH/dt\|_\infty <$(\verb|steady_atol| value) \\
+\verb|-step| & 1 & allowed values are $\{1,\dots,9\}$ for experiments 1 and 2, $\{1,\dots,13\}$ for  exper.~3a, and $\{1,\dots,15\}$ for exper.~3b; note typo in table 6 in \verb|mismip_4.pdf|: ``step 15'' skipped \\
+\verb|-try_calving| &  & flag to turn on experimental calving law which keeps  calving front thickness in range $[100\text{ m},200\text{ m}]$ \\
 \hline
-\verb|-Mx| &  & this option gets additional interpretation: \verb|-Mx 151| makes grid \\
-           &  & mode 1 so output files have ``\verb|_M1_|''; \verb|-Mx 1501| is grid mode 2 \\
-           &  & (``\verb|_M2_|''); any other value is grid mode 3 (``\verb|_M3_|'') \\
-\verb|-shelves_drag_too| &  & using this option has no effect because shelf drag is on \\
-                         &  & by default in MISMIP; see \verb|-no_shelf_drag| to turn off  \\
+\verb|-Mx| &  & this option gets additional interpretation: \verb|-Mx 151| makes grid  mode 1 so output files have ``\verb|_M1_|''; \verb|-Mx 1501| is grid mode 2  (``\verb|_M2_|''); any other value is grid mode 3 (``\verb|_M3_|'')\\
+\verb|-shelves_drag_too| &  & using this option has no effect because shelf drag is on by default in MISMIP; see \verb|-no_shelf_drag| to turn off\\
 \hline\normalsize
-\end{tabular}\end{table}
+\end{tabular}
+\end{table}
 
 To do an actual MISMIP run, one uses \verb|pisms -mismip| with additional options.  See Table \ref{tab:MISMIPoptions}.  A first run is:
 
@@ -1754,7 +1795,8 @@ There are many variations on this basic ``\verb|pismd -ross|''\pismoptionindex{r
 
 \begin{verbatim}
 $ pismd -ross -boot_from ross.nc -ssa -ssaBC ross.nc \
-        -Mx 147 -My 147 -Mz 3 -Lz 1e3 -d cnmu -verbose -pause 10
+        -Mx 147 -My 147 -Mz 3 -Lz 1e3 -view_map cbar,mask,log_nuH,ubar \
+        -verbose -pause 10
 \end{verbatim}
 Secondly one might want to do the run in parallel and do it on a finer grid.  For example,
 
@@ -1818,10 +1860,10 @@ Naturally, the question is ``does this $\chi^2$ value of $3637.016$ represent a 
 
 \small
 \begin{table}[ht]
+\centering
 \caption{Model performance index, $\chi^2$ (non-dimensional).  \protect{\textsl{(Reproduction of Table 1 in \cite{MacAyealetal}.)}}}\label{tab:chisqr}
-\begin{tabular}{@{}llll}\hline
-\textsl{Model} & $\chi^2$ & \textsl{Maximum velocity} \\
- & & $\text{m}\,\text{a}^{-1}$ \\ \hline
+\begin{tabular}{p{0.2\linewidth}p{0.1\linewidth}p{0.3\linewidth}}\hline
+\textsl{Model} & $\chi^2$ & \textsl{Maximum velocity, m/year} \\
 Bremerhaven1 & 3605 & 1379 \\
 Bremerhaven2 & 12\,518 & 1663 \\
 Chicago1 & 5114 & 1497 \\
@@ -1945,7 +1987,7 @@ The Index on page \pageref{sect:index} contains an alphabetical list of options.
 
 Indeed, we describe the role of the parameters for the plastic till model as follows: The effective pressure $N$ on the till is
 	$$N = P - p = (1 - (\mathtt{pwfrac}) \lambda) P$$
-where $P = \rho g H$ is the overburden or hydrostatic pressure at the base (see Paterson \cite{Paterson}, pp.~168--169) and $p = (\mathtt{pwfrac}) \lambda P$ is the pore water pressure in the till.  Here $\lambda$ is a pure number, $0\le \lambda \le 1$, measuring the amount of available basal water.  In particular, $\lambda = 0$ if the base is frozen, while $\lambda$ is a linear function of the stored basal melt water (see \verb|-d L|), up to the fixed maximum amount of stored basal melt water.  Thus our model says that when there is a lot (the maximum) amount of available basal water, $p= (\mathtt{pwfrac}) P$; the default value for $\mathtt{pwfrac}$ is 0.95.
+where $P = \rho g H$ is the overburden or hydrostatic pressure at the base (see Paterson \cite{Paterson}, pp.~168--169) and $p = (\mathtt{pwfrac}) \lambda P$ is the pore water pressure in the till.  Here $\lambda$ is a pure number, $0\le \lambda \le 1$, measuring the amount of available basal water.  In particular, $\lambda = 0$ if the base is frozen, while $\lambda$ is a linear function of the stored basal melt water (see \verb|-view_map bmelt|), up to the fixed maximum amount of stored basal melt water.  Thus our model says that when there is a lot (the maximum) amount of available basal water, $p= (\mathtt{pwfrac}) P$; the default value for $\mathtt{pwfrac}$ is 0.95.
 
 Note that Paterson gives this formula for the till yield stress
 	$$\tau_c = c_0 + \mu N, \qquad \mu = \tan \phi,$$
@@ -1953,7 +1995,7 @@ while Schoof \cite{SchoofStream} formula (2.4) gives this one
 	$$\tau_c = \mu N,$$
 with zero till cohesion.  We allow a positive till cohesion, though the default is zero, and we describe $\mu$ as the tangent of the friction angle $\phi$.
 
-\opt{ssa}  Use the equations of the shallow shelf approximation \cite{MacAyeal,Morland,SchoofStream,WeisGreveHutter} for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \verb|-d m|.  See also \verb|-plastic| and \verb|-super|. See also \verb|-dontreadSSAvels|.
+\opt{ssa}  Use the equations of the shallow shelf approximation \cite{MacAyeal,Morland,SchoofStream,WeisGreveHutter} for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \verb|-view_map mask|.  See also \verb|-plastic| and \verb|-super|. See also \verb|-dontreadSSAvels|.
 
 \opt{super}  Combine the velocity fields from the SIA and SSA models as in \cite{BBssasliding}.  Only effective if used with \verb|-ssa|.
 
@@ -2036,12 +2078,9 @@ See section \ref{sec:snapshots} for more details.
 
 \opt{dbig}  Specifies larger (about twice linear dimensions) diagnostic viewers.  See Appendix \ref{sect:viewers}.
 
-\opt{id}  Sets the x grid index at which a sounding diagnostic viewer (Appendix \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{Mx}}-1$.  The default is $(\text{\t{Mx}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -d t -id 10|.
+\opt{id}  Sets the x grid index at which a sounding diagnostic viewer (Appendix \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{Mx}}-1$.  The default is $(\text{\t{Mx}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -view_sounding temp -id 10|.
 
-\opt{jd}  Sets the y grid index at which a sounding diagnostic viewer (Appendix \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{My}}-1$.  The default is $(\text{\t{My}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -d t -jd 10|.
-
-\optdef{kd}{0}  Sets the z grid index at which map-plane diagnostic views are shown.  Compare \verb|pismv -test G -Mz 101 -d T| and \verb|pismv -test G -Mz 101 -d T -kd 50|.  See Appendix \ref{sect:viewers}.
-
+\opt{jd}  Sets the y grid index at which a sounding diagnostic viewer (Appendix \ref{sect:viewers}) is displayed.  The integer argument should be in the range $0,\dots,\text{\t{My}}-1$.  The default is $(\text{\t{My}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -view_sounding temp -jd 10|.
 
 \subsubsect{Verbosity to standard out}
 
@@ -2101,31 +2140,16 @@ In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf int
 \begin{table}[ht]
 \caption{Choosing the rheology using \t{-ice\und type}.}\label{tab:flowlaw}
 \small
-\begin{tabular}{@{}llll}\hline
+\begin{tabular}{p{0.25\linewidth}p{0.08\linewidth}p{0.57\linewidth}}\hline
 \textbf{Flow Law} & \textbf{Type} & \textbf{Comments and Reference} \\ \hline
-Paterson-Budd law   &  \t{pb} &   Fixed Glen exponent $n=3$.  There is a split ``Arrhenius'' \\
-\quad (usually the default) & & term $A(T) = A \exp(-Q/RT^*)$ where \\
-  & & $(A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}, Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1})$ if \\
-  & & $T^* < 263$ K and $(A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3}$, \\
-  & & $Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1})$ if $T^* > 263$ K and \\
-  & & where $T^*$ is the pressure-adjusted temperature \cite{PatersonBudd}.  \\
-\emph{Cold} part of Paterson-Budd    &  \t{arr} &   Regardless of temperature, the $A$ and $Q$ values for $T^*<263$ K in \\
-  & & the Paterson-Budd law apply.  This is the flow law \\
-  & & used in the thermomechanically coupled exact solutions \\
-  & & Tests \textbf{F} and \textbf{G} described in \cite{BBL,BB} \\
-  & & and run by \verb|pismv -test F| and \verb|pismv -test G|.  \\
-\emph{Warm} part of Paterson-Budd     &  \t{arrwarm} & Regardless of temperature, the $A$ and $Q$ values for $T^*>263$ K in \\
-  & &  Paterson-Budd apply.    \\
-Hooke law   &  \t{hooke} &  Fixed Glen exponent $n=3$.  Here \\
-  & & $A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$; values of \\
-  & & constants as in \cite{Hooke,PayneBaldwin}.   \\
-Hybrid of Goldsby-Kohlstedt &  \t{hybrid} &     Goldsby-Kohlstedt law with a combination of exponents  \\
-  \qquad and Paterson-Budd & & from $n=1.8$ to $n=4$ \cite{GoldsbyKohlstedt} in grounded \\
-  & & shallow ice approximation regions.  Paterson-Budd flow \\
-  & & for ice streams and ice sheets. See mask for SIA \\
-  & & versus stream versus shelf by \verb|-d m|. \\
-Isothermal Glen & \t{custom} & Highly customizable version of the isothermal Glen flow law. \\
-  & & Allows choice of exponent, hardness/softness parameters, and density. \\
+Paterson-Budd law (usually the default)  &  \t{pb} &   Fixed Glen exponent $n=3$.  There is a split ``Arrhenius'' term $A(T) = A \exp(-Q/RT^*)$ where \mbox{$A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* < 263$ K and
+ \mbox{$A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* > 263$ K and where $T^*$ is the pressure-adjusted temperature \cite{PatersonBudd}. \\
+\emph{Cold} part of Paterson-Budd &  \t{arr} &   Regardless of temperature, the $A$ and $Q$ values for $T^*<263$ K in  the Paterson-Budd law apply.  This is the flow law used in the thermomechanically coupled exact solutions Tests \textbf{F} and \textbf{G} described in \cite{BBL,BB} and run by \verb|pismv -test F| and \verb|pismv -test G|. \\
+
+\emph{Warm} part of Paterson-Budd     &  \t{arrwarm} & Regardless of temperature, the $A$ and $Q$ values for $T^*>263$ K in Paterson-Budd apply.\\
+Hooke law   &  \t{hooke} &  Fixed Glen exponent $n=3$.  Here  $A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$; values of  constants as in \cite{Hooke,PayneBaldwin}.\\
+Hybrid of Goldsby-Kohlstedt and Paterson-Budd & \t{hybrid} &     Goldsby-Kohlstedt law with a combination of exponents  from $n=1.8$ to $n=4$ \cite{GoldsbyKohlstedt} in grounded  shallow ice approximation regions.  Paterson-Budd flow  for ice streams and ice sheets. See mask for SIA versus stream versus shelf by \verb|-view\und map mask|. \\
+Isothermal Glen & \t{custom} & Highly customizable version of the isothermal Glen flow law.  Allows choice of exponent, hardness/softness parameters, and density. \\
 \hline
 \normalsize	
 \end{tabular}
@@ -2349,115 +2373,6 @@ These two PETSc mechanisms can be used together.  (The effect of duplicate or co
 \optdef{pc\und type}{ilu}   Several options are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \verb|pismv -test I| with high tolerances (e.g.~\verb|-ssa_rtol 1e-7| \verb|-ksp_rtol 1e-12|).
 
 \opt{v}   Show version number of PETSc.
-
-
-\clearpage \newpage
-\section{PISM diagnostic viewers}\label{sect:viewers}
-
-\subsubsection*{Viewing the PISM state}  Basic graphical views of the changing state of a PISM ice model are available at the command line by using the options ``\t{-d}'' and ``\t{-dbig}'' with additional arguments.  For instance:\index{PISM!graphical views at runtime}\pismoptionindex{d} \pismoptionindex{dbig }
-
-\verb|$  pismv -test G -d hTf -dbig 0|
-
-\noindent shows a map-plane views of surface elevation (``\t{h}''), temperature at the level specified by \t{-kd} (``\t{T}''), rate of change of thickness (``\t{f}'') and of horizontal ice speed at the surface (``\t{0}'', i.e.~zero).
-
-The option \t{-d} is followed by a space and then a list of single-character names of the diagnostic viewers.  The option \t{-dbig} works exactly the same way, with the same list of single-character names available.  The bigger viewers take precedence, so that ``\t{-d hT -dbig T}'' shows only two viewers, namely a regular size viewer for surface elevation and a larger viewer for temperature.
-\medskip
-
-
-\subsubsection*{Single character names (for each view)}  The single character diagnostic viewer and \Matlab views names are:
-\newcommand{\notMat}{(\emph{NOT available as a} \Matlab \emph{view}.)\xspace\xspace}
-
-\verb|0|:\quad Map-plane view of horizontal ice speed (magnitude of velocity) at the surface of the ice in meters per year.
-
-\verb|1|:\quad Map-plane view of $x$-component of horizontal ice velocity at the \emph{surface} of the ice in meters per year.
-
-\verb|2|:\quad Map-plane view of $y$-component of horizontal ice velocity at the \emph{surface} of the ice in meters per year.
-
-\verb|3|:\quad Map-plane view of vertical ice velocity at the \emph{surface} of the ice in meters per year; positive values are upward velocities.
-
-\verb|4|:\quad Map-plane view of $x$-component of horizontal ice velocity at the \emph{base} of the ice in meters per year.
-
-\verb|5|:\quad Map-plane view of $y$-component of horizontal ice velocity at the \emph{base} of the ice in meters per year.
-
-\verb|C|:\quad Map-plane view of basal till yield stress $\tau_c$, under plastic till ice stream model.  Units of kPa.
-
-\verb|D|:\quad \notMat Map-plane view of diffusivity coefficient $D$ in mass balance equation in $\text{m}^2/s$.  Meaningful only in regions of shallow ice flow.
-
-\verb|E|:\quad Map-plane view of age of the ice, in years.
-
-\verb|F|:\quad Map-plane view of basal geothermal heat flux, in milliWatts per meter squared.
-
-\verb|H|:\quad Map-plane view of thickness in meters.
-
-\verb|I|:\quad Map-plane view of till friction angle in degrees.
-
-\verb|L|:\quad Map-plane view of basal melt water \emph{thickness} in meters.
-
-\verb|P|:\quad \notMat (\emph{ONLY available for }\t{pismv}.)  Map-plane view of comPensatory heating term $\Sigma_C$ in thermocoupled verification tests F and G.  Displayed at chosen elevation above base; see option \verb|-kd|.
-
-\verb|Q|:\quad Map-plane view of basal driving stress $f_{\text{basal}} = \rho g H |\grad h|$.  Units of kPa.  Note that this quantity is the effective shear stress at the base in the SIA.  It is also the (magnitude of the) driving source term in the SSA, for both ice streams and ice shelves.  Compare to \verb|-d C|, the view of the till yield stress, when using the plastic till ice stream model.
-
-\verb|R|:\quad Map-plane view of basal frictional heating in milliWatts per meter squared.
-
-\verb|S|:\quad Map-plane view of strain heating term $\Sigma$ in temperature equation, in Kelvin per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
-
-\verb|T|:\quad Map-plane view of absolute ice temperature in Kelvin.  Displayed at chosen elevation above base; see option \verb|-kd|.
-
-\verb|U|:\quad Map-plane view of vertically averaged horizontal velocity in the $x$-direction \emph{on the staggered grid} which is offset by positive one in $i$ direction;  in meters per year.  (\emph{Meaningful only in technical/numerical context}; use \verb|u| generally.)
-
-\verb|V|:\quad Map-plane view of vertically averaged horizontal velocity in the $y$-direction \emph{on the staggered grid} which is offset by positive one in $j$ direction;  in meters per year.  (\emph{Meaningful only in technical/numerical context}; use \verb|v| generally.)
-
-\verb|X|:\quad Map plane view of $x$-component of horizontal velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
-
-\verb|Y|:\quad Map plane view of $y$-component of horizontal velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
-
-\verb|Z|:\quad Map plane view of vertical velocity, in meters per year.  Displayed at chosen elevation above base; see option \verb|-kd|.
-
-\verb|b|:\quad Map-plane view of bed elevation in meters above sea level.
-
-\verb|c|:\quad Map-plane view of horizontal speed, namely the absolute value of the vertically-averaged horizontal velocity.  Displayed as log base ten of speed in meters per year.
-
-\verb|e|:\quad Age in a vertical column (sounding); in years.  See \verb|-id|, \verb|-jd| to set sounding location.
-
-\verb|f|:\quad Map-plane view of thickening rate of the ice, in meters per year.
-
-\verb|h|:\quad Map-plane view of ice surface elevation in meters above sea level.
-
-\verb|i|:\quad Map-plane view of vertically-averaged effective viscosity times thickness; on $i$ offset grid.  Only meaningful in ice streams and shelves.
-
-\verb|j|:\quad Map-plane view of vertically-averaged effective viscosity times thickness; on $i$ offset grid.  Only meaningful in ice streams and shelves.
-
-\verb|k|:\quad \notMat Iteration monitor for the Krylov subspace routines (KSP) in Petsc.  Shows norm of residual versus iteration number.  Has same effect as PETSc option \verb|-ksp_monitor_draw|.
-
-\verb|l|:\quad Map-plane view of basal melt \emph{rate} in meters per year.
-
-\verb|m|:\quad Map-plane view of mask for flow type:  \textbf{1} = grounded shallow ice sheet flow,  \textbf{2} = dragging ice shelf, \textbf{3} = floating ice shelf, \text{7} = ice free ocean (in original input file).
-
-%\verb|N|:\quad Produces two viewers, namely the $i$ offset and $j$ offset grid versions of the rate of change of the vertically-averaged effective viscosity times thickness.  Only meaningful in ice streams and shelves.
-
-\verb|n|:\quad Map-plane view of the log base ten of the vertically-averaged effective viscosity times thickness on the regular grid.  Only meaningful in ice streams and shelves.
-
-\verb|p|:\quad Map-plane view of bed uplift rate in meters per year.
-
-\verb|q|:\quad Map-plane view of basal sliding speed.  Displayed as log base ten of speed in meters per year.
-
-\verb|r|:\quad Map-plane view of surface temperature in Kelvin.
-
-\verb|s|:\quad Strain heating term $\Sigma$ in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
-
-\verb|t|:\quad Absolute ice temperature in vertical column (sounding).  Note this sounding extends into the bedrock, unlike the other soundings (e.g.~\verb|-d egsxyz|).  See \verb|-id|, \verb|-jd| to set sounding location.
-
-\verb|u|:\quad Map-plane view of vertically averaged horizontal velocity in the $x$-direction;  in meters per year.
-
-\verb|v|:\quad Map-plane view of vertically averaged horizontal velocity in the $y$-direction;  in meters per year.
-
-\verb|x|:\quad $x$-component of horizontal velocity in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
-
-\verb|y|:\quad $y$-component of horizontal velocity in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
-
-\verb|z|:\quad Vertical velocity ($w$-component of velocity) in vertical column (sounding).  See \verb|-id|, \verb|-jd| to set sounding location.
-
-
 
 \clearpage \newpage
 \section{Python scripts for PISM modeling}\label{sect:scripts}

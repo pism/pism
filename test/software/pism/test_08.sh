@@ -20,9 +20,9 @@ run_test ()
     run -n 1 pismv -test G -Mx 11 -My 11 -Mz 21 -y 0 -o fine1.nc
 
     # Coarse -> fine:
-    run -n 1 pismr -i fine1.nc -regrid_from coarse1.nc -regrid_vars T -y 0 -o fine2.nc
+    run -n 1 pismr -i fine1.nc -regrid_from coarse1.nc -regrid_vars temp -y 0 -o fine2.nc
     # Fine -> coarse:
-    run -n 1 pismr -i coarse1.nc -regrid_from fine2.nc -regrid_vars T -y 0 -o coarse2.nc
+    run -n 1 pismr -i coarse1.nc -regrid_from fine2.nc -regrid_vars temp -y 0 -o coarse2.nc
 
     set +e
 

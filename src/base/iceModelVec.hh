@@ -108,7 +108,7 @@ protected:
   virtual PetscErrorCode checkHaveArray();
   virtual PetscErrorCode checkCompatibility(const char*, IceModelVec &other);
   virtual PetscErrorCode reset_attrs();
-  virtual PetscErrorCode create_viewer(bool big, string title, PetscViewer &viewer);
+  virtual PetscErrorCode create_viewer(PetscInt viewer_size, string title, PetscViewer &viewer);
   virtual PetscErrorCode compute_viewer_size(int target, int &x, int &y);
   // FIXME: consider adding 
   //   virtual PetscErrorCode  checkSelfOwnsIt(const PetscInt i, const PetscInt j);
@@ -139,7 +139,7 @@ public:
   PetscErrorCode  get_array(PetscScalar** &a);
   virtual PetscErrorCode set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v_y);
   virtual PetscErrorCode mask_by(IceModelVec2 &M, PetscScalar fill = 0.0);
-  virtual PetscErrorCode view(Vec g2, bool big);
+  virtual PetscErrorCode view(Vec g2, PetscInt viewer_size);
 };
 
 
@@ -161,7 +161,7 @@ public:
 				 PetscScalar *levelsIN, PetscScalar *valsOUT);
   PetscErrorCode  getValColumnQUAD(PetscInt i, PetscInt j, PetscInt nlevels, 
 				   PetscScalar *levelsIN, PetscScalar *valsOUT);
-  PetscErrorCode view_sounding(int i, int j, bool big);
+  PetscErrorCode view_sounding(int i, int j, PetscInt viewer_size);
 
 protected:  
   map<string,PetscViewer> *sounding_viewers;
@@ -213,9 +213,9 @@ public:
   PetscErrorCode  extend_vertically(int old_Mz, PetscScalar fill_value);
   PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2 &fill_values);
 
-  PetscErrorCode view_surface(IceModelVec2 &thickness, Vec g2, bool big);
-  PetscErrorCode view_horizontal_slice(PetscScalar level, Vec g2, bool big);
-  PetscErrorCode view_sounding(int i, int j, bool big);
+  PetscErrorCode view_surface(IceModelVec2 &thickness, Vec g2, PetscInt viewer_size);
+  PetscErrorCode view_horizontal_slice(PetscScalar level, Vec g2, PetscInt viewer_size);
+  PetscErrorCode view_sounding(int i, int j, PetscInt viewer_size);
 
 protected:  
   PetscErrorCode  isLegalLevel(PetscScalar z);

@@ -21,7 +21,7 @@ run_test ()
     run -n 1 pismr -boot_from foo.nc -Lx 2000 -Ly 2000 -Lz 4000 -Mx 41 -My 41 -Mz 41 -y 0 -o bar.nc
 
     # Overwrite topg using -regrig_from and save the result to baz.nc:
-    run -n 1 pismr -i bar.nc -regrid_from foo.nc -regrid_vars b -y 0 -o baz.nc
+    run -n 1 pismr -i bar.nc -regrid_from foo.nc -regrid_vars topg -y 0 -o baz.nc
 
     set +e
 

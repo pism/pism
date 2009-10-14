@@ -63,6 +63,7 @@ IceModel::IceModel(IceGrid &g)
     PetscEnd();
   }
 
+  viewer_size = 320;	      // FIXME! This should be in the config file
   // Special diagnostic viewers are off by default:
   view_diffusivity = false;
   view_nuH = false;

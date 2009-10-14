@@ -182,17 +182,13 @@ PetscErrorCode IceModelVec2::mask_by(IceModelVec2 &M, PetscScalar fill) {
 
 
 //! View a 2D field.
-PetscErrorCode IceModelVec2::view(Vec g2, bool big) {
+PetscErrorCode IceModelVec2::view(Vec g2, PetscInt viewer_size) {
   PetscErrorCode ierr;
 
   if ((*map_viewers)[name] == PETSC_NULL) {
-    string title;
-    if (big) {
-      title = string_attr("long_name") + " (" + string_attr("glaciological_units") + ")";
-    } else {
-      title = string_attr("short_name") + " (" + string_attr("glaciological_units") + ")";
-    }
-    ierr = create_viewer(big, title, (*map_viewers)[name]); CHKERRQ(ierr);
+    string title = string_attr("long_name") + " (" + string_attr("glaciological_units") + ")";
+
+    ierr = create_viewer(viewer_size, title, (*map_viewers)[name]); CHKERRQ(ierr);
   }
 
   if (localp) {
