@@ -105,12 +105,11 @@ PetscErrorCode IceModel::createViewers() {
 
   PetscErrorCode ierr;
   const int nv = 42; // number of viewers in use
-  char viewsInUse[nv] = {'0','1','2','3','4','5',
-                         'C','D','E','F','H','L','P','Q','R','S',
-                                 'T','U','V','X','Y','Z',
-                         'b','c','e','f','h','i','j','l',
-                                 'm','n','p','q','r','s','t','u','v','x',
-                                 'y','z'};
+  char viewsInUse[nv] = {'0','1','2','3','4','5','C','D','E','F',
+			 'H','I','L','Q','R','S','T','U','V','X',
+			 'Y','Z','b','c','e','f','h','i','j','l',
+			 'm','n','p','q','r','s','t','u','v','x',
+			 'y','z'};
 
   for (PetscInt nn = 0; nn < nv; nn++) {
     ierr = createOneViewerIfDesired(viewsInUse[nn]); CHKERRQ(ierr);
@@ -413,6 +412,7 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = updateSurfaceValuesViewer('1', u3, secpera); CHKERRQ(ierr);
   ierr = updateSurfaceValuesViewer('2', v3, secpera); CHKERRQ(ierr);
   ierr = updateSurfaceValuesViewer('3', w3, secpera); CHKERRQ(ierr);
+  ierr = updateSurfaceValuesViewer('r', T3, 1.0); CHKERRQ(ierr);
   ierr = update2DViewer('4', vub, secpera); CHKERRQ(ierr);
   ierr = update2DViewer('5', vvb, secpera); CHKERRQ(ierr);
 
@@ -448,7 +448,6 @@ PetscErrorCode IceModel::updateViewers() {
   ierr = update2DViewer('m', vMask, 1.0); CHKERRQ(ierr);
   ierr = update2DViewer('p', vuplift, secpera); CHKERRQ(ierr);
   ierr = updateSpeed2DViewer('q', vub, vvb, secpera, PETSC_TRUE, -3.0); CHKERRQ(ierr);
-  // 'r' was for surface temperature
   // 's' is sounding
   // 't' is sounding
   ierr = update2DViewer('u', vubar, secpera); CHKERRQ(ierr);

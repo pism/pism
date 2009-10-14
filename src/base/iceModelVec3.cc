@@ -470,7 +470,7 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2
 PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2 myH) {
   PetscErrorCode ierr;
   PetscScalar    **H, **surf_val;
-  ierr = DAVecGetArray(da, gsurf, &surf_val); CHKERRQ(ierr);
+  ierr = DAVecGetArray(grid->da2, gsurf, &surf_val); CHKERRQ(ierr);
   ierr = myH.get_array(H); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
@@ -478,7 +478,7 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2 myH) {
     }
   }
   ierr = myH.end_access(); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(da, gsurf, &surf_val); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(grid->da2, gsurf, &surf_val); CHKERRQ(ierr);
   return 0;
 }
 

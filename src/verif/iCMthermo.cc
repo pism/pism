@@ -281,10 +281,10 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
 }
 
 
-PetscErrorCode IceCompModel::updateCompViewers() {
+PetscErrorCode IceCompModel::updateViewers() {
   PetscErrorCode ierr;
 
-  ierr = updateViewers();  CHKERRQ(ierr);
+  ierr = IceModel::updateViewers();  CHKERRQ(ierr);
 
   Vec myg2;
   ierr = DACreateGlobalVector(grid.da2, &myg2); CHKERRQ(ierr);
