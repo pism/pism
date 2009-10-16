@@ -49,6 +49,7 @@ public:
   PetscErrorCode compute_ice_vertical_levels();
   PetscErrorCode compute_bed_vertical_levels();
   PetscErrorCode compute_horizontal_spacing();
+  PetscErrorCode compute_horizontal_coordinates(double* &x, double* &y);
   PetscErrorCode printVertLevels(int verbosity); 
   PetscInt       kBelowHeight(PetscScalar height);
 

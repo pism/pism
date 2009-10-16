@@ -459,7 +459,7 @@ The upshot is that if one computes in a truly periodic way then the gap between 
 Thus we compute  <tt>dx = 2 * Lx / Mx</tt>.
  */
 PetscErrorCode IceGrid::compute_horizontal_spacing() {
-  if (Mx < 1) {
+  if (Mx < 3) {
     SETERRQ(1, "IceGrid::set_horizontal_dims(): Mx has to be at least 3.");
   }
 
@@ -584,3 +584,40 @@ PetscErrorCode IceGrid::get_fine_vertical_grid_ice(PetscInt &fMz, PetscScalar &f
   return 0;
 }
 
+//! \brief Computes values of x and y corresponding to the computational grid,
+//! with accounting for periodicity.
+/*! This method allocates arrays \c x and \c y, and they have to be freed
+  (using delete[]) by the caller.
+ */
+PetscErrorCode IceGrid::compute_horizontal_coordinates(double* &x, double* &y) {
+  PetscErrorCode ierr;
+
+  // make sure that dx and dy are set correctly:
+  ierr = compute_horizontal_spacing(); CHKERRQ(ierr);
+
+  x = new double[Mx];
+  y = new double[My];
+
+  double x_min = -Lx + x0,
+    x_max = Lx + x0,
+    y_min = -Ly + y0,
+    y_max = Ly + y0;
+
+  if (periodicity & X_PERIODIC) {
+    x_max -= dx;
+  }
+
+  if (periodicity & Y_PERIODIC) {
+    y_max -= dy;
+  }
+
+  for (int i = 0; i < Mx; ++i)
+    x[i] = x_min + i * dx;
+  x[Mx - 1] = x_max;
+
+  for (int i = 0; i < My; ++i)
+    y[i] = y_min + i * dy;
+  y[My - 1] = y_max;
+
+  return 0;
+}
