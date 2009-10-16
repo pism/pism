@@ -43,8 +43,9 @@ public:
   PetscErrorCode set_vertical_levels(int Mz, int Mbz, double *z_levels, double *zb_levels);
   PetscErrorCode compute_vertical_levels();
   PetscErrorCode compute_horizontal_spacing();
-  PetscErrorCode printVertLevels(const int verbosity); 
-  PetscInt       kBelowHeight(const PetscScalar height);
+  PetscErrorCode compute_horizontal_coordinates(double* &x, double* &y);
+  PetscErrorCode printVertLevels(int verbosity); 
+  PetscInt       kBelowHeight(PetscScalar height);
 
   
   MPI_Comm    com;

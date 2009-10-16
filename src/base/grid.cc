@@ -225,7 +225,7 @@ PetscErrorCode  IceGrid::compute_vertical_levels() {
 
 
 //! Print the vertical levels in \c zlevels[] and \c zblevels[] to standard out.
-PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
+PetscErrorCode IceGrid::printVertLevels(int verbosity) {
   PetscErrorCode ierr;
   ierr = verbPrintf(verbosity,com,
      "    vertical levels in ice (Mz=%d,Lz=%5.4f): ",Mz,Lz); CHKERRQ(ierr);
@@ -242,7 +242,7 @@ PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
 }
 
 //! Return the index \c k into \c zlevels[] so that <tt>zlevels[k] <= height < zlevels[k+1]</tt> and <tt>k < Mz</tt>.
-PetscInt IceGrid::kBelowHeight(const PetscScalar height) {
+PetscInt IceGrid::kBelowHeight(PetscScalar height) {
   if (height < 0.0 - 1.0e-6) {
     PetscPrintf(com, 
        "IceGrid kBelowHeight(): height = %5.4f is below base of ice (height must be non-negative)\n",
@@ -383,7 +383,7 @@ The upshot is that if one computes in a truly periodic way then the gap between 
 Thus we compute  <tt>dx = 2 * Lx / Mx</tt>.
  */
 PetscErrorCode IceGrid::compute_horizontal_spacing() {
-  if (Mx < 1) {
+  if (Mx < 3) {
     SETERRQ(1, "IceGrid::set_horizontal_dims(): Mx has to be at least 3.");
   }
 
@@ -410,6 +410,44 @@ PetscErrorCode IceGrid::compute_horizontal_spacing() {
   } else {
     dy = 2.0 * Ly / (My - 1);
   }
+
+  return 0;
+}
+
+//! \brief Computes values of x and y corresponding to the computational grid,
+//! with accounting for periodicity.
+/*! This method allocates arrays \c x and \c y, and they have to be freed
+  (using delete[]) by the caller.
+ */
+PetscErrorCode IceGrid::compute_horizontal_coordinates(double* &x, double* &y) {
+  PetscErrorCode ierr;
+
+  // make sure that dx and dy are set correctly:
+  ierr = compute_horizontal_spacing(); CHKERRQ(ierr);
+
+  x = new double[Mx];
+  y = new double[My];
+
+  double x_min = -Lx + x0,
+    x_max = Lx + x0,
+    y_min = -Ly + y0,
+    y_max = Ly + y0;
+
+  if (periodicity & X_PERIODIC) {
+    x_max -= dx;
+  }
+
+  if (periodicity & Y_PERIODIC) {
+    y_max -= dy;
+  }
+
+  for (int i = 0; i < Mx; ++i)
+    x[i] = x_min + i * dx;
+  x[Mx - 1] = x_max;
+
+  for (int i = 0; i < My; ++i)
+    y[i] = y_min + i * dy;
+  y[My - 1] = y_max;
 
   return 0;
 }

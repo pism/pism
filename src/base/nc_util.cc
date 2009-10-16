@@ -1017,14 +1017,17 @@ PetscErrorCode NCTool::create_dimensions() {
     // set values:
     // Note that the 't' dimension is not modified: it is handled by the append_time method.
     // Also note the transpose.
-    stat = put_dimension_regular(x, grid->My,
-				 grid->y0 - grid->Ly,
-				 grid->y0 + grid->Ly); CHKERRQ(stat);
-    stat = put_dimension_regular(y, grid->Mx,
-				 grid->x0 - grid->Lx,
-				 grid->x0 + grid->Lx); CHKERRQ(stat);
+    
+    double *x_coords, *y_coords;
+    stat = grid->compute_horizontal_coordinates(x_coords, y_coords); CHKERRQ(stat);
+
+    stat = put_dimension(x, grid->My, y_coords); CHKERRQ(stat);
+    stat = put_dimension(y, grid->Mx, x_coords); CHKERRQ(stat);
     stat = put_dimension(z, grid->Mz, grid->zlevels); CHKERRQ(stat);
     stat = put_dimension(zb, grid->Mbz, grid->zblevels); CHKERRQ(stat);
+
+    delete[] x_coords;
+    delete[] y_coords;
   }
 
   return 0;
