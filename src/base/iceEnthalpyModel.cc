@@ -1044,7 +1044,7 @@ PetscErrorCode IceEnthalpyModel::drainageToBaseModelEnth(EnthalpyConverter &EC,
   PetscErrorCode ierr;
 
   if (allowAboveMelting == PETSC_TRUE) {
-    SETERRQ(1,"drainageToBaseModelEnth() called but allowAboveMelting==TRUE");
+    SETERRQ(1,"IceEnthalpyModel::drainageToBaseModelEnth() called but allowAboveMelting==TRUE");
   }
 
   // no change to either enthalpy or basal layer thickness in this case

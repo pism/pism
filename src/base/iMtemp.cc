@@ -496,7 +496,7 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
                     massmelted = dE / ice->latentHeat;
 
   if (allowAboveMelting == PETSC_TRUE) {
-    SETERRQ(1,"excessToBasalMeltLayer() called but allowAboveMelting==TRUE");
+    SETERRQ(1,"IceModel::excessToBasalMeltLayer() called but allowAboveMelting==TRUE");
   }
   if (*Texcess >= 0.0) {
     if (updateHmelt == PETSC_TRUE) {

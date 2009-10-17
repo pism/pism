@@ -76,6 +76,8 @@ IceModel::IceModel(IceGrid &g)
   save_extra = false;
   dvoldt = gdHdtav = 0;
 
+  allowAboveMelting = PETSC_FALSE;  // only IceCompModel ever sets it to true
+
   doColdIceMethods = PETSC_TRUE;  // FIXME: this way until IceEnthalpyModel is fully moved into IceModel
 
   // Default ice type:
