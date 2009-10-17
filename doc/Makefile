@@ -9,6 +9,9 @@ else
 	$(MAKE) ALL
 endif
 
+revision: 
+	@svnversion > revision.tex
+
 # default manuals and browser:
 
 installation : installation.tex
@@ -22,7 +25,8 @@ userman : manual.tex ice_bib.bib
 	pdflatex manual.tex
 	pdflatex manual.tex
 
-browser : doxyfile_browser doxybib.txt config_doc.txt std_names.html browser_pages.txt browser_bombproof.txt
+browser : doxyfile_browser doxybib.txt config_doc.txt std_names.html \
+		browser_pages.txt browser_bombproof.txt revision
 	doxygen doxyfile_browser
 
 doxybib.txt: doxybib.py ice_bib.bib
@@ -58,6 +62,8 @@ vfigs : verif/$(VFNOW_OUT)
 	   -r ${PISMREV_VFIGS} -g pdf -o figs/velerrs
 	../test/vnreport.py -f verif/$(VFNOW_OUT) -t K -e 'temp' \
 	   -r ${PISMREV_VFIGS} -g pdf -o figs/temperrs
+
+.PHONY:  clean revision svn_update userman installation browsenow browser vfigs
 
 clean :
 	@rm -f *.aux *.blg *.idx *.ind *.ilg *.log *.out *.toc texput.* *.bbl
