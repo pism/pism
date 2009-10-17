@@ -83,7 +83,6 @@ protected: // used internally
 };
 
 
-#if 1
 //! Tridiagonal linear system for bedrock conduction-only problem with Dirichlet boundary condition.
 /*!
 This class is currently only for redoing the temperature calculation in the bed,
@@ -120,7 +119,6 @@ protected: // used internally
               topBCValid,
               basalBCValid;
 };
-#endif
 
 #endif
 

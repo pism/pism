@@ -18,6 +18,8 @@
 
 #include "materials.hh"
 #include "pism_const.hh"
+#include "enthalpyConverter.hh"
+
 
 IceType::IceType(MPI_Comm c,const char pre[]) : comm(c) {
   PetscMemzero(prefix,sizeof(prefix));
@@ -166,6 +168,7 @@ PetscErrorCode CustomGlenIce::setFromOptions()
   return 0;
 }
 
+
 PetscErrorCode CustomGlenIce::printInfo(PetscInt thresh) const {
   PetscErrorCode ierr;
   if (thresh <= getVerbosityLevel()) {
@@ -173,6 +176,7 @@ PetscErrorCode CustomGlenIce::printInfo(PetscInt thresh) const {
   }
   return 0;
 }
+
 
 PetscErrorCode CustomGlenIce::view(PetscViewer viewer) const {
   PetscErrorCode ierr;
@@ -336,6 +340,163 @@ PetscScalar ThermoGlenIce::softnessParameter(PetscScalar T) const {
 //! Return the hardness parameter A(T) for a given temperature T.
 PetscScalar ThermoGlenIce::hardnessParameter(PetscScalar T) const {
   return pow(softnessParameter(T), -1.0/n);
+}
+
+
+/*!
+This constructor just sets flow law factor for nonzero water content, from
+\ref AschwandenBlatter2009 and \ref LliboutryDuval1985.
+ */
+PolyThermalGPBLDIce::PolyThermalGPBLDIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
+  EC = NULL;
+  T_0 = 273.15;               // default overridden through config interface
+  water_frac_coeff = 184.0;   // default overridden through config interface
+}
+
+
+PetscErrorCode PolyThermalGPBLDIce::setFromConfig(NCConfigVariable *config) {
+  if (config == NULL) {
+    SETERRQ(1,"config == NULL in PolyThermalGPBLDIce::setFromConfig()");
+  }
+  EC = new EnthalpyConverter(config);
+  T_0  = config->get("water_melting_temperature");    // K
+  water_frac_coeff = config->get("gpbld_water_frac_coeff");                
+  return 0;
+}
+
+
+PolyThermalGPBLDIce::~PolyThermalGPBLDIce() {
+  delete EC;
+}
+
+
+PetscErrorCode PolyThermalGPBLDIce::setFromOptions() {
+  PetscErrorCode ierr;
+
+  ierr = ThermoGlenIce::setFromOptions(); CHKERRQ(ierr);
+  
+  ierr = PetscOptionsBegin(comm,prefix,"PolyThermalGPBLDIce options",NULL); CHKERRQ(ierr);
+  {
+    ierr = PetscOptionsReal("-ice_gpbld_water_frac_coeff",
+      "coefficient of softness factor in temperate ice, as function of liquid water fraction (no units)",
+      "",water_frac_coeff,&water_frac_coeff,NULL); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode PolyThermalGPBLDIce::view(PetscViewer viewer) const {
+  PetscErrorCode ierr;
+
+  ierr = ThermoGlenIce::view(viewer); CHKERRQ(ierr);
+  
+  PetscTruth iascii;
+  if (!viewer) {
+    ierr = PetscViewerASCIIGetStdout(comm,&viewer);CHKERRQ(ierr);
+  }
+  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii);CHKERRQ(ierr);
+  if (iascii) {
+    ierr = PetscViewerASCIIPrintf(viewer,"<\nderived PolyThermalGPBLDIce object (%s)\n",prefix);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"  T_0             =%10.3f (K)\n",T_0);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,"  water_frac_coeff=%10.1f\n",water_frac_coeff);CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,">\n",water_frac_coeff);CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"No binary viewer for this object\n");
+  }
+  return 0;
+}
+
+
+//! The softness factor in the Glen-Paterson-Budd-Lliboutry-Duval flow law.  For constitutive law form.
+/*!
+This is a modification of Glen-Paterson-Budd ice, which is ThermoGlenIce.  In particular, if
+\f$A()\f$ is the softness factor for ThermoGlenIce, if \f$E\f$ is the enthalpy, and \f$p\f$ is
+the pressure then the softness we compute is
+   \f[A = A(T_{pa}(E,p))(1+184\omega).\f]
+The pressure-melting temperature \f$T_{pa}(E,p)\f$ is computed by getPATemp().
+ */
+PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(
+                PetscScalar enthalpy, PetscScalar pressure) const {
+  PetscErrorCode ierr;
+  if (EC == NULL) {
+    PetscErrorPrintf("EC is NULL in PolyThermalGPBLDIce::flowFromEnth()\n");
+    endPrintRank();
+  }
+  PetscScalar E_s, E_l;
+  EC->getEnthalpyInterval(pressure, E_s, E_l);
+  if (enthalpy <= E_s) {       // cold ice
+    PetscScalar T_pa;
+    ierr = EC->getPATemp(enthalpy,pressure,T_pa);
+    if (ierr) {
+      PetscErrorPrintf(
+        "getPATemp() returned ierr>0 in PolyThermalGPBLDIce::softnessParameterFromEnth()\n");
+      endPrintRank();
+    }
+    return softnessParameter( T_pa ); // uses ThermoGlenIce formula
+  } else if (enthalpy < E_l) { // temperate ice
+    PetscScalar omega;
+    ierr = EC->getWaterFraction(enthalpy,pressure,omega);
+    if (ierr) {
+      PetscErrorPrintf(
+        "getWaterFraction() returned ierr>0 in PolyThermalGPBLDIce::softnessParameterFromEnth()\n");
+      endPrintRank();
+    }
+    // next line implements eqn (23) in \ref AschwandenBlatter2009
+    return softnessParameter(T_0) * (1.0 + water_frac_coeff * omega);  // uses ThermoGlenIce formula
+  } else { // liquid water not allowed
+    PetscErrorPrintf("ERROR in PolyThermalGlenPBLDIce::flow(): liquid water not allowed\n\n");
+    endPrintRank();
+    return 0.0;
+  }
+}
+
+
+//! The hardness factor in the Paterson-Budd-Lliboutry-Duval flow law.  For viscosity form.
+PetscScalar PolyThermalGPBLDIce::hardnessParameterFromEnth(
+                PetscScalar enthalpy, PetscScalar pressure) const {
+  return pow(softnessParameterFromEnth(enthalpy,pressure), -1.0/n);
+}
+
+
+//! Glen-Paterson-Budd-Lliboutry-Duval flow law itself.
+PetscScalar PolyThermalGPBLDIce::flowFromEnth(
+                PetscScalar stress, PetscScalar enthalpy, PetscScalar pressure, PetscScalar /* gs */) const {
+  return softnessParameterFromEnth(enthalpy,pressure) * pow(stress,n-1);
+}
+
+
+PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
+                PetscScalar thickness,  PetscInt kbelowH, const PetscScalar *zlevels,
+                PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
+                const PetscScalar *enthalpy1, const PetscScalar *enthalpy2) const {
+  if (EC == NULL) {
+    PetscErrorPrintf(
+      "EC is NULL in PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth()\n");
+    endPrintRank();
+  }
+
+  // result is \nu_e H, i.e. viscosity times thickness; B is really hardness times thickness
+  // integrates the hardness parameter using the trapezoid rule.
+  PetscScalar B = 0;
+  if (kbelowH > 0) {
+    PetscScalar dz = zlevels[1] - zlevels[0];
+    B += 0.5 * dz * hardnessParameterFromEnth( 0.5 * (enthalpy1[0] + enthalpy2[0]),
+                                               EC->getPressureFromDepth(thickness) );
+    for (PetscInt m=1; m < kbelowH; m++) {
+      const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m],
+                        depth  = thickness - 0.5 * (zlevels[m+1] + zlevels[m]);
+      B += 0.5 * (dz + dzNEXT) * hardnessParameterFromEnth( 0.5 * (enthalpy1[m] + enthalpy2[m]),
+                                                            EC->getPressureFromDepth(depth) );
+      dz = dzNEXT;
+    }
+    // use last dz from for loop
+    const PetscScalar depth  = 0.5 * (thickness - zlevels[kbelowH]);
+    B += 0.5 * dz * hardnessParameterFromEnth( 0.5 * (enthalpy1[kbelowH] + enthalpy2[kbelowH]),
+                                               EC->getPressureFromDepth(depth) );
+  }
+  const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
+  return 0.5 * B * pow(schoofReg + alpha, (1-n)/(2*n));
 }
 
 
@@ -812,6 +973,9 @@ static PetscErrorCode create_custom(MPI_Comm comm,const char pre[],IceType **i) 
 static PetscErrorCode create_pb(MPI_Comm comm,const char pre[],IceType **i) {
   *i = new (ThermoGlenIce)(comm,pre);  return 0;
 }
+static PetscErrorCode create_gpbld(MPI_Comm comm,const char pre[],IceType **i) {
+  *i = new (PolyThermalGPBLDIce)(comm,pre);  return 0;
+}
 static PetscErrorCode create_hooke(MPI_Comm comm,const char pre[],IceType **i) {
   *i = new (ThermoGlenIceHooke)(comm,pre);  return 0;
 }
@@ -836,6 +1000,7 @@ PetscErrorCode IceFactory::registerAll()
   ierr = PetscMemzero(&type_list,sizeof(type_list));CHKERRQ(ierr);
   ierr = registerType(ICE_CUSTOM, &create_custom); CHKERRQ(ierr);
   ierr = registerType(ICE_PB,     &create_pb);     CHKERRQ(ierr);
+  ierr = registerType(ICE_GPBLD,  &create_gpbld);  CHKERRQ(ierr);
   ierr = registerType(ICE_HOOKE,  &create_hooke);  CHKERRQ(ierr);
   ierr = registerType(ICE_ARR,    &create_arr);    CHKERRQ(ierr);
   ierr = registerType(ICE_ARRWARM,&create_arrwarm);CHKERRQ(ierr);

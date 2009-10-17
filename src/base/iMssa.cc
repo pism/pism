@@ -128,11 +128,25 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
   ierr = vubarSSA.get_array(u); CHKERRQ(ierr);
   ierr = vvbarSSA.get_array(v); CHKERRQ(ierr);
 
+  PetscScalar *Enthij, *Enthoffset;
+  PolyThermalGPBLDIce *gpbldi = NULL;
+  if (doColdIceMethods==PETSC_FALSE) {
+    gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
+    if (!gpbldi) {
+      PetscPrintf(grid.com,
+        "doColdIceMethods == PETSC_FALSE in IceModel::computeEffectiveViscosity()\n"
+        "   but not using PolyThermalGPBLDIce ... ending ....\n");
+      PetscEnd();
+    }
+    ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  }
+
   for (PetscInt o=0; o<2; ++o) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         if (H[i][j] < ssaStrengthExtend.min_thickness_for_extension()) {
-          // Extends strength of SSA (i.e. nuH coeff) into the ice free region.  Does not add or subtract ice mass.
+          // Extends strength of SSA (i.e. nuH coeff) into the ice free region.
+          //  Does not add or subtract ice mass.
           nuH[o][i][j] = ssaStrengthExtend.notional_strength();
         } else {
           const PetscInt      oi = 1-o, oj=o;
@@ -152,10 +166,21 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
             v_y = (v[i][j+1] - v[i][j]) / dy;
           }
           const PetscScalar myH = 0.5 * (H[i][j] + H[i+oi][j+oj]);
-          ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
-          ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
-          nuH[o][i][j] = ice->effectiveViscosityColumn(myH, grid.kBelowHeight(myH), grid.zlevels,
-                                                       u_x, u_y, v_x, v_y, Tij, Toffset);
+
+          if (doColdIceMethods == PETSC_TRUE) {
+            ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+            ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
+            nuH[o][i][j] = ice->effectiveViscosityColumn(
+                                myH, grid.kBelowHeight(myH), grid.zlevels,
+                                u_x, u_y, v_x, v_y, Tij, Toffset);
+          } else {
+            ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+            ierr = Enth3.getInternalColumn(i+oi,j+oj,&Enthoffset); CHKERRQ(ierr);
+            nuH[o][i][j] = gpbldi->effectiveViscosityColumnFromEnth(
+                                myH, grid.kBelowHeight(myH), grid.zlevels,
+                                u_x, u_y, v_x, v_y, Enthij, Enthoffset);
+          }
+
           if (! finite(nuH[o][i][j]) || false) {
             ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, nuH[o][i][j]);
               CHKERRQ(ierr); 
@@ -176,6 +201,10 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
   ierr = vNuH[1].end_access(); CHKERRQ(ierr);
   ierr = vubarSSA.end_access(); CHKERRQ(ierr);
   ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
+
+  if (doColdIceMethods==PETSC_FALSE) {
+    ierr = Enth3.end_access(); CHKERRQ(ierr);
+  }
 
   // Some communication
   ierr = vNuH[0].beginGhostComm(); CHKERRQ(ierr);

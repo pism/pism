@@ -215,6 +215,19 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = Sigmastag3[0].begin_access(); CHKERRQ(ierr);
   ierr = Sigmastag3[1].begin_access(); CHKERRQ(ierr);
   
+  PetscScalar *Enthij, *Enthoffset;
+  PolyThermalGPBLDIce *gpbldi = NULL;
+  if (doColdIceMethods == PETSC_FALSE) {
+    gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
+    if (!gpbldi) {
+      PetscPrintf(grid.com,
+        "doColdIceMethods == false in IceMethod::velocitySIAStaggered()\n"
+        "   but not using PolyThermalGPBLDIce ... ending ....\n");
+      PetscEnd();
+    }
+    ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  }
+
   // staggered grid computation of: I, J, Sigma
   for (PetscInt o=0; o<2; o++) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
@@ -232,6 +245,10 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
             ierr = tau3.getInternalColumn(i,j,&ageij); CHKERRQ(ierr);
             ierr = tau3.getInternalColumn(i+oi,j+oj,&ageoffset); CHKERRQ(ierr);
           }
+          if (doColdIceMethods == PETSC_FALSE) {
+            ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+            ierr = Enth3.getInternalColumn(i+oi,j+oj,&Enthoffset); CHKERRQ(ierr);
+          }
 
           // does validity check for thickness:
           const PetscInt      ks = grid.kBelowHeight(thickness);  
@@ -246,7 +263,12 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
               grainsize = grainSizeVostok(0.5 * (ageij[k] + ageoffset[k]));
             }
             // If the flow law does not use grain size, it will just ignore it, no harm there
-            flow = ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure, grainsize);
+            if (doColdIceMethods == PETSC_TRUE) {
+              flow = ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure, grainsize);
+            } else {
+              flow = gpbldi->flowFromEnth(alpha * pressure, 0.5 * (Enthij[k] + Enthoffset[k]), 
+                                          pressure, grainsize);
+            }
 
             delta[k] = 2.0 * pressure * enhancement_factor * flow;
 
@@ -304,6 +326,10 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = Sigmastag3[1].end_access(); CHKERRQ(ierr);
   ierr = Istag3[0].end_access(); CHKERRQ(ierr);
   ierr = Istag3[1].end_access(); CHKERRQ(ierr);
+
+  if (doColdIceMethods == PETSC_FALSE) {
+    ierr = Enth3.end_access(); CHKERRQ(ierr);
+  }
 
   delete [] delta;   delete [] I;   delete [] J;   delete [] K;   delete [] Sigma;
   

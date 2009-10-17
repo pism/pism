@@ -98,7 +98,8 @@ ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
 	iMdefaults.cc iMgeometry.cc iMgrainsize.cc iMinit.cc iMinverse.cc \
 	iMinverseMat.cc iMIO.cc iMmatlab.cc iMoptions.cc \
 	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc \
-	iMutil.cc iMvelocity.cc iMviewers.cc Timeseries.cc PISMVars.cc iMtimeseries.cc
+	iMutil.cc iMvelocity.cc iMviewers.cc Timeseries.cc PISMVars.cc iMtimeseries.cc \
+	enthalpyConverter.cc
 ice_csources := cubature.c pism_signal.c
 
 # tests_sources go in libtests.[so|a]
@@ -108,7 +109,7 @@ tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 other_sources := penth.cc pismr.cc pismd.cc pismv.cc pisms.cc \
 	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc \
 	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc iceCalvBCModel.cc \
-	iceEnthalpyModel.cc enthColumnSystem.cc enthalpyConverter.cc \
+	iceEnthalpyModel.cc enthColumnSystem.cc \
 	pcctest.cc flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
 
 other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\

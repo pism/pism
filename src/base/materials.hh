@@ -20,6 +20,7 @@
 #define __materials_hh
 
 #include <petsc.h>
+#include "enthalpyConverter.hh"
 
 /*******************
 REGARDING IceType and HybridIce:  The main hierarchy is:
@@ -139,6 +140,47 @@ protected:
   PetscReal schoofLen,schoofVel,schoofReg,
             A_cold, A_warm, Q_cold, Q_warm,  // these four constants from Paterson & Budd (1982)
             crit_temp, n;
+};
+
+
+//! Glen (1955) and Paterson-Budd (1982) flow law with additional water fraction factor from Lliboutry & Duval (1985).
+/*!
+See \ref AschwandenBlatter2009.  The basic references are \ref Glen and \ref PatersonBudd 
+and \ref LliboutryDuval1985.
+ */
+class PolyThermalGPBLDIce : public ThermoGlenIce {
+public:
+  PolyThermalGPBLDIce(MPI_Comm c,const char pre[]);
+  virtual ~PolyThermalGPBLDIce();
+  virtual PetscErrorCode setFromConfig(NCConfigVariable *config);
+  virtual PetscErrorCode setFromOptions();
+  virtual PetscErrorCode view(PetscViewer viewer) const;
+
+  /* these are not reimplementations, but new routines.
+  to see where these replacements are needed, do in src/base/:
+     $ grep ice->flow *.cc
+     $ grep ice->effectiveViscosity *.cc
+     $ grep ice->softnessParameter *.cc
+     $ grep ice->hardnessParameter *.cc
+  note for grep: arrow (>) must actually be escaped with backslash
+  */
+  virtual PetscScalar softnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const;
+  virtual PetscScalar hardnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const;
+
+  virtual PetscScalar flowFromEnth(PetscScalar stress, PetscScalar enthalpy, PetscScalar pressure,
+                                       PetscScalar gs) const; // grainsize arg gs not used
+
+  virtual PetscScalar effectiveViscosityColumnFromEnth(
+                PetscScalar thickness,  PetscInt kbelowH, const PetscScalar *zlevels,
+                PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
+                const PetscScalar *enthalpy1, const PetscScalar *enthalpy2) const;
+
+  // these are used in src/base/ssaJed/ stuff only, so not addressed for now:
+  //    integratedStoreSize(), integratedStore(), integratedViscosity()
+
+protected:
+  PetscReal T_0, water_frac_coeff;
+  EnthalpyConverter *EC;
 };
 
 
@@ -329,6 +371,7 @@ private:
 
 #define ICE_CUSTOM  "custom"        /* Plain isothermal Glen with customizable parameters */
 #define ICE_PB      "pb"            /* Paterson-Budd (ThermoGlenIce) */
+#define ICE_GPBLD   "gpbld"         /* Paterson-Budd-Lliboutry-Duval (PolyThermalGPBLDIce) */
 #define ICE_HOOKE   "hooke"         /* Hooke (ThermoGlenIceHooke) */
 #define ICE_ARR     "arr"           /* Temperature dependent Arrhenius (either warm or cold) */
 #define ICE_HYBRID  "hybrid"        /* Goldsby-Kohlstedt for SIA, PB for SSA */

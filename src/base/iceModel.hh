@@ -194,6 +194,7 @@ protected:
         u3, v3, w3,	//!< velocity of ice; m s-1
         Sigma3, 	//!< strain-heating term in conservation of energy model; J s-1 m-3
         T3,		//!< absolute temperature of ice; K
+        Enth3,          //!< FIXME: not functional in IceModel; check initialization when IceEnthalpyModel moved
         tau3;		//!< age of ice; s
 
   IceModelVec3Bedrock
@@ -214,13 +215,19 @@ protected:
   // flags
   bool leaveNuHAloneSSA;
   PetscTruth  updateHmelt,
-              holdTillYieldStress, useConstantTillPhi,
+              holdTillYieldStress,
+              useConstantTillPhi,
               shelvesDragToo,
               doAdaptTimeStep, 
               realAgeForGrainSize,
-              ssaSystemToASCIIMatlab, reportPATemps,
+              ssaSystemToASCIIMatlab,
+              reportPATemps,
               allowAboveMelting,
-              computeSIAVelocities, transformForSurfaceGradient;
+              computeSIAVelocities,
+              transformForSurfaceGradient,
+              doColdIceMethods; // if true, use cold ice internals but read and write
+                                //        additional enthalpy fields to and from file
+                                // FIXME: check initialization when IceEnthalpyModel moved
   char        adaptReasonFlag;
 
   // file names

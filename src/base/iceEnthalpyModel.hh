@@ -22,51 +22,8 @@
 #include <petsc.h>
 #include "iceModelVec.hh"
 #include "NCVariable.hh"
-#include "materials.hh"
 #include "iceModel.hh"
 #include "enthalpyConverter.hh"
-
-
-//! Glen (1955) and Paterson-Budd (1982) flow law with additional water fraction factor from Lliboutry & Duval (1985).
-/*!
-See \ref AschwandenBlatter2009.  The basic references are \ref Glen and \ref PatersonBudd 
-and \ref LliboutryDuval1985.
- */
-class PolyThermalGPBLDIce : public ThermoGlenIce {
-public:
-  PolyThermalGPBLDIce(MPI_Comm c,const char pre[]);
-  virtual ~PolyThermalGPBLDIce();
-  virtual PetscErrorCode setFromConfig(NCConfigVariable *config);
-  virtual PetscErrorCode setFromOptions();
-  virtual PetscErrorCode view(PetscViewer viewer) const;
-
-  /* these are not reimplementations, but new routines.
-  to see where these replacements are needed, do in src/base/:
-     $ grep ice->flow *.cc
-     $ grep ice->effectiveViscosity *.cc
-     $ grep ice->softnessParameter *.cc
-     $ grep ice->hardnessParameter *.cc
-  note for grep: arrow (>) must actually be escaped with backslash
-  */
-  virtual PetscScalar softnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const;
-  virtual PetscScalar hardnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const;
-
-  virtual PetscScalar flowFromEnth(PetscScalar stress, PetscScalar enthalpy, PetscScalar pressure,
-                                       PetscScalar gs) const; // grainsize arg gs not used
-
-  virtual PetscScalar effectiveViscosityColumnFromEnth(
-                PetscScalar thickness,  PetscInt kbelowH, const PetscScalar *zlevels,
-                PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
-                const PetscScalar *enthalpy1, const PetscScalar *enthalpy2) const;
-
-  // these are used in src/base/ssaJed/ stuff only, so not addressed for now:
-  //    integratedStoreSize(), integratedStore(), integratedViscosity()
-
-protected:
-  PetscReal T_0, water_frac_coeff;
-  EnthalpyConverter *EC;
-};
-
 
 
 //! Temporary class for development of enthalpy-based polythermal PISM.
@@ -90,8 +47,6 @@ public:
   using IceModel::write_extra_fields;
   virtual PetscErrorCode write_extra_fields(const char filename[]);
 
-  PetscTruth doColdIceMethods; //!< if true, use cold ice internals but read and write additional enthalpy fields to and from file
-
 protected:
   using IceModel::createVecs;
   virtual PetscErrorCode createVecs();
@@ -114,12 +69,6 @@ protected:
                     PetscScalar ivol, PetscScalar iarea, bool useHomoTemp, 
                     PetscScalar &gmeltfrac, PetscScalar &gtemp0, PetscScalar &gorigfrac);
 
-  using IceModel::velocitySIAStaggered;
-  virtual PetscErrorCode velocitySIAStaggered();
-
-  using IceModel::computeEffectiveViscosity;
-  virtual PetscErrorCode computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscReal epsilon);
-
   using IceModel::temperatureStep;
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
   
@@ -138,7 +87,7 @@ protected:
 						 PetscScalar till_pw_frac, PetscScalar max_hmelt) const;
 
 protected: // new data members
-  IceModelVec3  Enth3, EnthNew3;
+  IceModelVec3  EnthNew3;  // NOTE:  Enth3 is an IceModel member, uninitialized and unused within IceModel
   
   PetscTruth    bmr_in_pore_pressure, thk_affects_pore_pressure;
   PetscScalar   bmr_enhance_scale, margin_pore_pressure_reduced,

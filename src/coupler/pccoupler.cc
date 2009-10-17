@@ -355,7 +355,6 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g, const PISMVars
 
 /* MINIMAL TEST FOR THIS SCHEME:
 cd examples/eisgreen/
-ncrename -v snowaccum,snowprecip green20km_y1.nc foo.nc
 pcctestsm -i foo.nc -sma -pdd_std_dev 1.0 -ys 0.0 -ye 1.0 -dt 0.01 -o smamovie01.nc
 pcctestsm -i foo.nc -sma -pdd_rand -pdd_std_dev 1.0 -ys 0.0 -ye 1.0 -dt 0.01 -o smarandmovie01.nc
 COMPARE FIELDS acab

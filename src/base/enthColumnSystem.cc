@@ -369,17 +369,16 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
 }
 
 
-
-#if 1
-
 bedrockOnlySystemCtx::bedrockOnlySystemCtx(int my_Mbz)
       : columnSystemCtx(my_Mbz) {
   Mbz = my_Mbz;
+#if 0
   if (Mbz <= 1) {
     PetscErrorPrintf(
        "\n\n\n  Mbz > 1 required in bedrockOnlySystemCtx (constructor error) \n\n");
     endPrintRank();
   }  
+#endif
   k0 = Mbz - 1;
   // set flags to indicate nothing yet set
   initAllDone = false;
@@ -473,7 +472,10 @@ PetscErrorCode bedrockOnlySystemCtx::solveThisColumn(PetscScalar **x) {
   if (!basalBCValid) {  SETERRQ(3,
      "solveThisColumn() should only be called after setBasalBoundaryValueThisColumn() in bedrockOnlySystemCtx"); }
 
-  if (Mbz <= 1) { SETERRQ(1,"Mbz<=1; constructor should have caught; how did I get here?"); }
+//DEBUG:  if (Mbz <= 1) { SETERRQ(1,"Mbz<=1; constructor should have caught; how did I get here?"); }
+  if (Mbz <= 1) {
+    SETERRQ(1,"Mbz<=1: do not call bedrockOnlySystemCtx::solveThisColumn() if no bedrock depth");
+  }
 
   // geothermal flux at base; method should gives O(\Delta t,\Delta z^2)
   //   local truncation error; comes from introducing one lower level, etc.
@@ -504,6 +506,4 @@ PetscErrorCode bedrockOnlySystemCtx::solveThisColumn(PetscScalar **x) {
   // solve it
   return solveTridiagonalSystem(Mbz,x);
 }
-
-#endif
 

@@ -21,174 +21,11 @@
 #include "enthalpyConverter.hh"
 
 
-/*!
-This constructor just sets flow law factor for nonzero water content, from
-\ref AschwandenBlatter2009 and \ref LliboutryDuval1985.
- */
-PolyThermalGPBLDIce::PolyThermalGPBLDIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
-  EC = NULL;
-  T_0 = 273.15;               // default overridden through config interface
-  water_frac_coeff = 184.0;   // default overridden through config interface
-}
-
-
-PetscErrorCode PolyThermalGPBLDIce::setFromConfig(NCConfigVariable *config) {
-  if (config == NULL) {
-    SETERRQ(1,"config == NULL in PolyThermalGPBLDIce::setFromConfig()");
-  }
-  EC = new EnthalpyConverter(config);
-  T_0  = config->get("water_melting_temperature");    // K
-  water_frac_coeff = config->get("gpbld_water_frac_coeff");                
-  return 0;
-}
-
-
-PolyThermalGPBLDIce::~PolyThermalGPBLDIce() {
-  delete EC;
-}
-
-
-PetscErrorCode PolyThermalGPBLDIce::setFromOptions() {
-  PetscErrorCode ierr;
-
-  ierr = ThermoGlenIce::setFromOptions(); CHKERRQ(ierr);
-  
-  ierr = PetscOptionsBegin(comm,prefix,"PolyThermalGPBLDIce options",NULL); CHKERRQ(ierr);
-  {
-    ierr = PetscOptionsReal("-ice_gpbld_water_frac_coeff",
-      "coefficient of softness factor in temperate ice, as function of liquid water fraction (no units)",
-      "",water_frac_coeff,&water_frac_coeff,NULL); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscErrorCode PolyThermalGPBLDIce::view(PetscViewer viewer) const {
-  PetscErrorCode ierr;
-
-  ierr = ThermoGlenIce::view(viewer); CHKERRQ(ierr);
-  
-  PetscTruth iascii;
-  if (!viewer) {
-    ierr = PetscViewerASCIIGetStdout(comm,&viewer);CHKERRQ(ierr);
-  }
-  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii);CHKERRQ(ierr);
-  if (iascii) {
-    ierr = PetscViewerASCIIPrintf(viewer,"<\nderived PolyThermalGPBLDIce object (%s)\n",prefix);CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"  T_0             =%10.3f (K)\n",T_0);CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"  water_frac_coeff=%10.1f\n",water_frac_coeff);CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,">\n",water_frac_coeff);CHKERRQ(ierr);
-  } else {
-    SETERRQ(1,"No binary viewer for this object\n");
-  }
-  return 0;
-}
-
-
-//! The softness factor in the Glen-Paterson-Budd-Lliboutry-Duval flow law.  For constitutive law form.
-/*!
-This is a modification of Glen-Paterson-Budd ice, which is ThermoGlenIce.  In particular, if
-\f$A()\f$ is the softness factor for ThermoGlenIce, if \f$E\f$ is the enthalpy, and \f$p\f$ is
-the pressure then the softness we compute is
-   \f[A = A(T_{pa}(E,p))(1+184\omega).\f]
-The pressure-melting temperature \f$T_{pa}(E,p)\f$ is computed by getPATemp().
- */
-PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(
-                PetscScalar enthalpy, PetscScalar pressure) const {
-  PetscErrorCode ierr;
-  if (EC == NULL) {
-    PetscErrorPrintf("EC is NULL in PolyThermalGPBLDIce::flowFromEnth()\n");
-    endPrintRank();
-  }
-  PetscScalar E_s, E_l;
-  EC->getEnthalpyInterval(pressure, E_s, E_l);
-  if (enthalpy <= E_s) {       // cold ice
-    PetscScalar T_pa;
-    ierr = EC->getPATemp(enthalpy,pressure,T_pa);
-    if (ierr) {
-      PetscErrorPrintf(
-        "getPATemp() returned ierr>0 in PolyThermalGPBLDIce::softnessParameterFromEnth()\n");
-      endPrintRank();
-    }
-    return softnessParameter( T_pa ); // uses ThermoGlenIce formula
-  } else if (enthalpy < E_l) { // temperate ice
-    PetscScalar omega;
-    ierr = EC->getWaterFraction(enthalpy,pressure,omega);
-    if (ierr) {
-      PetscErrorPrintf(
-        "getWaterFraction() returned ierr>0 in PolyThermalGPBLDIce::softnessParameterFromEnth()\n");
-      endPrintRank();
-    }
-    // next line implements eqn (23) in \ref AschwandenBlatter2009
-    return softnessParameter(T_0) * (1.0 + water_frac_coeff * omega);  // uses ThermoGlenIce formula
-  } else { // liquid water not allowed
-    PetscErrorPrintf("ERROR in PolyThermalGlenPBLDIce::flow(): liquid water not allowed\n\n");
-    endPrintRank();
-    return 0.0;
-  }
-}
-
-
-//! The hardness factor in the Paterson-Budd-Lliboutry-Duval flow law.  For viscosity form.
-PetscScalar PolyThermalGPBLDIce::hardnessParameterFromEnth(
-                PetscScalar enthalpy, PetscScalar pressure) const {
-  return pow(softnessParameterFromEnth(enthalpy,pressure), -1.0/n);
-}
-
-
-//! Glen-Paterson-Budd-Lliboutry-Duval flow law itself.
-PetscScalar PolyThermalGPBLDIce::flowFromEnth(
-                PetscScalar stress, PetscScalar enthalpy, PetscScalar pressure, PetscScalar /* gs */) const {
-  return softnessParameterFromEnth(enthalpy,pressure) * pow(stress,n-1);
-}
-
-
-PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
-                PetscScalar thickness,  PetscInt kbelowH, const PetscScalar *zlevels,
-                PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
-                const PetscScalar *enthalpy1, const PetscScalar *enthalpy2) const {
-  if (EC == NULL) {
-    PetscErrorPrintf(
-      "EC is NULL in PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth()\n");
-    endPrintRank();
-  }
-
-  // result is \nu_e H, i.e. viscosity times thickness; B is really hardness times thickness
-  // integrates the hardness parameter using the trapezoid rule.
-  PetscScalar B = 0;
-  if (kbelowH > 0) {
-    PetscScalar dz = zlevels[1] - zlevels[0];
-    B += 0.5 * dz * hardnessParameterFromEnth( 0.5 * (enthalpy1[0] + enthalpy2[0]),
-                                               EC->getPressureFromDepth(thickness) );
-    for (PetscInt m=1; m < kbelowH; m++) {
-      const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m],
-                        depth  = thickness - 0.5 * (zlevels[m+1] + zlevels[m]);
-      B += 0.5 * (dz + dzNEXT) * hardnessParameterFromEnth( 0.5 * (enthalpy1[m] + enthalpy2[m]),
-                                                            EC->getPressureFromDepth(depth) );
-      dz = dzNEXT;
-    }
-    // use last dz from for loop
-    const PetscScalar depth  = 0.5 * (thickness - zlevels[kbelowH]);
-    B += 0.5 * dz * hardnessParameterFromEnth( 0.5 * (enthalpy1[kbelowH] + enthalpy2[kbelowH]),
-                                               EC->getPressureFromDepth(depth) );
-  }
-  const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
-  return 0.5 * B * pow(schoofReg + alpha, (1-n)/(2*n));
-}
-
-
-#define ICE_GPBLD      "gpbld"
-//! Create new kind of ice, PolyThermalGPBLDIce.  For IceFactory registration.
-static PetscErrorCode create_gpbld(MPI_Comm comm,const char pre[],IceType **i) {
-  *i = new (PolyThermalGPBLDIce)(comm,pre);  return 0;
-}
-
-
 /*********** procedures for init ****************/
 
 IceEnthalpyModel::IceEnthalpyModel(IceGrid &g) : IceModel(g) {
-  doColdIceMethods = PETSC_FALSE;
+
+  doColdIceMethods = PETSC_FALSE;     // default is to actually use enthalpy for a polythermal model
 
   bmr_in_pore_pressure = PETSC_FALSE; // default to bwat-only model for pore water pressure
   bmr_enhance_scale = 0.10 / secpera; // default to say that basal melt rate must be on order of
@@ -198,7 +35,6 @@ IceEnthalpyModel::IceEnthalpyModel(IceGrid &g) : IceModel(g) {
                                            //   (from increased pore water pressure) is un-affected
                                            //   by ice thickness, which is a surrogate for distance 
                                            //   to margin
-
   margin_pore_pressure_H_high  = 2000.0; // defaults for the mechanism in
   margin_pore_pressure_H_low   = 1000.0; //   getEffectivePressureOnTill() which reduces
   margin_pore_pressure_reduced = 0.97;  //   pore pressure near margin; H_high, H_low are thicknesses
@@ -379,11 +215,6 @@ PetscErrorCode IceEnthalpyModel::init_physics() {
   ierr = verbPrintf(2, grid.com,
       "  setting flow law to Glen-Paterson-Budd-Lliboutry-Duval type ...\n");
       CHKERRQ(ierr);
-  ierr = iceFactory.registerType(ICE_GPBLD, &create_gpbld);
-  if (ierr != 0) {
-    SETERRQ1(1,"FAILURE OF iceFactory.registerType() ... return value %d \n",ierr);
-  }
-
   if (ice != NULL)  delete ice;  // kill choice already made!
   iceFactory.setType(ICE_GPBLD); // new flowlaw which has dependence on enthalpy not temperature
   iceFactory.create(&ice);
@@ -402,7 +233,7 @@ PetscErrorCode IceEnthalpyModel::init_physics() {
     }
   }
   
-  ierr = ice->printInfo(4);CHKERRQ(ierr); // DEBUG
+  ierr = ice->printInfo(4);CHKERRQ(ierr);
 
   ierr = ice->setFromOptions();CHKERRQ(ierr);
 
@@ -416,7 +247,8 @@ PetscErrorCode IceEnthalpyModel::init_physics() {
 PetscErrorCode IceEnthalpyModel::write_extra_fields(const char filename[]) {
   PetscErrorCode ierr;
 
-  ierr = Enth3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = Enth3.write(filename, NC_DOUBLE); CHKERRQ(ierr);//! Total code duplication with IceModel version, but checks flag doColdIceMethods and uses correct flow law.
+
 
   // also write omega = liquid water fraction
   //   we use EnthNew3 (global) as temporary, allocated space for this purpose
@@ -727,288 +559,6 @@ PetscErrorCode IceEnthalpyModel::energyAgeStats(
 }
 
 
-/*********** velocity routines in which new flow law gets used ****************/
-
-//! Total code duplication with IceModel version, but checks flag doColdIceMethods and uses correct flow law.
-PetscErrorCode IceEnthalpyModel::velocitySIAStaggered() {
-  PetscErrorCode  ierr;
-
-  PetscScalar *delta, *I, *J, *K, *Sigma;
-  delta = new PetscScalar[grid.Mz];
-  I = new PetscScalar[grid.Mz];
-  J = new PetscScalar[grid.Mz];
-  K = new PetscScalar[grid.Mz];
-  Sigma = new PetscScalar[grid.Mz];
-
-  PetscScalar **h_x[2], **h_y[2], **H, **uvbar[2];
-
-  PetscScalar *Tij, *Toffset, *ageij, *ageoffset;
-
-  double enhancement_factor = config.get("enhancement_factor");
-  double constant_grain_size = config.get("constant_grain_size");
-
-  const bool usetau3 = (IceTypeUsesGrainSize(ice) && (realAgeForGrainSize == PETSC_TRUE));
-
-  const PetscTruth usesGrainSize = IceTypeUsesGrainSize(ice);
-
-  ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
-  ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
-  ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
-  ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
-  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
-  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
-
-  ierr = T3.begin_access(); CHKERRQ(ierr);
-  if (usetau3) {
-    ierr = tau3.begin_access(); CHKERRQ(ierr);
-  }
-  ierr = w3.begin_access(); CHKERRQ(ierr);
-  ierr = Istag3[0].begin_access(); CHKERRQ(ierr);
-  ierr = Istag3[1].begin_access(); CHKERRQ(ierr);
-  ierr = Sigmastag3[0].begin_access(); CHKERRQ(ierr);
-  ierr = Sigmastag3[1].begin_access(); CHKERRQ(ierr);
-
-  PetscScalar *Enthij, *Enthoffset;
-  PolyThermalGPBLDIce *gpbldi = NULL;
-  if (doColdIceMethods==PETSC_FALSE) {
-    gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
-    if (!gpbldi) {
-      PetscPrintf(grid.com,
-        "doColdIceMethods==false in IceEnthalpyMethod::velocitySIAStaggered()\n"
-        "   but not using PolyThermalGPBLDIce ... ending ....\n");
-      PetscEnd();
-    }
-    ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  }
-
-  // staggered grid computation of: I, J, Sigma
-  for (PetscInt o=0; o<2; o++) {
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-        // staggered point: o=0 is i+1/2, o=1 is j+1/2,
-        //   (i,j) and (i+oi,j+oj) are reg grid neighbors of staggered pt:
-        const PetscInt     oi = 1-o, oj=o;
-        const PetscScalar  slope = (o==0) ? h_x[o][i][j] : h_y[o][i][j];
-        const PetscScalar  thickness = 0.5 * (H[i][j] + H[i+oi][j+oj]);
-
-        if (thickness > 0) {
-          ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
-          ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
-          if (usetau3) {
-            ierr = tau3.getInternalColumn(i,j,&ageij); CHKERRQ(ierr);
-            ierr = tau3.getInternalColumn(i+oi,j+oj,&ageoffset); CHKERRQ(ierr);
-          }
-
-          if (doColdIceMethods==PETSC_FALSE) {
-            ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-            ierr = Enth3.getInternalColumn(i+oi,j+oj,&Enthoffset); CHKERRQ(ierr);
-          }
-
-          // does validity check for thickness:
-          const PetscInt      ks = grid.kBelowHeight(thickness);
-          const PetscScalar   alpha =
-                  sqrt(PetscSqr(h_x[o][i][j]) + PetscSqr(h_y[o][i][j]));
-
-          I[0] = 0;   J[0] = 0;   K[0] = 0;
-          for (PetscInt k=0; k<=ks; ++k) {
-            const PetscScalar   pressure = ice->rho * earth_grav * (thickness - grid.zlevels[k]);
-            PetscScalar flow,grainsize = constant_grain_size;
-            if (usesGrainSize && realAgeForGrainSize) {
-              grainsize = grainSizeVostok(0.5 * (ageij[k] + ageoffset[k]));
-            }
-            // If the flow law does not use grain size, it will just ignore it, no harm there
-            if (doColdIceMethods==PETSC_TRUE) {
-              flow = ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure, grainsize);
-            } else {
-              flow = gpbldi->flowFromEnth(alpha * pressure, 0.5 * (Enthij[k] + Enthoffset[k]), 
-                                          pressure, grainsize);
-            }
-
-            delta[k] = 2.0 * pressure * enhancement_factor * flow;
-
-            // for Sigma, ignore mask value and assume SHEET; will be overwritten
-            // by correctSigma() in iMssa.cc
-            Sigma[k] = delta[k] * PetscSqr(alpha) * pressure;
-
-            if (k>0) { // trapezoid rule for I[k] and K[k]
-              const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
-              I[k] = I[k-1] + 0.5 * dz * (delta[k-1] + delta[k]);
-              K[k] = K[k-1] + 0.5 * dz * (grid.zlevels[k-1] * delta[k-1]
-                                          + grid.zlevels[k] * delta[k]);
-              J[k] = grid.zlevels[k] * I[k] - K[k];
-            }
-          }
-          for (PetscInt k=ks+1; k<grid.Mz; ++k) { // above the ice
-            Sigma[k] = 0.0;
-            I[k] = I[ks];
-            J[k] = grid.zlevels[k] * I[ks];
-          }
-
-          // diffusivity for deformational flow (vs basal diffusivity, incorporated in ub,vb)
-          const PetscScalar  Dfoffset = J[ks] + (thickness - grid.zlevels[ks]) * I[ks];
-
-          // vertically-averaged SIA-only velocity, sans sliding;
-          //   note uvbar[0][i][j] is  u  at right staggered point (i+1/2,j)
-          //   but uvbar[1][i][j] is  v  at up staggered point (i,j+1/2)
-          uvbar[o][i][j] = - Dfoffset * slope / thickness;
-
-          ierr = Istag3[o].setValColumnPL(i,j,grid.Mz,grid.zlevels,I); CHKERRQ(ierr);
-          ierr = Sigmastag3[o].setValColumnPL(i,j,grid.Mz,grid.zlevels,Sigma); CHKERRQ(ierr);
-        } else {  // zero thickness case
-          uvbar[o][i][j] = 0;
-          ierr = Istag3[o].setColumn(i,j,0.0); CHKERRQ(ierr);
-          ierr = Sigmastag3[o].setColumn(i,j,0.0); CHKERRQ(ierr);
-        }
-      } // o
-    } // j
-  } // i
-
-  ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
-
-  ierr = T3.end_access(); CHKERRQ(ierr);
-  if (usetau3) {
-    ierr = tau3.end_access(); CHKERRQ(ierr);
-  }
-  ierr = w3.end_access(); CHKERRQ(ierr);
-  ierr = Sigmastag3[0].end_access(); CHKERRQ(ierr);
-  ierr = Sigmastag3[1].end_access(); CHKERRQ(ierr);
-  ierr = Istag3[0].end_access(); CHKERRQ(ierr);
-  ierr = Istag3[1].end_access(); CHKERRQ(ierr);
-
-  if (doColdIceMethods==PETSC_FALSE) {
-    ierr = Enth3.end_access(); CHKERRQ(ierr);
-  }
-
-  delete [] delta;   delete [] I;   delete [] J;   delete [] K;   delete [] Sigma;
-
-  return 0;
-}
-
-
-PetscErrorCode IceEnthalpyModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscReal epsilon) {
-  PetscErrorCode ierr;
-
-  if (leaveNuHAloneSSA == PETSC_TRUE) {
-    return 0;
-  }
-
-  //CHECK_NOT_SSA_EXTERNAL(ssa);
-  if (ssa) {SETERRQ(1,"This should not be called when the external SSA solver is active");}
-
-  bool use_constant_nuh_for_ssa = config.get_flag("use_constant_nuh_for_ssa");
-  if (use_constant_nuh_for_ssa) {
-    // Intended only for debugging, this treats the entire domain as though it was the strength extension
-    // (i.e. strength does not even depend on thickness)
-    PetscReal nuH = ssaStrengthExtend.notional_strength();
-    ierr = vNuH[0].set(nuH); CHKERRQ(ierr);
-    ierr = vNuH[1].set(nuH); CHKERRQ(ierr);
-    return 0;
-  }
-
-  // We need to compute integrated effective viscosity (\bar\nu * H).
-  // It is locally determined by the strain rates and temperature field.
-  PetscScalar *Tij, *Toffset, **H, **nuH[2], **u, **v;
-  ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = vNuH[0].get_array(nuH[0]); CHKERRQ(ierr);
-  ierr = vNuH[1].get_array(nuH[1]); CHKERRQ(ierr);
-
-  ierr = vubarSSA.get_array(u); CHKERRQ(ierr);
-  ierr = vvbarSSA.get_array(v); CHKERRQ(ierr);
-
-  PetscScalar *Enthij, *Enthoffset;
-  PolyThermalGPBLDIce *gpbldi = NULL;
-  if (doColdIceMethods==PETSC_FALSE) {
-    gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
-    if (!gpbldi) {
-      PetscPrintf(grid.com,
-        "doColdIceMethods==false in IceEnthalpyMethod::computeEffectiveViscosity()\n"
-        "   but not using PolyThermalGPBLDIce ... ending ....\n");
-      PetscEnd();
-    }
-    ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  }
-
-  for (PetscInt o=0; o<2; ++o) {
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (H[i][j] < ssaStrengthExtend.min_thickness_for_extension()) {
-          // Extends strength of SSA (i.e. nuH coeff) into the ice free region.  Does not add or subtract ice mass.
-          nuH[o][i][j] = ssaStrengthExtend.notional_strength();
-        } else {
-          const PetscInt      oi = 1-o, oj=o;
-          const PetscScalar   dx = grid.dx,
-                              dy = grid.dy;
-          PetscScalar u_x, u_y, v_x, v_y;
-          // Check the offset to determine how to differentiate velocity
-          if (o == 0) {
-            u_x = (u[i+1][j] - u[i][j]) / dx;
-            u_y = (u[i][j+1] + u[i+1][j+1] - u[i][j-1] - u[i+1][j-1]) / (4*dy);
-            v_x = (v[i+1][j] - v[i][j]) / dx;
-            v_y = (v[i][j+1] + v[i+1][j+1] - v[i][j-1] - v[i+1][j-1]) / (4*dy);
-          } else {
-            u_x = (u[i+1][j] + u[i+1][j+1] - u[i-1][j] - u[i-1][j+1]) / (4*dx);
-            u_y = (u[i][j+1] - u[i][j]) / dy;
-            v_x = (v[i+1][j] + v[i+1][j+1] - v[i-1][j] - v[i-1][j+1]) / (4*dx);
-            v_y = (v[i][j+1] - v[i][j]) / dy;
-          }
-          const PetscScalar myH = 0.5 * (H[i][j] + H[i+oi][j+oj]);
-
-          if (doColdIceMethods==PETSC_TRUE) {
-            ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
-            ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
-            nuH[o][i][j] = ice->effectiveViscosityColumn(
-                                myH, grid.kBelowHeight(myH), grid.zlevels,
-                                u_x, u_y, v_x, v_y, Tij, Toffset);
-          } else {
-            ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-            ierr = Enth3.getInternalColumn(i+oi,j+oj,&Enthoffset); CHKERRQ(ierr);
-            nuH[o][i][j] = gpbldi->effectiveViscosityColumnFromEnth(
-                                myH, grid.kBelowHeight(myH), grid.zlevels,
-                                u_x, u_y, v_x, v_y, Enthij, Enthoffset);
-          }
-
-          if (! finite(nuH[o][i][j]) || false) {
-            ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, nuH[o][i][j]);
-              CHKERRQ(ierr);
-            ierr = PetscPrintf(grid.com, "  u_x, u_y, v_x, v_y = %e, %e, %e, %e\n",
-                               u_x, u_y, v_x, v_y);
-              CHKERRQ(ierr);
-          }
-
-          // We ensure that nuH is bounded below by a positive constant.
-          nuH[o][i][j] += epsilon;
-        }
-      }
-    }
-  }
-  ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = T3.end_access(); CHKERRQ(ierr);
-  ierr = vNuH[0].end_access(); CHKERRQ(ierr);
-  ierr = vNuH[1].end_access(); CHKERRQ(ierr);
-  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
-  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
-
-  if (doColdIceMethods==PETSC_FALSE) {
-    ierr = Enth3.end_access(); CHKERRQ(ierr);
-  }
-
-  // Some communication
-  ierr = vNuH[0].beginGhostComm(); CHKERRQ(ierr);
-  ierr = vNuH[0].endGhostComm(); CHKERRQ(ierr);
-  ierr = vNuH[1].beginGhostComm(); CHKERRQ(ierr);
-  ierr = vNuH[1].endGhostComm(); CHKERRQ(ierr);
-  return 0;
-}
-
-
 /*********** timestep routines ****************/
 
 PetscErrorCode IceEnthalpyModel::temperatureStep(
@@ -1082,10 +632,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   PetscTruth viewOneColumn;
   ierr = check_option("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
-#if 1
   PetscTruth viewOneRedoColumn;
   ierr = check_option("-view_redo_sys", viewOneRedoColumn); CHKERRQ(ierr);
-#endif
 
   EnthalpyConverter EC(&config);
   if (getVerbosityLevel() >= 4) { ierr = EC.viewConstants(NULL); CHKERRQ(ierr); }
@@ -1142,8 +690,6 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   // checks that all needed constants and pointers got set:
   ierr = system.initAllColumns(); CHKERRQ(ierr);
 
-
-#if 1
   PetscScalar *xredo;
   xredo = new PetscScalar[fMbz];
   bedrockOnlySystemCtx bedredosystem(fMbz);
@@ -1155,7 +701,6 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   bedredosystem.T_b             = new PetscScalar[fMbz];
   // checks that all needed constants and pointers got set:
   ierr = bedredosystem.initAllColumns(); CHKERRQ(ierr);
-#endif
 
   // now get map-plane coupler fields
   IceModelVec2 *pccTs, *pccsbt, *pccsbmf;
@@ -1374,48 +919,47 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
         }
       }
 
-#if 1
       // in temperate base case, or if bulge limiter was tripped, 
       //    redo bedrock temperature solution
       // FIXME:  and put energy back into melting
-      if (    (bulgeLimiterTripped)
-           || (    (PismModMask(mask[i][j]) != MASK_FLOATING)
-                && (EC.isTemperate(Enthnew[0], p_basal )) ) ) {
-        for (PetscInt k=0; k < fMbz; k++) {
-          bedredosystem.T_b[k] = Tb[k];
-        }
-        PetscScalar T_basal_new;
-        ierr = EC.getAbsTemp(Enthnew[0], p_basal, T_basal_new); CHKERRQ(ierr);
-        ierr = bedredosystem.setTopBoundaryValueThisColumn(T_basal_new); CHKERRQ(ierr);
-        ierr = bedredosystem.setBasalBoundaryValueThisColumn(Ghf[i][j]); CHKERRQ(ierr);
-        // solve the system
-        ierr = bedredosystem.solveThisColumn(&xredo); // no CHKERRQ(ierr) immediately because:
-        if (ierr > 0) {
-          SETERRQ3(2,
-            "bedredosystem tridiagonal solve failed at (%d,%d)\n"
-            "   with zero pivot position %d.\n", i, j, ierr);
-        } else { CHKERRQ(ierr); }
-        // insert
-        for (PetscInt k=0; k < fMbz; k++) {
-          Tbnew[k] = xredo[k];
-        }
-        // FIXME:  need to subtract Tbnew - xredo and put into melting
-
-        // diagnostic/debug
-        if (viewOneRedoColumn) {
-          if ((i==id) && (j==jd)) {
-            ierr = verbPrintf(1,PETSC_COMM_SELF,
-              "\n\nviewing bedredosystem and solution at (i,j)=(%d,%d):\n", i, j);
-              CHKERRQ(ierr);
-            ierr = bedredosystem.viewConstants(NULL); CHKERRQ(ierr);
-            ierr = bedredosystem.viewSystem(NULL,"system"); CHKERRQ(ierr);
-            ierr = bedredosystem.viewColumnValues(NULL, xredo, fMbz, "solution xredo");
-              CHKERRQ(ierr);
+      if (fMbz > 1) {
+        if (    (bulgeLimiterTripped)
+             || (    (PismModMask(mask[i][j]) != MASK_FLOATING)
+                  && (EC.isTemperate(Enthnew[0], p_basal )) ) ) {
+          for (PetscInt k=0; k < fMbz; k++) {
+            bedredosystem.T_b[k] = Tb[k];
           }
-        }
-
-      }
-#endif
+          PetscScalar T_basal_new;
+          ierr = EC.getAbsTemp(Enthnew[0], p_basal, T_basal_new); CHKERRQ(ierr);
+          ierr = bedredosystem.setTopBoundaryValueThisColumn(T_basal_new); CHKERRQ(ierr);
+          ierr = bedredosystem.setBasalBoundaryValueThisColumn(Ghf[i][j]); CHKERRQ(ierr);
+          // solve the system
+          ierr = bedredosystem.solveThisColumn(&xredo); // no CHKERRQ(ierr) immediately because:
+          if (ierr > 0) {
+            SETERRQ3(2,
+              "bedredosystem tridiagonal solve failed at (%d,%d)\n"
+              "   with zero pivot position %d.\n", i, j, ierr);
+          } else { CHKERRQ(ierr); }
+          // insert
+          for (PetscInt k=0; k < fMbz; k++) {
+            Tbnew[k] = xredo[k];
+          }
+          // FIXME:  need to subtract Tbnew - xredo and put into melting
+  
+          // diagnostic/debug
+          if (viewOneRedoColumn) {
+            if ((i==id) && (j==jd)) {
+              ierr = verbPrintf(1,PETSC_COMM_SELF,
+                "\n\nviewing bedredosystem and solution at (i,j)=(%d,%d):\n", i, j);
+                CHKERRQ(ierr);
+              ierr = bedredosystem.viewConstants(NULL); CHKERRQ(ierr);
+              ierr = bedredosystem.viewSystem(NULL,"system"); CHKERRQ(ierr);
+              ierr = bedredosystem.viewColumnValues(NULL, xredo, fMbz, "solution xredo");
+                CHKERRQ(ierr);
+            }
+          }
+        }  
+      }  // if (fMbz > 1)
 
       // transfer column into Tb3; no need for communication, even later
       ierr = Tb3.setValColumnPL(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
@@ -1467,10 +1011,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   delete [] system.Sigma; delete [] system.Enth;  delete [] system.Enth_s; 
   delete [] system.Enth_b;
 
-#if 1
   delete [] bedredosystem.T_b;
   delete [] xredo;
-#endif
 
   delete [] x;
   delete [] Tb;     delete [] Tbnew;   delete [] Enthnew;

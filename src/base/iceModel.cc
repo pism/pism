@@ -76,6 +76,8 @@ IceModel::IceModel(IceGrid &g)
   save_extra = false;
   dvoldt = gdHdtav = 0;
 
+  doColdIceMethods = PETSC_TRUE;  // FIXME: this way until IceEnthalpyModel is fully moved into IceModel
+
   // Default ice type:
   iceFactory.setType(ICE_PB);
 }
