@@ -84,9 +84,9 @@ public:
   map<string, vector<double> > doubles;
 
 protected:
-  virtual PetscErrorCode write_attributes(int ncid, int varid, nc_type nctype,
-				  bool write_in_glaciological_units);
-  virtual PetscErrorCode read_valid_range(int ncid, int varid);
+  virtual PetscErrorCode write_attributes(const NCTool &nc, int varid, nc_type nctype,
+					  bool write_in_glaciological_units);
+  virtual PetscErrorCode read_valid_range(const NCTool &nc, int varid);
   MPI_Comm com;
   PetscMPIInt rank;
   map<string, string> strings;
@@ -112,7 +112,7 @@ public:
 protected:
   GridType dims;
   IceGrid *grid;
-  PetscErrorCode define(int ncid, nc_type nctype, int &varid);
+  PetscErrorCode define(const NCTool &nc, nc_type nctype, int &varid);
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
   PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);
   PetscErrorCode check_range(Vec v);
@@ -131,9 +131,9 @@ public:
   virtual PetscErrorCode scalar_from_option(string, string);
 protected:
   string config_filename;
-  virtual PetscErrorCode write_attributes(int ncid, int varid, nc_type nctype,
-				  bool write_in_glaciological_units);
-  virtual PetscErrorCode define(int ncid, int &varid);
+  virtual PetscErrorCode write_attributes(const NCTool &nc, int varid, nc_type nctype,
+					  bool write_in_glaciological_units);
+  virtual PetscErrorCode define(const NCTool &nc, int &varid);
 };
 
 //! An internal class for reading, writing and converting time-series.
@@ -144,7 +144,7 @@ public:
   virtual PetscErrorCode write(const char filename[], size_t start, vector<double> &data);
   virtual PetscErrorCode change_units(vector<double> &data, utUnit *from, utUnit *to);
 protected:
-  virtual PetscErrorCode define(int ncid, int &varid);
+  virtual PetscErrorCode define(const NCTool &nc, int &varid);
 };
 
 #endif

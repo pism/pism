@@ -71,7 +71,19 @@ NCTool::NCTool(IceGrid *my_grid) {
   }
 }
 
-PetscErrorCode  NCTool::find_dimension(const char short_name[], int *dimid, bool &exists) {
+NCTool::~NCTool() {
+  if (ncid >= 0) {
+    PetscPrintf(com, "NCTool::~NCTool() ncid >= 0.\n");
+    PetscEnd();
+  }
+}
+
+//! 
+int NCTool::get_ncid() const {
+  return ncid;
+}
+
+PetscErrorCode  NCTool::find_dimension(const char short_name[], int *dimid, bool &exists) const {
   PetscErrorCode ierr;
   int stat, found = 0, my_dimid;
   if (rank == 0) {
@@ -114,7 +126,7 @@ PetscErrorCode  NCTool::find_dimension(const char short_name[], int *dimid, bool
  */
 PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
 				      int *varidp, bool &exists,
-				      bool &found_by_standard_name) {
+				      bool &found_by_standard_name) const {
   int ierr;
   int stat, found = 0, my_varid = -1, nvars;
   bool standard_name_match = false;
@@ -173,7 +185,7 @@ PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
 }
 
 PetscErrorCode NCTool::find_variable(string short_name, string standard_name,
-				     int *varidp, bool &exists) {
+				     int *varidp, bool &exists) const {
   bool dummy;
   PetscErrorCode ierr = find_variable(short_name, standard_name, varidp, exists, dummy);
   CHKERRQ(ierr);
@@ -181,12 +193,12 @@ PetscErrorCode NCTool::find_variable(string short_name, string standard_name,
 }
 				     
 
-PetscErrorCode NCTool::find_variable(string short_name, int *varid, bool &exists) {
+PetscErrorCode NCTool::find_variable(string short_name, int *varid, bool &exists) const {
   return find_variable(short_name, "", varid, exists);
 }
 
 //! Read the first and last values, and the lengths, of the x,y,z,zb dimensions from a NetCDF file.  Read the last t.
-PetscErrorCode NCTool::get_grid_info(grid_info &g) {
+PetscErrorCode NCTool::get_grid_info(grid_info &g) const {
   PetscErrorCode ierr;
 
   ierr = get_grid_info_2d(g); CHKERRQ(ierr);
@@ -200,7 +212,7 @@ PetscErrorCode NCTool::get_grid_info(grid_info &g) {
 }
 
 //! Read the first and last values, and the lengths, of the x,y dimensions from a NetCDF file.  Read the last t.
-PetscErrorCode NCTool::get_grid_info_2d(grid_info &g) {
+PetscErrorCode NCTool::get_grid_info_2d(grid_info &g) const {
   PetscErrorCode ierr;
 
   ierr = get_dim_length("t",  &g.t_len); CHKERRQ(ierr);
@@ -221,7 +233,7 @@ PetscErrorCode NCTool::get_grid_info_2d(grid_info &g) {
 }
 
 //! Read the last value of the time variable t from a NetCDF file.
-PetscErrorCode NCTool::get_last_time(double *time) {
+PetscErrorCode NCTool::get_last_time(double *time) const {
   PetscErrorCode ierr;
   ierr = get_dim_limits("t", NULL, time); CHKERRQ(ierr);
   return 0;
@@ -233,7 +245,7 @@ PetscErrorCode NCTool::get_last_time(double *time) {
   This function allocates arrays z_levels and zb_levels, and they have to be
   freed by the caller (using delete[]).
  */
-PetscErrorCode NCTool::get_vertical_dims(double* &z_levels, double* &zb_levels) {
+PetscErrorCode NCTool::get_vertical_dims(double* &z_levels, double* &zb_levels) const {
   int stat;
   int z_id, zb_id, z_len, zb_len;
   size_t zero  = 0, nc_z_len, nc_zb_len;
@@ -276,7 +288,7 @@ PetscErrorCode NCTool::get_vertical_dims(double* &z_levels, double* &zb_levels) 
 /*! Uses starting and ending values and a grid length for regularly-spaced
 values.
  */
-PetscErrorCode NCTool::put_dimension_regular(int varid, int len, double start, double end) {
+PetscErrorCode NCTool::put_dimension_regular(int varid, int len, double start, double end) const {
   PetscErrorCode ierr;
   int stat;
   double *v, delta;
@@ -304,7 +316,7 @@ PetscErrorCode NCTool::put_dimension_regular(int varid, int len, double start, d
 
 
 //! Put the variable for a dimension in a NetCDF file.  Makes no assumption about spacing.
-PetscErrorCode NCTool::put_dimension(int varid, int len, PetscScalar *vals) {
+PetscErrorCode NCTool::put_dimension(int varid, int len, PetscScalar *vals) const {
   PetscErrorCode ierr;
   int stat;
   double *v;
@@ -323,7 +335,7 @@ PetscErrorCode NCTool::put_dimension(int varid, int len, PetscScalar *vals) {
 /*!
 Just calls get_global_var().  Then transfers the global \c Vec \c g to the local \c Vec \c vec.
  */
-PetscErrorCode NCTool::get_local_var(const int varid, DA da, Vec v, GridType dims, int t) {
+PetscErrorCode NCTool::get_local_var(const int varid, DA da, Vec v, GridType dims, int t) const {
 
   PetscErrorCode ierr;
   Vec g;
@@ -339,7 +351,7 @@ PetscErrorCode NCTool::get_local_var(const int varid, DA da, Vec v, GridType dim
 
 
 //! Read a variable in a NetCDF file into a \c DA -managed global \c Vec \c g.  \e In \e parallel.
-PetscErrorCode NCTool::get_global_var(const int varid, Vec g, GridType dims, int t) {
+PetscErrorCode NCTool::get_global_var(const int varid, Vec g, GridType dims, int t) const {
   const int N = 5;
   const int start_tag = 1;
   const int count_tag = 2;
@@ -423,7 +435,7 @@ PetscErrorCode NCTool::get_global_var(const int varid, Vec g, GridType dims, int
 /*!
 Just calls put_global_var(), after transfering the local \c Vec called \c v into the global \c Vec \c g.
  */
-PetscErrorCode NCTool::put_local_var(const int varid, DA da, Vec v, GridType dims) {
+PetscErrorCode NCTool::put_local_var(const int varid, DA da, Vec v, GridType dims) const {
 
   PetscErrorCode ierr;
   Vec g;
@@ -438,7 +450,7 @@ PetscErrorCode NCTool::put_local_var(const int varid, DA da, Vec v, GridType dim
 
 
 //! Put a \c DA -managed global \c Vec \c g into a variable in a NetCDF file.  \e In \e parallel.
-PetscErrorCode NCTool::put_global_var(const int varid, Vec g, GridType dims) {
+PetscErrorCode NCTool::put_global_var(const int varid, Vec g, GridType dims) const {
   const int start_tag = 1;
   const int count_tag = 2;
   const int data_tag =  3;
@@ -519,7 +531,7 @@ Simply calls regrid_global_var().  Then transfers the global \c Vec \c g to the 
  */
 PetscErrorCode NCTool::regrid_local_var(const int varid, GridType dim_flag, LocalInterpCtx &lic,
                                         DA da, Vec vec, 
-                                        bool useMaskInterp) {
+                                        bool useMaskInterp) const {
   PetscErrorCode ierr;
   Vec g;
   ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
@@ -597,7 +609,7 @@ Then we just do the two variable interpolation as before, finding \f$a_{m}\f$ an
 computing \f$F(x,y,z)\f$.
  */
 PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dims, LocalInterpCtx &lic,
-                                         Vec g, bool useMaskInterp) {
+                                         Vec g, bool useMaskInterp) const {
   PetscErrorCode ierr;
   const int N = 5, X = 1, Y = 2, Z = 3, ZB = 4; // indices, just for clarity
   const int start_tag = 1; // MPI tag for the start array
@@ -869,7 +881,7 @@ PetscErrorCode NCTool::regrid_global_var(const int varid, GridType dims, LocalIn
 /*!
   Appends if overwrite == false (default).
  */
-PetscErrorCode NCTool::write_history(const char history[], bool overwrite) {
+PetscErrorCode NCTool::write_history(const char history[], bool overwrite) const {
   int stat;
   string old_history, new_history;
 
@@ -903,7 +915,7 @@ PetscErrorCode NCTool::write_history(const char history[], bool overwrite) {
     On processor 0 returns true if OK, false otherwise. Always returns true on
     processors other than 0.
  */
-bool NCTool::check_dimension(const char name[], const int len) {
+bool NCTool::check_dimension(const char name[], const int len) const {
   int stat, dimid;
   size_t dimlen;
 
@@ -925,7 +937,7 @@ bool NCTool::check_dimension(const char name[], const int len) {
 }
 
 //! Always returns true on processors other than zero.
-bool NCTool::check_dimensions() {
+bool NCTool::check_dimensions() const {
   bool t, x, y, z, zb;
 
   if (grid == NULL) SETERRQ(1, "NCTool::check_dimensions(...): grid == NULL");
@@ -941,7 +953,7 @@ bool NCTool::check_dimensions() {
 
 //! Create dimensions and coordinate variables for storing spatial data.
 /*! Assumes that the dataset is in the data mode. */
-PetscErrorCode NCTool::create_dimensions() {
+PetscErrorCode NCTool::create_dimensions() const {
   int stat, t, x, y, z, zb, dimid;
 
   if (grid == NULL) SETERRQ(1, "NCTool::create_dimensions(...): grid == NULL");
@@ -1008,7 +1020,7 @@ PetscErrorCode NCTool::create_dimensions() {
 }
 
 //! Appends \c time to the t dimension.
-PetscErrorCode NCTool::append_time(PetscReal time) {
+PetscErrorCode NCTool::append_time(PetscReal time) const {
   int stat, t_id;
 
 
@@ -1032,6 +1044,9 @@ PetscErrorCode NCTool::append_time(PetscReal time) {
 PetscErrorCode NCTool::open_for_reading(const char filename[]) {
   PetscErrorCode ierr;
   int stat = 0;
+
+  if (ncid >= 0) SETERRQ(1, "NCTool::open_for_reading(): ncid >= 0 at the beginning of the call");
+
   if (rank == 0) {
     stat = nc_open(filename, NC_NOWRITE, &ncid);
   }
@@ -1060,6 +1075,8 @@ PetscErrorCode NCTool::close() {
 //! Opens a file for writing if it exists, creates if it does not.
 PetscErrorCode NCTool::open_for_writing(const char filename[]) {
   int stat;
+
+  if (ncid >= 0) SETERRQ(1, "NCTool::open_for_writing(): ncid >= 0 at the beginning of the call");
 
   if (rank == 0) {
     bool file_exists = false;
@@ -1102,6 +1119,8 @@ PetscErrorCode NCTool::open_for_writing(const char filename[]) {
 PetscErrorCode NCTool::open_for_writing(const char filename[], bool append,
 					bool check_dims) {
   int stat;
+
+  if (ncid >= 0) SETERRQ(1, "NCTool::open_for_writing(): ncid >= 0 at the beginning of the call");
 
   if (append == false) {
     // if append == false, we need to check if the file exists and move it
@@ -1159,7 +1178,7 @@ PetscErrorCode NCTool::open_for_writing(const char filename[], bool append,
 }
 
 //! Writes global attributes to a NetCDF file.
-PetscErrorCode NCTool::write_global_attrs(bool have_ssa_velocities, const char conventions[]) {
+PetscErrorCode NCTool::write_global_attrs(bool have_ssa_velocities, const char conventions[]) const {
   int stat, flag = 0;
   char tmp[TEMPORARY_STRING_LENGTH];
 
@@ -1185,7 +1204,7 @@ PetscErrorCode NCTool::write_global_attrs(bool have_ssa_velocities, const char c
 }
 
 //! Finds the length of a dimension. Returns 0 if failed.
-PetscErrorCode NCTool::get_dim_length(const char name[], int *len) {
+PetscErrorCode NCTool::get_dim_length(const char name[], int *len) const {
   int stat, dim_id;
   
   if (rank == 0) {
@@ -1211,7 +1230,7 @@ PetscErrorCode NCTool::get_dim_length(const char name[], int *len) {
 
   Set \c min or \c max to NULL to omit the corresponding value.
  */
-PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *max) {
+PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *max) const {
   PetscErrorCode ierr;
   int len = 0, varid = -1;
   bool variable_exists = false;
@@ -1304,7 +1323,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
 /*!
   Missimg and empty attributes are treated the same.
  */
-PetscErrorCode NCTool::get_att_text(const int varid, const char name[], string &result) {
+PetscErrorCode NCTool::get_att_text(const int varid, const char name[], string &result) const {
   char *str = NULL;
   int ierr, stat, len;
 
@@ -1350,7 +1369,7 @@ PetscErrorCode NCTool::get_att_text(const int varid, const char name[], string &
 
 //! Reads a scalar attribute from a NetCDF file.
 PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
-				      vector<double> &result) {
+				      vector<double> &result) const {
   int ierr, stat, len;
 
   // Read and broadcast the attribute length:
@@ -1413,7 +1432,7 @@ PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
   Distances between elements are speciﬁed in type-independent units of elements
 */
 PetscErrorCode NCTool::compute_start_and_count(const int varid, int *start, int *count, GridType dims,
-					       size_t* &nc_start, size_t* &nc_count, ptrdiff_t* &imap) {
+					       size_t* &nc_start, size_t* &nc_count, ptrdiff_t* &imap) const {
   int stat, ndims;
   // Indices:
   const int T = 0, X = 1, Y = 2, Z = 3, ZB = 4;
@@ -1509,7 +1528,7 @@ PetscErrorCode NCTool::compute_start_and_count(const int varid, int *start, int 
 }
 
 //! Computes the size of the local block.
-int NCTool::compute_block_size(GridType dims, int* count) {
+int NCTool::compute_block_size(GridType dims, int* count) const {
   const int X = 1, Y = 2, Z = 3, ZB = 4;
   switch (dims) {
   case GRID_2D:
@@ -1560,7 +1579,7 @@ PetscErrorCode NCTool::get_grid(const char filename[]) {
 /*!
   Note that this function intentionally ignores the reference date.
  */
-PetscErrorCode NCTool::get_units(int varid, bool &has_units, utUnit &units) {
+PetscErrorCode NCTool::get_units(int varid, bool &has_units, utUnit &units) const {
   PetscErrorCode ierr;
   string units_string;
 
@@ -1598,7 +1617,7 @@ PetscErrorCode NCTool::get_units(int varid, bool &has_units, utUnit &units) {
 //! Creates a time-series variable (i.e. one that depends on "t" only).
 PetscErrorCode NCTool::create_timeseries(const char name[], const char long_name[],
 					 const char units[],
-					 nc_type nctype, int *varid) {
+					 nc_type nctype, int *varid) const {
   int stat, t_id, var_id;
 
   if (rank == 0) {
@@ -1629,7 +1648,7 @@ PetscErrorCode NCTool::create_timeseries(const char name[], const char long_name
 }
 
 //! Writes \c value to a NetCDF variable \c name(t). Uses the last time slice.
-PetscErrorCode NCTool::append_timeseries(const char name[], double value) {
+PetscErrorCode NCTool::append_timeseries(const char name[], double value) const {
   int stat, varid, t_len;
   bool variable_exists;
 
@@ -1649,7 +1668,7 @@ PetscErrorCode NCTool::append_timeseries(const char name[], double value) {
 }
 
 //! Get the number of attributes of a variable.
-PetscErrorCode NCTool::inq_nattrs(int varid, int &N) {
+PetscErrorCode NCTool::inq_nattrs(int varid, int &N) const {
   int stat;
 
   if (rank == 0) {
@@ -1661,7 +1680,7 @@ PetscErrorCode NCTool::inq_nattrs(int varid, int &N) {
 }
 
 //! Get the attribute type.
-PetscErrorCode NCTool::inq_att_type(int varid, const char name[], nc_type &result) {
+PetscErrorCode NCTool::inq_att_type(int varid, const char name[], nc_type &result) const {
   int stat, type;
   nc_type tmp;
 
@@ -1677,7 +1696,7 @@ PetscErrorCode NCTool::inq_att_type(int varid, const char name[], nc_type &resul
 }
 
 //! Gets the name of the n-th (counting from 0) attribute of a NetCDF variable.
-PetscErrorCode NCTool::inq_att_name(int varid, int n, string &name) {
+PetscErrorCode NCTool::inq_att_name(int varid, int n, string &name) const {
   int stat;
   char tmp[NC_MAX_NAME];
 
@@ -1694,7 +1713,7 @@ PetscErrorCode NCTool::inq_att_name(int varid, int n, string &name) {
 /*!
   The length of the result (\c dimids) is the number of dimensions.
  */
-PetscErrorCode NCTool::inq_dimids(int varid, vector<int> &dimids) {
+PetscErrorCode NCTool::inq_dimids(int varid, vector<int> &dimids) const {
   int stat;
   int ndims;
 
@@ -1720,7 +1739,7 @@ PetscErrorCode NCTool::inq_dimids(int varid, vector<int> &dimids) {
 }
 
 //! Get a name of a dimension by a dimension ID.
-PetscErrorCode NCTool::inq_dimname(int dimid, string &name) {
+PetscErrorCode NCTool::inq_dimname(int dimid, string &name) const {
   int stat;
   char tmp[NC_MAX_NAME];
 
@@ -1734,7 +1753,7 @@ PetscErrorCode NCTool::inq_dimname(int dimid, string &name) {
 }
 
 //! Get the dimension ID of an unlimited dimension. Sets unlimdimid to -1 if there isn't one.
-PetscErrorCode NCTool::inq_unlimdim(int &unlimdimid) {
+PetscErrorCode NCTool::inq_unlimdim(int &unlimdimid) const {
   int stat;
 
   if (rank == 0) {

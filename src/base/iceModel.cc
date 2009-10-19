@@ -202,7 +202,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vbed); CHKERRQ(ierr);
 
   // grounded_dragging_floating integer mask
-  ierr = vMask.create(grid, "mask",     true); CHKERRQ(ierr);
+  ierr = vMask.create(grid, "mask", true); CHKERRQ(ierr);
   ierr = vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
 			 "", ""); CHKERRQ(ierr);
   vector<double> mask_values(4);

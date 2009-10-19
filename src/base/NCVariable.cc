@@ -177,7 +177,7 @@ PetscErrorCode NCSpatialVariable::write(const char filename[], nc_type nctype,
 			  &varid, exists); CHKERRQ(ierr);
 
   if (!exists) {
-    ierr = define(nc.ncid, nctype, varid); CHKERRQ(ierr);
+    ierr = define(nc, nctype, varid); CHKERRQ(ierr);
   }
 
   if (write_in_glaciological_units) {
@@ -185,7 +185,7 @@ PetscErrorCode NCSpatialVariable::write(const char filename[], nc_type nctype,
   }
 
   // write the attributes
-  write_attributes(nc.ncid, varid, nctype, write_in_glaciological_units);
+  write_attributes(nc, varid, nctype, write_in_glaciological_units);
 
   // Actually write data:
   ierr = nc.put_global_var(varid, v, dims); CHKERRQ(ierr);  
@@ -291,7 +291,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
     ierr = change_units(v, &input_units, &units); CHKERRQ(ierr);
 
     // Read the valid range info:
-    ierr = read_valid_range(nc.ncid, varid); CHKERRQ(ierr);
+    ierr = read_valid_range(nc, varid); CHKERRQ(ierr);
 
     // Check the range and warn the user if needed:
     ierr = check_range(v); CHKERRQ(ierr);
@@ -309,8 +309,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
 /*! Reads \c valid_min, \c valid_max and \c valid_range attributes; if \c
     valid_range is found, sets the pair \c valid_min and \c valid_max instead.
  */
-PetscErrorCode NCVariable::read_valid_range(int ncid, int varid) {
-  NCTool nc(com, rank);
+PetscErrorCode NCVariable::read_valid_range(const NCTool &nc, int varid) {
   string input_units_string;
   utUnit input_units;
   vector<double> bounds;
@@ -320,8 +319,6 @@ PetscErrorCode NCVariable::read_valid_range(int ncid, int varid) {
   // Never reset valid_min/max if any of them was set internally.
   if (has("valid_min") || has("valid_max"))
     return 0;
-
-  nc.ncid = ncid;
 
   // Read the units: The following code ignores the units in the input file if
   // a) they are absent :-) b) they are invalid c) they are not compatible with
@@ -417,11 +414,13 @@ PetscErrorCode NCSpatialVariable::change_units(Vec v, utUnit *from, utUnit *to) 
   \li if both valid_min and valid_max are set, then valid_range is written
   instead of the valid_min, valid_max pair.
  */
-PetscErrorCode NCVariable::write_attributes(int ncid, int varid, nc_type nctype,
+PetscErrorCode NCVariable::write_attributes(const NCTool &nc, int varid, nc_type nctype,
 					    bool write_in_glaciological_units) {
   int ierr;
 
   if (rank != 0) return 0;
+
+  int ncid = nc.get_ncid();
 
   ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
@@ -584,13 +583,15 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
 }
 
 //! Define a NetCDF variable corresponding to a NCVariable object.
-PetscErrorCode NCSpatialVariable::define(int ncid, nc_type nctype, int &varid) {
+PetscErrorCode NCSpatialVariable::define(const NCTool &nc, nc_type nctype, int &varid) {
   int stat, dimids[4], var_id;
 
   if (grid == NULL)
     SETERRQ(1, "NCSpatialVariable::define: grid is NULL.");
 
   if (rank == 0) {
+    int ncid = nc.get_ncid();
+
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "t", &dimids[0]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "y", &dimids[1]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -761,10 +762,10 @@ PetscErrorCode NCConfigVariable::write(const char filename[]) {
   ierr = nc.find_variable(short_name, &varid, variable_exists); CHKERRQ(ierr);
 
   if (!variable_exists) {
-    ierr = define(nc.ncid, varid); CHKERRQ(ierr);
+    ierr = define(nc, varid); CHKERRQ(ierr);
   }
 
-  ierr = write_attributes(nc.ncid, varid, NC_DOUBLE, false);
+  ierr = write_attributes(nc, varid, NC_DOUBLE, false);
 
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -772,8 +773,10 @@ PetscErrorCode NCConfigVariable::write(const char filename[]) {
 }
 
 //! Define a configuration NetCDF variable.
-PetscErrorCode NCConfigVariable::define(int ncid, int &varid) {
-  int stat, var_id;
+PetscErrorCode NCConfigVariable::define(const NCTool &nc, int &varid) {
+  int stat, ncid, var_id;
+
+  ncid = nc.get_ncid();
 
   if (rank == 0) {
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -841,11 +844,13 @@ void NCConfigVariable::set_flag(string name, bool value) {
 }
 
 //! Write attributes to a NetCDF variable. All attributes are equal here.
-PetscErrorCode NCConfigVariable::write_attributes(int ncid, int varid, nc_type nctype,
+PetscErrorCode NCConfigVariable::write_attributes(const NCTool &nc, int varid, nc_type nctype,
 						  bool /*write_in_glaciological_units*/) {
-  int ierr;
+  int ierr, ncid;
 
   if (rank != 0) return 0;
+
+  ncid = nc.get_ncid();
 
   ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
@@ -982,9 +987,11 @@ PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
 
   PetscErrorCode ierr;
   NCTool nc(com, rank);
-  int varid;
+  int ncid, varid;
   bool variable_exists;
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+
+  ncid = nc.get_ncid();
 
   // Find the variable:
   ierr = nc.find_variable(short_name, strings["standard_name"],
@@ -1025,7 +1032,7 @@ PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
   data.resize(length);		// memory allocation happens here
 
   if (rank == 0) {
-    ierr = nc_get_var_double(nc.ncid, varid, &data[0]); 
+    ierr = nc_get_var_double(ncid, varid, &data[0]); 
     CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
   ierr = MPI_Bcast(&data[0], length, MPI_DOUBLE, 0, com); CHKERRQ(ierr);
@@ -1056,13 +1063,13 @@ PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
 
 
 //! Define a NetCDF variable corresponding to a time-series.
-PetscErrorCode NCTimeseries::define(int ncid, int &varid) {
+PetscErrorCode NCTimeseries::define(const NCTool &nc, int &varid) {
   PetscErrorCode ierr;
   bool dimension_exists;
-  int dimid;
-  NCTool nc(com, rank);
-  nc.ncid = ncid;
+  int ncid, dimid;
  
+  ncid = nc.get_ncid();
+
   ierr = nc.find_dimension(dimension_name.c_str(), &dimid, dimension_exists); CHKERRQ(ierr);
 
   if (rank == 0) {
@@ -1087,16 +1094,18 @@ PetscErrorCode NCTimeseries::write(const char filename[], size_t start, vector<d
 
   PetscErrorCode ierr;
   NCTool nc(com, rank);
+  int ncid;
 
   // append = true, check_dims = false
   ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr);
 
   bool variable_exists = false;
   int varid = -1;
+  ncid = nc.get_ncid();
 
   ierr = nc.find_variable(short_name.c_str(), &varid, variable_exists); CHKERRQ(ierr);
   if (!variable_exists) {
-    ierr = define(nc.ncid, varid); CHKERRQ(ierr);
+    ierr = define(nc, varid); CHKERRQ(ierr);
   }
 
   // convert to glaciological units:
@@ -1104,10 +1113,10 @@ PetscErrorCode NCTimeseries::write(const char filename[], size_t start, vector<d
 
   size_t count = static_cast<size_t>(data.size());
   if (rank == 0) {
-    ierr = nc_put_vara_double(nc.ncid, varid, &start, &count, &data[0]);
+    ierr = nc_put_vara_double(ncid, varid, &start, &count, &data[0]);
   }
 
-  ierr = write_attributes(nc.ncid, varid, NC_FLOAT, true);
+  ierr = write_attributes(nc, varid, NC_FLOAT, true);
 
   ierr = nc.close(); CHKERRQ(ierr);
 
