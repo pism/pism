@@ -1166,6 +1166,7 @@ PetscErrorCode IceModelVec::write_text_attr(const char filename[], const char na
     ierr = nc_enddef(nc.ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
 
+  ierr = nc.close(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -1192,6 +1193,8 @@ PetscErrorCode IceModelVec::write_scalar_attr(const char filename[], const char 
 
     ierr = nc_enddef(nc.ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
+
+  ierr = nc.close(); CHKERRQ(ierr);
   return 0;
 }
 
