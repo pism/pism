@@ -453,3 +453,28 @@ string timestamp() {
   return string(date_str);
 }
 
+//! Makes the process on rank \c rank_to_stop wait for the debugger to be attached.
+/*
+  Once the debugger is attached, giving it the "set var i = 1" (for gdb)
+  command will resume the run.
+ */
+PetscErrorCode pism_wait_for_gdb(MPI_Comm com, PetscMPIInt rank_to_stop) {
+  PetscErrorCode ierr;
+  PetscMPIInt my_rank;
+
+  ierr = MPI_Comm_rank(com, &my_rank); CHKERRQ(ierr);
+
+  if (my_rank == rank_to_stop) {
+    int i = 0;
+    char hostname[256];
+    gethostname(hostname, sizeof(hostname));
+    printf("PISM PID %d on %s is waiting...\n", getpid(), hostname);
+    fflush(stdout);
+    while (0 == i)
+      sleep(5);
+  }
+  
+  ierr = MPI_Barrier(com); CHKERRQ(ierr);
+
+  return 0;
+}

@@ -547,7 +547,7 @@ PetscLogEventEnd(massbalEVENT,0,0,0,0);
     ierr = update_viewers(); CHKERRQ(ierr);
 
     if (endOfTimeStepHook() != 0) break;
-  }
+  } // end of the time-stepping loop
 
   return 0;
 }
@@ -630,6 +630,12 @@ The following flow-chart illustrates the process.
  */
 PetscErrorCode IceModel::init() {
   PetscErrorCode ierr;
+
+  // Build PISM with PISM_WAIT_FOR_GDB defined to run make it wait for a
+  // connection.
+#ifdef PISM_WAIT_FOR_GDB
+  ierr = pism_wait_for_gdb(grid.com, 0); CHKERRQ(ierr);
+#endif
 
   // 1) Initialize the computational grid:
   ierr = grid_setup(); CHKERRQ(ierr);

@@ -102,4 +102,6 @@ PetscErrorCode show_usage_check_req_opts(
     MPI_Comm com, const char execname[], vector<string> required_options,
     const char usage[]);
 
+// debugging:
+PetscErrorCode pism_wait_for_gdb(MPI_Comm com, PetscMPIInt rank);
 #endif
