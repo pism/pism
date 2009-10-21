@@ -98,7 +98,7 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
     cmdstr += string(" ") + argv[j];
   cmdstr += "\n";
 
-  ierr = stampHistoryAdd(cmdstr); CHKERRQ(ierr);
+  global_attributes.prepend_history(cmdstr);
 
   return 0;
 }
@@ -125,33 +125,13 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
 }
 
 
-//! Get time and user/host name and add it to the given string.  Then call stampHistoryAdd(). 
+//! Get time and user/host name and add it to the given string.
 PetscErrorCode  IceModel::stampHistory(string str) {
-  PetscErrorCode ierr;
 
-  char username[50];
-  ierr = PetscGetUserName(username, sizeof(username)); CHKERRQ(ierr);
-  char hostname[100];
-  ierr = PetscGetHostName(hostname, sizeof(hostname)); CHKERRQ(ierr);
-  
-  ostringstream message;
-  message << username << "@" << hostname << " " << timestamp() << ": " << str << endl;
-
-  ierr = stampHistoryAdd(message.str()); CHKERRQ(ierr);
+  global_attributes.prepend_history(username_prefix() + (str + "\n"));
   
   return 0;
 }
-
-
-//! Add the given string to the history data member in IceModel.
-PetscErrorCode  IceModel::stampHistoryAdd(string str) {
-
-  //prepend it; this matches NCO behavior so commands are in order
-  history = str + history;
-  
-  return 0;
-}
-
 
 //! Check if the thickness of the ice is too large and extend the grid if necessary.
 /*!

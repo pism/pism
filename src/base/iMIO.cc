@@ -119,18 +119,15 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   PetscErrorCode ierr;
   NCTool nc(&grid);
 
-  bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
-
   // Prepare the file
   ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
   // append == false, check_dims == true
   ierr = nc.append_time(grid.year); CHKERRQ(ierr);
-  ierr = nc.write_history(history.c_str()); CHKERRQ(ierr); // append the history
-  ierr = nc.write_global_attrs(use_ssa_velocity, "CF-1.4"); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = polar_stereographic.write(filename); CHKERRQ(ierr);
-
+  ierr = mapping.write(filename); CHKERRQ(ierr);
+  ierr = global_attributes.write(filename); CHKERRQ(ierr);
+  
   ierr = write_model_state(filename);  CHKERRQ(ierr);
 
   if (atmosPCC != PETSC_NULL) {
@@ -281,32 +278,35 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
  
   // Read vubarSSA and vvbarSSA if SSA is on, if not asked to ignore them and
   // if they are present in the input file.
+  bool have_ssa_velocities = false;
   if (config.get_flag("use_ssa_velocity")) {
-    vector<double> flag;
-    ierr = nc.get_att_double(NC_GLOBAL, "ssa_velocities_are_valid", flag); CHKERRQ(ierr);
-    if (flag.size() == 1)
-      have_ssa_velocities = (int)flag[0];
+    string word;
+    ierr = nc.get_att_text(NC_GLOBAL, "ssa_velocities_are_valid", word); CHKERRQ(ierr);
+
+    have_ssa_velocities = (word == "true") || (word == "yes") || (word == "on");
   }
 
   PetscTruth dontreadSSAvels = PETSC_FALSE;
   ierr = check_option("-dontreadSSAvels", dontreadSSAvels); CHKERRQ(ierr);
   
-  if ((have_ssa_velocities == 1)  && (!dontreadSSAvels)) {
+  if (have_ssa_velocities && (!dontreadSSAvels)) {
     ierr = verbPrintf(3,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
 
     ierr = vubarSSA.read(filename, last_record); CHKERRQ(ierr);
     ierr = vvbarSSA.read(filename, last_record); CHKERRQ(ierr);
   }
 
-  // read the polar_stereographic if present
-  bool ps_exists;
-  ierr = nc.find_variable("polar_stereographic", NULL, ps_exists); CHKERRQ(ierr);
-  if (ps_exists) {
-    ierr = polar_stereographic.read(filename); CHKERRQ(ierr);
-    ierr = polar_stereographic.print(); CHKERRQ(ierr);
+  // read mapping parameters if present
+  bool mapping_exists;
+  ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
+  if (mapping_exists) {
+    ierr = mapping.read(filename); CHKERRQ(ierr);
+    ierr = mapping.print(); CHKERRQ(ierr);
   }
 
+  string history;
   ierr = nc.get_att_text(NC_GLOBAL, "history", history); CHKERRQ(ierr);
+  global_attributes.prepend_history(history);
 
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -535,16 +535,14 @@ PetscErrorCode IceModel::write_snapshot() {
 	   date_str.c_str(), executable_short_name.c_str(), grid.year, saving_after);
 
   if (!snapshots_file_is_ready) {
-    bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
     // Prepare the snapshots file:
     ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
     // append == false, check_dims == true
-    ierr = nc.write_history(history.c_str()); CHKERRQ(ierr); // append the history
-    ierr = nc.write_global_attrs(use_ssa_velocity, "CF-1.4"); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = polar_stereographic.write(filename); CHKERRQ(ierr);
+    ierr = global_attributes.write(filename); CHKERRQ(ierr);
+    ierr = mapping.write(filename); CHKERRQ(ierr);
     snapshots_file_is_ready = true;
   }
     

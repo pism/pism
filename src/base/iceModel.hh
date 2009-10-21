@@ -146,9 +146,10 @@ protected:
 
   IceGrid               &grid;
 
-  NCConfigVariable      polar_stereographic;
+  NCConfigVariable      mapping;
   NCConfigVariable      config;
-  
+  NCGlobalAttributes    global_attributes;
+
   LocalInterpCtx        *bootstrapLIC;
 
   IceFactory            iceFactory;
@@ -233,8 +234,6 @@ protected:
   // file names
   char         ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN];
 
-
-  string history; //!< history of commands used to generate this instance of IceModel
   string executable_short_name;
   
 protected:
@@ -425,7 +424,6 @@ protected:
   virtual PetscErrorCode stampHistoryCommand();
   virtual PetscErrorCode stampHistoryEnd();
   virtual PetscErrorCode stampHistory(string);
-  virtual PetscErrorCode stampHistoryAdd(string);
   virtual PetscErrorCode check_maximum_thickness();
 
   // see iMvelocity.cc

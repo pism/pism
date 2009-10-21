@@ -1177,32 +1177,6 @@ PetscErrorCode NCTool::open_for_writing(const char filename[], bool append,
   return 0;
 }
 
-//! Writes global attributes to a NetCDF file.
-PetscErrorCode NCTool::write_global_attrs(bool have_ssa_velocities, const char conventions[]) const {
-  int stat, flag = 0;
-  char tmp[TEMPORARY_STRING_LENGTH];
-
-  snprintf(tmp, TEMPORARY_STRING_LENGTH, "PISM %s", PISM_Revision);
-
-  if (rank == 0) {
-    stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    if (have_ssa_velocities)
-      flag = 1;
-    stat = nc_put_att_int(ncid, NC_GLOBAL, "ssa_velocities_are_valid", NC_INT, 1, &flag);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_put_att_text(ncid, NC_GLOBAL, "Conventions", strlen(conventions), conventions); 
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_put_att_text(ncid, NC_GLOBAL, "source", strlen(tmp), tmp); 
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
-  return 0;
-}
-
 //! Finds the length of a dimension. Returns 0 if failed.
 PetscErrorCode NCTool::get_dim_length(const char name[], int *len) const {
   int stat, dim_id;

@@ -136,6 +136,19 @@ protected:
   virtual PetscErrorCode define(const NCTool &nc, int &varid);
 };
 
+//! A class for reading and writing NetCDF global attributes.
+/*! This is not a variable, because it has no value, but it is similar to
+  NCConfigVariable, because uses of these attributes are similar.
+*/
+class NCGlobalAttributes : public NCConfigVariable {
+public:
+  virtual PetscErrorCode read(const char filename[]);
+  virtual PetscErrorCode write(const char filename[]);
+  virtual void prepend_history(string message);
+protected:
+  virtual PetscErrorCode write_attributes(const NCTool &nc, int, nc_type, bool);
+};
+
 //! An internal class for reading, writing and converting time-series.
 class NCTimeseries : public NCVariable {
 public:

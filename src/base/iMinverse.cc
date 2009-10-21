@@ -141,14 +141,14 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
     ierr = verbPrintf(2, grid.com, 
              "  preparing file %s to write inverse computation fields ...\n",
              invfieldsname); CHKERRQ(ierr);
+    global_attributes.prepend_history("option -inv_write_fields read");
     NCTool nc(&grid);
     ierr = nc.open_for_writing(invfieldsname, false, true); CHKERRQ(ierr);
     ierr = nc.append_time(grid.year); CHKERRQ(ierr);
-    ierr = nc.write_history("option -inv_write_fields read"); CHKERRQ(ierr);
-    ierr = nc.write_global_attrs(PETSC_FALSE, "CF-1.4"); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = polar_stereographic.write(invfieldsname); CHKERRQ(ierr);
+    ierr = global_attributes.write(invfieldsname); CHKERRQ(ierr);
+    ierr = mapping.write(invfieldsname); CHKERRQ(ierr);
   } else {
     strcpy(invfieldsname,""); // make sure empty
   }

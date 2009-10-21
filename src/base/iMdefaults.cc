@@ -52,8 +52,10 @@ PetscErrorCode IceModel::setDefaults() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-config", alt_config, PETSC_MAX_PATH_LEN, &use_alt_config);
   if (use_alt_config) {
     ierr = config.read(alt_config); CHKERRQ(ierr);
+    ierr = mapping.read(alt_config); CHKERRQ(ierr);
   } else {
     ierr = config.read(PISM_DefaultConfigFile); CHKERRQ(ierr);
+    ierr = mapping.read(PISM_DefaultConfigFile); CHKERRQ(ierr);
   }
   config.print();
 
@@ -89,12 +91,10 @@ PetscErrorCode IceModel::setDefaults() {
   jd = (grid.My - 1)/2;
   slice_level = 0.0;
 
-  // default polar stereographic projection settings: South Pole
-  polar_stereographic.set_string("pism_intent", "mapping");
-  polar_stereographic.set_string("grid_mapping_name", "polar_stereographic");
-  polar_stereographic.set("straight_vertical_longitude_from_pole", 0.0);
-  polar_stereographic.set("latitude_of_projection_origin", -90.0);
-  polar_stereographic.set("standard_parallel", -71.0);
+  // ssa_velocities_are_valid might get overwritten while reading an -i file
+  global_attributes.set_flag("ssa_velocities_are_valid", false);
+  global_attributes.set_string("Conventions", "CF-1.4");
+  global_attributes.set_string("source", string("PISM ") + PISM_Revision);
 
   return 0;
 }

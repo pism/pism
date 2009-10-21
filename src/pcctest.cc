@@ -116,53 +116,33 @@ static PetscErrorCode writePCCStateAtTimes(
                  const char *filename, const MPI_Comm com, IceGrid* grid,
                  int argc, char *argv[],
                  PetscReal ys, PetscReal ye, PetscReal dt_years,
-		 NCConfigVariable &psparams) {
+		 NCConfigVariable &mapping) {
 
   PetscErrorCode ierr;
+  char timestr[TEMPORARY_STRING_LENGTH];
   NCTool nc(grid);
+  NCGlobalAttributes global_attrs;
 
-  // put calling command in history string
-  char cmdstr[TEMPORARY_STRING_LENGTH], timestr[TEMPORARY_STRING_LENGTH];
-  strcpy(cmdstr, "");
-  strncat(cmdstr, argv[0], sizeof(cmdstr)); // Does not null terminate on overflow
-  cmdstr[sizeof(cmdstr) - 1] = '\0';
-  for (PetscInt i=1; i < argc; i++) {
-    size_t remaining_bytes = sizeof(cmdstr) - strlen(cmdstr) - 1;
-    // strncat promises to null terminate, so we must only make sure that the
-    // end of the buffer is not overwritten.
-    strncat(cmdstr, " ", remaining_bytes--);
-    strncat(cmdstr, argv[i], remaining_bytes);
-  }
-  cmdstr[sizeof(cmdstr) - 1] = '\0';
-  
-  // compare IceModel::stampHistory() for this way of getting date etc in file
-  time_t now;
-  tm tm_now;
-  now = time(NULL);
-  localtime_r(&now, &tm_now);
-  char date_str[50], username[50], hostname[100], wwstr[TEMPORARY_STRING_LENGTH];
-  strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
-  ierr = PetscGetUserName(username, sizeof(username)); CHKERRQ(ierr);
-  ierr = PetscGetHostName(hostname, sizeof(hostname)); CHKERRQ(ierr);
-  int length = snprintf(wwstr, sizeof(wwstr), "%s@%s %s:  %s\n",
-                        username, hostname, date_str, cmdstr);  
-  if (length < 0) {
-    SETERRQ(3, "PCCTEST ERROR: snprintf() is not C99 compliant?");
-  }
-  if (length > (int)sizeof(wwstr)) {
-    ierr = verbPrintf(1,com,
-       "PCCTEST WARNING: command line truncated to %d chars in history.\n",
-       length + 1 - sizeof(wwstr)); CHKERRQ(ierr);
-    wwstr[sizeof(wwstr) - 2] = '\n';
-    wwstr[sizeof(wwstr) - 1] = '\0';
-  }
+  global_attrs.init("global_attributes", com, grid->rank);
+  global_attrs.set_string("Conventions", "CF-1.4");
+  global_attrs.set_string("source", string("pcctest ") + PISM_Revision);
+
+  // Create a string with space-separated command-line arguments:
+  string cmdstr;
+  for (int j = 0; j < argc; j++)
+    cmdstr += string(" ") + argv[j];
+  cmdstr += "\n";
+
+  string history = username_prefix() + cmdstr;
+
+  global_attrs.prepend_history(history);
 
   ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
   // append == false, check_dims == true
-  ierr = nc.write_history(wwstr); CHKERRQ(ierr);
-  ierr = nc.write_global_attrs(false, "CF-1.4"); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
-  ierr = psparams.write(filename); CHKERRQ(ierr);
+
+  ierr = mapping.write(filename); CHKERRQ(ierr);
+  ierr = global_attrs.write(filename); CHKERRQ(ierr);
 
   PetscInt NN;  // get number of times at which PCC state is written
   if (dt_years < 0.0001) {
@@ -256,7 +236,7 @@ int main(int argc, char *argv[]) {
     
     char inname[PETSC_MAX_PATH_LEN], outname[PETSC_MAX_PATH_LEN];
     IceGrid grid(com, rank, size);
-    NCConfigVariable psparams;
+    NCConfigVariable mapping;
     
     ierr = PetscOptionsGetString(PETSC_NULL, "-i", inname, 
                                  PETSC_MAX_PATH_LEN, NULL); CHKERRQ(ierr);
@@ -264,7 +244,7 @@ int main(int argc, char *argv[]) {
              "  initializing grid from NetCDF file %s...\n", inname); CHKERRQ(ierr);
     ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
 
-    psparams.init("polar_stereographic", com, rank);
+    mapping.init("mapping", com, rank);
 
     // Process -ys, -ye, -dt *before* PCC->initFromOptions() is called.
     PetscReal ys = 0.0, ye = 0.0, dt_years = 0.0;
@@ -300,15 +280,15 @@ int main(int argc, char *argv[]) {
     LocalInterpCtx* lic;
     ierr = PCC->findPISMInputFile(inname, lic); CHKERRQ(ierr); // allocates lic
 
-    // Get the polar stereographic projection parameters.
+    // Get the projection parameters.
     NCTool nc(&grid);
     ierr = nc.open_for_reading(inname); CHKERRQ(ierr);
-    bool ps_exists;
-    ierr = nc.find_variable("polar_stereographic", NULL, ps_exists); CHKERRQ(ierr);
+    bool mapping_exists;
+    ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
-    if (ps_exists) {
-      ierr = psparams.read(inname); CHKERRQ(ierr);
-      ierr = psparams.print(); CHKERRQ(ierr);
+    if (mapping_exists) {
+      ierr = mapping.read(inname); CHKERRQ(ierr);
+      ierr = mapping.print(); CHKERRQ(ierr);
     }
 
     ierr = verbPrintf(2,com, 
@@ -325,7 +305,7 @@ int main(int argc, char *argv[]) {
       com, "  writing PISMClimateCoupler states to NetCDF file '%s'...\n",
       outname); CHKERRQ(ierr);
     ierr = writePCCStateAtTimes(PCC,outname,com,&grid, argc,argv, ys,ye,dt_years,
-                                psparams); CHKERRQ(ierr);
+                                mapping); CHKERRQ(ierr);
 
     ierr = doneWithIceInfo(variables); CHKERRQ(ierr);
 

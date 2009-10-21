@@ -16,7 +16,6 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cstring>
 #include "NCVariable.hh"
 #include "pism_const.hh"
 
@@ -84,6 +83,7 @@ PetscErrorCode NCSpatialVariable::reset() {
   NCVariable::reset();
 
   strings["coordinates"] = "lat lon";
+  strings["grid_mapping"] = "mapping";
   return 0;
 }
 
@@ -366,14 +366,15 @@ PetscErrorCode NCSpatialVariable::to_glaciological_units(Vec v) {
 PetscErrorCode NCSpatialVariable::change_units(Vec v, utUnit *from, utUnit *to) {
   PetscErrorCode ierr;
   double slope, intercept;
-  char from_name[TEMPORARY_STRING_LENGTH], to_name[TEMPORARY_STRING_LENGTH], *tmp;
+  string from_name, to_name;
+  char *tmp;
   bool use_slope, use_intercept;
 
   // Get string representations of units:
   utPrint(from, &tmp);
-  strncpy(from_name, tmp, TEMPORARY_STRING_LENGTH);
+  from_name = tmp;
   utPrint(to, &tmp);
-  strncpy(to_name, tmp, TEMPORARY_STRING_LENGTH);
+  to_name = tmp;
 
   // Get the slope and the intercept of the linear transformation.
   ierr = utConvert(from, to, &slope, &intercept);
@@ -382,7 +383,7 @@ PetscErrorCode NCSpatialVariable::change_units(Vec v, utUnit *from, utUnit *to) 
     if (ierr == UT_ECONVERT) {	// because units are incompatible
       ierr = PetscPrintf(com,
 			 "PISM ERROR: IceModelVec '%s': attempted to convert data from '%s' to '%s'.\n",
-			 short_name.c_str(), from_name, to_name);
+			 short_name.c_str(), from_name.c_str(), to_name.c_str());
       PetscEnd();
     } else {			// some other error
       return 2;
@@ -1129,14 +1130,15 @@ PetscErrorCode NCTimeseries::write(const char filename[], size_t start, vector<d
 PetscErrorCode NCTimeseries::change_units(vector<double> &data, utUnit *from, utUnit *to) {
   PetscErrorCode ierr;
   double slope, intercept;
-  char from_name[TEMPORARY_STRING_LENGTH], to_name[TEMPORARY_STRING_LENGTH], *tmp;
+  string from_name, to_name;
+  char *tmp;
   bool use_slope, use_intercept;
 
   // Get string representations of units:
   utPrint(from, &tmp);
-  strncpy(from_name, tmp, TEMPORARY_STRING_LENGTH);
+  from_name = tmp;
   utPrint(to, &tmp);
-  strncpy(to_name, tmp, TEMPORARY_STRING_LENGTH);
+  to_name = tmp;
 
   // Get the slope and the intercept of the linear transformation.
   ierr = utConvert(from, to, &slope, &intercept);
@@ -1145,7 +1147,7 @@ PetscErrorCode NCTimeseries::change_units(vector<double> &data, utUnit *from, ut
     if (ierr == UT_ECONVERT) {	// because units are incompatible
       ierr = PetscPrintf(com,
 			 "PISM ERROR: variable '%s': attempted to convert data from '%s' to '%s'.\n",
-			 short_name.c_str(), from_name, to_name);
+			 short_name.c_str(), from_name.c_str(), to_name.c_str());
       PetscEnd();
     } else {			// some other error
       return 2;
@@ -1166,4 +1168,109 @@ PetscErrorCode NCTimeseries::change_units(vector<double> &data, utUnit *from, ut
       *j += intercept;
 
   return 0;
+}
+
+PetscErrorCode NCGlobalAttributes::read(const char filename[]) {
+  PetscErrorCode ierr;
+  int nattrs;
+  NCTool nc(com, rank);
+
+  strings.clear();
+  doubles.clear();
+  config_filename = filename;
+
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+
+  ierr = nc.inq_nattrs(NC_GLOBAL, nattrs); CHKERRQ(ierr);
+
+  for (int j = 0; j < nattrs; ++j) {
+    string attname;
+    nc_type nctype;
+    ierr = nc.inq_att_name(NC_GLOBAL, j, attname); CHKERRQ(ierr);
+    ierr = nc.inq_att_type(NC_GLOBAL, attname.c_str(), nctype); CHKERRQ(ierr);
+
+    if (nctype == NC_CHAR) {
+      string value;
+      ierr = nc.get_att_text(NC_GLOBAL, attname.c_str(), value); CHKERRQ(ierr);
+
+      strings[attname] = value;
+    } else {
+      vector<double> values;
+
+      ierr = nc.get_att_double(NC_GLOBAL, attname.c_str(), values); CHKERRQ(ierr);
+      doubles[attname] = values;
+    }
+  } // end of for (int j = 0; j < nattrs; ++j)
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! Writes global attributes to a file by calling write_attributes().
+PetscErrorCode NCGlobalAttributes::write(const char filename[]) {
+  PetscErrorCode ierr;
+  NCTool nc(com, rank);
+
+  ierr = nc.open_for_writing(filename, true); CHKERRQ(ierr); // append == true
+
+  ierr = write_attributes(nc, NC_GLOBAL, NC_DOUBLE, false); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! Writes global attributes to a file. Prepends the history string.
+PetscErrorCode NCGlobalAttributes::write_attributes(const NCTool &nc, int, nc_type, bool) {
+  int ierr, ncid;
+  string old_history;
+
+  ierr = nc.get_att_text(NC_GLOBAL, "history", old_history);
+  CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+  if (rank != 0) return 0;
+
+  ncid = nc.get_ncid();
+
+  ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+  // Write text attributes:
+  map<string, string>::iterator i;
+  for (i = strings.begin(); i != strings.end(); ++i) {
+    string name  = i->first;
+    string value = i->second;
+
+    if (value.empty()) continue;
+
+    if (name == "history") {
+      // prepend:
+      value = value + old_history;
+    }      
+
+    ierr = nc_put_att_text(ncid, NC_GLOBAL, name.c_str(), value.size(), value.c_str()); 
+    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
+
+  // Write double attributes:
+  map<string, vector<double> >::iterator j;
+  for (j = doubles.begin(); j != doubles.end(); ++j) {
+    string name  = j->first;
+    vector<double> values = j->second;
+
+    if (values.empty()) continue;
+
+    ierr = nc_put_att_double(ncid, NC_GLOBAL, name.c_str(), NC_DOUBLE, values.size(), &values[0]);
+    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  }
+
+  ierr = nc_enddef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+  return 0;
+}
+
+//! Prepends \c message to the history string.
+void NCGlobalAttributes::prepend_history(string message) {
+  strings["history"] = message + strings["history"];
+
 }

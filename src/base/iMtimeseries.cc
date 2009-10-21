@@ -348,11 +348,10 @@ PetscErrorCode IceModel::write_extras() {
     // Prepare the file:
     ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
     // append == false, check_dims == true
-    ierr = nc.write_history(history.c_str()); CHKERRQ(ierr); // append the history
-    ierr = nc.write_global_attrs(false, "CF-1.4"); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = polar_stereographic.write(filename); CHKERRQ(ierr);
+    ierr = global_attributes.write(filename); CHKERRQ(ierr);
+    ierr = mapping.write(filename); CHKERRQ(ierr);
     extra_file_is_ready = true;
   }
     

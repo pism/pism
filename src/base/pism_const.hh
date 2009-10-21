@@ -82,6 +82,7 @@ PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],..
 void endPrintRank();
 
 string timestamp();
+string username_prefix();
 
 bool ends_with(string str, string suffix);
 

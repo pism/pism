@@ -36,11 +36,11 @@ IceModel::IceModel(IceGrid &g)
   }
 
   config.init("pism_config", grid.com, grid.rank);
-  polar_stereographic.init("polar_stereographic", grid.com, grid.rank);
+  mapping.init("mapping", grid.com, grid.rank);
+  global_attributes.init("global_attributes", grid.com, grid.rank);
 
   bootstrapLIC = PETSC_NULL;
 
-  have_ssa_velocities = false;
   ssa = NULL;
 
   pism_signal = 0;
@@ -634,7 +634,11 @@ PetscErrorCode IceModel::init() {
   // Build PISM with PISM_WAIT_FOR_GDB defined to run make it wait for a
   // connection.
 #ifdef PISM_WAIT_FOR_GDB
-  ierr = pism_wait_for_gdb(grid.com, 0); CHKERRQ(ierr);
+  PetscTruth wait_for_gdb = PETSC_FALSE;
+  ierr = check_option("-wait_for_gdb", wait_for_gdb); CHKERRQ(ierr);
+  if (wait_for_gdb) {
+    ierr = pism_wait_for_gdb(grid.com, 0); CHKERRQ(ierr);
+  }
 #endif
 
   // 1) Initialize the computational grid:

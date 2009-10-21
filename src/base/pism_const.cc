@@ -453,6 +453,25 @@ string timestamp() {
   return string(date_str);
 }
 
+//! Creates a string with the user name, hostname and the time-stamp (for history strings).
+string username_prefix() {
+  PetscErrorCode ierr;
+
+  char username[50];
+  ierr = PetscGetUserName(username, sizeof(username));
+  if (ierr != 0)
+    username[0] = '\0';
+  char hostname[100];
+  ierr = PetscGetHostName(hostname, sizeof(hostname));
+  if (ierr != 0)
+    hostname[0] = '\0';
+  
+  ostringstream message;
+  message << username << "@" << hostname << " " << timestamp() << ": ";
+
+  return message.str();
+}
+
 //! Makes the process on rank \c rank_to_stop wait for the debugger to be attached.
 /*
   Once the debugger is attached, giving it the "set var i = 1" (for gdb)

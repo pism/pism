@@ -64,7 +64,6 @@ public:
   PetscErrorCode find_dimension(const char short_name[], int *dimid, bool &exists) const;
   PetscErrorCode create_dimensions() const;
   PetscErrorCode append_time(PetscReal time) const;
-  PetscErrorCode write_global_attrs(bool have_ssa_velocities, const char conventions[]) const;
   PetscErrorCode write_history(const char history[], bool overwrite = false) const;
   PetscErrorCode get_last_time(double *time) const;
   PetscErrorCode get_dim_length(const char name[], int *len) const;

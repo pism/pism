@@ -66,11 +66,11 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 
   ierr = nc.close(); CHKERRQ(ierr);
 
-  bool ps_exists;
-  ierr = nc.find_variable("polar_stereographic", NULL, ps_exists); CHKERRQ(ierr);
-  if (ps_exists) {
-    ierr = polar_stereographic.read(filename); CHKERRQ(ierr);
-    ierr = polar_stereographic.print(); CHKERRQ(ierr);
+  bool mapping_exists;
+  ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
+  if (mapping_exists) {
+    ierr = mapping.read(filename); CHKERRQ(ierr);
+    ierr = mapping.print(); CHKERRQ(ierr);
   }
 
   // now work through all the 2d variables, regridding if present and otherwise
