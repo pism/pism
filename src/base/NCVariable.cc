@@ -983,6 +983,11 @@ PetscErrorCode NCConfigVariable::print() {
   return 0;
 }
 
+void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
+  NCVariable::init(n, c, r);
+  dimension_name = dim_name;
+}
+
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
 PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
 
@@ -1062,9 +1067,32 @@ PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
   return 0;
 }
 
+PetscErrorCode NCTimeseries::report_range(vector<double> &data) {
+  double slope, intercept;
+  PetscErrorCode ierr;
+  PetscReal min, max;
+
+  // Get the conversion coefficients:
+  utConvert(&units, &glaciological_units, &slope, &intercept);
+
+  min = *min_element(data.begin(), data.end());
+  max = *max_element(data.begin(), data.end());
+
+  min = min * slope + intercept;
+  max = max * slope + intercept;
+
+  ierr = verbPrintf(2, com, 
+		    "  FOUND  %-10s/ %-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+		    short_name.c_str(),
+		    strings["long_name"].c_str(), "", min, max,
+		    strings["glaciological_units"].c_str()); CHKERRQ(ierr);
+
+  return 0;
+}
+
 
 //! Define a NetCDF variable corresponding to a time-series.
-PetscErrorCode NCTimeseries::define(const NCTool &nc, int &varid) {
+PetscErrorCode NCTimeseries::define(const NCTool &nc, int &varid, nc_type nctype) {
   PetscErrorCode ierr;
   bool dimension_exists;
   int ncid, dimid;
@@ -1081,7 +1109,7 @@ PetscErrorCode NCTimeseries::define(const NCTool &nc, int &varid) {
       CHKERRQ(check_err(ierr,__LINE__,__FILE__));
     }
 
-    ierr = nc_def_var(ncid, short_name.c_str(), NC_DOUBLE, 1, &dimid, &varid);
+    ierr = nc_def_var(ncid, short_name.c_str(), nctype, 1, &dimid, &varid);
     CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
     ierr = nc_enddef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
@@ -1091,7 +1119,8 @@ PetscErrorCode NCTimeseries::define(const NCTool &nc, int &varid) {
   return 0;
 }
 
-PetscErrorCode NCTimeseries::write(const char filename[], size_t start, vector<double> &data) {
+PetscErrorCode NCTimeseries::write(const char filename[], size_t start,
+				   vector<double> &data, nc_type nctype) {
 
   PetscErrorCode ierr;
   NCTool nc(com, rank);
@@ -1106,7 +1135,7 @@ PetscErrorCode NCTimeseries::write(const char filename[], size_t start, vector<d
 
   ierr = nc.find_variable(short_name.c_str(), &varid, variable_exists); CHKERRQ(ierr);
   if (!variable_exists) {
-    ierr = define(nc, varid); CHKERRQ(ierr);
+    ierr = define(nc, varid, nctype); CHKERRQ(ierr);
   }
 
   // convert to glaciological units:
@@ -1124,6 +1153,13 @@ PetscErrorCode NCTimeseries::write(const char filename[], size_t start, vector<d
   // restore internal units:
   ierr = change_units(data, &glaciological_units, &units); CHKERRQ(ierr);
   return 0;
+}
+
+PetscErrorCode NCTimeseries::write(const char filename[], size_t start,
+				   double data, nc_type nctype) {
+  vector<double> tmp(1);
+  tmp[0] = data;
+  return write(filename, start, tmp, nctype);
 }
 
 //! Convert \c data.

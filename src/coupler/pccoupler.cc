@@ -203,6 +203,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars
   if (dTforceSet == PETSC_TRUE) {
     dTforcing = new Timeseries(grid, "delta_T", "t");
     ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);
+    ierr = dTforcing->set_attr("long_name", "surface temperature offsets"); CHKERRQ(ierr);
     ierr = dTforcing->set_dimension_units("years", ""); CHKERRQ(ierr);
 
     TsOffset = 0.0;

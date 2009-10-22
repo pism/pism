@@ -23,11 +23,8 @@ Timeseries::Timeseries(IceGrid *g, string name, string dimension_name) {
   com = g->com;
   rank = g->rank;
 
-  dimension.init(dimension_name, com, rank);
-  dimension.dimension_name = dimension_name;
-
-  var.init(name, com, rank);
-  var.dimension_name = dimension_name;
+  dimension.init(dimension_name, dimension_name, com, rank);
+  var.init(name, dimension_name, com, rank);
 
   short_name = name;
 }
@@ -35,8 +32,8 @@ Timeseries::Timeseries(IceGrid *g, string name, string dimension_name) {
 Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_name) {
   com = c;
   rank = r;
-  dimension.init(dimension_name, com, rank);
-  var.init(name, com, rank);
+  dimension.init(dimension_name, dimension_name, com, rank);
+  var.init(name, dimension_name, com, rank);
 
   short_name = name;
 }
@@ -55,6 +52,8 @@ PetscErrorCode Timeseries::read(const char filename[]) {
 		       filename); CHKERRQ(ierr);
     PetscEnd();
   }
+
+  ierr = var.report_range(values); CHKERRQ(ierr);
 
   return 0;
 }

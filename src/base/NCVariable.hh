@@ -153,11 +153,14 @@ protected:
 class NCTimeseries : public NCVariable {
 public:
   string dimension_name;
+  void    init(string name, string dim_name, MPI_Comm c, PetscMPIInt r);
   virtual PetscErrorCode read(const char filename[], vector<double> &data);
-  virtual PetscErrorCode write(const char filename[], size_t start, vector<double> &data);
+  virtual PetscErrorCode write(const char filename[], size_t start, vector<double> &data, nc_type nctype = NC_DOUBLE);
+  virtual PetscErrorCode write(const char filename[], size_t start, double data, nc_type nctype = NC_DOUBLE);
   virtual PetscErrorCode change_units(vector<double> &data, utUnit *from, utUnit *to);
+  virtual PetscErrorCode report_range(vector<double> &data);
 protected:
-  virtual PetscErrorCode define(const NCTool &nc, int &varid);
+  virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype);
 };
 
 #endif

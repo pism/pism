@@ -1067,8 +1067,48 @@ PetscErrorCode IceCompModel::reportErrors() {
   PetscErrorCode  ierr;
   ierr = verbPrintf(1,grid.com, 
      "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n");
-     CHKERRQ(ierr);
+  CHKERRQ(ierr);
 
+  int start;
+  char filename[TEMPORARY_STRING_LENGTH];
+  PetscTruth netcdf_report;
+  NCTimeseries err;
+  ierr = PetscOptionsGetString(PETSC_NULL, "-report_file", filename,
+			       TEMPORARY_STRING_LENGTH, &netcdf_report); CHKERRQ(ierr);
+
+  if (netcdf_report) {
+    ierr = verbPrintf(2,grid.com, "Also writing errors to '%s'...\n", filename);
+    CHKERRQ(ierr);
+
+    // Find the number of records in this file:
+    NCTool nc(&grid);
+    // append = true; check_dims = false
+    ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr);
+    ierr = nc.get_dim_length("N", &start); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
+
+    ierr = global_attributes.write(filename); CHKERRQ(ierr);
+
+    // Write the dimension variable:
+    err.init("N", "N", grid.com, grid.rank);
+    ierr = err.write(filename, (size_t)start, (double)(start + 1), NC_INT); CHKERRQ(ierr);
+
+    // Always write grid parameters:
+    err.init("dx", "N", grid.com, grid.rank);
+    ierr = err.set_units("meters"); CHKERRQ(ierr);
+    ierr = err.write(filename, (size_t)start, grid.dx); CHKERRQ(ierr);
+    err.short_name = "dy";
+    ierr = err.write(filename, (size_t)start, grid.dy); CHKERRQ(ierr);
+    err.short_name = "dz";
+    ierr = err.write(filename, (size_t)start, grid.dzMAX); CHKERRQ(ierr);
+    err.short_name = "dzb";
+    ierr = err.write(filename, (size_t)start, grid.dzbMAX); CHKERRQ(ierr);
+
+    // Always write the test name:
+    err.reset();
+    err.short_name = "test";
+    ierr = err.write(filename, (size_t)start, (double)testname, NC_BYTE); CHKERRQ(ierr);
+  }
   // geometry (thickness, vol) errors if appropriate; reported in m except for relmaxETA
   if (testname != 'K') {
     PetscScalar volexact, areaexact, domeHexact, volerr, areaerr, maxHerr, avHerr,
@@ -1083,6 +1123,25 @@ PetscErrorCode IceCompModel::reportErrors() {
     ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
                       100*volerr/volexact, maxHerr, avHerr,
                       maxetaerr/pow(domeHexact,m)); CHKERRQ(ierr);
+
+    if (netcdf_report) {
+      err.short_name = "volume_percentage";
+      ierr = err.set_units("percent"); CHKERRQ(ierr);
+      ierr = err.write(filename, (size_t)start, 100*volerr/volexact); CHKERRQ(ierr);
+
+      err.short_name = "relative_max_eta";
+      ierr = err.set_units("1"); CHKERRQ(ierr);
+      ierr = err.write(filename, (size_t)start, maxetaerr/pow(domeHexact,m)); CHKERRQ(ierr);
+
+      err.short_name = "maximum_thickness";
+      ierr = err.set_units("meters"); CHKERRQ(ierr);
+      err.set_string("long_name", "maximum ice thickness error");
+      ierr = err.write(filename, (size_t)start, maxHerr); CHKERRQ(ierr);
+
+      err.short_name = "average_thickness";
+      err.set_string("long_name", "average ice thickness error");
+      ierr = err.write(filename, (size_t)start, avHerr); CHKERRQ(ierr);
+    }
   }
 
   // temperature errors if appropriate; reported in K
@@ -1096,6 +1155,18 @@ PetscErrorCode IceCompModel::reportErrors() {
        CHKERRQ(ierr);  // no longer reporting   basecenterT
     ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
        maxTerr, avTerr, basemaxTerr, baseavTerr); CHKERRQ(ierr);
+
+    if (netcdf_report) {
+      err.short_name = "maximum_temperature";
+      ierr = err.set_units("Kelvin"); CHKERRQ(ierr);
+      err.set_string("long_name", "maximum ice temperature error");
+      ierr = err.write(filename, (size_t)start, maxTerr); CHKERRQ(ierr);
+
+      err.short_name = "average_temperature";
+      err.set_string("long_name", "average ice temperature error");
+      ierr = err.write(filename, (size_t)start, avTerr); CHKERRQ(ierr);
+    }
+
   } else if (testname == 'K') {
     PetscScalar maxTerr, avTerr, maxTberr, avTberr;
     ierr = computeIceBedrockTemperatureErrors(maxTerr, avTerr, maxTberr, avTberr);
@@ -1104,6 +1175,25 @@ PetscErrorCode IceCompModel::reportErrors() {
        "temp      :        maxT         avT       maxTb        avTb\n"); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
                   maxTerr, avTerr, maxTberr, avTberr); CHKERRQ(ierr);
+
+    if (netcdf_report) {
+      err.short_name = "maximum_temperature";
+      ierr = err.set_units("Kelvin"); CHKERRQ(ierr);
+      err.set_string("long_name", "maximum ice temperature error");
+      ierr = err.write(filename, (size_t)start, maxTerr); CHKERRQ(ierr);
+
+      err.short_name = "average_temperature";
+      err.set_string("long_name", "average ice temperature error");
+      ierr = err.write(filename, (size_t)start, avTerr); CHKERRQ(ierr);
+
+      err.short_name = "maximum_bed_temperature";
+      err.set_string("long_name", "maximum bedrock temperature error");
+      ierr = err.write(filename, (size_t)start, maxTberr); CHKERRQ(ierr);
+
+      err.short_name = "average_bed_temperature";
+      err.set_string("long_name", "average bedrock temperature error");
+      ierr = err.write(filename, (size_t)start, avTberr); CHKERRQ(ierr);
+    }
   }
 
   // Sigma errors if appropriate; reported in 10^6 J/(s m^3)
@@ -1114,6 +1204,16 @@ PetscErrorCode IceCompModel::reportErrors() {
        "Sigma     :      maxSig       avSig\n"); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f\n", 
                   maxSigerr*1.0e6, avSigerr*1.0e6); CHKERRQ(ierr);
+
+    if (netcdf_report) {
+      err.short_name = "maximum_sigma";
+      ierr = err.set_units("J s-1 m-3"); CHKERRQ(ierr);
+      ierr = err.set_glaciological_units("1e6 J s-1 m-3"); CHKERRQ(ierr);
+      ierr = err.write(filename, (size_t)start, maxSigerr); CHKERRQ(ierr);
+
+      err.short_name = "average_sigma";
+      ierr = err.write(filename, (size_t)start, avSigerr); CHKERRQ(ierr);
+    }
   }
 
   // surface velocity errors if exact values are available; reported in m/a
@@ -1124,6 +1224,22 @@ PetscErrorCode IceCompModel::reportErrors() {
        "surf vels :     maxUvec      avUvec        maxW         avW\n"); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n", 
                   maxUerr*secpera, avUerr*secpera, maxWerr*secpera, avWerr*secpera); CHKERRQ(ierr);
+
+    if (netcdf_report) {
+      err.short_name = "maximum_surface_velocity";
+      ierr = err.set_units("m/s"); CHKERRQ(ierr);
+      ierr = err.set_glaciological_units("m/a"); CHKERRQ(ierr);
+      ierr = err.write(filename, (size_t)start, maxUerr); CHKERRQ(ierr);
+
+      err.short_name = "average_surface_velocity";
+      ierr = err.write(filename, (size_t)start, avUerr); CHKERRQ(ierr);
+
+      err.short_name = "maximum_W";
+      ierr = err.write(filename, (size_t)start, maxWerr); CHKERRQ(ierr);
+
+      err.short_name = "average_W";
+      ierr = err.write(filename, (size_t)start, avWerr); CHKERRQ(ierr);
+    }
   }
 
   // basal velocity errors if appropriate; reported in m/a except prcntavvec
@@ -1138,6 +1254,24 @@ PetscErrorCode IceCompModel::reportErrors() {
                   maxvecerr*secpera, avvecerr*secpera, 
                   (avvecerr/exactmaxspeed)*100.0,
                   maxuberr*secpera, maxvberr*secpera); CHKERRQ(ierr);
+
+    if (netcdf_report) {
+      err.short_name = "maximum_basal_velocity";
+      ierr = err.set_units("m/s"); CHKERRQ(ierr);
+      ierr = err.set_glaciological_units("m/a"); CHKERRQ(ierr);
+      ierr = err.write(filename, (size_t)start, maxvecerr); CHKERRQ(ierr);
+
+      err.short_name = "average_basal_velocity";
+      ierr = err.write(filename, (size_t)start, avvecerr); CHKERRQ(ierr);
+      err.short_name = "maximum_ub";
+      ierr = err.write(filename, (size_t)start, maxvecerr); CHKERRQ(ierr);
+      err.short_name = "maximum_vb";
+      ierr = err.write(filename, (size_t)start, avvecerr); CHKERRQ(ierr);
+
+      err.reset();
+      err.short_name = "relative_basal_velocity";
+      ierr = err.write(filename, (size_t)start, maxvecerr); CHKERRQ(ierr);
+    }
   }
 
   ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
