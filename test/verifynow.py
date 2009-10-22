@@ -13,7 +13,7 @@ import commands
 import string
 
 # run a chosen verification   
-def verify(executable,test):
+def verify(executable,test,report_file=None):
    print ' ++++  TEST ' + test[0] + ':  verifying with ' + test[2] + ' exact soln  ++++'
    print ' ' + test[5]
    # for myMx in test[1][:levs]:
@@ -46,6 +46,8 @@ def verify(executable,test):
         testdo = testdo + ' -eta'
       print ' trying \"' + testdo + '\"'
       testdo = testdo + ' -verbose 1'  # only need final errors anyway
+      if (report_file):
+         testdo += " -report_file %s" % report_file # write report to a NetCDF file
       try:
          lasttime = time.time()
          (status,output) = commands.getstatusoutput(testdo)
@@ -141,9 +143,10 @@ pref = PREFIX
 letters = TESTS
 uneq = 0
 doeta = False
+report_file = None
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "ep:n:l:t:u:",
-     ["eta","prefix=","nproc=","levels=","tests=","unequal=","mpido=","help"])
+  opts, args = getopt.getopt(sys.argv[1:], "ep:n:l:t:u:r:",
+     ["eta","prefix=","nproc=","levels=","tests=","unequal=","mpido=","report_file=","help"])
   for opt, arg in opts:
     if opt in ("-p", "--prefix"):
       pref = arg
@@ -159,6 +162,8 @@ try:
       uneq = string.atoi(arg)
     elif opt in ("-e", "--eta"):
       doeta = True
+    elif opt in ("-r", "--report_file"):
+      report_file = arg
     elif opt == "--help":
       print """PISM verification script; usage:
   -e,--eta=     to add '-eta' option to pismv call
@@ -167,6 +172,7 @@ try:
                   (e.g. 'mpirun -np' or 'aprun -n' instead of default 'mpiexec -np')
   -n,--nproc=   specify number of processors to MPI
   -p,--prefix=  path prefix to pismv executable
+  -r,--report_file=  name of the NetCDF error report file
   -t,--tests=   verification tests to use: A,B,C,D,E,F,G,H,I,J,K,L,M
   -u,--uneq=    use unequal spaced vertical spacing
                   (-u 0 is equal spaced [default], -u 1 for '-quadZ', -u 2 for '-chebZ')
@@ -188,5 +194,5 @@ print " VERIFYNOW.PY: test(s) %s, %d refinement level(s), using '%s'" % \
 ## go through verification tests
 for test in alltests:
    if letters.find(test[0]) > -1:
-       verify(executable,test)
+       verify(executable,test,report_file)
 

@@ -457,7 +457,7 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = stampHistoryCommand(); CHKERRQ(ierr);
 
   // by now we already know if SSA velocities in the output will be valid:
-  global_attributes.set_flag("ssa_velocities_are_valid",
+  global_attributes.set_flag("pism_ssa_velocities_are_valid",
 			     config.get_flag("use_ssa_velocity"));
 
   // consistency of geometry after initialization;

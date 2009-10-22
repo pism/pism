@@ -18,6 +18,7 @@
 
 #include "NCVariable.hh"
 #include "pism_const.hh"
+#include <algorithm>
 
 NCVariable::NCVariable() {
   reset();

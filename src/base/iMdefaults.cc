@@ -92,7 +92,7 @@ PetscErrorCode IceModel::setDefaults() {
   slice_level = 0.0;
 
   // ssa_velocities_are_valid might get overwritten while reading an -i file
-  global_attributes.set_flag("ssa_velocities_are_valid", false);
+  global_attributes.set_flag("pism_ssa_velocities_are_valid", false);
   global_attributes.set_string("Conventions", "CF-1.4");
   global_attributes.set_string("source", string("PISM ") + PISM_Revision);
 

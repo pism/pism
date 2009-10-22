@@ -281,7 +281,7 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
   bool have_ssa_velocities = false;
   if (config.get_flag("use_ssa_velocity")) {
     string word;
-    ierr = nc.get_att_text(NC_GLOBAL, "ssa_velocities_are_valid", word); CHKERRQ(ierr);
+    ierr = nc.get_att_text(NC_GLOBAL, "pism_ssa_velocities_are_valid", word); CHKERRQ(ierr);
 
     have_ssa_velocities = (word == "true") || (word == "yes") || (word == "on");
   }
