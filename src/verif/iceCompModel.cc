@@ -1165,6 +1165,13 @@ PetscErrorCode IceCompModel::reportErrors() {
       err.short_name = "average_temperature";
       err.set_string("long_name", "average ice temperature error");
       ierr = err.write(filename, (size_t)start, avTerr); CHKERRQ(ierr);
+
+      err.short_name = "maximum_basal_temperature";
+      err.set_string("long_name", "maximum basal temperature error");
+      ierr = err.write(filename, (size_t)start, basemaxTerr); CHKERRQ(ierr);
+      err.short_name = "average_basal_temperature";
+      err.set_string("long_name", "average basal temperature error");
+      ierr = err.write(filename, (size_t)start, baseavTerr); CHKERRQ(ierr);
     }
 
   } else if (testname == 'K') {
@@ -1186,11 +1193,11 @@ PetscErrorCode IceCompModel::reportErrors() {
       err.set_string("long_name", "average ice temperature error");
       ierr = err.write(filename, (size_t)start, avTerr); CHKERRQ(ierr);
 
-      err.short_name = "maximum_bed_temperature";
+      err.short_name = "maximum_bedrock_temperature";
       err.set_string("long_name", "maximum bedrock temperature error");
       ierr = err.write(filename, (size_t)start, maxTberr); CHKERRQ(ierr);
 
-      err.short_name = "average_bed_temperature";
+      err.short_name = "average_bedrock_temperature";
       err.set_string("long_name", "average bedrock temperature error");
       ierr = err.write(filename, (size_t)start, avTberr); CHKERRQ(ierr);
     }
