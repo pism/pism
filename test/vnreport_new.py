@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from pylab import close, figure, clf, hold, plot, xlabel, ylabel, xticks, yticks, axis, legend, title, grid, show, savefig
-from numpy import array, polyfit, polyval, log10, floor, ceil, unique, squeeze
+from numpy import array, polyfit, polyval, log10, floor, ceil, unique
 #from matplotlib.font_manager import FontProperties
 import getopt
 import sys
@@ -17,22 +17,20 @@ def plot_errors(nc, x, vars, testname, plot_title, filename = None):
 
     # If we have less than 2 points to plot, then bail.
     if (sum(mask) < 2):
+        print "Skipping Test %s %s (not enough data to plot)" % (testname, plot_title)
         return
 
-    # Just so that I don't forget that it's log10 and not log.
-    f = log10
-
     # Get the independent variable and transform it. Note that everywhere here
-    # I assume that neither dx (dy, dz) not errors can be zero or negative.
+    # I assume that neither dx (dy, dz) nor errors can be zero or negative.
     dx = nc.variables[x][mask]
-    dim = f(dx)
+    dim = log10(dx)
     
     figure(figsize=(10,6));clf();hold(True)
 
     colors = ['red', 'blue', 'green', 'black', 'brown', 'cyan']
     for (v,c) in zip(vars,colors):
         # Get a particular variable, transform and fit a line through it:
-        data = f(nc.variables[v][mask])
+        data = log10(nc.variables[v][mask])
         p = polyfit(dim, data, 1)
 
         # Try to get the long_name, use short_name if it fails:
@@ -117,15 +115,19 @@ def plot_tests(nc, list_of_tests):
             plot_errors(nc, 'dx', ["maximum_surface_w", "average_surface_w"],
                         test_name, "ice surface vertical velocity errors")
 
-        if test_name in ['I', 'J', 'M']:
-            plot_errors(nc, 'dx', ["maximum_velocity", "maximum_u", "average_u"],
+        # test I: plot only the u component
+        if test_name == 'I':
+            plot_errors(nc, 'dy', ["relative_velocity"],
+                        test_name, "relative velocity errors")
+            plot_errors(nc, 'dy', ["maximum_u", "average_u"],
                         test_name, "velocity errors")
+            
+        # tests J and M:
+        if test_name in ['J', 'M']:
             plot_errors(nc, 'dx', ["relative_velocity"],
                         test_name, "relative velocity errors")
-            
-        if test_name in ['J', 'M']:
-            plot_errors(nc, 'dx', ["maximum_velocity", "maximum_v", "average_v"],
-                        test_name, "velocity errors (v component)")
+            plot_errors(nc, 'dx', ["maximum_velocity", "maximum_u", "average_u", "maximum_v", "average_v"],
+                        test_name, "velocity errors")
 
         # test K temperature errors:
         if (test_name == 'K'):
@@ -160,13 +162,13 @@ try:
 (Input file %s has reports for tests %s available.)""" % (input, str(available_tests))
             sys.exit(0)
 
-        if squeeze(tests_to_plot) == "all":
+        if tests_to_plot[0] == "all":
             tests_to_plot = available_tests
 
         close('all')
         plot_tests(nc, tests_to_plot)
         try:
-            # show() will break if we actually didn't plot anything
+            # show() will break if we didn't plot anything
             show()
         except:
             pass

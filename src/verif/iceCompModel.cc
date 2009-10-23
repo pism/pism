@@ -1133,7 +1133,7 @@ PetscErrorCode IceCompModel::reportErrors() {
 
       err.short_name = "relative_max_eta";
       ierr = err.set_units("1"); CHKERRQ(ierr);
-      err.set_string("long_name", "relative $\eta$ error");
+      err.set_string("long_name", "relative $\\eta$ error");
       ierr = err.write(filename, (size_t)start, maxetaerr/pow(domeHexact,m)); CHKERRQ(ierr);
 
       err.short_name = "maximum_thickness";
