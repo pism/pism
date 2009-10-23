@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from pylab import close, figure, clf, hold, plot, xlabel, ylabel, xticks, yticks, axis, legend, title, grid, show, savefig
-from numpy import array, polyfit, polyval, log10, floor, ceil
+from numpy import array, polyfit, polyval, log10, floor, ceil, unique, squeeze
 #from matplotlib.font_manager import FontProperties
 import getopt
 import sys
@@ -11,7 +11,6 @@ except:
     from netCDF3 import Dataset as NC
 
 def plot_errors(nc, x, vars, testname, plot_title, filename = None):
-
     # This mask lets us choose data corresponding to a particular test:
     test = array(map(chr, nc.variables['test'][:]))
     mask = (test == testname)
@@ -73,14 +72,17 @@ def plot_errors(nc, x, vars, testname, plot_title, filename = None):
     xlabel("$%s$ (%s)" % (dim_name, nc.variables[x].units))
 
     # Make sure that all variables given have the same units:
-    ylabels = array(map(lambda(x): nc.variables[x].units, vars))
-    if (any(ylabels != ylabels[0])):
-        print "Incompatible units!"
-    else:
-        ylabel(ylabels[0])
+    try:
+        ylabels = array(map(lambda(x): nc.variables[x].units, vars))
+        if (any(ylabels != ylabels[0])):
+            print "Incompatible units!"
+        else:
+            ylabel(ylabels[0])
+    except:
+        pass
 
     # Legend, grid and the title:
-    legend(loc='upper left', pad=0.05, labelsep = 0, handletextsep = 0.02, handlelen = 0.02)
+    legend(loc='best', pad=0.05, labelsep = 0, handletextsep = 0.02, handlelen = 0.02)
     #  prop = FontProperties(size='smaller'),
     grid(True)
     title("Test %s %s (%s)" % (testname, plot_title, nc.source))
@@ -91,15 +93,15 @@ def plot_errors(nc, x, vars, testname, plot_title, filename = None):
 def plot_tests(nc, list_of_tests):
     for test_name in list_of_tests:
         # thickness, volume and eta errors:
-        if test_name in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+        if test_name in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'L']:
             plot_errors(nc, 'dx', ["maximum_thickness", "average_thickness"], test_name, "ice thickness errors")
-            plot_errors(nc, 'dx', ["volume_percentage"], test_name, "relative ice volume errors")
+            plot_errors(nc, 'dx', ["relative_volume"], test_name, "relative ice volume errors")
             plot_errors(nc, 'dx', ["relative_max_eta"], test_name, r"relative max $\eta$ errors")
 
         # errors that are reported for test E only:
         if (test_name == 'E'):
             plot_errors(nc, 'dx', ["maximum_basal_velocity", "average_basal_velocity"], 'E' , r"basal velocity errors")
-            plot_errors(nc, 'dx', ["maximum_ub", "maximum_vb"], 'E' , "basal velocity (ub and vb) errors")
+            plot_errors(nc, 'dx', ["maximum_basal_u", "maximum_basal_v"], 'E' , "basal velocity (ub and vb) errors")
             plot_errors(nc, 'dx', ["relative_basal_velocity"], 'E', "relative basal velocity errors")
 
         # F and G temperature, sigma and velocity errors:
@@ -111,28 +113,34 @@ def plot_tests(nc, list_of_tests):
             plot_errors(nc, 'dx', ["maximum_basal_temperature", "average_basal_temperature"],
                         test_name, "basal temperature errors")
             plot_errors(nc, 'dx', ["maximum_surface_velocity", "average_surface_velocity"],
-                        test_name, "surface velocity errors")
-            plot_errors(nc, 'dx', ["maximum_W", "average_W"],
-                        test_name, "FIXME velocity errors")
+                        test_name, "ice surface horizontal velocity errors")
+            plot_errors(nc, 'dx', ["maximum_surface_w", "average_surface_w"],
+                        test_name, "ice surface vertical velocity errors")
 
-        # I
-        # J
+        if test_name in ['I', 'J', 'M']:
+            plot_errors(nc, 'dx', ["maximum_velocity", "maximum_u", "average_u"],
+                        test_name, "velocity errors")
+            plot_errors(nc, 'dx', ["relative_velocity"],
+                        test_name, "relative velocity errors")
+            
+        if test_name in ['J', 'M']:
+            plot_errors(nc, 'dx', ["maximum_velocity", "maximum_v", "average_v"],
+                        test_name, "velocity errors (v component)")
 
         # test K temperature errors:
         if (test_name == 'K'):
             plot_errors(nc, 'dz', ["maximum_temperature", "average_temperature",
                                    "maximum_bedrock_temperature", "average_bedrock_temperature"],
                         'K', "temperature errors")
-        # M
 
 def print_help():
     print """Usage:
 -i            specifies an input file (which should be a result of running pismv with the -report_file option)
--t,--tests=   specifies a comma-separated list of tests
+-t,--tests=   specifies a comma-separated list of tests. Use -t all to plot all the tests available in the -i file.
 --help        prints this message
 """
 
-tests_to_plot = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'M']
+tests_to_plot = None
 input = None
 try:
     opts, args = getopt.getopt(sys.argv[1:], "i:t:", ["tests=", "help"])
@@ -146,13 +154,25 @@ try:
             sys.exit(0)
     if input:
         nc = NC(input, 'r')
+        available_tests = unique(array(map(chr, nc.variables['test'][:])))
+        if tests_to_plot == None:
+            print """Please choose tests to plot using the -t option.
+(Input file %s has reports for tests %s available.)""" % (input, str(available_tests))
+            sys.exit(0)
+
+        if squeeze(tests_to_plot) == "all":
+            tests_to_plot = available_tests
+
         close('all')
         plot_tests(nc, tests_to_plot)
-        show()
+        try:
+            # show() will break if we actually didn't plot anything
+            show()
+        except:
+            pass
     else:
         print_help()
-except:
+except getopt.GetoptError:
     print "Processing command-line options failed."
     print_help()
     sys.exit(1)
-

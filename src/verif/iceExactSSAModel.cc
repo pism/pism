@@ -499,6 +499,48 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
   ierr = PetscGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
   gavvecerr = gavvecerr/(grid.Mx*grid.My);
 
+  // NetCDF error report code:
+  int start;
+  char filename[TEMPORARY_STRING_LENGTH];
+  PetscTruth netcdf_report;
+  NCTimeseries err;
+  ierr = PetscOptionsGetString(PETSC_NULL, "-report_file", filename,
+			       TEMPORARY_STRING_LENGTH, &netcdf_report); CHKERRQ(ierr);
+
+  if (netcdf_report) {
+    ierr = verbPrintf(2,grid.com, "Also writing errors to '%s'...\n", filename);
+    CHKERRQ(ierr);
+
+    // Find the number of records in this file:
+    NCTool nc(&grid);
+    // append = true; check_dims = false
+    ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr);
+    ierr = nc.get_dim_length("N", &start); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
+
+    ierr = global_attributes.write(filename); CHKERRQ(ierr);
+
+    // Write the dimension variable:
+    err.init("N", "N", grid.com, grid.rank);
+    ierr = err.write(filename, (size_t)start, (double)(start + 1), NC_INT); CHKERRQ(ierr);
+
+    // Always write grid parameters:
+    err.short_name = "dx";
+    ierr = err.set_units("meters"); CHKERRQ(ierr);
+    ierr = err.write(filename, (size_t)start, grid.dx); CHKERRQ(ierr);
+    err.short_name = "dy";
+    ierr = err.write(filename, (size_t)start, grid.dy); CHKERRQ(ierr);
+    err.short_name = "dz";
+    ierr = err.write(filename, (size_t)start, grid.dzMAX); CHKERRQ(ierr);
+    err.short_name = "dzb";
+    ierr = err.write(filename, (size_t)start, grid.dzbMAX); CHKERRQ(ierr);
+
+    // Always write the test name:
+    err.reset();
+    err.short_name = "test";
+    ierr = err.write(filename, (size_t)start, (double)test, NC_BYTE); CHKERRQ(ierr);
+  }
+
   if (test == 'I') {
     PetscScalar junk1, junk2, junk3;
     exactI(m_schoof, 0.0, 0.0, &junk1, &junk2, &exactmaxu, &junk3);
@@ -509,6 +551,25 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
             "           %11.4f%13.5f%10.4f%10.4f\n", 
             gmaxvecerr*secpera, (gavvecerr/exactmaxu)*100.0,
             gmaxuerr*secpera, gavuerr*secpera); CHKERRQ(ierr);
+
+    if (netcdf_report) {
+      err.reset();
+      err.short_name = "maximum_velocity";
+      ierr = err.set_units("m/s"); CHKERRQ(ierr);
+      ierr = err.set_glaciological_units("m/a"); CHKERRQ(ierr);
+      ierr = err.write(filename, (size_t)start, gmaxvecerr); CHKERRQ(ierr);
+
+      err.short_name = "maximum_u";
+      ierr = err.write(filename, (size_t)start, gmaxuerr); CHKERRQ(ierr);
+      err.short_name = "average_u";
+      ierr = err.write(filename, (size_t)start, gavuerr); CHKERRQ(ierr);
+
+      err.reset();
+      err.short_name = "relative_velocity";
+      ierr = err.set_units("percent"); CHKERRQ(ierr);
+      ierr = err.write(filename, (size_t)start, (gavvecerr/exactmaxu)*100.0); CHKERRQ(ierr);
+    }
+
   } else if ((test == 'J') || (test == 'M')) {
     if (test == 'J') {
       // following from "pismv -test J -Mx 601 -My 601 -Mz 3 -verbose -eo"
@@ -525,6 +586,29 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
             gmaxvecerr*secpera, (gavvecerr/exactmaxu)*100.0,
             gmaxuerr*secpera, gmaxverr*secpera, gavuerr*secpera, 
             gavverr*secpera); CHKERRQ(ierr);
+
+    if (netcdf_report) {
+      err.reset();
+      err.short_name = "maximum_velocity";
+      ierr = err.set_units("m/s"); CHKERRQ(ierr);
+      ierr = err.set_glaciological_units("m/a"); CHKERRQ(ierr);
+      ierr = err.write(filename, (size_t)start, gmaxvecerr); CHKERRQ(ierr);
+
+      err.short_name = "maximum_u";
+      ierr = err.write(filename, (size_t)start, gmaxuerr); CHKERRQ(ierr);
+      err.short_name = "average_u";
+      ierr = err.write(filename, (size_t)start, gavuerr); CHKERRQ(ierr);
+
+      err.short_name = "maximum_v";
+      ierr = err.write(filename, (size_t)start, gmaxverr); CHKERRQ(ierr);
+      err.short_name = "average_v";
+      ierr = err.write(filename, (size_t)start, gavverr); CHKERRQ(ierr);
+
+      err.reset();
+      err.short_name = "relative_velocity";
+      ierr = err.set_units("percent"); CHKERRQ(ierr);
+      ierr = err.write(filename, (size_t)start, (gavvecerr/exactmaxu)*100.0); CHKERRQ(ierr);
+    }
   }
 
 

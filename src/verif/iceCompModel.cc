@@ -1094,7 +1094,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     ierr = err.write(filename, (size_t)start, (double)(start + 1), NC_INT); CHKERRQ(ierr);
 
     // Always write grid parameters:
-    err.init("dx", "N", grid.com, grid.rank);
+    err.short_name = "dx";
     ierr = err.set_units("meters"); CHKERRQ(ierr);
     ierr = err.write(filename, (size_t)start, grid.dx); CHKERRQ(ierr);
     err.short_name = "dy";
@@ -1125,12 +1125,15 @@ PetscErrorCode IceCompModel::reportErrors() {
                       maxetaerr/pow(domeHexact,m)); CHKERRQ(ierr);
 
     if (netcdf_report) {
-      err.short_name = "volume_percentage";
+      err.reset();
+      err.short_name = "relative_volume";
       ierr = err.set_units("percent"); CHKERRQ(ierr);
+      err.set_string("long_name", "relative ice volume error");
       ierr = err.write(filename, (size_t)start, 100*volerr/volexact); CHKERRQ(ierr);
 
       err.short_name = "relative_max_eta";
       ierr = err.set_units("1"); CHKERRQ(ierr);
+      err.set_string("long_name", "relative $\eta$ error");
       ierr = err.write(filename, (size_t)start, maxetaerr/pow(domeHexact,m)); CHKERRQ(ierr);
 
       err.short_name = "maximum_thickness";
@@ -1139,6 +1142,7 @@ PetscErrorCode IceCompModel::reportErrors() {
       ierr = err.write(filename, (size_t)start, maxHerr); CHKERRQ(ierr);
 
       err.short_name = "average_thickness";
+      ierr = err.set_units("meters"); CHKERRQ(ierr);
       err.set_string("long_name", "average ice thickness error");
       ierr = err.write(filename, (size_t)start, avHerr); CHKERRQ(ierr);
     }
@@ -1157,6 +1161,7 @@ PetscErrorCode IceCompModel::reportErrors() {
        maxTerr, avTerr, basemaxTerr, baseavTerr); CHKERRQ(ierr);
 
     if (netcdf_report) {
+      err.reset();
       err.short_name = "maximum_temperature";
       ierr = err.set_units("Kelvin"); CHKERRQ(ierr);
       err.set_string("long_name", "maximum ice temperature error");
@@ -1184,6 +1189,7 @@ PetscErrorCode IceCompModel::reportErrors() {
                   maxTerr, avTerr, maxTberr, avTberr); CHKERRQ(ierr);
 
     if (netcdf_report) {
+      err.reset();
       err.short_name = "maximum_temperature";
       ierr = err.set_units("Kelvin"); CHKERRQ(ierr);
       err.set_string("long_name", "maximum ice temperature error");
@@ -1213,12 +1219,15 @@ PetscErrorCode IceCompModel::reportErrors() {
                   maxSigerr*1.0e6, avSigerr*1.0e6); CHKERRQ(ierr);
 
     if (netcdf_report) {
+      err.reset();
       err.short_name = "maximum_sigma";
       ierr = err.set_units("J s-1 m-3"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("1e6 J s-1 m-3"); CHKERRQ(ierr);
+      err.set_string("long_name", "maximum strain heating error");
       ierr = err.write(filename, (size_t)start, maxSigerr); CHKERRQ(ierr);
 
       err.short_name = "average_sigma";
+      err.set_string("long_name", "average strain heating error");
       ierr = err.write(filename, (size_t)start, avSigerr); CHKERRQ(ierr);
     }
   }
@@ -1233,18 +1242,23 @@ PetscErrorCode IceCompModel::reportErrors() {
                   maxUerr*secpera, avUerr*secpera, maxWerr*secpera, avWerr*secpera); CHKERRQ(ierr);
 
     if (netcdf_report) {
+      err.reset();
       err.short_name = "maximum_surface_velocity";
+      err.set_string("long_name", "maximum ice surface horizontal velocity error");
       ierr = err.set_units("m/s"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("m/a"); CHKERRQ(ierr);
       ierr = err.write(filename, (size_t)start, maxUerr); CHKERRQ(ierr);
 
       err.short_name = "average_surface_velocity";
+      err.set_string("long_name", "average ice surface horizontal velocity error");
       ierr = err.write(filename, (size_t)start, avUerr); CHKERRQ(ierr);
 
-      err.short_name = "maximum_W";
+      err.short_name = "maximum_surface_w";
+      err.set_string("long_name", "maximum ice surface vertical velocity error");
       ierr = err.write(filename, (size_t)start, maxWerr); CHKERRQ(ierr);
 
-      err.short_name = "average_W";
+      err.short_name = "average_surface_w";
+      err.set_string("long_name", "average ice surface vertical velocity error");
       ierr = err.write(filename, (size_t)start, avWerr); CHKERRQ(ierr);
     }
   }
@@ -1263,6 +1277,7 @@ PetscErrorCode IceCompModel::reportErrors() {
                   maxuberr*secpera, maxvberr*secpera); CHKERRQ(ierr);
 
     if (netcdf_report) {
+      err.reset();
       err.short_name = "maximum_basal_velocity";
       ierr = err.set_units("m/s"); CHKERRQ(ierr);
       ierr = err.set_glaciological_units("m/a"); CHKERRQ(ierr);
@@ -1270,14 +1285,15 @@ PetscErrorCode IceCompModel::reportErrors() {
 
       err.short_name = "average_basal_velocity";
       ierr = err.write(filename, (size_t)start, avvecerr); CHKERRQ(ierr);
-      err.short_name = "maximum_ub";
-      ierr = err.write(filename, (size_t)start, maxvecerr); CHKERRQ(ierr);
-      err.short_name = "maximum_vb";
-      ierr = err.write(filename, (size_t)start, avvecerr); CHKERRQ(ierr);
+      err.short_name = "maximum_basal_u";
+      ierr = err.write(filename, (size_t)start, maxuberr); CHKERRQ(ierr);
+      err.short_name = "maximum_basal_v";
+      ierr = err.write(filename, (size_t)start, maxvberr); CHKERRQ(ierr);
 
       err.reset();
       err.short_name = "relative_basal_velocity";
-      ierr = err.write(filename, (size_t)start, maxvecerr); CHKERRQ(ierr);
+      ierr = err.set_units("percent"); CHKERRQ(ierr);
+      ierr = err.write(filename, (size_t)start, (avvecerr/exactmaxspeed)*100); CHKERRQ(ierr);
     }
   }
 
