@@ -61,13 +61,18 @@ def plot_errors(nc, x, vars, testname, plot_title, filename = None):
     _,_,ymin,ymax = axis()
     axis(ymin = floor(ymin), ymax = ceil(ymax))
 
+    # Switch to km if dx (dy, dz) are big:
+    units = nc.variables[x].units
+    if (dx.min() > 1000.0 and (units == "meters")):
+        dx = dx / 1000.0
+        units = "km"
     # Round grid spacing in x-ticks:
     xticks(dim, map(lambda(x): "%d" % x, dx))
+    xlabel("$%s$ (%s)" % (dim_name, units))
+
     # Use default (figured out by matplotlib) locations, but change labels for y-ticks:
     loc,_ = yticks()
     yticks(loc, map(lambda(x) : "$10^{%1.1f}$" % x, loc))
-
-    xlabel("$%s$ (%s)" % (dim_name, nc.variables[x].units))
 
     # Make sure that all variables given have the same units:
     try:
@@ -106,14 +111,15 @@ def plot_tests(nc, list_of_tests):
         if test_name in ['F', 'G']:
             plot_errors(nc, 'dx', ["maximum_sigma", "average_sigma"],
                         test_name, "strain heating errors")
-            plot_errors(nc, 'dx', ["maximum_temperature", "average_temperature"],
+            plot_errors(nc, 'dx', ["maximum_temperature", "average_temperature",
+                                   "maximum_basal_temperature", "average_basal_temperature"],
                         test_name, "ice temperature errors")
-            plot_errors(nc, 'dx', ["maximum_basal_temperature", "average_basal_temperature"],
-                        test_name, "basal temperature errors")
-            plot_errors(nc, 'dx', ["maximum_surface_velocity", "average_surface_velocity"],
-                        test_name, "ice surface horizontal velocity errors")
-            plot_errors(nc, 'dx', ["maximum_surface_w", "average_surface_w"],
-                        test_name, "ice surface vertical velocity errors")
+
+            plot_errors(nc, 'dx', ["maximum_surface_velocity", "maximum_surface_w"],
+                        test_name, "maximum ice surface velocity errors")
+            plot_errors(nc, 'dx', ["average_surface_velocity", "average_surface_w"],
+                        test_name, "average ice surface velocity errors")
+
 
         # test I: plot only the u component
         if test_name == 'I':
