@@ -1,6 +1,6 @@
 ALL : installation userman browser
 
-update: svn_update
+update: svn_update revclean
 ifeq ($(shell touch revision.tex; svnversion | diff revision.tex -),)
 	@echo "doc/ directory is up to date."
 else
@@ -9,8 +9,11 @@ else
 	$(MAKE) ALL
 endif
 
-revision: 
+revision:
 	@svnversion > revision.tex
+
+revclean:
+	@rm -f revision.tex
 
 # default manuals and browser:
 
@@ -63,11 +66,11 @@ vfigs : verif/$(VFNOW_OUT)
 	../test/vnreport.py -f verif/$(VFNOW_OUT) -t K -e 'temp' \
 	   -r ${PISMREV_VFIGS} -g pdf -o figs/temperrs
 
-.PHONY:  clean revision svn_update userman installation browsenow browser vfigs
+.PHONY:  clean revision revclean svn_update userman installation browsenow browser vfigs
 
-clean :
+clean : revclean
 	@rm -f *.aux *.blg *.idx *.ind *.ilg *.log *.out *.toc texput.* *.bbl
-	@rm -f config_doc.txt doxybib.txt revision.tex
+	@rm -f config_doc.txt doxybib.txt
 
 svn_update:
 	@echo "Running 'svn update' ($(shell svn info |grep 'Repository Root'))..."

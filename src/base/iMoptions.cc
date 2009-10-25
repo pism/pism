@@ -163,10 +163,6 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.scalar_from_option("low_temp", "global_min_allowed_temp"); CHKERRQ(ierr);
 
-// note "-mato" caught in writeFiles() in iMIO.cc
-
-// note "-matv" caught in writeFiles() in iMIO.cc
-
   ierr = config.scalar_from_option("max_dt",        "maximum_time_step_years"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("mu_sliding",    "mu_sliding");              CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count");      CHKERRQ(ierr);
