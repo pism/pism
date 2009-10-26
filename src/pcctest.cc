@@ -83,16 +83,25 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
   return 0;
 }
 
-static PetscErrorCode readIceInfoFromFile(char *filename, LocalInterpCtx* &lic,
+static PetscErrorCode readIceInfoFromFile(char *filename, LocalInterpCtx* &lic, int start,
                                           PISMVars &variables) {
   PetscErrorCode ierr;
 
-  ierr = variables.get("lat")->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = variables.get("lon")->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = variables.get("mask")->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = variables.get("thk")->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = variables.get("usurf")->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = variables.get("topg")->regrid(filename, *lic, true); CHKERRQ(ierr);
+  if (lic != NULL) {
+    ierr = variables.get("lat")->regrid(filename, *lic, true); CHKERRQ(ierr);
+    ierr = variables.get("lon")->regrid(filename, *lic, true); CHKERRQ(ierr);
+    ierr = variables.get("mask")->regrid(filename, *lic, true); CHKERRQ(ierr);
+    ierr = variables.get("thk")->regrid(filename, *lic, true); CHKERRQ(ierr);
+    ierr = variables.get("usurf")->regrid(filename, *lic, true); CHKERRQ(ierr);
+    ierr = variables.get("topg")->regrid(filename, *lic, true); CHKERRQ(ierr);
+  } else {
+    ierr = variables.get("lat")->read(filename, start); CHKERRQ(ierr);
+    ierr = variables.get("lon")->read(filename, start); CHKERRQ(ierr);
+    ierr = variables.get("mask")->read(filename, start); CHKERRQ(ierr);
+    ierr = variables.get("thk")->read(filename, start); CHKERRQ(ierr);
+    ierr = variables.get("usurf")->read(filename, start); CHKERRQ(ierr);
+    ierr = variables.get("topg")->read(filename, start); CHKERRQ(ierr);
+  }
 
   return 0;
 }
@@ -221,8 +230,8 @@ int main(int argc, char *argv[]) {
       "where:\n"
       "  -i    input file in NetCDF format\n"
       "  -o    output file in NetCDF format\n"
-      "  -ys   start time A (= positive float) in years\n"
-      "  -ye   end time B (= positive float), B > A, in years\n"
+      "  -ys   start time A (= float) in years\n"
+      "  -ye   end time B (= float), B > A, in years\n"
       "  -dt   time step C (= positive float) in years\n"
       "and choose instance of PISMClimateCoupler:\n"
       "  -sma  apply PISMSnowModelAtmosCoupler (default)\n"
@@ -278,7 +287,10 @@ int main(int argc, char *argv[]) {
     ierr = PCC->initFromOptions(&grid, variables); CHKERRQ(ierr);
 
     LocalInterpCtx* lic;
-    ierr = PCC->findPISMInputFile(inname, lic); CHKERRQ(ierr); // allocates lic
+    bool regrid;
+    int start;
+    // allocates lic (if necessary)
+    ierr = PCC->findPISMInputFile(inname, lic, regrid, start); CHKERRQ(ierr);
 
     // Get the projection parameters.
     NCTool nc(&grid);
@@ -296,7 +308,7 @@ int main(int argc, char *argv[]) {
              "    to fill fields in PISMVars ...\n",
              inname); CHKERRQ(ierr);
 
-    ierr = readIceInfoFromFile(inname, lic, variables); CHKERRQ(ierr);
+    ierr = readIceInfoFromFile(inname, lic, start, variables); CHKERRQ(ierr);
     
     ierr = PetscOptionsGetString(PETSC_NULL, "-o", outname, 
                                  PETSC_MAX_PATH_LEN, NULL); CHKERRQ(ierr);

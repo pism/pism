@@ -53,7 +53,8 @@ public:
   //   PISM for input, get the info needed to read them; this is normally
   //   a helper routine for derived classes; filename needs to be pre-allocated
   // normally only used by derived classes, but also in src/pcctest.cc
-  virtual PetscErrorCode findPISMInputFile(char* filename, LocalInterpCtx* &lic);
+  virtual PetscErrorCode findPISMInputFile(char* filename, LocalInterpCtx* &lic,
+					   bool &regrid, int &start);
 
   virtual PetscErrorCode initFromOptions(IceGrid* g, const PISMVars &variables);
   
