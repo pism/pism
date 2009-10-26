@@ -186,7 +186,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars
             "",  // pism_intent is either "climate_state" or "climate_diagnostic" according
                  //    to whether this variable is kept or overwritten by a parameterization
                  //    (we don't know in the base class)
-            "instantaneous net ice equivalent accumulation (ablation) rate",
+            "instantaneous net ice-equivalent accumulation (ablation) rate",
 	    "m s-1",  // m *ice-equivalent* per second
 	    "land_ice_surface_specific_mass_balance");  // CF standard_name
 	    CHKERRQ(ierr);
@@ -201,7 +201,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars
             "",  // pism_intent is either "climate_state" or "climate_diagnostic" according
                  //    to whether this variable is kept or overwritten by a parameterization
                  //    (we don't know in the base class)
-            "ice temperature at ice surface but below firn processes",
+            "annual average ice temperature at ice surface but below firn processes",
             "K", 
             "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
             CHKERRQ(ierr);
