@@ -39,7 +39,8 @@ static PetscErrorCode setupIceGridFromFile(const char *filename, IceGrid &grid) 
 
 static PetscErrorCode readAtmosInfoFromFile(char *filename, IceGrid *grid,
 					    LocalInterpCtx* &lic, 
-					    IceInfoNeededByAtmosphereCoupler &info) {
+					    IceInfoNeededByAtmosphereCoupler &info,
+					    bool regrid, int start) {
   PetscErrorCode ierr;
 
   info.lat = new IceModelVec2;
@@ -61,17 +62,26 @@ static PetscErrorCode readAtmosInfoFromFile(char *filename, IceGrid *grid,
   ierr = info.surfelev->set_attrs(NULL, "ice upper surface elevation",
 		                  "m", "surface_altitude"); CHKERRQ(ierr);
 
-  ierr = info.lat->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.lon->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.mask->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.surfelev->regrid(filename, *lic, true); CHKERRQ(ierr);
+  if (regrid) {
+    ierr = info.lat->regrid(filename, *lic, true); CHKERRQ(ierr);
+    ierr = info.lon->regrid(filename, *lic, true); CHKERRQ(ierr);
+    ierr = info.mask->regrid(filename, *lic, true); CHKERRQ(ierr);
+    ierr = info.surfelev->regrid(filename, *lic, true); CHKERRQ(ierr);
+  } else {
+    ierr = info.lat->read(filename, start); CHKERRQ(ierr);
+    ierr = info.lon->read(filename, start); CHKERRQ(ierr);
+    ierr = info.mask->read(filename, start); CHKERRQ(ierr);
+    ierr = info.surfelev->read(filename, start); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
 
 static PetscErrorCode readOceanInfoFromFile(char *filename, MPI_Comm, IceGrid *grid,
-                                     LocalInterpCtx* &lic, 
-                                     IceInfoNeededByOceanCoupler &info) {
+					    LocalInterpCtx* &lic, 
+					    IceInfoNeededByOceanCoupler &info,
+					    bool regrid, int start) {
   PetscErrorCode ierr;
 
   info.lat = new IceModelVec2;
@@ -93,10 +103,18 @@ static PetscErrorCode readOceanInfoFromFile(char *filename, MPI_Comm, IceGrid *g
   ierr = info.thk->set_attrs(NULL, "land ice thickness",
 		             "m", "land_ice_thickness"); CHKERRQ(ierr);
 
-  ierr = info.lat->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.lon->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.mask->regrid(filename, *lic, true); CHKERRQ(ierr);
-  ierr = info.thk->regrid(filename, *lic, true); CHKERRQ(ierr);
+  if (regrid) {
+    ierr = info.lat->regrid(filename, *lic, true); CHKERRQ(ierr);
+    ierr = info.lon->regrid(filename, *lic, true); CHKERRQ(ierr);
+    ierr = info.mask->regrid(filename, *lic, true); CHKERRQ(ierr);
+    ierr = info.thk->regrid(filename, *lic, true); CHKERRQ(ierr);
+  } else {
+    ierr = info.lat->read(filename, start); CHKERRQ(ierr);
+    ierr = info.lon->read(filename, start); CHKERRQ(ierr);
+    ierr = info.mask->read(filename, start); CHKERRQ(ierr);
+    ierr = info.thk->read(filename, start); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -310,7 +328,10 @@ int main(int argc, char *argv[]) {
     ierr = PCC->initFromOptions(&grid); CHKERRQ(ierr);
 
     LocalInterpCtx* lic;
-    ierr = PCC->findPISMInputFile(inname, lic); CHKERRQ(ierr); // allocates lic
+    bool regrid;
+    int start;
+    // allocates lic (if necessary)
+    ierr = PCC->findPISMInputFile(inname, lic, regrid, start); CHKERRQ(ierr);
 
     // Get the polar stereographic projection parameters.
     NCTool nc(&grid);
@@ -326,14 +347,14 @@ int main(int argc, char *argv[]) {
              "  reading fields 'usurf', 'mask', 'lat', 'lon' from NetCDF file '%s' to fill fields\n"
              "    in IceInfoNeededByAtmosphereCoupler ...\n",
              inname); CHKERRQ(ierr);
-      ierr = readAtmosInfoFromFile(inname,&grid,lic,info_atmos); CHKERRQ(ierr);
+      ierr = readAtmosInfoFromFile(inname,&grid,lic,info_atmos, regrid, start); CHKERRQ(ierr);
       info = (void*) &info_atmos;
     } else if (coSet == PETSC_TRUE) {
       ierr = PetscPrintf(com, 
              "  reading fields 'thk', 'mask', 'lat', 'lon' from NetCDF file '%s' to fill fields\n"
              "    in IceInfoNeededByOceanCoupler ...\n",
              inname); CHKERRQ(ierr);
-      ierr = readOceanInfoFromFile(inname,com,&grid,lic,info_ocean); CHKERRQ(ierr);
+      ierr = readOceanInfoFromFile(inname,com,&grid,lic,info_ocean, regrid, start); CHKERRQ(ierr);
       info = (void*) &info_ocean;
     } else {
       info = PETSC_NULL;

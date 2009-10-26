@@ -131,7 +131,10 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
   // read accumulation and surface temperature
   char  filename[PETSC_MAX_PATH_LEN];
   LocalInterpCtx* lic;
-  ierr = findPISMInputFile((char*)filename, lic); CHKERRQ(ierr); // allocates lic
+  bool regrid;
+  int start;
+  // allocates lic (if necessary)
+  ierr = findPISMInputFile((char*)filename, lic, regrid, start); CHKERRQ(ierr);
 
   // mean annual surface temperature, the upper boundary condition for conservation of energy
   // vsurftemp.create() was already called by PISMAtmosphereCoupler::initFromOptions()
@@ -172,7 +175,11 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
     ierr = verbPrintf(2, g->com, 
       "  reading mean annual temperature at ice surface (but below firn processes) 'artm' from %s ... \n",
       filename); CHKERRQ(ierr); 
-    ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
+    if (regrid) {
+      ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
+    } else {
+      ierr = vsurftemp.read(filename, start); CHKERRQ(ierr); // it *is* critical
+    }
   } else {
     ierr = verbPrintf(2, g->com, 
       "  not reading mean annual temperature at ice surface from a file; formulas must fill it ... \n");
@@ -183,7 +190,11 @@ PetscErrorCode PISMPDDCoupler::initFromOptions(IceGrid* g) {
     ierr = verbPrintf(2, g->com, 
       "  reading mean annual ice-equivalent snow accumulation rate 'snowaccum' from %s ... \n",
       filename); CHKERRQ(ierr); 
-    ierr = vsnowaccum.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
+    if (regrid) {
+      ierr = vsnowaccum.regrid(filename, *lic, true); CHKERRQ(ierr); // it *is* critical
+    } else {
+      ierr = vsnowaccum.read(filename, start); CHKERRQ(ierr); // it *is* critical
+    }
   } else {
     ierr = verbPrintf(2, g->com, 
       "  not reading mean annual ice-equivalent snow accumulation rate 'snowaccum' from a file;\n"

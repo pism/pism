@@ -64,8 +64,12 @@ Open the file for reading and determine its computational grid parameters; these
 are in returned \c LocalInterpCtx.
 
 \e Caller of findPISMInputFile() is in charge of destroying the returned lic.
+
+Sets lic to NULL if the input file found is an -i input file (which means that
+we don't need to regrid and can just read data straight.)
  */
-PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterpCtx* &lic) {
+PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterpCtx* &lic,
+						     bool &regrid, int &start) {
   PetscErrorCode ierr;
   PetscTruth i_set, boot_from_set;
 
@@ -89,17 +93,28 @@ PetscErrorCode PISMClimateCoupler::findPISMInputFile(char* filename, LocalInterp
     strcpy(filename, boot_from_file);
   }
 
-  // filename now contains name of PISM input file;  now check it is really there;
-  // if so, read the dimensions of computational grid so that we can set up a
-  // LocalInterpCtx for actual reading of climate data
+  // filename now contains name of PISM input (bootstrapping) file; now check
+  // it is really there; if so, read the dimensions of computational grid so
+  // that we can set up a LocalInterpCtx for actual reading of climate data
   NCTool nc(grid);
+  int last_record;
   grid_info gi;
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
   ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
+  ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
+  last_record -= 1;
   ierr = nc.close(); CHKERRQ(ierr);
 
-  // *caller* of findPISMInputFile() is in charge of destroying
-  lic = new LocalInterpCtx(gi, NULL, NULL, *grid); // 2D only
+  if (boot_from_set) {
+    // *caller* of findPISMInputFile() is in charge of destroying
+    lic = new LocalInterpCtx(gi, NULL, NULL, *grid); // 2D only
+    regrid = true;
+    start = 0;
+  } else {
+    lic = NULL;
+    regrid = false;
+    start = last_record;
+  }
 
   return 0;
 }
@@ -294,17 +309,29 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g) {
   if (initializeFromFile) {
     char filename[PETSC_MAX_PATH_LEN];
     LocalInterpCtx* lic;
+    bool regrid;
+    int start;
+    ierr = findPISMInputFile((char*) filename, lic, regrid, start); CHKERRQ(ierr); // allocates lic (if necessary)
 
-    ierr = findPISMInputFile((char*) filename, lic); CHKERRQ(ierr); // allocates lic
+
     ierr = verbPrintf(2, g->com, 
        "initializing constant atmospheric climate: reading net surface mass\n"
        "  balance 'acab' and absolute surface temperature 'artm' from %s ...\n",
        filename); CHKERRQ(ierr); 
 
-    ierr = vsurfmassflux.regrid(filename, *lic, true); CHKERRQ(ierr);
-    ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr);
+    if (regrid) {
+      ierr = vsurfmassflux.regrid(filename, *lic, true); CHKERRQ(ierr);
+    } else {
+      ierr = vsurfmassflux.read(filename, start); CHKERRQ(ierr);
+    }
 
-    delete lic;
+    if (regrid) {
+      ierr = vsurftemp.regrid(filename, *lic, true); CHKERRQ(ierr);
+    } else {
+      ierr = vsurftemp.read(filename, start); CHKERRQ(ierr);
+    }
+
+    delete lic;			// deleting a NULL pointer is OK
   }
 
   printIfDebug("ending PISMConstAtmosCoupler::initFromOptions()\n");
