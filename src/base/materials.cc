@@ -21,16 +21,16 @@
 #include "enthalpyConverter.hh"
 
 
-IceType::IceType(MPI_Comm c,const char pre[]) : comm(c) {
+IceType::IceType(MPI_Comm c,const char pre[], const NCConfigVariable &config) : comm(c) {
   PetscMemzero(prefix,sizeof(prefix));
   if (pre) PetscStrncpy(prefix,pre,sizeof(prefix));
 
-  rho    = 910;          // kg/m^3       ice_density
-  beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient, beta_CC
-  k      = 2.10;         // J/(m K s) = W/(m K)    ice_thermal_conductivity
-  c_p    = 2009;         // J/(kg K)     ice_specific_heat_capacity
-  latentHeat = 3.35e5;   // J/kg         latent heat capacity, water_latent_heat_fusion
-  meltingTemp = 273.15;  // K            water_melting_temperature
+  rho          = config.get("ice_density");
+  beta_CC_grad = config.get("beta_CC");
+  k            = config.get("ice_thermal_conductivity");
+  c_p          = config.get("ice_specific_heat_capacity");
+  latentHeat   = config.get("water_latent_heat_fusion");
+  meltingTemp  = config.get("water_melting_temperature");
 }
 
 
@@ -39,12 +39,11 @@ PetscErrorCode IceType::printInfo(PetscInt) const {
   return 0;
 }
 
-
 // Rather than make this part of the base class, we just check at some reference values.
-PetscTruth IceTypeIsPatersonBuddCold(IceType *ice) {
+PetscTruth IceTypeIsPatersonBuddCold(IceType *ice, const NCConfigVariable &config) {
   static const struct {PetscReal s,T,p,gs;} v[] = {
     {1e3,223,1e6,1e-3},{2e4,254,3e6,2e-3},{5e4,268,5e6,3e-3},{1e5,273,8e6,5e-3}};
-  ThermoGlenArrIce cpb(PETSC_COMM_SELF,NULL); // This is unmodified cold Paterson-Budd
+  ThermoGlenArrIce cpb(PETSC_COMM_SELF,NULL,config); // This is unmodified cold Paterson-Budd
   for (int i=0; i<4; i++) {
     const PetscReal left  = ice->flow(v[i].s, v[i].T, v[i].p, v[i].gs),
                     right =  cpb.flow(v[i].s, v[i].T, v[i].p, v[i].gs);
@@ -54,7 +53,6 @@ PetscTruth IceTypeIsPatersonBuddCold(IceType *ice) {
   }
   return PETSC_TRUE;
 }
-
 
 PetscTruth IceTypeUsesGrainSize(IceType *ice) {
   static const PetscReal gs[] = {1e-4,1e-3,1e-2,1},s=1e4,T=260,p=1e6;
@@ -68,8 +66,9 @@ PetscTruth IceTypeUsesGrainSize(IceType *ice) {
 
 
 
-CustomGlenIce::CustomGlenIce(MPI_Comm c,const char pre[]) : IceType(c,pre)
+CustomGlenIce::CustomGlenIce(MPI_Comm c,const char pre[], const NCConfigVariable &config) : IceType(c,pre,config)
 {
+  // FIXME: these constants need to go in pism_config.cdl
   exponent_n = 3.0;
   softness_A = 4e-25;
   hardness_B = pow(softness_A, -1/exponent_n); // ~= 135720960;
@@ -199,7 +198,9 @@ PetscErrorCode CustomGlenIce::view(PetscViewer viewer) const {
 }
 
 
-ThermoGlenIce::ThermoGlenIce(MPI_Comm c,const char pre[]) : IceType(c,pre) {
+ThermoGlenIce::ThermoGlenIce(MPI_Comm c,const char pre[], const NCConfigVariable &config) : IceType(c,pre,config) {
+
+  // FIXME: these constants need to go in pism_config.cdl
   A_cold = 3.61e-13;   // Pa^-3 / s
   A_warm = 1.73e3;     // Pa^-3 / s
   Q_cold = 6.0e4;      // J / mol
@@ -347,23 +348,12 @@ PetscScalar ThermoGlenIce::hardnessParameter(PetscScalar T) const {
 This constructor just sets flow law factor for nonzero water content, from
 \ref AschwandenBlatter2009 and \ref LliboutryDuval1985.
  */
-PolyThermalGPBLDIce::PolyThermalGPBLDIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
-  EC = NULL;
-  T_0 = 273.15;               // default overridden through config interface
-  water_frac_coeff = 184.0;   // default overridden through config interface
-}
-
-
-PetscErrorCode PolyThermalGPBLDIce::setFromConfig(NCConfigVariable *config) {
-  if (config == NULL) {
-    SETERRQ(1,"config == NULL in PolyThermalGPBLDIce::setFromConfig()");
-  }
+PolyThermalGPBLDIce::PolyThermalGPBLDIce(MPI_Comm c,const char pre[],
+					 const NCConfigVariable &config) : ThermoGlenIce(c,pre,config) {
   EC = new EnthalpyConverter(config);
-  T_0  = config->get("water_melting_temperature");    // K
-  water_frac_coeff = config->get("gpbld_water_frac_coeff");                
-  return 0;
+  T_0  = config.get("water_melting_temperature");    // K
+  water_frac_coeff = config.get("gpbld_water_frac_coeff");                
 }
-
 
 PolyThermalGPBLDIce::~PolyThermalGPBLDIce() {
   delete EC;
@@ -465,7 +455,6 @@ PetscScalar PolyThermalGPBLDIce::flowFromEnth(
   return softnessParameterFromEnth(enthalpy,pressure) * pow(stress,n-1);
 }
 
-
 PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
                 PetscScalar thickness,  PetscInt kbelowH, const PetscScalar *zlevels,
                 PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
@@ -500,7 +489,9 @@ PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
 }
 
 
-ThermoGlenIceHooke::ThermoGlenIceHooke(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
+ThermoGlenIceHooke::ThermoGlenIceHooke(MPI_Comm c,const char pre[],
+				       const NCConfigVariable &config) : ThermoGlenIce(c,pre,config) {
+  // FIXME: these constants need to go in pism_config.cdl
   Q_Hooke = 7.88e4;       // J / mol
   // A_Hooke = (1/B_0)^n where n=3 and B_0 = 1.928 a^(1/3) Pa
   A_Hooke = 4.42165e-9;    // s^-1 Pa^-3
@@ -596,7 +587,10 @@ PetscScalar ThermoGlenArrIceWarm::Q() const {
 }
 
 
-HybridIce::HybridIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {
+HybridIce::HybridIce(MPI_Comm c,const char pre[],
+		     const NCConfigVariable &config) : ThermoGlenIce(c,pre,config) {
+
+  // FIXME: some of these constants need to go in pism_config.cdl
   V_act_vol    = -13.e-6;  // m^3/mol
   d_grain_size = 1.0e-3;   // m  (see p. ?? of G&K paper)
   //--- dislocation creep ---
@@ -747,7 +741,8 @@ PetscErrorCode HybridIce::view(PetscViewer viewer) const {
 }
 
 
-HybridIceStripped::HybridIceStripped(MPI_Comm c,const char pre[]) : HybridIce(c,pre) {
+HybridIceStripped::HybridIceStripped(MPI_Comm c,const char pre[],
+				     const NCConfigVariable &config) : HybridIce(c,pre,config) {
   d_grain_size_stripped = 3.0e-3;  // m; = 3mm  (see Peltier et al 2000 paper)
 }
 
@@ -933,7 +928,7 @@ PetscReal SSAStrengthExtension::min_thickness_for_extension() const {
 #undef ALEN
 #define ALEN(a) (sizeof(a)/sizeof(a)[0])
 
-IceFactory::IceFactory(MPI_Comm c,const char pre[])
+IceFactory::IceFactory(MPI_Comm c,const char pre[], const NCConfigVariable &conf) : config(conf)
 {
   comm = c;
   prefix[0] = 0;
@@ -957,7 +952,8 @@ IceFactory::~IceFactory()
 
 #undef __FUNCT__
 #define __FUNCT__ "IceFactory::registerType"
-PetscErrorCode IceFactory::registerType(const char tname[],PetscErrorCode(*icreate)(MPI_Comm,const char[],IceType**))
+PetscErrorCode IceFactory::registerType(const char tname[],
+					PetscErrorCode(*icreate)(MPI_Comm,const char[],const NCConfigVariable &, IceType**))
 {
   PetscErrorCode ierr;
 
@@ -967,26 +963,26 @@ PetscErrorCode IceFactory::registerType(const char tname[],PetscErrorCode(*icrea
 }
 
 
-static PetscErrorCode create_custom(MPI_Comm comm,const char pre[],IceType **i) {
-  *i = new (CustomGlenIce)(comm,pre);  return 0;
+static PetscErrorCode create_custom(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceType **i) {
+  *i = new (CustomGlenIce)(comm, pre, config);  return 0;
 }
-static PetscErrorCode create_pb(MPI_Comm comm,const char pre[],IceType **i) {
-  *i = new (ThermoGlenIce)(comm,pre);  return 0;
+static PetscErrorCode create_pb(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceType **i) {
+  *i = new (ThermoGlenIce)(comm, pre, config);  return 0;
 }
-static PetscErrorCode create_gpbld(MPI_Comm comm,const char pre[],IceType **i) {
-  *i = new (PolyThermalGPBLDIce)(comm,pre);  return 0;
+static PetscErrorCode create_gpbld(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceType **i) {
+  *i = new (PolyThermalGPBLDIce)(comm, pre, config);  return 0;
 }
-static PetscErrorCode create_hooke(MPI_Comm comm,const char pre[],IceType **i) {
-  *i = new (ThermoGlenIceHooke)(comm,pre);  return 0;
+static PetscErrorCode create_hooke(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceType **i) {
+  *i = new (ThermoGlenIceHooke)(comm, pre, config);  return 0;
 }
-static PetscErrorCode create_arr(MPI_Comm comm,const char pre[],IceType **i) {
-  *i = new (ThermoGlenArrIce)(comm,pre);  return 0;
+static PetscErrorCode create_arr(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceType **i) {
+  *i = new (ThermoGlenArrIce)(comm, pre, config);  return 0;
 }
-static PetscErrorCode create_arrwarm(MPI_Comm comm,const char pre[],IceType **i) {
-  *i = new (ThermoGlenArrIceWarm)(comm,pre);  return 0;
+static PetscErrorCode create_arrwarm(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceType **i) {
+  *i = new (ThermoGlenArrIceWarm)(comm, pre, config);  return 0;
 }
-static PetscErrorCode create_hybrid(MPI_Comm comm,const char pre[],IceType **i) {
-  *i = new (HybridIce)(comm,pre);  return 0;
+static PetscErrorCode create_hybrid(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceType **i) {
+  *i = new (HybridIce)(comm, pre, config);  return 0;
 }
 
 
@@ -1023,26 +1019,6 @@ PetscErrorCode IceFactory::setType(const char type[])
   PetscFunctionReturn(0);
 }
 
-
-#undef __FUNCT__
-#define __FUNCT__ "IceFactory::setTypeByNumber"
-// This method exists only for backwards compatibility.
-PetscErrorCode IceFactory::setTypeByNumber(int n)
-{
-
-  PetscFunctionBegin;
-  switch (n) {
-    case 0: setType(ICE_PB); break;
-    case 1: setType(ICE_ARR); break;
-    case 2: setType(ICE_ARRWARM); break;
-    case 3: setType(ICE_HOOKE); break;
-    case 4: setType(ICE_HYBRID); break;
-    default: SETERRQ1(1,"Ice number %d not available",n);
-  }
-  PetscFunctionReturn(0);
-}
-
-
 #undef __FUNCT__
 #define __FUNCT__ "IceFactory::setFromOptions"
 PetscErrorCode IceFactory::setFromOptions()
@@ -1052,16 +1028,6 @@ PetscErrorCode IceFactory::setFromOptions()
   char my_type_name[256];
 
   PetscFunctionBegin;
-  {
-    // This is for backwards compatibility only, -ice_type is the new way to choose ice
-    // Note that it is not maintainable to have multiple options for the same thing
-    PetscInt n;
-    ierr = PetscOptionsGetInt(prefix, "-law", &n, &flg); CHKERRQ(ierr);
-    if (flg) {
-      ierr = verbPrintf(1,comm,"Option `-law' is deprecated, please use `-ice_type'\n");CHKERRQ(ierr);
-      ierr = setTypeByNumber(n);CHKERRQ(ierr);
-    }
-  }
   // These options will choose Goldsby-Kohlstedt ice by default (see IceModel::setFromOptions()) but if a derived class
   // uses a different initialization procedure, we'll recognize them here as well.  A better long-term solution would be
   // to separate tracking of grain size from a particular flow law (since in principle they are unrelated) but since
@@ -1093,15 +1059,17 @@ PetscErrorCode IceFactory::setFromOptions()
 #define __FUNCT__ "IceFactory::create"
 PetscErrorCode IceFactory::create(IceType **inice)
 {
-  PetscErrorCode ierr,(*r)(MPI_Comm,const char[],IceType**);
+  PetscErrorCode ierr,(*r)(MPI_Comm,const char[],const NCConfigVariable &,IceType**);
   IceType *ice;
 
   PetscFunctionBegin;
   PetscValidPointer(inice,3);
   *inice = 0;
+  // find the function that can create selected ice type:
   ierr = PetscFListFind(type_list,comm,type_name,(void(**)(void))&r);CHKERRQ(ierr);
   if (!r) SETERRQ1(1,"Selected Ice type %s not available, but we shouldn't be able to get here anyway",type_name);
-  ierr = (*r)(comm,prefix,&ice);CHKERRQ(ierr);
+  // create an IceType instance:
+  ierr = (*r)(comm,prefix,config,&ice);CHKERRQ(ierr);
   *inice = ice;
   PetscFunctionReturn(0);
 }

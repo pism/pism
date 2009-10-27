@@ -50,10 +50,8 @@ IceExactSSAModel::IceExactSSAModel(IceGrid &g, char mytest) : IceModel(g) {
 
 PetscErrorCode IceExactSSAModel::init_physics() {
   PetscErrorCode ierr;
-  if (test == 'I')
-    iceFactory.setType(ICE_CUSTOM);
-  else
-    iceFactory.setType(ICE_ARR);
+
+  iceFactory.setType(ICE_CUSTOM);
 
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
@@ -555,8 +553,8 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
     if (netcdf_report) {
       err.reset();
       err.short_name = "maximum_velocity";
-      ierr = err.set_units("m/s"); CHKERRQ(ierr);
-      ierr = err.set_glaciological_units("m/a"); CHKERRQ(ierr);
+      ierr = err.set_units("meters/second"); CHKERRQ(ierr);
+      ierr = err.set_glaciological_units("meters/year"); CHKERRQ(ierr);
       ierr = err.write(filename, (size_t)start, gmaxvecerr); CHKERRQ(ierr);
 
       err.short_name = "maximum_u";
@@ -590,8 +588,8 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
     if (netcdf_report) {
       err.reset();
       err.short_name = "maximum_velocity";
-      ierr = err.set_units("m/s"); CHKERRQ(ierr);
-      ierr = err.set_glaciological_units("m/a"); CHKERRQ(ierr);
+      ierr = err.set_units("meters/second"); CHKERRQ(ierr);
+      ierr = err.set_glaciological_units("meters/year"); CHKERRQ(ierr);
       ierr = err.write(filename, (size_t)start, gmaxvecerr); CHKERRQ(ierr);
 
       err.short_name = "maximum_u";

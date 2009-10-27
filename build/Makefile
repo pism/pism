@@ -78,7 +78,7 @@ ifeq ($(PISM_USE_MPICXX), 1)
 endif
 
 SHELL := /bin/sh
-VPATH := $(subst src,../src,src/:src/base/:src/base/ssaJed/:src/earth/:src/verif/:src/software_tests:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
+VPATH := $(subst src,../src,src/:src/base/:src/earth/:src/verif/:src/software_tests:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
 executables := penth pismr pismd pismv pisms pcctest pismtests
@@ -91,7 +91,6 @@ config_file := ../lib/pism_config.nc
 # ice_sources and ice_csources go in libpism.[so|a]
 ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
 	pism_default_config.cc pism_revision.cc columnSystem.cc monthlyDataMaps.cc \
-	iceShelfExtension.cc ssa.cc ssafe.cc \
 	pism_const.cc iceModelVec.cc iceModelVec2.cc iceModelVec3.cc NCVariable.cc \
 	matlablike.cc greens.cc deformation.cc localMassBalance.cc pccoupler.cc \
 	iceModel.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc \

@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,20 +21,15 @@
 #include "enthalpyConverter.hh"
 
 
-EnthalpyConverter::EnthalpyConverter(NCConfigVariable *config) {
-  if (config == NULL) {
-    PetscErrorPrintf("\n\n\n  EnthalpyConverter ERROR in constructor:\n"
-                     "    config == NULL ... \n\n");
-    endPrintRank();
-  }
-  beta  = config->get("beta_CC");                                 // K Pa-1
-  c_b   = config->get("bedrock_thermal_specific_heat_capacity");  // J kg-1 K-1
-  c_i   = config->get("ice_specific_heat_capacity");              // J kg-1 K-1
-  g     = config->get("earth_gravity");                           // m s-2
-  L     = config->get("water_latent_heat_fusion");                // J kg-1
-  p_air = config->get("surface_pressure");                        // Pa
-  rho_i = config->get("ice_density");                             // kg m-3
-  T_0   = config->get("water_melting_temperature");               // K  
+EnthalpyConverter::EnthalpyConverter(const NCConfigVariable &config) {
+  beta  = config.get("beta_CC");                                 // K Pa-1
+  c_b   = config.get("bedrock_thermal_specific_heat_capacity");  // J kg-1 K-1
+  c_i   = config.get("ice_specific_heat_capacity");              // J kg-1 K-1
+  g     = config.get("earth_gravity");                           // m s-2
+  L     = config.get("water_latent_heat_fusion");                // J kg-1
+  p_air = config.get("surface_pressure");                        // Pa
+  rho_i = config.get("ice_density");                             // kg m-3
+  T_0   = config.get("water_melting_temperature");               // K  
 }
 
 

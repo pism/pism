@@ -644,10 +644,11 @@ PetscErrorCode NCVariable::reset() {
 }
 
 //! Checks if an attribute is present. Ignores empty strings.
-bool NCVariable::has(string name) {
+bool NCVariable::has(string name) const {
 
-  if (strings.find(name) != strings.end()) {
-    if (strings[name].empty())
+  map<string,string>::const_iterator j = strings.find(name);
+  if (j != strings.end()) {
+    if ((j->second).empty())
       return false;
 		   
     return true;
@@ -667,9 +668,10 @@ void NCVariable::set(string name, double value) {
 //! Get a single-valued scalar attribute.
 /*! Returns 0 if an attribute is not present, so that has() works correctly.
  */
-double NCVariable::get(string name) {
-  if (doubles.find(name) != doubles.end())
-    return doubles[name][0];
+double NCVariable::get(string name) const {
+  map<string,vector<double> >::const_iterator j = doubles.find(name);
+  if (j != doubles.end())
+    return (j->second)[0];
   else
     return 0;
 }
@@ -680,8 +682,12 @@ void NCVariable::set_string(string name, string value) {
 }
 
 //! Get a string attribute.
-string NCVariable::get_string(string name) {
-  return strings[name];
+string NCVariable::get_string(string name) const {
+  map<string,string>::const_iterator j = strings.find(name);
+  if (j != strings.end())
+    return j->second;
+  else
+    return string();
 }
 
 //! Check if a value \c a is in the valid range defined by \c valid_min and \c valid_min attributes.
@@ -753,7 +759,7 @@ PetscErrorCode NCConfigVariable::read(const char filename[]) {
 }
 
 //! Write a config variable to a file (with all its attributes).
-PetscErrorCode NCConfigVariable::write(const char filename[]) {
+PetscErrorCode NCConfigVariable::write(const char filename[]) const {
   PetscErrorCode ierr;
   int varid;
   bool variable_exists;
@@ -775,7 +781,7 @@ PetscErrorCode NCConfigVariable::write(const char filename[]) {
 }
 
 //! Define a configuration NetCDF variable.
-PetscErrorCode NCConfigVariable::define(const NCTool &nc, int &varid) {
+PetscErrorCode NCConfigVariable::define(const NCTool &nc, int &varid) const {
   int stat, ncid, var_id;
 
   ncid = nc.get_ncid();
@@ -798,7 +804,7 @@ PetscErrorCode NCConfigVariable::define(const NCTool &nc, int &varid) {
 
 
 //! Returns a \c double parameter. Stops if it was not found.
-double NCConfigVariable::get(string name) {
+double NCConfigVariable::get(string name) const {
 
   if (doubles.find(name) != doubles.end()) {
     return NCVariable::get(name);
@@ -817,26 +823,35 @@ double NCConfigVariable::get(string name) {
 
   Any other string produces an error.
  */
-bool NCConfigVariable::get_flag(string name) {
-  string value = strings[name];
+bool NCConfigVariable::get_flag(string name) const {
 
-  if ((value == "false") ||
-      (value == "no") ||
-      (value == "off"))
-    return false;
+  map<string,string>::const_iterator j = strings.find(name);
+  if (j != strings.end()) {
+    const string &value = j->second;
 
-  if ((value == "true") ||
-      (value == "yes") ||
-      (value == "on"))
-    return true;
+    if ((value == "false") ||
+	(value == "no") ||
+	(value == "off"))
+      return false;
+
+    if ((value == "true") ||
+	(value == "yes") ||
+	(value == "on"))
+      return true;
+
+    PetscPrintf(com,
+		"PISM ERROR: Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
+		"            Please make sure that it is equal to one of 'true', 'yes', 'on', 'false', 'no', 'off'.\n",
+		name.c_str(), value.c_str());
+    PetscEnd();
+  }
 
   PetscPrintf(com,
-	      "PISM ERROR: Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
-	      "            Please make sure that it is equal to one of 'true', 'yes', 'on', 'false', 'no', 'off'.\n",
-	      name.c_str(), value.c_str());
+	      "PISM ERROR: Parameter '%s' was not set. (Read from '%s'.)\n",
+	      name.c_str(), config_filename.c_str());
   PetscEnd();
 
-  return true;
+  return true;			// will never happen
 }
 
 //! Set a value of a boolean flag.
@@ -847,7 +862,7 @@ void NCConfigVariable::set_flag(string name, bool value) {
 
 //! Write attributes to a NetCDF variable. All attributes are equal here.
 PetscErrorCode NCConfigVariable::write_attributes(const NCTool &nc, int varid, nc_type nctype,
-						  bool /*write_in_glaciological_units*/) {
+						  bool /*write_in_glaciological_units*/) const {
   int ierr, ncid;
 
   if (rank != 0) return 0;
@@ -857,7 +872,7 @@ PetscErrorCode NCConfigVariable::write_attributes(const NCTool &nc, int varid, n
   ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
   // Write text attributes:
-  map<string, string>::iterator i;
+  map<string, string>::const_iterator i;
   for (i = strings.begin(); i != strings.end(); ++i) {
     string name  = i->first;
     string value = i->second;
@@ -869,7 +884,7 @@ PetscErrorCode NCConfigVariable::write_attributes(const NCTool &nc, int varid, n
   }
 
   // Write double attributes:
-  map<string, vector<double> >::iterator j;
+  map<string, vector<double> >::const_iterator j;
   for (j = doubles.begin(); j != doubles.end(); ++j) {
     string name  = j->first;
     vector<double> values = j->second;
@@ -944,14 +959,14 @@ PetscErrorCode NCConfigVariable::scalar_from_option(string name, string paramete
 }
 
 //! Print all the attributes of a configuration variable.
-PetscErrorCode NCConfigVariable::print() {
+PetscErrorCode NCConfigVariable::print() const {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(4, com, "PISM parameters read from %s:\n",
 		    config_filename.c_str());
 
   // Print text attributes:
-  map<string, string>::iterator i;
+  map<string, string>::const_iterator i;
   for (i = strings.begin(); i != strings.end(); ++i) {
     string name  = i->first;
     string value = i->second;
@@ -963,7 +978,7 @@ PetscErrorCode NCConfigVariable::print() {
   }
 
   // Print double attributes:
-  map<string, vector<double> >::iterator j;
+  map<string, vector<double> >::const_iterator j;
   for (j = doubles.begin(); j != doubles.end(); ++j) {
     string name  = j->first;
     vector<double> values = j->second;
@@ -1245,7 +1260,7 @@ PetscErrorCode NCGlobalAttributes::read(const char filename[]) {
 }
 
 //! Writes global attributes to a file by calling write_attributes().
-PetscErrorCode NCGlobalAttributes::write(const char filename[]) {
+PetscErrorCode NCGlobalAttributes::write(const char filename[]) const {
   PetscErrorCode ierr;
   NCTool nc(com, rank);
 
@@ -1259,7 +1274,7 @@ PetscErrorCode NCGlobalAttributes::write(const char filename[]) {
 }
 
 //! Writes global attributes to a file. Prepends the history string.
-PetscErrorCode NCGlobalAttributes::write_attributes(const NCTool &nc, int, nc_type, bool) {
+PetscErrorCode NCGlobalAttributes::write_attributes(const NCTool &nc, int, nc_type, bool) const {
   int ierr, ncid;
   string old_history;
 
@@ -1273,7 +1288,7 @@ PetscErrorCode NCGlobalAttributes::write_attributes(const NCTool &nc, int, nc_ty
   ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
   // Write text attributes:
-  map<string, string>::iterator i;
+  map<string, string>::const_iterator i;
   for (i = strings.begin(); i != strings.end(); ++i) {
     string name  = i->first;
     string value = i->second;
@@ -1290,7 +1305,7 @@ PetscErrorCode NCGlobalAttributes::write_attributes(const NCTool &nc, int, nc_ty
   }
 
   // Write double attributes:
-  map<string, vector<double> >::iterator j;
+  map<string, vector<double> >::const_iterator j;
   for (j = doubles.begin(); j != doubles.end(); ++j) {
     string name  = j->first;
     vector<double> values = j->second;

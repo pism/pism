@@ -220,9 +220,7 @@ PetscErrorCode IceEnthalpyModel::init_physics() {
   iceFactory.create(&ice);
 
   PolyThermalGPBLDIce *gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
-  if (gpbldi) {
-    gpbldi->setFromConfig(&config);
-  } else {
+  if (gpbldi == NULL) {
     ThermoGlenIce *tgi = dynamic_cast<ThermoGlenIce*>(ice);
     if (tgi) {
       ierr = verbPrintf(2, grid.com,
@@ -307,7 +305,7 @@ the enthalpy for that temperature and zero liquid fraction.
 PetscErrorCode IceEnthalpyModel::setEnth3FromT3_ColdIce() {
   PetscErrorCode ierr;
 
-  EnthalpyConverter EC(&config);
+  EnthalpyConverter EC(config);
   
   PetscScalar **H;
   ierr = T3.begin_access(); CHKERRQ(ierr);
@@ -349,7 +347,7 @@ IceModel::temperatureAgeStep() will have desired effect.
 PetscErrorCode IceEnthalpyModel::setTnew3FromEnth3() {
   PetscErrorCode ierr;
 
-  EnthalpyConverter EC(&config);
+  EnthalpyConverter EC(config);
 
   PetscScalar **thickness;
   PetscScalar *Tij, *Enthij; // columns of these values
@@ -384,7 +382,7 @@ PetscErrorCode IceEnthalpyModel::setLiquidFracFromEnthalpy(IceModelVec3 &useForL
      "",
      ""); CHKERRQ(ierr);
 
-  EnthalpyConverter EC(&config);
+  EnthalpyConverter EC(config);
 
   PetscScalar **thickness;
   PetscScalar *omegaij, *Enthij; // columns of these values
@@ -423,7 +421,7 @@ PetscErrorCode IceEnthalpyModel::setPATempFromEnthalpy(IceModelVec3 &useForPATem
      "deg_C",
      ""); CHKERRQ(ierr);
 
-  EnthalpyConverter EC(&config);
+  EnthalpyConverter EC(config);
 
   PetscScalar **thickness;
   PetscScalar *Tpaij, *Enthij; // columns of these values
@@ -465,7 +463,7 @@ PetscErrorCode IceEnthalpyModel::setCTSFromEnthalpy(IceModelVec3 &useForCTS) {
      "",
      ""); CHKERRQ(ierr);
 
-  EnthalpyConverter EC(&config);
+  EnthalpyConverter EC(config);
 
   PetscScalar **thickness;
   PetscScalar *CTSij, *Enthij; // columns of these values
@@ -499,7 +497,7 @@ PetscErrorCode IceEnthalpyModel::energyAgeStats(
   PetscScalar     **H, **Enthbase, *tau;
   PetscScalar     meltarea, temp0, origvol;
   
-  EnthalpyConverter EC(&config);
+  EnthalpyConverter EC(config);
 
   // put basal ice enthalpy in vWork2d[0]
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
@@ -635,7 +633,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   PetscTruth viewOneRedoColumn;
   ierr = check_option("-view_redo_sys", viewOneRedoColumn); CHKERRQ(ierr);
 
-  EnthalpyConverter EC(&config);
+  EnthalpyConverter EC(config);
   if (getVerbosityLevel() >= 4) { ierr = EC.viewConstants(NULL); CHKERRQ(ierr); }
 
   enthSystemCtx system(fMz,fMbz);

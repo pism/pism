@@ -163,12 +163,17 @@ try:
     if input:
         nc = NC(input, 'r')
         available_tests = unique(array(map(chr, nc.variables['test'][:])))
-        if tests_to_plot == None:
-            print """Please choose tests to plot using the -t option.
-(Input file %s has reports for tests %s available.)""" % (input, str(available_tests))
-            sys.exit(0)
 
-        if tests_to_plot[0] == "all":
+        if len(available_tests) == 1:
+            if tests_to_plot == None:
+                tests_to_plot = available_tests
+        else:
+            if (tests_to_plot == None):
+                print """Please choose tests to plot using the -t option.
+(Input file %s has reports for tests %s available.)""" % (input, str(available_tests))
+                sys.exit(0)
+
+        if (tests_to_plot[0] == "all"):
             tests_to_plot = available_tests
 
         close('all')

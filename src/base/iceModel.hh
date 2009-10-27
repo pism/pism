@@ -24,7 +24,6 @@
 #include <petscsnes.h>
 
 #include "materials.hh"
-#include "ssaJed/iceShelfExtension.hh"  // only used for Jed's ssa_external in base/ssa/
 #include "pism_const.hh"
 #include "grid.hh"
 #include "iceModelVec.hh"
@@ -35,10 +34,6 @@
 #include "../earth/deformation.hh"
 
 #include "../coupler/pccoupler.hh"
-
-// With this forward declaration, we don't have to recompile all of
-// Pism if the SSA header "pismssa.hh" changes.
-typedef struct _p_SSA *SSA;
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -121,6 +116,7 @@ public:
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
   virtual IceFactory &getIceFactory() { return iceFactory; }
   virtual IceType *getIce() {return ice;}
+  virtual const NCConfigVariable& get_config() {return config;}
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode bootstrapFromFile(const char *fname);
@@ -458,25 +454,6 @@ protected:
   Vec SSAX, SSARHS;  // Global vectors for solution of the linear system
   Vec SSAXLocal; // We need a local copy of the solution to map back to a DA based vector
   VecScatter SSAScatterGlobalToLocal;
-
-  // Jed's External SSA solver:  "If non-NULL, we are using the velocity solver in
-  // src/base/ssa and all the SSA* objects above are not used.  Eventually we should
-  // move SSA legacy stuff out of IceModel (either by putting into an implementation
-  // of SSA or by just deleting it)."
-  // Bueler's comments:  The type "SSA" is not documented and is defined as opaquely
-  // as possible by going through src/ssaJed/pismssa.h and src/ssaJed/ssaimpl.h.  This seems
-  // to be Jed's decision to start using PIMPL instead of C++ like the rest of PISM.
-  // The actual implementation of this SSA is a finite element method is in 
-  // src/ssaJed/ssafe.c.  It is very promising.  It is essentially impossible for me to
-  // understand without an analysis of the design principles of dohp.  Go to dohp.org
-  // and read Karniadakis and Sherwin.
-  SSA ssa;
-
-  // Jed's shelfExtension object: a strength extension that factors the nu*H coefficient
-  // of the SSA equations so that it can use your IceType.  Essentially unnecessary because
-  // the extension is the replacement for an unimplemented stress boundary condition.
-  IceShelfExtension  shelfExtensionJed;  
-                                      
 
   // This is related to the snapshot saving feature
   string snapshots_filename;

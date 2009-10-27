@@ -156,8 +156,6 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
   const PetscScalar PSTconstantNuHForSSA = H_SSA_EXTENSION * constantHardnessForSSA
                       / (2.0 * pow(TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
   ssaStrengthExtend.set_notional_strength(PSTconstantNuHForSSA);
-  
-  shelfExtensionJed.forceNuH(PSTconstantNuHForSSA);  // UNUSED EXCEPT FOR -ssa_external
 
   return 0;
 }

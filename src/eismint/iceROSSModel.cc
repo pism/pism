@@ -50,12 +50,6 @@ IceROSSModel::IceROSSModel(IceGrid &g)
           //          30 MPa yr for \bar\nu
   ssaStrengthExtend.set_notional_strength(DEFAULT_nuH);
 
-  // THIS IS UNUSED EXCEPT WITH -ssa_external:
-  // Most of these are defaults anyway, but this is how to go about setting defaults
-  shelfExtensionJed.setThickness(5);
-  shelfExtensionJed.setTemperature(263.15);
-  // Typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
-  shelfExtensionJed.setStrainRate((100.0 / secpera) / (100.0 * 1.0e3));
 }
 
 

@@ -20,37 +20,10 @@
 #include <cstring>
 #include <petscda.h>
 #include "iceModel.hh"
-#include "ssaJed/pismssa.hh"
-
-#if 1
-// Many functions in this file don't make sense if we are using the external SSA module.
-# define CHECK_NOT_SSA_EXTERNAL(ssa)                                              \
-  if (ssa) {SETERRQ(1,"This should not be called when the external SSA solver is active");}
-#else
-# define CHECK_NOT_SSA_EXTERNAL(ssa)
-#endif
 
 //! Each step of SSA uses previously saved values to start iteration; zero them here to start.
 PetscErrorCode IceModel::initSSA() {
   PetscErrorCode ierr;
-  PetscTruth ssa_external;
-
-  ssa_external = PETSC_FALSE;
-  ierr = PetscOptionsBegin(grid.com,NULL,"Shallow Stream/Shelf Approximation options",NULL);CHKERRQ(ierr);
-  {
-    ierr = PetscOptionsTruth("-ssa_external","Use external module instead of the solver hard-wired into IceModel","",ssa_external,&ssa_external,NULL);CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd();CHKERRQ(ierr);
-  if (ssa_external) {
-    ierr = SSACreate(&grid,&ssa);CHKERRQ(ierr);
-    ierr = SSASetIceType(ssa,ice);CHKERRQ(ierr);
-    ierr = SSASetOceanType(ssa,&ocean);CHKERRQ(ierr);
-    ierr = SSASetBasalType(ssa,basal);CHKERRQ(ierr);
-    ierr = SSASetShelfExtension(ssa,&shelfExtensionJed);CHKERRQ(ierr);
-    ierr = SSASetFromOptions(ssa);CHKERRQ(ierr);
-    return 0;
-  }
-  ssa = 0;                      // If SSA is non-NULL we will use the external module
   if (!have_ssa_velocities) {
     ierr = vubarSSA.set(0.0); CHKERRQ(ierr);
     ierr = vvbarSSA.set(0.0); CHKERRQ(ierr);
@@ -104,8 +77,6 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscRe
   if (leaveNuHAloneSSA == PETSC_TRUE) {
     return 0;
   }
-
-  CHECK_NOT_SSA_EXTERNAL(ssa);
 
   bool use_constant_nuh_for_ssa = config.get_flag("use_constant_nuh_for_ssa");
   if (use_constant_nuh_for_ssa) {
@@ -239,8 +210,6 @@ PetscErrorCode IceModel::testConvergenceOfNu(IceModelVec2 vNuH[2], IceModelVec2 
   const PetscScalar area = grid.dx * grid.dy;
 #define MY_NORM     NORM_1
 
-  CHECK_NOT_SSA_EXTERNAL(ssa);
-
   // Test for change in nu
   ierr = vNuHOld[0].add(-1, vNuH[0]); CHKERRQ(ierr);
   ierr = vNuHOld[1].add(-1, vNuH[1]); CHKERRQ(ierr);
@@ -318,8 +287,6 @@ PetscErrorCode IceModel::assembleSSAMatrix(bool includeBasalShear, IceModelVec2 
   const PetscScalar   scaling = 1.0e9;  // comparable to typical beta for an ice stream
   PetscErrorCode  ierr;
   PetscScalar     **mask, **nuH[2], **u, **v, **tauc;
-
-  CHECK_NOT_SSA_EXTERNAL(ssa);
 
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
@@ -463,8 +430,6 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   PetscErrorCode  ierr;
   PetscScalar     **mask, **h, **H, **uvbar[2], **taudx, **taudy;
 
-  CHECK_NOT_SSA_EXTERNAL(ssa);
-
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
   // get driving stress components
@@ -545,8 +510,6 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   PetscErrorCode  ierr;
   PetscScalar     **u, **v, *uv;
   Vec             xLoc = SSAXLocal;
-
-  CHECK_NOT_SSA_EXTERNAL(ssa);
 
   ierr = VecScatterBegin(SSAScatterGlobalToLocal, x, xLoc, 
            INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
@@ -632,16 +595,6 @@ PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
   PetscTruth dosnes;
   IceModelVec2 vNuDefault[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
 
-  if (ssa) {
-    // Drive the external SSA solver
-    ierr = SSASetFields(ssa,&vMask,vuvbar,&vH,&vh,&vbed,&vtauc,&T3);CHKERRQ(ierr);
-    ierr = SSASolve(ssa,vubarSSA,vvbarSSA);CHKERRQ(ierr);
-    // If you want to compare the external solver to the internal one, activate the line below and make sure that
-    // that CHECK_NOT_SSA_EXTERNAL is empty (top of this file).
-    //ierr = velocitySSA(vNuDefault,numiter);CHKERRQ(ierr);
-    //ierr = vubarSSA.report_range();CHKERRQ(ierr);
-    return 0;
-  }
   ierr = check_option("-ssa_bueler", dosnes); CHKERRQ(ierr);
   if (dosnes == PETSC_TRUE) {
     ierr = velocitySSA_SNES(vNuDefault, numiter); CHKERRQ(ierr);
@@ -674,8 +627,6 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
 
   PetscInt ssaMaxIterations = static_cast<PetscInt>(config.get("max_iterations_ssa"));
   
-  CHECK_NOT_SSA_EXTERNAL(ssa);
-
   ierr = vubarSSA.copy_to(vubarSSAOld); CHKERRQ(ierr);
   ierr = vvbarSSA.copy_to(vvbarSSAOld); CHKERRQ(ierr);
 

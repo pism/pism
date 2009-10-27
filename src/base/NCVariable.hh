@@ -64,10 +64,10 @@ public:
   virtual PetscErrorCode set_glaciological_units(string);
   virtual PetscErrorCode reset();
   virtual void set(string, double);
-  virtual double get(string);
+  virtual double get(string) const;
   virtual void set_string(string name, string value);
-  virtual string get_string(string);
-  virtual bool has(string);
+  virtual string get_string(string) const;
+  virtual bool has(string) const;
   virtual bool is_valid(PetscScalar a);
 			
   string short_name;
@@ -121,19 +121,19 @@ protected:
 //! A class for reading, writing and accessing PISM configuration flags and parameters.
 class NCConfigVariable : public NCVariable {
 public:
-  virtual PetscErrorCode print();
+  virtual PetscErrorCode print() const;
   virtual PetscErrorCode read(const char filename[]);
-  virtual PetscErrorCode write(const char filename[]);
-  virtual double get(string);
-  virtual bool get_flag(string);
+  virtual PetscErrorCode write(const char filename[]) const;
+  virtual double get(string) const;
+  virtual bool get_flag(string) const;
   virtual void set_flag(string, bool);
   virtual PetscErrorCode flag_from_option(string, string);
   virtual PetscErrorCode scalar_from_option(string, string);
 protected:
   string config_filename;
   virtual PetscErrorCode write_attributes(const NCTool &nc, int varid, nc_type nctype,
-					  bool write_in_glaciological_units);
-  virtual PetscErrorCode define(const NCTool &nc, int &varid);
+					  bool write_in_glaciological_units) const;
+  virtual PetscErrorCode define(const NCTool &nc, int &varid) const;
 };
 
 //! A class for reading and writing NetCDF global attributes.
@@ -143,10 +143,10 @@ protected:
 class NCGlobalAttributes : public NCConfigVariable {
 public:
   virtual PetscErrorCode read(const char filename[]);
-  virtual PetscErrorCode write(const char filename[]);
+  virtual PetscErrorCode write(const char filename[]) const;
   virtual void prepend_history(string message);
 protected:
-  virtual PetscErrorCode write_attributes(const NCTool &nc, int, nc_type, bool);
+  virtual PetscErrorCode write_attributes(const NCTool &nc, int, nc_type, bool) const;
 };
 
 //! An internal class for reading, writing and converting time-series.

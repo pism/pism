@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -48,7 +48,7 @@ the temperature (in K) is positive.
 */
 class EnthalpyConverter {
 public:
-  EnthalpyConverter(NCConfigVariable *config);
+  EnthalpyConverter(const NCConfigVariable &config);
 
   PetscErrorCode viewConstants(PetscViewer viewer) const;
 

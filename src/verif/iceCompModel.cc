@@ -235,9 +235,9 @@ PetscErrorCode IceCompModel::init_physics() {
   //   flow law to have the errors make sense
   tgaIce = dynamic_cast<ThermoGlenArrIce*>(ice);
   if (!tgaIce) SETERRQ(1,"IceCompModel requires ThermoGlenArrIce or a derived class");
-  if (IceTypeIsPatersonBuddCold(ice) == PETSC_FALSE) {
+  if (IceTypeIsPatersonBuddCold(ice, config) == PETSC_FALSE) {
     ierr = verbPrintf(1, grid.com, 
-       "WARNING: user set -law or -gk; default flow law should be -ice_type arr for IceCompModel\n");
+       "WARNING: user set -gk; default flow law should be -ice_type arr for IceCompModel\n");
     CHKERRQ(ierr);
   }
 
@@ -1246,7 +1246,7 @@ PetscErrorCode IceCompModel::reportErrors() {
       err.short_name = "maximum_surface_velocity";
       err.set_string("long_name", "maximum ice surface horizontal velocity error");
       ierr = err.set_units("m/s"); CHKERRQ(ierr);
-      ierr = err.set_glaciological_units("m/a"); CHKERRQ(ierr);
+      ierr = err.set_glaciological_units("meters/year"); CHKERRQ(ierr);
       ierr = err.write(filename, (size_t)start, maxUerr); CHKERRQ(ierr);
 
       err.short_name = "average_surface_velocity";
@@ -1280,7 +1280,7 @@ PetscErrorCode IceCompModel::reportErrors() {
       err.reset();
       err.short_name = "maximum_basal_velocity";
       ierr = err.set_units("m/s"); CHKERRQ(ierr);
-      ierr = err.set_glaciological_units("m/a"); CHKERRQ(ierr);
+      ierr = err.set_glaciological_units("meters/year"); CHKERRQ(ierr);
       ierr = err.write(filename, (size_t)start, maxvecerr); CHKERRQ(ierr);
 
       err.short_name = "average_basal_velocity";

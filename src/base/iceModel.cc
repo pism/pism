@@ -22,10 +22,9 @@
 
 #include "iceModel.hh"
 #include "pism_signal.h"
-#include "ssaJed/pismssa.hh"
 
 IceModel::IceModel(IceGrid &g)
-  : grid(g), iceFactory(grid.com,NULL), ice(NULL), shelfExtensionJed(grid.com,NULL) {
+  : grid(g), iceFactory(grid.com,NULL,config), ice(NULL) {
   PetscErrorCode ierr;
 
   if (utIsInit() == 0) {
@@ -40,8 +39,6 @@ IceModel::IceModel(IceGrid &g)
   global_attributes.init("global_attributes", grid.com, grid.rank);
 
   bootstrapLIC = PETSC_NULL;
-
-  ssa = NULL;
 
   pism_signal = 0;
   signal(SIGTERM, pism_signal_handler);
@@ -98,8 +95,6 @@ IceModel::~IceModel() {
   delete basalSIA;
 
   delete bootstrapLIC;
-
-  if (ssa) SSADestroy(ssa);
 
   delete ice;
   utTerm(); // Clean up after UDUNITS

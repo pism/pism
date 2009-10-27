@@ -21,6 +21,7 @@
 
 #include <petsc.h>
 #include "enthalpyConverter.hh"
+#include "NCVariable.hh"
 
 /*******************
 REGARDING IceType and HybridIce:  The main hierarchy is:
@@ -58,7 +59,7 @@ public:
               latentHeat,   //!< latent heat capacity
               meltingTemp;  //!< melting temperature
 
-  IceType(MPI_Comm c,const char pre[]);
+  IceType(MPI_Comm c,const char pre[], const NCConfigVariable &config);
   virtual ~IceType() {}
   virtual PetscErrorCode setFromOptions() {return 0;}
   virtual PetscErrorCode printInfo(PetscInt) const;
@@ -86,14 +87,14 @@ protected:
 };
 
 
-PetscTruth IceTypeIsPatersonBuddCold(IceType *);
+PetscTruth IceTypeIsPatersonBuddCold(IceType *, const NCConfigVariable &);
 PetscTruth IceTypeUsesGrainSize(IceType *);
 
 
 //! Derived class of IceType for which is still isothermal and power law, but has easily setable parameters.
 class CustomGlenIce : public IceType {
 public:
-  CustomGlenIce(MPI_Comm c,const char pre[]);
+  CustomGlenIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
   PetscErrorCode setDensity(PetscReal);
   PetscErrorCode setExponent(PetscReal);
   PetscErrorCode setHardness(PetscReal);
@@ -121,7 +122,7 @@ private:
 //! Derived class of IceType for Paterson-Budd (1982)-Glen ice.
 class ThermoGlenIce : public IceType {
 public:
-  ThermoGlenIce(MPI_Comm c,const char pre[]);
+  ThermoGlenIce(MPI_Comm c,const char pre[], const NCConfigVariable &config);
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const;
@@ -150,9 +151,8 @@ and \ref LliboutryDuval1985.
  */
 class PolyThermalGPBLDIce : public ThermoGlenIce {
 public:
-  PolyThermalGPBLDIce(MPI_Comm c,const char pre[]);
+  PolyThermalGPBLDIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
   virtual ~PolyThermalGPBLDIce();
-  virtual PetscErrorCode setFromConfig(NCConfigVariable *config);
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode view(PetscViewer viewer) const;
 
@@ -187,7 +187,7 @@ protected:
 //! Derived class of IceType for Hooke (1981)-Glen ice.  Only changes A(T) factor from ThermoGlenIce.
 class ThermoGlenIceHooke : public ThermoGlenIce {
 public:
-  ThermoGlenIceHooke(MPI_Comm c,const char pre[]);
+  ThermoGlenIceHooke(MPI_Comm c, const char pre[], const NCConfigVariable &config);
   virtual PetscScalar softnessParameter(PetscScalar T) const;
 protected:
   PetscReal A_Hooke, Q_Hooke, C_Hooke, K_Hooke, Tr_Hooke, R_Hooke; // constants from Hooke (1981)
@@ -197,7 +197,7 @@ protected:
 //! Derived class of IceType for Arrhenius-Glen ice.  \e Cold case of Paterson-Budd (1982) ice.
 class ThermoGlenArrIce : public ThermoGlenIce {
 public:
-  ThermoGlenArrIce(MPI_Comm c,const char pre[]) : ThermoGlenIce(c,pre) {}
+  ThermoGlenArrIce(MPI_Comm c,const char pre[], const NCConfigVariable &conf) : ThermoGlenIce(c,pre,conf) {}
   virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar softnessParameter(PetscScalar T) const;
   virtual PetscScalar tempFromSoftness(PetscScalar A) const; 
@@ -211,7 +211,7 @@ public:
 //! Derived class of IceType for Arrhenius-Glen ice.  \e Warm case of Paterson-Budd (1982) ice.
 class ThermoGlenArrIceWarm : public ThermoGlenArrIce {
 public:
-  ThermoGlenArrIceWarm(MPI_Comm c,const char pre[]) : ThermoGlenArrIce(c,pre) {}
+  ThermoGlenArrIceWarm(MPI_Comm c,const char pre[], const NCConfigVariable &conf) : ThermoGlenArrIce(c,pre,conf) {}
   virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar A() const;  // returns A_warm for Paterson-Budd
   virtual PetscScalar Q() const;  // returns Q_warm for Paterson-Budd
@@ -227,7 +227,7 @@ struct GKparts {
 //! Derived class of IceType for a hybrid of Goldsby-Kohlstedt (2001) ice in SIA, with Paterson-Budd (1982)-Glen behavior when needed in viscosity form (e.g. SSA).
 class HybridIce : public ThermoGlenIce {
 public:
-  HybridIce(MPI_Comm c,const char pre[]);
+  HybridIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
@@ -254,7 +254,7 @@ Peltier et al 2000, which is even simpler.
  */
 class HybridIceStripped : public HybridIce {
 public:
-  HybridIceStripped(MPI_Comm c,const char pre[]);
+  HybridIceStripped(MPI_Comm c,const char pre[], const NCConfigVariable &config);
   virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
   virtual PetscTruth usesGrainSize() const { return PETSC_FALSE; }
 protected:
@@ -411,12 +411,12 @@ error-prone.
  */
 class IceFactory {
 public:
-  IceFactory(MPI_Comm,const char prefix[]);
+  IceFactory(MPI_Comm,const char prefix[], const NCConfigVariable &conf);
   ~IceFactory();
   PetscErrorCode setType(const char[]);
-  PetscErrorCode setTypeByNumber(int);
   PetscErrorCode setFromOptions();
-  PetscErrorCode registerType(const char[],PetscErrorCode(*)(MPI_Comm,const char[],IceType **));
+  PetscErrorCode registerType(const char[],
+			      PetscErrorCode(*)(MPI_Comm,const char[], const NCConfigVariable &,IceType **));
   PetscErrorCode create(IceType **);
 private:
   PetscErrorCode registerAll();
@@ -424,6 +424,7 @@ private:
   MPI_Comm comm;
   char prefix[256],type_name[256];
   PetscFList type_list;
+  const NCConfigVariable &config;
 };
 
 // This uses the definition of second invariant from Hutter and several others, namely
