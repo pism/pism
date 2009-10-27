@@ -26,7 +26,7 @@ IceType::IceType(MPI_Comm c,const char pre[], const NCConfigVariable &config) : 
   if (pre) PetscStrncpy(prefix,pre,sizeof(prefix));
 
   rho          = config.get("ice_density");
-  beta_CC_grad = config.get("beta_CC");
+  beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("earth_gravity");
   k            = config.get("ice_thermal_conductivity");
   c_p          = config.get("ice_specific_heat_capacity");
   latentHeat   = config.get("water_latent_heat_fusion");
@@ -68,10 +68,10 @@ PetscTruth IceTypeUsesGrainSize(IceType *ice) {
 
 CustomGlenIce::CustomGlenIce(MPI_Comm c,const char pre[], const NCConfigVariable &config) : IceType(c,pre,config)
 {
-  // FIXME: these constants need to go in pism_config.cdl
-  exponent_n = 3.0;
-  softness_A = 4e-25;
+  exponent_n = config.get("glen_exponent");
+  softness_A = config.get("ice_softness");
   hardness_B = pow(softness_A, -1/exponent_n); // ~= 135720960;
+  // FIXME: this constant need to go in pism_config.cdl
   setSchoofRegularization(1,1000);             // Units of km
 }
 
