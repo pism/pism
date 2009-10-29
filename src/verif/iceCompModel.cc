@@ -387,7 +387,7 @@ PetscScalar IceCompModel::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
       const PetscScalar mu_max = 2.5e-11; /* Pa^-1 m s^-1; max sliding coeff */
       PetscScalar muE = mu_max * (4.0 * (r - r1) * (r2 - r) / rbot) 
                                * (4.0 * (theta - theta1) * (theta2 - theta) / thetabot);
-      return muE * tgaIce->rho * earth_grav * H;
+      return muE * tgaIce->rho * standard_gravity * H;
     } else
       return 0.0;
   } else

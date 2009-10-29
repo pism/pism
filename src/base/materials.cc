@@ -25,8 +25,10 @@ IceType::IceType(MPI_Comm c,const char pre[], const NCConfigVariable &config) : 
   PetscMemzero(prefix,sizeof(prefix));
   if (pre) PetscStrncpy(prefix,pre,sizeof(prefix));
 
+  standard_gravity = config.get("standard_gravity");
+  ideal_gas_constant = config.get("ideal_gas_constant");
   rho          = config.get("ice_density");
-  beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("earth_gravity");
+  beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * standard_gravity;
   k            = config.get("ice_thermal_conductivity");
   c_p          = config.get("ice_specific_heat_capacity");
   latentHeat   = config.get("water_latent_heat_fusion");
@@ -266,7 +268,7 @@ PetscErrorCode ThermoGlenIce::view(PetscViewer viewer) const {
 
 
 PetscScalar ThermoGlenIce::flow(PetscScalar stress,PetscScalar temp,PetscScalar pressure,PetscScalar) const {
-  const PetscScalar T = temp + (beta_CC_grad / (rho * earth_grav)) * pressure; // pressure-adjusted temp
+  const PetscScalar T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure; // pressure-adjusted temp
   return softnessParameter(T) * pow(stress,n-1);
 }
 
@@ -335,9 +337,9 @@ PetscScalar ThermoGlenIce::exponent() const { return n; }
 //! Return the softness parameter A(T) for a given temperature T.
 PetscScalar ThermoGlenIce::softnessParameter(PetscScalar T) const {
   if (T < crit_temp) {
-    return A_cold * exp(-Q_cold/(gasConst_R * T));
+    return A_cold * exp(-Q_cold/(ideal_gas_constant * T));
   }
-  return A_warm * exp(-Q_warm/(gasConst_R * T));
+  return A_warm * exp(-Q_warm/(ideal_gas_constant * T));
 }
 
 
@@ -499,7 +501,7 @@ ThermoGlenIceHooke::ThermoGlenIceHooke(MPI_Comm c,const char pre[],
   C_Hooke  = config.get("Hooke_C");
   K_Hooke  = config.get("Hooke_k");
   Tr_Hooke = config.get("Hooke_Tr");
-  R_Hooke  = config.get("gas_constant_R");
+  R_Hooke  = config.get("ideal_gas_constant");
 }
 
 //! This method implements formula (7) in [\ref Hooke].
@@ -534,13 +536,13 @@ PetscErrorCode ThermoGlenArrIce::view(PetscViewer viewer) const {
 
 //! Return the softness parameter A(T) for a given temperature T.
 PetscScalar ThermoGlenArrIce::softnessParameter(PetscScalar T) const {
-  return A() * exp(-Q()/(gasConst_R * T));
+  return A() * exp(-Q()/(ideal_gas_constant * T));
 }
 
 
 //! Return the temperature T corresponding to a given value A=A(T).
 PetscScalar ThermoGlenArrIce::tempFromSoftness(PetscScalar myA) const {
-  return - Q() / (gasConst_R * (log(myA) - log(A())));
+  return - Q() / (ideal_gas_constant * (log(myA) - log(A())));
 }
 
 
@@ -638,9 +640,9 @@ PetscScalar HybridIce::flow(PetscScalar stress, PetscScalar temp,
   PetscScalar eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
 
   if (PetscAbs(stress) < 1e-10) return 0;
-  const PetscScalar T = temp + (beta_CC_grad / (rho * earth_grav)) * pressure;
+  const PetscScalar T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
   const PetscScalar pV = pressure * V_act_vol;
-  const PetscScalar RT = gasConst_R * T;
+  const PetscScalar RT = ideal_gas_constant * T;
   // Diffusional Flow
   const PetscScalar diff_D_v = diff_D_0v * exp(-diff_Q_v/RT);
   diff_D_b = diff_D_0b * exp(-diff_Q_b/RT);
@@ -677,9 +679,9 @@ GKparts HybridIce::flowParts(PetscScalar stress,PetscScalar temp,PetscScalar pre
     p.eps_diff=0.0; p.eps_disl=0.0; p.eps_gbs=0.0; p.eps_basal=0.0;
     return p;
   }
-  const PetscScalar T = temp + (beta_CC_grad / (rho * earth_grav)) * pressure;
+  const PetscScalar T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
   const PetscScalar pV = pressure * V_act_vol;
-  const PetscScalar RT = gasConst_R * T;
+  const PetscScalar RT = ideal_gas_constant * T;
   // Diffusional Flow
   const PetscScalar diff_D_v = diff_D_0v * exp(-diff_Q_v/RT);
   diff_D_b = diff_D_0b * exp(-diff_Q_b/RT);
@@ -754,8 +756,8 @@ PetscScalar HybridIceStripped::flow(PetscScalar stress, PetscScalar temp, PetscS
   PetscScalar eps_disl, eps_basal, eps_gbs;
 
   if (PetscAbs(stress) < 1e-10) return 0;
-  const PetscScalar T = temp + (beta_CC_grad / (rho * earth_grav)) * pressure;
-  const PetscScalar RT = gasConst_R * T;
+  const PetscScalar T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
+  const PetscScalar RT = ideal_gas_constant * T;
   // NO Diffusional Flow
   // Dislocation Creep
   if (T > disl_crit_temp)

@@ -208,7 +208,7 @@ no error checking.
 PetscScalar IceModel::getEffectivePressureOnTill(PetscScalar thk, PetscScalar bwat,
 						 PetscScalar till_pw_fraction,
 						 PetscScalar max_hmelt) const {
-  const PetscScalar  overburdenP = ice->rho * earth_grav * thk;
+  const PetscScalar  overburdenP = ice->rho * standard_gravity * thk;
   return overburdenP * (1.0 - till_pw_fraction * (bwat / max_hmelt));
 }
 

@@ -146,8 +146,6 @@ protected:
   NCConfigVariable      config;
   NCGlobalAttributes    global_attributes;
 
-  LocalInterpCtx        *bootstrapLIC;
-
   IceFactory            iceFactory;
   IceType               *ice;
   PlasticBasalType      *basal;
@@ -205,6 +203,11 @@ protected:
     dvoldt;  //!< d(total ice volume)/dt; m3 s-1
   PetscInt    skipCountDown;
 
+  // physical parameters used frequently enough to make looking up via
+  // config.get() a hassle:
+  PetscScalar standard_gravity;
+  // Initialized in the IceModel constructor from the configuration file;
+  // SHOULD NOT be hard-wired.
 
   // flags
   bool leaveNuHAloneSSA;

@@ -19,6 +19,7 @@
 #ifndef __deformation_hh
 #define __deformation_hh
 
+#include "NCVariable.hh"
 #include <petscvec.h>
 #if (PISM_HAVE_FFTW)
 #include <fftw3.h>
@@ -51,7 +52,8 @@ class BedDeformLC {
 public:
   BedDeformLC();
   ~BedDeformLC();
-  PetscErrorCode settings(PetscTruth  myinclude_elastic,
+  PetscErrorCode settings(const NCConfigVariable &config,
+			  PetscTruth  myinclude_elastic,
                           PetscInt myMx, PetscInt myMy, PetscScalar mydx, PetscScalar mydy,
                           PetscInt myZ, PetscScalar myicerho,
                           PetscScalar myrho, PetscScalar myeta, PetscScalar myD,
@@ -75,6 +77,7 @@ protected:
                 D;       // lithosphere flexural rigidity
   
 private:
+  PetscScalar   standard_gravity;
   PetscTruth    settingsDone, allocDone;
   PetscInt      Nx, Ny,      // fat sizes
                 Nxge, Nyge;  // fat with boundary sizes

@@ -57,7 +57,9 @@ public:
               k,            //!< thermal conductivity
               c_p,          //!< specific heat capacity
               latentHeat,   //!< latent heat capacity
-              meltingTemp;  //!< melting temperature
+              meltingTemp,  //!< melting temperature
+              standard_gravity,
+              ideal_gas_constant;
 
   IceType(MPI_Comm c,const char pre[], const NCConfigVariable &config);
   virtual ~IceType() {}

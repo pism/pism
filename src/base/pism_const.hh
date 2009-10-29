@@ -19,6 +19,7 @@
 #ifndef __pism_const_hh
 #define __pism_const_hh
 
+#include <gsl/gsl_math.h>
 #include <petsc.h>
 #include "materials.hh"
 #include <string>
@@ -32,11 +33,9 @@ using namespace std;
 extern const char *PISM_Revision;
 extern const char *PISM_DefaultConfigFile;
 
-const PetscScalar gasConst_R = 8.31441;      // J/(mol K)    Gas Constant
-const PetscScalar earth_grav = 9.81;         // m/s^2        acceleration of gravity
 const PetscScalar secpera    = 3.15569259747e7; // The constant used in UDUNITS
 						// (src/udunits/pismudunits.dat)
-const PetscScalar pi         = 3.14159265358979;
+const PetscScalar pi         = M_PI;		// defined in gsl/gsl_math.h
 
 
 // following numerical values have some significance; see updateSurfaceElevationAndMask()
@@ -61,14 +60,6 @@ static inline int PismModMask(PetscScalar maskvalue) {
     return intmask;
   }
 }
-
-
-// Standard C++ does not have a "NaN", or an "isnan()".  We need an alternative
-//   and this is an admittedly lame one.  If there is a reliable way to check if
-//   IEEE 754 NAN is available, then PISM_NAN could be set to that.  Note most
-//   negative number in IEEE double is ~= -1.8e308, and if PetscScalar != double
-//   then use of this may throw an error (and that would probably be good).
-const double PISM_DOUBLE_NAN = -1.234567890123456e308;
 
 const PetscInt TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 

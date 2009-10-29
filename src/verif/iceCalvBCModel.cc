@@ -303,7 +303,7 @@ PetscErrorCode IceCalvBCModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   ierr = vsmoothCFmask.get_array(cfmask); CHKERRQ(ierr);
   ierr = vnCF[0].get_array(ncf[0]); CHKERRQ(ierr);
   ierr = vnCF[1].get_array(ncf[1]); CHKERRQ(ierr);
-  const PetscScalar Gamma = 0.5 * (1.0 - ice->rho / ocean_rho) * ice->rho * earth_grav;
+  const PetscScalar Gamma = 0.5 * (1.0 - ice->rho / ocean_rho) * ice->rho * standard_gravity;
 
   // clear right-hand side
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
@@ -359,7 +359,7 @@ PetscErrorCode IceCalvBCModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
           } else {
             SETERRQ(1,"should not reach here: surfGradInward=TRUE & edge=TRUE but not at edge");
           }          
-          const PetscScalar pressure = ice->rho * earth_grav * H[i][j];
+          const PetscScalar pressure = ice->rho * standard_gravity * H[i][j];
           ierr = VecSetValue(rhs, rowU, - pressure * h_x, INSERT_VALUES); CHKERRQ(ierr);
           ierr = VecSetValue(rhs, rowV, - pressure * h_y, INSERT_VALUES); CHKERRQ(ierr);
         } else { // usual case: use already computed driving stress

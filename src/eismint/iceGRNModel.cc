@@ -146,8 +146,8 @@ PetscErrorCode EISGREENAtmosCoupler::updateSurfTempAndProvide(
 }
 
 
-EISGREENMassBalance::EISGREENMassBalance(NCConfigVariable* myconfig) : PDDMassBalance(myconfig) {
-  // ignor configuration and just set EISMINT-Greenland defaults; user may override anyway
+EISGREENMassBalance::EISGREENMassBalance(const NCConfigVariable& myconfig) : PDDMassBalance(myconfig) {
+  // ignore configuration and just set EISMINT-Greenland defaults; user may override anyway
   pddFactorIce    = 0.008;
   pddFactorSnow   = 0.003;
   pddRefreezeFrac = 0.6;
@@ -156,7 +156,7 @@ EISGREENMassBalance::EISGREENMassBalance(NCConfigVariable* myconfig) : PDDMassBa
   // degree-day factors in \ref RitzEISMINT are water-equivalent
   //   thickness per degree day; ice-equivalent thickness melted per degree
   //   day is slightly larger; for example, iwfactor = 1000/910
-  const PetscScalar iwfactor = config->get("fresh_water_density") / config->get("ice_density");
+  const PetscScalar iwfactor = config.get("fresh_water_density") / config.get("ice_density");
   pddFactorSnow *= iwfactor;
   pddFactorIce  *= iwfactor;
 }
@@ -225,7 +225,7 @@ PetscErrorCode IceGRNModel::init_couplers() {
   if (pddPCC == PETSC_NULL) { SETERRQ(1,"dynamic_cast fail; pddPCC == PETSC_NULL\n"); }
 
   // the coupler (*pddPCC) will delete this at the end
-  EISGREENMassBalance *eisgreen_mbscheme = new EISGREENMassBalance(&config);
+  EISGREENMassBalance *eisgreen_mbscheme = new EISGREENMassBalance(config);
   ierr = pddPCC->setLMBScheme(eisgreen_mbscheme); CHKERRQ(ierr);
 
   PetscTruth gwl3StartSet;

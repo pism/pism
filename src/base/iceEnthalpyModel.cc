@@ -1108,7 +1108,7 @@ PetscScalar IceEnthalpyModel::getEffectivePressureOnTill(PetscScalar thk, PetscS
 							 PetscScalar max_hmelt) const {
 
   const PetscScalar
-    p_overburden = ice->rho * earth_grav * thk;
+    p_overburden = ice->rho * standard_gravity * thk;
 
   // base model for pore water pressure;  note  0 <= p_pw <= frac * p_overburden
   //   because  0 <= bwat <= max_hmelt

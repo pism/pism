@@ -312,14 +312,11 @@ netcdf pism_config {
     pism_config:seconds_per_year = 3.15569259747e7;
     pism_config:seconds_per_year_doc = "; should match the one used by UDUNITS (see src/udunits/pismudunits.dat).";
 
-    pism_config:earth_gravity = 9.81;
-    pism_config:earth_gravity_doc = "m s-2; acceleration due to gravity on Earth geoid";
+    pism_config:standard_gravity = 9.81;
+    pism_config:standard_gravity_doc = "m s-2; acceleration due to gravity on Earth geoid";
 
-    pism_config:gas_constant_R = 8.31441;
-    pism_config:gas_constant_R_doc = "J mol-1 K-1; ideal gas constant";
-
-    pism_config:pi = 3.14159265358979;
-    pism_config:pi_doc = "; ratio of a circle's circumference to its diameter";
+    pism_config:ideal_gas_constant = 8.31441;
+    pism_config:ideal_gas_constant_doc = "J mol-1 K-1; ideal gas constant";
 
 // Strings:
     pism_config:output_variables = "age bheatflx bwat dbdt lat litho_temp lon mask temp thk tillphi topg usurf dHdt cbar cflx cbase csurf wvelsurf taud tauc";

@@ -26,8 +26,7 @@
 #include "localMassBalance.hh"
 
 
-LocalMassBalance::LocalMassBalance(NCConfigVariable* myconfig) {
-  config = myconfig;
+LocalMassBalance::LocalMassBalance(const NCConfigVariable& myconfig) : config(myconfig) {
 }
 
 
@@ -55,13 +54,13 @@ PetscScalar LocalMassBalance::getMassFluxFromTemperatureTimeSeries(
 }
 
 
-PDDMassBalance::PDDMassBalance(NCConfigVariable* myconfig) : LocalMassBalance(myconfig) {
+PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig) : LocalMassBalance(myconfig) {
   // FIXME: switch over scheme and defaults to Fausto choice; make EISMINT-Greenland a special case,
   //   but not needing a derived class (I think)
-  pddFactorSnow   = config->get("pdd_factor_snow");
-  pddFactorIce    = config->get("pdd_factor_ice");
-  pddRefreezeFrac = config->get("pdd_refreeze");
-  pddStdDev       = config->get("pdd_std_dev");
+  pddFactorSnow   = config.get("pdd_factor_snow");
+  pddFactorIce    = config.get("pdd_factor_ice");
+  pddRefreezeFrac = config.get("pdd_refreeze");
+  pddStdDev       = config.get("pdd_std_dev");
 }
 
 
@@ -84,17 +83,17 @@ PetscErrorCode PDDMassBalance::init() {
 PetscErrorCode PDDMassBalance::setDegreeDayFactorsFromSpecialInfo(
                                   PetscScalar latitude, PetscScalar T_mj) {
   const PetscScalar
-    beta_ice_w = config->get("pdd_fausto_beta_ice_w"),
-    beta_snow_w = config->get("pdd_fausto_beta_snow_w");
-  if (latitude < config->get("pdd_fausto_latitude_beta_w")) { // case lat < 72 deg N
+    beta_ice_w = config.get("pdd_fausto_beta_ice_w"),
+    beta_snow_w = config.get("pdd_fausto_beta_snow_w");
+  if (latitude < config.get("pdd_fausto_latitude_beta_w")) { // case lat < 72 deg N
     pddFactorIce  = beta_ice_w;
     pddFactorSnow = beta_snow_w;
   } else { // case > 72 deg N
     const PetscScalar  
-      T_c = config->get("pdd_fausto_T_c"),
-      T_w = config->get("pdd_fausto_T_w"),
-      beta_ice_c = config->get("pdd_fausto_beta_ice_c"),
-      beta_snow_c = config->get("pdd_fausto_beta_snow_c");
+      T_c = config.get("pdd_fausto_T_c"),
+      T_w = config.get("pdd_fausto_T_w"),
+      beta_ice_c = config.get("pdd_fausto_beta_ice_c"),
+      beta_snow_c = config.get("pdd_fausto_beta_snow_c");
     if (T_mj >= T_w) {
       pddFactorIce  = beta_ice_w;
       pddFactorSnow = beta_snow_w;
@@ -113,7 +112,7 @@ PetscErrorCode PDDMassBalance::setDegreeDayFactorsFromSpecialInfo(
   // degree-day factors in \ref Faustoetal2009 are water-equivalent
   //   thickness per degree day; ice-equivalent thickness melted per degree
   //   day is slightly larger; for example, iwfactor = 1000/910
-  const PetscScalar iwfactor = config->get("fresh_water_density") / config->get("ice_density");
+  const PetscScalar iwfactor = config.get("fresh_water_density") / config.get("ice_density");
   pddFactorSnow *= iwfactor;
   pddFactorIce  *= iwfactor;
   return 0;
@@ -264,7 +263,7 @@ Initializes the random number generator (RNG).  The RNG is GSL's recommended def
 which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
 wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
  */
-PDDrandMassBalance::PDDrandMassBalance(NCConfigVariable* myconfig, bool repeatable) : PDDMassBalance(myconfig) {
+PDDrandMassBalance::PDDrandMassBalance(const NCConfigVariable& myconfig, bool repeatable) : PDDMassBalance(myconfig) {
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
   gsl_rng_set(pddRandGen, repeatable ? 0 : time(0)); 
 #if 0

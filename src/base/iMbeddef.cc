@@ -115,7 +115,8 @@ PetscErrorCode IceModel::bedDefSetup() {
     ierr = vuplift.put_on_proc0(upliftp0,   top0ctx, g2, g2natural); CHKERRQ(ierr);
 
     if (grid.rank == 0) {
-      ierr = bdLC.settings(PETSC_FALSE, // turn off elastic model for now
+      ierr = bdLC.settings(config,
+			   PETSC_FALSE, // turn off elastic model for now
 			   grid.Mx,grid.My,grid.dx,grid.dy,
 			   //                       2,                 // use Z = 2 for now
 			   4,                 // use Z = 4 for now; to reduce global drift?

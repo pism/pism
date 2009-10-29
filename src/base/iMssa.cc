@@ -472,7 +472,7 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
           } else {
             SETERRQ(1,"should not reach here: surfGradInward=TRUE & edge=TRUE but not at edge");
           }          
-          const PetscScalar pressure = ice->rho * earth_grav * H[i][j];
+          const PetscScalar pressure = ice->rho * standard_gravity * H[i][j];
           ierr = VecSetValue(rhs, rowU, - pressure * h_x, INSERT_VALUES); CHKERRQ(ierr);
           ierr = VecSetValue(rhs, rowV, - pressure * h_y, INSERT_VALUES); CHKERRQ(ierr);
         } else { // usual case: use already computed driving stress

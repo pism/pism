@@ -56,7 +56,7 @@ BedDeformLC::~BedDeformLC() {
 }
 
 
-PetscErrorCode BedDeformLC::settings(
+PetscErrorCode BedDeformLC::settings(const NCConfigVariable &config,
                   PetscTruth  myinclude_elastic,
                   PetscInt myMx, PetscInt myMy, PetscScalar mydx, PetscScalar mydy,
                   PetscInt myZ, PetscScalar myicerho,
@@ -75,6 +75,8 @@ PetscErrorCode BedDeformLC::settings(
   rho    = myrho;
   eta    = myeta;
   D      = myD;
+
+  standard_gravity = config.get("standard_gravity");
 
   // derive more parameters
   Lx     = ((Mx-1)/2) * dx;
@@ -225,7 +227,7 @@ PetscErrorCode BedDeformLC::uplift_init() {
   for (PetscInt i=0; i < Nx; i++) {
     for (PetscInt j=0; j < Ny; j++) {
       const PetscScalar cclap = cx[i]*cx[i] + cy[j]*cy[j];
-      lft[i][j] = rho * earth_grav + D * cclap * cclap;
+      lft[i][j] = rho * standard_gravity + D * cclap * cclap;
       rgt[i][j] = -2.0 * eta * sqrt(cclap);
     }
   }
@@ -292,7 +294,7 @@ PetscErrorCode BedDeformLC::step(const PetscScalar dtyear, const PetscScalar yea
   ierr = VecGetArray2d(Hdiff, Mx, My, 0, 0, &dH); CHKERRQ(ierr);
   for (PetscInt i=0; i < Mx; i++) {
     for (PetscInt j=0; j < My; j++) {
-      const PetscScalar sszz = - icerho * earth_grav * dH[i][j];
+      const PetscScalar sszz = - icerho * standard_gravity * dH[i][j];
       bdin[(j + j0_plate) + Ny * (i + i0_plate)][0] = dt * sszz;
     }
   }
@@ -322,7 +324,7 @@ PetscErrorCode BedDeformLC::step(const PetscScalar dtyear, const PetscScalar yea
     for (PetscInt j=0; j < Ny; j++) {
       const PetscScalar cclap = cx[i]*cx[i] + cy[j]*cy[j];
       const PetscScalar part1 = 2.0 * eta * sqrt(cclap);
-      const PetscScalar part2 = (dt/2.0) * (rho * earth_grav + D * cclap * cclap);
+      const PetscScalar part2 = (dt/2.0) * (rho * standard_gravity + D * cclap * cclap);
       lft[i][j] = part1 + part2;
       rgt[i][j] = part1 - part2;
     }
@@ -373,7 +375,7 @@ PetscErrorCode BedDeformLC::step(const PetscScalar dtyear, const PetscScalar yea
   const PetscScalar Hequiv = delvolume / (pi * Requiv * Requiv);
 
   const PetscScalar vd_time = yearFromStart * secpera;
-  const PetscScalar discshift = viscDisc(vd_time,Hequiv,Requiv,Lav,rho,earth_grav,D,eta) - av; 
+  const PetscScalar discshift = viscDisc(vd_time,Hequiv,Requiv,Lav,rho,standard_gravity,D,eta) - av; 
   for (PetscInt i=0; i < Nx; i++) {
     for (PetscInt j=0; j < Ny; j++) {
       pla[i][j] += discshift;

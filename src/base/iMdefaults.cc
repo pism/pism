@@ -91,6 +91,9 @@ PetscErrorCode IceModel::setDefaults() {
   jd = (grid.My - 1)/2;
   slice_level = 0.0;
 
+  // frequently used physical constants and parameters:
+  standard_gravity = config.get("standard_gravity");
+
   // ssa_velocities_are_valid might get overwritten while reading an -i file
   global_attributes.set_flag("pism_ssa_velocities_are_valid", false);
   global_attributes.set_string("Conventions", "CF-1.4");

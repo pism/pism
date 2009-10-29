@@ -109,7 +109,7 @@ alltests = [
         ' -My 5 -ssa_rtol ' + str(SSARTOL) + ' -ksp_rtol ' + str(KSPRTOL),
         '(refine dy=5000,1250,312.5,78.13,19.53,m, Mx=49,193,769,3073,12289)'],
    ['J',[30,60,120,180,240],'linearized, periodic ice shelf',0,
-        ' -Mz 11 -ksp_rtol ' + str(KSPRTOL),
+        ' -Mz 11 -pc_type asm -sub_pc_type lu -ksp_rtol ' + str(KSPRTOL),
         '(refine dx=20,10,5,3.333,2.5, km; dx=dy and My=30,60,120,180,240)'],
    ['K',[41,81,161,321,641],
         'pure conduction problem in ice and bedrock',3,' -Mx 4 -My 4 -y 130000.0 -Lbz 1000 -quadZ',

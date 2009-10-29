@@ -257,7 +257,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
           I[0] = 0;   J[0] = 0;   K[0] = 0;
           for (PetscInt k=0; k<=ks; ++k) {
-            const PetscScalar   pressure = ice->rho * earth_grav * (thickness - grid.zlevels[k]);
+            const PetscScalar   pressure = ice->rho * standard_gravity * (thickness - grid.zlevels[k]);
             PetscScalar flow,grainsize = constant_grain_size;
             if (usesGrainSize && realAgeForGrainSize) {
               grainsize = grainSizeVostok(0.5 * (ageij[k] + ageoffset[k]));
@@ -396,7 +396,7 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
           // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
           // in ice streams this result will be *overwritten* by
           //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
-          const PetscScalar P = ice->rho * earth_grav * H[i][j];
+          const PetscScalar P = ice->rho * standard_gravity * H[i][j];
           Rb[i][j] = - (P * myhx) * ub[i][j] - (P * myhy) * vb[i][j];
         }
       }
@@ -627,7 +627,7 @@ PetscScalar IceModel::basalVelocitySIA(
                PetscScalar /*x*/, PetscScalar /*y*/, PetscScalar H, PetscScalar T,
                PetscScalar /*alpha*/, PetscScalar mu, PetscScalar min_T) const {
   if (T + ice->beta_CC_grad * H > min_T) {
-    return basalSIA->velocity(mu, ice->rho * earth_grav * H);
+    return basalSIA->velocity(mu, ice->rho * standard_gravity * H);
   } else {
     return 0;
   }

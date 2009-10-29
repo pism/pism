@@ -438,10 +438,10 @@ PetscScalar IceEISModel::basalVelocitySIA(
   const PetscScalar  eismintII_temp_sliding = 273.15;
   
   if (expername == 'G') {
-      return Bfactor * ice->rho * earth_grav * H; 
+      return Bfactor * ice->rho * standard_gravity * H; 
   } else if (expername == 'H') {
       if (T + ice->beta_CC_grad * H > eismintII_temp_sliding) {
-        return Bfactor * ice->rho * earth_grav * H; // ditto case G
+        return Bfactor * ice->rho * standard_gravity * H; // ditto case G
       } else {
         return 0.0;
       }

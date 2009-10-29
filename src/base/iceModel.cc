@@ -38,8 +38,6 @@ IceModel::IceModel(IceGrid &g)
   mapping.init("mapping", grid.com, grid.rank);
   global_attributes.init("global_attributes", grid.com, grid.rank);
 
-  bootstrapLIC = PETSC_NULL;
-
   pism_signal = 0;
   signal(SIGTERM, pism_signal_handler);
   signal(SIGUSR1, pism_signal_handler);
@@ -93,8 +91,6 @@ IceModel::~IceModel() {
 
   delete basal;
   delete basalSIA;
-
-  delete bootstrapLIC;
 
   delete ice;
   utTerm(); // Clean up after UDUNITS

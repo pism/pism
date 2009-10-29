@@ -59,11 +59,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   grid_info g;
   ierr = nc.get_grid_info(g); CHKERRQ(ierr); // g.z_max is set to 0 if z does
 					     // not exist
-
-  // IceModel::bootstrapLIC is now a valid pointer which can be reused to get
-  // more info out of the the -boot_from file
-  bootstrapLIC = new LocalInterpCtx(g, NULL, NULL, grid);
-
+  LocalInterpCtx *lic = new LocalInterpCtx(g, NULL, NULL, grid);
   ierr = nc.close(); CHKERRQ(ierr);
 
   bool mapping_exists;
@@ -90,20 +86,20 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   ierr = verbPrintf(2, grid.com, 
 		    "  reading 2D model state variables by regridding ...\n"); CHKERRQ(ierr);
 
-  ierr = vLongitude.regrid(filename, *bootstrapLIC, false); CHKERRQ(ierr);
-  ierr =  vLatitude.regrid(filename, *bootstrapLIC, false); CHKERRQ(ierr);
-  ierr =         vH.regrid(filename, *bootstrapLIC,
+  ierr = vLongitude.regrid(filename, *lic, false); CHKERRQ(ierr);
+  ierr =  vLatitude.regrid(filename, *lic, false); CHKERRQ(ierr);
+  ierr =         vH.regrid(filename, *lic,
                            config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
-  ierr =       vbed.regrid(filename, *bootstrapLIC, 
+  ierr =       vbed.regrid(filename, *lic, 
                            config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
-  ierr =     vHmelt.regrid(filename, *bootstrapLIC, 
+  ierr =     vHmelt.regrid(filename, *lic, 
                            config.get("bootstrapping_Hmelt_value_no_var")); CHKERRQ(ierr);
-  ierr =   vtillphi.regrid(filename, *bootstrapLIC, 
+  ierr =   vtillphi.regrid(filename, *lic, 
                            config.get("bootstrapping_tillphi_value_no_var")); CHKERRQ(ierr);
-  ierr =       vGhf.regrid(filename, *bootstrapLIC, 
+  ierr =       vGhf.regrid(filename, *lic, 
                            config.get("bootstrapping_geothermal_flux_value_no_var"));
                            CHKERRQ(ierr);
-  ierr =    vuplift.regrid(filename, *bootstrapLIC, 
+  ierr =    vuplift.regrid(filename, *lic, 
                            config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
 
   // set mask and h; tell user what happened:
@@ -123,6 +119,8 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);
+
+  delete lic;
 
   return 0;
 }

@@ -38,7 +38,7 @@ input a time series for precipation rate.
 class LocalMassBalance {
 
 public:
-  LocalMassBalance(NCConfigVariable* myconfig);
+  LocalMassBalance(const NCConfigVariable &myconfig);
   virtual ~LocalMassBalance() {}
   virtual PetscErrorCode init();
 
@@ -58,7 +58,7 @@ public:
              PetscScalar precip);
 
 protected:
-  NCConfigVariable* config;
+  const NCConfigVariable& config;
 };
 
 
@@ -69,7 +69,7 @@ The expected number of positive degree days is computed by an integral in \ref C
 class PDDMassBalance : public LocalMassBalance {
 
 public:
-  PDDMassBalance(NCConfigVariable* myconfig);
+  PDDMassBalance(const NCConfigVariable& myconfig);
   virtual ~PDDMassBalance() {}
 
   virtual PetscErrorCode init();
@@ -116,7 +116,7 @@ framework because the model uses only local information.
 class PDDrandMassBalance : public PDDMassBalance {
 
 public:
-  PDDrandMassBalance(NCConfigVariable* myconfig, bool repeatable); //! repeatable==true to seed with zero every time.
+  PDDrandMassBalance(const NCConfigVariable& myconfig, bool repeatable); //! repeatable==true to seed with zero every time.
   virtual ~PDDrandMassBalance();
 
   virtual PetscErrorCode getNForTemperatureSeries(
