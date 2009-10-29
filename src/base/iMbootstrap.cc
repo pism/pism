@@ -249,6 +249,8 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
 
   bool do_ocean_kill = config.get_flag("ocean_kill");
 
+  double ocean_rho = config.get("sea_water_density");
+
   ierr = verbPrintf(2, grid.com, 
     "  determining surface elevation by  usurf = topg + thk  where grounded\n"
     "    and by floatation crit  usurf = (1-rho_i/rho_w) thk  where floating\n"); CHKERRQ(ierr);
@@ -287,7 +289,7 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
       } else { // if positive ice thickness then check floatation criterion
         const PetscScalar 
            hgrounded = bed[i][j] + H[i][j],
-           hfloating = currentSeaLevel + (1.0 - ice->rho/ocean.rho) * H[i][j];
+           hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * H[i][j];
         // check whether you are actually floating or grounded
         if (hgrounded > hfloating) {
           h[i][j] = hgrounded; // actually grounded so set h
@@ -352,6 +354,9 @@ PetscErrorCode IceModel::putTempAtDepth() {
   PetscScalar *T;
   T = new PetscScalar[grid.Mz];
 
+  double ocean_rho = config.get("sea_water_density");
+  double bed_thermal_k = config.get("bedrock_thermal_conductivity");
+
   IceModelVec2    *pccTs;
   if (atmosPCC != PETSC_NULL) {
     // call sets pccTs to point to IceModelVec2 with current surface temps
@@ -388,10 +393,10 @@ PetscErrorCode IceModel::putTempAtDepth() {
       
       // set temp within bedrock; if floating then top of bedrock sees ocean,
       //   otherwise it sees the temperature of the base of the ice
-      const PetscScalar floating_base = - (ice->rho/ocean.rho) * H[i][j];
+      const PetscScalar floating_base = - (ice->rho/ocean_rho) * H[i][j];
       const PetscScalar T_top_bed = (b[i][j] < floating_base)
                                          ? ice->meltingTemp : T[0];
-      ierr = bootstrapSetBedrockColumnTemp(i,j,T_top_bed,Ghf[i][j]); CHKERRQ(ierr);
+      ierr = bootstrapSetBedrockColumnTemp(i,j,T_top_bed,Ghf[i][j],bed_thermal_k); CHKERRQ(ierr);
     }
   }
   ierr =   vH.end_access(); CHKERRQ(ierr);
@@ -420,12 +425,13 @@ and the temperatures would be linear in between.
 Call <tt>Tb3.begin_access()</tt> before and 
 <tt>Tb3.end_access()</tt> after this routine.
  */
-PetscErrorCode IceModel::bootstrapSetBedrockColumnTemp(const PetscInt i, const PetscInt j,
-                            const PetscScalar Ttopbedrock, const PetscScalar geothermflux) {
+PetscErrorCode IceModel::bootstrapSetBedrockColumnTemp(PetscInt i, PetscInt j,
+						       PetscScalar Ttopbedrock, PetscScalar geothermflux,
+						       PetscScalar bed_thermal_k) {
   PetscScalar *Tb;
   Tb = new PetscScalar[grid.Mbz];
   for (PetscInt kb = 0; kb < grid.Mbz; kb++)
-    Tb[kb] = Ttopbedrock - (geothermflux / bed_thermal.k) * grid.zblevels[kb];
+    Tb[kb] = Ttopbedrock - (geothermflux / bed_thermal_k) * grid.zblevels[kb];
   PetscErrorCode ierr = Tb3.setInternalColumn(i,j,Tb); CHKERRQ(ierr);
   delete [] Tb;
   return 0;

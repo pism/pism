@@ -76,6 +76,8 @@ PetscErrorCode IceCompModel::initTestFG() {
   ierr = T3.begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
 
+  double bed_thermal_k = config.get("bedrock_thermal_conductivity");
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy;
@@ -100,7 +102,7 @@ PetscErrorCode IceCompModel::initTestFG() {
 
       // fill with basal temp increased by geothermal flux
       for (PetscInt k = 0; k < grid.Mbz; k++)
-        Tb[k] = T[0] - (Ggeo / bed_thermal.k) * grid.zblevels[k];
+        Tb[k] = T[0] - (Ggeo / bed_thermal_k) * grid.zblevels[k];
       ierr = Tb3.setInternalColumn(i,j,Tb); CHKERRQ(ierr);
     }
   }

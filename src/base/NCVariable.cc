@@ -95,6 +95,7 @@ NCSpatialVariable::NCSpatialVariable() {
 
 void NCSpatialVariable::init(string name, IceGrid &g, GridType d) {
   NCVariable::init(name, g.com, g.rank);
+  short_name = name;
   grid = &g;
   dims = d;
 }
@@ -282,7 +283,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
       ierr = verbPrintf(2, com,
 			"PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
 			"              Assuming that it is in '%s'.\n",
-			strings["short_name"].c_str(),
+			short_name.c_str(),
 			strings["long_name"].c_str(),
 			strings["units"].c_str()); CHKERRQ(ierr);
       utCopy(&units, &input_units);
@@ -417,7 +418,7 @@ PetscErrorCode NCSpatialVariable::change_units(Vec v, utUnit *from, utUnit *to) 
   instead of the valid_min, valid_max pair.
  */
 PetscErrorCode NCVariable::write_attributes(const NCTool &nc, int varid, nc_type nctype,
-					    bool write_in_glaciological_units) {
+					    bool write_in_glaciological_units) const {
   int ierr;
 
   if (rank != 0) return 0;
@@ -428,9 +429,9 @@ PetscErrorCode NCVariable::write_attributes(const NCTool &nc, int varid, nc_type
 
   // units, valid_min, valid_max and valid_range need special treatment:
   if (has("units")) {
-    string output_units = strings["units"];
+    string output_units = get_string("units");
     if (write_in_glaciological_units)
-      output_units = strings["glaciological_units"];
+      output_units = get_string("glaciological_units");
     ierr = nc_put_att_text(ncid, varid,
 			   "units",
 			   output_units.size(), output_units.c_str());
@@ -464,7 +465,7 @@ PetscErrorCode NCVariable::write_attributes(const NCTool &nc, int varid, nc_type
   }
 
   // Write text attributes:
-  map<string, string>::iterator i;
+  map<string, string>::const_iterator i;
   for (i = strings.begin(); i != strings.end(); ++i) {
     string name  = i->first;
     string value = i->second;
@@ -479,7 +480,7 @@ PetscErrorCode NCVariable::write_attributes(const NCTool &nc, int varid, nc_type
   }
 
   // Write double attributes:
-  map<string, vector<double> >::iterator j;
+  map<string, vector<double> >::const_iterator j;
   for (j = doubles.begin(); j != doubles.end(); ++j) {
     string name  = j->first;
     vector<double> values = j->second;
@@ -691,7 +692,7 @@ string NCVariable::get_string(string name) const {
 }
 
 //! Check if a value \c a is in the valid range defined by \c valid_min and \c valid_min attributes.
-bool NCVariable::is_valid(PetscScalar a) {
+bool NCVariable::is_valid(PetscScalar a) const {
   
   if (has("valid_min") && has("valid_max"))
     return (a >= get("valid_min")) && (a <= get("valid_max"));

@@ -162,6 +162,8 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
     do_plastic_till = config.get_flag("do_plastic_till"),
     use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
+  double ocean_rho = config.get("sea_water_density");
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // take this opportunity to check that H[i][j] >= 0
@@ -170,7 +172,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
       }
 
       const PetscScalar hgrounded = bed[i][j] + H[i][j],
-                        hfloating = currentSeaLevel + (1.0 - ice->rho/ocean.rho) * H[i][j];
+                        hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * H[i][j];
 
       if (is_dry_simulation) {
         // Don't update mask; potentially one would want to do SSA

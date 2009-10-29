@@ -2144,7 +2144,7 @@ Generally $\bar B$ is computed by a vertical-integral of a function of the tempe
 In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf intercomparison, a constant value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ is the default \cite{MacAyealetal}.
 
 \begin{table}[ht]
-\caption{Choosing the rheology using \t{-ice\und type}.}\label{tab:flowlaw}
+\caption{Choosing the rheology using \t{-ice\und type}.}\label{tab:flowlaw}\index{rheology}\index{flow law}
 \small
 \begin{tabular}{p{0.25\linewidth}p{0.08\linewidth}p{0.57\linewidth}}\hline
 \textbf{Flow Law} & \textbf{Type} & \textbf{Comments and Reference} \\ \hline
@@ -2154,7 +2154,7 @@ Paterson-Budd law (usually the default)  &  \t{pb} &   Fixed Glen exponent $n=3$
 
 \emph{Warm} part of Paterson-Budd     &  \t{arrwarm} & Regardless of temperature, the $A$ and $Q$ values for $T^*>263$ K in Paterson-Budd apply.\\
 Hooke law   &  \t{hooke} &  Fixed Glen exponent $n=3$.  Here  $A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$; values of  constants as in \cite{Hooke,PayneBaldwin}.\\
-Hybrid of Goldsby-Kohlstedt and Paterson-Budd & \t{hybrid} &     Goldsby-Kohlstedt law with a combination of exponents  from $n=1.8$ to $n=4$ \cite{GoldsbyKohlstedt} in grounded  shallow ice approximation regions.  Paterson-Budd flow  for ice streams and ice sheets. See mask for SIA versus stream versus shelf by \verb|-view\und map mask|. \\
+Hybrid of Goldsby-Kohlstedt and Paterson-Budd & \t{hybrid} &     Goldsby-Kohlstedt law with a combination of exponents  from $n=1.8$ to $n=4$ \cite{GoldsbyKohlstedt} in grounded  shallow ice approximation regions.  Paterson-Budd flow  for ice streams and ice sheets. See mask for SIA versus stream versus shelf by \verb|-view_map mask|. \\
 Isothermal Glen & \t{custom} & Highly customizable version of the isothermal Glen flow law.  Allows choice of exponent, hardness/softness parameters, and density. \\
 \hline
 \normalsize	

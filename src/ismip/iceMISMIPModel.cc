@@ -869,10 +869,11 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
   //   d xg            a - dq/dx
   //   ---- = -----------------------------
   //    dt     dh/dx - (rhow/rhoi) (db/dx)
+  double ocean_rho = config.get("sea_water_density");
   const PetscScalar dqdx = (mstats.q1 - mstats.q2) / (mstats.x1 - mstats.x2),
                     dhdx = (mstats.h1 - mstats.h2) / (mstats.x1 - mstats.x2),
                     dbdx = (mstats.b1 - mstats.b2) / (mstats.x1 - mstats.x2);
-  mstats.dxgdt = ((0.3/secpera) - dqdx) / (dhdx - (ocean.rho/ice->rho) * dbdx);  
+  mstats.dxgdt = ((0.3/secpera) - dqdx) / (dhdx - (ocean_rho/ice->rho) * dbdx);  
   return 0;
 }
 

@@ -567,23 +567,6 @@ PetscErrorCode IceEnthalpyModel::temperatureStep(
       "    [IceEnthalpyModel::temperatureStep(): ENTHALPY IS OFF. CALLING IceModel::temperatureStep()]\n");
     CHKERRQ(ierr);
 
-    /*
-      BEGIN FIX
-      over-write constants in material.cc, use values from config instead
-      FIX ME: are these all constants used in temperatureStep()?
-      this code will become deprecated when all PISM code uses the config system
-     */
-    ice->beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("earth_gravity");
-    ice->rho = config.get("ice_density");
-    ice->c_p = config.get("ice_specific_heat_capacity");
-    ice->k = config.get("ice_thermal_conductivity");
-    bed_thermal.rho = config.get("bedrock_thermal_density");
-    bed_thermal.c_p = config.get("bedrock_thermal_specific_heat_capacity");
-    bed_thermal.k = config.get("bedrock_thermal_conductivity");
-    /*
-      END FIX
-    */
-
     ierr = IceModel::temperatureStep(vertSacrCount,bulgeCount);  CHKERRQ(ierr);
 
     // start & complete communication: THIS IS REDUNDANT WITH temperatureAgeStep(),
@@ -646,9 +629,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   system.ice_c           = config.get("ice_specific_heat_capacity"); // ice->c_p;
   system.ice_k           = config.get("ice_thermal_conductivity"); // ice->k;
   system.ice_nu          = config.get("enthalpy_temperate_diffusivity"); // diffusion in temperate ice
-  system.bed_thermal_rho = config.get("bedrock_thermal_density"); // bed_thermal.rho;
-  system.bed_thermal_c   = config.get("bedrock_thermal_specific_heat_capacity"); // bed_thermal.c_p;
-  system.bed_thermal_k   = config.get("bedrock_thermal_conductivity"); // bed_thermal.k;
+  system.bed_thermal_rho = config.get("bedrock_thermal_density");
+  system.bed_thermal_c   = config.get("bedrock_thermal_specific_heat_capacity");
+  system.bed_thermal_k   = config.get("bedrock_thermal_conductivity");
 
   // space for solution of system; length = fMz + fMbz - 1
   const PetscInt k0 = fMbz - 1;
@@ -693,9 +676,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   bedrockOnlySystemCtx bedredosystem(fMbz);
   bedredosystem.dtTemp          = dtTempAge; // same time step for temp and age, currently
   bedredosystem.dzbEQ           = fdzb;
-  bedredosystem.bed_thermal_rho = config.get("bedrock_thermal_density"); // bed_thermal.rho;
-  bedredosystem.bed_thermal_c   = config.get("bedrock_thermal_specific_heat_capacity"); // bed_thermal.c_p;
-  bedredosystem.bed_thermal_k   = config.get("bedrock_thermal_conductivity"); // bed_thermal.k;
+  bedredosystem.bed_thermal_rho = config.get("bedrock_thermal_density");
+  bedredosystem.bed_thermal_c   = config.get("bedrock_thermal_specific_heat_capacity");
+  bedredosystem.bed_thermal_k   = config.get("bedrock_thermal_conductivity");
   bedredosystem.T_b             = new PetscScalar[fMbz];
   // checks that all needed constants and pointers got set:
   ierr = bedredosystem.initAllColumns(); CHKERRQ(ierr);

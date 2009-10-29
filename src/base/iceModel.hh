@@ -152,10 +152,7 @@ protected:
   IceType               *ice;
   PlasticBasalType      *basal;
   BasalTypeSIA          *basalSIA;
-  BedrockThermalType    bed_thermal;
   DeformableEarthType   bed_deformable;
-  SeaWaterType          ocean;
-  FreshWaterType        porewater;
   SSAStrengthExtension  ssaStrengthExtend;
 
   PISMAtmosphereCoupler *atmosPCC;
@@ -277,8 +274,10 @@ protected:
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode putTempAtDepth();
-  virtual PetscErrorCode bootstrapSetBedrockColumnTemp(const PetscInt i, const PetscInt j,
-                            const PetscScalar Ttopbedrock, const PetscScalar geothermflux);
+  virtual PetscErrorCode bootstrapSetBedrockColumnTemp(PetscInt i, PetscInt j,
+						       PetscScalar Ttopbedrock,
+						       PetscScalar geothermflux,
+						       PetscScalar bed_thermal_k);
   virtual PetscErrorCode setMaskSurfaceElevation_bootstrap();
 
   // see iMdefaults.cc

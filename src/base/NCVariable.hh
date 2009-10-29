@@ -68,7 +68,7 @@ public:
   virtual void set_string(string name, string value);
   virtual string get_string(string) const;
   virtual bool has(string) const;
-  virtual bool is_valid(PetscScalar a);
+  virtual bool is_valid(PetscScalar a) const;
 			
   string short_name;
 
@@ -85,7 +85,7 @@ public:
 
 protected:
   virtual PetscErrorCode write_attributes(const NCTool &nc, int varid, nc_type nctype,
-					  bool write_in_glaciological_units);
+					  bool write_in_glaciological_units) const;
   virtual PetscErrorCode read_valid_range(const NCTool &nc, int varid);
   MPI_Comm com;
   PetscMPIInt rank;

@@ -172,9 +172,9 @@ PetscErrorCode IceModel::temperatureStep(
   system.ice_rho         = ice->rho;
   system.ice_c_p         = ice->c_p;
   system.ice_k           = ice->k;
-  system.bed_thermal_rho = bed_thermal.rho;
-  system.bed_thermal_c_p = bed_thermal.c_p;
-  system.bed_thermal_k   = bed_thermal.k;
+  system.bed_thermal_rho = config.get("bedrock_thermal_density");
+  system.bed_thermal_c_p = config.get("bedrock_thermal_specific_heat_capacity");
+  system.bed_thermal_k   = config.get("bedrock_thermal_conductivity");
 
   const PetscInt k0 = fMbz - 1;
   PetscScalar *x;  
@@ -182,7 +182,7 @@ PetscErrorCode IceModel::temperatureStep(
 
   // constants needed after solution of system, in insertion phase
   const PetscScalar rho_c_I = ice->rho * ice->c_p,
-                    rho_c_br = bed_thermal.rho * bed_thermal.c_p,
+                    rho_c_br = config.get("bedrock_thermal_density") * config.get("bedrock_thermal_specific_heat_capacity"),
                     rho_c_av = (fdz * rho_c_I + fdzb * rho_c_br) / (fdz + fdzb);
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature

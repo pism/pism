@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from numpy import sort
 # try different netCDF modules
 try:
     from netCDF4 import *
@@ -71,7 +71,7 @@ print """
 <table style="width: 100%">
 <tr> <td> <b> Flag name </b> </td> <td> <b> Default value </b> </td> <td> <b> Description </b> </td> </tr>"""
 
-for attr in var.ncattrs():
+for attr in sort(var.ncattrs()):
     if attr.endswith("_doc"):
         continue
 
@@ -94,7 +94,7 @@ print """
 <table style="width: 100%">
 <tr> <td> <b>Parameter name </b> </td> <td> <b> Default value </b> </td> <td> <b> Description </b> </td> </tr>"""
 
-for attr in var.ncattrs():
+for attr in sort(var.ncattrs()):
     if attr.endswith("_doc"):
         continue
 
@@ -127,7 +127,7 @@ print """
 <table style="width: 100%">
 <tr> <td> <b> Parameter name </b> </td> <td> <b> Default value </b> </td> <td> <b> Description </b> </td> </tr>"""
 
-for attr in var.ncattrs():
+for attr in sort(var.ncattrs()):
     if attr.endswith("_doc"):
         continue
 

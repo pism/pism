@@ -121,13 +121,15 @@ PetscErrorCode IceROSSModel::misc_setup() {
 
   ierr = IceModel::misc_setup(); CHKERRQ(ierr);
 
+  double ocean_rho = config.get("sea_water_density");
+
   // update surface elev (this has to happen after
   // updateSurfaceElevationAnsMask is called in IceModel::misc_setup() above):
   ierr = verbPrintf(2,grid.com, 
      "EIS-Ross: applying floatation criterion everywhere to get smooth surface ...\n");
      CHKERRQ(ierr);
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
-  ierr = vh.scale(1.0 - ice->rho / ocean.rho ); CHKERRQ(ierr);
+  ierr = vh.scale(1.0 - ice->rho / ocean_rho ); CHKERRQ(ierr);
 
   // in preparation for SSA b.c. read; zero out vuvbar; SIA velocities will not
   //    be computed so this will stay

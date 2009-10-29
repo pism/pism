@@ -275,7 +275,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
       } else {
         // FIXME: floating case:  if the ice is floating and if w is relative to the geoid
         //   then w[0] is related to dHdt and nothing else:
-        //      w[0] = - (ice->rho/ocean.rho) * dHdt
+        //      w[0] = - (ice->rho/ocean_rho) * dHdt
         //   for grounded ice we *have* w[0] relative to the geoid because the dbdx,dbdy
         //   are used (and this suggests dbdt should be added, though it is really small)
         w[0] = 0.0;

@@ -148,9 +148,10 @@ PetscErrorCode IceEISModel::init_physics() {
   // is default, but want ice/rock interface segment to have geothermal flux
   // applied directly to ice)
   if (ice == PETSC_NULL) { SETERRQ(1,"ice == PETSC_NULL"); }
-  bed_thermal.rho = ice->rho;
-  bed_thermal.k = ice->k;
-  bed_thermal.c_p = ice->c_p;  
+
+  config.set("bedrock_thermal_density", ice->rho);
+  config.set("bedrock_thermal_conductivity", ice->k);
+  config.set("bedrock_thermal_specific_heat_capacity", ice->c_p);
 
   return 0;
 }
@@ -332,13 +333,16 @@ PetscErrorCode IceEISModel::fillintemps() {
 
   // fill in all ice temps with Ts and then have bedrock (if present despite EISMINT
   //   standard) temperatures reflect default geothermal rate
+  double bed_thermal_k = config.get("bedrock_thermal_conductivity");
+
   ierr = pccTs->get_array(Ts); CHKERRQ(ierr);
   ierr = T3.begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = T3.setColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
-      ierr = bootstrapSetBedrockColumnTemp(i,j,Ts[i][j],G_geothermal); CHKERRQ(ierr);
+      ierr = bootstrapSetBedrockColumnTemp(i,j,Ts[i][j],
+					   G_geothermal, bed_thermal_k); CHKERRQ(ierr);
     }
   }
   ierr = T3.end_access(); CHKERRQ(ierr);

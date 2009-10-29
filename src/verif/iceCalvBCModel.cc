@@ -295,13 +295,15 @@ PetscErrorCode IceCalvBCModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
   PetscScalar  **mask, **h, **H, **uvbar[2], **taudx, **taudy,
                **cfmask, **ncf[2];
 
+  double ocean_rho = config.get("sea_water_density");
+
   // first, find and store normal direction to calving front;
   //   used in forming both rhs and A; also get access to it here
   ierr = compute_nCF(); CHKERRQ(ierr);
   ierr = vsmoothCFmask.get_array(cfmask); CHKERRQ(ierr);
   ierr = vnCF[0].get_array(ncf[0]); CHKERRQ(ierr);
   ierr = vnCF[1].get_array(ncf[1]); CHKERRQ(ierr);
-  const PetscScalar Gamma = 0.5 * (1.0 - ice->rho / ocean.rho) * ice->rho * earth_grav;
+  const PetscScalar Gamma = 0.5 * (1.0 - ice->rho / ocean_rho) * ice->rho * earth_grav;
 
   // clear right-hand side
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);

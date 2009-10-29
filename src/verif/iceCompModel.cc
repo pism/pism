@@ -248,9 +248,9 @@ PetscErrorCode IceCompModel::init_physics() {
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
     // condition, especially in tests F and G)
-    bed_thermal.rho = tgaIce->rho;
-    bed_thermal.c_p = tgaIce->c_p;
-    bed_thermal.k = tgaIce->k;
+    config.set("bedrock_thermal_density", tgaIce->rho);
+    config.set("bedrock_thermal_conductivity", tgaIce->k);
+    config.set("bedrock_thermal_specific_heat_capacity", tgaIce->c_p);
   }
 
   bool do_bed_deformation = config.get_flag("do_bed_deformation"),
@@ -262,16 +262,16 @@ PetscErrorCode IceCompModel::init_physics() {
            "  -bed_def_iso  for the reported errors to be correct.\n"); CHKERRQ(ierr);
   }
 
-  // switch changes Test K to make material properties for bedrock the same as for ice
+  // this switch changes Test K to make material properties for bedrock the same as for ice
   PetscTruth biiSet;
   ierr = check_option("-bedrock_is_ice", biiSet); CHKERRQ(ierr);
   if (biiSet == PETSC_TRUE) {
     if (testname == 'K') {
       ierr = verbPrintf(1,grid.com,
          "setting material properties of bedrock to those of ice in Test K\n"); CHKERRQ(ierr);
-      bed_thermal.rho = tgaIce->rho;
-      bed_thermal.c_p = tgaIce->c_p;
-      bed_thermal.k = tgaIce->k;
+      config.set("bedrock_thermal_density", tgaIce->rho);
+      config.set("bedrock_thermal_conductivity", tgaIce->k);
+      config.set("bedrock_thermal_specific_heat_capacity", tgaIce->c_p);
       bedrock_is_ice_forK = PETSC_TRUE;
     } else {
       ierr = verbPrintf(1,grid.com,

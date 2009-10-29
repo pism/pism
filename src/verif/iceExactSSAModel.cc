@@ -284,6 +284,8 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
   ierr = vbed.set(-5000.0); CHKERRQ(ierr); // assures shelf is floating
   ierr = vMask.set(MASK_FLOATING); CHKERRQ(ierr);
 
+  double ocean_rho = config.get("sea_water_density");
+
   /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
   const PetscScalar nu0 = 30.0 * 1.0e6 * secpera; /* = 9.45e14 Pa s */
   const PetscScalar H0 = 500.0;       /* 500 m typical thickness */
@@ -303,7 +305,7 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
       const PetscScalar myx = grid.dx * ifrom0, myy = grid.dy * jfrom0;
       // set H,h on regular grid
       ierr = exactJ(myx, myy, &H[i][j], &junk1, &myu, &myv); CHKERRQ(ierr);
-      h[i][j] = (1.0 - ice->rho / ocean.rho) * H[i][j];
+      h[i][j] = (1.0 - ice->rho / ocean_rho) * H[i][j];
       // special case at center point: here we indirectly set ubar,vbar 
       // at (i,j) by marking this grid point as SHEET and setting staggered-grid
       // version of ubar approriately; the average done in assembleSSARhs()
@@ -337,12 +339,14 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
   PetscScalar    **H, **h, **bed, **mask, **ubar, **vbar,
                  **ub, **vb, **uvbar[2];
 
+  double ocean_rho = config.get("sea_water_density");
+
   const PetscScalar
             Rg = 300.0e3,     // radius for grounding line
             Rc = 600.0e3,     // radius for calving front
             H0 = 500.0,       // 500 m constant thickness
-            hicepresent = (1.0 - (ice->rho / ocean.rho)) * H0,
-            bedgrounded = - H0 * (ice->rho / ocean.rho);
+            hicepresent = (1.0 - (ice->rho / ocean_rho)) * H0,
+            bedgrounded = - H0 * (ice->rho / ocean_rho);
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vh.get_array(h); CHKERRQ(ierr);    

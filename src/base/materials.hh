@@ -261,18 +261,6 @@ protected:
   PetscReal d_grain_size_stripped;
 };
 
-
-//! Physical constants describing lithosphere thermal properties.
-class BedrockThermalType {
-public:
-  BedrockThermalType();
-  // these should be protected or private
-  PetscReal rho,   //!< density
-            k,     //!< thermal conductivity
-            c_p;   //!< specific heat capacity
-};
-
-
 //! Physical constants describing lithosphere mechanical properties.
 class DeformableEarthType {
 public:
@@ -282,25 +270,6 @@ public:
             D,     //!< lithosphere flexural rigidity
             eta;   //!< half-space (mantle) viscosity
 };
-
-
-//! Physical constants describing ocean water properties.
-class SeaWaterType {
-public:
-  SeaWaterType();
-  PetscReal rho,          //!< density
-            beta_CC_grad; //!< Clausius-Clapeyron gradient (melting temperature point per meter)
-};
-
-
-//! Physical constants describing pure water properties.
-class FreshWaterType {
-public:
-  FreshWaterType();
-  PetscReal rho,          //!< density
-            beta_CC_grad; //!< Clausius-Clapeyron gradient (melting temperature point per meter)
-};
-
 
 //! Class containing constitutive relation for till in SIA sliding law; NOT RECOMMENDED.
 class BasalTypeSIA {

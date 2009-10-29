@@ -68,11 +68,11 @@ PetscTruth IceTypeUsesGrainSize(IceType *ice) {
 
 CustomGlenIce::CustomGlenIce(MPI_Comm c,const char pre[], const NCConfigVariable &config) : IceType(c,pre,config)
 {
-  exponent_n = config.get("glen_exponent");
+  exponent_n = config.get("Glen_exponent");
   softness_A = config.get("ice_softness");
-  hardness_B = pow(softness_A, -1/exponent_n); // ~= 135720960;
-  // FIXME: this constant need to go in pism_config.cdl
-  setSchoofRegularization(1,1000);             // Units of km
+  hardness_B = pow(softness_A, -1/exponent_n);
+  setSchoofRegularization(config.get("Schoof_regularizing_velocity"),
+			  config.get("Schoof_regularizing_length"));
 }
 
 
@@ -145,7 +145,11 @@ PetscScalar CustomGlenIce::hardnessParameter(PetscScalar /*T*/) const { return h
 
 PetscErrorCode CustomGlenIce::setFromOptions()
 {
-  PetscReal      n = exponent_n,B=hardness_B,A=softness_A,slen=schoofLen/1e3,svel=schoofVel*secpera;
+  PetscReal n = exponent_n,
+    B=hardness_B,
+    A=softness_A,
+    slen=schoofLen/1e3,		// convert to km
+    svel=schoofVel*secpera;	// convert to m/year
   PetscTruth     flg;
   PetscErrorCode ierr;
 
@@ -199,30 +203,29 @@ PetscErrorCode CustomGlenIce::view(PetscViewer viewer) const {
 
 
 ThermoGlenIce::ThermoGlenIce(MPI_Comm c,const char pre[], const NCConfigVariable &config) : IceType(c,pre,config) {
-
-  // FIXME: these constants need to go in pism_config.cdl
-  A_cold = 3.61e-13;   // Pa^-3 / s
-  A_warm = 1.73e3;     // Pa^-3 / s
-  Q_cold = 6.0e4;      // J / mol
-  Q_warm = 13.9e4;     // J / mol
-  crit_temp = 263.15;  // K
-  n = 3;
-  schoofLen = 1e6;
-  schoofVel = 1/secpera;
+  n = 3;			// Paterson-Budd has the fixed Glen exponent, so it's hard-wired.
+  A_cold = config.get("Paterson-Budd_A_cold");
+  A_warm = config.get("Paterson-Budd_A_warm");
+  Q_cold = config.get("Paterson-Budd_Q_cold");
+  Q_warm = config.get("Paterson-Budd_Q_warm");
+  crit_temp = config.get("Paterson-Budd_critical_temperature");
+  schoofLen = config.get("Schoof_regularizing_length") * 1e3; // convert to meters
+  schoofVel = config.get("Schoof_regularizing_velocity")/secpera; // convert to m/s
   schoofReg = PetscSqr(schoofVel/schoofLen);
 }
 
 
 PetscErrorCode ThermoGlenIce::setFromOptions() {
   PetscErrorCode ierr;
-  PetscReal slen=schoofLen/1e3,svel=schoofVel*secpera;
+  PetscReal slen=schoofLen/1e3,	// convert to km
+    svel=schoofVel*secpera;	// convert to m/year
 
   ierr = PetscOptionsBegin(comm,prefix,"ThermoGlenIce options",NULL);CHKERRQ(ierr);
   {
     ierr = PetscOptionsReal("-ice_reg_schoof_vel","Regularizing velocity (Schoof definition, m/a)","",svel,&svel,NULL);CHKERRQ(ierr);
     ierr = PetscOptionsReal("-ice_reg_schoof_length","Regularizing length (Schoof definition, km)","",slen,&slen,NULL);CHKERRQ(ierr);
-    schoofVel = svel / secpera;
-    schoofLen = slen * 1e3;
+    schoofVel = svel / secpera;	// convert to m/s
+    schoofLen = slen * 1e3;	// convert to meters
     schoofReg = PetscSqr(schoofVel/schoofLen);
     ierr = PetscOptionsReal("-ice_pb_A_cold","Paterson-Budd cold softness parameter (Pa^-3 s^-1)","",A_cold,&A_cold,NULL);CHKERRQ(ierr);
     ierr = PetscOptionsReal("-ice_pb_A_warm","Paterson-Budd warm softness parameter (Pa^-3 s^-1)","",A_warm,&A_warm,NULL);CHKERRQ(ierr);
@@ -488,20 +491,18 @@ PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
   return 0.5 * B * pow(schoofReg + alpha, (1-n)/(2*n));
 }
 
-
+//! This is the Hooke flow law, see [\ref Hooke].
 ThermoGlenIceHooke::ThermoGlenIceHooke(MPI_Comm c,const char pre[],
 				       const NCConfigVariable &config) : ThermoGlenIce(c,pre,config) {
-  // FIXME: these constants need to go in pism_config.cdl
-  Q_Hooke = 7.88e4;       // J / mol
-  // A_Hooke = (1/B_0)^n where n=3 and B_0 = 1.928 a^(1/3) Pa
-  A_Hooke = 4.42165e-9;    // s^-1 Pa^-3
-  C_Hooke = 0.16612;       // Kelvin^K_Hooke
-  K_Hooke = 1.17;          // [unitless]
-  Tr_Hooke = 273.39;       // Kelvin
-  R_Hooke = 8.321;         // J mol^-1 K^-1
+  Q_Hooke  = config.get("Hooke_Q");
+  A_Hooke  = config.get("Hooke_A");
+  C_Hooke  = config.get("Hooke_C");
+  K_Hooke  = config.get("Hooke_k");
+  Tr_Hooke = config.get("Hooke_Tr");
+  R_Hooke  = config.get("gas_constant_R");
 }
 
-
+//! This method implements formula (7) in [\ref Hooke].
 PetscScalar ThermoGlenIceHooke::softnessParameter(PetscScalar T) const {
 
   return A_Hooke * exp( -Q_Hooke/(R_Hooke * T)
@@ -590,7 +591,6 @@ PetscScalar ThermoGlenArrIceWarm::Q() const {
 HybridIce::HybridIce(MPI_Comm c,const char pre[],
 		     const NCConfigVariable &config) : ThermoGlenIce(c,pre,config) {
 
-  // FIXME: some of these constants need to go in pism_config.cdl
   V_act_vol    = -13.e-6;  // m^3/mol
   d_grain_size = 1.0e-3;   // m  (see p. ?? of G&K paper)
   //--- dislocation creep ---
@@ -777,14 +777,6 @@ PetscScalar HybridIceStripped::flow(PetscScalar stress, PetscScalar temp, PetscS
   return eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
 }
 
-
-BedrockThermalType::BedrockThermalType() {
-  rho    = 3300;  // kg/(m^3)     density
-  k      = 3.0;   // J/(m K s) = W/(m K)    thermal conductivity
-  c_p    = 1000;  // J/(kg K)     specific heat capacity
-}
-
-
 DeformableEarthType::DeformableEarthType() {
   // for following, reference Lingle & Clark (1985) and  Bueler, Lingle, & Kallen-Brown (2006)
   //    D = E T^3/(12 (1-nu^2)) for Young's modulus E = 6.6e10 N/m^2, lithosphere thickness
@@ -793,27 +785,6 @@ DeformableEarthType::DeformableEarthType() {
   D     = 5.0e24;  // N m          lithosphere flexural rigidity
   eta   = 1.0e21;  // Pa s         half-space (mantle) viscosity
 }
-
-
-SeaWaterType::SeaWaterType() {
-  rho            = 1028.0;  // kg/m^3         density
-  // re Clausius-Clapeyron gradients:  Paterson (3rd ed, 1994, p. 212) says 
-  //   T = T_0 - beta' P  where  beta' = 9.8e-5 K / kPa = 9.8e-8 K / Pa.
-  //   And   dT/dz = beta' rho g  because  dP = - rho g dz.
-  //   Thus:
-  //     SeaWaterType:   beta = 9.8e-8 * 1028.0 * 9.81 = 9.882986e-4
-  //     FreshWaterType: beta = 9.8e-8 * 1000.0 * 9.81 = 9.613800e-4
-  //   For IceType this would be 8.748558e-4, but we use EISMINT II
-  //   (Payne et al 2000) value of 8.66e-4 by default; see above.
-  beta_CC_grad   = 9.883e-4;// K/m; C-C gradient
-}
-
-
-FreshWaterType::FreshWaterType() {
-  rho          = 1000.0;  // kg/m^3         density
-  beta_CC_grad = 9.614e-4;// K/m; C-C gradient; see comment above for SeaWaterType
-}
-
 
 PetscScalar BasalTypeSIA::velocity(PetscScalar sliding_coefficient,
                                    PetscScalar stress) {
