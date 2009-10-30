@@ -127,7 +127,14 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
 
   ierr = mapping.write(filename); CHKERRQ(ierr);
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
-  
+
+  PetscTruth override_used;
+  ierr = check_option("-config_override", override_used); CHKERRQ(ierr);
+  if (override_used) {
+    overrides.update_from(config);
+    ierr = overrides.write(filename); CHKERRQ(ierr);
+  }
+
   ierr = write_model_state(filename);  CHKERRQ(ierr);
 
   if (atmosPCC != PETSC_NULL) {

@@ -129,6 +129,8 @@ public:
   virtual void set_flag(string, bool);
   virtual PetscErrorCode flag_from_option(string, string);
   virtual PetscErrorCode scalar_from_option(string, string);
+  virtual void import_from(const NCConfigVariable &other);
+  virtual void update_from(const NCConfigVariable &other);
 protected:
   string config_filename;
   virtual PetscErrorCode write_attributes(const NCTool &nc, int varid, nc_type nctype,

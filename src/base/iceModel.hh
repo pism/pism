@@ -143,7 +143,7 @@ protected:
   IceGrid               &grid;
 
   NCConfigVariable      mapping;
-  NCConfigVariable      config;
+  NCConfigVariable      config, overrides;
   NCGlobalAttributes    global_attributes;
 
   IceFlowLawFactory     iceFactory;

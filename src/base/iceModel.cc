@@ -35,6 +35,7 @@ IceModel::IceModel(IceGrid &g)
   }
 
   config.init("pism_config", grid.com, grid.rank);
+  overrides.init("pism_overrides", grid.com, grid.rank);
   mapping.init("mapping", grid.com, grid.rank);
   global_attributes.init("global_attributes", grid.com, grid.rank);
 

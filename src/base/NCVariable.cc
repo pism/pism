@@ -728,7 +728,7 @@ PetscErrorCode NCConfigVariable::read(const char filename[]) {
   if (!variable_exists) {
     ierr = PetscPrintf(com,
 		       "PISM ERROR: configuration variable %s was not found in %s.\n"
-		       "            Exiting...",
+		       "            Exiting...\n",
 		       short_name.c_str(), filename); CHKERRQ(ierr);
     PetscEnd();
   }
@@ -1000,10 +1000,41 @@ PetscErrorCode NCConfigVariable::print() const {
   return 0;
 }
 
+//! Imports values from the other config variable, silently overwriting present values.
+void NCConfigVariable::import_from(const NCConfigVariable &other) {
+  map<string, vector<double> >::const_iterator j;
+  for (j = other.doubles.begin(); j != other.doubles.end(); ++j)
+    doubles[j->first] = j->second;
+
+  map<string,string>::const_iterator k;
+  for (k = other.strings.begin(); k != other.strings.end(); ++k)
+    strings[k->first] = k->second;
+}
+
+//! Update values from the other config variable, overwriting present values but avoiding adding new ones.
+void NCConfigVariable::update_from(const NCConfigVariable &other) {
+  map<string, vector<double> >::iterator j;
+  map<string, vector<double> >::const_iterator i;
+  for (j = doubles.begin(); j != doubles.end(); ++j) {
+    i = other.doubles.find(j->first);
+    if (i != other.doubles.end())
+      j->second = i->second;
+  }
+
+  map<string,string>::iterator k;
+  map<string,string>::const_iterator m;
+  for (k = strings.begin(); k != strings.end(); ++k) {
+    m = other.strings.find(k->first);
+    if (m != other.strings.end())
+      k->second = m->second;
+  }
+}
+
 void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
   NCVariable::init(n, c, r);
   dimension_name = dim_name;
 }
+
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
 PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {

@@ -57,6 +57,15 @@ PetscErrorCode IceModel::setDefaults() {
     ierr = config.read(PISM_DefaultConfigFile); CHKERRQ(ierr);
     ierr = mapping.read(PISM_DefaultConfigFile); CHKERRQ(ierr);
   }
+
+  char override_config[PETSC_MAX_PATH_LEN];
+  PetscTruth use_override_config;
+  ierr = PetscOptionsGetString(PETSC_NULL, "-config_override", override_config,
+			       PETSC_MAX_PATH_LEN, &use_override_config);
+  if (use_override_config) {
+    ierr = overrides.read(override_config); CHKERRQ(ierr);
+    config.import_from(overrides);
+  }
   config.print();
 
   executable_short_name = "pism"; // drivers typically override this
