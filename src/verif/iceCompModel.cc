@@ -227,21 +227,21 @@ PetscErrorCode IceCompModel::init_physics() {
   ierr = iceFactory.setType(ICE_ARR); CHKERRQ(ierr);
 
   // Let the base class version read the options (possibly overriding the
-  // default set above) and create the IceType object.
+  // default set above) and create the IceFlowLaw object.
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
   
-  // check on whether the options (already checked) chose the right IceType for verification;
+  // check on whether the options (already checked) chose the right IceFlowLaw for verification;
   //   need to have a tempFromSoftness() procedure as well as the need for the right
   //   flow law to have the errors make sense
   tgaIce = dynamic_cast<ThermoGlenArrIce*>(ice);
   if (!tgaIce) SETERRQ(1,"IceCompModel requires ThermoGlenArrIce or a derived class");
-  if (IceTypeIsPatersonBuddCold(ice, config) == PETSC_FALSE) {
+  if (IceFlowLawIsPatersonBuddCold(ice, config) == PETSC_FALSE) {
     ierr = verbPrintf(1, grid.com, 
        "WARNING: user set -gk; default flow law should be -ice_type arr for IceCompModel\n");
     CHKERRQ(ierr);
   }
 
-  f = ice->rho / bed_deformable.rho;  // for simple isostasy
+  f = ice->rho / config.get("lithosphere_density");  // for simple isostasy
 
   if (testname != 'K') {
     // now make bedrock have same material properties as ice

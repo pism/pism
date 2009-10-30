@@ -193,9 +193,9 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
   PetscScalar *Tij, *Toffset, *ageij, *ageoffset;
 
-  const bool usetau3 = (IceTypeUsesGrainSize(ice) && (realAgeForGrainSize == PETSC_TRUE));
+  const bool usetau3 = (IceFlowLawUsesGrainSize(ice) && (realAgeForGrainSize == PETSC_TRUE));
 
-  const PetscTruth usesGrainSize = IceTypeUsesGrainSize(ice);
+  const PetscTruth usesGrainSize = IceFlowLawUsesGrainSize(ice);
   
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);

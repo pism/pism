@@ -118,7 +118,7 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
     ierr = verbPrintf(1, grid.com, 
        "WARNING: inverse model and invertSurfaceVelocites() should only\n"
        "  be called with q > 0.0 in pseudo-plastic model;  here is \n"
-       "  PlasticBasalType::printInfo() output:\n");
+       "  IceBasalResistancePlasticLaw::printInfo() output:\n");
        CHKERRQ(ierr);
     ierr = basal->printInfo(1,grid.com); CHKERRQ(ierr);
     ierr = verbPrintf(1, grid.com, "  CONTINUING.  May crash!!\n"); CHKERRQ(ierr);

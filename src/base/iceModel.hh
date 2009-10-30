@@ -46,7 +46,7 @@ struct SSASNESNode {
 struct SSASNESCtx {
   DA               ssada;
   IceGrid          *grid;
-  PlasticBasalType *basal;
+  IceBasalResistancePlasticLaw *basal;
   IceModelVec2     ctxH,
                    ctxMask,
                    ctxtauc,
@@ -59,7 +59,7 @@ struct SSASNESCtx {
   bool             useConstantHardness,
                    useConstantNu,
                    useStoredNu,
-                   usePlasticBasalType;
+                   useIceBasalResistancePlasticLaw;
 };
 
 
@@ -114,8 +114,8 @@ public:
   virtual PetscErrorCode run();
   virtual PetscErrorCode diagnosticRun();
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
-  virtual IceFactory &getIceFactory() { return iceFactory; }
-  virtual IceType *getIce() {return ice;}
+  virtual IceFlowLawFactory &getIceFlowLawFactory() { return iceFactory; }
+  virtual IceFlowLaw *getIceFlowLaw() {return ice;}
   virtual const NCConfigVariable& get_config() {return config;}
 
   // see iMbootstrap.cc 
@@ -146,11 +146,10 @@ protected:
   NCConfigVariable      config;
   NCGlobalAttributes    global_attributes;
 
-  IceFactory            iceFactory;
-  IceType               *ice;
-  PlasticBasalType      *basal;
+  IceFlowLawFactory     iceFactory;
+  IceFlowLaw            *ice;
+  IceBasalResistancePlasticLaw *basal;
   BasalTypeSIA          *basalSIA;
-  DeformableEarthType   bed_deformable;
   SSAStrengthExtension  ssaStrengthExtend;
 
   PISMAtmosphereCoupler *atmosPCC;

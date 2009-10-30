@@ -55,6 +55,7 @@ subs = [(r"%\n",                      r""), # lines wrapped by BibTeX
         (r'\\^([a-zA-Z])',            r"&\1circ;"),            # circumflex
         (r'``',                       r'"'),                   # opening quotes
         (r"''",                       r'"'),                   # closing quotes
+        (r"\\,",                      r""),                    # \, LaTeX math spacing command
         ]
 
 for (regex, substitution) in subs:

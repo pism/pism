@@ -94,7 +94,7 @@ PetscErrorCode IceROSSModel::set_vars_from_options() {
 PetscErrorCode IceROSSModel::init_physics() {
   PetscErrorCode ierr;
 
-  // This initializes the IceFactory and calls IceFactory.create()
+  // This initializes the IceFlowLawFactory and calls IceFlowLawFactory.create()
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
   CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);

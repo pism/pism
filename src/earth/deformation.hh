@@ -56,7 +56,6 @@ public:
 			  PetscTruth  myinclude_elastic,
                           PetscInt myMx, PetscInt myMy, PetscScalar mydx, PetscScalar mydy,
                           PetscInt myZ, PetscScalar myicerho,
-                          PetscScalar myrho, PetscScalar myeta, PetscScalar myD,
                           Vec* myHstart, Vec* mybedstart, Vec* myuplift,  // initial state
                           Vec* myH,     // generally gets changed by calling program
                                         // before each call to step

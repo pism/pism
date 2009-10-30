@@ -269,7 +269,7 @@ is the yield stress of the till \ref SchoofStream .  More generally,
 ice streams can be modeled with a pseudo-plastic basal till.  This includes assuming the
 basal till is a linearly-viscous material, \f$\tau_{(b)i} = \beta u_i\f$ where \f$\beta\f$ 
 is the basal drag (friction) parameter \ref HulbeMacAyeal .
-See PlasticBasalType::drag().
+See IceBasalResistancePlasticLaw::drag().
 
 Note that the basal shear stress appears on the \em left side of the above system.  
 We believe this is crucial, because of its effect on the spectrum of the linear 

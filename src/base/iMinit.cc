@@ -350,7 +350,7 @@ PetscErrorCode IceModel::set_vars_from_options() {
   Rationale: all the physical parameters should be initialized before setting
   up the coupling or filling model-state variables.
 
-  In the base class we just initialize the IceType and the shelf extension.
+  In the base class we just initialize the IceFlowLaw and the shelf extension.
 
   Also, this is the good place for setting parameters that a user should not be
   able to override using a command-line option.
@@ -359,10 +359,10 @@ PetscErrorCode IceModel::init_physics() {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(3, grid.com,
-		    "Initializing IceType and shelfExtension...\n"); CHKERRQ(ierr);
+		    "Initializing IceFlowLaw and shelfExtension...\n"); CHKERRQ(ierr);
 
   ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
-  // Initialize the IceType object:
+  // Initialize the IceFlowLaw object:
   if (ice == PETSC_NULL) {
     ierr = iceFactory.create(&ice); CHKERRQ(ierr);
     ierr = ice->setFromOptions(); CHKERRQ(ierr); // Set options specific to this particular ice type
@@ -469,7 +469,7 @@ PetscErrorCode IceModel::misc_setup() {
   // init basal till model, possibly inverting for phi, if desired;
   //   reads options "-topg_to_phi phi_min,phi_max,phi_ocean,topg_min,topg_max"
   //   or "-surf_vel_to_phi foo.nc";
-  //   initializes PlasticBasalType* basal; sets fields vtauc, vtillphi
+  //   initializes IceBasalResistancePlasticLaw* basal; sets fields vtauc, vtillphi
   ierr = initBasalTillModel(); CHKERRQ(ierr);
   
   return 0;

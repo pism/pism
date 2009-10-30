@@ -24,9 +24,9 @@
 #include "NCVariable.hh"
 
 /*******************
-REGARDING IceType and HybridIce:  The main hierarchy is:
-  IceType <- ThermoGlenIce <- HybridIce <- HybridIceStripped,
-where "<-" means "derived class".  IceType is a virtual
+REGARDING IceFlowLaw and HybridIce:  The main hierarchy is:
+  IceFlowLaw <- ThermoGlenIce <- HybridIce <- HybridIceStripped,
+where "<-" means "derived class".  IceFlowLaw is a virtual
 class; it should never be used "as is".
 
 ThermoGlenIce     means *Paterson-Budd* version of Arhennius relation
@@ -38,7 +38,7 @@ HybridIce         means *Goldsby-Kohlstedt* flow law where vMask=SHEET,
 HybridIceStripped means, where SHEET, G-K without the pressure dependence and without the
                   diffusional part; also grain size fixed at 3mm
 
-Note each IceType has both a forward flow law ("flow") and an
+Note each IceFlowLaw has both a forward flow law ("flow") and an
 inverted-and-vertically-integrated flow law ("effectiveViscosityColumn").  Only the
 former form of the flow law is known for Goldsby-Kohlstedt.  If one can
 invert-and-vertically-integrate the G-K law then one can build a "trueGKIce"
@@ -49,7 +49,7 @@ derived class.
 /*!
 This is the interface which most of PISM uses for rheology.
  */
-class IceType {
+class IceFlowLaw {
 public:
   // ideally these would be protected or private:
   PetscScalar rho,          //!< density
@@ -61,8 +61,8 @@ public:
               standard_gravity,
               ideal_gas_constant;
 
-  IceType(MPI_Comm c,const char pre[], const NCConfigVariable &config);
-  virtual ~IceType() {}
+  IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &config);
+  virtual ~IceFlowLaw() {}
   virtual PetscErrorCode setFromOptions() {return 0;}
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const {return 0;}
@@ -75,11 +75,11 @@ public:
   virtual void integratedStore(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
                                const PetscScalar T[], PetscScalar store[]) const = 0;
   virtual void integratedViscosity(const PetscScalar store[],const PetscScalar Du[],PetscScalar *nuH, PetscScalar *dnuH) const = 0;
-  // This is not a natural part of IceType since it doesn't make any sense for plenty
+  // This is not a natural part of IceFlowLaw since it doesn't make any sense for plenty
   // of rheologies.  Nonetheless we need some exponent to compute the coordinate
   // transformation in IceModel::computeDrivingStress (see iMgeometry.cc).
   virtual PetscScalar exponent() const = 0;
-  // This is also not a natural part of IceType, but it is needed to invert the Sigma to obtain strain rate in
+  // This is also not a natural part of IceFlowLaw, but it is needed to invert the Sigma to obtain strain rate in
   // IceModel::correctSigma().  This method can reside here until a plan for generalizing correctSigma has been agreed
   // upon.
   virtual PetscScalar hardnessParameter(PetscScalar T) const = 0;
@@ -89,12 +89,12 @@ protected:
 };
 
 
-PetscTruth IceTypeIsPatersonBuddCold(IceType *, const NCConfigVariable &);
-PetscTruth IceTypeUsesGrainSize(IceType *);
+PetscTruth IceFlowLawIsPatersonBuddCold(IceFlowLaw *, const NCConfigVariable &);
+PetscTruth IceFlowLawUsesGrainSize(IceFlowLaw *);
 
 
-//! Derived class of IceType for which is still isothermal and power law, but has easily setable parameters.
-class CustomGlenIce : public IceType {
+//! Derived class of IceFlowLaw for which is still isothermal and power law, but has easily setable parameters.
+class CustomGlenIce : public IceFlowLaw {
 public:
   CustomGlenIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
   PetscErrorCode setDensity(PetscReal);
@@ -121,8 +121,8 @@ private:
 };
 
 
-//! Derived class of IceType for Paterson-Budd (1982)-Glen ice.
-class ThermoGlenIce : public IceType {
+//! Derived class of IceFlowLaw for Paterson-Budd (1982)-Glen ice.
+class ThermoGlenIce : public IceFlowLaw {
 public:
   ThermoGlenIce(MPI_Comm c,const char pre[], const NCConfigVariable &config);
   virtual PetscErrorCode setFromOptions();
@@ -186,7 +186,7 @@ protected:
 };
 
 
-//! Derived class of IceType for Hooke (1981)-Glen ice.  Only changes A(T) factor from ThermoGlenIce.
+//! Derived class of IceFlowLaw for Hooke (1981)-Glen ice.  Only changes A(T) factor from ThermoGlenIce.
 class ThermoGlenIceHooke : public ThermoGlenIce {
 public:
   ThermoGlenIceHooke(MPI_Comm c, const char pre[], const NCConfigVariable &config);
@@ -196,7 +196,7 @@ protected:
 };
 
 
-//! Derived class of IceType for Arrhenius-Glen ice.  \e Cold case of Paterson-Budd (1982) ice.
+//! Derived class of IceFlowLaw for Arrhenius-Glen ice.  \e Cold case of Paterson-Budd (1982) ice.
 class ThermoGlenArrIce : public ThermoGlenIce {
 public:
   ThermoGlenArrIce(MPI_Comm c,const char pre[], const NCConfigVariable &conf) : ThermoGlenIce(c,pre,conf) {}
@@ -210,7 +210,7 @@ public:
 };
 
 
-//! Derived class of IceType for Arrhenius-Glen ice.  \e Warm case of Paterson-Budd (1982) ice.
+//! Derived class of IceFlowLaw for Arrhenius-Glen ice.  \e Warm case of Paterson-Budd (1982) ice.
 class ThermoGlenArrIceWarm : public ThermoGlenArrIce {
 public:
   ThermoGlenArrIceWarm(MPI_Comm c,const char pre[], const NCConfigVariable &conf) : ThermoGlenArrIce(c,pre,conf) {}
@@ -226,7 +226,7 @@ struct GKparts {
 };
 
 
-//! Derived class of IceType for a hybrid of Goldsby-Kohlstedt (2001) ice in SIA, with Paterson-Budd (1982)-Glen behavior when needed in viscosity form (e.g. SSA).
+//! Derived class of IceFlowLaw for a hybrid of Goldsby-Kohlstedt (2001) ice in SIA, with Paterson-Budd (1982)-Glen behavior when needed in viscosity form (e.g. SSA).
 class HybridIce : public ThermoGlenIce {
 public:
   HybridIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
@@ -263,16 +263,6 @@ protected:
   PetscReal d_grain_size_stripped;
 };
 
-//! Physical constants describing lithosphere mechanical properties.
-class DeformableEarthType {
-public:
-  DeformableEarthType();
-  // these should be protected or private
-  PetscReal rho,   //!< density
-            D,     //!< lithosphere flexural rigidity
-            eta;   //!< half-space (mantle) viscosity
-};
-
 //! Class containing constitutive relation for till in SIA sliding law; NOT RECOMMENDED.
 class BasalTypeSIA {
 public:
@@ -287,16 +277,16 @@ public:
 This \e pseudo -plastic type can actually describe anything from linearly 
 viscous till to purely plastic till.
  */
-class PlasticBasalType {
+class IceBasalResistancePlasticLaw {
 public:
-  PlasticBasalType(PetscScalar regularizationConstant, bool pseudoPlastic,
+  IceBasalResistancePlasticLaw(PetscScalar regularizationConstant, bool pseudoPlastic,
                    PetscScalar pseudoExponent, PetscScalar pseudoUThreshold);
   virtual PetscErrorCode printInfo(int verbthresh, MPI_Comm com);
   virtual PetscScalar drag(PetscScalar tauc,
                            PetscScalar vx, PetscScalar vy);
   // Also get the derivative of drag with respect to \f$ alpha=\frac 1 2 \abs{u}^2 \f$.
   virtual void dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy, PetscScalar *drag, PetscScalar *ddrag) const;
-  virtual ~PlasticBasalType() {} // class w virtual methods needs virtual destructor?
+  virtual ~IceBasalResistancePlasticLaw() {} // class w virtual methods needs virtual destructor?
 
   PetscReal   plastic_regularize, pseudo_q, pseudo_u_threshold;
   bool pseudo_plastic;
@@ -349,9 +339,9 @@ private:
 #define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
 
 /*!
-Excerpt from Jed email to ELB, 2/21:
+Excerpt from Jed email to ELB, 2/21 (with fixes to reflect present names of objects (CK)):
 
-IceModel creates an IceFactory in it's constructor.  Derived classes
+IceModel creates an IceFlowLawFactory in it's constructor.  Derived classes
 can set options, and driver programs can get a reference and set
 options.  If no IceModel::ice object is created before
 IceModel::setFromOptions() is called, then IceModel will use the factory
@@ -372,23 +362,23 @@ You can add ice types without modifying materials.{hh,cc}.  See the
 usage in MISMIP, you create a trivial creation function and register it
 with the factory.
 
-To test whether an IceType object is true to a particular constitutive
+To test whether an IceFlowLaw object is true to a particular constitutive
 relation, it's best to just create a reference object and test at a few
-values.  Since I envision IceType objects having some state (see
+values.  Since I envision IceFlowLaw objects having some state (see
 CustomGlenIce) and it's hard to determine whether an object is actually
 a derived class, or whether it's a derived class which implements the
 same flow law but adds some additional methods, other ways of testing is
 error-prone.
  */
-class IceFactory {
+class IceFlowLawFactory {
 public:
-  IceFactory(MPI_Comm,const char prefix[], const NCConfigVariable &conf);
-  ~IceFactory();
+  IceFlowLawFactory(MPI_Comm,const char prefix[], const NCConfigVariable &conf);
+  ~IceFlowLawFactory();
   PetscErrorCode setType(const char[]);
   PetscErrorCode setFromOptions();
   PetscErrorCode registerType(const char[],
-			      PetscErrorCode(*)(MPI_Comm,const char[], const NCConfigVariable &,IceType **));
-  PetscErrorCode create(IceType **);
+			      PetscErrorCode(*)(MPI_Comm,const char[], const NCConfigVariable &,IceFlowLaw **));
+  PetscErrorCode create(IceFlowLaw **);
 private:
   PetscErrorCode registerAll();
 private:

@@ -153,7 +153,7 @@ PetscErrorCode IceModel::getNuFromNuH(IceModelVec2 vNuH[2], SSASNESCtx *user) {
 
 extern PetscScalar nu_eff(PetscScalar schoofReg, PetscScalar barB, 
                           PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y);
-extern PetscErrorCode basalstress(bool useIceModelBasal, PlasticBasalType *basal,
+extern PetscErrorCode basalstress(bool useIceModelBasal, IceBasalResistancePlasticLaw *basal,
                                   PetscScalar u, PetscScalar v, PetscScalar tauc,
                                   PetscScalar &taubx, PetscScalar &tauby);
 extern PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **x,
@@ -200,9 +200,9 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
   ierr = setbdryvalSSA(user.ssada, user.ctxBV); CHKERRQ(ierr);
 
   //   fill in parameters and flags in app ctx
-  user.schoofReg = PetscSqr((1/secpera)/1e6); // Now incorporated in the rheology (i.e. IceType)
+  user.schoofReg = PetscSqr((1/secpera)/1e6); // Now incorporated in the rheology (i.e. IceFlowLaw)
   user.useConstantNu = config.get_flag("use_constant_nuh_for_ssa");  
-  user.usePlasticBasalType = PETSC_TRUE;
+  user.useIceBasalResistancePlasticLaw = PETSC_TRUE;
   
   // set up SNES function
   ierr = SNESSetFunction(snes,R,SNESDAFormFunction,&user); CHKERRQ(ierr);
@@ -334,11 +334,11 @@ static PetscScalar nu_eff(bool useConstantNu, PetscScalar schoofReg, PetscScalar
 }
 
 
-PetscErrorCode basalstress(bool usePlasticBasalType, PlasticBasalType *basal,
+PetscErrorCode basalstress(bool useIceBasalResistancePlasticLaw, IceBasalResistancePlasticLaw *basal,
                            PetscScalar u, PetscScalar v, PetscScalar tauc,
                            PetscScalar &taubx, PetscScalar &tauby) {
 //  PetscPrintf(PETSC_COMM_WORLD, "basalstress() turned off\n"); PetscEnd();
-  if (usePlasticBasalType == PETSC_TRUE) {
+  if (useIceBasalResistancePlasticLaw == PETSC_TRUE) {
     taubx = - basal->drag(tauc, u, v) * u;
     tauby = - basal->drag(tauc, u, v) * v;
   } else {
@@ -456,7 +456,7 @@ PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **x,
   
         if (maskval == MASK_DRAGGING) {
           PetscScalar mytaubx, mytauby;
-          ierr = basalstress(ctx->usePlasticBasalType, ctx->basal,
+          ierr = basalstress(ctx->useIceBasalResistancePlasticLaw, ctx->basal,
                       x[i][j].u,  x[i][j].v, tauc[i][j], mytaubx, mytauby); CHKERRQ(ierr);
           f[i][j].u += sc * mytaubx;
           f[i][j].v += sc * mytauby;

@@ -42,7 +42,7 @@ PetscScalar IceModel::basalDragy(PetscScalar **tauc,
 
 //! Initialize the pseudo-plastic till mechanical model.
 /*! 
-See PlasticBasalType and updateYieldStressFromHmelt() and getEffectivePressureOnTill()
+See IceBasalResistancePlasticLaw and updateYieldStressFromHmelt() and getEffectivePressureOnTill()
 for model equations.  
 
 Calls either invertSurfaceVelocities(), for one way to get a map of till friction angle
@@ -64,7 +64,7 @@ PetscErrorCode IceModel::initBasalTillModel() {
     use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
   if (basal == NULL)
-    basal = new PlasticBasalType(plastic_regularization, do_pseudo_plastic_till, 
+    basal = new IceBasalResistancePlasticLaw(plastic_regularization, do_pseudo_plastic_till, 
                                  pseudo_plastic_q, pseudo_plastic_uthreshold);
 
   if (basalSIA == NULL)

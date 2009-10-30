@@ -595,7 +595,7 @@ The IceModel initialization sequence is this:
 
    3) Memory allocation.
 
-   4) Initialize IceType and (possibly) other physics.
+   4) Initialize IceFlowLaw and (possibly) other physics.
 
    5) Initialize PDD and forcing.
 
@@ -641,7 +641,7 @@ PetscErrorCode IceModel::init() {
   // 3) Memory allocation:
   ierr = createVecs(); CHKERRQ(ierr);
 
-  // 4) Initialize the IceType and (possibly) other physics.
+  // 4) Initialize the IceFlowLaw and (possibly) other physics.
   ierr = init_physics(); CHKERRQ(ierr);
 
   // 5) Initialize atmosphere and ocean couplers:

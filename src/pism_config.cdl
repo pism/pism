@@ -309,6 +309,18 @@ netcdf pism_config {
     pism_config:bedrock_thermal_specific_heat_capacity = 1000.0;
     pism_config:bedrock_thermal_specific_heat_capacity_doc = "J kg-1 K-1; for bedrock used in thermal model [\\ref RitzEISMINT]";
 
+    // for following, reference Lingle & Clark (1985) and  Bueler, Lingle, & Kallen-Brown (2006)
+    //    D = E T^3/(12 (1-nu^2)) for Young's modulus E = 6.6e10 N/m^2, lithosphere thickness
+    //    T = 88 km, and Poisson's ratio nu = 0.5
+    pism_config:lithosphere_density = 3300.0;
+    pism_config:lithosphere_density_doc = "kg m-3; lithosphere density used by the bed deformation model. See [\\ref LingleClark, \\ref BLK2006earth]";
+
+    pism_config:lithosphere_flexural_rigidity = 5.0e24;
+    pism_config:lithosphere_flexural_rigidity_doc = "N m; lithosphere flexural rigidity used by the bed deformation model. See [\\ref LingleClark, \\ref BLK2006earth]";
+
+    pism_config:mantle_viscosity = 1.0e21;
+    pism_config:mantle_viscosity_doc = "Pa s; half-space (mantle) viscosity used by the bed deformation model. See [\\ref LingleClark, \\ref BLK2006earth]";
+
     pism_config:seconds_per_year = 3.15569259747e7;
     pism_config:seconds_per_year_doc = "; should match the one used by UDUNITS (see src/udunits/pismudunits.dat).";
 

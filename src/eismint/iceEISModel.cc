@@ -141,7 +141,7 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
 PetscErrorCode IceEISModel::init_physics() {
   PetscErrorCode ierr;
 
-  // This initializes the IceType:
+  // This initializes the IceFlowLaw:
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
   // make bedrock thermal material properties into ice properties (note Mbz=1

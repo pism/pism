@@ -120,8 +120,7 @@ PetscErrorCode IceModel::bedDefSetup() {
 			   grid.Mx,grid.My,grid.dx,grid.dy,
 			   //                       2,                 // use Z = 2 for now
 			   4,                 // use Z = 4 for now; to reduce global drift?
-			   ice->rho, bed_deformable.rho, bed_deformable.eta, bed_deformable.D,
-			   &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0); CHKERRQ(ierr);
+			   ice->rho, &Hstartp0, &bedstartp0, &upliftp0, &Hp0, &bedp0); CHKERRQ(ierr);
       ierr = bdLC.alloc(); CHKERRQ(ierr);
       // *always* initialize plate from uplift, but make sure uplift (=dbed/dt)
       // is zero if it is not actually available from data
@@ -169,9 +168,13 @@ PetscErrorCode IceModel::bedDefStepIfNeeded() {
   // If the bed elevations are not expired, exit cleanly.
   const PetscScalar dtBedDefYears = grid.year - lastBedDefUpdateYear;
   if (dtBedDefYears >= bedDefIntervalYears) {
+    double lithosphere_density = config.get("lithosphere_density"),
+      lithosphere_flexural_rigidity = config.get("lithosphere_flexural_rigidity"),
+      mantle_viscosity = config.get("mantle_viscosity");
+
     ierr = verbPrintf(5,grid.com, 
       "  [ice->rho=%.3f, bed_deformable.rho=%.3f, b_d.D=%.3e, b_d.eta=%.3e]\n",
-      ice->rho, bed_deformable.rho, bed_deformable.D, bed_deformable.eta);
+      ice->rho, lithosphere_density, lithosphere_flexural_rigidity, mantle_viscosity);
       CHKERRQ(ierr);
     if (do_bed_iso) { // pointwise isostasy model: in parallel
       ierr = bed_def_step_iso(); CHKERRQ(ierr);
@@ -206,7 +209,9 @@ PetscErrorCode IceModel::bed_def_step_iso() {
   PetscErrorCode ierr;
   IceModelVec2 vHdiff = vWork2d[0];
 
-  const PetscScalar  f = ice->rho / bed_deformable.rho;
+  double lithosphere_density = config.get("lithosphere_density");
+
+  const PetscScalar  f = ice->rho / lithosphere_density;
   ierr = vH.add(-1, vHlast, vHdiff); CHKERRQ(ierr);  // Hdiff = H - Hlast
   ierr = vbedlast.add(-f, vHdiff, vbed); CHKERRQ(ierr);  // bed = bedlast - f (Hdiff)
   return 0;

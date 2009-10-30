@@ -187,9 +187,9 @@ the difference between \f$\mu\f$ and the value of \f$\tan\phi=\mu_i\f$
 for the IceModel state at the time the inverse model is invoked.
 
 This procedure should not be called in the purely plastic case.  It requires 
-PlasticBasalType::pseudo_plastic to be \c TRUE, which occurs if the 
+IceBasalResistancePlasticLaw::pseudo_plastic to be \c TRUE, which occurs if the 
 <tt>-pseudo_plastic_q</tt> option is used with a positive value.  Recall that 
-in this case the method PlasticBasalType::drag() computes the basal shear stress as
+in this case the method IceBasalResistancePlasticLaw::drag() computes the basal shear stress as
     \f[ \tau_b = - \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U} \f]
 where \f$\tau_b=(\tau_{(b)x},\tau_{(b)y})\f$, \f$U=(u,v)\f$,
 \f$q=\f$ <tt>pseudo_q</tt>, and \f$U_{\mathtt{th}}=\f$ <tt>pseudo_u_threshold</tt>.

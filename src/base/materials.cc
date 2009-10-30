@@ -21,7 +21,7 @@
 #include "enthalpyConverter.hh"
 
 
-IceType::IceType(MPI_Comm c,const char pre[], const NCConfigVariable &config) : comm(c) {
+IceFlowLaw::IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &config) : comm(c) {
   PetscMemzero(prefix,sizeof(prefix));
   if (pre) PetscStrncpy(prefix,pre,sizeof(prefix));
 
@@ -36,13 +36,13 @@ IceType::IceType(MPI_Comm c,const char pre[], const NCConfigVariable &config) : 
 }
 
 
-PetscErrorCode IceType::printInfo(PetscInt) const {
-  PetscPrintf(comm,"WARNING:  IceType::printInfo() called but base class IceType is virtual!!\n");
+PetscErrorCode IceFlowLaw::printInfo(PetscInt) const {
+  PetscPrintf(comm,"WARNING:  IceFlowLaw::printInfo() called but base class IceFlowLaw is virtual!!\n");
   return 0;
 }
 
 // Rather than make this part of the base class, we just check at some reference values.
-PetscTruth IceTypeIsPatersonBuddCold(IceType *ice, const NCConfigVariable &config) {
+PetscTruth IceFlowLawIsPatersonBuddCold(IceFlowLaw *ice, const NCConfigVariable &config) {
   static const struct {PetscReal s,T,p,gs;} v[] = {
     {1e3,223,1e6,1e-3},{2e4,254,3e6,2e-3},{5e4,268,5e6,3e-3},{1e5,273,8e6,5e-3}};
   ThermoGlenArrIce cpb(PETSC_COMM_SELF,NULL,config); // This is unmodified cold Paterson-Budd
@@ -56,7 +56,7 @@ PetscTruth IceTypeIsPatersonBuddCold(IceType *ice, const NCConfigVariable &confi
   return PETSC_TRUE;
 }
 
-PetscTruth IceTypeUsesGrainSize(IceType *ice) {
+PetscTruth IceFlowLawUsesGrainSize(IceFlowLaw *ice) {
   static const PetscReal gs[] = {1e-4,1e-3,1e-2,1},s=1e4,T=260,p=1e6;
   PetscReal ref = ice->flow(s,T,p,gs[0]);
   for (int i=1; i<4; i++) {
@@ -68,7 +68,7 @@ PetscTruth IceTypeUsesGrainSize(IceType *ice) {
 
 
 
-CustomGlenIce::CustomGlenIce(MPI_Comm c,const char pre[], const NCConfigVariable &config) : IceType(c,pre,config)
+CustomGlenIce::CustomGlenIce(MPI_Comm c,const char pre[], const NCConfigVariable &config) : IceFlowLaw(c,pre,config)
 {
   exponent_n = config.get("Glen_exponent");
   softness_A = config.get("ice_softness");
@@ -204,7 +204,7 @@ PetscErrorCode CustomGlenIce::view(PetscViewer viewer) const {
 }
 
 
-ThermoGlenIce::ThermoGlenIce(MPI_Comm c,const char pre[], const NCConfigVariable &config) : IceType(c,pre,config) {
+ThermoGlenIce::ThermoGlenIce(MPI_Comm c,const char pre[], const NCConfigVariable &config) : IceFlowLaw(c,pre,config) {
   n = 3;			// Paterson-Budd has the fixed Glen exponent, so it's hard-wired.
   A_cold = config.get("Paterson-Budd_A_cold");
   A_warm = config.get("Paterson-Budd_A_warm");
@@ -779,23 +779,12 @@ PetscScalar HybridIceStripped::flow(PetscScalar stress, PetscScalar temp, PetscS
   return eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
 }
 
-DeformableEarthType::DeformableEarthType() {
-  // for following, reference Lingle & Clark (1985) and  Bueler, Lingle, & Kallen-Brown (2006)
-  //    D = E T^3/(12 (1-nu^2)) for Young's modulus E = 6.6e10 N/m^2, lithosphere thickness
-  //    T = 88 km, and Poisson's ratio nu = 0.5
-  rho   = 3300;    // kg/(m^3)     density
-  D     = 5.0e24;  // N m          lithosphere flexural rigidity
-  eta   = 1.0e21;  // Pa s         half-space (mantle) viscosity
-}
-
 PetscScalar BasalTypeSIA::velocity(PetscScalar sliding_coefficient,
                                    PetscScalar stress) {
   return sliding_coefficient * stress;
 }
 
-
-
-PlasticBasalType::PlasticBasalType(
+IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(
              PetscScalar regularizationConstant, bool pseudoPlastic,
              PetscScalar pseudoExponent, PetscScalar pseudoUThreshold) {
   plastic_regularize = regularizationConstant;
@@ -805,7 +794,7 @@ PlasticBasalType::PlasticBasalType(
 }
 
 
-PetscErrorCode PlasticBasalType::printInfo(int verbthresh, MPI_Comm com) {
+PetscErrorCode IceBasalResistancePlasticLaw::printInfo(int verbthresh, MPI_Comm com) {
   PetscErrorCode ierr;
   if (pseudo_plastic == PETSC_TRUE) {
     if (pseudo_q == 1.0) {
@@ -834,9 +823,9 @@ The basal shear stress term \f$\tau_b\f$ in the SSA stress balance for ice
 is minus the return value here times (vx,vy).
 
 Purely plastic is the pseudo_q = 0.0 case; linear is pseudo_q = 1.0; set 
-pseudo_q using PlasticBasalType constructor.
+pseudo_q using IceBasalResistancePlasticLaw constructor.
  */
-PetscScalar PlasticBasalType::drag(PetscScalar tauc,
+PetscScalar IceBasalResistancePlasticLaw::drag(PetscScalar tauc,
                                    PetscScalar vx, PetscScalar vy) {
   const PetscScalar magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
   if (pseudo_plastic == PETSC_TRUE) {
@@ -847,7 +836,8 @@ PetscScalar PlasticBasalType::drag(PetscScalar tauc,
 }
 
 // Derivative of drag with respect to \f$ \alpha = \frac 1 2 (u_x^2 + u_y^2) \f$
-void PlasticBasalType::dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy, PetscScalar *d, PetscScalar *dd) const
+void IceBasalResistancePlasticLaw::dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy,
+						      PetscScalar *d, PetscScalar *dd) const
 {
   const PetscScalar magreg2 = PetscSqr(plastic_regularize) + PetscSqr(vx) + PetscSqr(vy);
   if (pseudo_plastic == PETSC_TRUE) {
@@ -901,7 +891,7 @@ PetscReal SSAStrengthExtension::min_thickness_for_extension() const {
 #undef ALEN
 #define ALEN(a) (sizeof(a)/sizeof(a)[0])
 
-IceFactory::IceFactory(MPI_Comm c,const char pre[], const NCConfigVariable &conf) : config(conf)
+IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,const char pre[], const NCConfigVariable &conf) : config(conf)
 {
   comm = c;
   prefix[0] = 0;
@@ -909,24 +899,24 @@ IceFactory::IceFactory(MPI_Comm c,const char pre[], const NCConfigVariable &conf
     PetscStrncpy(prefix,pre,sizeof(prefix));
   }
   if (registerAll()) {
-    PetscPrintf(comm,"IceFactory::registerAll returned an error but we're in a constructor\n");
+    PetscPrintf(comm,"IceFlowLawFactory::registerAll returned an error but we're in a constructor\n");
     PetscEnd();
   }
   if (setType(ICE_PB)) {       // Set's a default type
-    PetscPrintf(comm,"IceFactory::setType(\"%s\") returned an error, but we're in a constructor\n",ICE_PB);
+    PetscPrintf(comm,"IceFlowLawFactory::setType(\"%s\") returned an error, but we're in a constructor\n",ICE_PB);
     PetscEnd();
   }
 }
 
-IceFactory::~IceFactory()
+IceFlowLawFactory::~IceFlowLawFactory()
 {
   PetscFListDestroy(&type_list);
 }
 
 #undef __FUNCT__
-#define __FUNCT__ "IceFactory::registerType"
-PetscErrorCode IceFactory::registerType(const char tname[],
-					PetscErrorCode(*icreate)(MPI_Comm,const char[],const NCConfigVariable &, IceType**))
+#define __FUNCT__ "IceFlowLawFactory::registerType"
+PetscErrorCode IceFlowLawFactory::registerType(const char tname[],
+					PetscErrorCode(*icreate)(MPI_Comm,const char[],const NCConfigVariable &, IceFlowLaw**))
 {
   PetscErrorCode ierr;
 
@@ -936,32 +926,32 @@ PetscErrorCode IceFactory::registerType(const char tname[],
 }
 
 
-static PetscErrorCode create_custom(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceType **i) {
+static PetscErrorCode create_custom(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceFlowLaw **i) {
   *i = new (CustomGlenIce)(comm, pre, config);  return 0;
 }
-static PetscErrorCode create_pb(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceType **i) {
+static PetscErrorCode create_pb(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceFlowLaw **i) {
   *i = new (ThermoGlenIce)(comm, pre, config);  return 0;
 }
-static PetscErrorCode create_gpbld(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceType **i) {
+static PetscErrorCode create_gpbld(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceFlowLaw **i) {
   *i = new (PolyThermalGPBLDIce)(comm, pre, config);  return 0;
 }
-static PetscErrorCode create_hooke(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceType **i) {
+static PetscErrorCode create_hooke(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceFlowLaw **i) {
   *i = new (ThermoGlenIceHooke)(comm, pre, config);  return 0;
 }
-static PetscErrorCode create_arr(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceType **i) {
+static PetscErrorCode create_arr(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceFlowLaw **i) {
   *i = new (ThermoGlenArrIce)(comm, pre, config);  return 0;
 }
-static PetscErrorCode create_arrwarm(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceType **i) {
+static PetscErrorCode create_arrwarm(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceFlowLaw **i) {
   *i = new (ThermoGlenArrIceWarm)(comm, pre, config);  return 0;
 }
-static PetscErrorCode create_hybrid(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceType **i) {
+static PetscErrorCode create_hybrid(MPI_Comm comm,const char pre[], const NCConfigVariable &config, IceFlowLaw **i) {
   *i = new (HybridIce)(comm, pre, config);  return 0;
 }
 
 
 #undef __FUNCT__
-#define __FUNCT__ "IceFactory::registerAll"
-PetscErrorCode IceFactory::registerAll()
+#define __FUNCT__ "IceFlowLawFactory::registerAll"
+PetscErrorCode IceFlowLawFactory::registerAll()
 {
   PetscErrorCode ierr;
 
@@ -979,8 +969,8 @@ PetscErrorCode IceFactory::registerAll()
 
 
 #undef __FUNCT__
-#define __FUNCT__ "IceFactory::setType"
-PetscErrorCode IceFactory::setType(const char type[])
+#define __FUNCT__ "IceFlowLawFactory::setType"
+PetscErrorCode IceFlowLawFactory::setType(const char type[])
 {
   void (*r)(void);
   PetscErrorCode ierr;
@@ -993,8 +983,8 @@ PetscErrorCode IceFactory::setType(const char type[])
 }
 
 #undef __FUNCT__
-#define __FUNCT__ "IceFactory::setFromOptions"
-PetscErrorCode IceFactory::setFromOptions()
+#define __FUNCT__ "IceFlowLawFactory::setFromOptions"
+PetscErrorCode IceFlowLawFactory::setFromOptions()
 {
   PetscErrorCode ierr;
   PetscTruth flg;
@@ -1014,26 +1004,26 @@ PetscErrorCode IceFactory::setFromOptions()
   if (flg) {
     ierr = setType(ICE_HYBRID);CHKERRQ(ierr);
   }
-  ierr = PetscOptionsBegin(comm,prefix,"IceFactory options","IceType");CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(comm,prefix,"IceFlowLawFactory options","IceFlowLaw");CHKERRQ(ierr);
   {
-    ierr = PetscOptionsList("-ice_type","Ice type","IceFactory::setType",
+    ierr = PetscOptionsList("-ice_type","Ice type","IceFlowLawFactory::setType",
                             type_list,type_name,my_type_name,sizeof(my_type_name),&flg);CHKERRQ(ierr);
     if (flg) {ierr = setType(my_type_name);CHKERRQ(ierr);}
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
   
-//  ierr = PetscPrintf(comm,"IceFactory::type_name=%s at end of IceFactory::setFromOptions()\n",
+//  ierr = PetscPrintf(comm,"IceFlowLawFactory::type_name=%s at end of IceFlowLawFactory::setFromOptions()\n",
 //                     type_name); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 
 #undef __FUNCT__
-#define __FUNCT__ "IceFactory::create"
-PetscErrorCode IceFactory::create(IceType **inice)
+#define __FUNCT__ "IceFlowLawFactory::create"
+PetscErrorCode IceFlowLawFactory::create(IceFlowLaw **inice)
 {
-  PetscErrorCode ierr,(*r)(MPI_Comm,const char[],const NCConfigVariable &,IceType**);
-  IceType *ice;
+  PetscErrorCode ierr,(*r)(MPI_Comm,const char[],const NCConfigVariable &,IceFlowLaw**);
+  IceFlowLaw *ice;
 
   PetscFunctionBegin;
   PetscValidPointer(inice,3);
@@ -1041,7 +1031,7 @@ PetscErrorCode IceFactory::create(IceType **inice)
   // find the function that can create selected ice type:
   ierr = PetscFListFind(type_list,comm,type_name,(void(**)(void))&r);CHKERRQ(ierr);
   if (!r) SETERRQ1(1,"Selected Ice type %s not available, but we shouldn't be able to get here anyway",type_name);
-  // create an IceType instance:
+  // create an IceFlowLaw instance:
   ierr = (*r)(comm,prefix,config,&ice);CHKERRQ(ierr);
   *inice = ice;
   PetscFunctionReturn(0);

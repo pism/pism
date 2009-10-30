@@ -60,7 +60,6 @@ PetscErrorCode BedDeformLC::settings(const NCConfigVariable &config,
                   PetscTruth  myinclude_elastic,
                   PetscInt myMx, PetscInt myMy, PetscScalar mydx, PetscScalar mydy,
                   PetscInt myZ, PetscScalar myicerho,
-                  PetscScalar myrho, PetscScalar myeta, PetscScalar myD,
                   Vec* myHstart, Vec* mybedstart, Vec* myuplift, 
                   Vec* myH, Vec* mybed) {
 
@@ -72,9 +71,9 @@ PetscErrorCode BedDeformLC::settings(const NCConfigVariable &config,
   dy     = mydy;
   Z      = myZ; 
   icerho = myicerho;
-  rho    = myrho;
-  eta    = myeta;
-  D      = myD;
+  rho    = config.get("lithosphere_density");
+  eta    = config.get("mantle_viscosity");
+  D      = config.get("lithosphere_flexural_rigidity");
 
   standard_gravity = config.get("standard_gravity");
 
