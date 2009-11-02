@@ -78,12 +78,11 @@ ifeq ($(PISM_USE_MPICXX), 1)
 endif
 
 SHELL := /bin/sh
-VPATH := $(subst src,../src,src/:src/base/:src/earth/:src/verif/:src/software_tests:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
+VPATH := $(subst src,../src,src/:src/base/:src/earth/:src/verif/:src/verif/tests/:src/software_tests:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
 executables := penth pismr pismd pismv pisms pcctest pismtests
-extras := simpleABCD simpleE simpleFG simpleH simpleI simpleJ \
-	simpleL simpleM flowTable tryLCbd
+extras := flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
 exec_extras := $(addprefix ../bin/, $(extras))
 config_file := ../lib/pism_config.nc
@@ -111,9 +110,6 @@ other_sources := penth.cc pismr.cc pismd.cc pismv.cc pisms.cc \
 	iceEnthalpyModel.cc enthColumnSystem.cc \
 	pcctest.cc flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
 
-other_csources := simpleABCD.c simpleE.c simpleFG.c simpleH.c simpleI.c	\
-	simpleJ.c simpleK.c simpleL.c simpleM.c
-
 # this is the primary derived class example so it is structured as an example
 #   derived class; as an example it includes "grn_make"; creates executable
 #   "pgrn"
@@ -127,7 +123,7 @@ endif
 all_sources := $(ice_sources) $(ice_csources) $(test_sources) $(other_sources)	\
 		$(other_csources)
 
-TESTS_OBJS := $(tests_sources:.c=.o)
+TESTS_OBJS := $(addprefix ../src/verif/tests/, $(tests_sources:.c=.o))
 
 ICE_OBJS := $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
@@ -200,10 +196,6 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 
 ../bin/tryLCbd : tryLCbd.o deformation.o greens.o materials.o pism_const.o ${LIBPISMNAME}
 	${CXXLINKER} tryLCbd.o deformation.o greens.o materials.o pism_const.o ${ICE_LIB_FLAGS} -o $@
-
-# pattern rule for building all the simple* executables.
-../bin/simple% : simple%.o $(LIBTESTSNAME)
-	$(CLINKER) $< $(TESTS_LIB_FLAGS) -o $@
 
 # The GNU recommended procedure for automatically generating prerequisites.
 # (The obscure sed command comes straight from the GNU Make manual.)

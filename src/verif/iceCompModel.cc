@@ -23,10 +23,10 @@
 #include <vector>     // STL vector container; sortable; used in test L
 #include <algorithm>  // required by sort(...) in test L
 
-#include "exactTestsABCDE.h"
-#include "exactTestsFG.h" 
-#include "exactTestH.h" 
-#include "exactTestL.h" 
+#include "tests/exactTestsABCDE.h"
+#include "tests/exactTestsFG.h" 
+#include "tests/exactTestH.h" 
+#include "tests/exactTestL.h" 
 
 #include "../coupler/pccoupler.hh"
 #include "iceCompModel.hh"

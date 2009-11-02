@@ -18,8 +18,8 @@
 
 #include <cmath>
 #include <petscda.h>
-#include "exactTestsFG.h" 
-#include "exactTestK.h" 
+#include "tests/exactTestsFG.h" 
+#include "tests/exactTestK.h" 
 #include "iceCompModel.hh"
 
 // boundary conditions for tests F, G (same as EISMINT II Experiment F)

@@ -20,8 +20,8 @@
 #include "../base/grid.hh"
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
-#include "exactTestsIJ.h"
-#include "exactTestM.h"
+#include "tests/exactTestsIJ.h"
+#include "tests/exactTestM.h"
 #include "iceExactSSAModel.hh"
 
 const PetscScalar IceExactSSAModel::m_schoof = 10; // (pure number)
