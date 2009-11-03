@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ed Bueler
+// Copyright (C) 2009 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -127,7 +127,7 @@ suggests that 53 evals per year (i.e. approximately weekly) should be sufficient
 PetscErrorCode PDDMassBalance::getNForTemperatureSeries(
                    PetscScalar /* t */, PetscScalar dt, PetscInt &N) {
   PetscScalar dt_years = dt / secpera;
-  N = (int) ceil(52 * (dt_years) + 1);
+  N = (int) ceil(52 * (dt_years) + 1); // (52 weeks in a year)
   if (N < 3) N = 3;
   if ((N % 2) == 0)  N++;  // guarantee it is odd
   return 0;
@@ -221,7 +221,7 @@ procedure.
  */
 PetscScalar PDDMassBalance::CalovGreveIntegrand(
                PetscScalar sigma, PetscScalar Tac) {
-  const PetscScalar TacC = Tac - 273.15;
+  const PetscScalar TacC = Tac - 273.15; // convert to Celsius
   return (sigma / sqrt(2.0 * pi)) * exp(- TacC * TacC / (2.0 * sigma * sigma)) 
            + (TacC / 2.0) * gsl_sf_erfc(- TacC / (sqrt(2.0) * sigma));
 }

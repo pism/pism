@@ -845,6 +845,69 @@ Note that similar to the snapshot-saving mechanism, extra variables are saved \e
 
 \clearpage
 
+\subsection{PISM's default flags and parameters (and how to change them)}
+\label{sec:pism-defaults}
+
+PISM's behavior depends on values of many flags and physical parameters. Most of them have default values\footnote{For \texttt{pismr}, grid parameters $Mx$, $My$, $Mz$, $Mbz$, $Lz$, $Lbz$, that have to be set at bootstrapping, are some exceptions.} which are read from the configuration file \verb|pism_config.nc| in the \verb|lib| sub-directory.
+
+It is possible to run PISM with an alternate configuration file using the \intextoption{config} command-line option:
+\begin{verbatim}
+$ pismr -i foo.nc -y 1000 -config my_config.nc
+\end{verbatim}%$
+
+The file \verb|my_config.nc| has to contain \emph{all the flags and parameters} present in \verb|pism_config.nc|.
+
+The list of parameters is too long to include here; please see the PISM Class browser for an automatically-generated table describing them.
+
+% FIXME: needs more work
+
+\subsection{Managing parameter studies}
+\label{sec:parameter-studies}
+Keeping all PISM output files in a parameter study straight can be a challenge.
+
+If parameters of interest can be controlled using command-line options, one can use \verb|ncdump -h| and look at the \verb|history| global attribute.
+
+Changing parameters not available at the command-line is also possible~--- by using a custom configuration file (see section \ref{sec:pism-defaults}). The problem is that this makes it hard to see which parameters were changed.
+
+The \intextoption{config\und override} command-line option provides an alternative. First of all, a file used with this option can have \emph{a subset} of flags and parameters present in \verb|pism_config.nc|. Moreover, PISM adds the \verb|pism_overrides| variable present in this file to the output file, making it easy to see which parameters were used to produce it.
+
+Here's an example: suppose we want to compare the dynamics of an ice-sheet on Earth to the same ice-sheet on Mars.\footnote{This is an admittedly simplified example. One will surely need to change more than just the acceleration due to gravity for a real comparison.}
+
+Running
+\begin{verbatim}
+$ pismr -i input.nc -y 1e5 -o earth.nc <other PISM options>
+\end{verbatim}%$
+produces the ``Earth'' result, since PISM's defaults correspond to this planet.
+
+Next, we create \verb|mars.cdl|, containing the following:
+\small
+\begin{verbatim}
+netcdf mars {
+    variables:
+    byte pism_overrides;
+    pism_overrides:standard_gravity = 3.728;
+    pism_overrides:standard_gravity_doc = "m s-2; standard gravity on Mars";
+}
+\end{verbatim}
+\normalsize
+Notice that the variable name is \verb|pism_overrides| and not \verb|pism_config| above. Now
+\begin{verbatim}
+$ ncgen -o mars_config.nc mars.cdl
+$ pismr -i input.nc -y 1e5 -o mars.nc <other PISM options>
+\end{verbatim}
+will create \verb|mars.nc|, the result of the ``Mars'' run.
+
+In this case, we can use \verb|ncdump| to see what was different about \verb|mars.nc|:
+\small
+\begin{verbatim}
+$ ncdump -h mars.nc |grep pism_overrides
+ byte pism_overrides ;
+    pism_overrides:standard_gravity_doc = "m s-2; standard gravity on Mars" ;
+    pism_overrides:standard_gravity = 3.728 ;
+macbook:pism>
+\end{verbatim}%$
+\normalsize
+
 \subsection{Run-time diagnostic viewers}
 \label{sec:diagnostic-viewers}
 Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.
@@ -891,9 +954,9 @@ Some diagnostic quantities are \emph{only} available as run-time viewers:
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\hline
     \small
     \textbf{Variable name or an option} & \textbf{Description}\\\hline
-    \texttt{diffusivity} & diﬀusivity coeﬃcient D in mass balance equation in $m^{2}/s$. Meaningful only in regions of shallow ice ﬂow.\\
-    \texttt{nuH} & two viewers: vertically-averaged eﬀective viscosity times thickness; on $i$ and $j$ oﬀset grids. Only meaningful in ice streams and shelves.\\
-    \texttt{log\und nuH} & log base ten of the vertically-averaged eﬀective viscosity times thickness on the regular grid. Only meaningful in ice streams and shelves.\\
+    \texttt{diffusivity} & diffusivity coefficient D in mass balance equation in $m^{2}/s$. Meaningful only in regions of shallow ice ﬂow.\\
+    \texttt{nuH} & two viewers: vertically-averaged effective viscosity times thickness; on $i$ and $j$ offset grids. Only meaningful in ice streams and shelves.\\
+    \texttt{log\und nuH} & log base ten of the vertically-averaged effective viscosity times thickness on the regular grid. Only meaningful in ice streams and shelves.\\
     \intextoption{ksp\und monitor\und draw} & Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Shows norm of residual versus iteration number.\\
     \normalsize
   \end{tabular}
