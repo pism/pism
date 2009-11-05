@@ -18,7 +18,7 @@
 
 #include "iceGRNModel.hh"
 
-EISGREENAtmosCoupler::EISGREENAtmosCoupler() : PISMSnowModelAtmosCoupler() {
+EISGREENAtmosCoupler::EISGREENAtmosCoupler() : PISMGreenlandAtmosCoupler() {
   doGreenhouse = PETSC_FALSE;
   startYearGreenhouse = 0.0;
 }
@@ -33,7 +33,7 @@ PetscErrorCode EISGREENAtmosCoupler::startGreenhouseAtYear(PetscScalar year) {
 
 PetscErrorCode EISGREENAtmosCoupler::initFromOptions(IceGrid* g, const PISMVars &variables) {
   PetscErrorCode ierr;
-  ierr = PISMSnowModelAtmosCoupler::initFromOptions(g, variables); CHKERRQ(ierr);
+  ierr = PISMGreenlandAtmosCoupler::initFromOptions(g, variables); CHKERRQ(ierr);
   EISGREENMassBalance* eisg_scheme = dynamic_cast<EISGREENMassBalance*>(mbscheme);
   if (eisg_scheme == NULL) {
     ierr = verbPrintf(1, g->com, 
@@ -90,7 +90,7 @@ PetscErrorCode EISGREENAtmosCoupler::parameterizedUpdateSnowSurfaceTemp(
 
   ierr = surfelev->get_array(h);   CHKERRQ(ierr);
   ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
-  ierr = vsnowtemp_ma.get_array(T_ma);  CHKERRQ(ierr);
+  ierr = vsurftemp.get_array(T_ma);  CHKERRQ(ierr);
   ierr = vsnowtemp_mj.get_array(T_mj);  CHKERRQ(ierr);
   for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
@@ -102,12 +102,12 @@ PetscErrorCode EISGREENAtmosCoupler::parameterizedUpdateSnowSurfaceTemp(
   }  
   ierr = surfelev->end_access();   CHKERRQ(ierr);
   ierr = lat->end_access(); CHKERRQ(ierr);
-  ierr = vsnowtemp_ma.end_access();  CHKERRQ(ierr);
+  ierr = vsurftemp.end_access();  CHKERRQ(ierr);
   ierr = vsnowtemp_mj.end_access();  CHKERRQ(ierr);
 
   if (doGreenhouse == PETSC_TRUE) {
     const PetscScalar shift = shiftForGreenhouse(t_years,dt_years);
-    ierr = vsnowtemp_ma.shift(shift); CHKERRQ(ierr);
+    ierr = vsurftemp.shift(shift); CHKERRQ(ierr);
     ierr = vsnowtemp_mj.shift(shift); CHKERRQ(ierr);
   }
   return 0;
@@ -123,25 +123,10 @@ PetscErrorCode EISGREENAtmosCoupler::updateSurfTempAndProvide(
       "  computing ice surface temperature by elevation,latitude-dependent\n"
       "  EISMINT-Greenland formulas ...\n"); CHKERRQ(ierr);
 
+  ierr = parameterizedUpdateSnowSurfaceTemp(t_years, dt_years); CHKERRQ(ierr);
+
   ierr = PISMAtmosphereCoupler::updateSurfTempAndProvide(
               t_years, dt_years, pvst); CHKERRQ(ierr);
-
-  PetscScalar **Ts, **lat_degN, **h;
-  ierr = vsurftemp.get_array(Ts); CHKERRQ(ierr);
-  ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
-  ierr = surfelev->get_array(h); CHKERRQ(ierr);
-  for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
-      Ts[i][j] = meanAnnualTemp(h[i][j], lat_degN[i][j]);
-    }
-  }
-  ierr = vsurftemp.end_access(); CHKERRQ(ierr);
-  ierr = lat->end_access(); CHKERRQ(ierr);
-  ierr = surfelev->end_access(); CHKERRQ(ierr);
-
-  if (doGreenhouse == PETSC_TRUE) {
-    ierr = vsurftemp.shift(shiftForGreenhouse(t_years,dt_years)); CHKERRQ(ierr);
-  }
   return 0;
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2009 Ed Bueler, Andy Aschwanden, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,11 +43,12 @@ mpiexec -n 2 penth -boot_from estart.nc -Mx 121 -My 121 -Mz 101 -Mbz 51 -quadZ -
 
 */
 
-#include <petscvec.h>
+#include <petsc.h>
 #include "base/grid.hh"
 #include "base/materials.hh"
 #include "base/iceEnthalpyModel.hh"
 #include "coupler/pccoupler.hh"
+#include "coupler/pGreenlandAtmosCoupler.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -82,11 +83,11 @@ int main(int argc, char *argv[]) {
     PetscTruth  pddSet;
     ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
     PISMConstAtmosCoupler     pcac;
-    PISMSnowModelAtmosCoupler ppdd;
+    PISMGreenlandAtmosCoupler ppdd;
     PISMConstOceanCoupler     pcoc;
     if (pddSet == PETSC_TRUE) {
       ierr = verbPrintf(2,com, 
-        "penth attaching PISMSnowModelAtmosCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
+        "penth attaching PISMGreenlandAtmosCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
       ierr = m.attachAtmospherePCC(ppdd); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,com, 

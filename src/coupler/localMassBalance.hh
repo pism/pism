@@ -20,6 +20,7 @@
 #define __localMassBalance_hh
 
 #include <petsc.h>
+#include <gsl/gsl_rng.h>
 #include "../base/NCVariable.hh"
 
 //! Base class for a model which computes surface mass flux rate (ice thickness per time) from a precipitation (scalar) and a time series for temperature.

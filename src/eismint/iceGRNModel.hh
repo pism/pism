@@ -19,8 +19,13 @@
 #ifndef __iceGRNModel_hh
 #define __iceGRNModel_hh
 
-#include <petscvec.h>
+#include <petsc.h>
+#include "../base/iceModelVec.hh"
+#include "../base/PISMVars.hh"
+#include "../base/NCVariable.hh"
 #include "../base/iceModel.hh"
+#include "../coupler/localMassBalance.hh"
+#include "../coupler/pGreenlandAtmosCoupler.hh"
 
 //! Very slightly modified mass balance formulas for EISMINT-Greenland.
 /*!
@@ -45,16 +50,16 @@ Gives an elevation- and latitude-dependent mean annual ice surface temperature a
 snow temperature, for PDD.  Also implements a greenhouse climate warming scenario,
 for experiment GWL3 [\ref RitzEISMINT].
  */
-class EISGREENAtmosCoupler : public PISMSnowModelAtmosCoupler {
+class EISGREENAtmosCoupler : public PISMGreenlandAtmosCoupler {
 
 public:
   EISGREENAtmosCoupler();
 
-  using PISMSnowModelAtmosCoupler::initFromOptions; // overrides but calls this
+  using PISMGreenlandAtmosCoupler::initFromOptions; // overrides but calls this
   //! Just checks correct attachment of new mass balance scheme.
   virtual PetscErrorCode initFromOptions(IceGrid* g, const PISMVars &variables);
 
-  using PISMSnowModelAtmosCoupler::updateSurfTempAndProvide; // overrides this
+  using PISMGreenlandAtmosCoupler::updateSurfTempAndProvide; // overrides this
   //! Implements ice surface temperature parameterization.
   virtual PetscErrorCode updateSurfTempAndProvide(
                PetscScalar t_years, PetscScalar dt_years,
@@ -65,7 +70,7 @@ public:
 
 protected:
 
-  using PISMSnowModelAtmosCoupler::parameterizedUpdateSnowSurfaceTemp; // overrides this
+  using PISMGreenlandAtmosCoupler::parameterizedUpdateSnowSurfaceTemp; // overrides this
   //! Implements snow surface temperature parameterization, for use in mass balance model.
   virtual PetscErrorCode parameterizedUpdateSnowSurfaceTemp(
             PetscScalar t_years, PetscScalar dt_years);
@@ -92,7 +97,7 @@ to implement the choices stated in \ref RitzEISMINT , the EISMINT-Greenland
 specification:
 - A PDD model is always used, through a new coupler (EISGREENAtmosCoupler)
   calling a new mass balance scheme (EISGREENMassBalance).  These are small modifications
-  of the default scheme from \ref Faustoetal2009, implemented in PISMSnowModelAtmosCoupler.
+  of the default scheme from \ref Faustoetal2009, implemented in PISMGreenlandAtmosCoupler.
 - An enhancement factor of 3.0 is used.
 - -ocean_kill is used by default.
 

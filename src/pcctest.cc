@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] = 
-  "Driver for testing PISMClimateCoupler without IceModel.\n";
+  "Driver for testing PISMClimateCoupler and its derived classes without IceModel.\n";
 
 #include <ctime>
 #include <string>
@@ -28,6 +28,7 @@ static char help[] =
 #include "base/LocalInterpCtx.hh"
 #include "base/nc_util.hh"
 #include "coupler/pccoupler.hh"
+#include "coupler/pGreenlandAtmosCoupler.hh"
 #include "base/NCVariable.hh"
 
 
@@ -168,11 +169,11 @@ static PetscErrorCode writePCCStateAtTimes(
                        filename); CHKERRQ(ierr);
   }
 
-  PISMSnowModelAtmosCoupler* pdd_pcc = dynamic_cast<PISMSnowModelAtmosCoupler*>(pcc);
+  PISMGreenlandAtmosCoupler* pdd_pcc = dynamic_cast<PISMGreenlandAtmosCoupler*>(pcc);
   PetscScalar use_dt_years = dt_years;
   if ((pdd_pcc != NULL) && (dt_years > 1.0)) {
     ierr = verbPrintf(1,com,
-      "PCCTEST ATTENTION: PISMSnowModelAtmosCoupler will be asked for results\n"
+      "PCCTEST ATTENTION: PISMGreenlandAtmosCoupler will be asked for results\n"
       "  from one year periods at the start of each desired time subinterval;\n"
       "  full subinterval evaluation is too slow ...\n");
       CHKERRQ(ierr);
@@ -181,9 +182,9 @@ static PetscErrorCode writePCCStateAtTimes(
   
   // write the states
   for (PetscInt k=0; k < NN; k++) {
-    const PetscReal pccyear = ys + k * dt_years; // use original dt_years to get correct subinterval starts
-    ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr);
-    // append == true, check_dims == false
+    // use original dt_years to get correct subinterval starts:
+    const PetscReal pccyear = ys + k * dt_years; 
+    ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr); // append=true,check_dims=false
     ierr = nc.append_time(pccyear); CHKERRQ(ierr);
     
     PetscScalar dt_update_years = PetscMin(use_dt_years, ye - pccyear);
@@ -193,6 +194,7 @@ static PetscErrorCode writePCCStateAtTimes(
     ierr = nc.close(); CHKERRQ(ierr);
 
     ierr = pcc->updateClimateFields(pccyear, dt_update_years); CHKERRQ(ierr);
+
     ierr = pcc->writeCouplingFieldsToFile(pccyear, filename); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
       "  coupler updated for [%11.3f a,%11.3f a]; result written to %s ...\n",
@@ -226,17 +228,17 @@ int main(int argc, char *argv[]) {
     required.push_back("-ye");
     required.push_back("-dt");
     ierr = show_usage_check_req_opts(com, "pcctest", required,
-      "  pcctest -i IN.nc -o OUT.nc -ys A -ye B -dt C [-sma|-ca|-co] [OTHER PISM & PETSc OPTIONS]\n\n"
+      "  pcctest -i IN.nc -o OUT.nc -ys A -ye B -dt C [-ca|-co|-greenland] [OTHER PISM & PETSc OPTIONS]\n\n"
       "where:\n"
-      "  -i    input file in NetCDF format\n"
-      "  -o    output file in NetCDF format\n"
-      "  -ys   start time A (= float) in years\n"
-      "  -ye   end time B (= float), B > A, in years\n"
-      "  -dt   time step C (= positive float) in years\n"
+      "  -i         input file in NetCDF format\n"
+      "  -o         output file in NetCDF format\n"
+      "  -ys        start time A (= float) in years\n"
+      "  -ye        end time B (= float), B > A, in years\n"
+      "  -dt        time step C (= positive float) in years\n"
       "and choose instance of PISMClimateCoupler:\n"
-      "  -sma  apply PISMSnowModelAtmosCoupler (default)\n"
-      "  -ca   apply PISMConstAtmosCoupler\n"
-      "  -co   apply PISMConstOceanCoupler\n"
+      "  -ca        apply PISMConstAtmosCoupler (default)\n"
+      "  -co        apply PISMConstOceanCoupler\n"
+      "  -greenland apply PISMGreenlandAtmosCoupler\n"
       ); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,
@@ -263,21 +265,22 @@ int main(int argc, char *argv[]) {
     grid.year = ys;		// this value is used in PCC->initFromOptions()
 
     // set PCC from options
-    PetscTruth caSet, smaSet, coSet;
+    PetscTruth caSet, greenlandSet, coSet;
     ierr = check_option("-ca",  caSet); CHKERRQ(ierr);
-    ierr = check_option("-sma", smaSet); CHKERRQ(ierr);
     ierr = check_option("-co",  coSet); CHKERRQ(ierr);
+    ierr = check_option("-greenland", greenlandSet); CHKERRQ(ierr);
 
     PISMConstAtmosCoupler     pcac;
-    PISMSnowModelAtmosCoupler psmac;
     PISMConstOceanCoupler     pcoc;
+    PISMGreenlandAtmosCoupler pgac;
+
     PISMClimateCoupler*       PCC;
-    if (caSet == PETSC_TRUE) { 
-      PCC = (PISMClimateCoupler*) &pcac;
-    } else if (coSet == PETSC_TRUE) { 
+    if (coSet == PETSC_TRUE) { 
       PCC = (PISMClimateCoupler*) &pcoc;
-    } else { 
-      PCC = (PISMClimateCoupler*) &psmac;
+    } else if (greenlandSet == PETSC_TRUE) { 
+      PCC = (PISMClimateCoupler*) &pgac;
+    } else  { 
+      PCC = (PISMClimateCoupler*) &pcac;
     }
 
     // allocate IceModelVecs needed by couplers and put them in a dictionary:

@@ -25,6 +25,7 @@ static char help[] =
 #include "base/materials.hh"
 #include "base/iceModel.hh"
 #include "coupler/pccoupler.hh"
+#include "coupler/pGreenlandAtmosCoupler.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -65,12 +66,12 @@ int main(int argc, char *argv[]) {
 
     // Attach climate couplers:
     PISMConstAtmosCoupler     pcac;
-    PISMSnowModelAtmosCoupler ppdd;
+    PISMGreenlandAtmosCoupler ppdd;
     PISMConstOceanCoupler     pcoc;
     PetscTruth  pddSet;
     ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
     if (pddSet == PETSC_TRUE) {
-      ierr = verbPrintf(2,com, "pismr attaching PISMSnowModelAtmosCoupler to IceModel\n"); CHKERRQ(ierr);
+      ierr = verbPrintf(2,com, "pismr attaching PISMGreenlandAtmosCoupler to IceModel\n"); CHKERRQ(ierr);
       ierr = m.attachAtmospherePCC(ppdd); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,com, "pismr attaching PISMConstAtmosCoupler to IceModel\n"); CHKERRQ(ierr);
