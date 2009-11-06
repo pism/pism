@@ -202,8 +202,34 @@ PetscErrorCode PISMGreenlandAtmosCoupler::writeCouplingFieldsToFile(
   ierr = vsnowprecip.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   double dT_offset = 0.0;
-  if (dTforcing != NULL)
+  if (dTforcing != NULL) {
     dT_offset = (*dTforcing)(t_years);
+
+    // *if* dTforcing then modify precipitation, which is assumed to be present-day, to be 
+    //   modeled paleo-precipitation; see formula for P_G(t,x,y) on SeaRISE
+    //   "Model Initialization" page http://websrv.cs.umt.edu/isis/index.php/Model_Initialization
+    //   the version here assumes Delta T_SC = 0.0; write out with new name
+
+    IceModelVec2 vpaleoprecip;    
+    ierr = vpaleoprecip.create(*grid, "snowprecip_paleo", false); CHKERRQ(ierr);
+    ierr = vpaleoprecip.set_attrs(
+            "climate_diagnostic", 
+            "mean annual, time-dependent, paleo, ice-equivalent snow precipitation rate",
+	    "m s-1", 
+	    "");  // no CF standard_name
+	    CHKERRQ(ierr);
+    ierr = vpaleoprecip.set_glaciological_units("m year-1");
+    vpaleoprecip.write_in_glaciological_units = true;
+
+    ierr = vpaleoprecip.copy_from(vsnowprecip); CHKERRQ(ierr);
+    const PetscScalar precipexpfactor
+       = exp( config.get("precip_exponential_factor_for_temperature") * dT_offset );
+    ierr = vpaleoprecip.scale(precipexpfactor); CHKERRQ(ierr);
+
+    ierr = vpaleoprecip.write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+    vpaleoprecip.destroy();
+  }
 
   // save snapshot from yearly cycle or by interpolating monthlies
   IceModelVec2 vsnowtemp;  // no work vectors, so we create a new one
@@ -371,11 +397,12 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfMassFluxAndProvide(
   const PetscScalar tseries = (t_years - floor(t_years)) * secpera,
                     dtseries = (dt_years * secpera) / ((PetscScalar) Nseries);
   
-  // constants related to standard yearly cycle
+  // constants related to standard yearly cycle and precipitation offset
   const PetscScalar
      radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
      sperd = 8.64e4, // exact number of seconds per day
-     julydaysec = sperd * config.get("snow_temp_july_day");
+     julydaysec = sperd * config.get("snow_temp_july_day"),
+     precipexpfactor = config.get("precip_exponential_factor_for_temperature");
   
   // get access to snow temperatures (and update parameterization if appropriate)
   PetscScalar **T_ma, **T_mj, **snowrate, **lat_degN, **smflux;
@@ -425,10 +452,20 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfMassFluxAndProvide(
         ierr = pddscheme->setDegreeDayFactorsFromSpecialInfo(lat_degN[i][j],T_mj[i][j]); CHKERRQ(ierr);
       }
 
+      // *if* dTforcing then modify precipitation, which is assumed to be present-day, to be 
+      //   modeled paleo-precipitation; use dTforcing at midpoint of
+      //   interval [t_years,t_years+dt_years];  see formula for P_G(t,x,y) on SeaRISE
+      //   "Model Initialization" page http://websrv.cs.umt.edu/isis/index.php/Model_Initialization
+      //   the version here assumes Delta T_SC = 0.0
+      PetscScalar precip = snowrate[i][j];
+      if (dTforcing != NULL) {
+	precip *= exp( precipexpfactor * (*dTforcing)(t_years + 0.5 * dt_years) );
+      }
+
       
       // get surface mass balance at point i,j
       smflux[i][j] = mbscheme->getMassFluxFromTemperatureTimeSeries(
-                        tseries, dtseries, Tseries, Nseries,snowrate[i][j]);  // units of day^-1 K-1
+                        tseries, dtseries, Tseries, Nseries, precip);  // units of day^-1 K-1
     }
   }
   
