@@ -28,7 +28,7 @@
 
 //! Temporary class for development of enthalpy-based polythermal PISM.
 /*!
-Based on Bueler's reading of \ref AschwandenBlatter2009.
+Based on Bueler's reading of \ref AschwandenBlatter.
  */
 class IceEnthalpyModel : public IceModel {
 
@@ -45,7 +45,7 @@ public:
   virtual PetscErrorCode bootstrapFromFile(const char *filename);
 
   using IceModel::write_extra_fields;
-  virtual PetscErrorCode write_extra_fields(const char filename[]);
+  virtual PetscErrorCode write_extra_fields(const char* filename);
 
 protected:
   using IceModel::createVecs;

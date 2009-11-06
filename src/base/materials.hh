@@ -148,7 +148,7 @@ protected:
 
 //! Glen (1955) and Paterson-Budd (1982) flow law with additional water fraction factor from Lliboutry & Duval (1985).
 /*!
-See \ref AschwandenBlatter2009.  The basic references are \ref Glen and \ref PatersonBudd 
+See \ref AschwandenBlatter.  The basic references are \ref Glen and \ref PatersonBudd 
 and \ref LliboutryDuval1985.
  */
 class PolyThermalGPBLDIce : public ThermoGlenIce {

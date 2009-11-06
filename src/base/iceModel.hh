@@ -134,9 +134,9 @@ public:
   // see iMIO.cc
   virtual PetscErrorCode initFromFile(const char *);
   virtual PetscErrorCode writeFiles(const char* default_filename);
-  virtual PetscErrorCode write_model_state(const char filename[]);
-  virtual PetscErrorCode write_variables(const char filename[], set<string> vars);
-  virtual PetscErrorCode write_extra_fields(const char filename[]);
+  virtual PetscErrorCode write_model_state(const char *filename);
+  virtual PetscErrorCode write_variables(const char* filename, set<string> vars);
+  virtual PetscErrorCode write_extra_fields(const char *filename);
 
 protected:
 

@@ -351,7 +351,7 @@ PetscScalar ThermoGlenIce::hardnessParameter(PetscScalar T) const {
 
 /*!
 This constructor just sets flow law factor for nonzero water content, from
-\ref AschwandenBlatter2009 and \ref LliboutryDuval1985.
+\ref AschwandenBlatter and \ref LliboutryDuval1985.
  */
 PolyThermalGPBLDIce::PolyThermalGPBLDIce(MPI_Comm c,const char pre[],
 					 const NCConfigVariable &config) : ThermoGlenIce(c,pre,config) {

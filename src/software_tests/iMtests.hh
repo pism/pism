@@ -28,7 +28,7 @@ public:
   PetscErrorCode set_grid_defaults();
   PetscErrorCode set_vars_from_options();
   PetscErrorCode run();
-  PetscErrorCode writeFiles(const char filename[]);
+  PetscErrorCode writeFiles(const char* filename);
 
   PetscErrorCode testIceModelVec3();
   PetscErrorCode testIceModelVec3Bedrock();

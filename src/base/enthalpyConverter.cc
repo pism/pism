@@ -137,7 +137,7 @@ bool EnthalpyConverter::isTemperate(double E, double p) const {
 
 
 //! Get absolute ice temperature (K) from enthalpy and pressure.
-/*! From \ref AschwandenBlatter2009, equation (12)
+/*! From \ref AschwandenBlatter, equation (12)
      \f[ T= T(E,p) = \begin{cases} 
                        c_i^{-1} (E-E_s(p)) + T_m(p), & E < E_s(p), \\
                        T_m(p), &                       E_s(p) \le E < E_l(p).
@@ -183,7 +183,7 @@ PetscErrorCode EnthalpyConverter::getPATemp(double E, double p, double &T_pa) co
 
 //! Get liquid water fraction from enthalpy and pressure.
 /*!
-From \ref AschwandenBlatter2009, equation (12),
+From \ref AschwandenBlatter, equation (12),
    \f[ \omega = \omega(E,p) = \begin{cases}
                                  0.0,            & E \le E_s(p), \\
                                  (E-E_s(p)) / L, & E_s(p) < E < E_l(p).

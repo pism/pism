@@ -43,7 +43,7 @@ Some major entry points for developers into the class structure of PISM are:
   - IceModel
   - IceModel::init()
   - PISMClimateCoupler
-  - IceType
+  - IceFlowLaw
   - IceGrid
   - IceModelVec
 

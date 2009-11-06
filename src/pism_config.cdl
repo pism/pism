@@ -229,10 +229,10 @@ netcdf pism_config {
     pism_config:water_melting_temperature_doc = "Kelvin; triple point of pure water";
 
     pism_config:water_latent_heat_fusion = 3.34e5;
-    pism_config:water_latent_heat_fusion_doc = "J kg-1; latent heat of fusion for water [\\ref AschwandenBlatter2009]";
+    pism_config:water_latent_heat_fusion_doc = "J kg-1; latent heat of fusion for water [\\ref AschwandenBlatter]";
 
     pism_config:water_specific_heat_capacity = 4170.0;
-    pism_config:water_specific_heat_capacity_doc = "J kg-1 Kelvin-1; at triple point T_0 [\\ref AschwandenBlatter2009]";
+    pism_config:water_specific_heat_capacity_doc = "J kg-1 Kelvin-1; at triple point T_0 [\\ref AschwandenBlatter]";
 
     pism_config:ice_density = 910.0;
     pism_config:ice_density_doc = "kg m-3; = rho_i; density of ice in ice sheet";
@@ -289,7 +289,7 @@ netcdf pism_config {
     pism_config:enthalpy_temperate_diffusivity_doc = "m2 s-1; diffusivity units same as k/(rho c)";
                               
     pism_config:gpbld_water_frac_coeff = 184.0;
-    pism_config:gpbld_water_frac_coeff_doc = "; coefficient in Glen-Paterson-Budd flow law for extra dependence of softness on liquid water fraction (omega) [\\ref AschwandenBlatter2009, \\ref LliboutryDuval1985]";
+    pism_config:gpbld_water_frac_coeff_doc = "; coefficient in Glen-Paterson-Budd flow law for extra dependence of softness on liquid water fraction (omega) [\\ref AschwandenBlatter, \\ref LliboutryDuval1985]";
                               
     pism_config:liquid_water_fraction_max = 0.01;
     pism_config:liquid_water_fraction_max_doc = "pure number; in enthalpy model, drain once omega reaches this value [\\ref Greve97Greenland]";

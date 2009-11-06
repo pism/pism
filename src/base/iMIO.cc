@@ -197,7 +197,7 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars)
   return 0;
 }
 
-PetscErrorCode IceModel::write_model_state(const char filename[]) {
+PetscErrorCode IceModel::write_model_state(const char* filename) {
   PetscErrorCode ierr;
 
   string tmp = config.get_string("output_variables");
@@ -244,7 +244,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
 
 
 //! \b DEPRECATED. Writes extra fields to the output file \c filename. Does nothing in the base class.
-PetscErrorCode IceModel::write_extra_fields(const char /*filename*/[]) {
+PetscErrorCode IceModel::write_extra_fields(const char* /*filename*/) {
   // Do nothing.
   return 0;
 }

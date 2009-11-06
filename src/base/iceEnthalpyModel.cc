@@ -242,7 +242,7 @@ PetscErrorCode IceEnthalpyModel::init_physics() {
 
 /*********** procedures for read/write ****************/
 
-PetscErrorCode IceEnthalpyModel::write_extra_fields(const char filename[]) {
+PetscErrorCode IceEnthalpyModel::write_extra_fields(const char* filename) {
   PetscErrorCode ierr;
 
   ierr = Enth3.write(filename, NC_DOUBLE); CHKERRQ(ierr);//! Total code duplication with IceModel version, but checks flag doColdIceMethods and uses correct flow law.
