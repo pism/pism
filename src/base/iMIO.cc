@@ -358,7 +358,7 @@ PetscErrorCode IceModel::regrid() {
   // Return if no regridding is requested:
   if (!regrid_from_set) return 0;
 
-  ierr = verbPrintf(2, grid.com, "Regridding...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "regridding from file %s ...\n",filename); CHKERRQ(ierr);
   
   string var_name;
   set<string> vars;

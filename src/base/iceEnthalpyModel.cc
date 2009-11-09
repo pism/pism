@@ -956,9 +956,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 
       // finalize Hmelt value
       if (PismModMask(mask[i][j]) == MASK_FLOATING) {
-        // eliminate basal lubrication water if floating
-        // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO OCEAN)!!
-        Hmelt[i][j] = 0.0;
+        // if floating assume maximally saturated till
+        // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
+        Hmelt[i][j] = max_hmelt;
       } else {
         // limit Hmelt to be in [0.0, max_hmelt]
         // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO INFINITY AND BEYOND)!!
