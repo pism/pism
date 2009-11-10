@@ -158,7 +158,7 @@ EXCLUDE                = ../src/.svn/ \
                          ../src/ismip/heino/ \
                          ../src/earth/cubature.h ../src/earth/cubature.c \
                          ../src/udunits/ \
-                         ../src/verif/exactM.py \
+                         ../src/verif/tests/exactM.py \
                          ../src/base/ssaJed/
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 

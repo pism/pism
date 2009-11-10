@@ -17,7 +17,7 @@ digraph pism_init {
     {rank=same
       grid_from_file [label = "Get grid settings from\n a file using NCTool::get_grid()" URL="\ref NCTool::get_grid()"];
 
-      set_grid_defaults [label = "Set default grid parameters;\nread -boot_from file if present\nIceModel::set_grid_defaults()" color=darkgreen URL="\ref IceModel::set_grid_defaults()"];
+      set_grid_defaults [label = "Set default grid parameters;\nread them from -boot_from file if present\nIceModel::set_grid_defaults()" color=darkgreen URL="\ref IceModel::set_grid_defaults()"];
     }
     grid_from_options [label = "Set the grid parameters using\nIceModel::set_grid_from_options()" color=darkgreen URL="\ref IceModel::set_grid_from_options()"];
     is_i_set1 -> set_grid_defaults [label = "no"];
@@ -50,7 +50,7 @@ digraph pism_init {
     is_i_set2 [label = "Is -i set?"];
 
     initFromFile [label = "IceModel::initFromFile()" color=darkgreen URL="\ref IceModel::initFromFile()"];
-    set_values_from_options [label = "Read -boot_from file if present\nIceModel::set_vars_from_options()" color=darkgreen URL="\ref IceModel::set_vars_from_options()"];
+    set_values_from_options [label = "Bootstrap from -boot_from file if present\nIceModel::set_vars_from_options()" color=darkgreen URL="\ref IceModel::set_vars_from_options()"];
     is_i_set2 -> initFromFile [label = "yes"];
     is_i_set2 -> set_values_from_options [label = "no"];
   }  

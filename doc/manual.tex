@@ -217,12 +217,12 @@ Alternatively, one can use PISM's ``diagnostic viewers'' for a time-dependent vi
 \begin{verbatim}
 $ pisms -eisII A -i simp_exper.nc -y 1000 -view_map thk \
         -view_slice temp -slice_level 0 -view_sounding temp
-\end{verbatim}%$
+\end{verbatim}
 Three figures should appear and be refreshed at each time step.  One figure is a map-plane view of thickness, another is a map-plane view of the basal temperature in Kelvin, and the third is a graph of temperature versus height above the bedrock.  When the full 200,000 year run finishes, one may watch its evolving, though essentially steady, state.  A view that includes the ice flow speed is:
 \begin{verbatim}
 $ pisms -eisII A -i simp_exper.nc -y 1000 -view_map thk,cbar \
         -view_slice temp -slice_level 0 -view_sounding temp
-\end{verbatim}%$
+\end{verbatim}
 for example.  Figure \ref{fig:screenshot} will appear.
 
 \begin{figure}[ht]
@@ -545,7 +545,7 @@ Here is another example: suppose you have an output of a PISM run on a fairly co
 \begin{verbatim}
 $ pismr -boot_from foo.nc -Mx 201 -My 201 -Mz 21 -Mbz 21 -Lz 4000 -quadZ \
         -regrid_from foo.nc -regrid_vars litho_temp,age,temp -y 100 -o bar.nc
-\end{verbatim}%$
+\end{verbatim}
 In this case all the model-state 2D variables present in \verb|foo.nc| will be interpolated onto the new grid during bootstrapping, which happens first, while three-dimensional variables are filled using heuristics mentioned in section \ref{sect:boot}.  Then temperature in bedrock (\verb|litho_temp|)\footnote{Assumes that foo.nc has \t{Mbz}$>1$.}, age of the ice (\verb|age|) and ice temperature (\verb|temp|) will be interpolated from \verb|foo.nc| onto the new grid during the regridding stage, overriding values set at the bootstrapping stage.  All of this, bootstrapping and regridding, occurs before the first timestep.
 
 
@@ -853,7 +853,7 @@ PISM's behavior depends on values of many flags and physical parameters. Most of
 It is possible to run PISM with an alternate configuration file using the \intextoption{config} command-line option:
 \begin{verbatim}
 $ pismr -i foo.nc -y 1000 -config my_config.nc
-\end{verbatim}%$
+\end{verbatim}
 
 The file \verb|my_config.nc| has to contain \emph{all the flags and parameters} present in \verb|pism_config.nc|.
 
@@ -876,7 +876,7 @@ Here's an example: suppose we want to compare the dynamics of an ice-sheet on Ea
 Running
 \begin{verbatim}
 $ pismr -i input.nc -y 1e5 -o earth.nc <other PISM options>
-\end{verbatim}%$
+\end{verbatim}
 produces the ``Earth'' result, since PISM's defaults correspond to this planet.
 
 Next, we create \verb|mars.cdl|, containing the following:
@@ -905,7 +905,7 @@ $ ncdump -h mars.nc |grep pism_overrides
     pism_overrides:standard_gravity_doc = "m s-2; standard gravity on Mars" ;
     pism_overrides:standard_gravity = 3.728 ;
 macbook:pism>
-\end{verbatim}%$
+\end{verbatim}
 \normalsize
 
 \subsection{Run-time diagnostic viewers}
@@ -934,19 +934,19 @@ All the quantities listed in table \ref{tab:extra-vars} are available.
 The option \verb|-view_map| shows map-plane views of 2D fields and surface views of 3D fields; for example:
 \begin{verbatim}
 $ pismr -i input.nc -y 1000 -o output.nc -view_map thk,temp 
-\end{verbatim}%$
+\end{verbatim}
 shows ice thickness and ice temperature at the surface.
 
 It is possible to view 3D fields \emph{at a certain level above the base of the ice}:
 \begin{verbatim}
 $ pismr -i input.nc -y 1000 -o output.nc -view_slice temp -slice_level 1000
-\end{verbatim}%$
+\end{verbatim}
 shows the view of the ice temperature at 1000 meters above the base. (This will show air temperature in areas where ice thickness is less than 1000 meters.)
 
 The option \verb|-view_sounding| allows viewing a \emph{sounding} of a variable at a given grid point:
 \begin{verbatim}
 $ pismr -i input.nc -y 1000 -o output.nc -view_sounding temp
-\end{verbatim}%$
+\end{verbatim}
 shows the dependence of the ice temperature on $z$ at the center of the domain. One can use options \verb|-id| and \verb|-jd| to choose a different point.
 
 Some diagnostic quantities are \emph{only} available as run-time viewers:

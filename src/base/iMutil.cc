@@ -41,14 +41,15 @@ of the output NetCDF file.
 
 Signal \c SIGUSR1 makes PISM save state under a filename based on the
 the name of the executable (e.g. \c pismr or \c pismv) and the current 
-model year.  There is no indication in the history attribute of the output 
-NetCDF file because there is no effect.  There is an indication at \c stdout.
+model year.  In addition the time series (\c -ts_file, etc.) is flushed out
+There is no indication of these actions in the history attribute of the output (\c -o)
+NetCDF file because there is no effect on it, but there is an indication at \c stdout.
  */
 int IceModel::endOfTimeStepHook() {
   
   if (pism_signal == SIGTERM) {
     verbPrintf(1, grid.com, 
-       "Caught signal SIGTERM:  EXITING EARLY and saving with original filename.\n");
+       "\ncaught signal SIGTERM:  EXITING EARLY and saving with original filename.\n");
     char str[TEMPORARY_STRING_LENGTH];
     snprintf(str, sizeof(str), 
        "EARLY EXIT caused by signal SIGTERM.  Completed timestep at year=%.3f.",
@@ -62,7 +63,7 @@ int IceModel::endOfTimeStepHook() {
     snprintf(file_name, PETSC_MAX_PATH_LEN, "%s-%5.3f.nc",
              executable_short_name.c_str(), grid.year);
     verbPrintf(1, grid.com, 
-       "Caught signal SIGUSR1:  Writing intermediate file `%s'.\n",
+       "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",
        file_name);
     pism_signal = 0;
     dumpToFile(file_name);
