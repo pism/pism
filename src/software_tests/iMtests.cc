@@ -18,6 +18,9 @@
 
 #include <petscda.h>
 #include "iMtests.hh"
+#include "../coupler/iceModelVec2T.hh"
+#include "../base/nc_util.hh"
+#include <vector>
 
 //! Set grid defaults for a particular unit test.
 PetscErrorCode IceUnitModel::set_grid_defaults() {
@@ -38,6 +41,7 @@ PetscErrorCode IceUnitModel::run() {
 
   ierr = testIceModelVec3(); CHKERRQ(ierr);
   ierr = testIceModelVec3Bedrock(); CHKERRQ(ierr);
+  ierr = testIceModelVec2T(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -201,5 +205,60 @@ PetscErrorCode IceUnitModel::testIceModelVec3Bedrock()    {
   return 0;
 }
 
+PetscErrorCode IceUnitModel::testIceModelVec2T() {
+  PetscErrorCode ierr;
+  NCTool nc(&grid);
+  IceModelVec2T v;
+  int n_records = 51;
+  char filename[] = "test_IceModelVec2T.nc";
 
+  // create a file to regrid from (that will have grid parameters compatible
+  // with the current grid):
+  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
+  // append == false, check_dims == true
+  ierr = mapping.write(filename); CHKERRQ(ierr);
+  ierr = global_attributes.write(filename); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+  
+  double t = 0, t_max = 50, dt = 0.5;
+  while (t < t_max) {
+    ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
+    ierr = nc.append_time(t); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
+
+    ierr = vH.set(t); CHKERRQ(ierr);
+    ierr = vH.write(filename);
+    t = t + dt;
+  }
+
+  ierr = v.create(grid, "thk", n_records); CHKERRQ(ierr);
+  ierr = v.set_attrs("test", "IceModelVec2T test", "m", ""); CHKERRQ(ierr);
+  ierr = v.init(filename, "t"); CHKERRQ(ierr);
+
+  double T = 30;
+  double max_dt = 1000;		// a big number
+  ierr = v.max_timestep(T, max_dt); CHKERRQ(ierr);
+
+  PetscPrintf(grid.com, "  max_dt = %f\n", max_dt);
+
+  ierr = v.update(T, max_dt); CHKERRQ(ierr);
+
+  int N = 20;
+  vector<double> ts(N), values(N);
+
+  for (int j = 0; j < N; ++j) {
+    ts[j] = 45 + j + 0.5;
+  }
+
+  ierr = v.begin_access(); CHKERRQ(ierr);
+  ierr = v.interp(0, 0, N, &ts[0], &values[0]); CHKERRQ(ierr);
+  ierr = v.end_access(); CHKERRQ(ierr);
+
+  for (int j = 0; j < N; ++j) {
+    PetscPrintf(grid.com, "value(%3.3f) = %f\n", ts[j], values[j]);
+  }
+  
+
+  return 0;
+}
 

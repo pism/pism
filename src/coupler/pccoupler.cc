@@ -163,6 +163,13 @@ PetscErrorCode PISMClimateCoupler::updateClimateFields(
   SETERRQ(1,"PISMClimateCoupler ERROR:  this method is VIRTUAL in PISMClimateCoupler and is not implemented");
 }
 
+//! Sets dt_years to min(dt_years, maximum step the coupler can take).
+/*!
+  Does nothing in the base class.
+ */
+PetscErrorCode PISMClimateCoupler::max_timestep(PetscScalar /*t_years*/, PetscScalar &/*dt_years*/) {
+  return 0;
+}
 
 /******************* ATMOSPHERE:  PISMAtmosphereCoupler ********************/
 

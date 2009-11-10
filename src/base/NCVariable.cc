@@ -298,9 +298,11 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
     // Check the range and warn the user if needed:
     ierr = check_range(v); CHKERRQ(ierr);
 
-    // We can report the success, and the range now:
-    ierr = verbPrintf(2, com, "  FOUND ");
-    ierr = report_range(v, found_by_standard_name); CHKERRQ(ierr);
+    if (lic.report_range) {
+      // We can report the success, and the range now:
+      ierr = verbPrintf(2, com, "  FOUND ");
+      ierr = report_range(v, found_by_standard_name); CHKERRQ(ierr);
+    }
   } // end of if(exists)
 
   ierr = nc.close(); CHKERRQ(ierr);

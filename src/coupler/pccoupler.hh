@@ -62,6 +62,8 @@ public:
   virtual PetscErrorCode updateClimateFields(
              PetscScalar t_years, PetscScalar dt_years);
 
+  virtual PetscErrorCode max_timestep(PetscScalar t_years, PetscScalar &dt_years);
+
 protected:
   IceGrid* grid;
   PetscErrorCode printIfDebug(const char *message);

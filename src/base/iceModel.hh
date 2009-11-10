@@ -366,6 +366,7 @@ protected:
   virtual PetscErrorCode compute_vvelsurf(IceModelVec2 &result);
   virtual PetscErrorCode compute_wvelsurf(IceModelVec2 &result);
   virtual PetscErrorCode compute_by_name(string name, IceModelVec* &result);
+  virtual PetscErrorCode compute_rank(IceModelVec2 &result);
   // scalar:
   virtual PetscErrorCode compute_ice_volume(PetscScalar &result);
   virtual PetscErrorCode compute_ice_area(PetscScalar &result);

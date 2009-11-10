@@ -43,6 +43,19 @@ PetscErrorCode Timeseries::read(const char filename[]) {
   PetscErrorCode ierr;
 
   ierr = dimension.read(filename, time); CHKERRQ(ierr);
+  bool is_increasing = true;
+  for (unsigned int j = 1; j < time.size(); ++j) {
+    if (time[j] - time[j-1] < 1e-16) {
+      is_increasing = false;
+      break;
+    }
+  }
+  if (!is_increasing) {
+    ierr = PetscPrintf(com, "PISM ERROR: dimension '%s' has to be strictly increasing (read from '%s').\n",
+		       dimension.short_name.c_str(), filename);
+    PetscEnd();
+  }
+
   ierr = var.read(filename, values); CHKERRQ(ierr);
 
   if (time.size() != values.size()) {

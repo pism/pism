@@ -61,6 +61,7 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
   rank = grid.rank;
   regrid_2d_only = false;
   no_regrid_bedrock = false;
+  report_range = true;
 
   g.print(com);
 

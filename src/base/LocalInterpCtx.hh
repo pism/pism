@@ -82,7 +82,7 @@ public:
   int nz,		     //!< number of z-levels
     nzb;		     //!< number of zb-levels 
   double *zlevs, *zblevs;
-  bool regrid_2d_only, no_regrid_bedrock;
+  bool regrid_2d_only, no_regrid_bedrock, report_range;
   MPI_Comm com;			//!< MPI Communicator (for printing, mostly)
   PetscMPIInt rank;		//!< MPI rank, to allocate a_raw on proc 0 only
 

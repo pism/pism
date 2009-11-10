@@ -542,6 +542,22 @@ PetscErrorCode IceModel::compute_taud(IceModelVec2 &result, IceModelVec2 &tmp) {
   return 0;
 }
 
+//! \brief Sets entrues of result to corresponding processor ranks.
+PetscErrorCode IceModel::compute_rank(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+  PetscScalar **a;
+
+  ierr = result.get_array(a); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i)
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j)
+      a[i][j] = grid.rank;
+  ierr = result.end_access();
+
+  ierr = result.set_name("rank"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "processor rank", "", ""); CHKERRQ(ierr);
+  return 0;
+}
+
 //! Compute the pressure-adjusted temperature in degrees C corresponding to T3, and put in a global IceModelVec3 provided by user.
 /*!
 This procedure is put here in IceModel to facilitate comparison of IceModel and IceEnthalpyModel
@@ -643,6 +659,12 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 
   if (name == "wvelsurf") {
     ierr = compute_wvelsurf(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "rank") {
+    ierr = compute_rank(vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }
@@ -766,3 +788,4 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
 
   return errcode;
 }
+

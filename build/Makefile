@@ -98,7 +98,7 @@ ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
 	iMinverseMat.cc iMIO.cc iMmatlab.cc iMoptions.cc \
 	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc \
 	iMutil.cc iMvelocity.cc iMviewers.cc Timeseries.cc PISMVars.cc iMtimeseries.cc \
-	enthalpyConverter.cc
+	enthalpyConverter.cc iceModelVec2T.cc
 ice_csources := cubature.c pism_signal.c
 
 # tests_sources go in libtests.[so|a]
