@@ -47,7 +47,7 @@ public:
   virtual PetscErrorCode set_record(int n);
   virtual PetscErrorCode get_record(int n);
   virtual PetscErrorCode max_timestep(double t_years, double &dt_years);
-  virtual PetscErrorCode interp(double t_years);			 // done, needs testing
+  virtual PetscErrorCode interp(double t_years);
   virtual PetscErrorCode interp(int i, int j, int N,
 				PetscScalar *times, PetscScalar *results);
   virtual PetscErrorCode write(string filename, double t_years, nc_type nctype);
@@ -63,11 +63,10 @@ private:
   DA da3;
   Vec v3;			//!< a 3D Vec used to store records
   void ***array3;
-  int n_records;
+  int n_records, first;
   
-  double j_min, j_max;
-
-  virtual PetscErrorCode update(int start); // done, needs optimization
+  virtual PetscErrorCode update(int start);
+  virtual PetscErrorCode discard(int N);
 };
 
 

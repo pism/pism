@@ -220,7 +220,7 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
   
-  double t = 0, t_max = 50, dt = 0.5;
+  double t = 0, t_max = 50, dt = 1.0/3.0;
   while (t < t_max) {
     ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
     ierr = nc.append_time(t); CHKERRQ(ierr);
@@ -232,22 +232,23 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
   }
 
   ierr = v.create(grid, "thk", n_records); CHKERRQ(ierr);
-  ierr = v.set_attrs("test", "IceModelVec2T test", "m", ""); CHKERRQ(ierr);
+  ierr = v.set_attrs("test", "IceModelVec2T test, using 'thk'", "m", ""); CHKERRQ(ierr);
   ierr = v.init(filename, "t"); CHKERRQ(ierr);
 
-  double T = 30;
-  double max_dt = 1000;		// a big number
+  double T = 1;
+  double max_dt = 100;		// a big number
   ierr = v.max_timestep(T, max_dt); CHKERRQ(ierr);
 
-  PetscPrintf(grid.com, "  max_dt = %f\n", max_dt);
+  PetscPrintf(grid.com, "   max_dt = %f\n", max_dt);
 
   ierr = v.update(T, max_dt); CHKERRQ(ierr);
 
-  int N = 20;
+  int N = 11;
   vector<double> ts(N), values(N);
+  dt = max_dt / (N - 1);
 
   for (int j = 0; j < N; ++j) {
-    ts[j] = 45 + j + 0.5;
+    ts[j] = T + dt * j;
   }
 
   ierr = v.begin_access(); CHKERRQ(ierr);
@@ -255,9 +256,35 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
   ierr = v.end_access(); CHKERRQ(ierr);
 
   for (int j = 0; j < N; ++j) {
-    PetscPrintf(grid.com, "value(%3.3f) = %f\n", ts[j], values[j]);
+    PetscPrintf(grid.com, "   value(%3.3f) = %f\n", ts[j], values[j]);
   }
   
+  T += 3;
+  ierr = v.update(T, max_dt); CHKERRQ(ierr);
+  for (int j = 0; j < N; ++j) {
+    ts[j] = T + dt * j;
+  }
+
+  ierr = v.begin_access(); CHKERRQ(ierr);
+  ierr = v.interp(0, 0, N, &ts[0], &values[0]); CHKERRQ(ierr);
+  ierr = v.end_access(); CHKERRQ(ierr);
+
+  for (int j = 0; j < N; ++j) {
+    PetscPrintf(grid.com, "   value(%3.3f) = %f\n", ts[j], values[j]);
+  }
+
+  char output[] = "test_output.nc";
+
+  T = T + max_dt / 2.0;
+
+  ierr = nc.open_for_writing(output, false, true); CHKERRQ(ierr);
+  // append == false, check_dims == true
+  ierr = mapping.write(filename); CHKERRQ(ierr);
+  ierr = global_attributes.write(filename); CHKERRQ(ierr);
+  ierr = nc.append_time(T); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  ierr = v.write(output, T, NC_DOUBLE); CHKERRQ(ierr);
 
   return 0;
 }

@@ -20,6 +20,7 @@
 #include <algorithm>
 #include "iceModelVec2T.hh"
 #include "../base/nc_util.hh"
+#include "../base/pism_const.hh"
 
 IceModelVec2T::IceModelVec2T() : IceModelVec() {
   localp = false;
@@ -27,18 +28,23 @@ IceModelVec2T::IceModelVec2T() : IceModelVec() {
   v3 = PETSC_NULL;
   array3 = NULL;
   lic = NULL;
+  first = -1;
 }
 
 IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec(other) {
   shallow_copy = true;
   localp = false;
 
-  times = other.times;
   dimension = other.dimension;
+  times = other.times;
+  T = other.T;
   filename = other.filename;
   lic = other.lic;
   da3 = other.da3;
   v3 = other.v3;
+  array3 = other.array3;
+  n_records = other.n_records;
+  first = other.first;
 }
 
 PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const char my_short_name[], int my_n_records) {
@@ -52,7 +58,7 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const char my_short_name[
   grid = &my_grid;
   dims = GRID_2D;
   n_records = my_n_records;
-  T.resize(n_records);
+  T.resize(1);			// we assume that T[0] is always available
 
   // create the 2D DA:
   PetscInt       M, N, m, n;
@@ -138,7 +144,6 @@ PetscErrorCode IceModelVec2T::init(string fname, string dim_name) {
   
   dimension.init(dim_name, dim_name, grid->com, grid->rank);
   ierr = dimension.set_units("years"); CHKERRQ(ierr);
-
   ierr = dimension.read(filename.c_str(), times); CHKERRQ(ierr);
   
   bool is_increasing = true;
@@ -161,6 +166,10 @@ PetscErrorCode IceModelVec2T::init(string fname, string dim_name) {
   lic = new LocalInterpCtx(gi, NULL, NULL, *grid);
   lic->report_range = false;
 
+  double dt = 1e16;		// a very big number
+  ierr = max_timestep(grid->year, dt); CHKERRQ(ierr);
+  ierr = update(grid->year, dt); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -169,20 +178,21 @@ PetscErrorCode IceModelVec2T::update(double t_years, double dt_years) {
   PetscErrorCode ierr;
   int j, start, N = times.size();
   vector<double>::iterator begin = times.begin();
-  // FIXME: needs to be optimized a bit
 
-  j = lower_bound(begin, times.end(), t_years) - 1 - begin;
+  // just return if we have all the data we need:
+  if ((t_years >= T[0]) && (t_years + dt_years <= T.back()))
+    return 0;
+
+  j = upper_bound(begin, times.end(), t_years) - begin - 1;
 
   if ((n_records >= N) || (j < 0)) {
     start = 0;
-  } else if (j < N - n_records) { // n_records fit inside (0, N-1)
+  } else {
     start = j;
     
-    if (t_years + dt_years > times[start + n_records - 1])
+    if ((start < N - n_records) &&
+	(t_years + dt_years > times[start + n_records - 1]))
       SETERRQ(1, "IceModelVec2T::update(): timestep is too big");
-
-  } else {			// at least some of (j, j + n_records) is outside (0, N-1)
-    start = N - n_records;
   }
 
   ierr = update(start); CHKERRQ(ierr);
@@ -190,25 +200,68 @@ PetscErrorCode IceModelVec2T::update(double t_years, double dt_years) {
   return 0;
 }
 
+//! Update by reading at most n_records records from the file.
 PetscErrorCode IceModelVec2T::update(int start) {
   PetscErrorCode ierr;
   int N = times.size();
-  // FIXME: needs to be optimized a bit
 
   if ((start < 0) || (start >= N))
-    SETERRQ(1, "IceModelVec2T::update(int start): start is invalid");
+    SETERRQ1(1, "IceModelVec2T::update(int start): start = %d is invalid", start);
 
-  int M = PetscMin(n_records, N - start);
-  T.resize(M);
-
-  for (int j = 0; j < M; ++j) {
-    lic->start[0] = start + j;
-    ierr = regrid(filename.c_str(), *lic, true); CHKERRQ(ierr);
-//     PetscPrintf(grid->com, " reading entry #%d, year %f...\n", start + j, times[start + j]);
-    ierr = set_record(j); CHKERRQ(ierr);
-    T[j] = times[start + j];
+  int missing = PetscMin(n_records, N - start);
+  
+  int kept = 0;
+  if (first >= 0) {
+    int last = first + T.size() - 1;
+    if ((start >= first) && (start <= last)) {
+      int discarded = start - first; 
+      kept = last - start + 1;
+      ierr = discard(discarded); CHKERRQ(ierr);
+      missing -= kept;
+      start += kept;
+      first += discarded;
+    }
+  } else {
+    first = start;
   }
 
+  if (missing <= 0) return 0;
+  
+  T.resize(kept + missing);
+  string long_name = string_attr("long_name");
+  ierr = verbPrintf(2, grid->com, "  reading \"%s\" (short_name = %s): %d records, years %3.3f through %3.3f...\n",
+		    long_name.c_str(), name.c_str(), missing,
+		    times[start], times[start + missing - 1]);
+
+  for (int j = 0; j < missing; ++j) {
+    lic->start[0] = start + j;
+    ierr = regrid(filename.c_str(), *lic, true); CHKERRQ(ierr);
+    ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %f...\n",
+		      name.c_str(), start + j, times[start + j]);
+    ierr = set_record(kept + j); CHKERRQ(ierr);
+    T[kept + j] = times[start + j];
+  }
+
+  return 0;
+}
+
+//! Discard the first N records, shifting the rest of them towards the "beginning".
+PetscErrorCode IceModelVec2T::discard(int N) {
+  PetscErrorCode ierr;
+  PetscScalar **a2, ***a3;
+  PetscInt M = T.size() - N;
+
+  for (PetscInt k = 0; k < M; ++k)
+    T[k] = T[k + N];
+  T.resize(M);
+
+  ierr = get_arrays(a2, a3); CHKERRQ(ierr);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i)
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
+      for (PetscInt k = 0; k < M; ++k)
+	a3[i][j][k] = a3[i][j][k + N];
+  ierr = end_access(); CHKERRQ(ierr);
+  
   return 0;
 }
 
@@ -226,6 +279,7 @@ PetscErrorCode IceModelVec2T::set_record(int n) {
   return 0;
 }
 
+//! Sets the Vec v to the contents of the nth record.
 PetscErrorCode IceModelVec2T::get_record(int n) {
   PetscErrorCode ierr;
   PetscScalar **a2, ***a3;
@@ -255,24 +309,24 @@ PetscErrorCode IceModelVec2T::max_timestep(double t_years, double &dt_years) {
     return 0;
   }
 
-  // if t_years is outside the interval on the left, we can go to times[n_records - 1].
+  // if t_years is outside the interval on the left, we can go to times[n_records - 2].
   if (t_years < times[0]) {
-    dt_years = PetscMin(dt_years, times[n_records - 1] - t_years);
+    dt_years = PetscMin(dt_years, times[n_records - 2] - t_years);
     return 0;
   }
 
-  j = lower_bound(begin, times.end(), t_years) - 1 - begin;
+  j = upper_bound(begin, times.end(), t_years) - begin - 1;
   k = j + n_records;
 
   if (k < N) {
-    dt_years = PetscMin(dt_years, times[k-1] - t_years);
+    dt_years = PetscMin(dt_years, times[k - 2] - t_years);
     return 0;
   }
 
   return 0;
 }
 
-//! Writes data corresponding to t_years to a file.
+//! Writes the snapshot corresponding to t_years to a file.
 PetscErrorCode IceModelVec2T::write(string filename, double t_years, nc_type nctype) {
   PetscErrorCode ierr;
 
@@ -287,7 +341,7 @@ PetscErrorCode IceModelVec2T::interp(double t_years) {
   PetscErrorCode ierr;
   vector<double>::iterator end = T.end(), j;
   
-  j = lower_bound(T.begin(), end, t_years); // binary search
+  j = upper_bound(T.begin(), end, t_years); // binary search
 
   if (j == end) {
     ierr = get_record(T.size() - 1); CHKERRQ(ierr);
@@ -301,14 +355,14 @@ PetscErrorCode IceModelVec2T::interp(double t_years) {
     return 0;
   }
 
-  double lambda = (t_years - T[index - 1]) / (T[index] - T[index - 1]);
+  double lambda = (t_years - T[index]) / (T[index + 1] - T[index]);
   
   PetscScalar **a2, ***a3;
 
   ierr = get_arrays(a2, a3); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i)
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
-      a2[i][j] = a3[i][j][index - 1] * (1 - lambda) + a3[i][j][index] * lambda;
+      a2[i][j] = a3[i][j][index] * (1 - lambda) + a3[i][j][index + 1] * lambda;
   ierr = end_access(); CHKERRQ(ierr);
 
   return 0;
