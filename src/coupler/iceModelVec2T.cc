@@ -22,7 +22,7 @@
 #include "../base/nc_util.hh"
 #include "../base/pism_const.hh"
 
-IceModelVec2T::IceModelVec2T() : IceModelVec() {
+IceModelVec2T::IceModelVec2T() : IceModelVec2() {
   localp = false;
   da3 = PETSC_NULL;
   v3 = PETSC_NULL;
@@ -31,11 +31,10 @@ IceModelVec2T::IceModelVec2T() : IceModelVec() {
   first = -1;
 }
 
-IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec(other) {
+IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec2(other) {
   shallow_copy = true;
   localp = false;
 
-  dimension = other.dimension;
   times = other.times;
   T = other.T;
   filename = other.filename;
@@ -94,7 +93,7 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const char my_short_name[
 PetscErrorCode IceModelVec2T::destroy() {
   PetscErrorCode ierr;
 
-  ierr = IceModelVec::destroy(); CHKERRQ(ierr);
+  ierr = IceModelVec2::destroy(); CHKERRQ(ierr);
 
   if (v3 != PETSC_NULL) {
     ierr = VecDestroy(v3); CHKERRQ(ierr);
@@ -119,7 +118,7 @@ PetscErrorCode IceModelVec2T::get_arrays(PetscScalar** &a2, PetscScalar*** &a3) 
 }
 
 PetscErrorCode IceModelVec2T::begin_access() {
-  PetscErrorCode ierr = IceModelVec::begin_access(); CHKERRQ(ierr);
+  PetscErrorCode ierr = IceModelVec2::begin_access(); CHKERRQ(ierr);
   if (array3 == NULL) {
     ierr = DAVecGetArray(da3, v3, &array3); CHKERRQ(ierr);
   }
@@ -127,7 +126,7 @@ PetscErrorCode IceModelVec2T::begin_access() {
 }
 
 PetscErrorCode IceModelVec2T::end_access() {
-  PetscErrorCode ierr = IceModelVec::end_access(); CHKERRQ(ierr);
+  PetscErrorCode ierr = IceModelVec2::end_access(); CHKERRQ(ierr);
   if (array3 != NULL) {
     ierr = DAVecRestoreArray(da3, v3, &array3); CHKERRQ(ierr);
     array3 = PETSC_NULL;
@@ -135,16 +134,17 @@ PetscErrorCode IceModelVec2T::end_access() {
   return 0;
 }
 
-PetscErrorCode IceModelVec2T::init(string fname, string dim_name) {
+PetscErrorCode IceModelVec2T::init(string fname) {
   PetscErrorCode ierr;
+  NCTimeseries time_dimension;
   NCTool nc(grid);
   grid_info gi;
 
   filename = fname;
   
-  dimension.init(dim_name, dim_name, grid->com, grid->rank);
-  ierr = dimension.set_units("years"); CHKERRQ(ierr);
-  ierr = dimension.read(filename.c_str(), times); CHKERRQ(ierr);
+  time_dimension.init("t", "t", grid->com, grid->rank);
+  ierr = time_dimension.set_units("years"); CHKERRQ(ierr);
+  ierr = time_dimension.read(filename.c_str(), times); CHKERRQ(ierr);
   
   bool is_increasing = true;
   for (unsigned int j = 1; j < times.size(); ++j) {
@@ -154,8 +154,8 @@ PetscErrorCode IceModelVec2T::init(string fname, string dim_name) {
     }
   }
   if (!is_increasing) {
-    ierr = PetscPrintf(grid->com, "PISM ERROR: times '%s' have to be strictly increasing (read from '%s').\n",
-		       dimension.short_name.c_str(), filename.c_str());
+    ierr = PetscPrintf(grid->com, "PISM ERROR: times \"t\" have to be strictly increasing (read from '%s').\n",
+		       filename.c_str());
     PetscEnd();
   }
 
@@ -293,7 +293,7 @@ PetscErrorCode IceModelVec2T::get_record(int n) {
   return 0;
 }
 
-//! Given the time t_years and the current selected time-step dt_years,
+//! \brief Given the time t_years and the current selected time-step dt_years,
 //! determines the maximum possible time-step this IceModelVec2T allows.
 PetscErrorCode IceModelVec2T::max_timestep(double t_years, double &dt_years) {
   int j, k, N = times.size();
@@ -331,7 +331,7 @@ PetscErrorCode IceModelVec2T::write(string filename, double t_years, nc_type nct
   PetscErrorCode ierr;
 
   ierr = interp(t_years); CHKERRQ(ierr);
-  ierr = IceModelVec::write(filename.c_str(), nctype); CHKERRQ(ierr);
+  ierr = IceModelVec2::write(filename.c_str(), nctype); CHKERRQ(ierr);
 
   return 0;
 }
@@ -348,9 +348,9 @@ PetscErrorCode IceModelVec2T::interp(double t_years) {
     return 0;
   }
     
-  int index = j - T.begin();
+  int index = j - T.begin() - 1;
 
-  if (index == 0) {
+  if (index <= 0) {
     ierr = get_record(0); CHKERRQ(ierr);
     return 0;
   }

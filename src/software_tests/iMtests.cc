@@ -209,7 +209,6 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
   PetscErrorCode ierr;
   NCTool nc(&grid);
   IceModelVec2T v;
-  int n_records = 51;
   char filename[] = "test_IceModelVec2T.nc";
 
   // create a file to regrid from (that will have grid parameters compatible
@@ -220,20 +219,20 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
   
-  double t = 0, t_max = 50, dt = 1.0/3.0;
+  double t = 0, t_max = 50, dt = 0.35;
   while (t < t_max) {
     ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
     ierr = nc.append_time(t); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = vH.set(t); CHKERRQ(ierr);
+    ierr = vH.set(t*t); CHKERRQ(ierr);
     ierr = vH.write(filename);
     t = t + dt;
   }
 
-  ierr = v.create(grid, "thk", n_records); CHKERRQ(ierr);
+  ierr = v.create(grid, "thk", config.get("climate_forcing_buffer_size")); CHKERRQ(ierr);
   ierr = v.set_attrs("test", "IceModelVec2T test, using 'thk'", "m", ""); CHKERRQ(ierr);
-  ierr = v.init(filename, "t"); CHKERRQ(ierr);
+  ierr = v.init(filename); CHKERRQ(ierr);
 
   double T = 1;
   double max_dt = 100;		// a big number
@@ -245,7 +244,7 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
 
   int N = 11;
   vector<double> ts(N), values(N);
-  dt = max_dt / (N - 1);
+  dt = floor(max_dt) / (N - 1);
 
   for (int j = 0; j < N; ++j) {
     ts[j] = T + dt * j;
@@ -284,6 +283,7 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
   ierr = nc.append_time(T); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
+  ierr = v.update(T, 0); CHKERRQ(ierr);
   ierr = v.write(output, T, NC_DOUBLE); CHKERRQ(ierr);
 
   return 0;

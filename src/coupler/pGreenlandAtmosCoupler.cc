@@ -26,13 +26,13 @@
 #include "../base/NCVariable.hh"
 #include "../base/Timeseries.hh"
 #include "localMassBalance.hh"
-#include "monthlyDataMaps.hh"
+#include "iceModelVec2T.hh"
 #include "pccoupler.hh"
 #include "pGreenlandAtmosCoupler.hh"
 
 
 PISMGreenlandAtmosCoupler::PISMGreenlandAtmosCoupler() : PISMAtmosphereCoupler() {
-  monthlysnowtemps = NULL;
+  snowtemps = NULL;
   mbscheme = NULL;
 }
 
@@ -40,8 +40,8 @@ PISMGreenlandAtmosCoupler::PISMGreenlandAtmosCoupler() : PISMAtmosphereCoupler()
 PISMGreenlandAtmosCoupler::~PISMGreenlandAtmosCoupler() {
   vsnowprecip.destroy();
   vsnowtemp_mj.destroy();
-  delete monthlysnowtemps;
-  monthlysnowtemps = NULL;
+  delete snowtemps;
+  snowtemps = NULL;
   delete mbscheme;
   mbscheme = NULL;
 }
@@ -61,7 +61,7 @@ Performs the many actions which are needed to initialize the snow process model:
 -# finds the input file,
 -# initializes pointers to IceModel members which have information needed for parameterizing climate inputs (namely, latitude, longitude, surface elevation),
 -# reads vsnowprecip from file,
--# reads monthly temperature maps from file if \c -pdd_monthly_temps is given,
+-# initializes temperature maps from file if \c -pdd_snow_temps is given,
 -# chooses among mass balance schemes (from options \c -pdd, \c -pdd_rand, \c -pdd_rand_repeatable),
 -# and reads vsurftemp from file.
 
@@ -122,25 +122,26 @@ PetscErrorCode PISMGreenlandAtmosCoupler::initFromOptions(IceGrid* g, const PISM
     ierr = vsnowprecip.read(filename, start); CHKERRQ(ierr); // fails if not found!
   }
 
-  // check on whether we should read monthly snow-surface temperatures from file  
-  char monthlyTempsFile[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-pdd_monthly_temps", 
-             monthlyTempsFile, PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
+  // check on whether we should read snow-surface temperatures from file  
+  char snowTempsFile[PETSC_MAX_PATH_LEN];
+  ierr = PetscOptionsGetString(PETSC_NULL, "-pdd_snow_temps", 
+             snowTempsFile, PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
   if (optSet == PETSC_TRUE) {
     ierr = verbPrintf(2,grid->com,
-       "    reading monthly snow-surface temperatures from file %s ...\n",
-       monthlyTempsFile); CHKERRQ(ierr);
-    monthlysnowtemps = new MonthlyDataMaps;
-    // puts month-by-month "reading ..." message to stdout:
-    ierr = monthlysnowtemps->initFromFile(
-             "monsnowtemp", // expects short names monsnowtemp1,...,monsnowtemp12
-             "",            // choose no CF standard_name
-             monthlyTempsFile, grid); CHKERRQ(ierr);
+       "    reading snow-surface temperatures from file %s ...\n",
+       snowTempsFile); CHKERRQ(ierr);
+
+    snowtemps = new IceModelVec2T;
+    ierr = snowtemps->create(*grid, "snowtemp", config.get("climate_forcing_buffer_size"));
+    ierr = snowtemps->set_attrs("climate_forcing", "snow surface temperature",
+				"Kelvin", ""); CHKERRQ(ierr);
+    ierr = snowtemps->init(snowTempsFile); CHKERRQ(ierr);
+
   } else {
     ierr = verbPrintf(2,grid->com,
        "    using default snow-surface temperature parameterization\n"); CHKERRQ(ierr);
-    if (monthlysnowtemps != NULL)   delete monthlysnowtemps;
-    monthlysnowtemps = NULL;  // test for NULL to see if using monthly temps versus parameterization
+    if (snowtemps != NULL)   delete snowtemps;
+    snowtemps = NULL;  // test for NULL to see if using stored temps versus parameterization
   }
 
   // check if user wants default or random PDD; initialize mbscheme to one of these PDDs
@@ -163,7 +164,7 @@ PetscErrorCode PISMGreenlandAtmosCoupler::initFromOptions(IceGrid* g, const PISM
   }
   ierr = mbscheme->init(); CHKERRQ(ierr);
 
-  // this is ignored if monthly temps are used
+  // this is ignored if stored snow temps are used
   ierr = vsnowtemp_mj.create(*g, "snowtemp_mj", false); CHKERRQ(ierr);
   ierr = vsnowtemp_mj.set_attrs(
             "climate_state",
@@ -241,20 +242,10 @@ PetscErrorCode PISMGreenlandAtmosCoupler::writeCouplingFieldsToFile(
             ""); CHKERRQ(ierr);  // use no CF standard_name
   PetscScalar **T;
   ierr = vsnowtemp.get_array(T);  CHKERRQ(ierr);
-  if (monthlysnowtemps != NULL) {
-    PetscInt curr, next;
-    PetscScalar lam, **currmap, **nextmap;
-    const PetscScalar t = (t_years - floor(t_years)) * secpera;
-    ierr = monthlysnowtemps->getIndicesFromTime(t,curr,next,lam); CHKERRQ(ierr);
-    ierr = monthlysnowtemps->vdata[curr].get_array(currmap); CHKERRQ(ierr);
-    ierr = monthlysnowtemps->vdata[next].get_array(nextmap); CHKERRQ(ierr);
-    for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
-      for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
-        T[i][j] = monthlysnowtemps->interpolateMonthlyData(i,j,currmap,nextmap,lam) + dT_offset;
-      }
-    }
-    ierr = monthlysnowtemps->vdata[curr].end_access(); CHKERRQ(ierr);
-    ierr = monthlysnowtemps->vdata[next].end_access(); CHKERRQ(ierr);
+
+  if (snowtemps != NULL) {
+    ierr = snowtemps->update(t_years, 0); CHKERRQ(ierr);
+    ierr = snowtemps->write(filename, t_years, NC_FLOAT); CHKERRQ(ierr);
   } else {
     PetscScalar **T_ma, **T_mj;
     const PetscScalar radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
@@ -275,9 +266,6 @@ PetscErrorCode PISMGreenlandAtmosCoupler::writeCouplingFieldsToFile(
   ierr = vsnowtemp.end_access();  CHKERRQ(ierr);
   ierr = vsnowtemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = vsnowtemp.destroy(); CHKERRQ(ierr);
-
-  // no duplication of input monthly maps into output; would be done by call
-  //   monthlysnowtemps->write(filename);
 
   return 0;
 }
@@ -339,23 +327,27 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfTempAndProvide(
                   IceModelVec2* &pvst) {
   PetscErrorCode ierr;
 
-  // FIXME:  monthly case almost certainly broken
-  
-  ierr = parameterizedUpdateSnowSurfaceTemp(t_years, dt_years); CHKERRQ(ierr);
+  if (snowtemps != NULL) {
+    ierr = snowtemps->update(t_years, dt_years); CHKERRQ(ierr);
+    ierr = snowtemps->interp(t_years); CHKERRQ(ierr);
+    pvst = (IceModelVec2*) snowtemps;
+  } else {
+    ierr = parameterizedUpdateSnowSurfaceTemp(t_years, dt_years); CHKERRQ(ierr);
 
-  ierr = PISMAtmosphereCoupler::updateSurfTempAndProvide(
-              t_years, dt_years, pvst); CHKERRQ(ierr);
+    // let the base class handle dTforcing:
+    ierr = PISMAtmosphereCoupler::updateSurfTempAndProvide(t_years, dt_years, pvst); CHKERRQ(ierr);
+  }  
   return 0;
 }
 
 
-//! Compute the ice surface mass flux from the snow temperature (parameterized or stored as monthly maps), a stored map of snow precipication rate, and a choice of mass balance scheme (typically a PDD).
+//! Compute the ice surface mass flux from the snow temperature (parameterized or stored), a stored map of snow precipication rate, and a choice of mass balance scheme (typically a PDD).
 /*!
 First this method recomputes the snow temperature, either from a parameterization or from interpolating
-stored monthly snow temperature maps.  More precisely, if there are no monthly temperature maps then
+stored snow temperature maps.  More precisely, if there are no stored temperature maps then
 useTemperatureParameterizationToUpdateSnowTemp() is called .  In either case, at each point on the surface
 a temperature time series with short (weekly or less) time steps is generated.
-When there are no monthly temperatures, there is a parameterized yearly cycle 
+When there are no stored temperatures, there is a parameterized yearly cycle 
 of temperature and additional weather-related variability according to a normally distributed 
 random temperature change for each week and grid point.
 
@@ -371,9 +363,9 @@ The random method uses pseudo-random numbers to simulate the variability and the
 sums the number of positive degree days.  It is chosen by either <tt>-pdd_rand</tt> or 
 <tt>-pdd_rand_repeatable</tt>.
 
-Alternatively, if option <tt>-pdd_monthly_temps</tt> provides a NetCDF file 
-with the 12 monthly temperature maps, the temperature on a given day at a given
-location is found by linear interpolation (in time) of the monthly temps.
+Alternatively, if option <tt>-pdd_snow_temps</tt> provides a NetCDF file 
+with the temperature maps, the temperature on a given day at a given
+location is found by linear interpolation (in time) of these temps.
 
 The surface mass balance is computed from the stored map of snow precipitation rate
 by a call to the getMassFluxFromTemperatureTimeSeries() method of the LocalMassBalance object.
@@ -406,7 +398,7 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfMassFluxAndProvide(
   
   // get access to snow temperatures (and update parameterization if appropriate)
   PetscScalar **T_ma, **T_mj, **snowrate, **lat_degN, **smflux;
-  if (monthlysnowtemps == NULL) {
+  if (snowtemps == NULL) {
     ierr = parameterizedUpdateSnowSurfaceTemp(t_years,dt_years); CHKERRQ(ierr);
   }
 
@@ -417,32 +409,28 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfMassFluxAndProvide(
   ierr = vsurfmassflux.get_array(smflux);  CHKERRQ(ierr);
 
   // run through grid
+  vector<PetscScalar> ts(Nseries);
+  for (PetscInt k = 0; k < Nseries; ++k)
+    ts[k] = tseries + k * dtseries;
+
+  if (snowtemps != NULL) {
+    ierr = snowtemps->update(t_years, dt_years); CHKERRQ(ierr);
+  }
+  
   for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
 
       // build temperature time series at point i,j
-      for (PetscInt k = 0; k < Nseries; ++k) {
-        const PetscScalar  tk = tseries + ((PetscScalar) k) * dtseries;
-        if (monthlysnowtemps != NULL) {
-          // interpolate monthly temps; not a great memory access pattern ...
-          PetscInt curr, next;
-          PetscScalar lam;
-          ierr = monthlysnowtemps->getIndicesFromTime(tk,curr,next,lam); CHKERRQ(ierr);
-          PetscScalar **currmap, **nextmap;
-          ierr = monthlysnowtemps->vdata[curr].get_array(currmap); CHKERRQ(ierr);
-          ierr = monthlysnowtemps->vdata[next].get_array(nextmap); CHKERRQ(ierr);
-          Tseries[k] = monthlysnowtemps->interpolateMonthlyData(i,j,currmap,nextmap,lam);
-          ierr = monthlysnowtemps->vdata[curr].end_access(); CHKERRQ(ierr);
-          ierr = monthlysnowtemps->vdata[next].end_access(); CHKERRQ(ierr);
-        } else { // default case
+      if (snowtemps != NULL) {
+	ierr = snowtemps->interp(i, j, Nseries, &ts[0], Tseries); CHKERRQ(ierr);
+      } else {
+	for (PetscInt k = 0; k < Nseries; ++k) {
           // use corrected formula (4) in \ref Faustoetal2009, the standard yearly cycle
-          Tseries[k] = T_ma[i][j] + (T_mj[i][j] - T_ma[i][j]) * cos(radpersec * (tk - julydaysec));
+          Tseries[k] = T_ma[i][j] + (T_mj[i][j] - T_ma[i][j]) * cos(radpersec * (ts[k] - julydaysec));
+	  // apply the temperature offset if needed
+	  if (dTforcing != NULL)
+	    Tseries[k] += (*dTforcing)(t_years + k * dt_years / Nseries);
         }
-	
-	// apply the temperature offset if needed
-	if (dTforcing != NULL)
-	  Tseries[k] += (*dTforcing)(t_years + k * dt_years / Nseries);
-
       }
 
       // if we can, set mass balance parameters according to formula (6) in
@@ -479,4 +467,12 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfMassFluxAndProvide(
   return 0;
 }
 
+PetscErrorCode PISMGreenlandAtmosCoupler::max_timestep(PetscScalar t_years, PetscScalar &dt_years) {
+  PetscErrorCode ierr;
 
+  if (snowtemps != NULL) {
+    ierr = snowtemps->max_timestep(t_years, dt_years); CHKERRQ(ierr);
+  }
+  
+  return 0;
+}

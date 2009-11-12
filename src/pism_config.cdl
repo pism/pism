@@ -339,6 +339,9 @@ netcdf pism_config {
     pism_config:ts_variables = "dt ivol iarea iareag iareaf";
     pism_config:ts_variables_doc = "Space-separated list of scalar diagnostic quantities to save if -ts_file and -ts_times are used.";
 
+    pism_config:climate_forcing_buffer_size = 60;
+    pism_config:climate_forcing_buffer_size_doc = "; number of 2D climate forcing records to keep in memory; = 5 years of monthly records";
+
 // Mapping parameters:
    byte mapping;
    mapping:grid_mapping_name = "polar_stereographic" ;

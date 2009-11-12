@@ -92,7 +92,7 @@ ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
 	pism_default_config.cc pism_revision.cc columnSystem.cc \
 	pism_const.cc iceModelVec.cc iceModelVec2.cc iceModelVec3.cc NCVariable.cc \
 	matlablike.cc greens.cc deformation.cc \
-	localMassBalance.cc monthlyDataMaps.cc pccoupler.cc pGreenlandAtmosCoupler.cc \
+	localMassBalance.cc pccoupler.cc pGreenlandAtmosCoupler.cc \
 	iceModel.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc \
 	iMdefaults.cc iMgeometry.cc iMgrainsize.cc iMinit.cc iMinverse.cc \
 	iMinverseMat.cc iMIO.cc iMmatlab.cc iMoptions.cc \

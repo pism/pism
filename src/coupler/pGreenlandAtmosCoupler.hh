@@ -23,15 +23,15 @@
 #include "../base/iceModelVec.hh"
 #include "../base/PISMVars.hh"
 #include "localMassBalance.hh"
-#include "monthlyDataMaps.hh"
+#include "iceModelVec2T.hh"
 #include "pccoupler.hh"
 
 
 //! A derived class of PISMAtmosphereCoupler which has a simple snow process model suitable for Greenland modeling.
 /*!
 There are two parts to a "snow process model".
--# either a (snow/surface) temperature parameterization or stored monthly
-   (snow/surface) temperature maps,
+-# either a (snow/surface) temperature parameterization or stored (snow/surface)
+   temperature maps,
 -# a choice of PDD models, which convert the number of positive degree days, and
    the snow precipitation rate, into a surface mass balance (flux).
 
@@ -40,8 +40,8 @@ applicable to Greenland.  The constants can be changed, however, to describe oth
 parameterizations which depend linearly on the same things (latitude, longitude,
 and surface elevation).
 
-If monthly snow-surface temperature maps are used they are read through 
-MonthlyDataMaps  *monthlysnowtemps.
+If stored snow-surface temperature maps are used they are read through 
+IceModelVec2T *snowtemps.
 
 The PDD schemes are accessed through LocalMassBalance *mbscheme.
 The default PDD model uses formula (6) from \ref Faustoetal2009, and uses a 
@@ -92,9 +92,9 @@ public:
              PetscScalar t_years, PetscScalar dt_years,
              IceModelVec2* &pvst);
 
-
+  virtual PetscErrorCode max_timestep(PetscScalar t_years, PetscScalar &dt_years);
 protected:
-  //! Defaults to the \ref Faustoetal2009 scheme.  Called when no monthly temperature maps are available.
+  //! Defaults to the \ref Faustoetal2009 scheme.  Called when no stored temperature maps are available.
   /*!
     Computes the mean annual temperature as function of latitude, longitude, 
     surface elevation, and so on.
@@ -104,7 +104,7 @@ protected:
               PetscScalar t_years, PetscScalar dt_years);
 
   //! Instead of temperature parameterization we can use monthly temperature maps read from a file.
-  MonthlyDataMaps  *monthlysnowtemps;
+  IceModelVec2T *snowtemps;
 
   LocalMassBalance *mbscheme;
 

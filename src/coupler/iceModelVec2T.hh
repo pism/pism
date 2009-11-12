@@ -32,17 +32,76 @@ using namespace std;
 /// @endcond
 
 //! A class for storing and accessing 2D time-series (for climate forcing)
-/*!
+/*! This class was created to read time-dependent and spatially-varying climate
+  forcing data, in particular snow temperatures and precipitation.
+
+  It allocates a number (given as an argument to the create() method) of
+  records and reads them from a file if necessary.
+
+  If requests (calls to update()) go in sequence, every records should be read
+  only once.
+
+  Note that this class is optimized for use with a PDD scheme -- it stores
+  records so that data corresponding to a grid point are stored in adjacent
+  memory locations.
+
+  IceModelVec2T is always global (%i.e. has no ghosts).
+
+  Both versions of interp() use linear interpolation and extrapolate (by a
+  constant) outside the available range.
+
+  Usage example:
+  \code
+  // initialization:
+  char filename[] = "climate_inputs.nc";
+  IceModelVec2T v;
+  ierr = v.create(grid, "snowtemp", config.get("climate_forcing_buffer_size")); CHKERRQ(ierr);
+  ierr = v.set_attrs("climate_forcing", "snow temperature", "K", ""); CHKERRQ(ierr);
+  ierr = v.init(filename); CHKERRQ(ierr);
+
+  // actual use:
+
+  // ask it how long a time-step is possible:
+  double t = 0, max_dt = 1e16;
+  ierr = v.max_timestep(t, max_dt); CHKERRQ(ierr);
+
+  // update (this might read more data from the file)
+  ierr = v.update(t, max_dt); CHKERRQ(ierr);
+
+  // get a 2D field (such as precipitation):
+  ierr = v.interp(t + max_dt / 2.0); CHKERRQ(ierr);
+  // at this point v "looks" almost like an IceModelVec2 with data we need
+
+  // get a time-series for every grid location:
+  int N = 21;
+  vector<double> ts(N), values(N);
+  double dt = max_dt / (N - 1);
+
+  for (int j = 0; j < N; ++j) {
+    ts[j] = t + dt * j;
+  }
+
+  // is is OK to call update() again, it will not re-read data if at all possible
+  ierr = v.update(t, max_dt); CHKERRQ(ierr);
+
+  ierr = v.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i)
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+      ierr = v.interp(i, j, N, &ts[0], &values[0]); CHKERRQ(ierr);
+      // do more
+    }
+  ierr = v.end_access(); CHKERRQ(ierr);
   
+  \endcode
  */
-class IceModelVec2T : public IceModelVec {
+class IceModelVec2T : public IceModelVec2 {
 public:
   IceModelVec2T();
   IceModelVec2T(const IceModelVec2T &other);
   virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], int N);
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode get_arrays(PetscScalar** &a2, PetscScalar*** &a3);
-  virtual PetscErrorCode init(string filename, string dim_name);
+  virtual PetscErrorCode init(string filename);
   virtual PetscErrorCode update(double t_years, double dt_years);
   virtual PetscErrorCode set_record(int n);
   virtual PetscErrorCode get_record(int n);
@@ -54,16 +113,16 @@ public:
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();
 private:
-  NCTimeseries dimension;
   vector<double> times,		//!< all the times available in filename
-    T;				//!< times stored in this IceModelVec2T
-  string filename;
+    T;				//!< times stored in memory
+  string filename;		//!< file to read (regrid) from
   LocalInterpCtx *lic;		//!< We store the context because we might need
 				//!< to regrid many times
   DA da3;
   Vec v3;			//!< a 3D Vec used to store records
   void ***array3;
-  int n_records, first;
+  int n_records,		//!< maximum number of records to store in memory
+    first;			//!< in-file index of the first record stored in memory
   
   virtual PetscErrorCode update(int start);
   virtual PetscErrorCode discard(int N);
