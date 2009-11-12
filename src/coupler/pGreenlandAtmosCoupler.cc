@@ -32,7 +32,8 @@
 
 
 PISMGreenlandAtmosCoupler::PISMGreenlandAtmosCoupler() : PISMAtmosphereCoupler() {
-  snowtemps = NULL;
+  snowtempmaps = NULL;
+  snowprecipmaps = NULL;
   mbscheme = NULL;
 }
 
@@ -40,8 +41,10 @@ PISMGreenlandAtmosCoupler::PISMGreenlandAtmosCoupler() : PISMAtmosphereCoupler()
 PISMGreenlandAtmosCoupler::~PISMGreenlandAtmosCoupler() {
   vsnowprecip.destroy();
   vsnowtemp_mj.destroy();
-  delete snowtemps;
-  snowtemps = NULL;
+  delete snowtempmaps;
+  snowtempmaps = NULL;
+  delete snowprecipmaps;
+  snowprecipmaps = NULL;
   delete mbscheme;
   mbscheme = NULL;
 }
@@ -100,26 +103,42 @@ PetscErrorCode PISMGreenlandAtmosCoupler::initFromOptions(IceGrid* g, const PISM
   ierr = vsurfmassflux.set_attr("pism_intent","climate_diagnostic"); CHKERRQ(ierr);
   ierr = vsurfmassflux.set(0.0); CHKERRQ(ierr);
 
-  // create mean annual ice equivalent snow precipitation rate (before melt, and not including rain)
-  ierr = vsnowprecip.create(*g, "snowprecip", false); CHKERRQ(ierr);
-  ierr = vsnowprecip.set_attrs(
-            "climate_state", 
-            "mean annual ice-equivalent snow precipitation rate",
-	    "m s-1", 
-	    "");  // no CF standard_name ??
-	    CHKERRQ(ierr);
-  ierr = vsnowprecip.set_glaciological_units("m year-1");
-  vsnowprecip.write_in_glaciological_units = true;
+  // check on whether we should read snow precipitation rates from file  
+  char snowPrecipFile[PETSC_MAX_PATH_LEN];
+  ierr = PetscOptionsGetString(PETSC_NULL, "-pdd_snow_precip", 
+             snowPrecipFile, PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
+  if (optSet == PETSC_TRUE) {
+    ierr = verbPrintf(2,grid->com,
+       "    reading snow precipitation rates from file %s ...\n",
+       snowPrecipFile); CHKERRQ(ierr);
 
-  // read snow precipitation rate from file
-  ierr = verbPrintf(2, g->com, 
-      "    reading mean annual ice-equivalent snow precipitation rate 'snowprecip'\n"
-      "      from %s ... \n",
-      filename); CHKERRQ(ierr); 
-  if (regrid) {
-    ierr = vsnowprecip.regrid(filename, *lic, true); CHKERRQ(ierr); // fails if not found!
+    snowprecipmaps = new IceModelVec2T;
+    ierr = snowprecipmaps->create(*grid, "snowprecip", config.get("climate_forcing_buffer_size"));
+    ierr = snowprecipmaps->set_attrs("climate_forcing", "ice-equivalent snow precipitation rate",
+				"m s-1", ""); CHKERRQ(ierr);
+    ierr = snowprecipmaps->init(snowPrecipFile); CHKERRQ(ierr);
+
   } else {
-    ierr = vsnowprecip.read(filename, start); CHKERRQ(ierr); // fails if not found!
+    // create mean annual ice equivalent snow precipitation rate (before melt, and not including rain)
+    ierr = vsnowprecip.create(*g, "snowprecip", false); CHKERRQ(ierr);
+    ierr = vsnowprecip.set_attrs("climate_state", 
+				 "mean annual ice-equivalent snow precipitation rate",
+				 "m s-1", 
+				 "");  // no CF standard_name ??
+    CHKERRQ(ierr);
+    ierr = vsnowprecip.set_glaciological_units("m year-1");
+    vsnowprecip.write_in_glaciological_units = true;
+
+    // read snow precipitation rate from file
+    ierr = verbPrintf(2, g->com, 
+		      "    reading mean annual ice-equivalent snow precipitation rate 'snowprecip'\n"
+		      "      from %s ... \n",
+		      filename); CHKERRQ(ierr); 
+    if (regrid) {
+      ierr = vsnowprecip.regrid(filename, *lic, true); CHKERRQ(ierr); // fails if not found!
+    } else {
+      ierr = vsnowprecip.read(filename, start); CHKERRQ(ierr); // fails if not found!
+    }
   }
 
   // check on whether we should read snow-surface temperatures from file  
@@ -131,18 +150,26 @@ PetscErrorCode PISMGreenlandAtmosCoupler::initFromOptions(IceGrid* g, const PISM
        "    reading snow-surface temperatures from file %s ...\n",
        snowTempsFile); CHKERRQ(ierr);
 
-    snowtemps = new IceModelVec2T;
-    ierr = snowtemps->create(*grid, "snowtemp", config.get("climate_forcing_buffer_size"));
-    ierr = snowtemps->set_attrs("climate_forcing", "snow surface temperature",
+    snowtempmaps = new IceModelVec2T;
+    ierr = snowtempmaps->create(*grid, "snowtemp", config.get("climate_forcing_buffer_size"));
+    ierr = snowtempmaps->set_attrs("climate_forcing", "snow surface temperature",
 				"Kelvin", ""); CHKERRQ(ierr);
-    ierr = snowtemps->init(snowTempsFile); CHKERRQ(ierr);
+    ierr = snowtempmaps->init(snowTempsFile); CHKERRQ(ierr);
 
   } else {
     ierr = verbPrintf(2,grid->com,
        "    using default snow-surface temperature parameterization\n"); CHKERRQ(ierr);
-    if (snowtemps != NULL)   delete snowtemps;
-    snowtemps = NULL;  // test for NULL to see if using stored temps versus parameterization
+    if (snowtempmaps != NULL)   delete snowtempmaps;
+    snowtempmaps = NULL;  // test for NULL to see if using stored temps versus parameterization
   }
+
+  // this is ignored if stored snow temps are used
+  ierr = vsnowtemp_mj.create(*g, "snowtemp_mj", false); CHKERRQ(ierr);
+  ierr = vsnowtemp_mj.set_attrs("climate_state",
+				"mean July snow-surface temperature used in mass balance scheme",
+				"Kelvin",
+				""); CHKERRQ(ierr);  // no CF standard_name ??
+  ierr = vsnowtemp_mj.set(273.15); CHKERRQ(ierr);  // merely a default value
 
   // check if user wants default or random PDD; initialize mbscheme to one of these PDDs
   if (mbscheme == NULL) { // only read user options if scheme is not chosen yet;
@@ -164,16 +191,7 @@ PetscErrorCode PISMGreenlandAtmosCoupler::initFromOptions(IceGrid* g, const PISM
   }
   ierr = mbscheme->init(); CHKERRQ(ierr);
 
-  // this is ignored if stored snow temps are used
-  ierr = vsnowtemp_mj.create(*g, "snowtemp_mj", false); CHKERRQ(ierr);
-  ierr = vsnowtemp_mj.set_attrs(
-            "climate_state",
-            "mean July snow-surface temperature used in mass balance scheme",
-            "K",
-            ""); CHKERRQ(ierr);  // no CF standard_name ??
-  ierr = vsnowtemp_mj.set(273.15); CHKERRQ(ierr);  // merely a default value
-
-  // check if artm=vsurftemp is available in inptu file, and if so warn user that it
+  // check if artm=vsurftemp is available in input file, and if so warn user that it
   //   will be ignored and overwritten by parameterization
   NCTool nc(grid);
   bool surftemp_exists;
@@ -243,9 +261,9 @@ PetscErrorCode PISMGreenlandAtmosCoupler::writeCouplingFieldsToFile(
   PetscScalar **T;
   ierr = vsnowtemp.get_array(T);  CHKERRQ(ierr);
 
-  if (snowtemps != NULL) {
-    ierr = snowtemps->update(t_years, 0); CHKERRQ(ierr);
-    ierr = snowtemps->write(filename, t_years, NC_FLOAT); CHKERRQ(ierr);
+  if (snowtempmaps != NULL) {
+    ierr = snowtempmaps->update(t_years, 0); CHKERRQ(ierr);
+    ierr = snowtempmaps->write(filename, t_years, NC_FLOAT); CHKERRQ(ierr);
   } else {
     PetscScalar **T_ma, **T_mj;
     const PetscScalar radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
@@ -327,10 +345,10 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfTempAndProvide(
                   IceModelVec2* &pvst) {
   PetscErrorCode ierr;
 
-  if (snowtemps != NULL) {
-    ierr = snowtemps->update(t_years, dt_years); CHKERRQ(ierr);
-    ierr = snowtemps->interp(t_years); CHKERRQ(ierr);
-    pvst = (IceModelVec2*) snowtemps;
+  if (snowtempmaps != NULL) {
+    ierr = snowtempmaps->update(t_years, dt_years); CHKERRQ(ierr);
+    ierr = snowtempmaps->interp(t_years); CHKERRQ(ierr);
+    pvst = (IceModelVec2*) snowtempmaps;
   } else {
     ierr = parameterizedUpdateSnowSurfaceTemp(t_years, dt_years); CHKERRQ(ierr);
 
@@ -398,7 +416,7 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfMassFluxAndProvide(
   
   // get access to snow temperatures (and update parameterization if appropriate)
   PetscScalar **T_ma, **T_mj, **snowrate, **lat_degN, **smflux;
-  if (snowtemps == NULL) {
+  if (snowtempmaps == NULL) {
     ierr = parameterizedUpdateSnowSurfaceTemp(t_years,dt_years); CHKERRQ(ierr);
   }
 
@@ -411,22 +429,23 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfMassFluxAndProvide(
   // run through grid
   vector<PetscScalar> ts(Nseries);
   for (PetscInt k = 0; k < Nseries; ++k)
-    ts[k] = tseries + k * dtseries;
+    ts[k] = t_years + k * dt_years / Nseries;
 
-  if (snowtemps != NULL) {
-    ierr = snowtemps->update(t_years, dt_years); CHKERRQ(ierr);
+  if (snowtempmaps != NULL) {
+    ierr = snowtempmaps->update(t_years, dt_years); CHKERRQ(ierr);
   }
   
   for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
 
       // build temperature time series at point i,j
-      if (snowtemps != NULL) {
-	ierr = snowtemps->interp(i, j, Nseries, &ts[0], Tseries); CHKERRQ(ierr);
+      if (snowtempmaps != NULL) {
+	ierr = snowtempmaps->interp(i, j, Nseries, &ts[0], Tseries); CHKERRQ(ierr);
       } else {
 	for (PetscInt k = 0; k < Nseries; ++k) {
+	  double tk = tseries + k * dtseries;
           // use corrected formula (4) in \ref Faustoetal2009, the standard yearly cycle
-          Tseries[k] = T_ma[i][j] + (T_mj[i][j] - T_ma[i][j]) * cos(radpersec * (ts[k] - julydaysec));
+          Tseries[k] = T_ma[i][j] + (T_mj[i][j] - T_ma[i][j]) * cos(radpersec * (tk - julydaysec));
 	  // apply the temperature offset if needed
 	  if (dTforcing != NULL)
 	    Tseries[k] += (*dTforcing)(t_years + k * dt_years / Nseries);
@@ -470,8 +489,8 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfMassFluxAndProvide(
 PetscErrorCode PISMGreenlandAtmosCoupler::max_timestep(PetscScalar t_years, PetscScalar &dt_years) {
   PetscErrorCode ierr;
 
-  if (snowtemps != NULL) {
-    ierr = snowtemps->max_timestep(t_years, dt_years); CHKERRQ(ierr);
+  if (snowtempmaps != NULL) {
+    ierr = snowtempmaps->max_timestep(t_years, dt_years); CHKERRQ(ierr);
   }
   
   return 0;

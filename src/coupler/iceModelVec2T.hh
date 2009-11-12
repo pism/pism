@@ -56,7 +56,7 @@ using namespace std;
   char filename[] = "climate_inputs.nc";
   IceModelVec2T v;
   ierr = v.create(grid, "snowtemp", config.get("climate_forcing_buffer_size")); CHKERRQ(ierr);
-  ierr = v.set_attrs("climate_forcing", "snow temperature", "K", ""); CHKERRQ(ierr);
+  ierr = v.set_attrs("climate_forcing", "snow surface temperature", "K", ""); CHKERRQ(ierr);
   ierr = v.init(filename); CHKERRQ(ierr);
 
   // actual use:
@@ -70,7 +70,8 @@ using namespace std;
 
   // get a 2D field (such as precipitation):
   ierr = v.interp(t + max_dt / 2.0); CHKERRQ(ierr);
-  // at this point v "looks" almost like an IceModelVec2 with data we need
+  // at this point v "looks" almost like an IceModelVec2 with data we need (and
+  // can be type-cast to IceModelVec2)
 
   // get a time-series for every grid location:
   int N = 21;
@@ -100,7 +101,6 @@ public:
   IceModelVec2T(const IceModelVec2T &other);
   virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], int N);
   virtual PetscErrorCode destroy();
-  virtual PetscErrorCode get_arrays(PetscScalar** &a2, PetscScalar*** &a3);
   virtual PetscErrorCode init(string filename);
   virtual PetscErrorCode update(double t_years, double dt_years);
   virtual PetscErrorCode set_record(int n);
@@ -124,6 +124,7 @@ private:
   int n_records,		//!< maximum number of records to store in memory
     first;			//!< in-file index of the first record stored in memory
   
+  virtual PetscErrorCode get_array3(PetscScalar*** &a3);
   virtual PetscErrorCode update(int start);
   virtual PetscErrorCode discard(int N);
 };

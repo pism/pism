@@ -109,10 +109,9 @@ PetscErrorCode IceModelVec2T::destroy() {
   return 0;
 }
 
-PetscErrorCode IceModelVec2T::get_arrays(PetscScalar** &a2, PetscScalar*** &a3) {
+PetscErrorCode IceModelVec2T::get_array3(PetscScalar*** &a3) {
   PetscErrorCode ierr;
   ierr = begin_access(); CHKERRQ(ierr);
-  a2 = (PetscScalar**) array;
   a3 = (PetscScalar***) array3;
   return 0;
 }
@@ -255,7 +254,8 @@ PetscErrorCode IceModelVec2T::discard(int N) {
     T[k] = T[k + N];
   T.resize(M);
 
-  ierr = get_arrays(a2, a3); CHKERRQ(ierr);
+  ierr = get_array(a2); CHKERRQ(ierr);
+  ierr = get_array3(a3); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i)
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
       for (PetscInt k = 0; k < M; ++k)
@@ -270,7 +270,8 @@ PetscErrorCode IceModelVec2T::set_record(int n) {
   PetscErrorCode ierr;
   PetscScalar **a2, ***a3;
 
-  ierr = get_arrays(a2, a3); CHKERRQ(ierr);
+  ierr = get_array(a2); CHKERRQ(ierr);
+  ierr = get_array3(a3); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i)
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
       a3[i][j][n] = a2[i][j];
@@ -284,7 +285,8 @@ PetscErrorCode IceModelVec2T::get_record(int n) {
   PetscErrorCode ierr;
   PetscScalar **a2, ***a3;
 
-  ierr = get_arrays(a2, a3); CHKERRQ(ierr);
+  ierr = get_array(a2); CHKERRQ(ierr);
+  ierr = get_array3(a3); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i)
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
       a2[i][j] = a3[i][j][n];
@@ -337,6 +339,9 @@ PetscErrorCode IceModelVec2T::write(string filename, double t_years, nc_type nct
 }
 
 //! Extract data corresponding to t_years using linear interpolation.
+/*!
+  Note: this method does not check if an update() call is necessary!
+ */
 PetscErrorCode IceModelVec2T::interp(double t_years) {
   PetscErrorCode ierr;
   vector<double>::iterator end = T.end(), j;
@@ -359,7 +364,8 @@ PetscErrorCode IceModelVec2T::interp(double t_years) {
   
   PetscScalar **a2, ***a3;
 
-  ierr = get_arrays(a2, a3); CHKERRQ(ierr);
+  ierr = get_array(a2); CHKERRQ(ierr);
+  ierr = get_array3(a3); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i)
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j)
       a2[i][j] = a3[i][j][index] * (1 - lambda) + a3[i][j][index + 1] * lambda;
@@ -369,6 +375,9 @@ PetscErrorCode IceModelVec2T::interp(double t_years) {
 }
 
 //! Gets an interpolated time-series out. Has to be surrounded with begin_access() and end_access().
+/*!
+  Note: this method does not check ownership and does not check if an update() call is necessary!
+ */
 PetscErrorCode IceModelVec2T::interp(int i, int j, int N,
 				    PetscScalar *ts, PetscScalar *values) {
   int mcurr = 0;

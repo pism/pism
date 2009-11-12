@@ -32,10 +32,8 @@ IceEISModel::IceEISModel(IceGrid &g)
   iceFactory.setType(ICE_PB);
 }
 
-
-PetscErrorCode IceEISModel::set_grid_defaults() {
+PetscErrorCode IceEISModel::get_experiment_name() {
   PetscErrorCode ierr;
-
   /* This option determines the single character name of EISMINT II experiments:
   "-eisII F", for example.   If not given then do exper A.  */
   char                eisIIexpername[20];
@@ -55,6 +53,14 @@ PetscErrorCode IceEISModel::set_grid_defaults() {
       PetscEnd();
     }
   }
+
+  return 0;
+}
+
+PetscErrorCode IceEISModel::set_grid_defaults() {
+  PetscErrorCode ierr;
+  
+  ierr = get_experiment_name(); CHKERRQ(ierr);
 
   // note height of grid must be great enough to handle max thickness
   const PetscScalar   L = 750.0e3;      // Horizontal half-width of grid
@@ -172,6 +178,9 @@ PetscErrorCode IceEISModel::setFromOptions() {
   // optionally allow override of updateHmelt == PETSC_FALSE for EISMINT II
   ierr = check_option("-track_Hmelt", updateHmelt); CHKERRQ(ierr);
 
+  // process the -eisII option again (in case we're initializing from a -i
+  // file):
+  ierr = get_experiment_name(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com, 
               "setting parameters for EISMINT II experiment %c ... \n", 

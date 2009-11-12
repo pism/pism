@@ -53,6 +53,7 @@ protected:
     // for experiments I,J and K,L, respectively:
     PetscErrorCode generateTroughTopography();
     PetscErrorCode generateMoundTopography();
+    PetscErrorCode get_experiment_name();
 };
 
 #endif /* __iceEISModel_hh */

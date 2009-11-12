@@ -38,10 +38,22 @@ PetscErrorCode IceUnitModel::set_vars_from_options() {
 //! Run an unit test.
 PetscErrorCode IceUnitModel::run() {
   PetscErrorCode ierr;
+  PetscTruth flag;
 
-  ierr = testIceModelVec3(); CHKERRQ(ierr);
-  ierr = testIceModelVec3Bedrock(); CHKERRQ(ierr);
-  ierr = testIceModelVec2T(); CHKERRQ(ierr);
+  ierr = check_option("-IceModelVec3", flag); CHKERRQ(ierr);
+  if (flag) {
+    ierr = testIceModelVec3(); CHKERRQ(ierr);
+  }
+
+  ierr = check_option("-IceModelVec3Bedrock", flag); CHKERRQ(ierr);
+  if (flag) {
+    ierr = testIceModelVec3Bedrock(); CHKERRQ(ierr);
+  }
+
+  ierr = check_option("-IceModelVec2T", flag); CHKERRQ(ierr);
+  if (flag) {
+    ierr = testIceModelVec2T(); CHKERRQ(ierr);
+  }
 
   return 0;
 }
@@ -251,7 +263,7 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
   }
 
   ierr = v.begin_access(); CHKERRQ(ierr);
-  ierr = v.interp(0, 0, N, &ts[0], &values[0]); CHKERRQ(ierr);
+  ierr = v.interp(grid.xs, grid.ys, N, &ts[0], &values[0]); CHKERRQ(ierr);
   ierr = v.end_access(); CHKERRQ(ierr);
 
   for (int j = 0; j < N; ++j) {
@@ -265,7 +277,7 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
   }
 
   ierr = v.begin_access(); CHKERRQ(ierr);
-  ierr = v.interp(0, 0, N, &ts[0], &values[0]); CHKERRQ(ierr);
+  ierr = v.interp(grid.xs, grid.ys, N, &ts[0], &values[0]); CHKERRQ(ierr);
   ierr = v.end_access(); CHKERRQ(ierr);
 
   for (int j = 0; j < N; ++j) {
