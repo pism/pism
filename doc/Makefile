@@ -9,6 +9,9 @@ else
 	$(MAKE) ALL
 endif
 
+userman:
+	$(MAKE) -C userman
+
 revision:
 	@svnversion > revision.tex
 
@@ -20,13 +23,6 @@ revclean:
 installation : installation.tex
 	pdflatex installation.tex
 	pdflatex installation.tex
-
-userman : manual.tex ice_bib.bib
-	pdflatex manual.tex
-	bibtex manual
-	makeindex -l manual
-	pdflatex manual.tex
-	pdflatex manual.tex
 
 browser : doxyfile_browser doxybib.txt config_doc.txt std_names.html \
 		browser_pages.txt browser_bombproof.txt revision

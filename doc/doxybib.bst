@@ -15,6 +15,9 @@
  % This bibliographic style (bst) file has been generated from one or
  % more master bibliographic style (mbs) files, listed above.
  %
+ % NB! This file was hand-edited to use doxygen commands. Re-generating from
+ % merlin.mbs will destroy these modifications.
+ %
  % This generated file can be redistributed and/or modified under the terms
  % of the LaTeX Project Public License Distributed from CTAN
  % archives in directory macros/latex/base/lppl.txt; either
