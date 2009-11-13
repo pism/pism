@@ -128,8 +128,8 @@ the above CFL condition.  Then IceModel::determineTimeStep()
 implements adaptive time-stepping based on this and other stability criteria.
 
 We will assume an equally-spaced grid \f$z_0,\dots,z_{M_z}\f$ with \f$\Delta z = z_{k+1} - z_k\f$ in 
-the analysis below.  In fact PISM has a remapping scheme (options -quadZ and 
--chebZ), where the temperatures/ages in a column of ice are stored on an unequally-spaced 
+the analysis below.  In fact PISM has a remapping scheme (options -z_spacing
+and -zb_spacing), where the temperatures/ages in a column of ice are stored on an unequally-spaced 
 vertical grid, but they are mapped to a fine, equally-spaced grid for the temperature/age
 computations.  See procedures  IceModel::temperatureStep() and IceModel::ageStep(), and see
 the IceModelVec3 class and IceGrid::getFineEqualVertLevsIce().

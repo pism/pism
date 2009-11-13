@@ -89,7 +89,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
     } else {
       grid.year = 0.0;
       ierr = verbPrintf(2, grid.com, 
-		      "  time dimension was not found; setting current year to t = 0.0 years\n",
+		      "  time dimension was not found; setting current year to 0.0 years\n",
 		      grid.year); CHKERRQ(ierr);
     }
   } else {
@@ -119,13 +119,13 @@ PetscErrorCode IceModel::set_grid_defaults() {
 }
 
 //! Initalizes the grid from options.
-/*! Reads all of -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -Lbz, -quadZ, -quadZ_bed
-  and -chebZ. Sets corresponding grid parameters.
+/*! Reads all of -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -Lbz, -z_spacing and
+    -zb_spacing. Sets corresponding grid parameters.
  */
 PetscErrorCode IceModel::set_grid_from_options() {
   PetscErrorCode ierr;
   PetscTruth Mx_set, My_set, Mz_set, Mbz_set, Lx_set, Ly_set, Lz_set, Lbz_set,
-    quadZ_set, chebZ_set, no_quadZ_bed;
+    z_spacing_set, zb_spacing_set;
   PetscScalar x_scale, y_scale, z_scale, zb_scale;
   int Mx, My, Mz, Mbz;
 
@@ -156,16 +156,28 @@ PetscErrorCode IceModel::set_grid_from_options() {
 			 grid.Mbz, &Mbz, &Mbz_set); CHKERRQ(ierr);
 
   // Determine the vertical grid spacing in the ice:
-  ierr = PetscOptionsName("-quadZ", "Chooses the quadratic vertical grid spacing",
-			  PETSC_NULL, &quadZ_set); CHKERRQ(ierr);
-  ierr = PetscOptionsName("-chebZ", "Chooses the Chebyshev vertical grid spacing",
-			  PETSC_NULL, &chebZ_set); CHKERRQ(ierr);
+  const char *z_spacing[2] = {"quadratic", "equal"};
+  int z_spacing_index = 0;	// quadratic is the default
+  ierr = PetscOptionsEList("-z_spacing", "Vertical spacing in the ice", "",
+			   z_spacing, 2, z_spacing[0], &z_spacing_index, &z_spacing_set); CHKERRQ(ierr);
+  if (z_spacing_set) {
+    if (z_spacing_index == 0) {
+      grid.ice_vertical_spacing = QUADRATIC;
+    } else {
+      grid.ice_vertical_spacing = EQUAL;
+    }
+  }
 
-  // Only one of -quadZ and -chebZ is allowed.
-  if (quadZ_set && chebZ_set) {
-    ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: at most one of -quadZ and -chebZ is allowed.\n"); CHKERRQ(ierr);
-    PetscEnd();
+  // Determine the vertical grid spacing in the bedrock:
+  z_spacing_index = 0;
+  ierr = PetscOptionsEList("-zb_spacing", "Vertical spacing in the bedrock", "",
+			   z_spacing, 2, z_spacing[0], &z_spacing_index, &zb_spacing_set); CHKERRQ(ierr);
+  if (zb_spacing_set) {
+    if (z_spacing_index == 0) {
+      grid.bed_vertical_spacing = QUADRATIC;
+    } else {
+      grid.bed_vertical_spacing = EQUAL;
+    }
   }
 
   if (Mbz_set) {
@@ -175,10 +187,6 @@ PetscErrorCode IceModel::set_grid_from_options() {
       PetscEnd();
     }
   }
-
-  ierr = check_option("-no_quadZ_bed", no_quadZ_bed); CHKERRQ(ierr);
-  if (no_quadZ_bed)
-    grid.bed_vertical_spacing = EQUAL;
   
   // Done with the options.
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -192,8 +200,6 @@ PetscErrorCode IceModel::set_grid_from_options() {
   if (My_set)    grid.My  = My;
   if (Mz_set)    grid.Mz  = Mz;
   if (Mbz_set)   grid.Mbz = Mbz;
-  if (quadZ_set) grid.ice_vertical_spacing = QUADRATIC;
-  if (chebZ_set) grid.ice_vertical_spacing = CHEBYSHEV;
 
   ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
   ierr = grid.compute_vertical_levels();    CHKERRQ(ierr);
@@ -267,8 +273,8 @@ PetscErrorCode IceModel::grid_setup() {
     ierr = ignore_option(grid.com, "-Lx");    CHKERRQ(ierr);
     ierr = ignore_option(grid.com, "-Ly");    CHKERRQ(ierr);
     ierr = ignore_option(grid.com, "-Lz");    CHKERRQ(ierr);
-    ierr = ignore_option(grid.com, "-chebZ"); CHKERRQ(ierr);
-    ierr = ignore_option(grid.com, "-quadZ"); CHKERRQ(ierr);
+    ierr = ignore_option(grid.com, "-z_spacing"); CHKERRQ(ierr);
+    ierr = ignore_option(grid.com, "-zb_spacing"); CHKERRQ(ierr);
   } else {
     ierr = set_grid_defaults(); CHKERRQ(ierr);
     ierr = set_grid_from_options(); CHKERRQ(ierr);

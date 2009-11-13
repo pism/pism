@@ -17,7 +17,7 @@ echo ""
 echo "BOOTSTRAP.SH: running pgrn on eis_green_smoothed.nc for 1 year to smooth surface;"
 echo "  creates green20km_y1.nc ..."
 mpiexec -n $NN pgrn -boot_from eis_green_smoothed.nc \
-       -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 -quadZ \
+       -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 \
        -skip 1 -y 1 -o green20km_y1.nc
 
 echo ""

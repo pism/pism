@@ -70,8 +70,6 @@ PetscErrorCode IceModel::setDefaults() {
 
   executable_short_name = "pism"; // drivers typically override this
 
-  grid.ice_vertical_spacing = EQUAL;
-  
   computeSIAVelocities = PETSC_TRUE;
   transformForSurfaceGradient = PETSC_FALSE;
 

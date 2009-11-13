@@ -146,12 +146,12 @@ For now, to avoid issues of data formats, data flaws and data-handling scripts i
 
 In EISMINT II the prescribed grid has 60 subintervals in each direction, with each subinterval of length 25km.  Thus the total width of the computational box is 1500 km in both $x$ and $y$ directions.  However, PISM always allows choice of the grid in all three dimensions.  A runtime option chooses the number of grid points in each direction, and the number of points is one greater than the number of subintervals (grid spaces).  The vertical grid is not prescribed in EISMINT II.  For a demonstration we choose a 25km grid in the horizontal and we use 41 grid points in the vertical with unequal spacing.  The spacing is finest at the bottom of the ice column (34 m) and coarsest at the top (216 m).  The computational box is 5000 m high by default for EISMINT II experiment A in PISM, so no runtime option is needed to set that.
 
-Experiment A starts with zero ice, all EISMINT II runs are for 200,000 model years.  The center thickness of the ice sheet grows to a peak near 4100 m, at about 9,000 model years, before decaying to its equilibrium center thickness of about 3750 m.  Here we start with a short 6000 year run for a quick illustration.  The executable is ``\t{pisms}''\index{pisms}, for the ``simplifed geometry mode'' of PISM:\index{pisms}\pismoptionindex{eisII}\pismoptionindex{Mx}\pismoptionindex{My}\pismoptionindex{Mz}\pismoptionindex{quadZ}\pismoptionindex{y}
+Experiment A starts with zero ice, all EISMINT II runs are for 200,000 model years.  The center thickness of the ice sheet grows to a peak near 4100 m, at about 9,000 model years, before decaying to its equilibrium center thickness of about 3750 m.  Here we start with a short 6000 year run for a quick illustration.  The executable is ``\t{pisms}''\index{pisms}, for the ``simplifed geometry mode'' of PISM:\index{pisms}\pismoptionindex{eisII}\pismoptionindex{Mx}\pismoptionindex{My}\pismoptionindex{Mz}\pismoptionindex{y}
 
 \small
 \begin{quote}
 \begin{verbatim}
-$ pisms -eisII A -Mx 61 -My 61 -Mz 41 -quadZ -y 6000
+$ pisms -eisII A -Mx 61 -My 61 -Mz 41 -z_spacing quadratic -y 6000
 PISMS stable0.2 (simplified geometry mode)
 setting parameters for EISMINT II experiment A ... 
 initializing EISMINT II experiment A ... 
@@ -198,7 +198,7 @@ While the complete run continues in the background, let's view the intermediate 
 \small
 \begin{verbatim}
 :history = "user@host 2009-02-19 20:28:18 AKST:  PISM done.  PETSc MFlops = 1.23.\n",
-        " pisms -eisII A -Mx 61 -My 61 -Mz 41 -quadZ -y 6000\n",
+        " pisms -eisII A -Mx 61 -My 61 -Mz 41 -z_spacing quadratic -y 6000\n",
         "user@host 2009-02-19 20:27:42 AKST:  PISM (...) started on 1 procs.\n",
 \end{verbatim}
 \normalsize
@@ -483,13 +483,13 @@ The extent of the computational box, along with its bedrock extension downward, 
 
 \subsection{Grid}
 \label{subsect:grid}
-The PISM grid\index{PISM!grid} covering the computational box is equally spaced in horizontal ($x$ and $y$) directions.  Vertical spacing is quadratic by default (see below) but optionally a different spacing scheme can be chosen.  (Choose with options \intextoption{no\und quadZ} and \intextoption{chebZ}, respectively, below.)
+The PISM grid\index{PISM!grid} covering the computational box is equally spaced in horizontal ($x$ and $y$) directions.  Vertical spacing is quadratic by default (see below) but optionally a different spacing scheme can be chosen.  (Choose with options \intextoption{z\und spacing} and \intextoption{zb\und spacing}.)
 
 The grid is described by four numbers, namely the number of grid points \verb|Mx| in the $x$ direction, the number \verb|My| in the $y$ direction, the number \verb|Mz| in the $z$ direction within the ice, and the number \verb|Mbz| in the $z$ direction within the bedrock thermal layer.  These are specified by options \intextoption{Mx}, \intextoption{My}, \intextoption{Mz}, and \intextoption{Mbz}, respectively, as in Appendix A.  The defaults are 61, 61, 31, and 1, respectively.
 
 Note that \verb|Mx|, \verb|My|, \verb|Mz|, and \verb|Mbz| all indicate the number of grid \emph{points}.  The number of grid \emph{spaces} are one less, thus 60, 60, 30, and 0 in the default case.  The lowest grid point in a column of ice, at $z=0$, coincides with the highest grid point in the bedrock, so \verb|Mbz| must always be at least one.
 
-If \intextoption{chebZ} option is used, the vertical grid in the ice is spaced similar to the extreme values of Chebyshev polynomials \cite{Trefethen}.  It is very fine near the base of ice and coarser near the top of the computational box.  Default spacing is a quadratic function.  Here the spacing is smaller near the base than near the top, but the effect is less extreme than in the Chebyshev case.  (See the documentation of \verb|IceGrid::compute_ice_vertical_levels()| in PISM's class browser for more info and formulas defining the spacing.)
+Default spacing is a quadratic function: the spacing is smaller near the base than near the top. (See the documentation of \verb|IceGrid::compute_ice_vertical_levels()| in PISM's class browser for more info and formulas defining the spacing.)
 
 When a thermal bedrock layer is used, the distance \t{Lbz} is controlled by the \intextoption{Lbz} option.
 
@@ -543,7 +543,7 @@ See table \ref{tab:regridvar} for the regriddable variables using \intextoption{
 
 Here is another example: suppose you have an output of a PISM run on a fairly coarse grid (stored in \verb|foo.nc|) and you want to continue this run on a finer grid. This can be done using \intextoption{regrid\und from} along with \intextoption{boot\und from}:
 \begin{verbatim}
-$ pismr -boot_from foo.nc -Mx 201 -My 201 -Mz 21 -Mbz 21 -Lz 4000 -quadZ \
+$ pismr -boot_from foo.nc -Mx 201 -My 201 -Mz 21 -Mbz 21 -Lz 4000 \
         -regrid_from foo.nc -regrid_vars litho_temp,age,temp -y 100 -o bar.nc
 \end{verbatim}
 In this case all the model-state 2D variables present in \verb|foo.nc| will be interpolated onto the new grid during bootstrapping, which happens first, while three-dimensional variables are filled using heuristics mentioned in section \ref{sect:boot}.  Then temperature in bedrock (\verb|litho_temp|)\footnote{Assumes that foo.nc has \t{Mbz}$>1$.}, age of the ice (\verb|age|) and ice temperature (\verb|temp|) will be interpolated from \verb|foo.nc| onto the new grid during the regridding stage, overriding values set at the bootstrapping stage.  All of this, bootstrapping and regridding, occurs before the first timestep.
@@ -1006,9 +1006,9 @@ The latter is much more effective.  It is based on papers by Lingle and Clark \c
 
 Example runs to compare these models are
 \begin{verbatim}
-$ mpiexec -n 4 pisms -eisII A -quadZ -y 8000 -o eisIIA_nobd.nc
-$ mpiexec -n 4 pisms -eisII A -quadZ -bed_def_iso -y 8000 -o eisIIA_bdiso.nc
-$ mpiexec -n 4 pisms -eisII A -quadZ -bed_def_lc -y 8000 -o eisIIA_bdlc.nc
+$ mpiexec -n 4 pisms -eisII A -z_spacing quadratic -y 8000 -o eisIIA_nobd.nc
+$ mpiexec -n 4 pisms -eisII A -z_spacing quadratic -bed_def_iso -y 8000 -o eisIIA_bdiso.nc
+$ mpiexec -n 4 pisms -eisII A -z_spacing quadratic -bed_def_lc -y 8000 -o eisIIA_bdlc.nc
 \end{verbatim}
 Compare the \verb|topg|, \verb|usurf|, and \verb|dbdt| variables in the resulting output files.
 
@@ -1230,7 +1230,7 @@ pismv -test G -max_dt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
 pismv -test G -max_dt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
 \end{verbatim}
 \normalsize\end{quote}
-produced figures 13, 14, and 15 of \cite{BBL}.  The last two runs, especially, require a supercomputer; the $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.  (Appropriate use \verb|-skip 10| and \verb|-quadZ| accelerates such runs.  See subsection \ref{sect:usage}.)
+produced figures 13, 14, and 15 of \cite{BBL}.  The last two runs, especially, require a supercomputer; the $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.  (Appropriate use \verb|-skip 10| and \verb|-z_spacing quadratic| accelerates such runs.  See subsection \ref{sect:usage}.)
 
 \subsubsection*{Sample verification results}  Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} show a sampling of the results of verifying PISM using the tests described above.\index{PISM!verification results and reporting}  These figures were produced more-or-less automatically using Python scripts \verb|test/verifynow.py|\index{verifynow.py} and \verb|test/vnreport.py|\index{vnreport.py}.  See appendix \ref{sect:scripts}.
 
@@ -1278,11 +1278,11 @@ It must be pointed out that, to the experienced eye, these figures \emph{do not}
 
 \subsubsection*{Historical note}  There have been three stages of ice sheet model intercomparisons based on simplified geometry experiments since the early 1990s \cite{BuelerSpray}.\index{EISMINT!defined}
 
-EISMINT I \cite[ European Ice Sheet Modeling INiTiative]{EISMINT96}\footnote{See \texttt{http://homepages.vub.ac.be/\%7Ephuybrec/eismint.html}.} was the first of these and involved only the isothermal shallow ice approximation (SIA).  Both fixed margin and moving margin experiments were performed in EISMINT I, and various conclusions were drawn about the several numerical schemes used in the intercomparison.  EISMINT I is superceded, however, by verification using the full variety of known exact solutions to the isothermal SIA \cite{BLKCB}.  The ``rediscovery'', since EISMINT I, of the Halfar similarity solution with zero accumulation \cite{Halfar83}, and verification runs using that solution, already suffices to measure the isothermal SIA performance of PISM more precisely than would be allowed by comparison to EISMINT I results.
+EISMINT I \cite[ European Ice Sheet Modeling INiTiative]{EISMINT96}\footnote{See \url{http://homepages.vub.ac.be/\%7Ephuybrec/eismint.html}.} was the first of these and involved only the isothermal shallow ice approximation (SIA).  Both fixed margin and moving margin experiments were performed in EISMINT I, and various conclusions were drawn about the several numerical schemes used in the intercomparison.  EISMINT I is superceded, however, by verification using the full variety of known exact solutions to the isothermal SIA \cite{BLKCB}.  The ``rediscovery'', since EISMINT I, of the Halfar similarity solution with zero accumulation \cite{Halfar83}, and verification runs using that solution, already suffices to measure the isothermal SIA performance of PISM more precisely than would be allowed by comparison to EISMINT I results.
 
 EISMINT II \cite{EISMINT00} pointed out interesting and surprising properties of the thermocoupled SIA.  References \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT,BBssasliding} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the (perceived and real) shortfalls of ice sheet model behavior on EISMINT II experiments.  We believe that the discussion in \cite{PayneDongelmans,PayneBaldwin,BBL} adequately explains the ``spokes'' in EISMINT II experiment F as a genuine fluid instability, while Appendix B of \cite{BBssasliding} adequately cautions against the continuum model that generates the ``spokes'' in EISMINT II experiment H.   Thus we can move on from that era of controversy.  In any case, PISM has built-in support for all of the published and unpublished EISMINT II experiments; these are described in the next subsection.
 
-The ISMIP (Ice Sheet Model Intercomparison Project)\footnote{See \texttt{http://homepages.vub.ac.be/\%7Ephuybrec/ismip.html}.}\index{ISMIP!defined} round of intercomparisons is still ongoing at this time (2009).  There are two components of ISMIP substantially completed, namely HOM = Higher Order Models \cite{HOMtcd,HOMelmer} and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov}.  Of these, PISM participated in HEINO, but this ability is unmaintained.   We believe\index{ISMIP!interpretation of HEINO results} the continuum problem described by HEINO, also used in EISMINT II experiment H (above), is not easily approximate-able because of a required discontinuous jump in the basal velocity field.  The continuum problem predicts infinite vertical velocity because of this jump \cite[Appendix B]{BBssasliding}.  Details of the numerical schemes and their results are irrelevant if the continuum model makes such a prediction.
+The ISMIP (Ice Sheet Model Intercomparison Project)\footnote{See \url{http://homepages.vub.ac.be/\%7Ephuybrec/ismip.html}.}\index{ISMIP!defined} round of intercomparisons is still ongoing at this time (2009).  There are two components of ISMIP substantially completed, namely HOM = Higher Order Models \cite{HOMtcd,HOMelmer} and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov}.  Of these, PISM participated in HEINO, but this ability is unmaintained.   We believe\index{ISMIP!interpretation of HEINO results} the continuum problem described by HEINO, also used in EISMINT II experiment H (above), is not easily approximate-able because of a required discontinuous jump in the basal velocity field.  The continuum problem predicts infinite vertical velocity because of this jump \cite[Appendix B]{BBssasliding}.  Details of the numerical schemes and their results are irrelevant if the continuum model makes such a prediction.
 
 PISM offers the physical continuum model described in \cite{BBssasliding}, an SIA/SSA hybrid, as an alternative to the continuum model used in ISMIP-HEINO and EISMINT II experiment H.  Indeed the SIA/SSA hybrid is offered as a unified shallow model for real ice sheets (section \ref{sect:dynamics}).
 
@@ -1312,14 +1312,14 @@ The vertical grid is not specified in the EISMINT II writeup.  It seems that goo
 
 \begin{verbatim}
 pisms -eisII A -Mx 61 -My 61 -Mz 201 -skip 5 -y 2e5 -o eisIIA_equal.nc
-pisms -eisII A -Mx 61 -My 61 -Mz 61 -quadZ -skip 5 -y 2e5 -o eisIIA_quadZ.nc
+pisms -eisII A -Mx 61 -My 61 -Mz 61 -z_spacing quadratic -skip 5 -y 2e5 -o eisIIA_quadZ.nc
 \end{verbatim}
 \noindent The latter run is faster for memory reasons.  These SIA-only simulations parallelize well, and we see speedups up to at least 30 processors for the standard $61\times 61$ horizontal grid.
 
 Table \ref{tab:eisII} shows how all EISMINT II experiments are done in PISM.  Experiments below the horizontal line in Table \ref{tab:eisII} are only documented in \cite{EISIIdescribe}.
 
 \begin{table}[ht]
-\caption{Running the EISMINT II experiments in PISM.\index{PISM!running the EISMINT II experiments in}  Replace \t{-Mz 201} with \t{-Mz 61 -quadZ} for unequal vertical spacing.  Use \t{-skip 5} for significant speedup.}\label{tab:eisII}
+\caption{Running the EISMINT II experiments in PISM.\index{PISM!running the EISMINT II experiments in}  Replace \t{-Mz 201} with \t{-Mz 61 -z\und spacing quadratic} for unequal vertical spacing.  Use \t{-skip 5} for significant speedup.}\label{tab:eisII}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Command: ``\t{pisms }'' $+$} & \textbf{Relation to experiment A} \\ \hline
@@ -1538,7 +1538,7 @@ Next we use a script which converts the time-series data files \texttt{specmap.0
 We do a one model year run using option \verb|-boot_from| to ``bootstrap'' from file \verb|eis_green_smoothed.nc|.  The executable ``\verb|pgrn|'' is special to EISMINT-Greenland:\index{pgrn}
 \begin{verbatim}
 $ pgrn -boot_from eis_green_smoothed.nc \
-       -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 -quadZ \
+       -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 \
        -skip 1 -y 1 -o green20km_y1.nc
 \end{verbatim}
 \noindent The run takes only a few seconds of real time on any machine.  Tables \ref{bootstrapEISgreen} and \ref{bootCONTINUED} show the entire PISM output at the terminal.
@@ -1639,7 +1639,7 @@ Note that EISMINT-Greenland specifies an 83 by 141 point grid, but you may use o
 
 The option \verb|-boot_from| stands for ``bootstrap from''.  A different option \verb|-i|, for ``input file'', is used for a file which has full initial conditions.  In practice, \verb|-i| is only used with a NetCDF file which was previously saved by PISM.  That is, \verb|-i| is used to continue a run from a saved state.
 
-Note the choice of the height of the computational box (``\verb|-Lz 4000|''), of the number of vertical levels (``\verb|-Mz 51|'' for levels in ice and ``\verb|-Mbz 51|'' for levels in bedrock), and of a not-equally-spaced grid (``\verb|-quadZ|'').  The messages to standard out show that the vertical spacing is about 20 m near the base and more than 130 m at the top of the computational box (where it matters less).
+Note the choice of the height of the computational box (``\verb|-Lz 4000|''), of the number of vertical levels (``\verb|-Mz 51|'' for levels in ice and ``\verb|-Mbz 51|'' for levels in bedrock). The messages to standard out show that the vertical spacing is about 20 m near the base and more than 130 m at the top of the computational box (where it matters less).
 
 We see the report that bootstrapping has applied an interpolation scheme to the surface temperatures and geothermal fluxes to estimate preliminary temperatures within the ice.  It is based on a heuristic for the amount of downward flow in a column.  Thus bootstrapping quickly creates a temperature field at depth, but it is not a field in equilibrium with the flow.  (That's coming \dots)
 
@@ -2022,7 +2022,9 @@ The Index on page \pageref{sect:index} contains an alphabetical list of options.
 
 \subsectstar{Options controlling the (spatial) computational grid and box}
 
-\opt{chebZ}  Specify Chebyshev-spaced grid in the vertical.  \emph{This grid is extremely fine near the base}, and choice \verb|-quadZ| is probably better justified (by current understanding of the thermocoupling and age problems) than is \verb|-chebZ|.  Use only in combination with the option \verb|-boot_from| or with executables like \verb|pisms| and \verb|pismv| that initialize the grid from formulas.  (It will not work with \verb|-i|.)  See subsection \ref{subsect:grid}.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::compute_vertical_levels()| in the \emph{PISM Reference Manual}.
+\opt{z\und spacing} Vertical spacing within the ice: choose one from ``\t{quadratic}'' (the default for \t{pismr}) and ``\t{equal}''. In the quadratic case, the spacing near the base is about four times finer than it would be with equal spacing for the same value of \verb|Mz|, while the spacing near the top is correspondingly coarser.  Use only in combination with the option \verb|-boot_from| or with executables like \verb|pisms| and \verb|pismv| that initialize the grid from formulas.  (It will not work with \verb|-i|.)  See subsection \ref{subsect:grid}.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::compute_vertical_levels()| in the PISM class browser.
+
+\opt{zb\und spacing} Vertical spacing within the bedrock layer: choose one from ``\t{quadratic}'' (the default for \t{pismr}; see above for details) and ``\t{equal}''.
 
 \opt{Lx}  The x direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
 
@@ -2039,8 +2041,6 @@ The Index on page \pageref{sect:index} contains an alphabetical list of options.
 \optdef{My}{61}  Number of grid points in y horizontal direction.
 
 \optdef{Mz}{31}  Number of grid points in z (vertical) direction.
-
-\opt{quadZ}  Specify quadratically-spaced grid in the vertical.  The spacing near the base is about four times finer than it would be with equal spacing for the same value of \verb|Mz|, while the spacing near the top is correspondingly coarser.  Use only in combination with the option \verb|-boot_from| or with executables like \verb|pisms| and \verb|pismv| that initialize the grid from formulas.  (It will not work with \verb|-i|.)  See subsection \ref{subsect:grid}.  For a detailed description of the spacing of the grid, see the documentation on \verb|IceGrid::compute_vertical_levels()| in the \emph{PISM Reference Manual}.
 
 \subsectstar{Options turning on and off major physical models}
 
@@ -2235,7 +2235,7 @@ Isothermal Glen & \t{custom} & Highly customizable version of the isothermal Gle
 \optdef{topg\und to\und phi}{5.0,15.0,-1000.0,1000.0,10.0}  Sets till friction angle $\phi$=\texttt{tillphi} to piecewise-linear function of bed elevation.  Takes zero to five comma-separated arguments.  An example, in which sliding happens in the ``trough'', is 
 
 \begin{verbatim}
-pisms -eisII I -ssa -super -plastic -track_Hmelt -Mx 91 -My 91 -Mz 51 -quadZ \
+pisms -eisII I -ssa -super -plastic -track_Hmelt -Mx 91 -My 91 -Mz 51 -z_spacing quadratic \
       -topg_to_phi 5.0,15.0,0.0,1000.0 -y 12000
 \end{verbatim}
 \noindent See \emph{Reference Manual}, source file \texttt{iMbasal.cc}, and \cite{BBssasliding}.
@@ -2386,28 +2386,22 @@ Both for PISM and PETSc options, there are ways of avoiding the inconvenience of
 
 First, the environment variable \verb|PETSC_OPTIONS| can be set.  For example, a sequence of runs might need the same refined grid, and you might want to know if other options are read, ignored, or misspelled.  Set (in bash):
 
-\verb|export PETSC_OPTIONS="-Mx 101 -My 101 -Mz 51 -quadZ -options_left"|
+\verb|export PETSC_OPTIONS="-Mx 101 -My 101 -Mz 51 -options_left"|
 
 \noindent The runs 
-
-\verb|$ pismv -test F -y 100|
-
-\verb|$ pismv -test G -y 100|
-
+\begin{verbatim}
+$ pismv -test F -y 100
+$ pismv -test G -y 100
+\end{verbatim}
 \noindent then have the same refined grid in each run, and the runs report on which options were read.
 
 Second, the file \verb|.petscrc| is always read, if present, from the directory where PISM (i.e.~the PETSc program) is started.  It can have a list of options, one per line.  For example, to get the same options as above, \verb|.petscrc| would contain these lines:
-
-\verb|-Mx 101|
-
-\verb|-My 101|
-
-\verb|-Mz 51|
-
-\verb|-quadZ|
-
-\verb|-options_left|
-
+\begin{verbatim}
+-Mx 101
+-My 101
+-Mz 51
+-options_left
+\end{verbatim}
 \noindent Note that the first four lines give PISM options while the last has a generic PETSc option.
 
 These two PETSc mechanisms can be used together.  (The effect of duplicate or conflicting options is not clear, however, and should be avoided.)
@@ -2515,7 +2509,7 @@ $ series.py -f extract.txt -o desired_series.nc
 In a standard PISM installation, runs as \verb|test/verifynow.py|, or \verb|cd test/| and do \verb|./verifynow.py|.  Example usage: \begin{itemize}
 \item ``\verb|verifynow.py|'' without options will use one processor and do three levels of refinement; this command is equivalent to \verb|verifynow.py -n 1 -l 3 -t CGIJ|,
 \item ``\verb|verifynow.py -n 8 -l 5 -t J --prefix=bin/ --mpido='aprun -n'|'' will use \verb|aprun -n 8 bin/pismv| as the command and do five levels (the maximum) of refinement only on test J,
-\item ``\verb|verifynow.py -n 2 -l 3 -t CEIJGKL -u 1|'' uses two processers (cores) and runs in about two hours; the vertical spacing is not equal (\verb|-quadZ|),
+\item ``\verb|verifynow.py -n 2 -l 3 -t CEIJGKL -u 1|'' uses two processers (cores) and runs in about two hours; the vertical spacing is not equal (\verb|-z_spacing quadratic|),
 \item ``\verb|verifynow.py -n 40 -l 5 -t ABCDEFGIJKLM|'' will use forty processors to do all possible verification as managed by \verb|verifynow.py|; don't run this unless you have a big computer and you are prepared to wait.
 \end{itemize}
 

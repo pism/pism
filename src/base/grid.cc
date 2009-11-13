@@ -131,26 +131,8 @@ which may not even be a grid created by this routine).
   - When \c vertical_spacing == EQUAL, the vertical grid in the ice is equally spaced:
     <tt>zlevels[k] = k dzMIN</tt> where <tt>dzMIN = Lz / (Mz - 1)</tt>.  
     In this case <tt>dzMIN = dzMAX</tt>.
-  - When \c vertical_spacing == CHEBYSHEV, the vertical grid in the ice is Chebyshev spaced.  
-    Note that (generally speaking) the \f$N+1\f$ \e Chebyshev \e extreme 
-    \e points are \f$x_j = \cos(j \pi/N)\f$ for \f$j=0,1,\dots,N\f$. 
-    (See [\ref Trefethen].)
-    These are concentrated at either end of the interval \f$[-1,1]\f$.  In our 
-    case we want points concentrated near zero, and we use only half of the 
-    Chebyshev points because we don't need concentration near the top
-    of the computational box.  So we take the original Chebyshev extreme points
-    \f$x_j\f$ with \f$N= 2\, \mathtt{Mz} - 1\f$ but we choose only 
-    \f$j=0,1,\dots,\mathtt{Mz}-1\f$.  These points satisfy 
-    \f$0 \le x_j \le 1\f$ and they are clustered near \f$x=1\f$.  Then we 
-    flip and scale: \f$z_j = \mathtt{Lz} (1 - x_j)\f$.  The smallest spacing 
-    is a factor proportional to \c Mz smaller than the equal spacing.  That is, 
-    \f$z_1 = C \mathtt{Lz} / (\mathtt{Mz}^2)\f$ while 
-    \f$dzEQ = \mathtt{Lz}/(\mathtt{Mz}-1)\f$.   Near the top the spacing is, 
-    to good approximation, equal to \f$\pi \mathtt{dzEQ}\f$; the actual top 
-    space is recorded as \c dzMAX.
   - When \c vertical_spacing == QUADRATIC, the spacing is a quadratic function.  The intent 
-    is that the spacing is smaller near the base than near the top, but that 
-    the effect is less extreme than the Chebyshev case.  In particular, if 
+    is that the spacing is smaller near the base than near the top.  In particular, if 
     \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then <tt>zlevels[k] = Lz * 
     ( (\f$\zeta_k\f$ / \f$\lambda\f$) * (1.0 + (\f$\lambda\f$ - 1.0) 
     * \f$\zeta_k\f$) )</tt> where \f$\lambda\f$ = 4.  The value \f$\lambda\f$ 
@@ -182,17 +164,6 @@ PetscErrorCode  IceGrid::compute_ice_vertical_levels() {
       zlevels[k] = dzMIN * ((PetscScalar) k);
     }
     zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
-    break;
-  }
-  case CHEBYSHEV: {
-    // Spaced according to the Chebyshev extreme points in the interval [0,1],
-    //   with 1 flipped to be the base of the ice, and stretched.
-    for (PetscInt k=0; k < Mz - 1; k++) {
-      zlevels[k] = Lz * ( 1.0 - cos((pi/2.0) * k / (Mz-1)) );
-    }
-    zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
-    dzMIN = zlevels[1] - zlevels[0];
-    dzMAX = zlevels[Mz-1] - zlevels[Mz-2];
     break;
   }
   case QUADRATIC: {

@@ -71,44 +71,14 @@ PetscErrorCode IceCompModel::createVecs() {
   return 0;
 }
 
-// PetscErrorCode IceCompModel::createViewers() {
-//   PetscErrorCode ierr;
-
-//   ierr = IceModel::createViewers(); CHKERRQ(ierr);
-
-//   // must be called after IceModel::createViewers because diagnostic needs to be filled
-//   if ((testname=='F') || (testname=='G')) {
-//     ierr = createOneViewerIfDesired(&SigmaCompView, 'P',
-//                    "Sigma_C (comPensatory heat; K/a) at kd");  CHKERRQ(ierr);
-//   } else SigmaCompView = PETSC_NULL;
-  
-//   // take over SigmaMapView to show only strain heating and not sum Sigma + Sigma_C
-//   if (runtimeViewers[cIndex('S')] != PETSC_NULL) {
-//     ierr = PetscViewerDestroy(runtimeViewers[cIndex('S')]); CHKERRQ(ierr);
-//     runtimeViewers[cIndex('S')] = PETSC_NULL;
-//     ierr = createOneViewerIfDesired(&compSigmaMapView, 'S',
-//                    "Sigma (strain heat; K/a) at kd");  CHKERRQ(ierr);
-//   } else compSigmaMapView = PETSC_NULL;
-   
-//   return 0;
-// }
-
-
-// PetscErrorCode IceCompModel::destroyViewers() {
-//   PetscErrorCode ierr;
-
-//   ierr = IceModel::destroyViewers(); CHKERRQ(ierr);
-
-//   if (SigmaCompView != PETSC_NULL) { ierr = PetscViewerDestroy(SigmaCompView); CHKERRQ(ierr); }
-//   if (compSigmaMapView != PETSC_NULL) { ierr = PetscViewerDestroy(compSigmaMapView); CHKERRQ(ierr); }
-//   return 0;
-// }
-
-
 PetscErrorCode IceCompModel::set_grid_defaults() {
   PetscErrorCode ierr;
 
   // This sets the defaults for each test; command-line options can override this.
+
+  // equal spacing is the default for all the tests except K
+  grid.ice_vertical_spacing = EQUAL;
+  grid.bed_vertical_spacing = EQUAL;
 
   switch (testname) {
   case 'A':
@@ -141,8 +111,10 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
     grid.Mbz = 2;
     grid.Lx = grid.Ly = 1000e3;
     grid.Lz = 4000;
-    grid.Lbz = 1000;
+    grid.Lbz = 1000;		// this is important
     grid.periodicity = XY_PERIODIC;
+    grid.ice_vertical_spacing = QUADRATIC;
+    grid.bed_vertical_spacing = QUADRATIC;
     break;
   default:
     ierr = PetscPrintf(grid.com, "IceCompModel ERROR : desired test not implemented\n");

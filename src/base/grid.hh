@@ -21,7 +21,7 @@
 
 #include <petscda.h>
 
-typedef enum {UNKNOWN = 0, EQUAL, CHEBYSHEV, QUADRATIC} SpacingType;
+typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
 
 //! Describes the PISM grid and the distribution of data across processors.

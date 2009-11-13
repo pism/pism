@@ -207,8 +207,9 @@ column, wherein the enthalpy in a column of ice is stored on an unequally-spaced
 vertical grid, but is mapped to a fine, equally-spaced grid for the conservation of energy
 computation described here.  (Similar structure applies to the age computation.)  See procedures 
 IceEnthalpyModel::enthalpyAndDrainageStep() and IceModel::ageStep(), and see
-the IceModelVec3 class and IceGrid::getFineEqualVertLevsIce().  (Options -quadZ and 
--chebZ choose unequally-spaced storage vertical grids.)
+the IceModelVec3 class and IceGrid::getFineEqualVertLevsIce().  (Options -z_spacing and 
+-zb_spacing allow choosing unequally-spaced storage vertical grids in ice and
+bedrock, respectively.)
 
 The \f$z\f$ derivative terms in (\ref vertProblem) will be approximated implicitly.  Let
 \f$\lambda\f$ be in the interval \f$0 \le \lambda \le 1\f$.  The scheme BOMBPROOF is

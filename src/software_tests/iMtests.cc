@@ -127,9 +127,9 @@ PetscErrorCode IceUnitModel::testIceModelVec3()    {
 //   pisms -eisII A -y 1 -Mz 101 -Mbz 101 # no errors because grid coincides
 //   pisms -eisII A -y 1 -Mz 102 -Mbz 102 # small errors (grid doesn't coincide)
 // same story here
-//   pisms -eisII A -y 1 -Mz 11 -Mbz 11 -quadZ
-//   pisms -eisII A -y 1 -Mz 101 -Mbz 101 -quadZ
-//   pisms -eisII A -y 1 -Mz 102 -Mbz 102 -quadZ
+//   pisms -eisII A -y 1 -Mz 11 -Mbz 11
+//   pisms -eisII A -y 1 -Mz 101 -Mbz 101
+//   pisms -eisII A -y 1 -Mz 102 -Mbz 102
 PetscErrorCode IceUnitModel::testIceModelVec3Bedrock()    {
   PetscErrorCode ierr;
 
@@ -267,7 +267,7 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
   ierr = v.end_access(); CHKERRQ(ierr);
 
   for (int j = 0; j < N; ++j) {
-    PetscPrintf(grid.com, "   value(%3.3f) = %f\n", ts[j], values[j]);
+    PetscPrintf(grid.com, "   (%3.3f)^2 ~= %f\n", ts[j], values[j]);
   }
   
   T += 3;
@@ -281,7 +281,7 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
   ierr = v.end_access(); CHKERRQ(ierr);
 
   for (int j = 0; j < N; ++j) {
-    PetscPrintf(grid.com, "   value(%3.3f) = %f\n", ts[j], values[j]);
+    PetscPrintf(grid.com, "   (%3.3f)^2 ~= %f\n", ts[j], values[j]);
   }
 
   char output[] = "test_output.nc";

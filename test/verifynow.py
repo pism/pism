@@ -35,9 +35,7 @@ def verify(executable,test,report_file=None):
          gridopts = ' -Mz %d -Mbz %d' % (myMz, myMbz)
       testdo = executable + ' -test ' + test[0] + gridopts + test[4]
       if (uneq == 1):
-        testdo = testdo + ' -quadZ'
-      elif (uneq == 2):
-        testdo = testdo + ' -chebZ'
+        testdo = testdo + ' -z_spacing quadratic'
       if (doeta):
         testdo = testdo + ' -eta'
       print ' trying \"' + testdo + '\"'
@@ -112,7 +110,7 @@ alltests = [
         ' -Mz 11 -pc_type asm -sub_pc_type lu -ksp_rtol ' + str(KSPRTOL),
         '(refine dx=20,10,5,3.333,2.5, km; dx=dy and My=30,60,120,180,240)'],
    ['K',[41,81,161,321,641],
-        'pure conduction problem in ice and bedrock',3,' -Mx 4 -My 4 -y 130000.0 -Lbz 1000 -quadZ',
+        'pure conduction problem in ice and bedrock',3,' -Mx 4 -My 4 -y 130000.0 -Lbz 1000',
         '(refine dz=100,50,25,12.5,6.25,m, Mz=41,81,161,321,641)',
         [15,28,55,108,215]],
    ['L',[31,61,91,121,181],
@@ -171,7 +169,7 @@ try:
   -r,--report_file=  name of the NetCDF error report file
   -t,--tests=   verification tests to use: A,B,C,D,E,F,G,H,I,J,K,L,M
   -u,--uneq=    use unequal spaced vertical spacing
-                  (-u 0 is equal spaced [default], -u 1 for '-quadZ', -u 2 for '-chebZ')
+                  (-u 0 is equal spaced [default], -u 1 for '-quadZ')
   --help        prints this message"""
       sys.exit(0)
 except getopt.GetoptError:
