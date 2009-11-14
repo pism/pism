@@ -1,4 +1,5 @@
-// Copyright (C) 2008-2009 Ed Bueler, Constantine Khroulev, Gudfinna Adalgeirsdottir, and Andy Aschwanden
+// Copyright (C) 2008-2009 Ed Bueler, Constantine Khroulev, Gudfinna Adalgeirsdottir,
+//                         and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -50,22 +51,23 @@ degree days, given a normally-distributed daily variability.
 An alternative PDD scheme simulates the daily variability directly by a normal
 (pseudo-) random variable.
 
-There is a severe simplification about temperatures implicit in this model for
-computing inputs to IceModel.  Namely, vsurftemp is \e both the ice temperature
-below completion of firn processes \e and it is used as "vsnowtemp_meanannual",
-the mean annual temperature used in the snow processes model.
-That is, the temperature in the snow processes model, an instance of LocalMassBalance,
-which converts the snow precipitation rate vsnowprecip into surface mass flux vsurfmassflux,
-is here assumed to be equal to vsurftemp.
-    
-The available temperature in real modeling is frequently the +2 m temperature, above
-the snow surface, from an atmospheric flow/energy model.  So there are three temperatures:
+This model makes a severe simplifying assumption about temperatures.  Namely, 
+vsurftemp is \e both the ice upper boundary temperature (i.e. below completion
+of firn processes ...) \e and it is used as the mean annual temperature 
+used in the snow processes model.  That is, the temperature used in the 
+snow processes model to convert the snow precipitation rate vsnowprecip into 
+surface mass flux vsurfmassflux is here assumed to be equal to vsurftemp.
+In fact, the available temperature in real modeling is frequently the +2 m
+temperature, in the air above the snow surface at the level measured by a met
+station, and/or if may be from an atmospheric circulation model.  Thus there
+are three temperatures we might care about, all roughly at the surface of the ice
+sheet:
 
 -# the available 2m temperature (air)
 -# the needed temperature for correctly modeling melting in the mass balance scheme, and
 -# the needed temperature for the upper boundary of the conservation of energy scheme.
 
-Here we just assume they are all the same, which is a deficiency of the model.
+Here we just assume they are all the same.  It is a deficiency of the model.
  */
 class PISMGreenlandAtmosCoupler : public PISMAtmosphereCoupler {
 
