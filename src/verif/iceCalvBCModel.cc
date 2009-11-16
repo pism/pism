@@ -24,11 +24,7 @@ IceCalvBCModel::IceCalvBCModel(IceGrid &g, int mytest)
 }
 
 
-IceCalvBCModel::~IceCalvBCModel() {
-  vsmoothCFmask.destroy();
-  vnCF[0].destroy();
-  vnCF[1].destroy();
-}
+IceCalvBCModel::~IceCalvBCModel() {}
 
 PetscErrorCode IceCalvBCModel::createVecs() {
   PetscErrorCode ierr;

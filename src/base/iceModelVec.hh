@@ -37,7 +37,6 @@ public:
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
   virtual bool            was_created();
   virtual GridType        grid_type();
-  virtual PetscErrorCode  destroy();
 
   virtual PetscErrorCode  range(PetscReal &min, PetscReal &max);
   virtual PetscErrorCode  norm(NormType n, PetscReal &out);
@@ -104,6 +103,7 @@ protected:
 
   void         *array;  // will be PetscScalar** or PetscScalar*** in derived classes
 
+  virtual PetscErrorCode destroy();
   virtual PetscErrorCode checkAllocated();
   virtual PetscErrorCode checkHaveArray();
   virtual PetscErrorCode checkCompatibility(const char*, IceModelVec &other);
@@ -149,7 +149,6 @@ public:
   IceModelVec3Bedrock();
   IceModelVec3Bedrock(const IceModelVec3Bedrock &other);
   virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local);
-  virtual PetscErrorCode destroy();
 
   PetscErrorCode  setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN);
   PetscErrorCode  setColumn(PetscInt i, PetscInt j, PetscScalar c);
@@ -167,6 +166,7 @@ protected:
   map<string,PetscViewer> *sounding_viewers;
   Vec sounding_buffer;
   PetscErrorCode  isLegalLevel(PetscScalar z);
+  virtual PetscErrorCode destroy();
 };
 
 
@@ -176,7 +176,6 @@ public:
   IceModelVec3();
   IceModelVec3(const IceModelVec3 &other);
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
-  virtual PetscErrorCode  destroy();
 
   // note the IceModelVec3 with this method must be *local* while imv3_source must be *global*
   virtual PetscErrorCode  beginGhostCommTransfer(IceModelVec3 &imv3_source);
@@ -218,6 +217,7 @@ public:
   PetscErrorCode view_sounding(int i, int j, PetscInt viewer_size);
 
 protected:  
+  virtual PetscErrorCode  destroy();
   PetscErrorCode  isLegalLevel(PetscScalar z);
   virtual PetscErrorCode  extend_vertically_private(int old_Mz);
   map<string,PetscViewer> *slice_viewers, *sounding_viewers;

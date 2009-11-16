@@ -13,10 +13,10 @@ run_test ()
     cleanup
 
     # run with Lz set too low:
-    run -n 2 pisms -eisII A -y 1000 -Mmax 0.925 -Lz 900 -o foo.nc 
+    run -n 2 pisms -eisII A -y 1000 -Mmax 0.925 -Lz 900 -z_spacing equal -o foo.nc 
 
     # run with Lz set just right:
-    run -n 2 pisms -eisII A -y 1000 -Mz 33 -Mmax 0.925 -Lz 960 -o bar.nc 
+    run -n 2 pisms -eisII A -y 1000 -Mz 33 -Mmax 0.925 -Lz 960 -z_spacing equal -o bar.nc 
 
     # regrid from the extended grid onto the one in bar.nc:
     run -n 2 pismr -i bar.nc -regrid_from foo.nc -regrid_vars temp -y 0 -o baz.nc

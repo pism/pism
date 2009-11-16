@@ -242,7 +242,8 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
     t = t + dt;
   }
 
-  ierr = v.create(grid, "thk", config.get("climate_forcing_buffer_size")); CHKERRQ(ierr);
+  v.set_n_records(config.get("climate_forcing_buffer_size"));
+  ierr = v.create(grid, "thk", false); CHKERRQ(ierr);
   ierr = v.set_attrs("test", "IceModelVec2T test, using 'thk'", "m", ""); CHKERRQ(ierr);
   ierr = v.init(filename); CHKERRQ(ierr);
 
@@ -296,7 +297,22 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = v.update(T, 0); CHKERRQ(ierr);
-  ierr = v.write(output, T, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = v.interp(T); CHKERRQ(ierr);
+  ierr = v.write(output, NC_DOUBLE); CHKERRQ(ierr);
+
+  T = 13;
+  dt = 10;
+  double average;
+
+  ierr = v.update(T, dt); CHKERRQ(ierr);
+
+  ierr = v.begin_access(); CHKERRQ(ierr);
+  ierr = v.average(grid.xs, grid.ys, T, dt, average); CHKERRQ(ierr);
+  ierr = v.end_access(); CHKERRQ(ierr);
+
+  PetscPrintf(grid.com,
+	      "   average(%3.3f, %3.3f) = %3.3f, ideally should be 997/3 ~= 332.33333\n",
+	      T, T + dt, average);
 
   return 0;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -309,8 +309,6 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
   ierr = VecDestroy(X);CHKERRQ(ierr);
   ierr = VecDestroy(R);CHKERRQ(ierr);      
   ierr = SNESDestroy(snes);CHKERRQ(ierr);
-  ierr = user.ctxNu[0].destroy(); CHKERRQ(ierr);
-  ierr = user.ctxNu[1].destroy(); CHKERRQ(ierr);
 
   return 0;
 }

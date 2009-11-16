@@ -29,6 +29,8 @@ IceModelVec2T::IceModelVec2T() : IceModelVec2() {
   array3 = NULL;
   lic = NULL;
   first = -1;
+  n_records = 50;		// just a default
+  T.resize(1);			// so that T[0] is always available
 }
 
 IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec2(other) {
@@ -46,32 +48,23 @@ IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec2(other) {
   first = other.first;
 }
 
-PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const char my_short_name[], int my_n_records) {
-  if (!utIsInit()) {
-    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
-  }
-  if (v != PETSC_NULL) {
-    SETERRQ1(2,"IceModelVec2T with name='%s' already allocated\n", my_short_name);
-  }
+//! Sets the number of records to store in memory. Call it before calling create().
+void IceModelVec2T::set_n_records(unsigned int N) {
+  n_records = N;
+}
 
-  grid = &my_grid;
-  dims = GRID_2D;
-  n_records = my_n_records;
-  T.resize(1);			// we assume that T[0] is always available
-
-  // create the 2D DA:
-  PetscInt       M, N, m, n;
+PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const char my_short_name[], bool local) {
   PetscErrorCode ierr;
+
+  if (local) {
+    SETERRQ(1, "IceModelVec2T cannot be 'local'");
+  }
+
+  ierr = IceModelVec2::create(my_grid, my_short_name, false); CHKERRQ(ierr);
+
+  PetscInt       M, N, m, n;
   ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, DA_STENCIL_BOX,
-		    N, M,
-		    n, m,
-		    1, 1,	// dof and stencil width
-                    PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
-
-  // allocate the 2D Vec:
-  ierr = DACreateGlobalVector(da, &v); CHKERRQ(ierr);
 
   // create the 3D DA:
   ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR,
@@ -82,10 +75,6 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const char my_short_name[
 
   // allocate the 3D Vec:
   ierr = DACreateGlobalVector(da3, &v3); CHKERRQ(ierr);
-
-  name = my_short_name;
-
-  var1.init(name, my_grid, GRID_2D);
 
   return 0;
 }
@@ -164,10 +153,6 @@ PetscErrorCode IceModelVec2T::init(string fname) {
 
   lic = new LocalInterpCtx(gi, NULL, NULL, *grid);
   lic->report_range = false;
-
-  double dt = 1e16;		// a very big number
-  ierr = max_timestep(grid->year, dt); CHKERRQ(ierr);
-  ierr = update(grid->year, dt); CHKERRQ(ierr);
 
   return 0;
 }
@@ -265,7 +250,7 @@ PetscErrorCode IceModelVec2T::discard(int N) {
   return 0;
 }
 
-//! Sets the record number n to the contents of the Vec v.
+//! Sets the record number n to the contents of the (internal) Vec v.
 PetscErrorCode IceModelVec2T::set_record(int n) {
   PetscErrorCode ierr;
   PetscScalar **a2, ***a3;
@@ -280,7 +265,7 @@ PetscErrorCode IceModelVec2T::set_record(int n) {
   return 0;
 }
 
-//! Sets the Vec v to the contents of the nth record.
+//! Sets the (internal) Vec v to the contents of the nth record.
 PetscErrorCode IceModelVec2T::get_record(int n) {
   PetscErrorCode ierr;
   PetscScalar **a2, ***a3;
@@ -307,7 +292,7 @@ PetscErrorCode IceModelVec2T::max_timestep(double t_years, double &dt_years) {
   }
 
   // no restriction if t_years is outside the interval of available records (on the right)
-  if (t_years >= times[N - 1]) {
+  if (t_years >= times.back()) {
     return 0;
   }
 
@@ -324,16 +309,6 @@ PetscErrorCode IceModelVec2T::max_timestep(double t_years, double &dt_years) {
     dt_years = PetscMin(dt_years, times[k - 2] - t_years);
     return 0;
   }
-
-  return 0;
-}
-
-//! Writes the snapshot corresponding to t_years to a file.
-PetscErrorCode IceModelVec2T::write(string filename, double t_years, nc_type nctype) {
-  PetscErrorCode ierr;
-
-  ierr = interp(t_years); CHKERRQ(ierr);
-  ierr = IceModelVec2::write(filename.c_str(), nctype); CHKERRQ(ierr);
 
   return 0;
 }
@@ -403,6 +378,36 @@ PetscErrorCode IceModelVec2T::interp(int i, int j, int N,
     const PetscScalar valm = a3[i][j][mcurr];
     values[k] = valm + incr * (a3[i][j][mcurr+1] - valm);
   }
+
+  return 0;
+}
+
+//! \brief Finds the average value at i,j over the interval (t_years, t_years +
+//! dt_years) using trapezoidal rule.
+/*!
+  Can (and should) be optimized. Later, though.
+ */
+PetscErrorCode IceModelVec2T::average(int i, int j, double t_years, double dt_years,
+				      double &result) {
+  PetscErrorCode ierr;
+
+  // Determine the number of small time-steps to use for averaging:
+  int N = (int) ceil(52 * (dt_years) + 1); // (52 weeks in a year)
+  if (N < 2) N = 2;
+
+  vector<double> ts(N), values(N);
+  double dt = dt_years / (N - 1);
+  for (int k = 0; k < N; k++)
+    ts[k] = t_years + k * dt;
+  
+  ierr = interp(i, j, N, &ts[0], &values[0]); CHKERRQ(ierr);
+
+  // trapezoidal rule; uses the fact that all 'small' time intervals used here
+  // are the same:
+  result = 0;
+  for (int k = 0; k < N - 1; ++k)
+    result += values[k] + values[k + 1];
+  result /= 2*(N - 1);
 
   return 0;
 }

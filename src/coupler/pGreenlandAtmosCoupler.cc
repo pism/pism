@@ -39,14 +39,9 @@ PISMGreenlandAtmosCoupler::PISMGreenlandAtmosCoupler() : PISMAtmosphereCoupler()
 
 
 PISMGreenlandAtmosCoupler::~PISMGreenlandAtmosCoupler() {
-  vsnowprecip.destroy();
-  vsnowtemp_mj.destroy();
   delete snowtempmaps;
-  snowtempmaps = NULL;
   delete snowprecipmaps;
-  snowprecipmaps = NULL;
   delete mbscheme;
-  mbscheme = NULL;
 }
 
 
@@ -113,7 +108,8 @@ PetscErrorCode PISMGreenlandAtmosCoupler::initFromOptions(IceGrid* g, const PISM
        snowPrecipFile); CHKERRQ(ierr);
 
     snowprecipmaps = new IceModelVec2T;
-    ierr = snowprecipmaps->create(*grid, "snowprecip", config.get("climate_forcing_buffer_size"));
+    snowprecipmaps->set_n_records(config.get("climate_forcing_buffer_size")); 
+    ierr = snowprecipmaps->create(*grid, "snowprecip", false); CHKERRQ(ierr);
     ierr = snowprecipmaps->set_attrs("climate_forcing", "ice-equivalent snow precipitation rate",
 				"m s-1", ""); CHKERRQ(ierr);
     ierr = snowprecipmaps->init(snowPrecipFile); CHKERRQ(ierr);
@@ -151,7 +147,8 @@ PetscErrorCode PISMGreenlandAtmosCoupler::initFromOptions(IceGrid* g, const PISM
        snowTempsFile); CHKERRQ(ierr);
 
     snowtempmaps = new IceModelVec2T;
-    ierr = snowtempmaps->create(*grid, "snowtemp", config.get("climate_forcing_buffer_size"));
+    snowtempmaps->set_n_records(config.get("climate_forcing_buffer_size"));
+    ierr = snowtempmaps->create(*grid, "snowtemp", false); CHKERRQ(ierr);
     ierr = snowtempmaps->set_attrs("climate_forcing", "snow surface temperature",
 				"Kelvin", ""); CHKERRQ(ierr);
     ierr = snowtempmaps->init(snowTempsFile); CHKERRQ(ierr);
@@ -161,15 +158,15 @@ PetscErrorCode PISMGreenlandAtmosCoupler::initFromOptions(IceGrid* g, const PISM
        "    using default snow-surface temperature parameterization\n"); CHKERRQ(ierr);
     if (snowtempmaps != NULL)   delete snowtempmaps;
     snowtempmaps = NULL;  // test for NULL to see if using stored temps versus parameterization
-  }
 
-  // this is ignored if stored snow temps are used
-  ierr = vsnowtemp_mj.create(*g, "snowtemp_mj", false); CHKERRQ(ierr);
-  ierr = vsnowtemp_mj.set_attrs("climate_state",
-				"mean July snow-surface temperature used in mass balance scheme",
-				"Kelvin",
-				""); CHKERRQ(ierr);  // no CF standard_name ??
-  ierr = vsnowtemp_mj.set(273.15); CHKERRQ(ierr);  // merely a default value
+    // this is ignored if stored snow temps are used
+    ierr = vsnowtemp_mj.create(*g, "snowtemp_mj", false); CHKERRQ(ierr);
+    ierr = vsnowtemp_mj.set_attrs("climate_state",
+				  "mean July snow-surface temperature used in mass balance scheme",
+				  "Kelvin",
+				  ""); CHKERRQ(ierr);  // no CF standard_name ??
+    ierr = vsnowtemp_mj.set(273.15); CHKERRQ(ierr);  // merely a default value
+  }
 
   // check if user wants default or random PDD; initialize mbscheme to one of these PDDs
   if (mbscheme == NULL) { // only read user options if scheme is not chosen yet;
@@ -246,11 +243,9 @@ PetscErrorCode PISMGreenlandAtmosCoupler::writeCouplingFieldsToFile(
     ierr = vpaleoprecip.scale(precipexpfactor); CHKERRQ(ierr);
 
     ierr = vpaleoprecip.write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-    vpaleoprecip.destroy();
   }
 
-  // save snapshot from yearly cycle or by interpolating monthlies
+  // save snapshot from yearly cycle or by interpolating stored maps
   IceModelVec2 vsnowtemp;  // no work vectors, so we create a new one
   ierr = vsnowtemp.create(*grid, "snowtemp", false); CHKERRQ(ierr);
   ierr = vsnowtemp.set_attrs(
@@ -263,7 +258,8 @@ PetscErrorCode PISMGreenlandAtmosCoupler::writeCouplingFieldsToFile(
 
   if (snowtempmaps != NULL) {
     ierr = snowtempmaps->update(t_years, 0); CHKERRQ(ierr);
-    ierr = snowtempmaps->write(filename, t_years, NC_FLOAT); CHKERRQ(ierr);
+    ierr = snowtempmaps->interp(t_years); CHKERRQ(ierr);
+    ierr = snowtempmaps->write(filename, NC_FLOAT); CHKERRQ(ierr);
   } else {
     PetscScalar **T_ma, **T_mj;
     const PetscScalar radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
@@ -283,7 +279,6 @@ PetscErrorCode PISMGreenlandAtmosCoupler::writeCouplingFieldsToFile(
   }
   ierr = vsnowtemp.end_access();  CHKERRQ(ierr);
   ierr = vsnowtemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  ierr = vsnowtemp.destroy(); CHKERRQ(ierr);
 
   return 0;
 }

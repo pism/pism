@@ -713,8 +713,6 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
       } else {
         ierr = velocitySSA(vNuForJ, &numiter); CHKERRQ(ierr);
       }
-      ierr = vNuForJ[0].destroy(); CHKERRQ(ierr); // immediately de-allocate
-      ierr = vNuForJ[1].destroy(); CHKERRQ(ierr); // immediately de-allocate
     }
     // fill in 3D velocities (u,v,w)
     ierr = broadcastSSAVelocity(true); CHKERRQ(ierr);

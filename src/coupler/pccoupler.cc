@@ -180,13 +180,9 @@ PISMAtmosphereCoupler::PISMAtmosphereCoupler() : PISMClimateCoupler() {
 
 
 PISMAtmosphereCoupler::~PISMAtmosphereCoupler() {
-  vsurfmassflux.destroy();  // destroy if created
-  vsurftemp.destroy();
   if (dTforcing != PETSC_NULL) {
     delete dTforcing; // calls destructor for this Timeseries instance
-    dTforcing = PETSC_NULL;
   }
-  TsOffset = 0.0;
 }
 
 
@@ -424,12 +420,8 @@ PISMOceanCoupler::PISMOceanCoupler() : PISMClimateCoupler() {
 
 
 PISMOceanCoupler::~PISMOceanCoupler() {
-  vshelfbasetemp.destroy();
-  vshelfbasemassflux.destroy();
   if (dSLforcing != PETSC_NULL) {
-    seaLevel = 0.0;
     delete dSLforcing;
-    dSLforcing = PETSC_NULL;
   }
 }
 

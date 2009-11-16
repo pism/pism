@@ -229,8 +229,6 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
   ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
 
-  ierr = vbcflag.destroy(); CHKERRQ(ierr);
-
   // update viewers
   ierr = update_viewers(); CHKERRQ(ierr);
   return 0;

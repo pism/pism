@@ -55,7 +55,8 @@ using namespace std;
   // initialization:
   char filename[] = "climate_inputs.nc";
   IceModelVec2T v;
-  ierr = v.create(grid, "snowtemp", config.get("climate_forcing_buffer_size")); CHKERRQ(ierr);
+  v.set_n_records(config.get("climate_forcing_buffer_size"));
+  ierr = v.create(grid, "snowtemp", false); CHKERRQ(ierr);
   ierr = v.set_attrs("climate_forcing", "snow surface temperature", "K", ""); CHKERRQ(ierr);
   ierr = v.init(filename); CHKERRQ(ierr);
 
@@ -92,15 +93,22 @@ using namespace std;
       // do more
     }
   ierr = v.end_access(); CHKERRQ(ierr);
-  
+
+  // compute an average value over a time interval at a certain grid location:
+
+  double average;
+  ierr = v.begin_access(); CHKERRQ(ierr);
+  ierr = v.average(grid.xs, grid.ys, t, max_dt, average); CHKERRQ(ierr);
+  ierr = v.end_access(); CHKERRQ(ierr);
+
   \endcode
  */
 class IceModelVec2T : public IceModelVec2 {
 public:
   IceModelVec2T();
   IceModelVec2T(const IceModelVec2T &other);
-  virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], int N);
-  virtual PetscErrorCode destroy();
+  virtual void set_n_records(unsigned int N);
+  virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local);
   virtual PetscErrorCode init(string filename);
   virtual PetscErrorCode update(double t_years, double dt_years);
   virtual PetscErrorCode set_record(int n);
@@ -109,10 +117,11 @@ public:
   virtual PetscErrorCode interp(double t_years);
   virtual PetscErrorCode interp(int i, int j, int N,
 				PetscScalar *times, PetscScalar *results);
-  virtual PetscErrorCode write(string filename, double t_years, nc_type nctype);
+  virtual PetscErrorCode average(int i, int j, double t_years, double dt_years,
+				 double &result);
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();
-private:
+protected:
   vector<double> times,		//!< all the times available in filename
     T;				//!< times stored in memory
   string filename;		//!< file to read (regrid) from
@@ -124,6 +133,7 @@ private:
   int n_records,		//!< maximum number of records to store in memory
     first;			//!< in-file index of the first record stored in memory
   
+  virtual PetscErrorCode destroy();
   virtual PetscErrorCode get_array3(PetscScalar*** &a3);
   virtual PetscErrorCode update(int start);
   virtual PetscErrorCode discard(int N);

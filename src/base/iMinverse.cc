@@ -318,32 +318,22 @@ PetscErrorCode IceModel::createInvFields() {
 
 //! De-allocate IceModelVec2's for inverse model.
 PetscErrorCode IceModel::destroyInvFields() {
-  PetscErrorCode ierr;
-  ierr = inv.usIn->destroy(); CHKERRQ(ierr);
   delete inv.usIn;
   inv.usIn = PETSC_NULL;
-  ierr = inv.vsIn->destroy(); CHKERRQ(ierr);
   delete inv.vsIn;
   inv.vsIn = PETSC_NULL;
-  ierr = inv.invMask->destroy(); CHKERRQ(ierr);
   delete inv.invMask;
   inv.invMask = PETSC_NULL;
-  ierr = inv.usSIA->destroy(); CHKERRQ(ierr);
   delete inv.usSIA;
   inv.usSIA = PETSC_NULL;
-  ierr = inv.vsSIA->destroy(); CHKERRQ(ierr);
   delete inv.vsSIA;
   inv.vsSIA = PETSC_NULL;
-  ierr = inv.taubxComputed->destroy(); CHKERRQ(ierr);
   delete inv.taubxComputed;
   inv.taubxComputed = PETSC_NULL;
-  ierr = inv.taubyComputed->destroy(); CHKERRQ(ierr);
   delete inv.taubyComputed;
   inv.taubyComputed = PETSC_NULL;
-  ierr = inv.fofv->destroy(); CHKERRQ(ierr);
   delete inv.fofv;
   inv.fofv = PETSC_NULL;
-  ierr = inv.oldtillphi->destroy(); CHKERRQ(ierr);
   delete inv.oldtillphi;
   inv.oldtillphi = PETSC_NULL;
   delete inv.effPressureN;
