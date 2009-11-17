@@ -282,35 +282,36 @@ PetscErrorCode IceModelVec2T::get_record(int n) {
 
 //! \brief Given the time t_years and the current selected time-step dt_years,
 //! determines the maximum possible time-step this IceModelVec2T allows.
-PetscErrorCode IceModelVec2T::max_timestep(double t_years, double &dt_years) {
+/*!
+  Returns -1 if any time step is OK at t_years.
+ */
+double IceModelVec2T::max_timestep(double t_years) {
   int j, k, N = times.size();
   vector<double>::iterator begin = times.begin();
 
   // no restriction if all the records are in memory:
   if (n_records >= N) {
-    return 0;
+    return -1;
   }
 
   // no restriction if t_years is outside the interval of available records (on the right)
   if (t_years >= times.back()) {
-    return 0;
+    return -1;
   }
 
   // if t_years is outside the interval on the left, we can go to times[n_records - 2].
   if (t_years < times[0]) {
-    dt_years = PetscMin(dt_years, times[n_records - 2] - t_years);
-    return 0;
+    return times[n_records - 2] - t_years;
   }
 
   j = upper_bound(begin, times.end(), t_years) - begin - 1;
   k = j + n_records;
 
   if (k < N) {
-    dt_years = PetscMin(dt_years, times[k - 2] - t_years);
-    return 0;
+    return times[k - 2] - t_years;
   }
 
-  return 0;
+  return -1;
 }
 
 //! Extract data corresponding to t_years using linear interpolation.

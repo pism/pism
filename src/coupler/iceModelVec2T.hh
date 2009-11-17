@@ -113,7 +113,7 @@ public:
   virtual PetscErrorCode update(double t_years, double dt_years);
   virtual PetscErrorCode set_record(int n);
   virtual PetscErrorCode get_record(int n);
-  virtual PetscErrorCode max_timestep(double t_years, double &dt_years);
+  virtual double         max_timestep(double t_years);
   virtual PetscErrorCode interp(double t_years);
   virtual PetscErrorCode interp(int i, int j, int N,
 				PetscScalar *times, PetscScalar *results);

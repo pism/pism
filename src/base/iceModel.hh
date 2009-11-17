@@ -331,9 +331,6 @@ protected:
                                     const char *varname, const char *shorttitle);
   virtual PetscErrorCode writeSSAsystemMatlab(IceModelVec2 vNuH[2]);
 
-  // see iMnames.cc; note tn is statically-initialized in iMnames.cc
-  int cIndex(const char singleCharName);
-
   // see iMreport.cc
   virtual PetscErrorCode computeFlowUbarStats(
                        PetscScalar *gUbarmax, PetscScalar *gUbarSIAav,
@@ -356,10 +353,12 @@ protected:
 
   // Methods for computing diagnostic quantities:
   // spatially-varying:
+  virtual PetscErrorCode compute_bwp(IceModelVec2 &result);
   virtual PetscErrorCode compute_cbar(IceModelVec2 &result);
   virtual PetscErrorCode compute_cbase(IceModelVec2 &result, IceModelVec2 &tmp);
   virtual PetscErrorCode compute_cflx(IceModelVec2 &result, IceModelVec2 &cbar);
   virtual PetscErrorCode compute_csurf(IceModelVec2 &result, IceModelVec2 &tmp);
+  virtual PetscErrorCode compute_dhdt(IceModelVec2 &result);
   virtual PetscErrorCode compute_taud(IceModelVec2 &result, IceModelVec2 &tmp);
   virtual PetscErrorCode compute_temp_pa(IceModelVec3 &useForPATemp); // temporary for dev; FIXME
   virtual PetscErrorCode compute_uvelsurf(IceModelVec2 &result);
@@ -476,7 +475,7 @@ protected:
   PetscErrorCode create_timeseries();
   PetscErrorCode write_timeseries();
 
-  //spatial time-series
+  // spatial time-series
   bool save_extra, extra_file_is_ready, split_extra;
   string extra_filename;
   vector<double> extra_times;

@@ -179,7 +179,7 @@ public:
   virtual PetscErrorCode initFromOptions(IceGrid* g, const PISMVars &variables);
 
   using PISMClimateCoupler::writeCouplingFieldsToFile;
-  virtual PetscErrorCode writeCouplingFieldsToFile(const PetscScalar t_years, const char *filename);
+  virtual PetscErrorCode writeCouplingFieldsToFile(PetscScalar t_years, const char *filename);
 
   using PISMClimateCoupler::updateClimateFields;
   virtual PetscErrorCode updateClimateFields(

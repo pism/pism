@@ -100,7 +100,6 @@ IceModel::~IceModel() {
 
 //! Allocate all IceModelVecs defined in IceModel.
 /*!
-
   This procedure allocates the memory used to store model state, diagnostic and
   work vectors and sets metadata.
 
@@ -263,9 +262,9 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vHmelt.create(grid, "bwat", true); CHKERRQ(ierr);
   ierr = vHmelt.set_attrs("model_state", "effective thickness of subglacial melt water",
 			  "m", ""); CHKERRQ(ierr);
-  // NB! Effective thickness of subglacial melt water *does* vary from 0 to 2 meters only.
+  // NB! Effective thickness of subglacial melt water *does* vary from 0 to max_hmelt meters only.
   ierr = vHmelt.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = vHmelt.set_attr("valid_max", 2.0); CHKERRQ(ierr);
+  ierr = vHmelt.set_attr("valid_max", config.get("max_hmelt")); CHKERRQ(ierr);
   ierr = variables.add(vHmelt); CHKERRQ(ierr);
 
   // rate of change of ice thickness
@@ -450,7 +449,27 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
     dt_force = -1.0;
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
-    
+
+    // ask climate couplers what maximum time-step should be
+    double apcc_dt;
+    ierr = atmosPCC->max_timestep(grid.year, apcc_dt); CHKERRQ(ierr);
+    if (apcc_dt > 0.0) {
+      if (maxdt_temporary > 0)
+	maxdt_temporary = PetscMin(apcc_dt, maxdt_temporary);
+      else
+	maxdt_temporary = apcc_dt;
+    }
+
+    double opcc_dt;
+    ierr = oceanPCC->max_timestep(grid.year, opcc_dt); CHKERRQ(ierr);
+    if (opcc_dt > 0.0) {
+      if (maxdt_temporary > 0)
+	maxdt_temporary = PetscMin(opcc_dt, maxdt_temporary);
+      else
+	maxdt_temporary = opcc_dt;
+    }
+
+
 PetscLogEventBegin(beddefEVENT,0,0,0,0);
 
     // compute bed deformation, which only depends on current thickness and bed elevation

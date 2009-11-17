@@ -62,6 +62,19 @@ PetscErrorCode PISMClimateCoupler::initFromOptions(IceGrid* g, const PISMVars &/
     ierr = config.read(PISM_DefaultConfigFile); CHKERRQ(ierr);
   }
 
+  NCConfigVariable overrides;
+  overrides.init("pism_overrides", grid->com, grid->rank);
+
+  char override_config[PETSC_MAX_PATH_LEN];
+  PetscTruth use_override_config;
+  ierr = PetscOptionsGetString(PETSC_NULL, "-config_override", override_config,
+			       PETSC_MAX_PATH_LEN, &use_override_config);
+  if (use_override_config) {
+    ierr = overrides.read(override_config); CHKERRQ(ierr);
+    config.import_from(overrides);
+  }
+  config.print();
+
   printIfDebug("ending PISMClimateCoupler::initFromOptions()\n");
   return 0;
 }
@@ -163,11 +176,10 @@ PetscErrorCode PISMClimateCoupler::updateClimateFields(
   SETERRQ(1,"PISMClimateCoupler ERROR:  this method is VIRTUAL in PISMClimateCoupler and is not implemented");
 }
 
-//! Sets dt_years to min(dt_years, maximum step the coupler can take).
-/*!
-  Does nothing in the base class.
- */
-PetscErrorCode PISMClimateCoupler::max_timestep(PetscScalar /*t_years*/, PetscScalar &/*dt_years*/) {
+//! \brief Computes the maximum time-step (in seconds) this climate coupler can
+//! take. Sets dt_years to -1 if there is no restriction.
+PetscErrorCode PISMClimateCoupler::max_timestep(PetscScalar /*t_years*/, PetscScalar &dt_years) {
+  dt_years = -1;
   return 0;
 }
 
@@ -295,7 +307,7 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(
 }
 
 
-//! Calls updateSurfMassFluxAndProvide() and updateSurfTempAndProvide(); ignors returned pointers.
+//! Calls updateSurfMassFluxAndProvide() and updateSurfTempAndProvide(); ignores returned pointers.
 PetscErrorCode PISMAtmosphereCoupler::updateClimateFields(
                  PetscScalar t_years, PetscScalar dt_years) {
   PetscErrorCode ierr;
@@ -651,6 +663,7 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
                   IceModelVec2* &pvsbt) {
   PetscErrorCode ierr;
 
+  // FIXME: replace with config.get(...) calls
   // ignores everything from IceModel except ice thickness; also ignores t_years and dt_years
   const PetscScalar icerho       = 910.0,   // kg/m^3   ice shelf mean density
                     oceanrho     = 1028.0,  // kg/m^3   sea water mean density
@@ -680,6 +693,7 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseMassFluxAndProvide(
          IceModelVec2* &pvsbmf) {
   PetscErrorCode ierr;
 
+  // FIXME: replace with config.get(...) calls
   const PetscScalar icelatentheat = 3.35e5,   // J kg-1   ice latent heat capacity
                     icerho        = 910.0,    // kg m-3   ice shelf mean density
                     // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1

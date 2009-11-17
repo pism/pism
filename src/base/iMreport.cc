@@ -594,6 +594,48 @@ PetscErrorCode IceModel::compute_temp_pa(IceModelVec3 &useForPATemp) {
   return 0;
 }
 
+//! Computes the basal water pressure
+/*!
+  \f[p_w = \alpha\, w\, \rho\, g\, H,\f]
+  where 
+
+  - \f$\alpha\f$ is the till pore water fraction (till_pw_fraction),
+  - \f$w\f$ is the effective thickness of subglacial melt water (bwat)
+  - \f$\rho\f$ is the ice density (ice_density)
+  - \f$H\f$ is the ice thickness (thk)
+ */
+PetscErrorCode IceModel::compute_bwp(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+  PetscScalar alpha = config.get("till_pw_fraction"),
+    g     = config.get("standard_gravity"),
+    rho   = config.get("ice_density");
+
+  ierr = vH.multiply_by(vHmelt, result); CHKERRQ(ierr);
+  ierr = result.scale(alpha * rho * g); CHKERRQ(ierr);
+
+  ierr = result.set_name("bwp"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "basal pore water pressure",
+			  "Pa", ""); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief Computes the rate of change of ice surface elevation as a sum of the
+//! bedrock uplift rate and the thickness rate of change.
+PetscErrorCode IceModel::compute_dhdt(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+
+  ierr = vuplift.add(1.0, vdHdt, result); CHKERRQ(ierr);
+
+  ierr = result.set_name("dhdt"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "rate of change of surface elevation",
+			  "m s-1", ""); CHKERRQ(ierr);
+  ierr = result.set_glaciological_units("m year-1");
+  result.write_in_glaciological_units = true;
+
+  return 0;
+}
+
 //! \brief Computes a diagnostic quantity given by \c name and returns a
 //! pointer to a pre-allocated work vector containing it.
 /*! For 2D quantities, result will point to vWork2d[0].
@@ -607,6 +649,12 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   PetscErrorCode ierr;
 
   result = NULL;		// if clauses can override this
+
+  if (name == "bwp") {
+    ierr = compute_bwp(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
 
   if (name == "cbar") {
     ierr = compute_cbar(vWork2d[0]); CHKERRQ(ierr);
@@ -629,6 +677,12 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 
   if (name == "csurf") {
     ierr = compute_csurf(vWork2d[0], vWork2d[1]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "dhdt") {
+    ierr = compute_dhdt(vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }

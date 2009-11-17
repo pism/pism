@@ -44,7 +44,7 @@ public:
   virtual PetscErrorCode init();
 
   /*! Call before getMassFluxFromTemperatureTimeSeries() so that mass balance method can
-      decide how to cut up the time interval.  Most implementations will ignor
+      decide how to cut up the time interval.  Most implementations will ignore
       t and just use dt.  Input t,dt in seconds.  */
   virtual PetscErrorCode getNForTemperatureSeries(
                 PetscScalar t, PetscScalar dt, PetscInt &N);

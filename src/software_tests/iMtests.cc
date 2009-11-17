@@ -248,8 +248,8 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
   ierr = v.init(filename); CHKERRQ(ierr);
 
   double T = 1;
-  double max_dt = 100;		// a big number
-  ierr = v.max_timestep(T, max_dt); CHKERRQ(ierr);
+  double max_dt;
+  max_dt = v.max_timestep(T);
 
   PetscPrintf(grid.com, "   max_dt = %f\n", max_dt);
 
