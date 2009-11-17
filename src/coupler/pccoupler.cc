@@ -228,7 +228,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars
             "",  // pism_intent is either "climate_state" or "climate_diagnostic"
                  //    according to whether this variable is kept or overwritten
                  //    by a parameterization (we don't know in the base class)
-            "annual average ice temperature at ice surface but below firn processes",
+            "time-dependent annual average ice temperature at ice surface but below firn processes",
             "K", 
             "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
             CHKERRQ(ierr);
@@ -274,13 +274,8 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(
   PetscErrorCode ierr;
   
   ierr = vsurfmassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  if (dTforcing != PETSC_NULL) {
-    ierr = vsurftemp.shift(-TsOffset); CHKERRQ(ierr); // return to unshifted state
-    ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
-    ierr = vsurftemp.shift(TsOffset); CHKERRQ(ierr);  // re-apply the offset
-  } else {
-    ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  }
+
+  ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   // also append to surface temperature offset time series
   NCTool nc(grid);
@@ -351,6 +346,8 @@ PISMConstAtmosCoupler::PISMConstAtmosCoupler() : PISMAtmosphereCoupler() {
   initializeFromFile = true; // default
 }
 
+// FIXME:  SHOULD STOP OR WARN IF dTforcing != NULL BECAUSE SEMANTICS OF artm
+//         WHICH WAS READ FROM FILE ARE UNCLEAR: DID IT ALREADY HAVE A SHIFT IN IT?
 
 //! Normally initializes surface mass flux and surface temperature from the PISM input file.
 /*!
