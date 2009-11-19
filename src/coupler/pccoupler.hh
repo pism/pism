@@ -144,7 +144,7 @@ protected:
 
   PetscTruth      doForceToThickness;
   IceModelVec2    vthktarget;
-  IceModelVec2    *ftt_thk;  //!< pointer back to IceModel::vH, needed only if doForceToThickness
+  IceModelVec2    *ftt_thk;  //!< pointer back to IceModel::vH, needed only if doForceToThickness; FIXME:  SOME uses causes seg fault??!
   PetscReal       ftt_ys, ftt_ye, ftt_alphadecay;
 };
 

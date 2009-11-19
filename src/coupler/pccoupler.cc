@@ -213,6 +213,10 @@ g->year must be valid before this can be called.  (FIXME:  why?)
 
 If option -dTforcing is used, we find and read the temperature offsets from the given
 file into memory, by calling Timeseries.read() for Timeseries* dTforcing.
+
+If option \c -force_to_thk \c foo.nc is used then we initialize that mechanism by reading
+\c thk from \c foo.nc as the target thickness.  The start and end year are also determined.  (FIXME: but not correctly)  See updateSurfMassFluxandProvide() for the semantics of
+the  \c -force_to_thk mechanism.
  */
 PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars &variables) {
   PetscErrorCode ierr;
@@ -382,12 +386,24 @@ PetscErrorCode  PISMAtmosphereCoupler::get_force_to_thickness_time_from_options(
 }
 
 
+//! Apply the time step restriction if -force_to_thk is used, otherwise do nothing.
+/*!
+The timestep restriction is, by direct analogy, the same as for
+   \f[\frac{dy}{dt} = - \alpha y\f]
+with explicit (forward) Euler.  If \f$\Delta t\f$ is the time step then Euler is
+\f$y_{n+1} = (1-\alpha \Delta t) y_n\f$.  We require for stability that
+\f$|y_{n+1}|\le |y_n|\f$, which is to say \f$|1-\alpha \Delta t|\le 1\f$.
+Equivalently (since \f$\alpha \Delta t>0\f$),
+   \f[\alpha \Delta t\le 2\f]
+Therefore we set here
+   \f[\Delta t = \frac{2}{\alpha}.\f]
+ */
 PetscErrorCode PISMAtmosphereCoupler::max_timestep(
                     PetscScalar /* t_years */, PetscScalar &dt_years) {
   if (doForceToThickness == PETSC_TRUE) {
     dt_years = 2.0 / (ftt_alphadecay * secpera);
     verbPrintf(2, grid->com,
-       "    PISMAtmosphereCoupler::max_timestep() returns  dt_years = %.5f years because doForceToThickness\n",
+       "    PISMAtmosphereCoupler::max_timestep() returns  dt_years = %.5f years because doForceToThickness is set\n",
        dt_years);
   } else {
     dt_years = -1.0;
@@ -447,7 +463,52 @@ PetscErrorCode PISMAtmosphereCoupler::updateClimateFields(
 }
 
 
-//! Provides access to vsurfmassflux.  No update of vsurfmassflux unless -force_to_thk in use.  Derived class versions generally will update.
+//! Provides access to vsurfmassflux.  No update of vsurfmassflux unless \c -force_to_thk in use.  Derived-class versions generally will update themselves first and call this second.
+/*!
+If \c -force_to_thk \c foo.nc is in use then vthktarget will have a target ice thickness
+map (by the time this is called).  Let \f$H_{\text{tar}}\f$ be this target thickness,
+and let \f$H\f$ be the current model thickness.  Recall that the mass continuity 
+equation solved by IceModel::massContExplicitStep() is
+  \f[ \frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q} \f]
+and that this procedure is supposed to produce \f$M\f$.
+In this context, the semantics of \c -force_to_thk are that \f$M\f$ is modified
+by a multiple of the difference between the target thickness and the current thickness.
+In particular, the \f$\Delta M\f$ that is produced here is 
+  \f[\Delta M = \alpha (H_{\text{tar}} - H)\f]
+where \f$\alpha>0\f$ is determined below.  Note \f$\Delta M\f$ is positive in
+areas where \f$H_{\text{tar}} > H\f$, so we are adding mass there, and we are ablating
+in the other case.
+
+We determine \f$\alpha\f$ by the rule that we are removing mass at a rate such that by 
+the time the run is done, in the absence of flow, we have made
+\f$H = H_{\text{tar}} + \epsilon (H_0 - H_{\text{tar}})\f$
+where \f$\epsilon\f$ is the inverse \c pism_config:force_to_thickness_factor, which has default
+value 1000, and \f$H_0\f$ is the model thickness at the beginning of the run.
+In fact, let \f$t_s\f$ be the start time and \f$t_e\f$ the end time for the run.
+Without flow or basal mass balance, or any surface mass balance other than the
+\f$\Delta M\f$ computed here, we are solving
+  \f[ \frac{\partial H}{\partial t} = \alpha (H_{\text{tar}} - H) \f]
+Let's assume \f$H(t_s)=H_0\f$.  This ODE IVP has solution
+\f$H(t) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t-t_s)}\f$
+and so
+  \f[ H(t_e) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t_e-t_s)} \f]
+Thus we want
+  \f[ e^{-\alpha (t_e-t_s)} = \frac{1}{1000}\f]
+if \c pism_config:force_to_thickness_factor = 1000.  It follows that we set
+  \f[\alpha = \frac{\ln(1000)}{t_e-t_s}\f]
+(\f$\alpha\f$ is actually set in PISMAtmosphereCoupler::initFromOptions().)
+
+The final feature is that we turn on this mechanism so it is harshest near the end of the run.  In particular,
+  \f[\Delta M = \lambda(t) \alpha (H_{\text{tar}} - H)\f]
+where
+  \f[\lambda(t) = \frac{t-t_s}{t_e-t_s}\f]
+
+Note \f$M\f$ = \c acab must have been either read from a file
+(FIXME: that case is dangerous, because we keep adding on more and more;
+similar issues as with \c -dTforcing) or it was produced from a precipitation map and a 
+surface mass balance scheme.  We assume that the derived class has already computed 
+\f$M\f$, and this procedure is modifying the result.
+ */
 PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
     PetscScalar t_years, PetscScalar /*dt_years*/,
     IceModelVec2* &pvsmf) {
@@ -468,7 +529,9 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
     }
     
     // force-to-thickness mechanism is only full-strength at end of run
-    const PetscScalar lambda = (grid->year - ftt_ys) / (ftt_ye - ftt_ys);
+    // FIXME:  if the start year was set by reading from file, then we don't
+    //    have the right ftt_ys, ftt_ye
+    const PetscScalar lambda = (t_years - ftt_ys) / (ftt_ye - ftt_ys);
     ierr = verbPrintf(2, grid->com,
        "    t_years = %.3f a, ftt_ys = %.3f a, ftt_ye = %.3f a, lambda = %.3f, \n",
        t_years,ftt_ys,ftt_ye,lambda); CHKERRQ(ierr);
