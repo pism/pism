@@ -215,8 +215,6 @@ PetscErrorCode PISMGreenlandAtmosCoupler::writeCouplingFieldsToFile(
   
   ierr = PISMAtmosphereCoupler::writeCouplingFieldsToFile(t_years,filename); CHKERRQ(ierr);
 
-  // duplicate precipitation into file
-  ierr = vsnowprecip.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   double dT_offset = 0.0;
   if (dTforcing != NULL) {
@@ -286,6 +284,9 @@ PetscErrorCode PISMGreenlandAtmosCoupler::writeCouplingFieldsToFile(
     ierr = snowprecipmaps->update(t_years, 0); CHKERRQ(ierr);
     ierr = snowprecipmaps->interp(t_years); CHKERRQ(ierr);
     ierr = snowprecipmaps->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  } else {
+    // duplicate precipitation into file
+    ierr = vsnowprecip.write(filename, NC_FLOAT); CHKERRQ(ierr);
   }
 
   return 0;

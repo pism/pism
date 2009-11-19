@@ -95,8 +95,6 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // "-cbar_to_till" read in invertVelocitiesFromNetCDF() in iMinverse.cc
 
-// "-chebZ" read in IceGrid::set_grid_from_options()
-
   ierr = PetscOptionsGetReal(PETSC_NULL, "-constant_nuH", &my_nuH, &my_useConstantNuH); CHKERRQ(ierr);
   // user gives nu*H in MPa yr m (e.g. Ritz et al 2001 value is 30.0 * 1.0)
   if (my_useConstantNuH == PETSC_TRUE) {
@@ -104,28 +102,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   }
 
 // "-csurf_to_till" read in invertVelocitiesFromNetCDF() in iMinverse.cc
-
-  /* FIXME: this is definitely needed, but needs work, too
-  // regular size viewers
-  ierr = PetscOptionsGetString(PETSC_NULL, "-d", diagnostic, PETSC_MAX_PATH_LEN, PETSC_NULL); 
-            CHKERRQ(ierr);
-  if (showViewers == PETSC_FALSE) {
-    ierr = verbPrintf(1,grid.com,
-       "WARNING: viewers requested with -d but showViewers is false, so none shown\n");
-       CHKERRQ(ierr);
-    strcpy(diagnostic, "\0");
-  }
-  
-  // big viewers (which have higher priority than regular viewers)
-  ierr = PetscOptionsGetString(PETSC_NULL, "-dbig", diagnosticBIG, PETSC_MAX_PATH_LEN, PETSC_NULL); 
-            CHKERRQ(ierr);
-  if (showViewers == PETSC_FALSE)  {
-    ierr = verbPrintf(1,grid.com,
-       "WARNING: viewers requested with -dbig but showViewers is false, so none shown\n");
-       CHKERRQ(ierr);
-    strcpy(diagnosticBIG, "\0");
-  }
-  */
 
   ierr = config.scalar_from_option("e", "enhancement_factor"); CHKERRQ(ierr);
 

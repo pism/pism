@@ -296,7 +296,7 @@ PetscErrorCode IceModel::init_extras() {
   return 0;
 }
 
-//! Write spatiall-variable diagnostic quantities.
+//! Write spatially-variable diagnostic quantities.
 PetscErrorCode IceModel::write_extras() {
   PetscErrorCode ierr;
   NCTool nc(&grid);

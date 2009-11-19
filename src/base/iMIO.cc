@@ -505,7 +505,7 @@ PetscErrorCode IceModel::write_snapshot() {
 				 // initialized. See the code below.
   char filename[PETSC_MAX_PATH_LEN];
 
-  // determine if the user set the -save_at and -save_to options
+  // determine if the user set the -save_times and -save_file options
   if (!save_snapshots)
     return 0;
 

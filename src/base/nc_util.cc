@@ -216,12 +216,12 @@ PetscErrorCode NCTool::get_grid_info_2d(grid_info &g) const {
   PetscErrorCode ierr;
 
   ierr = get_dim_length("t",  &g.t_len); CHKERRQ(ierr);
-  ierr = get_dim_length("y",  &g.x_len); CHKERRQ(ierr); // transpose
-  ierr = get_dim_length("x",  &g.y_len); CHKERRQ(ierr); // transpose
+  ierr = get_dim_length("x",  &g.x_len); CHKERRQ(ierr);
+  ierr = get_dim_length("y",  &g.y_len); CHKERRQ(ierr);
 
   ierr = get_dim_limits("t", NULL, &g.time); CHKERRQ(ierr);
-  ierr = get_dim_limits("y", &g.x_min, &g.x_max); CHKERRQ(ierr); // transpose
-  ierr = get_dim_limits("x", &g.y_min, &g.y_max); CHKERRQ(ierr); // transpose
+  ierr = get_dim_limits("x", &g.x_min, &g.x_max); CHKERRQ(ierr);
+  ierr = get_dim_limits("y", &g.y_min, &g.y_max); CHKERRQ(ierr);
 
   g.x0 = (g.x_max + g.x_min) / 2.0;
   g.y0 = (g.y_max + g.y_min) / 2.0;
@@ -943,8 +943,8 @@ bool NCTool::check_dimensions() const {
   if (grid == NULL) SETERRQ(1, "NCTool::check_dimensions(...): grid == NULL");
 
   t  = check_dimension("t", -1); // length does not matter
-  x  = check_dimension("x", grid->My); // transpose
-  y  = check_dimension("y", grid->Mx); // transpose
+  x  = check_dimension("y", grid->My);
+  y  = check_dimension("x", grid->Mx);
   z  = check_dimension("z", grid->Mz);
   zb = check_dimension("zb", grid->Mbz);
   
@@ -968,15 +968,15 @@ PetscErrorCode NCTool::create_dimensions() const {
     stat = nc_put_att_text(ncid, t, "units", 17, "years since 1-1-1"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, t, "calendar", 4, "none"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, t, "axis", 1, "T"); check_err(stat,__LINE__,__FILE__);
-    // x; note the transpose
-    stat = nc_def_dim(ncid, "x", grid->My, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    // x
+    stat = nc_def_dim(ncid, "x", grid->Mx, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_def_var(ncid, "x", NC_DOUBLE, 1, &dimid, &x); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_put_att_text(ncid, x, "axis", 1, "X"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, x, "long_name", 32, "X-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, x, "standard_name", 23, "projection_x_coordinate"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, x, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
-    // y; note the transpose
-    stat = nc_def_dim(ncid, "y", grid->Mx, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    // y
+    stat = nc_def_dim(ncid, "y", grid->My, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_def_var(ncid, "y", NC_DOUBLE, 1, &dimid, &y); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_put_att_text(ncid, y, "axis", 1, "Y"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, y, "long_name", 32, "Y-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
@@ -1002,13 +1002,12 @@ PetscErrorCode NCTool::create_dimensions() const {
 
     // set values:
     // Note that the 't' dimension is not modified: it is handled by the append_time method.
-    // Also note the transpose.
     
     double *x_coords, *y_coords;
     stat = grid->compute_horizontal_coordinates(x_coords, y_coords); CHKERRQ(stat);
 
-    stat = put_dimension(x, grid->My, y_coords); CHKERRQ(stat);
-    stat = put_dimension(y, grid->Mx, x_coords); CHKERRQ(stat);
+    stat = put_dimension(y, grid->My, y_coords); CHKERRQ(stat);
+    stat = put_dimension(x, grid->Mx, x_coords); CHKERRQ(stat);
     stat = put_dimension(z, grid->Mz, grid->zlevels); CHKERRQ(stat);
     stat = put_dimension(zb, grid->Mbz, grid->zblevels); CHKERRQ(stat);
 
@@ -1198,7 +1197,7 @@ PetscErrorCode NCTool::get_dim_length(const char name[], int *len) const {
 }
 
 //! Gets dimension limits.
-/*! Gets dimension limits (i.e min and max values of the coordinate variable).
+/*! Gets dimension limits (%i.e. min and max values of the coordinate variable).
 
   Sets min = 0 and max = 0 if the dimension \c name has length 0.
 
@@ -1474,14 +1473,14 @@ PetscErrorCode NCTool::compute_start_and_count(const int varid, int *start, int 
       nc_start[j] = start[T];
       nc_count[j] = count[T];
       imap[j]     = 1;		// this value does not matter because we never read more than 1 record
-    } else if (dimids[j] == x_id) {
-      nc_start[j] = start[Y];	// transpose
-      nc_count[j] = count[Y];	// transpose
-      imap[j]     = z_count;	// transpose
     } else if (dimids[j] == y_id) {
-      nc_start[j] = start[X];		// transpose
-      nc_count[j] = count[X];		// transpose
-      imap[j]     = count[Y] * z_count; // transpose
+      nc_start[j] = start[Y];
+      nc_count[j] = count[Y];
+      imap[j]     = z_count;
+    } else if (dimids[j] == x_id) {
+      nc_start[j] = start[X];
+      nc_count[j] = count[X];
+      imap[j]     = count[Y] * z_count;
     } else if (dimids[j] == z_id) {
       nc_start[j] = start[Z];
       nc_count[j] = count[Z];

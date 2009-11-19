@@ -344,23 +344,31 @@ PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
   grid (Mx,My) are already determined. In particular, the input file (either \c
   -i or \c -boot_from) and user options (like \c -Mx) must have already been
   read to determine the parameters, and any conflicts must have been resolved.
+
+  This method contains the "fundamental" transpose: "My,Mx" instead of "Mx,My"
+  in the DACreate2d call; this transpose allows us to index arrays by "[i][j]"
+  (where 'i' corresponds to 'x' and 'j' to 'y') and be consistent about
+  meanings of 'x', 'y', 'u' and 'v'.
+
+  Unfortunately this means that PETSc viewers appear transposed.
+
+  This choice should be virtually invisible, unless you're using DALocalInfo
+  structures.
+
+  See IceModelVec3 for creation of three-dimensional DAs.
+
+  \note PETSc order: x in columns, y in rows, indexing as array[y][x]. PISM
+  order: x in rows, y in columns, indexing as array[x][y].
  */
 PetscErrorCode IceGrid::createDA() {
   PetscErrorCode ierr;
-
-  if (da2 != PETSC_NULL) {
+  if (da2 != PETSC_NULL)
     SETERRQ(1, "IceGrid::createDA(): da2 != PETSC_NULL");
-  }
 
-  // this line contains the fundamental transpose: My,Mx instead of "Mx,My";
-  // this transpose allows us to index the Vecs by "[i][j]" but display them
-  //   correctly in PETSc viewers; changing this to untransposed should *only*
-  //   change that viewer behavior
+  // Transpose:
   ierr = DACreate2d(com, DA_XYPERIODIC, DA_STENCIL_BOX,
                     My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 1,
                     PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
-
-  /* see IceModelVec3 for creation of three-dimensional DAs for each 3D Vec */
 
   DALocalInfo info;
   ierr = DAGetLocalInfo(da2, &info); CHKERRQ(ierr);
@@ -370,7 +378,6 @@ PetscErrorCode IceGrid::createDA() {
 
   return 0;
 }
-
 
 //! Sets grid vertical levels, Mz, Mbz, Lz and Lbz. Checks input for consistency.
 PetscErrorCode IceGrid::set_vertical_levels(int new_Mz, int new_Mbz, double *new_zlevels, double *new_zblevels) {

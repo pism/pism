@@ -134,10 +134,10 @@ PetscErrorCode IceModel::set_grid_from_options() {
 			   "Options setting the computational grid extent and dimensions",
 			   PETSC_NULL); CHKERRQ(ierr);
 
-  // Read -Lx and -Ly. Note the transpose!
-  ierr = PetscOptionsScalar("-Lx", "Half of the grid extent in the X direction, in km", "",
+  // Read -Lx and -Ly.
+  ierr = PetscOptionsScalar("-Ly", "Half of the grid extent in the X direction, in km", "",
 			    y_scale, &y_scale, &Ly_set); CHKERRQ(ierr);
-  ierr = PetscOptionsScalar("-Ly", "Half of the grid extent in the Y direction, in km", "",
+  ierr = PetscOptionsScalar("-Lx", "Half of the grid extent in the Y direction, in km", "",
 			    x_scale, &x_scale, &Lx_set); CHKERRQ(ierr);
   // Vertical extent (in the ice):
   ierr = PetscOptionsScalar("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters", "",
@@ -145,10 +145,10 @@ PetscErrorCode IceModel::set_grid_from_options() {
   ierr = PetscOptionsScalar("-Lbz", "Grid extent in the Z (vertical) direction in the bedrock, in meters", "",
 			    zb_scale, &zb_scale, &Lbz_set); CHKERRQ(ierr);
 
-  // Read -Mx, -My, -Mz and -Mbz. Note the transpose!
-  ierr = PetscOptionsInt("-Mx", "Number of grid points in the X direction", "",
+  // Read -Mx, -My, -Mz and -Mbz.
+  ierr = PetscOptionsInt("-My", "Number of grid points in the X direction", "",
 			 grid.My, &My, &My_set); CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-My", "Number of grid points in the Y direction", "",
+  ierr = PetscOptionsInt("-Mx", "Number of grid points in the Y direction", "",
 			 grid.Mx, &Mx, &Mx_set); CHKERRQ(ierr);
   ierr = PetscOptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice", "",
 			 grid.Mz, &Mz, &Mz_set); CHKERRQ(ierr);
