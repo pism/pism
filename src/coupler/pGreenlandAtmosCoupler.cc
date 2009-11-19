@@ -399,9 +399,6 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfMassFluxAndProvide(
              PetscScalar t_years, PetscScalar dt_years,
              IceModelVec2* &pvsmf) {
   PetscErrorCode ierr;
-  
-  ierr = PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
-     t_years, dt_years, pvsmf); CHKERRQ(ierr);
  
   // set up snow temperature time series
   PetscInt     Nseries;
@@ -509,27 +506,48 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfMassFluxAndProvide(
   ierr = vsurfmassflux.end_access(); CHKERRQ(ierr);
 
   delete [] Tseries;
+
+  // post-update in base class to add on -force_to_thk, etc.
+  ierr = PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
+     t_years, dt_years, pvsmf); CHKERRQ(ierr);
+
   return 0;
 }
+
 
 //! \brief Computes the maximum time-step (in seconds) this climate coupler can
 //! take. Sets dt_years to a negative number if there is no restriction.
 PetscErrorCode PISMGreenlandAtmosCoupler::max_timestep(PetscScalar t_years,
 						       PetscScalar &dt_years) {
   PetscErrorCode ierr;
-
+  
+  dt_years = -1.0;
+  
+  // time-step restriction if reading climate from stored maps
   if ((snowtempmaps != NULL) && (snowprecipmaps != NULL)) {
     double snowtemp_dt, snowprecip_dt;
-    snowtemp_dt   = snowtempmaps->max_timestep(t_years);   CHKERRQ(ierr);
-    snowprecip_dt = snowprecipmaps->max_timestep(t_years); CHKERRQ(ierr);
+    snowtemp_dt   = snowtempmaps->max_timestep(t_years);
+    snowprecip_dt = snowprecipmaps->max_timestep(t_years);
 
     if (snowtemp_dt < 0)   dt_years = snowprecip_dt;
     if (snowprecip_dt < 0) dt_years = snowtemp_dt;
     else                   dt_years = PetscMin(snowtemp_dt, snowprecip_dt);
-
-    return 0;
   }
   
-  dt_years = -1;
+  // ask base class for time-step restriction (e.g. -force_to_thk)
+  PetscScalar pac_dt_years;
+  ierr = PISMAtmosphereCoupler::max_timestep(t_years, pac_dt_years); CHKERRQ(ierr);
+
+  // resolve
+  if (pac_dt_years >= 0.0) {
+    if (dt_years < 0.0) {
+      dt_years = pac_dt_years;
+    } else {
+      // case in which both PISMGreenlandAtmosCoupler and PISMAtmosphereCoupler
+      //    have time-step restrictions; return minimum
+      if (pac_dt_years < dt_years)  dt_years = pac_dt_years;
+    }
+  }
   return 0;
 }
+

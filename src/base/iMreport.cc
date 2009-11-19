@@ -596,22 +596,25 @@ PetscErrorCode IceModel::compute_temp_pa(IceModelVec3 &useForPATemp) {
 
 //! Computes the basal water pressure
 /*!
-  \f[p_w = \alpha\, w\, \rho\, g\, H,\f]
+  \f[p_w = \alpha\, \frac{w}{w_{\text{max}}}\, \rho\, g\, H,\f]
   where 
 
   - \f$\alpha\f$ is the till pore water fraction (till_pw_fraction),
   - \f$w\f$ is the effective thickness of subglacial melt water (bwat)
+  - \f$w_{\text{max}}\f$ is the maximum allowed value for \f$w\f$ (max_hmelt),
   - \f$\rho\f$ is the ice density (ice_density)
   - \f$H\f$ is the ice thickness (thk)
  */
 PetscErrorCode IceModel::compute_bwp(IceModelVec2 &result) {
   PetscErrorCode ierr;
-  PetscScalar alpha = config.get("till_pw_fraction"),
-    g     = config.get("standard_gravity"),
-    rho   = config.get("ice_density");
+  PetscScalar
+    alpha     = config.get("till_pw_fraction"),
+    wmax      = config.get("max_hmelt"),
+    g         = config.get("standard_gravity"),
+    rho       = config.get("ice_density");
 
   ierr = vH.multiply_by(vHmelt, result); CHKERRQ(ierr);
-  ierr = result.scale(alpha * rho * g); CHKERRQ(ierr);
+  ierr = result.scale((alpha / wmax) * rho * g); CHKERRQ(ierr);
 
   ierr = result.set_name("bwp"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "basal pore water pressure",

@@ -129,7 +129,6 @@ static PetscErrorCode writePCCStateAtTimes(
 		 NCConfigVariable &mapping) {
 
   PetscErrorCode ierr;
-  char timestr[TEMPORARY_STRING_LENGTH];
   NCTool nc(grid);
   NCGlobalAttributes global_attrs;
 
@@ -155,27 +154,22 @@ static PetscErrorCode writePCCStateAtTimes(
   ierr = global_attrs.write(filename); CHKERRQ(ierr);
 
   PetscInt NN;  // get number of times at which PCC state is written
-  if (dt_years < 0.0001) {
-    ierr = verbPrintf(1,com,
-      "PCCTEST WARNING: dt_years less than 10^-4 year so just writing state for year %f\n",
-      ys); CHKERRQ(ierr);
-    NN = 1;
-  } else {
-    NN = (int) ceil((ye - ys) / dt_years);
-  }
-  if (NN > 1000)  SETERRQ(2,"PCCTEST ERROR: refuse to write more than 1000 times!");
+  NN = (int) ceil((ye - ys) / dt_years);
+  if (NN > 1000)
+    SETERRQ(2,"PCCTEST ERROR: refuse to write more than 1000 times!");
   if (NN > 50) {
-    ierr = PetscPrintf(com, "\n\nPCCTEST WARNING: writing more than 50 times to '%s'!!\n\n\n",
-                       filename); CHKERRQ(ierr);
+    ierr = PetscPrintf(com,
+        "\nPCCTEST ATTENTION: writing more than 50 times to '%s'!!\n\n",
+        filename); CHKERRQ(ierr);
   }
 
   PISMGreenlandAtmosCoupler* pdd_pcc = dynamic_cast<PISMGreenlandAtmosCoupler*>(pcc);
   PetscScalar use_dt_years = dt_years;
   if ((pdd_pcc != NULL) && (dt_years > 1.0)) {
     ierr = verbPrintf(1,com,
-      "PCCTEST ATTENTION: PISMGreenlandAtmosCoupler will be asked for results\n"
-      "  from one year periods at the start of each desired time subinterval;\n"
-      "  full subinterval evaluation is too slow ...\n");
+        "PCCTEST ATTENTION: PISMGreenlandAtmosCoupler will be asked for results\n"
+        "  from one year periods at the start of each desired time subinterval;\n"
+        "  full subinterval evaluation is too slow ...\n\n");
       CHKERRQ(ierr);
     use_dt_years = 1.0;
   }
@@ -188,18 +182,23 @@ static PetscErrorCode writePCCStateAtTimes(
     ierr = nc.append_time(pccyear); CHKERRQ(ierr);
     
     PetscScalar dt_update_years = PetscMin(use_dt_years, ye - pccyear);
-    snprintf(timestr, sizeof(timestr), 
-             "  coupler updated for [%11.3f a,%11.3f a] ...\n", pccyear, pccyear + dt_update_years);
-    ierr = nc.write_history(timestr); CHKERRQ(ierr); // append the history
-    ierr = nc.close(); CHKERRQ(ierr);
 
     ierr = pcc->updateClimateFields(pccyear, dt_update_years); CHKERRQ(ierr);
 
+    char timestr[TEMPORARY_STRING_LENGTH];
+    snprintf(timestr, sizeof(timestr), 
+        "  coupler updated for [%11.3f a,%11.3f a] ...", 
+        pccyear, pccyear + dt_update_years);
+    ierr = verbPrintf(2,com,"."); CHKERRQ(ierr);
+    ierr = verbPrintf(3,com,"\n%s writing result to %s ..",timestr,filename); CHKERRQ(ierr);
+    strncat(timestr,"\n",1);
+    ierr = nc.write_history(timestr); CHKERRQ(ierr); // append the history
+    ierr = nc.close(); CHKERRQ(ierr);
+
     ierr = pcc->writeCouplingFieldsToFile(pccyear, filename); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com,
-      "  coupler updated for [%11.3f a,%11.3f a]; result written to %s ...\n",
-      pccyear, pccyear + dt_update_years, filename); CHKERRQ(ierr);
+
   }
+  ierr = verbPrintf(2,com,"\n"); CHKERRQ(ierr);
 
   return 0;
 }

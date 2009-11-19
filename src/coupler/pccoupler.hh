@@ -129,10 +129,23 @@ public:
              PetscScalar t_years, PetscScalar dt_years,
              IceModelVec2* &pvst);  // pvst = pointer to vsurftemp
 
+  using PISMClimateCoupler::max_timestep;
+  virtual PetscErrorCode max_timestep(PetscScalar t_years, PetscScalar &dt_years);
+
 protected:
-  IceModelVec2        vsurfmassflux, vsurftemp; // access these through update...()
-  PetscReal           TsOffset;
-  Timeseries* dTforcing; 
+  virtual PetscErrorCode get_force_to_thickness_time_from_options(
+             IceGrid* g, PetscScalar &ftt_start_year, PetscScalar &ftt_end_year);
+
+protected:
+  IceModelVec2    vsurfmassflux, vsurftemp; // access these through update...()
+
+  Timeseries*     dTforcing; 
+  PetscReal       TsOffset;
+
+  PetscTruth      doForceToThickness;
+  IceModelVec2    vthktarget;
+  IceModelVec2    *ftt_thk;  //!< pointer back to IceModel::vH, needed only if doForceToThickness
+  PetscReal       ftt_ys, ftt_ye, ftt_alphadecay;
 };
 
 
@@ -234,7 +247,7 @@ public:
   PetscReal constOceanHeatFlux;  // in W m-2; directly converted to constant mass flux
                                  //   by updateShelfBaseMassFluxAndProvide()
 protected:
-  IceModelVec2 *thk;
+  IceModelVec2 *thk;  //!< pointer back to IceModel::vH
 };
 
 #endif

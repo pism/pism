@@ -151,6 +151,12 @@ netcdf pism_config {
     pism_config:beta_shelves_drag_too = 180000.0;
     pism_config:beta_shelves_drag_too_doc = "Pa s m^{-1}; (1/10000) of value stated in [\\ref HulbeMacAyeal] for ice stream E";
 
+
+  // PISMAtmosphereCoupler and PISMOceanCoupler constants, including LocalMassBalance
+
+    pism_config:force_to_thickness_factor = 1000.0;
+    pism_config:force_to_thickness_factor_doc = "; ratio by which force-to-thickness mechanism, if present, will attempt to reduce difference between model thickness and target thickness, relative to target thickness, by adding/removing mass";
+
     // The default values for the factors come from EISMINT-Greenland, [\\ref RitzEISMINT] .
     pism_config:pdd_factor_snow = 0.003;
     pism_config:pdd_factor_snow_doc = "m K-1 day-1; EISMINT-Greenland value [\\ref RitzEISMINT] ; = (3 mm ice-equivalent) / (pos degree day)";

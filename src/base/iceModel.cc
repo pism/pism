@@ -453,6 +453,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
     // ask climate couplers what maximum time-step should be
     double apcc_dt;
     ierr = atmosPCC->max_timestep(grid.year, apcc_dt); CHKERRQ(ierr);
+    apcc_dt *= secpera;
     if (apcc_dt > 0.0) {
       if (maxdt_temporary > 0)
 	maxdt_temporary = PetscMin(apcc_dt, maxdt_temporary);
@@ -462,6 +463,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
 
     double opcc_dt;
     ierr = oceanPCC->max_timestep(grid.year, opcc_dt); CHKERRQ(ierr);
+    opcc_dt *= secpera;
     if (opcc_dt > 0.0) {
       if (maxdt_temporary > 0)
 	maxdt_temporary = PetscMin(opcc_dt, maxdt_temporary);

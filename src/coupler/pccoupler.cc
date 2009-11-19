@@ -188,6 +188,7 @@ PetscErrorCode PISMClimateCoupler::max_timestep(PetscScalar /*t_years*/, PetscSc
 PISMAtmosphereCoupler::PISMAtmosphereCoupler() : PISMClimateCoupler() {
   dTforcing = PETSC_NULL;
   TsOffset = 0.0;
+  doForceToThickness = PETSC_FALSE;
 }
 
 
@@ -268,9 +269,132 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars
     ierr = dTforcing->read(dTfile); CHKERRQ(ierr);
   }
 
+  char fttfile[PETSC_MAX_PATH_LEN];
+  ierr = PetscOptionsGetString(PETSC_NULL, "-force_to_thk", fttfile,
+                               PETSC_MAX_PATH_LEN, &doForceToThickness); CHKERRQ(ierr);
+  if (doForceToThickness == PETSC_TRUE) {
+
+    ierr = verbPrintf(2, g->com,
+       "  option -force_to_thk seen ...\n"); CHKERRQ(ierr);
+
+    // allocate space and set attribs for target thickness
+    ierr = vthktarget.create(*g, "thk", false); CHKERRQ(ierr);  // will be *read* by this name
+    ierr = vthktarget.set_attrs(
+            "",  // pism_intent unknown
+            "target thickness for force-to-thickness-spinup mechanism (hit this at end of run)",
+	    "m",
+	    "");  // no CF standard_name, to put it mildly
+	    CHKERRQ(ierr);
+
+    // read user options, just like for IceModel, to determine start and end times for run
+    ierr = get_force_to_thickness_time_from_options(grid, ftt_ys, ftt_ye); CHKERRQ(ierr);
+
+    // determine exponential rate
+    ftt_alphadecay = log( config.get("force_to_thickness_factor") )
+                              / (secpera * (ftt_ye - ftt_ys));
+    ierr = verbPrintf(2, g->com,
+       "    (computed alpha = %.4e (from log(%.2f)/(%.3f a - %.3f a)) for -force_to_thk mechanism)\n",
+       ftt_alphadecay,config.get("force_to_thickness_factor"),ftt_ye,ftt_ys); CHKERRQ(ierr);
+
+    ftt_thk = dynamic_cast<IceModelVec2*>(variables.get("land_ice_thickness"));
+    if (!ftt_thk) SETERRQ(1, "ERROR: land_ice_thickness is not available");
+
+    // fttfile now contains name of -force_to_thk file; now check
+    // it is really there; if so, read the dimensions of computational grid so
+    // that we can set up a LocalInterpCtx for actual reading of target thickness
+    NCTool nc(grid);
+    grid_info gi;
+    ierr = nc.open_for_reading(fttfile); CHKERRQ(ierr);
+    ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
+
+    LocalInterpCtx* lic;
+    lic = new LocalInterpCtx(gi, NULL, NULL, *grid); // 2D only
+    ierr = verbPrintf(2, g->com, 
+       "    reading target thickness 'thk' from %s ...\n", fttfile); CHKERRQ(ierr); 
+    ierr = vthktarget.regrid(fttfile, *lic, true); CHKERRQ(ierr);
+    delete lic;			// deleting a NULL pointer is OK
+
+    // reset name to avoid confusion; attributes again because lost by set_name()?
+    ierr = vthktarget.set_name("thk_target"); CHKERRQ(ierr);
+    ierr = vthktarget.set_attrs(
+            "",  // pism_intent unknown
+            "target thickness for force-to-thickness-spinup mechanism (hit this at end of run)",
+	    "m",
+	    "");  // no CF standard_name, to put it mildly
+	    CHKERRQ(ierr);
+  }
+
   printIfDebug("ending PISMAtmosphereCoupler::initFromOptions()\n");
   return 0;
 }
+
+
+//! Get length of -force_to_thk run.   FIXME:  Duplicates IceModel::set_time_from_options().  Stupid.
+PetscErrorCode  PISMAtmosphereCoupler::get_force_to_thickness_time_from_options(
+      IceGrid* g, PetscScalar &ftt_start_year, PetscScalar &ftt_end_year) {
+  PetscErrorCode ierr;
+
+  // read options about year of start, year of end, number of run years;
+  // note grid.year has already been set from input file or otherwise
+  PetscScalar usrStartYear, usrEndYear, usrRunYears;
+  PetscTruth ysSet, yeSet, ySet;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &usrStartYear, &ysSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ye", &usrEndYear,   &yeSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-y",  &usrRunYears,  &ySet); CHKERRQ(ierr);
+
+  if (ysSet && yeSet && ySet) {
+    ierr = PetscPrintf(g->com, "PISMAtmosphereCoupler (-force_to_thk) ERROR: all of -y, -ys, -ye are set. Exiting...\n");
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
+  if (ySet && yeSet) {
+    ierr = PetscPrintf(g->com, "PISMAtmosphereCoupler (-force_to_thk) ERROR: using -y and -ye together is not allowed. Exiting...\n"); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  // Set the start year:
+  if (ysSet == PETSC_TRUE) {
+    config.set("start_year", usrStartYear);
+    ftt_start_year = usrStartYear;
+  } else {
+    config.set("start_year", ftt_start_year);
+  }
+
+  double start_year = config.get("start_year");
+
+  if (yeSet == PETSC_TRUE) {
+    if (usrEndYear < start_year) {
+      ierr = PetscPrintf(g->com,
+	"PISMAtmosphereCoupler (-force_to_thk) ERROR: -ye (%3.3f) is less than -ys (%3.3f) (or input file year or default).\n"
+	"PISMAtmosphereCoupler (-force_to_thk) cannot run backward in time.\n",
+	usrEndYear, start_year); CHKERRQ(ierr);
+      PetscEnd();
+    }
+    ftt_end_year = usrEndYear;
+  } else if (ySet == PETSC_TRUE) {
+    ftt_end_year = start_year + usrRunYears;
+    config.set("run_length_years", usrRunYears);
+  } else {
+    ftt_end_year = start_year + config.get("run_length_years");
+  }
+  return 0;
+}
+
+
+PetscErrorCode PISMAtmosphereCoupler::max_timestep(
+                    PetscScalar /* t_years */, PetscScalar &dt_years) {
+  if (doForceToThickness == PETSC_TRUE) {
+    dt_years = 2.0 / (ftt_alphadecay * secpera);
+    verbPrintf(2, grid->com,
+       "    PISMAtmosphereCoupler::max_timestep() returns  dt_years = %.5f years because doForceToThickness\n",
+       dt_years);
+  } else {
+    dt_years = -1.0;
+  }
+  return 0;
+}
+
 
 
 //! Writes surface mass flux and surface temperature to prepared file.
@@ -288,6 +412,11 @@ PetscErrorCode PISMAtmosphereCoupler::writeCouplingFieldsToFile(
   ierr = vsurfmassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   ierr = vsurftemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  if (doForceToThickness == PETSC_TRUE) {
+    ierr = vthktarget.write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = ftt_thk->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  }
 
   // also append to surface temperature offset time series
   NCTool nc(grid);
@@ -318,13 +447,53 @@ PetscErrorCode PISMAtmosphereCoupler::updateClimateFields(
 }
 
 
-//! Provides access to vsurfmassflux.  No update of vsurfmassflux.  Derived class versions generally will update.
+//! Provides access to vsurfmassflux.  No update of vsurfmassflux unless -force_to_thk in use.  Derived class versions generally will update.
 PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
-    PetscScalar /*t_years*/, PetscScalar /*dt_years*/,
+    PetscScalar t_years, PetscScalar /*dt_years*/,
     IceModelVec2* &pvsmf) {
-  if (vsurfmassflux.was_created())
-    pvsmf = &vsurfmassflux;
-  else {  SETERRQ(1,"vsurfmassflux not created in updateSurfMassFluxAndProvide()");  }
+
+  PetscErrorCode ierr;
+  
+  if (!vsurfmassflux.was_created()) {
+    SETERRQ(1,"vsurfmassflux not created in updateSurfMassFluxAndProvide()");  }
+
+  if (doForceToThickness == PETSC_TRUE) {
+    ierr = verbPrintf(2, grid->com,
+       "    updating vsurfmassflux from -force_to_thk mechanism ...\n"); CHKERRQ(ierr);
+    if (!vthktarget.was_created()) {
+      SETERRQ(2,"vthktarget not created; in updateSurfMassFluxAndProvide()");
+    }
+    if (!ftt_thk) {
+      SETERRQ(3,"thk (= ptr to IceModel::vH) is NULL; in updateSurfMassFluxAndProvide()");
+    }
+    
+    // force-to-thickness mechanism is only full-strength at end of run
+    const PetscScalar lambda = (grid->year - ftt_ys) / (ftt_ye - ftt_ys);
+    ierr = verbPrintf(2, grid->com,
+       "    t_years = %.3f a, ftt_ys = %.3f a, ftt_ye = %.3f a, lambda = %.3f, \n",
+       t_years,ftt_ys,ftt_ye,lambda); CHKERRQ(ierr);
+    if ((lambda < 0.0) || (lambda > 1.0)) {
+      SETERRQ(4,"computed lambda (for -force_to_thk) out of range; in updateSurfMassFluxAndProvide()");
+    }
+
+
+    PetscScalar **H, **Htarget, **massflux;
+    ierr = ftt_thk->get_array(H);   CHKERRQ(ierr);
+    ierr = vthktarget.get_array (Htarget); CHKERRQ(ierr);
+    ierr = vsurfmassflux.get_array (massflux); CHKERRQ(ierr);
+    for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
+      for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+        massflux[i][j] += lambda * ftt_alphadecay * (Htarget[i][j] - H[i][j]);
+      }
+    }
+    ierr = ftt_thk->end_access(); CHKERRQ(ierr);
+    ierr = vthktarget.end_access (); CHKERRQ(ierr);
+    ierr = vsurfmassflux.end_access(); CHKERRQ(ierr);
+    // no communication needed
+
+  }
+
+  pvsmf = &vsurfmassflux;
   return 0;
 }
 
