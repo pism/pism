@@ -87,9 +87,6 @@ PetscErrorCode PISMClimateCoupler::printIfDebug(const char *message) {
 }
 
 
-  // 
-
-
 //! Provides access, from the coupler, to the main PISM input file.
 /*!
 Since climate fields may be in the same file as the one used by IceModel for input,
@@ -100,15 +97,13 @@ Reads PISM options -i, -boot_from to determine if a PISM input or bootstrap file
 Opens the file for reading and determine its computational grid parameters.  These parameters
 are in returned \c LocalInterpCtx.
 
-\e Caller of findPISMInputFile() is in charge of destroying the returned lic.
-
-Sets lic to NULL if the input file was a -i input file.  This case means that
+If -boot_from was used, returns the \c LocalInterpCtx needed to read it, and
+\c regrid is true.  In this case the returned integer \c start should be ignored.
+Sets \c lic to NULL if the input file was a -i input file.  This case means that
 we don't need to regrid, and we can just read data straight.  In this same case the
 returned flag \c regrid is false, but the returned integer \c start gives the 
-time dimension index to use in reading.
-
-If -boot_from was used, returns the \c LocalInterpCtx needed to read it, and
-\c regrid is true.  In this case the returned integer \c start should be ignored. 
+time dimension index to use in reading.  The \e caller of findPISMInputFile() is in
+charge of destroying the returned \c lic.
 
 Argument filename needs to be pre-allocated.
  */
@@ -182,6 +177,7 @@ PetscErrorCode PISMClimateCoupler::max_timestep(PetscScalar /*t_years*/, PetscSc
   dt_years = -1;
   return 0;
 }
+
 
 /******************* ATMOSPHERE:  PISMAtmosphereCoupler ********************/
 
@@ -297,8 +293,8 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars
     ftt_alphadecay = log( config.get("force_to_thickness_factor") )
                               / (secpera * (ftt_ye - ftt_ys));
     ierr = verbPrintf(2, g->com,
-       "    (computed alpha = %.4e (from log(%.2f)/(%.3f a - %.3f a)) for -force_to_thk mechanism)\n",
-       ftt_alphadecay,config.get("force_to_thickness_factor"),ftt_ye,ftt_ys); CHKERRQ(ierr);
+       "    computed alpha = %.6f a^(-1) for %.3f a run, for -force_to_thk mechanism\n",
+       ftt_alphadecay * secpera,ftt_ye - ftt_ys); CHKERRQ(ierr);
 
     ftt_thk = dynamic_cast<IceModelVec2*>(variables.get("land_ice_thickness"));
     if (!ftt_thk) SETERRQ(1, "ERROR: land_ice_thickness is not available");
@@ -402,8 +398,8 @@ PetscErrorCode PISMAtmosphereCoupler::max_timestep(
                     PetscScalar /* t_years */, PetscScalar &dt_years) {
   if (doForceToThickness == PETSC_TRUE) {
     dt_years = 2.0 / (ftt_alphadecay * secpera);
-    verbPrintf(2, grid->com,
-       "    PISMAtmosphereCoupler::max_timestep() returns  dt_years = %.5f years because doForceToThickness is set\n",
+    verbPrintf(5, grid->com,
+       "    PISMAtmosphereCoupler::max_timestep() has doForceToThickness==TRUE; dt_years = %.5f years\n",
        dt_years);
   } else {
     dt_years = -1.0;
@@ -463,10 +459,13 @@ PetscErrorCode PISMAtmosphereCoupler::updateClimateFields(
 }
 
 
-//! Provides access to vsurfmassflux.  No update of vsurfmassflux unless \c -force_to_thk in use.  Derived-class versions generally will update themselves first and call this second.
+//! Updates state of surface mass balance field vsurfmassflux, and provides access to vsurfmassflux.
 /*!
+In fact, no update of vsurfmassflux occurs unless \c -force_to_thk in use.  Derived-class
+versions generally will update themselves first and call this second.
+
 If \c -force_to_thk \c foo.nc is in use then vthktarget will have a target ice thickness
-map (by the time this is called).  Let \f$H_{\text{tar}}\f$ be this target thickness,
+map (assuming initFromOptions() has been called).  Let \f$H_{\text{tar}}\f$ be this target thickness,
 and let \f$H\f$ be the current model thickness.  Recall that the mass continuity 
 equation solved by IceModel::massContExplicitStep() is
   \f[ \frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q} \f]
@@ -482,8 +481,8 @@ in the other case.
 We determine \f$\alpha\f$ by the rule that we are removing mass at a rate such that by 
 the time the run is done, in the absence of flow, we have made
 \f$H = H_{\text{tar}} + \epsilon (H_0 - H_{\text{tar}})\f$
-where \f$\epsilon\f$ is the inverse \c pism_config:force_to_thickness_factor, which has default
-value 1000, and \f$H_0\f$ is the model thickness at the beginning of the run.
+where \f$\epsilon\f$ is the inverse \c pism_config:force_to_thickness_factor, which has
+default value 1000, and \f$H_0\f$ is the model thickness at the beginning of the run.
 In fact, let \f$t_s\f$ be the start time and \f$t_e\f$ the end time for the run.
 Without flow or basal mass balance, or any surface mass balance other than the
 \f$\Delta M\f$ computed here, we are solving
@@ -504,10 +503,27 @@ where
   \f[\lambda(t) = \frac{t-t_s}{t_e-t_s}\f]
 
 Note \f$M\f$ = \c acab must have been either read from a file
-(FIXME: that case is dangerous, because we keep adding on more and more;
-similar issues as with \c -dTforcing) or it was produced from a precipitation map and a 
+(FIXME: that case is dangerous, because we keep adding on more and more; similar
+issues as with \c -dTforcing) or it was produced from a precipitation map and a 
 surface mass balance scheme.  We assume that the derived class has already computed 
 \f$M\f$, and this procedure is modifying the result.
+
+In terms of files generated from the EISMINT-Greenland example, a use of the
+\c -force_to_thk mechanism looks like the following:  Suppose we regard the SSL2
+run as a spin-up to reach a better temperature field.  Suppose that run is stopped
+at the 100 ka stage.  And note that the early file \c green20km_y1.nc has the target
+thickness, because it is essentially the measured thickness.  Thus we add a 2000 a
+run (it might make sense to make it longer, but this will take a little while anyway)
+in which the thickness goes from the values in \c green_SSL2_100k.nc to values very
+close to those in \c green20km_y1.nc:
+\code
+pgrn -ys -2000.0 -ye 0.0 -i green_SSL2_100k.nc -force_to_thk green20km_y1.nc -o green20km_spunup_to_present.nc
+\endcode
+Recall \c pgrn uses a derived class of PISMGreenlandAtmosCoupler, so with \c pismr
+the run we would need \c -pdd:
+\code
+pismr -ys -2000.0 -ye 0.0 -pdd -i green_SSL2_100k.nc -force_to_thk green20km_y1.nc -o green20km_spunup_to_present.nc
+\endcode
  */
 PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
     PetscScalar t_years, PetscScalar /*dt_years*/,
@@ -516,11 +532,12 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
   PetscErrorCode ierr;
   
   if (!vsurfmassflux.was_created()) {
-    SETERRQ(1,"vsurfmassflux not created in updateSurfMassFluxAndProvide()");  }
+    SETERRQ(1,"vsurfmassflux not created in updateSurfMassFluxAndProvide()");
+  }
 
   if (doForceToThickness == PETSC_TRUE) {
-    ierr = verbPrintf(2, grid->com,
-       "    updating vsurfmassflux from -force_to_thk mechanism ...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(5, grid->com,
+       "    updating vsurfmassflux from -force_to_thk mechanism ..."); CHKERRQ(ierr);
     if (!vthktarget.was_created()) {
       SETERRQ(2,"vthktarget not created; in updateSurfMassFluxAndProvide()");
     }
@@ -532,13 +549,12 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
     // FIXME:  if the start year was set by reading from file, then we don't
     //    have the right ftt_ys, ftt_ye
     const PetscScalar lambda = (t_years - ftt_ys) / (ftt_ye - ftt_ys);
-    ierr = verbPrintf(2, grid->com,
-       "    t_years = %.3f a, ftt_ys = %.3f a, ftt_ye = %.3f a, lambda = %.3f, \n",
+    ierr = verbPrintf(5, grid->com,
+       " (t_years = %.3f a, ftt_ys = %.3f a, ftt_ye = %.3f a, lambda = %.3f)\n",
        t_years,ftt_ys,ftt_ye,lambda); CHKERRQ(ierr);
     if ((lambda < 0.0) || (lambda > 1.0)) {
       SETERRQ(4,"computed lambda (for -force_to_thk) out of range; in updateSurfMassFluxAndProvide()");
     }
-
 
     PetscScalar **H, **Htarget, **massflux;
     ierr = ftt_thk->get_array(H);   CHKERRQ(ierr);
@@ -553,7 +569,6 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
     ierr = vthktarget.end_access (); CHKERRQ(ierr);
     ierr = vsurfmassflux.end_access(); CHKERRQ(ierr);
     // no communication needed
-
   }
 
   pvsmf = &vsurfmassflux;
@@ -592,6 +607,9 @@ PISMConstAtmosCoupler::PISMConstAtmosCoupler() : PISMAtmosphereCoupler() {
 
 // FIXME:  SHOULD STOP OR WARN IF dTforcing != NULL BECAUSE SEMANTICS OF artm
 //         WHICH WAS READ FROM FILE ARE UNCLEAR: DID IT ALREADY HAVE A SHIFT IN IT?
+
+// FIXME:  SHOULD STOP IF doForceToThickness == TRUE BECAUSE THAT MECHANISM WILL
+//         REPEATEDLY ADD \Delta M TO vsurfmassflux REPEATEDLY
 
 //! Normally initializes surface mass flux and surface temperature from the PISM input file.
 /*!
@@ -784,15 +802,12 @@ PetscErrorCode PISMOceanCoupler::updateShelfBaseMassFluxAndProvide(
 PetscErrorCode PISMOceanCoupler::updateShelfBaseTempAndProvide(
          PetscScalar /*t_years*/, PetscScalar /*dt_years*/,
          IceModelVec2* &pvsbt) {
-  // printIfDebug("entering PISMOceanCoupler::updateShelfBaseTempAndProvide()\n");
 
   if (vshelfbasetemp.was_created())
     pvsbt = &vshelfbasetemp;
   else {  
     SETERRQ(1,"vvshelfbasetemp not created in PISMOceanCoupler::updatehelfBaseTempAndProvide()");
   }
-
-  //  printIfDebug("leaving PISMOceanCoupler::updateShelfBaseTempAndProvide()\n");
   return 0;
 }
 
@@ -849,7 +864,6 @@ PISMConstOceanCoupler::PISMConstOceanCoupler() : PISMOceanCoupler() {
 
 PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g, const PISMVars &variables) {
   PetscErrorCode ierr;
-  printIfDebug("entering PISMConstOceanCoupler::initFromOptions()\n");
 
   ierr = PISMOceanCoupler::initFromOptions(g, variables); CHKERRQ(ierr);
 
@@ -864,7 +878,6 @@ PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g, const PISMVars
        constOceanHeatFlux); CHKERRQ(ierr); 
   }
 
-  printIfDebug("ending PISMConstOceanCoupler::initFromOptions()\n");
   return 0;
 }
 

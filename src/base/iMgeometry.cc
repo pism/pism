@@ -153,16 +153,16 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 
   const int MASK_GROUNDED_TO_DETERMINE = 999;
 
-  ierr =    vh.get_array(h);    CHKERRQ(ierr);
-  ierr =    vH.get_array(H);    CHKERRQ(ierr);
-  ierr =  vbed.get_array(bed);  CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
-
   bool is_dry_simulation = config.get_flag("is_dry_simulation"),
     do_plastic_till = config.get_flag("do_plastic_till"),
     use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
   double ocean_rho = config.get("sea_water_density");
+
+  ierr =    vh.get_array(h);    CHKERRQ(ierr);
+  ierr =    vH.get_array(H);    CHKERRQ(ierr);
+  ierr =  vbed.get_array(bed);  CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -304,16 +304,35 @@ zero.  Note that the rate of thickness change \f$\partial H/\partial t\f$ is com
 as is the rate of volume loss or gain.
  */
 PetscErrorCode IceModel::massContExplicitStep() {
-  const PetscScalar   dx = grid.dx, dy = grid.dy;
   PetscErrorCode ierr;
-  PetscScalar **H, **Hnew, **uvbar[2], **ubarssa, **vbarssa;
-  PetscScalar **ub, **vb, **accum, **bmr_gnded, **bmr_float, **mask;
-  IceModelVec2 vHnew = vWork2d[0];
 
+  const PetscScalar   dx = grid.dx, dy = grid.dy;
   bool do_ocean_kill = config.get_flag("ocean_kill"),
     floating_ice_killed = config.get_flag("floating_ice_killed"),
     include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
     do_superpose = config.get_flag("do_superpose");
+
+
+  IceModelVec2 *pccsmf, *pccsbmf;
+  if (atmosPCC != PETSC_NULL) {
+    // call sets pccsmf to point to IceModelVec2 with current surface mass flux
+    ierr = atmosPCC->updateSurfMassFluxAndProvide(
+              grid.year, dt / secpera, pccsmf); CHKERRQ(ierr);
+  } else { SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL"); }
+  if (oceanPCC != PETSC_NULL) {
+    // call sets pccsbmf to point to IceModelVec2 with current mass flux under shelf base
+    ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(
+              grid.year, dt / secpera, pccsbmf); CHKERRQ(ierr);
+  } else { SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL"); }
+
+  const PetscScalar inC_fofv = 1.0e-4 * PetscSqr(secpera),
+                    outC_fofv = 2.0 / pi;
+
+  IceModelVec2 vHnew = vWork2d[0];
+  ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
+
+  PetscScalar **H, **Hnew, **uvbar[2], **ubarssa, **vbarssa, **ub, **vb,
+              **accum, **bmr_gnded, **bmr_float, **mask;
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vbasalMeltRate.get_array(bmr_gnded); CHKERRQ(ierr);
@@ -321,35 +340,12 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
   ierr = vub.get_array(ub); CHKERRQ(ierr);
   ierr = vvb.get_array(vb); CHKERRQ(ierr);
-
-  IceModelVec2 *pccsmf, *pccsbmf;
-  if (atmosPCC != PETSC_NULL) {
-    // call sets pccsmf to point to IceModelVec2 with current surface mass flux
-    ierr = atmosPCC->updateSurfMassFluxAndProvide(
-              grid.year, dt / secpera, pccsmf); CHKERRQ(ierr);
-  } else {
-    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
-  }
   ierr = pccsmf->get_array(accum); CHKERRQ(ierr);
-
-  if (oceanPCC != PETSC_NULL) {
-    // call sets pccsbmf to point to IceModelVec2 with current mass flux under shelf base
-    ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(
-              grid.year, dt / secpera, pccsbmf); CHKERRQ(ierr);
-  } else {
-    SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");
-  }
   ierr = pccsbmf->get_array(bmr_float); CHKERRQ(ierr);
-
   ierr = vubarSSA.get_array(ubarssa); CHKERRQ(ierr);
   ierr = vvbarSSA.get_array(vbarssa); CHKERRQ(ierr);
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
-
-  ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
   ierr = vHnew.get_array(Hnew); CHKERRQ(ierr);
-
-  const PetscScalar inC_fofv = 1.0e-4 * PetscSqr(secpera),
-                    outC_fofv = 2.0 / pi;
 
   PetscScalar icecount = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -442,10 +438,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vvb.end_access(); CHKERRQ(ierr);
   ierr = vubarSSA.end_access(); CHKERRQ(ierr);
   ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
-
   ierr = pccsmf->end_access(); CHKERRQ(ierr);
   ierr = pccsbmf->end_access(); CHKERRQ(ierr);
-
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
 
@@ -471,5 +465,4 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   return 0;
 }
-
 
