@@ -517,12 +517,12 @@ run (it might make sense to make it longer, but this will take a little while an
 in which the thickness goes from the values in \c green_SSL2_100k.nc to values very
 close to those in \c green20km_y1.nc:
 \code
-pgrn -ys -2000.0 -ye 0.0 -i green_SSL2_100k.nc -force_to_thk green20km_y1.nc -o green20km_spunup_to_present.nc
+pgrn -ys -2000.0 -ye 0.0 -skip 5 -i green_SSL2_100k.nc -force_to_thk green20km_y1.nc -o green20km_spunup_to_present.nc
 \endcode
 Recall \c pgrn uses a derived class of PISMGreenlandAtmosCoupler, so with \c pismr
 the run we would need \c -pdd:
 \code
-pismr -ys -2000.0 -ye 0.0 -pdd -i green_SSL2_100k.nc -force_to_thk green20km_y1.nc -o green20km_spunup_to_present.nc
+pismr -ys -2000.0 -ye 0.0 -skip 5 -pdd -i green_SSL2_100k.nc -force_to_thk green20km_y1.nc -o green20km_spunup_to_present.nc
 \endcode
  */
 PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
