@@ -261,7 +261,10 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsGetReal(PETSC_NULL, "-ys", &ys, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsGetReal(PETSC_NULL, "-ye", &ye, NULL); CHKERRQ(ierr);
     ierr = PetscOptionsGetReal(PETSC_NULL, "-dt", &dt_years, NULL); CHKERRQ(ierr);
-    grid.year = ys;		// this value is used in PCC->initFromOptions()
+    // These values are used in PCC->initFromOptions()
+    grid.year = ys;		
+    grid.start_year = ys;
+    grid.end_year = ye;
 
     // set PCC from options
     PetscTruth caSet, greenlandSet, coSet;

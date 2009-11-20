@@ -47,7 +47,10 @@ const PetscScalar IceGrid::DEFAULT_ICEPARAM_Lz   = 4000.0;
 const PetscScalar IceGrid::DEFAULT_ICEPARAM_Lbz   = 0.0;
 
 //! Start at year zero by default.
-const PetscScalar IceGrid::DEFAULT_ICEPARAM_year = 0.0;
+const PetscScalar IceGrid::DEFAULT_ICEPARAM_start_year = 0.0;
+
+//! Run for 100 years by default
+const PetscScalar IceGrid::DEFAULT_ICEPARAM_run_length = 1000.0;
 
 //! Default grid is 61 x 61 in horizontal.
 const PetscInt    IceGrid::DEFAULT_ICEPARAM_Mx   = 61;
@@ -78,7 +81,9 @@ IceGrid::IceGrid(MPI_Comm c,
   Ly = DEFAULT_ICEPARAM_Ly;
   Lz = DEFAULT_ICEPARAM_Lz;
   Lbz = DEFAULT_ICEPARAM_Lbz;
-  year = DEFAULT_ICEPARAM_year;
+  start_year = DEFAULT_ICEPARAM_start_year;
+  year = start_year;
+  end_year = start_year + DEFAULT_ICEPARAM_run_length;
   Mx = DEFAULT_ICEPARAM_Mx;
   My = DEFAULT_ICEPARAM_My;
   Mz = DEFAULT_ICEPARAM_Mz;

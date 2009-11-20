@@ -86,8 +86,6 @@ PetscErrorCode IceModel::setDefaults() {
   // set maximum |u|,|v|,|w| in ice to an (obviously) invalid number
   gmaxu = gmaxv = gmaxw = -1.0;
 
-  end_year   = config.get("start_year") + config.get("run_length_years");
-
   reportPATemps = PETSC_TRUE;
   
   updateHmelt = PETSC_TRUE;

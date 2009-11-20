@@ -371,14 +371,14 @@ PetscErrorCode IceModel::massContExplicitStep() {
           fvs = 1.0 - outC_fofv * atan( inC_fofv *
                       ( PetscSqr(ubarssa[i][j-1]) + PetscSqr(vbarssa[i][j-1]) ) );
         const PetscScalar fvH = fv * H[i][j];
-        He = 0.5 * (fvH + fve * H[i+1][j]),
-        Hw = 0.5 * (fvw * H[i-1][j] + fvH),
-        Hn = 0.5 * (fvH + fvn * H[i][j+1]),
+        He = 0.5 * (fvH + fve * H[i+1][j]);
+        Hw = 0.5 * (fvw * H[i-1][j] + fvH);
+        Hn = 0.5 * (fvH + fvn * H[i][j+1]);
         Hs = 0.5 * (fvs * H[i][j-1] + fvH);
       } else {
-        He = 0.5 * (H[i][j] + H[i+1][j]),
-        Hw = 0.5 * (H[i-1][j] + H[i][j]),
-        Hn = 0.5 * (H[i][j] + H[i][j+1]),
+        He = 0.5 * (H[i][j] + H[i+1][j]);
+        Hw = 0.5 * (H[i-1][j] + H[i][j]);
+        Hn = 0.5 * (H[i][j] + H[i][j+1]);
         Hs = 0.5 * (H[i][j-1] + H[i][j]);
       }
 

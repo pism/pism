@@ -24,57 +24,6 @@
 #include <sstream>
 #include <set>
 
-//! Determine the run length, starting and ending years using command-line options.
-PetscErrorCode  IceModel::set_time_from_options() {
-  PetscErrorCode ierr;
-
-  // read options about year of start, year of end, number of run years;
-  // note grid.year has already been set from input file or otherwise
-  PetscScalar usrStartYear, usrEndYear, usrRunYears;
-  PetscTruth ysSet, yeSet, ySet;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &usrStartYear, &ysSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ye", &usrEndYear,   &yeSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-y",  &usrRunYears,  &ySet); CHKERRQ(ierr);
-
-  if (ysSet && yeSet && ySet) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: all of -y, -ys, -ye are set. Exiting...\n");
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
-  if (ySet && yeSet) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: using -y and -ye together is not allowed. Exiting...\n"); CHKERRQ(ierr);
-    PetscEnd();
-  }
-
-  // Set the start year:
-  if (ysSet == PETSC_TRUE) {
-    config.set("start_year", usrStartYear);
-    grid.year = usrStartYear;
-  } else {
-    config.set("start_year", grid.year);
-  }
-
-  double start_year = config.get("start_year");
-
-  if (yeSet == PETSC_TRUE) {
-    if (usrEndYear < start_year) {
-      ierr = PetscPrintf(grid.com,
-			"PISM ERROR: -ye (%3.3f) is less than -ys (%3.3f) (or input file year or default).\n"
-			"PISM cannot run backward in time.\n",
-			 usrEndYear, start_year); CHKERRQ(ierr);
-      PetscEnd();
-    }
-    end_year = usrEndYear;
-  } else if (ySet == PETSC_TRUE) {
-    end_year = start_year + usrRunYears;
-    config.set("run_length_years", usrRunYears);
-  } else {
-    end_year = start_year + config.get("run_length_years");
-  }
-  return 0;
-}
-
-
 //! Save model state in NetCDF format.
 /*! 
 Optionally allows saving of full velocity field.

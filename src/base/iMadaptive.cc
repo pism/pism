@@ -245,7 +245,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   if ( ( (doAdaptTimeStep == PETSC_TRUE) && do_mass_conserve ) ) {
     ierr = computeMaxDiffusivity(view_diffusivity); CHKERRQ(ierr);
   }
-  const PetscScalar timeToEnd = (end_year - grid.year) * secpera;
+  const PetscScalar timeToEnd = (grid.end_year - grid.year) * secpera;
   if (dt_force > 0.0) {
     dt = dt_force; // override usual dt mechanism
     adaptReasonFlag = 'f';

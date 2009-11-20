@@ -26,17 +26,17 @@ typedef enum {NONE = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodi
 
 //! Describes the PISM grid and the distribution of data across processors.
 /*!
-This class holds parameters describing the grid, including the vertical spacing 
-and which part of the horizontal grid is owned by the processor.  It contains 
-the dimensions of the PISM computational box.  The vertical spacing can be quite
-arbitrary.
+  This class holds parameters describing the grid, including the vertical
+  spacing and which part of the horizontal grid is owned by the processor. It
+  contains the dimensions of the PISM (4-dimensional, x*y*z*time) computational
+  box. The vertical spacing can be quite arbitrary.
 
-It creates and destroys a two dimensional \c PETSc \c DA (distributed array).
-The creation of this \c DA is the point at which PISM gets distributed across 
-multiple processors.
+  It creates and destroys a two dimensional \c PETSc \c DA (distributed array).
+  The creation of this \c DA is the point at which PISM gets distributed across
+  multiple processors.
 
-It computes grid parameters for the fine and equally-spaced vertical grid used
-in the conservation of energy and age equations.
+  It computes grid parameters for the fine and equally-spaced vertical grid
+  used in the conservation of energy and age equations.
  */
 class IceGrid {
 public:
@@ -81,7 +81,9 @@ public:
   PetscInt    Mz, Mbz; // number of grid points in z-direction, ice and bedrock.
   PetscInt initial_Mz; // initial number of grid levels; used by the grid extension code
 
-  PetscScalar year;       // current time (years)
+  PetscScalar year,       //!< current time (years)
+    start_year,		  //!< the year this run started from
+    end_year;		  //!< time to stop at
   
 protected:
   static const SpacingType DEFAULT_ICE_SPACING_TYPE, DEFAULT_BED_SPACING_TYPE;
@@ -89,7 +91,7 @@ protected:
   static const PetscScalar DEFAULT_QUADZ_LAMBDA;
   // FORMERLY IN IceParam:
   static const PetscScalar DEFAULT_ICEPARAM_Lx, DEFAULT_ICEPARAM_Ly,
-    DEFAULT_ICEPARAM_Lz, DEFAULT_ICEPARAM_Lbz, DEFAULT_ICEPARAM_year;
+    DEFAULT_ICEPARAM_Lz, DEFAULT_ICEPARAM_Lbz, DEFAULT_ICEPARAM_start_year, DEFAULT_ICEPARAM_run_length;
   static const PetscInt    DEFAULT_ICEPARAM_Mx, DEFAULT_ICEPARAM_My, DEFAULT_ICEPARAM_Mz,
                            DEFAULT_ICEPARAM_Mbz;
 private:

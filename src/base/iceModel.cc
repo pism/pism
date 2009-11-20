@@ -411,7 +411,6 @@ derived classes to do extra work.  See additionalAtStartTimestep() and additiona
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
-  double start_year = config.get("start_year");
   bool do_mass_conserve = config.get_flag("do_mass_conserve"),
     do_temp = config.get_flag("do_temp"),
     do_skip = config.get_flag("do_skip"),
@@ -443,7 +442,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   ierr = write_extras(); CHKERRQ(ierr);
 
   // main loop for time evolution
-  for (PetscScalar year = start_year; year < end_year; year += dt/secpera) {
+  for (PetscScalar year = grid.start_year; year < grid.end_year; year += dt/secpera) {
 
     ierr = verbPrintf(2,grid.com, " "); CHKERRQ(ierr);
     dt_force = -1.0;

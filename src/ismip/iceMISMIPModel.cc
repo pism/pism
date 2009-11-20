@@ -352,9 +352,9 @@ PetscErrorCode IceMISMIPModel::set_time_from_options() {
       runtimeyears); CHKERRQ(ierr);
     if (ysSet == PETSC_FALSE) {
       grid.year = 0.0;
-      config.set("start_year", grid.year);
+      grid.start_year = 0.0;
     }
-    end_year = config.get("start_year") + runtimeyears;
+    grid.end_year = grid.start_year + runtimeyears;
   }
 
   return 0;
@@ -704,7 +704,7 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
   if (rstats.dHdtnorm * secpera < dHdtnorm_atol) {  // if all points have dHdt < 10^-4 m/yr
     steadyOrGoalAchieved = PETSC_TRUE;
     // set the IceModel goal of end_year to the current year; causes immediate stop
-    end_year = grid.year;  
+    grid.end_year = grid.year;  
   }
 
   // apply an ad hoc calving criterion only under user option -try_calving

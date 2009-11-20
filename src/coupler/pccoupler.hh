@@ -133,10 +133,6 @@ public:
   virtual PetscErrorCode max_timestep(PetscScalar t_years, PetscScalar &dt_years);
 
 protected:
-  virtual PetscErrorCode get_force_to_thickness_time_from_options(
-             IceGrid* g, PetscScalar &ftt_start_year, PetscScalar &ftt_end_year);
-
-protected:
   IceModelVec2    vsurfmassflux, vsurftemp; // access these through update...()
 
   Timeseries*     dTforcing; 
@@ -144,8 +140,8 @@ protected:
 
   PetscTruth      doForceToThickness;
   IceModelVec2    vthktarget;
-  IceModelVec2    *ftt_thk;  //!< pointer back to IceModel::vH, needed only if doForceToThickness; FIXME:  SOME uses causes seg fault??!
-  PetscReal       ftt_ys, ftt_ye, ftt_alphadecay;
+  IceModelVec2    *ftt_thk;  //!< pointer back to IceModel::vH, needed only if doForceToThickness
+  PetscReal       ftt_alphadecay;
 };
 
 

@@ -155,9 +155,7 @@ PetscErrorCode IceModel::bedDefCleanup() {
 PetscErrorCode IceModel::bedDefStepIfNeeded() {
   PetscErrorCode  ierr;
 
-  double bedDefIntervalYears = config.get("bed_def_interval_years"),
-    start_year = config.get("start_year");
-
+  double bedDefIntervalYears = config.get("bed_def_interval_years");
   bool do_bed_iso = config.get_flag("do_bed_iso");
 
   // This is a front end to the bed deformation update system.  It updates
@@ -182,7 +180,7 @@ PetscErrorCode IceModel::bedDefStepIfNeeded() {
       ierr =   vH.put_on_proc0(Hp0,   top0ctx, g2, g2natural); CHKERRQ(ierr);
       ierr = vbed.put_on_proc0(bedp0, top0ctx, g2, g2natural); CHKERRQ(ierr);
       if (grid.rank == 0) {  // only processor zero does the step
-        ierr = bdLC.step(dtBedDefYears, grid.year - start_year); CHKERRQ(ierr);
+        ierr = bdLC.step(dtBedDefYears, grid.year - grid.start_year); CHKERRQ(ierr);
       }
       ierr = vbed.get_from_proc0(bedp0, top0ctx, g2, g2natural); CHKERRQ(ierr);
       ierr = vbed.beginGhostComm(); CHKERRQ(ierr);

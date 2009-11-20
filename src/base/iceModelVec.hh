@@ -103,6 +103,8 @@ protected:
 
   void         *array;  // will be PetscScalar** or PetscScalar*** in derived classes
 
+  int access_counter;		// used in begin_access() and end_access()
+
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode checkAllocated();
   virtual PetscErrorCode checkHaveArray();

@@ -80,9 +80,6 @@ netcdf pism_config {
     pism_config:constant_grain_size = 1.0;
     pism_config:constant_grain_size_doc = "mm; Default constant grains size to use with the Goldsby-Kohlstedt [\\ref GoldsbyKohlstedt] flow law";
 
-    pism_config:start_year = 0;
-    pism_config:start_year_doc = "Model year at which to start the run.";
-
     pism_config:run_length_years = 1000;
     pism_config:run_length_years_doc = "years; Default run length";
 

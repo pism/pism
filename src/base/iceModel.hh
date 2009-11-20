@@ -194,7 +194,7 @@ protected:
   // parameters
   PetscReal   dt, dtTempAge,  // current mass cont. and temp/age; time steps in seconds
               dt_force,
-              end_year, maxdt_temporary,
+              maxdt_temporary,
               CFLviolcount,    //!< really is just a count, but PetscGlobalSum requires this type
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax,
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components

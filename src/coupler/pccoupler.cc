@@ -286,15 +286,12 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars
 	    "");  // no CF standard_name, to put it mildly
 	    CHKERRQ(ierr);
 
-    // read user options, just like for IceModel, to determine start and end times for run
-    ierr = get_force_to_thickness_time_from_options(grid, ftt_ys, ftt_ye); CHKERRQ(ierr);
-
     // determine exponential rate
     ftt_alphadecay = log( config.get("force_to_thickness_factor") )
-                              / (secpera * (ftt_ye - ftt_ys));
+                              / (secpera * (g->end_year - g->start_year));
     ierr = verbPrintf(2, g->com,
        "    computed alpha = %.6f a^(-1) for %.3f a run, for -force_to_thk mechanism\n",
-       ftt_alphadecay * secpera,ftt_ye - ftt_ys); CHKERRQ(ierr);
+       ftt_alphadecay * secpera, g->end_year - g->start_year); CHKERRQ(ierr);
 
     ftt_thk = dynamic_cast<IceModelVec2*>(variables.get("land_ice_thickness"));
     if (!ftt_thk) SETERRQ(1, "ERROR: land_ice_thickness is not available");
@@ -313,7 +310,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars
     ierr = verbPrintf(2, g->com, 
        "    reading target thickness 'thk' from %s ...\n", fttfile); CHKERRQ(ierr); 
     ierr = vthktarget.regrid(fttfile, *lic, true); CHKERRQ(ierr);
-    delete lic;			// deleting a NULL pointer is OK
+    delete lic;
 
     // reset name to avoid confusion; attributes again because lost by set_name()?
     ierr = vthktarget.set_name("thk_target"); CHKERRQ(ierr);
@@ -323,64 +320,11 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars
 	    "m",
 	    "");  // no CF standard_name, to put it mildly
 	    CHKERRQ(ierr);
-  }
+  } // end of "if (doForceToThickness == PETSC_TRUE) {"
 
   printIfDebug("ending PISMAtmosphereCoupler::initFromOptions()\n");
   return 0;
 }
-
-
-//! Get length of -force_to_thk run.   FIXME:  Duplicates IceModel::set_time_from_options().  Stupid.
-PetscErrorCode  PISMAtmosphereCoupler::get_force_to_thickness_time_from_options(
-      IceGrid* g, PetscScalar &ftt_start_year, PetscScalar &ftt_end_year) {
-  PetscErrorCode ierr;
-
-  // read options about year of start, year of end, number of run years;
-  // note grid.year has already been set from input file or otherwise
-  PetscScalar usrStartYear, usrEndYear, usrRunYears;
-  PetscTruth ysSet, yeSet, ySet;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &usrStartYear, &ysSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ye", &usrEndYear,   &yeSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-y",  &usrRunYears,  &ySet); CHKERRQ(ierr);
-
-  if (ysSet && yeSet && ySet) {
-    ierr = PetscPrintf(g->com, "PISMAtmosphereCoupler (-force_to_thk) ERROR: all of -y, -ys, -ye are set. Exiting...\n");
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
-  if (ySet && yeSet) {
-    ierr = PetscPrintf(g->com, "PISMAtmosphereCoupler (-force_to_thk) ERROR: using -y and -ye together is not allowed. Exiting...\n"); CHKERRQ(ierr);
-    PetscEnd();
-  }
-
-  // Set the start year:
-  if (ysSet == PETSC_TRUE) {
-    config.set("start_year", usrStartYear);
-    ftt_start_year = usrStartYear;
-  } else {
-    config.set("start_year", ftt_start_year);
-  }
-
-  double start_year = config.get("start_year");
-
-  if (yeSet == PETSC_TRUE) {
-    if (usrEndYear < start_year) {
-      ierr = PetscPrintf(g->com,
-	"PISMAtmosphereCoupler (-force_to_thk) ERROR: -ye (%3.3f) is less than -ys (%3.3f) (or input file year or default).\n"
-	"PISMAtmosphereCoupler (-force_to_thk) cannot run backward in time.\n",
-	usrEndYear, start_year); CHKERRQ(ierr);
-      PetscEnd();
-    }
-    ftt_end_year = usrEndYear;
-  } else if (ySet == PETSC_TRUE) {
-    ftt_end_year = start_year + usrRunYears;
-    config.set("run_length_years", usrRunYears);
-  } else {
-    ftt_end_year = start_year + config.get("run_length_years");
-  }
-  return 0;
-}
-
 
 //! Apply the time step restriction if -force_to_thk is used, otherwise do nothing.
 /*!
@@ -546,19 +490,17 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
     }
     
     // force-to-thickness mechanism is only full-strength at end of run
-    // FIXME:  if the start year was set by reading from file, then we don't
-    //    have the right ftt_ys, ftt_ye
-    const PetscScalar lambda = (t_years - ftt_ys) / (ftt_ye - ftt_ys);
+    const PetscScalar lambda = (t_years - grid->start_year) / (grid->end_year - grid->start_year);
     ierr = verbPrintf(5, grid->com,
-       " (t_years = %.3f a, ftt_ys = %.3f a, ftt_ye = %.3f a, lambda = %.3f)\n",
-       t_years,ftt_ys,ftt_ye,lambda); CHKERRQ(ierr);
+       " (t_years = %.3f a, start_year = %.3f a, end_year = %.3f a, lambda = %.3f)\n",
+       t_years, grid->start_year , grid->end_year, lambda); CHKERRQ(ierr);
     if ((lambda < 0.0) || (lambda > 1.0)) {
       SETERRQ(4,"computed lambda (for -force_to_thk) out of range; in updateSurfMassFluxAndProvide()");
     }
 
     PetscScalar **H, **Htarget, **massflux;
     ierr = ftt_thk->get_array(H);   CHKERRQ(ierr);
-    ierr = vthktarget.get_array (Htarget); CHKERRQ(ierr);
+    ierr = vthktarget.get_array(Htarget); CHKERRQ(ierr);
     ierr = vsurfmassflux.get_array (massflux); CHKERRQ(ierr);
     for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
       for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
@@ -566,7 +508,7 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
       }
     }
     ierr = ftt_thk->end_access(); CHKERRQ(ierr);
-    ierr = vthktarget.end_access (); CHKERRQ(ierr);
+    ierr = vthktarget.end_access(); CHKERRQ(ierr);
     ierr = vsurfmassflux.end_access(); CHKERRQ(ierr);
     // no communication needed
   }

@@ -97,7 +97,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
     //   is set here; see set_time_from_options()
     PetscScalar usrStartYear;
     ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &usrStartYear, PETSC_NULL); CHKERRQ(ierr);
-    config.set("start_year", usrStartYear);
+    grid.start_year = usrStartYear;
     grid.year = usrStartYear;
   }
 
@@ -139,7 +139,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
 			    y_scale, &y_scale, &Ly_set); CHKERRQ(ierr);
   ierr = PetscOptionsScalar("-Lx", "Half of the grid extent in the Y direction, in km", "",
 			    x_scale, &x_scale, &Lx_set); CHKERRQ(ierr);
-  // Vertical extent (in the ice):
+  // Vertical extent (in the ice and bedrock, correspondingly):
   ierr = PetscOptionsScalar("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters", "",
 			    z_scale, &z_scale, &Lz_set); CHKERRQ(ierr);
   ierr = PetscOptionsScalar("-Lbz", "Grid extent in the Z (vertical) direction in the bedrock, in meters", "",
@@ -214,8 +214,8 @@ PetscErrorCode IceModel::set_grid_from_options() {
   There are two cases here:
 
   1) Initializing from a PISM ouput file, in which case all the options
-  influencing the grid (currently: -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -quadZ,
-  -chebZ) are ignored.
+  influencing the grid (currently: -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -z_spacing,
+  -zb_spacing) are ignored.
 
   2) Initializing using defaults, command-line options and (possibly) a
   bootstrapping file. Derived classes requiring special grid setup should
@@ -243,8 +243,8 @@ PetscErrorCode IceModel::grid_setup() {
     // Get the 'source' global attribute to check if we are given a PISM output
     // file:
     ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-    ierr = nc.get_att_text(NC_GLOBAL, "source", source);
-    ierr = nc.close();
+    ierr = nc.get_att_text(NC_GLOBAL, "source", source); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
 
     // If it's missing, print a warning
     if (source.empty()) {
@@ -263,6 +263,7 @@ PetscErrorCode IceModel::grid_setup() {
     }
 
     ierr = nc.get_grid(filename);   CHKERRQ(ierr);
+    grid.start_year = grid.year; // can be overridden using the -ys option
 
     // These options are ignored because we're getting *all* the grid
     // parameters from a file.
@@ -481,3 +482,50 @@ PetscErrorCode IceModel::misc_setup() {
   return 0;
 }
 
+//! Determine the run length, starting and ending years using command-line options.
+PetscErrorCode  IceModel::set_time_from_options() {
+  PetscErrorCode ierr;
+
+  // read options about year of start, year of end, number of run years;
+  // note grid.year has already been set from input file or defaults
+  PetscScalar usrStartYear, usrEndYear, usrRunYears;
+  PetscTruth ysSet, yeSet, ySet;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &usrStartYear, &ysSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ye", &usrEndYear,   &yeSet); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-y",  &usrRunYears,  &ySet); CHKERRQ(ierr);
+
+  if (ysSet && yeSet && ySet) {
+    ierr = PetscPrintf(grid.com, "PISM ERROR: all of -y, -ys, -ye are set. Exiting...\n");
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
+  if (ySet && yeSet) {
+    ierr = PetscPrintf(grid.com, "PISM ERROR: using -y and -ye together is not allowed. Exiting...\n"); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  // Set the start year if -ys is set, use the default (stored in
+  // grid.start_year) otherwise.
+  if (ysSet == PETSC_TRUE) {
+    grid.start_year = usrStartYear;
+    grid.year = usrStartYear;
+  } else {
+    grid.year = grid.start_year;
+  }
+
+  if (yeSet == PETSC_TRUE) {
+    if (usrEndYear < grid.start_year) {
+      ierr = PetscPrintf(grid.com,
+			"PISM ERROR: -ye (%3.3f) is less than -ys (%3.3f) (or input file year or default).\n"
+			"PISM cannot run backward in time.\n",
+			 usrEndYear, grid.start_year); CHKERRQ(ierr);
+      PetscEnd();
+    }
+    grid.end_year = usrEndYear;
+  } else if (ySet == PETSC_TRUE) {
+    grid.end_year = grid.start_year + usrRunYears;
+  } else {
+    grid.end_year = grid.start_year + config.get("run_length_years");
+  }
+  return 0;
+}

@@ -33,6 +33,8 @@ IceModelVec::IceModelVec() {
   dims = GRID_2D;		// default
   dof = 1;			// default
 
+  access_counter = 0;
+
   name = "*****UNKNOWN***** variable name";
 
   map_viewers = new map<string,PetscViewer>;
@@ -57,6 +59,7 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
   dof = other.dof;
   grid = other.grid;
   array = other.array;
+  access_counter = other.access_counter;
   localp = other.localp;
 
   map_viewers = other.map_viewers;
@@ -520,9 +523,16 @@ PetscErrorCode IceModelVec::checkCompatibility(const char* func, IceModelVec &ot
 PetscErrorCode  IceModelVec::begin_access() {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
-  if (array == NULL) {
+
+  if (access_counter < 0)
+    SETERRQ(1, "IceModelVec::begin_access(): access_counter < 0");
+
+  if (access_counter == 0) {
     ierr = DAVecGetArray(da, v, &array); CHKERRQ(ierr);
   }
+
+  access_counter++;
+
   return 0;
 }
 
@@ -530,10 +540,17 @@ PetscErrorCode  IceModelVec::begin_access() {
 PetscErrorCode  IceModelVec::end_access() {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
-  if (array != NULL) {
+
+  access_counter--;
+
+  if (access_counter < 0)
+    SETERRQ(1, "IceModelVec::end_access(): access_counter < 0");
+
+  if (access_counter == 0) {
     ierr = DAVecRestoreArray(da, v, &array); CHKERRQ(ierr);
-    array = PETSC_NULL;
+    array = NULL;
   }
+
   return 0;
 }
 

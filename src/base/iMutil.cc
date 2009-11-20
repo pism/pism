@@ -232,6 +232,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
 PetscErrorCode IceModel::report_grid_parameters() {
   PetscErrorCode ierr;
 
+
   // report on computational box
   ierr = verbPrintf(2,grid.com, 
            "computational box: %.2f km x %.2f km",
@@ -242,6 +243,10 @@ PetscErrorCode IceModel::report_grid_parameters() {
   } else {
     ierr = verbPrintf(2,grid.com," x %.2f m\n",grid.Lz); CHKERRQ(ierr);
   }
+
+  ierr = verbPrintf(2, grid.com,
+		    "time: start = %.2f a, end = %.2f a; run length: %.2f a\n",
+		    grid.start_year, grid.end_year, grid.end_year - grid.start_year);
   
   // report on grid cell dims
   if (grid.ice_vertical_spacing == EQUAL) {

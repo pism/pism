@@ -114,6 +114,8 @@ PetscErrorCode PISMGreenlandAtmosCoupler::initFromOptions(IceGrid* g, const PISM
     ierr = snowprecipmaps->set_attrs("climate_forcing", "ice-equivalent snow precipitation rate",
 				"m s-1", ""); CHKERRQ(ierr);
     ierr = snowprecipmaps->init(snowPrecipFile); CHKERRQ(ierr);
+    ierr = snowprecipmaps->set_glaciological_units("m year-1");
+    snowprecipmaps->write_in_glaciological_units = true;
 
   } else {
     // create mean annual ice equivalent snow precipitation rate (before melt, and not including rain)

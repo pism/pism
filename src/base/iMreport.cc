@@ -159,10 +159,7 @@ PetscErrorCode IceModel::energyAgeStats(
   PetscScalar     meltarea, temp0, origvol;
   
   // put basal ice temperature in vWork2d[0]
-  ierr = T3.begin_access(); CHKERRQ(ierr);
   ierr = T3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
-  ierr = T3.end_access(); CHKERRQ(ierr);
-
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vWork2d[0].get_array(Tbase); CHKERRQ(ierr);
   ierr = tau3.begin_access(); CHKERRQ(ierr);
@@ -417,12 +414,8 @@ PetscErrorCode IceModel::compute_cflx(IceModelVec2 &result, IceModelVec2 &cbar) 
 PetscErrorCode IceModel::compute_cbase(IceModelVec2 &result, IceModelVec2 &tmp) {
   PetscErrorCode ierr;
 
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = u3.getHorSlice(result, 0.0); CHKERRQ(ierr); // result = u_{z=0}
   ierr = v3.getHorSlice(tmp, 0.0); CHKERRQ(ierr);    // tmp = v_{z=0}
-  ierr = u3.end_access(); CHKERRQ(ierr);
-  ierr = v3.end_access(); CHKERRQ(ierr);
 
   ierr = result.set_to_magnitude(result,tmp); CHKERRQ(ierr);
   ierr = result.mask_by(vH); CHKERRQ(ierr); // mask out ice-free areas
