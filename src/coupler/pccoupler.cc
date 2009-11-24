@@ -551,7 +551,7 @@ PISMConstAtmosCoupler::PISMConstAtmosCoupler() : PISMAtmosphereCoupler() {
 //         WHICH WAS READ FROM FILE ARE UNCLEAR: DID IT ALREADY HAVE A SHIFT IN IT?
 
 // FIXME:  SHOULD STOP IF doForceToThickness == TRUE BECAUSE THAT MECHANISM WILL
-//         REPEATEDLY ADD \Delta M TO vsurfmassflux REPEATEDLY
+//         REPEATEDLY ADD \Delta M TO vsurfmassflux
 
 //! Normally initializes surface mass flux and surface temperature from the PISM input file.
 /*!

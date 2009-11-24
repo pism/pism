@@ -105,17 +105,14 @@ protected:
   virtual PetscErrorCode parameterizedUpdateSnowSurfaceTemp(
               PetscScalar t_years, PetscScalar dt_years);
 
-  //! Instead of temperature parameterization we can use stored temperature maps read from a file.
-  IceModelVec2T *snowtempmaps;
-
   LocalMassBalance *mbscheme;
 
   //! The snow precipitation rate in ice-equivalent meters per second.
   /*! vsurfmassflux is computed by LocalMassBalance scheme from this rate.  */
   IceModelVec2 vsnowprecip;
 
-  //! The snow precipitation rate in ice-equivalent meters per second, read from a file.
-  IceModelVec2T *snowprecipmaps;
+  //! Snow temperature and ice-equivalent snow precipitation anomalies:
+  IceModelVec2T *snowtempmaps, *snowprecipmaps;
 
   //! The mean July (julian day = 196; July 15) snow temperature used in the mass balance scheme.
   /*! This field is a diagnostic extra output of PISMGreenlandAtmosCoupler.  IceModel never

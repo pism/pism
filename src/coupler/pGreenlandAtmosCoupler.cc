@@ -59,8 +59,8 @@ Performs the many actions which are needed to initialize the snow process model:
 -# finds the input file,
 -# initializes pointers to IceModel members which have information needed for parameterizing climate inputs (namely, latitude, longitude, surface elevation),
 -# reads vsnowprecip from file,
--# initializes temperature maps from file if \c -pdd_snow_temps is given,
--# initializes precipitation maps from file if \c -pdd_snow_precip is given,
+-# initializes annual mean snow temperature anomalies if -anomaly_temp_ma is given
+-# initializes snow precipitation anomalies if -anomaly_precip is given
 -# chooses among mass balance schemes (from options \c -pdd, \c -pdd_rand, \c -pdd_rand_repeatable),
 -# and reads vsurftemp from file.
 
@@ -72,7 +72,6 @@ which is read from the input file.  The map vsurftemp is also time-invariant, an
 PetscErrorCode PISMGreenlandAtmosCoupler::initFromOptions(IceGrid* g, const PISMVars &variables) {
   PetscErrorCode ierr;
   PetscTruth   optSet;
-  printIfDebug("entering PISMGreenlandAtmosCoupler::initFromOptions()\n");
 
   ierr = PISMAtmosphereCoupler::initFromOptions(g, variables); CHKERRQ(ierr);
 
@@ -99,77 +98,80 @@ PetscErrorCode PISMGreenlandAtmosCoupler::initFromOptions(IceGrid* g, const PISM
   ierr = vsurfmassflux.set_attr("pism_intent","climate_diagnostic"); CHKERRQ(ierr);
   ierr = vsurfmassflux.set(0.0); CHKERRQ(ierr);
 
-  // check on whether we should read snow precipitation rates from file  
-  char snowPrecipFile[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-pdd_snow_precip", 
-             snowPrecipFile, PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
-  if (optSet == PETSC_TRUE) {
-    ierr = verbPrintf(2,grid->com,
-       "    reading snow precipitation rates from file %s ...\n",
-       snowPrecipFile); CHKERRQ(ierr);
-
-    snowprecipmaps = new IceModelVec2T;
-    snowprecipmaps->set_n_records((unsigned int) config.get("climate_forcing_buffer_size")); 
-    ierr = snowprecipmaps->create(*grid, "snowprecip", false); CHKERRQ(ierr);
-    ierr = snowprecipmaps->set_attrs("climate_forcing", "ice-equivalent snow precipitation rate",
-				"m s-1", ""); CHKERRQ(ierr);
-    ierr = snowprecipmaps->init(snowPrecipFile); CHKERRQ(ierr);
-    ierr = snowprecipmaps->set_glaciological_units("m year-1");
-    snowprecipmaps->write_in_glaciological_units = true;
-
-  } else {
-    // create mean annual ice equivalent snow precipitation rate (before melt, and not including rain)
-    ierr = vsnowprecip.create(*g, "snowprecip", false); CHKERRQ(ierr);
-    ierr = vsnowprecip.set_attrs("climate_state", 
-				 "mean annual ice-equivalent snow precipitation rate",
-				 "m s-1", 
-				 "");  // no CF standard_name ??
-    CHKERRQ(ierr);
-    ierr = vsnowprecip.set_glaciological_units("m year-1");
-    vsnowprecip.write_in_glaciological_units = true;
-
-    // read snow precipitation rate from file
-    ierr = verbPrintf(2, g->com, 
-		      "    reading mean annual ice-equivalent snow precipitation rate 'snowprecip'\n"
-		      "      from %s ... \n",
-		      filename); CHKERRQ(ierr); 
-    if (regrid) {
-      ierr = vsnowprecip.regrid(filename, *lic, true); CHKERRQ(ierr); // fails if not found!
-    } else {
-      ierr = vsnowprecip.read(filename, start); CHKERRQ(ierr); // fails if not found!
+  // check on whether we should read snow temperature anomalies
+  char anomalies_file[PETSC_MAX_PATH_LEN];
+  ierr = PetscOptionsGetString(PETSC_NULL, "-anomaly_temp_ma", 
+             anomalies_file, PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
+  if (optSet) {
+    // stop if -dTforcing is set:
+    PetscTruth dTforcing_set;
+    ierr = check_option("-dTforcing", dTforcing_set); CHKERRQ(ierr);
+    if (dTforcing_set) {
+      ierr = PetscPrintf(g->com, "PISM ERROR: option -anomaly_temp_ma is incompatible with -dTforcing.\n");
+      PetscEnd();
     }
-  }
 
-  // check on whether we should read snow-surface temperatures from file  
-  char snowTempsFile[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-pdd_snow_temps", 
-             snowTempsFile, PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
-  if (optSet == PETSC_TRUE) {
     ierr = verbPrintf(2,grid->com,
-       "    reading snow-surface temperatures from file %s ...\n",
-       snowTempsFile); CHKERRQ(ierr);
+       "    reading snow temperature anomalies from %s ...\n",
+       anomalies_file); CHKERRQ(ierr);
 
     snowtempmaps = new IceModelVec2T;
     snowtempmaps->set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
-    ierr = snowtempmaps->create(*grid, "snowtemp", false); CHKERRQ(ierr);
-    ierr = snowtempmaps->set_attrs("climate_forcing", "snow surface temperature",
-				"Kelvin", ""); CHKERRQ(ierr);
-    ierr = snowtempmaps->init(snowTempsFile); CHKERRQ(ierr);
-
-  } else {
-    ierr = verbPrintf(2,grid->com,
-       "    using default snow-surface temperature parameterization\n"); CHKERRQ(ierr);
-    if (snowtempmaps != NULL)   delete snowtempmaps;
-    snowtempmaps = NULL;  // test for NULL to see if using stored temps versus parameterization
-
-    // this is ignored if stored snow temps are used
-    ierr = vsnowtemp_mj.create(*g, "snowtemp_mj", false); CHKERRQ(ierr);
-    ierr = vsnowtemp_mj.set_attrs("climate_state",
-				  "mean July snow-surface temperature used in mass balance scheme",
-				  "Kelvin",
-				  ""); CHKERRQ(ierr);  // no CF standard_name ??
-    ierr = vsnowtemp_mj.set(273.15); CHKERRQ(ierr);  // merely a default value
+    ierr = snowtempmaps->create(*grid, "delta_snowtemp", false); CHKERRQ(ierr);
+    ierr = snowtempmaps->set_attrs("climate_forcing", "snow surface temperature anomalies",
+				   "Kelvin", ""); CHKERRQ(ierr);
+    ierr = snowtempmaps->init(anomalies_file); CHKERRQ(ierr);
   }
+
+  // check on whether we should read snow precipitation anomalies
+  ierr = PetscOptionsGetString(PETSC_NULL, "-anomaly_precip", 
+             anomalies_file, PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
+  if (optSet) {
+    ierr = verbPrintf(2,grid->com,
+       "    reading ice-equivalent snow precipitation rate anomalies from %s ...\n",
+       anomalies_file); CHKERRQ(ierr);
+
+    snowprecipmaps = new IceModelVec2T;
+    snowprecipmaps->set_n_records((unsigned int) config.get("climate_forcing_buffer_size")); 
+    ierr = snowprecipmaps->create(*grid, "delta_snowprecip", false); CHKERRQ(ierr);
+    ierr = snowprecipmaps->set_attrs("climate_forcing",
+				     "anomalies of ice-equivalent snow precipitation rate",
+				     "m s-1", ""); CHKERRQ(ierr);
+    ierr = snowprecipmaps->init(anomalies_file); CHKERRQ(ierr);
+    ierr = snowprecipmaps->set_glaciological_units("m year-1");
+    snowprecipmaps->write_in_glaciological_units = true;
+  }
+  
+  // create mean annual ice equivalent snow precipitation rate (before melt, and not including rain)
+  ierr = vsnowprecip.create(*g, "snowprecip", false); CHKERRQ(ierr);
+  ierr = vsnowprecip.set_attrs("climate_state", 
+			       "mean annual ice-equivalent snow precipitation rate",
+			       "m s-1", 
+			       "");  // no CF standard_name ??
+  CHKERRQ(ierr);
+  ierr = vsnowprecip.set_glaciological_units("m year-1");
+  vsnowprecip.write_in_glaciological_units = true;
+
+  // read snow precipitation rate from file
+  ierr = verbPrintf(2, g->com, 
+		    "    reading mean annual ice-equivalent snow precipitation rate 'snowprecip'\n"
+		    "      from %s ... \n",
+		    filename); CHKERRQ(ierr); 
+  if (regrid) {
+    ierr = vsnowprecip.regrid(filename, *lic, true); CHKERRQ(ierr); // fails if not found!
+  } else {
+    ierr = vsnowprecip.read(filename, start); CHKERRQ(ierr); // fails if not found!
+  }
+
+
+  ierr = verbPrintf(2,grid->com,
+		    "    using default snow-surface temperature parameterization\n"); CHKERRQ(ierr);
+  ierr = vsnowtemp_mj.create(*g, "snowtemp_mj", false); CHKERRQ(ierr);
+  ierr = vsnowtemp_mj.set_attrs("climate_state",
+				"mean July snow-surface temperature used in mass balance scheme",
+				"Kelvin",
+				""); CHKERRQ(ierr);  // no CF standard_name ??
+  ierr = vsnowtemp_mj.set(273.15); CHKERRQ(ierr);  // merely a default value
 
   // check if user wants default or random PDD; initialize mbscheme to one of these PDDs
   if (mbscheme == NULL) { // only read user options if scheme is not chosen yet;
@@ -206,18 +208,18 @@ PetscErrorCode PISMGreenlandAtmosCoupler::initFromOptions(IceGrid* g, const PISM
 
   delete lic;
 
-  printIfDebug("ending PISMGreenlandAtmosCoupler::initFromOptions()\n");
   return 0;
 }
-
 
 PetscErrorCode PISMGreenlandAtmosCoupler::writeCouplingFieldsToFile(
                               PetscScalar t_years, const char *filename) {
   PetscErrorCode ierr;
+  IceModelVec2 tmp;  // no work vectors, so we create a new one
+  ierr = tmp.create(*grid, "temporary_vector", false); CHKERRQ(ierr);
   
   ierr = PISMAtmosphereCoupler::writeCouplingFieldsToFile(t_years,filename); CHKERRQ(ierr);
 
-
+  // paleo-precipitation:
   double dT_offset = 0.0;
   if (dTforcing != NULL) {
     dT_offset = (*dTforcing)(t_years);
@@ -227,69 +229,79 @@ PetscErrorCode PISMGreenlandAtmosCoupler::writeCouplingFieldsToFile(
     //   "Model Initialization" page http://websrv.cs.umt.edu/isis/index.php/Model_Initialization
     //   the version here assumes Delta T_SC = 0.0; write out with new name
 
-    IceModelVec2 vpaleoprecip;    
-    ierr = vpaleoprecip.create(*grid, "snowprecip_paleo", false); CHKERRQ(ierr);
-    ierr = vpaleoprecip.set_attrs(
-            "climate_diagnostic", 
-            "mean annual, time-dependent, paleo, ice-equivalent snow precipitation rate",
-	    "m s-1", 
-	    "");  // no CF standard_name
-	    CHKERRQ(ierr);
-    ierr = vpaleoprecip.set_glaciological_units("m year-1");
-    vpaleoprecip.write_in_glaciological_units = true;
+    ierr = tmp.set_name("snowprecip_paleo"); CHKERRQ(ierr);
+    ierr = tmp.set_attrs("climate_diagnostic", 
+			 "mean annual, time-dependent, paleo, ice-equivalent snow precipitation rate",
+			 "m s-1", 
+			 ""); CHKERRQ(ierr);
+    ierr = tmp.set_glaciological_units("m year-1");
+    tmp.write_in_glaciological_units = true;
 
-    ierr = vpaleoprecip.copy_from(vsnowprecip); CHKERRQ(ierr);
+    ierr = tmp.copy_from(vsnowprecip); CHKERRQ(ierr);
     const PetscScalar precipexpfactor
        = exp( config.get("precip_exponential_factor_for_temperature") * dT_offset );
-    ierr = vpaleoprecip.scale(precipexpfactor); CHKERRQ(ierr);
+    ierr = tmp.scale(precipexpfactor); CHKERRQ(ierr);
 
-    ierr = vpaleoprecip.write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = tmp.write(filename, NC_FLOAT); CHKERRQ(ierr);
   } // end of if (dTforcing != NULL)
 
-  // save a temperature snapshot from yearly cycle or by interpolating stored
-  // maps
+  // temperature snapshot:
+  ierr = tmp.set_name("snowtemp"); CHKERRQ(ierr);
+  ierr = tmp.set_attrs("climate_diagnostic",
+		       "time-dependent snow-surface temperature used in mass balance scheme",
+		       "K",
+		       ""); CHKERRQ(ierr);  // use no CF standard_name
 
+  PetscScalar **T, **T_ma, **T_mj;
+  const PetscScalar radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
+    sperd = 8.64e4, // exact number of seconds per day
+    julydaysec = sperd * config.get("snow_temp_july_day"),
+    t = (t_years - floor(t_years)) * secpera,
+    cosfactor = cos(radpersec * (t - julydaysec));
+
+  // note that T_ma already has dT_offset or anomalies applied by
+  // updateSurfTempAndProvide()
+  ierr = tmp.get_array(T);  CHKERRQ(ierr);
+  ierr = vsurftemp.get_array(T_ma); CHKERRQ(ierr);
+  ierr = vsnowtemp_mj.get_array(T_mj); CHKERRQ(ierr);
+  for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
+      T[i][j] = T_ma[i][j] + (T_mj[i][j] - T_ma[i][j]) * cosfactor;
+    }
+  }
+  ierr = vsurftemp.end_access(); CHKERRQ(ierr);
+  ierr = vsnowtemp_mj.end_access();  CHKERRQ(ierr);
+  ierr = tmp.end_access();  CHKERRQ(ierr);
+
+  ierr = tmp.write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+  // write the current anomaly to the file (if applicable):
   if (snowtempmaps != NULL) {
     ierr = snowtempmaps->update(t_years, 0); CHKERRQ(ierr);
     ierr = snowtempmaps->interp(t_years); CHKERRQ(ierr);
     ierr = snowtempmaps->write(filename, NC_FLOAT); CHKERRQ(ierr);
-  } else {
-    IceModelVec2 vsnowtemp;  // no work vectors, so we create a new one
-    ierr = vsnowtemp.create(*grid, "snowtemp", false); CHKERRQ(ierr);
-    ierr = vsnowtemp.set_attrs("climate_diagnostic",
-			       "time-dependent snow-surface temperature used in mass balance scheme",
-			       "K",
-			       ""); CHKERRQ(ierr);  // use no CF standard_name
-
-    PetscScalar **T, **T_ma, **T_mj;
-    const PetscScalar radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
-                      sperd = 8.64e4, // exact number of seconds per day
-                      julydaysec = sperd * config.get("snow_temp_july_day"),
-                      t = (t_years - floor(t_years)) * secpera,
-                      cosfactor = cos(radpersec * (t - julydaysec));
-    ierr = vsnowtemp.get_array(T);  CHKERRQ(ierr);
-    ierr = vsurftemp.get_array(T_ma); CHKERRQ(ierr);
-    ierr = vsnowtemp_mj.get_array(T_mj); CHKERRQ(ierr);
-    for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
-      for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
-        T[i][j] = T_ma[i][j] + (T_mj[i][j] - T_ma[i][j]) * cosfactor + dT_offset;
-      }
-    }
-    ierr = vsurftemp.end_access();  CHKERRQ(ierr);
-    ierr = vsnowtemp_mj.end_access();  CHKERRQ(ierr);
-    ierr = vsnowtemp.end_access();  CHKERRQ(ierr);
-
-    ierr = vsnowtemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
   }
 
+  // precipitation:
   if (snowprecipmaps != NULL) {
     ierr = snowprecipmaps->update(t_years, 0); CHKERRQ(ierr);
     ierr = snowprecipmaps->interp(t_years); CHKERRQ(ierr);
     ierr = snowprecipmaps->write(filename, NC_FLOAT); CHKERRQ(ierr);
-  } else {
-    // duplicate precipitation into file
-    ierr = vsnowprecip.write(filename, NC_FLOAT); CHKERRQ(ierr);
+
+    ierr = tmp.copy_from(vsnowprecip); CHKERRQ(ierr);
+    ierr = tmp.add(1.0, *snowprecipmaps); CHKERRQ(ierr);
+
+    ierr = tmp.set_name("snowprecip_inst"); CHKERRQ(ierr);
+    ierr = tmp.set_attrs("climate_diagnostic", 
+			 "instantaneous ice-equivalent snow precipitation rate",
+			 "m s-1", ""); CHKERRQ(ierr);
+    ierr = tmp.set_glaciological_units("m year-1");
+    tmp.write_in_glaciological_units = true;
+    ierr = tmp.write(filename, NC_FLOAT); CHKERRQ(ierr);
   }
+
+  // duplicate original precipitation map:
+  ierr = vsnowprecip.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   return 0;
 }
@@ -346,37 +358,40 @@ PetscErrorCode PISMGreenlandAtmosCoupler::parameterizedUpdateSnowSurfaceTemp(
 }
 
 
+/*! Note that in this case surface temperature always comes from the
+  parameterization, so shifting it around is safe (it will be re-created next
+  time it's needed).
+ */
 PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfTempAndProvide(
                   PetscScalar t_years, PetscScalar dt_years, 
                   IceModelVec2* &pvst) {
   PetscErrorCode ierr;
 
-  if (snowtempmaps != NULL) {
-    ierr = snowtempmaps->update(t_years, dt_years); CHKERRQ(ierr);
-    ierr = snowtempmaps->interp(t_years); CHKERRQ(ierr);
-    pvst = (IceModelVec2*) snowtempmaps;
-  } else {
-    ierr = parameterizedUpdateSnowSurfaceTemp(t_years, dt_years); CHKERRQ(ierr);
+  ierr = parameterizedUpdateSnowSurfaceTemp(t_years, dt_years); CHKERRQ(ierr);
 
-    if (dTforcing != PETSC_NULL) {
-      TsOffset = (*dTforcing)(t_years);
-    }
-
+  if (dTforcing != PETSC_NULL) {
+    TsOffset = (*dTforcing)(t_years);
     ierr = vsurftemp.shift(TsOffset); CHKERRQ(ierr);  // apply the new offset
     pvst = &vsurftemp;
-  }  
+  }
+
+  if (snowtempmaps != NULL) {
+    ierr = snowtempmaps->update(t_years, 0); CHKERRQ(ierr);
+    ierr = snowtempmaps->interp(t_years); CHKERRQ(ierr);
+
+    ierr = vsurftemp.add(1.0, *snowtempmaps); CHKERRQ(ierr);
+  }
+  
   return 0;
 }
 
 
-//! Compute the ice surface mass flux from the snow temperature (parameterized or stored), a stored map of snow precipication rate, and a choice of mass balance scheme (typically a PDD).
-/*!
-First this method recomputes the snow temperature, either from a parameterization or from interpolating
-stored snow temperature maps.  More precisely, if there are no stored temperature maps then
-useTemperatureParameterizationToUpdateSnowTemp() is called .  In either case, at each point on the surface
-a temperature time series with short (weekly or less) time steps is generated.
-When there are no stored temperatures, there is a parameterized yearly cycle 
-of temperature and additional weather-related variability according to a normally distributed 
+//! Compute the ice surface mass flux from the snow temperature, a stored map of snow precipication rate, and a choice of mass balance scheme (typically a PDD).
+/*! First this method recomputes the snow temperature, either from a
+parameterization or from interpolating stored snow temperature maps. At each
+point on the surface a temperature time series with short (weekly or less) time
+steps is generated. There is also a parameterized yearly cycle of temperature and
+additional weather-related variability according to a normally distributed
 random temperature change for each week and grid point.
 
 At each point on the ice surface a temperature time series, for the duration of the 
@@ -391,10 +406,6 @@ The random method uses pseudo-random numbers to simulate the variability and the
 sums the number of positive degree days.  It is chosen by either <tt>-pdd_rand</tt> or 
 <tt>-pdd_rand_repeatable</tt>.
 
-Alternatively, if option <tt>-pdd_snow_temps</tt> provides a NetCDF file 
-with the temperature maps, the temperature on a given day at a given
-location is found by linear interpolation (in time) of these temps.
-
 The surface mass balance is computed from the stored map of snow precipitation rate
 by a call to the getMassFluxFromTemperatureTimeSeries() method of the LocalMassBalance object.
  */
@@ -402,111 +413,131 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfMassFluxAndProvide(
              PetscScalar t_years, PetscScalar dt_years,
              IceModelVec2* &pvsmf) {
   PetscErrorCode ierr;
+
+  // constants related to standard yearly cycle and precipitation offset
+  const PetscScalar
+    radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
+    sperd = 8.64e4, // exact number of seconds per day
+    julydaysec = sperd * config.get("snow_temp_july_day"),
+    precipexpfactor = config.get("precip_exponential_factor_for_temperature");
  
   // set up snow temperature time series
   PetscInt     Nseries;
-  ierr = mbscheme->getNForTemperatureSeries(
-             t_years * secpera, dt_years * secpera, Nseries); CHKERRQ(ierr);
+  ierr = mbscheme->getNForTemperatureSeries(t_years * secpera,
+					    dt_years * secpera, Nseries); CHKERRQ(ierr);
   PetscScalar  *Tseries = new PetscScalar[Nseries];
 
-  // times at which we compute snow temps are
+  // times at which we compute snow temps using the parameterization are
   //    tseries, tseries + dtseries, ..., tseries + (Nseries-1) * dtseries;
   const PetscScalar tseries = (t_years - floor(t_years)) * secpera,
     dtseries = (dt_years * secpera) / ((PetscScalar) Nseries);
-  
-  PetscScalar **smflux;
-  ierr = vsurfmassflux.get_array(smflux);  CHKERRQ(ierr);
 
-  if ((snowtempmaps != NULL) && (snowprecipmaps != NULL)) { // stored snow temperatures and precipitation
+  // times for the snow temperature time-series (in years, used to get mean
+  // annual temperature anomalies):
+  vector<PetscScalar> ts(Nseries);
+  for (PetscInt k = 0; k < Nseries; ++k)
+    ts[k] = t_years + k * dt_years / Nseries;
 
-    ierr = snowtempmaps->update(t_years, dt_years); CHKERRQ(ierr);
+  // use the parameterization to update T_ma and T_mj:
+  ierr = parameterizedUpdateSnowSurfaceTemp(t_years,dt_years); CHKERRQ(ierr);
+
+  if (snowprecipmaps != NULL) {
     ierr = snowprecipmaps->update(t_years, dt_years); CHKERRQ(ierr);
-
-    // times for the snow temperature time-series:
-    vector<PetscScalar> ts(Nseries);
-    for (PetscInt k = 0; k < Nseries; ++k)
-      ts[k] = t_years + k * dt_years / Nseries;
-
-    ierr = snowtempmaps->begin_access(); CHKERRQ(ierr);
     ierr = snowprecipmaps->begin_access(); CHKERRQ(ierr);
+  }
 
-    for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
-      for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
-	double precip;
-	ierr = snowtempmaps->interp(i, j, Nseries, &ts[0], Tseries); CHKERRQ(ierr);
-	ierr = snowprecipmaps->average(i, j, t_years, dt_years, precip); CHKERRQ(ierr);
-
-	// get surface mass balance at point i,j (units of day^-1 K-1)
-	smflux[i][j] = mbscheme->getMassFluxFromTemperatureTimeSeries(tseries, dtseries, Tseries,
-								      Nseries, precip);
-      }
-    }
-
-    ierr = snowtempmaps->end_access(); CHKERRQ(ierr);
-    ierr = snowprecipmaps->end_access(); CHKERRQ(ierr);
-
-  } else {			// \ref Faustoetal2009 parameterization
-
-    // constants related to standard yearly cycle and precipitation offset
-    const PetscScalar
-      radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
-      sperd = 8.64e4, // exact number of seconds per day
-      julydaysec = sperd * config.get("snow_temp_july_day"),
-      precipexpfactor = config.get("precip_exponential_factor_for_temperature");
-
-    PetscScalar **T_ma, **T_mj, **snowrate, **lat_degN;
-
-    ierr = parameterizedUpdateSnowSurfaceTemp(t_years,dt_years); CHKERRQ(ierr);
-
-    ierr = vsurftemp.get_array(T_ma);  CHKERRQ(ierr);
-    ierr = vsnowtemp_mj.get_array(T_mj);  CHKERRQ(ierr);
-    ierr = vsnowprecip.get_array(snowrate);  CHKERRQ(ierr);
-    ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
-
-    for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
-      for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
-
-	// build temperature time series at point i,j
-	for (PetscInt k = 0; k < Nseries; ++k) {
-	  double tk = tseries + k * dtseries;
-	  // use corrected formula (4) in \ref Faustoetal2009, the standard yearly cycle
-	  Tseries[k] = T_ma[i][j] + (T_mj[i][j] - T_ma[i][j]) * cos(radpersec * (tk - julydaysec));
-	  // apply the temperature offset if needed
-	  if (dTforcing != NULL)
-	    Tseries[k] += (*dTforcing)(t_years + k * dt_years / Nseries);
-	}
-
-	// if we can, set mass balance parameters according to formula (6) in
-	//   \ref Faustoetal2009
-	PDDMassBalance* pddscheme = dynamic_cast<PDDMassBalance*>(mbscheme);
-	if (pddscheme != NULL) {
-	  ierr = pddscheme->setDegreeDayFactorsFromSpecialInfo(lat_degN[i][j],T_mj[i][j]); CHKERRQ(ierr);
-	}
-
-	// *if* dTforcing then modify precipitation, which is assumed to be present-day, to be 
-	//   modeled paleo-precipitation; use dTforcing at midpoint of
-	//   interval [t_years,t_years+dt_years];  see formula for P_G(t,x,y) on SeaRISE
-	//   "Model Initialization" page http://websrv.cs.umt.edu/isis/index.php/Model_Initialization
-	//   the version here assumes Delta T_SC = 0.0
-	PetscScalar precip = snowrate[i][j];
-	if (dTforcing != NULL) {
-	  precip *= exp( precipexpfactor * (*dTforcing)(t_years + 0.5 * dt_years) );
-	}
-
-	// get surface mass balance at point i,j (units of day^-1 K-1)
-	smflux[i][j] = mbscheme->getMassFluxFromTemperatureTimeSeries(tseries, dtseries, Tseries,
-								      Nseries, precip);
-      }
-    }
-
-    ierr = vsurftemp.end_access();  CHKERRQ(ierr);
-    ierr = vsnowtemp_mj.end_access();  CHKERRQ(ierr);
-    ierr = vsnowprecip.end_access();  CHKERRQ(ierr);
-    ierr = lat->end_access(); CHKERRQ(ierr);
-
-  } // end of } else { // Faustoetal2009 parameterization
+  if (snowtempmaps != NULL) {
+    ierr = snowtempmaps->update(t_years, dt_years); CHKERRQ(ierr);
+    ierr = snowtempmaps->begin_access(); CHKERRQ(ierr);
+  }
   
+  PetscScalar **T_ma, **T_mj, **snowrate, **lat_degN, **smflux;
+  ierr = vsurfmassflux.get_array(smflux);  CHKERRQ(ierr);
+  ierr = vsurftemp.get_array(T_ma);  CHKERRQ(ierr);
+  ierr = vsnowtemp_mj.get_array(T_mj);  CHKERRQ(ierr);
+  ierr = vsnowprecip.get_array(snowrate);  CHKERRQ(ierr);
+  ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
+  for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
+      double precip = 0;
+
+      // get the precipitation during the time interval (t_years, t_years +
+      // dt_years); note that addition and averaging commute:
+      if (snowprecipmaps != NULL) {
+	ierr = snowprecipmaps->average(i, j, t_years, dt_years, precip); CHKERRQ(ierr);
+      }
+      
+      precip += snowrate[i][j];
+
+      // *if* dTforcing then modify precipitation, which is assumed to be
+      //   present-day, to be modeled paleo-precipitation; use dTforcing at
+      //   midpoint of interval [t_years,t_years+dt_years]; see formula for
+      //   P_G(t,x,y) on SeaRISE "Model Initialization" page
+      //   http://websrv.cs.umt.edu/isis/index.php/Model_Initialization the
+      //   version here assumes Delta T_SC = 0.0
+      if (dTforcing != NULL) {
+	precip *= exp( precipexpfactor * (*dTforcing)(t_years + 0.5 * dt_years) );
+      }
+
+      // done with precipitation
+
+      // build temperature time-series at the point i,j by filling Tseries with
+      // anomalies and then adding the yearly cycle:
+      if (snowtempmaps != NULL) {
+	ierr = snowtempmaps->interp(i, j, Nseries, &ts[0], Tseries); CHKERRQ(ierr);
+      } else {
+	// apply the temperature offset if needed
+	if (dTforcing != NULL) {
+
+	  for (PetscInt k = 0; k < Nseries; ++k)
+	    Tseries[k] = (*dTforcing)(ts[k]);
+
+	} else {
+
+	  for (PetscInt k = 0; k < Nseries; ++k)
+	    Tseries[k] = 0.0;
+
+	}
+      }
+
+      // add the standard yearly cycle using corrected formula (4) in [\ref Faustoetal2009]
+      for (PetscInt k = 0; k < Nseries; ++k) {
+	double tk = tseries + k * dtseries;
+	Tseries[k] += T_ma[i][j] + (T_mj[i][j] - T_ma[i][j]) * cos(radpersec * (tk - julydaysec));
+      }
+
+      // done with temperature time-series
+
+      // if we can, set mass balance parameters according to formula (6) in
+      // [\ref Faustoetal2009]
+      PDDMassBalance* pddscheme = dynamic_cast<PDDMassBalance*>(mbscheme);
+      if (pddscheme != NULL) {
+	ierr = pddscheme->setDegreeDayFactorsFromSpecialInfo(lat_degN[i][j],T_mj[i][j]); CHKERRQ(ierr);
+      }
+
+      // get surface mass balance at point i,j (units of day^-1 K-1)
+      smflux[i][j] = mbscheme->getMassFluxFromTemperatureTimeSeries(tseries, dtseries, Tseries,
+								    Nseries, precip);
+    }
+  }
   ierr = vsurfmassflux.end_access(); CHKERRQ(ierr);
+  ierr = vsurftemp.end_access();  CHKERRQ(ierr);
+  ierr = vsnowtemp_mj.end_access();  CHKERRQ(ierr);
+  ierr = vsnowprecip.end_access();  CHKERRQ(ierr);
+  ierr = lat->end_access(); CHKERRQ(ierr);
+
+  if (snowtempmaps != NULL) {
+    ierr = snowtempmaps->end_access(); CHKERRQ(ierr);
+
+    // add the snow temperature anomaly to artm so that its value is the same
+    // after updateSurfTempAndProvide() and updateSurfMassFluxAndProvide():
+    ierr = snowtempmaps->interp(t_years); CHKERRQ(ierr);
+    ierr = vsurftemp.add(1.0, *snowtempmaps); CHKERRQ(ierr);
+  }
+
+  if (snowprecipmaps != NULL) {
+    ierr = snowprecipmaps->end_access(); CHKERRQ(ierr);
+  }
 
   delete [] Tseries;
 
