@@ -46,8 +46,8 @@ def read2dROSSfloat(mygrid,myarray,xs,xm,My,mymissing,myshift,myscale):
 # function convert velocities from (azimuth,magnitude), with magnitude to (u,v)
 def uvGet(mag,azi):
   uv = zeros((2,),float32)
-  uv[0] = mag * cos((pi/180.0) * azi)
-  uv[1] = mag * sin((pi/180.0) * azi)
+  uv[1] = mag * cos((pi/180.0) * azi)
+  uv[0] = mag * sin((pi/180.0) * azi)
   return uv
 
 ##### command line arguments #####

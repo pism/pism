@@ -37,7 +37,7 @@ seconds_per_year = 3.1556926e7
 try:
     opts, args = getopt(argv[1:], "p:r:", ["pism-output=", "riggs="])
     # defaults:
-    pism_output = "unnamed_diag.nc"
+    pism_output = "rossComputed.nc"
     riggs_file = "riggs_clean.dat"
     for opt, arg in opts:
         if opt in ("-p", "--pism-output"):
@@ -70,8 +70,8 @@ try:
     H = squeeze(infile.variables["thk"][:])
     mask = squeeze(infile.variables["mask"][:])
     cbar = squeeze(infile.variables["cbar"][:])
-    ubar = squeeze(infile.variables["uvel"][:,:,:,0])
-    vbar = squeeze(infile.variables["vvel"][:,:,:,0])
+    ubar = squeeze(infile.variables["uvelsurf"][:])
+    vbar = squeeze(infile.variables["vvelsurf"][:])
     print "done."
 except Exception:
     print """ERROR!\nSpecify NetCDF file from PISM run with -p.
@@ -113,9 +113,9 @@ rigu = sin((pi/180)*rig[:,12]) * rig[:,10]
 rigv = cos((pi/180)*rig[:,12]) * rig[:,10]
 quiver(riglon, riglat, rigu, rigv, color='black')
 
-# quiver the computed velocities at the same points; note reversal of u,v in model
-uATrig = tri.nn_interpolator(vbar.flat)(riglon, riglat)
-vATrig = tri.nn_interpolator(ubar.flat)(riglon, riglat)
+# quiver the computed velocities at the same points
+uATrig = tri.nn_interpolator(ubar.flat)(riglon, riglat)
+vATrig = tri.nn_interpolator(vbar.flat)(riglon, riglat)
 quiver(riglon, riglat, uATrig, vATrig, color='red')
 axis([-5.26168, 3.72207, -13, -5.42445])
 xlabel('RIGGS grid longitude (deg E)'); ylabel('RIGGS grid latitude (deg N)')
