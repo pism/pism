@@ -273,9 +273,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars
   ierr = PetscOptionsGetString(PETSC_NULL, "-force_to_thk", fttfile,
                                PETSC_MAX_PATH_LEN, &doForceToThickness); CHKERRQ(ierr);
   if (doForceToThickness == PETSC_TRUE) {
-
-    ierr = verbPrintf(2, g->com,
-       "  option -force_to_thk seen ...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2, g->com,"  option -force_to_thk seen ...\n"); CHKERRQ(ierr);
 
     // allocate space and set attribs for target thickness
     ierr = vthktarget.create(*g, "thk", false); CHKERRQ(ierr);  // will be *read* by this name
@@ -286,13 +284,36 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars
 	    "");  // no CF standard_name, to put it mildly
 	    CHKERRQ(ierr);
 
-    // determine exponential rate
-    ftt_alphadecay = log( config.get("force_to_thickness_factor") )
+    // check if option given to change factor; option is given as pure number
+    PetscReal fttf;
+    PetscTruth fttfSet,fttalphaSet;
+    ierr = PetscOptionsGetReal(PETSC_NULL, "-force_to_thk_factor", &fttf, &fttfSet);
+       CHKERRQ(ierr);
+    if (fttfSet == PETSC_TRUE) {
+      config.set("force_to_thickness_factor",fttf);
+      ierr = verbPrintf(2, g->com,
+         "    option -force_to_thk_factor seen; setting factor to %.2f\n",
+         config.get("force_to_thickness_factor")); CHKERRQ(ierr);
+    }
+
+    // determine exponential rate alpha from user option or from factor;
+    //    option is given in a^{-1}
+    ierr = PetscOptionsGetReal(PETSC_NULL, "-force_to_thk_alpha",
+                               &ftt_alphadecay, &fttalphaSet); CHKERRQ(ierr);
+    if (fttalphaSet == PETSC_TRUE) {
+      ierr = verbPrintf(2, g->com,
+         "    option -force_to_thk_alpha seen; setting alpha to %.2f\n",
+         ftt_alphadecay); CHKERRQ(ierr);
+      ftt_alphadecay = ftt_alphadecay / secpera;
+    } else {
+      ftt_alphadecay = log( config.get("force_to_thickness_factor") )
                               / (secpera * (g->end_year - g->start_year));
+    }
     ierr = verbPrintf(2, g->com,
-       "    computed alpha = %.6f a^(-1) for %.3f a run, for -force_to_thk mechanism\n",
+       "    alpha = %.6f a^(-1) for %.3f a run, for -force_to_thk mechanism\n",
        ftt_alphadecay * secpera, g->end_year - g->start_year); CHKERRQ(ierr);
 
+    // get a pointer to the current model thickness (owned by IceModel)
     ftt_thk = dynamic_cast<IceModelVec2*>(variables.get("land_ice_thickness"));
     if (!ftt_thk) SETERRQ(1, "ERROR: land_ice_thickness is not available");
 
