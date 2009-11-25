@@ -369,10 +369,9 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfTempAndProvide(
 
   ierr = parameterizedUpdateSnowSurfaceTemp(t_years, dt_years); CHKERRQ(ierr);
 
-  if (dTforcing != PETSC_NULL) {
+  if (dTforcing != NULL) {
     TsOffset = (*dTforcing)(t_years);
     ierr = vsurftemp.shift(TsOffset); CHKERRQ(ierr);  // apply the new offset
-    pvst = &vsurftemp;
   }
 
   if (snowtempmaps != NULL) {
@@ -381,6 +380,8 @@ PetscErrorCode PISMGreenlandAtmosCoupler::updateSurfTempAndProvide(
 
     ierr = vsurftemp.add(1.0, *snowtempmaps); CHKERRQ(ierr);
   }
+
+  pvst = &vsurftemp;
   
   return 0;
 }

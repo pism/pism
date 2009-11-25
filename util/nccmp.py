@@ -44,7 +44,7 @@ def compare(file1, file2, variables, exclude, tol):
         nc1 = NC(file1, 'r')
         nc2 = NC(file2, 'r')
     except:
-        # This can happen if one of the files could not be open.
+        # This can happen if one of the files could not be opened.
         failure()
 
     if (exclude == False):
