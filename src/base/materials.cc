@@ -91,23 +91,6 @@ PetscScalar CustomGlenIce::effectiveViscosityColumn(PetscScalar H, PetscInt, con
 }
 
 
-PetscInt CustomGlenIce::integratedStoreSize() const { return 1; }
-
-
-void CustomGlenIce::integratedStore(PetscScalar H,PetscInt,const PetscScalar*,const PetscScalar[],PetscScalar store[]) const
-{
-  store[0] = H * hardness_B / 2;
-}
-
-
-void CustomGlenIce::integratedViscosity(const PetscScalar store[], const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const
-{
-  const PetscScalar alpha = secondInvariantDu(Du),power = (1-exponent_n) / (2*exponent_n);
-  *eta = store[0] * pow(schoofReg + alpha, power);
-  if (deta) *deta = power * *eta / (schoofReg + alpha);
-}
-
-
 PetscErrorCode CustomGlenIce::setDensity(PetscReal r) {rho = r; return 0;}
 
 
@@ -143,6 +126,11 @@ PetscScalar CustomGlenIce::softnessParameter(PetscScalar /*T*/) const { return s
 
 
 PetscScalar CustomGlenIce::hardnessParameter(PetscScalar /*T*/) const { return hardness_B; }
+
+
+PetscScalar CustomGlenIce::averagedHarness(
+                PetscScalar /* H */, PetscInt /* kbelowH */, const PetscScalar /* zlevels */ [],
+                const PetscScalar /* T */[]) const  { return hardness_B; }
 
 
 PetscErrorCode CustomGlenIce::setFromOptions()
@@ -300,41 +288,14 @@ PetscScalar ThermoGlenIce::effectiveViscosityColumn(
 }
 
 
-PetscInt ThermoGlenIce::integratedStoreSize() const {return 1;}
-
-
-void ThermoGlenIce::integratedStore(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
-                              const PetscScalar T[], PetscScalar store[]) const
-{
-  PetscScalar B = 0;
-  if (kbelowH > 0) {
-    PetscScalar dz = zlevels[1] - zlevels[0];
-    B += 0.5 * dz * hardnessParameter(T[0] + beta_CC_grad * H);
-    for (PetscInt m=1; m < kbelowH; m++) {
-      const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m];
-      B += 0.5 * (dz + dzNEXT) * hardnessParameter(T[m]
-           + beta_CC_grad * (H - zlevels[m]));
-      dz = dzNEXT;
-    }
-    // use last dz
-    B += 0.5 * dz * hardnessParameter(T[kbelowH] + beta_CC_grad * (H - zlevels[kbelowH]));
-  }
-  store[0] = B / 2;
-}
-
-
-void ThermoGlenIce::integratedViscosity(const PetscScalar store[],const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const
-{
-  const PetscScalar alpha = secondInvariantDu(Du);
-  *eta = store[0] * pow(schoofReg + alpha, (1-n)/(2*n));
-  if (deta) *deta = (1-n)/(2*n) * *eta / (schoofReg + alpha);
-}
-
-
+/*! This is not a natural part of all IceFlowLaw instances since it doesn't make any sense
+    for plenty of rheologies.  Specifically, however, we need some exponent to compute the coordinate
+    transformation in IceModel::computeDrivingStress (see iMgeometry.cc).  */
 PetscScalar ThermoGlenIce::exponent() const { return n; }
 
 
 //! Return the softness parameter A(T) for a given temperature T.
+/*! This is not a natural part of all IceFlowLaw instances.   */
 PetscScalar ThermoGlenIce::softnessParameter(PetscScalar T) const {
   if (T < crit_temp) {
     return A_cold * exp(-Q_cold/(ideal_gas_constant * T));
@@ -343,9 +304,38 @@ PetscScalar ThermoGlenIce::softnessParameter(PetscScalar T) const {
 }
 
 
-//! Return the hardness parameter A(T) for a given temperature T.
+//! Return the hardness parameter B(T) \f$= A(T)^{-1/n}\f$ for a given temperature T.
+/*! This is not a natural part of all IceFlowLaw instances, but it is an important optimization 
+    in the SSA stress balance to be able to factor the flow law into a temperature-dependent and 
+    a stress dependent part, and to do IceModel::correctSigma().   */
 PetscScalar ThermoGlenIce::hardnessParameter(PetscScalar T) const {
   return pow(softnessParameter(T), -1.0/n);
+}
+
+
+//! Computes vertical average of B(T) ice hardness, namely \f$\bar B(T)\f$.  See comment for hardnessParameter().
+/*! Note T[0],...,T[kbelowH] must be valid.  In particular, even if kbelowH == 0, we still use
+    T[0].  Uses trapezoid rule to do integral.  */
+PetscScalar ThermoGlenIce::averagedHarness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
+                                           const PetscScalar T[]) const {
+  PetscScalar B;
+  if ((kbelowH > 0) && (H > 1.0)) {
+    // use trapezoid rule starting from bottom of ice column
+    PetscScalar dz = zlevels[1] - zlevels[0];
+    B = 0.5 * dz * hardnessParameter(T[0] + beta_CC_grad * H);
+    for (PetscInt m=1; m < kbelowH; m++) {
+      dz = zlevels[m+1] - zlevels[m-1];
+      B += 0.5 * dz * hardnessParameter(T[m] + beta_CC_grad * (H - zlevels[m]));
+    }
+    // in top piece, between last zlevel in ice and ice surface, use T at lower end of subinterval
+    dz = H - zlevels[kbelowH];
+    B += 0.5 * dz * hardnessParameter(T[kbelowH] + beta_CC_grad * (H - zlevels[kbelowH]));
+    // B now contains integral, but we want average
+    return B / H;
+  } else {
+    // if no significant ice thickness, use T[0] directly
+    return hardnessParameter(T[0]);
+  }
 }
 
 
@@ -460,6 +450,7 @@ PetscScalar PolyThermalGPBLDIce::flowFromEnth(
   return softnessParameterFromEnth(enthalpy,pressure) * pow(stress,n-1);
 }
 
+
 PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
                 PetscScalar thickness,  PetscInt kbelowH, const PetscScalar *zlevels,
                 PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
@@ -492,6 +483,7 @@ PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
   const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
   return 0.5 * B * pow(schoofReg + alpha, (1-n)/(2*n));
 }
+
 
 //! This is the Hooke flow law, see [\ref Hooke].
 ThermoGlenIceHooke::ThermoGlenIceHooke(MPI_Comm c,const char pre[],

@@ -71,18 +71,11 @@ public:
   virtual PetscScalar effectiveViscosityColumn(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
                                                PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
                                                const PetscScalar *T1, const PetscScalar *T2) const = 0;
-  virtual PetscInt integratedStoreSize() const = 0;
-  virtual void integratedStore(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
-                               const PetscScalar T[], PetscScalar store[]) const = 0;
-  virtual void integratedViscosity(const PetscScalar store[],const PetscScalar Du[],PetscScalar *nuH, PetscScalar *dnuH) const = 0;
-  // This is not a natural part of IceFlowLaw since it doesn't make any sense for plenty
-  // of rheologies.  Nonetheless we need some exponent to compute the coordinate
-  // transformation in IceModel::computeDrivingStress (see iMgeometry.cc).
   virtual PetscScalar exponent() const = 0;
-  // This is also not a natural part of IceFlowLaw, but it is needed to invert the Sigma to obtain strain rate in
-  // IceModel::correctSigma().  This method can reside here until a plan for generalizing correctSigma has been agreed
-  // upon.
   virtual PetscScalar hardnessParameter(PetscScalar T) const = 0;
+  virtual PetscScalar averagedHarness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
+                                      const PetscScalar T[]) const = 0;
+
 protected:
   MPI_Comm comm;
   char prefix[256];
@@ -109,13 +102,11 @@ public:
   virtual PetscScalar effectiveViscosityColumn(PetscScalar,PetscInt,const PetscScalar *,
                                                PetscScalar,PetscScalar,PetscScalar,PetscScalar,
                                                const PetscScalar *,const PetscScalar *) const;
-  virtual PetscInt integratedStoreSize() const;
-  virtual void integratedStore(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
-                               const PetscScalar T[], PetscScalar store[]) const;
-  virtual void integratedViscosity(const PetscScalar store[], const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const;
   virtual PetscScalar exponent() const;
   virtual PetscScalar softnessParameter(PetscScalar T) const;
   virtual PetscScalar hardnessParameter(PetscScalar T) const;
+  virtual PetscScalar averagedHarness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
+                                      const PetscScalar T[]) const;
 private:
   PetscReal exponent_n,softness_A,hardness_B,schoofVel,schoofLen,schoofReg;
 };
@@ -132,13 +123,11 @@ public:
   virtual PetscScalar effectiveViscosityColumn(PetscScalar,PetscInt,const PetscScalar *,
                                                PetscScalar,PetscScalar,PetscScalar,PetscScalar,
                                                const PetscScalar *,const PetscScalar *) const;
-  virtual PetscInt integratedStoreSize() const;
-  virtual void integratedStore(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
-                               const PetscScalar T[], PetscScalar store[]) const;
-  virtual void integratedViscosity(const PetscScalar store[], const PetscScalar Du[], PetscScalar *eta, PetscScalar *deta) const;
   virtual PetscScalar exponent() const;
   virtual PetscScalar softnessParameter(PetscScalar T) const;
   virtual PetscScalar hardnessParameter(PetscScalar T) const;
+  virtual PetscScalar averagedHarness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
+                                      const PetscScalar T[]) const;
 protected:
   PetscReal schoofLen,schoofVel,schoofReg,
             A_cold, A_warm, Q_cold, Q_warm,  // these four constants from Paterson & Budd (1982)

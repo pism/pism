@@ -587,6 +587,44 @@ PetscErrorCode IceModel::compute_temp_pa(IceModelVec3 &useForPATemp) {
   return 0;
 }
 
+//! Computes the vertically-averaged ice hardness.
+PetscErrorCode IceModel::compute_hardav(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+  
+  const PetscScalar fillval = -1.0;
+  
+  PetscScalar **hardav, **thk;
+  PetscScalar *Tij; // columns of temperature values
+  ierr = T3.begin_access(); CHKERRQ(ierr);
+  ierr = vH.get_array(thk); CHKERRQ(ierr);
+  ierr = result.get_array(hardav); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+      const PetscScalar H = thk[i][j];
+      if (H > 0.0) {
+        hardav[i][j] = ice->averagedHarness(H, grid.kBelowHeight(H), grid.zlevels, Tij);
+      } else { // put negative value below valid range
+        hardav[i][j] = fillval;
+      }
+    }
+  }
+  ierr = T3.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_name("hardav"); CHKERRQ(ierr);
+  const PetscScalar power = 1.0 / ice->exponent();
+  char unitstr[TEMPORARY_STRING_LENGTH];
+  snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
+  ierr = result.set_attrs("diagnostic", "vertical average of ice hardness",
+			  unitstr, ""); CHKERRQ(ierr);
+
+  ierr = result.set_attr("valid_min",0.0); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue",fillval); CHKERRQ(ierr);
+  return 0;
+}
+
 //! Computes the basal water pressure
 /*!
   \f[p_w = \alpha\, \frac{w}{w_{\text{max}}}\, \rho\, g\, H,\f]
@@ -679,6 +717,12 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 
   if (name == "dhdt") {
     ierr = compute_dhdt(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "hardav") {
+    ierr = compute_hardav(vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }

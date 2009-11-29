@@ -351,7 +351,7 @@ protected:
               PetscScalar volume_kmcube, PetscScalar area_kmsquare,
               PetscScalar meltfrac, PetscScalar H0, PetscScalar T0);
 
-  // Methods for computing diagnostic quantities:
+  // see iMreport.cc;  methods for computing diagnostic quantities:
   // spatially-varying:
   virtual PetscErrorCode compute_bwp(IceModelVec2 &result);
   virtual PetscErrorCode compute_cbar(IceModelVec2 &result);
@@ -361,6 +361,7 @@ protected:
   virtual PetscErrorCode compute_dhdt(IceModelVec2 &result);
   virtual PetscErrorCode compute_taud(IceModelVec2 &result, IceModelVec2 &tmp);
   virtual PetscErrorCode compute_temp_pa(IceModelVec3 &useForPATemp); // temporary for dev; FIXME
+  virtual PetscErrorCode compute_hardav(IceModelVec2 &result);
   virtual PetscErrorCode compute_uvelsurf(IceModelVec2 &result);
   virtual PetscErrorCode compute_vvelsurf(IceModelVec2 &result);
   virtual PetscErrorCode compute_wvelsurf(IceModelVec2 &result);
