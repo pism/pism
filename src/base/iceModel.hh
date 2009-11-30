@@ -135,15 +135,17 @@ public:
   virtual PetscErrorCode initFromFile(const char *);
   virtual PetscErrorCode writeFiles(const char* default_filename);
   virtual PetscErrorCode write_model_state(const char *filename);
-  virtual PetscErrorCode write_variables(const char* filename, set<string> vars);
+  virtual PetscErrorCode write_variables(const char* filename, set<string> vars,
+					 nc_type nctype);
   virtual PetscErrorCode write_extra_fields(const char *filename);
 
 protected:
 
   IceGrid               &grid;
 
-  NCConfigVariable      mapping;
-  NCConfigVariable      config, overrides;
+  NCConfigVariable      mapping, //!< grid projection (mapping) parameters
+    config,			 //!< configuration flags and parameters
+    overrides;			 //!< flags and parameters overriding config, see -config_override
   NCGlobalAttributes    global_attributes;
 
   IceFlowLawFactory     iceFactory;
@@ -353,20 +355,25 @@ protected:
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // spatially-varying:
+  virtual PetscErrorCode compute_by_name(string name, IceModelVec* &result);
   virtual PetscErrorCode compute_bwp(IceModelVec2 &result);
   virtual PetscErrorCode compute_cbar(IceModelVec2 &result);
   virtual PetscErrorCode compute_cbase(IceModelVec2 &result, IceModelVec2 &tmp);
   virtual PetscErrorCode compute_cflx(IceModelVec2 &result, IceModelVec2 &cbar);
   virtual PetscErrorCode compute_csurf(IceModelVec2 &result, IceModelVec2 &tmp);
   virtual PetscErrorCode compute_dhdt(IceModelVec2 &result);
+  virtual PetscErrorCode compute_hardav(IceModelVec2 &result);
+  virtual PetscErrorCode compute_rank(IceModelVec2 &result);
   virtual PetscErrorCode compute_taud(IceModelVec2 &result, IceModelVec2 &tmp);
   virtual PetscErrorCode compute_temp_pa(IceModelVec3 &useForPATemp); // temporary for dev; FIXME
-  virtual PetscErrorCode compute_hardav(IceModelVec2 &result);
+  virtual PetscErrorCode compute_tempbase(IceModelVec2 &result);
+  virtual PetscErrorCode compute_tempsurf(IceModelVec2 &result);
+  virtual PetscErrorCode compute_uvelbase(IceModelVec2 &result);
   virtual PetscErrorCode compute_uvelsurf(IceModelVec2 &result);
+  virtual PetscErrorCode compute_vvelbase(IceModelVec2 &result);
   virtual PetscErrorCode compute_vvelsurf(IceModelVec2 &result);
+  virtual PetscErrorCode compute_wvelbase(IceModelVec2 &result);
   virtual PetscErrorCode compute_wvelsurf(IceModelVec2 &result);
-  virtual PetscErrorCode compute_by_name(string name, IceModelVec* &result);
-  virtual PetscErrorCode compute_rank(IceModelVec2 &result);
   // scalar:
   virtual PetscErrorCode compute_ice_volume(PetscScalar &result);
   virtual PetscErrorCode compute_ice_area(PetscScalar &result);
@@ -475,8 +482,9 @@ protected:
   PetscErrorCode init_timeseries();
   PetscErrorCode create_timeseries();
   PetscErrorCode write_timeseries();
+  PetscErrorCode ts_max_timestep(double t_years, double& dt_years);
 
-  // spatial time-series
+  // spatially-varying time-series
   bool save_extra, extra_file_is_ready, split_extra;
   string extra_filename;
   vector<double> extra_times;
@@ -484,6 +492,7 @@ protected:
   set<string> extra_vars;
   PetscErrorCode init_extras();
   PetscErrorCode write_extras();
+  PetscErrorCode extras_max_timestep(double t_years, double& dt_years);
 
   // diagnostic viewers; see iMviewers.cc
   virtual PetscErrorCode init_viewers();

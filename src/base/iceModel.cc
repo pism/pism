@@ -207,12 +207,10 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vMask); CHKERRQ(ierr);
 
   // upward geothermal flux at bedrock surface
-  ierr = vGhf.create(grid, "bheatflx", true); CHKERRQ(ierr);
+  ierr = vGhf.create(grid, "bheatflx", false); CHKERRQ(ierr); // never differentiated
   // PROPOSED standard_name = lithosphere_upward_heat_flux
-  ierr = vGhf.set_attrs("climate_steady",
-                        "upward geothermal flux at bedrock surface",
-			"W m-2",
-			""); CHKERRQ(ierr);
+  ierr = vGhf.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
+			"W m-2", ""); CHKERRQ(ierr);
   ierr = vGhf.set_glaciological_units("mW m-2");
   ierr = variables.add(vGhf); CHKERRQ(ierr);
 
@@ -303,19 +301,19 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vbasalMeltRate); CHKERRQ(ierr);
 
   // friction angle for till under grounded ice sheet
-  ierr = vtillphi.create(grid, "tillphi", true);
+  ierr = vtillphi.create(grid, "tillphi", false); // never differentiated
   // PROPOSED standard_name = land_ice_basal_material_friction_angle
   ierr = vtillphi.set_attrs("climate_steady", "friction angle for till under grounded ice sheet",
 			    "degrees", ""); CHKERRQ(ierr);
   ierr = variables.add(vtillphi); CHKERRQ(ierr);
 
   // longitude
-  ierr = vLongitude.create(grid, "lon", true); CHKERRQ(ierr);
+  ierr = vLongitude.create(grid, "lon", false); CHKERRQ(ierr);
   ierr = vLongitude.set_attrs("mapping", "longitude", "degree_east", "longitude"); CHKERRQ(ierr);
   ierr = variables.add(vLongitude); CHKERRQ(ierr);
 
   // latitude
-  ierr = vLatitude.create(grid, "lat", true); CHKERRQ(ierr);
+  ierr = vLatitude.create(grid, "lat", false); CHKERRQ(ierr);
   ierr = vLatitude.set_attrs("mapping", "latitude", "degree_north", "latitude"); CHKERRQ(ierr);
   ierr = variables.add(vLatitude); CHKERRQ(ierr);
 
@@ -470,6 +468,26 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
 	maxdt_temporary = opcc_dt;
     }
 
+    // -extra_{times,file,vars} mechanism:
+    double extras_dt;
+    ierr = extras_max_timestep(grid.year, extras_dt); CHKERRQ(ierr);
+    extras_dt *= secpera;
+    if (extras_dt > 0.0) {
+      if (maxdt_temporary > 0)
+	maxdt_temporary = PetscMin(extras_dt, maxdt_temporary);
+      else
+	maxdt_temporary = extras_dt;
+    }
+
+    double ts_dt;
+    ierr = ts_max_timestep(grid.year, ts_dt); CHKERRQ(ierr);
+    ts_dt *= secpera;
+    if (ts_dt > 0.0) {
+      if (maxdt_temporary > 0)
+	maxdt_temporary = PetscMin(ts_dt, maxdt_temporary);
+      else
+	maxdt_temporary = ts_dt;
+    }
 
 PetscLogEventBegin(beddefEVENT,0,0,0,0);
 

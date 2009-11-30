@@ -161,22 +161,22 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
       CHKERRQ(ierr);
 
   PetscReal slope = (phi_max - phi_min) / (topg_max - topg_min);
-  PetscScalar **phi, **bed, **mask; 
+  PetscScalar **tillphi, **bed, **mask; 
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr = vbed.get_array(bed); CHKERRQ(ierr);
-  ierr = vtillphi.get_array(phi); CHKERRQ(ierr);
+  ierr = vtillphi.get_array(tillphi); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (PismModMask(mask[i][j]) != MASK_FLOATING) {
         if (bed[i][j] <= topg_min) {
-          phi[i][j] = phi_min;
+          tillphi[i][j] = phi_min;
         } else if (bed[i][j] >= topg_max) {
-          phi[i][j] = phi_max;
+          tillphi[i][j] = phi_max;
         } else {
-          phi[i][j] = phi_min + (bed[i][j] - topg_min) * slope;
+          tillphi[i][j] = phi_min + (bed[i][j] - topg_min) * slope;
         }
       } else {
-        phi[i][j] = phi_ocean;
+        tillphi[i][j] = phi_ocean;
       }
     }
   }

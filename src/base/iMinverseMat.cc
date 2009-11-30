@@ -371,16 +371,16 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
             its, resnorm); CHKERRQ(ierr);
 
   // convert solution in x = \omega = \mu - \mu_i into phi 
-  PetscScalar **phi, **oldphi, **result;
-  ierr = vtillphi.get_array(phi);  CHKERRQ(ierr);
+  PetscScalar **tillphi, **oldphi, **result;
+  ierr = vtillphi.get_array(tillphi);  CHKERRQ(ierr);
   ierr = inv.oldtillphi->get_array(oldphi); CHKERRQ(ierr);
   ierr = DAVecGetArray(grid.da2, x, &result); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar muinitial = tan((pi/180.0) * oldphi[i][j]);
-      phi[i][j] = (180.0/pi) * atan(result[i][j] + muinitial);
-      if (phi[i][j] > phi_high)  phi[i][j] = phi_high;
-      if (phi[i][j] < phi_low)   phi[i][j] = phi_low;
+      tillphi[i][j] = (180.0/pi) * atan(result[i][j] + muinitial);
+      if (tillphi[i][j] > phi_high)  tillphi[i][j] = phi_high;
+      if (tillphi[i][j] < phi_low)   tillphi[i][j] = phi_low;
     }
   }
   ierr = DAVecRestoreArray(grid.da2, x, &result); CHKERRQ(ierr);

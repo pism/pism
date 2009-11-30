@@ -43,7 +43,7 @@ as global.  (I.e. we do not communicate ghosts.)
 PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2 &vtaudy) {
   PetscErrorCode ierr;
 
-  PetscScalar **h, **H, **mask, **b, **taudx, **taudy;
+  PetscScalar **h, **H, **mask, **bed, **taudx, **taudy;
 
   const PetscScalar n       = ice->exponent(), // frequently n = 3
                     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
@@ -57,7 +57,7 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2
 
   ierr =    vh.get_array(h);    CHKERRQ(ierr);
   ierr =    vH.get_array(H);    CHKERRQ(ierr);
-  ierr =  vbed.get_array(b);    CHKERRQ(ierr);
+  ierr =  vbed.get_array(bed);    CHKERRQ(ierr);
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
 
   ierr = vtaudx.get_array(taudx); CHKERRQ(ierr);
@@ -88,8 +88,8 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2
           // now add bed slope to get actual h_x,h_y
           // FIXME: there is no reason to assume user's bed is periodized; see vertical
           //   velocity computation
-          h_x += (b[i+1][j] - b[i-1][j]) / (2*dx);
-          h_y += (b[i][j+1] - b[i][j-1]) / (2*dy);
+          h_x += (bed[i+1][j] - bed[i-1][j]) / (2*dx);
+          h_y += (bed[i][j+1] - bed[i][j-1]) / (2*dy);
         } else {  // floating or whatever
           if (compute_surf_grad_inward_ssa && edge) {
             if (i == 0) {

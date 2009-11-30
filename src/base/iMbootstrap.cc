@@ -345,7 +345,7 @@ Note that \f$z\f$ here is negative, so the temperature increases as one goes dow
  */
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
-  PetscScalar     **H, **b, **Ts, **Ghf;
+  PetscScalar     **H, **bed, **Ts, **Ghf;
 
   PetscScalar *T;
   T = new PetscScalar[grid.Mz];
@@ -363,7 +363,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);
 
   ierr =   vH.get_array(H);   CHKERRQ(ierr);
-  ierr = vbed.get_array(b);   CHKERRQ(ierr);
+  ierr = vbed.get_array(bed);   CHKERRQ(ierr);
   ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
 
   ierr =  T3.begin_access(); CHKERRQ(ierr);
@@ -390,7 +390,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
       // set temp within bedrock; if floating then top of bedrock sees ocean,
       //   otherwise it sees the temperature of the base of the ice
       const PetscScalar floating_base = - (ice->rho/ocean_rho) * H[i][j];
-      const PetscScalar T_top_bed = (b[i][j] < floating_base)
+      const PetscScalar T_top_bed = (bed[i][j] < floating_base)
                                          ? ice->meltingTemp : T[0];
       ierr = bootstrapSetBedrockColumnTemp(i,j,T_top_bed,Ghf[i][j],bed_thermal_k); CHKERRQ(ierr);
     }

@@ -670,6 +670,113 @@ PetscErrorCode IceModel::compute_dhdt(IceModelVec2 &result) {
   return 0;
 }
 
+PetscErrorCode IceModel::compute_uvelbase(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = u3.getHorSlice(result, 0.0); CHKERRQ(ierr);
+  ierr = u3.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_name("uvelbase"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "x component of ice velocity at the base of ice",
+			  "m s-1", ""); CHKERRQ(ierr);
+  ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  result.write_in_glaciological_units = true;
+
+  return 0;
+}
+
+PetscErrorCode IceModel::compute_vvelbase(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+
+  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.getHorSlice(result, 0.0); CHKERRQ(ierr);
+  ierr = v3.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_name("vvelbase"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "y component of ice velocity at the base of ice",
+			  "m s-1", ""); CHKERRQ(ierr);
+  ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  result.write_in_glaciological_units = true;
+
+  return 0;
+}
+
+PetscErrorCode IceModel::compute_wvelbase(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+
+  ierr = w3.begin_access(); CHKERRQ(ierr);
+  ierr = w3.getHorSlice(result, 0.0); CHKERRQ(ierr);
+  ierr = w3.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_name("wvelbase"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "vertical velocity of ice at the base of ice",
+			  "m s-1", ""); CHKERRQ(ierr);
+  ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  result.write_in_glaciological_units = true;
+
+  return 0;
+}
+
+//! Computes ice temperature at the base of ice.
+PetscErrorCode IceModel::compute_tempbase(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+  PetscScalar fill_value = -1.0;
+
+  // put basal ice temperature in vWork2d[0]
+  ierr = T3.getHorSlice(result, 0.0); CHKERRQ(ierr);  // z=0 slice
+
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
+
+  ierr = result.set_name("tempbase"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "ice temperature at the base of ice",
+			  "Kelvin", ""); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! Computes ice temperature at the 1 m below the surface.
+PetscErrorCode IceModel::compute_tempsurf(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+  PetscScalar fill_value = -1.0;
+
+  // compute levels corresponding to 1 m below the ice surface:
+
+  PetscScalar **thk, **res;
+  ierr = vH.get_array(thk); CHKERRQ(ierr);
+  ierr = result.get_array(res); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	res[i][j] = PetscMax(thk[i][j] - 1.0, 0.0);
+    }
+  }
+  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  ierr = T3.getSurfaceValues(result, result); CHKERRQ(ierr);  // z=0 slice
+
+  ierr = vH.get_array(thk); CHKERRQ(ierr);
+  ierr = result.get_array(res); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (thk[i][j] <= 1.0)
+	res[i][j] = fill_value;
+    }
+  }
+  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_name("tempsurf"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "ice temperature at the base of ice",
+			  "Kelvin", ""); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! \brief Computes a diagnostic quantity given by \c name and returns a
 //! pointer to a pre-allocated work vector containing it.
 /*! For 2D quantities, result will point to vWork2d[0].
@@ -736,6 +843,36 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   if (name == "temp_pa") {
     ierr = compute_temp_pa(Tnew3); CHKERRQ(ierr);
     result = &Tnew3;
+    return 0;
+  }
+
+  if (name == "tempsurf") {
+    ierr = compute_tempsurf(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "tempbase") {
+    ierr = compute_tempbase(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "uvelbase") {
+    ierr = compute_uvelbase(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "vvelbase") {
+    ierr = compute_vvelbase(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "wvelbase") {
+    ierr = compute_wvelbase(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
     return 0;
   }
 
@@ -810,16 +947,16 @@ PetscErrorCode IceModel::compute_ice_area(PetscScalar &result) {
 //! Computes grounded ice area, in m^2.
 PetscErrorCode IceModel::compute_ice_area_grounded(PetscScalar &result) {
   PetscErrorCode ierr;
-  PetscScalar     **H, **M;
+  PetscScalar     **H, **mask;
   PetscScalar     area=0.0;
   const PetscScalar a = grid.dx * grid.dy; // cell area
   
-  ierr = vMask.get_array(M); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if ((H[i][j] > 0) &&
-	  ((PismIntMask(M[i][j]) == MASK_SHEET) || (PismIntMask(M[i][j]) == MASK_DRAGGING)))
+	  ((PismIntMask(mask[i][j]) == MASK_SHEET) || (PismIntMask(mask[i][j]) == MASK_DRAGGING)))
         area += a;
     }
   }  
@@ -833,15 +970,15 @@ PetscErrorCode IceModel::compute_ice_area_grounded(PetscScalar &result) {
 //! Computes floating ice area, in m^2.
 PetscErrorCode IceModel::compute_ice_area_floating(PetscScalar &result) {
   PetscErrorCode ierr;
-  PetscScalar     **H, **M;
+  PetscScalar     **H, **mask;
   PetscScalar     area=0.0;
   const PetscScalar a = grid.dx * grid.dy; // cell area
   
-  ierr = vMask.get_array(M); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ((H[i][j] > 0) && (PismModMask(M[i][j]) == MASK_FLOATING))
+      if ((H[i][j] > 0) && (PismModMask(mask[i][j]) == MASK_FLOATING))
         area += a;
     }
   }  

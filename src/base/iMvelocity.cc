@@ -225,7 +225,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   const PetscScalar   dx = grid.dx, 
                       dy = grid.dy;
   const PetscInt      Mz = grid.Mz;
-  PetscScalar **ub, **vb, **basalMeltRate, **mask, **b, **dbdt;
+  PetscScalar **ub, **vb, **basalMeltRate, **mask, **bed, **dbdt;
   PetscScalar *u, *v, *w;
 
   ierr = u3.begin_access(); CHKERRQ(ierr);
@@ -235,7 +235,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   ierr = vub.get_array(ub); CHKERRQ(ierr);
   ierr = vvb.get_array(vb); CHKERRQ(ierr);
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
-  ierr = vbed.get_array(b); CHKERRQ(ierr);
+  ierr = vbed.get_array(bed); CHKERRQ(ierr);
   ierr = vuplift.get_array(dbdt); CHKERRQ(ierr);
   ierr = vbasalMeltRate.get_array(basalMeltRate); CHKERRQ(ierr);
 
@@ -254,18 +254,18 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
         // bed gradient needed if grounded; there is no reason to assume that the
         //   bed elevation has been periodized by the user
         if (i == 0) {
-          dbdx = (b[i+1][j] - b[i][j]) / (dx);
+          dbdx = (bed[i+1][j] - bed[i][j]) / (dx);
         } else if (i == grid.Mx-1) {
-          dbdx = (b[i][j] - b[i-1][j]) / (dx);
+          dbdx = (bed[i][j] - bed[i-1][j]) / (dx);
         } else {
-          dbdx = (b[i+1][j] - b[i-1][j]) / (2.0*dx);
+          dbdx = (bed[i+1][j] - bed[i-1][j]) / (2.0*dx);
         }
         if (j == 0) {
-          dbdy = (b[i][j+1] - b[i][j]) / (dy);
+          dbdy = (bed[i][j+1] - bed[i][j]) / (dy);
         } else if (j == grid.My-1) {
-          dbdy = (b[i][j] - b[i][j-1]) / (dy);
+          dbdy = (bed[i][j] - bed[i][j-1]) / (dy);
         } else {
-          dbdy = (b[i][j+1] - b[i][j-1]) / (2.0*dy);
+          dbdy = (bed[i][j+1] - bed[i][j-1]) / (2.0*dy);
         }
         w[0] = ub[i][j] * dbdx + vb[i][j] * dbdy;
         if (include_bmr_in_continuity) {

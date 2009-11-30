@@ -880,8 +880,8 @@ PetscErrorCode IceModel::computeTFAFromBasalShearNoReg(
   PetscErrorCode ierr;
   PetscScalar    magVsqr, junk1, junk2;
 
-  PetscScalar **phi, **oldphi, **ub, **vb, **imask, **N, **fofv, **taubx, **tauby;
-  ierr = vtillphi.get_array(phi);  CHKERRQ(ierr);
+  PetscScalar **tillphi, **oldphi, **ub, **vb, **imask, **N, **fofv, **taubx, **tauby;
+  ierr = vtillphi.get_array(tillphi);  CHKERRQ(ierr);
   ierr = vubarSSA.get_array(ub);  CHKERRQ(ierr);
   ierr = vvbarSSA.get_array(vb);  CHKERRQ(ierr);
   ierr = inv.oldtillphi->get_array(oldphi);  CHKERRQ(ierr);
@@ -893,7 +893,7 @@ PetscErrorCode IceModel::computeTFAFromBasalShearNoReg(
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (imask[i][j] < 1.5) {
-        phi[i][j] = oldphi[i][j];  // no observed velocities or no stencil width
+        tillphi[i][j] = oldphi[i][j];  // no observed velocities or no stencil width
       } else {
         ierr = getVfromUforInverse(ub[i][j], vb[i][j], junk1, junk2, magVsqr); CHKERRQ(ierr);
         const PetscScalar
@@ -903,13 +903,13 @@ PetscErrorCode IceModel::computeTFAFromBasalShearNoReg(
         const PetscScalar idealphi = (180.0/pi) * atan(magtaub / (N[i][j] * magV));
         if (fofv[i][j] > 0.8) {  // if mostly SIA, gently turn off result and use old
           const PetscScalar lambda = (fofv[i][j] - 0.8) / 0.2;  // in [0,1]
-          phi[i][j] =   (1.0 - lambda) * idealphi + lambda * oldphi[i][j];
+          tillphi[i][j] =   (1.0 - lambda) * idealphi + lambda * oldphi[i][j];
         } else {
-          phi[i][j] = idealphi;
+          tillphi[i][j] = idealphi;
         }
       }
-      if (phi[i][j] > phi_high)  phi[i][j] = phi_high;
-      if (phi[i][j] < phi_low)   phi[i][j] = phi_low;
+      if (tillphi[i][j] > phi_high)  tillphi[i][j] = phi_high;
+      if (tillphi[i][j] < phi_low)   tillphi[i][j] = phi_low;
     }
   }
   ierr = vtillphi.end_access();  CHKERRQ(ierr);

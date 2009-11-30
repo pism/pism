@@ -103,7 +103,10 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   return 0;
 }
 
-PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars) {
+//! \brief Writes variables listed in vars to filename, using nctype to write
+//! fields stored in dedicated IceModelVecs.
+PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
+					 nc_type nctype) {
   PetscErrorCode ierr;
   IceModelVec *v;
 
@@ -114,7 +117,12 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars)
     if (v == NULL) {
       ++i;
     } else {
-      ierr = v->write(filename); CHKERRQ(ierr);
+      if (*i == "mask") {
+	ierr = v->write(filename); CHKERRQ(ierr); // use the default data type
+      } else {
+	ierr = v->write(filename, nctype); CHKERRQ(ierr);
+      }
+
       vars.erase(i++);		// note that it only erases variables that were
 				// found (and saved)
     }
@@ -128,7 +136,7 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars)
     if (v == NULL)
       ++i;
     else {
-      ierr = v->write(filename, NC_FLOAT); CHKERRQ(ierr); // diagnostic quantities are written in float
+      ierr = v->write(filename, NC_FLOAT); CHKERRQ(ierr); // diagnostic quantities are always written in float
       vars.erase(i++);
     }
   }
@@ -186,7 +194,7 @@ PetscErrorCode IceModel::write_model_state(const char* filename) {
     vars.insert("temp_pa");
   }
 
-  ierr = write_variables(filename, vars);
+  ierr = write_variables(filename, vars, NC_DOUBLE);
 
   return 0;
 }

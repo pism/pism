@@ -361,11 +361,7 @@ PetscErrorCode IceModel::write_extras() {
   ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = write_variables(filename, extra_vars);  CHKERRQ(ierr);
-
-  return 0;
-
-  /* FIXME: should we let couplers write their fields?
+  ierr = write_variables(filename, extra_vars, NC_FLOAT);  CHKERRQ(ierr);
 
   if (atmosPCC != PETSC_NULL) {
     ierr = atmosPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
@@ -380,5 +376,66 @@ PetscErrorCode IceModel::write_extras() {
   }
     
   return 0;
-  */
+}
+
+//! Computes the maximum time-step we can take and still hit all the requested years.
+/*!
+  Sets dt_years to -1 if any time-step is OK.
+ */
+PetscErrorCode IceModel::extras_max_timestep(double t_years, double& dt_years) {
+
+  if (!save_extra) {
+    dt_years = -1;
+    return 0;
+  }
+
+  bool force_times;
+  force_times = config.get_flag("force_output_times");
+
+  if (!force_times) {
+    dt_years = -1;
+    return 0;
+  }
+
+  vector<double>::iterator j;
+  j = upper_bound(extra_times.begin(), extra_times.end(), t_years);
+
+  if (j == extra_times.end()) {
+    dt_years = -1;
+    return 0;
+  }
+
+  dt_years = *j - t_years;
+  return 0;
+}
+
+//! Computes the maximum time-step we can take and still hit all the requested years.
+/*!
+  Sets dt_years to -1 if any time-step is OK.
+ */
+PetscErrorCode IceModel::ts_max_timestep(double t_years, double& dt_years) {
+
+  if (!save_ts) {
+    dt_years = -1;
+    return 0;
+  }
+
+  bool force_times;
+  force_times = config.get_flag("force_output_times");
+
+  if (!force_times) {
+    dt_years = -1;
+    return 0;
+  }
+
+  vector<double>::iterator j;
+  j = upper_bound(ts_times.begin(), ts_times.end(), t_years);
+
+  if (j == ts_times.end()) {
+    dt_years = -1;
+    return 0;
+  }
+
+  dt_years = *j - t_years;
+  return 0;
 }

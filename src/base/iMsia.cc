@@ -62,7 +62,7 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
   ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
 
   if (transformForSurfaceGradient == PETSC_TRUE) {
-    PetscScalar **eta, **b, **H;
+    PetscScalar **eta, **bed, **H;
     const PetscScalar n = ice->exponent(), // presumably 3.0
                       etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
                       invpow  = 1.0 / etapow,
@@ -82,7 +82,7 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
     ierr = vWork2d[4].endGhostComm(); CHKERRQ(ierr);
     // now use Mahaffy on eta to get grad h on staggered;
     // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
-    ierr = vbed.get_array(b); CHKERRQ(ierr);
+    ierr = vbed.get_array(bed); CHKERRQ(ierr);
     ierr = vWork2d[4].get_array(eta); CHKERRQ(ierr);
     for (PetscInt o=0; o<2; o++) {
       for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
@@ -99,9 +99,9 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
               h_y[o][i][j] = 0.0;
             }
             // now add bed slope to get actual h_x,h_y
-            h_x[o][i][j] += (b[i+1][j] - b[i][j]) / dx;
-            h_y[o][i][j] += (+ b[i+1][j+1] + b[i][j+1]
-                             - b[i+1][j-1] - b[i][j-1]) / (4.0*dy);
+            h_x[o][i][j] += (bed[i+1][j] - bed[i][j]) / dx;
+            h_y[o][i][j] += (+ bed[i+1][j+1] + bed[i][j+1]
+                             - bed[i+1][j-1] - bed[i][j-1]) / (4.0*dy);
           } else {        // J-offset
             const PetscScalar mean_eta = 0.5 * (eta[i][j+1] + eta[i][j]);
             if (mean_eta > 0.0) {
@@ -114,9 +114,9 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
               h_x[o][i][j] = 0.0;
             }
             // now add bed slope to get actual h_x,h_y
-            h_y[o][i][j] += (b[i][j+1] - b[i][j]) / dy;
-            h_x[o][i][j] += (+ b[i+1][j+1] + b[i+1][j]
-                             - b[i-1][j+1] - b[i-1][j]) / (4.0*dx);
+            h_y[o][i][j] += (bed[i][j+1] - bed[i][j]) / dy;
+            h_x[o][i][j] += (+ bed[i+1][j+1] + bed[i+1][j]
+                             - bed[i-1][j+1] - bed[i-1][j]) / (4.0*dx);
           }
         }
       }
