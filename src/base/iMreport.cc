@@ -385,7 +385,11 @@ PetscErrorCode IceModel::compute_cbar(IceModelVec2 &result) {
 			  "m s-1", ""); CHKERRQ(ierr);
   ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   result.write_in_glaciological_units = true;
+
+  PetscScalar fill_value = GSL_NAN;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr); // mask out ice-free areas
   ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
 
   return 0;
 }
@@ -403,7 +407,11 @@ PetscErrorCode IceModel::compute_cflx(IceModelVec2 &result, IceModelVec2 &cbar) 
 			  "m2 s-1", ""); CHKERRQ(ierr);
   ierr = result.set_glaciological_units("m2 year-1"); CHKERRQ(ierr);
   result.write_in_glaciological_units = true;
+
+  PetscScalar fill_value = GSL_NAN;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr); // mask out ice-free areas
   ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
 
   return 0;
 }
@@ -418,7 +426,6 @@ PetscErrorCode IceModel::compute_cbase(IceModelVec2 &result, IceModelVec2 &tmp) 
   ierr = v3.getHorSlice(tmp, 0.0); CHKERRQ(ierr);    // tmp = v_{z=0}
 
   ierr = result.set_to_magnitude(result,tmp); CHKERRQ(ierr);
-  ierr = result.mask_by(vH); CHKERRQ(ierr); // mask out ice-free areas
 
   ierr = result.set_name("cbase"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", 
@@ -426,7 +433,11 @@ PetscErrorCode IceModel::compute_cbase(IceModelVec2 &result, IceModelVec2 &tmp) 
 			  "m s-1", ""); CHKERRQ(ierr);
   ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   result.write_in_glaciological_units = true;
+
+  PetscScalar fill_value = GSL_NAN;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr); // mask out ice-free areas
   ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
 
   return 0;
 }
@@ -445,7 +456,6 @@ PetscErrorCode IceModel::compute_csurf(IceModelVec2 &result, IceModelVec2 &tmp) 
   ierr = v3.end_access(); CHKERRQ(ierr);
 
   ierr = result.set_to_magnitude(result,tmp); CHKERRQ(ierr);
-  ierr = result.mask_by(vH); CHKERRQ(ierr); // mask out ice-free areas
 
   ierr = result.set_name("csurf"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", 
@@ -453,7 +463,11 @@ PetscErrorCode IceModel::compute_csurf(IceModelVec2 &result, IceModelVec2 &tmp) 
 			  "m s-1", ""); CHKERRQ(ierr);
   ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   result.write_in_glaciological_units = true;
-  result.set_attr("valid_min", 0.0);
+
+  PetscScalar fill_value = GSL_NAN;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr); // mask out ice-free areas
+  ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
 
   return 0;
 }
@@ -475,6 +489,12 @@ PetscErrorCode IceModel::compute_uvelsurf(IceModelVec2 &result) {
   ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   result.write_in_glaciological_units = true;
 
+  PetscScalar fill_value = GSL_NAN;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr); // mask out ice-free areas
+  ierr = result.set_attr("valid_min", -1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -495,6 +515,12 @@ PetscErrorCode IceModel::compute_vvelsurf(IceModelVec2 &result) {
   ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   result.write_in_glaciological_units = true;
 
+  PetscScalar fill_value = GSL_NAN;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr); // mask out ice-free areas
+  ierr = result.set_attr("valid_min", -1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -504,7 +530,6 @@ PetscErrorCode IceModel::compute_vvelsurf(IceModelVec2 &result) {
  */
 PetscErrorCode IceModel::compute_wvelsurf(IceModelVec2 &result) {
   PetscErrorCode ierr;
-
   ierr = w3.begin_access(); CHKERRQ(ierr);
   ierr = w3.getSurfaceValues(result, vH); CHKERRQ(ierr);
   ierr = w3.end_access(); CHKERRQ(ierr);
@@ -514,6 +539,12 @@ PetscErrorCode IceModel::compute_wvelsurf(IceModelVec2 &result) {
 			  "m s-1", ""); CHKERRQ(ierr);
   ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   result.write_in_glaciological_units = true;
+
+  PetscScalar fill_value = GSL_NAN;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr); // mask out ice-free areas
+  ierr = result.set_attr("valid_min", -1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
 
   return 0;
 }
@@ -548,6 +579,7 @@ PetscErrorCode IceModel::compute_rank(IceModelVec2 &result) {
 
   ierr = result.set_name("rank"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "processor rank", "", ""); CHKERRQ(ierr);
+  result.time_independent = true;
   return 0;
 }
 
@@ -683,12 +715,17 @@ PetscErrorCode IceModel::compute_uvelbase(IceModelVec2 &result) {
   ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   result.write_in_glaciological_units = true;
 
+  PetscScalar fill_value = GSL_NAN;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", -1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
+
   return 0;
 }
 
 PetscErrorCode IceModel::compute_vvelbase(IceModelVec2 &result) {
   PetscErrorCode ierr;
-
   ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = v3.getHorSlice(result, 0.0); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
@@ -699,12 +736,17 @@ PetscErrorCode IceModel::compute_vvelbase(IceModelVec2 &result) {
   ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   result.write_in_glaciological_units = true;
 
+  PetscScalar fill_value = GSL_NAN;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", -1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
+
   return 0;
 }
 
 PetscErrorCode IceModel::compute_wvelbase(IceModelVec2 &result) {
   PetscErrorCode ierr;
-
   ierr = w3.begin_access(); CHKERRQ(ierr);
   ierr = w3.getHorSlice(result, 0.0); CHKERRQ(ierr);
   ierr = w3.end_access(); CHKERRQ(ierr);
@@ -715,22 +757,28 @@ PetscErrorCode IceModel::compute_wvelbase(IceModelVec2 &result) {
   ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   result.write_in_glaciological_units = true;
 
+  PetscScalar fill_value = GSL_NAN;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", -1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
+
   return 0;
 }
 
 //! Computes ice temperature at the base of ice.
 PetscErrorCode IceModel::compute_tempbase(IceModelVec2 &result) {
   PetscErrorCode ierr;
-  PetscScalar fill_value = -1.0;
 
   // put basal ice temperature in vWork2d[0]
   ierr = T3.getHorSlice(result, 0.0); CHKERRQ(ierr);  // z=0 slice
 
-  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
-
   ierr = result.set_name("tempbase"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "ice temperature at the base of ice",
 			  "Kelvin", ""); CHKERRQ(ierr);
+
+  PetscScalar fill_value = GSL_NAN;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
   ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
 
@@ -740,7 +788,7 @@ PetscErrorCode IceModel::compute_tempbase(IceModelVec2 &result) {
 //! Computes ice temperature at the 1 m below the surface.
 PetscErrorCode IceModel::compute_tempsurf(IceModelVec2 &result) {
   PetscErrorCode ierr;
-  PetscScalar fill_value = -1.0;
+  PetscScalar fill_value = GSL_NAN;
 
   // compute levels corresponding to 1 m below the ice surface:
 
@@ -769,7 +817,7 @@ PetscErrorCode IceModel::compute_tempsurf(IceModelVec2 &result) {
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = result.set_name("tempsurf"); CHKERRQ(ierr);
-  ierr = result.set_attrs("diagnostic", "ice temperature at the base of ice",
+  ierr = result.set_attrs("diagnostic", "ice temperature at 1m below the ice surface",
 			  "Kelvin", ""); CHKERRQ(ierr);
   ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);

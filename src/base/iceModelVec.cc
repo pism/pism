@@ -329,6 +329,7 @@ PetscErrorCode  IceModelVec::set_glaciological_units(string my_units) {
 //! Resets most IceModelVec attributes.
 PetscErrorCode IceModelVec::reset_attrs() {
 
+  time_independent = false;
   write_in_glaciological_units = false;
   output_data_type = NC_DOUBLE;
 
@@ -458,6 +459,7 @@ PetscErrorCode IceModelVec::write(const char filename[]) {
 PetscErrorCode IceModelVec::write(const char filename[], nc_type nctype) {
   PetscErrorCode ierr;
   Vec g;
+  var1.time_independent = time_independent;
 
   if (localp) {
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);

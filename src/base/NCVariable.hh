@@ -109,6 +109,7 @@ public:
 				bool critical, bool set_default_value,
 				PetscScalar default_value, MaskInterp *, Vec v);
   virtual PetscErrorCode to_glaciological_units(Vec v);
+  bool time_independent;
 protected:
   GridType dims;
   IceGrid *grid;

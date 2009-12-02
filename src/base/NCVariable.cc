@@ -83,6 +83,7 @@ PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
 PetscErrorCode NCSpatialVariable::reset() {
   NCVariable::reset();
 
+  time_independent = false;
   strings["coordinates"] = "lat lon";
   strings["grid_mapping"] = "mapping";
   return 0;
@@ -589,32 +590,40 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
 
 //! Define a NetCDF variable corresponding to a NCVariable object.
 PetscErrorCode NCSpatialVariable::define(const NCTool &nc, nc_type nctype, int &varid) {
-  int stat, dimids[4], var_id;
+  int stat, var_id;
 
   if (grid == NULL)
     SETERRQ(1, "NCSpatialVariable::define: grid is NULL.");
 
   if (rank == 0) {
-    int ncid = nc.get_ncid();
+    int ndims, dimids[4], ncid = nc.get_ncid();
+    int *dimids_ptr = dimids;
 
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
     stat = nc_inq_dimid(ncid, "t", &dimids[0]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "y", &dimids[1]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "x", &dimids[2]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
     switch (dims) {
     case GRID_2D:
-      stat = nc_def_var(ncid, short_name.c_str(), nctype, 3, dimids, &var_id);
+      ndims = 3;
       break;
     case GRID_3D:
       stat = nc_inq_dimid(ncid, "z", &dimids[3]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-      stat = nc_def_var(ncid, short_name.c_str(), nctype, 4, dimids, &var_id);
+      ndims = 4;
       break;
     case GRID_3D_BEDROCK:
       stat = nc_inq_dimid(ncid, "zb", &dimids[3]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-      stat = nc_def_var(ncid, short_name.c_str(), nctype, 4, dimids, &var_id);
+      ndims = 4;
+    }
+
+    if (time_independent) {
+      ndims--;
+      dimids_ptr = &dimids[1];
     }
     
+    stat = nc_def_var(ncid, short_name.c_str(), nctype, ndims, dimids_ptr, &var_id);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
     stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));

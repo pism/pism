@@ -212,6 +212,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vGhf.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
 			"W m-2", ""); CHKERRQ(ierr);
   ierr = vGhf.set_glaciological_units("mW m-2");
+  vGhf.time_independent = true;
   ierr = variables.add(vGhf); CHKERRQ(ierr);
 
   // u bar and v bar
@@ -305,16 +306,19 @@ PetscErrorCode IceModel::createVecs() {
   // PROPOSED standard_name = land_ice_basal_material_friction_angle
   ierr = vtillphi.set_attrs("climate_steady", "friction angle for till under grounded ice sheet",
 			    "degrees", ""); CHKERRQ(ierr);
+  vtillphi.time_independent = true;
   ierr = variables.add(vtillphi); CHKERRQ(ierr);
 
   // longitude
   ierr = vLongitude.create(grid, "lon", false); CHKERRQ(ierr);
   ierr = vLongitude.set_attrs("mapping", "longitude", "degree_east", "longitude"); CHKERRQ(ierr);
+  vLongitude.time_independent = true;
   ierr = variables.add(vLongitude); CHKERRQ(ierr);
 
   // latitude
   ierr = vLatitude.create(grid, "lat", false); CHKERRQ(ierr);
   ierr = vLatitude.set_attrs("mapping", "latitude", "degree_north", "latitude"); CHKERRQ(ierr);
+  vLatitude.time_independent = true;
   ierr = variables.add(vLatitude); CHKERRQ(ierr);
 
   // u bar and v bar on staggered grid
