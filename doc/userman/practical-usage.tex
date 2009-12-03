@@ -17,6 +17,8 @@ PISM buffers time-series data and writes it at the end of the run or once 10000 
 
 Omitting the \intextoption{ts\und vars} option makes PISM save \emph{all} the variables listed in table \ref{tab:time-series}.  Because scalar time-series take very little storage space, compared to spatially-varying data, this is usually a reasonable choice.
 
+If the file \verb|foo.nc|, specified by \verb|-ts_file foo.nc|, already exists then by default the existing file will be moved to \verb|foo.nc~| and the new time series will go into \verb|foo.nc|.  To append the time series onto the end of the existing file, use option \intextoption{ts\und append}.
+
 \begin{table}[ht]
   \caption{Command-line options controlling saving scalar time-series}
   \centering
@@ -26,6 +28,7 @@ Omitting the \intextoption{ts\und vars} option makes PISM save \emph{all} the va
     \intextoption{ts\und file} [file name] & Specifies the file to save to.\\
     \intextoption{ts\und times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
     \intextoption{ts\und vars} [list of variables] & Comma-separated list of variables, see table~\ref{tab:time-series}. Omitting this option is equivalent to listing all the possible variables.\\
+    \intextoption{ts\und append} & Append time series to file if it already exists.  No effect if file does not yet exist. \\
     \hline
   \end{tabular}
  \label{tab:time-series-opts}
@@ -47,6 +50,7 @@ Omitting the \intextoption{ts\und vars} option makes PISM save \emph{all} the va
  \label{tab:time-series}
 \end{table}
 
+
 \subsection{Saving time series of spatially-varying diagnostic quantities}\index{PISM!saving diagnostic quantities regularly}
 \label{sec:saving-spat-vari}
 
@@ -59,6 +63,8 @@ $ pismr -i foo.nc -y 10000 -o output.nc -extra_file extras.nc \
 \end{verbatim}
 will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years. Times are specified using a comma-separated list or a MATLAB-style range. Please see table \ref{tab:extras} for all the options corresponding to this feature; table \ref{tab:extra-vars} lists all the variable choices. 
 
+If the file \verb|foo.nc|, specified by \verb|-extra_file foo.nc|, already exists then by default the existing file will be moved to \verb|foo.nc~| and the new time series will go into \verb|foo.nc|.  To append the time series onto the end of the existing file, use option \intextoption{extra\und append}.
+
 \begin{table}[h]
   \caption{Command-line options controlling extra diagnostic output}
   \centering
@@ -68,13 +74,12 @@ will run for 10000 years, saving the magnitude of horizontal velocities at the i
     \intextoption{extra\und file} [file name] & Specifies the file to save to; should be different from the output \intextoption{o} file.\\
     \intextoption{extra\und times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list.\\
     \intextoption{extra\und vars} [list of variables]& Comma-separated list of variables, see table~\ref{tab:extra-vars}\\
-    \intextoption{split\und extras} & save to separate files, similar to \intextoption{split\und snapshots}\\
+    \intextoption{extra\und split} & Save to separate files, similar to \intextoption{split\und snapshots}\\
+    \intextoption{extra\und append} & Append variables to file if it already exists.  No effect if file does not yet exist, and no effect if \intextoption{extra\und split} is set. \\
     \hline
   \end{tabular}
  \label{tab:extras}
 \end{table}
-
-Note that similar to the snapshot-saving mechanism, extra variables are saved \emph{on the first time-step after a requested time}.  If the times given in \verb|extra_times| are as frequent as model time-steps then we do not guarantee saving at all the requested times.
 
 \begin{table}[h]
   \caption{Diagnostic quantities}

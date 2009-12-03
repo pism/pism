@@ -82,9 +82,12 @@ PetscErrorCode IceModel::init_timeseries() {
     }
   }
 
-  // This will move the file aside if it exists already.
+  // default behavior is to move the file aside if it exists already; option allows appending
+  PetscTruth append;
+  ierr = check_option("-ts_append", append); CHKERRQ(ierr);
+
   NCTool nc(grid.com, grid.rank);
-  ierr = nc.open_for_writing(ts_filename.c_str(), false, false); CHKERRQ(ierr);
+  ierr = nc.open_for_writing(ts_filename.c_str(), (append==PETSC_TRUE), false); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = create_timeseries(); CHKERRQ(ierr);
@@ -242,7 +245,7 @@ PetscErrorCode IceModel::init_extras() {
   split_extra = false;
 
   PetscTruth split;
-  ierr = check_option("-split_extras", split); CHKERRQ(ierr);
+  ierr = check_option("-extra_split", split); CHKERRQ(ierr);
   if (split) {
     split_extra = true;
   } else if (!ends_with(extra_filename, ".nc")) {
@@ -345,9 +348,12 @@ PetscErrorCode IceModel::write_extras() {
 
   if (!extra_file_is_ready) {
 
+    // default behavior is to move the file aside if it exists already; option allows appending
+    PetscTruth append;
+    ierr = check_option("-extra_append", append); CHKERRQ(ierr);
+
     // Prepare the file:
-    ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
-    // append == false, check_dims == true
+    ierr = nc.open_for_writing(filename, (append==PETSC_TRUE), true); CHKERRQ(ierr); // check_dims == true
     ierr = nc.close(); CHKERRQ(ierr);
 
     ierr = global_attributes.write(filename); CHKERRQ(ierr);

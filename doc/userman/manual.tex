@@ -974,7 +974,8 @@ We see the report that bootstrapping has applied an interpolation scheme to the 
 
 The bootstrapping mode also fills in several default values.  For instance, the variables \verb|bwat| (effective thickness of basal water), \verb|tillphi| (till friction angle), \verb|bheatflx| (geothermal flux), and \verb|dbdt| (bed uplift rate) were not found in the input file.   (They would be present in a saved PISM model state and they are part of the ``full initial conditions'' referred to earlier.)  Also, note that the data had redundant surface elevation values in the sense that PISM bootstrapping includes the computation ``\verb|usurf = topg + thk|'' of the surface elevation from the ice thickness and the bed elevation.
 
-In addition to the default bootstrapping actions there are additional settings special to EISMINT-Greenland.  For instance, because there is no EISMINT-Greenland gridded data set for surface temperature \cite{RitzEISMINT}.  Instead there is a formula (parameterization) which determines the temperature as a function of latitude and surface elevation.  The code behind \verb|pgrn| knows this formula and uses it.  Also the prescribed constant value for geothermal flux is set.
+In addition to the default bootstrapping actions there are additional settings special to EISMINT-Greenland.  For instance, because there is no EISMINT-Greenland gridded data set for surface temperature \cite{RitzEISMINT}.  Instead there is a formula (parameterization) which determines the temperature as a function of latitude and surface elevation.  The code behind \verb|pgrn| knows this formula and uses it.  Also the prescribed constant value for geothermal flux is set.  Finally, by default the option \verb|-ocean_kill| is set internally in \verb|pgrn|.  This forces all floating ice to immediately calve off (i.e.~to have thickness zero).
+
 
 As suggested a few paragraphs back, it is helpful to do a better job of filling in the temperatures within the ice.  One way to do this is to have the temperature field and velocity field co-evolve according to the thermomechanical flow model while holding the upper ice surface stationary.  This is a continuation of ``bootstrapping''.  The effect is to create a temperature field which is approximately stationary with respect to advection and conduction.\footnote{The resulting temperature field is not a fully physical temperature field, however, because it comes from a steadiness assumption about the geometry of the ice sheet.  Said another way, it is a temperature field in equilibrium with a velocity field for which the surface kinematical equation \cite{Fowler} is \emph{not} satisfied.}  We create this temperature field by running for 25000 years\footnote{In fact a longer run is reasonable.  The exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is on the order of 100k years.  But the goal is to get to a state which is reasonable for starting a complete steady-state run, SSL2 below.} with non-evolving surface.  The option \verb|-no_mass| turns off the map-plane mass continuity scheme, and thus any evolution of the surface.
 
@@ -994,32 +995,24 @@ The EISMINT-Greenland experiments \cite{RitzEISMINT} specify a positive degree d
 $ mpiexec -n 8 pgrn -ssl2 -i green20km_Tsteady.nc -y 10000 -ys 0 \
           -o green_SSL2_10k.nc
 \end{verbatim}
-\noindent We can continue for another ten thousand years by
+\noindent We could continue for another ten thousand years by starting from the saved file and continuing for 10000 more model years:
 \begin{verbatim}
 $ mpiexec -n 8 pgrn -ssl2 -i green_SSL2_10k.nc -y 10000 \
           -o green_SSL2_20k.nc
 \end{verbatim}
-\noindent And so on.   The script \verb|ssh2.sh| automates this cycle.  So we will now assume that the user \emph{actually} did this to completion:
+\noindent And so on.
+
+The script \verb|ssh2.sh| uses options \intextoption{ts\und file} and \intextoption{save\und file} to do the run with ``snapshots'' saved every 10000 model years, and the volume saved every 100 model years.  So out discussion will now assume that the user \emph{actually} did this to completion:
 
 \verb|./ssh2.sh 2 >> out.ssl2 &|
 
-FIXME: UPDATES NEEDED FROM HERE
-
-\noindent This puts the run in the background and generates a text file logging the whole run.  The whole SSL2 run should take something like ?? processor hours to produce eleven output files with names \verb|green_SSL2_|$N$\verb|k.nc| for $N=10,\dots,110$.
-
-Note that, by default the option \verb|-ocean_kill| is set internally in \verb|pgrn|.  This forces all floating ice to immediately calve off (i.e.~to have thickness zero).
+\noindent This puts the run in the background and generates a text file logging the whole run.  The whole SSL2 run should take something like ?? processor hours.  Three files appear, \verb|vol_ssl2.nc|, \verb|snaps_ssl2.nc|, and, at the end of the run, \verb|green_ssl2_110ka.nc|.
 
 The SSL2 simulation is intended to go until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines as a small volume change rate, namely less than a .01\% change in volume in 10,000 years.
 
-One can look at the standard output text file by a minimal method like ``\verb|less out.ssl2|''.  The user can more clearly see the behavior over time of the volume, area, basal melt fraction, and a couple of other default quantities, by generating a time series file in NetCDF form from the text (log) file coming from \verb|stdout|.  Then various NetCDF tools can be applied to view and manipulate that file.  To do this, use the Python script \verb|util/series.py|, documented in Appendix \ref{sect:scripts}, like this:
+One can look at the standard output text file by a minimal method like ``\verb|less out.ssl2|''.  The user can more clearly see the behavior over time of the volume, area, basal melt fraction, and a couple of other default quantities, by viewing the NetCDF file \verb|vol_ssl2.nc|.  We leave it as an exercise to find the first 10000 model year period in which the volume changes by less that 0.01\%.
 
-\verb|series.py -f out.ssl2 -o ssl2.ser.nc|
-
-\noindent View \verb|ssl2.ser.nc| using \verb|ncview|, for instance.
-
-One sees that the volume shows a consistent growing-but-leveling-out trend, with a final volume a bit more than $4 \times 10^{6}\,\text{km}^3$.  If we run the SSL2 experiment with the specified ``0.01\% change in 10k years'' criterion, then the run ends at 110k years with a volume change of about 0.001\% between the 100k and 110k model states.
-
-The time series for volume and melt fraction (the fraction of the base where the temperature is at pressure-melting) are shown in Figures \ref{fig:eisgrnvolseries} and \ref{fig:eisgrnmeltfseries}.  The volume time series is boring, but the melt fraction indicates something interesting: measured by basal melt fraction, the temperature field resulting from bootstrapping and relaxing the temperature field (above) gave a pretty good estimate of the basal melt fraction for the fully coupled steady state.
+FIXME:  FIGURES NEED MAINTENANCE.   In any case, one sees that the volume shows a consistent growing-but-leveling-out trend, with a final volume a bit more than $4 \times 10^{6}\,\text{km}^3$.  The time series for volume and melt fraction (the fraction of the base where the temperature is at pressure-melting) are shown in Figures \ref{fig:eisgrnvolseries} and \ref{fig:eisgrnmeltfseries}.  The volume time series is boring, but the melt fraction indicates something interesting: measured by basal melt fraction, the temperature field resulting from bootstrapping and relaxing the temperature field (above) gave a pretty good estimate of the basal melt fraction for the fully coupled steady state.
 
 \begin{figure}[ht]
 \includegraphics[width=6.0in,keepaspectratio=true]{eisgrn_volseries}
@@ -1033,7 +1026,7 @@ The time series for volume and melt fraction (the fraction of the base where the
 \label{fig:eisgrnmeltfseries}
 \end{figure}
 
-We will use the final NetCDF file \verb|green_SSL2_110k.nc| to continue the EISMINT-Greenland experiments below.  The saved ice thickness, basal temperature, and vertically-averaged horizontal velocity maps are shown in Figure \ref{fig:ssl2thickTpa}.
+FIXME:  FIGURES NEED MAINTENANCE.   We will use the final NetCDF file \verb|green_ssl2_110ka.nc| to continue the EISMINT-Greenland experiments below.  The saved ice thickness, basal temperature, and vertically-averaged horizontal velocity maps are shown in Figure \ref{fig:ssl2thickTpa}.
 
 \begin{figure}[ht]
 \mbox{\phantom{|}\hspace{-1.0in}\includegraphics[height=3.0in,keepaspectratio=true]{greenH_SSL2}\,\includegraphics[height=3.0in,width=2.3in]{greenTpa_SSL2}\,\includegraphics[height=3.0in,keepaspectratio=true]{greencbar_SSL2}}
@@ -1047,15 +1040,18 @@ In addition to the more standardized EISMINT-Greenland intercomparison called ``
 
 \subsubsection*{Climate forcing from GRIP and SPECMAP} 
 \label{sec:climate-forcing}
-The next experiment starts from the end of the steady state SSL2 run above.  Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| include these data for a ``CCL3'' climate forced run \cite{RitzEISMINT,HuybrechtsEISMINT}.  Before every time step, \verb|pgrn| reads the change to the surface temperature and sea level for that time.  The data in \verb|grip_dT.nc| extends 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, so EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  Thus we manually set the starting year using the option \verb|-ys|:\footnote{The run done this way would take a very long time and only produce the final file.  It is recommended, instead, that the user use script \texttt{ccl3.sh} which produces an intermediate file at every 10 ka.  Another way of getting intermediate files is by using the \texttt{-save\_file} option.}
+The next experiment starts from the end of the steady state SSL2 run above.  Recall that the NetCDF files \verb|grip_dT.nc| and \verb|specmap_dSL.nc| contain time series data for change in surface temperature and sea level.  The options \verb|-dTforcing| and \verb|-dSLforcing| include these data for a ``CCL3'' climate forced run \cite{RitzEISMINT,HuybrechtsEISMINT}.  Before every time step, \verb|pgrn| reads the change to the surface temperature and sea level for that time.  The data in \verb|grip_dT.nc| extends 250,000 years into the past, while the data in \verb|specmap_dSL.nc| goes back about 780,000 years, so EISMINT-Greenland specifies that the run will start at the beginning of the GRIP data.  
 
+The script \texttt{ccl3.sh} runs the CCL3 experiment for the full 250ka period, with this single command
 \begin{verbatim}
-$ mpiexec -n 8 pgrn -ccl3 -i green_SSL2_110k.nc -dTforcing grip_dT.nc \
-          -dSLforcing specmap_dSL.nc -ys -249900 -ye 0 -o green_CCL3_y-0.nc
+mpiexec -n 8 pgrn -ccl3 -skip 10 -i green_ssl2_110ka.nc -ys -249900 -ye 0 \
+  -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc \
+  -save_file snaps_ccl3.nc -save_times -240000:10000:-10000 \
+  -ts_file vol_ccl3.nc -ts_vars ivol -ts_times -249800:100:0 -o green_ccl3_year0.nc
 \end{verbatim}
-\noindent Note option \verb|-ccl3| also turns on the Lingle and Clark \cite{BLKfastearth,LingleClark} two layer, flat earth bed deformation model with an assumption of zero uplift rate at the start of the run.
+\noindent Option \verb|-ccl3| also turns on the Lingle and Clark \cite{BLKfastearth,LingleClark} two layer, flat earth bed deformation model with an assumption of zero uplift rate at the start of the run.
 
-The resulting thickness difference, relative to the end of the SSL2 run, and the pressure-adjusted basal temperature, are shown in Figure \ref{fig:cclthickTpa}.
+FIXME:  FIGURES NEED MAINTENANCE.   The resulting thickness difference, relative to the end of the SSL2 run, and the pressure-adjusted basal temperature, are shown in Figure \ref{fig:cclthickTpa}.
 
 \begin{figure}[h]
 \includegraphics[width=2.8in]{Hdiff_CCLSSL}\quad\includegraphics[width=2.8in]{Tpa_CCL}
@@ -1065,11 +1061,11 @@ The resulting thickness difference, relative to the end of the SSL2 run, and the
 
 EISMINT-Greenland also calls for a baseline run for another 500 years which starts from the end of the CCL3 run and has steady current climate forcing (noting no GRIP or SPECMAP data are known from the future!):
 
-\verb|mpiexec -n 8 pgrn -ccl3 -i green_CCL3_y-0.nc -y 500 -o green_CCL3_y500.nc|
+\verb|mpiexec -n 8 pgrn -ccl3 -i green_ccl3_year0.nc -y 500 -o green_ccl3_year500.nc|
 
 A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It runs for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
 
-\verb|mpiexec -n 8 pgrn -gwl3 -i green_CCL3_y-0.nc -y 500 -o green_GWL3_y500.nc|
+\verb|mpiexec -n 8 pgrn -gwl3 -i green_ccl3_year0.nc -y 500 -o green_gwl3_year500.nc|
 
 \subsubsection*{Visualizing the climate inputs in the Greenland case}
 \label{sec:pdd-series-with-pcctest}
@@ -1141,6 +1137,7 @@ FIXME:  Variable acab in following is worth looking at.  It looks right and it m
 \begin{verbatim}
 $ pcctest -i green20km_y1.nc -o bar.nc -ys -125000.0 -ye -0.0 -dt 1000.0  -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc -sma
 \end{verbatim}
+
 
 \clearpage\newpage
 \section{Example: Validating PISM as a flow model for the Ross ice shelf}\label{sect:ross} \index{PISM!running the EISMINT Ross ice shelf intercomparison in}\index{Antarctic ice sheet!Ross ice shelf} \index{EISMINT!intercomparison of Ross ice shelf models} \index{PISM!validation of ice shelf model} \index{Ross ice shelf} The term ``validation'' describes the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed \cite{Roache,Wesseling}.  Roughly speaking, validation can happen when the observations or data are better than the model, so the comparison measures the quality of the numerical model and not merely errors in, incompleteness of, or lack of confidence in, the data.
