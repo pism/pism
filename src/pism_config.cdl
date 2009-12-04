@@ -227,9 +227,6 @@ netcdf pism_config {
 
     pism_config:beta_CC = 7.9e-8;
     pism_config:beta_CC_doc = "K Pa-1; Clausius-Clapeyron constant [\\ref Luethi2002]";
-    // in materials.cc we have:
-    //   beta_CC_grad = 8.66e-4;// K/m          Clausius-Clapeyron gradient
-    // presumably for pure ice, but (beta_CC * ice.rho * grav) does not equal beta_CC_grad
 
     pism_config:surface_pressure = 1.0e5;
     pism_config:surface_pressure_doc = "Pa; = 1 atm = 1 bar; atmospheric pressure; = pressure at ice surface";
@@ -259,7 +256,7 @@ netcdf pism_config {
     pism_config:ice_softness_doc = "Pa-3 s-1; ice softness";
 
     pism_config:Hooke_A = 4.42165e-9;
-    pism_config:Hooke_A_doc = "s^-1 Pa^-3; A_Hooke = (1/B_0)^n where n=3 and B_0 = 1.928 a^(1/3) Pa. See [\\ref Hooke]";
+    pism_config:Hooke_A_doc = "s-1 Pa-3; A_Hooke = (1/B_0)^n where n=3 and B_0 = 1.928 a^(1/3) Pa. See [\\ref Hooke]";
 
     pism_config:Hooke_Q = 7.88e4;
     pism_config:Hooke_Q_doc = "J / mol; Activation energy, see [\\ref Hooke]";
@@ -341,6 +338,12 @@ netcdf pism_config {
 
     pism_config:climate_forcing_buffer_size = 60;
     pism_config:climate_forcing_buffer_size_doc = "; number of 2D climate forcing records to keep in memory; = 5 years of monthly records";
+    
+    pism_config:viewer_size = 320;
+    pism_config:viewer_size_doc = "; default diagnostic viewer size";
+
+    pism_config:slice_level = 0.0;
+    pism_config:slice_level_doc = "meters; level (in meters above the base of ice) used in slice viewers";
 
 // Strings:
     pism_config:output_variables = "age bheatflx bwat bwp dbdt lat litho_temp lon mask rank temp thk tillphi topg usurf dHdt dhdt cbar cflx cbase csurf wvelsurf taud tauc hardav";

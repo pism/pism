@@ -31,7 +31,7 @@ PetscErrorCode IceModel::temperatureAgeStep() {
                mybulgeCount = 0.0;
   PetscScalar gVertSacrCount, gbulgeCount;
 
-  // values go in vtaunew; note: 3D CFL check happens here:
+  // values go in taunew3; note: 3D CFL check happens here:
   ierr = ageStep(&myCFLviolcount); CHKERRQ(ierr);
     
   // new temperature values go in vTnew; also updates Hmelt:

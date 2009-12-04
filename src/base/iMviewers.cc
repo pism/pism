@@ -25,13 +25,16 @@
 
 //! Update the runtime graphical viewers.
 /*!
-Most viewers are updated by this routing, but some other are updated elsewhere:
+Most viewers are updated by this routine, but some other are updated elsewhere:
   \li see computeMaxDiffusivity() in iMutil.cc for the diffusivity viewer.
   \li see update_nu_viewers() for nuH and log_nuH viewers.
  */
 PetscErrorCode IceModel::update_viewers() {
   PetscErrorCode ierr;
   set<string>::iterator i;
+
+  PetscInt viewer_size = config.get("viewer_size");
+  PetscScalar slice_level = config.get("slice_level");
 
   // map-plane viewers
   for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {
@@ -186,9 +189,14 @@ PetscErrorCode IceModel::init_viewers() {
       sounding_viewers.insert(var_name);
   }
 
+  PetscInt viewer_size = config.get("viewer_size");
   ierr = PetscOptionsInt("-viewer_size", "specifies desired viewer size",
 			 "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
 
+  if (flag)
+    config.set("viewer_size", viewer_size); 
+
+  PetscScalar slice_level = config.get("slice_level");
   ierr = PetscOptionsReal("-slice_level", "sets the level (in meters above the base of ice) for slice viewers", "",
 			  slice_level, &slice_level, PETSC_NULL); CHKERRQ(ierr);
   if ( (slice_level > grid.Lz) || (slice_level < 0) ) {
@@ -197,6 +205,8 @@ PetscErrorCode IceModel::init_viewers() {
 		      "              Disabling slice viewers...\n",
 		      grid.Lz);
     slice_viewers.clear();
+  } else {
+    config.set("slice_level", slice_level);
   }
 
   // Done with the options.

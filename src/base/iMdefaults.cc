@@ -94,7 +94,6 @@ PetscErrorCode IceModel::setDefaults() {
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;
   jd = (grid.My - 1)/2;
-  slice_level = 0.0;
 
   // frequently used physical constants and parameters:
   standard_gravity = config.get("standard_gravity");

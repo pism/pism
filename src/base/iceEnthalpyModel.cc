@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -52,7 +52,6 @@ PetscErrorCode IceEnthalpyModel::createVecs() {
      "ice enthalpy (sensible plus latent heat, plus potential energy of pressure)",
      "J kg-1",
      ""); CHKERRQ(ierr);
-  ierr = variables.add(Enth3); CHKERRQ(ierr);
 
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
 
@@ -144,6 +143,11 @@ PetscErrorCode IceEnthalpyModel::initFromFile(const char *fname) {
 
   ierr = IceModel::initFromFile(fname); CHKERRQ(ierr);
 
+  // kludge: add it to the dictionary now (as opposed to before the
+  // initFromFile call above) so that penth does not stop if 'enthalpy' in not
+  // found in the -i file:
+  ierr = variables.add(Enth3); CHKERRQ(ierr);
+
   ierr = verbPrintf(2, grid.com,
      "  entering IceEnthalpyModel::initFromFile() after base class version;\n"
      "  looking in '%s' for variable 'enthalpy' ... \n",fname);
@@ -152,35 +156,23 @@ PetscErrorCode IceEnthalpyModel::initFromFile(const char *fname) {
   NCTool nc(&grid);
   ierr = nc.open_for_reading(fname); CHKERRQ(ierr);
 
-/* if we were to require "enthalpy" to be present then the code would be simpler:
-  ierr = Enth3.read(fname, last_record); CHKERRQ(ierr);
-*/
+  // Find the index of the last record in the file:
+  int last_record;
+  ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
+  last_record -= 1;
 
-  grid_info g;
-  ierr = nc.get_grid_info(g); CHKERRQ(ierr);
-  bool enthExists=false;
-  ierr = nc.find_variable("enthalpy", NULL, enthExists); CHKERRQ(ierr);
+  bool enthalpy_exists=false;
+  ierr = nc.find_variable("enthalpy", NULL, enthalpy_exists); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
 
-  if (enthExists) {
-    // act like we are regridding the variable
-    double *zlevs = NULL, *zblevs = NULL; // NULLs correspond to 2D-only regridding
-    if ((g.z_len != 0) && (g.zb_len != 0)) {
-      ierr = nc.get_vertical_dims(zlevs, zblevs); CHKERRQ(ierr);
-    } else {
-      SETERRQ1(1,
-         "PISM ERROR: -i file does not look right; at least one of 'z' and 'zb' is absent in '%s'.\n",
-         fname);
-    }
-    ierr = nc.close(); CHKERRQ(ierr);
-    LocalInterpCtx lic(g, zlevs, zblevs, grid);
-    ierr = Enth3.regrid(fname, lic, true); CHKERRQ(ierr);  // at this point, it is critical
+  if (enthalpy_exists) {
+    ierr = Enth3.read(fname, last_record); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com,
       "  variable 'enthalpy' not found so setting it as cold ice, from temperature ...\n");
       CHKERRQ(ierr);
     ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
   }
-
   return 0;
 }
 

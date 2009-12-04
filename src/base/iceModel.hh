@@ -500,9 +500,6 @@ protected:
   virtual PetscErrorCode update_nu_viewers(IceModelVec2 vNu[2], IceModelVec2[2], bool);
   set<string> map_viewers, slice_viewers, sounding_viewers;
   PetscInt     id, jd;	     // sounding indices
-  PetscScalar  slice_level;  //!< \brief level used for "slicing" 3D fields (in
-				//!< diagnostic viewers)
-  PetscInt viewer_size;		// desired size of viewers
   bool view_diffusivity, view_log_nuH, view_nuH;
 };
 

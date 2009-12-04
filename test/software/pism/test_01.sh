@@ -6,6 +6,8 @@ test="Test #1: pismr exact restartability."
 files="verify.nc foo.nc joe.nc bar.nc"
 dir=`pwd`
 
+OPTS="-max_dt 1"
+
 test_01 ()
 {
     cleanup
@@ -16,11 +18,11 @@ test_01 ()
     run -n 1 pismv -test G -y 10 -o verify.nc
 
     # run for ten years, fixed time step
-    run -n 1 pismr -i verify.nc -max_dt 1 -y 10 -o foo.nc
+    run -n 1 pismr -i verify.nc $OPTS -y 10 -o foo.nc
 
     # chain two five year runs, fixed time step
-    run -n 1 pismr -i verify.nc -max_dt 1 -y 5 -o joe.nc
-    run -n 1 pismr -i joe.nc -max_dt 1 -y 5 -o bar.nc
+    run -n 1 pismr -i verify.nc $OPTS -y 5 -o joe.nc
+    run -n 1 pismr -i joe.nc    $OPTS -y 5 -o bar.nc
 
     set +e
 

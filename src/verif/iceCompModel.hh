@@ -33,7 +33,6 @@ public:
   
   // re-defined steps of init() sequence:
   virtual PetscErrorCode set_grid_defaults();     // called by IceModel::grid_setup()
-  virtual PetscErrorCode set_grid_from_options(); // called by IceModel::grid_setup()
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode init_physics();

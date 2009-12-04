@@ -59,7 +59,6 @@ IceModel::IceModel(IceGrid &g)
     PetscEnd();
   }
 
-  viewer_size = 320;	      // FIXME! This should be in the config file
   // Special diagnostic viewers are off by default:
   view_diffusivity = false;
   view_nuH = false;
@@ -665,8 +664,8 @@ The following flow-chart illustrates the process.
 PetscErrorCode IceModel::init() {
   PetscErrorCode ierr;
 
-  // Build PISM with PISM_WAIT_FOR_GDB defined to run make it wait for a
-  // connection.
+  // Build PISM with PISM_WAIT_FOR_GDB defined and run with -wait_for_gdb to
+  // make it wait for a connection.
 #ifdef PISM_WAIT_FOR_GDB
   PetscTruth wait_for_gdb = PETSC_FALSE;
   ierr = check_option("-wait_for_gdb", wait_for_gdb); CHKERRQ(ierr);

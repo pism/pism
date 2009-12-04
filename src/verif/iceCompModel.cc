@@ -125,17 +125,6 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
   return 0;
 }
 
-
-PetscErrorCode IceCompModel::set_grid_from_options() {
-  PetscErrorCode ierr;
-
-  // Allows user to set -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -chebZ and -quadZ.
-  ierr = IceModel::set_grid_from_options(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
 PetscErrorCode IceCompModel::setFromOptions() {
   PetscErrorCode ierr;
 
