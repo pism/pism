@@ -211,8 +211,8 @@ If option -dTforcing is used, we find and read the temperature offsets from the 
 file into memory, by calling Timeseries.read() for Timeseries* dTforcing.
 
 If option \c -force_to_thk \c foo.nc is used then we initialize that mechanism by reading
-\c thk from \c foo.nc as the target thickness.  The start and end year are also determined.  (FIXME: but not correctly)  See updateSurfMassFluxandProvide() for the semantics of
-the  \c -force_to_thk mechanism.
+\c thk from \c foo.nc as the target thickness.  The start and end year are also determined.
+See updateSurfMassFluxandProvide() for the semantics of the \c -force_to_thk mechanism.
  */
 PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars &variables) {
   PetscErrorCode ierr;
@@ -284,34 +284,22 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars
 	    "");  // no CF standard_name, to put it mildly
 	    CHKERRQ(ierr);
 
-    // check if option given to change factor; option is given as pure number
-    PetscReal fttf;
-    PetscTruth fttfSet,fttalphaSet;
-    ierr = PetscOptionsGetReal(PETSC_NULL, "-force_to_thk_factor", &fttf, &fttfSet);
-       CHKERRQ(ierr);
-    if (fttfSet == PETSC_TRUE) {
-      config.set("force_to_thickness_factor",fttf);
-      ierr = verbPrintf(2, g->com,
-         "    option -force_to_thk_factor seen; setting factor to %.2f\n",
-         config.get("force_to_thickness_factor")); CHKERRQ(ierr);
-    }
-
     // determine exponential rate alpha from user option or from factor;
     //    option is given in a^{-1}
+    PetscScalar fttalpha;
+    PetscTruth  fttalphaSet;
     ierr = PetscOptionsGetReal(PETSC_NULL, "-force_to_thk_alpha",
-                               &ftt_alphadecay, &fttalphaSet); CHKERRQ(ierr);
+                               &fttalpha, &fttalphaSet); CHKERRQ(ierr);
     if (fttalphaSet == PETSC_TRUE) {
       ierr = verbPrintf(2, g->com,
-         "    option -force_to_thk_alpha seen; setting alpha to %.2f\n",
-         ftt_alphadecay); CHKERRQ(ierr);
-      ftt_alphadecay = ftt_alphadecay / secpera;
-    } else {
-      ftt_alphadecay = log( config.get("force_to_thickness_factor") )
-                              / (secpera * (g->end_year - g->start_year));
+         "    option -force_to_thk_alpha seen; setting alpha to %.2f a-1\n",
+         fttalpha); CHKERRQ(ierr);
+      config.set("force_to_thickness_alpha", fttalpha / secpera);  // save in s-1
     }
+    
     ierr = verbPrintf(2, g->com,
-       "    alpha = %.6f a^(-1) for %.3f a run, for -force_to_thk mechanism\n",
-       ftt_alphadecay * secpera, g->end_year - g->start_year); CHKERRQ(ierr);
+       "    alpha = %.6f a-1 for %.3f a run, for -force_to_thk mechanism\n",
+       config.get("force_to_thickness_alpha") * secpera, g->end_year - g->start_year); CHKERRQ(ierr);
 
     // get a pointer to the current model thickness (owned by IceModel)
     ftt_thk = dynamic_cast<IceModelVec2*>(variables.get("land_ice_thickness"));
@@ -362,7 +350,7 @@ Therefore we set here
 PetscErrorCode PISMAtmosphereCoupler::max_timestep(
                     PetscScalar /* t_years */, PetscScalar &dt_years) {
   if (doForceToThickness == PETSC_TRUE) {
-    dt_years = 2.0 / (ftt_alphadecay * secpera);
+    dt_years = 2.0 / (config.get("force_to_thickness_alpha") * secpera);
     verbPrintf(5, grid->com,
        "    PISMAtmosphereCoupler::max_timestep() has doForceToThickness==TRUE; dt_years = %.5f years\n",
        dt_years);
@@ -443,26 +431,19 @@ where \f$\alpha>0\f$ is determined below.  Note \f$\Delta M\f$ is positive in
 areas where \f$H_{\text{tar}} > H\f$, so we are adding mass there, and we are ablating
 in the other case.
 
-We determine \f$\alpha\f$ by the rule that we are removing mass at a rate such that by 
-the time the run is done, in the absence of flow, we have made
-\f$H = H_{\text{tar}} + \epsilon (H_0 - H_{\text{tar}})\f$
-where \f$\epsilon\f$ is the inverse \c pism_config:force_to_thickness_factor, which has
-default value 1000, and \f$H_0\f$ is the model thickness at the beginning of the run.
-In fact, let \f$t_s\f$ be the start time and \f$t_e\f$ the end time for the run.
+Let \f$t_s\f$ be the start time and \f$t_e\f$ the end time for the run.
 Without flow or basal mass balance, or any surface mass balance other than the
 \f$\Delta M\f$ computed here, we are solving
   \f[ \frac{\partial H}{\partial t} = \alpha (H_{\text{tar}} - H) \f]
-Let's assume \f$H(t_s)=H_0\f$.  This ODE IVP has solution
+Let's assume \f$H(t_s)=H_0\f$.  This initial value problem has solution
 \f$H(t) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t-t_s)}\f$
 and so
   \f[ H(t_e) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t_e-t_s)} \f]
-Thus we want
-  \f[ e^{-\alpha (t_e-t_s)} = \frac{1}{1000}\f]
-if \c pism_config:force_to_thickness_factor = 1000.  It follows that we set
-  \f[\alpha = \frac{\ln(1000)}{t_e-t_s}\f]
-(\f$\alpha\f$ is actually set in PISMAtmosphereCoupler::initFromOptions().)
+The constant \f$\alpha\f$ has a default value \c pism_config:force_to_thickness_alpha
+of $0.002\,\text{a}^{-1}$.
 
-The final feature is that we turn on this mechanism so it is harshest near the end of the run.  In particular,
+The final feature is that we turn on this mechanism so it is harshest near the end
+of the run.  In particular,
   \f[\Delta M = \lambda(t) \alpha (H_{\text{tar}} - H)\f]
 where
   \f[\lambda(t) = \frac{t-t_s}{t_e-t_s}\f]
@@ -511,10 +492,12 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
     }
     
     // force-to-thickness mechanism is only full-strength at end of run
-    const PetscScalar lambda = (t_years - grid->start_year) / (grid->end_year - grid->start_year);
+    const PetscScalar
+       alpha  = config.get("force_to_thickness_alpha"),
+       lambda = (t_years - grid->start_year) / (grid->end_year - grid->start_year);
     ierr = verbPrintf(5, grid->com,
-       " (t_years = %.3f a, start_year = %.3f a, end_year = %.3f a, lambda = %.3f)\n",
-       t_years, grid->start_year , grid->end_year, lambda); CHKERRQ(ierr);
+       " (t_years = %.3f a, start_year = %.3f a, end_year = %.3f a, alpha = %.5f, lambda = %.3f)\n",
+       t_years, grid->start_year , grid->end_year, alpha, lambda); CHKERRQ(ierr);
     if ((lambda < 0.0) || (lambda > 1.0)) {
       SETERRQ(4,"computed lambda (for -force_to_thk) out of range; in updateSurfMassFluxAndProvide()");
     }
@@ -525,7 +508,7 @@ PetscErrorCode PISMAtmosphereCoupler::updateSurfMassFluxAndProvide(
     ierr = vsurfmassflux.get_array (massflux); CHKERRQ(ierr);
     for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
       for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
-        massflux[i][j] += lambda * ftt_alphadecay * (Htarget[i][j] - H[i][j]);
+        massflux[i][j] += lambda * alpha * (Htarget[i][j] - H[i][j]);
       }
     }
     ierr = ftt_thk->end_access(); CHKERRQ(ierr);
@@ -568,11 +551,6 @@ PISMConstAtmosCoupler::PISMConstAtmosCoupler() : PISMAtmosphereCoupler() {
   initializeFromFile = true; // default
 }
 
-// FIXME:  SHOULD STOP OR WARN IF dTforcing != NULL BECAUSE SEMANTICS OF artm
-//         WHICH WAS READ FROM FILE ARE UNCLEAR: DID IT ALREADY HAVE A SHIFT IN IT?
-
-// FIXME:  SHOULD STOP IF doForceToThickness == TRUE BECAUSE THAT MECHANISM WILL
-//         REPEATEDLY ADD \Delta M TO vsurfmassflux
 
 //! Normally initializes surface mass flux and surface temperature from the PISM input file.
 /*!
@@ -589,6 +567,29 @@ redefined, the climate does not change and is the same is it is when initialized
 PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g, const PISMVars &variables) {
   PetscErrorCode ierr;
   printIfDebug("entering PISMConstAtmosCoupler::initFromOptions()\n");
+
+  // we stop with ERROR if the user asks for -dT_forcing because the semantics of saved artm,
+  // which was read from a file, are ambiguous: did it contain a paleo-forced shift or not?
+  PetscTruth dTforceSet;
+  ierr = check_option("-dTforcing", dTforceSet); CHKERRQ(ierr);
+  if (dTforceSet==PETSC_TRUE) {
+    ierr = PetscPrintf(g->com,
+      "PISM ERROR: current implementation of PISMConstAtmosCoupler will not work with -dTforcing mechanism\n");
+      CHKERRQ(ierr);
+    PetscEnd();
+  }
+   
+  // we stop with ERROR if the user asks for the force-to-thickness mechanism, because (as currently
+  //   implemented) it will repeatedly add a \Delta M map to the saved vsurfmassflux
+  PetscTruth fttSet, fttaSet;
+  ierr = check_option("-force_to_thk", fttSet); CHKERRQ(ierr);
+  ierr = check_option("-force_to_thk_alpha", fttaSet); CHKERRQ(ierr);
+  if ((fttSet==PETSC_TRUE) || (fttaSet==PETSC_TRUE)) {
+    ierr = PetscPrintf(g->com,
+      "PISM ERROR: current implementation of PISMConstAtmosCoupler will not work with -force_to_thk mechanism\n");
+      CHKERRQ(ierr);
+    PetscEnd();
+  }
 
   ierr = PISMAtmosphereCoupler::initFromOptions(g, variables); CHKERRQ(ierr);
 

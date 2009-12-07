@@ -141,7 +141,6 @@ protected:
   PetscTruth      doForceToThickness;
   IceModelVec2    vthktarget;
   IceModelVec2    *ftt_thk;  //!< pointer back to IceModel::vH, needed only if doForceToThickness
-  PetscReal       ftt_alphadecay;
 };
 
 

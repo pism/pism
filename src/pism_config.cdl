@@ -154,8 +154,8 @@ netcdf pism_config {
 
   // PISMAtmosphereCoupler and PISMOceanCoupler constants, including LocalMassBalance
 
-    pism_config:force_to_thickness_factor = 1000.0;
-    pism_config:force_to_thickness_factor_doc = "; ratio by which force-to-thickness mechanism, if present, will attempt to reduce difference between model thickness and target thickness, relative to target thickness, by adding/removing mass";
+    pism_config:force_to_thickness_alpha = 6.33775292816370e-11;
+    pism_config:force_to_thickness_alpha_doc = "s-1; = 0.002 a-1; exponential coefficient in force-to-thickness mechanism";
 
     // The default values for the factors come from EISMINT-Greenland, [\\ref RitzEISMINT] .
     pism_config:pdd_factor_snow = 0.003;
