@@ -52,7 +52,7 @@ An alternative PDD scheme simulates the daily variability directly by a normal
 (pseudo-) random variable.
 
 This model makes a severe simplifying assumption about temperatures.  Namely, 
-vsurftemp is \e both the ice upper boundary temperature (i.e. below completion
+vsurftemp is \e both the ice upper boundary temperature (below completion
 of firn processes ...) \e and it is used as the mean annual temperature 
 used in the snow processes model.  That is, the temperature used in the 
 snow processes model to convert the snow precipitation rate vsnowprecip into 
