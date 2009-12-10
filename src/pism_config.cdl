@@ -167,8 +167,8 @@ netcdf pism_config {
     pism_config:pdd_refreeze = 0.6;
     pism_config:pdd_refreeze_doc = "pure fraction; EISMINT-Greenland value [\\ref RitzEISMINT] ";
 
-    pism_config:pdd_std_dev = 5.0;
-    pism_config:pdd_std_dev_doc = "Kelvin; std dev of daily temp variation; EISMINT-Greenland value [\\ref RitzEISMINT] ";
+    pism_config:pdd_std_dev = 2.53;
+    pism_config:pdd_std_dev_doc = "Kelvin; std dev of daily temp variation; value from [\\ref Faustoetal2009]; compare EISMINT-Greenland value of 5.0 [\\ref RitzEISMINT] ";
 
     pism_config:pdd_fausto_latitude_beta_w = 72.0;
     pism_config:pdd_fausto_latitude_beta_w_doc = "degrees N; latitude below which to use warm case, in formula (6) in [\\ref Faustoetal2009] ";
