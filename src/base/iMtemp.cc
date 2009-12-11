@@ -437,6 +437,7 @@ PetscErrorCode IceModel::temperatureStep(
         basalMeltRate[i][j] = bmr_float[i][j]; // set by PISMOceanCoupler
       } else {
         // rate of change of Hmelt[][];  can be negative (till water freeze-on)
+	// Also note that this rate is calculated *before* limiting Hmelt.
         basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / dtTempAge;
       }
 

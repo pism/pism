@@ -201,6 +201,9 @@ protected:
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax,
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
               gdHdtav,  //!< average value in map-plane (2D) of dH/dt, where there is ice; m s-1
+    total_sub_shelf_ice_flux,
+    total_basal_ice_flux,
+    total_surface_ice_flux,
     dvoldt;  //!< d(total ice volume)/dt; m3 s-1
   PetscInt    skipCountDown;
 
@@ -375,6 +378,7 @@ protected:
   virtual PetscErrorCode compute_wvelbase(IceModelVec2 &result);
   virtual PetscErrorCode compute_wvelsurf(IceModelVec2 &result);
   // scalar:
+  virtual PetscErrorCode ice_mass_bookkeeping();
   virtual PetscErrorCode compute_ice_volume(PetscScalar &result);
   virtual PetscErrorCode compute_ice_area(PetscScalar &result);
   virtual PetscErrorCode compute_ice_area_grounded(PetscScalar &result);

@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -37,9 +37,6 @@ public:
 
   using IceModel::setFromOptions;
   PetscErrorCode setFromOptions();
-
-  using IceModel::initFromFile;
-  virtual PetscErrorCode initFromFile(const char *);
 
   using IceModel::bootstrapFromFile;
   virtual PetscErrorCode bootstrapFromFile(const char *filename);

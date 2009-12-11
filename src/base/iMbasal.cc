@@ -184,10 +184,6 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
   ierr = vbed.end_access(); CHKERRQ(ierr);
   ierr = vtillphi.end_access(); CHKERRQ(ierr);
 
-  // when in doubt ...
-  ierr = vtillphi.beginGhostComm();
-  ierr = vtillphi.endGhostComm();
-
   return 0;
 }
 

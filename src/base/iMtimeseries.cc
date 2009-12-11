@@ -112,6 +112,19 @@ PetscErrorCode IceModel::create_timeseries() {
     timeseries.push_back(ivol);
   }
 
+  if (find(ts_vars.begin(), ts_vars.end(), "imass") != ts_vars.end()) {
+    DiagnosticTimeseries *imass = new DiagnosticTimeseries(&grid, "imass", "t");
+
+    imass->set_units("kg", "");
+    imass->set_dimension_units("years", "");
+    imass->output_filename = ts_filename;
+
+    imass->set_attr("long_name", "ice mass");
+    imass->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(imass);
+  }
+
   if (find(ts_vars.begin(), ts_vars.end(), "iarea") != ts_vars.end()) {
     DiagnosticTimeseries *iarea = new DiagnosticTimeseries(&grid, "iarea", "t");
 
@@ -162,6 +175,69 @@ PetscErrorCode IceModel::create_timeseries() {
     delta_t->set_attr("valid_min", 0.0);
 
     timeseries.push_back(delta_t);
+  }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "divoldt") != ts_vars.end()) {
+    DiagnosticTimeseries *divoldt = new DiagnosticTimeseries(&grid, "divoldt", "t");
+
+    divoldt->set_units("m3 s-1", "");
+    divoldt->set_dimension_units("years", "");
+    divoldt->output_filename = ts_filename;
+
+    divoldt->set_attr("long_name", "ice volume rate of change");
+
+    timeseries.push_back(divoldt);
+  }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "dimassdt") != ts_vars.end()) {
+    DiagnosticTimeseries *dimassdt = new DiagnosticTimeseries(&grid, "dimassdt", "t");
+
+    dimassdt->set_units("kg s-1", "");
+    dimassdt->set_dimension_units("years", "");
+    dimassdt->output_filename = ts_filename;
+
+    dimassdt->set_attr("long_name", "ice mass rate of change");
+
+    timeseries.push_back(dimassdt);
+  }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "total_surface_ice_flux") != ts_vars.end()) {
+    DiagnosticTimeseries *tsif = new DiagnosticTimeseries(&grid, "total_surface_ice_flux", "t");
+
+    tsif->set_units("kg s-1", "");
+    tsif->set_dimension_units("years", "");
+    tsif->output_filename = ts_filename;
+
+    tsif->set_attr("long_name", "total top surface ice flux");
+    tsif->set_attr("comment", "positive means ice gain");
+
+    timeseries.push_back(tsif);
+  }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "total_basal_ice_flux") != ts_vars.end()) {
+    DiagnosticTimeseries *tbif = new DiagnosticTimeseries(&grid, "total_basal_ice_flux", "t");
+
+    tbif->set_units("kg s-1", "");
+    tbif->set_dimension_units("years", "");
+    tbif->output_filename = ts_filename;
+
+    tbif->set_attr("long_name", "total basal ice flux");
+    tbif->set_attr("comment", "positive means ice gain");
+
+    timeseries.push_back(tbif);
+  }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "total_sub_shelf_ice_flux") != ts_vars.end()) {
+    DiagnosticTimeseries *tssif = new DiagnosticTimeseries(&grid, "total_sub_shelf_ice_flux", "t");
+
+    tssif->set_units("kg s-1", "");
+    tssif->set_dimension_units("years", "");
+    tssif->output_filename = ts_filename;
+
+    tssif->set_attr("long_name", "total sub-ice-shelf ice flux");
+    tssif->set_attr("comment", "positive means ice gain");
+
+    timeseries.push_back(tssif);
   }
 
   return 0;

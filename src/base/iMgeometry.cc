@@ -427,8 +427,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
       if ( floating_ice_killed && (PismModMask(mask[i][j]) == MASK_FLOATING) )
         Hnew[i][j] = 0.0;
 
-    }
-  }
+    } // end of the inner for loop
+  } // end of the outer for loop
 
   ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);

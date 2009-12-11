@@ -33,7 +33,7 @@ PetscErrorCode IceModel::update_viewers() {
   PetscErrorCode ierr;
   set<string>::iterator i;
 
-  PetscInt viewer_size = config.get("viewer_size");
+  PetscInt viewer_size = (PetscInt)config.get("viewer_size");
   PetscScalar slice_level = config.get("slice_level");
 
   // map-plane viewers
@@ -189,7 +189,7 @@ PetscErrorCode IceModel::init_viewers() {
       sounding_viewers.insert(var_name);
   }
 
-  PetscInt viewer_size = config.get("viewer_size");
+  PetscInt viewer_size = (PetscInt)config.get("viewer_size");
   ierr = PetscOptionsInt("-viewer_size", "specifies desired viewer size",
 			 "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
 

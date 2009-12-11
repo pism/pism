@@ -233,6 +233,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars
   ierr = vsurfmassflux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vsurfmassflux.write_in_glaciological_units = true;
   ierr = vsurfmassflux.set(0.0); CHKERRQ(ierr);  // merely a default value
+  vsurfmassflux.set_attr("comment", "positive values correspond to ice gain");
 
   // annual mean air temperature at "ice surface", at level below all firn processes
   //   (e.g. "10 m" ice temperatures)

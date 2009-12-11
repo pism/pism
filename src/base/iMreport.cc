@@ -443,8 +443,8 @@ PetscErrorCode IceModel::compute_cbase(IceModelVec2 &result, IceModelVec2 &tmp) 
 }
 
 //! \brief Computes csurf, the magnitude of horizontal velocity of ice at ice
-//! surface and masks out ice-free areas. Uses \c tmp as a
-//! preallocated temporary storage.
+//! surface and masks out ice-free areas. Uses \c tmp as a preallocated
+//! temporary storage.
 PetscErrorCode IceModel::compute_csurf(IceModelVec2 &result, IceModelVec2 &tmp) {
   PetscErrorCode ierr;
 
@@ -455,7 +455,7 @@ PetscErrorCode IceModel::compute_csurf(IceModelVec2 &result, IceModelVec2 &tmp) 
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
 
-  ierr = result.set_to_magnitude(result,tmp); CHKERRQ(ierr);
+  ierr = result.set_to_magnitude(result, tmp); CHKERRQ(ierr);
 
   ierr = result.set_name("csurf"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", 
@@ -473,9 +473,6 @@ PetscErrorCode IceModel::compute_csurf(IceModelVec2 &result, IceModelVec2 &tmp) 
 }
 
 //! Computes uvelsurf, the x component of velocity of ice at ice surface.
-/*! Note that there is no need to mask out ice-free areas here, because
-  uvelsurf is zero at those locations.
- */
 PetscErrorCode IceModel::compute_uvelsurf(IceModelVec2 &result) {
   PetscErrorCode ierr;
 
@@ -499,9 +496,6 @@ PetscErrorCode IceModel::compute_uvelsurf(IceModelVec2 &result) {
 }
 
 //! Computes vvelsurf, the y component of velocity of ice at ice surface.
-/*! Note that there is no need to mask out ice-free areas here, because
-  vvelsurf is zero at those locations.
- */
 PetscErrorCode IceModel::compute_vvelsurf(IceModelVec2 &result) {
   PetscErrorCode ierr;
 
@@ -1037,12 +1031,20 @@ PetscErrorCode IceModel::compute_ice_area_floating(PetscScalar &result) {
   return 0;
 }
 
+//! Compute a scalar diagnostic quantity by name.
 PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
   PetscErrorCode ierr, errcode = 1;
 
   if (name == "ivol") {
     errcode = 0;
     ierr = compute_ice_volume(result); CHKERRQ(ierr);
+  }
+
+  if (name == "imass") {
+    errcode = 0;
+    PetscScalar ice_density = config.get("ice_density");
+    ierr = compute_ice_volume(result); CHKERRQ(ierr);
+    result *= ice_density;
   }
 
   if (name == "iarea") {
@@ -1065,6 +1067,108 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
     result = dt;
   }
 
+  if (name == "divoldt") {
+    errcode = 0;
+    result = dvoldt;
+  }
+
+  if (name == "dimassdt") {
+    errcode = 0;
+    PetscScalar ice_density = config.get("ice_density");
+    result = dvoldt * ice_density;
+  }
+
+  if (name == "total_basal_ice_flux") {
+    errcode = 0;
+    result = total_basal_ice_flux;
+  }
+
+  if (name == "total_surface_ice_flux") {
+    errcode = 0;
+    result = total_surface_ice_flux;
+  }
+
+  if (name == "total_sub_shelf_ice_flux") {
+    errcode = 0;
+    result = total_sub_shelf_ice_flux;
+  }
+
   return errcode;
 }
 
+/*! Computes total ice fluxes (in kg per second) at 3 interfaces:
+
+  \li "ice-atmoshpere" interface using the accumulation/ablation rate
+  \li "ice-bedrock" interface using the basal melt rate
+  \li bottom of ice shelves using the sub-ice-shelf melt rate
+
+  These quantities should be understood as <i>instantaneous at the beginning of
+  the time-step.</i> Multiplying by dt will \b not necessarily give the
+  corresponding change from the beginning to the end of the time-step.
+ */
+PetscErrorCode IceModel::ice_mass_bookkeeping() {
+  PetscErrorCode ierr;
+  IceModelVec2 *surface_mf, *subshelf_mf;
+  PetscScalar **thk, **acab, **bmr_grounded, **bmr_floating, **mask;
+  PetscReal cell_area = grid.dx * grid.dy;
+
+  // call sets pccsmf to point to IceModelVec2 with current surface mass flux
+  if (atmosPCC != PETSC_NULL) {
+    ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, dt / secpera,
+						  surface_mf); CHKERRQ(ierr);
+  } else { SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL"); }
+  // call sets pccsbmf to point to IceModelVec2 with current mass flux under shelf base
+  if (oceanPCC != PETSC_NULL) {
+    ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(grid.year, dt / secpera,
+						       subshelf_mf); CHKERRQ(ierr);
+  } else { SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL"); }
+
+  total_basal_ice_flux = 0;
+  total_surface_ice_flux = 0;
+  total_sub_shelf_ice_flux = 0;
+
+  ierr = surface_mf->get_array(acab); CHKERRQ(ierr);
+  ierr = subshelf_mf->get_array(bmr_floating); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.get_array(bmr_grounded); CHKERRQ(ierr);
+  ierr = vH.get_array(thk); CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      // ignore ice-free cells:
+      if (thk[i][j] <= 0.0)
+	continue;
+
+      // add the accumulation/ablation rate:
+      total_surface_ice_flux += acab[i][j]; // note the "+="!
+
+      // add the sub-shelf melt rate;
+      if (PismIntMask(mask[i][j]) == MASK_FLOATING) {
+	total_sub_shelf_ice_flux -= bmr_floating[i][j]; // note the "-="!
+      }
+
+      // add the basal melt rate:
+      if ( (PismIntMask(mask[i][j]) == MASK_SHEET) ||
+	   (PismIntMask(mask[i][j]) == MASK_DRAGGING) ) {
+	total_basal_ice_flux -= bmr_grounded[i][j]; // note the "-="!
+      }
+
+    }
+  }  
+  ierr = surface_mf->end_access(); CHKERRQ(ierr);
+  ierr = subshelf_mf->end_access(); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+
+  PetscScalar ice_density = config.get("ice_density");
+
+  total_surface_ice_flux     *= ice_density * cell_area;
+  total_sub_shelf_ice_flux   *= ice_density * cell_area;
+  total_basal_ice_flux       *= ice_density * cell_area;
+
+  ierr = PetscGlobalSum(&total_surface_ice_flux,   &total_surface_ice_flux,   grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&total_sub_shelf_ice_flux, &total_sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&total_basal_ice_flux,     &total_basal_ice_flux,     grid.com); CHKERRQ(ierr);
+
+  return 0;
+}

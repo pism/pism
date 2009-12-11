@@ -69,7 +69,11 @@ IceModel::IceModel(IceGrid &g)
   // Do not save time-series by default:
   save_ts = false;
   save_extra = false;
+
   dvoldt = gdHdtav = 0;
+  total_surface_ice_flux = 0;
+  total_basal_ice_flux = 0;
+  total_sub_shelf_ice_flux = 0;
 
   allowAboveMelting = PETSC_FALSE;  // only IceCompModel ever sets it to true
 
@@ -298,6 +302,7 @@ PetscErrorCode IceModel::createVecs() {
                                                   //   uninitialized basal melt rate.
   ierr = vbasalMeltRate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vbasalMeltRate.write_in_glaciological_units = true;
+  vbasalMeltRate.set_attr("comment", "positive basal melt rate corresponds to ice loss");
   ierr = variables.add(vbasalMeltRate); CHKERRQ(ierr);
 
   // friction angle for till under grounded ice sheet
@@ -482,16 +487,6 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
 	maxdt_temporary = extras_dt;
     }
 
-    double ts_dt;
-    ierr = ts_max_timestep(grid.year, ts_dt); CHKERRQ(ierr);
-    ts_dt *= secpera;
-    if (ts_dt > 0.0) {
-      if (maxdt_temporary > 0)
-	maxdt_temporary = PetscMin(ts_dt, maxdt_temporary);
-      else
-	maxdt_temporary = ts_dt;
-    }
-
 PetscLogEventBegin(beddefEVENT,0,0,0,0);
 
     // compute bed deformation, which only depends on current thickness and bed elevation
@@ -548,8 +543,11 @@ PetscLogEventBegin(tempEVENT,0,0,0,0);
       ierr = verbPrintf(2,grid.com, "$$"); CHKERRQ(ierr);
     }
 
-PetscLogEventEnd(tempEVENT,0,0,0,0);
-PetscLogEventBegin(massbalEVENT,0,0,0,0);
+    PetscLogEventEnd(tempEVENT,0,0,0,0);
+
+    ierr = ice_mass_bookkeeping(); CHKERRQ(ierr);
+
+    PetscLogEventBegin(massbalEVENT,0,0,0,0);
 
     if (do_mass_conserve) {
       ierr = massContExplicitStep(); CHKERRQ(ierr); // update H
@@ -562,7 +560,6 @@ PetscLogEventBegin(massbalEVENT,0,0,0,0);
     }
 
 PetscLogEventEnd(massbalEVENT,0,0,0,0);
-
     
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 
