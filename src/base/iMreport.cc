@@ -1111,6 +1111,7 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
   IceModelVec2 *surface_mf, *subshelf_mf;
   PetscScalar **thk, **acab, **bmr_grounded, **bmr_floating, **mask;
   PetscReal cell_area = grid.dx * grid.dy;
+  PetscScalar my_total_surface_ice_flux, my_total_basal_ice_flux, my_total_sub_shelf_ice_flux;
 
   // call sets pccsmf to point to IceModelVec2 with current surface mass flux
   if (atmosPCC != PETSC_NULL) {
@@ -1123,9 +1124,9 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
 						       subshelf_mf); CHKERRQ(ierr);
   } else { SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL"); }
 
-  total_basal_ice_flux = 0;
-  total_surface_ice_flux = 0;
-  total_sub_shelf_ice_flux = 0;
+  my_total_basal_ice_flux = 0;
+  my_total_surface_ice_flux = 0;
+  my_total_sub_shelf_ice_flux = 0;
 
   ierr = surface_mf->get_array(acab); CHKERRQ(ierr);
   ierr = subshelf_mf->get_array(bmr_floating); CHKERRQ(ierr);
@@ -1139,17 +1140,17 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
 	continue;
 
       // add the accumulation/ablation rate:
-      total_surface_ice_flux += acab[i][j]; // note the "+="!
+      my_total_surface_ice_flux += acab[i][j]; // note the "+="!
 
       // add the sub-shelf melt rate;
       if (PismIntMask(mask[i][j]) == MASK_FLOATING) {
-	total_sub_shelf_ice_flux -= bmr_floating[i][j]; // note the "-="!
+	my_total_sub_shelf_ice_flux -= bmr_floating[i][j]; // note the "-="!
       }
 
       // add the basal melt rate:
       if ( (PismIntMask(mask[i][j]) == MASK_SHEET) ||
 	   (PismIntMask(mask[i][j]) == MASK_DRAGGING) ) {
-	total_basal_ice_flux -= bmr_grounded[i][j]; // note the "-="!
+	my_total_basal_ice_flux -= bmr_grounded[i][j]; // note the "-="!
       }
 
     }
@@ -1162,13 +1163,13 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
 
   PetscScalar ice_density = config.get("ice_density");
 
-  total_surface_ice_flux     *= ice_density * cell_area;
-  total_sub_shelf_ice_flux   *= ice_density * cell_area;
-  total_basal_ice_flux       *= ice_density * cell_area;
+  my_total_surface_ice_flux     *= ice_density * cell_area;
+  my_total_sub_shelf_ice_flux   *= ice_density * cell_area;
+  my_total_basal_ice_flux       *= ice_density * cell_area;
 
-  ierr = PetscGlobalSum(&total_surface_ice_flux,   &total_surface_ice_flux,   grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&total_sub_shelf_ice_flux, &total_sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&total_basal_ice_flux,     &total_basal_ice_flux,     grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&my_total_surface_ice_flux,   &total_surface_ice_flux,   grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&my_total_sub_shelf_ice_flux, &total_sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&my_total_basal_ice_flux,     &total_basal_ice_flux,     grid.com); CHKERRQ(ierr);
 
   return 0;
 }
