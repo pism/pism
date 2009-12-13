@@ -605,6 +605,7 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, nc_type nctype, int &
     stat = nc_inq_dimid(ncid, "y", &dimids[1]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_inq_dimid(ncid, "x", &dimids[2]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
+    ndims = -1;
     switch (dims) {
     case GRID_2D:
       ndims = 3;
@@ -616,6 +617,9 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, nc_type nctype, int &
     case GRID_3D_BEDROCK:
       stat = nc_inq_dimid(ncid, "zb", &dimids[3]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
       ndims = 4;
+    }
+    if (ndims < 0) {
+      SETERRQ(2,"unknown value for internal variable dims in NCSpatialVariable::define()");
     }
 
     if (time_independent) {
