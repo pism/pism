@@ -20,7 +20,7 @@ endif
 DISPLAY = :0.0
 
 # Get PETSc environment and rules:
-PETSC3_BASE := $(wildcard ${PETSC_DIR}/conf/base)
+PETSC3_BASE := $(wildcard ${PETSC_DIR}conf/base)
 # PETSC3_BASE is empty string if not 3.0.0
 ifeq ($(strip $(PETSC3_BASE)),) 
   # include file which is only present in 2.3.3 and earlier
@@ -229,6 +229,7 @@ showEnv:
 	@echo 'CXXLINKER = ' ${CXXLINKER}
 	@echo 'PETSC_DIR = ' ${PETSC_DIR}
 	@echo 'PETSC_ARCH = ' ${PETSC_ARCH}
+	@echo 'PETSC3_BASE = ' ${PETSC3_BASE}
 	@echo 'LIBPISMNAME = ' ${LIBPISMNAME}
 	@echo 'LIBTESTSNAME = ' ${LIBTESTSNAME}
 	@echo 'PISM_REVISION = ' ${PISM_REVISION}
@@ -245,20 +246,18 @@ showEnv:
 
 depend: ;
 
-.PHONY: clean distclean depclean
-
-clean:: depclean
+.PHONY: distclean depclean
 
 depclean:
 	@rm -f $(depfiles) src/revision
 
-distclean: clean
+distclean: depclean
 	@rm -f ${LIBPISMNAME} ${LIBTESTSNAME} $(LIBUDUNITS) $(exec_default) $(exec_extras) \
             ../lib/pismudunits.dat
 
-# This is to avoid recreating .d files if you all you need is 'make clean' or
+# This is to avoid recreating .d files if you all you need is 'make depclean' or
 # 'make distclean':
-ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),depclean)
   ifneq ($(MAKECMDGOALS),distclean)
     include $(depfiles)
   endif
