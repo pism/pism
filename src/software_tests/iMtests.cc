@@ -242,7 +242,7 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
     t = t + dt;
   }
 
-  v.set_n_records(config.get("climate_forcing_buffer_size"));
+  v.set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
   ierr = v.create(grid, "thk", false); CHKERRQ(ierr);
   ierr = v.set_attrs("test", "IceModelVec2T test, using 'thk'", "m", ""); CHKERRQ(ierr);
   ierr = v.init(filename); CHKERRQ(ierr);
