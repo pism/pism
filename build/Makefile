@@ -247,7 +247,7 @@ depend: ;
 
 .PHONY: clean distclean depclean
 
-clean: depclean
+clean:: depclean
 
 depclean:
 	@rm -f $(depfiles) src/revision
