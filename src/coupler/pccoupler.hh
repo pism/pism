@@ -217,7 +217,7 @@ protected:
 };
 
 
-//! A derived class of PISMOceanCoupler for coupling PISM to an ocean model.  Essentially virtual.
+//! A derived class of PISMOceanCoupler for coupling PISM to an ocean model.  Very, very simplified.
 class PISMConstOceanCoupler : public PISMOceanCoupler {
 
 public:
@@ -239,9 +239,9 @@ public:
              PetscScalar t_years, PetscScalar dt_years,
              IceModelVec2* &pvsbt);  // pvsbt = pointer to vshelfbasetemp
 
-  PetscReal constOceanHeatFlux;  // in W m-2; directly converted to constant mass flux
-                                 //   by updateShelfBaseMassFluxAndProvide()
 protected:
+  PetscScalar sub_shelf_mass_flux();
+
   IceModelVec2 *thk;  //!< pointer back to IceModel::vH
 };
 

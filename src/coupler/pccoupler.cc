@@ -801,29 +801,41 @@ PetscErrorCode PISMOceanCoupler::updateSeaLevelElevation(PetscReal t_years, Pets
 
 /*******************  OCEAN:  PISMConstOceanCoupler ********************/
 
-/* historical note only:  PISMConstOceanCoupler is the only (quite simplified!) 
-ocean model provided with the PISM source.  It is based on a 
-nontrivial PISMClimateCoupler for ice shelves
-which was written by Ricarda Winkelmann (PIK), with input from Bueler, on 2 Dec 2008.
-That source is in icerepo/Potsdam-Antarctica, a password-protected svn repo.
-Contact Bueler for further info on that. */
+/* historical note:  PISMConstOceanCoupler is the only ocean model provided with the PISM source.
+It is was a trivial start to a now-highly-non-trivial PISMClimateCoupler for ocean beneath
+ice shelves which was written by Ricarda Winkelmann (PIK), with input from Bueler, on 2 Dec 2008.
+Contact Bueler for further info. */
+
+/* For this Coupler there is one relevant config parameter in src/pism_config.cdl (and thus
+lib/config.nc). It is "ocean_sub_shelf_heat_flux_into_ice", with default value 0.5 W m-2.  Here
+is some perspective on that value:
+
+It is a naively chosen default value.   The default value is possibly irrelevant as long
+as it is pretty small.  Note 0.5 W m-2 is about 4 times more heating than peak of the
+Shapiro & Ritzwoller (2004) geothermal fluxes for Antarctica of about 130 mW/m^2, but
+that is comparing apples and oranges.  Note heat flux immediately becomes a basal net mass
+balance, and 0.5 W m-2 yields  0.051758 m a-1 = 5.2 cm a-1 basal melt rate, as ice 
+thickness per time, in updateShelfBaseMassFluxAndProvide() below.
+An alternative would be to choose a default rate of zero.  See Lingle et al (1991;
+"A flow band model of the Ross Ice Shelf ..." JGR 96 (B4), pp 6849--6871), which gives 
+0.02 m/a freeze-on at one point as only measurement available at that time (one ice borehole).
+That source also gives 0.16 m/a melting as average rate necessary to maintain equilibrium,
+but points out variability in -0.5 m/a (i.e. melting) to +1.0 m/a (freeze-on) range from a
+flow band model (figure 5).
+ */
 
 PISMConstOceanCoupler::PISMConstOceanCoupler() : PISMOceanCoupler() {
-  constOceanHeatFlux = 0.5;   // W m-2 = J m-2 s-1; naively chosen default value
-        // default value possibly irrelevant as long as it is pretty small;
-        //   0.5 W m-2 is about 4 times more heating than peak of Shapiro&Ritzwoller (2004)
-        //   geothermal fluxes for Antarctica of about 130 mW/m^2;
-        //   0.5 W m-2 yields  0.051758 m a-1 = 5.2 cm a-1  basal melt rate, ice 
-        //   thickness per time, in updateShelfBaseMassFluxAndProvide() below
-        
-        // alternative: a rate of zero might do no harm; note heat flux immediately
-        //   becomes a basal net mass balance;
-        //   Lingle et al (1991; "A flow band model of the Ross Ice Shelf ..."
-        //   JGR 96 (B4), pp 6849--6871) gives 0.02 m/a freeze-on at one point as only 
-        //   measurement available at that time (one ice core) and also gives
-        //   0.16 m/a melting as average rate necessary to maintain equilibrium,
-        //   but points out variability in -0.5 m/a (i.e. melting) to 
-        //   +1.0 m/a (freeze-on) range from a flow band model (figure 5)
+  reportInitializationToStdOut = PETSC_TRUE;
+}
+
+
+//! Returns mass flux in ice-equivalent m s-1, from assumption that basal heat flux rate converts to mass flux.
+PetscScalar PISMConstOceanCoupler::sub_shelf_mass_flux() {
+  const PetscScalar L = config.get("water_latent_heat_fusion"),
+                    rho = config.get("ice_density"),
+                    // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
+                    meltrate = config.get("ocean_sub_shelf_heat_flux_into_ice") / (L * rho); // m s-1
+  return meltrate;
 }
 
 
@@ -834,20 +846,18 @@ PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g, const PISMVars
 
   thk = dynamic_cast<IceModelVec2*>(variables.get("land_ice_thickness"));
   if (!thk) SETERRQ(1, "ERROR: land_ice_thickness is not available");
-  
-  if (reportInitializationToStdOut) {
-    ierr = verbPrintf(2, g->com, 
-       "  initializing constant sub-ice shelf ocean climate:\n"
-       "    heat flux from ocean set to %.3f W m-2 (determines mass balance)\n"
-       "    ice shelf base temperature set to pressure-melting temperature\n",
-       constOceanHeatFlux); CHKERRQ(ierr); 
-  }
+
+  ierr = verbPrintf(2, g->com, 
+     "  initializing spatially- and temporally-constant sub-ice shelf ocean climate:\n"
+     "    heat flux from ocean set to %.3f W m-2, which determines mass flux (ice removal rate) %.5f m a-1\n"
+     "    ice shelf base temperature set to pressure-melting temperature\n",
+     config.get("ocean_sub_shelf_heat_flux_into_ice"), sub_shelf_mass_flux() * secpera); CHKERRQ(ierr); 
 
   return 0;
 }
 
 
-//! By default, does not write vshelfbasetemp and vshelfbasemassflux fields.
+//! Does *not* write constant vshelfbasetemp and vshelfbasemassflux fields.
 PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(
 		PetscScalar /*t_years*/, const char *filename) {
   PetscErrorCode ierr;
@@ -871,23 +881,21 @@ PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(
 PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
                   PetscScalar /*t_years*/, PetscScalar /*dt_years*/,
                   IceModelVec2* &pvsbt) {
+  // ignores everything from IceModel except ice thickness; also ignores t_years and dt_years
   PetscErrorCode ierr;
 
-  // FIXME: replace with config.get(...) calls
-  // ignores everything from IceModel except ice thickness; also ignores t_years and dt_years
-  const PetscScalar icerho       = 910.0,   // kg/m^3   ice shelf mean density
-                    oceanrho     = 1028.0,  // kg/m^3   sea water mean density
-                    beta_CC_grad = 8.66e-4, // K/m      Clausius-Clapeyron gradient
-                    T0           = 273.15;  // K        triple point = naively assumed
-                                            //          sea water temperature at sea level
+  const PetscScalar beta_CC_grad = config.get("beta_CC") * config.get("ice_density")
+                                     * config.get("standard_gravity"), // K m-1
+                    T0           = config.get("water_melting_temperature");  // K
   PetscScalar **H, **temp;
   ierr = thk->get_array(H);   CHKERRQ(ierr);
   ierr = vshelfbasetemp.get_array (temp); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      const PetscScalar shelfbaseelev = - (icerho / oceanrho) * H[i][j];
+      const PetscScalar shelfbaseelev
+          = - ( config.get("ice_density") / config.get("sea_water_density") ) * H[i][j];
       // temp is set to melting point at depth
-      temp[i][j] = T0 + beta_CC_grad * shelfbaseelev;  // base elev negative here so this is below T0
+      temp[i][j] = T0 + beta_CC_grad * shelfbaseelev;  // base elev negative here so is below T0
     }
   }
   ierr = thk->end_access(); CHKERRQ(ierr);
@@ -903,15 +911,9 @@ PetscErrorCode PISMConstOceanCoupler::updateShelfBaseMassFluxAndProvide(
          IceModelVec2* &pvsbmf) {
   PetscErrorCode ierr;
 
-  // FIXME: replace with config.get(...) calls
-  const PetscScalar icelatentheat = 3.35e5,   // J kg-1   ice latent heat capacity
-                    icerho        = 910.0,    // kg m-3   ice shelf mean density
-                    // following has units:   J m-2 s-1 / (J kg-1 * kg m-3) = m s-1
-                    meltrate      = constOceanHeatFlux / (icelatentheat * icerho); // m s-1
-
   // vshelfbasemassflux is positive if ice is melting (flux into ocean);
   //    see metadata set in PISMOceanCoupler::initFromOptions()
-  ierr = vshelfbasemassflux.set(meltrate); CHKERRQ(ierr);
+  ierr = vshelfbasemassflux.set(sub_shelf_mass_flux()); CHKERRQ(ierr);
 
   pvsbmf = &vshelfbasemassflux;
   return 0;

@@ -511,13 +511,12 @@ PetscErrorCode IceMISMIPModel::init_couplers() {
 
   ierr = IceModel::init_couplers(); CHKERRQ(ierr);
 
-  // set climate
+  config.set("ocean_sub_shelf_heat_flux_into_ice",0.0); // NO sub ice shelf melting
+
   if (oceanPCC != PETSC_NULL) {
-
     PISMConstOceanCoupler *coPCC = dynamic_cast<PISMConstOceanCoupler*>(oceanPCC);
-    if (coPCC == NULL) SETERRQ(1, "coPCC == NULL");
-
-    coPCC->constOceanHeatFlux = 0.0;  // NO sub ice shelf melting
+    if (coPCC == NULL)
+      SETERRQ(1, "PISM ERROR: coPCC == NULL in IceMISMIPModel ... PISMOceanCoupler is not a PISMConstOceanCoupler!\n");
   } else {
     SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");
   }

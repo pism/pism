@@ -221,6 +221,8 @@ netcdf pism_config {
     pism_config:precip_exponential_factor_for_temperature = 0.07041666667;
     pism_config:precip_exponential_factor_for_temperature_doc = "Kelvin-1; = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change [\\ref Huybrechts02] ";
 
+    pism_config:ocean_sub_shelf_heat_flux_into_ice = 0.5;
+    pism_config:ocean_sub_shelf_heat_flux_into_ice_doc = "W m-2; = J m-2 s-1; naively chosen default value for heat from ocean; see comments in src/coupler/pccoupler.cc";
 
 
     // THESE CONSTANTS MAY DUPLICATE, AND MAY SUPERSEDE, CONSTANTS IN materials.cc
