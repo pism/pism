@@ -42,8 +42,8 @@ svn_update:
 	@svn update
 
 clean:
-	@make -C $(BUILD_DIR) clean
-	@make -C doc clean
+	@$(MAKE) -C $(BUILD_DIR) clean
+	@$(MAKE) -C doc clean
 
 userman refman browser summary fullbib installation:
 	@cd doc && $(MAKE) $@
