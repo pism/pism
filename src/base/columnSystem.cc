@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petsc.h>
-#include "pism_const.hh"   // e.g. MASK_FLOATING and PismModMask()
+#include "pism_const.hh"   // e.g. MASK_FLOATING
 #include "iceModelVec.hh"
 #include "columnSystem.hh"
 
@@ -418,7 +418,7 @@ PetscErrorCode tempSystemCtx::setIndicesThisColumn(
 
 
 PetscErrorCode tempSystemCtx::setSchemeParamsThisColumn(
-                     PetscScalar my_mask, bool my_isMarginal, PetscScalar my_lambda) {
+                     PismMask my_mask, bool my_isMarginal, PetscScalar my_lambda) {
   if (!initAllDone) {  SETERRQ(2,
      "setSchemeParamsThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
   if (schemeParamsValid) {  SETERRQ(3,
@@ -491,7 +491,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x) {
     D[k0] = 1.0;
     U[k0] = 0.0;
     // if floating and no ice then worry only about bedrock temps
-    if (PismModMask(mask) == MASK_FLOATING) {
+    if (mask >= MASK_FLOATING) {
       // essentially no ice but floating ... ask PISMOceanCoupler
       rhs[k0] = Tshelfbase;
       // FIXME: split k0 into two grid points?
@@ -500,7 +500,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x) {
     }
   } else { // ks > 0; there is ice
     // for w, always difference *up* from base, but make it implicit
-    if (PismModMask(mask) == MASK_FLOATING) {
+    if (mask >= MASK_FLOATING) {
       // just apply Dirichlet condition to base of column of ice in an ice shelf
       if (k0 > 0) { L[k0] = 0.0; } // note L[0] not allocated 
       D[k0] = 1.0;

@@ -161,13 +161,13 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
       CHKERRQ(ierr);
 
   PetscReal slope = (phi_max - phi_min) / (topg_max - topg_min);
-  PetscScalar **tillphi, **bed, **mask; 
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  PetscScalar **tillphi, **bed;
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vbed.get_array(bed); CHKERRQ(ierr);
   ierr = vtillphi.get_array(tillphi); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (PismModMask(mask[i][j]) != MASK_FLOATING) {
+      if (!vMask.is_floating(i,j)) {
         if (bed[i][j] <= topg_min) {
           tillphi[i][j] = phi_min;
         } else if (bed[i][j] >= topg_max) {
@@ -247,14 +247,14 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
   }
 
   if (holdTillYieldStress == PETSC_FALSE) { // usual case: use Hmelt to determine tauc
-    PetscScalar **mask, **tauc, **H, **Hmelt, **tillphi; 
+    PetscScalar **tauc, **H, **Hmelt, **tillphi; 
 
     PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
       till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
       till_mu  = tan((pi/180.0)*config.get("default_till_phi")),
       max_hmelt = config.get("max_hmelt");
 
-    ierr =    vMask.get_array(mask);    CHKERRQ(ierr);
+    ierr =    vMask.begin_access();    CHKERRQ(ierr);
     ierr =    vtauc.get_array(tauc);    CHKERRQ(ierr);
     ierr =       vH.get_array(H);       CHKERRQ(ierr);
     ierr =   vHmelt.get_array(Hmelt);   CHKERRQ(ierr);
@@ -262,7 +262,7 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
 
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+        if (vMask.is_floating(i,j)) {
           tauc[i][j] = 0.0;  
         } else if (H[i][j] == 0.0) {
           tauc[i][j] = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice

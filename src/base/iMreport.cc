@@ -33,14 +33,14 @@ PetscErrorCode IceModel::computeFlowUbarStats
 
   PetscErrorCode ierr;
 
-  PetscScalar **H, **ubar, **vbar, **mask;
+  PetscScalar **H, **ubar, **vbar;
   PetscScalar Ubarmax = 0.0, UbarSIAsum = 0.0, Ubarstreamsum = 0.0,
               Ubarshelfsum = 0.0, icecount = 0.0, SIAcount = 0.0, shelfcount = 0.0;
 
   ierr =    vH.get_array(H);    CHKERRQ(ierr);
   ierr = vubar.get_array(ubar); CHKERRQ(ierr);
   ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0.0) {
@@ -48,13 +48,13 @@ PetscErrorCode IceModel::computeFlowUbarStats
         const PetscScalar Ubarmag 
                            = sqrt(PetscSqr(ubar[i][j]) + PetscSqr(vbar[i][j]));
         Ubarmax = PetscMax(Ubarmax, Ubarmag);
-        if (PismIntMask(mask[i][j]) == MASK_SHEET) {
+        if (vMask.value(i,j) == MASK_SHEET) {
           SIAcount += 1.0;
           UbarSIAsum += Ubarmag;
-        } else if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+        } else if (vMask.is_floating(i,j)) {
           shelfcount += 1.0;
           Ubarshelfsum += Ubarmag;
-        } else if (PismIntMask(mask[i][j]) == MASK_DRAGGING) {
+        } else if (vMask.value(i,j) == MASK_DRAGGING) {
           // streamcount = icecount - SIAcount - shelfcount
           Ubarstreamsum += Ubarmag;
         } else {
@@ -115,11 +115,11 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
   // though slightly less efficient when used by summaryEismint, which has to look at vH anyway,
   //   it is clearer to have this obvious ability as a procedure
   PetscErrorCode  ierr;
-  PetscScalar     **H, **mask;
+  PetscScalar     **H;
   PetscScalar     volume=0.0, area=0.0, volSIA=0.0, volstream=0.0, volshelf=0.0;
   
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -127,9 +127,9 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
         area += a;
         const PetscScalar dv = a * H[i][j] * 1e-3;
         volume += dv;
-        if (PismIntMask(mask[i][j]) == MASK_SHEET)   volSIA += dv;
-        else if (PismIntMask(mask[i][j]) == MASK_DRAGGING)   volstream += dv;
-        else if (PismModMask(mask[i][j]) == MASK_FLOATING)   volshelf += dv;
+        if (vMask.value(i,j) == MASK_SHEET)   volSIA += dv;
+        else if (vMask.value(i,j) == MASK_DRAGGING)   volstream += dv;
+        else if (vMask.is_floating(i,j))   volshelf += dv;
       }
     }
   }  
@@ -606,12 +606,11 @@ PetscErrorCode IceModel::compute_taud(IceModelVec2 &result, IceModelVec2 &tmp) {
 //! \brief Sets entrues of result to corresponding processor ranks.
 PetscErrorCode IceModel::compute_rank(IceModelVec2 &result) {
   PetscErrorCode ierr;
-  PetscScalar **a;
 
-  ierr = result.get_array(a); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i)
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j)
-      a[i][j] = grid.rank;
+      result(i,j) = grid.rank;
   ierr = result.end_access();
 
   ierr = result.set_name("rank"); CHKERRQ(ierr);
@@ -662,19 +661,18 @@ PetscErrorCode IceModel::compute_hardav(IceModelVec2 &result) {
   
   const PetscScalar fillval = -1.0;
   
-  PetscScalar **hardav, **thk;
   PetscScalar *Tij; // columns of temperature values
   ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = vH.get_array(thk); CHKERRQ(ierr);
-  ierr = result.get_array(hardav); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
-      const PetscScalar H = thk[i][j];
+      const PetscScalar H = vH(i,j);
       if (H > 0.0) {
-        hardav[i][j] = ice->averagedHarness(H, grid.kBelowHeight(H), grid.zlevels, Tij);
+        result(i,j) = ice->averagedHarness(H, grid.kBelowHeight(H), grid.zlevels, Tij);
       } else { // put negative value below valid range
-        hardav[i][j] = fillval;
+        result(i,j) = fillval;
       }
     }
   }
@@ -829,25 +827,23 @@ PetscErrorCode IceModel::compute_tempsurf(IceModelVec2 &result) {
 
   // compute levels corresponding to 1 m below the ice surface:
 
-  PetscScalar **thk, **res;
-  ierr = vH.get_array(thk); CHKERRQ(ierr);
-  ierr = result.get_array(res); CHKERRQ(ierr);
+  PetscScalar **res;
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	res[i][j] = PetscMax(thk[i][j] - 1.0, 0.0);
+      result(i,j) = PetscMax(vH(i,j) - 1.0, 0.0);
     }
   }
   ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = T3.getSurfaceValues(result, result); CHKERRQ(ierr);  // z=0 slice
 
-  ierr = vH.get_array(thk); CHKERRQ(ierr);
-  ierr = result.get_array(res); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (thk[i][j] <= 1.0)
-	res[i][j] = fill_value;
+      if (vH(i,j) <= 1.0)
+	result(i,j) = fill_value;
     }
   }
   ierr = result.end_access(); CHKERRQ(ierr);
@@ -991,15 +987,14 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 //! Computes the ice volume, in m^3.
 PetscErrorCode IceModel::compute_ice_volume(PetscScalar &result) {
   PetscErrorCode ierr;
-  PetscScalar     **H;
   PetscScalar     volume=0.0;
   const PetscScalar a = grid.dx * grid.dy; // cell area
   
-  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (H[i][j] > 0) {
-        volume += a * H[i][j];
+      if (vH(i,j) > 0) {
+        volume += a * vH(i,j);
       }
     }
   }  
@@ -1012,14 +1007,13 @@ PetscErrorCode IceModel::compute_ice_volume(PetscScalar &result) {
 //! Computes ice area, in m^2.
 PetscErrorCode IceModel::compute_ice_area(PetscScalar &result) {
   PetscErrorCode ierr;
-  PetscScalar     **H;
   PetscScalar     area=0.0;
   const PetscScalar a = grid.dx * grid.dy; // cell area
   
-  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (H[i][j] > 0)
+      if (vH(i,j) > 0)
         area += a;
     }
   }  
@@ -1032,16 +1026,14 @@ PetscErrorCode IceModel::compute_ice_area(PetscScalar &result) {
 //! Computes grounded ice area, in m^2.
 PetscErrorCode IceModel::compute_ice_area_grounded(PetscScalar &result) {
   PetscErrorCode ierr;
-  PetscScalar     **H, **mask;
   PetscScalar     area=0.0;
   const PetscScalar a = grid.dx * grid.dy; // cell area
   
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
-  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ((H[i][j] > 0) &&
-	  ((PismIntMask(mask[i][j]) == MASK_SHEET) || (PismIntMask(mask[i][j]) == MASK_DRAGGING)))
+      if ( (vH(i,j) > 0) && vMask.is_grounded(i,j) )
         area += a;
     }
   }  
@@ -1055,15 +1047,14 @@ PetscErrorCode IceModel::compute_ice_area_grounded(PetscScalar &result) {
 //! Computes floating ice area, in m^2.
 PetscErrorCode IceModel::compute_ice_area_floating(PetscScalar &result) {
   PetscErrorCode ierr;
-  PetscScalar     **H, **mask;
   PetscScalar     area=0.0;
   const PetscScalar a = grid.dx * grid.dy; // cell area
   
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
-  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ((H[i][j] > 0) && (PismModMask(mask[i][j]) == MASK_FLOATING))
+      if ( (vH(i,j) > 0) && vMask.is_floating(i,j) )
         area += a;
     }
   }  
@@ -1152,7 +1143,7 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
 PetscErrorCode IceModel::ice_mass_bookkeeping() {
   PetscErrorCode ierr;
   IceModelVec2 *surface_mf, *subshelf_mf;
-  PetscScalar **thk, **acab, **bmr_grounded, **bmr_floating, **mask;
+  PetscScalar **thk, **acab, **bmr_grounded, **bmr_floating;
   PetscReal cell_area = grid.dx * grid.dy;
   PetscScalar my_total_surface_ice_flux, my_total_basal_ice_flux, my_total_sub_shelf_ice_flux;
 
@@ -1175,7 +1166,7 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
   ierr = subshelf_mf->get_array(bmr_floating); CHKERRQ(ierr);
   ierr = vbasalMeltRate.get_array(bmr_grounded); CHKERRQ(ierr);
   ierr = vH.get_array(thk); CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // ignore ice-free cells:
@@ -1186,13 +1177,12 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
       my_total_surface_ice_flux += acab[i][j]; // note the "+="!
 
       // add the sub-shelf melt rate;
-      if (PismIntMask(mask[i][j]) == MASK_FLOATING) {
+      if (vMask.value(i,j) == MASK_FLOATING) {
 	my_total_sub_shelf_ice_flux -= bmr_floating[i][j]; // note the "-="!
       }
 
       // add the basal melt rate:
-      if ( (PismIntMask(mask[i][j]) == MASK_SHEET) ||
-	   (PismIntMask(mask[i][j]) == MASK_DRAGGING) ) {
+      if (vMask.is_grounded(i,j)) {
 	my_total_basal_ice_flux -= bmr_grounded[i][j]; // note the "-="!
       }
 

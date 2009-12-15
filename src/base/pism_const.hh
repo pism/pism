@@ -37,21 +37,18 @@ const PetscScalar secpera    = 3.15569259747e7; // The constant used in UDUNITS
 						// (src/udunits/pismudunits.dat)
 const PetscScalar pi         = M_PI;		// defined in gsl/gsl_math.h
 
-
 // following numerical values have some significance; see updateSurfaceElevationAndMask()
 enum PismMask {
+  MASK_UNKNOWN = -1,
   MASK_SHEET = 1,
   MASK_DRAGGING = 2,
+  // all the floating mask values are strictly greater than the grounded ones;
+  // the criterion for floating is "mask >= MASK_FLOATING"
   MASK_FLOATING = 3,
-  // (PismModMask(mask[i][j]) == MASK_FLOATING) is criteria for floating; ..._OCEAN0 only used if -ocean_kill
   MASK_FLOATING_OCEAN0 = 7
 };
 
-// note no range checking in these two:
-static inline int PismIntMask(PetscScalar maskvalue) {
-  return static_cast<int>(floor(maskvalue + 0.5));
-}
-
+// FIXME: this should be removed
 static inline int PismModMask(PetscScalar maskvalue) {
   int intmask = static_cast<int>(floor(maskvalue + 0.5));
   if (intmask > MASK_FLOATING) {

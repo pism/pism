@@ -159,7 +159,7 @@ sliding case we have a CFL condition.
  */
 PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   PetscErrorCode ierr;
-  PetscScalar **ub, **vb, **mask;
+  PetscScalar **ub, **vb;
   PetscScalar locCFLmaxdt2D = config.get("maximum_time_step_years") * secpera;
 
   bool do_ocean_kill = config.get_flag("ocean_kill"),
@@ -168,14 +168,13 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
 
   ierr = vub.get_array(ub); CHKERRQ(ierr);
   ierr = vvb.get_array(vb); CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // the following conditionals, both -ocean_kill and -float_kill, are also applied in 
       //   IceModel::massContExplicitStep() when zeroing thickness
-      const bool ignorableOcean =
-          (   ( do_ocean_kill && (PismIntMask(mask[i][j]) == MASK_FLOATING_OCEAN0) )
-           || ( floating_ice_killed && (PismModMask(mask[i][j]) == MASK_FLOATING)  )  );
+      const bool ignorableOcean = ( do_ocean_kill && (vMask.value(i,j) == MASK_FLOATING_OCEAN0) )
+	|| ( floating_ice_killed && vMask.is_floating(i,j) );
       if (!ignorableOcean) {
         PetscScalar denom = PetscAbs(ub[i][j])/grid.dx + PetscAbs(vb[i][j])/grid.dy;
         denom += (0.01/secpera)/(grid.dx + grid.dy);  // make sure it's pos.

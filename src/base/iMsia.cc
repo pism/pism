@@ -363,7 +363,7 @@ See correctBasalFrictionalHeating() for the SSA contribution.
  */
 PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   PetscErrorCode  ierr;
-  PetscScalar **h_x[2], **h_y[2], **ub, **vb, **Rb, **mask, **H;
+  PetscScalar **h_x[2], **h_y[2], **ub, **vb, **Rb, **H;
 
   double mu_sliding = config.get("mu_sliding");
   double minimum_temperature_for_sliding = config.get("minimum_temperature_for_sliding");
@@ -376,14 +376,14 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   ierr = vub.get_array(ub); CHKERRQ(ierr);
   ierr = vvb.get_array(vb); CHKERRQ(ierr);
   ierr = vRb.get_array(Rb); CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = T3.begin_access(); CHKERRQ(ierr);
   
   for (PetscInt o=0; o<2; o++) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+        if (vMask.is_floating(i,j)) {
           ub[i][j] = 0.0;
           vb[i][j] = 0.0;
           Rb[i][j] = 0.0;

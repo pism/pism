@@ -353,7 +353,7 @@ PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **x,
                                         SSASNESNode **f, SSASNESCtx *ctx) {
   PetscErrorCode ierr;
 
-  PetscScalar **H, **mask, **tauc, **taudx, **taudy, **nu[2];
+  PetscScalar **H, **tauc, **taudx, **taudy, **nu[2];
   SSASNESNode **xBV;
   PetscInt xs, ys, xm, ym;
 
@@ -366,7 +366,7 @@ PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **x,
                     sc = dx * dy;
 
   ierr =     ctx->ctxH.get_array(H);     CHKERRQ(ierr);
-  ierr =  ctx->ctxMask.get_array(mask);  CHKERRQ(ierr);
+  ierr =  ctx->ctxMask.begin_access();   CHKERRQ(ierr);
   ierr =  ctx->ctxtauc.get_array(tauc);  CHKERRQ(ierr);
   ierr = ctx->ctxtaudx.get_array(taudx); CHKERRQ(ierr);
   ierr = ctx->ctxtaudy.get_array(taudy); CHKERRQ(ierr);
@@ -378,7 +378,7 @@ PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **x,
   for (PetscInt i=xs; i<xs+xm; i++) {
     for (PetscInt j=ys; j<ys+ym; j++) {
 
-      int maskval = PismIntMask(mask[i][j]);
+      PismMask maskval = ctx->ctxMask.value(i,j);
 
       if (maskval == MASK_SHEET) {
         // here we assign boundary values

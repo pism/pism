@@ -638,11 +638,11 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   ierr = pccsbmf->get_array(bmr_float);  CHKERRQ(ierr);
 
   // get other map-plane fields
-  PetscScalar  **H, **Ghf, **mask, **Hmelt, **Rb, **basalMeltRate;
+  PetscScalar  **H, **Ghf, **Hmelt, **Rb, **basalMeltRate;
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vHmelt.get_array(Hmelt); CHKERRQ(ierr);
   ierr = vbasalMeltRate.get_array(basalMeltRate); CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vRb.get_array(Rb); CHKERRQ(ierr);
   ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
 
@@ -727,7 +727,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
         const bool isMarginal = checkThinNeigh(H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
                                                H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
 
-        ierr = system.setSchemeParamsThisColumn(mask[i][j], isMarginal, lambda); CHKERRQ(ierr);
+        ierr = system.setSchemeParamsThisColumn(vMask.value(i,j), isMarginal, lambda); CHKERRQ(ierr);
 
         // set boundary values for tridiagonal system
         ierr = system.setSurfaceBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);
@@ -785,7 +785,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 
       // drain ice/rock interface (or base of ice shelf) segment
       if (ks > 0) {
-        if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+        if (vMask.is_floating(i,j)) {
           // if the ice is floating then mass and energy balance
           //   is the responsibility of the PISMOceanCoupler
           Enthnew[0] = Enth_shelfbase;
@@ -818,7 +818,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       // bottom of ice is top of bedrock when grounded, so
       //   bedrock value T(z=0) should match ice value T(z=0);
       //   when floating just match ocean temp provided by PISMOceanCoupler
-      if (PismModMask(mask[i][j]) == MASK_FLOATING) { // top of bedrock sees ocean
+      if (vMask.is_floating(i,j)) { // top of bedrock sees ocean
           Tbnew[k0] = Tshelfbase[i][j];
       } else {
         if (ks > 0) { // grounded ice present
@@ -834,7 +834,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       // FIXME:  and put energy back into melting
       if (fMbz > 1) {
         if (    (bulgeLimiterTripped)
-             || (    (PismModMask(mask[i][j]) != MASK_FLOATING)
+             || (    (!vMask.is_floating(i,j))
                   && (EC.isTemperate(Enthnew[0], p_basal )) ) ) {
           for (PetscInt k=0; k < fMbz; k++) {
             bedredosystem.T_b[k] = Tb[k];
@@ -875,7 +875,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       ierr = Tb3.setValColumnPL(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
 
       // basalMeltRate[][] is rate of mass loss from bottom of ice
-      if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+      if (vMask.is_floating(i,j)) {
         // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)
         basalMeltRate[i][j] = bmr_float[i][j]; // set by PISMOceanCoupler
       } else {
@@ -884,7 +884,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       }
 
       // finalize Hmelt value
-      if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+      if (vMask.is_floating(i,j)) {
         // if floating assume maximally saturated till
         // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
         Hmelt[i][j] = max_hmelt;
@@ -1111,14 +1111,14 @@ PetscErrorCode IceEnthalpyModel::updateYieldStressFromHmelt() {
   }
 
   if (holdTillYieldStress == PETSC_FALSE) { // usual case: use Hmelt to determine tauc
-    PetscScalar **mask, **tauc, **H, **Hmelt, **bmr, **tillphi; 
+    PetscScalar **tauc, **H, **Hmelt, **bmr, **tillphi; 
 
     PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
       till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
       till_mu = tan((pi/180.0)*config.get("default_till_phi")),
       max_hmelt = config.get("max_hmelt");
 
-    ierr =          vMask.get_array(mask);    CHKERRQ(ierr);
+    ierr =          vMask.begin_access();     CHKERRQ(ierr);
     ierr =          vtauc.get_array(tauc);    CHKERRQ(ierr);
     ierr =             vH.get_array(H);       CHKERRQ(ierr);
     ierr =         vHmelt.get_array(Hmelt);   CHKERRQ(ierr);
@@ -1126,7 +1126,7 @@ PetscErrorCode IceEnthalpyModel::updateYieldStressFromHmelt() {
     ierr =       vtillphi.get_array(tillphi); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+        if (vMask.is_floating(i,j)) {
           tauc[i][j] = 0.0;  
         } else if (H[i][j] == 0.0) {
           tauc[i][j] = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice

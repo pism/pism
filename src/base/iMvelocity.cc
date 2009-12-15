@@ -225,7 +225,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   const PetscScalar   dx = grid.dx, 
                       dy = grid.dy;
   const PetscInt      Mz = grid.Mz;
-  PetscScalar **ub, **vb, **basalMeltRate, **mask, **bed, **dbdt;
+  PetscScalar **ub, **vb, **basalMeltRate, **bed, **dbdt;
   PetscScalar *u, *v, *w;
 
   ierr = u3.begin_access(); CHKERRQ(ierr);
@@ -234,7 +234,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
 
   ierr = vub.get_array(ub); CHKERRQ(ierr);
   ierr = vvb.get_array(vb); CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vbed.get_array(bed); CHKERRQ(ierr);
   ierr = vuplift.get_array(dbdt); CHKERRQ(ierr);
   ierr = vbasalMeltRate.get_array(basalMeltRate); CHKERRQ(ierr);
@@ -249,7 +249,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
 
       PetscScalar dbdx = 0.0, dbdy = 0.0;
 
-      if (PismModMask(mask[i][j]) != MASK_FLOATING) {
+      if (!vMask.is_floating(i,j)) {
         // if grounded then basal kinematical equation gives w[0]
         // bed gradient needed if grounded; there is no reason to assume that the
         //   bed elevation has been periodized by the user

@@ -24,7 +24,7 @@
 
 #include "iceModelVec.hh"
 
-// this file contains methods for derived classes IceModelVec2
+// this file contains methods for derived classes IceModelVec2 and IceModelVec2Mask
 
 // methods for base class IceModelVec are in "iceModelVec.cc"
 
@@ -165,12 +165,12 @@ PetscErrorCode IceModelVec2::set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v
 //! Masks out all the areas where \f$ M \le 0 \f$ by setting them to \c fill. 
 PetscErrorCode IceModelVec2::mask_by(IceModelVec2 &M, PetscScalar fill) {
   PetscErrorCode ierr;
-  PetscScalar **mask, **a;
-  ierr = get_array(a);
-  ierr = M.get_array(mask);
+  PetscScalar **a;
+  ierr = get_array(a); CHKERRQ(ierr);
+  ierr = M.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      if (mask[i][j] <= 0.0)
+      if (M(i,j) <= 0.0)
 	a[i][j] = fill;
     }
   }
@@ -204,3 +204,31 @@ PetscErrorCode IceModelVec2::view(Vec g2, PetscInt viewer_size) {
   return 0;
 }
 
+//! Provides access (both read and write) to the internal PetscScalar array.
+/*!
+  Note that i corresponds to the x direction and j to the y.
+ */
+PetscScalar& IceModelVec2::operator() (int i, int j) {
+  PetscScalar **a = (PetscScalar**) array;
+  return a[i][j];
+}
+
+///// IceModelVec2Mask
+
+//! Returns the mask value; does not check ownership.
+PismMask IceModelVec2Mask::value(int i, int j) {
+  PetscScalar **a = (PetscScalar**) array;
+  return static_cast<PismMask>(floor(a[i][j] + 0.5));
+}
+
+bool IceModelVec2Mask::is_grounded(int i, int j) {
+  PismMask m = value(i, j);
+
+  return (m == MASK_SHEET) || (m == MASK_DRAGGING);
+}
+
+bool IceModelVec2Mask::is_floating(int i, int j) {
+  PismMask m = value(i, j);
+
+  return (m == MASK_FLOATING) || (m == MASK_FLOATING_OCEAN0);
+}

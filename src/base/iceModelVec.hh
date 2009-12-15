@@ -23,6 +23,7 @@
 #include "../udunits/udunits.h"
 #include "nc_util.hh"
 #include "NCVariable.hh"
+#include "pism_const.hh"
 
 #ifndef __IceModelVec_hh
 #define __IceModelVec_hh
@@ -142,8 +143,17 @@ public:
   virtual PetscErrorCode set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v_y);
   virtual PetscErrorCode mask_by(IceModelVec2 &M, PetscScalar fill = 0.0);
   virtual PetscErrorCode view(Vec g2, PetscInt viewer_size);
+  virtual PetscScalar& operator() (int i, int j);
 };
 
+//! \brief A simple class "hiding" the fact that the mask is stored as
+//! floating-point scalars (instead of integers).
+class IceModelVec2Mask : public IceModelVec2 {
+public:
+  PismMask value(int i, int j);	  // returns the mask value
+  bool is_grounded(int i, int j); // checks for MASK_SHEET || MASK_DRAGGING
+  bool is_floating(int i, int j); // checks for MASK_FLOATING || MASK_FLOATING_OCEAN0
+};
 
 //! Class for a 3d DA-based Vec for bedrock (lithosphere) scalar quantities in IceModel.
 class IceModelVec3Bedrock : public IceModelVec {

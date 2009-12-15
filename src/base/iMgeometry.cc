@@ -43,7 +43,7 @@ as global.  (I.e. we do not communicate ghosts.)
 PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2 &vtaudy) {
   PetscErrorCode ierr;
 
-  PetscScalar **h, **H, **mask, **bed, **taudx, **taudy;
+  PetscScalar **h, **H, **bed, **taudx, **taudy;
 
   const PetscScalar n       = ice->exponent(), // frequently n = 3
                     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
@@ -57,8 +57,8 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2
 
   ierr =    vh.get_array(h);    CHKERRQ(ierr);
   ierr =    vH.get_array(H);    CHKERRQ(ierr);
-  ierr =  vbed.get_array(bed);    CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr =  vbed.get_array(bed);  CHKERRQ(ierr);
+  ierr = vMask.begin_access();  CHKERRQ(ierr);
 
   ierr = vtaudx.get_array(taudx); CHKERRQ(ierr);
   ierr = vtaudy.get_array(taudy); CHKERRQ(ierr);
@@ -72,8 +72,7 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2
       } else {
         PetscScalar h_x = 0.0, h_y = 0.0;
         bool edge = ((i == 0) || (i == Mx-1) || (j == 0) || (j == My-1));
-        if ( ( (PismIntMask(mask[i][j]) == MASK_SHEET)
-                || (PismIntMask(mask[i][j]) == MASK_DRAGGING) )
+        if ( vMask.is_grounded(i,j)
              && (transformForSurfaceGradient == PETSC_TRUE)
              && (!edge)                                     ) {
           // in grounded case, differentiate eta = H^{8/3} by chain rule
@@ -151,8 +150,6 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   ierr = oceanPCC->updateSeaLevelElevation(grid.year, dt / secpera,
 					   &currentSeaLevel); CHKERRQ(ierr);
 
-  const int MASK_GROUNDED_TO_DETERMINE = 999;
-
   bool is_dry_simulation = config.get_flag("is_dry_simulation"),
     do_plastic_till = config.get_flag("do_plastic_till"),
     use_ssa_velocity = config.get_flag("use_ssa_velocity");
@@ -178,7 +175,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
         // Don't update mask; potentially one would want to do SSA
         //   dragging ice shelf in dry case and/or ignore mean sea level elevation.
         h[i][j] = hgrounded;
-      } else if (PismIntMask(mask[i][j]) == MASK_FLOATING_OCEAN0) {
+      } else if (vMask.value(i,j) == MASK_FLOATING_OCEAN0) {
         // mask takes priority over bed in this case (note sea level may change).
         // Example Greenland case: if mask say Ellesmere is OCEAN0,
         //   then never want ice on Ellesmere.
@@ -187,7 +184,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
         // Almost always the next line is equivalent to h[i][j] = 0.
         h[i][j] = hfloating;  // ignore bed and treat it like deep ocean
       } else {
-        if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+        if (vMask.is_floating(i,j)) {
           // check whether you are actually floating or grounded
           if (hgrounded > hfloating+1.0) {
             h[i][j] = hgrounded; // actually grounded so update h
@@ -198,7 +195,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
                 mask[i][j] = MASK_DRAGGING;
               } else {
                 // we do not know how to set this point, which just became grounded
-                mask[i][j] = MASK_GROUNDED_TO_DETERMINE;
+                mask[i][j] = MASK_UNKNOWN;
               }
             } else {
               // we do not have any ice handled by SSA, so it must be SHEET
@@ -225,9 +222,10 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
         // deal with the confusing case, which is when it is grounded,
         //   it was marked FLOATING, and the user wants some SIA points
         //   and some SSA points
-        if (PismIntMask(mask[i][j]) == MASK_GROUNDED_TO_DETERMINE) {
+        if (vMask.value(i,j) == MASK_UNKNOWN) {
           // determine type of grounded ice by vote-by-neighbors
           //   (BOX stencil neighbors!):
+	  // FIXME: this should be made clearer
           const PetscScalar neighmasksum = 
                 PismModMask(mask[i-1][j+1]) + PismModMask(mask[i][j+1]) + PismModMask(mask[i+1][j+1]) +
                 PismModMask(mask[i-1][j])   +                           + PismModMask(mask[i+1][j])  +
@@ -332,7 +330,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
 
   PetscScalar **H, **Hnew, **uvbar[2], **ubarssa, **vbarssa, **ub, **vb,
-              **accum, **bmr_gnded, **bmr_float, **mask;
+    **accum, **bmr_gnded, **bmr_float;
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vbasalMeltRate.get_array(bmr_gnded); CHKERRQ(ierr);
@@ -344,7 +342,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = pccsbmf->get_array(bmr_float); CHKERRQ(ierr);
   ierr = vubarSSA.get_array(ubarssa); CHKERRQ(ierr);
   ierr = vvbarSSA.get_array(vbarssa); CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vMask.begin_access();  CHKERRQ(ierr);
   ierr = vHnew.get_array(Hnew); CHKERRQ(ierr);
 
   PetscScalar icecount = 0.0;
@@ -358,7 +356,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
       //    compare broadcastSSAVelocity(); note uvbar[o] is SIA result:
       //    uvbar[0] H = - D h_x
       PetscScalar He, Hw, Hn, Hs;
-      if ( do_superpose && (PismModMask(mask[i][j]) == MASK_DRAGGING) ) {
+      if ( do_superpose && (vMask.value(i,j) == MASK_DRAGGING) ) {
         const PetscScalar
           fv  = 1.0 - outC_fofv * atan( inC_fofv *
                       ( PetscSqr(ubarssa[i][j]) + PetscSqr(vbarssa[i][j]) ) ),
@@ -403,7 +401,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
       Hnew[i][j] += (accum[i][j] - divQ) * dt; // include M
 
       if (include_bmr_in_continuity) { // include S
-        if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+        if (vMask.is_floating(i,j)) {
            Hnew[i][j] -= bmr_float[i][j] * dt;
         } else {
            Hnew[i][j] -= bmr_gnded[i][j] * dt;
@@ -419,12 +417,12 @@ PetscErrorCode IceModel::massContExplicitStep() {
       
       // force zero thickness at points which were originally ocean (if "-ocean_kill");
       //   this is calving at original calving front location
-      if ( do_ocean_kill && (PismIntMask(mask[i][j]) == MASK_FLOATING_OCEAN0) )
+      if ( do_ocean_kill && (vMask.value(i,j) == MASK_FLOATING_OCEAN0) )
         Hnew[i][j] = 0.0;
 
       // force zero thickness at points which are floating (if "-float_kill");
       //   this is calving at grounding line
-      if ( floating_ice_killed && (PismModMask(mask[i][j]) == MASK_FLOATING) )
+      if ( floating_ice_killed && vMask.is_floating(i,j) )
         Hnew[i][j] = 0.0;
 
     } // end of the inner for loop

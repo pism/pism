@@ -29,7 +29,7 @@ public:
   PetscErrorCode initAllColumns();
   PetscErrorCode setIndicesThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
   PetscErrorCode setSchemeParamsThisColumn(
-                     PetscScalar my_mask, bool my_isMarginal, PetscScalar my_lambda);  
+                     PismMask my_mask, bool my_isMarginal, PetscScalar my_lambda);  
   PetscErrorCode setSurfaceBoundaryValuesThisColumn(PetscScalar my_Enth_surface);
   PetscErrorCode setBasalBoundaryValuesThisColumn(
                      PetscScalar my_Ghf, PetscScalar my_Enth_shelfbase, PetscScalar my_Rb);
@@ -64,7 +64,8 @@ public:
 protected: // used internally
   PetscInt    Mz, Mbz, k0;
   PetscInt    i, j, ks;
-  PetscScalar mask, lambda, Enth_ks, Ghf, Enth_shelfbase, Rb;
+  PetscScalar lambda, Enth_ks, Ghf, Enth_shelfbase, Rb;
+  PismMask    mask;
   bool        isMarginal;
   PetscScalar nuEQ,
               dzav,

@@ -219,7 +219,7 @@ PetscErrorCode IceModel::temperatureStep(
   ierr = system.initAllColumns(); CHKERRQ(ierr);
 
   // now get map-plane fields, starting with coupler fields
-  PetscScalar  **Ts, **Tshelfbase, **H, **Ghf, **mask, **Hmelt, **Rb,
+  PetscScalar  **Ts, **Tshelfbase, **H, **Ghf, **Hmelt, **Rb,
                **basalMeltRate, **bmr_float;
 
   IceModelVec2 *pccTs, *pccsbt, *pccsbmf;
@@ -248,7 +248,7 @@ PetscErrorCode IceModel::temperatureStep(
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vHmelt.get_array(Hmelt); CHKERRQ(ierr);
   ierr = vbasalMeltRate.get_array(basalMeltRate); CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vRb.get_array(Rb); CHKERRQ(ierr);
   ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
 
@@ -309,7 +309,7 @@ PetscErrorCode IceModel::temperatureStep(
         //   and strain heating if isMarginal
         const bool isMarginal = checkThinNeigh(H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
                                                H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
-        ierr = system.setSchemeParamsThisColumn(mask[i][j], isMarginal, lambda);
+        ierr = system.setSchemeParamsThisColumn(vMask.value(i,j), isMarginal, lambda);
                  CHKERRQ(ierr);  
 
         // set boundary values for tridiagonal system
@@ -368,8 +368,8 @@ PetscErrorCode IceModel::temperatureStep(
         if (Tnew[k] < globalMinAllowedTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
               "  [[too low (<200) ice segment temp T = %f at %d,%d,%d;"
-              " proc %d; mask=%f; w=%f]]\n",
-              Tnew[k],i,j,k,grid.rank,mask[i][j],system.w[k]*secpera); CHKERRQ(ierr);
+              " proc %d; mask=%d; w=%f]]\n",
+			      Tnew[k],i,j,k,grid.rank,vMask.value(i,j),system.w[k]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
         if (Tnew[k] < Ts[i][j] - bulgeMax) {
@@ -383,7 +383,7 @@ PetscErrorCode IceModel::temperatureStep(
         } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
           const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * H[i][j];
           PetscScalar Texcess = x[k0] - Tpmp; // positive or negative
-          if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+          if (vMask.is_floating(i,j)) {
              // when floating, only half a segment has had its temperature raised
              // above Tpmp
              excessToFromBasalMeltLayer(rho_c_I/2, 0.0, fdz, &Texcess, &Hmeltnew);
@@ -398,8 +398,8 @@ PetscErrorCode IceModel::temperatureStep(
         if (Tnew[0] < globalMinAllowedTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
               "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
-              " proc %d; mask=%f; w=%f]]\n",
-              Tnew[0],i,j,grid.rank,mask[i][j],system.w[0]*secpera); CHKERRQ(ierr);
+              " proc %d; mask=%d; w=%f]]\n",
+              Tnew[0],i,j,grid.rank,vMask.value(i,j),system.w[0]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
         if (Tnew[0] < Ts[i][j] - bulgeMax) {
@@ -412,7 +412,7 @@ PetscErrorCode IceModel::temperatureStep(
       if (ks > 0) {
         Tbnew[k0] = Tnew[0];
       } else {
-        if (PismModMask(mask[i][j]) == MASK_FLOATING) { // top of bedrock sees ocean
+        if (vMask.is_floating(i,j)) { // top of bedrock sees ocean
           Tbnew[k0] = Tshelfbase[i][j]; // set by PISMOceanCoupler
         } else { // top of bedrock sees atmosphere
           Tbnew[k0] = Ts[i][j];
@@ -423,8 +423,8 @@ PetscErrorCode IceModel::temperatureStep(
         if (Tbnew[k] < globalMinAllowedTemp) {
            ierr = PetscPrintf(PETSC_COMM_SELF,
               "  [[too low (<200) bedrock segment temp T = %f at %d,%d,%d;"
-              " proc %d; mask=%f]]\n",
-              Tbnew[k],i,j,k,grid.rank,mask[i][j]); CHKERRQ(ierr);
+              " proc %d; mask=%d]]\n",
+              Tbnew[k],i,j,k,grid.rank,vMask.value(i,j)); CHKERRQ(ierr);
            myLowTempCount++;
         }
         if (Tbnew[k] < Ts[i][j] - bulgeMax) {
@@ -444,7 +444,7 @@ PetscErrorCode IceModel::temperatureStep(
 
       // basalMeltRate[][] is rate of mass loss at bottom of ice everywhere;
       //   note massContExplicitStep() calls PISMOceanCoupler separately
-      if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+      if (vMask.is_floating(i,j)) {
         // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)
         basalMeltRate[i][j] = bmr_float[i][j]; // set by PISMOceanCoupler
       } else {
@@ -453,7 +453,7 @@ PetscErrorCode IceModel::temperatureStep(
         basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / dtTempAge;
       }
 
-      if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+      if (vMask.is_floating(i,j)) {
         // if floating assume maximally saturated till
         Hmelt[i][j] = max_hmelt;
       } else {

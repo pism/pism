@@ -48,11 +48,11 @@ struct SSASNESCtx {
   IceGrid          *grid;
   IceBasalResistancePlasticLaw *basal;
   IceModelVec2     ctxH,
-                   ctxMask,
                    ctxtauc,
                    ctxtaudx,
                    ctxtaudy,
                    ctxNu[2];
+  IceModelVec2Mask ctxMask;
   Vec              ctxBV;
   PetscScalar      schoofReg,
                    constantHardness;
@@ -175,13 +175,14 @@ protected:
         vLatitude,	//!< Latitude 
         vbed,		//!< bed topography
         vuplift,	//!< bed uplift rate
-        vMask,		//!< mask for flow type with values SHEET, DRAGGING, FLOATING
         vGhf,		//!< geothermal flux
         vRb,		//!< basal frictional heating on regular grid
         vtillphi,	//!< friction angle for till under grounded ice sheet
         vuvbar[2],	//!< ubar and vbar on staggered grid; ubar at i+1/2, vbar at j+1/2
         vub, vvb,	//!< basal velocities on standard grid
         vubar, vvbar;	//!< vertically-averaged horizontal velocity on standard grid
+
+  IceModelVec2Mask vMask; //!< mask for flow type with values SHEET, DRAGGING, FLOATING
 
   IceModelVec3
         u3, v3, w3,	//!< velocity of ice; m s-1

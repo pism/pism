@@ -353,7 +353,7 @@ PetscScalar IceCompModel::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
 
 PetscErrorCode IceCompModel::initTestABCDEH() {
   PetscErrorCode  ierr;
-  PetscScalar     A0, T0, **H, **accum, **mask, dummy1, dummy2, dummy3;
+  PetscScalar     A0, T0, **H, **accum, dummy1, dummy2, dummy3;
   const PetscScalar LforAE = 750e3; // m
 
   // need pointers to surface temp and accum, from PISMAtmosphereCoupler atmosPCC*
@@ -382,7 +382,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   if ((testname == 'A') || (testname == 'E')) {
-    ierr = vMask.get_array(mask); CHKERRQ(ierr);
+    ierr = vMask.begin_access(); CHKERRQ(ierr);
   }
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -392,7 +392,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
         case 'A':
           exactA(r,&H[i][j],&accum[i][j]);
           if (r >= LforAE)
-            mask[i][j] = MASK_FLOATING_OCEAN0;
+            vMask(i,j) = MASK_FLOATING_OCEAN0;
           break;
         case 'B':
           exactB(grid.year*secpera,r,&H[i][j],&accum[i][j]);
@@ -406,7 +406,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
         case 'E':
           exactE(xx,yy,&H[i][j],&accum[i][j],&dummy1,&dummy2,&dummy3);
           if (r >= LforAE)
-            mask[i][j] = MASK_FLOATING_OCEAN0;
+            vMask(i,j) = MASK_FLOATING_OCEAN0;
           break;
         case 'H':
           exactH(f,grid.year*secpera,r,&H[i][j],&accum[i][j]);

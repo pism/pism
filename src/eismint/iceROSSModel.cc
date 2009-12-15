@@ -251,10 +251,10 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
   PetscErrorCode  ierr;
   PetscScalar  uerr=0.0, verr=0.0, relvecerr=0.0, accN=0.0, 
                accArea=0.0, maxcComputed=0.0, vecErrAcc = 0.0;
-  PetscScalar  **azi, **mag, **acc, **ubar, **vbar, **H, **mask;
+  PetscScalar  **azi, **mag, **acc, **ubar, **vbar, **H;
   
   const PetscScalar area = grid.dx * grid.dy;
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = obsAzimuth.get_array(azi); CHKERRQ(ierr);    
   ierr = obsMagnitude.get_array(mag); CHKERRQ(ierr);    
@@ -263,7 +263,7 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
   ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-     if ((PismModMask(mask[i][j]) == MASK_FLOATING) && (H[i][j] > 1.0)) {
+      if (vMask.is_floating(i,j) && (H[i][j] > 1.0)) {
         const PetscScalar ccomputed = sqrt(PetscSqr(vbar[i][j]) + PetscSqr(ubar[i][j]));
         maxcComputed = PetscMax(maxcComputed,ccomputed);
         if (PetscAbs(acc[i][j] - 1.0) < 0.1) {
@@ -355,13 +355,13 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
 	udata(&grid, "riggsu", "count"),
 	vdata(&grid, "riggsv", "count");
       PetscInt    len;
-      PetscScalar **ubar, **vbar, **clat, **clon, **mask;
+      PetscScalar **ubar, **vbar, **clat, **clon;
 
       ierr = vLongitude.get_array(clon); CHKERRQ(ierr);
       ierr =  vLatitude.get_array(clat); CHKERRQ(ierr);
       ierr = vubar.get_array(ubar); CHKERRQ(ierr);
       ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
-      ierr = vMask.get_array(mask); CHKERRQ(ierr);
+      ierr = vMask.begin_access();  CHKERRQ(ierr);
 
       ierr = magdata.set_units("m year-1", ""); CHKERRQ(ierr);
       ierr =   udata.set_units("m year-1", ""); CHKERRQ(ierr);
@@ -400,7 +400,7 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
           ierr = verbPrintf(4,PETSC_COMM_SELF,
                  " PISM%d[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
                  grid.rank,k,clat[ci][cj],clon[ci][cj],cmag,cu,cv); CHKERRQ(ierr); 
-          if (PismIntMask(mask[ci][cj]) == MASK_FLOATING) {
+          if (vMask.value(ci,cj) == MASK_FLOATING) {
             goodptcount += 1.0;
             ChiSqr += PetscSqr(u-cu)+PetscSqr(v-cv);
           }

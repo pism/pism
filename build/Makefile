@@ -20,7 +20,7 @@ endif
 DISPLAY = :0.0
 
 # Get PETSc environment and rules:
-PETSC3_BASE := $(wildcard ${PETSC_DIR}conf/base)
+PETSC3_BASE := $(wildcard ${PETSC_DIR}/conf/base)
 # PETSC3_BASE is empty string if not 3.0.0
 ifeq ($(strip $(PETSC3_BASE)),) 
   # include file which is only present in 2.3.3 and earlier

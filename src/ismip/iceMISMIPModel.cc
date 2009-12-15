@@ -644,18 +644,18 @@ PetscErrorCode IceMISMIPModel::calving() {
   //    maintain thickness at calving front in range [100m,200m]
   // front will not advance beyond calving_front=1600km above
   PetscErrorCode ierr;
-  PetscScalar    **mask, **H;
+  PetscScalar    **H;
 
   ierr = verbPrintf(2,grid.com,"\nIceMISMIPModel: ad hoc calving ...\n"); CHKERRQ(ierr);
 
   const PetscScalar calving_thk_min = 100.0, calving_thk_max = 200.0; // meters
 
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (PismModMask(mask[i][j]) == MASK_FLOATING) {
+      if (vMask.is_floating(i,j)) {
         if (H[i][j] < calving_thk_min) {
           H[i][j] = 0.0;
         } else if ( (H[i][j] == 0.0) && 
@@ -877,7 +877,7 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
 PetscErrorCode IceMISMIPModel::getRoutineStats() {
   PetscErrorCode  ierr;
 
-  PetscScalar     **mask, **H, **vbar;
+  PetscScalar     **H, **vbar;
 
   // these are in MKS; sans "g" are local to the processor; with "g" are global 
   //   across all processors; we only evaluate for x > 0
@@ -885,7 +885,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
                   Ngrounded = 0.0, Nfloating = 0.0;
   PetscScalar     gavubargrounded, gavubarfloating, gjg;
 
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -897,8 +897,8 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
       // grounding line xg is largest  y  so that  mask[i][j] != FLOATING
       //       and mask[i][j+1] == FLOATING
       if ( (jfrom0 > 0.0) && (H[i][j] > 0.0) 
-           && (PismModMask(mask[i][j]) != MASK_FLOATING)
-           && (PismModMask(mask[i][j+1]) == MASK_FLOATING) ) {
+           && (!vMask.is_floating(i,j))
+	   &&   vMask.is_floating(i,j+1) ) {
         // NOTE !!!!:   y  REPLACES   x   FOR VIEWING CONVENIENCE!
         jg = PetscMax(jg,static_cast<PetscScalar>(j));
       }
@@ -906,7 +906,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
       if ((jfrom0 > 0) && (H[i][j] > 0.0)) {
         // NOTE !!!!:   y  REPLACES   x   FOR VIEWING CONVENIENCE!
         if (vbar[i][j] > maxubar)  maxubar = vbar[i][j];
-        if (PismModMask(mask[i][j]) != MASK_FLOATING) {
+        if (!vMask.is_floating(i,j)) {
           Ngrounded += 1.0;
           avubargrounded += vbar[i][j];
         } else {
