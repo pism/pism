@@ -274,11 +274,6 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
 
   ierr = verbPrintf(3,grid.com, "initializing Test %c from formulas ...\n",testname);  CHKERRQ(ierr);
 
-  // none use Goldsby-Kohlstedt or do age calc
-
-  // set the initial age of the ice:
-  tau3.set(config.get("initial_age_of_ice_years") * secpera);
-
   // all have no uplift or Hmelt
   ierr = vuplift.set(0.0); CHKERRQ(ierr);
   ierr = vHmelt.set(0.0); CHKERRQ(ierr);

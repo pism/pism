@@ -196,8 +196,6 @@ PetscErrorCode IceExactSSAModel::set_vars_from_options() {
   ierr =  T3.set(T0); CHKERRQ(ierr);
   ierr = Tb3.set(T0); CHKERRQ(ierr);
 
-  ierr = tau3.set(0.0); CHKERRQ(ierr);  // age (not yield stress)
-
   // set initial velocities (for start of iteration)
   ierr = vubar.set(0.0); CHKERRQ(ierr);
   ierr = vvbar.set(0.0); CHKERRQ(ierr);

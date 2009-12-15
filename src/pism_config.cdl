@@ -348,7 +348,7 @@ netcdf pism_config {
     pism_config:slice_level_doc = "meters; level (in meters above the base of ice) used in slice viewers";
 
 // Strings:
-    pism_config:output_variables = "age bheatflx bwat bwp dbdt lat litho_temp lon mask rank temp thk tillphi topg usurf dHdt dhdt cbar cflx cbase csurf wvelsurf taud tauc hardav";
+    pism_config:output_variables = "bheatflx bwat bwp dbdt lat litho_temp lon mask rank temp thk tillphi topg usurf dHdt dhdt cbar cflx cbase csurf wvelsurf taud tauc hardav";
     pism_config:output_variables_doc = "Space-separated list of variables to save in an output file (does not include fields written by couplers)";
     pism_config:ts_variables = "dt ivol imass iarea iareag iareaf divoldt dimassdt total_surface_ice_flux total_basal_ice_flux total_sub_shelf_ice_flux";
     pism_config:ts_variables_doc = "Space-separated list of scalar diagnostic quantities to save if -ts_file and -ts_times are used.";

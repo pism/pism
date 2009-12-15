@@ -216,15 +216,21 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr =     w3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr = Sigma3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =     T3.extend_vertically(old_Mz, *pccTs); CHKERRQ(ierr);
-  ierr =   tau3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
 
   // Work 3D vectors:
   ierr =         Tnew3.extend_vertically(old_Mz, *pccTs); CHKERRQ(ierr);
-  ierr =       taunew3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr = Sigmastag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr = Sigmastag3[1].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =     Istag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =     Istag3[1].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+
+  // deal with 3D age conditionally
+  PetscTruth ageSet;
+  ierr = check_option("-age", ageSet); CHKERRQ(ierr);
+  if (ageSet==PETSC_TRUE) {
+    ierr = tau3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+    ierr = taunew3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+  }
 
   return 0;
 }

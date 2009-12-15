@@ -125,9 +125,6 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
   ierr = vHmelt.set(0.0);
   ierr = vGhf.set(G_geothermal);
 
-  // set the initial age of the ice:
-  tau3.set(config.get("initial_age_of_ice_years") * secpera);
-
   ierr = vMask.set(MASK_SHEET);
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
 

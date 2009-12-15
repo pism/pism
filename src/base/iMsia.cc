@@ -193,7 +193,16 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
   PetscScalar *Tij, *Toffset, *ageij, *ageoffset;
 
-  const bool usetau3 = (IceFlowLawUsesGrainSize(ice) && (realAgeForGrainSize == PETSC_TRUE));
+  PetscTruth ageSet;
+  ierr = check_option("-age", ageSet); CHKERRQ(ierr);
+  if ((realAgeForGrainSize==PETSC_TRUE) && (ageSet!=PETSC_TRUE)) {
+    PetscPrintf(grid.com,
+       "PISM ERROR in IceModel::velocitySIAStaggered(): -age not set but age is needed for grain-size-based flow law\n"
+       "ENDING! ...\n\n");
+    PetscEnd();
+  }
+
+  const bool usetau3 = (IceFlowLawUsesGrainSize(ice) && (realAgeForGrainSize==PETSC_TRUE) && (ageSet==PETSC_TRUE));
 
   const PetscTruth usesGrainSize = IceFlowLawUsesGrainSize(ice);
   
@@ -258,8 +267,8 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           I[0] = 0;   J[0] = 0;   K[0] = 0;
           for (PetscInt k=0; k<=ks; ++k) {
             const PetscScalar   pressure = ice->rho * standard_gravity * (thickness - grid.zlevels[k]);
-            PetscScalar flow,grainsize = constant_grain_size;
-            if (usesGrainSize && realAgeForGrainSize) {
+            PetscScalar flow, grainsize = constant_grain_size;
+            if (usetau3 && usesGrainSize && realAgeForGrainSize) {
               grainsize = grainSizeVostok(0.5 * (ageij[k] + ageoffset[k]));
             }
             // If the flow law does not use grain size, it will just ignore it, no harm there

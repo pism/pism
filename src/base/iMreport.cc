@@ -145,30 +145,26 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
 
 
 /*!
-Computes fraction of the base which is melted, fraction of the ice which is as 
-old as the start of the run (original), and the ice basal temperature at the
+Computes fraction of the base which is melted and the ice basal temperature at the
 center of the ice sheet.
 
 Communication occurs here.
  */
-PetscErrorCode IceModel::energyAgeStats(
-                    PetscScalar ivol, PetscScalar iarea, bool useHomoTemp, 
-                    PetscScalar &gmeltfrac, PetscScalar &gtemp0, PetscScalar &gorigfrac) {
+PetscErrorCode IceModel::energyStats(PetscScalar iarea, bool useHomoTemp, 
+                                     PetscScalar &gmeltfrac, PetscScalar &gtemp0) {
   PetscErrorCode  ierr;
-  PetscScalar     **H, **Tbase, *tau;
-  PetscScalar     meltarea, temp0, origvol;
-  
-  // put basal ice temperature in vWork2d[0]
-  ierr = T3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
-  ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = vWork2d[0].get_array(Tbase); CHKERRQ(ierr);
-  ierr = tau3.begin_access(); CHKERRQ(ierr);
+  PetscScalar     **H, **Tbase;
+  PetscScalar     meltarea, temp0;
 
   const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
-  const PetscScalar   currtime = grid.year * secpera;
+  
+  // put basal ice temperature in vWork2d[0]
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = T3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
+  ierr = vWork2d[0].get_array(Tbase); CHKERRQ(ierr);
 
   double min_temperature_for_SIA_sliding = config.get("minimum_temperature_for_sliding");
-  meltarea = 0.0; temp0 = 0.0; origvol = 0.0;
+  meltarea = 0.0; temp0 = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0) {
@@ -180,14 +176,6 @@ PetscErrorCode IceModel::energyAgeStats(
           if (Tbase[i][j] >= ice->meltingTemp)
             meltarea += a;
         }
-        // accumulate volume of ice which is original
-        ierr = tau3.getInternalColumn(i,j,&tau); CHKERRQ(ierr);
-        const PetscInt  ks = grid.kBelowHeight(H[i][j]);
-        for (PetscInt k=1; k<=ks; k++) {
-          // ice is original if it is at least one year older than current time
-          if (0.5*(tau[k-1]+tau[k]) > currtime + secpera)
-            origvol += a * 1.0e-3 * (grid.zlevels[k] - grid.zlevels[k-1]);
-        }
       }
       // if you happen to be at center, record basal temp
       if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
@@ -198,17 +186,65 @@ PetscErrorCode IceModel::energyAgeStats(
   
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-  ierr = tau3.end_access(); CHKERRQ(ierr);
 
+  // communication
   ierr = PetscGlobalSum(&meltarea, &gmeltfrac, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&origvol,  &gorigfrac, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&temp0,    &gtemp0,    grid.com); CHKERRQ(ierr);
 
-  // normalize fractions correctly
-  if (ivol > 0.0)    gorigfrac = gorigfrac / ivol;
-  else gorigfrac = 0.0;
+  // normalize fraction correctly
   if (iarea > 0.0)   gmeltfrac = gmeltfrac / iarea;
   else gmeltfrac = 0.0;
+
+  return 0;
+}
+
+
+/*!
+Computes fraction of the ice which is as old as the start of the run (original).
+Communication occurs here.
+ */
+PetscErrorCode IceModel::ageStats(PetscScalar ivol, PetscScalar &gorigfrac) {
+  PetscErrorCode  ierr;
+
+  gorigfrac = -1.0;  // result value if not -age
+
+  PetscTruth ageSet;
+  ierr = check_option("-age", ageSet); CHKERRQ(ierr);
+  if (ageSet!=PETSC_TRUE)
+    return 0;  // leave now
+
+  const PetscScalar  a = grid.dx * grid.dy * 1e-3 * 1e-3, // area unit (km^2)
+                     currtime = grid.year * secpera; // seconds
+
+  PetscScalar **H, *tau, origvol = 0.0;
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = tau3.begin_access(); CHKERRQ(ierr);
+
+  // compute local original volume
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (H[i][j] > 0) {
+        // accumulate volume of ice which is original
+        ierr = tau3.getInternalColumn(i,j,&tau); CHKERRQ(ierr);
+        const PetscInt  ks = grid.kBelowHeight(H[i][j]);
+        for (PetscInt k=1; k<=ks; k++) {
+          // ice in segment is original if it is as old as one year less than current time
+          if (0.5*(tau[k-1]+tau[k]) > currtime - secpera)
+            origvol += a * 1.0e-3 * (grid.zlevels[k] - grid.zlevels[k-1]);
+        }
+      }
+    }
+  }
+
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = tau3.end_access(); CHKERRQ(ierr);
+
+  // communicate to turn into global original fraction
+  ierr = PetscGlobalSum(&origvol,  &gorigfrac, grid.com); CHKERRQ(ierr);
+
+  // normalize fraction correctly
+  if (ivol > 0.0)    gorigfrac = gorigfrac / ivol;
+  else gorigfrac = 0.0;
 
   return 0;
 }
@@ -238,8 +274,13 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   ierr = PetscGlobalMax(&divideH, &gdivideH, grid.com); CHKERRQ(ierr);
 
   if (tempAndAge || (getVerbosityLevel() >= 3)) {
-    ierr = energyAgeStats(gvolume, garea, useHomoTemp, 
-                               meltfrac, gdivideT, origfrac); CHKERRQ(ierr);
+    ierr = energyStats(garea, useHomoTemp, meltfrac, gdivideT); CHKERRQ(ierr);
+  }
+
+  PetscTruth ageSet;
+  ierr = check_option("-age", ageSet); CHKERRQ(ierr);
+  if ((tempAndAge || (getVerbosityLevel() >= 3)) && (ageSet==PETSC_TRUE)) {
+    ierr = ageStats(gvolume, origfrac); CHKERRQ(ierr);
   }
 
   // report CFL violations is there are enough
@@ -302,9 +343,11 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
         ierr = PetscPrintf(grid.com,            "%10.3f,%10.3f, %9.3f\n",
         gmaxu*secpera, gmaxv*secpera, gmaxw*secpera); CHKERRQ(ierr);
       }
-      ierr = PetscPrintf(grid.com, 
+      if (ageSet==PETSC_TRUE) {
+        ierr = PetscPrintf(grid.com, 
            "  fraction of ice which is original: %9.3f\n",
                          origfrac); CHKERRQ(ierr);
+      }
     }
   }
   return 0;

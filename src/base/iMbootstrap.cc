@@ -105,8 +105,15 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   // set mask and h; tell user what happened:
   ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
 
-  // set the initial age of the ice:
-  tau3.set(config.get("initial_age_of_ice_years") * secpera);
+  // set the initial age of the ice if appropriate
+  PetscTruth ageSet;
+  ierr = check_option("-age", ageSet); CHKERRQ(ierr);
+  if (ageSet==PETSC_TRUE) {
+    ierr = verbPrintf(2, grid.com, 
+      "  option -age seen ... setting initial age to %.4f years\n", config.get("initial_age_of_ice_years"));
+      CHKERRQ(ierr);
+    tau3.set(config.get("initial_age_of_ice_years") * secpera);
+  }
   
   ierr = verbPrintf(2, grid.com, 
      "  filling in ice and bedrock temperatures using surface temperatures and quartic guess\n");

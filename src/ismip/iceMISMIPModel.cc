@@ -474,9 +474,6 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   ierr = vHmelt.set(0.0); CHKERRQ(ierr);
   // none use Goldsby-Kohlstedt or do age calc
 
-  // set the initial age of the ice:
-  tau3.set(config.get("initial_age_of_ice_years") * secpera);
-
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no bed deformation
   ierr =  T3.set(ice->meltingTemp); CHKERRQ(ierr);
   ierr = Tb3.set(ice->meltingTemp); CHKERRQ(ierr);

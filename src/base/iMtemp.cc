@@ -31,15 +31,24 @@ PetscErrorCode IceModel::temperatureAgeStep() {
                mybulgeCount = 0.0;
   PetscScalar gVertSacrCount, gbulgeCount;
 
-  // values go in taunew3; note: 3D CFL check happens here:
-  ierr = ageStep(&myCFLviolcount); CHKERRQ(ierr);
+  // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
+  ierr = countCFLViolations(&myCFLviolcount); CHKERRQ(ierr);
+  
+  PetscTruth ageSet;
+  ierr = check_option("-age", ageSet); CHKERRQ(ierr);
+  if (ageSet==PETSC_TRUE) {
+    // new age values go in taunew3:
+    ierr = ageStep(); CHKERRQ(ierr);
+  }
     
   // new temperature values go in vTnew; also updates Hmelt:
   ierr = temperatureStep(&myVertSacrCount,&mybulgeCount); CHKERRQ(ierr);  
 
   // start temperature & age communication
   ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
-  ierr = tau3.beginGhostCommTransfer(taunew3); CHKERRQ(ierr);
+  if (ageSet==PETSC_TRUE) {
+    ierr = tau3.beginGhostCommTransfer(taunew3); CHKERRQ(ierr);
+  }
 
   ierr = PetscGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&myVertSacrCount, &gVertSacrCount, grid.com); CHKERRQ(ierr);
@@ -67,7 +76,10 @@ PetscErrorCode IceModel::temperatureAgeStep() {
 
   // complete temperature & age communication
   ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
-  ierr = tau3.endGhostCommTransfer(taunew3); CHKERRQ(ierr);
+  if (ageSet==PETSC_TRUE) {
+    ierr = tau3.endGhostCommTransfer(taunew3); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -534,43 +546,39 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
 }                           
 
 
-//! Take a semi-implicit time-step for the age equation.  Also check the horizontal CFL for advection.
+//! Take a semi-implicit time-step for the age equation.
 /*!
 The age equation is\f$d\tau/dt = 1\f$, that is,
     \f[ \frac{\partial \tau}{\partial t} + u \frac{\partial \tau}{\partial x}
         + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1\f]
 where \f$\tau(t,x,y,z)\f$ is the age of the ice and \f$(u,v,w)\f$  is the three dimensional
-velocity field.  This equation is hyperbolic (purely advective).  
+velocity field.  This equation is purely advective.  And it is hyperbolic.
 
-The boundary condition is that when the ice fell as snow it had age zero.  
+The boundary condition is that when the ice falls as snow it has age zero.  
 That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas, while there is no 
 boundary condition elsewhere, as the characteristics go outward in the ablation zone.
+(Some more numerical-analytic attention to this is worthwhile.)
 
-If the velocity in the bottom cell of ice is upward (w[i][j][0]>0) then we apply
-an age=0 boundary condition.  This is the case where ice freezes on at the base,
-either grounded basal ice freezing on stored water in till, or marine basal ice.
+If the velocity in the bottom cell of ice is upward (\code (w[i][j][0] > 0 \endcode)
+then we also apply an age = 0 boundary condition.  This is the case where ice freezes
+on at the base, either grounded basal ice freezing on stored water in till, or marine basal ice.
 
 \latexonly\index{BOMBPROOF!implementation for age equation}\endlatexonly
 The numerical method is first-order upwind but the vertical advection term is computed
-implicitly.  Thus there is no CFL-type stability condition for that part.
+implicitly.  (Thus there is no CFL-type stability condition for that part.)
 
-We use equally-spaced vertical grid in the calculation.  Note that the IceModelVec3 
-methods getValColumn() and setValColumn() interpolate back and forth between the grid 
+We use a finely-spaced, equally-spaced vertical grid in the calculation.  Note that the IceModelVec3 
+methods getValColumn...() and setValColumn..() interpolate back and forth between the grid 
 on which calculation is done and the storage grid.  Thus the storage grid can be either 
 equally spaced or not.
  */
-PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
+PetscErrorCode IceModel::ageStep() {
   PetscErrorCode  ierr;
 
   // set up fine grid in ice
-  PetscInt    fMz = 0;		// will be computed by the call below
+  PetscInt    fMz;
   PetscScalar fdz, *fzlev;
-
-  ierr = grid.get_fine_vertical_grid_ice(fMz, fdz, fzlev); CHKERRQ(ierr);
-
-  // constants associated to CFL checking
-  const PetscScalar cflx = grid.dx / dtTempAge,
-                    cfly = grid.dy / dtTempAge;
+  ierr = grid.get_fine_vertical_grid_ice(fMz, fdz, fzlev); CHKERRQ(ierr); // allocates fzlev
 
   PetscScalar *x;  
   x = new PetscScalar[fMz]; // space for solution
@@ -578,7 +586,7 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
   ageSystemCtx system(fMz); // linear system to solve in each column
   system.dx    = grid.dx;
   system.dy    = grid.dy;
-  system.dtAge = dtTempAge; // same time step for temp and age, currently
+  system.dtAge = dtTempAge;
   system.dzEQ  = fdz;
   // pointers to values in current column
   system.u     = new PetscScalar[fMz];
@@ -601,15 +609,9 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // this should *not* be replaced by a call to grid.kBelowHeight()
-      const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/fdz));
-      if (ks > fMz-1) {
-        SETERRQ3(1,
-           "ageStep() ERROR: ks = %d too high in ice column;\n"
-           "  H[i][j] = %5.4f exceeds Lz = %5.4f\n",
-           ks, H[i][j], grid.Lz);
-      }
+      const PetscInt  fks = static_cast<PetscInt>(floor(H[i][j]/fdz));
 
-      if (ks == 0) { // if no ice, set the entire column to zero age
+      if (fks == 0) { // if no ice, set the entire column to zero age
         ierr = taunew3.setColumn(i,j,0.0); CHKERRQ(ierr);
       } else { // general case: solve advection PDE; start by getting 3D velocity ...
         if (grid.ice_vertical_spacing == EQUAL) {
@@ -623,26 +625,19 @@ PetscErrorCode IceModel::ageStep(PetscScalar* CFLviol) {
           ierr = w3.getValColumnQUAD(i,j,fMz,fzlev,system.w); CHKERRQ(ierr);
         }
 
-        // age evolution is pure advection (so provides check on temp calculation):
-        //   check horizontal CFL conditions at each point
-        for (PetscInt k=0; k<ks; k++) {
-          if (PetscAbs(system.u[k]) > cflx)  *CFLviol += 1.0;
-          if (PetscAbs(system.v[k]) > cfly)  *CFLviol += 1.0;
-        }
-
-        ierr = system.setIndicesThisColumn(i,j,ks); CHKERRQ(ierr);
+        ierr = system.setIndicesThisColumn(i,j,fks); CHKERRQ(ierr);
 
         // solve the system for this column; call checks that params set
         ierr = system.solveThisColumn(&x); // no "CHKERRQ(ierr)" because:
         if (ierr > 0) {
-          SETERRQ3(2,
-            "Tridiagonal solve failed at (%d,%d) with zero pivot position %d.\n",
-            i, j, ierr);
+          PetscPrintf(grid.com,
+            "PISM ERROR in IceModel::ageStep():  Tridiagonal solve failed at (%d,%d) with zero pivot position %d.\n"
+            "ENDING! ...\n\n", i, j, ierr);
         } else { CHKERRQ(ierr); }
 
-        // x[k] contains age for k=0,...,ks
-        for (PetscInt k=ks+1; k<fMz; k++) {
-          x[k] = 0.0;  // age of ice above (and at) surface is zero years
+        // x[k] contains age for k=0,...,ks, but set age of ice above (and at) surface to zero years
+        for (PetscInt k=fks+1; k<fMz; k++) {
+          x[k] = 0.0;
         }
         
         // put solution in IceModelVec3

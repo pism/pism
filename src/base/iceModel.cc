@@ -158,15 +158,19 @@ PetscErrorCode IceModel::createVecs() {
   ierr = T3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = variables.add(T3); CHKERRQ(ierr);
 
-  // age of ice
-  ierr = tau3.create(grid, "age", true); CHKERRQ(ierr);
-  // PROPOSED standard_name = land_ice_age
-  ierr = tau3.set_attrs("model_state", "age of ice",
-			"s", ""); CHKERRQ(ierr);
-  ierr = tau3.set_glaciological_units("years");
-  tau3.write_in_glaciological_units = true;
-  ierr = tau3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = variables.add(tau3); CHKERRQ(ierr);
+  // age of ice but only if -age is set
+  PetscTruth ageSet;
+  ierr = check_option("-age", ageSet); CHKERRQ(ierr);
+  if (ageSet==PETSC_TRUE) {
+    ierr = tau3.create(grid, "age", true); CHKERRQ(ierr);
+    // PROPOSED standard_name = land_ice_age
+    ierr = tau3.set_attrs("model_state", "age of ice",
+                          "s", ""); CHKERRQ(ierr);
+    ierr = tau3.set_glaciological_units("years");
+    tau3.write_in_glaciological_units = true;
+    ierr = tau3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+    ierr = variables.add(tau3); CHKERRQ(ierr);
+  }
 
   // bedrock temperature
   ierr = Tb3.create(grid,"litho_temp", false); CHKERRQ(ierr);

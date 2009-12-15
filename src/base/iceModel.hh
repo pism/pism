@@ -248,6 +248,7 @@ protected:
   virtual PetscErrorCode computeMax2DSlidingSpeed();
   virtual PetscErrorCode adaptTimeStepDiffusivity();
   virtual PetscErrorCode determineTimeStep(const bool doTemperatureCFL);
+  virtual PetscErrorCode countCFLViolations(PetscScalar* CFLviol);
 
   // see iMbasal.cc: all relate to grounded SSA
   virtual PetscErrorCode initBasalTillModel();
@@ -346,9 +347,10 @@ protected:
                        PetscScalar& gvolume,PetscScalar& garea,
                        PetscScalar& gvolSIA, PetscScalar& gvolstream, 
                        PetscScalar& gvolshelf);
-  virtual PetscErrorCode energyAgeStats(
-                       PetscScalar ivol, PetscScalar iarea, bool useHomoTemp, 
-                       PetscScalar &gmeltfrac, PetscScalar &gtemp0, PetscScalar &gorigfrac);
+  virtual PetscErrorCode energyStats(
+                       PetscScalar iarea, bool useHomoTemp, 
+                       PetscScalar &gmeltfrac, PetscScalar &gtemp0);
+  virtual PetscErrorCode ageStats(PetscScalar ivol, PetscScalar &gorigfrac);
   virtual PetscErrorCode summary(bool tempAndAge, bool useHomoTemp);
   virtual PetscErrorCode summaryPrintLine(
               PetscTruth printPrototype, bool tempAndAge,
@@ -421,7 +423,7 @@ protected:
   // see iMtemp.cc; uses columnSystem.{hh|cc}
   virtual PetscErrorCode temperatureAgeStep();
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
-  virtual PetscErrorCode ageStep(PetscScalar* CFLviol);
+  virtual PetscErrorCode ageStep();
   virtual bool checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
                       PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE);
   virtual PetscErrorCode excessToFromBasalMeltLayer(
