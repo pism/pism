@@ -225,9 +225,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr =     Istag3[1].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
 
   // deal with 3D age conditionally
-  PetscTruth ageSet;
-  ierr = check_option("-age", ageSet); CHKERRQ(ierr);
-  if (ageSet==PETSC_TRUE) {
+  if (config.get_flag("do_age")) {
     ierr = tau3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
     ierr = taunew3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   }

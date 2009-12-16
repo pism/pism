@@ -206,11 +206,9 @@ Communication occurs here.
 PetscErrorCode IceModel::ageStats(PetscScalar ivol, PetscScalar &gorigfrac) {
   PetscErrorCode  ierr;
 
-  gorigfrac = -1.0;  // result value if not -age
+  gorigfrac = -1.0;  // result value if not do_age
 
-  PetscTruth ageSet;
-  ierr = check_option("-age", ageSet); CHKERRQ(ierr);
-  if (ageSet!=PETSC_TRUE)
+  if (!config.get_flag("do_age")) 
     return 0;  // leave now
 
   const PetscScalar  a = grid.dx * grid.dy * 1e-3 * 1e-3, // area unit (km^2)
@@ -277,9 +275,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     ierr = energyStats(garea, useHomoTemp, meltfrac, gdivideT); CHKERRQ(ierr);
   }
 
-  PetscTruth ageSet;
-  ierr = check_option("-age", ageSet); CHKERRQ(ierr);
-  if ((tempAndAge || (getVerbosityLevel() >= 3)) && (ageSet==PETSC_TRUE)) {
+  if ((tempAndAge || (getVerbosityLevel() >= 3)) && (config.get_flag("do_age"))) {
     ierr = ageStats(gvolume, origfrac); CHKERRQ(ierr);
   }
 
@@ -343,7 +339,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
         ierr = PetscPrintf(grid.com,            "%10.3f,%10.3f, %9.3f\n",
         gmaxu*secpera, gmaxv*secpera, gmaxw*secpera); CHKERRQ(ierr);
       }
-      if (ageSet==PETSC_TRUE) {
+      if (config.get_flag("do_age")) {
         ierr = PetscPrintf(grid.com, 
            "  fraction of ice which is original: %9.3f\n",
                          origfrac); CHKERRQ(ierr);
@@ -827,7 +823,6 @@ PetscErrorCode IceModel::compute_tempsurf(IceModelVec2 &result) {
 
   // compute levels corresponding to 1 m below the ice surface:
 
-  PetscScalar **res;
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {

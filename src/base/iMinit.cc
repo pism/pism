@@ -446,9 +446,7 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   ierr = Istag3[1].set_attrs("internal","","",""); CHKERRQ(ierr);
 
   // extra work vector for age if needed
-  PetscTruth ageSet;
-  ierr = check_option("-age", ageSet); CHKERRQ(ierr);
-  if (ageSet==PETSC_TRUE) {
+  if (config.get_flag("do_age")) {
     ierr = taunew3.create(grid,"age_new",false); CHKERRQ(ierr);
     ierr = taunew3.set_attrs("internal", "age of ice; temporary during update",
                              "s", ""); CHKERRQ(ierr);

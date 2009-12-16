@@ -193,16 +193,14 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
   PetscScalar *Tij, *Toffset, *ageij, *ageoffset;
 
-  PetscTruth ageSet;
-  ierr = check_option("-age", ageSet); CHKERRQ(ierr);
-  if ((realAgeForGrainSize==PETSC_TRUE) && (ageSet!=PETSC_TRUE)) {
+  if ((realAgeForGrainSize==PETSC_TRUE) && (!config.get_flag("do_age"))) {
     PetscPrintf(grid.com,
-       "PISM ERROR in IceModel::velocitySIAStaggered(): -age not set but age is needed for grain-size-based flow law\n"
-       "ENDING! ...\n\n");
+       "PISM ERROR in IceModel::velocitySIAStaggered(): do_age not set but\n"
+       "age is needed for grain-size-based flow law ...  ENDING! ...\n\n");
     PetscEnd();
   }
 
-  const bool usetau3 = (IceFlowLawUsesGrainSize(ice) && (realAgeForGrainSize==PETSC_TRUE) && (ageSet==PETSC_TRUE));
+  const bool usetau3 = (IceFlowLawUsesGrainSize(ice) && (realAgeForGrainSize==PETSC_TRUE) && (config.get_flag("do_age")));
 
   const PetscTruth usesGrainSize = IceFlowLawUsesGrainSize(ice);
   

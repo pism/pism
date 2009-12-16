@@ -71,6 +71,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.scalar_from_option("adapt_ratio",
 				   "adaptive_timestepping_ratio"); CHKERRQ(ierr);
 
+  ierr = config.flag_from_option("age", "do_age"); CHKERRQ(ierr);
+
   ierr = check_option("-bed_def_iso", flag); CHKERRQ(ierr);
   if (flag) {
     config.set_flag("do_bed_deformation", true);
@@ -144,6 +146,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count");      CHKERRQ(ierr);
 
   ierr = config.flag_from_option("mass", "do_mass_conserve"); CHKERRQ(ierr);
+
   ierr = config.flag_from_option("temp", "do_temp"); CHKERRQ(ierr);
 
 // note "-o" is in use for output file name; see iMIO.cc

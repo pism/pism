@@ -158,10 +158,8 @@ PetscErrorCode IceModel::createVecs() {
   ierr = T3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = variables.add(T3); CHKERRQ(ierr);
 
-  // age of ice but only if -age is set
-  PetscTruth ageSet;
-  ierr = check_option("-age", ageSet); CHKERRQ(ierr);
-  if (ageSet==PETSC_TRUE) {
+  // age of ice but only if age will be computed
+  if (config.get_flag("do_age")) {
     ierr = tau3.create(grid, "age", true); CHKERRQ(ierr);
     // PROPOSED standard_name = land_ice_age
     ierr = tau3.set_attrs("model_state", "age of ice",
@@ -423,6 +421,7 @@ PetscErrorCode IceModel::run() {
 
   bool do_mass_conserve = config.get_flag("do_mass_conserve"),
     do_temp = config.get_flag("do_temp"),
+    do_age = config.get_flag("do_age"),
     do_skip = config.get_flag("do_skip"),
     do_bed_deformation = config.get_flag("do_bed_deformation"),
     do_plastic_till = config.get_flag("do_plastic_till");
@@ -533,16 +532,21 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
     //           grid.rank, grid.year, dt/secpera, startYear, endYear);
     //        CHKERRQ(ierr);
 
-PetscLogEventBegin(tempEVENT,0,0,0,0);
+    PetscLogEventBegin(tempEVENT,0,0,0,0);
     
-    bool tempAgeStep = (updateAtDepth && (do_temp == PETSC_TRUE));
+    bool tempAgeStep = ( updateAtDepth && ((do_temp) || (do_age)) );
     if (tempAgeStep) { // do temperature and age
       ierr = temperatureAgeStep(); CHKERRQ(ierr);
       dtTempAge = 0.0;
       if (updateHmelt == PETSC_TRUE) {
         ierr = diffuseHmelt(); CHKERRQ(ierr);
       }
-      ierr = verbPrintf(2,grid.com, "at"); CHKERRQ(ierr);
+      if (do_age) {
+        ierr = verbPrintf(2,grid.com, "a"); CHKERRQ(ierr);
+      } else {
+        ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
+      }
+      ierr = verbPrintf(2,grid.com, "t"); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,grid.com, "$$"); CHKERRQ(ierr);
     }

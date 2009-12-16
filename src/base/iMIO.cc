@@ -182,9 +182,7 @@ PetscErrorCode IceModel::write_model_state(const char* filename) {
     vars.insert("vvelsurf");
   }
 
-  PetscTruth write_age;
-  ierr = check_option("-age", write_age); CHKERRQ(ierr);  
-  if (write_age == PETSC_TRUE)
+  if (config.get_flag("do_age"))
     vars.insert("age");
 
   // FIXME: temporarily, so that we can compare to IceEnthalpyModel results;

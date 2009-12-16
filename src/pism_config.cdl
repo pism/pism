@@ -9,13 +9,16 @@ netcdf pism_config {
     pism_config:do_mass_conserve_doc = "Solve the mass conservation equation";
 
     pism_config:do_temp = "yes";
-    pism_config:do_temp_doc = "Solve energy conservation and age equations";
+    pism_config:do_temp_doc = "Solve energy conservation equations.";
+
+    pism_config:do_age = "no";
+    pism_config:do_age_doc = "Solve age equation (advection equation for ice age).";
 
     pism_config:do_skip = "no";
-    pism_config:do_skip_doc = "Use the temperature, age, and SSA stress balance computation skipping mechanism";
+    pism_config:do_skip_doc = "Use the temperature, age, and SSA stress balance computation skipping mechanism.";
 
     pism_config:do_plastic_till = "no";
-    pism_config:do_plastic_till_doc = "Use Schoof’s plastic till model for ice streams at all grounded points on the ice sheet";
+    pism_config:do_plastic_till_doc = "Use Schoof’s plastic till model for ice streams at all grounded points on the ice sheet.";
 
     pism_config:do_pseudo_plastic_till = "no";
     pism_config:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
