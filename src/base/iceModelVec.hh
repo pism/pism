@@ -150,9 +150,11 @@ public:
 //! floating-point scalars (instead of integers).
 class IceModelVec2Mask : public IceModelVec2 {
 public:
-  PismMask value(int i, int j);	  // returns the mask value
-  bool is_grounded(int i, int j); // checks for MASK_SHEET || MASK_DRAGGING
-  bool is_floating(int i, int j); // checks for MASK_FLOATING || MASK_FLOATING_OCEAN0
+  virtual PismMask value(int i, int j);	  // returns the mask value
+  virtual bool is_grounded(int i, int j); // checks for MASK_SHEET || MASK_DRAGGING
+  virtual bool is_floating(int i, int j); // checks for MASK_FLOATING || MASK_FLOATING_OCEAN0
+  virtual PetscErrorCode fill_where_grounded(IceModelVec2 &v, const PetscScalar fillval);
+  virtual PetscErrorCode fill_where_floating(IceModelVec2 &v, const PetscScalar fillval);
 };
 
 //! Class for a 3d DA-based Vec for bedrock (lithosphere) scalar quantities in IceModel.

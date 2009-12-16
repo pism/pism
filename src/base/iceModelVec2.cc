@@ -218,8 +218,10 @@ PetscScalar& IceModelVec2::operator() (int i, int j) {
 //! Returns the mask value; does not check ownership.
 PismMask IceModelVec2Mask::value(int i, int j) {
   PetscScalar **a = (PetscScalar**) array;
-  return static_cast<PismMask>(floor(a[i][j] + 0.5));
+  const PetscInt ival = static_cast<int>(floor(a[i][j] + 0.5));
+  return static_cast<PismMask>(ival);
 }
+
 
 bool IceModelVec2Mask::is_grounded(int i, int j) {
   PismMask m = value(i, j);
@@ -227,8 +229,47 @@ bool IceModelVec2Mask::is_grounded(int i, int j) {
   return (m == MASK_SHEET) || (m == MASK_DRAGGING);
 }
 
+
 bool IceModelVec2Mask::is_floating(int i, int j) {
   PismMask m = value(i, j);
 
   return (m == MASK_FLOATING) || (m == MASK_FLOATING_OCEAN0);
 }
+
+PetscErrorCode IceModelVec2Mask::fill_where_grounded(IceModelVec2 &v, const PetscScalar fillval) {
+  PetscErrorCode ierr;
+
+  ierr = begin_access(); CHKERRQ(ierr);
+  ierr = v.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+      if (is_grounded(i,j)) {
+        v(i,j) = fillval;
+      }
+    }
+  }
+  ierr = v.end_access(); CHKERRQ(ierr);
+  ierr = end_access(); CHKERRQ(ierr);
+  
+  return 0;
+}
+
+
+PetscErrorCode IceModelVec2Mask::fill_where_floating(IceModelVec2 &v, const PetscScalar fillval) {
+  PetscErrorCode ierr;
+
+  ierr = begin_access(); CHKERRQ(ierr);
+  ierr = v.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+      if (is_floating(i,j)) {
+        v(i,j) = fillval;
+      }
+    }
+  }
+  ierr = v.end_access(); CHKERRQ(ierr);
+  ierr = end_access(); CHKERRQ(ierr);
+  
+  return 0;
+}
+

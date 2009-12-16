@@ -594,7 +594,11 @@ PetscErrorCode IceModel::compute_taud(IceModelVec2 &result, IceModelVec2 &tmp) {
   ierr = result.set_attrs("diagnostic",
 			  "magnitude of driving shear stress at base of ice",
 			  "Pa", ""); CHKERRQ(ierr);
+
+  PetscScalar fill_value = GSL_NAN;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr); // mask out ice-free areas
   ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
 
   return 0;
 }
@@ -688,7 +692,7 @@ PetscErrorCode IceModel::compute_hardav(IceModelVec2 &result) {
   return 0;
 }
 
-//! Computes the basal water pressure
+//! Computes the subglacial (basal) water pressure
 /*!
   \f[p_w = \alpha\, \frac{w}{w_{\text{max}}}\, \rho\, g\, H,\f]
   where 
@@ -698,21 +702,29 @@ PetscErrorCode IceModel::compute_hardav(IceModelVec2 &result) {
   - \f$w_{\text{max}}\f$ is the maximum allowed value for \f$w\f$ (max_hmelt),
   - \f$\rho\f$ is the ice density (ice_density)
   - \f$H\f$ is the ice thickness (thk)
+
+Result is set to invalid (_FillValue) where the ice is floating, there being
+no meaning to the above calculation.
  */
 PetscErrorCode IceModel::compute_bwp(IceModelVec2 &result) {
   PetscErrorCode ierr;
-  PetscScalar
+  const PetscScalar
     alpha     = config.get("till_pw_fraction"),
     wmax      = config.get("max_hmelt"),
     g         = config.get("standard_gravity"),
-    rho       = config.get("ice_density");
+    rho       = config.get("ice_density"),
+    fillval   = -1.0;
 
+  // compute pressure where grounded using vHmelt
   ierr = vH.multiply_by(vHmelt, result); CHKERRQ(ierr);
   ierr = result.scale((alpha / wmax) * rho * g); CHKERRQ(ierr);
+  ierr = vMask.fill_where_floating(result, fillval); CHKERRQ(ierr);
 
   ierr = result.set_name("bwp"); CHKERRQ(ierr);
-  ierr = result.set_attrs("diagnostic", "basal pore water pressure",
+  ierr = result.set_attrs("diagnostic", "subglacial (pore) water pressure",
 			  "Pa", ""); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min",0.0); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue",fillval); CHKERRQ(ierr);
 
   return 0;
 }
@@ -722,7 +734,9 @@ PetscErrorCode IceModel::compute_bwp(IceModelVec2 &result) {
 PetscErrorCode IceModel::compute_dhdt(IceModelVec2 &result) {
   PetscErrorCode ierr;
 
-  ierr = vuplift.add(1.0, vdHdt, result); CHKERRQ(ierr);
+  ierr = result.copy_from(vdHdt); CHKERRQ(ierr);          // result = dHdt
+  ierr = result.mask_by(vH,0.0); CHKERRQ(ierr);           // set _FillValue areas to 0.0
+  ierr = vuplift.add(1.0, result, result); CHKERRQ(ierr); // result += dbdt = uplift
 
   ierr = result.set_name("dhdt"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "rate of change of surface elevation",

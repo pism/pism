@@ -260,6 +260,7 @@ PetscErrorCode IceModel::createVecs() {
 		       "W m-2", ""); CHKERRQ(ierr);
   ierr = vRb.set_glaciological_units("mW m-2");
   vRb.write_in_glaciological_units = true;
+  ierr = vRb.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = variables.add(vRb); CHKERRQ(ierr);
 
   // effective thickness of subglacial melt water
@@ -277,6 +278,10 @@ PetscErrorCode IceModel::createVecs() {
 			 "m s-1", "tendency_of_land_ice_thickness"); CHKERRQ(ierr);
   ierr = vdHdt.set_glaciological_units("m year-1");
   vdHdt.write_in_glaciological_units = true;
+  const PetscScalar  huge_dHdt = 1.0e6;      // million m a-1 is out-of-range
+  ierr = vdHdt.set_attr("valid_min", -huge_dHdt / secpera); CHKERRQ(ierr);
+  ierr = vdHdt.set_attr("valid_max", huge_dHdt / secpera); CHKERRQ(ierr);
+  ierr = vdHdt.set_attr("_FillValue", GSL_NAN); CHKERRQ(ierr);
   ierr = variables.add(vdHdt); CHKERRQ(ierr);
 
   // yield stress for basal till (plastic or pseudo-plastic model)

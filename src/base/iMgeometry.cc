@@ -453,6 +453,9 @@ PetscErrorCode IceModel::massContExplicitStep() {
   dvoldt = gdHdtav * grid.dx * grid.dy;  // m^3/s
   gdHdtav = gdHdtav / gicecount; // m/s
 
+  // now that dHdt is correctly calculated and summed, mask out for diagnostic display
+  ierr = vdHdt.mask_by(vHnew, GSL_NAN); CHKERRQ(ierr);
+
   // finally copy vHnew into vH and communicate ghosted values
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
