@@ -276,7 +276,6 @@ PetscErrorCode IceEISModel::init_couplers() {
       "  (values from file %s ignored)\n", filename); CHKERRQ(ierr);
   }
 
-  PetscScalar  **accum, **Ts;
   IceModelVec2 *pccsmf, *pccTs;
 
   if (atmosPCC != PETSC_NULL) {
@@ -291,28 +290,29 @@ PetscErrorCode IceEISModel::init_couplers() {
   }
 
   // now fill in accum and surface temp
-  ierr =  pccTs->get_array(Ts); CHKERRQ(ierr);
-  ierr = pccsmf->get_array(accum); CHKERRQ(ierr);
+  ierr =  pccTs->begin_access(); CHKERRQ(ierr);
+  ierr = pccsmf->begin_access(); CHKERRQ(ierr);
 
   PetscScalar cx = grid.Lx, cy = grid.Ly;
   if (expername == 'E') {  cx += 100.0e3;  cy += 100.0e3;  } // shift center
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // r is distance from center of grid; if E then center is shifted (above)
-      const PetscScalar r = sqrt( PetscSqr(-cx + grid.dx*i) + PetscSqr(-cy + grid.dy*j) );
-      // set accumulation
-      accum[i][j] = PetscMin(M_max, S_b * (R_el-r));  // formula (7) in (Payne et al 2000)
+      const PetscScalar r = sqrt( PetscSqr(-cx + grid.dx*i)
+                                  + PetscSqr(-cy + grid.dy*j) );
+      // set accumulation from formula (7) in (Payne et al 2000)
+      (*pccsmf)(i,j) = PetscMin(M_max, S_b * (R_el-r));
       // set surface temperature
       if (expername == 'S') {
 	// simplest possible Scandinavian-type upper surface boundary condition
 	// could be replace with more elaborate formula
 	if (r <= R_cts) {
-	  Ts[i][j] = T_max;
+	  (*pccTs)(i,j) = T_max;
 	} else {
-	  Ts[i][j] = T_min;
+	  (*pccTs)(i,j) = T_min;
 	}	  
       } else {
-        Ts[i][j] = T_min + S_T * r;                 // formula (8) in (Payne et al 2000)
+        (*pccTs)(i,j) = T_min + S_T * r;  // formula (8) in (Payne et al 2000)
       }
     }
   }
@@ -325,7 +325,6 @@ PetscErrorCode IceEISModel::init_couplers() {
 
 PetscErrorCode IceEISModel::fillintemps() {
   PetscErrorCode      ierr;
-  PetscScalar         **Ts;
   const PetscScalar   G_geothermal   = 0.042; // J/m^2 s; geothermal flux
 
   IceModelVec2 *pccTs;
@@ -341,13 +340,13 @@ PetscErrorCode IceEISModel::fillintemps() {
   //   standard) temperatures reflect default geothermal rate
   double bed_thermal_k = config.get("bedrock_thermal_conductivity");
 
-  ierr = pccTs->get_array(Ts); CHKERRQ(ierr);
+  ierr = pccTs->begin_access(); CHKERRQ(ierr);
   ierr = T3.begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = T3.setColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
-      ierr = bootstrapSetBedrockColumnTemp(i,j,Ts[i][j],
+      ierr = T3.setColumn(i,j,(*pccTs)(i,j)); CHKERRQ(ierr);
+      ierr = bootstrapSetBedrockColumnTemp(i,j,(*pccTs)(i,j),
 					   G_geothermal, bed_thermal_k); CHKERRQ(ierr);
     }
   }
@@ -374,19 +373,17 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
   const PetscScalar    slope = b0/L;
   const PetscScalar    dx = grid.dx, dy = grid.dy;
   const PetscScalar    dx61 = (2*L) / 60; // = 25.0e3
-  PetscScalar          topg, **b;
 
-  ierr = vbed.get_array(b); CHKERRQ(ierr);
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar nsd = i * dx, ewd = j *dy;
       if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
            && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
-        topg = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(pi * (nsd - L) / w));
+        vbed(i,j) = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(pi * (nsd - L) / w));
       } else {
-        topg = 1000.0;
+        vbed(i,j) = 1000.0;
       }
-      b[i][j] = topg;
     }
   }
   ierr = vbed.end_access(); CHKERRQ(ierr);
@@ -411,14 +408,12 @@ PetscErrorCode IceEISModel::generateMoundTopography() {
   const PetscScalar    slope = 250.0;
   const PetscScalar    w = 150.0e3;  // mound width
   const PetscScalar    dx = grid.dx, dy = grid.dy;
-  PetscScalar          topg, **b;
 
-  ierr = vbed.get_array(b); CHKERRQ(ierr);
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar nsd = i * dx, ewd = j *dy;
-      topg = PetscAbs(slope * sin(pi * ewd / w) + slope * cos(pi * nsd / w));
-      b[i][j] = topg;
+      vbed(i,j) = PetscAbs(slope * sin(pi * ewd / w) + slope * cos(pi * nsd / w));
     }
   }
   ierr = vbed.end_access(); CHKERRQ(ierr);

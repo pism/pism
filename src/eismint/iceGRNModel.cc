@@ -86,18 +86,17 @@ PetscErrorCode EISGREENAtmosCoupler::parameterizedUpdateSnowSurfaceTemp(
   PetscErrorCode ierr;
   ierr = verbPrintf(4, grid->com, 
       "entering EISGREENAtmosCoupler::parameterizedUpdateSnowTemp()\n"); CHKERRQ(ierr);
-  PetscScalar **lat_degN, **h, **T_ma, **T_mj;
 
-  ierr = surfelev->get_array(h);   CHKERRQ(ierr);
-  ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
-  ierr = vsurftemp.get_array(T_ma);  CHKERRQ(ierr);
-  ierr = vsnowtemp_mj.get_array(T_mj);  CHKERRQ(ierr);
+  ierr = surfelev->begin_access();   CHKERRQ(ierr);
+  ierr = lat->begin_access(); CHKERRQ(ierr);
+  ierr = vsurftemp.begin_access();  CHKERRQ(ierr);  // = T_ma = mean annual temp
+  ierr = vsnowtemp_mj.begin_access();  CHKERRQ(ierr); // = T_mj = mean July
   for (PetscInt i = grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j = grid->ys; j<grid->ys+grid->ym; ++j) {
-      // T_ma, T_mj in K; T_ma is mean annual, T_mj is summer peak;
       //   note coupler builds sine wave yearly cycle from these
-      T_ma[i][j] = meanAnnualTemp(h[i][j], lat_degN[i][j]);
-      T_mj[i][j] = 273.15 + 30.38 - 0.006277 * h[i][j] - 0.3262 * lat_degN[i][j];
+      vsurftemp(i,j) = meanAnnualTemp((*surfelev)(i,j), (*lat)(i,j));
+      vsnowtemp_mj(i,j) = 273.15 + 30.38
+                          - 0.006277 * (*surfelev)(i,j) - 0.3262 * (*lat)(i,j);
     }
   }  
   ierr = surfelev->end_access();   CHKERRQ(ierr);

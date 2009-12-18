@@ -312,7 +312,11 @@ PetscErrorCode IceModel::init_extras() {
 
   ierr = parse_times(grid.com, tmp, extra_times);
   if (ierr != 0) {
-    ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -extra_times argument failed.\n"); CHKERRQ(ierr);
+    PetscPrintf(grid.com, "PISM ERROR: parsing the -extra_times argument failed.\n");
+    PetscEnd();
+  }
+  if (extra_times.size() == 0) {
+    PetscPrintf(grid.com, "PISM ERROR: no argument for -extra_times option.\n");
     PetscEnd();
   }
 
@@ -370,6 +374,10 @@ PetscErrorCode IceModel::init_extras() {
 	extra_vars.insert(var_name);
 
     }
+  }
+  if (extra_vars.size() == 0) {
+    ierr = verbPrintf(2, grid.com, 
+       "PISM WARNING: no variables list after -extra_vars ... writing empty file ...\n"); CHKERRQ(ierr);
   }
 
   return 0;
