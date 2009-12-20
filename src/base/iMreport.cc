@@ -830,15 +830,17 @@ PetscErrorCode IceModel::compute_tempbase(IceModelVec2 &result) {
   return 0;
 }
 
-//! Computes pressure adjusted ice temperature at the base of ice.
-PetscErrorCode IceModel::compute_temppabase(IceModelVec2 &result) {
+//! Computes pressure-adjusted ice temperature at the base of ice.
+PetscErrorCode IceModel::compute_temppabase(IceModelVec3 &hasPATemp,
+                                            IceModelVec2 &result) {
   PetscErrorCode ierr;
 
-  // put basal pressure-adjusted ice temperature in vWork2d[0]
-  ierr = Tnew3.getHorSlice(result, 0.0); CHKERRQ(ierr);  // z=0 slice
+  // put basal pressure-adjusted ice temperature in 2d result
+  ierr = hasPATemp.getHorSlice(result, 0.0); CHKERRQ(ierr);  // z=0 slice
 
   ierr = result.set_name("temppabase"); CHKERRQ(ierr);
-  ierr = result.set_attrs("diagnostic", "pressure-adjusted ice temperature at the base of ice",
+  ierr = result.set_attrs("diagnostic", 
+                          "pressure-adjusted ice temperature at the base of ice",
 			  "degrees Celsius", ""); CHKERRQ(ierr);
 
   PetscScalar fill_value = GSL_NAN;
@@ -969,7 +971,7 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 
   if (name == "temppabase") {
     ierr = compute_temp_pa(Tnew3); CHKERRQ(ierr);
-    ierr = compute_temppabase(vWork2d[0]); CHKERRQ(ierr);
+    ierr = compute_temppabase(Tnew3,vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }
