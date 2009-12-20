@@ -279,7 +279,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     ierr = ageStats(gvolume, origfrac); CHKERRQ(ierr);
   }
 
-  // report CFL violations is there are enough
+  // report CFL violations if there are enough
   if (CFLviolcount > 0.0) {
     const PetscScalar CFLviolpercent = 100.0 * CFLviolcount / (grid.Mx * grid.Mz * grid.Mz);
     const PetscScalar CFLVIOL_REPORT_VERB2_PERCENT = 0.1; // only report (verbosity=2) if above 0.1%
@@ -830,6 +830,25 @@ PetscErrorCode IceModel::compute_tempbase(IceModelVec2 &result) {
   return 0;
 }
 
+//! Computes pressure adjusted ice temperature at the base of ice.
+PetscErrorCode IceModel::compute_temppabase(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+
+  // put basal pressure-adjusted ice temperature in vWork2d[0]
+  ierr = Tnew3.getHorSlice(result, 0.0); CHKERRQ(ierr);  // z=0 slice
+
+  ierr = result.set_name("temppabase"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "pressure-adjusted ice temperature at the base of ice",
+			  "degrees Celsius", ""); CHKERRQ(ierr);
+
+  PetscScalar fill_value = GSL_NAN;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 0.0); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
+
+  return 0;
+}
+
 //! Computes ice temperature at the 1 m below the surface.
 PetscErrorCode IceModel::compute_tempsurf(IceModelVec2 &result) {
   PetscErrorCode ierr;
@@ -944,6 +963,13 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 
   if (name == "tempbase") {
     ierr = compute_tempbase(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "temppabase") {
+    ierr = compute_temp_pa(Tnew3); CHKERRQ(ierr);
+    ierr = compute_temppabase(vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }

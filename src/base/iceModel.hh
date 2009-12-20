@@ -373,6 +373,7 @@ protected:
   virtual PetscErrorCode compute_taud(IceModelVec2 &result, IceModelVec2 &tmp);
   virtual PetscErrorCode compute_temp_pa(IceModelVec3 &useForPATemp); // temporary for dev; FIXME
   virtual PetscErrorCode compute_tempbase(IceModelVec2 &result);
+  virtual PetscErrorCode compute_temppabase(IceModelVec2 &result);
   virtual PetscErrorCode compute_tempsurf(IceModelVec2 &result);
   virtual PetscErrorCode compute_uvelbase(IceModelVec2 &result);
   virtual PetscErrorCode compute_uvelsurf(IceModelVec2 &result);
