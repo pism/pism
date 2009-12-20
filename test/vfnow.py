@@ -322,14 +322,14 @@ executable = predo + prefix + 'pismv'
 tests = define_refinement_paths(KSPRTOL, SSARTOL)
 
 if do_userman:
-    print " VERIFYNOW.PY: test(s) %s, using '%s'\n" % (userman_tests, executable) + \
-          "               and ignoring options -t and -l" 
+    print " VFNOW.PY: test(s) %s, using '%s'\n" % (userman_tests, executable) + \
+          "           and ignoring options -t and -l" 
     for test in userman_tests:
         N = len(tests[test].Mx)
         for j in range(1, N + 1):
             run_test(executable, test, j, extra_options, debug)
 else:
-    print " VERIFYNOW.PY: test(s) %s, %d refinement level(s), using '%s'" % (
+    print " VFNOW.PY: test(s) %s, %d refinement level(s), using '%s'" % (
         test_names, levels, executable)
 
     for test in test_names:
