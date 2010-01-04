@@ -1,12 +1,14 @@
 #!/bin/bash
  
-# Script for Plastic till ice Stream with Thermocoupling experiment.  See
-# preprint Bueler and Brown 2008, "The shallow shelf approximation as a
-# `sliding law' in an ice sheet model with streaming flow".
+# Script for Plastic till ice Stream with Thermocoupling experiment.
+#
+# See Bueler and Brown 2009, "Shallow shelf approximation as a
+# "sliding law" in a thermomechanically coupled ice sheet model",
+# J. Geophys. Res. 114, F03008, doi:10.1029/2008JF001179.
 #
 # Starts with a run like EISMINT II exper A (and exper I), but 
-# this includes bedrock thermal model, inclusion of basal melt rate in mass
-# continuity, and tracking of Hmelt.  Then plastic SSA is turned on 
+# including bedrock thermal model, inclusion of basal melt rate in mass
+# continuity, and tracking of Hmelt.  Then plastic-base SSA is turned on 
 # for 4 (or 3 in P2) streams in several parameter sensitivity studies.
 # See src/eismint/icePSTexModel.cc for meaning of P1,P2,P3,P4, but roughly:
 #   * P1 studies stream width parameter
@@ -15,9 +17,10 @@
 #   * P4 studies downstream till friction angle changes
 #
 # Each of P1,P2,P3,P4 is run on each of 15km,10km,7.5km,5km grids.
-# The 10km grid cases are done first.  The 5km grid cases are saved for last.
-# Each of P1,P2,P3,P4 is run on 10km horizontal grid with doubled vertical resolution.
-# Just before the 5km cases, the 10km grid P1 is extended to 100k years.
+# The 10km grid cases are done first.  The 5km grid cases are 
+# saved for last.  Each of P1,P2,P3,P4 is run on 10km horizontal
+# grid with doubled vertical resolution.  Just before the 5km cases,
+# the 10km grid P1 is extended to 100k years.
 #
 # re SPEED: On experiment P1 with a 10km grid, bueler-pogo with 8 cores 
 # (two quad core Xeon processors at 2.33GHz) took about 1.5 hours for 
@@ -61,11 +64,11 @@ mpst()
 mpst_vg()
 {
     if [ "$2" = "e" ] ; then  # equal spaced default vertical grid
-        vg="-Mz 251 -Mbz 51 $3"
+        vg="-Mz 251 -Lbz 515 -Mbz 51 -z_spacing equal $3"
     elif [ "$2" = "u" ] ; then # un-equal spaced default vertical grid
-        vg="-Mz 101 -Mbz 41 -quadZ $3"
+        vg="-Mz 101 -Lbz 515 -Mbz 21 $3"
     elif [ "$2" = "t" ] ; then # un-equal spaced default vertical grid, *t*wice finer
-        vg="-Mz 201 -Mbz 81 -quadZ $3"
+        vg="-Mz 201 -Lbz 515 -Mbz 41 $3"
     else
         return 1
     fi
@@ -78,14 +81,15 @@ mpst_vg()
 #if [ ]; then   # always goes to "else"
 #else           # put this before restart location
 
+regridv="-regrid_vars bwat,temp,litho_temp,thk"
 
 # P0A: run without trough on refining grid for total of 200k years:
 mpst_vg $NN u "-P0A -Mx 61 -My 61 -y 1e5 -skip 20 -o P0A_100k.nc"
 mpst $NN "-P0A -i P0A_100k.nc -y 50000 -skip 20 -o P0A_150k.nc"
 mpst_vg $NN u "-P0A -Mx 121 -My 121 -y 40000 -ys 150000 \
- -skip 20 -regrid_from P0A_150k.nc -regrid_vars LTBHhe -o P0A_190k.nc"
+ -skip 20 -regrid_from P0A_150k.nc $regridv -o P0A_190k.nc"
 mpst_vg $NN u "-P0A -Mx 151 -My 151 -y 10000 -ys 190000 \
- -skip 20 -regrid_from P0A_190k.nc -regrid_vars LTBHhe -o P0A.nc"
+ -skip 20 -regrid_from P0A_190k.nc $regridv -o P0A.nc"
 
 
 # P1: flat with variable width but grid-aligned ice streams
@@ -103,9 +107,9 @@ mpst $NN "-P4 -i P0A.nc -ys 0 -y 5000 -o P4.nc"
 # P0I: run with troughs on refining grid for total of 200k years:
 mpst $NN "-P0I -i P0A_100k.nc -y 50000 -skip 20 -o P0I_150k.nc"
 mpst_vg $NN u "-P0I -Mx 121 -My 121 -y 40000 -ys 150000 \
- -skip 20 -regrid_from P0I_150k.nc -regrid_vars LTBHhe -o P0I_190k.nc"
+ -skip 20 -regrid_from P0I_150k.nc $regridv -o P0I_190k.nc"
 mpst_vg $NN u "-P0I -Mx 151 -My 151 -y 10000 -ys 190000 \
- -skip 20 -regrid_from P0I_190k.nc -regrid_vars LTBHhe -o P0I.nc"
+ -skip 20 -regrid_from P0I_190k.nc $regridv -o P0I.nc"
 
 # P3: troughs, with variable width but grid-aligned ice streams
 mpst $NN "-P3 -i P0I.nc -ys 0 -y 5000 -o P3.nc"
@@ -115,42 +119,42 @@ mpst $NN "-P3 -i P0I.nc -ys 0 -y 5000 -o P3.nc"
 
 # COARSE: as above but on 15km grid
 mpst_vg $NN u "-P1 -Mx 101 -My 101 -y 5000 \
- -regrid_from P0A.nc -regrid_vars LTBHhe -o P1coarse.nc"
+ -regrid_from P0A.nc $regridv -o P1coarse.nc"
 
 mpst_vg $NN u "-P2 -Mx 101 -My 101 -y 5000 \
- -regrid_from P0A.nc -regrid_vars LTBHhe -o P2coarse.nc"
+ -regrid_from P0A.nc $regridv -o P2coarse.nc"
 
 mpst_vg $NN u "-P3 -Mx 101 -My 101 -y 5000 \
- -regrid_from P0I.nc -regrid_vars LTBHhe -o P3coarse.nc"  # initial state has troughs
+ -regrid_from P0I.nc $regridv -o P3coarse.nc"  # initial state has troughs
 
 mpst_vg $NN u "-P4 -Mx 101 -My 101 -y 5000 \
- -regrid_from P0A.nc -regrid_vars LTBHhe -o P4coarse.nc"
+ -regrid_from P0A.nc $regridv -o P4coarse.nc"
 
 # FINE: as above but on 7.5km grid
 mpst_vg $NN u "-P1 -Mx 201 -My 201 -y 5000 \
- -regrid_from P0A.nc -regrid_vars LTBHhe -o P1fine.nc"
+ -regrid_from P0A.nc $regridv -o P1fine.nc"
 
 mpst_vg $NN u "-P2 -Mx 201 -My 201 -y 5000 \
- -regrid_from P0A.nc -regrid_vars LTBHhe -o P2fine.nc"
+ -regrid_from P0A.nc $regridv -o P2fine.nc"
 
 mpst_vg $NN u "-P3 -Mx 201 -My 201 -y 5000 \
- -regrid_from P0I.nc -regrid_vars LTBHhe -o P3fine.nc"  # initial state has troughs
+ -regrid_from P0I.nc $regridv -o P3fine.nc"  # initial state has troughs
 
 mpst_vg $NN u "-P4 -Mx 201 -My 201 -y 5000 \
- -regrid_from P0A.nc -regrid_vars LTBHhe -o P4fine.nc"
+ -regrid_from P0A.nc $regridv -o P4fine.nc"
 
 # VERTFINE: as above but with finer vertical grid (x2 points)
 mpst_vg $NN t "-P1 -Mx 151 -My 151 -y 5000 \
- -regrid_from P0A.nc -regrid_vars LTBHhe -o P1vertfine.nc"
+ -regrid_from P0A.nc $regridv -o P1vertfine.nc"
 
 mpst_vg $NN t "-P2 -Mx 151 -My 151 -y 5000 \
- -regrid_from P0A.nc -regrid_vars LTBHhe -o P2vertfine.nc"
+ -regrid_from P0A.nc $regridv -o P2vertfine.nc"
 
 mpst_vg $NN t "-P3 -Mx 151 -My 151 -y 5000 \
- -regrid_from P0I.nc -regrid_vars LTBHhe -o P3vertfine.nc"  # initial state has troughs
+ -regrid_from P0I.nc $regridv -o P3vertfine.nc"  # initial state has troughs
 
 mpst_vg $NN t "-P4 -Mx 151 -My 151 -y 5000 \
- -regrid_from P0A.nc -regrid_vars LTBHhe -o P4vertfine.nc"
+ -regrid_from P0A.nc $regridv -o P4vertfine.nc"
 
 
 # expensive stuff follows:
@@ -166,17 +170,16 @@ mpst $NN "-P1 -i P1_80k.nc -y 20000 -o P1_100k.nc"
 
 # FINEST: as P1, but on 5km grid; slow!
 mpst_vg $NN u "-P1 -Mx 301 -My 301 -skip 10 -y 5000 \
- -regrid_from P0A.nc -regrid_vars LTBHhe -o P1finest.nc"
+ -regrid_from P0A.nc $regridv -o P1finest.nc"
 
 mpst_vg $NN u "-P2 -Mx 301 -My 301 -skip 10 -y 5000 \
- -regrid_from P0A.nc -regrid_vars LTBHhe -o P2finest.nc"
+ -regrid_from P0A.nc $regridv -o P2finest.nc"
 
 mpst_vg $NN u "-P3 -Mx 301 -My 301 -skip 10 -y 5000 \
- -regrid_from P0I.nc -regrid_vars LTBHhe -o P3finest.nc"  # initial state has troughs
+ -regrid_from P0I.nc $regridv -o P3finest.nc"  # initial state has troughs
 
 mpst_vg $NN u "-P4 -Mx 301 -My 301 -skip 10 -y 5000 \
- -regrid_from P0A.nc -regrid_vars LTBHhe -o P4finest.nc"
-
+ -regrid_from P0A.nc $regridv -o P4finest.nc"
 
 #fi
 

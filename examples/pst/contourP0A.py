@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
-# draw contour map of P0A thickness and image of P0A basal water thickness
-# see Bueler and Brown (2008 preprint), "The shallow shelf approximation
-#    as a sliding law ...", http://arxiv.org/abs/0810.3449
-# optionally produces image files  thkP0Acontour.png, bwatP0Aimage.png
+# Draw contour map of P0A thickness and image of P0A basal water thickness.
+# Optionally produces image files  thkP0Acontour.png, bwatP0Aimage.png
+# if lines at bottom are uncommented.
+#
+# See Bueler and Brown 2009, "Shallow shelf approximation as a
+# "sliding law" in a thermomechanically coupled ice sheet model",
+# J. Geophys. Res. 114, F03008, doi:10.1029/2008JF001179.
 
 from pylab import *
 try:
@@ -41,7 +44,7 @@ axis('off')
 print "close figures to finish"
 show()
 
-## optional save to PNG
+## optional save to PNG:
 #print "saving figure(1) as thkP0Acontour.png ..."
 #savefig("thkP0Acontour.png", dpi=300, facecolor='w', edgecolor='w')
 #print "saving figure(2) as bwatP0Aimage.png ..."

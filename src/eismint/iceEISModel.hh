@@ -21,14 +21,12 @@
 
 #include <petscda.h>
 #include "../base/grid.hh"
-#include "../base/materials.hh"
 #include "../base/iceModel.hh"
 
 //! This derived class does EISMINT II simplified geometry experiments.  
 /*!
-These experiments only involve the thermomechanically coupled shallow ice approximation.  See 
-A. J. Payne and ten others, 200. <em> Results from the EISMINT model intercomparison:
-the effects of thermomechanical coupling</em>.  J. Glaciol. 46(153), 227--238.
+These experiments use the thermomechanically-coupled shallow ice approximation.
+See \ref EISMINT00.
  */
 class IceEISModel : public IceModel {
 public:
@@ -47,13 +45,13 @@ protected:
     PetscErrorCode fillintemps();
 
     virtual PetscScalar basalVelocitySIA( // not recommended, generally
-                             PetscScalar x, PetscScalar y, PetscScalar H, PetscScalar T,
-                             PetscScalar alpha, PetscScalar mu, PetscScalar min_T) const;
+        PetscScalar x, PetscScalar y, PetscScalar H, PetscScalar T,
+        PetscScalar alpha, PetscScalar mu, PetscScalar min_T) const;
 
-    // for experiments I,J and K,L, respectively:
-    PetscErrorCode generateTroughTopography();
-    PetscErrorCode generateMoundTopography();
+    PetscErrorCode generateTroughTopography();  // for experiments I,J
+    PetscErrorCode generateMoundTopography();   // for experiments K,L
     PetscErrorCode get_experiment_name();
 };
 
 #endif /* __iceEISModel_hh */
+

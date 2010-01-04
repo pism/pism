@@ -188,8 +188,8 @@ Of all operating systems it is probably quickest to install all the PISM prerequ
     \begin{tabular*}{0.9\linewidth}{p{0.2\linewidth}p{0.7\linewidth}}
       \hline
       \emph{Package name} & \emph{Comments}\\
-      |petsc-dev| & depends on |libpetsc2.3.3-dev|; this package 
-      depends on |libpetsc2.3.3|, |libopenmpi-dev|, |libx11-dev|,
+      |petsc-dev| & depends on |libpetsc3.x.x-dev|; this package 
+      depends on |libpetsc3.x.x|, |libopenmpi-dev|, |libx11-dev|,
       |libblas-dev|, |liblapack-dev|, |gfortran|, and others; 
       note |libopenmpi-dev| depends on |libopenmpi1| and
       replaces openmpi-bin\\
@@ -255,7 +255,7 @@ yet.  But this sequence worked with minimal pain.  Grab latest source from
 \begin{center}
   \url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}
 \end{center}
-Basically just get the |.tar.gz| and follow install instructions in top-level ``|README|''.  But error about missing |X| headers etc is resolved by two things, first to get Debian |xorg-dev| package, and second to tell the |ncview| |configure| script where to find |X|:
+Basically just get the |.tar.gz| and follow install instructions in top-level ``|README|''.  An error on a Debian system about missing |X| headers etc may be resolved by getting the |xorg-dev| package.  More generally, one may tell the |ncview| |configure| script where to find |X|:
 \begin{verbatim}
 $  ./configure --x-libraries=/usr/lib
 \end{verbatim}

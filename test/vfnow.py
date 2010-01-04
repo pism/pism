@@ -230,6 +230,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     B.My   = B.Mx
     B.Mz   = [31] * len(B.Mx)
     B.Mbz  = [1]  * len(B.Mx)
+    B.opts = "-ys 422.45 -y 25000.0"
     tests['B_userman'] = B
 
     # test G (for a figure in the User's Manual)
@@ -270,7 +271,7 @@ debug      = False
 try:
   opts, args = getopt.getopt(sys.argv[1:], "ep:n:l:t:ur:",
      ["eta","prefix=","nproc=","levels=","tests=","userman", "debug",
-      "uneq","mpido=","report_file=","help"])
+      "uneq","mpido=","report_file=","help","usage"])
   for opt, arg in opts:
     if opt in ("-p", "--prefix"):
         prefix = arg
@@ -292,7 +293,7 @@ try:
         extra_options += " -eta"
     elif opt in ("-r", "--report_file"):
         extra_options += " -report_file %s" % arg
-    elif opt == "--help":
+    elif opt in ("--help", "--usage"):
         print """PISM verification script; usage:
   -e,--eta=     to add '-eta' option to pismv call
   -l,--levels=  number of levels of verification; '-l 1' fast, '-l 5' slowest
@@ -305,7 +306,8 @@ try:
   -u            use unequal spaced (quadratic) vertical spacing
   --userman     run tests necessary to produce figures in the User's Manual
   --debug       do not run PISM, just print commands
-  --help        prints this message"""
+  --help        prints this message
+  --usage       ditto"""
         sys.exit(0)
 except getopt.GetoptError:
     print 'Incorrect command line arguments'

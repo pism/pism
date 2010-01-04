@@ -19,6 +19,7 @@
 #include <cstring>
 #include <petsc.h>
 #include "icePSTexModel.hh"
+#include "../base/Timeseries.hh"
 
 const PetscScalar 
   DEFAULT_PHI_STRONG = 15.0,  // till friction angle outside of stream
@@ -28,7 +29,7 @@ const PetscScalar
                               //     'upstream' to 'downstream' till friction
                               //     angle occurs
   xi_slop = 0.15,             // fractions by which reduced till friction
-  eta_slop = 0.5;            //     angle extends outside of stream; see
+  eta_slop = 0.5;             //     angle extends outside of stream; see
                               //     setTillPhi() and inStreamNbhd()
 
 const int Nexpers = 6,
@@ -93,25 +94,26 @@ PetscScalar stream_angle_P2[3] = {0.0, 100.0, 225.0};  // degrees
 
 IcePSTexModel::IcePSTexModel(IceGrid &g)
   : IceEISModel(g) {  // do almost nothing; derived need constructors
-  expername = 'A';      // mostly close to this, anyway
+  expername = 'A';    // PST expers are closest to EISMINT II exper A
 }
 
 
 PetscErrorCode IcePSTexModel::setFromOptions() {
   PetscErrorCode      ierr;
 
+  ierr = IceEISModel::setFromOptions();  CHKERRQ(ierr);
+
   exper_chosen = -1;
   for (int j=0; j<Nexpers; j++) {
     PetscTruth  optionset;
     char optionname[20] = "-";
     strcat(optionname,e[j].name);
-    ierr = check_option(optionname, optionset);
-      CHKERRQ(ierr);
+    ierr = check_option(optionname, optionset); CHKERRQ(ierr);
     if (optionset == PETSC_TRUE) {
       if (exper_chosen >= 0) {
         ierr = PetscPrintf(grid.com,
-			   "Only one experiment name option allowed for IcePSTexModel.\n");
-	CHKERRQ(ierr);
+          "Only one experiment name option allowed for IcePSTexModel.\n");
+          CHKERRQ(ierr);
 	PetscEnd();
       } else {
         exper_chosen = j;
@@ -121,18 +123,12 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
   }
   if (exper_chosen < 0) {
     ierr = PetscPrintf(grid.com,
-		       "Unrecognized experiment name for IcePSTexModel.\n"
-		       "  An experiment name option like '-P2' must be chosen.\n");
-    CHKERRQ(ierr);
+      "Unrecognized experiment name for IcePSTexModel.\n"
+      "  An experiment name option like '-P2' must be chosen.\n");
+      CHKERRQ(ierr);
     PetscEnd();
   }
 
-  config.set_flag("do_skip", true);
-  config.set("skip_max", 2);
-
-  ierr = IceEISModel::setFromOptions();  CHKERRQ(ierr);
-
-  // different from EISMINT II conventions (even for P0A and P0I)
   updateHmelt = PETSC_TRUE;
   config.set_flag("include_bmr_in_continuity", true);
   transformForSurfaceGradient = PETSC_TRUE;
@@ -194,6 +190,8 @@ PetscErrorCode IcePSTexModel::set_vars_from_options() {
     exper_chosen_name); CHKERRQ(ierr);
 
   ierr = IceEISModel::set_vars_from_options(); CHKERRQ(ierr);  
+
+// FIXME:  check that mask is set correctly for plastic till and SSA (i.e. all dragging)
 
   ierr = setBedElev(); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,

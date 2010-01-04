@@ -27,13 +27,13 @@ IceEISModel::IceEISModel(IceGrid &g)
   : IceModel(g) {  // do nothing; note derived classes must have constructors
   expername = 'A';
   infileused = false;
-
-  // Set the default ice type:
-  iceFactory.setType(ICE_PB);
+  iceFactory.setType(ICE_PB);  // Paterson-Budd
 }
+
 
 PetscErrorCode IceEISModel::get_experiment_name() {
   PetscErrorCode ierr;
+
   /* This option determines the single character name of EISMINT II experiments:
   "-eisII F", for example.   If not given then do exper A.  */
   char                eisIIexpername[20];
@@ -48,14 +48,15 @@ PetscErrorCode IceEISModel::get_experiment_name() {
       expername = temp;
     } else {
       ierr = PetscPrintf(grid.com,
-			 "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, L, or S\n");
-      CHKERRQ(ierr);
+        "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, L, or S\n");
+        CHKERRQ(ierr);
       PetscEnd();
     }
   }
 
   return 0;
 }
+
 
 PetscErrorCode IceEISModel::set_grid_defaults() {
   PetscErrorCode ierr;
@@ -95,11 +96,10 @@ PetscErrorCode IceEISModel::set_grid_defaults() {
       grid.Lx = grid.Ly = L;
       grid.Lz = 5e3;
       break;
-    default:  
-      {
+    default:  {
 	ierr = PetscPrintf(grid.com,
-			   "EISMINT II experiment name %c not valid\n",expername);
-	CHKERRQ(ierr);
+          "EISMINT II experiment name %c not valid\n",expername);
+	  CHKERRQ(ierr);
 	PetscEnd();
       }
     }	// end of switch(expername)
@@ -113,12 +113,12 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
 
   // initialize from EISMINT II formulas
   ierr = verbPrintf(1,grid.com, 
-           "initializing EISMINT II experiment %c from simplified geometry formulas ... \n", 
-           expername); CHKERRQ(ierr);
+    "initializing EISMINT II experiment %c from simplified geometry formulas ... \n", 
+    expername); CHKERRQ(ierr);
 
   // following will be part of saved state; not reset if read from file
   // if no inFile then starts with zero ice
-  const PetscScalar   G_geothermal   = 0.042;      // J/m^2 s; geo. heat flux
+  const PetscScalar   G_geothermal   = 0.042;      // J/m^2 s
   ierr = vh.set(0.0);
   ierr = vH.set(0.0);
   ierr = vbed.set(0.0);

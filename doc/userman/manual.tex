@@ -620,43 +620,44 @@ There is no current plan to support ISMIP-HOM, but comparison of shallow PISM re
 A third ISMIP part is the Marine Ice Sheet Model Intercomparison Project (MISMIP)\index{ISMIP!MISMIP}.  It is minimally supported in PISM, as described in subsection \ref{subsect:MISMIP} below.
 
 
-\subsection{EISMINT II}\label{subsect:EISMINTII}  There are seven experiments described in the published EISMINT II writeup \cite{EISMINT00}.\index{EISMINT}  They are labeled A, B, C, D, F, G, and H.  As specified in the writeup, the common features of all of these experiments are:\begin{itemize}
-\item runs are of 200,000 years, with no prescribed time step;
-\item runs are on a prescribed $61\times 61$ horizontal grid;
-\item the boundary conditions always have angular symmetry around the center of the grid;
-\item the bed is flat and does not move (there are no isostasy effects);
+\subsection{EISMINT II}\label{subsect:EISMINTII}  There are seven experiments described in the published EISMINT II writeup \cite{EISMINT00}.\index{EISMINT}  They are named A, B, C, D, F, G, and H.  They have these common features:\begin{itemize}
+\item runs are for 200,000 years, with no prescribed time step;
+\item a $61\times 61$ horizontal grid on a square domain ($1500$ km side length) is prescribed;
+\item the surface inputs (temperature and mass balance) have angular symmetry around the center of the grid;
+\item the bed is flat and does not move (no isostasy);
 \item the temperature in the bedrock is not modeled;
-\item only shallow ice approximation physics is included;
-\item the change in the temperature of ice is described by the shallow approximation of the conservation of energy \cite{Fowler};
-\item thermomechanical coupling is included, both because of the temperature dependence of the softness of the ice, \emph{and} through the strain-heating (dissipation-heating) term in the conservation of energy equation;
-\item the ice is \emph{cold} and not \emph{polythermal} \cite{Greve}; and finally
+\item only the cold (not polythermal) thermomechanically-coupled shallow ice approximation is used \cite{EISMINT00}; and
 \item though basal melt rates may be computed diagnostically, they do not affect the evolution of the ice sheet.
 \end{itemize}
-The experiments differ from each other in their various combinations of surface temperature and mass balance parameterizations.  Also, experiments H and G involve basal sliding, under the dangerous SIA sliding rubric \cite[Appendix B]{BBssasliding}, while the others don't.  Four experiments start with zero ice (A,F,G,H), while the other experiments (B,C,D) start from the final state of experiment A.
+The experiments differ from each other in their various combinations of surface temperature and mass balance parameterizations.  Experiments H and G involve basal sliding, under the physically-dubious SIA sliding rubric \cite[Appendix B]{BBssasliding}, while the others don't.  Four experiments start with zero ice (A,F,G,H), while the other experiments (B,C,D) start from the final state of experiment A.
 
 In addition to the seven experiments published in \cite{EISMINT00}, there were an additional five experiments described in the EISMINT II intercomparison description 
-\cite{EISIIdescribe}, labeled E, I, J, K, and L.\index{EISMINT!unpublished additional EISMINT II experiments}  These experiments share most features, itemized above, but with the following differences.  Experiment E is the same as experiment A except that the peak of the accumulation, and also the low point of the surface temperature, are shifted by 100 km in both $x$ and $y$ directions; also experiment E starts with the final state of experiment A.  Experiments I and J are similar to experiment A but with non-flat topography.  Experiments K and L are similar to experiment C but with non-flat topography.  See table \ref{tab:eisII} for how to run these experiments.
+\cite{EISIIdescribe}, labeled E, I, J, K, and L.\index{EISMINT!unpublished additional EISMINT II experiments}  These experiments share most features listed above, but with the following differences.  Experiment E is the same as experiment A except that the peak of the accumulation, and also the low point of the surface temperature, are shifted by 100 km in both $x$ and $y$ directions; also experiment E starts with the final state of experiment A.  Experiments I and J are similar to experiment A but with non-flat ``trough'' bed topography.  Experiments K and L are similar to experiment C but with non-flat ``mound'' bed topography.
 
-The vertical grid is not specified in the EISMINT II writeup.  It seems that good simulation of the complex thermomechanically coupled conditions near the base of the ice requires relatively fine resolution there.  One option in PISM is an equally-spaced grid, in which case we recommend the use of about 200 vertical levels.  With a quadratically spaced unequal grid one can use far fewer levels.  Reasonable experiment A runs, with basal layers of thickness 25 m or less, are:
+See table \ref{tab:eisII} for how to run all EISMINT II experiments in PISM.  Note that the vertical grid is not specified in EISMINT II, and it seems that good simulation of the thermomechanically-coupled conditions near the base of the ice requires relatively-fine resolution there.  (It is difficult to be quantitative because of a lack of theory.)  Our suggested default unequally-spaced grid with 61 levels gives a grid spacing of 21 m.  An equally-spaced grid is an option in PISM, and in this case we suggest using 201 vertical levels to give 25 m spacing.  Compare these:
 
+\small
 \begin{verbatim}
-pisms -eisII A -Mx 61 -My 61 -Mz 201 -skip 5 -y 2e5 -o eisIIA_equal.nc
-pisms -eisII A -Mx 61 -My 61 -Mz 61 -skip 5 -y 2e5 -o eisIIA_quadZ.nc
+pisms -eisII A -Mx 61 -My 61 -Mz 201 -z_spacing equal -skip 5 -y 2e5 -o eisIIA_equal.nc
+pisms -eisII A -Mx 61 -My 61 -Mz 61 -skip 5 -y 2e5 -o eisIIA.nc
 \end{verbatim}
-\noindent The latter run is faster for memory reasons.  These SIA-only simulations parallelize well, and we see speedups up to at least 30 processors for the standard $61\times 61$ horizontal grid.
+\normalsize
+\noindent The latter run is about a factor of two faster because of reduced cache memory use for the three-dimensional temperature field.
+
+These SIA-only simulations parallelize well, and we see speedups up to at least 30 processors for the standard $61\times 61$ horizontal grid.
 
 Table \ref{tab:eisII} shows how all EISMINT II experiments are done in PISM.  Experiments below the horizontal line in Table \ref{tab:eisII} are only documented in \cite{EISIIdescribe}.
 
 \begin{table}[ht]
-\caption{Running the EISMINT II experiments in PISM.\index{PISM!running the EISMINT II experiments in}  Replace \t{-Mz 201} with \t{-Mz 61 -z\und spacing quadratic} for unequal vertical spacing.  Use \t{-skip 5} for significant speedup.}\label{tab:eisII}
+\caption{Running the EISMINT II experiments in PISM.\index{PISM!running the EISMINT II experiments in}  Use \t{-skip 5}, on the $61\times 61$ default grid, for significant speedup.  Replace ``\t{-Mz 61}'' with \t{-Mz 201 -z\und spacing equal} for equal vertical spacing.}\label{tab:eisII}
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Command: ``\t{pisms }'' $+$} & \textbf{Relation to experiment A} \\ \hline
-\verb|-eisII A -Mx 61 -My 61 -Mz 201 -y 200000 -o eisIIA.nc| & \\
+\verb|-eisII A -Mx 61 -My 61 -Mz 61 -y 200000 -o eisIIA.nc| & \\
 \verb|-eisII B -i eisIIA.nc -y 2e5 -o eisIIB.nc| & warmer \\
 \verb|-eisII C -i eisIIA.nc -y 2e5 -o eisIIC.nc| & less snow (lower accumulation)\\
 \verb|-eisII D -i eisIIA.nc -y 2e5 -o eisIID.nc| & smaller area of accumulation \\
-\verb|-eisII F -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIF.nc| & colder; famous spokes \cite{BBL} \\
+\verb|-eisII F -Mx 61 -My 61 -Mz 61 -y 2e5 -o eisIIF.nc| & colder; famous spokes \cite{BBL} \\
 \verb|-eisII G -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIG.nc| & sliding (regardless of temperature) \\
 \verb|-eisII H -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIH.nc| & melt-temperature activated sliding \\ \hline
 \verb|-eisII E -i eisIIA.nc -y 2e5 -o eisIIE.nc| & shifted climate maps \\
