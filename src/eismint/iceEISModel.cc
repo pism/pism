@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,26 +16,32 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cstring>
 #include "../base/grid.hh"
 #include "../base/materials.hh"
 #include "../base/iceModel.hh"
 #include "iceEISModel.hh"
 
 
-IceEISModel::IceEISModel(IceGrid &g)
-  : IceModel(g) {  // do nothing; note derived classes must have constructors
+IceEISModel::IceEISModel(IceGrid &g) : IceModel(g) {
   expername = 'A';
-  infileused = false;
   iceFactory.setType(ICE_PB);  // Paterson-Budd
 }
 
 
-PetscErrorCode IceEISModel::get_experiment_name() {
-  PetscErrorCode ierr;
+//! Only executed if NOT initialized from file (-i).
+PetscErrorCode IceEISModel::set_grid_defaults() {
+  grid.Lx = 750e3;
+  grid.Ly = 750e3;
+  grid.Lz = 4e3;  // depend on auto-expansion to handle bigger thickness
+  return 0;
+}
 
-  /* This option determines the single character name of EISMINT II experiments:
-  "-eisII F", for example.   If not given then do exper A.  */
+
+//! Option -eisII determines the single character name of EISMINT II experiments.
+/*! Example is "-eisII F".   Defaults to experiment A.  */
+PetscErrorCode IceEISModel::set_expername_from_options() {
+  PetscErrorCode      ierr;
+
   char                eisIIexpername[20];
   int                 temp;
   PetscTruth          EISIIchosen;
@@ -44,11 +50,11 @@ PetscErrorCode IceEISModel::get_experiment_name() {
   if (EISIIchosen == PETSC_TRUE) {
     temp = eisIIexpername[0];
     if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
-    if (((temp >= 'A') && (temp <= 'L')) || (temp == 'S')) {
+    if ((temp >= 'A') && (temp <= 'L')) {
       expername = temp;
     } else {
       ierr = PetscPrintf(grid.com,
-        "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, L, or S\n");
+        "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
         CHKERRQ(ierr);
       PetscEnd();
     }
@@ -58,190 +64,48 @@ PetscErrorCode IceEISModel::get_experiment_name() {
 }
 
 
-PetscErrorCode IceEISModel::set_grid_defaults() {
-  PetscErrorCode ierr;
-  
-  ierr = get_experiment_name(); CHKERRQ(ierr);
-
-  // note height of grid must be great enough to handle max thickness
-  const PetscScalar   L = 750.0e3;      // Horizontal half-width of grid
-
-  switch (expername)
-    {
-    case 'A':
-    case 'E':
-    case 'I':
-    case 'S':
-      grid.Lx = grid.Ly = L;
-      grid.Lz = 5e3;
-      break;
-    case 'B':
-    case 'C':
-    case 'D':
-      grid.Lx = grid.Ly = L;
-      grid.Lz = 4e3;
-      break;
-    case 'F':
-      grid.Lx = grid.Ly = L;
-      grid.Lz = 6e3;
-      break;
-    case 'G':
-      grid.Lx = grid.Ly = L;
-      grid.Lz = 3e3;
-      break;
-    case 'H':
-    case 'J':
-    case 'K':
-    case 'L':
-      grid.Lx = grid.Ly = L;
-      grid.Lz = 5e3;
-      break;
-    default:  {
-	ierr = PetscPrintf(grid.com,
-          "EISMINT II experiment name %c not valid\n",expername);
-	  CHKERRQ(ierr);
-	PetscEnd();
-      }
-    }	// end of switch(expername)
-
-  return 0;
-}
-
-
-PetscErrorCode IceEISModel::set_vars_from_options() {
-  PetscErrorCode ierr;
-
-  // initialize from EISMINT II formulas
-  ierr = verbPrintf(1,grid.com, 
-    "initializing EISMINT II experiment %c from simplified geometry formulas ... \n", 
-    expername); CHKERRQ(ierr);
-
-  // following will be part of saved state; not reset if read from file
-  // if no inFile then starts with zero ice
-  const PetscScalar   G_geothermal   = 0.042;      // J/m^2 s
-  ierr = vh.set(0.0);
-  ierr = vH.set(0.0);
-  ierr = vbed.set(0.0);
-  ierr = vHmelt.set(0.0);
-  ierr = vGhf.set(G_geothermal);
-
-  ierr = vMask.set(MASK_SHEET);
-  ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
-
-  ierr = fillintemps(); CHKERRQ(ierr);
-
-  if ((expername == 'I') || (expername == 'J')) {
-    ierr = generateTroughTopography(); CHKERRQ(ierr);
-  } 
-  if ((expername == 'K') || (expername == 'L')) {
-    ierr = generateMoundTopography(); CHKERRQ(ierr);
-  } 
-
-  return 0;
-}
-
-
-PetscErrorCode IceEISModel::init_physics() {
-  PetscErrorCode ierr;
-
-  // This initializes the IceFlowLaw:
-  ierr = IceModel::init_physics(); CHKERRQ(ierr);
-
-  // make bedrock thermal material properties into ice properties (note Mbz=1
-  // is default, but want ice/rock interface segment to have geothermal flux
-  // applied directly to ice)
-  if (ice == PETSC_NULL) { SETERRQ(1,"ice == PETSC_NULL"); }
-
-  config.set("bedrock_thermal_density", ice->rho);
-  config.set("bedrock_thermal_conductivity", ice->k);
-  config.set("bedrock_thermal_specific_heat_capacity", ice->c_p);
-
-  return 0;
-}
-
-
 PetscErrorCode IceEISModel::setFromOptions() {
   PetscErrorCode      ierr;
 
-  // apply eismint defaults settings; options may overwrite
-  config.set_flag("is_dry_simulation", true);
-  config.set_flag("use_ssa_velocity", false);
-
-  config.set("enhancement_factor", 1.0);
-
-  config.set_flag("include_bmr_in_continuity", false);
-  // so basal melt does not change computation of vertical velocity
-
+  ierr = set_expername_from_options(); CHKERRQ(ierr);
+  
   // optionally allow override of updateHmelt == PETSC_FALSE for EISMINT II
   ierr = check_option("-track_Hmelt", updateHmelt); CHKERRQ(ierr);
 
-  // process the -eisII option again (in case we're initializing from a -i
-  // file):
-  ierr = get_experiment_name(); CHKERRQ(ierr);
-
   ierr = verbPrintf(2,grid.com, 
-              "setting parameters for EISMINT II experiment %c ... \n", 
-              expername); CHKERRQ(ierr);
-  // EISMINT II specified values for parameters M_max, R_el, T_min, S_b, S_T
+    "setting parameters for surface mass balance and temperature in EISMINT II experiment %c ... \n", 
+    expername); CHKERRQ(ierr);
+  // EISMINT II specified values for parameters
   S_b = 1.0e-2 * 1e-3 / secpera;    // Grad of accum rate change
   S_T = 1.67e-2 * 1e-3;           // K/m  Temp gradient
+  // these are for A,E,G,H,I,K:
+  M_max = 0.5 / secpera;  // Max accumulation
+  R_el = 450.0e3;           // Distance to equil line (accum=0)
+  T_min = 238.15;
   switch (expername) {
-    case 'A':
-    case 'E':  // starts from end of A
-    case 'G':
-    case 'H':
-    case 'I':
-    case 'K':
-      // start with zero ice and:
-      M_max = 0.5 / secpera;  // Max accumulation
-      R_el = 450.0e3;           // Distance to equil line (accum=0)
-      T_min = 238.15;
-      break;
-    case 'B':
-      // supposed to start from end of experiment A and:
-      M_max = 0.5 / secpera;
-      R_el = 450.0e3;
+    case 'B':  // supposed to start from end of experiment A and:
       T_min = 243.15;
       break;
     case 'C':
     case 'J':
-    case 'L':
-      // supposed to start from end of experiment A (for C; resp I and K for J and L) and:
+    case 'L':  // supposed to start from end of experiment A (for C;
+               //   resp I and K for J and L) and:
       M_max = 0.25 / secpera;
       R_el = 425.0e3;
-      T_min = 238.15;
       break;
-    case 'D':
-      // supposed to start from end of experiment A and:
-      M_max = 0.5 / secpera;
+    case 'D':  // supposed to start from end of experiment A and:
       R_el = 425.0e3;
-      T_min = 238.15;
       break;
-    case 'F':
-      // start with zero ice and:
-      M_max = 0.5 / secpera;
-      R_el = 450.0e3;
+    case 'F':  // start with zero ice and:
       T_min = 223.15;
       break;
-    case 'S':
-      // start with zero ice and:
-      M_max = 0.5 / secpera;  // Max accumulation
-      R_el = 450.0e3;           // Distance to equil line (accum=0)
-      R_cts = 100.0e3; // position where transition from temperate to cold surface upper boundary occurs
-      T_min = 238.15;
-      T_max = 273.15;
-      break;
-    default:
-      SETERRQ(999,"\n HOW DID I GET HERE?\n");
   }
 
   // if user specifies Tmin, Tmax, Mmax, Sb, ST, Rel, then use that (override above)
-  PetscScalar myTmin, myTmax, myMmax, mySb, myST, myRel, myRcts;
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Tmin", &T_min, NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Tmax", &T_max, NULL); CHKERRQ(ierr);
+  PetscScalar myMmax, mySb, myST, myRel;
   PetscTruth  paramSet;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Tmin", &myTmin, &paramSet); CHKERRQ(ierr);
-  if (paramSet == PETSC_TRUE)     T_min = myTmin;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Tmax", &myTmax, &paramSet); CHKERRQ(ierr);
-  if (paramSet == PETSC_TRUE)     T_max = myTmax;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Mmax", &myMmax, &paramSet); CHKERRQ(ierr);
   if (paramSet == PETSC_TRUE)     M_max = myMmax / secpera;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Sb", &mySb, &paramSet); CHKERRQ(ierr);
@@ -250,10 +114,33 @@ PetscErrorCode IceEISModel::setFromOptions() {
   if (paramSet == PETSC_TRUE)     S_T = myST * 1e-3;
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-Rel", &myRel, &paramSet); CHKERRQ(ierr);
   if (paramSet == PETSC_TRUE)     R_el = myRel * 1e3;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Rcts", &myRcts, &paramSet); CHKERRQ(ierr);
-  if (paramSet == PETSC_TRUE)     R_cts = myRcts;
 
   ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceEISModel::init_physics() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::init_physics(); CHKERRQ(ierr);
+
+  // see EISMINT II description; choose no ocean interaction, purely SIA, and E=1
+  config.set_flag("is_dry_simulation", true);
+  config.set_flag("use_ssa_velocity", false);
+  config.set("enhancement_factor", 1.0);
+
+  // basal melt does not change computation of vertical velocity:
+  config.set_flag("include_bmr_in_continuity", false);
+
+  // Make bedrock thermal material properties into ice properties.  Note that
+  // zero thickness bedrock layer is the default, but we want the ice/rock
+  // interface segment to have geothermal flux applied directly to ice without
+  // jump in material properties at base.
+  config.set("bedrock_thermal_density", ice->rho);
+  config.set("bedrock_thermal_conductivity", ice->k);
+  config.set("bedrock_thermal_specific_heat_capacity", ice->c_p);
+
   return 0;
 }
 
@@ -261,10 +148,17 @@ PetscErrorCode IceEISModel::setFromOptions() {
 PetscErrorCode IceEISModel::init_couplers() {
   PetscErrorCode      ierr;
 
+  // kill off sub-ice shelf initialization blurb; we don't have ocean interaction
+  if (oceanPCC != PETSC_NULL) {
+    oceanPCC->reportInitializationToStdOut = false;
+  } else {
+    SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");
+  }
+
   ierr = IceModel::init_couplers(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com,
-    "  setting surface mass balance and surface temperature from EISMINT II formulas ...\n");
+    "  setting surface mass balance and surface temperature variables ...\n");
     CHKERRQ(ierr);
 
   PetscTruth i_set;
@@ -303,17 +197,7 @@ PetscErrorCode IceEISModel::init_couplers() {
       // set accumulation from formula (7) in (Payne et al 2000)
       (*pccsmf)(i,j) = PetscMin(M_max, S_b * (R_el-r));
       // set surface temperature
-      if (expername == 'S') {
-	// simplest possible Scandinavian-type upper surface boundary condition
-	// could be replace with more elaborate formula
-	if (r <= R_cts) {
-	  (*pccTs)(i,j) = T_max;
-	} else {
-	  (*pccTs)(i,j) = T_min;
-	}	  
-      } else {
-        (*pccTs)(i,j) = T_min + S_T * r;  // formula (8) in (Payne et al 2000)
-      }
+      (*pccTs)(i,j) = T_min + S_T * r;  // formula (8) in (Payne et al 2000)
     }
   }
 
@@ -323,61 +207,20 @@ PetscErrorCode IceEISModel::init_couplers() {
 }
 
 
-PetscErrorCode IceEISModel::fillintemps() {
-  PetscErrorCode      ierr;
-  const PetscScalar   G_geothermal   = 0.042; // J/m^2 s; geothermal flux
-
-  IceModelVec2 *pccTs;
-  if (atmosPCC != PETSC_NULL) {
-    // call sets pccTs to point to IceModelVec2 with current surface temps
-    ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, pccTs);
-        CHKERRQ(ierr);
-  } else {
-    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
-  }
-
-  // fill in all ice temps with Ts and then have bedrock (if present despite EISMINT
-  //   standard) temperatures reflect default geothermal rate
-  double bed_thermal_k = config.get("bedrock_thermal_conductivity");
-
-  ierr = pccTs->begin_access(); CHKERRQ(ierr);
-  ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = Tb3.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = T3.setColumn(i,j,(*pccTs)(i,j)); CHKERRQ(ierr);
-      ierr = bootstrapSetBedrockColumnTemp(i,j,(*pccTs)(i,j),
-					   G_geothermal, bed_thermal_k); CHKERRQ(ierr);
-    }
-  }
-  ierr = T3.end_access(); CHKERRQ(ierr);
-  ierr = Tb3.end_access(); CHKERRQ(ierr);
-  ierr = pccTs->end_access(); CHKERRQ(ierr);
-
-  // communicate T because it will be horizontally differentiated
-  ierr = T3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = T3.endGhostComm(); CHKERRQ(ierr);
-  return 0;
-}
-
-
 PetscErrorCode IceEISModel::generateTroughTopography() {
   PetscErrorCode  ierr;
-  // computation based on
+  // computation based on code by Tony Payne, 6 March 1997:
   //    http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
-  // by Tony Payne, 6 March 1997
   
   const PetscScalar    b0 = 1000.0;  // plateau elevation
   const PetscScalar    L = 750.0e3;  // half-width of computational domain
   const PetscScalar    w = 200.0e3;  // trough width
   const PetscScalar    slope = b0/L;
-  const PetscScalar    dx = grid.dx, dy = grid.dy;
   const PetscScalar    dx61 = (2*L) / 60; // = 25.0e3
-
   ierr = vbed.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar nsd = i * dx, ewd = j *dy;
+      const PetscScalar nsd = i * grid.dx, ewd = j * grid.dy;
       if (    (nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61)
            && (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61) ) {
         vbed(i,j) = 1000.0 - PetscMax(0.0, slope * (ewd - L) * cos(pi * (nsd - L) / w));
@@ -388,11 +231,7 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
   }
   ierr = vbed.end_access(); CHKERRQ(ierr);
 
-  // communicate b because it will be horizontally differentiated
-  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
-
-  ierr = verbPrintf(3,grid.com,
+  ierr = verbPrintf(2,grid.com,
                "trough bed topography stored by IceEISModel::generateTroughTopography()\n");
                CHKERRQ(ierr);
   return 0;
@@ -401,42 +240,75 @@ PetscErrorCode IceEISModel::generateTroughTopography() {
 
 PetscErrorCode IceEISModel::generateMoundTopography() {
   PetscErrorCode  ierr;
-  // computation based on
+  // computation based on code by Tony Payne, 6 March 1997:
   //    http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
-  // by Tony Payne, 6 March 1997
   
   const PetscScalar    slope = 250.0;
   const PetscScalar    w = 150.0e3;  // mound width
-  const PetscScalar    dx = grid.dx, dy = grid.dy;
-
   ierr = vbed.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar nsd = i * dx, ewd = j *dy;
+      const PetscScalar nsd = i * grid.dx, ewd = j * grid.dy;
       vbed(i,j) = PetscAbs(slope * sin(pi * ewd / w) + slope * cos(pi * nsd / w));
     }
   }
   ierr = vbed.end_access(); CHKERRQ(ierr);
 
-  // communicate b because it will be horizontally differentiated
-  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com,
-           "mound bed topography stored by IceEISModel::generateTroughTopography()\n");
-           CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,
+    "mound bed topography stored by IceEISModel::generateTroughTopography()\n");
+    CHKERRQ(ierr);
   return 0;
 }
 
 
-//! Reimplement IceModel::basalVelocitySIA().
+//! Only executed if NOT initialized from file (-i).
+PetscErrorCode IceEISModel::set_vars_from_options() {
+  PetscErrorCode ierr;
+
+  // initialize from EISMINT II formulas
+  ierr = verbPrintf(1,grid.com, 
+    "initializing variables from EISMINT II experiment %c formulas ... \n", 
+    expername); CHKERRQ(ierr);
+
+  ierr = vbed.set(0.0);
+  if ((expername == 'I') || (expername == 'J')) {
+    ierr = generateTroughTopography(); CHKERRQ(ierr);
+  } 
+  if ((expername == 'K') || (expername == 'L')) {
+    ierr = generateMoundTopography(); CHKERRQ(ierr);
+  } 
+  // communicate b in any case; it will be horizontally-differentiated
+  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
+
+  ierr = vHmelt.set(0.0);
+  ierr = vGhf.set(0.042);  // EISMINT II value; J m-2 s-1
+
+  ierr = vMask.set(MASK_SHEET);
+  ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
+
+  // if no -i file then starts with zero ice
+  ierr = vh.set(0.0);
+  ierr = vH.set(0.0);
+
+  // this IceModel bootstrap method should do right thing because of variable
+  //   settings above and init of coupler above
+  ierr = putTempAtDepth(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+//! Reimplement IceModel::basalVelocitySIA().  Not a recommended mechanism.
 /*!
-For SIA regions (MASK_SHEET), and it is called within IceModel::basalSlidingHeatingSIA().
+Applies in SIA regions (mask = SHEET).  Is called in IceModel::basalSlidingHeatingSIA().
  */
 PetscScalar IceEISModel::basalVelocitySIA(
-                PetscScalar /*x*/, PetscScalar /*y*/, PetscScalar H, PetscScalar T,
-                PetscScalar /*alpha*/, PetscScalar /*mu*/, PetscScalar /*min_T*/) const {
-  const PetscScalar  Bfactor = 1e-3 / secpera; // units m s^-1 Pa^-1
-  const PetscScalar  eismintII_temp_sliding = 273.15;
+    PetscScalar /*x*/, PetscScalar /*y*/, PetscScalar H, PetscScalar T,
+    PetscScalar /*alpha*/, PetscScalar /*mu*/, PetscScalar /*min_T*/) const {
+
+  const PetscScalar  Bfactor = 1e-3 / secpera; // m s^-1 Pa^-1
+  const PetscScalar  eismintII_temp_sliding = 273.15;  // slide if basal ice this temp
   
   if (expername == 'G') {
       return Bfactor * ice->rho * standard_gravity * H; 

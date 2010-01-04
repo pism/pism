@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -39,6 +39,7 @@ class IcePSTexModel : public IceEISModel {
 public:
   IcePSTexModel(IceGrid &g);
   virtual PetscErrorCode setFromOptions();
+  virtual PetscErrorCode init_physics();
   virtual PetscErrorCode initFromFile(const char *fname);
   virtual PetscErrorCode set_vars_from_options();
 
@@ -54,6 +55,7 @@ protected:
                PetscScalar meltfrac,  PetscScalar H0,  PetscScalar T0);
 private:
   int exper_chosen;
+  PetscErrorCode init_mask_phi();
   int sectorNumberP2(const PetscScalar x, const PetscScalar y);
   bool inStream(const PetscScalar angle, const PetscScalar width,
                const PetscScalar x, const PetscScalar y,

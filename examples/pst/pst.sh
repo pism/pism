@@ -92,17 +92,19 @@ mpst_vg $NN u "-P0A -Mx 151 -My 151 -y 10000 -ys 190000 \
  -skip 20 -regrid_from P0A_190k.nc $regridv -o P0A.nc"
 
 
+#  FIXME:  do these with -ts_file ... (and modify icePSTexModel.cc to produce)
+
 # P1: flat with variable width but grid-aligned ice streams
-mpst $NN "-P1 -i P0A.nc -ys 0 -y 5000 -o P1.nc"
+mpst $NN "-P1 -i P0A.nc -ys 0 -y 5000 -skip 5 -o P1.nc"
 
 exit # early exit so script is usable as test
 
 # P2: flat with THREE same width and NOT grid-aligned ice streams
-mpst $NN "-P2 -i P0A.nc -ys 0 -y 5000 -o P2.nc"
+mpst $NN "-P2 -i P0A.nc -ys 0 -y 5000 -skip 5 -o P2.nc"
 
 # P4: flat with variable width but grid-aligned ice streams 
 #   and different down-stream till phi
-mpst $NN "-P4 -i P0A.nc -ys 0 -y 5000 -o P4.nc"
+mpst $NN "-P4 -i P0A.nc -ys 0 -y 5000 -skip 5 -o P4.nc"
 
 # P0I: run with troughs on refining grid for total of 200k years:
 mpst $NN "-P0I -i P0A_100k.nc -y 50000 -skip 20 -o P0I_150k.nc"
@@ -112,48 +114,48 @@ mpst_vg $NN u "-P0I -Mx 151 -My 151 -y 10000 -ys 190000 \
  -skip 20 -regrid_from P0I_190k.nc $regridv -o P0I.nc"
 
 # P3: troughs, with variable width but grid-aligned ice streams
-mpst $NN "-P3 -i P0I.nc -ys 0 -y 5000 -o P3.nc"
+mpst $NN "-P3 -i P0I.nc -ys 0 -y 5000 -skip 5 -o P3.nc"
 
 
 #  grid coarsening & refinement experiments:
 
 # COARSE: as above but on 15km grid
-mpst_vg $NN u "-P1 -Mx 101 -My 101 -y 5000 \
+mpst_vg $NN u "-P1 -Mx 101 -My 101 -y 5000 -skip 5 \
  -regrid_from P0A.nc $regridv -o P1coarse.nc"
 
-mpst_vg $NN u "-P2 -Mx 101 -My 101 -y 5000 \
+mpst_vg $NN u "-P2 -Mx 101 -My 101 -y 5000 -skip 5 \
  -regrid_from P0A.nc $regridv -o P2coarse.nc"
 
-mpst_vg $NN u "-P3 -Mx 101 -My 101 -y 5000 \
+mpst_vg $NN u "-P3 -Mx 101 -My 101 -y 5000 -skip 5 \
  -regrid_from P0I.nc $regridv -o P3coarse.nc"  # initial state has troughs
 
-mpst_vg $NN u "-P4 -Mx 101 -My 101 -y 5000 \
+mpst_vg $NN u "-P4 -Mx 101 -My 101 -y 5000 -skip 5 \
  -regrid_from P0A.nc $regridv -o P4coarse.nc"
 
 # FINE: as above but on 7.5km grid
-mpst_vg $NN u "-P1 -Mx 201 -My 201 -y 5000 \
+mpst_vg $NN u "-P1 -Mx 201 -My 201 -y 5000 -skip 5 \
  -regrid_from P0A.nc $regridv -o P1fine.nc"
 
-mpst_vg $NN u "-P2 -Mx 201 -My 201 -y 5000 \
+mpst_vg $NN u "-P2 -Mx 201 -My 201 -y 5000 -skip 5 \
  -regrid_from P0A.nc $regridv -o P2fine.nc"
 
-mpst_vg $NN u "-P3 -Mx 201 -My 201 -y 5000 \
+mpst_vg $NN u "-P3 -Mx 201 -My 201 -y 5000 -skip 5 \
  -regrid_from P0I.nc $regridv -o P3fine.nc"  # initial state has troughs
 
-mpst_vg $NN u "-P4 -Mx 201 -My 201 -y 5000 \
+mpst_vg $NN u "-P4 -Mx 201 -My 201 -y 5000 -skip 5 \
  -regrid_from P0A.nc $regridv -o P4fine.nc"
 
 # VERTFINE: as above but with finer vertical grid (x2 points)
-mpst_vg $NN t "-P1 -Mx 151 -My 151 -y 5000 \
+mpst_vg $NN t "-P1 -Mx 151 -My 151 -y 5000 -skip 5 \
  -regrid_from P0A.nc $regridv -o P1vertfine.nc"
 
-mpst_vg $NN t "-P2 -Mx 151 -My 151 -y 5000 \
+mpst_vg $NN t "-P2 -Mx 151 -My 151 -y 5000 -skip 5 \
  -regrid_from P0A.nc $regridv -o P2vertfine.nc"
 
-mpst_vg $NN t "-P3 -Mx 151 -My 151 -y 5000 \
+mpst_vg $NN t "-P3 -Mx 151 -My 151 -y 5000 -skip 5 \
  -regrid_from P0I.nc $regridv -o P3vertfine.nc"  # initial state has troughs
 
-mpst_vg $NN t "-P4 -Mx 151 -My 151 -y 5000 \
+mpst_vg $NN t "-P4 -Mx 151 -My 151 -y 5000 -skip 5 \
  -regrid_from P0A.nc $regridv -o P4vertfine.nc"
 
 
@@ -161,12 +163,14 @@ mpst_vg $NN t "-P4 -Mx 151 -My 151 -y 5000 \
 #    *  100k year run of P1 on 10km grid
 #    *  5km (finest) grid
 
+#  FIXME:  do this with -save_to ...
+
 # P1cont: as P1, but continue from saved state to 100k model years
-mpst $NN "-P1 -i P1.nc -y 15000 -o P1_20k.nc"
-mpst $NN "-P1 -i P1_20k.nc -y 20000 -o P1_40k.nc"
-mpst $NN "-P1 -i P1_40k.nc -y 20000 -o P1_60k.nc"
-mpst $NN "-P1 -i P1_60k.nc -y 20000 -o P1_80k.nc"
-mpst $NN "-P1 -i P1_80k.nc -y 20000 -o P1_100k.nc"
+mpst $NN "-P1 -i P1.nc -y 15000 -skip 5 -o P1_20k.nc"
+mpst $NN "-P1 -i P1_20k.nc -y 20000 -skip 5 -o P1_40k.nc"
+mpst $NN "-P1 -i P1_40k.nc -y 20000 -skip 5 -o P1_60k.nc"
+mpst $NN "-P1 -i P1_60k.nc -y 20000 -skip 5 -o P1_80k.nc"
+mpst $NN "-P1 -i P1_80k.nc -y 20000 -skip 5 -o P1_100k.nc"
 
 # FINEST: as P1, but on 5km grid; slow!
 mpst_vg $NN u "-P1 -Mx 301 -My 301 -skip 10 -y 5000 \

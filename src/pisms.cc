@@ -110,9 +110,9 @@ int main(int argc, char *argv[]) {
     ierr = m->init(); CHKERRQ(ierr);
 
     ierr = m->setExecName("pisms"); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com, "running chosen simplified geometry experiment ...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, "running ...\n"); CHKERRQ(ierr);
     ierr = m->run(); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com, "done with run ... \n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, "... done with run \n"); CHKERRQ(ierr);
     ierr = m->writeFiles("simp_exper.nc"); CHKERRQ(ierr);
 
     if (MISMIPchosen == PETSC_TRUE) {

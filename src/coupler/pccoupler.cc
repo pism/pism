@@ -636,10 +636,12 @@ PetscErrorCode PISMConstAtmosCoupler::initFromOptions(IceGrid* g, const PISMVars
 /*******************  OCEAN:  PISMOceanCoupler ********************/
 
 PISMOceanCoupler::PISMOceanCoupler() : PISMClimateCoupler() {
-  reportInitializationToStdOut = true;  // derived classes etc. can turn off before calling
-                                        // initFromOptions(), but it's on by default
   dSLforcing = PETSC_NULL;
   seaLevel = 0.0; // the obvious default value
+
+  // because this flag is public, instances or derived classes can turn off
+  //   initialization blurb by changing this default setting:
+  reportInitializationToStdOut = true;
 }
 
 
@@ -661,8 +663,6 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g, const PISMVars &var
   printIfDebug("entering PISMOceanCoupler::initFromOptions()\n");
 
   ierr = PISMClimateCoupler::initFromOptions(g, variables); CHKERRQ(ierr);
-
-  // no report to std out; otherwise reportInitializationToStdOut should be checked before report
 
   // ice boundary tempature at the base of the ice shelf
   ierr = vshelfbasetemp.create(*g, "shelfbtemp", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
@@ -825,7 +825,6 @@ flow band model (figure 5).
  */
 
 PISMConstOceanCoupler::PISMConstOceanCoupler() : PISMOceanCoupler() {
-  reportInitializationToStdOut = PETSC_TRUE;
 }
 
 
@@ -847,11 +846,14 @@ PetscErrorCode PISMConstOceanCoupler::initFromOptions(IceGrid* g, const PISMVars
   thk = dynamic_cast<IceModelVec2*>(variables.get("land_ice_thickness"));
   if (!thk) SETERRQ(1, "ERROR: land_ice_thickness is not available");
 
-  ierr = verbPrintf(2, g->com, 
-     "  initializing spatially- and temporally-constant sub-ice shelf ocean climate:\n"
-     "    heat flux from ocean set to %.3f W m-2, which determines mass flux (ice removal rate) %.5f m a-1\n"
-     "    ice shelf base temperature set to pressure-melting temperature\n",
-     config.get("ocean_sub_shelf_heat_flux_into_ice"), sub_shelf_mass_flux() * secpera); CHKERRQ(ierr); 
+  if (reportInitializationToStdOut) {
+    ierr = verbPrintf(2, g->com, 
+      "  initializing spatially- and temporally-constant sub-ice shelf ocean climate:\n"
+      "    heat flux from ocean set to %.3f W m-2, which determines mass flux (ice removal rate) %.5f m a-1\n"
+      "    ice shelf base temperature set to pressure-melting temperature\n",
+      config.get("ocean_sub_shelf_heat_flux_into_ice"), sub_shelf_mass_flux() * secpera);
+      CHKERRQ(ierr); 
+  }
 
   return 0;
 }

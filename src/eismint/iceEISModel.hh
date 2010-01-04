@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include "../base/grid.hh"
 #include "../base/iceModel.hh"
 
-//! This derived class does EISMINT II simplified geometry experiments.  
+//! Derived class for EISMINT II simplified geometry experiments.  
 /*!
 These experiments use the thermomechanically-coupled shallow ice approximation.
 See \ref EISMINT00.
@@ -38,19 +38,18 @@ public:
     virtual PetscErrorCode init_couplers();
     
 protected:
-    int         expername;
-    bool        infileused;
-    PetscScalar M_max, R_el, R_cts, T_min, T_max, S_b, S_T;
- 
-    PetscErrorCode fillintemps();
+    char        expername;
+    virtual PetscErrorCode set_expername_from_options();
 
-    virtual PetscScalar basalVelocitySIA( // not recommended, generally
+    PetscScalar M_max, R_el, T_min, T_max, S_b, S_T;
+ 
+    // for experiments G,H; uses generally not-recommended SIA-sliding rubric
+    virtual PetscScalar basalVelocitySIA(
         PetscScalar x, PetscScalar y, PetscScalar H, PetscScalar T,
         PetscScalar alpha, PetscScalar mu, PetscScalar min_T) const;
 
-    PetscErrorCode generateTroughTopography();  // for experiments I,J
-    PetscErrorCode generateMoundTopography();   // for experiments K,L
-    PetscErrorCode get_experiment_name();
+    virtual PetscErrorCode generateTroughTopography();  // for experiments I,J
+    virtual PetscErrorCode generateMoundTopography();   // for experiments K,L
 };
 
 #endif /* __iceEISModel_hh */

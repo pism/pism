@@ -113,6 +113,7 @@ other_sources := penth.cc pismr.cc pismd.cc pismv.cc pisms.cc \
 #   derived class; as an example it includes "grn_make"; creates executable
 #   "pgrn"
 include ../src/eismint/grn_make
+include ../src/eismint/scand/scand_make
 
 # Import additional make include files:
 ifdef CONFIG

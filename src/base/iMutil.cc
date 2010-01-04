@@ -249,7 +249,7 @@ PetscErrorCode IceModel::report_grid_parameters() {
   }
 
   ierr = verbPrintf(2, grid.com,
-           "                     time interval   start = %.2f a, end = %.2f a; run length: %.2f a\n",
+           "                     time interval   start = %.2f a, end = %.2f a; run length = %.2f a\n",
 		    grid.start_year, grid.end_year, grid.end_year - grid.start_year);
   
   // report on grid cell dims

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -93,7 +93,7 @@ PetscScalar stream_angle_P2[3] = {0.0, 100.0, 225.0};  // degrees
 
 
 IcePSTexModel::IcePSTexModel(IceGrid &g)
-  : IceEISModel(g) {  // do almost nothing; derived need constructors
+    : IceEISModel(g) {  // do almost nothing; derived need constructors
   expername = 'A';    // PST expers are closest to EISMINT II exper A
 }
 
@@ -129,6 +129,19 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
     PetscEnd();
   }
 
+  ierr = verbPrintf(2,grid.com, 
+    "setting up PST (Plastic till Stream w Thermocoupling) experiment %s ...\n",
+    exper_chosen_name); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+PetscErrorCode IcePSTexModel::init_physics() {
+  PetscErrorCode ierr;
+
+  ierr = IceEISModel::init_physics(); CHKERRQ(ierr);
+
   updateHmelt = PETSC_TRUE;
   config.set_flag("include_bmr_in_continuity", true);
   transformForSurfaceGradient = PETSC_TRUE;
@@ -157,6 +170,29 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
 }
 
 
+PetscErrorCode IcePSTexModel::init_mask_phi() {
+  PetscErrorCode ierr;
+  
+  // completely override EISMINT II version of mask
+  if (exper_chosen <= 1) { // P0A and P0I are nonsliding SIA
+    ierr = vMask.set(MASK_SHEET);
+    ierr = verbPrintf(2,grid.com,
+    "  mask set to SHEET for PST exper '%s' ...\n", exper_chosen_name); CHKERRQ(ierr);
+  } else {                 // P1, P2, P3, P4 use SSA-as-sliding
+    ierr = vMask.set(MASK_DRAGGING);
+    ierr = verbPrintf(2,grid.com,
+    "  mask set to DRAGGING for PST exper '%s' ...\n", exper_chosen_name); CHKERRQ(ierr);
+  }
+
+  ierr = verbPrintf(2,grid.com,
+    "  setting phi = (till friction angle) for PST exper '%s' ...\n", exper_chosen_name);
+    CHKERRQ(ierr);
+  ierr = setTillPhi(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
 PetscErrorCode IcePSTexModel::initFromFile(const char *fname) {
   PetscErrorCode      ierr;
 
@@ -166,16 +202,14 @@ PetscErrorCode IcePSTexModel::initFromFile(const char *fname) {
     "starting PST (Plastic till Stream w Thermocoupling) experiment %s from file  %s ...\n",
     exper_chosen_name, fname); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com, 
-    "  using existing bed topography ...\n"); CHKERRQ(ierr);
-
   ierr = verbPrintf(2,grid.com,
-    "  setting phi = (till friction angle) by PST formulas ... values from file %s ignored ...\n", fname); CHKERRQ(ierr);
-  ierr = setTillPhi(); CHKERRQ(ierr);
+    "  values of mask and phi = (till friction angle) in file will be ignored ...\n");
+    CHKERRQ(ierr);
+
+  ierr = init_mask_phi(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com, 
-    "running PST experiment '%s' ...\n",
-    exper_chosen_name); CHKERRQ(ierr);
+    "  bed topography from file is kept ...\n"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -184,29 +218,20 @@ PetscErrorCode IcePSTexModel::initFromFile(const char *fname) {
 PetscErrorCode IcePSTexModel::set_vars_from_options() {
   PetscErrorCode      ierr;
 
-  ierr = verbPrintf(2,grid.com, 
-    "setting up PST (Plastic till Stream w Thermocoupling) experiment %s from simplified geometry\n"
-    "   formulas, including those inherited from IceEISModel ...\n",
-    exper_chosen_name); CHKERRQ(ierr);
-
   ierr = IceEISModel::set_vars_from_options(); CHKERRQ(ierr);  
 
-// FIXME:  check that mask is set correctly for plastic till and SSA (i.e. all dragging)
+  ierr = verbPrintf(2,grid.com, 
+    "setting variables for PST experiment %s ...\n", exper_chosen_name); CHKERRQ(ierr);
+
+  ierr = init_mask_phi(); CHKERRQ(ierr);
 
   ierr = setBedElev(); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
-    "  bed topography stored ... "); CHKERRQ(ierr);
-
-  ierr = setTillPhi(); CHKERRQ(ierr);
-  ierr = verbPrintf(2,grid.com,
-    "  map of phi = (till friction angle) stored\n"); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2,grid.com, 
-    "running PST experiment '%s' ...\n",
-    exper_chosen_name); CHKERRQ(ierr);
+    "  bed topography set for PST exper '%s' ...\n", exper_chosen_name); CHKERRQ(ierr);
 
   return 0;
 }
+
 
 int IcePSTexModel::sectorNumberP2(const PetscScalar x, const PetscScalar y) {
   if (x > 0.0) {
