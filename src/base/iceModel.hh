@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -356,7 +356,7 @@ protected:
   virtual PetscErrorCode summaryPrintLine(
               PetscTruth printPrototype, bool tempAndAge,
               PetscScalar year, PetscScalar dt, 
-              PetscScalar volume_kmcube, PetscScalar area_kmsquare,
+              PetscScalar volume, PetscScalar area,
               PetscScalar meltfrac, PetscScalar H0, PetscScalar T0);
 
   // see iMreport.cc;  methods for computing diagnostic quantities:

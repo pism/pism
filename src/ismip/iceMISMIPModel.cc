@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 
 
 /* 
-This derived class illustrates the bug-creation problem.  See task #6216.
+This derived class illustrates the bug-creation problem, task #6216.
 A temporary solution is indicated by the print commands with "MAKE SURE
 THIS IS REALLY BEING USED!!" below.
  */
@@ -960,7 +960,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
 PetscErrorCode IceMISMIPModel::summaryPrintLine(
      PetscTruth printPrototype,  bool /*tempAndAge*/,
      PetscScalar year,  PetscScalar /*dt*/, 
-     PetscScalar volume_kmcube,  PetscScalar /*area_kmsquare*/,
+     PetscScalar volume,  PetscScalar /*area_kmsquare*/,
      PetscScalar /*meltfrac*/,  PetscScalar H0,  PetscScalar /*T0*/) {
 
 /*
@@ -1010,7 +1010,7 @@ is computed as in MISMIP description, and finite differences.
     ierr = getRoutineStats(); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com,
       "S %12.5f: %8.5f %7.2f %7.2f %7.2f %7.2f %7.2f %7.2f %8.2e %5d %5d\n",
-      year, volume_kmcube/1.0e6, 
+      year, volume/(1.0e6*1.0e9), 
       H0, rstats.xg / 1000.0, rstats.hxg, rstats.maxubar * secpera, 
       rstats.avubarG * secpera, rstats.avubarF * secpera,
       rstats.dHdtnorm * secpera, int(rstats.Ngrounded), int(rstats.Nfloating)); CHKERRQ(ierr);
@@ -1024,10 +1024,10 @@ is computed as in MISMIP description, and finite differences.
       ierr = verbPrintf(3,grid.com,"M  ");
       ierr = verbPrintf(3,grid.com,
         "%8.2f %7.2f %8.5f %7.2f %7.2f ",
-        year, rstats.xg / 1000.0, volume_kmcube/1.0e6, H0, rstats.hxg); CHKERRQ(ierr);
+        year, rstats.xg / 1000.0, volume/(1.0e6*1.0e9), H0, rstats.hxg); CHKERRQ(ierr);
       ierr = PetscViewerASCIIPrintf(tviewfile,
         "%8.2f %7.2f %8.5f %7.2f %7.2f ",
-        year, rstats.xg / 1000.0, volume_kmcube/1.0e6, H0, rstats.hxg); CHKERRQ(ierr);
+        year, rstats.xg / 1000.0, volume/(1.0e6*1.0e9), H0, rstats.hxg); CHKERRQ(ierr);
       ierr = verbPrintf(3,grid.com,"\n   ");
       ierr = verbPrintf(3,grid.com,
         "%7.2f %7.2f %7.2f %7.0f %7.2f %7.2f %7.2f %7.0f ",

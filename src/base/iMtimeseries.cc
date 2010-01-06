@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Constantine Khroulev
+// Copyright (C) 2009-2010 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,8 +35,8 @@ PetscErrorCode IceModel::init_timeseries() {
 
   if (ts_file_set ^ ts_times_set) {
     ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: you need to specity both -ts_filename and -ts_times to save"
-		       "diagnostic time-seties.\n");
+      "PISM ERROR: you need to specity both -ts_file and -ts_times to save"
+      "diagnostic time-series.\n");
     CHKERRQ(ierr);
     PetscEnd();
   }
@@ -284,7 +284,7 @@ PetscErrorCode IceModel::write_timeseries() {
 }
 
 
-//! Initialize the code saving sptially-variable diagnostic quantities.
+//! Initialize the code saving spatially-variable diagnostic quantities.
 PetscErrorCode IceModel::init_extras() {
   PetscErrorCode ierr;
   PetscTruth times = PETSC_FALSE, file = PETSC_FALSE;
@@ -299,9 +299,8 @@ PetscErrorCode IceModel::init_extras() {
 			       TEMPORARY_STRING_LENGTH, &times); CHKERRQ(ierr);
 
   if (file ^ times) {
-    ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: you need to specify both -extra_file and -extra_times to save spatial time-series.\n");
-    CHKERRQ(ierr);
+    PetscPrintf(grid.com,
+      "PISM ERROR: you need to specify both -extra_file and -extra_times to save spatial time-series.\n");
     PetscEnd();
   }
 

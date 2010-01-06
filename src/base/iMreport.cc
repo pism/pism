@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -108,24 +108,30 @@ PetscErrorCode IceModel::computeFlowUbarStats
 }
 
 
+//!  Computes volume and area of ice sheet, for reporting purposes.
+/*!
+Also computes ice volumes in the three mask regions SHEET, DRAGGING, FLOATING.
+
+Communication done for global max and global sum.
+
+Returns area in units of m^2 and volume in m^3.
+ */
 PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
                                     PetscScalar& gvolSIA, PetscScalar& gvolstream, 
                                     PetscScalar& gvolshelf) {
-  // returns area in units of km^2 and volume in km^3
-  // though slightly less efficient when used by summaryEismint, which has to look at vH anyway,
-  //   it is clearer to have this obvious ability as a procedure
+
   PetscErrorCode  ierr;
   PetscScalar     **H;
   PetscScalar     volume=0.0, area=0.0, volSIA=0.0, volstream=0.0, volshelf=0.0;
   
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
+  const PetscScalar   a = grid.dx * grid.dy; // area unit (m^2)
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0) {
         area += a;
-        const PetscScalar dv = a * H[i][j] * 1e-3;
+        const PetscScalar dv = a * H[i][j];
         volume += dv;
         if (vMask.value(i,j) == MASK_SHEET)   volSIA += dv;
         else if (vMask.value(i,j) == MASK_DRAGGING)   volstream += dv;
@@ -256,6 +262,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   PetscScalar     gvolSIA, gvolstream, gvolshelf;
   PetscScalar     meltfrac = 0.0, origfrac = 0.0;
 
+  // get volumes in m^3 and areas in m^2
   ierr = volumeArea(gvolume, garea, gvolSIA, gvolstream, gvolshelf); CHKERRQ(ierr);
   
   // get thick0 = gdivideH
@@ -307,8 +314,8 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
               &SIAgridfrac, &streamgridfrac, &shelfgridfrac); CHKERRQ(ierr);
     ierr = PetscPrintf(grid.com, 
            "    (volume of ice which is SIA, stream, shelf:  %8.3f,  %8.3f,  %8.3f)\n",
-                         gvolSIA/1.0e6, gvolstream/1.0e6, gvolshelf/1.0e6);
-                         CHKERRQ(ierr);
+           gvolSIA/(1.0e6*1.0e9), gvolstream/(1.0e6*1.0e9), gvolshelf/(1.0e6*1.0e9));
+           CHKERRQ(ierr);
     ierr = PetscPrintf(grid.com, 
            "  d(volume)/dt of ice (km^3/a):    %11.2f\n",
                          dvoldt*secpera*1.0e-9); CHKERRQ(ierr);
@@ -352,43 +359,47 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
 
 //! Print a line to stdout which summarizes the state of the modeled ice sheet at the end of the time step.
 /*!
-Generally, a single line is printed to stdout, starting with the character 'S' in the 
-left-most column.
+Generally, a single line is printed to stdout, starting with the character 'S'
+in the  left-most column.
 
 If IceModel::printPrototype is TRUE then alternate lines with
 different left-most characters are printed:
-  - 'P' line gives names of the quantities reported in the 'S' line, the "prototype", while
+  - 'P' line gives names of the quantities reported in the 'S' line, the
+    "prototype", while
   - 'U' line gives units of these quantities.
 
 The left-most character convention allows automatic tools to read PISM stdout
-and produce time-series.  The 'P' and 'U' lines are intended to appear once at the
-beginning of the run, while an 'S' line appears at every time step.  Some 'S'
-lines report "<same>" when there is no change to a quantity.
+and produce time-series.  The 'P' and 'U' lines are intended to appear once at
+the beginning of the run, while an 'S' line appears at every time step.  Some
+'S' lines report "<same>" when there is no change to a quantity.
 
 This base class version gives a report based on the information included in the 
-EISMINT II intercomparison of ice sheet models[\ref EISMINT00].  The 'P' and 'U' lines are \code
+EISMINT II intercomparison of ice sheet models[\ref EISMINT00].  The 'P' and 'U'
+lines are \code
   P         YEAR:     ivol   iarea    meltf     thick0     temp0
   U        years 10^6_km^3 10^6_km^2 (none)          m         K
 \endcode
-The 'S' line gives the corresponding numbers.
+The 'S' line gives the corresponding numbers.  Note that the inputs \c volume
+and \c area are in m^3 and m^2, respectively.  All inputs to this are in 
+MKS except for \c year.
 
 Note that \c ivol is the ice sheet volume and \c iarea is the area occupied 
-by positive thickness ice.  The pure number \c meltf is the fraction of \c iarea for which
-the base is at the melting temperature.  (xactly what this melting temperature refers to
-is determined in IceModel::summary().)  The final two quantities are
-simply values of two variable at the center of the computational domain, namely 
-the thickness (\c thick0) and basal ice absolute temperature (\c temp0) at that
-center point.
+by positive thickness ice.  The pure number \c meltf is the fraction of \c iarea
+for which the base is at the melting temperature.  (Exactly what this melting
+temperature refers to is determined in IceModel::summary().)  The final two
+quantities are simply values of two variables at the center of the computational
+domain, namely the thickness (\c thick0) and basal ice absolute temperature
+(\c temp0) at that center point.
 
 For more description and examples, see the PISM User's Manual.
   
-Derived classes of IceModel are encouraged to redefine this method and add 
-alternate information.
+Derived classes of IceModel may redefine this method and print alternate
+information.  Use of DiagnosticTimeseries may be superior, however.
  */
 PetscErrorCode IceModel::summaryPrintLine(
      PetscTruth printPrototype,  bool tempAndAge,
      PetscScalar year,  PetscScalar /* delta_t */,
-     PetscScalar volume_kmcube,  PetscScalar area_kmsquare,
+     PetscScalar volume,  PetscScalar area,
      PetscScalar meltfrac,  PetscScalar H0,  PetscScalar T0) {
 
   PetscErrorCode ierr;
@@ -398,13 +409,13 @@ PetscErrorCode IceModel::summaryPrintLine(
     ierr = verbPrintf(2,grid.com,
       "U        years 10^6_km^3 10^6_km^2 (none)          m         K\n");
   } else {
-    if (tempAndAge == PETSC_FALSE) {
-      ierr = verbPrintf(2,grid.com, "S %12.5f: %8.5f %7.4f   <same> %10.3f    <same>\n",
-                         year, volume_kmcube/1.0e6, area_kmsquare/1.0e6, H0); CHKERRQ(ierr);
-    } else { // general case
+    if (tempAndAge == PETSC_TRUE) {
       ierr = verbPrintf(2,grid.com, "S %12.5f: %8.5f %7.4f %8.4f %10.3f %9.4f\n",
-                         year, volume_kmcube/1.0e6, area_kmsquare/1.0e6, meltfrac,
+                         year, volume/(1.0e6*1.0e9), area/(1.0e6*1.0e6), meltfrac,
                          H0,T0); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2,grid.com, " %12.5f: %8.5f %7.4f   <same> %10.3f    <same>\n",
+                         year, volume/(1.0e6*1.0e9), area/(1.0e6*1.0e6), H0); CHKERRQ(ierr);
     }
   }
   return 0;

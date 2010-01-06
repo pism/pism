@@ -863,8 +863,7 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
 
 //! At SSA points, correct the previously-computed volume strain heating (dissipation heating).
 /*!
-This is documented in the draft of Ed Bueler and Jed Brown, (2008), ``The shallow shelf 
-approximation as a ``sliding law'' in an ice sheet model with streaming flow''.
+Documented in \ref BBssasliding.
  */
 PetscErrorCode IceModel::correctSigma() {
   PetscErrorCode  ierr;

@@ -94,7 +94,129 @@ PetscScalar stream_angle_P2[3] = {0.0, 100.0, 225.0};  // degrees
 
 IcePSTexModel::IcePSTexModel(IceGrid &g)
     : IceEISModel(g) {  // do almost nothing; derived need constructors
-  expername = 'A';    // PST expers are closest to EISMINT II exper A
+  expername = 'A';      // PST expers are closest to EISMINT II exper A
+  ivol = PETSC_NULL;    // if we write series then this is not NULL
+}
+
+
+IcePSTexModel::~IcePSTexModel() {
+
+  if (ivol != PETSC_NULL) {
+    ivol->flush();  delete ivol;
+    iarea->flush();  delete iarea;
+    maxcbar->flush();  delete maxcbar;
+
+    avup0->flush();  avup1->flush();  avup2->flush();
+    delete avup0;  delete avup1;  delete avup2;
+    avdwn0->flush();  avdwn1->flush();  avdwn2->flush();
+    delete avdwn0;  delete avdwn1;  delete avdwn2;
+    if (exper_chosen != 3) {
+      avup3->flush();  delete avup3;
+      avdwn3->flush();  delete avdwn3;
+    }
+  }
+}
+
+
+PetscErrorCode IcePSTexModel::prepare_series() {
+  PetscErrorCode      ierr;
+
+  // set up the file with name seriesname
+  char outname[PETSC_MAX_PATH_LEN];
+  PetscTruth o_set;
+  ierr = PetscOptionsGetString(
+    PETSC_NULL, "-o", outname, PETSC_MAX_PATH_LEN, &o_set); CHKERRQ(ierr);
+  if (!o_set)
+    strncpy(outname, "unnamedpst.nc", PETSC_MAX_PATH_LEN);
+  strncpy(seriesname,"ser_pst_", PETSC_MAX_PATH_LEN);
+  strcat(seriesname,outname);
+
+  ierr = verbPrintf(2,grid.com, 
+    "  writing diagnostic time series, with special PST information, to %s ...\n",
+    seriesname); CHKERRQ(ierr);
+  NCTool nc(grid.com, grid.rank);
+  ierr = nc.open_for_writing(seriesname, false, false); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  // set-up each scalar time series
+  ivol = new DiagnosticTimeseries(&grid, "ivol", "t");
+  ivol->set_units("m3", "");
+  ivol->set_dimension_units("years", "");
+  ivol->output_filename = seriesname;
+  ivol->set_attr("long_name", "PST result: total ice volume");
+  
+  iarea = new DiagnosticTimeseries(&grid, "iarea", "t");
+  iarea->set_units("m2", "");
+  iarea->set_dimension_units("years", "");
+  iarea->output_filename = seriesname;
+  iarea->set_attr("long_name", "PST result: total ice area");
+  
+  maxcbar = new DiagnosticTimeseries(&grid, "maxcbar", "t");
+  maxcbar->set_units("m s-1", "m a-1");
+  maxcbar->set_dimension_units("years", "");
+  maxcbar->output_filename = seriesname;
+  maxcbar->set_attr("long_name", 
+    "PST result: maximum vertically-averaged ice speed anywhere on ice sheet");
+  
+  avup0 = new DiagnosticTimeseries(&grid, "avup0", "t");
+  avup0->set_units("m s-1", "m a-1");
+  avup0->set_dimension_units("years", "");
+  avup0->output_filename = seriesname;
+  avup0->set_attr("long_name",
+    "PST result: average speed in upper part of stream 0");
+  
+  avup1 = new DiagnosticTimeseries(&grid, "avup1", "t");
+  avup1->set_units("m s-1", "m a-1");
+  avup1->set_dimension_units("years", "");
+  avup1->output_filename = seriesname;
+  avup1->set_attr("long_name",
+    "PST result: average speed in upper part of stream 1");
+  
+  avup2 = new DiagnosticTimeseries(&grid, "avup2", "t");
+  avup2->set_units("m s-1", "m a-1");
+  avup2->set_dimension_units("years", "");
+  avup2->output_filename = seriesname;
+  avup2->set_attr("long_name",
+    "PST result: average speed in upper part of stream 2");
+  
+  avdwn0 = new DiagnosticTimeseries(&grid, "avdwn0", "t");
+  avdwn0->set_units("m s-1", "m a-1");
+  avdwn0->set_dimension_units("years", "");
+  avdwn0->output_filename = seriesname;
+  avdwn0->set_attr("long_name",
+    "PST result: average speed in downstream part of stream 0");
+  
+  avdwn1 = new DiagnosticTimeseries(&grid, "avdwn1", "t");
+  avdwn1->set_units("m s-1", "m a-1");
+  avdwn1->set_dimension_units("years", "");
+  avdwn1->output_filename = seriesname;
+  avdwn1->set_attr("long_name",
+    "PST result: average speed in downstream part of stream 1");
+  
+  avdwn2 = new DiagnosticTimeseries(&grid, "avdwn2", "t");
+  avdwn2->set_units("m s-1", "m a-1");
+  avdwn2->set_dimension_units("years", "");
+  avdwn2->output_filename = seriesname;
+  avdwn2->set_attr("long_name",
+    "PST result: average speed in downstream part of stream 2");
+
+  if (exper_chosen != 3) {
+    avup3 = new DiagnosticTimeseries(&grid, "avup3", "t");
+    avup3->set_units("m s-1", "m a-1");
+    avup3->set_dimension_units("years", "");
+    avup3->output_filename = seriesname;
+    avup3->set_attr("long_name",
+      "PST result: average speed in upper part of stream 3");
+
+    avdwn3 = new DiagnosticTimeseries(&grid, "avdwn3", "t");
+    avdwn3->set_units("m s-1", "m a-1");
+    avdwn3->set_dimension_units("years", "");
+    avdwn3->output_filename = seriesname;
+    avdwn3->set_attr("long_name",
+      "PST result: average speed in downstream part of stream 3");
+  }
+  
+  return 0;
 }
 
 
@@ -112,7 +234,7 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
     if (optionset == PETSC_TRUE) {
       if (exper_chosen >= 0) {
         ierr = PetscPrintf(grid.com,
-          "Only one experiment name option allowed for IcePSTexModel.\n");
+          "IcePSTexModel ERROR:  Only one experiment name option allowed.\n");
           CHKERRQ(ierr);
 	PetscEnd();
       } else {
@@ -123,15 +245,21 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
   }
   if (exper_chosen < 0) {
     ierr = PetscPrintf(grid.com,
-      "Unrecognized experiment name for IcePSTexModel.\n"
+      "IcePSTexModel ERROR:  Unrecognized experiment name.\n"
       "  An experiment name option like '-P2' must be chosen.\n");
       CHKERRQ(ierr);
     PetscEnd();
   }
-
+  
   ierr = verbPrintf(2,grid.com, 
     "setting up PST (Plastic till Stream w Thermocoupling) experiment %s ...\n",
     exper_chosen_name); CHKERRQ(ierr);
+
+  PetscTruth optionset;
+  ierr = check_option("-no_ser", optionset); CHKERRQ(ierr);
+  if (optionset == PETSC_FALSE) {
+    ierr = prepare_series(); CHKERRQ(ierr);
+  }
 
   return 0;
 }
@@ -396,16 +524,18 @@ PetscErrorCode IcePSTexModel::setTillPhi() {
 }
 
 
-//! Replace IceModel default summary.  This one gives velocities in streams.
-PetscErrorCode IcePSTexModel::summaryPrintLine(
-     PetscTruth printPrototype,  bool /*tempAndAge*/,
-     PetscScalar year,  PetscScalar /*dt*/, 
-     PetscScalar volume_kmcube,  PetscScalar area_kmsquare,
-     PetscScalar /*meltfrac*/,  PetscScalar /*H0*/,  PetscScalar /*T0*/) {
-
+PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
   PetscErrorCode ierr;
-  PetscScalar     **H, **ubar, **vbar;
-  // these are in MKS units; with "g" are global across all processors
+
+  if (ivol == PETSC_NULL)  return 0;
+
+  // all are in MKS units
+  // variables starting with "g" are global across all processors
+
+  // not all of these are used ...
+  PetscScalar     gvolume, garea, gvolSIA, gvolstream, gvolshelf;
+  ierr = volumeArea(gvolume, garea, gvolSIA, gvolstream, gvolshelf); CHKERRQ(ierr);
+
   PetscScalar     maxcbarALL = 0.0, 
                   areaup[4] = {0.0, 0.0, 0.0, 0.0},
                   avcup[4] = {0.0, 0.0, 0.0, 0.0},
@@ -415,6 +545,7 @@ PetscErrorCode IcePSTexModel::summaryPrintLine(
   PetscScalar     x_loc, y_loc;
   const PetscScalar darea = grid.dx * grid.dy;
   
+  PetscScalar     **H, **ubar, **vbar;
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vubar.get_array(ubar); CHKERRQ(ierr);
   ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
@@ -444,7 +575,6 @@ PetscErrorCode IcePSTexModel::summaryPrintLine(
           for (int m=0; m<4; m++) {
             const PetscScalar width = e[exper_chosen].stream_width[m] * 1000.0;
             if (inStream((pi/2.0)*m,width,x,y,x_loc,y_loc)) {
-              //if (x_loc > stream_change) {
               if (x_loc > stream_change - 1.0) {
                 areadown[m] += darea;
                 avcdown[m] += cbar * darea;
@@ -481,47 +611,35 @@ PetscErrorCode IcePSTexModel::summaryPrintLine(
     }
   }
 
-  if (printPrototype == PETSC_TRUE) {
-    ierr = verbPrintf(2,grid.com,
-      "++++++++++++++++++++++++++ WIDEN SCREEN TO AT LEAST %d CHARS FOR IcePSTexModel OUTPUT"
-      " +++++++++++++++++++++++++++\n",
-      (exper_chosen == 3) ? 96 : 114); CHKERRQ(ierr);
-    if (exper_chosen == 3) {
-      ierr = verbPrintf(2,grid.com,
-        "P         YEAR:     ivol   iarea   maxcbar"
-        "    avup0   avdwn0    avup1   avdwn1    avup2   avdwn2\n");
-      ierr = verbPrintf(2,grid.com,
-        "U        years 10^6_km^3 10^6_km^2     m/a"
-        "      m/a      m/a      m/a      m/a      m/a      m/a\n");
-    } else {
-      ierr = verbPrintf(2,grid.com,
-        "P         YEAR:     ivol   iarea   maxcbar"
-        "    avup0   avdwn0    avup1   avdwn1    avup2   avdwn2    avup3   avdwn3\n");
-      ierr = verbPrintf(2,grid.com,
-        "U        years 10^6_km^3 10^6_km^2     m/a"
-        "      m/a      m/a      m/a      m/a      m/a      m/a      m/a      m/a\n");
-    }
-  } else { // run time summary line
-    if (exper_chosen == 3) {
-      ierr = verbPrintf(2,grid.com, 
-        "S %12.5f: %8.5f %7.4f %9.2f %8.2f %8.2f %8.2f %8.2f %8.2f %8.2f\n",
-         year, volume_kmcube/1.0e6, area_kmsquare/1.0e6,
-         gmaxcbarALL*secpera,
-         gavcup[0]*secpera, gavcdown[0]*secpera,
-         gavcup[1]*secpera, gavcdown[1]*secpera,
-         gavcup[2]*secpera, gavcdown[2]*secpera); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com, 
-        "S %12.5f: %8.5f %7.4f %9.2f %8.2f %8.2f %8.2f %8.2f %8.2f %8.2f %8.2f %8.2f\n",
-         year, volume_kmcube/1.0e6, area_kmsquare/1.0e6,
-         gmaxcbarALL*secpera,
-         gavcup[0]*secpera, gavcdown[0]*secpera,
-         gavcup[1]*secpera, gavcdown[1]*secpera,
-         gavcup[2]*secpera, gavcdown[2]*secpera,
-         gavcup[3]*secpera, gavcdown[3]*secpera); CHKERRQ(ierr);
-    }
+  ivol->append(grid.year, gvolume);
+  ivol->interp(grid.year);
+  iarea->append(grid.year, garea);
+  iarea->interp(grid.year);
+  maxcbar->append(grid.year, gmaxcbarALL);
+  maxcbar->interp(grid.year);
+
+  avup0->append(grid.year, gavcup[0]);
+  avup0->interp(grid.year);
+  avup1->append(grid.year, gavcup[1]);
+  avup1->interp(grid.year);
+  avup2->append(grid.year, gavcup[2]);
+  avup2->interp(grid.year);
+
+  avdwn0->append(grid.year, gavcdown[0]);
+  avdwn0->interp(grid.year);
+  avdwn1->append(grid.year, gavcdown[1]);
+  avdwn1->interp(grid.year);
+  avdwn2->append(grid.year, gavcdown[2]);
+  avdwn2->interp(grid.year);
+
+  if (exper_chosen != 3) {
+    avup3->append(grid.year, gavcup[3]);
+    avup3->interp(grid.year);
+    avdwn3->append(grid.year, gavcdown[3]);
+    avdwn3->interp(grid.year);
   }
 
   return 0;
 }
+
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -959,7 +959,7 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
 PetscErrorCode IceCompModel::summaryPrintLine(
      PetscTruth printPrototype,  bool tempAndAge,
      PetscScalar year,  PetscScalar /*dt*/, 
-     PetscScalar volume_kmcube,  PetscScalar area_kmsquare,
+     PetscScalar volume,  PetscScalar area,
      PetscScalar meltfrac,  PetscScalar H0,  PetscScalar T0) {
 
   PetscErrorCode ierr;
@@ -979,14 +979,15 @@ PetscErrorCode IceCompModel::summaryPrintLine(
     if ((testname == 'F') || (testname == 'G') || (testname == 'K')) {
       if (tempAndAge == PETSC_TRUE) {
         ierr = verbPrintf(2,grid.com, "S %12.5f: %9.5f %8.4f %8.4f %9.3f %9.4f\n",
-                       year, volume_kmcube/1.0e6,area_kmsquare/1.0e6,meltfrac,H0,T0); CHKERRQ(ierr);
+          year, volume/(1.0e6*1.0e9),area/(1.0e6*1.0e6), meltfrac, H0, T0);
+          CHKERRQ(ierr);
       } else {
         ierr = verbPrintf(2,grid.com, "S %12.5f: %9.5f %8.4f   <same> %9.3f    <same>\n",
-                       year, volume_kmcube/1.0e6,area_kmsquare/1.0e6,H0); CHKERRQ(ierr);
+          year, volume/(1.0e6*1.0e9),area/(1.0e6*1.0e6), H0); CHKERRQ(ierr);
       }
     } else {
         ierr = verbPrintf(2,grid.com, "S %12.5f: %9.5f %8.4f %9.3f\n",
-           year, volume_kmcube/1.0e6, area_kmsquare/1.0e6, H0); CHKERRQ(ierr);
+           year, volume/(1.0e6*1.0e9), area/(1.0e6*1.0e6), H0); CHKERRQ(ierr);
     }
   }
   return 0;

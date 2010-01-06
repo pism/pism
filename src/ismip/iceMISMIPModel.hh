@@ -1,4 +1,4 @@
-// Copyright (C) 2008, 2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -82,7 +82,7 @@ public:
   virtual PetscErrorCode summaryPrintLine(
                  PetscTruth printPrototype,  bool tempAndAge,
                  PetscScalar year,  PetscScalar dt, 
-                 PetscScalar volume_kmcube,  PetscScalar area_kmsquare,
+                 PetscScalar volume,  PetscScalar area,
                  PetscScalar meltfrac,  PetscScalar H0,  PetscScalar T0);
   using IceModel::basalDragx;
   virtual PetscScalar    basalDragx(PetscScalar **tauc,

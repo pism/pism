@@ -71,9 +71,18 @@ protected:
 
   Here is a usage example:
 
-  First, create the DiagnosticTimeseries object and set metadata. This will
-  prepare the offsets object to write delta_T(t) time-series to
-  pism-delta_T.nc, converting from degrees Celsius (internal units) to degrees
+  First, prepare a file for writing:
+
+  \code
+  char seriesname[] = "ser_delta_T.nc";
+  NCTool nc(grid.com, grid.rank);
+  nc.open_for_writing(seriesname, true, false);
+  nc.close();
+  \endcode
+
+  Next, create the DiagnosticTimeseries object and set metadata. This will
+  prepare the offsets object to write delta_T(t) time-series to file
+  ser_delta_T.nc, converting from degrees Celsius (internal units) to degrees
   Kelvin ("glaciological" units). Time will be written in years (%i.e. there is
   no unit conversion there).
 
@@ -82,21 +91,32 @@ protected:
   offsets->set_units("Kelvin", "Celsius");
   offsets->set_dimension_units("years", "");
   offsets->buffer_size = 100; // only store 100 entries; default is 10000
+  offsets->output_filename = seriesname;
+  offsets->set_attr("long_name", "temperature offsets from some value");
   \endcode
 
   Once this is set up, one can add calls like
 
   \code
   offsets->append(t_years, TsOffset);
-
   offsets->interp(time);
   \endcode
 
   to the code. The first call will store the (t_years, TsOffset). The second
-  call will use linear interpolation to find the value at \c time years.
+  call will use linear interpolation to find the value at \c time years.  Note
+  that the first call adds to a buffer but does not yield any output without 
+  the second call.  Therefore, even if interpolation is not really needed
+  because time==t_years, the call to interp() should still occur.
+  
+  Finally, make sure to write before destroying:
+
+  \code
+  offsets->flush();
+  delete offsets;
+  \endcode
 
   Note that every time you exceed the \c buffer_size limit, all the entries are
-  written to a file <b> and removed from memory</b>.
+  written to a file by flush() <b> and removed from memory</b>.
  */
 class DiagnosticTimeseries : public Timeseries {
 public:
