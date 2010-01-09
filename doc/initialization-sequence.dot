@@ -15,7 +15,7 @@ digraph pism_init {
 
     is_i_set1 [label = "Is -i set?"];
     {rank=same
-      grid_from_file [label = "Get grid settings from\n a file using NCTool::get_grid()" URL="\ref NCTool::get_grid()"];
+      grid_from_file [label = "Get grid settings from\n a file using NCTool::get_grid()\nIceModel::grid_setup()" URL="\ref NCTool::get_grid()"];
 
       set_grid_defaults [label = "Set default grid parameters;\nread them from -boot_from file if present\nIceModel::set_grid_defaults()" color=darkgreen URL="\ref IceModel::set_grid_defaults()"];
     }

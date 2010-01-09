@@ -302,7 +302,7 @@ PetscErrorCode IceModel::createVecs() {
 
   // basal melt rate
   ierr = vbasalMeltRate.create(grid, "bmelt", true); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.set_attrs("diagnostic",
+  ierr = vbasalMeltRate.set_attrs("model_state",
                                   "ice basal melt rate in ice thickness per time",
 				  "m s-1", "land_ice_basal_melt_rate"); CHKERRQ(ierr);
   ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);  // so vertical velocities do not use junk from 

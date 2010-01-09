@@ -210,9 +210,10 @@ PetscErrorCode IceModel::write_extra_fields(const char* /*filename*/) {
 }
 
 //! Read a saved PISM model state in NetCDF format, for complete initialization of an evolution or diagnostic run.
-/*! When initializing from a NetCDF input file, the input file determines the
-  number of grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the
-  computational box.
+/*!
+Before this is run, the input file determines the number of grid points 
+(Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational box.  See
+IceModel::grid_setup().
  */
 PetscErrorCode IceModel::initFromFile(const char *filename) {
   PetscErrorCode  ierr;
