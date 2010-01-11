@@ -122,6 +122,9 @@ If the file \verb|foo.nc|, specified by \verb|-extra_file foo.nc|, already exist
   \end{longtable}
  \label{tab:extra-vars}
 \end{table}
+
+\clearpage
+
 \subsection{Saving re-startable snapshots of the model state}\index{snapshots of the model state}\index{PISM!saving snapshots of the model state}
 \label{sec:snapshots}  Sometimes you want to check the model state every 1000 years, for example.  One possible solution is to run PISM for a thousand years, have it save all the fields at the end of the run, then restart and run for another thousand, and etc.  This forces the adaptive time-stepping mechanism to stop \emph{exactly} at multiples of 1000 years, which may be desirable in some cases.
 
@@ -490,29 +493,37 @@ Here the \verb|kill| command sent the signal to all four of the running PISM pro
 
 
 
-\subsection{Understanding adaptive time-stepping} \label{subsect:adapt}\index{PISM!adaptive time stepping scheme} Recall that at each time step the PISM standard output includes flags and a summary of the model state using a few numbers:
+\subsection{Understanding adaptive time-stepping} \label{subsect:adapt}\index{PISM!adaptive time stepping scheme} At each time step the PISM standard output includes flags and a summary of the model state using a few numbers.  A typical example is
+\small
 \begin{verbatim}
-%ybp SIA SSA  # vgatdh Nr  +STEP
-S         YEAR:     ivol   iarea    meltf     thick0     temp0
+  9.915e-05   2 y SIA  SSA  v$th d (dt=2.14438 in 5 substeps; av dt_sub=0.42888)
+S   2360.49413:  2.11211  1.0569   3682.864  256.0977
 \end{verbatim}
-Here we explain what `\verb|Nr|' and `\verb|STEP|' in the flag line mean.
+\normalsize
+\noindent The format of the second line, the summary, is simple:
+\small
+\begin{verbatim}
+S         YEAR:     ivol   iarea     thick0     temp0
+\end{verbatim}
+\normalsize
+That is, we have the total ice volume, total ice area, and the thickness and basal temperature at the center of the computational domain.  A ``\verb|U|'' line at the beginning of the standard output indicates the units.
 
-\verb|STEP| is the time step just taken by PISM, in model years.  This time step is determined by a somewhat complicated adaptive mechanism.  Note PISM does each step explicitly when numerically approximating mass conservation in the map-plane.  This, and the modeling of horizontal advection in conservation of energy and age evolution \cite{BBL}, requires an adaptive time-stepping scheme.
+The characters ``\verb|  9.915e-05   2 y SIA  SSA  v$th|'' at the beginning of the flag line give a very terse description of which processes happened.  What's clear is that both the SIA and SSA stress balances were solved.  For the rest, see the source code, expecially methods \verb|IceModel::run()| and \verb|IceModel::velocity()|.
 
-If the option \verb|-skip| is used then `\verb|N|' in the flag line will be non-zero.  If \verb|-skip| $M$ then \verb|N| will be at most $M-1$.  The flag \verb|N| will countdown the mass conservation steps, in the case that the adaptive scheme determines that a long temperature/age evolution time step can be taken.  To see an example, do:\index{pismv}
+Now we explain what the rest of the flags line, namely
 
-\verb|$  pismv -test G -Mx 141 -My 141 -Mz 51 -skip 4|
+``\verb|d (dt=2.14438 in 5 substeps; av dt_sub=0.42888)|''
 
-Table \ref{tab:adaptiveflag} explains the meaning of the additional one character adaptive-timestepping ``reason'' flag `\verb|r|'.
+\noindent might mean.  First note that the PISM time step is determined by an adaptive mechanism.  PISM does each step explicitly when numerically-approximating mass conservation in the map-plane.  This, and the modeling of horizontal advection in conservation of energy and age evolution, requires such an adaptive time-stepping scheme \cite{BBL}.  The first character we see here, namely ``\verb|d|'', is the adaptive-timestepping ``reason'' flag.  See Table \ref{tab:adaptiveflag}; ``\verb|d|'' means that the time step was limited by the diffusivity of SIA mass conservation.
 
 \begin{table}[ht]
-\caption{Meaning of the adaptive time-stepping ``reason'' flag `\texttt{r}' in standard output flag line.}\label{tab:adaptiveflag}
+\caption{Meaning of the adaptive time-stepping ``reason'' flag in the standard output flag line.}\label{tab:adaptiveflag}
 \begin{tabular}{p{0.05\linewidth}p{0.85\linewidth}}\hline
 \textbf{Flag} & \textbf{Active adaptive constraint} \\ \hline
 \verb|c| & three-dimensional CFL for temperature/age advection \cite{BBL} \\
 \verb|d| & diffusivity for SIA mass conservation \cite{BBL} \\
 \verb|e| & end of prescribed run time \\
-\verb|f| & \verb|-dt_force| set; generally option \verb|-dt_force|, which overrides the adaptive scheme, should not be used  \\
+\verb|f| & \verb|-dt_force| set; generally option \verb|-dt_force|, which overrides the adaptive scheme; \emph{should not be used}  \\
 \verb|m| & maximum allowed $\Delta t$ applies; set with \verb|-max_dt| \\
 \verb|t| & maximum $\Delta t$ was temporarily set by a derived class \\
 \verb|u| & 2D CFL for mass conservation in SSA regions (upwinded; \cite{BBssasliding})\\
@@ -521,4 +532,4 @@ Table \ref{tab:adaptiveflag} explains the meaning of the additional one characte
 \end{tabular}
 \end{table}
 
-
+We also see that there was a major time step of 2.1 model years divided into 5 substeps of about 0.43 years.  This came from the use of the \intextoption{skip} option.  Note that \verb|-skip| merely sets a maximum for the number of substeps.  The adaptive mechanism may choose to not take so many substeps, though they are computationally-inexpensive.

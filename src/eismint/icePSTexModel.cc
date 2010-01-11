@@ -102,6 +102,7 @@ IcePSTexModel::IcePSTexModel(IceGrid &g)
 IcePSTexModel::~IcePSTexModel() {
 
   if (ivol != PETSC_NULL) {
+    dt_ser->flush();  delete dt_ser;
     ivol->flush();  delete ivol;
     iarea->flush();  delete iarea;
     maxcbar->flush();  delete maxcbar;
@@ -132,13 +133,20 @@ PetscErrorCode IcePSTexModel::prepare_series() {
   strcat(seriesname,outname);
 
   ierr = verbPrintf(2,grid.com, 
-    "  writing diagnostic time series, with special PST information, to %s ...\n",
+    "  will write time series with special PST information to %s ...\n",
     seriesname); CHKERRQ(ierr);
   NCTool nc(grid.com, grid.rank);
   ierr = nc.open_for_writing(seriesname, false, false); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   // set-up each scalar time series
+  dt_ser = new DiagnosticTimeseries(&grid, "dt", "t");
+  dt_ser->set_units("s", "years");
+  dt_ser->set_dimension_units("years", "");
+  dt_ser->output_filename = seriesname;
+  dt_ser->set_attr("long_name", "PST result: mass continuity time-step");
+  dt_ser->set_attr("valid_min", 0.0);
+  
   ivol = new DiagnosticTimeseries(&grid, "ivol", "t");
   ivol->set_units("m3", "");
   ivol->set_dimension_units("years", "");
@@ -610,6 +618,9 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
       gavcdown[m] = 0.0;
     }
   }
+
+  dt_ser->append(grid.year, dt);
+  dt_ser->interp(grid.year);
 
   ivol->append(grid.year, gvolume);
   ivol->interp(grid.year);

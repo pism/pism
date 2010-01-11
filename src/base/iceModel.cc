@@ -446,9 +446,8 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   ierr = summaryPrintLine(PETSC_TRUE,do_temp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   skipCountDown = 0;
-  ierr = summary(do_temp,reportPATemps); CHKERRQ(ierr);  // report starting state
   dtTempAge = 0.0;
-
+  ierr = summary(do_temp,reportPATemps); CHKERRQ(ierr);  // report starting state
 
   // Write snapshots and time-series at the beginning of the run.
   ierr = write_snapshot(); CHKERRQ(ierr);
@@ -457,8 +456,8 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
 
   // main loop for time evolution
   for (PetscScalar year = grid.start_year; year < grid.end_year; year += dt/secpera) {
-
-    ierr = verbPrintf(2,grid.com, " "); CHKERRQ(ierr);
+    
+    strcpy(stdout_flag_string,"");  // clear it out
     dt_force = -1.0;
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
@@ -500,19 +499,16 @@ PetscLogEventBegin(beddefEVENT,0,0,0,0);
     // compute bed deformation, which only depends on current thickness and bed elevation
     if (do_bed_deformation) {
       ierr = bedDefStepIfNeeded(); CHKERRQ(ierr); // prints "b" or "$" as appropriate
-    } else {
-      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
-    }
+    } else stdout_flag_append(" ");
     
 PetscLogEventEnd(beddefEVENT,0,0,0,0);
 
     // update basal till yield stress if appropriate; will modify and communicate mask
     if (do_plastic_till) {
       ierr = updateYieldStressFromHmelt();  CHKERRQ(ierr);
-      ierr = verbPrintf(2,grid.com, "y"); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
-    }
+      stdout_flag_append("y");
+    } else stdout_flag_append("$");
+
 
     // always do SIA velocity calculation; only update SSA and 
     //   only update velocities at depth if suggested by temp and age
@@ -520,7 +516,7 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
     //   skipping SSA (and temp/age)
     bool updateAtDepth = (skipCountDown == 0);
     ierr = velocity(updateAtDepth); CHKERRQ(ierr);  // event logging in here
-    ierr = verbPrintf(2,grid.com, updateAtDepth ? "v" : "V" ); CHKERRQ(ierr);
+    stdout_flag_append(updateAtDepth ? "v" : "V");
     
     // adapt time step using velocities and diffusivity, ..., just computed
     bool useCFLforTempAgeEqntoGetTimestep = (do_temp == PETSC_TRUE);
@@ -532,11 +528,6 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
     //    criteria from derived class additionalAtStartTimestep(), and from 
     //    "-skip" mechanism
 
-    // ierr = PetscPrintf(PETSC_COMM_SELF,
-    //           "\n[rank=%d, year=%f, dt=%f, startYear=%f, endYear=%f]",
-    //           grid.rank, grid.year, dt/secpera, startYear, endYear);
-    //        CHKERRQ(ierr);
-
     PetscLogEventBegin(tempEVENT,0,0,0,0);
     
     bool tempAgeStep = ( updateAtDepth && ((do_temp) || (do_age)) );
@@ -546,15 +537,10 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
       if (updateHmelt == PETSC_TRUE) {
         ierr = diffuseHmelt(); CHKERRQ(ierr);
       }
-      if (do_age) {
-        ierr = verbPrintf(2,grid.com, "a"); CHKERRQ(ierr);
-      } else {
-        ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
-      }
-      ierr = verbPrintf(2,grid.com, "t"); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com, "$$"); CHKERRQ(ierr);
+      if (do_age) stdout_flag_append("at");
+      else        stdout_flag_append("$t");
     }
+    else stdout_flag_append("$$");
 
     PetscLogEventEnd(tempEVENT,0,0,0,0);
 
@@ -567,25 +553,26 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
       ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
       if ((do_skip == PETSC_TRUE) && (skipCountDown > 0))
         skipCountDown--;
-      ierr = verbPrintf(2,grid.com, "h"); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com, "$"); CHKERRQ(ierr);
-    }
+      stdout_flag_append("h");
+    } else stdout_flag_append("$");
 
 PetscLogEventEnd(massbalEVENT,0,0,0,0);
     
     ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 
-    // Writing these fields here ensures that we do it after the last
-    // time-step, too.
+    // end the flag line
+    char tempstr[5];
+    sprintf(tempstr," %c", adaptReasonFlag);
+    stdout_flag_append(tempstr);
+    
+    // report a summary for major steps or the last one
+    const bool show_step = tempAgeStep || (adaptReasonFlag == 'e');
+    ierr = summary(show_step,reportPATemps); CHKERRQ(ierr);
+
+    // writing these fields here ensures that we do it after the last time-step
     ierr = write_snapshot(); CHKERRQ(ierr);
     ierr = write_timeseries(); CHKERRQ(ierr);
     ierr = write_extras(); CHKERRQ(ierr);
-
-    // end the flag line and report a summary
-    ierr = verbPrintf(2,grid.com, " %d%c  +%6.5f\n", skipCountDown, adaptReasonFlag,
-                      dt / secpera); CHKERRQ(ierr);
-    ierr = summary(tempAgeStep,reportPATemps); CHKERRQ(ierr);
 
     ierr = update_viewers(); CHKERRQ(ierr);
 

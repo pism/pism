@@ -675,7 +675,7 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
       ierr = testConvergenceOfNu(vNuH, vNuHOld, &norm, &normChange); CHKERRQ(ierr);
       if (getVerbosityLevel() < 3) {
         ierr = verbPrintf(2,grid.com,
-          (k == 0) ? "%12.4e" : "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%12.4e",
+          (k == 0) ? "%11.3e" : "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%11.3e",
           normChange/norm); CHKERRQ(ierr);
       }
       ierr = verbPrintf(3,grid.com,"|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",

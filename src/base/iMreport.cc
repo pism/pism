@@ -291,11 +291,12 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     const PetscScalar CFLviolpercent = 100.0 * CFLviolcount / (grid.Mx * grid.Mz * grid.Mz);
     const PetscScalar CFLVIOL_REPORT_VERB2_PERCENT = 0.1; // only report (verbosity=2) if above 0.1%
     if (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT) {
-      ierr = verbPrintf(2,grid.com,"  [!CFL#=%1.0f (=%8.6f%% of 3D grid)]\n",
-                CFLviolcount,CFLviolpercent); CHKERRQ(ierr);
+      char tempstr[90] = "";
+      sprintf(tempstr, " [!CFL#=%1.0f (=%8.6f%% of 3D grid)]", CFLviolcount,CFLviolpercent);
+      stdout_flag_append(tempstr);
     } else {
       ierr = verbPrintf(3,grid.com,"  [!CFL#=%1.0f (=%8.6f%% of 3D grid)]\n",
-                CFLviolcount,CFLviolpercent); CHKERRQ(ierr);
+                        CFLviolcount,CFLviolpercent); CHKERRQ(ierr);
     }
   }
    
@@ -359,67 +360,84 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
 
 //! Print a line to stdout which summarizes the state of the modeled ice sheet at the end of the time step.
 /*!
-Generally, a single line is printed to stdout, starting with the character 'S'
-in the  left-most column.
+Generally, two lines are printed to stdout, the first starting with a space 
+and the second starting with the character 'S' in the left-most column (column 1).
 
-If IceModel::printPrototype is TRUE then alternate lines with
-different left-most characters are printed:
+The first line shows flags for which processes executed, and the length of the
+time step (and/or substeps under option -skip).  See IceModel::run()
+for meaning of these flags.
+
+If IceModel::printPrototype is TRUE then the first line does not appear and
+the second line has alternate appearance.  Specifically, different column 1
+characters are printed:
   - 'P' line gives names of the quantities reported in the 'S' line, the
     "prototype", while
   - 'U' line gives units of these quantities.
-
-The left-most character convention allows automatic tools to read PISM stdout
+This column 1 convention allows automatic tools to read PISM stdout
 and produce time-series.  The 'P' and 'U' lines are intended to appear once at
-the beginning of the run, while an 'S' line appears at every time step.  Some
-'S' lines report "<same>" when there is no change to a quantity.
-
+the beginning of the run, while an 'S' line appears at every time step.
 This base class version gives a report based on the information included in the 
-EISMINT II intercomparison of ice sheet models[\ref EISMINT00].  The 'P' and 'U'
-lines are \code
-  P         YEAR:     ivol   iarea    meltf     thick0     temp0
-  U        years 10^6_km^3 10^6_km^2 (none)          m         K
-\endcode
-The 'S' line gives the corresponding numbers.  Note that the inputs \c volume
-and \c area are in m^3 and m^2, respectively.  All inputs to this are in 
-MKS except for \c year.
+EISMINT II intercomparison of ice sheet models[\ref EISMINT00].
 
-Note that \c ivol is the ice sheet volume and \c iarea is the area occupied 
-by positive thickness ice.  The pure number \c meltf is the fraction of \c iarea
-for which the base is at the melting temperature.  (Exactly what this melting
-temperature refers to is determined in IceModel::summary().)  The final two
-quantities are simply values of two variables at the center of the computational
-domain, namely the thickness (\c thick0) and basal ice absolute temperature
-(\c temp0) at that center point.
+Note that the inputs \c volume and \c area to this method are in m^3 and m^2,
+respectively.  Thus all inputs to this method are in MKS except for \c year.
+
+The resulting numbers on an 'S' line have the following meaning in this base
+class version:
+  - \c ivol is the total ice sheet volume
+  - \c iarea is the total area occupied by positive thickness ice
+  - \c thick0 is the ice thickness at the center of the computational domain
+  - \c temp0 is the ice basal temperature at the center of the computational domain
+The last two can be interpreted as "sanity checks", because they give
+information about a location which may or may not be "typical".
 
 For more description and examples, see the PISM User's Manual.
-  
 Derived classes of IceModel may redefine this method and print alternate
 information.  Use of DiagnosticTimeseries may be superior, however.
  */
 PetscErrorCode IceModel::summaryPrintLine(
      PetscTruth printPrototype,  bool tempAndAge,
-     PetscScalar year,  PetscScalar /* delta_t */,
+     PetscScalar year,  PetscScalar delta_t,
      PetscScalar volume,  PetscScalar area,
-     PetscScalar meltfrac,  PetscScalar H0,  PetscScalar T0) {
+     PetscScalar /* meltfrac */,  PetscScalar H0,  PetscScalar T0) {
 
   PetscErrorCode ierr;
   if (printPrototype == PETSC_TRUE) {
     ierr = verbPrintf(2,grid.com,
-      "P         YEAR:     ivol   iarea    meltf     thick0     temp0\n");
+          "P         YEAR:     ivol   iarea     thick0     temp0\n");
     ierr = verbPrintf(2,grid.com,
-      "U        years 10^6_km^3 10^6_km^2 (none)          m         K\n");
+          "U        years 10^6_km^3 10^6_km^2        m         K\n");
+    mass_cont_sub_counter = 0;  
+    mass_cont_sub_dtsum = 0.0;    
   } else {
+    if (delta_t > 0.0) {
+      mass_cont_sub_counter++;      
+      mass_cont_sub_dtsum += delta_t;
+    }  
     if (tempAndAge == PETSC_TRUE) {
-      ierr = verbPrintf(2,grid.com, "S %12.5f: %8.5f %7.4f %8.4f %10.3f %9.4f\n",
-                         year, volume/(1.0e6*1.0e9), area/(1.0e6*1.0e6), meltfrac,
-                         H0,T0); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com, " %12.5f: %8.5f %7.4f   <same> %10.3f    <same>\n",
-                         year, volume/(1.0e6*1.0e9), area/(1.0e6*1.0e6), H0); CHKERRQ(ierr);
+      char tempstr[90] = "";
+      const PetscScalar major_dt_years = mass_cont_sub_dtsum / secpera;
+      if (mass_cont_sub_counter == 1) {
+        sprintf(tempstr, " (dt=%.5f)", major_dt_years);
+      } else {
+        sprintf(tempstr, " (dt=%.5f in %d substeps; av dt_sub=%.5f)",
+          major_dt_years, mass_cont_sub_counter, major_dt_years / mass_cont_sub_counter);
+      }
+      stdout_flag_append(tempstr);
+      if (delta_t > 0.0) { // avoids printing an empty line if we have not done anything
+        stdout_flag_append("\n");
+        ierr = verbPrintf(2,grid.com, stdout_flag_string); CHKERRQ(ierr);
+      }
+      ierr = verbPrintf(2,grid.com, 
+          "S %12.5f: %8.5f %7.4f %10.3f %9.4f\n",
+          year, volume/(1.0e6*1.0e9), area/(1.0e6*1.0e6), H0, T0); CHKERRQ(ierr);
+      mass_cont_sub_counter = 0;      
+      mass_cont_sub_dtsum = 0.0;
     }
   }
   return 0;
 }
+
 
 //! \brief Computes cbar, the magnitude of vertically-integrated horizontal
 //! velocity of ice and masks out ice-free areas.
@@ -1254,3 +1272,10 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
 
   return 0;
 }
+
+
+PetscErrorCode IceModel::stdout_flag_append(const char *x) {
+  strncat(stdout_flag_string,x,PETSC_MAX_PATH_LEN);
+  return 0;
+}
+

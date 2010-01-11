@@ -51,7 +51,6 @@ mpst()
 {
     cmd="mpiexec -n $1 pisms -pst $2"  # change if "mpirun" or "bin/pisms", etc.
     
-    echo 
     echo "date = '`date`' on host '`uname -n`':"
     echo "trying '$cmd'"
     echo
@@ -141,6 +140,8 @@ mpst_vg $NN u "-P3 -Mx 201 -My 201 -y 5000 -skip 10 \
 
 mpst_vg $NN u "-P4 -Mx 201 -My 201 -y 5000 -skip 10 \
  -regrid_from P0A.nc $regridv -o P4fine.nc"
+
+exit
 
 # VERTFINE: as 10km case but with finer vertical grid (x2 points)
 mpst_vg $NN t "-P1 -Mx 151 -My 151 -y 5000 -skip 5 \

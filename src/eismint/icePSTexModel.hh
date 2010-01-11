@@ -70,7 +70,8 @@ protected:
   PetscErrorCode prepare_series();
   char seriesname[PETSC_MAX_PATH_LEN];   // file name: "ser_pst_foo.nc" if "-o foo.nc"
   DiagnosticTimeseries
-     *ivol, *iarea,                      // ice vol and area; only mildly redundant 
+     *ivol, *iarea,                      // ice vol and area; mildly redundant 
+     *dt_ser,                            // time step; mildly redundant 
      *maxcbar,                           // max speed anywhere
      *avup0, *avup1, *avup2, *avup3,     // upstream speeds; avup3 not written for P3
      *avdwn0, *avdwn1, *avdwn2, *avdwn3; // downstream speeds; avdwn3 DITTO

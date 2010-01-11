@@ -48,20 +48,14 @@ protected:
   int          testname;
   void         mapcoords(const PetscInt i, const PetscInt j,
                   PetscScalar &x, PetscScalar &y, PetscScalar &r);
-  virtual PetscErrorCode summaryPrintLine(
-                   PetscTruth printPrototype, bool tempAndAge,
-                   PetscScalar year,  PetscScalar dt, 
-                   PetscScalar volume,  PetscScalar area,
-                   PetscScalar meltfrac,  PetscScalar H0,  PetscScalar T0);
-  virtual PetscErrorCode 
-               additionalAtStartTimestep();
-  virtual PetscErrorCode 
-               additionalAtEndTimestep();
+  virtual PetscErrorCode additionalAtStartTimestep();
+  virtual PetscErrorCode additionalAtEndTimestep();
   PetscErrorCode computeGeometryErrors(    // all tests except K
         PetscScalar &gvolexact, PetscScalar &gareaexact, PetscScalar &gdomeHexact,
         PetscScalar &volerr, PetscScalar &areaerr,
         PetscScalar &gmaxHerr, PetscScalar &gavHerr, PetscScalar &gmaxetaerr,
         PetscScalar &centerHerr);
+  virtual PetscErrorCode summary(bool tempAndAge, bool useHomoTemp);
 
   // related to tests A B C D E H
   PetscErrorCode initTestABCDEH();

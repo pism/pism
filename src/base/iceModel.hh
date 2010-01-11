@@ -196,8 +196,7 @@ protected:
 
   // parameters
   PetscReal   dt, dtTempAge,  // current mass cont. and temp/age; time steps in seconds
-              dt_force,
-              maxdt_temporary,
+              maxdt_temporary, dt_force, mass_cont_sub_dtsum,
               CFLviolcount,    //!< really is just a count, but PetscGlobalSum requires this type
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax,
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
@@ -206,7 +205,7 @@ protected:
     total_basal_ice_flux,
     total_surface_ice_flux,
     dvoldt;  //!< d(total ice volume)/dt; m3 s-1
-  PetscInt    skipCountDown;
+  PetscInt    skipCountDown, mass_cont_sub_counter;
 
   // physical parameters used frequently enough to make looking up via
   // config.get() a hassle:
@@ -232,8 +231,8 @@ protected:
                                 // FIXME: check initialization when IceEnthalpyModel moved
   char        adaptReasonFlag;
 
-  // file names
-  char         ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN];
+  char        ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN],
+              stdout_flag_string[PETSC_MAX_PATH_LEN];
 
   string executable_short_name;
   
@@ -355,9 +354,10 @@ protected:
   virtual PetscErrorCode summary(bool tempAndAge, bool useHomoTemp);
   virtual PetscErrorCode summaryPrintLine(
               PetscTruth printPrototype, bool tempAndAge,
-              PetscScalar year, PetscScalar dt, 
+              PetscScalar year, PetscScalar delta_t, 
               PetscScalar volume, PetscScalar area,
               PetscScalar meltfrac, PetscScalar H0, PetscScalar T0);
+  virtual PetscErrorCode stdout_flag_append(const char *x);
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // spatially-varying:
@@ -443,7 +443,6 @@ protected:
   // see iMvelocity.cc
   virtual PetscErrorCode velocity(bool updateSIAVelocityAtDepth);    
   virtual PetscErrorCode vertVelocityFromIncompressibility();
-    
 
 
 protected:
@@ -455,18 +454,13 @@ protected:
   IceModelVec3 Tnew3, taunew3;
   IceModelVec3 Sigmastag3[2], Istag3[2];
 
-protected:
+  // for saving SSA velocities for restart
   int have_ssa_velocities;	//!< use vubarSSA and vvbarSSA from a previous
 				//! run if 1, otherwise set them to zero in
 				//! IceModel::initSSA()
   IceModelVec2 vubarSSA, vvbarSSA;
 
-private:
-  // for event logging (profiling); see run() and velocity()
-  int siaEVENT, ssaEVENT, velmiscEVENT, beddefEVENT, massbalEVENT, tempEVENT;
-
-protected:
-  // Pieces of the SSA Velocity routine defined in iMssa.cc.
+  // SSA solve vars; note pieces of the SSA Velocity routine are defined in iMssa.cc
   KSP SSAKSP;
   Mat SSAStiffnessMatrix;
   Vec SSAX, SSARHS;  // Global vectors for solution of the linear system
@@ -510,6 +504,10 @@ protected:
   set<string> map_viewers, slice_viewers, sounding_viewers;
   PetscInt     id, jd;	     // sounding indices
   bool view_diffusivity, view_log_nuH, view_nuH;
+
+private:
+  // for event logging (profiling); see run() and velocity()
+  int siaEVENT, ssaEVENT, velmiscEVENT, beddefEVENT, massbalEVENT, tempEVENT;
 };
 
 #endif /* __iceModel_hh */
