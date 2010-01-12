@@ -1,6 +1,6 @@
-/*! \page bombproofenth BOMBPROOF, a numerical scheme for conservation of energy (ENTHALPY DEV VERSION)
+/*! \page bombproofenth BOMBPROOF, a numerical scheme for conservation of energy
 
-\section intro Introduction: The need for a \e very stable scheme, even if not very accurate
+\section intro Introduction
 
 One of the essential goals for any thermomechanically-coupled numerical ice sheet model 
 is a completely bombproof numerical 
@@ -9,26 +9,26 @@ energy within the ice and the bedrock.  The conservation of energy problem here
 is described in terms of the enthalpy field.
   
 "Bombproof" means being, roughly, as stable as possible in as many realistic modeling
-contexts as possible.  PISM illustrates this idea by including a scheme which is 
-observed to be highly robust in practice but also provably stable in a significant
+contexts as possible.  PISM's scheme is 
+observed to be highly robust in practice, but it is also provably stable in a significant
 range of circumstances.  The scheme is special to shallow ice sheets
 because it makes specific tradeoff choices with respect to vertical velocity, though
 it is generic and low order with respect to horizontal velocity.
-
 In this page we will state the scheme, prove its stability properties, and specify
 the nontrivial modifications needed at the ice-bedrock transition.
 
-Accuracy is also a goal, but it is necessarily a second goal.  It is partly achieved 
+Accuracy is necessarily a second goal.  It is partly achieved 
 here because our scheme has truncation error \f$O(\Delta z^2)\f$
 in many circumstances, though it reverts to lower order when it "detects trouble"
 in the form of large vertical velocities.  More completely stated, the scheme has 
 order \f$O(\Delta t,\Delta x,\Delta y, \Delta z^2)\f$ in circumstances where the vertical
-ice flow velocity is small enough, relative to conductivity.
+ice flow velocity is small enough, relative to conductivity, and otherwise reverts to 
+order \f$O(\Delta t,\Delta x,\Delta y, \Delta z^1)\f$.
 
 The finite difference scheme in this section supercedes the PISM scheme for the 
 temperature equation described in the appendices of [\ref BBL].  That scheme 
-is robust but it has a CFL condition on vertical advection, an avoidable time step 
-restriction.  The CFL condition on horizontal advection
+is robust but it has a CFL condition on \e vertical advection, an avoidable time step 
+restriction.  The CFL condition on \e horizontal advection
 remains in the new scheme, however.  The scheme here is conditionally stable 
 as an adaptive time-stepping technique for the 3D conservation of energy equation.
 The length of the time step is limited only by the maximum magnitude of the 
@@ -39,22 +39,21 @@ the ice sheet and attached ice shelves, generally changes over time.  This is an
 essential complicating factor in ice sheet modeling.  According to user options, 
 there may also be a model for the energy within a layer of bedrock 
 below the ice sheet.  The implementation must accommodate these possibilities.
-
 Equally essential is the fact that the velocity field has a
 complicated provenance.  It comes from a variety of stress
 balance equations.  These stress balances, especially where there is a transition 
-in flow type, like at grounding lines, are incompletely understood
-when thermomechanically coupled.
-The stress balance could be the SIA, the SSA, a mix of these in different parts of the
-ice sheet/shelf system, or less shallow models in future PISM versions.
+in flow type, for instance at grounding lines, are incompletely understood
+when thermomechanically coupled.  The stress balance could be the SIA, the
+SSA, a mix of these in different parts of the ice sheet/shelf system, or
+other stress balances in future PISM versions.
 
-We will not make, and we need to \e not make, assumptions
-about the regularity of the velocity field in space or time.  Nor do we want 
-the numerical scheme for advection to need any information about the velocity
-except its value at the beginning of the time step.  Thus we would not 
-accept a scheme which required the Jacobian
+We need to \e not make, and we will not make in proving stability, assumptions
+about the regularity of the velocity field in space or time.  Beyond boundedness,
+that is.  Nor do we want the numerical scheme for advection to need any
+information about the velocity except its value at the beginning of the time
+step.  Thus we would not accept a scheme which required the Jacobian
 of the velocity field with respect to changes in energy, for example.
-At very least we cannot implement a fully implicit scheme without some 
+At very least we cannot implement a fully-implicit scheme without some 
 blind iteration (%e.g. with no guarantee of convergence of the iteration).
 The scheme we propose involves no such iteration.
 
@@ -63,11 +62,13 @@ The scheme we propose involves no such iteration.
 
 In terms of the specific enthalpy field \f$E(x,y,z,t)\f$, which has units of 
 \f$\text{J}\,\text{kg}^{-1}\f$ in SI, the energy equation is [\ref AschwandenBlatter]
-
 \anchor basicEnergy
   \f[ \rho \frac{dE}{dt} = -\nabla \cdot \mathbf{q} + Q,\tag{basicEnergy} \f]
-where \f$\rho\f$ is the material density.  The heat flux in cold ice, temperate ice,
-and bedrock is
+where \f$\rho\f$ is the material density.  The units of equation
+(\ref basicEnergy), and of the quantity \f$Q\f$ described below, are
+\f$J\,\text{s}^{-1}\,\text{m}^{-3}\f$ in SI.
+
+The heat flux in cold ice, temperate ice, and bedrock is
 \anchor heatflux
   \f[ \mathbf{q} = \begin{cases}
                       - k_i c_i^{-1} \nabla E, & \text{cold ice}, \\
@@ -75,19 +76,21 @@ and bedrock is
                       - k_b c_b^{-1} \nabla E, & \text{bedrock}, \\
                    \end{cases} \f]
 where \f$k_i,c_i,k_b,c_b\f$ are all constant.  Note \f$dE/dt\f$ stands for the material
-derivative of the enthalpy field,
-  \f[ \frac{dE}{dt} = \frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E, \f] 
-where \f$\mathbf{U}\f$ is the three dimensional velocity, so advection \e is present.
+derivative of the enthalpy field, so the expanded form of (\ref basicEnergy) is
+  \f[ \rho \left(\frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E\right)
+        = -\nabla \cdot \mathbf{q} + Q, \f]
+where \f$\mathbf{U}\f$ is the three dimensional velocity.  Thus
+three-dimensional advection is included.
 
-In ice the additive quantity \f$Q\f$ is just the bulk strain (dissipation) heating.  For
-historical reasons (consistency with [\ref BBL, \ref BBssasliding]) we denote the strain
-heating term by \f$\Sigma\f$.  Without making any shallow approximations, the exact
-formula for this is
+The additive quantity \f$Q\f$ is the dissipation and frictional heating.  Within
+the ice we denote the dissipation (strain) heating by \f$\Sigma\f$ (for
+notational consistency with [\ref BBL, \ref BBssasliding]).   Without making any
+shallow approximations, the exact formula for this is
   \f[ \Sigma = \sum_{i,j=1}^3 D_{ij} \tau_{ij} \f] 
 where \f$D_{ij}\f$ is the strain rate tensor and \f$\tau_{ij}\f$ is the deviatoric stress
 tensor.  References [\ref BBL, \ref BBssasliding] address how this term is computed in PISM,
-according to the shallow stress balance approximation which is active.
-Within the PISM source code, see methods IceModel::velocitySIAStaggered() and
+according to the shallow stress balance approximations.
+Within the source code, see methods IceModel::velocitySIAStaggered() and
 IceModel::correctSigma().
 
 In a sliding model with an ice-bedrock interface, the friction of the sliding also is a
@@ -96,38 +99,33 @@ In formulas we write
   \f[ F_b = - \tau_b \cdot \mathbf{u}_b \,\delta_0(z), \f]
 where \f$\tau_b\f$ is the basal shear stress, \f$\mathbf{u}_b\f$ is the basal sliding velocity,
 and \f$\delta_0(z)\f$ is the usual Dirac delta "function", with the property that
-\f$\int_a^b \delta(z)\,dz = 1\f$ if \f$a<0<b\f$.  This delta function indicates that the
+\f$\int_a^b \delta_0(z)\,dz = 1\f$ if \f$a<0<b\f$.  This delta function indicates that the
 friction heating is concentrated at \f$z=0\f$.  Note that the basal shear stress is
 oppositely-directed to the basal velocity.  For example,
 in the plastic case \f$\tau_b = - \tau_c \mathbf{u}_b / |\mathbf{u}_b|\f$ where
-\f$\tau_c\f$ is a positive scalar, the yield stress.  (Within the PISM source code, 
-see methods IceModel::basalSlidingHeatingSIA() and IceModel::correctBasalFrictionalHeating().
-The former is only called by IceModel::velocity() if IceModel::muSliding > 0, which is
-not generally recommended [see Appendix B of \ref BBssasliding].)
+\f$\tau_c\f$ is a positive scalar, the yield stress.  The term \f$F_b\f$ will
+appear only under a volume integralso the delta function in the expression for 
+\f$F_b\f$ will be correctly-handled.  Within the source code, see method
+IceModel::correctBasalFrictionalHeating().  Note \f$Q=0\f$ in the bedrock
+thermal layer (strictly below the ice-bedrock interface).
 
-When considering the ice-bedrock interface, the term \f$Q\f$ will appear only under a
-volume integral.  Therefore the delta function in the expression for \f$F_b\f$ will be
-correctly handled.  In summary, our additive heat sources have the form
-  \f[ Q = \Sigma + F_b, \f]
-and this is what appears in equation (\ref basicEnergy).  Note \f$Q=0\f$ in the bedrock
-thermal layer.
+In summary, our additive heat sources have the form \f$Q = \Sigma + F_b, \f$,
+and this is what appears in equation (\ref basicEnergy).
 
-The units of equation (\ref basicEnergy), and of the quantity \f$Q\f$, are
-\f$J\,\text{s}^{-1}\,\text{m}^{-3}\f$ in SI.
-
-The shallow approximation we use, of equation (\ref basicEnergy), lacks horizontal
-conduction terms  [\ref Fowler].  Also, for the initial analysis of the core BOMBPROOF
-scheme, we specialize to cold ice and we do not consider the bedrock thermal layer.
-Within cold ice the coefficient in the heat flux is constant, so
+We use a shallow approximation of equation (\ref basicEnergy).  It lacks horizontal
+conduction terms  [\ref Fowler].  For the initial analysis of the core BOMBPROOF
+scheme, we specialize to cold ice and we do not consider the bedrock thermal layer,
+which is returned to later (below).  Therefore, within cold ice, the coefficient in the heat
+flux is constant, so
   \f[ \nabla \cdot \mathbf{q} = - k_i c_i^{-1} \frac{\partial^2 E}{\partial z^2}. \f]
 Therefore the equation we initially analyze is
 
 \anchor basicShallow
 \f[
-\rho_i \frac{dE}{dt} = k_i c_i^{-1} \frac{\partial^2 E}{\partial z^2} + Q,\tag{basicShallow}
+\rho_i \left(\frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E\right) = k_i c_i^{-1} \frac{\partial^2 E}{\partial z^2} + Q,\tag{basicShallow}
 \f]
 
-We will assume, without exception, that \f$\rho_i\f$ and \f$c_i\f$ are positive.
+We will assume, of course, that \f$\rho_i\f$ and \f$c_i\f$ are positive.
 
 We will be focusing on the direction in which the enthalpy and temperature has largest spatial gradient, 
 namely with respect to the vertical coordinate \f$z\f$.  Rewriting equation (\ref basicShallow)
@@ -150,10 +148,10 @@ condition at the top of the ice and a geothermal flux condition at the bottom of
 the enthalpy and the temperature are linearly related,
   \f[ T(H,p) = c_i^{-1} (E-E_s(p)) + T_m(p) = c_i^{-1} E, \f]
 because the enthalpy is normalized by \f$E_s(p) = c_i T_m(p)\f$.  (See documentation
-on the EnthalpyConverter class.)  We will assume that in reasonably realistic ice sheet modeling
-situations the surface temperature \f$T_s(t,x,y)\f$ (K) and the geothermal flux
-\f$G(t,x,y)\f$ (W m-2) are given.  Thus for cold ice, and no bedrock
-thermal layer,
+on the EnthalpyConverter class.)  We will assume that in reasonably-realistic
+ice sheet modeling situations the surface temperature \f$T_s(t,x,y)\f$ (K) and
+the geothermal flux \f$G(t,x,y)\f$ (W m-2) are given.  Thus for cold ice, and no
+bedrock thermal layer,
 
 \anchor columnbcs
 \f[
@@ -182,10 +180,8 @@ To state the upwind scheme itself, let
                                      f_i-f_{i-1}, & \alpha_i\ge 0, \\
                                      f_{i+1}-f_i, & \alpha_i<0.
                                   \end{cases}\f]
-(This is a slightly different definition of \f$\Up{f_{\bullet}}{\alpha_i}\f$
-from that used in the appendices of [\ref BBL], though with exactly the same intent.)
 The approximate horizontal advection terms, and thus the approximation to the whole
-term \f$\Phi\f$, is stated using this upwind notation as
+term \f$\Phi\f$, are
 	\f[\Phi_{ijk}^n = \Sigma_{ijk}^n - \rho_i 
 	                   \left( u_{ijk}^n\,\frac{\Up{E_{\bullet jk}^n}{u_{ijk}^n}}{\Delta x}
 	                          + v_{ijk}^n\,\frac{\Up{E_{i\bullet k}^n}{v_{ijk}^n}}{\Delta y} \right).\f]
@@ -205,28 +201,29 @@ In the analysis below we will assume an equally-spaced grid \f$z_0,\dots,z_{M_z}
 with \f$\Delta z = z_{k+1} - z_k\f$.  In fact PISM has a remapping scheme in each 
 column, wherein the enthalpy in a column of ice is stored on an unequally-spaced 
 vertical grid, but is mapped to a fine, equally-spaced grid for the conservation of energy
-computation described here.  (Similar structure applies to the age computation.)  See procedures 
+computation described here.  (Similar structure applies to the age computation.  See procedures 
 IceEnthalpyModel::enthalpyAndDrainageStep() and IceModel::ageStep(), and see
-the IceModelVec3 class and IceGrid::getFineEqualVertLevsIce().  (Options -z_spacing and 
+the IceModelVec3 class and IceGrid::getFineEqualVertLevsIce().  Options -z_spacing and 
 -zb_spacing allow choosing unequally-spaced storage vertical grids in ice and
 bedrock, respectively.)
 
 The \f$z\f$ derivative terms in (\ref vertProblem) will be approximated implicitly.  Let
-\f$\lambda\f$ be in the interval \f$0 \le \lambda \le 1\f$.  The scheme BOMBPROOF is
+\f$\lambda\f$ be in the interval \f$0 \le \lambda \le 1\f$.  The approximation to (\ref vertProblem) is is
 \anchor bombone
 \f{align*}
 \rho_i &\left( 
        \frac{E_k^{n+1} - E_k^n}{\Delta t}
        + \lambda w_k^n \frac{E_{k+1}^{n+1} - E_{k-1}^{n+1}}{2 \Delta z}
        + (1-\lambda) w_k^{n} \frac{\Up{E_{\bullet}^{n+1}}{w_k^{n}}}{\Delta z} \right) \\
-     &= k_i c_i^{-1}\, \frac{E_{k+1}^{n+1} - 2 E_{k}^{n+1} + E_{k-1}^{n+1}}{\Delta z^2} + \Phi_k^n \tag{bombone}
+     &= k_i c_i^{-1}\, \frac{E_{k+1}^{n+1} - 2 E_{k}^{n+1} + E_{k-1}^{n+1}}{\Delta z^2} + \Phi_k^n. \tag{bombone}
 \f}
-with the value for \f$\lambda\f$ determined by (\ref lambdachoice) below.
 We have suppressed indices \f$i,j\f$.
 
-Equation (\ref bombone) includes two approximations of vertical advection, combined 
-using nonnegative coefficients which sum to one.  Both approximations are
-(semi-)implicit, but the centered formula has higher accuracy,
+Equation (\ref bombone), along with a determination of \f$\lambda\f$ by
+(\ref lambdachoice) below. is the scheme BOMBPROOF.  It includes two
+approximations of vertical advection, combined using nonnegative coefficients
+which sum to one.  Both approximations are (semi-)implicit, but the centered
+formula has higher accuracy,
 	\f[w_k^n \frac{E_{k+1}^{n+1} - E_{k-1}^{n+1}}{2 \Delta z}
 	   = w \frac{\partial E}{\partial z} + O(\Delta t,\Delta z^2),\f]
 while the first order upwind formula has lower accuracy,
@@ -234,8 +231,7 @@ while the first order upwind formula has lower accuracy,
 	   = w \frac{\partial E}{\partial z} + O(\Delta t,\Delta z).\f]
 We prefer for accuracy reasons to use the centered formula, because it has 
 higher order truncation error.  We will only include (implicit) upwinding when
-it is needed for its added stability benefits.  This is done by the choice of
-\f$\lambda\f$ below.
+it is needed for its added stability benefits.
 
 Let
 	\f[ \nu = \frac{\Delta t}{\Delta z},

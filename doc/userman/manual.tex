@@ -1468,38 +1468,16 @@ See section \ref{sec:snapshots} for more details.
 \opt{split\und snapshots} Save model state snapshots to separate files. See the
 \verb|-save_file| option documentation above for details.
 
+\subsubsect{Verbosity to standard out}
+
+\optdef{verbose}{2}   Increased verbosity of standard output.  Usually given with an integer level; 0,1,2,3,4,5 are allowed.  At the extremes, \verb|-verbose 0| produces no stdout at all, \verb|-verbose 1| only prints only warnings and a few high priority messages, and \verb|-verbose 5| spews a lot of usually-undesirable stuff.  If given without argument (``\verb|-verbose|'') then sets level 3, while ``\verb|-verbose 2|'' is the default.
+
+
 \subsubsect{FIXME: Diagnostic viewers}
 
 \opt{id}  Sets the x grid index at which a sounding diagnostic viewer is displayed.  The integer argument should be in the range $0,\dots,\text{\t{Mx}}-1$.  The default is $(\text{\t{Mx}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -view_sounding temp -id 10|.
 
 \opt{jd}  Sets the y grid index at which a sounding diagnostic viewer is displayed.  The integer argument should be in the range $0,\dots,\text{\t{My}}-1$.  The default is $(\text{\t{My}}-1)/2$ at the center of the grid.  For example, \verb|pismv -test G -view_sounding temp -jd 10|.
-
-\subsubsect{Verbosity to standard out}
-
-\optdef{verbose}{2}   Increased verbosity of standard output.  Can be given without argument (``\verb|-verbose|'') or with a level which is one of the integers 0,1,2,3,4,5 (``\verb|-verbose 2|'').  The full scheme is given in table \ref{tab:verbosity}.
-
-\opt{vverbose}   See table \ref{tab:verbosity}.
-
-\opt{vvverbose}   See table \ref{tab:verbosity}.
-
-\begin{table}[ht]
-\caption{Controlling the verbosity level to standard out.}\label{tab:verbosity}
-\begin{tabular}{@{}llll}\hline
-\textbf{Level} & \textbf{Option} & \textbf{Meaning} \\ \hline
-   0  &  \t{-verbose 0} &   never print to standard out \emph{at all}; no warnings appear  \\
-   1  &  \t{-verbose 1} &   only warning messages and other high priority messages \\
-      &                 &    will appear  \\
-   2  &  [\t{-verbose 2}] & default verbosity    \\
-   3  &  \t{-verbose 3} &   somewhat verbose; expanded description of grid at start  \\
-      &  or \quad \t{-verbose} &  and expanded information in summary    \\
-   4  &  \t{-verbose 4} &     \\
-      &  or \quad \t{-vverbose} &  more verbose    \\
-   5  &  \t{-verbose 5} &     \\
-      &  or \quad \t{-vvverbose} &  maximally verbose \\
-\hline
-\normalsize
-\end{tabular}
-\end{table}
 
 
 \subsectstar{Options controlling parameters for physical models}
