@@ -77,6 +77,9 @@ netcdf pism_config {
     pism_config:bootstrapping_Hmelt_value_no_var = 0.0;
     pism_config:bootstrapping_Hmelt_value_no_var_doc = "m; basal melt water effective thickness value to use if variable Hmelt is absent in bootstrapping file";
     
+    pism_config:bootstrapping_bmelt_value_no_var = 0.0;
+    pism_config:bootstrapping_bmelt_value_no_var_doc = "m s-1; basal melt rate value to use if variable bmelt is absent in bootstrapping file";
+    
     pism_config:bootstrapping_tillphi_value_no_var = 15.0;
     pism_config:bootstrapping_tillphi_value_no_var_doc = "degrees; till friction angle value to use if variable tillphi is absent in bootstrapping file; tends not to slip";
     

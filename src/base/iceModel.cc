@@ -305,8 +305,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vbasalMeltRate.set_attrs("model_state",
                                   "ice basal melt rate in ice thickness per time",
 				  "m s-1", "land_ice_basal_melt_rate"); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);  // so vertical velocities do not use junk from 
-                                                  //   uninitialized basal melt rate.
   ierr = vbasalMeltRate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vbasalMeltRate.write_in_glaciological_units = true;
   vbasalMeltRate.set_attr("comment", "positive basal melt rate corresponds to ice loss");

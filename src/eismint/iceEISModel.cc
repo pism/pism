@@ -281,15 +281,16 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
   ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
   ierr = vbed.endGhostComm(); CHKERRQ(ierr);
 
-  ierr = vHmelt.set(0.0);
-  ierr = vGhf.set(0.042);  // EISMINT II value; J m-2 s-1
+  ierr = vHmelt.set(0.0); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);
+  ierr = vGhf.set(0.042); CHKERRQ(ierr);  // EISMINT II value; J m-2 s-1
 
-  ierr = vMask.set(MASK_SHEET);
+  ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
 
   // if no -i file then starts with zero ice
-  ierr = vh.set(0.0);
-  ierr = vH.set(0.0);
+  ierr = vh.set(0.0); CHKERRQ(ierr);
+  ierr = vH.set(0.0); CHKERRQ(ierr);
 
   // this IceModel bootstrap method should do right thing because of variable
   //   settings above and init of coupler above

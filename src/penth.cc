@@ -87,15 +87,15 @@ int main(int argc, char *argv[]) {
     PISMConstOceanCoupler     pcoc;
     if (pddSet == PETSC_TRUE) {
       ierr = verbPrintf(2,com, 
-        "penth attaching PISMGreenlandAtmosCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
+        "  attaching PISMGreenlandAtmosCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
       ierr = m.attachAtmospherePCC(ppdd); CHKERRQ(ierr);
     } else {
       ierr = verbPrintf(2,com, 
-        "penth attaching PISMConstAtmosCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
+        "  attaching PISMConstAtmosCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
       ierr = m.attachAtmospherePCC(pcac); CHKERRQ(ierr);
     }
     ierr = verbPrintf(2,com, 
-        "penth attaching PISMConstOceanCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
+        "  attaching PISMConstOceanCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
     ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
 
     ierr = m.init(); CHKERRQ(ierr);

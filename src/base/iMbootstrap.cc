@@ -94,6 +94,8 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
                            config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
   ierr =     vHmelt.regrid(filename, *lic, 
                            config.get("bootstrapping_Hmelt_value_no_var")); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.regrid(filename, *lic, 
+                           config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
   ierr =   vtillphi.regrid(filename, *lic, 
                            config.get("bootstrapping_tillphi_value_no_var")); CHKERRQ(ierr);
   ierr =       vGhf.regrid(filename, *lic, 
