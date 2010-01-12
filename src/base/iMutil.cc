@@ -255,62 +255,56 @@ PetscErrorCode IceModel::report_grid_parameters() {
   // report on grid cell dims
   if (grid.ice_vertical_spacing == EQUAL) {
     ierr = verbPrintf(2,grid.com, 
-           "  grid cell dims (equal dz in ice)   %.2f km x %.2f km x %.2f m",
+           "  grid cell dims (equal dz in ice)   %.2f km x %.2f km x %.2f m\n",
            grid.dx/1000.0,grid.dy/1000.0,grid.dzMIN); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com, 
            "   horizontal grid cell dimensions   %.2f km x %.2f km\n",
            grid.dx/1000.0,grid.dy/1000.0); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com, 
-           "      vertical grid spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m",
+           "      vertical grid spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
 		      grid.Mz, grid.dzMIN, grid.dzMAX); CHKERRQ(ierr);
-    PetscInt    fMz = 0;	// will be initialized by the call below
+  }
+
+  PetscInt    fMz = 0;	// will be initialized by the call below
+  if (grid.Mbz > 1) {
+    if (grid.bed_vertical_spacing == EQUAL) {
+      ierr = verbPrintf(2,grid.com, 
+           "  vertical grid spacing in bedrock   equal, dz = %.3f m\n",
+			grid.zblevels[1]-grid.zblevels[0]); CHKERRQ(ierr);
+    } else {
+    ierr = verbPrintf(2,grid.com, 
+           "  vertical grid spacing in bedrock   uneven, %d levels, %.3f m < dz < %.3f m\n",
+		      grid.Mbz, grid.dzbMIN, grid.dzbMAX); CHKERRQ(ierr);
+    }
+    PetscInt fMbz;
+    PetscScalar fdz, fdzb, *fzlev, *fzblev;
+    ierr = grid.get_fine_vertical_grid(fMz, fMbz, fdz, fdzb, fzlev, fzblev); CHKERRQ(ierr);
+    delete[] fzlev; delete[] fzblev;
+    ierr = verbPrintf(3,grid.com, 
+           "   fine spacing used in energy/age   fMz = %d, fdz = %.3f m, fMbz = %d, fdzb = %.3f m\n",
+           fMz, fdz, fMbz, fdzb); CHKERRQ(ierr);
+  } else { // no bedrock case
     PetscScalar fdz, *fzlev;
     ierr = grid.get_fine_vertical_grid_ice(fMz, fdz, fzlev); CHKERRQ(ierr);
     delete[] fzlev;
     ierr = verbPrintf(3,grid.com, 
-         "\n   fine spacing used in energy/age   fMz = %d, fdz = %.3f m",
+           "   fine spacing used in energy/age   fMz = %d, fdz = %.3f m\n",
            fMz, fdz); CHKERRQ(ierr);
-    if (fMz > 1000) {
-      ierr = verbPrintf(1,grid.com,
-        "\n\nWARNING: Using more than 1000 vertical levels internally in energy/age computation!\n\n");
-        CHKERRQ(ierr);
-    }
   }
-  if (grid.Mbz > 1) {
-    if (grid.bed_vertical_spacing == EQUAL) {
-      ierr = verbPrintf(2,grid.com, 
-         "\n  vertical grid spacing in bedrock   equal, dz = %.3f m\n",
-			grid.zblevels[1]-grid.zblevels[0]); CHKERRQ(ierr);
-    } else {
-    ierr = verbPrintf(2,grid.com, 
-         "\n  vertical grid spacing in bedrock   uneven, %d levels, %.3f m < dz < %.3f m",
-		      grid.Mbz, grid.dzbMIN, grid.dzbMAX); CHKERRQ(ierr);
-    }
+  if (fMz > 1000) {
+    ierr = verbPrintf(1,grid.com,
+      "\n\nWARNING: Using more than 1000 ice vertical levels internally in energy/age computation!\n\n");
+      CHKERRQ(ierr);
   }
-  ierr = verbPrintf(2,grid.com,"\n"); CHKERRQ(ierr);
 
-  // if -verbose (=-verbose 3) then actually list parameters of grid
-  ierr = verbPrintf(3,grid.com,
-         "  [grid parameters list (verbose output):\n"); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com,
-         "            x0 = %6.2f km, y0 = %6.2f km,\n",
-		    grid.x0/1000.0, grid.y0/1000.0); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com,
-         "            Mx = %d, My = %d, Mz = %d, Mbz = %d,\n",
-         grid.Mx,grid.My,grid.Mz,grid.Mbz); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com,
-         "            Lx = %6.2f km, Ly = %6.2f m, Lz = %6.2f m, Lbz = %6.2f m,\n",
-         grid.Lx/1000.0,grid.Ly/1000.0,grid.Lz,grid.Lbz); CHKERRQ(ierr);
-  ierr = verbPrintf(3,grid.com,
-         "            dx = %6.3f km, dy = %6.3f km, year = %8.4f]\n",
-         grid.dx/1000.0,grid.dy/1000.0,grid.year); CHKERRQ(ierr);
+  // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
+  ierr = grid.printInfo(3); CHKERRQ(ierr);
 
   // if -verbose 5 then more stuff
   ierr = verbPrintf(5,grid.com,
-       "\n  [vertical levels (REALLY verbose output):\n"); CHKERRQ(ierr);
-  ierr = grid.printVertLevels(5); CHKERRQ(ierr);  // only if verbose 5
-  ierr = verbPrintf(5,grid.com,"]\n"); CHKERRQ(ierr);
+       "  REALLY verbose output on IceGrid:\n"); CHKERRQ(ierr);
+  ierr = grid.printVertLevels(5); CHKERRQ(ierr);
   
   return 0;
 }

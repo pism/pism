@@ -39,45 +39,34 @@ PetscInt getVerbosityLevel() {
 }
 
 
-//! Determine verbosity level from user options, like "-verbose 5".
+//! Determine verbosity level from user options.
 /*!
 \verbatim
    level  option        meaning
    -----  ------        -------
    0      -verbose 0    never print to std out AT ALL!
    1      -verbose 1    less verbose than default: thresh must be 1 to print
-   2     [-verbose 2]   default
-   3      -verbose      somewhat verbose
-         [-verbose 3]   
-   4      -vverbose     fairly verbose
-         [-verbose 4]
-   5      -vvverbose    very verbose: if level this high then (thresh <= level) 
-         [-verbose 5]       always, so print everything
+   2      -verbose 2    DEFAULT
+   3      -verbose 3    somewhat verbose
+          -verbose      same as "-verbose 3" 
+   4      -verbose 4    fairly verbose
+   5      -verbose 5    very verbose: print everything
 \endverbatim
-
-Sets the verbosity level to 2 if no user options are given.
-
 See verbPrintf().
  */
 PetscErrorCode verbosityLevelFromOptions() {
-  // verbosity options: more info to standard out
   PetscErrorCode ierr;
-  PetscInt     myverbosityLevel;
-  PetscTruth   verbose, verbosityLevelSet;
-  PetscInt     DEFAULT_VERBOSITY_LEVEL = 2;
+  PetscInt       myLevel;
+  PetscTruth     verbose, levelSet;
   
-  ierr = setVerbosityLevel(DEFAULT_VERBOSITY_LEVEL);  
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-verbose", &myverbosityLevel, &verbosityLevelSet); CHKERRQ(ierr);
-  if (verbosityLevelSet == PETSC_TRUE) {
-    ierr = setVerbosityLevel(myverbosityLevel);
+  ierr = setVerbosityLevel(2);  
+  ierr = PetscOptionsGetInt(PETSC_NULL, "-verbose", &myLevel, &levelSet); CHKERRQ(ierr);
+  if (levelSet == PETSC_TRUE) {
+    ierr = setVerbosityLevel(myLevel);
   } else {
     ierr = PetscOptionsHasName(PETSC_NULL, "-verbose", &verbose); CHKERRQ(ierr);
     if (verbose == PETSC_TRUE)   ierr = setVerbosityLevel(3);
   }
-  ierr = PetscOptionsHasName(PETSC_NULL, "-vverbose", &verbose); CHKERRQ(ierr);
-  if (verbose == PETSC_TRUE)   ierr = setVerbosityLevel(4);
-  ierr = PetscOptionsHasName(PETSC_NULL, "-vvverbose", &verbose); CHKERRQ(ierr);
-  if (verbose == PETSC_TRUE)   ierr = setVerbosityLevel(5);
   return 0;
 }
 

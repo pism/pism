@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -260,7 +260,28 @@ PetscErrorCode IceGrid::compute_bed_vertical_levels() {
 }
 
 
-//! Print the vertical levels in \c zlevels[] and \c zblevels[] to standard out.
+//! Print to stdout information on computational domain and grid (other than the vertical levels themselves).
+PetscErrorCode IceGrid::printInfo(const int verbosity) {
+  PetscErrorCode ierr;
+  ierr = verbPrintf(verbosity,com,
+         "  IceGrid parameters:\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,com,
+         "            Lx = %6.2f km, Ly = %6.2f m, Lz = %6.2f m, Lbz = %6.2f m,\n",
+         Lx/1000.0,Ly/1000.0,Lz,Lbz); CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,com,
+         "            x0 = %6.2f km, y0 = %6.2f km,   (coordinates of center)\n",
+		    x0/1000.0, y0/1000.0); CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,com,
+         "            Mx = %d, My = %d, Mz = %d, Mbz = %d,\n",
+         Mx,My,Mz,Mbz); CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,com,
+         "            dx = %6.3f km, dy = %6.3f km, year = %8.4f]\n",
+         dx/1000.0,dy/1000.0,year); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Print the vertical levels in \c zlevels[] and \c zblevels[] to stdout.
 PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
   PetscErrorCode ierr;
   ierr = verbPrintf(verbosity,com,
@@ -276,6 +297,7 @@ PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
   ierr = verbPrintf(verbosity,com,"\n"); CHKERRQ(ierr);
   return 0;
 }
+
 
 //! Return the index \c k into \c zlevels[] so that <tt>zlevels[k] <= height < zlevels[k+1]</tt> and <tt>k < Mz</tt>.
 PetscInt IceGrid::kBelowHeight(PetscScalar height) {
