@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -107,26 +107,26 @@ PetscErrorCode IceExactSSAModel::misc_setup() {
 
   switch (test) {
   case 'I':
-      // fill vtauc with values for Schoof solution:
-      ierr = taucSetI(); CHKERRQ(ierr);
-      // set up remaining stuff:
-      ierr = setInitStateAndBoundaryVelsI(); CHKERRQ(ierr);
-      // set flags, parameters affecting solve of stream equations
-      // so periodic grid works although h(-Lx,y) != h(Lx,y):
-      config.set_flag("compute_surf_grad_inward_ssa", true);
-      config.set("epsilon_ssa", 0.0);  // don't use this lower bound
+    ierr = taucSetI(); CHKERRQ(ierr); // fill vtauc with values for Schoof soln
+    ierr = setInitStateAndBoundaryVelsI(); CHKERRQ(ierr);
+    // set flag so periodic grid works although h(-Lx,y) != h(Lx,y):
+    config.set_flag("compute_surf_grad_inward_ssa", true);
+    have_ssa_velocities = false;
+    config.set("epsilon_ssa", 0.0);  // don't use this lower bound
     break;
   case 'J':
     ierr = setInitStateJ(); CHKERRQ(ierr);
     config.set_flag("is_dry_simulation", false);
     leaveNuHAloneSSA = PETSC_TRUE; // will use already-computed nu instead of updating
     config.set_flag("compute_surf_grad_inward_ssa", false);
+    have_ssa_velocities = false;
     config.set("epsilon_ssa", 0.0);  // don't use this lower bound
     break;
   case 'M':
     ierr = setInitStateM(); CHKERRQ(ierr);
     config.set_flag("is_dry_simulation", false);
     config.set_flag("compute_surf_grad_inward_ssa", false);
+    have_ssa_velocities = false;
 
     ierr = ice->printInfo(3);CHKERRQ(ierr);
     // EXPERIMENT WITH STRENGTH BEYOND CALVING FRONT:
