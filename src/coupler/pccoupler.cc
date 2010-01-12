@@ -226,7 +226,7 @@ PetscErrorCode PISMAtmosphereCoupler::initFromOptions(IceGrid* g, const PISMVars
             "",  // pism_intent is either "climate_state" or "climate_diagnostic"
                  //    according to whether this variable is kept or overwritten
                  //    by a parameterization (we don't know in the base class)
-            "instantaneous ice-equivalent accumulation (ablation) rate",
+            "instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
 	    "m s-1",  // m *ice-equivalent* per second
 	    "land_ice_surface_specific_mass_balance");  // CF standard_name
 	    CHKERRQ(ierr);

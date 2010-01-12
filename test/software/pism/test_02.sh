@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-test="Test #2: pismv exact processor independence for SIA runs."
+test="Test #2: pismv exact processor independence (SIA only; test G)."
 dir=`pwd`
 files="foo1.nc foo2.nc foo3.nc foo8.nc foo10.nc"
 

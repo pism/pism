@@ -957,7 +957,7 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
 }
 
 
-PetscErrorCode IceCompModel::summary(bool tempAndAge, bool useHomoTemp) {
+PetscErrorCode IceCompModel::summary(bool /* tempAndAge */, bool useHomoTemp) {
   //   we always show a summary at every step
   return IceModel::summary(true,useHomoTemp);
 }

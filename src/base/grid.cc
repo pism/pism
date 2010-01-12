@@ -266,7 +266,7 @@ PetscErrorCode IceGrid::printInfo(const int verbosity) {
   ierr = verbPrintf(verbosity,com,
          "  IceGrid parameters:\n"); CHKERRQ(ierr);
   ierr = verbPrintf(verbosity,com,
-         "            Lx = %6.2f km, Ly = %6.2f m, Lz = %6.2f m, Lbz = %6.2f m,\n",
+         "            Lx = %6.2f km, Ly = %6.2f km, Lz = %6.2f m, Lbz = %6.2f m,\n",
          Lx/1000.0,Ly/1000.0,Lz,Lbz); CHKERRQ(ierr);
   ierr = verbPrintf(verbosity,com,
          "            x0 = %6.2f km, y0 = %6.2f km,   (coordinates of center)\n",

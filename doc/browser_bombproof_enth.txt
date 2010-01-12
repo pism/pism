@@ -290,16 +290,15 @@ The proof below shows the corresponding "wiggle-free" property for scheme (\ref 
 
 We want to be precise about the phrase "unconditionally stable" for BOMBPROOF.
 To do so we consider somewhat simplified cases which are amenable to analysis, and
-we prove two stability properties, the precise advantages of BOMBPROOF.
+we prove two stability properties.  These stability properties identify the
+precise advantages of BOMBPROOF.
 
 \subsection stabilitythm Theorem (stating the stability properties).
 Assume, for the precise but limited assertion of this theorem,
 that the surface temperature \f$T_s\f$ and the geothermal flux \f$G\f$ are constant 
-in time and space.  Assume also that the entire source function \f$\Phi\f$ is identically zero 
+in time.  Assume also that the entire source function \f$\Phi\f$ is identically zero 
 (but see comments below).  Fix an equally-spaced vertical grid \f$z_0=0 < z_1 < \dots < z_N=H\f$,
-so that the upper grid point coincides with the surface of the ice.  Suppose \f$c_p(T)\f$ is
-bounded below by a positive constant (so that equation (\ref bombtwo)
-is a valid rewriting of equation (\ref bombone)).  With these assumptions, if
+so that the upper grid point coincides with the surface of the ice.  With these assumptions, if
 \anchor lambdachoice
 \f[
 \lambda = \min\left\{1, \quad 
