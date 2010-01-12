@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-test="Test #1: pismr exact restartability."
+test="Test #1: pismr (SIA only) exact restartability."
 files="verify.nc foo.nc joe.nc bar.nc"
 dir=`pwd`
 
@@ -27,7 +27,7 @@ test_01 ()
     set +e
 
     # Compare output files at year 10:
-    run nccmp.py -t 1e-6 foo.nc bar.nc
+    run nccmp.py foo.nc bar.nc
     if [ $? != 0 ];
     then
 	fail "Output files are different."

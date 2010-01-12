@@ -271,6 +271,8 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
     expername); CHKERRQ(ierr);
 
   ierr = vbed.set(0.0);
+  ierr = vtillphi.set(config.get("default_till_phi")); CHKERRQ(ierr);
+
   if ((expername == 'I') || (expername == 'J')) {
     ierr = generateTroughTopography(); CHKERRQ(ierr);
   } 

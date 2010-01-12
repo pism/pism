@@ -1,4 +1,4 @@
-// Copyright (C) 2008, 2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -76,6 +76,8 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
   name = my_name;
 
   var1.init(my_name, my_grid, GRID_2D);
+
+  this->set(GSL_NAN);
 
   return 0;
 }

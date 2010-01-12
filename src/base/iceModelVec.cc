@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,7 +35,7 @@ IceModelVec::IceModelVec() {
 
   access_counter = 0;
 
-  name = "*****UNKNOWN***** variable name";
+  name = "unintialized variable";
 
   map_viewers = new map<string,PetscViewer>;
   reset_attrs();
@@ -334,6 +334,7 @@ PetscErrorCode IceModelVec::reset_attrs() {
   output_data_type = NC_DOUBLE;
 
   var1.reset();
+  var1.set("_FillValue", GSL_NAN);
 
   return 0;
 }

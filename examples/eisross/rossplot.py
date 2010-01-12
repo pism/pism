@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# ross_plot.py plots the computed Ross ice shelf speed compared to  observed 
+# ross_plot.py plots the computed Ross ice shelf speed compared to observed
 # values from RIGGS data.
 #
 # This script depends on the following Python packages:
@@ -16,23 +16,19 @@
 #
 #    $ svn co http://svn.scipy.org/svn/scikits/trunk/delaunay
 #    $ cd delaunay; sudo python setup.py install
-#   
-# Note there is an alternative Matlab script ross_plot.m
 #
-# CK 27may08
+# CK 27may08, ..., 12jan10
 
-# FIXME:  these two commands should be replaced by specific imports; it is hard
-#         to maintain this way:
-from numpy import *
-from pylab import *
-
+from numpy import ma, loadtxt, squeeze, linspace, tile, repeat, sin, pi, cos, sqrt
+from pylab import figure, clf, hold, pcolor, colorbar, plot, quiver, axis, xlabel, ylabel, savefig, show
+from scikits.delaunay import Triangulation
 from getopt import getopt, GetoptError
 from sys import argv, exit
+
 try:
     from netCDF4 import Dataset as NC
 except:
     from netCDF3 import Dataset as NC
-from scikits.delaunay import *
 
 seconds_per_year = 3.1556926e7
 
@@ -111,7 +107,7 @@ RIGGSlon = - RIGGSlon * RIGGS[:,9];  # RIGGS[:,9] is +1 if W, -1 if E
 #  File "./rossplot.py", line 107, in <module>
 #    cbar_masked.putmask(-20)
 #AttributeError: 'MaskedArray' object has no attribute 'putmask'
-cbar_masked.putmask(-20)
+cbar_masked = cbar_masked.filled(-20)
 
 cRIGGS = tri.nn_interpolator(cbar_masked.flat)(RIGGSlon, RIGGSlat)
 rig = RIGGS[cRIGGS > 0]
@@ -133,7 +129,6 @@ xlabel('RIGGS grid longitude (deg E)'); ylabel('RIGGS grid latitude (deg N)')
 #title("""Color is speed in m/a.\n Arrows are observed (black) and computed 
 #(red) velocities at RIGGS points.""")
 savefig("rossquiver.png")
-show()
 
 # report results comparable to Table 1 in (MacAyeal et al 1996)
 ChiSqrActual = sum( ((uATrig - rigu)**2 + (vATrig - rigv)**2) / (30**2) )

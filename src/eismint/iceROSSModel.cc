@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2006-2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -269,12 +269,11 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
         if (PetscAbs(acc[i][j] - 1.0) < 0.1) {
           accN += 1.0;
           accArea += area;
-          const PetscScalar vobs = mag[i][j] * sin((pi/180.0) * azi[i][j]);
-          const PetscScalar uobs = mag[i][j] * cos((pi/180.0) * azi[i][j]);
+          const PetscScalar uobs = mag[i][j] * sin((pi/180.0) * azi[i][j]);
+          const PetscScalar vobs = mag[i][j] * cos((pi/180.0) * azi[i][j]);
           // compare from readme.txt
           // uxbar(i0,j0) = magvel(i0,j0)* sin(3.1415926/180.*azvel(i0,j0))
           // uybar(i0,j0) = magvel(i0,j0)* cos(3.1415926/180.*azvel(i0,j0))
-          // the difference is the fundamental transpose in IceGrid::createDA()
           // debug:
           //verbPrintf(1,grid.com,"i,j=%d,%d:  observed = (%5.4f,%5.4f),   computed =  (%5.4f,%5.4f)\n",
           //           i,j,uobs*secpera,vobs*secpera,ubar[i][j]*secpera,vbar[i][j]*secpera);
@@ -388,14 +387,14 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
                  k,lat,lon,mag,u,v); CHKERRQ(ierr); 
         const PetscScalar origdlat = (-5.42445 - (-12.3325)) / 110.0;
         const PetscScalar lowlat = -12.3325 - origdlat * 46.0;
-        const PetscScalar dlat = (-5.42445 - lowlat) / (float) (grid.Mx - 1);        
+        const PetscScalar dlat = (-5.42445 - lowlat) / (float) (grid.My - 1);        
         const PetscScalar lowlon = -5.26168;
-        const PetscScalar dlon = (3.72207 - lowlon) / (float) (grid.My - 1);
-        const int         ci = (int) floor((lat - lowlat) / dlat);
-        const int         cj = (int) floor((lon - lowlon) / dlon);
+        const PetscScalar dlon = (3.72207 - lowlon) / (float) (grid.Mx - 1);
+        const int         cj = (int) floor((lat - lowlat) / dlat);
+        const int         ci = (int) floor((lon - lowlon) / dlon);
         if ((ci >= grid.xs) && (ci < grid.xs+grid.xm) && (cj >= grid.ys) && (cj < grid.ys+grid.ym)) {
-          const PetscScalar cu = secpera * vbar[ci][cj];  // note switched meaning
-          const PetscScalar cv = secpera * ubar[ci][cj];
+          const PetscScalar cu = secpera * ubar[ci][cj];
+          const PetscScalar cv = secpera * vbar[ci][cj];
           const PetscScalar cmag = sqrt(PetscSqr(cu)+PetscSqr(cv));
           ierr = verbPrintf(4,PETSC_COMM_SELF,
                  " PISM%d[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",

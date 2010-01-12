@@ -1,4 +1,4 @@
-// Copyright (C) 2008, 2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -73,6 +73,9 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[], boo
   name = my_name;
 
   var1.init(my_name, my_grid, GRID_3D);
+
+  // FIXME: for some reason the following breaks penth:
+  // this->set(GSL_NAN);
 
   return 0;
 }
@@ -573,6 +576,9 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
   localp = false;
 
   var1.init(name, my_grid, GRID_3D_BEDROCK);
+
+  this->set(GSL_NAN);
+
   return 0;
 }
 
