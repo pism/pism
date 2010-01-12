@@ -21,8 +21,11 @@
 #
 # CK 27may08
 
+# FIXME:  these two commands should be replaced by specific imports; it is hard
+#         to maintain this way:
 from numpy import *
 from pylab import *
+
 from getopt import getopt, GetoptError
 from sys import argv, exit
 try:
@@ -56,7 +59,8 @@ except GetoptError:
 # load RIGGS data FROM D. MACAYEAL TO ELB ON 19 DEC 2006.
 try:
     print "Loading RIGGS data from '%s'..." % (riggs_file),
-    RIGGS = load(riggs_file)
+    RIGGS = loadtxt(riggs_file)  # pylab now suggests numpy.loadtxt instead of 
+                                 #    pylab's "load"
     print "done."
 except IOError:
     print """ERROR!\nMake sure that '%s' is in the expected location
@@ -101,7 +105,14 @@ RIGGSlon = RIGGS[:,6] + RIGGS[:,7]/60 + RIGGS[:,8]/(60*60)
 RIGGSlon = - RIGGSlon * RIGGS[:,9];  # RIGGS[:,9] is +1 if W, -1 if E
 
 # throw out the ones which are not in model domain; 132 (131?) remain
+
+#FIXME:  next line fails for me with this message:
+#Traceback (most recent call last):
+#  File "./rossplot.py", line 107, in <module>
+#    cbar_masked.putmask(-20)
+#AttributeError: 'MaskedArray' object has no attribute 'putmask'
 cbar_masked.putmask(-20)
+
 cRIGGS = tri.nn_interpolator(cbar_masked.flat)(RIGGSlon, RIGGSlat)
 rig = RIGGS[cRIGGS > 0]
 riglon = RIGGSlon[cRIGGS > 0]

@@ -326,11 +326,13 @@ setattr(ubarvar, 'long_name',
         'vertical average of horizontal velocity of ice in projection_x_coordinate direction')
 setattr(ubarvar, 'units', 'm s-1')
 setattr(ubarvar, '_FillValue', 1.0 / SECPERA)
+ubarvar.standard_name = 'land_ice_vertical_mean_x_velocity'
 
 setattr(vbarvar, 'long_name', 
         'vertical average of horizontal velocity of ice in projection_y_coordinate direction')
 setattr(vbarvar, 'units', 'm s-1')
 setattr(vbarvar, '_FillValue', 1.0 / SECPERA)
+vbarvar.standard_name = 'land_ice_vertical_mean_y_velocity'
 
 setattr(bcflagvar, 'long_name', 'location of Dirichlet boundary condition for velocity')
 

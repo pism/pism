@@ -22,6 +22,15 @@ echo "-----  Also create NetCDF version of RIGGS data; riggs.nc; used later:"
 
 echo "-----  Running pismd to compute velocity in Ross ice shelf:"
 mpiexec -n $NN pismd -ross -boot_from ross.nc -ssa -ssaBC ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3 -o rossComputed.nc
+
+exit 
+
+# FIXME:  we want to do this compare to RIGGS data by default, too:
+
+echo "-----  Running pismd to compute velocity in Ross ice shelf, with compare to RIGGS data:"
+mpiexec -n $NN pismd -ross -boot_from ross.nc \
+ -ssa -ssa_rtol 1e-7 -ssaBC ross.nc -riggs riggs.nc \
+ -Mx 147 -My 147 -Mz 3 -Lz 1e3 -o rossComputed.nc
   
 echo "-----  Done.  Model output in rossComputed.nc."
 
