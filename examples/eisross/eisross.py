@@ -31,16 +31,13 @@ def read2dROSSfloat(mygrid,myarray,xs,xm,My,mymissing,myshift,myscale):
   vprint(mygrid.readline()) # ignor two lines
   vprint(mygrid.readline())
   Mx = xs + xm
-  #top = Mx - 1
   for i in range(xs):
     for j in range(My):
-      #myarray[top - i,j] = mymissing
       myarray[i,j] = mymissing
   for i in range(xm):
     j = 0
     for num in mygrid.readline().split():
       myarray[i+xs,j] = (float(num) + myshift) * myscale
-      #myarray[top - (i+xs),j] = (float(num) + myshift) * myscale
       j = j + 1
 
 # function convert velocities from (azimuth,magnitude), with magnitude to (u,v)
@@ -80,22 +77,15 @@ xmROSS = int(dim[0])
 MyROSS = int(dim[1])
 xsROSS = MyROSS - xmROSS
 MxROSS = MyROSS
-#top = MxROSS - 1
 # compute RIGGS grid coordinates (from original RIGGS documents)
 lat = zeros((MxROSS, MyROSS), float32)
 lon = zeros((MxROSS, MyROSS), float32)
 dlat = (-5.42445 - (-12.3325)) / 110.0
 dlon = (3.72207 - (-5.26168)) / 146.0
-#from Matlab file ross_plot.m:
-#dlat = (-5.42445 - (-12.3325))/110;
-#gridlatext = linspace(-12.3325 - dlat * 46,-5.42445,147);
-#gridlon = linspace(-5.26168,3.72207,147);
 for i in range(MxROSS):
   for j in range(MyROSS):
     lat[i,j] = -12.3325 - dlat * 46.0 + i * dlat
     lon[i,j] = -5.26168 + j * dlon
-    #lat[top - i,j] = -12.3325 - dlat * 46.0 + i * dlat
-    #lon[top - i,j] = -5.26168 + j * dlon
 #these are to be filled from 111by147.dat:
 eislat = zeros((MxROSS, MyROSS), float32) # actually ignored
 eislon = zeros((MxROSS, MyROSS), float32) # actually ignored
@@ -115,13 +105,11 @@ j=0;
 for line in range(xsROSS):
    for i in range(MyROSS):
       eislat[j,i] = 9999.;
-      #eislat[top-j,i] = 9999.;
    j = j + 1
 for line in range(xmROSS):
    latvalue = float(grid.readline())
    for i in range(MyROSS):
       eislat[j,i] = latvalue
-      #eislat[top-j,i] = latvalue
    j = j + 1
 vprint(grid.readline()) # read extra value
 # note there are actually 148 "columns position" values in 111by147Grid.dat file
@@ -132,7 +120,6 @@ for line in range(MyROSS):
    lonvalue = float(grid.readline())
    for j in range(MxROSS):
       eislon[j,i] = lonvalue
-      #eislon[top-j,i] = lonvalue
    i = i + 1
 vprint(grid.readline()) # read extra value
 vprint(grid.readline()) # ignor two lines
@@ -140,20 +127,16 @@ vprint(grid.readline())
 for i in [0, 1]:
   for j in range(MyROSS):
     mask[i,j] = MASK_SHEET
-    #mask[top - i,j] = MASK_SHEET
 for i in range(xsROSS-2):
   for j in range(MyROSS):
     mask[i+2,j] = MASK_FLOATING
-    #mask[top - (i+2),j] = MASK_FLOATING
 for i in range(xmROSS):
   j = 0
   for num in grid.readline().split():
     if int(num) == 1:
        mask[i+xsROSS,j] = MASK_FLOATING
-       #mask[top - (i+xsROSS),j] = MASK_FLOATING
     else:
        mask[i+xsROSS,j] = MASK_SHEET
-       #mask[top - (i+xsROSS),j] = MASK_SHEET
     j = j + 1
 read2dROSSfloat(grid,azi,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0)
 read2dROSSfloat(grid,mag,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0 / SECPERA)
@@ -163,16 +146,13 @@ vprint(grid.readline())
 for i in range(xsROSS):
   for j in range(MyROSS):
     accur[i,j] = -1
-    #accur[top - i,j] = -1
 for i in range(xmROSS):
   j = 0
   for num in grid.readline().split():
     if float(num) == 1.0:
        accur[i+xsROSS,j] = 1
-       #accur[top - (i+xsROSS),j] = 1
     else:
        accur[i+xsROSS,j] = 0
-       #accur[top - (i+xsROSS),j] = 0
     j = j + 1
 read2dROSSfloat(grid,bed,xsROSS,xmROSS,MyROSS,-600.0,0.0,-1.0)
 # set thickness to 1.0 m according to this info
@@ -183,7 +163,6 @@ for i in range(xmROSS):
   for num in grid.readline().split():
     if (float(num) == 1.0):
       thk[i,j] = 1.0
-      #thk[top - i,j] = 1.0
     j = j + 1
 read2dROSSfloat(grid,accum,xsROSS,xmROSS,MyROSS,0.2/SECPERA,0.0,1.0/(SECPERA * 1000.0))
 read2dROSSfloat(grid,barB,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0)
@@ -218,7 +197,6 @@ kbc=open(KBC_FILE, 'r')
 for count in range(77):
   coords = kbc.readline().split()
   i = int(coords[0]) + xsROSS
-  #i = top - (int(coords[0]) + xsROSS)
   j = int(coords[1])
   mask[i,j] = MASK_SHEET
   bcflag[i,j] = 1
@@ -232,7 +210,6 @@ inlets=open(INLETS_FILE, 'r')
 for count in range(22):
   data = inlets.readline().split()
   i = int(data[0]) + xsROSS
-  #i = top - (int(data[0]) + xsROSS)
   j = int(data[1])
   mask[i,j] = MASK_SHEET
   bcflag[i,j] = 1
@@ -242,14 +219,8 @@ inlets.close()
 
 ##### create and define dimensions and variables in NetCDF file #####
 ncfile = NC(WRIT_FILE, 'w')
-# set global attributes
-historysep = ' '
-historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
-setattr(ncfile, 'history', historystr)
-# define the dimensions
 xdim = ncfile.createDimension('y', MxROSS)
 ydim = ncfile.createDimension('x', MyROSS)
-# define the variables
 xvar = ncfile.createVariable('y', 'f8', ('y',))
 yvar = ncfile.createVariable('x', 'f8', ('x',))
 latvar = ncfile.createVariable('lat', 'f4', ('y','x'))
@@ -268,8 +239,12 @@ vbarvar = ncfile.createVariable('vbar', 'f4', ('y','x'))
 bcflagvar = ncfile.createVariable('bcflag', 'i4', ('y','x'))
 
 ##### attributes in NetCDF file #####
-setattr(ncfile, 'Conventions', 'CF-1.0') # only global attribute
-
+# set global attributes
+historysep = ' '
+historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
+setattr(ncfile, 'history', historystr)
+setattr(ncfile, 'Conventions', 'CF-1.4') # only global attribute
+# attributes on variables
 setattr(xvar, 'axis', 'X')
 setattr(xvar, 'long_name', 'x-coordinate in Cartesian system')
 setattr(xvar, 'standard_name', 'projection_x_coordinate')
@@ -282,9 +257,11 @@ setattr(yvar, 'units', 'm')
 
 setattr(latvar, 'long_name', 'RIGGS grid south latitude')
 latvar.units = 'degrees_north'
+latvar.standard_name = 'latitude'
 
 setattr(lonvar, 'long_name', 'RIGGS grid west longitude')
 lonvar.units = 'degrees_east'
+lonvar.standard_name = 'longitude'
 
 setattr(maskvar, 'long_name', 'grounded or floating integer mask')
 
@@ -299,6 +276,7 @@ setattr(magvar, '_FillValue', 9999.)
 setattr(thkvar, 'long_name', 'floating ice shelf thickness')
 setattr(thkvar, 'units', 'm')
 setattr(thkvar, '_FillValue', 1.)
+thkvar.standard_name = 'land_ice_thickness'
 
 setattr(accurvar, 'long_name', 'EISMINT ROSS flag for accurate observed velocity')
 setattr(accurvar, '_FillValue', -1)
@@ -336,7 +314,7 @@ vbarvar.standard_name = 'land_ice_vertical_mean_y_velocity'
 
 setattr(bcflagvar, 'long_name', 'location of Dirichlet boundary condition for velocity')
 
-##### write data into and close NetCDF file #####
+##### write data into NetCDF file #####
 for i in range(MxROSS):
 	xvar[i] = dxROSS * float(i - (MxROSS - 1)/2)
 for j in range(MyROSS):
@@ -355,6 +333,7 @@ Tsvar[:] = Ts
 ubarvar[:] = ubarOBS
 vbarvar[:] = vbarOBS
 bcflagvar[:] = bcflag
+
 # finish up
 ncfile.close()
 print "NetCDF file ",WRIT_FILE," created"

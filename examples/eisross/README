@@ -1,11 +1,15 @@
-                                             ELB 20may08
 
 Please see the User's Manual for *how* to perform the 
 EISMINT-Ross intercomparison using PISM.  It is in the section
 titled "Example: Validating PISM as a flow model for the Ross 
 ice shelf".
 
-This README file describes the sources and format of the data 
+Or just run the script:
+
+  $ ./quickstart.sh
+  
+
+The rest of this README file describes the sources and format of the data 
 used for EISMINT-Ross.  It supplements the "readme.txt" file from the 
 EISMINT Ross intercomparison (that file is dated "Oct 2nd 1996" 
 and is by V. Rommelaere).
@@ -51,9 +55,9 @@ COLUMN    MEANING
 14        estimated speed error (m/a; note replaced with 30
           for Chi^2 stat in MacAyeal et al 1996)
 
-ross_plot.py:  Takes the NetCDF result of a PISM Ross run (i.e. from
+rossplot.py:  Takes the NetCDF result of a PISM Ross run (i.e. from
 "pismd -ross -bif ross.nc -ssaBC ross.nc ...") and produces a
 good-looking figure using Python tools matplotlib, netcdf4-python, and 
 scikits.delaunay.  See comments to install.  Reads the riggs_clean.dat 
-file and produces the value of the \chi^2 statistic.  Produces .png
-images.
+file.  Produces .png images.
+

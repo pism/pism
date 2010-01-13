@@ -39,7 +39,7 @@ riggsmag = zeros((numlines,),float32)
 riggsazi = zeros((numlines,),float32)
 riggsu = zeros((numlines,),float32)
 riggsv = zeros((numlines,),float32)
-# = zeros((numlines,),float32)
+
 count = 0
 while 1:
   line = riggsin.readline().split()
@@ -49,14 +49,9 @@ while 1:
   riggscount[count] = int(line[0])
   truelat[count] = float(line[1])
   truelon[count] = float(line[2])
-  #RIGGSlat = -(RIGGS(:,4) + RIGGS(:,5)/60 + RIGGS(:,6)/(60*60));
-  #RIGGSlon = RIGGS(:,7) + RIGGS(:,8)/60 + RIGGS(:,9)/(60*60);
-  #RIGGSlon = - RIGGSlon .* RIGGS(:,10);  % RIGGS(:,10) is +1 if W, -1 if E
   riggslat[count] = - ( float(line[3]) + float(line[4])/60.0 + float(line[5])/3600.0 )
   riggslon[count] = float(line[6]) + float(line[7])/60.0 + float(line[8])/3600.0
   riggslon[count] = - float(line[9]) * riggslon[count]
-  #rigu = sin((pi/180)*rig(:,13)) .* rig(:,11);
-  #rigv = cos((pi/180)*rig(:,13)) .* rig(:,11);
   #ignor line[11] and line[13]
   riggsmag[count] = float(line[10])
   riggsazi[count] = float(line[12])
@@ -68,9 +63,7 @@ riggsin.close()
 
 ##### create and define dimensions and variables in NetCDF file #####
 ncfile = NC(OUT_FILE, 'w')
-# define the dimensions
 xdim = ncfile.createDimension('count', count)
-# define the variables
 xvar = ncfile.createVariable('count', 'f4', dimensions=('count',))
 truelatvar = ncfile.createVariable('truelat', 'f4', dimensions=('count',))
 truelonvar = ncfile.createVariable('truelon', 'f4', dimensions=('count',))
@@ -106,7 +99,7 @@ setattr(riggsuvar, 'units', 'm year-1')
 setattr(riggsvvar, 'long_name', 'RIGGS observed ice velocity y component')
 setattr(riggsvvar, 'units', 'm year-1')
 
-##### write data into and close NetCDF file #####
+##### write data into NetCDF file #####
 for i in range(count):
 	xvar[i] = int(riggscount[i])
 truelatvar[:] = truelat

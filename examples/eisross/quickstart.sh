@@ -14,19 +14,19 @@ do
   wget -nc http://homepages.vub.ac.be/~phuybrec/eismint/$fname
 done
 
-echo "-----  Run eis_ross.py to turn ascii data into NetCDF file ross.nc:"
+echo "-----  Run eisross.py to turn ascii data into NetCDF file ross.nc:"
 ./eisross.py -o ross.nc
 
-echo "-----  Also create NetCDF version of RIGGS data; riggs.nc; used later:"
-./eisriggs.py -o riggs.nc
+echo "-----  Run riggs.py to create NetCDF version riggs.nc of RIGGS data:"
+./riggs.py -o riggs.nc
 
-echo "-----  Running pismd to compute velocity in Ross ice shelf:"
-mpiexec -n $NN pismd -ross -boot_from ross.nc -ssa -ssaBC ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3 -o rossComputed.nc
+echo "-----  Running pismd to compute velocity in Ross ice shelf,"
+echo "       with comparison to RIGGS data:"
+mpiexec -n $NN pismd -ross -boot_from ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3 \
+ -ssa -ssaBC ross.nc -riggs riggs.nc -o rossComputed.nc
 
-echo "-----  Running pismd to compute velocity in Ross ice shelf, with compare to RIGGS data:"
-mpiexec -n $NN pismd -ross -boot_from ross.nc \
- -ssa -ssa_rtol 1e-7 -ssaBC ross.nc -riggs riggs.nc \
- -Mx 147 -My 147 -Mz 3 -Lz 1e3 -o rossComputed.nc
-  
-echo "-----  Done.  Model output in rossComputed.nc."
+echo "----- Generating figure comparing model vs observed velocity:"
+./rossplot.py --pism-output=rossComputed.nc --riggs=riggs_clean.dat
+
+echo "-----  Done."
 

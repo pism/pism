@@ -21,7 +21,6 @@
 
 from numpy import ma, loadtxt, squeeze, linspace, tile, repeat, sin, pi, cos, sqrt
 from pylab import figure, clf, hold, pcolor, colorbar, plot, quiver, axis, xlabel, ylabel, savefig, show
-from scikits.delaunay import Triangulation
 from getopt import getopt, GetoptError
 from sys import argv, exit
 
@@ -29,6 +28,13 @@ try:
     from netCDF4 import Dataset as NC
 except:
     from netCDF3 import Dataset as NC
+
+try:
+    from scikits.delaunay import Triangulation
+except:
+    print "ERROR:  scikits.delaunay  not installed (?)"
+    print "see PISM Installation Manual for information"
+    exit(1)
 
 seconds_per_year = 3.1556926e7
 
@@ -102,11 +108,6 @@ RIGGSlon = - RIGGSlon * RIGGS[:,9];  # RIGGS[:,9] is +1 if W, -1 if E
 
 # throw out the ones which are not in model domain; 132 (131?) remain
 
-#FIXME:  next line fails for me with this message:
-#Traceback (most recent call last):
-#  File "./rossplot.py", line 107, in <module>
-#    cbar_masked.putmask(-20)
-#AttributeError: 'MaskedArray' object has no attribute 'putmask'
 cbar_masked = cbar_masked.filled(-20)
 
 cRIGGS = tri.nn_interpolator(cbar_masked.flat)(RIGGSlon, RIGGSlat)
@@ -128,18 +129,22 @@ axis([-5.26168, 3.72207, -13, -5.42445])
 xlabel('RIGGS grid longitude (deg E)'); ylabel('RIGGS grid latitude (deg N)')
 #title("""Color is speed in m/a.\n Arrows are observed (black) and computed 
 #(red) velocities at RIGGS points.""")
-savefig("rossquiver.png")
+print "saving figure ross_quiver.png"
+savefig("ross_quiver.png")
 
-# report results comparable to Table 1 in (MacAyeal et al 1996)
-ChiSqrActual = sum( ((uATrig - rigu)**2 + (vATrig - rigv)**2) / (30**2) )
-print "chi^2 = %f" % (ChiSqrActual * (156.0/132.0))
-print "maximum computed ice shelf speed is  %f." % (cbar.max())
+# to report results comparable to Table 1 in (MacAyeal et al 1996)
+#ChiSqrActual = sum( ((uATrig - rigu)**2 + (vATrig - rigv)**2) / (30**2) )
+#print "chi^2 = %f" % (ChiSqrActual * (156.0/132.0))
+#print "maximum computed ice shelf speed is  %f." % (cbar.max())
 
 # show observed versus computed scatter plot as in Figure 2 in (MacAyeal et al 1996)
 figure(2);clf();hold(True)
 plot(sqrt(uATrig**2 + vATrig**2), sqrt(rigu**2 + rigv**2), '.k')
 plot([0, 1000],[0, 1000], 'k')
 xlabel('PISM computed speed (m/a)'); ylabel('RIGGS observed speed (m/a)')
-savefig("rossscatter.png")
+print "saving figure ross_scatter.png"
+savefig("ross_scatter.png")
+
+print "pausing to show figures ..."
 show()
 
