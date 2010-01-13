@@ -418,16 +418,16 @@ PetscErrorCode IceModel::write_extras() {
   }
 
   ierr = verbPrintf(3, grid.com, 
-		    "\nsaving spatial time-series to %s at %.5f a, for time-step goal %.5f a\n\n",
-		    filename, grid.year,saving_after);
+		    "\nsaving spatial time-series to %s at %.5f a\n\n",
+		    filename, grid.year);
   CHKERRQ(ierr);
 
   // create line for history in .nc file, including time of write
   string date_str = timestamp();
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
-	   "%s: %s saving time-series record at %10.5f a, for time-step goal %10.5f a\n",
-	   date_str.c_str(), executable_short_name.c_str(), grid.year, saving_after);
+	   "%s: %s saving spatial time-series record at %10.5f a\n",
+	   date_str.c_str(), executable_short_name.c_str(), grid.year);
 
   if (!extra_file_is_ready) {
 

@@ -202,7 +202,7 @@ if __name__ == "__main__":
     historysep = ' '
     historystr = asctime() + ': ' + historysep.join(argv) + '\n'
     if 'history' in nc.ncattrs():
-      nc.history += historystr
+      nc.history = historystr + nc.history  # prepend to history string
     else:
       nc.history = historystr
 
