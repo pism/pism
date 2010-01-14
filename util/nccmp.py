@@ -2,35 +2,51 @@
 from sys import argv, exit
 from getopt import getopt, GetoptError
 
+tol = 0.0   # default tolerance is perfection
+
 def success():
-    print "Files are the same within given tolerance."
+    print "Files are the same within tolerance %.1e" % tol
     exit(0)
 
 def failure():
     print "Files are different."
     exit(1)
 
+usage="""nccmp.py compares NetCDF files by absolute max norms of difference of variables
+usage:
+  nccmp.py foo.nc bar.nc            compare all variables
+  nccmp.py -v A,B foo.nc bar.nc     compare variables A and B
+  nccmp.py -x C foo.nc bar.nc       compare all variables except C
+  nccmp.py -t 1e-6 foo.nc bar.nc    use tolerance 1e-6 instead of default of 0"""
+
+def usagefailure(message):
+    print message
+    print
+    print usage
+    exit(2)
+
 def compare_vars(nc1, nc2, name, tol):
     from numpy import squeeze
-    # Find variables:
+
     try:
         var1 = squeeze(nc1.variables[name][:])
+    except:
+        usagefailure("ERROR: VARIABLE '%s' NOT FOUND IN FILE 1" % name)
+    try:
         var2 = squeeze(nc2.variables[name][:])
     except:
-        # This can happen if one of the files does not have the variable.
-        failure()
+        usagefailure("ERROR: VARIABLE '%s' NOT FOUND IN FILE 2" % name)
 
     try:
         delta = abs(var1 - var2).max()
     except:
-        # This can happen if variables have different shapes.
-        failure()
+        usagefailure("ERROR: VARIABLE '%s' OF INCOMPATIBLE SHAPES (?) IN FILES" % name)
 
     # The actual check:
     if (delta > tol):
         print "name = %s, delta = %e, tol = %e" % (name, delta, tol)
         failure()
-    
+
 
 def compare(file1, file2, variables, exclude, tol):
     try:
@@ -42,10 +58,12 @@ def compare(file1, file2, variables, exclude, tol):
 
     try:
         nc1 = NC(file1, 'r')
+    except:
+        usagefailure("ERROR: FILE '%s' CANNOT BE OPENED FOR READING" % file1)
+    try:
         nc2 = NC(file2, 'r')
     except:
-        # This can happen if one of the files could not be opened.
-        failure()
+        usagefailure("ERROR: FILE '%s' CANNOT BE OPENED FOR READING" % file2)
 
     if (exclude == False):
         if len(variables) == 0:
@@ -65,11 +83,12 @@ def compare(file1, file2, variables, exclude, tol):
                 continue
             compare_vars(nc1, nc2, each, tol)
 
-
 if __name__ == "__main__":
     from numpy import double
-    opts, args = getopt(argv[1:], "t:v:x")
-    tol = 0
+    try:
+      opts, args = getopt(argv[1:], "t:v:x", ["help","usage"])
+    except GetoptError:
+      usagefailure('ERROR: INCORRECT COMMAND LINE ARGUMENTS FOR nccmp.py')
     file1 = ""
     file2 = ""
     variables = []
@@ -81,13 +100,14 @@ if __name__ == "__main__":
             exclude = True
         if opt == "-v":
             variables = arg.split(",")
+        if opt in ("--help", "--usage"):
+            print usage
+            exit(0)
 
     if len(args) != 2:
-        failure()
+        usagefailure('ERROR: WRONG NUMBER OF ARGUMENTS FOR nccmp.py')
 
     compare(args[0],args[1], variables, exclude, tol)
 
     success()
 
-    
-            

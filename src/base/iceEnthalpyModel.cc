@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2010 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -138,6 +138,7 @@ PetscErrorCode IceEnthalpyModel::setFromOptions() {
   return 0;
 }
 
+
 PetscErrorCode IceEnthalpyModel::bootstrapFromFile(const char *filename) {
   PetscErrorCode ierr;
   ierr = IceModel::bootstrapFromFile(filename); CHKERRQ(ierr);
@@ -151,6 +152,54 @@ PetscErrorCode IceEnthalpyModel::bootstrapFromFile(const char *filename) {
 
   return 0;
 }
+
+
+PetscErrorCode IceEnthalpyModel::initFromFile(const char *filename) {
+  PetscErrorCode ierr;
+
+  // option to override default behavior: if -init_from_temp is set then we
+  //   *MODIFY* the input file, by computing enthalpy from temp as cold ice, then
+  //   init from that
+  PetscTruth initfromtemp;
+  ierr = check_option("-init_from_temp", initfromtemp); CHKERRQ(ierr);
+  if (initfromtemp == PETSC_FALSE) {
+    // if the option is not set, proceed with normal initialization
+    ierr = IceModel::initFromFile(filename); CHKERRQ(ierr);
+    return 0;
+  }
+
+  ierr = verbPrintf(2, grid.com,
+    "  option -init_from_temp seen ... IceEnthalpyModel doing SPECIAL ACTIONS:\n"
+    "      reading ice temperature and thickness from %s ...\n",
+    filename); CHKERRQ(ierr);  
+  NCTool nc(&grid);
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+  int last_record;
+  ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
+  last_record -= 1;
+  // computation of Enth3 will need thickness
+  ierr = vH.read(filename,last_record); CHKERRQ(ierr);
+  ierr = T3.read(filename,last_record); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+    "      computing enthalpy from ice temperature and thickness ...\n");
+    CHKERRQ(ierr);  
+  ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+    "      MODIFYING file '%s' by writing enthalpy ...\n",filename);
+    CHKERRQ(ierr);  
+  ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr);
+  ierr = Enth3.write(filename,NC_DOUBLE); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  // now init; this will actually re-read thk and enthalpy
+  ierr = IceModel::initFromFile(filename); CHKERRQ(ierr);
+  
+  return 0;
+}
+
 
 PetscErrorCode IceEnthalpyModel::init_physics() {
   PetscErrorCode ierr;
@@ -197,8 +246,9 @@ PetscErrorCode IceEnthalpyModel::init_physics() {
 PetscErrorCode IceEnthalpyModel::write_extra_fields(const char* filename) {
   PetscErrorCode ierr;
 
-  ierr = Enth3.write(filename, NC_DOUBLE); CHKERRQ(ierr);//! Total code duplication with IceModel version, but checks flag doColdIceMethods and uses correct flow law.
-
+  ierr = IceModel::write_extra_fields(filename); CHKERRQ(ierr);
+  
+  ierr = Enth3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
 
   // also write omega = liquid water fraction
   //   we use EnthNew3 (global) as temporary, allocated space for this purpose
@@ -239,10 +289,12 @@ PetscErrorCode IceEnthalpyModel::write_extra_fields(const char* filename) {
       "  writing basal frictional heating 'bfrict' ...\n"); CHKERRQ(ierr);
   ierr = vRb.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
+#if 0
   // also write bmelt = ice basal melt rate in m a-1
   ierr = verbPrintf(4, grid.com,
       "  writing ice basal melt rate 'bmelt' ...\n"); CHKERRQ(ierr);
   ierr = vbasalMeltRate.write(filename, NC_FLOAT); CHKERRQ(ierr);
+#endif
 
   return 0;
 }

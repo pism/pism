@@ -3,7 +3,7 @@
 source ../functions.sh
 
 test="Test #12: penth exact restartability."
-files="verify.nc blah.nc foo.nc joe.nc bar.nc"
+files="pre.nc blah.nc foo.nc joe.nc bar.nc"
 dir=`pwd`
 
 # passes with -no_temp
