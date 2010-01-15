@@ -814,18 +814,21 @@ PetscErrorCode IceModel::getEffectivePressureForInverse() {
   PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
     max_hmelt = config.get("max_hmelt");
 
-  PetscScalar **N, **H, **Hmelt;
+  PetscScalar **N, **H, **Hmelt, **bmr;
   ierr = inv.effPressureN->get_array(N);  CHKERRQ(ierr);
   ierr = vH.get_array(H);  CHKERRQ(ierr);
   ierr = vHmelt.get_array(Hmelt);  CHKERRQ(ierr);
+  ierr = vbasalMeltRate.get_array(bmr);  CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      N[i][j] = getEffectivePressureOnTill(H[i][j], Hmelt[i][j],
-					   till_pw_fraction, max_hmelt); // iMbasal.cc
+      N[i][j] = getEffectivePressureOnTill(
+                   H[i][j], Hmelt[i][j], bmr[i][j],
+		   till_pw_fraction, max_hmelt); // iMbasal.cc
     }
   }
   ierr = vH.end_access();  CHKERRQ(ierr);
   ierr = vHmelt.end_access();  CHKERRQ(ierr);
+  ierr = vbasalMeltRate.end_access();  CHKERRQ(ierr);
   ierr = inv.effPressureN->end_access();  CHKERRQ(ierr);
   return 0;
 }

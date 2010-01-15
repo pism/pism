@@ -78,12 +78,10 @@ protected:
                 PetscScalar thickness, PetscScalar z, PetscScalar dz,
                 PetscScalar &enthalpy, PetscScalar &Hmelt);
 
-  using IceModel::updateYieldStressFromHmelt;
-  virtual PetscErrorCode updateYieldStressFromHmelt();
-
-  using IceModel::getEffectivePressureOnTill;  // but does not override it; one more arg
-  virtual PetscScalar getEffectivePressureOnTill(PetscScalar thk, PetscScalar bwat, PetscScalar bmr,
-						 PetscScalar till_pw_frac, PetscScalar max_hmelt) const;
+  using IceModel::getEffectivePressureOnTill;
+  virtual PetscScalar getEffectivePressureOnTill(
+                PetscScalar thk, PetscScalar bwat, PetscScalar bmr,
+		PetscScalar till_pw_frac, PetscScalar max_hmelt) const;
 
 protected: // new data members
   IceModelVec3  EnthNew3;  // NOTE:  Enth3 is an IceModel member, uninitialized and unused within IceModel

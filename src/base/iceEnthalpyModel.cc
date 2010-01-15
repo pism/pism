@@ -42,32 +42,6 @@ IceEnthalpyModel::IceEnthalpyModel(IceGrid &g) : IceModel(g) {
 }
 
 
-PetscErrorCode IceEnthalpyModel::createVecs() {
-  PetscErrorCode ierr;
-
-  ierr = Enth3.create(grid, "enthalpy", true); CHKERRQ(ierr);
-  // POSSIBLE standard name = land_ice_enthalpy
-  ierr = Enth3.set_attrs(
-     "model_state",
-     "ice enthalpy (sensible plus latent heat, plus potential energy of pressure)",
-     "J kg-1",
-     ""); CHKERRQ(ierr);
-  ierr = variables.add(Enth3); CHKERRQ(ierr);
-
-  ierr = IceModel::createVecs(); CHKERRQ(ierr);
-
-  // see IceModel::allocate_internal_objects(), which is where this should go
-  ierr = EnthNew3.create(grid,"enthalpy_new",false); CHKERRQ(ierr); // global
-  ierr = EnthNew3.set_attrs(
-     "internal",
-     "ice enthalpy; temporary space during timestep",
-     "J kg-1",
-     ""); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
 PetscErrorCode IceEnthalpyModel::setFromOptions() {
   PetscErrorCode ierr;
 
@@ -139,16 +113,67 @@ PetscErrorCode IceEnthalpyModel::setFromOptions() {
 }
 
 
-PetscErrorCode IceEnthalpyModel::bootstrapFromFile(const char *filename) {
+PetscErrorCode IceEnthalpyModel::createVecs() {
   PetscErrorCode ierr;
-  ierr = IceModel::bootstrapFromFile(filename); CHKERRQ(ierr);
+
+  ierr = IceModel::createVecs(); CHKERRQ(ierr);
+
+  ierr = Enth3.create(grid, "enthalpy", true); CHKERRQ(ierr);
+  // POSSIBLE standard name = land_ice_enthalpy
+  ierr = Enth3.set_attrs(
+     "model_state",
+     "ice enthalpy (sensible plus latent heat, plus potential energy of pressure)",
+     "J kg-1",
+     ""); CHKERRQ(ierr);
+  ierr = variables.add(Enth3); CHKERRQ(ierr);
+
+  // see IceModel::allocate_internal_objects(), which is where this should go
+  ierr = EnthNew3.create(grid,"enthalpy_new",false); CHKERRQ(ierr); // global
+  ierr = EnthNew3.set_attrs(
+     "internal",
+     "ice enthalpy; temporary space during timestep",
+     "J kg-1",
+     ""); CHKERRQ(ierr);
+  // note 3d dedicated work vectors are not added to variables in IceModel either
   
-  ierr = verbPrintf(2, grid.com, "continuing bootstrapping in IceEnthalpyModel ...\n"); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceEnthalpyModel::init_physics() {
+  PetscErrorCode ierr;
+
+  // let the base class create the ice and process its options:
+  ierr = IceModel::init_physics(); CHKERRQ(ierr);
+
+  if (grid.Mbz == 2) {
+    SETERRQ(2,"IceEnthalpyModel does not allow grid.Mbz==2, because separation\n"
+              "between ice/bedrock interface and application of geothermal flux\n"
+              "is much easier.  Note grid.Mbz==1 and grid.Mbz>=3 are the allowed values.\n");
+  }
+
   ierr = verbPrintf(2, grid.com,
-      "  ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
+      "  setting flow law to Glen-Paterson-Budd-Lliboutry-Duval type ...\n");
       CHKERRQ(ierr);
-  ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
-  ierr = verbPrintf(2, grid.com, "bootstrapping done (IceEnthalpyModel)\n"); CHKERRQ(ierr);
+  if (ice != NULL)  delete ice;  // kill choice already made!
+  iceFactory.setType(ICE_GPBLD); // new flowlaw which has dependence on enthalpy not temperature
+  iceFactory.create(&ice);
+
+  PolyThermalGPBLDIce *gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
+  if (gpbldi == NULL) {
+    ThermoGlenIce *tgi = dynamic_cast<ThermoGlenIce*>(ice);
+    if (tgi) {
+      ierr = verbPrintf(2, grid.com,
+        "  [flow law was actually set to ThermoGlenIce by IceEnthalpyModel ...]\n"); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2, grid.com,
+        "  [WARNING: flow law unclear in IceEnthalpyModel ...]\n"); CHKERRQ(ierr);
+    }
+  }
+  
+  ierr = ice->printInfo(4);CHKERRQ(ierr);
+
+  ierr = ice->setFromOptions();CHKERRQ(ierr);
 
   return 0;
 }
@@ -201,44 +226,20 @@ PetscErrorCode IceEnthalpyModel::initFromFile(const char *filename) {
 }
 
 
-PetscErrorCode IceEnthalpyModel::init_physics() {
+PetscErrorCode IceEnthalpyModel::bootstrapFromFile(const char *filename) {
   PetscErrorCode ierr;
 
-  // let the base class create the ice and process its options:
-  ierr = IceModel::init_physics(); CHKERRQ(ierr);
-
-  if (grid.Mbz == 2) {
-    SETERRQ(2,"IceEnthalpyModel does not allow grid.Mbz==2, because separation\n"
-              "between ice/bedrock interface and application of geothermal flux\n"
-              "is much easier.  Note grid.Mbz==1 and grid.Mbz>=3 are the allowed values.\n");
-  }
-
-  ierr = verbPrintf(2, grid.com,
-      "  setting flow law to Glen-Paterson-Budd-Lliboutry-Duval type ...\n");
-      CHKERRQ(ierr);
-  if (ice != NULL)  delete ice;  // kill choice already made!
-  iceFactory.setType(ICE_GPBLD); // new flowlaw which has dependence on enthalpy not temperature
-  iceFactory.create(&ice);
-
-  PolyThermalGPBLDIce *gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
-  if (gpbldi == NULL) {
-    ThermoGlenIce *tgi = dynamic_cast<ThermoGlenIce*>(ice);
-    if (tgi) {
-      ierr = verbPrintf(2, grid.com,
-        "  [flow law was actually set to ThermoGlenIce by IceEnthalpyModel ...]\n"); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2, grid.com,
-        "  [WARNING: flow law unclear in IceEnthalpyModel ...]\n"); CHKERRQ(ierr);
-    }
-  }
+  ierr = IceModel::bootstrapFromFile(filename); CHKERRQ(ierr);
   
-  ierr = ice->printInfo(4);CHKERRQ(ierr);
-
-  ierr = ice->setFromOptions();CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "continuing bootstrapping in IceEnthalpyModel ...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+      "  ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
+      CHKERRQ(ierr);
+  ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "bootstrapping done (IceEnthalpyModel)\n"); CHKERRQ(ierr);
 
   return 0;
 }
-
 
 
 /*********** procedures for read/write ****************/
@@ -452,7 +453,6 @@ PetscErrorCode IceEnthalpyModel::setPATempFromEnthalpy(IceModelVec3 &useForPATem
 }
 
 
-
 //! Compute CTS = E/E_s from Enth3 and Es, and put in a global IceModelVec3 provided by user.
 /*!
 The actual cold-temperate transition surface (CTS) is the level set CTS = E/E_s(p) = 1.
@@ -587,7 +587,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 
   ierr = grid.get_fine_vertical_grid(fMz, fMbz, fdz, fdzb, fzlev, fzblev); CHKERRQ(ierr);
 
-  ierr = verbPrintf(4,grid.com,
+  ierr = verbPrintf(5,grid.com,
     "\n  [entering enthalpyAndDrainageStep(); fMz = %d, fdz = %5.3f, fMbz = %d, fdzb = %5.3f]",
     fMz, fdz, fMbz, fdzb); CHKERRQ(ierr);
 
@@ -614,9 +614,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   system.bed_thermal_c   = config.get("bedrock_thermal_specific_heat_capacity");
   system.bed_thermal_k   = config.get("bedrock_thermal_conductivity");
 
-  // space for solution of system; length = fMz + fMbz - 1
-  const PetscInt k0 = fMbz - 1;
+  // space for solution of system
   PetscScalar *x;
+  const PetscInt k0 = fMbz - 1;
   x = new PetscScalar[fMz + k0];
 
   // constants (needed after solution of system, in insertion phase, or for boundary values)
@@ -717,17 +717,17 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 
       // enthalpy and pressures at boundaries
       const PetscScalar p_basal = EC.getPressureFromDepth(H[i][j]),
-                        p_ks   = EC.getPressureFromDepth(H[i][j] - fzlev[ks]);
+                        p_ks    = EC.getPressureFromDepth(H[i][j] - fzlev[ks]);
       PetscScalar Enth_air, Enth_ks, Enth_shelfbase;
-      ierr = EC.getEnthPermissive(Ts[i][j], 0.0, p_air, Enth_air ); CHKERRQ(ierr);
+      ierr = EC.getEnthPermissive(Ts[i][j], 0.0, p_air, Enth_air); CHKERRQ(ierr);
       // in theory we could have a water fraction at k=ks level, but for
       //   now there is no case where we have that:
-      ierr = EC.getEnthPermissive(Ts[i][j], 0.0, p_ks, Enth_ks ); CHKERRQ(ierr);
-      // at underside of ice shelf, set enthalpy to that of max liquid water
-      //   temperate ice; probably does not make much difference anyway because of
-      //   no upward/downward liquid water transport:
+      ierr = EC.getEnthPermissive(Ts[i][j], 0.0, p_ks,  Enth_ks); CHKERRQ(ierr);
+      // at underside of ice shelf, set enthalpy to that of temperate ice w max liquid
       ierr = EC.getEnthPermissive(Tshelfbase[i][j], omega_max, p_basal,
-                              Enth_shelfbase); CHKERRQ(ierr);
+                                  Enth_shelfbase); CHKERRQ(ierr);
+
+      bool bulgeLimiterTripped = false;
 
       if (k0+ks>0) { // if there are enough points in bedrock&ice to bother ...
         ierr = system.setIndicesThisColumn(i,j,ks); CHKERRQ(ierr);
@@ -809,20 +809,21 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
           }
         }
 
-      }
+        // top ice level; no possibility of drainage (a separate modeling issue!)
+        Enthnew[ks] = x[k0 + ks];
 
-      // top ice level; no possibility of drainage (a separate modeling issue!)
-      Enthnew[ks] = x[k0 + ks];
-
-      // now that enthalpy is known, check for and correct any extreme advection bulges
-      bool bulgeLimiterTripped = false;
-      for (PetscInt k=0; k < ks; k++) {
-        Enthnew[k] = x[k0 + k];
-        if (Enthnew[k] < Enthnew[ks] - bulgeMaxEnth) {
-          Enthnew[k] = Enthnew[ks] - bulgeMaxEnth;
-          bulgeCount++;
-          bulgeLimiterTripped = true;
+        // now that enthalpy is known, check for and correct any extreme advection bulges
+        for (PetscInt k=0; k < ks; k++) {
+          Enthnew[k] = x[k0 + k];
+          if (Enthnew[k] < Enthnew[ks] - bulgeMaxEnth) {
+            Enthnew[k] = Enthnew[ks] - bulgeMaxEnth;
+            bulgeCount++;
+            bulgeLimiterTripped = true;
+          }
         }
+
+      } else { // case where k0+ks == 0; here we did not solve system so x[] is undefined
+        Enthnew[0] = Enth_air;
       }
 
       // prepare for melting/refreezing
@@ -841,7 +842,6 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
           // if the ice is floating then mass and energy balance
           //   is the responsibility of the PISMOceanCoupler
           Enthnew[0] = Enth_shelfbase;
-          Hmeltnew = 0.0;
         } else {
           // use the drainage model for the basal ice segment to determine both
           //   Hmeltnew and Enthnew[0]; modifies last two arguments, generally:
@@ -1119,90 +1119,6 @@ PetscScalar IceEnthalpyModel::getEffectivePressureOnTill(PetscScalar thk, PetscS
   }
 
   return p_overburden - p_pw;
-}
-
-
-//! Update the till yield stress for the pseudo-plastic SSA model.
-/*!
-Updates based on stored till water and basal melt rate.  We implement
-formula (2.4) in [\ref SchoofStream],
-    \f[   \tau_c = \mu (\rho g H - p_w), \f]
-where \f$\tau_c\f$ is the till yield stress, \f$\rho g H\f$ is the ice over-burden
-pressure (in the shallow approximation), \f$p_w\f$ is the modeled
-pore water pressure, and \f$\mu\f$ is a strength coefficient for the mineral till
-(at least, it is independent of \f$p_w\f$).  The difference
-    \f[   N = \rho g H - p_w   \f]
-is the effective pressure on the till.
- 
-We modify Schoof's formula by (possibly) adding a small till cohesion \f$c_0\f$
-and by expressing the coefficient as the tangent of a till friction angle
-
-\f$\varphi\f$:
-    \f[   \tau_c = c_0 + (\tan \varphi) N. \f]
-See [\ref Paterson] table 8.1) regarding values of \f$c_0\f$.
-Option  \c -plastic_c0 controls it.
-
-The main issue is the model for pore water pressure \f$p_w\f$ when
-computing \f$N\f$.  See getEffectivePressureOnTill().
-
-See [\ref BBssasliding] for a discussion of a complete model using these tools.
-
-Note that IceModel::updateSurfaceElevationAndMask() also
-checks whether do_plastic_till is true and if so it sets all mask points to
-DRAGGING.
-
-FIXME: Should be renamed "updateYieldStressUsingBasalWater()"?
- */
-PetscErrorCode IceEnthalpyModel::updateYieldStressFromHmelt() {
-  PetscErrorCode  ierr;
-
-  bool do_plastic_till = config.get_flag("do_plastic_till");
-  // only makes sense when do_plastic_till == TRUE
-  if (do_plastic_till == PETSC_FALSE) {
-    SETERRQ(1,"do_plastic_till == PETSC_FALSE but updateYieldStressFromHmelt() called");
-  }
-
-  if (holdTillYieldStress == PETSC_FALSE) { // usual case: use Hmelt to determine tauc
-    PetscScalar **tauc, **H, **Hmelt, **bmr, **tillphi; 
-
-    PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
-      till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
-      till_mu = tan((pi/180.0)*config.get("default_till_phi")),
-      max_hmelt = config.get("max_hmelt");
-
-    ierr =          vMask.begin_access();     CHKERRQ(ierr);
-    ierr =          vtauc.get_array(tauc);    CHKERRQ(ierr);
-    ierr =             vH.get_array(H);       CHKERRQ(ierr);
-    ierr =         vHmelt.get_array(Hmelt);   CHKERRQ(ierr);
-    ierr = vbasalMeltRate.get_array(bmr);     CHKERRQ(ierr);
-    ierr =       vtillphi.get_array(tillphi); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (vMask.is_floating(i,j)) {
-          tauc[i][j] = 0.0;  
-        } else if (H[i][j] == 0.0) {
-          tauc[i][j] = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice
-        } else { // grounded and there is some ice
-          const PetscScalar
-            N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j], bmr[i][j], till_pw_fraction,
-					   max_hmelt);
-          if (useConstantTillPhi == PETSC_TRUE) {
-            tauc[i][j] = till_c_0 + N * till_mu;
-          } else {
-            tauc[i][j] = till_c_0 + N * tan((pi/180.0) * tillphi[i][j]);
-          }
-        }
-      }
-    }
-    ierr =          vMask.end_access(); CHKERRQ(ierr);
-    ierr =          vtauc.end_access(); CHKERRQ(ierr);
-    ierr =             vH.end_access(); CHKERRQ(ierr);
-    ierr =       vtillphi.end_access(); CHKERRQ(ierr);
-    ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
-    ierr =         vHmelt.end_access(); CHKERRQ(ierr);
-  }
-
-  return 0;
 }
 
 

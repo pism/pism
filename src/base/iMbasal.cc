@@ -201,44 +201,43 @@ base of ice is frozen.
 Need \f$0 \le\f$ \c bwat \f$\le\f$ \c max_hmelt before calling this.  There is
 no error checking.
  */
-PetscScalar IceModel::getEffectivePressureOnTill(PetscScalar thk, PetscScalar bwat,
-						 PetscScalar till_pw_fraction,
-						 PetscScalar max_hmelt) const {
+PetscScalar IceModel::getEffectivePressureOnTill(
+      PetscScalar thk, PetscScalar bwat, PetscScalar /* bmr */,
+      PetscScalar till_pw_fraction, PetscScalar max_hmelt) const {
   const PetscScalar  overburdenP = ice->rho * standard_gravity * thk;
   return overburdenP * (1.0 - till_pw_fraction * (bwat / max_hmelt));
 }
 
 
-//! Update the till yield stress for the pseudo-plastic till model.
+//! Update the till yield stress for the pseudo-plastic till SSA model.
 /*!
-Expanded brief description: Update the till yield stress \e and the mask, for 
-the pseudo-plastic till model, based on pressure and stored till water.
+Updates based on stored till water and basal melt rate.  We implement
+formula (2.4) in [\ref SchoofStream],
+    \f[   \tau_c = \mu (\rho g H - p_w), \f]
+where \f$\tau_c\f$ is the till yield stress, \f$\rho g H\f$ is the ice over-burden
+pressure (in the shallow approximation), \f$p_w\f$ is the modeled
+pore water pressure, and \f$\mu\f$ is a strength coefficient for the mineral till
+(at least, it is independent of \f$p_w\f$).  The difference
+    \f[   N = \rho g H - p_w   \f]
+is the effective pressure on the till.
+ 
+We modify Schoof's formula by allowing a small till cohesion \f$c_0\f$
+and by expressing the coefficient as the tangent of a till friction angle
+\f$\varphi\f$:
+    \f[   \tau_c = c_0 + (\tan \varphi) N. \f]
+See [\ref Paterson] table 8.1) regarding values of \f$c_0\f$.
+Option  \c -plastic_c0 controls it.
 
-We implement formula (2.4) in [\ref SchoofStream] .  That formula is
-    \f[   \tau_c = \mu (\rho g H - p_w)\f]
-We modify it by:
-    - adding a small till cohesion \f$c_0\f$ (see [\ref Paterson] table 8.1);
-    - replacing \f$p_w \to \lambda p_w\f$ where \f$\lambda =\f$ 
-      Hmelt/DEFAULT_MAX_HMELT; thus \f$0 \le \lambda \le 1\f$ always while 
-      \f$\lambda = 0\f$ when the bed is frozen; and
-    - computing porewater pressure \f$p_w\f$ as a fixed fraction \f$\varphi\f$ 
-      of the overburden pressure \f$\rho g H\f$.
-The effective pressure \f$\rho g H - p_w\f$ is actually computed by 
-getEffectivePressureOnTill().
+The main modeling issue with this is the model for pore water pressure \f$p_w\f$ when
+computing \f$N\f$.  See getEffectivePressureOnTill().  See also [\ref BBssasliding]
+for a discussion of a complete model using these tools.
 
-With these replacements our formula looks like
-    \f[   \tau_c = c_0 + \mu \left(1 - \lambda \varphi\right) \rho g H \f]
-Note also that \f$\mu = \tan(\theta)\f$ where \f$\theta\f$ is a "friction angle."
-The parameters \f$c_0\f$, \f$\varphi\f$, \f$\theta\f$ can be set by options 
-\c -till_cohesion, \c -till_pw_fraction, and \c -till_friction_angle, respectively.
+Note that IceModel::updateSurfaceElevationAndMask() also
+checks whether do_plastic_till is true and if so it sets all mask points to
+DRAGGING.
  */
-PetscErrorCode IceModel::updateYieldStressFromHmelt() {
+PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
   PetscErrorCode  ierr;
-  //      (compare the porewater pressure computed by formula (4) in 
-  //      C. Ritz et al 2001 J. G. R. vol 106 no D23 pp 31943--31964;
-  //      the modification of this porewater pressure as in Lingle&Brown 1987 is not 
-  //      implementable because the "elevation of the bed at the grounding line"
-  //      is at an unknowable location as we are not doing a flow line model!)
 
   bool do_plastic_till = config.get_flag("do_plastic_till");
   // only makes sense when do_plastic_till == TRUE
@@ -247,46 +246,46 @@ PetscErrorCode IceModel::updateYieldStressFromHmelt() {
   }
 
   if (holdTillYieldStress == PETSC_FALSE) { // usual case: use Hmelt to determine tauc
-    PetscScalar **tauc, **H, **Hmelt, **tillphi; 
-
     PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
       till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
-      till_mu  = tan((pi/180.0)*config.get("default_till_phi")),
+      till_mu = tan((pi/180.0)*config.get("default_till_phi")),
       max_hmelt = config.get("max_hmelt");
 
-    ierr =    vMask.begin_access();    CHKERRQ(ierr);
-    ierr =    vtauc.get_array(tauc);    CHKERRQ(ierr);
-    ierr =       vH.get_array(H);       CHKERRQ(ierr);
-    ierr =   vHmelt.get_array(Hmelt);   CHKERRQ(ierr);
-    ierr = vtillphi.get_array(tillphi); CHKERRQ(ierr);
-
+    ierr =          vMask.begin_access(); CHKERRQ(ierr);
+    ierr =          vtauc.begin_access(); CHKERRQ(ierr);
+    ierr =             vH.begin_access(); CHKERRQ(ierr);
+    ierr =         vHmelt.begin_access(); CHKERRQ(ierr);
+    ierr = vbasalMeltRate.begin_access(); CHKERRQ(ierr);
+    ierr =       vtillphi.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         if (vMask.is_floating(i,j)) {
-          tauc[i][j] = 0.0;  
-        } else if (H[i][j] == 0.0) {
-          tauc[i][j] = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice
+          vtauc(i,j) = 0.0;  
+        } else if (vH(i,j) == 0.0) {
+          vtauc(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice
         } else { // grounded and there is some ice
-          const PetscScalar N = getEffectivePressureOnTill(H[i][j], Hmelt[i][j],
-							   till_pw_fraction, max_hmelt);
+          const PetscScalar N = getEffectivePressureOnTill(
+                                    vH(i,j), vHmelt(i,j), vbasalMeltRate(i,j),
+                                    till_pw_fraction, max_hmelt);
           if (useConstantTillPhi == PETSC_TRUE) {
-            tauc[i][j] = till_c_0 + till_mu * N;
+            vtauc(i,j) = till_c_0 + N * till_mu;
           } else {
-            const PetscScalar mymu = tan((pi/180.0) * tillphi[i][j]);
-            tauc[i][j] = till_c_0 + mymu * N;
+            vtauc(i,j) = till_c_0 + N * tan((pi/180.0) * vtillphi(i,j));
           }
         }
       }
     }
-    ierr =    vMask.end_access(); CHKERRQ(ierr);
-    ierr =    vtauc.end_access(); CHKERRQ(ierr);
-    ierr =       vH.end_access(); CHKERRQ(ierr);
-    ierr = vtillphi.end_access(); CHKERRQ(ierr);
-    ierr =   vHmelt.end_access(); CHKERRQ(ierr);
+    ierr =          vMask.end_access(); CHKERRQ(ierr);
+    ierr =          vtauc.end_access(); CHKERRQ(ierr);
+    ierr =             vH.end_access(); CHKERRQ(ierr);
+    ierr =       vtillphi.end_access(); CHKERRQ(ierr);
+    ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
+    ierr =         vHmelt.end_access(); CHKERRQ(ierr);
   }
 
   return 0;
 }
+
 
 
 //! Apply explicit time step for pure diffusion to basal layer of melt water.

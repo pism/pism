@@ -503,7 +503,7 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
 
     // update basal till yield stress if appropriate; will modify and communicate mask
     if (do_plastic_till) {
-      ierr = updateYieldStressFromHmelt();  CHKERRQ(ierr);
+      ierr = updateYieldStressUsingBasalWater();  CHKERRQ(ierr);
       stdout_flag_append("y");
     } else stdout_flag_append("$");
 
@@ -604,7 +604,7 @@ PetscErrorCode IceModel::diagnosticRun() {
 
   // update basal till yield stress if appropriate; will modify and communicate mask
   if (do_plastic_till) {
-    ierr = updateYieldStressFromHmelt();  CHKERRQ(ierr);
+    ierr = updateYieldStressUsingBasalWater();  CHKERRQ(ierr);
   }
 
   ierr = velocity(true); CHKERRQ(ierr);  // compute velocities (at depth)
