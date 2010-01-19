@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Ed Bueler, Andy Aschwanden, and Constantine Khroulev
+// Copyright (C) 2004-2010 Ed Bueler, Andy Aschwanden, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -76,8 +76,11 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com, "PENTH %s (development of ENTHALPY basic evolution run mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
+    NCConfigVariable config, overrides;
+    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+
     IceGrid g(com, rank, size);
-    IceEnthalpyModel m(g);
+    IceEnthalpyModel m(g, config, overrides);
     ierr = m.setExecName("penth"); CHKERRQ(ierr);
 
     PetscTruth  pddSet;

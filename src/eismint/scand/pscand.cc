@@ -54,9 +54,12 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com, "PSCAND %s (Scandinavian mod of EISMINT II mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
+    NCConfigVariable config, overrides;
+    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+
     // actually construct the IceModel
     IceGrid               g(com, rank, size);
-    IceScandModel         m(g);
+    IceScandModel         m(g, config, overrides);
 
     // construct and attach the PISMClimateCouplers
     PISMConstAtmosCoupler pcac;

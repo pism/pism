@@ -33,8 +33,8 @@
 
 const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
 
-IceCompModel::IceCompModel(IceGrid &g, int mytest)
-  : IceModel(g), tgaIce(NULL) {
+IceCompModel::IceCompModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides, int mytest)
+  : IceModel(g, conf, conf_overrides), tgaIce(NULL) {
   
   // note lots of defaults are set by the IceModel constructor defaults for
   // IceCompModel:

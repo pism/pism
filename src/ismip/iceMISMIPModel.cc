@@ -31,8 +31,8 @@ A temporary solution is indicated by the print commands with "MAKE SURE
 THIS IS REALLY BEING USED!!" below.
  */
 
-IceMISMIPModel::IceMISMIPModel(IceGrid &g) : 
-  IceModel(g) {
+IceMISMIPModel::IceMISMIPModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides) : 
+  IceModel(g, conf, conf_overrides) {
 
   iceFactory.setType(ICE_CUSTOM);  // ICE_CUSTOM has easy setting of ice density, hardness, etc.
 

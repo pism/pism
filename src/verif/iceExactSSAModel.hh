@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,8 +26,8 @@
 
 class IceExactSSAModel : public IceModel {
 public:
-    IceExactSSAModel(IceGrid &g, char mytest);
-    virtual PetscErrorCode setFromOptions();
+  IceExactSSAModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides, char mytest);
+  virtual PetscErrorCode setFromOptions();
 
   virtual PetscErrorCode misc_setup();
   virtual PetscErrorCode set_grid_defaults();

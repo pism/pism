@@ -63,7 +63,7 @@ The results in the former case, of smoother C_MISMIP, are no better, I think.
 class IceMISMIPModel : public IceModel {
 
 public:
-  IceMISMIPModel(IceGrid &g);
+  IceMISMIPModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
   virtual ~IceMISMIPModel(); // must be virtual merely because some members are virtual
 
   virtual PetscErrorCode set_grid_defaults();

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -61,8 +61,11 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com, "PISMR %s (basic evolution run mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
+    NCConfigVariable config, overrides;
+    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+
     IceGrid g(com, rank, size);
-    IceModel m(g);
+    IceModel m(g, config, overrides);
 
     // Attach climate couplers:
     PISMConstAtmosCoupler     pcac;

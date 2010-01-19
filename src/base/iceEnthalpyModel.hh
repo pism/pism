@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,7 +33,7 @@ Based on Bueler's reading of \ref AschwandenBlatter.
 class IceEnthalpyModel : public IceModel {
 
 public:
-  IceEnthalpyModel(IceGrid &g);
+  IceEnthalpyModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides);
 
   using IceModel::setFromOptions;
   PetscErrorCode setFromOptions();

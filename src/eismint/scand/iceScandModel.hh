@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2010 Andy Aschwandend and Ed Bueler
+// Copyright (C) 2009-2010 Andy Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 
 class IceScandModel : public IceEISModel {
 public:
-    IceScandModel(IceGrid &g);
+    IceScandModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
     virtual PetscErrorCode setFromOptions();
     virtual PetscErrorCode init_couplers();
     

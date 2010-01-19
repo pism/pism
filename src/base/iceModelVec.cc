@@ -400,7 +400,7 @@ PetscErrorCode IceModelVec::regrid(const char filename[], LocalInterpCtx &lic,
 }
 
 //! Gets an IceModelVec from a file \c filename, interpolating onto the current grid.
-/*! Sets all the values to \c default_value if the variable was not found..
+/*! Sets all the values to \c default_value if the variable was not found.
  */
 PetscErrorCode IceModelVec::regrid(const char filename[], 
                                    LocalInterpCtx &lic, PetscScalar default_value) {

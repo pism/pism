@@ -37,7 +37,8 @@ const PetscScalar IceExactSSAModel::LforJ = 300.0e3; // 300 km half-width
 const PetscScalar IceExactSSAModel::LforM = 750.0e3; // 750 km half-width
 
 
-IceExactSSAModel::IceExactSSAModel(IceGrid &g, char mytest) : IceModel(g) {
+IceExactSSAModel::IceExactSSAModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides, char mytest)
+  : IceModel(g, conf, conf_overrides) {
   test = mytest;
   
   config.set("max_iterations_ssa", 500);

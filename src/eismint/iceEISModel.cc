@@ -22,7 +22,8 @@
 #include "iceEISModel.hh"
 
 
-IceEISModel::IceEISModel(IceGrid &g) : IceModel(g) {
+IceEISModel::IceEISModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
+  : IceModel(g, conf, conf_overrides) {
   expername = 'A';
   iceFactory.setType(ICE_PB);  // Paterson-Budd
 }

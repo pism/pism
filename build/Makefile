@@ -24,10 +24,10 @@ PETSC3_BASE := $(wildcard ${PETSC_DIR}/conf/base)
 # PETSC3_BASE is empty string if not 3.0.0
 ifeq ($(strip $(PETSC3_BASE)),) 
   # include file which is only present in 2.3.3 and earlier
-  include ${PETSC_DIR}/bmake/common/base
+  include ${PETSC_DIR}/bmake/common/variables
 else
   # include file which is only present in 3.0.0 and later
-  include ${PETSC_DIR}/conf/base
+  include ${PETSC_DIR}/conf/variables
 endif
 
 # Compiler flags:
@@ -197,6 +197,12 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 ../bin/tryLCbd : tryLCbd.o deformation.o greens.o materials.o pism_const.o ${LIBPISMNAME}
 	${CXXLINKER} tryLCbd.o deformation.o greens.o materials.o pism_const.o ${ICE_LIB_FLAGS} -o $@
 
+# Rules making object files from sources.
+%.o: %.c
+	$(CC)  -c $< -o $@ $(CFLAGS) $(PCC_FLAGS) $(CPPFLAGS) $(PETSC_INCLUDE)
+%.o: %.cc
+	$(CXX) -c $< -o $@ $(CFLAGS) $(PCC_FLAGS) $(CPPFLAGS) $(PETSC_INCLUDE)
+
 # The GNU recommended procedure for automatically generating prerequisites.
 # (The obscure sed command comes straight from the GNU Make manual.)
 
@@ -252,13 +258,16 @@ depend: ;
 depclean:
 	@rm -f $(depfiles) src/revision
 
-distclean: depclean
+distclean: clean
 	@rm -f ${LIBPISMNAME} ${LIBTESTSNAME} $(LIBUDUNITS) $(exec_default) $(exec_extras) \
             ../lib/pismudunits.dat
 
-# This is to avoid recreating .d files if you all you need is 'make depclean' or
+clean:
+	@rm -f *.o *.d
+
+# This is to avoid recreating .d files if you all you need is 'make clean' or
 # 'make distclean':
-ifneq ($(MAKECMDGOALS),depclean)
+ifneq ($(MAKECMDGOALS),clean)
   ifneq ($(MAKECMDGOALS),distclean)
     include $(depfiles)
   endif

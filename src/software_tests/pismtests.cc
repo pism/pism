@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -46,7 +46,10 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(1,com, "PISMTESTS %s (unit tests mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
-    IceUnitModel m(g);
+    NCConfigVariable config, overrides;
+    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+
+    IceUnitModel m(g, config, overrides);
     ierr = m.setExecName("pismtests"); CHKERRQ(ierr);
 
     // Attach climate couplers:

@@ -1,4 +1,4 @@
-// Copyright (C) 2008, 2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,8 +19,8 @@
 #include "iceCalvBCModel.hh"
 
 
-IceCalvBCModel::IceCalvBCModel(IceGrid &g, int mytest)
-  : IceExactSSAModel(g, mytest) {
+IceCalvBCModel::IceCalvBCModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides, int mytest)
+  : IceExactSSAModel(g, conf, conf_overrides, mytest) {
 }
 
 

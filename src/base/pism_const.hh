@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -90,6 +90,10 @@ PetscErrorCode show_usage_and_quit(
 PetscErrorCode show_usage_check_req_opts(
     MPI_Comm com, const char execname[], vector<string> required_options,
     const char usage[]);
+
+// config file initialization:
+PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
+			   NCConfigVariable &config, NCConfigVariable &overrides);
 
 // debugging:
 PetscErrorCode pism_wait_for_gdb(MPI_Comm com, PetscMPIInt rank);

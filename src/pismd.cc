@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -57,12 +57,15 @@ int main(int argc, char *argv[]) {
     PetscTruth  doRoss;
     ierr = check_option("-ross", doRoss); CHKERRQ(ierr);
 
+    NCConfigVariable config, overrides;
+    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+
     IceGrid    g(com, rank, size);
     IceModel*      m;
     if (doRoss == PETSC_TRUE)
-      m = new IceROSSModel(g);
+      m = new IceROSSModel(g, config, overrides);
     else 
-      m = new IceModel(g);
+      m = new IceModel(g, config, overrides);
 
     PISMConstAtmosCoupler pcac;
     PISMConstOceanCoupler pcoc;

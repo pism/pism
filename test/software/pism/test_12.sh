@@ -6,7 +6,6 @@ test="Test #12: penth exact restartability."
 files="pre.nc blah.nc foo.nc joe.nc bar.nc"
 dir=`pwd`
 
-# passes with -no_temp
 OPTS="-max_dt 1"
 
 run_test ()

@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Constantine Khroulev
+// Copyright (C) 2009, 2010 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 
 class IceUnitModel : public IceModel {
 public:
-  IceUnitModel(IceGrid &g) : IceModel(g) {}
+  IceUnitModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides) : IceModel(g, config, overrides) {}
   PetscErrorCode set_grid_defaults();
   PetscErrorCode set_vars_from_options();
   PetscErrorCode run();

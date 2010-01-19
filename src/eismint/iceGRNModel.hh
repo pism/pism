@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Nathan Shemonski, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Nathan Shemonski, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -109,7 +109,7 @@ A separate driver calls this derived class and the new coupler, namely src/pgrn.
 class IceGRNModel : public IceModel {
 
 public:
-  IceGRNModel(IceGrid &g) : IceModel(g) {}
+  IceGRNModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides) : IceModel(g, config, overrides) {}
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode init_couplers();
 

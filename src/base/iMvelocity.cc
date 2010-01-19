@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
 
   // do SIA
   if (computeSIAVelocities == PETSC_TRUE) {
-    stdout_flag_append(" SIA ");
+    stdout_flags += " SIA ";
     ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here for eta
     // surface gradient temporarily stored in vWork2d[0 1 2 3] 
     ierr = verbPrintf(5,grid.com, "{surfaceGradientSIA()}"); CHKERRQ(ierr);
@@ -116,7 +116,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
       ierr = v3.set(0.0); CHKERRQ(ierr);
       ierr = Sigma3.set(0.0); CHKERRQ(ierr);
     }
-    stdout_flag_append("     ");
+    stdout_flags += "     ";
   }
 
 PetscLogEventEnd(siaEVENT,0,0,0,0);
@@ -128,11 +128,11 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
   }
   if (use_ssa_velocity) { // communication happens within SSA
     if ((firstTime == PETSC_TRUE) || (updateVelocityAtDepth)) {
-      stdout_flag_append(" SSA ");
+      stdout_flags += " SSA ";
       PetscInt numSSAiter;
       ierr = velocitySSA(&numSSAiter); CHKERRQ(ierr); // comm here ...
-      stdout_flag_append(" ");
-    } else  stdout_flag_append("       ");
+      stdout_flags += " ";
+    } else  stdout_flags += "       ";
     // even if velocitySSA() did not run, we still need to use stored SSA velocities 
     // to get 3D velocity field, basal velocities, basal frictional heating, 
     // and strain dissipation heating
@@ -154,7 +154,7 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     ierr = correctSigma(); CHKERRQ(ierr);
     ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
   } else {
-    stdout_flag_append("       ");
+    stdout_flags += "       ";
   }
 
 PetscLogEventEnd(ssaEVENT,0,0,0,0);

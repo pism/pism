@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -61,6 +61,9 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2, com, "PISMV %s (verification mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
+    NCConfigVariable config, overrides;
+    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+
     IceGrid      g(com, rank, size);
     PISMConstAtmosCoupler  pcac;
     PISMConstOceanCoupler  pcoc;
@@ -84,7 +87,7 @@ int main(int argc, char *argv[]) {
       // run derived class for test M which includes new calving front stress
       //   boundary condition implementation
       ierr = verbPrintf(1,com, "!!!!!!!! USING IceCalvBCModel TO DO test M !!!!!!!!\n"); CHKERRQ(ierr);
-      IceCalvBCModel mCBC(g, 'M');
+      IceCalvBCModel mCBC(g, config, overrides, 'M');
       ierr = mCBC.setExecName("pismv"); CHKERRQ(ierr);
       ierr = mCBC.attachAtmospherePCC(pcac); CHKERRQ(ierr);
       ierr = mCBC.attachOceanPCC(pcoc); CHKERRQ(ierr);
@@ -101,7 +104,7 @@ int main(int argc, char *argv[]) {
     } else if ((test == 'I') || (test == 'J') || (test == 'M')) {
       // run derived class for plastic till ice stream, or linearized ice shelf,
       //   or annular ice shelf with calving front
-      IceExactSSAModel mSSA(g, test);
+      IceExactSSAModel mSSA(g, config, overrides, test);
 
       ierr = mSSA.setExecName("pismv"); CHKERRQ(ierr);
       ierr = mSSA.attachAtmospherePCC(pcac); CHKERRQ(ierr);
@@ -117,7 +120,7 @@ int main(int argc, char *argv[]) {
       ierr = mSSA.writeFiles("verify.nc"); CHKERRQ(ierr);
     } else { // run derived class for compensatory source SIA solutions
              // (i.e. compensatory accumulation or compensatory heating)
-      IceCompModel mComp(g, test);
+      IceCompModel mComp(g, config, overrides, test);
       ierr = mComp.setExecName("pismv"); CHKERRQ(ierr);
       ierr = mComp.attachAtmospherePCC(pcac); CHKERRQ(ierr);
       ierr = mComp.attachOceanPCC(pcoc); CHKERRQ(ierr);
@@ -129,7 +132,6 @@ int main(int argc, char *argv[]) {
 
       ThermoGlenArrIce*   tgaice = dynamic_cast<ThermoGlenArrIce*>(mComp.getIceFlowLaw());
       if (dontReport == PETSC_FALSE) {
-	const NCConfigVariable &config = mComp.get_config();
 
         if (!IceFlowLawIsPatersonBuddCold(tgaice, config) && ((test == 'F') || (test == 'G'))) {
             ierr = verbPrintf(1,com, 

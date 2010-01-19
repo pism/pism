@@ -30,7 +30,7 @@ See \ref EISMINT00.
  */
 class IceEISModel : public IceModel {
 public:
-    IceEISModel(IceGrid &g);
+    IceEISModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
     virtual PetscErrorCode setFromOptions();
     virtual PetscErrorCode set_grid_defaults();
     virtual PetscErrorCode set_vars_from_options();

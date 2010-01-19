@@ -38,7 +38,7 @@ by Bueler at AGU 2007 and at NYU in Feb 2008.  IcePSTexModel has no "lake" or
 class IcePSTexModel : public IceEISModel {
 
 public:
-  IcePSTexModel(IceGrid &g);
+  IcePSTexModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides);
   virtual ~IcePSTexModel();
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode init_physics();

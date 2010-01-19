@@ -23,7 +23,8 @@
 
 /*********** procedures for init ****************/
 
-IceEnthalpyModel::IceEnthalpyModel(IceGrid &g) : IceModel(g) {
+IceEnthalpyModel::IceEnthalpyModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
+  : IceModel(g, conf, conf_overrides) {
 
   doColdIceMethods = PETSC_FALSE;     // default is to actually use enthalpy for a polythermal model
 

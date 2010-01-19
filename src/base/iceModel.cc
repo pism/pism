@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,8 +23,8 @@
 #include "iceModel.hh"
 #include "pism_signal.h"
 
-IceModel::IceModel(IceGrid &g)
-  : grid(g), iceFactory(grid.com,NULL,config), ice(NULL) {
+IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
+  : grid(g), config(conf), overrides(conf_overrides), iceFactory(grid.com,NULL, conf), ice(NULL) {
   PetscErrorCode ierr;
 
   if (utIsInit() == 0) {
@@ -34,8 +34,6 @@ IceModel::IceModel(IceGrid &g)
     }
   }
 
-  config.init("pism_config", grid.com, grid.rank);
-  overrides.init("pism_overrides", grid.com, grid.rank);
   mapping.init("mapping", grid.com, grid.rank);
   global_attributes.init("global_attributes", grid.com, grid.rank);
 
@@ -441,10 +439,13 @@ PismLogEventRegister("bed deform",   0,&beddefEVENT);
 PismLogEventRegister("mass bal calc",0,&massbalEVENT);
 PismLogEventRegister("temp age calc",0,&tempEVENT);
 
+  stdout_flags.erase(); // clear it out
+
   ierr = summaryPrintLine(PETSC_TRUE,do_temp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   skipCountDown = 0;
   dtTempAge = 0.0;
+  dt = 0.0;
   ierr = summary(do_temp,reportPATemps); CHKERRQ(ierr);  // report starting state
 
   // Write snapshots and time-series at the beginning of the run.
@@ -455,12 +456,12 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   // main loop for time evolution
   for (PetscScalar year = grid.start_year; year < grid.end_year; year += dt/secpera) {
     
-    strcpy(stdout_flag_string,"");  // clear it out
+    stdout_flags.erase();  // clear it out
     dt_force = -1.0;
     maxdt_temporary = -1.0;
     ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
 
-    // ask climate couplers what maximum time-step should be
+    // ask climate couplers what the maximum time-step should be
     double apcc_dt;
     ierr = atmosPCC->max_timestep(grid.year, apcc_dt); CHKERRQ(ierr);
     apcc_dt *= secpera;
@@ -497,15 +498,15 @@ PetscLogEventBegin(beddefEVENT,0,0,0,0);
     // compute bed deformation, which only depends on current thickness and bed elevation
     if (do_bed_deformation) {
       ierr = bedDefStepIfNeeded(); CHKERRQ(ierr); // prints "b" or "$" as appropriate
-    } else stdout_flag_append(" ");
+    } else stdout_flags += " ";
     
 PetscLogEventEnd(beddefEVENT,0,0,0,0);
 
     // update basal till yield stress if appropriate; will modify and communicate mask
     if (do_plastic_till) {
       ierr = updateYieldStressUsingBasalWater();  CHKERRQ(ierr);
-      stdout_flag_append("y");
-    } else stdout_flag_append("$");
+      stdout_flags += "y";
+    } else stdout_flags += "$";
 
 
     // always do SIA velocity calculation; only update SSA and 
@@ -514,7 +515,7 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
     //   skipping SSA (and temp/age)
     bool updateAtDepth = (skipCountDown == 0);
     ierr = velocity(updateAtDepth); CHKERRQ(ierr);  // event logging in here
-    stdout_flag_append(updateAtDepth ? "v" : "V");
+    stdout_flags += (updateAtDepth ? "v" : "V");
     
     // adapt time step using velocities and diffusivity, ..., just computed
     bool useCFLforTempAgeEqntoGetTimestep = (do_temp == PETSC_TRUE);
@@ -535,10 +536,10 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
       if (updateHmelt == PETSC_TRUE) {
         ierr = diffuseHmelt(); CHKERRQ(ierr);
       }
-      if (do_age) stdout_flag_append("at");
-      else        stdout_flag_append("$t");
+      if (do_age) stdout_flags += "at";
+      else        stdout_flags += "$t";
     }
-    else stdout_flag_append("$$");
+    else stdout_flags += "$$";
 
     PetscLogEventEnd(tempEVENT,0,0,0,0);
 
@@ -551,8 +552,8 @@ PetscLogEventEnd(beddefEVENT,0,0,0,0);
       ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
       if ((do_skip == PETSC_TRUE) && (skipCountDown > 0))
         skipCountDown--;
-      stdout_flag_append("h");
-    } else stdout_flag_append("$");
+      stdout_flags += "h";
+    } else stdout_flags += "$";
 
 PetscLogEventEnd(massbalEVENT,0,0,0,0);
     
@@ -561,7 +562,7 @@ PetscLogEventEnd(massbalEVENT,0,0,0,0);
     // end the flag line
     char tempstr[5];
     sprintf(tempstr," %c", adaptReasonFlag);
-    stdout_flag_append(tempstr);
+    stdout_flags += tempstr;
     
     // report a summary for major steps or the last one
     const bool show_step = tempAgeStep || (adaptReasonFlag == 'e');

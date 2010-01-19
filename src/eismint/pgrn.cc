@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Ed Bueler and Nathan Shemonski and Constantine Khroulev
+// Copyright (C) 2007-2010 Ed Bueler and Nathan Shemonski and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -58,8 +58,11 @@ int main(int argc, char *argv[]){
     ierr = verbPrintf(2, com, "PGRN %s (PISM EISMINT-Greenland mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
+    NCConfigVariable config, overrides;
+    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+
     IceGrid g(com, rank, size);
-    IceGRNModel    m(g);
+    IceGRNModel    m(g, config, overrides);
     ierr = m.setExecName("pgrn"); CHKERRQ(ierr);
 
     EISGREENAtmosCoupler   pegac;

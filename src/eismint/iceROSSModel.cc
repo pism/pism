@@ -24,8 +24,8 @@
 #include "iceROSSModel.hh"
 #include "../base/Timeseries.hh"
 
-IceROSSModel::IceROSSModel(IceGrid &g)
-  : IceModel(g) {  // do nothing; note derived classes must have constructors
+IceROSSModel::IceROSSModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
+  : IceModel(g, conf, conf_overrides) {  // do nothing; note derived classes must have constructors
 
   config.set_flag("use_ssa_velocity", true);
   computeSIAVelocities = PETSC_FALSE;

@@ -59,7 +59,7 @@ digraph pism_init {
   init_couplers -> is_i_set2;
 
   subgraph cluster_model_state {
-    label = "Set starting values of\nmodel state variables\rIceModel::model_state_setup()";
+    label = "Set starting values of\rmodel state variables\rIceModel::model_state_setup()";
     labeljust = r;
     URL = "\ref IceModel::model_state_setup()";
 

@@ -293,7 +293,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     if (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT) {
       char tempstr[90] = "";
       sprintf(tempstr, " [!CFL#=%1.0f (=%8.6f%% of 3D grid)]", CFLviolcount,CFLviolpercent);
-      stdout_flag_append(tempstr);
+      stdout_flags += tempstr;
     } else {
       ierr = verbPrintf(3,grid.com,"  [!CFL#=%1.0f (=%8.6f%% of 3D grid)]\n",
                         CFLviolcount,CFLviolpercent); CHKERRQ(ierr);
@@ -423,10 +423,10 @@ PetscErrorCode IceModel::summaryPrintLine(
         sprintf(tempstr, " (dt=%.5f in %d substeps; av dt_sub=%.5f)",
           major_dt_years, mass_cont_sub_counter, major_dt_years / mass_cont_sub_counter);
       }
-      stdout_flag_append(tempstr);
+      stdout_flags += tempstr;
       if (delta_t > 0.0) { // avoids printing an empty line if we have not done anything
-        stdout_flag_append("\n");
-        ierr = verbPrintf(2,grid.com, stdout_flag_string); CHKERRQ(ierr);
+        stdout_flags += "\n";
+        ierr = verbPrintf(2,grid.com, stdout_flags.c_str()); CHKERRQ(ierr);
       }
       ierr = verbPrintf(2,grid.com, 
           "S %12.5f: %8.5f %7.4f %10.3f %9.4f\n",
@@ -1270,12 +1270,6 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
   ierr = PetscGlobalSum(&my_total_sub_shelf_ice_flux, &total_sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&my_total_basal_ice_flux,     &total_basal_ice_flux,     grid.com); CHKERRQ(ierr);
 
-  return 0;
-}
-
-
-PetscErrorCode IceModel::stdout_flag_append(const char *x) {
-  strncat(stdout_flag_string,x,PETSC_MAX_PATH_LEN);
   return 0;
 }
 

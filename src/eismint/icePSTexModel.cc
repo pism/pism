@@ -92,8 +92,8 @@ ExperDescription e[Nexpers] = {
 PetscScalar stream_angle_P2[3] = {0.0, 100.0, 225.0};  // degrees
 
 
-IcePSTexModel::IcePSTexModel(IceGrid &g)
-    : IceEISModel(g) {  // do almost nothing; derived need constructors
+IcePSTexModel::IcePSTexModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
+  : IceEISModel(g, conf, conf_overrides) {  // do almost nothing; derived need constructors
   expername = 'A';      // PST expers are closest to EISMINT II exper A
   ivol = PETSC_NULL;    // if we write series then this is not NULL
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2006-2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 
 class IceROSSModel : public IceModel {
 public:
-  IceROSSModel(IceGrid &g);
+  IceROSSModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
   PetscErrorCode finishROSS();
   PetscErrorCode readRIGGSandCompare();
   virtual PetscErrorCode init_physics();

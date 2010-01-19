@@ -28,7 +28,7 @@
 class IceCompModel : public IceModel {
 
 public:
-  IceCompModel(IceGrid &g, int mytest);
+  IceCompModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides, int mytest);
   virtual ~IceCompModel();
   
   // re-defined steps of init() sequence:

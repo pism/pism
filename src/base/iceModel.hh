@@ -93,7 +93,7 @@ struct RegPoissonCtx {
 class IceModel {
 public:
   // see iceModel.cc for implementation of constructor and destructor:
-  IceModel(IceGrid &g);
+  IceModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
   virtual ~IceModel(); // must be virtual merely because some members are virtual
 
   // see iMinit.cc
@@ -144,8 +144,8 @@ protected:
   IceGrid               &grid;
 
   NCConfigVariable      mapping, //!< grid projection (mapping) parameters
-    config,			 //!< configuration flags and parameters
-    overrides;			 //!< flags and parameters overriding config, see -config_override
+    &config,			 //!< configuration flags and parameters
+    &overrides;			 //!< flags and parameters overriding config, see -config_override
   NCGlobalAttributes    global_attributes;
 
   IceFlowLawFactory     iceFactory;
@@ -231,8 +231,8 @@ protected:
                                 // FIXME: check initialization when IceEnthalpyModel moved
   char        adaptReasonFlag;
 
-  char        ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN],
-              stdout_flag_string[PETSC_MAX_PATH_LEN];
+  char        ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN];
+  string      stdout_flags;
 
   string executable_short_name;
   
@@ -357,7 +357,6 @@ protected:
               PetscScalar year, PetscScalar delta_t, 
               PetscScalar volume, PetscScalar area,
               PetscScalar meltfrac, PetscScalar H0, PetscScalar T0);
-  virtual PetscErrorCode stdout_flag_append(const char *x);
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // spatially-varying:

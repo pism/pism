@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -483,6 +483,39 @@ PetscErrorCode pism_wait_for_gdb(MPI_Comm com, PetscMPIInt rank_to_stop) {
   }
   
   ierr = MPI_Barrier(com); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! Initializes the config parameter and flag database.
+/*!
+  Processes -config and -config_override command line options.
+ */
+PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
+			   NCConfigVariable &config, NCConfigVariable &overrides) {
+  PetscErrorCode ierr;
+
+  config.init("pism_config", com, rank);
+  overrides.init("pism_overrides", com, rank);
+
+  char alt_config[PETSC_MAX_PATH_LEN];
+  PetscTruth use_alt_config;
+  ierr = PetscOptionsGetString(PETSC_NULL, "-config", alt_config, PETSC_MAX_PATH_LEN, &use_alt_config);
+  if (use_alt_config) {
+    ierr = config.read(alt_config); CHKERRQ(ierr);
+  } else {
+    ierr = config.read(PISM_DefaultConfigFile); CHKERRQ(ierr);
+  }
+
+  char override_config[PETSC_MAX_PATH_LEN];
+  PetscTruth use_override_config;
+  ierr = PetscOptionsGetString(PETSC_NULL, "-config_override", override_config,
+			       PETSC_MAX_PATH_LEN, &use_override_config);
+  if (use_override_config) {
+    ierr = overrides.read(override_config); CHKERRQ(ierr);
+    config.import_from(overrides);
+  }
+  config.print();
 
   return 0;
 }

@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2010 Andy Aschwanden and Ed Bueler
+// Copyright (C) 2009-2010 Andy Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,8 @@
 #include "iceScandModel.hh"
 
 
-IceScandModel::IceScandModel(IceGrid &g) : IceEISModel(g) {
+IceScandModel::IceScandModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides)
+  : IceEISModel(g, config, overrides) {
   expername = 'S';
 }
 

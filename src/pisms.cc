@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -71,6 +71,9 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
+    NCConfigVariable config, overrides;
+    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+
     PetscTruth  EISIIchosen, PSTexchosen, MISMIPchosen;
     /* This option determines the single character name of EISMINT II experiments:
     "-eisII F", for example. */
@@ -92,11 +95,11 @@ int main(int argc, char *argv[]) {
     IceGrid               g(com, rank, size);
     IceModel*             m;
     if (PSTexchosen == PETSC_TRUE) {
-      m = new IcePSTexModel(g);
+      m = new IcePSTexModel(g, config, overrides);
     } else if (MISMIPchosen == PETSC_TRUE) {
-      m = new IceMISMIPModel(g);
+      m = new IceMISMIPModel(g, config, overrides);
     } else {
-      m = new IceEISModel(g);
+      m = new IceEISModel(g, config, overrides);
     }
 
     // construct and attach the PISMClimateCouplers
