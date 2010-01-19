@@ -69,7 +69,7 @@ digraph pism_init {
     
     subgraph cluster_set_values_from_options {
       label = "Set variables by bootstrap from a file\n(derived classes may set vars in other ways) \nIceModel::set_vars_from_options()";
-      labeljust = l;
+      labeljust = r;
       URL = "\ref IceModel::set_vars_from_options()";
 
       is_boot_from_set [label = "Is -boot_from set?"];
@@ -84,10 +84,11 @@ digraph pism_init {
     }
     is_i_set2 -> initFromFile [label = "yes"];
     is_i_set2 -> is_boot_from_set [label = "no"];
+
+    regrid [label = "Regrid other data if -regrid_from\nIceModel::regrid()" color=darkgreen URL="\ref IceModel::regrid()"];
+    {initFromFile bootstrap_from_file} -> regrid;
   }  
 
-  regrid [label = "Regrid other data if -regrid_from\nIceModel::regrid()" color=darkgreen URL="\ref IceModel::regrid()"];
-  {initFromFile bootstrap_from_file} -> regrid;
 
   report [label = "IceModel::report_grid_parameters()" URL="\ref IceModel::report_grid_parameters()"];
   regrid -> report;

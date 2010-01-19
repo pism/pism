@@ -134,7 +134,7 @@ Note: your data was not modified.""" % initial_guess
 if __name__ == "__main__":
     from getopt import getopt, GetoptError
     from sys import argv, exit
-    from shutil import copyfile, move
+    from shutil import copy, move
     from tempfile import mkstemp
     from os import close
     from time import time, asctime
@@ -187,7 +187,7 @@ if __name__ == "__main__":
     try:
         (handle, tmp_filename) = mkstemp()
         close(handle) # mkstemp returns a file handle (which we don't need)
-        copyfile(input_filename, tmp_filename)
+        copy(input_filename, tmp_filename)
     except IOError:
         print "ERROR: Can't create %s, Exiting..." % tmp_filename
 

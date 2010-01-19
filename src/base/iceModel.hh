@@ -112,6 +112,10 @@ public:
   // see iceModel.cc
   PetscErrorCode init();
   virtual PetscErrorCode run();
+  virtual PetscErrorCode step(bool do_mass_conserve, bool do_temp,
+			      bool do_age, bool do_skip,
+			      bool do_bed_deformation,
+			      bool do_plastic_till);
   virtual PetscErrorCode diagnosticRun();
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
   virtual IceFlowLawFactory &getIceFlowLawFactory() { return iceFactory; }

@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -296,8 +296,13 @@ PetscErrorCode IceModel::grid_setup() {
   simplified geometry runs, for example) or from a bootstrapping file, using
   heuristics to fill in missing and 3D fields.
 
+  Calls IceModel::regrid().
+
   This function is called after all the memory allocation is done and all the
   physical parameters are set.
+
+  Calling this method should be all one needs to set model state variables.
+  Please avoid modifying them in other parts of the initialization sequence.
  */
 PetscErrorCode IceModel::model_state_setup() {
   PetscErrorCode ierr;
@@ -313,6 +318,11 @@ PetscErrorCode IceModel::model_state_setup() {
   } else {
     ierr = set_vars_from_options(); CHKERRQ(ierr);
   }
+
+  ierr = regrid(); CHKERRQ(ierr);
+
+  // Check consistency of geometry after initialization:
+  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -472,9 +482,6 @@ PetscErrorCode IceModel::misc_setup() {
   // by now we already know if SSA velocities in the output will be valid:
   global_attributes.set_flag("pism_ssa_velocities_are_valid",
 			     config.get_flag("use_ssa_velocity"));
-
-  // consistency of geometry after initialization;
-  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
   // allocate and setup bed deformation model
   ierr = bedDefSetup(); CHKERRQ(ierr);

@@ -397,6 +397,121 @@ PetscErrorCode IceModel::setExecName(const char *my_executable_short_name) {
   return 0;
 }
 
+PetscErrorCode IceModel::step(bool do_mass_conserve,
+			      bool do_temp,
+			      bool do_age,
+			      bool do_skip,
+			      bool do_bed_deformation,
+			      bool do_plastic_till) {
+  PetscErrorCode ierr;
+  ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
+
+  // ask climate couplers what the maximum time-step should be
+  double apcc_dt;
+  ierr = atmosPCC->max_timestep(grid.year, apcc_dt); CHKERRQ(ierr);
+  apcc_dt *= secpera;
+  if (apcc_dt > 0.0) {
+    if (maxdt_temporary > 0)
+      maxdt_temporary = PetscMin(apcc_dt, maxdt_temporary);
+    else
+      maxdt_temporary = apcc_dt;
+  }
+
+  double opcc_dt;
+  ierr = oceanPCC->max_timestep(grid.year, opcc_dt); CHKERRQ(ierr);
+  opcc_dt *= secpera;
+  if (opcc_dt > 0.0) {
+    if (maxdt_temporary > 0)
+      maxdt_temporary = PetscMin(opcc_dt, maxdt_temporary);
+    else
+      maxdt_temporary = opcc_dt;
+  }
+
+  // -extra_{times,file,vars} mechanism:
+  double extras_dt;
+  ierr = extras_max_timestep(grid.year, extras_dt); CHKERRQ(ierr);
+  extras_dt *= secpera;
+  if (extras_dt > 0.0) {
+    if (maxdt_temporary > 0)
+      maxdt_temporary = PetscMin(extras_dt, maxdt_temporary);
+    else
+      maxdt_temporary = extras_dt;
+  }
+
+  PetscLogEventBegin(beddefEVENT,0,0,0,0);
+
+  // compute bed deformation, which only depends on current thickness and bed elevation
+  if (do_bed_deformation) {
+    ierr = bedDefStepIfNeeded(); CHKERRQ(ierr); // prints "b" or "$" as appropriate
+  } else stdout_flags += " ";
+    
+  PetscLogEventEnd(beddefEVENT,0,0,0,0);
+
+  // update basal till yield stress if appropriate; will modify and communicate mask
+  if (do_plastic_till) {
+    ierr = updateYieldStressUsingBasalWater();  CHKERRQ(ierr);
+    stdout_flags += "y";
+  } else stdout_flags += "$";
+
+
+  // always do SIA velocity calculation; only update SSA and 
+  //   only update velocities at depth if suggested by temp and age
+  //   stability criterion; note *lots* of communication is avoided by 
+  //   skipping SSA (and temp/age)
+  bool updateAtDepth = (skipCountDown == 0);
+  ierr = velocity(updateAtDepth); CHKERRQ(ierr);  // event logging in here
+  stdout_flags += (updateAtDepth ? "v" : "V");
+    
+  // adapt time step using velocities and diffusivity, ..., just computed
+  bool useCFLforTempAgeEqntoGetTimestep = (do_temp == PETSC_TRUE);
+  ierr = determineTimeStep(useCFLforTempAgeEqntoGetTimestep); CHKERRQ(ierr);
+  dtTempAge += dt;
+  grid.year += dt / secpera;  // adopt it
+  // IceModel::dt,dtTempAge,grid.year are now set correctly according to
+  //    mass-continuity-eqn-diffusivity criteria, horizontal CFL criteria, and other 
+  //    criteria from derived class additionalAtStartTimestep(), and from 
+  //    "-skip" mechanism
+
+  PetscLogEventBegin(tempEVENT,0,0,0,0);
+    
+  bool tempAgeStep = ( updateAtDepth && ((do_temp) || (do_age)) );
+  if (tempAgeStep) { // do temperature and age
+    ierr = temperatureAgeStep(); CHKERRQ(ierr);
+    dtTempAge = 0.0;
+    if (updateHmelt == PETSC_TRUE) {
+      ierr = diffuseHmelt(); CHKERRQ(ierr);
+    }
+    if (do_age) stdout_flags += "at";
+    else        stdout_flags += "$t";
+  }
+  else stdout_flags += "$$";
+
+  PetscLogEventEnd(tempEVENT,0,0,0,0);
+
+  ierr = ice_mass_bookkeeping(); CHKERRQ(ierr);
+
+  PetscLogEventBegin(massbalEVENT,0,0,0,0);
+
+  if (do_mass_conserve) {
+    ierr = massContExplicitStep(); CHKERRQ(ierr); // update H
+    ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
+    if ((do_skip == PETSC_TRUE) && (skipCountDown > 0))
+      skipCountDown--;
+    stdout_flags += "h";
+  } else stdout_flags += "$";
+
+  PetscLogEventEnd(massbalEVENT,0,0,0,0);
+    
+  ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
+
+  // end the flag line
+  char tempstr[5];
+  sprintf(tempstr," %c", adaptReasonFlag);
+  stdout_flags += tempstr;
+
+  return 0;
+}
+
 //! Do the time-stepping for an evolution run.
 /*! 
 This procedure is the main time-stepping loop.  The following actions are taken on each pass 
@@ -439,6 +554,27 @@ PismLogEventRegister("bed deform",   0,&beddefEVENT);
 PismLogEventRegister("mass bal calc",0,&massbalEVENT);
 PismLogEventRegister("temp age calc",0,&tempEVENT);
 
+  // do a one-step diagnostic run:
+  dt_force = -1.0;
+  maxdt_temporary = -1.0;
+  skipCountDown = 0;
+  dtTempAge = 0.0;
+  dt = 0.0;
+  PetscReal end_year = grid.end_year;
+  grid.end_year = grid.start_year + 1; // all that matters is that it is
+				       // greater than start_year
+  ierr = step(do_mass_conserve, do_temp, do_age,
+	      do_skip, do_bed_deformation, do_plastic_till); CHKERRQ(ierr);
+
+  // set verbosity to 1 and re-initialize the model:
+  PetscInt tmp_verbosity = getVerbosityLevel(); 
+  ierr = setVerbosityLevel(1); CHKERRQ(ierr);
+  ierr = model_state_setup(); CHKERRQ(ierr);
+  grid.year = grid.start_year;
+  grid.end_year = end_year;
+  // restore verbosity:
+  ierr = setVerbosityLevel(tmp_verbosity); CHKERRQ(ierr);
+
   stdout_flags.erase(); // clear it out
 
   ierr = summaryPrintLine(PETSC_TRUE,do_temp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
@@ -459,112 +595,14 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
     stdout_flags.erase();  // clear it out
     dt_force = -1.0;
     maxdt_temporary = -1.0;
-    ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
 
-    // ask climate couplers what the maximum time-step should be
-    double apcc_dt;
-    ierr = atmosPCC->max_timestep(grid.year, apcc_dt); CHKERRQ(ierr);
-    apcc_dt *= secpera;
-    if (apcc_dt > 0.0) {
-      if (maxdt_temporary > 0)
-	maxdt_temporary = PetscMin(apcc_dt, maxdt_temporary);
-      else
-	maxdt_temporary = apcc_dt;
-    }
+    ierr = step(do_mass_conserve, do_temp, do_age,
+		do_skip, do_bed_deformation, do_plastic_till); CHKERRQ(ierr);
 
-    double opcc_dt;
-    ierr = oceanPCC->max_timestep(grid.year, opcc_dt); CHKERRQ(ierr);
-    opcc_dt *= secpera;
-    if (opcc_dt > 0.0) {
-      if (maxdt_temporary > 0)
-	maxdt_temporary = PetscMin(opcc_dt, maxdt_temporary);
-      else
-	maxdt_temporary = opcc_dt;
-    }
-
-    // -extra_{times,file,vars} mechanism:
-    double extras_dt;
-    ierr = extras_max_timestep(grid.year, extras_dt); CHKERRQ(ierr);
-    extras_dt *= secpera;
-    if (extras_dt > 0.0) {
-      if (maxdt_temporary > 0)
-	maxdt_temporary = PetscMin(extras_dt, maxdt_temporary);
-      else
-	maxdt_temporary = extras_dt;
-    }
-
-PetscLogEventBegin(beddefEVENT,0,0,0,0);
-
-    // compute bed deformation, which only depends on current thickness and bed elevation
-    if (do_bed_deformation) {
-      ierr = bedDefStepIfNeeded(); CHKERRQ(ierr); // prints "b" or "$" as appropriate
-    } else stdout_flags += " ";
-    
-PetscLogEventEnd(beddefEVENT,0,0,0,0);
-
-    // update basal till yield stress if appropriate; will modify and communicate mask
-    if (do_plastic_till) {
-      ierr = updateYieldStressUsingBasalWater();  CHKERRQ(ierr);
-      stdout_flags += "y";
-    } else stdout_flags += "$";
-
-
-    // always do SIA velocity calculation; only update SSA and 
-    //   only update velocities at depth if suggested by temp and age
-    //   stability criterion; note *lots* of communication is avoided by 
-    //   skipping SSA (and temp/age)
-    bool updateAtDepth = (skipCountDown == 0);
-    ierr = velocity(updateAtDepth); CHKERRQ(ierr);  // event logging in here
-    stdout_flags += (updateAtDepth ? "v" : "V");
-    
-    // adapt time step using velocities and diffusivity, ..., just computed
-    bool useCFLforTempAgeEqntoGetTimestep = (do_temp == PETSC_TRUE);
-    ierr = determineTimeStep(useCFLforTempAgeEqntoGetTimestep); CHKERRQ(ierr);
-    dtTempAge += dt;
-    grid.year += dt / secpera;  // adopt it
-    // IceModel::dt,dtTempAge,grid.year are now set correctly according to
-    //    mass-continuity-eqn-diffusivity criteria, horizontal CFL criteria, and other 
-    //    criteria from derived class additionalAtStartTimestep(), and from 
-    //    "-skip" mechanism
-
-    PetscLogEventBegin(tempEVENT,0,0,0,0);
-    
-    bool tempAgeStep = ( updateAtDepth && ((do_temp) || (do_age)) );
-    if (tempAgeStep) { // do temperature and age
-      ierr = temperatureAgeStep(); CHKERRQ(ierr);
-      dtTempAge = 0.0;
-      if (updateHmelt == PETSC_TRUE) {
-        ierr = diffuseHmelt(); CHKERRQ(ierr);
-      }
-      if (do_age) stdout_flags += "at";
-      else        stdout_flags += "$t";
-    }
-    else stdout_flags += "$$";
-
-    PetscLogEventEnd(tempEVENT,0,0,0,0);
-
-    ierr = ice_mass_bookkeeping(); CHKERRQ(ierr);
-
-    PetscLogEventBegin(massbalEVENT,0,0,0,0);
-
-    if (do_mass_conserve) {
-      ierr = massContExplicitStep(); CHKERRQ(ierr); // update H
-      ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
-      if ((do_skip == PETSC_TRUE) && (skipCountDown > 0))
-        skipCountDown--;
-      stdout_flags += "h";
-    } else stdout_flags += "$";
-
-PetscLogEventEnd(massbalEVENT,0,0,0,0);
-    
-    ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
-
-    // end the flag line
-    char tempstr[5];
-    sprintf(tempstr," %c", adaptReasonFlag);
-    stdout_flags += tempstr;
-    
     // report a summary for major steps or the last one
+    bool updateAtDepth = (skipCountDown == 0);
+    bool tempAgeStep = ( updateAtDepth && ((do_temp) || (do_age)) );
+
     const bool show_step = tempAgeStep || (adaptReasonFlag == 'e');
     ierr = summary(show_step,reportPATemps); CHKERRQ(ierr);
 
@@ -638,17 +676,15 @@ The IceModel initialization sequence is this:
    5) Initialize PDD and forcing.
 
    6) Fill the model state variables (from a PISM output file, from a
-   bootstrapping file using some modeling choices or using formulas).
-
-   7) Regrid.
+   bootstrapping file using some modeling choices or using formulas). Regrid.
 
    8) Report grid parameters.
 
    9) Allocate internal objects: SSA tools and work vectors. Some tasks in the
    next (tenth) item (bed deformation setup, for example) might need this.
 
-   10) Miscellaneous stuff: update surface elevation and mask, set up the bed
-   deformation model, initialize the basal till model, initialize snapshots.
+   10) Miscellaneous stuff: set up the bed deformation model, initialize the
+   basal till model, initialize snapshots.
 
 Please see the documenting comments of the functions called below to find 
 explanations of their intended uses.
@@ -687,10 +723,8 @@ PetscErrorCode IceModel::init() {
 
   // 6) Fill the model state variables (from a PISM output file, from a
   // bootstrapping file using some modeling choices or using formulas).
+  // Calls IceModel::regrid()
   ierr = model_state_setup(); CHKERRQ(ierr);
-
-  // 7) Regrid:
-  ierr = regrid(); CHKERRQ(ierr);
 
   // 8) Report grid parameters:
   ierr = report_grid_parameters(); CHKERRQ(ierr);
@@ -698,9 +732,9 @@ PetscErrorCode IceModel::init() {
   // 9) Allocate SSA tools and work vectors:
   ierr = allocate_internal_objects(); CHKERRQ(ierr);
 
-  // 10) Miscellaneous stuff: update surface elevation and mask, set up the bed
-  // deformation model, initialize the basal till model, initialize snapshots.
-  // This has to happen *after* regridding.
+  // 10) Miscellaneous stuff: set up the bed deformation model, initialize the
+  // basal till model, initialize snapshots. This has to happen *after*
+  // regridding.
   ierr = misc_setup();
 
   return 0; 
