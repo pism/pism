@@ -182,45 +182,88 @@ PetscErrorCode IceEnthalpyModel::init_physics() {
 PetscErrorCode IceEnthalpyModel::initFromFile(const char *filename) {
   PetscErrorCode ierr;
 
-  // option to override default behavior: if -init_from_temp is set then we
-  //   *MODIFY* the input file, by computing enthalpy from temp as cold ice, then
-  //   init from that
+  // option to override default behavior: if -init_from_temp or -init_from_and_liqfrac
+  //   are set then we *MODIFY* the input file, 
+  //   by computing enthalpy from temp as cold ice, then init from that
   PetscTruth initfromtemp;
+  PetscTruth initfromtempandliqfrac;
   ierr = check_option("-init_from_temp", initfromtemp); CHKERRQ(ierr);
-  if (initfromtemp == PETSC_FALSE) {
-    // if the option is not set, proceed with normal initialization
+  ierr = check_option("-init_from_temp_and_liqfrac", initfromtempandliqfrac); CHKERRQ(ierr);
+  if (initfromtemp == PETSC_FALSE && initfromtempandliqfrac == PETSC_FALSE) {
+    // if neither option is set, proceed with normal initialization
     ierr = IceModel::initFromFile(filename); CHKERRQ(ierr);
     return 0;
   }
 
-  ierr = verbPrintf(2, grid.com,
-    "  option -init_from_temp seen ... IceEnthalpyModel doing SPECIAL ACTIONS:\n"
-    "      reading ice temperature and thickness from %s ...\n",
-    filename); CHKERRQ(ierr);  
-  NCTool nc(&grid);
-  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-  int last_record;
-  ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
-  last_record -= 1;
-  // computation of Enth3 will need thickness
-  ierr = vH.read(filename,last_record); CHKERRQ(ierr);
-  ierr = T3.read(filename,last_record); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
+  // -init_from_temp was set, calculate enthalpy from temperature (i.e. cold-ice only)
+  if (initfromtemp == PETSC_TRUE) {
 
-  ierr = verbPrintf(2, grid.com,
-    "      computing enthalpy from ice temperature and thickness ...\n");
+    ierr = verbPrintf(2, grid.com,
+		      "  option -init_from_temp seen ... IceEnthalpyModel doing SPECIAL ACTIONS:\n"
+		      "      reading ice temperature and thickness from %s ...\n",
+		      filename); CHKERRQ(ierr);  
+    NCTool nc(&grid);
+    ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+    int last_record;
+    ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
+    last_record -= 1;
+    // computation of Enth3 will need thickness
+    ierr = vH.read(filename,last_record); CHKERRQ(ierr);
+    ierr = T3.read(filename,last_record); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
+  
+    ierr = verbPrintf(2, grid.com,
+		      "      computing enthalpy from ice temperature and thickness ...\n");
     CHKERRQ(ierr);  
-  ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+    ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com,
-    "      MODIFYING file '%s' by writing enthalpy ...\n",filename);
+    ierr = verbPrintf(2, grid.com,
+		      "      MODIFYING file '%s' by writing enthalpy ...\n",filename);
     CHKERRQ(ierr);  
-  ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr);
-  ierr = Enth3.write(filename,NC_DOUBLE); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
+    ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr);
+    ierr = Enth3.write(filename,NC_DOUBLE); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
+
+  }
+
+  // -init_from_and_liqfrac was set, calculate enthalpy from temperature and liquid water fraction
+  if (initfromtempandliqfrac == PETSC_TRUE) {
+
+    IceModelVec3 Liqfrac3;
+    ierr = Liqfrac3.create(grid, "liqfrac", false); CHKERRQ(ierr);
+
+    ierr = verbPrintf(2, grid.com,
+		      "  option -init_from_temp_and_liqfrac seen ... IceEnthalpyModel doing SPECIAL ACTIONS:\n"
+		      "      reading ice temperature, liquid water fraction and thickness from %s ...\n",
+		      filename); CHKERRQ(ierr);  
+    NCTool nc(&grid);
+    ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+    int last_record;
+    ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
+    last_record -= 1;
+    // computation of Enth3 will need thickness, temperature and liquid water fraction
+    ierr = vH.read(filename,last_record); CHKERRQ(ierr);
+    ierr = T3.read(filename,last_record); CHKERRQ(ierr);
+    ierr = Liqfrac3.read(filename,last_record); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
+
+    ierr = verbPrintf(2, grid.com,
+		      "      computing enthalpy from ice temperature and thickness ...\n");
+    CHKERRQ(ierr);  
+    ierr = setEnth3FromT3AndLiqfrac3(Liqfrac3); CHKERRQ(ierr);
+
+    ierr = verbPrintf(2, grid.com,
+		      "      MODIFYING file '%s' by writing enthalpy ...\n",filename);
+    CHKERRQ(ierr);  
+    ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr);
+    ierr = Enth3.write(filename,NC_DOUBLE); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr);
+
+  }
 
   // now init; this will actually re-read thk and enthalpy
   ierr = IceModel::initFromFile(filename); CHKERRQ(ierr);
+
   
   return 0;
 }
@@ -336,6 +379,46 @@ PetscErrorCode IceEnthalpyModel::setEnth3FromT3_ColdIce() {
 
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = T3.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  ierr = Enth3.beginGhostComm(); CHKERRQ(ierr);
+  ierr = Enth3.endGhostComm(); CHKERRQ(ierr);
+  return 0;
+}
+
+//! Compute Enth3 from temperature T3 and liquid fraction.
+PetscErrorCode IceEnthalpyModel::setEnth3FromT3AndLiqfrac3(IceModelVec3 &Liqfrac3) {
+  PetscErrorCode ierr;
+
+  EnthalpyConverter EC(config);
+  
+  PetscScalar **H;
+  ierr = T3.begin_access(); CHKERRQ(ierr);
+  ierr = Liqfrac3.begin_access(); CHKERRQ(ierr);
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+
+  PetscScalar *Tij, *Liqfracij, *Enthij; // columns of these values
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+      ierr = Liqfrac3.getInternalColumn(i,j,&Liqfracij); CHKERRQ(ierr);
+      ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+      for (PetscInt k=0; k<grid.Mz; ++k) {
+        const PetscScalar depth = H[i][j] - grid.zlevels[k];
+        // because of how getPressureFromDepth() works, the
+        //   energy content in the air is set to the value ice would have if it a chunk of it
+        //   occupied the air; the atmosphere actually has much lower energy content;
+        //   done this way for regularity (i.e. dEnth/dz computations)
+        ierr = EC.getEnthPermissive(Tij[k],Liqfracij[k],EC.getPressureFromDepth(depth), Enthij[k] );
+           CHKERRQ(ierr);
+      }
+    }
+  }
+
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
+  ierr = T3.end_access(); CHKERRQ(ierr);
+  ierr = Liqfrac3.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = Enth3.beginGhostComm(); CHKERRQ(ierr);

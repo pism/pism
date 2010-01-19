@@ -55,6 +55,8 @@ protected:
   virtual PetscErrorCode init_physics();
 
   virtual PetscErrorCode setEnth3FromT3_ColdIce();
+
+  virtual PetscErrorCode setEnth3FromT3AndLiqfrac3(IceModelVec3 &Liqfrac3);
   
   virtual PetscErrorCode setTnew3FromEnth3();
 
