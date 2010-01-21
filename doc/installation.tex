@@ -431,7 +431,7 @@ $  make all test
 \item Finally, to build PISM, you should follow the steps described in \ref{sec:pism-itself}, with one modification: after getting
   PISM sources, do
 \begin{verbatim}
-$  export CONFIG=config/macosx_macports
+$  export PISM_CONFIG=config/macosx_macports
 $  make all
 \end{verbatim}
   The first command includes the file |config/macosx_macports| into |build/Makefile|, modifying compiler and linker flags. See
@@ -439,7 +439,7 @@ $  make all
 
   Note that it might also be necessary to add
 \begin{verbatim}
-export DYLD_LIBRARY_PATH=/home/user/pism-dev/lib/
+export DYLD_LIBRARY_PATH=~/pism-dev/lib/
 \end{verbatim}
   to your |.bashrc| or equivalent to tell the dynamic library loader where to find PISM libraries.
 \end{enumerate}
@@ -452,7 +452,7 @@ export DYLD_LIBRARY_PATH=/home/user/pism-dev/lib/
 On some platforms it is necessary to use compiler or linker flags different from ones used on
 Linux, the default.  This can be done by editing the top-level makefile (|Makefile|) or |build/Makefile|, but here is a more robust approach.
 
-Set the environment variable |CONFIG| to |config/foo| to include the file |config/foo| into the makefile.  It is included \emph{after} all the flags, both compiler and linker, are defined, so it is possible to override any of them.   This is the way the PISM build process works on Mac OS X, using |CONFIG=config/macosx_macports|.  There are two advantages of this approach: first, settings for different systems can be kept separate.  Second, this allows building PISM on different systems using the same set of makefiles, so an |svn update| is less likely to break the build process on your system.
+Set the environment variable |PISM_CONFIG| to |config/foo| to include the file |config/foo| into the makefile.  It is included \emph{after} all the flags, both compiler and linker, are defined, so it is possible to override any of them.   This is the way the PISM build process works on Mac OS X, using |PISM_CONFIG=config/macosx_macports|.  There are two advantages of this approach: first, settings for different systems can be kept separate.  Second, this allows building PISM on different systems using the same set of makefiles, so an |svn update| is less likely to break the build process on your system.
 
 
 

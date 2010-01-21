@@ -20,7 +20,7 @@ endif
 DISPLAY = :0.0
 
 # Get PETSc environment and rules:
-PETSC3_BASE := $(wildcard ${PETSC_DIR}/conf/base)
+PETSC3_BASE := $(wildcard ${PETSC_DIR}/conf/variables)
 # PETSC3_BASE is empty string if not 3.0.0
 ifeq ($(strip $(PETSC3_BASE)),) 
   # include file which is only present in 2.3.3 and earlier
@@ -116,8 +116,8 @@ include ../src/eismint/grn_make
 include ../src/eismint/scand/scand_make
 
 # Import additional make include files:
-ifdef CONFIG
-  include $(addprefix ../,$(CONFIG))
+ifdef PISM_CONFIG
+  include $(addprefix ../,$(PISM_CONFIG))
 endif
 
 all_sources := $(ice_sources) $(ice_csources) $(test_sources) $(other_sources)	\
