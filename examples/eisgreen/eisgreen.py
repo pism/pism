@@ -127,7 +127,7 @@ print "Total Values Read: "+str(x)
 putmask(B, B == 0, topg_fill_value)
 
 # ready to write NetCDF file
-ncfile = NC(WRIT_FILE, 'w')
+ncfile = NC(WRIT_FILE, 'w',format='NETCDF3_CLASSIC')
 
 # set global attributes
 setattr(ncfile, 'Conventions', 'CF-1.4')

@@ -62,7 +62,7 @@ print "lines read from " + IN_FILE + "= " + str(count)
 riggsin.close()
 
 ##### create and define dimensions and variables in NetCDF file #####
-ncfile = NC(OUT_FILE, 'w')
+ncfile = NC(OUT_FILE, 'w',fomat='NETCDF3_CLASSIC')
 xdim = ncfile.createDimension('count', count)
 xvar = ncfile.createVariable('count', 'f4', dimensions=('count',))
 truelatvar = ncfile.createVariable('truelat', 'f4', dimensions=('count',))

@@ -278,7 +278,7 @@ My = 3
 dy = (2. * LL) / (float(Mx-1))
 Lx = (dy * float(My)) / 2.  # truely periodic in x direction
 
-ncfile = NC(ncfilename, 'w')
+ncfile = NC(ncfilename, 'w',fomat='NETCDF3_CLASSIC')
 
 # set global attributes
 historysep = ' '

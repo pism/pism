@@ -39,7 +39,7 @@ years_sea *= 1000.0
 dSea = -34.83 * (d18Osea + 1.93)
 
 # open the nc for delta Sea Level file to write to
-ncfile = NC(DSL_FILE, 'w')
+ncfile = NC(DSL_FILE, 'w',format='NETCDF3_CLASSIC')
 
 # set global attributes
 historysep = ' '

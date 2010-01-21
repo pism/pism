@@ -218,7 +218,7 @@ inlets.close()
 
 
 ##### create and define dimensions and variables in NetCDF file #####
-ncfile = NC(WRIT_FILE, 'w')
+ncfile = NC(WRIT_FILE, 'w',fomat='NETCDF3_CLASSIC')
 xdim = ncfile.createDimension('y', MxROSS)
 ydim = ncfile.createDimension('x', MyROSS)
 xvar = ncfile.createVariable('y', 'f8', ('y',))
