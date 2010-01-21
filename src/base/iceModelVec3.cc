@@ -74,8 +74,7 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[], boo
 
   var1.init(my_name, my_grid, GRID_3D);
 
-  // FIXME: for some reason the following breaks penth:
-  // this->set(GSL_NAN);
+  this->set(GSL_NAN);
 
   return 0;
 }

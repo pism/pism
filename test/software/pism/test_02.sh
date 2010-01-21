@@ -4,7 +4,7 @@ source ../functions.sh
 
 test="Test #2: pismv exact processor independence (SIA only; test G)."
 dir=`pwd`
-files="foo1.nc foo2.nc foo3.nc foo8.nc foo10.nc"
+files="foo1.nc foo2.nc foo3.nc foo4.nc foo6.nc"
 
 test_02 ()
 {
@@ -13,7 +13,7 @@ test_02 ()
     set -e
 
     # Create the files:
-    for NN in 1 2 3 8 10;
+    for NN in 1 2 3 4 6;
     do 
 	run -n $NN pismv -test G -Mx 61 -My 61 -Mz 61 -y 1 -verbose 1 -o foo$NN.nc
     done
@@ -21,9 +21,9 @@ test_02 ()
     set +e
 
     # Compare:
-    for i in 1 2 3 8 10;
+    for i in 1 2 3 4 6;
     do
-	for j in 1 2 3 8 10;
+	for j in 1 2 3 4 6;
 	do
 	    if [ $i -le $j ]; then continue; fi
 	    

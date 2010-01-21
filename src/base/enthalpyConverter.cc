@@ -314,7 +314,7 @@ PetscErrorCode EnthalpyConverter::getEnthAtWaterFraction(
 
 //! Compute enthalpy from absolute temperature within the bedrock.  The enthalpy scale is separate from that in ice.
 /*!
-If \f$c_b\f$ is the specific heat capacity of the bedrockthen we compute and return
+If \f$c_b\f$ is the specific heat capacity of the bedrock then we compute and return
   \f[ E = c_b T \f]
 where \f$T\f$ is the temperature at level \f$z<0\f$ in the bedrock.
 

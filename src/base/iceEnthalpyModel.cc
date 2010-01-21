@@ -449,7 +449,11 @@ PetscErrorCode IceEnthalpyModel::setTnew3FromEnth3() {
       ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
         const PetscScalar depth = thickness[i][j] - grid.zlevels[k];
-        ierr = EC.getAbsTemp(Enthij[k],EC.getPressureFromDepth(depth), Tij[k]); CHKERRQ(ierr);
+        ierr = EC.getAbsTemp(Enthij[k],EC.getPressureFromDepth(depth), Tij[k]); 
+        if (ierr) {
+          PetscPrintf(grid.com,"\n\nEnthalpyConverter.getAbsTemp() returned error; i=%d,j=%d,k=%d\n\n",i,j,k);
+        }
+        CHKERRQ(ierr);
       }
     }
   }

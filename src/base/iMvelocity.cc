@@ -189,130 +189,73 @@ PetscLogEventEnd(velmiscEVENT,0,0,0,0);
 }
 
 
-//! Compute vertical velocity using basal conditions and incompressibility of the ice.
-/*! 
-The original statement of incompressibility is
+//! Compute vertical velocity using incompressibility of the ice.
+/*!
+The vertical velocity \f$w(x,y,z,t)\f$ is the velocity <i>relative to the
+location of the base of the ice column</i>.  Thus \f$w<0\f$ means that that
+that part of the ice is getting closer to the base of the ice, and so on.
+The slope of the bed (i.e. relative to the geoid) and/or the motion of the
+bed (i.e. from bed deformation) do not affect the vertical velocity.
+
+In fact the following statement is exactly true if the basal melt rate is zero:
+the vertical velocity at a point in the ice is positive (negative) if and only
+if the average horizontal divergence of the horizontal velocity, in the portion
+of the ice column below that point, is negative (positive).
+In particular, because \f$z=0\f$ is the location of the base of the ice
+always, the only way to have \f$w(x,y,0,t) \ne 0\f$ is to have a basal melt
+rate.
+
+Incompressibility itself says
    \f[ \nabla\cdot\mathbf{U} + \frac{\partial w}{\partial z} = 0. \f]
 This is immediately equivalent to the integral
    \f[ w(x,y,z,t) = - \int_{b(x,y,t)}^{z} \nabla\cdot\mathbf{U}\,d\zeta
                            + w_b(x,y,t). \f]
+Here the value \f$w_b(x,y,t)\f$ is either zero or the basal melt rate
+according to the value of the flag \c include_bmr_in_continuity.
 
-The basal kinematic equation is
-   \f[ w_b = \frac{\partial b}{\partial t} + \mathbf{U}_b \cdot \nabla b - S \f]
-where \f$S\f$ is the basal melt rate.  (The inclusion of the basal melt rate is optional.)  
-This equation determines the vertical velocity of the ice at the base (\f$w_b\f$), 
-which is needed in the incompressibility integral.
-
-@cond VERTCHANGE
-Note we do a change of vertical coordinate \f$\tilde z = z - b(x,y,t)\f$.  Thus all 
-derivatives, with respect to any variable \f$x,y,z,t\f$, change accordingly 
-(see elsewhere).  The revised form of the incompressibility integral is
-   \f[ w(x,y,\tilde z,t) = - \int_0^{\tilde z} \left(
-          \nabla\cdot\mathbf{U} 
-          - \nabla b \cdot \left(\frac{\partial u}{\partial \tilde z},
-                                 \frac{\partial v}{\partial \tilde z}\right)
-                                                     \right)\,d\zeta
-                           + w_b(x,y,t). \f]
-@endcond
-
-The vertical integral is computed by the trapezoid rule.  There is no assumption about equal
-spacing.
+The vertical integral is computed by the trapezoid rule.
  */
 PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   PetscErrorCode  ierr;
-  const PetscScalar   dx = grid.dx, 
-                      dy = grid.dy;
-  const PetscInt      Mz = grid.Mz;
-  PetscScalar **ub, **vb, **basalMeltRate, **bed, **dbdt;
-  PetscScalar *u, *v, *w;
+  const PetscScalar dx = grid.dx, dy = grid.dy;
+  const PetscInt    Mz = grid.Mz;
+  bool include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity");
 
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = w3.begin_access(); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.begin_access(); CHKERRQ(ierr);
 
-  ierr = vub.get_array(ub); CHKERRQ(ierr);
-  ierr = vvb.get_array(vb); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = vbed.get_array(bed); CHKERRQ(ierr);
-  ierr = vuplift.get_array(dbdt); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.get_array(basalMeltRate); CHKERRQ(ierr);
-
-  bool include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity");
-
+  PetscScalar *u, *v, *w;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
-      ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
       ierr = w3.getInternalColumn(i,j,&w); CHKERRQ(ierr);
-
-      PetscScalar dbdx = 0.0, dbdy = 0.0;
-
-      if (!vMask.is_floating(i,j)) {
-        // if grounded then basal kinematical equation gives w[0]
-        // bed gradient needed if grounded; there is no reason to assume that the
-        //   bed elevation has been periodized by the user
-        if (i == 0) {
-          dbdx = (bed[i+1][j] - bed[i][j]) / (dx);
-        } else if (i == grid.Mx-1) {
-          dbdx = (bed[i][j] - bed[i-1][j]) / (dx);
-        } else {
-          dbdx = (bed[i+1][j] - bed[i-1][j]) / (2.0*dx);
-        }
-        if (j == 0) {
-          dbdy = (bed[i][j+1] - bed[i][j]) / (dy);
-        } else if (j == grid.My-1) {
-          dbdy = (bed[i][j] - bed[i][j-1]) / (dy);
-        } else {
-          dbdy = (bed[i][j+1] - bed[i][j-1]) / (2.0*dy);
-        }
-        w[0] = ub[i][j] * dbdx + vb[i][j] * dbdy;
-        if (include_bmr_in_continuity) {
-          w[0] -= basalMeltRate[i][j];
-        }
-        // DEBUG?: should dbdt be added?
+      if (include_bmr_in_continuity) {
+        w[0] = vbasalMeltRate(i,j);
       } else {
-        // FIXME: floating case:  if the ice is floating and if w is relative to the geoid
-        //   then w[0] is related to dHdt and nothing else:
-        //      w[0] = - (ice->rho/ocean_rho) * dHdt
-        //   for grounded ice we *have* w[0] relative to the geoid because the dbdx,dbdy
-        //   are used (and this suggests dbdt should be added, though it is really small)
         w[0] = 0.0;
       }
 
-      // compute w above base by trapezoid rule 
+      ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
+      ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
       planeStar uss, vss;
       ierr = u3.getPlaneStarZ(i,j,0.0,&uss);
       ierr = v3.getPlaneStarZ(i,j,0.0,&vss);
-      PetscScalar OLDintegrand = (uss.ip1 - uss.im1) / (2.0*dx) + (vss.jp1 - vss.jm1) / (2.0*dy);
-      // at bottom, difference up:
-      PetscScalar dz = grid.zlevels[1] - grid.zlevels[0];
-      OLDintegrand -= dbdx * (u[1] - u[0]) / dz + dbdy * (v[1] - v[0]) / dz;
-
+      PetscScalar OLDintegrand
+             = (uss.ip1 - uss.im1) / (2.0*dx) + (vss.jp1 - vss.jm1) / (2.0*dy);
       for (PetscInt k = 1; k < Mz; ++k) {
         ierr = u3.getPlaneStarZ(i,j,grid.zlevels[k],&uss);
         ierr = v3.getPlaneStarZ(i,j,grid.zlevels[k],&vss);
-        PetscScalar NEWintegrand = (uss.ip1 - uss.im1) / (2.0*dx) + (vss.jp1 - vss.jm1) / (2.0*dy);
-        dz = grid.zlevels[k] - grid.zlevels[k-1];
-        if (k == Mz-1) { // at top, difference down:
-          NEWintegrand -= dbdx * (u[k] - u[k-1]) / dz + dbdy * (v[k] - v[k-1]) / dz;
-        } else { // usual case; central difference
-          const PetscScalar twodz = grid.zlevels[k+1] - grid.zlevels[k-1];
-          NEWintegrand -= dbdx * (u[k+1] - u[k-1]) / twodz + dbdy * (v[k+1] - v[k-1]) / twodz;
-        }
+        const PetscScalar NEWintegrand
+             = (uss.ip1 - uss.im1) / (2.0*dx) + (vss.jp1 - vss.jm1) / (2.0*dy);
+        const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
         w[k] = w[k-1] - 0.5 * (NEWintegrand + OLDintegrand) * dz;
         OLDintegrand = NEWintegrand;
       }
-      // no need to call w3.setInternalColumn; already set
     }
   }
 
-  ierr =     vub.end_access(); CHKERRQ(ierr);
-  ierr =     vvb.end_access(); CHKERRQ(ierr);
-  ierr =   vMask.end_access(); CHKERRQ(ierr);
-  ierr =    vbed.end_access(); CHKERRQ(ierr);
-  ierr = vuplift.end_access(); CHKERRQ(ierr);
   ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
-  
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
   ierr = w3.end_access(); CHKERRQ(ierr);
