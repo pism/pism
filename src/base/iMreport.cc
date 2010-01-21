@@ -402,11 +402,20 @@ PetscErrorCode IceModel::summaryPrintLine(
      PetscScalar /* meltfrac */,  PetscScalar H0,  PetscScalar T0) {
 
   PetscErrorCode ierr;
+  const bool do_temp = config.get_flag("do_temp");
+
   if (printPrototype == PETSC_TRUE) {
-    ierr = verbPrintf(2,grid.com,
+    if (do_temp) {
+      ierr = verbPrintf(2,grid.com,
           "P         YEAR:     ivol   iarea     thick0     temp0\n");
-    ierr = verbPrintf(2,grid.com,
+      ierr = verbPrintf(2,grid.com,
           "U        years 10^6_km^3 10^6_km^2        m         K\n");
+    } else {
+      ierr = verbPrintf(2,grid.com,
+          "P         YEAR:     ivol   iarea     thick0\n");
+      ierr = verbPrintf(2,grid.com,
+          "U        years 10^6_km^3 10^6_km^2        m\n");
+    }
     mass_cont_sub_counter = 0;  
     mass_cont_sub_dtsum = 0.0;    
   } else {
@@ -414,7 +423,7 @@ PetscErrorCode IceModel::summaryPrintLine(
       mass_cont_sub_counter++;      
       mass_cont_sub_dtsum += delta_t;
     }  
-    if (tempAndAge == PETSC_TRUE) {
+    if ((tempAndAge == PETSC_TRUE) || (!do_temp)) {
       char tempstr[90] = "";
       const PetscScalar major_dt_years = mass_cont_sub_dtsum / secpera;
       if (mass_cont_sub_counter == 1) {
@@ -428,9 +437,15 @@ PetscErrorCode IceModel::summaryPrintLine(
         stdout_flags += "\n";
         ierr = verbPrintf(2,grid.com, stdout_flags.c_str()); CHKERRQ(ierr);
       }
-      ierr = verbPrintf(2,grid.com, 
+      if (do_temp) {
+        ierr = verbPrintf(2,grid.com, 
           "S %12.5f: %8.5f %7.4f %10.3f %9.4f\n",
           year, volume/(1.0e6*1.0e9), area/(1.0e6*1.0e6), H0, T0); CHKERRQ(ierr);
+      } else {
+        ierr = verbPrintf(2,grid.com, 
+          "S %12.5f: %8.5f %7.4f %10.3f\n",
+          year, volume/(1.0e6*1.0e9), area/(1.0e6*1.0e6), H0); CHKERRQ(ierr);
+      }
       mass_cont_sub_counter = 0;      
       mass_cont_sub_dtsum = 0.0;
     }
