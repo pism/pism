@@ -1,4 +1,4 @@
-// Copyright (C) 2008, 2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -51,6 +51,7 @@ public:
   virtual PetscErrorCode  copy_to_global(Vec destination);
   virtual PetscErrorCode  copy_to(IceModelVec &destination);
   virtual PetscErrorCode  copy_from(IceModelVec &source);
+  virtual PetscErrorCode  has_nan();
   virtual PetscErrorCode  set_name(const char name[]);
   virtual PetscErrorCode  set_glaciological_units(string units);
   virtual PetscErrorCode  set_attr(string name, string value);

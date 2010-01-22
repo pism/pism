@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Constantine Khroulev
+// Copyright (C) 2009, 2010 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -74,4 +74,19 @@ set<IceModelVec*> PISMVars::get_variables() const {
   }
 
   return result;
+}
+
+//! Debugging: checks if IceModelVecs in the dictionary have NANs.
+PetscErrorCode PISMVars::check_for_nan() const {
+  PetscErrorCode ierr;
+  set<IceModelVec*> vars = get_variables();
+
+  set<IceModelVec*>::iterator j = vars.begin();
+  while (j != vars.end()) {
+    ierr = (*j)->has_nan(); CHKERRQ(ierr);
+
+    j++;
+  }
+
+  return 0;
 }

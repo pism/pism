@@ -16,7 +16,7 @@ usage="""nccmp.py compares NetCDF files by absolute max norms of difference of v
 usage:
   nccmp.py foo.nc bar.nc            compare all variables
   nccmp.py -v A,B foo.nc bar.nc     compare variables A and B
-  nccmp.py -x C foo.nc bar.nc       compare all variables except C
+  nccmp.py -x -v C foo.nc bar.nc    compare all variables except C
   nccmp.py -t 1e-6 foo.nc bar.nc    use tolerance 1e-6 instead of default of 0"""
 
 def usagefailure(message):
@@ -26,7 +26,7 @@ def usagefailure(message):
     exit(2)
 
 def compare_vars(nc1, nc2, name, tol):
-    from numpy import squeeze
+    from numpy import squeeze, isnan, ma
 
     try:
         var1 = squeeze(nc1.variables[name][:])
@@ -38,9 +38,18 @@ def compare_vars(nc1, nc2, name, tol):
         usagefailure("ERROR: VARIABLE '%s' NOT FOUND IN FILE 2" % name)
 
     try:
-        delta = abs(var1 - var2).max()
+        mask = isnan(var1) | isnan(var2)
     except:
         usagefailure("ERROR: VARIABLE '%s' OF INCOMPATIBLE SHAPES (?) IN FILES" % name)
+
+    if mask.all():
+        print 'Variable %10s: no values to compare.' % name
+        return
+
+    var1 = ma.array(var1, mask = mask)
+    var2 = ma.array(var2, mask = mask)
+
+    delta = abs(var1 - var2).max()
 
     # The actual check:
     if (delta > tol):

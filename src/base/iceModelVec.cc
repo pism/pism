@@ -747,6 +747,21 @@ PetscErrorCode IceModelVec::compute_viewer_size(int target_size, int &x, int &y)
   return 0;
 }
 
+//! Checks if the current IceModelVec has NANs and stops if it does.
+PetscErrorCode IceModelVec::has_nan() {
+  PetscErrorCode ierr;
+  PetscReal tmp;
+
+  ierr = norm(NORM_INFINITY, tmp); CHKERRQ(ierr);
+
+  if (gsl_isnan(tmp)) {
+    SETERRQ1(1, "IceModelVec %s has NANs", name.c_str());
+    //    PetscPrintf(grid->com, "IceModelVec %s has NANs\n", name.c_str());
+  }
+
+  return 0;
+}
+
 /********* IceModelVec3 and IceModelVec3Bedrock: SEE SEPARATE FILE  iceModelVec3.cc    **********/
 
 /********* IceModelVec2: SEE SEPARATE FILE  iceModelVec2.cc    **********/

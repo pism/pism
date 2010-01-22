@@ -404,6 +404,9 @@ PetscErrorCode IceModel::step(bool do_mass_conserve,
 			      bool do_bed_deformation,
 			      bool do_plastic_till) {
   PetscErrorCode ierr;
+
+  //  ierr = variables.check_for_nan(); CHKERRQ(ierr);
+
   ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
 
   // ask climate couplers what the maximum time-step should be
@@ -555,25 +558,33 @@ PismLogEventRegister("mass bal calc",0,&massbalEVENT);
 PismLogEventRegister("temp age calc",0,&tempEVENT);
 
   // do a one-step diagnostic run:
+  // set verbosuty to 1 to suppress reporting
+  PetscInt tmp_verbosity = getVerbosityLevel(); 
+  ierr = setVerbosityLevel(1); CHKERRQ(ierr);
+
   dt_force = -1.0;
   maxdt_temporary = -1.0;
   skipCountDown = 0;
   dtTempAge = 0.0;
   dt = 0.0;
   PetscReal end_year = grid.end_year;
-  grid.end_year = grid.start_year + 1; // all that matters is that it is
+  grid.end_year = grid.start_year + 1; // all what matters is that it is
 				       // greater than start_year
   ierr = step(do_mass_conserve, do_temp, do_age,
 	      do_skip, do_bed_deformation, do_plastic_till); CHKERRQ(ierr);
 
-  // set verbosity to 1 and re-initialize the model:
-  PetscInt tmp_verbosity = getVerbosityLevel(); 
-  ierr = setVerbosityLevel(1); CHKERRQ(ierr);
+  // re-initialize the model:
   ierr = model_state_setup(); CHKERRQ(ierr);
   grid.year = grid.start_year;
   grid.end_year = end_year;
+
   // restore verbosity:
   ierr = setVerbosityLevel(tmp_verbosity); CHKERRQ(ierr);
+
+  // Write snapshots and time-series at the beginning of the run.
+  ierr = write_snapshot(); CHKERRQ(ierr);
+  ierr = write_timeseries(); CHKERRQ(ierr);
+  ierr = write_extras(); CHKERRQ(ierr);
 
   stdout_flags.erase(); // clear it out
 
@@ -581,13 +592,17 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   adaptReasonFlag = '$'; // no reason for no timestep
   skipCountDown = 0;
   dtTempAge = 0.0;
-  dt = 0.0;
-  ierr = summary(do_temp,reportPATemps); CHKERRQ(ierr);  // report starting state
+  maxdt_temporary = dt = dt_force = 0.0;
+  dt_from_diffus = dt_from_cfl = 0.0;
+  CFLmaxdt = CFLmaxdt2D = 0.0;
+  gDmax = dvoldt = gdHdtav = 0;
+  total_surface_ice_flux = 0;
+  total_basal_ice_flux = 0;
+  total_sub_shelf_ice_flux = 0;
 
-  // Write snapshots and time-series at the beginning of the run.
-  ierr = write_snapshot(); CHKERRQ(ierr);
-  ierr = write_timeseries(); CHKERRQ(ierr);
-  ierr = write_extras(); CHKERRQ(ierr);
+  gmaxu = gmaxv = gmaxw = -1;
+
+  ierr = summary(do_temp,reportPATemps); CHKERRQ(ierr);  // report starting state
 
   // main loop for time evolution
   for (PetscScalar year = grid.start_year; year < grid.end_year; year += dt/secpera) {

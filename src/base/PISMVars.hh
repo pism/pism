@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Constantine Khroulev
+// Copyright (C) 2009, 2010 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,6 +33,7 @@ public:
   void remove(string);
   IceModelVec* get(string) const;
   set<IceModelVec*> get_variables() const;
+  PetscErrorCode check_for_nan() const;
 
 protected:
   mutable map<string, IceModelVec*> variables;

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -969,7 +969,10 @@ PetscErrorCode IceFlowLawFactory::setType(const char type[])
 
   PetscFunctionBegin;
   ierr = PetscFListFind(type_list,comm,type,(void(**)(void))&r);CHKERRQ(ierr);
-  if (!r) SETERRQ1(PETSC_ERR_ARG_UNKNOWN_TYPE,"Selected Ice type %s not available",type);
+  if (!r) {
+    ierr = PetscPrintf(comm, "PISM ERROR: Selected Ice type %s is not available.\n",type); CHKERRQ(ierr);
+    PetscEnd();
+  }
   ierr = PetscStrncpy(type_name,type,sizeof(type_name));CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

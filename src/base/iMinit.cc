@@ -159,7 +159,15 @@ PetscErrorCode IceModel::set_grid_from_options() {
   const char *z_spacing[2] = {"quadratic", "equal"};
   int z_spacing_index = 0;	// quadratic is the default
   ierr = PetscOptionsEList("-z_spacing", "Vertical spacing in the ice", "",
-			   z_spacing, 2, z_spacing[0], &z_spacing_index, &z_spacing_set); CHKERRQ(ierr);
+			   z_spacing, 2, z_spacing[0], &z_spacing_index, &z_spacing_set);
+  if (ierr == PETSC_ERR_USER) {
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: invalid -z_spacing agrument.\n");
+    CHKERRQ(ierr);
+    PetscEnd();
+
+  } else CHKERRQ(ierr);
+
   if (z_spacing_set) {
     if (z_spacing_index == 0) {
       grid.ice_vertical_spacing = QUADRATIC;
@@ -171,7 +179,15 @@ PetscErrorCode IceModel::set_grid_from_options() {
   // Determine the vertical grid spacing in the bedrock:
   z_spacing_index = 0;
   ierr = PetscOptionsEList("-zb_spacing", "Vertical spacing in the bedrock", "",
-			   z_spacing, 2, z_spacing[0], &z_spacing_index, &zb_spacing_set); CHKERRQ(ierr);
+			   z_spacing, 2, z_spacing[0], &z_spacing_index, &zb_spacing_set);
+  if (ierr == PETSC_ERR_USER) {
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: invalid -zb_spacing argument.\n");
+    CHKERRQ(ierr);
+    PetscEnd();
+
+  } else CHKERRQ(ierr);
+
   if (zb_spacing_set) {
     if (z_spacing_index == 0) {
       grid.bed_vertical_spacing = QUADRATIC;
@@ -303,6 +319,9 @@ PetscErrorCode IceModel::grid_setup() {
 
   Calling this method should be all one needs to set model state variables.
   Please avoid modifying them in other parts of the initialization sequence.
+
+  Also, please avoid operations that would make it unsafe to call this more
+  than once (memory allocation is one example).
  */
 PetscErrorCode IceModel::model_state_setup() {
   PetscErrorCode ierr;
