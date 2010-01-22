@@ -73,6 +73,8 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   total_basal_ice_flux = 0;
   total_sub_shelf_ice_flux = 0;
 
+  have_ssa_velocities = 0;	// no SSA velocities at the start of the run
+
   allowAboveMelting = PETSC_FALSE;  // only IceCompModel ever sets it to true
 
   doColdIceMethods = PETSC_TRUE;  // FIXME: this way until IceEnthalpyModel is fully moved into IceModel
@@ -655,6 +657,7 @@ PetscErrorCode IceModel::diagnosticRun() {
            CHKERRQ(ierr);
   adaptReasonFlag = ' '; // no reason for no timestep
   skipCountDown = 0;
+  dt = 0.0;
 
   // update basal till yield stress if appropriate; will modify and communicate mask
   if (do_plastic_till) {
