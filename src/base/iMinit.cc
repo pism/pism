@@ -343,6 +343,19 @@ PetscErrorCode IceModel::model_state_setup() {
   // Check consistency of geometry after initialization:
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
+#if 0
+  // allocate and setup bed deformation model
+  ierr = bedDefSetup(); CHKERRQ(ierr);
+#endif
+
+#if 1
+  // init basal till model, possibly inverting for phi, if desired;
+  //   reads options "-topg_to_phi phi_min,phi_max,phi_ocean,topg_min,topg_max"
+  //   or "-surf_vel_to_phi foo.nc";
+  //   initializes IceBasalResistancePlasticLaw* basal; sets fields vtauc, vtillphi
+  ierr = initBasalTillModel(); CHKERRQ(ierr);
+#endif
+
   return 0;
 }
 
@@ -502,14 +515,18 @@ PetscErrorCode IceModel::misc_setup() {
   global_attributes.set_flag("pism_ssa_velocities_are_valid",
 			     config.get_flag("use_ssa_velocity"));
 
+#if 1
   // allocate and setup bed deformation model
   ierr = bedDefSetup(); CHKERRQ(ierr);
+#endif
 
+#if 0
   // init basal till model, possibly inverting for phi, if desired;
   //   reads options "-topg_to_phi phi_min,phi_max,phi_ocean,topg_min,topg_max"
   //   or "-surf_vel_to_phi foo.nc";
   //   initializes IceBasalResistancePlasticLaw* basal; sets fields vtauc, vtillphi
   ierr = initBasalTillModel(); CHKERRQ(ierr);
+#endif
   
   return 0;
 }

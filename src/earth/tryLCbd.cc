@@ -42,6 +42,7 @@ static char help[] =
 #include <petscvec.h>
 #include <petscda.h>
 #include "../base/pism_const.hh"
+#include "../base/NCVariable.hh"
 #include "../base/materials.hh"
 #include "../earth/deformation.hh"
 
@@ -59,8 +60,18 @@ int main(int argc, char *argv[]) {
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    DeformableEarthType bedrock;
-    //ThermoGlenIce       ice(com,ICE_PB);  // linker error???
+    NCConfigVariable config;
+    config.init("pism_config", com, rank);
+    char alt_config[PETSC_MAX_PATH_LEN];
+    PetscTruth use_alt_config;
+    ierr = PetscOptionsGetString(PETSC_NULL, "-config", alt_config, 
+                                 PETSC_MAX_PATH_LEN, &use_alt_config); CHKERRQ(ierr);
+    if (use_alt_config) {
+      ierr = config.read(alt_config); CHKERRQ(ierr);
+    } else {
+      ierr = config.read(PISM_DefaultConfigFile); CHKERRQ(ierr);
+    }
+
     BedDeformLC bdlc;
     DA          da2;
     Vec         H, bed, Hstart, bedstart, uplift;
@@ -70,6 +81,7 @@ int main(int argc, char *argv[]) {
     PetscScalar H0 = 1000.0;            // ice disc load thickness
 
     if (argc >= 2) {
+      // FIXME:  should use PETSC-style options
       switch (argv[1][0]) {
         case '1':
           include_elastic = PETSC_FALSE;  do_uplift = PETSC_FALSE;  H0 = 1000.0;
@@ -90,8 +102,10 @@ int main(int argc, char *argv[]) {
     const PetscScalar R0 = 1000.0e3;          // ice disc load radius
     const PetscScalar tfinalyears = 150.0e3;  // total run time
 
-    const PetscInt    Mx = 97, 
-                      My = 65;
+    // FIXME: should accept options here
+    const PetscInt    Mx = 193, 
+                      My = 129;
+
     const PetscScalar Lx = 3000.0e3, 
                       Ly = 2000.0e3;
     const PetscInt    Z = 2;
@@ -168,10 +182,11 @@ int main(int argc, char *argv[]) {
       }
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"setting BedDeformLC\n"); CHKERRQ(ierr);
-      ierr = bdlc.settings(include_elastic,Mx,My,dx,dy,Z, 
-//                           ice.rho, bedrock.rho, bedrock.eta, bedrock.D,
-                           910.0, bedrock.rho, bedrock.eta, bedrock.D,
-                           &Hstart, &bedstart, &uplift, &H, &bed); CHKERRQ(ierr);
+      ierr = bdlc.settings(
+               config,
+               include_elastic,Mx,My,dx,dy,Z,
+               config.get("ice_density"),
+               &Hstart, &bedstart, &uplift, &H, &bed); CHKERRQ(ierr);
 
       ierr = PetscPrintf(PETSC_COMM_SELF,"allocating BedDeformLC\n"); CHKERRQ(ierr);
       ierr = bdlc.alloc(); CHKERRQ(ierr);
@@ -189,16 +204,18 @@ int main(int argc, char *argv[]) {
         const PetscScalar tyears = k*dtyears;
         ierr = bdlc.step(dtyears, tyears); CHKERRQ(ierr);
         ierr = VecView(bed,viewer); CHKERRQ(ierr);
-        char title[100];
         PetscScalar **b;
         ierr = VecGetArray2d(bed, Mx, My, 0, 0, &b); CHKERRQ(ierr);
         const PetscScalar b0new = b[imid][jmid];
         ierr = VecRestoreArray2d(bed, Mx, My, 0, 0, &b); CHKERRQ(ierr);
         const PetscScalar dbdt0 = (b0new - b0old) / (dtyears);
-        sprintf(title, "bed elev (m)  [t = %9.1f]", tyears);
+
         ierr = PetscPrintf(PETSC_COMM_SELF,
                   "   t=%8.0f (a)   b(0,0)=%11.5f (m)  dbdt(0,0)=%11.7f (m/a)\n",
                   tyears, b0new, dbdt0); CHKERRQ(ierr);
+
+        char title[100];
+        snprintf(title,100, "bed elev (m)  [t = %9.1f]", tyears);
         ierr = PetscDrawSetTitle(draw,title); CHKERRQ(ierr);
         b0old = b0new;
       }

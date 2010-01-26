@@ -34,7 +34,7 @@ public:
 protected:
     PetscErrorCode assembleSSAMatrix(const bool includeBasalShear,
                                      IceModelVec2 vNuH[2], Mat A);
-    PetscErrorCode assembleSSARhs(bool surfGradInward, Vec rhs);
+    PetscErrorCode assembleSSARhs(Vec rhs);
 
     // CF = calving front
     IceModelVec2   vsmoothCFmask;  // gradient of this gives normal dir to

@@ -351,12 +351,12 @@ PetscErrorCode just_show_usage(
     MPI_Comm com, const char execname[], const char usage[]) {
   PetscErrorCode ierr;
   ierr = verbPrintf(1,com,
-      "%s is a PISM (http://pism-docs.org) executable.", execname); CHKERRQ(ierr);
+      "%s is a PISM (http://www.pism-docs.org) executable.", execname); CHKERRQ(ierr);
   ierr = verbPrintf(1,com,"\nOptions cheat-sheet:\n\n");
       CHKERRQ(ierr);
   ierr = verbPrintf(1,com,usage); CHKERRQ(ierr);
   ierr = verbPrintf(1,com,
-      "\nTo run in parallel using N processors (most MPI cases):\n"
+      "\nTo run in parallel using N processors (in typical MPI case):\n"
       "  mpiexec -n N %s ...\n"
       "\nFor more help on %s and PISM,\n"
       "  1. Download User's Manual for PISM: http://www.pism-docs.org/pdfs/manual0.2.pdf\n"

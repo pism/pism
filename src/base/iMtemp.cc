@@ -55,10 +55,11 @@ PetscErrorCode IceModel::temperatureAgeStep() {
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
     const PetscScalar bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
     const PetscScalar BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
-    if (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT) {
-      ierr = verbPrintf(2,grid.com," [BPsacr=%.4f%%] ", bfsacrPRCNT); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(3,grid.com," [BPsacr=%.4f%%] ", bfsacrPRCNT); CHKERRQ(ierr);
+    if (   (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT) 
+        || (getVerbosityLevel() > 2)                    ) {
+      char tempstr[50] = "";
+      snprintf(tempstr,50, "  [BPsacr=%.4f%%] ", bfsacrPRCNT);
+      stdout_flags = tempstr + stdout_flags;
     }
   }
 
@@ -68,7 +69,9 @@ PetscErrorCode IceModel::temperatureAgeStep() {
              = 100.0 * (gbulgeCount / (grid.Mx * grid.My * (grid.Mz + grid.Mbz)) );
     const PetscScalar BPBULGE_REPORT_PERCENT = 0.0001; // only report if above 1 / 10^6
     if (bulgePRCNT > BPBULGE_REPORT_PERCENT) {
-      ierr = verbPrintf(2,grid.com," [BPbulge=%.5f%%] ", bulgePRCNT); CHKERRQ(ierr);
+      char tempstr[50] = "";
+      snprintf(tempstr,50, "  [BPbulge=%.5f%%] ", bulgePRCNT);
+      stdout_flags = tempstr + stdout_flags;
     }
   }
 

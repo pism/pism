@@ -200,7 +200,7 @@ protected:
 
   // parameters
   PetscReal   dt, dtTempAge,  // current mass cont. and temp/age; time steps in seconds
-              maxdt_temporary, dt_force, mass_cont_sub_dtsum,
+              maxdt_temporary, dt_force,
               CFLviolcount,    //!< really is just a count, but PetscGlobalSum requires this type
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax,
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
@@ -209,7 +209,7 @@ protected:
     total_basal_ice_flux,
     total_surface_ice_flux,
     dvoldt;  //!< d(total ice volume)/dt; m3 s-1
-  PetscInt    skipCountDown, mass_cont_sub_counter;
+  PetscInt    skipCountDown;
 
   // physical parameters used frequently enough to make looking up via
   // config.get() a hassle:
@@ -236,7 +236,7 @@ protected:
   char        adaptReasonFlag;
 
   char        ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN];
-  string      stdout_flags;
+  string      stdout_flags, stdout_ssa;
 
   string executable_short_name;
   
@@ -412,7 +412,7 @@ protected:
   virtual PetscErrorCode testConvergenceOfNu(IceModelVec2 vNuH[2], IceModelVec2 vNuHOld[2],
                                              PetscReal *norm, PetscReal *normChange);
   virtual PetscErrorCode assembleSSAMatrix(bool includeBasalShear, IceModelVec2 vNuH[2], Mat A);
-  virtual PetscErrorCode assembleSSARhs(bool surfGradInward, Vec rhs);
+  virtual PetscErrorCode assembleSSARhs(Vec rhs);
   virtual PetscErrorCode moveVelocityToDAVectors(Vec x);
   virtual PetscErrorCode broadcastSSAVelocity(bool updateVelocityAtDepth);
   virtual PetscErrorCode correctSigma();

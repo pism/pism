@@ -52,9 +52,9 @@ int main(int argc, char *argv[]) {
       "  pisms [-eisII x|-pst -xxx|-mismip N] [OTHER PISM & PETSc OPTIONS]\n\n"
       "where major option chooses type of simplified experiment:\n"
       "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n"
+      "  -mismip Nx  choose MISMIP experiment (Nx = 1a|1b|2a|2b|3a|3b)\n"
       "  -pst -xxx   choose plastic till ice stream experiment; see Bueler & Brown (2009);\n"
       "              (-xxx = -P0A|-P0I|-P1|-P2|-P3|-P4)\n"
-      "  -mismip Nx  choose MISMIP experiment (Nx = 1a|1b|2a|2b|3a|3b)\n"
       "notes:\n"
       "  -pdd        not allowed (because PISMConstAtmosCoupler is always used)\n"
       ); CHKERRQ(ierr);

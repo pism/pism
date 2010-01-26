@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2010 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -209,7 +209,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
   if (!basalBCsValid) {  SETERRQ(3,
      "solveThisColumn() should only be called after setBasalBoundaryValuesThisColumn() in enthSystemCtx"); }
 
-/* PRINCIPLES ABOUT THESE MODIFICATIONS: 
+/* PRINCIPLES ABOUT THESE MODIFICATIONS OF tempSystemCtx::solveThisColumn(): 
 1)  coefficients in system are unitless and therefore most D,L,U expressions are not altered
 2)  old temperature equation had units of Kelvin on each side; new equation has units
     of enthalpy, namely J kg-1, on each side

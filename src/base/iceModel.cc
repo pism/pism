@@ -510,8 +510,7 @@ PetscErrorCode IceModel::step(bool do_mass_conserve,
   ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 
   // end the flag line
-  char tempstr[5];
-  sprintf(tempstr," %c", adaptReasonFlag);
+  char tempstr[5];  snprintf(tempstr,5," %c", adaptReasonFlag);
   stdout_flags += tempstr;
 
   return 0;

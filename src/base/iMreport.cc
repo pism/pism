@@ -286,17 +286,18 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
     ierr = ageStats(gvolume, origfrac); CHKERRQ(ierr);
   }
 
-  // report CFL violations if there are enough
+  // report CFL violations
   if (CFLviolcount > 0.0) {
     const PetscScalar CFLviolpercent = 100.0 * CFLviolcount / (grid.Mx * grid.Mz * grid.Mz);
-    const PetscScalar CFLVIOL_REPORT_VERB2_PERCENT = 0.1; // only report (verbosity=2) if above 0.1%
-    if (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT) {
+    // at default verbosity level, only report CFL viols if above:
+    const PetscScalar CFLVIOL_REPORT_VERB2_PERCENT = 0.1;
+    if (   (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT) 
+        || (getVerbosityLevel() > 2) ) {
       char tempstr[90] = "";
-      sprintf(tempstr, " [!CFL#=%1.0f (=%8.6f%% of 3D grid)]", CFLviolcount,CFLviolpercent);
-      stdout_flags += tempstr;
-    } else {
-      ierr = verbPrintf(3,grid.com,"  [!CFL#=%1.0f (=%8.6f%% of 3D grid)]\n",
-                        CFLviolcount,CFLviolpercent); CHKERRQ(ierr);
+      snprintf(tempstr,90,
+              "  [!CFL#=%1.0f (=%5.2f%% of 3D grid)] ",
+              CFLviolcount,CFLviolpercent);
+      stdout_flags = tempstr + stdout_flags;
     }
   }
    
@@ -404,6 +405,12 @@ PetscErrorCode IceModel::summaryPrintLine(
   PetscErrorCode ierr;
   const bool do_temp = config.get_flag("do_temp");
 
+  // this version keeps track of what has been done so as to minimize stdout:
+  static string stdout_flags_count0;
+  static int    mass_cont_sub_counter = 0;  
+  static double mass_cont_sub_dtsum = 0.0;    
+  
+
   if (printPrototype == PETSC_TRUE) {
     if (do_temp) {
       ierr = verbPrintf(2,grid.com,
@@ -416,26 +423,30 @@ PetscErrorCode IceModel::summaryPrintLine(
       ierr = verbPrintf(2,grid.com,
           "U        years 10^6_km^3 10^6_km^2        m\n");
     }
-    mass_cont_sub_counter = 0;  
-    mass_cont_sub_dtsum = 0.0;    
   } else {
+    if (mass_cont_sub_counter == 0)
+      stdout_flags_count0 = stdout_flags;
     if (delta_t > 0.0) {
       mass_cont_sub_counter++;      
       mass_cont_sub_dtsum += delta_t;
-    }  
-    if ((tempAndAge == PETSC_TRUE) || (!do_temp)) {
+    }
+    if ((tempAndAge == PETSC_TRUE) || (!do_temp) || (getVerbosityLevel() > 2)) {
       char tempstr[90] = "";
       const PetscScalar major_dt_years = mass_cont_sub_dtsum / secpera;
       if (mass_cont_sub_counter == 1) {
-        sprintf(tempstr, " (dt=%.5f)", major_dt_years);
+        snprintf(tempstr,90, " (dt=%.5f)", major_dt_years);
       } else {
-        sprintf(tempstr, " (dt=%.5f in %d substeps; av dt_sub=%.5f)",
+        snprintf(tempstr,90, " (dt=%.5f in %d substeps; av dt_sub=%.5f)",
           major_dt_years, mass_cont_sub_counter, major_dt_years / mass_cont_sub_counter);
       }
-      stdout_flags += tempstr;
+      stdout_flags_count0 += tempstr;
       if (delta_t > 0.0) { // avoids printing an empty line if we have not done anything
-        stdout_flags += "\n";
-        ierr = verbPrintf(2,grid.com, stdout_flags.c_str()); CHKERRQ(ierr);
+        stdout_flags_count0 += "\n";
+        ierr = verbPrintf(2,grid.com, stdout_flags_count0.c_str()); CHKERRQ(ierr);
+      }
+      if (stdout_ssa.length() > 0) {
+        stdout_ssa += "\n";
+        ierr = verbPrintf(2,grid.com, stdout_ssa.c_str()); CHKERRQ(ierr);
       }
       if (do_temp) {
         ierr = verbPrintf(2,grid.com, 

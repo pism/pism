@@ -422,11 +422,14 @@ Regarding the first argument, if \c surfGradInward == \c true then we differenti
 the surface \f$h(x,y)\f$ inward from edge of grid at the edge of the grid.  This allows 
 certain to make sense on a period grid.  This applies to Test I and Test J, in particular.
  */
-PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
+PetscErrorCode IceModel::assembleSSARhs(Vec rhs) {
   const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
   const PetscScalar   dx=grid.dx, dy=grid.dy;
+  const bool inward = config.get_flag("compute_surf_grad_inward_ssa");
+
   // next constant not too sensitive, but must match value in assembleSSAMatrix():
   const PetscScalar   scaling = 1.0e9;  // comparable to typical beta for an ice stream;
+
   PetscErrorCode  ierr;
   PetscScalar     **h, **H, **uvbar[2], **taudx, **taudy;
 
@@ -454,8 +457,8 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
         ierr = VecSetValue(rhs, rowV, scaling * 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]),
                            INSERT_VALUES); CHKERRQ(ierr);
       } else {
-        bool edge = ((i == 0) || (i == Mx-1) || (j == 0) || (j == My-1));
-        if (surfGradInward && edge) {
+        const bool edge = ((i == 0) || (i == Mx-1) || (j == 0) || (j == My-1));
+        if (inward && edge) {
           PetscScalar h_x, h_y;
           if (i == 0) {
             h_x = (h[i+1][j] - h[i][j]) / (dx);
@@ -470,7 +473,7 @@ PetscErrorCode IceModel::assembleSSARhs(bool surfGradInward, Vec rhs) {
             h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
             h_y = (h[i][j] - h[i][j-1]) / (dy);
           } else {
-            SETERRQ(1,"should not reach here: surfGradInward=TRUE & edge=TRUE but not at edge");
+            SETERRQ(1,"should not reach here: inward=true & edge=true but not at edge");
           }          
           const PetscScalar pressure = ice->rho * standard_gravity * H[i][j];
           ierr = VecSetValue(rhs, rowU, - pressure * h_x, INSERT_VALUES); CHKERRQ(ierr);
@@ -622,40 +625,40 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
   PetscInt    its;
   KSPConvergedReason  reason;
 
+  stdout_ssa = "";
+  
   PetscReal ssaRelativeTolerance = config.get("ssa_relative_convergence"),
-    epsilon = config.get("epsilon_ssa");
+            epsilon              = config.get("epsilon_ssa");
 
   PetscInt ssaMaxIterations = static_cast<PetscInt>(config.get("max_iterations_ssa"));
   
   ierr = vubarSSA.copy_to(vubarSSAOld); CHKERRQ(ierr);
   ierr = vvbarSSA.copy_to(vvbarSSAOld); CHKERRQ(ierr);
 
-  ierr = verbPrintf(4,grid.com,
-     "  [ssaEpsilon = %10.5e, ssaMaxIterations = %d, ssaRelativeTolerance = %10.5e]\n",
-     epsilon, ssaMaxIterations, ssaRelativeTolerance); CHKERRQ(ierr);
-  ierr = ice->printInfo(4);CHKERRQ(ierr);
+  // computation of RHS only needs to be done once; does not depend on solution;
+  //   but matrix changes under nonlinear iteration (loop over k below)
+  ierr = assembleSSARhs(rhs); CHKERRQ(ierr);
 
-  // this only needs to be done once; right hand side of system
-  //   does not depend on solution; note solution changes under nonlinear iteration
-  //   so matrix must be recomputed in loop over k below
-  bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
-  ierr = assembleSSARhs(compute_surf_grad_inward_ssa, rhs); CHKERRQ(ierr);
-
-  for (PetscInt l=0; ; ++l) {
+  for (PetscInt l=0; ; ++l) { // iterate with increasing regularization parameter
     ierr = computeEffectiveViscosity(vNuH, epsilon); CHKERRQ(ierr);
     ierr = update_nu_viewers(vNuH, vNuHOld, true); CHKERRQ(ierr);
-    for (PetscInt k=0; k<ssaMaxIterations; ++k) {
+    // iterate on effective viscosity: "outer nonlinear iteration":
+    for (PetscInt k=0; k<ssaMaxIterations; ++k) { 
     
       // in preparation of measuring change of effective viscosity:
       ierr = vNuH[0].copy_to(vNuHOld[0]); CHKERRQ(ierr);
       ierr = vNuH[1].copy_to(vNuHOld[1]); CHKERRQ(ierr);
 
       // reform matrix, which depends on updated viscosity
-      ierr = verbPrintf(3,grid.com, "  %d,%2d:", l, k); CHKERRQ(ierr);
+      if (getVerbosityLevel() > 2) {
+        char tempstr[50] = "";  snprintf(tempstr,50, "  %d,%2d:", l, k);
+        stdout_ssa += tempstr;
+      }
       ierr = assembleSSAMatrix(true, vNuH, A); CHKERRQ(ierr);
-      ierr = verbPrintf(3,grid.com, "A:"); CHKERRQ(ierr);
+      if (getVerbosityLevel() > 2)
+        stdout_ssa += "A:";
 
-      // call PETSc to solve linear system by iterative method
+      // call PETSc to solve linear system by iterative method; "inner linear iteration"
       ierr = KSPSetOperators(ksp, A, A, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
       ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr); // SOLVE
       ierr = KSPGetConvergedReason(ksp, &reason); CHKERRQ(ierr);
@@ -667,23 +670,24 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
         PetscEnd();
       }
       ierr = KSPGetIterationNumber(ksp, &its); CHKERRQ(ierr);
-      ierr = verbPrintf(3,grid.com, "S:%d,%d: ", its, reason); CHKERRQ(ierr);
+      if (getVerbosityLevel() > 2) {
+        char tempstr[50] = "";  snprintf(tempstr,50, "S:%d,%d: ", its, reason);
+        stdout_ssa += tempstr;
+      }
 
       // finish iteration and report to standard out
       ierr = moveVelocityToDAVectors(x); CHKERRQ(ierr);
       ierr = computeEffectiveViscosity(vNuH, epsilon); CHKERRQ(ierr);
       ierr = testConvergenceOfNu(vNuH, vNuHOld, &norm, &normChange); CHKERRQ(ierr);
-      if (getVerbosityLevel() < 3) {
-        ierr = verbPrintf(2,grid.com,
-          (k == 0) ? "%11.3e" : "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b%11.3e",
-          normChange/norm); CHKERRQ(ierr);
+      if (getVerbosityLevel() > 2) {
+        // verbose output includes norm and change for each outer iteration
+        char tempstr[100] = "";
+        snprintf(tempstr,100, "|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n", 
+                         norm, normChange/norm);
+        stdout_ssa += tempstr;
       }
-      ierr = verbPrintf(3,grid.com,"|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
-                         norm, normChange/norm); CHKERRQ(ierr);
+
       ierr = update_nu_viewers(vNuH, vNuHOld, true); CHKERRQ(ierr);
-      if (getVerbosityLevel() < 3) {
-        ierr = verbPrintf(2,grid.com, "%4d", k+1); CHKERRQ(ierr);
-      }
       *numiter = k + 1;
       if (norm == 0 || normChange / norm < ssaRelativeTolerance) goto done;
 
@@ -712,9 +716,22 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2 vNuH[2], PetscInt *numiter) {
 
   done:
 
+  if (getVerbosityLevel() > 2) {
+    char tempstr[50] = "";
+    snprintf(tempstr,50, "... =%5d outer iterations", *numiter);
+    stdout_ssa += tempstr;
+  } else if (getVerbosityLevel() == 2) {
+    // at default verbosity, just record last normchange and iterations
+    char tempstr[50] = "";
+    snprintf(tempstr,50, "%5d outer iterations", *numiter);
+    stdout_ssa += tempstr;
+  }
+  if (getVerbosityLevel() >= 2)
+    stdout_ssa = "  SSA: " + stdout_ssa;
   if (ssaSystemToASCIIMatlab == PETSC_TRUE) {
     ierr = writeSSAsystemMatlab(vNuH); CHKERRQ(ierr);
   }
+
   return 0;
 }
 

@@ -136,11 +136,11 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
     ierr = PetscViewerASCIIPrintf(viewer,
       "\n\n<nmax > 12: matrix too big to display as full; viewing tridiagonal matrix '%s' by diagonals ...\n",info); CHKERRQ(ierr);
     char diag_info[PETSC_MAX_PATH_LEN];
-    sprintf(diag_info, "super-diagonal U for system '%s'", info);
+    snprintf(diag_info,PETSC_MAX_PATH_LEN, "super-diagonal U for system '%s'", info);
     ierr = viewColumnValues(viewer,U,nmax,diag_info); CHKERRQ(ierr);
-    sprintf(diag_info, "main diagonal D for system '%s'", info);
+    snprintf(diag_info,PETSC_MAX_PATH_LEN, "main diagonal D for system '%s'", info);
     ierr = viewColumnValues(viewer,D,nmax,diag_info); CHKERRQ(ierr);
-    sprintf(diag_info, "sub-diagonal L for system '%s'", info);
+    snprintf(diag_info,PETSC_MAX_PATH_LEN, "sub-diagonal L for system '%s'", info);
     ierr = viewColumnValues(viewer,Lp,nmax-1,diag_info); CHKERRQ(ierr);
   } else {
     ierr = PetscViewerASCIIPrintf(viewer,
@@ -183,7 +183,7 @@ PetscErrorCode columnSystemCtx::viewSystem(PetscViewer viewer, const char* info)
   PetscErrorCode ierr;
   ierr = viewMatrix(viewer,info); CHKERRQ(ierr);
   char  rhs_info[PETSC_MAX_PATH_LEN];
-  sprintf(rhs_info, "right-hand side vector for system '%s'", info);
+  snprintf(rhs_info,PETSC_MAX_PATH_LEN, "right-hand side vector for system '%s'", info);
   ierr = viewColumnValues(viewer,rhs,nmax,rhs_info); CHKERRQ(ierr);
   return 0;
 }

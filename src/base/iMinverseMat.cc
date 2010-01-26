@@ -104,7 +104,7 @@ PetscErrorCode IceModel::computeBasalShearFromSSA() {
   ierr = assembleSSAMatrix(false, myvNuH, A); CHKERRQ(ierr);
  
   // Note rhs contains driving terms  - \rho g H \grad h
-  ierr = assembleSSARhs(false, rhs); CHKERRQ(ierr);
+  ierr = assembleSSARhs(rhs); CHKERRQ(ierr);
 
   // Set x = [u v]'  (interleaved).
   PetscScalar **ub, **vb;

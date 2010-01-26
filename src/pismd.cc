@@ -41,12 +41,22 @@ int main(int argc, char *argv[]) {
   { /* This explicit scoping forces destructors to be called before PetscFinalize() */
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
-    vector<string> required;
-    required.clear();
-    ierr = show_usage_check_req_opts(com, "pismd", required,
-      "  pismd IS DEPRECATED\n\n  INTENDED REPLACEMENT IS 'pismr -y 0 -f3d '\n\n"
-      "  SEE 'pismr -usage'\n"
-      ); CHKERRQ(ierr);
+    PetscTruth iset, bfset;
+    ierr = check_option("-i", iset); CHKERRQ(ierr);
+    ierr = check_option("-boot_from", bfset); CHKERRQ(ierr);
+    string usage =
+      "  pismd IS DEPRECATED\n\n"
+      "  INTENDED REPLACEMENT IS 'pismr -y 0 -f3d '\n\n"
+      "  SEE 'pismr -usage'\n";
+    if ((iset == PETSC_FALSE) && (bfset == PETSC_FALSE)) {
+      ierr = PetscPrintf(com,
+         "PISM ERROR: one of options -i,-boot_from is required\n\n"); CHKERRQ(ierr);
+      ierr = show_usage_and_quit(com, "pismd", usage.c_str()); CHKERRQ(ierr);
+    } else {
+      vector<string> required;  required.clear();
+      ierr = show_usage_check_req_opts(com, "pismd", required, usage.c_str()); CHKERRQ(ierr);
+    }
+
 
     ierr = verbPrintf(2,com, "PISMD %s (diagnostic velocity computation mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);

@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-## VERIFYNOW.PY is a script to verify several components of PISM.
-## It specifies a refinement path for each of Tests ABCDEFGIJKL and runs pismv accordingly.
-## Copyright (C) 2007--2009 Ed Bueler and Constantine Khroulev
+## VFYNOW.PY is a script for verification of numerical schemes in PISM.
+## It specifies a refinement path for each of Tests ABCDEFGIJKL and runs
+## pismv accordingly.
+## Copyright (C) 2007--2010 Ed Bueler and Constantine Khroulev
 import sys, getopt, time, commands
 from numpy import array, double, int
 
@@ -319,7 +320,6 @@ if nproc > 1:
 else:
   predo = ""
 executable = predo + prefix + 'pismv'
-#####
 
 tests = define_refinement_paths(KSPRTOL, SSARTOL)
 

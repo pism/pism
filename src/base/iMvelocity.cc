@@ -116,7 +116,6 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
       ierr = v3.set(0.0); CHKERRQ(ierr);
       ierr = Sigma3.set(0.0); CHKERRQ(ierr);
     }
-    stdout_flags += "     ";
   }
 
 PetscLogEventEnd(siaEVENT,0,0,0,0);
@@ -128,11 +127,9 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
   }
   if (use_ssa_velocity) { // communication happens within SSA
     if ((firstTime == PETSC_TRUE) || (updateVelocityAtDepth)) {
-      stdout_flags += " SSA ";
       PetscInt numSSAiter;
       ierr = velocitySSA(&numSSAiter); CHKERRQ(ierr); // comm here ...
-      stdout_flags += " ";
-    } else  stdout_flags += "       ";
+    }
     // even if velocitySSA() did not run, we still need to use stored SSA velocities 
     // to get 3D velocity field, basal velocities, basal frictional heating, 
     // and strain dissipation heating
@@ -153,8 +150,6 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     //   above is important
     ierr = correctSigma(); CHKERRQ(ierr);
     ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
-  } else {
-    stdout_flags += "       ";
   }
 
 PetscLogEventEnd(ssaEVENT,0,0,0,0);

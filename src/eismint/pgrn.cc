@@ -41,19 +41,29 @@ int main(int argc, char *argv[]){
   { // explicit scoping does destructors before PetscFinalize() 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
-    vector<string> required;
-    required.clear();
-    ierr = show_usage_check_req_opts(com, "pgrn", required,
+    PetscTruth iset, bfset;
+    ierr = check_option("-i", iset); CHKERRQ(ierr);
+    ierr = check_option("-boot_from", bfset); CHKERRQ(ierr);
+    string usage =
       "  pgrn {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n\n"
       "where:\n"
       "  -i          input file in NetCDF format: contains PISM-written model state\n"
       "  -boot_from  input file in NetCDF format: contains a few fields, from which\n"
       "              heuristics will build initial model state\n"
       "notes:\n"
+      "  * special executable for EISMINT-Greenland\n"
       "  * one of -i or -boot_from is required\n"
       "  * if -boot_from is used then in fact '-Mx A -My B -Mz C -Lz D' is also required\n"
-      "  * generally behaves like pismr after initialization\n"
-      ); CHKERRQ(ierr);
+      "  * generally behaves like pismr after initialization\n";
+    if ((iset == PETSC_FALSE) && (bfset == PETSC_FALSE)) {
+      ierr = PetscPrintf(com,
+         "PISM ERROR: one of options -i,-boot_from is required\n\n"); CHKERRQ(ierr);
+      ierr = show_usage_and_quit(com, "pgrn", usage.c_str()); CHKERRQ(ierr);
+    } else {
+      vector<string> required;  required.clear();
+      ierr = show_usage_check_req_opts(com, "pgrn", required, usage.c_str()); CHKERRQ(ierr);
+    }
+
 
     ierr = verbPrintf(2, com, "PGRN %s (PISM EISMINT-Greenland mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);

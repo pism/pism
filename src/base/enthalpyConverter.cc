@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2010 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -72,7 +72,8 @@ PetscErrorCode EnthalpyConverter::viewConstants(PetscViewer viewer) const {
 /*! If \f$d\f$ is the depth then
      \f[ p = p_{\text{air}}  + \rho_i g d. \f]
 Frequently \f$d\f$ is computed from the thickess minus a level in the ice, 
-something like "H[i][j] - z[k]"
+something like "H[i][j] - z[k]".  The input depth to this routine is allowed to
+be negative, representing a position above the surface of the ice.
  */ 
 double EnthalpyConverter::getPressureFromDepth(double depth) const {
   if (depth <= 0.0) { // at or above surface of ice
@@ -97,7 +98,9 @@ double EnthalpyConverter::getMeltingTemp(double p) const {
      \f[ E_s(p) = c_i T_m(p), \f]
 In particular,
      \f[ E_s( p_{\text{air}}) = c_i (T_0 - \beta p_{\text{air}}) = 548743.22\, \frac{\text{J}}{\text{kg}} \f]
-is the enthalpy for surface ice (\f$p_{\text{air}} = 10^5\f$ Pa) at temperature 
+is the enthalpy for surface ice.
+
+Note that \f$p_{\text{air}} = 10^5\f$ Pa at temperature 
 \f$T_0=273.15\f$ K, with standard choices \f$c_i=2009\f$ J kg-1 K-1 and
 \f$\beta=7.53\times 10^{-8}\f$ K Pa-1.
  */
@@ -121,7 +124,8 @@ void EnthalpyConverter::getEnthalpyInterval(double p, double &E_s, double &E_l) 
 /*!
 If \f$E\f$ and \f$E_s\f$ are the enthalpy and the CTS enthalpy, respectively, then
   \f[ CTS = \frac{E}{E_s}.\f]
-where CTS = 1 is the CTS contour line. Only used for postprocessing
+where CTS = 1 is the CTS contour line.  Thus CTS is greater than one for temperate ice
+and less than one for cold ice.  Presumably only used for postprocessing.
 */ 
 double EnthalpyConverter::getCTS(double E, double p) const {
   const double E_s = getEnthalpyCTS(p);
@@ -129,10 +133,10 @@ double EnthalpyConverter::getCTS(double E, double p) const {
 }
 
 
-//! Determines if E > E_s(p), that is, if the ice is at the pressure-melting point.
+//! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
 bool EnthalpyConverter::isTemperate(double E, double p) const {
   const double E_s = getEnthalpyCTS(p);
-  return (E > E_s);
+  return (E >= E_s);
 }
 
 

@@ -43,11 +43,10 @@ int main(int argc, char *argv[]) {
   {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
-    vector<string> required;
-    required.clear(); // FIXME: either -boot_from or -i is required, but currently no
-                      //        way to enforce (option a)|(option b)
-                      // in fact, when -boot_from given then require
-    ierr = show_usage_check_req_opts(com, "pismr", required,
+    PetscTruth iset, bfset;
+    ierr = check_option("-i", iset); CHKERRQ(ierr);
+    ierr = check_option("-boot_from", bfset); CHKERRQ(ierr);
+    string usage =
       "  pismr {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n\n"
       "where:\n"
       "  -i          input file in NetCDF format: contains PISM-written model state\n"
@@ -55,8 +54,15 @@ int main(int argc, char *argv[]) {
       "              heuristics will build initial model state\n"
       "notes:\n"
       "  * one of -i or -boot_from is required\n"
-      "  * if -boot_from is used then in fact '-Mx A -My B -Mz C -Lz D' is also required\n"
-      ); CHKERRQ(ierr);
+      "  * if -boot_from is used then in fact '-Mx A -My B -Mz C -Lz D' is also required\n";
+    if ((iset == PETSC_FALSE) && (bfset == PETSC_FALSE)) {
+      ierr = PetscPrintf(com,
+         "PISM ERROR: one of options -i,-boot_from is required\n\n"); CHKERRQ(ierr);
+      ierr = show_usage_and_quit(com, "pismr", usage.c_str()); CHKERRQ(ierr);
+    } else {
+      vector<string> required;  required.clear();
+      ierr = show_usage_check_req_opts(com, "pismr", required, usage.c_str()); CHKERRQ(ierr);
+    }
 
     ierr = verbPrintf(2,com, "PISMR %s (basic evolution run mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);

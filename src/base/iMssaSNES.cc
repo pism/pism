@@ -253,8 +253,7 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
     Vec x = SSAX, rhs = SSARHS; // solve  A x = rhs
     PetscInt    kspits;
     KSPConvergedReason  kspreason;
-    bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
-    ierr = assembleSSARhs(compute_surf_grad_inward_ssa, rhs); CHKERRQ(ierr);
+    ierr = assembleSSARhs(rhs); CHKERRQ(ierr);
     ierr = computeEffectiveViscosity(vNuH,ssaEpsilon); CHKERRQ(ierr);
     ierr = update_nu_viewers(vNuH, vNuH, true); CHKERRQ(ierr);
     ierr = assembleSSAMatrix(true, vNuH, A); CHKERRQ(ierr);

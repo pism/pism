@@ -195,9 +195,9 @@ PetscErrorCode IceModel::bedDefStepIfNeeded() {
     ierr = vbed.copy_to(vbedlast); CHKERRQ(ierr);
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
     lastBedDefUpdateYear = grid.year;
-    ierr = verbPrintf(2, grid.com, "b"); CHKERRQ(ierr);
+    stdout_flags += "b";
   } else {
-    ierr = verbPrintf(2, grid.com, "$"); CHKERRQ(ierr);
+    stdout_flags += "$";
   }
   return 0;
 }
