@@ -26,7 +26,7 @@ INFILE=green20km_Tsteady.nc
 
 snaps="-save_file snaps_ssl2.nc -save_times 10000:10000:100000"
 
-ts="-ts_file vol_ssl2.nc -ts_vars ivol -ts_times 100:100:110000"
+ts="-ts_file vol_ssl2.nc -ts_vars ivol -ts_times 0:100:110000"
 
 $SHOW $MPIDO $NN pgrn -ssl2 -skip 10 -i $INFILE -ys 0 -ye 110000 ${snaps} ${ts} -o green_ssl2_110ka.nc
 

@@ -19,9 +19,10 @@ echo "PREPROCESS.SH: running eisgreen.py to create eis_green20.nc ..."
 ./eisgreen.py
 
 echo ""
-echo "PREPROCESS.SH: running util/fill_missing.py to fill missing values in topg;"
-echo "  creates eis_green_smoothed.nc ..."
+echo "PREPROCESS.SH: running util/fill_missing.py to fill missing values in topg"
+echo "  variable in data (eis_green20.nc) ..."
 fill_missing.py -f eis_green20.nc -v topg -o eis_green_smoothed.nc
+echo "  eis_green_smoothed.nc written ..."
 
 echo ""
 echo "PREPROCESS.SH: running eiscore.py to create grip_dT.nc and specmap_dSL.nc ..."
