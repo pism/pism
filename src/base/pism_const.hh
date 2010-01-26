@@ -85,6 +85,7 @@ PetscErrorCode parse_range(
 PetscErrorCode parse_times(MPI_Comm com, string str, vector<double> &result);
 
 // usage message and required options; drivers use these
+PetscErrorCode stop_on_version_option();
 PetscErrorCode show_usage_and_quit(
     MPI_Comm com, const char execname[], const char usage[]);
 PetscErrorCode show_usage_check_req_opts(

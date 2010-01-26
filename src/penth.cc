@@ -66,15 +66,16 @@ int main(int argc, char *argv[]) {
   {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
+    ierr = verbPrintf(2,com, "PENTH %s (development of ENTHALPY basic evolution run mode)\n",
+		      PISM_Revision); CHKERRQ(ierr);
+    ierr = stop_on_version_option(); CHKERRQ(ierr);
+
     vector<string> required;
     required.clear();
     ierr = show_usage_check_req_opts(com, "penth", required,
       "  penth IS UNDER DEVELOPMENT AND WILL MERGE WITH pismr\n\n"
       "  SEE 'pismr -usage'\n"
       ); CHKERRQ(ierr);
-
-    ierr = verbPrintf(2,com, "PENTH %s (development of ENTHALPY basic evolution run mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
 
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);

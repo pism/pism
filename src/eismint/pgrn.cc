@@ -41,6 +41,10 @@ int main(int argc, char *argv[]){
   { // explicit scoping does destructors before PetscFinalize() 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
+    ierr = verbPrintf(2, com, "PGRN %s (PISM EISMINT-Greenland mode)\n",
+		      PISM_Revision); CHKERRQ(ierr);
+    ierr = stop_on_version_option(); CHKERRQ(ierr);
+
     PetscTruth iset, bfset;
     ierr = check_option("-i", iset); CHKERRQ(ierr);
     ierr = check_option("-boot_from", bfset); CHKERRQ(ierr);
@@ -63,10 +67,6 @@ int main(int argc, char *argv[]){
       vector<string> required;  required.clear();
       ierr = show_usage_check_req_opts(com, "pgrn", required, usage.c_str()); CHKERRQ(ierr);
     }
-
-
-    ierr = verbPrintf(2, com, "PGRN %s (PISM EISMINT-Greenland mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
 
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);

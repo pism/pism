@@ -41,6 +41,10 @@ int main(int argc, char *argv[]) {
   { /* This explicit scoping forces destructors to be called before PetscFinalize() */
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
+    ierr = verbPrintf(2,com, "PISMD %s (diagnostic velocity computation mode)\n",
+		      PISM_Revision); CHKERRQ(ierr);
+    ierr = stop_on_version_option(); CHKERRQ(ierr);
+
     PetscTruth iset, bfset;
     ierr = check_option("-i", iset); CHKERRQ(ierr);
     ierr = check_option("-boot_from", bfset); CHKERRQ(ierr);
@@ -56,10 +60,6 @@ int main(int argc, char *argv[]) {
       vector<string> required;  required.clear();
       ierr = show_usage_check_req_opts(com, "pismd", required, usage.c_str()); CHKERRQ(ierr);
     }
-
-
-    ierr = verbPrintf(2,com, "PISMD %s (diagnostic velocity computation mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
 
     // re this option, see  src/eismint/iceROSSModel.hh|cc and:
     //     D. MacAyeal and five others (1996). "An ice-shelf model test based on the 

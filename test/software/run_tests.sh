@@ -18,7 +18,7 @@ PATH=$PREFIX/bin:$PREFIX/util:$PATH
 # Get PISM version:
 # Note that 'cat' is here so that the whole output of pismr is read and no
 # "pipe is broken" error is generated:
-VERSION=`$MPIDO -n 1 pismr | cat | head -1 | sed -e "s/PISMR //; s/ (.\{1,\}//"`
+VERSION=`$MPIDO -n 1 pismr -pismversion | cat | head -1 | sed -e "s/PISMR //; s/ (.\{1,\}//"`
 
 # Print the summary title.
 print "Testing $SUBDIR $VERSION in $PREFIX."

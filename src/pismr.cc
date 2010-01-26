@@ -43,6 +43,10 @@ int main(int argc, char *argv[]) {
   {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
+    ierr = verbPrintf(2,com, "PISMR %s (basic evolution run mode)\n",
+		      PISM_Revision); CHKERRQ(ierr);
+    ierr = stop_on_version_option(); CHKERRQ(ierr);
+
     PetscTruth iset, bfset;
     ierr = check_option("-i", iset); CHKERRQ(ierr);
     ierr = check_option("-boot_from", bfset); CHKERRQ(ierr);
@@ -57,15 +61,12 @@ int main(int argc, char *argv[]) {
       "  * if -boot_from is used then in fact '-Mx A -My B -Mz C -Lz D' is also required\n";
     if ((iset == PETSC_FALSE) && (bfset == PETSC_FALSE)) {
       ierr = PetscPrintf(com,
-         "PISM ERROR: one of options -i,-boot_from is required\n\n"); CHKERRQ(ierr);
+         "\nPISM ERROR: one of options -i,-boot_from is required\n\n"); CHKERRQ(ierr);
       ierr = show_usage_and_quit(com, "pismr", usage.c_str()); CHKERRQ(ierr);
     } else {
       vector<string> required;  required.clear();
       ierr = show_usage_check_req_opts(com, "pismr", required, usage.c_str()); CHKERRQ(ierr);
     }
-
-    ierr = verbPrintf(2,com, "PISMR %s (basic evolution run mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
 
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);

@@ -48,6 +48,10 @@ int main(int argc, char *argv[]) {
   {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
+    ierr = verbPrintf(2, com, "PISMV %s (verification mode)\n",
+		      PISM_Revision); CHKERRQ(ierr);
+    ierr = stop_on_version_option(); CHKERRQ(ierr);
+
     vector<string> required;
     required.push_back("-test");
     ierr = show_usage_check_req_opts(com, "pismv", required,
@@ -57,9 +61,6 @@ int main(int argc, char *argv[]) {
       "  -no_report  do not give error report at end of run\n"
       "  -eo         do not do numerical run; exact solution only\n"
       ); CHKERRQ(ierr);
-
-    ierr = verbPrintf(2, com, "PISMV %s (verification mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
 
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);

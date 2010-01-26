@@ -46,6 +46,10 @@ int main(int argc, char *argv[]) {
   {    
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
+    ierr = verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
+		      PISM_Revision); CHKERRQ(ierr);
+    ierr = stop_on_version_option(); CHKERRQ(ierr);
+
     vector<string> required;
     required.clear(); // no actually required options; "-eisII A" is default
     ierr = show_usage_check_req_opts(com, "pisms", required,
@@ -67,9 +71,6 @@ int main(int argc, char *argv[]) {
         CHKERRQ(ierr);
       PetscEnd();
     }
-
-    ierr = verbPrintf(2,com, "PISMS %s (simplified geometry mode)\n",
-		      PISM_Revision); CHKERRQ(ierr);
 
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);

@@ -347,6 +347,20 @@ PetscErrorCode parse_times(MPI_Comm com, string str, vector<double> &result) {
 }
 
 
+PetscErrorCode stop_on_version_option() {
+  PetscErrorCode ierr;
+
+  PetscTruth vSet, pvSet;
+  ierr = check_option("-version", vSet); CHKERRQ(ierr);
+  ierr = check_option("-pismversion", pvSet); CHKERRQ(ierr);
+  if ((vSet == PETSC_FALSE) && (pvSet == PETSC_FALSE))
+    return 0;
+
+  PetscEnd();
+  return 0;
+}
+
+
 PetscErrorCode just_show_usage(
     MPI_Comm com, const char execname[], const char usage[]) {
   PetscErrorCode ierr;
@@ -374,6 +388,9 @@ PetscErrorCode just_show_usage(
 PetscErrorCode show_usage_and_quit(
     MPI_Comm com, const char execname[], const char usage[]) {
   PetscErrorCode ierr;
+
+  ierr = stop_on_version_option(); CHKERRQ(ierr);
+
   ierr = just_show_usage(com, execname, usage); CHKERRQ(ierr);
   PetscEnd();
   return 0;
@@ -385,7 +402,9 @@ PetscErrorCode show_usage_check_req_opts(
     MPI_Comm com, const char execname[], vector<string> required_options,
     const char usage[]) {
   PetscErrorCode ierr;
-  
+
+  ierr = stop_on_version_option(); CHKERRQ(ierr);
+
   PetscTruth usageSet;
   ierr = check_option("-usage", usageSet); CHKERRQ(ierr);
   if (usageSet == PETSC_TRUE) {

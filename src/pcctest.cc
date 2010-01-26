@@ -220,6 +220,11 @@ int main(int argc, char *argv[]) {
   {
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
+    ierr = verbPrintf(2,
+      com,"PCCTEST %s (test of PISMClimateCoupler offline from IceModel)\n",
+      PISM_Revision); CHKERRQ(ierr);
+    ierr = stop_on_version_option(); CHKERRQ(ierr);
+
     vector<string> required;
     required.push_back("-i");
     required.push_back("-o");
@@ -239,10 +244,6 @@ int main(int argc, char *argv[]) {
       "  -co        apply PISMConstOceanCoupler\n"
       "  -greenland apply PISMGreenlandAtmosCoupler\n"
       ); CHKERRQ(ierr);
-
-    ierr = verbPrintf(2,
-      com,"PCCTEST %s (test of PISMClimateCoupler offline from IceModel)\n",
-      PISM_Revision); CHKERRQ(ierr);
     
     char inname[PETSC_MAX_PATH_LEN], outname[PETSC_MAX_PATH_LEN];
     IceGrid grid(com, rank, size);
