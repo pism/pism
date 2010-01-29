@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -67,6 +67,18 @@ int IceModel::endOfTimeStepHook() {
        file_name);
     pism_signal = 0;
     dumpToFile(file_name);
+
+    // flush all the time-series buffers:
+    vector<DiagnosticTimeseries*>::iterator i;
+    for (i = timeseries.begin(); i < timeseries.end(); ++i) {
+      (*i)->flush();
+    }
+  }
+
+  if (pism_signal == SIGUSR2) {
+    verbPrintf(1, grid.com, 
+       "\ncaught signal SIGUSR2:  Flushing time series.\n\n");
+    pism_signal = 0;
 
     // flush all the time-series buffers:
     vector<DiagnosticTimeseries*>::iterator i;

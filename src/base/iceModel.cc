@@ -40,6 +40,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   pism_signal = 0;
   signal(SIGTERM, pism_signal_handler);
   signal(SIGUSR1, pism_signal_handler);
+  signal(SIGUSR2, pism_signal_handler);
 
   doAdaptTimeStep = PETSC_TRUE;
   basal = NULL;
@@ -405,8 +406,6 @@ PetscErrorCode IceModel::step(bool do_mass_conserve,
 			      bool do_plastic_till) {
   PetscErrorCode ierr;
 
-  //  ierr = variables.check_for_nan(); CHKERRQ(ierr);
-
   ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
 
   // ask climate couplers what the maximum time-step should be
@@ -511,6 +510,8 @@ PetscErrorCode IceModel::step(bool do_mass_conserve,
   char tempstr[5];  snprintf(tempstr,5," %c", adaptReasonFlag);
   stdout_flags += tempstr;
 
+  //  ierr = variables.check_for_nan(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -573,6 +574,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
 	      do_skip, do_bed_deformation, do_plastic_till); CHKERRQ(ierr);
 
   // re-initialize the model:
+  global_attributes.set_string("history", "");
   ierr = model_state_setup(); CHKERRQ(ierr);
   grid.year = grid.start_year;
   grid.end_year = end_year;

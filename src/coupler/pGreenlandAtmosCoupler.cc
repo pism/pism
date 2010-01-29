@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2009 Ed Bueler, Constantine Khroulev, Gudfinna Adalgeirsdottir, and Andy Aschwanden
+// Copyright (C) 2008-2010 Ed Bueler, Constantine Khroulev, Gudfinna Adalgeirsdottir, and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -312,7 +312,7 @@ The default method here is the Fausto et al parameterization scheme
 appropriate to the Greenland ice sheet.  The parameterization depends linearly
 on surface elevation, latitude, and longitude.
   
-See formulas (1) and (2) and Table 3 in \ref Faustoetal2009.
+See formulas (1) and (2) and Table 3 in [\ref Faustoetal2009].
   
 The default values for lapse rates, which are stored in src/pism_config.cdl, use values 
 from the lines 'Best annual fit: This study with \f$\kappa_{\text{ma}}\f$' 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -200,7 +200,7 @@ PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
 }
 
 
-//! Compute the integrand in integral (6) in \ref CalovGreve05 .
+//! Compute the integrand in integral (6) in [\ref CalovGreve05].
 /*!
 The integral is
    \f[\mathrm{PDD} = \int_{t_0}^{t_0+\mathtt{dt}} dt\,

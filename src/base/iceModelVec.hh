@@ -168,7 +168,6 @@ public:
   PetscErrorCode  setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN);
   PetscErrorCode  setColumn(PetscInt i, PetscInt j, PetscScalar c);
   PetscErrorCode  getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsOUT);
-
   PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscInt nlevels, 
 				 PetscScalar *levelsIN, PetscScalar *valsIN);
   PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscInt nlevels, 
@@ -230,6 +229,7 @@ public:
   PetscErrorCode view_surface(IceModelVec2 &thickness, Vec g2, PetscInt viewer_size);
   PetscErrorCode view_horizontal_slice(PetscScalar level, Vec g2, PetscInt viewer_size);
   PetscErrorCode view_sounding(int i, int j, PetscInt viewer_size);
+  virtual PetscErrorCode  has_nan();
 
 protected:  
   virtual PetscErrorCode  destroy();

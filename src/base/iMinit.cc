@@ -356,6 +356,8 @@ PetscErrorCode IceModel::model_state_setup() {
   ierr = initBasalTillModel(); CHKERRQ(ierr);
 #endif
 
+  ierr = stampHistoryCommand(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -509,14 +511,23 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = init_extras(); CHKERRQ(ierr);
   ierr = init_viewers(); CHKERRQ(ierr);
 
-  ierr = stampHistoryCommand(); CHKERRQ(ierr);
-
   // by now we already know if SSA velocities in the output will be valid:
   global_attributes.set_flag("pism_ssa_velocities_are_valid",
 			     config.get_flag("use_ssa_velocity"));
 
 #if 1
   // allocate and setup bed deformation model
+
+  // FIXME: this should be moved to IceModel::model_state_setup(), but it uses
+  // IceModel::g2, the internal global Vec allocated in
+  // IceModel::allocate_internal_objects(), which is called after
+  // model_state_setup().
+
+  // g2 has only two uses (scatters to processor zero for the bed deformation
+  // model and diagnostic viewers) and we should get rid of it. One solution
+  // would be: a) modularize the bed deformation code so that memory
+  // allocation is separated from the bed uplift pre-initialization and b) make
+  // IceModelVec2s allocate their own Vecs for viewing.
   ierr = bedDefSetup(); CHKERRQ(ierr);
 #endif
 

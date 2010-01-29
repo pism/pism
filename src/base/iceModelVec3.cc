@@ -298,11 +298,20 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(PetscInt i, PetscInt j, PetscScalar
 
   PetscScalar ***arr = (PetscScalar***) array;
 
-  star->ij  = arr[i][j][kbz]   + incr * (arr[i][j][kbz + 1]   - arr[i][j][kbz]);
-  star->ip1 = arr[i+1][j][kbz] + incr * (arr[i+1][j][kbz + 1] - arr[i+1][j][kbz]);
-  star->im1 = arr[i-1][j][kbz] + incr * (arr[i-1][j][kbz + 1] - arr[i-1][j][kbz]);
-  star->jp1 = arr[i][j+1][kbz] + incr * (arr[i][j+1][kbz + 1] - arr[i][j+1][kbz]);
-  star->jm1 = arr[i][j-1][kbz] + incr * (arr[i][j-1][kbz + 1] - arr[i][j-1][kbz]);
+  if (kbz < grid->Mz - 1) {
+    star->ij  = arr[i][j][kbz]   + incr * (arr[i][j][kbz + 1]   - arr[i][j][kbz]);
+    star->ip1 = arr[i+1][j][kbz] + incr * (arr[i+1][j][kbz + 1] - arr[i+1][j][kbz]);
+    star->im1 = arr[i-1][j][kbz] + incr * (arr[i-1][j][kbz + 1] - arr[i-1][j][kbz]);
+    star->jp1 = arr[i][j+1][kbz] + incr * (arr[i][j+1][kbz + 1] - arr[i][j+1][kbz]);
+    star->jm1 = arr[i][j-1][kbz] + incr * (arr[i][j-1][kbz + 1] - arr[i][j-1][kbz]);
+  } else {
+    star->ij  = arr[i][j][kbz];
+    star->ip1 = arr[i+1][j][kbz];
+    star->im1 = arr[i-1][j][kbz];
+    star->jp1 = arr[i][j+1][kbz];
+    star->jm1 = arr[i][j-1][kbz];
+  }
+
   return 0;
 }
 
@@ -1038,6 +1047,33 @@ PetscErrorCode IceModelVec3Bedrock::view_sounding(int i, int j, PetscInt viewer_
   ierr = var1.to_glaciological_units(sounding_buffer); CHKERRQ(ierr);
 
   ierr = VecView(sounding_buffer, (*sounding_viewers)[name]); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode  IceModelVec3::has_nan() {
+  PetscErrorCode ierr;
+  vector<PetscScalar> V;
+  V.resize(grid->Mz);
+  PetscScalar *tmp = &V[0];
+
+  ierr = begin_access(); CHKERRQ(ierr);
+  PetscInt i, j, k;
+  for (i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (j=grid->ys; j<grid->ys+grid->ym; ++j) {
+      ierr = getInternalColumn(i, j, &tmp); CHKERRQ(ierr);
+      for (k = 0; k < grid->Mz; k++) {
+	if (gsl_isnan(tmp[k])) {
+	  ierr = PetscSynchronizedPrintf(grid->com, "IceModelVec3 %s: NAN at i = %d, j = %d\n",
+					 name.c_str(), i, j); CHKERRQ(ierr);
+	  break;
+	}
+      }
+    }
+  }
+  ierr = end_access(); CHKERRQ(ierr);
+
+  ierr = PetscSynchronizedFlush(grid->com); CHKERRQ(ierr);
 
   return 0;
 }
