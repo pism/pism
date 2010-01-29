@@ -399,7 +399,7 @@ PetscErrorCode IceModel::set_vars_from_options() {
   Rationale: all the physical parameters should be initialized before setting
   up the coupling or filling model-state variables.
 
-  In the base class we just initialize the IceFlowLaw and the shelf extension.
+  In the base class we just initialize the IceFlowLaw.
 
   Also, this is the good place for setting parameters that a user should not be
   able to override using a command-line option.
@@ -408,7 +408,7 @@ PetscErrorCode IceModel::init_physics() {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(3, grid.com,
-		    "Initializing IceFlowLaw and shelfExtension...\n"); CHKERRQ(ierr);
+		    "Initializing IceFlowLaw ...\n"); CHKERRQ(ierr);
 
   ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
   // Initialize the IceFlowLaw object:

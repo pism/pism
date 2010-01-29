@@ -43,7 +43,6 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
 
   doAdaptTimeStep = PETSC_TRUE;
   basal = NULL;
-  basalSIA = NULL;
   top0ctx = PETSC_NULL;
   g2natural = PETSC_NULL;
   CFLviolcount = 0;
@@ -94,7 +93,6 @@ IceModel::~IceModel() {
     delete (*i);
 
   delete basal;
-  delete basalSIA;
 
   delete ice;
   utTerm(); // Clean up after UDUNITS

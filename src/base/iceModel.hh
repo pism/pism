@@ -155,7 +155,6 @@ protected:
   IceFlowLawFactory     iceFactory;
   IceFlowLaw            *ice;
   IceBasalResistancePlasticLaw *basal;
-  BasalTypeSIA          *basalSIA;
   SSAStrengthExtension  ssaStrengthExtend;
 
   PISMAtmosphereCoupler *atmosPCC;

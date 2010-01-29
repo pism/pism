@@ -144,7 +144,7 @@ netcdf pism_config {
     pism_config:thk_eff_reduced_doc = "; factor by which basal water pressure is reduced by thickness effect";
 
     pism_config:mu_sliding = 0.0;
-    pism_config:mu_sliding_doc = "The sliding law parameter in SIA regions of the ice. <i>This kind of sliding is not recommended, which is why it is turned oﬀ by default.</i>";
+    pism_config:mu_sliding_doc = "The sliding law parameter in SIA regions of the ice. <i>This kind of sliding is not recommended, which is why it is turned oﬀ by default.</i>  See Appendix B of \ref BBssasliding for the dangers in this mechanism.";
 
     pism_config:bed_def_interval_years = 10.0;
     pism_config:bed_def_interval_years_doc = "years; Interval between bed deformation updates";

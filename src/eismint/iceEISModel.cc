@@ -272,8 +272,6 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
     expername); CHKERRQ(ierr);
 
   ierr = vbed.set(0.0);
-  ierr = vtillphi.set(config.get("default_till_phi")); CHKERRQ(ierr);
-
   if ((expername == 'I') || (expername == 'J')) {
     ierr = generateTroughTopography(); CHKERRQ(ierr);
   } 
@@ -291,6 +289,8 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
   ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
 
+  ierr = vtillphi.set(config.get("default_till_phi")); CHKERRQ(ierr);
+
   // if no -i file then starts with zero ice
   ierr = vh.set(0.0); CHKERRQ(ierr);
   ierr = vH.set(0.0); CHKERRQ(ierr);
@@ -303,9 +303,10 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
 }
 
 
-//! Reimplement IceModel::basalVelocitySIA().  Not a recommended mechanism.
+//! Reimplement IceModel::basalVelocitySIA().
 /*!
-Applies in SIA regions (mask = SHEET).  Is called in IceModel::basalSlidingHeatingSIA().
+Applies in SIA regions (mask = SHEET).  Generally not a recommended mechanism,
+but called-for in EISMINT II.
  */
 PetscScalar IceEISModel::basalVelocitySIA(
     PetscScalar /*x*/, PetscScalar /*y*/, PetscScalar H, PetscScalar T,

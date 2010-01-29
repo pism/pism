@@ -252,14 +252,6 @@ protected:
   PetscReal d_grain_size_stripped;
 };
 
-//! Class containing constitutive relation for till in SIA sliding law; NOT RECOMMENDED.
-class BasalTypeSIA {
-public:
-  virtual PetscScalar velocity(PetscScalar sliding_coefficient,
-                               PetscScalar stress);
-  virtual ~BasalTypeSIA() {}  // need virtual destructor because has virtual methods
-};
-
 
 //! Class containing physical constants and the constitutive relation describing till for SSA.
 /*!

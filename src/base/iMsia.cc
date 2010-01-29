@@ -346,16 +346,19 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
 //! Compute the basal sliding and frictional heating if (where) SIA sliding rule is used.
 /*!
-This routine is only called, by velocity(), if \f$\mu\f$=\c mu_sliding is non-zero.
+This routine is only called, by velocity(), if \f$\mu\f$=\c mu_sliding is
+non-zero.
 
 THIS KIND OF SIA SLIDING LAW IS A BAD IDEA.  THAT'S WHY \f$\mu\f$ IS SET TO 
-ZERO BY DEFAULT.
+ZERO BY DEFAULT.  See Appendix B of \ref BBssasliding for the dangers in this
+mechanism.
 
-This routine calls the SIA-type sliding law, which may return zero in the frozen base
-case; see basalVelocitySIA().  The basal sliding velocity is computed for all SIA 
-points.  This routine also computes the basal frictional heating.  The basal 
-velocity \c Vecs \c vub and \c vvb and the frictional heating \c Vec are fully 
-over-written.  Where the ice is floating, they all have value zero.  
+This routine calls the SIA-type sliding law, which may return zero in the
+frozen base case; see basalVelocitySIA().  The basal sliding velocity is
+computed for all SIA points.  This routine also computes the basal frictional
+heating.  The basal velocity \c Vecs \c vub and \c vvb and the frictional
+heating \c Vec are fully over-written.  Where the ice is floating, they all
+have value zero.  
 
 See correctBasalFrictionalHeating() for the SSA contribution.
  */
@@ -428,19 +431,21 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
 //! Average staggered-grid vertically-averaged horizontal velocity onto regular grid.
 /*! 
 At the end of velocitySIAStaggered() the vertically-averaged horizontal velocity 
-vuvbar[0],vuvbar[1] from deformation is known on the regular grid.  At the end of basalSIA()
-the basal sliding from an SIA-type sliding rule is in vub, vvb.  This procedure 
-averages the former onto the regular grid and adds the sliding velocity.
+components vuvbar[0],vuvbar[1] from deformation are known on the regular grid.
+At the end of basalSIA() the basal sliding from an SIA-type sliding rule is in
+vub, vvb.  This procedure averages the former onto the regular grid and adds
+the sliding velocity.
 
-That is, this procedure computes the SIA ``first guess'' at the vertically-averaged horizontal
-velocity.  Therefore the values in \c Vec\ s \c vubar, \c vvbar are merely tentative.  The 
-values in \c vuvbar are authoritative; these are PISM's estimate of \e deformation by shear
-in vertical planes.
+That is, this procedure computes the SIA "first guess" at the
+vertically-averaged horizontal velocity.  Therefore the values in \c Vec\ s
+\c vubar, \c vvbar are merely tentative.  The values in \c vuvbar are, however,
+PISM's estimate of \e deformation by shear in vertical planes.
 
-Note that communication of ghosted values must occur between velocitySIAStaggered() and this 
-procedure for the averaging to work.  Only two-dimensional regular grid velocities 
-are updated here.  The full three-dimensional velocity field is not updated here
-but instead in horizontalVelocitySIARegular() and in vertVelocityFromIncompressibility().
+Note that communication of ghosted values must occur between calling
+velocitySIAStaggered() and this procedure for the averaging to work.  Only
+two-dimensional regular grid velocities are updated here.  The full
+three-dimensional velocity field is not updated here but instead in
+horizontalVelocitySIARegular() and in vertVelocityFromIncompressibility().
  */
 PetscErrorCode IceModel::velocities2DSIAToRegular() {  
   PetscErrorCode ierr;
@@ -455,13 +460,14 @@ PetscErrorCode IceModel::velocities2DSIAToRegular() {
   if (mu_sliding == 0.0) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        // compute ubar,vbar on regular grid by averaging deformational on staggered grid
+        // compute ubar,vbar on regular grid by averaging deformational onto
+        //   staggered grid
         ubar[i][j] = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
         vbar[i][j] = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
       }
     }
   } else {
-    // this case is not recommended!  don't use -mu_sliding POSITIVE
+    // this case is not recommended!
     PetscScalar **ub, **vb;
     ierr = vub.get_array(ub); CHKERRQ(ierr);
     ierr = vvb.get_array(vb); CHKERRQ(ierr);
@@ -485,14 +491,14 @@ PetscErrorCode IceModel::velocities2DSIAToRegular() {
 
 //! Put the volume strain heating (dissipation heating) onto the regular grid.
 /*!
-At the end of velocitySIAStaggered() the volume strain-heating \f$\Sigma\f$ is available
-on the staggered grid.  This procedure averages it onto the regular grid.
+At the end of velocitySIAStaggered() the volume strain-heating \f$\Sigma\f$ is
+available on the staggered grid.  This procedure averages it onto the regular
+grid.  \f$\Sigma\f$ is used in the temperature equation.
 
-Note that communication of ghosted values of \c Vec \c vSigma must occur between 
+Communication of ghosted values of \c Vec \c vSigma must occur between 
 velocitySIAStaggered() and this procedure for the averaging to work.
  */
 PetscErrorCode IceModel::SigmaSIAToRegular() {
-  // average Sigma onto regular grid for use in the temperature equation
   PetscErrorCode  ierr;
   PetscScalar **H;
 
@@ -611,30 +617,33 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
 
 //! Compute the coefficient of surface gradient, for basal sliding velocity as a function of driving stress in SIA regions.
 /*!
-THIS KIND OF SIA SLIDING LAW IS A BAD IDEA IN A THERMOMECHANICALLY-COUPLED MODEL.
-THAT'S WHY \f$\mu\f$ IS SET TO ZERO BY DEFAULT.                
+THIS KIND OF SIA SLIDING LAW IS A BAD IDEA IN A THERMOMECHANICALLY-COUPLED
+MODEL.  THAT'S WHY \f$\mu\f$ IS SET TO ZERO BY DEFAULT.                
 
-In SIA regions a basal sliding law of the form
+In SIA regions (= MASK_SHEET) a basal sliding law of the form
   \f[ \mathbf{U}_b = (u_b,v_b) = - C \nabla h \f] 
-is allowed.  Here \f$\mathbf{U}_b\f$ is the horizontal velocity of the base of the ice
-(the "sliding velocity") and \f$h\f$ is the elevation of the ice surface.  This procedure 
-returns the \em positive coefficient \f$C\f$ in this relationship.  This coefficient can
-depend of the thickness, the basal temperature, and the horizontal location.
-
-This procedure is virtual and can be replaced by any derived class.
+is allowed.  Here \f$\mathbf{U}_b\f$ is the horizontal velocity of the base of
+the ice (the "sliding velocity") and \f$h\f$ is the elevation of the ice
+surface.  This procedure returns the \em positive \em coefficient \f$C\f$ in
+this relationship.  This coefficient can depend of the thickness, the basal
+temperature, and the horizontal location.
 
 The default version for IceModel here is location-independent 
-pressure-melting-temperature-activated linear sliding.  Here we pass
-\f$\mu\f$, which can be set by option \c -mu_sliding, and the pressure 
-at the base to BasalTypeSIA::velocity().
+pressure-melting-temperature-activated linear sliding.  See Appendix B of
+\ref BBssasliding for the dangers in this mechanism.
+
+Parameter \f$\mu\f$ can be set by option \c -mu_sliding.
 
 The returned coefficient is used in basalSlidingHeatingSIA().
+
+This procedure is virtual and can be replaced by any derived class.
  */
 PetscScalar IceModel::basalVelocitySIA(
                PetscScalar /*x*/, PetscScalar /*y*/, PetscScalar H, PetscScalar T,
                PetscScalar /*alpha*/, PetscScalar mu, PetscScalar min_T) const {
   if (T + ice->beta_CC_grad * H > min_T) {
-    return basalSIA->velocity(mu, ice->rho * standard_gravity * H);
+    const PetscScalar p_over = ice->rho * standard_gravity * H;
+    return mu * p_over;
   } else {
     return 0;
   }

@@ -42,16 +42,13 @@ PetscScalar IceModel::basalDragy(PetscScalar **tauc,
 
 //! Initialize the pseudo-plastic till mechanical model.
 /*! 
-See IceBasalResistancePlasticLaw and updateYieldStressFromHmelt() and getEffectivePressureOnTill()
-for model equations.  
+See IceBasalResistancePlasticLaw and updateYieldStressUsingBasalWater() and 
+getBasalWaterPressure() and diffuseHmelt() for important model equations.  
 
 Calls either invertSurfaceVelocities(), for one way to get a map of till friction angle
 \c vtillphi, or computePhiFromBedElevation() for another way, or leaves \c vtillphi
 unchanged.  First two of these are according to options \c -surf_vel_to_phi
 and \c -topg_to_phi, respectively.
-
-Also initializes a SIA-type sliding law, but use of that model is not recommended
-and is turned off by default.
  */
 PetscErrorCode IceModel::initBasalTillModel() {
   PetscErrorCode ierr;
@@ -66,9 +63,6 @@ PetscErrorCode IceModel::initBasalTillModel() {
   if (basal == NULL)
     basal = new IceBasalResistancePlasticLaw(plastic_regularization, do_pseudo_plastic_till, 
                                  pseudo_plastic_q, pseudo_plastic_uthreshold);
-
-  if (basalSIA == NULL)
-    basalSIA = new BasalTypeSIA();  // initialize it; USE NOT RECOMMENDED!
   
   if (use_ssa_velocity) {
     ierr = basal->printInfo(3,grid.com); CHKERRQ(ierr);

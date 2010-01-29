@@ -213,7 +213,6 @@ The vertical integral is computed by the trapezoid rule.
 PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   PetscErrorCode  ierr;
   const PetscScalar dx = grid.dx, dy = grid.dy;
-  const PetscInt    Mz = grid.Mz;
   bool include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity");
 
   ierr = u3.begin_access(); CHKERRQ(ierr);
@@ -221,7 +220,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   ierr = w3.begin_access(); CHKERRQ(ierr);
   ierr = vbasalMeltRate.begin_access(); CHKERRQ(ierr);
 
-  PetscScalar *u, *v, *w;
+  PetscScalar *w;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = w3.getInternalColumn(i,j,&w); CHKERRQ(ierr);
@@ -231,14 +230,12 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
         w[0] = 0.0;
       }
 
-      ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
-      ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
       planeStar uss, vss;
       ierr = u3.getPlaneStarZ(i,j,0.0,&uss);
       ierr = v3.getPlaneStarZ(i,j,0.0,&vss);
       PetscScalar OLDintegrand
              = (uss.ip1 - uss.im1) / (2.0*dx) + (vss.jp1 - vss.jm1) / (2.0*dy);
-      for (PetscInt k = 1; k < Mz; ++k) {
+      for (PetscInt k = 1; k < grid.Mz; ++k) {
         ierr = u3.getPlaneStarZ(i,j,grid.zlevels[k],&uss);
         ierr = v3.getPlaneStarZ(i,j,grid.zlevels[k],&vss);
         const PetscScalar NEWintegrand

@@ -771,10 +771,6 @@ PetscScalar HybridIceStripped::flow(PetscScalar stress, PetscScalar temp, PetscS
   return eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
 }
 
-PetscScalar BasalTypeSIA::velocity(PetscScalar sliding_coefficient,
-                                   PetscScalar stress) {
-  return sliding_coefficient * stress;
-}
 
 IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(
              PetscScalar regularizationConstant, bool pseudoPlastic,
