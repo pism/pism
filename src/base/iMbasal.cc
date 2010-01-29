@@ -188,36 +188,117 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
 }
 
 
-//! Compute effective pressure on till using effective thickness of stored till water.
+//! Compute modeled pressure in subglacial liquid water using thickness of water layer, and possibly the melt rate, at the base.
 /*!
-Uses ice thickness to compute overburden pressure.
+This procedure provides a simple model of basal water pressure \f$p_w\f$, which
+is modeled as a function of the thickness of the basal stored water plus 
+(optionally) the basal melt rate.
 
-Provides very simple model of pore water pressure:  Pore water pressure is assumed
-to be a fixed fraction of the overburden pressure.
+Input \c bwat is thickness of basal water.  Input \c bmr is the basal melt rate.
+Because both \c bwat and \c bmr are zero at points where base of ice is 
+below the pressure-melting temperature, the modeled basal water pressure is
+zero when the base is frozen.
 
-Note \c bwat is thickness of basal water.  It should be zero at points where
-base of ice is frozen.
+The inequality \c bwat \f$\le\f$ \c max_hmelt is required at input, and an
+error is thrown if not.
 
-Need \f$0 \le\f$ \c bwat \f$\le\f$ \c max_hmelt before calling this.  There is
-no error checking.
+Regarding the physics, compare the water pressure computed by formula (4) in
+[\ref Ritzetal2001], where the pressure is a function of sea level and bed
+elevation.  Also, the method using "elevation of the bed at the grounding line"
+as in [\ref LingleBrown1987] is not implementable because that elevation is
+at an unknowable location.  (We are not doing a flow line model!)
+
+Several options control the water pressure model:
+  - \c -[no_]\c bmr_enhance  toggle the basal melt rate dependency in water
+                           pressure; DEFAULT IS OFF
+  - \c -bmr_enhance_scale  sets the value; defaults to 0.10, since 10 cm/a is
+                           a significant enough level of basal melt rate to
+                           cause weakening effect for saturated till;
+                           argument is in m/a; must set \c -bmr_enhance for this
+                           to have effect
+  - \c -plastic_pwfrac     controls parameter till_pw_fraction
+  - \c -[no_]\c thk_eff    toggle the thickness effect: for smaller thicknesses there
+                           is a reduction in basal water pressure, a conceptual
+                           near-margin drainage mechanism; DEFAULT IS OFF
+  - \c -thk_eff_reduced    factor by which basal water pressure is reduced; default is
+                           0.97; must set \c -thk_eff for this to have effect
+  - \c -thk_eff_H_high     maximum thickness at which effect is applied; default
+                           is 2000 m; must set \c -thk_eff for this to have
+                           any effect
+  - \c -thk_eff_H_low      thickness at which thickness effect is full strength;
+                           default is 1000 m; must set \c -thk_eff for this to
+                           have any effect
+
+At several places in the code the effective pressure on the mineral part of the
+till is computed by these lines, which are recommended for this purpose:
+
+<code>
+  p_over = ice->rho * standard_gravity * thk;  // the pressure of the weight of the ice
+
+  p_eff  = p_over - getBasalWaterPressure(thk, bwat, bmr, frac, max_hmelt);
+</code>
  */
-PetscScalar IceModel::getEffectivePressureOnTill(
-      PetscScalar thk, PetscScalar bwat, PetscScalar /* bmr */,
-      PetscScalar till_pw_fraction, PetscScalar max_hmelt) const {
-  const PetscScalar  overburdenP = ice->rho * standard_gravity * thk;
-  return overburdenP * (1.0 - till_pw_fraction * (bwat / max_hmelt));
+PetscScalar IceModel::getBasalWaterPressure(PetscScalar thk, PetscScalar bwat,
+				            PetscScalar bmr, PetscScalar frac,
+				            PetscScalar max_hmelt) const {
+
+  if (bwat > max_hmelt) {
+    PetscPrintf(grid.com,
+      "PISM ERROR:  bwat exceeds max_hmelt in IceModel::getBasalWaterPressure()\n");
+    PetscEnd();
+  }
+
+  static const bool
+    usebmr        = config.get_flag("bmr_enhance_basal_water_pressure"),
+    usethkeff     = config.get_flag("thk_eff_basal_water_pressure");
+  static const PetscScalar
+    bmr_scale     = config.get("bmr_enhance_scale"),
+    thkeff_reduce = config.get("thk_eff_reduced"),
+    thkeff_H_high = config.get("thk_eff_H_high"),
+    thkeff_H_low  = config.get("thk_eff_H_low");
+
+  // the model; note  0 <= p_pw <= frac * p_overburden
+  //   because  0 <= bwat <= max_hmelt
+  const PetscScalar p_overburden = ice->rho * standard_gravity * thk;
+  PetscScalar  p_pw = frac * (bwat / max_hmelt) * p_overburden;
+
+  if (usebmr) {
+    // add to pressure from instantaneous basal melt rate;
+    //   note  (additional) <= (1.0 - frac) * p_overburden so
+    //   0 <= p_pw <= p_overburden
+    p_pw += ( 1.0 - exp( - PetscMax(0.0,bmr) / bmr_scale ) )
+            * (1.0 - frac) * p_overburden;
+  }
+
+  if (usethkeff) {
+    // ice thickness is surrogate for distance to margin; near margin the till
+    //   is presumably better drained so we reduce the water pressure
+    if (thk < thkeff_H_high) {
+      if (thk <= thkeff_H_low) {
+        p_pw *= thkeff_reduce;
+      } else {
+        // case Hlow < thk < Hhigh; use linear to connect (Hlow, reduced * p_pw)
+        //   to (Hhigh, 1.0 * p_w)
+        p_pw *= thkeff_reduce
+                + (1.0 - thkeff_reduce)
+                    * (thk - thkeff_H_low) / (thkeff_H_high - thkeff_H_low);
+      }
+    }
+  }
+
+  return p_pw;
 }
 
 
 //! Update the till yield stress for the pseudo-plastic till SSA model.
 /*!
-Updates based on stored till water and basal melt rate.  We implement
+Updates based on modeled basal water pressure.  We implement
 formula (2.4) in [\ref SchoofStream],
     \f[   \tau_c = \mu (\rho g H - p_w), \f]
 where \f$\tau_c\f$ is the till yield stress, \f$\rho g H\f$ is the ice over-burden
 pressure (in the shallow approximation), \f$p_w\f$ is the modeled
-pore water pressure, and \f$\mu\f$ is a strength coefficient for the mineral till
-(at least, it is independent of \f$p_w\f$).  The difference
+pore (=basal) water pressure, and \f$\mu\f$ is a strength coefficient for the
+mineral till (at least, it is independent of \f$p_w\f$).  The difference
     \f[   N = \rho g H - p_w   \f]
 is the effective pressure on the till.
  
@@ -228,9 +309,9 @@ and by expressing the coefficient as the tangent of a till friction angle
 See [\ref Paterson] table 8.1) regarding values of \f$c_0\f$.
 Option  \c -plastic_c0 controls it.
 
-The main modeling issue with this is the model for pore water pressure \f$p_w\f$ when
-computing \f$N\f$.  See getEffectivePressureOnTill().  See also [\ref BBssasliding]
-for a discussion of a complete model using these tools.
+The major concern with this is the model for basal water pressure \f$p_w\f$.  
+See getBasalWaterPressure().  See also [\ref BBssasliding] for a discussion
+of a complete model using these tools.
 
 Note that IceModel::updateSurfaceElevationAndMask() also
 checks whether do_plastic_till is true and if so it sets all mask points to
@@ -264,9 +345,11 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
         } else if (vH(i,j) == 0.0) {
           vtauc(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice
         } else { // grounded and there is some ice
-          const PetscScalar N = getEffectivePressureOnTill(
-                                    vH(i,j), vHmelt(i,j), vbasalMeltRate(i,j),
-                                    till_pw_fraction, max_hmelt);
+          const PetscScalar
+            p_over = ice->rho * standard_gravity * vH(i,j),
+            p_w    = getBasalWaterPressure(vH(i,j), vHmelt(i,j),
+                       vbasalMeltRate(i,j), till_pw_fraction, max_hmelt),
+            N      = p_over - p_w;  // effective pressure on till
           if (useConstantTillPhi == PETSC_TRUE) {
             vtauc(i,j) = till_c_0 + N * till_mu;
           } else {

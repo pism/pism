@@ -811,7 +811,8 @@ PetscErrorCode IceModel::removeSIApart() {
 PetscErrorCode IceModel::getEffectivePressureForInverse() {
   PetscErrorCode ierr;
 
-  PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
+  const PetscScalar
+    till_pw_fraction = config.get("till_pw_fraction"),
     max_hmelt = config.get("max_hmelt");
 
   PetscScalar **N, **H, **Hmelt, **bmr;
@@ -821,9 +822,11 @@ PetscErrorCode IceModel::getEffectivePressureForInverse() {
   ierr = vbasalMeltRate.get_array(bmr);  CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      N[i][j] = getEffectivePressureOnTill(
-                   H[i][j], Hmelt[i][j], bmr[i][j],
-		   till_pw_fraction, max_hmelt); // iMbasal.cc
+      const PetscScalar
+        p_over = ice->rho * standard_gravity * H[i][j],
+        p_w    = getBasalWaterPressure(H[i][j], Hmelt[i][j],
+                       bmr[i][j], till_pw_fraction, max_hmelt);
+      N[i][j] = p_over - p_w;  // effective pressure on till
     }
   }
   ierr = vH.end_access();  CHKERRQ(ierr);

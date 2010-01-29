@@ -26,20 +26,7 @@
 IceEnthalpyModel::IceEnthalpyModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : IceModel(g, conf, conf_overrides) {
 
-  doColdIceMethods = PETSC_FALSE;     // default is to actually use enthalpy for a polythermal model
-
-  bmr_in_pore_pressure = PETSC_FALSE; // default to bwat-only model for pore water pressure
-  bmr_enhance_scale = 0.10 / secpera; // default to say that basal melt rate must be on order of
-                                      //   10 cm/a to start making major difference in pore pressure
-
-  thk_affects_pore_pressure = PETSC_FALSE; // default is that basal water weakening of till
-                                           //   (from increased pore water pressure) is un-affected
-                                           //   by ice thickness, which is a surrogate for distance 
-                                           //   to margin
-  margin_pore_pressure_H_high  = 2000.0; // defaults for the mechanism in
-  margin_pore_pressure_H_low   = 1000.0; //   getEffectivePressureOnTill() which reduces
-  margin_pore_pressure_reduced = 0.97;  //   pore pressure near margin; H_high, H_low are thicknesses
-
+  doColdIceMethods = PETSC_FALSE; // default is to USE enthalpy for a polythermal model
 }
 
 
@@ -52,34 +39,6 @@ PetscErrorCode IceEnthalpyModel::setFromOptions() {
   //   ice is cold
   ierr = check_option("-cold", doColdIceMethods); CHKERRQ(ierr);
 
-  // if set, add function of instantaneous basal melt rate to pore water pressure
-  //   computed by the usual model, which is a function of stored till water thickness
-  ierr = check_option("-bmr_enhance", bmr_in_pore_pressure); CHKERRQ(ierr);
-  // bmr_enhance_scale is set by giving a basal melt rate in m a-1
-  //   this amount of basal melt is then a scale for the basal melt rate
-  //   weakening effect from -bmr_enhance;
-  //   if -bmr_enhance_scale is set to some value, then bmr_in_pore_pressure
-  //   is set to true;  default is "-bmr_enhance_scale 0.10";
-  //   see getEffectivePressureOnTill()
-  PetscScalar bmres;
-  PetscTruth  bmres_set;
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-bmr_enhance_scale", &bmres, 
-                             &bmres_set);  CHKERRQ(ierr);
-  if (bmres_set == PETSC_TRUE) {
-    bmr_in_pore_pressure = PETSC_TRUE;
-    bmr_enhance_scale = bmres / secpera;
-  }
-
-  // if set, makes the thickness affect the pore_pressure; near margin there
-  //   is a reduction in pore pressure, a conceptual drainage mechanism
-  ierr = check_option("-thk_eff", thk_affects_pore_pressure); CHKERRQ(ierr);
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-margin_reduced",
-                             &margin_pore_pressure_reduced, PETSC_NULL);  CHKERRQ(ierr);
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-margin_H_high", 
-                             &margin_pore_pressure_H_high, PETSC_NULL);  CHKERRQ(ierr);
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-margin_H_low",
-                             &margin_pore_pressure_H_low, PETSC_NULL);  CHKERRQ(ierr);
-
   // DEBUG:  report settings
   const int vlevel = 2;
   ierr = verbPrintf(vlevel, grid.com,
@@ -88,27 +47,13 @@ PetscErrorCode IceEnthalpyModel::setFromOptions() {
       "    doColdIceMethods is %s\n", (doColdIceMethods == PETSC_TRUE) ? "TRUE" : "FALSE");
       CHKERRQ(ierr);
   ierr = verbPrintf(vlevel, grid.com,
-      "    bmr_in_pore_pressure is %s\n", (bmr_in_pore_pressure == PETSC_TRUE) ? "TRUE" : "FALSE");
+      "    config:bmr_enhance_basal_water_pressure is %s\n",
+      config.get_flag("bmr_enhance_basal_water_pressure") ? "TRUE" : "FALSE");
       CHKERRQ(ierr);
-  if (bmr_in_pore_pressure == PETSC_TRUE) {
-    ierr = verbPrintf(vlevel, grid.com,
-      "      bmr_enhance_scale = %f m a-1\n", bmr_enhance_scale * secpera);
-      CHKERRQ(ierr);
-  }
   ierr = verbPrintf(vlevel, grid.com,
-      "    thk_affects_pore_pressure is %s\n", (thk_affects_pore_pressure == PETSC_TRUE) ? "TRUE" : "FALSE");
+      "    config:thk_eff_basal_water_pressure is %s\n",
+      config.get_flag("thk_eff_basal_water_pressure") ? "TRUE" : "FALSE");
       CHKERRQ(ierr);
-  if (thk_affects_pore_pressure == PETSC_TRUE) {
-    ierr = verbPrintf(vlevel, grid.com,
-      "      margin_pore_pressure_reduced = %f\n", margin_pore_pressure_reduced);
-      CHKERRQ(ierr);
-    ierr = verbPrintf(vlevel, grid.com,
-      "      margin_pore_pressure_H_high = %f m\n", margin_pore_pressure_H_high);
-      CHKERRQ(ierr);
-    ierr = verbPrintf(vlevel, grid.com,
-      "      margin_pore_pressure_H_low = %f m\n", margin_pore_pressure_H_low);
-      CHKERRQ(ierr);
-  }
 
   return 0;
 }
@@ -328,18 +273,6 @@ PetscErrorCode IceEnthalpyModel::write_extra_fields(const char* filename) {
      "ice enthalpy; temporary space during timestep",
      "J kg-1",
      ""); CHKERRQ(ierr);
-
-  // also write bfrict = friction heating, in units mW m-2 like geothermal heat
-  ierr = verbPrintf(4, grid.com,
-      "  writing basal frictional heating 'bfrict' ...\n"); CHKERRQ(ierr);
-  ierr = vRb.write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-#if 0
-  // also write bmelt = ice basal melt rate in m a-1
-  ierr = verbPrintf(4, grid.com,
-      "  writing ice basal melt rate 'bmelt' ...\n"); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.write(filename, NC_FLOAT); CHKERRQ(ierr);
-#endif
 
   return 0;
 }
@@ -1138,75 +1071,4 @@ PetscErrorCode IceEnthalpyModel::drainageToBaseModelEnth(EnthalpyConverter &EC,
 
   return 0;
 }
-
-
-//! Compute effective pressure on till using thickness of stored till water and basal melt rate.
-/*!
-The effective pressure on the till is 
-    \f[   N = \rho g H - p_w   \f]
-where \f$\rho g H\f$ is the ice over-burden pressure (in the shallow approximation),
-and  \f$p_w\f$ is the modeled pore water pressure.
-
-This procedure provides a simple model of pore water pressure \f$p_w\f$.  It is
-a function of the thickness of the basal stored water plus (optionally)
-of the basal melt rate.
-
-Input \c bwat is thickness of basal water.  Input \c bmr is the basal melt rate.
-Because both \c bwat and \c bmr are zero at points where base of ice is frozen,
-the resulting effective pressure on the till, from this routine, equals
-the overburden pressure.
-
-Option \c -plastic_pwfrac controls parameter till_pw_fraction.
-
-Option \c -bmr_enhance turns on the basal melt rate dependency in pore pressure.
-Option \c -bmr_enhance_scale sets the value.  Default is equivalent to
-\c -bmr_enhance_scale 0.10, for 10 cm/a as a significant enough level of
-basal melt rate to cause a big weakening effect.
-
-Need \f$0 \le\f$ \c bwat \f$\le\f$ \c max_hmelt before calling this.  There is
-no error checking.
-
-Compare the porewater pressure computed by formula (4) in [\ref Ritzetal2001],
-where the pressure is a function of sea level and bed elevation.
-Also, the method using "elevation of the bed at the grounding line"
-as in Lingle&Brown 1987 is not implementable because that elevation is
-at an unknowable location.  We are not doing a flow line model!
- */
-PetscScalar IceEnthalpyModel::getEffectivePressureOnTill(PetscScalar thk, PetscScalar bwat,
-							 PetscScalar bmr, PetscScalar frac,
-							 PetscScalar max_hmelt) const {
-
-  const PetscScalar
-    p_overburden = ice->rho * standard_gravity * thk;
-
-  // base model for pore water pressure;  note  0 <= p_pw <= frac * p_overburden
-  //   because  0 <= bwat <= max_hmelt
-  PetscScalar  p_pw = frac * (bwat / max_hmelt) * p_overburden;
-
-  if (bmr_in_pore_pressure) {
-    // more weakening from instantaneous basal melt rate; additional
-    //   pore water pressure means reduction of effective pressure and of tau_c
-    //   note  (additional) <= (1.0 - frac) * p_overburden so  0 <= p_pw <= p_overburden
-    p_pw += ( 1.0 - exp( - PetscMax(0.0,bmr) / bmr_enhance_scale ) ) * (1.0 - frac) * p_overburden;
-  }
-
-  if (thk_affects_pore_pressure) {
-    // ice thickness is surrogate for distance to margin; near margin the till
-    //   is presumably better drained so we reduce the pore pressure
-    const PetscScalar re    = margin_pore_pressure_reduced,
-                      Hhigh = margin_pore_pressure_H_high,
-                      Hlow  = margin_pore_pressure_H_low;
-    if (thk < Hhigh) {
-      if (thk <= Hlow) {
-        p_pw *= re;
-      } else { // case Hlow < thk < Hhigh;
-               //   use linear to connect (Hlow, reduced * p_pw) to (Hhigh, 1.0 * p_w)
-        p_pw *= re + (1.0 - re) * (thk - Hlow) / (Hhigh - Hlow);
-      }
-    }
-  }
-
-  return p_overburden - p_pw;
-}
-
 

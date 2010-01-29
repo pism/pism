@@ -257,15 +257,16 @@ protected:
   // see iMbasal.cc: all relate to grounded SSA
   virtual PetscErrorCode initBasalTillModel();
   virtual PetscErrorCode computePhiFromBedElevation();
-  virtual PetscScalar    getEffectivePressureOnTill(
-            PetscScalar thk, PetscScalar bwat, PetscScalar bmr,
-            PetscScalar till_pw_fraction, PetscScalar max_hmelt) const;
+  virtual PetscScalar    getBasalWaterPressure(
+                           PetscScalar thk, PetscScalar bwat, PetscScalar bmr,
+                           PetscScalar frac, PetscScalar max_hmelt) const;
   virtual PetscErrorCode updateYieldStressUsingBasalWater();
-  virtual PetscScalar basalDragx(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
-                                 PetscInt i, PetscInt j) const;
-  virtual PetscScalar basalDragy(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
-                                 PetscInt i, PetscInt j) const;
-
+  virtual PetscScalar    basalDragx(
+                           PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
+                           PetscInt i, PetscInt j) const;
+  virtual PetscScalar    basalDragy(
+                           PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
+                           PetscInt i, PetscInt j) const;
   virtual PetscErrorCode diffuseHmelt();
 
   // see iMbeddef.cc

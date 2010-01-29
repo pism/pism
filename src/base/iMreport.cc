@@ -766,13 +766,27 @@ PetscErrorCode IceModel::compute_bwp(IceModelVec2 &result) {
   const PetscScalar
     alpha     = config.get("till_pw_fraction"),
     wmax      = config.get("max_hmelt"),
-    g         = config.get("standard_gravity"),
-    rho       = config.get("ice_density"),
     fillval   = -1.0;
 
-  // compute pressure where grounded using vHmelt
-  ierr = vH.multiply_by(vHmelt, result); CHKERRQ(ierr);
-  ierr = result.scale((alpha / wmax) * rho * g); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vHmelt.begin_access(); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (vH(i,j) > 0.0) {
+        result(i,j) = getBasalWaterPressure(
+                        vH(i,j), vHmelt(i,j), vbasalMeltRate(i,j), alpha, wmax);
+      } else { // put negative value below valid range
+        result(i,j) = fillval;
+      }
+    }
+  }
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vHmelt.end_access(); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+
   ierr = vMask.fill_where_floating(result, fillval); CHKERRQ(ierr);
 
   ierr = result.set_name("bwp"); CHKERRQ(ierr);

@@ -80,18 +80,10 @@ protected:
                 PetscScalar thickness, PetscScalar z, PetscScalar dz,
                 PetscScalar &enthalpy, PetscScalar &Hmelt);
 
-  using IceModel::getEffectivePressureOnTill;
-  virtual PetscScalar getEffectivePressureOnTill(
-                PetscScalar thk, PetscScalar bwat, PetscScalar bmr,
-		PetscScalar till_pw_frac, PetscScalar max_hmelt) const;
-
-protected: // new data members
-  IceModelVec3  EnthNew3;  // NOTE:  Enth3 is an IceModel member, uninitialized and unused within IceModel
-  
-  PetscTruth    bmr_in_pore_pressure, thk_affects_pore_pressure;
-  PetscScalar   bmr_enhance_scale, margin_pore_pressure_reduced,
-                margin_pore_pressure_H_high, margin_pore_pressure_H_low;
+protected:
+  IceModelVec3  EnthNew3;  // NOTE:  Enth3 is an IceModel member, uninitialized
+                           //        and unused within IceModel
 };
 
-#endif
+#endif  // __iceEnthalpyModel_hh
 
