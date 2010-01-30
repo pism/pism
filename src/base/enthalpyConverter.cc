@@ -23,7 +23,6 @@
 
 EnthalpyConverter::EnthalpyConverter(const NCConfigVariable &config) {
   beta  = config.get("beta_CC");                                 // K Pa-1
-  c_b   = config.get("bedrock_thermal_specific_heat_capacity");  // J kg-1 K-1
   c_i   = config.get("ice_specific_heat_capacity");              // J kg-1 K-1
   g     = config.get("standard_gravity");			 // m s-2
   L     = config.get("water_latent_heat_fusion");                // J kg-1
@@ -33,7 +32,7 @@ EnthalpyConverter::EnthalpyConverter(const NCConfigVariable &config) {
 }
 
 
-//! Simple view of state of EnthalpyConverter.  Give NULL to get stdout.
+//! Simple view of state of EnthalpyConverter.  viewer==NULL sends to stdout.
 PetscErrorCode EnthalpyConverter::viewConstants(PetscViewer viewer) const {
   PetscErrorCode ierr;
 
@@ -48,8 +47,6 @@ PetscErrorCode EnthalpyConverter::viewConstants(PetscViewer viewer) const {
     "\n<showing EnthalpyConverter constants:\n"); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
       "   beta  = %12.5e (K Pa-1)\n",    beta); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "   c_b   = %12.5f (J kg-1 K-1)\n",c_b); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
       "   c_i   = %12.5f (J kg-1 K-1)\n",c_i); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
@@ -313,34 +310,5 @@ PetscErrorCode EnthalpyConverter::getEnthAtWaterFraction(
   const PetscScalar E_s = getEnthalpyCTS(p);
   E = E_s + omega * L;
   return 0;
-}
-
-
-//! Compute enthalpy from absolute temperature within the bedrock.  The enthalpy scale is separate from that in ice.
-/*!
-If \f$c_b\f$ is the specific heat capacity of the bedrock then we compute and return
-  \f[ E = c_b T \f]
-where \f$T\f$ is the temperature at level \f$z<0\f$ in the bedrock.
-
-Input temperatures are assumed to be absolute (not pressure-adjusted).
-
-Checks that \f$T > 0\f$ and returns error if not.
- */
-PetscErrorCode EnthalpyConverter::getEnthBedrock(double T, double &E) const {
-  if (T <= 0.0) {
-    SETERRQ1(1,"\n\nT = %f <= 0 is not a valid absolute temperature\n\n",T);
-  }
-  E = c_b * T;
-  return 0;
-}
-
-
-//! Inverse function from getEnthBedrock().
-/*!
-In same notation as for getEnthBedrock(),
-  \f[ T = \frac{E}{c_b}.\f]
- */
-double EnthalpyConverter::getAbsTempBedrock(double E) const {
-  return E / c_b;
 }
 

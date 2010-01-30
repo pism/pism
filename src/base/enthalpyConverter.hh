@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2010 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 #include "NCVariable.hh"
 
-//! Converts enthalpy to-and-from temperature and water content.
+//! Converts ice specific enthalpy to-and-from temperature and water content.
 /*!
 ONCE THIS CLASS IS CONFIRMED TO BE CORRECT, IT *CAN* GO IN src/base/pism_const.{hh|cc}
 
@@ -30,7 +30,7 @@ Use this way, for example within IceModel with NCConfigVariable config member:
   #include "enthalpyConverter.hh"
   EnthalpyConverter EC(&config);  // this runs constructor, so make sure this
                                   //   is done after the creation/initialization of
-                                  //   IceModel::config
+                                  //   NCConfigVariable config
   ...
   for (...) {
     ...
@@ -52,7 +52,6 @@ public:
 
   PetscErrorCode viewConstants(PetscViewer viewer) const;
 
-  // ice conversion methods
   double         getPressureFromDepth(double depth) const;
   double         getMeltingTemp(double p) const;
   double         getEnthalpyCTS(double p) const;
@@ -67,12 +66,8 @@ public:
   PetscErrorCode getEnthPermissive(double T, double omega, double p, double &E) const;
   PetscErrorCode getEnthAtWaterFraction(double omega, double p, double &E) const;
 
-  // bedrock conversion methods
-  PetscErrorCode getEnthBedrock(double T, double &E) const;
-  double         getAbsTempBedrock(double E) const;
-
 protected:
-  double T_0, L, c_i, c_b, rho_i, g, p_air, beta;
+  double T_0, L, c_i, rho_i, g, p_air, beta;
 };
 
 #endif

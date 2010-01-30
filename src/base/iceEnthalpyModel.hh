@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2010 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,9 +27,6 @@
 
 
 //! Temporary class for development of enthalpy-based polythermal PISM.
-/*!
-Based on Bueler's reading of \ref AschwandenBlatter.
- */
 class IceEnthalpyModel : public IceModel {
 
 public:

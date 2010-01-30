@@ -145,9 +145,9 @@ PetscErrorCode IceEnthalpyModel::initFromFile(const char *filename) {
   if (initfromtemp == PETSC_TRUE) {
 
     ierr = verbPrintf(2, grid.com,
-		      "  option -init_from_temp seen ... IceEnthalpyModel doing SPECIAL ACTIONS:\n"
-		      "      reading ice temperature and thickness from %s ...\n",
-		      filename); CHKERRQ(ierr);  
+      "  option -init_from_temp seen ... IceEnthalpyModel doing SPECIAL ACTIONS:\n"
+      "      reading ice temperature and thickness from %s ...\n",
+      filename); CHKERRQ(ierr);  
     NCTool nc(&grid);
     ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
     int last_record;
@@ -170,11 +170,8 @@ PetscErrorCode IceEnthalpyModel::initFromFile(const char *filename) {
     ierr = Enth3.write(filename,NC_DOUBLE); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
-  }
-
-  // -init_from_and_liqfrac was set, calculate enthalpy from temperature and liquid water fraction
-  if (initfromtempandliqfrac == PETSC_TRUE) {
-
+  } else if (initfromtempandliqfrac == PETSC_TRUE) {
+    // -init_from_and_liqfrac was set, calculate enthalpy from temperature and liquid water fraction
     IceModelVec3 Liqfrac3;
     ierr = Liqfrac3.create(grid, "liqfrac", false); CHKERRQ(ierr);
 
@@ -207,7 +204,8 @@ PetscErrorCode IceEnthalpyModel::initFromFile(const char *filename) {
 
   }
 
-  // now init; this will actually re-read thk and enthalpy
+  // now init; this will actually re-read enthalpy because of
+  //   "variables.add(Enth3)" above
   ierr = IceModel::initFromFile(filename); CHKERRQ(ierr);
 
   
@@ -513,8 +511,6 @@ PetscErrorCode IceEnthalpyModel::setCTSFromEnthalpy(IceModelVec3 &useForCTS) {
 }
 
 
-/*********** modified reporting to standard out ******************/
-
 PetscErrorCode IceEnthalpyModel::energyStats(PetscScalar iarea, bool /*useHomoTemp*/, 
                                              PetscScalar &gmeltfrac, PetscScalar &gtemp0) {
   PetscErrorCode  ierr;
@@ -599,13 +595,14 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   PetscErrorCode  ierr;
 
   if (doColdIceMethods==PETSC_TRUE) {
-    SETERRQ(1,"\n\n    IceEnthalpyModel::enthalpyAndDrainageStep() called but doColdIceMethods==true ... ending\n");
+    SETERRQ(1,
+       "\n\nPISM ERROR:  IceEnthalpyModel::enthalpyAndDrainageStep() called but\n"
+           "             doColdIceMethods==true ... ending\n");
   }
 
   // set up fine grid in ice and bedrock
   PetscInt    fMz, fMbz;
   PetscScalar fdz, *fzlev, fdzb, *fzblev;
-
   ierr = grid.get_fine_vertical_grid(fMz, fMbz, fdz, fdzb, fzlev, fzblev); CHKERRQ(ierr);
 
   ierr = verbPrintf(5,grid.com,
@@ -615,25 +612,21 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   PetscTruth viewOneColumn;
   ierr = check_option("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
-  PetscTruth viewOneRedoColumn;
-  ierr = check_option("-view_redo_sys", viewOneRedoColumn); CHKERRQ(ierr);
-
   EnthalpyConverter EC(config);
-  if (getVerbosityLevel() >= 4) { ierr = EC.viewConstants(NULL); CHKERRQ(ierr); }
 
   enthSystemCtx system(fMz,fMbz);
-  system.dx              = grid.dx;
-  system.dy              = grid.dy;
-  system.dtTemp          = dtTempAge; // same time step for temp and age, currently
-  system.dzEQ            = fdz;
-  system.dzbEQ           = fdzb;
-  system.ice_rho         = config.get("ice_density"); // ice->rho;
-  system.ice_c           = config.get("ice_specific_heat_capacity"); // ice->c_p;
-  system.ice_k           = config.get("ice_thermal_conductivity"); // ice->k;
-  system.ice_nu          = config.get("enthalpy_temperate_diffusivity"); // diffusion in temperate ice
-  system.bed_thermal_rho = config.get("bedrock_thermal_density");
-  system.bed_thermal_c   = config.get("bedrock_thermal_specific_heat_capacity");
-  system.bed_thermal_k   = config.get("bedrock_thermal_conductivity");
+  system.dx      = grid.dx;
+  system.dy      = grid.dy;
+  system.dtTemp  = dtTempAge; // same time step for temp and age, currently
+  system.dzEQ    = fdz;
+  system.dzbEQ   = fdzb;
+  system.ice_rho = config.get("ice_density"); // ice->rho;
+  system.ice_c   = config.get("ice_specific_heat_capacity"); // ice->c_p;
+  system.ice_k   = config.get("ice_thermal_conductivity"); // ice->k;
+  system.ice_nu  = config.get("enthalpy_temperate_diffusivity"); // diffusion in temperate ice
+  system.bed_rho = config.get("bedrock_thermal_density");
+  system.bed_c   = config.get("bedrock_thermal_specific_heat_capacity");
+  system.bed_k   = config.get("bedrock_thermal_conductivity");
 
   // space for solution of system
   PetscScalar *x;
@@ -653,7 +646,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
                     bulgeMaxEnth = system.ice_c * bulgeMaxTemp;
 
   // pointers to values in current column
-  PetscScalar *Enthnew, *Tb, *Tbnew;
+  PetscScalar *Enthnew, *Tbnew;
 
   system.u     = new PetscScalar[fMz];
   system.v     = new PetscScalar[fMz];
@@ -661,10 +654,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   system.Sigma = new PetscScalar[fMz];
   system.Enth  = new PetscScalar[fMz];
   system.Enth_s= new PetscScalar[fMz];
-  system.Enth_b= new PetscScalar[fMbz];
+  system.Tb    = new PetscScalar[fMbz];
 
   Enthnew      = new PetscScalar[fMz];
-  Tb           = new PetscScalar[fMbz];
   Tbnew        = new PetscScalar[fMbz];
 
   // system needs access to Enth3 for planeStar()
@@ -672,18 +664,6 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 
   // checks that all needed constants and pointers got set:
   ierr = system.initAllColumns(); CHKERRQ(ierr);
-
-  PetscScalar *xredo;
-  xredo = new PetscScalar[fMbz];
-  bedrockOnlySystemCtx bedredosystem(fMbz);
-  bedredosystem.dtTemp          = dtTempAge; // same time step for temp and age, currently
-  bedredosystem.dzbEQ           = fdzb;
-  bedredosystem.bed_thermal_rho = config.get("bedrock_thermal_density");
-  bedredosystem.bed_thermal_c   = config.get("bedrock_thermal_specific_heat_capacity");
-  bedredosystem.bed_thermal_k   = config.get("bedrock_thermal_conductivity");
-  bedredosystem.T_b             = new PetscScalar[fMbz];
-  // checks that all needed constants and pointers got set:
-  ierr = bedredosystem.initAllColumns(); CHKERRQ(ierr);
 
   // now get map-plane coupler fields
   IceModelVec2 *pccTs, *pccsbt, *pccsbmf;
@@ -711,10 +691,10 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   ierr = pccsbmf->get_array(bmr_float);  CHKERRQ(ierr);
 
   // get other map-plane fields
-  PetscScalar  **H, **Ghf, **Hmelt, **Rb, **basalMeltRate;
+  PetscScalar  **H, **Ghf, **Hmelt, **Rb, **bmr;
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vHmelt.get_array(Hmelt); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.get_array(basalMeltRate); CHKERRQ(ierr);
+  ierr = vbasalMeltRate.get_array(bmr); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vRb.get_array(Rb); CHKERRQ(ierr);
   ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
@@ -729,6 +709,11 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
 
   PetscScalar max_hmelt = config.get("max_hmelt");
+
+  if (getVerbosityLevel() >= 3) {  // view: all constants correct at this point?
+    ierr = EC.viewConstants(NULL); CHKERRQ(ierr);
+    ierr = system.viewConstants(NULL); CHKERRQ(ierr);
+  }
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -751,8 +736,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       bool bulgeLimiterTripped = false;
 
       if (k0+ks>0) { // if there are enough points in bedrock&ice to bother ...
-        ierr = system.setIndicesThisColumn(i,j,ks); CHKERRQ(ierr);
-        ierr = Tb3.getValColumnPL(i,j,fMbz,fzblev,Tb); CHKERRQ(ierr);
+        ierr = system.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
+
+        ierr = Tb3.getValColumnPL(i,j,fMbz,fzblev,system.Tb); CHKERRQ(ierr);
 
         if (grid.ice_vertical_spacing == EQUAL) {
           ierr = u3.getValColumnPL(i,j,fMz,fzlev,system.u); CHKERRQ(ierr);
@@ -790,11 +776,6 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
           system.Enth_s[k] = EC.getEnthalpyCTS(p_air);
         }
 
-        // go though bedrock and set system enthalpy from temperature
-        for (PetscInt k=0; k < fMbz; k++) {
-          ierr = EC.getEnthBedrock(Tb[k], system.Enth_b[k]); CHKERRQ(ierr);
-        }
-
         // if isMarginal then only do vertical conduction for ice;
         //   will ignore advection and strain heating if isMarginal
         const bool isMarginal = checkThinNeigh(H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
@@ -806,6 +787,15 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
         ierr = system.setSurfaceBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);
         ierr = system.setBasalBoundaryValuesThisColumn(
                  Ghf[i][j],Enth_shelfbase,Rb[i][j]); CHKERRQ(ierr);
+
+        // diagnostic/debug
+        if (viewOneColumn) {
+          if ((i==id) && (j==jd)) {
+            ierr = verbPrintf(1,grid.com,
+              "just before solving system at (i,j)=(%d,%d):\n", i, j); CHKERRQ(ierr);
+            ierr = system.viewConstants(NULL); CHKERRQ(ierr);
+          }
+        }
 
         // solve the system for this column: x will contain new enthalpy in ice and in bedrock
         //   that is, x[k] is always an enthalpy
@@ -819,12 +809,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
         if (viewOneColumn) {
           if ((i==id) && (j==jd)) {
             ierr = verbPrintf(1,grid.com,
-              "\nin IceEnthalpyModel::enthalpyDrainageStep();\n"
-                "   fMz = %d, fdz = %5.3f, fMbz = %d, fdzb = %5.3f, k0 = %d, ks = %d\n\n",
-              fMz, fdz, fMbz, fdzb, k0, ks); CHKERRQ(ierr);
-            ierr = verbPrintf(1,grid.com,
               "viewing system and solution at (i,j)=(%d,%d):\n", i, j); CHKERRQ(ierr);
-            ierr = system.viewConstants(NULL); CHKERRQ(ierr);
             ierr = system.viewSystem(NULL,"system"); CHKERRQ(ierr);
             ierr = system.viewColumnValues(NULL, x, fMz+k0, "solution x"); CHKERRQ(ierr);
           }
@@ -883,9 +868,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       // transfer column into EnthNew3; communication later
       ierr = EnthNew3.setValColumnPL(i,j,fMz,fzlev,Enthnew); CHKERRQ(ierr);
 
-      // recover temperature in bedrock from enthalpy solution
+      // set temperature in bedrock
       for (PetscInt k=0; k < k0; k++) {
-        Tbnew[k] = EC.getAbsTempBedrock(x[k]);
+        Tbnew[k] = x[k];
       }
 
       // bottom of ice is top of bedrock when grounded, so
@@ -894,7 +879,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       if (vMask.is_floating(i,j)) { // top of bedrock sees ocean
           Tbnew[k0] = Tshelfbase[i][j];
       } else {
-        if (ks > 0) { // grounded ice present
+        if (ks > 0) {
+          //  FIXME:  IS THIS RIGHT?:    grounded ice present
           // get ice temperature at z=0; enforces continuity of temperature
           ierr = EC.getAbsTemp(Enthnew[0], p_basal, Tbnew[k0]); CHKERRQ(ierr);
         } else {      // no significant ice; top of bedrock sees atmosphere
@@ -902,58 +888,16 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
         }
       }
 
-      // in temperate base case, or if bulge limiter was tripped, 
-      //    redo bedrock temperature solution
-      // FIXME:  and put energy back into melting
-      if (fMbz > 1) {
-        if (    (bulgeLimiterTripped)
-             || (    (!vMask.is_floating(i,j))
-                  && (EC.isTemperate(Enthnew[0], p_basal )) ) ) {
-          for (PetscInt k=0; k < fMbz; k++) {
-            bedredosystem.T_b[k] = Tb[k];
-          }
-          PetscScalar T_basal_new;
-          ierr = EC.getAbsTemp(Enthnew[0], p_basal, T_basal_new); CHKERRQ(ierr);
-          ierr = bedredosystem.setTopBoundaryValueThisColumn(T_basal_new); CHKERRQ(ierr);
-          ierr = bedredosystem.setBasalBoundaryValueThisColumn(Ghf[i][j]); CHKERRQ(ierr);
-          // solve the system
-          ierr = bedredosystem.solveThisColumn(&xredo); // no CHKERRQ(ierr) immediately because:
-          if (ierr > 0) {
-            SETERRQ3(2,
-              "bedredosystem tridiagonal solve failed at (%d,%d)\n"
-              "   with zero pivot position %d.\n", i, j, ierr);
-          } else { CHKERRQ(ierr); }
-          // insert
-          for (PetscInt k=0; k < fMbz; k++) {
-            Tbnew[k] = xredo[k];
-          }
-          // FIXME:  need to subtract Tbnew - xredo and put into melting
-  
-          // diagnostic/debug
-          if (viewOneRedoColumn) {
-            if ((i==id) && (j==jd)) {
-              ierr = verbPrintf(1,PETSC_COMM_SELF,
-                "\n\nviewing bedredosystem and solution at (i,j)=(%d,%d):\n", i, j);
-                CHKERRQ(ierr);
-              ierr = bedredosystem.viewConstants(NULL); CHKERRQ(ierr);
-              ierr = bedredosystem.viewSystem(NULL,"system"); CHKERRQ(ierr);
-              ierr = bedredosystem.viewColumnValues(NULL, xredo, fMbz, "solution xredo");
-                CHKERRQ(ierr);
-            }
-          }
-        }  
-      }  // if (fMbz > 1)
-
       // transfer column into Tb3; no need for communication, even later
       ierr = Tb3.setValColumnPL(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
 
       // basalMeltRate[][] is rate of mass loss from bottom of ice
       if (vMask.is_floating(i,j)) {
         // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)
-        basalMeltRate[i][j] = bmr_float[i][j]; // set by PISMOceanCoupler
+        bmr[i][j] = bmr_float[i][j]; // set by PISMOceanCoupler
       } else {
         // rate of change of Hmelt[][];  can be negative (till water freeze-on)
-        basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / dtTempAge;
+        bmr[i][j] = (Hmeltnew - Hmelt[i][j]) / dtTempAge;
       }
 
       // finalize Hmelt value
@@ -992,20 +936,17 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
 
   delete [] system.u;     delete [] system.v;     delete [] system.w;
   delete [] system.Sigma; delete [] system.Enth;  delete [] system.Enth_s; 
-  delete [] system.Enth_b;
-
-  delete [] bedredosystem.T_b;
-  delete [] xredo;
+  delete [] system.Tb;
 
   delete [] x;
-  delete [] Tb;     delete [] Tbnew;   delete [] Enthnew;
+  delete [] Tbnew;   delete [] Enthnew;
   delete [] fzlev;  delete [] fzblev;
 
   return 0;
 }
 
 
-//! Move some of the liquid water fraction in a column segment [z,z+dz] to the base according to heuristics.
+//! Move some of the liquid water fraction in a column segment [z,z+dz] to the base.
 /*!
 Generally this procedure alters the values in the last two arguments,
 'enthalpy' and 'Hmelt'.  There is conservation of energy here because the 

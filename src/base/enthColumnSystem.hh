@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2010 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,6 @@ class enthSystemCtx : public columnSystemCtx {
 public:
   enthSystemCtx(int my_Mz, int my_Mbz);
   PetscErrorCode initAllColumns();
-  PetscErrorCode setIndicesThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
   PetscErrorCode setSchemeParamsThisColumn(
                      PismMask my_mask, bool my_isMarginal, PetscScalar my_lambda);  
   PetscErrorCode setSurfaceBoundaryValuesThisColumn(PetscScalar my_Enth_surface);
@@ -48,13 +47,13 @@ public:
                ice_c,
                ice_k,
                ice_nu,
-               bed_thermal_rho,
-               bed_thermal_c,
-               bed_thermal_k;
+               bed_rho,
+               bed_c,
+               bed_k;
   // pointers which should be set before calling initForAllColumns()
   PetscScalar  *Enth,   // enthalpy in ice
                *Enth_s, // enthalpy level for CTS; function only of pressure
-               *Enth_b, // enthalpy in bedrock
+               *Tb,     // temperature in bedrock
                *u,
                *v,
                *w,
@@ -63,62 +62,20 @@ public:
 
 protected: // used internally
   PetscInt    Mz, Mbz, k0;
-  PetscInt    i, j, ks;
   PetscScalar lambda, Enth_ks, Ghf, Enth_shelfbase, Rb;
   PismMask    mask;
   bool        isMarginal;
   PetscScalar nuEQ,
               dzav,
-              rho_c_I,
-              rho_c_br,
               iceK,
               iceRcold,
               iceRtemp,
-              brK,
-              brR;
+              bedK,
+              bedR;
   bool        initAllDone,
-              indicesValid,
               schemeParamsValid,
               surfBCsValid,
               basalBCsValid;
-};
-
-
-//! Tridiagonal linear system for bedrock conduction-only problem with Dirichlet boundary condition.
-/*!
-This class is currently only for redoing the temperature calculation in the bed,
-after the enthSystemCtx has already done its solve, and only when the z=0 level
-is at the pressure-melting temperature.
- */
-class bedrockOnlySystemCtx : public columnSystemCtx {
-
-public:
-  bedrockOnlySystemCtx(int my_Mbz);
-  PetscErrorCode viewConstants(PetscViewer viewer);
-  PetscErrorCode initAllColumns();
-  PetscErrorCode setTopBoundaryValueThisColumn(PetscScalar my_Ttop);
-  PetscErrorCode setBasalBoundaryValueThisColumn(PetscScalar my_Ghf);
-  PetscErrorCode solveThisColumn(PetscScalar **x);  
-
-public:
-  // constants which should be set before calling initForAllColumns()
-  PetscScalar  dtTemp,
-               dzbEQ,
-               bed_thermal_rho,
-               bed_thermal_c,
-               bed_thermal_k;
-  // pointers which should be set before calling initForAllColumns()
-  PetscScalar  *T_b; // temperature in bedrock
-
-protected: // used internally
-  PetscInt    Mbz, k0;
-  PetscInt    i, j;
-  PetscScalar Ttop, Ghf;
-  PetscScalar brK,
-              brR;
-  bool        initAllDone,
-              topBCValid,
-              basalBCValid;
 };
 
 #endif

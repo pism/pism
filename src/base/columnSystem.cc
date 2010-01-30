@@ -40,17 +40,9 @@ columnSystemCtx::columnSystemCtx(PetscInt my_nmax) : nmax(my_nmax) {
   rhs  = new PetscScalar[nmax];
   work = new PetscScalar[nmax];
 
-  // zero the entries; only useful for clean views
-  for (PetscInt k = 0; k < nmax-1; k++) {
-    Lp[k]   = 0.0;
-    D[k]    = 0.0;
-    U[k]    = 0.0;
-    rhs[k]  = 0.0;
-    work[k] = 0.0; 
-  }
-  D[nmax-1]    = 0.0;
-  rhs[nmax-1]  = 0.0;
-  work[nmax-1] = 0.0;
+  resetColumn();
+  
+  indicesValid = false;
 }
 
 
@@ -60,6 +52,37 @@ columnSystemCtx::~columnSystemCtx() {
   delete [] U;
   delete [] rhs;
   delete [] work;
+}
+
+
+PetscErrorCode columnSystemCtx::resetColumn() {
+  // zero the entries except diagonal; only useful for clean views
+  for (PetscInt k = 0; k < nmax-1; k++) {
+    Lp[k]   = 0.0;
+    D[k]    = 1.0;
+    U[k]    = 0.0;
+    rhs[k]  = 0.0;
+    work[k] = 0.0; 
+  }
+  D[nmax-1]    = 1.0;
+  rhs[nmax-1]  = 0.0;
+  work[nmax-1] = 0.0;
+  return 0;
+}
+
+
+PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(
+                  PetscInt my_i, PetscInt my_j, PetscInt my_ks) {
+  if (indicesValid) {  SETERRQ(3,
+     "setIndicesAndClearThisColumn() called twice in same column"); }
+  i = my_i;
+  j = my_j;
+  ks = my_ks;
+
+  resetColumn();
+  
+  indicesValid = true;
+  return 0;
 }
 
 
@@ -206,6 +229,9 @@ PetscErrorCode columnSystemCtx::solveTridiagonalSystem(
   if (*x == NULL) { SETERRQ(-998,"*x is NULL in columnSystemCtx"); }
   if (n < 1) { SETERRQ(-997,"instance size n < 1 in columnSystemCtx"); }
   if (n > nmax) { SETERRQ(-996,"instance size n too large in columnSystemCtx"); }
+
+  if (!indicesValid) { SETERRQ(-995,"column indices not valid in columnSystemCtx"); }
+
   PetscScalar b;
   b = D[0];
   if (b == 0.0) { return 1; }
@@ -219,6 +245,8 @@ PetscErrorCode columnSystemCtx::solveTridiagonalSystem(
   for (int i=n-2; i>=0; --i) {
     (*x)[i] -= work[i+1] * (*x)[i+1];
   }
+
+  indicesValid = false;
   return 0;
 }
 
@@ -226,7 +254,6 @@ PetscErrorCode columnSystemCtx::solveTridiagonalSystem(
 ageSystemCtx::ageSystemCtx(PetscInt my_Mz)
       : columnSystemCtx(my_Mz) { // size of system is Mz
   initAllDone = false;
-  indicesValid = false;
   // set values so we can check if init was called on all
   dx = -1.0;
   dy = -1.0;
@@ -255,26 +282,10 @@ PetscErrorCode ageSystemCtx::initAllColumns() {
 }
 
 
-PetscErrorCode ageSystemCtx::setIndicesThisColumn(
-                  PetscInt my_i, PetscInt my_j, PetscInt my_ks) {
-  if (!initAllDone) {  SETERRQ(2,
-     "setIndicesThisColumn() should only be called after initAllColumns() in ageSystemCtx"); }
-  if (indicesValid) {  SETERRQ(3,
-     "setIndicesThisColumn() called twice in same column (?) in ageSystemCtx"); }
-  i = my_i;
-  j = my_j;
-  ks = my_ks;
-  indicesValid = true;
-  return 0;
-}
-
-
 PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x) {
   PetscErrorCode ierr;
   if (!initAllDone) {  SETERRQ(2,
      "solveThisColumn() should only be called after initAllColumns() in ageSystemCtx"); }
-  if (!indicesValid) {  SETERRQ(3,
-     "solveThisColumn() should only be called after setIndicesThisColumn() in ageSystemCtx"); }
 
   // set up system: 0 <= k < ks
   for (PetscInt k = 0; k < ks; k++) {
@@ -323,9 +334,6 @@ PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x) {
     rhs[ks] = 0.0;  // age zero at surface
   }
 
-  // mark column as done
-  indicesValid = false;
-
   // solve it
   return solveTridiagonalSystem(ks+1,x);
 }
@@ -338,7 +346,6 @@ tempSystemCtx::tempSystemCtx(PetscInt my_Mz, PetscInt my_Mbz)
   k0 = Mbz - 1; // max size nmax of system is Mz + k0 = Mz + Mbz - 1
   // set flags to indicate nothing yet set
   initAllDone = false;
-  indicesValid = false;
   schemeParamsValid = false;
   surfBCsValid = false;
   basalBCsValid = false;
@@ -403,20 +410,6 @@ PetscErrorCode tempSystemCtx::initAllColumns() {
 }
 
 
-PetscErrorCode tempSystemCtx::setIndicesThisColumn(
-                  PetscInt my_i, PetscInt my_j, PetscInt my_ks) {
-  if (!initAllDone) {  SETERRQ(2,
-     "setIndicesThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
-  if (indicesValid) {  SETERRQ(3,
-     "setIndicesThisColumn() called twice in same column (?) in tempSystemCtx"); }
-  i = my_i;
-  j = my_j;
-  ks = my_ks;
-  indicesValid = true;
-  return 0;
-}
-
-
 PetscErrorCode tempSystemCtx::setSchemeParamsThisColumn(
                      PismMask my_mask, bool my_isMarginal, PetscScalar my_lambda) {
   if (!initAllDone) {  SETERRQ(2,
@@ -460,8 +453,6 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x) {
   PetscErrorCode ierr;
   if (!initAllDone) {  SETERRQ(2,
      "solveThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
-  if (!indicesValid) {  SETERRQ(3,
-     "solveThisColumn() should only be called after setIndicesThisColumn() in tempSystemCtx"); }
   if (!schemeParamsValid) {  SETERRQ(3,
      "solveThisColumn() should only be called after setSchemeParamsThisColumn() in tempSystemCtx"); }
   if (!surfBCsValid) {  SETERRQ(3,
@@ -579,7 +570,6 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x) {
   }
 
   // mark column as done
-  indicesValid = false;
   schemeParamsValid = false;
   surfBCsValid = false;
   basalBCsValid = false;

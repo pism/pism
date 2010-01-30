@@ -276,7 +276,7 @@ PetscErrorCode IceModel::temperatureStep(
       const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/fdz));
       
       if (k0+ks>0) { // if there are enough points in bedrock&ice to bother ...
-        ierr = system.setIndicesThisColumn(i,j,ks); CHKERRQ(ierr);
+        ierr = system.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
 	if (grid.bed_vertical_spacing == EQUAL) {
 	  ierr = Tb3.getValColumnPL(i,j,fMbz,fzblev,system.Tb); CHKERRQ(ierr);
 	} else {
@@ -626,7 +626,7 @@ PetscErrorCode IceModel::ageStep() {
           ierr = w3.getValColumnQUAD(i,j,fMz,fzlev,system.w); CHKERRQ(ierr);
         }
 
-        ierr = system.setIndicesThisColumn(i,j,fks); CHKERRQ(ierr);
+        ierr = system.setIndicesAndClearThisColumn(i,j,fks); CHKERRQ(ierr);
 
         // solve the system for this column; call checks that params set
         ierr = system.solveThisColumn(&x); // no "CHKERRQ(ierr)" because:

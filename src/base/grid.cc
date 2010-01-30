@@ -121,13 +121,12 @@ PetscErrorCode IceGrid::compute_vertical_levels() {
 }
 
 //! \brief Set the vertical levels in the ice according to values in Mz, Lz,
-//! Mbz, and the ice_vertical_spacing data member.
+//! and the ice_vertical_spacing data member.
 /*!
-Sets \c dzMIN, \c dzMAX, and \c Lbz.  Sets and re-allocates \c zlevels[] 
-and \c zblevels[].
+Sets \c dzMIN and \c dzMAX.  Sets and re-allocates \c zlevels[].
 
-Uses \c Mz, \c Lz, \c Mbz, and \c spacing_type.  Note that \c ice_vertical_spacing
-cannot be UNKNOWN.
+Uses \c Mz, \c Lz, and \c ice_vertical_spacing.  (Note that \c ice_vertical_spacing
+cannot be UNKNOWN.)
 
 This procedure is only called when a grid is determined from scratch, %e.g. 
 by a derived class or when bootstrapping from 2D data only, but not when 
@@ -194,8 +193,6 @@ PetscErrorCode  IceGrid::compute_ice_vertical_levels() {
 /*!
   PISM supports equal and quadratic spacing of bedrock levels.
 
-  
-  
   Please see IceGrid::compute_ice_vertical_levels() for more.
  */
 PetscErrorCode IceGrid::compute_bed_vertical_levels() {

@@ -42,6 +42,8 @@ public:
                                  of maximum size nmax */
   ~columnSystemCtx();           //! deallocate it
 
+  PetscErrorCode setIndicesAndClearThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
+
   PetscErrorCode viewColumnValues(PetscViewer viewer, 
                                   PetscScalar *v, PetscInt m, const char* info) const;
 
@@ -53,8 +55,14 @@ protected:
   PetscInt    nmax;
   PetscScalar *L, *Lp, *D, *U, *rhs, *work; // vectors for tridiagonal system
 
+  PetscInt    i, j, ks;
+
   // deliberately protected so only derived classes can use
   PetscErrorCode solveTridiagonalSystem(PetscInt n, PetscScalar **x);
+  
+private:
+  bool        indicesValid;
+  PetscErrorCode resetColumn();
 };
 
 
@@ -80,7 +88,6 @@ class ageSystemCtx : public columnSystemCtx {
 public:
   ageSystemCtx(PetscInt my_Mz);
   PetscErrorCode initAllColumns();
-  PetscErrorCode setIndicesThisColumn(PetscInt my_i, PetscInt my_j, PetscInt my_ks);  
   PetscErrorCode solveThisColumn(PetscScalar **x);  
 
 public:
@@ -96,10 +103,8 @@ public:
   IceModelVec3 *tau3;
 
 protected: // used internally
-  PetscInt    i, j, ks;
   PetscScalar nuEQ;
-  bool        initAllDone,
-              indicesValid;
+  bool        initAllDone;
 };
 
 
@@ -129,7 +134,6 @@ class tempSystemCtx : public columnSystemCtx {
 public:
   tempSystemCtx(PetscInt my_Mz, PetscInt my_Mbz);
   PetscErrorCode initAllColumns();
-  PetscErrorCode setIndicesThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
   PetscErrorCode setSchemeParamsThisColumn(
                      PismMask my_mask, bool my_isMarginal, PetscScalar my_lambda);  
   PetscErrorCode setSurfaceBoundaryValuesThisColumn(PetscScalar my_Ts);
@@ -161,7 +165,6 @@ public:
 
 protected: // used internally
   PetscInt    Mz, Mbz, k0;
-  PetscInt    i, j, ks;
   PetscScalar lambda, Ts, Ghf, Tshelfbase, Rb;
   PismMask    mask;
   bool        isMarginal;
