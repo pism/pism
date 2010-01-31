@@ -2,20 +2,9 @@
 
 \section intro Introduction
 
-One of the essential goals for any thermomechanically-coupled numerical ice sheet model 
-is a completely bombproof numerical 
-scheme for the advection-conduction-reaction problem for the conservation of
-energy within the ice and the bedrock.  The conservation of energy problem here
-is described in terms of the enthalpy field.
-  
-"Bombproof" means being, roughly, as stable as possible in as many realistic modeling
-contexts as possible.  PISM's scheme is 
-observed to be highly robust in practice, but it is also provably stable in a significant
-range of circumstances.  The scheme is special to shallow ice sheets
-because it makes specific tradeoff choices with respect to vertical velocity, though
-it is generic and low order with respect to horizontal velocity.
-In this page we will state the scheme, prove its stability properties, and specify
-the nontrivial modifications needed at the ice-bedrock transition.
+One of the essential goals for any thermomechanically-coupled numerical ice sheet model is a completely bombproof numerical scheme for the advection-conduction-reaction problem for the conservation of energy within the ice and the bedrock.  The conservation of energy problem here is described in terms of the enthalpy field for the ice and in terms of temperature for the bedrock.
+
+"Bombproof" means being, roughly, as stable as possible in as many realistic modeling contexts as possible.  PISM's scheme is observed to be highly robust in practice, but it is also provably stable in a significant range of circumstances.  The scheme is special to shallow ice sheets because it makes specific tradeoff choices with respect to vertical velocity, though it is generic (and low order) with respect to horizontal velocity.  In this page we will state the scheme, prove its stability properties, and specify the nontrivial modifications needed at the ice-bedrock transition.
 
 Accuracy is necessarily a second goal.  It is partly achieved 
 here because our scheme has truncation error \f$O(\Delta z^2)\f$
@@ -60,7 +49,7 @@ The scheme we propose involves no such iteration.
 
 \section iceequations Conservation of energy in a shallow ice sheet
 
-In terms of the specific enthalpy field \f$E(x,y,z,t)\f$, which has units of 
+In terms of the ice specific enthalpy field \f$E(x,y,z,t)\f$, which has units of 
 \f$\text{J}\,\text{kg}^{-1}\f$ in SI, the energy equation is [\ref AschwandenBlatter]
 \anchor basicEnergy
   \f[ \rho \frac{dE}{dt} = -\nabla \cdot \mathbf{q} + Q,\tag{basicEnergy} \f]
@@ -68,49 +57,26 @@ where \f$\rho\f$ is the material density.  The units of equation
 (\ref basicEnergy), and of the quantity \f$Q\f$ described below, are
 \f$J\,\text{s}^{-1}\,\text{m}^{-3}\f$ in SI.
 
-The heat flux in cold ice, temperate ice, and bedrock is
+The heat flux in cold ice and temperate ice is
 \anchor heatflux
   \f[ \mathbf{q} = \begin{cases}
                       - k_i c_i^{-1} \nabla E, & \text{cold ice}, \\
                       0, & \text{temperate ice}, \tag{heatflux} \\
-                      - k_b c_b^{-1} \nabla E, & \text{bedrock}, \\
                    \end{cases} \f]
-where \f$k_i,c_i,k_b,c_b\f$ are all constant.  Note \f$dE/dt\f$ stands for the material
-derivative of the enthalpy field, so the expanded form of (\ref basicEnergy) is
+where \f$k_i,c_i\f$ are constant.  (In fact we will consider nonzero flux in the temperate ice case, either conceptualized as a regularization of the "real" equation, or as a flux of latent heat carried by liquid water.)  Note \f$dE/dt\f$ stands for the material derivative of the enthalpy field, so the expanded form of (\ref basicEnergy) is
   \f[ \rho \left(\frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E\right)
         = -\nabla \cdot \mathbf{q} + Q, \f]
-where \f$\mathbf{U}\f$ is the three dimensional velocity.  Thus
-three-dimensional advection is included.
+where \f$\mathbf{U}\f$ is the three dimensional velocity.  Thus three-dimensional advection is included.
 
-The additive quantity \f$Q\f$ is the dissipation and frictional heating.  Within
-the ice we denote the dissipation (strain) heating by \f$\Sigma\f$ (for
-notational consistency with [\ref BBL, \ref BBssasliding]).   Without making any
-shallow approximations, the exact formula for this is
-  \f[ \Sigma = \sum_{i,j=1}^3 D_{ij} \tau_{ij} \f] 
-where \f$D_{ij}\f$ is the strain rate tensor and \f$\tau_{ij}\f$ is the deviatoric stress
-tensor.  References [\ref BBL, \ref BBssasliding] address how this term is computed in PISM,
-according to the shallow stress balance approximations.
-Within the source code, see methods IceModel::velocitySIAStaggered() and
-IceModel::correctSigma().
+The additive quantity \f$Q\f$ is the dissipation (strain-rate) heating.  Without making any shallow approximations, the exact formula for this is
+  \f[ Q = \sum_{i,j=1}^3 D_{ij} \tau_{ij} \f] 
+where \f$D_{ij}\f$ is the strain rate tensor and \f$\tau_{ij}\f$ is the deviatoric stress tensor.  References [\ref BBL, \ref BBssasliding] address how this term is computed in PISM, according to the shallow stress balance approximations.
+(Within the source code, see methods IceModel::velocitySIAStaggered() and
+IceModel::correctSigma().  Note \f$Q\f$ was called \f$\Sigma\f$ in the just-mentioned references.)
 
-In a sliding model with an ice-bedrock interface, the friction of the sliding also is a
-source of heating.  It has units of W m-2 = J s-1 m-2, that is, heating per area.
-In formulas we write
-  \f[ F_b = - \tau_b \cdot \mathbf{u}_b \,\delta_0(z), \f]
-where \f$\tau_b\f$ is the basal shear stress, \f$\mathbf{u}_b\f$ is the basal sliding velocity,
-and \f$\delta_0(z)\f$ is the usual Dirac delta "function", with the property that
-\f$\int_a^b \delta_0(z)\,dz = 1\f$ if \f$a<0<b\f$.  This delta function indicates that the
-friction heating is concentrated at \f$z=0\f$.  Note that the basal shear stress is
-oppositely-directed to the basal velocity.  For example,
-in the plastic case \f$\tau_b = - \tau_c \mathbf{u}_b / |\mathbf{u}_b|\f$ where
-\f$\tau_c\f$ is a positive scalar, the yield stress.  The term \f$F_b\f$ will
-appear only under a volume integralso the delta function in the expression for 
-\f$F_b\f$ will be correctly-handled.  Within the source code, see method
-IceModel::correctBasalFrictionalHeating().  Note \f$Q=0\f$ in the bedrock
-thermal layer (strictly below the ice-bedrock interface).
-
-In summary, our additive heat sources have the form \f$Q = \Sigma + F_b, \f$,
-and this is what appears in equation (\ref basicEnergy).
+In a sliding model with an ice-bedrock interface, the friction of the sliding also is a source of heating.  It has units of W m-2 = J s-1 m-2, that is, heating per area.  In formulas we write
+  \f[ F_b = - \tau_b \cdot \mathbf{u}_b, \f]
+where \f$\tau_b\f$ is the basal shear stress and \f$\mathbf{u}_b\f$ is the basal sliding velocity.  The friction heating is concentrated at \f$z=0\f$.  Note that the basal shear stress is oppositely-directed to the basal velocity.  (For example, in the plastic case \f$\tau_b = - \tau_c \mathbf{u}_b / |\mathbf{u}_b|\f$ where \f$\tau_c\f$ is a positive scalar, the yield stress.)  The term \f$F_b\f$ will enter into the basal boundary condition, the flux jump condition addressed in section \ref melt below.
 
 We use a shallow approximation of equation (\ref basicEnergy).  It lacks horizontal
 conduction terms  [\ref Fowler].  For the initial analysis of the core BOMBPROOF
@@ -146,7 +112,7 @@ The boundary conditions to problem (\ref vertProblem) are a surface temperature
 condition at the top of the ice and a geothermal flux condition at the bottom of the ice.
 (Only at the end will we consider the bedrock thermal layer.)  Within cold ice
 the enthalpy and the temperature are linearly related,
-  \f[ T(H,p) = c_i^{-1} (E-E_s(p)) + T_m(p) = c_i^{-1} E, \f]
+  \f[ T(E,p) = c_i^{-1} (E-E_s(p)) + T_m(p) = c_i^{-1} E, \f]
 because the enthalpy is normalized by \f$E_s(p) = c_i T_m(p)\f$.  (See documentation
 on the EnthalpyConverter class.)  We will assume that in reasonably-realistic
 ice sheet modeling situations the surface temperature \f$T_s(t,x,y)\f$ (K) and
@@ -171,11 +137,7 @@ the source term \f$\Phi\f$ because we treat it explicitly, evaluating at time \f
 require a coupled system distributed across processors.  That kind of numerical difficulty
 can be avoided, even given the other constraints on accuracy and implementation.)
 
-The scheme we use for horizontal advection is explicit first-order upwinding.  
-There is a CFL condition for the scheme to be stable, 
-based on the magnitude of the horizontal velocity components, namely (\ref CFL) below.
-
-To state the upwind scheme itself, let
+The scheme we use for horizontal advection is explicit first-order upwinding.  There is a CFL condition for the scheme to be stable, in the absence of conduction, and it is based on the magnitude of the horizontal velocity components.  To state the upwind scheme itself, let
   \f[\Up{f_{\bullet}}{\alpha_i} = \begin{cases}
                                      f_i-f_{i-1}, & \alpha_i\ge 0, \\
                                      f_{i+1}-f_i, & \alpha_i<0.
@@ -200,15 +162,15 @@ implements adaptive time-stepping based on this and other stability criteria.
 In the analysis below we will assume an equally-spaced grid \f$z_0,\dots,z_{M_z}\f$
 with \f$\Delta z = z_{k+1} - z_k\f$.  In fact PISM has a remapping scheme in each 
 column, wherein the enthalpy in a column of ice is stored on an unequally-spaced 
-vertical grid, but is mapped to a fine, equally-spaced grid for the conservation of energy
-computation described here.  (Similar structure applies to the age computation.  See procedures 
-IceEnthalpyModel::enthalpyAndDrainageStep() and IceModel::ageStep(), and see
-the IceModelVec3 class and IceGrid::getFineEqualVertLevsIce().  Options -z_spacing and 
--zb_spacing allow choosing unequally-spaced storage vertical grids in ice and
-bedrock, respectively.)
+vertical grid, but is mapped to a fine, equally-spaced grid for the conservation
+of energy computation described here.  (Similar structure applies to the age
+computation.  See procedures IceEnthalpyModel::enthalpyAndDrainageStep() and
+IceModel::ageStep(), and see the IceModelVec3 class and
+IceGrid::get_fine_vertical_grid().  Options -z_spacing and -zb_spacing allow
+choosing unequally-spaced storage vertical grids in ice and bedrock,
+respectively.)
 
-The \f$z\f$ derivative terms in (\ref vertProblem) will be approximated implicitly.  Let
-\f$\lambda\f$ be in the interval \f$0 \le \lambda \le 1\f$.  The approximation to (\ref vertProblem) is is
+The \f$z\f$ derivative terms in (\ref vertProblem) will be approximated implicitly.  Let \f$\lambda\f$ be in the interval \f$0 \le \lambda \le 1\f$.  Suppressing indices \f$i,j\f$, the approximation to (\ref vertProblem) is
 \anchor bombone
 \f{align*}
 \rho_i &\left( 
@@ -217,21 +179,14 @@ The \f$z\f$ derivative terms in (\ref vertProblem) will be approximated implicit
        + (1-\lambda) w_k^{n} \frac{\Up{E_{\bullet}^{n+1}}{w_k^{n}}}{\Delta z} \right) \\
      &= k_i c_i^{-1}\, \frac{E_{k+1}^{n+1} - 2 E_{k}^{n+1} + E_{k-1}^{n+1}}{\Delta z^2} + \Phi_k^n. \tag{bombone}
 \f}
-We have suppressed indices \f$i,j\f$.
 
-Equation (\ref bombone), along with a determination of \f$\lambda\f$ by
-(\ref lambdachoice) below. is the scheme BOMBPROOF.  It includes two
-approximations of vertical advection, combined using nonnegative coefficients
-which sum to one.  Both approximations are (semi-)implicit, but the centered
-formula has higher accuracy,
+Equation (\ref bombone), along with a determination of \f$\lambda\f$ by (\ref lambdachoice) below, is the scheme BOMBPROOF.  It includes two approximations of vertical advection, combined with nonnegative coefficients which sum to one.  Both approximations are (semi-)implicit, but the centered formula has higher accuracy,
 	\f[w_k^n \frac{E_{k+1}^{n+1} - E_{k-1}^{n+1}}{2 \Delta z}
 	   = w \frac{\partial E}{\partial z} + O(\Delta t,\Delta z^2),\f]
 while the first order upwind formula has lower accuracy,
 	\f[w_k^{n} \frac{\Up{E_{\bullet}^{n+1}}{w_k^{n}}}{\Delta z}
 	   = w \frac{\partial E}{\partial z} + O(\Delta t,\Delta z).\f]
-We prefer for accuracy reasons to use the centered formula, because it has 
-higher order truncation error.  We will only include (implicit) upwinding when
-it is needed for its added stability benefits.
+We prefer for accuracy reasons to use the centered formula when possible, because it has higher order truncation error.  We only include (implicit) upwinding when it is needed for its added stability benefits.
 
 Let
 	\f[ \nu = \frac{\Delta t}{\Delta z},
@@ -526,339 +481,79 @@ The argument for this equation is standard, involving the introduction
 of a virtual value \f$E_{-1}^{n+1}\f$ [\ref MortonMayers].
 
 
-\section icebedrock A finite difference scheme at the ice-bedrock transition
+\section melt Heat flux jump condition at base, and melt rate
 
-The ice/bedrock interface requires careful, special analysis, because many physical
-processes are reflected in the conservation of energy equation.  For this special
-location we must make a somewhat elaborate argument, a finite volume argument, in
-order to derive the one algebraic equation, per column, which goes in the system
-of equations for that column (see enthSystemCtx).  In particular, because 
-the enthalpy has different dependence on temperature in ice and bedrock, there is an
-inevitable enthalpy jump at the ice-bedrock transition.  (In fact, \f$\partial E/\partial T\f$
-has different values in ice and in bedrock, so we cannot choose normalizations in
-ice and in bedrock with the property that there is no jump in enthalpy at the
-ice-bedrock interface.)
+At the bottom of grounded ice, a certain amount of heat comes out of the earth
+and enters the ice, \e or melts the base of the ice.  Furthermore, at the
+contact of the ice and underlying material, heat is generated if there is
+sliding.  Because the PISM user may or may not want a bedrock thermal layer,
+and because the basal ice may be cold (below the pressure-melting temperature)
+or temperate, there are a number of cases to consider and then correctly
+approximate by finite difference schemes.
 
-Consider \ref figure1 "Figure 1" which has volume \f$V\f$ surrounded by a dotted line.
-We will integrate our conservation of energy equation
-  \f[ \rho \frac{dE}{dt} = -\nabla \cdot \mathbf{q} + Q \f]
-over \f$V\f$.  Volume \f$V\f$ is between levels \f$z=-\epsilon\f$ and 
-\f$z=+\epsilon\f$, where \f$\epsilon=\Delta z/2\f$.  We denote the upper and lower
-halves of \f$V\f$ by \f$V^\pm\f$, respectively.
+Equations (5.40) and (9.134) of \ref GreveBlatter2009 say the same thing about the jump of heat flux in both the cold and temperate cases, however:
 
-\anchor figure1
-\image html enthinterface.png "Figure 1.  At the ice-bedrock transition."
-
-Before integrating over \f$V\f$, recall the different forms for heat flux \f$\mathbf{q}\f$
-(\ref heatflux), and the meaning of the material derivative \f$dE/dt\f$.  Also, 
-note that the lower half \f$V^-\f$ is boring (only vertical
-conduction) while the upper half \f$V^+\f$ is interesting (vertical conduction 
-\e plus advection \e plus strain heating).
-
-Now, by the divergence theorem [\ref Schey],
-  \f[ \int_{V} \rho \frac{dE}{dt}
-        = - \int_V \nabla \cdot \mathbf{q} + \int_V Q
-        = - \int_{\partial V} \mathbf{q} \cdot \mathbf{n} + \int_V Q \f]
-where \f$\partial V\f$ is the entire boundary
-of \f$V\f$, with outward unit normal vector field \f$\mathbf{n}\f$.
-
-The fact that \f$\Delta z \ll \Delta x\f$, which is to say the shallowness of the
-continuum model, justifies neglecting the conductive heat flux through the
-sides of \f$V\f$ and only integrating over the top and bottom, namely surfaces
-\f$S^\pm\f$ in \ref figure1 "Figure 1".  On \f$S^\pm\f$ the outward unit normal
-is the vertical unit vector: \f$\mathbf{n}=\pm \mathbf{z}\f$, respectively.
-Also, the integral on the left side of the equation breaks into two parts in which
-the densities are constant, and only the upper part is a flowing material (with
-three-dimensional velocity \f$\mathbf{U}\f$), so the material derivative is 
-just the partial derivative in the lower part.  Thus we have
-\anchor interface1
-  \f[ \rho_i \int_{V^+} \frac{\partial E}{\partial t}
-         + \rho_i \int_{V^+} \mathbf{U} \cdot \nabla E
-         + \rho_b \int_{V^-} \frac{\partial E}{\partial t}
-        = - \int_{S^+} \mathbf{q} \cdot \mathbf{z}
-          - \int_{S^-} \mathbf{q} \cdot (-\mathbf{z}) + \int_V Q \tag{interface1}\f]
-
-Let \f$A=\Delta x\Delta y\f$, the cross-sectional area of our column of ice, so
-\f$\epsilon A\f$ is the volume of \f$V^+\f$.  We compute the integral of the additive
-heating \f$Q\f$: 
-  \f[ \int_V Q = \int_{V} \Sigma + \int_{V} F_b = \int_{V^+} \Sigma 
-                                   - \int_{z=0} \tau_b \cdot \mathbf{u}_b\,dx dy \f]
-because of the delta function in the expression for \f$F_b\f$.  Let
-  \f[ \bar \Sigma = (\epsilon A)^{-1} \int_{V^+} \Sigma, \f]
-  \f[ \bar F = - A^{-1} \int_{z=0} \tau_b \cdot \mathbf{u}_b\,dx dy.  \f]
-These quantities will be addressed later.
-
-As with core BOMBPROOF we will treat horizontal and vertical advection by different schemes.
-We split the integral
-  \f[ \int_{V^+} \mathbf{U} \cdot \nabla E
-      = \int_{V^+} \left(u \frac{\partial E}{\partial x} + v \frac{\partial E}{\partial y}\right)
-       + \int_{V^+} w \frac{\partial E}{\partial z}.  \f] 
-Let
-  \f[ I = (\epsilon A)^{-1} \int_{V^+} \left( u \frac{\partial E}{\partial x} 
-                                             + v \frac{\partial E}{\partial y}\right). \f]
-
-Ignore the temperate ice case, for the moment, so
-  \f[ \mathbf{q} \cdot \mathbf{z} = \begin{cases}
-                                      - k_i c_i^{-1} \frac{\partial E}{\partial z}, & z>0, \\
-                                      - k_b c_b^{-1} \frac{\partial E}{\partial z}, & z<0.
-                                    \end{cases} \f]
-
-Combining the above fragments by substitution into (\ref interface1), here is the 
-equation from which we will produce a finite
-difference equation corresponding to the \f$z=0\f$ grid point in a vertical column of ice:
-\anchor interface2
-  \f[ \rho_i \int_{V^+} \frac{\partial E}{\partial t}
-         + \rho_b \int_{V^-} \frac{\partial E}{\partial t}
-        = k_i c_i^{-1} \int_{S^+} \frac{\partial E}{\partial z}
-          - k_b c_b^{-1} \int_{S^-} \frac{\partial E}{\partial z}
-          - \rho_i \int_{V^+} w \frac{\partial E}{\partial z}
-          - \rho_i \epsilon A I + \epsilon A \bar \Sigma + A \bar F. \tag{interface2}\f]
-
-Let \f$E_{0^+}^n\f$ be the value of the enthalpy in the ice
-at the grid point at \f$z=0\f$.  Let \f$E_{0^-}^n\f$ be the value of the enthalpy 
-in the bedrock at the grid point at \f$z=0\f$.  These are not generally the same value; 
-we will allow a jump at \f$z=0\f$ in the enthalpy, even as we enforce continuity of temperature
-at that location.
-
-The scheme will be implicit (backward Euler).  We use the same notation as in describing 
-core BOMBPROOF.  For the left side of the equation, we approximate
-\f$E\f$ in \f$V^\pm\f$ by its value at \f$z=0\f$, respectively, making a \f$O(\Delta z)\f$
-error right away.  The integrals \f$I\f$, \f$\bar \Sigma\f$, and \f$\bar F\f$ are
-evaluated explicitly, at time \f$t_n\f$.  From (\ref interface2),
-  \f[ \rho_i \epsilon A \frac{E_{0^+}^{n+1} - E_{0^+}^n}{\Delta t}
-         + \rho_b \epsilon A \frac{E_{0^-}^{n+1} - E_{0^-}^n}{\Delta t}
-        = k_i c_i^{-1} A \frac{E_{+1}^{n+1} - E_{0^+}^{n+1}}{2\epsilon}
-          - k_b c_b^{-1} A \frac{E_{0^-}^{n+1} - E_{-1}^{n+1}}{2\epsilon}
-          - \rho_i \epsilon A w_0^n \frac{ \Up{w_0^n}{ E_\bullet^{n+1} } }{2\epsilon}
-          - \rho_i \epsilon A I^n + \epsilon A \bar \Sigma^n + A \bar F^n. \f]
-Divide by \f$\epsilon A = \Delta z A / 2\f$:
-  \f[ \rho_i \frac{E_{0^+}^{n+1} - E_{0^+}^n}{\Delta t}
-         + \rho_b \frac{E_{0^-}^{n+1} - E_{0^-}^n}{\Delta t}
-        = 2 k_i c_i^{-1} \frac{E_{+1}^{n+1} - E_{0^+}^{n+1}}{\Delta z^2}
-          - 2 k_b c_b^{-1} \frac{E_{0^-}^{n+1} - E_{-1}^{n+1}}{\Delta z^2}
-          - \rho_i w_0^n \frac{ \Up{w_0^n}{ E_\bullet^{n+1} } }{\Delta z}
-          - \rho_i I^n + \bar \Sigma^n + \frac{2 \bar F}{\Delta z}. \f]
-Define
-  \f[ \hat\rho = \frac{\rho_i}{\rho_b}, \qquad 
-      R_i = \frac{k_i \Delta t}{c_i \rho_i \Delta z^2}, \qquad
-      R_b = \frac{k_b \Delta t}{c_b \rho_b \Delta z^2}, \qquad
-      \nu = \frac{\Delta t}{\Delta z}.  \f]
-Multiply both sides of our evolving equation by \f$\Delta t/\rho_b\f$ to get:
-\anchor scaledinter
-\f{align*}
- \hat\rho &(E_{0^+}^{n+1} - E_{0^+}^n) + (E_{0^-}^{n+1} - E_{0^-}^n) \\
-         &= \hat\rho 2 R_i (E_{+1}^{n+1} - E_{0^+}^{n+1})
-                           - 2 R_b (E_{0^-}^{n+1} - E_{-1}^{n+1})
-          - \hat\rho \nu w_0^n \Up{w_0^n}{ E_\bullet^{n+1} }
-          - \Delta t \hat\rho I^n 
-          + \frac{\Delta t \bar \Sigma^n}{\rho_b}
-          + \frac{2 \nu \bar F^n}{\rho_b}.  \tag{scaledinter}
+\anchor meltheuristic
+\f{equation*}
+\left(\text{conductive heat flux from bedrock}\right) - \left(\text{conductive heat flux into the base of the ice}\right) = \left(\text{heat lost to melt rate}\right) - \left(\text{heat gained from friction}\right)
 \f}
 
-Because there is asymmetry of flow, with nonzero vertical velocity only
-in the ice and not in the bedrock, we must interpret the vertical advection
-upwind term carefully.  We choose to include vertical advection, by upwinding,
-<i>only in the case of a downward vertical velocity</i>.
-We approximate the entire vertical advection term by zero
-in the upward velocity case.  (Downward vertical velocity corresponds 
-to a positive basal melt rate.)  In terms of \f$\uppair{a}{b}\f$ notation, we choose
-  \f[ \Up{w_0^n}{ E_\bullet^{n+1} } = \uppair{0}{E_{+1}^{n+1} - E_{0^+}^{n+1}}. \f]
-The second case is when \f$w_0^n < 0\f$.
+In particular, if there is zero basal melt rate and no sliding then the heat flux is a continuous vector quantity across the ice/bedrock interface.
 
-Regarding the horizontal advection term \f$I^n\f$, its discrete approximation is this:
-  \f[ I^n = u_{ij0}^n\,\frac{\Up{E_{\bullet j0}^n}{u_{ij0}^n}}{\Delta x}
-	                          + v_{ij0}^n\,\frac{\Up{E_{i\bullet 0}^n}{v_{ij0}^n}}{\Delta y}.  \f]
-Here the \f$i,j\f$ indices re-appear for (hoped) clarity.  And \f$E_{ij0}^n = E_{0^+}^n\f$
-is a known variable in our context, etc.
+For the translation of the last equation into symbols, let \f$M\f$ be the basal melt rate, positive when ice is being turned into liquid, and \f$L\f$ be the latent heat of fusion of water.  We use a small-slope assumption for the base, namely that the normal direction to the ice base is in the \f$z\f$ direction.  Recall from an earlier equation that \f$F_b = - \tau_b \cdot \mathbf{u}_b\f$ is the heating rate from friction.  Then at least the right hand side can be written down for all grounded cases:
 
-Equation (\ref scaledinter) is one of a system of equations for the new values.
-Thus we re-arrange it with the unknowns on the left, as with core BOMBPROOF:
-\anchor nearlythere
+\anchor melteqn
 \f{align*}
-- 2 R_b E_{-1}^{n+1} &+ (1 + 2 R_b) E_{0^-}^{n+1}
-      + \hat\rho \left(1 + 2 R_i - \nu w_0^n \uppair{0}{1}\right) E_{0^+}^{n+1}
-      + \hat\rho \left(-2 R_i + \nu w_0^n \uppair{0}{1}\right) E_{+1}^{n+1} \tag{nearlythere} \\
-     &= \hat\rho E_{0^+}^{n} + E_{0^-}^{n} - \Delta t \hat\rho I^n
-       + \frac{\Delta t \bar \Sigma^n}{\rho_b}
-       + \frac{2 \nu \bar F^n}{\rho_b}. 
+\left(\text{conductive heat flux from bedrock}\right) - \left(\text{conductive heat flux into the base of the ice}\right) &= \rho_i L M +\tau_b \cdot \mathbf{u}_b
 \f}
 
-We use the known value of the ice basal enthalpy as the value \f$E_{0^+}^{n}\f$.
-Then there are actually five unknowns in the last equation, four on the left
-and one on the right,
-  \f[ E_{-1}^{n+1}, \quad E_{0^-}^{n+1}, \quad E_{0^+}^{n+1}, \quad E_{+1}^{n+1}, \quad
-      \text{and} \quad E_{0^-}^n. \f]
-But we need to have an equation which can be part of a tridiagonal system, with three unknowns.
-<i>Therefore we need two additional facts relating these five unknowns.</i>
-
-Those facts are the continuity of temperature at \f$z=0\f$ at time \f$t_n\f$ 
-\e and at time \f$t_{n+1}\f$.  The two additional equations are
-\f{align*}
-  T_b(E_{0^-}^n,p) &= T_i(E_{0^+}^n,p), \\
-  T_b(E_{0^-}^{n+1},p) &= T_i(E_{0^+}^{n+1},p).
-\f}
-The pressure \f$p\f$ at \f$z=0\f$ is a known quantity in this context:
-\f$p=\rho_i g H_{i,j}^n\f$, by the hydrostatic approximation.    The functions
-\f$T_b()\f$ and \f$T_i()\f$ are exactly EnthalpyConverter::getAbsTempBedrock() and
-EnthalpyConverter::getAbsTemp(), respectively.
-
-In fact it gets even simpler.  We invert the functions \f$T_b()\f$ on the left side of the
-above temperature continuity equations, and we insert these expressions into (\ref nearlythere) to get
-\anchor evencloser
-\f{align*}
-- 2 R_b E_{-1}^{n+1} &+ (1 + 2 R_b) E_b(T_i(E_{0^+}^{n+1},p),p)
-      + \hat\rho \left(1 + 2 R_i - \nu w_0^n \uppair{0}{1}\right) E_{0^+}^{n+1}
-      + \hat\rho \left(-2 R_i + \nu w_0^n \uppair{0}{1}\right) E_{+1}^{n+1} \tag{evencloser}\\
-     &= \hat\rho E_{0^+}^{n} + E_b(T_i(E_{0^+}^n,p),p) - \Delta t \hat\rho I^n
-      + \frac{\Delta t \bar \Sigma^n}{\rho_b} + \frac{2 \nu \bar F^n}{\rho_b}. 
-\f}
-The function \f$E_b()\f$ is exactly EnthalpyConverter::getEnthBedrock() (which actually takes 
-no pressure variable because of how enthalpy is normalized).  This equation has only
-the three unknowns \f$E_{-1}^{n+1}\f$, \f$E_{0^+}^{n+1}\f$, and \f$E_{+1}^{n+1}\f$.  It is,
-essentially, ready to be inserted into the tridiagonal system of equations managed 
-by an enthSystemCtx instance.
-
-Now, for the current enthalpy normalization in EnthalpyConverter, 
-  \f[ E_b(T,p) = c_b T \qquad \text{and} \qquad
-      T_i(E,p) = \begin{cases} \frac{E}{c_i},               & E \le E_s(p), \\
-                               T_m(p) = \frac{E_s(p)}{c_i}, & E>E_s(p).\end{cases} \f]
-Thus 
-  \f[ E_b(T_i(E,p),p) = \begin{cases} \frac{c_b}{c_i} E, & E\le E_s(p), \\
-                                      \frac{c_b}{c_i} E_s(p), &        E>E_s(p).\end{cases} \f]
-This means we can simplify equation (\ref evencloser).
-
-In fact, here is the 
-final form of our ice-bedrock interface finite difference equation,
-for insertion into the tridiagonal system managed by enthSystemCtx::solveThisColumn(),
-in the case that \f$E_{0+}^n \le E_s(p)\f$:
-\anchor icebedfinalcold
-\f{align*}
-- 2 R_b E_{-1}^{n+1} &+ \left[(1 + 2 R_b) \frac{c_b}{c_i} 
-      + \hat\rho \left(1 + 2 R_i - \nu w_0^n \uppair{0}{1}\right) \right] E_{0^+}^{n+1}
-      + \hat\rho \left(-2 R_i + \nu w_0^n \uppair{0}{1}\right) E_{+1}^{n+1} \tag{icebedfinalcold} \\
-   &= \left(\hat\rho + \frac{c_b}{c_i} \right) E_{0^+}^n 
-      - \Delta t \hat\rho I^n 
-      + \frac{\Delta t \bar \Sigma^n}{\rho_b} + \frac{2 \nu \bar F^n}{\rho_b}. 
-\f}
-When this equation is used, it is possible that the computed quantity \f$E_{0+}^{n+1}\f$ 
-exceeds \f$E_s(p)\f$ even though \f$E_{0+}^n \le E_s(p)\f$ at the start of the timestep.
-We do not iterate or alter the equation in this case, but accept the (presumably small) error.
-
-If \f$E_{0+}^n > E_s(p)\f$ then we assume that \f$E_{0+}^{n+1} > E_s(p)\f$ will hold as 
-well.  Recall equation (\ref evencloser) and replace the two terms \f$E_b(T_i(\cdot,p),p)\f$
-with \f$E_s(p)\f$.  Also recall \f$k=0\f$ is the conductivity of the temperate ice.  Thus:
-\anchor icebedfinaltemperate
-\f{align*}
-- 2 R_b E_{-1}^{n+1} &+ \hat\rho \left(1 - \nu w_0^n \uppair{0}{1}\right) E_{0^+}^{n+1}
-      + \hat\rho \nu w_0^n \uppair{0}{1} E_{+1}^{n+1} \tag{icebedfinaltemperate}\\
-   &= \hat\rho E_{0^+}^n - 2 R_b \frac{c_b}{c_i} E_s(p)
-      - \Delta t \hat\rho I^n 
-      + \frac{\Delta t \bar \Sigma^n}{\rho_b} + \frac{2 \nu \bar F^n}{\rho_b}. 
-\f}
-Again a small error results if \f$E_{0+}^n > E_s(p)\f$ while for the computed quantity
-at the next time, \f$E_{0+}^{n+1} < E_s(p)\f$; we accept it.
-
-Equations (\ref icebedfinalcold) and (\ref icebedfinaltemperate) are only
-used in PISM if there is a positive bedrock thermal layer
-depth, which is the condition IceGrid::Mbz > 1 or, equivalently, IceGrid::Lbz > 0.0.
-
-Note that within the code IceEnthalpyModel::enthalpyAndDrainageStep() and
-enthSystemCtx::solveThisColumn(), the \f$z=0\f$ level has \c k=k0 so the levels denoted
-with subscripts \f$+1,0,-1\f$ above are actually at <tt>k=k0+1,k0,k0-1</tt>, respectively.
+Of course \f$M=0\f$ and zero sliding are each allowed.  Furthemore, though we think of the frictional heat from sliding as being fully determined before doing one time step for conservation of energy, the melt rate is \e not known until the conservation of energy equation is solved.  That is, the melt rate \f$M\f$ is an unknown in the conservation of energy equation, to be solved-for here.
 
 
-\section otherice Other concerns: for the lowest ice column segment
+\subsection wbedrockcase Case: have bedrock thermal layer
 
-If there is no bedrock, which is a valid modeling choice and which a PISM user
-may make, then the above argument does not apply to the basal ice segment.  Therefore
-reconsider \ref figure1 "Figure 1", which has volume \f$V\f$ surrounded by a dotted line,
-without the bedrock part of the column.  We will integrate our conservation of energy equation
-  \f[ \rho \frac{dE}{dt} = -\nabla \cdot \mathbf{q} + Q \f]
-\e over \f$V^+\f$ \e only, that is, only over the upper half of \f$V\f$.  Volume \f$V^+\f$
-is between levels \f$z=0\f$ and \f$z=+\epsilon=\Delta z/2\f$.  The upper surface of
-\f$V^+\f$ is \f$S^+\f$.  Denote the \f$z=0\f$ lower surface of \f$V^+\f$ by 
-\f$S^0\f$.
-
-Doing this integral and ignoring side conduction (by shallowness) gives
-  \f[ \rho_i \int_{V^+} \frac{\partial E}{\partial t}
-         + \rho_i \int_{V^+} \mathbf{U} \cdot \nabla E
-        = - \int_{S^+} \mathbf{q} \cdot \mathbf{z}
-          - \int_{S^0} \mathbf{q} \cdot (-\mathbf{z}) + \int_V \Sigma.\f]
-Compare to equation (\ref interface1).
-
-On surface \f$S^+\f$,
-  \f[ \mathbf{q} \cdot \mathbf{z} = - k_i c_i^{-1} \frac{\partial E}{\partial z}. \f]
-On surface \f$S^0\f$,
-  \f[ \mathbf{q} \cdot \mathbf{z} = G + \frac{1}{2} (-\tau_b \cdot \mathbf{u}_b). \f]
-That is, on surface \f$S^0\f$ we assume half of the positive frictional heating flux
-\f$-\tau_b \cdot \mathbf{u}_b\f$, which has SI units W m-2 = J s-1 m-2, enters the ice,
-along with the geothermal flux which is applied here at the base of the ice, instead
-of under the bedrock.
-
-Doing the same approximations as before, with the same meaning for symbols
-\f$A,I^n,\bar\Sigma,\bar F\f$, and upwinding notation, as before, gives
-  \f[ \rho_i \epsilon A \frac{E_{0}^{n+1} - E_{0}^n}{\Delta t} + \rho_i \epsilon A I^n
-           + \rho_i \epsilon A w_0^n \frac{ \Up{w_0^n}{ E_\bullet^{n+1} } }{2\epsilon}
-      = k_i c_i^{-1} A \frac{E_{+1}^{n+1} - E_{0}^{n+1}}{2\epsilon}
-           + A (G + 0.5 \bar F^n) + \epsilon A \bar \Sigma^n. \f]
-Dividing by \f$\epsilon A\f$ and multiplying by \f$\Delta t (\rho_i)^{-1}\f$,
-as before, gives:
-  \f[ E_{0}^{n+1} - E_{0}^n + \Delta t I^n + \nu w_0^n \Up{w_0^n}{ E_\bullet^{n+1} }
-      = 2 R_i \left(E_{+1}^{n+1} - E_{0}^{n+1} \right)
-           + \frac{2 \nu}{\rho_i} (G + 0.5 \bar F^n) + \frac{\Delta t}{\rho_i} \bar \Sigma^n. \f]
-Recall
-  \f[ \Up{w_0^n}{ E_\bullet^{n+1} } = \uppair{0}{E_{+1}^{n+1} - E_{0^+}^{n+1}}. \f]
-Using this, and rearranging with unknowns (superscript \f$n+1\f$) on the left, we get 
-\anchor icebasenobedrock
-  \f[ \left(1 + 2 R_i - \nu w_0^n \uppair{0}{1}\right) E_{0}^{n+1}
-        + \left(-2 R_i + \nu w_0^n \uppair{0}{1}\right) E_{+1}^{n+1} 
-      = E_{0}^n - \Delta t I^n  + \frac{2 \nu}{\rho_i} (G + 0.5 \bar F^n)
-        + \frac{\Delta t}{\rho_i} \bar \Sigma^n. \tag{icebasenobedrock}\f]
-This is the equation used in the tridiagonal system managed by
-enthSystemCtx::solveThisColumn(), in the case of the ice basal segment if there
-is no bedrock thermal layer.  (Note there is no distinction here between
-cold and temperate cases, which is generally
-the case for the enthalpy method, except when we ask for temperature continuity
-when the ice meets bedrock, the case above.)
+<table border>
+<tr>
+    <td> <b>ice base</b>  </td>
+    <td> \b continuum \b equation </td>
+    <td> <b>linear equation in numerical system</b> </td>
+</tr>
+<tr>
+    <td> cold base: \f$T(0^+)<T_m(p)\f$  </td>
+    <td> \f[ \left(-k_b \frac{\partial T}{\partial z}\Big|_{z=0^-}\right) - \left(-k_i c_i^{-1}\frac{\partial E}{\partial z}\Big|_{z=0^+}\right) = 0 +\tau_b \cdot \mathbf{u}_b \f] </td>
+    <td> ??? </td>
+</tr> 
+<tr>
+    <td> temperate base: \f$T(0^+)=T_m(p)\f$  </td>
+    <td> \f[ \left(-k_b \frac{\partial T}{\partial z}\Big|_{z=0^-}\right) - 0 = \rho_i L M +\tau_b \cdot \mathbf{u}_b \f] </td>
+    <td> ??? </td>
+</tr> 
+</table>
 
 
-\section otherbedrock Other concerns: for the highest bedrock column segment
+\subsection nobedrockcase Case: no bedrock thermal layer
 
-Recall that we have already described the numerical scheme for the conservation of energy 
-in bedrock, above.  The equation
-  \f[ \rho_b \frac{\partial E}{\partial t} = k_b c_b^{-1}  \frac{\partial^2 E}{\partial z^2}, \f]
-had a finite difference approximation, in the tridiagonal system,
-  \f[ -R_b E_{k-1}^{n+1} + \left(1 + 2 R_b\right) E_k^{n+1} - R_b E_{k+1}^{n+1}
-         = E_k^n. \f]
-Consider the \f$k=-1\f$ case (more properly, the <tt>k=k0-1</tt> case in 
-enthSystemCtx::solveThisColumn()).  In this case the
-level above, \f$k=0\f$, is where our equation couples to the unknown
-ice/base transition value \f$E_{0^-}^{n+1}\f$.  This is an enthalpy
-in bedrock, which is different from the ice enthalpy value \f$E_{0^+}^{n+1}\f$.
+<table border>
+<tr>
+    <td> <b>ice base</b>  </td>
+    <td> \b continuum \b equation </td>
+    <td> <b>linear equation in numerical system</b> </td>
+</tr>
+</table>
 
-We need to use the correct enthalpy at the \f$k=0\f$ level.  Again we do this by enforcing
-continuity of temperature, which is only necessary at the \f$n+1\f$ time:
-  \f[  T_b(E_{0^-}^{n+1},p) = T_i(E_{0^+}^{n+1},p). \f]
-This continuity requirement implies, with choices in EnthalpyConverter,
-  \f[ E_{0^-}^{n+1} = \frac{c_b}{c_i} E_{0^+}^{n+1}. \f]
-The result is a revised equation
-\anchor neartopofbedrock
-  \f[ -R_b E_{-2}^{n+1} + \left(1 + 2 R_b\right) E_{-1}^{n+1} - R_b \frac{c_b}{c_i} E_{0^+}^{n+1}
-         = E_{-1}^n. \tag{neartopofbedrock} \f]
-This equation is used in the tridiagonal system managed by enthSystemCtx::solveThisColumn().
+\subsection floatingbasecase Case: floating ice
+
+<table border>
+<tr>
+    <td> <b>ice base</b>  </td>
+    <td> \b continuum \b equation </td>
+    <td> <b>linear equation in numerical system</b> </td>
+</tr>
+</table>
 
 
-\section morebedrock Other concerns, continued: effect of temperate ice and frictional heating on bedrock temps
 
-Recall that the frictional heating rate, from sliding, contributes to the
-conservation of energy equation in the ice/bedrock transition segment.  (See equation
-(\ref interface1) and the definition of \f$\bar F\f$ following it.)  Though we believe
-that the scheme, as described above, is reasonable, its discrete time implementation can
-generate unreasonable temperature profiles in the bedrock.  In particular, continuity
-of temperature at the ice/bedrock interface is enforced at the end of the step:
-  \f[T_b(E_{0^-}^{n+1},p) = T_i(E_{0^+}^{n+1},p).\f]
 
-FIXME:  WHERE IS THIS GOING?
 
 
 */  /* <--- IF END-OF-COMMENT LOST, CONFUSION RESULTS ... */

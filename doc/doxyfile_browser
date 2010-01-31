@@ -88,12 +88,8 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = doxybib.txt \
-		         browser_pages.txt \
-			 browser_bombproof.txt \
-			 browser_bombproof_enth.txt \
-			 std_names.html \
-			 config_doc.txt \
+INPUT                  = config_doc.txt std_names.html browser_pages.txt \
+			 browser_bombproof_enth.txt doxybib.txt \
 		         ../src/ \
                          ../src/base/ \
                          ../src/coupler/ \
@@ -308,4 +304,6 @@ DOT_CLEANUP            = YES
 #---------------------------------------------------------------------------
 # Configuration::additions related to the search engine   
 #---------------------------------------------------------------------------
-SEARCHENGINE           = NO
+SEARCHENGINE           = YES
+SERVER_BASED_SEARCH    = NO
+

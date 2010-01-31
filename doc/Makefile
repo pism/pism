@@ -25,7 +25,7 @@ installation : installation.tex
 	pdflatex installation.tex
 
 browser : doxyfile_browser doxybib.txt config_doc.txt std_names.html \
-		browser_pages.txt browser_bombproof.txt revision
+		browser_pages.txt browser_bombproof_enth.txt revision
 	doxygen doxyfile_browser
 
 doxybib.txt: doxybib.py ice_bib.bib
