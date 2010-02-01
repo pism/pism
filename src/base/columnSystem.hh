@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ed Bueler
+// Copyright (C) 2009-2010 Ed Bueler
 //
 // This file is part of PISM.
 //

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -57,16 +57,11 @@ columnSystemCtx::~columnSystemCtx() {
 
 PetscErrorCode columnSystemCtx::resetColumn() {
   // zero the entries except diagonal; only useful for clean views
-  for (PetscInt k = 0; k < nmax-1; k++) {
-    Lp[k]   = 0.0;
-    D[k]    = 1.0;
-    U[k]    = 0.0;
-    rhs[k]  = 0.0;
-    work[k] = 0.0; 
-  }
-  D[nmax-1]    = 1.0;
-  rhs[nmax-1]  = 0.0;
-  work[nmax-1] = 0.0;
+  for (PetscInt k = 0; k < nmax-1; k++) Lp[k]   = 0.0;
+  for (PetscInt k = 0; k < nmax-1; k++) U[k]    = 0.0;
+  for (PetscInt k = 0; k < nmax;   k++) D[k]    = 1.0;
+  for (PetscInt k = 0; k < nmax;   k++) rhs[k]  = 0.0;
+  for (PetscInt k = 0; k < nmax;   k++) work[k] = 0.0;
   return 0;
 }
 

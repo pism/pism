@@ -26,18 +26,23 @@ class enthSystemCtx : public columnSystemCtx {
 
 public:
   enthSystemCtx(int my_Mz, int my_Mbz);
+
   PetscErrorCode initAllColumns();
-  PetscErrorCode setSchemeParamsThisColumn(
-                     PismMask my_mask, bool my_isMarginal, PetscScalar my_lambda);  
-  PetscErrorCode setSurfaceBoundaryValuesThisColumn(PetscScalar my_Enth_surface);
-  PetscErrorCode setBasalBoundaryValuesThisColumn(
-                     PetscScalar my_Ghf, PetscScalar my_Enth_shelfbase, PetscScalar my_Rb);
-  PetscErrorCode solveThisColumn(PetscScalar **x);
-  
   PetscErrorCode viewConstants(PetscViewer viewer);
 
+  PetscErrorCode setSchemeParamsThisColumn(
+            const bool my_isfloating, const bool my_ismarginal,
+            const PetscScalar my_lambda);  
+  PetscErrorCode setSurfaceBoundaryValuesThisColumn(
+            const PetscScalar my_Enth_surface);
+  PetscErrorCode setBasalBoundaryValuesThisColumn(
+            const PetscScalar my_Ghf, const PetscScalar my_Enth_shelfbase, 
+            const PetscScalar my_Rb);
+
+  PetscErrorCode solveThisColumn(PetscScalar **x);
+
 public:
-  // constants which should be set before calling initForAllColumns()
+  // constants which should be set before calling initAllColumns()
   PetscScalar  dx,
                dy,
                dtTemp,
@@ -50,7 +55,7 @@ public:
                bed_rho,
                bed_c,
                bed_k;
-  // pointers which should be set before calling initForAllColumns()
+  // pointers which should be set before calling initAllColumns()
   PetscScalar  *Enth,   // enthalpy in ice
                *Enth_s, // enthalpy level for CTS; function only of pressure
                *Tb,     // temperature in bedrock
@@ -61,10 +66,9 @@ public:
   IceModelVec3 *Enth3;
 
 protected: // used internally
-  PetscInt    Mz, Mbz, k0;
+  PetscInt    Mz, Mbz;
   PetscScalar lambda, Enth_ks, Ghf, Enth_shelfbase, Rb;
-  PismMask    mask;
-  bool        isMarginal;
+  bool        isfloating, ismarginal;
   PetscScalar nuEQ,
               dzav,
               iceK,
@@ -72,6 +76,8 @@ protected: // used internally
               iceRtemp,
               bedK,
               bedR;
+
+private:
   bool        initAllDone,
               schemeParamsValid,
               surfBCsValid,
