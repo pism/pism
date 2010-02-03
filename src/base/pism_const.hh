@@ -76,6 +76,7 @@ bool ends_with(string str, string suffix);
 
 // handy functions for processing options:
 PetscErrorCode check_option(string name, PetscTruth &flag);
+PetscErrorCode check_option(string name, bool &flag);        // overloaded
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]);
 PetscErrorCode check_old_option_and_stop(
     MPI_Comm com, const char old_name[], const char new_name[]);

@@ -321,3 +321,8 @@ PetscErrorCode IceModel::report_grid_parameters() {
   return 0;
 }
 
+
+bool IceModel::issounding(const PetscInt i, const PetscInt j){ 
+  return ((i == id) && (j == jd));
+}
+

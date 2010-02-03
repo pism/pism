@@ -189,6 +189,13 @@ PetscErrorCode check_option(string name, PetscTruth &flag) {
   return 0;
 }
 
+PetscErrorCode check_option(string name, bool &flag) {
+  PetscTruth ptflag;
+  PetscErrorCode ierr = check_option(name, ptflag); CHKERRQ(ierr);
+  flag = (ptflag == PETSC_TRUE);
+  return 0;
+}
+
 //! Print a warning telling the user that an option was ignored.
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]) {
   PetscErrorCode ierr;

@@ -437,11 +437,12 @@ protected:
                       PetscScalar *Texcess, PetscScalar *Hmelt);
 
   // see iMutil.cc
-  virtual int endOfTimeStepHook();
+  virtual int            endOfTimeStepHook();
   virtual PetscErrorCode stampHistoryCommand();
   virtual PetscErrorCode stampHistoryEnd();
   virtual PetscErrorCode stampHistory(string);
   virtual PetscErrorCode check_maximum_thickness();
+  virtual bool           issounding(const PetscInt i, const PetscInt j);
 
   // see iMvelocity.cc
   virtual PetscErrorCode velocity(bool updateSIAVelocityAtDepth);    
