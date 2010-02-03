@@ -267,7 +267,7 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
   PetscErrorCode ierr;
 
   // initialize from EISMINT II formulas
-  ierr = verbPrintf(1,grid.com, 
+  ierr = verbPrintf(2,grid.com, 
     "initializing variables from EISMINT II experiment %c formulas ... \n", 
     expername); CHKERRQ(ierr);
 

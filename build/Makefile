@@ -188,6 +188,12 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 ../bin/pismtests: pismtests.o iMtests.o ${LIBPISMNAME}
 	${CXXLINKER} pismtests.o iMtests.o ${ICE_LIB_FLAGS} -o $@
 
+# BEGIN FIXME: this is temporary and should eventually go:
+other_sources += PISMComponent.cc PAConstant.cc PAFausto.cc PAForcing.cc PISMSurface.cc pcctest3.cc PISMOcean.cc
+
+../bin/pcctest3 : pcctest3.o ${LIBPISMNAME} PISMComponent.o PAConstant.o PAFausto.o PAForcing.o PISMSurface.o PISMOcean.o
+	${CXXLINKER} pcctest3.o PISMComponent.o PAConstant.o PAFausto.o PAForcing.o PISMSurface.o PISMOcean.o ${ICE_LIB_FLAGS} -o $@
+# END FIXME
 
 #build extra executables
 

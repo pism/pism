@@ -148,13 +148,13 @@ PetscErrorCode IceModelVec2::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Ve
  */
 PetscErrorCode IceModelVec2::set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v_y) {
   PetscErrorCode ierr;
-  PetscScalar **fx, **fy, **mag;
-  ierr = v_x.get_array(fx); CHKERRQ(ierr);
-  ierr = v_y.get_array(fy); CHKERRQ(ierr);
+  PetscScalar **mag = NULL;
+  ierr = v_x.begin_access(); CHKERRQ(ierr);
+  ierr = v_y.begin_access(); CHKERRQ(ierr);
   ierr = get_array(mag); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      mag[i][j] = sqrt(PetscSqr(fx[i][j]) + PetscSqr(fy[i][j]));
+      mag[i][j] = sqrt( PetscSqr(v_x(i,j)) + PetscSqr(v_y(i,j)) );
     }
   }
   ierr = v_x.end_access(); CHKERRQ(ierr);
@@ -167,7 +167,7 @@ PetscErrorCode IceModelVec2::set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v
 //! Masks out all the areas where \f$ M \le 0 \f$ by setting them to \c fill. 
 PetscErrorCode IceModelVec2::mask_by(IceModelVec2 &M, PetscScalar fill) {
   PetscErrorCode ierr;
-  PetscScalar **a;
+  PetscScalar **a = NULL;
   ierr = get_array(a); CHKERRQ(ierr);
   ierr = M.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {

@@ -275,6 +275,8 @@ PetscErrorCode PISMGreenlandAtmosCoupler::writeCouplingFieldsToFile(
 
   ierr = tmp.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
+  ierr = vsnowtemp_mj.write(filename, NC_FLOAT);  CHKERRQ(ierr);
+
   // write the current anomaly to the file (if applicable):
   if (snowtempmaps != NULL) {
     ierr = snowtempmaps->update(t_years, 0); CHKERRQ(ierr);

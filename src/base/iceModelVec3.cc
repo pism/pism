@@ -1013,7 +1013,7 @@ PetscErrorCode IceModelVec3::view_sounding(int i, int j, PetscInt viewer_size) {
 
 PetscErrorCode IceModelVec3Bedrock::view_sounding(int i, int j, PetscInt viewer_size) {
   PetscErrorCode ierr;
-  PetscScalar *ivals;
+  PetscScalar *ivals = NULL;
   PetscInt my_Mz = grid->Mbz;
 
   // memory allocation:
