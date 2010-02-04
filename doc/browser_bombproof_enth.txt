@@ -557,7 +557,7 @@ Of course zero sliding is a possible condition for the velocities going into BOM
          \end{matrix} \f] </td>
     <td> <p> k=Mbz+1: E[1],E[0] </p>
          <p> k=Mbz: Tb[Mbz-1] </p>
-         <p> k=Mbz-1: X,Tb[Mbz-1],Tb[Mbz-2] </p> </td>
+         <p> k=Mbz-1: X </p> </td>
 </tr> 
 <tr>
     <td> NO bedrock thermal layer (so Mbz=1)

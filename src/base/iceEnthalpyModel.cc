@@ -721,7 +721,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(PetscScalar* vertSacrCo
       // for fine grid; this should *not* be replaced by call to grid.kBelowHeight()
       const PetscInt  ks = static_cast<PetscInt>(floor(H[i][j]/fdz));
 
-      // enthalpy and pressures at boundaries
+      // enthalpy and pressures at boundaries of ice
       const PetscScalar p_basal = EC.getPressureFromDepth(H[i][j]),
                         p_ks    = EC.getPressureFromDepth(H[i][j] - fzlev[ks]);
       PetscScalar Enth_air, Enth_ks, Enth_shelfbase;
