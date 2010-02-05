@@ -121,14 +121,12 @@ PetscErrorCode enthSystemCtx::setSurfaceBoundaryValuesThisColumn(
 
 
 PetscErrorCode enthSystemCtx::setBasalBoundaryValuesThisColumn(
-                     const PetscScalar my_Ghf, const PetscScalar my_Enth_shelfbase,
-                     const PetscScalar my_Rb) {
+                     const PetscScalar my_Ghf, const PetscScalar my_Rb) {
   if (!initAllDone) {  SETERRQ(2,
      "setBasalBoundaryValuesThisColumn() should only be called after initAllColumns() in enthSystemCtx"); }
   if (basalBCsValid) {  SETERRQ(3,
      "setBasalBoundaryValuesThisColumn() called twice (?) in enthSystemCtx"); }
   Ghf = my_Ghf;
-  Enth_shelfbase = my_Enth_shelfbase;
   Rb = my_Rb;
   basalBCsValid = true;
   return 0;
@@ -181,8 +179,8 @@ PetscErrorCode enthSystemCtx::viewConstants(PetscViewer viewer) {
                      "  isfloating,ismarginal,lambda, = %d,%d,%10.3f\n",
                      (int)isfloating,(int)ismarginal,lambda); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-                     "  Enth_ks,Ghf,Enth_shelfbase,Rb = %10.3e,%10.3e,%10.3e,%10.3e\n",
-                     Enth_ks,Ghf,Enth_shelfbase,Rb); CHKERRQ(ierr);
+                     "  Enth_ks,Ghf,Rb = %10.3e,%10.3e,%10.3e\n",
+                     Enth_ks,Ghf,Rb); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,">>\n\n"); CHKERRQ(ierr);
   return 0;
 }
@@ -266,6 +264,8 @@ PRINCIPLES ABOUT THESE MODIFICATIONS OF tempSystemCtx::solveThisColumn():
     U[Mbz-1] = -1.0 / ice_c;  // eqn:  Tb[Mbz-1] - c_i^{-1} Enth[0] = 0
     rhs[Mbz-1] = 0.0;
   }
+
+FIXME:  issues from here on with meaning of k=Mbz equation ... it is a heat flux X
 
   // bottom part of ice: k=Mbz eqn
   if (ks == 0) {
@@ -373,7 +373,7 @@ FIXME  reasonable below here  FIXME?
       rhs[Mbz+k] += dtTemp * ((Sigma[k] / ice_rho) - UpEnthu - UpEnthv);
     }
   }
-      
+
   // apply surface b.c. (but only if we have not already addressed Mbz+ks eqn)
   if (ks > 0) {
     L[Mbz+ks] = 0.0;

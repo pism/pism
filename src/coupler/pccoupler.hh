@@ -175,6 +175,11 @@ public:
 //! A basic derived class of PISMClimateCoupler for coupling PISM to an ocean model.  Essentially virtual.
 /*!
 It is expected that a derived class of this will actually be used.
+
+The mass flux returned by updateShelfBaseMassFluxAndProvide() has this sign
+convention: positive values mean ice is being \e removed from the shelf.  This agrees
+with the basal melt rate sign convention for the grounded portion of an ice
+sheet.
  */
 class PISMOceanCoupler : public PISMClimateCoupler {
 
@@ -209,7 +214,8 @@ public:
                                            // there can be no floating ice (for example)
 
 protected:
-  IceModelVec2 vshelfbasetemp, vshelfbasemassflux;
+  IceModelVec2 vshelfbasetemp,     //!< this field may not be needed by IceModel at all!
+               vshelfbasemassflux; //!< this field is believed to be the important one
   Timeseries*  dSLforcing; // possibly contains sea level offset data, e.g. from sea bed core data
   PetscReal    seaLevel; /*!<  IceModel will read PISMOceanCoupler to determine surface elevation
                                of floating ice, and thus the grounding line.  seaLevel here can

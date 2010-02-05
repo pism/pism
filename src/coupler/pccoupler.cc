@@ -655,8 +655,7 @@ PISMOceanCoupler::~PISMOceanCoupler() {
 /*!
 Derived class implementations will check user options to configure the PISMOceanCoupler.
 This version allocates space and sets attributes for the two essential fields.
-
-g->year must be valid before this can be called.
+It also reads the -dSLforcing file if provided.
  */
 PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g, const PISMVars &variables) {
   PetscErrorCode ierr;
@@ -708,14 +707,16 @@ PetscErrorCode PISMOceanCoupler::initFromOptions(IceGrid* g, const PISMVars &var
 }
 
 
+/*!
+We assume file is prepared in the sense that it exists and that global attributes 
+are already written.  See IceModel::dumpToFile() for how main PISM output file is
+prepared.  Note calls here handle opening and closing the file.  We write in
+FLOAT not DOUBLE because these are expected to be for diagnosis, not restart etc.
+ */
 PetscErrorCode PISMOceanCoupler::writeCouplingFieldsToFile(
 		PetscScalar /*t_years*/, const char *filename) {
   PetscErrorCode ierr;
   
-  // We assume file is prepared in the sense that it exists and that global attributes 
-  //   are already written.  See IceModel::dumpToFile() for how main PISM output file is
-  //   prepared.  Note calls here handle opening and closing the file.  We write in
-  //   FLOAT not DOUBLE because these are expected to be for diagnosis, not restart etc.
   ierr = vshelfbasetemp.write(filename, NC_FLOAT); CHKERRQ(ierr);
   ierr = vshelfbasemassflux.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
@@ -806,7 +807,8 @@ It is was a trivial start to a now-highly-non-trivial PISMClimateCoupler for oce
 ice shelves which was written by Ricarda Winkelmann (PIK), with input from Bueler, on 2 Dec 2008.
 Contact Bueler for further info. */
 
-/* For this Coupler there is one relevant config parameter in src/pism_config.cdl (and thus
+/*!
+For this Coupler there is one relevant config parameter in src/pism_config.cdl (and thus
 lib/config.nc). It is "ocean_sub_shelf_heat_flux_into_ice", with default value 0.5 W m-2.  Here
 is some perspective on that value:
 
@@ -823,7 +825,6 @@ That source also gives 0.16 m/a melting as average rate necessary to maintain eq
 but points out variability in -0.5 m/a (i.e. melting) to +1.0 m/a (freeze-on) range from a
 flow band model (figure 5).
  */
-
 PISMConstOceanCoupler::PISMConstOceanCoupler() : PISMOceanCoupler() {
 }
 
@@ -883,7 +884,8 @@ PetscErrorCode PISMConstOceanCoupler::writeCouplingFieldsToFile(
 PetscErrorCode PISMConstOceanCoupler::updateShelfBaseTempAndProvide(
                   PetscScalar /*t_years*/, PetscScalar /*dt_years*/,
                   IceModelVec2* &pvsbt) {
-  // ignores everything from IceModel except ice thickness; also ignores t_years and dt_years
+  // ignors everything from IceModel except ice thickness
+  // also ignors t_years and dt_years
   PetscErrorCode ierr;
 
   const PetscScalar beta_CC_grad = config.get("beta_CC") * config.get("ice_density")

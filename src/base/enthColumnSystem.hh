@@ -36,8 +36,7 @@ public:
   PetscErrorCode setSurfaceBoundaryValuesThisColumn(
             const PetscScalar my_Enth_surface);
   PetscErrorCode setBasalBoundaryValuesThisColumn(
-            const PetscScalar my_Ghf, const PetscScalar my_Enth_shelfbase, 
-            const PetscScalar my_Rb);
+            const PetscScalar my_Ghf, const PetscScalar my_Rb);
 
   PetscErrorCode solveThisColumn(PetscScalar **x);
 
@@ -67,7 +66,7 @@ public:
 
 protected: // used internally
   PetscInt    Mz, Mbz;
-  PetscScalar lambda, Enth_ks, Ghf, Enth_shelfbase, Rb;
+  PetscScalar lambda, Enth_ks, Ghf, Rb;
   bool        isfloating, ismarginal;
   PetscScalar nuEQ,
               dzav,

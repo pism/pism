@@ -51,6 +51,15 @@ protected:
   using IceModel::init_physics;
   virtual PetscErrorCode init_physics();
 
+  using IceModel::energyStats;
+  virtual PetscErrorCode energyStats(PetscScalar iarea, bool useHomoTemp, 
+                                     PetscScalar &gmeltfrac, PetscScalar &gtemp0);
+
+  using IceModel::temperatureStep;
+  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, 
+                                         PetscScalar* bulgeCount);
+
+protected:  // new to IceEnthalpyModel
   virtual PetscErrorCode setEnth3FromT3_ColdIce();
 
   virtual PetscErrorCode setEnth3FromT3AndLiqfrac3(IceModelVec3 &Liqfrac3);
@@ -62,15 +71,9 @@ protected:
   virtual PetscErrorCode setCTSFromEnthalpy(IceModelVec3 &useForCTS);
 
   virtual PetscErrorCode setPATempFromEnthalpy(IceModelVec3 &useForPATemp);
-
-  using IceModel::energyStats;
-  virtual PetscErrorCode energyStats(PetscScalar iarea, bool useHomoTemp, 
-                                     PetscScalar &gmeltfrac, PetscScalar &gtemp0);
-
-  using IceModel::temperatureStep;
-  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
   
-  virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
+  virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
+                                                 PetscScalar* bulgeCount);
 
   virtual PetscErrorCode drainageToBaseModelEnth(EnthalpyConverter &EC,
                 PetscScalar L, PetscScalar omega_max,
@@ -78,8 +81,8 @@ protected:
                 PetscScalar &enthalpy, PetscScalar &Hmelt);
 
 protected:
-  IceModelVec3  EnthNew3;  // NOTE:  Enth3 is an IceModel member, uninitialized
-                           //        and unused within IceModel
+  IceModelVec3  EnthNew3;  // NOTE:  Enth3 itself is an IceModel member,
+                           //        uninitialized and unused within IceModel
 };
 
 #endif  // __iceEnthalpyModel_hh
