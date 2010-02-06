@@ -162,7 +162,7 @@ PetscErrorCode PAFausto::write_diagnostic_fields(PetscReal t_years, PetscReal dt
   // using the standard yearly cycle and write that too:
   IceModelVec2 tmp;		// will be de-allicated at the end of scope
 
-  ierr = tmp.create(grid, "fausto_temp_snapshot", false); CHKERRQ(ierr);
+  ierr = tmp.create(grid, "temp_snapshot", false); CHKERRQ(ierr);
   ierr = tmp.set_attrs("diagnostic", "near-surface air temperature snapshot",
 		       "K", ""); CHKERRQ(ierr);
 
@@ -248,9 +248,7 @@ PetscErrorCode PAFausto::temp_snapshot(PetscReal t_years, PetscReal dt_years,
 
   ierr = update(t_years, dt_years); CHKERRQ(ierr);
 
-  string history = "computed using corrected formula (4) in " + reference;
-
-  double T = t_years + 0.0 * dt_years; // FIXME: should be the interval mid-point
+  double T = t_years + 0.5 * dt_years;
 
   double t_sec = ( T - floor(T) ) * secpera; // time from the beginning of a year, in seconds
 
@@ -259,6 +257,7 @@ PetscErrorCode PAFausto::temp_snapshot(PetscReal t_years, PetscReal dt_years,
   ierr = result.add(1.0, temp_ma); CHKERRQ(ierr);
   // result = temp_ma + (temp_mj - temp_ma) * cos(radpersec * (T - julydaysec));
 
+  string history = "computed using corrected formula (4) in " + reference;
   ierr = result.set_attr("history", history); CHKERRQ(ierr);
 
   return 0;

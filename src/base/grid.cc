@@ -352,7 +352,7 @@ PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
     }
   }
 
-  if (PetscAbs(dzMAX - dzMIN) <= 1.0e-8) {
+  if (PetscAbs(dzbMAX - dzbMIN) <= 1.0e-8) {
     bed_vertical_spacing = EQUAL;
   } else {
     bed_vertical_spacing = UNKNOWN;

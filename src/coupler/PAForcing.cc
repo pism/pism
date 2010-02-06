@@ -168,7 +168,7 @@ PetscErrorCode PAForcing::write_input_fields(PetscReal t_years, PetscReal dt_yea
 PetscErrorCode PAForcing::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 						  string filename) {
   PetscErrorCode ierr;
-  double T = t_years + 0.0 * dt_years;  // FIXME: should be the midpoint
+  double T = t_years + 0.5 * dt_years;
 
   ierr = input_model->write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
 
@@ -200,7 +200,7 @@ PetscErrorCode PAForcing::write_diagnostic_fields(PetscReal t_years, PetscReal d
 PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
 						   PetscReal dt_years, string filename) {
   PetscErrorCode ierr;
-  double T = t_years + 0.0 * dt_years;  // FIXME: should be the midpoint
+  double T = t_years + 0.5 * dt_years;
 
   if (temp_ma_anomaly != NULL) {
     if (vars.find("temp_ma_anomaly") != vars.end()) {
@@ -296,7 +296,7 @@ PetscErrorCode PAForcing::mean_precip(PetscReal t_years, PetscReal dt_years,
 PetscErrorCode PAForcing::mean_annual_temp(PetscReal t_years, PetscReal dt_years,
 					   IceModelVec2 &result) {
   PetscErrorCode ierr;
-  double T = t_years + 0.0 * dt_years;  // FIXME: should be the midpoint
+  double T = t_years + 0.5 * dt_years;
 
   ierr = input_model->mean_annual_temp(t_years, dt_years, result); CHKERRQ(ierr);
 
@@ -373,7 +373,7 @@ PetscErrorCode PAForcing::temp_time_series(int i, int j, int N,
 PetscErrorCode PAForcing::temp_snapshot(PetscReal t_years, PetscReal dt_years,
 					IceModelVec2 &result) {
   PetscErrorCode ierr;
-  double T = t_years + 0.0 * dt_years;  // FIXME: should be the midpoint
+  double T = t_years + 0.5 * dt_years;
 
   ierr = input_model->temp_snapshot(t_years, dt_years, result); CHKERRQ(ierr);
 

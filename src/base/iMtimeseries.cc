@@ -55,6 +55,11 @@ PetscErrorCode IceModel::init_timeseries() {
     PetscEnd();
   }
 
+  if (ts_times.size() == 0) {
+    PetscPrintf(grid.com, "PISM ERROR: no argument for -ts_times option.\n");
+    PetscEnd();
+  }
+
   ierr = verbPrintf(2, grid.com, "saving scalar time-series to '%s'; ",
 		    ts_filename.c_str()); CHKERRQ(ierr);
 
@@ -66,6 +71,11 @@ PetscErrorCode IceModel::init_timeseries() {
 			       TEMPORARY_STRING_LENGTH, &ts_vars_set); CHKERRQ(ierr);
   string var_name;
   if (ts_vars_set) {
+    if (strlen(tmp) == 0) {
+      PetscPrintf(grid.com, "PISM ERROR: no argument for -ts_vars option.\n");
+      PetscEnd();
+    }
+
     ierr = verbPrintf(2, grid.com, "variables requested: %s\n", tmp); CHKERRQ(ierr);
     istringstream arg(tmp);
 
@@ -356,6 +366,11 @@ PetscErrorCode IceModel::init_extras() {
 
   string var_name;
   if (save_vars) {
+    if (strlen(tmp) == 0) {
+      PetscPrintf(grid.com, "PISM ERROR: no argument for -extra_vars option.\n");
+      PetscEnd();
+    }
+    
     ierr = verbPrintf(2, grid.com, "variables requested: %s\n", tmp); CHKERRQ(ierr);
     istringstream arg(tmp);
 

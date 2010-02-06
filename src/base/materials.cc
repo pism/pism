@@ -966,7 +966,7 @@ PetscErrorCode IceFlowLawFactory::setType(const char type[])
   PetscFunctionBegin;
   ierr = PetscFListFind(type_list,comm,type,(void(**)(void))&r);CHKERRQ(ierr);
   if (!r) {
-    ierr = PetscPrintf(comm, "PISM ERROR: Selected Ice type %s is not available.\n",type); CHKERRQ(ierr);
+    ierr = PetscPrintf(comm, "PISM ERROR: Selected ice type \"%s\" is not available.\n",type); CHKERRQ(ierr);
     PetscEnd();
   }
   ierr = PetscStrncpy(type_name,type,sizeof(type_name));CHKERRQ(ierr);

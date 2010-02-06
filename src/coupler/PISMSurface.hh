@@ -115,18 +115,42 @@ protected:
 
 class PSModifier : public PISMSurfaceModel {
 public:
-  virtual ~PSModifier();
+  PSModifier(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
+    : PISMSurfaceModel(g, conf, vars)
+  {};
+  virtual ~PSModifier() {}
   virtual void attach_input(PISMSurfaceModel *input);
 protected:
   PISMSurfaceModel *input_model;
 };
 
 //! A class implementing a mechanism modifying surface mass balance to force
-//! ice thickness to a given target at the end of the run. \b NOT \b IMPLEMENTED
+//! ice thickness to a given target at the end of the run.
 class PSForceThickness : public PSModifier {
 public:
-  // FIXME
+  PSForceThickness(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
+    : PSModifier(g, conf, vars)
+  {
+    ice_thickness = NULL;
+    alpha = config.get("force_to_thickness_alpha");
+  }
+
+  virtual ~PSForceThickness() {}
+  PetscErrorCode init();
+  virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
+					       IceModelVec2 &result);
+  virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
+						 IceModelVec2 &result);
+  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
+  virtual PetscErrorCode write_input_fields(PetscReal t_years, PetscReal dt_years,
+					    string filename);
+  virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
+						 string filename);
 protected:
+  string input_file;
+  PetscReal alpha;
+  IceModelVec2 *ice_thickness;	//!< current ice thickness produced by IceModel.
+  IceModelVec2 target_thickness;
 };
 
 class PSLocalMassBalance : public PISMSurfaceModel {

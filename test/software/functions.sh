@@ -27,7 +27,7 @@ print () {
 
 # run a command and throw away the output if $SILENT is set
 
-# This function is used to be able to suppress the output from a command when
+# This function is used to allow suppressing the output from a command when
 # the test is run in the batch mode, but not when it is run manually.
 
 # Note that it uses the $MPIDO variable; use "run -n NN command" with NN =
@@ -35,38 +35,28 @@ print () {
 # you need to run it without MPI ("command" can not be "-n" in the latter
 # case).
 run () {
-
-    # Figure out if we need to dump the output:
-    if [ -z $SILENT ]; then
-
-	# Print a message explaining what will happen:
-	if [ $1 == "-n" ]; then
-	    echo Running $MPIDO $@
-	    $MPIDO $@
-	else
-	    echo Running $@
-	    $@
-	fi
+    COMMAND="echo ERROR: function run: no arguments!"
+    PROGRAM="echo"
+    # Find out if we need to use $MPIDO:
+    if [ $1 == "-n" ]; then
+	COMMAND="$MPIDO $@"
+	PROGRAM=$3
     else
-	if [ -z $VERBOSE ]; then
-	    if [ $1 == "-n" ];
-	    then
-		$MPIDO $@ &> /dev/null
-	    else
-		$@ &> /dev/null
-	    fi
-	else
-	    if [ $1 == "-n" ];
-	    then
-		print "Running $MPIDO $@ &> /dev/null"
-		$MPIDO $@ &> /dev/null
-	    else
-		print "Running $@ &> /dev/null"
-		$@ &> /dev/null
-	    fi
-	fi
+	COMMAND=$@
+	PROGRAM=$1
     fi
 
+    if [ -z `which $PROGRAM` ]; then
+	echo ERROR: $PROGRAM not found!
+    fi
+
+    # Figure out if we need to dump the output:
+    if [ $SILENT ]; then
+	$COMMAND &> /dev/null
+    else 
+	echo "Running $COMMAND"
+	$COMMAND
+    fi
 }
 
 # print a message and count a success

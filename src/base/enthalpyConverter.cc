@@ -175,7 +175,7 @@ We define the pressure-adjusted temperature to be:
 PetscErrorCode EnthalpyConverter::getPATemp(double E, double p, double &T_pa) const {
   PetscErrorCode ierr;
   const double T_m = getMeltingTemp(p);
-  double T;
+  double T = 0;			// initialized to avoid a compiler warning
   ierr = getAbsTemp(E,p,T); CHKERRQ(ierr);
   T_pa = T - T_m + T_0;
   return 0;

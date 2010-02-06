@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -425,6 +425,11 @@ PetscErrorCode IceModel::init_snapshots() {
   ierr = parse_times(grid.com, tmp, snapshot_times);
   if (ierr != 0) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -save_times argument failed.\n"); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  if (snapshot_times.size() == 0) {
+    PetscPrintf(grid.com, "PISM ERROR: no argument for -save_times option.\n");
     PetscEnd();
   }
 

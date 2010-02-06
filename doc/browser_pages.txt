@@ -23,6 +23,9 @@ points into the PISM classes are:
   - PISMClimateCoupler
   - IceGrid
   - IceModelVec
+  - PISMSurfaceModel
+  - PISMAtmosphereModel
+  - PISMOceanModel
 
 The <a href="pages.html">Related Pages tab</a> at the top links to 
 overview pages for some aspects of PISM design.  You will also find a

@@ -22,6 +22,7 @@ static char help[] =
 #include <set>
 #include <ctime>
 #include <string>
+#include <sstream>
 #include <vector>
 #include <petscda.h>
 #include "base/pism_const.hh"
@@ -33,10 +34,11 @@ static char help[] =
 #include "coupler/PISMAtmosphere.hh"
 #include "coupler/PISMSurface.hh"
 #include "coupler/PISMOcean.hh"
+#include "eismint/pgrn_atmosphere.hh"
 
 //! Replaces PetscOptionsEList.
 static PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set<string> choices,
-				      string default_value, string &result, bool flag) {
+				      string default_value, string &result, bool &flag) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   string list, descr;
@@ -78,6 +80,69 @@ static PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string descripti
   return 0;
 }
 
+PetscErrorCode PISMOptionsStrings(string opt, string text, string default_value,
+				  vector<string>& result, bool &flag) {
+  PetscErrorCode ierr;
+  char tmp[TEMPORARY_STRING_LENGTH];
+  PetscTruth opt_set = PETSC_FALSE;
+
+  ierr = PetscOptionsString(opt.c_str(), text.c_str(), "", default_value.c_str(),
+			    tmp, TEMPORARY_STRING_LENGTH, &opt_set); CHKERRQ(ierr);
+
+  result.clear();
+
+  if (opt_set) {
+    istringstream arg(tmp);
+    string word;
+    while (getline(arg, word, ','))
+      result.push_back(word);
+
+    flag = true;
+  } else {
+    result.push_back(default_value);
+    flag = false;
+  }
+
+  return 0;
+}
+/*
+static PetscErrorCode init_atmosphere(IceGrid &grid, const NCConfigVariable &conf, PISMVars &vars,
+				      PISMAtmosphereModel* &atmosphere) {
+  PetscErrorCode ierr;
+  bool opt_set = false;
+  string choice;
+  PISMAtmosphereModel *tmp = NULL;
+
+  ierr = PetscOptionsBegin(grid.com, "", "PISM options controlling surface, atmosphere and ocean models", ""); CHKERRQ(ierr);
+
+  // Atmosphere models:
+  set<string> atmosphere_models;
+  atmosphere_models.insert("constant");
+  atmosphere_models.insert("greenland");
+  atmosphere_models.insert("eismint_greenland");
+
+  ierr = PISMOptionsList(grid.com,
+			 "-atmosphere",
+			 "Specifies an atmosphere model.",
+			 atmosphere_models,
+			 "constant",
+			 choice,
+			 opt_set); CHKERRQ(ierr);
+
+  if        (choice == "constant") {
+    atmosphere = new PAConstant(grid, conf, vars);
+  } else if (choice == "greenland") {
+    atmosphere = new PAFausto(grid, conf, vars);
+  } else if (choice == "eismint_greenland") {
+    atmosphere = new PA_EISMINT_Greenland(grid, conf, vars);
+  } else {
+    SETERRQ(1, "Invalid atmosphere model choice (should never happen)");
+  }
+
+  return 0;
+}
+*/
+
 //! Processes command-line options and creates 
 static PetscErrorCode init_boundary_models(IceGrid &grid, const NCConfigVariable &conf, PISMVars &vars,
 					   PISMSurfaceModel* &surface_model,
@@ -93,6 +158,7 @@ static PetscErrorCode init_boundary_models(IceGrid &grid, const NCConfigVariable
   set<string> atmosphere_models;
   atmosphere_models.insert("constant");
   atmosphere_models.insert("greenland");
+  atmosphere_models.insert("eismint_greenland");
 
   ierr = PISMOptionsList(grid.com,
 			 "-atmosphere",
@@ -106,6 +172,8 @@ static PetscErrorCode init_boundary_models(IceGrid &grid, const NCConfigVariable
     atmosphere = new PAConstant(grid, conf, vars);
   } else if (choice == "greenland") {
     atmosphere = new PAFausto(grid, conf, vars);
+  } else if (choice == "eismint_greenland") {
+    atmosphere = new PA_EISMINT_Greenland(grid, conf, vars);
   } else {
     SETERRQ(1, "Invalid atmosphere model choice (should never happen)");
   }
@@ -146,6 +214,18 @@ static PetscErrorCode init_boundary_models(IceGrid &grid, const NCConfigVariable
     surface_model = new PSLocalMassBalance(grid, conf, vars);
   } else {
     SETERRQ(1, "Invalid surface model choice (should never happen)");
+  }
+
+  // Surface model modifiers:
+
+  PetscTruth ftt_set;
+  ierr = check_option("-force_to_thk", ftt_set); CHKERRQ(ierr);
+  if (ftt_set) {
+    PSForceThickness *forcing = new PSForceThickness(grid, conf, vars);
+
+    forcing->attach_input(surface_model);
+
+    surface_model = forcing;
   }
 
   // Ocean models: no choices (yet), so we just use the default (constant) model.

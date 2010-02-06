@@ -224,7 +224,7 @@ PetscErrorCode PSLocalMassBalance::init() {
 
   ierr = check_option("-pdd_rand", pdd_rand); CHKERRQ(ierr);
   ierr = check_option("-pdd_rand_repeatable", pdd_rand_repeatable); CHKERRQ(ierr);
-  ierr = check_option("-pdd_greenland", fausto_params); CHKERRQ(ierr);
+  ierr = check_option("-pdd_fausto", fausto_params); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, "* Initializing the PDD-based surface process model...\n"); CHKERRQ(ierr);
 
@@ -333,6 +333,213 @@ PetscErrorCode PSLocalMassBalance::ice_surface_temperature(PetscReal t_years, Pe
   string history = result.string_attr("history");
   history = "re-interpreted mean annual near-surface air temperature as instantaneous ice temperature at the ice surface\n" + history;
   ierr = result.set_attr("history", history); CHKERRQ(ierr);
+
+  return 0;
+}
+
+///// "Force-to-thickness" mechanism
+
+PetscErrorCode PSForceThickness::init() {
+  PetscErrorCode ierr;
+  char fttfile[PETSC_MAX_PATH_LEN];
+
+  ierr = input_model->init(); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+		    "* Initializing force-to-thickness mass-balance modifier...\n"); CHKERRQ(ierr);
+
+  ice_thickness = dynamic_cast<IceModelVec2*>(variables.get("land_ice_thickness"));
+  if (!ice_thickness) SETERRQ(1, "ERROR: land_ice_thickness is not available");
+
+  ierr = target_thickness.create(grid, "thk", false); CHKERRQ(ierr); // name to read by
+  ierr = target_thickness.set_attrs("climate_state", 
+				    "target ice thickness (to be reached at the end of the run",
+				    "m", 
+				    "land_ice_thickness"); CHKERRQ(ierr); // standard_name to read by
+
+  ierr = PetscOptionsGetString(PETSC_NULL, "-force_to_thk", fttfile,
+                               PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
+
+  input_file = fttfile;
+
+  // determine exponential rate alpha from user option or from factor; option
+  // is given in a^{-1}
+  PetscScalar fttalpha;
+  PetscTruth  fttalphaSet;
+    
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-force_to_thk_alpha",
+			     &fttalpha, &fttalphaSet); CHKERRQ(ierr);
+  if (fttalphaSet == PETSC_TRUE) {
+    ierr = verbPrintf(2, grid.com,
+		      "    option -force_to_thk_alpha seen; setting alpha to %.2f a-1\n",
+		      fttalpha); CHKERRQ(ierr);
+    alpha = fttalpha / secpera;
+  }
+    
+  ierr = verbPrintf(2, grid.com,
+		    "    alpha = %.6f a-1 for %.3f a run, for -force_to_thk mechanism\n",
+		    alpha * secpera, grid.end_year - grid.start_year); CHKERRQ(ierr);
+
+  // fttfile now contains name of -force_to_thk file; now check
+  // it is really there; if so, read the dimensions of computational grid so
+  // that we can set up a LocalInterpCtx for actual reading of target thickness
+  NCTool nc(&grid);
+  grid_info gi;
+  ierr = nc.open_for_reading(fttfile); CHKERRQ(ierr);
+  ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  LocalInterpCtx* lic;
+  lic = new LocalInterpCtx(gi, NULL, NULL, grid); // 2D only
+  ierr = verbPrintf(2, grid.com, 
+		    "    reading target thickness 'thk' from %s ...\n", fttfile); CHKERRQ(ierr); 
+  ierr = target_thickness.regrid(fttfile, *lic, true); CHKERRQ(ierr);
+  delete lic;
+
+  // reset name to avoid confusion; attributes again because lost by set_name()?
+  ierr = target_thickness.set_name("target_thickness"); CHKERRQ(ierr);
+  ierr = target_thickness.set_attrs("",  // pism_intent unknown
+				    "target thickness for force-to-thickness-spinup mechanism (hit this at end of run)",
+				    "m",
+				    "");  // no CF standard_name, to put it mildly
+  CHKERRQ(ierr);
+
+
+  return 0;
+}
+
+/*!
+If \c -force_to_thk \c foo.nc is in use then vthktarget will have a target ice thickness
+map.  Let \f$H_{\text{tar}}\f$ be this target thickness,
+and let \f$H\f$ be the current model thickness.  Recall that the mass continuity 
+equation solved by IceModel::massContExplicitStep() is
+  \f[ \frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q} \f]
+and that this procedure is supposed to produce \f$M\f$.
+In this context, the semantics of \c -force_to_thk are that \f$M\f$ is modified
+by a multiple of the difference between the target thickness and the current thickness.
+In particular, the \f$\Delta M\f$ that is produced here is 
+  \f[\Delta M = \alpha (H_{\text{tar}} - H)\f]
+where \f$\alpha>0\f$ is determined below.  Note \f$\Delta M\f$ is positive in
+areas where \f$H_{\text{tar}} > H\f$, so we are adding mass there, and we are ablating
+in the other case.
+
+Let \f$t_s\f$ be the start time and \f$t_e\f$ the end time for the run.
+Without flow or basal mass balance, or any surface mass balance other than the
+\f$\Delta M\f$ computed here, we are solving
+  \f[ \frac{\partial H}{\partial t} = \alpha (H_{\text{tar}} - H) \f]
+Let's assume \f$H(t_s)=H_0\f$.  This initial value problem has solution
+\f$H(t) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t-t_s)}\f$
+and so
+  \f[ H(t_e) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t_e-t_s)} \f]
+The constant \f$\alpha\f$ has a default value \c pism_config:force_to_thickness_alpha
+of $0.002\,\text{a}^{-1}$.
+
+The final feature is that we turn on this mechanism so it is harshest near the end
+of the run.  In particular,
+  \f[\Delta M = \lambda(t) \alpha (H_{\text{tar}} - H)\f]
+where
+  \f[\lambda(t) = \frac{t-t_s}{t_e-t_s}\f]
+
+In terms of files generated from the EISMINT-Greenland example, a use of the
+\c -force_to_thk mechanism looks like the following:  Suppose we regard the SSL2
+run as a spin-up to reach a better temperature field.  Suppose that run is stopped
+at the 100 ka stage.  And note that the early file \c green20km_y1.nc has the target
+thickness, because it is essentially the measured thickness.  Thus we add a 2000 a
+run (it might make sense to make it longer, but this will take a little while anyway)
+in which the thickness goes from the values in \c green_SSL2_100k.nc to values very
+close to those in \c green20km_y1.nc:
+\code
+pgrn -ys -2000.0 -ye 0.0 -skip 5 -i green_SSL2_100k.nc -force_to_thk green20km_y1.nc -o green20km_spunup_to_present.nc
+\endcode
+Recall \c pgrn uses a PDD scheme by default, so with \c pismr
+the we would need to use the \c -pdd option:
+\code
+pismr -ys -2000.0 -ye 0.0 -skip 5 -pdd -i green_SSL2_100k.nc -force_to_thk green20km_y1.nc -o green20km_spunup_to_present.nc
+\endcode
+ */
+PetscErrorCode PSForceThickness::ice_surface_mass_flux(PetscReal t_years, PetscReal /*dt_years*/,
+						       IceModelVec2 &result) {
+  PetscErrorCode ierr;
+
+  ierr = verbPrintf(5, grid.com,
+		    "    updating vsurfmassflux from -force_to_thk mechanism ..."); CHKERRQ(ierr);
+    
+  // force-to-thickness mechanism is only full-strength at end of run
+  const PetscScalar lambda = (t_years - grid.start_year) / (grid.end_year - grid.start_year);
+  ierr = verbPrintf(5, grid.com,
+		    " (t_years = %.3f a, start_year = %.3f a, end_year = %.3f a, alpha = %.5f, lambda = %.3f)\n",
+		    t_years, grid.start_year , grid.end_year, alpha, lambda); CHKERRQ(ierr);
+  if ((lambda < 0.0) || (lambda > 1.0)) {
+    SETERRQ(4,"computed lambda (for -force_to_thk) out of range; in updateSurfMassFluxAndProvide()");
+  }
+
+  PetscScalar **H;
+  ierr = ice_thickness->get_array(H);   CHKERRQ(ierr);
+  ierr = target_thickness.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      result(i,j) += lambda * alpha * (target_thickness(i,j) - H[i][j]);
+    }
+  }
+  ierr = ice_thickness->end_access(); CHKERRQ(ierr);
+  ierr = target_thickness.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  // no communication needed
+
+  return 0;
+}
+
+//! Does not modify ice surface temperature.
+PetscErrorCode PSForceThickness::ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
+							 IceModelVec2 &result) {
+  PetscErrorCode ierr;
+
+  ierr = input_model->ice_surface_temperature(t_years, dt_years, result); CHKERRQ(ierr);
+
+  return 0;
+}
+
+/*!
+The timestep restriction is, by direct analogy, the same as for
+   \f[\frac{dy}{dt} = - \alpha y\f]
+with explicit (forward) Euler.  If \f$\Delta t\f$ is the time step then Euler is
+\f$y_{n+1} = (1-\alpha \Delta t) y_n\f$.  We require for stability that
+\f$|y_{n+1}|\le |y_n|\f$, which is to say \f$|1-\alpha \Delta t|\le 1\f$.
+Equivalently (since \f$\alpha \Delta t>0\f$),
+   \f[\alpha \Delta t\le 2\f]
+Therefore we set here
+   \f[\Delta t = \frac{2}{\alpha}.\f]
+ */
+PetscErrorCode PSForceThickness::max_timestep(PetscReal t_years, PetscReal &dt_years) {
+  PetscErrorCode ierr;
+  PetscReal max_dt = 2.0 / (alpha * secpera);
+  
+  ierr = input_model->max_timestep(t_years, dt_years); CHKERRQ(ierr);
+
+  if (dt_years > 0) {
+    if (max_dt > 0)
+      dt_years = PetscMin(max_dt, dt_years);
+  }
+  else dt_years = max_dt;
+
+  return 0;
+}
+
+PetscErrorCode PSForceThickness::write_input_fields(PetscReal t_years, PetscReal dt_years,
+						    string filename) {
+  PetscErrorCode ierr;
+
+  ierr = input_model->write_input_fields(t_years, dt_years, filename); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PSForceThickness::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
+							 string filename) {
+  PetscErrorCode ierr;
+
+  ierr = input_model->write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
 
   return 0;
 }
