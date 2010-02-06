@@ -575,7 +575,7 @@ PetscErrorCode IceEnthalpyModel::temperatureStep(
 
 //! Update enthalpy field based on conservation of energy in ice and bedrock.
 PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
-                      PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {
+                      PetscScalar* vertSacrCount, PetscScalar* /*bulgeCount*/) {
   PetscErrorCode  ierr;
   EnthalpyConverter EC(config);
 
@@ -605,7 +605,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
 
   // space for solution of system
   PetscScalar *x;
-  x = new PetscScalar[fMbz + fMz + 1];
+  x = new PetscScalar[fMbz + 1 + fMz];
 
   const PetscScalar
     p_air     = config.get("surface_pressure"),          // Pa
@@ -639,7 +639,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
 
   if (getVerbosityLevel() >= 3) {  // view: all constants correct at this point?
     ierr = EC.viewConstants(NULL); CHKERRQ(ierr);
-    ierr = system.viewConstants(NULL); CHKERRQ(ierr);
+    ierr = system.viewConstants(NULL,false); CHKERRQ(ierr);
   }
 
   // now get map-plane coupler fields: Dirichlet upper surface boundary
@@ -669,9 +669,10 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vHmelt.get_array(Hmelt); CHKERRQ(ierr);
   ierr = vbasalMeltRate.get_array(bmr); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vRb.get_array(Rb); CHKERRQ(ierr);
   ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
+
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
 
   // these are accessed a column at a time
   ierr = u3.begin_access(); CHKERRQ(ierr);
@@ -743,27 +744,33 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
                                  H[i+1][j],H[i+1][j+1],H[i][j+1],H[i-1][j+1],
                                  H[i-1][j],H[i-1][j-1],H[i][j-1],H[i+1][j-1]);
       ierr = system.setSchemeParamsThisColumn(
-                       vMask.is_floating(i,j), isMarginal, lambda); CHKERRQ(ierr);
+               vMask.is_floating(i,j), isMarginal, lambda); CHKERRQ(ierr);
 
-      // set boundary values for tridiagonal system
-      ierr = system.setSurfaceBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);
-      ierr = system.setBasalBoundaryValuesThisColumn(
-               Ghf[i][j],Rb[i][j]); CHKERRQ(ierr);
+      const PetscScalar
+          hf = vMask.is_floating(i,j) ? system.ice_rho * L * bmr_float[i][j] 
+                                      : Ghf[i][j];
+      ierr = system.setBoundaryValuesThisColumn(
+               Enth_ks, hf, Rb[i][j]); CHKERRQ(ierr);
 
       // diagnostic/debug
       if (viewOneColumn && issounding(i,j)) {
         ierr = verbPrintf(1,grid.com,
           "just before solving system at (i,j)=(%d,%d):\n", i, j); CHKERRQ(ierr);
-        ierr = system.viewConstants(NULL); CHKERRQ(ierr);
+        ierr = system.viewConstants(NULL,true); CHKERRQ(ierr);
       }
 
       // solve the system for this column: x will contain new enthalpy in ice
       //   and new temperature in bedrock
       ierr = system.solveThisColumn(&x); // no CHKERRQ(ierr) immediately because:
       if (ierr > 0) {
-        SETERRQ3(2,
-          "Tridiagonal solve failed at (%d,%d) with zero pivot position %d.\n",
+        ierr = PetscPrintf(grid.com,
+          "\n\ntridiagonal solve in enthalpyAndDrainageStep() failed at (%d,%d)\n"
+          "   with zero pivot position %d\n"
+          "   viewing system ... \n",
           i, j, ierr);
+        ierr = system.viewSystem(NULL,"system"); CHKERRQ(ierr);
+        ierr = PetscPrintf(grid.com, "\n   ENDING ...\n");
+        PetscEnd();
       } else { CHKERRQ(ierr); }
 
       // diagnostic/debug
@@ -779,54 +786,66 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
       // start from bottom and work up column, using solution vector x[]
       //   to determine bedrock temperature, basal melt rate, and ice enthalpy
 
-      // set temperature in bedrock
+      // temperature in bedrock now complete
       for (PetscInt k=0; k < fMbz; k++) {
         Tbnew[k] = x[k];
       }
-
       // transfer column into Tb3; no need for communication, even later
       ierr = Tb3.setValColumnPL(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
 
-      // prepare for melting/refreezing
-      PetscScalar Hmeltnew = Hmelt[i][j];
       // determine melt rate if any
+      PetscScalar Hmeltnew = Hmelt[i][j];  // prepare for melting/refreezing
       if (ks > 0) {
+        // three cases: see tables in doc/doxy/html/bombproofenth.html
         if (vMask.is_floating(i,j)) {
-          bmr[i][j] = bmr_float[i][j];
+          bmr[i][j] = bmr_float[i][j]; 
+          // and ignor x[fMbz] which contains only known ocean melt rate
+          // ... and no contribute to stored Hmelt, which will be set to zero
         } else if (system.Enth[0] >= system.Enth_s[0]) {
+          // grounded melting case; add to stored melt water
           bmr[i][j] = x[fMbz] / (system.ice_rho * L);
           Hmeltnew += dtTempAge * bmr[i][j];
         } else {
+          // ignor x[Mbz] which contains only heat flux into ice
           bmr[i][j] = 0.0;
         }
       } else {
         bmr[i][j] = 0.0;
       }
 
-      // enthalpy is known
+      // enthalpy is *temporarily* known; drainage will change
       for (PetscInt k=0; k < fMz; k++) {
         Enthnew[k] = x[fMbz+1 + k];
       }
 
-      // drain ice segments
-      for (PetscInt k=1; k < ks; k++) {
+      // drain ice segments; alters Enthnew[]; adds to basal melt rate too
+      PetscScalar Hdrainedtotal = 0.0;
+      for (PetscInt k=0; k < ks; k++) {
         // modifies last two arguments, generally:
-        ierr = drainageToBaseModelEnth(EC, L, omega_max, H[i][j], fzlev[k], fdz,
-                                       Enthnew[k], Hmeltnew); CHKERRQ(ierr);
+        PetscScalar dHdrained;
+        ierr = drainageToBaseModelEnth(EC, omega_max, H[i][j], fzlev[k], fdz,
+                                       Enthnew[k], dHdrained); CHKERRQ(ierr);
+        Hdrainedtotal += dHdrained;
       }
+      bmr[i][j] += Hdrainedtotal / dtTempAge;
+      Hmeltnew += Hdrainedtotal;
 
       // transfer column into EnthNew3; communication later
       ierr = EnthNew3.setValColumnPL(i,j,fMz,fzlev,Enthnew); CHKERRQ(ierr);
 
-      // finalize Hmelt value
-      if (vMask.is_floating(i,j)) {
-        // if floating assume maximally saturated till
-        // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
-        Hmelt[i][j] = max_hmelt;
-      } else {
-        // limit Hmelt to be in [0.0, max_hmelt]
-        // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO INFINITY AND BEYOND)!!
-        Hmelt[i][j] = PetscMax(0.0, PetscMin(max_hmelt, Hmeltnew) );
+      if (updateHmelt == PETSC_TRUE) {
+        // finalize Hmelt value
+        if (vMask.is_floating(i,j)) {
+          // if floating assume maximally saturated "till"
+          // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
+          Hmelt[i][j] = max_hmelt;
+        } if (ks == 0) {
+          Hmelt[i][j] = 0.0;  // no stored water on ice free land
+        } else {
+          // limit Hmelt to be in [0.0, max_hmelt]
+          // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO INFINITY AND BEYOND)!!
+          Hmelt[i][j] = PetscMax(0.0, PetscMin(max_hmelt, Hmeltnew) );
+        }
       }
 
     }
@@ -865,67 +884,34 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
 //! Move some of the liquid water fraction in a column segment [z,z+dz] to the base.
 /*!
 Generally this procedure alters the values in the last two arguments,
-'enthalpy' and 'Hmelt'.  There is conservation of energy here because the 
-enthalpy lost/gained by the ice becomes latent heat lost/gained by the 
-layer of basal water.
+'enthalpy' and 'Hdrained'.  The latter argument is the ice-equivalent water
+thickness which is moved to the bed by drainage.
 
 Heuristic: Once liquid water fraction exceeds a cap, all of it goes to the base.
 Follows \ref Greve97Greenland and references therein.
-
-Interesting note:  If the basal ice is cold and there is available water
-(Hmelt > 0.0) then ice will freeze on, causing a negative basal melt rate which can 
-enter into the mass continuity equation, and we bring the lowest ice layer (basal ice)
-up to temperate.
  */
-PetscErrorCode IceEnthalpyModel::drainageToBaseModelEnth(EnthalpyConverter &EC,
-                PetscScalar L, PetscScalar omega_max,
-                PetscScalar thickness, PetscScalar z, PetscScalar dz,
-                PetscScalar &enthalpy, PetscScalar &Hmelt) {
+PetscErrorCode IceEnthalpyModel::drainageToBaseModelEnth(
+                EnthalpyConverter &EC,
+                PetscScalar omega_max, PetscScalar thickness,
+                PetscScalar z, PetscScalar dz,
+                PetscScalar &enthalpy, PetscScalar &Hdrained) {
   PetscErrorCode ierr;
 
   if (allowAboveMelting == PETSC_TRUE) {
-    SETERRQ(1,"IceEnthalpyModel::drainageToBaseModelEnth() called but allowAboveMelting==TRUE");
+    SETERRQ(1,"IceEnthalpyModel::drainageToBaseModelEnth() called\n"
+              "   BUT allowAboveMelting==TRUE");
   }
-
-  // no change to either enthalpy or basal layer thickness in this case
-  if (updateHmelt == PETSC_FALSE)  return 0;
-
-  const PetscScalar p     = EC.getPressureFromDepth(thickness - z);
 
   // if there is liquid water already, thus temperate, consider whether there
-  //   is enough to cause drainage
-  const PetscScalar omega = EC.getWaterFractionLimited(enthalpy, p);
-  if (omega > 1.0e-6) {
-    const PetscScalar abovecap = omega - omega_max;
-    if (abovecap > 0.0) {
-      // alternative, but different if E > E_l: enthalpy -= abovecap * L;
-      //   following form is safer, but gives UNACCOUNTED ENERGY LOSS IF E>E_l
-      ierr = EC.getEnthAtWaterFraction(omega_max, p, enthalpy); CHKERRQ(ierr);
-      Hmelt    += abovecap * dz;   // ice-equivalent water thickness change
-    }
-    return 0; // done with temperate case
+  //   is enough to cause drainage;  UNACCOUNTED ENERGY LOSS IF E>E_l
+  const PetscScalar p     = EC.getPressureFromDepth(thickness - z),
+                    omega = EC.getWaterFractionLimited(enthalpy, p);
+  if (omega > omega_max) {
+    // drain water:
+    Hdrained = (omega - omega_max) * dz;
+    // update enthalpy because omega == omega_max now:
+    ierr = EC.getEnthAtWaterFraction(omega_max, p, enthalpy); CHKERRQ(ierr);
   }
-  
-  // if cold and in the basal layer, consider whether there is available 
-  //   water to freeze on
-  // FIXME: think about ocean case!?
-  if ((z >= -1.0e-6) && (z <= 1.0e-6)) {
-    // only consider freeze-on if column segment is at base of ice;
-    //   E_s = getEnthalpyCTS(config, p)
-    const PetscScalar dEnth_to_reach_temperate = EC.getEnthalpyCTS(p) - enthalpy;
-    if (dEnth_to_reach_temperate > 0.0) {
-      // if below E_s, then freeze on, and bring up enthalpy to E_s if
-      //   enough water is available; first quantity is also
-      //   ((rho Hmelt dx dy) * L) / (rho dx dy dz)
-      const PetscScalar
-         dEnth_available = (Hmelt / dz) * L,
-         dEnth_added     = PetscMin(dEnth_available, dEnth_to_reach_temperate);
-      enthalpy += dEnth_added;
-      Hmelt    -= (dEnth_added * dz) / L;  // will cause negative basal melt rate;
-                                           //   enters into mass continuity
-    }
-  }
-
   return 0;
 }
 

@@ -155,7 +155,7 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
       "\n\n<nmax > 12: matrix too big to display as full; viewing tridiagonal matrix '%s' by diagonals ...\n",info); CHKERRQ(ierr);
     char diag_info[PETSC_MAX_PATH_LEN];
     snprintf(diag_info,PETSC_MAX_PATH_LEN, "super-diagonal U for system '%s'", info);
-    ierr = viewColumnValues(viewer,U,nmax,diag_info); CHKERRQ(ierr);
+    ierr = viewColumnValues(viewer,U,nmax-1,diag_info); CHKERRQ(ierr);
     snprintf(diag_info,PETSC_MAX_PATH_LEN, "main diagonal D for system '%s'", info);
     ierr = viewColumnValues(viewer,D,nmax,diag_info); CHKERRQ(ierr);
     snprintf(diag_info,PETSC_MAX_PATH_LEN, "sub-diagonal L for system '%s'", info);

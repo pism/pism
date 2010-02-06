@@ -22,17 +22,14 @@
 
 
 enthSystemCtx::enthSystemCtx(int my_Mz, int my_Mbz)
-      : columnSystemCtx(my_Mz + my_Mbz) {
+      : columnSystemCtx(my_Mbz + 1 + my_Mz) {  // <- critical: sets size of sys
   Mz = my_Mz;
   Mbz = my_Mbz;
-
-  //OLD (FIXME: remove this): k0=Mbz-1
 
   // set flags to indicate nothing yet set
   initAllDone = false;
   schemeParamsValid = false;
-  surfBCsValid = false;
-  basalBCsValid = false;
+  BCsValid = false;
   // set values so we can check if init was called on all
   dx = -1;
   dy = -1;
@@ -86,7 +83,6 @@ PetscErrorCode enthSystemCtx::initAllColumns() {
   iceRtemp = ice_nu * dtTemp / PetscSqr(dzEQ);
   bedK = bed_k / (bed_rho * bed_c);
   bedR = bedK * dtTemp / PetscSqr(dzbEQ);
-  dzav = 0.5 * (dzEQ + dzbEQ);
   // done
   initAllDone = true;
   return 0;
@@ -97,7 +93,8 @@ PetscErrorCode enthSystemCtx::setSchemeParamsThisColumn(
                      const bool my_isfloating, bool my_ismarginal,
                      const PetscScalar my_lambda) {
   if (!initAllDone) {  SETERRQ(2,
-     "setSchemeParamsThisColumn() should only be called after initAllColumns() in enthSystemCtx"); }
+     "setSchemeParamsThisColumn() should only be called after\n"
+     "  initAllColumns() in enthSystemCtx"); }
   if (schemeParamsValid) {  SETERRQ(3,
      "setSchemeParamsThisColumn() called twice (?) in enthSystemCtx"); }
   isfloating = my_isfloating;
@@ -108,32 +105,24 @@ PetscErrorCode enthSystemCtx::setSchemeParamsThisColumn(
 }
 
 
-PetscErrorCode enthSystemCtx::setSurfaceBoundaryValuesThisColumn(
-                     const PetscScalar my_Enth_surface) {
-  if (!initAllDone) {  SETERRQ(2,
-     "setSurfaceBoundaryValuesThisColumn() should only be called after initAllColumns() in enthSystemCtx"); }
-  if (surfBCsValid) {  SETERRQ(3,
-     "setSurfaceBoundaryValuesThisColumn() called twice (?) in enthSystemCtx"); }
-  Enth_ks = my_Enth_surface;
-  surfBCsValid = true;
-  return 0;
-}
-
-
-PetscErrorCode enthSystemCtx::setBasalBoundaryValuesThisColumn(
+PetscErrorCode enthSystemCtx::setBoundaryValuesThisColumn(
+                     const PetscScalar my_Enth_surface,
                      const PetscScalar my_Ghf, const PetscScalar my_Rb) {
   if (!initAllDone) {  SETERRQ(2,
-     "setBasalBoundaryValuesThisColumn() should only be called after initAllColumns() in enthSystemCtx"); }
-  if (basalBCsValid) {  SETERRQ(3,
-     "setBasalBoundaryValuesThisColumn() called twice (?) in enthSystemCtx"); }
+     "setBoundaryValuesThisColumn() should only be called after\n"
+     "  initAllColumns() in enthSystemCtx"); }
+  if (BCsValid) {  SETERRQ(3,
+     "setBoundaryValuesThisColumn() called twice (?) in enthSystemCtx"); }
+  Enth_ks = my_Enth_surface;
   Ghf = my_Ghf;
   Rb = my_Rb;
-  basalBCsValid = true;
+  BCsValid = true;
   return 0;
 }
 
 
-PetscErrorCode enthSystemCtx::viewConstants(PetscViewer viewer) {
+PetscErrorCode enthSystemCtx::viewConstants(
+                     PetscViewer viewer, bool show_col_dependent) {
   PetscErrorCode ierr;
 
   if (!viewer) {
@@ -159,243 +148,189 @@ PetscErrorCode enthSystemCtx::viewConstants(PetscViewer viewer) {
                      "  bed_rho,bed_c,bed_k = %10.3e,%10.3e,%10.3e\n",
                      bed_rho,bed_c,bed_k); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-                     "  nuEQ,dzav = %10.3e,%10.3e\n",
-                     nuEQ,dzav); CHKERRQ(ierr);
+                     "  nuEQ = %10.3e\n",
+                     nuEQ); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
                      "  iceK,iceRcold,iceRtemp = %10.3e,%10.3e,%10.3e,\n",
 		     iceK,iceRcold,iceRtemp); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
                      "  bedK,bedR = %10.3e,%10.3e\n",
 		     bedK,bedR); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
-                     "schemeParamsValid,surfBCsValid,basalBCsValid = (%d,%d,%d)\n"
-                     "for THIS column:\n",
-                     (int)schemeParamsValid,(int)surfBCsValid,(int)basalBCsValid);
-                     CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
+  if (show_col_dependent) {
+    ierr = PetscViewerASCIIPrintf(viewer,
+                     "for THIS column:\n"
+                     "  schemeParamsValid,BCsValid = (%d,%d)\n",
+                     (int)schemeParamsValid,(int)BCsValid); CHKERRQ(ierr);
+    ierr = PetscViewerASCIIPrintf(viewer,
                      "  i,j,ks = %d,%d,%d\n",
                      i,j,ks); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
+    ierr = PetscViewerASCIIPrintf(viewer,
                      "  isfloating,ismarginal,lambda, = %d,%d,%10.3f\n",
                      (int)isfloating,(int)ismarginal,lambda); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(viewer,
+    ierr = PetscViewerASCIIPrintf(viewer,
                      "  Enth_ks,Ghf,Rb = %10.3e,%10.3e,%10.3e\n",
                      Enth_ks,Ghf,Rb); CHKERRQ(ierr);
+  }
   ierr = PetscViewerASCIIPrintf(viewer,">>\n\n"); CHKERRQ(ierr);
   return 0;
 }
 
 
-//! Solve the tridiagonal system which determines the new values, in a single
-//! \brief column, of the ice enthalpy and the bedrock temperature.
-/*!
-See the page documenting BOMBPROOF.  We implement equations FIXME: 
-(\ref bombtwo), (\ref bedrockeqn),
-(\ref geothermalbedeqn), (\ref icebedfinalcold), (\ref icebedfinaltemperate),
-(\ref neartopofbedrock), and (\ref icebasenobedrock).
- */
+/*! \brief Solve the tridiagonal system, in a single column, which determines
+the new values of the ice enthalpy and the bedrock temperature. */
 PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
-  PetscErrorCode ierr;
+
   if (!initAllDone) {  SETERRQ(2,
-     "solveThisColumn() should only be called after initAllColumns() in enthSystemCtx"); }
+     "solveThisColumn() should only be called after\n"
+     "  initAllColumns() in enthSystemCtx"); }
   if (!schemeParamsValid) {  SETERRQ(3,
-     "solveThisColumn() should only be called after setSchemeParamsThisColumn() in enthSystemCtx"); }
-  if (!surfBCsValid) {  SETERRQ(3,
-     "solveThisColumn() should only be called after setSurfaceBoundaryValuesThisColumn() in enthSystemCtx"); }
-  if (!basalBCsValid) {  SETERRQ(3,
-     "solveThisColumn() should only be called after setBasalBoundaryValuesThisColumn() in enthSystemCtx"); }
+     "solveThisColumn() should only be called after\n"
+     "  setSchemeParamsThisColumn() in enthSystemCtx"); }
+  if (!BCsValid) {  SETERRQ(3,
+     "solveThisColumn() should only be called after\n"
+     "  setBoundaryValuesThisColumn() in enthSystemCtx"); }
 
-/*
-PRINCIPLES ABOUT THESE MODIFICATIONS OF tempSystemCtx::solveThisColumn(): 
-
-0)  there is a change in the number of variables.  there are Mbz bedrock
-  temperature variables and there are Mz ice enthalpy variables for a total of
-  Mbz+Mz equations:
-    equation [0]         is always for bedrock
-    equation [Mbz-1]     is the top of the bedrock layer; z=0; Mbz==1 *is*
-                         allowed
-    equation [Mbz]       is the base of the ice; z=0 so same location as [Mbz-1]
-                         but the material is ice
-    equation [Mbz+ks]    is the highest elevation equation still within the ice
-    equation [Mbz+ks+1]  is in the air
-    equation [Mbz+Mz-1]  is the top of the air
-
-0.5) *all* levels are solved; that is, the tridiagonal linear system *always* 
-  has Mbz+Mz-1 equations, and the enthalpy of the air above the ice is always
-  solved-for
-
-1)  coefficients in system are unitless and therefore most D,L,U expressions
-  are not altered
-
-2)  old temperature equation had units of Kelvin on each side; new equation (in
-  ice) has units of enthalpy, namely J kg-1, on each side
-
-3)  item 2) means all rhs[] expressions must be modified, and expressions not
-  proportional to a temperature or enthalpy generally are multiplied by c
-  (which has units J kg-1 K-1)
-*/
-
-  if (Mbz > 1) { // bedrock present: build k=0:Mbz-2 eqns
-    // should give O(\Delta t,\Delta z^2) convergence
-    // note L[0] not an allocated or used location
+  if (Mbz > 1) { // bedrock present: build k=0:Mbz-1 eqns
+    // eqn:  - k_b (d Tb / d zb) = G
+    // L[0] is not an allocated or used location
     D[0] = (1.0 + 2.0 * bedR);
     U[0] = - 2.0 * bedR;  
     rhs[0] = Tb[0] + 2.0 * dtTemp * Ghf / (bed_rho * bed_c * dzbEQ);
 
-    // bedrock only; pure vertical conduction problem
+    // k=1:Mbz-2  bedrock only; pure vertical conduction problem
     for (PetscInt k = 1; k < Mbz-1; k++) {
       L[k] = -bedR;
       D[k] = 1.0 + 2.0 * bedR;
       U[k] = -bedR;
       rhs[k] = Tb[k];
     }
-  }
-
-  // k=Mbz-1 equation says top-of-bedrock temperature equals base of ice, but 
-  //   there are two grounded cases: either basal ice is cold so both temps are
-  //   unknown, or basal ice is temperate and this equation sets top of bedrock
-  //   temp directly; in floating case we also set top of bedrock directly
-  if (Mbz > 1)  L[Mbz-1] = 0.0;
-  D[Mbz-1] = 1.0;
-  if ((isfloating) || (Enth[0] >= Enth_s[0])) {
-    U[Mbz-1] = 0.0;           // eqn:  Tb[Mbz-1] = Tm(p)
-    rhs[Mbz-1] = Enth_s[0] / ice_c;
-  } else {
-    U[Mbz-1] = -1.0 / ice_c;  // eqn:  Tb[Mbz-1] - c_i^{-1} Enth[0] = 0
-    rhs[Mbz-1] = 0.0;
-  }
-
-FIXME:  issues from here on with meaning of k=Mbz equation ... it is a heat flux X
-
-  // bottom part of ice: k=Mbz eqn
-  if (ks == 0) {
-    // essentially no ice; set Enth[0] to air value if grounded or sub-ice shelf
-    //   if not
-    L[Mbz] = 0.0; 
-    D[Mbz] = 1.0;
-    U[Mbz] = 0.0;
-    rhs[Mbz] = (isfloating) ? Enth_shelfbase : Enth_ks;
-  } else { 
-    // there is more than one grid space of ice
+    
+    // k=Mbz-1 equation says flux delivered to base of ice is determined by
+    //         bedrock temperature gradient and heat from sliding
     if (isfloating) {
-      // apply Dirichlet condition to base of column of ice in an ice shelf
-      L[Mbz] = 0.0; 
-      D[Mbz] = 1.0;
-      U[Mbz] = 0.0;
-      rhs[Mbz] = Enth_shelfbase;
-    } else if (Mbz == 1) {
-FIXME  reasonable above here
-      // grounded but no bedrock layer; apply geothermal flux here
-      // WARNING: subtle consequences of finite volume argument for basal segment;
-      // see BOMBPROOF docs
-      const PetscScalar R = (Enth[k0] > Enth_s[k0]) ? iceRtemp : iceRcold;
-      // L[k0] = 0.0;  (note this is not an allocated location!) 
-      D[k0] = 1.0 + 2.0 * R;
-      U[k0] = - 2.0 * R;
-      if (w[0] < 0.0) { // velocity downward: upwind vertical
-        const PetscScalar AA = nuEQ * w[0];
-        D[k0] -= AA;
-        U[k0] += AA;
-      }
-      rhs[k0] = Enth[k0];
-      rhs[k0] += (2.0 * nuEQ / ice_rho) * (Ghf + 0.5 * Rb); // geothermal and half of frictional heat
-      if (!isMarginal) {
-        planeStar ss;
-        ierr = Enth3->getPlaneStarZ(i,j,0.0,&ss);
-        const PetscScalar UpEnthu = (u[0] < 0) ? u[0] * (ss.ip1 -  ss.ij) / dx :
-                                                 u[0] * (ss.ij  - ss.im1) / dx;
-        const PetscScalar UpEnthv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
-                                                 v[0] * (ss.ij  - ss.jm1) / dy;
-        rhs[k0] -= dtTemp * (UpEnthu + UpEnthv);     // hor. advection
-        rhs[k0] += dtTemp * Sigma[0] / ice_rho;      // strain heat
-      }
-    } else { 
-      // there is *grounded* ice AND there is bedrock at interface
-      // WARNING: subtle consequences of finite volume argument across interface;
-      // in this segment even temperate ice is conductive (same value as cold ice)
-      // see BOMBPROOF docs
-      // note sure how to proceed here, keep cold value or replace with temperate?
-      const PetscScalar rho_ratio  = ice_rho / bed_rho,
-                        c_ratioINV = bed_c / ice_c;
-      L[k0] = - 2.0 * bedR;
-      if (Enth[k0] > Enth_s[k0]) {
-        D[k0] = rho_ratio * (1.0 + 2.0 * iceRcold);
-      } else {
-        D[k0] = (1.0 + 2.0 * bedR) * c_ratioINV + rho_ratio * (1.0 + 2.0 * iceRcold);
-      }
-      U[k0] = - rho_ratio * 2.0 * iceRcold;
-      if (w[0] < 0.0) { // velocity downward: upwind vertical
-        const PetscScalar AA = rho_ratio * dtTemp * w[0] / dzav;
-        D[k0] -= AA;
-        U[k0] += AA;
-      }
-      if (Enth[k0] > Enth_s[k0]) { // decide cold vs temperate using prev enthalpy
-        rhs[k0] = rho_ratio * Enth[0] - 2 * bedR * c_ratioINV * Enth_s[k0];
-      } else {
-        rhs[k0] = (rho_ratio + c_ratioINV) * Enth[0];
-      }
-      rhs[k0] += 2.0 * dtTemp * Rb / (bed_rho * dzav); // frictional heat
-      if (!isMarginal) {
-        planeStar ss;
-        ierr = Enth3->getPlaneStarZ(i,j,0.0,&ss);
-        const PetscScalar UpEnthu = (u[0] < 0) ? u[0] * (ss.ip1 -  ss.ij) / dx :
-                                                 u[0] * (ss.ij  - ss.im1) / dx;
-        const PetscScalar UpEnthv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
-                                                 v[0] * (ss.ij  - ss.jm1) / dy;
-        rhs[k0] -= dtTemp * rho_ratio * (UpEnthu + UpEnthv); // hor. advection
-        rhs[k0] += dtTemp * Sigma[0] / bed_rho;      // strain heat
-      }
-FIXME  reasonable below here  FIXME?
+      L[Mbz-1] = 0.0;
+      D[Mbz-1] = 0.0;
+      U[Mbz-1] = - 1.0;  // "+X" on right
+      rhs[Mbz-1] = - Ghf;  // "+G" on left
+    } else {
+      L[Mbz-1] = bed_k / dzbEQ;
+      D[Mbz-1] = - bed_k / dzbEQ;
+      U[Mbz-1] = - 1.0;  // "-X" on left in cold case, "+X" on right in warm case
+      rhs[Mbz-1] = - Rb;
+    }
+
+  } else { // no bedrock; k=0 equation *is* k=Mbz-1 equation
+    // k=0 equation says flux delivered to base of ice is determined by
+    //     bedrock temperature gradient and heat from sliding
+    if (isfloating) {
+      // L[0] = 0.0;  // not allocated
+      D[0] = 0.0;
+      U[0] = - 1.0;  // "+X" on right
+      rhs[0] = - Ghf;  // "+G" on left
+    } else {
+      // L[0] = 0.0;  // not allocated
+      D[0] = 0.0;
+      U[0] = - 1.0;  // "-X" on left in cold case, "+X" on right in warm case
+      rhs[0] = - Ghf - Rb;  // "+G" on left
+    }    
+  }
+
+  // k=Mbz equation says top-of-bedrock temperature equals base of ice temperature
+  D[Mbz] = 0.0;       // unknown X does not play role in this equation; CAUTION
+  if (isfloating) {
+    // eqn:  Tb[Mbz-1] + 0 X + 0 Enth[0] = c_i^{-1} Enth_s[0]    (=T_m(p))
+    L[Mbz] = 1.0;
+    U[Mbz] = 0.0;  
+    rhs[Mbz] = (1.0 / ice_c) * Enth_s[0];
+  } else {
+    if (Enth[0] < Enth_s[0]) {  // cold base
+      // eqn:  Tb[Mbz-1] + 0 X - c_i^{-1} Enth[0] = 0
+      L[Mbz] = 1.0;
+      U[Mbz] = - 1.0 / ice_c;  
+      rhs[Mbz] = 0.0;
+    } else { // warm base
+      // eqn:  Tb[Mbz-1] + 0 X + 0 Enth[0] = c_i^{-1} Enth_s[0]   (=T_m(p))
+      L[Mbz] = 1.0;
+      U[Mbz] = 0.0;  
+      rhs[Mbz] = (1.0 / ice_c) * Enth_s[0];
     }
   }
 
-  // generic ice segment in Mbz+k location (if any; only runs if ks >= 2)
+  // k=Mbz+1 eqn: usually says heat flux into ice is zero (melting/warm base
+  //   case) or given by X (see above)
+  if (ks == 0) {
+    // essentially no ice; set Enth[0] to air value if grounded or to pressure-
+    //   melting if sub-ice shelf
+    L[Mbz+1] = 0.0; 
+    D[Mbz+1] = 1.0;
+    U[Mbz+1] = 0.0;
+    rhs[Mbz+1] = (isfloating) ? (1.0 / ice_c) * Enth_s[0] : Enth_ks;
+  } else { 
+    // there is more than one grid space of ice
+    if (isfloating) {
+      // apply Neumann condition to base of column of ice in an ice shelf
+      // eqn:   - E[0] + E[1] = 0
+      L[Mbz+1] = 0.0; 
+      D[Mbz+1] = - 1.0;
+      U[Mbz+1] = 1.0;
+      rhs[Mbz+1] = 0.0;
+    } else {
+      if (Enth[0] < Enth_s[0]) {  // cold base
+        // eqn:  X - (k_i/(c_i*dz)) E[0] + (k_i/(c_i*dz)) E[0] = 0
+        const PetscScalar A = ice_k / (ice_c * dzEQ);
+        L[Mbz+1] = 1.0;
+        D[Mbz+1] = - A;
+        U[Mbz+1] = A;
+        rhs[Mbz+1] =  0.0;
+      } else { // warm base
+        // apply Neumann condition to base of column of ice because melt eats heat flux
+        // eqn:   - E[0] + E[1] = 0
+        L[Mbz+1] = 0.0; 
+        D[Mbz+1] = - 1.0;
+        U[Mbz+1] = 1.0;
+        rhs[Mbz+1] = 0.0;
+      }
+    }
+  }
+
+  // generic ice segment in Mbz+1+k location (if any; only runs if ks >= 2)
   for (PetscInt k = 1; k < ks; k++) {
     const PetscScalar AA = nuEQ * w[k],
                       R = (Enth[k] > Enth_s[k]) ? iceRtemp : iceRcold;
     if (w[k] >= 0.0) {  // velocity upward
-      L[Mbz+k] = - R - AA * (1.0 - lambda/2.0);
-      D[Mbz+k] = 1.0 + 2.0 * R + AA * (1.0 - lambda);
-      U[Mbz+k] = - R + AA * (lambda/2.0);
+      L[Mbz+1+k] = - R - AA * (1.0 - lambda/2.0);
+      D[Mbz+1+k] = 1.0 + 2.0 * R + AA * (1.0 - lambda);
+      U[Mbz+1+k] = - R + AA * (lambda/2.0);
     } else {            // velocity downward
-      L[Mbz+k] = - R - AA * (lambda/2.0);
-      D[Mbz+k] = 1.0 + 2.0 * R - AA * (1.0 - lambda);
-      U[Mbz+k] = - R + AA * (1.0 - lambda/2.0);
+      L[Mbz+1+k] = - R - AA * (lambda/2.0);
+      D[Mbz+1+k] = 1.0 + 2.0 * R - AA * (1.0 - lambda);
+      U[Mbz+1+k] = - R + AA * (1.0 - lambda/2.0);
     }
-    rhs[Mbz+k] = Enth[k];
+    rhs[Mbz+1+k] = Enth[k];
     if (!ismarginal) {
       planeStar ss;
-      ierr = Enth3->getPlaneStarZ(i,j,k * dzEQ,&ss);
+      Enth3->getPlaneStarZ(i,j,k * dzEQ,&ss);
       const PetscScalar UpEnthu = (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx :
                                                u[k] * (ss.ij  - ss.im1) / dx;
       const PetscScalar UpEnthv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :
                                                v[k] * (ss.ij  - ss.jm1) / dy;
-      rhs[Mbz+k] += dtTemp * ((Sigma[k] / ice_rho) - UpEnthu - UpEnthv);
+      rhs[Mbz+1+k] += dtTemp * ((Sigma[k] / ice_rho) - UpEnthu - UpEnthv);
     }
   }
 
-  // apply surface b.c. (but only if we have not already addressed Mbz+ks eqn)
-  if (ks > 0) {
-    L[Mbz+ks] = 0.0;
-    D[Mbz+ks] = 1.0;
-    if (ks < Mz-1) U[Mbz+ks] = 0.0;
-    rhs[Mbz+ks] = Enth_ks;
-  }
-
-  // air above (if any; note max possible value for ks is Mz-1
-  for (PetscInt k = Mbz+ks+1; k < Mbz+Mz; k++) {
-    L[k] = 0.0;
-    D[k] = 1.0;
-    if (k < Mbz+Mz-1) U[k] = 0.0;
-    rhs[k] = Enth_ks;
+  // air above
+  for (PetscInt k = ks; k < Mz; k++) {
+    L[Mbz+1+k] = 0.0;
+    D[Mbz+1+k] = 1.0;
+    if (k < Mz) U[Mbz+1+k] = 0.0;
+    rhs[Mbz+1+k] = Enth_ks;
   }
 
   // mark column as done
   schemeParamsValid = false;
-  surfBCsValid = false;
-  basalBCsValid = false;
+  BCsValid = false;
 
   // solve it; note drainage is not addressed yet and post-processing may occur
-  return solveTridiagonalSystem(Mbz+Mz,x);
+  return solveTridiagonalSystem(Mbz + 1 + Mz, x);
 }
 

@@ -558,7 +558,11 @@ PismLogEventRegister("mass bal calc",0,&massbalEVENT);
 PismLogEventRegister("temp age calc",0,&tempEVENT);
 
   // do a one-step diagnostic run:
-  // set verbosuty to 1 to suppress reporting
+
+  ierr = verbPrintf(3,grid.com,
+      "  doing preliminary step to fill diagnostic quantities ..."); CHKERRQ(ierr);
+
+  // set verbosity to 1 to suppress reporting
   PetscInt tmp_verbosity = getVerbosityLevel(); 
   ierr = setVerbosityLevel(1); CHKERRQ(ierr);
 
@@ -570,8 +574,17 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   PetscReal end_year = grid.end_year;
   grid.end_year = grid.start_year + 1; // all what matters is that it is
 				       // greater than start_year
+
   ierr = step(do_mass_conserve, do_temp, do_age,
 	      do_skip, do_bed_deformation, do_plastic_till); CHKERRQ(ierr);
+
+  // print verbose messages according to user-set verbosity
+  if (tmp_verbosity > 2) {
+    ierr = PetscPrintf(grid.com,
+      " done; reached time %.4f a\n", grid.year); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com,
+      "  re-setting model state as initialized ...\n"); CHKERRQ(ierr);
+  }
 
   // re-initialize the model:
   global_attributes.set_string("history", "");

@@ -76,8 +76,8 @@ protected:  // new to IceEnthalpyModel
                                                  PetscScalar* bulgeCount);
 
   virtual PetscErrorCode drainageToBaseModelEnth(EnthalpyConverter &EC,
-                PetscScalar L, PetscScalar omega_max,
-                PetscScalar thickness, PetscScalar z, PetscScalar dz,
+                PetscScalar omega_max, PetscScalar thickness,
+                PetscScalar z, PetscScalar dz,
                 PetscScalar &enthalpy, PetscScalar &Hmelt);
 
 protected:

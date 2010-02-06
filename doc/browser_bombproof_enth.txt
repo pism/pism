@@ -434,15 +434,9 @@ The argument for this equation is standard, involving a temporary value \f$T_{-1
 
 \section melt Heat flux jump and melt rate at ice base
 
-At the bottom of grounded ice, a certain amount of heat comes out of the earth
-and enters the ice, or it melts the base of the ice.  Furthermore, at the
-contact of the ice and underlying material, heat is generated if there is
-sliding.  Because the PISM user may or may not want a bedrock thermal layer,
-and because the basal ice may be cold (below the pressure-melting temperature)
-or temperate, there are a number of cases to consider and then correctly
-approximate by finite difference schemes.
+At the bottom of grounded ice, a certain amount of heat comes out of the earth and enters the ice.  \e Unless it melts the base of the ice.  Also, at the contact of the ice and underlying material, heat is generated if there is sliding.  Because the PISM user may or may not want a bedrock thermal layer, and because the basal ice may be cold (below the pressure-melting temperature) or temperate, we see there are a number of cases to consider and approximate by finite difference schemes.
 
-Equations (5.40) and (9.134) of \ref GreveBlatter2009 say the same thing about the jump of heat flux in both the cold and temperate cases, however:
+Fortunately, Equations (5.40) and (9.134) of \ref GreveBlatter2009 say the same thing about the jump of heat flux in both the cold and temperate cases, however:
 
 \anchor meltheuristic
 \f{equation*}
@@ -451,11 +445,13 @@ Equations (5.40) and (9.134) of \ref GreveBlatter2009 say the same thing about t
 
 In particular, if there is zero basal melt rate and no sliding then the heat flux is a continuous vector quantity across the ice/bedrock interface.
 
-In symbols, let \f$M\f$ be the basal melt rate, positive when ice is being turned into liquid, and \f$L\f$ be the latent heat of fusion of water.  We use a small-slope assumption for the base, namely that the normal direction to the ice base is in the \f$z\f$ direction.  Recall that \f$F_b = - \tau_b \cdot \mathbf{u}_b\f$ is the heating rate from friction.  The right hand side has this form for all grounded cases:
+In symbols, let \f$M\f$ be the basal melt rate, positive when ice is being turned into liquid, and \f$L\f$ be the latent heat of fusion of water.  We use a small-slope assumption for the base, namely that the normal direction to the ice base is in the \f$z\f$ direction.  Recall that
+  \f[ F_b = - \tau_b \cdot \mathbf{u}_b \f]
+is the heating rate from friction.  The right hand side has this form for all grounded cases:
 
 \anchor melteqn
 \f{align*}
-\left(\begin{matrix}\text{conductive heat flux} \\ \text{from bedrock}\end{matrix}\right) - \left(\begin{matrix}\text{conductive heat flux} \\ \text{into the base of the ice}\end{matrix}\right) &= \rho_i L M +\tau_b \cdot \mathbf{u}_b
+\left(\begin{matrix}\text{conductive heat flux} \\ \text{from bedrock}\end{matrix}\right) - \left(\begin{matrix}\text{conductive heat flux} \\ \text{into the base of the ice}\end{matrix}\right) &= \rho_i L M - F_b
 \f}
 
 Of course zero sliding is a possible condition for the velocities going into BOMBPROOF, while zero melt rate is a possible outcome of the calculation here.  That is, though the frictional heating rate from sliding is determined before doing one time step for conservation of energy, the melt rate is \e not known until the conservation of energy equation is solved.  Thus \f$M\f$ is an unknown here.
@@ -476,7 +472,7 @@ Of course zero sliding is a possible condition for the velocities going into BOM
     <td> \f[ \begin{matrix}
          -k_i c_i^{-1}\frac{\partial E}{\partial z}\Big|_{z=0^+} = X \\ \\
          T(0^-) = c_i^{-1} E(0^+) \\ \\
-         -k_b \frac{\partial T}{\partial z}\Big|_{z=0^-} - X = 0 +\tau_b \cdot \mathbf{u}_b
+         -k_b \frac{\partial T}{\partial z}\Big|_{z=0^-} - X = 0 - F_b
          \end{matrix} \f] </td>
     <td> <p> k=Mbz+1: E[1],E[0],X </p>
          <p> k=Mbz: E[0],Tb[Mbz-1] </p>
@@ -489,7 +485,7 @@ Of course zero sliding is a possible condition for the velocities going into BOM
     <td> \f[ \begin{matrix}
          \frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 \\ \\
          T(0^-) = c_i^{-1} E_s(0^+) = T_m(p)  \\ \\
-         -k_b \frac{\partial T}{\partial z}\Big|_{z=0^-} - 0 = X +\tau_b \cdot \mathbf{u}_b
+         -k_b \frac{\partial T}{\partial z}\Big|_{z=0^-} - 0 = X - F_b
          \end{matrix} \f] </td>
     <td> <p> k=Mbz+1: E[1],E[0] </p>
          <p> k=Mbz: Tb[Mbz-1] </p>
@@ -514,7 +510,7 @@ Of course zero sliding is a possible condition for the velocities going into BOM
     <td> \f[ \begin{matrix}
          -k_i c_i^{-1}\frac{\partial E}{\partial z}\Big|_{z=0^+} = X \\ \\
          T(0^-) = c_i^{-1} E(0^+) \\ \\
-         G - X = 0 +\tau_b \cdot \mathbf{u}_b
+         G - X = 0 - F_b
          \end{matrix} \f] </td>
     <td> <p> k=2: E[1],E[0],X </p>
          <p> k=1: E[0],Tb[0] </p>
@@ -528,7 +524,7 @@ Of course zero sliding is a possible condition for the velocities going into BOM
     <td> \f[ \begin{matrix}
          \frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 \\ \\
          T(0^-) = c_i^{-1} E_s(0^+) = T_m(p)  \\ \\
-         G - 0 = X +\tau_b \cdot \mathbf{u}_b
+         G - 0 = X - F_b
          \end{matrix} \f] </td>
     <td> <p> k=2: E[1],E[0] </p>
          <p> k=1: Tb[0] </p>
@@ -549,11 +545,11 @@ Of course zero sliding is a possible condition for the velocities going into BOM
     <td> HAVE bedrock thermal layer  
          <p> </p>
          <p> <i>(\f$X = \rho_i L M\f$ is heat rate for melting ice)</i></p> 
-         <p> <i>(\f$M_o\f$ is sub-ice shelf heat flux from ocean model)</i></p> </td>
+         <p> <i>(\f$G=\rho_i L M\f$ where \f$M_o\f$ is sub-ice shelf mass flux from ocean model; positive is removal of ice)</i></p> </td>
     <td> \f[ \begin{matrix}
          \frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 \\ \\
          T(0^-) = c_i^{-1} E_s(0^+) = T_m(p)  \\ \\
-         \rho_i L M_o - 0 = X + 0
+         G - 0 = X - 0
          \end{matrix} \f] </td>
     <td> <p> k=Mbz+1: E[1],E[0] </p>
          <p> k=Mbz: Tb[Mbz-1] </p>
@@ -563,11 +559,11 @@ Of course zero sliding is a possible condition for the velocities going into BOM
     <td> NO bedrock thermal layer (so Mbz=1)
          <p> </p>
          <p> <i>(\f$X = \rho_i L M\f$ is heat rate for melting ice)</i></p> 
-         <p> <i>(\f$M_o\f$ is sub-ice mass flux from ocean model; positive is removal of ice)</i></p> </td>
+         <p> <i>(\f$G=\rho_i L M\f$ where \f$M_o\f$ is sub-ice mass flux from ocean model; positive is removal of ice)</i></p> </td>
     <td> \f[ \begin{matrix}
          \frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 \\ \\
          T(0^-) = c_i^{-1} E_s(0^+) = T_m(p)  \\ \\
-         \rho_i L M_o - 0 = X + 0
+         G - 0 = X - 0
          \end{matrix} \f] </td>
     <td> <p> k=2: E[1],E[0] </p>
          <p> k=1: Tb[0] </p>
