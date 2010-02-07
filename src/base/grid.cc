@@ -347,8 +347,8 @@ PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
     dzbMAX = 0.0;
     for (PetscInt k = 0; k < Mbz - 1; k++) {
       const PetscScalar mydz = zblevels[k+1] - zblevels[k];
-      dzbMIN = PetscMin(mydz,dzMIN);
-      dzbMAX = PetscMax(mydz,dzMAX);
+      dzbMIN = PetscMin(mydz,dzbMIN);
+      dzbMAX = PetscMax(mydz,dzbMAX);
     }
   }
 
