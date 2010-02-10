@@ -50,7 +50,7 @@ NN=2               # set default number of processors here
 
 MPIDO=mpiexec      # change this if need "mpirun", etc.
 
-MYINITIALS=EBU     # MISMIP says "first character of the first name followed
+MYINITIALS=ABC     # MISMIP says "first character of the first name followed
                    #    by the first two characters of the last name"
 
 #MODELRANGE="1 2"   # model 1 is pure SSA, model 2 is SIA+SSA
@@ -148,24 +148,24 @@ do
   do
     case $GRID in
       1   ) GRIDMY=151; SKIP=;;
-      2   ) GRIDMY=1501; SKIP="-skip 10 ";;
-      3   ) GRIDMY=601; SKIP="-skip 10 ";;
+      2   ) GRIDMY=1501; SKIP="-skip 10";;
+      3   ) GRIDMY=601; SKIP="-skip 10";;
     esac
 
     ## experiment 1:
     for ES in 1a 1b
     do
       smncname=SMthk_${ES}_M${GRID}_A1.nc
-      regridstart="-regrid ${smncname} -regrid_vars H"
+      regridstart="-regrid_file ${smncname} -regrid_vars H"
       ### replace regridstart by empty string if we want to start w 10 m thickness
       #regridstart=
-      options="-step 1 ${SKIP}-Mx 3 -Mz 15 -My ${GRIDMY} ${regridstart}"
+      options="-step 1 ${SKIP} -Mx 3 -Lz 6000 -Mz 15 Lbz 0 -Mbz 1 -My ${GRIDMY} ${regridstart}"
       mpimismip $NN $MODEL $ES "$options"
       for STEP in 2 3 4 5 6 7 8 9
       do
         PREV=$(($STEP-1))
         INNAME=${MYINITIALS}${MODEL}_${ES}_M${GRID}_A${PREV}.nc
-        mpimismip $NN $MODEL $ES "-step ${STEP} ${SKIP}-if ${INNAME}"
+        mpimismip $NN $MODEL $ES "-step ${STEP} ${SKIP} -i ${INNAME}"
       done # for STEP
     done # for ES
 
@@ -174,12 +174,12 @@ do
     for SLIDING in a b
     do
       INNAME=${MYINITIALS}${MODEL}_1${SLIDING}_M${GRID}_A9.nc
-      mpimismip $NN $MODEL 2$SLIDING "-step 8 ${SKIP}-if ${INNAME}"
+      mpimismip $NN $MODEL 2$SLIDING "-step 8 ${SKIP} -i ${INNAME}"
       for STEP in 7 6 5 4 3 2 1
       do
         PREV=$(($STEP+1))
         INNAME=${MYINITIALS}${MODEL}_2${SLIDING}_M${GRID}_A${PREV}.nc
-        mpimismip $NN $MODEL 2$SLIDING "-step ${STEP} ${SKIP}-if ${INNAME}"
+        mpimismip $NN $MODEL 2$SLIDING "-step ${STEP} ${SKIP} -i ${INNAME}"
       done # for STEP
     done # for SLIDING
 
@@ -194,7 +194,7 @@ do
     do
       PREV=$(($STEP-1))
       INNAME=${MYINITIALS}${MODEL}_3a_M${GRID}_A${PREV}.nc
-      mpimismip $NN $MODEL 3a "-step ${STEP} ${SKIP}-if ${INNAME}"
+      mpimismip $NN $MODEL 3a "-step ${STEP} ${SKIP} -i ${INNAME}"
     done # for STEP
 
     # exper 3b
@@ -202,13 +202,13 @@ do
     regridstart="-regrid ${smncname} -regrid_vars H"
     ### replace regridstart by empty string if we want to start w 10 m thickness
     #regridstart=
-    options="-step 1 ${SKIP}-Mx 3 -Mz 15 -My ${GRIDMY} ${regridstart}"
+    options="-step 1 ${SKIP} -Mx 3 -Mz 15 -My ${GRIDMY} ${regridstart}"
     mpimismip $NN $MODEL 3b "$options"
     for STEP in 2 3 4 5 6 7 8 9 10 11 12 13 14 15
     do
       PREV=$(($STEP-1))
       INNAME=${MYINITIALS}${MODEL}_3b_M${GRID}_A${PREV}.nc
-      mpimismip $NN $MODEL 3b "-step ${STEP} ${SKIP}-if ${INNAME}"
+      mpimismip $NN $MODEL 3b "-step ${STEP} ${SKIP} -i ${INNAME}"
     done # for STEP
 
   done # for GRID

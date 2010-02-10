@@ -7,6 +7,7 @@
 # starting "#SM" are from those Matlab codes
 
 from scipy import *
+from scipy.integrate import odeint
 from pylab import *
 import sys
 import time
@@ -197,8 +198,8 @@ def SMsurface(h,x):
 #SM computes ice THICKNESS H_soln at points with position X_soln
 #options = odeset('AbsTol',1e-6,'RelTol',1e-6); #SM odeset('AbsTol',f/1e-3);
 #[X_soln,H_soln] = ode45(@SMsurface,x_grid,[h_f],options);
-#Hresult = integrate.odeint(SMsurface,[h_f],x_grid,atol=1.e-6,rtol=1.e-6)               
-Hresult = integrate.odeint(SMsurface,[h_f],x_grid,atol=1.e-9,rtol=1.e-9)               
+#Hresult = odeint(SMsurface,[h_f],x_grid,atol=1.e-6,rtol=1.e-6)               
+Hresult = odeint(SMsurface,[h_f],x_grid,atol=1.e-9,rtol=1.e-9)               
 H_soln = array(Hresult[:,0])
 
 #SM computes ice surface elevation by adding bed elevation
