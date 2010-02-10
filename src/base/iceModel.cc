@@ -200,13 +200,16 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vMask.create(grid, "mask", true); CHKERRQ(ierr);
   ierr = vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
 			 "", ""); CHKERRQ(ierr);
-  vector<double> mask_values(4);
-  mask_values[0] = MASK_SHEET;
-  mask_values[1] = MASK_DRAGGING;
-  mask_values[2] = MASK_FLOATING;
-  mask_values[3] = MASK_FLOATING_OCEAN0;
+  vector<double> mask_values(6);
+  mask_values[0] = MASK_ICE_FREE_BEDROCK;
+  mask_values[1] = MASK_SHEET;
+  mask_values[2] = MASK_DRAGGING_SHEET;
+  mask_values[3] = MASK_FLOATING;
+  mask_values[4] = MASK_ICE_FREE_OCEAN;
+  mask_values[5] = MASK_OCEAN_AT_TIME_0;
   ierr = vMask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
-  ierr = vMask.set_attr("flag_meanings", "sheet dragging floating floating_at_time_0"); CHKERRQ(ierr);
+  ierr = vMask.set_attr("flag_meanings",
+			"ice_free_bedrock sheet dragging_sheet floating ice_free_ocean ocean_at_time_zero"); CHKERRQ(ierr);
   vMask.output_data_type = NC_BYTE;
   ierr = variables.add(vMask); CHKERRQ(ierr);
 

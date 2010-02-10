@@ -315,7 +315,7 @@ PetscErrorCode IcePSTexModel::init_mask_phi() {
     ierr = verbPrintf(2,grid.com,
     "  mask set to SHEET for PST exper '%s' ...\n", exper_chosen_name); CHKERRQ(ierr);
   } else {                 // P1, P2, P3, P4 use SSA-as-sliding
-    ierr = vMask.set(MASK_DRAGGING);
+    ierr = vMask.set(MASK_DRAGGING_SHEET);
     ierr = verbPrintf(2,grid.com,
     "  mask set to DRAGGING for PST exper '%s' ...\n", exper_chosen_name); CHKERRQ(ierr);
   }

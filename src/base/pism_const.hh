@@ -24,6 +24,7 @@
 #include "materials.hh"
 #include <string>
 #include <vector>
+#include <set>
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -37,15 +38,16 @@ const PetscScalar secpera    = 3.15569259747e7; // The constant used in UDUNITS
 						// (src/udunits/pismudunits.dat)
 const PetscScalar pi         = M_PI;		// defined in gsl/gsl_math.h
 
-// following numerical values have some significance; see updateSurfaceElevationAndMask()
 enum PismMask {
-  MASK_UNKNOWN = -1,
-  MASK_SHEET = 1,
-  MASK_DRAGGING = 2,
+  MASK_UNKNOWN          = -1,
+  MASK_ICE_FREE_BEDROCK = 0,
+  MASK_SHEET            = 1,
+  MASK_DRAGGING_SHEET   = 2,
   // all the floating mask values are strictly greater than the grounded ones;
   // the criterion for floating is "mask >= MASK_FLOATING"
-  MASK_FLOATING = 3,
-  MASK_FLOATING_OCEAN0 = 7
+  MASK_FLOATING         = 3,
+  MASK_ICE_FREE_OCEAN   = 4,
+  MASK_OCEAN_AT_TIME_0  = 7
 };
 
 // FIXME: this should be removed
@@ -69,12 +71,16 @@ PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],..
 
 void endPrintRank();
 
-string timestamp();
-string username_prefix();
+string pism_timestamp();
+string pism_username_prefix();
 
 bool ends_with(string str, string suffix);
 
 // handy functions for processing options:
+PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set<string> choices,
+			       string default_value, string &result, bool &flag);
+PetscErrorCode PISMOptionsStrings(string opt, string text, string default_value,
+				  vector<string>& result, bool &flag);
 PetscErrorCode check_option(string name, PetscTruth &flag);
 PetscErrorCode check_option(string name, bool &flag);        // overloaded
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]);

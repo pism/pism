@@ -501,7 +501,7 @@ PetscErrorCode IceModel::write_snapshot() {
 
   // create line for history in .nc file, including time of write
 
-  string date_str = timestamp();
+  string date_str = pism_timestamp();
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
 	   "%s: %s snapshot at %10.5f a, for time-step goal %10.5f a\n",

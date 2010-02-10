@@ -117,8 +117,11 @@ class PSModifier : public PISMSurfaceModel {
 public:
   PSModifier(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
     : PISMSurfaceModel(g, conf, vars)
-  {};
-  virtual ~PSModifier() {}
+  { input_model = NULL; }
+
+  virtual ~PSModifier()
+  { delete input_model; }
+
   virtual void attach_input(PISMSurfaceModel *input);
 protected:
   PISMSurfaceModel *input_model;
@@ -137,6 +140,7 @@ public:
 
   virtual ~PSForceThickness() {}
   PetscErrorCode init();
+  virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
 					       IceModelVec2 &result);
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,

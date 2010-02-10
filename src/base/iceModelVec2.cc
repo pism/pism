@@ -228,14 +228,14 @@ PismMask IceModelVec2Mask::value(int i, int j) {
 bool IceModelVec2Mask::is_grounded(int i, int j) {
   PismMask m = value(i, j);
 
-  return (m == MASK_SHEET) || (m == MASK_DRAGGING);
+  return (m == MASK_SHEET) || (m == MASK_DRAGGING_SHEET) || (m == MASK_ICE_FREE_BEDROCK);
 }
 
 
 bool IceModelVec2Mask::is_floating(int i, int j) {
   PismMask m = value(i, j);
 
-  return (m == MASK_FLOATING) || (m == MASK_FLOATING_OCEAN0);
+  return (m == MASK_FLOATING) || (m == MASK_ICE_FREE_OCEAN) || (m == MASK_OCEAN_AT_TIME_0);
 }
 
 PetscErrorCode IceModelVec2Mask::fill_where_grounded(IceModelVec2 &v, const PetscScalar fillval) {

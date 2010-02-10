@@ -455,7 +455,7 @@ bool is_increasing(int len, double *a) {
 }
 
 //! Creates a time-stamp used for the history NetCDF attribute.
-string timestamp() {
+string pism_timestamp() {
   time_t now;
   tm tm_now;
   char date_str[50];
@@ -469,7 +469,7 @@ string timestamp() {
 }
 
 //! Creates a string with the user name, hostname and the time-stamp (for history strings).
-string username_prefix() {
+string pism_username_prefix() {
   PetscErrorCode ierr;
 
   char username[50];
@@ -482,7 +482,7 @@ string username_prefix() {
     hostname[0] = '\0';
   
   ostringstream message;
-  message << username << "@" << hostname << " " << timestamp() << ": ";
+  message << username << "@" << hostname << " " << pism_timestamp() << ": ";
 
   return message.str();
 }
@@ -542,6 +542,80 @@ PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
     config.import_from(overrides);
   }
   config.print();
+
+  return 0;
+}
+
+//! PISM wrapper replacing PetscOptionsStringArray.
+PetscErrorCode PISMOptionsStrings(string opt, string text, string default_value,
+				  vector<string>& result, bool &flag) {
+  PetscErrorCode ierr;
+  char tmp[TEMPORARY_STRING_LENGTH];
+  PetscTruth opt_set = PETSC_FALSE;
+
+  ierr = PetscOptionsString(opt.c_str(), text.c_str(), "", default_value.c_str(),
+			    tmp, TEMPORARY_STRING_LENGTH, &opt_set); CHKERRQ(ierr);
+
+  result.clear();
+
+  string word;
+  if (opt_set) {
+    istringstream arg(tmp);
+    while (getline(arg, word, ','))
+      result.push_back(word);
+
+    flag = true;
+  } else {
+    istringstream arg(default_value);
+    while (getline(arg, word, ','))
+      result.push_back(word);
+
+    flag = false;
+  }
+
+  return 0;
+}
+
+//! PISM wrapper replacing PetscOptionsEList.
+PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set<string> choices,
+			       string default_value, string &result, bool &flag) {
+  PetscErrorCode ierr;
+  char tmp[TEMPORARY_STRING_LENGTH];
+  string list, descr;
+  PetscTruth opt_set = PETSC_FALSE;
+
+  if (choices.empty()) {
+    SETERRQ(1, "PISMOptionsList: empty choices argument");
+  }
+
+  set<string>::iterator j = choices.begin();
+  list = "[" + *j++;
+  while (j != choices.end()) {
+    list += ", " + (*j++);
+  }
+  list += "]";
+
+  descr = description + " Choose one of " + list;
+
+  ierr = PetscOptionsString(opt.c_str(), descr.c_str(), "", default_value.c_str(),
+			    tmp, TEMPORARY_STRING_LENGTH, &opt_set); CHKERRQ(ierr);
+
+  // return the default value if the option was not set
+  if (!opt_set) {
+    flag = false;
+    result = default_value;
+    return 0;
+  }
+
+  // return the choice if it is valid and stop if it is not
+  if (choices.find(tmp) != choices.end()) {
+    flag = true;
+    result = tmp;
+  } else {
+    ierr = PetscPrintf(com, "ERROR: invalid %s argument: \"%s\". Please choose one of %s.\n",
+		       opt.c_str(), tmp, list.c_str()); CHKERRQ(ierr);
+    ierr = PetscEnd(); CHKERRQ(ierr);
+  }
 
   return 0;
 }

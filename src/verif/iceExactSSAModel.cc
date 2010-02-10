@@ -236,7 +236,7 @@ PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVelsI() {
   PetscErrorCode ierr;
   PetscScalar    **uvbar[2], **mask, **h, **bed;
   
-  ierr = vMask.set(MASK_DRAGGING); CHKERRQ(ierr);
+  ierr = vMask.set(MASK_DRAGGING_SHEET); CHKERRQ(ierr);
   ierr = vH.set(H0_schoof); CHKERRQ(ierr);
 
   // set h, bed everywhere
@@ -407,7 +407,7 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
         h[i][j] = 0.0;
         // continue to drop away at 2 m per hor. km beyond grounding line:
         bed[i][j] = bedgrounded - (r - Rg) * 0.002;  
-        mask[i][j] = MASK_FLOATING_OCEAN0;
+        mask[i][j] = MASK_OCEAN_AT_TIME_0;
       }
     }
   }  

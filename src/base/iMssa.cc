@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -367,7 +367,7 @@ PetscErrorCode IceModel::assembleSSAMatrix(bool includeBasalShear, IceModelVec2 
          *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
          *    or linear friction law according to basal->drag(), which gets called
          *    by basalDragx(),basalDragy().  */
-        if ((includeBasalShear) && (vMask.value(i,j) == MASK_DRAGGING)) {
+        if ((includeBasalShear) && (vMask.value(i,j) == MASK_DRAGGING_SHEET)) {
           // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
           valU[5] += basalDragx(tauc, u, v, i, j);
           valV[7] += basalDragy(tauc, u, v, i, j);
@@ -784,7 +784,7 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (vMask.value(i,j) != MASK_SHEET) {
         // combine velocities if desired (and not floating)
-        const bool addVels = ( do_superpose && (vMask.value(i,j) == MASK_DRAGGING) );
+        const bool addVels = ( do_superpose && (vMask.value(i,j) == MASK_DRAGGING_SHEET) );
         PetscScalar fv = 0.0, omfv = 1.0;  // case of formulas below where ssa
                                            // speed is infinity; i.e. when !addVels
                                            // we just pass through the SSA velocity
@@ -856,7 +856,7 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
       if (vMask.is_floating(i,j)) {
         Rb[i][j] = 0.0;
       }
-      if ((vMask.value(i,j) == MASK_DRAGGING) && use_ssa_velocity) {
+      if ((vMask.value(i,j) == MASK_DRAGGING_SHEET) && use_ssa_velocity) {
         // note basalDrag[x|y]() produces a coefficient, not a stress;
         //   uses *updated* ub,vb if do_superpose == TRUE
         const PetscScalar 
@@ -909,7 +909,7 @@ PetscErrorCode IceModel::correctSigma() {
         // note vubarSSA, vvbarSSA *are* communicated for differencing by last
         //   call to moveVelocityToDAVectors()
         // apply glaciological-superposition-to-low-order if desired (and not floating)
-        bool addVels = ( do_superpose && (vMask.value(i,j) == MASK_DRAGGING) );
+        bool addVels = ( do_superpose && (vMask.value(i,j) == MASK_DRAGGING_SHEET) );
         PetscScalar fv = 0.0, omfv = 1.0;  // case of formulas below where ssa
                                            // speed is infinity; i.e. when !addVels
                                            // we just pass through the SSA velocity

@@ -161,8 +161,6 @@ protected:
   DiagnosticTimeseries *delta_T; //!< for debugging
   bool paleo_precipitation_correction;
   IceModelVec2T *temp_ma_anomaly, *snowprecip_anomaly;
-
-  PISMAtmosphereModel *input_model;
 };
 
 /*

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -451,7 +451,7 @@ PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **x,
                                         - (nu_im * H_im * (u_y_im + v_x_im))) )
                      + sc * taudy[i][j];
   
-        if (maskval == MASK_DRAGGING) {
+        if (maskval == MASK_DRAGGING_SHEET) {
           PetscScalar mytaubx, mytauby;
           ierr = basalstress(ctx->useIceBasalResistancePlasticLaw, ctx->basal,
                       x[i][j].u,  x[i][j].v, tauc[i][j], mytaubx, mytauby); CHKERRQ(ierr);

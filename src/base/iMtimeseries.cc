@@ -438,7 +438,7 @@ PetscErrorCode IceModel::write_extras() {
   CHKERRQ(ierr);
 
   // create line for history in .nc file, including time of write
-  string date_str = timestamp();
+  string date_str = pism_timestamp();
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
 	   "%s: %s saving spatial time-series record at %10.5f a\n",

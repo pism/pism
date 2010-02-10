@@ -622,10 +622,10 @@ PetscErrorCode IceMISMIPModel::setMask() {
                static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
       const PetscScalar y = grid.dy * jfrom0;
       if (PetscAbs(y) >= calving_front) {
-        mask[i][j] = MASK_FLOATING_OCEAN0;
+        mask[i][j] = MASK_OCEAN_AT_TIME_0;
       } else {
         // note updateSurfaceElevationAndMask() will mark DRAGGING as FLOATING if it is floating
-        mask[i][j] = MASK_DRAGGING;
+        mask[i][j] = MASK_DRAGGING_SHEET;
       }
 
     }

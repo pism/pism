@@ -190,10 +190,10 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 
 # BEGIN FIXME: this is temporary and should eventually go:
 other_sources += PISMComponent.cc PAConstant.cc PAFausto.cc PAForcing.cc \
-                 PISMSurface.cc pcctest3.cc PISMOcean.cc pgrn_atmosphere.cc
+                 PISMSurface.cc pcctest3.cc PISMOcean.cc pgrn_atmosphere.cc PCFactory.cc
 
 ../bin/pcctest3 : pcctest3.o ${LIBPISMNAME} PISMComponent.o PAConstant.o PAFausto.o \
-                  PAForcing.o PISMSurface.o PISMOcean.o pgrn_atmosphere.o
+                  PAForcing.o PISMSurface.o PISMOcean.o pgrn_atmosphere.o PCFactory.o
 	${CXXLINKER} $^ ${ICE_LIB_FLAGS} -o $@
 # END FIXME
 

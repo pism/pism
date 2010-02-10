@@ -31,228 +31,17 @@ static char help[] =
 #include "base/nc_util.hh"
 #include "base/NCVariable.hh"
 
+#include "coupler/PCFactory.hh"
 #include "coupler/PISMAtmosphere.hh"
 #include "coupler/PISMSurface.hh"
 #include "coupler/PISMOcean.hh"
 #include "eismint/pgrn_atmosphere.hh"
 
-//! Replaces PetscOptionsEList.
-static PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set<string> choices,
-				      string default_value, string &result, bool &flag) {
-  PetscErrorCode ierr;
-  char tmp[TEMPORARY_STRING_LENGTH];
-  string list, descr;
-  PetscTruth opt_set = PETSC_FALSE;
-
-  if (choices.empty()) {
-    SETERRQ(1, "PISMOptionsList: empty choices argument");
-  }
-
-  list = "[" + *(choices.begin());
-  set<string>::iterator j = choices.begin(); j++;
-  while (j != choices.end()) {
-    list += ", " + (*j++);
-  }
-  list += "]";
-
-  descr = description + " Choose one of " + list;
-
-  ierr = PetscOptionsString(opt.c_str(), descr.c_str(), "", default_value.c_str(),
-			    tmp, TEMPORARY_STRING_LENGTH, &opt_set); CHKERRQ(ierr);
-
-  // return the default value if the option was not set
-  if (!opt_set) {
-    flag = false;
-    result = default_value;
-    return 0;
-  }
-
-  // return the choice if it is valid and stop if it is not
-  if (choices.find(tmp) != choices.end()) {
-    flag = true;
-    result = tmp;
-  } else {
-    ierr = PetscPrintf(com, "ERROR: invalid %s argument: \"%s\". Please choose one of %s.\n",
-		       opt.c_str(), tmp, list.c_str()); CHKERRQ(ierr);
-    ierr = PetscEnd(); CHKERRQ(ierr);
-  }
-
-  return 0;
+static void create_pa_eismint_greenland(IceGrid& g, const NCConfigVariable& conf,
+					PISMVars& vars, PISMAtmosphereModel* &result) {
+  result = new PA_EISMINT_Greenland(g, conf, vars);
 }
 
-PetscErrorCode PISMOptionsStrings(string opt, string text, string default_value,
-				  vector<string>& result, bool &flag) {
-  PetscErrorCode ierr;
-  char tmp[TEMPORARY_STRING_LENGTH];
-  PetscTruth opt_set = PETSC_FALSE;
-
-  ierr = PetscOptionsString(opt.c_str(), text.c_str(), "", default_value.c_str(),
-			    tmp, TEMPORARY_STRING_LENGTH, &opt_set); CHKERRQ(ierr);
-
-  result.clear();
-
-  if (opt_set) {
-    istringstream arg(tmp);
-    string word;
-    while (getline(arg, word, ','))
-      result.push_back(word);
-
-    flag = true;
-  } else {
-    result.push_back(default_value);
-    flag = false;
-  }
-
-  return 0;
-}
-/*
-static PetscErrorCode init_atmosphere(IceGrid &grid, const NCConfigVariable &conf, PISMVars &vars,
-				      PISMAtmosphereModel* &atmosphere) {
-  PetscErrorCode ierr;
-  bool opt_set = false;
-  string choice;
-  PISMAtmosphereModel *tmp = NULL;
-
-  ierr = PetscOptionsBegin(grid.com, "", "PISM options controlling surface, atmosphere and ocean models", ""); CHKERRQ(ierr);
-
-  // Atmosphere models:
-  set<string> atmosphere_models;
-  atmosphere_models.insert("constant");
-  atmosphere_models.insert("greenland");
-  atmosphere_models.insert("eismint_greenland");
-
-  ierr = PISMOptionsList(grid.com,
-			 "-atmosphere",
-			 "Specifies an atmosphere model.",
-			 atmosphere_models,
-			 "constant",
-			 choice,
-			 opt_set); CHKERRQ(ierr);
-
-  if        (choice == "constant") {
-    atmosphere = new PAConstant(grid, conf, vars);
-  } else if (choice == "greenland") {
-    atmosphere = new PAFausto(grid, conf, vars);
-  } else if (choice == "eismint_greenland") {
-    atmosphere = new PA_EISMINT_Greenland(grid, conf, vars);
-  } else {
-    SETERRQ(1, "Invalid atmosphere model choice (should never happen)");
-  }
-
-  return 0;
-}
-*/
-
-//! Processes command-line options and creates 
-static PetscErrorCode init_boundary_models(IceGrid &grid, const NCConfigVariable &conf, PISMVars &vars,
-					   PISMSurfaceModel* &surface_model,
-					   PISMOceanModel* &ocean_model) {
-  PetscErrorCode ierr;
-  bool opt_set = false;
-  string choice;
-  PISMAtmosphereModel *atmosphere = NULL;
-
-  ierr = PetscOptionsBegin(grid.com, "", "PISM options controlling surface, atmosphere and ocean models", ""); CHKERRQ(ierr);
-
-  // Atmosphere models:
-  set<string> atmosphere_models;
-  atmosphere_models.insert("constant");
-  atmosphere_models.insert("greenland");
-  atmosphere_models.insert("eismint_greenland");
-
-  ierr = PISMOptionsList(grid.com,
-			 "-atmosphere",
-			 "Specifies an atmosphere model.",
-			 atmosphere_models,
-			 "constant",
-			 choice,
-			 opt_set); CHKERRQ(ierr);
-
-  if        (choice == "constant") {
-    atmosphere = new PAConstant(grid, conf, vars);
-  } else if (choice == "greenland") {
-    atmosphere = new PAFausto(grid, conf, vars);
-  } else if (choice == "eismint_greenland") {
-    atmosphere = new PA_EISMINT_Greenland(grid, conf, vars);
-  } else {
-    SETERRQ(1, "Invalid atmosphere model choice (should never happen)");
-  }
-
-  // Atmosphere forcing:
-  PetscTruth dTforcing_set, temp_ma_anomaly_set, snowprecip_anomaly_set;
-  ierr = check_option("-dTforcing", dTforcing_set); CHKERRQ(ierr);
-  ierr = check_option("-temp_ma_anomaly", temp_ma_anomaly_set); CHKERRQ(ierr);
-  ierr = check_option("-snowprecip_anomaly", snowprecip_anomaly_set); CHKERRQ(ierr);
-
-  if (dTforcing_set || temp_ma_anomaly_set || snowprecip_anomaly_set) {
-    PAForcing *forcing = new PAForcing(grid, conf, vars);
-
-    forcing->attach_input(atmosphere);
-
-    atmosphere = forcing;
-  }
-  
-  // Surface models:
-  set<string> surface_models;
-  surface_models.insert("simple");
-  surface_models.insert("constant");
-  surface_models.insert("pdd");
-
-  ierr = PISMOptionsList(grid.com,
-			 "-surface",
-			 "Specifies a surface (snow process, melt) model.",
-			 surface_models,
-			 "simple",
-			 choice,
-			 opt_set); CHKERRQ(ierr);
-
-  if        (choice == "simple") {
-    surface_model = new PSSimple(grid, conf, vars);
-  } else if (choice == "constant") {
-    surface_model = new PSConstant(grid, conf, vars);
-  } else if (choice == "pdd") {
-    surface_model = new PSLocalMassBalance(grid, conf, vars);
-  } else {
-    SETERRQ(1, "Invalid surface model choice (should never happen)");
-  }
-
-  // Surface model modifiers:
-
-  PetscTruth ftt_set;
-  ierr = check_option("-force_to_thk", ftt_set); CHKERRQ(ierr);
-  if (ftt_set) {
-    PSForceThickness *forcing = new PSForceThickness(grid, conf, vars);
-
-    forcing->attach_input(surface_model);
-
-    surface_model = forcing;
-  }
-
-  // Ocean models: no choices (yet), so we just use the default (constant) model.
-
-  ocean_model = new POConstant(grid, conf, vars);
-
-  PetscTruth sea_level_forcing = PETSC_FALSE;
-  ierr = check_option("-dSLforcing", sea_level_forcing); CHKERRQ(ierr);
-
-  if (sea_level_forcing) {
-    POForcing *forcing = new POForcing(grid, conf, vars);
-
-    forcing->attach_input(ocean_model);
-
-    ocean_model = forcing;
-  }
-
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  surface_model->attach_atmosphere_model(atmosphere);
-
-  ierr = surface_model->init(); CHKERRQ(ierr);
-
-  ierr = ocean_model->init(); CHKERRQ(ierr);
-
-  return 0;
-}
 
 static PetscErrorCode setupIceGridFromFile(const char *filename, IceGrid &grid) {
   PetscErrorCode ierr;
@@ -415,7 +204,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     cmdstr += string(" ") + argv[j];
   cmdstr += "\n";
 
-  string history = username_prefix() + cmdstr;
+  string history = pism_username_prefix() + cmdstr;
 
   global_attrs.prepend_history(history);
 
@@ -583,10 +372,32 @@ int main(int argc, char *argv[]) {
     ierr = readIceInfoFromFile(inname, last_record, variables); CHKERRQ(ierr);
 
     // Initialize boundary models:
-    PISMSurfaceModel *surface = NULL;
-    PISMOceanModel   *ocean   = NULL;
-    ierr = init_boundary_models(grid, config, variables, surface, ocean); CHKERRQ(ierr);
-    
+    PAFactory pa(grid, config, variables);
+    PISMAtmosphereModel *atmosphere;
+    pa.add_model("eismint_greenland", &create_pa_eismint_greenland);
+
+    PSFactory ps(grid, config, variables);
+    PISMSurfaceModel *surface;
+
+    POFactory po(grid, config, variables);
+    PISMOceanModel *ocean;
+
+    ierr = PetscOptionsBegin(grid.com, "", "PISM Boundary Models", ""); CHKERRQ(ierr);
+
+    pa.create(atmosphere);
+
+    ps.create(surface);
+
+    surface->attach_atmosphere_model(atmosphere);
+
+    po.create(ocean);
+
+    ierr = surface->init(); CHKERRQ(ierr);
+    ierr = ocean->init(); CHKERRQ(ierr);
+
+    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    // done initializing boundary models.
+
     ierr = PetscOptionsGetString(PETSC_NULL, "-o", outname, 
                                  PETSC_MAX_PATH_LEN, NULL); CHKERRQ(ierr);
 

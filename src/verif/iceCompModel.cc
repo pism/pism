@@ -393,7 +393,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
         case 'A':
           exactA(r,&H[i][j],&accum[i][j]);
           if (r >= LforAE)
-            vMask(i,j) = MASK_FLOATING_OCEAN0;
+            vMask(i,j) = MASK_OCEAN_AT_TIME_0;
           break;
         case 'B':
           exactB(grid.year*secpera,r,&H[i][j],&accum[i][j]);
@@ -407,7 +407,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
         case 'E':
           exactE(xx,yy,&H[i][j],&accum[i][j],&dummy1,&dummy2,&dummy3);
           if (r >= LforAE)
-            vMask(i,j) = MASK_FLOATING_OCEAN0;
+            vMask(i,j) = MASK_OCEAN_AT_TIME_0;
           break;
         case 'H':
           exactH(f,grid.year*secpera,r,&H[i][j],&accum[i][j]);

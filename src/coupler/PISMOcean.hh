@@ -59,7 +59,7 @@ public:
   virtual PetscErrorCode shelf_base_mass_flux(PetscReal t_years, PetscReal dt_years,
 					      IceModelVec2 &result);
 protected:
-  IceModelVec2 *ice_thickness;
+  IceModelVec2 *ice_thickness;	// is not owned by this class
 };
 
 //! A class defining the interface of a PISM ocean model modifier.

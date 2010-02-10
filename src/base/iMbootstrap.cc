@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Nathan Shemonski, Ed Bueler and
+// Copyright (C) 2004-2010 Jed Brown, Nathan Shemonski, Ed Bueler and
 // Constantine Khroulev
 //
 // This file is part of PISM.
@@ -284,7 +284,7 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
       if (H[i][j] < 0.001) {  // if no ice
         if (bed[i][j] < 0.0) {
           h[i][j] = 0.0;
-          mask[i][j] = do_ocean_kill ? MASK_FLOATING_OCEAN0 : MASK_FLOATING;
+          mask[i][j] = do_ocean_kill ? MASK_OCEAN_AT_TIME_0 : MASK_FLOATING;
         } else {
           h[i][j] = bed[i][j];
           mask[i][j] = MASK_SHEET;

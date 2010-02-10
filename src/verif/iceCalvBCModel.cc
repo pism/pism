@@ -246,7 +246,7 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
            *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
            *    or linear friction law according to basal->drag(), which gets called
            *    by basalDragx(),basalDragy().  */
-          if ((includeBasalShear) && (vMask.value(i,j) == MASK_DRAGGING)) {
+          if ((includeBasalShear) && (vMask.value(i,j) == MASK_DRAGGING_SHEET)) {
             // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
             valU[5] += basalDragx(tauc, u, v, i, j);
             valV[7] += basalDragy(tauc, u, v, i, j);

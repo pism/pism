@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -142,7 +142,7 @@ static PetscErrorCode writePCCStateAtTimes(
     cmdstr += string(" ") + argv[j];
   cmdstr += "\n";
 
-  string history = username_prefix() + cmdstr;
+  string history = pism_username_prefix() + cmdstr;
 
   global_attrs.prepend_history(history);
 

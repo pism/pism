@@ -106,7 +106,7 @@ PetscErrorCode PSConstant::init() {
   bool regrid = false;
   int start = -1;
 
-  ierr = verbPrintf(2, grid.com, "  Initializing the constant-in-time surface process model...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "* Initializing the constant-in-time surface process model...\n"); CHKERRQ(ierr);
 
 
   // allocate IceModelVecs for storing temperature and surface mass balance fields
@@ -339,9 +339,13 @@ PetscErrorCode PSLocalMassBalance::ice_surface_temperature(PetscReal t_years, Pe
 
 ///// "Force-to-thickness" mechanism
 
+void PSForceThickness::attach_atmosphere_model(PISMAtmosphereModel *input) {
+  input_model->attach_atmosphere_model(input);
+}
+
 PetscErrorCode PSForceThickness::init() {
   PetscErrorCode ierr;
-  char fttfile[PETSC_MAX_PATH_LEN];
+  char fttfile[PETSC_MAX_PATH_LEN] = "";
 
   ierr = input_model->init(); CHKERRQ(ierr);
 
@@ -432,7 +436,7 @@ Let's assume \f$H(t_s)=H_0\f$.  This initial value problem has solution
 and so
   \f[ H(t_e) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t_e-t_s)} \f]
 The constant \f$\alpha\f$ has a default value \c pism_config:force_to_thickness_alpha
-of $0.002\,\text{a}^{-1}$.
+of \f$0.002\,\text{a}^{-1}\f$.
 
 The final feature is that we turn on this mechanism so it is harshest near the end
 of the run.  In particular,

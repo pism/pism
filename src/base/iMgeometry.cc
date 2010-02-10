@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -175,7 +175,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
         // Don't update mask; potentially one would want to do SSA
         //   dragging ice shelf in dry case and/or ignore mean sea level elevation.
         h[i][j] = hgrounded;
-      } else if (vMask.value(i,j) == MASK_FLOATING_OCEAN0) {
+      } else if (vMask.value(i,j) == MASK_OCEAN_AT_TIME_0) {
         // mask takes priority over bed in this case (note sea level may change).
         // Example Greenland case: if mask say Ellesmere is OCEAN0,
         //   then never want ice on Ellesmere.
@@ -192,7 +192,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
               if (do_plastic_till) {
                 // we are using SSA-as-a-sliding-law, so we know what to do:
                 //   all grounded points become DRAGGING
-                mask[i][j] = MASK_DRAGGING;
+                mask[i][j] = MASK_DRAGGING_SHEET;
               } else {
                 // we do not know how to set this point, which just became grounded
                 mask[i][j] = MASK_UNKNOWN;
@@ -211,7 +211,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
             h[i][j] = hgrounded; // actually grounded so update h
             if (use_ssa_velocity && do_plastic_till) {
               // we are using SSA-as-a-sliding-law, so grounded points become DRAGGING
-              mask[i][j] = MASK_DRAGGING;
+              mask[i][j] = MASK_DRAGGING_SHEET;
             }
           } else {
             h[i][j] = hfloating; // actually floating so update h
@@ -232,10 +232,10 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
                 PismModMask(mask[i-1][j-1]) + PismModMask(mask[i][j-1]) + PismModMask(mask[i+1][j-1]);
           // make SHEET if either all neighbors are SHEET or at most one is 
           //   DRAGGING; if any are floating then ends up DRAGGING:
-          if (neighmasksum <= (7*MASK_SHEET + MASK_DRAGGING + 0.1)) { 
+          if (neighmasksum <= (7*MASK_SHEET + MASK_DRAGGING_SHEET + 0.1)) { 
             mask[i][j] = MASK_SHEET;
           } else { // otherwise make DRAGGING
-            mask[i][j] = MASK_DRAGGING;
+            mask[i][j] = MASK_DRAGGING_SHEET;
           }
         }
         
@@ -356,7 +356,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
       //    compare broadcastSSAVelocity(); note uvbar[o] is SIA result:
       //    uvbar[0] H = - D h_x
       PetscScalar He, Hw, Hn, Hs;
-      if ( do_superpose && (vMask.value(i,j) == MASK_DRAGGING) ) {
+      if ( do_superpose && (vMask.value(i,j) == MASK_DRAGGING_SHEET) ) {
         const PetscScalar
           fv  = 1.0 - outC_fofv * atan( inC_fofv *
                       ( PetscSqr(ubarssa[i][j]) + PetscSqr(vbarssa[i][j]) ) ),
@@ -417,7 +417,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
       
       // force zero thickness at points which were originally ocean (if "-ocean_kill");
       //   this is calving at original calving front location
-      if ( do_ocean_kill && (vMask.value(i,j) == MASK_FLOATING_OCEAN0) )
+      if ( do_ocean_kill && (vMask.value(i,j) == MASK_OCEAN_AT_TIME_0) )
         Hnew[i][j] = 0.0;
 
       // force zero thickness at points which are floating (if "-float_kill");

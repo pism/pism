@@ -54,7 +54,7 @@ PetscErrorCode IceModel::computeFlowUbarStats
         } else if (vMask.is_floating(i,j)) {
           shelfcount += 1.0;
           Ubarshelfsum += Ubarmag;
-        } else if (vMask.value(i,j) == MASK_DRAGGING) {
+        } else if (vMask.value(i,j) == MASK_DRAGGING_SHEET) {
           // streamcount = icecount - SIAcount - shelfcount
           Ubarstreamsum += Ubarmag;
         } else {
@@ -134,7 +134,7 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
         const PetscScalar dv = a * H[i][j];
         volume += dv;
         if (vMask.value(i,j) == MASK_SHEET)   volSIA += dv;
-        else if (vMask.value(i,j) == MASK_DRAGGING)   volstream += dv;
+        else if (vMask.value(i,j) == MASK_DRAGGING_SHEET)   volstream += dv;
         else if (vMask.is_floating(i,j))   volshelf += dv;
       }
     }
