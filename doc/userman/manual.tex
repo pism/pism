@@ -1,7 +1,9 @@
 \documentclass[11pt,final]{amsart}
 
-\newcommand{\PISMREV}{\input{revision.tex}}
+%% THE FOLLOWING SHOULD CHANGE FOR A STABLE RELEASE:
+\newcommand{\PISMREV}{\textbf{trunk} revision \input{revision.tex}}
 \newcommand{\PETSCREL}{2.3.3 or 3.0.0}
+\newcommand{\PISMDOWNLOADMSG}{Get development version of PISM source code: \\ \centerline{\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev}} \quad}
 
 %\addtolength\topmargin{-.1in}
 \addtolength\textheight{0.4in}
@@ -55,7 +57,7 @@
 
 \author[]{Ed Bueler \\ Constantine Khroulev \\ Jed Brown \\ Nathan Shemonski}
 
-\date{\today.  Support by email: \texttt{help\@@pism-docs.org}.  Based on PISM revision \PISMREV\,and PETSC release \PETSCREL.  Get development version of PISM source code: \\ \centerline{\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev} \quad}}
+\date{\today.  Support by email: \texttt{help\@@pism-docs.org}.  Based on PISM \PISMREV\,and PETSC release \PETSCREL. \PISMDOWNLOADMSG}
 
 \pdfinfo{
 /Title (PISM User's Manual)
@@ -77,9 +79,9 @@
 
 \newpage
 \phantom{bob}
-\vspace{1.5in}
+\vspace{1.0in}
 \begin{quote}
-\textsl{Copyright (C) 2004--2009 Ed Bueler and Constantine Khroulev and Jed Brown and Nathan Shemonski}
+\textsl{Copyright (C) 2004--2010 Ed Bueler and Constantine Khroulev and Jed Brown and Nathan Shemonski}
 \medskip
 
 \noindent \textsl{This file is part of PISM.}
@@ -90,14 +92,21 @@
 \vspace{0.6in}
 \normalspacing
 
+
 \centerline{\textsc{Acknowledgements}}
 \bigskip
 
-The NASA Modeling, Analysis, and Prediction program\index{NASA!Modeling, Analysis, and Prediction Program}, grant \# NNX09AJ38G, 2009--2013, supports the development of PISM.  Development from 2002 to 2008 was supported by the NASA Cryospheric Sciences Program\index{NASA!Cryospheric Sciences Program}, grant \# NAG5-11371.
+\small
+The NASA Modeling, Analysis, and Prediction program\index{NASA!Modeling, Analysis, and Prediction Program} (grant \# NNX09AJ38G) supports the development of PISM from 2009 to 2013.  We thank them!  Development from 2002 to 2008 was supported by the NASA Cryospheric Sciences Program\index{NASA!Cryospheric Sciences Program}.
 
-The Arctic Regional Supercomputer Center\index{Arctic Regional Supercomputer Center (ARSC)} has provided significant computational resources and technical help in the development of PISM.
+The Snow, Ice, and Permafrost (SIP) group\index{Geophysical Institute!Snow, Ice, and Permafrost group} at the Geophysical Institute at UAF is now the home for PISM developers.  Find us in Elvey 410D, in a corner office facing the wilds of Alaska.
 
-Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\index{Lingle, Craig}.  Dave Covey, Don Bahls, and Greg Newby have supported our computers, tools, and and computations.  Thanks to Tolly Adalgeirsdottir, Andy Aschwanden, Torsten Albrecht, Marianne Hasselhoff, Tore Hattermann, Jesse Johnson, Art Mahoney, Anders Levermann, Maria Martin, Kent Overstreet, Martin Truffer, Ben Sperisen, Ricarda Winkelmann, Ryan Woodard and several other PISM users for helpful comments and questions on PISM and this \emph{Manual}.
+The Arctic Region Supercomputing Center\index{Arctic Region Supercomputing Center (ARSC)} has provided significant computational resources and technical help in the development of PISM, including the vital support of postdoc Andy Aschwanden.
+
+Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\index{Lingle, Craig}.
+
+Dave Covey, Don Bahls, and Greg Newby have supported our computers, tools, and and computations.  Martin Truffer, Regine Hock, Dani DellaGiustina and others in the SIP group provide the real-glaciology context for PISM at UAF.  Thanks to Tolly Adalgeirsdottir, Torsten Albrecht, Nick Golledge, Marianne Hasselhoff, Tore Hattermann, Jesse Johnson, Anders Levermann, Art Mahoney, David Maxwell, Maria Martin, Kent Overstreet, Ben Sperisen, Ward van Pelt, Ricarda Winkelmann, Ryan Woodard, Florian Ziemen and other PISM users/developers for helpful comments and questions on PISM and this \emph{Manual}.
+\normalsize
 
 \newpage
 \setcounter{tocdepth}{2}
@@ -559,7 +568,7 @@ pismv -test G -max_dt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
 pismv -test G -max_dt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
 \end{verbatim}
 \normalsize\end{quote}
-produced figures 13, 14, and 15 of \cite{BBL}.  The last two runs, especially, require a supercomputer; the $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.  (Appropriate use \verb|-skip 10| and \verb|-z_spacing quadratic| accelerates such runs.  See subsection \ref{sect:usage}.)
+produced figures 13, 14, and 15 of \cite{BBL}.  The last two runs, especially, require a supercomputer; the $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.  (Appropriate use \verb|-skip 10| and \verb|-z_spacing quadratic| accelerates such runs.  See subsection \ref{sec:practical-usage}.)
 
 \subsection{Sample verification results}  Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} show a sampling of the results of verifying PISM using the tests described above.\index{PISM!verification results and reporting}  These figures were produced more-or-less automatically using Python scripts \verb|test/verifynow.py|\index{verifynow.py} and \verb|test/vnreport.py|\index{vnreport.py}.  See appendix \ref{sect:scripts}.
 
@@ -611,7 +620,7 @@ EISMINT I \cite[ European Ice Sheet Modeling INiTiative]{EISMINT96}\footnote{See
 
 EISMINT II \cite{EISMINT00} pointed out interesting and surprising properties of the thermocoupled SIA.  References \cite{BBL,Hindmarsh04,Hindmarsh06,PayneBaldwin,SaitoEISMINT,BBssasliding} each interpret the EISMINT II experiments and/or describe attempts to add more complete physical models to ``fix'' the (perceived and real) shortfalls of ice sheet model behavior on EISMINT II experiments.  We believe that the discussion in \cite{PayneDongelmans,PayneBaldwin,BBL} adequately explains the ``spokes'' in EISMINT II experiment F as a genuine fluid instability, while Appendix B of \cite{BBssasliding} adequately cautions against the continuum model that generates the ``spokes'' in EISMINT II experiment H.   Thus we can move on from that era of controversy.  In any case, PISM has built-in support for all of the published and unpublished EISMINT II experiments; these are described in the next subsection.
 
-The ISMIP (Ice Sheet Model Intercomparison Project)\footnote{See \url{http://homepages.vub.ac.be/\%7Ephuybrec/ismip.html}.}\index{ISMIP!defined} round of intercomparisons is still ongoing at this time (2009).  There are two components of ISMIP substantially completed, namely HOM = Higher Order Models \cite{HOMtcd,HOMelmer} and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov}.  Of these, PISM participated in HEINO, but this ability is unmaintained.   We believe\index{ISMIP!interpretation of HEINO results} the continuum problem described by HEINO, also used in EISMINT II experiment H (above), is not easily approximate-able because of a required discontinuous jump in the basal velocity field.  The continuum problem predicts infinite vertical velocity because of this jump \cite[Appendix B]{BBssasliding}.  Details of the numerical schemes and their results are irrelevant if the continuum model makes such a prediction.
+The ISMIP (Ice Sheet Model Intercomparison Project)\footnote{See \url{http://homepages.vub.ac.be/\%7Ephuybrec/ismip.html}.}\index{ISMIP!defined} round of intercomparisons is still ongoing at this time (2009).  There are two components of ISMIP substantially completed, namely HOM = Higher Order Models \cite{ISMIPHOM,HOMelmer} and HEINO = Heinrich Event INtercOmparison \cite{GreveTakahamaCalov,Calovetal2009HEINOfinal}.  Of these, PISM participated in HEINO, but this ability is unmaintained.   We believe\index{ISMIP!interpretation of HEINO results} the continuum problem described by HEINO, also used in EISMINT II experiment H (above), is not easily approximate-able because of a required discontinuous jump in the basal velocity field.  The continuum problem predicts infinite vertical velocity because of this jump \cite[Appendix B]{BBssasliding}.  Details of the numerical schemes and their results are irrelevant if the continuum model makes such a prediction.
 
 PISM offers the physical continuum model described in \cite{BBssasliding}, an SIA/SSA hybrid, as an alternative to the continuum model used in ISMIP-HEINO and EISMINT II experiment H.  Indeed the SIA/SSA hybrid is offered as a unified shallow model for real ice sheets (section \ref{sect:dynamics}).
 
@@ -788,7 +797,7 @@ We see immediately that the PISM result does not put the grounding line in the s
 
 We can learn more about the problem.  It turns out that the numerical flaw in the flux also keeps the grounding line from moving properly, we think.  The problem is that the numerical result doesn't move the grounding line to its correct location if the ice sheet and shelf are initially 10 m as specified in MISMIP.  On the other hand, the correct location for the grounding line is also approximately a steady state for PISM numerics; the grounding line stays where you put it (compare \cite{SchoofMarine2} and \cite{VieliPayne}).
 
-But \verb|solverSM.py| has an option which allows the asymptotic-matching thickness result from the \cite{SchoofMarine1} theory to be written into a NetCDF file.  We can then initialize the PISM thickness from it, using \verb|-regrid_from| (section \ref{sect:usage}).
+But \verb|solverSM.py| has an option which allows the asymptotic-matching thickness result from the \cite{SchoofMarine1} theory to be written into a NetCDF file.  We can then initialize the PISM thickness from it, using \verb|-regrid_from| (section \ref{sec:practical-usage}).
 
 The effect when we do this at higher resolution (grid mode 3 with 6km spacing, instead of 24 km), is a step forward:
 
@@ -1050,7 +1059,7 @@ mpiexec -n 8 pgrn -ccl3 -skip 10 -i green_ssl2_110ka.nc -ys -249900 -ye 0 \
 
 FIXME:  FIGURES NEED MAINTENANCE.   The resulting thickness difference, relative to the end of the SSL2 run, and the pressure-adjusted basal temperature, are shown in Figure \ref{fig:cclthickTpa}.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \includegraphics[width=2.8in]{Hdiff_CCLSSL}\quad\includegraphics[width=2.8in]{Tpa_CCL}
 \caption{Left:  Ice thickness difference between end (year zero) of a CCL3 run and the end of an SSL2 run (meters).  Right:  Ice pressure-adjusted basal temperature (degrees C below 0; right) at the end of a EISMINT-Greenland CCL3 run.  Compare Figure \ref{fig:ssl2thickTpa}.}
 \label{fig:cclthickTpa}
@@ -1321,13 +1330,13 @@ The Index on page \pageref{sect:index} contains an alphabetical list of options.
 
 \opt{zb\und spacing} Vertical spacing within the bedrock layer: choose one from ``\t{quadratic}'' (the default for \t{pismr}; see above for details) and ``\t{equal}''.
 
-\opt{Lx}  The x direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
+\opt{Lx}  The x direction half-width of the computational box, in kilometers.  See section \ref{sec:practical-usage}.
 
-\opt{Ly}  The y direction half-width of the computational box, in kilometers.  See section \ref{sect:usage}.
+\opt{Ly}  The y direction half-width of the computational box, in kilometers.  See section \ref{sec:practical-usage}.
 
-\opt{Lz}  The height of the computational box for the ice (excluding the bedrock thermal model part).  See section \ref{sect:usage}.
+\opt{Lz}  The height of the computational box for the ice (excluding the bedrock thermal model part).  See section \ref{sec:practical-usage}.
 
-\optdef{Lbz}{0}  The thickness of the bedrock thermal layer.  See section \ref{sect:usage}.
+\optdef{Lbz}{0}  The thickness of the bedrock thermal layer.  See section \ref{sec:practical-usage}.
 
 \optdef{Mbz}{1}  Number of grid points in the bedrock for the bedrock thermal model.  The highest grid point corresponds to the base of the ice $z=0$, and so \t{Mbz}$>1$ is required to actually have bedrock thermal model.  Note this option is unrelated to the bed deformation model (glacial isostasy model); see option \verb|-bed_def| for that.
 
@@ -1392,9 +1401,9 @@ Not needed when using \verb|pismd|, for which saving the full three-dimensional 
 
 \opt{o}  Give name of output file: \verb|-o foo.nc| writes an output file named \verb|foo.nc|.  See the description of option \verb|-i|.  Default name is \verb|unnamed.nc| under \verb|pismr|, \verb|simp_exper.nc| under \verb|pisms|, and \verb|verify.nc| under \verb|pismv|.
 
-\opt{regrid\und from}  Give the name of the NetCDF file from which to regrid variables.  See section \ref{sect:usage}.
+\opt{regrid\und from}  Give the name of the NetCDF file from which to regrid variables.  See section \ref{sec:practical-usage}.
 
-\optdef{regrid\und vars}{}  Which variables to regrid.  See section \ref{sect:usage}.
+\optdef{regrid\und vars}{}  Which variables to regrid.  See section \ref{sec:practical-usage}.
 
 \opt{dontreadSSAvels} Turns off reading the \verb|ubarSSA| and \verb|vbarSSA| velocities saved by a previous \verb|-ssa| run.
 
@@ -1560,7 +1569,7 @@ Here $b$ is the bed elevation and $h$ is the surface elevation.  The transformat
 
 \optdef{low\und temp}{200.0}  Set the temperature which PISM will regard as ``too low''.  Units in Kelvin.  Note that one kind of numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated.  In that case temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations, and if the number is too great then the run is stopped.  See option \verb|-max_low_temps|.
 
-\optdef{max\und dt}{60.0}  The maximum time-step in years.  The adaptive time-stepping scheme will make the time-step shorter than this as needed for stability, but not longer.  See section \ref{sect:usage}.
+\optdef{max\und dt}{60.0}  The maximum time-step in years.  The adaptive time-stepping scheme will make the time-step shorter than this as needed for stability, but not longer.  See section \ref{sec:practical-usage}.
 
 \optdef{max\und low\und temps}{10}  Specify the number (a nonnegative integer) of allowed low temp violations per time step.  Note these are reported in detail (i.e.~with location) if \verb|-verbose| is set.  Note that one kind of numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated.  In that case temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations, and if the number is too great then the run is stopped.  See option \verb|-low_temp| for the cutoff low temperature.
 
@@ -1860,7 +1869,7 @@ Assuming that \verb|ross.nc| contains data produced by a PISM run like ones in s
 >> cbar = double(reshape(cbar, 147, 147));
 >> pcolor(cbar);colorbar();
 \end{verbatim}
-in the MATLAB shell will produce a picture similar to Figure \ref{fig:rossspeed}.
+in the MATLAB shell will produce a picture of the Ross Ice Shelf shaded by modeled ice speed.
 
 \label{sect:index}
 \printindex
