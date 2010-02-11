@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -118,6 +118,9 @@ The default values are vaguely suitable for Antarctica, perhaps:
 - \c topg_min = -1000.0 m,
 - \c topg_max = 1000.0 m,
 - \c phi_ocean = 10.0 degrees.
+
+If the user gives option <code>-topg_to_phi A,B,C,D</endcode> then \c phi_ocean
+is not used. Instead, the same rule as above for grounded ice is used.
  */
 PetscErrorCode IceModel::computePhiFromBedElevation() {
 
@@ -133,10 +136,12 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
   if (topgphiSet != PETSC_TRUE) {
     SETERRQ(1,"HOW DID I GET HERE? ... ending...\n");
   }
-  if (Nparam > 5) {
+  if ((Nparam > 5) || (Nparam < 4)) {
     ierr = verbPrintf(1, grid.com, 
-      "WARNING: option -topg_to_phi read more than 5 parameters ... effect may be bad ...\n");
+      "PISM ERROR: option -topg_to_phi provided with more than 5 or fewer than 4\n"
+      "            arguments ... ENDING ...\n");
       CHKERRQ(ierr);
+    PetscEnd();
   }
   PetscReal   phi_min = inarray[0],
               phi_max = inarray[1],
@@ -153,6 +158,11 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
       phi_min, topg_min, phi_max-phi_min, topg_max - topg_min, topg_min, topg_max,
       phi_max, topg_max);
       CHKERRQ(ierr);
+  if (Nparam == 5) {
+    ierr = verbPrintf(2, grid.com, 
+      "      (also using phi = %5.2f in floating ice or ice free ocean)\n",
+      phi_ocean); CHKERRQ(ierr);
+  }
 
   PetscReal slope = (phi_max - phi_min) / (topg_max - topg_min);
   PetscScalar **tillphi, **bed;
@@ -161,7 +171,7 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
   ierr = vtillphi.get_array(tillphi); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (!vMask.is_floating(i,j)) {
+      if ((!vMask.is_floating(i,j)) || (Nparam < 5)) {
         if (bed[i][j] <= topg_min) {
           tillphi[i][j] = phi_min;
         } else if (bed[i][j] >= topg_max) {
