@@ -28,10 +28,10 @@ cflx = squeeze(nc.variables["cflx"][:])
 print "  [cflx has max = %.2f and min = %.2f (m/a)]" % (cflx.max(),cflx.min())
 nc.close()
 
-mid = (len(y)-1)/2
-plot(y[mid:]/1.e3,cflx[0,mid:],'k.-',markersize=10,linewidth=2)
+mid = (len(x)-1)/2
+plot(x[mid:]/1.e3,cflx[0,mid:],'k.-',markersize=10,linewidth=2)
 hold(True)
-plot(y[mid:]/1.e3,y[mid:] * 0.3,'r:',linewidth=1.5)
+plot(x[mid:]/1.e3,x[mid:] * 0.3,'r:',linewidth=1.5)
 hold(False)
 xlabel("y  ($\mathrm{km}$)",size=14)
 ylabel(r"flux   ($\mathrm{m}^2\,\mathrm{a}^{-1}$)",size=14)
