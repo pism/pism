@@ -7,6 +7,7 @@
 #   ./figsMISMIP.py -p ABC1_1a_M1_A1
 
 from pylab import *
+from matplotlib.mlab import load
 import os
 import sys
 from getopt import getopt, GetoptError
