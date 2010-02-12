@@ -176,7 +176,7 @@ netcdf pism_config {
     pism_config:beta_shelves_drag_too_doc = "Pa s m^{-1}; (1/10000) of value stated in [\\ref HulbeMacAyeal] for ice stream E";
 
 
-  // PISMAtmosphereCoupler and PISMOceanCoupler constants, including LocalMassBalance
+  // PISMAtmosphereModel and PISMOceanModel constants, including LocalMassBalance
 
     pism_config:force_to_thickness_alpha = 6.33775292816370e-11;
     pism_config:force_to_thickness_alpha_doc = "s-1; = 0.002 a-1; exponential coefficient in force-to-thickness mechanism";
@@ -246,7 +246,7 @@ netcdf pism_config {
     pism_config:precip_exponential_factor_for_temperature_doc = "Kelvin-1; = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change [\\ref Huybrechts02] ";
 
     pism_config:ocean_sub_shelf_heat_flux_into_ice = 0.5;
-    pism_config:ocean_sub_shelf_heat_flux_into_ice_doc = "W m-2; = J m-2 s-1; naively chosen default value for heat from ocean; see comments in src/coupler/pccoupler.cc";
+    pism_config:ocean_sub_shelf_heat_flux_into_ice_doc = "W m-2; = J m-2 s-1; naively chosen default value for heat from ocean; see comments in src/coupler/PISMOcean.cc";
 
 
     // THESE CONSTANTS MAY DUPLICATE, AND MAY SUPERSEDE, CONSTANTS IN materials.cc
@@ -372,8 +372,8 @@ netcdf pism_config {
     pism_config:slice_level_doc = "meters; level (in meters above the base of ice) used in slice viewers";
 
 // Strings:
-    pism_config:output_variables = "bfrict bheatflx bwat bwp dbdt lat litho_temp lon mask rank temp thk tillphi topg usurf dHdt dhdt cbar cflx cbase csurf wvelsurf taud tauc hardav bmelt";
-    pism_config:output_variables_doc = "Space-separated list of variables to save in an output file (does not include fields written by couplers)";
+    pism_config:output_variables = "acab artm bfrict bheatflx bwat bwp dbdt lat litho_temp lon mask rank temp thk tillphi topg usurf dHdt dhdt cbar cflx cbase csurf wvelsurf taud tauc hardav bmelt";
+    pism_config:output_variables_doc = "Space-separated list of variables to save in an output file (does not include fields written by boundary models)";
     pism_config:ts_variables = "dt ivol imass iarea iareag iareaf divoldt dimassdt total_surface_ice_flux total_basal_ice_flux total_sub_shelf_ice_flux";
     pism_config:ts_variables_doc = "Space-separated list of scalar diagnostic quantities to save if -ts_file and -ts_times are used.";
 

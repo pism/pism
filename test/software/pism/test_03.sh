@@ -6,6 +6,8 @@ test="Test #3: no information loss on -y 0 runs (ignoring diagnostic variables).
 files="foo.nc bar.nc baz.nc"
 dir=`pwd`
 
+OPTS="-surface constant"
+
 test_03 ()
 {
     cleanup
@@ -17,10 +19,10 @@ test_03 ()
 
     # Run for a year using pismr (so that all the parameters, including
     # rheology, are the same):
-    run -n 2 pismr -i foo.nc -y 1 -o bar.nc
+    run -n 2 pismr -i foo.nc -y 1 $OPTS -o bar.nc
 
     # Run for 0 years:
-    run -n 2 pismr -i bar.nc -y 0 -o baz.nc
+    run -n 2 pismr -i bar.nc -y 0 $OPTS -o baz.nc
 
     set +e
 

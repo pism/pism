@@ -27,14 +27,14 @@
 
 class PISMSurfaceModel : public PISMComponent {
 public:
-  PISMSurfaceModel(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-    : PISMComponent(g, conf, vars)
+  PISMSurfaceModel(IceGrid &g, const NCConfigVariable &conf)
+    : PISMComponent(g, conf)
   { atmosphere = NULL; };
 
   virtual ~PISMSurfaceModel()
   { delete atmosphere; };
 
-  virtual PetscErrorCode init();
+  virtual PetscErrorCode init(PISMVars &vars);
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
 					       IceModelVec2 &result) = 0;
@@ -51,18 +51,22 @@ protected:
 //! A do-nothing (dummy) surface model. <b> Please avoid using it! </b>
 class PSDummy : public PISMSurfaceModel {
 public:
-  PSDummy(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-    : PISMSurfaceModel(g, conf, vars)
+  PSDummy(IceGrid &g, const NCConfigVariable &conf)
+    : PISMSurfaceModel(g, conf)
   {};
 
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input)
   { delete input; }
 
-  virtual PetscErrorCode init() { return 0; };
+  virtual PetscErrorCode init(PISMVars &) { return 0; };
   virtual PetscErrorCode ice_surface_mass_flux(PetscReal, PetscReal, IceModelVec2&)
   { return 0; }
 
   virtual PetscErrorCode ice_surface_temperature(PetscReal, PetscReal, IceModelVec2 &)
+  { return 0; }
+  virtual PetscErrorCode write_input_fields(PetscReal, PetscReal, string)
+  { return 0; }
+  virtual PetscErrorCode write_diagnostic_fields(PetscReal, PetscReal, string)
   { return 0; }
 };
 
@@ -78,9 +82,9 @@ public:
 */
 class PSSimple : public PISMSurfaceModel {
 public:
-  PSSimple(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-    : PISMSurfaceModel(g, conf, vars) {};
-  virtual PetscErrorCode init();
+  PSSimple(IceGrid &g, const NCConfigVariable &conf)
+    : PISMSurfaceModel(g, conf) {};
+  virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
 					       IceModelVec2 &result);
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
@@ -91,11 +95,11 @@ public:
 //! from a PISM input file.
 class PSConstant : public PISMSurfaceModel {
 public:
-  PSConstant(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-    : PISMSurfaceModel(g, conf, vars)
+  PSConstant(IceGrid &g, const NCConfigVariable &conf)
+    : PISMSurfaceModel(g, conf)
   {};
 
-  virtual PetscErrorCode init();
+  virtual PetscErrorCode init(PISMVars &vars);
   //! This surface model does not use an atmosphere model.
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input)
   { delete input; }
@@ -115,8 +119,8 @@ protected:
 
 class PSModifier : public PISMSurfaceModel {
 public:
-  PSModifier(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-    : PISMSurfaceModel(g, conf, vars)
+  PSModifier(IceGrid &g, const NCConfigVariable &conf)
+    : PISMSurfaceModel(g, conf)
   { input_model = NULL; }
 
   virtual ~PSModifier()
@@ -131,15 +135,15 @@ protected:
 //! ice thickness to a given target at the end of the run.
 class PSForceThickness : public PSModifier {
 public:
-  PSForceThickness(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-    : PSModifier(g, conf, vars)
+  PSForceThickness(IceGrid &g, const NCConfigVariable &conf)
+    : PSModifier(g, conf)
   {
     ice_thickness = NULL;
     alpha = config.get("force_to_thickness_alpha");
   }
 
   virtual ~PSForceThickness() {}
-  PetscErrorCode init();
+  PetscErrorCode init(PISMVars &vars);
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
 					       IceModelVec2 &result);
@@ -159,9 +163,9 @@ protected:
 
 class PSLocalMassBalance : public PISMSurfaceModel {
 public:
-  PSLocalMassBalance(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars);
+  PSLocalMassBalance(IceGrid &g, const NCConfigVariable &conf);
   virtual ~PSLocalMassBalance();
-  virtual PetscErrorCode init();
+  virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
 					       IceModelVec2 &result);
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,

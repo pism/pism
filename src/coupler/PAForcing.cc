@@ -25,8 +25,8 @@ void PAModifier::attach_input(PISMAtmosphereModel *input) {
   input_model = input;
 }
 
-PAForcing::PAForcing(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-  : PAModifier(g, conf, vars) {
+PAForcing::PAForcing(IceGrid &g, const NCConfigVariable &conf)
+  : PAModifier(g, conf) {
   dTforcing = NULL;
   delta_T = NULL;
   temp_ma_anomaly = NULL;
@@ -41,22 +41,44 @@ PAForcing::~PAForcing() {
   delete snowprecip_anomaly;
 }
 
-PetscErrorCode PAForcing::init() {
+PetscErrorCode PAForcing::init(PISMVars &vars) {
   PetscErrorCode ierr;
+  PetscTruth dTforcing_set, temp_ma_anomaly_set, snowprecip_anomaly_set;
+  char temp_ma_anomalies_file[PETSC_MAX_PATH_LEN],
+    snowprecip_anomalies_file[PETSC_MAX_PATH_LEN],
+    dT_file[PETSC_MAX_PATH_LEN];
 
-  ierr = input_model->init(); CHKERRQ(ierr);
+  ierr = input_model->init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, "* Initializing air temperature and precipitation forcing...\n"); CHKERRQ(ierr);
 
+  ierr = PetscOptionsHead("Air temperature and precipitation forcing"); CHKERRQ(ierr);
+
+  ierr = PetscOptionsString("-anomaly_temp_ma",
+			    "Specifies the air temperature anomalies file",
+			    "", "",
+			    temp_ma_anomalies_file, PETSC_MAX_PATH_LEN, &temp_ma_anomaly_set); CHKERRQ(ierr);
+  ierr = PetscOptionsString("-anomaly_precip", 
+			    "Specifies the precipitation anomalies file",
+			    "", "",
+			    snowprecip_anomalies_file, PETSC_MAX_PATH_LEN, &snowprecip_anomaly_set); CHKERRQ(ierr);
+  ierr = PetscOptionsString("-dTforcing",
+			    "Specifies the air temperature offsets file",
+			    "", "",
+			    dT_file, PETSC_MAX_PATH_LEN, &dTforcing_set); CHKERRQ(ierr);
+
+  ierr = PetscOptionsTail(); CHKERRQ(ierr);
+
+  if (! (dTforcing_set || temp_ma_anomaly_set || snowprecip_anomaly_set) ) {
+    ierr = PetscPrintf(grid.com,
+		       "ERROR: atmosphere forcing requires at least one of"
+		       " -anomaly_temp_ma, -anomaly_precip, -dTforcing.\n"); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
   // check on whether we should read mean annual temperature anomalies
-  PetscTruth optSet;
-  char anomalies_file[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-anomaly_temp_ma", 
-			       anomalies_file, PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
-  if (optSet) {
+  if (temp_ma_anomaly_set) {
     // stop if -dTforcing is set:
-    PetscTruth dTforcing_set;
-    ierr = check_option("-dTforcing", dTforcing_set); CHKERRQ(ierr);
     if (dTforcing_set) {
       ierr = PetscPrintf(grid.com, "PISM ERROR: option -anomaly_temp_ma is incompatible with -dTforcing.\n");
       PetscEnd();
@@ -64,23 +86,21 @@ PetscErrorCode PAForcing::init() {
 
     ierr = verbPrintf(2,grid.com,
 		      "    reading air temperature anomalies from %s ...\n",
-		      anomalies_file); CHKERRQ(ierr);
+		      temp_ma_anomalies_file); CHKERRQ(ierr);
 
     temp_ma_anomaly = new IceModelVec2T;
     temp_ma_anomaly->set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
     ierr = temp_ma_anomaly->create(grid, "temp_ma_anomaly", false); CHKERRQ(ierr);
     ierr = temp_ma_anomaly->set_attrs("climate_forcing", "mean annual near-surface temperature anomalies",
 				      "Kelvin", ""); CHKERRQ(ierr);
-    ierr = temp_ma_anomaly->init(anomalies_file); CHKERRQ(ierr);
+    ierr = temp_ma_anomaly->init(temp_ma_anomalies_file); CHKERRQ(ierr);
   }
 
   // check on whether we should read snow precipitation anomalies
-  ierr = PetscOptionsGetString(PETSC_NULL, "-anomaly_precip", 
-			       anomalies_file, PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
-  if (optSet) {
+  if (snowprecip_anomaly_set) {
     ierr = verbPrintf(2,grid.com,
 		      "    reading ice-equivalent snow precipitation rate anomalies from %s ...\n",
-		      anomalies_file); CHKERRQ(ierr);
+		      snowprecip_anomalies_file); CHKERRQ(ierr);
 
     snowprecip_anomaly = new IceModelVec2T;
     snowprecip_anomaly->set_n_records((unsigned int) config.get("climate_forcing_buffer_size")); 
@@ -88,22 +108,19 @@ PetscErrorCode PAForcing::init() {
     ierr = snowprecip_anomaly->set_attrs("climate_forcing",
 					 "anomalies of ice-equivalent snow precipitation rate",
 					 "m s-1", ""); CHKERRQ(ierr);
-    ierr = snowprecip_anomaly->init(anomalies_file); CHKERRQ(ierr);
+    ierr = snowprecip_anomaly->init(snowprecip_anomalies_file); CHKERRQ(ierr);
     ierr = snowprecip_anomaly->set_glaciological_units("m year-1");
     snowprecip_anomaly->write_in_glaciological_units = true;
   }
 
   // check user option -dTforcing for a surface temperature forcing data set
-  char dTfile[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-dTforcing", dTfile,
-                               PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
-  if (optSet == PETSC_TRUE) {
-    ierr = check_option("-paleo_precip", optSet); CHKERRQ(ierr);
+  if (dTforcing_set == PETSC_TRUE) {
+    PetscTruth paleo_precip_set;
+    ierr = check_option("-paleo_precip", paleo_precip_set); CHKERRQ(ierr);
 
-    if (optSet) {
+    if (paleo_precip_set) {
       ierr = verbPrintf(2,grid.com,
-			"    using the paleo-precipitation correction...\n",
-			anomalies_file); CHKERRQ(ierr);
+			"    using the paleo-precipitation correction...\n"); CHKERRQ(ierr);
       paleo_precipitation_correction = true;
     }
 
@@ -113,9 +130,9 @@ PetscErrorCode PAForcing::init() {
     ierr = dTforcing->set_attr("long_name", "near-surface air temperature offsets"); CHKERRQ(ierr);
 
     ierr = verbPrintf(2, grid.com, 
-		      "  reading delta T data from forcing file %s...\n", dTfile);  CHKERRQ(ierr);
+		      "  reading delta T data from forcing file %s...\n", dT_file);  CHKERRQ(ierr);
 	 
-    ierr = dTforcing->read(dTfile); CHKERRQ(ierr);
+    ierr = dTforcing->read(dT_file); CHKERRQ(ierr);
 
     delta_T = new DiagnosticTimeseries(grid.com, grid.rank, "delta_T", "t");
     ierr = delta_T->set_units("Celsius", ""); CHKERRQ(ierr);
@@ -198,7 +215,7 @@ PetscErrorCode PAForcing::write_diagnostic_fields(PetscReal t_years, PetscReal d
 
 
 PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
-						   PetscReal dt_years, string filename) {
+				       PetscReal dt_years, string filename) {
   PetscErrorCode ierr;
   double T = t_years + 0.5 * dt_years;
 
@@ -256,7 +273,7 @@ PetscErrorCode PAForcing::update(PetscReal t_years, PetscReal dt_years) {
 }
 
 PetscErrorCode PAForcing::mean_precip(PetscReal t_years, PetscReal dt_years,
-						  IceModelVec2 &result) {
+				      IceModelVec2 &result) {
   PetscErrorCode ierr;
 
   ierr = input_model->mean_precip(t_years, dt_years, result); CHKERRQ(ierr);

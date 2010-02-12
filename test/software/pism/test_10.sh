@@ -16,17 +16,17 @@ run_test ()
     run -n 1 pisms -eisII I -Mx 101 -My 201 -y 0 -o foo0.nc
 
     # Bootstrap:
-    for NN in 1 2 3 8 10;
+    for NN in 1 2 3 4 5;
     do 
-	run -n $NN pismr -boot_from foo0.nc -Mx 101 -My 201 -Mz 11 -Lz 5000 -y 0 -o foo$NN.nc
+	run -n $NN pismr -boot_from foo0.nc -surface constant -Mx 101 -My 201 -Mz 11 -Lz 5000 -y 0 -o foo$NN.nc
     done
 
     set +e
 
     # Compare:
-    for i in 1 2 3 8 10;
+    for i in 1 2 3 4 5;
     do
-	for j in 1 2 3 8 10;
+	for j in 1 2 3 4 5;
 	do
 	    if [ $i -le $j ]; then continue; fi
 	    

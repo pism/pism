@@ -23,12 +23,13 @@ static char help[] =
 #include <cstring>
 #include <petsc.h>
 #include "base/grid.hh"
-#include "base/materials.hh"
 #include "base/iceModel.hh"
-#include "coupler/pccoupler.hh"
 #include "eismint/iceEISModel.hh"
 #include "eismint/icePSTexModel.hh"
 #include "ismip/iceMISMIPModel.hh"
+
+#include "coupler/PISMSurface.hh"
+#include "coupler/PISMOcean.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -93,8 +94,14 @@ int main(int argc, char *argv[]) {
     }
 
     // actually construct the IceModel
-    IceGrid               g(com, rank, size);
-    IceModel*             m;
+    IceGrid g(com, rank, size);
+
+    // Initialize boundary models (climate will always come from
+    // intercomparison formulas):
+    PISMSurfaceModel *surface = new PSDummy(g, config);
+    PISMOceanModel *ocean = new POConstant(g, config);
+
+    IceModel *m;
     if (PSTexchosen == PETSC_TRUE) {
       m = new IcePSTexModel(g, config, overrides);
     } else if (MISMIPchosen == PETSC_TRUE) {
@@ -103,13 +110,8 @@ int main(int argc, char *argv[]) {
       m = new IceEISModel(g, config, overrides);
     }
 
-    // construct and attach the PISMClimateCouplers
-    PISMConstAtmosCoupler pcac;
-    PISMConstOceanCoupler pcoc;
-    // climate will always come from intercomparison formulas:
-    pcac.initializeFromFile = false; 
-    ierr = m->attachAtmospherePCC(pcac); CHKERRQ(ierr);
-    ierr = m->attachOceanPCC(pcoc); CHKERRQ(ierr);
+    m->attach_surface_model(surface);
+    m->attach_ocean_model(ocean);
 
     ierr = m->init(); CHKERRQ(ierr);
 

@@ -467,16 +467,15 @@ PetscErrorCode IceModel::write_extras() {
 
   ierr = write_variables(filename, extra_vars, NC_FLOAT);  CHKERRQ(ierr);
 
-  if (atmosPCC != PETSC_NULL) {
-    ierr = atmosPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
+  if (surface != PETSC_NULL) {
+    ierr = surface->write_input_fields(grid.year, dt / secpera, filename); CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+    SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }
-
-  if (oceanPCC != PETSC_NULL) {
-    ierr = oceanPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
+  if (ocean != PETSC_NULL) {
+    ierr = ocean->write_input_fields(grid.year, dt / secpera, filename); CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");
+    SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
   }
     
   return 0;

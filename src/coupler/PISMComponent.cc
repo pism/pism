@@ -18,8 +18,8 @@
 
 #include "PISMComponent.hh"
 
-PISMComponent::PISMComponent(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-    : grid(g), config(conf), variables(vars)
+PISMComponent::PISMComponent(IceGrid &g, const NCConfigVariable &conf)
+    : grid(g), config(conf)
 {
   t = dt = GSL_NAN;
 };

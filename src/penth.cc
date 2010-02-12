@@ -47,8 +47,11 @@ mpiexec -n 2 penth -boot_from estart.nc -Mx 121 -My 121 -Mz 101 -Mbz 51 -quadZ -
 #include "base/grid.hh"
 #include "base/materials.hh"
 #include "base/iceEnthalpyModel.hh"
-#include "coupler/pccoupler.hh"
 #include "coupler/pGreenlandAtmosCoupler.hh"
+#include "coupler/PCFactory.hh"
+#include "coupler/PISMAtmosphere.hh"
+#include "coupler/PISMSurface.hh"
+#include "coupler/PISMOcean.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -84,23 +87,24 @@ int main(int argc, char *argv[]) {
     IceEnthalpyModel m(g, config, overrides);
     ierr = m.setExecName("penth"); CHKERRQ(ierr);
 
-    PetscTruth  pddSet;
-    ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
-    PISMConstAtmosCoupler     pcac;
-    PISMGreenlandAtmosCoupler ppdd;
-    PISMConstOceanCoupler     pcoc;
-    if (pddSet == PETSC_TRUE) {
-      ierr = verbPrintf(2,com, 
-        "  attaching PISMGreenlandAtmosCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
-      ierr = m.attachAtmospherePCC(ppdd); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,com, 
-        "  attaching PISMConstAtmosCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
-      ierr = m.attachAtmospherePCC(pcac); CHKERRQ(ierr);
-    }
-    ierr = verbPrintf(2,com, 
-        "  attaching PISMConstOceanCoupler to IceEnthalpyModel\n"); CHKERRQ(ierr);
-    ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
+    // Initialize boundary models:
+    PAFactory pa(g, config);
+    PISMAtmosphereModel *atmosphere;
+
+    PSFactory ps(g, config);
+    PISMSurfaceModel *surface;
+
+    POFactory po(g, config);
+    PISMOceanModel *ocean;
+
+    pa.create(atmosphere);
+    ps.create(surface);
+    po.create(ocean);
+
+    surface->attach_atmosphere_model(atmosphere);
+
+    m.attach_ocean_model(ocean);
+    m.attach_surface_model(surface);
 
     ierr = m.init(); CHKERRQ(ierr);
 

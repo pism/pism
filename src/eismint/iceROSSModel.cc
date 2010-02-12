@@ -195,28 +195,26 @@ PetscErrorCode IceROSSModel::finishROSS() {
 
 PetscErrorCode IceROSSModel::fillinTemps() {
   PetscErrorCode      ierr;
-  PetscScalar         **Ts;
 
-  // fill in all temps with Ts
-  IceModelVec2    *pccTs;
-  if (atmosPCC != PETSC_NULL) {
-    // call sets pccTs to point to IceModelVec2 with current surface temps
-    ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, 0.0, pccTs); CHKERRQ(ierr);
-  } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL  in  IceROSSModel::fillinTemps()");  }
+  // fill in all temps with artm:
+  if (surface != PETSC_NULL) {
+    ierr = surface->ice_surface_temperature(grid.year, 0.0, artm); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
+  }
 
-  ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);
+  ierr = artm.begin_access();  CHKERRQ(ierr);
   ierr = T3.begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = T3.setColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
-      ierr = Tb3.setColumn(i,j,Ts[i][j]); CHKERRQ(ierr);
+      ierr =  T3.setColumn(i, j, artm(i,j)); CHKERRQ(ierr);
+      ierr = Tb3.setColumn(i, j, artm(i,j)); CHKERRQ(ierr);
     }
   }
   ierr = T3.end_access(); CHKERRQ(ierr);
   ierr = Tb3.end_access(); CHKERRQ(ierr);
-  ierr = pccTs->end_access();  CHKERRQ(ierr);
+  ierr = artm.end_access();  CHKERRQ(ierr);
 
   return 0;
 }

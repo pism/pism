@@ -30,10 +30,10 @@
 //! snow, atmosphere, ocean... models for PISM.
 class PISMComponent {
 public:
-  PISMComponent(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars);
+  PISMComponent(IceGrid &g, const NCConfigVariable &conf);
   virtual ~PISMComponent() {};
 
-  virtual PetscErrorCode init() = 0;
+  virtual PetscErrorCode init(PISMVars &vars) = 0;
 
   //! \brief Reports the maximum time-step the model can take at t_years. Sets
   //! dt_years to -1 if any time-step is OK.
@@ -67,7 +67,6 @@ protected:
 					 bool &regrid, int &start);
   IceGrid &grid;
   const NCConfigVariable &config;
-  PISMVars &variables;
   PetscReal t,			//!< Last time used as an argument for the update() method.
     dt;				//!< Lasr time-step used as an argument for the update() method.
 };

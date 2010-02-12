@@ -20,9 +20,10 @@ static char help[] = "Driver for PISM software unit tests.\n";
 
 #include <petsc.h>
 #include "../base/grid.hh"
-#include "../base/materials.hh"
 #include "iMtests.hh"
-#include "../coupler/pccoupler.hh"
+
+#include "../coupler/PISMSurface.hh"
+#include "../coupler/PISMOcean.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -39,24 +40,23 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     IceGrid g(com, rank, size);
-    PISMConstAtmosCoupler     pcac;
-    PISMConstOceanCoupler     pcoc;
+
+    NCConfigVariable config, overrides;
+    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+
+    // Create boundary models:
+    PISMSurfaceModel *surface = new PSDummy(g, config);
+    PISMOceanModel *ocean = new POConstant(g, config);
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
     ierr = verbPrintf(1,com, "PISMTESTS %s (unit tests mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
-    NCConfigVariable config, overrides;
-    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
-
     IceUnitModel m(g, config, overrides);
     ierr = m.setExecName("pismtests"); CHKERRQ(ierr);
 
-    // Attach climate couplers:
-    ierr = verbPrintf(2,com, "pismtests attaching PISMConstAtmosCoupler to IceModel\n"); CHKERRQ(ierr);
-    pcac.initializeFromFile = false;
-    ierr = m.attachAtmospherePCC(pcac); CHKERRQ(ierr);
-    ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
+    m.attach_surface_model(surface);
+    m.attach_ocean_model(ocean);
 
     ierr = m.init(); CHKERRQ(ierr);
 

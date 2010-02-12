@@ -64,12 +64,7 @@ PetscErrorCode IceScandModel::setFromOptions() {
 PetscErrorCode IceScandModel::init_couplers() {
   PetscErrorCode      ierr;
 
-  // kill off sub-ice shelf initialization blurb; we don't have ocean interaction
-  if (oceanPCC != PETSC_NULL) {
-    oceanPCC->reportInitializationToStdOut = false;
-  } else {
-    SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");
-  }
+  config.set_flag("is_dry_simulation", true);
 
   ierr = IceModel::init_couplers(); CHKERRQ(ierr);
 
@@ -86,21 +81,8 @@ PetscErrorCode IceScandModel::init_couplers() {
       "  (values from file %s ignored)\n", filename); CHKERRQ(ierr);
   }
 
-  IceModelVec2 *pccsmf, *pccTs;
-
-  if (atmosPCC != PETSC_NULL) {
-    // call sets pccsmf to point to IceModelVec2 with current surface massflux
-    ierr = atmosPCC->updateSurfMassFluxAndProvide(
-              grid.year, 0.0, pccsmf); CHKERRQ(ierr);
-    // call sets pccTs to point to IceModelVec2 with current surface temps
-    ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, 0.0, pccTs); CHKERRQ(ierr);
-  } else {
-    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
-  }
-
-  ierr =  pccTs->begin_access(); CHKERRQ(ierr);
-  ierr = pccsmf->begin_access(); CHKERRQ(ierr);
+  ierr = artm.begin_access(); CHKERRQ(ierr);
+  ierr = acab.begin_access(); CHKERRQ(ierr);
   PetscScalar cx = grid.Lx, cy = grid.Ly;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -108,16 +90,16 @@ PetscErrorCode IceScandModel::init_couplers() {
       const PetscScalar r = sqrt( PetscSqr(-cx + grid.dx*i)
                                   + PetscSqr(-cy + grid.dy*j) );
       // set accumulation from formula (7) in (Payne et al 2000)
-      (*pccsmf)(i,j) = PetscMin(M_max, S_b * (R_el-r));
+      acab(i,j) = PetscMin(M_max, S_b * (R_el-r));
       // set surface temperature
       // simplest possible Scandinavian-type upper surface boundary condition
       // could be replace with more elaborate formula
-      if (r <= R_cts)  (*pccTs)(i,j) = T_max;
-      else             (*pccTs)(i,j) = T_min;
+      if (r <= R_cts)  artm(i,j) = T_max;
+      else             artm(i,j) = T_min;
     }
   }
-  ierr = pccsmf->end_access(); CHKERRQ(ierr);
-  ierr =  pccTs->end_access(); CHKERRQ(ierr);
+  ierr = acab.end_access(); CHKERRQ(ierr);
+  ierr = artm.end_access(); CHKERRQ(ierr);
   return 0;
 }
 

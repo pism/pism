@@ -6,7 +6,7 @@ test="Test #12: penth exact restartability."
 files="pre.nc blah.nc foo.nc joe.nc bar.nc"
 dir=`pwd`
 
-OPTS="-max_dt 1"
+OPTS="-max_dt 1 -surface constant"
 
 run_test ()
 {
@@ -18,7 +18,7 @@ run_test ()
     run -n 1 pismv -test G -y 10 -o pre.nc
 
     # bootstrap it to get variable 'enthalpy' into blah.
-    run -n 1 penth -boot_from pre.nc -Mx 31 -My 31 -Mz 31 -Lz 4000 -y 1 -o blah.nc
+    run -n 1 penth -boot_from pre.nc -surface constant -Mx 31 -My 31 -Mz 31 -Lz 4000 -y 1 -o blah.nc
 
     # run for 10 years, fixed time step
     run -n 1 penth -i blah.nc $OPTS -y 10 -o foo.nc

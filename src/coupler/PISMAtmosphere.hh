@@ -28,7 +28,8 @@
 //! A purely virtual class defining the interface of a PISM Atmosphere Model.
 class PISMAtmosphereModel : public PISMComponent {
 public:
-  PISMAtmosphereModel(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars) : PISMComponent(g, conf, vars) {};
+  PISMAtmosphereModel(IceGrid &g, const NCConfigVariable &conf)
+    : PISMComponent(g, conf) {};
 
   //! \brief Sets result to the mean precipitation over the time interval
   //! (t_years, t_years + dt_years), in m/s ice equivalent.
@@ -59,9 +60,9 @@ public:
 //! from a PISM input file.
 class PAConstant : public PISMAtmosphereModel {
 public:
-  PAConstant(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-    : PISMAtmosphereModel(g, conf, vars) {};
-  virtual PetscErrorCode init();
+  PAConstant(IceGrid &g, const NCConfigVariable &conf)
+    : PISMAtmosphereModel(g, conf) {};
+  virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
 				     IceModelVec2 &result);
   virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
@@ -81,14 +82,14 @@ protected:
   IceModelVec2 snowprecip, temperature;
 };
 
-//! A class implementing an atmosphere model cobmining the Fausto [\ref
+//! A class implementing an atmosphere model combining the Fausto [\ref
 //! Faustoetal2009] present-day temperature parameterization for Greenland and
 //! stored precipitation data.
 class PAFausto : public PISMAtmosphereModel {
 public:
-  PAFausto(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-    : PISMAtmosphereModel(g, conf, vars) {};
-  virtual PetscErrorCode init();
+  PAFausto(IceGrid &g, const NCConfigVariable &conf)
+    : PISMAtmosphereModel(g, conf) {};
+  virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode write_input_fields(PetscReal /*t_years*/,
 					    PetscReal /*dt_years*/,
 					    string filename);
@@ -115,8 +116,8 @@ protected:
 
 class PAModifier : public PISMAtmosphereModel {
 public:
-  PAModifier(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-    : PISMAtmosphereModel(g, conf, vars)
+  PAModifier(IceGrid &g, const NCConfigVariable &conf)
+    : PISMAtmosphereModel(g, conf)
   { input_model = NULL; }
 
   virtual ~PAModifier()
@@ -135,10 +136,10 @@ protected:
  */
 class PAForcing : public PAModifier {
 public:
-  PAForcing(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars);
+  PAForcing(IceGrid &g, const NCConfigVariable &conf);
   virtual ~PAForcing();
   virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
-  virtual PetscErrorCode init();
+  virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode write_input_fields(PetscReal t_years, PetscReal dt_years,
 					    string filename);
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
@@ -163,31 +164,49 @@ protected:
   IceModelVec2T *temp_ma_anomaly, *snowprecip_anomaly;
 };
 
-/*
-//! A class implementing a simple atmospheric lapse rate model.
-class PALapseRates : public PAModifier {
-public:
-  PALapseRates(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars);
-  virtual ~PALapseRates();
-  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years); 
 
-  virtual PetscErrorCode init(); 
-  virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
-				      PetscReal dt_years, string filename); 
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years); 
-  virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
-				     IceModelVec2 &result); 
+//! A class implementing a simple atmospheric lapse rate model.
+/*!
+  Let \f$T\f$ be the temperature and \f$h\f$ the surface elevation. Then the lapse rate \f$\gamma\f$ is
+\f[
+\gamma = -\frac{dT}{dh}.
+\f]
+This equation can be solved exactly, to obtain
+\f[
+T(h) = -\gamma \cdot h + f,
+\f]
+or
+\f[
+T(x,y) = -\gamma \cdot h(x,y) + f(x,y),
+\f]
+where \f$f(x,y)\f$ is the initial condition. We have
+\f[
+f(x,y) = T_0(x,y) + \gamma\cdot h_0(x,y).
+\f]
+
+Class PALapseRates implements this lapse-rate correction mechanism.
+ */
+class PALapseRates : public PAConstant {
+public:
+  PALapseRates(IceGrid &g, const NCConfigVariable &conf)
+    : PAConstant(g, conf)
+  {
+    gamma = 0;
+    usurf = NULL;
+  }
+  virtual ~PALapseRates() {}
+  virtual PetscErrorCode init(PISMVars &vars); 
   virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
 					  IceModelVec2 &result); 
   virtual PetscErrorCode begin_pointwise_access(); 
   virtual PetscErrorCode end_pointwise_access();   
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values); 
-
+  virtual PetscErrorCode write_input_fields(PetscReal t_years, PetscReal dt_years,
+					    string filename);
 protected:
-  PetscReal temperature_lapse_rate;
-  IceModelVec2 surfelev_initial;
+  PetscReal gamma;
+  IceModelVec2 f, *usurf;
 };
-*/
 
 #endif	// __PISMAtmosphere_hh

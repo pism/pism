@@ -5,10 +5,10 @@
 
 class PA_EISMINT_Greenland : public PAFausto {
 public:
-  PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars); // done
+  PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &conf); // done
   virtual ~PA_EISMINT_Greenland() {}
 
-  virtual PetscErrorCode init();
+  virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
 					  IceModelVec2 &result);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);

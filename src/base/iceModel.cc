@@ -48,8 +48,8 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   g2natural = PETSC_NULL;
   CFLviolcount = 0;
 
-  atmosPCC = PETSC_NULL;
-  oceanPCC = PETSC_NULL;
+  surface = NULL;
+  ocean = NULL;
 
   ierr = setDefaults();  // lots of parameters and flags set here, including by reading from a config file
   if (ierr != 0) {
@@ -92,6 +92,10 @@ IceModel::~IceModel() {
   vector<DiagnosticTimeseries*>::iterator i;
   for (i = timeseries.begin(); i < timeseries.end(); ++i)
     delete (*i);
+
+  delete ocean;
+
+  delete surface;
 
   delete basal;
 
@@ -355,6 +359,52 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vvbarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   ierr = variables.add(vvbarSSA); CHKERRQ(ierr);
 
+  // input fields:
+  // mean annual net ice equivalent surface mass balance rate
+  ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
+  ierr = acab.set_attrs(
+            "climate_state",
+            "instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
+	    "m s-1",  // m *ice-equivalent* per second
+	    "land_ice_surface_specific_mass_balance");  // CF standard_name
+	    CHKERRQ(ierr);
+  ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  acab.write_in_glaciological_units = true;
+  acab.set_attr("comment", "positive values correspond to ice gain");
+  ierr = variables.add(acab); CHKERRQ(ierr);
+
+  // annual mean air temperature at "ice surface", at level below all firn
+  //   processes (e.g. "10 m" or ice temperatures)
+  ierr = artm.create(grid, "artm", false); CHKERRQ(ierr);
+  ierr = artm.set_attrs(
+            "climate_state",
+            "time-dependent annual average ice temperature at ice surface but below firn processes",
+            "K", 
+            "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
+            CHKERRQ(ierr);
+  ierr = variables.add(artm); CHKERRQ(ierr);
+
+  // ice mass balance rate at the base of the ice shelf; sign convention for
+  //   vshelfbasemass matches standard sign convention for basal melt rate of
+  //   grounded ice
+  ierr = shelfbmassflux.create(grid, "shelfbmassflux", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
+  ierr = shelfbmassflux.set_attrs(
+           "climate_state", "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
+	   "m s-1", ""); CHKERRQ(ierr); 
+  // PROPOSED standard name = ice_shelf_basal_specific_mass_balance
+  // rescales from m/s to m/a when writing to NetCDF and std out:
+  shelfbmassflux.write_in_glaciological_units = true;
+  ierr = shelfbmassflux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = variables.add(shelfbmassflux); CHKERRQ(ierr);
+
+  // ice boundary tempature at the base of the ice shelf
+  ierr = shelfbtemp.create(grid, "shelfbtemp", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
+  ierr = shelfbtemp.set_attrs(
+           "climate_state", "absolute temperature at ice shelf base",
+	   "K", ""); CHKERRQ(ierr);
+  // PROPOSED standard name = ice_shelf_basal_temperature
+  ierr = variables.add(shelfbtemp); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -380,16 +430,6 @@ PetscErrorCode IceModel::deallocate_internal_objects() {
   return 0;
 }
 
-PetscErrorCode IceModel::attachAtmospherePCC(PISMAtmosphereCoupler &aPCC) {
-  atmosPCC = &aPCC;
-  return 0;
-}
-
-PetscErrorCode IceModel::attachOceanPCC(PISMOceanCoupler &oPCC) {
-  oceanPCC = &oPCC;
-  return 0;
-}
-
 void IceModel::setConstantNuHForSSA(PetscScalar nuH) {
   config.set_flag("use_constant_nuh_for_ssa", true);
   ssaStrengthExtend.set_notional_strength(nuH);
@@ -411,9 +451,9 @@ PetscErrorCode IceModel::step(bool do_mass_conserve,
 
   ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
 
-  // ask climate couplers what the maximum time-step should be
+  // ask boundary models what the maximum time-step should be
   double apcc_dt;
-  ierr = atmosPCC->max_timestep(grid.year, apcc_dt); CHKERRQ(ierr);
+  ierr = surface->max_timestep(grid.year, apcc_dt); CHKERRQ(ierr);
   apcc_dt *= secpera;
   if (apcc_dt > 0.0) {
     if (maxdt_temporary > 0)
@@ -423,7 +463,7 @@ PetscErrorCode IceModel::step(bool do_mass_conserve,
   }
 
   double opcc_dt;
-  ierr = oceanPCC->max_timestep(grid.year, opcc_dt); CHKERRQ(ierr);
+  ierr = ocean->max_timestep(grid.year, opcc_dt); CHKERRQ(ierr);
   opcc_dt *= secpera;
   if (opcc_dt > 0.0) {
     if (maxdt_temporary > 0)

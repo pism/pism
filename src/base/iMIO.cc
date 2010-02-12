@@ -86,16 +86,16 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
 
   ierr = write_model_state(filename);  CHKERRQ(ierr);
 
-  if (atmosPCC != PETSC_NULL) {
-    ierr = atmosPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
+  if (surface != PETSC_NULL) {
+    ierr = surface->write_input_fields(grid.year, dt / secpera, filename); CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+    SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }
 
-  if (oceanPCC != PETSC_NULL) {
-    ierr = oceanPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
+  if (ocean != PETSC_NULL) {
+    ierr = ocean->write_input_fields(grid.year, dt / secpera, filename); CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");
+    SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
   }
 
   ierr = write_extra_fields(filename); CHKERRQ(ierr); // chance for derived classes to do more
@@ -527,17 +527,17 @@ PetscErrorCode IceModel::write_snapshot() {
 
   ierr = write_model_state(filename);  CHKERRQ(ierr);
 
-  // Let couplers write their fields:
-  if (atmosPCC != PETSC_NULL) {
-    ierr = atmosPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
+  // Let boundary models write their fields:
+  if (surface != PETSC_NULL) {
+    ierr = surface->write_input_fields(grid.year, dt / secpera, filename); CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+    SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }
 
-  if (oceanPCC != PETSC_NULL) {
-    ierr = oceanPCC->writeCouplingFieldsToFile(grid.year,filename); CHKERRQ(ierr);
+  if (ocean != PETSC_NULL) {
+    ierr = ocean->write_input_fields(grid.year, dt / secpera, filename); CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");
+    SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
   }
     
   ierr = write_extra_fields(filename); CHKERRQ(ierr);

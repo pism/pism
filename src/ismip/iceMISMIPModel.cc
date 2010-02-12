@@ -485,19 +485,8 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
 
   // updateSurfaceElevationAndMask is called in misc_setup()
 
-  IceModelVec2 *pccsmf, *pccTs;
-  if (atmosPCC != PETSC_NULL) {
-    // call sets pccsmf to point to IceModelVec2 with current surface massflux
-    ierr = atmosPCC->updateSurfMassFluxAndProvide(
-              grid.year, 0.0, pccsmf); CHKERRQ(ierr);
-    // call sets pccTs to point to IceModelVec2 with current surface temps
-    ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, 0.0, pccTs); CHKERRQ(ierr);
-  } else {
-    SETERRQ(3,"PISM ERROR: atmosPCC == PETSC_NULL");
-  }
-  ierr = pccTs->set(ice->meltingTemp); CHKERRQ(ierr);
-  ierr = pccsmf->set(0.3/secpera); CHKERRQ(ierr);
+  ierr = artm.set(ice->meltingTemp); CHKERRQ(ierr);
+  ierr = acab.set(0.3/secpera); CHKERRQ(ierr);
 
   return 0;
 }
@@ -510,12 +499,12 @@ PetscErrorCode IceMISMIPModel::init_couplers() {
 
   config.set("ocean_sub_shelf_heat_flux_into_ice",0.0); // NO sub ice shelf melting
 
-  if (oceanPCC != PETSC_NULL) {
-    PISMConstOceanCoupler *coPCC = dynamic_cast<PISMConstOceanCoupler*>(oceanPCC);
-    if (coPCC == NULL)
-      SETERRQ(1, "PISM ERROR: coPCC == NULL in IceMISMIPModel ... PISMOceanCoupler is not a PISMConstOceanCoupler!\n");
+  if (ocean != PETSC_NULL) {
+    POConstant *co = dynamic_cast<POConstant*>(ocean);
+    if (co == NULL)
+      SETERRQ(1, "PISM ERROR: co == NULL in IceMISMIPModel ... ocean model is not a POConstant!\n");
   } else {
-    SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");
+    SETERRQ(2,"PISM ERROR: ocean == PETSC_NULL");
   }
   
   return 0;

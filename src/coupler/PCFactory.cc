@@ -2,33 +2,38 @@
 #include "../base/pism_const.hh"
 
 // Atmosphere
-static void create_pa_greenland(IceGrid& g, const NCConfigVariable& conf, PISMVars& vars, PISMAtmosphereModel* &result) {
-  result = new PAFausto(g, conf, vars);
+static void create_pa_greenland(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
+  result = new PAFausto(g, conf);
 }
 
-static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMVars& vars, PISMAtmosphereModel* &result) {
-  result = new PAConstant(g, conf, vars);
+static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
+  result = new PAConstant(g, conf);
 }
 
-static void create_pa_forcing(IceGrid& g, const NCConfigVariable& conf, PISMVars& vars, PAModifier* &result) {
-  result = new PAForcing(g, conf, vars);
+static void create_pa_lapse_rates(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
+  result = new PALapseRates(g, conf);
+}
+
+static void create_pa_forcing(IceGrid& g, const NCConfigVariable& conf, PAModifier* &result) {
+  result = new PAForcing(g, conf);
 }
 
 void PAFactory::add_standard_types() {
-  add_model("greenland",    &create_pa_greenland);
-  add_model("constant",     &create_pa_constant);
-  add_modifier("forcing",   &create_pa_forcing);
+  add_model("greenland",       &create_pa_greenland);
+  add_model("constant",        &create_pa_constant);
+  add_model("temp_lapse_rate", &create_pa_lapse_rates);
+  add_modifier("forcing",      &create_pa_forcing);
   set_default("constant");
 }
 
 
 // Ocean
-static void create_po_constant(IceGrid& g, const NCConfigVariable& conf, PISMVars& vars, PISMOceanModel* &result) {
-  result = new POConstant(g, conf, vars);
+static void create_po_constant(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel* &result) {
+  result = new POConstant(g, conf);
 }
 
-static void create_po_forcing(IceGrid& g, const NCConfigVariable& conf, PISMVars& vars, POModifier* &result) {
-  result = new POForcing(g, conf, vars);
+static void create_po_forcing(IceGrid& g, const NCConfigVariable& conf, POModifier* &result) {
+  result = new POForcing(g, conf);
 }
 
 void POFactory::add_standard_types() {
@@ -38,20 +43,20 @@ void POFactory::add_standard_types() {
 }
 
 // Surface
-static void create_ps_localmassbalance(IceGrid& g, const NCConfigVariable& conf, PISMVars& vars, PISMSurfaceModel* &result) {
-  result = new PSLocalMassBalance(g, conf, vars);
+static void create_ps_localmassbalance(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
+  result = new PSLocalMassBalance(g, conf);
 }
 
-static void create_ps_simple(IceGrid& g, const NCConfigVariable& conf, PISMVars& vars, PISMSurfaceModel* &result) {
-  result = new PSSimple(g, conf, vars);
+static void create_ps_simple(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
+  result = new PSSimple(g, conf);
 }
 
-static void create_ps_constant(IceGrid& g, const NCConfigVariable& conf, PISMVars& vars, PISMSurfaceModel* &result) {
-  result = new PSConstant(g, conf, vars);
+static void create_ps_constant(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
+  result = new PSConstant(g, conf);
 }
 
-static void create_ps_forcing(IceGrid& g, const NCConfigVariable& conf, PISMVars& vars, PSModifier* &result) {
-  result = new PSForceThickness(g, conf, vars);
+static void create_ps_forcing(IceGrid& g, const NCConfigVariable& conf, PSModifier* &result) {
+  result = new PSForceThickness(g, conf);
 }
 
 void PSFactory::add_standard_types() {

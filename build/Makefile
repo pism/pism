@@ -96,7 +96,8 @@ ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
 	iMinverseMat.cc iMIO.cc iMmatlab.cc iMoptions.cc \
 	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc \
 	iMutil.cc iMvelocity.cc iMviewers.cc Timeseries.cc PISMVars.cc iMtimeseries.cc \
-	enthalpyConverter.cc iceModelVec2T.cc
+	enthalpyConverter.cc iceModelVec2T.cc PISMComponent.cc PAConstant.cc PAFausto.cc \
+        PAForcing.cc PISMSurface.cc PISMOcean.cc PCFactory.cc PALapseRates.cc
 ice_csources := cubature.c pism_signal.c
 
 # tests_sources go in libtests.[so|a]
@@ -189,12 +190,9 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 	${CXXLINKER} pismtests.o iMtests.o ${ICE_LIB_FLAGS} -o $@
 
 # BEGIN FIXME: this is temporary and should eventually go:
-other_sources += PISMComponent.cc PAConstant.cc PAFausto.cc PAForcing.cc \
-                 PISMSurface.cc pcctest3.cc PISMOcean.cc pgrn_atmosphere.cc PCFactory.cc
-
-../bin/pcctest3 : pcctest3.o ${LIBPISMNAME} PISMComponent.o PAConstant.o PAFausto.o \
-                  PAForcing.o PISMSurface.o PISMOcean.o pgrn_atmosphere.o PCFactory.o
-	${CXXLINKER} $^ ${ICE_LIB_FLAGS} -o $@
+other_sources += pcctest3.cc pgrn_atmosphere.cc
+../bin/pcctest3 : pcctest3.o pgrn_atmosphere.o ${LIBPISMNAME}
+	${CXXLINKER} pcctest3.o pgrn_atmosphere.o ${ICE_LIB_FLAGS} -o $@
 # END FIXME
 
 #build extra executables

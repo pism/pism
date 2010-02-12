@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -220,31 +220,23 @@ PetscErrorCode IceModel::temperatureStep(
   ierr = system.initAllColumns(); CHKERRQ(ierr);
 
   // now get map-plane fields, starting with coupler fields
-  PetscScalar  **Ts, **Tshelfbase, **H, **Ghf, **Hmelt, **Rb,
-               **basalMeltRate, **bmr_float;
+  PetscScalar  **H, **Ghf, **Hmelt, **Rb, **basalMeltRate;
+  
+  if (surface != PETSC_NULL) {
+    ierr = surface->ice_surface_temperature(grid.year, dtTempAge / secpera, artm); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
+  }
+  if (ocean != PETSC_NULL) {
+    ierr = ocean->shelf_base_mass_flux(grid.year, dt / secpera, shelfbmassflux); CHKERRQ(ierr);
+    ierr = ocean->shelf_base_temperature(grid.year, dt / secpera, shelfbtemp); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
+  }
 
-  IceModelVec2 *pccTs, *pccsbt, *pccsbmf;
-  if (atmosPCC != PETSC_NULL) {
-    // call sets pccTs to point to IceModelVec2 with current surface temps
-    ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, dtTempAge / secpera, pccTs);
-              CHKERRQ(ierr);
-  } else {
-    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
-  }
-  if (oceanPCC != PETSC_NULL) {
-    ierr = oceanPCC->updateShelfBaseTempAndProvide(
-              grid.year, dt / secpera, pccsbt);
-              CHKERRQ(ierr);
-    ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(
-              grid.year, dt / secpera, pccsbmf);
-              CHKERRQ(ierr);
-  } else {
-    SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");
-  }
-  ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);
-  ierr = pccsbt->get_array(Tshelfbase);  CHKERRQ(ierr);
-  ierr = pccsbmf->get_array(bmr_float);  CHKERRQ(ierr);
+  ierr = artm.begin_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
+  ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vHmelt.get_array(Hmelt); CHKERRQ(ierr);
@@ -314,9 +306,8 @@ PetscErrorCode IceModel::temperatureStep(
                  CHKERRQ(ierr);  
 
         // set boundary values for tridiagonal system
-        ierr = system.setSurfaceBoundaryValuesThisColumn(Ts[i][j]); CHKERRQ(ierr);
-        ierr = system.setBasalBoundaryValuesThisColumn(
-                 Ghf[i][j],Tshelfbase[i][j],Rb[i][j]); CHKERRQ(ierr);
+        ierr = system.setSurfaceBoundaryValuesThisColumn(artm(i,j)); CHKERRQ(ierr);
+        ierr = system.setBasalBoundaryValuesThisColumn(Ghf[i][j],shelfbtemp(i,j),Rb[i][j]); CHKERRQ(ierr);
 
         // solve the system for this column; melting not addressed yet
         ierr = system.solveThisColumn(&x); // no CHKERRQ(ierr) immediately because:
@@ -373,8 +364,8 @@ PetscErrorCode IceModel::temperatureStep(
 			      Tnew[k],i,j,k,grid.rank,vMask.value(i,j),system.w[k]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
-        if (Tnew[k] < Ts[i][j] - bulgeMax) {
-          Tnew[k] = Ts[i][j] - bulgeMax;  bulgeCount++;   }
+        if (Tnew[k] < artm(i,j) - bulgeMax) {
+          Tnew[k] = artm(i,j) - bulgeMax;  bulgeCount++;   }
       }
       
       // insert solution for ice/rock interface (or base of ice shelf) segment
@@ -403,8 +394,8 @@ PetscErrorCode IceModel::temperatureStep(
               Tnew[0],i,j,grid.rank,vMask.value(i,j),system.w[0]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
-        if (Tnew[0] < Ts[i][j] - bulgeMax) {
-          Tnew[0] = Ts[i][j] - bulgeMax;   bulgeCount++;   }
+        if (Tnew[0] < artm(i,j) - bulgeMax) {
+          Tnew[0] = artm(i,j) - bulgeMax;   bulgeCount++;   }
       } else {
         Hmeltnew = 0.0;
       }
@@ -414,9 +405,9 @@ PetscErrorCode IceModel::temperatureStep(
         Tbnew[k0] = Tnew[0];
       } else {
         if (vMask.is_floating(i,j)) { // top of bedrock sees ocean
-          Tbnew[k0] = Tshelfbase[i][j]; // set by PISMOceanCoupler
+          Tbnew[k0] = shelfbtemp(i,j); // set by PISMOceanCoupler
         } else { // top of bedrock sees atmosphere
-          Tbnew[k0] = Ts[i][j];
+          Tbnew[k0] = artm(i,j);
         }
       }
       // check bedrock solution        
@@ -428,8 +419,8 @@ PetscErrorCode IceModel::temperatureStep(
               Tbnew[k],i,j,k,grid.rank,vMask.value(i,j)); CHKERRQ(ierr);
            myLowTempCount++;
         }
-        if (Tbnew[k] < Ts[i][j] - bulgeMax) {
-          Tbnew[k] = Ts[i][j] - bulgeMax;   bulgeCount++;   }
+        if (Tbnew[k] < artm(i,j) - bulgeMax) {
+          Tbnew[k] = artm(i,j) - bulgeMax;   bulgeCount++;   }
       }
 
       // transfer column into Tb3; neighboring columns will not reference!
@@ -437,7 +428,7 @@ PetscErrorCode IceModel::temperatureStep(
 
       // set to air temp above ice
       for (PetscInt k=ks; k<fMz; k++) {
-        Tnew[k] = Ts[i][j];
+        Tnew[k] = artm(i,j);
       }
 
       // transfer column into Tnew3; communication later
@@ -447,7 +438,7 @@ PetscErrorCode IceModel::temperatureStep(
       //   note massContExplicitStep() calls PISMOceanCoupler separately
       if (vMask.is_floating(i,j)) {
         // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)
-        basalMeltRate[i][j] = bmr_float[i][j]; // set by PISMOceanCoupler
+        basalMeltRate[i][j] = shelfbmassflux(i,j); // set by PISMOceanCoupler
       } else {
         // rate of change of Hmelt[][];  can be negative (till water freeze-on)
 	// Also note that this rate is calculated *before* limiting Hmelt.
@@ -474,9 +465,10 @@ PetscErrorCode IceModel::temperatureStep(
   ierr = vGhf.end_access(); CHKERRQ(ierr);
   ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
 
-  ierr = pccTs->end_access(); CHKERRQ(ierr);
-  ierr = pccsbt->end_access();  CHKERRQ(ierr);
-  ierr = pccsbmf->end_access();  CHKERRQ(ierr);
+  ierr = artm.end_access(); CHKERRQ(ierr);
+
+  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
+  ierr = shelfbtemp.end_access(); CHKERRQ(ierr);
 
   ierr = Tb3.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);

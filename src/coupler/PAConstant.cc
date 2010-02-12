@@ -19,14 +19,13 @@
 
 #include "PISMAtmosphere.hh"
 
-PetscErrorCode PAConstant::init() {
+PetscErrorCode PAConstant::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
   LocalInterpCtx *lic = NULL;
   bool regrid = false;
   int start = -1;
 
   ierr = verbPrintf(2, grid.com, "* Initializing the constant-in-time atmosphere model...\n"); CHKERRQ(ierr);
-
 
   // allocate IceModelVecs for storing temperature and precipitation fields:
 

@@ -642,35 +642,30 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
     ierr = system.viewConstants(NULL,false); CHKERRQ(ierr);
   }
 
-  // now get map-plane coupler fields: Dirichlet upper surface boundary
-  //    and mass balance lower boundary
-  IceModelVec2 *pccTs, *pccsbmf;
-  if (atmosPCC != PETSC_NULL) {
-    // call sets pccTs to point to IceModelVec2 with current surface temps
-    ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, dtTempAge / secpera, pccTs);
-              CHKERRQ(ierr);
+  // now get map-plane coupler fields: Dirichlet upper surface boundary and
+  //    mass balance lower boundary
+  if (surface != PETSC_NULL) {
+    ierr = surface->ice_surface_temperature(grid.year, dtTempAge / secpera, artm); CHKERRQ(ierr);
   } else {
-    SETERRQ(3,"PISM ERROR: atmosPCC == PETSC_NULL");
+    SETERRQ(4,"PISM ERROR: surface == PETSC_NULL");
   }
-  if (oceanPCC != PETSC_NULL) {
-    ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(
-              grid.year, dt / secpera, pccsbmf);
-              CHKERRQ(ierr);
+
+  if (ocean != PETSC_NULL) {
+    ierr = ocean->shelf_base_mass_flux(grid.year, dt / secpera, shelfbmassflux); CHKERRQ(ierr);
   } else {
-    SETERRQ(4,"PISM ERROR: oceanPCC == PETSC_NULL");
+    SETERRQ(4,"PISM ERROR: ocean == PETSC_NULL");
   }
-  PetscScalar  **Ts, **bmr_float;
-  ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);
-  ierr = pccsbmf->get_array(bmr_float);  CHKERRQ(ierr);
+
+  ierr = artm.begin_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
 
   // get other map-plane fields
-  PetscScalar  **H, **Ghf, **Hmelt, **Rb, **bmr;
+  PetscScalar  **H, **bmr;
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = vHmelt.get_array(Hmelt); CHKERRQ(ierr);
+  ierr = vHmelt.begin_access(); CHKERRQ(ierr);
   ierr = vbasalMeltRate.get_array(bmr); CHKERRQ(ierr);
-  ierr = vRb.get_array(Rb); CHKERRQ(ierr);
-  ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
+  ierr = vRb.begin_access(); CHKERRQ(ierr);
+  ierr = vGhf.begin_access(); CHKERRQ(ierr);
 
   ierr = vMask.begin_access(); CHKERRQ(ierr);
 
@@ -693,10 +688,10 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
       const PetscScalar p_basal = EC.getPressureFromDepth(H[i][j]),
                         p_ks    = EC.getPressureFromDepth(H[i][j] - fzlev[ks]);
       PetscScalar Enth_air, Enth_ks;
-      ierr = EC.getEnthPermissive(Ts[i][j], 0.0, p_air, Enth_air); CHKERRQ(ierr);
+      ierr = EC.getEnthPermissive(artm(i,j), 0.0, p_air, Enth_air); CHKERRQ(ierr);
       // in theory we could have a water fraction at k=ks level, but for
       //   now there is no case where we have that:
-      ierr = EC.getEnthPermissive(Ts[i][j], 0.0, p_ks,  Enth_ks); CHKERRQ(ierr);
+      ierr = EC.getEnthPermissive(artm(i,j), 0.0, p_ks,  Enth_ks); CHKERRQ(ierr);
 
       ierr = system.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
 
@@ -747,10 +742,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
                vMask.is_floating(i,j), isMarginal, lambda); CHKERRQ(ierr);
 
       const PetscScalar
-          hf = vMask.is_floating(i,j) ? system.ice_rho * L * bmr_float[i][j] 
-                                      : Ghf[i][j];
-      ierr = system.setBoundaryValuesThisColumn(
-               Enth_ks, hf, Rb[i][j]); CHKERRQ(ierr);
+	hf = vMask.is_floating(i,j) ? system.ice_rho * L * shelfbmassflux(i,j) 
+                                      : vGhf(i,j);
+      ierr = system.setBoundaryValuesThisColumn(Enth_ks, hf, vRb(i,j)); CHKERRQ(ierr);
 
       // diagnostic/debug
       if (viewOneColumn && issounding(i,j)) {
@@ -794,11 +788,11 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
       ierr = Tb3.setValColumnPL(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
 
       // determine melt rate if any
-      PetscScalar Hmeltnew = Hmelt[i][j];  // prepare for melting/refreezing
+      PetscScalar Hmeltnew = vHmelt(i,j);  // prepare for melting/refreezing
       if (ks > 0) {
         // three cases: see tables in doc/doxy/html/bombproofenth.html
         if (vMask.is_floating(i,j)) {
-          bmr[i][j] = bmr_float[i][j]; 
+          bmr[i][j] = shelfbmassflux(i,j); 
           // and ignor x[fMbz] which contains only known ocean melt rate
           // ... and no contribute to stored Hmelt, which will be set to zero
         } else if (system.Enth[0] >= system.Enth_s[0]) {
@@ -838,13 +832,13 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
         if (vMask.is_floating(i,j)) {
           // if floating assume maximally saturated "till"
           // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
-          Hmelt[i][j] = max_hmelt;
+          vHmelt(i,j) = max_hmelt;
         } if (ks == 0) {
-          Hmelt[i][j] = 0.0;  // no stored water on ice free land
+          vHmelt(i,j) = 0.0;  // no stored water on ice free land
         } else {
           // limit Hmelt to be in [0.0, max_hmelt]
           // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO INFINITY AND BEYOND)!!
-          Hmelt[i][j] = PetscMax(0.0, PetscMin(max_hmelt, Hmeltnew) );
+          vHmelt(i,j) = PetscMax(0.0, PetscMin(max_hmelt, Hmeltnew) );
         }
       }
 
@@ -858,8 +852,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
   ierr = vGhf.end_access(); CHKERRQ(ierr);
   ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
 
-  ierr = pccTs->end_access(); CHKERRQ(ierr);
-  ierr = pccsbmf->end_access();  CHKERRQ(ierr);
+  ierr = artm.end_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
 
   ierr = Tb3.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);

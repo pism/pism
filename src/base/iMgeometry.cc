@@ -43,7 +43,7 @@ as global.  (I.e. we do not communicate ghosts.)
 PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2 &vtaudy) {
   PetscErrorCode ierr;
 
-  PetscScalar **h, **H, **bed, **taudx, **taudy;
+  PetscScalar **h, **bed, **taudx, **taudy;
 
   const PetscScalar n       = ice->exponent(), // frequently n = 3
                     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
@@ -56,7 +56,7 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2
   bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
 
   ierr =    vh.get_array(h);    CHKERRQ(ierr);
-  ierr =    vH.get_array(H);    CHKERRQ(ierr);
+  ierr =    vH.begin_access();  CHKERRQ(ierr);
   ierr =  vbed.get_array(bed);  CHKERRQ(ierr);
   ierr = vMask.begin_access();  CHKERRQ(ierr);
 
@@ -65,7 +65,7 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar pressure = ice->rho * standard_gravity * H[i][j];
+      const PetscScalar pressure = ice->rho * standard_gravity * vH(i,j);
       if (pressure <= 0.0) {
         taudx[i][j] = 0.0;
         taudy[i][j] = 0.0;
@@ -76,13 +76,13 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2
              && (transformForSurfaceGradient == PETSC_TRUE)
              && (!edge)                                     ) {
           // in grounded case, differentiate eta = H^{8/3} by chain rule
-          if (H[i][j] > 0.0) {
-            const PetscScalar myH = (H[i][j] < minThickEtaTransform)
-                                    ? minThickEtaTransform : H[i][j];
+          if (vH(i,j) > 0.0) {
+            const PetscScalar myH = (vH(i,j) < minThickEtaTransform)
+                                    ? minThickEtaTransform : vH(i,j);
             const PetscScalar eta = pow(myH, etapow),
                               factor = invpow * pow(eta, dinvpow);
-            h_x = factor * (pow(H[i+1][j],etapow) - pow(H[i-1][j],etapow)) / (2*dx);
-            h_y = factor * (pow(H[i][j+1],etapow) - pow(H[i][j-1],etapow)) / (2*dy);
+            h_x = factor * (pow(vH(i+1,j),etapow) - pow(vH(i-1,j),etapow)) / (2*dx);
+            h_y = factor * (pow(vH(i,j+1),etapow) - pow(vH(i,j-1),etapow)) / (2*dy);
           }
           // now add bed slope to get actual h_x,h_y
           // FIXME: there is no reason to assume user's bed is periodized; see vertical
@@ -145,10 +145,9 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   PetscErrorCode ierr;
   PetscScalar **h, **bed, **H, **mask;
 
-  if (oceanPCC == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");  }
+  if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal currentSeaLevel;
-  ierr = oceanPCC->updateSeaLevelElevation(grid.year, dt / secpera,
-					   &currentSeaLevel); CHKERRQ(ierr);
+  ierr = ocean->sea_level_elevation(grid.year, dt / secpera, currentSeaLevel); CHKERRQ(ierr);
 
   bool is_dry_simulation = config.get_flag("is_dry_simulation"),
     do_plastic_till = config.get_flag("do_plastic_till"),
@@ -163,13 +162,13 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // take this opportunity to check that H[i][j] >= 0
-      if (H[i][j] < 0) {
+      // take this opportunity to check that vH(i,j) >= 0
+      if (vH(i,j) < 0) {
         SETERRQ2(1,"Thickness negative at point i=%d, j=%d",i,j);
       }
 
-      const PetscScalar hgrounded = bed[i][j] + H[i][j],
-                        hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * H[i][j];
+      const PetscScalar hgrounded = bed[i][j] + vH(i,j),
+                        hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * vH(i,j);
 
       if (is_dry_simulation) {
         // Don't update mask; potentially one would want to do SSA
@@ -270,8 +269,8 @@ In these equations \f$H\f$ is the ice thickness,
 mass balance (e.g. basal melt or freeze-on), and \f$\bar{\mathbf{U}}\f$ is the vertically-averaged
 horizontal velocity of the ice.  This procedure uses conservation of mass to update the ice thickness.
 
-The PISMAtmosphereCoupler pointed to by IceModel::atmosPCC provides \f$M\f$.  The PISMOceanCoupler
-pointed to by IceModel::oceanPCC provides \f$S\f$ at locations below floating ice (ice shelves).
+The PISMSurfaceModel pointed to by IceModel::surface provides \f$M\f$.  The PISMOceanModel
+pointed to by IceModel::ocean provides \f$S\f$ at locations below floating ice (ice shelves).
 
 The map-plane flux of the ice \f$\mathbf{q}\f$ is defined by the above formula.  Nonetheless
 the mass flux is split into the parts caused by non-sliding SIA-type deformation and 
@@ -310,18 +309,13 @@ PetscErrorCode IceModel::massContExplicitStep() {
     include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
     do_superpose = config.get_flag("do_superpose");
 
+  if (surface != NULL) {
+    ierr = surface->ice_surface_mass_flux(grid.year, dt / secpera, acab); CHKERRQ(ierr);
+  } else { SETERRQ(1,"PISM ERROR: surface == NULL"); }
 
-  IceModelVec2 *pccsmf, *pccsbmf;
-  if (atmosPCC != PETSC_NULL) {
-    // call sets pccsmf to point to IceModelVec2 with current surface mass flux
-    ierr = atmosPCC->updateSurfMassFluxAndProvide(
-              grid.year, dt / secpera, pccsmf); CHKERRQ(ierr);
-  } else { SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL"); }
-  if (oceanPCC != PETSC_NULL) {
-    // call sets pccsbmf to point to IceModelVec2 with current mass flux under shelf base
-    ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(
-              grid.year, dt / secpera, pccsbmf); CHKERRQ(ierr);
-  } else { SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL"); }
+  if (ocean != NULL) {
+    ierr = ocean->shelf_base_mass_flux(grid.year, dt / secpera, shelfbmassflux); CHKERRQ(ierr);
+  } else { SETERRQ(2,"PISM ERROR: ocean == NULL"); }
 
   const PetscScalar inC_fofv = 1.0e-4 * PetscSqr(secpera),
                     outC_fofv = 2.0 / pi;
@@ -329,26 +323,26 @@ PetscErrorCode IceModel::massContExplicitStep() {
   IceModelVec2 vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
 
-  PetscScalar **H, **Hnew, **uvbar[2], **ubarssa, **vbarssa, **ub, **vb,
-    **accum, **bmr_gnded, **bmr_float;
+  PetscScalar **uvbar[2], **ubarssa, **vbarssa, **ub, **vb,
+    **bmr_gnded;
 
-  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vbasalMeltRate.get_array(bmr_gnded); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
   ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
   ierr = vub.get_array(ub); CHKERRQ(ierr);
   ierr = vvb.get_array(vb); CHKERRQ(ierr);
-  ierr = pccsmf->get_array(accum); CHKERRQ(ierr);
-  ierr = pccsbmf->get_array(bmr_float); CHKERRQ(ierr);
+  ierr = acab.begin_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
   ierr = vubarSSA.get_array(ubarssa); CHKERRQ(ierr);
   ierr = vvbarSSA.get_array(vbarssa); CHKERRQ(ierr);
   ierr = vMask.begin_access();  CHKERRQ(ierr);
-  ierr = vHnew.get_array(Hnew); CHKERRQ(ierr);
+  ierr = vHnew.begin_access(); CHKERRQ(ierr);
 
   PetscScalar icecount = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (H[i][j] > 0.0)  icecount++;
+      if (vH(i,j) > 0.0)  icecount++;
 
       // get thickness averaged onto staggered grid;
       //    note Div Q = Div (- f(v) D grad h + (1-f(v)) U_b H) 
@@ -368,16 +362,16 @@ PetscErrorCode IceModel::massContExplicitStep() {
                       ( PetscSqr(ubarssa[i][j+1]) + PetscSqr(vbarssa[i][j+1]) ) ),
           fvs = 1.0 - outC_fofv * atan( inC_fofv *
                       ( PetscSqr(ubarssa[i][j-1]) + PetscSqr(vbarssa[i][j-1]) ) );
-        const PetscScalar fvH = fv * H[i][j];
-        He = 0.5 * (fvH + fve * H[i+1][j]);
-        Hw = 0.5 * (fvw * H[i-1][j] + fvH);
-        Hn = 0.5 * (fvH + fvn * H[i][j+1]);
-        Hs = 0.5 * (fvs * H[i][j-1] + fvH);
+        const PetscScalar fvH = fv * vH(i,j);
+        He = 0.5 * (fvH + fve * vH(i+1,j));
+        Hw = 0.5 * (fvw * vH(i-1,j) + fvH);
+        Hn = 0.5 * (fvH + fvn * vH(i,j+1));
+        Hs = 0.5 * (fvs * vH(i,j-1) + fvH);
       } else {
-        He = 0.5 * (H[i][j] + H[i+1][j]);
-        Hw = 0.5 * (H[i-1][j] + H[i][j]);
-        Hn = 0.5 * (H[i][j] + H[i][j+1]);
-        Hs = 0.5 * (H[i][j-1] + H[i][j]);
+        He = 0.5 * (vH(i,j) + vH(i+1,j));
+        Hw = 0.5 * (vH(i-1,j) + vH(i,j));
+        Hn = 0.5 * (vH(i,j) + vH(i,j+1));
+        Hs = 0.5 * (vH(i,j-1) + vH(i,j));
       }
 
       // staggered grid Div(Q) for SIA (non-sliding) deformation part;
@@ -390,27 +384,27 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
       // basal sliding part: split  Div(v H)  by product rule into  v . grad H
       //    and  (Div v) H; use upwinding on first and centered on second
-      divQ +=  ub[i][j] * ( ub[i][j] < 0 ? H[i+1][j]-H[i][j]
-                                         : H[i][j]-H[i-1][j] ) / dx
-             + vb[i][j] * ( vb[i][j] < 0 ? H[i][j+1]-H[i][j]
-                                         : H[i][j]-H[i][j-1] ) / dy;
+      divQ +=  ub[i][j] * ( ub[i][j] < 0 ? vH(i+1,j)-vH(i,j)
+                                         : vH(i,j)-vH(i-1,j) ) / dx
+             + vb[i][j] * ( vb[i][j] < 0 ? vH(i,j+1)-vH(i,j)
+                                         : vH(i,j)-vH(i,j-1) ) / dy;
 
-      divQ += H[i][j] * ( (ub[i+1][j] - ub[i-1][j]) / (2.0*dx)
+      divQ += vH(i,j) * ( (ub[i+1][j] - ub[i-1][j]) / (2.0*dx)
                           + (vb[i][j+1] - vb[i][j-1]) / (2.0*dy) );
 
-      Hnew[i][j] += (accum[i][j] - divQ) * dt; // include M
+      vHnew(i,j) += (acab(i,j) - divQ) * dt; // include M
 
       if (include_bmr_in_continuity) { // include S
         if (vMask.is_floating(i,j)) {
-           Hnew[i][j] -= bmr_float[i][j] * dt;
+	  vHnew(i,j) -= shelfbmassflux(i,j) * dt;
         } else {
-           Hnew[i][j] -= bmr_gnded[i][j] * dt;
+           vHnew(i,j) -= bmr_gnded[i][j] * dt;
         }
       }
 
       // apply free boundary rule: negative thickness becomes zero
-      if (Hnew[i][j] < 0)
-        Hnew[i][j] = 0.0;
+      if (vHnew(i,j) < 0)
+        vHnew(i,j) = 0.0;
 
       // the following conditionals, both -ocean_kill and -float_kill, are also applied in 
       //   IceModel::computeMax2DSlidingSpeed() when determining CFL
@@ -418,12 +412,12 @@ PetscErrorCode IceModel::massContExplicitStep() {
       // force zero thickness at points which were originally ocean (if "-ocean_kill");
       //   this is calving at original calving front location
       if ( do_ocean_kill && (vMask.value(i,j) == MASK_OCEAN_AT_TIME_0) )
-        Hnew[i][j] = 0.0;
+        vHnew(i,j) = 0.0;
 
       // force zero thickness at points which are floating (if "-float_kill");
       //   this is calving at grounding line
       if ( floating_ice_killed && vMask.is_floating(i,j) )
-        Hnew[i][j] = 0.0;
+        vHnew(i,j) = 0.0;
 
     } // end of the inner for loop
   } // end of the outer for loop
@@ -436,8 +430,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vvb.end_access(); CHKERRQ(ierr);
   ierr = vubarSSA.end_access(); CHKERRQ(ierr);
   ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
-  ierr = pccsmf->end_access(); CHKERRQ(ierr);
-  ierr = pccsbmf->end_access(); CHKERRQ(ierr);
+  ierr = acab.end_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
 

@@ -6,13 +6,13 @@
 template <class Model, class Modifier>
 class PCFactory {
 public:
-  PCFactory<Model,Modifier>(IceGrid& g, const NCConfigVariable& conf, PISMVars& vars)
-  : grid(g), config(conf), variables(vars) {}
+  PCFactory<Model,Modifier>(IceGrid& g, const NCConfigVariable& conf)
+  : grid(g), config(conf) {}
   virtual ~PCFactory<Model,Modifier>() {}
 
   //! Sets the default type name.
   virtual PetscErrorCode set_default(string name) {
-    void (*func) (IceGrid&, const NCConfigVariable&, PISMVars&, Model*&);
+    void (*func) (IceGrid&, const NCConfigVariable&, Model*&);
 
     func = models[name];
     if (!func) {
@@ -25,15 +25,14 @@ public:
 
   //! Creates a boundary model. Processes command-line options.
   virtual PetscErrorCode create(Model* &result) {
-    void (*F) (IceGrid&, const NCConfigVariable&, PISMVars&, Model*&);
+    void (*F) (IceGrid&, const NCConfigVariable&, Model*&);
     PetscErrorCode ierr;
     vector<string> choices;
-    set<string> available_models;
     string model_list, modifier_list, descr;
     bool flag = false;
 
     // build a list of available models:
-    typename map<string,void(*)(IceGrid&, const NCConfigVariable&, PISMVars&, Model*&)>::iterator k;
+    typename map<string,void(*)(IceGrid&, const NCConfigVariable&, Model*&)>::iterator k;
     k = models.begin();
     model_list = "[" + (k++)->first;
     for(; k != models.end(); k++) {
@@ -42,7 +41,7 @@ public:
     model_list += "]";
 
     // build a list of available modifiers:
-    typename map<string,void(*)(IceGrid&, const NCConfigVariable&, PISMVars&, Modifier*&)>::iterator p;
+    typename map<string,void(*)(IceGrid&, const NCConfigVariable&, Modifier*&)>::iterator p;
     p = modifiers.begin();
     modifier_list = "[" + (p++)->first;
     for(; p != modifiers.end(); p++) {
@@ -64,8 +63,8 @@ public:
       choices.push_back(default_type);
     }
 
-    // the first element has to be an *actual* atmosphere model (not a
-    // modifier), so we create it:
+    // the first element has to be an *actual* model (not a modifier), so we
+    // create it:
     vector<string>::iterator j = choices.begin();
   
     F = models[*j];
@@ -75,13 +74,13 @@ public:
       PetscEnd();
     }
 
-    (*F)(grid, config, variables, result);
+    (*F)(grid, config, result);
 
     ++j;
 
     // process remaining arguments:
     while (j != choices.end()) {
-      void (*M) (IceGrid&, const NCConfigVariable&, PISMVars&, Modifier*&);
+      void (*M) (IceGrid&, const NCConfigVariable&, Modifier*&);
       Modifier *mod;
 
       M = modifiers[*j];
@@ -91,7 +90,7 @@ public:
 	PetscEnd();
       }
 
-      (*M)(grid, config, variables, mod);
+      (*M)(grid, config, mod);
 
       mod->attach_input(result);
       result = mod;
@@ -103,11 +102,11 @@ public:
   }
 
   //! Adds a boundary model to the dictionary.
-  virtual void add_model(string name, void(*func)(IceGrid&, const NCConfigVariable&, PISMVars&, Model*&)) {
+  virtual void add_model(string name, void(*func)(IceGrid&, const NCConfigVariable&, Model*&)) {
     models[name] = func;
   }
 
-  virtual void add_modifier(string name, void(*func)(IceGrid&, const NCConfigVariable&, PISMVars&, Modifier*&)) {
+  virtual void add_modifier(string name, void(*func)(IceGrid&, const NCConfigVariable&, Modifier*&)) {
     modifiers[name] = func;
   }
 
@@ -131,17 +130,16 @@ public:
 protected:
   virtual void add_standard_types() {}
   string default_type, option;
-  map<string,void(*)(IceGrid&, const NCConfigVariable&, PISMVars&, Model*&)> models;
-  map<string,void(*)(IceGrid&, const NCConfigVariable&, PISMVars&, Modifier*&)> modifiers;
+  map<string,void(*)(IceGrid&, const NCConfigVariable&, Model*&)> models;
+  map<string,void(*)(IceGrid&, const NCConfigVariable&, Modifier*&)> modifiers;
   IceGrid& grid;
   const NCConfigVariable& config;
-  PISMVars& variables;
 };
 
 class PAFactory : public PCFactory<PISMAtmosphereModel,PAModifier> {
 public:
-  PAFactory(IceGrid& g, const NCConfigVariable& conf, PISMVars& vars)
-    : PCFactory<PISMAtmosphereModel,PAModifier>(g, conf, vars)
+  PAFactory(IceGrid& g, const NCConfigVariable& conf)
+    : PCFactory<PISMAtmosphereModel,PAModifier>(g, conf)
   {
     add_standard_types();
     option = "atmosphere";
@@ -152,8 +150,8 @@ public:
 
 class PSFactory : public PCFactory<PISMSurfaceModel,PSModifier> {
 public:
-  PSFactory(IceGrid& g, const NCConfigVariable& conf, PISMVars& vars)
-    : PCFactory<PISMSurfaceModel,PSModifier>(g, conf, vars)
+  PSFactory(IceGrid& g, const NCConfigVariable& conf)
+    : PCFactory<PISMSurfaceModel,PSModifier>(g, conf)
   {
     add_standard_types();
     option = "surface";
@@ -165,8 +163,8 @@ public:
 
 class POFactory : public PCFactory<PISMOceanModel,POModifier> {
 public:
-  POFactory(IceGrid& g, const NCConfigVariable& conf, PISMVars& vars)
-    : PCFactory<PISMOceanModel,POModifier>(g, conf, vars)
+  POFactory(IceGrid& g, const NCConfigVariable& conf)
+    : PCFactory<PISMOceanModel,POModifier>(g, conf)
   {
     add_standard_types();
     option = "ocean";

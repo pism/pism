@@ -6,7 +6,7 @@ test="Test #1: pismr exact restartability (SIA only)."
 files="verify.nc foo.nc joe.nc bar.nc"
 dir=`pwd`
 
-OPTS="-max_dt 1"
+OPTS="-max_dt 1 -surface constant"
 
 test_01 ()
 {

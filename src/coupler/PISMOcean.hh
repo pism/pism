@@ -27,8 +27,8 @@
 //! A very rudimentary PISM ocean model.
 class PISMOceanModel : public PISMComponent {
 public:
-  PISMOceanModel(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-    : PISMComponent(g, conf, vars)
+  PISMOceanModel(IceGrid &g, const NCConfigVariable &conf)
+    : PISMComponent(g, conf)
   {
     sea_level = 0;
   }
@@ -48,10 +48,10 @@ protected:
 //! sub-shelf heat flux.
 class POConstant : public PISMOceanModel {
 public:
-  POConstant(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-    : PISMOceanModel(g, conf, vars) {}
+  POConstant(IceGrid &g, const NCConfigVariable &conf)
+    : PISMOceanModel(g, conf) {}
   virtual ~POConstant() {}
-  virtual PetscErrorCode init();
+  virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode sea_level_elevation(PetscReal t_years, PetscReal dt_years,
 					     PetscReal &result);
   virtual PetscErrorCode shelf_base_temperature(PetscReal t_years, PetscReal dt_years,
@@ -65,8 +65,8 @@ protected:
 //! A class defining the interface of a PISM ocean model modifier.
 class POModifier : public PISMOceanModel {
 public:
-  POModifier(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-    : PISMOceanModel(g, conf, vars)
+  POModifier(IceGrid &g, const NCConfigVariable &conf)
+    : PISMOceanModel(g, conf)
   { input_model = NULL; }
 
   virtual ~POModifier()
@@ -80,8 +80,8 @@ protected:
 //! A class implementing sea level forcing.
 class POForcing : public POModifier {
 public:
-  POForcing(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-    : POModifier(g, conf, vars)
+  POForcing(IceGrid &g, const NCConfigVariable &conf)
+    : POModifier(g, conf)
   {
     dSLforcing = NULL;
     delta_sea_level = NULL;
@@ -93,7 +93,7 @@ public:
     delete delta_sea_level;
   }
 
-  virtual PetscErrorCode init();
+  virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode sea_level_elevation(PetscReal t_years, PetscReal dt_years,
 					     PetscReal &result);
   virtual PetscErrorCode shelf_base_temperature(PetscReal t_years, PetscReal dt_years,

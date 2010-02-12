@@ -36,7 +36,6 @@ public:
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode init_physics();
-  virtual PetscErrorCode init_couplers();
   virtual PetscErrorCode set_vars_from_options(); // called by IceModel::model_state_setup()
 
   PetscErrorCode reportErrors();

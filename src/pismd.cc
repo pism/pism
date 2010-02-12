@@ -18,10 +18,13 @@
 
 #include <petsc.h>
 #include "base/grid.hh"
-#include "base/materials.hh"
 #include "base/iceModel.hh"
-#include "coupler/pccoupler.hh"
 #include "eismint/iceROSSModel.hh"
+
+#include "coupler/PCFactory.hh"
+#include "coupler/PISMAtmosphere.hh"
+#include "coupler/PISMSurface.hh"
+#include "coupler/PISMOcean.hh"
 
 static char help[] =
   "Driver for ice sheet, shelf, and stream simulations, for 'diagnostic'\n"
@@ -71,20 +74,36 @@ int main(int argc, char *argv[]) {
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     IceGrid    g(com, rank, size);
-    IceModel*      m;
+
+    // Initialize boundary models:
+    PAFactory pa(g, config);
+    PISMAtmosphereModel *atmosphere;
+
+    PSFactory ps(g, config);
+    PISMSurfaceModel *surface;
+    ierr = ps.set_default("constant"); CHKERRQ(ierr);
+
+    POFactory po(g, config);
+    PISMOceanModel *ocean;
+
+    pa.create(atmosphere);
+    ps.create(surface);
+    po.create(ocean);
+
+    surface->attach_atmosphere_model(atmosphere);
+
+    IceModel *m;
     if (doRoss == PETSC_TRUE)
       m = new IceROSSModel(g, config, overrides);
     else 
       m = new IceModel(g, config, overrides);
 
-    PISMConstAtmosCoupler pcac;
-    PISMConstOceanCoupler pcoc;
-    ierr = m->attachAtmospherePCC(pcac); CHKERRQ(ierr);
-    ierr = m->attachOceanPCC(pcoc); CHKERRQ(ierr);
+    m->attach_surface_model(surface);
+    m->attach_ocean_model(ocean);
 
     ierr = m->setExecName("pismd"); CHKERRQ(ierr);
 
-    ierr = PetscOptionsSetValue("-f3d", ""); CHKERRQ(ierr);
+    config.set_flag("force_full_diagnostics", true);
 
     ierr = m->init(); CHKERRQ(ierr);
 

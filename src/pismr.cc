@@ -22,10 +22,12 @@ static char help[] =
 
 #include <petsc.h>
 #include "base/grid.hh"
-#include "base/materials.hh"
 #include "base/iceModel.hh"
-#include "coupler/pccoupler.hh"
-#include "coupler/pGreenlandAtmosCoupler.hh"
+
+#include "coupler/PCFactory.hh"
+#include "coupler/PISMAtmosphere.hh"
+#include "coupler/PISMSurface.hh"
+#include "coupler/PISMOcean.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -74,21 +76,24 @@ int main(int argc, char *argv[]) {
     IceGrid g(com, rank, size);
     IceModel m(g, config, overrides);
 
-    // Attach climate couplers:
-    PISMConstAtmosCoupler     pcac;
-    PISMGreenlandAtmosCoupler ppdd;
-    PISMConstOceanCoupler     pcoc;
-    PetscTruth  pddSet;
-    ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
-    if (pddSet == PETSC_TRUE) {
-      ierr = verbPrintf(2,com, "pismr attaching PISMGreenlandAtmosCoupler to IceModel\n"); CHKERRQ(ierr);
-      ierr = m.attachAtmospherePCC(ppdd); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,com, "pismr attaching PISMConstAtmosCoupler to IceModel\n"); CHKERRQ(ierr);
-      ierr = m.attachAtmospherePCC(pcac); CHKERRQ(ierr);
-    }
-    ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
+    // Initialize boundary models:
+    PAFactory pa(g, config);
+    PISMAtmosphereModel *atmosphere;
 
+    PSFactory ps(g, config);
+    PISMSurfaceModel *surface;
+
+    POFactory po(g, config);
+    PISMOceanModel *ocean;
+
+    pa.create(atmosphere);
+    ps.create(surface);
+    po.create(ocean);
+
+    surface->attach_atmosphere_model(atmosphere);
+
+    m.attach_ocean_model(ocean);
+    m.attach_surface_model(surface);
     ierr = m.setExecName("pismr"); CHKERRQ(ierr);
 
     ierr = m.init(); CHKERRQ(ierr);

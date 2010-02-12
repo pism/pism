@@ -38,8 +38,8 @@ static char help[] =
 #include "eismint/pgrn_atmosphere.hh"
 
 static void create_pa_eismint_greenland(IceGrid& g, const NCConfigVariable& conf,
-					PISMVars& vars, PISMAtmosphereModel* &result) {
-  result = new PA_EISMINT_Greenland(g, conf, vars);
+					PISMAtmosphereModel* &result) {
+  result = new PA_EISMINT_Greenland(g, conf);
 }
 
 
@@ -372,28 +372,25 @@ int main(int argc, char *argv[]) {
     ierr = readIceInfoFromFile(inname, last_record, variables); CHKERRQ(ierr);
 
     // Initialize boundary models:
-    PAFactory pa(grid, config, variables);
+    PAFactory pa(grid, config);
     PISMAtmosphereModel *atmosphere;
     pa.add_model("eismint_greenland", &create_pa_eismint_greenland);
 
-    PSFactory ps(grid, config, variables);
+    PSFactory ps(grid, config);
     PISMSurfaceModel *surface;
 
-    POFactory po(grid, config, variables);
+    POFactory po(grid, config);
     PISMOceanModel *ocean;
 
     ierr = PetscOptionsBegin(grid.com, "", "PISM Boundary Models", ""); CHKERRQ(ierr);
 
     pa.create(atmosphere);
-
     ps.create(surface);
-
-    surface->attach_atmosphere_model(atmosphere);
-
     po.create(ocean);
 
-    ierr = surface->init(); CHKERRQ(ierr);
-    ierr = ocean->init(); CHKERRQ(ierr);
+    surface->attach_atmosphere_model(atmosphere);
+    ierr = surface->init(variables); CHKERRQ(ierr);
+    ierr = ocean->init(variables); CHKERRQ(ierr);
 
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
     // done initializing boundary models.

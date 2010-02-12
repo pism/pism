@@ -23,8 +23,10 @@ static char help[] =
 #include <petscbag.h>
 #include "../../base/grid.hh"
 #include "../../base/materials.hh"
-#include "../../coupler/pccoupler.hh"
 #include "iceScandModel.hh"
+
+#include "../../coupler/PISMSurface.hh"
+#include "../../coupler/PISMOcean.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -61,13 +63,12 @@ int main(int argc, char *argv[]) {
     IceGrid               g(com, rank, size);
     IceScandModel         m(g, config, overrides);
 
-    // construct and attach the PISMClimateCouplers
-    PISMConstAtmosCoupler pcac;
-    PISMConstOceanCoupler pcoc;
-    // climate will always come from intercomparison formulas:
-    pcac.initializeFromFile = false; 
-    ierr = m.attachAtmospherePCC(pcac); CHKERRQ(ierr);
-    ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
+    // Create boundary models:
+    PISMSurfaceModel *surface = new PSDummy(g, config);
+    PISMOceanModel   *ocean   = new POConstant(g, config);;
+
+    m.attach_ocean_model(ocean);
+    m.attach_surface_model(surface);
 
     ierr = m.init(); CHKERRQ(ierr);
 

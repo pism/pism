@@ -118,11 +118,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   ierr = verbPrintf(2, grid.com, 
      "  filling in ice and bedrock temperatures using surface temperatures and quartic guess\n");
      CHKERRQ(ierr);
-  if (atmosPCC != PETSC_NULL) {
-    IceModelVec2* ignored;
-    ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, ignored);
-                CHKERRQ(ierr);
-  } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }  
+
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);
@@ -265,9 +261,9 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
            "    option -ocean_kill seen: floating ice mask=3; ice free ocean mask=7\n"); CHKERRQ(ierr);
   }
 
-  if (oceanPCC == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: oceanPCC == PETSC_NULL");  }
+  if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal currentSeaLevel;
-  ierr = oceanPCC->updateSeaLevelElevation(grid.year, 0, &currentSeaLevel); CHKERRQ(ierr);
+  ierr = ocean->sea_level_elevation(grid.year, 0, currentSeaLevel); CHKERRQ(ierr);
            
   ierr = vh.get_array(h); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
@@ -352,7 +348,7 @@ Note that \f$z\f$ here is negative, so the temperature increases as one goes dow
  */
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
-  PetscScalar     **H, **bed, **Ts, **Ghf;
+  PetscScalar     **H, **bed, **Ghf;
 
   PetscScalar *T;
   T = new PetscScalar[grid.Mz];
@@ -360,15 +356,13 @@ PetscErrorCode IceModel::putTempAtDepth() {
   double ocean_rho = config.get("sea_water_density");
   double bed_thermal_k = config.get("bedrock_thermal_conductivity");
 
-  IceModelVec2    *pccTs;
-  if (atmosPCC != PETSC_NULL) {
-    // call sets pccTs to point to IceModelVec2 with current surface temps
-    ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, 0.0, pccTs); CHKERRQ(ierr);
-  } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }
+  if (surface != NULL) {
+    ierr = surface->ice_surface_temperature(grid.year, 0.0, artm); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1, "PISM ERROR: surface == NULL");
+  }
 
-  ierr = pccTs->get_array(Ts);  CHKERRQ(ierr);
-
+  ierr = artm.begin_access(); CHKERRQ(ierr);
   ierr =   vH.get_array(H);   CHKERRQ(ierr);
   ierr = vbed.get_array(bed);   CHKERRQ(ierr);
   ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
@@ -388,10 +382,10 @@ PetscErrorCode IceModel::putTempAtDepth() {
         const PetscScalar depth = HH - grid.zlevels[k];
         const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * depth;
         const PetscScalar d2 = depth * depth;
-        T[k] = PetscMin(Tpmp,Ts[i][j] + alpha * d2 + beta * d2 * d2);
+        T[k] = PetscMin(Tpmp,artm(i,j) + alpha * d2 + beta * d2 * d2);
       }
       for (PetscInt k = ks; k < grid.Mz; k++) // above ice
-        T[k] = Ts[i][j];
+        T[k] = artm(i,j);
       ierr = T3.setValColumnPL(i,j,grid.Mz,grid.zlevels,T); CHKERRQ(ierr);
       
       // set temp within bedrock; if floating then top of bedrock sees ocean,
@@ -407,7 +401,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr = vGhf.end_access(); CHKERRQ(ierr);
   ierr =   T3.end_access(); CHKERRQ(ierr);
   ierr =  Tb3.end_access(); CHKERRQ(ierr);
-  ierr = pccTs->end_access(); CHKERRQ(ierr);
+  ierr = artm.end_access(); CHKERRQ(ierr);
 
   delete [] T;
   

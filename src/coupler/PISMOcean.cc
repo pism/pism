@@ -19,14 +19,14 @@
 
 #include "PISMOcean.hh"
 
-PetscErrorCode POConstant::init() {
+PetscErrorCode POConstant::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   if (!config.get_flag("is_dry_simulation")) {
     ierr = verbPrintf(2, grid.com, "* Initializing the constant ocean model...\n"); CHKERRQ(ierr);
   }
 
-  ice_thickness = dynamic_cast<IceModelVec2*>(variables.get("land_ice_thickness"));
+  ice_thickness = dynamic_cast<IceModelVec2*>(vars.get("land_ice_thickness"));
   if (!ice_thickness) { SETERRQ(1, "ERROR: ice thickness is not available"); }
 
   return 0;
@@ -87,11 +87,11 @@ void POModifier::attach_input(PISMOceanModel *input) {
 
 ///// POForcing
 
-PetscErrorCode POForcing::init() {
+PetscErrorCode POForcing::init(PISMVars &vars) {
   PetscErrorCode ierr;
   PetscTruth optSet;
 
-  ierr = input_model->init(); CHKERRQ(ierr);
+  ierr = input_model->init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, "* Initializing sea level forcing...\n"); CHKERRQ(ierr);
 
@@ -115,6 +115,9 @@ PetscErrorCode POForcing::init() {
     ierr = delta_sea_level->set_units("m", ""); CHKERRQ(ierr);
     ierr = delta_sea_level->set_dimension_units("years", ""); CHKERRQ(ierr);
     ierr = delta_sea_level->set_attr("long_name", "sea level elevation offsets"); CHKERRQ(ierr);
+  } else {
+    ierr = PetscPrintf(grid.com, "ERROR: ocean forcing requires the -dSLforcing option.\n"); CHKERRQ(ierr);
+    PetscEnd();
   }
 
   return 0;

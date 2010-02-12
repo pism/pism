@@ -16,15 +16,111 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+//! Implements EISMINT-Greenland experiments.
+/*! \file This driver adds only the minimum functionality needed to implement the
+choices stated in [\ref RitzEISMINT], the EISMINT-Greenland specification:
+- A PDD melt model is used by default.
+- Non-standard PDD parameters are used.
+- PA_EISMINT_Greenland atmosphere model implements EISMINT-Greenland air temperature parameterization.
+- An enhancement factor of 3.0 is used.
+- -ocean_kill is used by default.
+
+Which experiment to do is chosen by one of options -ssl2,-ccl3,-gwl3.  (Experiment
+SSL3 is not implemented; see User's Manual.)
+ */
+
 static char help[] = 
   "Driver for PISM runs of EISMINT-Greenland intercomparison.\n";
 
 #include <petsc.h>
 #include "../base/grid.hh"
-#include "../base/materials.hh"
 #include "../base/iceModel.hh"
-#include "../coupler/pccoupler.hh"
-#include "iceGRNModel.hh"
+#include "pgrn_atmosphere.hh"
+
+#include "../coupler/PCFactory.hh"
+#include "../coupler/PISMAtmosphere.hh"
+#include "../coupler/PISMSurface.hh"
+#include "../coupler/PISMOcean.hh"
+
+typedef enum {SSL2, SSL3, CCL3, GWL3} EISGREENrun;
+
+static void create_pa_eismint_greenland(IceGrid& g, const NCConfigVariable& conf,
+					PISMAtmosphereModel* &result) {
+  result = new PA_EISMINT_Greenland(g, conf);
+}
+
+static PetscErrorCode set_eismint_greenland_params(MPI_Comm com,
+						   NCConfigVariable &config) {
+  PetscErrorCode ierr;
+  PetscTruth ssl2Set, ssl3Set, ccl3Set, gwl3Set;
+  EISGREENrun exper = SSL2;	// default
+
+  ierr = check_option("-ssl2", ssl2Set); CHKERRQ(ierr);
+  if (ssl2Set == PETSC_TRUE)   exper = SSL2;
+  ierr = check_option("-ccl3", ccl3Set); CHKERRQ(ierr);
+  if (ccl3Set == PETSC_TRUE)   exper = CCL3;
+  ierr = check_option("-gwl3", gwl3Set); CHKERRQ(ierr);
+  if (gwl3Set == PETSC_TRUE)   exper = GWL3;
+
+  ierr = check_option("-ssl3", ssl3Set); CHKERRQ(ierr);
+  if (ssl3Set == PETSC_TRUE) {
+    ierr = PetscPrintf(com,
+       "experiment SSL3 (-ssl3) is not implemented ... ENDING\n"
+       "  (choose parameters yourself, by runtime options)\n"); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  ierr = verbPrintf(2, com, 
+     "  setting flags equivalent to '-e 3 -ocean_kill'; user options may override ...\n");
+     CHKERRQ(ierr);
+  config.set("enhancement_factor", 3.0);
+  config.set_flag("ocean_kill", true);
+
+  if (exper != SSL2) { 
+    // use Lingle-Clark bed deformation model for CCL3 and GWL3 but not SSL2
+    ierr = verbPrintf(2, com, 
+      "  setting flags equivalent to: '-bed_def_lc'; user options may override ...\n");
+      CHKERRQ(ierr);
+    config.set_flag("do_bed_deformation", true);
+    config.set_flag("do_bed_iso", false);
+  }
+
+  config.set("mu_sliding", 0.0);  // no SIA-type sliding!; see [\ref RitzEISMINT]
+
+  // use the EISMINT-Greenland value if no value in -boot_from file
+  config.set("bootstrapping_geothermal_flux_value_no_var", 0.050);
+
+  PetscTruth gwl3_start_set;
+  ierr = check_option("-gwl3_start_year", gwl3_start_set); CHKERRQ(ierr);
+  if ((exper != GWL3) && gwl3_start_set) {
+    ierr = PetscPrintf(com,
+		       "PISM ERROR: option -gwl3_start_year is only allowed if -gwl3 is set.\n"); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  // degree-day factors in \ref RitzEISMINT are water-equivalent thickness
+  // per degree day; ice-equivalent thickness melted per degree day is
+  // slightly larger; for example, iwfactor = 1000/910
+  const PetscReal iwfactor = config.get("fresh_water_density") / config.get("ice_density");
+  PetscReal pdd_factor_ice = 0.008 * iwfactor, // convert from water- to ice-equivalent
+    pdd_factor_snow        = 0.003 * iwfactor, // ditto
+    pdd_refreeze           = 0.6,
+    pdd_std_dev            = 5.0;
+
+  ierr = verbPrintf(2, com,
+		    "Setting PDD parameters to EISMINT-Greenland values...\n"
+		    "  pdd_factor_ice  = %3.5f m (ice equivalent) K-1 day-1\n"
+		    "  pdd_factor_snow = %3.5f m (ice equivalent) K-1 day-1\n"
+		    "  pdd_refreeze    = %3.5f 1\n"
+		    "  pdd_std_dev     = %3.5f K\n",
+		    pdd_factor_ice, pdd_factor_snow, pdd_refreeze, pdd_std_dev);
+  config.set("pdd_factor_ice",  pdd_factor_ice);
+  config.set("pdd_factor_snow", pdd_factor_snow);
+  config.set("pdd_refreeze",    pdd_refreeze);
+  config.set("pdd_std_dev",     pdd_std_dev);
+
+  return 0;
+}
 
 int main(int argc, char *argv[]){
   PetscErrorCode ierr;
@@ -71,14 +167,33 @@ int main(int argc, char *argv[]){
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
-    IceGrid g(com, rank, size);
-    IceGRNModel    m(g, config, overrides);
+    ierr = set_eismint_greenland_params(com, config); CHKERRQ(ierr);
+
+    IceGrid  g(com, rank, size);
+    IceModel m(g, config, overrides);
     ierr = m.setExecName("pgrn"); CHKERRQ(ierr);
 
-    EISGREENAtmosCoupler   pegac;
-    PISMConstOceanCoupler  pcoc;
-    ierr = m.attachAtmospherePCC(pegac); CHKERRQ(ierr);
-    ierr = m.attachOceanPCC(pcoc); CHKERRQ(ierr);
+    // boundary models:
+    PAFactory pa(g, config);
+    PISMAtmosphereModel *atmosphere;
+    pa.add_model("eismint_greenland", &create_pa_eismint_greenland);
+    ierr = pa.set_default("eismint_greenland"); CHKERRQ(ierr);
+
+    PSFactory ps(g, config);
+    PISMSurfaceModel *surface;
+    ierr = ps.set_default("pdd"); CHKERRQ(ierr);
+
+    POFactory po(g, config);
+    PISMOceanModel *ocean;
+
+    pa.create(atmosphere);
+    ps.create(surface);
+    po.create(ocean);
+
+    surface->attach_atmosphere_model(atmosphere);
+
+    m.attach_surface_model(surface);
+    m.attach_ocean_model(ocean);
  
     ierr = m.init(); CHKERRQ(ierr);
  

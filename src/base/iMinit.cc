@@ -428,16 +428,15 @@ PetscErrorCode IceModel::init_couplers() {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(3, grid.com,
-		    "Initializing atmosphere and ocean couplers...\n"); CHKERRQ(ierr);
+		    "Initializing boundary models...\n"); CHKERRQ(ierr);
 
-  if (atmosPCC != PETSC_NULL) {
-    ierr = atmosPCC->initFromOptions(&grid, variables); CHKERRQ(ierr);
-  } else {  SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");  }
- 
- if (oceanPCC != PETSC_NULL) {
-   if (config.get_flag("is_dry_simulation")) {  oceanPCC->reportInitializationToStdOut = false;  }
-   ierr = oceanPCC->initFromOptions(&grid, variables); CHKERRQ(ierr);
-  } else {  SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL");  }
+ if (surface != PETSC_NULL) {
+   ierr = surface->init(variables); CHKERRQ(ierr);
+  } else {  SETERRQ(2,"PISM ERROR: surface == PETSC_NULL");  }
+
+ if (ocean != PETSC_NULL) {
+   ierr = ocean->init(variables); CHKERRQ(ierr);
+  } else {  SETERRQ(2,"PISM ERROR: ocean == PETSC_NULL");  }
 
 
   return 0;

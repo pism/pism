@@ -33,7 +33,8 @@
 
 #include "../earth/deformation.hh"
 
-#include "../coupler/pccoupler.hh"
+#include "../coupler/PISMOcean.hh"
+#include "../coupler/PISMSurface.hh"
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -120,7 +121,6 @@ public:
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
   virtual IceFlowLawFactory &getIceFlowLawFactory() { return iceFactory; }
   virtual IceFlowLaw *getIceFlowLaw() {return ice;}
-  virtual const NCConfigVariable& get_config() {return config;}
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode bootstrapFromFile(const char *fname);
@@ -130,8 +130,8 @@ public:
   virtual PetscErrorCode setFromOptions();
   
   // see iMutil.cc
-  virtual PetscErrorCode attachAtmospherePCC(PISMAtmosphereCoupler &aPCC);
-  virtual PetscErrorCode attachOceanPCC(PISMOceanCoupler &oPCC);
+  virtual void attach_surface_model(PISMSurfaceModel *surf);
+  virtual void attach_ocean_model(PISMOceanModel *ocean);
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
 
@@ -157,11 +157,11 @@ protected:
   IceBasalResistancePlasticLaw *basal;
   SSAStrengthExtension  ssaStrengthExtend;
 
-  PISMAtmosphereCoupler *atmosPCC;
-  PISMOceanCoupler      *oceanPCC;
+  PISMSurfaceModel *surface;
+  PISMOceanModel   *ocean;
 
   //! \brief A dictionary with pointers to IceModelVecs below, for passing them
-  //! from the IceModel core to other components (such as couplers)
+  //! from the IceModel core to other components (such as surface and ocean models)
   PISMVars variables;
 
   InverseModelCtx       inv;
@@ -183,7 +183,11 @@ protected:
         vtillphi,	//!< friction angle for till under grounded ice sheet
         vuvbar[2],	//!< ubar and vbar on staggered grid; ubar at i+1/2, vbar at j+1/2
         vub, vvb,	//!< basal velocities on standard grid
-        vubar, vvbar;	//!< vertically-averaged horizontal velocity on standard grid
+        vubar, vvbar,	//!< vertically-averaged horizontal velocity on standard grid
+    acab,
+    artm,
+    shelfbtemp,
+    shelfbmassflux;
 
   IceModelVec2Mask vMask; //!< mask for flow type with values SHEET, DRAGGING, FLOATING
 

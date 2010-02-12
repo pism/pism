@@ -20,18 +20,21 @@ static char help[] =
 "Ice sheet driver for PISM (SIA and SSA) verification.  Uses exact solutions to various\n"
 "  coupled subsystems.  Computes difference between exact solution and numerical solution.\n"
 "  Can also just compute exact solution (-eo).\n"
-"  Currently implements tests A, B, C, D, E, F, G, H, I, J, L, M.\n\n";
+"  Currently implements tests A, B, C, D, E, F, G, H, I, J, K, L, M.\n\n";
 
+#include <ctype.h>		// toupper
 #include <cstring>
 #include <cstdio>
 #include <petscda.h>
 #include <petscbag.h>
 #include "base/grid.hh"
 #include "base/materials.hh"
-#include "coupler/pccoupler.hh"
 #include "verif/iceCompModel.hh"
 #include "verif/iceExactSSAModel.hh"
 #include "verif/iceCalvBCModel.hh"
+
+#include "coupler/PISMSurface.hh"
+#include "coupler/PISMOcean.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -66,19 +69,19 @@ int main(int argc, char *argv[]) {
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     IceGrid      g(com, rank, size);
-    PISMConstAtmosCoupler  pcac;
-    PISMConstOceanCoupler  pcoc;
-    pcac.initializeFromFile = false; // even if user says -i, the surface climate still
-                                     //   comes from formulas and is not read from file
+
+    // Initialize boundary models:
+    PISMSurfaceModel *surface = new PSDummy(g, config);
+    PISMOceanModel     *ocean = new POConstant(g, config);
 
     // determine test (and whether to report error)
     char         testname[20];
     PetscTruth   testchosen;
     ierr = PetscOptionsGetString(PETSC_NULL, "-test", testname, 1, 
                                  &testchosen); CHKERRQ(ierr);
-    char test = testname[0];  // only use the first letter
+    unsigned char test = testname[0];  // only use the first letter
     if (testchosen == PETSC_FALSE)         test = 'A';       // default to test A
-    if ((test >= 'a') && (test <= 'z'))    test += 'A'-'a';  // capitalize if lower    
+    test = toupper(test);				     // capitalize
 
     PetscTruth   dontReport;
     ierr = check_option("-no_report", dontReport); CHKERRQ(ierr);
@@ -90,8 +93,8 @@ int main(int argc, char *argv[]) {
       ierr = verbPrintf(1,com, "!!!!!!!! USING IceCalvBCModel TO DO test M !!!!!!!!\n"); CHKERRQ(ierr);
       IceCalvBCModel mCBC(g, config, overrides, 'M');
       ierr = mCBC.setExecName("pismv"); CHKERRQ(ierr);
-      ierr = mCBC.attachAtmospherePCC(pcac); CHKERRQ(ierr);
-      ierr = mCBC.attachOceanPCC(pcoc); CHKERRQ(ierr);
+      mCBC.attach_surface_model(surface);
+      mCBC.attach_ocean_model(ocean);
 
       ierr = mCBC.init(); CHKERRQ(ierr);
       
@@ -108,8 +111,8 @@ int main(int argc, char *argv[]) {
       IceExactSSAModel mSSA(g, config, overrides, test);
 
       ierr = mSSA.setExecName("pismv"); CHKERRQ(ierr);
-      ierr = mSSA.attachAtmospherePCC(pcac); CHKERRQ(ierr);
-      ierr = mSSA.attachOceanPCC(pcoc); CHKERRQ(ierr);
+      mSSA.attach_surface_model(surface);
+      mSSA.attach_ocean_model(ocean);
 
       ierr = mSSA.init(); CHKERRQ(ierr);
 
@@ -123,8 +126,8 @@ int main(int argc, char *argv[]) {
              // (i.e. compensatory accumulation or compensatory heating)
       IceCompModel mComp(g, config, overrides, test);
       ierr = mComp.setExecName("pismv"); CHKERRQ(ierr);
-      ierr = mComp.attachAtmospherePCC(pcac); CHKERRQ(ierr);
-      ierr = mComp.attachOceanPCC(pcoc); CHKERRQ(ierr);
+      mComp.attach_surface_model(surface);
+      mComp.attach_ocean_model(ocean);
 
       ierr = mComp.init(); CHKERRQ(ierr);
 

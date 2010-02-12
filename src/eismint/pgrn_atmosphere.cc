@@ -1,7 +1,7 @@
 # include "pgrn_atmosphere.hh"
 
-PA_EISMINT_Greenland::PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-  : PAFausto(g, conf, vars) {
+PA_EISMINT_Greenland::PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &conf)
+  : PAFausto(g, conf) {
   do_greenhouse_warming = false;
   greenhouse_warming_start_year = 0.0;
 }
@@ -60,7 +60,7 @@ PetscErrorCode PA_EISMINT_Greenland::update(PetscReal t_years, PetscReal dt_year
   return 0;
 }
 
-PetscErrorCode PA_EISMINT_Greenland::init() {
+PetscErrorCode PA_EISMINT_Greenland::init(PISMVars &vars) {
   PetscErrorCode ierr;
   LocalInterpCtx *lic = NULL;
   bool regrid = false;
@@ -98,10 +98,10 @@ PetscErrorCode PA_EISMINT_Greenland::init() {
   snowprecip.time_independent = true;
 
   // initialize pointers to fields the parameterization depends on:
-  surfelev = dynamic_cast<IceModelVec2*>(variables.get("surface_altitude"));
+  surfelev = dynamic_cast<IceModelVec2*>(vars.get("surface_altitude"));
   if (!surfelev) SETERRQ(1, "ERROR: surface_altitude is not available");
 
-  lat = dynamic_cast<IceModelVec2*>(variables.get("latitude"));
+  lat = dynamic_cast<IceModelVec2*>(vars.get("latitude"));
   if (!lat) SETERRQ(1, "ERROR: latitude is not available");
 
   ierr = find_pism_input(snowprecip_filename, lic, regrid, start); CHKERRQ(ierr);
@@ -122,6 +122,18 @@ PetscErrorCode PA_EISMINT_Greenland::init() {
   ierr = snowprecip.set_attr("history", snowprecip_history); CHKERRQ(ierr);
 
   delete lic;
+
+  PetscTruth gwl3_start_set;
+  PetscReal  gwl3_start_year;
+  ierr = PetscOptionsGetReal(PETSC_NULL, "-gwl3_start_year", &gwl3_start_year, &gwl3_start_set);
+  CHKERRQ(ierr);
+
+  if (gwl3_start_set) {  // do GWL3, and set start year
+    ierr = greenhouse_warming(gwl3_start_year); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com,
+		      "    turning on GWL3 warming scenario at year %3.3f...\n",
+		      gwl3_start_year);
+  }
 
   t = grid.year;
   dt = 0;

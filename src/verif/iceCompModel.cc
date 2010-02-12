@@ -28,7 +28,6 @@
 #include "tests/exactTestH.h" 
 #include "tests/exactTestL.h" 
 
-#include "../coupler/pccoupler.hh"
 #include "iceCompModel.hh"
 
 const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
@@ -244,26 +243,6 @@ PetscErrorCode IceCompModel::init_physics() {
   return 0;
 }
 
-
-PetscErrorCode IceCompModel::init_couplers() {
-  PetscErrorCode ierr;
-
-  PetscTruth i_set;
-  char filename[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-i",
-			       filename, PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
-  if (i_set) {
-    ierr = verbPrintf(2, grid.com, "starting Test %c climate using -i file %s ...\n",
-	      testname, filename);  CHKERRQ(ierr);
-    PISMConstAtmosCoupler *pcac = dynamic_cast<PISMConstAtmosCoupler*>(atmosPCC);   
-    pcac->initializeFromFile = true;
-  }
-
-  ierr = IceModel::init_couplers(); CHKERRQ(ierr);
-  return 0;
-}
-
-
 PetscErrorCode IceCompModel::set_vars_from_options() {
   PetscErrorCode ierr;
 
@@ -357,18 +336,11 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   PetscScalar     A0, T0, **H, **accum, dummy1, dummy2, dummy3;
   const PetscScalar LforAE = 750e3; // m
 
-  // need pointers to surface temp and accum, from PISMAtmosphereCoupler atmosPCC*
-  IceModelVec2  *pccTs, *pccaccum;
-  ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt are irrelevant here 
-                  pccTs); CHKERRQ(ierr);  
-  ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt are irrelevant here 
-                  pccaccum); CHKERRQ(ierr);  
-
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce->tempFromSoftness(A0);
-  ierr = pccTs->set(T0); CHKERRQ(ierr);
+  ierr = artm.set(T0); CHKERRQ(ierr);
   ierr =   T3.set(T0); CHKERRQ(ierr);
   ierr =  Tb3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
@@ -380,7 +352,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
     config.set("mu_sliding", 0.0);
   }
 
-  ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
+  ierr = acab.get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   if ((testname == 'A') || (testname == 'E')) {
     ierr = vMask.begin_access(); CHKERRQ(ierr);
@@ -416,7 +388,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
       }
     }
   }
-  ierr = pccaccum->end_access(); CHKERRQ(ierr);
+  ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   if ((testname == 'A') || (testname == 'E')) {
     ierr = vMask.end_access(); CHKERRQ(ierr);
@@ -459,18 +431,11 @@ PetscErrorCode IceCompModel::initTestL() {
 
   if (testname != 'L')  { SETERRQ(1,"test must be 'L'"); }
   
-  // need pointers to surface temp and accum, from PISMAtmosphereCoupler atmosPCC*
-  IceModelVec2  *pccTs, *pccaccum;
-  ierr = atmosPCC->updateSurfTempAndProvide(grid.year, 0.0, // year and dt are irrelevant here 
-                  pccTs); CHKERRQ(ierr);  
-  ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt are irrelevant here 
-                  pccaccum); CHKERRQ(ierr);  
-
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
   A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce->tempFromSoftness(A0);
-  ierr = pccTs->set(T0); CHKERRQ(ierr);
+  ierr = artm.set(T0); CHKERRQ(ierr);
   ierr =   T3.set(T0); CHKERRQ(ierr);
   ierr =  Tb3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
@@ -523,7 +488,7 @@ PetscErrorCode IceCompModel::initTestL() {
   CHKERRQ(ierr);
   delete [] rr;
   
-  ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
+  ierr = acab.get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vbed.get_array(bed); CHKERRQ(ierr);
   for (PetscInt k = 0; k < MM; k++) {
@@ -531,7 +496,7 @@ PetscErrorCode IceCompModel::initTestL() {
     bed  [rrv[k].i][rrv[k].j] = bb[k];
     accum[rrv[k].i][rrv[k].j] = aa[k];
   }
-  ierr = pccaccum->end_access(); CHKERRQ(ierr);
+  ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);
   delete [] HH;  delete [] bb;  delete [] aa;
@@ -556,13 +521,8 @@ PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
   PetscErrorCode  ierr;
   PetscScalar     **accum, dummy;
 
-  // need pointer to accum, from PISMAtmosphereCoupler atmosPCC*
-  IceModelVec2  *pccaccum;
-  ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt are irrelevant here 
-                  pccaccum); CHKERRQ(ierr);  
-
   // before flow step, set accumulation from exact values;
-  ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
+  ierr = acab.get_array(accum); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy;
@@ -581,7 +541,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
       }
     }
   }
-  ierr = pccaccum->end_access(); CHKERRQ(ierr);
+  ierr = acab.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -590,12 +550,7 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
   PetscErrorCode  ierr;
   PetscScalar     **H, **accum;
 
-  // need pointer to accum, from PISMAtmosphereCoupler atmosPCC*
-  IceModelVec2  *pccaccum;
-  ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt irrelevant here 
-                  pccaccum); CHKERRQ(ierr);  
-
-  ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
+  ierr = acab.get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -622,7 +577,7 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
     }
   }
 
-  ierr = pccaccum->end_access(); CHKERRQ(ierr);
+  ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
@@ -648,12 +603,7 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
   PetscErrorCode  ierr;
   PetscScalar     **H, **accum, **ub, **vb, dummy;
 
-  // need pointer to accum, from PISMAtmosphereCoupler atmosPCC*
-  IceModelVec2  *pccaccum;
-  ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, 0.0, // year and dt are irrelevant here 
-                  pccaccum); CHKERRQ(ierr);  
-
-  ierr = pccaccum->get_array(accum); CHKERRQ(ierr);
+  ierr = acab.get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vub.get_array(ub); CHKERRQ(ierr);
   ierr = vvb.get_array(vb); CHKERRQ(ierr);
@@ -664,7 +614,7 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
       exactE(xx,yy,&H[i][j],&accum[i][j],&dummy,&ub[i][j],&vb[i][j]);
     }
   }
-  ierr = pccaccum->end_access(); CHKERRQ(ierr);
+  ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vub.end_access(); CHKERRQ(ierr);
   ierr = vvb.end_access(); CHKERRQ(ierr);

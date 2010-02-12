@@ -20,7 +20,7 @@
 #include "PISMAtmosphere.hh"
 
 //! Allocates memory and reads in the snow precipitaion data.
-PetscErrorCode PAFausto::init() {
+PetscErrorCode PAFausto::init(PISMVars &vars) {
   PetscErrorCode ierr;
   LocalInterpCtx *lic = NULL;
   bool regrid = false;
@@ -59,13 +59,13 @@ PetscErrorCode PAFausto::init() {
   snowprecip.time_independent = true;
 
   // initialize pointers to fields the parameterization depends on:
-  surfelev = dynamic_cast<IceModelVec2*>(variables.get("surface_altitude"));
+  surfelev = dynamic_cast<IceModelVec2*>(vars.get("surface_altitude"));
   if (!surfelev) SETERRQ(1, "ERROR: surface_altitude is not available");
 
-  lat = dynamic_cast<IceModelVec2*>(variables.get("latitude"));
+  lat = dynamic_cast<IceModelVec2*>(vars.get("latitude"));
   if (!lat) SETERRQ(1, "ERROR: latitude is not available");
 
-  lon = dynamic_cast<IceModelVec2*>(variables.get("longitude"));
+  lon = dynamic_cast<IceModelVec2*>(vars.get("longitude"));
   if (!lon) SETERRQ(1, "ERROR: longitude is not available");
 
   ierr = find_pism_input(snowprecip_filename, lic, regrid, start); CHKERRQ(ierr);

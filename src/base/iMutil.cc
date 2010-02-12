@@ -212,14 +212,10 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   // We use surface temperatures to extend T3 and Tnew3. We get them from the
   // PISMAtmosphereCoupler.
 
-  IceModelVec2 *pccTs;
-
-  if (atmosPCC != PETSC_NULL) {
-    // call sets pccTs to point to IceModelVec2 with current surface temps
-    ierr = atmosPCC->updateSurfTempAndProvide(
-              grid.year, 0.0, pccTs); CHKERRQ(ierr);
+  if (surface != PETSC_NULL) {
+    ierr = surface->ice_surface_temperature(grid.year, 0.0, artm); CHKERRQ(ierr);
   } else {
-    SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL");
+    SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }
 
   // Model state 3D vectors:
@@ -227,10 +223,10 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr =     v3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =     w3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr = Sigma3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
-  ierr =     T3.extend_vertically(old_Mz, *pccTs); CHKERRQ(ierr);
+  ierr =     T3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
 
   // Work 3D vectors:
-  ierr =         Tnew3.extend_vertically(old_Mz, *pccTs); CHKERRQ(ierr);
+  ierr =         Tnew3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
   ierr = Sigmastag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr = Sigmastag3[1].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =     Istag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
@@ -326,3 +322,10 @@ bool IceModel::issounding(const PetscInt i, const PetscInt j){
   return ((i == id) && (j == jd));
 }
 
+void IceModel::attach_surface_model(PISMSurfaceModel *my_surface) {
+  surface = my_surface;
+}
+
+void IceModel::attach_ocean_model(PISMOceanModel *my_ocean) {
+  ocean = my_ocean;
+}

@@ -1248,43 +1248,40 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
  */
 PetscErrorCode IceModel::ice_mass_bookkeeping() {
   PetscErrorCode ierr;
-  IceModelVec2 *surface_mf, *subshelf_mf;
-  PetscScalar **thk, **acab, **bmr_grounded, **bmr_floating;
+  PetscScalar **bmr_grounded;
   PetscReal cell_area = grid.dx * grid.dy;
   PetscScalar my_total_surface_ice_flux, my_total_basal_ice_flux, my_total_sub_shelf_ice_flux;
 
   // call sets pccsmf to point to IceModelVec2 with current surface mass flux
-  if (atmosPCC != PETSC_NULL) {
-    ierr = atmosPCC->updateSurfMassFluxAndProvide(grid.year, dt / secpera,
-						  surface_mf); CHKERRQ(ierr);
-  } else { SETERRQ(1,"PISM ERROR: atmosPCC == PETSC_NULL"); }
-  // call sets pccsbmf to point to IceModelVec2 with current mass flux under shelf base
-  if (oceanPCC != PETSC_NULL) {
-    ierr = oceanPCC->updateShelfBaseMassFluxAndProvide(grid.year, dt / secpera,
-						       subshelf_mf); CHKERRQ(ierr);
-  } else { SETERRQ(2,"PISM ERROR: oceanPCC == PETSC_NULL"); }
+  if (surface != PETSC_NULL) {
+    ierr = surface->ice_surface_mass_flux(grid.year, dt / secpera, acab); CHKERRQ(ierr);
+  } else { SETERRQ(2,"PISM ERROR: surface == PETSC_NULL"); }
+
+  if (ocean != PETSC_NULL) {
+    ierr = ocean->shelf_base_mass_flux(grid.year, dt / secpera, shelfbmassflux); CHKERRQ(ierr);
+  } else { SETERRQ(2,"PISM ERROR: ocean == PETSC_NULL"); }
 
   my_total_basal_ice_flux = 0;
   my_total_surface_ice_flux = 0;
   my_total_sub_shelf_ice_flux = 0;
 
-  ierr = surface_mf->get_array(acab); CHKERRQ(ierr);
-  ierr = subshelf_mf->get_array(bmr_floating); CHKERRQ(ierr);
+  ierr = acab.begin_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
   ierr = vbasalMeltRate.get_array(bmr_grounded); CHKERRQ(ierr);
-  ierr = vH.get_array(thk); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // ignore ice-free cells:
-      if (thk[i][j] <= 0.0)
+      if (vH(i,j) <= 0.0)
 	continue;
 
       // add the accumulation/ablation rate:
-      my_total_surface_ice_flux += acab[i][j]; // note the "+="!
+      my_total_surface_ice_flux += acab(i,j); // note the "+="!
 
       // add the sub-shelf melt rate;
       if (vMask.value(i,j) == MASK_FLOATING) {
-	my_total_sub_shelf_ice_flux -= bmr_floating[i][j]; // note the "-="!
+	my_total_sub_shelf_ice_flux -= shelfbmassflux(i,j); // note the "-="!
       }
 
       // add the basal melt rate:
@@ -1294,8 +1291,8 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
 
     }
   }  
-  ierr = surface_mf->end_access(); CHKERRQ(ierr);
-  ierr = subshelf_mf->end_access(); CHKERRQ(ierr);
+  ierr = acab.end_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);

@@ -28,13 +28,13 @@ void PISMSurfaceModel::attach_atmosphere_model(PISMAtmosphereModel *input) {
   atmosphere = input;
 }
 
-PetscErrorCode PISMSurfaceModel::init() {
+PetscErrorCode PISMSurfaceModel::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   if (atmosphere == NULL)
-    SETERRQ(1, "PISMSurfaceModel::init(): atmosphere == NULL");
+    SETERRQ(1, "PISMSurfaceModel::init(PISMVars &vars): atmosphere == NULL");
 
-  ierr = atmosphere->init(); CHKERRQ(ierr);
+  ierr = atmosphere->init(vars); CHKERRQ(ierr);
 
   return 0;
 }
@@ -59,16 +59,16 @@ PetscErrorCode PISMSurfaceModel::write_diagnostic_fields(PetscReal t_years, Pets
 
 ///// Simple PISM surface model.
 
-PetscErrorCode PSSimple::init() {
+PetscErrorCode PSSimple::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   if (atmosphere == NULL)
-    SETERRQ(1, "PISMSurfaceModel::init(): atmosphere == NULL");
+    SETERRQ(1, "PISMSurfaceModel::init(PISMVars &vars): atmosphere == NULL");
 
-  ierr = atmosphere->init(); CHKERRQ(ierr);
+  ierr = atmosphere->init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing the simplest PISM surface model\n"
+		    "* Initializing the simplest PISM surface (snow) processes model\n"
 		    "  (precipitation == mass balance, 2m air temperature == ice surface temperature)...\n"); CHKERRQ(ierr);
 
   return 0;
@@ -100,14 +100,13 @@ PetscErrorCode PSSimple::ice_surface_temperature(PetscReal t_years, PetscReal dt
 
 ///// Constant-in-time surface model.
 
-PetscErrorCode PSConstant::init() {
+PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
   LocalInterpCtx *lic = NULL;
   bool regrid = false;
   int start = -1;
 
-  ierr = verbPrintf(2, grid.com, "* Initializing the constant-in-time surface process model...\n"); CHKERRQ(ierr);
-
+  ierr = verbPrintf(2, grid.com, "* Initializing the constant-in-time surface (snow) processes model...\n"); CHKERRQ(ierr);
 
   // allocate IceModelVecs for storing temperature and surface mass balance fields
 
@@ -205,8 +204,8 @@ void PSModifier::attach_input(PISMSurfaceModel *input) {
 
 ///// PISM surface model implementing a PDD scheme.
 
-PSLocalMassBalance::PSLocalMassBalance(IceGrid &g, const NCConfigVariable &conf, PISMVars &vars)
-  : PISMSurfaceModel(g, conf, vars) {
+PSLocalMassBalance::PSLocalMassBalance(IceGrid &g, const NCConfigVariable &conf)
+  : PISMSurfaceModel(g, conf) {
   mbscheme = NULL;
   use_fausto_pdd_parameters = false;
   lat = NULL;
@@ -216,17 +215,17 @@ PSLocalMassBalance::~PSLocalMassBalance() {
   delete mbscheme;
 }
 
-PetscErrorCode PSLocalMassBalance::init() {
+PetscErrorCode PSLocalMassBalance::init(PISMVars &vars) {
   PetscErrorCode ierr;
   PetscTruth pdd_rand, pdd_rand_repeatable, fausto_params;
 
-  ierr = PISMSurfaceModel::init(); CHKERRQ(ierr);
+  ierr = PISMSurfaceModel::init(vars); CHKERRQ(ierr);
 
   ierr = check_option("-pdd_rand", pdd_rand); CHKERRQ(ierr);
   ierr = check_option("-pdd_rand_repeatable", pdd_rand_repeatable); CHKERRQ(ierr);
   ierr = check_option("-pdd_fausto", fausto_params); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com, "* Initializing the PDD-based surface process model...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "* Initializing the PDD-based surface (snow) processes model...\n"); CHKERRQ(ierr);
 
   if (pdd_rand_repeatable) {
     ierr = verbPrintf(2, grid.com, "  Using a PDD implementation based on simulating a random process.\n"); CHKERRQ(ierr);
@@ -249,7 +248,7 @@ PetscErrorCode PSLocalMassBalance::init() {
 			     "mean July temperature from the [\ref Faustoetal2009] parameterization",
 			     "K",
 			     ""); CHKERRQ(ierr);
-    lat = dynamic_cast<IceModelVec2*>(variables.get("latitude"));
+    lat = dynamic_cast<IceModelVec2*>(vars.get("latitude"));
     if (!lat) SETERRQ(1, "ERROR: latitude is not available");
   }
 
@@ -343,16 +342,36 @@ void PSForceThickness::attach_atmosphere_model(PISMAtmosphereModel *input) {
   input_model->attach_atmosphere_model(input);
 }
 
-PetscErrorCode PSForceThickness::init() {
+PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   PetscErrorCode ierr;
   char fttfile[PETSC_MAX_PATH_LEN] = "";
+  PetscTruth opt_set;
+  PetscScalar fttalpha;
+  PetscTruth  fttalphaSet;
 
-  ierr = input_model->init(); CHKERRQ(ierr);
+  ierr = input_model->init(vars); CHKERRQ(ierr);
+
+  ierr = PetscOptionsHead("Surface model forcing"); CHKERRQ(ierr);
+
+  ierr = PetscOptionsString("-force_to_thk",
+			    "Specifies the target thickness file",
+			    "", "",
+			    fttfile, PETSC_MAX_PATH_LEN, &opt_set); CHKERRQ(ierr);
+
+  if (!opt_set) {
+    ierr = PetscPrintf(grid.com, "ERROR: surface model forcing requires the -force_to_thk option.\n"); CHKERRQ(ierr);
+    PetscEnd();
+  }
+    
+  ierr = PetscOptionsReal("-force_to_thk_alpha",
+			  "Specifies the force-to-thickness alphae value",
+			  "", alpha * secpera,
+			  &fttalpha, &fttalphaSet); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
 		    "* Initializing force-to-thickness mass-balance modifier...\n"); CHKERRQ(ierr);
 
-  ice_thickness = dynamic_cast<IceModelVec2*>(variables.get("land_ice_thickness"));
+  ice_thickness = dynamic_cast<IceModelVec2*>(vars.get("land_ice_thickness"));
   if (!ice_thickness) SETERRQ(1, "ERROR: land_ice_thickness is not available");
 
   ierr = target_thickness.create(grid, "thk", false); CHKERRQ(ierr); // name to read by
@@ -361,18 +380,10 @@ PetscErrorCode PSForceThickness::init() {
 				    "m", 
 				    "land_ice_thickness"); CHKERRQ(ierr); // standard_name to read by
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-force_to_thk", fttfile,
-                               PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
-
   input_file = fttfile;
 
   // determine exponential rate alpha from user option or from factor; option
   // is given in a^{-1}
-  PetscScalar fttalpha;
-  PetscTruth  fttalphaSet;
-    
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-force_to_thk_alpha",
-			     &fttalpha, &fttalphaSet); CHKERRQ(ierr);
   if (fttalphaSet == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com,
 		      "    option -force_to_thk_alpha seen; setting alpha to %.2f a-1\n",
