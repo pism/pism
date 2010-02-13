@@ -58,7 +58,7 @@
     Sheet Model:\normalsize} \\ \protect{\Large \bigskip \bigskip Installation
     Manual\normalsize}}
 
-\author[]{Constantine Khroulev \\ Ed Bueler}
+\author[]{Constantine Khroulev \\ Ed Bueler \\ Andy Aschwanden}
 
 \date{\today.  Get PISM development version by \\
 \phantom{foobar} \qquad\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev} \\
@@ -67,7 +67,7 @@ Based on PISM revision \PISMREV\quad and PETSC release \PETSCREL.}
 
 \pdfinfo{
 /Title (PISM Installation Manual)
-/Author (Constantine Khroulev and Ed Bueler)
+/Author (Constantine Khroulev, Ed Bueler and Andy Aschwanden)
 /Subject (Downloading and installing PISM, a Parallel Ice-Sheet Model)
 /Keywords (PISM ice-sheet modeling installation)
 }
@@ -413,7 +413,7 @@ export PATH=/opt/local/bin:/opt/local/sbin:$PATH
 \item Note that it is not necessary to install Python, as it is bundled with the operating system (as are BLAS, LAPACK, OpenMPI and
   Subversion). The easiest way to get SciPy et al to work on an Intel-based Mac with Mac OS X is to use SciPy Superpack from
   \url{http://macinscience.org/?page_id=6/}. This package includes |numpy|, |SciPy| and |matplotlib|, as well as |ipython|, a very useful
-  interactive Python shell. Unfortunately, Scipy Superpack does not support PowerPC-based Macs; we recommend using  \href{http://www.enthought.com/}{Enthought Python Distributions} on older Macs.
+  interactive Python shell. Unfortunately, Scipy Superpack does not support PowerPC-based Macs; we recommend using \href{http://www.enthought.com/}{Enthought Python Distributions} on older Macs. \href{http://www.enthought.com/}{Enthought Python Distributions (EPD)}, which is free for Academic use, may also be used on Intel-based Macs. In fact, this is probably the easiest way as EPD already includes all modules mentioned above.
 \item After installing MacPorts, do
 \begin{verbatim}
 $  sudo port install netcdf ncview gsl fftw-3
@@ -500,7 +500,7 @@ A final reminder with respect to installation:  Let's assume you have checked ou
 
 If you're lucky, you might be able to install all the Python packages mentioned in section \ref{sec:prerequisites} using a package manager. On the other hand, the Python packages below are not currently available in Debian package repositories. They are easy to install using Python |setuptools|, however; these tools are included with recent versions of Python.  And you might not be using a package manager!
 
-\subsubsection*{Python module \texttt{netCDF3}, from package \texttt{netcdf4-python}}  Typical users have NetCDF 3.6.2.  You can install |netcdf4-python|, to get |netCDF3| needed by PISM scripts, by downloading a tarball from the project homepage \url{http://code.google.com/p/netcdf4-python/}.  Go to that site to identify the latest one, and download with a web browser or do something like the following, using the appropriate version number:
+\subsubsection*{Python module \texttt{netCDF3}, from package \texttt{netcdf4-python}}  You can skip this paragraph if you have \href{http://www.enthought.com/}{Enthought Python Distributions} installed. Typical users have NetCDF 3.6.2.  You can install |netcdf4-python|, to get |netCDF3| needed by PISM scripts, by downloading a tarball from the project homepage \url{http://code.google.com/p/netcdf4-python/}.  Go to that site to identify the latest one, and download with a web browser or do something like the following, using the appropriate version number:
 \begin{verbatim}
 $  wget http://netcdf4-python.googlecode.com/files/netCDF4-NUMBER.tar.gz
 $  tar -xvf netCDF4-NUMBER.tar.gz
@@ -525,7 +525,11 @@ assuming that HDF5 and NetCDF were installed in the |/usr/| tree.
 The scripts in directories |util/|, |examples/eisgreen|, |examples/eisross|, |examples/mismip|, and so on, which need |netCDF3|, should now work.
 
 
-\subsubsection*{Python package \texttt{scikits.delaunay}}  One PISM script, |examples/eisross/ross_plot.py|, needs this.  Here's how to get it:
+\subsubsection*{Python package \texttt{scikits.delaunay}}  One PISM script, |examples/eisross/ross_plot.py|, needs this. \href{http://www.enthought.com/}{Enthought Python Distributions} users do (make sure you have version 6.0 or greater): 
+\begin{verbatim}
+$ sudo easy_install http://svn.scipy.org/svn/scikits/trunk/delaunay
+\end{verbatim}
+If you have a different Python distribution installed, here's how to get \texttt{scikits.delaunay}:
 \begin{verbatim}
 $  svn co http://svn.scipy.org/svn/scikits/trunk/delaunay
 $  cd delaunay

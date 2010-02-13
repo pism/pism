@@ -1479,7 +1479,7 @@ where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress d
 	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,P,d)\,\dot \eps_{ij} $$
 Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inverse form of the flow law explains the ``hybrid'' law \verb|-ice_type hybrid| (or \verb|-gk|).
 
-\optdef{ice\und custom\und hardness}{1.9e8} Some ice types are customizable, run with \verb|-help| to see all the customizable options for your chosen ice type (since \verb|-help| displays many options, it is often useful to grep the output, as in \verb:pismv -ice_type custom -help | grep ice_:).  A common use the \verb|custom| ice type is to directly specify the hardness parameter in an ice shelf study.  The viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
+\optdef{ice\und custom\und hardness}{1.9e8} Some ice types are customizable, run with \verb|-help| to see all the customizable options for your chosen ice type (since \verb|-help| displays many options, it is often useful to grep the output, as in \verb:pisms -ice_type custom -help | grep ice_:).  A common use the \verb|custom| ice type is to directly specify the hardness parameter in an ice shelf study.  The viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
 	$$\ddx{}\left(2\nu H\left(2\ddx{u} + \ddy{v}\right)\right)$$
 where 
 	$$\nu = \frac{\bar B}{2} \left[\left(\ddx{u}\right)^2 + \left(\ddy{v}\right)^2 +
