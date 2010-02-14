@@ -54,7 +54,7 @@ PetscErrorCode PAConstant::init(PISMVars &/*vars*/) {
   // read snow precipitation rate and temperatures from file
   ierr = verbPrintf(2, grid.com, 
 		    "    reading mean annual ice-equivalent snow precipitation rate 'snowprecip'\n"
-		    "    and mean annual near-surface air temperature 'artm' from %s ... \n",
+		    "    and mean annual near-surface air temperature 'temp_ma' from %s ... \n",
 		    input_file.c_str()); CHKERRQ(ierr); 
   if (regrid) {
     ierr = snowprecip.regrid(input_file.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!

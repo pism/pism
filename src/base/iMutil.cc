@@ -247,7 +247,7 @@ PetscErrorCode IceModel::report_grid_parameters() {
   ierr = verbPrintf(2,grid.com, "computational domain and grid:\n"); CHKERRQ(ierr);
   // report on computational box
   ierr = verbPrintf(2,grid.com, 
-           "                    spatial domain   %.2f km x %.2f km",
+           "           spatial domain   %.2f km x %.2f km",
            2*grid.Lx/1000.0,2*grid.Ly/1000.0); CHKERRQ(ierr);
   if (grid.Mbz > 1) {
     ierr = verbPrintf(2,grid.com," x (%.2f m + %.2f m bedrock)\n"
@@ -257,32 +257,32 @@ PetscErrorCode IceModel::report_grid_parameters() {
   }
 
   ierr = verbPrintf(2, grid.com,
-           "                     time interval   [ %.2f a, %.2f a ]; run length = %.4f a\n",
+           "            time interval   [ %.2f a, %.2f a ]; run length = %.4f a\n",
 		    grid.start_year, grid.end_year, grid.end_year - grid.start_year);
   
   // report on grid cell dims
+  ierr = verbPrintf(2,grid.com, 
+           "     horizontal grid cell   %.2f km x %.2f km\n",
+                    grid.dx/1000.0,grid.dy/1000.0); CHKERRQ(ierr);
   if (grid.ice_vertical_spacing == EQUAL) {
     ierr = verbPrintf(2,grid.com, 
-           "  grid cell dims (equal dz in ice)   %.2f km x %.2f km x %.2f m\n",
-           grid.dx/1000.0,grid.dy/1000.0,grid.dzMIN); CHKERRQ(ierr);
+           "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
+                    grid.dzMIN); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com, 
-           "   horizontal grid cell dimensions   %.2f km x %.2f km\n",
-           grid.dx/1000.0,grid.dy/1000.0); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com, 
-           "      vertical grid spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
-		      grid.Mz, grid.dzMIN, grid.dzMAX); CHKERRQ(ierr);
+           "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
+		    grid.Mz, grid.dzMIN, grid.dzMAX); CHKERRQ(ierr);
   }
 
   PetscInt    fMz = 0;	// will be initialized by the call below
   if (grid.Mbz > 1) {
     if (grid.bed_vertical_spacing == EQUAL) {
       ierr = verbPrintf(2,grid.com, 
-           "  vertical grid spacing in bedrock   equal, dz = %.3f m\n",
+           "  vert spacing in bedrock   dz = %.3f m (equal spacing)\n",
 			grid.zblevels[1]-grid.zblevels[0]); CHKERRQ(ierr);
     } else {
     ierr = verbPrintf(2,grid.com, 
-           "  vertical grid spacing in bedrock   uneven, %d levels, %.3f m < dz < %.3f m\n",
+           "  vert spacing in bedrock   uneven, %d levels, %.3f m < dz < %.3f m\n",
 		      grid.Mbz, grid.dzbMIN, grid.dzbMAX); CHKERRQ(ierr);
     }
     PetscInt fMbz;
@@ -290,7 +290,8 @@ PetscErrorCode IceModel::report_grid_parameters() {
     ierr = grid.get_fine_vertical_grid(fMz, fMbz, fdz, fdzb, fzlev, fzblev); CHKERRQ(ierr);
     delete[] fzlev; delete[] fzblev;
     ierr = verbPrintf(3,grid.com, 
-           "   fine spacing used in energy/age   fMz = %d, fdz = %.3f m, fMbz = %d, fdzb = %.3f m\n",
+           "  fine spacing in conservation of energy and age:\n"
+           "                            fMz = %d, fdz = %.3f m, fMbz = %d, fdzb = %.3f m\n",
            fMz, fdz, fMbz, fdzb); CHKERRQ(ierr);
   } else { // no bedrock case
     PetscScalar fdz, *fzlev;
