@@ -312,9 +312,13 @@ PetscErrorCode IceModel::temperatureStep(
         // solve the system for this column; melting not addressed yet
         ierr = system.solveThisColumn(&x); // no CHKERRQ(ierr) immediately because:
         if (ierr > 0) {
-          SETERRQ3(2,
-            "Tridiagonal solve failed at (%d,%d) with zero pivot position %d.\n",
-            i, j, ierr);
+          PetscPrintf(grid.com,
+            "PISM ERROR in IceModel::temperatureStep():\n"
+            "   tridiagonal solve failed at (%d,%d) with zero pivot position %d\n"
+            "   1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n"
+            "   ENDING! ...\n",
+            i, j, ierr, system.norm1(k0+ks+1), system.ddratio(k0+ks+1));
+          PetscEnd();
         } else { CHKERRQ(ierr); }
 
         // diagnostic/DEBUG; added for comparison to IceEnthalpyModel
@@ -326,6 +330,9 @@ PetscErrorCode IceModel::temperatureStep(
               fMz, fdz, fMbz, fdzb, k0, ks); CHKERRQ(ierr);
             ierr = verbPrintf(1,grid.com,
               "viewing system and solution at (i,j)=(%d,%d):\n", i, j); CHKERRQ(ierr);
+            ierr = verbPrintf(1,grid.com,
+              "   1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n",
+              system.norm1(k0+ks+1), system.ddratio(k0+ks+1)); CHKERRQ(ierr);
             ierr = system.viewSystem(NULL,"system"); CHKERRQ(ierr);
             ierr = system.viewColumnValues(NULL, x, fMz+k0, "solution x"); CHKERRQ(ierr);
           }
@@ -624,8 +631,12 @@ PetscErrorCode IceModel::ageStep() {
         ierr = system.solveThisColumn(&x); // no "CHKERRQ(ierr)" because:
         if (ierr > 0) {
           PetscPrintf(grid.com,
-            "PISM ERROR in IceModel::ageStep():  Tridiagonal solve failed at (%d,%d) with zero pivot position %d.\n"
-            "ENDING! ...\n\n", i, j, ierr);
+            "PISM ERROR in IceModel::ageStep():\n"
+            "  tridiagonal solve failed at (%d,%d) with zero pivot position %d\n"
+            "  1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n"
+            "  ENDING! ...\n\n",
+            i, j, ierr, system.norm1(fks+1), system.ddratio(fks+1));
+          PetscEnd();
         } else { CHKERRQ(ierr); }
 
         // x[k] contains age for k=0,...,ks, but set age of ice above (and at) surface to zero years

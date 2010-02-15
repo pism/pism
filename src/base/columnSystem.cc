@@ -22,6 +22,23 @@
 #include "columnSystem.hh"
 
 
+//! Allocate a tridiagonal system of maximum size my_nmax.
+/*!
+Let N = \c nmax.  Then allocated locations are like this:
+\verbatim
+D[0]   U[0]    0      0      0    ...
+L[1]   D[1]   U[1]    0      0    ...
+ 0     L[2]   D[2]   U[2]    0    ...
+ 0      0     L[3]   D[3]   U[3]  ...
+\endverbatim
+with the last row
+\verbatim
+0       0     ...     0  L[N-1]  D[N-1]
+\endverbatim
+Thus the index into the arrays L, D, U is always the row number.
+
+Note L[0] is not allocated and U[N-1] is not allocated.
+ */
 columnSystemCtx::columnSystemCtx(PetscInt my_nmax) : nmax(my_nmax) {
   if (nmax < 1) {
     PetscPrintf(PETSC_COMM_WORLD,
@@ -41,7 +58,7 @@ columnSystemCtx::columnSystemCtx(PetscInt my_nmax) : nmax(my_nmax) {
   work = new PetscScalar[nmax];
 
   resetColumn();
-  
+
   indicesValid = false;
 }
 
@@ -55,14 +72,66 @@ columnSystemCtx::~columnSystemCtx() {
 }
 
 
+//! Zero all entries.
 PetscErrorCode columnSystemCtx::resetColumn() {
-  // zero the entries except diagonal; only useful for clean views
   for (PetscInt k = 0; k < nmax-1; k++) Lp[k]   = 0.0;
   for (PetscInt k = 0; k < nmax-1; k++) U[k]    = 0.0;
-  for (PetscInt k = 0; k < nmax;   k++) D[k]    = 1.0;
+  for (PetscInt k = 0; k < nmax;   k++) D[k]    = 0.0;
   for (PetscInt k = 0; k < nmax;   k++) rhs[k]  = 0.0;
   for (PetscInt k = 0; k < nmax;   k++) work[k] = 0.0;
   return 0;
+}
+
+
+//! Compute 1-norm, which is max sum of absolute values of columns.
+PetscScalar columnSystemCtx::norm1(const PetscInt n) {
+  if (n > nmax) {
+    PetscPrintf(PETSC_COMM_WORLD,"PISM ERROR:  n > nmax in columnSystemCtx::norm1\n");
+    PetscEnd();
+  }
+  if (n == 1)  return fabs(D[0]);   // only 1x1 case is special
+  PetscScalar z = fabs(D[0]) + fabs(L[1]);
+  for (PetscInt k = 1; k < n; k++) {  // k is column index (zero-based)
+    z = PetscMax(z, fabs(U[k-1])) + fabs(D[k]) + fabs(L[k+1]);
+  }
+  z = PetscMax(z, fabs(U[n-2]) + fabs(D[n-1]));
+  return z;
+}
+
+
+//! Compute diagonal-dominance ratio.  If this is less than one then the matrix is strictly diagonally-dominant.
+/*!
+Let \f$A = (a_{ij})\f$ be the tridiagonal matrix
+described by L,D,U for row indices 0 through \c n.  The computed ratio is 
+  \f[ \max_{j=1,\dots,n} \frac{|a_{j,j-1}|+|a_{j,j+1}|}{|a_{jj}|}, \f]
+where \f$a_{1,0}\f$ and \f$a_{n,n+1}\f$ are interpreted as zero.
+
+If this is smaller than one then it is a theorem that the tridiagonal solve will
+succeed.
+
+We return -1.0 if the absolute value of any diagonal element is less than
+1e-12 of the 1-norm of the matrix.
+ */
+PetscScalar columnSystemCtx::ddratio(const PetscInt n) {
+  if (n > nmax) {
+    PetscPrintf(PETSC_COMM_WORLD,"PISM ERROR:  n > nmax in columnSystemCtx::norm1\n");
+    PetscEnd();
+  }
+  const PetscScalar scale = norm1(n);
+
+  if ( (fabs(D[0]) / scale) < 1.0e-12)  return -1.0;
+  PetscScalar z = fabs(U[0]) / fabs(D[0]);
+
+  for (PetscInt j = 1; j < n-1; j++) {  // j is row index (zero-based)
+    if ( (fabs(D[j]) / scale) < 1.0e-12)  return -1.0;
+    const PetscScalar s = fabs(L[j]) + fabs(U[j]);
+    z = PetscMax(z, s / fabs(D[j]) );
+  } 
+
+  if ( (fabs(D[n-1]) / scale) < 1.0e-12)  return -1.0;
+  z = PetscMax(z, fabs(L[n-1]) / fabs(D[n-1]) );
+
+  return z;
 }
 
 
@@ -150,9 +219,10 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
     return 0;
   }
 
-  if (nmax > 12) {
+//  if (nmax > 12) {
+  if (nmax > 120) {
     ierr = PetscViewerASCIIPrintf(viewer,
-      "\n\n<nmax > 12: matrix too big to display as full; viewing tridiagonal matrix '%s' by diagonals ...\n",info); CHKERRQ(ierr);
+      "\n\n<nmax > 120: matrix too big to display as full; viewing tridiagonal matrix '%s' by diagonals ...\n",info); CHKERRQ(ierr);
     char diag_info[PETSC_MAX_PATH_LEN];
     snprintf(diag_info,PETSC_MAX_PATH_LEN, "super-diagonal U for system '%s'", info);
     ierr = viewColumnValues(viewer,U,nmax-1,diag_info); CHKERRQ(ierr);
@@ -165,23 +235,23 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
         "\n<viewing ColumnSystem tridiagonal matrix, '%s':\n",info); CHKERRQ(ierr);
     for (PetscInt k=0; k<nmax; k++) {    // k+1 is row  (while j+1 is column)
       if (k == 0) {              // viewing first row
-        ierr = PetscViewerASCIIPrintf(viewer,"%8.5f %8.5f ",D[k],U[k]); CHKERRQ(ierr);
+        ierr = PetscViewerASCIIPrintf(viewer,"%10.7f %10.7f ",D[k],U[k]); CHKERRQ(ierr);
         for (PetscInt j=2; j<nmax; j++) {
-          ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
+          ierr = PetscViewerASCIIPrintf(viewer,"%10.7f ",0.0); CHKERRQ(ierr);
         }
       } else if (k < nmax-1) {   // viewing generic row
         for (PetscInt j=0; j<k-1; j++) {
-          ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
+          ierr = PetscViewerASCIIPrintf(viewer,"%10.7f ",0.0); CHKERRQ(ierr);
         }
-        ierr = PetscViewerASCIIPrintf(viewer,"%8.5f %8.5f %8.5f ",L[k],D[k],U[k]); CHKERRQ(ierr);
+        ierr = PetscViewerASCIIPrintf(viewer,"%10.7f %10.7f %10.7f ",L[k],D[k],U[k]); CHKERRQ(ierr);
         for (PetscInt j=k+2; j<nmax; j++) {
-          ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
+          ierr = PetscViewerASCIIPrintf(viewer,"%10.7f ",0.0); CHKERRQ(ierr);
         }
       } else {                   // viewing last row
         for (PetscInt j=0; j<k-1; j++) {
-          ierr = PetscViewerASCIIPrintf(viewer,"%8.5f ",0.0); CHKERRQ(ierr);
+          ierr = PetscViewerASCIIPrintf(viewer,"%10.7f ",0.0); CHKERRQ(ierr);
         }
-        ierr = PetscViewerASCIIPrintf(viewer,"%8.5f %8.5f ",L[k],D[k]); CHKERRQ(ierr);
+        ierr = PetscViewerASCIIPrintf(viewer,"%10.7f %10.7f ",L[k],D[k]); CHKERRQ(ierr);
       }
       ierr = PetscViewerASCIIPrintf(viewer,"\n"); CHKERRQ(ierr);  // end of row
     }
@@ -219,7 +289,7 @@ Success is return code zero.  Positive return code gives location of zero pivot.
 Negative return code indicates a software problem.
  */
 PetscErrorCode columnSystemCtx::solveTridiagonalSystem(
-                  PetscInt n, PetscScalar **x) {
+                  const PetscInt n, PetscScalar **x) {
   if (x == NULL) { SETERRQ(-999,"x is NULL in columnSystemCtx"); }
   if (*x == NULL) { SETERRQ(-998,"*x is NULL in columnSystemCtx"); }
   if (n < 1) { SETERRQ(-997,"instance size n < 1 in columnSystemCtx"); }

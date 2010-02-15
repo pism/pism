@@ -22,7 +22,7 @@
 #include <petsc.h>
 #include "iceModelVec.hh"
 
-//! Virtual base class.  Describes a tridiagonal system to solve in a column of ice.
+//! Virtual base class.  Abstracts a tridiagonal system to solve in a column of ice and/or bedrock.
 /*!
 Because both the age evolution and conservation of energy equations require us to set up
 and solve a tridiagonal system of equations, this is structure is worth abstracting.
@@ -38,11 +38,14 @@ the system in each column.
 class columnSystemCtx {
 
 public:
-  columnSystemCtx(PetscInt my_nmax); /*! allocate a tridiagonal system
-                                 of maximum size nmax */
-  ~columnSystemCtx();           //! deallocate it
+  columnSystemCtx(PetscInt my_nmax);
+  ~columnSystemCtx();
 
   PetscErrorCode setIndicesAndClearThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
+  
+  PetscScalar    norm1(const PetscInt n);
+
+  PetscScalar    ddratio(const PetscInt n);
 
   PetscErrorCode viewColumnValues(PetscViewer viewer, 
                                   PetscScalar *v, PetscInt m, const char* info) const;
@@ -58,7 +61,7 @@ protected:
   PetscInt    i, j, ks;
 
   // deliberately protected so only derived classes can use
-  PetscErrorCode solveTridiagonalSystem(PetscInt n, PetscScalar **x);
+  PetscErrorCode solveTridiagonalSystem(const PetscInt n, PetscScalar **x);
   
 private:
   bool        indicesValid;
