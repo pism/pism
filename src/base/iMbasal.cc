@@ -119,7 +119,7 @@ The default values are vaguely suitable for Antarctica, perhaps:
 - \c topg_max = 1000.0 m,
 - \c phi_ocean = 10.0 degrees.
 
-If the user gives option <code>-topg_to_phi A,B,C,D</endcode> then \c phi_ocean
+If the user gives option <code>-topg_to_phi A,B,C,D</code> then \c phi_ocean
 is not used. Instead, the same rule as above for grounded ice is used.
  */
 PetscErrorCode IceModel::computePhiFromBedElevation() {

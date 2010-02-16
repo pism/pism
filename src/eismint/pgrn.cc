@@ -16,8 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-//! Implements EISMINT-Greenland experiments.
-/*! \file This driver adds only the minimum functionality needed to implement the
+//! \file pgrn.cc Implements EISMINT-Greenland experiments.
+/*! \file pgrn.cc
+This driver adds only the minimum functionality needed to implement the
 choices stated in [\ref RitzEISMINT], the EISMINT-Greenland specification:
 - A PDD melt model is used by default.
 - Non-standard PDD parameters are used.

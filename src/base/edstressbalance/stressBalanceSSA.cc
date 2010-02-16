@@ -183,9 +183,9 @@ PetscScalar StressBalanceSSA::basalDragy(PetscScalar **tauc, PetscScalar **u, Pe
 
 
 /*!
-Compute compoents of the basal stress <em>applied to the base of the ice</em>:
-  \f[\tau_{b,x} = - C(\tau_c,u,v) u,]\f
-  \f[\tau_{b,y} = - C(\tau_c,u,v) v,]\f
+Compute compoents of the basal stress applied to the base of the ice:
+  \f[ \tau_{b,x} = - C(\tau_c,u,v) u, \f]
+  \f[ \tau_{b,y} = - C(\tau_c,u,v) v, \f]
  */
 PetscErrorCode StressBalanceSSA::getBasalStress(IceModelVec2 *vbs_x, IceModelVec2 *vbs_y) {
   PetscErrorCode ierr;
@@ -214,6 +214,4 @@ PetscErrorCode StressBalanceSSA::getBasalStress(IceModelVec2 *vbs_x, IceModelVec
   
   return 0;
 }
-
-
 

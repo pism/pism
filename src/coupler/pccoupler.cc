@@ -441,7 +441,7 @@ Let's assume \f$H(t_s)=H_0\f$.  This initial value problem has solution
 and so
   \f[ H(t_e) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t_e-t_s)} \f]
 The constant \f$\alpha\f$ has a default value \c pism_config:force_to_thickness_alpha
-of $0.002\,\text{a}^{-1}$.
+of \f$0.002\,\text{a}^{-1}\f$.
 
 The final feature is that we turn on this mechanism so it is harshest near the end
 of the run.  In particular,
