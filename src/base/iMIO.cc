@@ -157,34 +157,6 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
 PetscErrorCode IceModel::write_model_state(const char* filename) {
   PetscErrorCode ierr;
 
-  string tmp = config.get_string("output_variables");
-  istringstream list(tmp);
-  set<string> vars;
-  
-  // split the list; note that this also removes any duplicate entries
-  while (getline(list, tmp, ' ')) {
-    if (!tmp.empty())		// this ignores multiple spaces separating variable names
-      vars.insert(tmp);
-  }
-
-  // add more variables (if needed)
-  if (config.get_flag("use_ssa_velocity")) {
-    vars.insert("vubarSSA");
-    vars.insert("vvbarSSA");
-  }
-
-  if (config.get_flag("force_full_diagnostics")) {
-    ierr = verbPrintf(2, grid.com, "Writing full 3D velocities...\n"); CHKERRQ(ierr);
-    vars.insert("uvel");
-    vars.insert("vvel");
-    vars.insert("wvel");
-    vars.insert("uvelsurf");
-    vars.insert("vvelsurf");
-  }
-
-  if (config.get_flag("do_age"))
-    vars.insert("age");
-
   // FIXME: temporarily, so that we can compare to IceEnthalpyModel results;
   //   what to do with pressure-adjusted temp in longer term?
   PetscTruth write_temp_pa;
@@ -194,10 +166,10 @@ PetscErrorCode IceModel::write_model_state(const char* filename) {
     //   use Tnew3 (global) as temporary, allocated space for this purpose
     ierr = verbPrintf(2, grid.com,
       "  writing pressure-adjusted ice temperature (deg C) 'temp_pa' ...\n"); CHKERRQ(ierr);
-    vars.insert("temp_pa");
+    output_vars.insert("temp_pa");
   }
 
-  ierr = write_variables(filename, vars, NC_DOUBLE);
+  ierr = write_variables(filename, output_vars, NC_DOUBLE);
 
   return 0;
 }
@@ -410,6 +382,9 @@ PetscErrorCode IceModel::init_snapshots() {
   ierr = PetscOptionsGetString(PETSC_NULL, "-save_times", tmp,
 			       TEMPORARY_STRING_LENGTH, &save_at_set); CHKERRQ(ierr);
 
+  ierr = set_output_size("-save_size", "Sets the 'size' of a snapshot file.",
+			 "small", snapshot_vars); CHKERRQ(ierr);
+
   if (save_to_set ^ save_at_set) {
     ierr = PetscPrintf(grid.com,
 		       "PISM ERROR: you need to specify both -save_file and -save_times to save snapshots.\n");
@@ -525,7 +500,7 @@ PetscErrorCode IceModel::write_snapshot() {
   ierr = nc.write_history(tmp); CHKERRQ(ierr); // append the history
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = write_model_state(filename);  CHKERRQ(ierr);
+  ierr = write_variables(filename, snapshot_vars, NC_DOUBLE);
 
   // Let boundary models write their fields:
   if (surface != PETSC_NULL) {

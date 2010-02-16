@@ -101,9 +101,10 @@ PetscErrorCode PALapseRates::write_input_fields(PetscReal t_years, PetscReal dt_
             "K",
 	    ""); CHKERRQ(ierr);
 
-  ierr = mean_annual_temp(t_years, dt_years, temp_ma); CHKERRQ(ierr);
+  ierr = temp_snapshot(t_years, dt_years, temp_ma); CHKERRQ(ierr);
 
   ierr = temp_ma.write(filename.c_str()); CHKERRQ(ierr);
 
   return 0;
 }
+

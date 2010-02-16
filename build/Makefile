@@ -79,36 +79,34 @@ SHELL := /bin/sh
 VPATH := $(subst src,../src,src/:src/base/:src/earth/:src/verif/:src/verif/tests/:src/software_tests:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
-executables := penth pismr pismd pismv pisms pcctest pismtests
+executables := penth pismr pismd pismv pisms pcctest3 pismtests
 extras := flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
 exec_extras := $(addprefix ../bin/, $(extras))
 config_file := ../lib/pism_config.nc
 
 # ice_sources and ice_csources go in libpism.[so|a]
-ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc \
-	pism_default_config.cc pism_revision.cc columnSystem.cc \
-	pism_const.cc iceModelVec.cc iceModelVec2.cc iceModelVec3.cc NCVariable.cc \
-	matlablike.cc greens.cc deformation.cc \
-	localMassBalance.cc pccoupler.cc pGreenlandAtmosCoupler.cc \
-	iceModel.cc iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc \
-	iMdefaults.cc iMgeometry.cc iMgrainsize.cc iMinit.cc iMinverse.cc \
-	iMinverseMat.cc iMIO.cc iMmatlab.cc iMoptions.cc \
-	iMreport.cc iMssa.cc iMssaSNES.cc iMsia.cc iMtemp.cc \
-	iMutil.cc iMvelocity.cc iMviewers.cc Timeseries.cc PISMVars.cc iMtimeseries.cc \
-	enthalpyConverter.cc iceModelVec2T.cc PISMComponent.cc PAConstant.cc PAFausto.cc \
-        PAForcing.cc PISMSurface.cc PISMOcean.cc PCFactory.cc PALapseRates.cc
+ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc		\
+	pism_default_config.cc pism_revision.cc columnSystem.cc pism_const.cc	\
+	iceModelVec.cc iceModelVec2.cc iceModelVec3.cc NCVariable.cc		\
+	matlablike.cc greens.cc deformation.cc localMassBalance.cc iceModel.cc	\
+	iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc iMdefaults.cc	\
+	iMgeometry.cc iMgrainsize.cc iMinit.cc iMinverse.cc iMinverseMat.cc	\
+	iMIO.cc iMmatlab.cc iMoptions.cc iMreport.cc iMssa.cc iMssaSNES.cc	\
+	iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc Timeseries.cc	\
+	PISMVars.cc iMtimeseries.cc enthalpyConverter.cc iceModelVec2T.cc	\
+	PISMComponent.cc PAConstant.cc PAFausto.cc PAForcing.cc PISMSurface.cc	\
+	PISMOcean.cc PCFactory.cc PALapseRates.cc
 ice_csources := cubature.c pism_signal.c
 
 # tests_sources go in libtests.[so|a]
 tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 	exactTestK.c exactTestL.c exactTestM.c
 
-other_sources := penth.cc pismr.cc pismd.cc pismv.cc pisms.cc \
-	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc \
-	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc iceCalvBCModel.cc \
-	iceEnthalpyModel.cc enthColumnSystem.cc \
-	pcctest.cc flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
+other_sources := penth.cc pismr.cc pismd.cc pismv.cc pisms.cc iceEISModel.cc	\
+	iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc iceCompModel.cc	\
+	iCMthermo.cc iceExactSSAModel.cc iceCalvBCModel.cc iceEnthalpyModel.cc	\
+	enthColumnSystem.cc flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
 
 # this is the primary derived class example so it is structured as an example
 #   derived class; as an example it includes "grn_make"; creates executable
@@ -183,17 +181,12 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 	${CXXLINKER} iCMthermo.o iceCompModel.o iceExactSSAModel.o \
 	iceCalvBCModel.o pismv.o ${ICE_LIB_FLAGS} ${TESTS_LIB_FLAGS} -o $@
 
-../bin/pcctest : pcctest.o ${LIBPISMNAME}
-	${CXXLINKER} pcctest.o ${ICE_LIB_FLAGS} -o $@
-
 ../bin/pismtests: pismtests.o iMtests.o ${LIBPISMNAME}
 	${CXXLINKER} pismtests.o iMtests.o ${ICE_LIB_FLAGS} -o $@
 
-# BEGIN FIXME: this is temporary and should eventually go:
 other_sources += pcctest3.cc pgrn_atmosphere.cc
 ../bin/pcctest3 : pcctest3.o pgrn_atmosphere.o ${LIBPISMNAME}
 	${CXXLINKER} pcctest3.o pgrn_atmosphere.o ${ICE_LIB_FLAGS} -o $@
-# END FIXME
 
 #build extra executables
 

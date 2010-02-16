@@ -35,15 +35,15 @@ PetscErrorCode PAFausto::init(PISMVars &vars) {
     "A new present-day temperature parameterization for Greenland. J. Glaciol. 55 (189), 95-105.";
 
   // Allocate internal IceModelVecs:
-  ierr = temp_ma.create(grid, "fausto_temp_ma", false); CHKERRQ(ierr);
-  ierr = temp_ma.set_attrs("climate_state",
+  ierr = temp_ma.create(grid, "fausto_airtemp_ma", false); CHKERRQ(ierr);
+  ierr = temp_ma.set_attrs("diagnostic",
 			   "mean annual near-surface air temperature",
 			   "K", 
 			   ""); CHKERRQ(ierr);  // no CF standard_name ??
   ierr = temp_ma.set_attr("source", reference);
 
-  ierr = temp_mj.create(grid, "fausto_temp_mj", false); CHKERRQ(ierr);
-  ierr = temp_mj.set_attrs("climate_state",
+  ierr = temp_mj.create(grid, "fausto_airtemp_mj", false); CHKERRQ(ierr);
+  ierr = temp_mj.set_attrs("diagnostic",
 			   "mean July near-surface air temperature",
 			   "Kelvin",
 			   ""); CHKERRQ(ierr);  // no CF standard_name ??
@@ -178,11 +178,24 @@ PetscErrorCode PAFausto::write_fields(set<string> vars, PetscReal t_years,
 
   ierr = update(t_years, dt_years); CHKERRQ(ierr);
 
-  if (vars.find("fausto_temp_ma") != vars.end()) {
+  if (vars.find("airtemp") != vars.end()) {
+    IceModelVec2 airtemp;
+    ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
+    ierr = airtemp.set_attrs("diagnostic",
+			     "snapshot of the near-surface air temperature",
+			     "K",
+			     ""); CHKERRQ(ierr);
+
+    ierr = temp_snapshot(t_years, dt_years, airtemp); CHKERRQ(ierr);
+
+    ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
+  if (vars.find("fausto_airtemp_ma") != vars.end()) {
     ierr = temp_ma.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (vars.find("fausto_temp_mj") != vars.end()) {
+  if (vars.find("fausto_airtemp_mj") != vars.end()) {
     ierr = temp_mj.write(filename.c_str()); CHKERRQ(ierr);
   }
 

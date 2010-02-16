@@ -67,6 +67,12 @@ PetscErrorCode IceCompModel::createVecs() {
   ierr = SigmaComp3.set_attrs("internal","rate of compensatory strain heating in ice",
 			      "W m-3", ""); CHKERRQ(ierr);
 
+  // this ensures that these variables are saved to an output file and are read
+  // back in if -i option is used (they are "model_state", in a sense, since
+  // PSDummy is used):
+  ierr = artm.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+  ierr = acab.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+
   return 0;
 }
 

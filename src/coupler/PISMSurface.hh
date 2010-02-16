@@ -44,6 +44,8 @@ public:
 					    string filename);
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 						 string filename);
+  virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
+				      PetscReal dt_years, string filename);
 protected:
   PISMAtmosphereModel *atmosphere;
 };

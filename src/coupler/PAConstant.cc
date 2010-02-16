@@ -141,3 +141,27 @@ PetscErrorCode PAConstant::write_diagnostic_fields(PetscReal /*t_years*/, PetscR
 
   return 0;
 }
+
+PetscErrorCode PAConstant::write_fields(set<string> vars, PetscReal t_years,
+					PetscReal dt_years, string filename) {
+  PetscErrorCode ierr;
+
+  if (vars.find("airtemp") != vars.end()) {
+    IceModelVec2 airtemp;
+    ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
+    ierr = airtemp.set_attrs("diagnostic",
+			     "snapshot of the near-surface air temperature",
+			     "K",
+			     ""); CHKERRQ(ierr);
+
+    ierr = temp_snapshot(t_years, dt_years, airtemp); CHKERRQ(ierr);
+
+    ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
+  if (vars.find("snowprecip") != vars.end()) {
+    ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
+  return 0;
+}

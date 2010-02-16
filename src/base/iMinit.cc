@@ -505,6 +505,9 @@ PetscErrorCode IceModel::misc_setup() {
 
   ierr = verbPrintf(3, grid.com, "Finishing initialization...\n"); CHKERRQ(ierr);
 
+  ierr = set_output_size("-o_size", "Sets the 'size' of an output file.",
+			 "medium", output_vars); CHKERRQ(ierr);
+
   ierr = init_snapshots(); CHKERRQ(ierr);
   ierr = init_timeseries(); CHKERRQ(ierr);
   ierr = init_extras(); CHKERRQ(ierr);
@@ -527,6 +530,9 @@ PetscErrorCode IceModel::misc_setup() {
   // would be: a) modularize the bed deformation code so that memory
   // allocation is separated from the bed uplift pre-initialization and b) make
   // IceModelVec2s allocate their own Vecs for viewing.
+  // 
+  // Note that the bed deformation model already has separated allocation and
+  // initialization code parts.
   ierr = bedDefSetup(); CHKERRQ(ierr);
 #endif
 

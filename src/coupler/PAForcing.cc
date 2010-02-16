@@ -219,6 +219,20 @@ PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
   PetscErrorCode ierr;
   double T = t_years + 0.5 * dt_years;
 
+  if (vars.find("airtemp") != vars.end()) {
+    IceModelVec2 airtemp;
+    ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
+    ierr = airtemp.set_attrs("diagnostic",
+			     "snapshot of the near-surface air temperature",
+			     "K",
+			     ""); CHKERRQ(ierr);
+
+    ierr = temp_snapshot(t_years, dt_years, airtemp); CHKERRQ(ierr);
+
+    ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
+    vars.erase("airtemp");
+  }
+
   if (temp_ma_anomaly != NULL) {
     if (vars.find("temp_ma_anomaly") != vars.end()) {
       ierr = temp_ma_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
@@ -247,6 +261,8 @@ PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
       vars.erase("delta_T");
     }
   }
+
+  ierr = input_model->write_fields(vars, t_years, dt_years, filename); CHKERRQ(ierr);
 
   return 0;
 }

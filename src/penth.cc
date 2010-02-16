@@ -45,9 +45,8 @@ mpiexec -n 2 penth -boot_from estart.nc -Mx 121 -My 121 -Mz 101 -Mbz 51 -quadZ -
 
 #include <petsc.h>
 #include "base/grid.hh"
-#include "base/materials.hh"
 #include "base/iceEnthalpyModel.hh"
-#include "coupler/pGreenlandAtmosCoupler.hh"
+
 #include "coupler/PCFactory.hh"
 #include "coupler/PISMAtmosphere.hh"
 #include "coupler/PISMSurface.hh"

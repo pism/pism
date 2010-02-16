@@ -44,6 +44,8 @@ the name of the executable (e.g. \c pismr or \c pismv) and the current
 model year.  In addition the time series (\c -ts_file, etc.) is flushed out
 There is no indication of these actions in the history attribute of the output (\c -o)
 NetCDF file because there is no effect on it, but there is an indication at \c stdout.
+
+Signal \c SIGUSR2 makes PISM flush time-series, without saving model state.
  */
 int IceModel::endOfTimeStepHook() {
   
@@ -210,7 +212,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   // Done with the grid. Now we need to extend IceModelVec3s.
 
   // We use surface temperatures to extend T3 and Tnew3. We get them from the
-  // PISMAtmosphereCoupler.
+  // PISMSurfaceModel.
 
   if (surface != PETSC_NULL) {
     ierr = surface->ice_surface_temperature(grid.year, 0.0, artm); CHKERRQ(ierr);

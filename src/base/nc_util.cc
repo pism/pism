@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -1378,7 +1378,7 @@ PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
   return 0;
 }
 
-//! Assembles start and count arrays for a particular variable.
+//! Assembles start, count and imap arrays for a particular variable.
 /*!
   Does nothing on processors other than zero.
 
@@ -1582,60 +1582,6 @@ PetscErrorCode NCTool::get_units(int varid, bool &has_units, utUnit &units) cons
   }
   
   has_units = true;
-
-  // Cleanup:
-  return 0;
-}
-
-//! Creates a time-series variable (i.e. one that depends on "t" only).
-PetscErrorCode NCTool::create_timeseries(const char name[], const char long_name[],
-					 const char units[],
-					 nc_type nctype, int *varid) const {
-  int stat, t_id, var_id;
-
-  if (rank == 0) {
-    stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "t", &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_def_var(ncid, name, nctype, 1, &t_id, &var_id);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    if (units != NULL) {
-      stat = nc_put_att_text(ncid, var_id, "units", strlen(units), units);
-      CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    }
-
-    if (long_name != NULL) {
-      stat = nc_put_att_text(ncid, var_id, "long_name", strlen(long_name), long_name);
-      CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    }
-
-    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
-  stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, com); CHKERRQ(stat);
-
-  if (varid != NULL)
-    *varid = var_id;
-
-  return 0;
-}
-
-//! Writes \c value to a NetCDF variable \c name(t). Uses the last time slice.
-PetscErrorCode NCTool::append_timeseries(const char name[], double value) const {
-  int stat, varid, t_len;
-  bool variable_exists;
-
-  stat = get_dim_length("t", &t_len); CHKERRQ(stat);
-
-  stat = find_variable(name, &varid, variable_exists); CHKERRQ(stat);
-  if (!variable_exists) {
-    stat = create_timeseries(name, NULL, NULL, NC_FLOAT, &varid); CHKERRQ(stat);
-  }
-
-  if (rank == 0) {
-    size_t index = static_cast<size_t>(t_len - 1);
-    stat = nc_put_var1_double(ncid, varid, &index, &value); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
 
   return 0;
 }

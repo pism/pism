@@ -128,7 +128,9 @@ public:
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
-  
+  PetscErrorCode set_output_size(string option, string description,
+				 string default_value, set<string> &result);
+
   // see iMutil.cc
   virtual void attach_surface_model(PISMSurfaceModel *surf);
   virtual void attach_ocean_model(PISMOceanModel *ocean);
@@ -475,10 +477,14 @@ protected:
   Vec SSAXLocal; // We need a local copy of the solution to map back to a DA based vector
   VecScatter SSAScatterGlobalToLocal;
 
+  // Set of variables to put in the output file:
+  set<string> output_vars;
+
   // This is related to the snapshot saving feature
   string snapshots_filename;
   bool save_snapshots, snapshots_file_is_ready, split_snapshots;
   vector<double> snapshot_times;
+  set<string> snapshot_vars;
   unsigned int current_snapshot;
   PetscErrorCode init_snapshots();
   PetscErrorCode write_snapshot();

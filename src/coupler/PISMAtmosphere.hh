@@ -75,6 +75,8 @@ public:
 					    string filename);
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 						 string filename);
+  virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
+				      PetscReal dt_years, string filename);
   virtual PetscErrorCode temp_snapshot(PetscReal t_years, PetscReal dt_years,
 				       IceModelVec2 &result);
 protected:
@@ -145,7 +147,7 @@ public:
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 						 string filename);
   virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
-				      PetscReal dt_years, string filename); // needs work
+				      PetscReal dt_years, string filename);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
   virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
 				     IceModelVec2 &result);

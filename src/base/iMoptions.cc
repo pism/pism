@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,8 @@
 
 #include <cstring>
 #include <cmath>
+#include <sstream>
+#include <set>
 #include "iceModel.hh"
 
 //! Read runtime (command line) options and alter the corresponding parameters or flags as appropriate.
@@ -38,8 +40,8 @@ Note there are no options to directly set \c dx, \c dy, \c dz, \c Lbz, and \c ye
 should not directly set these grid parameters.  There are, however, options for directly 
 setting \c Mx, \c My, \c Mz, \c Mbz and also \c Lx, \c Ly, \c Lz.
 
-Note that additional options are read by PISMClimateCoupler instances, including -pdd... 
-and -d?forcing options.
+Note that additional options are read by PISM{Atmosphere|Surface|Ocean}Model
+instances, including -pdd... and -d?forcing options.
  */
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
@@ -259,6 +261,79 @@ PetscErrorCode  IceModel::setFromOptions() {
   // Process -y, -ys, -ye. We are reading these options here because couplers
   // might need to know what year it is.
   ierr = set_time_from_options();
+
+  return 0;
+}
+
+//! Assembles a list of variables corresponding to an output file size.
+PetscErrorCode IceModel::set_output_size(string option,
+					 string description,
+					 string default_value,
+					 set<string> &result) {
+  PetscErrorCode ierr;
+  set<string> choices;
+  string keyword;
+  bool flag;
+
+  choices.insert("small");
+  choices.insert("medium");
+  choices.insert("big");
+
+  ierr = PISMOptionsList(grid.com, option,
+			 description, choices,
+			 default_value, keyword, flag); CHKERRQ(ierr);
+
+  result.clear();
+
+  // Add all the model-state variables:
+  set<IceModelVec*> vars = variables.get_variables();
+  set<IceModelVec*>::iterator i = vars.begin();
+  while (i != vars.end()) {
+
+    string intent = (*i)->string_attr("pism_intent");
+    if ( (intent == "model_state") || (intent == "mapping") ||
+	 (intent == "climate_steady") )
+      result.insert((*i)->string_attr("short_name"));
+
+    ++i;
+  }
+
+  // add {u,v}barSSA if SSA is "on":
+  if (config.get_flag("use_ssa_velocity")) {
+    result.insert("vubarSSA");
+    result.insert("vvbarSSA");
+  }
+
+  if (keyword == "small") {
+
+    // only model-state variables are saved; we're done
+
+    return 0;
+  }
+
+  // add all the variables listed in the config file ("medium" size):
+  string tmp = config.get_string("output_variables");
+  istringstream list(tmp);
+  
+  // split the list; note that this also removes any duplicate entries
+  while (getline(list, tmp, ' ')) {
+    if (!tmp.empty())		// this ignores multiple spaces separating variable names
+      result.insert(tmp);
+  }
+
+  
+  if (keyword == "big") {
+    // add some more variables
+
+    if (config.get_flag("do_age"))
+      output_vars.insert("age");
+
+    result.insert("uvel");
+    result.insert("vvel");
+    result.insert("wvel");
+    result.insert("uvelsurf");
+    result.insert("vvelsurf");
+  }
 
   return 0;
 }

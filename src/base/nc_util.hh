@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -84,10 +84,6 @@ public:
   PetscErrorCode get_att_text(int varid, const char name[], string &result) const;
   PetscErrorCode get_att_double(int varid, const char name[], vector<double> &result) const;
   PetscErrorCode get_units(int varid, bool &has_units, utUnit &units) const;
-
-  PetscErrorCode create_timeseries(const char name[], const char long_name[],
-				   const char units[], nc_type nctype, int *varid) const;
-  PetscErrorCode append_timeseries(const char name[], double value) const;
 
   PetscErrorCode get_local_var(int varid, DA da, Vec v, GridType dims, int t) const;
   PetscErrorCode get_global_var(int varid, Vec g, GridType dims, int t) const;
