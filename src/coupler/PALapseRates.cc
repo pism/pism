@@ -94,10 +94,10 @@ PetscErrorCode PALapseRates::write_input_fields(PetscReal t_years, PetscReal dt_
   ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
 
   IceModelVec2 temp_ma;
-  ierr = temp_ma.create(grid, "temp_ma", false); CHKERRQ(ierr); // FIXME! choose the right name
+  ierr = temp_ma.create(grid, "airtemp_ma", false); CHKERRQ(ierr); // FIXME! choose the right name
   ierr = temp_ma.set_attrs(
             "climate_state",
-            "mean annual near-surface (2 m) air temperature",
+            "mean annual near-surface air temperature",
             "K",
 	    ""); CHKERRQ(ierr);
 

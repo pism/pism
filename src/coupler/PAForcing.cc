@@ -31,7 +31,6 @@ PAForcing::PAForcing(IceGrid &g, const NCConfigVariable &conf)
   delta_T = NULL;
   temp_ma_anomaly = NULL;
   snowprecip_anomaly = NULL;
-  paleo_precipitation_correction = false;
 }
 
 PAForcing::~PAForcing() {
@@ -52,7 +51,7 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
 
   ierr = verbPrintf(2, grid.com, "* Initializing air temperature and precipitation forcing...\n"); CHKERRQ(ierr);
 
-  ierr = PetscOptionsHead("Air temperature and precipitation forcing"); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Air temperature and precipitation forcing", ""); CHKERRQ(ierr);
 
   ierr = PetscOptionsString("-anomaly_temp_ma",
 			    "Specifies the air temperature anomalies file",
@@ -67,13 +66,10 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
 			    "", "",
 			    dT_file, PETSC_MAX_PATH_LEN, &dTforcing_set); CHKERRQ(ierr);
 
-  ierr = PetscOptionsTail(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (! (dTforcing_set || temp_ma_anomaly_set || snowprecip_anomaly_set) ) {
-    ierr = PetscPrintf(grid.com,
-		       "ERROR: atmosphere forcing requires at least one of"
-		       " -anomaly_temp_ma, -anomaly_precip, -dTforcing.\n"); CHKERRQ(ierr);
-    PetscEnd();
+    ierr = verbPrintf(2, grid.com, "  NOTE: Forcing is inactive...\n"); CHKERRQ(ierr);
   }
 
   // check on whether we should read mean annual temperature anomalies
@@ -115,15 +111,6 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
 
   // check user option -dTforcing for a surface temperature forcing data set
   if (dTforcing_set == PETSC_TRUE) {
-    PetscTruth paleo_precip_set;
-    ierr = check_option("-paleo_precip", paleo_precip_set); CHKERRQ(ierr);
-
-    if (paleo_precip_set) {
-      ierr = verbPrintf(2,grid.com,
-			"    using the paleo-precipitation correction...\n"); CHKERRQ(ierr);
-      paleo_precipitation_correction = true;
-    }
-
     dTforcing = new Timeseries(grid.com, grid.rank, "delta_T", "t");
     ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);
     ierr = dTforcing->set_dimension_units("years", ""); CHKERRQ(ierr);
@@ -310,15 +297,6 @@ PetscErrorCode PAForcing::mean_precip(PetscReal t_years, PetscReal dt_years,
     }
     ierr = result.end_access(); CHKERRQ(ierr);
     ierr = snowprecip_anomaly->end_access(); CHKERRQ(ierr);
-
-    ierr = result.set_attr("history", history); CHKERRQ(ierr);
-  }
-
-  if ((dTforcing != NULL) && paleo_precipitation_correction) {
-    string history = "added the paleo-precipitation correction\n" + result.string_attr("history");
-
-    PetscReal precipexpfactor = config.get("precip_exponential_factor_for_temperature");
-    ierr = result.scale(exp( precipexpfactor * (*dTforcing)(t_years + 0.5 * dt_years) )); CHKERRQ(ierr);
 
     ierr = result.set_attr("history", history); CHKERRQ(ierr);
   }

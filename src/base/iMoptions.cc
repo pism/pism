@@ -209,10 +209,6 @@ PetscErrorCode  IceModel::setFromOptions() {
     PetscEnd();
   }
 
-// note "-regrid_from" is in use for regrid file name; see iMregrid.cc
-
-// note "-regrid_vars" is in use for regrid variable names; see iMregrid.cc
-
   // see assembleSSAMatrix(); used in MISMIP
   ierr = check_option("-shelves_drag_too", doShelvesDragToo); CHKERRQ(ierr);
   if (doShelvesDragToo == PETSC_TRUE)   shelvesDragToo = PETSC_TRUE;

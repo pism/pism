@@ -32,6 +32,7 @@ class IceEISModel : public IceModel {
 public:
     IceEISModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
     virtual PetscErrorCode setFromOptions();
+    virtual PetscErrorCode createVecs();
     virtual PetscErrorCode set_grid_defaults();
     virtual PetscErrorCode set_vars_from_options();
     virtual PetscErrorCode init_physics();

@@ -26,17 +26,28 @@
 
 
 struct routineStatsType {
-  PetscScalar jg, xg, hxg, maxubar, avubarG, avubarF, 
-              dHdtnorm, Ngrounded, Nfloating;
+  PetscScalar ig,		// index corresponding to the grounding line
+    xg,				// grounding line position
+    hxg,			// ice thickness at the grounding line
+    maxubar,			// maximum vertically-averaged horizontal velocity
+    avubarG,			// average of ubar over grounded points
+    avubarF, 			// ditto, floating points
+    dHdtnorm,			// maximum of the thickness rate of change 
+    Ngrounded,			// number of grounded points
+    Nfloating;			// number of floating points
 };
 
 
 struct mismipStatsType {
-  PetscScalar dxgdt, x1, x2, x3, h1, h2, h3, b1, b2, b3, q1, q2, q3;
+  PetscScalar dxgdt,		// rate of change of the grounding line position
+    x1, x2, x3,			// grounding line position and its neighboring points
+    h1, h2, h3,			// ice thicknesses corresponding to x1, x2, x3
+    b1, b2, b3,			// bed depth below sea level at x1, x2, x3
+    q1, q2, q3;			// signed ice flux at x1, x2, x3
 };
 
 
-//! Derived class of IceModel with performs MISMIP experiments.
+//! Derived class of IceModel which performs MISMIP experiments.
 /*!
 See \e User's \e Manual and run script   examples/mismip/mismip.sh.
 
@@ -66,6 +77,7 @@ public:
   IceMISMIPModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
   virtual ~IceMISMIPModel(); // must be virtual merely because some members are virtual
 
+  virtual PetscErrorCode createVecs();
   virtual PetscErrorCode set_grid_defaults();
   virtual PetscErrorCode set_grid_from_options();
   virtual PetscErrorCode setFromOptions();

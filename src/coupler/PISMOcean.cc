@@ -116,7 +116,7 @@ PetscErrorCode POForcing::init(PISMVars &vars) {
     ierr = delta_sea_level->set_dimension_units("years", ""); CHKERRQ(ierr);
     ierr = delta_sea_level->set_attr("long_name", "sea level elevation offsets"); CHKERRQ(ierr);
   } else {
-    ierr = PetscPrintf(grid.com, "ERROR: ocean forcing requires the -dSLforcing option.\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, "NOTE: -dSLforcing option is not set. Forcing is inactive...\n"); CHKERRQ(ierr);
     PetscEnd();
   }
 

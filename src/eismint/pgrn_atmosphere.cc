@@ -1,27 +1,9 @@
 # include "pgrn_atmosphere.hh"
 
 PA_EISMINT_Greenland::PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &conf)
-  : PAFausto(g, conf) {
+  : PA_Parameterized_Temperature(g, conf) {
   do_greenhouse_warming = false;
   greenhouse_warming_start_year = 0.0;
-}
-
-PetscErrorCode PA_EISMINT_Greenland::mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-						      IceModelVec2 &result) {
-  PetscErrorCode ierr;
-  ierr = update(t_years, dt_years); CHKERRQ(ierr);
-
-  ierr = temp_ma.copy_to(result); CHKERRQ(ierr);
-  ierr = result.set_attr("history",
-			 "computed using a mean annual air temperature parameterization in " +
-			 reference + "\n"); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode PA_EISMINT_Greenland::greenhouse_warming(PetscReal start_year) {
-  do_greenhouse_warming = true;
-  greenhouse_warming_start_year = start_year;
-  return 0;
 }
 
 PetscErrorCode PA_EISMINT_Greenland::update(PetscReal t_years, PetscReal dt_years) {
@@ -62,9 +44,6 @@ PetscErrorCode PA_EISMINT_Greenland::update(PetscReal t_years, PetscReal dt_year
 
 PetscErrorCode PA_EISMINT_Greenland::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  LocalInterpCtx *lic = NULL;
-  bool regrid = false;
-  int start = -1;
 
   ierr = verbPrintf(2, grid.com,
 		    "* Initializing Greenland atmosphere model based on the EISMINT Greenland (C. Ritz, 1997)\n"
@@ -73,29 +52,7 @@ PetscErrorCode PA_EISMINT_Greenland::init(PISMVars &vars) {
   reference = "Ritz, C. (1997). EISMINT Intercomparison Experiment: Comparison of existing Greenland models."
     " URL: http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html";
 
-  // Allocate internal IceModelVecs:
-  ierr = temp_ma.create(grid, "eismint_temp_ma", false); CHKERRQ(ierr);
-  ierr = temp_ma.set_attrs("climate_state",
-			   "mean annual near-surface air temperature",
-			   "K", 
-			   ""); CHKERRQ(ierr);  // no CF standard_name ??
-  ierr = temp_ma.set_attr("source", reference);
-
-  ierr = temp_mj.create(grid, "eismint_temp_mj", false); CHKERRQ(ierr);
-  ierr = temp_mj.set_attrs("climate_state",
-			   "mean July near-surface air temperature",
-			   "Kelvin",
-			   ""); CHKERRQ(ierr);  // no CF standard_name ??
-  ierr = temp_mj.set_attr("source", reference);
-
-  ierr = snowprecip.create(grid, "snowprecip", false); CHKERRQ(ierr);
-  ierr = snowprecip.set_attrs("climate_state", 
-			      "mean annual ice-equivalent snow precipitation rate",
-			      "m s-1", 
-			      ""); CHKERRQ(ierr); // no CF standard_name ??
-  ierr = snowprecip.set_glaciological_units("m year-1");
-  snowprecip.write_in_glaciological_units = true;
-  snowprecip.time_independent = true;
+  ierr = PA_Parameterized_Temperature::init(vars); CHKERRQ(ierr);
 
   // initialize pointers to fields the parameterization depends on:
   surfelev = dynamic_cast<IceModelVec2*>(vars.get("surface_altitude"));
@@ -104,32 +61,15 @@ PetscErrorCode PA_EISMINT_Greenland::init(PISMVars &vars) {
   lat = dynamic_cast<IceModelVec2*>(vars.get("latitude"));
   if (!lat) SETERRQ(1, "ERROR: latitude is not available");
 
-  ierr = find_pism_input(snowprecip_filename, lic, regrid, start); CHKERRQ(ierr);
-
-  // read snow precipitation rate from file
-  ierr = verbPrintf(2, grid.com, 
-		    "    reading mean annual ice-equivalent snow precipitation rate 'snowprecip'\n"
-		    "      from %s ... \n",
-		    snowprecip_filename.c_str()); CHKERRQ(ierr); 
-  if (regrid) {
-    ierr = snowprecip.regrid(snowprecip_filename.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
-  } else {
-    ierr = snowprecip.read(snowprecip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
-  }
-  string snowprecip_history = "read mean annual ice-equivalent snow precipitation rate from " +
-    snowprecip_filename + "\n";
-
-  ierr = snowprecip.set_attr("history", snowprecip_history); CHKERRQ(ierr);
-
-  delete lic;
-
   PetscTruth gwl3_start_set;
   PetscReal  gwl3_start_year;
   ierr = PetscOptionsGetReal(PETSC_NULL, "-gwl3_start_year", &gwl3_start_year, &gwl3_start_set);
   CHKERRQ(ierr);
 
   if (gwl3_start_set) {  // do GWL3, and set start year
-    ierr = greenhouse_warming(gwl3_start_year); CHKERRQ(ierr);
+    do_greenhouse_warming = true;
+    greenhouse_warming_start_year = gwl3_start_year;
+
     ierr = verbPrintf(2, grid.com,
 		      "    turning on GWL3 warming scenario at year %3.3f...\n",
 		      gwl3_start_year);
@@ -155,16 +95,4 @@ PetscReal PA_EISMINT_Greenland::greenhouse_shift(PetscReal t_years, PetscReal dt
       return 3.514;
     }
   }
-}
-
-PetscErrorCode PA_EISMINT_Greenland::temp_snapshot(PetscReal t_years, PetscReal dt_years,
-				       IceModelVec2 &result) {
-  PetscErrorCode ierr;
-
-  ierr = PAFausto::temp_snapshot(t_years, dt_years, result); CHKERRQ(ierr);
-
-  string history = "computed using the standard (cosine) yearly cycle\n";
-  ierr = result.set_attr("history", history); CHKERRQ(ierr);
-
-  return 0;
 }

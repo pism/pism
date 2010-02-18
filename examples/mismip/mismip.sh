@@ -147,19 +147,19 @@ do
   for GRID in $GRIDRANGE
   do
     case $GRID in
-      1   ) GRIDMY=151; SKIP=;;
-      2   ) GRIDMY=1501; SKIP="-skip 10";;
-      3   ) GRIDMY=601; SKIP="-skip 10";;
+      1   ) GRIDMX=151; SKIP=;;
+      2   ) GRIDMX=1501; SKIP="-skip 10";;
+      3   ) GRIDMX=601; SKIP="-skip 10";;
     esac
 
     ## experiment 1:
     for ES in 1a 1b
     do
       smncname=SMthk_${ES}_M${GRID}_A1.nc
-      regridstart="-regrid_file ${smncname} -regrid_vars H"
+      regridstart="-regrid_file ${smncname} -regrid_vars thk"
       ### replace regridstart by empty string if we want to start w 10 m thickness
       #regridstart=
-      options="-step 1 ${SKIP} -Mx 3 -Lz 6000 -Mz 15 Lbz 0 -Mbz 1 -My ${GRIDMY} ${regridstart}"
+      options="-step 1 ${SKIP} -Mx ${GRIDMX} -Mz 15 Lbz 0 -Mbz 1 -My 3 ${regridstart}"
       mpimismip $NN $MODEL $ES "$options"
       for STEP in 2 3 4 5 6 7 8 9
       do
@@ -185,10 +185,10 @@ do
 
     # exper 3a
     smncname=SMthk_3a_M${GRID}_A1.nc
-    regridstart="-regrid ${smncname} -regrid_vars H"
+    regridstart="-regrid_file ${smncname} -regrid_vars thk"
     ### replace regridstart by empty string if we want to start w 10 m thickness
     #regridstart=
-    options="-step 1 ${SKIP}-Mx 3 -Mz 15 -My ${GRIDMY} ${regridstart}"
+    options="-step 1 ${SKIP} -Mx ${GRIDMX} -Mz 15 -My 3 ${regridstart}"
     mpimismip $NN $MODEL 3a "$options"
     for STEP in 2 3 4 5 6 7 8 9 10 11 12 13
     do
@@ -199,10 +199,10 @@ do
 
     # exper 3b
     smncname=SMthk_3b_M${GRID}_A1.nc
-    regridstart="-regrid ${smncname} -regrid_vars H"
+    regridstart="-regrid ${smncname} -regrid_vars thk"
     ### replace regridstart by empty string if we want to start w 10 m thickness
     #regridstart=
-    options="-step 1 ${SKIP} -Mx 3 -Mz 15 -My ${GRIDMY} ${regridstart}"
+    options="-step 1 ${SKIP} -Mx ${GRIDMX} -Mz 15 -My 3 ${regridstart}"
     mpimismip $NN $MODEL 3b "$options"
     for STEP in 2 3 4 5 6 7 8 9 10 11 12 13 14 15
     do

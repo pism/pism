@@ -6,7 +6,7 @@ test="Test #3: no information loss on -y 0 runs (ignoring diagnostic variables).
 files="foo.nc bar.nc baz.nc"
 dir=`pwd`
 
-OPTS="-surface constant"
+OPTS="-surface constant -o_size small"
 
 test_03 ()
 {
@@ -27,7 +27,7 @@ test_03 ()
     set +e
 
     # Compare, excluding irrelevant diagnostic variables:
-    run nccmp.py -x -v t,usurf,dHdt,cbar,cflx,cbase,csurf,wvelsurf,taud,tauc,dhdt bar.nc baz.nc
+    run nccmp.py -x -v t bar.nc baz.nc
     if [ $? != 0 ];
     then
 	fail "foo.nc and bar.nc are different."

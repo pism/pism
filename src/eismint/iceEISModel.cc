@@ -28,6 +28,17 @@ IceEISModel::IceEISModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &c
   iceFactory.setType(ICE_PB);  // Paterson-Budd
 }
 
+PetscErrorCode IceEISModel::createVecs() {
+  PetscErrorCode ierr = IceModel::createVecs(); CHKERRQ(ierr);
+
+  // this ensures that these variables are saved to an output file and are read
+  // back in if -i option is used (they are "model_state", in a sense, since
+  // PSDummy is used):
+  ierr = artm.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+  ierr = acab.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+
+  return 0;
+}
 
 //! Only executed if NOT initialized from file (-i).
 PetscErrorCode IceEISModel::set_grid_defaults() {

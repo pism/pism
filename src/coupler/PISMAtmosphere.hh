@@ -84,14 +84,15 @@ protected:
   IceModelVec2 snowprecip, temperature;
 };
 
-//! A class implementing an atmosphere model combining the Fausto [\ref
-//! Faustoetal2009] present-day temperature parameterization for Greenland and
-//! stored precipitation data.
-class PAFausto : public PISMAtmosphereModel {
+//! A class containing an incomplete implementation of an atmosphere model
+//! based on a temperature parameterization using mean annual and mean July
+//! (mean summer) temperatures and a cosine yearly cycle. Uses a stored
+//! precipitation field.
+class PA_Parameterized_Temperature : public PISMAtmosphereModel {
 public:
-  PAFausto(IceGrid &g, const NCConfigVariable &conf)
-    : PISMAtmosphereModel(g, conf) {};
-  virtual PetscErrorCode init(PISMVars &vars);
+  PA_Parameterized_Temperature(IceGrid &g, const NCConfigVariable &conf)
+    : PISMAtmosphereModel(g, conf) {}
+  virtual PetscErrorCode init(PISMVars &vars);	      // nb
   virtual PetscErrorCode write_input_fields(PetscReal /*t_years*/,
 					    PetscReal /*dt_years*/,
 					    string filename);
@@ -99,7 +100,8 @@ public:
 						 string filename);
   virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
 				      PetscReal dt_years, string filename);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  //! This method implements the parameterization.
+  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years) = 0;
   virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
 				     IceModelVec2 &result);
   virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
@@ -113,6 +115,32 @@ public:
 protected:
   string reference, snowprecip_filename;
   IceModelVec2 temp_ma, temp_mj, snowprecip;
+};
+
+//! \brief A modification of PA_Parameterized_Temperature tailored for the
+//! SeaRISE-Greenland assessment. Uses the Fausto [\ref Faustoetal2009]
+//! present-day temperature parameterization and stored precipitation data.
+//! Adds the precipitation correction for spin-ups.
+class PA_SeaRISE_Greenland : public PA_Parameterized_Temperature {
+public:
+  PA_SeaRISE_Greenland(IceGrid &g, const NCConfigVariable &conf)
+    : PA_Parameterized_Temperature(g, conf)
+  {
+    paleo_precipitation_correction = false;
+    dTforcing = NULL;
+  }
+
+  virtual ~PA_SeaRISE_Greenland()
+  {
+    delete dTforcing;
+  }
+  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
+				     IceModelVec2 &result);
+protected:
+  bool paleo_precipitation_correction;
+  Timeseries *dTforcing;
   IceModelVec2 *lat, *lon, *surfelev;
 };
 
@@ -134,7 +162,7 @@ protected:
 //! (anomalies, temperature offsets...) to results of another PISM atmosphere
 //! model.
 /*! Processes command-line options -dTforcing, -temp_ma_anomaly,
-  -snowprecip_anomaly, -paleo_precip.
+  -snowprecip_anomaly.
  */
 class PAForcing : public PAModifier {
 public:
@@ -162,7 +190,6 @@ public:
 protected:
   Timeseries *dTforcing;
   DiagnosticTimeseries *delta_T; //!< for debugging
-  bool paleo_precipitation_correction;
   IceModelVec2T *temp_ma_anomaly, *snowprecip_anomaly;
 };
 

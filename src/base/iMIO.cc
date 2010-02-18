@@ -276,7 +276,7 @@ PetscErrorCode IceModel::regrid() {
 			   PETSC_NULL); CHKERRQ(ierr);
 
   // Get the regridding file name:
-  ierr = PetscOptionsString("-regrid_from", "Specifies the file to regrid from", "", "",
+  ierr = PetscOptionsString("-regrid_file", "Specifies the file to regrid from", "", "",
 			    filename, PETSC_MAX_PATH_LEN,
 			    &regrid_from_set); CHKERRQ(ierr);
 

@@ -6,7 +6,7 @@ test="Test #6: bootstrapping from files with symmetric and non-symmetric x- and 
 files="foo.nc bar.nc baz.nc"
 dir=`pwd`
 
-OPTS="-boot_from foo.nc -Mx 11 -My 11 -Mz 11 -Mbz 1 -Lz 4000 -y 0 -surface constant"
+OPTS="-boot_from foo.nc -Mx 11 -My 11 -Mz 11 -Mbz 1 -Lz 4000 -y 0 -surface constant -o_size small"
 test_06 ()
 {
     cleanup

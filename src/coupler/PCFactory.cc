@@ -2,12 +2,12 @@
 #include "../base/pism_const.hh"
 
 // Atmosphere
-static void create_pa_greenland(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
-  result = new PAFausto(g, conf);
-}
-
 static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
   result = new PAConstant(g, conf);
+}
+
+static void create_pa_searise_greenland(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
+  result = new PA_SeaRISE_Greenland(g, conf);
 }
 
 static void create_pa_lapse_rates(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
@@ -19,10 +19,10 @@ static void create_pa_forcing(IceGrid& g, const NCConfigVariable& conf, PAModifi
 }
 
 void PAFactory::add_standard_types() {
-  add_model("greenland",       &create_pa_greenland);
-  add_model("constant",        &create_pa_constant);
-  add_model("temp_lapse_rate", &create_pa_lapse_rates);
-  add_modifier("forcing",      &create_pa_forcing);
+  add_model("constant",          &create_pa_constant);
+  add_model("searise_greenland", &create_pa_searise_greenland);
+  add_model("temp_lapse_rate",   &create_pa_lapse_rates);
+  add_modifier("forcing",        &create_pa_forcing);
   set_default("constant");
 }
 

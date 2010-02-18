@@ -922,15 +922,18 @@ bool NCTool::check_dimension(const char name[], const int len) const {
   if (rank == 0) {
     stat = nc_inq_dimid(ncid, name, &dimid);
     if (stat == NC_NOERR) {
-      stat = nc_inq_dimlen(ncid, dimid, &dimlen);
+      if (len < 0)
+	return true;
 
+      stat = nc_inq_dimlen(ncid, dimid, &dimlen);
       if (stat != NC_NOERR)
 	return false;
-      if ((len < 0) || ((int)dimlen == len))
+
+      if ((int)dimlen == len)
 	return true;
-      if ((int)dimlen != len)
-	return false;
     }
+
+    return false;
   }
 
   return true;

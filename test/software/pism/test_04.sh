@@ -6,7 +6,7 @@ test="Test #4: regridding during bootstrapping: coarse -> fine -> coarse."
 files="foo.nc bar.nc baz.nc"
 dir=`pwd`
 
-OPTS="-surface constant -Lz 4000 -y 0"
+OPTS="-surface constant -Lz 4000 -y 0 -o_size small"
 COARSE="-Mx 11 -My 11 -Mz 11"
 FINE=" -Mx 21 -My 21 -Mz 21"
 test_04 ()

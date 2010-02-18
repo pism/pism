@@ -70,6 +70,8 @@ public:
   { return 0; }
   virtual PetscErrorCode write_diagnostic_fields(PetscReal, PetscReal, string)
   { return 0; }
+  virtual PetscErrorCode write_fields(set<string>, PetscReal, PetscReal, string)
+  { return 0; }
 };
 
 //! \brief A class implementing a primitive surface model.

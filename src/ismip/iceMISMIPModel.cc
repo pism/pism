@@ -114,7 +114,7 @@ PetscScalar IceMISMIPModel::basalIsotropicDrag(
 
 
 PetscErrorCode IceMISMIPModel::set_grid_defaults() {
-  grid.Mx = 3;
+  grid.My = 3;
   return 0;
 }
 
@@ -122,7 +122,7 @@ PetscErrorCode IceMISMIPModel::set_grid_defaults() {
 PetscErrorCode IceMISMIPModel::set_grid_from_options() {
   PetscErrorCode ierr;
 
-  // let the base class read -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, -chebZ and -quadZ:
+  // let the base class read -Mx, -My, -Mz, -Mbz, -Lx, -Ly, -Lz, z_spacing and -zb_spacing:
   ierr = IceModel::set_grid_from_options(); CHKERRQ(ierr);
   ierr = ignore_option(grid.com, "-Lx"); CHKERRQ(ierr);
   ierr = ignore_option(grid.com, "-Ly"); CHKERRQ(ierr);
@@ -136,20 +136,22 @@ PetscErrorCode IceMISMIPModel::set_grid_from_options() {
     grid.Lz = 6000.0;
   }
 
-  // effect of double rescale here is to compute grid.dy so we can get square cells
-  //    (in horizontal).  NOTE: y takes place of x!!!
-  grid.Lx = 1000.0;
-  grid.Ly = L;
-  grid.periodicity = X_PERIODIC;
+  ierr = grid.compute_vertical_levels(); CHKERRQ(ierr);
+
+  // effect of double rescale here is to compute grid.dy so we can get square
+  //    cells (in horizontal).
+  grid.Lx = L;
+  grid.Ly = 1000.0;
+  grid.periodicity = Y_PERIODIC;
   ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr); 
-  const PetscScalar   Lx_desired = (grid.dy * grid.Mx) / 2.0;
-  grid.Lx = Lx_desired;
+  const PetscScalar   Ly_desired = (grid.dx * grid.My) / 2.0;
+  grid.Ly = Ly_desired;
   ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
 
-  // determine gridmode from My
-  if (grid.My == 151) 
+  // determine gridmode from Mx
+  if (grid.Mx == 151) 
     gridmode = 1;
-  else if (grid.My == 1501) 
+  else if (grid.Mx == 1501) 
     gridmode = 2;
   else
     gridmode = 3;
@@ -457,6 +459,15 @@ PetscErrorCode IceMISMIPModel::initFromFile(const char *fname) {
 }
 
 
+PetscErrorCode IceMISMIPModel::createVecs() {
+  PetscErrorCode ierr;
+  ierr = IceModel::createVecs(); CHKERRQ(ierr);
+
+  ierr = artm.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+  ierr = acab.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
+  return 0;
+}
+
 PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   PetscErrorCode ierr;
 
@@ -479,7 +490,11 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   ierr = Tb3.set(ice->meltingTemp); CHKERRQ(ierr);
   
   ierr = vH.set(initialthickness); CHKERRQ(ierr);
-  
+
+  ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);
+  ierr = vGhf.set(0.0); CHKERRQ(ierr);
+  ierr = vtillphi.set(5.0); CHKERRQ(ierr);
+
   ierr = setBed(); CHKERRQ(ierr);
   ierr = setMask(); CHKERRQ(ierr);
 
@@ -561,25 +576,23 @@ PetscErrorCode IceMISMIPModel::misc_setup() {
 
 PetscErrorCode IceMISMIPModel::setBed() {
   PetscErrorCode ierr;
-  PetscScalar          **b;
 
-  ierr = vbed.get_array(b); CHKERRQ(ierr);
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
     
-      // NOTE !!!!:   y  REPLACES   x   FOR VIEWING CONVENIENCE!
-      const PetscScalar jfrom0 =
-               static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
-      const PetscScalar y = grid.dy * jfrom0;
-      const PetscScalar xs = PetscAbs(y) / 750.0e3;  // scaled and symmetrical x coord
+      const PetscScalar ifrom0 =
+               static_cast<PetscScalar>(i)-static_cast<PetscScalar>(grid.Mx - 1)/2.0;
+      const PetscScalar x = grid.dx * ifrom0;
+      const PetscScalar xs = PetscAbs(x) / 750.0e3;  // scaled and symmetrical x coord
 
       if ((exper == 1) || (exper == 2)) {
-        b[i][j] = 720.0 - 778.5 * xs;
+        vbed(i,j) = 720.0 - 778.5 * xs;
       } else if (exper == 3) {
         const PetscScalar xs2 = xs * xs,
                           xs4 = xs2 * xs2,
                           xs6 = xs4 * xs2;
-        b[i][j] = 729.0 - 2184.0 * xs2 + 1031.72 * xs4 - 151.72 * xs6;
+        vbed(i,j) = 729.0 - 2184.0 * xs2 + 1031.72 * xs4 - 151.72 * xs6;
       } else {
         SETERRQ(99,"how did I get here?");
       }
@@ -597,24 +610,22 @@ PetscErrorCode IceMISMIPModel::setBed() {
 
 PetscErrorCode IceMISMIPModel::setMask() {
   PetscErrorCode ierr;
-  PetscScalar    **mask;
 
   const PetscScalar calving_front = 1600.0e3;
 //  const PetscScalar calving_front = 10000.0e3;  // NOW NOTHING MARKED AS FLOATING_OCEAN0
 
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
     
-      // NOTE !!!!:   y  REPLACES   x   FOR VIEWING CONVENIENCE!
-      const PetscScalar jfrom0 =
-               static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
-      const PetscScalar y = grid.dy * jfrom0;
-      if (PetscAbs(y) >= calving_front) {
-        mask[i][j] = MASK_OCEAN_AT_TIME_0;
+      const PetscScalar ifrom0 =
+               static_cast<PetscScalar>(i)-static_cast<PetscScalar>(grid.Mx - 1)/2.0;
+      const PetscScalar x = grid.dx * ifrom0;
+      if (PetscAbs(x) >= calving_front) {
+        vMask(i,j) = MASK_OCEAN_AT_TIME_0;
       } else {
         // note updateSurfaceElevationAndMask() will mark DRAGGING as FLOATING if it is floating
-        mask[i][j] = MASK_DRAGGING_SHEET;
+        vMask(i,j) = MASK_DRAGGING_SHEET;
       }
 
     }
@@ -633,23 +644,22 @@ PetscErrorCode IceMISMIPModel::calving() {
   //    maintain thickness at calving front in range [100m,200m]
   // front will not advance beyond calving_front=1600km above
   PetscErrorCode ierr;
-  PetscScalar    **H;
 
   ierr = verbPrintf(2,grid.com,"\nIceMISMIPModel: ad hoc calving ...\n"); CHKERRQ(ierr);
 
   const PetscScalar calving_thk_min = 100.0, calving_thk_max = 200.0; // meters
 
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (vMask.is_floating(i,j)) {
-        if (H[i][j] < calving_thk_min) {
-          H[i][j] = 0.0;
-        } else if ( (H[i][j] == 0.0) && 
-                    ((H[i][j-1] > calving_thk_max) || (H[i][j+1] > calving_thk_max)) ) {
-          H[i][j] = (calving_thk_min + calving_thk_max) / 2.0;
+        if (vH(i,j) < calving_thk_min) {
+          vH(i,j) = 0.0;
+        } else if ( (vH(i,j) == 0.0) && 
+                    ((vH(i-1,j) > calving_thk_max) || (vH(i+1,j) > calving_thk_max)) ) {
+          vH(i,j) = (calving_thk_min + calving_thk_max) / 2.0;
         }
       }
     }
@@ -682,8 +692,19 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
   // this is called at the end of each pass through time-stepping loop IceModel::run()
   PetscErrorCode  ierr;
 
-  PetscScalar     infnormdHdt;
-  ierr = vdHdt.norm(NORM_INFINITY, infnormdHdt); CHKERRQ(ierr);
+  PetscScalar     infnormdHdt = 0.0;
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vdHdt.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (vH(i,j) > 0.0) {
+	infnormdHdt = PetscMax(infnormdHdt, vdHdt(i,j));
+      }
+    }
+  }
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vdHdt.end_access(); CHKERRQ(ierr);
+
   ierr = PetscGlobalMax(&infnormdHdt, &rstats.dHdtnorm, grid.com); CHKERRQ(ierr);
 
   if (rstats.dHdtnorm * secpera < dHdtnorm_atol) {  // if all points have dHdt < 10^-4 m/yr
@@ -768,18 +789,18 @@ PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype, char*
     ierr = PetscViewerASCIIPrintf(view,"%10.4f %10.2f\n", rstats.xg / 1000.0, grid.year);
                CHKERRQ(ierr);
   } else {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       const PetscScalar
-        jfrom0 = static_cast<PetscScalar>(j)
-                                 - static_cast<PetscScalar>(grid.My - 1)/2.0,
-        y = grid.dy * jfrom0;
-      if (y >= 0) {
+        ifrom0 = static_cast<PetscScalar>(i)
+                                 - static_cast<PetscScalar>(grid.Mx - 1)/2.0,
+        x = grid.dx * ifrom0;
+      if (x >= 0) {
         if (mismiptype == 's') {
           ierr = PetscViewerASCIISynchronizedPrintf(view,
-               "%10.2f %10.4f\n", y / 1000.0, H[grid.xs][j]); CHKERRQ(ierr);
+               "%10.2f %10.4f\n", x / 1000.0, H[i][grid.ys]); CHKERRQ(ierr);
         } else { // mismiptype == 'e'
           ierr = PetscViewerASCIISynchronizedPrintf(view,
-                 "%10.4f %10.4f\n", h[grid.xs][j], bed[grid.xs][j]); CHKERRQ(ierr);
+                 "%10.4f %10.4f\n", h[i][grid.ys], bed[i][grid.ys]); CHKERRQ(ierr);
         }
       } else { // write empty string to make sure all processors write;
                // perhaps it is a bug in PETSc that this seems to be necessary?
@@ -807,40 +828,40 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
 
   ierr = vvbar.multiply_by(vH, vWork2d[0]); CHKERRQ(ierr);
   ierr = vWork2d[0].get_array(q); CHKERRQ(ierr);
-  // q[i][j] is signed flux in y direction, in units of m^2/s
+  // q[i][j] is signed flux in x direction, in units of m^2/s
   
   mstats.x1 = rstats.xg;
-  mstats.x2 = rstats.xg - grid.dy;
-  mstats.x3 = rstats.xg + grid.dy;
+  mstats.x2 = rstats.xg - grid.dx;
+  mstats.x3 = rstats.xg + grid.dx;
   
   PetscScalar myh2 = 0.0, myh3 = 0.0, myb1 = -1e6, myb2 = -1e6, myb3 = -1e6, 
               myq1 = -1e20, myq2 = -1e20, myq3 = -1e20;
-  const int jg = (int)floor(rstats.jg + 0.1);
+  const int ig = (int)floor(rstats.ig + 0.1);
 
   mstats.h1 = rstats.hxg;  // already computed
-  if ( (jg >= grid.ys) && (jg < grid.ys + grid.ym)
-       && (grid.xs == 0)                             ) {  // if (0,jg) is in ownership
-    myb1 = b[0][jg];
-    myq1 = q[0][jg];
+  if ( (ig >= grid.xs) && (ig < grid.xs + grid.xm)
+       && (grid.ys == 0)                             ) {  // if (ig,0) is in ownership
+    myb1 = b[ig][0];
+    myq1 = q[ig][0];
   }
   ierr = PetscGlobalMax(&myb1, &mstats.b1, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&myq1, &mstats.q1, grid.com); CHKERRQ(ierr);
 
-  if ( (jg-1 >= grid.ys) && (jg-1 < grid.ys + grid.ym)
-       && (grid.xs == 0)                             ) {  // if (0,jg-1) is in ownership
-    myh2 = H[0][jg-1];
-    myb2 = b[0][jg-1];
-    myq2 = q[0][jg-1];
+  if ( (ig-1 >= grid.xs) && (ig-1 < grid.xs + grid.xm)
+       && (grid.ys == 0)                             ) {  // if (ig-1,0) is in ownership
+    myh2 = H[ig-1][0];
+    myb2 = b[ig-1][0];
+    myq2 = q[ig-1][0];
   }
   ierr = PetscGlobalMax(&myh2, &mstats.h2, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&myb2, &mstats.b2, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&myq2, &mstats.q2, grid.com); CHKERRQ(ierr);
 
-  if ( (jg+1 >= grid.ys) && (jg+1 < grid.ys + grid.ym)
-       && (grid.xs == 0)                             ) {  // if (0,jg+1) is in ownership
-    myh3 = H[0][jg+1];
-    myb3 = b[0][jg+1];
-    myq3 = q[0][jg+1];
+  if ( (ig+1 >= grid.xs) && (ig+1 < grid.xs + grid.xm)
+       && (grid.ys == 0)                             ) {  // if (ig+1,0) is in ownership
+    myh3 = H[ig+1][0];
+    myb3 = b[ig+1][0];
+    myq3 = q[ig+1][0];
   }
   ierr = PetscGlobalMax(&myh3, &mstats.h3, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&myb3, &mstats.b3, grid.com); CHKERRQ(ierr);
@@ -866,60 +887,56 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
 PetscErrorCode IceMISMIPModel::getRoutineStats() {
   PetscErrorCode  ierr;
 
-  PetscScalar     **H, **vbar;
-
   // these are in MKS; sans "g" are local to the processor; with "g" are global 
   //   across all processors; we only evaluate for x > 0
-  PetscScalar     maxubar = 0.0, avubargrounded = 0.0, avubarfloating = 0.0, jg = 0.0,
+  PetscScalar     maxubar = 0.0, avubargrounded = 0.0, avubarfloating = 0.0, ig = 0.0,
                   Ngrounded = 0.0, Nfloating = 0.0;
-  PetscScalar     gavubargrounded, gavubarfloating, gjg;
+  PetscScalar     gavubargrounded, gavubarfloating, gig;
 
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vubar.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-      const PetscScalar jfrom0 =
-               static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
+      const PetscScalar ifrom0 =
+               static_cast<PetscScalar>(i)-static_cast<PetscScalar>(grid.Mx - 1)/2.0;
 
-      // grounding line xg is largest  y  so that  mask[i][j] != FLOATING
-      //       and mask[i][j+1] == FLOATING
-      if ( (jfrom0 > 0.0) && (H[i][j] > 0.0) 
+      // grounding line xg is largest  x  so that  mask(i,j) != FLOATING
+      //       and mask[i+1][j] == FLOATING
+      if ( (ifrom0 > 0.0) && (vH(i,j) > 0.0) 
            && (!vMask.is_floating(i,j))
-	   &&   vMask.is_floating(i,j+1) ) {
-        // NOTE !!!!:   y  REPLACES   x   FOR VIEWING CONVENIENCE!
-        jg = PetscMax(jg,static_cast<PetscScalar>(j));
+	   &&   vMask.is_floating(i+1,j) ) {
+        ig = PetscMax(ig,static_cast<PetscScalar>(i));
       }
 
-      if ((jfrom0 > 0) && (H[i][j] > 0.0)) {
-        // NOTE !!!!:   y  REPLACES   x   FOR VIEWING CONVENIENCE!
-        if (vbar[i][j] > maxubar)  maxubar = vbar[i][j];
+      if ((ifrom0 > 0) && (vH(i,j) > 0.0)) {
+        if (vubar(i,j) > maxubar)  maxubar = vubar(i,j);
         if (!vMask.is_floating(i,j)) {
           Ngrounded += 1.0;
-          avubargrounded += vbar[i][j];
+          avubargrounded += vubar(i,j);
         } else {
           Nfloating += 1.0;
-          avubarfloating += vbar[i][j];        
+          avubarfloating += vubar(i,j);        
         }
       }
 
     }
   }
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vvbar.end_access(); CHKERRQ(ierr);
+  ierr = vubar.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalMax(&jg, &gjg, grid.com); CHKERRQ(ierr);
-  rstats.jg = gjg;
+  ierr = PetscGlobalMax(&ig, &gig, grid.com); CHKERRQ(ierr);
+  rstats.ig = gig;
   
-  const PetscScalar gjgfrom0 =
-          gjg - static_cast<PetscScalar>(grid.My - 1)/2.0;
-  rstats.xg = gjgfrom0 * grid.dy;
+  const PetscScalar gigfrom0 =
+          gig - static_cast<PetscScalar>(grid.Mx - 1)/2.0;
+  rstats.xg = gigfrom0 * grid.dx;
   
   PetscScalar myhxg = 0.0;
-  if ( (gjg >= grid.ys) && (gjg < grid.ys + grid.ym)
-       && (grid.xs == 0)                             ) {  // if (0,gjg) is in ownership
-    myhxg = H[0][static_cast<int>(gjg)]; // i.e. hxg = H[0][gjg]
+  if ( (gig >= grid.xs) && (gig < grid.xs + grid.xm)
+       && (grid.ys == 0)                             ) {  // if (gig,0) is in ownership
+    myhxg = vH(static_cast<int>(gig),0); // i.e. hxg = vH(gig,0)
   } else {
     myhxg = 0.0;
   } 
