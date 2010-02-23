@@ -423,9 +423,7 @@ the surface \f$h(x,y)\f$ inward from edge of grid at the edge of the grid.  This
 certain to make sense on a period grid.  This applies to Test I and Test J, in particular.
  */
 PetscErrorCode IceModel::assembleSSARhs(Vec rhs) {
-  const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
-  const PetscScalar   dx=grid.dx, dy=grid.dy;
-  const bool inward = config.get_flag("compute_surf_grad_inward_ssa");
+  const PetscInt  M=2*grid.My;
 
   // next constant not too sensitive, but must match value in assembleSSAMatrix():
   const PetscScalar   scaling = 1.0e9;  // comparable to typical beta for an ice stream;
@@ -457,31 +455,9 @@ PetscErrorCode IceModel::assembleSSARhs(Vec rhs) {
         ierr = VecSetValue(rhs, rowV, scaling * 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]),
                            INSERT_VALUES); CHKERRQ(ierr);
       } else {
-        const bool edge = ((i == 0) || (i == Mx-1) || (j == 0) || (j == My-1));
-        if (inward && edge) {
-          PetscScalar h_x, h_y;
-          if (i == 0) {
-            h_x = (h[i+1][j] - h[i][j]) / (dx);
-            h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
-          } else if (i == Mx-1) {
-            h_x = (h[i][j] - h[i-1][j]) / (dx);
-            h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
-          } else if (j == 0) {
-            h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
-            h_y = (h[i][j+1] - h[i][j]) / (dy);
-          } else if (j == My-1) {        
-            h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
-            h_y = (h[i][j] - h[i][j-1]) / (dy);
-          } else {
-            SETERRQ(1,"should not reach here: inward=true & edge=true but not at edge");
-          }          
-          const PetscScalar pressure = ice->rho * standard_gravity * H[i][j];
-          ierr = VecSetValue(rhs, rowU, - pressure * h_x, INSERT_VALUES); CHKERRQ(ierr);
-          ierr = VecSetValue(rhs, rowV, - pressure * h_y, INSERT_VALUES); CHKERRQ(ierr);
-        } else { // usual case: use already computed driving stress
-          ierr = VecSetValue(rhs, rowU, taudx[i][j], INSERT_VALUES); CHKERRQ(ierr);
-          ierr = VecSetValue(rhs, rowV, taudy[i][j], INSERT_VALUES); CHKERRQ(ierr);          
-        }
+	// usual case: use already computed driving stress
+	ierr = VecSetValue(rhs, rowU, taudx[i][j], INSERT_VALUES); CHKERRQ(ierr);
+	ierr = VecSetValue(rhs, rowV, taudy[i][j], INSERT_VALUES); CHKERRQ(ierr);          
       }
     }
   }

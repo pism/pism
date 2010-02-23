@@ -433,7 +433,7 @@ protected:
   virtual PetscErrorCode velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its);
 
   // see iMtemp.cc; uses columnSystem.{hh|cc}
-  virtual PetscErrorCode temperatureAgeStep();
+  virtual PetscErrorCode temperatureStep();
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
   virtual PetscErrorCode ageStep();
   virtual bool checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 

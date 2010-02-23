@@ -754,9 +754,9 @@ PetscErrorCode IceModelVec::has_nan() {
 
   ierr = norm(NORM_INFINITY, tmp); CHKERRQ(ierr);
 
-  if (gsl_isnan(tmp)) {
+  if ( gsl_isnan(tmp) ) {
     //    SETERRQ1(1, "IceModelVec %s has NANs", name.c_str());
-    PetscPrintf(grid->com, "IceModelVec %s has NANs\n", name.c_str());
+    PetscPrintf(grid->com, "IceModelVec %s has uninitialized grid points (or NANs)\n", name.c_str());
   }
 
   return 0;

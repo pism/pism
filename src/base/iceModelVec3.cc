@@ -74,7 +74,7 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[], boo
 
   var1.init(my_name, my_grid, GRID_3D);
 
-  this->set(GSL_NAN);
+  //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
 
   return 0;
 }
@@ -585,7 +585,7 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
 
   var1.init(name, my_grid, GRID_3D_BEDROCK);
 
-  this->set(GSL_NAN);
+  //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
 
   return 0;
 }
@@ -1053,9 +1053,9 @@ PetscErrorCode IceModelVec3Bedrock::view_sounding(int i, int j, PetscInt viewer_
 
 PetscErrorCode  IceModelVec3::has_nan() {
   PetscErrorCode ierr;
-  vector<PetscScalar> V;
+  vector<PetscReal> V;
   V.resize(grid->Mz);
-  PetscScalar *tmp = &V[0];
+  PetscReal *tmp = &V[0];
 
   ierr = begin_access(); CHKERRQ(ierr);
   PetscInt i, j, k;
@@ -1064,7 +1064,7 @@ PetscErrorCode  IceModelVec3::has_nan() {
       ierr = getInternalColumn(i, j, &tmp); CHKERRQ(ierr);
       for (k = 0; k < grid->Mz; k++) {
 	if (gsl_isnan(tmp[k])) {
-	  ierr = PetscSynchronizedPrintf(grid->com, "IceModelVec3 %s: NAN at i = %d, j = %d\n",
+	  ierr = PetscSynchronizedPrintf(grid->com, "IceModelVec3 %s: NAN (or uninitialized) at i = %d, j = %d\n",
 					 name.c_str(), i, j); CHKERRQ(ierr);
 	  break;
 	}

@@ -175,7 +175,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     J.name = "J"
     J.test = "linearized periodic ice shelf"
     J.path = "(refine dy=5000,1250,312.5,78.13,19.53,m, Mx=49,193,769,3073,12289)"
-    J.Mx   = [49, 193, 769, 3073, 12289]
+    J.Mx   = [49, 98, 196, 392, 784]
     J.My   = J.Mx
     J.Mz   = [11] * 5
     J.opts = "-pc_type asm -sub_pc_type lu -ksp_rtol %1.e" % KSPRTOL

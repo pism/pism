@@ -287,7 +287,6 @@ PetscErrorCode IceModel::createVecs() {
   const PetscScalar  huge_dHdt = 1.0e6;      // million m a-1 is out-of-range
   ierr = vdHdt.set_attr("valid_min", -huge_dHdt / secpera); CHKERRQ(ierr);
   ierr = vdHdt.set_attr("valid_max", huge_dHdt / secpera); CHKERRQ(ierr);
-  ierr = vdHdt.set_attr("_FillValue", GSL_NAN); CHKERRQ(ierr);
   ierr = variables.add(vdHdt); CHKERRQ(ierr);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
@@ -518,18 +517,26 @@ PetscErrorCode IceModel::step(bool do_mass_conserve,
   //    "-skip" mechanism
 
   PetscLogEventBegin(tempEVENT,0,0,0,0);
-    
-  bool tempAgeStep = ( updateAtDepth && ((do_temp) || (do_age)) );
-  if (tempAgeStep) { // do temperature and age
-    ierr = temperatureAgeStep(); CHKERRQ(ierr);
-    dtTempAge = 0.0;
+
+  if (do_age) {
+    ierr = ageStep(); CHKERRQ(ierr);
+    stdout_flags += "a";
+  } else {
+    stdout_flags += "$";
+  }
+
+  bool tempStep = updateAtDepth && do_temp;
+  if (tempStep) { // do the temperature step
+    ierr = temperatureStep(); CHKERRQ(ierr);
     if (updateHmelt == PETSC_TRUE) {
       ierr = diffuseHmelt(); CHKERRQ(ierr);
     }
-    if (do_age) stdout_flags += "at";
-    else        stdout_flags += "$t";
+    stdout_flags += "t";
+  } else {
+    stdout_flags += "$";
   }
-  else stdout_flags += "$$";
+
+  dtTempAge = 0.0;
 
   PetscLogEventEnd(tempEVENT,0,0,0,0);
 

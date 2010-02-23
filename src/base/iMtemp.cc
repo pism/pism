@@ -21,9 +21,8 @@
 #include "columnSystem.hh"
 #include "iceModel.hh"
 
-
 //! Manage the solution of the energy and age equations, and related parallel communication.
-PetscErrorCode IceModel::temperatureAgeStep() {
+PetscErrorCode IceModel::temperatureStep() {
   PetscErrorCode  ierr;
 
   PetscScalar  myCFLviolcount = 0.0,   // these are counts but they are type "PetscScalar"
@@ -33,20 +32,12 @@ PetscErrorCode IceModel::temperatureAgeStep() {
 
   // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
   ierr = countCFLViolations(&myCFLviolcount); CHKERRQ(ierr);
-  
-  if (config.get_flag("do_age")) {
-    // new age values go in taunew3:
-    ierr = ageStep(); CHKERRQ(ierr);
-  }
     
   // new temperature values go in vTnew; also updates Hmelt:
   ierr = temperatureStep(&myVertSacrCount,&mybulgeCount); CHKERRQ(ierr);  
 
   // start temperature & age communication
   ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
-  if (config.get_flag("do_age")) {
-    ierr = tau3.beginGhostCommTransfer(taunew3); CHKERRQ(ierr);
-  }
 
   ierr = PetscGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&myVertSacrCount, &gVertSacrCount, grid.com); CHKERRQ(ierr);
@@ -77,9 +68,6 @@ PetscErrorCode IceModel::temperatureAgeStep() {
 
   // complete temperature & age communication
   ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
-  if (config.get_flag("do_age")) {
-    ierr = tau3.endGhostCommTransfer(taunew3); CHKERRQ(ierr);
-  }
 
   return 0;
 }
@@ -660,6 +648,9 @@ PetscErrorCode IceModel::ageStep() {
   delete [] x;  
   delete [] system.u;  delete [] system.v;  delete [] system.w;
   delete [] fzlev;
+
+  ierr = tau3.beginGhostCommTransfer(taunew3); CHKERRQ(ierr);
+  ierr = tau3.endGhostCommTransfer(taunew3); CHKERRQ(ierr);
 
   return 0;
 }

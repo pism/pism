@@ -65,9 +65,6 @@ PetscErrorCode PAConstant::init(PISMVars &/*vars*/) {
   }
 
   delete lic;
-
-  t = grid.year;
-  dt = 0;
 	    
   return 0;
 }

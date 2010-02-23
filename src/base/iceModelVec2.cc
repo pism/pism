@@ -77,7 +77,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
 
   var1.init(my_name, my_grid, GRID_2D);
 
-  this->set(GSL_NAN);
+  //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
 
   return 0;
 }

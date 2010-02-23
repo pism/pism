@@ -257,8 +257,8 @@ PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
 PetscErrorCode PAForcing::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr;
 
-  if ((gsl_fcmp(t_years,  t,  1e-4) == 0) &&
-      (gsl_fcmp(dt_years, dt, 1e-4) == 0))
+  if ((fabs(t_years - t) < 1e-12) &&
+      (fabs(dt_years - dt) < 1e-12))
     return 0;
 
   t  = t_years;

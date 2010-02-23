@@ -68,9 +68,6 @@ PetscErrorCode PA_Parameterized_Temperature::init(PISMVars &/*vars*/) {
 
   delete lic;
 
-  t = grid.year;
-  dt = 0;
-
   return 0;
 }
 
@@ -309,8 +306,8 @@ PetscErrorCode PA_SeaRISE_Greenland::mean_precip(PetscReal t_years, PetscReal dt
 PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr;
 
-  if ((gsl_fcmp(t_years,  t,  1e-4) == 0) &&
-      (gsl_fcmp(dt_years, dt, 1e-4) == 0))
+  if ((fabs(t_years - t) < 1e-12) &&
+      (fabs(dt_years - dt) < 1e-12))
     return 0;
 
   t  = t_years;
