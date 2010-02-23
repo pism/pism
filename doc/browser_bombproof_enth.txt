@@ -2,9 +2,7 @@
 
 \section intro Introduction
 
-One of the essential goals for any thermomechanically-coupled numerical ice sheet model is a completely bombproof numerical scheme for the advection-conduction-reaction problem for the conservation of energy within the ice and the bedrock.  The conservation of energy problem here is described in terms of the enthalpy field for the ice and in terms of temperature for the bedrock.
-
-"Bombproof" means being, roughly, as stable as possible in as many realistic modeling contexts as possible.  PISM's scheme is observed to be highly robust in practice, but it is also provably stable in a significant range of circumstances.  The scheme is special to shallow ice sheets because it makes specific tradeoff choices with respect to vertical velocity, though it is generic (and low order) with respect to horizontal velocity.  In this page we will state the scheme, prove its stability properties, and specify the nontrivial modifications needed at the ice-bedrock transition.
+One of the essential goals for any thermomechanically-coupled numerical ice sheet model is a completely bombproof numerical scheme for the advection-conduction-reaction problem for the conservation of energy within the ice and the bedrock.  "Bombproof" means being, roughly, as stable as possible in as many realistic modeling contexts as possible.  PISM's scheme is observed to be highly robust in practice, but it is also provably stable in a significant range of circumstances.  The scheme is special to shallow ice sheets because it makes specific tradeoff choices with respect to vertical velocity, though it is generic (and low order) with respect to horizontal velocity.  In this page we will state the scheme, prove its stability properties, and specify the nontrivial modifications needed at the ice-bedrock transition.
 
 Accuracy is necessarily a second goal.  It is partly achieved 
 here because our scheme has truncation error \f$O(\Delta z^2)\f$
@@ -14,7 +12,9 @@ order \f$O(\Delta t,\Delta x,\Delta y, \Delta z^2)\f$ in circumstances where the
 ice flow velocity is small enough, relative to conductivity, and otherwise reverts to 
 order \f$O(\Delta t,\Delta x,\Delta y, \Delta z^1)\f$.
 
-The finite difference scheme in this section supercedes the PISM scheme for the 
+The conservation of energy problem here is described in terms of the enthalpy
+field for the ice and in terms of temperature for the bedrock.  The finite
+difference scheme here supercedes the PISM scheme for the 
 temperature equation described in the appendices of [\ref BBL].  That scheme 
 is robust but it has a CFL condition on \e vertical advection, an avoidable time step 
 restriction.  The CFL condition on \e horizontal advection
@@ -413,7 +413,7 @@ Because the relevant layer of bedrock below an ice sheet is again very shallow, 
   \f[ \rho_b c_b \frac{\partial T}{\partial t} = k_b \frac{\partial^2 T}{\partial z^2}. \f]
 Here we assume \f$\rho_b,k_b,c_b\f$ are constant material properties.
 
-Because there is no advection, our scheme is easily "bombproof" without choosing \f$\lambda\f$, or other complications.  In particular we use the simplest centered implicit (backward Euler) scheme and quickly get this scaled form,
+Because there is no advection, the simplest centered implicit (backward Euler) scheme is easily "bombproof" without choosing \f$\lambda\f$, or other complications.  It has this scaled form,
 \anchor bedrockeqn
 \f[ -R_b T_{k-1}^{n+1} + \left(1 + 2 R_b\right) T_k^{n+1} - R_b T_{k+1}^{n+1}
          = T_k^n, \tag{bedrockeqn} \f]
@@ -421,43 +421,40 @@ where
   \f[ R_b = \frac{k_b \Delta t}{\rho_b c_b \Delta z^2}. \f]
 This is unconditionally stable for a pure bedrock problem, and has a maximum principle, without any further qualification [\ref MortonMayers].
 
-The geothermal flux \f$G\f$ is applied at the bottom of the bedrock.   (This is at \c k=0 in enthSystemCtx::solveThisColumn().)  The second of equations (\ref columnbcs) is now
+The geothermal flux \f$G\f$ is applied at the bottom of the bedrock.  The second of equations (\ref columnbcs) is now
         \f[ - k_b \frac{\partial T}{\partial z}\Big|_{z=-Lbz} = G. \f]
-At this location we have the following equation, which
-modifies the above generic bedrock segment case.  It replaces the flux through the lower
-surface of the bottom segment of the column by a known flux:
+Thus we have this approximated Neumann boundary condition at the base of the bedrock:
 \anchor geothermalbedeqn
 \f[ \left(1 + 2 R_b\right) T_0^{n+1} - 2.0 R_b T_{+1}^{n+1}
          = T_0^n + \frac{2 \Delta t G}{\rho_b c_b \Delta z}. \tag{geothermalbedeqn} \f]
 The argument for this equation is standard, involving a temporary value \f$T_{-1}^{n+1}\f$ [\ref MortonMayers].
 
+According to the cases described in the next subsection, the bedrock thermal layer problem is either solved by combinedSystemCtx or bedrockOnlySystemCtx.  In the former case the ice and bedrock are combined together in one large system.  In the latter case the top of the bedrock temperature is a known value (Dirichlet condition).
+
 
 \section melt Heat flux jump and melt rate at ice base
 
-At the bottom of grounded ice, a certain amount of heat comes out of the earth and either enters the ice through conduction or melts the base of the ice.  If the ice sheet is sliding then additional heat is generated at the contact of the ice and the underlying material.  Because the PISM user may or may not want a bedrock thermal layer, because the basal ice may be cold (below the pressure-melting temperature) or temperate, and because the ice might be grounded or floating, we see there are a number of cases to consider and approximate by finite difference schemes.
+At the bottom of grounded ice, a certain amount of heat comes out of the earth and either enters the ice through conduction or melts the base of the ice.  If the ice sheet is sliding then additional heat is generated at the contact of the ice and the underlying material.  Because the PISM user may or may not want a bedrock thermal layer, because the basal ice may be cold (below the pressure-melting temperature) or temperate, and because the ice might be grounded or floating, we see there are a number of cases to consider and approximate by finite differences.
 
 Equations (5.40) and (9.134) of \ref GreveBlatter2009, which are identical, give a common framework describing the jump in conductive heat flux in both the cold and temperate cases, however:
-
 \anchor meltheuristic
 \f{equation*}
 \left(\begin{matrix}\text{conductive heat flux} \\ \text{from bedrock}\end{matrix}\right) - \left(\begin{matrix}\text{conductive heat flux} \\ \text{into the base of the ice}\end{matrix}\right) = \left(\text{heat lost to melt rate}\right) - \left(\text{heat gained from friction}\right)
 \f}
+In particular, if there is zero basal melt rate and no sliding, so that both terms on the right are zero, then the heat flux is a continuous vector quantity across the ice/bedrock interface.  Otherwise the above equation describes the heat flux jump.
 
-In particular, if there is zero basal melt rate and no sliding, so that both terms on the right are zero, then the heat flux is a continuous vector quantity across the ice/bedrock interface.
-
-In symbols, let \f$M\f$ be the basal melt rate, positive when ice is being turned into liquid, and \f$L\f$ be the latent heat of fusion of water.  We use a small-slope assumption for the base, namely that the normal direction to the ice base is the \f$z\f$ direction.  Recall that
+In symbols, let \f$M\f$ be the basal melt rate, positive when ice is being turned into liquid, and \f$L\f$ be the latent heat of fusion of water.  We use a small-slope assumption for the base, namely we assume that the normal direction to the ice base is the \f$z\f$ direction.  Recall that
   \f[ F_b = - \tau_b \cdot \mathbf{u}_b \f]
-is the heating rate from friction.  With this notation, the right hand side has this form for all grounded cases:
-
+is the heating rate from friction.  With this notation, the right hand side has the same form for all grounded cases:
 \anchor melteqn
 \f{align*}
 \left(\begin{matrix}\text{conductive heat flux} \\ \text{from bedrock}\end{matrix}\right) - \left(\begin{matrix}\text{conductive heat flux} \\ \text{into the base of the ice}\end{matrix}\right) &= \rho_i L M - F_b
 \f}
 Zero sliding is, of course, a possible condition for the velocities going into BOMBPROOF.
 
-On the other hand, zero melt rate is a possible outcome of the calculation described here.  Though the frictional heating rate from sliding is determined before doing one time step for conservation of energy, the melt rate is \e not known until the conservation of energy boundary value problem (for that time step) is solved.  Thus \f$M\f$ is an unknown here.  Ideally the melt rate produced thermodynamically here would be consistent with the same quantity used as the lower boundary condition determining vertical velocity from incompressibility (see IceModel::vertVelocityFromIncompressibility()), but for now we accept an \f$O(\Delta t)\f$ error by not iterating to solve this consistency relation.
+Though the frictional heating rate from sliding is determined before doing the time step for conservation of energy, the melt rate is \e not known until the conservation of energy boundary value problem is solved.  Thus \f$M\f$ is an unknown below.  Ideally the melt rate produced thermodynamically here would be consistent with the same quantity used as the lower boundary condition determining vertical velocity from incompressibility (see IceModel::vertVelocityFromIncompressibility()) at the same time step.  For now, however, we treat the column ice velocity as known at the beginning of the step, even though it actually came from the calculation of the melt rate at the previous step.  As a consequence, for now we accept an \f$O(\Delta t)\f$ error by not iterating to solve this consistency relation.  In the tables below, \f$w(0^+)\f$ is the vertical ice velocity at the bottom ice grid location, and it came from the previous time step, as the melt/refreeze rate.
 
-The following tables detail the cases.  In the implementation of these conditions, in the linear systems which we solve at each time step in each column of ice, are in every case tridiagonal matrices with diagonal dominance.  But the size and number of such systems varies according to the cases, so the code is nontrivial to understand.  In particular, when there is a bedrock thermal layer but the base is cold we solve a single system of size <code>Mz + Mbz -1</code>, while if there is a bedrock layer but the base is melting then we solve two systems, the one in ice of size \c Mz and the one in bedrock of size \c Mbz.  The comments in the table below are intended to illuminate this aspect.
+The following tables detail the cases.  In the linear systems which we solve at each time step in each column of ice, each of the cases below becomes one or two tridiagonal matrices with diagonal dominance.  Since the size and number (one or two) of such systems varies according to the cases, the code is nontrivial to understand.  In particular, when there is a bedrock thermal layer but the base is cold we solve a single system of size <code>Mz + Mbz -1</code>, while if there is a bedrock layer but the base is melting then we solve two systems, the one in ice of size \c Mz and the one in bedrock of size \c Mbz.  The comments in the table below are intended to illuminate this aspect.
 
 In every case below, \f$T(0^-)\f$ should be understood as the temperature at the top of the bedrock, while \f$E(0^+)\f$ is the enthalpy at the bottom of the ice.  The special normalizing value \f$E_s(0^+)\f$ is the enthalpy value which CTS ice would have at that pressure; see EnthalpyConverter.  In particular, \f$c_i^{-1} E_s(0^+)\f$ is the pressure-melting temperature at the base of the ice.  Recall \f$G\f$ is geothermal flux.
 
@@ -477,18 +474,36 @@ In every case below, \f$T(0^-)\f$ should be understood as the temperature at the
          -k_b \frac{\partial T}{\partial z}\Big|_{z=0^-} + k_i c_i^{-1}\frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 - F_b
          \end{matrix} \f] </td>
     <td> <p> The first equation, continuity of temperature, allows the second equation to be written with just three unknowns, E[1], E[0], and Tb[Mbz-2].  The system to solve is then tridiagonal and has unknowns Tb[0] .. Tb[Mbz-2] E[0] .. E[Mz-1] and size Mz + Mbz -1.  The second equation at left thus appears somewhere in the middle of a "large" system for the whole ice and bedrock column.</p>
-         <p>The top-of-bedrock temperature Tb[Mbz-1] is \e not one of the unknowns in the system, but is post-computed by the first equation.  </p></td>
+         <p>The top-of-bedrock temperature Tb[Mbz-1] is \e not one of the unknowns in the system, but is post-computed by the first equation.  </p>
+         <p>If the ice is floating then we are not in this case.</p></td>
 </tr> 
 <tr>
-    <td> temperate ice base:  
-         <p>  \f$E(0^+) >= E_s(0^+)\f$ </p> </td>
+    <td> temperate ice base with downward column velocity:  
+         <p>  \f$E(0^+) \ge E_s(0^+)\f$ and \f$ w(0^+) < 0\f$</p> 
+    </td>
     <td> \f[ \begin{matrix}
-         \frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 \\ \\
+         \frac{\partial E}{\partial t}\Big|_{z=0^+} + w(0^+)\frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 \\ \\
          T(0^-) = c_i^{-1} E_s(0^+)  \\ \\
          -k_b \frac{\partial T}{\partial z}\Big|_{z=0^-} - 0 = \rho_i L M - F_b
          \end{matrix} \f] </td>
-    <td> <p> The first equation is a Neumann condtion at the bottom of the well-posed ice enthalpy problem, a system with unknowns E[0] .. E[Mz-1] and size Mz.  </p>
-         <p>The second equation implies that the bedrock thermal problem is well-posed by itself, with Dirichlet condition at the top and Neumann at the bottom.  So we solve it in a system of size Mbz for unknowns Tb[0] .. Tb[Mbz-1].  From the solution Tb[] we compute heat flux out of the top of the bedrock layer, and the third equation gives us the basal melt rate \f$M\f$.  </p> </td>
+    <td> <p> The first equation is no boundary condition at all because, in this case of temperate ice base, we assume zero enthalpy conductivity, so the problem is hyperbolic in the ice.  We upwind implicitly so the discretized form looks like
+    \f[ (1-\nu w(0^+)) E_0^{n+1} + \nu w(0^+) E_1^{n+1} = E_0^n, \f]
+where \f$\nu=\Delta t/\Delta z\f$ and \f$E_0^{n+1} = \f$E[0] and \f$E_1^{n+1}=\f$E[1], so we believe we have a well-posed ice enthalpy problem.  It is a diagonally-dominant tridiagonal system with unknowns E[0] .. E[Mz-1] and size Mz.  </p>
+         <p>The second equation implies that the bedrock thermal problem is well-posed by itself, with Dirichlet condition at the top and Neumann at the bottom.  So we solve it in a system of size Mbz for unknowns Tb[0] .. Tb[Mbz-1].  From the solution Tb[] we compute heat flux out of the top of the bedrock layer, and the third equation gives us the basal melt rate \f$M\f$.  </p>
+         <p>If the ice is floating then the second equation is replaced by \f$T(0^-) = T_{sb}\f$, but this is still a Dirichlet condition for the temperature in the bedrock.  The third equation is short-circuited: we get the basal melt rate \f$M\f$ as supplied by by PISMOceanModel::shelf_base_mass_flux().</p>  </td>
+</tr> 
+<tr>
+    <td> temperate ice base with upward column velocity:  
+         <p>  \f$E(0^+) \ge E_s(0^+)\f$ and \f$ w(0^+) \ge 0\f$</p>
+    </td>
+    <td> \f[ \begin{matrix}
+         E\Big|_{z=0^+} = E_s(0^+) \\ \\
+         T(0^-) = c_i^{-1} E_s(0^+)  \\ \\
+         -k_b \frac{\partial T}{\partial z}\Big|_{z=0^-} - 0 = \rho_i L M - F_b
+         \end{matrix} \f] </td>
+    <td> <p> The first equation is a Dirichlet condition for the ice enthalpy problem.  We are assuming here that any ice advected upward into the ice column "comes in" as pressure-melting temperature ice with zero liquid fraction, if the ice base was temperate at the last time step.  Note that this case occurs if either there was exactly no melt in the previous time step, or if there was refreeze in the previous time step.  The result is a tridiagonal system with unknowns E[0] .. E[Mz-1] and size Mz.  </p>
+         <p>The second and third equations have the same interpretation as the case immediately above.  </p> 
+         <p>If the ice is floating then the same comments as the in the case immediately above, about the second and third equations, apply.</p></td>
 </tr> 
 </table>
 
@@ -508,52 +523,40 @@ In every case below, \f$T(0^-)\f$ should be understood as the temperature at the
          T(0^-) = c_i^{-1} E(0^+) \\ \\
          G + k_i c_i^{-1}\frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 - F_b
          \end{matrix} \f] </td>
-    <td> <p> The second equation is a Neumann condition for the enthalpy problem.  Thus the system has unknowns E[0] .. E[Mz-1] and size Mz.  The first equation then computes Tb[0]. </p></td>
+    <td> <p> The second equation is a Neumann condition for the enthalpy problem.  Thus the system has unknowns E[0] .. E[Mz-1] and size Mz.  The first equation then computes Tb[0]. </p>
+         <p>If the ice is floating then we are not in this case.</p></td>
 </tr> 
 <tr>
-    <td> temperate ice base:    
-         <p> \f$E(0^+) >= E_s(0^+)\f$ </p> </td>
+    <td> temperate ice base with downward column velocity:  
+         <p>  \f$E(0^+) \ge E_s(0^+)\f$ and \f$ w(0^+) < 0\f$</p>
+    </td>
     <td> \f[ \begin{matrix}
-         \frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 \\ \\
+         \frac{\partial E}{\partial t}\Big|_{z=0^+} + w(0^+)\frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 \\ \\
          T(0^-) = c_i^{-1} E_s(0^+)  \\ \\
          G - 0 = \rho_i L M - F_b
          \end{matrix} \f] </td>
-    <td> <p> The first equation is a Neumann condition for the enthalpy problem, which has the same unknowns and size as above.  The temperature Tb[0] at the top of the bedrock is computed by the second equation.  The melt rate \f$M\f$ can be set immediately from the third equation. </p> </td>
+    <td> <p> The first equation has exactly the same interpretation as in the corresponding with-bedrock case above. </p>
+    <p> The temperature Tb[0] at the top of the bedrock is computed by the second equation.  The melt rate \f$M\f$ can be set immediately from the third equation. </p> 
+    <p>If the ice is floating then the second equation is replaced by \f$T(0^-) = T_{sb}\f$, directly giving Tb[0].  The third equation is short-circuited: we get the basal melt rate \f$M\f$ as supplied by by PISMOceanModel::shelf_base_mass_flux().</p></td>
+</tr> 
+<tr>
+    <td> temperate ice base with upward column velocity:  
+         <p>  \f$E(0^+) \ge E_s(0^+)\f$ and \f$ w(0^+) \ge 0\f$</p>
+    </td>
+    <td> \f[ \begin{matrix}
+         E\Big|_{z=0^+} = E_s(0^+) \\ \\
+         T(0^-) = c_i^{-1} E_s(0^+)  \\ \\
+         G - 0 = \rho_i L M - F_b
+         \end{matrix} \f] </td>
+    <td> <p> The first equation  has exactly the same interpretation as in the corresponding with-bedrock case above. </p>
+         <p>The second and third equations have the same interpretation as the case immediately above.  </p> 
+         <p>If the ice is floating then the same comments as the in the case immediately above, about the second and third equations, apply.</p></td>
 </tr> 
 </table>
 
 
-\subsection floatingbasecase case: floating ice
 
-<table border>
-<tr>
-    <td width="20%"> <b>condition on bedrock</b> <p><b> (any ice base)</b></p>  </td>
-    <td width="20%"> \b continuum \b equations </td>
-    <td> \b comments </td>
-</tr>
-<tr>
-    <td> HAVE bedrock thermal layer (Mbz>1) 
-          </td>
-    <td> \f[ \begin{matrix}
-         \frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 \\ \\
-         T(0^-) = T_{sb}
-         \end{matrix} \f] </td>
-    <td> <p> The first equation is a Neumann condition for the ice enthalpy system, with unknowns E[0] .. E[Mz-1] and size Mz.  The second equation is a Dirichlet condition for the bedrock thermal layer system, with unknowns Tb[0] .. Tb[Mbz-1] and size Mbz-1.</p>
-    <p>The shelf base temperature \f$T_{sb}\f$ is supplied by PISMOceanModel::shelf_base_temperature().  The melt rate \f$M\f$ is supplied as a boundary condition from the ocean model by PISMOceanModel::shelf_base_mass_flux(). </p>
-    <p> Note the odd physical choice that the shelf base temperature is used as the temperature at the \e top of the \e bedrock, which is actually the bottom of the ocean.  This choice means that the conservation of energy code does not need to know about the bedrock topography or the elevation of sea level.  FIXME: But there could be a PISMOceanModel::subshelf_bed_temperature() routine. </p> </td>
-</tr> 
-<tr>
-    <td> NO bedrock thermal layer (Mbz=1)
-          </td>
-    <td> \f[ \begin{matrix}
-         \frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 \\ \\
-         T(0^-) = T_{sb}
-         \end{matrix} \f] </td>
-    <td> <p>The second equation entirely determines Tb[0] without solving a bedrock system.  The rest is the same as the case above.</p> </td>
-</tr> 
-</table>
-
-
+Regarding the floating case:  The shelf base temperature \f$T_{sb}\f$ is supplied by PISMOceanModel::shelf_base_temperature().  The melt rate \f$M\f$ is supplied as a boundary condition from the ocean model by PISMOceanModel::shelf_base_mass_flux().  Note the odd physical choice that the shelf base temperature is used as the temperature at the \e top of the \e bedrock, which is actually the bottom of the ocean.  This choice means that the conservation of energy code does not need to know about the bedrock topography or the elevation of sea level.  FIXME: But there could be a PISMOceanModel::subshelf_bed_temperature() routine.
 
 
 
