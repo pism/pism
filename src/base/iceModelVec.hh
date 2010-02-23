@@ -143,6 +143,10 @@ public:
   PetscErrorCode  get_array(PetscScalar** &a);
   virtual PetscErrorCode set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v_y);
   virtual PetscErrorCode mask_by(IceModelVec2 &M, PetscScalar fill = 0.0);
+  virtual PetscScalar diff_x(int i, int j);
+  virtual PetscScalar diff_y(int i, int j);
+  virtual PetscScalar diff_x_p(int i, int j);
+  virtual PetscScalar diff_y_p(int i, int j);
   virtual PetscErrorCode view(Vec g2, PetscInt viewer_size);
   virtual PetscScalar& operator() (int i, int j);
 };

@@ -43,75 +43,58 @@ as global.  (I.e. we do not communicate ghosts.)
 PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2 &vtaudy) {
   PetscErrorCode ierr;
 
-  PetscScalar **h, **bed, **taudx, **taudy;
-
   const PetscScalar n       = ice->exponent(), // frequently n = 3
                     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
                     invpow  = 1.0 / etapow,  // = 3/8
                     dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
   const PetscScalar minThickEtaTransform = 5.0; // m
-  const PetscInt    Mx=grid.Mx, My=grid.My;
   const PetscScalar dx=grid.dx, dy=grid.dy;
 
   bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
 
-  ierr =    vh.get_array(h);    CHKERRQ(ierr);
+  ierr =    vh.begin_access();    CHKERRQ(ierr);
   ierr =    vH.begin_access();  CHKERRQ(ierr);
-  ierr =  vbed.get_array(bed);  CHKERRQ(ierr);
+  ierr =  vbed.begin_access();  CHKERRQ(ierr);
   ierr = vMask.begin_access();  CHKERRQ(ierr);
 
-  ierr = vtaudx.get_array(taudx); CHKERRQ(ierr);
-  ierr = vtaudy.get_array(taudy); CHKERRQ(ierr);
+  ierr = vtaudx.begin_access(); CHKERRQ(ierr);
+  ierr = vtaudy.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar pressure = ice->rho * standard_gravity * vH(i,j);
       if (pressure <= 0.0) {
-        taudx[i][j] = 0.0;
-        taudy[i][j] = 0.0;
+        vtaudx(i,j) = 0.0;
+        vtaudy(i,j) = 0.0;
       } else {
         PetscScalar h_x = 0.0, h_y = 0.0;
-        bool edge = ((i == 0) || (i == Mx-1) || (j == 0) || (j == My-1));
-        if ( vMask.is_grounded(i,j)
-             && (transformForSurfaceGradient == PETSC_TRUE)
-             && (!edge)                                     ) {
-          // in grounded case, differentiate eta = H^{8/3} by chain rule
-          if (vH(i,j) > 0.0) {
-            const PetscScalar myH = (vH(i,j) < minThickEtaTransform)
-                                    ? minThickEtaTransform : vH(i,j);
-            const PetscScalar eta = pow(myH, etapow),
-                              factor = invpow * pow(eta, dinvpow);
-            h_x = factor * (pow(vH(i+1,j),etapow) - pow(vH(i-1,j),etapow)) / (2*dx);
-            h_y = factor * (pow(vH(i,j+1),etapow) - pow(vH(i,j-1),etapow)) / (2*dy);
-          }
-          // now add bed slope to get actual h_x,h_y
-          // FIXME: there is no reason to assume user's bed is periodized; see vertical
-          //   velocity computation
-          h_x += (bed[i+1][j] - bed[i-1][j]) / (2*dx);
-          h_y += (bed[i][j+1] - bed[i][j-1]) / (2*dy);
-        } else {  // floating or whatever
-          if (compute_surf_grad_inward_ssa && edge) {
-            if (i == 0) {
-              h_x = (h[i+1][j] - h[i][j]) / (dx);
-              h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
-            } else if (i == Mx-1) {
-              h_x = (h[i][j] - h[i-1][j]) / (dx);
-              h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
-            } else if (j == 0) {
-              h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
-              h_y = (h[i][j+1] - h[i][j]) / (dy);
-            } else if (j == My-1) {        
-              h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
-              h_y = (h[i][j] - h[i][j-1]) / (dy);
-            }
+	// FIXME: we need to handle grid periodicity correctly.
+        if (vMask.is_grounded(i,j) && (transformForSurfaceGradient == PETSC_TRUE)) {
+	  // in grounded case, differentiate eta = H^{8/3} by chain rule
+	  if (vH(i,j) > 0.0) {
+	    const PetscScalar myH = (vH(i,j) < minThickEtaTransform) ?
+	      minThickEtaTransform : vH(i,j);
+	    const PetscScalar eta = pow(myH, etapow), factor = invpow * pow(eta, dinvpow);
+	    h_x = factor * (pow(vH(i+1,j),etapow) - pow(vH(i-1,j),etapow)) / (2*dx);
+	    h_y = factor * (pow(vH(i,j+1),etapow) - pow(vH(i,j-1),etapow)) / (2*dy);
+	  }
+	  // now add bed slope to get actual h_x,h_y
+	  // FIXME: there is no reason to assume user's bed is periodized; see vertical
+	  //   velocity computation
+	  h_x += vbed.diff_x(i,j);
+	  h_y += vbed.diff_y(i,j);
+        } else {  // floating or eta transformation is not used
+          if (compute_surf_grad_inward_ssa) {
+	    h_x = vh.diff_x_p(i,j);
+	    h_y = vh.diff_y_p(i,j);
           } else {
-            h_x = (h[i+1][j] - h[i-1][j]) / (2*dx);
-            h_y = (h[i][j+1] - h[i][j-1]) / (2*dy);
-          }
+	    h_x = vh.diff_x(i,j);
+	    h_y = vh.diff_y(i,j);
+	  }
         }
 
-        taudx[i][j] = - pressure * h_x;
-        taudy[i][j] = - pressure * h_y;
+        vtaudx(i,j) = - pressure * h_x;
+        vtaudy(i,j) = - pressure * h_y;
       }
     }
   }

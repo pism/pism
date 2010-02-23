@@ -102,18 +102,16 @@ IcePSTexModel::IcePSTexModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariabl
 IcePSTexModel::~IcePSTexModel() {
 
   if (ivol != PETSC_NULL) {
-    dt_ser->flush();  delete dt_ser;
-    ivol->flush();  delete ivol;
-    iarea->flush();  delete iarea;
-    maxcbar->flush();  delete maxcbar;
+    delete dt_ser;
+    delete ivol;
+    delete iarea;
+    delete maxcbar;
 
-    avup0->flush();  avup1->flush();  avup2->flush();
     delete avup0;  delete avup1;  delete avup2;
-    avdwn0->flush();  avdwn1->flush();  avdwn2->flush();
-    delete avdwn0;  delete avdwn1;  delete avdwn2;
+    delete avdwn0; delete avdwn1; delete avdwn2;
     if (exper_chosen != 3) {
-      avup3->flush();  delete avup3;
-      avdwn3->flush();  delete avdwn3;
+      delete avup3;
+      delete avdwn3;
     }
   }
 }
@@ -420,7 +418,6 @@ bool IcePSTexModel::inStream(const PetscScalar angle, const PetscScalar width,
 
 PetscErrorCode IcePSTexModel::setBedElev() {
   PetscErrorCode ierr;
-  PetscScalar **b;
   
   const PetscScalar    width = 200.0e3,  // trough width = 200km; not the same
                                          //   as stream width
@@ -430,7 +427,7 @@ PetscErrorCode IcePSTexModel::setBedElev() {
 
   ierr = vbed.set(plateau); CHKERRQ(ierr);
 
-  ierr = vbed.get_array(b); CHKERRQ(ierr);
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -441,7 +438,7 @@ PetscErrorCode IcePSTexModel::setBedElev() {
         PetscScalar drop = e[exper_chosen].bed_end_depth[m],
                     slope = drop / stream_length;
         if (inStream((pi/2.0)*m,width,x,y,x_loc,y_loc))
-          b[i][j] = plateau - slope * x_loc * cos(pi * y_loc / width);
+          vbed(i,j) = plateau - slope * x_loc * cos(pi * y_loc / width);
       }
     }
   }
@@ -489,7 +486,6 @@ PetscScalar IcePSTexModel::phiLocal(const PetscScalar width,
 
 PetscErrorCode IcePSTexModel::setTillPhi() {
   PetscErrorCode ierr;
-  PetscScalar **phi;
   
   const PetscScalar    dx = grid.dx, dy = grid.dy;
   PetscScalar          x_loc, y_loc;
@@ -499,7 +495,7 @@ PetscErrorCode IcePSTexModel::setTillPhi() {
   if (exper_chosen <= 1)
     return 0;  // nothing further for P0A and P0I
 
-  ierr = vtillphi.get_array(phi); CHKERRQ(ierr);
+  ierr = vtillphi.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -509,17 +505,17 @@ PetscErrorCode IcePSTexModel::setTillPhi() {
         const PetscScalar width = e[exper_chosen].stream_width[0] * 1000.0;
         for (PetscInt m=0; m<3; m++) {
           if (inStreamNbhd(false,(pi/180.0) * stream_angle_P2[m],width,x,y,x_loc,y_loc))
-            phi[i][j] = phiLocal(width,x_loc,y_loc,DEFAULT_PHI_STRONG,
-                                 e[exper_chosen].upstream_phi[m],
-                                 e[exper_chosen].downstream_phi[m]);
+            vtillphi(i,j) = phiLocal(width,x_loc,y_loc,DEFAULT_PHI_STRONG,
+				     e[exper_chosen].upstream_phi[m],
+				     e[exper_chosen].downstream_phi[m]);
         }
       } else {
         for (PetscInt m=0; m<4; m++) { // go through four sectors
           const PetscScalar width = e[exper_chosen].stream_width[m] * 1000.0;
           if (inStreamNbhd(false,(pi/2.0)*m,width,x,y,x_loc,y_loc)) {
-            phi[i][j] = phiLocal(width,x_loc,y_loc,DEFAULT_PHI_STRONG,
-                                 e[exper_chosen].upstream_phi[m],
-                                 e[exper_chosen].downstream_phi[m]);
+            vtillphi(i,j) = phiLocal(width,x_loc,y_loc,DEFAULT_PHI_STRONG,
+				     e[exper_chosen].upstream_phi[m],
+				     e[exper_chosen].downstream_phi[m]);
           }          
         }
       }
@@ -553,16 +549,15 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
   PetscScalar     x_loc, y_loc;
   const PetscScalar darea = grid.dx * grid.dy;
   
-  PetscScalar     **H, **ubar, **vbar;
-  ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
-  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vubar.begin_access(); CHKERRQ(ierr);
+  ierr = vvbar.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (H[i][j] > 0) {
-        const PetscScalar cbar = sqrt( PetscSqr(ubar[i][j])
-                                       + PetscSqr(vbar[i][j]) );
-        const PetscScalar x = -grid.Ly + grid.dy * j,  // note reversal
+      if (vH(i,j) > 0) {
+        const PetscScalar cbar = sqrt( PetscSqr(vubar(i,j)) + PetscSqr(vvbar(i,j)) );
+        const PetscScalar x = -grid.Ly + grid.dy * j, // note reversal (FIXME!
+						      // do we need this now?)
                           y = -grid.Lx + grid.dx * i,
                           r = sqrt(PetscSqr(x) + PetscSqr(y));
         if (cbar > maxcbarALL)  maxcbarALL = cbar;

@@ -493,15 +493,13 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
 
   ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);
   ierr = vGhf.set(0.0); CHKERRQ(ierr);
-  ierr = vtillphi.set(5.0); CHKERRQ(ierr);
-
-  ierr = setBed(); CHKERRQ(ierr);
-  ierr = setMask(); CHKERRQ(ierr);
-
-  // updateSurfaceElevationAndMask is called in misc_setup()
+  ierr = vtillphi.set(0.0); CHKERRQ(ierr);
 
   ierr = artm.set(ice->meltingTemp); CHKERRQ(ierr);
   ierr = acab.set(0.3/secpera); CHKERRQ(ierr);
+
+  ierr = setBed(); CHKERRQ(ierr);
+  ierr = setMask(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -510,9 +508,9 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
 PetscErrorCode IceMISMIPModel::init_couplers() {
   PetscErrorCode ierr;
 
-  ierr = IceModel::init_couplers(); CHKERRQ(ierr);
-
   config.set("ocean_sub_shelf_heat_flux_into_ice",0.0); // NO sub ice shelf melting
+
+  ierr = IceModel::init_couplers(); CHKERRQ(ierr);
 
   if (ocean != PETSC_NULL) {
     POConstant *co = dynamic_cast<POConstant*>(ocean);
@@ -781,10 +779,9 @@ PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype, char*
   ierr = PetscViewerSetFormat(view, PETSC_VIEWER_ASCII_DEFAULT); CHKERRQ(ierr);
 #endif
   // just get all Vecs which might be needed
-  PetscScalar     **H, **h, **bed;
-  ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = vh.get_array(h); CHKERRQ(ierr);
-  ierr = vbed.get_array(bed); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vh.begin_access(); CHKERRQ(ierr);
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
   if (mismiptype == 'f') {
     ierr = PetscViewerASCIIPrintf(view,"%10.4f %10.2f\n", rstats.xg / 1000.0, grid.year);
                CHKERRQ(ierr);
@@ -797,10 +794,12 @@ PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype, char*
       if (x >= 0) {
         if (mismiptype == 's') {
           ierr = PetscViewerASCIISynchronizedPrintf(view,
-               "%10.2f %10.4f\n", x / 1000.0, H[i][grid.ys]); CHKERRQ(ierr);
+						    "%10.2f %10.4f\n",
+						    x / 1000.0, vH(i,grid.ys)); CHKERRQ(ierr);
         } else { // mismiptype == 'e'
           ierr = PetscViewerASCIISynchronizedPrintf(view,
-                 "%10.4f %10.4f\n", h[i][grid.ys], bed[i][grid.ys]); CHKERRQ(ierr);
+						    "%10.4f %10.4f\n",
+						    vh(i,grid.ys), vbed(i,grid.ys)); CHKERRQ(ierr);
         }
       } else { // write empty string to make sure all processors write;
                // perhaps it is a bug in PETSc that this seems to be necessary?
@@ -819,16 +818,14 @@ PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype, char*
 
 PetscErrorCode IceMISMIPModel::getMISMIPStats() {
   // run this only after getRoutineStats() is called
-  
   PetscErrorCode  ierr;
-  PetscScalar     **H, **b, **q;
+  IceModelVec2 q = vWork2d[0];	// give it a shorter name
+  ierr = vubar.multiply_by(vH, q); CHKERRQ(ierr);
+  // q is signed flux in x direction, in units of m^2/s
 
-  ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = vbed.get_array(b); CHKERRQ(ierr);
-
-  ierr = vvbar.multiply_by(vH, vWork2d[0]); CHKERRQ(ierr);
-  ierr = vWork2d[0].get_array(q); CHKERRQ(ierr);
-  // q[i][j] is signed flux in x direction, in units of m^2/s
+  ierr =   vH.begin_access(); CHKERRQ(ierr);
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
+  ierr =    q.begin_access(); CHKERRQ(ierr);
   
   mstats.x1 = rstats.xg;
   mstats.x2 = rstats.xg - grid.dx;
@@ -839,37 +836,37 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
   const int ig = (int)floor(rstats.ig + 0.1);
 
   mstats.h1 = rstats.hxg;  // already computed
-  if ( (ig >= grid.xs) && (ig < grid.xs + grid.xm)
-       && (grid.ys == 0)                             ) {  // if (ig,0) is in ownership
-    myb1 = b[ig][0];
-    myq1 = q[ig][0];
+  if ( (ig >= grid.xs) && (ig < grid.xs + grid.xm) &&
+       (0  >= grid.ys) && (0  < grid.ys + grid.ym) ) {  // if (ig,0) is in ownership
+    myb1 = vbed(ig,0);
+    myq1 =    q(ig,0);
   }
   ierr = PetscGlobalMax(&myb1, &mstats.b1, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&myq1, &mstats.q1, grid.com); CHKERRQ(ierr);
 
-  if ( (ig-1 >= grid.xs) && (ig-1 < grid.xs + grid.xm)
-       && (grid.ys == 0)                             ) {  // if (ig-1,0) is in ownership
-    myh2 = H[ig-1][0];
-    myb2 = b[ig-1][0];
-    myq2 = q[ig-1][0];
+  if ( (ig-1 >= grid.xs) && (ig-1 < grid.xs + grid.xm) &&
+       (0  >= grid.ys) && (0  < grid.ys + grid.ym) ) {  // if (ig-1,0) is in ownership
+    myh2 =   vH(ig-1,0);
+    myb2 = vbed(ig-1,0);
+    myq2 =    q(ig-1,0);
   }
   ierr = PetscGlobalMax(&myh2, &mstats.h2, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&myb2, &mstats.b2, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&myq2, &mstats.q2, grid.com); CHKERRQ(ierr);
 
-  if ( (ig+1 >= grid.xs) && (ig+1 < grid.xs + grid.xm)
-       && (grid.ys == 0)                             ) {  // if (ig+1,0) is in ownership
-    myh3 = H[ig+1][0];
-    myb3 = b[ig+1][0];
-    myq3 = q[ig+1][0];
+  if ( (ig+1 >= grid.xs) && (ig+1 < grid.xs + grid.xm) &&
+       (0  >= grid.ys) && (0  < grid.ys + grid.ym) ) {  // if (ig+1,0) is in ownership
+    myh3 =   vH(ig+1,0);
+    myb3 = vbed(ig+1,0);
+    myq3 =    q(ig+1,0);
   }
   ierr = PetscGlobalMax(&myh3, &mstats.h3, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&myb3, &mstats.b3, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&myq3, &mstats.q3, grid.com); CHKERRQ(ierr);
 
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr =   vH.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  ierr =    q.end_access(); CHKERRQ(ierr);
 
   // perform MISMIP diagnostic computation here, to estimate dxg/dt:
   //   d xg            a - dq/dx
@@ -903,16 +900,16 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
                static_cast<PetscScalar>(i)-static_cast<PetscScalar>(grid.Mx - 1)/2.0;
 
       // grounding line xg is largest  x  so that  mask(i,j) != FLOATING
-      //       and mask[i+1][j] == FLOATING
+      //       and mask(i+1,j) == FLOATING
       if ( (ifrom0 > 0.0) && (vH(i,j) > 0.0) 
-           && (!vMask.is_floating(i,j))
-	   &&   vMask.is_floating(i+1,j) ) {
+           && vMask.is_grounded(i,j)
+	   && vMask.is_floating(i+1,j) ) {
         ig = PetscMax(ig,static_cast<PetscScalar>(i));
       }
 
       if ((ifrom0 > 0) && (vH(i,j) > 0.0)) {
         if (vubar(i,j) > maxubar)  maxubar = vubar(i,j);
-        if (!vMask.is_floating(i,j)) {
+        if (vMask.is_grounded(i,j)) {
           Ngrounded += 1.0;
           avubargrounded += vubar(i,j);
         } else {
@@ -934,8 +931,8 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
   rstats.xg = gigfrom0 * grid.dx;
   
   PetscScalar myhxg = 0.0;
-  if ( (gig >= grid.xs) && (gig < grid.xs + grid.xm)
-       && (grid.ys == 0)                             ) {  // if (gig,0) is in ownership
+  if ( (gig >= grid.xs) && (gig < grid.xs + grid.xm)  &&
+       (0   >= grid.ys) && (0   < grid.ys + grid.ym) ) {  // if (gig,0) is in ownership
     myhxg = vH(static_cast<int>(gig),0); // i.e. hxg = vH(gig,0)
   } else {
     myhxg = 0.0;

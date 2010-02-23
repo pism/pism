@@ -210,9 +210,9 @@ PetscErrorCode IceModelVec2::view(Vec g2, PetscInt viewer_size) {
 /*!
   Note that i corresponds to the x direction and j to the y.
  */
+inline
 PetscScalar& IceModelVec2::operator() (int i, int j) {
-  PetscScalar **a = (PetscScalar**) array;
-  return a[i][j];
+  return static_cast<PetscScalar**>(array)[i][j];
 }
 
 ///// IceModelVec2Mask
@@ -275,3 +275,46 @@ PetscErrorCode IceModelVec2Mask::fill_where_floating(IceModelVec2 &v, const Pets
   return 0;
 }
 
+//! \brief Returns the x-derivative at i,j approximated using centered finite
+//! differences.
+inline
+PetscScalar IceModelVec2::diff_x(int i, int j) {
+  return ( (*this)(i + 1,j) - (*this)(i - 1,j) ) / (2 * grid->dx);
+}
+
+//! \brief Returns the y-derivative at i,j approximated using centered finite
+//! differences.
+inline
+PetscScalar IceModelVec2::diff_y(int i, int j) {
+  return ( (*this)(i,j + 1) - (*this)(i,j - 1) ) / (2 * grid->dy);
+}
+
+//! \brief Returns the x-derivative at i,j approximated using centered finite
+//! differences. Respects grid periodicity and uses one-sided FD at grid edges
+//! if necessary.
+PetscScalar IceModelVec2::diff_x_p(int i, int j) {
+  if (grid->periodicity & X_PERIODIC)
+    return diff_x(i,j);
+  
+  if (i == 0)
+    return ( (*this)(i + 1,j) - (*this)(i,j) ) / (grid->dx);
+  else if (i == grid->Mx - 1)
+    return ( (*this)(i,j) - (*this)(i - 1,j) ) / (grid->dx);
+  else
+    return diff_x(i,j);
+}
+
+//! \brief Returns the y-derivative at i,j approximated using centered finite
+//! differences. Respects grid periodicity and uses one-sided FD at grid edges
+//! if necessary.
+PetscScalar IceModelVec2::diff_y_p(int i, int j) {
+  if (grid->periodicity & Y_PERIODIC)
+    return diff_y(i,j);
+  
+  if (j == 0)
+    return ( (*this)(i,j + 1) - (*this)(i,j) ) / (grid->dy);
+  else if (j == grid->My - 1)
+    return ( (*this)(i,j) - (*this)(i,j - 1) ) / (grid->dy);
+  else
+    return diff_y(i,j);
+}

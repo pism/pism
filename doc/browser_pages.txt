@@ -20,7 +20,6 @@ For a complete list of classes, click on the
 points into the PISM classes are:
   - IceModel
   - IceModel::init()
-  - PISMClimateCoupler
   - IceGrid
   - IceModelVec
   - PISMSurfaceModel
