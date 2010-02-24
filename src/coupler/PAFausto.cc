@@ -71,7 +71,7 @@ PetscErrorCode PA_Parameterized_Temperature::init(PISMVars &/*vars*/) {
   return 0;
 }
 
-PetscErrorCode PA_Parameterized_Temperature::write_input_fields(PetscReal /*t_years*/, PetscReal /*dt_years*/,
+PetscErrorCode PA_Parameterized_Temperature::write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
 								string filename) {
   PetscErrorCode ierr;
 
@@ -84,7 +84,7 @@ PetscErrorCode PA_Parameterized_Temperature::write_diagnostic_fields(PetscReal t
 								     string filename) {
   PetscErrorCode ierr;
 
-  ierr = write_input_fields(t_years, dt_years, filename); CHKERRQ(ierr);
+  ierr = write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
 
   ierr = update(t_years, dt_years); CHKERRQ(ierr);
 

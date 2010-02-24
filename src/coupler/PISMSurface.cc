@@ -39,11 +39,11 @@ PetscErrorCode PISMSurfaceModel::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PISMSurfaceModel::write_input_fields(PetscReal t_years, PetscReal dt_years,
+PetscErrorCode PISMSurfaceModel::write_model_state(PetscReal t_years, PetscReal dt_years,
 						    string filename) {
   PetscErrorCode ierr;
 
-  ierr = atmosphere->write_input_fields(t_years, dt_years, filename); CHKERRQ(ierr);
+  ierr = atmosphere->write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
 
   return 0;
 }
@@ -179,12 +179,12 @@ PetscErrorCode PSConstant::ice_surface_temperature(PetscReal /*t_years*/, PetscR
 }
 
 //! Does not ask the atmosphere model because it does not use one.
-PetscErrorCode PSConstant::write_input_fields(PetscReal /*t_years*/, PetscReal /*dt_years*/,
+PetscErrorCode PSConstant::write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
 						    string filename) {
   PetscErrorCode ierr;
 
-  ierr = artm.write(filename.c_str(), NC_FLOAT); CHKERRQ(ierr);
-  ierr = acab.write(filename.c_str(), NC_FLOAT); CHKERRQ(ierr);
+  ierr = artm.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = acab.write(filename.c_str()); CHKERRQ(ierr);
 
   return 0;
 }
@@ -194,7 +194,7 @@ PetscErrorCode PSConstant::write_diagnostic_fields(PetscReal t_years, PetscReal 
 						   string filename) {
   PetscErrorCode ierr;
 
-  ierr = write_input_fields(t_years, dt_years, filename); CHKERRQ(ierr);
+  ierr = write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
 
   return 0;
 }
@@ -322,10 +322,6 @@ PetscErrorCode PSLocalMassBalance::ice_surface_mass_flux(PetscReal t_years, Pets
   }
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = atmosphere->end_pointwise_access(); CHKERRQ(ierr);
-
-  if (use_fausto_pdd_parameters) {
-  }
-
 
   return 0;
 }
@@ -547,11 +543,11 @@ PetscErrorCode PSForceThickness::max_timestep(PetscReal t_years, PetscReal &dt_y
   return 0;
 }
 
-PetscErrorCode PSForceThickness::write_input_fields(PetscReal t_years, PetscReal dt_years,
+PetscErrorCode PSForceThickness::write_model_state(PetscReal t_years, PetscReal dt_years,
 						    string filename) {
   PetscErrorCode ierr;
 
-  ierr = input_model->write_input_fields(t_years, dt_years, filename); CHKERRQ(ierr);
+  ierr = input_model->write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
 
   return 0;
 }

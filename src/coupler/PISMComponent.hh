@@ -42,8 +42,8 @@ public:
 
   //! \brief Writes fields that were read from an input file and are necessary
   //! for restarting.
-  virtual PetscErrorCode write_input_fields(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-					    string /*filename*/)
+  virtual PetscErrorCode write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
+					   string /*filename*/)
   { return 0; }
 
   //! \brief Updates the model and writes all the internal fields (for testing

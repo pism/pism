@@ -160,11 +160,11 @@ PetscErrorCode PAForcing::max_timestep(PetscReal t_years,
   return 0;
 }
 
-PetscErrorCode PAForcing::write_input_fields(PetscReal t_years, PetscReal dt_years,
+PetscErrorCode PAForcing::write_model_state(PetscReal t_years, PetscReal dt_years,
 					     string filename) {
   PetscErrorCode ierr;
 
-  ierr = input_model->write_input_fields(t_years, dt_years, filename); CHKERRQ(ierr);
+  ierr = input_model->write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
 
   return 0;
 }

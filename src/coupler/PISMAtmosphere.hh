@@ -71,7 +71,7 @@ public:
   virtual PetscErrorCode end_pointwise_access();
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values);
-  virtual PetscErrorCode write_input_fields(PetscReal t_years, PetscReal dt_years,
+  virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 						 string filename);
@@ -93,7 +93,7 @@ public:
   PA_Parameterized_Temperature(IceGrid &g, const NCConfigVariable &conf)
     : PISMAtmosphereModel(g, conf) {}
   virtual PetscErrorCode init(PISMVars &vars);	      // nb
-  virtual PetscErrorCode write_input_fields(PetscReal /*t_years*/,
+  virtual PetscErrorCode write_model_state(PetscReal /*t_years*/,
 					    PetscReal /*dt_years*/,
 					    string filename);
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
@@ -170,7 +170,7 @@ public:
   virtual ~PAForcing();
   virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode write_input_fields(PetscReal t_years, PetscReal dt_years,
+  virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 						 string filename);
@@ -231,7 +231,7 @@ public:
   virtual PetscErrorCode end_pointwise_access();   
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values); 
-  virtual PetscErrorCode write_input_fields(PetscReal t_years, PetscReal dt_years,
+  virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
 protected:
   PetscReal gamma;

@@ -216,8 +216,8 @@ PetscErrorCode IceModel::temperatureStep(
     SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }
   if (ocean != PETSC_NULL) {
-    ierr = ocean->shelf_base_mass_flux(grid.year, dt / secpera, shelfbmassflux); CHKERRQ(ierr);
-    ierr = ocean->shelf_base_temperature(grid.year, dt / secpera, shelfbtemp); CHKERRQ(ierr);
+    ierr = ocean->shelf_base_mass_flux(grid.year, dtTempAge / secpera, shelfbmassflux); CHKERRQ(ierr);
+    ierr = ocean->shelf_base_temperature(grid.year, dtTempAge / secpera, shelfbtemp); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
   }

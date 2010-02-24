@@ -40,7 +40,7 @@ public:
 					       IceModelVec2 &result) = 0;
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
 						 IceModelVec2 &result) = 0;
-  virtual PetscErrorCode write_input_fields(PetscReal t_years, PetscReal dt_years,
+  virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 						 string filename);
@@ -66,7 +66,7 @@ public:
 
   virtual PetscErrorCode ice_surface_temperature(PetscReal, PetscReal, IceModelVec2 &)
   { return 0; }
-  virtual PetscErrorCode write_input_fields(PetscReal, PetscReal, string)
+  virtual PetscErrorCode write_model_state(PetscReal, PetscReal, string)
   { return 0; }
   virtual PetscErrorCode write_diagnostic_fields(PetscReal, PetscReal, string)
   { return 0; }
@@ -112,7 +112,7 @@ public:
 					       IceModelVec2 &result);
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
 						 IceModelVec2 &result);
-  virtual PetscErrorCode write_input_fields(PetscReal t_years, PetscReal dt_years,
+  virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 						 string filename);
@@ -154,8 +154,8 @@ public:
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
 						 IceModelVec2 &result);
   virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
-  virtual PetscErrorCode write_input_fields(PetscReal t_years, PetscReal dt_years,
-					    string filename);
+  virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
+					   string filename);
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 						 string filename);
 protected:

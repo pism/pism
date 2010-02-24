@@ -87,17 +87,22 @@ If the file \verb|foo.nc|, specified by \verb|-extra_file foo.nc|, already exist
   \begin{longtable}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}\hline
     \textbf{Name} & \textbf{Units} & \textbf{Description}\\
     \hline
+    \texttt{acab} &m/year & instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate \\
     \texttt{age} & years & age of ice \\
+    \texttt{artm} & time-dependent annual average ice temperature at ice surface but below firn processes\\
     \texttt{bfrict} & mW/m$^{2}$ & basal frictional heating from ice sliding (= till dissipation) \\
     \texttt{bheatflx} & W/m$^{2}$ & upward geothermal flux at bedrock surface \\
     \texttt{bmelt} & m/year & ice basal melt rate in ice thickness per time \\
     \texttt{bwat} & m & effective thickness of subglacial melt water \\
+    \texttt{bwp} & Pa & subglacial (pore) water pressure \\
     \texttt{cbar} & m/year & magnitude of vertically-integrated horizontal velocity of ice \\
     \texttt{cbase} & m/year & magnitude of horizontal velocity of ice at base of ice \\
     \texttt{cflx} & m$^{2}$/year & magnitude of vertically-integrated horizontal flux of ice \\
     \texttt{csurf} & m/year & magnitude of horizontal velocity of ice at ice surface \\
     \texttt{dHdt} & m/year & rate of change of ice thickness \\
     \texttt{dbdt} & m/year& bedrock uplift rate \\
+    \texttt{dhdt} & m/year& rate of change of surface elevation \\
+    \texttt{hardav} & Pa s$^{1/n}$ & vertical average of ice hardness \\
     \texttt{lat} & degrees north& latitude \\
     \texttt{litho\und temp} & K & lithosphere (bedrock) temperature\\
     \texttt{lon} & degrees east & longitude \\
@@ -107,6 +112,9 @@ If the file \verb|foo.nc|, specified by \verb|-extra_file foo.nc|, already exist
     \texttt{tauc} & Pa & yield stress for basal till (plastic or pseudo-plastic model) \\
     \texttt{taud} & Pa & magnitude of driving shear stress at base of ice \\
     \texttt{temp} & K & ice temperature \\
+    \texttt{temp_pa} & C & pressure-adjusted ice temperature \\
+    \texttt{tempbase} & K & ice temperature at the ice base\\
+    \texttt{tempsurf} & K & ice temperature at the ice surface\\
     \texttt{thk} & m & ice thickness\\
     \texttt{tillphi} & degrees & friction angle for till under grounded ice sheet \\
     \texttt{topg} & m & bedrock surface elevation \\
@@ -114,10 +122,20 @@ If the file \verb|foo.nc|, specified by \verb|-extra_file foo.nc|, already exist
     \texttt{ub} & m/year & basal ice velocity in the X direction \\
     \texttt{usurf} & m & ice upper surface elevation \\
     \texttt{uvel} & m/year & horizontal velocity of ice in the X direction \\
+    \texttt{uvelbase} & m/year & horizontal velocity of ice in the X direction
+    at the ice base\\
+    \texttt{uvelsurf} & m/year & horizontal velocity of ice in the X direction
+    at the ice surface\\
     \texttt{vbar} & m/year & vertical mean of horizontal ice velocity in the Y direction \\
+    \texttt{vvelbase} & m/year & horizontal velocity of ice in the Y direction
+    at the ice base\\
+    \texttt{vvelsurf} & m/year & horizontal velocity of ice in the Y direction
+    at the ice surface\\
     \texttt{vb} & m/year & basal ice velocity in the Y direction \\
     \texttt{vvel} & m/year & horizontal velocity of ice in the Y direction \\
     \texttt{wvel} & m/year & vertical velocity of ice \\
+    \texttt{wvelbase} & m/year &vertical velocity of ice at the ice base\\
+    \texttt{wvelsurf} & m/year & horizontal velocity of ice at the ice surface\\
     \hline
   \end{longtable}
  \label{tab:extra-vars}

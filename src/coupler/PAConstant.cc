@@ -119,7 +119,7 @@ PetscErrorCode PAConstant::temp_snapshot(PetscReal t_years, PetscReal dt_years,
   return 0;
 }
 
-PetscErrorCode PAConstant::write_input_fields(PetscReal /*t_years*/, PetscReal /*dt_years*/,
+PetscErrorCode PAConstant::write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
 					      string filename) {
   PetscErrorCode ierr;
 

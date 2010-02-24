@@ -301,34 +301,35 @@ PetscErrorCode IceModel::set_output_size(string option,
   }
 
   if (keyword == "small") {
-
     // only model-state variables are saved; we're done
-
     return 0;
-  }
 
-  // add all the variables listed in the config file ("medium" size):
-  string tmp = config.get_string("output_variables");
-  istringstream list(tmp);
+  } else if (keyword == "medium") {
+    // add all the variables listed in the config file ("medium" size):
+    string tmp = config.get_string("output_medium");
+    istringstream list(tmp);
   
-  // split the list; note that this also removes any duplicate entries
-  while (getline(list, tmp, ' ')) {
-    if (!tmp.empty())		// this ignores multiple spaces separating variable names
-      result.insert(tmp);
-  }
+    // split the list; note that this also removes any duplicate entries
+    while (getline(list, tmp, ' ')) {
+      if (!tmp.empty())		// this ignores multiple spaces separating variable names
+	result.insert(tmp);
+    }
+    return 0;
 
+  } else if (keyword == "big") {
+    // add all the variables listed in the config file ("big" size):
+    string tmp = config.get_string("output_big");
+    istringstream list(tmp);
   
-  if (keyword == "big") {
-    // add some more variables
+    // split the list; note that this also removes any duplicate entries
+    while (getline(list, tmp, ' ')) {
+      if (!tmp.empty())		// this ignores multiple spaces separating variable names
+	result.insert(tmp);
+    }
+    return 0;
 
-    if (config.get_flag("do_age"))
-      output_vars.insert("age");
-
-    result.insert("uvel");
-    result.insert("vvel");
-    result.insert("wvel");
-    result.insert("uvelsurf");
-    result.insert("vvelsurf");
+  } else {
+    SETERRQ(1, "can't happen");
   }
 
   return 0;

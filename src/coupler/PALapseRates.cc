@@ -87,7 +87,7 @@ PetscErrorCode PALapseRates::temp_time_series(int i, int j, int N,
   return 0;
 }
 
-PetscErrorCode PALapseRates::write_input_fields(PetscReal t_years, PetscReal dt_years,
+PetscErrorCode PALapseRates::write_model_state(PetscReal t_years, PetscReal dt_years,
 						string filename) {
   PetscErrorCode ierr;
 

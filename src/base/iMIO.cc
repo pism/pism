@@ -87,13 +87,13 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   ierr = write_model_state(filename);  CHKERRQ(ierr);
 
   if (surface != PETSC_NULL) {
-    ierr = surface->write_input_fields(grid.year, dt / secpera, filename); CHKERRQ(ierr);
+    ierr = surface->write_model_state(grid.year, dt / secpera, filename); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }
 
   if (ocean != PETSC_NULL) {
-    ierr = ocean->write_input_fields(grid.year, dt / secpera, filename); CHKERRQ(ierr);
+    ierr = ocean->write_model_state(grid.year, dt / secpera, filename); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
   }
@@ -504,13 +504,13 @@ PetscErrorCode IceModel::write_snapshot() {
 
   // Let boundary models write their fields:
   if (surface != PETSC_NULL) {
-    ierr = surface->write_input_fields(grid.year, dt / secpera, filename); CHKERRQ(ierr);
+    ierr = surface->write_model_state(grid.year, dt / secpera, filename); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }
 
   if (ocean != PETSC_NULL) {
-    ierr = ocean->write_input_fields(grid.year, dt / secpera, filename); CHKERRQ(ierr);
+    ierr = ocean->write_model_state(grid.year, dt / secpera, filename); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
   }
