@@ -17,7 +17,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "iceEnthalpyModel.hh"
+#include "bedrockOnlySystem.hh"
+#include "iceenthOnlySystem.hh"
+
 #include "enthColumnSystem.hh"
+
 #include "enthalpyConverter.hh"
 
 
@@ -589,6 +593,14 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
   PetscScalar fdz, *fzlev, fdzb, *fzblev;
   ierr = grid.get_fine_vertical_grid(fMz, fMbz, fdz, fdzb, fzlev, fzblev); CHKERRQ(ierr);
 
+  bedrockOnlySystemCtx bosys(config, fMbz);
+  ierr = bosys.initAllColumns(dtTempAge, fdzb); CHKERRQ(ierr);
+  ierr = bosys.viewConstants(NULL, false); CHKERRQ(ierr);
+
+  iceenthOnlySystemCtx ieosys(config, Enth3, fMz);
+  ierr = ieosys.initAllColumns(grid.dx, grid.dy, dtTempAge, fdz); CHKERRQ(ierr);
+  ierr = ieosys.viewConstants(NULL, false); CHKERRQ(ierr);
+
   enthSystemCtx system(fMz,fMbz);
   system.dx      = grid.dx;
   system.dy      = grid.dy;
@@ -637,7 +649,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
   bool viewOneColumn;
   ierr = check_option("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
-  if (getVerbosityLevel() >= 3) {  // view: all constants correct at this point?
+  if (getVerbosityLevel() >= 4) {  // view: all constants correct at this point?
     ierr = EC.viewConstants(NULL); CHKERRQ(ierr);
     ierr = system.viewConstants(NULL,false); CHKERRQ(ierr);
   }
@@ -695,6 +707,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
 
       ierr = system.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
 
+      ierr = Tb3.getValColumnPL(i,j,fMbz,fzblev,bosys.Tb); CHKERRQ(ierr);
       ierr = Tb3.getValColumnPL(i,j,fMbz,fzblev,system.Tb); CHKERRQ(ierr);
 
       if (grid.ice_vertical_spacing == EQUAL) {
@@ -721,6 +734,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
       for (PetscInt k = ks+1; k < fMz; k++) {
         system.Enth_s[k] = EC.getEnthalpyCTS(p_air);
       }
+
+      ierr = bosys.setBoundaryValuesThisColumn(EC.getMeltingTemp(p_basal), vGhf(i,j)); CHKERRQ(ierr); // FIXME
 
       // go through column and find appropriate lambda for BOMBPROOF
       PetscScalar lambda = 1.0;  // start with centered implicit for more accuracy
@@ -757,24 +772,41 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
       //   and new temperature in bedrock
       ierr = system.solveThisColumn(&x); // no CHKERRQ(ierr) immediately because:
       if (ierr > 0) {
-        ierr = PetscPrintf(grid.com,
+        char fname[PETSC_MAX_PATH_LEN];
+        snprintf(fname, PETSC_MAX_PATH_LEN, "enthsys_i%d_j%d_zeropivot%d.m",
+                 i,j,ierr);
+        PetscPrintf(grid.com,
           "\n\ntridiagonal solve in enthalpyAndDrainageStep() failed at (%d,%d)\n"
           "   with zero pivot position %d\n"
-          "   viewing system ... \n",
-          i, j, ierr);
-        ierr = system.viewSystem(NULL,"system"); CHKERRQ(ierr);
-        ierr = PetscPrintf(grid.com, "\n   ENDING ...\n");
+          "   viewing system to file %s ... \n",
+          i, j, ierr, fname);
+        PetscViewer viewer;
+        ierr = PetscViewerCreate(grid.com, &viewer);CHKERRQ(ierr);
+        ierr = PetscViewerSetType(viewer, PETSC_VIEWER_ASCII);CHKERRQ(ierr);
+        ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
+        ierr = PetscViewerFileSetName(viewer, fname);CHKERRQ(ierr);
+        ierr = system.viewSystem(viewer,"system"); CHKERRQ(ierr);
+        ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
+        PetscPrintf(grid.com, "\n   ENDING ...\n");
         PetscEnd();
       } else { CHKERRQ(ierr); }
 
       // diagnostic/debug
       if (viewOneColumn && issounding(i,j)) {
+        char fname[PETSC_MAX_PATH_LEN];
+        snprintf(fname, PETSC_MAX_PATH_LEN, "enthsyssoln_i%d_j%d.m",i,j);
         ierr = verbPrintf(1,grid.com,
-            "viewing system and solution at (i,j)=(%d,%d):\n", i, j);
+            "viewing system and solution at (i,j)=(%d,%d) to file %s\n\n",
+            i, j, fname); CHKERRQ(ierr);
+        PetscViewer    viewer;
+        ierr = PetscViewerCreate(grid.com, &viewer);CHKERRQ(ierr);
+        ierr = PetscViewerSetType(viewer, PETSC_VIEWER_ASCII);CHKERRQ(ierr);
+        ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
+        ierr = PetscViewerFileSetName(viewer, fname);CHKERRQ(ierr);
+        ierr = system.viewSystem(viewer,"system"); CHKERRQ(ierr);
+        ierr = system.viewColumnValues(viewer, x, fMbz+fMz, "solution x");
             CHKERRQ(ierr);
-        ierr = system.viewSystem(NULL,"system"); CHKERRQ(ierr);
-        ierr = system.viewColumnValues(NULL, x, fMbz+fMz, "solution x");
-            CHKERRQ(ierr);
+        ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
       }
 
       // start from bottom and work up column, using solution vector x[]

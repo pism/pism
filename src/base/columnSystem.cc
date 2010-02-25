@@ -74,6 +74,7 @@ columnSystemCtx::~columnSystemCtx() {
 
 //! Zero all entries.
 PetscErrorCode columnSystemCtx::resetColumn() {
+  // done this way for memory contiguity:
   for (PetscInt k = 0; k < nmax-1; k++) Lp[k]   = 0.0;
   for (PetscInt k = 0; k < nmax-1; k++) U[k]    = 0.0;
   for (PetscInt k = 0; k < nmax;   k++) D[k]    = 0.0;
@@ -84,7 +85,7 @@ PetscErrorCode columnSystemCtx::resetColumn() {
 
 
 //! Compute 1-norm, which is max sum of absolute values of columns.
-PetscScalar columnSystemCtx::norm1(const PetscInt n) {
+PetscScalar columnSystemCtx::norm1(const PetscInt n) const {
   if (n > nmax) {
     PetscPrintf(PETSC_COMM_WORLD,"PISM ERROR:  n > nmax in columnSystemCtx::norm1\n");
     PetscEnd();
@@ -112,7 +113,7 @@ succeed.
 We return -1.0 if the absolute value of any diagonal element is less than
 1e-12 of the 1-norm of the matrix.
  */
-PetscScalar columnSystemCtx::ddratio(const PetscInt n) {
+PetscScalar columnSystemCtx::ddratio(const PetscInt n) const {
   if (n > nmax) {
     PetscPrintf(PETSC_COMM_WORLD,"PISM ERROR:  n > nmax in columnSystemCtx::norm1\n");
     PetscEnd();

@@ -276,7 +276,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
       rhs[Mbz+1] = 0.0;
     } else {
       if (Enth[0] < Enth_s[0]) {  // cold base
-        // eqn:  X - (k_i/(c_i*dz)) E[0] + (k_i/(c_i*dz)) E[0] = 0
+        // eqn:  X - (k_i/(c_i*dz)) E[0] + (k_i/(c_i*dz)) E[1] = 0
         const PetscScalar A = ice_k / (ice_c * dzEQ);
         L[Mbz+1] = 1.0;
         D[Mbz+1] = - A;

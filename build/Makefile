@@ -103,10 +103,11 @@ ice_csources := cubature.c pism_signal.c
 tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 	exactTestK.c exactTestL.c exactTestM.c
 
-other_sources := penth.cc pismr.cc pismd.cc pismv.cc pisms.cc iceEISModel.cc	\
-	iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc iceCompModel.cc	\
-	iCMthermo.cc iceExactSSAModel.cc iceCalvBCModel.cc iceEnthalpyModel.cc	\
-	enthColumnSystem.cc flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
+other_sources := penth.cc pismr.cc pismd.cc pismv.cc pisms.cc \
+	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc \
+	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc iceCalvBCModel.cc \
+	iceEnthalpyModel.cc enthColumnSystem.cc bedrockOnlySystem.cc \
+	iceenthOnlySystem.cc flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
 
 # this is the primary derived class example so it is structured as an example
 #   derived class; as an example it includes "grn_make"; creates executable
@@ -163,8 +164,10 @@ $(config_file): pism_config.cdl
 
 $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 
-../bin/penth : penth.o iceEnthalpyModel.o enthColumnSystem.o enthalpyConverter.o ${LIBPISMNAME}
-	${CXXLINKER} penth.o iceEnthalpyModel.o enthColumnSystem.o enthalpyConverter.o ${ICE_LIB_FLAGS} -o $@
+../bin/penth : penth.o iceEnthalpyModel.o enthColumnSystem.o \
+               bedrockOnlySystem.o iceenthOnlySystem.o enthalpyConverter.o ${LIBPISMNAME}
+	${CXXLINKER} penth.o iceEnthalpyModel.o enthColumnSystem.o \
+	    bedrockOnlySystem.o iceenthOnlySystem.o enthalpyConverter.o ${ICE_LIB_FLAGS} -o $@
 
 ../bin/pismr : pismr.o ${LIBPISMNAME}
 	${CXXLINKER} pismr.o ${ICE_LIB_FLAGS} -o $@

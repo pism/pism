@@ -42,16 +42,12 @@ public:
   ~columnSystemCtx();
 
   PetscErrorCode setIndicesAndClearThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
-  
-  PetscScalar    norm1(const PetscInt n);
 
-  PetscScalar    ddratio(const PetscInt n);
-
+  PetscScalar    norm1(const PetscInt n) const;
+  PetscScalar    ddratio(const PetscInt n) const;
   PetscErrorCode viewColumnValues(PetscViewer viewer, 
                                   PetscScalar *v, PetscInt m, const char* info) const;
-
   PetscErrorCode viewMatrix(PetscViewer viewer, const char* info) const;
-
   PetscErrorCode viewSystem(PetscViewer viewer, const char* info) const;
 
 protected:
