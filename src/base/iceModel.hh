@@ -343,8 +343,6 @@ protected:
   virtual PetscErrorCode regrid();
 
   // see iMmatlab.cc
-  virtual PetscErrorCode VecView_g2ToMatlab(PetscViewer v, 
-                                    const char *varname, const char *shorttitle);
   virtual PetscErrorCode writeSSAsystemMatlab(IceModelVec2 vNuH[2]);
 
   // see iMreport.cc
@@ -458,7 +456,8 @@ protected:
 protected:
   // working space (a convenience)
   static const PetscInt nWork2d=6;
-  Vec g2;			//!< Global work vector
+  Vec g2;			//!< Global work vector; used by the bed
+				//!< deformation code only.
   IceModelVec2 vWork2d[nWork2d];
   // 3D working space (with specific purposes)
   IceModelVec3 Tnew3, taunew3;

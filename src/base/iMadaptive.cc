@@ -84,7 +84,7 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool update_diffusivity_viewer) {
     ierr = vWork2d[0].set_name("diffusivity"); CHKERRQ(ierr);
     ierr = vWork2d[0].set_attrs("diagnostic",
 				"diffusivity", "m2/s", ""); CHKERRQ(ierr);
-    ierr = vWork2d[0].view(g2, false); CHKERRQ(ierr);
+    ierr = vWork2d[0].view(300); CHKERRQ(ierr);
   }
 
   ierr = PetscGlobalMax(&Dmax, &gDmax, grid.com); CHKERRQ(ierr);

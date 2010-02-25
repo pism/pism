@@ -1,7 +1,25 @@
+// Copyright (C) 2007-2010 Ed Bueler and Nathan Shemonski and Constantine Khroulev
+//
+// This file is part of PISM.
+//
+// PISM is free software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the Free Software
+// Foundation; either version 2 of the License, or (at your option) any later
+// version.
+//
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License
+// along with PISM; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
 # include "pgrn_atmosphere.hh"
 
 PA_EISMINT_Greenland::PA_EISMINT_Greenland(IceGrid &g, const NCConfigVariable &conf)
-  : PA_Parameterized_Temperature(g, conf) {
+  : PAYearlyCycle(g, conf) {
   do_greenhouse_warming = false;
   greenhouse_warming_start_year = 0.0;
 }
@@ -52,7 +70,7 @@ PetscErrorCode PA_EISMINT_Greenland::init(PISMVars &vars) {
   reference = "Ritz, C. (1997). EISMINT Intercomparison Experiment: Comparison of existing Greenland models."
     " URL: http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html";
 
-  ierr = PA_Parameterized_Temperature::init(vars); CHKERRQ(ierr);
+  ierr = PAYearlyCycle::init(vars); CHKERRQ(ierr);
 
   // initialize pointers to fields the parameterization depends on:
   surfelev = dynamic_cast<IceModelVec2*>(vars.get("surface_altitude"));

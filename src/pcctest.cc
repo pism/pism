@@ -196,7 +196,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
   global_attrs.init("global_attributes", com, grid->rank);
   global_attrs.set_string("Conventions", "CF-1.4");
-  global_attrs.set_string("source", string("pcctest3 ") + PISM_Revision);
+  global_attrs.set_string("source", string("pcctest ") + PISM_Revision);
 
   // Create a string with space-separated command-line arguments:
   string cmdstr;
@@ -218,10 +218,10 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   PetscInt NN;  // get number of times at which PISM boundary model state is written
   NN = (int) ceil((ye - ys) / dt_years);
   if (NN > 1000)
-    SETERRQ(2,"PCCTEST3 ERROR: refuse to write more than 1000 times!");
+    SETERRQ(2,"PCCTEST ERROR: refuse to write more than 1000 times!");
   if (NN > 50) {
     ierr = PetscPrintf(com,
-        "\nPCCTEST3 ATTENTION: writing more than 50 times to '%s'!!\n\n",
+        "\nPCCTEST ATTENTION: writing more than 50 times to '%s'!!\n\n",
         filename); CHKERRQ(ierr);
   }
 

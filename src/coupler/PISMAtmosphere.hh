@@ -20,7 +20,7 @@
 #ifndef __PISMAtmosphere_hh
 #define __PISMAtmosphere_hh
 
-#include "PISMComponent.hh"
+#include "../base/PISMComponent.hh"
 #include "../base/iceModelVec.hh"
 #include "../base/Timeseries.hh"
 #include "iceModelVec2T.hh"
@@ -87,10 +87,10 @@ protected:
 //! A class containing an incomplete implementation of an atmosphere model
 //! based on a temperature parameterization using mean annual and mean July
 //! (mean summer) temperatures and a cosine yearly cycle. Uses a stored
-//! precipitation field.
-class PA_Parameterized_Temperature : public PISMAtmosphereModel {
+//! (constant in time) precipitation field.
+class PAYearlyCycle : public PISMAtmosphereModel {
 public:
-  PA_Parameterized_Temperature(IceGrid &g, const NCConfigVariable &conf)
+  PAYearlyCycle(IceGrid &g, const NCConfigVariable &conf)
     : PISMAtmosphereModel(g, conf) {}
   virtual PetscErrorCode init(PISMVars &vars);	      // nb
   virtual PetscErrorCode write_model_state(PetscReal /*t_years*/,
@@ -117,14 +117,14 @@ protected:
   IceModelVec2 temp_ma, temp_mj, snowprecip;
 };
 
-//! \brief A modification of PA_Parameterized_Temperature tailored for the
+//! \brief A modification of PAYearlyCycle tailored for the
 //! SeaRISE-Greenland assessment. Uses the Fausto [\ref Faustoetal2009]
 //! present-day temperature parameterization and stored precipitation data.
 //! Adds the precipitation correction for spin-ups.
-class PA_SeaRISE_Greenland : public PA_Parameterized_Temperature {
+class PA_SeaRISE_Greenland : public PAYearlyCycle {
 public:
   PA_SeaRISE_Greenland(IceGrid &g, const NCConfigVariable &conf)
-    : PA_Parameterized_Temperature(g, conf)
+    : PAYearlyCycle(g, conf)
   {
     paleo_precipitation_correction = false;
     dTforcing = NULL;

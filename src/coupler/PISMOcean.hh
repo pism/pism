@@ -20,7 +20,7 @@
 #ifndef __PISMOceanModel_hh
 #define __PISMOceanModel_hh
 
-#include "PISMComponent.hh"
+#include "../base/PISMComponent.hh"
 #include "../base/iceModelVec.hh"
 #include "../base/Timeseries.hh"
 

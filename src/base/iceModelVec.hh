@@ -143,11 +143,13 @@ public:
   PetscErrorCode  get_array(PetscScalar** &a);
   virtual PetscErrorCode set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v_y);
   virtual PetscErrorCode mask_by(IceModelVec2 &M, PetscScalar fill = 0.0);
+  virtual PetscErrorCode sum(PetscScalar &result);
   virtual PetscScalar diff_x(int i, int j);
   virtual PetscScalar diff_y(int i, int j);
   virtual PetscScalar diff_x_p(int i, int j);
   virtual PetscScalar diff_y_p(int i, int j);
-  virtual PetscErrorCode view(Vec g2, PetscInt viewer_size);
+  virtual PetscErrorCode view(PetscInt viewer_size);
+  virtual PetscErrorCode view_matlab(PetscViewer my_viewer);
   virtual PetscScalar& operator() (int i, int j);
 };
 
@@ -230,8 +232,8 @@ public:
   PetscErrorCode  extend_vertically(int old_Mz, PetscScalar fill_value);
   PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2 &fill_values);
 
-  PetscErrorCode view_surface(IceModelVec2 &thickness, Vec g2, PetscInt viewer_size);
-  PetscErrorCode view_horizontal_slice(PetscScalar level, Vec g2, PetscInt viewer_size);
+  PetscErrorCode view_surface(IceModelVec2 &thickness, PetscInt viewer_size);
+  PetscErrorCode view_horizontal_slice(PetscScalar level, PetscInt viewer_size);
   PetscErrorCode view_sounding(int i, int j, PetscInt viewer_size);
   virtual PetscErrorCode  has_nan();
 

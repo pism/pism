@@ -20,7 +20,7 @@
 #include "PISMAtmosphere.hh"
 
 //! Allocates memory and reads in the snow precipitaion data.
-PetscErrorCode PA_Parameterized_Temperature::init(PISMVars &/*vars*/) {
+PetscErrorCode PAYearlyCycle::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
   LocalInterpCtx *lic = NULL;
   bool regrid = false;
@@ -71,7 +71,7 @@ PetscErrorCode PA_Parameterized_Temperature::init(PISMVars &/*vars*/) {
   return 0;
 }
 
-PetscErrorCode PA_Parameterized_Temperature::write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
+PetscErrorCode PAYearlyCycle::write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
 								string filename) {
   PetscErrorCode ierr;
 
@@ -80,7 +80,7 @@ PetscErrorCode PA_Parameterized_Temperature::write_model_state(PetscReal /*t_yea
   return 0;
 }
 
-PetscErrorCode PA_Parameterized_Temperature::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
+PetscErrorCode PAYearlyCycle::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 								     string filename) {
   PetscErrorCode ierr;
 
@@ -105,7 +105,7 @@ PetscErrorCode PA_Parameterized_Temperature::write_diagnostic_fields(PetscReal t
   return 0;
 }
 
-PetscErrorCode PA_Parameterized_Temperature::write_fields(set<string> vars, PetscReal t_years,
+PetscErrorCode PAYearlyCycle::write_fields(set<string> vars, PetscReal t_years,
 							  PetscReal /*dt_years*/, string filename) {
   PetscErrorCode ierr;
 
@@ -140,7 +140,7 @@ PetscErrorCode PA_Parameterized_Temperature::write_fields(set<string> vars, Pets
 }
 
 //! Copies the stored snow precipitation field into result.
-PetscErrorCode PA_Parameterized_Temperature::mean_precip(PetscReal t_years, PetscReal dt_years,
+PetscErrorCode PAYearlyCycle::mean_precip(PetscReal t_years, PetscReal dt_years,
 							 IceModelVec2 &result) {
   PetscErrorCode ierr;
 
@@ -155,7 +155,7 @@ PetscErrorCode PA_Parameterized_Temperature::mean_precip(PetscReal t_years, Pets
 }
 
 //! Copies the stored mean annual near-surface air temperature field into result.
-PetscErrorCode PA_Parameterized_Temperature::mean_annual_temp(PetscReal t_years, PetscReal dt_years,
+PetscErrorCode PAYearlyCycle::mean_annual_temp(PetscReal t_years, PetscReal dt_years,
 							      IceModelVec2 &result) {
   PetscErrorCode ierr;
 
@@ -168,7 +168,7 @@ PetscErrorCode PA_Parameterized_Temperature::mean_annual_temp(PetscReal t_years,
   return 0;
 }
 
-PetscErrorCode PA_Parameterized_Temperature::temp_time_series(int i, int j, int N,
+PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, int N,
 							      PetscReal *ts, PetscReal *values) {
   // constants related to the standard yearly cycle
   const PetscReal
@@ -184,7 +184,7 @@ PetscErrorCode PA_Parameterized_Temperature::temp_time_series(int i, int j, int 
   return 0;
 }
 
-PetscErrorCode PA_Parameterized_Temperature::temp_snapshot(PetscReal t_years, PetscReal dt_years,
+PetscErrorCode PAYearlyCycle::temp_snapshot(PetscReal t_years, PetscReal dt_years,
 				       IceModelVec2 &result) {
   PetscErrorCode ierr;
   const PetscReal
@@ -209,7 +209,7 @@ PetscErrorCode PA_Parameterized_Temperature::temp_snapshot(PetscReal t_years, Pe
   return 0;
 }
 
-PetscErrorCode PA_Parameterized_Temperature::begin_pointwise_access() {
+PetscErrorCode PAYearlyCycle::begin_pointwise_access() {
   PetscErrorCode ierr;
 
   ierr = temp_ma.begin_access(); CHKERRQ(ierr);
@@ -218,7 +218,7 @@ PetscErrorCode PA_Parameterized_Temperature::begin_pointwise_access() {
   return 0;
 }
 
-PetscErrorCode PA_Parameterized_Temperature::end_pointwise_access() {
+PetscErrorCode PAYearlyCycle::end_pointwise_access() {
   PetscErrorCode ierr;
 
   ierr = temp_ma.end_access(); CHKERRQ(ierr);
@@ -240,7 +240,7 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
     "R. S. Fausto, A. P. Ahlstrom, D. V. As, C. E. Boggild, and S. J. Johnsen, 2009. "
     "A new present-day temperature parameterization for Greenland. J. Glaciol. 55 (189), 95-105.";
 
-  ierr = PA_Parameterized_Temperature::init(vars); CHKERRQ(ierr);
+  ierr = PAYearlyCycle::init(vars); CHKERRQ(ierr);
 
   // initialize pointers to fields the parameterization depends on:
   surfelev = dynamic_cast<IceModelVec2*>(vars.get("surface_altitude"));
@@ -286,7 +286,7 @@ PetscErrorCode PA_SeaRISE_Greenland::mean_precip(PetscReal t_years, PetscReal dt
 						IceModelVec2 &result) {
   PetscErrorCode ierr;
 
-  ierr = PA_Parameterized_Temperature::mean_precip(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = PAYearlyCycle::mean_precip(t_years, dt_years, result); CHKERRQ(ierr);
 
   if ((dTforcing != NULL) && paleo_precipitation_correction) {
     string history = "added the paleo-precipitation correction\n" + result.string_attr("history");

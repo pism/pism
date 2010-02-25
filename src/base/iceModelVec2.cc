@@ -183,10 +183,14 @@ PetscErrorCode IceModelVec2::mask_by(IceModelVec2 &M, PetscScalar fill) {
 }
 
 
-//! View a 2D field.
-PetscErrorCode IceModelVec2::view(Vec g2, PetscInt viewer_size) {
+//! \brief View a 2D field. Allocates and de-allocates g2, the temporary global
+//! vector; performance should not matter here.
+PetscErrorCode IceModelVec2::view(PetscInt viewer_size) {
   PetscErrorCode ierr;
+  Vec g2;
 
+  ierr = DACreateGlobalVector(grid->da2, &g2); CHKERRQ(ierr);
+  
   if ((*map_viewers)[name] == PETSC_NULL) {
     string title = string_attr("long_name") + " (" + string_attr("glaciological_units") + ")";
 
@@ -203,8 +207,43 @@ PetscErrorCode IceModelVec2::view(Vec g2, PetscInt viewer_size) {
 
   ierr = VecView(g2, (*map_viewers)[name]); CHKERRQ(ierr);
 
+  ierr = VecDestroy(g2); CHKERRQ(ierr);
+
   return 0;
 }
+
+PetscErrorCode IceModelVec2::view_matlab(PetscViewer my_viewer) {
+  PetscErrorCode ierr;
+  string long_name = var1.get_string("long_name");
+  Vec g2;
+
+  ierr = DACreateGlobalVector(grid->da2, &g2); CHKERRQ(ierr);
+
+  if (localp) {
+    ierr = copy_to_global(g2); CHKERRQ(ierr);
+  } else {
+    ierr = VecCopy(v, g2); CHKERRQ(ierr);
+  }
+
+  ierr = var1.to_glaciological_units(g2); CHKERRQ(ierr);
+
+  // add Matlab comment before listing, using short title
+
+  ierr = PetscViewerASCIIPrintf(my_viewer, "\n%%%% %s = %s\n",
+				name.c_str(), long_name.c_str()); CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) g2, name.c_str()); CHKERRQ(ierr);
+
+  ierr = VecView(g2, my_viewer); CHKERRQ(ierr);
+
+  ierr = PetscViewerASCIIPrintf(my_viewer,"\n%s = reshape(%s,%d,%d);\n\n",
+				name.c_str(), name.c_str(), grid->My, grid->Mx); CHKERRQ(ierr);
+
+  ierr = VecDestroy(g2); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
 
 //! Provides access (both read and write) to the internal PetscScalar array.
 /*!
@@ -317,4 +356,26 @@ PetscScalar IceModelVec2::diff_y_p(int i, int j) {
     return ( (*this)(i,j) - (*this)(i,j - 1) ) / (grid->dy);
   else
     return diff_y(i,j);
+}
+
+//! Sums up all the values in an IceModelVec2 object. Ignores ghosts.
+/*! Avoids copying to a "global" vector.
+ */
+PetscErrorCode IceModelVec2::sum(PetscScalar &result) {
+  PetscErrorCode ierr;
+  PetscScalar my_result = 0;
+
+  // sum up the local part:
+  ierr = begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+      my_result += (*this)(i,j);
+    }
+  }
+  ierr = end_access(); CHKERRQ(ierr);
+
+  // find the global sum:
+  ierr = PetscGlobalSum(&my_result, &result, grid->com); CHKERRQ(ierr);
+
+  return 0;
 }

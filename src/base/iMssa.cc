@@ -213,20 +213,21 @@ PetscErrorCode IceModel::testConvergenceOfNu(IceModelVec2 vNuH[2], IceModelVec2 
   // Test for change in nu
   ierr = vNuHOld[0].add(-1, vNuH[0]); CHKERRQ(ierr);
   ierr = vNuHOld[1].add(-1, vNuH[1]); CHKERRQ(ierr);
-  ierr = vNuHOld[0].copy_to_global(g2); CHKERRQ(ierr);
-  ierr = VecNorm(g2, MY_NORM, &nuChange[0]); CHKERRQ(ierr);
+
+  ierr = vNuHOld[0].norm(MY_NORM, nuChange[0]); CHKERRQ(ierr);
   nuChange[0] *= area;
-  ierr = vNuHOld[1].copy_to_global(g2); CHKERRQ(ierr);
-  ierr = VecNorm(g2, MY_NORM, &nuChange[1]); CHKERRQ(ierr);
+
+  ierr = vNuHOld[1].norm(MY_NORM, nuChange[1]); CHKERRQ(ierr);
   nuChange[1] *= area;
+
   *normChange = sqrt(PetscSqr(nuChange[0]) + PetscSqr(nuChange[1]));
 
-  ierr = vNuH[0].copy_to_global(g2); CHKERRQ(ierr);
-  ierr = VecNorm(g2, MY_NORM, &nuNorm[0]); CHKERRQ(ierr);
+  ierr = vNuH[0].norm(MY_NORM, nuNorm[0]); CHKERRQ(ierr);
   nuNorm[0] *= area;
-  ierr = vNuH[1].copy_to_global(g2); CHKERRQ(ierr);
-  ierr = VecNorm(g2, MY_NORM, &nuNorm[1]); CHKERRQ(ierr);
+
+  ierr = vNuH[1].norm(MY_NORM, nuNorm[1]); CHKERRQ(ierr);
   nuNorm[1] *= area;
+
   *norm = sqrt(PetscSqr(nuNorm[0]) + PetscSqr(nuNorm[1]));
   return 0;
 }

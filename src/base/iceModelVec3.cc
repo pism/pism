@@ -932,8 +932,11 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   return 0;
 }
 
-PetscErrorCode IceModelVec3::view_surface(IceModelVec2 &thickness, Vec g2, PetscInt viewer_size) {
+PetscErrorCode IceModelVec3::view_surface(IceModelVec2 &thickness, PetscInt viewer_size) {
   PetscErrorCode ierr;
+  Vec g2;
+
+  ierr = DACreateGlobalVector(grid->da2, &g2); CHKERRQ(ierr);
 
   if ((*map_viewers)[name] == PETSC_NULL) {
     string title = string_attr("long_name") + " at the ice surface (" +
@@ -948,11 +951,16 @@ PetscErrorCode IceModelVec3::view_surface(IceModelVec2 &thickness, Vec g2, Petsc
 
   ierr = VecView(g2, (*map_viewers)[name]); CHKERRQ(ierr);
 
+  ierr = VecDestroy(g2); CHKERRQ(ierr);
+
   return 0;
 }
 
-PetscErrorCode IceModelVec3::view_horizontal_slice(PetscScalar level, Vec g2, PetscInt viewer_size) {
+PetscErrorCode IceModelVec3::view_horizontal_slice(PetscScalar level, PetscInt viewer_size) {
   PetscErrorCode ierr;
+  Vec g2;
+
+  ierr = DACreateGlobalVector(grid->da2, &g2); CHKERRQ(ierr);
 
   if ((*slice_viewers)[name] == PETSC_NULL) {
     ostringstream title;
@@ -967,6 +975,8 @@ PetscErrorCode IceModelVec3::view_horizontal_slice(PetscScalar level, Vec g2, Pe
   ierr = var1.to_glaciological_units(g2); CHKERRQ(ierr);
 
   ierr = VecView(g2, (*slice_viewers)[name]); CHKERRQ(ierr);
+
+  ierr = VecDestroy(g2); CHKERRQ(ierr);
 
   return 0;
 }

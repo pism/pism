@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -56,14 +56,14 @@ PetscErrorCode IceModel::update_viewers() {
       {
 	IceModelVec2 *v2 = dynamic_cast<IceModelVec2*>(v);
 	if (v2 == NULL) SETERRQ(1,"grid_type() returns GRID_2D but dynamic_cast gives a NULL");
-	ierr = v2->view(g2, viewer_size); CHKERRQ(ierr);
+	ierr = v2->view(viewer_size); CHKERRQ(ierr);
 	break;
       }
     case GRID_3D:
       {
 	IceModelVec3 *v3 = dynamic_cast<IceModelVec3*>(v);
 	if (v3 == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
-	ierr = v3->view_surface(vH, g2, viewer_size); CHKERRQ(ierr);
+	ierr = v3->view_surface(vH, viewer_size); CHKERRQ(ierr);
 	break;
       }
     case GRID_3D_BEDROCK:
@@ -100,7 +100,7 @@ PetscErrorCode IceModel::update_viewers() {
     if (dims == GRID_3D) {
 	IceModelVec3 *v3 = dynamic_cast<IceModelVec3*>(v);
 	if (v3 == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
-	ierr = v3->view_horizontal_slice(slice_level, g2, viewer_size); CHKERRQ(ierr);
+	ierr = v3->view_horizontal_slice(slice_level, viewer_size); CHKERRQ(ierr);
     }
   }
 
@@ -241,14 +241,14 @@ PetscErrorCode IceModel::update_nu_viewers(IceModelVec2 vNu[2], IceModelVec2 /*v
     ierr = vWork2d[5].end_access(); CHKERRQ(ierr);
 
     ierr = vWork2d[5].set_name("log10(nuH)"); CHKERRQ(ierr);
-    ierr = vWork2d[5].view(g2, false); CHKERRQ(ierr);
+    ierr = vWork2d[5].view(300); CHKERRQ(ierr);
   }
 
   if (view_nuH) {
     ierr = vNu[0].set_name("nuH[0]"); CHKERRQ(ierr);
-    ierr = vNu[0].view(g2, false); CHKERRQ(ierr);
+    ierr = vNu[0].view(300); CHKERRQ(ierr);
     ierr = vNu[1].set_name("nuH[1]"); CHKERRQ(ierr);
-    ierr = vNu[1].view(g2, false); CHKERRQ(ierr);
+    ierr = vNu[1].view(300); CHKERRQ(ierr);
   }
 
   return 0;

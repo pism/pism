@@ -425,8 +425,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
   // average value of dH/dt; also d(volume)/dt
   PetscScalar gicecount;
   ierr = PetscGlobalSum(&icecount, &gicecount, grid.com); CHKERRQ(ierr);
-  ierr = vdHdt.copy_to_global(g2); CHKERRQ(ierr);
-  ierr = VecSum(g2, &gdHdtav); CHKERRQ(ierr);
+
+  ierr = vdHdt.sum(gdHdtav); CHKERRQ(ierr);
   dvoldt = gdHdtav * grid.dx * grid.dy;  // m^3/s
   gdHdtav = gdHdtav / gicecount; // m/s
 

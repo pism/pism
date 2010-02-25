@@ -20,9 +20,9 @@
 #ifndef __PISMSurfaceModel_hh
 #define __PISMSurfaceModel_hh
 
-#include "PISMComponent.hh"
-#include "PISMAtmosphere.hh"
+#include "../base/PISMComponent.hh"
 #include "../base/iceModelVec.hh"
+#include "PISMAtmosphere.hh"
 #include "localMassBalance.hh"
 
 class PISMSurfaceModel : public PISMComponent {

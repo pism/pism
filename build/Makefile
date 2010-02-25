@@ -79,7 +79,7 @@ SHELL := /bin/sh
 VPATH := $(subst src,../src,src/:src/base/:src/earth/:src/verif/:src/verif/tests/:src/software_tests:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
-executables := penth pismr pismd pismv pisms pcctest3 pismtests
+executables := penth pismr pismd pismv pisms pcctest pismtests
 extras := flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
 exec_extras := $(addprefix ../bin/, $(extras))
@@ -95,7 +95,7 @@ ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc		\
 	iMIO.cc iMmatlab.cc iMoptions.cc iMreport.cc iMssa.cc iMssaSNES.cc	\
 	iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc Timeseries.cc	\
 	PISMVars.cc iMtimeseries.cc enthalpyConverter.cc iceModelVec2T.cc	\
-	PISMComponent.cc PAConstant.cc PAFausto.cc PAForcing.cc PISMSurface.cc	\
+	PISMComponent.cc PAConstant.cc PAYearlyCycle.cc PAForcing.cc PISMSurface.cc	\
 	PISMOcean.cc PCFactory.cc PALapseRates.cc
 ice_csources := cubature.c pism_signal.c
 
@@ -184,9 +184,9 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 ../bin/pismtests: pismtests.o iMtests.o ${LIBPISMNAME}
 	${CXXLINKER} pismtests.o iMtests.o ${ICE_LIB_FLAGS} -o $@
 
-other_sources += pcctest3.cc pgrn_atmosphere.cc
-../bin/pcctest3 : pcctest3.o pgrn_atmosphere.o ${LIBPISMNAME}
-	${CXXLINKER} pcctest3.o pgrn_atmosphere.o ${ICE_LIB_FLAGS} -o $@
+other_sources += pcctest.cc pgrn_atmosphere.cc
+../bin/pcctest : pcctest.o pgrn_atmosphere.o ${LIBPISMNAME}
+	${CXXLINKER} pcctest.o pgrn_atmosphere.o ${ICE_LIB_FLAGS} -o $@
 
 #build extra executables
 

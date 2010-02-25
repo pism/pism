@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,19 +20,6 @@
 #include <cmath>
 #include <petscda.h>
 #include "iceModel.hh"
-
-PetscErrorCode IceModel::VecView_g2ToMatlab(PetscViewer v, 
-                                 const char *varname, const char *shorttitle) {
-  PetscErrorCode ierr;
-  
-  // add Matlab comment before listing, using short title
-  ierr = PetscViewerASCIIPrintf(v, "\n%%%% %s = %s\n", varname, shorttitle); CHKERRQ(ierr);
-  ierr = PetscObjectSetName((PetscObject) g2, varname); CHKERRQ(ierr);
-  ierr = VecView(g2, v); CHKERRQ(ierr);
-  ierr = PetscViewerASCIIPrintf(v,"\n%s = reshape(%s,%d,%d);\n\n",
-             varname, varname, grid.My, grid.Mx); CHKERRQ(ierr);
-  return 0;
-}
 
 //! Write out the linear system of equations for the last nonlinear iteration (for SSA).
 /*!
@@ -104,18 +91,16 @@ PetscErrorCode IceModel::writeSSAsystemMatlab(IceModelVec2 vNu[2]) {
   ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n\n");  CHKERRQ(ierr);
 
   // also save thickness and effective viscosity
-  ierr = vH.copy_to_global(g2); CHKERRQ(ierr);
-  ierr = VecView_g2ToMatlab(viewer, "H", 
-            "ice thickness"); CHKERRQ(ierr);
-  ierr = vh.copy_to_global(g2); CHKERRQ(ierr);
-  ierr = VecView_g2ToMatlab(viewer, "h", 
-            "ice surface elevation"); CHKERRQ(ierr);
-  ierr = vNu[0].copy_to_global(g2); CHKERRQ(ierr);
-  ierr = VecView_g2ToMatlab(viewer, "nu_0", 
-            "effective viscosity times thickness (i offset)"); CHKERRQ(ierr);
-  ierr = vNu[1].copy_to_global(g2); CHKERRQ(ierr);
-  ierr = VecView_g2ToMatlab(viewer, "nu_1", 
-            "effective viscosity times thickness (j offset)"); CHKERRQ(ierr);
+  ierr = vH.view_matlab(viewer); CHKERRQ(ierr);
+  ierr = vh.view_matlab(viewer); CHKERRQ(ierr);
+
+  ierr = vNu[0].set_name("nu_0"); CHKERRQ(ierr);
+  ierr = vNu[0].set_attr("long_name", "effective viscosity times thickness (i offset)"); CHKERRQ(ierr);
+  ierr = vNu[0].view_matlab(viewer); CHKERRQ(ierr);
+
+  ierr = vNu[1].set_name("nu_1"); CHKERRQ(ierr);
+  ierr = vNu[1].set_attr("long_name", "effective viscosity times thickness (j offset)"); CHKERRQ(ierr);
+  ierr = vNu[1].view_matlab(viewer); CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
   ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
