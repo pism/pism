@@ -180,6 +180,9 @@ public:
 				 PetscScalar *levelsIN, PetscScalar *valsOUT);
   PetscErrorCode  getValColumnQUAD(PetscInt i, PetscInt j, PetscInt nlevels, 
 				   PetscScalar *levelsIN, PetscScalar *valsOUT);
+  PetscErrorCode  getValColumnSmart(bool equally_spaced, 
+                                    PetscInt i, PetscInt j, PetscInt nlevels, 
+                                    PetscScalar *levelsIN, PetscScalar *valsOUT);
   PetscErrorCode view_sounding(int i, int j, PetscInt viewer_size);
 
 protected:  
@@ -222,6 +225,9 @@ public:
                                  PetscScalar *levelsIN, PetscScalar *valsOUT);
   PetscErrorCode  getValColumnQUAD(PetscInt i, PetscInt j, PetscInt nlevels, 
                                    PetscScalar *levelsIN, PetscScalar *valsOUT);
+  PetscErrorCode  getValColumnSmart(bool equally_spaced, 
+                                    PetscInt i, PetscInt j, PetscInt nlevels, 
+                                    PetscScalar *levelsIN, PetscScalar *valsOUT);
   PetscErrorCode  getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsPTR);
 
   PetscErrorCode  getHorSlice(Vec &gslice, PetscScalar z); // used in iMmatlab.cc

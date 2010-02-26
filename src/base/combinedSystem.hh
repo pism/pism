@@ -16,32 +16,32 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __iceenthOnlySystem_hh
-#define __iceenthOnlySystem_hh
+#ifndef __combinedSystem_hh
+#define __combinedSystem_hh
 
 #include "columnSystem.hh"
 
-//! Tridiagonal linear system for vertical column of enthalpy-based conservation of energy in ice.
+//! Tridiagonal linear system for vertical column of enthalpy-based conservation of energy in ice and bedrock; applicable only in case of cold ice base.
 /*!
 See the page documenting \ref bombproofenth.
 */
-class iceenthOnlySystemCtx : public columnSystemCtx {
+class combinedSystemCtx : public columnSystemCtx {
 
 public:
-  iceenthOnlySystemCtx(
-    const NCConfigVariable &config, IceModelVec3 &my_Enth3, int my_Mz);
-  ~iceenthOnlySystemCtx();
+  combinedSystemCtx(
+    const NCConfigVariable &config, IceModelVec3 &my_Enth3,
+    int my_Mz, int my_Mbz);
+  ~combinedSystemCtx();
 
   PetscErrorCode initAllColumns(
       const PetscScalar my_dx, const PetscScalar my_dy, 
-      const PetscScalar my_dtTemp, const PetscScalar my_dzEQ);
+      const PetscScalar my_dtTemp,
+      const PetscScalar my_dzEQ, const PetscScalar my_dzbEQ);
 
   PetscErrorCode setSchemeParamsThisColumn(
       const bool my_ismarginal, const PetscScalar my_lambda);  
   PetscErrorCode setBoundaryValuesThisColumn(
-      const PetscScalar my_Enth_surface);
-  PetscErrorCode setLevel0EqnThisColumn(
-      const PetscScalar my_a0, const PetscScalar my_a1, const PetscScalar my_b);
+      const PetscScalar my_Enth_surface, const PetscScalar my_Ghf);
 
   PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
 
@@ -54,16 +54,19 @@ public:
                *u,
                *v,
                *w,
-               *Sigma;
+               *Sigma,
+               *Tb;     // temperature in bedrock at prev step
 
 private:
-  PetscInt     Mz;
-  PetscScalar  ice_rho, ice_c, ice_k, ice_nu,
-               dx, dy, dtTemp, dzEQ, nuEQ, iceK, iceRcold, iceRtemp;
+  PetscInt     Mz, Mbz;
+  PetscScalar  ice_rho, ice_c, ice_k,
+               bed_rho, bed_c, bed_k,
+               dx, dy, dtTemp, dzEQ, dzbEQ,
+               nuEQ, iceK, iceRcold, bedK, bedR;
   IceModelVec3 *Enth3;
-  PetscScalar  lambda, Enth_ks, a0, a1, b;
+  PetscScalar  lambda, Enth_ks, Ghf;
   bool         ismarginal;
 };
 
-#endif   //  ifndef __iceenthOnlySystem_hh
+#endif   //  ifndef __combinedSystem_hh
 

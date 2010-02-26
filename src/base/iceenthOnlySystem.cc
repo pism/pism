@@ -32,7 +32,6 @@ iceenthOnlySystemCtx::iceenthOnlySystemCtx(
   iceRtemp = -1.0;
   lambda   = -1.0;
   Enth_ks  = -1.0;
-  dEdz_base = -1.0;
   a0 = GSL_NAN;
   a1 = GSL_NAN;
   b  = GSL_NAN;
@@ -93,14 +92,13 @@ PetscErrorCode iceenthOnlySystemCtx::setSchemeParamsThisColumn(
 
 
 PetscErrorCode iceenthOnlySystemCtx::setBoundaryValuesThisColumn(
-           const PetscScalar my_Enth_surface, const PetscScalar my_dEdz_base) {
+           const PetscScalar my_Enth_surface) {
   if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {  SETERRQ(2,
      "setBoundaryValuesThisColumn() should only be called after\n"
      "  initAllColumns() in iceenthOnlySystemCtx"); }
   if (Enth_ks >= 0.0) {  SETERRQ(3,
      "setBoundaryValuesThisColumn() called twice (?) in iceenthOnlySystemCtx"); }
   Enth_ks = my_Enth_surface;
-  dEdz_base = my_dEdz_base;
   return 0;
 }
 
@@ -155,8 +153,8 @@ PetscErrorCode iceenthOnlySystemCtx::viewConstants(
                      "  ismarginal,lambda = %d,%10.3f\n",
                      (int)ismarginal,lambda); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,
-                     "  Enth_ks,dEdz_base = %10.3e,%10.3e\n",
-                     Enth_ks,dEdz_base); CHKERRQ(ierr);
+                     "  Enth_ks = %10.3e\n",
+                     Enth_ks); CHKERRQ(ierr);
     ierr = PetscViewerASCIIPrintf(viewer,
                      "  a0,a1,b = %10.3e,%10.3e\n",
                      a0,a1,b); CHKERRQ(ierr);

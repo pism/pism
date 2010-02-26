@@ -523,8 +523,13 @@ where \f$\nu=\Delta t/\Delta z\f$ and \f$E_0^{n+1} = \f$E[0] and \f$E_1^{n+1}=\f
          T(0^-) = c_i^{-1} E(0^+) \\ \\
          G + k_i c_i^{-1}\frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 - F_b
          \end{matrix} \f] </td>
-    <td> <p> The second equation is a Neumann condition for the enthalpy problem.  Thus the system has unknowns E[0] .. E[Mz-1] and size Mz.  The first equation then computes Tb[0]. </p>
-         <p>If the ice is floating then we are not in this case.</p></td>
+    <td> <p> The second equation is a Neumann condition for the enthalpy problem,
+         and becomes
+            \f[ E_0^{n+1} - E_1^{n+1}
+                  = \frac{c_i \Delta z}{k_i} \left(F_b + G\right). \f]
+         The system has unknowns E[0] .. E[Mz-1] and size Mz. </p>
+         <p> The first equation then computes Tb[0]. </p>
+         <p> If the ice is floating then we are not in this case.</p></td>
 </tr> 
 <tr>
     <td> temperate ice base with downward column velocity:  

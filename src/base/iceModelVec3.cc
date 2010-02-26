@@ -435,6 +435,18 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt 
 }
 
 
+//! If equally_spaced then use PL, otherwise use QUAD.
+PetscErrorCode  IceModelVec3::getValColumnSmart(bool equally_spaced, 
+                  PetscInt i, PetscInt j, PetscInt nlevels, 
+                  PetscScalar *levelsIN, PetscScalar *valsOUT) {
+  if (equally_spaced) {
+    return getValColumnPL(i, j, nlevels, levelsIN, valsOUT);
+  } else {
+    return getValColumnQUAD(i, j, nlevels, levelsIN, valsOUT);
+  }
+}
+
+
 //! Copies a horizontal slice at level z of an IceModelVec3 into a Vec gslice.
 PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, PetscScalar z) {
   PetscErrorCode ierr;
@@ -828,6 +840,19 @@ PetscErrorCode  IceModelVec3Bedrock::getValColumnQUAD(PetscInt i, PetscInt j, Pe
 
   return 0;
 }
+
+
+//! If equally_spaced then use PL, otherwise use QUAD.
+PetscErrorCode  IceModelVec3Bedrock::getValColumnSmart(bool equally_spaced, 
+                  PetscInt i, PetscInt j, PetscInt nlevels, 
+                  PetscScalar *levelsIN, PetscScalar *valsOUT) {
+  if (equally_spaced) {
+    return getValColumnPL(i, j, nlevels, levelsIN, valsOUT);
+  } else {
+    return getValColumnQUAD(i, j, nlevels, levelsIN, valsOUT);
+  }
+}
+
 
 //! Extends an IceModelVec3 and fills all the new grid points with \c fill_value.
 PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, PetscScalar fill_value) {

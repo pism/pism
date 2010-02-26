@@ -34,10 +34,12 @@ public:
   bedrockOnlySystemCtx(const NCConfigVariable &config, int my_Mbz);
   ~bedrockOnlySystemCtx();
 
-  PetscErrorCode initAllColumns(const PetscScalar my_dtTemp,
-                                const PetscScalar my_dzbEQ);
+  PetscErrorCode initAllColumns(
+      const PetscScalar my_dtTemp, const PetscScalar my_dzbEQ);
+
   PetscErrorCode setBoundaryValuesThisColumn(
-                   const PetscScalar my_Tbedtop, const PetscScalar my_Ghf);
+      const PetscScalar my_Tbedtop, const PetscScalar my_Ghf);
+
   PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
 
   PetscErrorCode solveThisColumn(PetscScalar **x);
