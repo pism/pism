@@ -696,14 +696,10 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
   PetscScalar fdz, *fzlev, fdzb, *fzblev;
   ierr = grid.get_fine_vertical_grid(fMz, fMbz, fdz, fdzb, fzlev, fzblev); CHKERRQ(ierr);
 
-  bedrockOnlySystemCtx bosys(config, fMbz);
-  ierr = bosys.initAllColumns(dtTempAge, fdzb); CHKERRQ(ierr);
-
-  iceenthOnlySystemCtx iosys(config, Enth3, fMz);
-  ierr = iosys.initAllColumns(grid.dx, grid.dy, dtTempAge, fdz); CHKERRQ(ierr);
-
-  combinedSystemCtx    cbsys(config, Enth3, fMz, fMbz);
-  ierr = cbsys.initAllColumns(grid.dx, grid.dy, dtTempAge, fdz, fdzb); CHKERRQ(ierr);
+  if (fMbz == 2) {
+    SETERRQ(1,"method in IceEnthalpyModel does not make sense when fMbz == 2;\n"
+              "   fMbz==1 and fMbz>2 are allowed\n");
+  }
 
   EnthalpyConverter EC(config);
 
@@ -720,18 +716,28 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
   Enthnew = new PetscScalar[fMz];  // new enthalpy in column
   Tbnew   = new PetscScalar[fMbz]; // new bedrock temperature in column
 
+  combinedSystemCtx    cbsys(config, Enth3, fMz, fMbz);
+  ierr = cbsys.initAllColumns(grid.dx, grid.dy, dtTempAge, fdz, fdzb); CHKERRQ(ierr);
+
   // space for solution in case ice and bedrock are combined in one system
   PetscScalar *xcombined;
   xcombined = new PetscScalar[fMbz + fMz - 1];
 
+  bedrockOnlySystemCtx bosys(config, fMbz);
+  ierr = bosys.initAllColumns(dtTempAge, fdzb); CHKERRQ(ierr);
+
+  iceenthOnlySystemCtx iosys(config, Enth3, fMz);
+  ierr = iosys.initAllColumns(grid.dx, grid.dy, dtTempAge, fdz); CHKERRQ(ierr);
+
   bool viewOneColumn;
   ierr = check_option("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
+  // FIXME: verbosity failure: option "-verbose 4" does not generate true here
   if (getVerbosityLevel() >= 4) {  // view: all constants correct at this point?
     ierr = EC.viewConstants(NULL); CHKERRQ(ierr);
+    ierr = cbsys.viewConstants(NULL, false); CHKERRQ(ierr);
     ierr = bosys.viewConstants(NULL, false); CHKERRQ(ierr);
     ierr = iosys.viewConstants(NULL, false); CHKERRQ(ierr);
-    ierr = cbsys.viewConstants(NULL, false); CHKERRQ(ierr);
   }
 
   // now get map-plane coupler fields: Dirichlet upper surface boundary and
@@ -758,7 +764,6 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
   ierr = vbasalMeltRate.begin_access(); CHKERRQ(ierr);
   ierr = vRb.begin_access(); CHKERRQ(ierr);
   ierr = vGhf.begin_access(); CHKERRQ(ierr);
-
   ierr = vMask.begin_access(); CHKERRQ(ierr);
 
   // these are accessed a column at a time
@@ -810,14 +815,16 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
         ierr = copyColumn(iosys.w,cbsys.w,fMz); CHKERRQ(ierr);
         ierr = Sigma3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,cbsys.Sigma); CHKERRQ(ierr);
         ierr = Tb3.getValColumnSmart(bed_is_equal,i,j,fMbz,fzblev,cbsys.Tb); CHKERRQ(ierr);
+        ierr = cbsys.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
         ierr = cbsys.setSchemeParamsThisColumn(isMarginal, lambda); CHKERRQ(ierr);
-        ierr = cbsys.setBoundaryValuesThisColumn(Enth_ks, vGhf(i,j)); CHKERRQ(ierr);
+        ierr = cbsys.setBoundaryValuesThisColumn(Enth_ks, vGhf(i,j), vRb(i,j)); CHKERRQ(ierr);
         ierr = cbsys.solveThisColumn(&xcombined);
         if (ierr > 0) {
           reportColumnSolveError(ierr, grid.com, cbsys, "combined", i, j);
         }
         if (viewOneColumn && issounding(i,j)) {
-          ierr = reportColumn(grid.com, cbsys, "combined", i, j, xcombined, fMbz+fMz+1); CHKERRQ(ierr);
+          ierr = reportColumn(grid.com, cbsys, "combined", i, j, xcombined, fMbz+fMz-1);
+            CHKERRQ(ierr);
         }
         for (PetscInt k = 0; k < fMbz-1; k++) {
           Tbnew[k] = xcombined[k];
@@ -835,6 +842,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
         PetscScalar hf_base;
         if (grid.Mbz > 1) { // deal with bedrock layer first, if present
           // case of temperate bed and a bedrock layer
+          // make value of ks invalid:
+          ierr = bosys.setIndicesAndClearThisColumn(i,j,-1); CHKERRQ(ierr);  
           ierr = bosys.setBoundaryValuesThisColumn(
                    (vMask.is_floating(i,j)) ? shelfbtemp(i,j) : EC.getMeltingTemp(p_basal), 
                    vGhf(i,j)); CHKERRQ(ierr);
@@ -867,6 +876,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
         ierr = u3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,iosys.u); CHKERRQ(ierr);
         ierr = v3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,iosys.v); CHKERRQ(ierr);
         ierr = Sigma3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,iosys.Sigma); CHKERRQ(ierr);
+        ierr = iosys.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
         ierr = iosys.setSchemeParamsThisColumn(isMarginal, lambda); CHKERRQ(ierr);
         ierr = iosys.setBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);
         if (iosys.Enth[0] < iosys.Enth_s[0]) {
@@ -933,15 +943,16 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
     }
   }
 
+  ierr = artm.end_access(); CHKERRQ(ierr);
+  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
+  ierr = shelfbtemp.end_access(); CHKERRQ(ierr);
+
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vHmelt.end_access(); CHKERRQ(ierr);
   ierr = vRb.end_access(); CHKERRQ(ierr);
   ierr = vGhf.end_access(); CHKERRQ(ierr);
   ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
-
-  ierr = artm.end_access(); CHKERRQ(ierr);
-  ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
 
   ierr = Tb3.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);

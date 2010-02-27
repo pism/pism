@@ -44,7 +44,8 @@ public:
   PetscErrorCode setSchemeParamsThisColumn(
       const bool my_ismarginal, const PetscScalar my_lambda);  
   PetscErrorCode setBoundaryValuesThisColumn(
-      const PetscScalar my_Enth_surface, const PetscScalar my_Ghf);
+      const PetscScalar my_Enth_surface, const PetscScalar my_Ghf,
+      const PetscScalar my_Fb);
 
   PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
 
@@ -62,12 +63,12 @@ public:
 
 private:
   PetscInt     Mz, Mbz;
-  PetscScalar  ice_rho, ice_c, ice_k,
+  PetscScalar  ice_rho, ice_c, ice_k, ice_nu,
                bed_rho, bed_c, bed_k,
                dx, dy, dtTemp, dzEQ, dzbEQ,
-               nuEQ, iceK, iceRcold, bedK, bedR;
+               nuEQ, iceK, iceRcold, iceRtemp, bedK, bedR;
   IceModelVec3 *Enth3;
-  PetscScalar  lambda, Enth_ks, Ghf;
+  PetscScalar  lambda, Enth_ks, Ghf, Fb;
   bool         ismarginal;
 };
 

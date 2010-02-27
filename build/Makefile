@@ -79,8 +79,7 @@ SHELL := /bin/sh
 VPATH := $(subst src,../src,src/:src/base/:src/earth/:src/verif/:src/verif/tests/:src/software_tests:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
-#executables := penth pismr pismd pismv pisms pcctest pismtests
-executables := pismr pismd pismv pisms pcctest pismtests
+executables := penth pismr pismd pismv pisms pcctest pismtests
 extras := flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
 exec_extras := $(addprefix ../bin/, $(extras))
@@ -107,7 +106,7 @@ tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 other_sources := penth.cc pismr.cc pismd.cc pismv.cc pisms.cc \
 	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc \
 	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc iceCalvBCModel.cc \
-	iceEnthalpyModel.cc enthColumnSystem.cc bedrockOnlySystem.cc \
+	iceEnthalpyModel.cc combinedSystem.cc bedrockOnlySystem.cc \
 	iceenthOnlySystem.cc flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
 
 # this is the primary derived class example so it is structured as an example
@@ -165,9 +164,9 @@ $(config_file): pism_config.cdl
 
 $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 
-../bin/penth : penth.o iceEnthalpyModel.o enthColumnSystem.o \
+../bin/penth : penth.o iceEnthalpyModel.o combinedSystem.o \
                bedrockOnlySystem.o iceenthOnlySystem.o enthalpyConverter.o ${LIBPISMNAME}
-	${CXXLINKER} penth.o iceEnthalpyModel.o enthColumnSystem.o \
+	${CXXLINKER} penth.o iceEnthalpyModel.o combinedSystem.o \
 	    bedrockOnlySystem.o iceenthOnlySystem.o enthalpyConverter.o ${ICE_LIB_FLAGS} -o $@
 
 ../bin/pismr : pismr.o ${LIBPISMNAME}

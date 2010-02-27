@@ -473,8 +473,29 @@ In every case below, \f$T(0^-)\f$ should be understood as the temperature at the
          T(0^-) = c_i^{-1} E(0^+) \\ \\
          -k_b \frac{\partial T}{\partial z}\Big|_{z=0^-} + k_i c_i^{-1}\frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 - F_b
          \end{matrix} \f] </td>
-    <td> <p> The first equation, continuity of temperature, allows the second equation to be written with just three unknowns, E[1], E[0], and Tb[Mbz-2].  The system to solve is then tridiagonal and has unknowns Tb[0] .. Tb[Mbz-2] E[0] .. E[Mz-1] and size Mz + Mbz -1.  The second equation at left thus appears somewhere in the middle of a "large" system for the whole ice and bedrock column.</p>
-         <p>The top-of-bedrock temperature Tb[Mbz-1] is \e not one of the unknowns in the system, but is post-computed by the first equation.  </p>
+    <td> <p> The first equation, continuity of temperature, allows the second
+         equation to be written with just three unknowns, E[1], E[0], 
+         and Tb[Mbz-2].  The resulting equation appears in the middle of the
+         "large" system for the whole ice and bedrock column.  In particular, it says
+       \f[  - \frac{k_b}{\Delta z_b} T_{Mbz-2}^{n+1}
+              + \left(\frac{k_b}{\Delta z_b} + \frac{k_i}{\Delta z}\right) \frac{1}{c_i} E_0^{n+1}
+              - \frac{k_i}{\Delta z} \frac{1}{c_i} E_1^{n+1} = F_b. \f]
+         However, the next level down into the bedrock is also affected by the
+         coincidence of the top bedrock layer and the bottom ice layer.  In
+         particular, instead of equation (\ref bedrockeqn) we have
+     \f[ -R_b T_{Mbz-3}^{n+1} + \left(1 + 2 R_b\right) T_{Mbz-2}^{n+1}
+               - R_b \frac{1}{c_i} E_0^{n+1} = T_{Mbz-2}^n, \f]
+         </p>
+         <p>
+         FIXME:  It follows that the restriction fMbz\f$\ne 2\f$ is used to make sense of
+         this.  This guarantees that if there is a bedrock layer then "fMbz-3"
+         is an allocated location.
+         </p>
+    
+         <p>The system to solve is then tridiagonal and has unknowns 
+         Tb[0] .. Tb[Mbz-2] E[0] .. E[Mz-1] and size Mbz + Mz -1.  
+         The top-of-bedrock temperature Tb[Mbz-1] is \e not one of the 
+         unknowns in the system, but is post-computed by the first equation.  </p>
          <p>If the ice is floating then we are not in this case.</p></td>
 </tr> 
 <tr>

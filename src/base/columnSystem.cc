@@ -87,7 +87,7 @@ PetscErrorCode columnSystemCtx::resetColumn() {
 //! Compute 1-norm, which is max sum of absolute values of columns.
 PetscScalar columnSystemCtx::norm1(const PetscInt n) const {
   if (n > nmax) {
-    PetscPrintf(PETSC_COMM_WORLD,"PISM ERROR:  n > nmax in columnSystemCtx::norm1\n");
+    PetscPrintf(PETSC_COMM_WORLD,"PISM ERROR:  n > nmax in columnSystemCtx::norm1()\n");
     PetscEnd();
   }
   if (n == 1)  return fabs(D[0]);   // only 1x1 case is special
@@ -115,7 +115,7 @@ We return -1.0 if the absolute value of any diagonal element is less than
  */
 PetscScalar columnSystemCtx::ddratio(const PetscInt n) const {
   if (n > nmax) {
-    PetscPrintf(PETSC_COMM_WORLD,"PISM ERROR:  n > nmax in columnSystemCtx::norm1\n");
+    PetscPrintf(PETSC_COMM_WORLD,"PISM ERROR:  n > nmax in columnSystemCtx::ddratio()\n");
     PetscEnd();
   }
   const PetscScalar scale = norm1(n);

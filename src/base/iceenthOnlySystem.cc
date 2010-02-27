@@ -136,8 +136,8 @@ PetscErrorCode iceenthOnlySystemCtx::viewConstants(
                      "  dx,dy,dtTemp,dzEQ = %8.2f,%8.2f,%10.3e,%8.2f\n",
                      dx,dy,dtTemp,dzEQ); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-                     "  ice_rho,ice_c,ice_k = %10.3e,%10.3e,%10.3e\n",
-                     ice_rho,ice_c,ice_k); CHKERRQ(ierr);
+                     "  ice_rho,ice_c,ice_k,ice_nu = %10.3e,%10.3e,%10.3e,%10.3e\n",
+                     ice_rho,ice_c,ice_k,ice_nu); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
                      "  nuEQ = %10.3e\n",
                      nuEQ); CHKERRQ(ierr);
@@ -233,5 +233,4 @@ PetscErrorCode iceenthOnlySystemCtx::solveThisColumn(PetscScalar **x) {
   }
   return retval;
 }
-
 
