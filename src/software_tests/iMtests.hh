@@ -33,6 +33,7 @@ public:
   PetscErrorCode testIceModelVec3();
   PetscErrorCode testIceModelVec3Bedrock();
   PetscErrorCode testIceModelVec2T();
+  PetscErrorCode test_bedrockOnlySystem();
 };
 
 #endif // 

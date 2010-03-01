@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,7 @@
 #include "../coupler/iceModelVec2T.hh"
 #include "../base/nc_util.hh"
 #include <vector>
+#include "../base/bedrockOnlySystem.hh"
 
 //! Set grid defaults for a particular unit test.
 PetscErrorCode IceUnitModel::set_grid_defaults() {
@@ -53,6 +54,11 @@ PetscErrorCode IceUnitModel::run() {
   ierr = check_option("-IceModelVec2T", flag); CHKERRQ(ierr);
   if (flag) {
     ierr = testIceModelVec2T(); CHKERRQ(ierr);
+  }
+
+  ierr = check_option("-bedrockOnlySystem", flag); CHKERRQ(ierr);
+  if (flag) {
+    ierr = test_bedrockOnlySystem(); CHKERRQ(ierr);
   }
 
   return 0;
@@ -317,3 +323,93 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
   return 0;
 }
 
+/*! Tests bedrockOnlySystem, which solves a FD approximation of
+  \f[ \rho_b c_b \frac{\partial T}{\partial t} = k_b \frac{\partial^2 T}{\partial z^2}. \f]
+ using a constant \f$\left.T\right|_{z=0}=200\f$ Dirichlet boundary condition at z = 0 and a Neumann boundary condition
+\f[
+\left.\frac{\partial T}{\partial z}\right|_{z = -\text{Lbz}} = -\frac{G}{k_b},
+\f]
+where
+\f[
+G = k_b Me^{-M^2 Kt}
+\f]
+at \f$z = -\text{Lbz}\f$, where
+\f[
+K = \frac{k_b}{\rho_b c_b}
+\f]
+and
+\f[
+M = \frac{2\pi}{\text{Lbz}}.
+\f]
+Then the solution is
+\f[
+T(t,z) = e^{-M^2Kt}\sin(Mz).
+\f]
+
+The refinement path can be controlled using -Mbz, -Lbz and -max_dt command-line options.
+*/
+PetscErrorCode IceUnitModel::test_bedrockOnlySystem() {
+  PetscErrorCode ierr;
+
+  PetscInt fMbz = grid.Mbz;	// number of points in the fine vertical grid
+
+  ierr = verbPrintf(2, grid.com, "Testing bedrockOnlySystemCtx...\n"); CHKERRQ(ierr);
+
+  PetscReal
+    bed_rho  = config.get("bedrock_thermal_density"),		     // kg m-3
+    bed_c    = config.get("bedrock_thermal_specific_heat_capacity"), // J kg-1 K-1
+    bed_k    = config.get("bedrock_thermal_conductivity"), // W m-1 K-1
+    K        = bed_k / (bed_rho * bed_c),
+    dz       = grid.Lbz / (fMbz - 1), // vertical grid spacing
+    dt_years = config.get("maximum_time_step_years"),
+    M        = M_PI/grid.Lbz,	// scaling factor
+    T_z0     = 200.0;		// Dirichlet boundary cond. at z = 0.
+
+  PetscScalar
+    *x       = new PetscScalar[fMbz],
+    *x_exact = new PetscScalar[fMbz];
+
+  bedrockOnlySystemCtx ctx(config, fMbz);
+  ierr = ctx.initAllColumns(dt_years, dz);
+
+  // fill in ctx.Tb with the solution at t = grid.start_year:
+  PetscReal t = grid.start_year;
+  for (int j = 0; j < fMbz; ++j) {
+    PetscReal z = -grid.Lbz + j * dz;
+    ctx.Tb[j] = T_z0 + exp(-(M*M) * K * t) * sin(M * z);
+  }
+
+  // fill the exact solution:
+  t = grid.end_year;
+  for (int j = 0; j < fMbz; ++j) {
+    PetscReal z = -grid.Lbz + j * dz;
+    x_exact[j] = T_z0 + exp(-(M*M) * K * t) * sin(M * z);
+  }
+
+  // time-stepping loop:
+  for (PetscScalar year = grid.start_year; year < grid.end_year; year += dt_years) {
+    PetscReal G = bed_k * M * exp(-(M*M) * K * year);
+    ierr = ctx.setIndicesAndClearThisColumn(0.0, 0.0, 0.0); CHKERRQ(ierr); // argument values don't matter
+    ierr = ctx.setBoundaryValuesThisColumn(T_z0, G); CHKERRQ(ierr);
+    ierr = ctx.solveThisColumn(&x); CHKERRQ(ierr);
+
+    // copy the solution to be used during the next time-step:
+    for (int j = 0; j < fMbz; ++j)
+      ctx.Tb[j] = x[j];
+
+    dt_years = PetscMin(dt_years, grid.end_year - year);
+  }
+
+  // compare numberical and exact solutions:
+  PetscReal delta = 0.0;
+  for (int j = 0; j < fMbz; ++j) {
+    delta = PetscMax(delta, fabs(x[j] - x_exact[j]));
+  }  
+
+  ierr = verbPrintf(1, grid.com, "Maximum temperature error: %1.12e\n", delta); CHKERRQ(ierr);
+
+  delete[] x;
+  delete[] x_exact;
+
+  return 0;
+}

@@ -184,8 +184,8 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 	${CXXLINKER} iCMthermo.o iceCompModel.o iceExactSSAModel.o \
 	iceCalvBCModel.o pismv.o ${ICE_LIB_FLAGS} ${TESTS_LIB_FLAGS} -o $@
 
-../bin/pismtests: pismtests.o iMtests.o ${LIBPISMNAME}
-	${CXXLINKER} pismtests.o iMtests.o ${ICE_LIB_FLAGS} -o $@
+../bin/pismtests: pismtests.o iMtests.o ${LIBPISMNAME} bedrockOnlySystem.o
+	${CXXLINKER} pismtests.o iMtests.o bedrockOnlySystem.o ${ICE_LIB_FLAGS} -o $@
 
 other_sources += pcctest.cc pgrn_atmosphere.cc
 ../bin/pcctest : pcctest.o pgrn_atmosphere.o ${LIBPISMNAME}

@@ -643,9 +643,9 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
 
   // re-initialize the model:
   global_attributes.set_string("history", "");
-  ierr = model_state_setup(); CHKERRQ(ierr);
   grid.year = grid.start_year;
   grid.end_year = end_year;
+  ierr = model_state_setup(); CHKERRQ(ierr);
 
   // restore verbosity:
   ierr = setVerbosityLevel(tmp_verbosity); CHKERRQ(ierr);

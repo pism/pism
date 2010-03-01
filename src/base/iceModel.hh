@@ -128,8 +128,8 @@ public:
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
-  PetscErrorCode set_output_size(string option, string description,
-				 string default_value, set<string> &result);
+  virtual PetscErrorCode set_output_size(string option, string description,
+					 string default_value, set<string> &result);
 
   // see iMutil.cc
   virtual void attach_surface_model(PISMSurfaceModel *surf);
@@ -457,7 +457,7 @@ protected:
   // working space (a convenience)
   static const PetscInt nWork2d=6;
   Vec g2;			//!< Global work vector; used by the bed
-				//!< deformation code only.
+				//!< deformation code only. (FIXME!)
   IceModelVec2 vWork2d[nWork2d];
   // 3D working space (with specific purposes)
   IceModelVec3 Tnew3, taunew3;

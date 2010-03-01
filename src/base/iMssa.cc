@@ -441,8 +441,6 @@ PetscErrorCode IceModel::assembleSSARhs(Vec rhs) {
 
   /* rhs (= right-hand side) assembly loop */
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = vh.get_array(h); CHKERRQ(ierr);
-  ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
   ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -463,8 +461,6 @@ PetscErrorCode IceModel::assembleSSARhs(Vec rhs) {
     }
   }
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vh.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
   ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
 
@@ -495,8 +491,8 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
            INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecScatterEnd(SSAScatterGlobalToLocal, x, xLoc, 
            INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGetArray(xLoc, &uv); CHKERRQ(ierr);
 
+  ierr = VecGetArray(xLoc, &uv); CHKERRQ(ierr);
   ierr = vubarSSA.get_array(u); CHKERRQ(ierr);
   ierr = vvbarSSA.get_array(v); CHKERRQ(ierr);
 
@@ -506,8 +502,8 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
       v[i][j] = uv[i*M + 2*j+1];
     }
   }
-  ierr = VecRestoreArray(xLoc, &uv); CHKERRQ(ierr);
 
+  ierr = VecRestoreArray(xLoc, &uv); CHKERRQ(ierr);
   ierr = vubarSSA.end_access(); CHKERRQ(ierr);
   ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
 

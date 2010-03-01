@@ -304,7 +304,7 @@ PetscErrorCode IceModel::report_grid_parameters() {
            fMz, fdz); CHKERRQ(ierr);
   }
   if (fMz > 1000) {
-    ierr = verbPrintf(1,grid.com,
+    ierr = verbPrintf(2,grid.com,
       "\n\nWARNING: Using more than 1000 ice vertical levels internally in energy/age computation!\n\n");
       CHKERRQ(ierr);
   }

@@ -49,6 +49,7 @@ public:
   virtual PetscErrorCode  multiply_by(IceModelVec &x, IceModelVec &result);
   virtual PetscErrorCode  multiply_by(IceModelVec &x);
   virtual PetscErrorCode  copy_to_global(Vec destination);
+  virtual PetscErrorCode  copy_from_global(Vec source);
   virtual PetscErrorCode  copy_to(IceModelVec &destination);
   virtual PetscErrorCode  copy_from(IceModelVec &source);
   virtual PetscErrorCode  has_nan();

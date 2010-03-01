@@ -326,8 +326,7 @@ See the part of the <i>User's Manual</i> on EISMINT-Greenland.
 Consider a horizontal grid point <tt>i,j</tt>.  Suppose the surface temperature \f$T_s\f$ and the geothermal
 flux \f$g\f$ are given at that grid point.  Within the corresponding column, denote the temperature
 by \f$T(z)\f$ for some elevation \f$z\f$ above the base of the ice.  (Note ice corresponds to \f$z>0\f$ while
-bedrock has \f$z<0\f$.)  Apply the rule that \f$T(z)=T_s\f$ is \f$z\f$ is above the top of the ice (at 
-\f$z=H\f$).  
+bedrock has \f$z<0\f$.)  Apply the rule that \f$T(z)=T_s\f$ is \f$z\f$ is above the top of the ice (at \f$z=H\f$).  
 
 Within the ice, set
 	\f[T(z) = T_s + \alpha (H-z)^2 + \beta (H-z)^4\f]

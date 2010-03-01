@@ -276,12 +276,26 @@ PetscErrorCode  IceModelVec::copy_to_global(Vec destination) {
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (!localp)
-    SETERRQ2(1, "Use copy_to(...). (Called %s.copy_to_global(...) and %s is global)", 
+    SETERRQ2(1, "Use copy_to_global(...). (Called %s.copy_to_global(...) and %s is global)", 
     name.c_str(), name.c_str());
 
   ierr = DALocalToGlobal(da, v, INSERT_VALUES, destination); CHKERRQ(ierr);
   return 0;
 }
+
+PetscErrorCode IceModelVec::copy_from_global(Vec source) {
+  PetscErrorCode ierr;
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
+  if (!localp)
+    SETERRQ2(1, "Use copy_from_global(...). (Called %s.copy_from_global(...) and %s is global)", 
+    name.c_str(), name.c_str());
+
+  ierr =   DAGlobalToLocalBegin(da, source, INSERT_VALUES, v);  CHKERRQ(ierr);
+  ierr =     DAGlobalToLocalEnd(da, source, INSERT_VALUES, v);  CHKERRQ(ierr);
+  return 0;
+}
+
 
 //! Result: destination <- v.  Leaves metadata alone but copies values in Vec.  Uses VecCopy.
 PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) {

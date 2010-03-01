@@ -93,9 +93,6 @@ PetscErrorCode PA_EISMINT_Greenland::init(PISMVars &vars) {
 		      gwl3_start_year);
   }
 
-  t = grid.year;
-  dt = 0;
-
   return 0;
 }
 

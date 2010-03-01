@@ -96,9 +96,11 @@ int main(int argc, char *argv[]) {
     POFactory po(g, config);
     PISMOceanModel *ocean;
 
+    ierr = PetscOptionsBegin(com, "", "Options choosing PISM boundary models", ""); CHKERRQ(ierr);
     pa.create(atmosphere);
     ps.create(surface);
     po.create(ocean);
+    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     surface->attach_atmosphere_model(atmosphere);
 
