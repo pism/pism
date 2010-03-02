@@ -430,7 +430,7 @@ PetscErrorCode IceModel::assembleSSARhs(Vec rhs) {
   const PetscScalar   scaling = 1.0e9;  // comparable to typical beta for an ice stream;
 
   PetscErrorCode  ierr;
-  PetscScalar     **h, **H, **uvbar[2], **taudx, **taudy;
+  PetscScalar     **uvbar[2], **taudx, **taudy;
 
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 

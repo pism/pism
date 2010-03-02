@@ -55,6 +55,9 @@ protected:
   virtual PetscErrorCode energyStats(PetscScalar iarea, bool useHomoTemp, 
                                      PetscScalar &gmeltfrac, PetscScalar &gtemp0);
 
+  using IceModel::check_maximum_thickness_hook;
+  virtual PetscErrorCode check_maximum_thickness_hook(const int old_Mz);
+
   using IceModel::temperatureStep;
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, 
                                          PetscScalar* bulgeCount);

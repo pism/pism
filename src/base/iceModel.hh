@@ -446,6 +446,7 @@ protected:
   virtual PetscErrorCode stampHistoryEnd();
   virtual PetscErrorCode stampHistory(string);
   virtual PetscErrorCode check_maximum_thickness();
+  virtual PetscErrorCode check_maximum_thickness_hook(const int old_Mz);
   virtual bool           issounding(const PetscInt i, const PetscInt j);
 
   // see iMvelocity.cc

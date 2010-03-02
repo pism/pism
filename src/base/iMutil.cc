@@ -239,9 +239,19 @@ PetscErrorCode IceModel::check_maximum_thickness() {
     ierr = tau3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
     ierr = taunew3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   }
+  
+  ierr = check_maximum_thickness_hook(old_Mz); CHKERRQ(ierr);
 
   return 0;
 }
+
+
+//! Allows derived classes to extend their own IceModelVec3's in vertical.
+/*! Base class version does absolutely nothing. */
+PetscErrorCode IceModel::check_maximum_thickness_hook(const int old_Mz) {
+  return 0;
+}
+
 
 PetscErrorCode IceModel::report_grid_parameters() {
   PetscErrorCode ierr;

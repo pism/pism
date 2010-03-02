@@ -106,9 +106,13 @@ PetscErrorCode iceenthOnlySystemCtx::setBoundaryValuesThisColumn(
 //! Set coefficients in equation \f$a_0 E_0^{n+1} + a_1 E_1^{n+1} = b\f$ at base of ice.
 PetscErrorCode iceenthOnlySystemCtx::setLevel0EqnThisColumn(
       const PetscScalar my_a0, const PetscScalar my_a1, const PetscScalar my_b) {
-  if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {  SETERRQ(2,
-     "setLevel0EqnThisColumn() should only be called after\n"
-     "  initAllColumns() in iceenthOnlySystemCtx"); }
+  if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {
+    SETERRQ(1, "setLevel0EqnThisColumn() should only be called after\n"
+               "  initAllColumns() in iceenthOnlySystemCtx");
+  }
+  if ((!gsl_isnan(a0)) || (!gsl_isnan(a1)) || (!gsl_isnan(b))) {
+    SETERRQ(2, "setLevel0EqnThisColumn() called twice ? in iceenthOnlySystemCtx");
+  }
   a0 = my_a0;
   a1 = my_a1;
   b  = my_b;
@@ -215,7 +219,7 @@ PetscErrorCode iceenthOnlySystemCtx::solveThisColumn(PetscScalar **x) {
 
   // air above
   for (PetscInt k = ks; k < Mz; k++) {
-    L[k] = 0.0;
+    if (k > 0) L[k] = 0.0;
     D[k] = 1.0;
     if (k < Mz-1) U[k] = 0.0;
     rhs[k] = Enth_ks;
@@ -224,7 +228,8 @@ PetscErrorCode iceenthOnlySystemCtx::solveThisColumn(PetscScalar **x) {
   // solve it; note drainage is not addressed yet and post-processing may occur
   PetscErrorCode retval = solveTridiagonalSystem(Mz, x);
 
-  if (!retval) { // mark column as done by making scheme params and b.c.s invalid
+  if (!retval) {
+    // if success, mark column as done by making scheme params and b.c.s invalid
     lambda  = -1.0;
     Enth_ks = -1.0;
     a0 = GSL_NAN;

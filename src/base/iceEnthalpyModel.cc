@@ -222,6 +222,42 @@ PetscErrorCode IceEnthalpyModel::bootstrapFromFile(const char *filename) {
 }
 
 
+//!  If this gets called then we need to extend the IceModelVec3s owned by IceEnthalpyModel.
+PetscErrorCode IceEnthalpyModel::check_maximum_thickness_hook(const int old_Mz) {
+  PetscErrorCode  ierr;
+
+  // We use surface temperatures to extend Enth3 and Enthnew3. We get them from the
+  // PISMSurfaceModel.
+  if (surface != PETSC_NULL) {
+    ierr = surface->ice_surface_temperature(grid.year, 0.0, artm); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
+  }
+
+  // vWork2d[0] will have the enthalpy of the air
+  EnthalpyConverter EC(config);
+  PetscScalar **Enthair;
+  ierr = vWork2d[0].get_array(Enthair); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = EC.getEnthPermissive(
+         artm(i,j),0.0,EC.getPressureFromDepth(-1.0),Enthair[i][j]);
+         CHKERRQ(ierr);
+    }
+  }
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+
+  // Model state 3D vectors:
+  ierr = Enth3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
+
+  // Work 3D vectors:
+  ierr = EnthNew3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+
 /*********** procedures for read/write ****************/
 
 PetscErrorCode IceEnthalpyModel::write_extra_fields(const char* filename) {
