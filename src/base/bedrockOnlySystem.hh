@@ -22,11 +22,12 @@
 #include "columnSystem.hh"
 #include "NCVariable.hh"
 
-//! Tridiagonal linear system for vertical column of bedrock alone.
+//! Tridiagonal linear system for conservation of energy in vertical column of bedrock only.
 /*!
 See the page documenting \ref bombproofenth.  We implement equations
 \ref bedrockeqn and \ref geothermalbedeqn.  The top of the bedrock has a
-Dirichlet condition and the bottom has a Neumann condition.
+Dirichlet condition and the bottom has a Neumann condition.  Heat flux at top of
+bedrock can be extracted from the solution.
 */
 class bedrockOnlySystemCtx : public columnSystemCtx {
 

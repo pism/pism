@@ -21,13 +21,14 @@
 
 #include "columnSystem.hh"
 
-//! Tridiagonal linear system for vertical column of enthalpy-based conservation of energy in ice and bedrock.
+//! Tridiagonal linear system for conservation of energy in vertical column of combining ice enthalpy and bedrock temperature.
 /*!
-This derived class is used only in case of cold ice base \e and a bedrock 
-thermal layer of positive thickness (Mbz > 1).
-
-See the page documenting \ref bombproofenth.
-*/
+See the page documenting \ref bombproofenth.  This class is used only 
+in case of cold ice base \e and a bedrock thermal layer of positive thickness
+(Mbz > 1).  The top of the ice has a Dirichlet condition and the bottom
+of the bedrock has a Neumann condition.  At the z=0 level there is a heat flux
+jump (or no jump if no heat from cold sliding) equation.
+ */
 class combinedSystemCtx : public columnSystemCtx {
 
 public:

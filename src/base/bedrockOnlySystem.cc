@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "bedrockOnlySystem.hh"
+#include <gsl/gsl_math.h>
 
 
 bedrockOnlySystemCtx::bedrockOnlySystemCtx(const NCConfigVariable &config, int my_Mbz)
@@ -36,6 +37,7 @@ bedrockOnlySystemCtx::bedrockOnlySystemCtx(const NCConfigVariable &config, int m
   bedK = bed_k / (bed_rho * bed_c);
   
   Tb = new PetscScalar[Mbz];  // bedrock temps at prev step
+  Tb[0] = GSL_NAN;
 }
 
 
@@ -108,10 +110,13 @@ PetscErrorCode bedrockOnlySystemCtx::solveThisColumn(PetscScalar **x) {
   if ((Tbedtop < 0.0) || (Ghf < 0.0)) {  
     SETERRQ(3, "solveThisColumn() should only be called after\n"
                "  setBoundaryValuesThisColumn() in bedrockOnlySystemCtx"); }
-
   if (Mbz <= 1) {
     SETERRQ(4, "solveThisColumn() should only be called\n"
                "  if Mbz > 1 (for bedrockOnlySystemCtx)"); }
+
+  if (gsl_isnan(Tb[0])) {
+    SETERRQ(66, "solveThisColumn() called with invalid Tb[] in\n"
+               "  bedrockOnlySystemCtx"); }
 
   // eqn:  - k_b (d Tb / d zb) = G + (heat equation); uses "add a point
   // past the end" trick (Morton & Mayers)
@@ -139,6 +144,7 @@ PetscErrorCode bedrockOnlySystemCtx::solveThisColumn(PetscScalar **x) {
   if (!retval) { // mark column as done by making b.c.s invalid
     Tbedtop = -1.0;
     Ghf     = -1.0;
+    Tb[0]   = GSL_NAN;
   }
   return retval;
 }

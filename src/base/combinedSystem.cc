@@ -18,6 +18,7 @@
 
 #include "enthalpyConverter.hh"
 #include "combinedSystem.hh"
+#include <gsl/gsl_math.h>
 
 
 combinedSystemCtx::combinedSystemCtx(
@@ -63,7 +64,17 @@ combinedSystemCtx::combinedSystemCtx(
   Enth_s = new PetscScalar[Mz];  // enthalpy of pressure-melting-point
   Enth   = new PetscScalar[Mz];
   Tb     = new PetscScalar[Mbz];  // bedrock temps at prev step
+
   Enth3 = &my_Enth3;  // points to IceModelVec3
+
+  // invalidate column inputs
+  u[0]      = GSL_NAN;
+  v[0]      = GSL_NAN;
+  w[0]      = GSL_NAN;
+  Sigma[0]  = GSL_NAN;
+  Enth_s[0] = GSL_NAN;
+  Enth[0]   = GSL_NAN;
+  Tb[0]     = GSL_NAN;
 }
 
 
@@ -193,6 +204,28 @@ PetscErrorCode combinedSystemCtx::solveThisColumn(PetscScalar **x) {
     SETERRQ(6, "solveThisColumn() NOT IMPLEMENTED FOR\n"
                "  SPECIAL CASE Mbz == 2,  in combinedSystemCtx"); }
 
+  if (gsl_isnan(u[0])) {
+    SETERRQ(60, "solveThisColumn() called with invalid u[] in\n"
+               "  combinedSystemCtx"); }
+  if (gsl_isnan(v[0])) {
+    SETERRQ(61, "solveThisColumn() called with invalid v[] in\n"
+               "  combinedSystemCtx"); }
+  if (gsl_isnan(w[0])) {
+    SETERRQ(62, "solveThisColumn() called with invalid w[] in\n"
+               "  combinedSystemCtx"); }
+  if (gsl_isnan(Sigma[0])) {
+    SETERRQ(63, "solveThisColumn() called with invalid Sigma[] in\n"
+               "  combinedSystemCtx"); }
+  if (gsl_isnan(Enth_s[0])) {
+    SETERRQ(64, "solveThisColumn() called with invalid Enth_s[] in\n"
+               "  combinedSystemCtx"); }
+  if (gsl_isnan(Enth[0])) {
+    SETERRQ(65, "solveThisColumn() called with invalid Enth[] in\n"
+               "  combinedSystemCtx"); }
+  if (gsl_isnan(Tb[0])) {
+    SETERRQ(66, "solveThisColumn() called with invalid Tb[] in\n"
+               "  combinedSystemCtx"); }
+
   // eqn:  - k_b (d Tb / d zb) = G + (heat equation); uses "add a point
   //       past the end" trick (Morton & Mayers)
   // L[0] is not allocated
@@ -263,6 +296,14 @@ PetscErrorCode combinedSystemCtx::solveThisColumn(PetscScalar **x) {
     Enth_ks = -1.0;
     Ghf     = -1.0;
     Fb      = -1.0;
+    // invalidate column inputs
+    u[0]      = GSL_NAN;
+    v[0]      = GSL_NAN;
+    w[0]      = GSL_NAN;
+    Sigma[0]  = GSL_NAN;
+    Enth_s[0] = GSL_NAN;
+    Enth[0]   = GSL_NAN;
+    Tb[0]     = GSL_NAN;
   }
   return retval;
 }

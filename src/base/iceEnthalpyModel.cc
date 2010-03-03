@@ -234,18 +234,20 @@ PetscErrorCode IceEnthalpyModel::check_maximum_thickness_hook(const int old_Mz) 
     SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }
 
-  // vWork2d[0] will have the enthalpy of the air
+  // vWork2d[0] will have the enthalpy of the air, very close to the value of
+  //   Enth_ks in enthalpyAndDrainageStep() below
   EnthalpyConverter EC(config);
-  PetscScalar **Enthair;
-  ierr = vWork2d[0].get_array(Enthair); CHKERRQ(ierr);
+  ierr = vWork2d[0].begin_access(); CHKERRQ(ierr);
+  ierr = artm.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = EC.getEnthPermissive(
-         artm(i,j),0.0,EC.getPressureFromDepth(-1.0),Enthair[i][j]);
+         artm(i,j),0.0,EC.getPressureFromDepth(0.0),vWork2d[0](i,j));
          CHKERRQ(ierr);
     }
   }
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  ierr = artm.end_access(); CHKERRQ(ierr);
 
   // Model state 3D vectors:
   ierr = Enth3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
@@ -715,6 +717,16 @@ PetscErrorCode copyColumn(PetscScalar *src, PetscScalar *dest, const PetscInt n)
 
 
 //! Update enthalpy field based on conservation of energy in ice and bedrock.
+/*!
+This method is documented by the page \ref bombproofenth.
+
+This method uses instances of combinedSystemCtx, bedrockOnlySystemCtx, and
+iceenthOnlySystemCtx.
+
+This method modifies IceModelVec3 EnthNew3, IceModelVec3Bedrock Tb3,
+IceModelVec2 vBasalMeltRate, and IceModelVec2 vHmelt.  No communication of
+ghosts is done for any of these fields.
+ */
 PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
                       PetscScalar* vertSacrCount, PetscScalar* /*bulgeCount*/) {
   PetscErrorCode  ierr;
@@ -754,8 +766,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
 
   combinedSystemCtx    cbsys(config, Enth3, fMz, fMbz);
   ierr = cbsys.initAllColumns(grid.dx, grid.dy, dtTempAge, fdz, fdzb); CHKERRQ(ierr);
-
-  // space for solution in case ice and bedrock are combined in one system
+  // space for solution when ice and bedrock are combined in one system
   PetscScalar *xcombined;
   xcombined = new PetscScalar[fMbz + fMz - 1];
 
@@ -768,8 +779,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
   bool viewOneColumn;
   ierr = check_option("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
-  // FIXME: verbosity failure: option "-verbose 4" does not generate true here
-  if (getVerbosityLevel() >= 4) {  // view: all constants correct at this point?
+  // FIXME: verbosity failure?: option "-verbose 4" does not generate true here?
+  if (getVerbosityLevel() >= 4) {  // view: all column-independent constants correct?
     ierr = EC.viewConstants(NULL); CHKERRQ(ierr);
     ierr = cbsys.viewConstants(NULL, false); CHKERRQ(ierr);
     ierr = bosys.viewConstants(NULL, false); CHKERRQ(ierr);
@@ -779,17 +790,19 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
   // now get map-plane coupler fields: Dirichlet upper surface boundary and
   //    mass balance lower boundary under shelves
   if (surface != PETSC_NULL) {
-    ierr = surface->ice_surface_temperature(grid.year, dtTempAge / secpera, artm); CHKERRQ(ierr);
+    ierr = surface->ice_surface_temperature(grid.year, dtTempAge / secpera, artm);
+        CHKERRQ(ierr);
   } else {
     SETERRQ(4,"PISM ERROR: surface == PETSC_NULL");
   }
   if (ocean != PETSC_NULL) {
-    ierr = ocean->shelf_base_mass_flux(grid.year, dtTempAge / secpera, shelfbmassflux); CHKERRQ(ierr);
-    ierr = ocean->shelf_base_temperature(grid.year, dtTempAge / secpera, shelfbtemp); CHKERRQ(ierr);
+    ierr = ocean->shelf_base_mass_flux(grid.year, dtTempAge / secpera, shelfbmassflux);
+        CHKERRQ(ierr);
+    ierr = ocean->shelf_base_temperature(grid.year, dtTempAge / secpera, shelfbtemp);
+        CHKERRQ(ierr);
   } else {
     SETERRQ(5,"PISM ERROR: ocean == PETSC_NULL");
   }
-
   ierr = artm.begin_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
   ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
@@ -841,9 +854,11 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
       if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
 
       // major decision: is cold base and grounded and has bedrock layer?:
-      if ( (iosys.Enth[0] < iosys.Enth_s[0]) && (grid.Mbz > 1) && (!vMask.is_floating(i,j)) ) {
+      if ( (iosys.Enth[0] < iosys.Enth_s[0]) && (fMbz > 1) && (!vMask.is_floating(i,j)) ) {
 
         // ***** COLD BASE, GROUNDED CASE WITH BEDROCK *****
+        ierr = cbsys.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
+
         ierr = copyColumn(iosys.Enth,cbsys.Enth,fMz); CHKERRQ(ierr);
         ierr = copyColumn(iosys.Enth_s,cbsys.Enth_s,fMz); CHKERRQ(ierr);
         ierr = u3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,cbsys.u); CHKERRQ(ierr);
@@ -851,17 +866,19 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
         ierr = copyColumn(iosys.w,cbsys.w,fMz); CHKERRQ(ierr);
         ierr = Sigma3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,cbsys.Sigma); CHKERRQ(ierr);
         ierr = Tb3.getValColumnSmart(bed_is_equal,i,j,fMbz,fzblev,cbsys.Tb); CHKERRQ(ierr);
-        ierr = cbsys.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
+
         ierr = cbsys.setSchemeParamsThisColumn(isMarginal, lambda); CHKERRQ(ierr);
         ierr = cbsys.setBoundaryValuesThisColumn(Enth_ks, vGhf(i,j), vRb(i,j)); CHKERRQ(ierr);
+
         ierr = cbsys.solveThisColumn(&xcombined);
-        if (ierr > 0) {
+        if (ierr) {
           reportColumnSolveError(ierr, grid.com, cbsys, "combined", i, j);
         }
         if (viewOneColumn && issounding(i,j)) {
           ierr = reportColumn(grid.com, cbsys, "combined", i, j, xcombined, fMbz+fMz-1);
             CHKERRQ(ierr);
         }
+        // break result x[] of combined system between Enthnew[fMz] and Tbnew[fMbz]
         for (PetscInt k = 0; k < fMbz-1; k++) {
           Tbnew[k] = xcombined[k];
         }
@@ -869,6 +886,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
         for (PetscInt k = 0; k < fMz; k++) {
           Enthnew[k] = xcombined[k + fMbz-1];
         }
+
         vbasalMeltRate(i,j) = 0.0;  // zero melt rate if cold base
 
       } else {
@@ -876,26 +894,31 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
         // ***** OTHER CASES *****
         // ***** BEDROCK ONLY SOLVE *****
         PetscScalar hf_base;
-        if (grid.Mbz > 1) { // deal with bedrock layer first, if present
+        if (fMbz > 1) { // deal with bedrock layer first, if present
           // case of temperate bed and a bedrock layer
-          // make value of ks invalid:
           ierr = bosys.setIndicesAndClearThisColumn(i,j,-1); CHKERRQ(ierr);  
-          ierr = bosys.setBoundaryValuesThisColumn(
-                   (vMask.is_floating(i,j)) ? shelfbtemp(i,j) : EC.getMeltingTemp(p_basal), 
-                   vGhf(i,j)); CHKERRQ(ierr);
+
           ierr = Tb3.getValColumnSmart(bed_is_equal,i,j,fMbz,fzblev,bosys.Tb);
                    CHKERRQ(ierr);
+
+          const PetscScalar Tbtop = (vMask.is_floating(i,j)) ? shelfbtemp(i,j)
+                                                             : EC.getMeltingTemp(p_basal);
+          ierr = bosys.setBoundaryValuesThisColumn(Tbtop, vGhf(i,j)); CHKERRQ(ierr);
+
           ierr = bosys.solveThisColumn(&Tbnew);
-          if (ierr > 0) {
+          if (ierr) {
             reportColumnSolveError(ierr, grid.com, bosys, "bedrockOnly", i, j);
           }
           if (viewOneColumn && issounding(i,j)) {
-            ierr = reportColumn(grid.com, bosys, "bedrockOnly", i, j, Tbnew, fMbz); CHKERRQ(ierr);
+            ierr = reportColumn(grid.com, bosys, "bedrockOnly", i, j, Tbnew, fMbz);
+                CHKERRQ(ierr);
           }
+
           hf_base = bosys.extractHeatFluxFromSoln(Tbnew);
         } else {
           hf_base = vGhf(i,j);
         }
+
         // can determine melt now from heat flux out of base, etc.
         if (vMask.is_floating(i,j)) {
           vbasalMeltRate(i,j) = shelfbmassflux(i,j);
@@ -906,19 +929,23 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
             vbasalMeltRate(i,j) = ( hf_base + vRb(i,j) ) / (ice_rho * L);
           }
         }
+
         // ***** ICE ONLY SOLVE *****
         // now set-up for solve in ice; note iosys.Enth[], iosys.w[], iosys.Enth_s[]
         //   are already filled
+        ierr = iosys.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
+
         ierr = u3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,iosys.u); CHKERRQ(ierr);
         ierr = v3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,iosys.v); CHKERRQ(ierr);
         ierr = Sigma3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,iosys.Sigma); CHKERRQ(ierr);
-        ierr = iosys.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
+
         ierr = iosys.setSchemeParamsThisColumn(isMarginal, lambda); CHKERRQ(ierr);
         ierr = iosys.setBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);
         if (iosys.Enth[0] < iosys.Enth_s[0]) {
           // cold base case: ice base equation says heat flux is known
           const PetscScalar C = ice_c * fdz / ice_k;
-          ierr = iosys.setLevel0EqnThisColumn(1.0,-1.0,C * (hf_base + vRb(i,j))); CHKERRQ(ierr);
+          ierr = iosys.setLevel0EqnThisColumn(
+                   1.0,-1.0,C * (hf_base + vRb(i,j))); CHKERRQ(ierr);
         } else {
           // determine lowest-level equation by vert vel at bottom of ice
           if (iosys.w[0] < 0.0) {
@@ -928,30 +955,30 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
                      1 - nuw0, nuw0, iosys.Enth[0]); CHKERRQ(ierr);            
           } else {
             // Dirichlet cond. for enthalpy at ice base
-            ierr = iosys.setLevel0EqnThisColumn(1.0,0.0,iosys.Enth_s[0]); CHKERRQ(ierr);
+            ierr = iosys.setLevel0EqnThisColumn(
+                     1.0,0.0,iosys.Enth_s[0]); CHKERRQ(ierr);
           }
         }
+
         ierr = iosys.solveThisColumn(&Enthnew);
-        if (ierr > 0) {
+        if (ierr) {
           reportColumnSolveError(ierr, grid.com, iosys, "iceenthOnly", i, j);
         }
         if (viewOneColumn && issounding(i,j)) {
-          ierr = reportColumn(grid.com, iosys, "iceenthOnly", i, j, Enthnew, fMz); CHKERRQ(ierr);
+          ierr = reportColumn(grid.com, iosys, "iceenthOnly", i, j, Enthnew, fMz);
+              CHKERRQ(ierr);
         }
       }
-
-      // transfer column into Tb3; no need for communication, even later
-      ierr = Tb3.setValColumnPL(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
 
       // drain ice segments; alters Enthnew[]; adds to both basal melt rate and Hmelt
       PetscScalar Hmeltnew = vHmelt(i,j),
                   Hdrainedtotal = 0.0;
       for (PetscInt k=0; k < ks; k++) {
+        PetscScalar dHdrained = 0.0;
         // modifies last two arguments, generally:
-        PetscScalar dHdrained;
         ierr = drainageToBaseModelEnth(EC, omega_max, vH(i,j), fzlev[k], fdz,
                                        Enthnew[k], dHdrained); CHKERRQ(ierr);
-        Hdrainedtotal += dHdrained;
+        Hdrainedtotal += dHdrained;  // always a positive contribution
       }
       if (!vMask.is_floating(i,j)) {
         vbasalMeltRate(i,j) += Hdrainedtotal / dtTempAge;
@@ -961,13 +988,26 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
       // transfer column into EnthNew3; communication later
       ierr = EnthNew3.setValColumnPL(i,j,fMz,fzlev,Enthnew); CHKERRQ(ierr);
 
+      // if no thermal layer then need to fill Tb directly
+      if (fMbz == 1) {
+        if (vMask.is_floating(i,j)) { // floating: get from PISMOceanModel
+          Tbnew[0] = shelfbtemp(i,j);
+        } else {                      // grounded: duplicate temp from ice
+          ierr = EC.getAbsTemp(Enthnew[0],EC.getPressureFromDepth(vH(i,j)), Tbnew[0]);
+                    CHKERRQ(ierr);
+        }
+      }
+
+      // transfer column into Tb3; no need for communication, even later
+      ierr = Tb3.setValColumnPL(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
+
       // finalize Hmelt value
       if (updateHmelt == PETSC_TRUE) {
         if (vMask.is_floating(i,j)) {
           // if floating assume maximally saturated "till"
           // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
           vHmelt(i,j) = max_hmelt;
-        } if (ks == 0) {
+        } else if (ks == 0) {
           vHmelt(i,j) = 0.0;  // no stored water on ice free land
         } else {
           // limit Hmelt to be in [0.0, max_hmelt]
@@ -1035,6 +1075,8 @@ PetscErrorCode IceEnthalpyModel::drainageToBaseModelEnth(
     Hdrained = (omega - omega_max) * dz;
     // update enthalpy because omega == omega_max now:
     ierr = EC.getEnthAtWaterFraction(omega_max, p, enthalpy); CHKERRQ(ierr);
+  } else {
+    Hdrained = 0.0;
   }
   return 0;
 }

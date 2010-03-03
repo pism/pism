@@ -21,9 +21,14 @@
 
 #include "columnSystem.hh"
 
-//! Tridiagonal linear system for vertical column of enthalpy-based conservation of energy in ice.
+//! Tridiagonal linear system for conservation of energy in vertical column of ice enthalpy.
 /*!
-See the page documenting \ref bombproofenth.
+See the page documenting \ref bombproofenth.  This class is used either
+when the ice base is at the pressure melting temperature or when there is no
+bedrock thermal layer of positive thickness (i.e. because Mbz==1).  The top of
+the ice has a Dirichlet condition.  The boundary condition at the bottom of the
+ice depends on various cases, and these cases are not decided here.  Instead, 
+the user of this class sets the lowest-level (z=0) equation.
 */
 class iceenthOnlySystemCtx : public columnSystemCtx {
 

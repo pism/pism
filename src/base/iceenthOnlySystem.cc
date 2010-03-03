@@ -47,10 +47,18 @@ iceenthOnlySystemCtx::iceenthOnlySystemCtx(
   v      = new PetscScalar[Mz];
   w      = new PetscScalar[Mz];
   Sigma  = new PetscScalar[Mz];
-  Enth_s = new PetscScalar[Mz];  // enthalpy of pressure-melting-point
   Enth   = new PetscScalar[Mz];
+  Enth_s = new PetscScalar[Mz];  // enthalpy of pressure-melting-point
 
   Enth3 = &my_Enth3;  // points to IceModelVec3
+
+  // invalidate column inputs
+  u[0]      = GSL_NAN;
+  v[0]      = GSL_NAN;
+  w[0]      = GSL_NAN;
+  Sigma[0]  = GSL_NAN;
+  Enth_s[0] = GSL_NAN;
+  Enth[0]   = GSL_NAN;
 }
 
 
@@ -186,6 +194,25 @@ PetscErrorCode iceenthOnlySystemCtx::solveThisColumn(PetscScalar **x) {
     SETERRQ(5, "solveThisColumn() should only be called after\n"
                "  setLevel0EqnThisColumn() in iceenthOnlySystemCtx"); }
 
+  if (gsl_isnan(u[0])) {
+    SETERRQ(60, "solveThisColumn() called with invalid u[] in\n"
+               "  iceenthOnlySystemCtx"); }
+  if (gsl_isnan(v[0])) {
+    SETERRQ(61, "solveThisColumn() called with invalid v[] in\n"
+               "  iceenthOnlySystemCtx"); }
+  if (gsl_isnan(w[0])) {
+    SETERRQ(62, "solveThisColumn() called with invalid w[] in\n"
+               "  iceenthOnlySystemCtx"); }
+  if (gsl_isnan(Sigma[0])) {
+    SETERRQ(63, "solveThisColumn() called with invalid Sigma[] in\n"
+               "  iceenthOnlySystemCtx"); }
+  if (gsl_isnan(Enth_s[0])) {
+    SETERRQ(64, "solveThisColumn() called with invalid Enth_s[] in\n"
+               "  iceenthOnlySystemCtx"); }
+  if (gsl_isnan(Enth[0])) {
+    SETERRQ(65, "solveThisColumn() called with invalid Enth[] in\n"
+               "  iceenthOnlySystemCtx"); }
+
   // k=0 equation must be supplied to avoid making decisions here
   // L[0] = 0.0;  // not allocated
   D[0] = a0;
@@ -235,6 +262,13 @@ PetscErrorCode iceenthOnlySystemCtx::solveThisColumn(PetscScalar **x) {
     a0 = GSL_NAN;
     a1 = GSL_NAN;
     b  = GSL_NAN;
+    // invalidate column inputs
+    u[0]      = GSL_NAN;
+    v[0]      = GSL_NAN;
+    w[0]      = GSL_NAN;
+    Sigma[0]  = GSL_NAN;
+    Enth_s[0] = GSL_NAN;
+    Enth[0]   = GSL_NAN;
   }
   return retval;
 }
