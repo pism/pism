@@ -970,9 +970,14 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
         }
       }
 
+      // basal melt rate causes water to be added to layer
+      PetscScalar Hmeltnew = vHmelt(i,j);
+      if (!vMask.is_floating(i,j)) {
+        Hmeltnew += vbasalMeltRate(i,j) * dtTempAge;
+      }
+
       // drain ice segments; alters Enthnew[]; adds to both basal melt rate and Hmelt
-      PetscScalar Hmeltnew = vHmelt(i,j),
-                  Hdrainedtotal = 0.0;
+      PetscScalar Hdrainedtotal = 0.0;
       for (PetscInt k=0; k < ks; k++) {
         PetscScalar dHdrained = 0.0;
         // modifies last two arguments, generally:
