@@ -389,7 +389,7 @@ PetscErrorCode IceUnitModel::test_bedrockOnlySystem() {
   // time-stepping loop:
   for (PetscScalar year = grid.start_year; year < grid.end_year; year += dt_years) {
     PetscReal G = bed_k * M * exp(-(M*M) * K * year);
-    ierr = ctx.setIndicesAndClearThisColumn(0.0, 0.0, 0.0); CHKERRQ(ierr); // argument values don't matter
+    ierr = ctx.setIndicesAndClearThisColumn(0, 0, 0); CHKERRQ(ierr); // argument values don't matter
     ierr = ctx.setBoundaryValuesThisColumn(T_z0, G); CHKERRQ(ierr);
     ierr = ctx.solveThisColumn(&x); CHKERRQ(ierr);
 

@@ -66,6 +66,75 @@ Note that the NetCDF model state saved by PISM at the end of an \emph{evolution}
 
 \subsection{Computing ice age} \label{subsect:age} By default, PISM does not compute the age of the ice\index{PISM!modeling the age of the ice} because it does not directly impact ice flow using the default flow laws.   It is very easy to turn on.  Just set \intextoption{age}.
 
+\subsection{Setting up PISM boundary (atmosphere, surface and ocean) models}
+\label{sec:boundary-models}
+
+Setting up PISM's boundary models requires selecting one model of each kind and zero or more "model modifiers"; selected models and modifiers are chained as in Figure~\ref{fig:climate-input-data-flow}. Command-line options \intextoption{atmosphere}, \intextoption{surface} and \intextoption{ocean} take a comma-separated list of keywords as an argument; the first keyword \emph{has} to correspond to a model, the rest can be modifiers. Any of these options can be omitted to use the default atmosphere, surface or ocean model, although using a modifier requires specifying a model.
+
+For example,
+\begin{verbatim}
+$ pismr -i foo.nc -atmosphere searise_greenland,forcing \
+        -dTforcing delta_T.nc -surface pdd
+\end{verbatim}%$
+chooses a combination of SeaRISE-Greenland atmosphere model (using an air temperature parameterization and constant-in-time precipitation),  ice-core derived temperature forcing, a PDD local surface mass balance model, and a default (constant) ocean model.
+
+Each of PISM boundary model types currently has one ``modifier'' available; the corresponding keyword is \texttt{forcing}. Please see below for details.
+
+\begin{enumerate}
+\item \textbf{PISM atmosphere models.}
+  \begin{itemize}
+  \item \emph{SeaRISE-Greenland} (\verb|searise_greenland|)
+
+    This atmosphere model implements a longitude, latitude and elevation dependent near-surface air temperature parameterization and a cosine yearly cycle described in \cite{Faustoetal2009} and uses a constant in time ice-equivalent snow precipitation field (in units of thickness per time, variable \verb|snowprecip|) that is read from an input file.
+
+    It expects variables \verb|snowprecip|, latitude and longitude to be present in an input file.
+  \item \emph{Constant in time} (\verb|constant|)
+
+    This atmosphere model reads the snow precipitation (variable \verb|snowprecip|) and the mean annual near-surface air temperature (variable \verb|temp_ma|) and provides then to a selected surface model.
+  \item \emph{Constant precipitation using a temperature lapse rate} (\verb|temp_lapse_rate|)
+    
+    This atmosphere model also uses a constant snow precipitation field (\verb|snowprecip|) and requires the mean annual near-surface air temperature (\verb|temp_ma|) to be present in an input file. In addition to this, it dynamically corrects air temperature using a location-independent elevation lapse rate specified using the \intextoption{lapse\und rate} command-line option (in units of degrees Celsius per meter).
+
+  \end{itemize}
+
+  The atmosphere \verb|forcing| modifier implements temperature forcing using scalar offsets and also a mechanism applying precipitation and mean annual temperature anomalies.
+  \begin{itemize}
+  \item \intextoption{dTforcing} specifies a file containing scalar temperature offsets (variable \verb|delta_T|), 
+  \item \intextoption{anomaly\und temp\und ma} specifies a file containing spatially-variable mean annual near-surface air temperature anomalies (variable \verb|temp_ma_anomaly|), and
+  \item \intextoption{anomaly\und precip} specifies a file containing spatially-variable ice-equivalent precipitation anomalies (in thickness per time) (variable \verb|snowprecip_anomaly|).
+  \end{itemize}
+
+  Options \intextoption{anomaly\und temp\und ma} and \intextoption{anomaly\und precip} can be used to set up a PISM run using a GCM output, essentially achieving one-way coupling.
+
+  Note that only one temperature forcing mechanism can be used at any time.
+
+\item \textbf{PISM surface (snow) process models}
+  \begin{itemize}
+  \item \emph{The ``invisible'' model} (\verb|simple|)
+
+    This is the simplest ``surface model'', re-interpreting precipitation as mass flux into the ice and mean annual near-surface air temperature as the temperature of the ice at the ice surface (below firn). (This implies that there is no melt as long as precipitation is non-negative.)
+
+    However primitive it may be, this model can be useful: to model Antarctica, for example.
+  \item \emph{Constant in time} (\verb|constant|)
+
+    This surface model reads and provides constant in time top surface boundary conditions (see table \ref{tab:ice-dynamics-bc}). When PISM is used with this model, variables \verb|artm| (ice temperature at the ice surface) and \verb|acab| are expected to be present in an input file.
+
+    Note: this surface model \emph{ignores}  the atmosphere model selection made using the \intextoption{atmosphere} option.
+
+  \item \emph{Local mass balance (PDD)} (\verb|pdd|)
+
+    This surface model can be used to 
+  \end{itemize}
+\item \textbf{PISM ocean models}
+  PISM includes one simple ocean model: \verb|constant|, providing constant (both in time and space) mass flux into the ocean and sea level elevation to PISM's ice flow core. The mass flux is controlled by the\\ \verb|ocean_sub_shelf_heat_flux_into_ice| configuration parameter and the assumption that the mass flux is proportional to heat flux into ice.
+
+  The ocean \texttt{forcing} modifier implements sea level forcing. The command-line option \intextoption{dSLforcing} is used to specify the file containing sea level offsets:
+\begin{verbatim}
+$ pismr -i in.nc -ocean constant,forcing -dSLforcing delta_SL.nc
+\end{verbatim}%$
+uses \verb|delta_SL.nc|
+\end{enumerate}
+  
 
 \subsection{Positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  The default atmospheric climate assumption made by the \verb|pismr| and \verb|pgrn| executables is that the input file will supply surface mass balance and ice surface temperature in variables \verb|acab| and \verb|artm|, respectively.  The supplied surface mass balance \verb|acab| is assumed to be the net surface balance, which is not the snow accumulation rate when melting can occur, and it must be in units of ice-equivalent thickness per time.  The supplied surface temperature \verb|artm| is regarded as the mean annual surface temperature, at a point in the ice below the completion of firn processes \cite{Hock05}.  The mass conservation equation for the ice sheet requires the surface mass balance, while the conservation of energy model requires the ice surface temperature as a boundary condition.
 
@@ -155,3 +224,7 @@ Compare the \verb|topg|, \verb|usurf|, and \verb|dbdt| variables in the resultin
 
 Test H in section \ref{sect:verif} can be used to reproduce the comparison done in \cite{BLKfastearth}.
 
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual"
+%%% End: 

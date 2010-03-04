@@ -35,7 +35,7 @@ run_test ()
 	return 1
     fi
 
-#    pass
+    pass
     return 0
 }
 

@@ -2,6 +2,18 @@
 \section{Practical Usage}
 \label{sec:practical-usage}
 
+\subsection{Choosing variables to save at the end of the run}
+\label{sec:output-size}
+
+A PISM output file always contains variables that are necessary to restart it
+plus some diagnostic quantities. It is possible, though, to make this list
+bigger (or smaller) using the \intextoption{o\und size} command-line option.
+
+Possible choices are ``\texttt{-o\und size small}'' (no diagnostic variables),
+``\texttt{medium}'' (the default, adds variables listed in the \texttt{output\und
+  medium} configuration variable to model state fields) and ``\texttt{big}'',
+saving \emph{every} variable listed in Table \ref{tab:extra-vars}.
+
 \subsection{Saving time series of scalar diagnostic quantities}\index{time-series}\index{PISM!saving time-series}
 \label{sec:saving-time-series}
  It is also possible to save time-series of certain scalar diagnostic quantities using a combination of the options \intextoption{ts\und file}, \intextoption{ts\und times}, and \intextoption{ts\und vars}.  For example,
@@ -228,6 +240,10 @@ The list of parameters is too long to include here; please see the PISM Class br
 \label{sec:diagnostic-viewers}
 Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.
 All the quantities listed in table \ref{tab:extra-vars} are available.
+
+Note that (for performance and implementation reasons) map and slice viewers
+are transposed.
+
 \begin{table}[ht]
   \caption{Options controlling run-time diagnostic viewers}
   \centering
@@ -263,7 +279,8 @@ The option \verb|-view_sounding| allows viewing a \emph{sounding} of a variable 
 \begin{verbatim}
 $ pismr -i input.nc -y 1000 -o output.nc -view_sounding temp
 \end{verbatim}
-shows the dependence of the ice temperature on $z$ at the center of the domain. One can use options \verb|-id| and \verb|-jd| to choose a different point.
+shows the dependence of the ice temperature on $z$ (more precisely, on the
+number of the vertical grid layer) at the center of the domain. One can use options \verb|-id| and \verb|-jd| to choose a different point.
 
 Some diagnostic quantities are \emph{only} available as run-time viewers:
 \begin{center}
@@ -327,7 +344,7 @@ macbook:pism>
 \normalsize
 
 
-\subsection{Visualizing the climate inputs, without ice dynamics}\label{subsect:pcctest}  Recall that
+\subsection{Visualizing climate inputs, without ice dynamics}\label{subsect:pcctest}  Recall that
 internally in PISM there is a separation of climate inputs from ice dynamics
 (subsection \ref{subsect:separateclimate}).  Executable \verb|pcctest|\index{PISM!pcctest}
 allows one to visualize climate inputs without invoking the ice dynamics core of PISM.
@@ -392,17 +409,18 @@ See section \ref{sect:green} for another \verb|pcctest| example.
 
 The transfer from grid to grid is reasonably general---one can go from coarse to fine or vice versa in each dimension $x,y,z$---but the transfer must always be done by \emph{interpolation} and never \emph{extrapolation}.  (An attempt to do the latter will always produce a PISM error.)
 
-Such ``regridding'' is done using the \intextoption{regrid\und from} and \intextoption{regrid\und vars} commands as in this example:\index{pisms}
+Such ``regridding'' is done using the \intextoption{regrid\und file} and \intextoption{regrid\und vars} commands as in this example:\index{pisms}
 
 \begin{verbatim}
 $  pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
-         -regrid_from foo.nc -regrid_vars thk,temp -o bar.nc
+         -regrid_file foo.nc -regrid_vars thk,temp -o bar.nc
 \end{verbatim}
 \noindent By specifying regridded variables ``\verb|thk,temp|'', the ice thickness and temperature values from the old grid are interpolated onto the new grid.  Here one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment A description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
 
 A slightly different use of regridding occurs when ``bootstrapping'', as described in section \ref{sect:boot} and illustrated by example in section \ref{sect:green}.
 
-See table \ref{tab:regridvar} for the regriddable variables using \intextoption{regrid\und from}.  Only model state variables are regriddable, while climate and boundary data generally are not explicitly regriddable.  (Bootstrapping, however, allows the same general interpolation as this explicit regrid.)
+See table \ref{tab:regridvar} for the regriddable variables using
+\intextoption{regrid\und file}.  Only model state variables are regriddable, while climate and boundary data generally are not explicitly regriddable.  (Bootstrapping, however, allows the same general interpolation as this explicit regrid.)
 
 \begin{table}[ht]
 \centering
@@ -422,7 +440,7 @@ See table \ref{tab:regridvar} for the regriddable variables using \intextoption{
 \end{tabular}
 \end{table}
 
-Here is another example: suppose you have an output of a PISM run on a fairly coarse grid (stored in \verb|foo.nc|) and you want to continue this run on a finer grid. This can be done using \intextoption{regrid\und from} along with \intextoption{boot\und from}:
+Here is another example: suppose you have an output of a PISM run on a fairly coarse grid (stored in \verb|foo.nc|) and you want to continue this run on a finer grid. This can be done using \intextoption{regrid\und file} along with \intextoption{boot\und from}:
 \begin{verbatim}
 $ pismr -boot_from foo.nc -Mx 201 -My 201 -Mz 21 -Mbz 21 -Lz 4000 \
         -regrid_from foo.nc -regrid_vars litho_temp,age,temp -y 100 -o bar.nc
@@ -551,3 +569,8 @@ Now we explain what the rest of the flags line, namely
 \end{table}
 
 We also see that there was a major time step of 2.1 model years divided into 5 substeps of about 0.43 years.  This came from the use of the \intextoption{skip} option.  Note that \verb|-skip| merely sets a maximum for the number of substeps.  The adaptive mechanism may choose to not take so many substeps, though they are computationally-inexpensive.
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual"
+%%% End: 

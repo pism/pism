@@ -69,8 +69,12 @@ public:
   
     F = models[*j];
     if (!F) {
-      PetscPrintf(grid.com, "ERROR: %s model \"%s\" is not available.\n",
-		  option.c_str(), j->c_str());
+      PetscPrintf(grid.com,
+		  "ERROR: %s model \"%s\" is not available.\n"
+		  "  Available models:    %s\n"
+		  "  Available modifiers: %s\n",
+		  option.c_str(), j->c_str(),
+		  model_list.c_str(), modifier_list.c_str());
       PetscEnd();
     }
 
@@ -85,8 +89,10 @@ public:
 
       M = modifiers[*j];
       if (!M) {
-	PetscPrintf(grid.com, "ERROR: %s modifier \"%s\" is not available.\n",
-		    option.c_str(), j->c_str());
+	PetscPrintf(grid.com,
+		    "ERROR: %s modifier \"%s\" is not available.\n"
+		    "  Available modifiers: %s\n",
+		    option.c_str(), j->c_str(), modifier_list.c_str());
 	PetscEnd();
       }
 

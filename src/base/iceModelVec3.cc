@@ -435,10 +435,12 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt 
 }
 
 
-//! If equally_spaced then use PL, otherwise use QUAD.
-PetscErrorCode  IceModelVec3::getValColumnSmart(bool equally_spaced, 
+//! If the grid is equally spaced in the ice then use PL, otherwise use QUAD.
+PetscErrorCode  IceModelVec3::getValColumn(
                   PetscInt i, PetscInt j, PetscInt nlevels, 
                   PetscScalar *levelsIN, PetscScalar *valsOUT) {
+  bool equally_spaced = grid->ice_vertical_spacing == EQUAL;
+  
   if (equally_spaced) {
     return getValColumnPL(i, j, nlevels, levelsIN, valsOUT);
   } else {
@@ -842,10 +844,12 @@ PetscErrorCode  IceModelVec3Bedrock::getValColumnQUAD(PetscInt i, PetscInt j, Pe
 }
 
 
-//! If equally_spaced then use PL, otherwise use QUAD.
-PetscErrorCode  IceModelVec3Bedrock::getValColumnSmart(bool equally_spaced, 
+//! If the grid is equally spaced in the bedrock then use PL, otherwise use QUAD.
+PetscErrorCode  IceModelVec3Bedrock::getValColumn(
                   PetscInt i, PetscInt j, PetscInt nlevels, 
                   PetscScalar *levelsIN, PetscScalar *valsOUT) {
+  bool equally_spaced = grid->bed_vertical_spacing == EQUAL;
+
   if (equally_spaced) {
     return getValColumnPL(i, j, nlevels, levelsIN, valsOUT);
   } else {

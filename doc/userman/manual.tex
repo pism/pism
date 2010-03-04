@@ -19,6 +19,7 @@
 \usepackage[pdftex]{graphicx}
 \usepackage[pdftex]{hyperref}
 \usepackage{longtable}
+\usepackage[usenames]{color}
 
 %% uncomment to see locations of index entries
 %\usepackage{showidx}
@@ -339,7 +340,7 @@ In PISM the SSA may be used as a ``sliding law'' for grounded ice otherwise mode
 By default, PISM does not numerically solve the SSA at all.  The user must add the option \intextoption{ssa} (FIXME).  An exception is the use of the executable \verb|pismv| for verifying the SSA balance of momentum equations, as addressed in section \ref{sect:verif}.
 
 
-\subsection{A hierarchy of simplifying assumptions for ice flow}\index{PISM!hierarchy of simplifying assumptions}   Table \ref{tab:modelhierarchy} describes a hierarchy of models which are implemented in PISM or are planned.  this hierarchy is listed in order of increasing effectiveness in modeling grounded ice sheets with fast flow features.  It is also listed in order of increasing need for data to serve as boundary and initial conditions, an important consideration for the scientific user.
+\subsection{A hierarchy of simplifying assumptions for ice flow}\label{sec:model-hierarchy}\index{PISM!hierarchy of simplifying assumptions}   Table \ref{tab:modelhierarchy} describes a hierarchy of models which are implemented in PISM or are planned.  this hierarchy is listed in order of increasing effectiveness in modeling grounded ice sheets with fast flow features.  It is also listed in order of increasing need for data to serve as boundary and initial conditions, an important consideration for the scientific user.
 
 \begin{table}[ht]
 \caption{Hierarchy of current and planned flow models in PISM, for the grounded parts of ice sheets, from most to fewest simplifying assumptions \emph{and} from least to greatest need for boundary data.  The \emph{italicized} models are planned for future versions of PISM but are not implemented in \texttt{stable0.3}.}\label{tab:modelhierarchy} 
@@ -369,31 +370,122 @@ Much ice flow modeling, especially of streams and shelves, uses only instantaneo
 
 Sections \ref{sect:green} and \ref{sect:ross} illustrate the evolutionary and diagnostic modeling modes of PISM, respectively.  The first of these describes time-stepping evolution models for the Greenland ice sheet while the second describes a diagnostic SSA model for the Ross ice shelf.
 
+\subsection{Climate inputs and their separation from ice dynamics}
+\label{sec:climate-inputs}
 
-\subsection{Separation of climate inputs from ice dynamics}\label{subsect:separateclimate}  
-PISM's job is to approximate ice flow.  In addition, as described in subsection \ref{subsect:beddef}, PISM includes an optional bed deformation component approximating the movement of the Earth's crust and upper mantle in response to changing ice load.  Also, the temperature of the layer of bedrock in contact with grounded ice is included in the conservation of energy model.
+This section describes our understanding of the sixth PISM design principle
+(section \ref{sect:dynamics}): \emph{climate inputs affect ice dynamics by
+  a well-defined interface}.
 
-Thus PISM ``owns'' the ice and bedrock if it is coupled with other models for the atmosphere and ocean.  See Figure \ref{fig:climatecartoon}.  ``Other models'' may be anything from a nearly trivial parameterization of surface temperature and mass balance to full GCMs of astonishing complexity.
+PISM's job is to approximate ice flow, thus PISM's view of the world is
+centered around ice dynamics, boundary conditions it requires, and
+corresponding interfaces; see figure~\ref{fig:climate-inputs} for an illustration.
 
-\begin{figure}[ht]
-\vspace{0.2in}
-\includegraphics[height=2.0in,keepaspectratio=true]{climate_cartoon}
+An ice sheet modeled by PISM has a top surface interface (green dashed line in
+the figure) separating it from a surface (snow, firn, melt\dots) processes
+layer. This layer covers the whole surface of the ice, \emph{including ablation
+  areas} and ice-free bedrock.
 
-\vspace{0.1in}
-\caption{PISM approximates ice flow and bed deformation, so it ``owns'' the region below the dashed curve.  Components called \t{PISMAtmosphereCoupler} and \t{PISMOceanCoupler} provide climate inputs to the ice flow model at the ice upper surface and under ice shelves, respectively.}
-\label{fig:climatecartoon}
+As described in section \ref{subsect:beddef}, PISM includes an optional bed
+deformation component approximating the movement of the Earth's crust and upper
+mantle in response to changing ice load. Also, the temperature of the layer of
+bedrock in contact with grounded ice is included in the conservation of energy
+model. In this sense everything below the black dashed line (i.e. ice and
+bedrock) is ``owned'' by PISM, which adds two more interfaces:
+sub-ice-shelf/ocean (shown in blue) and the bottom of the bedrock thermal layer
+(not shown).
+
+\begin{figure}
+  \centering
+  \includegraphics[width=5in]{figs/climate_cartoon_new.pdf}
+  \caption{PISM's view of interfaces between an ice sheet and the outside world}
+  \label{fig:climate-inputs}
 \end{figure}
 
-Within the ice-dynamics-and-earth-deformation PISM core code, there is no parameterization or other model for boundary mass or energy balance.  Indeed this is a structural principle for PISM: boundary mass or energy balance computations are handled by non-core interface components called \t{PISMAtmosphereCoupler} and \t{PISMOceanCoupler}.   Obviously the former is for the ice upper surface while the latter is special to the undersides of ice shelves.  The advantage of this arrangement is that ``attaching'' PISM to other components of a global or regional climate model should require changing only small parts of the PISM interface source code\footnote{Specifically this would involve adding \t{PISMAtmosphereCoupler} and/or \t{PISMOceanCoupler} derived classes along with a new driver.  Users with ambititious plans for coupling PISM to other codes should see the \emph{PISM Source Browser}, e.g.~at \url{http://www.pism-docs.org/dev/doxy/html/index.html}.} without any change to the ice dynamics core.
+\begin{table}[h]
+  \centering
+  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\\
+    \hline
+    \textbf{Boundary} & \textbf{Necessary conditions}\\
+    \hline
+    Top ice surface (below firn) (\textcolor{green}{green})& Ice temperature (or enthalpy) and mass flux into the ice\\
+    Bottom surface of the thermal bed layer (not shown) & Geothermal flux\\
+    Bottom ice shelf surface (\textcolor{blue}{blue})& Mass flux into the ocean\\
+   \hline
+  \end{tabular}
+  \caption{Boundary conditions required by PISM's ice dynamics mode; see figure
+  \ref{fig:climate-inputs}}
+  \label{tab:ice-dynamics-bc}
+\end{table}
 
-The dashed line in Figure \ref{fig:climatecartoon} suggests that there is a thin layer on the ice surface not modeled by PISM, which is true.  ``Ice dynamics'' must include the mass of the snow/firn layer, but it cannot include the processes which transform this layer into ice with a certain temperature.  Similarly, the undersides of ice shelves are locations of important mass and energy flux processes \emph{not} modeled by core PISM, though potentially modeled in a \t{PISMOceanCoupler}.  In any case, the job of the non-core \t{PISM...Coupler} components is, as already stated, to provide definitive boundary mass or energy balance to the ice dynamics core.
+Table \ref{tab:ice-dynamics-bc} lists boundary conditions required at
+interfaces mentioned above.\footnote{This is a somewhat simplified view
+  corresponding to a ``generic'' PISM run. Please see section
+  \ref{sec:model-hierarchy} for details.} In a perfect world (or, possibly, in the future) we
+should be able to get them directly, as observation results or from a GCM.
+Unfortunately in most realistic modeling situations they are not easily
+available.\footnote{Even if PISM is coupled to a GCM--- due to differences in
+  model resolutions and required down-scaling.}.
 
-The PISM source code already contains example instances of \t{PISM...Coupler} components.  For example, instances of \t{PISMAtmosphereCoupler} exist for the simplified geometry experiments in section \ref{sect:simp}, and for the Greenland model in section \ref{sect:green}.
+So, to be able to use data that \emph{is} available, an ice-sheet model has to
+have additional components that are responsible for modeling surface (snow)
+processes, sub-shelf/ocean interaction, or just \emph{turning data that we have
+  into data that we need} (depending on a particular case and the point of
+view).
 
-Actually, most of this is invisible to the PISM user.  Options given to the PISM executables (e.g.~\t{pismr} or \t{pisms}) are passed internally to the \t{PISM...Coupler} components, if appropriate, so it looks to the user as if command line control of climate inputs is the same as command line control of ice dynamics.  For example, a standard existing \t{PISMAtmosphereCoupler}, with a positive degree day scheme for surface mass balance, is described in subsection \ref{subsect:pdd} as a part of PISM.  It \emph{is} part of PISM, but it is outside a well-defined ice dynamics core.
+This is reflected in PISM's design: the ice-dynamics-and-earth-deformation PISM
+core does not contain any parameterization or other model for boundary mass or
+energy balance. This simplifies customizing and debugging PISM's climate
+inputs, promotes code reuse and isolates the code that needs to be changed to
+couple PISM to a climate model.
 
-Why describe this structure here?  On the one hand, some users may be interested in coupling PISM to other models.  On the other hand, the PISM authors do not claim expertise in modeling atmosphere, ocean, or even snow processes.  The separation has a code-reliability purpose.  Indeed PISM users need to know that they are ultimately responsible for providing the climate inputs they intend.  The auxiliary tool \verb|pcctest|, described in subsection \ref{subsect:pcctest}, is intended to help users observe the climate inputs they have chosen, without involving ice dynamics at all.
+Users wishing to customize PISM's climate inputs should see the \emph{PISM
+  Source Browser}, e.g.~at
+\url{http://www.pism-docs.org/dev/doxy/html/index.html} and the documentation
+of \emph{PISMSurfaceModel}, \emph{PISMAtmosphereModel} and
+\emph{PISMOceanModel} therein. Also, section \ref{sect:green} describes a
+modeling example using a non-standard air temperature parameterization. Looking
+at \texttt{pgrn.cc} and \texttt{pgrn\und atmosphere.cc} may be a reasonable
+start.
 
+Note that figure~\ref{fig:climate-inputs} includes an interface that was not
+mentioned yet, the one between the surface layer and the air (red dashed line).
+Unlike the ones listed in table~\ref{tab:ice-dynamics-bc}, this interface
+\emph{may not even be present in some PISM configurations:} the ice dynamics
+core of PISM only ``knows'' about mediums bordering ice and bedrock. A pair
+consisting of a ``PISM surface model'' and an ``PISM ocean model'' may be
+hiding anything from a nearly trivial parameterization of ice surface
+temperature plus surface and sub-shelf mass fluxes to a GCM of astonishing
+complexity.
+
+Figure~\ref{fig:climate-input-data-flow} illustrates the corresponding data
+flow \emph{into} the PISM core; the data flow in the other direction depends on
+particular modeling choices.
+
+This figure requires an explanation: a ``modifier'' in this context is an
+adjustment of climate inputs that can be used with different climate
+choices. Using ice-core derived air temperature offsets is an example: instead
+of having a ``Greenland model'' implementing temperature offsets and an
+``antarctic'' model, also implementing them, PISM has a generic ``forcing''
+mechanism that can be paired with another model. Please see section \ref{sec:boundary-models} for
+a list of ``climate'' components included in PISM source code and other details.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=5in]{figs/data-flow.pdf}
+  \caption{PISM climate input data flow. Colored arrows correspond to interfaces in
+    figure \ref{fig:climate-inputs}.}
+  \label{fig:climate-input-data-flow}
+\end{figure}
+
+Why describe this structure here? On the one hand, some users may be interested
+in coupling PISM to other models. On the other hand, the PISM authors do not
+claim expertise in modeling atmosphere, ocean, or even snow processes. The
+separation has a code-reliability purpose. Indeed PISM users need to know that
+they are ultimately responsible for providing the climate inputs they intend.
+The auxiliary tool \verb|pcctest|, described in subsection
+\ref{subsect:pcctest}, is intended to help users observe the climate inputs
+they have chosen, without involving ice dynamics at all.
 
 \clearpage
 \newpage
@@ -464,7 +556,7 @@ Subsection shows bootstrapping for the \ref{sect:green} does EISMINT-Greenland i
 \end{itemize}
 As a consequence of these options, and generally from the complexity of getting a computation started on a parallel computer, we observe that initializing PISM is one of the most error-prone parts of maintaining it.
 
-Thus initialization sequence is also an error-prone part of writing a derived class of \verb|IceModel| to modify PISM's function.  The reader interested in doing so should see method \verb|IceModel::init()| and also view the flow chart in \verb|doc/initialization-sequence.png|.  Note that \verb|init()| is \emph{not} \verb|virtual|.  Derived classes can redefine the several methods which are called by \verb|init()|, which are \verb|virtual|.  The EISMINT-Greenland derived class \verb|IceGRNModel| is an example.
+Thus initialization sequence is also an error-prone part of writing a derived class of \verb|IceModel| to modify PISM's function.  The reader interested in doing so should see method \verb|IceModel::init()| and also view the flow chart in \verb|doc/initialization-sequence.png|.  Note that \verb|init()| is \emph{not} \verb|virtual|.  Derived classes can redefine the several methods which are called by \verb|init()|, which are \verb|virtual|.
 
 
 \clearpage\newpage

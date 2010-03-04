@@ -737,9 +737,6 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
            "             doColdIceMethods==true ... ending\n");
   }
 
-  const bool // are storage grids equal-spaced
-      ice_is_equal = (grid.ice_vertical_spacing == EQUAL),
-      bed_is_equal = (grid.bed_vertical_spacing == EQUAL);
   PetscInt    fMz, fMbz;  // number of fine grid levels in ice and bedrock, resp
   PetscScalar fdz, *fzlev, fdzb, *fzblev;
   ierr = grid.get_fine_vertical_grid(fMz, fMbz, fdz, fdzb, fzlev, fzblev); CHKERRQ(ierr);
@@ -843,8 +840,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
       //   now there is no case where we have that:
       ierr = EC.getEnthPermissive(artm(i,j), 0.0, p_ks,  Enth_ks); CHKERRQ(ierr);
 
-      ierr = Enth3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,iosys.Enth); CHKERRQ(ierr);
-      ierr = w3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,iosys.w); CHKERRQ(ierr);
+      ierr = Enth3.getValColumn(i,j,fMz,fzlev,iosys.Enth); CHKERRQ(ierr);
+      ierr = w3.getValColumn(i,j,fMz,fzlev,iosys.w); CHKERRQ(ierr);
 
       PetscScalar lambda;
       ierr = getEnthalpyCTSColumn(config, EC, fMz, fdz, fzlev,
@@ -861,11 +858,11 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
 
         ierr = copyColumn(iosys.Enth,cbsys.Enth,fMz); CHKERRQ(ierr);
         ierr = copyColumn(iosys.Enth_s,cbsys.Enth_s,fMz); CHKERRQ(ierr);
-        ierr = u3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,cbsys.u); CHKERRQ(ierr);
-        ierr = v3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,cbsys.v); CHKERRQ(ierr);
+        ierr = u3.getValColumn(i,j,fMz,fzlev,cbsys.u); CHKERRQ(ierr);
+        ierr = v3.getValColumn(i,j,fMz,fzlev,cbsys.v); CHKERRQ(ierr);
         ierr = copyColumn(iosys.w,cbsys.w,fMz); CHKERRQ(ierr);
-        ierr = Sigma3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,cbsys.Sigma); CHKERRQ(ierr);
-        ierr = Tb3.getValColumnSmart(bed_is_equal,i,j,fMbz,fzblev,cbsys.Tb); CHKERRQ(ierr);
+        ierr = Sigma3.getValColumn(i,j,fMz,fzlev,cbsys.Sigma); CHKERRQ(ierr);
+        ierr = Tb3.getValColumn(i,j,fMbz,fzblev,cbsys.Tb); CHKERRQ(ierr);
 
         ierr = cbsys.setSchemeParamsThisColumn(isMarginal, lambda); CHKERRQ(ierr);
         ierr = cbsys.setBoundaryValuesThisColumn(Enth_ks, vGhf(i,j), vRb(i,j)); CHKERRQ(ierr);
@@ -898,7 +895,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
           // case of temperate bed and a bedrock layer
           ierr = bosys.setIndicesAndClearThisColumn(i,j,-1); CHKERRQ(ierr);  
 
-          ierr = Tb3.getValColumnSmart(bed_is_equal,i,j,fMbz,fzblev,bosys.Tb);
+          ierr = Tb3.getValColumn(i,j,fMbz,fzblev,bosys.Tb);
                    CHKERRQ(ierr);
 
           const PetscScalar Tbtop = (vMask.is_floating(i,j)) ? shelfbtemp(i,j)
@@ -935,9 +932,9 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
         //   are already filled
         ierr = iosys.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
 
-        ierr = u3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,iosys.u); CHKERRQ(ierr);
-        ierr = v3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,iosys.v); CHKERRQ(ierr);
-        ierr = Sigma3.getValColumnSmart(ice_is_equal,i,j,fMz,fzlev,iosys.Sigma); CHKERRQ(ierr);
+        ierr = u3.getValColumn(i,j,fMz,fzlev,iosys.u); CHKERRQ(ierr);
+        ierr = v3.getValColumn(i,j,fMz,fzlev,iosys.v); CHKERRQ(ierr);
+        ierr = Sigma3.getValColumn(i,j,fMz,fzlev,iosys.Sigma); CHKERRQ(ierr);
 
         ierr = iosys.setSchemeParamsThisColumn(isMarginal, lambda); CHKERRQ(ierr);
         ierr = iosys.setBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);
