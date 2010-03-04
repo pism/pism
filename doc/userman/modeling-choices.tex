@@ -90,7 +90,7 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
     It expects variables \verb|snowprecip|, latitude and longitude to be present in an input file.
   \item \emph{Constant in time} (\verb|constant|)
 
-    This atmosphere model reads the snow precipitation (variable \verb|snowprecip|) and the mean annual near-surface air temperature (variable \verb|temp_ma|) and provides then to a selected surface model.
+    This atmosphere model reads the snow precipitation (variable \verb|snowprecip|) and the mean annual near-surface air temperature (variable \verb|temp_ma|) and provides them to a selected surface model.
   \item \emph{Constant precipitation using a temperature lapse rate} (\verb|temp_lapse_rate|)
     
     This atmosphere model also uses a constant snow precipitation field (\verb|snowprecip|) and requires the mean annual near-surface air temperature (\verb|temp_ma|) to be present in an input file. In addition to this, it dynamically corrects air temperature using a location-independent elevation lapse rate specified using the \intextoption{lapse\und rate} command-line option (in units of degrees Celsius per meter).

@@ -107,8 +107,14 @@ netcdf pism_config {
     pism_config:default_tauc = 1e4;
     pism_config:default_tauc_doc = "Pa; fill value for yield stress for basal till (plastic or pseudo-plastic model); note 10^4 Pa = 0.1 bar";
 
-    pism_config:max_hmelt = 2.0;
-    pism_config:max_hmelt_doc = "meters; maximum thickness of the basal melt water layer";
+    pism_config:hmelt_max = 2.0;
+    pism_config:hmelt_max_doc = "meters; maximum thickness of the basal melt water layer";
+
+    pism_config:hmelt_diffusion_distance = 2e4;
+    pism_config:hmelt_diffusion_distance_doc = "meters; diffusion distance for melt water thickness; see equation (11) in [\\ref BBssasliding]";
+
+    pism_config:hmelt_diffusion_time = 1000.0;
+    pism_config:hmelt_diffusion_time_doc = "years; diffusion time for melt water thickness; see equation (11) in [\\ref BBssasliding]";
 
     pism_config:minimum_temperature_for_sliding = 273.0;
     pism_config:minimum_temperature_for_sliding_doc = "Kelvin; Note less than ice.meltingTemp; if above this value then decide to slide";

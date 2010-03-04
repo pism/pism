@@ -203,7 +203,7 @@ Because both \c bwat and \c bmr are zero at points where base of ice is
 below the pressure-melting temperature, the modeled basal water pressure is
 zero when the base is frozen.
 
-The inequality \c bwat \f$\le\f$ \c max_hmelt is required at input, and an
+The inequality \c bwat \f$\le\f$ \c hmelt_max is required at input, and an
 error is thrown if not.
 
 Regarding the physics, compare the water pressure computed by formula (4) in
@@ -239,16 +239,16 @@ till is computed by these lines, which are recommended for this purpose:
 <code>
   p_over = ice->rho * standard_gravity * thk;  // the pressure of the weight of the ice
 
-  p_eff  = p_over - getBasalWaterPressure(thk, bwat, bmr, frac, max_hmelt);
+  p_eff  = p_over - getBasalWaterPressure(thk, bwat, bmr, frac, hmelt_max);
 </code>
  */
 PetscScalar IceModel::getBasalWaterPressure(PetscScalar thk, PetscScalar bwat,
 				            PetscScalar bmr, PetscScalar frac,
-				            PetscScalar max_hmelt) const {
+				            PetscScalar hmelt_max) const {
 
-  if (bwat > max_hmelt) {
+  if (bwat > hmelt_max) {
     PetscPrintf(grid.com,
-      "PISM ERROR:  bwat exceeds max_hmelt in IceModel::getBasalWaterPressure()\n");
+      "PISM ERROR:  bwat exceeds hmelt_max in IceModel::getBasalWaterPressure()\n");
     PetscEnd();
   }
 
@@ -262,9 +262,9 @@ PetscScalar IceModel::getBasalWaterPressure(PetscScalar thk, PetscScalar bwat,
     thkeff_H_low  = config.get("thk_eff_H_low");
 
   // the model; note  0 <= p_pw <= frac * p_overburden
-  //   because  0 <= bwat <= max_hmelt
+  //   because  0 <= bwat <= hmelt_max
   const PetscScalar p_overburden = ice->rho * standard_gravity * thk;
-  PetscScalar  p_pw = frac * (bwat / max_hmelt) * p_overburden;
+  PetscScalar  p_pw = frac * (bwat / hmelt_max) * p_overburden;
 
   if (usebmr) {
     // add to pressure from instantaneous basal melt rate;
@@ -334,7 +334,7 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
     PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
       till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
       till_mu = tan((pi/180.0)*config.get("default_till_phi")),
-      max_hmelt = config.get("max_hmelt");
+      hmelt_max = config.get("hmelt_max");
 
     ierr =          vMask.begin_access(); CHKERRQ(ierr);
     ierr =          vtauc.begin_access(); CHKERRQ(ierr);
@@ -352,7 +352,7 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
           const PetscScalar
             p_over = ice->rho * standard_gravity * vH(i,j),
             p_w    = getBasalWaterPressure(vH(i,j), vHmelt(i,j),
-                       vbasalMeltRate(i,j), till_pw_fraction, max_hmelt),
+                       vbasalMeltRate(i,j), till_pw_fraction, hmelt_max),
             N      = p_over - p_w;  // effective pressure on till
           if (useConstantTillPhi == PETSC_TRUE) {
             vtauc(i,j) = till_c_0 + N * till_mu;
@@ -383,18 +383,22 @@ Uses vWork2d[0] to temporarily store new values for Hmelt.
  */
 PetscErrorCode IceModel::diffuseHmelt() {
   PetscErrorCode  ierr;
-  
+
+  const PetscScalar
+    L = config.get("hmelt_diffusion_distance"),
+    diffusion_time = config.get("hmelt_diffusion_time") * secpera; // convert to seconds
+
   // diffusion constant K in u_t = K \nabla^2 u is chosen so that fundmental
   //   solution has standard deviation \sigma = 20 km at time t = 1000 yrs;
   //   2 \sigma^2 = 4 K t
-  const PetscScalar K = 2.0e4 * 2.0e4 / (2.0 * 1000.0 * secpera),
+  const PetscScalar K = L * L / (2.0 * diffusion_time),
                     Rx = K * dtTempAge / (grid.dx * grid.dx),
                     Ry = K * dtTempAge / (grid.dy * grid.dy);
 
   // NOTE: restriction that
   //    1 - 2 R_x - 2 R_y \ge 0
   // is a maximum principle restriction; therefore new Hmelt will be between
-  // zero and max_hmelt if old Hmelt has that property
+  // zero and hmelt_max if old Hmelt has that property
   const PetscScalar oneM4R = 1.0 - 2.0 * Rx - 2.0 * Ry;
   if (oneM4R <= 0.0) {
     SETERRQ(1,

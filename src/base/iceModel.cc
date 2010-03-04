@@ -273,9 +273,9 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vHmelt.create(grid, "bwat", true); CHKERRQ(ierr);
   ierr = vHmelt.set_attrs("model_state", "effective thickness of subglacial melt water",
 			  "m", ""); CHKERRQ(ierr);
-  // NB! Effective thickness of subglacial melt water *does* vary from 0 to max_hmelt meters only.
+  // NB! Effective thickness of subglacial melt water *does* vary from 0 to hmelt_max meters only.
   ierr = vHmelt.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = vHmelt.set_attr("valid_max", config.get("max_hmelt")); CHKERRQ(ierr);
+  ierr = vHmelt.set_attr("valid_max", config.get("hmelt_max")); CHKERRQ(ierr);
   ierr = variables.add(vHmelt); CHKERRQ(ierr);
 
   // rate of change of ice thickness

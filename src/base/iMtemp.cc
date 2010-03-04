@@ -247,7 +247,7 @@ PetscErrorCode IceModel::temperatureStep(
   PetscInt maxLowTempCount = static_cast<PetscInt>(config.get("max_low_temp_count"));
   PetscReal globalMinAllowedTemp = config.get("global_min_allowed_temp");
 
-  PetscReal max_hmelt = config.get("max_hmelt");
+  PetscReal hmelt_max = config.get("hmelt_max");
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -442,10 +442,10 @@ PetscErrorCode IceModel::temperatureStep(
 
       if (vMask.is_floating(i,j)) {
         // if floating assume maximally saturated till
-        Hmelt[i][j] = max_hmelt;
+        Hmelt[i][j] = hmelt_max;
       } else {
         // limit Hmelt by default max and store
-        Hmelt[i][j] = PetscMin(max_hmelt, Hmeltnew);
+        Hmelt[i][j] = PetscMin(hmelt_max, Hmeltnew);
       }
 
     } 

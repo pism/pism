@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -813,7 +813,7 @@ PetscErrorCode IceModel::getEffectivePressureForInverse() {
 
   const PetscScalar
     till_pw_fraction = config.get("till_pw_fraction"),
-    max_hmelt = config.get("max_hmelt");
+    hmelt_max = config.get("hmelt_max");
 
   PetscScalar **N, **H, **Hmelt, **bmr;
   ierr = inv.effPressureN->get_array(N);  CHKERRQ(ierr);
@@ -825,7 +825,7 @@ PetscErrorCode IceModel::getEffectivePressureForInverse() {
       const PetscScalar
         p_over = ice->rho * standard_gravity * H[i][j],
         p_w    = getBasalWaterPressure(H[i][j], Hmelt[i][j],
-                       bmr[i][j], till_pw_fraction, max_hmelt);
+                       bmr[i][j], till_pw_fraction, hmelt_max);
       N[i][j] = p_over - p_w;  // effective pressure on till
     }
   }

@@ -754,7 +754,7 @@ PetscErrorCode IceModel::compute_hardav(IceModelVec2 &result) {
 
   - \f$\alpha\f$ is the till pore water fraction (till_pw_fraction),
   - \f$w\f$ is the effective thickness of subglacial melt water (bwat)
-  - \f$w_{\text{max}}\f$ is the maximum allowed value for \f$w\f$ (max_hmelt),
+  - \f$w_{\text{max}}\f$ is the maximum allowed value for \f$w\f$ (hmelt_max),
   - \f$\rho\f$ is the ice density (ice_density)
   - \f$H\f$ is the ice thickness (thk)
 
@@ -765,7 +765,7 @@ PetscErrorCode IceModel::compute_bwp(IceModelVec2 &result) {
   PetscErrorCode ierr;
   const PetscScalar
     alpha     = config.get("till_pw_fraction"),
-    wmax      = config.get("max_hmelt"),
+    wmax      = config.get("hmelt_max"),
     fillval   = -1.0;
 
   ierr = vH.begin_access(); CHKERRQ(ierr);

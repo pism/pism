@@ -766,7 +766,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
     ice_k     = config.get("ice_thermal_conductivity"),
     L         = config.get("water_latent_heat_fusion"),  // J kg-1
     omega_max = config.get("liquid_water_fraction_max"), // pure
-    max_hmelt = config.get("max_hmelt");                 // m
+    hmelt_max = config.get("hmelt_max");                 // m
 
   PetscScalar *Enthnew, *Tbnew;
   Enthnew = new PetscScalar[fMz];  // new enthalpy in column
@@ -1032,13 +1032,13 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
         if (vMask.is_floating(i,j)) {
           // if floating assume maximally saturated "till"
           // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
-          vHmelt(i,j) = max_hmelt;
+          vHmelt(i,j) = hmelt_max;
         } else if (ks == 0) {
           vHmelt(i,j) = 0.0;  // no stored water on ice free land
         } else {
-          // limit Hmelt to be in [0.0, max_hmelt]
+          // limit Hmelt to be in [0.0, hmelt_max]
           // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO INFINITY AND BEYOND)!!
-          vHmelt(i,j) = PetscMax(0.0, PetscMin(max_hmelt, Hmeltnew) );
+          vHmelt(i,j) = PetscMax(0.0, PetscMin(hmelt_max, Hmeltnew) );
         }
       }
 

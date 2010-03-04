@@ -264,7 +264,7 @@ protected:
   virtual PetscErrorCode computePhiFromBedElevation();
   virtual PetscScalar    getBasalWaterPressure(
                            PetscScalar thk, PetscScalar bwat, PetscScalar bmr,
-                           PetscScalar frac, PetscScalar max_hmelt) const;
+                           PetscScalar frac, PetscScalar hmelt_max) const;
   virtual PetscErrorCode updateYieldStressUsingBasalWater();
   virtual PetscScalar    basalDragx(
                            PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
