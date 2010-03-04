@@ -1171,6 +1171,32 @@ PetscErrorCode IceModel::compute_ice_area_floating(PetscScalar &result) {
   return 0;
 }
 
+//! Computes the ice enthalpy, in J/m^3.
+PetscErrorCode IceModel::compute_ice_enthalpy(PetscScalar &result) {
+  PetscErrorCode ierr;
+  PetscScalar enthalpysum=0.0;
+  PetscScalar *Enth;
+  Enth = new PetscScalar[grid.Mz];
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscInt ks = grid.kBelowHeight(vH(i,j));
+      ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
+	if (vH(i,j) > 0) {
+	  for (PetscInt k=0; k<=ks; ++k) {
+	    enthalpysum += Enth[k];
+	  }
+	}
+    }
+  }
+  ierr = vH.end_access(); CHKERRQ(ierr);  
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
+
+  ierr = PetscGlobalSum(&enthalpysum, &result, grid.com); CHKERRQ(ierr);
+  return 0;
+}
+
 //! Compute a scalar diagnostic quantity by name.
 PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
   PetscErrorCode ierr, errcode = 1;
@@ -1231,6 +1257,15 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
   if (name == "total_sub_shelf_ice_flux") {
     errcode = 0;
     result = total_sub_shelf_ice_flux;
+  }
+
+  if (name == "ienthalpy") {
+    errcode = 0;
+    PetscScalar ice_density = config.get("ice_density");
+    PetscScalar ivolume;
+    ierr = compute_ice_volume(ivolume); CHKERRQ(ierr);
+    ierr = compute_ice_enthalpy(result); CHKERRQ(ierr);
+    result *= ice_density * ivolume;
   }
 
   return errcode;

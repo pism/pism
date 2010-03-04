@@ -1,5 +1,5 @@
 # Configuration flags:
-PISM_PREFIX ?= $(PWD)
+PISM_INSTALL_DIR ?= $(PWD)
 PISM_HAVE_FFTW ?= 1
 PISM_STATIC ?= 0
 # if ==1 then adds -g

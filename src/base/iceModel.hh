@@ -395,6 +395,7 @@ protected:
   virtual PetscErrorCode compute_ice_area(PetscScalar &result);
   virtual PetscErrorCode compute_ice_area_grounded(PetscScalar &result);
   virtual PetscErrorCode compute_ice_area_floating(PetscScalar &result);
+  virtual PetscErrorCode compute_ice_enthalpy(PetscScalar &result);
   virtual PetscErrorCode compute_by_name(string name, PetscScalar &result);
 
   // see iMsia.cc

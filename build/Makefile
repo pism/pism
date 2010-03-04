@@ -1,4 +1,4 @@
-ifndef PISM_PREFIX
+ifndef PISM_INSTALL_DIR
   $(error Please run make from the top-level PISM directory)
 endif
 
@@ -32,7 +32,7 @@ endif
 
 # Compiler flags:
 CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_REVISION='"$(PISM_REVISION)"' \
-          -I../src/udunits -I../src/base -DPISM_DEFAULT_CONFIG_FILE='"$(PISM_PREFIX)/lib/pism_config.nc"'
+          -I../src/udunits -I../src/base -DPISM_DEFAULT_CONFIG_FILE='"$(PISM_INSTALL_DIR)/lib/pism_config.nc"'
 ifeq (${PISM_USE_GNU_FLAGS}, 1)
   CFLAGS += -Woverloaded-virtual -pipe -O2
 endif
@@ -42,15 +42,15 @@ endif
 
 # Flags needed by UDUNITS:
 UDUNITS_CFLAGS   = -c -O2 -fPIC
-UDUNITS_CPPFLAGS = -DUT_INSTALL_PATH='"$(PISM_PREFIX)/lib/pismudunits.dat"' \
-	-DUT_SOURCE_PATH='"$(PISM_PREFIX)/lib/pismudunits.dat"' -DNDEBUG -Df2cFortran
+UDUNITS_CPPFLAGS = -DUT_INSTALL_PATH='"$(PISM_INSTALL_DIR)/lib/pismudunits.dat"' \
+	-DUT_SOURCE_PATH='"$(PISM_INSTALL_DIR)/lib/pismudunits.dat"' -DNDEBUG -Df2cFortran
 
 # Flags related to building libraries; defaults are for GNU/Linux
 SHARED = -shared
 
 # Linker flags:
 BASE_LIB_FLAGS := ${PISM_EXTRA_LIBS} \
-                  -L../lib -Wl,-rpath,$(PISM_PREFIX)/lib \
+                  -L../lib -Wl,-rpath,$(PISM_INSTALL_DIR)/lib \
                   -lm -lgsl -lgslcblas
 ifeq (${PISM_HAVE_FFTW}, 1)
   BASE_LIB_FLAGS += -lfftw3
@@ -242,7 +242,7 @@ showEnv:
 	@echo 'LIBPISMNAME = ' ${LIBPISMNAME}
 	@echo 'LIBTESTSNAME = ' ${LIBTESTSNAME}
 	@echo 'PISM_REVISION = ' ${PISM_REVISION}
-	@echo 'PISM_PREFIX = ' ${PISM_PREFIX}
+	@echo 'PISM_INSTALL_DIR = ' ${PISM_INSTALL_DIR}
 	@echo 'PISM_HAVE_FFTW = ' ${PISM_HAVE_FFTW}
 	@echo 'PISM_STATIC = ' ${PISM_STATIC}
 	@echo 'PISM_USE_DEBUG = ' ${PISM_USE_DEBUG}

@@ -122,6 +122,19 @@ PetscErrorCode IceModel::create_timeseries() {
     timeseries.push_back(ivol);
   }
 
+  if (find(ts_vars.begin(), ts_vars.end(), "ienthalpy") != ts_vars.end()) {
+    DiagnosticTimeseries *ienthalpy = new DiagnosticTimeseries(&grid, "ienthalpy", "t");
+
+    ienthalpy->set_units("J", "");
+    ienthalpy->set_dimension_units("years", "");
+    ienthalpy->output_filename = ts_filename;
+
+    ienthalpy->set_attr("long_name", "ice enthalpy");
+    ienthalpy->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(ienthalpy);
+  }
+
   if (find(ts_vars.begin(), ts_vars.end(), "imass") != ts_vars.end()) {
     DiagnosticTimeseries *imass = new DiagnosticTimeseries(&grid, "imass", "t");
 
