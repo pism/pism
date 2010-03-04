@@ -587,7 +587,7 @@ PetscErrorCode IceEnthalpyModel::temperatureStep(
     CHKERRQ(ierr);
 
     ierr = IceModel::temperatureStep(vertSacrCount,bulgeCount);  CHKERRQ(ierr);
-
+    
     // start & complete communication: THIS IS REDUNDANT WITH temperatureAgeStep(),
     //    BUT NEEDED TO GET UPDATED ENTHALPY AT END OF TIME STEP
     ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
@@ -599,9 +599,20 @@ PetscErrorCode IceEnthalpyModel::temperatureStep(
       "    [IceEnthalpyModel::temperatureStep(): ENTHALPY IS ON.\n"
       "         CALLING IceEnthalpyModel::enthalpyAndDrainageStep()]\n");
       CHKERRQ(ierr);
+
     // new enthalpy values go in EnthNew3; also updates (and communicates) Hmelt
     // enthalpyStep() is in iceEnthalpyModel.cc
-    ierr = enthalpyAndDrainageStep(vertSacrCount,bulgeCount);  CHKERRQ(ierr);
+    PetscScalar myLiquifiedVol = 0.0;
+    ierr = enthalpyAndDrainageStep(vertSacrCount,&myLiquifiedVol);  CHKERRQ(ierr);
+
+    PetscScalar gLiquifiedVol;
+    ierr = PetscGlobalSum(&myLiquifiedVol, &gLiquifiedVol, grid.com); CHKERRQ(ierr);
+    if (gLiquifiedVol > 0.0) {
+      ierr = verbPrintf(1,grid.com,
+        "\n IceEnthalpyModel WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n",
+        gLiquifiedVol / 1.0e9); CHKERRQ(ierr);
+    }
+    
 
     // start & complete communication
     ierr = Enth3.beginGhostCommTransfer(EnthNew3); CHKERRQ(ierr);
@@ -728,7 +739,7 @@ IceModelVec2 vBasalMeltRate, and IceModelVec2 vHmelt.  No communication of
 ghosts is done for any of these fields.
  */
 PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
-                      PetscScalar* vertSacrCount, PetscScalar* /*bulgeCount*/) {
+                      PetscScalar* vertSacrCount, PetscScalar* liquifiedVol) {
   PetscErrorCode  ierr;
 
   if (doColdIceMethods==PETSC_TRUE) {
@@ -821,6 +832,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
   ierr = EnthNew3.begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
 
+  PetscInt liquifiedCount = 0;
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -879,7 +892,13 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
         for (PetscInt k = 0; k < fMbz-1; k++) {
           Tbnew[k] = xcombined[k];
         }
-        ierr = EC.getAbsTemp(xcombined[fMbz-1], p_basal, Tbnew[fMbz-1]); CHKERRQ(ierr);
+        // at this point we need a temperature from ice that could in extreme
+        //   situations *be fully melted*; thus we catch the return code and
+        //   and count this phenomenon
+        ierr = EC.getAbsTemp(xcombined[fMbz-1], p_basal, Tbnew[fMbz-1]);
+        if (ierr==1) { // return code of 1 means block of ice melted completely
+          liquifiedCount++;
+        } else CHKERRQ(ierr);
         for (PetscInt k = 0; k < fMz; k++) {
           Enthnew[k] = xcombined[k + fMbz-1];
         }
@@ -973,10 +992,15 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
         Hmeltnew += vbasalMeltRate(i,j) * dtTempAge;
       }
 
-      // drain ice segments; alters Enthnew[]; adds to both basal melt rate and Hmelt
+      // drain ice segments; alters Enthnew[]; adds to both basal melt rate and Hmelt;
+      //    has side-effect that Enthnew[] is ice with at most omega_max liquid
+      //    fraction
       PetscScalar Hdrainedtotal = 0.0;
       for (PetscInt k=0; k < ks; k++) {
         PetscScalar dHdrained = 0.0;
+        if (EC.isLiquified(Enthnew[k],EC.getPressureFromDepth(vH(i,j) - fzlev[k]))) {
+          liquifiedCount++;
+        }
         // modifies last two arguments, generally:
         ierr = drainageToBaseModelEnth(EC, omega_max, vH(i,j), fzlev[k], fdz,
                                        Enthnew[k], dHdrained); CHKERRQ(ierr);
@@ -1043,6 +1067,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
   delete [] Enthnew; delete [] Tbnew;  delete [] xcombined;
   delete [] fzlev;   delete [] fzblev;
 
+  *liquifiedVol = ((double) liquifiedCount) * fdz * grid.dx * grid.dy;
   return 0;
 }
 

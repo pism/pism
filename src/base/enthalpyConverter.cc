@@ -111,9 +111,11 @@ double EnthalpyConverter::getEnthalpyCTS(double p) const {
      \f[ E_s(p) = c_i T_m(p), \f]
      \f[ E_l(p) = H_s(p) + L. \f]
  */
-void EnthalpyConverter::getEnthalpyInterval(double p, double &E_s, double &E_l) const {
+PetscErrorCode EnthalpyConverter::getEnthalpyInterval(
+                       double p, double &E_s, double &E_l) const {
   E_s = getEnthalpyCTS(p);
   E_l = E_s + L;
+  return 0;
 }
 
 
@@ -146,21 +148,22 @@ bool EnthalpyConverter::isTemperate(double E, double p) const {
 But the first case simplifies if we expand \f$E_s\f$:
      \f[ c_i^{-1} (E-E_s(p)) + T_m(p) = c_i^{-1} (E-c_i T_m(p)) + T_m(p) = c_i^{-1} E.\f]
 
-We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we fail if
-\f$E \ge E_l(p)\f$.
+We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we return
+a 1 as output PetscErrorCode if \f$E \ge E_l(p)\f$.
  */
 PetscErrorCode EnthalpyConverter::getAbsTemp(double E, double p, double &T) const {
   double E_s, E_l;
-  getEnthalpyInterval(p, E_s, E_l);
+  PetscErrorCode ierr = getEnthalpyInterval(p, E_s, E_l); CHKERRQ(ierr);
   if (E < E_s) {
     T = E / c_i;
-  } else if (E < E_l) { // two cases in (12)
+  } else { // two cases in (12)
     T = getMeltingTemp(p);
-  } else {
-    SETERRQ2(3,
-      "\n\nenthalpy E=%f equals or exceeds that of liquid water (E_l=%f)\n\n",E,E_l);
   }
-  return 0;
+  if (E < E_l) {
+    return 0;
+  } else { // enthalpy equals or exceeds that of liquid water
+    return 1;
+  }
 }
 
 
@@ -195,15 +198,17 @@ We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we fail i
  */
 PetscErrorCode EnthalpyConverter::getWaterFraction(double E, double p, double &omega) const {
   double E_s, E_l;
-  getEnthalpyInterval(p, E_s, E_l);
+  PetscErrorCode ierr = getEnthalpyInterval(p, E_s, E_l); CHKERRQ(ierr);
   if (E <= E_s) { // two cases in (12)
     omega = 0.0;
-  } else if (E < E_l) {
-    omega = (E - E_s) / L;
   } else {
-    SETERRQ1(2,"\n\nenthalpy E=%f equals or exceeds that of liquid water\n\n",E);
+    omega = (E - E_s) / L;
   }
-  return 0;
+  if (E < E_l) {
+    return 0;
+  } else { // enthalpy equals or exceeds that of liquid water
+    return 1;
+  }
 }
 
 //! Get liquid water fraction from enthalpy and pressure, but return omega=1 if high enthalpy.
@@ -221,6 +226,18 @@ double EnthalpyConverter::getWaterFractionLimited(double E, double p) const {
     return (E - E_s) / L;
   } else {
     return 1.0;
+  }
+}
+
+
+//! Is ice at given enthalpy and pressure actually liquid water?
+bool EnthalpyConverter::isLiquified(double E, double p) const {
+  double E_s, E_l;
+  getEnthalpyInterval(p, E_s, E_l);
+  if (E < E_l) {
+    return false;
+  } else {
+    return true;
   }
 }
 

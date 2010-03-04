@@ -39,12 +39,20 @@ Use this way, for example within IceModel with NCConfigVariable config member:
   }   
 \endcode
 
-Some methods are functions returning the computed values, a boolean, or 
-return \c void.  These do no error checking.
-
-Others return PetscErrorCode (and set arguments).  These check
-either that the enthalpy is below that of liquid water, or that
+Some methods are functions which return the computed values or a boolean.  These
+do no error checking.  Others return PetscErrorCode (and set arguments).  These
+check either that the enthalpy is below that of liquid water, or that
 the temperature (in K) is positive.
+
+Specifically, getAbsTemp() gives return value 1 if the input enthalpy exceeded
+that of liquid water, but puts the temperature of maximum-liquid-content 
+temperate ice into its computed value for T.  And getWaterFraction() gives
+return value of 1 under the same condition, but puts the maximum-liquid-content
+into its computed value for omega.
+
+The three methods that get the enthalpy from temperatures and liquid fractions, 
+namely getEnth, getEnthPermissive, getEnthAtWaterFraction, are more strict about
+error checking.  They call SETERRQ() if there arguments are invalid.
 */
 class EnthalpyConverter {
 public:
@@ -55,13 +63,18 @@ public:
   double         getPressureFromDepth(double depth) const;
   double         getMeltingTemp(double p) const;
   double         getEnthalpyCTS(double p) const;
-  void           getEnthalpyInterval(double p, double &E_s, double &E_l) const;
+  PetscErrorCode getEnthalpyInterval(double p, double &E_s, double &E_l) const;
   double         getCTS(double E, double p) const;
+
   bool           isTemperate(double E, double p) const;
+  bool           isLiquified(double E, double p) const;
+
   PetscErrorCode getAbsTemp(double E, double p, double &T) const;
   PetscErrorCode getPATemp(double E, double p, double &T_pa) const;
+
   PetscErrorCode getWaterFraction(double E, double p, double &omega) const;
   double         getWaterFractionLimited(double E, double p) const;
+
   PetscErrorCode getEnth(double T, double omega, double p, double &E) const;
   PetscErrorCode getEnthPermissive(double T, double omega, double p, double &E) const;
   PetscErrorCode getEnthAtWaterFraction(double omega, double p, double &E) const;

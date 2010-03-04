@@ -76,7 +76,7 @@ protected:  // new to IceEnthalpyModel
   virtual PetscErrorCode setPATempFromEnthalpy(IceModelVec3 &useForPATemp);
   
   virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
-                                                 PetscScalar* bulgeCount);
+                                                 PetscScalar* liquifiedVol);
 
   virtual PetscErrorCode drainageToBaseModelEnth(EnthalpyConverter &EC,
                 PetscScalar omega_max, PetscScalar thickness,
