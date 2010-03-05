@@ -104,9 +104,7 @@ The Snow, Ice, and Permafrost (SIP) group\index{Geophysical Institute!Snow, Ice,
 
 The Arctic Region Supercomputing Center\index{Arctic Region Supercomputing Center (ARSC)} has provided significant computational resources and technical help in the development of PISM, including the vital support of postdoc Andy Aschwanden.
 
-Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\index{Lingle, Craig}.
-
-Dave Covey, Don Bahls, and Greg Newby have supported our computers, tools, and and computations.  Martin Truffer, Regine Hock, Dani DellaGiustina and others in the SIP group provide the real-glaciology context for PISM at UAF.  Thanks to Tolly Adalgeirsdottir, Torsten Albrecht, Nick Golledge, Marianne Hasselhoff, Tore Hattermann, Jesse Johnson, Anders Levermann, Art Mahoney, David Maxwell, Maria Martin, Kent Overstreet, Ben Sperisen, Ward van Pelt, Ricarda Winkelmann, Ryan Woodard, Florian Ziemen and other PISM users/developers for helpful comments and questions on PISM and this \emph{Manual}.
+Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\index{Lingle, Craig}.  Dave Covey, Don Bahls, and Greg Newby have supported our computers, tools, and and computations.  Martin Truffer, Regine Hock, Dani DellaGiustina and others in the SIP group provide the real-glaciology context for PISM at UAF.  Thanks to Tolly Adalgeirsdottir, Torsten Albrecht, Nick Golledge, Marianne Hasselhoff, Tore Hattermann, Jesse Johnson, Anders Levermann, Art Mahoney, David Maxwell, Maria Martin, Kent Overstreet, Ben Sperisen, Ward van Pelt, Ricarda Winkelmann, Ryan Woodard, Florian Ziemen and other PISM users/developers for helpful comments and questions on PISM and this \emph{Manual}.
 \normalsize
 
 \newpage
@@ -314,33 +312,29 @@ NCO\index{NCO (NetCDF Operators)} & \href{http://nco.sourceforge.net/}{\t{nco.so
 \item science is better if done with publicly-available data.
 \end{enumerate}
 
-\noindent We do not claim to follow these principles perfectly.  We hope, however, that the user will see these principles reflected in PISM and this \emph{Manual}.
+\noindent We do not claim to follow these principles perfectly, but we hope that any user can see these principles reflected in PISM and this \emph{Manual}.
 
 Principle (1) is illustrated by our existence.  Principle (2) is addressed in section \ref{sect:verif}.  Principle (7) is illustrated by examples in sections \ref{sect:green} and \ref{sect:ross} (FIXME: and the new introduction).  Principles (3), (4), (5), and (6) are explained and expanded next.
 
 
-\subsection{Two main shallow models, SIA and SSA}\index{PISM!SIA}\index{PISM!SSA}  At each time-step of a typical PISM runs, the geometry, temperature, and basal strength of the ice sheet are included into stress balance equations to determine the velocity of the flowing ice.   PISM can, however, numerically solve \emph{two}\footnote{Currently only two in \texttt{stable0.3}.  More are planned as shown in table \ref{tab:modelhierarchy}.} significantly-different shallow approximations of the full stress balance equations\footnote{The ``full stress balance equations'' form the Stokes model for slowly-flowing fluids \cite{Fowler}, in this case a non-Newtonian fluid, and they are themselves an inertia-free approximation of the conservation of momentum equations.}:\begin{itemize}
+\subsection{Two main shallow models, SIA and SSA}\index{PISM!SIA}\index{PISM!SSA}  At each time-step of a typical PISM runs, the geometry, temperature, and basal strength of the ice sheet are included into stress balance equations to determine the velocity of the flowing ice.   PISM can, however, numerically solve two significantly-different shallow approximations of the full stress balance equations\footnote{The ``full stress balance equations'' form the Stokes model for slowly-flowing fluids \cite{Fowler}, in this case a non-Newtonian fluid, and they are themselves an inertia-free approximation of the conservation of momentum equations.}:\begin{itemize}
 \item the non-sliding shallow ice approximation (SIA)\index{SIA (shallow ice approximation)} \cite{Hutter}, which describes ice as flowing by shear in planes parallel to the geoid, with an infinitely-strong contact of ice base to bedrock, and
 \item the shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} \cite{WeisGreveHutter}, which describes a membrane-type flow of floating ice \cite{Morland}, or grounded ice which is sliding over a weak base \cite{MacAyeal,SchoofStream}.
 \end{itemize}
-PISM numerically solves both the SIA and SSA equations in parallel.  Time-stepping solutions of the mass continuity equation are possible when using each models.
+PISM numerically solves both the SIA and SSA equations in parallel.  Time-stepping solutions of the mass continuity equation are possible when using each model.
 
-The SIA\index{SIA (shallow ice approximation)!applicability} equations are, as a rule, easier and quicker to numerically solve than the SSA.  The SIA equations are also easier to parallelize.\index{parallelization!relative ease of, between SIA and SSA}  They are a ``lubrication approximation'' \cite{Fowler} which describes the shear as a local function of the driving stress of classical glaciology \cite{Paterson}, through a flow law (constitutive relation).  They can confidently be applied to those grounded parts of ice sheets for which the basal ice is frozen to the bedrock, or minimally sliding, and for which the bed topography is relatively slowly-varying in the map-plane \cite{Fowler}, which roughly characterizes the majority (by area) of the Greenland and Antarctic ice sheets.  We recommend solving the SIA with a \emph{non-sliding} base because the ad hoc addition of a ``sliding laws''\index{SIA (shallow ice approximation)!sliding laws} into the SIA stress balance, and especially schemes which ``switch on'' at the pressure-melting temperature \cite{EISMINT00}, have bad continuum and numerical modeling consequences \cite[appendix B]{BBssasliding}.
+The SIA\index{SIA (shallow ice approximation)!applicability} equations are, as a rule, easier and quicker to numerically solve than the SSA, and they are also easier to parallelize.\index{parallelization!relative ease of, between SIA and SSA}  They are a ``lubrication approximation'' \cite{Fowler} which describes the shear as a local function of the driving stress of classical glaciology \cite{Paterson}.  They can confidently be applied to those grounded parts of ice sheets for which the basal ice is frozen to the bedrock, or minimally sliding, and for which the bed topography is relatively slowly-varying in the map-plane \cite{Fowler}, which roughly characterizes the majority (by area) of the Greenland and Antarctic ice sheets.  We recommend solving the SIA with a \emph{non-sliding} base because the ad hoc addition of a ``sliding laws''\index{SIA (shallow ice approximation)!sliding laws} into the SIA stress balance, and especially schemes which ``switch on'' at the pressure-melting temperature \cite{EISMINT00}, have bad continuum and numerical modeling consequences \cite[appendix B]{BBssasliding}.
 
-The SSA\index{SSA (shallow shelf approximation)!applicability} equations can confidently be applied to large floating ice shelves, which have small depth-to-width ratio and negligible basal resistance \cite{Morland,MorlandZainuddin}.
+The SSA\index{SSA (shallow shelf approximation)!applicability} equations can confidently be applied to large floating ice shelves, which have small depth-to-width ratio and negligible basal resistance \cite{Morland,MorlandZainuddin}.  Terrestrial ice sheets also have fast-flowing grounded parts, however, called ``ice streams'' or ``outlet glaciers''.  Such features appear at the margin of, and sometimes well into the interior of, the Greenland \cite{Joughinetal2001}\index{Greenland ice sheet} and Antarctic \cite{BamberVaughanJoughin}\index{Antarctic ice sheet} ice sheets.  Describing these faster-flowing grounded parts of ice sheets requires something more than the non-sliding SIA.  One might use the full Stokes equations, or a ``higher-order'' but still shallow stress balance \cite{Blatter,Pattyn03}, but with any stress balance model one must still specify an appropriate sliding boundary condition.  To address these faster-flowing parts, one may apply the SSA equations with additional basal resistance terms to model fast-flowing and sliding grounded ice.  This was demonstrated for the Siple Coast ice streams of Antarctica by MacAyeal\index{MacAyeal, Doug} \cite{MacAyeal} using a linearly-viscous model for the underlying till.  A free boundary problem with the same (SSA) balance equations is the Schoof\index{Schoof, Christian} \cite{SchoofStream} model of ice streams, in which ice streams appear where there is plastic basal till failure \cite{Paterson}.
 
-Terrestrial ice sheets also have fast-flowing grounded parts, however, called ``ice streams'' or ``outlet glaciers''.  Such features appear at the margin of, and sometimes well into the interior of, the Greenland \cite{Joughinetal2001}\index{Greenland ice sheet} and Antarctic \cite{BamberVaughanJoughin}\index{Antarctic ice sheet} ice sheets.  Describing these faster-flowing grounded parts of ice sheets requires something more than the non-sliding SIA.  One might use the full Stokes equations, or a ``higher-order'' but still shallow stress balance \cite{Blatter,Pattyn03}, but with any stress balance model there is still the issue of the appropriate sliding boundary condition.
+As noted, both the SIA and SSA models are \emph{shallow} approximations.  That is, the respective partial differential equations are derived from the Stokes equations by different small-parameter arguments, both based on a small depth-to-width ratio for the ice sheet.\footnote{For this small-parameter argument in the SIA case see \cite{Fowler}.  For the corresponding SSA argument, see \cite{WeisGreveHutter} or the appendices of \cite{SchoofStream}.  See \cite{SchoofHindmarsh} on connections between these shallowest models and ``higher order'' models.  The references are, of course, the right place to find continuum equations and their physical motivation.}
 
-One may apply the SSA equations with additional basal resistance terms to model fast-flowing and sliding grounded ice.  This is demonstrated in the context of the Siple Coast ice streams of Antarctica by MacAyeal\index{MacAyeal, Doug} \cite{HulbeMacAyeal,MacAyeal} using a linearly-viscous model for the underlying till, and in many other references.  A free boundary problem with the same (SSA) balance equations is the Schoof\index{Schoof, Christian} \cite{SchoofStream} model of ice streams, in which ice streams appear where there is plastic basal till failure \cite{Paterson}.
-
-As noted, both the SIA and SSA models are \emph{shallow} approximations.  That is, the respective partial differential equations are derived from the Stokes equations by different small-parameter arguments, both based on a small depth-to-width ratio for the ice sheet.\footnote{For this small-parameter argument in the SIA case see \cite{Fowler}.  For the corresponding SSA argument, see \cite{WeisGreveHutter} or the appendices of \cite{SchoofStream}.  See \cite{SchoofHindmarsh} on connections between these shallowest models and ``higher order'' models.The references are, of course, the right place to see serious discussion of continuum equations and their physical motivation.}
-
-In PISM the SSA may be used as a ``sliding law'' for grounded ice otherwise modeled by the SIA\cite{BBssasliding}, and the resulting model is recommended.  This role for the SSA is in addition to its obvious role in ice shelf modeling.  In brief, our concept for grounded ice is that we balance the membrane stresses which immediately become important when there is sliding.  Similar concerns at the ``grounding line'', where ice flows into a floating ice shelf, suggest that membrane stresses on the grounded side of the grounding line are worth including.
+In PISM the SSA may be used as a ``sliding law'' for grounded ice otherwise modeled by the SIA, and the resulting model is recommended \cite{BBssasliding,BKAJS}.  This role for the SSA is in addition to its obvious role in ice shelf modeling.  In brief, our concept for grounded ice is that we balance the membrane stresses which become important when there is sliding.  These stresses are especially important near spatial (and temporal) changes in basal strength.  Similar concerns at the ``grounding line'', where ice flows into a floating ice shelf, also suggest that membrane stresses on the grounded side of the grounding line are worth including.
 
 By default, PISM does not numerically solve the SSA at all.  The user must add the option \intextoption{ssa} (FIXME).  An exception is the use of the executable \verb|pismv| for verifying the SSA balance of momentum equations, as addressed in section \ref{sect:verif}.
 
 
-\subsection{A hierarchy of simplifying assumptions for ice flow}\label{sec:model-hierarchy}\index{PISM!hierarchy of simplifying assumptions}   Table \ref{tab:modelhierarchy} describes a hierarchy of models which are implemented in PISM or are planned.  this hierarchy is listed in order of increasing effectiveness in modeling grounded ice sheets with fast flow features.  It is also listed in order of increasing need for data to serve as boundary and initial conditions, an important consideration for the scientific user.
+\subsection{A hierarchy of simplifying assumptions for ice flow}\label{sec:model-hierarchy}\index{PISM!hierarchy of simplifying assumptions}   Table \ref{tab:modelhierarchy} describes a hierarchy of models which are implemented in PISM or are planned.  This hierarchy is listed in order of increasing effectiveness in modeling grounded ice sheets with fast flow features.  It is also listed in order of increasing need for data to serve as boundary and initial conditions, an important consideration for the scientific user.
 
 \begin{table}[ht]
 \caption{Hierarchy of current and planned flow models in PISM, for the grounded parts of ice sheets, from most to fewest simplifying assumptions \emph{and} from least to greatest need for boundary data.  The \emph{italicized} models are planned for future versions of PISM but are not implemented in \texttt{stable0.3}.}\label{tab:modelhierarchy} 
@@ -357,12 +351,12 @@ By default, PISM does not numerically solve the SSA at all.  The user must add t
 \normalsize
 \end{table}
 
-As an additional row one might list ``full Stokes'' in Table \ref{tab:modelhierarchy}.  That stress balance is \emph{not} planned for PISM at any time, however, as its numerical solution requires fundamentally different computational design.
+As an additional row one might list ``full Stokes'' in Table \ref{tab:modelhierarchy}.  That stress balance is \emph{not} planned for PISM at any time, however, as its numerical solution requires a fundamentally different computational architecture.
 
-It makes sense to also talk about an \emph{ice shelf} model hierarchy, and even about a special hierarchy of models for the transition from grounded to floating ice \cite{SchoofMarine1}, but this would take us too far afield.  Currently, ice shelves are modeled by the SSA equations in PISM.
+It makes sense to also talk about an \emph{ice shelf} model hierarchy, and even about a special hierarchy of models for the transition from grounded to floating ice \cite{SchoofMarine1}, but this would take us too far afield.  Currently, ice shelves should always be modeled by the SSA equations in PISM.
 
 
-\subsection{Evolutionary versus diagnostic ice shelf modeling} \label{subsect:basicmodes}\index{PISM!evolution run}\index{PISM!diagnostic run}    The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time as similarly as possible to the modeled ice sheet.  Such a goal assumes one has the right climate inputs and parameter choices at each time step.  For predictive purposes, such a goal also assumes one starts with the right initial conditions, adequately describing the present state of the ice sheet.  (This last assumption is rarely satisfied in ice sheet modeling, however; see section \ref{sect:boot}.)
+\subsection{Evolutionary versus diagnostic ice shelf modeling} \label{subsect:basicmodes}\index{PISM!evolution run}\index{PISM!diagnostic run}    The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time as similarly as possible to the modeled ice sheet.  Such a goal assumes one has the right climate inputs and parameter choices at each time step.  For predictive purposes, such a goal also assumes one starts with the right initial conditions, adequately describing the present state of the ice sheet, though in fact thiss last assumption is rarely satisfied; see section \ref{sect:boot}.
 
 Underlying an ice sheet model like PISM are evolution-in-time partial differential equations.  PISM solves these by taking small time steps.\footnote{``Small'' time steps vary from hundredths to many model years, depending primarily on both grid resolution and modeled ice flow speed.  Time steps are chosen adaptively in PISM, according to the stability criteria of the several numerical methods.}  We will describe this usual time-stepping behavior as an ``evolution run.''
 
@@ -371,20 +365,9 @@ Much ice flow modeling, especially of streams and shelves, uses only instantaneo
 Sections \ref{sect:green} and \ref{sect:ross} illustrate the evolutionary and diagnostic modeling modes of PISM, respectively.  The first of these describes time-stepping evolution models for the Greenland ice sheet while the second describes a diagnostic SSA model for the Ross ice shelf.
 
 \subsection{Climate inputs and their separation from ice dynamics}
-\label{sec:climate-inputs}
+\label{sec:climate-inputs}  This section applies the sixth PISM organizing principle above (section \ref{sect:dynamics}): \emph{climate inputs affect ice dynamics by a well-defined interface}.
 
-This section describes our understanding of the sixth PISM design principle
-(section \ref{sect:dynamics}): \emph{climate inputs affect ice dynamics by
-  a well-defined interface}.
-
-PISM's job is to approximate ice flow, thus PISM's view of the world is
-centered around ice dynamics, boundary conditions it requires, and
-corresponding interfaces; see figure~\ref{fig:climate-inputs} for an illustration.
-
-An ice sheet modeled by PISM has a top surface interface (green dashed line in
-the figure) separating it from a surface (snow, firn, melt\dots) processes
-layer. This layer covers the whole surface of the ice, \emph{including ablation
-  areas} and ice-free bedrock.
+Because PISM's job is to approximate ice flow, its world view is centered around ice dynamics, boundary conditions it required to model dynamics, and the corresponding interfaces.  Figure~\ref{fig:climate-inputs} is an illustration emphasizing that the ice sheet has a top surface interface (green dashed line in the figure) separating it from a surface (snow, firn, melt\dots) processes layer.  This latter layer covers the whole surface of the ice, \emph{including ablation areas} and ice-free bedrock.
 
 As described in section \ref{subsect:beddef}, PISM includes an optional bed
 deformation component approximating the movement of the Earth's crust and upper
@@ -413,29 +396,21 @@ sub-ice-shelf/ocean (shown in blue) and the bottom of the bedrock thermal layer
     Bottom ice shelf surface (\textcolor{blue}{blue})& Mass flux into the ocean\\
    \hline
   \end{tabular}
-  \caption{Boundary conditions required by PISM's ice dynamics mode; see figure
+  \caption{Boundary conditions required by PISM's ice dynamics core; see figure
   \ref{fig:climate-inputs}}
   \label{tab:ice-dynamics-bc}
 \end{table}
 
 Table \ref{tab:ice-dynamics-bc} lists boundary conditions required at
-interfaces mentioned above.\footnote{This is a somewhat simplified view
-  corresponding to a ``generic'' PISM run. Please see section
-  \ref{sec:model-hierarchy} for details.} In a perfect world (or, possibly, in the future) we
-should be able to get them directly, as observation results or from a GCM.
-Unfortunately in most realistic modeling situations they are not easily
-available.\footnote{Even if PISM is coupled to a GCM--- due to differences in
-  model resolutions and required down-scaling.}.
+interfaces mentioned above.\footnote{This is a somewhat simplified view  corresponding to a ``generic'' PISM run.   See section \ref{sec:model-hierarchy} for details.}  The PISM ice dynamics core would like to be able to get these fields directly from observations/measurements, or directly from a GCM.  Unfortunately in most realistic modeling situations they are not so easily available.\footnote{Including cases where PISM is coupled to a GCM---due to differences in model resolutions and required down-scaling.}.
 
 So, to be able to use data that \emph{is} available, an ice-sheet model has to
 have additional components that are responsible for modeling surface (snow)
-processes, sub-shelf/ocean interaction, or just \emph{turning data that we have
-  into data that we need} (depending on a particular case and the point of
-view).
+processes or sub-shelf/ocean interaction.  Sometimes these components merely turn data that we already have into data in the right units and with the right metadata so that PISM knows what to do with those data.
 
-This is reflected in PISM's design: the ice-dynamics-and-earth-deformation PISM
+Thus we have PISM's design: the ice-dynamics-and-earth-deformation PISM
 core does not contain any parameterization or other model for boundary mass or
-energy balance. This simplifies customizing and debugging PISM's climate
+energy balance.  This simplifies customizing and debugging PISM's climate
 inputs, promotes code reuse and isolates the code that needs to be changed to
 couple PISM to a climate model.
 
@@ -443,7 +418,7 @@ Users wishing to customize PISM's climate inputs should see the \emph{PISM
   Source Browser}, e.g.~at
 \url{http://www.pism-docs.org/dev/doxy/html/index.html} and the documentation
 of \emph{PISMSurfaceModel}, \emph{PISMAtmosphereModel} and
-\emph{PISMOceanModel} therein. Also, section \ref{sect:green} describes a
+\emph{PISMOceanModel} therein.  Also, section \ref{sect:green} describes a
 modeling example using a non-standard air temperature parameterization. Looking
 at \texttt{pgrn.cc} and \texttt{pgrn\und atmosphere.cc} may be a reasonable
 start.
@@ -455,7 +430,7 @@ Unlike the ones listed in table~\ref{tab:ice-dynamics-bc}, this interface
 core of PISM only ``knows'' about mediums bordering ice and bedrock. A pair
 consisting of a ``PISM surface model'' and an ``PISM ocean model'' may be
 hiding anything from a nearly trivial parameterization of ice surface
-temperature plus surface and sub-shelf mass fluxes to a GCM of astonishing
+temperature plus surface and sub-shelf mass fluxes to a GCM of great
 complexity.
 
 Figure~\ref{fig:climate-input-data-flow} illustrates the corresponding data
@@ -464,7 +439,7 @@ particular modeling choices.
 
 This figure requires an explanation: a ``modifier'' in this context is an
 adjustment of climate inputs that can be used with different climate
-choices. Using ice-core derived air temperature offsets is an example: instead
+choices.  Using ice-core derived air temperature offsets is an example: instead
 of having a ``Greenland model'' implementing temperature offsets and an
 ``antarctic'' model, also implementing them, PISM has a generic ``forcing''
 mechanism that can be paired with another model. Please see section \ref{sec:boundary-models} for
@@ -480,7 +455,7 @@ a list of ``climate'' components included in PISM source code and other details.
 
 Why describe this structure here? On the one hand, some users may be interested
 in coupling PISM to other models. On the other hand, the PISM authors do not
-claim expertise in modeling atmosphere, ocean, or even snow processes. The
+claim expertise in modeling atmosphere, ocean, or even snow processes.   So the
 separation has a code-reliability purpose. Indeed PISM users need to know that
 they are ultimately responsible for providing the climate inputs they intend.
 The auxiliary tool \verb|pcctest|, described in subsection
