@@ -69,62 +69,72 @@ Note that the NetCDF model state saved by PISM at the end of an \emph{evolution}
 \subsection{Setting up PISM boundary (atmosphere, surface and ocean) models}
 \label{sec:boundary-models}
 
-Setting up PISM's boundary models requires selecting one model of each kind and zero or more "model modifiers"; selected models and modifiers are chained as in Figure~\ref{fig:climate-input-data-flow}. Command-line options \intextoption{atmosphere}, \intextoption{surface} and \intextoption{ocean} take a comma-separated list of keywords as an argument; the first keyword \emph{has} to correspond to a model, the rest can be modifiers. Any of these options can be omitted to use the default atmosphere, surface or ocean model, although using a modifier requires specifying a model.
+Setting up PISM's boundary models requires selecting one model of each kind and zero or more ``model modifiers''; selected models and modifiers are chained as in Figure~\ref{fig:climate-input-data-flow}. Command-line options \intextoption{atmosphere}, \intextoption{surface} and \intextoption{ocean} take a comma-separated list of keywords as an argument; the first keyword \emph{has} to correspond to a model, the rest can be modifiers. Any of these options can be omitted to use the default atmosphere, surface or ocean model, although using a modifier requires specifying a model.
 
 For example,
 \begin{verbatim}
 $ pismr -i foo.nc -atmosphere searise_greenland,forcing \
         -dTforcing delta_T.nc -surface pdd
 \end{verbatim}%$
-chooses a combination of SeaRISE-Greenland atmosphere model (using an air temperature parameterization and constant-in-time precipitation),  ice-core derived temperature forcing, a PDD local surface mass balance model, and a default (constant) ocean model.
+chooses a combination of SeaRISE-Greenland atmosphere model (see below),  ice-core derived temperature forcing, a PDD local surface mass balance model, and a default (constant) ocean model.
 
 Each of PISM boundary model types currently has one ``modifier'' available; the corresponding keyword is \texttt{forcing}. Please see below for details.
 
 \begin{enumerate}
 \item \textbf{PISM atmosphere models.}
   \begin{itemize}
-  \item \emph{SeaRISE-Greenland} (\verb|searise_greenland|)
+  \item \emph{SeaRISE-Greenland} (\verb|searise_greenland|, the default)
 
     This atmosphere model implements a longitude, latitude and elevation dependent near-surface air temperature parameterization and a cosine yearly cycle described in \cite{Faustoetal2009} and uses a constant in time ice-equivalent snow precipitation field (in units of thickness per time, variable \verb|snowprecip|) that is read from an input file.
+
+    Please see \url{http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland} for details.
 
     It expects variables \verb|snowprecip|, latitude and longitude to be present in an input file.
   \item \emph{Constant in time} (\verb|constant|)
 
-    This atmosphere model reads the snow precipitation (variable \verb|snowprecip|) and the mean annual near-surface air temperature (variable \verb|temp_ma|) and provides them to a selected surface model.
+    This atmosphere model reads the snow precipitation (variable \verb|snowprecip|) and the mean annual near-surface air temperature (variable \verb|temp_ma|) and provides them to a surface model.
   \item \emph{Constant precipitation using a temperature lapse rate} (\verb|temp_lapse_rate|)
     
     This atmosphere model also uses a constant snow precipitation field (\verb|snowprecip|) and requires the mean annual near-surface air temperature (\verb|temp_ma|) to be present in an input file. In addition to this, it dynamically corrects air temperature using a location-independent elevation lapse rate specified using the \intextoption{lapse\und rate} command-line option (in units of degrees Celsius per meter).
-
-  \end{itemize}
+ \end{itemize}
 
   The atmosphere \verb|forcing| modifier implements temperature forcing using scalar offsets and also a mechanism applying precipitation and mean annual temperature anomalies.
   \begin{itemize}
   \item \intextoption{dTforcing} specifies a file containing scalar temperature offsets (variable \verb|delta_T|), 
   \item \intextoption{anomaly\und temp\und ma} specifies a file containing spatially-variable mean annual near-surface air temperature anomalies (variable \verb|temp_ma_anomaly|), and
-  \item \intextoption{anomaly\und precip} specifies a file containing spatially-variable ice-equivalent precipitation anomalies (in thickness per time) (variable \verb|snowprecip_anomaly|).
+  \item \intextoption{anomaly\und precip} specifies a file containing spatially-variable ice-equivalent precipitation anomalies (in units of thickness per time, variable \verb|snowprecip_anomaly|).
   \end{itemize}
 
   Options \intextoption{anomaly\und temp\und ma} and \intextoption{anomaly\und precip} can be used to set up a PISM run using a GCM output, essentially achieving one-way coupling.
 
-  Note that only one temperature forcing mechanism can be used at any time.
+  Note that only one air temperature forcing mechanism can be used at any time.
 
 \item \textbf{PISM surface (snow) process models}
   \begin{itemize}
-  \item \emph{The ``invisible'' model} (\verb|simple|)
+  \item \emph{The ``invisible'' model} (\verb|simple|, the default)
 
-    This is the simplest ``surface model'', re-interpreting precipitation as mass flux into the ice and mean annual near-surface air temperature as the temperature of the ice at the ice surface (below firn). (This implies that there is no melt as long as precipitation is non-negative.)
+    This is the simplest ``surface model'' available in PISM. Its job is to re-interpret  precipitation as mass flux into the ice and mean annual near-surface air temperature as the temperature of the ice at the ice surface (below firn) (see \cite{Hock05}, for example). This implies that there is no melt as long as the precipitation field  is non-negative.
 
-    However primitive it may be, this model can be useful: to model Antarctica, for example.
+    However primitive it may be, this model can be useful; modeling Antarctica is one example.
   \item \emph{Constant in time} (\verb|constant|)
 
-    This surface model reads and provides constant in time top surface boundary conditions (see table \ref{tab:ice-dynamics-bc}). When PISM is used with this model, variables \verb|artm| (ice temperature at the ice surface) and \verb|acab| are expected to be present in an input file.
+    This surface model reads constant in time top surface boundary conditions and provides them to the ice dynamics model (see table \ref{tab:ice-dynamics-bc}). When PISM is used with this model, variables \verb|artm| (ice temperature at the ice surface but below firn) and \verb|acab| (top surface mass flux into the ice) are expected to be present in an input file.
 
     Note: this surface model \emph{ignores}  the atmosphere model selection made using the \intextoption{atmosphere} option.
 
-  \item \emph{Local mass balance (PDD)} (\verb|pdd|)
+  \item \emph{Local mass balance (PDD)} (\verb|pdd|) \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model} 
 
-    This surface model can be used to 
-  \end{itemize}
+    The default PDD used by PISM, turned on by option \intextoption{surface pdd}, comes from the EISMINT-Greenland intercomparison (section \ref{sect:green} and \cite{RitzEISMINT}), but it has controllable parameters.
+
+    A PDD generally adds ``white noise'' to the seasonal cycle to simulate additional daily variability associated to the vagaries of weather.  This additional random variation is quite significant, as the seasonal cycle may never reach the melting point but that point may be reached with some probability, in the presence of the daily variability, and thus melt may occur.  Concretely, a normally-distributed, mean zero random temperature increment is added to the seasonal cycle.  The standard deviation of the daily variability is controlled by the \texttt{pdd\und std\und dev} configuration parameter, and defaults to 2.53 degrees. There is no particular assumed spatial correlation of daily variability.
+
+The number of positive degree days is computed as the magnitude of the temperature excursion above $0\!\phantom{|}^\circ \text{C}$ multiplied by the duration (in days) when it is above zero.  In PISM there are actually two methods for computing the number of positive degree days.  The first computes only the expected value, by the method described in \cite{CalovGreve05}.  This is the default when a PDD is chosen (i.e.~option \intextoption{pdd}).  The second is a monte carlo simulation of the white noise itself, chosen by \intextoption{pdd\und rand}.  This monte carlo simulation adds the same daily variation at every point, though the seasonal cycle is (generally) location dependent.  If repeatable randomness is desired use \intextoption{pdd\und repeatable} instead of \verb|-pdd_rand|.
+
+The number of positive degree days is multiplied by a coefficient (\intextoption{pdd\und factor\und snow}) to compute the amount of snow melted.  Of the melted snow, a fraction (\intextoption{pdd\und refreeze}) is kept as ice.  This ice, plus all unmelted snow (already measured as ice-equivalent) is added to the mass balance, unless the number of positive degree days exceeds that required to melt all of the snow.  In this latter case, in which there are excess positive degree days available for melting, the excess is multiplied by a coefficient (\intextoption{pdd\und factor\und ice}) to compute how much ice is melted.  In this case actual ablation occurs at that location.
+
+There is an executable for testing the PDD model without invoking ice dynamics, namely \verb|pcctest|.  See subsection \ref{subsect:pcctest}.  Section \ref{sect:green} demonstrates the PDD model and \verb|pcctest|.
+
+ \end{itemize}
 \item \textbf{PISM ocean models}
   PISM includes one simple ocean model: \verb|constant|, providing constant (both in time and space) mass flux into the ocean and sea level elevation to PISM's ice flow core. The mass flux is controlled by the\\ \verb|ocean_sub_shelf_heat_flux_into_ice| configuration parameter and the assumption that the mass flux is proportional to heat flux into ice.
 
@@ -138,19 +148,10 @@ uses \verb|delta_SL.nc|
 
 \subsection{Positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  The default atmospheric climate assumption made by the \verb|pismr| and \verb|pgrn| executables is that the input file will supply surface mass balance and ice surface temperature in variables \verb|acab| and \verb|artm|, respectively.  The supplied surface mass balance \verb|acab| is assumed to be the net surface balance, which is not the snow accumulation rate when melting can occur, and it must be in units of ice-equivalent thickness per time.  The supplied surface temperature \verb|artm| is regarded as the mean annual surface temperature, at a point in the ice below the completion of firn processes \cite{Hock05}.  The mass conservation equation for the ice sheet requires the surface mass balance, while the conservation of energy model requires the ice surface temperature as a boundary condition.
 
-These assumptions about supplied climate are not very realistic for practical glaciological observations.  If the input data actually includes the annual snow-fall accumulation then one might want to compute the surface mass balance according to some model of how much of the snow is transformed to ice, and how much ablates or is transported away, using a modeled time- and space-dependent temperature.  An example of such a model is a \emph{positive degree day} model \cite{Hock05}, a ``PDD''.  The default PDD used by PISM, turned on by option \intextoption{-surface pdd}, comes from the EISMINT-Greenland intercomparison (section \ref{sect:green} and \cite{RitzEISMINT}), but it has controllable parameters.
+These assumptions about supplied climate are not very realistic for practical glaciological observations.  If the input data actually includes the annual snow-fall accumulation then one might want to compute the surface mass balance according to some model of how much of the snow is transformed to ice, and how much ablates or is transported away, using a modeled time- and space-dependent temperature.  An example of such a model is a \emph{positive degree day} model \cite{Hock05}, a ``PDD''.  
 
-The snow accumulation rate data should be supplied to this PDD in the input variable \verb|snowprecip|, and should already be measured in ice-equivalent thickness per time (e.g.~\verb|m s-1|).  The annual mean snow temperature is again the variable \verb|artm| and should have units K.
+ The annual mean snow temperature is again the variable \verb|artm| and should have units K.
 
-There are parameters controlling the seasonal temperature cycle.  The positive difference between the peak of seasonal temperatures and the mean (average) is called the ``summer warming.''  The default temperature cycle has a constant amount of summer warming, controlled by option \intextoption{pdd\und summer\und warming}.  By default the peak of the seasonal cycle occurs on August 1, Julian day 243 (option \intextoption{pdd\und summer\und peak\und day} can override this).  The annual mean temperature is grid-point dependent, specified by the input surface temperature map in variable \verb|artm|, but the timing of the peak and the amount of summer warming are applied equally everywhere.
-
-A PDD generally adds ``white noise'' to the seasonal cycle to simulate additional daily variability associated to the vagaries of weather.  This additional random variation is quite significant, as the seasonal cycle may never reach the melting point but that point may be reached with some probability, in the presence of the daily variability, and thus melt may occur.  Concretely, a normally-distributed, mean zero random temperature increment is added to the seasonal cycle.  The standard deviation of the daily variability is controlled by \intextoption{pdd\und std\und dev}, and defaults to 5 degrees.  There is no particular assumed spatial correlation of daily variability.
-
-The number of positive degree days is computed as the magnitude of the temperature excursion above $0\!\phantom{|}^\circ \text{C}$ multiplied by the duration (in days) when it is above zero.  In PISM there are actually two methods for computing the number of positive degree days.  The first computes only the expected value, by the method described in \cite{CalovGreve05}.  This is the default when a PDD is chosen (i.e.~option \intextoption{pdd}).  The second is a monte carlo simulation of the white noise itself, chosen by \intextoption{pdd\und rand}.  This monte carlo simulation adds the same daily variation at every point, though the seasonal cycle is (generally) location dependent.  If repeatable randomness is desired use \intextoption{pdd\und repeatable} instead of \verb|-pdd_rand|.
-
-The number of positive degree days is multiplied by a coefficient (\intextoption{pdd\und factor\und snow}) to compute the amount of snow melted.  Of the melted snow, a fraction (\intextoption{pdd\und refreeze}) is kept as ice.  This ice, plus all unmelted snow (already measured as ice-equivalent) is added to the mass balance, unless the number of positive degree days exceeds that required to melt all of the snow.  In this latter case, in which there are excess positive degree days available for melting, the excess is multiplied by a coefficient (\intextoption{pdd\und factor\und ice}) to compute how much ice is melted.  In this case actual ablation occurs at that location.
-
-There is an executable for testing the PDD model without invoking ice dynamics, namely \verb|pcctest|.  See subsection \ref{subsect:pcctest}.  Section \ref{sect:green} demonstrates the PDD model and \verb|pcctest|.
 
 
 \subsection{Floatation criterion and mask} \label{subsect:floatmask}  The most basic decision about ice dynamics made internally by PISM is whether to apply the ``floatation criterion'' to determine whether the ice is floating on the ocean or not.  In an evolution run this decision is made at each time step and the result is stored in the \t{mask}.

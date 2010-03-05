@@ -43,7 +43,9 @@ PetscErrorCode PISMSurfaceModel::write_model_state(PetscReal t_years, PetscReal 
 						    string filename) {
   PetscErrorCode ierr;
 
-  ierr = atmosphere->write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
+  if (atmosphere != NULL) {
+    ierr = atmosphere->write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
+  }
 
   return 0;
 }
@@ -52,7 +54,9 @@ PetscErrorCode PISMSurfaceModel::write_fields(set<string> vars, PetscReal t_year
 					      PetscReal dt_years, string filename) {
   PetscErrorCode ierr;
 
-  ierr = atmosphere->write_fields(vars, t_years, dt_years, filename); CHKERRQ(ierr);
+  if (atmosphere != NULL) {
+    ierr = atmosphere->write_fields(vars, t_years, dt_years, filename); CHKERRQ(ierr);
+  }
 
   return 0;
 }
@@ -61,7 +65,9 @@ PetscErrorCode PISMSurfaceModel::write_diagnostic_fields(PetscReal t_years, Pets
 							 string filename) {
   PetscErrorCode ierr;
 
-  ierr = atmosphere->write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
+  if (atmosphere != NULL) {
+    ierr = atmosphere->write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
+  }
 
   return 0;
 }

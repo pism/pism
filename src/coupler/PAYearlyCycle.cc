@@ -106,7 +106,7 @@ PetscErrorCode PAYearlyCycle::write_diagnostic_fields(PetscReal t_years, PetscRe
 }
 
 PetscErrorCode PAYearlyCycle::write_fields(set<string> vars, PetscReal t_years,
-							  PetscReal /*dt_years*/, string filename) {
+					   PetscReal /*dt_years*/, string filename) {
   PetscErrorCode ierr;
 
   ierr = update(t_years, 0); CHKERRQ(ierr);

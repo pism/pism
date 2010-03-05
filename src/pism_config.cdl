@@ -237,7 +237,7 @@ netcdf pism_config {
     pism_config:snow_temp_fausto_d_mj_doc = "Kelvin; = 14.70+273.15; base temperature for formula (2) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_gamma_mj = -0.005426;
-    pism_config:snow_temp_fausto_gamma_mj_doc = "Kelvin m-1; = -5.426 / 1km; mean slope lapse rate for formula (2) in [[\\ref Faustoetal2009]] ";
+    pism_config:snow_temp_fausto_gamma_mj_doc = "Kelvin m-1; = -5.426 / 1km; mean slope lapse rate for formula (2) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_fausto_c_mj = -0.1585;
     pism_config:snow_temp_fausto_c_mj_doc = "Kelvin (degN)-1; latitude-dependence coefficient for formula (2) in [\\ref Faustoetal2009] ";
