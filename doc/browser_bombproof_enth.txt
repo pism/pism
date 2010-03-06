@@ -503,13 +503,14 @@ In every case below, \f$T(0^-)\f$ should be understood as the temperature at the
          <p>  \f$E(0^+) \ge E_s(0^+)\f$ and \f$ w(0^+) < 0\f$</p> 
     </td>
     <td> \f[ \begin{matrix}
-         \frac{\partial E}{\partial t}\Big|_{z=0^+} + w(0^+)\frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 \\ \\
+         \rho_i \left(\frac{\partial E}{\partial t}\Big|_{z=0^+} + w(0^+)\frac{\partial E}{\partial z}\Big|_{z=0^+}\right) =  \Phi(0^+) \\ \\
          T(0^-) = c_i^{-1} E_s(0^+)  \\ \\
          -k_b \frac{\partial T}{\partial z}\Big|_{z=0^-} - 0 = \rho_i L M - F_b
          \end{matrix} \f] </td>
-    <td> <p> The first equation is no boundary condition at all because, in this case of temperate ice base, we assume zero enthalpy conductivity, so the problem is hyperbolic in the ice.  We upwind implicitly so the discretized form looks like
-    \f[ (1-\nu w(0^+)) E_0^{n+1} + \nu w(0^+) E_1^{n+1} = E_0^n, \f]
-where \f$\nu=\Delta t/\Delta z\f$ and \f$E_0^{n+1} = \f$E[0] and \f$E_1^{n+1}=\f$E[1], so we believe we have a well-posed ice enthalpy problem.  It is a diagonally-dominant tridiagonal system with unknowns E[0] .. E[Mz-1] and size Mz.  </p>
+    <td> <p> The first equation is no boundary condition at all because, in this case of temperate ice base, we assume zero enthalpy conductivity, so the problem is hyperbolic in the ice.  The equation is the no-conduction form of (\ref vertProblem), at the base of the ice.  We believe this gives a well-posed ice enthalpy problem.</p>
+    <p> We upwind implicitly so the discretized form looks like
+    \f[ (1-\nu w(0^+)) E_0^{n+1} + \nu w(0^+) E_1^{n+1} = E_0^n + \Delta t \rho_i^{-1} \Phi_0^n, \f]
+where \f$\nu=\Delta t/\Delta z\f$ and \f$E_0^{n+1} = \f$E[0] and \f$E_1^{n+1}=\f$E[1].  That is, we have the \f$R=0\f$, \f$\lambda=0\f$, \f$k=0\f$ case of (\ref bombtwo), in the downward velocity case.  This produces a diagonally-dominant tridiagonal system with unknowns E[0] .. E[Mz-1] and size Mz.  </p>
          <p>The second equation implies that the bedrock thermal problem is well-posed by itself, with Dirichlet condition at the top and Neumann at the bottom.  So we solve it in a system of size Mbz for unknowns Tb[0] .. Tb[Mbz-1].  From the solution Tb[] we compute heat flux out of the top of the bedrock layer, and the third equation gives us the basal melt rate \f$M\f$.  </p>
          <p>If the ice is floating then the second equation is replaced by \f$T(0^-) = T_{sb}\f$, but this is still a Dirichlet condition for the temperature in the bedrock.  The third equation is short-circuited: we get the basal melt rate \f$M\f$ as supplied by by PISMOceanModel::shelf_base_mass_flux().</p>  </td>
 </tr> 

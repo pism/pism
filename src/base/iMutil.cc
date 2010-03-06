@@ -248,7 +248,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
 
 //! Allows derived classes to extend their own IceModelVec3's in vertical.
 /*! Base class version does absolutely nothing. */
-PetscErrorCode IceModel::check_maximum_thickness_hook(const int old_Mz) {
+PetscErrorCode IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
   return 0;
 }
 
