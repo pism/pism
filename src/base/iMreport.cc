@@ -1268,6 +1268,13 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
     result *= ice_density * ivolume;
   }
 
+  if (name == "dienthalpydt") {
+    errcode = 0;
+    PetscScalar ice_density = config.get("ice_density");
+    ierr = compute_ice_enthalpy(result); CHKERRQ(ierr);
+    result *= ice_density * dvoldt;
+  }
+
   return errcode;
 }
 

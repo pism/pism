@@ -122,7 +122,9 @@ PetscErrorCode IceModel::create_timeseries() {
     timeseries.push_back(ivol);
   }
 
-  if (find(ts_vars.begin(), ts_vars.end(), "ienthalpy") != ts_vars.end()) {
+  // FIX ME: just a temporary hack to avoid pism breaking if you try to write times series
+  //         without enthalpyModel
+  if (find(ts_vars.begin(), ts_vars.end(), "ienthalpy") != ts_vars.end() && Enth3.was_created()) {
     DiagnosticTimeseries *ienthalpy = new DiagnosticTimeseries(&grid, "ienthalpy", "t");
 
     ienthalpy->set_units("J", "");
@@ -222,6 +224,20 @@ PetscErrorCode IceModel::create_timeseries() {
     dimassdt->set_attr("long_name", "ice mass rate of change");
 
     timeseries.push_back(dimassdt);
+  }
+
+  // FIX ME: just a temporary hack to avoid pism breaking if you try to write times series
+  //         without enthalpyModel
+  if (find(ts_vars.begin(), ts_vars.end(), "dienthalpydt") != ts_vars.end() && Enth3.was_created()) {
+    DiagnosticTimeseries *dienthalpydt = new DiagnosticTimeseries(&grid, "dienthalpydt", "t");
+
+    dienthalpydt->set_units("J s-1", "");
+    dienthalpydt->set_dimension_units("years", "");
+    dienthalpydt->output_filename = ts_filename;
+
+    dienthalpydt->set_attr("long_name", "ice enthalpy rate of change");
+
+    timeseries.push_back(dienthalpydt);
   }
 
   if (find(ts_vars.begin(), ts_vars.end(), "total_surface_ice_flux") != ts_vars.end()) {
