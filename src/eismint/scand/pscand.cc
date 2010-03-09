@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     // actually construct the IceModel
-    IceGrid               g(com, rank, size);
+    IceGrid               g(com, rank, size, config);
     IceScandModel         m(g, config, overrides);
 
     // Create boundary models:

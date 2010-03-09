@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #define __grid_hh
 
 #include <petscda.h>
+#include "NCVariable.hh"
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
@@ -40,7 +41,7 @@ typedef enum {NONE = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodi
  */
 class IceGrid {
 public:
-  IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s);
+  IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s, const NCConfigVariable &config);
   ~IceGrid();
 
   PetscErrorCode createDA();  // destructor checks if DA was created, and destroys
@@ -87,14 +88,7 @@ public:
     end_year;		  //!< time to stop at
   
 protected:
-  static const SpacingType DEFAULT_ICE_SPACING_TYPE, DEFAULT_BED_SPACING_TYPE;
-  static const Periodicity DEFAULT_PERIODICITY;
-  static const PetscScalar DEFAULT_QUADZ_LAMBDA;
-  // FORMERLY IN IceParam:
-  static const PetscScalar DEFAULT_ICEPARAM_Lx, DEFAULT_ICEPARAM_Ly,
-    DEFAULT_ICEPARAM_Lz, DEFAULT_ICEPARAM_Lbz, DEFAULT_ICEPARAM_start_year, DEFAULT_ICEPARAM_run_length;
-  static const PetscInt    DEFAULT_ICEPARAM_Mx, DEFAULT_ICEPARAM_My, DEFAULT_ICEPARAM_Mz,
-                           DEFAULT_ICEPARAM_Mbz;
+  PetscScalar lambda;
 private:
   PetscErrorCode  get_dzMIN_dzMAX_spacingtype();
 };

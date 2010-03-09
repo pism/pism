@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Constantine Khroulev
+// Copyright (C) 2009, 2010 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include <petsc.h>
 #include <algorithm>
 #include "iceModelVec2T.hh"
-#include "../base/nc_util.hh"
+#include "../base/PISMIO.hh"
 #include "../base/pism_const.hh"
 
 IceModelVec2T::IceModelVec2T() : IceModelVec2() {
@@ -125,7 +125,7 @@ PetscErrorCode IceModelVec2T::end_access() {
 PetscErrorCode IceModelVec2T::init(string fname) {
   PetscErrorCode ierr;
   NCTimeseries time_dimension;
-  NCTool nc(grid);
+  PISMIO nc(grid);
   grid_info gi;
 
   filename = fname;

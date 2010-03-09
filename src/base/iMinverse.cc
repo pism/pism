@@ -22,6 +22,8 @@
 #include "iceModelVec.hh"
 #include "iceModel.hh"
 
+#include "PISMIO.hh"
+
 /*  for example usage see comments in examples/pst/convert_to_inv.sh; note 
 P0A.nc is at ftp://ftp.gi.alaska.edu/pub/bueler/P0A.nc  */
 
@@ -142,7 +144,7 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
              "  preparing file %s to write inverse computation fields ...\n",
              invfieldsname); CHKERRQ(ierr);
     global_attributes.prepend_history("option -inv_write_fields read");
-    NCTool nc(&grid);
+    PISMIO nc(&grid);
     ierr = nc.open_for_writing(invfieldsname, false, true); CHKERRQ(ierr);
     ierr = nc.append_time(grid.year); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
@@ -357,7 +359,7 @@ all that is required is that the fill value is outside the valid range.
  */
 PetscErrorCode IceModel::readObservedSurfVels(const char *filename) {
   PetscErrorCode ierr;
-  NCTool nc(&grid);
+  PISMIO nc(&grid);
   grid_info gi;
 
   // Get the grid parameters:

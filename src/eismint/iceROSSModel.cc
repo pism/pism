@@ -20,7 +20,7 @@
 #include <cstdio>
 #include <cmath>
 #include "../base/iceModel.hh"
-#include "../base/nc_util.hh"
+#include "../base/PISMIO.hh"
 #include "iceROSSModel.hh"
 #include "../base/Timeseries.hh"
 
@@ -222,7 +222,7 @@ PetscErrorCode IceROSSModel::fillinTemps() {
 
 PetscErrorCode IceROSSModel::readObservedVels(const char *filename) {
   PetscErrorCode  ierr;
-  NCTool nc(&grid);
+  PISMIO nc(&grid);
 
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
 

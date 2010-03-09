@@ -134,7 +134,7 @@ PetscErrorCode IcePSTexModel::prepare_series() {
     "  will write time series with special PST information to %s ...\n",
     seriesname); CHKERRQ(ierr);
   NCTool nc(grid.com, grid.rank);
-  ierr = nc.open_for_writing(seriesname, false, false); CHKERRQ(ierr);
+  ierr = nc.open_for_writing(seriesname); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   // set-up each scalar time series

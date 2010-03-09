@@ -89,6 +89,9 @@ netcdf pism_config {
     pism_config:constant_grain_size = 1.0;
     pism_config:constant_grain_size_doc = "mm; Default constant grains size to use with the Goldsby-Kohlstedt [\\ref GoldsbyKohlstedt] flow law";
 
+    pism_config:start_year = 0;
+    pism_config:start_year_doc = "years; Start year.";
+
     pism_config:run_length_years = 1000;
     pism_config:run_length_years_doc = "years; Default run length";
 
@@ -378,6 +381,42 @@ netcdf pism_config {
     pism_config:slice_level_doc = "meters; level (in meters above the base of ice) used in slice viewers";
 
 // Strings:
+   pism_config:grid_periodicity = "none";
+   pism_config:grid_periodicity_doc = "PISM grid periodicity; possible values are 'none', 'x', 'y', 'xy' (lowercase).";
+
+   pism_config:grid_ice_vertical_spacing = "quadratic";
+   pism_config:grid_ice_vertical_spacing_doc = "; Default vertical spacing in the ice. Possible values: 'quadratic' and 'equal'.";
+
+   pism_config:grid_bed_vertical_spacing = "quadratic";
+   pism_config:grid_bed_vertical_spacing_doc = "; Default vertical spacing in the bedrock thermal layer. Possible values: 'quadratic' and 'equal'.";
+
+   pism_config:grid_Mx = 61;
+   pism_config:grid_Mx_doc = "; Number of grid points in the x direction.";
+
+   pism_config:grid_My = 61;
+   pism_config:grid_My_doc = "; Number of grid points in the y direction.";
+
+   pism_config:grid_Mz = 31;
+   pism_config:grid_Mz_doc = "; Number of vertical grid levels in the ice.";
+
+   pism_config:grid_Mbz = 1;
+   pism_config:grid_Mbz_doc = "; Number of thermal bedrock layers; 1 level corresponds to no bedrock.";
+
+   pism_config:grid_Lx = 1500e3;
+   pism_config:grid_Lx_doc = "m; Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.";
+
+   pism_config:grid_Ly = 1500e3; 
+   pism_config:grid_Ly_doc = "m; Default computational box is 3000 km x 3000 km (= 2 Lx x 2 Ly) in horizontal.";
+
+   pism_config:grid_Lz = 4000;
+   pism_config:grid_Lz_doc = "meters; Height of the computational domain.";
+
+   pism_config:grid_Lbz = 0;
+   pism_config:grid_Lbz_doc = "meters; Thickness of the thermal bedrock layer.";
+
+   pism_config:grid_lambda = 4.0;
+   pism_config:grid_lambda_doc = "; Vertical grid spacing parameter. Roughly equal to the factor by which the grid is coarser at an end away from the ice-bedrock interface.";
+
    pism_config:output_medium = "cbar cbase csurf cflx dHdt tauc taud usurf wvelsurf";
    pism_config:output_medium_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size is selected. Does not include fields written by boundary models.";
    pism_config:output_big = "acab age artm bfrict bheatflx bmelt bwat bwp cbar cbase cflx csurf dHdt dbdt dhdt hardav lat litho_temp lon mask rank tauc taud temp tempbase tempsurf temp_pa thk tillphi topg ub ubar usurf uvel uvelbase uvelsurf vb vbar vvel vvelbase vvelsurf wvel wvelbase wvelsurf";

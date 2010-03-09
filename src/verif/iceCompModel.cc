@@ -963,9 +963,9 @@ PetscErrorCode IceCompModel::reportErrors() {
     CHKERRQ(ierr);
 
     // Find the number of records in this file:
-    NCTool nc(&grid);
+    NCTool nc(grid.com, grid.rank);
     // append = true; check_dims = false
-    ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr);
+    ierr = nc.open_for_writing(filename); CHKERRQ(ierr);
     ierr = nc.get_dim_length("N", &start); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 

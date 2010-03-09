@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMComponent.hh"
+#include "PISMIO.hh"
 
 PISMComponent::PISMComponent(IceGrid &g, const NCConfigVariable &conf)
     : grid(g), config(conf)
@@ -57,7 +58,7 @@ PetscErrorCode PISMComponent::find_pism_input(string &filename, //!< name of the
   // filename now contains name of PISM input (bootstrapping) file; now check
   // it is really there; if so, read the dimensions of computational grid so
   // that we can set up a LocalInterpCtx for actual reading of climate data
-  NCTool nc(&grid);
+  PISMIO nc(&grid);
   int last_record;
   grid_info gi;
   ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);

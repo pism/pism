@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <sstream>
 #include <set>
+#include "PISMIO.hh"
 
 //! Save model state in NetCDF format.
 /*! 
@@ -66,7 +67,7 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename) {
 
 PetscErrorCode IceModel::dumpToFile(const char *filename) {
   PetscErrorCode ierr;
-  NCTool nc(&grid);
+  PISMIO nc(&grid);
 
   // Prepare the file
   ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
@@ -189,7 +190,7 @@ IceModel::grid_setup().
  */
 PetscErrorCode IceModel::initFromFile(const char *filename) {
   PetscErrorCode  ierr;
-  NCTool nc(&grid);
+  NCTool nc(grid.com, grid.rank);
 
   ierr = verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
 		    filename); CHKERRQ(ierr);
@@ -267,7 +268,7 @@ PetscErrorCode IceModel::regrid() {
   PetscErrorCode ierr;
   char filename[PETSC_MAX_PATH_LEN], tmp[TEMPORARY_STRING_LENGTH];
   PetscTruth regridVarsSet, regrid_from_set;
-  NCTool nc(&grid);
+  PISMIO nc(&grid);
 
   ierr = check_old_option_and_stop(grid.com, "-regrid", "-regrid_from"); CHKERRQ(ierr);
 
@@ -348,7 +349,7 @@ PetscErrorCode IceModel::regrid() {
       continue;
     }
 
-    if ( ((v->grid_type() == GRID_3D) && lic.regrid_2d_only) ||
+    if ( ((v->grid_type() == GRID_3D) && lic.no_regrid_ice) ||
 	 ((v->grid_type() == GRID_3D_BEDROCK) && lic.no_regrid_bedrock) )
       {
       ierr = verbPrintf(2, grid.com, "  WARNING: skipping '%s'...\n",
@@ -438,7 +439,7 @@ PetscErrorCode IceModel::init_snapshots() {
 //! Writes a snapshot of the model state (if necessary)
 PetscErrorCode IceModel::write_snapshot() {
   PetscErrorCode ierr;
-  NCTool nc(&grid);
+  PISMIO nc(&grid);
   double saving_after = -1.0e30; // initialize to avoid compiler warning; this
 				 // value is never used, because saving_after
 				 // is only used if save_now == true, and in

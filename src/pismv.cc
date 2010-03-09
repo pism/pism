@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
-    IceGrid      g(com, rank, size);
+    IceGrid      g(com, rank, size, config);
 
     // Initialize boundary models:
     PISMSurfaceModel *surface = new PSDummy(g, config);

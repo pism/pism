@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
     }
 
     // actually construct the IceModel
-    IceGrid g(com, rank, size);
+    IceGrid g(com, rank, size, config);
 
     // Initialize boundary models (climate will always come from
     // intercomparison formulas):

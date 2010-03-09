@@ -170,7 +170,7 @@ int main(int argc, char *argv[]){
 
     ierr = set_eismint_greenland_params(com, config); CHKERRQ(ierr);
 
-    IceGrid  g(com, rank, size);
+    IceGrid  g(com, rank, size, config);
     IceModel m(g, config, overrides);
     ierr = m.setExecName("pgrn"); CHKERRQ(ierr);
 

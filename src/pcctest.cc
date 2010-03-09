@@ -28,7 +28,7 @@ static char help[] =
 #include "base/pism_const.hh"
 #include "base/grid.hh"
 #include "base/LocalInterpCtx.hh"
-#include "base/nc_util.hh"
+#include "base/PISMIO.hh"
 #include "base/NCVariable.hh"
 
 #include "coupler/PCFactory.hh"
@@ -46,7 +46,7 @@ static void create_pa_eismint_greenland(IceGrid& g, const NCConfigVariable& conf
 static PetscErrorCode setupIceGridFromFile(const char *filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
-  NCTool nc(&grid);
+  PISMIO nc(&grid);
   ierr = nc.get_grid(filename); CHKERRQ(ierr);
   ierr = grid.createDA(); CHKERRQ(ierr);  
   return 0;
@@ -178,7 +178,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
   MPI_Comm com = grid->com;
   PetscErrorCode ierr;
-  NCTool nc(grid);
+  PISMIO nc(grid);
   NCGlobalAttributes global_attrs;
   IceModelVec2 *artm, *acab, *shelfbasetemp, *shelfbasemassflux;
 
@@ -294,7 +294,6 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     NCConfigVariable config, overrides, mapping;
-    IceGrid grid(com, rank, size);
     char inname[PETSC_MAX_PATH_LEN], outname[PETSC_MAX_PATH_LEN];
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
@@ -327,6 +326,8 @@ int main(int argc, char *argv[]) {
     // read the config option database:
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
+    IceGrid grid(com, rank, size, config);
+
     // initialize the computational grid:
     ierr = PetscOptionsGetString(PETSC_NULL, "-i", inname, 
                                  PETSC_MAX_PATH_LEN, NULL); CHKERRQ(ierr);
@@ -351,7 +352,7 @@ int main(int argc, char *argv[]) {
     ierr = createVecs(grid, variables); CHKERRQ(ierr);
 
     // read data from a PISM input file (including the projection parameters)
-    NCTool nc(&grid);
+    NCTool nc(grid.com, grid.rank);
     int last_record;
     bool mapping_exists;
     ierr = nc.open_for_reading(inname); CHKERRQ(ierr);

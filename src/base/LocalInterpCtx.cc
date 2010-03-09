@@ -59,14 +59,17 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
                slop = 1.000001; // allowed slop; grids must subsets within this factor
   com = grid.com;
   rank = grid.rank;
-  regrid_2d_only = false;
+  no_regrid_ice = false;
   no_regrid_bedrock = false;
   report_range = true;
 
   g.print(com);
 
-  if ((zlevsIN == NULL) || (zblevsIN == NULL))
-    regrid_2d_only = true;
+  if (zlevsIN == NULL)
+    no_regrid_ice = true;
+
+  if (zblevsIN == NULL)
+    no_regrid_bedrock = true;
 
   PetscScalar dx0 = grid.x0 - g.x0,
               dy0 = grid.y0 - g.y0;
@@ -96,33 +99,34 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
    PetscEnd();
   }
   
-  if (regrid_2d_only == false) {
+  if (no_regrid_ice == false) {
     if (g.z_max*slop < Lz) {
-      verbPrintf(3,com,
+      verbPrintf(2,com,
 		 "  WARNING: vertical dimension of target computational domain\n"
 		 "    not a subset of source (in NetCDF file) computational domain;\n"
-		 "    g.z_max = %5.4f < Lz = %5.4f; ALLOWING ONLY 2D REGRIDDING ...\n",
+		 "    g.z_max = %5.4f < Lz = %5.4f; DISABLING REGRIDDING OF 3D VARIABLES (IN THE ICE) ...\n",
 		 g.z_max, Lz);
-      regrid_2d_only = true;
+      no_regrid_ice = true;
     }
+  }
+  
+  if (no_regrid_bedrock == false) {
     if (-g.zb_min*slop < Lbz) {
-      verbPrintf(3,com,
-		 "  LIC WARNING: vertical dimension of target BEDROCK computational domain\n"
+      verbPrintf(2,com,
+		 "  WARNING: vertical dimension of target BEDROCK computational domain\n"
 		 "    not a subset of source (in NetCDF file) BEDROCK computational domain;\n"
-		 "    -g.zb_min = %5.4f < Lbz = %5.4f; NOT ALLOWING BEDROCK REGRIDDING ...\n",
+		 "    -g.zb_min = %5.4f < Lbz = %5.4f; DISABLING BEDROCK REGRIDDING ...\n",
 		 -g.zb_min, Lbz);
       no_regrid_bedrock = true;
-    } else {
-      no_regrid_bedrock = false;
     }
-
-    // This disables regridding bedrock temperature if an input file has only
-    // one bedrock layer.
-    if (g.zb_len < 2) no_regrid_bedrock = true;
   }
 
-  verbPrintf(5, com, "LIC INFO: regrid_2d_only = %d, no_regrid_bedrock = %d\n",
-	     regrid_2d_only, no_regrid_bedrock);
+  // This disables regridding bedrock temperature if an input file has only
+  // one bedrock layer.
+  if (g.zb_len < 2) no_regrid_bedrock = true;
+
+  verbPrintf(5, com, "LIC INFO: no_regrid_ice = %d, no_regrid_bedrock = %d\n",
+	     no_regrid_ice, no_regrid_bedrock);
 
   // limits of the processor's part of the target computational domain
   double xbdy_tgt[2] = {-Lx + dx * grid.xs, -Lx + dx * (grid.xs + grid.xm - 1)};
@@ -187,24 +191,32 @@ and \c delta entries in the struct will not be meaningful.
 
   // This allows creating a local interpolation context for 2D regridding
   // without specifying dummy z or zb-related information in the g argument.
-  if (regrid_2d_only) {
+  if (no_regrid_ice) {
     count[Z] = 1;
-    count[ZB] = 1;
   } else {
     count[Z] = g.z_len;
+  }
+
+  if (no_regrid_bedrock) {
+    count[ZB] = 1;
+  } else {
     count[ZB] = g.zb_len;
   }
 
   zlevs = new double[count[Z]];
   zblevs = new double[count[ZB]];
 
-  if (regrid_2d_only) {
+  if (no_regrid_ice) {
     zlevs[0] = 0.0;
-    zblevs[0] = 0.0;
   } else {
     for (int k = 0; k < count[Z]; k++) {
       zlevs[k] = zlevsIN[k];
     }
+  }
+
+  if (no_regrid_bedrock) {
+    zblevs[0] = 0.0;
+  } else {
     for (int k = 0; k < count[ZB]; k++) {
       zblevs[k] = zblevsIN[k];
     }

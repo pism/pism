@@ -18,7 +18,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMSurface.hh"
-
+#include "../base/PISMIO.hh"
 ///// PISMSurfaceModel base class:
 
 void PISMSurfaceModel::attach_atmosphere_model(PISMAtmosphereModel *input) {
@@ -406,7 +406,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   // fttfile now contains name of -force_to_thk file; now check
   // it is really there; if so, read the dimensions of computational grid so
   // that we can set up a LocalInterpCtx for actual reading of target thickness
-  NCTool nc(&grid);
+  PISMIO nc(&grid);
   grid_info gi;
   ierr = nc.open_for_reading(fttfile); CHKERRQ(ierr);
   ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);

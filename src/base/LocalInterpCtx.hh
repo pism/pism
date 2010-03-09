@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -19,8 +19,6 @@
 #ifndef __lic_hh
 #define __lic_hh
 
-#include <netcdf.h>
-#include <petscmat.h>
 #include "grid.hh"
 
 class grid_info {
@@ -82,7 +80,7 @@ public:
   int nz,		     //!< number of z-levels
     nzb;		     //!< number of zb-levels 
   double *zlevs, *zblevs;
-  bool regrid_2d_only, no_regrid_bedrock, report_range;
+  bool no_regrid_ice, no_regrid_bedrock, report_range;
   MPI_Comm com;			//!< MPI Communicator (for printing, mostly)
   PetscMPIInt rank;		//!< MPI rank, to allocate a_raw on proc 0 only
 

@@ -86,7 +86,7 @@ exec_extras := $(addprefix ../bin/, $(extras))
 config_file := ../lib/pism_config.nc
 
 # ice_sources and ice_csources go in libpism.[so|a]
-ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc		\
+ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc PISMIO.cc	\
 	pism_default_config.cc pism_revision.cc columnSystem.cc pism_const.cc	\
 	iceModelVec.cc iceModelVec2.cc iceModelVec3.cc NCVariable.cc		\
 	matlablike.cc greens.cc deformation.cc localMassBalance.cc iceModel.cc	\
@@ -95,8 +95,8 @@ ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc		\
 	iMIO.cc iMmatlab.cc iMoptions.cc iMreport.cc iMssa.cc iMssaSNES.cc	\
 	iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc Timeseries.cc	\
 	PISMVars.cc iMtimeseries.cc enthalpyConverter.cc iceModelVec2T.cc	\
-	PISMComponent.cc PAConstant.cc PAYearlyCycle.cc PAForcing.cc PISMSurface.cc	\
-	PISMOcean.cc PCFactory.cc PALapseRates.cc
+	PISMComponent.cc PAConstant.cc PAYearlyCycle.cc PAForcing.cc		\
+	PISMSurface.cc PISMOcean.cc PCFactory.cc PALapseRates.cc
 ice_csources := cubature.c pism_signal.c
 
 # tests_sources go in libtests.[so|a]

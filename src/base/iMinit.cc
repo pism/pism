@@ -21,6 +21,7 @@
 
 #include <petscda.h>
 #include "iceModel.hh"
+#include "PISMIO.hh"
 
 //! Set default values of grid parameters.
 /*!
@@ -49,7 +50,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // overridden later, in IceModel::set_grid_from_options()).
 
   // Determine the grid extent from a bootstrapping file:
-  NCTool nc(&grid);
+  PISMIO nc(&grid);
   bool x_dim_exists, y_dim_exists, t_exists;
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
 
@@ -101,18 +102,23 @@ PetscErrorCode IceModel::set_grid_defaults() {
     grid.year = usrStartYear;
   }
 
-  // Grid dimensions and its vertical extent should not be deduced from a
-  // bootstrapping file, so we check if these options are set and stop if they
-  // are not.
+  // Grid dimensions should not be deduced from a bootstrapping file, so we
+  // check if these options are set and stop if they are not.
   ierr = check_option("-Mx", Mx_set); CHKERRQ(ierr);
   ierr = check_option("-My", My_set); CHKERRQ(ierr);
   ierr = check_option("-Mz", Mz_set); CHKERRQ(ierr);
-  ierr = check_option("-Lz", Lz_set); CHKERRQ(ierr);
   if ( !(Mx_set && My_set && Mz_set && Lz_set) ) {
     ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: All of -boot_from, -Mx, -My, -Mz, -Lz, are required for bootstrapping.\n");
+		       "PISM ERROR: All of -boot_from, -Mx, -My, -Mz are required for bootstrapping.\n");
     CHKERRQ(ierr);
     PetscEnd();
+  }
+
+  ierr = check_option("-Lz", Lz_set); CHKERRQ(ierr);
+  if ( !Lz_set ) {
+    ierr = verbPrintf(2, grid.com,
+		      "PISM WARNING: -Lz is not set; trying to deduce it from the bootstrapping file...\n");
+    CHKERRQ(ierr);
   }
 
   return 0;
@@ -253,7 +259,7 @@ PetscErrorCode IceModel::grid_setup() {
 			       filename, PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
 
   if (i_set) {
-    NCTool nc(&grid);
+    PISMIO nc(&grid);
     string source;
 
     // Get the 'source' global attribute to check if we are given a PISM output

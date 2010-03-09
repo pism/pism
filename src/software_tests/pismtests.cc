@@ -39,10 +39,10 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    IceGrid g(com, rank, size);
-
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+
+    IceGrid g(com, rank, size, config);
 
     // Create boundary models:
     PISMSurfaceModel *surface = new PSDummy(g, config);

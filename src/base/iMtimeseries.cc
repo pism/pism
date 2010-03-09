@@ -19,6 +19,7 @@
 #include "iceModel.hh"
 #include <sstream>
 #include <algorithm>
+#include "PISMIO.hh"
 
 //! Initializes the code writing scalar time-series.
 PetscErrorCode IceModel::init_timeseries() {
@@ -96,7 +97,7 @@ PetscErrorCode IceModel::init_timeseries() {
   PetscTruth append;
   ierr = check_option("-ts_append", append); CHKERRQ(ierr);
 
-  NCTool nc(grid.com, grid.rank);
+  PISMIO nc(&grid);
   ierr = nc.open_for_writing(ts_filename.c_str(), (append==PETSC_TRUE), false); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -439,7 +440,7 @@ PetscErrorCode IceModel::init_extras() {
 //! Write spatially-variable diagnostic quantities.
 PetscErrorCode IceModel::write_extras() {
   PetscErrorCode ierr;
-  NCTool nc(&grid);
+  PISMIO nc(&grid);
   double saving_after = -1.0e30; // initialize to avoid compiler warning; this
 				 // value is never used, because saving_after
 				 // is only used if save_now == true, and in

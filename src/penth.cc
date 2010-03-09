@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
-    IceGrid g(com, rank, size);
+    IceGrid g(com, rank, size, config);
     IceEnthalpyModel m(g, config, overrides);
     ierr = m.setExecName("penth"); CHKERRQ(ierr);
 

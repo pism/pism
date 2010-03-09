@@ -22,8 +22,9 @@
 #include <netcdf.h>
 #include "../udunits/udunits.h"
 #include "nc_util.hh"
-#include "NCVariable.hh"
+#include "NCSpatialVariable.hh"
 #include "pism_const.hh"
+#include "LocalInterpCtx.hh"
 
 #ifndef __IceModelVec_hh
 #define __IceModelVec_hh

@@ -508,9 +508,8 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
     CHKERRQ(ierr);
 
     // Find the number of records in this file:
-    NCTool nc(&grid);
-    // append = true; check_dims = false
-    ierr = nc.open_for_writing(filename, true, false); CHKERRQ(ierr);
+    NCTool nc(grid.com, grid.rank);
+    ierr = nc.open_for_writing(filename); CHKERRQ(ierr);
     ierr = nc.get_dim_length("N", &start); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 

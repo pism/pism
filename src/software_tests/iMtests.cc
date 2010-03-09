@@ -19,7 +19,7 @@
 #include <petscda.h>
 #include "iMtests.hh"
 #include "../coupler/iceModelVec2T.hh"
-#include "../base/nc_util.hh"
+#include "../base/PISMIO.hh"
 #include <vector>
 #include "../base/bedrockOnlySystem.hh"
 
@@ -225,7 +225,7 @@ PetscErrorCode IceUnitModel::testIceModelVec3Bedrock()    {
 
 PetscErrorCode IceUnitModel::testIceModelVec2T() {
   PetscErrorCode ierr;
-  NCTool nc(&grid);
+  PISMIO nc(&grid);
   IceModelVec2T v;
   char filename[] = "test_IceModelVec2T.nc";
 

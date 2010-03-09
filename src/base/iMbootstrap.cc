@@ -24,6 +24,7 @@
 #include "nc_util.hh"
 #include "iceModel.hh"
 
+#include "PISMIO.hh"
 
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
 /*! 
@@ -34,7 +35,7 @@ See chapter 4 of the User's Manual.  We read only 2D information from the bootst
 PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   PetscErrorCode  ierr;
 
-  NCTool nc(&grid);
+  PISMIO nc(&grid);
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 
@@ -104,6 +105,24 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   ierr =    vuplift.regrid(filename, *lic, 
                            config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
 
+  bool Lz_set;
+  ierr = check_option("-Lz", Lz_set); CHKERRQ(ierr);
+  if ( !Lz_set ) {
+    PetscReal thk_min, thk_max;
+    ierr = vH.range(thk_min, thk_max); CHKERRQ(ierr);
+
+    ierr = verbPrintf(2, grid.com,
+		      "  Setting Lz to 1.5 * max(ice thickness) = %3.3f meters...\n",
+		      1.5 * thk_max);
+
+
+    grid.Lz = 1.5 * thk_max;
+
+    ierr = grid.compute_vertical_levels();
+
+    CHKERRQ(ierr);
+  }
+
   // set mask and h; tell user what happened:
   ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
 
@@ -138,7 +157,7 @@ For now it is \e only called using "pismd -ross".
 PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   PetscErrorCode  ierr;
   IceModelVec2 vbcflag;
-  NCTool nc(&grid);
+  PISMIO nc(&grid);
 
   // determine if variables exist in file
   int maskid, ubarid, vbarid, bcflagid;

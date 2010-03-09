@@ -22,6 +22,7 @@
 #include "iceenthOnlySystem.hh"
 #include "combinedSystem.hh"
 
+#include "PISMIO.hh"
 
 /*********** procedures for init ****************/
 
@@ -141,7 +142,7 @@ PetscErrorCode IceEnthalpyModel::initFromFile(const char *filename) {
       "  option -init_from_temp seen ... IceEnthalpyModel doing SPECIAL ACTIONS:\n"
       "      reading ice temperature and thickness from %s ...\n",
       filename); CHKERRQ(ierr);  
-    NCTool nc(&grid);
+    PISMIO nc(&grid);
     ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
     int last_record;
     ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
@@ -172,7 +173,7 @@ PetscErrorCode IceEnthalpyModel::initFromFile(const char *filename) {
       "  option -init_from_temp_and_liqfrac seen ... IceEnthalpyModel doing SPECIAL ACTIONS:\n"
       "      reading ice temperature, liquid water fraction and thickness from %s ...\n",
       filename); CHKERRQ(ierr);  
-    NCTool nc(&grid);
+    PISMIO nc(&grid);
     ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
     int last_record;
     ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);

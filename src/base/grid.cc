@@ -17,77 +17,71 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petscfix.h>
-#include <petscda.h>
 #include "grid.hh"
 #include "pism_const.hh"
-#include "nc_util.hh"
-#include "../udunits/udunits.h"
-
-//! Use equally-spaced vertical by default.
-const SpacingType IceGrid::DEFAULT_ICE_SPACING_TYPE = QUADRATIC;
-
-const SpacingType IceGrid::DEFAULT_BED_SPACING_TYPE = QUADRATIC;
-
-//! Use non-periodic grid by default.
-const Periodicity IceGrid::DEFAULT_PERIODICITY = NONE;
-
-//! Quadratic spacing in the vertical is 4 times finer near the base than equal spacing.
-const PetscScalar IceGrid::DEFAULT_QUADZ_LAMBDA  = 4.0;
-
-//! Default computational box is 3000 km x 3000 km (= 2 \c Lx x 2 \c Ly) in horizontal.
-const PetscScalar IceGrid::DEFAULT_ICEPARAM_Lx   = 1500.0e3;
-
-//! Default computational box is 3000 km x 3000 km (= 2 \c Lx x 2 \c Ly) in horizontal.
-const PetscScalar IceGrid::DEFAULT_ICEPARAM_Ly   = 1500.0e3;
-
-//! Default computational box for ice is 4000 m high.
-const PetscScalar IceGrid::DEFAULT_ICEPARAM_Lz   = 4000.0;
-
-//! Default thickness of the bedrock layer.
-const PetscScalar IceGrid::DEFAULT_ICEPARAM_Lbz   = 0.0;
-
-//! Start at year zero by default.
-const PetscScalar IceGrid::DEFAULT_ICEPARAM_start_year = 0.0;
-
-//! Run for 100 years by default
-const PetscScalar IceGrid::DEFAULT_ICEPARAM_run_length = 1000.0;
-
-//! Default grid is 61 x 61 in horizontal.
-const PetscInt    IceGrid::DEFAULT_ICEPARAM_Mx   = 61;
-
-//! Default grid is 61 x 61 in horizontal.
-const PetscInt    IceGrid::DEFAULT_ICEPARAM_My   = 61;
-
-//! Default grid has 31 levels in the vertical.
-const PetscInt    IceGrid::DEFAULT_ICEPARAM_Mz   = 31;
-
-//! Default grid has no grid for bedrock; top bedrock level duplicates bottom of ice.
-const PetscInt    IceGrid::DEFAULT_ICEPARAM_Mbz  = 1;
-
 
 IceGrid::IceGrid(MPI_Comm c,
                  PetscMPIInt r,
-                 PetscMPIInt s):
+                 PetscMPIInt s, const NCConfigVariable &config):
   com(c), rank(r), size(s) { 
 
   // The grid in symmetric with respect to zero by default.
   x0 = 0.0;
   y0 = 0.0;
 
-  ice_vertical_spacing = DEFAULT_ICE_SPACING_TYPE;
-  bed_vertical_spacing = DEFAULT_BED_SPACING_TYPE;
-  periodicity = DEFAULT_PERIODICITY;
-  Lx = DEFAULT_ICEPARAM_Lx;
-  Ly = DEFAULT_ICEPARAM_Ly;
-  Lz = DEFAULT_ICEPARAM_Lz;
-  Lbz = DEFAULT_ICEPARAM_Lbz;
-  start_year = DEFAULT_ICEPARAM_start_year;
-  year = start_year;
-  end_year = start_year + DEFAULT_ICEPARAM_run_length;
-  Mx = DEFAULT_ICEPARAM_Mx;
-  My = DEFAULT_ICEPARAM_My;
-  Mz = DEFAULT_ICEPARAM_Mz;
-  Mbz = DEFAULT_ICEPARAM_Mbz;
+  string word = config.get_string("grid_periodicity");
+  if (word == "none")
+    periodicity = NONE;
+  else if (word == "x")
+    periodicity = X_PERIODIC;
+  else if (word == "y")
+    periodicity = Y_PERIODIC;
+  else if (word == "xy")
+    periodicity = XY_PERIODIC;
+  else {
+    PetscPrintf(com, 
+		"ERROR: grid periodicity type '%s' is invalid.\n",
+		word.c_str());
+    PetscEnd();
+  }
+
+  word = config.get_string("grid_ice_vertical_spacing");
+  if (word == "quadratic")
+    ice_vertical_spacing = QUADRATIC;
+  else if (word == "equal")
+    ice_vertical_spacing = EQUAL;
+  else {
+    PetscPrintf(com, 
+		"ERROR: ice vertical spacing type '%s' is invalid.\n",
+		word.c_str());
+    PetscEnd();
+  }
+
+  word = config.get_string("grid_bed_vertical_spacing");
+  if (word == "quadratic")
+    bed_vertical_spacing = QUADRATIC;
+  else if (word == "equal")
+    bed_vertical_spacing = EQUAL;
+  else {
+    PetscPrintf(com, 
+		"ERROR: bedrock vertical spacing type '%s' is invalid.\n",
+		word.c_str());
+    PetscEnd();
+  }
+
+  Lx  = config.get("grid_Lx");
+  Ly  = config.get("grid_Ly");
+  Lz  = config.get("grid_Lz");
+  Lbz = config.get("grid_Lbz");
+
+  lambda = config.get("grid_lambda");
+
+  year     = start_year = config.get("start_year");
+  end_year = start_year + config.get("run_length_years");
+  Mx  = config.get("grid_Mx");
+  My  = config.get("grid_My");
+  Mz  = config.get("grid_Mz");
+  Mbz = config.get("grid_Mbz");
 
   initial_Mz = 0;		// will be set to a correct value in
 				// IceModel::check_maximum_thickness()
@@ -172,10 +166,9 @@ PetscErrorCode  IceGrid::compute_ice_vertical_levels() {
   }
   case QUADRATIC: {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
-    const PetscScalar  lam = DEFAULT_QUADZ_LAMBDA;  
     for (PetscInt k=0; k < Mz - 1; k++) {
       const PetscScalar zeta = ((PetscScalar) k) / ((PetscScalar) Mz - 1);
-      zlevels[k] = Lz * ( (zeta / lam) * (1.0 + (lam - 1.0) * zeta) );
+      zlevels[k] = Lz * ( (zeta / lambda) * (1.0 + (lambda - 1.0) * zeta) );
     }
     zlevels[Mz - 1] = Lz;  // make sure it is exactly equal
     dzMIN = zlevels[1] - zlevels[0];
@@ -235,7 +228,7 @@ PetscErrorCode IceGrid::compute_bed_vertical_levels() {
 	// this is the lambda we have in bedrock; "2" below means that bedrock
 	// level thickness should increase with depth at about twice the rate of
 	// increase of ice levels.
-	PetscScalar lam = 2*DEFAULT_QUADZ_LAMBDA;
+	PetscScalar lam = 2*lambda;
 
 	zblevels[0] = -Lbz;	// make sure it's right on
 	for (PetscInt k = 1; k < Mbz - 1; k++) {

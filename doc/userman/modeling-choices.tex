@@ -124,7 +124,7 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
   \item \emph{Local mass balance (PDD)} (\verb|pdd|) \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model} 
 
-    The default PDD used by PISM, turned on by option \intextoption{surface pdd}, comes from the EISMINT-Greenland intercomparison (section \ref{sect:green} and \cite{RitzEISMINT}), but it has controllable parameters.
+   The default PDD used by PISM, turned on by option \intextoption{surface pdd}, is based on the EISMINT-Greenland intercomparison (section \ref{sect:green} and \cite{RitzEISMINT} and \cite{Faustoetal2009}), but it has controllable parameters.
 
     A PDD generally adds ``white noise'' to the seasonal cycle to simulate additional daily variability associated to the vagaries of weather.  This additional random variation is quite significant, as the seasonal cycle may never reach the melting point but that point may be reached with some probability, in the presence of the daily variability, and thus melt may occur.  Concretely, a normally-distributed, mean zero random temperature increment is added to the seasonal cycle.  The standard deviation of the daily variability is controlled by the \texttt{pdd\und std\und dev} configuration parameter, and defaults to 2.53 degrees. There is no particular assumed spatial correlation of daily variability.
 
