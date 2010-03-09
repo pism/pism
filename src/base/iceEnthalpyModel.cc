@@ -769,6 +769,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
     ice_k     = config.get("ice_thermal_conductivity"),
     L         = config.get("water_latent_heat_fusion"),  // J kg-1
     omega_max = config.get("liquid_water_fraction_max"), // pure
+    warm_dE   = config.get("warm_base_flux_enthalpy_fraction") * L,
     hmelt_max = config.get("hmelt_max");                 // m
 
   PetscScalar *Enthnew, *Tbnew;
@@ -913,7 +914,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
 
       } else {
 
-        // ***** OTHER CASES *****
+        // ***** ALL OTHER CASES *****
+
         // ***** BEDROCK ONLY SOLVE *****
         PetscScalar hf_base;
         if (fMbz > 1) { // deal with bedrock layer first, if present
@@ -948,6 +950,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
           vbasalMeltRate(i,j) = shelfbmassflux(i,j);
         } else {
           if (iosys.Enth[0] < iosys.Enth_s[0]) {
+            // this case only if no bedrock thermal layer
             vbasalMeltRate(i,j) = 0.0;  // zero melt rate if cold base
           } else {
             vbasalMeltRate(i,j) = ( hf_base + vRb(i,j) ) / (ice_rho * L);
@@ -970,15 +973,23 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
         //       see page documenting BOMBPROOF
         if (iosys.Enth[0] < iosys.Enth_s[0]) {
           // cold base case with fMbz==1: ice base equation says heat flux is known
+          // this case only if no bedrock thermal layer
           const PetscScalar C = ice_c * fdz / ice_k;
           ierr = iosys.setLevel0EqnThisColumn(
                    1.0,-1.0,C * (hf_base + vRb(i,j))); CHKERRQ(ierr);
         } else {
-          // velocity at bottom of ice in last step determines type
+          // we are in the warm base case, so velocity at bottom of ice in the
+          //   last time step determines type of boundary condition, either
+          //   (i) if w(0)<0 then outflow b.c. or (ii) if w(0)>=0 then Dirichlet
+          // *but*
+          // for basal ice only slightly above the pressure-melting temperature,
+          //   we combine the boundary condition (either (i) or (ii)) with
+          //   an amount of heat flux into the base; alpha is the amount of that flux
+          PetscScalar a0, a1, rhs;
           if (iosys.w[0] < 0.0) {
-            // outflow "boundary condition": apply diffusion free, upwinded form
+            // outflow "boundary condition": apply diffusion-free, upwinded form
             //   of enthalpy equation (bombtwo)
-            PetscScalar       rhs  = iosys.Enth[0];
+            rhs  = iosys.Enth[0];
             if (!isMarginal) {
               planeStar ss;
               Enth3.getPlaneStarZ(i,j,0,&ss);
@@ -990,12 +1001,26 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
               rhs += dtTempAge * ((iosys.Sigma[0] / ice_rho) - UpEnthu - UpEnthv);
             }
             const PetscScalar nuw0 = (dtTempAge / fdz) * iosys.w[0];
-            ierr = iosys.setLevel0EqnThisColumn(1 - nuw0, nuw0, rhs); CHKERRQ(ierr);            
+            a0 = 1 - nuw0;
+            a1 = nuw0;
           } else {
             // Dirichlet cond. for enthalpy at ice base
-            ierr = iosys.setLevel0EqnThisColumn(
-                     1.0,0.0,iosys.Enth_s[0]); CHKERRQ(ierr);
+            rhs = iosys.Enth_s[0];
+            a0  = 1.0;
+            a1  = 0.0;
           }
+
+          const PetscScalar
+            alpha      = (iosys.Enth[0] < iosys.Enth_s[0] + warm_dE)
+                            ? 1.0 - ((iosys.Enth[0] - iosys.Enth_s[0]) / warm_dE)
+                            : 0.0;
+          const PetscScalar C = ice_c * fdz / ice_k;
+          rhs = (1.0 - alpha) * rhs + alpha * ( C * (hf_base + vRb(i,j)) );
+          a0  = (1.0 - alpha) * a0  + alpha * 1.0,
+          a1  = (1.0 - alpha) * a1  + alpha * (-1.0);
+          vbasalMeltRate(i,j) *= 1.0 - alpha;
+
+          ierr = iosys.setLevel0EqnThisColumn(a0,a1,rhs); CHKERRQ(ierr);
         }
 
         ierr = iosys.solveThisColumn(&Enthnew);
@@ -1094,7 +1119,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
 }
 
 
-//! Move some of the liquid water fraction in a column segment [z,z+dz] to the base.
+//! Move liquid water fraction, in excess of fixed fraction, in a column segment [z,z+dz] to the base.
 /*!
 Generally this procedure alters the values in the last two arguments,
 'enthalpy' and 'Hdrained'.  The latter argument is the ice-equivalent water

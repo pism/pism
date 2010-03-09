@@ -335,6 +335,9 @@ netcdf pism_config {
     pism_config:liquid_water_fraction_max = 0.01;
     pism_config:liquid_water_fraction_max_doc = "pure number; in enthalpy model, drain once omega reaches this value [\\ref Greve97Greenland]";
 
+    pism_config:warm_base_flux_enthalpy_fraction = 0.002;
+    pism_config:warm_base_flux_enthalpy_fraction_doc = "pure number; in enthalpy model, if base of ice is warmer than pressure-melting, but the enthalpy is within this fraction of L (latent heat of fusion), then some heat flux enters the ice";
+
     pism_config:fresh_water_density = 1000.0;
     pism_config:fresh_water_density_doc = "kg m-3;";
    

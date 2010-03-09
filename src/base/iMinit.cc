@@ -107,7 +107,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   ierr = check_option("-Mx", Mx_set); CHKERRQ(ierr);
   ierr = check_option("-My", My_set); CHKERRQ(ierr);
   ierr = check_option("-Mz", Mz_set); CHKERRQ(ierr);
-  if ( !(Mx_set && My_set && Mz_set && Lz_set) ) {
+  if ( !(Mx_set && My_set && Mz_set) ) {
     ierr = PetscPrintf(grid.com,
 		       "PISM ERROR: All of -boot_from, -Mx, -My, -Mz are required for bootstrapping.\n");
     CHKERRQ(ierr);
