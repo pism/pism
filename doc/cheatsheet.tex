@@ -1,0 +1,160 @@
+\documentclass[landscape]{article}
+
+\usepackage[left=1.5cm,top=1cm,right=1.5cm,bottom=1cm,nohead,nofoot]{geometry}
+\usepackage{multicol}
+\usepackage{verbatim}
+\usepackage[pdftex]{hyperref}
+\hypersetup{pdftitle={PISM Cheat Sheet}}
+\hypersetup{pdfauthor={PISM (help@pism-docs.org)}}
+\hypersetup{pdfkeywords={cheat sheet, ice sheet model, parallel ice
+    sheet model, }}
+\hypersetup{pdfsubject={get PISM sources at http://www.pism-docs.org}}
+\hypersetup{colorlinks,
+  plainpages=false, % only if colorlinks=true
+  linkcolor=black,   % only if colorlinks=true
+  citecolor=black,   % only if colorlinks=true
+  urlcolor=black     % only if colorlinks=true
+}
+
+\def\pdfBorderAttrs{/Border [0 0 0] } % No border arround Links
+
+\newcommand{\PISMREV}{\textbf{trunk} revision \input{revision.tex}}
+\newcommand{\PETSCREL}{2.3.3 or 3.0.0}
+\newcommand{\PISMDOWNLOADMSG}{Get development version of PISM source code: \\ \centerline{\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev}} \quad}
+
+
+% Don't print section numbers
+\setcounter{secnumdepth}{0}
+
+\pagestyle{empty}
+
+% -----------------------------------------------------------------------
+
+\begin{document}
+
+\begin{center}
+     \Large{\textbf{PISM Cheat Sheet} Rev. \PISMREV} \\
+\end{center}
+
+
+\begin{multicols}{3}
+
+
+% multicol parameters
+% These lengths are set only within the two main columns
+%\setlength{\columnseprule}{0.25pt}
+\setlength{\premulticols}{1pt}
+\setlength{\postmulticols}{1pt}
+\setlength{\multicolsep}{1pt}
+\setlength{\columnsep}{2pt}
+
+\section{General Info}
+
+The Parallel Ice Sheet Model (PISM) is a modern, hybrid, polythermal
+ice sheet model which has been successfully run on more than 500
+processors. It is perfectly suitable for modeling of Greenland and Antarctica.
+
+\section{Atmospheres}
+Use \verb|-atmosphere| with
+ 
+\begin{tabular}{@{}ll@{}}
+\verb|constant|    & Blablah \\
+\verb|searise_greenland|  & Blabla. \\
+\verb|searise_antarctica|  & Blablah
+\end{tabular}
+
+\section{Snapshots}
+A snapshot contains only variable needed for restarting.
+
+\begin{tabular}{@{}ll@{}}
+\verb|constant|    & Blablah \\
+\verb|searise_greenland|  & Blabla. \\
+\verb|searise_antarctica|  & Blablah
+\end{tabular}
+
+\section{Writing additional variables}
+Use \verb|-atmosphere| with
+ 
+\begin{tabular}{@{}ll@{}}
+\verb|constant|    & Blablah \\
+\verb|searise_greenland|  & Blabla. \\
+\verb|searise_antarctica|  & Blablah
+\end{tabular}
+
+\section{Writing time series}
+Use \verb|-atmosphere| with
+ 
+\begin{tabular}{@{}ll@{}}
+\verb|constant|    & Blablah \\
+\verb|searise_greenland|  & Blabla. \\
+\verb|searise_antarctica|  & Blablah
+\end{tabular}
+
+\section{Atmospheres}
+Use \verb|-atmosphere| with
+ 
+\begin{tabular}{@{}ll@{}}
+\verb|constant|    & Blablah \\
+\verb|searise_greenland|  & Blabla. \\
+\verb|searise_antarctica|  & Blablah
+\end{tabular}
+
+\section{Atmospheres}
+Use \verb|-atmosphere| with
+ 
+\begin{tabular}{@{}ll@{}}
+\verb|constant|    & Blablah \\
+\verb|searise_greenland|  & Blabla. \\
+\verb|searise_antarctica|  & Blablah
+\end{tabular}
+
+\section{Atmospheres}
+Use \verb|-atmosphere| with
+ 
+\begin{tabular}{@{}ll@{}}
+\verb|constant|    & Blablah \\
+\verb|searise_greenland|  & Blabla. \\
+\verb|searise_antarctica|  & Blablah
+\end{tabular}
+
+\section{Atmospheres}
+Use \verb|-atmosphere| with
+ 
+\begin{tabular}{@{}ll@{}}
+\verb|constant|    & Blablah \\
+\verb|searise_greenland|  & Blabla. \\
+\verb|searise_antarctica|  & Blablah
+\end{tabular}
+
+\section{Atmospheres}
+Use \verb|-atmosphere| with
+ 
+\begin{tabular}{@{}ll@{}}
+\verb|constant|    & Blablah \\
+\verb|searise_greenland|  & Blabla. \\
+\verb|searise_antarctica|  & Blablah
+\end{tabular}
+
+\section{Atmospheres}
+Use \verb|-atmosphere| with
+ 
+\begin{tabular}{@{}ll@{}}
+\verb|constant|    & Blablah \\
+\verb|searise_greenland|  & Blabla. \\
+\verb|searise_antarctica|  & Blablah
+\end{tabular}
+
+
+
+\end{multicols}
+
+\rule{0.3\linewidth}{0.25pt}
+\scriptsize
+
+This card may be freely distributed under the terms of the GNU general
+public licence --- Copyright \copyright\ 2010 by PISM --- v0.3 --- \href{http://www.pism-docs.org}{\t{www.pism-docs.org}}
+
+
+
+\end{document}
+

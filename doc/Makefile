@@ -1,4 +1,4 @@
-ALL : installation userman browser
+ALL : installation cheatsheet userman browser
 
 update: svn_update revclean
 ifeq ($(shell touch revision.tex; svnversion | diff revision.tex -),)
@@ -27,6 +27,10 @@ installation : installation.tex
 browser : doxyfile_browser doxybib.txt config_doc.txt std_names.html \
 		browser_pages.txt browser_bombproof_enth.txt revision
 	doxygen doxyfile_browser
+
+cheatsheet : cheatsheet.tex
+	pdflatex cheatsheet.tex
+	pdflatex cheatsheet.tex
 
 doxybib.txt: doxybib.py ice_bib.bib
 	./doxybib.py
