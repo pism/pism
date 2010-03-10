@@ -18,7 +18,7 @@ __author__ = "Andy Aschwanden"
 
 # default values
 THRESHOLD = 1e-5
-VAR = 'tempbase'
+VAR = 'enthalpybase'
 
 parser = OptionParser()
 parser.usage = "usage: %prog [options] FILE"
@@ -60,6 +60,8 @@ else:
 
 # differenetiate along time axis
 dt = np.diff(t[:],axis=0)
+
+# should we check if user wants to plot a variable which is already a time rate of change?
 
 if dim == 1:
     Var = var[:]

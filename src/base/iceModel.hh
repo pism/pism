@@ -375,6 +375,8 @@ protected:
   virtual PetscErrorCode compute_cflx(IceModelVec2 &result, IceModelVec2 &cbar);
   virtual PetscErrorCode compute_csurf(IceModelVec2 &result, IceModelVec2 &tmp);
   virtual PetscErrorCode compute_dhdt(IceModelVec2 &result);
+  virtual PetscErrorCode compute_enthalpybase(IceModelVec2 &result);
+  virtual PetscErrorCode compute_enthalpysurf(IceModelVec2 &result);
   virtual PetscErrorCode compute_hardav(IceModelVec2 &result);
   virtual PetscErrorCode compute_rank(IceModelVec2 &result);
   virtual PetscErrorCode compute_taud(IceModelVec2 &result, IceModelVec2 &tmp);

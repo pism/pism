@@ -880,6 +880,24 @@ PetscErrorCode IceModel::compute_wvelbase(IceModelVec2 &result) {
   return 0;
 }
 
+//! Computes ice enthalpy at the base of ice.
+PetscErrorCode IceModel::compute_enthalpybase(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+
+  // put basal ice temperature in vWork2d[0]
+  ierr = Enth3.getHorSlice(result, 0.0); CHKERRQ(ierr);  // z=0 slice
+
+  ierr = result.set_name("enthalpybase"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "ice enthalpy at the base of ice",
+			  "J kg-1", ""); CHKERRQ(ierr);
+
+  PetscScalar fill_value = GSL_NAN;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
+
+  return 0;
+}
+
 //! Computes ice temperature at the base of ice.
 PetscErrorCode IceModel::compute_tempbase(IceModelVec2 &result) {
   PetscErrorCode ierr;
@@ -956,6 +974,40 @@ PetscErrorCode IceModel::compute_tempsurf(IceModelVec2 &result) {
   return 0;
 }
 
+//! Computes ice enthalpy at the 1 m below the surface.
+PetscErrorCode IceModel::compute_enthalpysurf(IceModelVec2 &result) {
+  PetscErrorCode ierr;
+  PetscScalar fill_value = GSL_NAN;
+
+  // compute levels corresponding to 1 m below the ice surface:
+
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      result(i,j) = PetscMax(vH(i,j) - 1.0, 0.0);
+    }
+  }
+  ierr = result.end_access(); CHKERRQ(ierr);
+
+  ierr = Enth3.getSurfaceValues(result, result); CHKERRQ(ierr);  // z=0 slice
+
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (vH(i,j) <= 1.0)
+	result(i,j) = fill_value;
+    }
+  }
+  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_name("tempsurf"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "ice enthalpy at 1m below the ice surface",
+			  "J kg-1", ""); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
+  return 0;
+}
 
 //! \brief Computes a diagnostic quantity given by \c name and returns a
 //! pointer to a pre-allocated work vector containing it.
@@ -1004,6 +1056,20 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 
   if (name == "dhdt") {
     ierr = compute_dhdt(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  // FIX ME: using was_created() is temporary hack to avoid crashing with non-penth executable
+  if (name == "enthalpybase" && Enth3.was_created()) {
+    ierr = compute_enthalpybase(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  // FIX ME: using was_created() is temporary hack to avoid crashing with non-penth executable
+  if (name == "enthalpysurf" && Enth3.was_created()) {
+    ierr = compute_enthalpysurf(vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }
