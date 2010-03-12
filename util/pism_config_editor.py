@@ -131,7 +131,7 @@ def save(dict, changes, default_filename, default_varname):
         nc = NC(filename, 'a')      # append
     except:
         try:
-            nc = NC(filename, 'w',fomat='NETCDF3_CLASSIC') # if not found, then create
+            nc = NC(filename, 'w',format='NETCDF3_CLASSIC') # if not found, then create
         except:
             print "ERROR: can't open '%s'." % filename
             return False

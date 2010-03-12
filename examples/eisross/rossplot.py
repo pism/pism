@@ -73,16 +73,18 @@ except IOError:
 try:
     print "Loading PISM output from '%s'..." % (pism_output),
     infile = NC(pism_output, 'r')
-    H = squeeze(infile.variables["thk"][:])
-    mask = squeeze(infile.variables["mask"][:])
-    cbar = squeeze(infile.variables["cbar"][:])
-    ubar = squeeze(infile.variables["uvelsurf"][:])
-    vbar = squeeze(infile.variables["vvelsurf"][:])
-    print "done."
 except Exception:
     print """ERROR!\nSpecify NetCDF file from PISM run with -p.
     See ross_plot.py --help and User's Manual.  Exiting..."""
     exit(-1)
+
+H = squeeze(infile.variables["thk"][:])
+mask = squeeze(infile.variables["mask"][:])
+cbar = squeeze(infile.variables["cbar"][:])
+ubar = squeeze(infile.variables["uvelsurf"][:])
+vbar = squeeze(infile.variables["vvelsurf"][:])
+print "done."
+
 
 # see 111by147.dat for these ranges
 dlat = (-5.42445 - (-12.3325))/110;

@@ -1,8 +1,10 @@
-\documentclass[landscape]{article}
+\documentclass[10pt,landscape]{article}
 
 \usepackage[left=1.5cm,top=1cm,right=1.5cm,bottom=1cm,nohead,nofoot]{geometry}
 \usepackage{multicol}
-\usepackage{verbatim}
+\usepackage{longtable}
+\usepackage{bm,url,xspace,verbatim}
+\usepackage{amssymb,amsmath}
 \usepackage[pdftex]{hyperref}
 \hypersetup{pdftitle={PISM Cheat Sheet}}
 \hypersetup{pdfauthor={PISM (help@pism-docs.org)}}
@@ -18,9 +20,12 @@
 
 \def\pdfBorderAttrs{/Border [0 0 0] } % No border arround Links
 
-\newcommand{\PISMREV}{\textbf{trunk} revision \input{revision.tex}}
+\newcommand{\PISMREV}{\textbf{trunk} revision \input{userman/revision.tex}}
 \newcommand{\PETSCREL}{2.3.3 or 3.0.0}
 \newcommand{\PISMDOWNLOADMSG}{Get development version of PISM source code: \\ \centerline{\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev}} \quad}
+
+%% macros having to do with documentation for options; note these appear in the index
+\newcommand{\und}{\_\!\_}
 
 
 % Don't print section numbers
@@ -37,12 +42,12 @@
 \end{center}
 
 
-\begin{multicols}{3}
+\begin{multicols*}{3}
 
 
 % multicol parameters
 % These lengths are set only within the two main columns
-%\setlength{\columnseprule}{0.25pt}
+\setlength{\columnseprule}{0.25pt}
 \setlength{\premulticols}{1pt}
 \setlength{\postmulticols}{1pt}
 \setlength{\multicolsep}{1pt}
@@ -54,99 +59,93 @@ The Parallel Ice Sheet Model (PISM) is a modern, hybrid, polythermal
 ice sheet model which has been successfully run on more than 500
 processors. It is perfectly suitable for modeling of Greenland and Antarctica.
 
-\section{Atmospheres}
-Use \verb|-atmosphere| with
- 
-\begin{tabular}{@{}ll@{}}
-\verb|constant|    & Blablah \\
-\verb|searise_greenland|  & Blabla. \\
-\verb|searise_antarctica|  & Blablah
-\end{tabular}
 
 \section{Snapshots}
-A snapshot contains only variable needed for restarting.
 
-\begin{tabular}{@{}ll@{}}
-\verb|constant|    & Blablah \\
-\verb|searise_greenland|  & Blabla. \\
-\verb|searise_antarctica|  & Blablah
+\begin{tabular}{@{}p{0.4\linewidth}p{0.5\linewidth}@{}}
+  \texttt{ts\und file} [file name] & Specifies the file to save to.\\
+    texttt{ts\und times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
+    \texttt{ts\und vars} [list of variables] & Comma-separated list of variables, see table~\ref{tab:time-series}. Omitting this option is equivalent to listing all the possible variables.\\
+    \texttt{ts\und append} & Append time series to file if it already exists.  No effect if file does not yet exist.
 \end{tabular}
 
-\section{Writing additional variables}
-Use \verb|-atmosphere| with
- 
-\begin{tabular}{@{}ll@{}}
-\verb|constant|    & Blablah \\
-\verb|searise_greenland|  & Blabla. \\
-\verb|searise_antarctica|  & Blablah
-\end{tabular}
 
-\section{Writing time series}
-Use \verb|-atmosphere| with
- 
-\begin{tabular}{@{}ll@{}}
-\verb|constant|    & Blablah \\
-\verb|searise_greenland|  & Blabla. \\
-\verb|searise_antarctica|  & Blablah
-\end{tabular}
+\section{Saving time series}
 
-\section{Atmospheres}
-Use \verb|-atmosphere| with
- 
-\begin{tabular}{@{}ll@{}}
-\verb|constant|    & Blablah \\
-\verb|searise_greenland|  & Blabla. \\
-\verb|searise_antarctica|  & Blablah
-\end{tabular}
-
-\section{Atmospheres}
-Use \verb|-atmosphere| with
- 
-\begin{tabular}{@{}ll@{}}
-\verb|constant|    & Blablah \\
-\verb|searise_greenland|  & Blabla. \\
-\verb|searise_antarctica|  & Blablah
-\end{tabular}
-
-\section{Atmospheres}
-Use \verb|-atmosphere| with
- 
-\begin{tabular}{@{}ll@{}}
-\verb|constant|    & Blablah \\
-\verb|searise_greenland|  & Blabla. \\
-\verb|searise_antarctica|  & Blablah
-\end{tabular}
-
-\section{Atmospheres}
-Use \verb|-atmosphere| with
- 
-\begin{tabular}{@{}ll@{}}
-\verb|constant|    & Blablah \\
-\verb|searise_greenland|  & Blabla. \\
-\verb|searise_antarctica|  & Blablah
-\end{tabular}
-
-\section{Atmospheres}
-Use \verb|-atmosphere| with
- 
-\begin{tabular}{@{}ll@{}}
-\verb|constant|    & Blablah \\
-\verb|searise_greenland|  & Blabla. \\
-\verb|searise_antarctica|  & Blablah
-\end{tabular}
-
-\section{Atmospheres}
-Use \verb|-atmosphere| with
- 
-\begin{tabular}{@{}ll@{}}
-\verb|constant|    & Blablah \\
-\verb|searise_greenland|  & Blabla. \\
-\verb|searise_antarctica|  & Blablah
+\begin{tabular}{@{}p{0.4\linewidth}p{0.5\linewidth}@{}}
+  \texttt{ts\und file} [file name] & Specifies the file to save to.\\
+  \texttt{ts\und times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
+  \texttt{ts\und vars} [list of variables] & Comma-separated list of variables, see table~\ref{tab:time-series}. Omitting this option is equivalent to listing all the possible variables.\\
+  \texttt{ts\und append} & Append time series to file if it already exists.  No effect if file does not yet exist. \\
 \end{tabular}
 
 
 
-\end{multicols}
+\section{Saving extra variables}
+
+\begin{tabular}{@{}p{0.4\linewidth}p{0.5\linewidth}@{}}
+   \texttt{extra\und file}\,[file name] & Specifies the file to save to; should be different from the output \texttt{o} file.\\
+    \texttt{extra\und times}\,[range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list.\\
+    \texttt{extra\und vars}\,[list of variables]& Comma-separated list of variables, see table~\ref{tab:extra-vars}\\
+    \texttt{extra\und split} & Save to separate files, similar to \texttt{split\und snapshots}\\
+    \texttt{extra\und append} & Append variables to file if it already exists.  No effect if file does not yet exist, and no effect if \texttt{extra\und split} is set.
+\end{tabular}
+
+
+
+
+Use \verb|-extra_vars| with
+    \texttt{acab}, 
+    \texttt{age},
+    \texttt{artm},
+    \texttt{bfrict},
+    \texttt{bheatflx},
+    \texttt{bmelt},
+    \texttt{bwat},
+    \texttt{bwp},
+    \texttt{cbar},
+    \texttt{cbase},
+    \texttt{cflx},
+    \texttt{csurf},
+    \texttt{dHdt},
+    \texttt{dbdt},
+    \texttt{dhdt},
+    \texttt{enthalpybase},
+    \texttt{enthalpysurf},
+    \texttt{hardav},
+    \texttt{lat},
+    \texttt{litho\und temp},
+    \texttt{lon},
+    \texttt{mask},
+    \texttt{strainheat},
+    \texttt{SigmaComp},
+    \texttt{tauc},
+    \texttt{taud},
+    \texttt{temp},
+    \texttt{temp\und pa},
+    \texttt{tempbase},
+    \texttt{tempsurf},
+    \texttt{thk},
+    \texttt{tillphi},
+    \texttt{topg},
+    \texttt{ubar},
+    \texttt{ub},
+    \texttt{usurf},
+    \texttt{uvel},
+    \texttt{uvelbase},
+   \texttt{uvelsurf},
+    \texttt{vbar},
+    \texttt{vvelbase},
+    \texttt{vvelsurf},
+    \texttt{vb},
+    \texttt{vvel},
+    \texttt{wvel},
+    \texttt{wvelbase},
+    \texttt{wvelsurf},
+
+
+
+\end{multicols*}
 
 \rule{0.3\linewidth}{0.25pt}
 \scriptsize

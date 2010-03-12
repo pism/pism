@@ -23,7 +23,7 @@ echo "-----  Run riggs.py to create NetCDF version riggs.nc of RIGGS data:"
 echo "-----  Running pismd to compute velocity in Ross ice shelf,"
 echo "       with comparison to RIGGS data:"
 mpiexec -n $NN pismd -ross -boot_from ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3 \
- -ssa -ssaBC ross.nc -riggs riggs.nc -o rossComputed.nc
+ -ssa -ssaBC ross.nc -riggs riggs.nc -o_size big -o rossComputed.nc
 
 echo "----- Generating figure comparing model vs observed velocity:"
 ./rossplot.py --pism-output=rossComputed.nc --riggs=riggs_clean.dat

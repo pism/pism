@@ -49,14 +49,21 @@ If the file \verb|foo.nc|, specified by \verb|-ts_file foo.nc|, already exists t
 \begin{table}[ht]
   \caption{Scalar time-series supported by PISM}
   \centering
-  \begin{tabular}{p{0.2\linewidth}p{0.1\linewidth}p{0.6\linewidth}}\hline
+  \begin{tabular}{p{0.4\linewidth}p{0.1\linewidth}p{0.4\linewidth}}\hline
    \textbf{Variable name} & \textbf{Units} & \textbf{Description}\\
    \hline
-    \texttt{ivol} & $m^{3}$ & total ice volume\\
-    \texttt{iarea} & $m^{2}$ & total area covered by ice \\
-    \texttt{iareag} & $m^{2}$ & area covered by grounded ice\\
-    \texttt{iareaf} & $m^{2}$ & area covered by floating ice\\
+    \texttt{ivol} &m$^{3}$ & total ice volume\\
+    \texttt{iarea} & m$^{2}$ & total area covered by ice \\
+    \texttt{iareag} & m$^{2}$ & area covered by grounded ice\\
+    \texttt{iareaf} & m$^{2}$ & area covered by floating ice\\
     \texttt{dt} & years & mass-continuity time-step\\
+    \texttt{divoldt} & m$^{3}\,$s$^{-1}$ & ice volume rate of change\\
+    \texttt{dimassdt} & kg$^{3}\,$s$^{-1}$ & ice mass rate of change\\
+    \texttt{total\und surface\und ice \und flux} & kg$^{3}\,$s$^{-1}$ & total surface ice flux \\
+    \texttt{total\und basal\und ice\und flux} & kg$^{3}$\,s$^{-1}$ & total basal ice flux \\
+    \texttt{total\und sub\und shelf\und ice\und flux} & kg$^{3}\,$s$^{-1}$  & total sub-ice-shelf ice flux \\
+    \texttt{ienthalpy} & J & total ice enthalpy\\
+    \texttt{dienthalpydt} & J\,s$^{-1}$ & total ice enthalpy rate of change \\
     \hline
   \end{tabular}
  \label{tab:time-series}
@@ -101,7 +108,7 @@ If the file \verb|foo.nc|, specified by \verb|-extra_file foo.nc|, already exist
     \hline
     \texttt{acab} &m/year & instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate \\
     \texttt{age} & years & age of ice \\
-    \texttt{artm} & time-dependent annual average ice temperature at ice surface but below firn processes\\
+    \texttt{artm} & K & time-dependent annual average ice temperature at ice surface but below firn processes\\
     \texttt{bfrict} & mW/m$^{2}$ & basal frictional heating from ice sliding (= till dissipation) \\
     \texttt{bheatflx} & W/m$^{2}$ & upward geothermal flux at bedrock surface \\
     \texttt{bmelt} & m/year & ice basal melt rate in ice thickness per time \\

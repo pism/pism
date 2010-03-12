@@ -117,7 +117,7 @@ PetscErrorCode IceModel::create_timeseries() {
     ivol->set_dimension_units("years", "");
     ivol->output_filename = ts_filename;
 
-    ivol->set_attr("long_name", "ice volume");
+    ivol->set_attr("long_name", "total ice volume");
     ivol->set_attr("valid_min", 0.0);
 
     timeseries.push_back(ivol);
@@ -132,7 +132,7 @@ PetscErrorCode IceModel::create_timeseries() {
     ienthalpy->set_dimension_units("years", "");
     ienthalpy->output_filename = ts_filename;
 
-    ienthalpy->set_attr("long_name", "ice enthalpy");
+    ienthalpy->set_attr("long_name", "total ice enthalpy");
     ienthalpy->set_attr("valid_min", 0.0);
 
     timeseries.push_back(ienthalpy);
@@ -145,7 +145,7 @@ PetscErrorCode IceModel::create_timeseries() {
     imass->set_dimension_units("years", "");
     imass->output_filename = ts_filename;
 
-    imass->set_attr("long_name", "ice mass");
+    imass->set_attr("long_name", "total ice mass");
     imass->set_attr("valid_min", 0.0);
 
     timeseries.push_back(imass);
@@ -210,7 +210,7 @@ PetscErrorCode IceModel::create_timeseries() {
     divoldt->set_dimension_units("years", "");
     divoldt->output_filename = ts_filename;
 
-    divoldt->set_attr("long_name", "ice volume rate of change");
+    divoldt->set_attr("long_name", "total ice volume rate of change");
 
     timeseries.push_back(divoldt);
   }
@@ -222,7 +222,7 @@ PetscErrorCode IceModel::create_timeseries() {
     dimassdt->set_dimension_units("years", "");
     dimassdt->output_filename = ts_filename;
 
-    dimassdt->set_attr("long_name", "ice mass rate of change");
+    dimassdt->set_attr("long_name", "total ice mass rate of change");
 
     timeseries.push_back(dimassdt);
   }
@@ -236,7 +236,7 @@ PetscErrorCode IceModel::create_timeseries() {
     dienthalpydt->set_dimension_units("years", "");
     dienthalpydt->output_filename = ts_filename;
 
-    dienthalpydt->set_attr("long_name", "ice enthalpy rate of change");
+    dienthalpydt->set_attr("long_name", "total ice enthalpy rate of change");
 
     timeseries.push_back(dienthalpydt);
   }
