@@ -205,7 +205,7 @@ Incompressibility itself says
 This is immediately equivalent to the integral
    \f[ w(x,y,z,t) = - \int_{b(x,y,t)}^{z} \nabla\cdot\mathbf{U}\,d\zeta
                            + w_b(x,y,t). \f]
-Here the value \f$w_b(x,y,t)\f$ is either zero or the basal melt rate
+Here the value \f$w_b(x,y,t)\f$ is either zero or the negative of the basal melt rate
 according to the value of the flag \c include_bmr_in_continuity.
 
 The vertical integral is computed by the trapezoid rule.
@@ -225,7 +225,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = w3.getInternalColumn(i,j,&w); CHKERRQ(ierr);
       if (include_bmr_in_continuity) {
-        w[0] = vbasalMeltRate(i,j);
+        w[0] = - vbasalMeltRate(i,j);
       } else {
         w[0] = 0.0;
       }
