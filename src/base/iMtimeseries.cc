@@ -24,15 +24,26 @@
 //! Initializes the code writing scalar time-series.
 PetscErrorCode IceModel::init_timeseries() {
   PetscErrorCode ierr;
-  PetscTruth ts_file_set = PETSC_FALSE, ts_times_set = PETSC_FALSE, ts_vars_set = PETSC_FALSE;
-  char tmp[TEMPORARY_STRING_LENGTH] = "\0";
+  bool ts_file_set, ts_times_set, ts_vars_set;
+  string times, vars;
+  bool append;
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-ts_file", tmp,
-			       PETSC_MAX_PATH_LEN, &ts_file_set); CHKERRQ(ierr);
-  ts_filename = tmp;
+  ierr = PetscOptionsBegin(grid.com, "", "Options controlling scalar diagnostic time-series", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-ts_file", "Specifies the time-series output file name",
+			     ts_filename, ts_file_set); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-ts_times", tmp,
-			       TEMPORARY_STRING_LENGTH, &ts_times_set); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-ts_times", "Specifies a MATLAB-style range or a list of requested times",
+			     times, ts_times_set); CHKERRQ(ierr);
+
+    ierr = PISMOptionsString("-ts_vars", "Specifies a comma-separated list of veriables to save",
+			     vars, ts_vars_set); CHKERRQ(ierr);
+
+    // default behavior is to move the file aside if it exists already; option allows appending
+    ierr = PISMOptionsIsSet("-ts_append", append); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
 
   if (ts_file_set ^ ts_times_set) {
     ierr = PetscPrintf(grid.com,
@@ -50,7 +61,7 @@ PetscErrorCode IceModel::init_timeseries() {
   
   save_ts = true;
 
-  ierr = parse_times(grid.com, tmp, ts_times);
+  ierr = parse_times(grid.com, times, ts_times);
   if (ierr != 0) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -ts_times argument failed.\n"); CHKERRQ(ierr);
     PetscEnd();
@@ -64,21 +75,15 @@ PetscErrorCode IceModel::init_timeseries() {
   ierr = verbPrintf(2, grid.com, "saving scalar time-series to '%s'; ",
 		    ts_filename.c_str()); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com, "times requested: %s\n", tmp); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "times requested: %s\n", times.c_str()); CHKERRQ(ierr);
 
   current_ts = 0;
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-ts_vars", tmp,
-			       TEMPORARY_STRING_LENGTH, &ts_vars_set); CHKERRQ(ierr);
+
   string var_name;
   if (ts_vars_set) {
-    if (strlen(tmp) == 0) {
-      PetscPrintf(grid.com, "PISM ERROR: no argument for -ts_vars option.\n");
-      PetscEnd();
-    }
-
-    ierr = verbPrintf(2, grid.com, "variables requested: %s\n", tmp); CHKERRQ(ierr);
-    istringstream arg(tmp);
+    ierr = verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str()); CHKERRQ(ierr);
+    istringstream arg(vars);
 
     while (getline(arg, var_name, ','))
       ts_vars.insert(var_name);
@@ -93,9 +98,6 @@ PetscErrorCode IceModel::init_timeseries() {
     }
   }
 
-  // default behavior is to move the file aside if it exists already; option allows appending
-  PetscTruth append;
-  ierr = check_option("-ts_append", append); CHKERRQ(ierr);
 
   PISMIO nc(&grid);
   ierr = nc.open_for_writing(ts_filename.c_str(), (append==PETSC_TRUE), false); CHKERRQ(ierr);
@@ -327,29 +329,38 @@ PetscErrorCode IceModel::write_timeseries() {
 //! Initialize the code saving spatially-variable diagnostic quantities.
 PetscErrorCode IceModel::init_extras() {
   PetscErrorCode ierr;
-  PetscTruth times = PETSC_FALSE, file = PETSC_FALSE;
-  char tmp[TEMPORARY_STRING_LENGTH] = "\0";
+  bool split, times_set, file_set, save_vars;
+  string times, vars;
   current_extra = 0;
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-extra_file", tmp,
-			       PETSC_MAX_PATH_LEN, &file); CHKERRQ(ierr);
-  extra_filename = tmp;
+  ierr = PetscOptionsBegin(grid.com, "", "Options controlling 2D and 3D diagnostic output", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-extra_file", "Specifies the output file",
+			     extra_filename, file_set); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-extra_times", tmp,
-			       TEMPORARY_STRING_LENGTH, &times); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-extra_times", "Specifies times to save at",
+			     times, times_set); CHKERRQ(ierr);
+			     
+    ierr = PISMOptionsString("-extra_vars", "Spacifies a comma-separated list of variables to save",
+			     vars, save_vars); CHKERRQ(ierr);
 
-  if (file ^ times) {
+    ierr = PISMOptionsIsSet("-extra_split", "Specifies whether to save to separate files",
+			    split); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  if (file_set ^ times_set) {
     PetscPrintf(grid.com,
       "PISM ERROR: you need to specify both -extra_file and -extra_times to save spatial time-series.\n");
     PetscEnd();
   }
 
-  if (!file && !times) {
+  if (!file_set && !times_set) {
     save_extra = false;
     return 0;
   }
 
-  ierr = parse_times(grid.com, tmp, extra_times);
+  ierr = parse_times(grid.com, times, extra_times);
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: parsing the -extra_times argument failed.\n");
     PetscEnd();
@@ -363,8 +374,6 @@ PetscErrorCode IceModel::init_extras() {
   extra_file_is_ready = false;
   split_extra = false;
 
-  PetscTruth split;
-  ierr = check_option("-extra_split", split); CHKERRQ(ierr);
   if (split) {
     split_extra = true;
   } else if (!ends_with(extra_filename, ".nc")) {
@@ -388,21 +397,12 @@ PetscErrorCode IceModel::init_extras() {
     CHKERRQ(ierr);
   }
 
-  ierr = verbPrintf(2, grid.com, "times requested: %s\n", tmp); CHKERRQ(ierr);
-
-  PetscTruth save_vars;
-  ierr = PetscOptionsGetString(PETSC_NULL, "-extra_vars", tmp,
-			       TEMPORARY_STRING_LENGTH, &save_vars); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "times requested: %s\n", times.c_str()); CHKERRQ(ierr);
 
   string var_name;
   if (save_vars) {
-    if (strlen(tmp) == 0) {
-      PetscPrintf(grid.com, "PISM ERROR: no argument for -extra_vars option.\n");
-      PetscEnd();
-    }
-    
-    ierr = verbPrintf(2, grid.com, "variables requested: %s\n", tmp); CHKERRQ(ierr);
-    istringstream arg(tmp);
+    ierr = verbPrintf(2, grid.com, "variables requested: %s\n", vars.c_str()); CHKERRQ(ierr);
+    istringstream arg(vars);
 
     while (getline(arg, var_name, ','))
       extra_vars.insert(var_name);
@@ -487,8 +487,8 @@ PetscErrorCode IceModel::write_extras() {
   if (!extra_file_is_ready) {
 
     // default behavior is to move the file aside if it exists already; option allows appending
-    PetscTruth append;
-    ierr = check_option("-extra_append", append); CHKERRQ(ierr);
+    bool append;
+    ierr = PISMOptionsIsSet("-extra_append", append); CHKERRQ(ierr);
 
     // Prepare the file:
     ierr = nc.open_for_writing(filename, (append==PETSC_TRUE), true); CHKERRQ(ierr); // check_dims == true

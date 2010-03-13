@@ -39,24 +39,24 @@ PetscErrorCode IceUnitModel::set_vars_from_options() {
 //! Run an unit test.
 PetscErrorCode IceUnitModel::run() {
   PetscErrorCode ierr;
-  PetscTruth flag;
+  bool flag;
 
-  ierr = check_option("-IceModelVec3", flag); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-IceModelVec3", flag); CHKERRQ(ierr);
   if (flag) {
     ierr = testIceModelVec3(); CHKERRQ(ierr);
   }
 
-  ierr = check_option("-IceModelVec3Bedrock", flag); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-IceModelVec3Bedrock", flag); CHKERRQ(ierr);
   if (flag) {
     ierr = testIceModelVec3Bedrock(); CHKERRQ(ierr);
   }
 
-  ierr = check_option("-IceModelVec2T", flag); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-IceModelVec2T", flag); CHKERRQ(ierr);
   if (flag) {
     ierr = testIceModelVec2T(); CHKERRQ(ierr);
   }
 
-  ierr = check_option("-bedrockOnlySystem", flag); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-bedrockOnlySystem", flag); CHKERRQ(ierr);
   if (flag) {
     ierr = test_bedrockOnlySystem(); CHKERRQ(ierr);
   }

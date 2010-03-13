@@ -737,8 +737,10 @@ PetscErrorCode IceModel::diagnosticRun() {
   
   // update viewers and pause for a chance to view
   ierr = update_viewers(); CHKERRQ(ierr);
-  PetscInt    pause_time = 0;
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, PETSC_NULL); CHKERRQ(ierr);
+  bool flag;
+  PetscInt pause_time = 0;
+  ierr = PISMOptionsInt("-pause", "Pause after the run, seconds",
+			pause_time, flag); CHKERRQ(ierr);
   if (pause_time > 0) {
     ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
     ierr = PetscSleep(pause_time); CHKERRQ(ierr);
@@ -781,11 +783,13 @@ The following flow-chart illustrates the process.
 PetscErrorCode IceModel::init() {
   PetscErrorCode ierr;
 
+  ierr = PetscOptionsBegin(grid.com, "", "PISM options", ""); CHKERRQ(ierr);
+
   // Build PISM with PISM_WAIT_FOR_GDB defined and run with -wait_for_gdb to
   // make it wait for a connection.
 #ifdef PISM_WAIT_FOR_GDB
-  PetscTruth wait_for_gdb = PETSC_FALSE;
-  ierr = check_option("-wait_for_gdb", wait_for_gdb); CHKERRQ(ierr);
+  bool wait_for_gdb = false;
+  ierr = PISMOptionsIsSet("-wait_for_gdb", wait_for_gdb); CHKERRQ(ierr);
   if (wait_for_gdb) {
     ierr = pism_wait_for_gdb(grid.com, 0); CHKERRQ(ierr);
   }
@@ -821,6 +825,8 @@ PetscErrorCode IceModel::init() {
   // basal till model, initialize snapshots. This has to happen *after*
   // regridding.
   ierr = misc_setup();
+
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   return 0; 
 }

@@ -22,8 +22,9 @@ void PAFactory::add_standard_types() {
   add_model("constant",          &create_pa_constant);
   add_model("searise_greenland", &create_pa_searise_greenland);
   add_model("temp_lapse_rate",   &create_pa_lapse_rates);
-  add_modifier("forcing",        &create_pa_forcing);
   set_default("constant");
+
+  add_modifier("forcing",        &create_pa_forcing);
 }
 
 
@@ -38,8 +39,9 @@ static void create_po_forcing(IceGrid& g, const NCConfigVariable& conf, POModifi
 
 void POFactory::add_standard_types() {
   add_model("constant",     &create_po_constant);
-  add_modifier("forcing",   &create_po_forcing);
   set_default("constant");
+
+  add_modifier("forcing",   &create_po_forcing);
 }
 
 // Surface
@@ -63,6 +65,7 @@ void PSFactory::add_standard_types() {
   add_model("constant",     &create_ps_constant);
   add_model("simple",       &create_ps_simple);
   add_model("pdd",          &create_ps_localmassbalance); 
-  add_modifier("forcing",   &create_ps_forcing);
   set_default("simple");
+
+  add_modifier("forcing",   &create_ps_forcing);
 }

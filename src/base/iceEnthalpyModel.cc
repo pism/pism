@@ -29,7 +29,7 @@
 IceEnthalpyModel::IceEnthalpyModel(IceGrid &g, NCConfigVariable &conf,
      NCConfigVariable &conf_overrides) : IceModel(g, conf, conf_overrides) {
 
-  doColdIceMethods = PETSC_FALSE; // default is to USE enthalpy
+  doColdIceMethods = false; // default is to USE enthalpy
 }
 
 
@@ -40,7 +40,7 @@ PetscErrorCode IceEnthalpyModel::setFromOptions() {
 
   // if set, use old IceModel::temperatureStep(), and set enthalpy as though
   //   ice is cold
-  ierr = check_option("-cold", doColdIceMethods); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-cold", doColdIceMethods); CHKERRQ(ierr);
 
   // DEBUG:  report settings
   const int vlevel = 2;
@@ -128,8 +128,8 @@ PetscErrorCode IceEnthalpyModel::initFromFile(const char *filename) {
   // option to override default behavior: if -init_from_temp or
   //   -init_from_temp_and_liqfrac are set then we *MODIFY* the input file
   bool initfromT, initfromTandOm;
-  ierr = check_option("-init_from_temp", initfromT); CHKERRQ(ierr);
-  ierr = check_option("-init_from_temp_and_liqfrac", initfromTandOm); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-init_from_temp", initfromT); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-init_from_temp_and_liqfrac", initfromTandOm); CHKERRQ(ierr);
   if ((!initfromT) && (!initfromTandOm)) {
     // if neither option is set, proceed with normal initialization
     ierr = IceModel::initFromFile(filename); CHKERRQ(ierr);
@@ -290,7 +290,7 @@ PetscErrorCode IceEnthalpyModel::write_extra_fields(const char* filename) {
   // write CTS position (unitless) if command line option -cts is given
   //   again use EnthNew3 (global) as temporary, allocated space
   bool userWantsCTS;
-  ierr = check_option("-cts", userWantsCTS); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-cts", userWantsCTS); CHKERRQ(ierr);
   if (userWantsCTS) {
     ierr = verbPrintf(4, grid.com,
       "  writing CTS scalar field 'cts'  (= E/Es) ...\n"); CHKERRQ(ierr);
@@ -789,7 +789,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
   ierr = iosys.initAllColumns(grid.dx, grid.dy, dtTempAge, fdz); CHKERRQ(ierr);
 
   bool viewOneColumn;
-  ierr = check_option("-view_sys", viewOneColumn); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
   // FIXME: verbosity failure?: option "-verbose 4" does not generate true here?
   if (getVerbosityLevel() >= 4) {  // view: all column-independent constants correct?

@@ -39,10 +39,10 @@ netcdf pism_config {
     pism_config:do_bed_iso_doc = "Compute bed deformations by simple point-wise isostasy.";
 
     pism_config:ocean_kill = "false";
-    pism_config:ocean_kill_doc = "If used with input from a NetCDF initialization ﬁle which has ice-free ocean mask (value MASK_FLOATING_OCEAN0=7), will zero out ice thicknesses in areas that were ice-free ocean at time zero. This is calving at the location of the original calving front.";
+    pism_config:ocean_kill_doc = "If used with input from a NetCDF initialization file which has ice-free ocean mask (value MASK_FLOATING_OCEAN0=7), will zero out ice thicknesses in areas that were ice-free ocean at time zero. This is calving at the location of the original calving front.";
 
     pism_config:floating_ice_killed = "false";
-    pism_config:floating_ice_killed_doc = "If ice is (or becomes) ﬂoating then it is set to thickness zero. This is calving at the grounding line.";
+    pism_config:floating_ice_killed_doc = "If ice is (or becomes) floating then it is set to thickness zero. This is calving at the grounding line.";
 
     pism_config:is_dry_simulation = "no";
     pism_config:is_dry_simulation_doc = "Dry (oceanless) simulation";
@@ -96,7 +96,7 @@ netcdf pism_config {
     pism_config:run_length_years_doc = "years; Default run length";
 
     pism_config:adaptive_timestepping_ratio = 0.12;
-    pism_config:adaptive_timestepping_ratio_doc = "; Adaptive time stepping ratio for the explicit scheme for the mass balance equation; \ref BBL, inequality (25)";
+    pism_config:adaptive_timestepping_ratio_doc = "; Adaptive time stepping ratio for the explicit scheme for the mass balance equation; \\ref BBL, inequality (25)";
 
     pism_config:initial_age_of_ice_years = 0.0;
     pism_config:initial_age_of_ice_years_doc = "years; Initial age of ice";
@@ -153,7 +153,7 @@ netcdf pism_config {
     pism_config:thk_eff_reduced_doc = "; factor by which basal water pressure is reduced by thickness effect";
 
     pism_config:mu_sliding = 0.0;
-    pism_config:mu_sliding_doc = "The sliding law parameter in SIA regions of the ice. <i>This kind of sliding is not recommended, which is why it is turned oﬀ by default.</i>  See Appendix B of \ref BBssasliding for the dangers in this mechanism.";
+    pism_config:mu_sliding_doc = "The sliding law parameter in SIA regions of the ice. <i>This kind of sliding is not recommended, which is why it is turned oﬀ by default.</i>  See Appendix B of \\ref BBssasliding for the dangers in this mechanism.";
 
     pism_config:bed_def_interval_years = 10.0;
     pism_config:bed_def_interval_years_doc = "years; Interval between bed deformation updates";

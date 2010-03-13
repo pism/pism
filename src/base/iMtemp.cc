@@ -161,8 +161,8 @@ PetscErrorCode IceModel::temperatureStep(
     fMz, fdz, fMbz, fdzb); CHKERRQ(ierr);
 
   // diagnostic/DEBUG; added for comparison to IceEnthalpyModel
-  PetscTruth viewOneColumn;
-  ierr = check_option("-view_sys", viewOneColumn); CHKERRQ(ierr);
+  bool viewOneColumn;
+  ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
   tempSystemCtx system(fMz,fMbz);
   system.dx              = grid.dx;

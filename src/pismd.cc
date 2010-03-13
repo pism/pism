@@ -48,9 +48,9 @@ int main(int argc, char *argv[]) {
 		      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
-    PetscTruth iset, bfset;
-    ierr = check_option("-i", iset); CHKERRQ(ierr);
-    ierr = check_option("-boot_from", bfset); CHKERRQ(ierr);
+    bool iset, bfset;
+    ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-boot_from", bfset); CHKERRQ(ierr);
     string usage =
       "  pismd IS DEPRECATED\n\n"
       "  INTENDED REPLACEMENT IS 'pismr -y 0 -f3d '\n\n"
@@ -67,8 +67,8 @@ int main(int argc, char *argv[]) {
     // re this option, see  src/eismint/iceROSSModel.hh|cc and:
     //     D. MacAyeal and five others (1996). "An ice-shelf model test based on the 
     //     Ross ice shelf," Ann. Glaciol. 23, 46--51
-    PetscTruth  doRoss;
-    ierr = check_option("-ross", doRoss); CHKERRQ(ierr);
+    bool  doRoss;
+    ierr = PISMOptionsIsSet("-ross", doRoss); CHKERRQ(ierr);
 
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);

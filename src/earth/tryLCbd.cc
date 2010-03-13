@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009 Ed Bueler
+// Copyright (C) 2007--2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -60,17 +60,9 @@ int main(int argc, char *argv[]) {
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
-    NCConfigVariable config;
-    config.init("pism_config", com, rank);
-    char alt_config[PETSC_MAX_PATH_LEN];
-    PetscTruth use_alt_config;
-    ierr = PetscOptionsGetString(PETSC_NULL, "-config", alt_config, 
-                                 PETSC_MAX_PATH_LEN, &use_alt_config); CHKERRQ(ierr);
-    if (use_alt_config) {
-      ierr = config.read(alt_config); CHKERRQ(ierr);
-    } else {
-      ierr = config.read(PISM_DefaultConfigFile); CHKERRQ(ierr);
-    }
+    NCConfigVariable config, overrides;
+
+    ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     BedDeformLC bdlc;
     DA          da2;

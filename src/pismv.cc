@@ -22,11 +22,10 @@ static char help[] =
 "  Can also just compute exact solution (-eo).\n"
 "  Currently implements tests A, B, C, D, E, F, G, H, I, J, K, L, M.\n\n";
 
-#include <ctype.h>		// toupper
-#include <cstring>
-#include <cstdio>
+#include <cctype>		// toupper
+#include <string>
+#include <algorithm>		// std::transform()
 #include <petscda.h>
-#include <petscbag.h>
 #include "base/grid.hh"
 #include "base/materials.hh"
 #include "verif/iceCompModel.hh"
@@ -35,6 +34,12 @@ static char help[] =
 
 #include "coupler/PISMSurface.hh"
 #include "coupler/PISMOcean.hh"
+
+// a wrapper that seems to be necessary to make std::transform below work
+static inline char pism_toupper(char c)
+{
+    return std::toupper(c);
+}
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -75,19 +80,22 @@ int main(int argc, char *argv[]) {
     PISMOceanModel     *ocean = new POConstant(g, config);
 
     // determine test (and whether to report error)
-    char         testname[20];
-    PetscTruth   testchosen;
-    ierr = PetscOptionsGetString(PETSC_NULL, "-test", testname, 1, 
-                                 &testchosen); CHKERRQ(ierr);
-    unsigned char test = testname[0];  // only use the first letter
-    if (testchosen == PETSC_FALSE)         test = 'A';       // default to test A
-    test = toupper(test);				     // capitalize
+    string testname = "A";
+    bool   dontReport, test_chosen;
+    ierr = PetscOptionsBegin(g.com, "", "Options specific to PISMV", ""); CHKERRQ(ierr);
+    {
+      ierr = PISMOptionsString("-test", "Specifies PISM verification test",
+			       testname, test_chosen); CHKERRQ(ierr);
+      ierr = PISMOptionsIsSet("-no_report", "Don't report numerical errors",
+			      dontReport); CHKERRQ(ierr);
+    }
+    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-    PetscTruth   dontReport;
-    ierr = check_option("-no_report", dontReport); CHKERRQ(ierr);
+    // transform to uppercase:
+    transform(testname.begin(), testname.end(), testname.begin(), pism_toupper);
 
     // actually construct and run one of the derived classes of IceModel
-    if (test == '0') {
+    if (testname == "0") {
       // run derived class for test M which includes new calving front stress
       //   boundary condition implementation
       ierr = verbPrintf(1,com, "!!!!!!!! USING IceCalvBCModel TO DO test M !!!!!!!!\n"); CHKERRQ(ierr);
@@ -105,10 +113,10 @@ int main(int argc, char *argv[]) {
       }
       ierr = mCBC.writeFiles("verify.nc"); CHKERRQ(ierr);
       ierr = mCBC.writeCFfields("verify.nc"); CHKERRQ(ierr); // add three more fields
-    } else if ((test == 'I') || (test == 'J') || (test == 'M')) {
+    } else if ((testname == "I") || (testname == "J") || (testname == "M")) {
       // run derived class for plastic till ice stream, or linearized ice shelf,
       //   or annular ice shelf with calving front
-      IceExactSSAModel mSSA(g, config, overrides, test);
+      IceExactSSAModel mSSA(g, config, overrides, testname[0]);
 
       ierr = mSSA.setExecName("pismv"); CHKERRQ(ierr);
       mSSA.attach_surface_model(surface);
@@ -124,7 +132,7 @@ int main(int argc, char *argv[]) {
       ierr = mSSA.writeFiles("verify.nc"); CHKERRQ(ierr);
     } else { // run derived class for compensatory source SIA solutions
              // (i.e. compensatory accumulation or compensatory heating)
-      IceCompModel mComp(g, config, overrides, test);
+      IceCompModel mComp(g, config, overrides, testname[0]);
       ierr = mComp.setExecName("pismv"); CHKERRQ(ierr);
       mComp.attach_surface_model(surface);
       mComp.attach_ocean_model(ocean);
@@ -137,10 +145,12 @@ int main(int argc, char *argv[]) {
       ThermoGlenArrIce*   tgaice = dynamic_cast<ThermoGlenArrIce*>(mComp.getIceFlowLaw());
       if (dontReport == PETSC_FALSE) {
 
-        if (!IceFlowLawIsPatersonBuddCold(tgaice, config) && ((test == 'F') || (test == 'G'))) {
-            ierr = verbPrintf(1,com, 
-                "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type arr')\n"
-                "   for reported errors in test %c to be meaningful!\n", test); CHKERRQ(ierr);
+        if (!IceFlowLawIsPatersonBuddCold(tgaice, config) &&
+	    ((testname == "F") || (testname == "G"))) {
+	  ierr = verbPrintf(1,com, 
+			    "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type arr')\n"
+			    "   for reported errors in test %c to be meaningful!\n",
+			    testname.c_str()); CHKERRQ(ierr);
         }
         ierr = mComp.reportErrors();  CHKERRQ(ierr);
       }

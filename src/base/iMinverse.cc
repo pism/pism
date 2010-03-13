@@ -107,11 +107,11 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
   PetscErrorCode ierr;
   
   // read options
-  PetscTruth  invfieldsSet;
+  bool  dummy, invfieldsSet;
   PetscScalar invPhiMax = 15.0, 
               invPhiMin = 5.0,
               invRegEps = 1.0e23;
-  char invfieldsname[PETSC_MAX_PATH_LEN];
+  string invfieldsname;
 
   bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till"),
     do_superpose = config.get_flag("do_superpose");
@@ -126,33 +126,37 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
     ierr = verbPrintf(1, grid.com, "  CONTINUING.  May crash!!\n"); CHKERRQ(ierr);
   }
 
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-inv_phi_min", &invPhiMin, PETSC_NULL);
-           CHKERRQ(ierr);
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-inv_phi_max", &invPhiMax, PETSC_NULL);
-           CHKERRQ(ierr);
-  ierr = PetscOptionsGetReal(PETSC_NULL,   "-inv_reg_eps", &invRegEps, PETSC_NULL);
-           CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-inv_write_fields", invfieldsname, 
-           PETSC_MAX_PATH_LEN, &invfieldsSet); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Options controlling the inverse model", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsReal("-inv_phi_min", "Minimal till friction angle",
+			   invPhiMin, dummy); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-inv_phi_max", "Maximal till friction angle",
+			   invPhiMax, dummy); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-inv_reg_eps", "Regularization parameter",
+			   invRegEps, dummy); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-inv_write_fields", "File to save inverse modeling fields to",
+			     invfieldsname, invfieldsSet); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   // allocate
   ierr = createInvFields(); CHKERRQ(ierr);
 
   // if user will want fields written, prepare the file now
-  if (invfieldsSet == PETSC_TRUE) {
+  if (invfieldsSet) {
     ierr = verbPrintf(2, grid.com, 
              "  preparing file %s to write inverse computation fields ...\n",
-             invfieldsname); CHKERRQ(ierr);
+		      invfieldsname.c_str()); CHKERRQ(ierr);
     global_attributes.prepend_history("option -inv_write_fields read");
     PISMIO nc(&grid);
     ierr = nc.open_for_writing(invfieldsname, false, true); CHKERRQ(ierr);
     ierr = nc.append_time(grid.year); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = global_attributes.write(invfieldsname); CHKERRQ(ierr);
-    ierr = mapping.write(invfieldsname); CHKERRQ(ierr);
+    ierr = global_attributes.write(invfieldsname.c_str()); CHKERRQ(ierr);
+    ierr = mapping.write(invfieldsname.c_str()); CHKERRQ(ierr);
   } else {
-    strcpy(invfieldsname,""); // make sure empty
+    invfieldsname = ""; // make sure empty
   }
 
   // copy till phi to old
@@ -220,15 +224,15 @@ PetscErrorCode IceModel::invertSurfaceVelocities(const char *filename) {
     ierr = verbPrintf(2, grid.com, 
            "    regularizing mu = tan(phi) computation using epsilon = %.3e ...\n",
            invRegEps); CHKERRQ(ierr);
-    ierr = computeTFAFromBasalShear(invPhiMin,invPhiMax,invRegEps,invfieldsname); CHKERRQ(ierr);
+    ierr = computeTFAFromBasalShear(invPhiMin,invPhiMax,invRegEps,invfieldsname.c_str()); CHKERRQ(ierr);
   }
 
   // write out stored inverse info; mostly for debug
   if (invfieldsSet == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com, 
              "  writing various fields from inverse model computation to file %s ...\n",
-             invfieldsname); CHKERRQ(ierr);
-    ierr = writeInvFields(invfieldsname); CHKERRQ(ierr);
+		      invfieldsname.c_str()); CHKERRQ(ierr);
+    ierr = writeInvFields(invfieldsname.c_str()); CHKERRQ(ierr);
   }
 
   ierr = verbPrintf(2, grid.com, 

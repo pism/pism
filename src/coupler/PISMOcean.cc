@@ -89,16 +89,20 @@ void POModifier::attach_input(PISMOceanModel *input) {
 
 PetscErrorCode POForcing::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  PetscTruth optSet;
+  bool optSet;
+  string dSLfile;
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, "* Initializing sea level forcing...\n"); CHKERRQ(ierr);
 
-  // check user option -dTforcing for a surface temperature forcing data set
-  char dSLfile[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-dSLforcing", dSLfile,
-                               PETSC_MAX_PATH_LEN, &optSet); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Sea level forcing options", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-dSLforcing", "Sea level forcing file",
+			     dSLfile, optSet); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
   if (optSet == PETSC_TRUE) {
 
     dSLforcing = new Timeseries(grid.com, grid.rank, "delta_sea_level", "t");
@@ -108,8 +112,8 @@ PetscErrorCode POForcing::init(PISMVars &vars) {
 
     ierr = verbPrintf(2, grid.com, 
 		      "  reading delta sea level data from forcing file %s ...\n", 
-		      dSLfile); CHKERRQ(ierr);
-    ierr = dSLforcing->read(dSLfile); CHKERRQ(ierr);
+		      dSLfile.c_str()); CHKERRQ(ierr);
+    ierr = dSLforcing->read(dSLfile.c_str()); CHKERRQ(ierr);
 
     delta_sea_level = new DiagnosticTimeseries(grid.com, grid.rank, "delta_sea_level", "t");
     ierr = delta_sea_level->set_units("m", ""); CHKERRQ(ierr);

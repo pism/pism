@@ -77,12 +77,24 @@ string pism_username_prefix();
 bool ends_with(string str, string suffix);
 
 // handy functions for processing options:
-PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set<string> choices,
+PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string text, set<string> choices,
 			       string default_value, string &result, bool &flag);
-PetscErrorCode PISMOptionsStrings(string opt, string text, string default_value,
-				  vector<string>& result, bool &flag);
-PetscErrorCode check_option(string name, PetscTruth &flag);
-PetscErrorCode check_option(string name, bool &flag);        // overloaded
+
+PetscErrorCode PISMOptionsString(string option, string text,
+				 string &result, bool &flag);
+PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_value,
+				      vector<string>& result, bool &flag);
+
+PetscErrorCode PISMOptionsInt(string option, string text,
+			      PetscInt &result, bool &is_set);
+PetscErrorCode PISMOptionsReal(string option, string text,
+			       PetscReal &result, bool &is_set);
+PetscErrorCode PISMOptionsRealArray(string option, string text,
+				    vector<PetscReal> &result, bool &is_set);
+
+PetscErrorCode PISMOptionsIsSet(string option, bool &result);
+PetscErrorCode PISMOptionsIsSet(string option, string descr, bool &result);
+
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]);
 PetscErrorCode check_old_option_and_stop(
     MPI_Comm com, const char old_name[], const char new_name[]);

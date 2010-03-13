@@ -54,10 +54,11 @@ PetscErrorCode IceEISModel::set_grid_defaults() {
 PetscErrorCode IceEISModel::set_expername_from_options() {
   PetscErrorCode      ierr;
 
-  char                eisIIexpername[20];
+  string                eisIIexpername;
   int                 temp;
-  PetscTruth          EISIIchosen;
-  ierr = PetscOptionsGetString(PETSC_NULL, "-eisII", eisIIexpername, 1, &EISIIchosen);
+  bool          EISIIchosen;
+  ierr = PISMOptionsString("-eisII", "EISMINT II experiment name",
+			   eisIIexpername, EISIIchosen);
             CHKERRQ(ierr);
   if (EISIIchosen == PETSC_TRUE) {
     temp = eisIIexpername[0];
@@ -79,10 +80,14 @@ PetscErrorCode IceEISModel::set_expername_from_options() {
 PetscErrorCode IceEISModel::setFromOptions() {
   PetscErrorCode      ierr;
 
+  ierr = PetscOptionsBegin(grid.com, "", "IceEISModel options", ""); CHKERRQ(ierr);
+
   ierr = set_expername_from_options(); CHKERRQ(ierr);
   
   // optionally allow override of updateHmelt == PETSC_FALSE for EISMINT II
-  ierr = check_option("-track_Hmelt", updateHmelt); CHKERRQ(ierr);
+  bool flag;
+  ierr = PISMOptionsIsSet("-track_Hmelt", flag); CHKERRQ(ierr);
+  if (flag) updateHmelt = PETSC_TRUE;
 
   ierr = verbPrintf(2,grid.com, 
     "setting parameters for surface mass balance and temperature in EISMINT II experiment %c ... \n", 
@@ -114,18 +119,30 @@ PetscErrorCode IceEISModel::setFromOptions() {
   }
 
   // if user specifies Tmin, Tmax, Mmax, Sb, ST, Rel, then use that (override above)
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Tmin", &T_min, NULL); CHKERRQ(ierr);
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Tmax", &T_max, NULL); CHKERRQ(ierr);
-  PetscScalar myMmax, mySb, myST, myRel;
-  PetscTruth  paramSet;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Mmax", &myMmax, &paramSet); CHKERRQ(ierr);
-  if (paramSet == PETSC_TRUE)     M_max = myMmax / secpera;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Sb", &mySb, &paramSet); CHKERRQ(ierr);
-  if (paramSet == PETSC_TRUE)     S_b = mySb * 1e-3 / secpera;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ST", &myST, &paramSet); CHKERRQ(ierr);
-  if (paramSet == PETSC_TRUE)     S_T = myST * 1e-3;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Rel", &myRel, &paramSet); CHKERRQ(ierr);
-  if (paramSet == PETSC_TRUE)     R_el = myRel * 1e3;
+  bool paramSet;
+  ierr = PISMOptionsReal("-Tmin", "T min, Kelvin",
+			 T_min, paramSet); CHKERRQ(ierr);
+  ierr = PISMOptionsReal("-Tmax", "T max, Kelvin",
+			 T_max, paramSet); CHKERRQ(ierr);
+
+  PetscReal myMmax, mySb, myST, myRel;
+  ierr = PISMOptionsReal("-Mmax", "Maximum accumulation, m/year",
+			 myMmax, paramSet); CHKERRQ(ierr);
+  if (paramSet)     M_max = myMmax / secpera;
+
+  ierr = PISMOptionsReal("-Sb", "FIXME",
+			 mySb, paramSet); CHKERRQ(ierr);
+  if (paramSet)     S_b = mySb * 1e-3 / secpera;
+
+  ierr = PISMOptionsReal("-ST", "FIXME",
+			 myST, paramSet); CHKERRQ(ierr);
+  if (paramSet)     S_T = myST * 1e-3;
+
+  ierr = PISMOptionsReal("-Rel", "FIXME",
+			 myRel, paramSet); CHKERRQ(ierr);
+  if (paramSet)     R_el = myRel * 1e3;
+
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
   return 0;

@@ -64,26 +64,17 @@ int main(int argc, char *argv[]) {
       "  -pdd        not allowed (because PISMConstAtmosCoupler is always used)\n"
       ); CHKERRQ(ierr);
 
-    PetscTruth  pddSet;
-    ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
-    if (pddSet == PETSC_TRUE) {
-      ierr = PetscPrintf(com,
-        "PISM ERROR: -pdd is not currently allowed as option to pisms\n");
-        CHKERRQ(ierr);
-      PetscEnd();
-    }
-
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
-    PetscTruth  EISIIchosen, PSTexchosen, MISMIPchosen;
+    bool EISIIchosen, PSTexchosen, MISMIPchosen;
     /* This option determines the single character name of EISMINT II experiments:
     "-eisII F", for example. */
-    ierr = check_option("-eisII", EISIIchosen); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-eisII", EISIIchosen); CHKERRQ(ierr);
     /* This option chooses Plastic till ice Stream with Thermocoupling experiment. */
-    ierr = check_option("-pst", PSTexchosen); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-pst", PSTexchosen); CHKERRQ(ierr);
     /* This option chooses MISMIP; "-mismip N" is experiment N in MISMIP; N=1,2,3 */
-    ierr = check_option("-mismip", MISMIPchosen); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-mismip", MISMIPchosen); CHKERRQ(ierr);
     
     int  choiceSum = (int) EISIIchosen + (int) PSTexchosen + (int) MISMIPchosen;
     if (choiceSum > 1) {

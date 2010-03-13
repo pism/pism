@@ -33,16 +33,19 @@ Calls dumpToFile() and writeMatlabVars() to do the actual work.
  */
 PetscErrorCode  IceModel::writeFiles(const char* default_filename) {
   PetscErrorCode ierr;
-  char filename[PETSC_MAX_PATH_LEN];
+  string filename = default_filename,
+    config_out;
+  bool o_set, dump_config;
 
   ierr = stampHistoryEnd(); CHKERRQ(ierr);
 
-  PetscTruth o_set;
-  ierr = PetscOptionsGetString(PETSC_NULL, "-o", filename, PETSC_MAX_PATH_LEN, &o_set); CHKERRQ(ierr);
-
-  // Use the default if the output file name was not given:
-  if (!o_set)
-    strncpy(filename, default_filename, PETSC_MAX_PATH_LEN);
+  ierr = PetscOptionsBegin(grid.com, "", "PISM output options", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-o", "Output file name", filename, o_set); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-dump_config", "File to write the config to",
+			     config_out, dump_config); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (!ends_with(filename, ".nc")) {
     ierr = verbPrintf(2, grid.com,
@@ -50,15 +53,12 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename) {
     CHKERRQ(ierr);
   }
 
-  ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'\n", filename); CHKERRQ(ierr);
-  ierr = dumpToFile(filename); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'\n", filename.c_str()); CHKERRQ(ierr);
+  ierr = dumpToFile(filename.c_str()); CHKERRQ(ierr);
 
   // save the config file 
-  char config_out[PETSC_MAX_PATH_LEN];
-  PetscTruth dump_config;
-  ierr = PetscOptionsGetString(PETSC_NULL, "-dump_config", config_out, PETSC_MAX_PATH_LEN, &dump_config);
   if (dump_config) {
-    ierr = config.write(config_out); CHKERRQ(ierr);
+    ierr = config.write(config_out.c_str()); CHKERRQ(ierr);
   }
 
   return 0;
@@ -78,8 +78,8 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
   ierr = mapping.write(filename); CHKERRQ(ierr);
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
 
-  PetscTruth override_used;
-  ierr = check_option("-config_override", override_used); CHKERRQ(ierr);
+  bool override_used;
+  ierr = PISMOptionsIsSet("-config_override", override_used); CHKERRQ(ierr);
   if (override_used) {
     overrides.update_from(config);
     ierr = overrides.write(filename); CHKERRQ(ierr);
@@ -160,9 +160,9 @@ PetscErrorCode IceModel::write_model_state(const char* filename) {
 
   // FIXME: temporarily, so that we can compare to IceEnthalpyModel results;
   //   what to do with pressure-adjusted temp in longer term?
-  PetscTruth write_temp_pa;
-  ierr = check_option("-temp_pa", write_temp_pa); CHKERRQ(ierr);  
-  if (write_temp_pa == PETSC_TRUE) {
+  bool write_temp_pa;
+  ierr = PISMOptionsIsSet("-temp_pa", write_temp_pa); CHKERRQ(ierr);  
+  if (write_temp_pa) {
     // write temp_pa = pressure-adjusted temp in Celcius
     //   use Tnew3 (global) as temporary, allocated space for this purpose
     ierr = verbPrintf(2, grid.com,
@@ -227,8 +227,8 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     have_ssa_velocities = (word == "true") || (word == "yes") || (word == "on");
   }
 
-  PetscTruth dontreadSSAvels = PETSC_FALSE;
-  ierr = check_option("-dontreadSSAvels", dontreadSSAvels); CHKERRQ(ierr);
+  bool dontreadSSAvels = false;
+  ierr = PISMOptionsIsSet("-dontreadSSAvels", dontreadSSAvels); CHKERRQ(ierr);
   
   if (have_ssa_velocities && (!dontreadSSAvels)) {
     ierr = verbPrintf(3,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
@@ -266,8 +266,8 @@ Most of the time the user should carefully specify which variables to regrid.
  */
 PetscErrorCode IceModel::regrid() {
   PetscErrorCode ierr;
-  char filename[PETSC_MAX_PATH_LEN], tmp[TEMPORARY_STRING_LENGTH];
-  PetscTruth regridVarsSet, regrid_from_set;
+  string filename, tmp;
+  bool regridVarsSet, regrid_from_set;
   PISMIO nc(&grid);
 
   ierr = check_old_option_and_stop(grid.com, "-regrid", "-regrid_from"); CHKERRQ(ierr);
@@ -277,14 +277,11 @@ PetscErrorCode IceModel::regrid() {
 			   PETSC_NULL); CHKERRQ(ierr);
 
   // Get the regridding file name:
-  ierr = PetscOptionsString("-regrid_file", "Specifies the file to regrid from", "", "",
-			    filename, PETSC_MAX_PATH_LEN,
-			    &regrid_from_set); CHKERRQ(ierr);
+  ierr = PISMOptionsString("-regrid_file", "Specifies the file to regrid from",
+			   filename, regrid_from_set); CHKERRQ(ierr);
 
-  ierr = PetscOptionsString("-regrid_vars", "Specifies the list of variable to regrid", "",
-			    "age,temp,litho_temp",
-			    tmp, TEMPORARY_STRING_LENGTH,
-			    &regridVarsSet); CHKERRQ(ierr);
+  ierr = PISMOptionsString("-regrid_vars", "Specifies the list of variable to regrid",
+			   tmp, regridVarsSet); CHKERRQ(ierr);
 
   // Done with the options.
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -292,7 +289,7 @@ PetscErrorCode IceModel::regrid() {
   // Return if no regridding is requested:
   if (!regrid_from_set) return 0;
 
-  ierr = verbPrintf(2, grid.com, "regridding from file %s ...\n",filename); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "regridding from file %s ...\n",filename.c_str()); CHKERRQ(ierr);
   
   string var_name;
   set<string> vars;
@@ -311,7 +308,7 @@ PetscErrorCode IceModel::regrid() {
   //   extracted from regridFile, and from information about the part of the
   //   grid owned by this processor
 
-  ierr = nc.open_for_reading(filename);
+  ierr = nc.open_for_reading(filename.c_str());
   
   grid_info g;
   // Note that after this call g.z_len and g.zb_len are zero if the
@@ -325,7 +322,7 @@ PetscErrorCode IceModel::regrid() {
     ierr = verbPrintf(2, grid.com,
 		      "PISM WARNING: at least one of 'z' and 'zb' is absent in '%s'.\n"
 		      "              3D regridding is disabled.\n",
-		      filename);
+		      filename.c_str());
     CHKERRQ(ierr);
   }
   ierr = nc.close(); CHKERRQ(ierr);
@@ -357,7 +354,7 @@ PetscErrorCode IceModel::regrid() {
       continue;
     }
 
-    ierr = v->regrid(filename, lic, true); CHKERRQ(ierr);
+    ierr = v->regrid(filename.c_str(), lic, true); CHKERRQ(ierr);
 
   }
 
@@ -369,22 +366,25 @@ PetscErrorCode IceModel::regrid() {
 //! Initializes the snapshot-saving mechanism.
 PetscErrorCode IceModel::init_snapshots() {
   PetscErrorCode ierr;
-  PetscTruth save_at_set = PETSC_FALSE, save_to_set = PETSC_FALSE;
-  char tmp[TEMPORARY_STRING_LENGTH] = "\0";
+  bool save_at_set, save_to_set, split;
+  string tmp;
   current_snapshot = 0;
 
-  ierr = check_old_option_and_stop(grid.com, "-save_to", "-save_file"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(grid.com, "-save_at", "-save_times"); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Options controlling the snapshot-saving mechanism", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-save_file", "Specifies a snapshot filename",
+			     snapshots_filename, save_to_set); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-save_file", tmp,
-			       PETSC_MAX_PATH_LEN, &save_to_set); CHKERRQ(ierr);
-  snapshots_filename = tmp;
+    ierr = PISMOptionsString("-save_times", "Gives a list or a MATLAB-style range of times to save snapshots at",
+			     tmp, save_at_set); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-save_times", tmp,
-			       TEMPORARY_STRING_LENGTH, &save_at_set); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-save_split", "Specifies whether to save snapshots to separate files",
+			    split); CHKERRQ(ierr);
 
-  ierr = set_output_size("-save_size", "Sets the 'size' of a snapshot file.",
-			 "small", snapshot_vars); CHKERRQ(ierr);
+    ierr = set_output_size("-save_size", "Sets the 'size' of a snapshot file.",
+			   "small", snapshot_vars); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (save_to_set ^ save_at_set) {
     ierr = PetscPrintf(grid.com,
@@ -413,8 +413,6 @@ PetscErrorCode IceModel::init_snapshots() {
   snapshots_file_is_ready = false;
   split_snapshots = false;
 
-  PetscTruth split;
-  ierr = check_option("-split_snapshots", split); CHKERRQ(ierr);
   if (split) {
     split_snapshots = true;
   } else if (!ends_with(snapshots_filename, ".nc")) {
@@ -431,7 +429,7 @@ PetscErrorCode IceModel::init_snapshots() {
 		      snapshots_filename.c_str()); CHKERRQ(ierr);
   }
 
-  ierr = verbPrintf(2, grid.com, "times requested: %s\n", tmp); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "times requested: %s\n", tmp.c_str()); CHKERRQ(ierr);
 
   return 0;
 }

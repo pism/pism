@@ -106,7 +106,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
                            config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
 
   bool Lz_set;
-  ierr = check_option("-Lz", Lz_set); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
   if ( !Lz_set ) {
     PetscReal thk_min, thk_max;
     ierr = vH.range(thk_min, thk_max); CHKERRQ(ierr);

@@ -708,7 +708,7 @@ PetscErrorCode PISMIO::get_grid(const char filename[]) {
 
   if check_dims == true, makes sure dimensions are OK.
  */
-PetscErrorCode PISMIO::open_for_writing(const char filename[], bool append,
+PetscErrorCode PISMIO::open_for_writing(string filename, bool append,
 					bool check_dims) {
   int stat;
 
@@ -719,10 +719,9 @@ PetscErrorCode PISMIO::open_for_writing(const char filename[], bool append,
     // before proceeding if it does:
     if (rank == 0) {
       bool file_exists = false;
-      char tmp[PETSC_MAX_PATH_LEN];
 
       // Check if the file exists:
-      if (FILE *f = fopen(filename, "r")) {
+      if (FILE *f = fopen(filename.c_str(), "r")) {
 	file_exists = true;
 	fclose(f);
       } else {
@@ -730,23 +729,22 @@ PetscErrorCode PISMIO::open_for_writing(const char filename[], bool append,
       }
     
       if (file_exists && !append) {
-	strcpy(tmp, filename);
-	strcat(tmp, "~");	// tmp <- "foo.nc~"
+	string tmp = filename + "~";
       
-	stat = rename(filename, tmp);
+	stat = rename(filename.c_str(), tmp.c_str());
 	if (stat != 0) {
 	  stat = verbPrintf(1, com, "PISM ERROR: can't move '%s' to '%s'.\n",
-			    filename, tmp);
+			    filename.c_str(), tmp.c_str());
 	  PetscEnd();
 	}
 	stat = verbPrintf(2, com, 
 			  "PISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",
-			  filename, tmp);
+			  filename.c_str(), tmp.c_str());
       }    
     } // end of if (rank == 0)
   }   // end of if (append == false)
 
-  stat = NCTool::open_for_writing(filename); CHKERRQ(stat);
+  stat = NCTool::open_for_writing(filename.c_str()); CHKERRQ(stat);
 
   // If we don't need to check dimensions, we're done.
   if (!check_dims)
@@ -758,7 +756,7 @@ PetscErrorCode PISMIO::open_for_writing(const char filename[], bool append,
     if (!dimensions_are_ok) {
       stat = PetscPrintf(com,
 			 "PISM ERROR: file '%s' has dimensions incompatible with the current grid. Exiting...\n",
-			 filename); CHKERRQ(stat);
+			 filename.c_str()); CHKERRQ(stat);
       PetscEnd();
     }
   } else {

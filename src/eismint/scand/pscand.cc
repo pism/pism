@@ -44,15 +44,6 @@ int main(int argc, char *argv[]) {
   {    
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
-    PetscTruth  pddSet;
-    ierr = check_option("-pdd", pddSet); CHKERRQ(ierr);
-    if (pddSet == PETSC_TRUE) {
-      ierr = PetscPrintf(com,
-        "PISM ERROR: -pdd is not currently allowed as option to pscand\n");
-        CHKERRQ(ierr);
-      PetscEnd();
-    }
-
     ierr = verbPrintf(2,com, "PSCAND %s (Scandinavian mod of EISMINT II mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 

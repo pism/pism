@@ -233,10 +233,10 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
 
   exper_chosen = -1;
   for (int j=0; j<Nexpers; j++) {
-    PetscTruth  optionset;
+    bool  optionset;
     char optionname[20] = "-";
     strcat(optionname,e[j].name);
-    ierr = check_option(optionname, optionset); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet(optionname, optionset); CHKERRQ(ierr);
     if (optionset == PETSC_TRUE) {
       if (exper_chosen >= 0) {
         ierr = PetscPrintf(grid.com,
@@ -261,8 +261,8 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
     "setting up PST (Plastic till Stream w Thermocoupling) experiment %s ...\n",
     exper_chosen_name); CHKERRQ(ierr);
 
-  PetscTruth optionset;
-  ierr = check_option("-no_ser", optionset); CHKERRQ(ierr);
+  bool optionset;
+  ierr = PISMOptionsIsSet("-no_ser", optionset); CHKERRQ(ierr);
   if (optionset == PETSC_FALSE) {
     ierr = prepare_series(); CHKERRQ(ierr);
   }

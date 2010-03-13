@@ -14,7 +14,13 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
   usurf = dynamic_cast<IceModelVec2*>(vars.get("surface_altitude"));
   if (!usurf) { SETERRQ(1, "ERROR: Surface elevation is not available"); }
 
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-lapse_rate", &gamma, PETSC_NULL);
+  ierr = PetscOptionsBegin(grid.com, "", "Air temp. lapse rate model options", ""); CHKERRQ(ierr);
+  {
+    bool flag;
+    ierr = PISMOptionsReal("-lapse_rate", "Air temperature lapse rate, degrees K per meter",
+			   gamma, flag); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   ierr = f.create(grid, "usurf", false); CHKERRQ(ierr);
   ierr = f.set_attrs("internal", "ice upper surface elevation",

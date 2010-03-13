@@ -252,7 +252,7 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
   lon = dynamic_cast<IceModelVec2*>(vars.get("longitude"));
   if (!lon) SETERRQ(1, "ERROR: longitude is not available");
 
-  ierr = check_option("-paleo_precip", paleo_precipitation_correction); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-paleo_precip", paleo_precipitation_correction); CHKERRQ(ierr);
 
   if (paleo_precipitation_correction) {
     PetscTruth dTforcing_set;

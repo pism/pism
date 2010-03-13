@@ -151,7 +151,7 @@ PetscErrorCode IceModel::init_viewers() {
 			   PETSC_NULL); CHKERRQ(ierr);
 
   // map-plane (and surface) viewers:
-  ierr = PetscOptionsString("-view_map", "specifies the comma-separated list of map-plane viewers", "", "[empty]",
+  ierr = PetscOptionsString("-view_map", "specifies the comma-separated list of map-plane viewers", "", "empty",
 			    tmp, TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
   string var_name;
   if (flag) {
@@ -190,14 +190,14 @@ PetscErrorCode IceModel::init_viewers() {
   }
 
   PetscInt viewer_size = (PetscInt)config.get("viewer_size");
-  ierr = PetscOptionsInt("-viewer_size", "specifies desired viewer size",
+  ierr = PetscOptionsInt("-view_size", "specifies desired viewer size",
 			 "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
 
   if (flag)
     config.set("viewer_size", viewer_size); 
 
   PetscScalar slice_level = config.get("slice_level");
-  ierr = PetscOptionsReal("-slice_level", "sets the level (in meters above the base of ice) for slice viewers", "",
+  ierr = PetscOptionsReal("-view_slice_level", "sets the level (in meters above the base of ice) for slice viewers", "",
 			  slice_level, &slice_level, PETSC_NULL); CHKERRQ(ierr);
   if ( (slice_level > grid.Lz) || (slice_level < 0) ) {
     ierr = verbPrintf(2, grid.com,

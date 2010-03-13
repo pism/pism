@@ -70,15 +70,21 @@ PetscErrorCode IceModel::initBasalTillModel() {
 
   ierr = vtauc.set(config.get("default_tauc")); CHKERRQ(ierr);
 
-  // initialize till friction angle (vtillphi) from options
-  PetscTruth  topgphiSet,svphiSet;
-  char filename[PETSC_MAX_PATH_LEN];
-  ierr = check_option("-topg_to_phi", topgphiSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-surf_vel_to_phi", filename, 
-                               PETSC_MAX_PATH_LEN, &svphiSet); CHKERRQ(ierr);
+  bool topgphiSet,svphiSet;
+  string filename;
+  ierr = PetscOptionsHead("Options controlling the basal till model"); CHKERRQ(ierr);
+  {
+    // initialize till friction angle (vtillphi) from options
+    ierr = PISMOptionsIsSet("-topg_to_phi", "Use the till friction angle parameterization", topgphiSet); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-surf_vel_to_phi", "Specifies the file containing surface velocities to invert",
+			     filename, svphiSet); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsTail(); CHKERRQ(ierr);
+
   if ((svphiSet == PETSC_TRUE) && (topgphiSet == PETSC_TRUE)) {
     SETERRQ(1,"conflicting options for initializing till friction angle; ENDING ...\n");
   }
+
   if (topgphiSet == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com, 
       "option -topg_to_phi seen; creating till friction angle map from bed elev ...\n");
@@ -86,10 +92,11 @@ PetscErrorCode IceModel::initBasalTillModel() {
     // note option -topg_to_phi will be read again to get comma separated array of parameters
     ierr = computePhiFromBedElevation(); CHKERRQ(ierr);
   }
+
   if (svphiSet == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com, 
       "option -surf_vel_to_phi seen; doing ad hoc inverse model ...\n"); CHKERRQ(ierr);
-    ierr = invertSurfaceVelocities(filename); CHKERRQ(ierr);
+    ierr = invertSurfaceVelocities(filename.c_str()); CHKERRQ(ierr);
   }
   // if neither -surf_vel_to_phi OR -topg_to_phi then pass through; vtillphi is set from
   //   default constant, or -i value, or -boot_from (?)

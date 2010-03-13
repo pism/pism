@@ -43,11 +43,11 @@ static void create_pa_eismint_greenland(IceGrid& g, const NCConfigVariable& conf
 }
 
 
-static PetscErrorCode setupIceGridFromFile(const char *filename, IceGrid &grid) {
+static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
   PISMIO nc(&grid);
-  ierr = nc.get_grid(filename); CHKERRQ(ierr);
+  ierr = nc.get_grid(filename.c_str()); CHKERRQ(ierr);
   ierr = grid.createDA(); CHKERRQ(ierr);  
   return 0;
 }
@@ -134,7 +134,7 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
   return 0;
 }
 
-static PetscErrorCode readIceInfoFromFile(char *filename, int start,
+static PetscErrorCode readIceInfoFromFile(const char *filename, int start,
                                           PISMVars &variables) {
   PetscErrorCode ierr;
 
@@ -294,7 +294,7 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {
     NCConfigVariable config, overrides, mapping;
-    char inname[PETSC_MAX_PATH_LEN], outname[PETSC_MAX_PATH_LEN];
+    string inname, outname;
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
@@ -327,21 +327,27 @@ int main(int argc, char *argv[]) {
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     IceGrid grid(com, rank, size, config);
+    
+    bool flag;
+    PetscReal ys = 0.0, ye = 0.0, dt_years = 0.0;
+    ierr = PetscOptionsBegin(grid.com, "", "PCCTEST options", ""); CHKERRQ(ierr);
+    {
+      ierr = PISMOptionsString("-i", "Input file name",  inname, flag); CHKERRQ(ierr);
+      ierr = PISMOptionsString("-o", "Output file name", outname, flag); CHKERRQ(ierr);
+
+      ierr = PISMOptionsReal("-ys", "Start year", ys, flag); CHKERRQ(ierr);
+      ierr = PISMOptionsReal("-ye", "End year",   ye, flag); CHKERRQ(ierr);
+      ierr = PISMOptionsReal("-dt", "Time-step, in years", dt_years, flag); CHKERRQ(ierr);
+    }
+    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // initialize the computational grid:
-    ierr = PetscOptionsGetString(PETSC_NULL, "-i", inname, 
-                                 PETSC_MAX_PATH_LEN, NULL); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, 
-             "  initializing grid from NetCDF file %s...\n", inname); CHKERRQ(ierr);
+		      "  initializing grid from NetCDF file %s...\n", inname.c_str()); CHKERRQ(ierr);
     ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
 
     mapping.init("mapping", com, rank);
 
-    // Process -ys, -ye, -dt *before* initializing boundary models
-    PetscReal ys = 0.0, ye = 0.0, dt_years = 0.0;
-    ierr = PetscOptionsGetReal(PETSC_NULL, "-ys", &ys, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsGetReal(PETSC_NULL, "-ye", &ye, NULL); CHKERRQ(ierr);
-    ierr = PetscOptionsGetReal(PETSC_NULL, "-dt", &dt_years, NULL); CHKERRQ(ierr);
     // These values may be used by surface, atmosphere of ocean models:
     grid.year = ys;		
     grid.start_year = ys;
@@ -355,12 +361,12 @@ int main(int argc, char *argv[]) {
     NCTool nc(grid.com, grid.rank);
     int last_record;
     bool mapping_exists;
-    ierr = nc.open_for_reading(inname); CHKERRQ(ierr);
+    ierr = nc.open_for_reading(inname.c_str()); CHKERRQ(ierr);
     ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
     ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
     if (mapping_exists) {
-      ierr = mapping.read(inname); CHKERRQ(ierr);
+      ierr = mapping.read(inname.c_str()); CHKERRQ(ierr);
       ierr = mapping.print(); CHKERRQ(ierr);
     }
     last_record -= 1;
@@ -368,9 +374,9 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com, 
              "  reading fields lat,lon,mask,thk,topg,usurf from NetCDF file %s\n"
              "    to fill fields in PISMVars ...\n",
-             inname); CHKERRQ(ierr);
+		      inname.c_str()); CHKERRQ(ierr);
 
-    ierr = readIceInfoFromFile(inname, last_record, variables); CHKERRQ(ierr);
+    ierr = readIceInfoFromFile(inname.c_str(), last_record, variables); CHKERRQ(ierr);
 
     // Initialize boundary models:
     PAFactory pa(grid, config);
@@ -396,14 +402,12 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
     // done initializing boundary models.
 
-    ierr = PetscOptionsGetString(PETSC_NULL, "-o", outname, 
-                                 PETSC_MAX_PATH_LEN, NULL); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,
       com, "  writing boundary model states to NetCDF file '%s'...\n",
-      outname); CHKERRQ(ierr);
+		      outname.c_str()); CHKERRQ(ierr);
 
-    ierr = writePCCStateAtTimes(variables, surface, ocean, outname, &grid, argc, argv,
+    ierr = writePCCStateAtTimes(variables, surface, ocean, outname.c_str(), &grid, argc, argv,
 				ys, ye, dt_years,
                                 mapping); CHKERRQ(ierr);
 

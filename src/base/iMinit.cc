@@ -30,14 +30,14 @@
  */
 PetscErrorCode IceModel::set_grid_defaults() {
   PetscErrorCode ierr;
-  PetscTruth Mx_set, My_set, Mz_set, Lz_set, boot_from_set;
-  char filename[PETSC_MAX_PATH_LEN];
+  bool Mx_set, My_set, Mz_set, Lz_set, boot_from_set;
+  string filename;
   grid_info gi;
 
   // Get the bootstrapping file name:
-  ierr = check_old_option_and_stop(grid.com, "-bif", "-boot_from"); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from",
-			       filename, PETSC_MAX_PATH_LEN, &boot_from_set); CHKERRQ(ierr);
+  
+  ierr = PISMOptionsString("-boot_from", "Specifies the file to bootstrap from",
+			   filename, boot_from_set); CHKERRQ(ierr);
 
   if (!boot_from_set) {
     ierr = PetscPrintf(grid.com,
@@ -52,7 +52,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   // Determine the grid extent from a bootstrapping file:
   PISMIO nc(&grid);
   bool x_dim_exists, y_dim_exists, t_exists;
-  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+  ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
 
   ierr = nc.find_dimension("x", NULL, x_dim_exists); CHKERRQ(ierr);
   ierr = nc.find_dimension("y", NULL, y_dim_exists); CHKERRQ(ierr);
@@ -62,12 +62,14 @@ PetscErrorCode IceModel::set_grid_defaults() {
 
   // if the horizontal dimensions are absent then we can not proceed
   if (!x_dim_exists) {
-    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'x'\n",filename);
+    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'x'\n",
+		       filename.c_str());
     CHKERRQ(ierr);
     PetscEnd();
   }
   if (!y_dim_exists) {
-    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'y'\n",filename);
+    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'y'\n",
+		       filename.c_str());
     CHKERRQ(ierr);
     PetscEnd();
   }
@@ -78,9 +80,9 @@ PetscErrorCode IceModel::set_grid_defaults() {
   grid.Lx = gi.Lx;
   grid.Ly = gi.Ly;
 
-  // read grid.year if no option overrides it
-  PetscTruth ys_set;
-  ierr = check_option("-ys", ys_set); CHKERRQ(ierr);
+  // read grid.year if no option overrides it (avoids unnecessary reporting)
+  bool ys_set;
+  ierr = PISMOptionsIsSet("-ys", ys_set); CHKERRQ(ierr);
   if (!ys_set) {
     if (t_exists) {
       grid.year = gi.time / secpera; // set year from read-in time variable
@@ -93,20 +95,13 @@ PetscErrorCode IceModel::set_grid_defaults() {
 		      "  time dimension was not found; setting current year to 0.0 years\n",
 		      grid.year); CHKERRQ(ierr);
     }
-  } else {
-    // go ahead and read -ys option, possibly redundantly, but to assure that grid.year 
-    //   is set here; see set_time_from_options()
-    PetscScalar usrStartYear;
-    ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &usrStartYear, PETSC_NULL); CHKERRQ(ierr);
-    grid.start_year = usrStartYear;
-    grid.year = usrStartYear;
   }
 
   // Grid dimensions should not be deduced from a bootstrapping file, so we
   // check if these options are set and stop if they are not.
-  ierr = check_option("-Mx", Mx_set); CHKERRQ(ierr);
-  ierr = check_option("-My", My_set); CHKERRQ(ierr);
-  ierr = check_option("-Mz", Mz_set); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-Mx", Mx_set); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-My", My_set); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-Mz", Mz_set); CHKERRQ(ierr);
   if ( !(Mx_set && My_set && Mz_set) ) {
     ierr = PetscPrintf(grid.com,
 		       "PISM ERROR: All of -boot_from, -Mx, -My, -Mz are required for bootstrapping.\n");
@@ -114,10 +109,10 @@ PetscErrorCode IceModel::set_grid_defaults() {
     PetscEnd();
   }
 
-  ierr = check_option("-Lz", Lz_set); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
   if ( !Lz_set ) {
     ierr = verbPrintf(2, grid.com,
-		      "PISM WARNING: -Lz is not set; trying to deduce it from the bootstrapping file...\n");
+		      "PISM WARNING: -Lz is not set; trying to deduce it using the bootstrapping file...\n");
     CHKERRQ(ierr);
   }
 
@@ -130,98 +125,72 @@ PetscErrorCode IceModel::set_grid_defaults() {
  */
 PetscErrorCode IceModel::set_grid_from_options() {
   PetscErrorCode ierr;
-  PetscTruth Mx_set, My_set, Mz_set, Mbz_set, Lx_set, Ly_set, Lz_set, Lbz_set,
+  bool Mx_set, My_set, Mz_set, Mbz_set, Lx_set, Ly_set, Lz_set, Lbz_set,
     z_spacing_set, zb_spacing_set;
-  PetscScalar x_scale, y_scale, z_scale, zb_scale;
-  int Mx, My, Mz, Mbz;
+  PetscReal x_scale = grid.Lx / 1000.0,
+    y_scale = grid.Ly / 1000.0,
+    z_scale = grid.Lz,
+    zb_scale = grid.Lbz;
 
   // Process the options:
-  ierr = PetscOptionsBegin(grid.com, PETSC_NULL,
-			   "Options setting the computational grid extent and dimensions",
-			   PETSC_NULL); CHKERRQ(ierr);
 
   // Read -Lx and -Ly.
-  ierr = PetscOptionsScalar("-Ly", "Half of the grid extent in the X direction, in km", "",
-			    y_scale, &y_scale, &Ly_set); CHKERRQ(ierr);
-  ierr = PetscOptionsScalar("-Lx", "Half of the grid extent in the Y direction, in km", "",
-			    x_scale, &x_scale, &Lx_set); CHKERRQ(ierr);
+  ierr = PISMOptionsReal("-Ly", "Half of the grid extent in the X direction, in km",
+			 y_scale,  Ly_set); CHKERRQ(ierr);
+  ierr = PISMOptionsReal("-Lx", "Half of the grid extent in the Y direction, in km",
+			 x_scale,  Lx_set); CHKERRQ(ierr);
   // Vertical extent (in the ice and bedrock, correspondingly):
-  ierr = PetscOptionsScalar("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters", "",
-			    z_scale, &z_scale, &Lz_set); CHKERRQ(ierr);
-  ierr = PetscOptionsScalar("-Lbz", "Grid extent in the Z (vertical) direction in the bedrock, in meters", "",
-			    zb_scale, &zb_scale, &Lbz_set); CHKERRQ(ierr);
+  ierr = PISMOptionsReal("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
+			 z_scale,  Lz_set); CHKERRQ(ierr);
+  ierr = PISMOptionsReal("-Lbz", "Grid extent in the Z (vertical) direction in the bedrock, in meters",
+			 zb_scale, Lbz_set); CHKERRQ(ierr);
 
   // Read -Mx, -My, -Mz and -Mbz.
-  ierr = PetscOptionsInt("-My", "Number of grid points in the X direction", "",
-			 grid.My, &My, &My_set); CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-Mx", "Number of grid points in the Y direction", "",
-			 grid.Mx, &Mx, &Mx_set); CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice", "",
-			 grid.Mz, &Mz, &Mz_set); CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-Mbz", "Number of grid points in the Z (vertical) direction in the bedrock", "",
-			 grid.Mbz, &Mbz, &Mbz_set); CHKERRQ(ierr);
+  ierr = PISMOptionsInt("-My", "Number of grid points in the X direction",
+			grid.My, My_set); CHKERRQ(ierr);
+  ierr = PISMOptionsInt("-Mx", "Number of grid points in the Y direction",
+			grid.Mx, Mx_set); CHKERRQ(ierr);
+  ierr = PISMOptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
+			grid.Mz, Mz_set); CHKERRQ(ierr);
+  ierr = PISMOptionsInt("-Mbz", "Number of grid points in the Z (vertical) direction in the bedrock",
+			grid.Mbz, Mbz_set); CHKERRQ(ierr);
 
+  string keyword;
+  set<string> z_spacing_choices;
+  z_spacing_choices.insert("quadratic");
+  z_spacing_choices.insert("equal");
   // Determine the vertical grid spacing in the ice:
-  const char *z_spacing[2] = {"quadratic", "equal"};
-  int z_spacing_index = 0;	// quadratic is the default
-  ierr = PetscOptionsEList("-z_spacing", "Vertical spacing in the ice", "",
-			   z_spacing, 2, z_spacing[0], &z_spacing_index, &z_spacing_set);
-  if (ierr == PETSC_ERR_USER) {
-    ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: invalid -z_spacing agrument.\n");
-    CHKERRQ(ierr);
-    PetscEnd();
-
-  } else CHKERRQ(ierr);
-
-  if (z_spacing_set) {
-    if (z_spacing_index == 0) {
-      grid.ice_vertical_spacing = QUADRATIC;
-    } else {
-      grid.ice_vertical_spacing = EQUAL;
-    }
+  ierr = PISMOptionsList(grid.com, "-z_spacing", "Vertical spacing in the ice.",
+			 z_spacing_choices, "quadratic", keyword, z_spacing_set); CHKERRQ(ierr);
+			 
+  if (keyword == "quadratic") {
+    grid.ice_vertical_spacing = QUADRATIC;
+  } else {
+    grid.ice_vertical_spacing = EQUAL;
   }
 
   // Determine the vertical grid spacing in the bedrock:
-  z_spacing_index = 0;
-  ierr = PetscOptionsEList("-zb_spacing", "Vertical spacing in the bedrock", "",
-			   z_spacing, 2, z_spacing[0], &z_spacing_index, &zb_spacing_set);
-  if (ierr == PETSC_ERR_USER) {
-    ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: invalid -zb_spacing argument.\n");
-    CHKERRQ(ierr);
-    PetscEnd();
-
-  } else CHKERRQ(ierr);
-
-  if (zb_spacing_set) {
-    if (z_spacing_index == 0) {
-      grid.bed_vertical_spacing = QUADRATIC;
-    } else {
-      grid.bed_vertical_spacing = EQUAL;
-    }
+  ierr = PISMOptionsList(grid.com, "-zb_spacing", "Vertical spacing in the bedrock thermal layer.",
+			 z_spacing_choices, "quadratic", keyword, zb_spacing_set); CHKERRQ(ierr);
+  if (keyword == "quadratic") {
+    grid.bed_vertical_spacing = QUADRATIC;
+  } else {
+    grid.bed_vertical_spacing = EQUAL;
   }
 
   if (Mbz_set) {
-    if ((Mbz > 1) && !Lbz_set) {
+    if ((grid.Mbz > 1) && !Lbz_set) {
       ierr = PetscPrintf(grid.com,
 			 "PISM ERROR: Please specify bedrock layer thickness using -Lbz.\n"); CHKERRQ(ierr);
       PetscEnd();
     }
   }
   
-  // Done with the options.
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
   // Use the information obtained above:
   if (Lx_set)    grid.Lx  = x_scale * 1000.0; // convert to meters
   if (Ly_set)    grid.Ly  = y_scale * 1000.0; // convert to meters
   if (Lz_set)    grid.Lz  = z_scale;	      // in meters already
   if (Lbz_set)   grid.Lbz = zb_scale;	      // in meters already
-  if (Mx_set)    grid.Mx  = Mx;
-  if (My_set)    grid.My  = My;
-  if (Mz_set)    grid.Mz  = Mz;
-  if (Mbz_set)   grid.Mbz = Mbz;
 
   ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
   ierr = grid.compute_vertical_levels();    CHKERRQ(ierr);
@@ -247,16 +216,17 @@ PetscErrorCode IceModel::set_grid_from_options() {
  */
 PetscErrorCode IceModel::grid_setup() {
   PetscErrorCode ierr;
-  PetscTruth i_set;
-  char filename[PETSC_MAX_PATH_LEN];
+  bool i_set;
+  string filename;
+
+  ierr = PetscOptionsHead("Options controlling input and computational grid parameters"); CHKERRQ(ierr);
 
   ierr = verbPrintf(3, grid.com,
 		    "Setting up the computational grid...\n"); CHKERRQ(ierr);
 
   // Check if we are initializing from a PISM output file:
-  ierr = check_old_option_and_stop(grid.com, "-if", "-i"); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-i",
-			       filename, PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
+  ierr = PISMOptionsString("-i", "Specifies a PISM input file",
+			   filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
     PISMIO nc(&grid);
@@ -264,7 +234,7 @@ PetscErrorCode IceModel::grid_setup() {
 
     // Get the 'source' global attribute to check if we are given a PISM output
     // file:
-    ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+    ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
     ierr = nc.get_att_text(NC_GLOBAL, "source", source); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
 
@@ -274,17 +244,17 @@ PetscErrorCode IceModel::grid_setup() {
 			"PISM WARNING: file '%s' does not have the 'source' global attribute.\n"
 			"     If '%s' is a PISM output file, please run the following to get rid of this warning:\n"
 			"     ncatted -a source,global,c,c,PISM %s\n",
-			filename, filename, filename); CHKERRQ(ierr);
+			filename.c_str(), filename.c_str(), filename.c_str()); CHKERRQ(ierr);
     } else if (source.find("PISM") == string::npos) {
       // If the 'source' attribute does not contain the string "PISM", then print
       // a message and stop:
       ierr = verbPrintf(1, grid.com,
 			"PISM WARNING: '%s' does not seem to be a PISM output file.\n"
 			"     If it is, please make sure that the 'source' global attribute contains the string \"PISM\".\n",
-			filename); CHKERRQ(ierr);
+			filename.c_str()); CHKERRQ(ierr);
     }
 
-    ierr = nc.get_grid(filename);   CHKERRQ(ierr);
+    ierr = nc.get_grid(filename.c_str());   CHKERRQ(ierr);
     grid.start_year = grid.year; // can be overridden using the -ys option
 
     // These options are ignored because we're getting *all* the grid
@@ -303,8 +273,12 @@ PetscErrorCode IceModel::grid_setup() {
     ierr = set_grid_from_options(); CHKERRQ(ierr);
   }
 
+  // Process -y, -ys, -ye. We are reading these options here because couplers
+  // might need to know what year it is.
+  ierr = set_time_from_options(); CHKERRQ(ierr);
+
   ierr = grid.createDA(); CHKERRQ(ierr);
-  
+
   return 0;
 }
 
@@ -331,15 +305,15 @@ PetscErrorCode IceModel::grid_setup() {
  */
 PetscErrorCode IceModel::model_state_setup() {
   PetscErrorCode ierr;
-  PetscTruth i_set;
-  char filename[PETSC_MAX_PATH_LEN];
+  bool i_set;
+  string filename;
   
   // Check if we are initializing from a PISM output file:
-  ierr = PetscOptionsGetString(PETSC_NULL, "-i",
-			       filename, PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
+  ierr = PISMOptionsString("-i", "Specifies a PISM input file",
+			   filename, i_set); CHKERRQ(ierr);
 
   if (i_set) {
-    ierr = initFromFile(filename); CHKERRQ(ierr);
+    ierr = initFromFile(filename.c_str()); CHKERRQ(ierr);
   } else {
     ierr = set_vars_from_options(); CHKERRQ(ierr);
   }
@@ -376,17 +350,17 @@ PetscErrorCode IceModel::model_state_setup() {
  */
 PetscErrorCode IceModel::set_vars_from_options() {
   PetscErrorCode ierr;
-  PetscTruth boot_from_set;
-  char filename[PETSC_MAX_PATH_LEN];
+  bool boot_from_set;
+  string filename;
 
   ierr = verbPrintf(3, grid.com,
 		    "Setting initial values of model state variables...\n"); CHKERRQ(ierr);
 
-  ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from",
-			       filename, PETSC_MAX_PATH_LEN, &boot_from_set); CHKERRQ(ierr);
+  ierr = PISMOptionsString("-boot_from", "Specifies the file to bootstrap from",
+			   filename, boot_from_set); CHKERRQ(ierr);
   
   if (boot_from_set) {
-    ierr = bootstrapFromFile(filename); CHKERRQ(ierr);
+    ierr = bootstrapFromFile(filename.c_str()); CHKERRQ(ierr);
   } else {
     ierr = PetscPrintf(grid.com, "PISM ERROR: No input file specified.\n"); CHKERRQ(ierr);
     PetscEnd();
@@ -559,11 +533,19 @@ PetscErrorCode  IceModel::set_time_from_options() {
 
   // read options about year of start, year of end, number of run years;
   // note grid.year has already been set from input file or defaults
-  PetscScalar usrStartYear, usrEndYear, usrRunYears;
-  PetscTruth ysSet, yeSet, ySet;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ys", &usrStartYear, &ysSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-ye", &usrEndYear,   &yeSet); CHKERRQ(ierr);
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-y",  &usrRunYears,  &ySet); CHKERRQ(ierr);
+  PetscReal usrStartYear = grid.start_year,
+    usrEndYear = grid.end_year,
+    usrRunYears = grid.end_year - grid.start_year;
+  bool ysSet = false, yeSet = false, ySet = false;
+
+  ierr = PetscOptionsHead("Time: start year, end year and run length"); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsReal("-ys", "Start year",        usrStartYear, ysSet); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-ye", "End year",          usrEndYear,   yeSet); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-y",  "years; Run length", usrRunYears,  ySet);  CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsTail(); CHKERRQ(ierr);
+
 
   if (ysSet && yeSet && ySet) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: all of -y, -ys, -ye are set. Exiting...\n");

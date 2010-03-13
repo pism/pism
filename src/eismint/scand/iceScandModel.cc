@@ -31,9 +31,9 @@ IceScandModel::IceScandModel(IceGrid &g, NCConfigVariable &config, NCConfigVaria
 PetscErrorCode IceScandModel::set_expername_from_options() {
   PetscErrorCode ierr;
   // do nothing except stop if -eisII is set; default expername already set to S
-  PetscTruth eisIISet;
-  ierr = check_option("-eisII", eisIISet); CHKERRQ(ierr);
-  if (eisIISet == PETSC_TRUE) {
+  bool eisIISet;
+  ierr = PISMOptionsIsSet("-eisII", eisIISet); CHKERRQ(ierr);
+  if (eisIISet) {
     ierr = PetscPrintf(grid.com,
       "IceScandModel ERROR: -eisII option not used because does '-eisII S' always\n");
       CHKERRQ(ierr);

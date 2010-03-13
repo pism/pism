@@ -46,8 +46,8 @@ IceMISMIPModel::IceMISMIPModel(IceGrid &g, NCConfigVariable &conf, NCConfigVaria
   initialthickness = 10.0; // m
   runtimeyears = 3.0e4; // a
   strcpy(initials,"ABC");
-  tryCalving = PETSC_FALSE;
-  writeExtras = PETSC_FALSE;
+  tryCalving = false;
+  writeExtras = false;
   steadyOrGoalAchieved = PETSC_FALSE;
   m_MISMIP = 1.0/3.0; // power
   C_MISMIP = 7.624e6; // Pa m^(−1/3) s^(1/3)
@@ -208,7 +208,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 
   // OTHER OPTIONS:
   // read option    -extras       [OFF]
-  ierr = check_option("-extras", writeExtras); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-extras", writeExtras); CHKERRQ(ierr);
 
   // read option    -initials     [ABC]
   ierr = PetscOptionsGetString(PETSC_NULL, "-initials", initials, 
@@ -232,8 +232,8 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   }
 
   // read option    -no_shelf_drag
-  PetscTruth noShelfDrag;
-  ierr = check_option("-no_shelf_drag", noShelfDrag); CHKERRQ(ierr);
+  bool noShelfDrag;
+  ierr = PISMOptionsIsSet("-no_shelf_drag", noShelfDrag); CHKERRQ(ierr);
   if (noShelfDrag == PETSC_TRUE) {
     shelvesDragToo = PETSC_FALSE;
   } else {
@@ -290,7 +290,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   }
 
   // read option    -try_calving      [OFF]
-  ierr = check_option("-try_calving", tryCalving); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-try_calving", tryCalving); CHKERRQ(ierr);
 
   config.set_flag("do_temp",                      false);
   config.set_flag("do_plastic_till",              false);
@@ -303,7 +303,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 
   transformForSurfaceGradient = PETSC_TRUE;
 
-  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);  // call to set_time_from_options() occurs here
+  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
 
   // models 1 vs 2
   if (modelnum == 1) {

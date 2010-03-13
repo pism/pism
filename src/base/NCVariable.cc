@@ -931,10 +931,11 @@ PetscErrorCode NCConfigVariable::write_attributes(const NCTool &nc, int varid, n
  */
 PetscErrorCode NCConfigVariable::flag_from_option(string name, string flag) {
   PetscErrorCode ierr;
-  PetscTruth foo, no_foo;
+  bool foo = false,
+    no_foo = false;
 
-  ierr = check_option("-" + name, foo); CHKERRQ(ierr);
-  ierr = check_option("-no_" + name, no_foo); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-" + name, get_string(flag + "_doc"), foo); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-no_" + name, no_foo); CHKERRQ(ierr);
 
   if (foo && no_foo) {
     PetscPrintf(com, "PISM ERROR: Inconsistent command-line options: both -%s and -no_%s are set.\n",
@@ -963,11 +964,12 @@ PetscErrorCode NCConfigVariable::flag_from_option(string name, string flag) {
  */
 PetscErrorCode NCConfigVariable::scalar_from_option(string name, string parameter) {
   PetscErrorCode ierr;
-  PetscReal value;
-  PetscTruth flag;
-  string opt = "-" + name;
+  PetscReal value = get(parameter);
+  bool flag;
   
-  ierr = PetscOptionsGetReal(PETSC_NULL, opt.c_str(), &value, &flag); CHKERRQ(ierr);
+  ierr = PISMOptionsReal("-" + name,
+			 get_string(parameter + "_doc"),
+			 value, flag); CHKERRQ(ierr);
   if (flag)
     this->set(parameter, value);
   

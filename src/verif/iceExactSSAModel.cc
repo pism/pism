@@ -678,8 +678,10 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
   ierr = verbPrintf(2,grid.com, "running Test %c ...\n", test); CHKERRQ(ierr);
 
   // does user want to turn off actual numerical evolution (and save exact solution)?
-  ierr = check_option("-eo", exactOnly); CHKERRQ(ierr);
-  if (exactOnly == PETSC_TRUE) {
+  bool flag;
+  ierr = PISMOptionsIsSet("-eo", flag); CHKERRQ(ierr);
+  if (flag) {
+    exactOnly = PETSC_TRUE;
     ierr=verbPrintf(2,grid.com,"  EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION\n"); CHKERRQ(ierr);
   }
 
@@ -699,8 +701,8 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
       ierr = velocitySSA(&numiter); CHKERRQ(ierr);
     } else if (test == 'J') {
       // use locally allocated space for (computed) nu:
-      PetscTruth     dosnes;
-      ierr = check_option("-ssa_snes", dosnes); CHKERRQ(ierr);  
+      bool     dosnes;
+      ierr = PISMOptionsIsSet("-ssa_snes", dosnes); CHKERRQ(ierr);  
       if (dosnes == PETSC_TRUE) {
         ierr = velocitySSA_SNES(vNuForJ, &numiter); CHKERRQ(ierr); 
       } else {

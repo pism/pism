@@ -53,18 +53,18 @@ static void create_pa_eismint_greenland(IceGrid& g, const NCConfigVariable& conf
 static PetscErrorCode set_eismint_greenland_params(MPI_Comm com,
 						   NCConfigVariable &config) {
   PetscErrorCode ierr;
-  PetscTruth ssl2Set, ssl3Set, ccl3Set, gwl3Set;
+  bool ssl2Set, ssl3Set, ccl3Set, gwl3Set;
   EISGREENrun exper = SSL2;	// default
 
-  ierr = check_option("-ssl2", ssl2Set); CHKERRQ(ierr);
-  if (ssl2Set == PETSC_TRUE)   exper = SSL2;
-  ierr = check_option("-ccl3", ccl3Set); CHKERRQ(ierr);
-  if (ccl3Set == PETSC_TRUE)   exper = CCL3;
-  ierr = check_option("-gwl3", gwl3Set); CHKERRQ(ierr);
-  if (gwl3Set == PETSC_TRUE)   exper = GWL3;
+  ierr = PISMOptionsIsSet("-ssl2", ssl2Set); CHKERRQ(ierr);
+  if (ssl2Set)   exper = SSL2;
+  ierr = PISMOptionsIsSet("-ccl3", ccl3Set); CHKERRQ(ierr);
+  if (ccl3Set)   exper = CCL3;
+  ierr = PISMOptionsIsSet("-gwl3", gwl3Set); CHKERRQ(ierr);
+  if (gwl3Set)   exper = GWL3;
 
-  ierr = check_option("-ssl3", ssl3Set); CHKERRQ(ierr);
-  if (ssl3Set == PETSC_TRUE) {
+  ierr = PISMOptionsIsSet("-ssl3", ssl3Set); CHKERRQ(ierr);
+  if (ssl3Set) {
     ierr = PetscPrintf(com,
        "experiment SSL3 (-ssl3) is not implemented ... ENDING\n"
        "  (choose parameters yourself, by runtime options)\n"); CHKERRQ(ierr);
@@ -91,8 +91,8 @@ static PetscErrorCode set_eismint_greenland_params(MPI_Comm com,
   // use the EISMINT-Greenland value if no value in -boot_from file
   config.set("bootstrapping_geothermal_flux_value_no_var", 0.050);
 
-  PetscTruth gwl3_start_set;
-  ierr = check_option("-gwl3_start_year", gwl3_start_set); CHKERRQ(ierr);
+  bool gwl3_start_set;
+  ierr = PISMOptionsIsSet("-gwl3_start_year", gwl3_start_set); CHKERRQ(ierr);
   if ((exper != GWL3) && gwl3_start_set) {
     ierr = PetscPrintf(com,
 		       "PISM ERROR: option -gwl3_start_year is only allowed if -gwl3 is set.\n"); CHKERRQ(ierr);
@@ -142,9 +142,9 @@ int main(int argc, char *argv[]){
 		      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
-    PetscTruth iset, bfset;
-    ierr = check_option("-i", iset); CHKERRQ(ierr);
-    ierr = check_option("-boot_from", bfset); CHKERRQ(ierr);
+    bool iset, bfset;
+    ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-boot_from", bfset); CHKERRQ(ierr);
     string usage =
       "  pgrn {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n\n"
       "where:\n"

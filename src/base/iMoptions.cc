@@ -46,16 +46,18 @@ instances, including -pdd... and -d?forcing options.
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
 
-  PetscTruth flag;
+  bool flag;
 
-  PetscTruth  my_useConstantNuH, 
-              myssaSystemToASCIIMatlab,
-              myholdTillYieldStress, realageSet,
-              etaSet, doShelvesDragToo;
-  PetscScalar my_nuH;
+  bool  my_useConstantNuH, 
+    myssaSystemToASCIIMatlab,
+    myholdTillYieldStress, realageSet,
+    etaSet, doShelvesDragToo;
+  PetscReal my_nuH = 0;
 
   ierr = verbPrintf(3, grid.com,
 		    "Processing physics-related command-line options...\n"); CHKERRQ(ierr);
+
+  ierr = PetscOptionsBegin(grid.com, "", "Misc PISM options", ""); CHKERRQ(ierr);
 
   /* 
   note on pass-by-reference for options:
@@ -75,7 +77,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.flag_from_option("age", "do_age"); CHKERRQ(ierr);
 
-  ierr = check_option("-bed_def_iso", flag); CHKERRQ(ierr);
+  // FIXME: -bed_def options should be handled by the bed deformation module.
+  // I'm leaving it as it is so far; will fix once that code is re-factored (CK).
+  ierr = PISMOptionsIsSet("-bed_def_iso", flag); CHKERRQ(ierr);
   if (flag) {
     config.set_flag("do_bed_deformation", true);
     config.set_flag("do_bed_iso", true);
@@ -83,7 +87,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   bool bed_def_iso = flag;
 
-  ierr = check_option("-bed_def_lc", flag); CHKERRQ(ierr);  
+  ierr = PISMOptionsIsSet("-bed_def_lc", flag); CHKERRQ(ierr);  
   if (flag) {
     config.set_flag("do_bed_deformation", true);
     config.set_flag("do_bed_iso", false);
@@ -105,9 +109,11 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // "-cbar_to_till" read in invertVelocitiesFromNetCDF() in iMinverse.cc
 
-  ierr = PetscOptionsGetReal(PETSC_NULL, "-constant_nuH", &my_nuH, &my_useConstantNuH); CHKERRQ(ierr);
+  ierr = PISMOptionsReal("-constant_nuH",
+			 "Sets a constant value for the product of viscosity and thickness used in the SSA velocity computation",
+			 my_nuH, my_useConstantNuH); CHKERRQ(ierr);
   // user gives nu*H in MPa yr m (e.g. Ritz et al 2001 value is 30.0 * 1.0)
-  if (my_useConstantNuH == PETSC_TRUE) {
+  if (my_useConstantNuH) {
     setConstantNuHForSSA(my_nuH  * 1.0e6 * secpera); // convert to Pa s m
   }
 
@@ -115,8 +121,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.scalar_from_option("e", "enhancement_factor"); CHKERRQ(ierr);
 
-  ierr = check_option("-eta", etaSet); CHKERRQ(ierr);
-  if (etaSet == PETSC_TRUE)  transformForSurfaceGradient = PETSC_TRUE;
+  ierr = PISMOptionsIsSet("-eta", "Use eta transformation to compute surface gradient",
+			  etaSet); CHKERRQ(ierr);
+  if (etaSet)  transformForSurfaceGradient = PETSC_TRUE;
 
   ierr = config.flag_from_option("f3d", "force_full_diagnostics"); CHKERRQ(ierr);
 
@@ -127,31 +134,29 @@ PetscErrorCode  IceModel::setFromOptions() {
   //   this form allows a constant value of grain size to be input in mm
   ierr = config.scalar_from_option("gk", "constant_grain_size"); CHKERRQ(ierr);
 
-  ierr = check_option("-gk", flag); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-gk", flag); CHKERRQ(ierr);
   if (flag) {
     ierr = iceFactory.setType(ICE_HYBRID);CHKERRQ(ierr);
   }
 
   // note "-gk_age" is also used for specifying Goldsby-Kohlstedt ice;
-  ierr = check_option("-gk_age", realAgeForGrainSize); CHKERRQ(ierr);
-  if (realAgeForGrainSize) {
+  ierr = PISMOptionsIsSet("-gk_age", flag); CHKERRQ(ierr);
+  if (flag) {
+    realAgeForGrainSize = PETSC_TRUE;
     ierr = iceFactory.setType(ICE_HYBRID);CHKERRQ(ierr);
   }
 
-  ierr = check_option("-hold_tauc", myholdTillYieldStress); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-hold_tauc", myholdTillYieldStress); CHKERRQ(ierr);
   if (myholdTillYieldStress == PETSC_TRUE)    holdTillYieldStress = PETSC_TRUE;
 
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-id", &id, PETSC_NULL); CHKERRQ(ierr);
-
-// note "-i" is in use for input file name; see initFromOptions() in iMutil.cc
-
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-jd", &jd, PETSC_NULL); CHKERRQ(ierr);
+  ierr = PISMOptionsInt("-id", "Specifies the sounding row", id, flag); CHKERRQ(ierr);
+  ierr = PISMOptionsInt("-jd", "Specifies the sounding column", jd, flag); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("low_temp", "global_min_allowed_temp"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("max_dt",        "maximum_time_step_years"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("mu_sliding",    "mu_sliding");              CHKERRQ(ierr);
-  ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count");      CHKERRQ(ierr);
 
   ierr = config.flag_from_option("mass", "do_mass_conserve"); CHKERRQ(ierr);
 
@@ -188,19 +193,20 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   // power in denominator on pseudo_plastic_uthreshold; typical is q=0.25; q=0 is pure plastic
   ierr = config.scalar_from_option("pseudo_plastic_q", "pseudo_plastic_q"); CHKERRQ(ierr);
-  ierr = check_option("-pseudo_plastic_q", flag);  CHKERRQ(ierr);
+
+  ierr = PISMOptionsIsSet("-pseudo_plastic_q", flag);  CHKERRQ(ierr);
   if (flag)
     config.set_flag("do_pseudo_plastic_till", true);
 
   // threshold; at this velocity tau_c is basal shear stress
   ierr = config.scalar_from_option("pseudo_plastic_uthreshold", "pseudo_plastic_uthreshold"); CHKERRQ(ierr);
-  ierr = check_option("-pseudo_plastic_uthreshold", flag);  CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-pseudo_plastic_uthreshold", flag);  CHKERRQ(ierr);
   if (flag)
     config.set_flag("do_pseudo_plastic_till", true);
 
   // see updateGrainSizeNow(); option to choose modeled age vtau instead of pseudo age in
   // computing grainsize through Vostok core correlation
-  ierr = check_option("-real_age_grainsize", realageSet); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-real_age_grainsize", realageSet); CHKERRQ(ierr);
   //if (realageSet == PETSC_TRUE)   realAgeForGrainSize = PETSC_TRUE;
   if (realageSet == PETSC_TRUE) {
     ierr = PetscPrintf(grid.com,
@@ -210,7 +216,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   }
 
   // see assembleSSAMatrix(); used in MISMIP
-  ierr = check_option("-shelves_drag_too", doShelvesDragToo); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-shelves_drag_too", doShelvesDragToo); CHKERRQ(ierr);
   if (doShelvesDragToo == PETSC_TRUE)   shelvesDragToo = PETSC_TRUE;
   
   ierr = config.flag_from_option("ssa", "use_ssa_velocity"); CHKERRQ(ierr);
@@ -223,14 +229,14 @@ PetscErrorCode  IceModel::setFromOptions() {
   // numerical solution of SSA equations; can be given with or without filename prefix
   // (i.e. "-ssa_matlab " or "-ssa_matlab foo" are both legal; in former case get 
   // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
-  ierr = check_option("-ssa_matlab", myssaSystemToASCIIMatlab); CHKERRQ(ierr);
+
+  string tempPrefix;
+  ierr = PISMOptionsString("-ssa_matlab", "Save linear system in Matlab-readable ASCII format",
+			   tempPrefix, myssaSystemToASCIIMatlab); CHKERRQ(ierr);
   if (myssaSystemToASCIIMatlab == PETSC_TRUE)   ssaSystemToASCIIMatlab = PETSC_TRUE;
   if (ssaSystemToASCIIMatlab == PETSC_TRUE) {  // now get the prefix if it was given by user
-    char tempPrefix[PETSC_MAX_PATH_LEN];
-    ierr = PetscOptionsGetString(PETSC_NULL, "-ssa_matlab", tempPrefix, 
-             PETSC_MAX_PATH_LEN, PETSC_NULL); CHKERRQ(ierr);
-    if (strlen(tempPrefix) > 0) {
-      strcpy(ssaMatlabFilePrefix, tempPrefix);
+    if (tempPrefix.size() > 0) {
+      strcpy(ssaMatlabFilePrefix, tempPrefix.c_str());
     } // otherwise keep default prefix, whatever it was
   }
 
@@ -254,9 +260,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   // pure number :
   ierr = config.scalar_from_option("thk_eff_reduced","thk_eff_reduced");  CHKERRQ(ierr);
 
-  // Process -y, -ys, -ye. We are reading these options here because couplers
-  // might need to know what year it is.
-  ierr = set_time_from_options();
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -299,6 +303,9 @@ PetscErrorCode IceModel::set_output_size(string option,
     result.insert("vubarSSA");
     result.insert("vvbarSSA");
   }
+
+  if (config.get_flag("force_full_diagnostics"))
+    keyword = "big";
 
   if (keyword == "small") {
     // only model-state variables are saved; we're done

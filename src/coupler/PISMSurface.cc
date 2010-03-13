@@ -229,13 +229,21 @@ PSLocalMassBalance::~PSLocalMassBalance() {
 
 PetscErrorCode PSLocalMassBalance::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  PetscTruth pdd_rand, pdd_rand_repeatable, fausto_params;
+  bool pdd_rand, pdd_rand_repeatable, fausto_params;
 
   ierr = PISMSurfaceModel::init(vars); CHKERRQ(ierr);
 
-  ierr = check_option("-pdd_rand", pdd_rand); CHKERRQ(ierr);
-  ierr = check_option("-pdd_rand_repeatable", pdd_rand_repeatable); CHKERRQ(ierr);
-  ierr = check_option("-pdd_fausto", fausto_params); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Local mass balance model", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsIsSet("-pdd_rand", "Use a PDD implementation based on simulating a random process",
+			    pdd_rand); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-pdd_rand_repeatable", "Use a PDD implementation based on simulating a repeatable random process",
+			    pdd_rand_repeatable); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-pdd_fausto", "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]",
+			    fausto_params); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
 
   ierr = verbPrintf(2, grid.com, "* Initializing the PDD-based surface (snow) processes model...\n"); CHKERRQ(ierr);
 

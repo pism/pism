@@ -568,10 +568,10 @@ iteration (the "outer" loop over \c k) has a chance to converge.
  */
 PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
   PetscErrorCode ierr;
-  PetscTruth dosnes;
+  bool dosnes;
   IceModelVec2 vNuDefault[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
 
-  ierr = check_option("-ssa_bueler", dosnes); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-ssa_bueler", dosnes); CHKERRQ(ierr);
   if (dosnes == PETSC_TRUE) {
     ierr = velocitySSA_SNES(vNuDefault, numiter); CHKERRQ(ierr);
   } else {

@@ -167,35 +167,6 @@ void endPrintRank() {
   MPI_Abort(PETSC_COMM_WORLD,3155);
 }
 
-//! Checks if an option is present in the PETSc option database.
-/*!
-
-  This is (essentially) a reimplementation of PetscOptionsHasName, except that
-  this *always* sets \c flag to PETSC_TRUE if an option is present.
-
-  PetscOptionsHasName, on the other hand, sets \c flag to PETSC_FALSE if an
-  option was set as "-foo FALSE", "-foo NO" or "-foo 0". Note that if one uses
-  "-foo 0.0", PetscOptionsHasName will set \c flag to PETSC_TRUE.
-
-  This unpredictability is bad. We want a function that does not depend on the
-  argument given with an option.
- */
-PetscErrorCode check_option(string name, PetscTruth &flag) {
-  PetscErrorCode ierr;
-  char tmp[1];
-
-  ierr = PetscOptionsGetString(PETSC_NULL, name.c_str(), tmp, 1, &flag); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode check_option(string name, bool &flag) {
-  PetscTruth ptflag;
-  PetscErrorCode ierr = check_option(name, ptflag); CHKERRQ(ierr);
-  flag = (ptflag == PETSC_TRUE);
-  return 0;
-}
-
 //! Print a warning telling the user that an option was ignored.
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]) {
   PetscErrorCode ierr;
@@ -357,10 +328,10 @@ PetscErrorCode parse_times(MPI_Comm com, string str, vector<double> &result) {
 PetscErrorCode stop_on_version_option() {
   PetscErrorCode ierr;
 
-  PetscTruth vSet, pvSet;
-  ierr = check_option("-version", vSet); CHKERRQ(ierr);
-  ierr = check_option("-pismversion", pvSet); CHKERRQ(ierr);
-  if ((vSet == PETSC_FALSE) && (pvSet == PETSC_FALSE))
+  bool vSet, pvSet;
+  ierr = PISMOptionsIsSet("-version", vSet); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-pismversion", pvSet); CHKERRQ(ierr);
+  if ((vSet == false) && (pvSet == false))
     return 0;
 
   PetscEnd();
@@ -412,17 +383,17 @@ PetscErrorCode show_usage_check_req_opts(
 
   ierr = stop_on_version_option(); CHKERRQ(ierr);
 
-  PetscTruth usageSet;
-  ierr = check_option("-usage", usageSet); CHKERRQ(ierr);
-  if (usageSet == PETSC_TRUE) {
+  bool usageSet;
+  ierr = PISMOptionsIsSet("-usage", usageSet); CHKERRQ(ierr);
+  if (usageSet == true) {
     ierr = show_usage_and_quit(com, execname, usage); CHKERRQ(ierr);
   }
 
   // go through list of required options, and if not given, fail
   bool req_absent = false;
   for (size_t ii=0; ii < required_options.size(); ii++) {
-    PetscTruth set;
-    ierr = check_option(required_options[ii], set); CHKERRQ(ierr);
+    bool set;
+    ierr = PISMOptionsIsSet(required_options[ii], set); CHKERRQ(ierr);
     if (set == PETSC_FALSE) {
       req_absent = true;
       ierr = verbPrintf(1,com,
@@ -436,9 +407,9 @@ PetscErrorCode show_usage_check_req_opts(
   }
      
   // show usage message with -help, but don't fail
-  PetscTruth helpSet;
-  ierr = check_option("-help", helpSet); CHKERRQ(ierr);
-  if (helpSet == PETSC_TRUE) {
+  bool helpSet;
+  ierr = PISMOptionsIsSet("-help", helpSet); CHKERRQ(ierr);
+  if (helpSet == true) {
     ierr = just_show_usage(com, execname, usage); CHKERRQ(ierr);
   }
 
@@ -524,21 +495,23 @@ PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
   config.init("pism_config", com, rank);
   overrides.init("pism_overrides", com, rank);
 
-  char alt_config[PETSC_MAX_PATH_LEN];
-  PetscTruth use_alt_config;
-  ierr = PetscOptionsGetString(PETSC_NULL, "-config", alt_config, PETSC_MAX_PATH_LEN, &use_alt_config);
-  if (use_alt_config) {
-    ierr = config.read(alt_config); CHKERRQ(ierr);
-  } else {
-    ierr = config.read(PISM_DefaultConfigFile); CHKERRQ(ierr);
+  string alt_config = PISM_DefaultConfigFile,
+    override_config;
+  bool use_alt_config, use_override_config;
+  
+  ierr = PetscOptionsBegin(com, "", "PISM config file options", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-config", "Specifies the name of an alternative config file",
+			     alt_config, use_alt_config); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-config_override", "Specifies a config override file name",
+			     override_config, use_override_config); CHKERRQ(ierr);
   }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  char override_config[PETSC_MAX_PATH_LEN];
-  PetscTruth use_override_config;
-  ierr = PetscOptionsGetString(PETSC_NULL, "-config_override", override_config,
-			       PETSC_MAX_PATH_LEN, &use_override_config);
+  ierr = config.read(alt_config.c_str()); CHKERRQ(ierr);
+
   if (use_override_config) {
-    ierr = overrides.read(override_config); CHKERRQ(ierr);
+    ierr = overrides.read(override_config.c_str()); CHKERRQ(ierr);
     config.import_from(overrides);
   }
   config.print();
@@ -546,35 +519,19 @@ PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
   return 0;
 }
 
-//! PISM wrapper replacing PetscOptionsStringArray.
-PetscErrorCode PISMOptionsStrings(string opt, string text, string default_value,
-				  vector<string>& result, bool &flag) {
-  PetscErrorCode ierr;
-  char tmp[TEMPORARY_STRING_LENGTH];
-  PetscTruth opt_set = PETSC_FALSE;
-
-  ierr = PetscOptionsString(opt.c_str(), text.c_str(), "", default_value.c_str(),
-			    tmp, TEMPORARY_STRING_LENGTH, &opt_set); CHKERRQ(ierr);
-
-  result.clear();
-
-  string word;
-  if (opt_set) {
-    istringstream arg(tmp);
-    while (getline(arg, word, ','))
-      result.push_back(word);
-
-    flag = true;
-  } else {
-    istringstream arg(default_value);
-    while (getline(arg, word, ','))
-      result.push_back(word);
-
-    flag = false;
-  }
-
-  return 0;
-}
+/* 
+   note on pass-by-reference for options: For the last argument "flag" to
+   PetscOptionsXXXX(....,&flag), the flag always indicates whether the option
+   has been set. Therefore "flag" is altered by this function call. For other
+   arguments "value" to PetscOptionsXXXX(....,&value,&flag), the value of
+   "value" is only set if the user specified the option. Therefore "flag"
+   should always be given a local PetscTruth variable if we want to preserve
+   previously set IceModel flags. By contrast, for various parameters "value"
+   we can use the IceModel parameter itself without fear of overwriting
+   defaults unless, of course, the user wants them overwritten. It is also o.k.
+   to have a local variable for "value", and then proceed to set the IceModel
+   member accordingly.
+*/
 
 //! PISM wrapper replacing PetscOptionsEList.
 PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set<string> choices,
@@ -616,6 +573,163 @@ PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set
 		       opt.c_str(), tmp, list.c_str()); CHKERRQ(ierr);
     ierr = PetscEnd(); CHKERRQ(ierr);
   }
+
+  return 0;
+}
+
+PetscErrorCode PISMOptionsString(string option, string text,
+				 string &result, bool &is_set) {
+  PetscErrorCode ierr;
+  char tmp[TEMPORARY_STRING_LENGTH];
+  PetscTruth flag;
+
+  ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
+			    result.c_str(), tmp,
+			    TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
+
+  if (flag) {
+    is_set = true;
+    result = tmp;
+  } else {
+    is_set = false;
+  }
+
+  return 0;
+}
+
+//! PISM wrapper replacing PetscOptionsStringArray.
+PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_value,
+				      vector<string>& result, bool &flag) {
+  PetscErrorCode ierr;
+  char tmp[TEMPORARY_STRING_LENGTH];
+  PetscTruth opt_set = PETSC_FALSE;
+
+  ierr = PetscOptionsString(opt.c_str(), text.c_str(), "", default_value.c_str(),
+			    tmp, TEMPORARY_STRING_LENGTH, &opt_set); CHKERRQ(ierr);
+
+  result.clear();
+
+  string word;
+  if (opt_set) {
+    istringstream arg(tmp);
+    while (getline(arg, word, ','))
+      result.push_back(word);
+
+    flag = true;
+  } else {
+    istringstream arg(default_value);
+    while (getline(arg, word, ','))
+      result.push_back(word);
+
+    flag = false;
+  }
+
+  return 0;
+}
+
+PetscErrorCode PISMOptionsInt(string option, string text,
+			      PetscInt &result, bool &is_set) {
+  PetscErrorCode ierr;
+  PetscTruth flag;
+
+  ierr = PetscOptionsInt(option.c_str(), text.c_str(), "",
+			 result, &result, &flag);
+  CHKERRQ(ierr);
+
+  if (flag) is_set = true;
+
+  return 0;
+}
+
+PetscErrorCode PISMOptionsReal(string option, string text,
+			       PetscReal &result, bool &is_set) {
+  PetscErrorCode ierr;
+  PetscTruth flag;
+
+  ierr = PetscOptionsReal(option.c_str(), text.c_str(), "",
+			  result, &result, &flag);
+  CHKERRQ(ierr);
+
+  if (flag) is_set = true;
+
+  return 0;
+}
+
+PetscErrorCode PISMOptionsRealArray(string option, string text,
+				    vector<PetscReal> &result, bool &is_set) {
+  PetscErrorCode ierr;
+  char str[TEMPORARY_STRING_LENGTH];
+  PetscTruth flag;
+
+  ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
+			    "none", str,
+			    TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
+
+  if (flag) {
+    is_set = true;
+    istringstream arg(str);
+    string tmp;
+
+    result.clear();
+    while(getline(arg, tmp, ',')) {
+      double d;
+      char *endptr;
+
+      d = strtod(tmp.c_str(), &endptr);
+      if (*endptr != '\0') {
+	ierr = PetscPrintf(PETSC_COMM_WORLD,
+			   "PISM ERROR: Can't parse %s (%s is not a number).\n",
+			   tmp.c_str(), tmp.c_str()); CHKERRQ(ierr);
+	return 1;
+      }
+      else
+	result.push_back(d);
+    }
+  } else {
+    is_set = false;
+  }
+  
+  return 0;
+}
+
+
+
+//! Checks if an option is present in the PETSc option database.
+/*!
+
+  This is (essentially) a reimplementation of PetscOptionsHasName, except that
+  this *always* sets \c flag to PETSC_TRUE if an option is present.
+
+  PetscOptionsHasName, on the other hand, sets \c flag to PETSC_FALSE if an
+  option was set as "-foo FALSE", "-foo NO" or "-foo 0". Note that if one uses
+  "-foo 0.0", PetscOptionsHasName will set \c flag to PETSC_TRUE.
+
+  This unpredictability is bad. We want a function that does not depend on the
+  argument given with an option.
+ */
+PetscErrorCode PISMOptionsIsSet(string option, bool &result) {
+  PetscErrorCode ierr;
+  char tmp[1];
+  PetscTruth flag;
+
+  ierr = PetscOptionsGetString(PETSC_NULL, option.c_str(), tmp, 1, &flag); CHKERRQ(ierr);
+
+  result = (flag == PETSC_TRUE);
+
+  return 0;
+}
+
+//! A version of PISMOptionsIsSet that prints a -help message.
+PetscErrorCode PISMOptionsIsSet(string option, string text,
+				bool &result) {
+  PetscErrorCode ierr;
+  char tmp[1];
+  PetscTruth flag;
+
+  ierr = PetscOptionsString(option.c_str(), text.c_str(), "",
+			    "", tmp, 1, &flag); CHKERRQ(ierr);
+
+  result = (flag == PETSC_TRUE);
 
   return 0;
 }

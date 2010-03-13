@@ -67,15 +67,21 @@ PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig) : LocalMassBala
 PetscErrorCode PDDMassBalance::init() {
   // check options for parameter values
   PetscErrorCode ierr;
-  PetscTruth     pSet;
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_factor_snow", &pddFactorSnow, &pSet);
-             CHKERRQ(ierr);
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_factor_ice", &pddFactorIce, &pSet);
-             CHKERRQ(ierr);
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_refreeze", &pddRefreezeFrac, &pSet);
-             CHKERRQ(ierr);
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-pdd_std_dev", &pddStdDev, &pSet);
-             CHKERRQ(ierr);
+  bool     pSet;
+
+  ierr = PetscOptionsBegin(PETSC_COMM_WORLD, "", "PDD mass balance model options", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsReal("-pdd_factor_snow", "PDD snow factor",
+			   pddFactorSnow, pSet); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-pdd_factor_ice", "PDD ice factor",
+			   pddFactorIce, pSet); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-pdd_refreeze", "PDD refreeze fraction", 
+			   pddRefreezeFrac, pSet); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-pdd_std_dev", "PDD standard deviation", 
+			   pddStdDev, pSet); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
   return 0;
 }
 

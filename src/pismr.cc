@@ -49,9 +49,9 @@ int main(int argc, char *argv[]) {
 		      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
-    PetscTruth iset, bfset;
-    ierr = check_option("-i", iset); CHKERRQ(ierr);
-    ierr = check_option("-boot_from", bfset); CHKERRQ(ierr);
+    bool iset, bfset;
+    ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-boot_from", bfset); CHKERRQ(ierr);
     string usage =
       "  pismr {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n\n"
       "where:\n"

@@ -263,6 +263,7 @@ depclean:
 distclean: clean
 	@rm -f ${LIBPISMNAME} ${LIBTESTSNAME} $(LIBUDUNITS) $(exec_default) $(exec_extras) \
             ../lib/pismudunits.dat
+	$(MAKE) -C ../src/verif/tests/ clean
 
 clean:
 	@rm -f *.o *.d
