@@ -63,33 +63,6 @@ PetscErrorCode IceEnthalpyModel::setFromOptions() {
 }
 
 
-PetscErrorCode IceEnthalpyModel::createVecs() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::createVecs(); CHKERRQ(ierr);
-
-  ierr = Enth3.create(grid, "enthalpy", true); CHKERRQ(ierr);
-  // POSSIBLE standard name = land_ice_enthalpy
-  ierr = Enth3.set_attrs(
-     "model_state",
-     "ice enthalpy (includes sensible heat, latent heat, pressure)",
-     "J kg-1",
-     ""); CHKERRQ(ierr);
-  ierr = variables.add(Enth3); CHKERRQ(ierr);
-
-  // see IceModel::allocate_internal_objects(), which is where this should go
-  ierr = EnthNew3.create(grid,"enthalpy_new",false); CHKERRQ(ierr); // global
-  ierr = EnthNew3.set_attrs(
-     "internal",
-     "ice enthalpy; temporary space during timestep",
-     "J kg-1",
-     ""); CHKERRQ(ierr);
-  // work vectors with "internal" are not in PISMVars IceModel::variables
-
-  return 0;
-}
-
-
 PetscErrorCode IceEnthalpyModel::initFromFile(const char *filename) {
   PetscErrorCode ierr;
 
@@ -191,43 +164,6 @@ PetscErrorCode IceEnthalpyModel::bootstrapFromFile(const char *filename) {
 }
 
 
-//!  If this gets called then we need to extend the IceModelVec3s owned by IceEnthalpyModel.
-PetscErrorCode IceEnthalpyModel::check_maximum_thickness_hook(const int old_Mz) {
-  PetscErrorCode  ierr;
-
-  // We use surface temperatures to extend Enth3 and Enthnew3. We get them from the
-  // PISMSurfaceModel.
-  if (surface != PETSC_NULL) {
-    ierr = surface->ice_surface_temperature(grid.year, 0.0, artm); CHKERRQ(ierr);
-  } else {
-    SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
-  }
-
-  // vWork2d[0] will have the enthalpy of the air, very close to the value of
-  //   Enth_ks in enthalpyAndDrainageStep() below
-  
-  ierr = vWork2d[0].begin_access(); CHKERRQ(ierr);
-  ierr = artm.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = EC->getEnthPermissive(
-         artm(i,j),0.0,EC->getPressureFromDepth(0.0),vWork2d[0](i,j));
-         CHKERRQ(ierr);
-    }
-  }
-  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-  ierr = artm.end_access(); CHKERRQ(ierr);
-
-  // Model state 3D vectors:
-  ierr = Enth3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
-
-  // Work 3D vectors:
-  ierr = EnthNew3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
 
 /*********** procedures for read/write ****************/
 
@@ -239,36 +175,36 @@ PetscErrorCode IceEnthalpyModel::write_extra_fields(const char* filename) {
   ierr = Enth3.write(filename, NC_DOUBLE); CHKERRQ(ierr);
 
   // also write omega = liquid water fraction
-  //   we use EnthNew3 (global) as temporary, allocated space for this purpose
+  //   we use Enthnew3 (global) as temporary, allocated space for this purpose
   ierr = verbPrintf(4, grid.com,
       "  writing liquid water fraction 'liquid_frac' from enthalpy ...\n"); CHKERRQ(ierr);
-  ierr = setLiquidFracFromEnthalpy(EnthNew3); CHKERRQ(ierr);
-  ierr = EnthNew3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = setLiquidFracFromEnthalpy(Enthnew3); CHKERRQ(ierr);
+  ierr = Enthnew3.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   // also write temp_pa = pressure-adjusted temp in Celcius
-  //   again use EnthNew3 (global) as temporary, allocated space
+  //   again use Enthnew3 (global) as temporary, allocated space
   ierr = verbPrintf(4, grid.com,
       "  writing pressure-adjusted ice temperature (deg C) 'temp_pa' ...\n");
       CHKERRQ(ierr);
-  ierr = setPATempFromEnthalpy(EnthNew3); CHKERRQ(ierr); // sets to Kelvin
-  ierr = EnthNew3.shift(- config.get("water_melting_temperature"));// make deg C
+  ierr = setPATempFromEnthalpy(Enthnew3); CHKERRQ(ierr); // sets to Kelvin
+  ierr = Enthnew3.shift(- config.get("water_melting_temperature"));// make deg C
       CHKERRQ(ierr);
-  ierr = EnthNew3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = Enthnew3.write(filename, NC_FLOAT); CHKERRQ(ierr);
 
   // write CTS position (unitless) if command line option -cts is given
-  //   again use EnthNew3 (global) as temporary, allocated space
+  //   again use Enthnew3 (global) as temporary, allocated space
   bool userWantsCTS;
   ierr = PISMOptionsIsSet("-cts", userWantsCTS); CHKERRQ(ierr);
   if (userWantsCTS) {
     ierr = verbPrintf(4, grid.com,
       "  writing CTS scalar field 'cts'  (= E/Es) ...\n"); CHKERRQ(ierr);
-    ierr = setCTSFromEnthalpy(EnthNew3); CHKERRQ(ierr); // returns K
-    ierr = EnthNew3.write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = setCTSFromEnthalpy(Enthnew3); CHKERRQ(ierr); // returns K
+    ierr = Enthnew3.write(filename, NC_FLOAT); CHKERRQ(ierr);
   }
 
-  // reset attributes on EnthNew3, a temporary; probaly not needed
-  ierr = EnthNew3.set_name("enthalpy_new"); CHKERRQ(ierr);
-  ierr = EnthNew3.set_attrs(
+  // reset attributes on Enthnew3, a temporary; probaly not needed
+  ierr = Enthnew3.set_name("enthalpy_new"); CHKERRQ(ierr);
+  ierr = Enthnew3.set_attrs(
      "internal",
      "ice enthalpy; temporary space during timestep",
      "J kg-1",
@@ -563,7 +499,7 @@ PetscErrorCode IceEnthalpyModel::temperatureStep(
       "         CALLING IceEnthalpyModel::enthalpyAndDrainageStep()]\n");
       CHKERRQ(ierr);
 
-    // new enthalpy values go in EnthNew3; also updates (and communicates) Hmelt
+    // new enthalpy values go in Enthnew3; also updates (and communicates) Hmelt
     // enthalpyStep() is in iceEnthalpyModel.cc
     PetscScalar myLiquifiedVol = 0.0;
     ierr = enthalpyAndDrainageStep(vertSacrCount,&myLiquifiedVol);  CHKERRQ(ierr);
@@ -578,8 +514,8 @@ PetscErrorCode IceEnthalpyModel::temperatureStep(
     
 
     // start & complete communication
-    ierr = Enth3.beginGhostCommTransfer(EnthNew3); CHKERRQ(ierr);
-    ierr = Enth3.endGhostCommTransfer(EnthNew3); CHKERRQ(ierr);
+    ierr = Enth3.beginGhostCommTransfer(Enthnew3); CHKERRQ(ierr);
+    ierr = Enth3.endGhostCommTransfer(Enthnew3); CHKERRQ(ierr);
 
     ierr = setTnew3FromEnth3();  CHKERRQ(ierr);  // temperatureAgeStep() ASSUMES Tnew3 valid
   }
@@ -697,7 +633,7 @@ This method is documented by the page \ref bombproofenth.
 This method uses instances of combinedSystemCtx, bedrockOnlySystemCtx, and
 iceenthOnlySystemCtx.
 
-This method modifies IceModelVec3 EnthNew3, IceModelVec3Bedrock Tb3,
+This method modifies IceModelVec3 Enthnew3, IceModelVec3Bedrock Tb3,
 IceModelVec2 vBasalMeltRate, and IceModelVec2 vHmelt.  No communication of
 ghosts is done for any of these fields.
  */
@@ -793,7 +729,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
   ierr = w3.begin_access(); CHKERRQ(ierr);
   ierr = Sigma3.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  ierr = EnthNew3.begin_access(); CHKERRQ(ierr);
+  ierr = Enthnew3.begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
 
   PetscInt liquifiedCount = 0;
@@ -1018,8 +954,8 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
         Hmeltnew += Hdrainedtotal;
       }
 
-      // transfer column into EnthNew3; communication later
-      ierr = EnthNew3.setValColumnPL(i,j,fMz,fzlev,Enthnew); CHKERRQ(ierr);
+      // transfer column into Enthnew3; communication later
+      ierr = Enthnew3.setValColumnPL(i,j,fMz,fzlev,Enthnew); CHKERRQ(ierr);
 
       // if no thermal layer then need to fill Tb directly
       if (fMbz == 1) {
@@ -1069,7 +1005,7 @@ PetscErrorCode IceEnthalpyModel::enthalpyAndDrainageStep(
   ierr = w3.end_access(); CHKERRQ(ierr);
   ierr = Sigma3.end_access(); CHKERRQ(ierr);
   ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = EnthNew3.end_access(); CHKERRQ(ierr);
+  ierr = Enthnew3.end_access(); CHKERRQ(ierr);
 
   delete [] Enthnew; delete [] Tbnew;  delete [] xcombined;
   delete [] fzlev;   delete [] fzblev;

@@ -485,6 +485,10 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   ierr = Tnew3.create(grid,"temp_new",false); CHKERRQ(ierr);
   ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
                          "K", ""); CHKERRQ(ierr);
+  ierr = Enthnew3.create(grid,"enthalpy_new",false); CHKERRQ(ierr);
+  ierr = Enthnew3.set_attrs("internal",
+             "ice enthalpy; temporary space during timestep",
+             "J kg-1", ""); CHKERRQ(ierr);
   ierr = Sigmastag3[0].create(grid,"Sigma_stagx",true); CHKERRQ(ierr);
   ierr = Sigmastag3[0].set_attrs("internal",
              "rate of strain heating; on staggered grid offset in X direction",

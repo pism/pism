@@ -11,9 +11,11 @@ test_02 ()
     cleanup
 
     set -e
+    
+    NRANGE="1 2 3 4 6"
 
     # Create the files:
-    for NN in 1 2 3 4 6;
+    for NN in $NRANGE;
     do 
 	run -n $NN pismv -test G -Mx 61 -My 61 -Mz 61 -y 1 -verbose 1 -o foo$NN.nc
     done
@@ -21,9 +23,9 @@ test_02 ()
     set +e
 
     # Compare:
-    for i in 1 2 3 4 6;
+    for i in $NRANGE;
     do
-	for j in 1 2 3 4 6;
+	for j in $NRANGE;
 	do
 	    if [ $i -le $j ]; then continue; fi
 	    

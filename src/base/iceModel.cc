@@ -163,6 +163,14 @@ PetscErrorCode IceModel::createVecs() {
   ierr = T3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = variables.add(T3); CHKERRQ(ierr);
 
+  ierr = Enth3.create(grid, "enthalpy", true); CHKERRQ(ierr);
+  // POSSIBLE standard name = land_ice_enthalpy
+  ierr = Enth3.set_attrs(
+     "model_state",
+     "ice enthalpy (includes sensible heat, latent heat, pressure)",
+     "J kg-1", ""); CHKERRQ(ierr);
+  ierr = variables.add(Enth3); CHKERRQ(ierr);
+
   // age of ice but only if age will be computed
   if (config.get_flag("do_age")) {
     ierr = tau3.create(grid, "age", true); CHKERRQ(ierr);

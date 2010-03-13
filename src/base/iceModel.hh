@@ -467,7 +467,7 @@ protected:
 				//!< deformation code only. (FIXME!)
   IceModelVec2 vWork2d[nWork2d];
   // 3D working space (with specific purposes)
-  IceModelVec3 Tnew3, taunew3;
+  IceModelVec3 Tnew3, Enthnew3, taunew3;
   IceModelVec3 Sigmastag3[2], Istag3[2];
 
   // for saving SSA velocities for restart

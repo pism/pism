@@ -45,15 +45,9 @@ public:
   virtual PetscErrorCode write_extra_fields(const char* filename);
 
 protected:
-  using IceModel::createVecs;
-  virtual PetscErrorCode createVecs();
-  
   using IceModel::energyStats;
   virtual PetscErrorCode energyStats(PetscScalar iarea, bool useHomoTemp, 
                                      PetscScalar &gmeltfrac, PetscScalar &gtemp0);
-
-  using IceModel::check_maximum_thickness_hook;
-  virtual PetscErrorCode check_maximum_thickness_hook(const int old_Mz);
 
   using IceModel::temperatureStep;
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, 
@@ -79,10 +73,6 @@ protected:  // new to IceEnthalpyModel
                 PetscScalar omega_max, PetscScalar thickness,
                 PetscScalar z, PetscScalar dz,
                 PetscScalar &enthalpy, PetscScalar &Hmelt);
-
-protected:
-  IceModelVec3  EnthNew3;  // NOTE:  Enth3 itself is an IceModel member,
-                           //        uninitialized and unused within IceModel
 };
 
 #endif  // __iceEnthalpyModel_hh

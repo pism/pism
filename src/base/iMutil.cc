@@ -220,15 +220,31 @@ PetscErrorCode IceModel::check_maximum_thickness() {
     SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }
 
+  // for extending the variables Enth3 and Enthnew3 vertically, put into
+  //   vWork2d[0] the enthalpy of the air
+  ierr = vWork2d[0].begin_access(); CHKERRQ(ierr);
+  ierr = artm.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = EC->getEnthPermissive(
+         artm(i,j),0.0,EC->getPressureFromDepth(0.0),vWork2d[0](i,j));
+         CHKERRQ(ierr);
+    }
+  }
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  ierr = artm.end_access(); CHKERRQ(ierr);
+
   // Model state 3D vectors:
   ierr =     u3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =     v3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =     w3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr = Sigma3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =     T3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
+  ierr =  Enth3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
 
   // Work 3D vectors:
   ierr =         Tnew3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
+  ierr =      Enthnew3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
   ierr = Sigmastag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr = Sigmastag3[1].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =     Istag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
