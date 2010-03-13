@@ -395,7 +395,7 @@ PetscErrorCode IceModel::init_physics() {
   ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
 
   // Initialize the IceFlowLaw object:
-  if (doColdIceMethods == PETSC_FALSE) {
+  if (!doColdIceMethods) {
     ierr = verbPrintf(2, grid.com,
       "  setting flow law to Glen-Paterson-Budd-Lliboutry-Duval type ...\n");
       CHKERRQ(ierr);

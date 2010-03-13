@@ -109,6 +109,10 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // "-cbar_to_till" read in invertVelocitiesFromNetCDF() in iMinverse.cc
 
+  // if set, use old IceModel::temperatureStep(), and set enthalpy as though
+  //   ice is cold
+  ierr = PISMOptionsIsSet("-cold", doColdIceMethods); CHKERRQ(ierr);
+
   ierr = PISMOptionsReal("-constant_nuH",
 			 "Sets a constant value for the product of viscosity and thickness used in the SSA velocity computation",
 			 my_nuH, my_useConstantNuH); CHKERRQ(ierr);

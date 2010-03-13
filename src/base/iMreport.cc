@@ -158,40 +158,62 @@ Communication occurs here.
  */
 PetscErrorCode IceModel::energyStats(PetscScalar iarea, bool useHomoTemp, 
                                      PetscScalar &gmeltfrac, PetscScalar &gtemp0) {
-  PetscErrorCode  ierr;
-  PetscScalar     **H, **Tbase;
-  PetscScalar     meltarea, temp0;
-
-  const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
+  PetscErrorCode    ierr;
+  PetscScalar       meltarea = 0.0, temp0 = 0.0;
+  const PetscScalar a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
   
-  // put basal ice temperature in vWork2d[0]
-  ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = T3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
-  ierr = vWork2d[0].get_array(Tbase); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
 
-  double min_temperature_for_SIA_sliding = config.get("minimum_temperature_for_sliding");
-  meltarea = 0.0; temp0 = 0.0;
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (H[i][j] > 0) {
-        // accumulate area of base which is at melt point
-        if (useHomoTemp) {
-          if (Tbase[i][j] + ice->beta_CC_grad * H[i][j] >= min_temperature_for_SIA_sliding)
-            meltarea += a;
-        } else {
-          if (Tbase[i][j] >= ice->meltingTemp)
-            meltarea += a;
+  if (doColdIceMethods) {
+    // use T3 to get stats
+    ierr = T3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
+    PetscScalar **Tbase;
+    ierr = vWork2d[0].get_array(Tbase); CHKERRQ(ierr);
+    double min_temperature_for_SIA_sliding
+                 = config.get("minimum_temperature_for_sliding");
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        if (vH(i,j) > 0) {
+          // accumulate area of base which is at melt point
+          if (useHomoTemp) {
+            if ( Tbase[i][j] + ice->beta_CC_grad * vH(i,j)
+                           >= min_temperature_for_SIA_sliding )
+              meltarea += a;
+          } else {
+            if (Tbase[i][j] >= ice->meltingTemp)
+              meltarea += a;
+          }
+        }
+        // if you happen to be at center, record basal temp
+        if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
+          temp0 = Tbase[i][j];
         }
       }
-      // if you happen to be at center, record basal temp
-      if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-        temp0 = Tbase[i][j];
+    }
+    ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  } else {
+    // use Enth3 to get stats
+    ierr = Enth3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
+    PetscScalar **Enthbase;
+    ierr = vWork2d[0].get_array(Enthbase); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        if (vH(i,j) > 0) {
+          // accumulate area of base which is at melt point
+          if (EC->isTemperate(Enthbase[i][j], EC->getPressureFromDepth(vH(i,j)) ))  
+            meltarea += a;
+        }
+        // if you happen to be at center, record absolute basal temp there
+        if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
+          ierr = EC->getAbsTemp(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)), temp0);
+            CHKERRQ(ierr);
+        }
       }
     }
+    ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   }
-  
+
   ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
 
   // communication
   ierr = PetscGlobalSum(&meltarea, &gmeltfrac, grid.com); CHKERRQ(ierr);
@@ -738,6 +760,8 @@ PetscErrorCode IceModel::compute_temp_pa(IceModelVec3 &useForPATemp) {
   }
 
 
+  // make deg C:
+  ierr = useForPATemp.shift(-config.get("water_melting_temperature")); CHKERRQ(ierr);
   ierr = useForPATemp.set_name("temp_pa"); CHKERRQ(ierr);
   ierr = useForPATemp.set_attrs("diagnostic",
        "pressure-adjusted ice temperature (degrees C)", "", ""); CHKERRQ(ierr);

@@ -79,8 +79,6 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
 
   allowAboveMelting = PETSC_FALSE;  // only IceCompModel ever sets it to true
 
-  doColdIceMethods = PETSC_TRUE;  // FIXME: this way until IceEnthalpyModel is fully moved into IceModel
-
   // Default ice type:
   iceFactory.setType(ICE_PB);
 }

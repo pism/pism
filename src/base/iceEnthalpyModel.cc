@@ -22,7 +22,6 @@
 #include "iceenthOnlySystem.hh"
 #include "combinedSystem.hh"
 
-#include "PISMIO.hh"
 
 /*********** procedures for init ****************/
 
@@ -33,85 +32,12 @@ IceEnthalpyModel::IceEnthalpyModel(IceGrid &g, NCConfigVariable &conf,
 }
 
 
-PetscErrorCode IceEnthalpyModel::setFromOptions() {
-  PetscErrorCode ierr;
-
-  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
-
-  // if set, use old IceModel::temperatureStep(), and set enthalpy as though
-  //   ice is cold
-  ierr = PISMOptionsIsSet("-cold", doColdIceMethods); CHKERRQ(ierr);
-
-  // DEBUG:  report settings
-  const int vlevel = 2;
-  ierr = verbPrintf(vlevel, grid.com,
-      "  IceEnthalpyModel::setFromOptions():\n"); CHKERRQ(ierr);
-  ierr = verbPrintf(vlevel, grid.com,
-      "    doColdIceMethods is %s\n", 
-      (doColdIceMethods == PETSC_TRUE) ? "TRUE" : "FALSE");
-      CHKERRQ(ierr);
-  ierr = verbPrintf(vlevel, grid.com,
-      "    config:bmr_enhance_basal_water_pressure is %s\n",
-      config.get_flag("bmr_enhance_basal_water_pressure") ? "TRUE" : "FALSE");
-      CHKERRQ(ierr);
-  ierr = verbPrintf(vlevel, grid.com,
-      "    config:thk_eff_basal_water_pressure is %s\n",
-      config.get_flag("thk_eff_basal_water_pressure") ? "TRUE" : "FALSE");
-      CHKERRQ(ierr);
-
-  return 0;
-}
-
-
-PetscErrorCode IceEnthalpyModel::energyStats(PetscScalar iarea, bool /*useHomoTemp*/, 
-                                             PetscScalar &gmeltfrac, PetscScalar &gtemp0) {
-  PetscErrorCode  ierr;
-
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  // put basal ice enthalpy in vWork2d[0]
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  ierr = Enth3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
-  ierr = Enth3.end_access(); CHKERRQ(ierr);
-  PetscScalar **Enthbase;
-  ierr = vWork2d[0].get_array(Enthbase); CHKERRQ(ierr);
-
-  const PetscScalar a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
-  PetscScalar  meltarea = 0.0, temp0 = 0.0;
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (vH(i,j) > 0) {
-        // accumulate area of base which is at melt point
-        if (EC->isTemperate(Enthbase[i][j], EC->getPressureFromDepth(vH(i,j)) ))  
-          meltarea += a;
-      }
-      // if you happen to be at center, record absolute basal temp there
-      if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-        ierr = EC->getAbsTemp(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)), temp0);
-          CHKERRQ(ierr);
-      }
-    }
-  }
-  
-  ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-
-  ierr = PetscGlobalSum(&meltarea, &gmeltfrac, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalMax(&temp0,    &gtemp0,    grid.com); CHKERRQ(ierr);
-
-  // normalize fraction correctly
-  if (iarea > 0.0)   gmeltfrac = gmeltfrac / iarea;
-  else gmeltfrac = 0.0;
-
-  return 0;
-}
-
-
 /*********** timestep routines ****************/
 
 PetscErrorCode IceEnthalpyModel::temperatureStep(
      PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {
   PetscErrorCode ierr;
-  if (doColdIceMethods==PETSC_TRUE) {
+  if (doColdIceMethods) {
     ierr = verbPrintf(4,grid.com,
       "    [IceEnthalpyModel::temperatureStep(): ENTHALPY IS OFF.\n"
       "         CALLING IceModel::temperatureStep()]\n");

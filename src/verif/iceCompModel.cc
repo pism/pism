@@ -194,10 +194,12 @@ PetscErrorCode IceCompModel::init_physics() {
   // Set the default for IceCompModel:
   ierr = iceFactory.setType(ICE_ARR); CHKERRQ(ierr);
 
+  doColdIceMethods = true;
+
   // Let the base class version read the options (possibly overriding the
   // default set above) and create the IceFlowLaw object.
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
-  
+
   // check on whether the options (already checked) chose the right IceFlowLaw for verification;
   //   need to have a tempFromSoftness() procedure as well as the need for the right
   //   flow law to have the errors make sense

@@ -31,19 +31,11 @@ class IceEnthalpyModel : public IceModel {
 public:
   IceEnthalpyModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides);
 
-  using IceModel::setFromOptions;
-  PetscErrorCode setFromOptions();
-
 protected:
-  using IceModel::energyStats;
-  virtual PetscErrorCode energyStats(PetscScalar iarea, bool useHomoTemp, 
-                                     PetscScalar &gmeltfrac, PetscScalar &gtemp0);
-
   using IceModel::temperatureStep;
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, 
                                          PetscScalar* bulgeCount);
 
-protected:  // new to IceEnthalpyModel  
   virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
                                                  PetscScalar* liquifiedVol);
 
