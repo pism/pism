@@ -21,28 +21,63 @@
 #include "columnSystem.hh"
 #include "iceModel.hh"
 
-//! Manage the solution of the energy and age equations, and related parallel communication.
-PetscErrorCode IceModel::temperatureStep() {
+
+//! Manage the solution of the energy equation, and related parallel communication.
+/*!
+Calls the method enthalpyAndDrainageStep(), or temperatureStep() if
+doColdIceMethods.
+ */
+PetscErrorCode IceModel::energyStep() {
   PetscErrorCode  ierr;
 
   PetscScalar  myCFLviolcount = 0.0,   // these are counts but they are type "PetscScalar"
-               myVertSacrCount = 0.0,  //   because that type works with PetscGlobalSum()
-               mybulgeCount = 0.0;
-  PetscScalar gVertSacrCount, gbulgeCount;
+               myVertSacrCount = 0.0;  //   because that type works with PetscGlobalSum()
+  PetscScalar gVertSacrCount;
 
   // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
   ierr = countCFLViolations(&myCFLviolcount); CHKERRQ(ierr);
-    
-  // new temperature values go in vTnew; also updates Hmelt:
-  ierr = temperatureStep(&myVertSacrCount,&mybulgeCount); CHKERRQ(ierr);  
 
-  // start temperature & age communication
-  ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
+  if (doColdIceMethods) {
+    PetscScalar  mybulgeCount = 0.0, gbulgeCount;
+    // new temperature values go in vTnew; also updates Hmelt:
+    ierr = temperatureStep(&myVertSacrCount,&mybulgeCount); CHKERRQ(ierr);  
+
+    ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
+    ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
+
+    ierr = setEnth3FromT3_ColdIce();  CHKERRQ(ierr);
+
+    ierr = PetscGlobalSum(&mybulgeCount, &gbulgeCount, grid.com); CHKERRQ(ierr);
+    if (gbulgeCount > 0.0) {   // count of when advection bulges are limited;
+                               //    frequently it is identically zero
+      const PetscScalar bulgePRCNT
+             = 100.0 * (gbulgeCount / (grid.Mx * grid.My * (grid.Mz + grid.Mbz)) );
+      const PetscScalar BPBULGE_REPORT_PERCENT = 0.0001; // only report if above 1 / 10^6
+      if (bulgePRCNT > BPBULGE_REPORT_PERCENT) {
+        char tempstr[50] = "";
+        snprintf(tempstr,50, "  [BPbulge=%.5f%%] ", bulgePRCNT);
+        stdout_flags = tempstr + stdout_flags;
+      }
+    }
+  } else {
+    // new enthalpy values go in Enthnew3; also updates (and communicates) Hmelt
+    PetscScalar myLiquifiedVol = 0.0, gLiquifiedVol;
+
+    ierr = enthalpyAndDrainageStep(&myVertSacrCount,&myLiquifiedVol);  CHKERRQ(ierr);
+
+    ierr = Enth3.beginGhostCommTransfer(Enthnew3); CHKERRQ(ierr);
+    ierr = Enth3.endGhostCommTransfer(Enthnew3); CHKERRQ(ierr);
+
+    ierr = PetscGlobalSum(&myLiquifiedVol, &gLiquifiedVol, grid.com); CHKERRQ(ierr);
+    if (gLiquifiedVol > 0.0) {
+      ierr = verbPrintf(1,grid.com,
+        "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n",
+        gLiquifiedVol / 1.0e9); CHKERRQ(ierr);
+    }
+  }
 
   ierr = PetscGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&myVertSacrCount, &gVertSacrCount, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&mybulgeCount, &gbulgeCount, grid.com); CHKERRQ(ierr);
-
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
     const PetscScalar bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
     const PetscScalar BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
@@ -53,21 +88,6 @@ PetscErrorCode IceModel::temperatureStep() {
       stdout_flags = tempstr + stdout_flags;
     }
   }
-
-  if (gbulgeCount > 0.0) {   // count of when advection bulges are limited;
-                             //    frequently it is identically zero
-    const PetscScalar bulgePRCNT
-             = 100.0 * (gbulgeCount / (grid.Mx * grid.My * (grid.Mz + grid.Mbz)) );
-    const PetscScalar BPBULGE_REPORT_PERCENT = 0.0001; // only report if above 1 / 10^6
-    if (bulgePRCNT > BPBULGE_REPORT_PERCENT) {
-      char tempstr[50] = "";
-      snprintf(tempstr,50, "  [BPbulge=%.5f%%] ", bulgePRCNT);
-      stdout_flags = tempstr + stdout_flags;
-    }
-  }
-
-  // complete temperature & age communication
-  ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
 
   return 0;
 }

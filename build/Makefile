@@ -34,10 +34,10 @@ endif
 CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_REVISION='"$(PISM_REVISION)"' \
           -I../src/udunits -I../src/base -DPISM_DEFAULT_CONFIG_FILE='"$(PISM_INSTALL_DIR)/lib/pism_config.nc"'
 ifeq (${PISM_USE_GNU_FLAGS}, 1)
-  CFLAGS += -Woverloaded-virtual -pipe -O2
+  CFLAGS += -Woverloaded-virtual -Wall -pipe -O2
 endif
 ifeq (${PISM_USE_DEBUG}, 1)
-  CFLAGS += -g -Wall -Wextra
+  CFLAGS += -g
 endif
 
 # Flags needed by UDUNITS:
@@ -91,10 +91,12 @@ ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc PISMIO.cc	\
 	iceModelVec.cc iceModelVec2.cc iceModelVec3.cc NCVariable.cc		\
 	matlablike.cc greens.cc deformation.cc localMassBalance.cc iceModel.cc	\
 	iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc iMdefaults.cc	\
-	iMenthalpy.cc iMgeometry.cc iMgrainsize.cc iMinit.cc iMinverse.cc iMinverseMat.cc	\
-	iMIO.cc iMmatlab.cc iMoptions.cc iMreport.cc iMssa.cc iMssaSNES.cc	\
-	iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc Timeseries.cc	\
-	PISMVars.cc iMtimeseries.cc enthalpyConverter.cc iceModelVec2T.cc	\
+	iMenthalpy.cc iMgeometry.cc iMgrainsize.cc iMinit.cc iMinverse.cc \
+	iMinverseMat.cc	iMIO.cc iMmatlab.cc iMoptions.cc iMreport.cc iMssa.cc \
+	iMssaSNES.cc iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc \
+	Timeseries.cc PISMVars.cc iMtimeseries.cc enthalpyConverter.cc \
+	combinedSystem.cc bedrockOnlySystem.cc \
+	iceenthOnlySystem.cc iceModelVec2T.cc	\
 	PISMComponent.cc PAConstant.cc PAYearlyCycle.cc PAForcing.cc		\
 	PISMSurface.cc PISMOcean.cc PCFactory.cc PALapseRates.cc
 ice_csources := cubature.c pism_signal.c
@@ -106,8 +108,7 @@ tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 other_sources := penth.cc pismr.cc pismd.cc pismv.cc pisms.cc \
 	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc \
 	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc iceCalvBCModel.cc \
-	iceEnthalpyModel.cc combinedSystem.cc bedrockOnlySystem.cc \
-	iceenthOnlySystem.cc flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
+	flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
 
 # this is the primary derived class example so it is structured as an example
 #   derived class; as an example it includes "grn_make"; creates executable
@@ -164,10 +165,9 @@ $(config_file): pism_config.cdl
 
 $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 
-../bin/penth : penth.o iceEnthalpyModel.o combinedSystem.o \
-               bedrockOnlySystem.o iceenthOnlySystem.o enthalpyConverter.o ${LIBPISMNAME}
-	${CXXLINKER} penth.o iceEnthalpyModel.o combinedSystem.o \
-	    bedrockOnlySystem.o iceenthOnlySystem.o enthalpyConverter.o ${ICE_LIB_FLAGS} -o $@
+# penth executable should be removed!
+../bin/penth : penth.o ${LIBPISMNAME}
+	${CXXLINKER} penth.o ${ICE_LIB_FLAGS} -o $@
 
 ../bin/pismr : pismr.o ${LIBPISMNAME}
 	${CXXLINKER} pismr.o ${ICE_LIB_FLAGS} -o $@

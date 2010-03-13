@@ -448,8 +448,9 @@ PetscErrorCode IceModel::setExecName(const char *my_executable_short_name) {
   return 0;
 }
 
-PetscErrorCode IceModel::step(bool do_mass_conserve,
-			      bool do_temp,
+
+PetscErrorCode IceModel::step(bool do_mass_continuity,
+			      bool do_energy,
 			      bool do_age,
 			      bool do_skip,
 			      bool do_bed_deformation,
@@ -515,8 +516,7 @@ PetscErrorCode IceModel::step(bool do_mass_conserve,
   stdout_flags += (updateAtDepth ? "v" : "V");
     
   // adapt time step using velocities and diffusivity, ..., just computed
-  bool useCFLforTempAgeEqntoGetTimestep = (do_temp == PETSC_TRUE);
-  ierr = determineTimeStep(useCFLforTempAgeEqntoGetTimestep); CHKERRQ(ierr);
+  ierr = determineTimeStep(do_energy); CHKERRQ(ierr);
   dtTempAge += dt;
   grid.year += dt / secpera;  // adopt it
   // IceModel::dt,dtTempAge,grid.year are now set correctly according to
@@ -533,9 +533,8 @@ PetscErrorCode IceModel::step(bool do_mass_conserve,
     stdout_flags += "$";
   }
 
-  bool tempStep = updateAtDepth && do_temp;
-  if (tempStep) { // do the temperature step
-    ierr = temperatureStep(); CHKERRQ(ierr);
+  if (updateAtDepth && do_energy) { // do the temperature step
+    ierr = energyStep(); CHKERRQ(ierr);
     if (updateHmelt == PETSC_TRUE) {
       ierr = diffuseHmelt(); CHKERRQ(ierr);
     }
@@ -552,7 +551,7 @@ PetscErrorCode IceModel::step(bool do_mass_conserve,
 
   PetscLogEventBegin(massbalEVENT,0,0,0,0);
 
-  if (do_mass_conserve) {
+  if (do_mass_continuity) {
     ierr = massContExplicitStep(); CHKERRQ(ierr); // update H
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
     if ((do_skip == PETSC_TRUE) && (skipCountDown > 0))
@@ -577,6 +576,7 @@ PetscErrorCode IceModel::step(bool do_mass_conserve,
 
   return 0;
 }
+
 
 //! Do the time-stepping for an evolution run.
 /*! 
@@ -755,6 +755,7 @@ PetscErrorCode IceModel::diagnosticRun() {
   }
   return 0;
 }
+
 
 //! Manage the initialization of the IceModel object.
 /*!

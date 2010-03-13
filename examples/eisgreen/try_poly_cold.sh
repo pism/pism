@@ -14,7 +14,9 @@ IN=green20km_y1.nc
 set -e  # exit on error
 set -x  # show commands as they go
 
-mpiexec -n $NN pismr $OPTIONS -y $LENGTH -i $IN -o pismr_y$LENGTH.nc
+# polythermal version
+mpiexec -n $NN pismr $OPTIONS -y $LENGTH -i $IN -o poly_y$LENGTH.nc
 
-mpiexec -n $NN penth $OPTIONS -y $LENGTH -i $IN -o penth_y$LENGTH.nc
+# cold ice version
+mpiexec -n $NN pismr -cold $OPTIONS -y $LENGTH -i $IN -o cold_y$LENGTH.nc
 

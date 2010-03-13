@@ -114,8 +114,10 @@ public:
   // see iceModel.cc
   PetscErrorCode init();
   virtual PetscErrorCode run();
-  virtual PetscErrorCode step(bool do_mass_conserve, bool do_temp,
-			      bool do_age, bool do_skip,
+  virtual PetscErrorCode step(bool do_mass_continuity, 
+                              bool do_energy,
+			      bool do_age,
+			      bool do_skip,
 			      bool do_bed_deformation,
 			      bool do_plastic_till);
   virtual PetscErrorCode diagnosticRun();
@@ -311,6 +313,17 @@ protected:
   virtual PetscErrorCode setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac);
   virtual PetscErrorCode setCTSFromEnthalpy(IceModelVec3 &useForCTS);
   virtual PetscErrorCode setPATempFromEnthalpy(IceModelVec3 &useForPATemp);
+  virtual PetscErrorCode getEnthalpyCTSColumn(
+                PetscInt Mz, PetscScalar dzEQ, const PetscScalar *zlev,
+                PetscScalar thk, PetscInt ks,
+                const PetscScalar *Enth, const PetscScalar *w,
+                PetscScalar *lambda, PetscScalar **Enth_s);
+  virtual PetscErrorCode enthalpyAndDrainageStep(
+                PetscScalar* vertSacrCount, PetscScalar* liquifiedVol);
+  virtual PetscErrorCode drainageToBaseModelEnth(
+                PetscScalar omega_max, PetscScalar thickness,
+                PetscScalar z, PetscScalar dz,
+                PetscScalar &enthalpy, PetscScalar &Hdrained);
 
   // see iMgeometry.cc
   virtual PetscErrorCode computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2 &vtaudy);
@@ -446,8 +459,8 @@ protected:
   virtual PetscErrorCode getNuFromNuH(IceModelVec2 vNuH[2], SSASNESCtx *user);
   virtual PetscErrorCode velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its);
 
-  // see iMtemp.cc; uses columnSystem.{hh|cc}
-  virtual PetscErrorCode temperatureStep();
+  // see iMtemp.cc
+  virtual PetscErrorCode energyStep();
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
   virtual PetscErrorCode ageStep();
   virtual bool checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
