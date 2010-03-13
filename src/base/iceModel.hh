@@ -304,6 +304,14 @@ protected:
   // see iMdefaults.cc
   PetscErrorCode setDefaults();
 
+  // see iMenthalpy.cc
+  virtual PetscErrorCode setEnth3FromT3_ColdIce();
+  virtual PetscErrorCode setEnth3FromT3AndLiqfrac3(IceModelVec3 &Liqfrac3);
+  virtual PetscErrorCode setTnew3FromEnth3();
+  virtual PetscErrorCode setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac);
+  virtual PetscErrorCode setCTSFromEnthalpy(IceModelVec3 &useForCTS);
+  virtual PetscErrorCode setPATempFromEnthalpy(IceModelVec3 &useForPATemp);
+
   // see iMgeometry.cc
   virtual PetscErrorCode computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2 &vtaudy);
   virtual PetscErrorCode updateSurfaceElevationAndMask();

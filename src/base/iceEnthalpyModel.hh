@@ -53,19 +53,7 @@ protected:
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, 
                                          PetscScalar* bulgeCount);
 
-protected:  // new to IceEnthalpyModel
-  virtual PetscErrorCode setEnth3FromT3_ColdIce();
-
-  virtual PetscErrorCode setEnth3FromT3AndLiqfrac3(IceModelVec3 &Liqfrac3);
-  
-  virtual PetscErrorCode setTnew3FromEnth3();
-
-  virtual PetscErrorCode setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac);
-
-  virtual PetscErrorCode setCTSFromEnthalpy(IceModelVec3 &useForCTS);
-
-  virtual PetscErrorCode setPATempFromEnthalpy(IceModelVec3 &useForPATemp);
-  
+protected:  // new to IceEnthalpyModel  
   virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
                                                  PetscScalar* liquifiedVol);
 
