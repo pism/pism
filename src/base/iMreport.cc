@@ -674,33 +674,69 @@ PetscErrorCode IceModel::compute_rank(IceModelVec2 &result) {
   return 0;
 }
 
+
+//! Compute the CTS field, CTS = E/E_s(p) and put in a global IceModelVec3 provided by user.
+PetscErrorCode IceModel::compute_cts(IceModelVec3 &useForCTS) {
+  PetscErrorCode ierr;
+
+  if (doColdIceMethods) {
+    ierr = useForCTS.set(0.0); CHKERRQ(ierr);
+  } else {
+    ierr = setCTSFromEnthalpy(useForCTS); CHKERRQ(ierr);
+  }
+  ierr = useForCTS.set_name("cts"); CHKERRQ(ierr);
+  ierr = useForCTS.set_attrs(
+     "diagnostic",
+     "cts = E/E_s(p), so cold-temperate transition surface is at cts = 1",
+     "", ""); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Compute the liquid fraction, and put in a global IceModelVec3 provided by user.
+PetscErrorCode IceModel::compute_liqfrac(IceModelVec3 &useForLiqfrac) {
+  PetscErrorCode ierr;
+
+  if (doColdIceMethods) {
+    ierr = useForLiqfrac.set(0.0); CHKERRQ(ierr);
+  } else {
+    ierr = setLiquidFracFromEnthalpy(useForLiqfrac); CHKERRQ(ierr);
+  }
+  ierr = useForLiqfrac.set_name("liqfrac"); CHKERRQ(ierr);
+  ierr = useForLiqfrac.set_attrs(
+     "diagnostic","liquid water fraction in ice (between 0 and 1)",
+     "", ""); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! Compute the pressure-adjusted temperature in degrees C corresponding to T3, and put in a global IceModelVec3 provided by user.
-/*!
-This procedure is put here in IceModel to facilitate comparison of IceModel and IceEnthalpyModel
-results.  It is called by giving option -temp_pa.
- */
 PetscErrorCode IceModel::compute_temp_pa(IceModelVec3 &useForPATemp) {
   PetscErrorCode ierr;
 
-  PetscScalar **thickness;
-  PetscScalar *Tpaij, *Tij; // columns of these values
-  ierr = useForPATemp.begin_access(); CHKERRQ(ierr);
-  ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = vH.get_array(thickness); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = useForPATemp.getInternalColumn(i,j,&Tpaij); CHKERRQ(ierr);
-      ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
-      for (PetscInt k=0; k<grid.Mz; ++k) {
-        Tpaij[k] = Tij[k] - ice->meltingTemp;  // un-adjusted, but in deg_C
-        const PetscScalar depth = thickness[i][j] - grid.zlevels[k];
-        if (depth > 0.0)  Tpaij[k] += ice->beta_CC_grad * depth;
+  if (doColdIceMethods) {
+    PetscScalar *Tpaij, *Tij; // columns of these values
+    ierr = useForPATemp.begin_access(); CHKERRQ(ierr);
+    ierr = T3.begin_access(); CHKERRQ(ierr);
+    ierr = vH.begin_access(); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        ierr = useForPATemp.getInternalColumn(i,j,&Tpaij); CHKERRQ(ierr);
+        ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+        for (PetscInt k=0; k<grid.Mz; ++k) {
+          Tpaij[k] = Tij[k] - ice->meltingTemp;  // un-adjusted, but in deg_C
+          const PetscScalar depth = vH(i,j) - grid.zlevels[k];
+          if (depth > 0.0)  Tpaij[k] += ice->beta_CC_grad * depth;
+        }
       }
     }
+    ierr = T3.end_access(); CHKERRQ(ierr);
+    ierr = useForPATemp.end_access(); CHKERRQ(ierr);
+    ierr = vH.end_access(); CHKERRQ(ierr);
+  } else {
+    ierr = setPATempFromEnthalpy(useForPATemp); CHKERRQ(ierr);
   }
-  ierr = T3.end_access(); CHKERRQ(ierr);
-  ierr = useForPATemp.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
+
 
   ierr = useForPATemp.set_name("temp_pa"); CHKERRQ(ierr);
   ierr = useForPATemp.set_attrs("diagnostic",
@@ -709,6 +745,7 @@ PetscErrorCode IceModel::compute_temp_pa(IceModelVec3 &useForPATemp) {
   // communication not done; we allow global IceModelVec3s as useForPATemp
   return 0;
 }
+
 
 //! Computes the vertically-averaged ice hardness.
 PetscErrorCode IceModel::compute_hardav(IceModelVec2 &result) {
@@ -1054,29 +1091,41 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
     return 0;
   }
 
+  if (name == "cts") {
+    ierr = compute_cts(Enthnew3); CHKERRQ(ierr);
+    result = &Enthnew3;
+    return 0;
+  }
+
   if (name == "dhdt") {
     ierr = compute_dhdt(vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }
 
-  // FIX ME: using was_created() is temporary hack to avoid crashing with non-penth executable
-  if (name == "enthalpybase" && Enth3.was_created()) {
-    ierr = compute_enthalpybase(vWork2d[0]); CHKERRQ(ierr);
-    result = &vWork2d[0];
-    return 0;
-  }
+  if (!doColdIceMethods) {
+    if (name == "enthalpybase") {
+      ierr = compute_enthalpybase(vWork2d[0]); CHKERRQ(ierr);
+      result = &vWork2d[0];
+      return 0;
+    }
 
-  // FIX ME: using was_created() is temporary hack to avoid crashing with non-penth executable
-  if (name == "enthalpysurf" && Enth3.was_created()) {
-    ierr = compute_enthalpysurf(vWork2d[0]); CHKERRQ(ierr);
-    result = &vWork2d[0];
-    return 0;
+    if (name == "enthalpysurf") {
+      ierr = compute_enthalpysurf(vWork2d[0]); CHKERRQ(ierr);
+      result = &vWork2d[0];
+      return 0;
+    }
   }
 
   if (name == "hardav") {
     ierr = compute_hardav(vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "liqfrac") {
+    ierr = compute_liqfrac(Enthnew3); CHKERRQ(ierr);
+    result = &Enthnew3;
     return 0;
   }
 
@@ -1155,6 +1204,7 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 
   return 0;
 }
+
 
 //! Computes the ice volume, in m^3.
 PetscErrorCode IceModel::compute_ice_volume(PetscScalar &result) {

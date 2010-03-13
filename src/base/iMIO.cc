@@ -155,19 +155,33 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
   return 0;
 }
 
+
 PetscErrorCode IceModel::write_model_state(const char* filename) {
   PetscErrorCode ierr;
 
-  // FIXME: temporarily, so that we can compare to IceEnthalpyModel results;
-  //   what to do with pressure-adjusted temp in longer term?
   bool write_temp_pa;
   ierr = PISMOptionsIsSet("-temp_pa", write_temp_pa); CHKERRQ(ierr);  
-  if (write_temp_pa) {
+  if (write_temp_pa || (!doColdIceMethods)) {
     // write temp_pa = pressure-adjusted temp in Celcius
-    //   use Tnew3 (global) as temporary, allocated space for this purpose
-    ierr = verbPrintf(2, grid.com,
+    ierr = verbPrintf(4, grid.com,
       "  writing pressure-adjusted ice temperature (deg C) 'temp_pa' ...\n"); CHKERRQ(ierr);
     output_vars.insert("temp_pa");
+  }
+
+  bool write_liqfrac;
+  ierr = PISMOptionsIsSet("-liqfrac", write_liqfrac); CHKERRQ(ierr);  
+  if (write_liqfrac || (!doColdIceMethods)) {
+    ierr = verbPrintf(4, grid.com,
+      "  writing liquid water fraction 'liqfrac' ...\n"); CHKERRQ(ierr);
+    output_vars.insert("liqfrac");
+  }
+
+  bool userWantsCTS;
+  ierr = PISMOptionsIsSet("-cts", userWantsCTS); CHKERRQ(ierr);
+  if (userWantsCTS) {
+    ierr = verbPrintf(4, grid.com,
+      "  writing CTS (= E/Es) scalar field 'cts' ...\n"); CHKERRQ(ierr);
+    output_vars.insert("cts");
   }
 
   ierr = write_variables(filename, output_vars, NC_DOUBLE);
@@ -182,11 +196,12 @@ PetscErrorCode IceModel::write_extra_fields(const char* /*filename*/) {
   return 0;
 }
 
+
 //! Read a saved PISM model state in NetCDF format, for complete initialization of an evolution or diagnostic run.
 /*!
-Before this is run, the input file determines the number of grid points 
-(Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational box.  See
-IceModel::grid_setup().
+Before this is run, the method IceModel::grid_setup() determines the number of
+grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational
+box from the same input file.
  */
 PetscErrorCode IceModel::initFromFile(const char *filename) {
   PetscErrorCode  ierr;
@@ -235,6 +250,29 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
 
     ierr = vubarSSA.read(filename, last_record); CHKERRQ(ierr);
     ierr = vvbarSSA.read(filename, last_record); CHKERRQ(ierr);
+  }
+
+  // options for initializing enthalpy
+  bool initfromT, initfromTandOm;
+  ierr = PISMOptionsIsSet("-init_from_temp", initfromT); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-init_from_temp_and_liqfrac", initfromTandOm); CHKERRQ(ierr);
+  if (initfromT && initfromTandOm) {
+    SETERRQ(1,"PISM ERROR: both options -init_from_temp and -init_from_temp_and_liqfrac seen; must choose one or none");
+  }
+  if (initfromT) {
+    ierr = verbPrintf(2, grid.com,
+      "  option -init_from_temp seen; computing enthalpy from ice temperature and thickness ...\n"); CHKERRQ(ierr);  
+    ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+  } else if (initfromTandOm) {
+    ierr = verbPrintf(2, grid.com,
+      "  option -init_from_temp_and_liqfrac seen; computing enthalpy from ice temperature, liquid water fraction and thickness ...\n"); CHKERRQ(ierr);
+    // use Enthnew3 as already-allocated space 
+    ierr = Enthnew3.set_name("liqfrac"); CHKERRQ(ierr);
+    ierr = Enthnew3.set_attrs(
+      "internal", "liqfrac; temporary use during initialization",
+      "", ""); CHKERRQ(ierr);
+    ierr = Enthnew3.read(filename,last_record); CHKERRQ(ierr);
+    ierr = setEnth3FromT3AndLiqfrac3(Enthnew3); CHKERRQ(ierr);
   }
 
   // read mapping parameters if present

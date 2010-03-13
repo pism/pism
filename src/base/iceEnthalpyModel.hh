@@ -23,7 +23,6 @@
 #include "iceModelVec.hh"
 #include "NCVariable.hh"
 #include "iceModel.hh"
-#include "enthalpyConverter.hh"
 
 
 //! Temporary class for development of enthalpy-based polythermal PISM.
@@ -34,15 +33,6 @@ public:
 
   using IceModel::setFromOptions;
   PetscErrorCode setFromOptions();
-
-  using IceModel::bootstrapFromFile;
-  virtual PetscErrorCode bootstrapFromFile(const char *filename);
-
-  using IceModel::initFromFile;
-  virtual PetscErrorCode initFromFile(const char *filename);
-
-  using IceModel::write_extra_fields;
-  virtual PetscErrorCode write_extra_fields(const char* filename);
 
 protected:
   using IceModel::energyStats;

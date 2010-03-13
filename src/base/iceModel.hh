@@ -391,6 +391,8 @@ protected:
   virtual PetscErrorCode compute_hardav(IceModelVec2 &result);
   virtual PetscErrorCode compute_rank(IceModelVec2 &result);
   virtual PetscErrorCode compute_taud(IceModelVec2 &result, IceModelVec2 &tmp);
+  virtual PetscErrorCode compute_cts(IceModelVec3 &useForCTS);
+  virtual PetscErrorCode compute_liqfrac(IceModelVec3 &useForLiqfrac);
   virtual PetscErrorCode compute_temp_pa(IceModelVec3 &useForPATemp);
   virtual PetscErrorCode compute_tempbase(IceModelVec2 &result);
   virtual PetscErrorCode compute_temppabase(IceModelVec3 &hasPATemp,

@@ -137,8 +137,12 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   ierr = verbPrintf(2, grid.com, 
      "  filling in ice and bedrock temperatures using surface temperatures and quartic guess\n");
      CHKERRQ(ierr);
-
   ierr = putTempAtDepth(); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+    "  ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
+    CHKERRQ(ierr);
+  ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);
 
