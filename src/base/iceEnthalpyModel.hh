@@ -48,9 +48,6 @@ protected:
   using IceModel::createVecs;
   virtual PetscErrorCode createVecs();
   
-  using IceModel::init_physics;
-  virtual PetscErrorCode init_physics();
-
   using IceModel::energyStats;
   virtual PetscErrorCode energyStats(PetscScalar iarea, bool useHomoTemp, 
                                      PetscScalar &gmeltfrac, PetscScalar &gtemp0);
@@ -78,7 +75,7 @@ protected:  // new to IceEnthalpyModel
   virtual PetscErrorCode enthalpyAndDrainageStep(PetscScalar* vertSacrCount,
                                                  PetscScalar* liquifiedVol);
 
-  virtual PetscErrorCode drainageToBaseModelEnth(EnthalpyConverter &EC,
+  virtual PetscErrorCode drainageToBaseModelEnth(
                 PetscScalar omega_max, PetscScalar thickness,
                 PetscScalar z, PetscScalar dz,
                 PetscScalar &enthalpy, PetscScalar &Hmelt);

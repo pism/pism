@@ -51,6 +51,8 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   surface = NULL;
   ocean = NULL;
 
+  EC = NULL;
+
   ierr = setDefaults();  // lots of parameters and flags set here, including by reading from a config file
   if (ierr != 0) {
     verbPrintf(1,grid.com, "Error setting defaults.\n");
@@ -94,12 +96,12 @@ IceModel::~IceModel() {
     delete (*i);
 
   delete ocean;
-
   delete surface;
 
   delete basal;
-
+  delete EC;
   delete ice;
+
   utTerm(); // Clean up after UDUNITS
 }
 

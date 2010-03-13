@@ -371,33 +371,63 @@ PetscErrorCode IceModel::set_vars_from_options() {
 
 //! Initialize some physical parameters.
 /*!
-  This is the place for all non-trivial initialization of physical parameters
-  (non-trivial meaning requiring more than just setting a value of a
-  parameter).
+  This is the place for all non-trivial initialization of physical parameters.
+  ("Non-trivial" means that the initialization requires more than just setting
+  a value of a parameter.  Such trivial changes can go here too, or earlier.)
+  Also, this is the good place to set those parameters that a user should not be
+  able to override using a command-line option.
 
   This method is called after memory allocation but before filling any of
-  IceModelVecs.
+  IceModelVecs because all the physical parameters should be initialized before
+  setting up the coupling or filling model-state variables.
 
-  Rationale: all the physical parameters should be initialized before setting
-  up the coupling or filling model-state variables.
-
-  In the base class we just initialize the IceFlowLaw.
-
-  Also, this is the good place for setting parameters that a user should not be
-  able to override using a command-line option.
+  In the base class IceModel we just initialize the IceFlowLaw and the
+  EnthalpyConverter.
  */
 PetscErrorCode IceModel::init_physics() {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(3, grid.com,
-		    "Initializing IceFlowLaw ...\n"); CHKERRQ(ierr);
+		    "initializing IceFlowLaw and EnthalpyConverter ...\n"); CHKERRQ(ierr);
+
+  EC = new EnthalpyConverter(config);
 
   ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
+
   // Initialize the IceFlowLaw object:
-  if (ice == PETSC_NULL) {
-    ierr = iceFactory.create(&ice); CHKERRQ(ierr);
-    ierr = ice->setFromOptions(); CHKERRQ(ierr); // Set options specific to this particular ice type
+  if (doColdIceMethods == PETSC_FALSE) {
+    ierr = verbPrintf(2, grid.com,
+      "  setting flow law to Glen-Paterson-Budd-Lliboutry-Duval type ...\n");
+      CHKERRQ(ierr);
+    if (ice != NULL)  delete ice;  // kill choice already made
+    iceFactory.setType(ICE_GPBLD); // new flowlaw which has dependence on enthalpy
+                                   //   not temperature
+    iceFactory.create(&ice);
+    PolyThermalGPBLDIce *gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
+    if (gpbldi == NULL) {
+      ThermoGlenIce *tgi = dynamic_cast<ThermoGlenIce*>(ice);
+      if (tgi) {
+        ierr = verbPrintf(2, grid.com,
+          "    [flow law was actually set to ThermoGlenIce]\n");
+          CHKERRQ(ierr);
+      } else {
+        ierr = verbPrintf(1, grid.com,
+          "PISM WARNING: flow law unclear ...\n"); CHKERRQ(ierr);
+      }
+    }
+  } else {
+    // FIXME:  the semantics of IceFlowLaw should be cleared up; lots of PISM
+    //   (e.g. verification and EISMINT II and EISMINT-Greenland) are cold,
+    //   but the really important cases (e.g. SeaRISE-Greenland) are polythermal
+    // in cold case we may have various IceFlowLaw s, e.g. set by derived classes
+    if (ice == PETSC_NULL) {
+      ierr = iceFactory.create(&ice); CHKERRQ(ierr);
+    }
   }
+
+  // set options specific to this particular ice type:
+  ierr = ice->setFromOptions(); CHKERRQ(ierr);
+  ierr = ice->printInfo(4);CHKERRQ(ierr);
 
   return 0;
 }

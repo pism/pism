@@ -582,8 +582,16 @@ where \f$\nu=\Delta t/\Delta z\f$ and \f$E_0^{n+1} = \f$E[0] and \f$E_1^{n+1}=\f
 </table>
 
 
+\subsection An additional regularization in the warm base case
 
-Regarding the floating case:  The shelf base temperature \f$T_{sb}\f$ is supplied by PISMOceanModel::shelf_base_temperature().  The melt rate \f$M\f$ is supplied as a boundary condition from the ocean model by PISMOceanModel::shelf_base_mass_flux().  Note the odd physical choice that the shelf base temperature is used as the temperature at the \e top of the \e bedrock, which is actually the bottom of the ocean.  This choice means that the conservation of energy code does not need to know about the bedrock topography or the elevation of sea level.  FIXME: But there could be a PISMOceanModel::subshelf_bed_temperature() routine.
+In the cases above where the base of the ice is at the pressure-melting temperature, and when the velocity at the base of the ice is downward, an additional regularization is allowed, and used by default.  In such cases, without any regularization, the sign of the vertical velocity at the bottom of the ice at the last time step determines the type of boundary condition:  If \f$w(0)<0\f$ then an outflow boundary condition is applied, while when \f$w(0)\ge 0\f$ then a Dirichlet boundary condition is applied.
+
+For basal ice only slightly above the pressure-melting temperature, we use the configuration parameter \c warm_base_flux_enthalpy_fraction to allow a small amount of heat flux into the ice base.  We do this by combining the corresponding equations in the tridiagonal system.  Setting \c warm_base_flux_enthalpy_fraction to zero removes this regularization.
+
+
+\subsection Regarding the floating case
+
+The shelf base temperature \f$T_{sb}\f$ is supplied by PISMOceanModel::shelf_base_temperature().  The melt rate \f$M\f$ is supplied as a boundary condition from the ocean model by PISMOceanModel::shelf_base_mass_flux().  Note that we make the possibly-peculiar physical choice that the shelf base temperature is used as the temperature at the <i>top of the bedrock</i>, which is actually the bottom of the ocean.  This choice means that there should be no abrupt changes in top-of-bedrock heat flux as the grounding line moves.  This choice also means that the conservation of energy code does not need to know about the bedrock topography or the elevation of sea level.  (In the future there could be a PISMOceanModel::subshelf_bed_temperature() routine.)
 
 
 

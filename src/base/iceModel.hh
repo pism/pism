@@ -25,6 +25,7 @@
 
 #include "materials.hh"
 #include "pism_const.hh"
+#include "enthalpyConverter.hh"
 #include "grid.hh"
 #include "iceModelVec.hh"
 #include "NCVariable.hh"
@@ -159,6 +160,8 @@ protected:
   IceBasalResistancePlasticLaw *basal;
   SSAStrengthExtension  ssaStrengthExtend;
 
+  EnthalpyConverter *EC;
+ 
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;
 
