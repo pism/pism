@@ -182,7 +182,14 @@ echo "$SCRIPTNAME COUPLER_FORCING = $COUPLER_FORCING"
 
 
 
-# FIXME: put smoothing run back in here.
+# bootstrap and do smoothing run to 100 years
+PRE0NAME=g${CS}km_pre100.nc
+echo
+echo "$SCRIPTNAME  short smoothing run before bootstrapping (for ${SMOOTHRUNLENGTH}a)"
+cmd="$MPIDO $NN $PISM -skip $COARSESKIP -boot_from $INNAME $COARSEGRID \
+  $COUPLER_SIMPLE -y ${SMOOTHRUNLENGTH} -o $PRE0NAME"
+$DO $cmd
+
 
 # run with -no_mass (no surface change) for 75ka
 PRE1NAME=g${CS}km_steady.nc
@@ -191,7 +198,7 @@ EXTIMES=0:250:${NOMASSSIARUNLENGTH}
 EXVARS="tempbase"
 echo
 echo "$SCRIPTNAME  bootstrapping and -no_mass (no surface change) SIA for ${NOMASSSIARUNLENGTH}a"
-cmd="$MPIDO $NN $PISM -skip $COARSESKIP $COARSEGRID -boot_from $INNAME $COUPLER_SIMPLE $TILLPHI \
+cmd="$MPIDO $NN $PISM -skip $COARSESKIP -i $PRE0NAME $COUPLER_SIMPLE \
   -no_mass -y ${NOMASSSIARUNLENGTH} \
   -extra_file $EX1NAME -extra_vars $EXVARS -extra_times $EXTIMES -o $PRE1NAME"
 $DO $cmd
@@ -199,7 +206,7 @@ $DO $cmd
 # smoothing for 100 years
 PRE2NAME=g${CS}km_SIA.nc
 echo
-echo "$SCRIPTNAME  10km grid: smoothing with SIA for ${SMOOTHRUNLENGTH}a"
+echo "$SCRIPTNAME  smoothing with SIA for ${SMOOTHRUNLENGTH}a"
 cmd="$MPIDO $NN $PISM -skip $COARSESKIP -i $PRE1NAME $COUPLER_SIMPLE -y $SMOOTHRUNLENGTH -o $PRE2NAME"
 $DO $cmd
 
@@ -216,7 +223,7 @@ TSNAME=ts_g${CS}km_m40ka.nc
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      except bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
-cmd="$MPIDO $NN $PISM -skip $COARSESKIP -i $PRE4NAME $TILLPHI $FULLPHYS $COUPLER_FORCING \
+cmd="$MPIDO $NN $PISM -skip $COARSESKIP -i $PRE2NAME $TILLPHI $FULLPHYS $COUPLER_FORCING \
      -ts_file $TSNAME -ts_times $PALEOSTARTYEAR:1:$ENDTIME \
      -save_file $SNAPSNAME -save_times -120000:5000:-45000 \
      -ys $PALEOSTARTYEAR -ye $ENDTIME -o $OUTNAME"
