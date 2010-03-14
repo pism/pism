@@ -9,6 +9,8 @@ class PISMIO : public NCTool {
 public:
   PISMIO(IceGrid *my_grid);
   virtual ~PISMIO() {}
+
+  using NCTool::open_for_writing;
   PetscErrorCode open_for_writing(string filename, bool append,
 				  bool check_dims = false);
   PetscErrorCode get_grid(const char filename[]);

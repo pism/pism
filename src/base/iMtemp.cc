@@ -68,6 +68,13 @@ PetscErrorCode IceModel::energyStep() {
     ierr = Enth3.beginGhostCommTransfer(Enthnew3); CHKERRQ(ierr);
     ierr = Enth3.endGhostCommTransfer(Enthnew3); CHKERRQ(ierr);
 
+    // FIXME:  updating T3 here is a stupid waste of time; see task #6868; we
+    //         should only be writing temp (= absolute temperature) diagnostically
+    //         whenever doColdIceMethods==false
+    ierr = setTnew3FromEnth3(); CHKERRQ(ierr);
+    ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
+    ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
+
     ierr = PetscGlobalSum(&myLiquifiedVol, &gLiquifiedVol, grid.com); CHKERRQ(ierr);
     if (gLiquifiedVol > 0.0) {
       ierr = verbPrintf(1,grid.com,

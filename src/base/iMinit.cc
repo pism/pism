@@ -482,6 +482,7 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   }
 
   // 3d dedicated work vectors
+  // FIXME Tnew3 should only be allocated when doColdIceMethods==true
   ierr = Tnew3.create(grid,"temp_new",false); CHKERRQ(ierr);
   ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
                          "K", ""); CHKERRQ(ierr);

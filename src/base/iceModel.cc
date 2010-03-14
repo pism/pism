@@ -154,6 +154,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = Sigma3.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
   ierr = variables.add(Sigma3); CHKERRQ(ierr);
 
+  // FIXME T3 should only be allocated when doColdIceMethods==true
   // ice temperature
   ierr = T3.create(grid, "temp", true); CHKERRQ(ierr);
   ierr = T3.set_attrs("model_state","ice temperature",
