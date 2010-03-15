@@ -582,6 +582,7 @@ INPUT                  = config_doc.txt \
                          std_names.html \
                          browser_pages.txt \
                          browser_bombproof_enth.txt \
+                         browser_vertchange.txt \
                          doxybib.txt \
                          ../src/ \
                          ../src/base/ \

@@ -1,4 +1,4 @@
-/*! \page bombproofenth BOMBPROOF, a numerical scheme for conservation of energy
+/*! \page bombproofenth BOMBPROOF, PISM's numerical scheme for conservation of energy
 
 \section intro Introduction
 

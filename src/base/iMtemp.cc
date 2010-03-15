@@ -110,8 +110,8 @@ derivative, so advection is included.  Here \f$\rho\f$ is the density of ice,
 \f$c_p\f$ is its specific heat, and \f$k\f$ is its conductivity.  Also \f$\Sigma\f$ is the volume
 strain heating (with SI units of \f$J/(\text{s} \text{m}^3) = \text{W}\,\text{m}^{-3}\f$).
 
-\latexonly\index{BOMBPROOF!implementation for temperature equation}\endlatexonly
-Both the temperature equation and the age equation involve advection.
+This method is documented by papers [\ref BBL,\ref BBssasliding].
+
 We handle horizontal advection explicitly by first-order upwinding.  We handle
 vertical advection implicitly by centered differencing when possible, and retreat to
 implicit first-order upwinding when necessary.  There is a CFL condition
@@ -129,49 +129,25 @@ The method uses equally-spaced calculation but the methods getValColumn(),
 setValColumn() interpolate back-and-forth from this equally-spaced calculational
 grid to the (usually) non-equally spaced storage grid.
 
+An instance of tempSystemCtx is used to solve the tridiagonal system set-up here.
+
 In this procedure four scalar fields are modified: vHmelt, vbasalMeltRate, Tb3, and Tnew3.
 But vbasalMeltRate and Tb3 will never need to communicate ghosted values (horizontal 
 stencil neighbors).  The ghosted values for T3 are updated from the values in Tnew3 in the
-communication done by temperatureAgeStep().  There is a diffusion model for vHmelt in 
+communication done by energyStep().  There is a diffusion model for vHmelt in 
 diffuseHmelt() which does communication for vHmelt.
- 
-Here is a more complete discussion and derivation.
 
-Consider a column of a slowly flowing and heat conducting material as shown in the left side 
-of the next figure.  (The left side shows a general column of flowing and heat conduction 
-material showing a small segment \f$V\f$.  The right side shows a more specific column of ice 
-flowing and sliding over bedrock.)  This is an \em Eulerian view so the material flows through 
-a column which remains fixed (and is notional).  The column is vertical.  We will 
-assume when needed that it is rectangular in cross-section with cross-sectional area 
-\f$\Delta x\Delta y\f$.
-
-\image latex earlycols.png "Left: a general column of material.  Right: ice over bedrock." width=3in
-
-[FIXME: CONTINUE TO MINE eqns3D.tex FOR MORE]
-
-The application of the geothermal flux at the base of a column is a special case for which 
-we give a finite difference argument.  This scheme follows the equation (2.114) in 
-\ref MortonMayers .  We have the boundary condition
-	\f[  -k \frac{\partial T}{\partial z} = G(t,x,y) \f]
-where \f$G(t,x,y)\f$ is the applied geothermal flux, and it is applied at level \f$z=-B_0\f$ 
-in the bedrock (which is the only case considered here).  We <em> add a virtual lower grid 
-point </em> \f$z_{-1} = z_0 - \Delta  z\f$ and we approximate the above boundary condition 
-at \f$z_0\f$ by the centered-difference
-	\f[  -k \frac{T_{1} - T_{-1}}{2 \Delta z} = G. \f]
-Here \f$T_k = T_{ijk}^{l+1}\f$.  We also apply the discretized conduction equation 
-at \f$z_0\f$.  These two combined equations yield a simplified form
-	\f[(1 + 2 KR) T_0 - 2 K T_1 = T_0 + \frac{2\Delta t}{\rho c_p \Delta z} G \f]
-where \f$K = k \Delta t (\rho c \Delta z^2)^{-1}\f$.
-
-The scheme BOMBPROOF is very reliable, but there is still an extreme and rare fjord
-situation which causes trouble.  For example, it occurs in one column of ice in one 
-fjord perhaps only once
+The scheme cold-ice-BOMBPROOF, implemented here, is very reliable, but there is
+still an extreme and rare fjord situation which causes trouble.  For example, it
+occurs in one column of ice in one fjord perhaps only once
 in a 200ka simulation of the whole sheet, in my (ELB) experience modeling the Greenland 
 ice sheet.  It causes the discretized advection bulge to give temperatures below that 
 of the coldest ice anywhere, a continuum impossibility.  So as a final protection
 there is a "bulge limiter" which sets the temperature to the surface temperature of
 the column minus the bulge maximum (15 K) if it is below that level.  The number of 
 times this occurs is reported as a "BPbulge" percentage.
+
+See page \ref bombproofenth essentially documents the cold-ice-BOMBPROOF here.
  */
 PetscErrorCode IceModel::temperatureStep(
      PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {
@@ -383,7 +359,7 @@ PetscErrorCode IceModel::temperatureStep(
            ierr = PetscPrintf(PETSC_COMM_SELF,
               "  [[too low (<200) ice segment temp T = %f at %d,%d,%d;"
               " proc %d; mask=%d; w=%f]]\n",
-			      Tnew[k],i,j,k,grid.rank,vMask.value(i,j),system.w[k]*secpera); CHKERRQ(ierr);
+              Tnew[k],i,j,k,grid.rank,vMask.value(i,j),system.w[k]*secpera); CHKERRQ(ierr);
            myLowTempCount++;
         }
         if (Tnew[k] < artm(i,j) - bulgeMax) {
@@ -578,7 +554,6 @@ If the velocity in the bottom cell of ice is upward (\code (w[i][j][0] > 0 \endc
 then we also apply an age = 0 boundary condition.  This is the case where ice freezes
 on at the base, either grounded basal ice freezing on stored water in till, or marine basal ice.
 
-\latexonly\index{BOMBPROOF!implementation for age equation}\endlatexonly
 The numerical method is first-order upwind but the vertical advection term is computed
 implicitly.  (Thus there is no CFL-type stability condition for that part.)
 
