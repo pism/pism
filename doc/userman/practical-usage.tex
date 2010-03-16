@@ -360,6 +360,8 @@ allows one to visualize climate inputs without invoking the ice dynamics core of
 This is helpful during the process of creating PISM-readable data files, and modeling 
 with such.
 
+FIXME: this section needs and overhaul!
+
 \verb|pcctest| takes options listed in table \ref{tab:pcctest}.
 
 \begin{table}[ht]
@@ -412,7 +414,7 @@ deviation of 5 degrees), but this random perturbation is not shown.  In fact the
 \cite{CalovGreve05} method to compute the expected number of positive degree days.  From this
 computation the net surface mass balance is computed, namely \verb|acab| in \verb|pddmovie.nc|.
 
-See section \ref{sect:green} for another \verb|pcctest| example.
+See section \ref{sec:eismint-greenland} for another \verb|pcctest| example.
 
 \subsection{Regridding}  It is common to want to interpolate a coarse grid model state onto a finer grid or vice versa.  For example, one might want to do the EISMINT II experiment on the default grid, producing output \verb|foo.nc|, but then interpolate both the ice thickness and the temperature onto a finer grid.  The basic idea of ``regridding'' in PISM is that one starts over from the beginning on the finer grid, but one extracts the desired variables stored in the coarse grid file and interpolates these onto the finer grid before proceeding with the actual computation.
 
@@ -426,7 +428,7 @@ $  pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
 \end{verbatim}
 \noindent By specifying regridded variables ``\verb|thk,temp|'', the ice thickness and temperature values from the old grid are interpolated onto the new grid.  Here one doesn't need to regrid the bed elevation, which is set identically zero as part of the EISMINT II experiment A description, nor the ice surface elevation, which is computed as the bed elevation plus the ice thickness at each time step anyway.
 
-A slightly different use of regridding occurs when ``bootstrapping'', as described in section \ref{sect:boot} and illustrated by example in section \ref{sect:green}.
+A slightly different use of regridding occurs when ``bootstrapping'', as described in section \ref{sect:boot} and illustrated by example in section \ref{sec:eismint-greenland}.
 
 See table \ref{tab:regridvar} for the regriddable variables using
 \intextoption{regrid\und file}.  Only model state variables are regriddable, while climate and boundary data generally are not explicitly regriddable.  (Bootstrapping, however, allows the same general interpolation as this explicit regrid.)

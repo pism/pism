@@ -252,6 +252,21 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     ierr = vvbarSSA.read(filename, last_record); CHKERRQ(ierr);
   }
 
+  if (config.get_flag("do_age")) {
+    bool age_exists;
+    ierr = nc.find_variable("age", NULL, age_exists); CHKERRQ(ierr);
+
+    if (age_exists) {
+      ierr = tau3.read(filename, last_record); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2,grid.com,
+			"PISM WARNING: input file '%s' does not have the 'age' variable.\n"
+			"  Setting it to zero...\n",
+			filename); CHKERRQ(ierr);
+      ierr = tau3.set(0.0); CHKERRQ(ierr);
+    }
+  } 
+
   // options for initializing enthalpy
   bool initfromT, initfromTandOm;
   ierr = PISMOptionsIsSet("-init_from_temp", initfromT); CHKERRQ(ierr);

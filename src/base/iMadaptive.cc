@@ -338,13 +338,8 @@ PetscErrorCode IceModel::countCFLViolations(PetscScalar* CFLviol) {
         PetscEnd();
       }
 
-      if (grid.ice_vertical_spacing == EQUAL) {
-        ierr = u3.getValColumnPL  (i,j,fMz,fzlev,u); CHKERRQ(ierr);
-        ierr = v3.getValColumnPL  (i,j,fMz,fzlev,v); CHKERRQ(ierr);
-      } else { // for not-equal spaced
-        ierr = u3.getValColumnQUAD(i,j,fMz,fzlev,u); CHKERRQ(ierr);
-        ierr = v3.getValColumnQUAD(i,j,fMz,fzlev,v); CHKERRQ(ierr);
-      }
+      ierr = u3.getValColumn(i,j,fMz,fzlev,u); CHKERRQ(ierr);
+      ierr = v3.getValColumn(i,j,fMz,fzlev,v); CHKERRQ(ierr);
 
       // check horizontal CFL conditions at each point
       for (PetscInt k=0; k<=fks; k++) {

@@ -132,7 +132,7 @@ Note: your data was not modified.""" % initial_guess
     return
 
 if __name__ == "__main__":
-    from getopt import getopt, GetoptError
+    from optparse import OptionParser
     from sys import argv, exit
     from shutil import copy, move
     from tempfile import mkstemp
@@ -143,45 +143,46 @@ if __name__ == "__main__":
     except:
         from netCDF3 import Dataset as NC
 
+    parser = OptionParser()
 
-    try:
-        opts, args = getopt(argv[1:], "f:v:o:e:i:",
-                            ["file=", "variables=", "out_file=",
-                             "eps=", "initial_guess="])
-        # defaults:
-        input_filename = ""
-        output_filename = ""
-        variables = []
-        eps = 1.0
-        initial_guess = 'mean'
-        for opt, arg in opts:
-            if opt in ("-f", "--file"):
-                input_filename = arg
-            if opt in ("-o", "--out_file"):
-                output_filename = arg
-            if opt in ("-v", "--variables"):
-                variables = arg.split(",")
-            if opt in ("-e", "--eps"):
-                eps = float(arg)
-            if opt in ("-i", "--initial_guess"):
-                initial_guess = float(arg)
-    except GetoptError:
-        print "Incorrect command line arguments. Exiting..."
-        exit(-1)
+    parser.usage = "%prog [options]"
+    parser.description = "Fills missing values in variables selected using -v in the file given by -f."
+    parser.add_option("-f", "--file", dest="input_filename",
+                      help="input file")
+    parser.add_option("-v", "--vars", dest="variables",
+                      help="comma-separated list of variables to process")
+    parser.add_option("-o", "--out_file", dest="output_filename",
+                      help="output file")
+    parser.add_option("-e", "--eps", dest="eps",
+                      help="convergence tolerance",
+                      default="1.0")
+    parser.add_option("-i", "--initial_guess", dest="initial_guess",
+                      help="initial guess to use; applies to all selected variables",
+                      default="mean")
 
-    if input_filename == "":
+    (options, args) = parser.parse_args()
+
+    if options.input_filename == "":
         print """Please specify the input file name
 (using the -f or --file command line option)."""
         exit(-1)
-    if variables == []:
+    input_filename = options.input_filename
+
+    if options.variables == "":
         print """Please specify the list of variables to process
 (using the -v or --variables command line option)."""
         exit(-1)
+    variables = (options.variables).split(',')
 
-    if output_filename == "":
+    if options.output_filename == "":
         print """Please specify the output file name
 (using the -o or --out_file command line option)."""
         exit(-1)
+    output_filename = options.output_filename
+
+    eps = float(options.eps)
+
+    # Done processing command-line options.
 
     print "Creating the temporary file..."
     try:
@@ -271,7 +272,7 @@ Warning: this attribute is deprecated by the NUG.""" % missing
                 continue
             print "Filling in %5d missing values..." % count
             t0 = time()
-            laplace(data, mask, -1, eps, initial_guess=initial_guess)
+            laplace(data, mask, -1, eps, initial_guess=options.initial_guess)
             var[:] = data
             
             # now REMOVE missing_value and _FillValue attributes

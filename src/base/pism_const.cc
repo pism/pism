@@ -587,12 +587,10 @@ PetscErrorCode PISMOptionsString(string option, string text,
 			    result.c_str(), tmp,
 			    TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
 
-  if (flag) {
-    is_set = true;
+  is_set = (flag == PETSC_TRUE);
+
+  if (is_set)
     result = tmp;
-  } else {
-    is_set = false;
-  }
 
   return 0;
 }
@@ -636,7 +634,7 @@ PetscErrorCode PISMOptionsInt(string option, string text,
 			 result, &result, &flag);
   CHKERRQ(ierr);
 
-  if (flag) is_set = true;
+  is_set = (flag == PETSC_TRUE);
 
   return 0;
 }
@@ -650,7 +648,7 @@ PetscErrorCode PISMOptionsReal(string option, string text,
 			  result, &result, &flag);
   CHKERRQ(ierr);
 
-  if (flag) is_set = true;
+  is_set = (flag == PETSC_TRUE);
 
   return 0;
 }
@@ -665,8 +663,9 @@ PetscErrorCode PISMOptionsRealArray(string option, string text,
 			    "none", str,
 			    TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
 
-  if (flag) {
-    is_set = true;
+  is_set = (flag == PETSC_TRUE);
+
+  if (is_set) {
     istringstream arg(str);
     string tmp;
 
@@ -685,8 +684,6 @@ PetscErrorCode PISMOptionsRealArray(string option, string text,
       else
 	result.push_back(d);
     }
-  } else {
-    is_set = false;
   }
   
   return 0;

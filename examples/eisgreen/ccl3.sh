@@ -29,7 +29,7 @@ INFILE=green_ssl2_110ka.nc
 
 DTFILE=grip_dT.nc
 DSLFILE=specmap_dSL.nc
-forcing="-dTforcing $DTFILE -dSLforcing $DSLFILE"
+forcing="-atmosphere eismint_greenland,forcing -ocean constant,forcing -dTforcing $DTFILE -dSLforcing $DSLFILE"
 
 snaps="-save_file snaps_ccl3.nc -save_times -240000:10000:-10000"
 

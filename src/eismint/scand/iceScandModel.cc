@@ -55,7 +55,14 @@ PetscErrorCode IceScandModel::setFromOptions() {
   T_max = 273.15;
 
   R_cts = 100.0e3; // position where transition from temperate to cold
-  ierr = PetscOptionsGetScalar(PETSC_NULL, "-Rcts", &R_cts, NULL); CHKERRQ(ierr);
+
+  bool flag;
+  ierr = PetscOptionsBegin(grid.com, "", "IceScandModel options", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsReal("-Rcts", "Positions of the temperate-to-cold transition",
+			   R_cts, flag); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -70,16 +77,9 @@ PetscErrorCode IceScandModel::init_couplers() {
 
   ierr = verbPrintf(2,grid.com,
     "  setting surface mass balance and surface temperature variables for IceScandModel ...\n");
-    CHKERRQ(ierr);
+  CHKERRQ(ierr);
 
-  PetscTruth i_set;
-  char filename[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-i",
-			       filename, PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
-  if (i_set) {
-    ierr = verbPrintf(2,grid.com,
-      "  (values from file %s ignored)\n", filename); CHKERRQ(ierr);
-  }
+  ierr = ignore_option(grid.com, "-i"); CHKERRQ(ierr);
 
   ierr = artm.begin_access(); CHKERRQ(ierr);
   ierr = acab.begin_access(); CHKERRQ(ierr);

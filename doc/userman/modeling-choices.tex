@@ -45,6 +45,18 @@ If one initializes PISM from a saved model state using \intextoption{i} then the
 
 Otherwise, one is allowed to specify the grid when PISM is started.  In particular, the user should specify the grid when using \intextoption{boot\und from} or when initializing a simplified geometry experiment or a verification test, though defaults are generally present in these cases.  See sections \ref{sect:start} and \ref{sect:boot} for examples and explanation.
 
+\subsection{Time}
+\label{sec:time}
+
+The following command-line options control PISM time.
+
+\optdef{y}{1000} Number of model years to run.
+
+\opt{ye} Model year at which to end the run.  The default value is the start year  (\verb|-ys| or initialized model time from file) plus the default or given (\verb|-y|) run length.  If both \verb|-ys| and \verb|-ye| are used then the run length is set to the difference.  Using all three of \verb|-ys|, \verb|-y| and \verb|-ys| is not allowed.
+
+\opt{ys} Model year at which to start the run.  Also resets the model time, ignoring any time in the input file.
+
+
 
 \subsection{Diagnostic computations}  As a diagnostic example, using the EISMINT II final state computed in section \ref{sect:start}, try\index{pismd}
 
@@ -87,10 +99,15 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
     This atmosphere model implements a longitude, latitude and elevation dependent near-surface air temperature parameterization and a cosine yearly cycle described in \cite{Faustoetal2009} and uses a constant in time ice-equivalent snow precipitation field (in units of thickness per time, variable \verb|snowprecip|) that is read from an input file.
 
+    The parameterization is controlled by configuration parameters with the \texttt{snow\und temp} prefix.
+
+    In addition to the temperature parameterization it implements the SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degree Celsius of temperature change \cite{Huybrechts02}
+
     Please see \url{http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland} for details.
 
     It expects variables \verb|snowprecip|, latitude and longitude to be present in an input file.
-  \item \emph{Constant in time} (\verb|constant|)
+
+ \item \emph{Constant in time} (\verb|constant|)
 
     This atmosphere model reads the snow precipitation (variable \verb|snowprecip|) and the mean annual near-surface air temperature (variable \verb|temp_ma|) and provides them to a surface model.
   \item \emph{Constant precipitation using a temperature lapse rate} (\verb|temp_lapse_rate|)
@@ -124,15 +141,15 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
   \item \emph{Local mass balance (PDD)} (\verb|pdd|) \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model} 
 
-   The default PDD used by PISM, turned on by option \intextoption{surface pdd}, is based on the EISMINT-Greenland intercomparison (section \ref{sect:green} and \cite{RitzEISMINT} and \cite{Faustoetal2009}), but it has controllable parameters.
+   The default PDD used by PISM, turned on by option \intextoption{surface pdd}, is based on \cite{CalovGreve05} and EISMINT-Greenland intercomparison (section \ref{sec:eismint-greenland} and \cite{RitzEISMINT}). It also implements latitude- and mean July temperature dependent ice and snow factors using formulas in \cite{Faustoetal2009}.
 
-    A PDD generally adds ``white noise'' to the seasonal cycle to simulate additional daily variability associated to the vagaries of weather.  This additional random variation is quite significant, as the seasonal cycle may never reach the melting point but that point may be reached with some probability, in the presence of the daily variability, and thus melt may occur.  Concretely, a normally-distributed, mean zero random temperature increment is added to the seasonal cycle.  The standard deviation of the daily variability is controlled by the \texttt{pdd\und std\und dev} configuration parameter, and defaults to 2.53 degrees. There is no particular assumed spatial correlation of daily variability.
+   Our PDD implementation is meant to be used with an atmosphere model implementing a cosine yearly cycle such as \texttt{searise\und greenland}, but is not restricted to parameterizations like this one. A PDD generally adds ``white noise'' to the seasonal cycle to simulate additional daily variability associated to the vagaries of weather.  This additional random variation is quite significant, as the seasonal cycle may never reach the melting point but that point may be reached with some probability, in the presence of the daily variability, and thus melt may occur.  Concretely, a normally-distributed, mean zero random temperature increment is added to the seasonal cycle.  The standard deviation of the daily variability is controlled by the \texttt{pdd\und std\und dev} configuration parameter, and defaults to 2.53 degrees \cite{Faustoetal2009}. There is no particular assumed spatial correlation of daily variability.
 
-The number of positive degree days is computed as the magnitude of the temperature excursion above $0\!\phantom{|}^\circ \text{C}$ multiplied by the duration (in days) when it is above zero.  In PISM there are actually two methods for computing the number of positive degree days.  The first computes only the expected value, by the method described in \cite{CalovGreve05}.  This is the default when a PDD is chosen (i.e.~option \intextoption{pdd}).  The second is a monte carlo simulation of the white noise itself, chosen by \intextoption{pdd\und rand}.  This monte carlo simulation adds the same daily variation at every point, though the seasonal cycle is (generally) location dependent.  If repeatable randomness is desired use \intextoption{pdd\und repeatable} instead of \verb|-pdd_rand|.
+The number of positive degree days is computed as the magnitude of the temperature excursion above $0\!\phantom{|}^\circ \text{C}$ multiplied by the duration (in days) when it is above zero.  In PISM there are actually two methods for computing the number of positive degree days.  The first computes only the expected value, by the method described in \cite{CalovGreve05}.  This is the default when a PDD is chosen (i.e.~option \intextoption{surface pdd}).  The second is a monte carlo simulation of the white noise itself, chosen by adding the option \intextoption{pdd\und rand}.  This monte carlo simulation adds the same daily variation at every point, though the seasonal cycle is (generally) location dependent.  If repeatable randomness is desired use \intextoption{pdd\und rand\und repeatable} instead of \verb|-pdd_rand|.
 
-The number of positive degree days is multiplied by a coefficient (\intextoption{pdd\und factor\und snow}) to compute the amount of snow melted.  Of the melted snow, a fraction (\intextoption{pdd\und refreeze}) is kept as ice.  This ice, plus all unmelted snow (already measured as ice-equivalent) is added to the mass balance, unless the number of positive degree days exceeds that required to melt all of the snow.  In this latter case, in which there are excess positive degree days available for melting, the excess is multiplied by a coefficient (\intextoption{pdd\und factor\und ice}) to compute how much ice is melted.  In this case actual ablation occurs at that location.
+The number of positive degree days is multiplied by a coefficient (config parameter \texttt{pdd\und factor\und snow}) to compute the amount of snow melted.  Of the melted snow, a fraction (\texttt{pdd\und refreeze}) is kept as ice.  This ice, plus all unmelted snow (already measured as ice-equivalent) is added to the mass balance, unless the number of positive degree days exceeds that required to melt all of the snow.  In this latter case, in which there are excess positive degree days available for melting, the excess is multiplied by a coefficient (\texttt{pdd\und factor\und ice}) to compute how much ice is melted.  In this case actual ablation occurs at that location.
 
-There is an executable for testing the PDD model without invoking ice dynamics, namely \verb|pcctest|.  See subsection \ref{subsect:pcctest}.  Section \ref{sect:green} demonstrates the PDD model and \verb|pcctest|.
+See also configuration parameters with the \texttt{pdd\und fausto} prefix.
 
  \end{itemize}
 \item \textbf{PISM ocean models}
@@ -145,15 +162,6 @@ $ pismr -i in.nc -ocean constant,forcing -dSLforcing delta_SL.nc
 uses \verb|delta_SL.nc|
 \end{enumerate}
   
-
-\subsection{Positive degree-day model}  \label{subsect:pdd} \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model}  The default atmospheric climate assumption made by the \verb|pismr| and \verb|pgrn| executables is that the input file will supply surface mass balance and ice surface temperature in variables \verb|acab| and \verb|artm|, respectively.  The supplied surface mass balance \verb|acab| is assumed to be the net surface balance, which is not the snow accumulation rate when melting can occur, and it must be in units of ice-equivalent thickness per time.  The supplied surface temperature \verb|artm| is regarded as the mean annual surface temperature, at a point in the ice below the completion of firn processes \cite{Hock05}.  The mass conservation equation for the ice sheet requires the surface mass balance, while the conservation of energy model requires the ice surface temperature as a boundary condition.
-
-These assumptions about supplied climate are not very realistic for practical glaciological observations.  If the input data actually includes the annual snow-fall accumulation then one might want to compute the surface mass balance according to some model of how much of the snow is transformed to ice, and how much ablates or is transported away, using a modeled time- and space-dependent temperature.  An example of such a model is a \emph{positive degree day} model \cite{Hock05}, a ``PDD''.  
-
- The annual mean snow temperature is again the variable \verb|artm| and should have units K.
-
-
-
 \subsection{Floatation criterion and mask} \label{subsect:floatmask}  The most basic decision about ice dynamics made internally by PISM is whether to apply the ``floatation criterion'' to determine whether the ice is floating on the ocean or not.  In an evolution run this decision is made at each time step and the result is stored in the \t{mask}.
 
 The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:maskvals}.  The mask does not by itself determine ice dynamics.  For instance, when ice is floating (either value \verb|MASK_FLOATING| or \verb|MASK_FLOATING_OCEAN0|) the usual choice for ice dynamics is SSA, but the user can choose not to apply that model by leaving off the option \verb|-ssa|.
@@ -163,15 +171,15 @@ The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:mask
 \small
 \begin{tabular}{p{0.25\linewidth}p{0.65\linewidth}}\hline
 \textbf{Mask value} & \textbf{Meaning}\\ \hline
-1=\verb|SHEET| & ice is grounded (and only the SIA is always applied) \\
-2=\verb|DRAGGING| & ice is grounded (and the SSA is applied if option \verb|-ssa| is given) \\
-3=\verb|FLOATING| & ice is floating (and the SSA is applied if option \verb|-ssa| is given) \\
-7=\verb|FLOATING_OCEAN0| & same as \verb|FLOATING|, but the grid point was ice free ocean at initialization of the model by \verb|-boot_from|; ice with this value will calve off if option \verb|-ocean_kill| is given.\\
+1=\verb|MASK_SHEET| & ice is grounded (and only the SIA is always applied) \\
+2=\verb|MASK_DRAGGING_SHEET| & ice is grounded (and the SSA is applied if option \verb|-ssa| is given) \\
+3=\verb|MASK_FLOATING| & ice is floating (and the SSA is applied if option \verb|-ssa| is given) \\
+7=\verb|MASK_FLOATING_AT_TIME_0| & same as \verb|MASK_FLOATING|, but the grid point was ice free ocean at initialization of the model by \verb|-boot_from|; ice with this value will calve off if option \verb|-ocean_kill| is given.\\
 \hline\end{tabular}
 \normalsize
 \end{table}
 
-Assuming the geometry of the ice evolves (which can be turned off by option \intextoption{no\und mass}), and assuming an ocean exists (which can be turned off by option \intextoption{dry}), then at each time step the mask can change.  Ice which becomes floating is marked as \verb|FLOATING| while ice which becomes grounded is either marked as \verb|SHEET| or \verb|DRAGGING|.  The decision between \verb|SHEET| or \verb|DRAGGING| is made by a vote-by-neighbors scheme in the most general case.  When both \intextoption{ssa} and \intextoption{super} are given all grounded ice is \verb|DRAGGING|, however.
+Assuming the geometry of the ice evolves (which can be turned off by option \intextoption{no\und mass}), and assuming an ocean exists (which can be turned off by option \intextoption{dry}), then at each time step the mask can change.  Ice which becomes floating is marked as \verb|MASK_FLOATING| while ice which becomes grounded is either marked as \verb|MASK_SHEET| or \verb|MASK_DRAGGING_SHEET|.  The decision between \verb|MASK_SHEET| or \verb|MASK_DRAGGING_SHEET| is made by a vote-by-neighbors scheme in the most general case.  When both \intextoption{ssa} and \intextoption{super} are given all grounded ice has \verb|MASK_DRAGGING_SHEET|, however.
 
 \subsection{Plastic till free boundary problem for ice streams; SSA as a sliding law}  \label{subsect:plastic}
 WARNING: The models described in this subsection are still under active development, and thus we give only a sketch.
@@ -229,3 +237,5 @@ Test H in section \ref{sect:verif} can be used to reproduce the comparison done 
 %%% mode: latex
 %%% TeX-master: "manual"
 %%% End: 
+
+% LocalWords:  intercomparison PDD

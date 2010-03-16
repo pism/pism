@@ -308,6 +308,9 @@ PetscErrorCode IceModel::set_output_size(string option,
     result.insert("vvbarSSA");
   }
 
+  if (config.get_flag("do_age"))
+    result.insert("age");
+
   if (config.get_flag("force_full_diagnostics"))
     keyword = "big";
 

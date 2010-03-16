@@ -74,12 +74,13 @@ columnSystemCtx::~columnSystemCtx() {
 
 //! Zero all entries.
 PetscErrorCode columnSystemCtx::resetColumn() {
-  // done this way for memory contiguity:
-  for (PetscInt k = 0; k < nmax-1; k++) Lp[k]   = 0.0;
-  for (PetscInt k = 0; k < nmax-1; k++) U[k]    = 0.0;
-  for (PetscInt k = 0; k < nmax;   k++) D[k]    = 0.0;
-  for (PetscInt k = 0; k < nmax;   k++) rhs[k]  = 0.0;
-  for (PetscInt k = 0; k < nmax;   k++) work[k] = 0.0;
+  PetscErrorCode ierr;
+  ierr = PetscMemzero(Lp, (nmax-1)*sizeof(PetscScalar)); CHKERRQ(ierr);
+  ierr = PetscMemzero(U,  (nmax-1)*sizeof(PetscScalar)); CHKERRQ(ierr);
+
+  ierr = PetscMemzero(D,    nmax*sizeof(PetscScalar)); CHKERRQ(ierr);
+  ierr = PetscMemzero(rhs,  nmax*sizeof(PetscScalar)); CHKERRQ(ierr);
+  ierr = PetscMemzero(work, nmax*sizeof(PetscScalar)); CHKERRQ(ierr);
   return 0;
 }
 

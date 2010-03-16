@@ -54,7 +54,7 @@ PetscErrorCode IceEISModel::set_grid_defaults() {
 PetscErrorCode IceEISModel::set_expername_from_options() {
   PetscErrorCode      ierr;
 
-  string                eisIIexpername;
+  string                eisIIexpername = "A";
   int                 temp;
   bool          EISIIchosen;
   ierr = PISMOptionsString("-eisII", "EISMINT II experiment name",
@@ -125,7 +125,10 @@ PetscErrorCode IceEISModel::setFromOptions() {
   ierr = PISMOptionsReal("-Tmax", "T max, Kelvin",
 			 T_max, paramSet); CHKERRQ(ierr);
 
-  PetscReal myMmax, mySb, myST, myRel;
+  PetscReal myMmax = M_max*secpera,
+    mySb = S_b * secpera / 1e3,
+    myST = S_T / 1e3,
+    myRel = R_el / 1e3;
   ierr = PISMOptionsReal("-Mmax", "Maximum accumulation, m/year",
 			 myMmax, paramSet); CHKERRQ(ierr);
   if (paramSet)     M_max = myMmax / secpera;
@@ -138,7 +141,7 @@ PetscErrorCode IceEISModel::setFromOptions() {
 			 myST, paramSet); CHKERRQ(ierr);
   if (paramSet)     S_T = myST * 1e-3;
 
-  ierr = PISMOptionsReal("-Rel", "FIXME",
+  ierr = PISMOptionsReal("-Rel", "km; FIXME",
 			 myRel, paramSet); CHKERRQ(ierr);
   if (paramSet)     R_el = myRel * 1e3;
 
@@ -183,16 +186,9 @@ PetscErrorCode IceEISModel::init_couplers() {
 
   ierr = verbPrintf(2,grid.com,
     "  setting surface mass balance and surface temperature variables ...\n");
-    CHKERRQ(ierr);
+  CHKERRQ(ierr);
 
-  PetscTruth i_set;
-  char filename[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-i",
-			       filename, PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
-  if (i_set) {
-    ierr = verbPrintf(2,grid.com,
-      "  (values from file %s ignored)\n", filename); CHKERRQ(ierr);
-  }
+  ierr = ignore_option(grid.com, "-i"); CHKERRQ(ierr);
 
   // now fill in accum and surface temp
   ierr = artm.begin_access(); CHKERRQ(ierr);

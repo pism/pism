@@ -174,7 +174,7 @@ PetscErrorCode IceModel::createVecs() {
   if (config.get_flag("do_age")) {
     ierr = tau3.create(grid, "age", true); CHKERRQ(ierr);
     // PROPOSED standard_name = land_ice_age
-    ierr = tau3.set_attrs("model_state", "age of ice",
+    ierr = tau3.set_attrs("diagnostic", "age of ice",
                           "s", ""); CHKERRQ(ierr);
     ierr = tau3.set_glaciological_units("years");
     tau3.write_in_glaciological_units = true;

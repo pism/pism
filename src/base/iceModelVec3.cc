@@ -388,6 +388,7 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt 
 					       PetscScalar *levelsIN, PetscScalar *valsOUT) {
   
   PetscErrorCode ierr;
+#ifdef PISM_DEBUG
   ierr = checkAllocated(); CHKERRQ(ierr);
   // check if in ownership ?
 
@@ -398,15 +399,19 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt 
                  "    (IceModelVec3 with name='%s')  ENDING!\n",k,name.c_str());
     }
   }
+#endif
 
   PetscScalar* levels = grid->zlevels;
   PetscScalar ***arr = (PetscScalar***) array;
-  
+  PetscScalar *values = new PetscScalar[grid->Mz];
+
+  ierr = PetscMemcpy(values, arr[i][j], grid->Mz*sizeof(PetscScalar)); CHKERRQ(ierr);
+
   PetscInt mcurr = 0;
   for (PetscInt k = 0; k < nlevelsIN; k++) {
     // extrapolate (if necessary):
     if (levelsIN[k] > levels[grid->Mz-1]) {
-      valsOUT[k] = arr[i][j][grid->Mz-1];
+      valsOUT[k] = values[grid->Mz-1];
       continue;
     }
 
@@ -414,22 +419,24 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt 
       mcurr++;
     }
     const PetscScalar z0 = levels[mcurr],
-                      f0 = arr[i][j][mcurr];
+                      f0 = values[mcurr];
     if (mcurr >= grid->Mz - 2) {
       // just do linear interpolation at top of grid
       const PetscScalar incr = (levelsIN[k] - z0) / (levels[mcurr+1] - z0);
-      valsOUT[k] = f0 + incr * (arr[i][j][mcurr+1] - f0);
+      valsOUT[k] = f0 + incr * (values[mcurr+1] - f0);
     } else {
       const PetscScalar dz1 = levels[mcurr+1] - z0,
                         dz2 = levels[mcurr+2] - z0;
-      const PetscScalar D1 = (arr[i][j][mcurr+1] - f0) / dz1,
-                        D2 = (arr[i][j][mcurr+2] - f0) / dz2;
+      const PetscScalar D1 = (values[mcurr+1] - f0) / dz1,
+                        D2 = (values[mcurr+2] - f0) / dz2;
       const PetscScalar c = (D2 - D1) / (dz2 - dz1),
                         b = D1 - c * dz1;
       const PetscScalar s = levelsIN[k] - z0;
       valsOUT[k] = f0 + s * (b + c * s);
     }
   }
+
+  delete[] values;
 
   return 0;
 }

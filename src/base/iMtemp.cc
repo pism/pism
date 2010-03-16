@@ -260,26 +260,14 @@ PetscErrorCode IceModel::temperatureStep(
       
       if (k0+ks>0) { // if there are enough points in bedrock&ice to bother ...
         ierr = system.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
-	if (grid.bed_vertical_spacing == EQUAL) {
-	  ierr = Tb3.getValColumnPL(i,j,fMbz,fzblev,system.Tb); CHKERRQ(ierr);
-	} else {
-	  ierr = Tb3.getValColumnQUAD(i,j,fMbz,fzblev,system.Tb); CHKERRQ(ierr);
-	}
 
-        if (grid.ice_vertical_spacing == EQUAL) {
-          ierr = u3.getValColumnPL(i,j,fMz,fzlev,system.u); CHKERRQ(ierr);
-          ierr = v3.getValColumnPL(i,j,fMz,fzlev,system.v); CHKERRQ(ierr);
-          ierr = w3.getValColumnPL(i,j,fMz,fzlev,system.w); CHKERRQ(ierr);
-          ierr = Sigma3.getValColumnPL(i,j,fMz,fzlev,system.Sigma); CHKERRQ(ierr);
-          ierr = T3.getValColumnPL(i,j,fMz,fzlev,system.T); CHKERRQ(ierr);
-        } else {
-          // slower, but right for not-equal spaced
-          ierr = u3.getValColumnQUAD(i,j,fMz,fzlev,system.u); CHKERRQ(ierr);
-          ierr = v3.getValColumnQUAD(i,j,fMz,fzlev,system.v); CHKERRQ(ierr);
-          ierr = w3.getValColumnQUAD(i,j,fMz,fzlev,system.w); CHKERRQ(ierr);
-          ierr = Sigma3.getValColumnQUAD(i,j,fMz,fzlev,system.Sigma); CHKERRQ(ierr);
-          ierr = T3.getValColumnQUAD(i,j,fMz,fzlev,system.T); CHKERRQ(ierr);
-        }
+	ierr = Tb3.getValColumn(i,j,fMbz,fzblev,system.Tb); CHKERRQ(ierr);
+
+	ierr = u3.getValColumn(i,j,fMz,fzlev,system.u); CHKERRQ(ierr);
+	ierr = v3.getValColumn(i,j,fMz,fzlev,system.v); CHKERRQ(ierr);
+	ierr = w3.getValColumn(i,j,fMz,fzlev,system.w); CHKERRQ(ierr);
+	ierr = Sigma3.getValColumn(i,j,fMz,fzlev,system.Sigma); CHKERRQ(ierr);
+	ierr = T3.getValColumn(i,j,fMz,fzlev,system.T); CHKERRQ(ierr);
 
         // go through column and find appropriate lambda for BOMBPROOF
         PetscScalar lambda = 1.0;  // start with centered implicit for more accuracy
@@ -604,16 +592,10 @@ PetscErrorCode IceModel::ageStep() {
       if (fks == 0) { // if no ice, set the entire column to zero age
         ierr = taunew3.setColumn(i,j,0.0); CHKERRQ(ierr);
       } else { // general case: solve advection PDE; start by getting 3D velocity ...
-        if (grid.ice_vertical_spacing == EQUAL) {
-          ierr = u3.getValColumnPL(i,j,fMz,fzlev,system.u); CHKERRQ(ierr);
-          ierr = v3.getValColumnPL(i,j,fMz,fzlev,system.v); CHKERRQ(ierr);
-          ierr = w3.getValColumnPL(i,j,fMz,fzlev,system.w); CHKERRQ(ierr);
-        } else {
-          // slower, but right for not-equal spaced
-          ierr = u3.getValColumnQUAD(i,j,fMz,fzlev,system.u); CHKERRQ(ierr);
-          ierr = v3.getValColumnQUAD(i,j,fMz,fzlev,system.v); CHKERRQ(ierr);
-          ierr = w3.getValColumnQUAD(i,j,fMz,fzlev,system.w); CHKERRQ(ierr);
-        }
+
+	ierr = u3.getValColumn(i,j,fMz,fzlev,system.u); CHKERRQ(ierr);
+	ierr = v3.getValColumn(i,j,fMz,fzlev,system.v); CHKERRQ(ierr);
+	ierr = w3.getValColumn(i,j,fMz,fzlev,system.w); CHKERRQ(ierr);
 
         ierr = system.setIndicesAndClearThisColumn(i,j,fks); CHKERRQ(ierr);
 

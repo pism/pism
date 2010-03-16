@@ -150,7 +150,7 @@ See the \emph{Installation Manual} to install PISM.  Once installed, the executa
  
 \subsection{Running an EISMINT simplified geometry experiment}\index{EISMINT}  PISM's purpose is the simulation of actual ice sheets.  But actual ice sheet simulations require actual data, so we start with idealized ice sheets.
 
-Ice sheet and ice shelf data \emph{are} freely available as part of the EISMINT intercomparison and SeaRISE assessment efforts.  Section \ref{sect:green} is a tutorial on the use of PISM as a Greenland ice sheet evolution model, while section \ref{sect:ross} is a tutorial on using PISM as a Ross ice shelf diagnostic model; both use EISMINT data sets.
+Ice sheet and ice shelf data \emph{are} freely available as part of the EISMINT intercomparison and SeaRISE assessment efforts.  Section \ref{sec:eismint-greenland} is a tutorial on the use of PISM as a Greenland ice sheet evolution model, while section \ref{sect:ross} is a tutorial on using PISM as a Ross ice shelf diagnostic model; both use EISMINT data sets.
 
 For now, to avoid issues of data formats, data flaws and data-handling scripts in a first use of PISM, this section describes how to use PISM for experiment A in the ``EISMINT II'' simplified-geometry, thermomechanically-coupled ice sheet model intercomparison \cite{EISMINT00}.  This experiment models an angularly-symmetric shallow, grounded ice sheet on a flat bed with moderately cold surface temperatures.
 
@@ -317,7 +317,7 @@ NCO\index{NCO (NetCDF Operators)} & \href{http://nco.sourceforge.net/}{\t{nco.so
 
 \noindent We do not claim to follow these principles perfectly, but we hope that any user can see these principles reflected in PISM and this \emph{Manual}.
 
-Principle (1) is illustrated by our existence.  Principle (2) is addressed in section \ref{sect:verif}.  Principle (7) is illustrated by examples in sections \ref{sect:green} and \ref{sect:ross} (FIXME: and the new introduction).  Principles (3), (4), (5), and (6) are explained and expanded next.
+Principle (1) is illustrated by our existence.  Principle (2) is addressed in section \ref{sect:verif}.  Principle (7) is illustrated by examples in sections \ref{sec:eismint-greenland} and \ref{sect:ross} (FIXME: and the new introduction).  Principles (3), (4), (5), and (6) are explained and expanded next.
 
 
 \subsection{Two main shallow models, SIA and SSA}\index{PISM!SIA}\index{PISM!SSA}  At each time-step of a typical PISM runs, the geometry, temperature, and basal strength of the ice sheet are included into stress balance equations to determine the velocity of the flowing ice.   PISM can, however, numerically solve two significantly-different shallow approximations of the full stress balance equations\footnote{The ``full stress balance equations'' form the Stokes model for slowly-flowing fluids \cite{Fowler}, in this case a non-Newtonian fluid, and they are themselves an inertia-free approximation of the conservation of momentum equations.}:\begin{itemize}
@@ -365,7 +365,7 @@ Underlying an ice sheet model like PISM are evolution-in-time partial differenti
 
 Much ice flow modeling, especially of streams and shelves, uses only instantaneous ``diagnostic'' solution of the partial differential equations which determine the velocity field.  The existence of such ``instantaneous'' velocity fields follows from the slowness of the ice, which implies that inertia can be neglected in the stress balance \cite{Fowler}.  The goal of a ``diagnostic run'' is usually to compute the velocity field, including the instantaneous rate of surface movement in particular.  This will be our definition of ``diagnostic run'' from now on.
 
-Sections \ref{sect:green} and \ref{sect:ross} illustrate the evolutionary and diagnostic modeling modes of PISM, respectively.  The first of these describes time-stepping evolution models for the Greenland ice sheet while the second describes a diagnostic SSA model for the Ross ice shelf.
+Sections \ref{sec:eismint-greenland} and \ref{sect:ross} illustrate the evolutionary and diagnostic modeling modes of PISM, respectively.  The first of these describes time-stepping evolution models for the Greenland ice sheet while the second describes a diagnostic SSA model for the Ross ice shelf.
 
 \subsection{Climate inputs and their separation from ice dynamics}
 \label{sec:climate-inputs}  This section applies the sixth PISM organizing principle above (section \ref{sect:dynamics}): \emph{climate inputs affect ice dynamics by a well-defined interface}.
@@ -421,7 +421,7 @@ Users wishing to customize PISM's climate inputs should see the \emph{PISM
   Source Browser}, e.g.~at
 \url{http://www.pism-docs.org/dev/doxy/html/index.html} and the documentation
 of \emph{PISMSurfaceModel}, \emph{PISMAtmosphereModel} and
-\emph{PISMOceanModel} therein.  Also, section \ref{sect:green} describes a
+\emph{PISMOceanModel} therein.  Also, section \ref{sec:eismint-greenland} describes a
 modeling example using a non-standard air temperature parameterization. Looking
 at \texttt{pgrn.cc} and \texttt{pgrn\und atmosphere.cc} may be a reasonable
 start.
@@ -513,7 +513,7 @@ The heuristics used by PISM are, for now, only documented in the source code fil
 
 When using \intextoption{boot\und from} you will need to specify both grid dimensions (using \intextoption{Mx}, \intextoption{My} and \intextoption{Mz}) and the height of the computational box for the ice with \intextoption{Lz}.  The data read from the file can determine the horizontal extent of the model, if options \intextoption{Lx}, \intextoption{Ly} are not set.  The additional specification of vertical extent by \verb|-Lz| is reasonably natural because realistic data used in ``bootstrapping'' are two-dimensional.  Not specifying all four options \verb|-Mx|, \verb|-My|, \verb|-Mz|, \verb|-Lz| \emph{when bootstrapping with} \verb|-boot_from| is an error.
 
-Subsection shows bootstrapping for the \ref{sect:green} does EISMINT-Greenland intercomparison \cite{RitzEISMINT,HuybrechtsEISMINT}.
+Subsection shows bootstrapping for the \ref{sec:eismint-greenland} does EISMINT-Greenland intercomparison \cite{RitzEISMINT,HuybrechtsEISMINT}.
 
 \subsubsection*{\texttt{-boot\und from} file format}
 \label{sec:bootstrapping-format}  Allowed formats for a bootstrapping file are relatively simple to describe. 
@@ -887,7 +887,7 @@ $ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -extras -regrid_from SM.nc \
 
 \clearpage\newpage
 
-\section{Example: Modeling the Greenland ice sheet}\label{sect:green} \index{PISM!running the EISMINT Greenland intercomparison}\index{Greenland ice sheet}\index{EISMINT!intercomparison of Greenland models} 
+\section{Example: Modeling the Greenland ice sheet}\label{sec:eismint-greenland} \index{PISM!running the EISMINT Greenland intercomparison}\index{Greenland ice sheet}\index{EISMINT!intercomparison of Greenland models} 
 
 In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use somewhat stale data from the 1990s ice sheet modelling intercomparison EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}.  Though based on old data, EISMINT-Greenland is an excellent tutorial example.
 
@@ -1387,11 +1387,6 @@ The Index on page \pageref{sect:index} contains an alphabetical list of options.
 
 \subsectstar{Options controlling model run length/start/end}
 
-\optdef{y}{1000} Number of model years to run.
-
-\opt{ye} Model year at which to end the run.  The default value is the start year  (\verb|-ys| or initialized model time from file) plus the default or given (\verb|-y|) run length.  If both \verb|-ys| and \verb|-ye| are used then the run length is set to the difference.  Using all three of \verb|-ys|, \verb|-y| and \verb|-ys| is not allowed.
-
-\opt{ys} Model year at which to start the run.  Also resets the model time, ignoring any time in the input file.
 
 
 \subsectstar{Options controlling the (spatial) computational grid and box}
@@ -1455,11 +1450,11 @@ with zero till cohesion.  We allow a positive till cohesion, though the default 
 
 \subsubsect{File input and output from PISM}
 
-\opt{boot\und from}  The model can be ``bootstrapped'' from certain NetCDF files using less than the full initial values for the system of evolution partial differential equations.  See sections \ref{sect:boot} for generalities and \ref{sect:green} for an example.  Compare \verb|-i|.
+\opt{boot\und from}  The model can be ``bootstrapped'' from certain NetCDF files using less than the full initial values for the system of evolution partial differential equations.  See sections \ref{sect:boot} for generalities and \ref{sec:eismint-greenland} for an example.  Compare \verb|-i|.
 
-\opt{dSLforcing}    Use the specified NetCDF file to apply changes in \emph{S}ea \emph{L}evel from a climate ``forcing'' record.  See section \ref{sect:green} for an example.
+\opt{dSLforcing}    Use the specified NetCDF file to apply changes in \emph{S}ea \emph{L}evel from a climate ``forcing'' record.  See section \ref{sec:eismint-greenland} for an example.
 
-\opt{dTforcing}    Use the specified NetCDF file to apply changes in surface \emph{T}emperature from a climate ``forcing'' record.  See section \ref{sect:green} for an example.
+\opt{dTforcing}    Use the specified NetCDF file to apply changes in surface \emph{T}emperature from a climate ``forcing'' record.  See section \ref{sec:eismint-greenland} for an example.
 
 \opt{f3d}  Save the model state with additional full velocity field.  That is, save all scalar components $u(x,y,z)$, $v(x,y,z)$, $w(x,y,z)$ of the velocity field for $(x,y,z)$ everywhere in the three-dimensional computational box.  These are saved as \verb|uvel|, \verb|vvel|, and \verb|wvel|, respectively.  Also saves \verb|uvelsurf| and \verb|vvelsurf|, the surface values of the $x$ and $y$ components of the velocity.
 
@@ -1592,26 +1587,6 @@ pisms -eisII I -ssa -super -plastic -track_Hmelt -Mx 91 -My 91 -Mz 51 \
 \end{verbatim}
 \noindent See \emph{Reference Manual}, source file \texttt{iMbasal.cc}, and \cite{BBssasliding}.
 
-
-\subsubsect{Positive degree day model (PDD) parameters}
-
-\opt{pdd\und rand}  Turns on the positive degree day model (which is off by default for \verb|pismr|, \verb|pisms|, and \verb|pismv|).  Use a monte carlo method based on a random number generator.  Note that if \verb|-pdd_std_dev 0.0| is set then the additional randomness is not active.  See subsection \ref{subsect:pdd}.
-
-\opt{pdd\und rand\und repeatable}  Same effect as \verb|pdd_rand| but additionally sets the ``seed'' for the random number generator to a default.  This makes runs based on the monte carlo method repeatable.
-
-\optdef{pdd\und factor\und ice}{0.008}  The amount of ice, measured in meters, which is melted per positive degree day.  In units of $\text{m}\!\phantom{|}^\circ\text{C}^{-1}\text{day}^{-1}$.  See subsection \ref{subsect:pdd}.
-
-\optdef{pdd\und factor\und snow}{0.003}  The amount of snow, measured in meters ice-equivalent, which is melted per positive degree day.  In units of $\text{m}\phantom{|}^\circ\text{C}^{-1}\text{day}^{-1}$.  See subsection \ref{subsect:pdd}.
-
-\optdef{pdd\und refreeze}{0.6}  Fraction of melted snow, from positive degree day melting, which locally refreezes as ice (and therefore adds to accumulation).  See subsection \ref{subsect:pdd}.
-
-\optdef{pdd\und std\und dev}{5.0}  Standard deviation of temperature increment added each day to temperature cycle in positive degree day model.  Units of $\phantom{|}^\circ\text{C}$.  See subsection \ref{subsect:pdd}.
-
-\optdef{pdd\und summer\und peak\und day}{243.0}  Julian day of peak summer temperature.  Default of August 1st is clearly not appropriate to Antarctica!  See subsection \ref{subsect:pdd}.
-
-\optdef{pdd\und summer\und warming}{15.0}  Difference between peak summer temperature and mean annual temperature at each grid location.  Units of $\phantom{|}^\circ\text{C}$.  See subsection \ref{subsect:pdd}.  Note \verb|pgrn| ignors this option; see section \ref{sect:green}.
-
-
 \subsubsect{Plastic till model parameters}
 
 \optdef{plastic\und c0}{0.0}  Set the value of the till cohesion in the plastic till model.  The value is a pressure, given in kPa.  Only effective if used with \verb|-plastic| and \verb|-ssa|.
@@ -1704,19 +1679,11 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \subsubsect{EISMINT-Greenland}  
 
-\noindent \emph{See section \ref{sect:green} to understand these options.  ``Specification'' refers to the EISMINT-Greenland specification in \cite{RitzEISMINT}.}
+\noindent \emph{See section \ref{sec:eismint-greenland} to understand these options.  ``Specification'' refers to the EISMINT-Greenland specification in \cite{RitzEISMINT}.}
 
 \optrestrict{ccl3}{pgrn -forcing}    Run EISMINT-Greenland climate control experiment.
 
 \optrestrict{gwl3}{pgrn}    Run EISMINT-Greenland greenhouse warming scenario.
-
-\optrestrict{have\und artm}{pgrn}  Use a surface temperature map in the input file, instead of elevation-latitude formula in specification.
-
-\optrestrict{have\und bheatflx}{pgrn}  Use a geothermal flux map in the input file, instead of the constant value in the specification (namely $50\,\text{mW}\,\text{m}^{-2}$).
-
-\optrestrict{no\und EI\und delete}{pgrn}  Do not remove Ellesmere Island and Iceland from computational domain.  I.e.~leave the mask alone and allow ice to spread onto these pieces of land; very unlikely for Iceland!
-
-\optrestrict{no\und pdd}{pgrn}  Do not use a PDD (positive degree-day) model, despite EISMINT-Greenland specification.
 
 \optrestrict{ssl2}{pgrn}    Run EISMINT-GREENLAND steady state experiment level 2.
 
@@ -1792,8 +1759,6 @@ These two PETSc mechanisms can be used together.  (The effect of duplicate or co
 \clearpage \newpage
 \section{Python scripts for PISM modeling}\label{sect:scripts}
 
-FIXME:  It is reasonable to replace option lists with the mere suggestion to use \verb|foo.py --help|.  \verb|verifynow.py| has been documented this way.
-
 \newcommand{\scriptoptdef}[3]{\vspace{1mm}\noindent \large\texttt{-#1},\,\,\texttt{--#2=}\normalsize\,\,[\textsl{#3}]:\quad}
 
 \newcommand{\scripthead}[1]{\subsubsection*{\Large{\texttt{#1}}}}
@@ -1804,7 +1769,7 @@ FIXME:  It is reasonable to replace option lists with the mere suggestion to use
 	$$\grad^2 u = 0$$
 to smoothly replace missing values in two-dimensional NetCDF variables with the average of the ``nearby'' non-missing values.
 
-Section \ref{sect:green} gives an example of actual usage on the bed elevations in the EISMINT-Greenland data.  Here is a hypothetical example usage, of filling the missing values in the two variables \verb|topg| and \verb|usurf|, using a convergence tolerance of $10^{-4}$ and the initial guess of $100$, on data in the NetCDF file \verb|data.nc|:
+Section \ref{sec:eismint-greenland} gives an example of actual usage on the bed elevations in the EISMINT-Greenland data.  Here is a hypothetical example usage, of filling the missing values in the two variables \verb|topg| and \verb|usurf|, using a convergence tolerance of $10^{-4}$ and the initial guess of $100$, on data in the NetCDF file \verb|data.nc|:
 
 \begin{verbatim}
 fill_missing.py -f data.nc -v topg,usurf --eps=1.0e-4 \
@@ -1812,106 +1777,59 @@ fill_missing.py -f data.nc -v topg,usurf --eps=1.0e-4 \
 \end{verbatim}
 Note that \verb|-i| and \verb|-e| specify the initial guess and the convergence tolerance for \emph{all} the specified variables, so using these options only makes sense if all the variables have the same units. Moreover, making a good initial guess can noticeably reduce the time needed to fill in the holes, so we recommend processing variables one at a time.
 
-\opthead  \verb|fill_missing.py| takes the following options.  They have both a short form and a long form, \emph{a la} GNU; the default is in brackets:
+Note that each of the requested variables must have missing values specified
+according to CF Metadata conventions. Namely, each of the listed variables must
+have one of the following: \verb|valid_range| or both of \verb|valid_min| and
+\verb|valid_max| defined if the values are in a specific range; one of
+\verb|valid_min| and \verb|valid_max| if values are greater (or less,
+respectively) than some value, or \verb|_FillValue|. Also note that
+\verb|_FillValue| is interpreted as \verb|valid_max| if it is positive and as
+\verb|valid_min| otherwise; see
+\href{http://www.unidata.ucar.edu/software/netcdf/guide_10.html#SEC76}{NetCDF
+  User's Guide: Attributes} for details. The \verb|missing_value| is deprecated
+by the NetCDF User's Guide, but is supported for backward compatibility
 
-\scriptoptdef{e}{eps}{$1.0$}  Convergence tolerance for iteration to solve Laplace's equation.
-
-\scriptoptdef{f}{file}{no default}  The full name of the NetCDF file from which to read variables for filling.
-
-\scriptoptdef{o}{out\und file}{no default}  Full name of output file.
-
-\scriptoptdef{i}{initial\und guess}{'mean'}  The initial guess used by the script; should be within the valid range of values. The default is the mean of all the \emph{present} values of a variable.
-
-\scriptoptdef{v}{variables}{no default}  Comma separated list of variables for which to fill missing values.  Note that each of the listed variables must have missing values specified according to CF Metadata conventions. Namely, each of the listed variables must have one of the following: \verb|valid_range| or both of \verb|valid_min| and \verb|valid_max| defined if the values are in a specific range; one of \verb|valid_min| and \verb|valid_max| if values are greater (or less, respectively) than some value, or \verb|_FillValue|. Also note that \verb|_FillValue| is interpreted as \verb|valid_max| if it is positive and as \verb|valid_min| otherwise; see \href{http://www.unidata.ucar.edu/software/netcdf/guide_10.html#SEC76}{NetCDF User's Guide: Attributes} for details. The \verb|missing_value| is deprecated by the NetCDF User's Guide, but is supported for backward compatibility.
-
-
-\scripthead{util/series.py}\index{series.py}  This Python script postprocesses the standard output of \verb|pismr|, \verb|pisms|, \verb|pgrn|, or \verb|pismv|, if it is stored in a text file, to generate a NetCDF file with a time series.\footnote{That is, it postprocesses standard output from the PISM \emph{evolution} executables.  Output from \texttt{pismd}, an executable for diagnostic runs, leads to no meaningful time series.}  This yields time series for ice sheet volume, area, melt fraction, thickness at the center of the grid, and temperature of the base of the ice at the center of the grid, in the default case.  Also the time series for the time step length itself is extracted.  The result is a one-dimensional NetCDF file.
-
-An example usage is
-
-\begin{verbatim}
-$  pisms -eisII A -Mx 61 -My 61 -Mz 201 -y 5000 >> eisIIA.out
-$  series.py -f eisIIA.out -o eisIIA_series.nc
-$  ncview eisIIA_series.nc|
-\end{verbatim}
-Note that multiple runs can have their standard out concatenated, and \verb|series.py| will (generally) give reasonable behavior.  For example,
-
-\begin{verbatim}
-$  pisms -eisII A -i simp_exper.nc -y 1000 >> eisIIA.out
-$  pisms -eisII A -i simp_exper.nc -y 1000 >> eisIIA.out
-$  series.py -f eisIIA.out -o eisIIA_ser_more.nc
-\end{verbatim}
-gives a reasonable time series even though the file \verb|eisIIA.out| twice has the evidence of the run stopping, being saved, and restarting.  Note that the \verb|delta_t| variable in \verb|eisIIA_ser_more.nc| goes to zero when there is a restart; this is a feature not a bug.
-
-An even more sophisticated usage is when a script runs PISM in several different ways and generates a long text file from standard out, say \verb|foo.txt|.  One can use \verb|less -N| to view the file with line numbers, and search backward and forwards  for ``PISM'' at each restart, with \verb|/PISM| or  \verb|?PISM| to find a range of line numbers for each run (for which a time series is desired).  Suppose we determine that we want line numbers 100 through 1234.  Then extract that range and run \verb|series.py|:
-
-\begin{verbatim}
-$ cat foo.txt | sed -n '100,1234p' >> extract.txt
-$ series.py -f extract.txt -o desired_series.nc
-\end{verbatim}
-\opthead  \verb|series.py| takes the following options.  They have both a short form and a long form, \emph{a la} GNU; the default is in brackets:
-
-\scriptoptdef{f}{file}{foo.txt} The full name of the text file.
-
-\scriptoptdef{o}{out}{series\und out.nc} The full name of the output NetCDF file.
+Please run \texttt{fill\und missing.py --help} for the list of available
+command-line options.
 
 
-\scripthead{test/verifynow.py}\index{verifynow.py}  This Python script in directory \verb|test/| organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in section \ref{sect:verif}.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
+\scripthead{test/vfnow.py}\index{vfnow.py}  This Python script in directory \verb|test/| organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in section \ref{sect:verif}.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
 
-In a standard PISM installation, runs as \verb|test/verifynow.py|, or \verb|cd test/| and do \verb|./verifynow.py|.  Example usage: \begin{itemize}
-\item ``\verb|verifynow.py|'' without options will use one processor and do three levels of refinement; this command is equivalent to \verb|verifynow.py -n 1 -l 3 -t CGIJ|,
-\item ``\verb|verifynow.py -n 8 -l 5 -t J --prefix=bin/ --mpido='aprun -n'|'' will use \verb|aprun -n 8 bin/pismv| as the command and do five levels (the maximum) of refinement only on test J,
-\item ``\verb|verifynow.py -n 2 -l 3 -t CEIJGKL -u 1|'' uses two processers (cores) and runs in about two hours; the vertical spacing is not equal (\verb|-z_spacing quadratic|),
-\item ``\verb|verifynow.py -n 40 -l 5 -t ABCDEFGIJKLM|'' will use forty processors to do all possible verification as managed by \verb|verifynow.py|; don't run this unless you have a big computer and you are prepared to wait.
+In a standard PISM installation, runs as \verb|test/vfnow.py|, or \texttt{cd test/} and do \texttt{./vfnow.py}. Example usage:
+\begin{itemize}
+\item ``\verb|vfnow.py|'' without options will use one processor and do three levels of refinement; this command is equivalent to \verb|vfnow.py -n 1 -l 3 -t CGIJ|,
+\item ``\verb|vfnow.py -n 8 -l 5 -t J --prefix=bin/ --mpido='aprun -n'|'' will use \verb|aprun -n 8 bin/pismv| as the command and do five levels (the maximum) of refinement only on test J,
+\item ``\verb|vfnow.py -n 2 -l 3 -t CEIJGKL -u 1|'' uses two processers (cores) and runs in about two hours; the vertical spacing is not equal (\verb|-z_spacing quadratic|),
+\item ``\verb|vfnow.py -n 40 -l 5 -t ABCDEFGIJKLM|'' will use forty processors to do all possible verification as managed by \verb|vfnow.py|; don't run this unless you have a big computer and you are prepared to wait.
 \end{itemize}
 
-For a list of options do \verb|test/verifynow.py --help|.
+For a list of options do \verb|test/vfnow.py --help|.
 
-Timing information is given in the \verb|verifynow.py| output so performance, including parallel performance, can be assessed along with accuracy.  The exact meaning of the numerical errors reported by \verb|pismv|, which appear in a \verb|verifynow.py| output as well, is currently only documented in the source files \verb|pism/src/verif/iceCompModel.cc|, \verb|pism/src/verif/iCMthermo.cc|, and \verb|pism/src/verif/iceExactSSAModel.cc|.  
+Timing information is given in the \verb|vfnow.py| output so performance, including parallel performance, can be assessed along with accuracy.  The exact meaning of the numerical errors reported by \verb|pismv|, which appear in a \verb|vfnow.py| output as well, is currently only documented in the source files \verb|pism/src/verif/iceCompModel.cc|, \verb|pism/src/verif/iCMthermo.cc|, and \verb|pism/src/verif/iceExactSSAModel.cc|.  
 
 
-\scripthead{test/vnreport.py}\index{vnreport.py}  This Python script postprocesses the standard output of \verb|verifynow.py| above.  The output is converted into graphs using \verb|matplotlib|.  Example graphs are Figures \ref{fig:thickerrsG} through \ref{fig:temperrsK} in section \ref{sect:verif}.
-
-In a standard PISM installation, to run this script you will want to \verb|cd test/| and run the script there with ``\verb|./|'' or ``\verb|python|''.
+\scripthead{test/vnreport.py}\index{vnreport.py}  This Python script processes
+a NetCDF report file created by \texttt{vfnow.py} and creates plots similar
+to figures \ref{fig:thickerrsB}--~\ref{fig:temperrsK}.
 
 The basic use is this:
-
 \begin{verbatim}
-$  verifynow.py -n 2 -l 3 -t BGIK >> foo.txt
-$  vnreport.py -f foo.txt -t B -e 'geometry' -o thickerrs
+$  vfnow.py -n 2 -l 5 -t K -r K.nc
+$  vnreport.py -i K.nc -t K
 \end{verbatim}
-(Figures \ref{fig:thickerrsG} through \ref{fig:temperrsK} in section \ref{sect:verif} were actually generated by a level five (``\verb|-l 5|'') \verb|verifynow.py| run, but that takes a lot of computer time.)
 
-The \verb|verifynow.py| run will take a while.  The \verb|vnreport.py| run will (quickly) look at \verb|foo.txt| and extract the geometry (thickness) numerical errors and refinement path and build a \verb|.png| image like that in Figure \ref{fig:thickerrsG}.\footnote{A useful post-processing step on such \texttt{.png} images is to use one of the ImageMagick (\href{http://www.imagemagick.org/}{www.imagemagick.org}) tools to autocrop the white space: \texttt{mogrify -trim +repage thickerrs\und G.png}.  This degrades the quality of \texttt{.pdf} images, so it is not recommended for those.}  To generate a \verb|.pdf| image, add option \verb|-g pdf|.
+The \verb|vfnow.py| run will take a while.  The \verb|vnreport.py| run will
+(quickly) look at \verb|K.nc| and extract the geometry (thickness) numerical
+errors and refinement path and create and image like that in Figure
+\ref{fig:temperrsK}. This script does not save the image created, you can
+do that using the ``save'' button of the displayed dialog.
 
 The \verb|Makefile| in the documentation directory \verb|pism/doc/| gives more example usages.  In fact, \verb|vnreport.py| is primarily used to automate the creation of this manual.
 
-\opthead  \verb|vnreport.py| takes the following options:
-
-\scriptoptdef{e}{error}{geometry} which kind of error to look for; for example, with test E the valid possibilities are \verb|geometry| and \verb|'base vels'|
-
-\scriptoptdef{f}{file}{foo.txt} name of the text file containing the \verb|verifynow.py| report
-
-\scriptoptdef{g}{graphformat}{png} image file type; \verb|png| and \verb|pdf| are the two supported possiblities
-
-\scriptoptdef{o}{out}{report} prefix of output file name; if ``\verb|-t G -o bar|'' then output file is named ``\verb|bar_G.pdf|''
-
-\scriptoptdef{r}{pismrev}{0} PISM revision number to add to title of image; only displayed if positive ($>0$)
-
-\scriptoptdef{t}{test}{A} the test for which to find the \verb|verifynow.py| report; only one value allowed
-
-\scriptoptdef{x}{exclude}{} specify tags of errors to exclude from the figure
+Please run \texttt{vnreport.py --help} for the list of all the options accepted.
 
 
 \scripthead{util/nc2mat.py}\index{nc2mat.py} This Python script reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format (\verb|.mat|, supported by MATLAB version 5 and later). It depends on \verb|netcdf4-python| and SciPy.
-
-\opthead \verb|nc2mat.py| takes the following options:
-
-\scriptoptdef{o}{output}{same as input, with \t{.nc} replaced with \t{.mat}} output file name
-
-\scriptoptdef{v}{variables}{all the variables} the list of variables to write to the output file
-
-\scriptoptdef{e}{exclude}{no variables} the list of variables to exclude
 
 Here are some examples:
 

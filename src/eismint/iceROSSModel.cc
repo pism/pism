@@ -137,15 +137,24 @@ PetscErrorCode IceROSSModel::misc_setup() {
   ierr = vuvbar[1].set(0.0); CHKERRQ(ierr);
 
   // read SSA b.c. from file
-  PetscTruth  ssaBCset;
-  char        ssaBCfile[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-ssaBC", ssaBCfile,
-                               PETSC_MAX_PATH_LEN, &ssaBCset); CHKERRQ(ierr);
-  if (ssaBCset == PETSC_TRUE) {
+  bool   ssaBCset;
+  string ssaBCfile;
+  ierr = PetscOptionsBegin(grid.com, "", "IceROSSModel options", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-ssaBC", "Specifies the file containing SSA boundary conditions",
+			     ssaBCfile, ssaBCset); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  if (ssaBCset) {
      ierr = verbPrintf(2, grid.com,
              "EIS-Ross: reading SSA boundary condition file %s and setting bdry conds\n",
-             ssaBCfile); CHKERRQ(ierr);
-     ierr = readShelfStreamBCFromFile(ssaBCfile); CHKERRQ(ierr);
+		       ssaBCfile.c_str()); CHKERRQ(ierr);
+     ierr = readShelfStreamBCFromFile(ssaBCfile.c_str()); CHKERRQ(ierr);
+     config.set_flag("use_ssabc", true);
+     config.set_string("ssabc_filename", ssaBCfile);
+  } else {
+     config.set_flag("use_ssabc", false);
   }
 
   ierr = verbPrintf(2,grid.com, "EIS-Ross: computing velocity ...\n"); CHKERRQ(ierr);
@@ -156,18 +165,15 @@ PetscErrorCode IceROSSModel::misc_setup() {
 PetscErrorCode IceROSSModel::finishROSS() {
   PetscErrorCode  ierr;
 
-  PetscTruth  ssaBCset;
-  char        ssaBCfile[PETSC_MAX_PATH_LEN];
-  ierr = PetscOptionsGetString(PETSC_NULL, "-ssaBC", ssaBCfile,
-                               PETSC_MAX_PATH_LEN, &ssaBCset); CHKERRQ(ierr);
-  if (ssaBCset == PETSC_FALSE)
+  if (config.get_flag("use_ssabc") == false)
     return 0;
 
   double ssaEpsilon = config.get("epsilon_ssa");
+  string ssaBCfile = config.get_string("ssabc_filename");
 
   ierr = verbPrintf(2,grid.com, "\nEIS-Ross: reading observed velocities from %s...\n",
-                    ssaBCfile); CHKERRQ(ierr);
-  ierr = readObservedVels(ssaBCfile); CHKERRQ(ierr);
+                    ssaBCfile.c_str()); CHKERRQ(ierr);
+  ierr = readObservedVels(ssaBCfile.c_str()); CHKERRQ(ierr);
 
   ierr = computeErrorsInAccurateRegion(); CHKERRQ(ierr);
   ierr = readRIGGSandCompare(); CHKERRQ(ierr);
