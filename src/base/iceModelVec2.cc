@@ -258,7 +258,7 @@ PetscScalar& IceModelVec2::operator() (int i, int j) {
 
 //! Returns the mask value; does not check ownership.
 PismMask IceModelVec2Mask::value(int i, int j) {
-  PetscScalar **a = (PetscScalar**) array;
+  const PetscScalar **a = (const PetscScalar**) array;
   const PetscInt ival = static_cast<int>(floor(a[i][j] + 0.5));
   return static_cast<PismMask>(ival);
 }

@@ -220,26 +220,29 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   ierr = w3.begin_access(); CHKERRQ(ierr);
   ierr = vbasalMeltRate.begin_access(); CHKERRQ(ierr);
 
-  PetscScalar *w;
+  PetscScalar *w, *u_im1, *u_ip1, *v_jm1, *v_jp1;
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = w3.getInternalColumn(i,j,&w); CHKERRQ(ierr);
+
+      ierr = u3.getInternalColumn(i-1,j,&u_im1); CHKERRQ(ierr);
+      ierr = u3.getInternalColumn(i+1,j,&u_ip1); CHKERRQ(ierr);
+
+      ierr = v3.getInternalColumn(i,j-1,&v_jm1); CHKERRQ(ierr);
+      ierr = v3.getInternalColumn(i,j+1,&v_jp1); CHKERRQ(ierr);
+
       if (include_bmr_in_continuity) {
         w[0] = - vbasalMeltRate(i,j);
       } else {
         w[0] = 0.0;
       }
 
-      planeStar uss, vss;
-      ierr = u3.getPlaneStarZ(i,j,0.0,&uss);
-      ierr = v3.getPlaneStarZ(i,j,0.0,&vss);
       PetscScalar OLDintegrand
-             = (uss.ip1 - uss.im1) / (2.0*dx) + (vss.jp1 - vss.jm1) / (2.0*dy);
+             = (u_ip1[0] - u_im1[0]) / (2.0*dx) + (v_jp1[0] - v_jm1[0]) / (2.0*dy);
       for (PetscInt k = 1; k < grid.Mz; ++k) {
-        ierr = u3.getPlaneStarZ(i,j,grid.zlevels[k],&uss);
-        ierr = v3.getPlaneStarZ(i,j,grid.zlevels[k],&vss);
         const PetscScalar NEWintegrand
-             = (uss.ip1 - uss.im1) / (2.0*dx) + (vss.jp1 - vss.jm1) / (2.0*dy);
+             = (u_ip1[k] - u_im1[k]) / (2.0*dx) + (v_jp1[k] - v_jm1[k]) / (2.0*dy);
         const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
         w[k] = w[k-1] - 0.5 * (NEWintegrand + OLDintegrand) * dz;
         OLDintegrand = NEWintegrand;

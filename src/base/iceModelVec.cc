@@ -539,10 +539,12 @@ PetscErrorCode IceModelVec::checkCompatibility(const char* func, IceModelVec &ot
 //! Checks if an IceModelVec is allocated and calls DAVecGetArray.
 PetscErrorCode  IceModelVec::begin_access() {
   PetscErrorCode ierr;
+#ifdef PISM_DEBUG
   ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (access_counter < 0)
     SETERRQ(1, "IceModelVec::begin_access(): access_counter < 0");
+#endif
 
   if (access_counter == 0) {
     ierr = DAVecGetArray(da, v, &array); CHKERRQ(ierr);
@@ -556,12 +558,14 @@ PetscErrorCode  IceModelVec::begin_access() {
 //! Checks if an IceModelVec is allocated and calls DAVecRestoreArray.
 PetscErrorCode  IceModelVec::end_access() {
   PetscErrorCode ierr;
-  ierr = checkAllocated(); CHKERRQ(ierr);
-
   access_counter--;
+
+#ifdef PISM_DEBUG
+  ierr = checkAllocated(); CHKERRQ(ierr);
 
   if (access_counter < 0)
     SETERRQ(1, "IceModelVec::end_access(): access_counter < 0");
+#endif
 
   if (access_counter == 0) {
     ierr = DAVecRestoreArray(da, v, &array); CHKERRQ(ierr);

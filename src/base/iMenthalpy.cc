@@ -255,30 +255,31 @@ PetscErrorCode IceModel::setCTSFromEnthalpy(IceModelVec3 &useForCTS) {
 Return argument Enth_s[Mz] has the enthalpy value for the pressure-melting 
 temperature at the corresponding z level.
  */
-PetscErrorCode IceModel::getEnthalpyCTSColumn(
-      PetscInt Mz, PetscScalar dzEQ, const PetscScalar *zlev,
-      PetscScalar thk, PetscInt ks,
-      const PetscScalar *Enth, const PetscScalar *w,
-      PetscScalar *lambda, PetscScalar **Enth_s) {
+PetscErrorCode IceModel::getEnthalpyCTSColumn(PetscScalar p_air,
+					      PetscScalar thk,
+					      PetscInt ks,
+					      const PetscScalar *Enth,
+					      const PetscScalar *w,
+					      PetscScalar *lambda,
+					      PetscScalar **Enth_s) {
 
   *lambda = 1.0;  // start with centered implicit for more accuracy
   const PetscScalar
-      ice_rho_c = config.get("ice_density") * config.get("ice_specific_heat_capacity"),
-      ice_k     = config.get("ice_thermal_conductivity");
+      ice_rho_c = ice->rho * ice->c_p,
+      ice_k     = ice->k;
   for (PetscInt k = 0; k <= ks; k++) {
-    (*Enth_s)[k] = EC->getEnthalpyCTS(EC->getPressureFromDepth(thk - zlev[k]));
+    (*Enth_s)[k] = EC->getEnthalpyCTS(EC->getPressureFromDepth(thk - grid.zlevels_fine[k]));
 
     if (Enth[k] > (*Enth_s)[k]) { // lambda = 0 if temperate ice present in column
       *lambda = 0.0;
     } else {
       const PetscScalar 
-          denom = (PetscAbs(w[k]) + 0.000001/secpera) * ice_rho_c * dzEQ;
+          denom = (PetscAbs(w[k]) + 0.000001/secpera) * ice_rho_c * grid.dz_fine;
       *lambda = PetscMin(*lambda, 2.0 * ice_k / denom);
     }
   }
 
-  const PetscScalar p_air = config.get("surface_pressure");
-  for (PetscInt k = ks+1; k < Mz; k++) {
+  for (PetscInt k = ks+1; k < grid.Mz_fine; k++) {
     (*Enth_s)[k] = EC->getEnthalpyCTS(p_air);
   }
 
@@ -374,10 +375,11 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   }
 
   // get fine grid levels in ice and bedrock; guaranteed dz=dzb
-  PetscInt    fMz, fMbz;  
-  PetscScalar fdz, *fzlev, dummy_fdzb, *fzblev;
-  ierr = grid.get_fine_vertical_grid(
-      fMz, fMbz, fdz, dummy_fdzb, fzlev, fzblev); CHKERRQ(ierr);
+  PetscInt    fMz = grid.Mz_fine,
+    fMbz = grid.Mbz_fine;  
+  PetscScalar fdz = grid.dz_fine,
+    *fzlev = grid.zlevels_fine;
+
   if (fMbz == 2) {
     SETERRQ(2,
       "PISM ERROR:  enthalpyAndDrainageStep() does not currently allow fMbz == 2;\n"
@@ -386,9 +388,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
   const PetscScalar
     p_air     = config.get("surface_pressure"),
-    ice_rho   = config.get("ice_density"),
-    ice_c     = config.get("ice_specific_heat_capacity"),
-    ice_k     = config.get("ice_thermal_conductivity"),
+    ice_rho   = ice->rho,
+    ice_c     = ice->c_p,
+    ice_k     = ice->k,
     L         = config.get("water_latent_heat_fusion"),  // J kg-1
     omega_max = config.get("liquid_water_fraction_max"), // pure
     warm_dE   = config.get("warm_base_flux_enthalpy_fraction") * L,
@@ -465,10 +467,11 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
       // for fine grid; this should *not* be replaced by call to grid.kBelowHeight()
       const PetscInt ks = static_cast<PetscInt>(floor(vH(i,j)/fdz));
-      // ignor advection and strain heating in ice if isMarginal
+      // ignore advection and strain heating in ice if isMarginal
       const bool isMarginal = checkThinNeigh(
                                  vH(i+1,j),vH(i+1,j+1),vH(i,j+1),vH(i-1,j+1),
                                  vH(i-1,j),vH(i-1,j-1),vH(i,j-1),vH(i+1,j-1)  );
+      const bool is_floating = vMask.is_floating(i,j);
 
       // enthalpy and pressures at boundaries of ice
       const PetscScalar p_basal = EC->getPressureFromDepth(vH(i,j)),
@@ -479,28 +482,28 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       //   now there is no case where we have that:
       ierr = EC->getEnthPermissive(artm(i,j), 0.0, p_ks,  Enth_ks); CHKERRQ(ierr);
 
-      ierr = Enth3.getValColumn(i,j,fMz,fzlev,iosys.Enth); CHKERRQ(ierr);
-      ierr = w3.getValColumn(i,j,fMz,fzlev,iosys.w); CHKERRQ(ierr);
+      ierr = Enth3.getValColumn(i,j,iosys.Enth); CHKERRQ(ierr);
+      ierr = w3.getValColumn(i,j,iosys.w); CHKERRQ(ierr);
 
       PetscScalar lambda;
-      ierr = getEnthalpyCTSColumn(fMz, fdz, fzlev, vH(i,j), ks, iosys.Enth, iosys.w,
+      ierr = getEnthalpyCTSColumn(p_air, vH(i,j), ks, iosys.Enth, iosys.w,
                                   &lambda, &iosys.Enth_s); CHKERRQ(ierr);
 
       if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
 
       // major decision: is cold base and grounded and has bedrock layer?:
-      if ( (iosys.Enth[0] < iosys.Enth_s[0]) && (fMbz > 1) && (!vMask.is_floating(i,j)) ) {
+      if ( (iosys.Enth[0] < iosys.Enth_s[0]) && (fMbz > 1) && (!is_floating) ) {
 
         // ***** COLD BASE, GROUNDED CASE WITH BEDROCK *****
         ierr = cbsys.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
 
         ierr = copyColumn(iosys.Enth,cbsys.Enth,fMz); CHKERRQ(ierr);
         ierr = copyColumn(iosys.Enth_s,cbsys.Enth_s,fMz); CHKERRQ(ierr);
-        ierr = u3.getValColumn(i,j,fMz,fzlev,cbsys.u); CHKERRQ(ierr);
-        ierr = v3.getValColumn(i,j,fMz,fzlev,cbsys.v); CHKERRQ(ierr);
+        ierr = u3.getValColumn(i,j,cbsys.u); CHKERRQ(ierr);
+        ierr = v3.getValColumn(i,j,cbsys.v); CHKERRQ(ierr);
         ierr = copyColumn(iosys.w,cbsys.w,fMz); CHKERRQ(ierr);
-        ierr = Sigma3.getValColumn(i,j,fMz,fzlev,cbsys.Sigma); CHKERRQ(ierr);
-        ierr = Tb3.getValColumn(i,j,fMbz,fzblev,cbsys.Tb); CHKERRQ(ierr);
+        ierr = Sigma3.getValColumn(i,j,cbsys.Sigma); CHKERRQ(ierr);
+        ierr = Tb3.getValColumn(i,j,cbsys.Tb); CHKERRQ(ierr);
 
         ierr = cbsys.setSchemeParamsThisColumn(isMarginal, lambda);
             CHKERRQ(ierr);
@@ -543,12 +546,11 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           // case of temperate bed and a bedrock layer
           ierr = bosys.setIndicesAndClearThisColumn(i,j,-1); CHKERRQ(ierr);  
 
-          ierr = Tb3.getValColumn(i,j,fMbz,fzblev,bosys.Tb);
+          ierr = Tb3.getValColumn(i,j,bosys.Tb);
                    CHKERRQ(ierr);
 
-          const PetscScalar Tbtop =
-                  (vMask.is_floating(i,j)) ? shelfbtemp(i,j)
-                                           : EC->getMeltingTemp(p_basal);
+          const PetscScalar Tbtop = (is_floating ? shelfbtemp(i,j)
+				     : EC->getMeltingTemp(p_basal));
           ierr = bosys.setBoundaryValuesThisColumn(Tbtop, vGhf(i,j));
               CHKERRQ(ierr);
 
@@ -567,7 +569,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         }
 
         // can determine melt now from heat flux out of base, etc.
-        if (vMask.is_floating(i,j)) {
+        if (is_floating) {
           vbasalMeltRate(i,j) = shelfbmassflux(i,j);
         } else {
           if (iosys.Enth[0] < iosys.Enth_s[0]) {
@@ -583,9 +585,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         //   iosys.Enth_s[] are already filled
         ierr = iosys.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
 
-        ierr = u3.getValColumn(i,j,fMz,fzlev,iosys.u); CHKERRQ(ierr);
-        ierr = v3.getValColumn(i,j,fMz,fzlev,iosys.v); CHKERRQ(ierr);
-        ierr = Sigma3.getValColumn(i,j,fMz,fzlev,iosys.Sigma); CHKERRQ(ierr);
+        ierr = u3.getValColumn(i,j,iosys.u); CHKERRQ(ierr);
+        ierr = v3.getValColumn(i,j,iosys.v); CHKERRQ(ierr);
+        ierr = Sigma3.getValColumn(i,j,iosys.Sigma); CHKERRQ(ierr);
 
         ierr = iosys.setSchemeParamsThisColumn(isMarginal, lambda); CHKERRQ(ierr);
         ierr = iosys.setBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);
@@ -613,7 +615,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
             rhs  = iosys.Enth[0];
             if (!isMarginal) {
               planeStar ss;
-              Enth3.getPlaneStarZ(i,j,0,&ss);
+              Enth3.getPlaneStar(i,j,0,&ss);
               const PetscScalar
                  UpEnthu = (iosys.u[0] < 0) ? iosys.u[0] * (ss.ip1 -  ss.ij) / grid.dx
                                             : iosys.u[0] * (ss.ij  - ss.im1) / grid.dx,
@@ -656,7 +658,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
       // basal melt rate causes water to be added to layer
       PetscScalar Hmeltnew = vHmelt(i,j);
-      if (!vMask.is_floating(i,j)) {
+      if (!is_floating) {
         Hmeltnew += vbasalMeltRate(i,j) * dtTempAge;
       }
 
@@ -674,17 +676,17 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
                                        Enthnew[k], dHdrained); CHKERRQ(ierr);
         Hdrainedtotal += dHdrained;  // always a positive contribution
       }
-      if (!vMask.is_floating(i,j)) {
+      if (!is_floating) {
         vbasalMeltRate(i,j) += Hdrainedtotal / dtTempAge;
         Hmeltnew += Hdrainedtotal;
       }
 
       // transfer column into Enthnew3; communication later
-      ierr = Enthnew3.setValColumnPL(i,j,fMz,fzlev,Enthnew); CHKERRQ(ierr);
+      ierr = Enthnew3.setValColumnPL(i,j,Enthnew); CHKERRQ(ierr);
 
       // if no thermal layer then need to fill Tb directly
       if (fMbz == 1) {
-        if (vMask.is_floating(i,j)) { // floating: get from PISMOceanModel
+        if (is_floating) { // floating: get from PISMOceanModel
           Tbnew[0] = shelfbtemp(i,j);
         } else {                      // grounded: duplicate temp from ice
           ierr = EC->getAbsTemp(Enthnew[0],EC->getPressureFromDepth(vH(i,j)), Tbnew[0]);
@@ -693,11 +695,11 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       }
 
       // transfer column into Tb3; no need for communication, even later
-      ierr = Tb3.setValColumnPL(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
+      ierr = Tb3.setValColumnPL(i,j,Tbnew); CHKERRQ(ierr);
 
       // finalize Hmelt value
       if (updateHmelt == PETSC_TRUE) {
-        if (vMask.is_floating(i,j)) {
+        if (is_floating) {
           // if floating assume maximally saturated "till"
           // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
           vHmelt(i,j) = hmelt_max;
@@ -733,7 +735,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   ierr = Enthnew3.end_access(); CHKERRQ(ierr);
 
   delete [] Enthnew; delete [] Tbnew;  delete [] xcombined;
-  delete [] fzlev;   delete [] fzblev;
 
   *liquifiedVol = ((double) liquifiedCount) * fdz * grid.dx * grid.dy;
   return 0;
@@ -747,7 +748,7 @@ Generally this procedure alters the values in the last two arguments,
 thickness which is moved to the bed by drainage.
 
 Heuristic: Once liquid water fraction exceeds a cap, all of it goes to the base.
-Follows \ref Greve97Greenland and references therein.
+Follows [\ref Greve97Greenland] and references therein.
  */
 PetscErrorCode IceModel::drainageToBaseModelEnth(
                 PetscScalar omega_max, PetscScalar thickness,

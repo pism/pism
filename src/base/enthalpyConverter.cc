@@ -261,19 +261,21 @@ Because of these not-allowed cases, the following expression is also valid:
  */
 PetscErrorCode EnthalpyConverter::getEnth(
                   double T, double omega, double p, double &E) const {
+  const double T_m = getMeltingTemp(p);
+#ifdef PISM_DEBUG
   if (T <= 0.0) {
     SETERRQ1(1,"\n\nT = %f <= 0 is not a valid absolute temperature\n\n",T);
   }
   if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
     SETERRQ1(2,"\n\nwater fraction omega=%f not in range [0,1]\n\n",omega);
   }
-  const double T_m = getMeltingTemp(p);
   if (T > T_m + 1.0e-6) {
     SETERRQ2(3,"T=%f exceeds T_m=%f so we have liquid water; not allowed\n\n",T,T_m);
   }
   if ((T < T_m - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
     SETERRQ3(4,"T < T_m AND omega > 0 is contradictory\n\n",T,T_m,omega);
   }
+#endif
   const double E_s = getEnthalpyCTS(p);
   E = E_s + c_i * (T - T_m) + omega * L;
   return 0;

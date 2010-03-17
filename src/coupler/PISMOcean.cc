@@ -43,15 +43,16 @@ PetscErrorCode POConstant::shelf_base_temperature(PetscReal /*t_years*/, PetscRe
   PetscErrorCode ierr;
 
   const PetscScalar T0 = config.get("water_melting_temperature"), // K
-    beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("standard_gravity"); // K m-1
+    beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("standard_gravity"), // K m-1
+    ice_rho = config.get("ice_density"),
+    sea_water_rho = config.get("sea_water_density");
 
   PetscScalar **H;
   ierr = ice_thickness->get_array(H);   CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar shelfbaseelev
-          = - ( config.get("ice_density") / config.get("sea_water_density") ) * H[i][j];
+      const PetscScalar shelfbaseelev = - ( ice_rho / sea_water_rho ) * H[i][j];
       // temp is set to melting point at depth
       result(i,j) = T0 + beta_CC_grad * shelfbaseelev;  // base elev negative here so is below T0
     }

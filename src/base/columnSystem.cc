@@ -75,12 +75,11 @@ columnSystemCtx::~columnSystemCtx() {
 //! Zero all entries.
 PetscErrorCode columnSystemCtx::resetColumn() {
   PetscErrorCode ierr;
-  ierr = PetscMemzero(Lp, (nmax-1)*sizeof(PetscScalar)); CHKERRQ(ierr);
-  ierr = PetscMemzero(U,  (nmax-1)*sizeof(PetscScalar)); CHKERRQ(ierr);
-
-  ierr = PetscMemzero(D,    nmax*sizeof(PetscScalar)); CHKERRQ(ierr);
-  ierr = PetscMemzero(rhs,  nmax*sizeof(PetscScalar)); CHKERRQ(ierr);
-  ierr = PetscMemzero(work, nmax*sizeof(PetscScalar)); CHKERRQ(ierr);
+  ierr = PetscMemzero(Lp,   (nmax-1)*sizeof(PetscScalar)); CHKERRQ(ierr);
+  ierr = PetscMemzero(U,    (nmax-1)*sizeof(PetscScalar)); CHKERRQ(ierr);
+  ierr = PetscMemzero(D,    (nmax)*sizeof(PetscScalar)); CHKERRQ(ierr);
+  ierr = PetscMemzero(rhs,  (nmax)*sizeof(PetscScalar)); CHKERRQ(ierr);
+  ierr = PetscMemzero(work, (nmax)*sizeof(PetscScalar)); CHKERRQ(ierr);
   return 0;
 }
 
@@ -292,13 +291,14 @@ Negative return code indicates a software problem.
  */
 PetscErrorCode columnSystemCtx::solveTridiagonalSystem(
                   const PetscInt n, PetscScalar **x) {
+#ifdef PISM_DEBUG
   if (x == NULL) { SETERRQ(-999,"x is NULL in columnSystemCtx"); }
   if (*x == NULL) { SETERRQ(-998,"*x is NULL in columnSystemCtx"); }
   if (n < 1) { SETERRQ(-997,"instance size n < 1 in columnSystemCtx"); }
   if (n > nmax) { SETERRQ(-996,"instance size n too large in columnSystemCtx"); }
 
   if (!indicesValid) { SETERRQ(-995,"column indices not valid in columnSystemCtx"); }
-
+#endif
   PetscScalar b;
   b = D[0];
   if (b == 0.0) { return 1; }
@@ -357,7 +357,7 @@ PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x) {
   // set up system: 0 <= k < ks
   for (PetscInt k = 0; k < ks; k++) {
     planeStar ss;  // note ss.ij = tau[k]
-    ierr = tau3->getPlaneStarZ(i,j,k * dzEQ,&ss); CHKERRQ(ierr);
+    ierr = tau3->getPlaneStar_fine(i,j,k,&ss); CHKERRQ(ierr);
     // do lowest-order upwinding, explicitly for horizontal
     rhs[k] =  (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx
                          : u[k] * (ss.ij  - ss.im1) / dx;
@@ -571,7 +571,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x) {
         rhs[k0] += dtTemp * rho_c_ratio * 0.5 * (Sigma[0] / rho_c_I);
         // WARNING: subtle consequences of finite volume argument across interface
         planeStar ss;
-        ierr = T3->getPlaneStarZ(i,j,0.0,&ss);
+        ierr = T3->getPlaneStar(i,j,0,&ss);
         const PetscScalar UpTu = (u[0] < 0) ? u[0] * (ss.ip1 -  ss.ij) / dx :
                                               u[0] * (ss.ij  - ss.im1) / dx;
         const PetscScalar UpTv = (v[0] < 0) ? v[0] * (ss.jp1 -  ss.ij) / dy :
@@ -607,7 +607,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x) {
   // generic ice segment: build k0+1:k0+ks-1 eqns
   for (PetscInt k = 1; k < ks; k++) {
     planeStar ss;
-    ierr = T3->getPlaneStarZ(i,j,k * dzEQ,&ss);
+    ierr = T3->getPlaneStar_fine(i,j,k,&ss);
     const PetscScalar UpTu = (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx :
                                           u[k] * (ss.ij  - ss.im1) / dx;
     const PetscScalar UpTv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :

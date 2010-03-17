@@ -91,38 +91,42 @@ PetscErrorCode IceUnitModel::testIceModelVec3()    {
   ierr = T3.beginGhostComm(); CHKERRQ(ierr);
   ierr = T3.endGhostComm(); CHKERRQ(ierr);
 
-  PetscScalar levels[10] = {0.0, 10.0, 100.0, 200.0, 500.0, 1000.0, 
-                            1500.0, 2000.0, 2500.0, grid.Lz};
-  PetscScalar valsIN[10], valsOUT[10];
+  PetscScalar *values_in = new PetscScalar[grid.Mz_fine],
+    *values_out = new PetscScalar[grid.Mz_fine];
+
   ierr = T3.begin_access(); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com,
     "\n\ntesting IceModelVec3::setValColumnPL() and getValColumnPL()\n"); CHKERRQ(ierr);
-  for (PetscInt k=0; k < 10; k++) {
-    valsIN[k] = sin(levels[k]/1000.0);
+  for (PetscInt k=0; k < grid.Mz_fine; k++) {
+    values_in[k] = sin(grid.zlevels_fine[k]/1000.0);
   }
-  ierr = T3.setValColumnPL(grid.xs, grid.ys, 10, levels, valsIN); CHKERRQ(ierr);
-  ierr = T3.getValColumnPL(grid.xs, grid.ys, 10, levels, valsOUT); CHKERRQ(ierr);
-  for (PetscInt k=0; k < 10; k++) {
+  ierr = T3.setValColumnPL(grid.xs, grid.ys, values_in); CHKERRQ(ierr);
+  ierr = T3.getValColumnPL(grid.xs, grid.ys, values_out); CHKERRQ(ierr);
+  for (PetscInt k=0; k < grid.Mz_fine; k++) {
     ierr = verbPrintf(1,grid.com,
-        "   k=%d:   level=%7.2f   valsIN=%7.4f   valsOUT=%7.4f   |diff|=%5.4e\n",
-        k,levels[k],valsIN[k],valsOUT[k],PetscAbs(valsIN[k]-valsOUT[k]) ); CHKERRQ(ierr);
+        "   k=%d:   level=%7.2f   values_in=%7.4f   values_out=%7.4f   |diff|=%5.4e\n",
+        k,grid.zlevels_fine[k],values_in[k],values_out[k],PetscAbs(values_in[k]-values_out[k]) ); CHKERRQ(ierr);
   }
   ierr = verbPrintf(1,grid.com,"done\n\n\n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com,
     "\n\ntesting IceModelVec3::setValColumnPL() and getValColumnQUAD()\n");
-    CHKERRQ(ierr);
-  ierr = T3.getValColumnQUAD(grid.xs, grid.ys, 10, levels, valsOUT); CHKERRQ(ierr);
-  for (PetscInt k=0; k < 10; k++) {
+  CHKERRQ(ierr);
+  ierr = T3.getValColumnQUAD(grid.xs, grid.ys, values_out); CHKERRQ(ierr);
+  for (PetscInt k=0; k < grid.Mz_fine; k++) {
     ierr = verbPrintf(1,grid.com,
-       "   k=%d:   level=%7.2f   valsIN=%7.4f   valsOUT=%7.4f   |diff|=%5.4e\n",
-       k,levels[k],valsIN[k],valsOUT[k],PetscAbs(valsIN[k]-valsOUT[k]) ); 
+       "   k=%d:   level=%7.2f   values_in=%7.4f   values_out=%7.4f   |diff|=%5.4e\n",
+       k,grid.zlevels_fine[k],values_in[k],values_out[k],PetscAbs(values_in[k]-values_out[k]) ); 
        CHKERRQ(ierr);
   }
   ierr = verbPrintf(1,grid.com,"done\n\n\n"); CHKERRQ(ierr);
 
   ierr = T3.end_access(); CHKERRQ(ierr);
+
+  delete[] values_in;
+  delete[] values_out;
+
   return 0;
 }
 
@@ -166,60 +170,41 @@ PetscErrorCode IceUnitModel::testIceModelVec3Bedrock()    {
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com,
              "\ntesting setInternalColumn() and getInternalColumn ... "); CHKERRQ(ierr);
-  PetscScalar *valsiIN, *valsiOUT;
-  valsiIN = new PetscScalar[grid.Mbz];
-  for (PetscInt k=0; k < grid.Mbz; k++) {
-    valsiIN[k] = sin(grid.zblevels[k]/833.42342);
-  }
-  ierr = Tb3.setInternalColumn(grid.xs,grid.ys,valsiIN); CHKERRQ(ierr);
-  ierr = Tb3.getInternalColumn(grid.xs,grid.ys,&valsiOUT); CHKERRQ(ierr);
-  maxdiff = 0.0;
-  for (PetscInt k=0; k < grid.Mbz; k++) {
-    maxdiff = PetscMax(maxdiff,PetscAbs(valsiIN[k]-valsiOUT[k]));
-  }
-  delete [] valsiIN;
-  ierr = Tb3.end_access(); CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com, "max error is %5.4e\n\n", maxdiff); CHKERRQ(ierr);
+  PetscScalar *values_in = new PetscScalar[grid.Mbz_fine],
+    *values_out = new PetscScalar[grid.Mbz_fine];
 
-
-  const PetscInt N=10;
-  // make levels[] increasing and covering interval [-Lbz,0.0]
-  PetscScalar levels[N] = {1.0, 0.9, 0.5, 0.4, 0.32, 0.31, 0.3, 0.2, 0.1, 0.0};
-  for (PetscInt k=0; k < N; k++) {
-    levels[k] = - grid.Lbz * levels[k];  
+  for (PetscInt k=0; k < grid.Mbz_fine; k++) {
+    values_in[k] = sin(grid.zblevels_fine[k]/1000.0);
   }
 
-  ierr = Tb3.begin_access(); CHKERRQ(ierr);
-  PetscScalar valsIN[N], valsOUT[N];
-  for (PetscInt k=0; k < N; k++) {
-    valsIN[k] = sin(levels[k]/1000.0);
-  }
-
-  ierr = Tb3.setValColumnPL(grid.xs, grid.ys, N, levels, valsIN); CHKERRQ(ierr);
+  ierr = Tb3.setValColumnPL(grid.xs, grid.ys, values_in); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com,
     "\ntesting setValColumn() and getValColumnPL():\n"); CHKERRQ(ierr);
 
-  ierr = Tb3.getValColumnPL(grid.xs, grid.ys, N, levels, valsOUT); CHKERRQ(ierr);
-  for (PetscInt k=0; k < N; k++) {
+  ierr = Tb3.getValColumnPL(grid.xs, grid.ys, values_out); CHKERRQ(ierr);
+  for (PetscInt k=0; k < grid.Mbz_fine; k++) {
     ierr = verbPrintf(1,grid.com,
-        "   k=%d:   level=%10.2f   valsIN=%7.4f   valsOUT=%7.4f   |diff|=%5.4e\n",
-        k,levels[k],valsIN[k],valsOUT[k],PetscAbs(valsIN[k]-valsOUT[k]) ); CHKERRQ(ierr);
+        "   k=%d:   level=%10.2f   values_in=%7.4f   values_out=%7.4f   |diff|=%5.4e\n",
+        k,grid.zblevels_fine[k],values_in[k],values_out[k],PetscAbs(values_in[k]-values_out[k]) ); CHKERRQ(ierr);
   }
 
   ierr = verbPrintf(1,grid.com,
     "\ntesting setValColumn() and getValColumnQUAD():\n"); CHKERRQ(ierr);
 
-  ierr = Tb3.getValColumnQUAD(grid.xs, grid.ys, N, levels, valsOUT); CHKERRQ(ierr);
-  for (PetscInt k=0; k < N; k++) {
+  ierr = Tb3.getValColumnQUAD(grid.xs, grid.ys, values_out); CHKERRQ(ierr);
+  for (PetscInt k=0; k < grid.Mbz_fine; k++) {
     ierr = verbPrintf(1,grid.com,
-        "   k=%d:   level=%10.2f   valsIN=%7.4f   valsOUT=%7.4f   |diff|=%5.4e\n",
-        k,levels[k],valsIN[k],valsOUT[k],PetscAbs(valsIN[k]-valsOUT[k]) ); CHKERRQ(ierr);
+        "   k=%d:   level=%10.2f   values_in=%7.4f   values_out=%7.4f   |diff|=%5.4e\n",
+        k,grid.zblevels_fine[k],values_in[k],values_out[k],PetscAbs(values_in[k]-values_out[k]) ); CHKERRQ(ierr);
   }
 
   ierr = verbPrintf(1,grid.com,"done\n\n\n"); CHKERRQ(ierr);
 
   ierr = Tb3.end_access(); CHKERRQ(ierr);
+
+  delete[] values_in;
+  delete[] values_out;
   return 0;
 }
 

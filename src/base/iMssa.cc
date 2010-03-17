@@ -306,7 +306,8 @@ PetscErrorCode IceModel::assembleSSAMatrix(bool includeBasalShear, IceModelVec2 
       const PetscInt J = 2*j;
       const PetscInt rowU = i*M + J;
       const PetscInt rowV = i*M + J+1;
-      if (vMask.value(i,j) == MASK_SHEET) {
+      const PismMask mask_value = vMask.value(i,j);
+      if (mask_value == MASK_SHEET) {
         // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
         //   this is where boundary value to SSA is set
         ierr = MatSetValues(A, 1, &rowU, 1, &rowU, &scaling, INSERT_VALUES); CHKERRQ(ierr);
@@ -368,14 +369,14 @@ PetscErrorCode IceModel::assembleSSAMatrix(bool includeBasalShear, IceModelVec2 
          *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
          *    or linear friction law according to basal->drag(), which gets called
          *    by basalDragx(),basalDragy().  */
-        if ((includeBasalShear) && (vMask.value(i,j) == MASK_DRAGGING_SHEET)) {
+        if ((includeBasalShear) && (mask_value == MASK_DRAGGING_SHEET)) {
           // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
           valU[5] += basalDragx(tauc, u, v, i, j);
           valV[7] += basalDragy(tauc, u, v, i, j);
         }
 
         // make shelf drag a little bit if desired
-        if ((shelvesDragToo == PETSC_TRUE) && (vMask.value(i,j) == MASK_FLOATING)) {
+        if ((shelvesDragToo == PETSC_TRUE) && (mask_value == MASK_FLOATING)) {
           //ierr = verbPrintf(1,grid.com,"... SHELF IS DRAGGING ..."); CHKERRQ(ierr);
           valU[5] += beta_shelves_drag_too;
           valV[7] += beta_shelves_drag_too;

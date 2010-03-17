@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2010 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2010 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -88,11 +88,13 @@ PetscErrorCode iceenthOnlySystemCtx::initAllColumns(
 
 PetscErrorCode iceenthOnlySystemCtx::setSchemeParamsThisColumn(
                      bool my_ismarginal, const PetscScalar my_lambda) {
+#ifdef PISM_DEBUG
   if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {  SETERRQ(2,
      "setSchemeParamsThisColumn() should only be called after\n"
      "  initAllColumns() in iceenthOnlySystemCtx"); }
   if (lambda >= 0.0) {  SETERRQ(3,
      "setSchemeParamsThisColumn() called twice (?) in iceenthOnlySystemCtx"); }
+#endif
   ismarginal = my_ismarginal;
   lambda = my_lambda;
   return 0;
@@ -101,11 +103,13 @@ PetscErrorCode iceenthOnlySystemCtx::setSchemeParamsThisColumn(
 
 PetscErrorCode iceenthOnlySystemCtx::setBoundaryValuesThisColumn(
            const PetscScalar my_Enth_surface) {
+#ifdef PISM_DEBUG
   if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {  SETERRQ(2,
      "setBoundaryValuesThisColumn() should only be called after\n"
      "  initAllColumns() in iceenthOnlySystemCtx"); }
   if (Enth_ks >= 0.0) {  SETERRQ(3,
      "setBoundaryValuesThisColumn() called twice (?) in iceenthOnlySystemCtx"); }
+#endif
   Enth_ks = my_Enth_surface;
   return 0;
 }
@@ -114,6 +118,7 @@ PetscErrorCode iceenthOnlySystemCtx::setBoundaryValuesThisColumn(
 //! Set coefficients in equation \f$a_0 E_0^{n+1} + a_1 E_1^{n+1} = b\f$ at base of ice.
 PetscErrorCode iceenthOnlySystemCtx::setLevel0EqnThisColumn(
       const PetscScalar my_a0, const PetscScalar my_a1, const PetscScalar my_b) {
+#ifdef PISM_DEBUG
   if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {
     SETERRQ(1, "setLevel0EqnThisColumn() should only be called after\n"
                "  initAllColumns() in iceenthOnlySystemCtx");
@@ -121,6 +126,7 @@ PetscErrorCode iceenthOnlySystemCtx::setLevel0EqnThisColumn(
   if ((!gsl_isnan(a0)) || (!gsl_isnan(a1)) || (!gsl_isnan(b))) {
     SETERRQ(2, "setLevel0EqnThisColumn() called twice ? in iceenthOnlySystemCtx");
   }
+#endif
   a0 = my_a0;
   a1 = my_a1;
   b  = my_b;
@@ -180,7 +186,7 @@ PetscErrorCode iceenthOnlySystemCtx::viewConstants(
 /*! \brief Solve the tridiagonal system, in a single column, which determines
 the new values of the ice enthalpy. */
 PetscErrorCode iceenthOnlySystemCtx::solveThisColumn(PetscScalar **x) {
-
+#ifdef PISM_DEBUG
   if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {
     SETERRQ(2, "solveThisColumn() should only be called after\n"
                "  initAllColumns() in iceenthOnlySystemCtx"); }
@@ -212,7 +218,7 @@ PetscErrorCode iceenthOnlySystemCtx::solveThisColumn(PetscScalar **x) {
   if (gsl_isnan(Enth[0])) {
     SETERRQ(65, "solveThisColumn() called with invalid Enth[] in\n"
                "  iceenthOnlySystemCtx"); }
-
+#endif
   // k=0 equation must be supplied to avoid making decisions here
   // L[0] = 0.0;  // not allocated
   D[0] = a0;
@@ -235,7 +241,7 @@ PetscErrorCode iceenthOnlySystemCtx::solveThisColumn(PetscScalar **x) {
     rhs[k] = Enth[k];
     if (!ismarginal) {
       planeStar ss;
-      Enth3->getPlaneStarZ(i,j,k * dzEQ,&ss);
+      Enth3->getPlaneStar_fine(i,j,k,&ss);
       const PetscScalar UpEnthu = (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx :
                                                u[k] * (ss.ij  - ss.im1) / dx;
       const PetscScalar UpEnthv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :

@@ -302,34 +302,26 @@ PetscErrorCode IceModel::report_grid_parameters() {
 		    grid.Mz, grid.dzMIN, grid.dzMAX); CHKERRQ(ierr);
   }
 
-  PetscInt    fMz = 0;	// will be initialized by the call below
   if (grid.Mbz > 1) {
     if (grid.bed_vertical_spacing == EQUAL) {
       ierr = verbPrintf(2,grid.com, 
            "  vert spacing in bedrock   dz = %.3f m (equal spacing)\n",
 			grid.zblevels[1]-grid.zblevels[0]); CHKERRQ(ierr);
     } else {
-    ierr = verbPrintf(2,grid.com, 
-           "  vert spacing in bedrock   uneven, %d levels, %.3f m < dz < %.3f m\n",
-		      grid.Mbz, grid.dzbMIN, grid.dzbMAX); CHKERRQ(ierr);
+      ierr = verbPrintf(2,grid.com, 
+			"  vert spacing in bedrock   uneven, %d levels, %.3f m < dz < %.3f m\n",
+			grid.Mbz, grid.dzbMIN, grid.dzbMAX); CHKERRQ(ierr);
     }
-    PetscInt fMbz;
-    PetscScalar fdz, fdzb, *fzlev, *fzblev;
-    ierr = grid.get_fine_vertical_grid(fMz, fMbz, fdz, fdzb, fzlev, fzblev); CHKERRQ(ierr);
-    delete[] fzlev; delete[] fzblev;
     ierr = verbPrintf(3,grid.com, 
            "  fine spacing in conservation of energy and age:\n"
-           "                            fMz = %d, fdz = %.3f m, fMbz = %d, fdzb = %.3f m\n",
-           fMz, fdz, fMbz, fdzb); CHKERRQ(ierr);
+           "                            fMz = %d, fdz = %.3f m, fMbz = %d m\n",
+           grid.Mz_fine, grid.dz_fine, grid.Mbz_fine); CHKERRQ(ierr);
   } else { // no bedrock case
-    PetscScalar fdz, *fzlev;
-    ierr = grid.get_fine_vertical_grid_ice(fMz, fdz, fzlev); CHKERRQ(ierr);
-    delete[] fzlev;
     ierr = verbPrintf(3,grid.com, 
            "   fine spacing used in energy/age   fMz = %d, fdz = %.3f m\n",
-           fMz, fdz); CHKERRQ(ierr);
+           grid.Mz_fine, grid.dz_fine); CHKERRQ(ierr);
   }
-  if (fMz > 1000) {
+  if (grid.Mz_fine > 1000) {
     ierr = verbPrintf(2,grid.com,
       "\n\nWARNING: Using more than 1000 ice vertical levels internally in energy/age computation!\n\n");
       CHKERRQ(ierr);

@@ -305,8 +305,8 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           //   but uvbar[1][i][j] is  v  at up staggered point (i,j+1/2)
           uvbar[o][i][j] = - Dfoffset * slope / thickness;
          
-          ierr = Istag3[o].setValColumnPL(i,j,grid.Mz,grid.zlevels,I); CHKERRQ(ierr);
-          ierr = Sigmastag3[o].setValColumnPL(i,j,grid.Mz,grid.zlevels,Sigma); CHKERRQ(ierr);
+          ierr = Istag3[o].setInternalColumn(i, j, I); CHKERRQ(ierr);
+          ierr = Sigmastag3[o].setInternalColumn(i, j, Sigma); CHKERRQ(ierr);
         } else {  // zero thickness case
           uvbar[o][i][j] = 0;
           ierr = Istag3[o].setColumn(i,j,0.0); CHKERRQ(ierr);
@@ -556,6 +556,9 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
   PetscScalar **h_x[2], **h_y[2];
   PetscScalar *u, *v, *IEAST, *IWEST, *INORTH, *ISOUTH;
 
+  u = new PetscScalar[grid.Mz];
+  v = new PetscScalar[grid.Mz];  
+
   double mu_sliding = config.get("mu_sliding");
 
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
@@ -566,11 +569,11 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
   ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = Istag3[0].begin_access(); CHKERRQ(ierr);
   ierr = Istag3[1].begin_access(); CHKERRQ(ierr);
+  ierr = vub.begin_access(); CHKERRQ(ierr);
+  ierr = vvb.begin_access(); CHKERRQ(ierr);
   
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
-      ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
       ierr = Istag3[0].getInternalColumn(i,j,&IEAST); CHKERRQ(ierr);
       ierr = Istag3[0].getInternalColumn(i-1,j,&IWEST); CHKERRQ(ierr);
       ierr = Istag3[1].getInternalColumn(i,j,&INORTH); CHKERRQ(ierr);
@@ -581,26 +584,24 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
         v[k] = - 0.25 * ( IEAST[k] * h_y[0][i][j] + IWEST[k] * h_y[0][i-1][j] +
                           INORTH[k] * h_y[1][i][j] + ISOUTH[k] * h_y[1][i][j-1] );
       }
+
+      if (mu_sliding > 0.0) {	// unusual case
+        for (PetscInt k=0; k<grid.Mz; ++k) {
+          u[k] += vub(i,j);
+	  v[k] += vvb(i,j);
+        }
+      }
+
+      ierr = u3.setInternalColumn(i, j, u); CHKERRQ(ierr);
+      ierr = v3.setInternalColumn(i, j, v); CHKERRQ(ierr);
     }
   }
 
-  if (mu_sliding > 0.0) { // unusual case
-    PetscScalar **ub, **vb;
-    ierr = vub.get_array(ub); CHKERRQ(ierr);
-    ierr = vvb.get_array(vb); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
-        ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
-        for (PetscInt k=0; k<grid.Mz; ++k) {
-          u[k] += ub[i][j];
-          v[k] += vb[i][j];
-        }
-      }
-    }
-    ierr = vub.end_access(); CHKERRQ(ierr);
-    ierr = vvb.end_access(); CHKERRQ(ierr);
-  }
+  delete[] u;
+  delete[] v;
+
+  ierr = vub.end_access(); CHKERRQ(ierr);
+  ierr = vvb.end_access(); CHKERRQ(ierr);
   
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);

@@ -408,7 +408,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
       }
       for (PetscInt k = ks; k < grid.Mz; k++) // above ice
         T[k] = artm(i,j);
-      ierr = T3.setValColumnPL(i,j,grid.Mz,grid.zlevels,T); CHKERRQ(ierr);
+      ierr = T3.setInternalColumn(i,j,T); CHKERRQ(ierr);
       
       // set temp within bedrock; if floating then top of bedrock sees ocean,
       //   otherwise it sees the temperature of the base of the ice

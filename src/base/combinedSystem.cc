@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2010 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2010 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -271,7 +271,7 @@ PetscErrorCode combinedSystemCtx::solveThisColumn(PetscScalar **x) {
     rhs[Mbz-1+k] = Enth[k];
     if (!ismarginal) {
       planeStar ss;
-      Enth3->getPlaneStarZ(i,j,k * dzEQ,&ss);
+      Enth3->getPlaneStar_fine(i,j,k,&ss);
       const PetscScalar UpEnthu = (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx :
                                                u[k] * (ss.ij  - ss.im1) / dx;
       const PetscScalar UpEnthv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :

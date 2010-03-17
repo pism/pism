@@ -55,11 +55,7 @@ public:
   PetscErrorCode printVertLevels(int verbosity); 
   PetscInt       kBelowHeight(PetscScalar height);
 
-  PetscErrorCode get_fine_vertical_grid(PetscInt &fMz, PetscInt &fMbz,
-					PetscScalar &fdz, PetscScalar &fdzb,
-					PetscScalar* &fzlevs, PetscScalar* &fzblev);
-  PetscErrorCode get_fine_vertical_grid_ice(PetscInt &fMz, PetscScalar &fdz, PetscScalar* &fzlev);
-  
+
   MPI_Comm    com;
   PetscMPIInt rank, size;
   DA          da2;		// whether this is PETSC_NULL is important;
@@ -69,6 +65,17 @@ public:
 
   PetscScalar *zlevels, *zblevels; // z levels, in ice & bedrock; the storage grid for fields 
                                    // which are represented in 3d Vecs
+
+  // Fine vertical grid and the interpolation setup:
+  PetscScalar *zlevels_fine, *zblevels_fine, dz_fine;
+  PetscInt    Mz_fine, Mbz_fine;
+  // Array ice_storage2fine contains indices of the ice storage vertical grid
+  // that are just below a level of the fine grid. I.e. ice_storage2fine[k] is
+  // the storage grid level just below fine-grid level k (zlevels_fine[k]).
+  // Similarly for other arrays below.
+  PetscInt *ice_storage2fine, *ice_fine2storage,
+    *bed_storage2fine, *bed_fine2storage;
+
   SpacingType ice_vertical_spacing, bed_vertical_spacing;
   Periodicity periodicity;
   PetscScalar dzMIN, dzMAX;
@@ -90,7 +97,9 @@ public:
 protected:
   PetscScalar lambda;
 private:
-  PetscErrorCode  get_dzMIN_dzMAX_spacingtype();
+  PetscErrorCode get_dzMIN_dzMAX_spacingtype();
+  PetscErrorCode compute_fine_vertical_grid();
+  PetscErrorCode init_interpolation();
 };
 
 #endif	/* __grid_hh */

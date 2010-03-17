@@ -313,11 +313,13 @@ protected:
   virtual PetscErrorCode setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac);
   virtual PetscErrorCode setCTSFromEnthalpy(IceModelVec3 &useForCTS);
   virtual PetscErrorCode setPATempFromEnthalpy(IceModelVec3 &useForPATemp);
-  virtual PetscErrorCode getEnthalpyCTSColumn(
-                PetscInt Mz, PetscScalar dzEQ, const PetscScalar *zlev,
-                PetscScalar thk, PetscInt ks,
-                const PetscScalar *Enth, const PetscScalar *w,
-                PetscScalar *lambda, PetscScalar **Enth_s);
+  virtual PetscErrorCode getEnthalpyCTSColumn(PetscScalar p_air, //!< atmospheric pressure
+					      PetscScalar thk,	 //!< ice thickness
+					      PetscInt ks,	 //!< index of the level just below the surface
+					      const PetscScalar *Enth,
+					      const PetscScalar *w,
+					      PetscScalar *lambda,
+					      PetscScalar **Enth_s);
   virtual PetscErrorCode enthalpyAndDrainageStep(
                 PetscScalar* vertSacrCount, PetscScalar* liquifiedVol);
   virtual PetscErrorCode drainageToBaseModelEnth(

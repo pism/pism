@@ -154,10 +154,11 @@ PetscErrorCode IceModel::temperatureStep(
   PetscErrorCode  ierr;
 
   // set up fine grid in ice and bedrock
-  PetscInt    fMz, fMbz;
-  PetscScalar fdz, *fzlev, fdzb, *fzblev;
-
-  ierr = grid.get_fine_vertical_grid(fMz, fMbz, fdz, fdzb, fzlev, fzblev); CHKERRQ(ierr);
+  PetscInt    fMz = grid.Mz_fine,
+    fMbz = grid.Mbz_fine;
+  PetscScalar fdz = grid.dz_fine,
+    fdzb = fdz,
+    *fzlev = grid.zlevels_fine;
 
   ierr = verbPrintf(5,grid.com,
     "\n  [entering temperatureStep(); fMz = %d, fdz = %5.3f, fMbz = %d, fdzb = %5.3f]",
@@ -261,13 +262,13 @@ PetscErrorCode IceModel::temperatureStep(
       if (k0+ks>0) { // if there are enough points in bedrock&ice to bother ...
         ierr = system.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
 
-	ierr = Tb3.getValColumn(i,j,fMbz,fzblev,system.Tb); CHKERRQ(ierr);
+	ierr = Tb3.getValColumn(i,j,system.Tb); CHKERRQ(ierr);
 
-	ierr = u3.getValColumn(i,j,fMz,fzlev,system.u); CHKERRQ(ierr);
-	ierr = v3.getValColumn(i,j,fMz,fzlev,system.v); CHKERRQ(ierr);
-	ierr = w3.getValColumn(i,j,fMz,fzlev,system.w); CHKERRQ(ierr);
-	ierr = Sigma3.getValColumn(i,j,fMz,fzlev,system.Sigma); CHKERRQ(ierr);
-	ierr = T3.getValColumn(i,j,fMz,fzlev,system.T); CHKERRQ(ierr);
+	ierr = u3.getValColumn(i,j,system.u); CHKERRQ(ierr);
+	ierr = v3.getValColumn(i,j,system.v); CHKERRQ(ierr);
+	ierr = w3.getValColumn(i,j,system.w); CHKERRQ(ierr);
+	ierr = Sigma3.getValColumn(i,j,system.Sigma); CHKERRQ(ierr);
+	ierr = T3.getValColumn(i,j,system.T); CHKERRQ(ierr);
 
         // go through column and find appropriate lambda for BOMBPROOF
         PetscScalar lambda = 1.0;  // start with centered implicit for more accuracy
@@ -410,7 +411,7 @@ PetscErrorCode IceModel::temperatureStep(
       }
 
       // transfer column into Tb3; neighboring columns will not reference!
-      ierr = Tb3.setValColumnPL(i,j,fMbz,fzblev,Tbnew); CHKERRQ(ierr);
+      ierr = Tb3.setValColumnPL(i,j,Tbnew); CHKERRQ(ierr);
 
       // set to air temp above ice
       for (PetscInt k=ks; k<fMz; k++) {
@@ -418,7 +419,7 @@ PetscErrorCode IceModel::temperatureStep(
       }
 
       // transfer column into Tnew3; communication later
-      ierr = Tnew3.setValColumnPL(i,j,fMz,fzlev,Tnew); CHKERRQ(ierr);
+      ierr = Tnew3.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
 
       // basalMeltRate[][] is rate of mass loss at bottom of ice everywhere;
       //   note massContExplicitStep() calls PISMOceanCoupler separately
@@ -470,8 +471,6 @@ PetscErrorCode IceModel::temperatureStep(
   delete [] system.Sigma;
   
   delete [] Tbnew;  delete [] Tnew;
-
-  delete [] fzlev;   delete [] fzblev;
 
   return 0;
 }
@@ -554,9 +553,8 @@ PetscErrorCode IceModel::ageStep() {
   PetscErrorCode  ierr;
 
   // set up fine grid in ice
-  PetscInt    fMz;
-  PetscScalar fdz, *fzlev;
-  ierr = grid.get_fine_vertical_grid_ice(fMz, fdz, fzlev); CHKERRQ(ierr); // allocates fzlev
+  PetscInt    fMz = grid.Mz_fine;
+  PetscScalar fdz = grid.dz_fine, *fzlev = grid.zlevels_fine;
 
   PetscScalar *x;  
   x = new PetscScalar[fMz]; // space for solution
@@ -593,9 +591,9 @@ PetscErrorCode IceModel::ageStep() {
         ierr = taunew3.setColumn(i,j,0.0); CHKERRQ(ierr);
       } else { // general case: solve advection PDE; start by getting 3D velocity ...
 
-	ierr = u3.getValColumn(i,j,fMz,fzlev,system.u); CHKERRQ(ierr);
-	ierr = v3.getValColumn(i,j,fMz,fzlev,system.v); CHKERRQ(ierr);
-	ierr = w3.getValColumn(i,j,fMz,fzlev,system.w); CHKERRQ(ierr);
+	ierr = u3.getValColumn(i,j,system.u); CHKERRQ(ierr);
+	ierr = v3.getValColumn(i,j,system.v); CHKERRQ(ierr);
+	ierr = w3.getValColumn(i,j,system.w); CHKERRQ(ierr);
 
         ierr = system.setIndicesAndClearThisColumn(i,j,fks); CHKERRQ(ierr);
 
@@ -617,7 +615,7 @@ PetscErrorCode IceModel::ageStep() {
         }
         
         // put solution in IceModelVec3
-        ierr = taunew3.setValColumnPL(i,j,fMz,fzlev,x); CHKERRQ(ierr);
+        ierr = taunew3.setValColumnPL(i,j,x); CHKERRQ(ierr);
       }
     }
   }

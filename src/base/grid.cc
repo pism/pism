@@ -90,6 +90,15 @@ IceGrid::IceGrid(MPI_Comm c,
   zlevels = NULL;
   zblevels = NULL;
 
+  zlevels_fine = NULL;
+  zblevels_fine = NULL;
+  Mz_fine = Mbz_fine = 0;
+
+  ice_storage2fine = NULL;
+  ice_fine2storage = NULL;
+  bed_storage2fine = NULL;
+  bed_fine2storage = NULL;
+
   compute_vertical_levels();
   compute_horizontal_spacing();
 }
@@ -101,6 +110,13 @@ IceGrid::~IceGrid() {
   }
   delete [] zlevels;
   delete [] zblevels;
+  delete [] zlevels_fine;
+  delete [] zblevels_fine;
+  
+  delete [] ice_storage2fine;
+  delete [] ice_fine2storage;
+  delete [] bed_storage2fine;
+  delete [] bed_fine2storage;
 }
 
 
@@ -111,6 +127,7 @@ PetscErrorCode IceGrid::compute_vertical_levels() {
   ierr = compute_ice_vertical_levels(); CHKERRQ(ierr);
   ierr = compute_bed_vertical_levels(); CHKERRQ(ierr);
 
+  ierr = compute_fine_vertical_grid(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -398,6 +415,8 @@ PetscErrorCode IceGrid::createDA() {
 
 //! Sets grid vertical levels, Mz, Mbz, Lz and Lbz. Checks input for consistency.
 PetscErrorCode IceGrid::set_vertical_levels(int new_Mz, int new_Mbz, double *new_zlevels, double *new_zblevels) {
+  PetscErrorCode ierr;
+
   if (new_Mz < 2) {
     SETERRQ(1, "IceGrid::set_vertical_levels(): Mz has to be at least 2.");
   }
@@ -433,6 +452,7 @@ PetscErrorCode IceGrid::set_vertical_levels(int new_Mz, int new_Mbz, double *new
   zblevels[Mbz-1] = 0.0;	// make sure zblevels end with zero
 
   get_dzMIN_dzMAX_spacingtype();
+  ierr = compute_fine_vertical_grid(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -493,9 +513,6 @@ PetscErrorCode IceGrid::compute_horizontal_spacing() {
   fine equally-spaced grids in ice and bedrock have the same spacing (if
   bedrock is present).
 
-  Arrays fzlev and fzblev are allocated here and have to be freed by the
-  caller.
-
   Mapping to and from the storage grid occurs in IceModelVec3 and
   IceModelVec3Bedrock methods.
 
@@ -503,79 +520,122 @@ PetscErrorCode IceGrid::compute_horizontal_spacing() {
   this to match spacings (see above). The temperature field is extrapolated to
   the extra level using the value from the topmost level.
  */
-PetscErrorCode IceGrid::get_fine_vertical_grid(PetscInt &fMz, PetscInt &fMbz,
-					       PetscScalar &fdz, PetscScalar &fdzb,
-					       PetscScalar* &fzlev, PetscScalar* &fzblev) {
+PetscErrorCode IceGrid::compute_fine_vertical_grid() {
+  PetscErrorCode ierr;
+
+  delete [] zlevels_fine;
+  delete [] zblevels_fine;
 
   // the smallest of the spacings used in ice and bedrock:
-  PetscScalar dz_fine = PetscMin(dzMIN, dzbMIN);
+  PetscScalar my_dz_fine = PetscMin(dzMIN, dzbMIN);
 
   if (Lbz > 1e-9) {		// we have bedrock
 
     // the number of levels of the computational grid in bedrock:
-    fMbz = static_cast<PetscInt>(ceil(Lbz / dz_fine) + 1);
+    Mbz_fine = static_cast<PetscInt>(ceil(Lbz / my_dz_fine) + 1);
 
-    // recompute fine spacing so that Lbz is an integer multiple of dz_fine:
-    dz_fine = Lbz / (fMbz - 1);
+    // recompute fine spacing so that Lbz is an integer multiple of my_dz_fine:
+    my_dz_fine = Lbz / (Mbz_fine - 1);
 
     // number of levels in the ice; this is one level too many, but spacing
     // matches the one used in the bedrock and the extra level is in the air,
     // anyway
-    fMz = static_cast<PetscInt>(ceil(Lz / dz_fine) + 2);
+    Mz_fine = static_cast<PetscInt>(ceil(Lz / my_dz_fine) + 2);
   } else {			// we don't have bedrock
 
-    fMbz = 1;
-    fMz = static_cast<PetscInt>(ceil(Lz / dz_fine) + 1);
-    dz_fine = Lz / (fMz - 1);
+    Mbz_fine = 1;
+    Mz_fine = static_cast<PetscInt>(ceil(Lz / my_dz_fine) + 1);
+    my_dz_fine = Lz / (Mz_fine - 1);
   }
 
   // both ice and bedrock will have this spacing
-  fdz = fdzb = dz_fine;
+  dz_fine = my_dz_fine;
 
   // allocate arrays:
-  fzlev  = new PetscScalar[fMz];
-  fzblev = new PetscScalar[fMbz];
+  zlevels_fine  = new PetscScalar[Mz_fine];
+  zblevels_fine = new PetscScalar[Mbz_fine];
 
   // compute levels in the ice:
-  for (PetscInt k = 0; k < fMz; k++)
-    fzlev[k] = ((PetscScalar) k) * dz_fine;
+  for (PetscInt k = 0; k < Mz_fine; k++)
+    zlevels_fine[k] = ((PetscScalar) k) * dz_fine;
   // Note that it's allowed to go over Lz.
 
   // and bedrock:
-  for (PetscInt kb = 0; kb < fMbz-1; kb++)
-    fzblev[kb] = - Lbz + dz_fine * ((PetscScalar) kb);
-  fzblev[fMbz-1] = 0.0;  // make sure it is right on
-  
+  for (PetscInt kb = 0; kb < Mbz_fine-1; kb++)
+    zblevels_fine[kb] = - Lbz + dz_fine * ((PetscScalar) kb);
+  zblevels_fine[Mbz_fine-1] = 0.0;  // make sure it is right on
+
+  ierr = init_interpolation(); CHKERRQ(ierr);
+
   return 0;
 }
 
-//! Computes fine vertical spacing in the ice.
-/*! Similar to IceGrid::get_fine_vertical_grid(), but used in the age
-  computation. The grid created by this method does not extend into the
-  bedrock, so neither matching the spacing nor extending past Lz is necessary.
- */
-PetscErrorCode IceGrid::get_fine_vertical_grid_ice(PetscInt &fMz, PetscScalar &fdz,
-						   PetscScalar* &fzlev) {
-  if (ice_vertical_spacing == EQUAL) {
-    // just use the storage grid
-    fdz = dzMIN;
-    fMz = Mz;
-    fzlev = new PetscScalar[fMz];
-    for (PetscInt k = 0; k < fMz; k++)
-      fzlev[k] = zlevels[k];
-  } else {
-    PetscScalar dz_fine = dzMIN;
-    fMz = static_cast<PetscInt>(ceil(Lz / dz_fine) + 1);
-    dz_fine = Lz / (fMz - 1);
+//! Fills arrays ice_storage2fine, ice_fine2storage, bed_storage2fine,
+//! bed_fine2storage with indices of levels that are just below 
+PetscErrorCode IceGrid::init_interpolation() {
+  PetscInt m;
 
-    fdz = dz_fine;
-    fzlev  = new PetscScalar[fMz];
+  // ice: storage -> fine
+  delete[] ice_storage2fine;
+  ice_storage2fine = new PetscInt[Mz_fine];
+  m = 0;
+  for (PetscInt k = 0; k < Mz_fine; k++) {
+    if (zlevels_fine[k] >= Lz) {
+      ice_storage2fine[k] = Mz - 1;
+      continue;
+    }
 
-    // compute levels in the ice:
-    for (PetscInt k = 0; k < fMz - 1; k++)
-      fzlev[k] = ((PetscScalar) k) * dz_fine;
-    fzlev[fMz - 1] = Lz;
+    while (zlevels[m + 1] < zlevels_fine[k]) {
+      m++;
+    }
+
+    ice_storage2fine[k] = m;
   }
+  
+  // ice: fine -> storage
+  delete[] ice_fine2storage;
+  ice_fine2storage = new PetscInt[Mz];
+  m = 0;
+  for (PetscInt k = 0; k < Mz; k++) {
+    while (zlevels_fine[m + 1] < zlevels[k]) {
+      m++;
+    }
+
+    ice_fine2storage[k] = m;
+  }
+
+  // bed: storage -> fine
+  delete[] bed_storage2fine;
+  bed_storage2fine = new PetscInt[Mbz_fine];
+  m = 0;
+  if (Mbz > 1) {
+    for (PetscInt k = 0; k < Mbz_fine; k++) {
+      while (zblevels[m + 1] < zblevels_fine[k]) {
+	m++;
+      }
+
+      bed_storage2fine[k] = m;
+    }
+  } else {
+    bed_storage2fine[0] = 0;
+  }
+
+  // bed: fine -> storage
+  delete[] bed_fine2storage;
+  bed_fine2storage = new PetscInt[Mbz];
+  m = 0;
+  if (Mbz_fine > 1) {
+    for (PetscInt k = 0; k < Mbz; k++) {
+      while (zblevels_fine[m + 1] < zblevels[k]) {
+	m++;
+      }
+
+      bed_fine2storage[k] = m;
+    }
+  } else {
+    bed_fine2storage[0] = 0;
+  }
+
   return 0;
 }
 

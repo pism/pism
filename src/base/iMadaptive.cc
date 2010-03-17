@@ -299,10 +299,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
 This applies to the horizontal part of the three-dimensional advection problem
 solved by IceModel::ageStep() and the advection, ice-only part of the problem solved by
 temperatureStep().  These methods use a fine vertical grid, and so we consider CFL
-violations on that same fine grid.
-
-Also takes an opportunity to check whether thickness exceeds grid.Lz in any columns
-for the fine vertical grid used in those problems.
+violations on that same fine grid. (FIXME: should we actually use the fine grid?)
 
 Communication is needed to determine total CFL violation count over entire grid.
 It is handled by temperatureAgeStep(), not here.
@@ -313,33 +310,18 @@ PetscErrorCode IceModel::countCFLViolations(PetscScalar* CFLviol) {
   const PetscScalar cflx = grid.dx / dtTempAge,
                     cfly = grid.dy / dtTempAge;
 
-  // will get horizontal velocity on fine vertical grid in ice; set up for that
-  PetscInt    fMz;
-  PetscScalar fdz, *fzlev, *u, *v;
-  ierr = grid.get_fine_vertical_grid_ice(fMz, fdz, fzlev); CHKERRQ(ierr); // allocates fzlev
-  u = new PetscScalar[fMz];
-  v = new PetscScalar[fMz];
+  PetscScalar *u, *v;
 
-  PetscScalar **H;
-  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // this should *not* be replaced by a call to grid.kBelowHeight()
-      const PetscInt  fks = static_cast<PetscInt>(floor(H[i][j]/fdz));
-      if (fks > fMz-1) {
-        PetscPrintf(grid.com,
-           "PISM ERROR in IceModel::countCFLViolations(): fks=%d above top of computational box:\n"
-           "  column (i,j)=(%d,%d) on rank=%d:   H[i][j] = %5.4f exceeds grid.Lz = %5.4f\n"
-           "ENDING ...\n\n",
-           i, j, grid.rank, fks, H[i][j], grid.Lz);
-        PetscEnd();
-      }
+      const PetscInt  fks = grid.kBelowHeight(vH(i,j));
 
-      ierr = u3.getValColumn(i,j,fMz,fzlev,u); CHKERRQ(ierr);
-      ierr = v3.getValColumn(i,j,fMz,fzlev,v); CHKERRQ(ierr);
+      ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
+      ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
 
       // check horizontal CFL conditions at each point
       for (PetscInt k=0; k<=fks; k++) {
@@ -352,8 +334,6 @@ PetscErrorCode IceModel::countCFLViolations(PetscScalar* CFLviol) {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access();  CHKERRQ(ierr);
   ierr = v3.end_access();  CHKERRQ(ierr);
-
-  delete [] u;  delete [] v;  delete [] fzlev;
 
   return 0;
 }
