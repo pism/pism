@@ -152,7 +152,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr =     w3.create(grid, "wvel", false); CHKERRQ(ierr); // never diff'ed in hor dirs
   // PROPOSED standard name = land_ice_upward_velocity
   //   (compare "upward_air_velocity" and "upward_sea_water_velocity")
-  ierr =     w3.set_attrs("diagnostic", "vertical velocity of ice",
+  ierr =     w3.set_attrs("diagnostic", "vertical velocity of ice RELATIVE TO THE LOCATION AT THE BASE OF THE ICE",
 			  "m s-1", NULL); CHKERRQ(ierr);
   ierr =     w3.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   w3.write_in_glaciological_units = true;

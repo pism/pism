@@ -318,7 +318,7 @@ PetscErrorCode IceModel::write_model_state(const char filename[]) {
   ierr = w3.end_access(); CHKERRQ(ierr);
 
   ierr = vWork2d[0].set_name("wvelsurf"); CHKERRQ(ierr);
-  ierr = vWork2d[0].set_attrs("diagnostic", "vertical velocity of ice at ice surface",
+  ierr = vWork2d[0].set_attrs("diagnostic", "vertical velocity of ice at ice surface RELATIVE TO THE LOCATION AT THE BASE OF THE ICE",
 			      "m s-1", NULL); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vWork2d[0].write_in_glaciological_units = true;
