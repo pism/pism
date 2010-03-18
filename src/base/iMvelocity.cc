@@ -187,7 +187,11 @@ PetscLogEventEnd(velmiscEVENT,0,0,0,0);
 //! Compute vertical velocity using incompressibility of the ice.
 /*!
 The vertical velocity \f$w(x,y,z,t)\f$ is the velocity <i>relative to the
-location of the base of the ice column</i>.  Thus \f$w<0\f$ means that that
+location of the base of the ice column</i>.  That is, the vertical velocity
+computed here is identified as \f$\tilde w(x,y,s,t)\f$ in the page
+\ref vertchange.
+
+Thus \f$w<0\f$ here means that that
 that part of the ice is getting closer to the base of the ice, and so on.
 The slope of the bed (i.e. relative to the geoid) and/or the motion of the
 bed (i.e. from bed deformation) do not affect the vertical velocity.

@@ -732,10 +732,11 @@ PetscErrorCode IceModel::compute_liqfrac(IceModelVec3 &useForLiqfrac) {
 }
 
 
-//! Compute the pressure-adjusted temperature in degrees C corresponding to T3, and put in a global IceModelVec3 provided by user.
+//! Compute the pressure-adjusted temperature in degrees C corresponding to Enth3 (or T3 if -cold), and put in a global IceModelVec3 provided by user.
 PetscErrorCode IceModel::compute_temp_pa(IceModelVec3 &useForPATemp) {
   PetscErrorCode ierr;
 
+  // first compute pressure-adjusted in K
   if (doColdIceMethods) {
     PetscScalar *Tpaij, *Tij; // columns of these values
     ierr = useForPATemp.begin_access(); CHKERRQ(ierr);
@@ -746,9 +747,12 @@ PetscErrorCode IceModel::compute_temp_pa(IceModelVec3 &useForPATemp) {
         ierr = useForPATemp.getInternalColumn(i,j,&Tpaij); CHKERRQ(ierr);
         ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
         for (PetscInt k=0; k<grid.Mz; ++k) {
-          Tpaij[k] = Tij[k] - ice->meltingTemp;  // un-adjusted, but in deg_C
           const PetscScalar depth = vH(i,j) - grid.zlevels[k];
-          if (depth > 0.0)  Tpaij[k] += ice->beta_CC_grad * depth;
+          if (depth > 0.0) {
+            Tpaij[k] = Tij[k] + ice->beta_CC_grad * depth;
+          } else {
+            Tpaij[k] = Tij[k];
+          }
         }
       }
     }
@@ -759,8 +763,7 @@ PetscErrorCode IceModel::compute_temp_pa(IceModelVec3 &useForPATemp) {
     ierr = setPATempFromEnthalpy(useForPATemp); CHKERRQ(ierr);
   }
 
-
-  // make deg C:
+  // make deg C and set other metadata
   ierr = useForPATemp.shift(-config.get("water_melting_temperature")); CHKERRQ(ierr);
   ierr = useForPATemp.set_name("temp_pa"); CHKERRQ(ierr);
   ierr = useForPATemp.set_attrs("diagnostic",
