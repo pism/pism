@@ -88,7 +88,8 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ../src/ \
+INPUT                  = browser_vertchange.txt \
+                         ../src/ \
                          ../src/base/ \
                          ../src/coupler/ \
                          ../src/num/ \
