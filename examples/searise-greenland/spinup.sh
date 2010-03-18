@@ -26,6 +26,14 @@ echo
 
 set -e  # exit on error
 
+NN=2  # default number of processors
+if [ $# -gt 0 ] ; then  # if user says "psearise.sh 8" then NN = 8
+  NN="$1"
+fi
+
+echo "$SCRIPTNAME              NN = $NN"
+set -e  # exit on error
+
 # preprocess.sh generates pism_*.nc files; run it first
 if [ -n "${PISM_DATANAME:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME PISM_DATANAME = $PISM_DATANAME  (already set)"
@@ -48,12 +56,11 @@ fi
 
 for INPUT in $PISM_DATANAME $TEMPSERIES $SLSERIES; do
   if [ -e "$INPUT" ] ; then  # check if file exist
-    echo "$SCRIPTNAME     input found:  $INPUT"
+    echo "$SCRIPTNAME           INPUT = $INPUT (found)"
   else
-    echo "$SCRIPTNAME  INPUT MISSING!:  $INPUT"
+    echo "$SCRIPTNAME           INPUT = $INPUT (missing)"
     echo
-    echo "$SCRIPTNAME      please run ./preprocess.sh"
-    echo "$SCRIPTNAME              exiting ..."
+    echo "$SCRIPTNAME           please run ./preprocess.sh, exiting"
     echo
     exit
   fi
@@ -62,15 +69,9 @@ done
 INNAME=$PISM_DATANAME
 OUTFINALNAME=g5km_0.nc
 
-NN=2  # default number of processors
-if [ $# -gt 0 ] ; then  # if user says "spinup.sh 8" then NN = 8
-  NN="$1"
-fi
-echo "$SCRIPTNAME              NN = $NN"
-
 # run lengths and starting time for paleo
 SMOOTHRUNLENGTH=100
-NOMASSSIARUNLENGTH=75000
+NOMASSSIARUNLENGTH=50000
 PALEOSTARTYEAR=-125000
 
 # grids
@@ -117,45 +118,45 @@ if [ $# -gt 1 ] ; then
   fi
 fi
 
-echo "$SCRIPTNAME      COARSEGRID = $COARSEGRID   ($CS km)"
-echo "$SCRIPTNAME        FINEGRID = $FINEGRID   ($FS km)"
+echo "$SCRIPTNAME      COARSEGRID = $COARSEGRID ($CS km)"
+echo "$SCRIPTNAME        FINEGRID = $FINEGRID ($FS km)"
 
 # set MPIDO if using different MPI execution command, for example:
 #  $ export PISM_MPIDO="aprun -n "
 if [ -n "${PISM_MPIDO:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME      PISM_MPIDO = $PISM_MPIDO  (already set)"
+  echo "$SCRIPTNAME           MPIDO = $PISM_MPIDO  (already set)"
+  MPIDO=$PISM_MPIDO
 else
-  PISM_MPIDO="mpiexec -n "
-  echo "$SCRIPTNAME      PISM_MPIDO = $PISM_MPIDO"
+  MPIDO="mpiexec -n "
+  echo "$SCRIPTNAME           MPIDO = $MPIDO"
 fi
-MPIDO=$PISM_MPIDO
 
 # check if env var PISM_DO was set (i.e. PISM_DO=echo for a 'dry' run)
 if [ -n "${PISM_DO:+1}" ] ; then  # check if env var DO is already set
-  echo "$SCRIPTNAME         PISM_DO = $PISM_DO  (already set)"
+  echo "$SCRIPTNAME              DO = $PISM_DO  (already set)"
+  DO=$PISM_DO
 else
-  PISM_DO="" 
+  DO="" 
 fi
-DO=$PISM_DO
 
 # prefix to pism (not to executables)
 if [ -n "${PISM_PREFIX:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX  (already set)"
+  echo "$SCRIPTNAME          PREFIX = $PISM_PREFIX  (already set)"
+  PREFIX=$PISM_PREFIX
 else
-  PISM_PREFIX=~/pism-dev  # just a guess
-  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX"
+  PREFIX=~/pism-dev  # just a guess
+  echo "$SCRIPTNAME          PREFIX = $PREFIX"
 fi
-PREFIX=$PISM_PREFIX
 
 # set PISM_EXEC if using different executables, for example:
 #  $ export PISM_EXEC="pismr -cold"
 if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC  (already set)"
+  echo "$SCRIPTNAME            EXEC = $PISM_EXEC  (already set)"
+  EXEC=$PISM_EXEC
 else
-  PISM_EXEC="pismr"
-  echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
+  EXEC="pismr"
+  echo "$SCRIPTNAME            EXEC = $EXEC"
 fi
-EXEC=$PISM_EXEC
 
 # cat prefix and exec together
 PISM="${PREFIX}/bin/${EXEC} -ocean_kill"
@@ -180,6 +181,7 @@ echo "$SCRIPTNAME  COUPLER_SIMPLE = $COUPLER_SIMPLE"
 echo "$SCRIPTNAME COUPLER_FORCING = $COUPLER_FORCING"
 
 
+
 # bootstrap and do smoothing run to 100 years
 PRE0NAME=g${CS}km_pre100.nc
 echo
@@ -189,11 +191,11 @@ cmd="$MPIDO $NN $PISM -skip $COARSESKIP -boot_from $INNAME $COARSEGRID \
 $DO $cmd
 
 
-# run with -no_mass (no surface change) for 75ka
+# run with -no_mass (no surface change) for 50ka
 PRE1NAME=g${CS}km_steady.nc
 EX1NAME=ex_${PRE1NAME}
 EXTIMES=0:250:${NOMASSSIARUNLENGTH}
-EXVARS="tempbase"
+EXVARS="enthalpybase,temppabase,mask" # add mask, so that check_stationarity.py ignores ice-free areas.
 echo
 echo "$SCRIPTNAME  bootstrapping and -no_mass (no surface change) SIA for ${NOMASSSIARUNLENGTH}a"
 cmd="$MPIDO $NN $PISM -skip $COARSESKIP -i $PRE0NAME $COUPLER_SIMPLE \
@@ -207,6 +209,7 @@ echo
 echo "$SCRIPTNAME  smoothing with SIA for ${SMOOTHRUNLENGTH}a"
 cmd="$MPIDO $NN $PISM -skip $COARSESKIP -i $PRE1NAME $COUPLER_SIMPLE -y $SMOOTHRUNLENGTH -o $PRE2NAME"
 $DO $cmd
+
 
 
 # pre-spinup done; ready to use paleoclimate forcing ...
