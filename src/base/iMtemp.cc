@@ -22,10 +22,24 @@
 #include "iceModel.hh"
 
 
+// it would be reasonable for code clarity to split this into three
+// small source files, "iMenergy.cc", "iMtemperature.cc", "iMage.cc"
+
+
 //! Manage the solution of the energy equation, and related parallel communication.
 /*!
 Calls the method enthalpyAndDrainageStep(), or temperatureStep() if
-doColdIceMethods.
+IceModel::doColdIceMethods.
+
+This method (energyStep()) \e must update these four fields:
+  - IceModelVec3 Enth3
+  - IceModelVec3Bedrock Tb3
+  - IceModelVec2 vbasalMeltRate
+  - IceModelVec2 vHmelt
+That is, energyStep() is in charge of calling other methods that update, and
+then it is in charge of doing the ghost communication as needed.  If
+IceModel::doColdIceMethods then energyStep() must also update this field
+  - IceModelVec3 T3
  */
 PetscErrorCode IceModel::energyStep() {
   PetscErrorCode  ierr;
@@ -43,9 +57,9 @@ PetscErrorCode IceModel::energyStep() {
     ierr = temperatureStep(&myVertSacrCount,&mybulgeCount); CHKERRQ(ierr);  
 
     ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
-    ierr = setEnth3FromT3_ColdIce();  CHKERRQ(ierr);
     ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
 
+    ierr = setEnth3FromT3_ColdIce();  CHKERRQ(ierr);
 
     ierr = PetscGlobalSum(&mybulgeCount, &gbulgeCount, grid.com); CHKERRQ(ierr);
     if (gbulgeCount > 0.0) {   // count of when advection bulges are limited;
@@ -95,15 +109,20 @@ PetscErrorCode IceModel::energyStep() {
 
 //! Takes a semi-implicit time-step for the temperature equation.
 /*!
-In summary, the conservation of energy equation is
+This method should be kept because it is worth having alternative physics, and
+so that older results can be reproduced.  In particular, this method is
+documented by papers [\ref BBL,\ref BBssasliding].   The new browser page
+\ref bombproofenth essentially documents the cold-ice-BOMBPROOF method here, but
+the newer enthalpy-based method is slightly different and (we hope) a superior
+implementation of the conservation of energy principle.
+
+The conservation of energy equation written in terms of temperature is
     \f[ \rho c_p(T) \frac{dT}{dt} = k \frac{\partial^2 T}{\partial z^2} + \Sigma,\f] 
 where \f$T(t,x,y,z)\f$ is the temperature of the ice.  This equation is the shallow approximation
 of the full 3D conservation of energy.  Note \f$dT/dt\f$ stands for the material
 derivative, so advection is included.  Here \f$\rho\f$ is the density of ice, 
 \f$c_p\f$ is its specific heat, and \f$k\f$ is its conductivity.  Also \f$\Sigma\f$ is the volume
 strain heating (with SI units of \f$J/(\text{s} \text{m}^3) = \text{W}\,\text{m}^{-3}\f$).
-
-This method is documented by papers [\ref BBL,\ref BBssasliding].
 
 We handle horizontal advection explicitly by first-order upwinding.  We handle
 vertical advection implicitly by centered differencing when possible, and retreat to
@@ -130,7 +149,7 @@ stencil neighbors).  The ghosted values for T3 are updated from the values in Tn
 communication done by energyStep().  There is a diffusion model for vHmelt in 
 diffuseHmelt() which does communication for vHmelt.
 
-The scheme cold-ice-BOMBPROOF, implemented here, is very reliable, but there is
+The (older) scheme cold-ice-BOMBPROOF, implemented here, is very reliable, but there is
 still an extreme and rare fjord situation which causes trouble.  For example, it
 occurs in one column of ice in one fjord perhaps only once
 in a 200ka simulation of the whole sheet, in my (ELB) experience modeling the Greenland 
@@ -139,8 +158,6 @@ of the coldest ice anywhere, a continuum impossibility.  So as a final protectio
 there is a "bulge limiter" which sets the temperature to the surface temperature of
 the column minus the bulge maximum (15 K) if it is below that level.  The number of 
 times this occurs is reported as a "BPbulge" percentage.
-
-See page \ref bombproofenth essentially documents the cold-ice-BOMBPROOF here.
  */
 PetscErrorCode IceModel::temperatureStep(
      PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {

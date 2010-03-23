@@ -83,11 +83,6 @@ PetscErrorCode IceEISModel::setFromOptions() {
   ierr = PetscOptionsBegin(grid.com, "", "IceEISModel options", ""); CHKERRQ(ierr);
 
   ierr = set_expername_from_options(); CHKERRQ(ierr);
-  
-  // optionally allow override of updateHmelt == PETSC_FALSE for EISMINT II
-  bool flag;
-  ierr = PISMOptionsIsSet("-track_Hmelt", flag); CHKERRQ(ierr);
-  if (flag) updateHmelt = PETSC_TRUE;
 
   ierr = verbPrintf(2,grid.com, 
     "setting parameters for surface mass balance and temperature in EISMINT II experiment %c ... \n", 
@@ -147,9 +142,16 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
+  // these change default IceModel semantics to match EISMINT II choices:
+
+  bool flag;
+  ierr = PISMOptionsIsSet("-track_Hmelt", flag); CHKERRQ(ierr);
+  if (flag) updateHmelt = PETSC_TRUE;
+
   ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
 
-  doColdIceMethods = true;
+  doColdIceMethods = true;  // not override-able, because no
+                            //   "-polythermal" option at this time
   return 0;
 }
 

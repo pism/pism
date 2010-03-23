@@ -92,12 +92,13 @@ FINESKIP=$SKIPTWENTYKM
 CS=20 # km
 FS=20 # km
 
+COARSEENDTIME=-40000 # BP
 
+echo ""
 if [ $# -gt 1 ] ; then
   if [ $2 -eq "1" ] ; then  # if user says "spinup.sh N 1" then COARSE:
-    echo ""
-    echo "$SCRIPTNAME       WARNING: ALL RUNS ON 10km GRID"
-    echo ""
+    echo "$SCRIPTNAME       GRID: ALL RUNS ON 10km"
+    echo "$SCRIPTNAME       WARNING: LARGE COMPUTATIONAL TIME"
     COARSEGRID=$TENKMGRID
     FINEGRID=$TENKMGRID
     COARSESKIP=$SKIPTENKM
@@ -106,9 +107,8 @@ if [ $# -gt 1 ] ; then
     FS=10 # km
   fi
   if [ $2 -eq "2" ] ; then  # if user says "spinup.sh N 2" then SHORT PALEO and VERY COARSE:
-    echo ""
-    echo "$SCRIPTNAME       WARNING: ALL RUNS ON 10km AND 5km GRID"
-    echo ""
+    echo "$SCRIPTNAME       GRID:    ON 10km TILL ${COARSEENDTIME}a THEN ON 5km"
+    echo "$SCRIPTNAME       WARNING: VERY LARGE COMPUTATIONAL TIME"
     COARSEGRID=$TENKMGRID
     FINEGRID=$FIVEKMGRID
     COARSESKIP=$SKIPFIVEKM
@@ -116,7 +116,10 @@ if [ $# -gt 1 ] ; then
     CS=10 # km
     FS=5  # km
   fi
+else
+    echo "$SCRIPTNAME       GRID: ALL RUNS ON 20km"
 fi
+echo ""
 
 echo "$SCRIPTNAME      COARSEGRID = $COARSEGRID ($CS km)"
 echo "$SCRIPTNAME        FINEGRID = $FINEGRID ($FS km)"
@@ -124,42 +127,42 @@ echo "$SCRIPTNAME        FINEGRID = $FINEGRID ($FS km)"
 # set MPIDO if using different MPI execution command, for example:
 #  $ export PISM_MPIDO="aprun -n "
 if [ -n "${PISM_MPIDO:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME           MPIDO = $PISM_MPIDO  (already set)"
-  MPIDO=$PISM_MPIDO
+  echo "$SCRIPTNAME      PISM_MPIDO = $PISM_MPIDO  (already set)"
 else
-  MPIDO="mpiexec -n "
-  echo "$SCRIPTNAME           MPIDO = $MPIDO"
+  PISM_MPIDO="mpiexec -n "
+  echo "$SCRIPTNAME      PISM_MPIDO = $PISM_MPIDO"
 fi
+MPIDO=$PISM_MPIDO
 
 # check if env var PISM_DO was set (i.e. PISM_DO=echo for a 'dry' run)
 if [ -n "${PISM_DO:+1}" ] ; then  # check if env var DO is already set
-  echo "$SCRIPTNAME              DO = $PISM_DO  (already set)"
-  DO=$PISM_DO
+  echo "$SCRIPTNAME         PISM_DO = $PISM_DO  (already set)"
 else
-  DO="" 
+  PISM_DO="" 
 fi
+DO=$PISM_DO
 
 # prefix to pism (not to executables)
 if [ -n "${PISM_PREFIX:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME          PREFIX = $PISM_PREFIX  (already set)"
-  PREFIX=$PISM_PREFIX
+  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX  (already set)"
 else
-  PREFIX=~/pism-dev  # just a guess
-  echo "$SCRIPTNAME          PREFIX = $PREFIX"
+  PISM_PREFIX=""    # just a guess
+  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX"
 fi
+PREFIX=$PISM_PREFIX
 
 # set PISM_EXEC if using different executables, for example:
 #  $ export PISM_EXEC="pismr -cold"
 if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME            EXEC = $PISM_EXEC  (already set)"
-  EXEC=$PISM_EXEC
+  echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC  (already set)"
 else
-  EXEC="pismr"
-  echo "$SCRIPTNAME            EXEC = $EXEC"
+  PISM_EXEC="pismr"
+  echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
 fi
+EXEC=$PISM_EXEC
 
 # cat prefix and exec together
-PISM="${PREFIX}/bin/${EXEC} -ocean_kill"
+PISM="${PREFIX}${EXEC} -ocean_kill"
 
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -pdd_fausto"
@@ -185,7 +188,7 @@ echo "$SCRIPTNAME COUPLER_FORCING = $COUPLER_FORCING"
 # bootstrap and do smoothing run to 100 years
 PRE0NAME=g${CS}km_pre100.nc
 echo
-echo "$SCRIPTNAME  short smoothing run before bootstrapping (for ${SMOOTHRUNLENGTH}a)"
+echo "$SCRIPTNAME  bootstrapping plus short smoothing run (for ${SMOOTHRUNLENGTH}a)"
 cmd="$MPIDO $NN $PISM -skip $COARSESKIP -boot_from $INNAME $COARSEGRID \
   $COUPLER_SIMPLE -y ${SMOOTHRUNLENGTH} -o $PRE0NAME"
 $DO $cmd
@@ -197,7 +200,7 @@ EX1NAME=ex_${PRE1NAME}
 EXTIMES=0:250:${NOMASSSIARUNLENGTH}
 EXVARS="enthalpybase,temppabase,mask" # add mask, so that check_stationarity.py ignores ice-free areas.
 echo
-echo "$SCRIPTNAME  bootstrapping and -no_mass (no surface change) SIA for ${NOMASSSIARUNLENGTH}a"
+echo "$SCRIPTNAME  -no_mass (no surface change) SIA run to achieve approximate temperature equilibrium, for ${NOMASSSIARUNLENGTH}a"
 cmd="$MPIDO $NN $PISM -skip $COARSESKIP -i $PRE0NAME $COUPLER_SIMPLE \
   -no_mass -y ${NOMASSSIARUNLENGTH} \
   -extra_file $EX1NAME -extra_vars $EXVARS -extra_times $EXTIMES -o $PRE1NAME"
@@ -216,7 +219,7 @@ $DO $cmd
 # spinup is split into 5 substages
 
 # start back at 125ka BPE, use GRIP and SPECMAP forcing, run till SPLIT1TIME
-ENDTIME=-40000 # BP
+ENDTIME=$COARSEENDTIME
 OUTNAME=g${CS}km_m40ka.nc
 SNAPSNAME=snaps_g${CS}km_m40ka.nc
 TSNAME=ts_g${CS}km_m40ka.nc
@@ -229,7 +232,7 @@ cmd="$MPIDO $NN $PISM -skip $COARSESKIP -i $PRE2NAME $TILLPHI $FULLPHYS $COUPLER
      -ys $PALEOSTARTYEAR -ye $ENDTIME -o $OUTNAME"
 $DO $cmd
 
-# to stop here:
+# uncomment to stop here:
 #exit
 
 STARTTIME=$ENDTIME
