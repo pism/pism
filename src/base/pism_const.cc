@@ -328,7 +328,7 @@ PetscErrorCode parse_times(MPI_Comm com, string str, vector<double> &result) {
 PetscErrorCode stop_on_version_option() {
   PetscErrorCode ierr;
 
-  bool vSet, pvSet;
+  bool vSet = false, pvSet = false;
   ierr = PISMOptionsIsSet("-version", vSet); CHKERRQ(ierr);
   ierr = PISMOptionsIsSet("-pismversion", pvSet); CHKERRQ(ierr);
   if ((vSet == false) && (pvSet == false))
@@ -383,7 +383,7 @@ PetscErrorCode show_usage_check_req_opts(
 
   ierr = stop_on_version_option(); CHKERRQ(ierr);
 
-  bool usageSet;
+  bool usageSet = false;
   ierr = PISMOptionsIsSet("-usage", usageSet); CHKERRQ(ierr);
   if (usageSet == true) {
     ierr = show_usage_and_quit(com, execname, usage); CHKERRQ(ierr);
@@ -392,7 +392,7 @@ PetscErrorCode show_usage_check_req_opts(
   // go through list of required options, and if not given, fail
   bool req_absent = false;
   for (size_t ii=0; ii < required_options.size(); ii++) {
-    bool set;
+    bool set = false;
     ierr = PISMOptionsIsSet(required_options[ii], set); CHKERRQ(ierr);
     if (set == PETSC_FALSE) {
       req_absent = true;
@@ -407,7 +407,7 @@ PetscErrorCode show_usage_check_req_opts(
   }
      
   // show usage message with -help, but don't fail
-  bool helpSet;
+  bool helpSet = false;
   ierr = PISMOptionsIsSet("-help", helpSet); CHKERRQ(ierr);
   if (helpSet == true) {
     ierr = just_show_usage(com, execname, usage); CHKERRQ(ierr);

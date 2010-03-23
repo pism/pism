@@ -96,7 +96,7 @@ ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc PISMIO.cc	\
 	iMssaSNES.cc iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc \
 	Timeseries.cc PISMVars.cc iMtimeseries.cc enthalpyConverter.cc \
 	combinedSystem.cc bedrockOnlySystem.cc \
-	iceenthOnlySystem.cc iceModelVec2T.cc	\
+	iceenthOnlySystem.cc iceModelVec2T.cc iceModelVec2V.cc	\
 	PISMComponent.cc PAConstant.cc PAYearlyCycle.cc PAForcing.cc		\
 	PISMSurface.cc PISMOcean.cc PCFactory.cc PALapseRates.cc
 ice_csources := cubature.c pism_signal.c
@@ -184,8 +184,8 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 	${CXXLINKER} iCMthermo.o iceCompModel.o iceExactSSAModel.o \
 	iceCalvBCModel.o pismv.o ${ICE_LIB_FLAGS} ${TESTS_LIB_FLAGS} -o $@
 
-../bin/pismtests: pismtests.o iMtests.o ${LIBPISMNAME} bedrockOnlySystem.o
-	${CXXLINKER} pismtests.o iMtests.o bedrockOnlySystem.o ${ICE_LIB_FLAGS} -o $@
+../bin/pismtests: pismtests.o iMtests.o ${LIBPISMNAME} bedrockOnlySystem.o iceModelVec2V.o
+	${CXXLINKER} pismtests.o iMtests.o bedrockOnlySystem.o iceModelVec2V.o ${ICE_LIB_FLAGS} -o $@
 
 other_sources += pcctest.cc pgrn_atmosphere.cc
 ../bin/pcctest : pcctest.o pgrn_atmosphere.o ${LIBPISMNAME}

@@ -32,7 +32,7 @@ protected:
   virtual PetscReal greenhouse_shift(PetscReal t_years, PetscReal dt_years);
   bool do_greenhouse_warming;
   PetscReal greenhouse_warming_start_year;
-  IceModelVec2 *lat, *surfelev;
+  IceModelVec2S *lat, *surfelev;
 };
 
 #endif	// __PA_EISMINT_Greenland

@@ -21,17 +21,18 @@ run_test ()
     run -n 1 pismv -test G -Mx 11 -My 11 -Mz 21 -y 0 -o fine1.nc
 
     # Coarse -> fine:
-    run -n 1 pismr -i fine1.nc -regrid_from coarse1.nc -regrid_vars temp $OPTS -o fine2.nc
+    run -n 1 pismr -i fine1.nc -regrid_file coarse1.nc -regrid_vars enthalpy $OPTS -o fine2.nc
     # Fine -> coarse:
-    run -n 1 pismr -i coarse1.nc -regrid_from fine2.nc -regrid_vars temp $OPTS -o coarse2.nc
+    run -n 1 pismr -i coarse1.nc -regrid_file fine2.nc -regrid_vars enthalpy $OPTS -o coarse2.nc
 
     set +e
 
     # Compare:
-    run nccmp.py -t 1e-16 -v temp coarse1.nc coarse2.nc
+    run nccmp.py -t 1e-16 -v enthalpy coarse1.nc coarse2.nc
     if [ $? != 0 ];
     then
 	fail "files coarse1.nc and coarse2.nc are different"
+	return 0
     fi
 
     pass

@@ -26,7 +26,7 @@ PetscErrorCode POConstant::init(PISMVars &vars) {
     ierr = verbPrintf(2, grid.com, "* Initializing the constant ocean model...\n"); CHKERRQ(ierr);
   }
 
-  ice_thickness = dynamic_cast<IceModelVec2*>(vars.get("land_ice_thickness"));
+  ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (!ice_thickness) { SETERRQ(1, "ERROR: ice thickness is not available"); }
 
   return 0;
@@ -39,7 +39,7 @@ PetscErrorCode POConstant::sea_level_elevation(PetscReal /*t_years*/, PetscReal 
 }
 
 PetscErrorCode POConstant::shelf_base_temperature(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						  IceModelVec2 &result) {
+						  IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   const PetscScalar T0 = config.get("water_melting_temperature"), // K
@@ -65,7 +65,7 @@ PetscErrorCode POConstant::shelf_base_temperature(PetscReal /*t_years*/, PetscRe
 
 //! Computes mass flux in ice-equivalent m s-1, from assumption that basal heat flux rate converts to mass flux.
 PetscErrorCode POConstant::shelf_base_mass_flux(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						IceModelVec2 &result) {
+						IceModelVec2S &result) {
   PetscErrorCode ierr;
   PetscReal L = config.get("water_latent_heat_fusion"),
     rho = config.get("ice_density"),
@@ -143,7 +143,7 @@ PetscErrorCode POForcing::sea_level_elevation(PetscReal t_years, PetscReal dt_ye
 
 
 PetscErrorCode POForcing::shelf_base_temperature(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2 &result) {
+						 IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = input_model->shelf_base_temperature(t_years, dt_years, result); CHKERRQ(ierr);
@@ -152,7 +152,7 @@ PetscErrorCode POForcing::shelf_base_temperature(PetscReal t_years, PetscReal dt
 }
 
 PetscErrorCode POForcing::shelf_base_mass_flux(PetscReal t_years, PetscReal dt_years,
-					       IceModelVec2 &result) {
+					       IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = input_model->shelf_base_mass_flux(t_years, dt_years, result); CHKERRQ(ierr);

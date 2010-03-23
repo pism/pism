@@ -36,7 +36,6 @@ public:
   IceModelVec(const IceModelVec &other);
   virtual ~IceModelVec();
 
-  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
   virtual bool            was_created();
   virtual GridType        grid_type();
 
@@ -49,23 +48,23 @@ public:
   virtual PetscErrorCode  scale(PetscScalar alpha);
   virtual PetscErrorCode  multiply_by(IceModelVec &x, IceModelVec &result);
   virtual PetscErrorCode  multiply_by(IceModelVec &x);
-  virtual PetscErrorCode  copy_to_global(Vec destination);
-  virtual PetscErrorCode  copy_from_global(Vec source);
+  virtual PetscErrorCode  copy_to(Vec destination);
+  virtual PetscErrorCode  copy_from(Vec source);
   virtual PetscErrorCode  copy_to(IceModelVec &destination);
   virtual PetscErrorCode  copy_from(IceModelVec &source);
   virtual PetscErrorCode  has_nan();
-  virtual PetscErrorCode  set_name(const char name[]);
+  virtual PetscErrorCode  set_name(const char name[], int component = 0);
   virtual PetscErrorCode  set_glaciological_units(string units);
-  virtual PetscErrorCode  set_attr(string name, string value);
-  virtual PetscErrorCode  set_attr(string name, double value);
-  virtual PetscErrorCode  set_attr(string name, vector<double> values);
-  virtual bool            has_attr(string name);
-  virtual string          string_attr(string name);
-  virtual double          double_attr(string name);
-  virtual vector<double>  array_attr(string name);
+  virtual PetscErrorCode  set_attr(string name, string value, int component = 0);
+  virtual PetscErrorCode  set_attr(string name, double value, int component = 0);
+  virtual PetscErrorCode  set_attr(string name, vector<double> values, int component = 0);
+  virtual bool            has_attr(string name, int component = 0);
+  virtual string          string_attr(string name, int component = 0);
+  virtual double          double_attr(string name, int component = 0);
+  virtual vector<double>  array_attr(string name, int component = 0);
   virtual PetscErrorCode  set_attrs(string my_pism_intent, string my_long_name,
-				    string my_units, string my_standard_name);
-  virtual bool            is_valid(PetscScalar a);
+				    string my_units, string my_standard_name, int component = 0);
+  virtual bool            is_valid(PetscScalar a, int component = 0);
   virtual PetscErrorCode  write(const char filename[]);
   virtual PetscErrorCode  write(const char filename[], nc_type nctype);
   virtual PetscErrorCode  read(const char filename[], unsigned int time);
@@ -91,13 +90,12 @@ protected:
   Vec  v;
   string name;
 
-  NCSpatialVariable var1;	//!< a NetCDF variable corresponding to this
-				//!IceModelVec; called var1 because some
-				//!IceModelVecs will have more: var2, etc.
+  vector<NCSpatialVariable> vars; //!< NetCDF variable(s) corresponding to this
+				//!IceModelVec; dof == 1 vectors only have vars[0].
 
   IceGrid      *grid;
   GridType     dims;
-  int dof;
+  int          dof;
   DA           da;
   bool         localp;
   //! it is a map, because a temporary IceModelVec can be used to view
@@ -130,21 +128,31 @@ struct planeBox {
   PetscScalar ij, ip1, im1, jp1, jm1, ip1jp1, im1jp1, ip1jm1, im1jm1;
 };
 
-
-//! Class for a 2d DA-based Vec for ice scalar quantities in IceModel.
+//! Class for a 2d DA-based Vec for scalar quantities in IceModel.
 class IceModelVec2 : public IceModelVec {
 public:
-  IceModelVec2();
-  IceModelVec2(const IceModelVec2 &other);
+  IceModelVec2() : IceModelVec() {}
+  IceModelVec2(const IceModelVec2 &other) : IceModelVec(other) {};
+  virtual PetscErrorCode create(IceGrid &my_grid, const char my_short_name[], bool local,
+			 DAStencilType my_sten, int stencil_width, int dof);
+protected:
+  PetscErrorCode get_component(int n, Vec result);
+  PetscErrorCode set_component(int n, Vec source);
+};
+
+//! A class for storing and accessing scalar 2D fields.
+class IceModelVec2S : public IceModelVec2 {
+  friend class IceModelVec2V;
+public:
+  IceModelVec2S() {}
+  IceModelVec2S(const IceModelVec2S &other) : IceModelVec2(other) {}
   // does not need a copy constructor, because it does not add any new data members
-  virtual PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local);
-  PetscErrorCode  create(IceGrid &my_grid, const char my_short_name[], bool local,
-			 DAStencilType my_sten, int stencil_width);
+  virtual PetscErrorCode  create(IceGrid &my_grid, const char my_name[], bool local, int width = 1);
   virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   PetscErrorCode  get_array(PetscScalar** &a);
-  virtual PetscErrorCode set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v_y);
-  virtual PetscErrorCode mask_by(IceModelVec2 &M, PetscScalar fill = 0.0);
+  virtual PetscErrorCode set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y);
+  virtual PetscErrorCode mask_by(IceModelVec2S &M, PetscScalar fill = 0.0);
   virtual PetscErrorCode sum(PetscScalar &result);
   virtual PetscScalar diff_x(int i, int j);
   virtual PetscScalar diff_y(int i, int j);
@@ -159,11 +167,47 @@ public:
 //! floating-point scalars (instead of integers).
 class IceModelVec2Mask : public IceModelVec2 {
 public:
+  virtual PetscErrorCode create(IceGrid &my_grid, const char my_name[], bool local, int width = 1);
+  PetscErrorCode  get_array(PetscScalar** &a); // provides access to the storage (PetscScalar) array
+  virtual PetscScalar& operator() (int i, int j);
   virtual PismMask value(int i, int j);	  // returns the mask value
   virtual bool is_grounded(int i, int j); // checks for MASK_SHEET || MASK_DRAGGING
   virtual bool is_floating(int i, int j); // checks for MASK_FLOATING || MASK_FLOATING_OCEAN0
-  virtual PetscErrorCode fill_where_grounded(IceModelVec2 &v, const PetscScalar fillval);
-  virtual PetscErrorCode fill_where_floating(IceModelVec2 &v, const PetscScalar fillval);
+  virtual PetscErrorCode fill_where_grounded(IceModelVec2S &v, const PetscScalar fillval);
+  virtual PetscErrorCode fill_where_floating(IceModelVec2S &v, const PetscScalar fillval);
+};
+
+/// IceModeVec2V
+
+struct PISMVector2 {
+  PetscScalar u, v;
+};
+
+//! Class for storing and accessing 2D vector fields used in IceModel.
+class IceModelVec2V : public IceModelVec2 {
+public:
+  IceModelVec2V();
+  IceModelVec2V(const IceModelVec2V &original);
+  ~IceModelVec2V();
+  virtual PetscErrorCode create(IceGrid &my_grid, const char my_short_name[],
+				bool local, int stencil_width = 1); 
+
+  // I/O:
+  virtual PetscErrorCode write(const char filename[], nc_type nctype); 
+  virtual PetscErrorCode read(const char filename[], const unsigned int time); 
+  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, bool critical); 
+  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value); 
+  virtual PetscErrorCode get_array(PISMVector2 ** &a); 
+  virtual PetscErrorCode magnitude(IceModelVec2S &result); 
+  virtual PISMVector2&   operator()(int i, int j);
+  // component-wise access:
+  virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
+  virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
+  // Metadata, etc:
+  virtual bool           is_valid(PetscScalar u, PetscScalar v); 
+protected:
+  DA component_da;		//!< same as \c da, but for one component only
+  PetscErrorCode destroy();	
 };
 
 //! Class for a 3d DA-based Vec for bedrock (lithosphere) scalar quantities in IceModel.
@@ -181,7 +225,7 @@ public:
   PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsOUT);
   PetscErrorCode  getValColumnQUAD(PetscInt i, PetscInt j, PetscScalar *valsOUT);
   PetscErrorCode  getValColumn(PetscInt i, PetscInt j, PetscScalar *valsOUT);
-  PetscErrorCode view_sounding(int i, int j, PetscInt viewer_size);
+  PetscErrorCode  view_sounding(int i, int j, PetscInt viewer_size);
 
 protected:  
   map<string,PetscViewer> *sounding_viewers;
@@ -200,8 +244,8 @@ public:
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
 
   // note the IceModelVec3 with this method must be *local* while imv3_source must be *global*
-  virtual PetscErrorCode  beginGhostCommTransfer(IceModelVec3 &imv3_source);
-  virtual PetscErrorCode  endGhostCommTransfer(IceModelVec3 &imv3_source);
+  virtual PetscErrorCode beginGhostCommTransfer(IceModelVec3 &imv3_source);
+  virtual PetscErrorCode endGhostCommTransfer(IceModelVec3 &imv3_source);
 
   // need call begin_access() before set...() or get...() *and* need call end_access() afterward
   PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsIN);
@@ -229,14 +273,14 @@ public:
   PetscErrorCode  getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsPTR);
 
   PetscErrorCode  getHorSlice(Vec &gslice, PetscScalar z); // used in iMmatlab.cc
-  PetscErrorCode  getHorSlice(IceModelVec2 &gslice, PetscScalar z);
-  PetscErrorCode  getSurfaceValues(Vec &gsurf, IceModelVec2 &myH); // used in iMviewers.cc
-  PetscErrorCode  getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2 &myH);
-  PetscErrorCode  getSurfaceValues(IceModelVec2 &gsurf, PetscScalar **H);
+  PetscErrorCode  getHorSlice(IceModelVec2S &gslice, PetscScalar z);
+  PetscErrorCode  getSurfaceValues(Vec &gsurf, IceModelVec2S &myH); // used in iMviewers.cc
+  PetscErrorCode  getSurfaceValues(IceModelVec2S &gsurf, IceModelVec2S &myH);
+  PetscErrorCode  getSurfaceValues(IceModelVec2S &gsurf, PetscScalar **H);
   PetscErrorCode  extend_vertically(int old_Mz, PetscScalar fill_value);
-  PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2 &fill_values);
+  PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2S &fill_values);
 
-  PetscErrorCode view_surface(IceModelVec2 &thickness, PetscInt viewer_size);
+  PetscErrorCode view_surface(IceModelVec2S &thickness, PetscInt viewer_size);
   PetscErrorCode view_horizontal_slice(PetscScalar level, PetscInt viewer_size);
   PetscErrorCode view_sounding(int i, int j, PetscInt viewer_size);
   virtual PetscErrorCode  has_nan();

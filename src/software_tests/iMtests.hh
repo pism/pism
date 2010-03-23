@@ -29,11 +29,15 @@ public:
   PetscErrorCode set_vars_from_options();
   PetscErrorCode run();
   PetscErrorCode writeFiles(const char* filename);
+  PetscErrorCode createVecs();
+  PetscErrorCode model_state_setup();
 
-  PetscErrorCode testIceModelVec3();
-  PetscErrorCode testIceModelVec3Bedrock();
-  PetscErrorCode testIceModelVec2T();
-  PetscErrorCode test_bedrockOnlySystem();
+  PetscErrorCode test_IceModelVec3();
+  PetscErrorCode test_IceModelVec3Bedrock();
+  PetscErrorCode test_IceModelVec2T();
+  PetscErrorCode test_IceModelVec2V();
+  PetscErrorCode test_dof1comm();
+  PetscErrorCode test_dof2comm();
 };
 
 #endif // 

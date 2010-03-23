@@ -86,6 +86,8 @@ PetscErrorCode IceExactSSAModel::setFromOptions() {
 
   ierr = IceModel::setFromOptions();CHKERRQ(ierr);
 
+  doColdIceMethods = true;
+
   return 0;
 }
 
@@ -203,8 +205,7 @@ PetscErrorCode IceExactSSAModel::set_vars_from_options() {
   ierr = u3.set(0.0); CHKERRQ(ierr);
   ierr = v3.set(0.0); CHKERRQ(ierr);
   ierr = w3.set(0.0); CHKERRQ(ierr);
-  ierr = vub.set(0.0); CHKERRQ(ierr);
-  ierr = vvb.set(0.0); CHKERRQ(ierr);
+  ierr = basal_vel.set(0.0); CHKERRQ(ierr);
 
   return 0;
 }
@@ -333,7 +334,8 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
 PetscErrorCode IceExactSSAModel::setInitStateM() {
   PetscErrorCode ierr;
   PetscScalar    **H, **h, **bed, **mask, **ubar, **vbar,
-                 **ub, **vb, **uvbar[2];
+                 **uvbar[2];
+  PISMVector2 **bvel;
 
   double ocean_rho = config.get("sea_water_density");
 
@@ -350,8 +352,7 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr = vubar.get_array(ubar); CHKERRQ(ierr);
   ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
-  ierr = vub.get_array(ub); CHKERRQ(ierr);
-  ierr = vvb.get_array(vb); CHKERRQ(ierr);
+  ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
@@ -383,8 +384,8 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
         //   for floating portion; do that for grounded now
         ubar[i][j] = myu; 
         vbar[i][j] = myv;
-        ub[i][j] = myu;
-        vb[i][j] = myv;
+        bvel[i][j].u = myu;
+        bvel[i][j].v = myv;
         ierr = u3.setColumn(i,j,myu); CHKERRQ(ierr);
         ierr = v3.setColumn(i,j,myv); CHKERRQ(ierr);
         // w3 is set by IceModel::vertVelocityFromIncompressibility()
@@ -414,8 +415,7 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vubar.end_access(); CHKERRQ(ierr);
   ierr = vvbar.end_access(); CHKERRQ(ierr);
-  ierr = vub.end_access(); CHKERRQ(ierr);
-  ierr = vvb.end_access(); CHKERRQ(ierr);
+  ierr = basal_vel.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].end_access(); CHKERRQ(ierr);

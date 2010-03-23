@@ -23,23 +23,20 @@
 
 PetscErrorCode IceModel::mapUVbarSSAToSSASNESVec(DA ssasnesda, Vec &ssasnesX) {
   PetscErrorCode ierr;
-  PetscScalar **u, **v;
   SSASNESNode **x;
 
-  ierr = vubarSSA.get_array(u); CHKERRQ(ierr);
-  ierr = vvbarSSA.get_array(v); CHKERRQ(ierr);
+  ierr = ssavel.begin_access(); CHKERRQ(ierr);
   ierr = DAVecGetArray(ssasnesda, ssasnesX, &x); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      x[i][j].u = u[i][j];
-      x[i][j].v = v[i][j];
+      x[i][j].u = ssavel(i,j).u;
+      x[i][j].v = ssavel(i,j).v;
     }
   }
 
   ierr = DAVecRestoreArray(ssasnesda, ssasnesX, &x); CHKERRQ(ierr);
-  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
-  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
+  ierr = ssavel.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -47,29 +44,24 @@ PetscErrorCode IceModel::mapUVbarSSAToSSASNESVec(DA ssasnesda, Vec &ssasnesX) {
 
 PetscErrorCode IceModel::mapSSASNESVecToUVbarSSA(DA ssasnesda, Vec ssasnesX) {
   PetscErrorCode ierr;
-  PetscScalar **u, **v;
   SSASNESNode **x;
 
-  ierr = vubarSSA.get_array(u); CHKERRQ(ierr);
-  ierr = vvbarSSA.get_array(v); CHKERRQ(ierr);
+  ierr = ssavel.begin_access(); CHKERRQ(ierr);
   ierr = DAVecGetArray(ssasnesda, ssasnesX, &x); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      u[i][j] = x[i][j].u;
-      v[i][j] = x[i][j].v;
+      ssavel(i,j).u = x[i][j].u;
+      ssavel(i,j).v = x[i][j].v;
     }
   }
 
   ierr = DAVecRestoreArray(ssasnesda, ssasnesX, &x); CHKERRQ(ierr);
-  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
-  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
+  ierr = ssavel.end_access(); CHKERRQ(ierr);
 
   // Communicate so that we have stencil width for evaluation of effective viscosity (and geometry)
-  ierr = vubarSSA.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vubarSSA.endGhostComm(); CHKERRQ(ierr);
-  ierr = vvbarSSA.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vvbarSSA.endGhostComm(); CHKERRQ(ierr);
+  ierr = ssavel.beginGhostComm(); CHKERRQ(ierr);
+  ierr = ssavel.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -114,7 +106,7 @@ PetscErrorCode IceModel::solvefeedback(SNES snes, Vec residual) {
 }
 
 
-PetscErrorCode IceModel::getNuFromNuH(IceModelVec2 vNuH[2], SSASNESCtx *user) {
+PetscErrorCode IceModel::getNuFromNuH(IceModelVec2S vNuH[2], SSASNESCtx *user) {
   PetscErrorCode ierr;
   PetscScalar **H, **nuH[2], **nu[2];
 
@@ -160,7 +152,7 @@ extern PetscErrorCode SSASNESFormFunctionLocal(DALocalInfo *info, SSASNESNode **
                                                SSASNESNode **f, SSASNESCtx *ctx);
 
 
-PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2 vNuH[2], PetscInt *its) {
+PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2S vNuH[2], PetscInt *its) {
   PetscErrorCode ierr;
 
   SNES        snes;                 /* nonlinear solver */

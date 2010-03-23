@@ -297,15 +297,14 @@ PetscErrorCode IceModel::set_output_size(string option,
     string intent = (*i)->string_attr("pism_intent");
     if ( (intent == "model_state") || (intent == "mapping") ||
 	 (intent == "climate_steady") )
-      result.insert((*i)->string_attr("short_name"));
+      result.insert((*i)->string_attr("name"));
 
     ++i;
   }
 
-  // add {u,v}barSSA if SSA is "on":
+  // add {u,v}bar_ssa if SSA is "on":
   if (config.get_flag("use_ssa_velocity")) {
-    result.insert("vubarSSA");
-    result.insert("vvbarSSA");
+    result.insert("uvbar_ssa");	// will write both ubar_ssa and vbar_ssa
   }
 
   if (config.get_flag("do_age"))

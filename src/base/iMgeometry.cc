@@ -40,7 +40,7 @@ In floating parts the surface gradient is always computed by the regular formula
 Saves it in user supplied Vecs \c vtaudx and \c vtaudy, which are treated 
 as global.  (I.e. we do not communicate ghosts.)
  */
-PetscErrorCode IceModel::computeDrivingStress(IceModelVec2 &vtaudx, IceModelVec2 &vtaudy) {
+PetscErrorCode IceModel::computeDrivingStress(IceModelVec2S &vtaudx, IceModelVec2S &vtaudy) {
   PetscErrorCode ierr;
 
   const PetscScalar n       = ice->exponent(), // frequently n = 3
@@ -126,14 +126,22 @@ neighbors).  When the \c MASK_DRAGGING points have plastic till bases this is no
  */
 PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   PetscErrorCode ierr;
+
+  ierr = update_mask(); CHKERRQ(ierr);
+  ierr = update_surface_elevation(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModel::update_mask() {
+  PetscErrorCode ierr;
   PetscScalar **h, **bed, **H, **mask;
 
   if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal currentSeaLevel;
   ierr = ocean->sea_level_elevation(grid.year, dt / secpera, currentSeaLevel); CHKERRQ(ierr);
 
-  bool is_dry_simulation = config.get_flag("is_dry_simulation"),
-    do_plastic_till = config.get_flag("do_plastic_till"),
+  bool do_plastic_till = config.get_flag("do_plastic_till"),
     use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
   double ocean_rho = config.get("sea_water_density");
@@ -145,19 +153,115 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+
+      const PetscScalar hgrounded = bed[i][j] + vH(i,j),
+	hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * vH(i,j);
+
+      // points marked as "ocean at time zero" are not updated
+      if (vMask.value(i,j) == MASK_OCEAN_AT_TIME_0)
+	continue;
+
+      if (vMask.is_floating(i,j)) { // floating
+
+	if (hgrounded > hfloating+1.0) { // floatation criterion says it is grounded
+	  if (use_ssa_velocity) {
+	    if (do_plastic_till) {
+	      // we are using SSA-as-a-sliding-law, so we know what to do:
+	      //   all grounded points become DRAGGING
+	      mask[i][j] = MASK_DRAGGING_SHEET;
+	    } else {
+	      // we do not know how to set this point, which just became grounded
+	      mask[i][j] = MASK_UNKNOWN;
+	    }
+	  } else {
+	    // we do not have any ice handled by SSA, so it must be SHEET
+	    mask[i][j] = MASK_SHEET;
+	  }
+	}
+
+      } else {   // grounded
+
+	// apply the floatation criterion:
+	if (hgrounded > hfloating-1.0) { // floatation criterion says it is grounded
+
+	  // we are using SSA-as-a-sliding-law, so grounded points become DRAGGING
+	  if (use_ssa_velocity && do_plastic_till)
+	    mask[i][j] = MASK_DRAGGING_SHEET;
+
+	} else {
+	  mask[i][j] = MASK_FLOATING;
+	}
+
+      }
+
+      // deal with the confusing case, which is when it is grounded,
+      //   it was marked FLOATING, and the user wants some SIA points
+      //   and some SSA points
+      if (vMask.value(i,j) == MASK_UNKNOWN) {
+	// determine type of grounded ice by vote-by-neighbors
+	//   (BOX stencil neighbors!):
+	// FIXME: this should be made clearer
+	const PetscScalar neighmasksum = 
+	  PismModMask(mask[i-1][j+1]) + PismModMask(mask[i][j+1]) + PismModMask(mask[i+1][j+1]) +
+	  PismModMask(mask[i-1][j])   +                           + PismModMask(mask[i+1][j])  +
+	  PismModMask(mask[i-1][j-1]) + PismModMask(mask[i][j-1]) + PismModMask(mask[i+1][j-1]);
+	// make SHEET if either all neighbors are SHEET or at most one is 
+	//   DRAGGING; if any are floating then ends up DRAGGING:
+	if (neighmasksum <= (7*MASK_SHEET + MASK_DRAGGING_SHEET + 0.1)) { 
+	  mask[i][j] = MASK_SHEET;
+	} else { // otherwise make DRAGGING
+	  mask[i][j] = MASK_DRAGGING_SHEET;
+	}
+      }
+        
+    } // inner for loop (j)
+  } // outer for loop (i)
+
+  ierr =         vh.end_access(); CHKERRQ(ierr);
+  ierr =         vH.end_access(); CHKERRQ(ierr);
+  ierr =       vbed.end_access(); CHKERRQ(ierr);
+  ierr =      vMask.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModel::update_surface_elevation() {
+  PetscErrorCode ierr;
+  PetscScalar **h, **bed, **H, **mask;
+
+  if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
+  PetscReal currentSeaLevel;
+  ierr = ocean->sea_level_elevation(grid.year, dt / secpera, currentSeaLevel); CHKERRQ(ierr);
+
+  bool is_dry_simulation = config.get_flag("is_dry_simulation");
+
+  double ocean_rho = config.get("sea_water_density");
+
+  ierr =    vh.get_array(h);    CHKERRQ(ierr);
+  ierr =    vH.get_array(H);    CHKERRQ(ierr);
+  ierr =  vbed.get_array(bed);  CHKERRQ(ierr);
+  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+
+  // NB! this code updates ghosts locally, assuming that all the necessary
+  // fields have up-to-date ghosts and box stencils with the width of 1 (or more).
+  for (PetscInt   i = grid.xs - 1; i < grid.xs + grid.xm + 1; ++i) {
+    for (PetscInt j = grid.ys - 1; j < grid.ys + grid.ym + 1; ++j) {
       // take this opportunity to check that vH(i,j) >= 0
       if (vH(i,j) < 0) {
         SETERRQ2(1,"Thickness negative at point i=%d, j=%d",i,j);
       }
 
       const PetscScalar hgrounded = bed[i][j] + vH(i,j),
-                        hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * vH(i,j);
+	hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * vH(i,j);
 
       if (is_dry_simulation) {
-        // Don't update mask; potentially one would want to do SSA
-        //   dragging ice shelf in dry case and/or ignore mean sea level elevation.
+        // Don't update mask; potentially one would want to do SSA dragging ice
+        //   shelf in dry case and/or ignore mean sea level elevation.
         h[i][j] = hgrounded;
-      } else if (vMask.value(i,j) == MASK_OCEAN_AT_TIME_0) {
+	continue;		// go to the next grid point
+      }
+
+      if (vMask.value(i,j) == MASK_OCEAN_AT_TIME_0) {
         // mask takes priority over bed in this case (note sea level may change).
         // Example Greenland case: if mask say Ellesmere is OCEAN0,
         //   then never want ice on Ellesmere.
@@ -165,65 +269,16 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
         // the thickness; massContExplicitStep() is in charge of that.
         // Almost always the next line is equivalent to h[i][j] = 0.
         h[i][j] = hfloating;  // ignore bed and treat it like deep ocean
-      } else {
-        if (vMask.is_floating(i,j)) {
-          // check whether you are actually floating or grounded
-          if (hgrounded > hfloating+1.0) {
-            h[i][j] = hgrounded; // actually grounded so update h
-            if (use_ssa_velocity) {
-              if (do_plastic_till) {
-                // we are using SSA-as-a-sliding-law, so we know what to do:
-                //   all grounded points become DRAGGING
-                mask[i][j] = MASK_DRAGGING_SHEET;
-              } else {
-                // we do not know how to set this point, which just became grounded
-                mask[i][j] = MASK_UNKNOWN;
-              }
-            } else {
-              // we do not have any ice handled by SSA, so it must be SHEET
-              mask[i][j] = MASK_SHEET;
-            }
-          } else {
-            h[i][j] = hfloating; // actually floating so update h
-          }
-        } else { 
-          // mask says it is grounded, so set everything according to 
-          //   newly-evaluated flotation criterion
-          if (hgrounded > hfloating-1.0) {
-            h[i][j] = hgrounded; // actually grounded so update h
-            if (use_ssa_velocity && do_plastic_till) {
-              // we are using SSA-as-a-sliding-law, so grounded points become DRAGGING
-              mask[i][j] = MASK_DRAGGING_SHEET;
-            }
-          } else {
-            h[i][j] = hfloating; // actually floating so update h
-            mask[i][j] = MASK_FLOATING;
-          }
-        }
-
-        // deal with the confusing case, which is when it is grounded,
-        //   it was marked FLOATING, and the user wants some SIA points
-        //   and some SSA points
-        if (vMask.value(i,j) == MASK_UNKNOWN) {
-          // determine type of grounded ice by vote-by-neighbors
-          //   (BOX stencil neighbors!):
-	  // FIXME: this should be made clearer
-          const PetscScalar neighmasksum = 
-                PismModMask(mask[i-1][j+1]) + PismModMask(mask[i][j+1]) + PismModMask(mask[i+1][j+1]) +
-                PismModMask(mask[i-1][j])   +                           + PismModMask(mask[i+1][j])  +
-                PismModMask(mask[i-1][j-1]) + PismModMask(mask[i][j-1]) + PismModMask(mask[i+1][j-1]);
-          // make SHEET if either all neighbors are SHEET or at most one is 
-          //   DRAGGING; if any are floating then ends up DRAGGING:
-          if (neighmasksum <= (7*MASK_SHEET + MASK_DRAGGING_SHEET + 0.1)) { 
-            mask[i][j] = MASK_SHEET;
-          } else { // otherwise make DRAGGING
-            mask[i][j] = MASK_DRAGGING_SHEET;
-          }
-        }
-        
+	continue;	      // go to the next grid point
       }
 
+      if (vMask.is_floating(i,j)) {
+	h[i][j] = hfloating; // actually floating so update h
+      } else { 
+	h[i][j] = hgrounded; // actually grounded so update h
+      }
     }
+        
   }
 
   ierr =         vh.end_access(); CHKERRQ(ierr);
@@ -231,14 +286,10 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   ierr =       vbed.end_access(); CHKERRQ(ierr);
   ierr =      vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vh.endGhostComm(); CHKERRQ(ierr);
+  // NB! ghosts were updated locally; no communication is necessary
 
-  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
-
 
 //! Update the thickness from the horizontal velocity and the surface and basal mass balance.
 /*! 
@@ -303,24 +354,23 @@ PetscErrorCode IceModel::massContExplicitStep() {
   const PetscScalar inC_fofv = 1.0e-4 * PetscSqr(secpera),
                     outC_fofv = 2.0 / pi;
 
-  IceModelVec2 vHnew = vWork2d[0];
+  IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
 
-  PetscScalar **uvbar[2], **ubarssa, **vbarssa, **ub, **vb,
-    **bmr_gnded;
+  PetscScalar **uvbar[2], **bmr_gnded;
+  PISMVector2 **bvel;
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.get_array(bmr_gnded); CHKERRQ(ierr);
+  ierr = vbmr.get_array(bmr_gnded); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
   ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
-  ierr = vub.get_array(ub); CHKERRQ(ierr);
-  ierr = vvb.get_array(vb); CHKERRQ(ierr);
+  ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
   ierr = acab.begin_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
-  ierr = vubarSSA.get_array(ubarssa); CHKERRQ(ierr);
-  ierr = vvbarSSA.get_array(vbarssa); CHKERRQ(ierr);
   ierr = vMask.begin_access();  CHKERRQ(ierr);
   ierr = vHnew.begin_access(); CHKERRQ(ierr);
+
+  ierr = ssavel.begin_access(); CHKERRQ(ierr);
 
   PetscScalar icecount = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -336,15 +386,15 @@ PetscErrorCode IceModel::massContExplicitStep() {
       if ( do_superpose && (vMask.value(i,j) == MASK_DRAGGING_SHEET) ) {
         const PetscScalar
           fv  = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(ubarssa[i][j]) + PetscSqr(vbarssa[i][j]) ) ),
+                      ( PetscSqr(ssavel(i,  j).u) + PetscSqr(ssavel(i,  j).v) ) ),
           fve = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(ubarssa[i+1][j]) + PetscSqr(vbarssa[i+1][j]) ) ),
+                      ( PetscSqr(ssavel(i+1,j).u) + PetscSqr(ssavel(i+1,j).v) ) ),
           fvw = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(ubarssa[i-1][j]) + PetscSqr(vbarssa[i-1][j]) ) ),
+                      ( PetscSqr(ssavel(i-1,j).u) + PetscSqr(ssavel(i-1,j).v) ) ),
           fvn = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(ubarssa[i][j+1]) + PetscSqr(vbarssa[i][j+1]) ) ),
+                      ( PetscSqr(ssavel(i,j+1).u) + PetscSqr(ssavel(i,j+1).v) ) ),
           fvs = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(ubarssa[i][j-1]) + PetscSqr(vbarssa[i][j-1]) ) );
+                      ( PetscSqr(ssavel(i,j-1).u) + PetscSqr(ssavel(i,j-1).v) ) );
         const PetscScalar fvH = fv * vH(i,j);
         He = 0.5 * (fvH + fve * vH(i+1,j));
         Hw = 0.5 * (fvw * vH(i-1,j) + fvH);
@@ -367,13 +417,13 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
       // basal sliding part: split  Div(v H)  by product rule into  v . grad H
       //    and  (Div v) H; use upwinding on first and centered on second
-      divQ +=  ub[i][j] * ( ub[i][j] < 0 ? vH(i+1,j)-vH(i,j)
-                                         : vH(i,j)-vH(i-1,j) ) / dx
-             + vb[i][j] * ( vb[i][j] < 0 ? vH(i,j+1)-vH(i,j)
-                                         : vH(i,j)-vH(i,j-1) ) / dy;
+      divQ +=  bvel[i][j].u * ( bvel[i][j].u < 0 ? vH(i+1,j)-vH(i,j)
+				 : vH(i,j)-vH(i-1,j) ) / dx
+	     + bvel[i][j].v * ( bvel[i][j].v < 0 ? vH(i,j+1)-vH(i,j)
+				 : vH(i,j)-vH(i,j-1) ) / dy;
 
-      divQ += vH(i,j) * ( (ub[i+1][j] - ub[i-1][j]) / (2.0*dx)
-                          + (vb[i][j+1] - vb[i][j-1]) / (2.0*dy) );
+      divQ += vH(i,j) * ( (bvel[i+1][j].u - bvel[i-1][j].u) / (2.0*dx)
+                          + (bvel[i][j+1].v - bvel[i][j-1].v) / (2.0*dy) );
 
       vHnew(i,j) += (acab(i,j) - divQ) * dt; // include M
 
@@ -405,14 +455,12 @@ PetscErrorCode IceModel::massContExplicitStep() {
     } // end of the inner for loop
   } // end of the outer for loop
 
-  ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
+  ierr = vbmr.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
   ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
-  ierr = vub.end_access(); CHKERRQ(ierr);
-  ierr = vvb.end_access(); CHKERRQ(ierr);
-  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
-  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
+  ierr = basal_vel.end_access(); CHKERRQ(ierr);
+  ierr = ssavel.end_access(); CHKERRQ(ierr);
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);

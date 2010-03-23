@@ -52,6 +52,15 @@ IceROSSModel::IceROSSModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable 
 
 }
 
+PetscErrorCode IceROSSModel::setFromOptions() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
+
+  doColdIceMethods = PETSC_TRUE;
+  
+  return 0;
+}
 
 PetscErrorCode IceROSSModel::createVecs() {
   PetscErrorCode ierr;
@@ -182,7 +191,7 @@ PetscErrorCode IceROSSModel::finishROSS() {
   // to an nc file by additional code; old revisions had code to show in diagnostic
   // viewers by overwriting ubar,vbar
   
-  IceModelVec2  myvNu[2];
+  IceModelVec2S  myvNu[2];
   ierr = myvNu[0].create(grid, "myvNu", true); CHKERRQ(ierr);
   ierr = myvNu[1].create(grid, "myvNu", true); CHKERRQ(ierr);
   ierr = computeEffectiveViscosity(myvNu, ssaEpsilon); CHKERRQ(ierr);

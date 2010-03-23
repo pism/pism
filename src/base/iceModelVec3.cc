@@ -27,7 +27,7 @@
 
 // this file contains method for derived class IceModelVec3
 
-// methods for base class IceModelVec and derived class IceModelVec2
+// methods for base class IceModelVec and derived class IceModelVec2S
 // are in "iceModelVec.cc"
 
 IceModelVec3::IceModelVec3() : IceModelVec() {
@@ -43,7 +43,8 @@ IceModelVec3::~IceModelVec3() {
   }
 }
 
-IceModelVec3::IceModelVec3(const IceModelVec3 &other) : IceModelVec() {
+IceModelVec3::IceModelVec3(const IceModelVec3 &other)
+  : IceModelVec(other) {
   slice_viewers = other.slice_viewers;
   sounding_buffer = other.sounding_buffer;
   sounding_viewers = other.sounding_viewers;
@@ -79,7 +80,7 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[], boo
   localp = local;
   name = my_name;
 
-  var1.init(my_name, my_grid, GRID_3D);
+  vars[0].init(my_name, my_grid, GRID_3D);
 
   //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
 
@@ -454,8 +455,8 @@ PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, PetscScalar z) {
   return 0;
 }
 
-//! Copies a horizontal slice at level z of an IceModelVec3 into an IceModelVec2 gslice.
-PetscErrorCode  IceModelVec3::getHorSlice(IceModelVec2 &gslice, PetscScalar z) {
+//! Copies a horizontal slice at level z of an IceModelVec3 into an IceModelVec2S gslice.
+PetscErrorCode  IceModelVec3::getHorSlice(IceModelVec2S &gslice, PetscScalar z) {
   PetscErrorCode ierr;
   PetscScalar    **slice_val;
 
@@ -473,8 +474,8 @@ PetscErrorCode  IceModelVec3::getHorSlice(IceModelVec2 &gslice, PetscScalar z) {
 }
 
 
-//! Copies the values of an IceModelVec3 at the ice surface (specified by the level myH) to an IceModelVec2 gsurf.
-PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2 &myH) {
+//! Copies the values of an IceModelVec3 at the ice surface (specified by the level myH) to an IceModelVec2S gsurf.
+PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2S &gsurf, IceModelVec2S &myH) {
   PetscErrorCode ierr;
   PetscScalar    **H;
   ierr = myH.get_array(H); CHKERRQ(ierr);
@@ -487,7 +488,7 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, IceModelVec2
 /*!
   This version is used in iMviewers.cc
  */
-PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2 &myH) {
+PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2S &myH) {
   PetscErrorCode ierr;
   PetscScalar    **H, **surf_val;
   ierr = begin_access(); CHKERRQ(ierr);
@@ -505,7 +506,7 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(Vec &gsurf, IceModelVec2 &myH) {
 }
 
 
-PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2 &gsurf, PetscScalar **H) {
+PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2S &gsurf, PetscScalar **H) {
   PetscErrorCode ierr;
   PetscScalar    **surf_val;
 
@@ -589,7 +590,7 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
 
   localp = false;
 
-  var1.init(name, my_grid, GRID_3D_BEDROCK);
+  vars[0].init(name, my_grid, GRID_3D_BEDROCK);
 
   //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
 
@@ -852,7 +853,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, PetscScalar fill_valu
 
 
 //! Extends an IceModelVec3 and fills the new grid points with corresponding \c fill_values values.
-PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2 &fill_values) {
+PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_values) {
   PetscErrorCode ierr;
 
   // Allocate more memory:
@@ -925,7 +926,7 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   return 0;
 }
 
-PetscErrorCode IceModelVec3::view_surface(IceModelVec2 &thickness, PetscInt viewer_size) {
+PetscErrorCode IceModelVec3::view_surface(IceModelVec2S &thickness, PetscInt viewer_size) {
   PetscErrorCode ierr;
   Vec g2;
 
@@ -940,7 +941,7 @@ PetscErrorCode IceModelVec3::view_surface(IceModelVec2 &thickness, PetscInt view
 
   ierr = getSurfaceValues(g2, thickness); CHKERRQ(ierr);
 
-  ierr = var1.to_glaciological_units(g2); CHKERRQ(ierr);
+  ierr = vars[0].to_glaciological_units(g2); CHKERRQ(ierr);
 
   ierr = VecView(g2, (*map_viewers)[name]); CHKERRQ(ierr);
 
@@ -965,7 +966,7 @@ PetscErrorCode IceModelVec3::view_horizontal_slice(PetscScalar level, PetscInt v
 
   ierr = getHorSlice(g2, level); CHKERRQ(ierr);
 
-  ierr = var1.to_glaciological_units(g2); CHKERRQ(ierr);
+  ierr = vars[0].to_glaciological_units(g2); CHKERRQ(ierr);
 
   ierr = VecView(g2, (*slice_viewers)[name]); CHKERRQ(ierr);
 
@@ -1007,7 +1008,7 @@ PetscErrorCode IceModelVec3::view_sounding(int i, int j, PetscInt viewer_size) {
   ierr = VecAssemblyEnd(sounding_buffer); CHKERRQ(ierr);
 
   // change units:
-  ierr = var1.to_glaciological_units(sounding_buffer); CHKERRQ(ierr);
+  ierr = vars[0].to_glaciological_units(sounding_buffer); CHKERRQ(ierr);
 
   ierr = VecView(sounding_buffer, (*sounding_viewers)[name]); CHKERRQ(ierr);
 
@@ -1047,7 +1048,7 @@ PetscErrorCode IceModelVec3Bedrock::view_sounding(int i, int j, PetscInt viewer_
   ierr = VecAssemblyEnd(sounding_buffer); CHKERRQ(ierr);
 
   // change units:
-  ierr = var1.to_glaciological_units(sounding_buffer); CHKERRQ(ierr);
+  ierr = vars[0].to_glaciological_units(sounding_buffer); CHKERRQ(ierr);
 
   ierr = VecView(sounding_buffer, (*sounding_viewers)[name]); CHKERRQ(ierr);
 

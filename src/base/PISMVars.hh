@@ -30,6 +30,7 @@
 class PISMVars {
 public:
   PetscErrorCode add(IceModelVec &);
+  PetscErrorCode add(IceModelVec &, string name);
   void remove(string);
   IceModelVec* get(string) const;
   set<IceModelVec*> get_variables() const;

@@ -42,7 +42,7 @@ public:
 protected:
     char            test;       // only 'I', 'J', 'M' supported
     PetscTruth      exactOnly;
-    IceModelVec2    vNuForJ[2];
+    IceModelVec2S    vNuForJ[2];
           
     PetscErrorCode  fillFromExactSolution();
     PetscErrorCode  taucSetI();

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -194,6 +194,7 @@ PetscErrorCode IceModel::bedDefStepIfNeeded() {
     ierr = vH.copy_to(vHlast); CHKERRQ(ierr);
     ierr = vbed.copy_to(vbedlast); CHKERRQ(ierr);
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
+
     lastBedDefUpdateYear = grid.year;
     stdout_flags += "b";
   } else {
@@ -205,7 +206,7 @@ PetscErrorCode IceModel::bedDefStepIfNeeded() {
 
 PetscErrorCode IceModel::bed_def_step_iso() {
   PetscErrorCode ierr;
-  IceModelVec2 vHdiff = vWork2d[0];
+  IceModelVec2S vHdiff = vWork2d[0];
 
   double lithosphere_density = config.get("lithosphere_density");
 

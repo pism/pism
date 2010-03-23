@@ -239,16 +239,19 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr =     v3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =     w3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr = Sigma3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
-  ierr =     T3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
   ierr =  Enth3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
 
   // Work 3D vectors:
-  ierr =         Tnew3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
   ierr =      Enthnew3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
   ierr = Sigmastag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr = Sigmastag3[1].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =     Istag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =     Istag3[1].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+
+  if (doColdIceMethods) {
+    ierr =    T3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
+    ierr = Tnew3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
+  }
 
   // deal with 3D age conditionally
   if (config.get_flag("do_age")) {

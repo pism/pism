@@ -11,7 +11,7 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
 	    
   ierr = verbPrintf(2, grid.com, "  NOTE: Using a lapse-rate correction for air temperature...\n"); CHKERRQ(ierr);
 
-  usurf = dynamic_cast<IceModelVec2*>(vars.get("surface_altitude"));
+  usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
   if (!usurf) { SETERRQ(1, "ERROR: Surface elevation is not available"); }
 
   ierr = PetscOptionsBegin(grid.com, "", "Air temp. lapse rate model options", ""); CHKERRQ(ierr);
@@ -53,7 +53,7 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
 }
 
 PetscErrorCode PALapseRates::mean_annual_temp(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-					      IceModelVec2 &result) {
+					      IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = result.begin_access(); CHKERRQ(ierr);
@@ -99,7 +99,7 @@ PetscErrorCode PALapseRates::write_model_state(PetscReal t_years, PetscReal dt_y
 
   ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
 
-  IceModelVec2 temp_ma;
+  IceModelVec2S temp_ma;
   ierr = temp_ma.create(grid, "airtemp_ma", false); CHKERRQ(ierr); // FIXME! choose the right name
   ierr = temp_ma.set_attrs(
             "climate_state",

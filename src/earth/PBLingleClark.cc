@@ -59,7 +59,7 @@ the natural ordering in a new global vector before calling
 VecScatterBegin/End() to scatter the natural vector onto process 0.
 */
 
-PetscErrorCode PBLingleClark::transfer_to_proc0(IceModelVec2 &source, Vec result) {
+PetscErrorCode PBLingleClark::transfer_to_proc0(IceModelVec2S &source, Vec result) {
   PetscErrorCode ierr;
 
   ierr = source.copy_to_global(g2);
@@ -73,7 +73,7 @@ PetscErrorCode PBLingleClark::transfer_to_proc0(IceModelVec2 &source, Vec result
   return 0;
 }
 
-PetscErrorCode PBLingleClark::transfer_from_proc0(Vec source, IceModelVec2 &result) {
+PetscErrorCode PBLingleClark::transfer_from_proc0(Vec source, IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = VecScatterBegin(scatter, source, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
@@ -129,10 +129,10 @@ PetscErrorCode PBLingleClark::deallocate() {
 PetscErrorCode PBLingleClark::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  thk = dynamic_cast<IceModelVec2*>(vars.get("land_ice_thickness"));
+  thk = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (!thk) SETERRQ(1, "ERROR: thk is not available");
 
-  topg = dynamic_cast<IceModelVec2*>(vars.get("bedrock_altitude"));
+  topg = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
   if (!topg) SETERRQ(1, "ERROR: topg is not available");
 
   dt_beddef = GSL_NAN;

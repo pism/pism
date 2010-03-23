@@ -95,7 +95,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
                            config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
   ierr =     vHmelt.regrid(filename, *lic, 
                            config.get("bootstrapping_Hmelt_value_no_var")); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.regrid(filename, *lic, 
+  ierr =       vbmr.regrid(filename, *lic, 
                            config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
   ierr =   vtillphi.regrid(filename, *lic, 
                            config.get("bootstrapping_tillphi_value_no_var")); CHKERRQ(ierr);
@@ -139,10 +139,11 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
      CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com,
-    "  ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
+  if (doColdIceMethods == false) {
+    ierr = verbPrintf(2, grid.com,
+		      "  ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
     CHKERRQ(ierr);
-  ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+  }
 
   ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);
 
@@ -160,7 +161,7 @@ For now it is \e only called using "pismd -ross".
  */
 PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   PetscErrorCode  ierr;
-  IceModelVec2 vbcflag;
+  IceModelVec2S vbcflag;
   PISMIO nc(&grid);
 
   // determine if variables exist in file
@@ -372,8 +373,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
   PetscScalar     **H, **bed, **Ghf;
 
-  PetscScalar *T;
-  T = new PetscScalar[grid.Mz];
+  PetscScalar *T = new PetscScalar[grid.Mz];
 
   double ocean_rho = config.get("sea_water_density");
   double bed_thermal_k = config.get("bedrock_thermal_conductivity");
@@ -384,12 +384,18 @@ PetscErrorCode IceModel::putTempAtDepth() {
     SETERRQ(1, "PISM ERROR: surface == NULL");
   }
 
+  IceModelVec3 *result;
+  if (doColdIceMethods) 
+    result = &T3;
+  else
+    result = &Enth3;
+
   ierr = artm.begin_access(); CHKERRQ(ierr);
   ierr =   vH.get_array(H);   CHKERRQ(ierr);
   ierr = vbed.get_array(bed);   CHKERRQ(ierr);
   ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
 
-  ierr =  T3.begin_access(); CHKERRQ(ierr);
+  ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -404,31 +410,45 @@ PetscErrorCode IceModel::putTempAtDepth() {
         const PetscScalar depth = HH - grid.zlevels[k];
         const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * depth;
         const PetscScalar d2 = depth * depth;
+
         T[k] = PetscMin(Tpmp,artm(i,j) + alpha * d2 + beta * d2 * d2);
+
       }
       for (PetscInt k = ks; k < grid.Mz; k++) // above ice
         T[k] = artm(i,j);
-      ierr = T3.setInternalColumn(i,j,T); CHKERRQ(ierr);
-      
+
       // set temp within bedrock; if floating then top of bedrock sees ocean,
       //   otherwise it sees the temperature of the base of the ice
       const PetscScalar floating_base = - (ice->rho/ocean_rho) * H[i][j];
       const PetscScalar T_top_bed = (bed[i][j] < floating_base)
                                          ? ice->meltingTemp : T[0];
       ierr = bootstrapSetBedrockColumnTemp(i,j,T_top_bed,Ghf[i][j],bed_thermal_k); CHKERRQ(ierr);
+      
+      if (doColdIceMethods == false) {
+	for (PetscInt k = 0; k < grid.Mz; ++k) {
+	  const PetscScalar depth = HH - grid.zlevels[k];
+	  const PetscScalar pressure = 
+	    EC->getPressureFromDepth(depth);
+	  // reuse T to store enthalpy; assume that the ice is cold
+	  ierr = EC->getEnthPermissive(T[k], 0.0, pressure, T[k]); CHKERRQ(ierr);
+	}
+      }
+
+      ierr = result->setInternalColumn(i,j,T); CHKERRQ(ierr);
+      
     }
   }
-  ierr =   vH.end_access(); CHKERRQ(ierr);
-  ierr = vbed.end_access(); CHKERRQ(ierr);
-  ierr = vGhf.end_access(); CHKERRQ(ierr);
-  ierr =   T3.end_access(); CHKERRQ(ierr);
-  ierr =  Tb3.end_access(); CHKERRQ(ierr);
-  ierr = artm.end_access(); CHKERRQ(ierr);
+  ierr =     vH.end_access(); CHKERRQ(ierr);
+  ierr =   vbed.end_access(); CHKERRQ(ierr);
+  ierr =   vGhf.end_access(); CHKERRQ(ierr);
+  ierr = result->end_access(); CHKERRQ(ierr);
+  ierr =    Tb3.end_access(); CHKERRQ(ierr);
+  ierr =   artm.end_access(); CHKERRQ(ierr);
 
   delete [] T;
-  
-  ierr = T3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = T3.endGhostComm(); CHKERRQ(ierr);
+
+  ierr = result->beginGhostComm(); CHKERRQ(ierr);
+  ierr = result->endGhostComm(); CHKERRQ(ierr);
 
   return 0;
 }

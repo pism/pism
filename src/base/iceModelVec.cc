@@ -37,6 +37,8 @@ IceModelVec::IceModelVec() {
 
   name = "unintialized variable";
 
+  vars.resize(dof);
+
   map_viewers = new map<string,PetscViewer>;
   reset_attrs();
 }
@@ -69,7 +71,7 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
 
   name = other.name;
 
-  var1 = other.var1;
+  vars = other.vars;
 }
 
 
@@ -77,12 +79,6 @@ IceModelVec::~IceModelVec() {
   // Only destroy the IceModelVec if it is not a shallow copy:
   if (!shallow_copy) destroy();
 }
-
-PetscErrorCode  IceModelVec::create(IceGrid &/*mygrid*/, const char /*my_name*/[], 
-                                    bool /*local*/) {
-  SETERRQ(1,"IceModelVec::create(...) is VIRTUAL ONLY: not implemented");
-}
-
 
 //! Returns true if create() was called and false otherwise.
 bool IceModelVec::was_created() {
@@ -271,28 +267,26 @@ PetscErrorCode  IceModelVec::multiply_by(IceModelVec &x) {
 /*! This is potentially dangerous: make sure that \c destination has the same
     dimensions as the current IceModelVec.
  */
-PetscErrorCode  IceModelVec::copy_to_global(Vec destination) {
+PetscErrorCode  IceModelVec::copy_to(Vec destination) {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
-
-  if (!localp)
-    SETERRQ2(1, "Use copy_to_global(...). (Called %s.copy_to_global(...) and %s is global)", 
-    name.c_str(), name.c_str());
-
-  ierr = DALocalToGlobal(da, v, INSERT_VALUES, destination); CHKERRQ(ierr);
+  if (localp) {
+    ierr = DALocalToGlobal(da, v, INSERT_VALUES, destination); CHKERRQ(ierr);
+  } else {
+    ierr = VecCopy(v, destination); CHKERRQ(ierr);
+  }
   return 0;
 }
 
-PetscErrorCode IceModelVec::copy_from_global(Vec source) {
+PetscErrorCode IceModelVec::copy_from(Vec source) {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
-
-  if (!localp)
-    SETERRQ2(1, "Use copy_from_global(...). (Called %s.copy_from_global(...) and %s is global)", 
-    name.c_str(), name.c_str());
-
-  ierr =   DAGlobalToLocalBegin(da, source, INSERT_VALUES, v);  CHKERRQ(ierr);
-  ierr =     DAGlobalToLocalEnd(da, source, INSERT_VALUES, v);  CHKERRQ(ierr);
+  if (localp) {
+    ierr =   DAGlobalToLocalBegin(da, source, INSERT_VALUES, v);  CHKERRQ(ierr);
+    ierr =     DAGlobalToLocalEnd(da, source, INSERT_VALUES, v);  CHKERRQ(ierr);
+  } else {
+    ierr = VecCopy(source, v); CHKERRQ(ierr);
+  }
   return 0;
 }
 
@@ -320,10 +314,14 @@ PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
 }
 
 //! Sets the variable name to \c name.
-PetscErrorCode  IceModelVec::set_name(const char new_name[]) {
+PetscErrorCode  IceModelVec::set_name(const char new_name[], int N) {
   reset_attrs();
-  name = new_name;
-  var1.short_name = new_name;
+  
+  if (N == 0)
+    name = new_name;
+
+  vars[N].short_name = new_name;
+
   return 0;
 }
 
@@ -335,7 +333,11 @@ with a conversion to the glaciological units set here.
  */
 PetscErrorCode  IceModelVec::set_glaciological_units(string my_units) {
 
-  PetscErrorCode ierr = var1.set_glaciological_units(my_units); CHKERRQ(ierr);
+  PetscErrorCode ierr;
+    
+  for (int j = 0; j < dof; ++j) {
+   ierr = vars[j].set_glaciological_units(my_units); CHKERRQ(ierr);
+  }
   
   return 0;
 }
@@ -347,8 +349,10 @@ PetscErrorCode IceModelVec::reset_attrs() {
   write_in_glaciological_units = false;
   output_data_type = NC_DOUBLE;
 
-  var1.reset();
-  var1.set("_FillValue", GSL_NAN);
+  for (int j = 0; j < dof; ++j) {
+    vars[j].reset();
+    vars[j].set("_FillValue", GSL_NAN);
+  }
 
   return 0;
 }
@@ -365,22 +369,23 @@ PetscErrorCode IceModelVec::reset_attrs() {
 PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
 				      string my_long_name,
 				      string my_units,
-				      string my_standard_name) {
+				      string my_standard_name,
+				      int N) {
 
   if (!my_long_name.empty()) {
-    var1.set_string("long_name", my_long_name);
+    vars[N].set_string("long_name", my_long_name);
   }
 
   if (!my_units.empty()) {
-    PetscErrorCode ierr = var1.set_units(my_units); CHKERRQ(ierr);
+    PetscErrorCode ierr = vars[N].set_units(my_units); CHKERRQ(ierr);
   }
 
   if (!my_pism_intent.empty()) {
-    var1.set_string("pism_intent", my_pism_intent);
+    vars[N].set_string("pism_intent", my_pism_intent);
   }
 
   if (!my_standard_name.empty()) {
-    var1.set_string("standard_name", my_standard_name);
+    vars[N].set_string("standard_name", my_standard_name);
   }
 
   return 0;
@@ -395,19 +400,22 @@ PetscErrorCode IceModelVec::regrid(const char filename[], LocalInterpCtx &lic,
   MaskInterp *m = NULL;
   Vec g;
 
+  if (dof != 1)
+    SETERRQ(1, "This method only supports IceModelVecs with dof == 1.");
+
   if (use_interpolation_mask) m = &interpolation_mask;
 
   if (localp) {
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
 
-    ierr = var1.regrid(filename, lic, critical, false, 0.0, m, g); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, lic, critical, false, 0.0, m, g); CHKERRQ(ierr);
 
     ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
     ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
 
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = var1.regrid(filename, lic, critical, false, 0.0, m, v); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, lic, critical, false, 0.0, m, v); CHKERRQ(ierr);
   }
 
   return 0;
@@ -422,19 +430,22 @@ PetscErrorCode IceModelVec::regrid(const char filename[],
   MaskInterp *m = NULL;
   Vec g;
 
+  if (dof != 1)
+    SETERRQ(1, "This method only supports IceModelVecs with dof == 1.");
+
   if (use_interpolation_mask) m = &interpolation_mask;
 
   if (localp) {
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
 
-    ierr = var1.regrid(filename, lic, false, true, default_value, m, g); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, lic, false, true, default_value, m, g); CHKERRQ(ierr);
 
     ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
     ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
 
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = var1.regrid(filename, lic, false, true, default_value, m, v); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, lic, false, true, default_value, m, v); CHKERRQ(ierr);
   }
 
   return 0;
@@ -445,17 +456,20 @@ PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time)
   PetscErrorCode ierr;
   Vec g;
 
+  if (dof != 1)
+    SETERRQ(1, "This method only supports IceModelVecs with dof == 1.");
+
   if (localp) {
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
 
-    ierr = var1.read(filename, time, g); CHKERRQ(ierr);
+    ierr = vars[0].read(filename, time, g); CHKERRQ(ierr);
 
     ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
     ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
 
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = var1.read(filename, time, v); CHKERRQ(ierr);
+    ierr = vars[0].read(filename, time, v); CHKERRQ(ierr);
   }
 
   return 0;
@@ -474,17 +488,21 @@ PetscErrorCode IceModelVec::write(const char filename[]) {
 PetscErrorCode IceModelVec::write(const char filename[], nc_type nctype) {
   PetscErrorCode ierr;
   Vec g;
-  var1.time_independent = time_independent;
+
+  if (dof != 1)
+    SETERRQ(1, "This method only supports IceModelVecs with dof == 1.");
+
+  vars[0].time_independent = time_independent;
 
   if (localp) {
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
     ierr = DALocalToGlobal(da, v, INSERT_VALUES, g); CHKERRQ(ierr);
 
-    ierr = var1.write(filename, nctype, write_in_glaciological_units, g); CHKERRQ(ierr);
+    ierr = vars[0].write(filename, nctype, write_in_glaciological_units, g); CHKERRQ(ierr);
 
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = var1.write(filename, nctype, write_in_glaciological_units, v); CHKERRQ(ierr);
+    ierr = vars[0].write(filename, nctype, write_in_glaciological_units, v); CHKERRQ(ierr);
   }
 
   return 0;
@@ -653,67 +671,64 @@ PetscErrorCode  IceModelVec::set(const PetscScalar c) {
 /*!
   uses valid_min and valid_max attributes, which can be set using the set_attr() method.
  */
-bool IceModelVec::is_valid(PetscScalar a) {
-
-  if (dof != 1)
-    SETERRQ(1, "IceModelVec::is_valid(PetscScalar) only supports dof == 1.");
-
-  return var1.is_valid(a);
+bool IceModelVec::is_valid(PetscScalar a, int N) {
+  return vars[N].is_valid(a);
 }
 
 //! Set a string attribute of an IceModelVec.
 /*! Attributes "units" and "glaciological_units" are also parsed to be used for unit conversion.
  */
-PetscErrorCode IceModelVec::set_attr(string attr, string value) {
+PetscErrorCode IceModelVec::set_attr(string attr, string value, int N) {
   PetscErrorCode ierr;
 
   if (attr == "units") {
-    ierr = var1.set_units(value); CHKERRQ(ierr);
+    ierr = vars[N].set_units(value); CHKERRQ(ierr);
     return 0;
   }
 
   if (attr == "glaciological_units") {
-    ierr = var1.set_glaciological_units(value); CHKERRQ(ierr);
+    ierr = vars[N].set_glaciological_units(value); CHKERRQ(ierr);
     return 0;
   }
 
-  var1.set_string(attr, value);
+  vars[N].set_string(attr, value);
   return 0;
 }
 
 //! Sets a single-valued double attribute.
-PetscErrorCode IceModelVec::set_attr(string name, double value) {
-  var1.set(name, value);
-  
+PetscErrorCode IceModelVec::set_attr(string name, double value, int N) {
+  vars[N].set(name, value);
   return 0;
 }
 
 //! Sets an array attribute.
-PetscErrorCode IceModelVec::set_attr(string name, vector<double> values) {
-  var1.doubles[name] = values;
-
+PetscErrorCode IceModelVec::set_attr(string name, vector<double> values,
+				     int N) {
+  vars[N].doubles[name] = values;
   return 0;
 }
 
-bool IceModelVec::has_attr(string name) {
-  return var1.has(name);
+bool IceModelVec::has_attr(string name, int N) {
+  return vars[N].has(name);
 }
 
 //! Returns a single-valued double attribute.
-double IceModelVec::double_attr(string name) {
-  return var1.get(name);
+double IceModelVec::double_attr(string name, int N) {
+  return vars[N].get(name);
 }
 
 //! Returns a string attribute.
-string IceModelVec::string_attr(string n) {
-  if (n == "short_name")
+string IceModelVec::string_attr(string n, int N) {
+
+  if (n == "name")
     return name;
-  return var1.get_string(n);
+
+  return vars[N].get_string(n);
 }
 
 //! Returns an array attribute.
-vector<double> IceModelVec::array_attr(string name) {
-  return var1.doubles[name];
+vector<double> IceModelVec::array_attr(string name, int N) {
+  return vars[N].doubles[name];
 }
 
 //! Creates a run-time diagnostic viewer.

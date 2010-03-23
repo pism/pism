@@ -21,7 +21,6 @@
 #include "../coupler/iceModelVec2T.hh"
 #include "../base/PISMIO.hh"
 #include <vector>
-#include "../base/bedrockOnlySystem.hh"
 
 //! Set grid defaults for a particular unit test.
 PetscErrorCode IceUnitModel::set_grid_defaults() {
@@ -36,6 +35,42 @@ PetscErrorCode IceUnitModel::set_vars_from_options() {
   return 0;
 }
 
+PetscErrorCode IceUnitModel::model_state_setup() {
+ PetscErrorCode ierr;
+  bool flag1, flag2;
+
+  ierr = PISMOptionsIsSet("-dof1", flag1); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-dof2", flag2); CHKERRQ(ierr);
+  if (flag1 || flag2) {
+    // do nothing
+  } else {
+    ierr = IceModel::model_state_setup(); CHKERRQ(ierr);
+  } 
+
+  return 0;
+}
+
+PetscErrorCode IceUnitModel::createVecs() {
+  PetscErrorCode ierr;
+  bool flag1, flag2;
+
+  ierr = PISMOptionsIsSet("-dof1", flag1); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-dof2", flag2); CHKERRQ(ierr);
+  if (flag1 || flag2) {
+    // create vH because the ocean coupler needs it:
+    ierr = vH.create(grid, "thk", true); CHKERRQ(ierr);
+    ierr = vH.set_attrs("model_state", "land ice thickness",
+			"m", "land_ice_thickness"); CHKERRQ(ierr);
+    ierr = vH.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+    ierr = variables.add(vH); CHKERRQ(ierr);
+  } else {
+    ierr = IceModel::createVecs(); CHKERRQ(ierr);
+  }
+
+
+  return 0;
+}
+
 //! Run an unit test.
 PetscErrorCode IceUnitModel::run() {
   PetscErrorCode ierr;
@@ -43,23 +78,34 @@ PetscErrorCode IceUnitModel::run() {
 
   ierr = PISMOptionsIsSet("-IceModelVec3", flag); CHKERRQ(ierr);
   if (flag) {
-    ierr = testIceModelVec3(); CHKERRQ(ierr);
+    ierr = test_IceModelVec3(); CHKERRQ(ierr);
   }
 
   ierr = PISMOptionsIsSet("-IceModelVec3Bedrock", flag); CHKERRQ(ierr);
   if (flag) {
-    ierr = testIceModelVec3Bedrock(); CHKERRQ(ierr);
+    ierr = test_IceModelVec3Bedrock(); CHKERRQ(ierr);
   }
 
   ierr = PISMOptionsIsSet("-IceModelVec2T", flag); CHKERRQ(ierr);
   if (flag) {
-    ierr = testIceModelVec2T(); CHKERRQ(ierr);
+    ierr = test_IceModelVec2T(); CHKERRQ(ierr);
   }
 
-  ierr = PISMOptionsIsSet("-bedrockOnlySystem", flag); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-IceModelVec2V", flag); CHKERRQ(ierr);
   if (flag) {
-    ierr = test_bedrockOnlySystem(); CHKERRQ(ierr);
+    ierr = test_IceModelVec2V(); CHKERRQ(ierr);
   }
+
+  ierr = PISMOptionsIsSet("-dof1", flag); CHKERRQ(ierr);
+  if (flag) {
+    ierr = test_dof1comm(); CHKERRQ(ierr);
+  }
+
+  ierr = PISMOptionsIsSet("-dof2", flag); CHKERRQ(ierr);
+  if (flag) {
+    ierr = test_dof2comm(); CHKERRQ(ierr);
+  }
+
 
   return 0;
 }
@@ -76,7 +122,7 @@ PetscErrorCode IceUnitModel::writeFiles(const char*) {
 //   pisms -eisII A -y 1 -Mx 5 -My 5 -Mz 501   # no errors
 //   pisms -eisII A -y 1 -Mx 5 -My 5 -Mz 500   # small errors 
 //                                               (appropriate; from linear interpolation)
-PetscErrorCode IceUnitModel::testIceModelVec3()    {
+PetscErrorCode IceUnitModel::test_IceModelVec3()    {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(1,grid.com,"\n\ntesting IceModelVec3; setting to constant %f",
@@ -140,7 +186,7 @@ PetscErrorCode IceUnitModel::testIceModelVec3()    {
 //   pisms -eisII A -y 1 -Mz 11 -Mbz 11
 //   pisms -eisII A -y 1 -Mz 101 -Mbz 101
 //   pisms -eisII A -y 1 -Mz 102 -Mbz 102
-PetscErrorCode IceUnitModel::testIceModelVec3Bedrock()    {
+PetscErrorCode IceUnitModel::test_IceModelVec3Bedrock()    {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(1,grid.com,
@@ -208,7 +254,7 @@ PetscErrorCode IceUnitModel::testIceModelVec3Bedrock()    {
   return 0;
 }
 
-PetscErrorCode IceUnitModel::testIceModelVec2T() {
+PetscErrorCode IceUnitModel::test_IceModelVec2T() {
   PetscErrorCode ierr;
   PISMIO nc(&grid);
   IceModelVec2T v;
@@ -308,93 +354,184 @@ PetscErrorCode IceUnitModel::testIceModelVec2T() {
   return 0;
 }
 
-/*! Tests bedrockOnlySystem, which solves a FD approximation of
-  \f[ \rho_b c_b \frac{\partial T}{\partial t} = k_b \frac{\partial^2 T}{\partial z^2}. \f]
- using a constant \f$\left.T\right|_{z=0}=200\f$ Dirichlet boundary condition at z = 0 and a Neumann boundary condition
-\f[
-\left.\frac{\partial T}{\partial z}\right|_{z = -\text{Lbz}} = -\frac{G}{k_b},
-\f]
-where
-\f[
-G = k_b Me^{-M^2 Kt}
-\f]
-at \f$z = -\text{Lbz}\f$, where
-\f[
-K = \frac{k_b}{\rho_b c_b}
-\f]
-and
-\f[
-M = \frac{2\pi}{\text{Lbz}}.
-\f]
-Then the solution is
-\f[
-T(t,z) = e^{-M^2Kt}\sin(Mz).
-\f]
-
-The refinement path can be controlled using -Mbz, -Lbz and -max_dt command-line options.
-*/
-PetscErrorCode IceUnitModel::test_bedrockOnlySystem() {
+PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   PetscErrorCode ierr;
 
-  PetscInt fMbz = grid.Mbz;	// number of points in the fine vertical grid
+  PISMIO nc(&grid);
+  IceModelVec2V uvbar_ssa;
 
-  ierr = verbPrintf(2, grid.com, "Testing bedrockOnlySystemCtx...\n"); CHKERRQ(ierr);
+  ierr = uvbar_ssa.create(grid, "bar_ssa", true); CHKERRQ(ierr);
 
-  PetscReal
-    bed_rho  = config.get("bedrock_thermal_density"),		     // kg m-3
-    bed_c    = config.get("bedrock_thermal_specific_heat_capacity"), // J kg-1 K-1
-    bed_k    = config.get("bedrock_thermal_conductivity"), // W m-1 K-1
-    K        = bed_k / (bed_rho * bed_c),
-    dz       = grid.Lbz / (fMbz - 1), // vertical grid spacing
-    dt_years = config.get("maximum_time_step_years"),
-    M        = M_PI/grid.Lbz,	// scaling factor
-    T_z0     = 200.0;		// Dirichlet boundary cond. at z = 0.
+  ierr = uvbar_ssa.set_attrs("internal",
+			      "x component of the SSA horizontal ice velocity",
+			     "m s-1", "", 0); CHKERRQ(ierr);
+  ierr = uvbar_ssa.set_attrs("internal",
+			      "y component of the SSA horizontal ice velocity",
+			     "m s-1", "", 1); CHKERRQ(ierr);
+  ierr = uvbar_ssa.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  uvbar_ssa.write_in_glaciological_units = true;
 
-  PetscScalar
-    *x       = new PetscScalar[fMbz],
-    *x_exact = new PetscScalar[fMbz];
+  ierr = uvbar_ssa.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      uvbar_ssa(i,j).u = 3.0/secpera;
+      uvbar_ssa(i,j).v = 4.0/secpera;
+    }
+  }
+  ierr = uvbar_ssa.end_access(); CHKERRQ(ierr);
 
-  bedrockOnlySystemCtx ctx(config, fMbz);
-  ierr = ctx.initAllColumns(dt_years, dz);
+  // get and view components:
+  ierr = uvbar_ssa.get_component(0, vubar); CHKERRQ(ierr);
+  ierr = uvbar_ssa.get_component(1, vvbar); CHKERRQ(ierr);
+  ierr = vubar.view(300); CHKERRQ(ierr);
+  ierr = vvbar.view(300); CHKERRQ(ierr);
+  PetscSleep(5);
 
-  // fill in ctx.Tb with the solution at t = grid.start_year:
-  PetscReal t = grid.start_year;
-  for (int j = 0; j < fMbz; ++j) {
-    PetscReal z = -grid.Lbz + j * dz;
-    ctx.Tb[j] = T_z0 + exp(-(M*M) * K * t) * sin(M * z);
+  // write to a file:
+
+  char filename[] = "test_IceModelVec2V.nc";
+  // create a file to regrid from (that will have grid parameters compatible
+  // with the current grid):
+  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
+  // append == false, check_dims == true
+  ierr = mapping.write(filename); CHKERRQ(ierr);
+  ierr = global_attributes.write(filename); CHKERRQ(ierr);
+  ierr = nc.append_time(0.0); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  ierr = uvbar_ssa.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+
+  // reset:
+  ierr = uvbar_ssa.set(0.0); CHKERRQ(ierr);
+
+  // read in:
+  ierr = uvbar_ssa.read(filename, 0); CHKERRQ(ierr);
+  // write out:
+  ierr = uvbar_ssa.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+
+  ierr = uvbar_ssa.magnitude(vWork2d[0]); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_name("cbar"); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_attrs("diagnostic", 
+			  "magnitude of vertically-integrated horizontal velocity of ice",
+			  "m s-1", ""); CHKERRQ(ierr);
+  ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  vWork2d[0].write_in_glaciological_units = true;
+
+  ierr = vWork2d[0].write(filename, NC_DOUBLE); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! Copyright (C) PETSc authors.
+//! copied from PETSc src/benchmarks/Index.c
+static int BlastCache(void)
+{
+  int    i,ierr,n = 100000;
+  PetscScalar *x,*y,*z,*a,*b;
+
+  ierr = PetscMalloc(5*n*sizeof(PetscScalar),&x);CHKERRQ(ierr); // this will be ~4Mb...
+  y = x + n;
+  z = y + n;
+  a = z + n;
+  b = a + n;
+
+  for (i=0; i<n; i++) {
+    a[i] = (PetscScalar) i;
+    y[i] = (PetscScalar) i;
+    z[i] = (PetscScalar) i;
+    b[i] = (PetscScalar) i;
+    x[i] = (PetscScalar) i;
   }
 
-  // fill the exact solution:
-  t = grid.end_year;
-  for (int j = 0; j < fMbz; ++j) {
-    PetscReal z = -grid.Lbz + j * dz;
-    x_exact[j] = T_z0 + exp(-(M*M) * K * t) * sin(M * z);
+  for (i=0; i<n; i++) {
+    a[i] = 3.0*x[i] + 2.0*y[i] + 3.3*z[i] - 25.*b[i];
+  }
+  for (i=0; i<n; i++) {
+    b[i] = 3.0*x[i] + 2.0*y[i] + 3.3*a[i] - 25.*b[i];
+  }
+  for (i=0; i<n; i++) {
+    z[i] = 3.0*x[i] + 2.0*y[i] + 3.3*a[i] - 25.*b[i];
+  }
+  ierr = PetscFree(x);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode IceUnitModel::test_dof1comm() {
+  PetscErrorCode ierr;
+
+  IceModelVec2S ubar, vbar;
+  PetscScalar **u, **v;
+
+  ierr = ubar.create(grid, "ubar", true); CHKERRQ(ierr);
+  ierr = vbar.create(grid, "vbar", true); CHKERRQ(ierr);
+
+  ierr = ubar.set(0.0); CHKERRQ(ierr);
+  ierr = ubar.set(100.0); CHKERRQ(ierr);
+
+  for (int k = 0; k < 100; ++k) {
+
+    BlastCache();
+    
+    // set:
+    ierr = ubar.get_array(u); CHKERRQ(ierr);
+    ierr = vbar.get_array(v); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	u[i][j] = 0.25 * (v[i-1][j] + v[i+1][j] + v[i][j-1] + v[i][j+1]);
+	v[i][j] = 0.25 * (u[i-1][j] + u[i+1][j] + u[i][j-1] + u[i][j+1]);
+      }
+    }
+    ierr = ubar.end_access(); CHKERRQ(ierr);
+    ierr = vbar.end_access(); CHKERRQ(ierr);
+
+    BlastCache();
+
+    // communicate:
+    ierr = ubar.beginGhostComm(); CHKERRQ(ierr);
+    ierr = ubar.endGhostComm(); CHKERRQ(ierr);
+
+    ierr = vbar.beginGhostComm(); CHKERRQ(ierr);
+    ierr = vbar.endGhostComm(); CHKERRQ(ierr);
   }
 
-  // time-stepping loop:
-  for (PetscScalar year = grid.start_year; year < grid.end_year; year += dt_years) {
-    PetscReal G = bed_k * M * exp(-(M*M) * K * year);
-    ierr = ctx.setIndicesAndClearThisColumn(0, 0, 0); CHKERRQ(ierr); // argument values don't matter
-    ierr = ctx.setBoundaryValuesThisColumn(T_z0, G); CHKERRQ(ierr);
-    ierr = ctx.solveThisColumn(&x); CHKERRQ(ierr);
+  return 0;
+}
 
-    // copy the solution to be used during the next time-step:
-    for (int j = 0; j < fMbz; ++j)
-      ctx.Tb[j] = x[j];
+PetscErrorCode IceUnitModel::test_dof2comm() {
+  PetscErrorCode ierr;
 
-    dt_years = PetscMin(dt_years, grid.end_year - year);
+  IceModelVec2V uvbar_ssa;
+
+  ierr = uvbar_ssa.create(grid, "bar_ssa", true); CHKERRQ(ierr);
+
+  ierr = uvbar_ssa.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      uvbar_ssa(i,j).u = 0.0;
+      uvbar_ssa(i,j).v = 100.0;
+    }
   }
+  ierr = uvbar_ssa.end_access(); CHKERRQ(ierr);
 
-  // compare numberical and exact solutions:
-  PetscReal delta = 0.0;
-  for (int j = 0; j < fMbz; ++j) {
-    delta = PetscMax(delta, fabs(x[j] - x_exact[j]));
-  }  
+  for (int k = 0; k < 100; ++k) {
 
-  ierr = verbPrintf(1, grid.com, "Maximum temperature error: %1.12e\n", delta); CHKERRQ(ierr);
+    BlastCache();
 
-  delete[] x;
-  delete[] x_exact;
+    // set:
+    ierr = uvbar_ssa.begin_access(); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	uvbar_ssa(i,j).u = 0.25 * (uvbar_ssa(i-1,j).v + uvbar_ssa(i+1,j).v + uvbar_ssa(i,j-1).v + uvbar_ssa(i,j+1).v);
+	uvbar_ssa(i,j).v = 0.25 * (uvbar_ssa(i-1,j).u + uvbar_ssa(i+1,j).u + uvbar_ssa(i,j-1).u + uvbar_ssa(i,j+1).u);
+      }
+    }
+    ierr = uvbar_ssa.end_access(); CHKERRQ(ierr);
 
+    BlastCache();
+
+    // communicate:
+    ierr = uvbar_ssa.beginGhostComm(); CHKERRQ(ierr);
+    ierr = uvbar_ssa.endGhostComm(); CHKERRQ(ierr);
+  }
   return 0;
 }

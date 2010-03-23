@@ -145,7 +145,7 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
   // check if we have any variables we didn't write
   if (!vars.empty()) {
     ierr = verbPrintf(2, grid.com,
-		      "PISM WARNING: skipping the following variables: "); CHKERRQ(ierr);
+		      "PISM WARNING: the following variables were *not* written: "); CHKERRQ(ierr);
     for (i = vars.begin(); i != vars.end(); ++i) {
       ierr = verbPrintf(2, grid.com, "%s, ", (*i).c_str()); CHKERRQ(ierr);
     }
@@ -232,7 +232,7 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     ++i;
   }
  
-  // Read vubarSSA and vvbarSSA if SSA is on, if not asked to ignore them and
+  // Read ssavel if SSA is on, if not asked to ignore them and
   // if they are present in the input file.
   bool have_ssa_velocities = false;
   if (config.get_flag("use_ssa_velocity")) {
@@ -246,10 +246,9 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
   ierr = PISMOptionsIsSet("-dontreadSSAvels", dontreadSSAvels); CHKERRQ(ierr);
   
   if (have_ssa_velocities && (!dontreadSSAvels)) {
-    ierr = verbPrintf(3,grid.com,"Reading vubarSSA and vvbarSSA...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(3,grid.com,"Reading ssavel...\n"); CHKERRQ(ierr);
 
-    ierr = vubarSSA.read(filename, last_record); CHKERRQ(ierr);
-    ierr = vvbarSSA.read(filename, last_record); CHKERRQ(ierr);
+    ierr = ssavel.read(filename, last_record); CHKERRQ(ierr);
   }
 
   if (config.get_flag("do_age")) {
@@ -312,18 +311,17 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
 For each variable selected by option <tt>-regrid_vars</tt>, we regrid it onto the current grid from 
 the NetCDF file specified by <tt>-regrid_from</tt>.
 
-The default, if <tt>-regrid_vars</tt> is not given, is to regrid the 3 dimensional 
-quantities \c tau3, \c T3, \c Tb3.  This is consistent with one standard purpose of 
-regridding, which is to stick with current geometry through the downscaling procedure.  
-Most of the time the user should carefully specify which variables to regrid.
+The default, if <tt>-regrid_vars</tt> is not given, is to regrid the 3
+dimensional quantities \c tau3, \c Tb3 and either \c T3 or \c Enth3. This is
+consistent with one standard purpose of regridding, which is to stick with
+current geometry through the downscaling procedure. Most of the time the user
+should carefully specify which variables to regrid.
  */
 PetscErrorCode IceModel::regrid() {
   PetscErrorCode ierr;
   string filename, tmp;
   bool regridVarsSet, regrid_from_set;
   PISMIO nc(&grid);
-
-  ierr = check_old_option_and_stop(grid.com, "-regrid", "-regrid_from"); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, PETSC_NULL,
 			   "Options controlling regridding",
@@ -352,9 +350,15 @@ PetscErrorCode IceModel::regrid() {
     while (getline(list, var_name, ','))
       vars.insert(var_name);
   } else {
-    vars.insert("age");
-    vars.insert("temp");
     vars.insert("litho_temp");
+
+    if (config.get("do_age"))
+	vars.insert("age");
+
+    if (doColdIceMethods)
+      vars.insert("temp");
+    else
+      vars.insert("enthalpy");
   }
 
   // create "local interpolation context" from dimensions, limits, and lengths

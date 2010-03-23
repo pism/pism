@@ -55,18 +55,18 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
 static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
   
   PetscErrorCode ierr;
-  IceModelVec2 *lat, *lon, *mask, *thk, *surfelev, *topg, *acab, *artm, *shelfbasetemp, *shelfbasemassflux;
+  IceModelVec2S *lat, *lon, *mask, *thk, *surfelev, *topg, *acab, *artm, *shelfbasetemp, *shelfbasemassflux;
 
-  lat      = new IceModelVec2;
-  lon      = new IceModelVec2;
-  mask     = new IceModelVec2;
-  thk      = new IceModelVec2;
-  surfelev = new IceModelVec2;
-  topg     = new IceModelVec2;
-  acab     = new IceModelVec2;
-  artm     = new IceModelVec2;
-  shelfbasetemp     = new IceModelVec2;
-  shelfbasemassflux = new IceModelVec2;
+  lat      = new IceModelVec2S;
+  lon      = new IceModelVec2S;
+  mask     = new IceModelVec2S;
+  thk      = new IceModelVec2S;
+  surfelev = new IceModelVec2S;
+  topg     = new IceModelVec2S;
+  acab     = new IceModelVec2S;
+  artm     = new IceModelVec2S;
+  shelfbasetemp     = new IceModelVec2S;
+  shelfbasemassflux = new IceModelVec2S;
 
   ierr = lat->create(grid, "lat", true); CHKERRQ(ierr);
   ierr = lat->set_attrs("mapping", "latitude", "degrees_north", "latitude"); CHKERRQ(ierr);
@@ -180,18 +180,18 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   PetscErrorCode ierr;
   PISMIO nc(grid);
   NCGlobalAttributes global_attrs;
-  IceModelVec2 *artm, *acab, *shelfbasetemp, *shelfbasemassflux;
+  IceModelVec2S *artm, *acab, *shelfbasetemp, *shelfbasemassflux;
 
-  artm = dynamic_cast<IceModelVec2*>(variables.get("artm"));
+  artm = dynamic_cast<IceModelVec2S*>(variables.get("artm"));
   if (artm == NULL) { SETERRQ(1, "artm is not available"); }
 
-  acab = dynamic_cast<IceModelVec2*>(variables.get("acab"));
+  acab = dynamic_cast<IceModelVec2S*>(variables.get("acab"));
   if (acab == NULL) { SETERRQ(1, "acab is not available"); }
 
-  shelfbasetemp = dynamic_cast<IceModelVec2*>(variables.get("shelfbasetemp"));
+  shelfbasetemp = dynamic_cast<IceModelVec2S*>(variables.get("shelfbasetemp"));
   if (shelfbasetemp == NULL) { SETERRQ(1, "shelfbasetemp is not available"); }
 
-  shelfbasemassflux = dynamic_cast<IceModelVec2*>(variables.get("shelfbasemassflux"));
+  shelfbasemassflux = dynamic_cast<IceModelVec2S*>(variables.get("shelfbasemassflux"));
   if (shelfbasemassflux == NULL) { SETERRQ(1, "shelfbasemassflux is not available"); }
 
   global_attrs.init("global_attributes", com, grid->rank);

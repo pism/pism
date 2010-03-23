@@ -34,12 +34,12 @@ public:
   //! \brief Sets result to the mean precipitation over the time interval
   //! (t_years, t_years + dt_years), in m/s ice equivalent.
   virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
-				     IceModelVec2 &result) = 0;
+				     IceModelVec2S &result) = 0;
 
   //! \brief Sets result to the mean annual near-surface air temperature corresponding
   //! to the time interval (t_years, t_years + dt_years), in degrees Kelvin.
   virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-					  IceModelVec2 &result) = 0;
+					  IceModelVec2S &result) = 0;
 
   virtual PetscErrorCode begin_pointwise_access() = 0;
   virtual PetscErrorCode end_pointwise_access() = 0;
@@ -53,7 +53,7 @@ public:
   //! \brief Sets result to a snapshot of temperature for the interval
   //! (t_years, dt_years).
   virtual PetscErrorCode temp_snapshot(PetscReal t_years, PetscReal dt_years,
-				       IceModelVec2 &result) = 0;
+				       IceModelVec2S &result) = 0;
 };
 
 //! \brief A class implementing a constant-in-time atmosphere model. Reads data
@@ -64,9 +64,9 @@ public:
     : PISMAtmosphereModel(g, conf) {};
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
-				     IceModelVec2 &result);
+				     IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-					  IceModelVec2 &result);
+					  IceModelVec2S &result);
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
@@ -78,10 +78,10 @@ public:
   virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
 				      PetscReal dt_years, string filename);
   virtual PetscErrorCode temp_snapshot(PetscReal t_years, PetscReal dt_years,
-				       IceModelVec2 &result);
+				       IceModelVec2S &result);
 protected:
   string input_file;
-  IceModelVec2 snowprecip, temperature;
+  IceModelVec2S snowprecip, temperature;
 };
 
 //! A class containing an incomplete implementation of an atmosphere model
@@ -103,18 +103,18 @@ public:
   //! This method implements the parameterization.
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years) = 0;
   virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
-				     IceModelVec2 &result);
+				     IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-					  IceModelVec2 &result);
+					  IceModelVec2S &result);
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values);
   virtual PetscErrorCode temp_snapshot(PetscReal t_years, PetscReal dt_years,
-				       IceModelVec2 &result);
+				       IceModelVec2S &result);
 protected:
   string reference, snowprecip_filename;
-  IceModelVec2 temp_ma, temp_mj, snowprecip;
+  IceModelVec2S temp_ma, temp_mj, snowprecip;
 };
 
 //! \brief A modification of PAYearlyCycle tailored for the
@@ -137,11 +137,11 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
   virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
-				     IceModelVec2 &result);
+				     IceModelVec2S &result);
 protected:
   bool paleo_precipitation_correction;
   Timeseries *dTforcing;
-  IceModelVec2 *lat, *lon, *surfelev;
+  IceModelVec2S *lat, *lon, *surfelev;
 };
 
 class PAModifier : public PISMAtmosphereModel {
@@ -178,15 +178,15 @@ public:
 				      PetscReal dt_years, string filename);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
   virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
-				     IceModelVec2 &result);
+				     IceModelVec2S &result);
   virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-					  IceModelVec2 &result); 
+					  IceModelVec2S &result); 
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();  
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values);
   virtual PetscErrorCode temp_snapshot(PetscReal t_years, PetscReal dt_years,
-				       IceModelVec2 &result);
+				       IceModelVec2S &result);
 protected:
   Timeseries *dTforcing;
   DiagnosticTimeseries *delta_T; //!< for debugging
@@ -226,7 +226,7 @@ public:
   virtual ~PALapseRates() {}
   virtual PetscErrorCode init(PISMVars &vars); 
   virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-					  IceModelVec2 &result); 
+					  IceModelVec2S &result); 
   virtual PetscErrorCode begin_pointwise_access(); 
   virtual PetscErrorCode end_pointwise_access();   
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
@@ -235,7 +235,7 @@ public:
 					    string filename);
 protected:
   PetscReal gamma;
-  IceModelVec2 f, *usurf;
+  IceModelVec2S f, *usurf;
 };
 
 #endif	// __PISMAtmosphere_hh

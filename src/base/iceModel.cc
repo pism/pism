@@ -154,13 +154,14 @@ PetscErrorCode IceModel::createVecs() {
   ierr = Sigma3.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
   ierr = variables.add(Sigma3); CHKERRQ(ierr);
 
-  // FIXME T3 should only be allocated when doColdIceMethods==true
-  // ice temperature
-  ierr = T3.create(grid, "temp", true); CHKERRQ(ierr);
-  ierr = T3.set_attrs("model_state","ice temperature",
-		      "K", "land_ice_temperature"); CHKERRQ(ierr);
-  ierr = T3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = variables.add(T3); CHKERRQ(ierr);
+  if (doColdIceMethods) {
+    // ice temperature
+    ierr = T3.create(grid, "temp", true); CHKERRQ(ierr);
+    ierr = T3.set_attrs("model_state","ice temperature",
+			"K", "land_ice_temperature"); CHKERRQ(ierr);
+    ierr = T3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+    ierr = variables.add(T3); CHKERRQ(ierr);
+  }
 
   ierr = Enth3.create(grid, "enthalpy", true); CHKERRQ(ierr);
   // POSSIBLE standard name = land_ice_enthalpy
@@ -253,22 +254,17 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vvbar); CHKERRQ(ierr);
 
   // basal velocities on standard grid
-  ierr = vub.create(grid, "ub", true); CHKERRQ(ierr);
-  ierr = vub.set_attrs("diagnostic", "basal ice velocity in the X direction",
-		       "m s-1", "land_ice_basal_x_velocity"); CHKERRQ(ierr);
-  ierr = vub.set_glaciological_units("m year-1");
-  vub.write_in_glaciological_units = true;
-  ierr = variables.add(vub); CHKERRQ(ierr);
-  
-  ierr = vvb.create(grid, "vb", true); CHKERRQ(ierr);
-  ierr = vvb.set_attrs("diagnostic", "basal ice velocity in the Y direction",
-		       "m s-1", "land_ice_basal_y_velocity"); CHKERRQ(ierr);
-  ierr = vvb.set_glaciological_units("m year-1");
-  vvb.write_in_glaciological_units = true;
-  ierr = variables.add(vvb); CHKERRQ(ierr);
+  ierr = basal_vel.create(grid, "basal", true); CHKERRQ(ierr); // components are ubasal and vbasal
+  ierr = basal_vel.set_attrs("diagnostic", "basal ice velocity in the X direction",
+		       "m s-1", "land_ice_basal_x_velocity", 0); CHKERRQ(ierr);
+  ierr = basal_vel.set_attrs("diagnostic", "basal ice velocity in the Y direction",
+		       "m s-1", "land_ice_basal_y_velocity", 1); CHKERRQ(ierr);
+  ierr = basal_vel.set_glaciological_units("m year-1");
+  basal_vel.write_in_glaciological_units = true;
+  ierr = variables.add(basal_vel, "uvbasal"); CHKERRQ(ierr);
 
   // basal frictional heating on regular grid
-  ierr = vRb.create(grid, "bfrict", true); CHKERRQ(ierr);
+  ierr = vRb.create(grid, "bfrict", false); CHKERRQ(ierr);
   // PROPOSED standard_name = land_ice_basal_frictional_heating
   ierr = vRb.set_attrs("diagnostic",
                        "basal frictional heating from ice sliding (= till dissipation)",
@@ -299,7 +295,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vdHdt); CHKERRQ(ierr);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
-  ierr = vtauc.create(grid, "tauc", true); CHKERRQ(ierr);
+  ierr = vtauc.create(grid, "tauc", false); CHKERRQ(ierr);
   // PROPOSED standard_name = land_ice_basal_material_yield_stress
   ierr = vtauc.set_attrs("diagnostic", 
              "yield stress for basal till (plastic or pseudo-plastic model)",
@@ -315,14 +311,14 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vuplift); CHKERRQ(ierr);
 
   // basal melt rate
-  ierr = vbasalMeltRate.create(grid, "bmelt", true); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.set_attrs("model_state",
+  ierr = vbmr.create(grid, "bmelt", false); CHKERRQ(ierr);
+  ierr = vbmr.set_attrs("model_state",
                                   "ice basal melt rate in ice thickness per time",
 				  "m s-1", "land_ice_basal_melt_rate"); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  vbasalMeltRate.write_in_glaciological_units = true;
-  vbasalMeltRate.set_attr("comment", "positive basal melt rate corresponds to ice loss");
-  ierr = variables.add(vbasalMeltRate); CHKERRQ(ierr);
+  ierr = vbmr.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  vbmr.write_in_glaciological_units = true;
+  vbmr.set_attr("comment", "positive basal melt rate corresponds to ice loss");
+  ierr = variables.add(vbmr); CHKERRQ(ierr);
 
   // friction angle for till under grounded ice sheet
   ierr = vtillphi.create(grid, "tillphi", false); // never differentiated
@@ -355,17 +351,13 @@ PetscErrorCode IceModel::createVecs() {
 	    "m s-1", ""); CHKERRQ(ierr);
 
   // initial guesses of SSA velocities
-  ierr = vubarSSA.create(grid, "vubarSSA", true);
-  ierr = vubarSSA.set_attrs("internal_restart", "SSA model ice velocity in the X direction",
-                            "m s-1", ""); CHKERRQ(ierr);
-  ierr = vubarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  ierr = variables.add(vubarSSA); CHKERRQ(ierr);
-
-  ierr = vvbarSSA.create(grid, "vvbarSSA", true);
-  ierr = vvbarSSA.set_attrs("internal_restart", "SSA model ice velocity in the Y direction",
-                            "m s-1", ""); CHKERRQ(ierr);
-  ierr = vvbarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  ierr = variables.add(vvbarSSA); CHKERRQ(ierr);
+  ierr = ssavel.create(grid, "bar_ssa", true); // components are ubar_ssa and vbar_ssa
+  ierr = ssavel.set_attrs("internal_restart", "SSA model ice velocity in the X direction",
+                            "m s-1", "", 0); CHKERRQ(ierr);
+  ierr = ssavel.set_attrs("internal_restart", "SSA model ice velocity in the Y direction",
+                            "m s-1", "", 1); CHKERRQ(ierr);
+  ierr = ssavel.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = variables.add(ssavel, "uvbar_ssa"); CHKERRQ(ierr);
 
   // input fields:
   // mean annual net ice equivalent surface mass balance rate

@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
     PISMOceanModel *ocean = new POConstant(g, config);
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
-    ierr = verbPrintf(1,com, "PISMTESTS %s (unit tests mode)\n",
+    ierr = verbPrintf(1,com, "PISMTESTS %s (unit tests and new-code-playground mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
 
     IceUnitModel m(g, config, overrides);

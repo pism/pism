@@ -164,54 +164,25 @@ PetscErrorCode IceModel::energyStats(PetscScalar iarea, bool useHomoTemp,
   
   ierr = vH.begin_access(); CHKERRQ(ierr);
 
-  if (doColdIceMethods) {
-    // use T3 to get stats
-    ierr = T3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
-    PetscScalar **Tbase;
-    ierr = vWork2d[0].get_array(Tbase); CHKERRQ(ierr);
-    double min_temperature_for_SIA_sliding
-                 = config.get("minimum_temperature_for_sliding");
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (vH(i,j) > 0) {
-          // accumulate area of base which is at melt point
-          if (useHomoTemp) {
-            if ( Tbase[i][j] + ice->beta_CC_grad * vH(i,j)
-                           >= min_temperature_for_SIA_sliding )
-              meltarea += a;
-          } else {
-            if (Tbase[i][j] >= ice->meltingTemp)
-              meltarea += a;
-          }
-        }
-        // if you happen to be at center, record basal temp
-        if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-          temp0 = Tbase[i][j];
-        }
+  // use Enth3 to get stats
+  ierr = Enth3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
+  PetscScalar **Enthbase;
+  ierr = vWork2d[0].get_array(Enthbase); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (vH(i,j) > 0) {
+	// accumulate area of base which is at melt point
+	if (EC->isTemperate(Enthbase[i][j], EC->getPressureFromDepth(vH(i,j)) ))  
+	  meltarea += a;
+      }
+      // if you happen to be at center, record absolute basal temp there
+      if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
+	ierr = EC->getAbsTemp(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)), temp0);
+	CHKERRQ(ierr);
       }
     }
-    ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-  } else {
-    // use Enth3 to get stats
-    ierr = Enth3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
-    PetscScalar **Enthbase;
-    ierr = vWork2d[0].get_array(Enthbase); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (vH(i,j) > 0) {
-          // accumulate area of base which is at melt point
-          if (EC->isTemperate(Enthbase[i][j], EC->getPressureFromDepth(vH(i,j)) ))  
-            meltarea += a;
-        }
-        // if you happen to be at center, record absolute basal temp there
-        if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-          ierr = EC->getAbsTemp(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)), temp0);
-            CHKERRQ(ierr);
-        }
-      }
-    }
-    ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   }
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
 
   ierr = vH.end_access(); CHKERRQ(ierr);
 
@@ -489,7 +460,7 @@ PetscErrorCode IceModel::summaryPrintLine(
 
 //! \brief Computes cbar, the magnitude of vertically-integrated horizontal
 //! velocity of ice and masks out ice-free areas.
-PetscErrorCode IceModel::compute_cbar(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_cbar(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = result.set_to_magnitude(vubar, vvbar); CHKERRQ(ierr);
@@ -512,7 +483,7 @@ PetscErrorCode IceModel::compute_cbar(IceModelVec2 &result) {
 
 //! \brief Computes cflx, the magnitude of vertically-integrated horizontal
 //! flux of ice.
-PetscErrorCode IceModel::compute_cflx(IceModelVec2 &result, IceModelVec2 &cbar) {
+PetscErrorCode IceModel::compute_cflx(IceModelVec2S &result, IceModelVec2S &cbar) {
   PetscErrorCode ierr;
 
   ierr = cbar.multiply_by(vH, result); CHKERRQ(ierr);
@@ -535,7 +506,7 @@ PetscErrorCode IceModel::compute_cflx(IceModelVec2 &result, IceModelVec2 &cbar) 
 //! \brief Computes cbase, the magnitude of horizontal velocity of ice at base
 //! of ice and masks out ice-free areas.
 //! Uses \c tmp as a preallocated temporary storage.
-PetscErrorCode IceModel::compute_cbase(IceModelVec2 &result, IceModelVec2 &tmp) {
+PetscErrorCode IceModel::compute_cbase(IceModelVec2S &result, IceModelVec2S &tmp) {
   PetscErrorCode ierr;
 
   ierr = u3.getHorSlice(result, 0.0); CHKERRQ(ierr); // result = u_{z=0}
@@ -561,7 +532,7 @@ PetscErrorCode IceModel::compute_cbase(IceModelVec2 &result, IceModelVec2 &tmp) 
 //! \brief Computes csurf, the magnitude of horizontal velocity of ice at ice
 //! surface and masks out ice-free areas. Uses \c tmp as a preallocated
 //! temporary storage.
-PetscErrorCode IceModel::compute_csurf(IceModelVec2 &result, IceModelVec2 &tmp) {
+PetscErrorCode IceModel::compute_csurf(IceModelVec2S &result, IceModelVec2S &tmp) {
   PetscErrorCode ierr;
 
   ierr = u3.begin_access(); CHKERRQ(ierr);
@@ -589,7 +560,7 @@ PetscErrorCode IceModel::compute_csurf(IceModelVec2 &result, IceModelVec2 &tmp) 
 }
 
 //! Computes uvelsurf, the x component of velocity of ice at ice surface.
-PetscErrorCode IceModel::compute_uvelsurf(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_uvelsurf(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = u3.begin_access(); CHKERRQ(ierr);
@@ -612,7 +583,7 @@ PetscErrorCode IceModel::compute_uvelsurf(IceModelVec2 &result) {
 }
 
 //! Computes vvelsurf, the y component of velocity of ice at ice surface.
-PetscErrorCode IceModel::compute_vvelsurf(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_vvelsurf(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = v3.begin_access(); CHKERRQ(ierr);
@@ -638,7 +609,7 @@ PetscErrorCode IceModel::compute_vvelsurf(IceModelVec2 &result) {
 /*! Note that there is no need to mask out ice-free areas here, because
   wvelsurf is zero at those locations.
  */
-PetscErrorCode IceModel::compute_wvelsurf(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_wvelsurf(IceModelVec2S &result) {
   PetscErrorCode ierr;
   ierr = w3.begin_access(); CHKERRQ(ierr);
   ierr = w3.getSurfaceValues(result, vH); CHKERRQ(ierr);
@@ -661,7 +632,7 @@ PetscErrorCode IceModel::compute_wvelsurf(IceModelVec2 &result) {
 
 //! \brief Computes taud, the magnitude of driving shear stress at base of ice.
 //! Uses tmp as a preallocated temporary storage.
-PetscErrorCode IceModel::compute_taud(IceModelVec2 &result, IceModelVec2 &tmp) {
+PetscErrorCode IceModel::compute_taud(IceModelVec2S &result, IceModelVec2S &tmp) {
   PetscErrorCode ierr;
 
   ierr = computeDrivingStress(result, tmp); CHKERRQ(ierr);
@@ -681,7 +652,7 @@ PetscErrorCode IceModel::compute_taud(IceModelVec2 &result, IceModelVec2 &tmp) {
 }
 
 //! \brief Sets entrues of result to corresponding processor ranks.
-PetscErrorCode IceModel::compute_rank(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_rank(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = result.begin_access(); CHKERRQ(ierr);
@@ -732,61 +703,59 @@ PetscErrorCode IceModel::compute_liqfrac(IceModelVec3 &useForLiqfrac) {
 }
 
 
-//! Compute the pressure-adjusted temperature in degrees C corresponding to Enth3 (or T3 if -cold), and put in a global IceModelVec3 provided by user.
-PetscErrorCode IceModel::compute_temp_pa(IceModelVec3 &useForPATemp) {
+//! \brief Compute the pressure-adjusted temperature in degrees C corresponding
+//! to ice temperature, and put in a global IceModelVec3 provided by user.
+PetscErrorCode IceModel::compute_temp_pa(IceModelVec3 &result) {
   PetscErrorCode ierr;
 
-  // first compute pressure-adjusted in K
-  if (doColdIceMethods) {
-    PetscScalar *Tpaij, *Tij; // columns of these values
-    ierr = useForPATemp.begin_access(); CHKERRQ(ierr);
-    ierr = T3.begin_access(); CHKERRQ(ierr);
-    ierr = vH.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        ierr = useForPATemp.getInternalColumn(i,j,&Tpaij); CHKERRQ(ierr);
-        ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
-        for (PetscInt k=0; k<grid.Mz; ++k) {
-          const PetscScalar depth = vH(i,j) - grid.zlevels[k];
-          if (depth > 0.0) {
-            Tpaij[k] = Tij[k] + ice->beta_CC_grad * depth;
-          } else {
-            Tpaij[k] = Tij[k];
-          }
-        }
+  ierr = result.set_name("temp_pa"); CHKERRQ(ierr);
+  ierr = result.set_attrs(
+     "diagnostic",
+     "pressure-adjusted ice temperature (degrees above pressure-melting point)",
+     "deg_C", ""); CHKERRQ(ierr);
+
+  PetscScalar *Tpaij, *Enthij; // columns of these values
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = result.getInternalColumn(i,j,&Tpaij); CHKERRQ(ierr);
+      ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+      for (PetscInt k=0; k<grid.Mz; ++k) {
+        const PetscScalar depth = vH(i,j) - grid.zlevels[k];
+        ierr = EC->getPATemp(Enthij[k],EC->getPressureFromDepth(depth), Tpaij[k]);
+          CHKERRQ(ierr);
       }
     }
-    ierr = T3.end_access(); CHKERRQ(ierr);
-    ierr = useForPATemp.end_access(); CHKERRQ(ierr);
-    ierr = vH.end_access(); CHKERRQ(ierr);
-  } else {
-    ierr = setPATempFromEnthalpy(useForPATemp); CHKERRQ(ierr);
   }
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
 
-  // make deg C and set other metadata
-  ierr = useForPATemp.shift(-config.get("water_melting_temperature")); CHKERRQ(ierr);
-  ierr = useForPATemp.set_name("temp_pa"); CHKERRQ(ierr);
-  ierr = useForPATemp.set_attrs("diagnostic",
-       "pressure-adjusted ice temperature (degrees C)", "", ""); CHKERRQ(ierr);
+  // make deg C:
+  ierr = result.shift(-config.get("water_melting_temperature")); CHKERRQ(ierr);
 
-  // communication not done; we allow global IceModelVec3s as useForPATemp
+  // communication not done; we allow global IceModelVec3s as result
   return 0;
 }
 
 
 //! Computes the vertically-averaged ice hardness.
-PetscErrorCode IceModel::compute_hardav(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_hardav(IceModelVec2S &result) {
   PetscErrorCode ierr;
   
   const PetscScalar fillval = -1.0;
+
+  ierr = compute_temp(Enthnew3); CHKERRQ(ierr);
   
   PetscScalar *Tij; // columns of temperature values
-  ierr = T3.begin_access(); CHKERRQ(ierr);
+  ierr = Enthnew3.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+      ierr = Enthnew3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
       const PetscScalar H = vH(i,j);
       if (H > 0.0) {
         result(i,j) = ice->averagedHarness(H, grid.kBelowHeight(H), grid.zlevels, Tij);
@@ -795,7 +764,7 @@ PetscErrorCode IceModel::compute_hardav(IceModelVec2 &result) {
       }
     }
   }
-  ierr = T3.end_access(); CHKERRQ(ierr);
+  ierr = Enthnew3.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
 
@@ -825,7 +794,7 @@ PetscErrorCode IceModel::compute_hardav(IceModelVec2 &result) {
 Result is set to invalid (_FillValue) where the ice is floating, there being
 no meaning to the above calculation.
  */
-PetscErrorCode IceModel::compute_bwp(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_bwp(IceModelVec2S &result) {
   PetscErrorCode ierr;
   const PetscScalar
     alpha     = config.get("till_pw_fraction"),
@@ -834,13 +803,13 @@ PetscErrorCode IceModel::compute_bwp(IceModelVec2 &result) {
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vHmelt.begin_access(); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.begin_access(); CHKERRQ(ierr);
+  ierr = vbmr.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (vH(i,j) > 0.0) {
         result(i,j) = getBasalWaterPressure(
-                        vH(i,j), vHmelt(i,j), vbasalMeltRate(i,j), alpha, wmax);
+                        vH(i,j), vHmelt(i,j), vbmr(i,j), alpha, wmax);
       } else { // put negative value below valid range
         result(i,j) = fillval;
       }
@@ -848,7 +817,7 @@ PetscErrorCode IceModel::compute_bwp(IceModelVec2 &result) {
   }
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHmelt.end_access(); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
+  ierr = vbmr.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
 
   ierr = vMask.fill_where_floating(result, fillval); CHKERRQ(ierr);
@@ -864,7 +833,7 @@ PetscErrorCode IceModel::compute_bwp(IceModelVec2 &result) {
 
 //! \brief Computes the rate of change of ice surface elevation as a sum of the
 //! bedrock uplift rate and the thickness rate of change.
-PetscErrorCode IceModel::compute_dhdt(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_dhdt(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = result.copy_from(vdHdt); CHKERRQ(ierr);          // result = dHdt
@@ -880,7 +849,7 @@ PetscErrorCode IceModel::compute_dhdt(IceModelVec2 &result) {
   return 0;
 }
 
-PetscErrorCode IceModel::compute_uvelbase(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_uvelbase(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = u3.begin_access(); CHKERRQ(ierr);
@@ -902,7 +871,7 @@ PetscErrorCode IceModel::compute_uvelbase(IceModelVec2 &result) {
   return 0;
 }
 
-PetscErrorCode IceModel::compute_vvelbase(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_vvelbase(IceModelVec2S &result) {
   PetscErrorCode ierr;
   ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = v3.getHorSlice(result, 0.0); CHKERRQ(ierr);
@@ -923,7 +892,7 @@ PetscErrorCode IceModel::compute_vvelbase(IceModelVec2 &result) {
   return 0;
 }
 
-PetscErrorCode IceModel::compute_wvelbase(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_wvelbase(IceModelVec2S &result) {
   PetscErrorCode ierr;
   ierr = w3.begin_access(); CHKERRQ(ierr);
   ierr = w3.getHorSlice(result, 0.0); CHKERRQ(ierr);
@@ -945,7 +914,7 @@ PetscErrorCode IceModel::compute_wvelbase(IceModelVec2 &result) {
 }
 
 //! Computes ice enthalpy at the base of ice.
-PetscErrorCode IceModel::compute_enthalpybase(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_enthalpybase(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   // put basal ice temperature in vWork2d[0]
@@ -963,11 +932,13 @@ PetscErrorCode IceModel::compute_enthalpybase(IceModelVec2 &result) {
 }
 
 //! Computes ice temperature at the base of ice.
-PetscErrorCode IceModel::compute_tempbase(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_tempbase(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
+  ierr = compute_temp(Enthnew3); CHKERRQ(ierr);
+
   // put basal ice temperature in vWork2d[0]
-  ierr = T3.getHorSlice(result, 0.0); CHKERRQ(ierr);  // z=0 slice
+  ierr = Enthnew3.getHorSlice(result, 0.0); CHKERRQ(ierr);  // z=0 slice
 
   ierr = result.set_name("tempbase"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "ice temperature at the base of ice",
@@ -983,7 +954,7 @@ PetscErrorCode IceModel::compute_tempbase(IceModelVec2 &result) {
 
 //! Computes pressure-adjusted ice temperature at the base of ice.
 PetscErrorCode IceModel::compute_temppabase(IceModelVec3 &hasPATemp,
-                                            IceModelVec2 &result) {
+                                            IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   // put basal pressure-adjusted ice temperature in 2d result
@@ -1003,7 +974,7 @@ PetscErrorCode IceModel::compute_temppabase(IceModelVec3 &hasPATemp,
 }
 
 //! Computes ice temperature at the 1 m below the surface.
-PetscErrorCode IceModel::compute_tempsurf(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_tempsurf(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PetscScalar fill_value = GSL_NAN;
 
@@ -1018,7 +989,9 @@ PetscErrorCode IceModel::compute_tempsurf(IceModelVec2 &result) {
   }
   ierr = result.end_access(); CHKERRQ(ierr);
 
-  ierr = T3.getSurfaceValues(result, result); CHKERRQ(ierr);  // z=0 slice
+  ierr = compute_temp(Enthnew3); CHKERRQ(ierr);
+
+  ierr = Enthnew3.getSurfaceValues(result, result); CHKERRQ(ierr);  // z=0 slice
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -1039,7 +1012,7 @@ PetscErrorCode IceModel::compute_tempsurf(IceModelVec2 &result) {
 }
 
 //! Computes ice enthalpy at the 1 m below the surface.
-PetscErrorCode IceModel::compute_enthalpysurf(IceModelVec2 &result) {
+PetscErrorCode IceModel::compute_enthalpysurf(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PetscScalar fill_value = GSL_NAN;
 
@@ -1077,7 +1050,7 @@ PetscErrorCode IceModel::compute_enthalpysurf(IceModelVec2 &result) {
 //! pointer to a pre-allocated work vector containing it.
 /*! For 2D quantities, result will point to vWork2d[0].
 
-  For 3D -- to T3new, because we don't have a general-purpose 3D work vector.
+  For 3D -- to Enthnew3, because we don't have a general-purpose 3D work vector.
 
   Note that (depending on the quantity requested) vWork2d[1] might get used as
   a temporary storage.
@@ -1130,18 +1103,16 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
     return 0;
   }
 
-  if (!doColdIceMethods) {
-    if (name == "enthalpybase") {
-      ierr = compute_enthalpybase(vWork2d[0]); CHKERRQ(ierr);
-      result = &vWork2d[0];
-      return 0;
-    }
+  if (name == "enthalpybase") {
+    ierr = compute_enthalpybase(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
 
-    if (name == "enthalpysurf") {
-      ierr = compute_enthalpysurf(vWork2d[0]); CHKERRQ(ierr);
-      result = &vWork2d[0];
-      return 0;
-    }
+  if (name == "enthalpysurf") {
+    ierr = compute_enthalpysurf(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
   }
 
   if (name == "hardav") {
@@ -1163,8 +1134,8 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   }
 
   if (name == "temp_pa") {
-    ierr = compute_temp_pa(Tnew3); CHKERRQ(ierr);
-    result = &Tnew3;
+    ierr = compute_temp_pa(Enth3); CHKERRQ(ierr);
+    result = &Enth3;
     return 0;
   }
 
@@ -1181,8 +1152,8 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   }
 
   if (name == "temppabase") {
-    ierr = compute_temp_pa(Tnew3); CHKERRQ(ierr);
-    ierr = compute_temppabase(Tnew3,vWork2d[0]); CHKERRQ(ierr);
+    ierr = compute_temp_pa(Enth3); CHKERRQ(ierr);
+    ierr = compute_temppabase(Enth3,vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }
@@ -1437,7 +1408,7 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
   PetscReal cell_area = grid.dx * grid.dy;
   PetscScalar my_total_surface_ice_flux, my_total_basal_ice_flux, my_total_sub_shelf_ice_flux;
 
-  // call sets pccsmf to point to IceModelVec2 with current surface mass flux
+  // call sets pccsmf to point to IceModelVec2S with current surface mass flux
   if (surface != PETSC_NULL) {
     ierr = surface->ice_surface_mass_flux(grid.year, dt / secpera, acab); CHKERRQ(ierr);
   } else { SETERRQ(2,"PISM ERROR: surface == PETSC_NULL"); }
@@ -1452,7 +1423,7 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
 
   ierr = acab.begin_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.get_array(bmr_grounded); CHKERRQ(ierr);
+  ierr = vbmr.get_array(bmr_grounded); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -1478,7 +1449,7 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
   }  
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
+  ierr = vbmr.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 

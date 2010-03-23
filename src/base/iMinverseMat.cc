@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2009 Ed Bueler
+// Copyright (C) 2008--2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -76,9 +76,9 @@ PetscErrorCode IceModel::computeBasalShearFromSSA() {
     useConstantNuHForSSA_save = config.get_flag("use_constant_nuh_for_ssa");
   leaveNuHAloneSSA = PETSC_FALSE;
   config.set_flag("use_constant_nuh_for_ssa", false);
-  IceModelVec2 myvNuH[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
+  IceModelVec2S myvNuH[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
   // eps=0.0 in bdd-below regularization; Schoof type regularization does occur;
-  ierr = computeEffectiveViscosity(myvNuH, 0.0); CHKERRQ(ierr); // uses vubarSSA, vvbarSSA
+  ierr = computeEffectiveViscosity(myvNuH, 0.0); CHKERRQ(ierr); // uses ssavel
   leaveNuHAloneSSA = leaveNuHAloneSSA_save;
   config.set_flag("use_constant_nuh_for_ssa", useConstantNuHForSSA_save);
 
@@ -107,19 +107,17 @@ PetscErrorCode IceModel::computeBasalShearFromSSA() {
   ierr = assembleSSARhs(rhs); CHKERRQ(ierr);
 
   // Set x = [u v]'  (interleaved).
-  PetscScalar **ub, **vb;
   const PetscInt  twoMy = 2 * grid.My;
   ierr = VecSet(x, 0.0); CHKERRQ(ierr);
-  ierr = vubarSSA.get_array(ub); CHKERRQ(ierr);
-  ierr = vvbarSSA.get_array(vb); CHKERRQ(ierr);
+
+  ierr = ssavel.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = VecSetValue(x, i*twoMy + 2*j, ub[i][j], INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValue(x, i*twoMy + 2*j+1, vb[i][j], INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValue(x, i*twoMy + 2*j,   ssavel(i,j).u, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValue(x, i*twoMy + 2*j+1, ssavel(i,j).v, INSERT_VALUES); CHKERRQ(ierr);
     }
   }
-  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
-  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
+  ierr = ssavel.end_access(); CHKERRQ(ierr);
 
   // assemble matrix and vec before multiplication; communicate!
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -320,9 +318,9 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
   user.grid = &grid;
 
   // space for f(x,y) and g(x,y)
-  user.f = new IceModelVec2;
+  user.f = new IceModelVec2S;
   ierr = user.f->create(grid, "f_invmodel", false); CHKERRQ(ierr);
-  user.g = new IceModelVec2;
+  user.g = new IceModelVec2S;
   ierr = user.g->create(grid, "g_invmodel", false); CHKERRQ(ierr);
 
   // main added content relative to ex5: fill nontrivial coeffs f,g for reg version
@@ -402,7 +400,7 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
 PetscErrorCode IceModel::fillRegPoissonData(RegPoissonCtx &user) {
   PetscErrorCode ierr;
 
-  PetscScalar **oldphi, **imask, **N, **taubx, **tauby, **ub, **vb, 
+  PetscScalar **oldphi, **imask, **N, **taubx, **tauby,
               **ff, **gg;
   PetscScalar magVsqr, V_x, V_y;
 
@@ -411,8 +409,7 @@ PetscErrorCode IceModel::fillRegPoissonData(RegPoissonCtx &user) {
   ierr = inv.effPressureN->get_array(N);  CHKERRQ(ierr);
   ierr = inv.taubxComputed->get_array(taubx); CHKERRQ(ierr);
   ierr = inv.taubyComputed->get_array(tauby); CHKERRQ(ierr);
-  ierr = vubarSSA.get_array(ub); CHKERRQ(ierr);
-  ierr = vvbarSSA.get_array(vb); CHKERRQ(ierr);
+  ierr = ssavel.begin_access(); CHKERRQ(ierr);
   ierr = user.f->get_array(ff); CHKERRQ(ierr);
   ierr = user.g->get_array(gg); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -421,7 +418,8 @@ PetscErrorCode IceModel::fillRegPoissonData(RegPoissonCtx &user) {
         ff[i][j] = 0.0;
         gg[i][j] = 0.0;
       } else {
-        ierr = getVfromUforInverse(ub[i][j], vb[i][j], V_x, V_y, magVsqr); CHKERRQ(ierr);
+        ierr = getVfromUforInverse(ssavel(i,j).u,
+				   ssavel(i,j).v, V_x, V_y, magVsqr); CHKERRQ(ierr);
         const PetscScalar 
               taubdotV = taubx[i][j] * V_x + tauby[i][j] * V_y,
               muinitial = tan((pi/180.0) * oldphi[i][j]);
@@ -439,8 +437,7 @@ PetscErrorCode IceModel::fillRegPoissonData(RegPoissonCtx &user) {
   ierr = inv.effPressureN->end_access();  CHKERRQ(ierr);
   ierr = inv.taubxComputed->end_access(); CHKERRQ(ierr);
   ierr = inv.taubyComputed->end_access(); CHKERRQ(ierr);
-  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
-  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
+  ierr = ssavel.end_access(); CHKERRQ(ierr);
 
   return 0; 
 }

@@ -24,72 +24,30 @@
 
 #include "iceModelVec.hh"
 
-// this file contains methods for derived classes IceModelVec2 and IceModelVec2Mask
+// this file contains methods for derived classes IceModelVec2S and IceModelVec2Mask
 
 // methods for base class IceModelVec are in "iceModelVec.cc"
 
-IceModelVec2::IceModelVec2() : IceModelVec() {}
-
-IceModelVec2::IceModelVec2(const IceModelVec2 &other) : IceModelVec(other) {}
-
-
-PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], bool local) {
+PetscErrorCode  IceModelVec2S::create(IceGrid &my_grid, const char my_name[], bool local, int width) {
   if (!utIsInit()) {
     SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
   }
 
   if (v != PETSC_NULL) {
-    SETERRQ1(2,"IceModelVec2 with name='%s' already allocated\n", my_name);
+    SETERRQ1(2,"IceModelVec2S with name='%s' already allocated\n", my_name);
   }
-  PetscErrorCode ierr = create(my_grid, my_name, local, DA_STENCIL_BOX, 1); CHKERRQ(ierr);
+  PetscErrorCode ierr = IceModelVec2::create(my_grid, my_name, local, DA_STENCIL_BOX, width, dof); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], bool local,
-                                     DAStencilType my_sten, int stencil_width) {
-  if (!utIsInit()) {
-    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
-  }
-  if (v != PETSC_NULL) {
-    SETERRQ1(2,"IceModelVec2 with name='%s' already allocated\n", my_name);
-  }
-
-  grid = &my_grid;
-  dims = GRID_2D;
-  
-  PetscInt       M, N, m, n;
-  PetscErrorCode ierr;
-  ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
-                   PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, my_sten, N, M, n, m,
-		    1,		// dof
-		    stencil_width,
-                    PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
-
-  if (local) {
-    ierr = DACreateLocalVector(da, &v); CHKERRQ(ierr);
-  } else {
-    ierr = DACreateGlobalVector(da, &v); CHKERRQ(ierr);
-  }
-
-  localp = local;
-  name = my_name;
-
-  var1.init(my_name, my_grid, GRID_2D);
-
-  //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode IceModelVec2::get_array(PetscScalar** &a) {
+PetscErrorCode IceModelVec2S::get_array(PetscScalar** &a) {
   PetscErrorCode ierr;
   ierr = begin_access(); CHKERRQ(ierr);
   a = (PetscScalar**) array;
   return 0;
 }
 
-//! Puts a local IceModelVec2 on processor 0.
+//! Puts a local IceModelVec2S on processor 0.
 /*!
  <ul>
  <li> onp0 and ctx should be created by calling VecScatterCreateToZero or be identical to one,
@@ -97,7 +55,7 @@ PetscErrorCode IceModelVec2::get_array(PetscScalar** &a) {
  <li> g2natural is a preallocated temporary global vector with natural ordering.
  </ul>
 */
-PetscErrorCode IceModelVec2::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) {
+PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
 
@@ -122,7 +80,7 @@ PetscErrorCode IceModelVec2::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec 
  <li> g2natural is a preallocated temporary global vector with natural ordering.
  </ul>
 */
-PetscErrorCode IceModelVec2::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) {
+PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural) {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
 
@@ -146,7 +104,7 @@ PetscErrorCode IceModelVec2::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Ve
 
   Does not communicate.
  */
-PetscErrorCode IceModelVec2::set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v_y) {
+PetscErrorCode IceModelVec2S::set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y) {
   PetscErrorCode ierr;
   PetscScalar **mag = NULL;
   ierr = v_x.begin_access(); CHKERRQ(ierr);
@@ -165,7 +123,7 @@ PetscErrorCode IceModelVec2::set_to_magnitude(IceModelVec2 &v_x, IceModelVec2 &v
 }
 
 //! Masks out all the areas where \f$ M \le 0 \f$ by setting them to \c fill. 
-PetscErrorCode IceModelVec2::mask_by(IceModelVec2 &M, PetscScalar fill) {
+PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, PetscScalar fill) {
   PetscErrorCode ierr;
   PetscScalar **a = NULL;
   ierr = get_array(a); CHKERRQ(ierr);
@@ -185,7 +143,7 @@ PetscErrorCode IceModelVec2::mask_by(IceModelVec2 &M, PetscScalar fill) {
 
 //! \brief View a 2D field. Allocates and de-allocates g2, the temporary global
 //! vector; performance should not matter here.
-PetscErrorCode IceModelVec2::view(PetscInt viewer_size) {
+PetscErrorCode IceModelVec2S::view(PetscInt viewer_size) {
   PetscErrorCode ierr;
   Vec g2;
 
@@ -198,12 +156,12 @@ PetscErrorCode IceModelVec2::view(PetscInt viewer_size) {
   }
 
   if (localp) {
-    ierr = copy_to_global(g2); CHKERRQ(ierr);
+    ierr = copy_to(g2); CHKERRQ(ierr);
   } else {
     ierr = VecCopy(v, g2); CHKERRQ(ierr);
   }
 
-  ierr = var1.to_glaciological_units(g2); CHKERRQ(ierr);
+  ierr = vars[0].to_glaciological_units(g2); CHKERRQ(ierr);
 
   ierr = VecView(g2, (*map_viewers)[name]); CHKERRQ(ierr);
 
@@ -212,20 +170,20 @@ PetscErrorCode IceModelVec2::view(PetscInt viewer_size) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::view_matlab(PetscViewer my_viewer) {
+PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) {
   PetscErrorCode ierr;
-  string long_name = var1.get_string("long_name");
+  string long_name = vars[0].get_string("long_name");
   Vec g2;
 
   ierr = DACreateGlobalVector(grid->da2, &g2); CHKERRQ(ierr);
 
   if (localp) {
-    ierr = copy_to_global(g2); CHKERRQ(ierr);
+    ierr = copy_to(g2); CHKERRQ(ierr);
   } else {
     ierr = VecCopy(v, g2); CHKERRQ(ierr);
   }
 
-  ierr = var1.to_glaciological_units(g2); CHKERRQ(ierr);
+  ierr = vars[0].to_glaciological_units(g2); CHKERRQ(ierr);
 
   // add Matlab comment before listing, using short title
 
@@ -243,18 +201,35 @@ PetscErrorCode IceModelVec2::view_matlab(PetscViewer my_viewer) {
   return 0;
 }
 
-
-
 //! Provides access (both read and write) to the internal PetscScalar array.
 /*!
   Note that i corresponds to the x direction and j to the y.
  */
 inline
-PetscScalar& IceModelVec2::operator() (int i, int j) {
+PetscScalar& IceModelVec2S::operator() (int i, int j) {
   return static_cast<PetscScalar**>(array)[i][j];
 }
 
 ///// IceModelVec2Mask
+
+PetscErrorCode  IceModelVec2Mask::create(IceGrid &my_grid, const char my_name[], bool local, int width) {
+  if (!utIsInit()) {
+    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
+  }
+
+  if (v != PETSC_NULL) {
+    SETERRQ1(2,"IceModelVec2Mask with name='%s' already allocated\n", my_name);
+  }
+  PetscErrorCode ierr = IceModelVec2::create(my_grid, my_name, local, DA_STENCIL_BOX, width, dof); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceModelVec2Mask::get_array(PetscScalar** &a) {
+  PetscErrorCode ierr;
+  ierr = begin_access(); CHKERRQ(ierr);
+  a = (PetscScalar**) array;
+  return 0;
+}
 
 //! Returns the mask value; does not check ownership.
 PismMask IceModelVec2Mask::value(int i, int j) {
@@ -263,21 +238,25 @@ PismMask IceModelVec2Mask::value(int i, int j) {
   return static_cast<PismMask>(ival);
 }
 
+inline
+PetscScalar& IceModelVec2Mask::operator() (int i, int j) {
+  return static_cast<PetscScalar**>(array)[i][j];
+}
 
 bool IceModelVec2Mask::is_grounded(int i, int j) {
-  PismMask m = value(i, j);
+  const PismMask m = value(i, j);
 
   return (m == MASK_SHEET) || (m == MASK_DRAGGING_SHEET) || (m == MASK_ICE_FREE_BEDROCK);
 }
 
 
 bool IceModelVec2Mask::is_floating(int i, int j) {
-  PismMask m = value(i, j);
+  const PismMask m = value(i, j);
 
   return (m == MASK_FLOATING) || (m == MASK_ICE_FREE_OCEAN) || (m == MASK_OCEAN_AT_TIME_0);
 }
 
-PetscErrorCode IceModelVec2Mask::fill_where_grounded(IceModelVec2 &v, const PetscScalar fillval) {
+PetscErrorCode IceModelVec2Mask::fill_where_grounded(IceModelVec2S &v, const PetscScalar fillval) {
   PetscErrorCode ierr;
 
   ierr = begin_access(); CHKERRQ(ierr);
@@ -296,7 +275,7 @@ PetscErrorCode IceModelVec2Mask::fill_where_grounded(IceModelVec2 &v, const Pets
 }
 
 
-PetscErrorCode IceModelVec2Mask::fill_where_floating(IceModelVec2 &v, const PetscScalar fillval) {
+PetscErrorCode IceModelVec2Mask::fill_where_floating(IceModelVec2S &v, const PetscScalar fillval) {
   PetscErrorCode ierr;
 
   ierr = begin_access(); CHKERRQ(ierr);
@@ -317,21 +296,21 @@ PetscErrorCode IceModelVec2Mask::fill_where_floating(IceModelVec2 &v, const Pets
 //! \brief Returns the x-derivative at i,j approximated using centered finite
 //! differences.
 inline
-PetscScalar IceModelVec2::diff_x(int i, int j) {
+PetscScalar IceModelVec2S::diff_x(int i, int j) {
   return ( (*this)(i + 1,j) - (*this)(i - 1,j) ) / (2 * grid->dx);
 }
 
 //! \brief Returns the y-derivative at i,j approximated using centered finite
 //! differences.
 inline
-PetscScalar IceModelVec2::diff_y(int i, int j) {
+PetscScalar IceModelVec2S::diff_y(int i, int j) {
   return ( (*this)(i,j + 1) - (*this)(i,j - 1) ) / (2 * grid->dy);
 }
 
 //! \brief Returns the x-derivative at i,j approximated using centered finite
 //! differences. Respects grid periodicity and uses one-sided FD at grid edges
 //! if necessary.
-PetscScalar IceModelVec2::diff_x_p(int i, int j) {
+PetscScalar IceModelVec2S::diff_x_p(int i, int j) {
   if (grid->periodicity & X_PERIODIC)
     return diff_x(i,j);
   
@@ -346,7 +325,7 @@ PetscScalar IceModelVec2::diff_x_p(int i, int j) {
 //! \brief Returns the y-derivative at i,j approximated using centered finite
 //! differences. Respects grid periodicity and uses one-sided FD at grid edges
 //! if necessary.
-PetscScalar IceModelVec2::diff_y_p(int i, int j) {
+PetscScalar IceModelVec2S::diff_y_p(int i, int j) {
   if (grid->periodicity & Y_PERIODIC)
     return diff_y(i,j);
   
@@ -358,10 +337,10 @@ PetscScalar IceModelVec2::diff_y_p(int i, int j) {
     return diff_y(i,j);
 }
 
-//! Sums up all the values in an IceModelVec2 object. Ignores ghosts.
+//! Sums up all the values in an IceModelVec2S object. Ignores ghosts.
 /*! Avoids copying to a "global" vector.
  */
-PetscErrorCode IceModelVec2::sum(PetscScalar &result) {
+PetscErrorCode IceModelVec2S::sum(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar my_result = 0;
 
@@ -376,6 +355,97 @@ PetscErrorCode IceModelVec2::sum(PetscScalar &result) {
 
   // find the global sum:
   ierr = PetscGlobalSum(&my_result, &result, grid->com); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+///// IceModelVec2
+
+PetscErrorCode IceModelVec2::get_component(int N, Vec result) {
+  PetscErrorCode ierr;
+  void *tmp_res = NULL, *tmp_v;
+
+  if (N < 0 || N >= dof)
+    SETERRQ(1, "invalid argument (N)");
+
+  ierr = DAVecGetArray(grid->da2, result, &tmp_res); CHKERRQ(ierr);
+  PetscScalar **res = static_cast<PetscScalar**>(tmp_res);
+
+  ierr = DAVecGetArrayDOF(da, v, &tmp_v); CHKERRQ(ierr);
+  PetscScalar ***a_dof = static_cast<PetscScalar***>(tmp_v);
+
+  for (PetscInt i = grid->xs; i < grid->xs+grid->xm; ++i)
+    for (PetscInt j = grid->ys; j < grid->ys+grid->ym; ++j)
+      res[i][j] = a_dof[i][j][N];
+
+
+  ierr = DAVecRestoreArray(grid->da2, result, &tmp_res); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(da,        v,      &tmp_v); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModelVec2::set_component(int N, Vec source) {
+  PetscErrorCode ierr;
+  void *tmp_src = NULL, *tmp_v;
+
+  if (N < 0 || N >= dof)
+    SETERRQ(1, "invalid argument (N)");
+
+  ierr = DAVecGetArray(grid->da2, source, &tmp_src); CHKERRQ(ierr);
+  PetscScalar **src = static_cast<PetscScalar**>(tmp_src);
+
+  ierr = DAVecGetArrayDOF(da, v, &tmp_v); CHKERRQ(ierr);
+  PetscScalar ***a_dof = static_cast<PetscScalar***>(tmp_v);
+
+  for (PetscInt i = grid->xs; i < grid->xs+grid->xm; ++i)
+    for (PetscInt j = grid->ys; j < grid->ys+grid->ym; ++j)
+      a_dof[i][j][N] = src[i][j];
+
+  ierr = DAVecRestoreArray(grid->da2, source, &tmp_src); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(da,        v,      &tmp_v); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], bool local,
+                                     DAStencilType my_sten, int stencil_width, int my_dof) {
+  if (!utIsInit()) {
+    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
+  }
+  if (v != PETSC_NULL) {
+    SETERRQ1(2,"IceModelVec2 with name='%s' already allocated\n", my_name);
+  }
+
+  dof  = my_dof;
+  grid = &my_grid;
+  dims = GRID_2D;
+  
+  PetscInt       M, N, m, n;
+  PetscErrorCode ierr;
+  ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
+                   PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
+  ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, my_sten, N, M, n, m,
+		    dof,
+		    stencil_width,
+                    PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
+
+  if (local) {
+    ierr = DACreateLocalVector(da, &v); CHKERRQ(ierr);
+  } else {
+    ierr = DACreateGlobalVector(da, &v); CHKERRQ(ierr);
+  }
+
+  localp = local;
+  name = my_name;
+
+  vars.resize(dof);
+  for (int j = 0; j < dof; ++j)
+    vars[j].init(my_name, my_grid, GRID_2D);
+
+  //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
 
   return 0;
 }

@@ -73,10 +73,10 @@ PetscErrorCode PA_EISMINT_Greenland::init(PISMVars &vars) {
   ierr = PAYearlyCycle::init(vars); CHKERRQ(ierr);
 
   // initialize pointers to fields the parameterization depends on:
-  surfelev = dynamic_cast<IceModelVec2*>(vars.get("surface_altitude"));
+  surfelev = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
   if (!surfelev) SETERRQ(1, "ERROR: surface_altitude is not available");
 
-  lat = dynamic_cast<IceModelVec2*>(vars.get("latitude"));
+  lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
   if (!lat) SETERRQ(1, "ERROR: latitude is not available");
 
   PetscTruth gwl3_start_set;

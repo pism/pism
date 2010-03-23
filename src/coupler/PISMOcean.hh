@@ -36,9 +36,9 @@ public:
   virtual PetscErrorCode sea_level_elevation(PetscReal t_years, PetscReal dt_years,
 					     PetscReal &result) = 0;
   virtual PetscErrorCode shelf_base_temperature(PetscReal t_years, PetscReal dt_years,
-						IceModelVec2 &result) = 0;
+						IceModelVec2S &result) = 0;
   virtual PetscErrorCode shelf_base_mass_flux(PetscReal t_years, PetscReal dt_years,
-					      IceModelVec2 &result) = 0;
+					      IceModelVec2S &result) = 0;
 protected:
   PetscReal sea_level;
 };
@@ -55,11 +55,11 @@ public:
   virtual PetscErrorCode sea_level_elevation(PetscReal t_years, PetscReal dt_years,
 					     PetscReal &result);
   virtual PetscErrorCode shelf_base_temperature(PetscReal t_years, PetscReal dt_years,
-						IceModelVec2 &result);
+						IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(PetscReal t_years, PetscReal dt_years,
-					      IceModelVec2 &result);
+					      IceModelVec2S &result);
 protected:
-  IceModelVec2 *ice_thickness;	// is not owned by this class
+  IceModelVec2S *ice_thickness;	// is not owned by this class
 };
 
 //! A class defining the interface of a PISM ocean model modifier.
@@ -97,9 +97,9 @@ public:
   virtual PetscErrorCode sea_level_elevation(PetscReal t_years, PetscReal dt_years,
 					     PetscReal &result);
   virtual PetscErrorCode shelf_base_temperature(PetscReal t_years, PetscReal dt_years,
-						IceModelVec2 &result);
+						IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(PetscReal t_years, PetscReal dt_years,
-					      IceModelVec2 &result);
+					      IceModelVec2S &result);
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 						 string filename);
 protected:

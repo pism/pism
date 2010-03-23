@@ -37,9 +37,9 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-					       IceModelVec2 &result) = 0;
+					       IceModelVec2S &result) = 0;
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2 &result) = 0;
+						 IceModelVec2S &result) = 0;
   virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
@@ -61,10 +61,10 @@ public:
   { delete input; }
 
   virtual PetscErrorCode init(PISMVars &) { return 0; };
-  virtual PetscErrorCode ice_surface_mass_flux(PetscReal, PetscReal, IceModelVec2&)
+  virtual PetscErrorCode ice_surface_mass_flux(PetscReal, PetscReal, IceModelVec2S&)
   { return 0; }
 
-  virtual PetscErrorCode ice_surface_temperature(PetscReal, PetscReal, IceModelVec2 &)
+  virtual PetscErrorCode ice_surface_temperature(PetscReal, PetscReal, IceModelVec2S &)
   { return 0; }
   virtual PetscErrorCode write_model_state(PetscReal, PetscReal, string)
   { return 0; }
@@ -90,9 +90,9 @@ public:
     : PISMSurfaceModel(g, conf) {};
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-					       IceModelVec2 &result);
+					       IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2 &result);
+						 IceModelVec2S &result);
 };
 
 //! \brief A class implementing a constant-in-time surface model. Reads data
@@ -109,16 +109,16 @@ public:
   { delete input; }
 
   virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-					       IceModelVec2 &result);
+					       IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2 &result);
+						 IceModelVec2S &result);
   virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 						 string filename);
 protected:
   string input_file;
-  IceModelVec2 acab, artm;
+  IceModelVec2S acab, artm;
 };
 
 class PSModifier : public PISMSurfaceModel {
@@ -150,9 +150,9 @@ public:
   PetscErrorCode init(PISMVars &vars);
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-					       IceModelVec2 &result);
+					       IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2 &result);
+						 IceModelVec2S &result);
   virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
   virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					   string filename);
@@ -161,8 +161,8 @@ public:
 protected:
   string input_file;
   PetscReal alpha;
-  IceModelVec2 *ice_thickness;	//!< current ice thickness produced by IceModel.
-  IceModelVec2 target_thickness;
+  IceModelVec2S *ice_thickness;	//!< current ice thickness produced by IceModel.
+  IceModelVec2S target_thickness;
 };
 
 class PSLocalMassBalance : public PISMSurfaceModel {
@@ -171,13 +171,13 @@ public:
   virtual ~PSLocalMassBalance();
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-					       IceModelVec2 &result);
+					       IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2 &result);
+						 IceModelVec2S &result);
 protected:
   LocalMassBalance *mbscheme;	//!< mass balance scheme to use
   bool use_fausto_pdd_parameters;
-  IceModelVec2 temp_mj,	//!< for the mean July temperature needed to set PDD parameters as in [\ref Faustoetal2009].
+  IceModelVec2S temp_mj,	//!< for the mean July temperature needed to set PDD parameters as in [\ref Faustoetal2009].
     *lat;		//!< latitude needed to set PDD parameters as in [\ref Faustoetal2009].
 };
 

@@ -207,7 +207,7 @@ PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
   double T = t_years + 0.5 * dt_years;
 
   if (vars.find("airtemp") != vars.end()) {
-    IceModelVec2 airtemp;
+    IceModelVec2S airtemp;
     ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
     ierr = airtemp.set_attrs("diagnostic",
 			     "snapshot of the near-surface air temperature",
@@ -276,7 +276,7 @@ PetscErrorCode PAForcing::update(PetscReal t_years, PetscReal dt_years) {
 }
 
 PetscErrorCode PAForcing::mean_precip(PetscReal t_years, PetscReal dt_years,
-				      IceModelVec2 &result) {
+				      IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = input_model->mean_precip(t_years, dt_years, result); CHKERRQ(ierr);
@@ -305,7 +305,7 @@ PetscErrorCode PAForcing::mean_precip(PetscReal t_years, PetscReal dt_years,
 }
 
 PetscErrorCode PAForcing::mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-					   IceModelVec2 &result) {
+					   IceModelVec2S &result) {
   PetscErrorCode ierr;
   double T = t_years + 0.5 * dt_years;
 
@@ -382,7 +382,7 @@ PetscErrorCode PAForcing::temp_time_series(int i, int j, int N,
 }
 
 PetscErrorCode PAForcing::temp_snapshot(PetscReal t_years, PetscReal dt_years,
-					IceModelVec2 &result) {
+					IceModelVec2S &result) {
   PetscErrorCode ierr;
   double T = t_years + 0.5 * dt_years;
 

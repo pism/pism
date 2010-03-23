@@ -108,22 +108,18 @@ PetscErrorCode IceModel::setEnth3FromT3AndLiqfrac3(
 
 //! Compute the ice temperature corresponding to Enth3, and put in Tnew3.
 /*!
-Typically this is used just after Enth3 is determined.
-
-Does not communicate.  Ghosts will be invalid, but the idea is that
-"T3.endGhostCommTransfer(Tnew3)" in IceModel::temperatureStep() will have
-the desired effect.
+  Computes ice temperature from enthalpy (as a diagnostic quantity).
  */
-PetscErrorCode IceModel::setTnew3FromEnth3() {
+PetscErrorCode IceModel::compute_temp(IceModelVec3 &result) {
   PetscErrorCode ierr;
 
   PetscScalar *Tij, *Enthij; // columns of these values
-  ierr = Tnew3.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = Tnew3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+      ierr = result.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
       ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
         const PetscScalar depth = vH(i,j) - grid.zlevels[k];
@@ -138,8 +134,14 @@ PetscErrorCode IceModel::setTnew3FromEnth3() {
     }
   }
   ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = Tnew3.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_name("temp"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic","ice temperature",
+			  "K", "land_ice_temperature"); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -177,42 +179,6 @@ PetscErrorCode IceModel::setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFra
   ierr = vH.end_access(); CHKERRQ(ierr);
   return 0;
 }
-
-
-//! Compute the pressure-adjusted temperature corresponding to Enth3, and put in a global IceModelVec3 provided by user.
-/*!
-Does not communicate ghosts for IceModelVec3 useForPATemp.
- */
-PetscErrorCode IceModel::setPATempFromEnthalpy(IceModelVec3 &useForPATemp) {
-  PetscErrorCode ierr;
-
-  ierr = useForPATemp.set_name("temp_pa"); CHKERRQ(ierr);
-  ierr = useForPATemp.set_attrs(
-     "diagnostic",
-     "pressure-adjusted ice temperature (degrees above pressure-melting point)",
-     "deg_C", ""); CHKERRQ(ierr);
-
-  PetscScalar *Tpaij, *Enthij; // columns of these values
-  ierr = useForPATemp.begin_access(); CHKERRQ(ierr);
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = useForPATemp.getInternalColumn(i,j,&Tpaij); CHKERRQ(ierr);
-      ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-      for (PetscInt k=0; k<grid.Mz; ++k) {
-        const PetscScalar depth = vH(i,j) - grid.zlevels[k];
-        ierr = EC->getPATemp(Enthij[k],EC->getPressureFromDepth(depth), Tpaij[k]);
-          CHKERRQ(ierr);
-      }
-    }
-  }
-  ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = useForPATemp.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
-  return 0;
-}
-
 
 //! Compute the CTS field, CTS = E/E_s(p), from Enth3, and put in a global IceModelVec3 provided by user.
 /*!
@@ -362,7 +328,7 @@ This method uses instances of combinedSystemCtx, bedrockOnlySystemCtx, and
 iceenthOnlySystemCtx.
 
 This method modifies IceModelVec3 Enthnew3, IceModelVec3Bedrock Tb3,
-IceModelVec2 vBasalMeltRate, and IceModelVec2 vHmelt.  No communication of
+IceModelVec2S vBasalMeltRate, and IceModelVec2S vHmelt.  No communication of
 ghosts is done for any of these fields.
  */
 PetscErrorCode IceModel::enthalpyAndDrainageStep(
@@ -446,7 +412,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   // get other map-plane fields
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vHmelt.begin_access(); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.begin_access(); CHKERRQ(ierr);
+  ierr = vbmr.begin_access(); CHKERRQ(ierr);
   ierr = vRb.begin_access(); CHKERRQ(ierr);
   ierr = vGhf.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
@@ -525,7 +491,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         }
         // at this point we need a temperature from ice that could in extreme
         //   situations *be fully melted*; thus we catch the return code and
-        //   and count this phenomenon
+        //   count this phenomenon
         ierr = EC->getAbsTemp(xcombined[fMbz-1], p_basal, Tbnew[fMbz-1]);
         if (ierr==1) { // return code of 1 means block of ice melted completely
           liquifiedCount++;
@@ -534,7 +500,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           Enthnew[k] = xcombined[k + fMbz-1];
         }
 
-        vbasalMeltRate(i,j) = 0.0;  // zero melt rate if cold base
+        vbmr(i,j) = 0.0;  // zero melt rate if cold base
 
       } else {
 
@@ -570,13 +536,13 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
         // can determine melt now from heat flux out of base, etc.
         if (is_floating) {
-          vbasalMeltRate(i,j) = shelfbmassflux(i,j);
+          vbmr(i,j) = shelfbmassflux(i,j);
         } else {
           if (iosys.Enth[0] < iosys.Enth_s[0]) {
             // this case only if no bedrock thermal layer
-            vbasalMeltRate(i,j) = 0.0;  // zero melt rate if cold base
+            vbmr(i,j) = 0.0;  // zero melt rate if cold base
           } else {
-            vbasalMeltRate(i,j) = ( hf_base + vRb(i,j) ) / (ice_rho * L);
+            vbmr(i,j) = ( hf_base + vRb(i,j) ) / (ice_rho * L);
           }
         }
 
@@ -641,7 +607,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           rhs = (1.0 - alpha) * rhs + alpha * ( C * (hf_base + vRb(i,j)) );
           a0  = (1.0 - alpha) * a0  + alpha * 1.0,
           a1  = (1.0 - alpha) * a1  + alpha * (-1.0);
-          vbasalMeltRate(i,j) *= 1.0 - alpha;
+          vbmr(i,j) *= 1.0 - alpha;
 
           ierr = iosys.setLevel0EqnThisColumn(a0,a1,rhs); CHKERRQ(ierr);
         }
@@ -659,7 +625,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       // basal melt rate causes water to be added to layer
       PetscScalar Hmeltnew = vHmelt(i,j);
       if (!is_floating) {
-        Hmeltnew += vbasalMeltRate(i,j) * dtTempAge;
+        Hmeltnew += vbmr(i,j) * dtTempAge;
       }
 
       // drain ice segments; alters Enthnew[]; adds to both basal melt rate and Hmelt;
@@ -677,7 +643,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         Hdrainedtotal += dHdrained;  // always a positive contribution
       }
       if (!is_floating) {
-        vbasalMeltRate(i,j) += Hdrainedtotal / dtTempAge;
+        vbmr(i,j) += Hdrainedtotal / dtTempAge;
         Hmeltnew += Hdrainedtotal;
       }
 
@@ -724,7 +690,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   ierr = vHmelt.end_access(); CHKERRQ(ierr);
   ierr = vRb.end_access(); CHKERRQ(ierr);
   ierr = vGhf.end_access(); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
+  ierr = vbmr.end_access(); CHKERRQ(ierr);
 
   ierr = Tb3.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);

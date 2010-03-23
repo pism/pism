@@ -93,7 +93,7 @@ PetscErrorCode PAYearlyCycle::write_diagnostic_fields(PetscReal t_years, PetscRe
 
   // Compute a snapshot of the instantaneous air temperature for this time-step
   // using the standard yearly cycle and write that too:
-  IceModelVec2 tmp;		// will be de-allicated at the end of scope
+  IceModelVec2S tmp;		// will be de-allocated at the end of scope
 
   ierr = tmp.create(grid, "airtemp", false); CHKERRQ(ierr);
   ierr = tmp.set_attrs("diagnostic", "near-surface air temperature snapshot",
@@ -112,7 +112,7 @@ PetscErrorCode PAYearlyCycle::write_fields(set<string> vars, PetscReal t_years,
   ierr = update(t_years, 0); CHKERRQ(ierr);
 
   if (vars.find("airtemp") != vars.end()) {
-    IceModelVec2 airtemp;
+    IceModelVec2S airtemp;
     ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
     ierr = airtemp.set_attrs("diagnostic",
 			     "snapshot of the near-surface air temperature",
@@ -141,7 +141,7 @@ PetscErrorCode PAYearlyCycle::write_fields(set<string> vars, PetscReal t_years,
 
 //! Copies the stored snow precipitation field into result.
 PetscErrorCode PAYearlyCycle::mean_precip(PetscReal t_years, PetscReal dt_years,
-							 IceModelVec2 &result) {
+							 IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = update(t_years, dt_years); CHKERRQ(ierr);
@@ -156,7 +156,7 @@ PetscErrorCode PAYearlyCycle::mean_precip(PetscReal t_years, PetscReal dt_years,
 
 //! Copies the stored mean annual near-surface air temperature field into result.
 PetscErrorCode PAYearlyCycle::mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-							      IceModelVec2 &result) {
+							      IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = update(t_years, dt_years); CHKERRQ(ierr);
@@ -185,7 +185,7 @@ PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, int N,
 }
 
 PetscErrorCode PAYearlyCycle::temp_snapshot(PetscReal t_years, PetscReal dt_years,
-				       IceModelVec2 &result) {
+				       IceModelVec2S &result) {
   PetscErrorCode ierr;
   const PetscReal
     radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
@@ -243,13 +243,13 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
   ierr = PAYearlyCycle::init(vars); CHKERRQ(ierr);
 
   // initialize pointers to fields the parameterization depends on:
-  surfelev = dynamic_cast<IceModelVec2*>(vars.get("surface_altitude"));
+  surfelev = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
   if (!surfelev) SETERRQ(1, "ERROR: surface_altitude is not available");
 
-  lat = dynamic_cast<IceModelVec2*>(vars.get("latitude"));
+  lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
   if (!lat) SETERRQ(1, "ERROR: latitude is not available");
 
-  lon = dynamic_cast<IceModelVec2*>(vars.get("longitude"));
+  lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
   if (!lon) SETERRQ(1, "ERROR: longitude is not available");
 
   ierr = PISMOptionsIsSet("-paleo_precip", paleo_precipitation_correction); CHKERRQ(ierr);
@@ -283,7 +283,7 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
 }
 
 PetscErrorCode PA_SeaRISE_Greenland::mean_precip(PetscReal t_years, PetscReal dt_years,
-						IceModelVec2 &result) {
+						IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = PAYearlyCycle::mean_precip(t_years, dt_years, result); CHKERRQ(ierr);

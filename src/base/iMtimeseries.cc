@@ -417,15 +417,14 @@ PetscErrorCode IceModel::init_extras() {
       string intent = (*i)->string_attr("pism_intent");
       if ( (intent == "model_state") || (intent == "mapping") ||
 	   (intent == "climate_steady") )
-	extra_vars.insert((*i)->string_attr("short_name"));
+	extra_vars.insert((*i)->string_attr("name"));
 
       ++i;
     }
 
     // add {u,v}barSSA if SSA is "on":
     if (config.get_flag("use_ssa_velocity")) {
-      extra_vars.insert("vubarSSA");
-      extra_vars.insert("vvbarSSA");
+      extra_vars.insert("uvbar_ssa");
     }
 
   }

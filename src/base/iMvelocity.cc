@@ -61,17 +61,14 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     ierr = verbPrintf(5,grid.com, "{comm after velocitySIAStaggered()}"); CHKERRQ(ierr);
 
     if (mu_sliding == 0.0) { // no need to spend time on nothing
-      ierr = vub.set(0.0); CHKERRQ(ierr);
-      ierr = vvb.set(0.0); CHKERRQ(ierr);
+      ierr = basal_vel.set(0.0); CHKERRQ(ierr);
       ierr = vRb.set(0.0); CHKERRQ(ierr);
     } else {
       // compute (and initialize values in) ub,vb and Rb; zero everything where floating
       ierr = basalSlidingHeatingSIA(); CHKERRQ(ierr);
       ierr = verbPrintf(5,grid.com, "{basalSlidingHeatingSIA()}"); CHKERRQ(ierr);
-      ierr = vub.beginGhostComm(); CHKERRQ(ierr);
-      ierr = vub.endGhostComm(); CHKERRQ(ierr);
-      ierr = vvb.beginGhostComm(); CHKERRQ(ierr);
-      ierr = vvb.endGhostComm(); CHKERRQ(ierr);
+      ierr = basal_vel.beginGhostComm(); CHKERRQ(ierr);
+      ierr = basal_vel.endGhostComm(); CHKERRQ(ierr);
       // no need to communicate vRb since not differenced in horizontal
     }
 
@@ -108,8 +105,9 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     // conditions to SSA calculation
     ierr = vubar.set(0.0); CHKERRQ(ierr);
     ierr = vvbar.set(0.0); CHKERRQ(ierr);
-    ierr = vub.set(0.0); CHKERRQ(ierr);
-    ierr = vvb.set(0.0); CHKERRQ(ierr);
+
+    ierr = basal_vel.set(0.0); CHKERRQ(ierr);
+
     ierr = vRb.set(0.0); CHKERRQ(ierr);
     if (updateVelocityAtDepth) {
       ierr = u3.set(0.0); CHKERRQ(ierr);
@@ -141,12 +139,11 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     ierr = vvbar.beginGhostComm(); CHKERRQ(ierr);
     ierr = vvbar.endGhostComm(); CHKERRQ(ierr);
 
-    ierr = vub.beginGhostComm(); CHKERRQ(ierr);
-    ierr = vub.endGhostComm(); CHKERRQ(ierr);
-    ierr = vvb.beginGhostComm(); CHKERRQ(ierr);
-    ierr = vvb.endGhostComm(); CHKERRQ(ierr);
+    
+    ierr = basal_vel.beginGhostComm(); CHKERRQ(ierr);
+    ierr = basal_vel.endGhostComm(); CHKERRQ(ierr);
 
-    // note correctSigma() differences ub,vb in horizontal, so communication
+    // note correctSigma() differences ubasal,vbasal in horizontal, so communication
     //   above is important
     ierr = correctSigma(); CHKERRQ(ierr);
     ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
@@ -222,7 +219,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = w3.begin_access(); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.begin_access(); CHKERRQ(ierr);
+  ierr = vbmr.begin_access(); CHKERRQ(ierr);
 
   PetscScalar *w, *u_im1, *u_ip1, *v_jm1, *v_jp1;
 
@@ -237,7 +234,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
       ierr = v3.getInternalColumn(i,j+1,&v_jp1); CHKERRQ(ierr);
 
       if (include_bmr_in_continuity) {
-        w[0] = - vbasalMeltRate(i,j);
+        w[0] = - vbmr(i,j);
       } else {
         w[0] = 0.0;
       }
@@ -254,7 +251,7 @@ PetscErrorCode IceModel::vertVelocityFromIncompressibility() {
     }
   }
 
-  ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
+  ierr = vbmr.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
   ierr = w3.end_access(); CHKERRQ(ierr);

@@ -191,7 +191,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
   PetscScalar **h_x[2], **h_y[2], **H, **uvbar[2];
 
-  PetscScalar *Tij, *Toffset, *ageij, *ageoffset;
+  PetscScalar *ageij, *ageoffset;
 
   if ((realAgeForGrainSize==PETSC_TRUE) && (!config.get_flag("do_age"))) {
     PetscPrintf(grid.com,
@@ -212,7 +212,6 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
   ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
 
-  ierr = T3.begin_access(); CHKERRQ(ierr);
   if (usetau3) {
     ierr = tau3.begin_access(); CHKERRQ(ierr);
   }
@@ -232,8 +231,8 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
         "   but not using PolyThermalGPBLDIce ... ending ....\n");
       PetscEnd();
     }
-    ierr = Enth3.begin_access(); CHKERRQ(ierr);
   }
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
 
   // staggered grid computation of: I, J, Sigma
   for (PetscInt o=0; o<2; o++) {
@@ -246,16 +245,13 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
         const PetscScalar  thickness = 0.5 * (H[i][j] + H[i+oi][j+oj]);
 
         if (thickness > 0) { 
-          ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
-          ierr = T3.getInternalColumn(i+oi,j+oj,&Toffset); CHKERRQ(ierr);
           if (usetau3) {
             ierr = tau3.getInternalColumn(i,j,&ageij); CHKERRQ(ierr);
             ierr = tau3.getInternalColumn(i+oi,j+oj,&ageoffset); CHKERRQ(ierr);
           }
-          if (doColdIceMethods == PETSC_FALSE) {
-            ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-            ierr = Enth3.getInternalColumn(i+oi,j+oj,&Enthoffset); CHKERRQ(ierr);
-          }
+	  
+	  ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+	  ierr = Enth3.getInternalColumn(i+oi,j+oj,&Enthoffset); CHKERRQ(ierr);
 
           // does validity check for thickness:
           const PetscInt      ks = grid.kBelowHeight(thickness);  
@@ -264,17 +260,21 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
           I[0] = 0;   J[0] = 0;   K[0] = 0;
           for (PetscInt k=0; k<=ks; ++k) {
+	    // pressure added by the ice (i.e. pressure difference between the
+	    // current level and the top of the column)
             const PetscScalar   pressure = ice->rho * standard_gravity * (thickness - grid.zlevels[k]);
             PetscScalar flow, grainsize = constant_grain_size;
             if (usetau3 && usesGrainSize && realAgeForGrainSize) {
               grainsize = grainSizeVostok(0.5 * (ageij[k] + ageoffset[k]));
             }
             // If the flow law does not use grain size, it will just ignore it, no harm there
+	    PetscScalar E = 0.5 * (Enthij[k] + Enthoffset[k]);
             if (doColdIceMethods == PETSC_TRUE) {
-              flow = ice->flow(alpha * pressure, 0.5 * (Tij[k] + Toffset[k]), pressure, grainsize);
+	      PetscScalar T;
+	      ierr = EC->getAbsTemp(E, pressure, T); CHKERRQ(ierr);
+              flow = ice->flow(alpha * pressure, T, pressure, grainsize);
             } else {
-              flow = gpbldi->flowFromEnth(alpha * pressure, 0.5 * (Enthij[k] + Enthoffset[k]), 
-                                          pressure, grainsize);
+              flow = gpbldi->flowFromEnth(alpha * pressure, E, pressure, grainsize);
             }
 
             delta[k] = 2.0 * pressure * enhancement_factor * flow;
@@ -324,7 +324,6 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
 
-  ierr = T3.end_access(); CHKERRQ(ierr);
   if (usetau3) {
     ierr = tau3.end_access(); CHKERRQ(ierr);
   }
@@ -334,9 +333,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = Istag3[0].end_access(); CHKERRQ(ierr);
   ierr = Istag3[1].end_access(); CHKERRQ(ierr);
 
-  if (doColdIceMethods == PETSC_FALSE) {
-    ierr = Enth3.end_access(); CHKERRQ(ierr);
-  }
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
 
   delete [] delta;   delete [] I;   delete [] J;   delete [] K;   delete [] Sigma;
   
@@ -364,7 +361,9 @@ See correctBasalFrictionalHeating() for the SSA contribution.
  */
 PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   PetscErrorCode  ierr;
-  PetscScalar **h_x[2], **h_y[2], **ub, **vb, **Rb, **H;
+  PetscScalar **h_x[2], **h_y[2], **Rb, **H;
+
+  PISMVector2 **bvel;
 
   double mu_sliding = config.get("mu_sliding");
   double minimum_temperature_for_sliding = config.get("minimum_temperature_for_sliding");
@@ -374,19 +373,18 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
   ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
 
-  ierr = vub.get_array(ub); CHKERRQ(ierr);
-  ierr = vvb.get_array(vb); CHKERRQ(ierr);
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
   ierr = vRb.get_array(Rb); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = T3.begin_access(); CHKERRQ(ierr);
   
   for (PetscInt o=0; o<2; o++) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
         if (vMask.is_floating(i,j)) {
-          ub[i][j] = 0.0;
-          vb[i][j] = 0.0;
+          bvel[i][j].u = 0.0;
+          bvel[i][j].v = 0.0;
           Rb[i][j] = 0.0;
         } else {
           // basal velocity from SIA-type sliding law: not recommended!
@@ -397,17 +395,22 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
                                  + h_x[1][i][j] + h_x[1][i][j-1]),
                   myhy = 0.25 * (  h_y[0][i][j] + h_y[0][i-1][j]
                                  + h_y[1][i][j] + h_y[1][i][j-1]),
-                  alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy)),
-                  basalC = basalVelocitySIA(myx, myy, H[i][j], T3.getValZ(i,j,0.0), 
-                                            alpha, mu_sliding,
-					    minimum_temperature_for_sliding);
-          ub[i][j] = - basalC * myhx;
-          vb[i][j] = - basalC * myhy;
+	    alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
+	  PetscScalar T, basalC;
+
+	  ierr = EC->getAbsTemp(Enth3.getValZ(i,j,0.0),
+				EC->getPressureFromDepth(H[i][j]), T); CHKERRQ(ierr);
+
+	  basalC = basalVelocitySIA(myx, myy, H[i][j], T, 
+				    alpha, mu_sliding,
+				    minimum_temperature_for_sliding);
+          bvel[i][j].u = - basalC * myhx;
+          bvel[i][j].v = - basalC * myhy;
           // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
           // in ice streams this result will be *overwritten* by
           //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
           const PetscScalar P = ice->rho * standard_gravity * H[i][j];
-          Rb[i][j] = - (P * myhx) * ub[i][j] - (P * myhy) * vb[i][j];
+          Rb[i][j] = - (P * myhx) * bvel[i][j].u - (P * myhy) * bvel[i][j].v;
         }
       }
     }
@@ -420,10 +423,9 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
 
-  ierr = vub.end_access(); CHKERRQ(ierr);
-  ierr = vvb.end_access(); CHKERRQ(ierr);
+  ierr = basal_vel.end_access(); CHKERRQ(ierr);
   ierr = vRb.end_access(); CHKERRQ(ierr);
-  ierr = T3.end_access(); CHKERRQ(ierr);
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -433,7 +435,7 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
 At the end of velocitySIAStaggered() the vertically-averaged horizontal velocity 
 components vuvbar[0],vuvbar[1] from deformation are known on the regular grid.
 At the end of basalSIA() the basal sliding from an SIA-type sliding rule is in
-vub, vvb.  This procedure averages the former onto the regular grid and adds
+basal_vel.  This procedure averages the former onto the regular grid and adds
 the sliding velocity.
 
 That is, this procedure computes the SIA "first guess" at the
@@ -468,18 +470,16 @@ PetscErrorCode IceModel::velocities2DSIAToRegular() {
     }
   } else {
     // this case is not recommended!
-    PetscScalar **ub, **vb;
-    ierr = vub.get_array(ub); CHKERRQ(ierr);
-    ierr = vvb.get_array(vb); CHKERRQ(ierr);
+    PISMVector2 **bvel;
+    ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         // as above, adding basal on regular grid
-        ubar[i][j] = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]) + ub[i][j];
-        vbar[i][j] = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]) + vb[i][j];
+        ubar[i][j] = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]) + bvel[i][j].u;
+        vbar[i][j] = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]) + bvel[i][j].v;
       }
     }
-    ierr = vub.end_access(); CHKERRQ(ierr);
-    ierr = vvb.end_access(); CHKERRQ(ierr);
+    ierr = basal_vel.end_access(); CHKERRQ(ierr);
   }
   ierr =     vubar.end_access(); CHKERRQ(ierr);
   ierr =     vvbar.end_access(); CHKERRQ(ierr);
@@ -569,8 +569,7 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
   ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = Istag3[0].begin_access(); CHKERRQ(ierr);
   ierr = Istag3[1].begin_access(); CHKERRQ(ierr);
-  ierr = vub.begin_access(); CHKERRQ(ierr);
-  ierr = vvb.begin_access(); CHKERRQ(ierr);
+  ierr = basal_vel.begin_access(); CHKERRQ(ierr);
   
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -587,8 +586,8 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
 
       if (mu_sliding > 0.0) {	// unusual case
         for (PetscInt k=0; k<grid.Mz; ++k) {
-          u[k] += vub(i,j);
-	  v[k] += vvb(i,j);
+          u[k] += basal_vel(i,j).u;
+	  v[k] += basal_vel(i,j).v;
         }
       }
 
@@ -600,8 +599,7 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
   delete[] u;
   delete[] v;
 
-  ierr = vub.end_access(); CHKERRQ(ierr);
-  ierr = vvb.end_access(); CHKERRQ(ierr);
+  ierr = basal_vel.end_access(); CHKERRQ(ierr);
   
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);

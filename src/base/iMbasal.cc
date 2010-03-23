@@ -28,15 +28,15 @@ generally).
 
 /*** for ice stream regions (MASK_DRAGGING): ***/
 PetscScalar IceModel::basalDragx(PetscScalar **tauc,
-                                 PetscScalar **u, PetscScalar **v,
+                                 PISMVector2 **uv,
                                  PetscInt i, PetscInt j) const {
-  return basal->drag(tauc[i][j], u[i][j], v[i][j]);
+  return basal->drag(tauc[i][j], uv[i][j].u, uv[i][j].v);
 }
 
 PetscScalar IceModel::basalDragy(PetscScalar **tauc,
-                                 PetscScalar **u, PetscScalar **v,
+                                 PISMVector2 **uv,
                                  PetscInt i, PetscInt j) const {
-  return basal->drag(tauc[i][j], u[i][j], v[i][j]);
+  return basal->drag(tauc[i][j], uv[i][j].u, uv[i][j].v);
 }
 
 
@@ -343,12 +343,12 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
       till_mu = tan((pi/180.0)*config.get("default_till_phi")),
       hmelt_max = config.get("hmelt_max");
 
-    ierr =          vMask.begin_access(); CHKERRQ(ierr);
-    ierr =          vtauc.begin_access(); CHKERRQ(ierr);
-    ierr =             vH.begin_access(); CHKERRQ(ierr);
-    ierr =         vHmelt.begin_access(); CHKERRQ(ierr);
-    ierr = vbasalMeltRate.begin_access(); CHKERRQ(ierr);
-    ierr =       vtillphi.begin_access(); CHKERRQ(ierr);
+    ierr =    vMask.begin_access(); CHKERRQ(ierr);
+    ierr =    vtauc.begin_access(); CHKERRQ(ierr);
+    ierr =       vH.begin_access(); CHKERRQ(ierr);
+    ierr =   vHmelt.begin_access(); CHKERRQ(ierr);
+    ierr =     vbmr.begin_access(); CHKERRQ(ierr);
+    ierr = vtillphi.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         if (vMask.is_floating(i,j)) {
@@ -359,7 +359,7 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
           const PetscScalar
             p_over = ice->rho * standard_gravity * vH(i,j),
             p_w    = getBasalWaterPressure(vH(i,j), vHmelt(i,j),
-                       vbasalMeltRate(i,j), till_pw_fraction, hmelt_max),
+                       vbmr(i,j), till_pw_fraction, hmelt_max),
             N      = p_over - p_w;  // effective pressure on till
           if (useConstantTillPhi == PETSC_TRUE) {
             vtauc(i,j) = till_c_0 + N * till_mu;
@@ -369,12 +369,12 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
         }
       }
     }
-    ierr =          vMask.end_access(); CHKERRQ(ierr);
-    ierr =          vtauc.end_access(); CHKERRQ(ierr);
-    ierr =             vH.end_access(); CHKERRQ(ierr);
-    ierr =       vtillphi.end_access(); CHKERRQ(ierr);
-    ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
-    ierr =         vHmelt.end_access(); CHKERRQ(ierr);
+    ierr =    vMask.end_access(); CHKERRQ(ierr);
+    ierr =    vtauc.end_access(); CHKERRQ(ierr);
+    ierr =       vH.end_access(); CHKERRQ(ierr);
+    ierr = vtillphi.end_access(); CHKERRQ(ierr);
+    ierr =     vbmr.end_access(); CHKERRQ(ierr);
+    ierr =   vHmelt.end_access(); CHKERRQ(ierr);
   }
 
   return 0;

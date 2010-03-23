@@ -33,13 +33,13 @@ public:
 
 protected:
     PetscErrorCode assembleSSAMatrix(const bool includeBasalShear,
-                                     IceModelVec2 vNuH[2], Mat A);
+                                     IceModelVec2S vNuH[2], Mat A);
     PetscErrorCode assembleSSARhs(Vec rhs);
 
     // CF = calving front
-    IceModelVec2   vsmoothCFmask;  // gradient of this gives normal dir to
+    IceModelVec2S   vsmoothCFmask;  // gradient of this gives normal dir to
                                // calving front, namely  ...
-    IceModelVec2   vnCF[2];    // ... this pair
+    IceModelVec2S   vnCF[2];    // ... this pair
     PetscErrorCode compute_nCF();
 };
 

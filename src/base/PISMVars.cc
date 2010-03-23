@@ -18,6 +18,12 @@
 
 #include "PISMVars.hh"
 
+PetscErrorCode PISMVars::add(IceModelVec &v, string name) {
+
+  variables[name] = &v;
+
+  return 0;
+}
 //!Add an IceModelVec to the dictionary.
 /*!
   Adds both short_name and standard_name (if present); should be called \b after setting the metadata.
@@ -26,7 +32,7 @@
  */
 PetscErrorCode PISMVars::add(IceModelVec &v) {
 
-  string short_name = v.string_attr("short_name");
+  string short_name = v.string_attr("name");
 
   // an IceModelVec always has a short_name:
   if (variables[short_name] == NULL)

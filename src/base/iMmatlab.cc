@@ -26,7 +26,7 @@
 Writes out the matrix, the right-hand side, and the solution vector in a \em Matlab-readable
 format, a <tt>.m</tt> file.
 */
-PetscErrorCode IceModel::writeSSAsystemMatlab(IceModelVec2 vNu[2]) {
+PetscErrorCode IceModel::writeSSAsystemMatlab(IceModelVec2S vNu[2]) {
   PetscErrorCode ierr;
   PetscViewer    viewer;
   char           file_name[PETSC_MAX_PATH_LEN], yearappend[PETSC_MAX_PATH_LEN];

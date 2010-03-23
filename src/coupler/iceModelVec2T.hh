@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Constantine Khroulev
+// Copyright (C) 2009, 2010 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -71,8 +71,8 @@ using namespace std;
 
   // get a 2D field (such as precipitation):
   ierr = v.interp(t + max_dt / 2.0); CHKERRQ(ierr);
-  // at this point v "looks" almost like an IceModelVec2 with data we need (and
-  // can be type-cast to IceModelVec2)
+  // at this point v "looks" almost like an IceModelVec2S with data we need (and
+  // can be type-cast to IceModelVec2S)
 
   // get a time-series for every grid location:
   int N = 21;
@@ -103,7 +103,7 @@ using namespace std;
 
   \endcode
  */
-class IceModelVec2T : public IceModelVec2 {
+class IceModelVec2T : public IceModelVec2S {
 public:
   IceModelVec2T();
   IceModelVec2T(const IceModelVec2T &other);

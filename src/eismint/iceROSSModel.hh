@@ -29,12 +29,13 @@ public:
   IceROSSModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
   PetscErrorCode finishROSS();
   PetscErrorCode readRIGGSandCompare();
+  virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode init_physics();
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode misc_setup();
 
 private:
-    IceModelVec2    obsAzimuth, obsMagnitude, obsAccurate;    
+    IceModelVec2S    obsAzimuth, obsMagnitude, obsAccurate;    
     virtual PetscErrorCode  createVecs();
     PetscErrorCode  fillinTemps();
     PetscErrorCode  readObservedVels(const char *fname);

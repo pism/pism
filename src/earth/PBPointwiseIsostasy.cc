@@ -12,10 +12,10 @@ PBPointwiseIsostasy::~PBPointwiseIsostasy() {
 PetscErrorCode PBPointwiseIsostasy::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
-  thk = dynamic_cast<IceModelVec2*>(vars.get("land_ice_thickness"));
+  thk = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (!thk) SETERRQ(1, "ERROR: thk is not available");
 
-  topg = dynamic_cast<IceModelVec2*>(vars.get("bedrock_altitude"));
+  topg = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
   if (!topg) SETERRQ(1, "ERROR: topg is not available");
 
   dt_beddef = GSL_NAN;
@@ -35,7 +35,7 @@ PetscErrorCode PBPointwiseIsostasy::update(PetscReal t_years, PetscReal dt_years
 
   // FIXME
   PetscErrorCode ierr;
-  IceModelVec2 vHdiff = vWork2d[0];
+  IceModelVec2S vHdiff = vWork2d[0];
 
   double lithosphere_density = config.get("lithosphere_density");
 

@@ -72,7 +72,7 @@ protected:
                              PetscScalar alpha, PetscScalar mu, PetscScalar min_T) const;
 
   // related to test L
-  IceModelVec2   vHexactL;
+  IceModelVec2S   vHexactL;
   PetscErrorCode initTestL();
   PetscErrorCode fillSolnTestL();  // only used with exactOnly == PETSC_TRUE
 

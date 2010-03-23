@@ -66,7 +66,7 @@ PetscErrorCode IceCalvBCModel::compute_nCF() {
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   // smooth by iterated averaging
-  IceModelVec2 vnCFOLD = vnCF[0];
+  IceModelVec2S vnCFOLD = vnCF[0];
   PetscScalar **cfOLD;
   const PetscInt smoothStages = 3;
   for (PetscInt k=0; k<smoothStages; ++k) {
@@ -132,12 +132,13 @@ PetscErrorCode IceCalvBCModel::writeCFfields(const char* default_filename) {
 
 
 PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
-                                 IceModelVec2 vNuH[2], Mat A) {
+                                 IceModelVec2S vNuH[2], Mat A) {
   const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   const PetscScalar   one = 1.0;
   PetscErrorCode  ierr;
-  PetscScalar     **nuH[2], **u, **v, **tauc, **cfmask;
+  PetscScalar     **nuH[2], **tauc, **cfmask;
+  PISMVector2 **uv;
 
   // clear it out
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
@@ -147,8 +148,7 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
   /* matrix assembly loop */
   ierr = vMask.begin_access();  CHKERRQ(ierr);
   ierr = vtauc.get_array(tauc); CHKERRQ(ierr);
-  ierr = vubarSSA.get_array(u); CHKERRQ(ierr);
-  ierr = vvbarSSA.get_array(v); CHKERRQ(ierr);
+  ierr = ssavel.get_array(uv); CHKERRQ(ierr);
   ierr = vNuH[0].get_array(nuH[0]); CHKERRQ(ierr);
   ierr = vNuH[1].get_array(nuH[1]); CHKERRQ(ierr);
   ierr = vsmoothCFmask.get_array(cfmask); CHKERRQ(ierr);
@@ -248,8 +248,8 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
            *    by basalDragx(),basalDragy().  */
           if ((includeBasalShear) && (vMask.value(i,j) == MASK_DRAGGING_SHEET)) {
             // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
-            valU[5] += basalDragx(tauc, u, v, i, j);
-            valV[7] += basalDragy(tauc, u, v, i, j);
+            valU[5] += basalDragx(tauc, uv, i, j);
+            valV[7] += basalDragy(tauc, uv, i, j);
           }
 
           // make shelf drag a little bit if desired
@@ -269,8 +269,7 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vsmoothCFmask.end_access(); CHKERRQ(ierr);
 
-  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
-  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
+  ierr = ssavel.end_access(); CHKERRQ(ierr);
   ierr = vtauc.end_access(); CHKERRQ(ierr);
 
   ierr = vNuH[0].end_access(); CHKERRQ(ierr);

@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Ed Bueler, Constantine Khroulev, and Jed Brown
+// Copyright (C) 2006-2010 Ed Bueler, Constantine Khroulev, and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -115,17 +115,12 @@ PetscErrorCode StressBalanceSSA::initAndAllocate(IceGrid* g) {
   ierr = KSPSetFromOptions(SSAKSP); CHKERRQ(ierr);
 
   // initial guesses of SSA velocities
-  ierr = vubarSSA.create(*grid, "vubarSSA", true);
-  ierr = vubarSSA.set_attrs("ssa_internal_restart", 
-                            "SSA model ice velocity in the X direction",
-                            "m s-1", ""); CHKERRQ(ierr);
-  ierr = vubarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-
-  ierr = vvbarSSA.create(*grid, "vvbarSSA", true);
-  ierr = vvbarSSA.set_attrs("ssa_internal_restart",
-                            "SSA model ice velocity in the Y direction",
-                            "m s-1", ""); CHKERRQ(ierr);
-  ierr = vvbarSSA.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = ssavel.create(grid, "bar_ssa", true); // components are ubar_ssa and vbar_ssa
+  ierr = ssavel.set_attrs("internal_restart", "SSA model ice velocity in the X direction",
+                            "m s-1", "", 0); CHKERRQ(ierr);
+  ierr = ssavel.set_attrs("internal_restart", "SSA model ice velocity in the Y direction",
+                            "m s-1", "", 1); CHKERRQ(ierr);
+  ierr = ssavel.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
   ierr = vaveragedhardness.create(*grid, "hardavSSA", true); CHKERRQ(ierr);
   const PetscScalar power = 1.0 / ice->exponent();
@@ -156,29 +151,28 @@ PetscErrorCode StressBalanceSSA::deallocate() {
 
 PetscErrorCode StressBalanceSSA::setGuessZero() {
   PetscErrorCode ierr;
-  ierr = vubarSSA.set(0.0); CHKERRQ(ierr);
-  ierr = vvbarSSA.set(0.0); CHKERRQ(ierr);
+  ierr = ssavel.set(0.0); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscErrorCode StressBalanceSSA::setGuess(IceModelVec2 *ubar_guess, IceModelVec2 *vbar_guess) {
+PetscErrorCode StressBalanceSSA::setGuess(IceModelVec2S *ubar_guess, IceModelVec2S *vbar_guess) {
   PetscErrorCode ierr;
-  ierr = vubarSSA.copy_from(*ubar_guess); CHKERRQ(ierr);
-  ierr = vvbarSSA.copy_from(*vbar_guess); CHKERRQ(ierr);
+  ierr = ssavel.set_component(0, *ubar_guess); CHKERRQ(ierr);
+  ierr = ssavel.set_component(1, *vbar_guess); CHKERRQ(ierr);
   return 0;
 }
 
 
-PetscScalar StressBalanceSSA::basalDragx(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
+PetscScalar StressBalanceSSA::basalDragx(PetscScalar **tauc, PISMVector2 **uv,
                                          PetscInt i, PetscInt j) const {
-  return basal->drag(tauc[i][j], u[i][j], v[i][j]);
+  return basal->drag(tauc[i][j], uv[i][j].u, uv[i][j].v);
 }
 
 
-PetscScalar StressBalanceSSA::basalDragy(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
+PetscScalar StressBalanceSSA::basalDragy(PetscScalar **tauc, PISMVector2 **uv,
                                          PetscInt i, PetscInt j) const {                         
-  return basal->drag(tauc[i][j], u[i][j], v[i][j]);
+  return basal->drag(tauc[i][j], uv[i][j].u, uv[i][j].v);
 };
 
 
@@ -190,9 +184,9 @@ Compute compoents of the basal stress applied to the base of the ice:
 PetscErrorCode StressBalanceSSA::getBasalStress(IceModelVec2 *vbs_x, IceModelVec2 *vbs_y) {
   PetscErrorCode ierr;
   
-  PetscScalar **u, **v, **tauc, **mask, **bs_x, **bs_y;
-  ierr = vubarSSA.get_array(u); CHKERRQ(ierr);
-  ierr = vvbarSSA.get_array(v); CHKERRQ(ierr);
+  PISMVector2 **uv;
+  PetscScalar **tauc, **mask, **bs_x, **bs_y;
+  ierr = ssavel.get_array(uv); CHKERRQ(ierr);
   ierr = vtauc->get_array(tauc); CHKERRQ(ierr);
   ierr = vmask->get_array(mask); CHKERRQ(ierr);
   ierr = vbs_x->get_array(bs_x); CHKERRQ(ierr);
@@ -200,13 +194,12 @@ PetscErrorCode StressBalanceSSA::getBasalStress(IceModelVec2 *vbs_x, IceModelVec
 
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      bs_x[i][j] = - basalDragx(tauc, u, v, i, j) * u[i][j],
-      bs_y[i][j] = - basalDragy(tauc, u, v, i, j) * v[i][j];
+      bs_x[i][j] = - basalDragx(tauc, uv, i, j) * u[i][j];
+      bs_y[i][j] = - basalDragy(tauc, uv, i, j) * v[i][j];
     }
   }
 
-  ierr = vubarSSA.end_access(); CHKERRQ(ierr);
-  ierr = vvbarSSA.end_access(); CHKERRQ(ierr);
+  ierr = ssavel.end_access(); CHKERRQ(ierr);
   ierr = vtauc->end_access(); CHKERRQ(ierr);
   ierr = vmask->end_access(); CHKERRQ(ierr);
   ierr = vbs_x->end_access(); CHKERRQ(ierr);

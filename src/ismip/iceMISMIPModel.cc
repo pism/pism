@@ -490,7 +490,7 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   
   ierr = vH.set(initialthickness); CHKERRQ(ierr);
 
-  ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);
+  ierr = vbmr.set(0.0); CHKERRQ(ierr);
   ierr = vGhf.set(0.0); CHKERRQ(ierr);
   ierr = vtillphi.set(0.0); CHKERRQ(ierr);
 
@@ -818,7 +818,7 @@ PetscErrorCode IceMISMIPModel::writeMISMIPasciiFile(const char mismiptype, char*
 PetscErrorCode IceMISMIPModel::getMISMIPStats() {
   // run this only after getRoutineStats() is called
   PetscErrorCode  ierr;
-  IceModelVec2 q = vWork2d[0];	// give it a shorter name
+  IceModelVec2S q = vWork2d[0];	// give it a shorter name
   ierr = vubar.multiply_by(vH, q); CHKERRQ(ierr);
   // q is signed flux in x direction, in units of m^2/s
 

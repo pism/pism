@@ -90,7 +90,7 @@ PetscErrorCode PSSimple::init(PISMVars &vars) {
 }
 
 PetscErrorCode PSSimple::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-					       IceModelVec2 &result) {
+					       IceModelVec2S &result) {
   PetscErrorCode ierr;
   ierr = atmosphere->mean_precip(t_years, dt_years, result); CHKERRQ(ierr);
 
@@ -102,7 +102,7 @@ PetscErrorCode PSSimple::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_y
 }
 
 PetscErrorCode PSSimple::ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2 &result) {
+						 IceModelVec2S &result) {
   PetscErrorCode ierr;
   ierr = atmosphere->mean_annual_temp(t_years, dt_years, result); CHKERRQ(ierr);
 
@@ -163,7 +163,7 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
 }
 
 PetscErrorCode PSConstant::ice_surface_mass_flux(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						 IceModelVec2 &result) {
+						 IceModelVec2S &result) {
   PetscErrorCode ierr;
   string history  = "read from " + input_file + "\n";
 
@@ -174,7 +174,7 @@ PetscErrorCode PSConstant::ice_surface_mass_flux(PetscReal /*t_years*/, PetscRea
 }
 
 PetscErrorCode PSConstant::ice_surface_temperature(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						   IceModelVec2 &result) {
+						   IceModelVec2S &result) {
   PetscErrorCode ierr;
   string history  = "read from " + input_file + "\n";
 
@@ -262,13 +262,13 @@ PetscErrorCode PSLocalMassBalance::init(PISMVars &vars) {
     ierr = verbPrintf(2, grid.com, "  Setting PDD parameters using formulas (6) and (7) in [Faustoetal2009]...\n"); CHKERRQ(ierr);
     use_fausto_pdd_parameters = true;
 
-    // allocate an IceModelVec2 to store mean July temperatures:
+    // allocate an IceModelVec2S to store mean July temperatures:
     ierr = temp_mj.create(grid, "temp_mj", false); CHKERRQ(ierr);
     ierr = temp_mj.set_attrs("internal",
 			     "mean July temperature from the [\ref Faustoetal2009] parameterization",
 			     "K",
 			     ""); CHKERRQ(ierr);
-    lat = dynamic_cast<IceModelVec2*>(vars.get("latitude"));
+    lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
     if (!lat) SETERRQ(1, "ERROR: latitude is not available");
   }
 
@@ -276,7 +276,7 @@ PetscErrorCode PSLocalMassBalance::init(PISMVars &vars) {
 }
 
 PetscErrorCode PSLocalMassBalance::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-							 IceModelVec2 &result) {
+							 IceModelVec2S &result) {
   PetscErrorCode ierr;
   PetscScalar **lat_degN;
 
@@ -341,7 +341,7 @@ PetscErrorCode PSLocalMassBalance::ice_surface_mass_flux(PetscReal t_years, Pets
 }
 
 PetscErrorCode PSLocalMassBalance::ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-							   IceModelVec2 &result) {
+							   IceModelVec2S &result) {
   PetscErrorCode ierr;
   ierr = atmosphere->mean_annual_temp(t_years, dt_years, result); CHKERRQ(ierr);
 
@@ -387,7 +387,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com,
 		    "* Initializing force-to-thickness mass-balance modifier...\n"); CHKERRQ(ierr);
 
-  ice_thickness = dynamic_cast<IceModelVec2*>(vars.get("land_ice_thickness"));
+  ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (!ice_thickness) SETERRQ(1, "ERROR: land_ice_thickness is not available");
 
   ierr = target_thickness.create(grid, "thk", false); CHKERRQ(ierr); // name to read by
@@ -489,7 +489,7 @@ pismr -ys -2000.0 -ye 0.0 -skip 5 -pdd -i green_SSL2_100k.nc -force_to_thk green
 \endcode
  */
 PetscErrorCode PSForceThickness::ice_surface_mass_flux(PetscReal t_years, PetscReal /*dt_years*/,
-						       IceModelVec2 &result) {
+						       IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(5, grid.com,
@@ -523,7 +523,7 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(PetscReal t_years, PetscR
 
 //! Does not modify ice surface temperature.
 PetscErrorCode PSForceThickness::ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-							 IceModelVec2 &result) {
+							 IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = input_model->ice_surface_temperature(t_years, dt_years, result); CHKERRQ(ierr);

@@ -481,11 +481,15 @@ PetscErrorCode IceModel::allocate_internal_objects() {
     ierr = vWork2d[j].create(grid, namestr, true); CHKERRQ(ierr);
   }
 
+  ierr = ssavel_old.create(grid, "bar_ssa_old", true); CHKERRQ(ierr);
+
   // 3d dedicated work vectors
-  // FIXME Tnew3 should only be allocated when doColdIceMethods==true
-  ierr = Tnew3.create(grid,"temp_new",false); CHKERRQ(ierr);
-  ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
-                         "K", ""); CHKERRQ(ierr);
+  if (doColdIceMethods) {
+    ierr = Tnew3.create(grid,"temp_new",false); CHKERRQ(ierr);
+    ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
+			   "K", ""); CHKERRQ(ierr);
+  }
+
   ierr = Enthnew3.create(grid,"enthalpy_new",false); CHKERRQ(ierr);
   ierr = Enthnew3.set_attrs("internal",
              "ice enthalpy; temporary space during timestep",
@@ -544,7 +548,7 @@ PetscErrorCode IceModel::misc_setup() {
   // model and diagnostic viewers) and we should get rid of it. One solution
   // would be: a) modularize the bed deformation code so that memory
   // allocation is separated from the bed uplift pre-initialization and b) make
-  // IceModelVec2s allocate their own Vecs for viewing.
+  // IceModelVec2Ss allocate their own Vecs for viewing.
   // 
   // Note that the bed deformation model already has separated allocation and
   // initialization code parts.

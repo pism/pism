@@ -43,9 +43,9 @@ PetscErrorCode IceModel::energyStep() {
     ierr = temperatureStep(&myVertSacrCount,&mybulgeCount); CHKERRQ(ierr);  
 
     ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
+    ierr = setEnth3FromT3_ColdIce();  CHKERRQ(ierr);
     ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
 
-    ierr = setEnth3FromT3_ColdIce();  CHKERRQ(ierr);
 
     ierr = PetscGlobalSum(&mybulgeCount, &gbulgeCount, grid.com); CHKERRQ(ierr);
     if (gbulgeCount > 0.0) {   // count of when advection bulges are limited;
@@ -67,13 +67,6 @@ PetscErrorCode IceModel::energyStep() {
 
     ierr = Enth3.beginGhostCommTransfer(Enthnew3); CHKERRQ(ierr);
     ierr = Enth3.endGhostCommTransfer(Enthnew3); CHKERRQ(ierr);
-
-    // FIXME:  updating T3 here is a stupid waste of time; see task #6868; we
-    //         should only be writing temp (= absolute temperature) diagnostically
-    //         whenever doColdIceMethods==false
-    ierr = setTnew3FromEnth3(); CHKERRQ(ierr);
-    ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
-    ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
 
     ierr = PetscGlobalSum(&myLiquifiedVol, &gLiquifiedVol, grid.com); CHKERRQ(ierr);
     if (gLiquifiedVol > 0.0) {
@@ -131,8 +124,8 @@ grid to the (usually) non-equally spaced storage grid.
 
 An instance of tempSystemCtx is used to solve the tridiagonal system set-up here.
 
-In this procedure four scalar fields are modified: vHmelt, vbasalMeltRate, Tb3, and Tnew3.
-But vbasalMeltRate and Tb3 will never need to communicate ghosted values (horizontal 
+In this procedure four scalar fields are modified: vHmelt, vbmr, Tb3, and Tnew3.
+But vbmr and Tb3 will never need to communicate ghosted values (horizontal 
 stencil neighbors).  The ghosted values for T3 are updated from the values in Tnew3 in the
 communication done by energyStep().  There is a diffusion model for vHmelt in 
 diffuseHmelt() which does communication for vHmelt.
@@ -205,7 +198,7 @@ PetscErrorCode IceModel::temperatureStep(
   system.Tb    = new PetscScalar[fMbz];
   Tbnew        = new PetscScalar[fMbz];
   
-  // system needs access to T3 for planeStar()
+  // system needs access to T3 for T3.getPlaneStar_fine()
   system.T3 = &T3;
 
   // checks that all needed constants and pointers got set:
@@ -232,7 +225,7 @@ PetscErrorCode IceModel::temperatureStep(
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vHmelt.get_array(Hmelt); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.get_array(basalMeltRate); CHKERRQ(ierr);
+  ierr = vbmr.get_array(basalMeltRate); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vRb.get_array(Rb); CHKERRQ(ierr);
   ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
@@ -450,7 +443,7 @@ PetscErrorCode IceModel::temperatureStep(
   ierr = vHmelt.end_access(); CHKERRQ(ierr);
   ierr = vRb.end_access(); CHKERRQ(ierr);
   ierr = vGhf.end_access(); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.end_access(); CHKERRQ(ierr);
+  ierr = vbmr.end_access(); CHKERRQ(ierr);
 
   ierr = artm.end_access(); CHKERRQ(ierr);
 

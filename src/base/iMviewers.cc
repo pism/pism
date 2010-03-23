@@ -54,7 +54,7 @@ PetscErrorCode IceModel::update_viewers() {
     switch(dims) {
     case GRID_2D:
       {
-	IceModelVec2 *v2 = dynamic_cast<IceModelVec2*>(v);
+	IceModelVec2S *v2 = dynamic_cast<IceModelVec2S*>(v);
 	if (v2 == NULL) SETERRQ(1,"grid_type() returns GRID_2D but dynamic_cast gives a NULL");
 	ierr = v2->view(viewer_size); CHKERRQ(ierr);
 	break;
@@ -217,13 +217,13 @@ PetscErrorCode IceModel::init_viewers() {
 
 
 //! Update nuH viewers.
-PetscErrorCode IceModel::update_nu_viewers(IceModelVec2 vNu[2], IceModelVec2 /*vNuOld*/[2], bool /*updateNu_tView*/) {
+PetscErrorCode IceModel::update_nu_viewers(IceModelVec2S vNu[2], IceModelVec2S /*vNuOld*/[2], bool /*updateNu_tView*/) {
   // this one is called when solving an SSA system
 
   PetscErrorCode ierr;
   if (view_log_nuH) {
     PetscScalar  **nui, **nuj, **gg;  
-    ierr = vWork2d[5].get_array(gg); CHKERRQ(ierr);
+    ierr = vWork2d[4].get_array(gg); CHKERRQ(ierr);
     ierr = vNu[0].get_array(nui); CHKERRQ(ierr);
     ierr = vNu[1].get_array(nuj); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -238,10 +238,10 @@ PetscErrorCode IceModel::update_nu_viewers(IceModelVec2 vNu[2], IceModelVec2 /*v
     }
     ierr = vNu[0].end_access(); CHKERRQ(ierr);
     ierr = vNu[1].end_access(); CHKERRQ(ierr);
-    ierr = vWork2d[5].end_access(); CHKERRQ(ierr);
+    ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
 
-    ierr = vWork2d[5].set_name("log10(nuH)"); CHKERRQ(ierr);
-    ierr = vWork2d[5].view(300); CHKERRQ(ierr);
+    ierr = vWork2d[4].set_name("log10(nuH)"); CHKERRQ(ierr);
+    ierr = vWork2d[4].view(300); CHKERRQ(ierr);
   }
 
   if (view_nuH) {

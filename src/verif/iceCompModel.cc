@@ -184,6 +184,8 @@ PetscErrorCode IceCompModel::setFromOptions() {
   }
 
   ierr = IceModel::setFromOptions();CHKERRQ(ierr);
+
+  doColdIceMethods = true;
   return 0;
 }
 
@@ -264,10 +266,10 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
 
   ierr = verbPrintf(3,grid.com, "initializing Test %c from formulas ...\n",testname);  CHKERRQ(ierr);
 
-  // all have no uplift or Hmelt
+  // all have no uplift or Hmelt (or basal melt)
   ierr = vuplift.set(0.0); CHKERRQ(ierr);
   ierr = vHmelt.set(0.0); CHKERRQ(ierr);
-  ierr = vbasalMeltRate.set(0.0); CHKERRQ(ierr);
+  ierr = vbmr.set(0.0); CHKERRQ(ierr);
 
   // Test-specific initialization:
   switch (testname) {
@@ -611,32 +613,29 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
 
 PetscErrorCode IceCompModel::fillSolnTestE() {
   PetscErrorCode  ierr;
-  PetscScalar     **H, **accum, **ub, **vb, dummy;
+  PetscScalar     **H, **accum, dummy;
+  PISMVector2     **bvel;
 
   ierr = acab.get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = vub.get_array(ub); CHKERRQ(ierr);
-  ierr = vvb.get_array(vb); CHKERRQ(ierr);
+  ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy;
       mapcoords(i,j,xx,yy,r);
-      exactE(xx,yy,&H[i][j],&accum[i][j],&dummy,&ub[i][j],&vb[i][j]);
+      exactE(xx,yy,&H[i][j],&accum[i][j],&dummy,&bvel[i][j].u,&bvel[i][j].v);
     }
   }
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vub.end_access(); CHKERRQ(ierr);
-  ierr = vvb.end_access(); CHKERRQ(ierr);
+  ierr = basal_vel.end_access(); CHKERRQ(ierr);
 
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
   ierr = vH.endGhostComm(); CHKERRQ(ierr);
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
 
-  ierr = vub.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vub.endGhostComm(); CHKERRQ(ierr);
-  ierr = vvb.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vvb.endGhostComm(); CHKERRQ(ierr);
+  ierr = basal_vel.beginGhostComm(); CHKERRQ(ierr);
+  ierr = basal_vel.endGhostComm(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -790,15 +789,15 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
       PetscScalar &gmaxuberr, PetscScalar &gmaxvberr) {
 
   PetscErrorCode ierr;
-  PetscScalar    **H, **ub, **vb;
+  PetscScalar    **H;
   PetscScalar    maxvecerr, avvecerr, maxuberr, maxvberr;
   PetscScalar    ubexact,vbexact, dummy1,dummy2,dummy3;
-  
+  PISMVector2    **bvel;
+
   if (testname != 'E')
     SETERRQ(1,"basal velocity errors only computable for test E\n");
 
-  ierr = vub.get_array(ub); CHKERRQ(ierr);
-  ierr = vvb.get_array(vb); CHKERRQ(ierr);
+  ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   maxvecerr = 0.0; avvecerr = 0.0; maxuberr = 0.0; maxvberr = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
@@ -808,8 +807,8 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
         mapcoords(i,j,xx,yy,r);
         exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact); 
         // compute maximum errors
-        const PetscScalar uberr = PetscAbsReal(ub[i][j] - ubexact);
-        const PetscScalar vberr = PetscAbsReal(vb[i][j] - vbexact);
+        const PetscScalar uberr = PetscAbsReal(bvel[i][j].u - ubexact);
+        const PetscScalar vberr = PetscAbsReal(bvel[i][j].v - vbexact);
         maxuberr = PetscMax(maxuberr,uberr);
         maxvberr = PetscMax(maxvberr,vberr);
         const PetscScalar vecerr = sqrt(uberr*uberr + vberr*vberr);
@@ -819,8 +818,7 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
     }
   }
   ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vub.end_access(); CHKERRQ(ierr);
-  ierr = vvb.end_access(); CHKERRQ(ierr);
+  ierr = basal_vel.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMax(&maxuberr, &gmaxuberr, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&maxvberr, &gmaxvberr, grid.com); CHKERRQ(ierr);

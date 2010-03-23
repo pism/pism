@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Ed Bueler, Constantine Khroulev, and Jed Brown
+// Copyright (C) 2006-2010 Ed Bueler, Constantine Khroulev, and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -68,21 +68,21 @@ class StressBalanceSSA {
 
 public:
   StressBalanceSSA(IceGrid* g, IceFlowLaw* ssa_ice, IceBasalResistancePlasticLaw* ssa_basal,
-                   IceModelVec2 *ssa_tauc, IceModelVec2 *ssa_mask, IceModelVec2 *ssa_hardav);
+                   IceModelVec2S *ssa_tauc, IceModelVec2S *ssa_mask, IceModelVec2S *ssa_hardav);
   virtual ~StressBalanceSSA();
 
   //! Sets initial-guess velocities to zero.
   virtual PetscErrorCode setGuessZero();
   //! Provide initial-guess velocities.
-  virtual PetscErrorCode setGuess(IceModelVec2 *ubar_guess, IceModelVec2 *vbar_guess);
+  virtual PetscErrorCode setGuess(IceModelVec2S *ubar_guess, IceModelVec2S *vbar_guess);
 
   //! Solve stress balance for vertically-integrated horizontal velocity.
   virtual PetscErrorCode solve(PetscInt *numiter);
   //! Solve stress balance for vertically-integrated horizontal velocity, but provide the effective viscosity (two components on the staggered grid).
-  virtual PetscErrorCode solve(IceModelVec2 vNuH[2], PetscInt *numiter);
+  virtual PetscErrorCode solve(IceModelVec2S vNuH[2], PetscInt *numiter);
 
   //! Put components of basal stress, applied by bedrock to base of ice, in provided IceModelVec2.
-  virtual PetscErrorCode getBasalStress(IceModelVec2 *vbs_x, IceModelVec2 *vbs_y);
+  virtual PetscErrorCode getBasalStress(IceModelVec2S *vbs_x, IceModelVec2S *vbs_y);
 
   //! Modify/update the provided field (e.g. by adding SSA solution to current SIA solution).
   virtual PetscErrorCode modifyHorizontalVelocityComponents(IceModelVec3 *u, IceModelVec3 *v);
@@ -95,15 +95,15 @@ public:
 
 protected:
   virtual PetscErrorCode updateAveragedHardness();
-  virtual PetscErrorCode computeEffectiveViscosity(IceModelVec2 vNuH[2], PetscReal epsilon);
-  virtual PetscErrorCode testConvergenceOfNu(IceModelVec2 vNuH[2], IceModelVec2 vNuHOld[2],
+  virtual PetscErrorCode computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscReal epsilon);
+  virtual PetscErrorCode testConvergenceOfNu(IceModelVec2S vNuH[2], IceModelVec2S vNuHOld[2],
                                              PetscReal *norm, PetscReal *normChange);
-  virtual PetscErrorCode assembleSSAMatrix(bool includeBasalShear, IceModelVec2 vNuH[2], Mat A);
+  virtual PetscErrorCode assembleSSAMatrix(bool includeBasalShear, IceModelVec2S vNuH[2], Mat A);
   virtual PetscErrorCode assembleSSARhs(bool surfGradInward, Vec rhs);
   virtual PetscErrorCode moveVelocityToDAVectors(Vec x);
 
-  IceModelVec2 vubarSSA, vvbarSSA,
-               vaveragedhardness;
+  IceModelVec2V ssavel;
+  IceModelVec2S vaveragedhardness;
   
   KSP        SSAKSP;
   Mat        SSAStiffnessMatrix;
@@ -119,15 +119,15 @@ protected:
   IceBasalResistancePlasticLaw* basal;
   SSAStrengthExtension          ssaStrengthExtend;
 
-  IceModelVec2 *vtauc, *vmask, *vhardav;  // pointers to external IMVecs (e.g. from IceModel)
+  IceModelVec2S *vtauc, *vmask, *vhardav;  // pointers to external IMVecs (e.g. from IceModel)
 
 private:
   PetscErrorCode initAndAllocate(IceGrid* g);
   PetscErrorCode deallocate();
 
-  PetscScalar basalDragx(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
+  PetscScalar basalDragx(PetscScalar **tauc, PISMVector2 **uv,
                          PetscInt i, PetscInt j) const;
-  PetscScalar basalDragy(PetscScalar **tauc, PetscScalar **u, PetscScalar **v,
+  PetscScalar basalDragy(PetscScalar **tauc, PISMVector2 **uv,
                          PetscInt i, PetscInt j) const;
 };
 

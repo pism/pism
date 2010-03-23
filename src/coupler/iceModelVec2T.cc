@@ -22,7 +22,7 @@
 #include "../base/PISMIO.hh"
 #include "../base/pism_const.hh"
 
-IceModelVec2T::IceModelVec2T() : IceModelVec2() {
+IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
   localp = false;
   da3 = PETSC_NULL;
   v3 = PETSC_NULL;
@@ -33,7 +33,7 @@ IceModelVec2T::IceModelVec2T() : IceModelVec2() {
   T.resize(1);			// so that T[0] is always available
 }
 
-IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec2(other) {
+IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec2S(other) {
   shallow_copy = true;
   localp = false;
 
@@ -60,7 +60,7 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const char my_short_name[
     SETERRQ(1, "IceModelVec2T cannot be 'local'");
   }
 
-  ierr = IceModelVec2::create(my_grid, my_short_name, false); CHKERRQ(ierr);
+  ierr = IceModelVec2S::create(my_grid, my_short_name, false); CHKERRQ(ierr);
 
   PetscInt       M, N, m, n;
   ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
@@ -82,7 +82,7 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const char my_short_name[
 PetscErrorCode IceModelVec2T::destroy() {
   PetscErrorCode ierr;
 
-  ierr = IceModelVec2::destroy(); CHKERRQ(ierr);
+  ierr = IceModelVec2S::destroy(); CHKERRQ(ierr);
 
   if (v3 != PETSC_NULL) {
     ierr = VecDestroy(v3); CHKERRQ(ierr);
@@ -106,7 +106,7 @@ PetscErrorCode IceModelVec2T::get_array3(PetscScalar*** &a3) {
 }
 
 PetscErrorCode IceModelVec2T::begin_access() {
-  PetscErrorCode ierr = IceModelVec2::begin_access(); CHKERRQ(ierr);
+  PetscErrorCode ierr = IceModelVec2S::begin_access(); CHKERRQ(ierr);
   if (array3 == NULL) {
     ierr = DAVecGetArray(da3, v3, &array3); CHKERRQ(ierr);
   }
@@ -114,7 +114,7 @@ PetscErrorCode IceModelVec2T::begin_access() {
 }
 
 PetscErrorCode IceModelVec2T::end_access() {
-  PetscErrorCode ierr = IceModelVec2::end_access(); CHKERRQ(ierr);
+  PetscErrorCode ierr = IceModelVec2S::end_access(); CHKERRQ(ierr);
   if (array3 != NULL) {
     ierr = DAVecRestoreArray(da3, v3, &array3); CHKERRQ(ierr);
     array3 = PETSC_NULL;
