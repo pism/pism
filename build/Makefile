@@ -79,7 +79,7 @@ SHELL := /bin/sh
 VPATH := $(subst src,../src,src/:src/base/:src/earth/:src/verif/:src/verif/tests/:src/software_tests:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
-executables := penth pismr pismd pismv pisms pcctest pismtests
+executables := pismr pismd pismv pisms pcctest pismtests
 extras := flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
 exec_extras := $(addprefix ../bin/, $(extras))
@@ -105,7 +105,7 @@ ice_csources := cubature.c pism_signal.c
 tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 	exactTestK.c exactTestL.c exactTestM.c
 
-other_sources := penth.cc pismr.cc pismd.cc pismv.cc pisms.cc \
+other_sources := pismr.cc pismd.cc pismv.cc pisms.cc \
 	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc \
 	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc iceCalvBCModel.cc \
 	flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
@@ -165,10 +165,6 @@ $(config_file): pism_config.cdl
 
 $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 
-# penth executable should be removed!
-../bin/penth : penth.o ${LIBPISMNAME}
-	${CXXLINKER} penth.o ${ICE_LIB_FLAGS} -o $@
-
 ../bin/pismr : pismr.o ${LIBPISMNAME}
 	${CXXLINKER} pismr.o ${ICE_LIB_FLAGS} -o $@
 
@@ -193,8 +189,8 @@ other_sources += pcctest.cc pgrn_atmosphere.cc
 
 #build extra executables
 
-../bin/flowTable : flowTable.o materials.o ${LIBPISMNAME}
-	${CXXLINKER} flowTable.o materials.o ${ICE_LIB_FLAGS} -o $@
+../bin/flowTable : flowTable.o materials.o pism_const.o ${LIBPISMNAME}
+	${CXXLINKER} flowTable.o materials.o pism_const.o ${ICE_LIB_FLAGS} -o $@
 
 ../bin/tryLCbd : tryLCbd.o deformation.o greens.o materials.o pism_const.o ${LIBPISMNAME}
 	${CXXLINKER} tryLCbd.o deformation.o greens.o materials.o pism_const.o ${ICE_LIB_FLAGS} -o $@
