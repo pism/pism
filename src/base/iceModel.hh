@@ -119,7 +119,7 @@ public:
 			      bool do_age,
 			      bool do_skip,
 			      bool do_bed_deformation,
-			      bool do_plastic_till);
+			      bool use_ssa_when_grounded);
   virtual PetscErrorCode diagnosticRun();
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
   virtual IceFlowLawFactory &getIceFlowLawFactory() { return iceFactory; }
@@ -189,19 +189,20 @@ protected:
         vRb,		//!< basal frictional heating on regular grid; no ghosts
         vtillphi,	//!< friction angle for till under grounded ice sheet; no ghosts
         vuvbar[2],	//!< ubar and vbar on staggered grid; ubar at i+1/2, vbar at j+1/2
-        vubar, vvbar,	//!< vertically-averaged horizontal velocity on standard grid; ghosted
-    acab,
-    artm,
-    shelfbtemp,
-    shelfbmassflux;
+    acab,		//!< accumulation/ablation rate; no ghosts
+    artm,		//!< ice temperature at the top of the ice but below firn; no ghosts
+    shelfbtemp,		//!< ice temperature at the bottom of an ice shelf; no ghosts
+    shelfbmassflux;	//!< ice mass flux from ice shelf base (positive flux is loss from ice shelf)
 
-  IceModelVec2V basal_vel;	//!< basal velocities on standard grid; ghosted
+  IceModelVec2V vel_basal,	//!< basal velocities on standard grid; ghosted
+    vel_bar, //!< vertically-averaged horizontal velocity on standard grid; ghosted
+    vel_ssa; //!< SSA model ice velocity; ghosted
 
   IceModelVec2Mask vMask; //!< mask for flow type with values SHEET, DRAGGING, FLOATING
 
   IceModelVec3
         u3, v3, w3,	//!< velocity of ice; m s-1
-        Sigma3, 	//!< strain-heating term in conservation of energy model; J s-1 m-3
+        Sigma3, 	//!< strain-heating term in conservation of energy model; J s-1 m-3, no ghosts
         T3,		//!< absolute temperature of ice; K
         Enth3,          //!< enthalpy
         tau3;		//!< age of ice; s
@@ -487,7 +488,7 @@ protected:
 
 protected:
   // working space (a convenience)
-  static const PetscInt nWork2d=6;
+  static const PetscInt nWork2d=5;
   Vec g2;			//!< Global work vector; used by the bed
 				//!< deformation code only. (FIXME!)
   IceModelVec2S vWork2d[nWork2d];
@@ -499,7 +500,7 @@ protected:
   int have_ssa_velocities;	//!< use ubar_ssa and vbar_ssa from a previous
 				//! run if 1, otherwise set them to zero in
 				//! IceModel::initSSA()
-  IceModelVec2V ssavel, ssavel_old;
+  IceModelVec2V vel_ssa_old;
 
   // SSA solve vars; note pieces of the SSA Velocity routine are defined in iMssa.cc
   KSP SSAKSP;

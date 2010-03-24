@@ -283,12 +283,12 @@ PetscErrorCode IcePSTexModel::init_physics() {
   if (exper_chosen <= 1) { // P0A and P0I are nonsliding SIA
     config.set_flag("use_ssa_velocity", false);
     config.set_flag("do_superpose", false);
-    config.set_flag("do_plastic_till", false);
+    config.set_flag("use_ssa_when_grounded", false);
   } else {
     // these options equiv to "-ssa -super -plastic"
     config.set_flag("use_ssa_velocity", true);
     config.set_flag("do_superpose", true);
-    config.set_flag("do_plastic_till", true);
+    config.set_flag("use_ssa_when_grounded", true);
     useConstantTillPhi = PETSC_FALSE;
   }  
 
@@ -550,12 +550,11 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
   const PetscScalar darea = grid.dx * grid.dy;
   
   ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vubar.begin_access(); CHKERRQ(ierr);
-  ierr = vvbar.begin_access(); CHKERRQ(ierr);
+  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (vH(i,j) > 0) {
-        const PetscScalar cbar = sqrt( PetscSqr(vubar(i,j)) + PetscSqr(vvbar(i,j)) );
+        const PetscScalar cbar = sqrt( PetscSqr(vel_bar(i,j).u) + PetscSqr(vel_bar(i,j).v) );
         const PetscScalar x = -grid.Ly + grid.dy * j, // note reversal (FIXME!
 						      // do we need this now?)
                           y = -grid.Lx + grid.dx * i,
@@ -592,8 +591,7 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
     }
   }
   ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vubar.end_access(); CHKERRQ(ierr);
-  ierr = vvbar.end_access(); CHKERRQ(ierr);
+  ierr = vel_bar.end_access(); CHKERRQ(ierr);
 
   // globalize and actually compute averages
   ierr = PetscGlobalMax(&maxcbarALL, &gmaxcbarALL, grid.com); CHKERRQ(ierr);

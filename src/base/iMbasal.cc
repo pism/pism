@@ -325,16 +325,16 @@ See getBasalWaterPressure().  See also [\ref BBssasliding] for a discussion
 of a complete model using these tools.
 
 Note that IceModel::updateSurfaceElevationAndMask() also
-checks whether do_plastic_till is true and if so it sets all mask points to
+checks whether use_ssa_when_grounded is true and if so it sets all mask points to
 DRAGGING.
  */
 PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
   PetscErrorCode  ierr;
 
-  bool do_plastic_till = config.get_flag("do_plastic_till");
-  // only makes sense when do_plastic_till == TRUE
-  if (do_plastic_till == PETSC_FALSE) {
-    SETERRQ(1,"do_plastic_till == PETSC_FALSE but updateYieldStressFromHmelt() called");
+  bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
+  // only makes sense when use_ssa_when_grounded == TRUE
+  if (use_ssa_when_grounded == PETSC_FALSE) {
+    SETERRQ(1,"use_ssa_when_grounded == PETSC_FALSE but updateYieldStressFromHmelt() called");
   }
 
   if (holdTillYieldStress == PETSC_FALSE) { // usual case: use Hmelt to determine tauc
@@ -413,7 +413,8 @@ PetscErrorCode IceModel::diffuseHmelt() {
        "  (timestep restriction believed so rare that is not part of adaptive scheme)");
   }
 
-  // communicate ghosted values so neighbors are valid
+  // communicate ghosted values so neighbors are valid (temperatureStep and
+  // enthalpyAndDrainageStep modify vHmelt, but do not update ghosts).
   ierr = vHmelt.beginGhostComm(); CHKERRQ(ierr);
   ierr = vHmelt.endGhostComm(); CHKERRQ(ierr);
 

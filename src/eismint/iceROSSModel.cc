@@ -264,7 +264,7 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
   PetscErrorCode  ierr;
   PetscScalar  uerr=0.0, verr=0.0, relvecerr=0.0, accN=0.0, 
                accArea=0.0, maxcComputed=0.0, vecErrAcc = 0.0;
-  PetscScalar  **azi, **mag, **acc, **ubar, **vbar, **H;
+  PetscScalar  **azi, **mag, **acc, **H;
   
   const PetscScalar area = grid.dx * grid.dy;
   ierr = vMask.begin_access(); CHKERRQ(ierr);
@@ -272,12 +272,11 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
   ierr = obsAzimuth.get_array(azi); CHKERRQ(ierr);    
   ierr = obsMagnitude.get_array(mag); CHKERRQ(ierr);    
   ierr = obsAccurate.get_array(acc); CHKERRQ(ierr);    
-  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
-  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
+  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (vMask.is_floating(i,j) && (H[i][j] > 1.0)) {
-        const PetscScalar ccomputed = sqrt(PetscSqr(vbar[i][j]) + PetscSqr(ubar[i][j]));
+        const PetscScalar ccomputed = sqrt(PetscSqr(vel_bar(i,j).u) + PetscSqr(vel_bar(i,j).v));
         maxcComputed = PetscMax(maxcComputed,ccomputed);
         if (PetscAbs(acc[i][j] - 1.0) < 0.1) {
           accN += 1.0;
@@ -290,8 +289,8 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
           // debug:
           //verbPrintf(1,grid.com,"i,j=%d,%d:  observed = (%5.4f,%5.4f),   computed =  (%5.4f,%5.4f)\n",
           //           i,j,uobs*secpera,vobs*secpera,ubar[i][j]*secpera,vbar[i][j]*secpera);
-          const PetscScalar Dv = PetscAbs(vobs - vbar[i][j]);
-          const PetscScalar Du = PetscAbs(uobs - ubar[i][j]);
+          const PetscScalar Dv = PetscAbs(vobs - vel_bar(i,j).u);
+          const PetscScalar Du = PetscAbs(uobs - vel_bar(i,j).v);
           verr += Dv;
           uerr += Du;
           relvecerr += (PetscSqr(Dv) + PetscSqr(Du)) / (PetscSqr(vobs) + PetscSqr(uobs));
@@ -303,8 +302,7 @@ PetscErrorCode IceROSSModel::computeErrorsInAccurateRegion() {
   ierr = obsMagnitude.end_access(); CHKERRQ(ierr);
   ierr = obsAzimuth.end_access(); CHKERRQ(ierr);
   ierr = obsAccurate.end_access(); CHKERRQ(ierr);
-  ierr = vubar.end_access(); CHKERRQ(ierr);
-  ierr = vvbar.end_access(); CHKERRQ(ierr);
+  ierr = vel_bar.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
@@ -367,12 +365,11 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
 	udata(&grid, "riggsu", "count"),
 	vdata(&grid, "riggsv", "count");
       PetscInt    len;
-      PetscScalar **ubar, **vbar, **clat, **clon;
+      PetscScalar **clat, **clon;
 
       ierr = vLongitude.get_array(clon); CHKERRQ(ierr);
       ierr =  vLatitude.get_array(clat); CHKERRQ(ierr);
-      ierr = vubar.get_array(ubar); CHKERRQ(ierr);
-      ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
+      ierr = vel_bar.begin_access(); CHKERRQ(ierr);
       ierr = vMask.begin_access();  CHKERRQ(ierr);
 
       ierr = magdata.set_units("m year-1", ""); CHKERRQ(ierr);
@@ -406,8 +403,8 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
         const int         cj = (int) floor((lat - lowlat) / dlat);
         const int         ci = (int) floor((lon - lowlon) / dlon);
         if ((ci >= grid.xs) && (ci < grid.xs+grid.xm) && (cj >= grid.ys) && (cj < grid.ys+grid.ym)) {
-          const PetscScalar cu = secpera * ubar[ci][cj];
-          const PetscScalar cv = secpera * vbar[ci][cj];
+          const PetscScalar cu = secpera * vel_bar(ci,cj).u;
+          const PetscScalar cv = secpera * vel_bar(ci,cj).v;
           const PetscScalar cmag = sqrt(PetscSqr(cu)+PetscSqr(cv));
           ierr = verbPrintf(4,PETSC_COMM_SELF,
                  " PISM%d[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
@@ -432,8 +429,7 @@ PetscErrorCode IceROSSModel::readRIGGSandCompare() {
       ierr =  vLatitude.end_access(); CHKERRQ(ierr);
       ierr = vMask.end_access(); CHKERRQ(ierr);
 
-      ierr = vubar.end_access(); CHKERRQ(ierr);
-      ierr = vvbar.end_access(); CHKERRQ(ierr);
+      ierr = vel_bar.end_access(); CHKERRQ(ierr);
   }
   return 0;
 }

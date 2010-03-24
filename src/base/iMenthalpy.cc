@@ -448,8 +448,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       //   now there is no case where we have that:
       ierr = EC->getEnthPermissive(artm(i,j), 0.0, p_ks,  Enth_ks); CHKERRQ(ierr);
 
-      ierr = Enth3.getValColumn(i,j,iosys.Enth); CHKERRQ(ierr);
-      ierr = w3.getValColumn(i,j,iosys.w); CHKERRQ(ierr);
+      ierr = Enth3.getValColumn(i,j,ks,iosys.Enth); CHKERRQ(ierr);
+      ierr = w3.getValColumn(i,j,ks,iosys.w); CHKERRQ(ierr);
 
       PetscScalar lambda;
       ierr = getEnthalpyCTSColumn(p_air, vH(i,j), ks, iosys.Enth, iosys.w,
@@ -465,10 +465,10 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
         ierr = copyColumn(iosys.Enth,cbsys.Enth,fMz); CHKERRQ(ierr);
         ierr = copyColumn(iosys.Enth_s,cbsys.Enth_s,fMz); CHKERRQ(ierr);
-        ierr = u3.getValColumn(i,j,cbsys.u); CHKERRQ(ierr);
-        ierr = v3.getValColumn(i,j,cbsys.v); CHKERRQ(ierr);
+        ierr = u3.getValColumn(i,j,ks,cbsys.u); CHKERRQ(ierr);
+        ierr = v3.getValColumn(i,j,ks,cbsys.v); CHKERRQ(ierr);
         ierr = copyColumn(iosys.w,cbsys.w,fMz); CHKERRQ(ierr);
-        ierr = Sigma3.getValColumn(i,j,cbsys.Sigma); CHKERRQ(ierr);
+        ierr = Sigma3.getValColumn(i,j,ks,cbsys.Sigma); CHKERRQ(ierr);
         ierr = Tb3.getValColumn(i,j,cbsys.Tb); CHKERRQ(ierr);
 
         ierr = cbsys.setSchemeParamsThisColumn(isMarginal, lambda);
@@ -551,9 +551,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         //   iosys.Enth_s[] are already filled
         ierr = iosys.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
 
-        ierr = u3.getValColumn(i,j,iosys.u); CHKERRQ(ierr);
-        ierr = v3.getValColumn(i,j,iosys.v); CHKERRQ(ierr);
-        ierr = Sigma3.getValColumn(i,j,iosys.Sigma); CHKERRQ(ierr);
+        ierr = u3.getValColumn(i,j,ks,iosys.u); CHKERRQ(ierr);
+        ierr = v3.getValColumn(i,j,ks,iosys.v); CHKERRQ(ierr);
+        ierr = Sigma3.getValColumn(i,j,ks,iosys.Sigma); CHKERRQ(ierr);
 
         ierr = iosys.setSchemeParamsThisColumn(isMarginal, lambda); CHKERRQ(ierr);
         ierr = iosys.setBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);

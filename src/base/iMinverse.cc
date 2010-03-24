@@ -468,12 +468,12 @@ PetscErrorCode IceModel::writeInvFields(const char *filename) {
   inv.vsSIA->write_in_glaciological_units = true;
   ierr = inv.vsSIA->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
-  bool oldwritegu = ssavel.write_in_glaciological_units;
-  ierr = ssavel.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  ssavel.write_in_glaciological_units = true;
-  ssavel.set_attr("_FillValue", fill_ma);
-  ierr = ssavel.write(filename, NC_FLOAT); CHKERRQ(ierr);
-  if (!oldwritegu)   ssavel.write_in_glaciological_units = false;
+  bool oldwritegu = vel_ssa.write_in_glaciological_units;
+  ierr = vel_ssa.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  vel_ssa.write_in_glaciological_units = true;
+  vel_ssa.set_attr("_FillValue", fill_ma);
+  ierr = vel_ssa.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  if (!oldwritegu)   vel_ssa.write_in_glaciological_units = false;
 
   ierr = inv.taubxComputed->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
@@ -561,7 +561,7 @@ horizontalVelocitySIARegular().  Therefore these IceModel members get modified:
 
 - IceModelVec2S vuvbar[2]
 - IceModelVec2S vWork2d[0..5]
-- IceModelVec2V basal_vel  (set to zero)
+- IceModelVec2V vel_basal  (set to zero)
 - IceModelVec3 Istag3[2] 
 - IceModelVec3 Sigmastag3[2].
 - IceModelVec3 vu
@@ -576,14 +576,10 @@ PetscErrorCode IceModel::computeSIASurfaceVelocity() {
   
   config.set("mu_sliding", 0.0);  // turn off SIA type sliding even if wanted for forward model (a bad idea ...)
   
-  ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here ...
+  ierr = surfaceGradientSIA(); CHKERRQ(ierr);
   // surface gradient temporarily stored in vWork2d[0..3] ...
 
-  // communicate h_x[o], h_y[o] on staggered for basalSIA() and horizontalVelocitySIARegular()
-  for (PetscInt k=0; k<4; ++k) { 
-    ierr = vWork2d[k].beginGhostComm(); CHKERRQ(ierr);
-    ierr = vWork2d[k].endGhostComm(); CHKERRQ(ierr);
-  }
+  // w=1 ghosts of vWork2d[0..3] were updated locally, no comm. is necessary.
 
   // compute the vertically integrated velocity from the nonsliding SIA
   //   (namely vuvbar[2], which is (ubar,vbar) on staggered grid)
@@ -603,7 +599,7 @@ PetscErrorCode IceModel::computeSIASurfaceVelocity() {
   ierr = Istag3[1].beginGhostComm(); CHKERRQ(ierr);
   ierr = Istag3[0].endGhostComm(); CHKERRQ(ierr);
   ierr = Istag3[1].endGhostComm(); CHKERRQ(ierr);
-  ierr = basal_vel.set(0.0); CHKERRQ(ierr);  // no sliding in SIA
+  ierr = vel_basal.set(0.0); CHKERRQ(ierr);  // no sliding in SIA
   ierr = horizontalVelocitySIARegular(); CHKERRQ(ierr);
 
   // now grab surface value of 3D velocity fields
@@ -771,17 +767,17 @@ PetscErrorCode IceModel::removeSIApart() {
   ierr = inv.usSIA->get_array(usSIA); CHKERRQ(ierr);
   ierr = inv.vsSIA->get_array(vsSIA); CHKERRQ(ierr);
   ierr = inv.fofv->get_array(fofv);  CHKERRQ(ierr);
-  ierr = ssavel.begin_access();   CHKERRQ(ierr);
+  ierr = vel_ssa.begin_access();   CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar f = fofv[i][j];
       if (f < maxfofv) {
-        ssavel(i,j).u = (us[i][j] - f * usSIA[i][j]) / (1.0 - f);
-        ssavel(i,j).v = (vs[i][j] - f * vsSIA[i][j]) / (1.0 - f);
+        vel_ssa(i,j).u = (us[i][j] - f * usSIA[i][j]) / (1.0 - f);
+        vel_ssa(i,j).v = (vs[i][j] - f * vsSIA[i][j]) / (1.0 - f);
       } else {
         // if f is 1, just treat all observed surface vel as SIA, so no sliding
-        ssavel(i,j).u = 0.0;
-        ssavel(i,j).v = 0.0;
+        vel_ssa(i,j).u = 0.0;
+        vel_ssa(i,j).v = 0.0;
       }
     }
   }
@@ -790,11 +786,11 @@ PetscErrorCode IceModel::removeSIApart() {
   ierr = inv.usSIA->end_access(); CHKERRQ(ierr);
   ierr = inv.vsSIA->end_access(); CHKERRQ(ierr);
   ierr = inv.fofv->end_access(); CHKERRQ(ierr);
-  ierr = ssavel.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
 
   // SSA differential op will be applied; communicate
-  ierr = ssavel.beginGhostComm(); CHKERRQ(ierr);
-  ierr = ssavel.endGhostComm(); CHKERRQ(ierr);
+  ierr = vel_ssa.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vel_ssa.endGhostComm(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -881,7 +877,7 @@ PetscErrorCode IceModel::computeTFAFromBasalShearNoReg(
 
   PetscScalar **tillphi, **oldphi, **imask, **N, **fofv, **taubx, **tauby;
   ierr = vtillphi.get_array(tillphi);  CHKERRQ(ierr);
-  ierr = ssavel.begin_access();   CHKERRQ(ierr);
+  ierr = vel_ssa.begin_access();   CHKERRQ(ierr);
   ierr = inv.oldtillphi->get_array(oldphi);  CHKERRQ(ierr);
   ierr = inv.invMask->get_array(imask);  CHKERRQ(ierr);
   ierr = inv.effPressureN->get_array(N);  CHKERRQ(ierr);
@@ -893,7 +889,7 @@ PetscErrorCode IceModel::computeTFAFromBasalShearNoReg(
       if (imask[i][j] < 1.5) {
         tillphi[i][j] = oldphi[i][j];  // no observed velocities or no stencil width
       } else {
-        ierr = getVfromUforInverse(ssavel(i,j).u, ssavel(i,j).v, junk1, junk2, magVsqr); CHKERRQ(ierr);
+        ierr = getVfromUforInverse(vel_ssa(i,j).u, vel_ssa(i,j).v, junk1, junk2, magVsqr); CHKERRQ(ierr);
         const PetscScalar
             magV    = sqrt(magVsqr),
             magtaub = sqrt(PetscSqr(taubx[i][j]) + PetscSqr(tauby[i][j]));
@@ -911,7 +907,7 @@ PetscErrorCode IceModel::computeTFAFromBasalShearNoReg(
     }
   }
   ierr = vtillphi.end_access();  CHKERRQ(ierr);
-  ierr = ssavel.end_access();  CHKERRQ(ierr);
+  ierr = vel_ssa.end_access();  CHKERRQ(ierr);
   ierr = inv.oldtillphi->end_access();  CHKERRQ(ierr);
   ierr = inv.fofv->end_access();  CHKERRQ(ierr);
   ierr = inv.invMask->end_access();  CHKERRQ(ierr);

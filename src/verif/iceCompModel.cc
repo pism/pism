@@ -30,6 +30,23 @@
 
 #include "iceCompModel.hh"
 
+PetscErrorCode ICMEnthalpyConverter::getAbsTemp(double E, double p, double &T) const {
+  T = E / c_i;
+  return 0;
+}
+
+PetscErrorCode ICMEnthalpyConverter::getEnth(
+                 double T, double omega, double p, double &E) const {
+ E = T * c_i;
+ return 0;
+}
+
+PetscErrorCode ICMEnthalpyConverter::getEnthPermissive(
+                 double T, double omega, double p, double &E) const {
+ E = T * c_i;
+ return 0;
+}
+
 const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
 
 IceCompModel::IceCompModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides, int mytest)
@@ -48,7 +65,7 @@ IceCompModel::IceCompModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable 
   config.set_flag("do_mass_conserve", true);
   config.set_flag("use_ssa_velocity", false);
   config.set_flag("include_bmr_in_continuity", false);
-  config.set_flag("do_plastic_till", false);
+  config.set_flag("use_ssa_when_grounded", false);
 }
 
 
@@ -202,6 +219,9 @@ PetscErrorCode IceCompModel::init_physics() {
   // default set above) and create the IceFlowLaw object.
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
+  delete EC;
+  EC = new ICMEnthalpyConverter(config);
+
   // check on whether the options (already checked) chose the right IceFlowLaw for verification;
   //   need to have a tempFromSoftness() procedure as well as the need for the right
   //   flow law to have the errors make sense
@@ -293,6 +313,8 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
     break;
   default:  SETERRQ(1,"Desired test not implemented by IceCompModel.\n");
   }
+
+  ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -618,7 +640,7 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
 
   ierr = acab.get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
+  ierr = vel_basal.get_array(bvel); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy;
@@ -628,14 +650,14 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
   }
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = basal_vel.end_access(); CHKERRQ(ierr);
+  ierr = vel_basal.end_access(); CHKERRQ(ierr);
 
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
   ierr = vH.endGhostComm(); CHKERRQ(ierr);
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
 
-  ierr = basal_vel.beginGhostComm(); CHKERRQ(ierr);
-  ierr = basal_vel.endGhostComm(); CHKERRQ(ierr);
+  ierr = vel_basal.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vel_basal.endGhostComm(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -797,7 +819,7 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
   if (testname != 'E')
     SETERRQ(1,"basal velocity errors only computable for test E\n");
 
-  ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
+  ierr = vel_basal.get_array(bvel); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   maxvecerr = 0.0; avvecerr = 0.0; maxuberr = 0.0; maxvberr = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
@@ -818,7 +840,7 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
     }
   }
   ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = basal_vel.end_access(); CHKERRQ(ierr);
+  ierr = vel_basal.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMax(&maxuberr, &gmaxuberr, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&maxvberr, &gmaxvberr, grid.com); CHKERRQ(ierr);

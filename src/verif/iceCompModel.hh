@@ -25,6 +25,15 @@
 #include "../base/iceModel.hh"
 #include "../base/iceModelVec.hh"
 
+class ICMEnthalpyConverter : public EnthalpyConverter {
+public:
+  ICMEnthalpyConverter(const NCConfigVariable &config) : EnthalpyConverter(config) {}
+  virtual ~ICMEnthalpyConverter() {}
+  virtual PetscErrorCode getAbsTemp(double E, double p, double &T) const;
+  virtual PetscErrorCode getEnth(double T, double omega, double p, double &E) const;
+  virtual PetscErrorCode getEnthPermissive(double T, double omega, double p, double &E) const;
+};
+
 class IceCompModel : public IceModel {
 
 public:

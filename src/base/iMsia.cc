@@ -70,23 +70,24 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
     // compute eta = H^{8/3}, which is more regular, on reg grid
     ierr = vWork2d[4].get_array(eta); CHKERRQ(ierr);
     ierr = vH.get_array(H); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+    // Updates eta, including stencil width 2 ghosts
+    // (Assumes that vH has stencil width = 2.)
+    for (PetscInt   i = grid.xs - 2; i < grid.xs+grid.xm + 2; i++) {
+      for (PetscInt j = grid.ys - 2; j < grid.ys+grid.ym + 2; j++) {
         eta[i][j] = pow(H[i][j], etapow);
       }
     }
     ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
     ierr = vH.end_access(); CHKERRQ(ierr);
-    // communicate eta: other processors will need ghosted for d/dx and d/dy
-    ierr = vWork2d[4].beginGhostComm(); CHKERRQ(ierr);
-    ierr = vWork2d[4].endGhostComm(); CHKERRQ(ierr);
+
     // now use Mahaffy on eta to get grad h on staggered;
     // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
+    // (Assumes that vbed and eta (vWork2d[4]) have w=2 ghosts).
     ierr = vbed.get_array(bed); CHKERRQ(ierr);
     ierr = vWork2d[4].get_array(eta); CHKERRQ(ierr);
     for (PetscInt o=0; o<2; o++) {
-      for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-        for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+      for (PetscInt   i = grid.xs - 1; i < grid.xs+grid.xm + 1; i++) {
+        for (PetscInt j = grid.ys - 1; j < grid.ys+grid.ym + 1; j++) {
           if (o==0) {     // If I-offset
             const PetscScalar mean_eta = 0.5 * (eta[i+1][j] + eta[i][j]);
             if (mean_eta > 0.0) {
@@ -126,9 +127,10 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
   } else {  // if transformForSurfaceGradient == FALSE; the Mahaffy scheme
     PetscScalar **h;
     ierr = vh.get_array(h); CHKERRQ(ierr);
+    // update w=1 ghosts locally
     for (PetscInt o=0; o<2; o++) {
-      for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-        for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+      for (PetscInt   i = grid.xs - 1; i < grid.xs+grid.xm + 1; i++) {
+        for (PetscInt j = grid.ys - 1; j < grid.ys+grid.ym + 1; j++) {
           if (o==0) {     // If I-offset
             h_x[o][i][j] = (h[i+1][j] - h[i][j]) / dx;
             h_y[o][i][j] = (+ h[i+1][j+1] + h[i][j+1]
@@ -203,19 +205,20 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   const bool usetau3 = (IceFlowLawUsesGrainSize(ice) && (realAgeForGrainSize==PETSC_TRUE) && (config.get_flag("do_age")));
 
   const PetscTruth usesGrainSize = IceFlowLawUsesGrainSize(ice);
-  
+
+  // inputs:
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
   ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
   ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
-  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
-  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
-
   if (usetau3) {
     ierr = tau3.begin_access(); CHKERRQ(ierr);
   }
-  ierr = w3.begin_access(); CHKERRQ(ierr);
+  // outputs:
+  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
+  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
   ierr = Istag3[0].begin_access(); CHKERRQ(ierr);
   ierr = Istag3[1].begin_access(); CHKERRQ(ierr);
   ierr = Sigmastag3[0].begin_access(); CHKERRQ(ierr);
@@ -232,12 +235,15 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
       PetscEnd();
     }
   }
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
 
+  // Updates w=1 ghosts locally. Uses w=2 ghosts of vH, Enth3 and (possibly)
+  // tau3. Note that vWork2d[...] w=2 ghosts are *not* used.
+
+  const PetscInt G = 1;
   // staggered grid computation of: I, J, Sigma
   for (PetscInt o=0; o<2; o++) {
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) { 
+    for (PetscInt   i = grid.xs - G; i < grid.xs+grid.xm + G; i++) {
+      for (PetscInt j = grid.ys - G; j < grid.ys+grid.ym + G; j++) { 
         // staggered point: o=0 is i+1/2, o=1 is j+1/2,
         //   (i,j) and (i+oi,j+oj) are reg grid neighbors of staggered pt:
         const PetscInt     oi = 1-o, oj=o;  
@@ -327,7 +333,6 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   if (usetau3) {
     ierr = tau3.end_access(); CHKERRQ(ierr);
   }
-  ierr = w3.end_access(); CHKERRQ(ierr);
   ierr = Sigmastag3[0].end_access(); CHKERRQ(ierr);
   ierr = Sigmastag3[1].end_access(); CHKERRQ(ierr);
   ierr = Istag3[0].end_access(); CHKERRQ(ierr);
@@ -374,7 +379,7 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
 
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
+  ierr = vel_basal.get_array(bvel); CHKERRQ(ierr);
   ierr = vRb.get_array(Rb); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
@@ -423,7 +428,7 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
 
-  ierr = basal_vel.end_access(); CHKERRQ(ierr);
+  ierr = vel_basal.end_access(); CHKERRQ(ierr);
   ierr = vRb.end_access(); CHKERRQ(ierr);
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   return 0;
@@ -435,12 +440,12 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
 At the end of velocitySIAStaggered() the vertically-averaged horizontal velocity 
 components vuvbar[0],vuvbar[1] from deformation are known on the regular grid.
 At the end of basalSIA() the basal sliding from an SIA-type sliding rule is in
-basal_vel.  This procedure averages the former onto the regular grid and adds
+vel_basal.  This procedure averages the former onto the regular grid and adds
 the sliding velocity.
 
 That is, this procedure computes the SIA "first guess" at the
 vertically-averaged horizontal velocity.  Therefore the values in \c Vec\ s
-\c vubar, \c vvbar are merely tentative.  The values in \c vuvbar are, however,
+\c vel_bar are merely tentative.  The values in \c vuvbar are, however,
 PISM's estimate of \e deformation by shear in vertical planes.
 
 Note that communication of ghosted values must occur between calling
@@ -451,38 +456,38 @@ horizontalVelocitySIARegular() and in vertVelocityFromIncompressibility().
  */
 PetscErrorCode IceModel::velocities2DSIAToRegular() {  
   PetscErrorCode ierr;
-  PetscScalar **ubar, **vbar, **uvbar[2];
+  PetscScalar **uvbar[2];
 
   double mu_sliding = config.get("mu_sliding");
 
-  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
-  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
+  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
   ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
   if (mu_sliding == 0.0) {
+    // can't update ghosts locally, because this would require w=2 ghosts of
+    // uvbar[2] to be valid.
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         // compute ubar,vbar on regular grid by averaging deformational onto
         //   staggered grid
-        ubar[i][j] = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
-        vbar[i][j] = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
+        vel_bar(i,j).u = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
+        vel_bar(i,j).v = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
       }
     }
   } else {
     // this case is not recommended!
     PISMVector2 **bvel;
-    ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
+    ierr = vel_basal.get_array(bvel); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         // as above, adding basal on regular grid
-        ubar[i][j] = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]) + bvel[i][j].u;
-        vbar[i][j] = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]) + bvel[i][j].v;
+        vel_bar(i,j).u = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]) + bvel[i][j].u;
+        vel_bar(i,j).v = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]) + bvel[i][j].v;
       }
     }
-    ierr = basal_vel.end_access(); CHKERRQ(ierr);
+    ierr = vel_basal.end_access(); CHKERRQ(ierr);
   }
-  ierr =     vubar.end_access(); CHKERRQ(ierr);
-  ierr =     vvbar.end_access(); CHKERRQ(ierr);
+  ierr =   vel_bar.end_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
   ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
   return 0;
@@ -561,15 +566,17 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
 
   double mu_sliding = config.get("mu_sliding");
 
+  // inputs:
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
   ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
   ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = Istag3[0].begin_access(); CHKERRQ(ierr);
   ierr = Istag3[1].begin_access(); CHKERRQ(ierr);
-  ierr = basal_vel.begin_access(); CHKERRQ(ierr);
+  ierr = vel_basal.begin_access(); CHKERRQ(ierr);
+  // outputs:
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.begin_access(); CHKERRQ(ierr);
   
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -586,8 +593,8 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
 
       if (mu_sliding > 0.0) {	// unusual case
         for (PetscInt k=0; k<grid.Mz; ++k) {
-          u[k] += basal_vel(i,j).u;
-	  v[k] += basal_vel(i,j).v;
+          u[k] += vel_basal(i,j).u;
+	  v[k] += vel_basal(i,j).v;
         }
       }
 
@@ -599,7 +606,7 @@ PetscErrorCode IceModel::horizontalVelocitySIARegular() {
   delete[] u;
   delete[] v;
 
-  ierr = basal_vel.end_access(); CHKERRQ(ierr);
+  ierr = vel_basal.end_access(); CHKERRQ(ierr);
   
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);

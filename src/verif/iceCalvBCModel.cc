@@ -148,7 +148,7 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
   /* matrix assembly loop */
   ierr = vMask.begin_access();  CHKERRQ(ierr);
   ierr = vtauc.get_array(tauc); CHKERRQ(ierr);
-  ierr = ssavel.get_array(uv); CHKERRQ(ierr);
+  ierr = vel_ssa.get_array(uv); CHKERRQ(ierr);
   ierr = vNuH[0].get_array(nuH[0]); CHKERRQ(ierr);
   ierr = vNuH[1].get_array(nuH[1]); CHKERRQ(ierr);
   ierr = vsmoothCFmask.get_array(cfmask); CHKERRQ(ierr);
@@ -269,7 +269,7 @@ PetscErrorCode IceCalvBCModel::assembleSSAMatrix(const bool includeBasalShear,
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vsmoothCFmask.end_access(); CHKERRQ(ierr);
 
-  ierr = ssavel.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
   ierr = vtauc.end_access(); CHKERRQ(ierr);
 
   ierr = vNuH[0].end_access(); CHKERRQ(ierr);

@@ -183,6 +183,8 @@ PetscErrorCode IceModel::bedDefStepIfNeeded() {
         ierr = bdLC.step(dtBedDefYears, grid.year - grid.start_year); CHKERRQ(ierr);
       }
       ierr = vbed.get_from_proc0(bedp0, top0ctx, g2, g2natural); CHKERRQ(ierr);
+
+      // FIXME: is this comm. really necessary?
       ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
       ierr = vbed.endGhostComm(); CHKERRQ(ierr);
     }
