@@ -143,8 +143,10 @@ def plot_tests(nc, list_of_tests):
 
 def print_help():
     print """Usage:
--i            specifies an input file (which should be a result of running pismv with the -report_file option)
--t,--tests=   specifies a comma-separated list of tests. Use -t all to plot all the tests available in the -i file.
+-i            specifies an input file, a result of running pismv (or vfnow.py)
+                with the -report_file option
+-t,--tests=   specifies a comma-separated list of tests. Use '-t all'
+                to plot all the tests available in the -i file.
 --help        prints this message
 """
 

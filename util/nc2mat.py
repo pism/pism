@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from scipy.io.matlab.mio import savemat
 from sys import argv, exit
 try:
     from netCDF4 import Dataset as NC
@@ -91,12 +90,18 @@ if len(missing) > 0:
 print "Excluded variables: ", exclude_list
 
 if mdict.keys() == []:
-    print "No data to write. Exiting..."
-    exit(-1)
+    print "WARNING:  No data to write. Exiting ..."
+    print_options_and_exit(-2)
 
 print "Writing data to %s..." % (output_name)
 try:
+    from scipy.io.matlab.mio import savemat
+except:
+    print "ERROR! Can't import 'savemat' from scipy.io.matlab.mio.  Exiting ..."
+    exit(-3)
+from scipy.io.matlab.mio import savemat
+try:
     savemat(output_name, mdict, appendmat=False, format='5')
 except:
-    print "ERROR! Can't write to %s. Exiting..." % (output_name)
-    exit(-1)
+    print "ERROR! Can't write to %s. Exiting ..." % (output_name)
+    exit(-4)

@@ -889,21 +889,21 @@ $ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -extras -regrid_from SM.nc \
 
 \section{Example: Modeling the Greenland ice sheet}\label{sec:eismint-greenland} \index{PISM!running the EISMINT Greenland intercomparison}\index{Greenland ice sheet}\index{EISMINT!intercomparison of Greenland models} 
 
-In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use somewhat stale data from the 1990s ice sheet modelling intercomparison EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}.  Though based on old data, EISMINT-Greenland is an excellent tutorial example.
+In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use older data from the 1990s ice sheet modelling intercomparison EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}, but it is an excellent tutorial example.
 
-The data for performing this experiment are freely available at
+The data are freely available at
 \medskip
 
 \centerline{\protect{\textbf{\url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}}}}
 \medskip
 
-\noindent The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  In the ice and sea floor-core driven ``forced climate'' CCL3 run, described below, the ice sheet is forced by changes in surface temperature from the GRIP core \cite{Dansgaardetal1993} and by changes in sea level from SPECMAP \cite{Imbrieetal1984}.  A parameter-sensitivity study of a EISMINT-Greenland type ice sheet model is described in \cite{RitzFabreLetreguilly}.
+\noindent The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  In the ``forced climate'' CCL3 run, described below, the modeled ice sheet is sees changes in surface temperature from the GRIP core \cite{Dansgaardetal1993} and sea level changes from SPECMAP \cite{Imbrieetal1984}.
 
-Substantial developments have occurred in modeling the Greenland ice sheet since the EISMINT-Greenland intercomparison.  For example, the relation between a Greenland ice sheet flow model, Earth deformation under ice sheet loads, and the reconstruction of global ice loading is analyzed in \cite{TarasovPeltier}.  The response of Greenland ice sheet models to climate warming is addressed in \cite{HuybrechtsdeWolde,Huybrechts02, Greve00}, among other references.
+Substantial developments have occurred in modeling the Greenland ice sheet since the EISMINT-Greenland intercomparison.  For example, the relation between a Greenland ice sheet flow model, Earth deformation under ice sheet loads, and the reconstruction of global ice loading is analyzed in \cite{TarasovPeltier}.  A parameter-sensitivity study of a EISMINT-Greenland-type ice sheet model is described in \cite{RitzFabreLetreguilly}.  The response of Greenland ice sheet models to climate warming is addressed in \cite{HuybrechtsdeWolde,Huybrechts02, Greve00}, among other references.
 
 The rest of this section is a step-by-step PISM tutorial.  The details can be typed in by hand, or the user can invoke the bash scripts \verb|preprocess.sh|, \verb|bootstrap.sh|, \verb|ssl2.sh|, and \verb|ccl3.sh| in the directory \verb|examples/eisgreen|.  These scripts execute the commands in the next four subsections, respectively.
 
-\subsubsection*{Obtaining and pre-processing the EISMINT-Greenland data}  We use two Python scripts to convert the EISMINT-Greenland data.  The data is in the form of several ASCII text files, into NetCDF files usable by PISM.  The Python libraries \href{http://numpy.scipy.org/}{\texttt{numpy}} and \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}} must be present for the scripts to work.
+\subsubsection*{Obtaining and pre-processing the EISMINT-Greenland data}  We use two Python scripts to convert the EISMINT-Greenland data.  The data is in the form of several ASCII text files, so we convert them into NetCDF files usable by PISM.  The Python libraries \href{http://numpy.scipy.org/}{\texttt{numpy}} and \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}} must be present for the scripts to work.
 
 First, \verb|cd examples/eisgreen/| from the PISM directory, and download these text (ASCII) files from the EISMINT-Greenland web site above: 
 
@@ -1756,98 +1756,57 @@ These two PETSc mechanisms can be used together.  (The effect of duplicate or co
 
 \opt{v}   Show version number of PETSc.
 
+
 \clearpage \newpage
 \section{Python scripts for PISM modeling}\label{sect:scripts}
 
-\newcommand{\scriptoptdef}[3]{\vspace{1mm}\noindent \large\texttt{-#1},\,\,\texttt{--#2=}\normalsize\,\,[\textsl{#3}]:\quad}
-
 \newcommand{\scripthead}[1]{\subsubsection*{\Large{\texttt{#1}}}}
 
-\newcommand{\opthead}{\smallskip \noindent\textsc{options}.\quad}
-
-\scripthead{util/fill\und missing.py}\index{fill\und missing.py}  This script uses an approximation to Laplace's equation
+\scripthead{util/fill\und missing.py}\index{fill\und missing.py}  Uses an approximation to Laplace's equation
 	$$\grad^2 u = 0$$
 to smoothly replace missing values in two-dimensional NetCDF variables with the average of the ``nearby'' non-missing values.
 
-Section \ref{sec:eismint-greenland} gives an example of actual usage on the bed elevations in the EISMINT-Greenland data.  Here is a hypothetical example usage, of filling the missing values in the two variables \verb|topg| and \verb|usurf|, using a convergence tolerance of $10^{-4}$ and the initial guess of $100$, on data in the NetCDF file \verb|data.nc|:
+Section \ref{sec:eismint-greenland} gives an example application to the bed elevations in the EISMINT-Greenland data.  Here is another hypothetical example, filling the missing values in the variables \verb|topg| and \verb|usurf|, using a convergence tolerance of $10^{-4}$ and the initial guess of $100$, on data in the NetCDF file \verb|data.nc|:
 
 \begin{verbatim}
 fill_missing.py -f data.nc -v topg,usurf --eps=1.0e-4 \
                 -i 100.0 -o data_smoothed.nc
 \end{verbatim}
-Note that \verb|-i| and \verb|-e| specify the initial guess and the convergence tolerance for \emph{all} the specified variables, so using these options only makes sense if all the variables have the same units. Moreover, making a good initial guess can noticeably reduce the time needed to fill in the holes, so we recommend processing variables one at a time.
+Options \verb|-i| and \verb|-e| specify the initial guess and the convergence tolerance for \emph{all} the specified variables, so using these options only makes sense if all the variables have the same units.  Moreover, making a good initial guess can noticeably reduce the time needed to fill in the holes.  Generally variables should be filled one at a time.
 
-Note that each of the requested variables must have missing values specified
-according to CF Metadata conventions. Namely, each of the listed variables must
-have one of the following: \verb|valid_range| or both of \verb|valid_min| and
-\verb|valid_max| defined if the values are in a specific range; one of
-\verb|valid_min| and \verb|valid_max| if values are greater (or less,
-respectively) than some value, or \verb|_FillValue|. Also note that
-\verb|_FillValue| is interpreted as \verb|valid_max| if it is positive and as
-\verb|valid_min| otherwise; see
+Each of the requested variables must have missing values specified
+according to CF Metadata conventions, namely one of the following:
+\verb|valid_range| or both of \verb|valid_min| and
+\verb|valid_max| (if the values are in a specific range); one of
+\verb|valid_min| (\verb|valid_max|) if values are greater (less)
+than some value, or \verb|_FillValue|.  Also \verb|_FillValue| is
+interpreted as \verb|valid_max| if it is positive, and as
+\verb|valid_min| otherwise, and the \verb|missing_value| attribute is deprecated
+by the NetCDF User's Guide, but is supported for backward compatibility.  For more information see
 \href{http://www.unidata.ucar.edu/software/netcdf/guide_10.html#SEC76}{NetCDF
-  User's Guide: Attributes} for details. The \verb|missing_value| is deprecated
-by the NetCDF User's Guide, but is supported for backward compatibility
+ User's Guide: Attributes}.
 
-Please run \texttt{fill\und missing.py --help} for the list of available
+Run \texttt{fill\und missing.py --help} for the list of available
 command-line options.
 
 
-\scripthead{test/vfnow.py}\index{vfnow.py}  This Python script in directory \verb|test/| organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in section \ref{sect:verif}.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
+\scripthead{util/nc2mat.py}\index{nc2mat.py} Reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format (\verb|.mat|, supported by MATLAB version 5 and later). It depends on \verb|netcdf4-python| and SciPy.
 
-In a standard PISM installation, runs as \verb|test/vfnow.py|, or \texttt{cd test/} and do \texttt{./vfnow.py}. Example usage:
-\begin{itemize}
-\item ``\verb|vfnow.py|'' without options will use one processor and do three levels of refinement; this command is equivalent to \verb|vfnow.py -n 1 -l 3 -t CGIJ|,
-\item ``\verb|vfnow.py -n 8 -l 5 -t J --prefix=bin/ --mpido='aprun -n'|'' will use \verb|aprun -n 8 bin/pismv| as the command and do five levels (the maximum) of refinement only on test J,
-\item ``\verb|vfnow.py -n 2 -l 3 -t CEIJGKL -u 1|'' uses two processers (cores) and runs in about two hours; the vertical spacing is not equal (\verb|-z_spacing quadratic|),
-\item ``\verb|vfnow.py -n 40 -l 5 -t ABCDEFGIJKLM|'' will use forty processors to do all possible verification as managed by \verb|vfnow.py|; don't run this unless you have a big computer and you are prepared to wait.
-\end{itemize}
+The options go before the input file name.  Here are some examples:
 
-For a list of options do \verb|test/vfnow.py --help|.
+\verb|nc2mat.py ross.nc|
 
-Timing information is given in the \verb|vfnow.py| output so performance, including parallel performance, can be assessed along with accuracy.  The exact meaning of the numerical errors reported by \verb|pismv|, which appear in a \verb|vfnow.py| output as well, is currently only documented in the source files \verb|pism/src/verif/iceCompModel.cc|, \verb|pism/src/verif/iCMthermo.cc|, and \verb|pism/src/verif/iceExactSSAModel.cc|.  
+\noindent will read all the variables from \verb|ross.nc| and write them to \verb|ross.mat|,
 
+\verb|nc2mat.py -v thk,acab -o ross_matlab.mat ross.nc|
 
-\scripthead{test/vnreport.py}\index{vnreport.py}  This Python script processes
-a NetCDF report file created by \texttt{vfnow.py} and creates plots similar
-to figures \ref{fig:thickerrsB}--~\ref{fig:temperrsK}.
-
-The basic use is this:
-\begin{verbatim}
-$  vfnow.py -n 2 -l 5 -t K -r K.nc
-$  vnreport.py -i K.nc -t K
-\end{verbatim}
-
-The \verb|vfnow.py| run will take a while.  The \verb|vnreport.py| run will
-(quickly) look at \verb|K.nc| and extract the geometry (thickness) numerical
-errors and refinement path and create and image like that in Figure
-\ref{fig:temperrsK}. This script does not save the image created, you can
-do that using the ``save'' button of the displayed dialog.
-
-The \verb|Makefile| in the documentation directory \verb|pism/doc/| gives more example usages.  In fact, \verb|vnreport.py| is primarily used to automate the creation of this manual.
-
-Please run \texttt{vnreport.py --help} for the list of all the options accepted.
-
-
-\scripthead{util/nc2mat.py}\index{nc2mat.py} This Python script reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format (\verb|.mat|, supported by MATLAB version 5 and later). It depends on \verb|netcdf4-python| and SciPy.
-
-Here are some examples:
+\noindent will read variables \verb|thk| and \verb|acab| from \verb|ross.nc| and write them to \verb|ross_matlab.nc|, and
 
 \verb|nc2mat.py -e x,y,z ross.nc|
 
 \noindent will read all the variables except \verb|x|, \verb|y| and \verb|z| from \verb|ross.nc| and write them to \verb|ross.mat|.
 
-\verb|nc2mat.py -v thk,acab -o ross_matlab.mat ross.nc|
-
-\noindent will read variables \verb|thk| and \verb|acab| from \verb|ross.nc| and write them to \verb|ross_matlab.nc|.
-
-\verb|nc2mat.py ross.nc|
-
-\noindent will read all the variables from \verb|ross.nc| and write them to \verb|ross.mat|.
-
-Note that the options should go before the input file name. Also note that PISM saves all the variables using the single precision (type \verb|float|), while most MATLAB plotting functions expect data to have double precision (type \verb|double|), so one might need to convert them explicitly.
-
-Assuming that \verb|ross.nc| contains data produced by a PISM run like ones in section \ref{sect:ross}, running
+Because PISM saves all diagnostic variables using the single precision (type \verb|float|), while most MATLAB plotting functions expect data to have double precision (type \verb|double|), so one might need to convert them explicitly.  For example, assuming that \verb|ross.nc| contains data produced by a PISM run like ones in section \ref{sect:ross}, running
 
 \verb|nc2mat.py -v cbar ross.nc|
 
@@ -1855,9 +1814,26 @@ Assuming that \verb|ross.nc| contains data produced by a PISM run like ones in s
 \begin{verbatim}
 >> load ross.mat;
 >> cbar = double(reshape(cbar, 147, 147));
->> pcolor(cbar);colorbar();
+>> pcolor(cbar); colorbar();
 \end{verbatim}
 in the MATLAB shell will produce a picture of the Ross Ice Shelf shaded by modeled ice speed.
+
+\scripthead{test/vfnow.py}\index{vfnow.py}  Organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in section \ref{sect:verif}.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
+
+Examples:
+\begin{itemize}
+\item \verb|vfnow.py|: use one processor and do three levels of refinement; this command is equivalent to \verb|vfnow.py -n 2 -l 2 -t CGIJ|,
+\item ``\verb|vfnow.py -n 8 -l 5 -t J --prefix=bin/ --mpido='aprun -n'|'' will use
+
+\noindent \verb|aprun -n 8 bin/pismv| as the command and do five levels (the maximum) of refinement only on test J,
+\item ``\verb|vfnow.py -n 2 -l 3 -t CEIJGKL|'' uses two processers (cores) and runs in about an hour,
+\item ``\verb|vfnow.py -n 40 -l 5 -t ABCDEFGIJKL|'' will use forty processors to do all possible verification as managed by \verb|vfnow.py|; don't run this unless you have a big computer and you are prepared to wait.
+\end{itemize}
+
+For a list of options do \verb|test/vfnow.py --help|.
+
+Timing information is given in the \verb|vfnow.py| output so performance, including parallel performance, can be assessed along with accuracy.  An additional script \verb|vnreport.py|\index{vnreport.py} also automates the creation of convergence graphs like figures \ref{fig:thickerrsB}--~\ref{fig:temperrsK}.
+
 
 \label{sect:index}
 \printindex

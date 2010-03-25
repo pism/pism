@@ -78,10 +78,10 @@ IceGrid::IceGrid(MPI_Comm c,
 
   year     = start_year = config.get("start_year");
   end_year = start_year + config.get("run_length_years");
-  Mx  = config.get("grid_Mx");
-  My  = config.get("grid_My");
-  Mz  = config.get("grid_Mz");
-  Mbz = config.get("grid_Mbz");
+  Mx  = static_cast<PetscInt>(config.get("grid_Mx"));
+  My  = static_cast<PetscInt>(config.get("grid_My"));
+  Mz  = static_cast<PetscInt>(config.get("grid_Mz"));
+  Mbz = static_cast<PetscInt>(config.get("grid_Mbz"));
 
   initial_Mz = 0;		// will be set to a correct value in
 				// IceModel::check_maximum_thickness()
