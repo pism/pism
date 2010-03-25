@@ -293,7 +293,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   ierr = PISMOptionsIsSet("-try_calving", tryCalving); CHKERRQ(ierr);
 
   config.set_flag("do_temp",                      false);
-  config.set_flag("do_plastic_till",              false);
+  config.set_flag("use_ssa_when_grounded",        false);
   config.set_flag("do_bed_deformation",           false);
   config.set_flag("is_dry_simulation",            false);
   config.set_flag("include_bmr_in_continuity",    false);

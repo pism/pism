@@ -30,6 +30,23 @@
 
 #include "iceCompModel.hh"
 
+PetscErrorCode ICMEnthalpyConverter::getAbsTemp(double E, double p, double &T) const {
+  T = E / c_i;
+  return 0;
+}
+
+PetscErrorCode ICMEnthalpyConverter::getEnth(
+                 double T, double omega, double p, double &E) const {
+ E = T * c_i;
+ return 0;
+}
+
+PetscErrorCode ICMEnthalpyConverter::getEnthPermissive(
+                 double T, double omega, double p, double &E) const {
+ E = T * c_i;
+ return 0;
+}
+
 const PetscScalar IceCompModel::ablationRateOutside = 0.02; // m/a
 
 IceCompModel::IceCompModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides, int mytest)
@@ -48,13 +65,8 @@ IceCompModel::IceCompModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable 
   config.set_flag("do_mass_conserve", true);
   config.set_flag("use_ssa_velocity", false);
   config.set_flag("include_bmr_in_continuity", false);
-  config.set_flag("do_plastic_till", false);
+  config.set_flag("use_ssa_when_grounded", false);
 }
-
-
-IceCompModel::~IceCompModel() {
-}
-
 
 PetscErrorCode IceCompModel::createVecs() {
   PetscErrorCode ierr;
@@ -196,11 +208,12 @@ PetscErrorCode IceCompModel::init_physics() {
   // Set the default for IceCompModel:
   ierr = iceFactory.setType(ICE_ARR); CHKERRQ(ierr);
 
-  doColdIceMethods = true;
-
   // Let the base class version read the options (possibly overriding the
   // default set above) and create the IceFlowLaw object.
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
+
+  delete EC;
+  EC = new ICMEnthalpyConverter(config);
 
   // check on whether the options (already checked) chose the right IceFlowLaw for verification;
   //   need to have a tempFromSoftness() procedure as well as the need for the right
@@ -293,6 +306,8 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
     break;
   default:  SETERRQ(1,"Desired test not implemented by IceCompModel.\n");
   }
+
+  ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
 
   return 0;
 }

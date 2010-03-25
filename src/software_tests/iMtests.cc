@@ -148,7 +148,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec3()    {
     values_in[k] = sin(grid.zlevels_fine[k]/1000.0);
   }
   ierr = T3.setValColumnPL(grid.xs, grid.ys, values_in); CHKERRQ(ierr);
-  ierr = T3.getValColumnPL(grid.xs, grid.ys, values_out); CHKERRQ(ierr);
+  ierr = T3.getValColumnPL(grid.xs, grid.ys, grid.Mz_fine, values_out); CHKERRQ(ierr);
   for (PetscInt k=0; k < grid.Mz_fine; k++) {
     ierr = verbPrintf(1,grid.com,
         "   k=%d:   level=%7.2f   values_in=%7.4f   values_out=%7.4f   |diff|=%5.4e\n",
@@ -159,7 +159,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec3()    {
   ierr = verbPrintf(1,grid.com,
     "\n\ntesting IceModelVec3::setValColumnPL() and getValColumnQUAD()\n");
   CHKERRQ(ierr);
-  ierr = T3.getValColumnQUAD(grid.xs, grid.ys, values_out); CHKERRQ(ierr);
+  ierr = T3.getValColumnQUAD(grid.xs, grid.ys, grid.Mz_fine, values_out); CHKERRQ(ierr);
   for (PetscInt k=0; k < grid.Mz_fine; k++) {
     ierr = verbPrintf(1,grid.com,
        "   k=%d:   level=%7.2f   values_in=%7.4f   values_out=%7.4f   |diff|=%5.4e\n",

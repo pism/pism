@@ -1134,8 +1134,8 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   }
 
   if (name == "temp_pa") {
-    ierr = compute_temp_pa(Enth3); CHKERRQ(ierr);
-    result = &Enth3;
+    ierr = compute_temp_pa(Enthnew3); CHKERRQ(ierr);
+    result = &Enthnew3;
     return 0;
   }
 
@@ -1152,7 +1152,7 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   }
 
   if (name == "temppabase") {
-    ierr = compute_temp_pa(Enth3); CHKERRQ(ierr);
+    ierr = compute_temp_pa(Enthnew3); CHKERRQ(ierr);
     ierr = compute_temppabase(Enthnew3,vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
@@ -1285,7 +1285,7 @@ PetscErrorCode IceModel::compute_ice_area_floating(PetscScalar &result) {
   return 0;
 }
 
-//! Computes the ice enthalpy, in J/m^3.
+//! Computes the total ice enthalpy (a scalar), in J/m^3.
 PetscErrorCode IceModel::compute_ice_enthalpy(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar enthalpysum=0.0;

@@ -141,7 +141,7 @@ PetscErrorCode IceModel::update_mask() {
   PetscReal currentSeaLevel;
   ierr = ocean->sea_level_elevation(grid.year, dt / secpera, currentSeaLevel); CHKERRQ(ierr);
 
-  bool do_plastic_till = config.get_flag("do_plastic_till"),
+  bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded"),
     use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
   double ocean_rho = config.get("sea_water_density");
@@ -165,13 +165,10 @@ PetscErrorCode IceModel::update_mask() {
 
 	if (hgrounded > hfloating+1.0) { // floatation criterion says it is grounded
 	  if (use_ssa_velocity) {
-	    if (do_plastic_till) {
-	      // we are using SSA-as-a-sliding-law, so we know what to do:
-	      //   all grounded points become DRAGGING
+	    if (use_ssa_when_grounded) {
 	      mask[i][j] = MASK_DRAGGING_SHEET;
 	    } else {
-	      // we do not know how to set this point, which just became grounded
-	      mask[i][j] = MASK_UNKNOWN;
+	      mask[i][j] = MASK_SHEET;
 	    }
 	  } else {
 	    // we do not have any ice handled by SSA, so it must be SHEET
@@ -185,7 +182,7 @@ PetscErrorCode IceModel::update_mask() {
 	if (hgrounded > hfloating-1.0) { // floatation criterion says it is grounded
 
 	  // we are using SSA-as-a-sliding-law, so grounded points become DRAGGING
-	  if (use_ssa_velocity && do_plastic_till)
+	  if (use_ssa_velocity && use_ssa_when_grounded)
 	    mask[i][j] = MASK_DRAGGING_SHEET;
 
 	} else {
@@ -193,27 +190,6 @@ PetscErrorCode IceModel::update_mask() {
 	}
 
       }
-
-      // deal with the confusing case, which is when it is grounded,
-      //   it was marked FLOATING, and the user wants some SIA points
-      //   and some SSA points
-      if (vMask.value(i,j) == MASK_UNKNOWN) {
-	// determine type of grounded ice by vote-by-neighbors
-	//   (BOX stencil neighbors!):
-	// FIXME: this should be made clearer
-	const PetscScalar neighmasksum = 
-	  PismModMask(mask[i-1][j+1]) + PismModMask(mask[i][j+1]) + PismModMask(mask[i+1][j+1]) +
-	  PismModMask(mask[i-1][j])   +                           + PismModMask(mask[i+1][j])  +
-	  PismModMask(mask[i-1][j-1]) + PismModMask(mask[i][j-1]) + PismModMask(mask[i+1][j-1]);
-	// make SHEET if either all neighbors are SHEET or at most one is 
-	//   DRAGGING; if any are floating then ends up DRAGGING:
-	if (neighmasksum <= (7*MASK_SHEET + MASK_DRAGGING_SHEET + 0.1)) { 
-	  mask[i][j] = MASK_SHEET;
-	} else { // otherwise make DRAGGING
-	  mask[i][j] = MASK_DRAGGING_SHEET;
-	}
-      }
-        
     } // inner for loop (j)
   } // outer for loop (i)
 

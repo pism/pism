@@ -404,6 +404,12 @@ The pressure-melting temperature \f$T_{pa}(E,p)\f$ is computed by getPATemp().
 PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(
                 PetscScalar enthalpy, PetscScalar pressure) const {
   PetscErrorCode ierr;
+#ifdef PISM_DEBUG
+  if (enthalpy < 0) {
+    SETERRQ(1, "Negative enthaply; this should never happen");
+  }
+#endif
+
   if (EC == NULL) {
     PetscErrorPrintf("EC is NULL in PolyThermalGPBLDIce::flowFromEnth()\n");
     endPrintRank();

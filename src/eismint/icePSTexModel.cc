@@ -283,12 +283,12 @@ PetscErrorCode IcePSTexModel::init_physics() {
   if (exper_chosen <= 1) { // P0A and P0I are nonsliding SIA
     config.set_flag("use_ssa_velocity", false);
     config.set_flag("do_superpose", false);
-    config.set_flag("do_plastic_till", false);
+    config.set_flag("use_ssa_when_grounded", false);
   } else {
     // these options equiv to "-ssa -super -plastic"
     config.set_flag("use_ssa_velocity", true);
     config.set_flag("do_superpose", true);
-    config.set_flag("do_plastic_till", true);
+    config.set_flag("use_ssa_when_grounded", true);
     useConstantTillPhi = PETSC_FALSE;
   }  
 

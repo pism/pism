@@ -119,7 +119,7 @@ public:
 			      bool do_age,
 			      bool do_skip,
 			      bool do_bed_deformation,
-			      bool do_plastic_till);
+			      bool use_ssa_when_grounded);
   virtual PetscErrorCode diagnosticRun();
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
   virtual IceFlowLawFactory &getIceFlowLawFactory() { return iceFactory; }

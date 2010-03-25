@@ -390,7 +390,8 @@ PetscErrorCode IceModel::init_physics() {
   ierr = verbPrintf(3, grid.com,
 		    "initializing IceFlowLaw and EnthalpyConverter ...\n"); CHKERRQ(ierr);
 
-  EC = new EnthalpyConverter(config);
+  if (EC == NULL)
+    EC = new EnthalpyConverter(config);
 
   ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
 

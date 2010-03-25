@@ -447,7 +447,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 			      bool do_age,
 			      bool do_skip,
 			      bool do_bed_deformation,
-			      bool do_plastic_till) {
+			      bool use_ssa_when_grounded) {
   PetscErrorCode ierr;
 
   ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
@@ -494,7 +494,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   PetscLogEventEnd(beddefEVENT,0,0,0,0);
 
   // update basal till yield stress if appropriate; will modify and communicate mask
-  if (do_plastic_till) {
+  if (use_ssa_when_grounded) {
     ierr = updateYieldStressUsingBasalWater();  CHKERRQ(ierr);
     stdout_flags += "y";
   } else stdout_flags += "$";
@@ -599,7 +599,7 @@ PetscErrorCode IceModel::run() {
     do_age = config.get_flag("do_age"),
     do_skip = config.get_flag("do_skip"),
     do_bed_deformation = config.get_flag("do_bed_deformation"),
-    do_plastic_till = config.get_flag("do_plastic_till");
+    use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
 
 #if PETSC_VERSION_MAJOR >= 3
 # define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((name),(cookie),(event))
@@ -632,7 +632,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
 				       // greater than start_year
 
   ierr = step(do_mass_conserve, do_temp, do_age,
-	      do_skip, do_bed_deformation, do_plastic_till); CHKERRQ(ierr);
+	      do_skip, do_bed_deformation, use_ssa_when_grounded); CHKERRQ(ierr);
 
   // print verbose messages according to user-set verbosity
   if (tmp_verbosity > 2) {
@@ -682,7 +682,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
     maxdt_temporary = -1.0;
 
     ierr = step(do_mass_conserve, do_temp, do_age,
-		do_skip, do_bed_deformation, do_plastic_till); CHKERRQ(ierr);
+		do_skip, do_bed_deformation, use_ssa_when_grounded); CHKERRQ(ierr);
 
     // report a summary for major steps or the last one
     bool updateAtDepth = (skipCountDown == 0);
@@ -718,7 +718,7 @@ This procedure has no loop but the following actions are taken:
 PetscErrorCode IceModel::diagnosticRun() {
   PetscErrorCode  ierr;
 
-  bool do_plastic_till = config.get_flag("do_plastic_till");
+  bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
 
   // print out some stats about input state
   ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -728,7 +728,7 @@ PetscErrorCode IceModel::diagnosticRun() {
   dt = 0.0;
 
   // update basal till yield stress if appropriate; will modify and communicate mask
-  if (do_plastic_till) {
+  if (use_ssa_when_grounded) {
     ierr = updateYieldStressUsingBasalWater();  CHKERRQ(ierr);
   }
 

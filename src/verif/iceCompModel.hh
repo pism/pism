@@ -25,11 +25,20 @@
 #include "../base/iceModel.hh"
 #include "../base/iceModelVec.hh"
 
+class ICMEnthalpyConverter : public EnthalpyConverter {
+public:
+  ICMEnthalpyConverter(const NCConfigVariable &config) : EnthalpyConverter(config) {}
+  virtual ~ICMEnthalpyConverter() {}
+  virtual PetscErrorCode getAbsTemp(double E, double p, double &T) const;
+  virtual PetscErrorCode getEnth(double T, double omega, double p, double &E) const;
+  virtual PetscErrorCode getEnthPermissive(double T, double omega, double p, double &E) const;
+};
+
 class IceCompModel : public IceModel {
 
 public:
   IceCompModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides, int mytest);
-  virtual ~IceCompModel();
+  virtual ~IceCompModel() {}
   
   // re-defined steps of init() sequence:
   virtual PetscErrorCode set_grid_defaults();     // called by IceModel::grid_setup()

@@ -44,7 +44,7 @@ IceExactSSAModel::IceExactSSAModel(IceGrid &g, NCConfigVariable &conf, NCConfigV
   config.set("max_iterations_ssa", 500);
   config.set_flag("use_ssa_velocity",         true);
   config.set_flag("use_constant_nuh_for_ssa", false);
-  config.set_flag("do_plastic_till",          true); // correct for I, irrelevant for J and M
+  config.set_flag("use_ssa_when_grounded",    true); // correct for I, irrelevant for J and M
   config.set_flag("do_superpose",             false);
   config.set_flag("force_full_diagnostics",   true);
 }

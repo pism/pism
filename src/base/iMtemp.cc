@@ -59,6 +59,9 @@ PetscErrorCode IceModel::energyStep() {
     ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
     ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
 
+    // setEnth3FromT3_ColdIce() updates ghosts of Enth3 using a
+    // begin/endGhostComm pair. Is not optimized because this
+    // (doColdIceMethods) is a rare case.
     ierr = setEnth3FromT3_ColdIce();  CHKERRQ(ierr);
 
     ierr = PetscGlobalSum(&mybulgeCount, &gbulgeCount, grid.com); CHKERRQ(ierr);
@@ -274,11 +277,11 @@ PetscErrorCode IceModel::temperatureStep(
 
 	ierr = Tb3.getValColumn(i,j,system.Tb); CHKERRQ(ierr);
 
-	ierr = u3.getValColumn(i,j,system.u); CHKERRQ(ierr);
-	ierr = v3.getValColumn(i,j,system.v); CHKERRQ(ierr);
-	ierr = w3.getValColumn(i,j,system.w); CHKERRQ(ierr);
-	ierr = Sigma3.getValColumn(i,j,system.Sigma); CHKERRQ(ierr);
-	ierr = T3.getValColumn(i,j,system.T); CHKERRQ(ierr);
+	ierr = u3.getValColumn(i,j,ks,system.u); CHKERRQ(ierr);
+	ierr = v3.getValColumn(i,j,ks,system.v); CHKERRQ(ierr);
+	ierr = w3.getValColumn(i,j,ks,system.w); CHKERRQ(ierr);
+	ierr = Sigma3.getValColumn(i,j,ks,system.Sigma); CHKERRQ(ierr);
+	ierr = T3.getValColumn(i,j,ks,system.T); CHKERRQ(ierr);
 
         // go through column and find appropriate lambda for BOMBPROOF
         PetscScalar lambda = 1.0;  // start with centered implicit for more accuracy
@@ -601,9 +604,9 @@ PetscErrorCode IceModel::ageStep() {
         ierr = taunew3.setColumn(i,j,0.0); CHKERRQ(ierr);
       } else { // general case: solve advection PDE; start by getting 3D velocity ...
 
-	ierr = u3.getValColumn(i,j,system.u); CHKERRQ(ierr);
-	ierr = v3.getValColumn(i,j,system.v); CHKERRQ(ierr);
-	ierr = w3.getValColumn(i,j,system.w); CHKERRQ(ierr);
+	ierr = u3.getValColumn(i,j,fks,system.u); CHKERRQ(ierr);
+	ierr = v3.getValColumn(i,j,fks,system.v); CHKERRQ(ierr);
+	ierr = w3.getValColumn(i,j,fks,system.w); CHKERRQ(ierr);
 
         ierr = system.setIndicesAndClearThisColumn(i,j,fks); CHKERRQ(ierr);
 
