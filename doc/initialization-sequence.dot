@@ -1,6 +1,6 @@
 // Use
 // dot -Tpng initialization-sequence.dot -o initialization-sequence.png
-// to create the picture (or just grab it from the class browser).
+// to create the picture.
 
 digraph pism_init {
   // Global graph parameters
@@ -15,7 +15,7 @@ digraph pism_init {
 
     is_i_set1 [label = "Is -i set?"];
 
-    grid_from_file [label = "Get ALL grid settings from file" URL="\ref PISMIO::get_grid()"];
+    grid_from_file [label = "Get ALL grid settings from file" URL="\ref NCTool::get_grid()"];
 
     subgraph cluster_set_grid_defaults {
       label = "Set default grid parameters\nIceModel::set_grid_defaults()";
@@ -24,7 +24,7 @@ digraph pism_init {
 
       is_boot_from_set1 [label = "Is -boot_from set?"];
       
-      grid_from_boot_file [label = "Get SOME grid settings from file\n(boot file DOES NOT fully determine grid)" URL="\ref PISMIO::get_grid()"];
+      grid_from_boot_file [label = "Get SOME grid settings from file\n(boot file DOES NOT fully determine grid)" URL="\ref NCTool::get_grid()"];
       
       fail_in_IceModel1 [label = "ERROR in base class IceModel"]
       

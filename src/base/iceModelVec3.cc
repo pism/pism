@@ -52,8 +52,7 @@ IceModelVec3::IceModelVec3(const IceModelVec3 &other)
 }
 
 //! Allocate a DA and a Vec from information in IceGrid.
-PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[],
-				     bool local, int stencil_width) {
+PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[], bool local) {
   if (!utIsInit()) {
     SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
   }
@@ -69,8 +68,7 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[],
   PetscErrorCode ierr;
   ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR, my_grid.Mz, N, M, 1, n, m,
-		    1, stencil_width,
+  ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR, my_grid.Mz, N, M, 1, n, m, 1, 1,
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
 
   if (local) {
@@ -357,8 +355,7 @@ Return array \c valsOUT must be an allocated array of \c nlevels scalars
 Upon return, \c valsOUT will be filled with values of scalar quantity at 
 the \f$z\f$ values in \c levelsIN.
  */
-PetscErrorCode IceModelVec3::getValColumnPL(PetscInt i, PetscInt j, PetscInt ks,
-					    PetscScalar *result) {
+PetscErrorCode IceModelVec3::getValColumnPL(PetscInt i, PetscInt j, PetscScalar *result) {
   
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
@@ -369,11 +366,6 @@ PetscErrorCode IceModelVec3::getValColumnPL(PetscInt i, PetscInt j, PetscInt ks,
   PetscScalar ***arr = (PetscScalar***) array;
 
   for (PetscInt k = 0; k < grid->Mz_fine; k++) {
-    if (k > ks) {
-      result[k] = arr[i][j][grid->ice_storage2fine[k]];
-      continue;
-    }
-
     PetscInt m = grid->ice_storage2fine[k];
 
     // extrapolate (if necessary):
@@ -396,8 +388,7 @@ PetscErrorCode IceModelVec3::getValColumnPL(PetscInt i, PetscInt j, PetscInt ks,
 Return array \c valsOUT must be an allocated array of \c grid.Mz_fine scalars 
 (\c PetscScalar).
  */
-PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt ks,
-					       PetscScalar *result) {
+PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscScalar *result) {
   
   const PetscScalar *levels = grid->zlevels;
   const PetscScalar *levels_fine = grid->zlevels_fine;
@@ -405,11 +396,6 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt 
   const PetscScalar *column = arr[i][j];
 
   for (PetscInt k = 0; k < grid->Mz_fine; k++) {
-    if (k > ks) {
-      result[k] = arr[i][j][grid->ice_storage2fine[k]];
-      continue;
-    }
-
     const PetscInt m = grid->ice_storage2fine[k];
 
     // extrapolate (if necessary):
@@ -441,12 +427,12 @@ PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt 
 
 
 //! If the grid is equally spaced in the ice then use PL, otherwise use QUAD.
-PetscErrorCode  IceModelVec3::getValColumn(PetscInt i, PetscInt j, PetscInt ks,
+PetscErrorCode  IceModelVec3::getValColumn(PetscInt i, PetscInt j,
 					   PetscScalar *result) {
   if (grid->ice_vertical_spacing == EQUAL) {
-    return getValColumnPL(i, j, ks, result);
+    return getValColumnPL(i, j, result);
   } else {
-    return getValColumnQUAD(i, j, ks, result);
+    return getValColumnQUAD(i, j, result);
   }
 }
 

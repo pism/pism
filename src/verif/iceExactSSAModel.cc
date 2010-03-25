@@ -44,7 +44,7 @@ IceExactSSAModel::IceExactSSAModel(IceGrid &g, NCConfigVariable &conf, NCConfigV
   config.set("max_iterations_ssa", 500);
   config.set_flag("use_ssa_velocity",         true);
   config.set_flag("use_constant_nuh_for_ssa", false);
-  config.set_flag("use_ssa_when_grounded",    true); // correct for I, irrelevant for J and M
+  config.set_flag("do_plastic_till",          true); // correct for I, irrelevant for J and M
   config.set_flag("do_superpose",             false);
   config.set_flag("force_full_diagnostics",   true);
 }
@@ -53,6 +53,8 @@ PetscErrorCode IceExactSSAModel::init_physics() {
   PetscErrorCode ierr;
 
   iceFactory.setType(ICE_CUSTOM);
+
+  doColdIceMethods = true;
 
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
@@ -95,8 +97,8 @@ PetscErrorCode IceExactSSAModel::createVecs() {
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
 
   if (test == 'J') {
-    ierr = vNuForJ[0].create(grid, "vNuForJ[0]", true, 2); CHKERRQ(ierr);
-    ierr = vNuForJ[1].create(grid, "vNuForJ[1]", true, 2); CHKERRQ(ierr);
+    ierr = vNuForJ[0].create(grid, "vNuForJ[0]", true); CHKERRQ(ierr);
+    ierr = vNuForJ[1].create(grid, "vNuForJ[1]", true); CHKERRQ(ierr);
   }
 
   return 0;
@@ -195,14 +197,15 @@ PetscErrorCode IceExactSSAModel::set_vars_from_options() {
   ierr = Tb3.set(T0); CHKERRQ(ierr);
 
   // set initial velocities (for start of iteration)
-  ierr = vel_bar.set(0.0); CHKERRQ(ierr);
+  ierr = vubar.set(0.0); CHKERRQ(ierr);
+  ierr = vvbar.set(0.0); CHKERRQ(ierr);
   ierr = vuvbar[0].set(0.0); CHKERRQ(ierr);
   ierr = vuvbar[1].set(0.0); CHKERRQ(ierr);
   // clear 3D and basal velocities too
   ierr = u3.set(0.0); CHKERRQ(ierr);
   ierr = v3.set(0.0); CHKERRQ(ierr);
   ierr = w3.set(0.0); CHKERRQ(ierr);
-  ierr = vel_basal.set(0.0); CHKERRQ(ierr);
+  ierr = basal_vel.set(0.0); CHKERRQ(ierr);
 
   return 0;
 }
@@ -330,7 +333,7 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
 
 PetscErrorCode IceExactSSAModel::setInitStateM() {
   PetscErrorCode ierr;
-  PetscScalar    **H, **h, **bed, **mask,
+  PetscScalar    **H, **h, **bed, **mask, **ubar, **vbar,
                  **uvbar[2];
   PISMVector2 **bvel;
 
@@ -347,8 +350,9 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
   ierr = vh.get_array(h); CHKERRQ(ierr);    
   ierr = vbed.get_array(bed); CHKERRQ(ierr);    
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
-  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
-  ierr = vel_basal.get_array(bvel); CHKERRQ(ierr);
+  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
+  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
+  ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
@@ -378,8 +382,8 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
         mask[i][j] = MASK_SHEET;
         // see IceModel::broadcastSSAVelocity() to see how velocity will be set
         //   for floating portion; do that for grounded now
-        vel_bar(i,j).u = myu; 
-        vel_bar(i,j).v = myv;
+        ubar[i][j] = myu; 
+        vbar[i][j] = myv;
         bvel[i][j].u = myu;
         bvel[i][j].v = myv;
         ierr = u3.setColumn(i,j,myu); CHKERRQ(ierr);
@@ -409,8 +413,9 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr);    
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vel_bar.end_access(); CHKERRQ(ierr);
-  ierr = vel_basal.end_access(); CHKERRQ(ierr);
+  ierr = vubar.end_access(); CHKERRQ(ierr);
+  ierr = vvbar.end_access(); CHKERRQ(ierr);
+  ierr = basal_vel.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
@@ -425,6 +430,7 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
               avuerr = 0.0, avverr = 0.0, maxuerr = 0.0, maxverr = 0.0;
   PetscScalar gmaxvecerr = 0.0, gavvecerr = 0.0, gavuerr = 0.0, gavverr = 0.0,
               gmaxuerr = 0.0, gmaxverr = 0.0;
+  PetscScalar **u, **v;
 
   if (config.get_flag("do_pseudo_plastic_till")) {
     ierr = verbPrintf(1,grid.com, 
@@ -433,7 +439,8 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
   ierr = verbPrintf(1,grid.com, 
           "NUMERICAL ERRORS in velocity relative to exact solution:\n"); CHKERRQ(ierr);
 
-  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
+  ierr = vubar.get_array(u); CHKERRQ(ierr);
+  ierr = vvbar.get_array(v); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
@@ -466,8 +473,8 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
         SETERRQ(1,"only tests I,J,M have computable errors");
       }
       // compute maximum errors
-      const PetscScalar uerr = PetscAbsReal(vel_bar(i,j).u - uexact);
-      const PetscScalar verr = PetscAbsReal(vel_bar(i,j).v - vexact);
+      const PetscScalar uerr = PetscAbsReal(u[i][j] - uexact);
+      const PetscScalar verr = PetscAbsReal(v[i][j] - vexact);
       avuerr = avuerr + uerr;      
       avverr = avverr + verr;      
       maxuerr = PetscMax(maxuerr,uerr);
@@ -477,7 +484,8 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
       avvecerr = avvecerr + vecerr;
     }
   }
-  ierr = vel_bar.end_access(); CHKERRQ(ierr);
+  ierr = vubar.end_access(); CHKERRQ(ierr);
+  ierr = vvbar.end_access(); CHKERRQ(ierr);
    
   ierr = PetscGlobalMax(&maxuerr, &gmaxuerr, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&maxverr, &gmaxverr, grid.com); CHKERRQ(ierr);
@@ -614,8 +622,10 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
 
 PetscErrorCode IceExactSSAModel::fillFromExactSolution() {
   PetscErrorCode  ierr;
+  PetscScalar **ubar, **vbar;
 
-  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
+  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
+  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
@@ -624,12 +634,12 @@ PetscErrorCode IceExactSSAModel::fillFromExactSolution() {
       PetscScalar myr,myx,myy;
       mapcoords(i,j,myx,myy,myr);
       if (test == 'I') {
-        exactI(m_schoof, myx, myy, &junk1, &junk2, &vel_bar(i,j).u, &vel_bar(i,j).v); 
+        exactI(m_schoof, myx, myy, &junk1, &junk2, &ubar[i][j], &vbar[i][j]); 
       } else if (test == 'J') {
         const PetscInt ifrom0 = i - (grid.Mx)/2,
                        jfrom0 = j - (grid.My)/2;
         const PetscScalar myx = grid.dx * ifrom0, myy = grid.dy * jfrom0;
-        ierr = exactJ(myx, myy, &junk1, &junk2, &vel_bar(i,j).u, &vel_bar(i,j).v); CHKERRQ(ierr);
+        ierr = exactJ(myx, myy, &junk1, &junk2, &ubar[i][j], &vbar[i][j]); CHKERRQ(ierr);
       } else if (test == 'M') {
         PetscScalar alpha;
         ierr = exactM(myr, &alpha, &junk1, 1.0e-12, 0.0, 1); //CHKERRQ(ierr);
@@ -639,24 +649,25 @@ PetscErrorCode IceExactSSAModel::fillFromExactSolution() {
           verbPrintf(1,grid.com,"   i,j,xx,yy,r = %d,%d,%f,%f,%f\n", i,j,myx,myy,myr);
         }
         if (myr > 1.0) {
-          vel_bar(i,j).u = alpha * (myx / myr);
-          vel_bar(i,j).v = alpha * (myy / myr);
+          ubar[i][j] = alpha * (myx / myr);
+          vbar[i][j] = alpha * (myy / myr);
         } else {
-          vel_bar(i,j).u = 0.0;
-          vel_bar(i,j).v = 0.0;
+          ubar[i][j] = 0.0;
+          vbar[i][j] = 0.0;
         }
       } else {
         SETERRQ(1,"only tests I,J,M supported in IceExactSSAModel");
       }
       // now fill in velocity at depth
       for (PetscInt k=0; k<grid.Mz; k++) {
-        ierr = u3.setColumn(i,j,vel_bar(i,j).u); CHKERRQ(ierr);
-        ierr = v3.setColumn(i,j,vel_bar(i,j).v); CHKERRQ(ierr);
+        ierr = u3.setColumn(i,j,ubar[i][j]); CHKERRQ(ierr);
+        ierr = v3.setColumn(i,j,vbar[i][j]); CHKERRQ(ierr);
         // leave w alone for now; will be filled by call to broadcastSSAVelocity()
       }
     }
   }
-  ierr = vel_bar.end_access(); CHKERRQ(ierr);
+  ierr = vubar.end_access(); CHKERRQ(ierr);
+  ierr = vvbar.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
   return 0;

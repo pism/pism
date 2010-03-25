@@ -43,7 +43,7 @@ PetscErrorCode  IceModelVec2S::create(IceGrid &my_grid, const char my_name[], bo
 PetscErrorCode IceModelVec2S::get_array(PetscScalar** &a) {
   PetscErrorCode ierr;
   ierr = begin_access(); CHKERRQ(ierr);
-  a = static_cast<PetscScalar**>(array);
+  a = (PetscScalar**) array;
   return 0;
 }
 
@@ -447,69 +447,5 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
 
   //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
 
-  return 0;
-}
-
-///// IceModelVec2Stag
-
-PetscErrorCode  IceModelVec2Stag::create(IceGrid &my_grid, const char my_short_name[], bool local,
-					 int stencil_width) {
-
-  PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, local, DA_STENCIL_BOX,
-					     stencil_width, dof); CHKERRQ(ierr);
-  string s_name = name;
-  vars[0].init(s_name + "[0]", my_grid, GRID_2D);
-  vars[1].init(s_name + "[1]", my_grid, GRID_2D);
-
-  return 0;
-}
-
-PetscErrorCode  IceModelVec2Stag::begin_access() {
-  PetscErrorCode ierr;
-#ifdef PISM_DEBUG
-  ierr = checkAllocated(); CHKERRQ(ierr);
-
-  if (access_counter < 0)
-    SETERRQ(1, "IceModelVec::begin_access(): access_counter < 0");
-#endif
-
-  if (access_counter == 0) {
-    ierr = DAVecGetArrayDOF(da, v, &array); CHKERRQ(ierr);
-  }
-
-  access_counter++;
-
-  return 0;
-}
-
-//! Checks if an IceModelVec is allocated and calls DAVecRestoreArray.
-PetscErrorCode  IceModelVec2Stag::end_access() {
-  PetscErrorCode ierr;
-  access_counter--;
-
-#ifdef PISM_DEBUG
-  ierr = checkAllocated(); CHKERRQ(ierr);
-
-  if (access_counter < 0)
-    SETERRQ(1, "IceModelVec::end_access(): access_counter < 0");
-#endif
-
-  if (access_counter == 0) {
-    ierr = DAVecRestoreArrayDOF(da, v, &array); CHKERRQ(ierr);
-    array = NULL;
-  }
-
-  return 0;
-}
-
-inline
-PetscScalar& IceModelVec2Stag::operator() (int i, int j, int k) {
-  return static_cast<PetscScalar***>(array)[i][j][k];
-}
-
-PetscErrorCode IceModelVec2Stag::get_array(PetscScalar*** &a) {
-  PetscErrorCode ierr;
-  ierr = begin_access(); CHKERRQ(ierr);
-  a = static_cast<PetscScalar***>(array);
   return 0;
 }

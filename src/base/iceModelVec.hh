@@ -163,21 +163,6 @@ public:
   virtual PetscScalar& operator() (int i, int j);
 };
 
-//! \brief A class for storing and accessing internal staggered-grid 2D fields.
-//! Uses dof=2 storage. Does \b not support input and output. This class is
-//! identical to IceModelVec2V, except that components are not called \c u and
-//! \c v (to avoid confusion).
-class IceModelVec2Stag : public IceModelVec2 {
-public:
-  IceModelVec2Stag() { dof = 2; vars.resize(dof); }
-  IceModelVec2Stag(const IceModelVec2S &other) : IceModelVec2(other) {}
-  virtual PetscErrorCode create(IceGrid &my_grid, const char my_name[], bool local, int width = 1);
-  virtual PetscErrorCode get_array(PetscScalar*** &a);
-  virtual PetscErrorCode begin_access();
-  virtual PetscErrorCode end_access();
-  virtual PetscScalar& operator() (int i, int j, int k);
-};
-
 //! \brief A simple class "hiding" the fact that the mask is stored as
 //! floating-point scalars (instead of integers).
 class IceModelVec2Mask : public IceModelVec2 {
@@ -193,6 +178,7 @@ public:
 };
 
 /// IceModeVec2V
+
 struct PISMVector2 {
   PetscScalar u, v;
 };
@@ -255,8 +241,7 @@ public:
   IceModelVec3();
   IceModelVec3(const IceModelVec3 &other);
   virtual ~IceModelVec3();
-  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[],
-				 bool local, int stencil_width = 1);
+  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[], bool local);
 
   // note the IceModelVec3 with this method must be *local* while imv3_source must be *global*
   virtual PetscErrorCode beginGhostCommTransfer(IceModelVec3 &imv3_source);
@@ -282,9 +267,9 @@ public:
 //                                      PetscInt nlevels, PetscScalar *levelsIN, 
 //                                      PetscScalar *avOUT);
 
-  PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
-  PetscErrorCode  getValColumnQUAD(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
-  PetscErrorCode  getValColumn(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
+  PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsOUT);
+  PetscErrorCode  getValColumnQUAD(PetscInt i, PetscInt j, PetscScalar *valsOUT);
+  PetscErrorCode  getValColumn(PetscInt i, PetscInt j, PetscScalar *valsOUT);
   PetscErrorCode  getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsPTR);
 
   PetscErrorCode  getHorSlice(Vec &gslice, PetscScalar z); // used in iMmatlab.cc

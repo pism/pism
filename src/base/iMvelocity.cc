@@ -39,76 +39,63 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
   // do SIA
   if (computeSIAVelocities == PETSC_TRUE) {
     stdout_flags += " SIA ";
-
-    // uses:
-    // * thickness and bed topography or
-    // * usurf
-    // updates: surface gradient in vWork2d[0,1,2,3], including w=1 ghosts
-    ierr = surfaceGradientSIA(); CHKERRQ(ierr);
+    ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here for eta
+    // surface gradient temporarily stored in vWork2d[0 1 2 3] 
     ierr = verbPrintf(5,grid.com, "{surfaceGradientSIA()}"); CHKERRQ(ierr);
 
-    // uses: 
-    // * enthalpy (or temperature) (including w=2 ghosts)
-    // * (possibly) age (including w=2 ghosts)
-    // * surface gradient (including w=1 ghosts)
-    // * thickness (including w=2 ghosts)
-    // updates:
-    // * SIA velocities on the staggered grid (vuvbar[0,1]), including w=1 ghosts
-    // * Sigma on the staggered grid (Sigmastag3[0,1]), including w=1 ghosts
-    // * I on the staggered grid (Istag3[0,1])
+    // communicate h_x[o], h_y[o] on staggered for basalSIA() and horizontalVelocitySIARegular()
+    for (PetscInt k=0; k<4; ++k) { 
+      ierr = vWork2d[k].beginGhostComm(); CHKERRQ(ierr);
+      ierr = vWork2d[k].endGhostComm(); CHKERRQ(ierr);
+    }
+
     ierr = velocitySIAStaggered(); CHKERRQ(ierr);
     ierr = verbPrintf(5,grid.com, "{velocitySIAStaggered()}"); CHKERRQ(ierr);
 
-    // no need to communicate vuvbar[01] for boundary conditions for SSA and
-    // vertAveragedVelocityToRegular() and velocities2DSIAToRegular(): w=1
-    // ghosts were updated locally
+    // communicate vuvbar[01] for boundary conditions for SSA and vertAveragedVelocityToRegular()
+    // and velocities2DSIAToRegular()
+    ierr = vuvbar[0].beginGhostComm();
+    ierr = vuvbar[0].endGhostComm();
+    ierr = vuvbar[1].beginGhostComm();
+    ierr = vuvbar[1].endGhostComm();
+    ierr = verbPrintf(5,grid.com, "{comm after velocitySIAStaggered()}"); CHKERRQ(ierr);
 
     if (mu_sliding == 0.0) { // no need to spend time on nothing
-      ierr = vel_basal.set(0.0); CHKERRQ(ierr);
+      ierr = basal_vel.set(0.0); CHKERRQ(ierr);
       ierr = vRb.set(0.0); CHKERRQ(ierr);
     } else {
       // compute (and initialize values in) ub,vb and Rb; zero everything where floating
       ierr = basalSlidingHeatingSIA(); CHKERRQ(ierr);
       ierr = verbPrintf(5,grid.com, "{basalSlidingHeatingSIA()}"); CHKERRQ(ierr);
-      // this case is not recommended and (as such) is not optimized
-      ierr = vel_basal.beginGhostComm(); CHKERRQ(ierr);
-      ierr = vel_basal.endGhostComm(); CHKERRQ(ierr);
+      ierr = basal_vel.beginGhostComm(); CHKERRQ(ierr);
+      ierr = basal_vel.endGhostComm(); CHKERRQ(ierr);
       // no need to communicate vRb since not differenced in horizontal
     }
 
     // now put staggered grid value of vertically-averaged horizontal velocity on regular grid
     // (this makes ubar and vbar be just the result of SIA; note that for SSA
-    // we used *saved* vel_bar as first guess for iteration at SSA points)
+    // we used *saved* ubar,vbar as first guess for iteration at SSA points)
     // also put staggered value of basal velocity onto regular grid
-
-    // uses:
-    // * vuvbar[0,1] (including w=1 ghosts)
-    // updates:
-    // * vel_bar (local values only, updating ghosts will require communication)
     ierr = velocities2DSIAToRegular(); CHKERRQ(ierr);
     ierr = verbPrintf(5,grid.com, "{velocities2DSIAToRegular()}"); CHKERRQ(ierr);
-
-    ierr = vel_bar.beginGhostComm(); CHKERRQ(ierr);
-    ierr = vel_bar.endGhostComm(); CHKERRQ(ierr);
+    ierr = vubar.beginGhostComm(); CHKERRQ(ierr);
+    ierr = vubar.endGhostComm(); CHKERRQ(ierr);
+    ierr = vvbar.beginGhostComm(); CHKERRQ(ierr);
+    ierr = vvbar.endGhostComm(); CHKERRQ(ierr);
   
     if (updateVelocityAtDepth) {  
-      // I on staggered is used in  horizontalVelocitySIARegular()
-      // Sigma on staggered is used in SigmaSIAToRegular()
+      // communicate I on staggered for horizontalVelocitySIARegular()
+      //   and also communicate Sigma on staggered for SigmaSIAToRegular()
+      ierr = Sigmastag3[0].beginGhostComm(); CHKERRQ(ierr);
+      ierr = Sigmastag3[1].beginGhostComm(); CHKERRQ(ierr);
+      ierr = Istag3[0].beginGhostComm(); CHKERRQ(ierr);
+      ierr = Istag3[1].beginGhostComm(); CHKERRQ(ierr);
+      ierr = Sigmastag3[0].endGhostComm(); CHKERRQ(ierr);
+      ierr = Sigmastag3[1].endGhostComm(); CHKERRQ(ierr);
+      ierr = Istag3[0].endGhostComm(); CHKERRQ(ierr);
+      ierr = Istag3[1].endGhostComm(); CHKERRQ(ierr);
 
-      // uses:
-      // * Sigma on the staggered grid, including w=1 ghosts
-      // * thickness
-      // updates:
-      // * Sigma (local values only; does not need communication)
       ierr = SigmaSIAToRegular(); CHKERRQ(ierr);
-
-      // uses:
-      // * surface gradient, including w=1 ghosts
-      // * I on the staggered grid, including w=1 ghosts
-      // * vel_basal (optional, local values only)
-      // updates:
-      // * u3, local values only
-      // * v3, local values only
       ierr = horizontalVelocitySIARegular(); CHKERRQ(ierr);
       ierr = verbPrintf(5,grid.com, "{SigmaSIAToRegular(),horizontalVelocitySIARegular()}");
                 CHKERRQ(ierr);
@@ -116,8 +103,10 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
   } else { // if computeSIAVelocities == PETSC_FALSE
     // do NOT zero out vuvbar[0],vuvbar[1]; they are used to communicate boundary
     // conditions to SSA calculation
-    ierr = vel_bar.set(0.0); CHKERRQ(ierr);
-    ierr = vel_basal.set(0.0); CHKERRQ(ierr);
+    ierr = vubar.set(0.0); CHKERRQ(ierr);
+    ierr = vvbar.set(0.0); CHKERRQ(ierr);
+
+    ierr = basal_vel.set(0.0); CHKERRQ(ierr);
 
     ierr = vRb.set(0.0); CHKERRQ(ierr);
     if (updateVelocityAtDepth) {
@@ -142,29 +131,17 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     // even if velocitySSA() did not run, we still need to use stored SSA velocities 
     // to get 3D velocity field, basal velocities, basal frictional heating, 
     // and strain dissipation heating
-
-    // uses:
-    // * mask
-    // * vel_ssa
-    // * vel_basal
-    // * vel_bar
-    // * u3
-    // * v3
-    // * vuvbar[0,1], including w=1 ghosts
-    // updates:
-    // * u3
-    // * v3
-    // * vel_bar
-    // * vel_basal
-    // (In all these cases only local values are updated.)
     ierr = broadcastSSAVelocity(updateVelocityAtDepth); CHKERRQ(ierr);
 
     // now communicate modified velocity fields
-    ierr = vel_bar.beginGhostComm(); CHKERRQ(ierr);
-    ierr = vel_bar.endGhostComm(); CHKERRQ(ierr);
+    ierr = vubar.beginGhostComm(); CHKERRQ(ierr);
+    ierr = vubar.endGhostComm(); CHKERRQ(ierr);
+    ierr = vvbar.beginGhostComm(); CHKERRQ(ierr);
+    ierr = vvbar.endGhostComm(); CHKERRQ(ierr);
+
     
-    ierr = vel_basal.beginGhostComm(); CHKERRQ(ierr);
-    ierr = vel_basal.endGhostComm(); CHKERRQ(ierr);
+    ierr = basal_vel.beginGhostComm(); CHKERRQ(ierr);
+    ierr = basal_vel.endGhostComm(); CHKERRQ(ierr);
 
     // note correctSigma() differences ubasal,vbasal in horizontal, so communication
     //   above is important

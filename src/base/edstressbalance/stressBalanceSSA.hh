@@ -102,7 +102,7 @@ protected:
   virtual PetscErrorCode assembleSSARhs(bool surfGradInward, Vec rhs);
   virtual PetscErrorCode moveVelocityToDAVectors(Vec x);
 
-  IceModelVec2V vel_ssa;
+  IceModelVec2V ssavel;
   IceModelVec2S vaveragedhardness;
   
   KSP        SSAKSP;

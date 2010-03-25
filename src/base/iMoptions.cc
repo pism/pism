@@ -174,7 +174,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.flag_from_option("ocean_kill", "ocean_kill"); CHKERRQ(ierr);
 
   // use a plastic basal till mechanical model
-  ierr = config.flag_from_option("plastic", "use_ssa_when_grounded"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("plastic", "do_plastic_till"); CHKERRQ(ierr);
 
   // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
   // from the thickness of the basal melt water; see updateYieldStressFromHmelt()

@@ -293,7 +293,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   ierr = PISMOptionsIsSet("-try_calving", tryCalving); CHKERRQ(ierr);
 
   config.set_flag("do_temp",                      false);
-  config.set_flag("use_ssa_when_grounded",        false);
+  config.set_flag("do_plastic_till",              false);
   config.set_flag("do_bed_deformation",           false);
   config.set_flag("is_dry_simulation",            false);
   config.set_flag("include_bmr_in_continuity",    false);
@@ -819,11 +819,7 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
   // run this only after getRoutineStats() is called
   PetscErrorCode  ierr;
   IceModelVec2S q = vWork2d[0];	// give it a shorter name
-  IceModelVec2S ubar = vWork2d[1];
-
-  ierr = vel_bar.get_component(0, ubar); CHKERRQ(ierr);
-
-  ierr = ubar.multiply_by(vH, q); CHKERRQ(ierr);
+  ierr = vubar.multiply_by(vH, q); CHKERRQ(ierr);
   // q is signed flux in x direction, in units of m^2/s
 
   ierr =   vH.begin_access(); CHKERRQ(ierr);
@@ -893,13 +889,9 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
                   Ngrounded = 0.0, Nfloating = 0.0;
   PetscScalar     gavubargrounded, gavubarfloating, gig;
 
-  IceModelVec2S ubar = vWork2d[0];
-  
-  ierr = vel_bar.get_component(0, ubar); CHKERRQ(ierr);
-
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = ubar.begin_access(); CHKERRQ(ierr);
+  ierr = vubar.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -915,20 +907,20 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
       }
 
       if ((ifrom0 > 0) && (vH(i,j) > 0.0)) {
-        if (ubar(i,j) > maxubar)  maxubar = ubar(i,j);
+        if (vubar(i,j) > maxubar)  maxubar = vubar(i,j);
         if (vMask.is_grounded(i,j)) {
           Ngrounded += 1.0;
-          avubargrounded += ubar(i,j);
+          avubargrounded += vubar(i,j);
         } else {
           Nfloating += 1.0;
-          avubarfloating += ubar(i,j);        
+          avubarfloating += vubar(i,j);        
         }
       }
 
     }
   }
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = ubar.end_access(); CHKERRQ(ierr);
+  ierr = vubar.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMax(&ig, &gig, grid.com); CHKERRQ(ierr);
   rstats.ig = gig;

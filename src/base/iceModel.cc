@@ -163,7 +163,7 @@ PetscErrorCode IceModel::createVecs() {
     ierr = variables.add(T3); CHKERRQ(ierr);
   }
 
-  ierr = Enth3.create(grid, "enthalpy", true, 2); CHKERRQ(ierr); // stencil width=2
+  ierr = Enth3.create(grid, "enthalpy", true); CHKERRQ(ierr);
   // POSSIBLE standard name = land_ice_enthalpy
   ierr = Enth3.set_attrs(
      "model_state",
@@ -173,8 +173,7 @@ PetscErrorCode IceModel::createVecs() {
 
   // age of ice but only if age will be computed
   if (config.get_flag("do_age")) {
-    ierr = tau3.create(grid, "age", true, 2); CHKERRQ(ierr); // stencil width = 2
-    // has ghosts, for computing grain size of the staggered grid
+    ierr = tau3.create(grid, "age", true); CHKERRQ(ierr);
     // PROPOSED standard_name = land_ice_age
     ierr = tau3.set_attrs("diagnostic", "age of ice",
                           "s", ""); CHKERRQ(ierr);
@@ -193,26 +192,26 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(Tb3); CHKERRQ(ierr);
 
   // ice upper surface elevation
-  ierr = vh.create(grid, "usurf", true, 2); CHKERRQ(ierr); // stencil width = 2
+  ierr = vh.create(grid, "usurf", true); CHKERRQ(ierr);
   ierr = vh.set_attrs("diagnostic", "ice upper surface elevation",
 		      "m", "surface_altitude"); CHKERRQ(ierr);
   ierr = variables.add(vh); CHKERRQ(ierr);
 
   // land ice thickness
-  ierr = vH.create(grid, "thk", true, 2); CHKERRQ(ierr); // stencil width = 2
+  ierr = vH.create(grid, "thk", true); CHKERRQ(ierr);
   ierr = vH.set_attrs("model_state", "land ice thickness",
 		      "m", "land_ice_thickness"); CHKERRQ(ierr);
   ierr = vH.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   ierr = variables.add(vH); CHKERRQ(ierr);
 
   // bedrock surface elevation
-  ierr = vbed.create(grid, "topg", true, 2); CHKERRQ(ierr); // stencil width = 2
+  ierr = vbed.create(grid, "topg", true); CHKERRQ(ierr);
   ierr = vbed.set_attrs("model_state", "bedrock surface elevation",
 			"m", "bedrock_altitude"); CHKERRQ(ierr);
   ierr = variables.add(vbed); CHKERRQ(ierr);
 
   // grounded_dragging_floating integer mask
-  ierr = vMask.create(grid, "mask", true, 2); CHKERRQ(ierr); // stencil width = 2
+  ierr = vMask.create(grid, "mask", true); CHKERRQ(ierr);
   ierr = vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
 			 "", ""); CHKERRQ(ierr);
   vector<double> mask_values(6);
@@ -238,26 +237,31 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vGhf); CHKERRQ(ierr);
 
   // u bar and v bar
-  ierr = vel_bar.create(grid, "bar", true); CHKERRQ(ierr); // components are ubar, vbar
-  ierr = vel_bar.set_attrs("diagnostic", 
-			   "vertical mean of horizontal ice velocity in the X direction",
-			   "m s-1", "land_ice_vertical_mean_x_velocity", 0); CHKERRQ(ierr);
-  ierr = vel_bar.set_attrs("diagnostic", 
-			   "vertical mean of horizontal ice velocity in the Y direction",
-			   "m s-1", "land_ice_vertical_mean_y_velocity", 1); CHKERRQ(ierr);
-  ierr = vel_bar.set_glaciological_units("m year-1");
-  vel_bar.write_in_glaciological_units = true;
-  ierr = variables.add(vel_bar, "uvbar"); CHKERRQ(ierr);
+  ierr = vubar.create(grid, "ubar", true); CHKERRQ(ierr);
+  ierr = vubar.set_attrs("diagnostic", 
+                         "vertical mean of horizontal ice velocity in the X direction",
+			 "m s-1", "land_ice_vertical_mean_x_velocity"); CHKERRQ(ierr);
+  ierr = vubar.set_glaciological_units("m year-1");
+  vubar.write_in_glaciological_units = true;
+  ierr = variables.add(vubar); CHKERRQ(ierr);
+
+  ierr = vvbar.create(grid, "vbar", true); CHKERRQ(ierr);
+  ierr = vvbar.set_attrs("diagnostic", 
+                         "vertical mean of horizontal ice velocity in the Y direction",
+			 "m s-1", "land_ice_vertical_mean_y_velocity"); CHKERRQ(ierr);
+  ierr = vvbar.set_glaciological_units("m year-1");
+  vvbar.write_in_glaciological_units = true;
+  ierr = variables.add(vvbar); CHKERRQ(ierr);
 
   // basal velocities on standard grid
-  ierr = vel_basal.create(grid, "basal", true); CHKERRQ(ierr); // components are ubasal and vbasal
-  ierr = vel_basal.set_attrs("diagnostic", "basal ice velocity in the X direction",
+  ierr = basal_vel.create(grid, "basal", true); CHKERRQ(ierr); // components are ubasal and vbasal
+  ierr = basal_vel.set_attrs("diagnostic", "basal ice velocity in the X direction",
 		       "m s-1", "land_ice_basal_x_velocity", 0); CHKERRQ(ierr);
-  ierr = vel_basal.set_attrs("diagnostic", "basal ice velocity in the Y direction",
+  ierr = basal_vel.set_attrs("diagnostic", "basal ice velocity in the Y direction",
 		       "m s-1", "land_ice_basal_y_velocity", 1); CHKERRQ(ierr);
-  ierr = vel_basal.set_glaciological_units("m year-1");
-  vel_basal.write_in_glaciological_units = true;
-  ierr = variables.add(vel_basal, "uvbasal"); CHKERRQ(ierr);
+  ierr = basal_vel.set_glaciological_units("m year-1");
+  basal_vel.write_in_glaciological_units = true;
+  ierr = variables.add(basal_vel, "uvbasal"); CHKERRQ(ierr);
 
   // basal frictional heating on regular grid
   ierr = vRb.create(grid, "bfrict", false); CHKERRQ(ierr);
@@ -271,8 +275,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vRb); CHKERRQ(ierr);
 
   // effective thickness of subglacial melt water
-  ierr = vHmelt.create(grid, "bwat", true, 2); CHKERRQ(ierr);
-  // stencil width = 2 for compatibility with vWork2d[...]
+  ierr = vHmelt.create(grid, "bwat", true); CHKERRQ(ierr);
   ierr = vHmelt.set_attrs("model_state", "effective thickness of subglacial melt water",
 			  "m", ""); CHKERRQ(ierr);
   // NB! Effective thickness of subglacial melt water *does* vary from 0 to hmelt_max meters only.
@@ -281,7 +284,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vHmelt); CHKERRQ(ierr);
 
   // rate of change of ice thickness
-  ierr = vdHdt.create(grid, "dHdt", true, 2); CHKERRQ(ierr); // stencil width = 2 to simplify computing dH/dt
+  ierr = vdHdt.create(grid, "dHdt", true); CHKERRQ(ierr);
   ierr = vdHdt.set_attrs("diagnostic", "rate of change of ice thickness",
 			 "m s-1", "tendency_of_land_ice_thickness"); CHKERRQ(ierr);
   ierr = vdHdt.set_glaciological_units("m year-1");
@@ -300,7 +303,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vtauc); CHKERRQ(ierr);
 
   // bedrock uplift rate
-  ierr = vuplift.create(grid, "dbdt", true, 2); CHKERRQ(ierr); // stencil width = 2 to simplify code
+  ierr = vuplift.create(grid, "dbdt", true); CHKERRQ(ierr);
   ierr = vuplift.set_attrs("model_state", "bedrock uplift rate",
 			   "m s-1", "tendency_of_bedrock_altitude"); CHKERRQ(ierr);
   ierr = vuplift.set_glaciological_units("m year-1");
@@ -348,13 +351,13 @@ PetscErrorCode IceModel::createVecs() {
 	    "m s-1", ""); CHKERRQ(ierr);
 
   // initial guesses of SSA velocities
-  ierr = vel_ssa.create(grid, "bar_ssa", true, 2); // components are ubar_ssa and vbar_ssa; stencil width = 2
-  ierr = vel_ssa.set_attrs("internal_restart", "SSA model ice velocity in the X direction",
+  ierr = ssavel.create(grid, "bar_ssa", true); // components are ubar_ssa and vbar_ssa
+  ierr = ssavel.set_attrs("internal_restart", "SSA model ice velocity in the X direction",
                             "m s-1", "", 0); CHKERRQ(ierr);
-  ierr = vel_ssa.set_attrs("internal_restart", "SSA model ice velocity in the Y direction",
+  ierr = ssavel.set_attrs("internal_restart", "SSA model ice velocity in the Y direction",
                             "m s-1", "", 1); CHKERRQ(ierr);
-  ierr = vel_ssa.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  ierr = variables.add(vel_ssa, "uvbar_ssa"); CHKERRQ(ierr);
+  ierr = ssavel.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = variables.add(ssavel, "uvbar_ssa"); CHKERRQ(ierr);
 
   // input fields:
   // mean annual net ice equivalent surface mass balance rate
@@ -444,7 +447,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 			      bool do_age,
 			      bool do_skip,
 			      bool do_bed_deformation,
-			      bool use_ssa_when_grounded) {
+			      bool do_plastic_till) {
   PetscErrorCode ierr;
 
   ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
@@ -491,7 +494,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   PetscLogEventEnd(beddefEVENT,0,0,0,0);
 
   // update basal till yield stress if appropriate; will modify and communicate mask
-  if (use_ssa_when_grounded) {
+  if (do_plastic_till) {
     ierr = updateYieldStressUsingBasalWater();  CHKERRQ(ierr);
     stdout_flags += "y";
   } else stdout_flags += "$";
@@ -596,7 +599,7 @@ PetscErrorCode IceModel::run() {
     do_age = config.get_flag("do_age"),
     do_skip = config.get_flag("do_skip"),
     do_bed_deformation = config.get_flag("do_bed_deformation"),
-    use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
+    do_plastic_till = config.get_flag("do_plastic_till");
 
 #if PETSC_VERSION_MAJOR >= 3
 # define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((name),(cookie),(event))
@@ -629,7 +632,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
 				       // greater than start_year
 
   ierr = step(do_mass_conserve, do_temp, do_age,
-	      do_skip, do_bed_deformation, use_ssa_when_grounded); CHKERRQ(ierr);
+	      do_skip, do_bed_deformation, do_plastic_till); CHKERRQ(ierr);
 
   // print verbose messages according to user-set verbosity
   if (tmp_verbosity > 2) {
@@ -679,7 +682,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
     maxdt_temporary = -1.0;
 
     ierr = step(do_mass_conserve, do_temp, do_age,
-		do_skip, do_bed_deformation, use_ssa_when_grounded); CHKERRQ(ierr);
+		do_skip, do_bed_deformation, do_plastic_till); CHKERRQ(ierr);
 
     // report a summary for major steps or the last one
     bool updateAtDepth = (skipCountDown == 0);
@@ -715,7 +718,7 @@ This procedure has no loop but the following actions are taken:
 PetscErrorCode IceModel::diagnosticRun() {
   PetscErrorCode  ierr;
 
-  bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
+  bool do_plastic_till = config.get_flag("do_plastic_till");
 
   // print out some stats about input state
   ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -725,7 +728,7 @@ PetscErrorCode IceModel::diagnosticRun() {
   dt = 0.0;
 
   // update basal till yield stress if appropriate; will modify and communicate mask
-  if (use_ssa_when_grounded) {
+  if (do_plastic_till) {
     ierr = updateYieldStressUsingBasalWater();  CHKERRQ(ierr);
   }
 

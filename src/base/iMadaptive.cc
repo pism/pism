@@ -166,7 +166,7 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
     floating_ice_killed = config.get_flag("floating_ice_killed");
   
 
-  ierr = vel_basal.get_array(basal); CHKERRQ(ierr);
+  ierr = basal_vel.get_array(basal); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -181,7 +181,7 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
       }
     }
   }
-  ierr = vel_basal.end_access(); CHKERRQ(ierr);
+  ierr = basal_vel.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);

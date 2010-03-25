@@ -456,10 +456,6 @@ PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time)
   PetscErrorCode ierr;
   Vec g;
 
-  if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Reading %s...\n", name.c_str()); CHKERRQ(ierr);
-  }
-
   if (dof != 1)
     SETERRQ(1, "This method only supports IceModelVecs with dof == 1.");
 
@@ -482,10 +478,6 @@ PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time)
 //! Writes an IceModelVec to a NetCDF file using the default output data type.
 PetscErrorCode IceModelVec::write(const char filename[]) {
   PetscErrorCode ierr;
-
-  if (getVerbosityLevel() > 3) {
-    ierr = PetscPrintf(grid->com, "  Writing %s...\n", name.c_str()); CHKERRQ(ierr);
-  }
   
   ierr = write(filename, output_data_type); CHKERRQ(ierr);
 

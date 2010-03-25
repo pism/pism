@@ -57,28 +57,27 @@ error checking.  They call SETERRQ() if there arguments are invalid.
 class EnthalpyConverter {
 public:
   EnthalpyConverter(const NCConfigVariable &config);
-  virtual ~EnthalpyConverter() {}
 
-  virtual PetscErrorCode viewConstants(PetscViewer viewer) const;
+  PetscErrorCode viewConstants(PetscViewer viewer) const;
 
-  virtual double         getPressureFromDepth(double depth) const;
-  virtual double         getMeltingTemp(double p) const;
-  virtual double         getEnthalpyCTS(double p) const;
-  virtual PetscErrorCode getEnthalpyInterval(double p, double &E_s, double &E_l) const;
-  virtual double         getCTS(double E, double p) const;
+  double         getPressureFromDepth(double depth) const;
+  double         getMeltingTemp(double p) const;
+  double         getEnthalpyCTS(double p) const;
+  PetscErrorCode getEnthalpyInterval(double p, double &E_s, double &E_l) const;
+  double         getCTS(double E, double p) const;
 
-  virtual bool           isTemperate(double E, double p) const;
-  virtual bool           isLiquified(double E, double p) const;
+  bool           isTemperate(double E, double p) const;
+  bool           isLiquified(double E, double p) const;
 
-  virtual PetscErrorCode getAbsTemp(double E, double p, double &T) const;
-  virtual PetscErrorCode getPATemp(double E, double p, double &T_pa) const;
+  PetscErrorCode getAbsTemp(double E, double p, double &T) const;
+  PetscErrorCode getPATemp(double E, double p, double &T_pa) const;
 
-  virtual PetscErrorCode getWaterFraction(double E, double p, double &omega) const;
-  virtual double         getWaterFractionLimited(double E, double p) const;
+  PetscErrorCode getWaterFraction(double E, double p, double &omega) const;
+  double         getWaterFractionLimited(double E, double p) const;
 
-  virtual PetscErrorCode getEnth(double T, double omega, double p, double &E) const;
-  virtual PetscErrorCode getEnthPermissive(double T, double omega, double p, double &E) const;
-  virtual PetscErrorCode getEnthAtWaterFraction(double omega, double p, double &E) const;
+  PetscErrorCode getEnth(double T, double omega, double p, double &E) const;
+  PetscErrorCode getEnthPermissive(double T, double omega, double p, double &E) const;
+  PetscErrorCode getEnthAtWaterFraction(double omega, double p, double &E) const;
 
 protected:
   double T_0, L, c_i, rho_i, g, p_air, beta;

@@ -28,24 +28,25 @@ PetscErrorCode IceModel::computeFlowUbarStats
                        PetscScalar *gUbarstreamav, PetscScalar *gUbarshelfav,
                        PetscScalar *gicegridfrac, PetscScalar *gSIAgridfrac,
                        PetscScalar *gstreamgridfrac, PetscScalar *gshelfgridfrac) {
-  // NOTE:  Assumes IceModel::vel_bar, vu, vv holds correct 
+  // NOTE:  Assumes IceModel::vubar, vvbar, vu, vv holds correct 
   // and up-to-date values of velocities
 
   PetscErrorCode ierr;
 
-  PetscScalar **H;
+  PetscScalar **H, **ubar, **vbar;
   PetscScalar Ubarmax = 0.0, UbarSIAsum = 0.0, Ubarstreamsum = 0.0,
               Ubarshelfsum = 0.0, icecount = 0.0, SIAcount = 0.0, shelfcount = 0.0;
 
   ierr =    vH.get_array(H);    CHKERRQ(ierr);
-  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
+  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
+  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0.0) {
         icecount += 1.0;
         const PetscScalar Ubarmag 
-	  = sqrt(PetscSqr(vel_bar(i,j).u) + PetscSqr(vel_bar(i,j).v));
+                           = sqrt(PetscSqr(ubar[i][j]) + PetscSqr(vbar[i][j]));
         Ubarmax = PetscMax(Ubarmax, Ubarmag);
         if (vMask.value(i,j) == MASK_SHEET) {
           SIAcount += 1.0;
@@ -62,9 +63,10 @@ PetscErrorCode IceModel::computeFlowUbarStats
       }
     }
   }
-  ierr =   vMask.end_access(); CHKERRQ(ierr);
-  ierr =      vH.end_access(); CHKERRQ(ierr);
-  ierr = vel_bar.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr =    vH.end_access(); CHKERRQ(ierr);
+  ierr = vubar.end_access(); CHKERRQ(ierr);
+  ierr = vvbar.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMax(&Ubarmax, gUbarmax, grid.com); CHKERRQ(ierr);
   
@@ -175,7 +177,7 @@ PetscErrorCode IceModel::energyStats(PetscScalar iarea, bool useHomoTemp,
       }
       // if you happen to be at center, record absolute basal temp there
       if (i == (grid.Mx - 1)/2 && j == (grid.My - 1)/2) {
-	ierr = EC->getAbsTemp(Enthbase[i][j], EC->getPressureFromDepth(vH(i,j)), temp0);
+	ierr = EC->getAbsTemp(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)), temp0);
 	CHKERRQ(ierr);
       }
     }
@@ -461,7 +463,7 @@ PetscErrorCode IceModel::summaryPrintLine(
 PetscErrorCode IceModel::compute_cbar(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = vel_bar.magnitude(result); CHKERRQ(ierr);
+  ierr = result.set_to_magnitude(vubar, vvbar); CHKERRQ(ierr);
   ierr = result.mask_by(vH); CHKERRQ(ierr); // mask out ice-free areas
 
   ierr = result.set_name("cbar"); CHKERRQ(ierr);
@@ -1132,8 +1134,8 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   }
 
   if (name == "temp_pa") {
-    ierr = compute_temp_pa(Enthnew3); CHKERRQ(ierr);
-    result = &Enthnew3;
+    ierr = compute_temp_pa(Enth3); CHKERRQ(ierr);
+    result = &Enth3;
     return 0;
   }
 
@@ -1150,7 +1152,7 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   }
 
   if (name == "temppabase") {
-    ierr = compute_temp_pa(Enthnew3); CHKERRQ(ierr);
+    ierr = compute_temp_pa(Enth3); CHKERRQ(ierr);
     ierr = compute_temppabase(Enthnew3,vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;

@@ -478,11 +478,10 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   for (int j = 0; j < nWork2d; j++) {
     char namestr[30];
     snprintf(namestr, sizeof(namestr), "work_vector_%d", j);
-    ierr = vWork2d[j].create(grid, namestr, true, 2); CHKERRQ(ierr); // have ghosts, stencil width = 2
+    ierr = vWork2d[j].create(grid, namestr, true); CHKERRQ(ierr);
   }
 
-  ierr = vel_ssa_old.create(grid, "bar_ssa_old", true, 2); CHKERRQ(ierr);
-  // components are ubar_ssa_old and vbar_ssa_old
+  ierr = ssavel_old.create(grid, "bar_ssa_old", true); CHKERRQ(ierr);
 
   // 3d dedicated work vectors
   if (doColdIceMethods) {
