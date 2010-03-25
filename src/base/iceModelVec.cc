@@ -32,6 +32,7 @@ IceModelVec::IceModelVec() {
 
   dims = GRID_2D;		// default
   dof = 1;			// default
+  s_width = 1;
 
   access_counter = 0;
 

@@ -42,6 +42,15 @@
 using namespace std;
 /// @endcond
 
+// comment out the next line to disable local ghost updating
+#define LOCAL_GHOST_UPDATE 1
+
+#ifdef LOCAL_GHOST_UPDATE
+#define MY_WIDE_STENCIL 2
+#else
+#define MY_WIDE_STENCIL 1
+#endif
+
 struct SSASNESNode {
   PetscScalar u, v;
 };
@@ -195,7 +204,7 @@ protected:
     shelfbtemp,
     shelfbmassflux;
 
-  IceModelVec2V basal_vel;	//!< basal velocities on standard grid; ghosted
+  IceModelVec2V vel_basal;	//!< basal velocities on standard grid; ghosted
 
   IceModelVec2Mask vMask; //!< mask for flow type with values SHEET, DRAGGING, FLOATING
 
@@ -207,7 +216,7 @@ protected:
         tau3;		//!< age of ice; s
 
   IceModelVec3Bedrock
-        Tb3;		//!< temperature of lithosphere (bedrock) under ice or ocean; K
+        Tb3;		//!< temperature of lithosphere (bedrock) under ice or ocean; K; no ghosts
 
   // parameters
   PetscReal   dt, dtTempAge,  // current mass cont. and temp/age; time steps in seconds
@@ -499,7 +508,7 @@ protected:
   int have_ssa_velocities;	//!< use ubar_ssa and vbar_ssa from a previous
 				//! run if 1, otherwise set them to zero in
 				//! IceModel::initSSA()
-  IceModelVec2V ssavel, ssavel_old;
+  IceModelVec2V vel_ssa, vel_ssa_old;
 
   // SSA solve vars; note pieces of the SSA Velocity routine are defined in iMssa.cc
   KSP SSAKSP;

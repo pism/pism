@@ -115,12 +115,12 @@ PetscErrorCode StressBalanceSSA::initAndAllocate(IceGrid* g) {
   ierr = KSPSetFromOptions(SSAKSP); CHKERRQ(ierr);
 
   // initial guesses of SSA velocities
-  ierr = ssavel.create(grid, "bar_ssa", true); // components are ubar_ssa and vbar_ssa
-  ierr = ssavel.set_attrs("internal_restart", "SSA model ice velocity in the X direction",
+  ierr = vel_ssa.create(grid, "bar_ssa", true); // components are ubar_ssa and vbar_ssa
+  ierr = vel_ssa.set_attrs("internal_restart", "SSA model ice velocity in the X direction",
                             "m s-1", "", 0); CHKERRQ(ierr);
-  ierr = ssavel.set_attrs("internal_restart", "SSA model ice velocity in the Y direction",
+  ierr = vel_ssa.set_attrs("internal_restart", "SSA model ice velocity in the Y direction",
                             "m s-1", "", 1); CHKERRQ(ierr);
-  ierr = ssavel.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ierr = vel_ssa.set_glaciological_units("m year-1"); CHKERRQ(ierr);
 
   ierr = vaveragedhardness.create(*grid, "hardavSSA", true); CHKERRQ(ierr);
   const PetscScalar power = 1.0 / ice->exponent();
@@ -151,15 +151,15 @@ PetscErrorCode StressBalanceSSA::deallocate() {
 
 PetscErrorCode StressBalanceSSA::setGuessZero() {
   PetscErrorCode ierr;
-  ierr = ssavel.set(0.0); CHKERRQ(ierr);
+  ierr = vel_ssa.set(0.0); CHKERRQ(ierr);
   return 0;
 }
 
 
 PetscErrorCode StressBalanceSSA::setGuess(IceModelVec2S *ubar_guess, IceModelVec2S *vbar_guess) {
   PetscErrorCode ierr;
-  ierr = ssavel.set_component(0, *ubar_guess); CHKERRQ(ierr);
-  ierr = ssavel.set_component(1, *vbar_guess); CHKERRQ(ierr);
+  ierr = vel_ssa.set_component(0, *ubar_guess); CHKERRQ(ierr);
+  ierr = vel_ssa.set_component(1, *vbar_guess); CHKERRQ(ierr);
   return 0;
 }
 
@@ -186,7 +186,7 @@ PetscErrorCode StressBalanceSSA::getBasalStress(IceModelVec2 *vbs_x, IceModelVec
   
   PISMVector2 **uv;
   PetscScalar **tauc, **mask, **bs_x, **bs_y;
-  ierr = ssavel.get_array(uv); CHKERRQ(ierr);
+  ierr = vel_ssa.get_array(uv); CHKERRQ(ierr);
   ierr = vtauc->get_array(tauc); CHKERRQ(ierr);
   ierr = vmask->get_array(mask); CHKERRQ(ierr);
   ierr = vbs_x->get_array(bs_x); CHKERRQ(ierr);
@@ -199,7 +199,7 @@ PetscErrorCode StressBalanceSSA::getBasalStress(IceModelVec2 *vbs_x, IceModelVec
     }
   }
 
-  ierr = ssavel.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
   ierr = vtauc->end_access(); CHKERRQ(ierr);
   ierr = vmask->end_access(); CHKERRQ(ierr);
   ierr = vbs_x->end_access(); CHKERRQ(ierr);

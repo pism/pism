@@ -25,7 +25,7 @@
 PetscErrorCode IceModel::initSSA() {
   PetscErrorCode ierr;
   if (!have_ssa_velocities) {
-    ierr = ssavel.set(0.0); CHKERRQ(ierr);
+    ierr = vel_ssa.set(0.0); CHKERRQ(ierr);
   }
   return 0;
 }
@@ -95,7 +95,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
   ierr = vNuH[1].get_array(nuH[1]); CHKERRQ(ierr);
 
   PISMVector2 **uv;
-  ierr = ssavel.get_array(uv); CHKERRQ(ierr);
+  ierr = vel_ssa.get_array(uv); CHKERRQ(ierr);
 
   PetscScalar *Enthij, *Enthoffset;
   PolyThermalGPBLDIce *gpbldi = NULL;
@@ -180,7 +180,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
   ierr = vNuH[0].end_access(); CHKERRQ(ierr);
   ierr = vNuH[1].end_access(); CHKERRQ(ierr);
 
-  ierr = ssavel.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
 
   ierr = Enth3.end_access(); CHKERRQ(ierr);
 
@@ -308,7 +308,7 @@ PetscErrorCode IceModel::assembleSSAMatrix(bool includeBasalShear, IceModelVec2S
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vtauc.get_array(tauc); CHKERRQ(ierr);
 
-  ierr = ssavel.get_array(uvssa); CHKERRQ(ierr);
+  ierr = vel_ssa.get_array(uvssa); CHKERRQ(ierr);
 
   ierr = vNuH[0].get_array(nuH[0]); CHKERRQ(ierr);
   ierr = vNuH[1].get_array(nuH[1]); CHKERRQ(ierr);
@@ -401,7 +401,7 @@ PetscErrorCode IceModel::assembleSSAMatrix(bool includeBasalShear, IceModelVec2S
   }
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = ssavel.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
   ierr = vtauc.end_access(); CHKERRQ(ierr);
 
   ierr = vNuH[0].end_access(); CHKERRQ(ierr);
@@ -506,7 +506,7 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
            INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
 
   ierr = VecGetArray(xLoc, &uv); CHKERRQ(ierr);
-  ierr = ssavel.get_array(uv_da); CHKERRQ(ierr);
+  ierr = vel_ssa.get_array(uv_da); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       uv_da[i][j].u = uv[i*M + 2*j];
@@ -514,11 +514,11 @@ PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
     }
   }
   ierr = VecRestoreArray(xLoc, &uv); CHKERRQ(ierr);
-  ierr = ssavel.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
 
   // Communicate so that we have stencil width for evaluation of effective viscosity (and geometry)
-  ierr = ssavel.beginGhostComm(); CHKERRQ(ierr);
-  ierr = ssavel.endGhostComm(); CHKERRQ(ierr);
+  ierr = vel_ssa.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vel_ssa.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -610,7 +610,7 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2S vNuH[2], PetscInt *numiter) {
 
   PetscInt ssaMaxIterations = static_cast<PetscInt>(config.get("max_iterations_ssa"));
   
-  ierr = ssavel.copy_to(ssavel_old); CHKERRQ(ierr);
+  ierr = vel_ssa.copy_to(vel_ssa_old); CHKERRQ(ierr);
 
   // computation of RHS only needs to be done once; does not depend on solution;
   //   but matrix changes under nonlinear iteration (loop over k below)
@@ -679,7 +679,7 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2S vNuH[2], PetscInt *numiter) {
 			 ssaMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA);
        CHKERRQ(ierr);
 
-       ierr = ssavel.copy_from(ssavel_old); CHKERRQ(ierr);
+       ierr = vel_ssa.copy_from(vel_ssa_old); CHKERRQ(ierr);
        epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
     } else {
        SETERRQ1(1, 
@@ -742,8 +742,8 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
 
   PISMVector2 **uvssa, **bvel;
-  ierr = ssavel.get_array(uvssa); CHKERRQ(ierr);
-  ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
+  ierr = vel_ssa.get_array(uvssa); CHKERRQ(ierr);
+  ierr = vel_basal.get_array(bvel); CHKERRQ(ierr);
 
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
@@ -797,8 +797,8 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vubar.end_access(); CHKERRQ(ierr);
   ierr = vvbar.end_access(); CHKERRQ(ierr);
-  ierr = ssavel.end_access(); CHKERRQ(ierr);
-  ierr = basal_vel.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
+  ierr = vel_basal.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
@@ -819,7 +819,7 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
   bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
   PISMVector2 **bvel;
-  ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
+  ierr = vel_basal.get_array(bvel); CHKERRQ(ierr);
   ierr = vRb.get_array(Rb); CHKERRQ(ierr);
   ierr = vtauc.get_array(tauc); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
@@ -841,7 +841,7 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
     }
   }
 
-  ierr = basal_vel.end_access(); CHKERRQ(ierr);
+  ierr = vel_basal.end_access(); CHKERRQ(ierr);
   ierr = vtauc.end_access(); CHKERRQ(ierr);
   ierr = vRb.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
@@ -867,7 +867,7 @@ PetscErrorCode IceModel::correctSigma() {
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   
   PISMVector2 **uvssa;
-  ierr = ssavel.get_array(uvssa); CHKERRQ(ierr);
+  ierr = vel_ssa.get_array(uvssa); CHKERRQ(ierr);
 
   ierr = Sigma3.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
@@ -879,7 +879,7 @@ PetscErrorCode IceModel::correctSigma() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (vMask.value(i,j) != MASK_SHEET) {
-        // note ubar_ssa and vbar_ssa in ssavel *are* communicated for differencing by last
+        // note ubar_ssa and vbar_ssa in vel_ssa *are* communicated for differencing by last
         //   call to moveVelocityToDAVectors()
         // apply glaciological-superposition-to-low-order if desired (and not floating)
         bool addVels = ( do_superpose && (vMask.value(i,j) == MASK_DRAGGING_SHEET) );
@@ -934,7 +934,7 @@ PetscErrorCode IceModel::correctSigma() {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  ierr = ssavel.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
 
   ierr = Sigma3.end_access(); CHKERRQ(ierr);
   ierr = Enth3.end_access(); CHKERRQ(ierr);

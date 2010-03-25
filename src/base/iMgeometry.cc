@@ -135,7 +135,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 
 PetscErrorCode IceModel::update_mask() {
   PetscErrorCode ierr;
-  PetscScalar **h, **bed, **H, **mask;
+  PetscScalar **bed, **H, **mask;
 
   if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal currentSeaLevel;
@@ -146,13 +146,17 @@ PetscErrorCode IceModel::update_mask() {
 
   double ocean_rho = config.get("sea_water_density");
 
-  ierr =    vh.get_array(h);    CHKERRQ(ierr);
   ierr =    vH.get_array(H);    CHKERRQ(ierr);
   ierr =  vbed.get_array(bed);  CHKERRQ(ierr);
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+#ifdef LOCAL_GHOST_UPDATE
+  PetscInt GHOSTS = 2;
+#else
+  PetscInt GHOSTS = 0;
+#endif
+  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
 
       const PetscScalar hgrounded = bed[i][j] + vH(i,j),
 	hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * vH(i,j);
@@ -193,10 +197,14 @@ PetscErrorCode IceModel::update_mask() {
     } // inner for loop (j)
   } // outer for loop (i)
 
-  ierr =         vh.end_access(); CHKERRQ(ierr);
   ierr =         vH.end_access(); CHKERRQ(ierr);
   ierr =       vbed.end_access(); CHKERRQ(ierr);
   ierr =      vMask.end_access(); CHKERRQ(ierr);
+
+#ifndef LOCAL_GHOST_UPDATE
+  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
+#endif
 
   return 0;
 }
@@ -218,10 +226,13 @@ PetscErrorCode IceModel::update_surface_elevation() {
   ierr =  vbed.get_array(bed);  CHKERRQ(ierr);
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
 
-  // NB! this code updates ghosts locally, assuming that all the necessary
-  // fields have up-to-date ghosts and box stencils with the width of 1 (or more).
-  for (PetscInt   i = grid.xs - 1; i < grid.xs + grid.xm + 1; ++i) {
-    for (PetscInt j = grid.ys - 1; j < grid.ys + grid.ym + 1; ++j) {
+#ifdef LOCAL_GHOST_UPDATE
+  PetscInt GHOSTS = 2;
+#else
+  PetscInt GHOSTS = 0;
+#endif
+  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
       // take this opportunity to check that vH(i,j) >= 0
       if (vH(i,j) < 0) {
         SETERRQ2(1,"Thickness negative at point i=%d, j=%d",i,j);
@@ -262,7 +273,10 @@ PetscErrorCode IceModel::update_surface_elevation() {
   ierr =       vbed.end_access(); CHKERRQ(ierr);
   ierr =      vMask.end_access(); CHKERRQ(ierr);
 
-  // NB! ghosts were updated locally; no communication is necessary
+#ifndef LOCAL_GHOST_UPDATE
+  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vh.endGhostComm(); CHKERRQ(ierr);
+#endif
 
   return 0;
 }
@@ -340,13 +354,13 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vbmr.get_array(bmr_gnded); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
   ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
-  ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
+  ierr = vel_basal.get_array(bvel); CHKERRQ(ierr);
   ierr = acab.begin_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access();  CHKERRQ(ierr);
   ierr = vHnew.begin_access(); CHKERRQ(ierr);
 
-  ierr = ssavel.begin_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
 
   PetscScalar icecount = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -362,15 +376,15 @@ PetscErrorCode IceModel::massContExplicitStep() {
       if ( do_superpose && (vMask.value(i,j) == MASK_DRAGGING_SHEET) ) {
         const PetscScalar
           fv  = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(ssavel(i,  j).u) + PetscSqr(ssavel(i,  j).v) ) ),
+                      ( PetscSqr(vel_ssa(i,  j).u) + PetscSqr(vel_ssa(i,  j).v) ) ),
           fve = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(ssavel(i+1,j).u) + PetscSqr(ssavel(i+1,j).v) ) ),
+                      ( PetscSqr(vel_ssa(i+1,j).u) + PetscSqr(vel_ssa(i+1,j).v) ) ),
           fvw = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(ssavel(i-1,j).u) + PetscSqr(ssavel(i-1,j).v) ) ),
+                      ( PetscSqr(vel_ssa(i-1,j).u) + PetscSqr(vel_ssa(i-1,j).v) ) ),
           fvn = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(ssavel(i,j+1).u) + PetscSqr(ssavel(i,j+1).v) ) ),
+                      ( PetscSqr(vel_ssa(i,j+1).u) + PetscSqr(vel_ssa(i,j+1).v) ) ),
           fvs = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(ssavel(i,j-1).u) + PetscSqr(ssavel(i,j-1).v) ) );
+                      ( PetscSqr(vel_ssa(i,j-1).u) + PetscSqr(vel_ssa(i,j-1).v) ) );
         const PetscScalar fvH = fv * vH(i,j);
         He = 0.5 * (fvH + fve * vH(i+1,j));
         Hw = 0.5 * (fvw * vH(i-1,j) + fvH);
@@ -435,8 +449,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
   ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
-  ierr = basal_vel.end_access(); CHKERRQ(ierr);
-  ierr = ssavel.end_access(); CHKERRQ(ierr);
+  ierr = vel_basal.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);

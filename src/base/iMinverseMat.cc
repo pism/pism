@@ -78,7 +78,7 @@ PetscErrorCode IceModel::computeBasalShearFromSSA() {
   config.set_flag("use_constant_nuh_for_ssa", false);
   IceModelVec2S myvNuH[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
   // eps=0.0 in bdd-below regularization; Schoof type regularization does occur;
-  ierr = computeEffectiveViscosity(myvNuH, 0.0); CHKERRQ(ierr); // uses ssavel
+  ierr = computeEffectiveViscosity(myvNuH, 0.0); CHKERRQ(ierr); // uses vel_ssa
   leaveNuHAloneSSA = leaveNuHAloneSSA_save;
   config.set_flag("use_constant_nuh_for_ssa", useConstantNuHForSSA_save);
 
@@ -110,14 +110,14 @@ PetscErrorCode IceModel::computeBasalShearFromSSA() {
   const PetscInt  twoMy = 2 * grid.My;
   ierr = VecSet(x, 0.0); CHKERRQ(ierr);
 
-  ierr = ssavel.begin_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = VecSetValue(x, i*twoMy + 2*j,   ssavel(i,j).u, INSERT_VALUES); CHKERRQ(ierr);
-      ierr = VecSetValue(x, i*twoMy + 2*j+1, ssavel(i,j).v, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValue(x, i*twoMy + 2*j,   vel_ssa(i,j).u, INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValue(x, i*twoMy + 2*j+1, vel_ssa(i,j).v, INSERT_VALUES); CHKERRQ(ierr);
     }
   }
-  ierr = ssavel.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
 
   // assemble matrix and vec before multiplication; communicate!
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -409,7 +409,7 @@ PetscErrorCode IceModel::fillRegPoissonData(RegPoissonCtx &user) {
   ierr = inv.effPressureN->get_array(N);  CHKERRQ(ierr);
   ierr = inv.taubxComputed->get_array(taubx); CHKERRQ(ierr);
   ierr = inv.taubyComputed->get_array(tauby); CHKERRQ(ierr);
-  ierr = ssavel.begin_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
   ierr = user.f->get_array(ff); CHKERRQ(ierr);
   ierr = user.g->get_array(gg); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -418,8 +418,8 @@ PetscErrorCode IceModel::fillRegPoissonData(RegPoissonCtx &user) {
         ff[i][j] = 0.0;
         gg[i][j] = 0.0;
       } else {
-        ierr = getVfromUforInverse(ssavel(i,j).u,
-				   ssavel(i,j).v, V_x, V_y, magVsqr); CHKERRQ(ierr);
+        ierr = getVfromUforInverse(vel_ssa(i,j).u,
+				   vel_ssa(i,j).v, V_x, V_y, magVsqr); CHKERRQ(ierr);
         const PetscScalar 
               taubdotV = taubx[i][j] * V_x + tauby[i][j] * V_y,
               muinitial = tan((pi/180.0) * oldphi[i][j]);
@@ -437,7 +437,7 @@ PetscErrorCode IceModel::fillRegPoissonData(RegPoissonCtx &user) {
   ierr = inv.effPressureN->end_access();  CHKERRQ(ierr);
   ierr = inv.taubxComputed->end_access(); CHKERRQ(ierr);
   ierr = inv.taubyComputed->end_access(); CHKERRQ(ierr);
-  ierr = ssavel.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
 
   return 0; 
 }

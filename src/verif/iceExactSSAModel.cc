@@ -93,12 +93,13 @@ PetscErrorCode IceExactSSAModel::setFromOptions() {
 
 PetscErrorCode IceExactSSAModel::createVecs() {
   PetscErrorCode ierr;
+  PetscInt WIDE_STENCIL = MY_WIDE_STENCIL;
 
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
 
   if (test == 'J') {
-    ierr = vNuForJ[0].create(grid, "vNuForJ[0]", true); CHKERRQ(ierr);
-    ierr = vNuForJ[1].create(grid, "vNuForJ[1]", true); CHKERRQ(ierr);
+    ierr = vNuForJ[0].create(grid, "vNuForJ[0]", true, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = vNuForJ[1].create(grid, "vNuForJ[1]", true, WIDE_STENCIL); CHKERRQ(ierr);
   }
 
   return 0;
@@ -205,7 +206,7 @@ PetscErrorCode IceExactSSAModel::set_vars_from_options() {
   ierr = u3.set(0.0); CHKERRQ(ierr);
   ierr = v3.set(0.0); CHKERRQ(ierr);
   ierr = w3.set(0.0); CHKERRQ(ierr);
-  ierr = basal_vel.set(0.0); CHKERRQ(ierr);
+  ierr = vel_basal.set(0.0); CHKERRQ(ierr);
 
   return 0;
 }
@@ -352,7 +353,7 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr = vubar.get_array(ubar); CHKERRQ(ierr);
   ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
-  ierr = basal_vel.get_array(bvel); CHKERRQ(ierr);
+  ierr = vel_basal.get_array(bvel); CHKERRQ(ierr);
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
@@ -415,7 +416,7 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vubar.end_access(); CHKERRQ(ierr);
   ierr = vvbar.end_access(); CHKERRQ(ierr);
-  ierr = basal_vel.end_access(); CHKERRQ(ierr);
+  ierr = vel_basal.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].end_access(); CHKERRQ(ierr);

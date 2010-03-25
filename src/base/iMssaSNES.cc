@@ -25,18 +25,18 @@ PetscErrorCode IceModel::mapUVbarSSAToSSASNESVec(DA ssasnesda, Vec &ssasnesX) {
   PetscErrorCode ierr;
   SSASNESNode **x;
 
-  ierr = ssavel.begin_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
   ierr = DAVecGetArray(ssasnesda, ssasnesX, &x); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      x[i][j].u = ssavel(i,j).u;
-      x[i][j].v = ssavel(i,j).v;
+      x[i][j].u = vel_ssa(i,j).u;
+      x[i][j].v = vel_ssa(i,j).v;
     }
   }
 
   ierr = DAVecRestoreArray(ssasnesda, ssasnesX, &x); CHKERRQ(ierr);
-  ierr = ssavel.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -46,22 +46,22 @@ PetscErrorCode IceModel::mapSSASNESVecToUVbarSSA(DA ssasnesda, Vec ssasnesX) {
   PetscErrorCode ierr;
   SSASNESNode **x;
 
-  ierr = ssavel.begin_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
   ierr = DAVecGetArray(ssasnesda, ssasnesX, &x); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      ssavel(i,j).u = x[i][j].u;
-      ssavel(i,j).v = x[i][j].v;
+      vel_ssa(i,j).u = x[i][j].u;
+      vel_ssa(i,j).v = x[i][j].v;
     }
   }
 
   ierr = DAVecRestoreArray(ssasnesda, ssasnesX, &x); CHKERRQ(ierr);
-  ierr = ssavel.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
 
   // Communicate so that we have stencil width for evaluation of effective viscosity (and geometry)
-  ierr = ssavel.beginGhostComm(); CHKERRQ(ierr);
-  ierr = ssavel.endGhostComm(); CHKERRQ(ierr);
+  ierr = vel_ssa.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vel_ssa.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 

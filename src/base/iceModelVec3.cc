@@ -64,13 +64,14 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[],
   
   grid = &my_grid;
   dims = GRID_3D;
+  s_width = stencil_width;
 
   PetscInt       M, N, m, n;
   PetscErrorCode ierr;
   ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
   ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR, my_grid.Mz, N, M, 1, n, m,
-		    1, stencil_width,
+		    1, s_width,
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
 
   if (local) {
@@ -907,7 +908,8 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   PetscInt       M, N, m, n;
   ierr = DAGetInfo(grid->da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DACreate3d(grid->com, DA_YZPERIODIC, DA_STENCIL_STAR, grid->Mz, N, M, 1, n, m, 1, 1,
+  ierr = DACreate3d(grid->com, DA_YZPERIODIC, DA_STENCIL_STAR, grid->Mz, N, M, 1, n, m,
+		    1, s_width,
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da_new); CHKERRQ(ierr);
   
   if (localp) {

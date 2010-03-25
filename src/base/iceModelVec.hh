@@ -95,7 +95,7 @@ protected:
 
   IceGrid      *grid;
   GridType     dims;
-  int          dof;
+  int          dof, s_width;
   DA           da;
   bool         localp;
   //! it is a map, because a temporary IceModelVec can be used to view

@@ -232,7 +232,7 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     ++i;
   }
  
-  // Read ssavel if SSA is on, if not asked to ignore them and
+  // Read vel_ssa if SSA is on, if not asked to ignore them and
   // if they are present in the input file.
   bool have_ssa_velocities = false;
   if (config.get_flag("use_ssa_velocity")) {
@@ -246,9 +246,9 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
   ierr = PISMOptionsIsSet("-dontreadSSAvels", dontreadSSAvels); CHKERRQ(ierr);
   
   if (have_ssa_velocities && (!dontreadSSAvels)) {
-    ierr = verbPrintf(3,grid.com,"Reading ssavel...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(3,grid.com,"Reading vel_ssa...\n"); CHKERRQ(ierr);
 
-    ierr = ssavel.read(filename, last_record); CHKERRQ(ierr);
+    ierr = vel_ssa.read(filename, last_record); CHKERRQ(ierr);
   }
 
   if (config.get_flag("do_age")) {

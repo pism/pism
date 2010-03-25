@@ -457,6 +457,7 @@ PetscErrorCode IceModel::init_couplers() {
 //! Allocates SSA tools and work vectors.
 PetscErrorCode IceModel::allocate_internal_objects() {
   PetscErrorCode ierr;
+  PetscInt WIDE_STENCIL = MY_WIDE_STENCIL;
 
   // a global Vec is needed for things like viewers and comm to proc zero
   ierr = DACreateGlobalVector(grid.da2, &g2); CHKERRQ(ierr);
@@ -479,10 +480,10 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   for (int j = 0; j < nWork2d; j++) {
     char namestr[30];
     snprintf(namestr, sizeof(namestr), "work_vector_%d", j);
-    ierr = vWork2d[j].create(grid, namestr, true); CHKERRQ(ierr);
+    ierr = vWork2d[j].create(grid, namestr, true, WIDE_STENCIL); CHKERRQ(ierr);
   }
 
-  ierr = ssavel_old.create(grid, "bar_ssa_old", true); CHKERRQ(ierr);
+  ierr = vel_ssa_old.create(grid, "bar_ssa_old", true, WIDE_STENCIL); CHKERRQ(ierr);
 
   // 3d dedicated work vectors
   if (doColdIceMethods) {

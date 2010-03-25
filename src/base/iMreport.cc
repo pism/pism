@@ -836,9 +836,9 @@ PetscErrorCode IceModel::compute_bwp(IceModelVec2S &result) {
 PetscErrorCode IceModel::compute_dhdt(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = result.copy_from(vdHdt); CHKERRQ(ierr);          // result = dHdt
-  ierr = result.mask_by(vH,0.0); CHKERRQ(ierr);           // set _FillValue areas to 0.0
-  ierr = vuplift.add(1.0, result, result); CHKERRQ(ierr); // result += dbdt = uplift
+  ierr = result.copy_from(vdHdt); CHKERRQ(ierr); // result = dHdt
+  ierr = result.mask_by(vH,0.0); CHKERRQ(ierr);	// set _FillValue areas to 0.0
+  ierr = result.add(1.0, vuplift); CHKERRQ(ierr); // result += dbdt = uplift
 
   ierr = result.set_name("dhdt"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "rate of change of surface elevation",
