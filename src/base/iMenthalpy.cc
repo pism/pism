@@ -106,7 +106,7 @@ PetscErrorCode IceModel::setEnth3FromT3AndLiqfrac3(
 }
 
 
-//! Compute the ice temperature corresponding to Enth3, and put in Tnew3.
+//! Compute the ice temperature corresponding to Enth3, and put in a given IceModelVec3.
 /*!
   Computes ice temperature from enthalpy (as a diagnostic quantity).
  */

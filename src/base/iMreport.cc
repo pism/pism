@@ -1151,7 +1151,7 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 
   if (name == "temppabase") {
     ierr = compute_temp_pa(Enthnew3); CHKERRQ(ierr);
-    ierr = compute_temppabase(Enth3,vWork2d[0]); CHKERRQ(ierr);
+    ierr = compute_temppabase(Enthnew3,vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }
