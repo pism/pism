@@ -1,0 +1,39 @@
+THIS WAS ORIGINALLY REPORTED Wednesday 01/13/2010 at 01:01 AS BUG # 15119
+BY FLORIAN ZIEMEN.  IT MAY BE A HELPFUL FIX TO USERS OF stable0.2.
+
+IT IS A VERY REASONABLE CHANGE IN SEMANTICS, BUT THE OTHER
+SEMANTICS (IN WHICH artm IS NOT UPDATED TO THE MEAN OF THE MONTHLY VALUES, SO
+THAT THE USER NEEDED TO CHOOSE A MEAN FOR artm SEPARATELY AND CAREFULLY) WERE
+A "FEATURE".  AT LEAST THEY WERE INTENDED IN THE ABSENCE OF ANY CONFIDENCE THAT
+THE UPPER BOUNDARY CONDITION FOR THE CONSERVATION OF ENERGY WAS THE SAME
+TEMPERATURE FIELD AS NEEDED BY THE PDD.
+
+THESE SEMANTICS ARE CLEARED UP, AND THE CHOICES MADE EXPLICIT, IN stable0.3.
+
+----------------------------
+
+When using the monthly pdd coupler, artm is not the mean of the monthly values,
+but whatever is found in the restart file.  This does affect the flow speed
+through the ice temperature.
+
+This may be a feature, to me it was a bug...
+
+This fixes it in
+PetscErrorCode PISMMonthlyTempsAtmosCoupler::readMonthlyTemps()
+in pccoupler.cc:
+
+@@ -446,7 +580,12 @@
+ierr = verbPrintf(2, grid->com,
+" reading month %d surface temperature '%s' ...\n", j+1, monthlyTempName); CHKERRQ(ierr);
+ierr = vmonthlytemp[j].regrid(monthlyTempsFile, lic, true); CHKERRQ(ierr); // it is critical
++
+}
++ vsurftemp.set(0);
++ for (int month=0; month<12;month++){
++ vsurftemp.add(1/12.,vmonthlytemp[month]);
++ }
+return 0;
+}
+
+//Cheers
+//Flo
