@@ -1,9 +1,0 @@
-VPATH += :../src/eismint/scand/
-
-exec_default += ../bin/pscand
-
-other_sources += iceScandModel.cc pscand.cc
-
-../bin/pscand : iceEISModel.o iceScandModel.o pscand.o ${LIBPISMNAME}
-	${CXXLINKER} iceEISModel.o iceScandModel.o pscand.o ${ICE_LIB_FLAGS} -o $@
-

@@ -55,17 +55,17 @@ BASE_LIB_FLAGS := ${PISM_EXTRA_LIBS} \
 ifeq (${PISM_HAVE_FFTW}, 1)
   BASE_LIB_FLAGS += -lfftw3
 endif
-TESTS_LIB_FLAGS := -ltests ${BASE_LIB_FLAGS}
+VERIF_LIB_FLAGS := -lverif ${BASE_LIB_FLAGS}
 ICE_LIB_FLAGS := -lpism -lnetcdf -lpismudunits ${PETSC_LIB} ${BASE_LIB_FLAGS}
 
 # set names for libraries
 ifneq ($(PISM_STATIC),1)
 LIBPISMNAME := ../lib/libpism.so
-LIBTESTSNAME := ../lib/libtests.so
+LIBVERIFNAME := ../lib/libverif.so
 LIBUDUNITS = ../lib/libpismudunits.so
 else
 LIBPISMNAME := ../lib/libpism.a
-LIBTESTSNAME := ../lib/libtests.a
+LIBVERIFNAME := ../lib/libverif.a
 LIBUDUNITS = ../lib/libpismudunits.a
 endif
 
@@ -101,8 +101,8 @@ ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc PISMIO.cc	\
 	PISMSurface.cc PISMOcean.cc PCFactory.cc PALapseRates.cc
 ice_csources := cubature.c pism_signal.c
 
-# tests_sources go in libtests.[so|a]
-tests_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
+# verif_sources go in libverif.[so|a]
+verif_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 	exactTestK.c exactTestL.c exactTestM.c
 
 other_sources := pismr.cc pismd.cc pismv.cc pisms.cc \
@@ -114,7 +114,6 @@ other_sources := pismr.cc pismd.cc pismv.cc pisms.cc \
 #   derived class; as an example it includes "grn_make"; creates executable
 #   "pgrn"
 include ../src/eismint/grn_make
-include ../src/eismint/scand/scand_make
 
 # Import additional make include files:
 ifdef PISM_CONFIG
@@ -124,13 +123,13 @@ endif
 all_sources := $(ice_sources) $(ice_csources) $(test_sources) $(other_sources)	\
 		$(other_csources)
 
-TESTS_OBJS := $(addprefix ../src/verif/tests/, $(tests_sources:.c=.o))
+VERIF_OBJS := $(addprefix ../src/verif/tests/, $(verif_sources:.c=.o))
 
 ICE_OBJS := $(ice_sources:.cc=.o) $(ice_csources:.c=.o)
 
 depfiles := $(patsubst %.c,%.d,$(patsubst %.cc,%.d,$(all_sources)))
 
-all: ${LIBPISMNAME} ${LIBTESTSNAME} $(LIBUDUNITS) $(exec_default) $(config_file)
+all: ${LIBPISMNAME} ${LIBVERIFNAME} $(LIBUDUNITS) $(exec_default) $(config_file)
 	@svnversion ../src/ > ../src/revision
 
 extras : ${exec_extras}
@@ -145,7 +144,7 @@ endif
 # $@ should go first here:
 $(LIBPISMNAME)  : ${ICE_OBJS}
 	$(BUILD_LIB) $@ $^
-$(LIBTESTSNAME) : ${TESTS_OBJS}
+$(LIBVERIFNAME) : ${VERIF_OBJS}
 	$(BUILD_LIB) $@ $^
 
 # Build UDUNITS:
@@ -176,9 +175,9 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 	${ICE_LIB_FLAGS} -o $@
 
 ../bin/pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o iceCalvBCModel.o \
- pismv.o ${LIBTESTSNAME} ${LIBPISMNAME}
+ pismv.o ${LIBVERIFNAME} ${LIBPISMNAME}
 	${CXXLINKER} iCMthermo.o iceCompModel.o iceExactSSAModel.o \
-	iceCalvBCModel.o pismv.o ${ICE_LIB_FLAGS} ${TESTS_LIB_FLAGS} -o $@
+	iceCalvBCModel.o pismv.o ${ICE_LIB_FLAGS} ${VERIF_LIB_FLAGS} -o $@
 
 ../bin/pismtests: pismtests.o iMtests.o ${LIBPISMNAME} bedrockOnlySystem.o iceModelVec2V.o
 	${CXXLINKER} pismtests.o iMtests.o bedrockOnlySystem.o iceModelVec2V.o ${ICE_LIB_FLAGS} -o $@
@@ -223,7 +222,6 @@ other_sources += pcctest.cc pgrn_atmosphere.cc
 showEnv:
 	@echo 'ICE_OBJS = ' ${ICE_OBJS}
 	@echo 'ICE_LIB_FLAGS = ' ${ICE_LIB_FLAGS}
-	@echo 'TESTS_LIB_FLAGS = ' ${TESTS_LIB_FLAGS}
 	@echo 'PETSC_LIB = ' ${PETSC_LIB}
 	@echo 'CFLAGS = ' ${CFLAGS}
 	@echo 'VPATH = ' ${VPATH}
@@ -236,7 +234,7 @@ showEnv:
 	@echo 'PETSC_ARCH = ' ${PETSC_ARCH}
 	@echo 'PETSC3_BASE = ' ${PETSC3_BASE}
 	@echo 'LIBPISMNAME = ' ${LIBPISMNAME}
-	@echo 'LIBTESTSNAME = ' ${LIBTESTSNAME}
+	@echo 'LIBVERIFNAME = ' ${LIBVERIFNAME}
 	@echo 'PISM_REVISION = ' ${PISM_REVISION}
 	@echo 'PISM_INSTALL_DIR = ' ${PISM_INSTALL_DIR}
 	@echo 'PISM_HAVE_FFTW = ' ${PISM_HAVE_FFTW}
@@ -257,7 +255,7 @@ depclean:
 	@rm -f $(depfiles) src/revision
 
 distclean: clean
-	@rm -f ${LIBPISMNAME} ${LIBTESTSNAME} $(LIBUDUNITS) $(exec_default) $(exec_extras) \
+	@rm -f ${LIBPISMNAME} ${LIBVERIFNAME} $(LIBUDUNITS) $(exec_default) $(exec_extras) \
             ../lib/pismudunits.dat
 	$(MAKE) -C ../src/verif/tests/ clean
 
