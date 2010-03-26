@@ -4,7 +4,7 @@ source ../functions.sh
 
 test="Test #10: regridding with different number of processors."
 dir=`pwd`
-files="foo0.nc foo1.nc foo2.nc foo3.nc foo8.nc foo10.nc"
+files="foo0.nc foo1.nc foo2.nc foo3.nc foo4.nc foo5.nc"
 
 run_test ()
 {
