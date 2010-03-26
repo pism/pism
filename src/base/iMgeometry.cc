@@ -116,7 +116,7 @@ This procedure should be called whenever necessary to maintain consistency of ge
 
 For instance, it should be called when either ice thickness or bed elevation change. 
 In particular we always want \f$h = H + b\f$ to apply at grounded points, and, on the
-other hand, we want the mask to reflect that the ice is floating if the floatation 
+other hand, we want the mask to reflect that the ice is floating if the flotation 
 criterion applies at a point.
 
 There is one difficult case.  When a point was floating and becomes grounded we generally
@@ -167,7 +167,7 @@ PetscErrorCode IceModel::update_mask() {
 
       if (vMask.is_floating(i,j)) { // floating
 
-	if (hgrounded > hfloating+1.0) { // floatation criterion says it is grounded
+	if (hgrounded > hfloating+1.0) { // flotation criterion says it is grounded
 	  if (use_ssa_velocity) {
 	    if (use_ssa_when_grounded) {
 	      mask[i][j] = MASK_DRAGGING_SHEET;
@@ -182,8 +182,8 @@ PetscErrorCode IceModel::update_mask() {
 
       } else {   // grounded
 
-	// apply the floatation criterion:
-	if (hgrounded > hfloating-1.0) { // floatation criterion says it is grounded
+	// apply the flotation criterion:
+	if (hgrounded > hfloating-1.0) { // flotation criterion says it is grounded
 
 	  // we are using SSA-as-a-sliding-law, so grounded points become DRAGGING
 	  if (use_ssa_velocity && use_ssa_when_grounded)

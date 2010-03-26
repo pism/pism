@@ -34,31 +34,64 @@ fi
 echo "$SCRIPTNAME              NN = $NN"
 set -e  # exit on error
 
+# set MPIDO if using different MPI execution command, for example:
+#  $ export PISM_MPIDO="aprun -n "
+if [ -n "${PISM_MPIDO:+1}" ] ; then  # check if env var is already set
+  echo "$SCRIPTNAME      PISM_MPIDO = $PISM_MPIDO  (already set)"
+else
+  PISM_MPIDO="mpiexec -n "
+  echo "$SCRIPTNAME      PISM_MPIDO = $PISM_MPIDO"
+fi
+
+# check if env var PISM_DO was set (i.e. PISM_DO=echo for a 'dry' run)
+if [ -n "${PISM_DO:+1}" ] ; then  # check if env var DO is already set
+  echo "$SCRIPTNAME         PISM_DO = $PISM_DO  (already set)"
+else
+  PISM_DO="" 
+fi
+
+# prefix to pism (not to executables)
+if [ -n "${PISM_PREFIX:+1}" ] ; then  # check if env var is already set
+  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX  (already set)"
+else
+  PISM_PREFIX=""    # just a guess
+  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX"
+fi
+
+# set PISM_EXEC if using different executables, for example:
+#  $ export PISM_EXEC="pismr -cold"
+if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
+  echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC  (already set)"
+else
+  PISM_EXEC="pismr"
+  echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
+fi
+
+echo
+
 # preprocess.sh generates pism_*.nc files; run it first
 if [ -n "${PISM_DATANAME:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME PISM_DATANAME = $PISM_DATANAME  (already set)"
+  echo "$SCRIPTNAME   PISM_DATANAME = $PISM_DATANAME  (already set)"
 else
   PISM_DATAVERSION=0.93
   PISM_DATANAME=pism_Greenland_5km_v$PISM_DATAVERSION.nc
 fi
 if [ -n "${PISM_TEMPSERIES:+1}" ] ; then
-  echo "$SCRIPTNAME      TEMPSERIES = $PISM_TEMPSERIES  (already set)"
-  TEMPSERIES=$PISM_TEMPSERIES
+  echo "$SCRIPTNAME PISM_TEMPSERIES = $PISM_TEMPSERIES  (already set)"
 else
-  TEMPSERIES=pism_dT.nc
+  PISM_TEMPSERIES=pism_dT.nc
 fi
 if [ -n "${PISM_SLSERIES:+1}" ] ; then
-  echo "$SCRIPTNAME        SLSERIES = $PISM_SLSERIES  (already set)"
-  SLSERIES=$PISM_SLSERIES
+  echo "$SCRIPTNAME   PISM_SLSERIES = $PISM_SLSERIES  (already set)"
 else
-  SLSERIES=pism_dSL.nc
+  PISM_SLSERIES=pism_dSL.nc
 fi
 
-for INPUT in $PISM_DATANAME $TEMPSERIES $SLSERIES; do
+for INPUT in $PISM_DATANAME $PISM_TEMPSERIES $PISM_SLSERIES; do
   if [ -e "$INPUT" ] ; then  # check if file exist
-    echo "$SCRIPTNAME           INPUT = $INPUT (found)"
+    echo "$SCRIPTNAME           input   $INPUT (found)"
   else
-    echo "$SCRIPTNAME           INPUT = $INPUT (missing)"
+    echo "$SCRIPTNAME           input   $INPUT (MISSING!!)"
     echo
     echo "$SCRIPTNAME           please run ./preprocess.sh, exiting"
     echo
@@ -97,7 +130,7 @@ COARSEENDTIME=-40000 # BP
 echo ""
 if [ $# -gt 1 ] ; then
   if [ $2 -eq "1" ] ; then  # if user says "spinup.sh N 1" then COARSE:
-    echo "$SCRIPTNAME       GRID: ALL RUNS ON 10km"
+    echo "$SCRIPTNAME grid: ALL RUNS ON 10km"
     echo "$SCRIPTNAME       WARNING: LARGE COMPUTATIONAL TIME"
     COARSEGRID=$TENKMGRID
     FINEGRID=$TENKMGRID
@@ -107,7 +140,7 @@ if [ $# -gt 1 ] ; then
     FS=10 # km
   fi
   if [ $2 -eq "2" ] ; then  # if user says "spinup.sh N 2" then SHORT PALEO and VERY COARSE:
-    echo "$SCRIPTNAME       GRID:    ON 10km TILL ${COARSEENDTIME}a THEN ON 5km"
+    echo "$SCRIPTNAME grid: ON 10km TILL ${COARSEENDTIME}a THEN ON 5km"
     echo "$SCRIPTNAME       WARNING: VERY LARGE COMPUTATIONAL TIME"
     COARSEGRID=$TENKMGRID
     FINEGRID=$FIVEKMGRID
@@ -117,57 +150,20 @@ if [ $# -gt 1 ] ; then
     FS=5  # km
   fi
 else
-    echo "$SCRIPTNAME       GRID: ALL RUNS ON 20km"
+    echo "$SCRIPTNAME grid: ALL RUNS ON 20km"
 fi
 echo ""
 
-echo "$SCRIPTNAME      COARSEGRID = $COARSEGRID ($CS km)"
-echo "$SCRIPTNAME        FINEGRID = $FINEGRID ($FS km)"
-
-# set MPIDO if using different MPI execution command, for example:
-#  $ export PISM_MPIDO="aprun -n "
-if [ -n "${PISM_MPIDO:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME      PISM_MPIDO = $PISM_MPIDO  (already set)"
-else
-  PISM_MPIDO="mpiexec -n "
-  echo "$SCRIPTNAME      PISM_MPIDO = $PISM_MPIDO"
-fi
-MPIDO=$PISM_MPIDO
-
-# check if env var PISM_DO was set (i.e. PISM_DO=echo for a 'dry' run)
-if [ -n "${PISM_DO:+1}" ] ; then  # check if env var DO is already set
-  echo "$SCRIPTNAME         PISM_DO = $PISM_DO  (already set)"
-else
-  PISM_DO="" 
-fi
-DO=$PISM_DO
-
-# prefix to pism (not to executables)
-if [ -n "${PISM_PREFIX:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX  (already set)"
-else
-  PISM_PREFIX=""    # just a guess
-  echo "$SCRIPTNAME     PISM_PREFIX = $PISM_PREFIX"
-fi
-PREFIX=$PISM_PREFIX
-
-# set PISM_EXEC if using different executables, for example:
-#  $ export PISM_EXEC="pismr -cold"
-if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
-  echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC  (already set)"
-else
-  PISM_EXEC="pismr"
-  echo "$SCRIPTNAME       PISM_EXEC = $PISM_EXEC"
-fi
-EXEC=$PISM_EXEC
+echo "$SCRIPTNAME     coarse grid = '$COARSEGRID' (= $CS km)"
+echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km)"
 
 # cat prefix and exec together
-PISM="${PREFIX}${EXEC} -ocean_kill"
+PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill"
 
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -pdd_fausto"
 # coupler settings for spin-up (i.e. with forcing)
-COUPLER_FORCING="-atmosphere searise_greenland,forcing -surface pdd -pdd_fausto -dTforcing $TEMPSERIES -dSLforcing $SLSERIES"
+COUPLER_FORCING="-atmosphere searise_greenland,forcing -surface pdd -pdd_fausto -dTforcing $PISM_TEMPSERIES -dSLforcing $PISM_SLSERIES"
 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
@@ -177,11 +173,11 @@ GRLPARAMS="-e 1 -pseudo_plastic_q 0.10 -plastic_pwfrac 0.99"
 
 FULLPHYS="-ssa -super -plastic -thk_eff ${GRLPARAMS}"
 
-echo "$SCRIPTNAME            PISM = $PISM"
-echo "$SCRIPTNAME         TILLPHI = $TILLPHI"
-echo "$SCRIPTNAME        FULLPHYS = $FULLPHYS"
-echo "$SCRIPTNAME  COUPLER_SIMPLE = $COUPLER_SIMPLE"
-echo "$SCRIPTNAME COUPLER_FORCING = $COUPLER_FORCING"
+echo "$SCRIPTNAME      executable = '$PISM'"
+echo "$SCRIPTNAME         tillphi = '$TILLPHI'"
+echo "$SCRIPTNAME    full physics = '$FULLPHYS'"
+echo "$SCRIPTNAME  simple coupler = '$COUPLER_SIMPLE'"
+echo "$SCRIPTNAME forcing coupler = '$COUPLER_FORCING'"
 
 
 
@@ -189,9 +185,9 @@ echo "$SCRIPTNAME COUPLER_FORCING = $COUPLER_FORCING"
 PRE0NAME=g${CS}km_pre100.nc
 echo
 echo "$SCRIPTNAME  bootstrapping plus short smoothing run (for ${SMOOTHRUNLENGTH}a)"
-cmd="$MPIDO $NN $PISM -skip $COARSESKIP -boot_from $INNAME $COARSEGRID \
+cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -boot_from $INNAME $COARSEGRID \
   $COUPLER_SIMPLE -y ${SMOOTHRUNLENGTH} -o $PRE0NAME"
-$DO $cmd
+$PISM_DO $cmd
 
 
 # run with -no_mass (no surface change) for 50ka
@@ -201,17 +197,17 @@ EXTIMES=0:250:${NOMASSSIARUNLENGTH}
 EXVARS="enthalpybase,temppabase,mask" # add mask, so that check_stationarity.py ignores ice-free areas.
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA run to achieve approximate temperature equilibrium, for ${NOMASSSIARUNLENGTH}a"
-cmd="$MPIDO $NN $PISM -skip $COARSESKIP -i $PRE0NAME $COUPLER_SIMPLE \
+cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE0NAME $COUPLER_SIMPLE \
   -no_mass -y ${NOMASSSIARUNLENGTH} \
   -extra_file $EX1NAME -extra_vars $EXVARS -extra_times $EXTIMES -o $PRE1NAME"
-$DO $cmd
+$PISM_DO $cmd
 
 # smoothing for 100 years
 PRE2NAME=g${CS}km_SIA.nc
 echo
 echo "$SCRIPTNAME  smoothing with SIA for ${SMOOTHRUNLENGTH}a"
-cmd="$MPIDO $NN $PISM -skip $COARSESKIP -i $PRE1NAME $COUPLER_SIMPLE -y $SMOOTHRUNLENGTH -o $PRE2NAME"
-$DO $cmd
+cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE1NAME $COUPLER_SIMPLE -y $SMOOTHRUNLENGTH -o $PRE2NAME"
+$PISM_DO $cmd
 
 
 
@@ -226,11 +222,11 @@ TSNAME=ts_g${CS}km_m40ka.nc
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      except bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
-cmd="$MPIDO $NN $PISM -skip $COARSESKIP -i $PRE2NAME $TILLPHI $FULLPHYS $COUPLER_FORCING \
+cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE2NAME $TILLPHI $FULLPHYS $COUPLER_FORCING \
      -ts_file $TSNAME -ts_times $PALEOSTARTYEAR:1:$ENDTIME \
      -save_file $SNAPSNAME -save_times -120000:5000:-45000 \
      -ys $PALEOSTARTYEAR -ye $ENDTIME -o $OUTNAME"
-$DO $cmd
+$PISM_DO $cmd
 
 # uncomment to stop here:
 #exit
@@ -245,17 +241,17 @@ TSNAME=ts_g${FS}km_m30ka.nc
 echo
 echo "$SCRIPTNAME  regrid and do paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
-cmd="$MPIDO $NN $PISM -skip $FINESKIP -boot_from $INNAME $FINEGRID $TILLPHI $FULLPHYS -bed_def_lc $COUPLER_FORCING\
+cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_from $INNAME $FINEGRID $TILLPHI $FULLPHYS -bed_def_lc $COUPLER_FORCING\
      -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat  \
      -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
       -save_file $SNAPSNAME -save_times $SNAPSTIME \
      -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
-$DO $cmd
+$PISM_DO $cmd
 
 # to stop here:
 #exit
 
-pismopts="$MPIDO $NN $PISM -skip $FINESKIP $FULLPHYS -bed_def_lc $COUPLER_FORCING"
+pism5kmopts="$PISM_MPIDO $NN $PISM -skip $FINESKIP $FULLPHYS -bed_def_lc $COUPLER_FORCING"
 
 STARTTIME=$ENDTIME
 ENDTIME=-20000 # BP
@@ -269,7 +265,7 @@ echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
 cmd="$pism5kmopts -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
      -save_file $SNAPSNAME -save_times $SNAPSTIME -i $STARTNAME -ye $ENDTIME -o $OUTNAME"
-$DO $cmd
+$PISM_DO $cmd
 
 STARTTIME=$ENDTIME
 ENDTIME=-10000 # BP
@@ -281,9 +277,9 @@ TSNAME=ts_g${FG}km_m10ka.nc
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
-cmd="$pismopts -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
+cmd="$pism5kmopts -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
      -save_file $SNAPSNAME -save_times $SNAPSTIME -i $STARTNAME -ye $ENDTIME -o $OUTNAME"
-$DO $cmd
+$PISM_DO $cmd
 
 STARTTIME=$ENDTIME
 ENDTIME=0 # BP
@@ -295,9 +291,9 @@ TSNAME=ts_g${FS}km_0.nc
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE (present)"
-cmd="$pismopts -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
+cmd="$pism5kmopts -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
      -save_file $SNAPSNAME -save_times $SNAPSTIME -i $STARTNAME -ye $ENDTIME -o $OUTNAME"
-$DO $cmd
+$PISM_DO $cmd
 
 
 echo

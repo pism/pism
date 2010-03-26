@@ -276,7 +276,7 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
 
   ierr = verbPrintf(2, grid.com, 
     "  determining surface elevation by  usurf = topg + thk  where grounded\n"
-    "    and by floatation crit  usurf = (1-rho_i/rho_w) thk  where floating\n"); CHKERRQ(ierr);
+    "    and by flotation crit  usurf = (1-rho_i/rho_w) thk  where floating\n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
            "  preliminary determination of mask for grounded/floating and sheet/dragging\n"); CHKERRQ(ierr);
@@ -309,7 +309,7 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
           h[i][j] = bed[i][j];
           mask[i][j] = MASK_SHEET;
         } 
-      } else { // if positive ice thickness then check floatation criterion
+      } else { // if positive ice thickness then check flotation criterion
         const PetscScalar 
            hgrounded = bed[i][j] + H[i][j],
            hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * H[i][j];
