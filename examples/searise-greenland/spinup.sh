@@ -193,7 +193,7 @@ $PISM_DO $cmd
 # run with -no_mass (no surface change) for 50ka
 PRE1NAME=g${CS}km_steady.nc
 EX1NAME=ex_${PRE1NAME}
-EXTIMES=0:250:${NOMASSSIARUNLENGTH}
+EXTIMES=0:500:${NOMASSSIARUNLENGTH}
 EXVARS="enthalpybase,temppabase,mask" # add mask, so that check_stationarity.py ignores ice-free areas.
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA run to achieve approximate temperature equilibrium, for ${NOMASSSIARUNLENGTH}a"

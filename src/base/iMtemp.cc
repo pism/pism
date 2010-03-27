@@ -99,7 +99,7 @@ PetscErrorCode IceModel::energyStep() {
     const PetscScalar bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
     const PetscScalar BPSACR_REPORT_VERB2_PERCENT = 5.0; // only report if above 5%
     if (   (bfsacrPRCNT > BPSACR_REPORT_VERB2_PERCENT) 
-        || (getVerbosityLevel() > 2)                    ) {
+        && (getVerbosityLevel() > 2)                    ) {
       char tempstr[50] = "";
       snprintf(tempstr,50, "  [BPsacr=%.4f%%] ", bfsacrPRCNT);
       stdout_flags = tempstr + stdout_flags;
