@@ -73,7 +73,7 @@ PetscErrorCode IceCompModel::createVecs() {
 
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
 
-  ierr = vHexactL.create(grid, "HexactL", true); CHKERRQ(ierr);
+  ierr = vHexactL.create(grid, "HexactL", true, 2); CHKERRQ(ierr);
 
   ierr = SigmaComp3.create(grid,"SigmaComp", false); CHKERRQ(ierr);
   ierr = SigmaComp3.set_attrs("internal","rate of compensatory strain heating in ice",
@@ -448,7 +448,7 @@ public:
 
 //! Comparison used initTestL() in generating sorted list for ODE solver.
 struct rgridReverseSort {
-  bool operator()(rgrid a, rgrid b) { return (a.r >= b.r); }
+  bool operator()(rgrid a, rgrid b) { return (a.r > b.r); }
 };
 
 
