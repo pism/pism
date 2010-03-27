@@ -74,87 +74,25 @@ received a copy of the GNU General Public License along with PISM; see \c COPYIN
 source directory; if not, write to the
 Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 </i>
-
 */
 
-/*!
-\page pismsourceID An overview of C++ classes in the PISM source code
-
-\section overviewID Overview
-
-FIXME!
-
-PISM is implemented as a collection of C++ object classes.  There are five basic 
-classes to know about, the sources for each of which are in \c pism/src/base/:
-  - IceGrid.  Describes the computational box and grid, and the parallel layout
-       of the grid.  For instance, which processor owns which part of the grid is stored in an
-       instance of IceGrid.
-  - IceModel.  Contains myriad data structures, flags, PETSc \c Vecs (below), and 
-       most of the numerical methods of PISM.  The most important class.  An instance of 
-       IceModel has data members including an instance of IceGrid, many instances of IceModelVec,
-       many instances of MaterialType, and an instance of NCTool. 
-  - IceModelVec.  Abstracts the idea of a scalar field distributed across the PISM grid.  Elements of 
-       this class can read and write themselves to NetCDF files, for instance.  The three dimensional 
-       case, the derived class \c IceModelVec3, can hand back a requested column or stencil, for instance.
-  - MaterialType.  Various materials are derived from the class \c MaterialType which merely defines 
-       a couple of physical constants.  \c IceType is a derived class, but still an abstract class.
-       It defines the physical properties of ice as a material.  Concrete classes derived from \c IceType
-       are \c ThermoGlenIce (which uses the EISMINT constants) and \c GKIce as well as \c HybridIce, 
-       which implements the Goldsby-Kohlstedt flow law [\ref GoldsbyKohlstedt].  
-
-       @note Actually, it is 
-       difficult or impossible to implement a complete Goldsby-Kohlstedt \c IceType because the effective
-       viscosity (inverse) form of the constitutive relation is required for computation of SSA velocity 
-       fields. \c HybridIce is Goldsby-Kohlstedt ice in SIA regions and Glen ice in other regions.
-
-       There is a basal material type \c BasalType which can be plastic or linearly viscous.  Similarly, 
-       there are \c BedrockType and \c OceanType types which define associated physical constants.
-  - NCTool.  Collects the methods which read and write and regrid the actual PETSc 
-       \c Vecs in PISM.  These methods do nontrivial parallel data transfers.
-
-Additional classes are \c Data1D and \c LocalInterpCtx, among others.
- 
-\section icemodelID Description of IceModel
-
-The methods for \c IceModel are many.  In addition to numerics, they initialize the model 
-from input data files.  (Note several derived classes of \c IceModel initialize from 
-formulas describing simplified geometry experiments or exact solutions.)  The methods
-in \c IceModel read user options, allocate arrays in a distributed manner under PETSc, 
-control diagnostic viewers, run the adaptive time-stepping mechanism, report the state 
-of PISM to the user, and write out the model state to files.
-
-A derived class of \c IceModel called \c IceCompModel is used for verification.  It has additional 
-structures which allow compensatory sources and compute initial conditions from, and errors relative to,
-known exact solutions [\ref BLKCB, \ref BBL, \ref BB].  Another derived class used for verification is 
-\c IceExactSSAModel, which implements the exact solution described in [\ref SchoofStream].
-
-Other derived classes of \c IceModel are \c IceEISModel, \c IceGRNModel, and \c IceROSSModel.  
-These correspond to the EISMINT II simplified geometry experiments [\ref EISMINT00] , and the 
-EISMINT-Greenland ice sheet and EISMINT-Ross ice shelf models described in the \e User's \e Manual.
-
-There are five established drivers which just call constructors and destructors for an instance 
-of \c IceModel, or a derived class thereof, and tell the instance to run itself.  These are in the 
-source files \c pgrn.cc, \c pismd.cc, \c pismr.cc, \c pisms.cc, and \c pismv.cc, corresponding to 
-the executables with the same names.  The drivers \c pismr.cc and \c pismd.cc only use the base 
-class \c IceModel, so one is required to initialize from a PISM model state NetCDF file with 
-\c -i or from an incomplete model state NetCDF file using \c -boot_from.
-
-The different derived classes generally invoke the same numerical procedures to handle the various 
-partial differential equations of the continuum model.  In the case of \c IceCompModel and
-\c IceExactSSAModel, this fact is at the heart of the verification mechanism.
-
-*/
 
 /*!
 \page petscID PETSc: An overview for PISM users
 
-FIXME!:  gloss why a lot of this is now buried in stable0.3; derived class writers now need minimal knowledge of PETSc
+\section preamble Preamble
 
-FIXME:   instead, what is important to know is that solving the SSA in parallel
-is relatively deep technology, and the solution depends (through preconditioner
-issues) on number of processors
+In stable0.3, because of abstractions especially in IceModelVec and its derived
+classes, programmers building derived classes of IceModel now need minimal
+knowledge of PETSc and especially PETSc DAs.  What \e is important to know is
+that solving the SSA in parallel is relatively deep technology.  Very
+specifically, because effective parallel iterative linear algebra requires
+preconditioning, <i>the solution of the SSA stress balance depends on the number
+of processors</i>.  This will also be true of high resolution parallel solution
+of all other membrane-including stress balances (Blatter, Stokes).
 
 \section intro Introduction
+
 The PETSc library [\ref petsc-user-ref] provides essential support for distributed 
 arrays and linear solvers in a parallel computing environment.  ``PETSc" stands for 
 ``Portable, Extensible Toolkit for Scientific Computation."  It is a suite of data structures 
@@ -170,19 +108,23 @@ Documentation for PETSc is at
 
 http://www.mcs.anl.gov/petsc/.
 
-PISM is a C++ program and PETSc is a C library.  All PISM calls to PETSc use the PETSc C API, not the C++ API.
+PISM is a C++ program and PETSc is a C library, but all PISM calls to PETSc use
+the PETSc C API, not the C++ API.
 
 
 \subsection petsctypesID PETSc types
 
-Most important variables in a PETSc program are of these types:
+Most important variables deep inside PISM are of these PETSc types:
   - \c DA
   - \c Vec
+  - \c Mat
   - \c KSP
 
-In fact most of the PETSc types merely declare pointers, but these types should be regarded 
-as abstract data types.  Variables must be created with calls to functions like \c DACreate2d(), 
-\c VecCreate(), etc., and destroyed when no longer needed.
+In fact most of the PETSc types merely declare pointers, as these are
+abstract data types.  Variables must be created with calls to functions like \c DACreate2d(), 
+\c VecCreate(), etc., and destroyed when no longer needed.  These concepts are
+largely buried inside IceGrid (esp. DA type) and IceModelVec (esp. Vec type).
+But Mat and KSP types are exposed in the IceModel code which solves the SSA.
 
 
 \subsection distributedID Distributed arrays and vectors
@@ -247,18 +189,15 @@ essentially all loops over two dimensional arrays in PISM look like this:
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
-    ... H[i][j] ...
-    
-    ... ubar[i][j] ...
-    
-    ... T[i][j][k] ...
+    ... vH(i,j) ...
 
     }
   }
 \endcode
 
 The integers \c grid.xs, \c grid.xm, \c grid.ys, \c grid.ym, are just the numbers that come
-from a call to \c DAGetLocalInfo(), just after the \c DA is created.
+from a call to \c DAGetLocalInfo(), just after the \c DA is created, but normally
+a programmer just calls IceGrid.
 
 
 \subsection localglobalID "Local" versus "global" Vecs
@@ -323,6 +262,8 @@ no need to allocate space for them, and a "global" \c Vec is appropriate.  Local
 typically need to be mapped to global vectors before viewing or using in a linear system, but
 this is an entirely "local" operation which does not require message passing (\c DALocalToGlobal()).
 
+At risk of repetition, most of the above distinction between "local" and "global"
+is buried in IceModelVec abstraction.
 
 \subsection linearsysID Solving linear systems
 
@@ -373,31 +314,26 @@ the matrix to have an optimal parallel layout.
 
 \subsection additionalpetscID Additional PETSc utility functions
 
+Quite ellaborate error tracing and performance monitoring is possible with PETSc.  All
+functions return \c PetscErrorCode which should be checked by the macro \c CHKERRQ().
+Therefore runtime errors normally print sufficient traceback information.
+If this information is not present (because the error did not get traced back), you 
+may need to use a debugger which is accessible with the command line (PETSc) options 
+\c -start_in_debugger and \c -on_error_attach_debugger.  Option \c -log_summary
+is useful to get some diagnostics written to the terminal.
+
 The \c PetscViewer interface allows PETSc objects to be displayed.  One can "view"
 a \c Vec to a graphical (X) window, but the "view" can be saving the \c Vec to a binary
 file on disk, in plain text to the terminal (standard out), or even by sending to a running
-instance of \e Matlab.  (This last capability is not used yet in PISM.)
-
-FIXME  option -d is gone
-
+instance of \e Matlab.  In PISM the X views are available under options -view_map,
+-view_slice, and -view_sounding.  See the User's Manual.
 When viewing \c Vec s graphically in multiprocessor jobs, the display may have to be 
 set on the command line, for instance as <tt>-display :0</tt> or similar; this must be given 
 as the final option.  For example,
 \code
-   mpiexec -n 2 pismv -test C -Mx 101 -My 101 -Mz 31 -y 1000 -d HT -display :0
+   mpiexec -n 2 pisms -view_map thk -display :0
 \endcode
-allows a two processor run to view (graphically) both the ice thickness (<tt>-d H</tt>)
-and the ice temperature (<tt>-d T</tt>).
-
-Quite ellaborate error tracing and performance monitoring is possible with PETSc.  All
-functions return \c PetscErrorCode which should be checked by the macro \c CHKERRQ().
-Therefore runtime errors normally print sufficient traceback information.
-
-If this information is not present (because the error did not get traced back), you 
-may need to use a debugger which is accessible with the command line (PETSc) options 
-\c -start_in_debugger and \c -on_error_attach_debugger.  
-
-Option \c -log_summary is useful to get some diagnostics written to the terminal.
+allows a two processor run to view the ice thickness.
 
 */
  

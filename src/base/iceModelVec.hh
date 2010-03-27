@@ -16,6 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef __IceModelVec_hh
+#define __IceModelVec_hh
+
 #include <cstring>
 #include <cstdlib>
 #include <petscda.h>
@@ -25,9 +28,6 @@
 #include "NCSpatialVariable.hh"
 #include "pism_const.hh"
 #include "LocalInterpCtx.hh"
-
-#ifndef __IceModelVec_hh
-#define __IceModelVec_hh
 
 //! Abstract class for reading, writing, allocating, and accessing a DA-based PETSc Vec from within IceModel.
 class IceModelVec {

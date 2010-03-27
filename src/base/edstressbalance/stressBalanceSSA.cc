@@ -53,7 +53,7 @@ PetscErrorCode newSSAStrengthExtension::set_min_thickness(PetscReal my_min_thick
 
 StressBalanceSSA::StressBalanceSSA(
            IceGrid* g, IceFlowLaw* ssa_ice, IceBasalResistancePlasticLaw* ssa_basal,
-           IceModelVec2 *ssa_tauc, IceModelVec2 *ssa_mask, IceModelVec2 *ssa_hardav) {
+           IceModelVec2S *ssa_tauc, IceModelVec2S *ssa_mask, IceModelVec2S *ssa_hardav) {
   initAndAllocate(g);
   ice = ssa_ice;
   basal = ssa_basal;
@@ -181,7 +181,7 @@ Compute compoents of the basal stress applied to the base of the ice:
   \f[ \tau_{b,x} = - C(\tau_c,u,v) u, \f]
   \f[ \tau_{b,y} = - C(\tau_c,u,v) v, \f]
  */
-PetscErrorCode StressBalanceSSA::getBasalStress(IceModelVec2 *vbs_x, IceModelVec2 *vbs_y) {
+PetscErrorCode StressBalanceSSA::getBasalStress(IceModelVec2S *vbs_x, IceModelVec2S *vbs_y) {
   PetscErrorCode ierr;
   
   PISMVector2 **uv;

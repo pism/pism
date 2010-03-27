@@ -1,3 +1,6 @@
+#ifndef __PISMBedDef_hh
+#define __PISMBedDef_hh
+
 #include "../base/PISMComponent.hh"
 #include "../base/iceModelVec.hh"
 #include "deformation.hh"
@@ -54,4 +57,6 @@ protected:
     upliftp0;			// bed uplift
   BedDeformLC bdLC;
 };
+#endif
+
 #endif

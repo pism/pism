@@ -210,7 +210,7 @@ PetscScalar& IceModelVec2S::operator() (int i, int j) {
   return static_cast<PetscScalar**>(array)[i][j];
 }
 
-///// IceModelVec2Mask
+// IceModelVec2Mask
 
 PetscErrorCode  IceModelVec2Mask::create(IceGrid &my_grid, const char my_name[], bool local, int width) {
   if (!utIsInit()) {
@@ -360,7 +360,7 @@ PetscErrorCode IceModelVec2S::sum(PetscScalar &result) {
 }
 
 
-///// IceModelVec2
+// IceModelVec2
 
 PetscErrorCode IceModelVec2::get_component(int N, Vec result) {
   PetscErrorCode ierr;
@@ -450,7 +450,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
   return 0;
 }
 
-///// IceModelVec2Stag
+// IceModelVec2Stag
 
 PetscErrorCode  IceModelVec2Stag::create(IceGrid &my_grid, const char my_short_name[], bool local,
 					 int stencil_width) {
