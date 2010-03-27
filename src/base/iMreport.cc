@@ -1133,6 +1133,12 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
     return 0;
   }
 
+  if (name == "temp") {
+    ierr = compute_temp(Enthnew3); CHKERRQ(ierr);
+    result = &Enthnew3;
+    return 0;
+  }
+
   if (name == "temp_pa") {
     ierr = compute_temp_pa(Enthnew3); CHKERRQ(ierr);
     result = &Enthnew3;
