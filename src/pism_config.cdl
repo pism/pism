@@ -18,13 +18,13 @@ netcdf pism_config {
     pism_config:do_skip_doc = "Use the temperature, age, and SSA stress balance computation skipping mechanism.";
 
     pism_config:use_ssa_when_grounded = "no";
-    pism_config:use_ssa_when_grounded_doc = "FIXME: This doc-string is outdated. Use Schoof’s plastic till model for ice streams at all grounded points on the ice sheet.";
+    pism_config:use_ssa_when_grounded_doc = "In PISM, sliding occurs at all grounded points either in the SIA paradigm (see mu_sliding) or in the SSA-as-a-sliding law paradigm [\\ref BBssasliding].  Choose the latter if yes.";
 
     pism_config:do_pseudo_plastic_till = "no";
     pism_config:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
 
     pism_config:do_superpose = "no";
-    pism_config:do_superpose_doc = "Combine the velocity ﬁelds from the SIA and SSA models as in [\\ref BBssasliding]. Only eﬀective if used with -ssa.";
+    pism_config:do_superpose_doc = "Combine the velocity ﬁelds from the SIA and SSA models as in [\\ref BBssasliding]. Only effective if used with -ssa.";
 
     pism_config:thermal_bedrock = "yes";
     pism_config:thermal_bedrock_doc = "Use the bedrock thermal model";
@@ -150,7 +150,7 @@ netcdf pism_config {
     pism_config:thk_eff_reduced_doc = "; factor by which basal water pressure is reduced by thickness effect";
 
     pism_config:mu_sliding = 0.0;
-    pism_config:mu_sliding_doc = "The sliding law parameter in SIA regions of the ice. <i>This kind of sliding is not recommended, which is why it is turned oﬀ by default.</i>  See Appendix B of \\ref BBssasliding for the dangers in this mechanism.";
+    pism_config:mu_sliding_doc = "The sliding law parameter in SIA sliding paradigm. <i>This kind of sliding is not recommended, which is why it is turned off by default.</i>  See Appendix B of \\ref BBssasliding for the dangers in this mechanism.";
 
     pism_config:bed_def_interval_years = 10.0;
     pism_config:bed_def_interval_years_doc = "years; Interval between bed deformation updates";

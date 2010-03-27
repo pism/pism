@@ -39,7 +39,7 @@ EOF
 
     if [ $? != 0 ];
     then
-	fail "temperature fields in bar.nc and baz.nc are different"
+	fail "ivol time series in ivol.nc is not constant"
 	# the return statement *is* needed here, because 'fail' does not
 	# terminate the test execution
 	return 1

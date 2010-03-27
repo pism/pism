@@ -72,20 +72,20 @@ PetscErrorCode IceModel::initBasalTillModel() {
 
   bool topgphiSet,svphiSet;
   string filename;
-  ierr = PetscOptionsHead("Options controlling the basal till model"); CHKERRQ(ierr);
+  //ierr = PetscOptionsHead("Options controlling the basal till model"); CHKERRQ(ierr);
   {
     // initialize till friction angle (vtillphi) from options
     ierr = PISMOptionsIsSet("-topg_to_phi", "Use the till friction angle parameterization", topgphiSet); CHKERRQ(ierr);
     ierr = PISMOptionsString("-surf_vel_to_phi", "Specifies the file containing surface velocities to invert",
 			     filename, svphiSet); CHKERRQ(ierr);
   }
-  ierr = PetscOptionsTail(); CHKERRQ(ierr);
+  //ierr = PetscOptionsTail(); CHKERRQ(ierr);
 
-  if ((svphiSet == PETSC_TRUE) && (topgphiSet == PETSC_TRUE)) {
+  if ((svphiSet) && (topgphiSet)) {
     SETERRQ(1,"conflicting options for initializing till friction angle; ENDING ...\n");
   }
 
-  if (topgphiSet == PETSC_TRUE) {
+  if (topgphiSet) {
     ierr = verbPrintf(2, grid.com, 
       "option -topg_to_phi seen; creating till friction angle map from bed elev ...\n");
       CHKERRQ(ierr);
@@ -93,7 +93,7 @@ PetscErrorCode IceModel::initBasalTillModel() {
     ierr = computePhiFromBedElevation(); CHKERRQ(ierr);
   }
 
-  if (svphiSet == PETSC_TRUE) {
+  if (svphiSet) {
     ierr = verbPrintf(2, grid.com, 
       "option -surf_vel_to_phi seen; doing ad hoc inverse model ...\n"); CHKERRQ(ierr);
     ierr = invertSurfaceVelocities(filename.c_str()); CHKERRQ(ierr);
