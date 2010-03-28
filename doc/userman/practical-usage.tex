@@ -355,7 +355,7 @@ macbook:pism>
 
 \subsection{Visualizing climate inputs, without ice dynamics}\label{subsect:pcctest}  Recall that
 internally in PISM there is a separation of climate inputs from ice dynamics
-(subsection \ref{subsect:separateclimate}).  Executable \verb|pcctest|\index{PISM!pcctest}
+(subsection \ref{sec:climate-inputs}).  Executable \verb|pcctest|\index{PISM!pcctest}
 allows one to visualize climate inputs without invoking the ice dynamics core of PISM.
 This is helpful during the process of creating PISM-readable data files, and modeling 
 with such.
@@ -398,7 +398,7 @@ in variables \verb|acab|, \verb|artm|, reported back to us as the time- and spac
 climate at times \verb|ys:dt:ye|.  It is a boring ``movie.''
 
 The excuse for the executable \verb|pcctest| becomes clearer if we use a positive degree-day
-model (subsection \ref{subsect:pdd}).  The positive degree-day
+model (subsection \ref{sec:boundary-models}).  The positive degree-day
 model uses a variable called \verb|snowaccum|, and a calculation of melting, to get the
 surface mass balance \verb|acab|.  As a demonstration here we use an NCO\index{NCO (NetCDF Operators)!ncrename} (subsection 
 \ref{subsect:nctoolsintro}) to change a variable name in \verb|state.nc|.  Then we run \verb|pcctest|

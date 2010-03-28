@@ -40,22 +40,25 @@ seconds_per_year = 3.1556926e7
 
 # process command line arguments
 try:
-    opts, args = getopt(argv[1:], "p:r:", ["pism-output=", "riggs="])
+    opts, args = getopt(argv[1:], "", ["pism-output=", "riggs=", "ross="])
     # defaults:
     pism_output = "rossComputed.nc"
     riggs_file = "riggs_clean.dat"
+    ross_file = "ross.nc"
     for opt, arg in opts:
-        if opt in ("-p", "--pism-output"):
+        if opt in ("--pism-output"):
             pism_output = arg
-        if opt in ("-r", "--riggs"):
+        if opt in ("--riggs"):
             riggs_file = arg
+        if opt in ("--ross"):
+            ross_file = arg
 except GetoptError:
-    print """Options:
-               --pism-output=<PISM output file> or -p <PISM output file>
-                 specifies the NetCDF file with PISM output
-
-               --riggs=<RIGGS data file> or -r <RIGGS data file>
-                 specifies the data file with RIGGS points."""
+    print """
+Options:
+   --pism-output=<PISM output .nc file>:  specifies the NetCDF file with PISM output
+   --riggs=<RIGGS data file>: specifies the data file with RIGGS points
+   --ross=<eismint ross .nc file>: specifies the NetCDF file which includes 'accur'
+"""
     exit(-1)
 
 # load RIGGS data FROM D. MACAYEAL TO ELB ON 19 DEC 2006.
@@ -85,6 +88,14 @@ ubar = squeeze(infile.variables["uvelsurf"][:])
 vbar = squeeze(infile.variables["vvelsurf"][:])
 print "done."
 
+# need accur flag to determine location of calving front
+print "Loading EISMINT data from 'ross.nc'..."
+rossfile = NC("ross.nc", 'r')
+accur = squeeze(rossfile.variables["accur"][:])
+rosslat = squeeze(rossfile.variables["lat"][:])
+rosslon = squeeze(rossfile.variables["lon"][:])
+print "done."
+
 
 # see 111by147.dat for these ranges
 dlat = (-5.42445 - (-12.3325))/110;
@@ -96,8 +107,12 @@ glon = tile(gridlon, 147); glat = repeat(gridlatext, 147)
 tri = Triangulation(glon, glat)
 
 # This is needed to only plot areas where H >= 20 and mask == 0
-# and filter out RIGGS points that are outside the model domain.
-cbar_masked = ma.array(cbar, mask = (mask == 1) + (H < 20))
+# and filter out RIGGS points that are outside the model domain,
+# and use location of calving front from accur flag
+cbar_masked = ma.array(cbar,
+    mask = (mask == 1) + (H < 20.0)
+            + ((accur == 0) & (rosslat < -11.0) & (rosslon < 1.0))
+    )
 
 # show computed speed as color
 figure(1, figsize=(9,8));clf();hold(True)
