@@ -108,6 +108,12 @@ public:
   IceModelVec2T();
   IceModelVec2T(const IceModelVec2T &other);
   virtual void set_n_records(unsigned int N);
+// FIXME:  adding the next "using" declaration causes a compiler ERROR because then
+//         an ambiguity gets recognized; see famous "you're going to die"
+//         web ref:   http://www.parashift.com/c++-faq-lite/strange-inheritance.html#faq-23.9
+//         I claim it actually makes sense to me!
+//         de-ambiguation is needed!
+//  using IceModelVec2S::create;
   virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local);
   virtual PetscErrorCode init(string filename);
   virtual PetscErrorCode update(double t_years, double dt_years);

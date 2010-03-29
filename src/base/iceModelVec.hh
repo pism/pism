@@ -147,6 +147,7 @@ public:
   IceModelVec2S() {}
   IceModelVec2S(const IceModelVec2S &other) : IceModelVec2(other) {}
   // does not need a copy constructor, because it does not add any new data members
+  using IceModelVec2::create;
   virtual PetscErrorCode  create(IceGrid &my_grid, const char my_name[], bool local, int width = 1);
   virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
@@ -171,6 +172,7 @@ class IceModelVec2Stag : public IceModelVec2 {
 public:
   IceModelVec2Stag() { dof = 2; vars.resize(dof); }
   IceModelVec2Stag(const IceModelVec2S &other) : IceModelVec2(other) {}
+  using IceModelVec2::create;
   virtual PetscErrorCode create(IceGrid &my_grid, const char my_name[], bool local, int width = 1);
   virtual PetscErrorCode get_array(PetscScalar*** &a);
   virtual PetscErrorCode begin_access();
@@ -182,6 +184,7 @@ public:
 //! floating-point scalars (instead of integers).
 class IceModelVec2Mask : public IceModelVec2 {
 public:
+  using IceModelVec2::create;
   virtual PetscErrorCode create(IceGrid &my_grid, const char my_name[], bool local, int width = 1);
   PetscErrorCode  get_array(PetscScalar** &a); // provides access to the storage (PetscScalar) array
   virtual PetscScalar& operator() (int i, int j);
@@ -203,10 +206,12 @@ public:
   IceModelVec2V();
   IceModelVec2V(const IceModelVec2V &original);
   ~IceModelVec2V();
+  using IceModelVec2::create;
   virtual PetscErrorCode create(IceGrid &my_grid, const char my_short_name[],
 				bool local, int stencil_width = 1); 
 
   // I/O:
+  using IceModelVec2::write;
   virtual PetscErrorCode write(const char filename[], nc_type nctype); 
   virtual PetscErrorCode read(const char filename[], const unsigned int time); 
   virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, bool critical); 
@@ -218,6 +223,7 @@ public:
   virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
   virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
   // Metadata, etc:
+  using IceModelVec2::is_valid;
   virtual bool           is_valid(PetscScalar u, PetscScalar v); 
 protected:
   DA component_da;		//!< same as \c da, but for one component only
