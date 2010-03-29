@@ -255,6 +255,9 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.scalar_from_option("skip", "skip_max"); CHKERRQ(ierr);
   ierr = config.flag_from_option("skip",   "do_skip");  CHKERRQ(ierr);
 
+  ierr = config.scalar_from_option("summary_volarea_scale_factor_log10",
+                                   "summary_volarea_scale_factor_log10"); CHKERRQ(ierr);
+
   // if set, makes the thickness affect the pore_pressure; near margin there
   //   is a reduction in basal water pressure, a conceptual drainage mechanism
   ierr = config.flag_from_option("thk_eff", "thk_eff_basal_water_pressure"); CHKERRQ(ierr);

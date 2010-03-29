@@ -374,6 +374,9 @@ netcdf pism_config {
     pism_config:climate_forcing_buffer_size = 60;
     pism_config:climate_forcing_buffer_size_doc = "; number of 2D climate forcing records to keep in memory; = 5 years of monthly records";
     
+    pism_config:summary_volarea_scale_factor_log10 = 6;
+    pism_config:summary_volarea_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume and area in summary line to stdout";
+    
     pism_config:viewer_size = 320;
     pism_config:viewer_size_doc = "; default diagnostic viewer size";
 

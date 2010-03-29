@@ -398,23 +398,33 @@ PetscErrorCode IceModel::summaryPrintLine(
   PetscErrorCode ierr;
   const bool do_temp = config.get_flag("do_temp");
 
+  const int log10scale = static_cast<int>(config.get("summary_volarea_scale_factor_log10"));
+  const double scale = pow(10.0, static_cast<double>(log10scale));
+  char  volscalestr[10] = "     ", // for special case: blank when 10^0 = 1 scaling
+        areascalestr[10] = "   ";  // ditto
+  if (log10scale != 0) {
+    snprintf(volscalestr, sizeof(volscalestr), "10^%1d_", log10scale);
+    strcpy(areascalestr,volscalestr);
+  }
+
   // this version keeps track of what has been done so as to minimize stdout:
   static string stdout_flags_count0;
   static int    mass_cont_sub_counter = 0;  
-  static double mass_cont_sub_dtsum = 0.0;    
+  static double mass_cont_sub_dtsum = 0.0;
   
-
   if (printPrototype == PETSC_TRUE) {
     if (do_temp) {
       ierr = verbPrintf(2,grid.com,
           "P         YEAR:     ivol   iarea     thick0     temp0\n");
       ierr = verbPrintf(2,grid.com,
-          "U        years 10^6_km^3 10^6_km^2        m         K\n");
+          "U        years %skm^3 %skm^2        m         K\n",
+          volscalestr,areascalestr);
     } else {
       ierr = verbPrintf(2,grid.com,
           "P         YEAR:     ivol   iarea     thick0\n");
       ierr = verbPrintf(2,grid.com,
-          "U        years 10^6_km^3 10^6_km^2        m\n");
+          "U        years %skm^3 %skm^2        m\n",
+          volscalestr,areascalestr);
     }
   } else {
     if (mass_cont_sub_counter == 0)
@@ -444,11 +454,11 @@ PetscErrorCode IceModel::summaryPrintLine(
       if (do_temp) {
         ierr = verbPrintf(2,grid.com, 
           "S %12.5f: %8.5f %7.4f %10.3f %9.4f\n",
-          year, volume/(1.0e6*1.0e9), area/(1.0e6*1.0e6), H0, T0); CHKERRQ(ierr);
+          year, volume/(scale*1.0e9), area/(scale*1.0e6), H0, T0); CHKERRQ(ierr);
       } else {
         ierr = verbPrintf(2,grid.com, 
           "S %12.5f: %8.5f %7.4f %10.3f\n",
-          year, volume/(1.0e6*1.0e9), area/(1.0e6*1.0e6), H0); CHKERRQ(ierr);
+          year, volume/(scale*1.0e9), area/(scale*1.0e6), H0); CHKERRQ(ierr);
       }
       mass_cont_sub_counter = 0;      
       mass_cont_sub_dtsum = 0.0;

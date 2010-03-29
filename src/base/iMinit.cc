@@ -398,8 +398,9 @@ PetscErrorCode IceModel::init_physics() {
   // Initialize the IceFlowLaw object:
   if (!doColdIceMethods) {
     ierr = verbPrintf(2, grid.com,
-      "  setting flow law to Glen-Paterson-Budd-Lliboutry-Duval type ...\n");
-      CHKERRQ(ierr);
+      "  setting flow law to polythermal type ...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(3, grid.com,
+      "      (= Glen-Paterson-Budd-Lliboutry-Duval type)\n"); CHKERRQ(ierr);
     if (ice != NULL)  delete ice;  // kill choice already made
     iceFactory.setType(ICE_GPBLD); // new flowlaw which has dependence on enthalpy
                                    //   not temperature
@@ -417,6 +418,9 @@ PetscErrorCode IceModel::init_physics() {
       }
     }
   } else {
+    ierr = verbPrintf(2, grid.com,
+      "  doing cold ice methods ...\n"); CHKERRQ(ierr);
+
     // FIXME:  the semantics of IceFlowLaw should be cleared up; lots of PISM
     //   (e.g. verification and EISMINT II and EISMINT-Greenland) are cold,
     //   but the really important cases (e.g. SeaRISE-Greenland) are polythermal
