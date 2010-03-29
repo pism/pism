@@ -1,7 +1,8 @@
 #!/bin/bash
-#   Downloads data and runs an EISMINT-Ross example in PISM.  See User's Manual.
+#   Downloads data and runs an EISMINT-Ross example in PISM.
+#   See User's Manual.
 
-NN=1  # default number of processors
+NN=2  # default number of processes
 if [ $# -gt 0 ] ; then  # if user says "./quickstart.sh 8" then NN = 8
   NN="$1"
 fi
@@ -15,20 +16,20 @@ do
 done
 
 echo "-----  Run eisross.py to turn ascii data from EISMINT into NetCDF file"
-echo "       ross.nc (requires python modules numpy and netCDF3/netCDF4):"
+echo "-----    ross.nc (requires python modules numpy and netCDF3/netCDF4):"
 ./eisross.py -o ross.nc
 
 echo "-----  Run riggs.py to create NetCDF version riggs.nc of RIGGS data"
-echo "       (requires python modules numpy and netCDF3/netCDF4):"
+echo "-----    (requires python modules numpy and netCDF3 or netCDF4):"
 ./riggs.py -o riggs.nc
 
-echo "-----  Running 'pismd -ross' to compute velocity in Ross ice shelf,"
-echo "       including comparison to RIGGS data:"
+echo "-----  Running 'pismd -ross' with $NN processes to compute velocity in"
+echo "-----    Ross ice shelf, including comparison to RIGGS data:"
 mpiexec -n $NN pismd -ross -boot_from ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3 \
   -ssa -ssaBC ross.nc -riggs riggs.nc -o_size big -o rossComputed.nc
 
 echo "----- Generating figure comparing model vs observed velocity (requires"
-echo "      python modules numpy, netCDF3/netCDF4, pylab, and scikits.delaunay):"
+echo "-----   python modules numpy, netCDF3/4, pylab, and scikits.delaunay):"
 ./rossplot.py
 
 echo "-----  Done."

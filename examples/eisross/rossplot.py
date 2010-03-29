@@ -146,8 +146,6 @@ axis([-5.26168, 3.72207, -13, -5.42445])
 xlabel('RIGGS grid longitude (deg E)'); ylabel('RIGGS grid latitude (deg N)')
 #title("""Color is speed in m/a.\n Arrows are observed (black) and computed 
 #(red) velocities at RIGGS points.""")
-print "saving figure ross_quiver.png"
-savefig("ross_quiver.png")
 
 # to report results comparable to Table 1 in (MacAyeal et al 1996)
 #ChiSqrActual = sum( ((uATrig - rigu)**2 + (vATrig - rigv)**2) / (30**2) )
@@ -159,8 +157,6 @@ figure(2);clf();hold(True)
 plot(sqrt(uATrig**2 + vATrig**2), sqrt(rigu**2 + rigv**2), '.k')
 plot([0, 1000],[0, 1000], 'k')
 xlabel('PISM computed speed (m/a)'); ylabel('RIGGS observed speed (m/a)')
-print "saving figure ross_scatter.png"
-savefig("ross_scatter.png")
 
 print "pausing to show figures ..."
 show()
