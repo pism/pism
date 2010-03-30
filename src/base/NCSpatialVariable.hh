@@ -13,6 +13,7 @@ public:
   virtual PetscErrorCode read(const char filename[], unsigned int time, Vec v);
   virtual PetscErrorCode reset();
   virtual PetscErrorCode write(const char filename[], nc_type nctype,
+			       string variable_order,
 			       bool write_in_glaciological_units, Vec v);
   virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic,
 				bool critical, bool set_default_value,
@@ -22,7 +23,8 @@ public:
 protected:
   GridType dims;
   IceGrid *grid;
-  PetscErrorCode define(int ncid, nc_type nctype, int &varid);
+  PetscErrorCode define(int ncid, nc_type nctype,
+			string variable_order, int &varid);
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
   PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);
   PetscErrorCode check_range(Vec v);

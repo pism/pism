@@ -396,13 +396,39 @@ PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
  */
 PetscErrorCode IceGrid::createDA() {
   PetscErrorCode ierr;
+  PetscInt WIDE_STENCIL = 2;
   if (da2 != PETSC_NULL)
     SETERRQ(1, "IceGrid::createDA(): da2 != PETSC_NULL");
 
   // Transpose:
   ierr = DACreate2d(com, DA_XYPERIODIC, DA_STENCIL_BOX,
-                    My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, 1,
+                    My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, WIDE_STENCIL,
                     PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
+
+  DALocalInfo info;
+  ierr = DAGetLocalInfo(da2, &info); CHKERRQ(ierr);
+  // this continues the fundamental transpose
+  xs = info.ys; xm = info.ym;
+  ys = info.xs; ym = info.xm;
+
+  return 0;
+}
+
+PetscErrorCode IceGrid::createDA(PetscInt procs_x, PetscInt procs_y,
+				 PetscInt* &lx, PetscInt* &ly) {
+  PetscErrorCode ierr;
+  PetscInt WIDE_STENCIL = 2;
+
+  if (da2 != PETSC_NULL) {
+    ierr = DADestroy(da2); CHKERRQ(ierr);
+  }
+
+  // Transpose:
+  ierr = DACreate2d(com, DA_XYPERIODIC, DA_STENCIL_BOX,
+                    My, Mx,
+		    procs_y, procs_x,
+		    1, WIDE_STENCIL,
+                    ly, lx, &da2); CHKERRQ(ierr);
 
   DALocalInfo info;
   ierr = DAGetLocalInfo(da2, &info); CHKERRQ(ierr);

@@ -51,13 +51,17 @@ PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const char my_short_name
 					     stencil_width, dof); CHKERRQ(ierr);
 
   PetscInt       M, N, m, n;
+  const PetscInt *lx, *ly;
   ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
+  ierr = DAGetOwnershipRanges(my_grid.da2, &ly, &lx, PETSC_NULL); CHKERRQ(ierr);
 
   // component DA:
-  ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, DA_STENCIL_BOX, N, M, n, m,
+  ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, DA_STENCIL_BOX,
+		    N, M,
+		    n, m,
 		    1, stencil_width, // "1" is the dof of a component
-                    PETSC_NULL, PETSC_NULL, &component_da); CHKERRQ(ierr);
+                    ly, lx, &component_da); CHKERRQ(ierr);
 
   string s_name = name;
   vars[0].init("u" + s_name, my_grid, GRID_2D);
@@ -108,7 +112,8 @@ PetscErrorCode IceModelVec2V::read(const char filename[], const unsigned int tim
   return 0;  
 }
 
-PetscErrorCode IceModelVec2V::write(const char filename[], nc_type nctype) {
+PetscErrorCode IceModelVec2V::write(const char filename[], nc_type nctype,
+				    string var_order) {
   PetscErrorCode ierr;
 
   ierr = checkAllocated(); CHKERRQ(ierr);
@@ -122,7 +127,8 @@ PetscErrorCode IceModelVec2V::write(const char filename[], nc_type nctype) {
   for (int j = 0; j < dof; ++j) {
     vars[j].time_independent = time_independent;
     ierr = IceModelVec2::get_component(j, tmp); CHKERRQ(ierr);
-    ierr = vars[j].write(filename, nctype, write_in_glaciological_units, tmp);
+    ierr = vars[j].write(filename, nctype, var_order,
+			 write_in_glaciological_units, tmp);
   }
 
   // Clean up:

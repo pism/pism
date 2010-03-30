@@ -115,7 +115,8 @@ PetscErrorCode IceCalvBCModel::compute_nCF() {
 
 PetscErrorCode IceCalvBCModel::writeCFfields(const char* default_filename) {
   PetscErrorCode ierr;
-  
+  string var_order = config.get_string("output_coord_var_order");
+
   char filename[PETSC_MAX_PATH_LEN];
   PetscTruth o_set;
   ierr = PetscOptionsGetString(PETSC_NULL, "-o", filename, PETSC_MAX_PATH_LEN, &o_set); CHKERRQ(ierr);
@@ -124,9 +125,9 @@ PetscErrorCode IceCalvBCModel::writeCFfields(const char* default_filename) {
   if (!o_set)
     strncpy(filename, default_filename, PETSC_MAX_PATH_LEN);
 
-  ierr = vsmoothCFmask.write(filename, NC_DOUBLE); CHKERRQ(ierr);
-  ierr = vnCF[0].write(filename, NC_DOUBLE); CHKERRQ(ierr);
-  ierr = vnCF[1].write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = vsmoothCFmask.write(filename, NC_DOUBLE, var_order); CHKERRQ(ierr);
+  ierr = vnCF[0].write(filename, NC_DOUBLE, var_order); CHKERRQ(ierr);
+  ierr = vnCF[1].write(filename, NC_DOUBLE, var_order); CHKERRQ(ierr);
   return 0;
 }
 

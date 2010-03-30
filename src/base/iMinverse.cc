@@ -428,16 +428,17 @@ PetscErrorCode IceModel::readObservedSurfVels(const char *filename) {
 PetscErrorCode IceModel::writeInvFields(const char *filename) {
   PetscErrorCode ierr;
   PetscScalar fill_ma  = 2.0 * secpera; // 2.0 m/s is the fill value; huge
+  string var_order = config.get_string("output_coord_var_order");
 
   ierr = inv.usIn->set_glaciological_units("m year-1"); CHKERRQ(ierr);
   inv.usIn->write_in_glaciological_units = true;
   inv.usIn->set_attr("_FillValue", fill_ma);
-  ierr = inv.usIn->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.usIn->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
   ierr = inv.vsIn->set_glaciological_units("m year-1"); CHKERRQ(ierr);
   inv.vsIn->write_in_glaciological_units = true;
   inv.vsIn->set_attr("_FillValue", fill_ma);
-  ierr = inv.vsIn->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.vsIn->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
   ierr = vWork2d[0].set_to_magnitude(*(inv.usIn), *(inv.usIn)); CHKERRQ(ierr); // FIXME:
 									       // should
@@ -456,46 +457,46 @@ PetscErrorCode IceModel::writeInvFields(const char *filename) {
 	     "m s-1", ""); CHKERRQ(ierr);
   ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vWork2d[0].write_in_glaciological_units = true;
-  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = vWork2d[0].write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
-  ierr = inv.invMask->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.invMask->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
   ierr = inv.usSIA->set_glaciological_units("m year-1"); CHKERRQ(ierr);
   inv.usSIA->write_in_glaciological_units = true;
-  ierr = inv.usSIA->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.usSIA->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
   ierr = inv.vsSIA->set_glaciological_units("m year-1"); CHKERRQ(ierr);
   inv.vsSIA->write_in_glaciological_units = true;
-  ierr = inv.vsSIA->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.vsSIA->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
   bool oldwritegu = vel_ssa.write_in_glaciological_units;
   ierr = vel_ssa.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vel_ssa.write_in_glaciological_units = true;
   vel_ssa.set_attr("_FillValue", fill_ma);
-  ierr = vel_ssa.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = vel_ssa.write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
   if (!oldwritegu)   vel_ssa.write_in_glaciological_units = false;
 
-  ierr = inv.taubxComputed->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.taubxComputed->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
-  ierr = inv.taubyComputed->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.taubyComputed->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
-  ierr = inv.effPressureN->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.effPressureN->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
   ierr = vWork2d[0].set_to_magnitude(*(inv.taubxComputed),*(inv.taubyComputed)); CHKERRQ(ierr);
   ierr = vWork2d[0].set_name("magtaubComputed"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs("inverse_output",
              "magnitude of basal shear stress applied at base of ice",
 	     "Pa", ""); CHKERRQ(ierr);
-  ierr = vWork2d[0].write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = vWork2d[0].write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
   inv.fofv->set_attr("more_info", "value of 1 means velocity is all SIA, value of 0 means velocity is all SSA");
-  ierr = inv.fofv->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.fofv->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
   // input till phi
-  ierr = inv.oldtillphi->write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = inv.oldtillphi->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
   // output till phi
-  ierr = vtillphi.write(filename, NC_FLOAT); CHKERRQ(ierr);
+  ierr = vtillphi.write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
   return 0;
 }

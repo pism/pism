@@ -413,6 +413,7 @@ protected:
   virtual PetscErrorCode compute_enthalpysurf(IceModelVec2S &result);
   virtual PetscErrorCode compute_hardav(IceModelVec2S &result);
   virtual PetscErrorCode compute_rank(IceModelVec2S &result);
+  virtual PetscErrorCode compute_proc_ice_area(IceModelVec2S &result);
   virtual PetscErrorCode compute_taud(IceModelVec2S &result, IceModelVec2S &tmp);
   virtual PetscErrorCode compute_cts(IceModelVec3 &useForCTS);
   virtual PetscErrorCode compute_liqfrac(IceModelVec3 &useForLiqfrac);

@@ -45,6 +45,8 @@ public:
   ~IceGrid();
 
   PetscErrorCode createDA();  // destructor checks if DA was created, and destroys
+  PetscErrorCode createDA(PetscInt procs_x, PetscInt procs_y,
+			  PetscInt* &lx, PetscInt* &ly);
   PetscErrorCode set_vertical_levels(int Mz, int Mbz, double *z_levels, double *zb_levels);
   PetscErrorCode compute_vertical_levels();
   PetscErrorCode compute_ice_vertical_levels();

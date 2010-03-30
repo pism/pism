@@ -677,6 +677,33 @@ PetscErrorCode IceModel::compute_rank(IceModelVec2S &result) {
   return 0;
 }
 
+//! \brief Sets entrues of result to corresponding processor ranks.
+PetscErrorCode IceModel::compute_proc_ice_area(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+  PetscInt ice_filled_cells = 0;
+
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i)
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j)
+      if (vH(i,j) > 0) {
+	ice_filled_cells += 1;
+      }
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i)
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j)
+      result(i,j) = ice_filled_cells;
+  ierr = result.end_access();
+
+  ierr = result.set_name("proc_ice_area"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic",
+			  "number of cells containing ice in a processor's domain",
+			  "", ""); CHKERRQ(ierr);
+  result.time_independent = true;
+  return 0;
+}
+
 
 //! Compute the CTS field, CTS = E/E_s(p) and put in a global IceModelVec3 provided by user.
 PetscErrorCode IceModel::compute_cts(IceModelVec3 &useForCTS) {
@@ -1212,6 +1239,12 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 
   if (name == "rank") {
     ierr = compute_rank(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "proc_ice_area") {
+    ierr = compute_proc_ice_area(vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }

@@ -96,8 +96,9 @@ PetscErrorCode PALapseRates::temp_time_series(int i, int j, int N,
 PetscErrorCode PALapseRates::write_model_state(PetscReal t_years, PetscReal dt_years,
 						string filename) {
   PetscErrorCode ierr;
+  string var_order = config.get_string("output_coord_var_order");
 
-  ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = snowprecip.write(filename.c_str(), var_order); CHKERRQ(ierr);
 
   IceModelVec2S temp_ma;
   ierr = temp_ma.create(grid, "airtemp_ma", false); CHKERRQ(ierr); // FIXME! choose the right name
@@ -109,7 +110,7 @@ PetscErrorCode PALapseRates::write_model_state(PetscReal t_years, PetscReal dt_y
 
   ierr = temp_snapshot(t_years, dt_years, temp_ma); CHKERRQ(ierr);
 
-  ierr = temp_ma.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = temp_ma.write(filename.c_str(), var_order); CHKERRQ(ierr);
 
   return 0;
 }

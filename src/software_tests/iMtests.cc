@@ -268,6 +268,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
   
+  string var_order = config.get_string("output_coord_var_order");
   double t = 0, t_max = 50, dt = 0.35;
   while (t < t_max) {
     ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
@@ -275,7 +276,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
     ierr = nc.close(); CHKERRQ(ierr);
 
     ierr = vH.set(t*t); CHKERRQ(ierr);
-    ierr = vH.write(filename);
+    ierr = vH.write(filename, var_order);
     t = t + dt;
   }
 
@@ -335,7 +336,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
 
   ierr = v.update(T, 0); CHKERRQ(ierr);
   ierr = v.interp(T); CHKERRQ(ierr);
-  ierr = v.write(output, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = v.write(output, NC_DOUBLE, var_order); CHKERRQ(ierr);
 
   T = 13;
   dt = 10;
@@ -399,7 +400,9 @@ PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   ierr = nc.append_time(0.0); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = uvbar_ssa.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  string var_order = config.get_string("output_coord_var_order");
+
+  ierr = uvbar_ssa.write(filename, NC_DOUBLE, var_order); CHKERRQ(ierr);
 
   // reset:
   ierr = uvbar_ssa.set(0.0); CHKERRQ(ierr);
@@ -407,7 +410,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   // read in:
   ierr = uvbar_ssa.read(filename, 0); CHKERRQ(ierr);
   // write out:
-  ierr = uvbar_ssa.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = uvbar_ssa.write(filename, NC_DOUBLE, var_order); CHKERRQ(ierr);
 
   ierr = uvbar_ssa.magnitude(vWork2d[0]); CHKERRQ(ierr);
   ierr = vWork2d[0].set_name("cbar"); CHKERRQ(ierr);
@@ -417,7 +420,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   ierr = vWork2d[0].set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vWork2d[0].write_in_glaciological_units = true;
 
-  ierr = vWork2d[0].write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = vWork2d[0].write(filename, NC_DOUBLE, var_order); CHKERRQ(ierr);
 
   return 0;
 }

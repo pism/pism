@@ -53,14 +53,15 @@ void IceModelVec2T::set_n_records(unsigned int N) {
   n_records = N;
 }
 
-PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const char my_short_name[], bool local) {
+PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const char my_short_name[],
+				     bool local, int width) {
   PetscErrorCode ierr;
 
   if (local) {
     SETERRQ(1, "IceModelVec2T cannot be 'local'");
   }
 
-  ierr = IceModelVec2S::create(my_grid, my_short_name, false); CHKERRQ(ierr);
+  ierr = IceModelVec2S::create(my_grid, my_short_name, false, width); CHKERRQ(ierr);
 
   PetscInt       M, N, m, n;
   ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,

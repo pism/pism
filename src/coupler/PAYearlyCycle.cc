@@ -74,8 +74,9 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &/*vars*/) {
 PetscErrorCode PAYearlyCycle::write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
 								string filename) {
   PetscErrorCode ierr;
+  string var_order = config.get_string("output_coord_var_order");
 
-  ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = snowprecip.write(filename.c_str(), var_order); CHKERRQ(ierr);
 
   return 0;
 }
@@ -83,13 +84,14 @@ PetscErrorCode PAYearlyCycle::write_model_state(PetscReal /*t_years*/, PetscReal
 PetscErrorCode PAYearlyCycle::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 								     string filename) {
   PetscErrorCode ierr;
+  string var_order = config.get_string("output_coord_var_order");
 
   ierr = write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
 
   ierr = update(t_years, dt_years); CHKERRQ(ierr);
 
-  ierr = temp_ma.write(filename.c_str(), NC_FLOAT); CHKERRQ(ierr);
-  ierr = temp_mj.write(filename.c_str(), NC_FLOAT); CHKERRQ(ierr);
+  ierr = temp_ma.write(filename.c_str(), NC_FLOAT, var_order); CHKERRQ(ierr);
+  ierr = temp_mj.write(filename.c_str(), NC_FLOAT, var_order); CHKERRQ(ierr);
 
   // Compute a snapshot of the instantaneous air temperature for this time-step
   // using the standard yearly cycle and write that too:
@@ -100,7 +102,7 @@ PetscErrorCode PAYearlyCycle::write_diagnostic_fields(PetscReal t_years, PetscRe
 		       "K", ""); CHKERRQ(ierr);
 
   ierr = temp_snapshot(t_years, dt_years, tmp); CHKERRQ(ierr);
-  ierr = tmp.write(filename.c_str(), NC_FLOAT); CHKERRQ(ierr);
+  ierr = tmp.write(filename.c_str(), NC_FLOAT, var_order); CHKERRQ(ierr);
 
   return 0;
 }
@@ -108,6 +110,7 @@ PetscErrorCode PAYearlyCycle::write_diagnostic_fields(PetscReal t_years, PetscRe
 PetscErrorCode PAYearlyCycle::write_fields(set<string> vars, PetscReal t_years,
 					   PetscReal /*dt_years*/, string filename) {
   PetscErrorCode ierr;
+  string var_order = config.get_string("output_coord_var_order");
 
   ierr = update(t_years, 0); CHKERRQ(ierr);
 
@@ -121,19 +124,19 @@ PetscErrorCode PAYearlyCycle::write_fields(set<string> vars, PetscReal t_years,
 
     ierr = temp_snapshot(t_years, 0, airtemp); CHKERRQ(ierr);
 
-    ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = airtemp.write(filename.c_str(), var_order); CHKERRQ(ierr);
   }
 
   if (vars.find("airtemp_ma") != vars.end()) {
-    ierr = temp_ma.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = temp_ma.write(filename.c_str(), var_order); CHKERRQ(ierr);
   }
 
   if (vars.find("airtemp_mj") != vars.end()) {
-    ierr = temp_mj.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = temp_mj.write(filename.c_str(), var_order); CHKERRQ(ierr);
   }
 
   if (vars.find("snowprecip") != vars.end()) {
-    ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
+    ierr = snowprecip.write(filename.c_str(), var_order); CHKERRQ(ierr);
   }
 
   return 0;

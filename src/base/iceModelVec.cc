@@ -481,20 +481,22 @@ PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time)
 }
 
 //! Writes an IceModelVec to a NetCDF file using the default output data type.
-PetscErrorCode IceModelVec::write(const char filename[]) {
+PetscErrorCode IceModelVec::write(const char filename[],
+				  string var_order) {
   PetscErrorCode ierr;
 
   if (getVerbosityLevel() > 3) {
     ierr = PetscPrintf(grid->com, "  Writing %s...\n", name.c_str()); CHKERRQ(ierr);
   }
   
-  ierr = write(filename, output_data_type); CHKERRQ(ierr);
+  ierr = write(filename, output_data_type, var_order); CHKERRQ(ierr);
 
   return 0;
 }
 
 //! Writes an IceModelVec to a NetCDF file.
-PetscErrorCode IceModelVec::write(const char filename[], nc_type nctype) {
+PetscErrorCode IceModelVec::write(const char filename[], nc_type nctype,
+				  string var_order) {
   PetscErrorCode ierr;
   Vec g;
 
@@ -507,11 +509,13 @@ PetscErrorCode IceModelVec::write(const char filename[], nc_type nctype) {
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
     ierr = DALocalToGlobal(da, v, INSERT_VALUES, g); CHKERRQ(ierr);
 
-    ierr = vars[0].write(filename, nctype, write_in_glaciological_units, g); CHKERRQ(ierr);
+    ierr = vars[0].write(filename, nctype, var_order,
+			 write_in_glaciological_units, g); CHKERRQ(ierr);
 
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = vars[0].write(filename, nctype, write_in_glaciological_units, v); CHKERRQ(ierr);
+    ierr = vars[0].write(filename, nctype, var_order,
+			 write_in_glaciological_units, v); CHKERRQ(ierr);
   }
 
   return 0;

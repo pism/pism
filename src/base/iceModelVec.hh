@@ -65,8 +65,8 @@ public:
   virtual PetscErrorCode  set_attrs(string my_pism_intent, string my_long_name,
 				    string my_units, string my_standard_name, int component = 0);
   virtual bool            is_valid(PetscScalar a, int component = 0);
-  virtual PetscErrorCode  write(const char filename[]);
-  virtual PetscErrorCode  write(const char filename[], nc_type nctype);
+  virtual PetscErrorCode  write(const char filename[], string var_order);
+  virtual PetscErrorCode  write(const char filename[], nc_type nctype, string var_order);
   virtual PetscErrorCode  read(const char filename[], unsigned int time);
   virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, bool critical);
   virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
@@ -90,8 +90,9 @@ protected:
   Vec  v;
   string name;
 
-  vector<NCSpatialVariable> vars; //!< NetCDF variable(s) corresponding to this
-				//!IceModelVec; dof == 1 vectors only have vars[0].
+  //! NetCDF variable(s) corresponding to this IceModelVec; dof == 1 vectors
+  //! only have vars[0].
+  vector<NCSpatialVariable> vars;
 
   IceGrid      *grid;
   GridType     dims;
@@ -212,7 +213,8 @@ public:
 
   // I/O:
   using IceModelVec2::write;
-  virtual PetscErrorCode write(const char filename[], nc_type nctype); 
+  virtual PetscErrorCode write(const char filename[], nc_type nctype,
+			       string var_order); 
   virtual PetscErrorCode read(const char filename[], const unsigned int time); 
   virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, bool critical); 
   virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value); 
@@ -310,6 +312,7 @@ protected:
   virtual PetscErrorCode  destroy();
   PetscErrorCode  isLegalLevel(PetscScalar z);
   virtual PetscErrorCode  extend_vertically_private(int old_Mz);
+  virtual PetscErrorCode  create_da(DA &result, PetscInt Mz);
   map<string,PetscViewer> *slice_viewers, *sounding_viewers;
   Vec sounding_buffer;
 };

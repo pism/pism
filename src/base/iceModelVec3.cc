@@ -51,9 +51,33 @@ IceModelVec3::IceModelVec3(const IceModelVec3 &other)
   shallow_copy = true;
 }
 
+PetscErrorCode IceModelVec3::create_da(DA &result, PetscInt Mz) {
+  PetscErrorCode ierr;
+  PetscInt       M, N, m, n;
+  const PetscInt *lx, *ly;
+
+  ierr = DAGetInfo(grid->da2,
+		   PETSC_NULL,	       // dim
+		   &N, &M, PETSC_NULL, // N, M, P
+		   &n, &m, PETSC_NULL, // n, m, p
+                   PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
+
+  ierr = DAGetOwnershipRanges(grid->da2, &ly, &lx, PETSC_NULL); CHKERRQ(ierr);
+
+  ierr = DACreate3d(grid->com, DA_YZPERIODIC, DA_STENCIL_STAR,
+		    Mz, N, M,	// P, N, M
+		    1, n, m,	// p, n, m
+		    1, s_width,	// dof, stencil_width
+                    PETSC_NULL, ly, lx, // lz, ly, lx
+		    &result); CHKERRQ(ierr);
+
+  return 0;
+}
+
 //! Allocate a DA and a Vec from information in IceGrid.
 PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[],
 				     bool local, int stencil_width) {
+  PetscErrorCode ierr;
   if (!utIsInit()) {
     SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
   }
@@ -66,13 +90,7 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[],
   dims = GRID_3D;
   s_width = stencil_width;
 
-  PetscInt       M, N, m, n;
-  PetscErrorCode ierr;
-  ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
-                   PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR, my_grid.Mz, N, M, 1, n, m,
-		    1, s_width,
-                    PETSC_NULL, PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
+  ierr = create_da(da, grid->Mz); CHKERRQ(ierr);
 
   if (local) {
     ierr = DACreateLocalVector(da, &v); CHKERRQ(ierr);
@@ -595,11 +613,16 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
   
   PetscInt       M, N, m, n;
   PetscErrorCode ierr;
+  const PetscInt *lx, *ly;
+  ierr = DAGetOwnershipRanges(my_grid.da2, &ly, &lx, PETSC_NULL); CHKERRQ(ierr);
   ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR, my_grid.Mbz, 
-                    N, M, 1, n, m, 1, 1,
-                    PETSC_NULL, PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
+  ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR,
+		    my_grid.Mbz, N, M,	// P, N, M
+		    1, n, m,		// p, n, m
+		    1, 1,		// dof, stencil width
+                    PETSC_NULL, ly, lx, // lz, ly, lx
+		    &da); CHKERRQ(ierr);
 
   ierr = DACreateGlobalVector(da, &v); CHKERRQ(ierr);
 
@@ -905,12 +928,7 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
 
   // This code should match what is being done in IceModelVec3::create():
 
-  PetscInt       M, N, m, n;
-  ierr = DAGetInfo(grid->da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
-                   PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DACreate3d(grid->com, DA_YZPERIODIC, DA_STENCIL_STAR, grid->Mz, N, M, 1, n, m,
-		    1, s_width,
-                    PETSC_NULL, PETSC_NULL, PETSC_NULL, &da_new); CHKERRQ(ierr);
+  ierr = create_da(da_new, grid->Mz); CHKERRQ(ierr);
   
   if (localp) {
     ierr = DACreateLocalVector(da_new, &v_new); CHKERRQ(ierr);

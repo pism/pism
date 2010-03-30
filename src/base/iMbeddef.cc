@@ -71,13 +71,14 @@ PetscErrorCode IceModel::destroyScatterToProcZero() {
 
 PetscErrorCode IceModel::bedDefSetup() {
   PetscErrorCode  ierr;
+  PetscInt WIDE_STENCIL = 2;
 
   if (config.get_flag("do_bed_deformation") == false)
     return 0;
 
   bool do_bed_iso = config.get_flag("do_bed_iso");
 
-  ierr = vHlast.create(grid, "vHlast", true); CHKERRQ(ierr);
+  ierr = vHlast.create(grid, "vHlast", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = vHlast.copy_from(vH); CHKERRQ(ierr);
   
   ierr = vbedlast.create(grid, "vbedlast", true);

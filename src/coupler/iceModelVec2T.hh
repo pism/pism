@@ -113,8 +113,9 @@ public:
 //         web ref:   http://www.parashift.com/c++-faq-lite/strange-inheritance.html#faq-23.9
 //         I claim it actually makes sense to me!
 //         de-ambiguation is needed!
-//  using IceModelVec2S::create;
-  virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local);
+  using IceModelVec2S::create;
+  virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[],
+				bool local, int width = 1);
   virtual PetscErrorCode init(string filename);
   virtual PetscErrorCode update(double t_years, double dt_years);
   virtual PetscErrorCode set_record(int n);

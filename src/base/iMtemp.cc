@@ -331,7 +331,7 @@ PetscErrorCode IceModel::temperatureStep(
           }
         }
 
-      }
+      }	// end of "// if there are enough points in bedrock&ice to bother ..."
 
       // insert bedrock solution; check for too low below
       for (PetscInt k=0; k < k0; k++) {

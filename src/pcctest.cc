@@ -174,7 +174,8 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 					   const char *filename, IceGrid* grid,
 					   int argc, char *argv[],
 					   PetscReal ys, PetscReal ye, PetscReal dt_years,
-					   NCConfigVariable &mapping) {
+					   NCConfigVariable &mapping,
+					   string var_order) {
 
   MPI_Comm com = grid->com;
   PetscErrorCode ierr;
@@ -258,18 +259,18 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = nc.close(); CHKERRQ(ierr);
 
     ierr = surface->ice_surface_mass_flux(pccyear, dt_update_years, *acab); CHKERRQ(ierr);
-    ierr = acab->write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = acab->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
     ierr = surface->ice_surface_temperature(pccyear, dt_update_years, *artm); CHKERRQ(ierr);
-    ierr = artm->write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = artm->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
     ierr = surface->write_diagnostic_fields(pccyear, dt_update_years, filename); CHKERRQ(ierr);
 
     ierr = ocean->shelf_base_temperature(pccyear, dt_update_years, *shelfbasetemp); CHKERRQ(ierr);
-    ierr = shelfbasetemp->write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = shelfbasetemp->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
     ierr = ocean->shelf_base_mass_flux(pccyear, dt_update_years, *shelfbasemassflux); CHKERRQ(ierr);
-    ierr = shelfbasemassflux->write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = shelfbasemassflux->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr);
 
     ierr = ocean->write_diagnostic_fields(pccyear, dt_update_years, filename); CHKERRQ(ierr);
   }
@@ -407,9 +408,11 @@ int main(int argc, char *argv[]) {
       com, "  writing boundary model states to NetCDF file '%s'...\n",
 		      outname.c_str()); CHKERRQ(ierr);
 
+    string var_order = config.get_string("output_coord_var_order");
+
     ierr = writePCCStateAtTimes(variables, surface, ocean, outname.c_str(), &grid, argc, argv,
 				ys, ye, dt_years,
-                                mapping); CHKERRQ(ierr);
+                                mapping, var_order); CHKERRQ(ierr);
 
     delete surface;
     delete ocean;

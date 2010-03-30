@@ -425,12 +425,14 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
   
   PetscInt       M, N, m, n;
   PetscErrorCode ierr;
+  const PetscInt *lx, *ly;
   ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
                    PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
+  ierr = DAGetOwnershipRanges(my_grid.da2, &ly, &lx, PETSC_NULL); CHKERRQ(ierr);
   ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, my_sten, N, M, n, m,
 		    dof,
 		    stencil_width,
-                    PETSC_NULL, PETSC_NULL, &da); CHKERRQ(ierr);
+                    ly, lx, &da); CHKERRQ(ierr);
 
   if (local) {
     ierr = DACreateLocalVector(da, &v); CHKERRQ(ierr);
