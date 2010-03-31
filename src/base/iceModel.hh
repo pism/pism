@@ -250,9 +250,6 @@ protected:
               allowAboveMelting,
               computeSIAVelocities,
     transformForSurfaceGradient;
-  bool doColdIceMethods; // if true, use cold ice internals but read and write
-  // additional enthalpy fields to and from file FIXME: check initialization
-  // when IceEnthalpyModel moved
   char        adaptReasonFlag;
 
   char        ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN];

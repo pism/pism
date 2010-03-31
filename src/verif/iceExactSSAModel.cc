@@ -54,8 +54,6 @@ PetscErrorCode IceExactSSAModel::init_physics() {
 
   iceFactory.setType(ICE_CUSTOM);
 
-  doColdIceMethods = true;
-
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
   // If the user left things alone, we'll have a CustomGlenIce
@@ -86,7 +84,8 @@ PetscErrorCode IceExactSSAModel::setFromOptions() {
 
   ierr = IceModel::setFromOptions();CHKERRQ(ierr);
 
-  doColdIceMethods = true;
+  // can not be overridden 
+  config.set_flag("do_cold_ice_methods", true);
 
   return 0;
 }

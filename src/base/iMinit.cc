@@ -396,7 +396,7 @@ PetscErrorCode IceModel::init_physics() {
   ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
 
   // Initialize the IceFlowLaw object:
-  if (!doColdIceMethods) {
+  if (!config.get_flag("do_cold_ice_methods")) {
     ierr = verbPrintf(2, grid.com,
       "  setting flow law to polythermal type ...\n"); CHKERRQ(ierr);
     ierr = verbPrintf(3, grid.com,
@@ -490,7 +490,7 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   ierr = vel_ssa_old.create(grid, "bar_ssa_old", true, WIDE_STENCIL); CHKERRQ(ierr);
 
   // 3d dedicated work vectors
-  if (doColdIceMethods) {
+  if (config.get_flag("do_cold_ice_methods")) {
     ierr = Tnew3.create(grid,"temp_new",false); CHKERRQ(ierr);
     ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
 			   "K", ""); CHKERRQ(ierr);

@@ -26,6 +26,8 @@ IceEISModel::IceEISModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &c
   : IceModel(g, conf, conf_overrides) {
   expername = 'A';
   iceFactory.setType(ICE_PB);  // Paterson-Budd
+  config.set_flag("do_cold_ice_methods", true);
+  // can be overridden by the command-line option -no_cold
 }
 
 PetscErrorCode IceEISModel::createVecs() {
@@ -150,8 +152,6 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
   ierr = IceModel::setFromOptions();  CHKERRQ(ierr);
 
-  doColdIceMethods = true;  // not override-able, because no
-                            //   "-polythermal" option at this time
   return 0;
 }
 
@@ -159,8 +159,6 @@ PetscErrorCode IceEISModel::setFromOptions() {
 PetscErrorCode IceEISModel::init_physics() {
   PetscErrorCode ierr;
 
-  doColdIceMethods = true;
-  
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
   // see EISMINT II description; choose no ocean interaction, purely SIA, and E=1

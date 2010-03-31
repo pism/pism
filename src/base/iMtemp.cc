@@ -29,7 +29,7 @@
 //! Manage the solution of the energy equation, and related parallel communication.
 /*!
 Calls the method enthalpyAndDrainageStep(), or temperatureStep() if
-IceModel::doColdIceMethods.
+do_cold_ice_methods == true.
 
 This method (energyStep()) \e must update these four fields:
   - IceModelVec3 Enth3
@@ -38,7 +38,7 @@ This method (energyStep()) \e must update these four fields:
   - IceModelVec2 vHmelt
 That is, energyStep() is in charge of calling other methods that update, and
 then it is in charge of doing the ghost communication as needed.  If
-IceModel::doColdIceMethods then energyStep() must also update this field
+do_cold_ice_methods == true, then energyStep() must also update this field
   - IceModelVec3 T3
  */
 PetscErrorCode IceModel::energyStep() {
@@ -51,7 +51,7 @@ PetscErrorCode IceModel::energyStep() {
   // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
   ierr = countCFLViolations(&myCFLviolcount); CHKERRQ(ierr);
 
-  if (doColdIceMethods) {
+  if (config.get_flag("do_cold_ice_methods")) {
     PetscScalar  mybulgeCount = 0.0, gbulgeCount;
     // new temperature values go in vTnew; also updates Hmelt:
     ierr = temperatureStep(&myVertSacrCount,&mybulgeCount); CHKERRQ(ierr);  
@@ -61,7 +61,7 @@ PetscErrorCode IceModel::energyStep() {
 
     // setEnth3FromT3_ColdIce() updates ghosts of Enth3 using a
     // begin/endGhostComm pair. Is not optimized because this
-    // (doColdIceMethods) is a rare case.
+    // (do_cold_ice_methods) is a rare case.
     ierr = setEnth3FromT3_ColdIce();  CHKERRQ(ierr);
 
     ierr = PetscGlobalSum(&mybulgeCount, &gbulgeCount, grid.com); CHKERRQ(ierr);

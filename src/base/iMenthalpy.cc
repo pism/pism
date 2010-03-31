@@ -335,9 +335,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
                       PetscScalar* vertSacrCount, PetscScalar* liquifiedVol) {
   PetscErrorCode  ierr;
 
-  if (doColdIceMethods) {
+  if (config.get_flag("do_cold_ice_methods")) {
     SETERRQ(1,
-      "PISM ERROR:  enthalpyAndDrainageStep() called but doColdIceMethods==true\n");
+      "PISM ERROR:  enthalpyAndDrainageStep() called but do_cold_ice_methods==true\n");
   }
 
   // get fine grid levels in ice and bedrock; guaranteed dz=dzb

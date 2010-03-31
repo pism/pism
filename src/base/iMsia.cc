@@ -249,11 +249,11 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   
   PetscScalar *Enthij, *Enthoffset;
   PolyThermalGPBLDIce *gpbldi = NULL;
-  if (doColdIceMethods == PETSC_FALSE) {
+  if (config.get_flag("do_cold_ice_methods") == false) {
     gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
     if (!gpbldi) {
       PetscPrintf(grid.com,
-        "doColdIceMethods == false in IceMethod::velocitySIAStaggered()\n"
+        "do_cold_ice_methods == false in IceMethod::velocitySIAStaggered()\n"
         "   but not using PolyThermalGPBLDIce ... ending ....\n");
       PetscEnd();
     }
@@ -300,7 +300,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
             }
             // If the flow law does not use grain size, it will just ignore it, no harm there
 	    PetscScalar E = 0.5 * (Enthij[k] + Enthoffset[k]);
-            if (doColdIceMethods == PETSC_TRUE) {
+            if (config.get_flag("do_cold_ice_methods") == true) {
 	      PetscScalar T;
 	      ierr = EC->getAbsTemp(E, pressure, T); CHKERRQ(ierr);
               flow = ice->flow(alpha * pressure, T, pressure, grainsize);

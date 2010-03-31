@@ -709,7 +709,7 @@ PetscErrorCode IceModel::compute_proc_ice_area(IceModelVec2S &result) {
 PetscErrorCode IceModel::compute_cts(IceModelVec3 &useForCTS) {
   PetscErrorCode ierr;
 
-  if (doColdIceMethods) {
+  if (config.get_flag("do_cold_ice_methods")) {
     ierr = useForCTS.set(0.0); CHKERRQ(ierr);
   } else {
     ierr = setCTSFromEnthalpy(useForCTS); CHKERRQ(ierr);
@@ -727,7 +727,7 @@ PetscErrorCode IceModel::compute_cts(IceModelVec3 &useForCTS) {
 PetscErrorCode IceModel::compute_liqfrac(IceModelVec3 &useForLiqfrac) {
   PetscErrorCode ierr;
 
-  if (doColdIceMethods) {
+  if (config.get_flag("do_cold_ice_methods")) {
     ierr = useForLiqfrac.set(0.0); CHKERRQ(ierr);
   } else {
     ierr = setLiquidFracFromEnthalpy(useForLiqfrac); CHKERRQ(ierr);

@@ -5,6 +5,9 @@ netcdf pism_config {
     pism_config:force_output_times = "yes";
     pism_config:force_output_times_doc = "Modify the time-stepping mechanism to hit times requested using -extra_times and -ts_times.";
 
+    pism_config:do_cold_ice_methods = "no";
+    pism_config:do_cold_ice_methods_doc = "Use cold ice (i.e. not polythermal) methods.";
+
     pism_config:do_mass_conserve = "yes";
     pism_config:do_mass_conserve_doc = "Solve the mass conservation equation";
 
@@ -24,7 +27,7 @@ netcdf pism_config {
     pism_config:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
 
     pism_config:do_superpose = "yes";
-    pism_config:do_superpose_doc = "Combine the velocity ﬁelds from the SIA and SSA models as in [\\ref BBssasliding]. Only effective if used with -ssa.";
+    pism_config:do_superpose_doc = "Combine the velocity ﬁelds from the SIA and SSA models as in [\\ref BBssasliding]. Only effective if used with -ssa_sliding.";
 
     pism_config:thermal_bedrock = "yes";
     pism_config:thermal_bedrock_doc = "Use the bedrock thermal model";

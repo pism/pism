@@ -99,11 +99,11 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
 
   PetscScalar *Enthij, *Enthoffset;
   PolyThermalGPBLDIce *gpbldi = NULL;
-  if (doColdIceMethods==PETSC_FALSE) {
+  if (config.get_flag("do_cold_ice_methods") == false) {
     gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
     if (!gpbldi) {
       PetscPrintf(grid.com,
-        "doColdIceMethods == PETSC_FALSE in IceModel::computeEffectiveViscosity()\n"
+        "do_cold_ice_methods == false in IceModel::computeEffectiveViscosity()\n"
         "   but not using PolyThermalGPBLDIce ... ending ....\n");
       PetscEnd();
     }
@@ -143,7 +143,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
 	  ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
 	  ierr = Enth3.getInternalColumn(i+oi,j+oj,&Enthoffset); CHKERRQ(ierr);
 
-          if (doColdIceMethods == PETSC_TRUE) {
+          if (config.get_flag("do_cold_ice_methods") == true) {
 	    for (int k = 0; k < grid.Mz; ++k) {
 	      ierr = EC->getAbsTemp(Enthij[k],
 				    EC->getPressureFromDepth(H[i][j]-grid.zlevels[k]),

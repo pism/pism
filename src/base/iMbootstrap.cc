@@ -140,7 +140,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
      CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
-  if (doColdIceMethods == false) {
+  if (config.get_flag("do_cold_ice_methods") == false) {
     ierr = verbPrintf(2, grid.com,
 		      "  ice enthalpy set from temperature, as cold ice (zero liquid fraction)\n");
     CHKERRQ(ierr);
@@ -386,7 +386,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   }
 
   IceModelVec3 *result;
-  if (doColdIceMethods) 
+  if (config.get_flag("do_cold_ice_methods")) 
     result = &T3;
   else
     result = &Enth3;
@@ -425,7 +425,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
                                          ? ice->meltingTemp : T[0];
       ierr = bootstrapSetBedrockColumnTemp(i,j,T_top_bed,Ghf[i][j],bed_thermal_k); CHKERRQ(ierr);
       
-      if (doColdIceMethods == false) {
+      if (config.get_flag("do_cold_ice_methods") == false) {
 	for (PetscInt k = 0; k < grid.Mz; ++k) {
 	  const PetscScalar depth = HH - grid.zlevels[k];
 	  const PetscScalar pressure = 

@@ -161,7 +161,7 @@ PetscErrorCode IceModel::write_model_state(const char* filename) {
 
   bool write_temp_pa;
   ierr = PISMOptionsIsSet("-temp_pa", write_temp_pa); CHKERRQ(ierr);  
-  if (write_temp_pa || (!doColdIceMethods)) {
+  if (write_temp_pa || (!config.get_flag("do_cold_ice_methods"))) {
     // write temp_pa = pressure-adjusted temp in Celcius
     ierr = verbPrintf(4, grid.com,
       "  writing pressure-adjusted ice temperature (deg C) 'temp_pa' ...\n"); CHKERRQ(ierr);
@@ -170,7 +170,7 @@ PetscErrorCode IceModel::write_model_state(const char* filename) {
 
   bool write_liqfrac;
   ierr = PISMOptionsIsSet("-liqfrac", write_liqfrac); CHKERRQ(ierr);  
-  if (write_liqfrac || (!doColdIceMethods)) {
+  if (write_liqfrac || (!config.get_flag("do_cold_ice_methods"))) {
     ierr = verbPrintf(4, grid.com,
       "  writing liquid water fraction 'liqfrac' ...\n"); CHKERRQ(ierr);
     output_vars.insert("liqfrac");
@@ -355,7 +355,7 @@ PetscErrorCode IceModel::regrid() {
     if (config.get("do_age"))
 	vars.insert("age");
 
-    if (doColdIceMethods)
+    if (config.get_flag("do_cold_ice_methods"))
       vars.insert("temp");
     else
       vars.insert("enthalpy");

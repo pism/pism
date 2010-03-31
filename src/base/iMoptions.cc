@@ -111,7 +111,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   // if set, use old IceModel::temperatureStep(), and set enthalpy as though
   //   ice is cold
-  ierr = PISMOptionsIsSet("-cold", doColdIceMethods); CHKERRQ(ierr);
+  ierr = config.flag_from_option("cold", "do_cold_ice_methods"); CHKERRQ(ierr);
 
   ierr = PISMOptionsReal("-constant_nuH",
 			 "Sets a constant value for the product of viscosity and thickness used in the SSA velocity computation",

@@ -55,9 +55,9 @@ IceROSSModel::IceROSSModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable 
 PetscErrorCode IceROSSModel::setFromOptions() {
   PetscErrorCode ierr;
 
-  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
+  config.set_flag("do_cold_ice_methods", true);
 
-  doColdIceMethods = PETSC_TRUE;
+  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
   
   return 0;
 }

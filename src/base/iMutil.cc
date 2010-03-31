@@ -248,7 +248,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr =     Istag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =     Istag3[1].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
 
-  if (doColdIceMethods) {
+  if (config.get_flag("do_cold_ice_methods")) {
     ierr =    T3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
     ierr = Tnew3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
   }

@@ -197,7 +197,8 @@ PetscErrorCode IceCompModel::setFromOptions() {
 
   ierr = IceModel::setFromOptions();CHKERRQ(ierr);
 
-  doColdIceMethods = true;
+  // can not be overridden
+  config.set_flag("do_cold_ice_methods", true);
   return 0;
 }
 
