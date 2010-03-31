@@ -650,9 +650,6 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
   ierr = vH.endGhostComm(); CHKERRQ(ierr);
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
 
-  ierr = vel_basal.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vel_basal.endGhostComm(); CHKERRQ(ierr);
-
   return 0;
 }
 

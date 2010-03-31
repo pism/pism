@@ -819,7 +819,9 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
   // run this only after getRoutineStats() is called
   PetscErrorCode  ierr;
   IceModelVec2S q = vWork2d[0];	// give it a shorter name
-  ierr = vubar.multiply_by(vH, q); CHKERRQ(ierr);
+
+  ierr = vel_bar.get_component(0, q); CHKERRQ(ierr);
+  ierr = q.multiply_by(vH); CHKERRQ(ierr);
   // q is signed flux in x direction, in units of m^2/s
 
   ierr =   vH.begin_access(); CHKERRQ(ierr);
@@ -891,7 +893,7 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
 
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vubar.begin_access(); CHKERRQ(ierr);
+  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -907,20 +909,20 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
       }
 
       if ((ifrom0 > 0) && (vH(i,j) > 0.0)) {
-        if (vubar(i,j) > maxubar)  maxubar = vubar(i,j);
+        if (vel_bar(i,j).u > maxubar)  maxubar = vel_bar(i,j).u;
         if (vMask.is_grounded(i,j)) {
           Ngrounded += 1.0;
-          avubargrounded += vubar(i,j);
+          avubargrounded += vel_bar(i,j).u;
         } else {
           Nfloating += 1.0;
-          avubarfloating += vubar(i,j);        
+          avubarfloating += vel_bar(i,j).u;        
         }
       }
 
     }
   }
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vubar.end_access(); CHKERRQ(ierr);
+  ierr = vel_bar.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMax(&ig, &gig, grid.com); CHKERRQ(ierr);
   rstats.ig = gig;

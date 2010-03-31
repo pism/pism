@@ -84,13 +84,9 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     // uses:
     // * vuvbar[0,1] (including w=1 ghosts)
     // updates:
-    // * vubar, vvbar (local values only, updating ghosts will require communication)
+    // * vel_bar
     ierr = velocities2DSIAToRegular(); CHKERRQ(ierr);
     ierr = verbPrintf(5,grid.com, "{velocities2DSIAToRegular()}"); CHKERRQ(ierr);
-    ierr = vubar.beginGhostComm(); CHKERRQ(ierr);
-    ierr = vubar.endGhostComm(); CHKERRQ(ierr);
-    ierr = vvbar.beginGhostComm(); CHKERRQ(ierr);
-    ierr = vvbar.endGhostComm(); CHKERRQ(ierr);
   
     if (updateVelocityAtDepth) {  
       // I on staggered is used in  horizontalVelocitySIARegular()
@@ -117,9 +113,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
   } else { // if computeSIAVelocities == PETSC_FALSE
     // do NOT zero out vuvbar[0],vuvbar[1]; they are used to communicate boundary
     // conditions to SSA calculation
-    ierr = vubar.set(0.0); CHKERRQ(ierr);
-    ierr = vvbar.set(0.0); CHKERRQ(ierr);
-
+    ierr = vel_bar.set(0.0); CHKERRQ(ierr);
     ierr = vel_basal.set(0.0); CHKERRQ(ierr);
 
     ierr = vRb.set(0.0); CHKERRQ(ierr);
@@ -163,11 +157,6 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     ierr = broadcastSSAVelocity(updateVelocityAtDepth); CHKERRQ(ierr);
 
     // now communicate modified velocity fields
-    ierr = vubar.beginGhostComm(); CHKERRQ(ierr);
-    ierr = vubar.endGhostComm(); CHKERRQ(ierr);
-    ierr = vvbar.beginGhostComm(); CHKERRQ(ierr);
-    ierr = vvbar.endGhostComm(); CHKERRQ(ierr);
-
     ierr = vel_basal.beginGhostComm(); CHKERRQ(ierr);
     ierr = vel_basal.endGhostComm(); CHKERRQ(ierr);
 

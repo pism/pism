@@ -381,10 +381,10 @@ PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   ierr = uvbar_ssa.end_access(); CHKERRQ(ierr);
 
   // get and view components:
-  ierr = uvbar_ssa.get_component(0, vubar); CHKERRQ(ierr);
-  ierr = uvbar_ssa.get_component(1, vvbar); CHKERRQ(ierr);
-  ierr = vubar.view(300); CHKERRQ(ierr);
-  ierr = vvbar.view(300); CHKERRQ(ierr);
+  ierr = uvbar_ssa.get_component(0, vWork2d[0]); CHKERRQ(ierr);
+  ierr = uvbar_ssa.get_component(1, vWork2d[1]); CHKERRQ(ierr);
+  ierr = vWork2d[0].view(300); CHKERRQ(ierr);
+  ierr = vWork2d[1].view(300); CHKERRQ(ierr);
   PetscSleep(5);
 
   // write to a file:

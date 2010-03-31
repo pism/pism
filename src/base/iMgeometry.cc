@@ -348,13 +348,12 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
 
   PetscScalar **uvbar[2], **bmr_gnded;
-  PISMVector2 **bvel;
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vbmr.get_array(bmr_gnded); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
   ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
-  ierr = vel_basal.get_array(bvel); CHKERRQ(ierr);
+  ierr = vel_basal.begin_access(); CHKERRQ(ierr);
   ierr = acab.begin_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access();  CHKERRQ(ierr);
@@ -407,13 +406,13 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
       // basal sliding part: split  Div(v H)  by product rule into  v . grad H
       //    and  (Div v) H; use upwinding on first and centered on second
-      divQ +=  bvel[i][j].u * ( bvel[i][j].u < 0 ? vH(i+1,j)-vH(i,j)
+      divQ +=  vel_basal(i,j).u * ( vel_basal(i,j).u < 0 ? vH(i+1,j)-vH(i,j)
 				 : vH(i,j)-vH(i-1,j) ) / dx
-	     + bvel[i][j].v * ( bvel[i][j].v < 0 ? vH(i,j+1)-vH(i,j)
+	     + vel_basal(i,j).v * ( vel_basal(i,j).v < 0 ? vH(i,j+1)-vH(i,j)
 				 : vH(i,j)-vH(i,j-1) ) / dy;
 
-      divQ += vH(i,j) * ( (bvel[i+1][j].u - bvel[i-1][j].u) / (2.0*dx)
-                          + (bvel[i][j+1].v - bvel[i][j-1].v) / (2.0*dy) );
+      divQ += vH(i,j) * ( (vel_basal(i+1,j).u - vel_basal(i-1,j).u) / (2.0*dx)
+                          + (vel_basal(i,j+1).v - vel_basal(i,j-1).v) / (2.0*dy) );
 
       vHnew(i,j) += (acab(i,j) - divQ) * dt; // include M
 

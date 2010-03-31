@@ -185,7 +185,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     K.name = "K"
     K.test = "pure conduction problem in ice and bedrock"
     K.path = "(refine dz=100,50,25,12.5,6.25,m, Mz=41,81,161,321,641)"
-    K.Mx   = [4] * 5
+    K.Mx   = [8] * 5
     K.My   = K.Mx
     K.Mz   = array([41, 81, 161, 321, 641])
     K.Mbz  = (K.Mz - 1) / 4 + 1

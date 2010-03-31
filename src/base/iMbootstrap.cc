@@ -209,8 +209,7 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
     ierr = verbPrintf(3, grid.com, "  mask not found; leaving current values alone ...\n");
                CHKERRQ(ierr);
   }
-  ierr = vubar.regrid(filename, lic, true); CHKERRQ(ierr);
-  ierr = vvbar.regrid(filename, lic, true); CHKERRQ(ierr);
+  ierr = vel_bar.regrid(filename, lic, true); CHKERRQ(ierr);
 
   // we have already checked if "bcflag" exists, so just read it
   vbcflag.interpolation_mask.number_allowed = 2;
@@ -219,17 +218,16 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   vbcflag.use_interpolation_mask = true;
   ierr = vbcflag.regrid(filename, lic, true); CHKERRQ(ierr);
 
-  // now use values in vubar,vvbar, not equal to missing_value, to set boundary conditions by
+  // now use values in vel_bar, not equal to missing_value, to set boundary conditions by
   // setting corresponding locations to MASK_SHEET and setting vuvbar[0|1] appropriately;
   // set boundary condition which will apply to finite difference system:
   //    staggered grid velocities at MASK_SHEET points which neighbor MASK_FLOATING points
   ierr = vuvbar[0].set(0.0); CHKERRQ(ierr);
   ierr = vuvbar[1].set(0.0); CHKERRQ(ierr);
-  PetscScalar **mask, **bc, **ubar, **vbar, **uvbar[2];
+  PetscScalar **mask, **bc, **uvbar[2];
   ierr = vbcflag.get_array(bc); CHKERRQ(ierr);    
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
-  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
-  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
+  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
   ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
 
@@ -237,10 +235,10 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (PetscAbs(bc[i][j] - 1.0) < 0.1) {
         // assume it is really a boundary condition location
-        uvbar[0][i-1][j] = ubar[i][j];
-        uvbar[0][i][j] = ubar[i][j];
-        uvbar[1][i][j-1] = vbar[i][j];
-        uvbar[1][i][j] = vbar[i][j];
+        uvbar[0][i-1][j] = vel_bar(i,j).u;
+        uvbar[0][i][j] = vel_bar(i,j).u;
+        uvbar[1][i][j-1] = vel_bar(i,j).v;
+        uvbar[1][i][j] = vel_bar(i,j).v;
         mask[i][j] = MASK_SHEET;  // assure that shelf/stream equations not active at this point
       } else {
         uvbar[0][i-1][j] = 0.0;
@@ -252,8 +250,7 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   }
   ierr =   vbcflag.end_access(); CHKERRQ(ierr);    
   ierr =     vMask.end_access(); CHKERRQ(ierr);
-  ierr =     vubar.end_access(); CHKERRQ(ierr);
-  ierr =     vvbar.end_access(); CHKERRQ(ierr);
+  ierr =   vel_bar.end_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
   ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
 

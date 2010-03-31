@@ -734,12 +734,11 @@ is a function which decreases smoothly from 1 for \f$|v| = 0\f$ to 0 as
 PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
 
   PetscErrorCode ierr;
-  PetscScalar **ubar, **vbar, **uvbar[2];
+  PetscScalar **uvbar[2];
   PetscScalar *u, *v;
   
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
-  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
+  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
 
   PISMVector2 **uvssa, **bvel;
   ierr = vel_ssa.get_array(uvssa); CHKERRQ(ierr);
@@ -787,16 +786,15 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
         //   staggered grid
         const PetscScalar ubarSIA = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]),
                           vbarSIA = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
-        ubar[i][j] = (addVels) ? fv * ubarSIA + omfv * uvssa[i][j].u : uvssa[i][j].u;
-        vbar[i][j] = (addVels) ? fv * vbarSIA + omfv * uvssa[i][j].v : uvssa[i][j].v;
+        vel_bar(i,j).u = (addVels) ? fv * ubarSIA + omfv * uvssa[i][j].u : uvssa[i][j].u;
+        vel_bar(i,j).v = (addVels) ? fv * vbarSIA + omfv * uvssa[i][j].v : uvssa[i][j].v;
 
       }
     }
   }
 
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vubar.end_access(); CHKERRQ(ierr);
-  ierr = vvbar.end_access(); CHKERRQ(ierr);
+  ierr = vel_bar.end_access(); CHKERRQ(ierr);
   ierr = vel_ssa.end_access(); CHKERRQ(ierr);
   ierr = vel_basal.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);

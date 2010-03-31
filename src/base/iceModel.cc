@@ -238,21 +238,16 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vGhf); CHKERRQ(ierr);
 
   // u bar and v bar
-  ierr = vubar.create(grid, "ubar", true); CHKERRQ(ierr);
-  ierr = vubar.set_attrs("diagnostic", 
-                         "vertical mean of horizontal ice velocity in the X direction",
-			 "m s-1", "land_ice_vertical_mean_x_velocity"); CHKERRQ(ierr);
-  ierr = vubar.set_glaciological_units("m year-1");
-  vubar.write_in_glaciological_units = true;
-  ierr = variables.add(vubar); CHKERRQ(ierr);
-
-  ierr = vvbar.create(grid, "vbar", true); CHKERRQ(ierr);
-  ierr = vvbar.set_attrs("diagnostic", 
-                         "vertical mean of horizontal ice velocity in the Y direction",
-			 "m s-1", "land_ice_vertical_mean_y_velocity"); CHKERRQ(ierr);
-  ierr = vvbar.set_glaciological_units("m year-1");
-  vvbar.write_in_glaciological_units = true;
-  ierr = variables.add(vvbar); CHKERRQ(ierr);
+  ierr = vel_bar.create(grid, "bar", false); CHKERRQ(ierr); // components are ubar and vbar
+  ierr = vel_bar.set_attrs("diagnostic", 
+			   "vertical mean of horizontal ice velocity in the X direction",
+			   "m s-1", "land_ice_vertical_mean_x_velocity", 0); CHKERRQ(ierr);
+  ierr = vel_bar.set_attrs("diagnostic", 
+			   "vertical mean of horizontal ice velocity in the Y direction",
+			   "m s-1", "land_ice_vertical_mean_y_velocity", 1); CHKERRQ(ierr);
+  ierr = vel_bar.set_glaciological_units("m year-1");
+  vel_bar.write_in_glaciological_units = true;
+  ierr = variables.add(vel_bar, "uvbar"); CHKERRQ(ierr);
 
   // basal velocities on standard grid
   ierr = vel_basal.create(grid, "basal", true); CHKERRQ(ierr); // components are ubasal and vbasal

@@ -488,7 +488,7 @@ the sliding velocity.
 
 That is, this procedure computes the SIA "first guess" at the
 vertically-averaged horizontal velocity.  Therefore the values in \c Vec\ s
-\c vubar, \c vvbar are merely tentative.  The values in \c vuvbar are, however,
+\c vel_bar are merely tentative.  The values in \c vuvbar are, however,
 PISM's estimate of \e deformation by shear in vertical planes.
 
 Note that communication of ghosted values must occur between calling
@@ -499,12 +499,11 @@ horizontalVelocitySIARegular() and in vertVelocityFromIncompressibility().
  */
 PetscErrorCode IceModel::velocities2DSIAToRegular() {  
   PetscErrorCode ierr;
-  PetscScalar **ubar, **vbar, **uvbar[2];
+  PetscScalar **uvbar[2];
 
   double mu_sliding = config.get("mu_sliding");
 
-  ierr = vubar.get_array(ubar); CHKERRQ(ierr);
-  ierr = vvbar.get_array(vbar); CHKERRQ(ierr);
+  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
   ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
   if (mu_sliding == 0.0) {
@@ -512,8 +511,8 @@ PetscErrorCode IceModel::velocities2DSIAToRegular() {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         // compute ubar,vbar on regular grid by averaging deformational onto
         //   staggered grid
-        ubar[i][j] = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
-        vbar[i][j] = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
+        vel_bar(i,j).u = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
+        vel_bar(i,j).v = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
       }
     }
   } else {
@@ -523,14 +522,13 @@ PetscErrorCode IceModel::velocities2DSIAToRegular() {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         // as above, adding basal on regular grid
-        ubar[i][j] = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]) + bvel[i][j].u;
-        vbar[i][j] = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]) + bvel[i][j].v;
+        vel_bar(i,j).u = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]) + bvel[i][j].u;
+        vel_bar(i,j).v = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]) + bvel[i][j].v;
       }
     }
     ierr = vel_basal.end_access(); CHKERRQ(ierr);
   }
-  ierr =     vubar.end_access(); CHKERRQ(ierr);
-  ierr =     vvbar.end_access(); CHKERRQ(ierr);
+  ierr =   vel_bar.end_access(); CHKERRQ(ierr);
   ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
   ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
   return 0;
