@@ -61,7 +61,6 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   ierr = nc.get_grid_info(g); CHKERRQ(ierr); // g.z_max is set to 0 if z does
 					     // not exist
   LocalInterpCtx *lic = new LocalInterpCtx(g, NULL, NULL, grid);
-  ierr = nc.close(); CHKERRQ(ierr);
 
   bool mapping_exists;
   ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
@@ -69,6 +68,8 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
     ierr = mapping.read(filename); CHKERRQ(ierr);
     ierr = mapping.print(); CHKERRQ(ierr);
   }
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   // now work through all the 2d variables, regridding if present and otherwise
   // setting to default values appropriately

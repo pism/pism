@@ -23,7 +23,7 @@ netcdf pism_config {
     pism_config:do_pseudo_plastic_till = "no";
     pism_config:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
 
-    pism_config:do_superpose = "no";
+    pism_config:do_superpose = "yes";
     pism_config:do_superpose_doc = "Combine the velocity ﬁelds from the SIA and SSA models as in [\\ref BBssasliding]. Only effective if used with -ssa.";
 
     pism_config:thermal_bedrock = "yes";

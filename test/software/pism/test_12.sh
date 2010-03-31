@@ -5,7 +5,7 @@ source ../functions.sh
 # Test name:
 test="Test #12: mass conservation within rounding error for nonsliding SIA moving margin."
 # The list of files to delete when done.
-files="verify.nc ivol.nc dump.txt"
+files="verify.nc ivol.nc"
 dir=`pwd`
 
 run_test ()
@@ -17,24 +17,25 @@ run_test ()
     # run test B 
     run -n 2 pismv -test B $GRID $OPTS $TS_OPTS
 
-    ncdump -p 1,14 -v ivol -l 30 ivol.nc |sed -e "s/,//g; s/;//g" | uniq > dump.txt
+    python <<EOF
+from numpy import diff, log10, floor
+from sys import exit
+try:
+    from netCDF3 import Dataset
+except:
+    from netCDF4 import Dataset
 
-    diff dump.txt - > /dev/null <<EOF
-netcdf ivol {
-dimensions:
-	t = UNLIMITED  // (201 currently)
-variables:
-	double t(t) 
-		t:units = "years" 
-	double ivol(t) 
-		ivol:units = "m3" 
-		ivol:valid_min = 0.f 
-		ivol:long_name = "total ice volume" 
-data:
+nc = Dataset("ivol.nc", 'r')
+ivol = nc.variables['ivol'][:]
+ivol_max = ivol.max()
+threshold = 10**(floor(log10(ivol_max)) - 14) # 14 digits of accuracy
+diff_max = diff(ivol).max()
 
- ivol = 
-    3.9740987142713e+15 
-}
+if diff_max < threshold:
+    exit(0)
+else:
+    print "diff(ivol).max() = %f > %f" % (diff_max, threshold)
+    exit(1)
 EOF
 
     if [ $? != 0 ];

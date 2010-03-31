@@ -173,8 +173,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   //   at bootstrapping (-boot_from), if original condition was ice-free ocean
   ierr = config.flag_from_option("ocean_kill", "ocean_kill"); CHKERRQ(ierr);
 
-  // use a plastic basal till mechanical model
-  ierr = config.flag_from_option("plastic", "use_ssa_when_grounded"); CHKERRQ(ierr);
 
   // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
   // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
@@ -219,11 +217,42 @@ PetscErrorCode  IceModel::setFromOptions() {
     PetscEnd();
   }
 
+  // check -ssa_floating_only
+  ierr = PISMOptionsIsSet("-ssa_floating_only", flag);  CHKERRQ(ierr);
+  if (flag) {
+    config.set_flag("use_ssa_velocity", true);
+    config.set_flag("use_ssa_when_grounded", false);
+  }
+
+  // check -ssa_sliding
+  ierr = PISMOptionsIsSet("-ssa_sliding", flag);  CHKERRQ(ierr);
+  if (flag) {
+    config.set_flag("use_ssa_velocity", true);
+    config.set_flag("use_ssa_when_grounded", true);
+  }
+
+  // check if -super is set and warn if it has no effect:
+  ierr = PISMOptionsIsSet("-super", flag); CHKERRQ(ierr);
+  if (flag && (config.get_flag("use_ssa_when_grounded") == false)) {
+    ierr = verbPrintf(2, grid.com,
+		      "PISM WARNING: option -super has no effect "
+		      "if use_ssa_when_grounded is not set.\n"); CHKERRQ(ierr);
+  }
+  ierr = PISMOptionsIsSet("-no_super", flag); CHKERRQ(ierr);
+  if (flag && (config.get_flag("use_ssa_when_grounded") == false)) {
+    ierr = verbPrintf(2, grid.com,
+		      "PISM WARNING: option -no_super has no effect "
+		      "if use_ssa_when_grounded is not set.\n"); CHKERRQ(ierr);
+  }
+  ierr = config.flag_from_option("super", "do_superpose"); CHKERRQ(ierr);
+
+  ierr = check_old_option_and_stop(grid.com, "-ssa",
+				   "-ssa_sliding' or '-ssa_floating_only"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(grid.com, "-plastic", "-ssa_sliding"); CHKERRQ(ierr);
+
   // see assembleSSAMatrix(); used in MISMIP
   ierr = PISMOptionsIsSet("-shelves_drag_too", doShelvesDragToo); CHKERRQ(ierr);
   if (doShelvesDragToo == PETSC_TRUE)   shelvesDragToo = PETSC_TRUE;
-  
-  ierr = config.flag_from_option("ssa", "use_ssa_velocity"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssa"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssa"); CHKERRQ(ierr);
@@ -246,9 +275,6 @@ PetscErrorCode  IceModel::setFromOptions() {
 
 // -ssaBC used in IceROSSModel
   
-  // add SIA results to those of SSA equations where DRAGGING;  see
-  //   \ref BBssasliding
-  ierr = config.flag_from_option("super", "do_superpose"); CHKERRQ(ierr);
   
   /* This allows more than one mass continuity step per temperature/age and SSA
      computation */
