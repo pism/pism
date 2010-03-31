@@ -63,7 +63,7 @@ PetscErrorCode IceModelVec3::create_da(DA &result, PetscInt Mz) {
 
 #if PETSC_VERSION_MAJOR >= 3
   const PetscInt *lx = NULL, *ly = NULL;
-  ierr = DAGetOwnershipRanges(my_grid.da2, &ly, &lx, PETSC_NULL); CHKERRQ(ierr);
+  ierr = DAGetOwnershipRanges(grid->da2, &ly, &lx, PETSC_NULL); CHKERRQ(ierr);
 #else
   PetscInt *lx = NULL, *ly = NULL;
 #endif
@@ -620,7 +620,7 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
 
 #if PETSC_VERSION_MAJOR >= 3
   const PetscInt *lx = NULL, *ly = NULL;
-  ierr = DAGetOwnershipRanges(my_grid.da2, &ly, &lx, PETSC_NULL); CHKERRQ(ierr);
+  ierr = DAGetOwnershipRanges(grid->da2, &ly, &lx, PETSC_NULL); CHKERRQ(ierr);
 #else
   PetscInt *lx = NULL, *ly = NULL;
 #endif
