@@ -25,9 +25,11 @@
 IceEISModel::IceEISModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : IceModel(g, conf, conf_overrides) {
   expername = 'A';
-  iceFactory.setType(ICE_PB);  // Paterson-Budd
+
+  // following flag must be here in constructor because IceModel::createVecs()
+  //   uses it; can't wait till init_physics()
+  // non-polythermal methods; can be overridden by the command-line option -no_cold:
   config.set_flag("do_cold_ice_methods", true);
-  // can be overridden by the command-line option -no_cold
 }
 
 PetscErrorCode IceEISModel::createVecs() {
@@ -159,7 +161,7 @@ PetscErrorCode IceEISModel::setFromOptions() {
 PetscErrorCode IceEISModel::init_physics() {
   PetscErrorCode ierr;
 
-  ierr = IceModel::init_physics(); CHKERRQ(ierr);
+  iceFactory.setType(ICE_PB);  // Paterson-Budd; can be overridden by options
 
   // see EISMINT II description; choose no ocean interaction, purely SIA, and E=1
   config.set_flag("is_dry_simulation", true);
@@ -169,10 +171,14 @@ PetscErrorCode IceEISModel::init_physics() {
   // basal melt does not change computation of vertical velocity:
   config.set_flag("include_bmr_in_continuity", false);
 
+  ierr = IceModel::init_physics(); CHKERRQ(ierr);
+
   // Make bedrock thermal material properties into ice properties.  Note that
   // zero thickness bedrock layer is the default, but we want the ice/rock
   // interface segment to have geothermal flux applied directly to ice without
   // jump in material properties at base.
+  // (These must follow call to IceModel::init_physics(), where ice is allocated
+  // as a pointer.)
   config.set("bedrock_thermal_density", ice->rho);
   config.set("bedrock_thermal_conductivity", ice->k);
   config.set("bedrock_thermal_specific_heat_capacity", ice->c_p);

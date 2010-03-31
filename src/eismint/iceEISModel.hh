@@ -23,10 +23,12 @@
 #include "../base/grid.hh"
 #include "../base/iceModel.hh"
 
-//! Derived class for EISMINT II simplified geometry experiments.  
+
+//! Derived class for doing EISMINT II simplified geometry experiments.  
 /*!
-These experiments use the thermomechanically-coupled shallow ice approximation.
-See \ref EISMINT00.
+These experiments use the thermomechanically-coupled, non-polythermal shallow
+ice approximation.  Experiment H does \e not \e recommended SIA-sliding
+paradigm.  See \ref EISMINT00 and Appendix B of \ref BBssasliding.
  */
 class IceEISModel : public IceModel {
 public:
