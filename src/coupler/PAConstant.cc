@@ -122,10 +122,9 @@ PetscErrorCode PAConstant::temp_snapshot(PetscReal t_years, PetscReal dt_years,
 PetscErrorCode PAConstant::write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
 					      string filename) {
   PetscErrorCode ierr;
-  string var_order = config.get_string("output_coord_var_order");
 
-  ierr = snowprecip.write(filename.c_str(), var_order); CHKERRQ(ierr);
-  ierr = temperature.write(filename.c_str(), var_order); CHKERRQ(ierr);
+  ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = temperature.write(filename.c_str()); CHKERRQ(ierr);
 
   return 0;
 }
@@ -133,10 +132,9 @@ PetscErrorCode PAConstant::write_model_state(PetscReal /*t_years*/, PetscReal /*
 PetscErrorCode PAConstant::write_diagnostic_fields(PetscReal /*t_years*/, PetscReal /*dt_years*/,
 						   string filename) {
   PetscErrorCode ierr;
-  string var_order = config.get_string("output_coord_var_order");
 
-  ierr = snowprecip.write(filename.c_str(), var_order); CHKERRQ(ierr);
-  ierr = temperature.write(filename.c_str(), var_order); CHKERRQ(ierr);
+  ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = temperature.write(filename.c_str()); CHKERRQ(ierr);
 
   return 0;
 }
@@ -144,7 +142,6 @@ PetscErrorCode PAConstant::write_diagnostic_fields(PetscReal /*t_years*/, PetscR
 PetscErrorCode PAConstant::write_fields(set<string> vars, PetscReal t_years,
 					PetscReal dt_years, string filename) {
   PetscErrorCode ierr;
-  string var_order = config.get_string("output_coord_var_order");
 
   if (vars.find("airtemp") != vars.end()) {
     IceModelVec2S airtemp;
@@ -156,11 +153,11 @@ PetscErrorCode PAConstant::write_fields(set<string> vars, PetscReal t_years,
 
     ierr = temp_snapshot(t_years, dt_years, airtemp); CHKERRQ(ierr);
 
-    ierr = airtemp.write(filename.c_str(), var_order); CHKERRQ(ierr);
+    ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   if (vars.find("snowprecip") != vars.end()) {
-    ierr = snowprecip.write(filename.c_str(), var_order); CHKERRQ(ierr);
+    ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   return 0;

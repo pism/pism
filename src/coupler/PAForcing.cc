@@ -173,7 +173,6 @@ PetscErrorCode PAForcing::write_diagnostic_fields(PetscReal t_years, PetscReal d
 						  string filename) {
   PetscErrorCode ierr;
   double T = t_years + 0.5 * dt_years;
-  string var_order = config.get_string("output_coord_var_order");
 
   ierr = input_model->write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
 
@@ -182,13 +181,13 @@ PetscErrorCode PAForcing::write_diagnostic_fields(PetscReal t_years, PetscReal d
   if (temp_ma_anomaly != NULL) {
     ierr = temp_ma_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
     ierr = temp_ma_anomaly->interp(T); CHKERRQ(ierr);
-    ierr = temp_ma_anomaly->write(filename.c_str(), var_order); CHKERRQ(ierr);
+    ierr = temp_ma_anomaly->write(filename.c_str()); CHKERRQ(ierr);
   }
 
   if (snowprecip_anomaly != NULL) {
     ierr = snowprecip_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
     ierr = snowprecip_anomaly->interp(T); CHKERRQ(ierr);
-    ierr = snowprecip_anomaly->write(filename.c_str(), var_order); CHKERRQ(ierr);
+    ierr = snowprecip_anomaly->write(filename.c_str()); CHKERRQ(ierr);
   }
 
   if (dTforcing != NULL) {
@@ -206,7 +205,6 @@ PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
 				       PetscReal dt_years, string filename) {
   PetscErrorCode ierr;
   double T = t_years + 0.5 * dt_years;
-  string var_order = config.get_string("output_coord_var_order");
 
   if (vars.find("airtemp") != vars.end()) {
     IceModelVec2S airtemp;
@@ -218,7 +216,7 @@ PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
 
     ierr = temp_snapshot(t_years, dt_years, airtemp); CHKERRQ(ierr);
 
-    ierr = airtemp.write(filename.c_str(), var_order); CHKERRQ(ierr);
+    ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
     vars.erase("airtemp");
   }
 
@@ -226,7 +224,7 @@ PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
     if (vars.find("temp_ma_anomaly") != vars.end()) {
       ierr = temp_ma_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
       ierr = temp_ma_anomaly->interp(T); CHKERRQ(ierr);
-      ierr = temp_ma_anomaly->write(filename.c_str(), var_order); CHKERRQ(ierr);
+      ierr = temp_ma_anomaly->write(filename.c_str()); CHKERRQ(ierr);
       vars.erase("temp_ma_anomaly");
     }
   }
@@ -235,7 +233,7 @@ PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
     if (vars.find("snowprecip_anomaly") != vars.end()) {
       ierr = snowprecip_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
       ierr = snowprecip_anomaly->interp(T); CHKERRQ(ierr);
-      ierr = snowprecip_anomaly->write(filename.c_str(), var_order); CHKERRQ(ierr);
+      ierr = snowprecip_anomaly->write(filename.c_str()); CHKERRQ(ierr);
       vars.erase("snowprecip_anomaly");
     }
 

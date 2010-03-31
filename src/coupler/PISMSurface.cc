@@ -188,10 +188,9 @@ PetscErrorCode PSConstant::ice_surface_temperature(PetscReal /*t_years*/, PetscR
 PetscErrorCode PSConstant::write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
 						    string filename) {
   PetscErrorCode ierr;
-  string var_order = config.get_string("output_coord_var_order");
 
-  ierr = artm.write(filename.c_str(), var_order); CHKERRQ(ierr);
-  ierr = acab.write(filename.c_str(), var_order); CHKERRQ(ierr);
+  ierr = artm.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = acab.write(filename.c_str()); CHKERRQ(ierr);
 
   return 0;
 }

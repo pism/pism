@@ -112,8 +112,7 @@ PetscErrorCode IceModelVec2V::read(const char filename[], const unsigned int tim
   return 0;  
 }
 
-PetscErrorCode IceModelVec2V::write(const char filename[], nc_type nctype,
-				    string var_order) {
+PetscErrorCode IceModelVec2V::write(const char filename[], nc_type nctype) {
   PetscErrorCode ierr;
 
   ierr = checkAllocated(); CHKERRQ(ierr);
@@ -127,7 +126,7 @@ PetscErrorCode IceModelVec2V::write(const char filename[], nc_type nctype,
   for (int j = 0; j < dof; ++j) {
     vars[j].time_independent = time_independent;
     ierr = IceModelVec2::get_component(j, tmp); CHKERRQ(ierr);
-    ierr = vars[j].write(filename, nctype, var_order,
+    ierr = vars[j].write(filename, nctype,
 			 write_in_glaciological_units, tmp);
   }
 

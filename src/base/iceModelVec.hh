@@ -65,8 +65,8 @@ public:
   virtual PetscErrorCode  set_attrs(string my_pism_intent, string my_long_name,
 				    string my_units, string my_standard_name, int component = 0);
   virtual bool            is_valid(PetscScalar a, int component = 0);
-  virtual PetscErrorCode  write(const char filename[], string var_order);
-  virtual PetscErrorCode  write(const char filename[], nc_type nctype, string var_order);
+  virtual PetscErrorCode  write(const char filename[]);
+  virtual PetscErrorCode  write(const char filename[], nc_type nctype);
   virtual PetscErrorCode  read(const char filename[], unsigned int time);
   virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, bool critical);
   virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
@@ -213,8 +213,7 @@ public:
 
   // I/O:
   using IceModelVec2::write;
-  virtual PetscErrorCode write(const char filename[], nc_type nctype,
-			       string var_order); 
+  virtual PetscErrorCode write(const char filename[], nc_type nctype); 
   virtual PetscErrorCode read(const char filename[], const unsigned int time); 
   virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, bool critical); 
   virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value); 

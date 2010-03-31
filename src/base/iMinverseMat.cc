@@ -326,17 +326,16 @@ PetscErrorCode IceModel::computeTFAFromBasalShear(
   // main added content relative to ex5: fill nontrivial coeffs f,g for reg version
   ierr = fillRegPoissonData(user); CHKERRQ(ierr);
 
-  string var_order = config.get_string("output_coord_var_order");
   // write f,g to file, if a filename is given
   if (strlen(invfieldsfilename) > 0) {
     ierr = user.f->set_attrs(
        "inverse_output", "f(x,y), coeff in Poisson-like eqn for regularizing mu",
        "", ""); CHKERRQ(ierr);
-    ierr = user.f->write(invfieldsfilename, NC_FLOAT, var_order); CHKERRQ(ierr);
+    ierr = user.f->write(invfieldsfilename, NC_FLOAT); CHKERRQ(ierr);
     ierr = user.g->set_attrs(
        "inverse_output", "g(x,y), coeff in Poisson-like eqn for regularizing mu",
        "", ""); CHKERRQ(ierr);
-    ierr = user.g->write(invfieldsfilename, NC_FLOAT, var_order); CHKERRQ(ierr);
+    ierr = user.g->write(invfieldsfilename, NC_FLOAT); CHKERRQ(ierr);
   }
 
   // create appropriate SNES, Mat

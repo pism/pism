@@ -21,7 +21,6 @@
 #include "PISMIO.hh"
 #include "pism_const.hh"
 #include <algorithm>
-#include <sstream>
 
 NCVariable::NCVariable() {
   reset();
@@ -166,7 +165,6 @@ PetscErrorCode NCSpatialVariable::read(const char filename[], unsigned int time,
   Defines a variable and converts the units if needed.
  */
 PetscErrorCode NCSpatialVariable::write(const char filename[], nc_type nctype,
-					string variable_order,
 					bool write_in_glaciological_units, Vec v) {
   PetscErrorCode ierr;
   bool exists;
@@ -184,8 +182,7 @@ PetscErrorCode NCSpatialVariable::write(const char filename[], nc_type nctype,
 			  &varid, exists); CHKERRQ(ierr);
 
   if (!exists) {
-    ierr = define(nc.get_ncid(), nctype,
-		  variable_order, varid); CHKERRQ(ierr);
+    ierr = define(nc.get_ncid(), nctype, varid); CHKERRQ(ierr);
   }
 
   if (write_in_glaciological_units) {
@@ -595,56 +592,37 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
 }
 
 //! Define a NetCDF variable corresponding to a NCVariable object.
-PetscErrorCode NCSpatialVariable::define(int ncid, nc_type nctype,
-					 string variable_order, int &varid) {
+PetscErrorCode NCSpatialVariable::define(int ncid, nc_type nctype, int &varid) {
   int stat, var_id;
 
   if (grid == NULL)
     SETERRQ(1, "NCSpatialVariable::define: grid is NULL.");
 
-  string var_name;
-  vector<string> vars;
-  istringstream list(variable_order);
-  // split the list
-  while (getline(list, var_name, ',')) {
-    if ((var_name == "z") && (GRID_3D_BEDROCK == dims))
-      var_name = "zb";
-
-    vars.push_back(var_name);
-  }
-
-  if (vars.size() != 3) {
-    stat = verbPrintf(1, com,
-		      "PISM WARNING: output_coord_var_order has to contain 3 names.\n"
-		      "  Defaulting to \"y,x,z\"...\n"); CHKERRQ(stat);
-    vars.clear();
-    vars.push_back("y");
-    vars.push_back("x");
-
-    if (dims == GRID_3D_BEDROCK)
-      vars.push_back("zb");
-    else
-      vars.push_back("z");
-  }
-
   if (rank == 0) {
-    int ndims, dimids[4];
+    int i = 0, ndims, dimids[4];
     int *dimids_ptr = dimids;
 
     stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-    stat = nc_inq_dimid(ncid, "t", &dimids[0]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_inq_dimid(ncid, "t", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-    for (int j = 0; j < 3; ++j) {
-      stat = nc_inq_dimid(ncid, vars[j].c_str(), &dimids[j+1]);
-      CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    switch (dims) {
+    case GRID_3D:
+      stat = nc_inq_dimid(ncid, "z", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+      ndims = 4;
+      break;
+    case GRID_3D_BEDROCK:
+      stat = nc_inq_dimid(ncid, "zb", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+      ndims = 4;
+      break;
+    case GRID_2D:
+    default:
+      ndims = 3;
+      break;
     }
 
-    ndims = -1;
-    if (dims == GRID_2D)
-      ndims = 3;
-    else
-      ndims = 4;
+    stat = nc_inq_dimid(ncid, "y", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_inq_dimid(ncid, "x", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
     if (time_independent) {
       ndims--;

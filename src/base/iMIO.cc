@@ -110,7 +110,6 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
 					 nc_type nctype) {
   PetscErrorCode ierr;
   IceModelVec *v;
-  string var_order = config.get_string("output_coord_var_order");
 
   set<string>::iterator i = vars.begin();
   while (i != vars.end()) {
@@ -120,9 +119,9 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
       ++i;
     } else {
       if (*i == "mask") {
-	ierr = v->write(filename, var_order); CHKERRQ(ierr); // use the default data type
+	ierr = v->write(filename); CHKERRQ(ierr); // use the default data type
       } else {
-	ierr = v->write(filename, nctype, var_order); CHKERRQ(ierr);
+	ierr = v->write(filename, nctype); CHKERRQ(ierr);
       }
 
       vars.erase(i++);		// note that it only erases variables that were
@@ -138,7 +137,7 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
     if (v == NULL)
       ++i;
     else {
-      ierr = v->write(filename, NC_FLOAT, var_order); CHKERRQ(ierr); // diagnostic quantities are always written in float
+      ierr = v->write(filename, NC_FLOAT); CHKERRQ(ierr); // diagnostic quantities are always written in float
       vars.erase(i++);
     }
   }
