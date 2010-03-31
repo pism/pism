@@ -168,10 +168,10 @@ COUPLER_FORCING="-atmosphere searise_greenland,forcing -surface pdd -pdd_fausto 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
 
-# use "best run" parameters from Bueler et al. (GRL)
-GRLPARAMS="-e 1 -pseudo_plastic_q 0.10 -plastic_pwfrac 0.99"
+# use "control run" parameters from Bueler et al. submitted
+PARAMS="-e 3 -pseudo_plastic_q 0.25 -plastic_pwfrac 0.98"
 
-FULLPHYS="-ssa -super -plastic -thk_eff ${GRLPARAMS}"
+FULLPHYS="-ssa_sliding -thk_eff ${PARAMS}"
 
 echo "$SCRIPTNAME      executable = '$PISM'"
 echo "$SCRIPTNAME         tillphi = '$TILLPHI'"
