@@ -325,10 +325,6 @@ protected:
 					      PetscScalar **Enth_s);
   virtual PetscErrorCode enthalpyAndDrainageStep(
                 PetscScalar* vertSacrCount, PetscScalar* liquifiedVol);
-  virtual PetscErrorCode drainageToBaseModelEnth(
-                PetscScalar omega_max, PetscScalar thickness,
-                PetscScalar z, PetscScalar dz,
-                PetscScalar &enthalpy, PetscScalar &Hdrained);
 
   // see iMgeometry.cc
   virtual PetscErrorCode computeDrivingStress(IceModelVec2S &vtaudx, IceModelVec2S &vtaudy);

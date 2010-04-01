@@ -330,6 +330,11 @@ iceenthOnlySystemCtx.
 This method modifies IceModelVec3 Enthnew3, IceModelVec3Bedrock Tb3,
 IceModelVec2S vBasalMeltRate, and IceModelVec2S vHmelt.  No communication of
 ghosts is done for any of these fields.
+
+Regarding drainage, we move the liquid water fraction which is in excess of
+the fixed fraction \c omega_max in a column segment [z,z+dz] to the base.
+Heuristic: Once liquid water fraction exceeds a cap, all of it goes to the base.
+Follows [\ref Greve97Greenland] and references therein.
  */
 PetscErrorCode IceModel::enthalpyAndDrainageStep(
                       PetscScalar* vertSacrCount, PetscScalar* liquifiedVol) {
@@ -434,20 +439,58 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
       // for fine grid; this should *not* be replaced by call to grid.kBelowHeight()
       const PetscInt ks = static_cast<PetscInt>(floor(vH(i,j)/fdz));
+
+      // enthalpy and pressures at top of ice
+      const PetscScalar p_ks = EC->getPressureFromDepth(vH(i,j) - fzlev[ks]);
+      PetscScalar Enth_ks;
+      // in theory we could have a water fraction at k=ks level, but for
+      //   now there is no case where we have that:
+      ierr = EC->getEnthPermissive(artm(i,j), 0.0, p_ks,  Enth_ks); CHKERRQ(ierr);
+
+      const bool is_floating = vMask.is_floating(i,j);
+
+      // deal completely with columns with no ice; note bedrock does need actions
+      if (ks == 0) {
+        ierr = Enthnew3.setColumn(i,j,Enth_ks); CHKERRQ(ierr);
+        PetscScalar Tbtop;
+        if (is_floating) {
+          Tbtop = shelfbtemp(i,j);
+        } else {
+          ierr = EC->getAbsTemp(Enth_ks, p_ks, Tbtop); CHKERRQ(ierr);
+        }
+        if (fMbz > 1) { // bedrock layer if present
+          ierr = bosys.setIndicesAndClearThisColumn(i,j,-1); CHKERRQ(ierr);  
+          ierr = Tb3.getValColumn(i,j,bosys.Tb); CHKERRQ(ierr);
+          ierr = bosys.setBoundaryValuesThisColumn(Tbtop, vGhf(i,j)); CHKERRQ(ierr);
+          ierr = bosys.solveThisColumn(&Tbnew);
+          if (ierr)  reportColumnSolveError(ierr, grid.com, bosys, "bedrockOnly", i, j);
+          if (viewOneColumn && issounding(i,j)) {
+            ierr = reportColumn(grid.com, bosys, "bedrockOnly",
+                                i, j, Tbnew, fMbz); CHKERRQ(ierr);
+          }
+          ierr = Tb3.setValColumnPL(i,j,Tbnew); CHKERRQ(ierr);
+        } else { // no bedrock layer: we are actually just setting one value
+          ierr = Tb3.setColumn(i,j,Tbtop); CHKERRQ(ierr);
+        }
+        if (is_floating) {
+          vHmelt(i,j) = hmelt_max;
+          vbmr(i,j) = shelfbmassflux(i,j);
+        } else {
+          vHmelt(i,j) = 0.0;  // no stored water on ice free land
+          vbmr(i,j) = 0.0;    // no basal melt rate; melting is a surface process
+                              //   on ice free land
+        }
+       
+        goto donewithcolumn;
+      }
+
+      { // explicit scoping to deal with goto and initializers
+
       // ignore advection and strain heating in ice if isMarginal
       const bool isMarginal = checkThinNeigh(
                                  vH(i+1,j),vH(i+1,j+1),vH(i,j+1),vH(i-1,j+1),
                                  vH(i-1,j),vH(i-1,j-1),vH(i,j-1),vH(i+1,j-1)  );
-      const bool is_floating = vMask.is_floating(i,j);
-
-      // enthalpy and pressures at boundaries of ice
-      const PetscScalar p_basal = EC->getPressureFromDepth(vH(i,j)),
-                        p_ks    = EC->getPressureFromDepth(vH(i,j) - fzlev[ks]);
-      PetscScalar Enth_air, Enth_ks;
-      ierr = EC->getEnthPermissive(artm(i,j), 0.0, p_air, Enth_air); CHKERRQ(ierr);
-      // in theory we could have a water fraction at k=ks level, but for
-      //   now there is no case where we have that:
-      ierr = EC->getEnthPermissive(artm(i,j), 0.0, p_ks,  Enth_ks); CHKERRQ(ierr);
+      const PetscScalar p_basal = EC->getPressureFromDepth(vH(i,j));
 
       ierr = Enth3.getValColumn(i,j,ks,iosys.Enth); CHKERRQ(ierr);
       ierr = w3.getValColumn(i,j,ks,iosys.w); CHKERRQ(ierr);
@@ -478,9 +521,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
             CHKERRQ(ierr);
 
         ierr = cbsys.solveThisColumn(&xcombined);
-        if (ierr) {
-          reportColumnSolveError(ierr, grid.com, cbsys, "combined", i, j);
-        }
+        if (ierr) reportColumnSolveError(ierr, grid.com, cbsys, "combined", i, j);
         if (viewOneColumn && issounding(i,j)) {
           ierr = reportColumn(grid.com, cbsys, "combined", i, j,
                               xcombined, fMbz+fMz-1); CHKERRQ(ierr);
@@ -522,9 +563,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
               CHKERRQ(ierr);
 
           ierr = bosys.solveThisColumn(&Tbnew);
-          if (ierr) {
-            reportColumnSolveError(ierr, grid.com, bosys, "bedrockOnly", i, j);
-          }
+          if (ierr) reportColumnSolveError(ierr, grid.com, bosys, "bedrockOnly", i, j);
           if (viewOneColumn && issounding(i,j)) {
             ierr = reportColumn(grid.com, bosys, "bedrockOnly",
                                 i, j, Tbnew, fMbz); CHKERRQ(ierr);
@@ -615,44 +654,55 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         }
 
         ierr = iosys.solveThisColumn(&Enthnew);
-        if (ierr) {
-          reportColumnSolveError(ierr, grid.com, iosys, "iceenthOnly", i, j);
-        }
+        if (ierr) reportColumnSolveError(ierr, grid.com, iosys, "iceenthOnly", i, j);
         if (viewOneColumn && issounding(i,j)) {
           ierr = reportColumn(grid.com, iosys, "iceenthOnly", 
                               i, j, Enthnew, fMz); CHKERRQ(ierr);
         }
       }
 
-      // basal melt rate causes water to be added to layer
+      // thermodynamic basal melt rate causes water to be added to layer
       PetscScalar Hmeltnew = vHmelt(i,j);
       if (!is_floating) {
         Hmeltnew += vbmr(i,j) * dtTempAge;
       }
 
-      // drain ice segments; alters Enthnew[]; adds to both basal melt rate and Hmelt;
-      //    has side-effect that Enthnew[] is ice with at most omega_max liquid
-      //    fraction
+      // drain ice segments; has result that Enthnew[] is ice with at most
+      //   omega_max liquid
       PetscScalar Hdrainedtotal = 0.0;
       for (PetscInt k=0; k < ks; k++) {
-        PetscScalar dHdrained = 0.0;
         if (EC->isLiquified(Enthnew[k],EC->getPressureFromDepth(vH(i,j) - fzlev[k]))) {
           liquifiedCount++;
         }
-        // modifies last two arguments, generally:
-        ierr = drainageToBaseModelEnth(omega_max, vH(i,j), fzlev[k], fdz,
-                                       Enthnew[k], dHdrained); CHKERRQ(ierr);
+
+        // if there is liquid water already, thus temperate, consider whether there
+        //   is enough to cause drainage;  UNACCOUNTED ENERGY LOSS IF E>E_l
+        const PetscScalar p     = EC->getPressureFromDepth(vH(i,j) - fzlev[k]),
+                          omega = EC->getWaterFractionLimited(Enthnew[k], p);
+        PetscScalar dHdrained;
+        if (omega > omega_max) {
+          // drain water:
+          dHdrained = (omega - omega_max) * fdz;
+          // update enthalpy because omega == omega_max now:
+          ierr = EC->getEnthAtWaterFraction(omega_max, p, Enthnew[k]); CHKERRQ(ierr);
+        } else {
+          dHdrained = 0.0;
+        }
+                                       
         Hdrainedtotal += dHdrained;  // always a positive contribution
       }
+      // in grounded case, add to both basal melt rate and Hmelt; if floating,
+      // Hdrainedtotal is discarded because ocean determines basal melt rate
       if (!is_floating) {
         vbmr(i,j) += Hdrainedtotal / dtTempAge;
         Hmeltnew += Hdrainedtotal;
       }
 
-      // transfer column into Enthnew3; communication later
+      // Enthnew[] is finalized!:  transfer column into Enthnew3; communication
+      //   will occur later
       ierr = Enthnew3.setValColumnPL(i,j,Enthnew); CHKERRQ(ierr);
 
-      // if no thermal layer then need to fill Tb directly
+      // if no thermal layer then need to fill Tbnew[0] directly
       if (fMbz == 1) {
         if (is_floating) { // floating: get from PISMOceanModel
           Tbnew[0] = shelfbtemp(i,j);
@@ -662,7 +712,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         }
       }
 
-      // transfer column into Tb3; no need for communication, even later
+      // Tbnew[] is finalized!:  transfer column into Tb3; no need for
+      //    communication, even later
       ierr = Tb3.setValColumnPL(i,j,Tbnew); CHKERRQ(ierr);
 
       // finalize Hmelt value
@@ -694,6 +745,11 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         }
       }
 
+      } // end explicit scoping
+      
+      donewithcolumn: 
+      { }  // odd thing: something needs to follow goto target to get compilation
+
     }
   }
 
@@ -722,39 +778,4 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   return 0;
 }
 
-
-//! Move liquid water fraction, in excess of fixed fraction, in a column segment [z,z+dz] to the base.
-/*!
-Generally this procedure alters the values in the last two arguments,
-'enthalpy' and 'Hdrained'.  The latter argument is the ice-equivalent water
-thickness which is moved to the bed by drainage.
-
-Heuristic: Once liquid water fraction exceeds a cap, all of it goes to the base.
-Follows [\ref Greve97Greenland] and references therein.
- */
-PetscErrorCode IceModel::drainageToBaseModelEnth(
-                PetscScalar omega_max, PetscScalar thickness,
-                PetscScalar z, PetscScalar dz,
-                PetscScalar &enthalpy, PetscScalar &Hdrained) {
-  PetscErrorCode ierr;
-
-  if (allowAboveMelting == PETSC_TRUE) {
-    SETERRQ(1,
-      "PISM ERROR: drainageToBaseModelEnth() called BUT allowAboveMelting==TRUE");
-  }
-
-  // if there is liquid water already, thus temperate, consider whether there
-  //   is enough to cause drainage;  UNACCOUNTED ENERGY LOSS IF E>E_l
-  const PetscScalar p     = EC->getPressureFromDepth(thickness - z),
-                    omega = EC->getWaterFractionLimited(enthalpy, p);
-  if (omega > omega_max) {
-    // drain water:
-    Hdrained = (omega - omega_max) * dz;
-    // update enthalpy because omega == omega_max now:
-    ierr = EC->getEnthAtWaterFraction(omega_max, p, enthalpy); CHKERRQ(ierr);
-  } else {
-    Hdrained = 0.0;
-  }
-  return 0;
-}
 
