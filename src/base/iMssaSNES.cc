@@ -68,24 +68,21 @@ PetscErrorCode IceModel::mapSSASNESVecToUVbarSSA(DA ssasnesda, Vec ssasnesX) {
 
 PetscErrorCode IceModel::setbdryvalSSA(DA ssasnesda, Vec &ssasnesBV) {
   PetscErrorCode ierr;
-  PetscScalar **uvbar[2];
   SSASNESNode **xBV;
 
-  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
-  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+  ierr = uvbar.begin_access(); CHKERRQ(ierr);
   ierr = DAVecGetArray(ssasnesda, ssasnesBV, &xBV); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       // this value will only be used where mask[i][j] == MASK_SHEET
-      xBV[i][j].u = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
-      xBV[i][j].v = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
+      xBV[i][j].u = 0.5*(uvbar(i-1,j,0) + uvbar(i,j,0));
+      xBV[i][j].v = 0.5*(uvbar(i,j-1,1) + uvbar(i,j,1));
     }
   }
 
   ierr = DAVecRestoreArray(ssasnesda, ssasnesBV, &xBV); CHKERRQ(ierr);
-  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = uvbar.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

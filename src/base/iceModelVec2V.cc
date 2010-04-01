@@ -50,10 +50,6 @@ PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const char my_short_name
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, local, DA_STENCIL_BOX,
 					     stencil_width, dof); CHKERRQ(ierr);
 
-  PetscInt       M, N, m, n;
-  ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
-                   PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-
 #if PETSC_VERSION_MAJOR >= 3
   const PetscInt *lx = NULL, *ly = NULL;
   ierr = DAGetOwnershipRanges(my_grid.da2, &ly, &lx, PETSC_NULL); CHKERRQ(ierr);
@@ -62,9 +58,9 @@ PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const char my_short_name
 #endif
 
   // component DA:
-  ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, DA_STENCIL_BOX,
-		    N, M,
-		    n, m,
+  ierr = DACreate2d(grid->com, DA_XYPERIODIC, DA_STENCIL_BOX,
+		    grid->My, grid->Mx,
+		    grid->Ny, grid->Nx,
 		    1, stencil_width, // "1" is the dof of a component
                     ly, lx, &component_da); CHKERRQ(ierr);
 

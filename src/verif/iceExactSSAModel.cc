@@ -145,10 +145,8 @@ PetscErrorCode IceExactSSAModel::misc_setup() {
   // Communicate so that we can differentiate surface, and to set boundary conditions
   ierr = vh.beginGhostComm(); CHKERRQ(ierr);
   ierr = vh.endGhostComm(); CHKERRQ(ierr);
-  ierr = vuvbar[0].beginGhostComm(); CHKERRQ(ierr);
-  ierr = vuvbar[1].beginGhostComm(); CHKERRQ(ierr);
-  ierr = vuvbar[0].endGhostComm(); CHKERRQ(ierr);
-  ierr = vuvbar[1].endGhostComm(); CHKERRQ(ierr);
+  ierr = uvbar.beginGhostComm(); CHKERRQ(ierr);
+  ierr = uvbar.endGhostComm(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -198,8 +196,7 @@ PetscErrorCode IceExactSSAModel::set_vars_from_options() {
 
   // set initial velocities (for start of iteration)
   ierr = vel_bar.set(0.0); CHKERRQ(ierr);
-  ierr = vuvbar[0].set(0.0); CHKERRQ(ierr);
-  ierr = vuvbar[1].set(0.0); CHKERRQ(ierr);
+  ierr = uvbar.set(0.0); CHKERRQ(ierr);
   // clear 3D and basal velocities too
   ierr = u3.set(0.0); CHKERRQ(ierr);
   ierr = v3.set(0.0); CHKERRQ(ierr);
@@ -231,7 +228,7 @@ PetscErrorCode IceExactSSAModel::taucSetI() {
 
 PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVelsI() {
   PetscErrorCode ierr;
-  PetscScalar    **uvbar[2], **mask, **h, **bed;
+  PetscScalar    **mask, **h, **bed;
   
   ierr = vMask.set(MASK_DRAGGING_SHEET); CHKERRQ(ierr);
   ierr = vH.set(H0_schoof); CHKERRQ(ierr);
@@ -241,8 +238,7 @@ PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVelsI() {
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr = vh.get_array(h); CHKERRQ(ierr);    
   ierr = vbed.get_array(bed); CHKERRQ(ierr);
-  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
-  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+  ierr = uvbar.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar junk, myu, myv;
@@ -257,15 +253,14 @@ PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVelsI() {
         // set boundary condition which will apply to finite difference system:
         // staggered grid velocities at MASK_SHEET points at edges of grid
         mask[i][j] = MASK_SHEET;
-        uvbar[0][i-1][j] = myu;
-        uvbar[0][i][j] = myu;    // so average onto regular grid point (i,j) has u=myu
-        uvbar[1][i][j-1] = myv;
-        uvbar[1][i][j] = myv;    // so average onto regular grid point (i,j) has v=myv
+        uvbar(i-1,j,0) = myu;
+        uvbar(i,j,0) = myu;    // so average onto regular grid point (i,j) has u=myu
+        uvbar(i,j-1,1) = myv;
+        uvbar(i,j,1) = myv;    // so average onto regular grid point (i,j) has v=myv
       }
     }
   }  
-  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = uvbar.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vh.end_access(); CHKERRQ(ierr);    
   ierr = vbed.end_access(); CHKERRQ(ierr);
@@ -275,7 +270,7 @@ PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVelsI() {
 
 PetscErrorCode IceExactSSAModel::setInitStateJ() {
   PetscErrorCode ierr;
-  PetscScalar    **H, **h, **mask, **uvbar[2];
+  PetscScalar    **H, **h, **mask;
 
   ierr = vbed.set(-5000.0); CHKERRQ(ierr); // assures shelf is floating
   ierr = vMask.set(MASK_FLOATING); CHKERRQ(ierr);
@@ -291,8 +286,7 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vh.get_array(h); CHKERRQ(ierr);    
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
-  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
-  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+  ierr = uvbar.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar junk1, myu, myv;
@@ -309,8 +303,8 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
       // and makes ubar=myu, vbar=myv there
       if ( (i == (grid.Mx)/2) && (j == (grid.My)/2) ) {
         mask[i][j] = MASK_SHEET;
-        uvbar[0][i-1][j] = myu;   uvbar[0][i][j] = myu;
-        uvbar[1][i][j-1] = myv;   uvbar[1][i][j] = myv;
+        uvbar(i-1,j,0) = myu;   uvbar(i,j,0) = myu;
+        uvbar(i,j-1,1) = myv;   uvbar(i,j,1) = myv;
         
         ierr = u3.begin_access(); CHKERRQ(ierr);
         ierr = v3.begin_access(); CHKERRQ(ierr);
@@ -324,16 +318,14 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
   ierr = vh.end_access(); CHKERRQ(ierr);    
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = uvbar.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
 
 PetscErrorCode IceExactSSAModel::setInitStateM() {
   PetscErrorCode ierr;
-  PetscScalar    **H, **h, **bed, **mask,
-                 **uvbar[2];
+  PetscScalar    **H, **h, **bed, **mask;
   PISMVector2 **bvel;
 
   double ocean_rho = config.get("sea_water_density");
@@ -353,8 +345,7 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
   ierr = vel_basal.get_array(bvel); CHKERRQ(ierr);
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
-  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+  ierr = uvbar.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar alpha, Drr, myu, myv;
@@ -388,8 +379,8 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
         ierr = v3.setColumn(i,j,myv); CHKERRQ(ierr);
         // w3 is set by IceModel::vertVelocityFromIncompressibility()
         // see IceModel::assembleSSARhs() to see why pairs are set here:
-        uvbar[0][i][j] = myu;  uvbar[0][i-1][j] = myu;
-        uvbar[1][i][j] = myv;  uvbar[1][i][j-1] = myv;
+        uvbar(i,j,0) = myu;  uvbar(i-1,j,0) = myu;
+        uvbar(i,j,1) = myv;  uvbar(i,j-1,1) = myv;
       } else if (r <= Rc) {
         // ice shelf case
         H[i][j] = H0;
@@ -415,8 +406,7 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
   ierr = vel_basal.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = uvbar.end_access(); CHKERRQ(ierr);
   return 0;
 }
 

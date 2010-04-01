@@ -412,6 +412,8 @@ PetscErrorCode IceModelVec2::set_component(int N, Vec source) {
 
 PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], bool local,
                                      DAStencilType my_sten, int stencil_width, int my_dof) {
+  PetscErrorCode ierr;
+
   if (!utIsInit()) {
     SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
   }
@@ -422,11 +424,6 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
   dof  = my_dof;
   grid = &my_grid;
   dims = GRID_2D;
-  
-  PetscInt       M, N, m, n;
-  PetscErrorCode ierr;
-  ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
-                   PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
 
 #if PETSC_VERSION_MAJOR >= 3
   const PetscInt *lx = NULL, *ly = NULL;
@@ -435,9 +432,10 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
   PetscInt *lx = NULL, *ly = NULL;
 #endif
 
-  ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, my_sten, N, M, n, m,
-		    dof,
-		    stencil_width,
+  ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, my_sten,
+		    grid->My, grid->Mx,
+		    grid->Ny, grid->Nx,
+		    dof, stencil_width,
                     ly, lx, &da); CHKERRQ(ierr);
 
   if (local) {

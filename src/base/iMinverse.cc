@@ -559,7 +559,7 @@ The nonsliding thermomechanically coupled SIA equations are used.
 This procedure calls surfaceGradientSIA(), velocitySIAStaggered(), and
 horizontalVelocitySIARegular().  Therefore these IceModel members get modified:
 
-- IceModelVec2S vuvbar[2]
+- IceModelVec2Stag uvbar
 - IceModelVec2S vWork2d[0..5]
 - IceModelVec2V vel_basal  (set to zero)
 - IceModelVec3 Istag3[2] 
@@ -586,14 +586,12 @@ PetscErrorCode IceModel::computeSIASurfaceVelocity() {
   }
 
   // compute the vertically integrated velocity from the nonsliding SIA
-  //   (namely vuvbar[2], which is (ubar,vbar) on staggered grid)
+  //   (namely uvbar, which is (ubar,vbar) on staggered grid)
   ierr = velocitySIAStaggered(); CHKERRQ(ierr);
 
-  // communicate vuvbar[01] for velocities2DSIAToRegular():
-  ierr = vuvbar[0].beginGhostComm(); CHKERRQ(ierr);
-  ierr = vuvbar[1].beginGhostComm(); CHKERRQ(ierr);
-  ierr = vuvbar[0].endGhostComm(); CHKERRQ(ierr);
-  ierr = vuvbar[1].endGhostComm(); CHKERRQ(ierr);
+  // communicate uvbar for velocities2DSIAToRegular():
+  ierr = uvbar.beginGhostComm(); CHKERRQ(ierr);
+  ierr = uvbar.endGhostComm(); CHKERRQ(ierr);
 
   // we have the 2d vertically-averaged velocity on the staggered grid, but
   //   we actually need the surface velocity computed by the nonsliding SIA

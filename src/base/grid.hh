@@ -85,7 +85,8 @@ public:
 
   PetscScalar x0, y0;	   // grid center (from an input or bootstrapping file)
   PetscScalar Lx, Ly; // half width of the ice model grid in x-direction, y-direction (m)
-  PetscInt    Mx, My; // number of grid points in x-direction, y-direction
+  PetscInt    Mx, My; // number of grid points in the x-direction, y-direction
+  PetscInt    Nx, Ny; // number of processors in the x-direcion, y-direction
   PetscScalar dx, dy; // horizontal grid spacing
 
   PetscScalar Lz, Lbz; // extent of the ice, bedrock in z-direction (m)
@@ -97,8 +98,9 @@ public:
     end_year;		  //!< time to stop at
   
 protected:
-  PetscScalar lambda;
+  PetscScalar lambda;	 // vertical spacing parameter
 private:
+  void compute_nprocs();
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
   PetscErrorCode compute_fine_vertical_grid();
   PetscErrorCode init_interpolation();

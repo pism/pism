@@ -197,11 +197,12 @@ protected:
         vGhf,		//!< geothermal flux; no ghosts
         vRb,		//!< basal frictional heating on regular grid; no ghosts
         vtillphi,	//!< friction angle for till under grounded ice sheet; no ghosts
-        vuvbar[2],	//!< ubar and vbar on staggered grid; ubar at i+1/2, vbar at j+1/2
     acab,
     artm,
     shelfbtemp,
     shelfbmassflux;
+
+  IceModelVec2Stag uvbar; //!< ubar and vbar on staggered grid; ubar at i+1/2, vbar at j+1/2
 
   IceModelVec2V vel_basal,	//!< basal velocities on standard grid; ghosted
     vel_bar; //!< vertically-averaged horizontal velocity on standard grid; ghosted
@@ -490,7 +491,7 @@ protected:
 
 protected:
   // working space (a convenience)
-  static const PetscInt nWork2d=6;
+  static const PetscInt nWork2d=5;
   Vec g2;			//!< Global work vector; used by the bed
 				//!< deformation code only. (FIXME!)
   IceModelVec2S vWork2d[nWork2d];

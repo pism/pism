@@ -54,13 +54,13 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     // * surface gradient (including w=1 ghosts)
     // * thickness (including w=2 ghosts)
     // updates:
-    // * SIA velocities on the staggered grid (vuvbar[0,1]), including w=1 ghosts
+    // * SIA velocities on the staggered grid (uvbar), including w=1 ghosts
     // * Sigma on the staggered grid (Sigmastag3[0,1]), including w=1 ghosts
     // * I on the staggered grid (Istag3[0,1])
     ierr = velocitySIAStaggered(); CHKERRQ(ierr);
     ierr = verbPrintf(5,grid.com, "{velocitySIAStaggered()}"); CHKERRQ(ierr);
 
-    // no need to communicate vuvbar[01] for boundary conditions for SSA and
+    // no need to communicate uvbar for boundary conditions for SSA and
     // vertAveragedVelocityToRegular() and velocities2DSIAToRegular(): w=1
     // ghosts were updated locally
 
@@ -82,7 +82,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     // also put staggered value of basal velocity onto regular grid
 
     // uses:
-    // * vuvbar[0,1] (including w=1 ghosts)
+    // * uvbar (including w=1 ghosts)
     // updates:
     // * vel_bar
     ierr = velocities2DSIAToRegular(); CHKERRQ(ierr);
@@ -111,7 +111,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
                 CHKERRQ(ierr);
     }
   } else { // if computeSIAVelocities == PETSC_FALSE
-    // do NOT zero out vuvbar[0],vuvbar[1]; they are used to communicate boundary
+    // do NOT zero out uvbar; they are used to communicate boundary
     // conditions to SSA calculation
     ierr = vel_bar.set(0.0); CHKERRQ(ierr);
     ierr = vel_basal.set(0.0); CHKERRQ(ierr);
@@ -147,7 +147,7 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     // * vel_bar
     // * u3
     // * v3
-    // * vuvbar[0,1], including w=1 ghosts
+    // * uvbar, including w=1 ghosts
     // updates:
     // * u3
     // * v3
@@ -164,7 +164,7 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     //   above is important
     ierr = correctSigma(); CHKERRQ(ierr);
     ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
-  }
+  } // end of if (use_ssa_velocity) { ...
 
 PetscLogEventEnd(ssaEVENT,0,0,0,0);
 PetscLogEventBegin(velmiscEVENT,0,0,0,0);

@@ -337,14 +337,15 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vLatitude); CHKERRQ(ierr);
 
   // u bar and v bar on staggered grid
-  ierr = vuvbar[0].create(grid, "vuvbar[0]", true); CHKERRQ(ierr);
-  ierr = vuvbar[0].set_attrs("internal", 
-            "vertically averaged ice velocity, on staggered grid offset in X direction, from SIA, in the X direction",
-	    "m s-1", ""); CHKERRQ(ierr);
-  ierr = vuvbar[1].create(grid, "vuvbar[1]", true); CHKERRQ(ierr);
-  ierr = vuvbar[1].set_attrs("internal", 
-            "vertically averaged ice velocity, on staggered grid offset in Y direction, from SIA, in the Y direction",
-	    "m s-1", ""); CHKERRQ(ierr);
+  ierr = uvbar.create(grid, "uvbar", true); CHKERRQ(ierr);
+  ierr = uvbar.set_attrs("internal", 
+			 "vertically averaged ice velocity, on staggered grid offset in X direction,"
+			 " from SIA, in the X direction",
+			 "m s-1", "", 0); CHKERRQ(ierr);
+  ierr = uvbar.set_attrs("internal", 
+			 "vertically averaged ice velocity, on staggered grid offset in Y direction,"
+			 " from SIA, in the Y direction",
+			 "m s-1", "", 1); CHKERRQ(ierr);
 
   // initial guesses of SSA velocities
   ierr = vel_ssa.create(grid, "bar_ssa", true, WIDE_STENCIL); // components are ubar_ssa and vbar_ssa

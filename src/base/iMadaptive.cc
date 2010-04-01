@@ -34,18 +34,17 @@ procedure computes the maximum of the diffusivity on the grid.
 See determineTimeStep() and massContExplicitStep().
  */
 PetscErrorCode IceModel::computeMaxDiffusivity(bool update_diffusivity_viewer) {
-  // assumes vuvbar holds correct deformational values of velocities
+  // assumes uvbar holds correct deformational values of velocities
 
   PetscErrorCode ierr;
 
   const PetscScalar DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE = 1.0e-4;
-  PetscScalar **h, **H, **uvbar[2], **D;
+  PetscScalar **h, **H, **D;
   PetscScalar Dmax = 0.0;
 
   ierr =        vh.get_array(h); CHKERRQ(ierr);
   ierr =        vH.get_array(H); CHKERRQ(ierr);
-  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
-  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+  ierr = uvbar.begin_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].get_array(D); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -59,8 +58,8 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool update_diffusivity_viewer) {
           const PetscScalar h_x=(h[i+1][j]-h[i-1][j])/(2.0*grid.dx),
                             h_y=(h[i][j+1]-h[i][j-1])/(2.0*grid.dy),
                             alpha = sqrt(PetscSqr(h_x) + PetscSqr(h_y));
-          const PetscScalar udef = 0.5 * (uvbar[0][i][j] + uvbar[0][i-1][j]),
-                            vdef = 0.5 * (uvbar[1][i][j] + uvbar[1][i][j-1]),
+          const PetscScalar udef = 0.5 * (uvbar(i,j,0) + uvbar(i-1,j,0)),
+                            vdef = 0.5 * (uvbar(i,j,1) + uvbar(i,j-1,1)),
                             Ubarmag = sqrt(PetscSqr(udef) + PetscSqr(vdef));
           const PetscScalar d =
                H[i][j] * Ubarmag/(alpha + DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE);
@@ -76,8 +75,7 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool update_diffusivity_viewer) {
   }
   ierr =        vh.end_access(); CHKERRQ(ierr);
   ierr =        vH.end_access(); CHKERRQ(ierr);  
-  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = uvbar.end_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
 
   if (update_diffusivity_viewer) { // view diffusivity (m^2/s)

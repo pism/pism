@@ -140,10 +140,9 @@ PetscErrorCode IceROSSModel::misc_setup() {
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
   ierr = vh.scale(1.0 - ice->rho / ocean_rho ); CHKERRQ(ierr);
 
-  // in preparation for SSA b.c. read; zero out vuvbar; SIA velocities will not
+  // in preparation for SSA b.c. read; zero out uvbar; SIA velocities will not
   //    be computed so this will stay
-  ierr = vuvbar[0].set(0.0); CHKERRQ(ierr);
-  ierr = vuvbar[1].set(0.0); CHKERRQ(ierr);
+  ierr = uvbar.set(0.0); CHKERRQ(ierr);
 
   // read SSA b.c. from file
   bool   ssaBCset;

@@ -20,9 +20,8 @@
 #include "grid.hh"
 #include "pism_const.hh"
 
-IceGrid::IceGrid(MPI_Comm c,
-                 PetscMPIInt r,
-                 PetscMPIInt s, const NCConfigVariable &config):
+IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
+		 const NCConfigVariable &config):
   com(c), rank(r), size(s) { 
 
   // The grid in symmetric with respect to zero by default.
@@ -82,6 +81,8 @@ IceGrid::IceGrid(MPI_Comm c,
   My  = static_cast<PetscInt>(config.get("grid_My"));
   Mz  = static_cast<PetscInt>(config.get("grid_Mz"));
   Mbz = static_cast<PetscInt>(config.get("grid_Mbz"));
+
+  Nx = Ny = 0;			// will be set to a correct value in createDA()
 
   initial_Mz = 0;		// will be set to a correct value in
 				// IceModel::check_maximum_thickness()
@@ -370,6 +371,33 @@ PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
   return 0;
 }
 
+void IceGrid::compute_nprocs() {
+
+  Nx = (PetscInt)(0.5 + sqrt(((double)Mx)*((double)size)/((double)My)));
+
+  if (Nx == 0) Nx = 1;
+
+  while (Nx > 0) {
+    Ny = size/Nx;
+    if (Nx*Ny == size) break;
+    Nx--;
+  }
+
+  if (Mx > My && Nx < Ny) {PetscInt _Nx = Nx; Nx = Ny; Ny = _Nx;}
+
+  if ((Mx / Nx) < 2) {		// note: integer division
+    PetscPrintf(com, "PISM ERROR: Can't distribute a %d x %d grid across %d processors!\n",
+		Mx, My, size);
+    PetscEnd();
+  }
+
+  if ((My / Ny) < 2) {		// note: integer division
+    PetscPrintf(com, "PISM ERROR: Can't distribute a %d x %d grid across %d processors!\n",
+		Mx, My, size);
+    PetscEnd();
+  }
+
+}
 
 //! Create the PETSc DA \c da2 for the horizontal grid.  Determine how the horizontal grid is divided among processors.
 /*!
@@ -400,10 +428,22 @@ PetscErrorCode IceGrid::createDA() {
   if (da2 != PETSC_NULL)
     SETERRQ(1, "IceGrid::createDA(): da2 != PETSC_NULL");
 
+  compute_nprocs();
+
   // Transpose:
   ierr = DACreate2d(com, DA_XYPERIODIC, DA_STENCIL_BOX,
-                    My, Mx, PETSC_DECIDE, PETSC_DECIDE, 1, WIDE_STENCIL,
-                    PETSC_NULL, PETSC_NULL, &da2); CHKERRQ(ierr);
+                    My, Mx,
+		    Ny, Nx,
+		    1, WIDE_STENCIL, // dof, stencil width
+                    PETSC_NULL, PETSC_NULL, &da2);
+  if (ierr != 0) {
+    PetscErrorCode ierr2;
+    ierr2 = verbPrintf(1, com,
+		       "PISM ERROR: can't distribute the %d x %d grid across %d processors...\n"
+		       "Exiting...\n", Mx, My, ierr);
+    CHKERRQ(ierr2);
+    PetscEnd();
+  }
 
   DALocalInfo info;
   ierr = DAGetLocalInfo(da2, &info); CHKERRQ(ierr);
@@ -428,7 +468,17 @@ PetscErrorCode IceGrid::createDA(PetscInt procs_x, PetscInt procs_y,
                     My, Mx,
 		    procs_y, procs_x,
 		    1, WIDE_STENCIL,
-                    ly, lx, &da2); CHKERRQ(ierr);
+                    ly, lx, &da2);
+  if (ierr != 0) {
+    PetscErrorCode ierr2;
+    ierr2 = verbPrintf(1, com,
+		       "PISM ERROR: can't distribute the %d x %d grid across %d processors...\n"
+		       "Exiting...\n", Mx, My, size);
+    CHKERRQ(ierr2);
+    PetscEnd();
+  }
+  
+ CHKERRQ(ierr);
 
   DALocalInfo info;
   ierr = DAGetLocalInfo(da2, &info); CHKERRQ(ierr);

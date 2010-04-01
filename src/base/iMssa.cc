@@ -426,7 +426,7 @@ by only differencing into the grid for points at the edge; see test I.)
 
 Note that the grid points with mask value MASK_SHEET correspond to the trivial 
 equations
-   \f[ \bar u_{ij} = \frac{uvbar[0][i-1][j] + uvbar[0][i][j]}{2}, \f]
+   \f[ \bar u_{ij} = \frac{uvbar(i-1,j,0) + uvbar(i,j,0)}{2}, \f]
 and similarly for \f$\bar v_{ij}\f$.  That is, the vertically-averaged horizontal
 velocity is already known for these points because it was computed (on the staggered
 grid) using the SIA.
@@ -442,7 +442,7 @@ PetscErrorCode IceModel::assembleSSARhs(Vec rhs) {
   const PetscScalar   scaling = 1.0e9;  // comparable to typical beta for an ice stream;
 
   PetscErrorCode  ierr;
-  PetscScalar     **uvbar[2], **taudx, **taudy;
+  PetscScalar     **taudx, **taudy;
 
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
@@ -453,17 +453,16 @@ PetscErrorCode IceModel::assembleSSARhs(Vec rhs) {
 
   /* rhs (= right-hand side) assembly loop */
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
-  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+  ierr = uvbar.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscInt J = 2*j;
       const PetscInt rowU = i*M + J;
       const PetscInt rowV = i*M + J+1;
       if (vMask.value(i,j) == MASK_SHEET) {
-        ierr = VecSetValue(rhs, rowU, scaling * 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]),
+        ierr = VecSetValue(rhs, rowU, scaling * 0.5*(uvbar(i-1,j,0) + uvbar(i,j,0)),
                            INSERT_VALUES); CHKERRQ(ierr);
-        ierr = VecSetValue(rhs, rowV, scaling * 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]),
+        ierr = VecSetValue(rhs, rowV, scaling * 0.5*(uvbar(i,j-1,1) + uvbar(i,j,1)),
                            INSERT_VALUES); CHKERRQ(ierr);
       } else {
 	// usual case: use already computed driving stress
@@ -473,8 +472,7 @@ PetscErrorCode IceModel::assembleSSARhs(Vec rhs) {
     }
   }
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = uvbar.end_access(); CHKERRQ(ierr);
 
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
@@ -734,7 +732,6 @@ is a function which decreases smoothly from 1 for \f$|v| = 0\f$ to 0 as
 PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
 
   PetscErrorCode ierr;
-  PetscScalar **uvbar[2];
   PetscScalar *u, *v;
   
   ierr = vMask.begin_access(); CHKERRQ(ierr);
@@ -746,8 +743,7 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
 
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
-  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+  ierr = uvbar.begin_access(); CHKERRQ(ierr);
 
   const PetscScalar inC_fofv = 1.0e-4 * PetscSqr(secpera),
                     outC_fofv = 2.0 / pi;
@@ -784,8 +780,8 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
         
         // also update ubar,vbar by adding SIA contribution, interpolated from 
         //   staggered grid
-        const PetscScalar ubarSIA = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]),
-                          vbarSIA = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
+        const PetscScalar ubarSIA = 0.5*(uvbar(i-1,j,0) + uvbar(i,j,0)),
+                          vbarSIA = 0.5*(uvbar(i,j-1,1) + uvbar(i,j,1));
         vel_bar(i,j).u = (addVels) ? fv * ubarSIA + omfv * uvssa[i][j].u : uvssa[i][j].u;
         vel_bar(i,j).v = (addVels) ? fv * vbarSIA + omfv * uvssa[i][j].v : uvssa[i][j].v;
 
@@ -799,8 +795,7 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   ierr = vel_basal.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = uvbar.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

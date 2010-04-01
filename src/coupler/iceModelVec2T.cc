@@ -63,14 +63,10 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const char my_short_name[
 
   ierr = IceModelVec2S::create(my_grid, my_short_name, false, width); CHKERRQ(ierr);
 
-  PetscInt       M, N, m, n;
-  ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
-                   PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-
   // create the 3D DA:
   ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR,
-		    n_records, N, M,
-		    1,         n, m,
+		    n_records, grid->My, grid->Mx,
+		    1,         grid->Ny, grid->Nx,
 		    1, 1,	// dof and stencil width
                     PETSC_NULL, PETSC_NULL, PETSC_NULL, &da3); CHKERRQ(ierr);
 

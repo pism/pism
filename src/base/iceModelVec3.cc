@@ -53,13 +53,6 @@ IceModelVec3::IceModelVec3(const IceModelVec3 &other)
 
 PetscErrorCode IceModelVec3::create_da(DA &result, PetscInt Mz) {
   PetscErrorCode ierr;
-  PetscInt       M, N, m, n;
-
-  ierr = DAGetInfo(grid->da2,
-		   PETSC_NULL,	       // dim
-		   &N, &M, PETSC_NULL, // N, M, P
-		   &n, &m, PETSC_NULL, // n, m, p
-                   PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
 
 #if PETSC_VERSION_MAJOR >= 3
   const PetscInt *lx = NULL, *ly = NULL;
@@ -69,8 +62,8 @@ PetscErrorCode IceModelVec3::create_da(DA &result, PetscInt Mz) {
 #endif
 
   ierr = DACreate3d(grid->com, DA_YZPERIODIC, DA_STENCIL_STAR,
-		    Mz, N, M,	// P, N, M
-		    1, n, m,	// p, n, m
+		    Mz, grid->My, grid->Mx, // P, N, M
+		    1,  grid->Ny, grid->Nx, // p, n, m
 		    1, s_width,	// dof, stencil_width
                     PETSC_NULL, ly, lx, // lz, ly, lx
 		    &result); CHKERRQ(ierr);
@@ -105,7 +98,7 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[],
   localp = local;
   name = my_name;
 
-  vars[0].init(my_name, my_grid, GRID_3D);
+  vars[0].init(my_name, my_grid, dims);
 
   //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
 
@@ -615,7 +608,6 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
   grid = &my_grid;
   dims = GRID_3D_BEDROCK;
   
-  PetscInt       M, N, m, n;
   PetscErrorCode ierr;
 
 #if PETSC_VERSION_MAJOR >= 3
@@ -625,11 +617,9 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
   PetscInt *lx = NULL, *ly = NULL;
 #endif
 
-  ierr = DAGetInfo(my_grid.da2, PETSC_NULL, &N, &M, PETSC_NULL, &n, &m, PETSC_NULL,
-                   PETSC_NULL, PETSC_NULL, PETSC_NULL, PETSC_NULL); CHKERRQ(ierr);
-  ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR,
-		    my_grid.Mbz, N, M,	// P, N, M
-		    1, n, m,		// p, n, m
+  ierr = DACreate3d(grid->com, DA_YZPERIODIC, DA_STENCIL_STAR,
+		    grid->Mbz, grid->My, grid->Mx, // P, N, M
+		    1, grid->Ny, grid->Nx,	   // p, n, m
 		    1, 1,		// dof, stencil width
                     PETSC_NULL, ly, lx, // lz, ly, lx
 		    &da); CHKERRQ(ierr);
@@ -638,7 +628,7 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
 
   localp = false;
 
-  vars[0].init(name, my_grid, GRID_3D_BEDROCK);
+  vars[0].init(name, my_grid, dims);
 
   //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
 

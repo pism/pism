@@ -286,7 +286,7 @@ PetscErrorCode IceCalvBCModel::assembleSSARhs(Vec rhs) {
   PetscErrorCode  ierr;
   const PetscInt  M=2*grid.My;
 
-  PetscScalar  **h, **H, **uvbar[2], **taudx, **taudy,
+  PetscScalar  **h, **H, **taudx, **taudy,
                **cfmask, **ncf[2];
 
   double ocean_rho = config.get("sea_water_density");
@@ -311,8 +311,7 @@ PetscErrorCode IceCalvBCModel::assembleSSARhs(Vec rhs) {
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vh.get_array(h); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
-  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+  ierr = uvbar.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscInt J = 2*j,
@@ -321,9 +320,9 @@ PetscErrorCode IceCalvBCModel::assembleSSARhs(Vec rhs) {
       if (vMask.value(i,j) == MASK_SHEET) {
         // non-SSA case: set the velocity; in some cases this is Dirichlet cond
         //   for SSA region
-        ierr = VecSetValue(rhs, rowU, 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]),
+        ierr = VecSetValue(rhs, rowU, 0.5*(uvbar(i-1,j,0) + uvbar(i,j,0)),
                            INSERT_VALUES); CHKERRQ(ierr);
-        ierr = VecSetValue(rhs, rowV, 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]),
+        ierr = VecSetValue(rhs, rowV, 0.5*(uvbar(i,j-1,1) + uvbar(i,j,1)),
                            INSERT_VALUES); CHKERRQ(ierr);
       } else if ( (vMask.value(i,j) == MASK_FLOATING)
                   && (cfmask[i][j] > 0.01) && (cfmask[i][j] < 0.99) ) {
@@ -343,8 +342,7 @@ PetscErrorCode IceCalvBCModel::assembleSSARhs(Vec rhs) {
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vh.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = uvbar.end_access(); CHKERRQ(ierr);
 
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);

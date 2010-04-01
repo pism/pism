@@ -219,40 +219,37 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   ierr = vbcflag.regrid(filename, lic, true); CHKERRQ(ierr);
 
   // now use values in vel_bar, not equal to missing_value, to set boundary conditions by
-  // setting corresponding locations to MASK_SHEET and setting vuvbar[0|1] appropriately;
+  // setting corresponding locations to MASK_SHEET and setting uvbar appropriately;
   // set boundary condition which will apply to finite difference system:
   //    staggered grid velocities at MASK_SHEET points which neighbor MASK_FLOATING points
-  ierr = vuvbar[0].set(0.0); CHKERRQ(ierr);
-  ierr = vuvbar[1].set(0.0); CHKERRQ(ierr);
-  PetscScalar **mask, **bc, **uvbar[2];
+  ierr = uvbar.set(0.0); CHKERRQ(ierr);
+  PetscScalar **mask, **bc;
   ierr = vbcflag.get_array(bc); CHKERRQ(ierr);    
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr = vel_bar.begin_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
-  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+  ierr = uvbar.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (PetscAbs(bc[i][j] - 1.0) < 0.1) {
         // assume it is really a boundary condition location
-        uvbar[0][i-1][j] = vel_bar(i,j).u;
-        uvbar[0][i][j] = vel_bar(i,j).u;
-        uvbar[1][i][j-1] = vel_bar(i,j).v;
-        uvbar[1][i][j] = vel_bar(i,j).v;
+        uvbar(i-1,j,0) = vel_bar(i,j).u;
+        uvbar(i,j,0) = vel_bar(i,j).u;
+        uvbar(i,j-1,1) = vel_bar(i,j).v;
+        uvbar(i,j,1) = vel_bar(i,j).v;
         mask[i][j] = MASK_SHEET;  // assure that shelf/stream equations not active at this point
       } else {
-        uvbar[0][i-1][j] = 0.0;
-        uvbar[0][i][j] = 0.0;
-        uvbar[1][i][j-1] = 0.0;
-        uvbar[1][i][j] = 0.0;        
+        uvbar(i-1,j,0) = 0.0;
+        uvbar(i,j,0) = 0.0;
+        uvbar(i,j-1,1) = 0.0;
+        uvbar(i,j,1) = 0.0;        
       }
     }
   }
   ierr =   vbcflag.end_access(); CHKERRQ(ierr);    
   ierr =     vMask.end_access(); CHKERRQ(ierr);
   ierr =   vel_bar.end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = uvbar.end_access(); CHKERRQ(ierr);
 
   // update viewers
   ierr = update_viewers(); CHKERRQ(ierr);

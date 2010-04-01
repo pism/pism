@@ -190,7 +190,7 @@ is computed in this method).
 
 At the end of this routine the value of \f$D\f$ and of the <em>deformational part of</em> 
 the vertically-averaged horizontal velocity, namely \f$D \nabla h\f$, is known at all staggered 
-grid points.  It is stored in the \c Vec pair called \c vuvbar.
+grid points.  It is stored in an IceModelVec2Stag called \c uvbar.
 
 The scheme used for this is
 the one first proposed in the context of ice sheets by Mahaffy (1976).  That is, the method 
@@ -215,7 +215,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   double enhancement_factor = config.get("enhancement_factor");
   double constant_grain_size = config.get("constant_grain_size");
 
-  PetscScalar **h_x[2], **h_y[2], **H, **uvbar[2];
+  PetscScalar **h_x[2], **h_y[2], **H;
 
   PetscScalar *ageij, *ageoffset;
 
@@ -235,8 +235,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
   ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
   ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
-  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
-  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+  ierr = uvbar.begin_access(); CHKERRQ(ierr);
 
   if (usetau3) {
     ierr = tau3.begin_access(); CHKERRQ(ierr);
@@ -332,14 +331,14 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           const PetscScalar  Dfoffset = J[ks] + (thickness - grid.zlevels[ks]) * I[ks];
 
           // vertically-averaged SIA-only velocity, sans sliding;
-          //   note uvbar[0][i][j] is  u  at right staggered point (i+1/2,j)
-          //   but uvbar[1][i][j] is  v  at up staggered point (i,j+1/2)
-          uvbar[o][i][j] = - Dfoffset * slope / thickness;
+          //   note uvbar(i,j,0) is  u  at right staggered point (i+1/2,j)
+          //   but uvbar(i,j,1) is  v  at up staggered point (i,j+1/2)
+          uvbar(i,j,o) = - Dfoffset * slope / thickness;
          
           ierr = Istag3[o].setInternalColumn(i, j, I); CHKERRQ(ierr);
           ierr = Sigmastag3[o].setInternalColumn(i, j, Sigma); CHKERRQ(ierr);
         } else {  // zero thickness case
-          uvbar[o][i][j] = 0;
+          uvbar(i,j,o) = 0;
           ierr = Istag3[o].setColumn(i,j,0.0); CHKERRQ(ierr);
           ierr = Sigmastag3[o].setColumn(i,j,0.0); CHKERRQ(ierr);
         } 
@@ -348,8 +347,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   } // i
 
   ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = uvbar.end_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
@@ -369,10 +367,8 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   delete [] delta;   delete [] I;   delete [] J;   delete [] K;   delete [] Sigma;
 
 #ifndef LOCAL_GHOST_UPDATE
-    ierr = vuvbar[0].beginGhostComm();
-    ierr = vuvbar[0].endGhostComm();
-    ierr = vuvbar[1].beginGhostComm();
-    ierr = vuvbar[1].endGhostComm();
+  ierr = uvbar.beginGhostComm(); CHKERRQ(ierr);
+  ierr = uvbar.endGhostComm(); CHKERRQ(ierr);
 
     ierr = Sigmastag3[0].beginGhostComm(); CHKERRQ(ierr);
     ierr = Sigmastag3[1].beginGhostComm(); CHKERRQ(ierr);
@@ -481,14 +477,14 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
 //! Average staggered-grid vertically-averaged horizontal velocity onto regular grid.
 /*! 
 At the end of velocitySIAStaggered() the vertically-averaged horizontal velocity 
-components vuvbar[0],vuvbar[1] from deformation are known on the regular grid.
+components from deformation (stored in uvbar) are known on the regular grid.
 At the end of basalSIA() the basal sliding from an SIA-type sliding rule is in
 vel_basal.  This procedure averages the former onto the regular grid and adds
 the sliding velocity.
 
 That is, this procedure computes the SIA "first guess" at the
 vertically-averaged horizontal velocity.  Therefore the values in \c Vec\ s
-\c vel_bar are merely tentative.  The values in \c vuvbar are, however,
+\c vel_bar are merely tentative.  The values in \c uvbar are, however,
 PISM's estimate of \e deformation by shear in vertical planes.
 
 Note that communication of ghosted values must occur between calling
@@ -499,20 +495,18 @@ horizontalVelocitySIARegular() and in vertVelocityFromIncompressibility().
  */
 PetscErrorCode IceModel::velocities2DSIAToRegular() {  
   PetscErrorCode ierr;
-  PetscScalar **uvbar[2];
 
   double mu_sliding = config.get("mu_sliding");
 
   ierr = vel_bar.begin_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
-  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+  ierr = uvbar.begin_access(); CHKERRQ(ierr);
   if (mu_sliding == 0.0) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         // compute ubar,vbar on regular grid by averaging deformational onto
         //   staggered grid
-        vel_bar(i,j).u = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]);
-        vel_bar(i,j).v = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]);
+        vel_bar(i,j).u = 0.5*(uvbar(i-1,j,0) + uvbar(i,j,0));
+        vel_bar(i,j).v = 0.5*(uvbar(i,j-1,1) + uvbar(i,j,1));
       }
     }
   } else {
@@ -522,15 +516,14 @@ PetscErrorCode IceModel::velocities2DSIAToRegular() {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
         // as above, adding basal on regular grid
-        vel_bar(i,j).u = 0.5*(uvbar[0][i-1][j] + uvbar[0][i][j]) + bvel[i][j].u;
-        vel_bar(i,j).v = 0.5*(uvbar[1][i][j-1] + uvbar[1][i][j]) + bvel[i][j].v;
+        vel_bar(i,j).u = 0.5*(uvbar(i-1,j,0) + uvbar(i,j,0)) + bvel[i][j].u;
+        vel_bar(i,j).v = 0.5*(uvbar(i,j-1,1) + uvbar(i,j,1)) + bvel[i][j].v;
       }
     }
     ierr = vel_basal.end_access(); CHKERRQ(ierr);
   }
-  ierr =   vel_bar.end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = vel_bar.end_access(); CHKERRQ(ierr);
+  ierr =   uvbar.end_access(); CHKERRQ(ierr);
   return 0;
 }
 

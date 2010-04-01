@@ -306,7 +306,7 @@ Here \f$D\f$ is the (positive, scalar) effective diffusivity of the SIA and
 The methods used are first-order explicit in time.  The derivatives in 
 \f$\nabla \cdot \mathbf{q}\f$ are computed by centered finite difference methods.  In the case 
 of the SIA contribution, the value of \f$D \nabla h\f$ is already stored in 
-\c Vec \c vuvbar on the staggered grid by velocitySIAStaggered().  It is differenced in 
+\c IceModelVec2Stag \c uvbar on the staggered grid by velocitySIAStaggered().  It is differenced in 
 the standard centered manner (with averaging of the thickness onto the staggered grid).
 
 Basal sliding may come from SSA or from a sliding law in SIA (the latter is usually inferior as a
@@ -347,12 +347,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
 
-  PetscScalar **uvbar[2], **bmr_gnded;
+  PetscScalar **bmr_gnded;
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vbmr.get_array(bmr_gnded); CHKERRQ(ierr);
-  ierr = vuvbar[0].get_array(uvbar[0]); CHKERRQ(ierr);
-  ierr = vuvbar[1].get_array(uvbar[1]); CHKERRQ(ierr);
+  ierr = uvbar.begin_access(); CHKERRQ(ierr);
   ierr = vel_basal.begin_access(); CHKERRQ(ierr);
   ierr = acab.begin_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
@@ -400,8 +399,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
       //    Q = - D grad h = Ubar H    in non-sliding case
       PetscScalar divQ = 0.0;
       if (computeSIAVelocities == PETSC_TRUE) {
-        divQ =  (uvbar[0][i][j] * He - uvbar[0][i-1][j] * Hw) / dx
-              + (uvbar[1][i][j] * Hn - uvbar[1][i][j-1] * Hs) / dy;
+        divQ =  (uvbar(i,j,0) * He - uvbar(i-1,j,0) * Hw) / dx
+              + (uvbar(i,j,1) * Hn - uvbar(i,j-1,1) * Hs) / dy;
       }
 
       // basal sliding part: split  Div(v H)  by product rule into  v . grad H
@@ -446,8 +445,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   ierr = vbmr.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[0].end_access(); CHKERRQ(ierr);
-  ierr = vuvbar[1].end_access(); CHKERRQ(ierr);
+  ierr = uvbar.end_access(); CHKERRQ(ierr);
   ierr = vel_basal.end_access(); CHKERRQ(ierr);
   ierr = vel_ssa.end_access(); CHKERRQ(ierr);
   ierr = acab.end_access(); CHKERRQ(ierr);
