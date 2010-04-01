@@ -338,6 +338,9 @@ netcdf pism_config {
     pism_config:warm_base_flux_enthalpy_fraction = 0.0001;
     pism_config:warm_base_flux_enthalpy_fraction_doc = "pure number; in enthalpy model, if base of ice is warmer than pressure-melting, but the enthalpy is within this fraction of L (latent heat of fusion), then some heat flux enters the ice";
 
+    pism_config:cold_base_refreeze_rate = 6.33775292308256e-10;
+    pism_config:cold_base_refreeze_rate_doc = "m s-1; = 2 cm/yr; in enthalpy model, if base of ice is colder than pressure-melting, but there is positive-thickness stored basal water, then ice is added back at this rate";
+
     pism_config:fresh_water_density = 1000.0;
     pism_config:fresh_water_density_doc = "kg m-3;";
    

@@ -360,6 +360,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
     L         = config.get("water_latent_heat_fusion"),  // J kg-1
     omega_max = config.get("liquid_water_fraction_max"), // pure
     warm_dE   = config.get("warm_base_flux_enthalpy_fraction") * L,
+    refreeze_rate = config.get("cold_base_refreeze_rate"), // m s-1
     hmelt_max = config.get("hmelt_max");                 // m
 
   PetscScalar *Enthnew, *Tbnew;
@@ -607,7 +608,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           rhs = (1.0 - alpha) * rhs + alpha * ( C * (hf_base + vRb(i,j)) );
           a0  = (1.0 - alpha) * a0  + alpha * 1.0,
           a1  = (1.0 - alpha) * a1  + alpha * (-1.0);
-          vbmr(i,j) *= 1.0 - alpha;
+
+          if (!is_floating)    vbmr(i,j) *= 1.0 - alpha;
 
           ierr = iosys.setLevel0EqnThisColumn(a0,a1,rhs); CHKERRQ(ierr);
         }
@@ -675,6 +677,20 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           // limit Hmelt to be in [0.0, hmelt_max]
           // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO INFINITY AND BEYOND)!!
           vHmelt(i,j) = PetscMax(0.0, PetscMin(hmelt_max, Hmeltnew) );
+
+          // refreeze case: if grounded base has become cold then put back ice at
+          //   externally-set maximum rate; basal enthalpy not altered
+          if ( (Enthnew[0] < iosys.Enth_s[0]) && (vHmelt(i,j) > 0.0) ) {
+            if (vHmelt(i,j) > refreeze_rate * dtTempAge) {
+              vbmr(i,j) -= refreeze_rate;
+              vHmelt(i,j) -= refreeze_rate * dtTempAge;
+            } else {
+              // in this case we refreeze all available Hmelt
+              vbmr(i,j) -= vHmelt(i,j) / dtTempAge;
+              vHmelt(i,j) = 0.0;
+            }
+          }
+
         }
       }
 
