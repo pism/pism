@@ -1,6 +1,10 @@
 #!/usr/bin/env python
-from numpy import *
-# This script is an implementation of the SOR method with Chebyshev
+
+## @package fill_missing
+# \brief This script is an implementation of the SOR method with Chebyshev
+# acceleration for the Laplace equation.
+#
+# \details This script is an implementation of the SOR method with Chebyshev
 # acceleration for the Laplace equation, as described in 'Numerical Recipes in
 # Fortran: the art of scientific computing' by William H. Press et al -- 2nd
 # edition.
@@ -14,56 +18,61 @@ from numpy import *
 
 # CK, 08/12/2008
 
+from numpy import *
+
+## Computes \f$\rho_{Jacobi}\f$, see formula (19.5.24), page 858.
 def rho_jacobi((J,L)):
-    """Computes $\rho_{Jacobi}$, see formula (19.5.24), page 858."""
+
     return (cos(pi/J) + cos(pi/L))/2
 
-def fix_indices(Is, Js, (M, N)):
-    """This makes the stencil wrap around the grid. It is unclear if this should be
-    done, but it allows using a 4-point stencil for all points, even if they
-    are on the edge of the grid (otherwise we need to use three points on the
-    sides and two in the corners).
+## This makes the stencil wrap around the grid. It is unclear if this should be
+#  done, but it allows using a 4-point stencil for all points, even if they
+#  are on the edge of the grid (otherwise we need to use three points on the
+#  sides and two in the corners).
+#
+#  Is and Js are arrays with row- and column-indices, M and N are the grid
+#  dimensions.
 
-    Is and Js are arrays with row- and column-indices, M and N are the grid
-    dimensions.
-    """
+def fix_indices(Is, Js, (M, N)):
+
     Is[Is ==  M] = 0
     Is[Is == -1] = M-1
     Js[Js ==  N] = 0
     Js[Js == -1] = N-1
     return (Is, Js)
 
+## \brief laplace solves the Laplace equation
+# \details laplace solves the Laplace equation using the SOR method with Chebyshev
+#    acceleration as described in 'Numerical Recipes in Fortran: the art of
+#    scientific computing' by William H. Press et al -- 2nd edition, section
+#    19.5.
+#
+#    data is a 2-d array (computation grid)
+#
+#    mask is a boolean array; setting mask to 'data == 0', for example, results
+#         in only modifying points where 'data' is zero, all the other points
+#         are left as is. Intended use: if in an array the value of -9999.0
+#         signifies a missing value, then setting mask to 'data == -9999.0'
+#         fills in all the missing values.
+#
+#    eps1 is the first stopping criterion: the iterations stop if the norm of
+#         residual becomes less than eps1*initial_norm, where 'initial_norm' is
+#         the initial norm of residual. Setting eps1 to zero or a negative
+#         number disables this stopping criterion.
+#
+#    eps2 is the second stopping criterion: the iterations stop if the absolute
+#         value of the maximal change in value between successive iterations is
+#         less than eps2. Setting eps2 to zero or a negative number disables
+#         this stopping criterion.
+#
+#    initial_guess is the initial guess used for all the values in the domain;
+#         the default is 'mean', i.e. use the mean of all the present values as
+#         the initial guess for missing values. initial_guess has to be 'mean'
+#         or a number.
+#
+#    max_iter is the maximum number of iterations allowed. The default is 10000.
 def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
-    """laplace solves the Laplace equation using the SOR method with Chebyshev
-    acceleration as described in 'Numerical Recipes in Fortran: the art of
-    scientific computing' by William H. Press et al -- 2nd edition, section
-    19.5.
 
-    data is a 2-d array (computation grid)
-
-    mask is a boolean array; setting mask to 'data == 0', for example, results
-         in only modifying points where 'data' is zero, all the other points
-         are left as is. Intended use: if in an array the value of -9999.0
-         signifies a missing value, then setting mask to 'data == -9999.0'
-         fills in all the missing values.
-
-    eps1 is the first stopping criterion: the iterations stop if the norm of
-         residual becomes less than eps1*initial_norm, where 'initial_norm' is
-         the initial norm of residual. Setting eps1 to zero or a negative
-         number disables this stopping criterion.
-
-    eps2 is the second stopping criterion: the iterations stop if the absolute
-         value of the maximal change in value between successive iterations is
-         less than eps2. Setting eps2 to zero or a negative number disables
-         this stopping criterion.
-
-    initial_guess is the initial guess used for all the values in the domain;
-         the default is 'mean', i.e. use the mean of all the present values as
-         the initial guess for missing values. initial_guess has to be 'mean'
-         or a number.
-
-    max_iter is the maximum number of iterations allowed. The default is 10000.
-    """
     dimensions = data.shape
     rjac = rho_jacobi(dimensions)
     i, j = indices(dimensions)
@@ -199,7 +208,7 @@ if __name__ == "__main__":
        print "Note: %s was not modified." % output_filename
        exit(-1)
 
-    # add history global attribute (after checking if present)
+    ## add history global attribute (after checking if present)
     historysep = ' '
     historystr = asctime() + ': ' + historysep.join(argv) + '\n'
     if 'history' in nc.ncattrs():

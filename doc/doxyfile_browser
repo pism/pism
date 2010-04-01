@@ -203,7 +203,7 @@ OPTIMIZE_OUTPUT_FOR_C  = NO
 # Java. For instance, namespaces will be presented as packages, qualified
 # scopes will look different, etc.
 
-OPTIMIZE_OUTPUT_JAVA   = NO
+OPTIMIZE_OUTPUT_JAVA   = YES
 
 # Set the OPTIMIZE_FOR_FORTRAN tag to YES if your project consists of Fortran
 # sources only. Doxygen will then generate output that is more tailored for
@@ -591,7 +591,8 @@ INPUT                  = config_doc.txt \
                          ../src/earth/ \
                          ../src/verif/ \
                          ../src/eismint/ \
-                         ../src/ismip/
+                         ../src/ismip/ \
+			 ../util/
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
