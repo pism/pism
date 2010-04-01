@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Constantine Khroulev
+// Copyright (C) 2009, 2010 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -175,7 +175,6 @@ DiagnosticTimeseries::DiagnosticTimeseries(IceGrid *g, string name, string dimen
 
   buffer_size = 10000;		// just a default
   start = 0;
-  output_filename = name + ".nc";
 }
 
 DiagnosticTimeseries::DiagnosticTimeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_name)
@@ -183,7 +182,6 @@ DiagnosticTimeseries::DiagnosticTimeseries(MPI_Comm c, PetscMPIInt r, string nam
 
   buffer_size = 10000;		// just a default
   start = 0;
-  output_filename = name + ".nc";
 }
 
 //! Destructor; makes sure that everything is written to a file.
@@ -248,6 +246,11 @@ PetscErrorCode DiagnosticTimeseries::flush() {
   PetscErrorCode ierr;
   NCTool nc(com, rank);
   int len;
+
+  // return cleanly if this DiagnosticTimeseries object was created but never
+  // used:
+  if (output_filename.empty())
+    return 0;
 
   // Get the length of the time dimension; if other time-series object was
   // written at this time-step already, len will be greater than start, so we
