@@ -44,12 +44,11 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
 
   doAdaptTimeStep = PETSC_TRUE;
   basal = NULL;
-  top0ctx = PETSC_NULL;
-  g2natural = PETSC_NULL;
   CFLviolcount = 0;
 
   surface = NULL;
-  ocean = NULL;
+  ocean   = NULL;
+  beddef  = NULL;
 
   EC = NULL;
 
@@ -95,6 +94,7 @@ IceModel::~IceModel() {
 
   delete ocean;
   delete surface;
+  delete beddef;
 
   delete basal;
   delete EC;
@@ -413,10 +413,6 @@ PetscErrorCode IceModel::createVecs() {
 PetscErrorCode IceModel::deallocate_internal_objects() {
   PetscErrorCode ierr;
 
-  ierr = bedDefCleanup(); CHKERRQ(ierr);
-
-  ierr = VecDestroy(g2); CHKERRQ(ierr);
-
   ierr = KSPDestroy(SSAKSP); CHKERRQ(ierr);
   ierr = MatDestroy(SSAStiffnessMatrix); CHKERRQ(ierr);
   ierr = VecDestroy(SSAX); CHKERRQ(ierr);
@@ -443,7 +439,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 			      bool do_energy,
 			      bool do_age,
 			      bool do_skip,
-			      bool do_bed_deformation,
 			      bool use_ssa_when_grounded) {
   PetscErrorCode ierr;
 
@@ -484,8 +479,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   PetscLogEventBegin(beddefEVENT,0,0,0,0);
 
   // compute bed deformation, which only depends on current thickness and bed elevation
-  if (do_bed_deformation) {
-    ierr = bedDefStepIfNeeded(); CHKERRQ(ierr); // prints "b" or "$" as appropriate
+  if (beddef) {
+    ierr = bed_def_step(); CHKERRQ(ierr); // prints "b" or "$" as appropriate
   } else stdout_flags += " ";
     
   PetscLogEventEnd(beddefEVENT,0,0,0,0);
@@ -595,7 +590,6 @@ PetscErrorCode IceModel::run() {
     do_temp = config.get_flag("do_temp"),
     do_age = config.get_flag("do_age"),
     do_skip = config.get_flag("do_skip"),
-    do_bed_deformation = config.get_flag("do_bed_deformation"),
     use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
 
 #if PETSC_VERSION_MAJOR >= 3
@@ -629,7 +623,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
 				       // greater than start_year
 
   ierr = step(do_mass_conserve, do_temp, do_age,
-	      do_skip, do_bed_deformation, use_ssa_when_grounded); CHKERRQ(ierr);
+	      do_skip, use_ssa_when_grounded); CHKERRQ(ierr);
 
   // print verbose messages according to user-set verbosity
   if (tmp_verbosity > 2) {
@@ -679,7 +673,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
     maxdt_temporary = -1.0;
 
     ierr = step(do_mass_conserve, do_temp, do_age,
-		do_skip, do_bed_deformation, use_ssa_when_grounded); CHKERRQ(ierr);
+		do_skip, use_ssa_when_grounded); CHKERRQ(ierr);
 
     // report a summary for major steps or the last one
     bool updateAtDepth = (skipCountDown == 0);
@@ -749,42 +743,15 @@ PetscErrorCode IceModel::diagnosticRun() {
 
 //! Manage the initialization of the IceModel object.
 /*!
-The IceModel initialization sequence is this:
-  
-   1) Initialize the computational grid.
-
-   2) Process the options.
-
-   3) Memory allocation.
-
-   4) Initialize IceFlowLaw and (possibly) other physics.
-
-   5) Initialize PDD and forcing.
-
-   6) Fill the model state variables (from a PISM output file, from a
-   bootstrapping file using some modeling choices or using formulas). Regrid.
-
-   8) Report grid parameters.
-
-   9) Allocate internal objects: SSA tools and work vectors. Some tasks in the
-   next (tenth) item (bed deformation setup, for example) might need this.
-
-   10) Miscellaneous stuff: set up the bed deformation model, initialize the
-   basal till model, initialize snapshots.
-
 Please see the documenting comments of the functions called below to find 
 explanations of their intended uses.
-
-The following flow-chart illustrates the process.
-
-\dotfile initialization-sequence.dot IceModel initialization sequence
  */
 PetscErrorCode IceModel::init() {
   PetscErrorCode ierr;
 
   ierr = PetscOptionsBegin(grid.com, "", "PISM options", ""); CHKERRQ(ierr);
 
-  // Build PISM with PISM_WAIT_FOR_GDB defined and run with -wait_for_gdb to
+  // Build PISM with -DPISM_WAIT_FOR_GDB=1 and run with -wait_for_gdb to
   // make it wait for a connection.
 #ifdef PISM_WAIT_FOR_GDB
   bool wait_for_gdb = false;
@@ -793,39 +760,43 @@ PetscErrorCode IceModel::init() {
     ierr = pism_wait_for_gdb(grid.com, 0); CHKERRQ(ierr);
   }
 #endif
+  //! The IceModel initialization sequence is this:
 
-  // 1) Initialize the computational grid:
+  //! 1) Initialize the computational grid:
   ierr = grid_setup(); CHKERRQ(ierr);
 
-  // 2) Process the options:
+  //! 2) Process the options:
   ierr = setFromOptions(); CHKERRQ(ierr);
 
-  // 3) Memory allocation:
+  //! 3) Memory allocation:
   ierr = createVecs(); CHKERRQ(ierr);
 
-  // 4) Initialize the IceFlowLaw and (possibly) other physics.
+  //! 4) Initialize the IceFlowLaw and (possibly) other physics.
   ierr = init_physics(); CHKERRQ(ierr);
 
-  // 5) Initialize atmosphere and ocean couplers:
+  //! 5) Initialize atmosphere and ocean couplers:
   ierr = init_couplers(); CHKERRQ(ierr);
 
-  // 6) Fill the model state variables (from a PISM output file, from a
-  // bootstrapping file using some modeling choices or using formulas).
-  // Calls IceModel::regrid()
+  //! 6) Fill the model state variables (from a PISM output file, from a
+  //! bootstrapping file using some modeling choices or using formulas). Calls
+  //! IceModel::regrid()
   ierr = model_state_setup(); CHKERRQ(ierr);
 
-  // 8) Report grid parameters:
+  //! 7) Report grid parameters:
   ierr = report_grid_parameters(); CHKERRQ(ierr);
 
-  // 9) Allocate SSA tools and work vectors:
+  //! 8) Allocate SSA tools and work vectors:
   ierr = allocate_internal_objects(); CHKERRQ(ierr);
 
-  // 10) Miscellaneous stuff: set up the bed deformation model, initialize the
-  // basal till model, initialize snapshots. This has to happen *after*
-  // regridding.
+  //! 9) Miscellaneous stuff: set up the bed deformation model, initialize the
+  //! basal till model, initialize snapshots. This has to happen *after*
+  //! regridding.
   ierr = misc_setup();
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  //! The following flow-chart illustrates the process.
+  //! \dotfile initialization-sequence.dot IceModel initialization sequence
 
   return 0; 
 }

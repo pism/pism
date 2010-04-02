@@ -1,9 +1,13 @@
+#include "PISMBedDef.hh"
 
 PISMBedDef::PISMBedDef(IceGrid &g, const NCConfigVariable &conf)
   : PISMComponent(g, conf) {
 
-  thk = NULL;
-  topg = NULL;
+  thk    = NULL;
+  topg   = NULL;
+  uplift = NULL;
+
+  t_beddef_last = GSL_NAN;
 
   PetscErrorCode ierr = pismbeddef_allocate();
   if (ierr != 0) {
@@ -14,39 +18,38 @@ PISMBedDef::PISMBedDef(IceGrid &g, const NCConfigVariable &conf)
 
 PetscErrorCode PISMBedDef::pismbeddef_allocate() {
   PetscErrorCode ierr;
-  // These IceModelVecs are automatically de-allocated by the PISMBedDef
-  // destructor.
+  PetscInt WIDE_STENCIL = 2;
 
-  // "local" because topg is local (this makes some code simpler)
-  ierr = dtopgdt.create(grid, "dbdt", true); CHKERRQ(ierr);
-  ierr = dtopgdt.set_attrs("model_state", "bedrock uplift rate",
-			   "m s-1", "tendency_of_bedrock_altitude"); CHKERRQ(ierr);
-  ierr = dtopgdt.set_glaciological_units("m year-1");
-  dtopgdt.write_in_glaciological_units = true;
-  
-  ierr = thk_last(grid, "beddef_thk_last", true); CHKERRQ(ierr);
-  // attributes are not set because this field is never read or written
-
-  ierr = topg_last(grid, "topg", true); CHKERRQ(ierr);
+  ierr = topg_last.create(grid, "topg", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_last.set_attrs("model_state", "bedrock surface elevation",
 			     "m", "bedrock_altitude"); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode PISMBedDef::write_fields(set<string> vars, PetscReal t_years,
-					PetscReal dt_years, string filename) {
+PetscErrorCode PISMBedDef::init(PISMVars &vars) {
+
+  t_beddef_last = grid.year;
+
+  thk = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
+  if (!thk) SETERRQ(1, "ERROR: thk is not available");
+
+  topg = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
+  if (!topg) SETERRQ(1, "ERROR: topg is not available");
+
+  uplift = dynamic_cast<IceModelVec2S*>(vars.get("tendency_of_bedrock_altitude"));
+  if (!uplift) SETERRQ(1, "ERROR: uplift is not available");
+  
+  return 0;
+}
+
+//! Compute bed uplift.
+PetscErrorCode PISMBedDef::compute_uplift(PetscScalar dt_beddef) {
   PetscErrorCode ierr;
 
-  ierr = update(t_years, 0); CHKERRQ(ierr);
-
-  if (vars.find("dbdt") != vars.end()) {
-    ierr = dtopgdt.write(filename.c_str()); CHKERRQ(ierr);
-  }
-
-  if (vars.find("topg") != vars.end()) {
-    ierr = topg_last.write(filename.c_str()); CHKERRQ(ierr);
-  }
+  ierr = topg->add(-1, topg_last, *uplift); CHKERRQ(ierr);
+  //! uplift = (topg - topg_last) / dt
+  ierr = uplift->scale(1.0 / (dt_beddef * secpera)); CHKERRQ(ierr); 
 
   return 0;
 }

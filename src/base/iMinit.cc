@@ -323,10 +323,11 @@ PetscErrorCode IceModel::model_state_setup() {
   // Check consistency of geometry after initialization:
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
-#if 0
-  // allocate and setup bed deformation model
-  ierr = bedDefSetup(); CHKERRQ(ierr);
-#endif
+  // Initialize a bed deformation model (if needed); this should go after
+  // the regrid() call.
+  if (beddef) {
+    ierr = beddef->init(variables); CHKERRQ(ierr);
+  }
 
 #if 1
   // init basal till model, possibly inverting for phi, if desired;
@@ -434,6 +435,8 @@ PetscErrorCode IceModel::init_physics() {
   ierr = ice->setFromOptions(); CHKERRQ(ierr);
   ierr = ice->printInfo(4);CHKERRQ(ierr);
 
+  ierr = bed_def_setup(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -463,9 +466,6 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   PetscErrorCode ierr;
   PetscInt WIDE_STENCIL = MY_WIDE_STENCIL;
 
-  // a global Vec is needed for things like viewers and comm to proc zero
-  ierr = DACreateGlobalVector(grid.da2, &g2); CHKERRQ(ierr);
-
   // setup (classical) SSA tools
   const PetscInt M = 2 * grid.Mx * grid.My;
   ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, M, M,
@@ -488,6 +488,7 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   }
 
   ierr = vel_ssa_old.create(grid, "bar_ssa_old", true, WIDE_STENCIL); CHKERRQ(ierr);
+  // components are ubar_ssa_old and vbar_ssa_old
 
   // 3d dedicated work vectors
   if (config.get_flag("do_cold_ice_methods")) {
@@ -541,25 +542,6 @@ PetscErrorCode IceModel::misc_setup() {
   // by now we already know if SSA velocities in the output will be valid:
   global_attributes.set_flag("pism_ssa_velocities_are_valid",
 			     config.get_flag("use_ssa_velocity"));
-
-#if 1
-  // allocate and setup bed deformation model
-
-  // FIXME: this should be moved to IceModel::model_state_setup(), but it uses
-  // IceModel::g2, the internal global Vec allocated in
-  // IceModel::allocate_internal_objects(), which is called after
-  // model_state_setup().
-
-  // g2 has only two uses (scatters to processor zero for the bed deformation
-  // model and diagnostic viewers) and we should get rid of it. One solution
-  // would be: a) modularize the bed deformation code so that memory
-  // allocation is separated from the bed uplift pre-initialization and b) make
-  // IceModelVec2Ss allocate their own Vecs for viewing.
-  // 
-  // Note that the bed deformation model already has separated allocation and
-  // initialization code parts.
-  ierr = bedDefSetup(); CHKERRQ(ierr);
-#endif
 
 #if 0
   // init basal till model, possibly inverting for phi, if desired;

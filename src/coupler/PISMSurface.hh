@@ -169,6 +169,7 @@ class PSLocalMassBalance : public PISMSurfaceModel {
 public:
   PSLocalMassBalance(IceGrid &g, const NCConfigVariable &conf);
   virtual ~PSLocalMassBalance();
+  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
 					       IceModelVec2S &result);
@@ -178,6 +179,7 @@ protected:
   LocalMassBalance *mbscheme;	//!< mass balance scheme to use
   bool use_fausto_pdd_parameters;
   IceModelVec2S temp_mj,	//!< for the mean July temperature needed to set PDD parameters as in [\ref Faustoetal2009].
+    acab,			//!< cached accumulation/ablation rates
     *lat;		//!< latitude needed to set PDD parameters as in [\ref Faustoetal2009].
 };
 

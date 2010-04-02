@@ -162,10 +162,9 @@ PetscErrorCode IceCompModel::setFromOptions() {
   // options should be able to override parameter values set here.
 
   if (testname == 'H') {
-    config.set_flag("do_bed_deformation", true);
-    config.set_flag("do_bed_iso", true);
+    config.set_string("bed_deformation_model", "iso");
   } else
-    config.set_flag("do_bed_deformation", false);
+    config.set_string("bed_deformation_model", "none");
 
   if ((testname == 'F') || (testname == 'G') || (testname == 'K')) {
     config.set_flag("do_temp", true);
@@ -239,13 +238,12 @@ PetscErrorCode IceCompModel::init_physics() {
     config.set("bedrock_thermal_specific_heat_capacity", tgaIce->c_p);
   }
 
-  bool do_bed_deformation = config.get_flag("do_bed_deformation"),
-    do_bed_iso = config.get_flag("do_bed_iso");
+  string bed_def_model = config.get_string("bed_deformation_model");
 
-  if ( (testname == 'H') && ((do_bed_deformation == PETSC_FALSE) || (do_bed_iso == PETSC_FALSE)) ) {
+  if ( (testname == 'H') && bed_def_model != "iso" ) {
     ierr = verbPrintf(1,grid.com, 
            "IceCompModel WARNING: Test H should be run with option\n"
-           "  -bed_def_iso  for the reported errors to be correct.\n"); CHKERRQ(ierr);
+           "  '-bed_def iso'  for the reported errors to be correct.\n"); CHKERRQ(ierr);
   }
 
   // this switch changes Test K to make material properties for bedrock the same as for ice

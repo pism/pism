@@ -32,8 +32,7 @@
 #include "PISMVars.hh"
 #include "Timeseries.hh"
 
-#include "../earth/deformation.hh"
-
+#include "../earth/PISMBedDef.hh"
 #include "../coupler/PISMOcean.hh"
 #include "../coupler/PISMSurface.hh"
 
@@ -127,7 +126,6 @@ public:
                               bool do_energy,
 			      bool do_age,
 			      bool do_skip,
-			      bool do_bed_deformation,
 			      bool use_ssa_when_grounded);
   virtual PetscErrorCode diagnosticRun();
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
@@ -175,6 +173,7 @@ protected:
  
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;
+  PISMBedDef       *beddef;
 
   //! \brief A dictionary with pointers to IceModelVecs below, for passing them
   //! from the IceModel core to other components (such as surface and ocean models)
@@ -197,10 +196,10 @@ protected:
         vGhf,		//!< geothermal flux; no ghosts
         vRb,		//!< basal frictional heating on regular grid; no ghosts
         vtillphi,	//!< friction angle for till under grounded ice sheet; no ghosts
-    acab,
-    artm,
-    shelfbtemp,
-    shelfbmassflux;
+    acab,		//!< accumulation/ablation rate; no ghosts
+    artm,		//!< ice temperature at the ice surface but below firn; no ghosts
+    shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
+    shelfbmassflux;	//<! ice mass flux into the ocean at the shelf base; no ghosts
 
   IceModelVec2Stag uvbar; //!< ubar and vbar on staggered grid; ubar at i+1/2, vbar at j+1/2
 
@@ -210,17 +209,18 @@ protected:
   IceModelVec2Mask vMask; //!< mask for flow type with values SHEET, DRAGGING, FLOATING
 
   IceModelVec3
-        u3, v3, w3,	//!< velocity of ice; m s-1
-        Sigma3, 	//!< strain-heating term in conservation of energy model; J s-1 m-3
-        T3,		//!< absolute temperature of ice; K
-        Enth3,          //!< enthalpy
-        tau3;		//!< age of ice; s
+        u3, v3, w3,	//!< velocity of ice; m s-1 (ghosted)
+        Sigma3, 	//!< strain-heating term in conservation of energy model; J s-1 m-3 (no ghosts)
+        T3,		//!< absolute temperature of ice; K (ghosted)
+        Enth3,          //!< enthalpy; J / kg (ghosted)
+        tau3;		//!< age of ice; s (ghosted because it is evaluated on the staggered-grid)
 
   IceModelVec3Bedrock
-        Tb3;		//!< temperature of lithosphere (bedrock) under ice or ocean; K; no ghosts
+        Tb3;		//!< temperature of lithosphere (bedrock) under ice or ocean; K (no ghosts)
 
   // parameters
-  PetscReal   dt, dtTempAge,  // current mass cont. and temp/age; time steps in seconds
+  PetscReal   dt,     //!< mass continuity time step, s
+    dtTempAge,  // enthalpy (temperature) and age time steps in seconds
               maxdt_temporary, dt_force,
               CFLviolcount,    //!< really is just a count, but PetscGlobalSum requires this type
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax,
@@ -286,20 +286,9 @@ protected:
   virtual PetscErrorCode diffuseHmelt();
 
   // see iMbeddef.cc
-  Vec            g2natural;
-  VecScatter     top0ctx; // possibly useful general tool for putting Vecs on processor zero
-  PetscErrorCode createScatterToProcZero(Vec& samplep0);
-  PetscErrorCode destroyScatterToProcZero();
-  BedDeformLC    bdLC;
-  PetscScalar    lastBedDefUpdateYear;
-  IceModelVec2S   vbedlast;
-  IceModelVec2S   vHlast;	//!< used for simple pointwise isostasy and to compute uplift
-  Vec            Hp0, bedp0,                       // vecs on proc zero for
-                 Hstartp0, bedstartp0, upliftp0;   // passing to bdLC
-  virtual PetscErrorCode bedDefSetup();
-  virtual PetscErrorCode bedDefCleanup();
-  virtual PetscErrorCode bedDefStepIfNeeded();
-  virtual PetscErrorCode bed_def_step_iso();
+  PetscScalar last_bed_def_update;
+  virtual PetscErrorCode bed_def_setup();
+  virtual PetscErrorCode bed_def_step();
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode putTempAtDepth();
@@ -492,8 +481,6 @@ protected:
 protected:
   // working space (a convenience)
   static const PetscInt nWork2d=5;
-  Vec g2;			//!< Global work vector; used by the bed
-				//!< deformation code only. (FIXME!)
   IceModelVec2S vWork2d[nWork2d];
   // 3D working space (with specific purposes)
   IceModelVec3 Tnew3, Enthnew3, taunew3;

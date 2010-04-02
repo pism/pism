@@ -79,25 +79,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   // FIXME: -bed_def options should be handled by the bed deformation module.
   // I'm leaving it as it is so far; will fix once that code is re-factored (CK).
-  ierr = PISMOptionsIsSet("-bed_def_iso", flag); CHKERRQ(ierr);
-  if (flag) {
-    config.set_flag("do_bed_deformation", true);
-    config.set_flag("do_bed_iso", true);
-  }
 
-  bool bed_def_iso = flag;
-
-  ierr = PISMOptionsIsSet("-bed_def_lc", flag); CHKERRQ(ierr);  
-  if (flag) {
-    config.set_flag("do_bed_deformation", true);
-    config.set_flag("do_bed_iso", false);
-  }
-
-  if (bed_def_iso && flag)  {
-    ierr = verbPrintf(1,grid.com,
-       "WARNING: both options -bed_def_iso and -bed_def_lc set; using Lingle & Clark model\n");
-       CHKERRQ(ierr);
-  }
+  ierr = check_old_option_and_stop(grid.com, "-bed_def_iso", "-bed_def"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(grid.com, "-bed_def_lc", "-bed_def"); CHKERRQ(ierr);
 
   // see getBasalWaterPressure()
   ierr = config.flag_from_option("bmr_enhance", "bmr_enhance_basal_water_pressure");

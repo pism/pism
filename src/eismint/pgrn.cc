@@ -80,10 +80,9 @@ static PetscErrorCode set_eismint_greenland_params(MPI_Comm com,
   if (exper != SSL2) { 
     // use Lingle-Clark bed deformation model for CCL3 and GWL3 but not SSL2
     ierr = verbPrintf(2, com, 
-      "  setting flags equivalent to: '-bed_def_lc'; user options may override ...\n");
+      "  setting flags equivalent to: '-bed_def lc'; user options may override ...\n");
       CHKERRQ(ierr);
-    config.set_flag("do_bed_deformation", true);
-    config.set_flag("do_bed_iso", false);
+    config.set_string("bed_deformation_model", "lc");
   }
 
   config.set("mu_sliding", 0.0);  // no SIA-type sliding!; see [\ref RitzEISMINT]

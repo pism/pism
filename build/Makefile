@@ -91,14 +91,14 @@ ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc PISMIO.cc	\
 	iceModelVec.cc iceModelVec2.cc iceModelVec3.cc NCVariable.cc		\
 	matlablike.cc greens.cc deformation.cc localMassBalance.cc iceModel.cc	\
 	iMadaptive.cc iMbasal.cc iMbeddef.cc iMbootstrap.cc iMdefaults.cc	\
-	iMenthalpy.cc iMgeometry.cc iMgrainsize.cc iMinit.cc iMinverse.cc \
-	iMinverseMat.cc	iMIO.cc iMmatlab.cc iMoptions.cc iMreport.cc iMssa.cc \
-	iMssaSNES.cc iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc \
-	Timeseries.cc PISMVars.cc iMtimeseries.cc enthalpyConverter.cc \
-	combinedSystem.cc bedrockOnlySystem.cc \
-	iceenthOnlySystem.cc iceModelVec2T.cc iceModelVec2V.cc	\
-	PISMComponent.cc PAConstant.cc PAYearlyCycle.cc PAForcing.cc		\
-	PISMSurface.cc PISMOcean.cc PCFactory.cc PALapseRates.cc
+	iMenthalpy.cc iMgeometry.cc iMgrainsize.cc iMinit.cc iMinverse.cc	\
+	iMinverseMat.cc iMIO.cc iMmatlab.cc iMoptions.cc iMreport.cc iMssa.cc	\
+	iMssaSNES.cc iMsia.cc iMtemp.cc iMutil.cc iMvelocity.cc iMviewers.cc	\
+	Timeseries.cc PISMVars.cc iMtimeseries.cc enthalpyConverter.cc		\
+	combinedSystem.cc bedrockOnlySystem.cc iceenthOnlySystem.cc		\
+	iceModelVec2T.cc iceModelVec2V.cc PISMComponent.cc PAConstant.cc	\
+	PAYearlyCycle.cc PAForcing.cc PISMSurface.cc PISMOcean.cc PCFactory.cc	\
+	PALapseRates.cc PISMBedDef.cc PBPointwiseIsostasy.cc PBLingleClark.cc
 ice_csources := cubature.c pism_signal.c
 
 # verif_sources go in libverif.[so|a]

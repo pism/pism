@@ -173,16 +173,7 @@ where dt = (N-1)*dt_series.
 PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
              PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N,
              PetscScalar precip) {
-#if 0
-  static bool flag = true;
-  if (flag) {
-     PetscPrintf(PETSC_COMM_WORLD,
-     "\nfirst call to PDDMassBalance::getMassFluxFromTemperatureTimeSeries():\n"
-       "  pddFactorSnow,pddFactorIce,pddRefreezeFrac,pddStdDev=%f,%f,%f,%f\n\n",
-     pddFactorSnow,pddFactorIce,pddRefreezeFrac,pddStdDev); 
-     flag = false;
-  }
-#endif
+
   const PetscScalar
       pddsum = getPDDSumFromTemperatureTimeSeries(t,dt_series,T,N), // units: K day
       dt     = (N-1) * dt_series; 
@@ -251,15 +242,7 @@ PetscScalar PDDMassBalance::getPDDSumFromTemperatureTimeSeries(
     pdd_sum += (h_days / 2.0) * ( CalovGreveIntegrand(pddStdDev,T[N-2])
                                   + CalovGreveIntegrand(pddStdDev,T[N-1]) );
   }
-#if 0
-  static bool flag = true;
-  if (flag) {
-     PetscPrintf(PETSC_COMM_WORLD,
-     "\nfirst call to PDDMassBalance::getPDDSumFromTemperatureTimeSeries():\n"
-       "  pdd_sum=%f\n\n",pdd_sum); 
-     flag = false;
-  }
-#endif
+
   return pdd_sum;
 }
 
@@ -323,15 +306,7 @@ PetscScalar PDDrandMassBalance::getPDDSumFromTemperatureTimeSeries(
     temp += gsl_ran_gaussian(pddRandGen, pddStdDev); // add random: N(0,sigma)
     if (temp > 273.15)   pdd_sum += h_days * (temp - 273.15);
   }
-#if 0
-  static bool flag = true;
-  if (flag) {
-     PetscPrintf(PETSC_COMM_WORLD,
-     "\nfirst call to PDDrandMassBalance::getPDDSumFromTemperatureTimeSeries():\n"
-       "  pdd_sum=%f\n\n",pdd_sum); 
-     flag = false;
-  }
-#endif
+
   return pdd_sum;
 }
 

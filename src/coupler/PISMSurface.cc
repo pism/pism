@@ -258,6 +258,16 @@ PetscErrorCode PSLocalMassBalance::init(PISMVars &vars) {
     mbscheme = new PDDMassBalance(config);
   }
 
+  ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
+  ierr = acab.set_attrs("climate_state",
+			"instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
+			"m s-1",  // m *ice-equivalent* per second
+			"land_ice_surface_specific_mass_balance");  // CF standard_name
+  CHKERRQ(ierr);
+  ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  acab.write_in_glaciological_units = true;
+  acab.set_attr("comment", "positive values correspond to ice gain");
+
   if (fausto_params) {
     ierr = verbPrintf(2, grid.com, "  Setting PDD parameters using formulas (6) and (7) in [Faustoetal2009]...\n"); CHKERRQ(ierr);
     use_fausto_pdd_parameters = true;
@@ -275,17 +285,23 @@ PetscErrorCode PSLocalMassBalance::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSLocalMassBalance::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-							 IceModelVec2S &result) {
+PetscErrorCode PSLocalMassBalance::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr;
   PetscScalar **lat_degN;
+
+  if ((fabs(t_years - t) < 1e-12) &&
+      (fabs(dt_years - dt) < 1e-12))
+    return 0;
+
+  t  = t_years;
+  dt = dt_years;
 
   // to ensure that temperature time series are correct:
   ierr = atmosphere->update(t_years, dt_years); CHKERRQ(ierr);
 
-  // This is a point-wise (local) computation, so we can use "result" to store
+  // This is a point-wise (local) computation, so we can use "acab" to store
   // precipitation:
-  ierr = atmosphere->mean_precip(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = atmosphere->mean_precip(t_years, dt_years, acab); CHKERRQ(ierr);
 
   // set up air temperature time series
   PetscInt Nseries;
@@ -316,7 +332,7 @@ PetscErrorCode PSLocalMassBalance::ice_surface_mass_flux(PetscReal t_years, Pets
   }
 
   ierr = atmosphere->begin_pointwise_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = acab.begin_access(); CHKERRQ(ierr);
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = atmosphere->temp_time_series(i, j, Nseries, &ts[0], &T[0]); CHKERRQ(ierr);
@@ -330,12 +346,25 @@ PetscErrorCode PSLocalMassBalance::ice_surface_mass_flux(PetscReal t_years, Pets
 	}
       }
 
-      result(i,j) = mbscheme->getMassFluxFromTemperatureTimeSeries(tseries, dtseries, &T[0],
-								   Nseries, result(i,j));
+      acab(i,j) = mbscheme->getMassFluxFromTemperatureTimeSeries(tseries, dtseries, &T[0],
+								 Nseries,
+								 acab(i,j)); // precipitation
     }
   }
-  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = atmosphere->end_pointwise_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+PetscErrorCode PSLocalMassBalance::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
+							 IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  ierr = update(t_years, dt_years); CHKERRQ(ierr);
+
+  ierr = acab.copy_to(result); CHKERRQ(ierr);
 
   return 0;
 }
