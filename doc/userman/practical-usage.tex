@@ -1,5 +1,5 @@
 
-\section{Practical Usage}
+\section{Practical usage}
 \label{sec:practical-usage}
 
 \subsection{Choosing variables to save at the end of the run}
@@ -63,7 +63,6 @@ If the file \verb|foo.nc|, specified by \verb|-ts_file foo.nc|, already exists t
     \texttt{total\und basal\und ice\und flux} & kg$^{3}$\,s$^{-1}$ & total basal ice flux \\
     \texttt{total\und sub\und shelf\und ice\und flux} & kg$^{3}\,$s$^{-1}$  & total sub-ice-shelf ice flux \\
     \texttt{ienthalpy} & J & total ice enthalpy\\
-    \texttt{dienthalpydt} & J\,s$^{-1}$ & total ice enthalpy rate of change \\
     \hline
   \end{tabular}
  \label{tab:time-series}
@@ -103,6 +102,7 @@ If the file \verb|foo.nc|, specified by \verb|-extra_file foo.nc|, already exist
 \begin{table}[ht]
   \caption{Diagnostic quantities}
   \centering
+\small \hspace{-2mm}
   \begin{longtable}{p{0.15\linewidth}p{0.15\linewidth}p{0.6\linewidth}}\hline
     \textbf{Name} & \textbf{Units} & \textbf{Description}\\
     \hline
@@ -159,6 +159,7 @@ If the file \verb|foo.nc|, specified by \verb|-extra_file foo.nc|, already exist
     \texttt{wvelsurf} & m/year & horizontal velocity of ice at the ice surface\\
     \hline
   \end{longtable}
+\normalsize
  \label{tab:extra-vars}
 \end{table}
 
@@ -459,25 +460,20 @@ $ pismr -boot_from foo.nc -Mx 201 -My 201 -Mz 21 -Mbz 21 -Lz 4000 \
 In this case all the model-state 2D variables present in \verb|foo.nc| will be interpolated onto the new grid during bootstrapping, which happens first, while three-dimensional variables are filled using heuristics mentioned in section \ref{sect:boot}.  Then temperature in bedrock (\verb|litho_temp|)\footnote{Assumes that foo.nc has \t{Mbz}$>1$.}, age of the ice (\verb|age|) and ice temperature (\verb|temp|) will be interpolated from \verb|foo.nc| onto the new grid during the regridding stage, overriding values set at the bootstrapping stage.  All of this, bootstrapping and regridding, occurs before the first timestep.
 
 
-\subsection{Signals, to control a running PISM model} \label{subsect:signal} \index{signals} \index{PISM!catches signals -TERM and -USR1}  Ice sheet model runs sometimes take a long time, so the state of a run may need checking.  Sometimes the run needs to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard, included in Linux and most flavors of Unix.  Table \ref{tab:signals} summarizes how PISM responds to signals.
+\newcommand\pid{\textsl{pid}s}
 
-\newcommand\pid{\textsl{pid}}
-\newcommand\same{(\textsl{same})}
+\subsection{Signals, to control a running PISM model} \label{subsect:signal} \index{signals} \index{PISM!catches signals -TERM and -USR1}  Ice sheet model runs sometimes take a long time, so the state of a run may need checking.  Sometimes the run needs to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard, included in Linux and most flavors of Unix.  Table \ref{tab:signals} summarizes how PISM responds to signals.  A convenient form of \verb|kill|, for Linux users, is \verb|pkill| which will find processes by executable name.  Thus ``\verb|pkill -USR1 pismr|'' might be used to send all PISM processes the same signal, avoiding an explicit list of \pid.
+
 \begin{table}[ht]
-\caption{Signalling PISM.  \pid~stands for list of all identifiers of the running PISM processes.  The signals are POSIX but \t{pkill} is a Linux extension.}\label{tab:signals}
-\begin{tabular}{p{0.25\linewidth}p{0.1\linewidth}p{0.6\linewidth}}\hline
+\caption{Signalling running PISM processes.  ``\pid''~stands for list of all identifiers of the PISM processes.}\label{tab:signals}
+\begin{tabular}{p{0.20\linewidth}p{0.10\linewidth}p{0.70\linewidth}}\hline
 \textbf{Command} & \textbf{Signal} & \textbf{PISM behavior} \\
 \hline
-\texttt{kill -KILL} \pid & \texttt{SIGKILL} & terminate with extreme prejudice; PISM cannot catch it and no state is saved \\
-Ctrl-C &  & typically the same for foreground process(es)  \\
+\texttt{kill -KILL} \pid & \texttt{SIGKILL} & Terminate with extreme prejudice. PISM cannot catch it and no state is saved. \\
+\texttt{kill -TERM} \pid & \texttt{SIGTERM} & End processes, but save the last model state in the output file, using \verb|-o| name or default name as normal.  Note that the \verb|history| string in the output file will contain an ``\verb|EARLY EXIT caused by signal SIGTERM|'' indication. \\
+\texttt{kill -USR1} \pid & \texttt{SIGUSR1} & Allow process(es) to continue, but save the model state at the current time as ``\texttt{pism}\textsl{X}\texttt{-}\textsl{year}\texttt{.nc}''.  Time-stepping is not altered.  Also flushes time-series output buffers. \\
+\texttt{kill -USR2} \pid & \texttt{SIGUSR2} & Just flush time-series output buffers. \\
 \hline
-\texttt{kill -TERM} \pid & \texttt{SIGTERM} & end process(es) but PISM will save the last model state using \verb|-o| name or default name \\
-\texttt{kill} \pid &  & typically the same \\
-\texttt{pkill -TERM pismv} &  & convenient form for MPI runs with multiple processes needing signal \\
-\hline
-\texttt{kill -USR1} \pid & \texttt{SIGUSR1} & allow process(es) to continue but PISM will save its model state at current time as ``\texttt{pism-}\textsl{year}\texttt{.nc}''. This also flushes time-series output buffers. \\
-\texttt{pkill -USR1 pismv} &  & convenient form for MPI runs \\
-\hline\normalsize
 \end{tabular}
 \end{table}
 
@@ -485,101 +481,94 @@ Here is an example.  Suppose we start a long verification run in the background,
 
 \verb|pismv -test G -Mz 101 -y 1e6 -o testGmillion.nc >> log.txt &|
 
-\noindent This run gets a Unix process id (``\verb|pid|''),\index{signals!the pid} and we will need that number, which we assume is ``8920''.  (Get it using \verb|ps| or \verb|pgrep|.)  If we want to observe the run without stopping we send the \verb|USR1| signal:\index{signals!usr1}
+\noindent This run gets a Unix process id,\index{signals!the pid}, which we assume is ``8920''.  (Get it using \verb|ps| or \verb|pgrep|.)  If we want to observe the run without stopping it we send the \verb|USR1| signal:\index{signals!usr1}
 
 \verb|kill -USR1 8920|
 
-\noindent where ``\verb|8920|'' happened to be the \verb|pid| of the running PISM process.  It happens that we caught the run at year 31871.5 or so because a NetCDF file \verb|pism-31871.495239.nc| is produced.  This intermediate state file can be viewed by \verb|ncview pism-31871.495239.nc|.  Note also that in the standard out log file \verb|log.txt| the line
+\noindent Suppose it happens that we caught the run at year 31871.5.  Then, for example, a NetCDF file \verb|pismv-31871.495.nc| is produced.  Note also that in the standard out log file \verb|log.txt| the line
 
 \begin{verbatim}
-...
-Caught signal SIGUSR1: Writing intermediate file `pism-31871.495239.nc'.
-...
+caught signal SIGUSR1:  Writing intermediate file ... and flushing time series.
 \end{verbatim}
-\noindent appears around time step (i.e.~\verb|YEAR|) 31900.
-
-Suppose, on the other hand, that the run needs to be stopped.  One may use the interrupt ``\verb|kill -KILL 8920|''\index{signals!kill}\index{killing runs} for this process, which is running in the background.  (Foreground processes can be interrupted by Ctrl-C.)  This brutal method, which a process cannot catch or block, stops the process but does not allow it to save the model state.  Therefore one cannot restart at the same place, nor inspect the model state.  For that ability, use the \verb|TERM|\index{signals!term} signal,
+\noindent appears around that time step.  Suppose, on the other hand, that the run needs to be stopped.  Then a graceful way is\index{signals!term}
 
 \verb|kill -TERM 8920|
 
-\noindent Then the PISM run is stopped and the lines
-\begin{verbatim}
-Caught signal SIGTERM: exiting early.
-...
-Writing model state to file `testGmillion.nc' ... done
-\end{verbatim}
-\noindent appear in the log file \verb|log.txt|.  The \verb|history| global attribute \verb|testGmillion.nc| records the point at which the run was stopped.  One can restart and finish the run by the command (for example)
-
-\begin{verbatim}
-$ pismv -test G -i testGmillion.nc -ye 1e6 \
-        -o testGmillion_finish.nc >> log_cont.txt &
-\end{verbatim}
-
-\smallskip
-
-Finally we consider a multiple process (MPI) run of PISM.  Here each of the processes must be sent the same signal at the same time.  For example, consider the dialog
-\begin{quote}
-\begin{verbatim}
-	$ mpiexec -n 4 pismv -test C -y 100000 -o foo.nc >> log.txt &
-	$ ps
-	PID TTY          TIME CMD
-	6761 pts/0    00:00:00 mpiexec
-	6762 pts/0    00:00:00 pismv
-	6763 pts/0    00:00:00 pismv
-	6764 pts/0    00:00:00 pismv
-	6765 pts/0    00:00:00 pismv
-	6770 pts/2    00:00:00 ps
-	$ kill -TERM 6762 6763 6764 6765
-\end{verbatim}
-\end{quote}
-Here the \verb|kill| command sent the signal to all four of the running PISM processes simultaneously.  It causes all four processes to end, and PISM writes \verb|foo.nc| for possible restart.  Efficiency motivates using the Linux tool \verb|pkill|\index{pkill}, which avoids the need to list process ids:
-
-  \verb|pkill -TERM pismv|
-
-\noindent See \verb|man pkill| and \verb|man pgrep|.
+\noindent because the model state is saved and can be inspected.
 
 
 
-\subsection{Understanding adaptive time-stepping} \label{subsect:adapt}\index{PISM!adaptive time stepping scheme} At each time step the PISM standard output includes flags and a summary of the model state using a few numbers.  A typical example is
+\subsection{Understanding adaptive time-stepping} \label{subsect:adapt}\index{PISM!adaptive time stepping scheme} At each time step the PISM standard output includes ``flags'' and then a summary of the model state using a few numbers.  A typical example is
 \small
 \begin{verbatim}
-  9.915e-05   2 y SIA  SSA  v$th d (dt=2.14438 in 5 substeps; av dt_sub=0.42888)
-S   2360.49413:  2.11211  1.0569   3682.864  256.0977
+ y SIA v$th d (dt=1.07878 in 2 substeps; av dt_sub=0.53939)
+  SSA:     4 outer iterations
+S  -3456.41429:  3.35908  2.1664   2748.786  271.2114
 \end{verbatim}
 \normalsize
-\noindent The format of the second line, the summary, is simple:
+\noindent The format of the third line, the summary, is simple:
 \small
 \begin{verbatim}
 S         YEAR:     ivol   iarea     thick0     temp0
 \end{verbatim}
 \normalsize
-That is, we have the total ice volume, total ice area, and the thickness and basal temperature at the center of the computational domain.  A ``\verb|U|'' line at the beginning of the standard output indicates the units.
+That is, we have the total ice volume, total ice area, and the thickness and basal temperature at the center of the computational domain.  A ``\verb|U|'' line near the beginning of the standard output indicates the units.
 
-The characters ``\verb|  9.915e-05   2 y SIA  SSA  v$th|'' at the beginning of the flag line give a very terse description of which processes happened.  What's clear is that both the SIA and SSA stress balances were solved.  For the rest, see the source code, expecially methods \verb|IceModel::run()| and \verb|IceModel::velocity()|.
+The characters ``\verb| y SIA v$th|'' at the beginning of the flag line give a very terse description of which physical processes were modeled in that time step.  Both the SIA and SSA stress balances were solved, and the latter, which is the most computationally-expensive, describes its nonlinear iterations.
 
 Now we explain what the rest of the flags line, namely
 
-``\verb|d (dt=2.14438 in 5 substeps; av dt_sub=0.42888)|''
+``\verb|d (dt=1.07878 in 2 substeps; av dt_sub=0.53939)|''
 
-\noindent might mean.  First note that the PISM time step is determined by an adaptive mechanism.  PISM does each step explicitly when numerically-approximating mass conservation in the map-plane.  This, and the modeling of horizontal advection in conservation of energy and age evolution, requires such an adaptive time-stepping scheme \cite{BBL}.  The first character we see here, namely ``\verb|d|'', is the adaptive-timestepping ``reason'' flag.  See Table \ref{tab:adaptiveflag}; ``\verb|d|'' means that the time step was limited by the diffusivity of SIA mass conservation.
+\noindent might mean.  Note that the PISM time step is determined by an adaptive mechanism.  PISM does each step explicitly when numerically-approximating mass conservation in the map-plane.  This, and the modeling of horizontal advection in conservation of energy and age evolution, requires such an adaptive time-stepping scheme \cite{BBL}.  The first character we see here, namely ``\verb|d|'', is the adaptive-timestepping ``reason'' flag.  See Table \ref{tab:adaptiveflag}; ``\verb|d|'' means that the time step was limited by the diffusivity of SIA mass conservation.  We also see that there was a major time step of 1.08 model years divided into 2 substeps of about 0.54 years.  The \intextoption{skip} option sets the maximum number of such substeps, but the adaptive mechanism may choose to take fewer substeps to satisfy numerical stability criteria.
 
 \begin{table}[ht]
 \caption{Meaning of the adaptive time-stepping ``reason'' flag in the standard output flag line.}\label{tab:adaptiveflag}
 \begin{tabular}{p{0.05\linewidth}p{0.85\linewidth}}\hline
 \textbf{Flag} & \textbf{Active adaptive constraint} \\ \hline
 \verb|c| & three-dimensional CFL for temperature/age advection \cite{BBL} \\
-\verb|d| & diffusivity for SIA mass conservation \cite{BBL} \\
+\verb|d| & diffusivity for SIA mass conservation \cite{BBL,HindmarshPayne} \\
 \verb|e| & end of prescribed run time \\
 \verb|f| & \verb|-dt_force| set; generally option \verb|-dt_force|, which overrides the adaptive scheme; \emph{should not be used}  \\
 \verb|m| & maximum allowed $\Delta t$ applies; set with \verb|-max_dt| \\
-\verb|t| & maximum $\Delta t$ was temporarily set by a derived class \\
+\verb|t| & maximum $\Delta t$ was temporarily set by a derived class, or by the mechanism which saves time-series of spatially-varying quantities \\
 \verb|u| & 2D CFL for mass conservation in SSA regions (upwinded; \cite{BBssasliding})\\
 \hline
 \normalsize
 \end{tabular}
 \end{table}
 
-We also see that there was a major time step of 2.1 model years divided into 5 substeps of about 0.43 years.  This came from the use of the \intextoption{skip} option.  Note that \verb|-skip| merely sets a maximum for the number of substeps.  The adaptive mechanism may choose to not take so many substeps, though they are computationally-inexpensive.
+
+\subsection{Utility and test scripts} \label{subsect:scripts}\index{python scripts} Some nice scripts.
+ 
+FIXME: the python scripts are all documented at the \textsl{Packages} tab on the browser
+
+FIXME: the python scripts all take \texttt{fill\und missing.py --help}
+
+\newcommand{\scripthead}[1]{\texttt{#1}}
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{p{0.35\linewidth}p{0.65\linewidth}}\\
+    \hline
+    \textbf{Script} & \textbf{Function(s)}\\
+    \hline
+    \scripthead{test/vfnow.py} & Organizes the process of verifying PISM.  Specifies standard refinement paths for each of the tests (section \ref{sect:verif}). \\
+    \scripthead{test/vnreport.py} & Automates the creation of convergence graphs like figures \ref{fig:thickerrsB}--~\ref{fig:temperrsK}. \\
+    \scripthead{util/fill\und missing.py} & Uses an approximation to Laplace's equation $\grad^2 u = 0$ to smoothly replace missing values in a two-dimensional NetCDF variable.  The ``hole'' is filled with an average of the boundary non-missing values. Section \ref{sec:eismint-greenland} gives an example application to the bed elevations in the EISMINT-Greenland data.  Depends on \verb|netcdf4-python| and \verb|scipy| Python packages. \\
+    \scripthead{util/check\und polarstereo.py} & \\
+    \scripthead{util/check\und stationarity.py} & \\
+    \scripthead{util/nc2mat.py} & Reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format \verb|.mat|, supported by MATLAB version 5 and later.  Depends on \verb|netcdf4-python| and \verb|scipy| Python packages. \\
+    \scripthead{util/nccmp.py} & \\
+    \scripthead{util/pism\und config\und editor.py} & \\
+    \scripthead{util/pism\und matlab.m} & \\
+   \hline
+  \end{tabular}
+  \caption{Some scripts for helping PISM users.}
+  \label{tab:scripts-overview}
+\end{table}
+
+
 
 %%% Local Variables: 
 %%% mode: latex

@@ -38,15 +38,16 @@ The NetCDF data file which we use for input is freely-available at, and is descr
 Any of these NetCDF files can be viewed with \verb|ncview| or other NetCDF visualization tool (see below).  Application of \verb|pyNGL| tools to \verb|Greenland_5km_v0.93.nc| produced figures \ref{fig:sr-input1} and  \ref{fig:sr-input1}, for example.  The metadata itself can be listed at the command line, or put in a text file, by \verb|ncdump -h|.
 
 \begin{figure}[ht]
-\includegraphics[width=2.4in,keepaspectratio=true]{sr-greenland_thk}
- \quad\includegraphics[width=2.4in,keepaspectratio=true]{sr-greenland_prcp}
-\caption{The input present-day ice thickness (left) and present-day precipitation (right) for SeaRISE-Greenland.}
+\mbox{\includegraphics[width=3.0in,keepaspectratio=true]{sr-greenland_thk}
+ \quad\includegraphics[width=3.0in,keepaspectratio=true]{sr-greenland_prcp}}
+\caption{The input present-day ice thickness (left; m) and present-day precipitation (right; m $\text{a}^{-1}$ ice equivalent) for SeaRISE-Greenland.  Figures produced with FIXME: STATE TOOL}
 \label{fig:sr-input1}
 \end{figure}
 
 \begin{figure}[ht]
-\includegraphics[width=2.4in,keepaspectratio=true]{sr-greenland_topg}
- \quad \includegraphics[width=2.4in,keepaspectratio=true]{sr-greenland_bheatflx}\caption{The input bedrock elevation (left) and geothermal flux (right) for SeaRISE-Greenland.}
+\mbox{\includegraphics[width=3.0in,keepaspectratio=true]{sr-greenland_topg}
+ \quad \includegraphics[width=3.0in,keepaspectratio=true]{sr-greenland_bheatflx}}
+\caption{The input bedrock elevation (left; m) and geothermal flux (right; W $\text{m}^{-2}$) for SeaRISE-Greenland.  Figures produced with FIXME: STATE TOOL}
 \label{fig:sr-input2}
 \end{figure}
 
@@ -79,7 +80,7 @@ This describes a 100 year run on a $76\times 141$ point grid in the horizontal, 
 
 
 
-FIXME 
+FIXME:  note total run time for complete 20km spinup r1043 on bueler-pogo, rank=8, was 104 processor-hours
 
 \noindent This run should take about one minute of real time. Next we generate a more credible enthalpy field. One way to do this is to have the enthalpy field and velocity field co-evolve according to the thermomechanical flow model while holding the upper ice surface stationary.  This is a continuation of ``bootstrapping''.  The effect is to create an enthalpy field which is approximately stationary with respect to advection and conduction.\footnote{The resulting enthalpy field is not a fully physical enthalpy field, however, because it comes from a steadiness assumption about the geometry of the ice sheet.  Said another way, it is a enthalpy field in equilibrium with a velocity field for which the surface kinematical equation \cite{Fowler} is \emph{not} satisfied.}  We create this enthalpy field by running for 50000 years\footnote{A longer run might be desirabe, but here we only wish to have a reasonable starting field. More about how to determine the length of a no-mass run can be found in...} with non-evolving surface.  The option \verb|-no_mass| turns off the map-plane mass continuity scheme, and thus any evolution of the surface.
 \begin{verbatim}
@@ -113,7 +114,7 @@ While the complete run continues in the background, let's view the intermediate 
 \noindent This kind of ``history'' is convenient for understanding what you have done, once it all works!
 
 
-Another way to view the output file is graphically.  One of the most convenient tools is \verb|ncview|; see Table \ref{tab:NetCDFview}.  Running ncview on the output file (\verb|ncview simp_exper.nc|) and viewing the ``\t{thk}'' variable gives a figure like \ref{fig:ncviewshot}.
+Another way to view the output file is graphically.  One of the most convenient tools is \verb|ncview|; see Table \ref{tab:NetCDFview}.
 
 
 

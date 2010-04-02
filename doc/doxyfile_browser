@@ -592,6 +592,7 @@ INPUT                  = config_doc.txt \
                          ../src/verif/ \
                          ../src/eismint/ \
                          ../src/ismip/ \
+			 ../test/ \
 			 ../util/
 
 # This tag can be used to specify the character encoding of the source files
