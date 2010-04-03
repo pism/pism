@@ -1440,38 +1440,46 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
   return errcode;
 }
 
-/*! Computes total ice fluxes (in kg per second) at 3 interfaces:
 
-  \li "ice-atmoshpere" interface using the accumulation/ablation rate
-  \li "ice-bedrock" interface using the basal melt rate
-  \li bottom of ice shelves using the sub-ice-shelf melt rate
+/*! Computes total ice fluxes in kg s-1 at 3 interfaces:
 
-  These quantities should be understood as <i>instantaneous at the beginning of
-  the time-step.</i> Multiplying by dt will \b not necessarily give the
-  corresponding change from the beginning to the end of the time-step.
+  \li the ice-atmosphere interface: gets surface mass balance rate from
+      PISMSurfaceModel *surface,
+  \li the ice-ocean interface at the bottom of ice shelves: gets ocean-imposed
+      basal melt rate from PISMOceanModel *ocean, and
+  \li the ice-bedrock interface: gets basal melt rate from IceModelVec2S vbmr.
+
+A unit-conversion occurs for all three quantities, from ice-equivalent m s-1
+to kg s-1.  The sign convention about these fluxes is that positve flux means
+ice is being \e added to the ice fluid volume at that interface.
+
+These quantities should be understood as <i>instantaneous at the beginning of
+the time-step.</i>  Multiplying by dt will \b not necessarily give the
+corresponding change from the beginning to the end of the time-step.
+
+FIXME:  The calving rate can be computed by post-processing:
+divoldt = surface_ice_flux * iarea + basal_ice_flux * iareag + sub_shelf_ice_flux * iareaf + calving_flux_vol_rate
  */
 PetscErrorCode IceModel::ice_mass_bookkeeping() {
   PetscErrorCode ierr;
-  PetscScalar **bmr_grounded;
-  PetscReal cell_area = grid.dx * grid.dy;
-  PetscScalar my_total_surface_ice_flux, my_total_basal_ice_flux, my_total_sub_shelf_ice_flux;
 
-  // call sets pccsmf to point to IceModelVec2S with current surface mass flux
+  // note acab and shelfbmassflux are IceModelVec2S owned by IceModel
   if (surface != PETSC_NULL) {
-    ierr = surface->ice_surface_mass_flux(grid.year, dt / secpera, acab); CHKERRQ(ierr);
+    ierr = surface->ice_surface_mass_flux(grid.year, dt / secpera, acab);
+           CHKERRQ(ierr);
   } else { SETERRQ(2,"PISM ERROR: surface == PETSC_NULL"); }
 
   if (ocean != PETSC_NULL) {
-    ierr = ocean->shelf_base_mass_flux(grid.year, dt / secpera, shelfbmassflux); CHKERRQ(ierr);
+    ierr = ocean->shelf_base_mass_flux(grid.year, dt / secpera, shelfbmassflux);
+           CHKERRQ(ierr);
   } else { SETERRQ(2,"PISM ERROR: ocean == PETSC_NULL"); }
 
-  my_total_basal_ice_flux = 0;
-  my_total_surface_ice_flux = 0;
-  my_total_sub_shelf_ice_flux = 0;
+  PetscScalar my_total_surface_ice_flux = 0.0, my_total_basal_ice_flux = 0.0,
+              my_total_sub_shelf_ice_flux = 0.0;
 
   ierr = acab.begin_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
-  ierr = vbmr.get_array(bmr_grounded); CHKERRQ(ierr);
+  ierr = vbmr.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -1479,18 +1487,14 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
       // ignore ice-free cells:
       if (vH(i,j) <= 0.0)
 	continue;
-
-      // add the accumulation/ablation rate:
       my_total_surface_ice_flux += acab(i,j); // note the "+="!
-
-      // add the sub-shelf melt rate;
       if (vMask.value(i,j) == MASK_FLOATING) {
+        // note: we are deliberately *not* including fluxes in
+        //   MASK_ICE_FREE_OCEAN and MASK_OCEAN_AT_TIME_0 areas
 	my_total_sub_shelf_ice_flux -= shelfbmassflux(i,j); // note the "-="!
       }
-
-      // add the basal melt rate:
       if (vMask.is_grounded(i,j)) {
-	my_total_basal_ice_flux -= bmr_grounded[i][j]; // note the "-="!
+	my_total_basal_ice_flux -= vbmr(i,j); // note the "-="!
       }
 
     }
@@ -1501,8 +1505,8 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  PetscScalar ice_density = config.get("ice_density");
-
+  PetscScalar cell_area   = grid.dx * grid.dy,
+              ice_density = config.get("ice_density");
   my_total_surface_ice_flux     *= ice_density * cell_area;
   my_total_sub_shelf_ice_flux   *= ice_density * cell_area;
   my_total_basal_ice_flux       *= ice_density * cell_area;

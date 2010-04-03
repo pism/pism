@@ -180,7 +180,6 @@ echo "$SCRIPTNAME  simple coupler = '$COUPLER_SIMPLE'"
 echo "$SCRIPTNAME forcing coupler = '$COUPLER_FORCING'"
 
 
-
 # bootstrap and do smoothing run to 100 years
 PRE0NAME=g${CS}km_pre100.nc
 echo
@@ -241,7 +240,8 @@ TSNAME=ts_g${FS}km_m30ka.nc
 echo
 echo "$SCRIPTNAME  regrid and do paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
-cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_from $INNAME $FINEGRID $TILLPHI $FULLPHYS -bed_def_lc $COUPLER_FORCING\
+cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_from $INNAME $FINEGRID $TILLPHI $FULLPHYS \
+     -bed_def lc $COUPLER_FORCING\
      -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat  \
      -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
       -save_file $SNAPSNAME -save_times $SNAPSTIME \
@@ -251,7 +251,7 @@ $PISM_DO $cmd
 # to stop here:
 #exit
 
-pism5kmopts="$PISM_MPIDO $NN $PISM -skip $FINESKIP $FULLPHYS -bed_def_lc $COUPLER_FORCING"
+pism5kmopts="$PISM_MPIDO $NN $PISM -skip $FINESKIP $FULLPHYS -bed_def lc $COUPLER_FORCING"
 
 STARTTIME=$ENDTIME
 ENDTIME=-20000 # BP
@@ -259,7 +259,7 @@ STARTNAME=$OUTNAME
 OUTNAME=g${FS}km_m20ka.nc
 SNAPSNAME=g${FS}km_m25ka.nc
 SNAPSTIME=-25000
-TSNAME=ts_g${FG}km_m20ka.nc
+TSNAME=ts_g${FS}km_m20ka.nc
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
@@ -273,7 +273,7 @@ STARTNAME=$OUTNAME
 OUTNAME=g${FS}km_m10ka.nc
 SNAPSNAME=g${FS}km_m15ka.nc
 SNAPSTIME=-15000
-TSNAME=ts_g${FG}km_m10ka.nc
+TSNAME=ts_g${FS}km_m10ka.nc
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
@@ -298,3 +298,4 @@ $PISM_DO $cmd
 
 echo
 echo "$SCRIPTNAME  spinup done"
+

@@ -179,7 +179,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     H.path = "(refine dx=80,60,40,30,20,km, dx=dy and Mx=My=31,41,61,81,121)"
     H.Mx   = [31, 41, 61, 81, 121]
     H.My   = H.Mx
-    H.opts = "-bed_def_iso -y 60000.0"
+    H.opts = "-bed_def iso -y 60000.0"
     tests['H'] = H
     # I
     I = PISMVerificationTest()
