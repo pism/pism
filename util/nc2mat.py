@@ -1,6 +1,21 @@
 #!/usr/bin/env python
 
-from sys import argv, exit
+## @package nc2mat
+## Reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format \c .mat, supported by MATLAB version 5 and later). It depends on \c netcdf4-python and \ c SciPy.
+##
+## The options go before the input file name.  Here are some examples:
+## \verbatim nc2mat.py ross.nc \endverbatim will read all the variables from \c ross.nc and write them to \c ross.mat, \verbatim nc2mat.py -v thk,acab -o ross_matlab.mat ross.nc \endverbatim will read variables \c thk and \c acab from \c ross.nc and write them to \c ross_matlab.nc, and
+## \verbatim nc2mat.py -e x,y,z ross.nc \endverbatim
+## will read all the variables except \c x, \c y and \c z from \c ross.nc and write them to \c ross.mat.
+## Because PISM saves all diagnostic variables using the single precision (type \c float), while most MATLAB plotting functions expect data to have double precision (type \c double), so one might need to convert them explicitly.  For example, assuming that \c ross.nc contains data produced by a PISM run like ones in section \ref sect:ross, running
+## \verbatim nc2mat.py -v cbar ross.nc \endverbatim and then typing
+## \code
+## >> load ross.mat;
+## >> cbar = double(reshape(cbar, 147, 147));
+## >> pcolor(cbar); colorbar();
+## \endcode
+## in the MATLAB shell will produce a picture of the Ross Ice Shelf shaded by modeled ice speed.
+
 try:
     from netCDF4 import Dataset as NC
 except:

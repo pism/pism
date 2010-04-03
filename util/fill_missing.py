@@ -1,20 +1,39 @@
 #!/usr/bin/env python
 
 ## @package fill_missing
-# \brief This script is an implementation of the SOR method with Chebyshev
-# acceleration for the Laplace equation.
+# \brief This script solves the Laplace equation.
 #
-# \details This script is an implementation of the SOR method with Chebyshev
+# \details The script is an implementation of the SOR method with Chebyshev
 # acceleration for the Laplace equation, as described in 'Numerical Recipes in
 # Fortran: the art of scientific computing' by William H. Press et al -- 2nd
 # edition.
-
-# This can (obviously) be optimized, but I believe that we _should not_
-# sacrifice readability unless we absolutely have to.
-
+#
 # Note also that this script can be used both from the command line and as a
 # Python module -- by adding 'from fill_missing import laplace' to your
 # program.
+# Uses an approximation to Laplace's equation
+# 	\f[ \nabla^2 u = 0 \f]
+# to smoothly replace missing values in two-dimensional NetCDF variables with the average of the ``nearby'' non-missing values.
+# Section \ref{sec:eismint-greenland} gives an example application to the bed elevations in the EISMINT-Greenland data.  Here is another hypothetical example, filling the missing values in the variables \c topg and \c usurf, using a convergence tolerance of \f$10^{-4}\f$ and the initial guess of \f$100\f$, on data in the NetCDF file \c data.nc :
+# \code
+# fill_missing.py -f data.nc -v topg,usurf --eps=1.0e-4 \
+#                 -i 100.0 -o data_smoothed.nc
+# \endcode
+# Options \c -i and \c -e specify the initial guess and the convergence tolerance for \e all the specified variables, so using these options only makes sense if all the variables have the same units.  Moreover, making a good initial guess can noticeably reduce the time needed to fill in the holes.  Generally variables should be filled one at a time.
+#
+# Each of the requested variables must have missing values specified
+# according to CF Metadata conventions, namely one of the following:
+# \c valid_range or both of \c valid_min and
+# \c valid_max (if the values are in a specific range); one of
+# \c valid_min (\c valid_max) if values are greater (less)
+# than some value, or \c _FillValue.  Also \c _FillValue is
+# interpreted as \c valid_max if it is positive, and as
+# \c valid_min otherwise, and the \c missing_value  attribute is deprecated
+# by the NetCDF User's Guide, but is supported for backward compatibility.  For more information see
+# <a href="http://www.unidata.ucar.edu/software/netcdf/guide_10.html#SEC76">NetCDF User's Guide: Attributes</a>.
+# Run \verbatim fill_missing.py --help \endverbatim for the list of available
+# command-line options.
+
 
 # CK, 08/12/2008
 

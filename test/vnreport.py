@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+
+## @package vnreport
+## Create convergence graphs
+
 from pylab import close, figure, clf, hold, plot, xlabel, ylabel, xticks, yticks, axis, legend, title, grid, show, savefig
 from numpy import array, polyfit, polyval, log10, floor, ceil, unique
 #from matplotlib.font_manager import FontProperties

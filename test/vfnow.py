@@ -1,24 +1,44 @@
 #!/usr/bin/env python
-## VFYNOW.PY is a script for verification of numerical schemes in PISM.
+
+## @package vfnow
+## A script for verification of numerical schemes in PISM.
 ## It specifies a refinement path for each of Tests ABCDEFGIJKL and runs
 ## pismv accordingly.
 ## Copyright (C) 2007--2010 Ed Bueler and Constantine Khroulev
+##
+## Organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in section \ref{sect:verif}.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
+##
+## Examples:
+##    - \verbatim vfnow.py \endverbatim use one processor and do three levels of refinement; this command is equivalent to \verbatim vfnow.py -n 2 -l 2 -t CGIJ \endverbatim,
+##    - \verbatim vfnow.py -n 8 -l 5 -t J --prefix=bin/ --mpido='aprun -n' \endverbatim will use \verbatim aprun -n 8 bin/pismv \endverbatim as the command and do five levels (the maximum) of refinement only on test J,
+##    - \verbatim vfnow.py -n 2 -l 3 -t CEIJGKL \endverbatim uses two processers (cores) and runs in about an hour,
+##    - \verbatim vfnow.py -n 40 -l 5 -t ABCDEFGIJKL \endverbatim will use forty processors to do all possible verification as managed by \c vfnow.py; don't run this unless you have a big computer and you are prepared to wait.
+## For a list of options do \verbatim test/vfnow.py --help \endverbatim.
+## Timing information is given in the \c vfnow.py output so performance, including parallel performance, can be assessed along with accuracy. 
+
 import sys, getopt, time, commands
 from numpy import array, double, int
 
+## A class describing a refinement path and command-line options
+## for a particular PISM verification test.
 class PISMVerificationTest:
-    """A class describing a refinement path and command-line options for a
-    particular PISM verification test."""
-    N = 50                      # max number of levels that will work with
-                                # default Mz and Mbz; should be enough so far
-    name = ""                   # one-letter test name
-    test = ""                   # test description
-    path = ""                   # description of the refinement path
+
+    ## max number of levels that will work with
+    N = 50
+    ## one-letter test name
+    name = ""
+    ## test description
+    test = ""
+    ## description of the refinement path
+    path = ""                   
     Mx = []
     My = []
-    Mz = [31] * N               # 31 levels in the ice
-    Mbz = [1] * N               # no bedrock by default
-    opts = ""                   # extra options (such as -y, -ys, -ssa_rtol)
+    ## 31 levels in the ice
+    Mz = [31] * N
+    ## no bedrock by default
+    Mbz = [1] * N
+    ## extra options (such as -y, -ys, -ssa_rtol)
+    opts = ""                   
         
     def build_command(self, executable, level):
         M = zip(self.Mx, self.My, self.Mz, self.Mbz)
