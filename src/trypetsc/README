@@ -1,65 +1,24 @@
-This directory contains four PETSc example source codes, two
-copied straight from the PETSc Bratu example (in different PETSc
-versions).  The  other two are by the PISM authors but are close
-to PETSc example codes anyway.
+This directory contains example PETSc source codes, some 
+copied straight from PETSc (like the Bratu example, in different PETSc
+versions).  Others are by the PISM authors but are close
+to PETSc example codes anyway.  All of these examples relate to "PETSc-
+technicalities" of relevance to PISM.
 
 Compiling and running these allows a user to test whether PETSc
 itself is installed properly, as a way of testing
 PETSc before building PISM.
 
-The following usage examples should work if PETSc 2.3.3 or earlier
+The following usage examples should work if PETSc 2.3.3 or 3.0.? or 3.1.?
 is installed properly, even if other libraries needed by PISM are not yet
-installed (e.g. NetCDF, FFTW):
-
-$ make ex5_petsc2  # Bratu DA/SNES example from PETSc
-$ ./ex5_petsc2
-Number of Newton iterations = 4
-
-$ make poisson  # non-constant coeff Poisson eqn following PISM conventions
-$ ./poisson
- 10 x  10 grid: number of Newton iterations = 2
-                max abs(residual) = |residual|_infty = 1.653e-11
-                max abs(u_NUM-u_EXACT) = |u_NUM-u_EXACT|_infty = 3.614e-02
-$ mpiexec -np 4 ./poisson -da_grid_x 100 -da_grid_y 120
-120 x 100 grid: number of Newton iterations = 2
-                max abs(residual) = |residual|_infty = 3.622e-11
-                max abs(u_NUM-u_EXACT) = |u_NUM-u_EXACT|_infty = 3.146e-04
-
-$ make localVecMax  # illustrates that DA "local" vecs are of VecType VECSEQ
-$ ./localVecMax 
-global Vec has VecType = mpi
-local Vec has VecType = seq
-for global Vec:  max = 1.00, min = 0.00, infnorm = 1.00, twonorm = 6.51
-for local  Vec:  max = 1.00, min = 0.00, infnorm = 1.00, twonorm = 6.51
-$ mpiexec -np 4 ./localVecMax 
-global Vec has VecType = mpi
-local Vec has VecType = seq
-for global Vec:  max = 1.00, min = 0.00, infnorm = 1.00, twonorm = 6.51
-for local  Vec:  max = 0.50, min = 0.00, infnorm = 0.50, twonorm = 1.82
-
+installed (e.g. NetCDF, FFTW).
 
 
 -----------------------
-BUILD ERRORS
+REGARDING PETSC VERSIONS
 -----------------------
-If there is an error 
-   "makefile: ... /bmake/common/base: No such file or directory"
-or similar then
-   ***  PETSC_DIR is not set properly  ***
-   ***  see PISM install guide  ***
 
-If there is an error
-   "..../bmake/FOO/petscconf: No such file or directory"
-or similar then
-   ***  PETSC_ARCH is not set properly (as it is set to FOO)  ***
-   ***  see PISM install guide  ***
-   
-
------------------------
-IF USING PETSC 3.0.0 or later
------------------------
-The makefile in this directory demostrates how to determine which make
-system to use; there is at least one significant difference between the
+The makefile in this directory demostrates how we determine which make
+system to use.  There is at least one significant difference between the
 make system in PETSc 2.3.3 and 3.0.0.  Also incompatibilities in the API.
 If using 3.0.0 try:
 
@@ -70,15 +29,25 @@ Number of Newton iterations = 4
 Note poisson.c has a precompiler directive to work under either 2.3.3 
 or 3.0.0.  localVecMax.c works unmodified under either.
 
+Here is an example only for 2.3.3 or earlier:
+
+$ make ex5_petsc2  # Bratu DA/SNES example from PETSc
+$ ./ex5_petsc2
+Number of Newton iterations = 4
+
 
 -----------------------
-DEVELOPER COMMENT
+BUILD ERRORS
 -----------------------
-The example ex5.c is useful to PISM developers because
-it shows use of SNES on a nonlinear PDE.
+If there is an error 
+   "makefile: ... /bmake/common/base: No such file or directory"
+or similar then
+   ***  PETSC_DIR is not set properly  ***
+   ***  see PISM Installation Manual  ***
 
-ex5.c has been modified to give poisson.c, which solves exactly the kind of
-Poisson-like problem which is needed as a regularization step in inverse 
-modeling (i.e. IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic()
-in src/base/iMinverseMat.cc).
+If there is an error
+   "..../bmake/FOO/petscconf: No such file or directory"
+or similar then
+   ***  PETSC_ARCH is not set properly (as it is set to FOO)  ***
+   ***  see PISM Installation Manual  ***
 

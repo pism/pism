@@ -24,6 +24,13 @@ e.g.:
 
    mpiexec -np 2 ./poisson -dodraw -draw_pause 2 -display :0
 
+The example SNES ex5.c itself is useful to PISM developers because
+it shows use of SNES on a nonlinear PDE.  But
+ex5.c has been modified to give poisson.c, which solves exactly the kind of
+Poisson-like problem which is needed as a regularization step in inverse 
+modeling (i.e. IceModel::computeYieldStressFromBasalShearUsingPseudoPlastic()
+in src/base/iMinverseMat.cc).
+
 --------------------------------------------
 
 CHANGELOG relative to ex5.c:

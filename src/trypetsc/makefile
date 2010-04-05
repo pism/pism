@@ -1,9 +1,6 @@
 # this makefile is an abbreviated form of src/snes/examples/tutorials/makefile
 
-CFLAGS           =
-CPPFLAGS         =
-MANSEC           = SNES
-EXAMPLESC	 = ex5.c poisson.c localVecMax.c
+#MANSEC          = KSP SNES
 
 PETSC3_BASE := $(wildcard ${PETSC_DIR}/conf/base)
 # PETSC3_BASE is empty string if not 3.0.0
@@ -21,15 +18,21 @@ endif
 CFLAGS += -DHAVE_PETSC3=${HAVE_PETSC3} -g
 
 
+lapbasic: lapbasic.o  chkopts
+	-${CLINKER} -o lapbasic lapbasic.o ${PETSC_KSP_LIB}
+	${RM} lapbasic.o
+
+lapdof2: lapdof2.o  chkopts
+	-${CLINKER} -o lapdof2 lapdof2.o ${PETSC_KSP_LIB}
+	${RM} lapdof2.o
+
 poisson: poisson.o  chkopts
 	-${CLINKER} -o poisson poisson.o ${PETSC_SNES_LIB}
 	${RM} poisson.o
 
-
 localVecMax: localVecMax.o  chkopts
-	-${CLINKER} -o localVecMax localVecMax.o ${PETSC_SNES_LIB}
+	-${CLINKER} -o localVecMax localVecMax.o ${PETSC_KSP_LIB}
 	${RM} localVecMax.o
-
 
 ex5_petsc2: ex5_petsc2.o chkopts
 	-${CLINKER} -o ex5_petsc2 ex5_petsc2.o ${PETSC_SNES_LIB}
@@ -42,5 +45,4 @@ ex5_petsc3: ex5_petsc3.o chkopts
 ex2_printsome: ex2_printsome.o   chkopts
 	-${CLINKER} -o ex2_printsome ex2_printsome.o  ${PETSC_SYS_LIB}
 	${RM} -f ex2_printsome.o
-
 
