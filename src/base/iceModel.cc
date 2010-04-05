@@ -413,12 +413,8 @@ PetscErrorCode IceModel::createVecs() {
 PetscErrorCode IceModel::deallocate_internal_objects() {
   PetscErrorCode ierr;
 
-  ierr = KSPDestroy(SSAKSP); CHKERRQ(ierr);
-  ierr = MatDestroy(SSAStiffnessMatrix); CHKERRQ(ierr);
-  ierr = VecDestroy(SSAX); CHKERRQ(ierr);
-  ierr = VecDestroy(SSARHS); CHKERRQ(ierr);
-  ierr = VecDestroy(SSAXLocal); CHKERRQ(ierr);
-  ierr = VecScatterDestroy(SSAScatterGlobalToLocal); CHKERRQ(ierr);
+  // since SSA tools are currently part of IceModel, de-allocate them here
+  ierr = destroySSAobjects(); CHKERRQ(ierr);
 
   return 0;
 }

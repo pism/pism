@@ -461,23 +461,13 @@ PetscErrorCode IceModel::init_couplers() {
 }
 
 
-//! Allocates SSA tools and work vectors.
+//! Allocates work vectors (and calls more).
 PetscErrorCode IceModel::allocate_internal_objects() {
   PetscErrorCode ierr;
   PetscInt WIDE_STENCIL = MY_WIDE_STENCIL;
 
-  // setup (classical) SSA tools
-  const PetscInt M = 2 * grid.Mx * grid.My;
-  ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, M, M,
-                         13, PETSC_NULL, 13, PETSC_NULL,
-                         &SSAStiffnessMatrix); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com, PETSC_DECIDE, M, &SSAX); CHKERRQ(ierr);
-  ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
-  ierr = VecCreateSeq(PETSC_COMM_SELF, M, &SSAXLocal);
-  ierr = VecScatterCreate(SSAX, PETSC_NULL, SSAXLocal, PETSC_NULL,
-                          &SSAScatterGlobalToLocal); CHKERRQ(ierr);
-  ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
-  ierr = KSPSetFromOptions(SSAKSP); CHKERRQ(ierr);
+  // since SSA tools are part of IceModel, allocate them here
+  ierr = allocateSSAobjects(); CHKERRQ(ierr);
 
   // various internal quantities
   // 2d work vectors

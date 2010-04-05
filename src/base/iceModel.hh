@@ -433,6 +433,8 @@ protected:
                              PetscScalar alpha, PetscScalar mu, PetscScalar min_T) const;
 
   // see iMssa.cc
+  virtual PetscErrorCode allocateSSAobjects();
+  virtual PetscErrorCode destroySSAobjects();
   virtual PetscErrorCode initSSA();
   virtual PetscErrorCode velocitySSA(PetscInt *numiter);
   virtual PetscErrorCode velocitySSA(IceModelVec2S vNuH[2], PetscInt *numiter);

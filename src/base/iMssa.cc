@@ -21,6 +21,60 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
+
+//! Allocates SSA tools.
+/*
+When the SSA becomes an instance of an abstracted class, this may be dealt
+within a constructor.
+ */
+PetscErrorCode IceModel::allocateSSAobjects() {
+  PetscErrorCode ierr;
+
+  // SSA solve vars; note pieces of the SSA Velocity routine are defined in iMssa.cc
+  const PetscInt M = 2 * grid.Mx * grid.My;  // number of scalar variables
+  ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, 
+                         M, M,
+                         13, PETSC_NULL, 13, PETSC_NULL,
+                         &SSAStiffnessMatrix); CHKERRQ(ierr);
+  ierr = VecCreateMPI(grid.com, PETSC_DECIDE, M, &SSAX); CHKERRQ(ierr);
+  ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
+  ierr = VecCreateSeq(PETSC_COMM_SELF, M, &SSAXLocal);
+  ierr = VecScatterCreate(SSAX, PETSC_NULL, SSAXLocal, PETSC_NULL,
+                          &SSAScatterGlobalToLocal); CHKERRQ(ierr);
+
+  /* a NEW VERSION:
+  ierr = DACreateGlobalVector(vel_ssa.da,&SSAX); CHKERRQ(ierr);
+  ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
+  ierr = DAGetMatrix(vel_ssa.da, MATMPIAIJ, &SSAStiffnessMatrix); CHKERRQ(ierr);
+  ierr = MatSetFromOptions(SSAStiffnessMatrix);CHKERRQ(ierr);
+  // and REMOVE SSAScatterGlobalToLocal and SSAXLocal
+  */
+
+  ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(SSAKSP); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+//! Deallocate SSA tools.
+PetscErrorCode IceModel::destroySSAobjects() {
+  PetscErrorCode ierr;
+
+  ierr = KSPDestroy(SSAKSP); CHKERRQ(ierr);
+  ierr = MatDestroy(SSAStiffnessMatrix); CHKERRQ(ierr);
+  ierr = VecDestroy(SSAX); CHKERRQ(ierr);
+  ierr = VecDestroy(SSARHS); CHKERRQ(ierr);
+  ierr = VecDestroy(SSAXLocal); CHKERRQ(ierr);
+  ierr = VecScatterDestroy(SSAScatterGlobalToLocal); CHKERRQ(ierr);
+
+  /* a NEW VERSION:
+  // as is but without SSAScatterGlobalToLocal and SSAXLocal
+  */
+  return 0;
+}
+
+
 //! Each step of SSA uses previously saved values to start iteration; zero them here to start.
 PetscErrorCode IceModel::initSSA() {
   PetscErrorCode ierr;
@@ -196,7 +250,6 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
 }
 
 
-
 /*!
 Compares saved to current product of vertically-averaged viscosity times height,
 the quantity denoted \f$\bar\nu H\f$.  This comparison is used to determine
@@ -243,53 +296,79 @@ PetscErrorCode IceModel::testConvergenceOfNu(IceModelVec2S vNuH[2], IceModelVec2
 }
 
 
-//! Assemble the matrix (left-hand side) for the numerical approximation of the SSA equations.
+//! Assemble the left-hand side matrix for the numerical approximation of the SSA equations.
 /*! 
-COMMENT FIXME:  Finish plastic till paper first.  Then fix these comments to match.
+The SSA equations are in their clearest divergence form
+    \f[ - \frac{\partial T_{ij}}{\partial x_j} - \tau_{(b)i} = f_i \f]
+where \f$i,j\f$ range over \f$x,y\f$, \f$T_{ij}\f$ is a depth-integrated viscous
+stress tensor (%i.e. equation (2.6) in [\ref SchoofStream]; also [\ref Morland]).
+These equations determine velocity in a more-or-less elliptic manner.
+Here \f$\tau_{(b)i}\f$ are the components of the basal shear stress applied to
+the base of the ice and \f$f_i\f$ is the driving shear stress,
+    \f[ f_i = - \rho g H \frac{\partial h}{\partial x_i}. \f]
+Here \f$H\f$ is the ice thickness and \f$h\f$ is the elevation of the surface of
+the ice.
 
-The SSA equations are in their clearest form
-    \f[ - \frac{\partial T_{ij}}{\partial x_j} + \tau_{(b)i} = f_i \f]
-where \f$i,j\f$ range over \f$x,y\f$, \f$T_{ij}\f$ is a depth-integrated viscous stress tensor 
-(i.e. equation (2.6) in [\ref SchoofStream] , and following [\ref Morland], 
-and \f$\tau_{(b)i}\f$ are the components of the basal shear stress.  
-Also \f$f_i\f$ is the driving shear stress \f$f_i = - \rho g H \frac{\partial h}{\partial x_i}\f$.  
-These equations determine velocity in a more-or-less elliptic equation manner.  Here \f$H\f$ 
-is the ice thickness and \f$h\f$ is the elevation of the surface of the ice.
+More concretely, the SSA equations are
+\f{align*}
+ - 2 \left[\bar\nu H \left(2 u_x + v_y\right)\right]_x
+        - \left[\bar\nu H \left(u_y + v_x\right)\right]_y
+        - \tau_{(b)1}  &= - \rho g H h_x, \\
+   - \left[\bar\nu H \left(u_y + v_x\right)\right]_x
+        - 2 \left[\bar\nu H \left(u_x + 2 v_y\right)\right]_y
+        - \tau_{(b)2}  &= - \rho g H h_y, 
+\f}
+where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the
+\f$y\f$-component of the velocity.  Note \f$\bar\nu\f$ is the vertically-averaged
+effective viscosity of the ice.
 
-More specifically, the SSA equations are
-\latexonly
-\def\ddt#1{\ensuremath{\frac{\partial #1}{\partial t}}}
-\def\ddx#1{\ensuremath{\frac{\partial #1}{\partial x}}}
-\def\ddy#1{\ensuremath{\frac{\partial #1}{\partial y}}}
-\begin{align*}
-  - 2 \ddx{}\left[\nu H \left(2 \ddx{u} + \ddy{v}\right)\right]
-        - \ddy{}\left[\nu H \left(\ddy{u} + \ddx{v}\right)\right]
-        + \tau_{(b)x}  &=  - \rho g H \ddx{h}, \\
-    - \ddx{}\left[\nu H \left(\ddy{u} + \ddx{v}\right)\right]
-      - 2 \ddy{}\left[\nu H \left(\ddx{u} + 2 \ddy{v}\right)\right]
-        + \tau_{(b)y}  &=  - \rho g H \ddy{h}, 
-\end{align*}
-\endlatexonly
- where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the \f$y\f$-component 
-of the velocity.  Note \f$\nu\f$ is the vertically-averaged effective viscosity of the ice.  
+For ice shelves \f$\tau_{(b)i} = 0\f$ [\ref MacAyealetal].
+For ice streams with a basal till modelled as a plastic material,
+\f$\tau_{(b)i} = - \tau_c u_i/|\mathbf{u}|\f$ where 
+\f$\mathbf{u} = (u,v)\f$, \f$|\mathbf{u}| = \left(u^2 + v^2\right)^{1/2}\f$.
+Here \f$\tau_c(t,x,y)\f$ is the yield stress of the till [\ref SchoofStream].
+More generally, ice streams can be modeled with a pseudo-plastic basal till;
+see initBasalTillModel() and updateYieldStressUsingBasalWater() and
+[\ref BKAJS].
 
-For ice shelves \f$\tau_{(b)i} = 0\f$ [\ref MacAyealetal].  For ice streams with a basal 
-till modelled as a plastic material, \f$\tau_{(b)i} = \tau_c u_i/|\mathbf{u}|\f$ where 
-\f$\mathbf{u} = (u,v)\f$, \f$|\mathbf{u}| = \left(u^2 + v^2\right)^{1/2}\f$, and \f$\tau_c\f$ 
-is the yield stress of the till [\ref SchoofStream].  More generally,
-ice streams can be modeled with a pseudo-plastic basal till.  This includes assuming the
-basal till is a linearly-viscous material, \f$\tau_{(b)i} = \beta u_i\f$ where \f$\beta\f$ 
-is the basal drag (friction) parameter [\ref HulbeMacAyeal].
-See IceBasalResistancePlasticLaw::drag().
+The pseudo-plastic till model includes all power law sliding relations 
+[\ref BKAJS], and in particular it includes modeling the basal till as a linearly-viscous 
+material, \f$\tau_{(b)i} = - \beta u_i\f$ where \f$\beta\f$ is the basal drag
+(friction) parameter [\ref MacAyeal].  PISM assumes that the basal shear
+stress can be factored this way, <i>even if the coefficient depends on the
+velocity</i>, \f$\beta(u,v)\f$.  Such factoring is possible even in the case of
+(regularized) plastic till.  This scalar coefficient \f$\beta\f$ is what is
+returned by IceBasalResistancePlasticLaw::drag().
 
-Note that the basal shear stress appears on the \em left side of the above system.  
-We believe this is crucial, because of its effect on the spectrum of the linear 
-approximations of each stage.  The effect on spectrum is clearest in the linearly-viscous
-till case (i.e. [\ref HulbeMacAyeal]) but there seems to be an analogous effect in the 
-plastic till case [\ref SchoofStream].
+Note that the basal shear stress appears on the \em left side of the linear
+system we actually solve.  We believe this is crucial, because of its effect on
+the spectrum of the linear approximations of each stage.  The effect on spectrum
+is clearest in the linearly-viscous till case but
+there seems to be an analogous effect in the plastic till case.
 
-This method assembles the matrix for the left side of the SSA equations.  The numerical method 
-is finite difference.  In particular [FIXME: explain f.d. approxs, esp. mixed derivatives]
+This method assembles the matrix for the left side of the above SSA equations.
+The numerical method is finite difference.  Suppose we use difference notation
+\f$\delta_{+x}f^{i,j} = f^{i+1,j}-f^{i,j}\f$, 
+\f$\delta_{-x}f^{i,j} = f^{i,j}-f^{i-1,j}\f$, and 
+\f$\Delta_{x}f^{i,j} = f^{i+1,j}-f^{i-1,j}\f$, and corresponding notation for
+\f$y\f$ differences, and that we write \f$N = \bar\nu\f$ then the first of the 
+two "concrete" SSA equations above has this discretization:
+\f{align*}
+- &2 \frac{N^{i+\frac{1}{2},j}}{\Delta x} \left[2\frac{\delta_{+x}u^{i,j}}{\Delta x} + \frac{\Delta_{y} v^{i+1,j} + \Delta_{y} v^{i,j}}{4 \Delta y}\right] + 2 \frac{N^{i-\frac{1}{2},j}}{\Delta x} \left[2\frac{\delta_{-x}u^{i,j}}{\Delta x} + \frac{\Delta_y v^{i,j} + \Delta_y v^{i-1,j}}{4 \Delta y}\right] \\
+&\qquad- \frac{N^{i,j+\frac{1}{2}}}{\Delta y} \left[\frac{\delta_{+y} u^{i,j}}{\Delta y} + \frac{\Delta_x v^{i,j+1} + \Delta_x v^{i,j}}{4 \Delta x}\right] + \frac{N^{i,j-\frac{1}{2}}}{\Delta y} \left[\frac{\delta_{-y}u^{i,j}}{\Delta y} + \frac{\Delta_x v^{i,j} + \Delta_x v^{i,j-1}}{4 \Delta x}\right] - \tau_{(b)1}^{i,j} = - \rho g H^{i,j} \frac{\Delta_x h^{i,j}}{2\Delta x}.
+\f}
+As a picture, see Figure \ref ssastencil.
+
+\image html ssastencil.png "\b ssastencil:  Stencil for our finite difference discretization of the first of the two scalar SSA equations.  Triangles show staggered grid points where N = nu * H is evaluated.  Circles and squares show where u and v are approximated, respectively."
+\anchor ssastencil
+
+It follows immediately that the matrix we assemble in the current method has 
+13 nonzeros entries per row because, for this first SSA equation, there are 5
+grid values of \f$u\f$ and 8 grid values of \f$v\f$ used in this scheme.  For
+the second equation we also have 13 nonzeros per row.
+
+FIXME:  address use of DAGetMatrix and MatStencil once those are used
+
  */
 PetscErrorCode IceModel::assembleSSAMatrix(bool includeBasalShear, IceModelVec2S vNuH[2], Mat A) {
   const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
@@ -416,9 +495,9 @@ PetscErrorCode IceModel::assembleSSAMatrix(bool includeBasalShear, IceModelVec2S
 //! Computes the right-hand side ("rhs") of the linear problem for the SSA equations.
 /*! 
 The right side of the SSA equations is just the driving stress term
-   \f[ - \rho g H \nabla h \f]
-because, in particular, the basal stress is put on the left side of the system.  
-(See comment for assembleSSAMatrix().)  
+   \f[ - \rho g H \nabla h. \f]
+The basal stress is put on the left side of the system.  (See comment for
+assembleSSAMatrix().)  
 
 The surface slope is computed by centered difference onto the regular grid,
 which may use periodic ghosting.  (Optionally the surface slope can be computed 
@@ -490,6 +569,8 @@ linear SSA system does not in general have anything to do with the \c DA-based
 vectors, for the rest of \c IceModel, we must scatter the entire vector to all 
 processors.  In particular, this procedure runs once for each outer iteration
 in order to put the velocities where needed to compute effective viscosity.
+
+in a NEW VERSION this entire procedure would be removed
  */
 PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
   const PetscInt  M = 2 * grid.My;
@@ -538,22 +619,21 @@ inside KSPSolve().  This inner loop is controlled by PETSc but the user can set 
 <tt>-ksp_rtol</tt>, in particular, and that tolerance controls when the inner loop terminates.
 
 Note that <tt>-ksp_type</tt> can be used to choose the \c KSP.  This will set 
-which type of linear iterative method is used.  The KSP is important because 
-          omfv = 
-the eigenvalues of the linearized SSA are not well understood, but they 
-determine the convergence of this linear, inner, iteration.  The default KSP 
-is GMRES(30).
+which type of linear iterative method is used.  The KSP choice is important
+but poorly understood because the eigenvalues of the linearized SSA are not 
+well understood.  Nonetheless these eigenvalues determine the convergence of 
+this (inner) linear iteration.  The default KSP is GMRES(30).
 
-Note that <tt>-ksp_pc</tt> will set which preconditioner to use; the default 
+Note that <tt>-pc_type</tt> will set which preconditioner to use; the default 
 is ILU.  A well-chosen preconditioner can put the eigenvalues in the right
 place so that the KSP can converge quickly.  The preconditioner is also
 important because it will behave differently on different numbers of
 processors.  If the user wants the results of SSA calculations to be 
-independent of the number of processors, then <tt>-ksp_pc none</tt> should
-be used.
+independent of the number of processors, then <tt>-pc_type none</tt> should
+be used, but performance will be poor.
 
 If you want to test different KSP methods, it may be helpful to see how many 
-iterations were necessary.  Use <tt>-ksp_monitor</tt> or <tt>-d k</tt>.
+iterations were necessary.  Use <tt>-ksp_monitor</tt>.
 Initial testing implies that CGS takes roughly half the iterations of 
 GMRES(30), but is not significantly faster because the iterations are each 
 roughly twice as slow.  Furthermore, ILU and BJACOBI seem roughly equivalent
@@ -562,14 +642,13 @@ as preconditioners.
 The outer loop terminates when the effective viscosity is no longer changing 
 much, according to the tolerance set by the option <tt>-ssa_rtol</tt>.  (The 
 outer loop also terminates when a maximum number of iterations is exceeded.)
+We save the velocity from the last time step in order to have a better estimate
+of the effective viscosity than the u=v=0 result.
 
-In truth there is an outer outer loop (over index \c l).  This one manages an
+In truth there is an "outer outer" loop (over index \c l).  This one manages an
 attempt to over-regularize the effective viscosity so that the nonlinear
-iteration (the "outer" loop over \c k) has a chance to converge.
-
-  // We need to save the velocity from the last time step since we may have to
-  // restart the iteration with larger values of epsilon.
-
+iteration (the "outer" loop over \c k) has a chance to converge if it doesn't 
+converge with the default regularization.
  */
 PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
   PetscErrorCode ierr;
