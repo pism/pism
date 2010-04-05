@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
 
       ierr = mCBC.init(); CHKERRQ(ierr);
       
-      ierr = mCBC.diagnosticRun(); CHKERRQ(ierr);
+      ierr = mCBC.run(); CHKERRQ(ierr);
       ierr = verbPrintf(2,com, "done with diagnostic run\n"); CHKERRQ(ierr);
       if (dontReport == PETSC_FALSE) {
         ierr = mCBC.reportErrors();  CHKERRQ(ierr);
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
 
       ierr = mSSA.init(); CHKERRQ(ierr);
 
-      ierr = mSSA.diagnosticRun(); CHKERRQ(ierr);
+      ierr = mSSA.run(); CHKERRQ(ierr);
       ierr = verbPrintf(2,com, "done with diagnostic run\n"); CHKERRQ(ierr);
       if (dontReport == PETSC_FALSE) {
         ierr = mSSA.reportErrors();  CHKERRQ(ierr);

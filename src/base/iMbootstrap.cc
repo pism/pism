@@ -163,6 +163,7 @@ For now it is \e only called using "pismd -ross".
 PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   PetscErrorCode  ierr;
   IceModelVec2S vbcflag;
+  IceModelVec2V vel_bc;
   PISMIO nc(&grid);
 
   // determine if variables exist in file
@@ -189,7 +190,18 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
     CHKERRQ(ierr);
     PetscEnd();
   }
-  ierr = vbcflag.create(grid, "bcflag", true); CHKERRQ(ierr);
+  ierr = vbcflag.create(grid, "bcflag", false); CHKERRQ(ierr);
+
+  ierr = vel_bc.create(grid, "vel_bc", false); CHKERRQ(ierr);
+  ierr = vel_bc.set_attrs("diagnostic", 
+			   "vertical mean of horizontal ice velocity in the X direction",
+			   "m s-1", "land_ice_vertical_mean_x_velocity", 0); CHKERRQ(ierr);
+  ierr = vel_bc.set_attrs("diagnostic", 
+			   "vertical mean of horizontal ice velocity in the Y direction",
+			   "m s-1", "land_ice_vertical_mean_y_velocity", 1); CHKERRQ(ierr);
+  ierr = vel_bc.set_glaciological_units("m year-1");
+  vel_bc.write_in_glaciological_units = true;
+
 
   // create "local interpolation context" from dimensions, limits, and lengths extracted from
   //    file and from information about the part of the grid owned by this processor
@@ -209,7 +221,7 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
     ierr = verbPrintf(3, grid.com, "  mask not found; leaving current values alone ...\n");
                CHKERRQ(ierr);
   }
-  ierr = vel_bar.regrid(filename, lic, true); CHKERRQ(ierr);
+  ierr = vel_bc.regrid(filename, lic, true); CHKERRQ(ierr);
 
   // we have already checked if "bcflag" exists, so just read it
   vbcflag.interpolation_mask.number_allowed = 2;
@@ -218,7 +230,7 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   vbcflag.use_interpolation_mask = true;
   ierr = vbcflag.regrid(filename, lic, true); CHKERRQ(ierr);
 
-  // now use values in vel_bar, not equal to missing_value, to set boundary conditions by
+  // now use values in vel_bc, not equal to missing_value, to set boundary conditions by
   // setting corresponding locations to MASK_SHEET and setting uvbar appropriately;
   // set boundary condition which will apply to finite difference system:
   //    staggered grid velocities at MASK_SHEET points which neighbor MASK_FLOATING points
@@ -226,17 +238,17 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   PetscScalar **mask, **bc;
   ierr = vbcflag.get_array(bc); CHKERRQ(ierr);    
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
-  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
+  ierr = vel_bc.begin_access(); CHKERRQ(ierr);
   ierr = uvbar.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (PetscAbs(bc[i][j] - 1.0) < 0.1) {
         // assume it is really a boundary condition location
-        uvbar(i-1,j,0) = vel_bar(i,j).u;
-        uvbar(i,j,0) = vel_bar(i,j).u;
-        uvbar(i,j-1,1) = vel_bar(i,j).v;
-        uvbar(i,j,1) = vel_bar(i,j).v;
+        uvbar(i-1,j,0) = vel_bc(i,j).u;
+        uvbar(i,j,0) = vel_bc(i,j).u;
+        uvbar(i,j-1,1) = vel_bc(i,j).v;
+        uvbar(i,j,1) = vel_bc(i,j).v;
         mask[i][j] = MASK_SHEET;  // assure that shelf/stream equations not active at this point
       } else {
         uvbar(i-1,j,0) = 0.0;
@@ -248,7 +260,7 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   }
   ierr =   vbcflag.end_access(); CHKERRQ(ierr);    
   ierr =     vMask.end_access(); CHKERRQ(ierr);
-  ierr =   vel_bar.end_access(); CHKERRQ(ierr);
+  ierr =   vel_bc.end_access(); CHKERRQ(ierr);
   ierr = uvbar.end_access(); CHKERRQ(ierr);
 
   // update viewers

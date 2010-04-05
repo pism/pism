@@ -27,16 +27,12 @@
 IceROSSModel::IceROSSModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : IceModel(g, conf, conf_overrides) {  // do nothing; note derived classes must have constructors
 
-  config.set_flag("use_ssa_velocity", true);
   computeSIAVelocities = PETSC_FALSE;
 
   // further settings for velocity computation 
-  config.set_flag("use_constant_nuh_for_ssa", false);
   // compute the effective viscosity in usual shear-thinning way (except will
   // extend shelf using constantNuHForSSA below, also as usual)
   shelvesDragToo = PETSC_FALSE;            // exactly zero drag under shelves
-
-  config.set("epsilon_ssa", 0.0);  // don't use this lower bound on effective viscosity
 
   iceFactory.setType(ICE_CUSTOM);  // ICE_CUSTOM has easy setting of ice hardness
   
@@ -50,16 +46,6 @@ IceROSSModel::IceROSSModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable 
           //          30 MPa yr for \bar\nu
   ssaStrengthExtend.set_notional_strength(DEFAULT_nuH);
 
-}
-
-PetscErrorCode IceROSSModel::setFromOptions() {
-  PetscErrorCode ierr;
-
-  config.set_flag("do_cold_ice_methods", true);
-
-  ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
-  
-  return 0;
 }
 
 PetscErrorCode IceROSSModel::createVecs() {
@@ -79,6 +65,50 @@ PetscErrorCode IceROSSModel::createVecs() {
                                "", ""); CHKERRQ(ierr);
 
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceROSSModel::model_state_setup() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::model_state_setup(); CHKERRQ(ierr);
+
+  double ocean_rho = config.get("sea_water_density");
+
+  // update surface elev (this has to happen after
+  // updateSurfaceElevationAnsMask is called in IceModel::model_state_setup()
+  // above):
+  ierr = verbPrintf(2,grid.com, 
+     "EIS-Ross: applying floatation criterion everywhere to get smooth surface ...\n");
+     CHKERRQ(ierr);
+  ierr = vH.copy_to(vh); CHKERRQ(ierr);
+  ierr = vh.scale(1.0 - ice->rho / ocean_rho ); CHKERRQ(ierr);
+
+  // in preparation for SSA b.c. read; zero out uvbar; SIA velocities will not
+  //    be computed so this will stay
+  ierr = uvbar.set(0.0); CHKERRQ(ierr);
+
+  // read SSA b.c. from file
+  bool   ssaBCset;
+  string ssaBCfile;
+  ierr = PetscOptionsBegin(grid.com, "", "IceROSSModel options", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-ssaBC", "Specifies the file containing SSA boundary conditions",
+			     ssaBCfile, ssaBCset); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  if (ssaBCset) {
+     ierr = verbPrintf(2, grid.com,
+             "EIS-Ross: reading SSA boundary condition file %s and setting bdry conds\n",
+		       ssaBCfile.c_str()); CHKERRQ(ierr);
+     ierr = readShelfStreamBCFromFile(ssaBCfile.c_str()); CHKERRQ(ierr);
+     config.set_flag("use_ssabc", true);
+     config.set_string("ssabc_filename", ssaBCfile);
+  } else {
+     config.set_flag("use_ssabc", false);
+  }
+
   return 0;
 }
 
@@ -124,51 +154,6 @@ PetscErrorCode IceROSSModel::init_physics() {
   return 0;
 }
 
-
-PetscErrorCode IceROSSModel::misc_setup() {
-  PetscErrorCode  ierr;
-
-  ierr = IceModel::misc_setup(); CHKERRQ(ierr);
-
-  double ocean_rho = config.get("sea_water_density");
-
-  // update surface elev (this has to happen after
-  // updateSurfaceElevationAnsMask is called in IceModel::misc_setup() above):
-  ierr = verbPrintf(2,grid.com, 
-     "EIS-Ross: applying floatation criterion everywhere to get smooth surface ...\n");
-     CHKERRQ(ierr);
-  ierr = vH.copy_to(vh); CHKERRQ(ierr);
-  ierr = vh.scale(1.0 - ice->rho / ocean_rho ); CHKERRQ(ierr);
-
-  // in preparation for SSA b.c. read; zero out uvbar; SIA velocities will not
-  //    be computed so this will stay
-  ierr = uvbar.set(0.0); CHKERRQ(ierr);
-
-  // read SSA b.c. from file
-  bool   ssaBCset;
-  string ssaBCfile;
-  ierr = PetscOptionsBegin(grid.com, "", "IceROSSModel options", ""); CHKERRQ(ierr);
-  {
-    ierr = PISMOptionsString("-ssaBC", "Specifies the file containing SSA boundary conditions",
-			     ssaBCfile, ssaBCset); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  if (ssaBCset) {
-     ierr = verbPrintf(2, grid.com,
-             "EIS-Ross: reading SSA boundary condition file %s and setting bdry conds\n",
-		       ssaBCfile.c_str()); CHKERRQ(ierr);
-     ierr = readShelfStreamBCFromFile(ssaBCfile.c_str()); CHKERRQ(ierr);
-     config.set_flag("use_ssabc", true);
-     config.set_string("ssabc_filename", ssaBCfile);
-  } else {
-     config.set_flag("use_ssabc", false);
-  }
-
-  ierr = verbPrintf(2,grid.com, "EIS-Ross: computing velocity ...\n"); CHKERRQ(ierr);
-  return 0;
-}
-
 // This method is called by the pismd driver.
 PetscErrorCode IceROSSModel::finishROSS() {
   PetscErrorCode  ierr;
@@ -195,13 +180,6 @@ PetscErrorCode IceROSSModel::finishROSS() {
   ierr = myvNu[1].create(grid, "myvNu", true); CHKERRQ(ierr);
   ierr = computeEffectiveViscosity(myvNu, ssaEpsilon); CHKERRQ(ierr);
   ierr = update_nu_viewers(myvNu,myvNu,false); CHKERRQ(ierr);
-  
-  PetscInt    pause_time = 0;
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, PETSC_NULL); CHKERRQ(ierr);
-  if (pause_time > 0) {
-    ierr = verbPrintf(2,grid.com,"\npausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
-    ierr = PetscSleep(pause_time); CHKERRQ(ierr);
-  }
   
   return 0;
 }

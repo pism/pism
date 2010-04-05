@@ -229,3 +229,36 @@ PetscErrorCode IceModelVec2V::set_component(int n, IceModelVec2S &source) {
 
   return 0;
 }
+
+//! \brief View a 2D vector field. Allocates and de-allocates g2, the temporary global
+//! vector; performance should not matter here.
+PetscErrorCode IceModelVec2V::view(PetscInt viewer_size) {
+  PetscErrorCode ierr;
+  Vec g2;
+
+  ierr = DACreateGlobalVector(grid->da2, &g2); CHKERRQ(ierr);
+
+  string prefixes[2];
+  prefixes[0] = "u";
+  prefixes[1] = "v";
+  
+  for (int j = 0; j < dof; ++j) {
+    string c_name = prefixes[j] + name;
+    if ((*map_viewers)[c_name] == PETSC_NULL) {
+      string title = string_attr("long_name", j) + " (" + string_attr("glaciological_units", j) + ")";
+
+      ierr = create_viewer(viewer_size, title, (*map_viewers)[c_name]); CHKERRQ(ierr);
+    }
+
+    ierr = IceModelVec2::get_component(j, g2); CHKERRQ(ierr);
+
+    ierr = vars[j].to_glaciological_units(g2); CHKERRQ(ierr);
+
+    ierr = VecView(g2, (*map_viewers)[c_name]); CHKERRQ(ierr);
+  }
+
+
+  ierr = VecDestroy(g2); CHKERRQ(ierr);
+
+  return 0;
+}

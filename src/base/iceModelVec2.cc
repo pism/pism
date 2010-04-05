@@ -143,9 +143,12 @@ PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, PetscScalar fill) {
 
 //! \brief View a 2D field. Allocates and de-allocates g2, the temporary global
 //! vector; performance should not matter here.
-PetscErrorCode IceModelVec2S::view(PetscInt viewer_size) {
+PetscErrorCode IceModelVec2::view(PetscInt viewer_size) {
   PetscErrorCode ierr;
   Vec g2;
+
+  if (dof != 1)
+    SETERRQ(1, "This method only supports IceModelVecs with dof == 1.");
 
   ierr = DACreateGlobalVector(grid->da2, &g2); CHKERRQ(ierr);
   

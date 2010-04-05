@@ -36,8 +36,8 @@ public:
   virtual PetscErrorCode init_physics();
 
 
-    virtual PetscErrorCode diagnosticRun();
-    PetscErrorCode         reportErrors();
+  virtual PetscErrorCode run();
+  PetscErrorCode         reportErrors();
 
 protected:
     char            test;       // only 'I', 'J', 'M' supported

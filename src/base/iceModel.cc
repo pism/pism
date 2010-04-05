@@ -430,7 +430,10 @@ PetscErrorCode IceModel::setExecName(const char *my_executable_short_name) {
   return 0;
 }
 
-
+//! The contents of the time-step.
+/*!
+During the time-step we perform the following actions:
+ */
 PetscErrorCode IceModel::step(bool do_mass_continuity,
 			      bool do_energy,
 			      bool do_age,
@@ -438,9 +441,10 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 			      bool use_ssa_when_grounded) {
   PetscErrorCode ierr;
 
+  //! \li call additionalAtStartTimestep() to let derived classes do more
   ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
 
-  // ask boundary models what the maximum time-step should be
+  //! \li determine the maximum time-step boundary models can take
   double apcc_dt;
   ierr = surface->max_timestep(grid.year, apcc_dt); CHKERRQ(ierr);
   apcc_dt *= secpera;
@@ -461,7 +465,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
       maxdt_temporary = opcc_dt;
   }
 
-  // -extra_{times,file,vars} mechanism:
+  //! \li apply the time-step restriction from the -extra_{times,file,vars}
+  //! mechanism:
   double extras_dt;
   ierr = extras_max_timestep(grid.year, extras_dt); CHKERRQ(ierr);
   extras_dt *= secpera;
@@ -474,19 +479,22 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   PetscLogEventBegin(beddefEVENT,0,0,0,0);
 
-  // compute bed deformation, which only depends on current thickness and bed elevation
+  // \li compute the bed deformation, which only depends on current thickness and bed elevation
   if (beddef) {
     ierr = bed_def_step(); CHKERRQ(ierr); // prints "b" or "$" as appropriate
   } else stdout_flags += " ";
     
   PetscLogEventEnd(beddefEVENT,0,0,0,0);
 
-  // update basal till yield stress if appropriate; will modify and communicate mask
+  //! \li update the yield stress for the plastic till model (if appropriate)
   if (use_ssa_when_grounded) {
     ierr = updateYieldStressUsingBasalWater();  CHKERRQ(ierr);
     stdout_flags += "y";
   } else stdout_flags += "$";
 
+  //! \li update the velocity field; in some cases the whole three-dimensional
+  //! field is updated and in some cases just the vertically-averaged
+  //! horizontal velocity is updated; see velocity()
 
   // always do SIA velocity calculation; only update SSA and 
   //   only update velocities at depth if suggested by temp and age
@@ -495,18 +503,21 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   bool updateAtDepth = (skipCountDown == 0);
   ierr = velocity(updateAtDepth); CHKERRQ(ierr);  // event logging in here
   stdout_flags += (updateAtDepth ? "v" : "V");
-    
-  // adapt time step using velocities and diffusivity, ..., just computed
+
+  //! \li determine the time step according to a variety of stability criteria;
+  //!  see determineTimeStep()
   ierr = determineTimeStep(do_energy); CHKERRQ(ierr);
+
   dtTempAge += dt;
   grid.year += dt / secpera;  // adopt it
   // IceModel::dt,dtTempAge,grid.year are now set correctly according to
-  //    mass-continuity-eqn-diffusivity criteria, horizontal CFL criteria, and other 
-  //    criteria from derived class additionalAtStartTimestep(), and from 
+  //    mass-continuity-eqn-diffusivity criteria, horizontal CFL criteria, and
+  //    other criteria from derived class additionalAtStartTimestep(), and from
   //    "-skip" mechanism
 
   PetscLogEventBegin(tempEVENT,0,0,0,0);
 
+  //! \li update the age of the ice (if appropriate)
   if (do_age) {
     ierr = ageStep(); CHKERRQ(ierr);
     stdout_flags += "a";
@@ -514,6 +525,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     stdout_flags += "$";
   }
 
+  //! \li update the enthalpy (or temperature) field according to the conservation of
+  //!  energy model based (especially) on the new velocity field; see
+  //!  energyStep()
   if (updateAtDepth && do_energy) { // do the temperature step
     ierr = energyStep(); CHKERRQ(ierr);
     if (updateHmelt == PETSC_TRUE) {
@@ -528,10 +542,13 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   PetscLogEventEnd(tempEVENT,0,0,0,0);
 
+  //! \li compute fluxes through ice boundaries
   ierr = ice_mass_bookkeeping(); CHKERRQ(ierr);
 
   PetscLogEventBegin(massbalEVENT,0,0,0,0);
 
+  //! \li update the thickness of the ice according to the mass conservation
+  //!  model; see massContExplicitStep()
   if (do_mass_continuity) {
     ierr = massContExplicitStep(); CHKERRQ(ierr); // update H
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
@@ -546,7 +563,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   }
 
   PetscLogEventEnd(massbalEVENT,0,0,0,0);
-    
+
+  //! \li call additionalAtEndTimestep() to let derived classes do more
   ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 
   // end the flag line
@@ -561,23 +579,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
 //! Do the time-stepping for an evolution run.
 /*! 
-This procedure is the main time-stepping loop.  The following actions are taken on each pass 
-through the loop:
-\li the yield stress for the plastic till model is updated (if appropriate)
-\li the positive degree day model is invoked to compute the surface mass balance (if appropriate)
-\li a step of the bed deformation model is taken (if appropriate)
-\li the velocity field is updated; in some cases the whole three-dimensional field is updated 
-    and in some cases just the vertically-averaged horizontal velocity is updated; see velocity()
-\li the time step is determined according to a variety of stability criteria; 
-    see determineTimeStep()
-\li the temperature field is updated according to the conservation of energy model based 
-    (especially) on the new velocity field; see temperatureAgeStep()
-\li the thickness of the ice is updated according to the mass conservation model; see
-    massContExplicitStep()
-\li there is various reporting to the user on the current state; see summary() and updateViewers()
-
-Note that at the beginning and ends of each pass throught the loop there is a chance for 
-derived classes to do extra work.  See additionalAtStartTimestep() and additionalAtEndTimestep().
+This procedure is the main time-stepping loop.
  */
 PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
@@ -688,43 +690,6 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
     if (endOfTimeStepHook() != 0) break;
   } // end of the time-stepping loop
 
-  return 0;
-}
-
-
-//! Calls the necessary routines to do a diagnostic calculation of velocity.
-/*! 
-This important routine can be replaced by derived classes; it is \c virtual.
-
-This procedure has no loop but the following actions are taken:
-\li the yield stress for the plastic till model is updated (if appropriate)
-\li the velocity field is updated; in some cases the whole three-dimensional field is updated 
-    and in some cases just the vertically-averaged horizontal velocity is updated; see velocity()
-\li there is various reporting to the user on the current state; see summary() and updateViewers()
- */
-PetscErrorCode IceModel::diagnosticRun() {
-  PetscErrorCode  ierr;
-
-  bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
-
-  // print out some stats about input state
-  ierr = summaryPrintLine(PETSC_TRUE,PETSC_TRUE, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-           CHKERRQ(ierr);
-  adaptReasonFlag = ' '; // no reason for no timestep
-  skipCountDown = 0;
-  dt = 0.0;
-
-  // update basal till yield stress if appropriate; will modify and communicate mask
-  if (use_ssa_when_grounded) {
-    ierr = updateYieldStressUsingBasalWater();  CHKERRQ(ierr);
-  }
-
-  ierr = velocity(true); CHKERRQ(ierr);  // compute velocities (at depth)
-
-  ierr = summary(true,true); CHKERRQ(ierr);
-  
-  // update viewers and pause for a chance to view
-  ierr = update_viewers(); CHKERRQ(ierr);
   bool flag;
   PetscInt pause_time = 0;
   ierr = PISMOptionsInt("-pause", "Pause after the run, seconds",
@@ -733,9 +698,9 @@ PetscErrorCode IceModel::diagnosticRun() {
     ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
     ierr = PetscSleep(pause_time); CHKERRQ(ierr);
   }
+
   return 0;
 }
-
 
 //! Manage the initialization of the IceModel object.
 /*!

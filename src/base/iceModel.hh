@@ -127,7 +127,6 @@ public:
 			      bool do_age,
 			      bool do_skip,
 			      bool use_ssa_when_grounded);
-  virtual PetscErrorCode diagnosticRun();
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
   virtual IceFlowLawFactory &getIceFlowLawFactory() { return iceFactory; }
   virtual IceFlowLaw *getIceFlowLaw() {return ice;}
@@ -395,8 +394,6 @@ protected:
   virtual PetscErrorCode compute_enthalpybase(IceModelVec2S &result);
   virtual PetscErrorCode compute_enthalpysurf(IceModelVec2S &result);
   virtual PetscErrorCode compute_hardav(IceModelVec2S &result);
-  virtual PetscErrorCode compute_rank(IceModelVec2S &result);
-  virtual PetscErrorCode compute_proc_ice_area(IceModelVec2S &result);
   virtual PetscErrorCode compute_taud(IceModelVec2S &result, IceModelVec2S &tmp);
   virtual PetscErrorCode compute_cts(IceModelVec3 &useForCTS);
   virtual PetscErrorCode compute_liqfrac(IceModelVec3 &useForLiqfrac);
@@ -412,6 +409,9 @@ protected:
   virtual PetscErrorCode compute_vvelsurf(IceModelVec2S &result);
   virtual PetscErrorCode compute_wvelbase(IceModelVec2S &result);
   virtual PetscErrorCode compute_wvelsurf(IceModelVec2S &result);
+  // profiling, etc:
+  virtual PetscErrorCode compute_rank(IceModelVec2S &result);
+  virtual PetscErrorCode compute_proc_ice_area(IceModelVec2S &result);
   // scalar:
   virtual PetscErrorCode ice_mass_bookkeeping();
   virtual PetscErrorCode compute_ice_volume(PetscScalar &result);

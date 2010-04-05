@@ -27,9 +27,7 @@
 #include "coupler/PISMOcean.hh"
 
 static char help[] =
-  "Driver for ice sheet, shelf, and stream simulations, for 'diagnostic'\n"
-  "computation of velocity field from geometry and temperature field.\n"
-  "(Also a driver for EISMINT-Ross diagnostic velocity computation in ice shelf.)\n";
+  "Driver for EISMINT-Ross diagnostic velocity computation in ice shelf.)\n";
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -44,7 +42,7 @@ int main(int argc, char *argv[]) {
   { /* This explicit scoping forces destructors to be called before PetscFinalize() */
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
-    ierr = verbPrintf(2,com, "PISMD %s (diagnostic velocity computation mode)\n",
+    ierr = verbPrintf(2,com, "PISMROSS %s (EISMINT-Ross diagnostic velocity computation mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
@@ -52,26 +50,38 @@ int main(int argc, char *argv[]) {
     ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_from", bfset); CHKERRQ(ierr);
     string usage =
-      "  pismd IS DEPRECATED\n\n"
-      "  INTENDED REPLACEMENT IS 'pismr -y 0 -f3d '\n\n"
-      "  SEE 'pismr -usage'\n";
+      "  pismross {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n\n"
+      "where:\n"
+      "  -i          input file in NetCDF format: contains PISM-written model state\n"
+      "  -boot_from  input file in NetCDF format: contains a few fields, from which\n"
+      "              heuristics will build initial model state\n"
+      "  -ssaBC      read SSA boundary conditions from a file\n"
+      "  -riggs      read RIGGS data from a file\n"
+      "notes:\n"
+      "  * one of -i or -boot_from is required\n"
+      "  * if -boot_from is used then in fact '-Mx A -My B -Mz C -Lz D' is also required\n";
     if ((iset == PETSC_FALSE) && (bfset == PETSC_FALSE)) {
       ierr = PetscPrintf(com,
          "PISM ERROR: one of options -i,-boot_from is required\n\n"); CHKERRQ(ierr);
-      ierr = show_usage_and_quit(com, "pismd", usage.c_str()); CHKERRQ(ierr);
+      ierr = show_usage_and_quit(com, "pismross", usage.c_str()); CHKERRQ(ierr);
     } else {
       vector<string> required;  required.clear();
-      ierr = show_usage_check_req_opts(com, "pismd", required, usage.c_str()); CHKERRQ(ierr);
+      ierr = show_usage_check_req_opts(com, "pismross", required, usage.c_str()); CHKERRQ(ierr);
     }
 
-    // re this option, see  src/eismint/iceROSSModel.hh|cc and:
-    //     D. MacAyeal and five others (1996). "An ice-shelf model test based on the 
-    //     Ross ice shelf," Ann. Glaciol. 23, 46--51
-    bool  doRoss;
-    ierr = PISMOptionsIsSet("-ross", doRoss); CHKERRQ(ierr);
 
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
+
+    config.set_flag("use_ssa_velocity", true);
+    config.set_flag("use_ssa_when_grounded", false);
+    config.set_flag("use_constant_nuh_for_ssa", false);
+    config.set_flag("do_mass_conserve", false);
+    config.set_flag("do_temp", false);
+    config.set_flag("do_cold_ice_methods", true);
+    config.set("epsilon_ssa", 0.0);  // don't use this lower bound on effective viscosity
+    config.set("run_length_years", 0);
+    config.set_flag("force_full_diagnostics", true);
 
     IceGrid    g(com, rank, size, config);
 
@@ -92,34 +102,23 @@ int main(int argc, char *argv[]) {
 
     surface->attach_atmosphere_model(atmosphere);
 
-    IceModel *m;
-    if (doRoss == PETSC_TRUE)
-      m = new IceROSSModel(g, config, overrides);
-    else 
-      m = new IceModel(g, config, overrides);
+    IceROSSModel m(g, config, overrides);
 
-    m->attach_surface_model(surface);
-    m->attach_ocean_model(ocean);
+    m.attach_surface_model(surface);
+    m.attach_ocean_model(ocean);
 
-    ierr = m->setExecName("pismd"); CHKERRQ(ierr);
+    ierr = m.setExecName("pismross"); CHKERRQ(ierr);
 
-    config.set_flag("force_full_diagnostics", true);
-
-    ierr = m->init(); CHKERRQ(ierr);
+    ierr = m.init(); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com, "computing velocity field (diagnostically) ...\n"); CHKERRQ(ierr);
-    ierr = m->diagnosticRun(); CHKERRQ(ierr);
+    ierr = m.run(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "... done\n"); CHKERRQ(ierr);
 
-    if (doRoss == PETSC_TRUE) {
-      IceROSSModel* mRoss = dynamic_cast<IceROSSModel*>(m);
-      if (!mRoss) { SETERRQ(1, "PISMD: ross finish files ... how did I get here?"); }
-      ierr = mRoss->finishROSS(); CHKERRQ(ierr);
-    }
+    ierr = m.finishROSS(); CHKERRQ(ierr);
 
-    ierr = m->writeFiles("unnamed_diag.nc"); CHKERRQ(ierr);  // default filename if no -o
+    ierr = m.writeFiles("unnamed_diag.nc"); CHKERRQ(ierr);  // default filename if no -o
     
-    delete m;
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;

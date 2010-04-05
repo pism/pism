@@ -655,7 +655,7 @@ PetscErrorCode IceExactSSAModel::fillFromExactSolution() {
 }
 
 
-PetscErrorCode IceExactSSAModel::diagnosticRun() {
+PetscErrorCode IceExactSSAModel::run() {
   PetscErrorCode  ierr;
 
   ierr = verbPrintf(2,grid.com, "running Test %c ...\n", test); CHKERRQ(ierr);
@@ -707,12 +707,7 @@ PetscErrorCode IceExactSSAModel::diagnosticRun() {
   ierr = computeMax3DVelocities(); CHKERRQ(ierr); 
   ierr = summary(true,true); CHKERRQ(ierr);
   ierr = update_viewers(); CHKERRQ(ierr);
-  PetscInt    pause_time = 0;
-  ierr = PetscOptionsGetInt(PETSC_NULL, "-pause", &pause_time, PETSC_NULL); CHKERRQ(ierr);
-  if (pause_time > 0) {
-    ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
-    ierr = PetscSleep(pause_time); CHKERRQ(ierr);
-  }
+
   return 0;
 }
 

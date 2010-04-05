@@ -136,6 +136,7 @@ public:
   IceModelVec2(const IceModelVec2 &other) : IceModelVec(other) {};
   virtual PetscErrorCode create(IceGrid &my_grid, const char my_short_name[], bool local,
 			 DAStencilType my_sten, int stencil_width, int dof);
+  virtual PetscErrorCode view(PetscInt viewer_size);
 protected:
   PetscErrorCode get_component(int n, Vec result);
   PetscErrorCode set_component(int n, Vec source);
@@ -160,7 +161,6 @@ public:
   virtual PetscScalar diff_y(int i, int j);
   virtual PetscScalar diff_x_p(int i, int j);
   virtual PetscScalar diff_y_p(int i, int j);
-  virtual PetscErrorCode view(PetscInt viewer_size);
   virtual PetscErrorCode view_matlab(PetscViewer my_viewer);
   virtual PetscScalar& operator() (int i, int j);
 };
@@ -220,6 +220,7 @@ public:
   virtual PetscErrorCode get_array(PISMVector2 ** &a); 
   virtual PetscErrorCode magnitude(IceModelVec2S &result); 
   virtual PISMVector2&   operator()(int i, int j);
+  virtual PetscErrorCode view(PetscInt viewer_size);
   // component-wise access:
   virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
   virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
