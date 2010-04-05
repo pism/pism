@@ -384,7 +384,7 @@ $  make all
 
 If your operating system does not support shared libraries, then do \verb|export PISM_STATIC=1| before building.  This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.
 
-Note that the ``\verb|make all|'' puts executables, including \verb|pismd|,\index{pismd} \verb|pismr|,\index{pismr} \verb|pismv|,\index{pismv} and \verb|pisms|,\index{pisms} in the \verb|pism-dev/bin/| subdirectory.  Object files created during the build process (located in the \verb|build| subdirectory) are not deleted, so do ``\verb|make clean|'' to delete these if space is an issue.
+Note that the ``\verb|make all|'' puts executables, including \verb|pross|,\index{pross} \verb|pismr|,\index{pismr} \verb|pismv|,\index{pismv} and \verb|pisms|,\index{pisms} in the \verb|pism-dev/bin/| subdirectory.  Object files created during the build process (located in the \verb|build| subdirectory) are not deleted, so do ``\verb|make clean|'' to delete these if space is an issue.
 
 \item PISM executables can be run most easily by adding the directories \verb|pism-dev/bin/| and \verb|pism-dev/util/| to your \verb|PATH|.  The former directory contains the major PISM executables while the latter contains several useful scripts.  For instance, this command can be done in the \verb|bash| shell or in your \verb|.bashrc| file:\index{setting the \$PATH to find PISM executables}
 \begin{verbatim}

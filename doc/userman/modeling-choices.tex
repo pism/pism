@@ -60,20 +60,15 @@ The following command-line options control PISM time.
 
 \subsection{Diagnostic computations}  As a diagnostic example, using the EISMINT II final state computed in section \ref{sect:start}, try\index{pismd}
 
-\verb|pismd -i eisIIA200k.nc -o eisIIA200k_diag.nc|
+\verb|pismr -i eisIIA200k.nc -y 0 -o eisIIA200k_diag.nc -o_size big|
 
 \noindent The result is a NetCDF file \verb|eisIIA200k_diag.nc| which contains the full three-dimensional velocity field in the scalar NetCDF variables \verb|uvel|, \verb|vvel|, and \verb|wvel|.
 
-The velocity field saved by \verb|pismd| is the one which would be computed at the \emph{next} time step in an evolution run.  That is, if we also run\index{pisms}
+The velocity field saved by \verb|pismr -y 0| is the one which would be computed at the \emph{next} time step in an evolution run. 
 
-\verb|pisms -eisII A -i eisIIA200k.nc -y 0 -o eisIIA200k_plus.nc|
+This diagnostic mode is most frequently associated to the modeling of ice shelves and ice streams.  Subsection \ref{sect:ross} describes using \verb|pross| to model the Ross ice shelf \cite{MacAyealetal}.  Verification tests I and J, section \ref{sect:verif}, are diagnostic calculations using the SSA.
 
-\noindent then the horizontal velocity field computed in this single time step run is the same as that saved in \verb|eisIIA200k_diag.nc|.\footnote{For this example, one can use a NetCDF Operator\index{NCO (NetCDF Operators)!ncdiff} to check that the two saved NetCDF files contain the same vertically-averaged horizontal velocity field; just do \t{ncdiff -v cbar} \dots}
-
-This diagnostic mode is most frequently associated to the modeling of ice shelves and ice streams.  Subsection \ref{sect:ross} describes using \verb|pismd| to model the Ross ice shelf \cite{MacAyealetal}.  Verification tests I and J, section \ref{sect:verif}, are diagnostic calculations using the SSA.
-
-Note that the NetCDF model state saved by PISM at the end of an \emph{evolution} run does not, by default, contain the three-dimensional velocity field.  Instead, it contains just the variables which are needed to restart the run, especially the ice geometry and temperature field.  One can also force PISM to save the full velocity field at the end of a time-stepping run using the option \intextoption{f3d}.  The diagnostic executable \verb|pismd| saves the full three-dimensional velocity field by default.  Either way, saving the full velocity field roughly doubles the size of the saved NetCDF file.
-
+Note that the NetCDF model state saved by PISM at the end of an \emph{evolution} run does not, by default, contain the three-dimensional velocity field.  Instead, it contains just the variables which are needed to restart the run, especially the ice geometry and temperature field.  One can also force PISM to save all the supported diagnostic quantities at the end of a time-stepping run using the option \intextoption{o\und size}.
 
 
 \subsection{Computing ice age} \label{subsect:age} By default, PISM does not compute the age of the ice\index{PISM!modeling the age of the ice} because it does not directly impact ice flow using the default flow laws.   It is very easy to turn on.  Just set \intextoption{age}.

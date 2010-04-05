@@ -327,6 +327,7 @@ PetscErrorCode IceModel::model_state_setup() {
   // the regrid() call.
   if (beddef) {
     ierr = beddef->init(variables); CHKERRQ(ierr);
+    last_bed_def_update = grid.year;
   }
 
 #if 1

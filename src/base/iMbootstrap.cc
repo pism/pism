@@ -158,7 +158,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 /*!
 This is not really a bootstrap procedure, but it has to go somewhere.
 
-For now it is \e only called using "pismd -ross".
+For now it is \e only called using "pross".
  */
 PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   PetscErrorCode  ierr;

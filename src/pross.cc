@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   { /* This explicit scoping forces destructors to be called before PetscFinalize() */
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
-    ierr = verbPrintf(2,com, "PISMROSS %s (EISMINT-Ross diagnostic velocity computation mode)\n",
+    ierr = verbPrintf(2,com, "PROSS %s (EISMINT-Ross diagnostic velocity computation mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
 
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_from", bfset); CHKERRQ(ierr);
     string usage =
-      "  pismross {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n\n"
+      "  pross {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n\n"
       "where:\n"
       "  -i          input file in NetCDF format: contains PISM-written model state\n"
       "  -boot_from  input file in NetCDF format: contains a few fields, from which\n"
@@ -63,10 +63,10 @@ int main(int argc, char *argv[]) {
     if ((iset == PETSC_FALSE) && (bfset == PETSC_FALSE)) {
       ierr = PetscPrintf(com,
          "PISM ERROR: one of options -i,-boot_from is required\n\n"); CHKERRQ(ierr);
-      ierr = show_usage_and_quit(com, "pismross", usage.c_str()); CHKERRQ(ierr);
+      ierr = show_usage_and_quit(com, "pross", usage.c_str()); CHKERRQ(ierr);
     } else {
       vector<string> required;  required.clear();
-      ierr = show_usage_check_req_opts(com, "pismross", required, usage.c_str()); CHKERRQ(ierr);
+      ierr = show_usage_check_req_opts(com, "pross", required, usage.c_str()); CHKERRQ(ierr);
     }
 
 
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
     m.attach_surface_model(surface);
     m.attach_ocean_model(ocean);
 
-    ierr = m.setExecName("pismross"); CHKERRQ(ierr);
+    ierr = m.setExecName("pross"); CHKERRQ(ierr);
 
     ierr = m.init(); CHKERRQ(ierr);
 

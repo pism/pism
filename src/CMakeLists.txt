@@ -91,9 +91,9 @@ target_link_libraries (penth ${Pism_LIBS})
 add_executable (pismr pismr.cc)
 target_link_libraries (pismr ${Pism_LIBS})
 
-add_executable (pismd pismd.cc
+add_executable (pross pross.cc
   eismint/iceROSSModel.cc)
-target_link_libraries (pismd ${Pism_LIBS})
+target_link_libraries (pross ${Pism_LIBS})
 
 add_executable (pisms pisms.cc 
   eismint/iceEISModel.cc
@@ -116,7 +116,7 @@ add_executable (pcctest pcctest.cc)
 target_link_libraries (pcctest ${Pism_LIBS})
 
 install (TARGETS
-  penth pismr pisms pismv pismd pgrn ## executables
+  penth pismr pisms pismv pross pgrn ## executables
   pismverif pismbase pismearth pismudunits # libraries
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib

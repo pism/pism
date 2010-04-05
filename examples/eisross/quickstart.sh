@@ -23,9 +23,9 @@ echo "-----  Run riggs.py to create NetCDF version riggs.nc of RIGGS data"
 echo "-----    (requires python modules numpy and netCDF3 or netCDF4):"
 ./riggs.py -o riggs.nc
 
-echo "-----  Running 'pismd -ross' with $NN processes to compute velocity in"
+echo "-----  Running 'pross' with $NN processes to compute velocity in"
 echo "-----    Ross ice shelf, including comparison to RIGGS data:"
-mpiexec -n $NN pismd -boot_from ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3 -ssaBC ross.nc \
+mpiexec -n $NN pross -boot_from ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3 -ssaBC ross.nc \
         -riggs riggs.nc -o rossComputed.nc
 
 echo "----- Generating figure comparing model vs observed velocity (requires"

@@ -154,7 +154,7 @@ PetscErrorCode IceROSSModel::init_physics() {
   return 0;
 }
 
-// This method is called by the pismd driver.
+// This method is called by the pross driver.
 PetscErrorCode IceROSSModel::finishROSS() {
   PetscErrorCode  ierr;
 

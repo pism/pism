@@ -513,8 +513,6 @@ with zero till cohesion.  We allow a positive till cohesion, though the default 
 
 Has the effect of (very roughly) doubling the size of the output model state NetCDF file.
 
-Not needed when using \verb|pismd|, for which saving the full three-dimensional velocity field is the default.
-
 \opt{i}  The model can be initialized (restarted) from a NetCDF file \verb|foo.nc| written by the model, e.g.~\verb|foo.nc| from \verb|-o foo.nc|.  Compare \verb|-boot_from|.
 
 \opt{o}  Give name of output file: \verb|-o foo.nc| writes an output file named \verb|foo.nc|.  See the description of option \verb|-i|.  Default name is \verb|unnamed.nc| under \verb|pismr|, \verb|simp_exper.nc| under \verb|pisms|, and \verb|verify.nc| under \verb|pismv|.
@@ -602,9 +600,9 @@ Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inver
 where 
 	$$\nu = \frac{\bar B}{2} \left[\left(\ddx{u}\right)^2 + \left(\ddy{v}\right)^2 +
   \frac{1}{4} \left(\ddy{u} + \ddx{v}\right)^2 + \ddx{u}\ddy{v}\right]^{(1-n)/(2n)}.$$
-Generally $\bar B$ is computed by a vertical-integral of a function of the temperature field, but it is constant for isothermal ice.  If \verb|-ice_custom_hardness| is used then $\bar B$ is set to the given value.  The value should have units of Pa $\text{s}^{1/n}$ where $n$ is the Glen exponent (see \verb|-ice_type|).  Note that \verb|-ice_type| is \verb|pb| (Paterson-Budd) by default for most runs so \verb|-ice_custom_hardness| is only available when \verb|-ice_type custom| is given or when the driver has changed the default ice type (such as with \verb|pismv -test I| and \verb|pismd -ross|).
+Generally $\bar B$ is computed by a vertical-integral of a function of the temperature field, but it is constant for isothermal ice.  If \verb|-ice_custom_hardness| is used then $\bar B$ is set to the given value.  The value should have units of Pa $\text{s}^{1/n}$ where $n$ is the Glen exponent (see \verb|-ice_type|).  Note that \verb|-ice_type| is \verb|pb| (Paterson-Budd) by default for most runs so \verb|-ice_custom_hardness| is only available when \verb|-ice_type custom| is given or when the driver has changed the default ice type (such as with \verb|pismv -test I| and \verb|pross|).
 
-In the case of \verb|pismd -ross|, which performs the EISMINT Ross ice shelf intercomparison, a constant value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ is the default \cite{MacAyealetal}.
+In the case of \verb|pross|, which performs the EISMINT Ross ice shelf intercomparison, a constant value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ is the default \cite{MacAyealetal}.
 
 \begin{table}[ht]
 \caption{Choosing the rheology using \t{-ice\und type}.}\label{tab:flowlaw}\index{rheology}\index{flow law}
@@ -702,7 +700,7 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \subsubsect{Verification}
 
-\optrestrict{pause}{pismd -ross,pismv -test I,pismv -test J}    Pause for given number of seconds at the end of the run when the results are displayed.
+\optrestrict{pause}{pross,pismv -test I,pismv -test J}    Pause for given number of seconds at the end of the run when the results are displayed.
 
 \optrestrict{no\und report}{pismv}  Do not report errors at the end of a verification run.
 
@@ -745,9 +743,10 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \verb|-ksp_rtol|
 
 \subsubsect{EISMINT-Ross}
 
-\optrestrict{pause}{pismd -ross,pismv -test I,pismv -test J}    Pause for given number of seconds at the end of the run when the results are displayed.
+\optrestrict{pause}{pross,pismv -test I,pismv -test J}    Pause for given number of seconds at the end of the run when the results are displayed.
 
-\optrestrict{ross}{pismd}    Run the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  Requires data from \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.
+% FIXME: describe the pross driver.
+% \optrestrict{ross}{pismd}    Run the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  Requires data from \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.
 
 
 \subsect{PETSC options for PISM users}\label{subsect:petscoptions}

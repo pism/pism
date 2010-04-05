@@ -31,7 +31,7 @@ else
 endif
 
 #FIXME: this has undesirable effect that "make clean && make"  does not rebuild executables
-#pismr pismv pismd pgrn pcctest flowTable tryLCbd gridL simple%:
+#pismr pismv pross pgrn pcctest flowTable tryLCbd gridL simple%:
 #	$(MAKE) -C build ../bin/$@
 
 depclean:
