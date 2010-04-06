@@ -235,16 +235,6 @@ PetscErrorCode IceUnitModel::test_IceModelVec3Bedrock()    {
         k,grid.zblevels_fine[k],values_in[k],values_out[k],PetscAbs(values_in[k]-values_out[k]) ); CHKERRQ(ierr);
   }
 
-  ierr = verbPrintf(1,grid.com,
-    "\ntesting setValColumn() and getValColumnQUAD():\n"); CHKERRQ(ierr);
-
-  ierr = Tb3.getValColumnQUAD(grid.xs, grid.ys, values_out); CHKERRQ(ierr);
-  for (PetscInt k=0; k < grid.Mbz_fine; k++) {
-    ierr = verbPrintf(1,grid.com,
-        "   k=%d:   level=%10.2f   values_in=%7.4f   values_out=%7.4f   |diff|=%5.4e\n",
-        k,grid.zblevels_fine[k],values_in[k],values_out[k],PetscAbs(values_in[k]-values_out[k]) ); CHKERRQ(ierr);
-  }
-
   ierr = verbPrintf(1,grid.com,"done\n\n\n"); CHKERRQ(ierr);
 
   ierr = Tb3.end_access(); CHKERRQ(ierr);

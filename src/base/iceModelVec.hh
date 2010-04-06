@@ -245,8 +245,6 @@ public:
   PetscErrorCode  getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsOUT);
   PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsIN);
   PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsOUT);
-  PetscErrorCode  getValColumnQUAD(PetscInt i, PetscInt j, PetscScalar *valsOUT);
-  PetscErrorCode  getValColumn(PetscInt i, PetscInt j, PetscScalar *valsOUT);
   PetscErrorCode  view_sounding(int i, int j, PetscInt viewer_size);
 
 protected:  

@@ -460,7 +460,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         }
         if (fMbz > 1) { // bedrock layer if present
           ierr = bosys.setIndicesAndClearThisColumn(i,j,-1); CHKERRQ(ierr);  
-          ierr = Tb3.getValColumn(i,j,bosys.Tb); CHKERRQ(ierr);
+          ierr = Tb3.getValColumnPL(i,j,bosys.Tb); CHKERRQ(ierr);
           ierr = bosys.setBoundaryValuesThisColumn(Tbtop, vGhf(i,j)); CHKERRQ(ierr);
           ierr = bosys.solveThisColumn(&Tbnew);
           if (ierr)  reportColumnSolveError(ierr, grid.com, bosys, "bedrockOnly", i, j);
@@ -513,7 +513,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         ierr = v3.getValColumn(i,j,ks,cbsys.v); CHKERRQ(ierr);
         ierr = copyColumn(iosys.w,cbsys.w,fMz); CHKERRQ(ierr);
         ierr = Sigma3.getValColumn(i,j,ks,cbsys.Sigma); CHKERRQ(ierr);
-        ierr = Tb3.getValColumn(i,j,cbsys.Tb); CHKERRQ(ierr);
+        ierr = Tb3.getValColumnPL(i,j,cbsys.Tb); CHKERRQ(ierr);
 
         ierr = cbsys.setSchemeParamsThisColumn(isMarginal, lambda);
             CHKERRQ(ierr);
@@ -554,8 +554,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           // case of temperate bed and a bedrock layer
           ierr = bosys.setIndicesAndClearThisColumn(i,j,-1); CHKERRQ(ierr);  
 
-          ierr = Tb3.getValColumn(i,j,bosys.Tb);
-                   CHKERRQ(ierr);
+          ierr = Tb3.getValColumnPL(i,j,bosys.Tb); CHKERRQ(ierr);
 
           const PetscScalar Tbtop = (is_floating ? shelfbtemp(i,j)
 				     : EC->getMeltingTemp(p_basal));
@@ -579,7 +578,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           vbmr(i,j) = shelfbmassflux(i,j);
         } else {
           if (iosys.Enth[0] < iosys.Enth_s[0]) {
-            // this case only if no bedrock thermal layer
+            // this case occurs only if no bedrock thermal layer
             vbmr(i,j) = 0.0;  // zero melt rate if cold base
           } else {
             vbmr(i,j) = ( hf_base + vRb(i,j) ) / (ice_rho * L);
@@ -638,7 +637,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
             a0  = 1.0;
             a1  = 0.0;
           }
-
           const PetscScalar
             alpha      = (iosys.Enth[0] < iosys.Enth_s[0] + warm_dE)
                             ? 1.0 - ((iosys.Enth[0] - iosys.Enth_s[0]) / warm_dE)
@@ -707,8 +705,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         if (is_floating) { // floating: get from PISMOceanModel
           Tbnew[0] = shelfbtemp(i,j);
         } else {                      // grounded: duplicate temp from ice
-          ierr = EC->getAbsTemp(Enthnew[0],EC->getPressureFromDepth(vH(i,j)), Tbnew[0]);
-                    CHKERRQ(ierr);
+          ierr = EC->getAbsTemp(Enthnew[0],p_basal,Tbnew[0]); CHKERRQ(ierr);
         }
       }
 

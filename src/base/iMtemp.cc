@@ -277,7 +277,7 @@ PetscErrorCode IceModel::temperatureStep(
       if (k0+ks>0) { // if there are enough points in bedrock&ice to bother ...
         ierr = system.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
 
-	ierr = Tb3.getValColumn(i,j,system.Tb); CHKERRQ(ierr);
+	ierr = Tb3.getValColumnPL(i,j,system.Tb); CHKERRQ(ierr);
 
 	ierr = u3.getValColumn(i,j,ks,system.u); CHKERRQ(ierr);
 	ierr = v3.getValColumn(i,j,ks,system.v); CHKERRQ(ierr);

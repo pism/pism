@@ -756,12 +756,12 @@ PetscErrorCode  IceModelVec3Bedrock::isLegalLevel(PetscScalar z) {
 
 //! At given levels, return values of bedrock scalar quantity in a given column using piecewise linear interpolation.
 /*!
-Input array \c levelsIN must be an allocated array of \c nlevels scalars (\c PetscScalar).
+This method only works for computing the fine grid values by interpolation of
+the storage grid values.  That is, this method uses information in IceGrid* grid
+to get the grid.
 
-\c levelsIN must be strictly increasing and in the range \f$-\mathtt{grid.Lbz} <= z <= 0.0\f$.
-
-Return array \c valsOUT must be an allocated array of \c nlevels scalars (\c PetscScalar).
-Upon return, \c valsOUT will be filled with values of scalar quantity at the \f$z\f$ values in \c levelsIN.
+Array \c PetscScalar \c result[] must be an \e allocated array of size 
+\c grid->Mbz_fine.
  */
 PetscErrorCode  IceModelVec3Bedrock::getValColumnPL(PetscInt i, PetscInt j, PetscScalar *result) {
   
@@ -787,77 +787,6 @@ PetscErrorCode  IceModelVec3Bedrock::getValColumnPL(PetscInt i, PetscInt j, Pets
   }
 
   return 0;
-}
-
-//! \brief Return values of bedrock scalar quantity at given levels (m) below
-//! the top of the bedrock, using local quadratic interpolation.
-/*! Input array \c levelsIN must be an allocated array of \c nlevels scalars
-  (\c PetscScalar).
-
-  \c levelsIN must be strictly increasing and in the range
-  \f$-\mathtt{grid.Lbz} <= z <= 0\f$.
-
-  Return array \c valsOUT must be an allocated array of \c nlevels scalars (\c
-  PetscScalar).
-
-  Upon return, \c valsOUT will be filled with values of scalar quantity at the
-  \f$z\f$ values in \c levelsIN.
- */
-PetscErrorCode  IceModelVec3Bedrock::getValColumnQUAD(PetscInt i, PetscInt j, PetscScalar *result) {
-  
-  PetscErrorCode ierr;
-  ierr = checkAllocated(); CHKERRQ(ierr);
-  // check if in ownership ?
-
-  PetscScalar *levels = grid->zblevels;
-  PetscScalar *levels_fine = grid->zblevels_fine;
-  PetscScalar ***arr = (PetscScalar***) array;
-
-  if (grid->Mbz_fine == 1) {
-    result[0] = arr[i][j][0];
-    return 0;
-  }
-
-  PetscScalar *values = new PetscScalar[grid->Mbz];
-
-  ierr = PetscMemcpy(values, arr[i][j], grid->Mbz*sizeof(PetscScalar)); CHKERRQ(ierr);
-
-  for (PetscInt k = 0; k < grid->Mbz_fine; k++) {
-    PetscInt m = grid->bed_storage2fine[k];
-
-    const PetscScalar z0 = levels[m],
-                      f0 = values[m];
-    if (m >= grid->Mbz - 2) {
-      // just do linear interpolation at top of grid
-      const PetscScalar incr = (levels_fine[k] - z0) / (levels[m+1] - z0);
-      result[k] = f0 + incr * (values[m+1] - f0);
-    } else {
-      const PetscScalar dz1 = levels[m+1] - z0,
-                        dz2 = levels[m+2] - z0;
-      const PetscScalar D1 = (values[m+1] - f0) / dz1,
-                        D2 = (values[m+2] - f0) / dz2;
-      const PetscScalar c = (D2 - D1) / (dz2 - dz1),
-                        b = D1 - c * dz1;
-      const PetscScalar s = levels_fine[k] - z0;
-      result[k] = f0 + s * (b + c * s);
-    }
-  }
-
-  delete[] values;
-
-  return 0;
-}
-
-
-//! If the grid is equally spaced in the bedrock then use PL, otherwise use QUAD.
-PetscErrorCode  IceModelVec3Bedrock::getValColumn(PetscInt i, PetscInt j,
-						  PetscScalar *result) {
-
-  if (grid->bed_vertical_spacing == EQUAL) {
-    return getValColumnPL(i, j, result);
-  } else {
-    return getValColumnQUAD(i, j, result);
-  }
 }
 
 

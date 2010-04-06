@@ -218,9 +218,9 @@ procedure.
  */
 PetscScalar PDDMassBalance::CalovGreveIntegrand(
                PetscScalar sigma, PetscScalar Tac) {
-  const PetscScalar TacC = Tac - 273.15; // convert to Celsius
-  return (sigma / sqrt(2.0 * pi)) * exp(- TacC * TacC / (2.0 * sigma * sigma)) 
-           + (TacC / 2.0) * gsl_sf_erfc(- TacC / (sqrt(2.0) * sigma));
+  const PetscScalar TacC = Tac - 273.15, // convert to Celsius
+                    Z    = TacC / (sqrt(2.0) * sigma);
+  return (sigma / sqrt(2.0 * pi)) * exp(-Z*Z) + (TacC / 2.0) * gsl_sf_erfc(-Z);
 }
 
 
