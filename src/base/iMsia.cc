@@ -212,8 +212,9 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   K = new PetscScalar[grid.Mz];
   Sigma = new PetscScalar[grid.Mz];
 
-  double enhancement_factor = config.get("enhancement_factor");
-  double constant_grain_size = config.get("constant_grain_size");
+  const double enhancement_factor = config.get("enhancement_factor"),
+               constant_grain_size = config.get("constant_grain_size");
+  const bool   do_cold_ice = config.get_flag("do_cold_ice_methods");
 
   PetscScalar **h_x[2], **h_y[2], **H;
 
@@ -299,7 +300,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
             }
             // If the flow law does not use grain size, it will just ignore it, no harm there
 	    PetscScalar E = 0.5 * (Enthij[k] + Enthoffset[k]);
-            if (config.get_flag("do_cold_ice_methods") == true) {
+            if (do_cold_ice) {
 	      PetscScalar T;
 	      ierr = EC->getAbsTemp(E, pressure, T); CHKERRQ(ierr);
               flow = ice->flow(alpha * pressure, T, pressure, grainsize);
