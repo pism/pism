@@ -86,11 +86,9 @@ PetscErrorCode IceModel::energyStep() {
     ierr = Enth3.endGhostCommTransfer(Enthnew3); CHKERRQ(ierr);
 
     ierr = PetscGlobalSum(&myLiquifiedVol, &gLiquifiedVol, grid.com); CHKERRQ(ierr);
-    const PetscScalar
-       smallcell = grid.dx * grid.dy * (grid.zlevels[1] - grid.zlevels[0]);
-    if (gLiquifiedVol > 10 * smallcell) {
+    if (gLiquifiedVol > 0.0) {
       ierr = verbPrintf(1,grid.com,
-        "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n",
+        "\n PISM WARNING: fully-liquified cells detected: volume liquified = %.3f km^3\n\n",
         gLiquifiedVol / 1.0e9); CHKERRQ(ierr);
     }
   }

@@ -189,6 +189,16 @@ cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -boot_from $INNAME $COARSEGRID \
 $PISM_DO $cmd
 
 
+# quick look at climate in a century period; see delta_T in pism_dT.nc
+CLIMSTARTTIME=-500
+PRE0CLIMATE=g${CS}km_climate${CLIMSTARTTIME}a.nc
+echo
+echo "$SCRIPTNAME  running pcctest to show climate in modern period [${CLIMSTARTTIME} a,0 a], using current geometry and 10 year subintervals"
+cmd="$PISM_MPIDO $NN ${PISM_PREFIX}pcctest -i $PRE0NAME $COUPLER_FORCING \
+  -ys $CLIMSTARTTIME -ye 0 -dt 10.0 -o $PRE0CLIMATE"
+$PISM_DO $cmd
+
+
 # run with -no_mass (no surface change) for 50ka
 PRE1NAME=g${CS}km_steady.nc
 EX1NAME=ex_${PRE1NAME}

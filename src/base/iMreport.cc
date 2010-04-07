@@ -437,7 +437,7 @@ PetscErrorCode IceModel::summaryPrintLine(
       if (mass_cont_sub_counter == 1) {
         snprintf(tempstr,90, " (dt=%.5f)", major_dt_years);
       } else {
-        snprintf(tempstr,90, " (dt=%.5f in %d substeps; av dt_sub=%.5f)",
+        snprintf(tempstr,90, " (dt=%.5f in %d substeps; av dt_sub_mass_cont=%.5f)",
           major_dt_years, mass_cont_sub_counter, major_dt_years / mass_cont_sub_counter);
       }
       stdout_flags_count0 += tempstr;

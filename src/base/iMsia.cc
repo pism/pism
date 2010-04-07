@@ -249,7 +249,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   
   PetscScalar *Enthij, *Enthoffset;
   PolyThermalGPBLDIce *gpbldi = NULL;
-  if (config.get_flag("do_cold_ice_methods") == false) {
+  if (!do_cold_ice) {
     gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
     if (!gpbldi) {
       PetscPrintf(grid.com,
