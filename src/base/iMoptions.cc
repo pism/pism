@@ -57,7 +57,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = verbPrintf(3, grid.com,
 		    "Processing physics-related command-line options...\n"); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "Misc PISM options", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Options overriding config flags and parameters", ""); CHKERRQ(ierr);
 
   /* 
   note on pass-by-reference for options:

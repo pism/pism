@@ -123,8 +123,7 @@ PetscErrorCode IcePSTexModel::prepare_series() {
   // set up the file with name seriesname
   char outname[PETSC_MAX_PATH_LEN];
   PetscTruth o_set;
-  ierr = PetscOptionsGetString(
-    PETSC_NULL, "-o", outname, PETSC_MAX_PATH_LEN, &o_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-o", outname, PETSC_MAX_PATH_LEN, &o_set); CHKERRQ(ierr);
   if (!o_set)
     strncpy(outname, "unnamedpst.nc", PETSC_MAX_PATH_LEN);
   strncpy(seriesname,"ser_pst_", PETSC_MAX_PATH_LEN);

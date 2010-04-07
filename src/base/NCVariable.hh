@@ -103,8 +103,9 @@ public:
   virtual PetscErrorCode read(const char filename[]);
   virtual PetscErrorCode write(const char filename[]) const;
   virtual double get(string) const;
-  virtual bool get_flag(string) const;
-  virtual void set_flag(string, bool);
+  virtual bool   get_flag(string) const;
+  virtual string get_string(string name) const;
+  virtual void   set_flag(string, bool);
   virtual PetscErrorCode flag_from_option(string, string);
   virtual PetscErrorCode scalar_from_option(string, string);
   virtual void import_from(const NCConfigVariable &other);

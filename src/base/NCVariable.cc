@@ -870,6 +870,22 @@ bool NCConfigVariable::get_flag(string name) const {
   return true;			// will never happen
 }
 
+string NCConfigVariable::get_string(string name) const {
+  PetscErrorCode ierr;
+
+  map<string,string>::const_iterator j = strings.find(name);
+  if (j != strings.end())
+    return j->second;
+  else {
+    PetscPrintf(com,
+		"PISM ERROR: Parameter '%s' was not set. (Read from '%s'.)\n",
+		name.c_str(), config_filename.c_str());
+    PetscEnd();
+  }
+
+  return string();		// will never happen
+}
+
 //! Set a value of a boolean flag.
 void NCConfigVariable::set_flag(string name, bool value) {
   if (value) strings[name] = "true";

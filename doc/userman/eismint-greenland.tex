@@ -1,5 +1,6 @@
 
-\section{Example: Modeling the Greenland ice sheet}\label{sec:eismint-greenland} \index{PISM!running the EISMINT Greenland intercomparison}\index{Greenland ice sheet}\index{EISMINT!intercomparison of Greenland models} 
+\section{Example: Modeling the Greenland ice sheet}\label{sec:eismint-greenland} \ind{PISM!running the EISMINT Greenland intercomparison}\ind{Greenland ice sheet}\ind{EISMINT!intercomparison of Greenland models} 
+\renewcommand{\optindexsection}{EISMINT-Greenland}
 
 In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use older data from the 1990s ice sheet modelling intercomparison EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}, but it is an excellent tutorial example.
 
@@ -36,7 +37,7 @@ If these missing values were to be left in the NetCDF handed to PISM then the re
 \verb|$ fill_missing.py -f eis_green20.nc -v topg -o eis_green_smoothed.nc|
 
 \begin{figure}[ht]
-\includegraphics[width=2.4in,keepaspectratio=true]{EISgreen_thick}\quad\includegraphics[width=2.4in,keepaspectratio=true]{EISgreen_bed}
+\includegraphics[width=2.4in,keepaspectratio=true]{EISgreen-thick}\quad\includegraphics[width=2.4in,keepaspectratio=true]{EISgreen-bed}
 \caption{Views of the thickness (left) and smoothed bed elevation (right) for EISMINT-Greenland.  The coastal topography around several fjords has been smoothed.}
 \label{fig:greendata}
 \end{figure}
@@ -56,7 +57,7 @@ Next we use a script which converts the time-series data files \texttt{specmap.0
 
 \subsubsection*{Bootstrapping}  \label{sect:green-bootstrapping}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the full initial conditions needed for the continuum model.  \footnote{The continuum model is the differential equations describing ice flow inside PISM.  See section \ref{sect:boot} for more on ``bootstrapping''.}
 
-We do a one model year run using option \verb|-boot_from| to ``bootstrap'' from file \verb|eis_green_smoothed.nc|.  The executable ``\verb|pgrn|'' is special to EISMINT-Greenland:\index{pgrn}
+We do a one model year run using option \verb|-boot_from| to ``bootstrap'' from file \verb|eis_green_smoothed.nc|.  The executable ``\verb|pgrn|'' is special to EISMINT-Greenland:\ind{pgrn}
 \begin{verbatim}
 $ pgrn -boot_from eis_green_smoothed.nc \
        -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 \
@@ -179,7 +180,7 @@ $ mpiexec -n 2 pgrn -i green20km_y1.nc -no_mass -y 25000 \
 The EISMINT-Greenland experiments \cite{RitzEISMINT} specify a positive degree day (PDD) model which is automatically turned on when using the \verb|pgrn| executable.  (The base executable \verb|pismr| requires option \verb|-pdd| or \verb|-pdd_rand| to turn on the PDD model.)  The PDD model is, by default, implemented by the deterministic scheme described in \cite{CalovGreve05}, but the user can add option \verb|-pdd_rand| to use a stochastic PDD implementation.  The temperature parameterization and positive degree day factors are from \cite{RitzEISMINT} instead of the default for \verb|pismr|, which uses \cite{Faustoetal2009}.
 
 
-\subsubsection*{Running the EISMINT-Greenland steady state experiments}  Now that we have initial conditions including a vaguely-credible temperature field, our first experiment is the steady state run ``SSL2''.  This experiment uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}.  If 8 processors are used, a ten thousand model year run might look like this:
+\subsubsection*{Running the EISMINT-Greenland steady state experiments}  Now that we have initial conditions including a vaguely-credible temperature field, our first experiment is the steady state run ``SSL2'' (turned on using the option \intextoption{ssl2}).  This experiment uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}.  If 8 processors are used, a ten thousand model year run might look like this:
 
 \begin{verbatim}
 $ mpiexec -n 8 pgrn -ssl2 -i green20km_Tsteady.nc -y 10000 -ys 0 \
@@ -192,7 +193,7 @@ $ mpiexec -n 8 pgrn -ssl2 -i green_SSL2_10k.nc -y 10000 \
 \end{verbatim}
 \noindent And so on.
 
-The script \verb|ssh2.sh| uses options \intextoption{ts\und file} and \intextoption{save\und file} to do the run with ``snapshots'' saved every 10000 model years, and the volume saved every 100 model years.  So out discussion will now assume that the user \emph{actually} did this to completion:
+The script \verb|ssh2.sh| uses options \intextoption{ts\_file} and \intextoption{save\_file} to do the run with ``snapshots'' saved every 10000 model years, and the volume saved every 100 model years.  So out discussion will now assume that the user \emph{actually} did this to completion:
 
 \verb|./ssh2.sh 2 >> out.ssl2 &|
 
@@ -203,13 +204,13 @@ The SSL2 simulation is intended to go until the model reaches a ``steady state''
 FIXME:  FIGURES NEED MAINTENANCE.   In any case, one sees that the volume shows a consistent growing-but-leveling-out trend, with a final volume a bit more than $4 \times 10^{6}\,\text{km}^3$.  The time series for volume and melt fraction (the fraction of the base where the temperature is at pressure-melting) are shown in Figures \ref{fig:eisgrnvolseries} and \ref{fig:eisgrnmeltfseries}.  The volume time series is boring, but the melt fraction indicates something interesting: measured by basal melt fraction, the temperature field resulting from bootstrapping and relaxing the temperature field (above) gave a pretty good estimate of the basal melt fraction for the fully coupled steady state.
 
 \begin{figure}[ht]
-\includegraphics[width=6.0in,keepaspectratio=true]{eisgrn_volseries}
+\includegraphics[width=6.0in,keepaspectratio=true]{eisgrn-volseries}
 \caption{Volume time series for a 110k model year EISMINT-Greenland SSL2 run; units of $10^{6}\,\text{km}^3$.}
 \label{fig:eisgrnvolseries}
 \end{figure}
 
 \begin{figure}[ht]
-\includegraphics[width=6.0in,keepaspectratio=true]{eisgrn_meltfseries}
+\includegraphics[width=6.0in,keepaspectratio=true]{eisgrn-meltfseries}
 \caption{Time series for the fraction of the base which is at the pressure-melting temperature from a 110k model year EISMINT-Greenland run.  See the right hand part of Figure \ref{fig:ssl2thickTpa} for a map of the basal temperature.}
 \label{fig:eisgrnmeltfseries}
 \end{figure}
@@ -217,8 +218,8 @@ FIXME:  FIGURES NEED MAINTENANCE.   In any case, one sees that the volume shows 
 FIXME:  FIGURES NEED MAINTENANCE.   We will use the final NetCDF file \verb|green_ssl2_110ka.nc| to continue the EISMINT-Greenland experiments below.  The saved ice thickness, basal temperature, and vertically-averaged horizontal velocity maps are shown in Figure \ref{fig:ssl2thickTpa}.
 
 \begin{figure}[ht]
-\mbox{\phantom{|}\hspace{-1.0in}\includegraphics[height=3.0in,keepaspectratio=true]{greenH_SSL2}\,\includegraphics[height=3.0in,width=2.3in]{greenTpa_SSL2}\,\includegraphics[height=3.0in,keepaspectratio=true]{greencbar_SSL2}}
-%\includegraphics[height=3.7in,width=2.9in]{greenTpa_SSL2}
+\mbox{\phantom{|}\hspace{-1.0in}\includegraphics[height=3.0in,keepaspectratio=true]{greenH-SSL2}\,\includegraphics[height=3.0in,width=2.3in]{greenTpa-SSL2}\,\includegraphics[height=3.0in,keepaspectratio=true]{greencbar-SSL2}}
+%\includegraphics[height=3.7in,width=2.9in]{greenTpa-SSL2}
 \caption{Ice thickness (meters; left), basal temperature (degrees C below 0; middle), and vertically-averaged horizontal velocity (m/a; right) at the end (110k model years) of a EISMINT-Greenland SSL2 run.  Note that in the temperature graph the pressure-melting temperature areas are white.}
 \label{fig:ssl2thickTpa}
 \end{figure}
@@ -237,12 +238,12 @@ mpiexec -n 8 pgrn -ccl3 -skip 10 -i green_ssl2_110ka.nc -ys -249900 -ye 0 \
   -save_file snaps_ccl3.nc -save_times -240000:10000:-10000 \
   -ts_file vol_ccl3.nc -ts_vars ivol -ts_times -249800:100:0 -o green_ccl3_year0.nc
 \end{verbatim}
-\noindent Option \verb|-ccl3| also turns on the Lingle and Clark \cite{BLKfastearth,LingleClark} two layer, flat earth bed deformation model with an assumption of zero uplift rate at the start of the run.
+\noindent Option \intextoption{ccl3} also turns on the Lingle and Clark \cite{BLKfastearth,LingleClark} two layer, flat earth bed deformation model with an assumption of zero uplift rate at the start of the run.
 
 FIXME:  FIGURES NEED MAINTENANCE.   The resulting thickness difference, relative to the end of the SSL2 run, and the pressure-adjusted basal temperature, are shown in Figure \ref{fig:cclthickTpa}.
 
 \begin{figure}[ht]
-\includegraphics[width=2.8in]{Hdiff_CCLSSL}\quad\includegraphics[width=2.8in]{Tpa_CCL}
+\includegraphics[width=2.8in]{Hdiff-CCLSSL}\quad\includegraphics[width=2.8in]{Tpa-CCL}
 \caption{Left:  Ice thickness difference between end (year zero) of a CCL3 run and the end of an SSL2 run (meters).  Right:  Ice pressure-adjusted basal temperature (degrees C below 0; right) at the end of a EISMINT-Greenland CCL3 run.  Compare Figure \ref{fig:ssl2thickTpa}.}
 \label{fig:cclthickTpa}
 \end{figure}
@@ -251,7 +252,7 @@ EISMINT-Greenland also calls for a baseline run for another 500 years which star
 
 \verb|mpiexec -n 8 pgrn -ccl3 -i green_ccl3_year0.nc -y 500 -o green_ccl3_year500.nc|
 
-A final ``greenhouse warming'' experiment ``GWL3'' is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It runs for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
+A final ``greenhouse warming'' experiment ``GWL3'' (option \intextoption{gwl3}) is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It runs for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
 
 \verb|mpiexec -n 8 pgrn -gwl3 -i green_ccl3_year0.nc -y 500 -o green_gwl3_year500.nc|
 
@@ -285,7 +286,7 @@ Here are two things to notice:
 \begin{enumerate}
 \item The summer peak day is in the right place.  The default for this value is
   August 1 (day $243$, at approximately $243/365 \simeq 0.66$ year).  (If it is
-  important, the peak day can be changed using the \texttt{-pdd\und summer\und peak\und day}
+  important, the peak day can be changed using the \texttt{-pdd\_summer\_peak\_day}
   option; subsection \ref{sec:boundary-models}).
 
 \item Lows of the surface mass balance rate \verb|acab| correspond to 
@@ -298,7 +299,7 @@ Here are two things to notice:
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=5in]{pdd_timeseries}
+  \includegraphics[width=5in]{pdd-timeseries}
   \caption{Time series of the surface mass balance rate and snow temperature. Map view 
            on the right shows the location chosen.}
   \label{fig:pddseries}
@@ -316,7 +317,7 @@ This figure shows the GRIP temperature offsets (top graph; compare to figure \re
 
 \begin{figure}[ht]
   \centering
-  \includegraphics[width=5in]{artm_timeseries}
+  \includegraphics[width=5in]{artm-timeseries}
   \caption{Time series of the surface temperature compared to GRIP temperature offsets}
   \label{fig:artm-timeseries}
 \end{figure}

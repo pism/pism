@@ -396,7 +396,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
-  ierr = PetscOptionsHead("Surface model forcing"); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Surface model forcing", ""); CHKERRQ(ierr);
 
   ierr = PetscOptionsString("-force_to_thk",
 			    "Specifies the target thickness file",
@@ -439,6 +439,8 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com,
 		    "    alpha = %.6f a-1 for %.3f a run, for -force_to_thk mechanism\n",
 		    alpha * secpera, grid.end_year - grid.start_year); CHKERRQ(ierr);
+
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   // fttfile now contains name of -force_to_thk file; now check
   // it is really there; if so, read the dimensions of computational grid so

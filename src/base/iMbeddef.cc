@@ -29,10 +29,14 @@ PetscErrorCode IceModel::bed_def_setup() {
   choices.insert("lc");
 #endif
 
-  ierr = PetscOptionsHead("Bed deformation model"); CHKERRQ(ierr);
-  bool dummy;
-  ierr = PISMOptionsList(grid.com, "-bed_def", "Specifies a bed deformation model.",
+  ierr = PetscOptionsBegin(grid.com, "", "Bed deformation model", ""); CHKERRQ(ierr);
+  {
+    bool dummy;
+    ierr = PISMOptionsList(grid.com, "-bed_def", "Specifies a bed deformation model.",
 			 choices, model, model, dummy); CHKERRQ(ierr);
+
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if (model == "none")
     return 0;

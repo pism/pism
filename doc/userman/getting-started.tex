@@ -1,5 +1,5 @@
 
-\section{Getting started}\label{sect:start}\index{PISM!getting started}
+\section{Getting started}\label{sect:start}\ind{PISM!getting started}
 
 In this section we give an extended example applying PISM to the Greenland ice sheet.  We use recent data sets provided by the Sea-level Response to Ice Sheet Evolution (\href{http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment}{SeaRISE}), a community-organized process to produce an upper bound of ice sheet contributions to sea level in the next 100--200 years.  For more about SeaRISE, see
 \medskip
@@ -38,15 +38,15 @@ The NetCDF data file which we use for input is freely-available at, and is descr
 Any of these NetCDF files can be viewed with \verb|ncview| or other NetCDF visualization tool (see below).  Application of \verb|pyNGL| tools to \verb|Greenland_5km_v0.93.nc| produced figures \ref{fig:sr-input1} and  \ref{fig:sr-input1}, for example.  The metadata itself can be listed at the command line, or put in a text file, by \verb|ncdump -h|.
 
 \begin{figure}[ht]
-\mbox{\includegraphics[width=3.0in,keepaspectratio=true]{sr-greenland_thk}
- \quad\includegraphics[width=3.0in,keepaspectratio=true]{sr-greenland_prcp}}
+\mbox{\includegraphics[width=3.0in,keepaspectratio=true]{sr-greenland-thk}
+ \quad\includegraphics[width=3.0in,keepaspectratio=true]{sr-greenland-prcp}}
 \caption{The input present-day ice thickness (left; m) and present-day precipitation (right; m $\text{a}^{-1}$ ice equivalent) for SeaRISE-Greenland.  Figures produced with FIXME: STATE TOOL}
 \label{fig:sr-input1}
 \end{figure}
 
 \begin{figure}[ht]
-\mbox{\includegraphics[width=3.0in,keepaspectratio=true]{sr-greenland_topg}
- \quad \includegraphics[width=3.0in,keepaspectratio=true]{sr-greenland_bheatflx}}
+\mbox{\includegraphics[width=3.0in,keepaspectratio=true]{sr-greenland-topg}
+ \quad \includegraphics[width=3.0in,keepaspectratio=true]{sr-greenland-bheatflx}}
 \caption{The input bedrock elevation (left; m) and geothermal flux (right; W $\text{m}^{-2}$) for SeaRISE-Greenland.  Figures produced with FIXME: STATE TOOL}
 \label{fig:sr-input2}
 \end{figure}
@@ -102,10 +102,10 @@ $ mpiexec -n 4 /pismr -ocean_kill -skip 2 -i g20km_steady.nc \
 
 
 
-PISM being parallel, it can be sped up by using more processes.  The standard output in \verb|out.eisIIA| can be tracked as the job is running in the background using \verb|less|\index{less}, for instance.  Also, \verb|top|\index{top} is a Linux tool to watch CPU and memory usage during the run.
+PISM being parallel, it can be sped up by using more processes.  The standard output in \verb|out.eisIIA| can be tracked as the job is running in the background using \verb|less|\ind{less}, for instance.  Also, \verb|top|\ind{top} is a Linux tool to watch CPU and memory usage during the run.
 
 
-To get the model state in the midst of a PISM run, send all running \verb|pisms| processes (the PISM executable used here) a signal which causes PISM to write out the model state: \verb|pkill -USR1 pisms|.\index{PISM!catches signals -TERM and -USR1}\index{USR1}\index{pkill}  The PISM model state is then saved in a NetCDF file with name \verb|pism-|\emph{year}\verb|.nc|, using the year at that time step.  On the other hand, terminating the run with \verb|pkill -TERM pisms| will cause PISM to stop, but only after saving the model state using the specified output name.  See subsection \ref{subsect:signal} for a more complete description of how PISM catches signals.
+To get the model state in the midst of a PISM run, send all running \verb|pisms| processes (the PISM executable used here) a signal which causes PISM to write out the model state: \verb|pkill -USR1 pisms|.\ind{PISM!catches signals -TERM and -USR1}\ind{USR1}\ind{pkill}  The PISM model state is then saved in a NetCDF file with name \verb|pism-|\emph{year}\verb|.nc|, using the year at that time step.  On the other hand, terminating the run with \verb|pkill -TERM pisms| will cause PISM to stop, but only after saving the model state using the specified output name.  See subsection \ref{subsect:signal} for a more complete description of how PISM catches signals.
 
 While the complete run continues in the background, let's view the intermediate result stored in ...  An important fact to know is that a PISM output NetCDF file contains a ``history'' with the command that produced it.  For instance, 
 
@@ -118,7 +118,7 @@ Another way to view the output file is graphically.  One of the most convenient 
 
 
 
-As seen already, at each time step PISM shows a summary\index{PISM!standard output summary of each time step} of the model state using a few numbers and some single character flags.  The format of the summary is partly explained by two lines near the beginning of the run:
+As seen already, at each time step PISM shows a summary\ind{PISM!standard output summary of each time step} of the model state using a few numbers and some single character flags.  The format of the summary is partly explained by two lines near the beginning of the run:
 
 \small\begin{quote}
 \begin{verbatim}
@@ -150,13 +150,13 @@ As suggested earlier, we regularly use \verb|ncview| to look at NetCDF files.  T
 \textbf{Tool} & \textbf{Site} & \textbf{Function}\\ \hline
 \verb|ncdump| & \emph{included with any NetCDF distribution} & dump binary NetCDF as \texttt{.cdl} (text) file \\
 \verb|ncgen| & \emph{included with any NetCDF distribution} & convert \texttt{.cdl} file to binary NetCDF \\
-\verb|ncview|\index{ncview} & \href{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}{\texttt{meteora.ucsd.edu/$\sim$pierce}} & quick graphical view \\
+\verb|ncview|\ind{ncview} & \href{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}{\texttt{meteora.ucsd.edu/$\sim$pierce}} & quick graphical view \\
 IDV & \href{http://www.unidata.ucar.edu/software/idv/}{\t{www.unidata.ucar.edu/software/idv/}} & more complete visualization \\
 Paraview & \href{http://www.paraview.org}{\t{www.paraview.org}} & powerful open-source parallel visualization \\
 NCL &  \href{http://www.ncl.ucar.edu}{\t{www.ncl.ucar.edu}} & NCAR Command Language, open-source\\
 PyNGL &  \href{http://www.pyngl.ucar.edu}{\t{www.pyngl.ucar.edu}} & Python version of NCL, open-source\\
 VisIt & \href{http://visit.llnl.gov}{\t{visit.llnl.gov}} & advanced parallel visualization \\
-NCO\index{NCO (NetCDF Operators)} & \href{http://nco.sourceforge.net/}{\t{nco.sourceforge.net/}} & ``NetCDF Operators'': manipulations \\
+NCO\ind{NCO (NetCDF Operators)} & \href{http://nco.sourceforge.net/}{\t{nco.sourceforge.net/}} & ``NetCDF Operators'': manipulations \\
 \quad  & & \quad at command line
 \end{tabular}
 \normalsize

@@ -4,19 +4,20 @@
 
 \subsection{Choosing variables to save at the end of the run}
 \label{sec:output-size}
+\renewcommand{\optindexsection}{Output}
 
 A PISM output file always contains variables that are necessary to restart it
 plus some diagnostic quantities. It is possible, though, to make this list
-bigger (or smaller) using the \intextoption{o\und size} command-line option.
+bigger (or smaller) using the \intextoption{o\_size} command-line option.
 
-Possible choices are ``\texttt{-o\und size small}'' (no diagnostic variables),
-``\texttt{medium}'' (the default, adds variables listed in the \texttt{output\und
-  medium} configuration variable to model state fields) and ``\texttt{big}'',
+Possible choices are ``\texttt{-o\_size small}'' (no diagnostic variables),
+``\texttt{medium}'' (the default, adds variables listed in the \texttt{output\_medium} configuration variable to model state fields) and ``\texttt{big}'',
 saving \emph{every} variable listed in Table \ref{tab:extra-vars}.
 
-\subsection{Saving time series of scalar diagnostic quantities}\index{time-series}\index{PISM!saving time-series}
+\subsection{Saving time series of scalar diagnostic quantities}\ind{time-series}\ind{PISM!saving time-series}
 \label{sec:saving-time-series}
- It is also possible to save time-series of certain scalar diagnostic quantities using a combination of the options \intextoption{ts\und file}, \intextoption{ts\und times}, and \intextoption{ts\und vars}.  For example,
+\renewcommand{\optindexsection}{Saving scalar time-series}
+ It is also possible to save time-series of certain scalar diagnostic quantities using a combination of the options \intextoption{ts\_file}, \intextoption{ts\_times}, and \intextoption{ts\_vars}.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 1e4 -o output.nc -ts_file time-series.nc \
         -ts_times 0:1:1e4 -ts_vars ivol,iareag
@@ -27,9 +28,9 @@ Note that, similarly to the snapshot-saving code, this mechanism does not affect
 
 PISM buffers time-series data and writes it at the end of the run or once 10000 values are stored, whichever comes first. Sending an \texttt{USR1} signal to a PISM process flushes these buffers, making it possible to monitor the run. (See section \ref{subsect:signal} for more about PISM's signal handling.)
 
-Omitting the \intextoption{ts\und vars} option makes PISM save \emph{all} the variables listed in table \ref{tab:time-series}.  Because scalar time-series take very little storage space, compared to spatially-varying data, this is usually a reasonable choice.
+Omitting the \intextoption{ts\_vars} option makes PISM save \emph{all} the variables listed in table \ref{tab:time-series}.  Because scalar time-series take very little storage space, compared to spatially-varying data, this is usually a reasonable choice.
 
-If the file \verb|foo.nc|, specified by \verb|-ts_file foo.nc|, already exists then by default the existing file will be moved to \verb|foo.nc~| and the new time series will go into \verb|foo.nc|.  To append the time series onto the end of the existing file, use option \intextoption{ts\und append}.
+If the file \verb|foo.nc|, specified by \verb|-ts_file foo.nc|, already exists then by default the existing file will be moved to \verb|foo.nc~| and the new time series will go into \verb|foo.nc|.  To append the time series onto the end of the existing file, use option \intextoption{ts\_append}.
 
 \begin{table}[ht]
   \caption{Command-line options controlling saving scalar time-series}
@@ -37,10 +38,10 @@ If the file \verb|foo.nc|, specified by \verb|-ts_file foo.nc|, already exists t
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\hline
     \textbf{Option} & \textbf{Description} \\
     \hline
-    \intextoption{ts\und file} [file name] & Specifies the file to save to.\\
-    \intextoption{ts\und times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
-    \intextoption{ts\und vars} [list of variables] & Comma-separated list of variables, see table~\ref{tab:time-series}. Omitting this option is equivalent to listing all the possible variables.\\
-    \intextoption{ts\und append} & Append time series to file if it already exists.  No effect if file does not yet exist. \\
+    \intextoption{ts\_file} [file name] & Specifies the file to save to.\\
+    \intextoption{ts\_times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
+    \intextoption{ts\_vars} [list of variables] & Comma-separated list of variables, see table~\ref{tab:time-series}. Omitting this option is equivalent to listing all the possible variables.\\
+    \intextoption{ts\_append} & Append time series to file if it already exists.  No effect if file does not yet exist. \\
     \hline
   \end{tabular}
  \label{tab:time-series-opts}
@@ -59,9 +60,9 @@ If the file \verb|foo.nc|, specified by \verb|-ts_file foo.nc|, already exists t
     \texttt{dt} & years & mass-continuity time-step\\
     \texttt{divoldt} & m$^{3}\,$s$^{-1}$ & ice volume rate of change\\
     \texttt{dimassdt} & kg$^{3}\,$s$^{-1}$ & ice mass rate of change\\
-    \texttt{total\und surface\und ice \und flux} & kg$^{3}\,$s$^{-1}$ & total surface ice flux \\
-    \texttt{total\und basal\und ice\und flux} & kg$^{3}$\,s$^{-1}$ & total basal ice flux \\
-    \texttt{total\und sub\und shelf\und ice\und flux} & kg$^{3}\,$s$^{-1}$  & total sub-ice-shelf ice flux \\
+    \texttt{total\_surface\_ice \_flux} & kg$^{3}\,$s$^{-1}$ & total surface ice flux \\
+    \texttt{total\_basal\_ice\_flux} & kg$^{3}$\,s$^{-1}$ & total basal ice flux \\
+    \texttt{total\_sub\_shelf\_ice\_flux} & kg$^{3}\,$s$^{-1}$  & total sub-ice-shelf ice flux \\
     \texttt{ienthalpy} & J & total ice enthalpy\\
     \hline
   \end{tabular}
@@ -69,19 +70,20 @@ If the file \verb|foo.nc|, specified by \verb|-ts_file foo.nc|, already exists t
 \end{table}
 
 
-\subsection{Saving time series of spatially-varying diagnostic quantities}\index{PISM!saving diagnostic quantities regularly}
+\subsection{Saving time series of spatially-varying diagnostic quantities}\ind{PISM!saving diagnostic quantities regularly}
 \label{sec:saving-spat-vari}
+\renewcommand{\optindexsection}{Saving 2D and 3D time-series}
 
 Sometimes it is useful to have PISM save a handful of diagnostic quantities every 10 years (or even every year).  One can use snapshots (section \ref{sec:snapshots}), but doing so can easily fill your hard-drive because snapshots are complete (re-startable) model states.  Sometimes you want a \emph{subset} of model variables saved reasonably-frequently in an output file.
 
-Use options \intextoption{extra\und file}, \intextoption{extra\und times}, and \intextoption{extra\und vars} for this.  For example,
+Use options \intextoption{extra\_file}, \intextoption{extra\_times}, and \intextoption{extra\_vars} for this.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 10000 -o output.nc -extra_file extras.nc \
         -extra_times 0:10:1e4 -extra_vars csurf,cbase
 \end{verbatim}
 will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years. Times are specified using a comma-separated list or a MATLAB-style range. Please see table \ref{tab:extras} for all the options corresponding to this feature; table \ref{tab:extra-vars} lists all the variable choices. 
 
-If the file \verb|foo.nc|, specified by \verb|-extra_file foo.nc|, already exists then by default the existing file will be moved to \verb|foo.nc~| and the new time series will go into \verb|foo.nc|.  To append the time series onto the end of the existing file, use option \intextoption{extra\und append}.
+If the file \verb|foo.nc|, specified by \verb|-extra_file foo.nc|, already exists then by default the existing file will be moved to \verb|foo.nc~| and the new time series will go into \verb|foo.nc|.  To append the time series onto the end of the existing file, use option \intextoption{extra\_append}.
 
 \begin{table}[ht]
   \caption{Command-line options controlling extra diagnostic output}
@@ -89,11 +91,11 @@ If the file \verb|foo.nc|, specified by \verb|-extra_file foo.nc|, already exist
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\hline
     \textbf{Option} & \textbf{Description}\\
     \hline
-    \intextoption{extra\und file} [file name] & Specifies the file to save to; should be different from the output \intextoption{o} file.\\
-    \intextoption{extra\und times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list.\\
-    \intextoption{extra\und vars} [list of variables]& Comma-separated list of variables, see table~\ref{tab:extra-vars}\\
-    \intextoption{extra\und split} & Save to separate files, similar to \intextoption{split\und snapshots}\\
-    \intextoption{extra\und append} & Append variables to file if it already exists.  No effect if file does not yet exist, and no effect if \intextoption{extra\und split} is set. \\
+    \intextoption{extra\_file} [file name] & Specifies the file to save to; should be different from the output \intextoption{o} file.\\
+    \intextoption{extra\_times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list.\\
+    \intextoption{extra\_vars} [list of variables]& Comma-separated list of variables, see table~\ref{tab:extra-vars}\\
+    \intextoption{extra\_split} & Save to separate files, similar to \intextoption{split\_snapshots}\\
+    \intextoption{extra\_append} & Append variables to file if it already exists.  No effect if file does not yet exist, and no effect if \intextoption{extra\_split} is set. \\
     \hline
   \end{tabular}
  \label{tab:extras}
@@ -125,7 +127,7 @@ If the file \verb|foo.nc|, specified by \verb|-extra_file foo.nc|, already exist
     \texttt{enthalpysurf} & K & ice enthalpy at the ice surface\\
     \texttt{hardav} & Pa s$^{1/n}$ & vertical average of ice hardness \\
     \texttt{lat} & degrees north& latitude \\
-    \texttt{litho\und temp} & K & lithosphere (bedrock) temperature\\
+    \texttt{litho\_temp} & K & lithosphere (bedrock) temperature\\
     \texttt{lon} & degrees east & longitude \\
     \texttt{mask} & none & grounded/dragging/floating integer mask \\
     \texttt{strainheat} & mW/m$^{3}$ & rate of strain heating in ice (dissipation heating) \\
@@ -133,7 +135,7 @@ If the file \verb|foo.nc|, specified by \verb|-extra_file foo.nc|, already exist
     \texttt{tauc} & Pa & yield stress for basal till (plastic or pseudo-plastic model) \\
     \texttt{taud} & Pa & magnitude of driving shear stress at base of ice \\
     \texttt{temp} & K & ice temperature \\
-    \texttt{temp\und pa} & $^{\circ}$C & pressure-adjusted ice temperature \\
+    \texttt{temp\_pa} & $^{\circ}$C & pressure-adjusted ice temperature \\
     \texttt{tempbase} & K & ice temperature at the ice base\\
     \texttt{tempsurf} & K & ice temperature at the ice surface\\
     \texttt{thk} & m & ice thickness\\
@@ -165,10 +167,12 @@ If the file \verb|foo.nc|, specified by \verb|-extra_file foo.nc|, already exist
 
 \clearpage
 
-\subsection{Saving re-startable snapshots of the model state}\index{snapshots of the model state}\index{PISM!saving snapshots of the model state}
-\label{sec:snapshots}  Sometimes you want to check the model state every 1000 years, for example.  One possible solution is to run PISM for a thousand years, have it save all the fields at the end of the run, then restart and run for another thousand, and etc.  This forces the adaptive time-stepping mechanism to stop \emph{exactly} at multiples of 1000 years, which may be desirable in some cases.
+\subsection{Saving re-startable snapshots of the model state}\ind{snapshots of the model state}\ind{PISM!saving snapshots of the model state}
+\label{sec:snapshots}
+\renewcommand{\optindexsection}{Saving snapshots}
+Sometimes you want to check the model state every 1000 years, for example.  One possible solution is to run PISM for a thousand years, have it save all the fields at the end of the run, then restart and run for another thousand, and etc.  This forces the adaptive time-stepping mechanism to stop \emph{exactly} at multiples of 1000 years, which may be desirable in some cases.
 
-If saving exactly at specified times is not critical, then use the \intextoption{save\und file} and \intextoption{save\und times} options.  For example,
+If saving exactly at specified times is not critical, then use the \intextoption{save\_file} and \intextoption{save\_times} options.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 10000 -o output.nc -save_file snapshots.nc \
         -save_times 1000:1000:10000
@@ -192,7 +196,7 @@ If \verb|snapshots.nc| was created by the command above, running
 \begin{verbatim}
 $ pismr -i snapshots.nc -y 1000 -o output_2.nc
 \end{verbatim}
-will initialize using the last record in the file, at about $5000$ years.  By contrast, to restart from $1500$ years (for example) it is necessary to extract the corresponding record using \verb|ncks|\index{NCO (NetCDF Operators)!ncks}
+will initialize using the last record in the file, at about $5000$ years.  By contrast, to restart from $1500$ years (for example) it is necessary to extract the corresponding record using \verb|ncks|\ind{NCO (NetCDF Operators)!ncks}
 \begin{verbatim}
 $ ncks -d t,1500years snapshots.nc foo.nc
 \end{verbatim}
@@ -205,12 +209,12 @@ Also note that the second snapshot will probably be \emph{around} $1500$ years a
 Another possible use of snapshots is for restarting runs on a batch system which kills jobs which go over their allotted time.  Running PISM with options \verb|-y 1500| \verb|-save_times 1000:100:1400| would mean that if the job is killed before completing the whole 1500 year run, we can restart from near the last multiple of $100$ years.  Restarting with option \intextoption{ye} would finish the run on the desired year.
 
 It is also possible to save snapshots to separate files using the
-\intextoption{split\und snapshots} option.  For example, the run above can be changed to
+\intextoption{split\_snapshots} option.  For example, the run above can be changed to
 \begin{verbatim}
 $ pismr -i foo.nc -y 10000 -o output.nc -save_file snapshots \
         -save_times 1000,1500,2000,5000 -split_snapshots
 \end{verbatim}
-for this purpose.  This will produce files called \verb|snapshots-|year\verb|.nc|.  This option is generally faster if many snapshots are needed, apparently because of the time necessary to reopen a large file at each snapshot when \verb|-split_snapshots| is not used.  Note that tools like NCO\index{NCO (NetCDF Operators)!wildcards} and \verb|ncview|\index{ncview!wildcards} usually behave as desired with wildcards like ``\verb|snapshots-*.nc|''.
+for this purpose.  This will produce files called \verb|snapshots-|year\verb|.nc|.  This option is generally faster if many snapshots are needed, apparently because of the time necessary to reopen a large file at each snapshot when \verb|-split_snapshots| is not used.  Note that tools like NCO\ind{NCO (NetCDF Operators)!wildcards} and \verb|ncview|\ind{ncview!wildcards} usually behave as desired with wildcards like ``\verb|snapshots-*.nc|''.
 
 Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of the model state.
 
@@ -220,34 +224,17 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\hline
     \textbf{Option} & \textbf{Description} \\
     \hline
-    \intextoption{save\und file} [file name] & Specifies the file to save to.\\
-    \intextoption{save\und times} [range or list] & Specifies times at which to save snapshots, by either a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
-    \intextoption{split\und snapshots} & Separate the snapshot output into files named \texttt{snapshots-}year\texttt{.nc}.  Faster if you are saving more than a dozen or so snapshots. \\
+    \intextoption{save\_file} [file name] & Specifies the file to save to.\\
+    \intextoption{save\_times} [range or list] & Specifies times at which to save snapshots, by either a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
+    \intextoption{split\_snapshots} & Separate the snapshot output into files named \texttt{snapshots-}year\texttt{.nc}.  Faster if you are saving more than a dozen or so snapshots. \\
     \hline
   \end{tabular}
  \label{tab:snapshot-opts}
 \end{table}
 
-
-\subsection{PISM's default flags and parameters (and how to change them)}
-\label{sec:pism-defaults}
-
-PISM's behavior depends on values of many flags and physical parameters. Most of them have default values\footnote{For \texttt{pismr}, grid parameters $Mx$, $My$, $Mz$, $Mbz$, $Lz$, $Lbz$, that have to be set at bootstrapping, are some exceptions.} which are read from the configuration file \verb|pism_config.nc| in the \verb|lib| sub-directory.
-
-It is possible to run PISM with an alternate configuration file using the \intextoption{config} command-line option:
-\begin{verbatim}
-$ pismr -i foo.nc -y 1000 -config my_config.nc
-\end{verbatim}
-
-The file \verb|my_config.nc| has to contain \emph{all the flags and parameters} present in \verb|pism_config.nc|.
-
-The list of parameters is too long to include here; please see the PISM Class browser for an automatically-generated table describing them.
-
-% FIXME: needs more work
-
-
 \subsection{Run-time diagnostic viewers}
 \label{sec:diagnostic-viewers}
+\renewcommand{\optindexsection}{Run-time diagnostic viewers}
 Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.
 All the quantities listed in table \ref{tab:extra-vars} are available.
 
@@ -261,11 +248,11 @@ are transposed.
     \small
    \textbf{Option} & \textbf{Description}\\
     \hline
-    \intextoption{view\und map} [list of variables] & Turns on map-plane views of one or several variables, see tables \ref{tab:extra-vars}  \\
-    \intextoption{view\und slice} [list of variables] & Turns on viewers showing a slice of a 3D field at a certain level above the base of ice\\
-    \intextoption{slice\und level} number& Specifies the level for the previous option\\
-    \intextoption{viewer\und size} number & desired viewer size, in pixels\\
-    \intextoption{view\und sounding} [list of variables] &Turns on sounding viewers showing values in a column\\
+    \intextoption{view\_map} [list of variables] & Turns on map-plane views of one or several variables, see tables \ref{tab:extra-vars}  \\
+    \intextoption{view\_slice} [list of variables] & Turns on viewers showing a slice of a 3D field at a certain level above the base of ice\\
+    \intextoption{slice\_level} number& Specifies the level for the previous option\\
+    \intextoption{viewer\_size} number & desired viewer size, in pixels\\
+    \intextoption{view\_sounding} [list of variables] &Turns on sounding viewers showing values in a column\\
     \intextoption{id} number & Sounding row-index\\
     \intextoption{jd} number & Sounding column-index\\
     \hline
@@ -299,11 +286,28 @@ Some diagnostic quantities are \emph{only} available as run-time viewers:
     \textbf{Variable name or an option} & \textbf{Description}\\\hline
     \texttt{diffusivity} & diffusivity coefficient D in mass balance equation in $m^{2}/s$. Meaningful only in regions of shallow ice ﬂow.\\
     \texttt{nuH} & two viewers: vertically-averaged effective viscosity times thickness; on $i$ and $j$ offset grids. Only meaningful in ice streams and shelves.\\
-    \texttt{log\und nuH} & log base ten of the vertically-averaged effective viscosity times thickness on the regular grid. Only meaningful in ice streams and shelves.\\
-    \intextoption{ksp\und monitor\und draw} & Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Shows norm of residual versus iteration number.\\
+    \texttt{log\_nuH} & log base ten of the vertically-averaged effective viscosity times thickness on the regular grid. Only meaningful in ice streams and shelves.\\
+    \intextoption{ksp\_monitor\_draw} & Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Shows norm of residual versus iteration number.\\
     \normalsize
   \end{tabular}
 \end{center}
+
+\subsection{PISM's default flags and parameters (and how to change them)}
+\label{sec:pism-defaults}
+\renewcommand{\optindexsection}{PISM configuration file}
+
+PISM's behavior depends on values of many flags and physical parameters. Most of them have default values\footnote{For \texttt{pismr}, grid parameters $Mx$, $My$, $Mz$, $Mbz$, $Lz$, $Lbz$, that have to be set at bootstrapping, are some exceptions.} which are read from the configuration file \verb|pism_config.nc| in the \verb|lib| sub-directory.
+
+It is possible to run PISM with an alternate configuration file using the \intextoption{config} command-line option:
+\begin{verbatim}
+$ pismr -i foo.nc -y 1000 -config my_config.nc
+\end{verbatim}
+
+The file \verb|my_config.nc| has to contain \emph{all the flags and parameters} present in \verb|pism_config.nc|.
+
+The list of parameters is too long to include here; please see the PISM Class browser for an automatically-generated table describing them.
+
+% FIXME: needs more work
 
 \subsection{Managing parameter studies}
 \label{sec:parameter-studies}
@@ -313,7 +317,7 @@ If parameters of interest can be controlled using command-line options, one can 
 
 Changing parameters not available at the command-line is also possible~--- by using a custom configuration file (see section \ref{sec:pism-defaults}). The problem is that this makes it hard to see which parameters were changed.
 
-The \intextoption{config\und override} command-line option provides an alternative. First of all, a file used with this option can have \emph{a subset} of flags and parameters present in \verb|pism_config.nc|. Moreover, PISM adds the \verb|pism_overrides| variable present in this file to the output file, making it easy to see which parameters were used to produce it.
+The \intextoption{config\_override} command-line option provides an alternative. First of all, a file used with this option can have \emph{a subset} of flags and parameters present in \verb|pism_config.nc|. Moreover, PISM adds the \verb|pism_overrides| variable present in this file to the output file, making it easy to see which parameters were used to produce it.
 
 Here's an example: suppose we want to compare the dynamics of an ice-sheet on Earth to the same ice-sheet on Mars.\footnote{This is an admittedly simplified example. One will surely need to change more than just the acceleration due to gravity for a real comparison.}
 
@@ -354,12 +358,15 @@ macbook:pism>
 \normalsize
 
 
-\subsection{Visualizing climate inputs, without ice dynamics}\label{subsect:pcctest}  Recall that
-internally in PISM there is a separation of climate inputs from ice dynamics
-(subsection \ref{sec:climate-inputs}).  Executable \verb|pcctest|\index{PISM!pcctest}
-allows one to visualize climate inputs without invoking the ice dynamics core of PISM.
-This is helpful during the process of creating PISM-readable data files, and modeling 
-with such.
+\subsection{Visualizing climate inputs, without ice dynamics}
+\label{subsect:pcctest}
+\renewcommand{\optindexsection}{Visualizing climate inputs}
+
+Recall that internally in PISM there is a separation of climate inputs from ice
+dynamics (subsection \ref{sec:climate-inputs}). Executable
+\verb|pcctest|\ind{PISM!pcctest} allows one to visualize climate inputs without
+invoking the ice dynamics core of PISM. This is helpful during the process of
+creating PISM-readable data files, and modeling with such.
 
 FIXME: this section needs and overhaul!
 
@@ -371,17 +378,17 @@ FIXME: this section needs and overhaul!
   \begin{tabular}{p{0.1\linewidth}p{0.8\linewidth}}\hline
     \textbf{Option} & \textbf{Description}\\
     \hline
-    \texttt{-i} & specifies an input file, which has been produced by PISM;\\
-    \texttt{-o} & sets the output file name;\\
-    \texttt{-ca} &chooses the constant atmosphere coupler (\verb|PISMConstAtmosCoupler|);\\
-    \texttt{-sma} & chooses the PDD atmosphere coupler (\verb|PISMPDDCoupler|);\\
-    \texttt{-co} & chooses the constant ocean coupler (\verb|PISMConstOceanCoupler|);\\
-    \texttt{-ys} & sets the start time, in years;\\
-    \texttt{-ye} & sets the final time, in years;\\
-    \texttt{-dt} & sets the interval between saved climate snapshots.\\
+    \intextoption{i} & specifies an input file, which has been produced by PISM;\\
+    \intextoption{o} & sets the output file name;\\
+    \intextoption{ca} &chooses the constant atmosphere coupler (\verb|PISMConstAtmosCoupler|);\\
+    \intextoption{sma} & chooses the PDD atmosphere coupler (\verb|PISMPDDCoupler|);\\
+    \intextoption{co} & chooses the constant ocean coupler (\verb|PISMConstOceanCoupler|);\\
+    \intextoption{ys} & sets the start time, in years;\\
+    \intextoption{ye} & sets the final time, in years;\\
+    \intextoption{dt} & sets the interval between saved climate snapshots.\\
     \hline
  \end{tabular}
- \label{tab:pcctest}\index{\texttt{pcctest} command-line options}
+ \label{tab:pcctest}\ind{\texttt{pcctest} command-line options}
 \end{table}
 
 \bigskip
@@ -401,7 +408,7 @@ climate at times \verb|ys:dt:ye|.  It is a boring ``movie.''
 The excuse for the executable \verb|pcctest| becomes clearer if we use a positive degree-day
 model (subsection \ref{sec:boundary-models}).  The positive degree-day
 model uses a variable called \verb|snowaccum|, and a calculation of melting, to get the
-surface mass balance \verb|acab|.  As a demonstration here we use an NCO\index{NCO (NetCDF Operators)!ncrename} (subsection 
+surface mass balance \verb|acab|.  As a demonstration here we use an NCO\ind{NCO (NetCDF Operators)!ncrename} (subsection 
 \ref{subsect:nctoolsintro}) to change a variable name in \verb|state.nc|.  Then we run \verb|pcctest|
 with option \verb|-pdd| to invoke the \verb|PISMPDDCoupler|
 object, which includes the parameterized PDD:
@@ -417,11 +424,14 @@ computation the net surface mass balance is computed, namely \verb|acab| in \ver
 
 See section \ref{sec:eismint-greenland} for another \verb|pcctest| example.
 
-\subsection{Regridding}  It is common to want to interpolate a coarse grid model state onto a finer grid or vice versa.  For example, one might want to do the EISMINT II experiment on the default grid, producing output \verb|foo.nc|, but then interpolate both the ice thickness and the temperature onto a finer grid.  The basic idea of ``regridding'' in PISM is that one starts over from the beginning on the finer grid, but one extracts the desired variables stored in the coarse grid file and interpolates these onto the finer grid before proceeding with the actual computation.
+\subsection{Regridding}
+\renewcommand{\optindexsection}{Regridding}
+
+It is common to want to interpolate a coarse grid model state onto a finer grid or vice versa.  For example, one might want to do the EISMINT II experiment on the default grid, producing output \verb|foo.nc|, but then interpolate both the ice thickness and the temperature onto a finer grid.  The basic idea of ``regridding'' in PISM is that one starts over from the beginning on the finer grid, but one extracts the desired variables stored in the coarse grid file and interpolates these onto the finer grid before proceeding with the actual computation.
 
 The transfer from grid to grid is reasonably general---one can go from coarse to fine or vice versa in each dimension $x,y,z$---but the transfer must always be done by \emph{interpolation} and never \emph{extrapolation}.  (An attempt to do the latter will always produce a PISM error.)
 
-Such ``regridding'' is done using the \intextoption{regrid\und file} and \intextoption{regrid\und vars} commands as in this example:\index{pisms}
+Such ``regridding'' is done using the \intextoption{regrid\_file} and \intextoption{regrid\_vars} commands as in this example:\ind{pisms}
 
 \begin{verbatim}
 $  pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
@@ -432,17 +442,17 @@ $  pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
 A slightly different use of regridding occurs when ``bootstrapping'', as described in section \ref{sect:boot} and illustrated by example in section \ref{sec:eismint-greenland}.
 
 See table \ref{tab:regridvar} for the regriddable variables using
-\intextoption{regrid\und file}.  Only model state variables are regriddable, while climate and boundary data generally are not explicitly regriddable.  (Bootstrapping, however, allows the same general interpolation as this explicit regrid.)
+\intextoption{regrid\_file}.  Only model state variables are regriddable, while climate and boundary data generally are not explicitly regriddable.  (Bootstrapping, however, allows the same general interpolation as this explicit regrid.)
 
 \begin{table}[ht]
 \centering
-\caption{Regriddable variables.\index{regrid}\index{regrid\und vars}  Use \texttt{-regrid\und vars} with these names.}\label{tab:regridvar}
+\caption{Regriddable variables.\ind{regrid}\ind{regrid\_vars}  Use \texttt{-regrid\_vars} with these names.}\label{tab:regridvar}
 \begin{tabular}{ll}\hline
 \textbf{Name} & \textbf{Description}\\ \hline
 \texttt{age} & age of ice\\
 \texttt{bwat} & effective thickness of subglacial melt water \\
 \texttt{dbdt} & bedrock uplift rate \\
-\texttt{litho\und temp} & lithosphere (bedrock) temperature \\
+\texttt{litho\_temp} & lithosphere (bedrock) temperature \\
 \texttt{mask} & grounded/dragging/floating integer mask, see section \ref{subsect:floatmask} \\
 \texttt{temp} & ice temperature \\
 \texttt{thk} & land ice thickness \\
@@ -452,7 +462,7 @@ See table \ref{tab:regridvar} for the regriddable variables using
 \end{tabular}
 \end{table}
 
-Here is another example: suppose you have an output of a PISM run on a fairly coarse grid (stored in \verb|foo.nc|) and you want to continue this run on a finer grid. This can be done using \intextoption{regrid\und file} along with \intextoption{boot\und from}:
+Here is another example: suppose you have an output of a PISM run on a fairly coarse grid (stored in \verb|foo.nc|) and you want to continue this run on a finer grid. This can be done using \intextoption{regrid\_file} along with \intextoption{boot\_from}:
 \begin{verbatim}
 $ pismr -boot_from foo.nc -Mx 201 -My 201 -Mz 21 -Mbz 21 -Lz 4000 \
         -regrid_from foo.nc -regrid_vars litho_temp,age,temp -y 100 -o bar.nc
@@ -462,7 +472,7 @@ In this case all the model-state 2D variables present in \verb|foo.nc| will be i
 
 \newcommand\pid{\textsl{pid}s}
 
-\subsection{Signals, to control a running PISM model} \label{subsect:signal} \index{signals} \index{PISM!catches signals -TERM and -USR1}  Ice sheet model runs sometimes take a long time, so the state of a run may need checking.  Sometimes the run needs to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard, included in Linux and most flavors of Unix.  Table \ref{tab:signals} summarizes how PISM responds to signals.  A convenient form of \verb|kill|, for Linux users, is \verb|pkill| which will find processes by executable name.  Thus ``\verb|pkill -USR1 pismr|'' might be used to send all PISM processes the same signal, avoiding an explicit list of \pid.
+\subsection{Signals, to control a running PISM model} \label{subsect:signal} \ind{signals} \ind{PISM!catches signals -TERM and -USR1}  Ice sheet model runs sometimes take a long time, so the state of a run may need checking.  Sometimes the run needs to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard, included in Linux and most flavors of Unix.  Table \ref{tab:signals} summarizes how PISM responds to signals.  A convenient form of \verb|kill|, for Linux users, is \verb|pkill| which will find processes by executable name.  Thus ``\verb|pkill -USR1 pismr|'' might be used to send all PISM processes the same signal, avoiding an explicit list of \pid.
 
 \begin{table}[ht]
 \caption{Signalling running PISM processes.  ``\pid''~stands for list of all identifiers of the PISM processes.}\label{tab:signals}
@@ -477,11 +487,11 @@ In this case all the model-state 2D variables present in \verb|foo.nc| will be i
 \end{tabular}
 \end{table}
 
-Here is an example.  Suppose we start a long verification run in the background, with standard out redirected into a file:\index{pismv}
+Here is an example.  Suppose we start a long verification run in the background, with standard out redirected into a file:\ind{pismv}
 
 \verb|pismv -test G -Mz 101 -y 1e6 -o testGmillion.nc >> log.txt &|
 
-\noindent This run gets a Unix process id,\index{signals!the pid}, which we assume is ``8920''.  (Get it using \verb|ps| or \verb|pgrep|.)  If we want to observe the run without stopping it we send the \verb|USR1| signal:\index{signals!usr1}
+\noindent This run gets a Unix process id,\ind{signals!the pid}, which we assume is ``8920''.  (Get it using \verb|ps| or \verb|pgrep|.)  If we want to observe the run without stopping it we send the \verb|USR1| signal:\ind{signals!usr1}
 
 \verb|kill -USR1 8920|
 
@@ -490,7 +500,7 @@ Here is an example.  Suppose we start a long verification run in the background,
 \begin{verbatim}
 caught signal SIGUSR1:  Writing intermediate file ... and flushing time series.
 \end{verbatim}
-\noindent appears around that time step.  Suppose, on the other hand, that the run needs to be stopped.  Then a graceful way is\index{signals!term}
+\noindent appears around that time step.  Suppose, on the other hand, that the run needs to be stopped.  Then a graceful way is\ind{signals!term}
 
 \verb|kill -TERM 8920|
 
@@ -498,7 +508,11 @@ caught signal SIGUSR1:  Writing intermediate file ... and flushing time series.
 
 
 
-\subsection{Understanding adaptive time-stepping} \label{subsect:adapt}\index{PISM!adaptive time stepping scheme} At each time step the PISM standard output includes ``flags'' and then a summary of the model state using a few numbers.  A typical example is
+\subsection{Understanding adaptive time-stepping} \label{subsect:adapt}
+\ind{PISM!adaptive time stepping scheme}
+\renewcommand{\optindexsection}{Adaptive time-stepping scheme}
+
+At each time step the PISM standard output includes ``flags'' and then a summary of the model state using a few numbers.  A typical example is
 \small
 \begin{verbatim}
  y SIA v$th d (dt=1.07878 in 2 substeps; av dt_sub=0.53939)
@@ -539,11 +553,11 @@ Now we explain what the rest of the flags line, namely
 \end{table}
 
 
-\subsection{Utility and test scripts} \label{subsect:scripts}\index{python scripts} Some nice scripts.
+\subsection{Utility and test scripts} \label{subsect:scripts}\ind{python scripts} Some nice scripts.
  
 FIXME: the python scripts are all documented at the \textsl{Packages} tab on the browser
 
-FIXME: the python scripts all take \texttt{fill\und missing.py --help}
+FIXME: the python scripts all take \texttt{fill\_missing.py --help}
 
 \newcommand{\scripthead}[1]{\texttt{#1}}
 
@@ -555,13 +569,13 @@ FIXME: the python scripts all take \texttt{fill\und missing.py --help}
     \hline
     \scripthead{test/vfnow.py} & Organizes the process of verifying PISM.  Specifies standard refinement paths for each of the tests (section \ref{sect:verif}). \\
     \scripthead{test/vnreport.py} & Automates the creation of convergence graphs like figures \ref{fig:thickerrsB}--~\ref{fig:temperrsK}. \\
-    \scripthead{util/fill\und missing.py} & Uses an approximation to Laplace's equation $\grad^2 u = 0$ to smoothly replace missing values in a two-dimensional NetCDF variable.  The ``hole'' is filled with an average of the boundary non-missing values. Section \ref{sec:eismint-greenland} gives an example application to the bed elevations in the EISMINT-Greenland data.  Depends on \verb|netcdf4-python| and \verb|scipy| Python packages. \\
-    \scripthead{util/check\und polarstereo.py} & \\
-    \scripthead{util/check\und stationarity.py} & \\
+    \scripthead{util/fill\_missing.py} & Uses an approximation to Laplace's equation $\grad^2 u = 0$ to smoothly replace missing values in a two-dimensional NetCDF variable.  The ``hole'' is filled with an average of the boundary non-missing values. Section \ref{sec:eismint-greenland} gives an example application to the bed elevations in the EISMINT-Greenland data.  Depends on \verb|netcdf4-python| and \verb|scipy| Python packages. \\
+    \scripthead{util/check\_polarstereo.py} & \\
+    \scripthead{util/check\_stationarity.py} & \\
     \scripthead{util/nc2mat.py} & Reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format \verb|.mat|, supported by MATLAB version 5 and later.  Depends on \verb|netcdf4-python| and \verb|scipy| Python packages. \\
     \scripthead{util/nccmp.py} & \\
-    \scripthead{util/pism\und config\und editor.py} & \\
-    \scripthead{util/pism\und matlab.m} & \\
+    \scripthead{util/pism\_config\_editor.py} & \\
+    \scripthead{util/pism\_matlab.m} & \\
    \hline
   \end{tabular}
   \caption{Some scripts for helping PISM users.}

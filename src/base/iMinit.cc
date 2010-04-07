@@ -219,7 +219,7 @@ PetscErrorCode IceModel::grid_setup() {
   bool i_set;
   string filename;
 
-  ierr = PetscOptionsHead("Options controlling input and computational grid parameters"); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Options controlling input and computational grid parameters", ""); CHKERRQ(ierr);
 
   ierr = verbPrintf(3, grid.com,
 		    "Setting up the computational grid...\n"); CHKERRQ(ierr);
@@ -278,6 +278,8 @@ PetscErrorCode IceModel::grid_setup() {
   ierr = set_time_from_options(); CHKERRQ(ierr);
 
   ierr = grid.createDA(); CHKERRQ(ierr);
+
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -556,13 +558,13 @@ PetscErrorCode  IceModel::set_time_from_options() {
     usrRunYears = grid.end_year - grid.start_year;
   bool ysSet = false, yeSet = false, ySet = false;
 
-  ierr = PetscOptionsHead("Time: start year, end year and run length"); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Time: start year, end year and run length", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsReal("-ys", "Start year",        usrStartYear, ysSet); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-ye", "End year",          usrEndYear,   yeSet); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-y",  "years; Run length", usrRunYears,  ySet);  CHKERRQ(ierr);
   }
-  ierr = PetscOptionsTail(); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
 
   if (ysSet && yeSet && ySet) {

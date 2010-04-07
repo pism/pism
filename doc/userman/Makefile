@@ -10,10 +10,18 @@ revision:
 revclean:
 	@rm -f revision.tex
 
-userman : manual.tex ../ice_bib.bib revision $(parts)
+# creates a symlink to ice_bib.bib with a different name (so that we can avoid
+# underscores in filenames included in the manual)
+ice-bib.bib:
+	ln -s ../ice_bib.bib ice-bib.bib
+
+userman : manual.tex ice-bib.bib revision $(parts)
 	pdflatex manual.tex
 	BIBINPUTS=".:..:" bibtex manual
-	makeindex -l manual
+	makeindex -l general
+	printf ",s/\\_ /\\_/g\n,wq\n" | ed general.ind 
+	makeindex -l options
+	printf ",s/\\_ /\\_/g\n,wq\n" | ed options.ind
 	pdflatex manual.tex
 	pdflatex manual.tex
 

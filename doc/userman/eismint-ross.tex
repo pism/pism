@@ -1,5 +1,8 @@
 
-\section{Example: Validating PISM as a flow model for the Ross ice shelf}\label{sect:ross} \index{PISM!running the EISMINT Ross ice shelf intercomparison in}\index{Antarctic ice sheet!Ross ice shelf} \index{EISMINT!intercomparison of Ross ice shelf models} \index{PISM!validation of ice shelf model} \index{Ross ice shelf} The term ``validation'' describes the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed \cite{Roache,Wesseling}.  Roughly speaking, validation can happen when the observations or data are better than the model, so the comparison measures the quality of the numerical model and not merely errors in, incompleteness of, or lack of confidence in, the data.
+\section{Example: Validating PISM as a flow model for the Ross ice shelf}\label{sect:ross} \ind{PISM!running the EISMINT Ross ice shelf intercomparison in}\ind{Antarctic ice sheet!Ross ice shelf} \ind{EISMINT!intercomparison of Ross ice shelf models} \ind{PISM!validation of ice shelf model} \ind{Ross ice shelf}
+\renewcommand{\optindexsection}{EISMINT-Ross}
+
+The term ``validation'' describes the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed \cite{Roache,Wesseling}.  Roughly speaking, validation can happen when the observations or data are better than the model, so the comparison measures the quality of the numerical model and not merely errors in, incompleteness of, or lack of confidence in, the data.
 
 As part of the first EISMINT series of intercomparisons, MacAyeal and others \cite{MacAyealetal} validated several ice shelf numerical models using the Ross ice shelf as an example.  We refer to this intercomparison and its associate write-up \cite{MacAyealetal} as ``EISMINT-Ross''.  The models were compared to data from RIGGS (the Ross Ice shelf Geophysical and Glaciological Survey \cite{RIGGS2,RIGGS1}), acquired in the period 1973--1978.   The RIGGS data include the (horizontal) velocity of the ice shelf measured at a few hundred locations in a reasonably regular grid across the shelf; see figure \ref{fig:rosspython} below for an indication of these positions.
 
@@ -47,7 +50,7 @@ At the end of this run the computed velocity field is compared to the interpolat
 
 The output file \verb|unnamed_diag.nc| contains vertically-averaged horizontal speed in the variable \verb|cbar|.  Figure \ref{fig:rosspython} shows that computed speed as the color background; the comparison of modeled and observed vector velocities in that figure is discussed below.
 
-There are many variations on this basic ``\verb|pross|''\pismoptionindex{ross} run above.  First of all one can get more information during the run by adding diagnostic viewers and a more complete (verbose) report to standard out:\index{pross} \pismoptionindex{ssaBC}\pismoptionindex{pause} \pismoptionindex{ssa}
+There are many variations on this basic ``\verb|pross|''\pismoptionindex{ross} run above.  First of all one can get more information during the run by adding diagnostic viewers and a more complete (verbose) report to standard out:\ind{pross} \pismoptionindex{ssaBC}\pismoptionindex{pause} \pismoptionindex{ssa}
 
 \begin{verbatim}
 $ pross -boot_from ross.nc -ssa -ssaBC ross.nc \
@@ -62,7 +65,7 @@ $ mpiexec -n 4 pross -boot_from ross.nc -ssa -ssaBC ross.nc \
 \end{verbatim}
 The result is very similar, as it should be.  On the other hand, since the data is only on a 6.8 km grid we expect no added accuracy on this new 5km grid.
 
-Alternately one might want to experiment with different values of the hardness parameter.  Its default value is $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ as in \cite{MacAyealetal}.   We can also use smaller (more severe) tolerances for the nonlinear iteration (\intextoption{ssa\und rtol}) and the linear iteration (\intextoption{ksp\und rtol}) to get more confidence in the numerical scheme:
+Alternately one might want to experiment with different values of the hardness parameter.  Its default value is $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ as in \cite{MacAyealetal}.   We can also use smaller (more severe) tolerances for the nonlinear iteration (\intextoption{ssa\_rtol}) and the linear iteration (\intextoption{ksp\_rtol}) to get more confidence in the numerical scheme:
 
 \begin{verbatim}
 $ pross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 \
@@ -71,7 +74,7 @@ $ pross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 \
 \end{verbatim}
 
 
-\subsubsection*{Comparison to RIGGS data}  The file \verb|riggs_clean.dat| is a cleaned-up version of the original RIGGS\index{RIGGS} data \cite{RIGGS1, RIGGS2}.  (See \texttt{README} for more explanation on this RIGGS data.)  To convert this data to a NetCDF file, as needed next, do
+\subsubsection*{Comparison to RIGGS data}  The file \verb|riggs_clean.dat| is a cleaned-up version of the original RIGGS\ind{RIGGS} data \cite{RIGGS1, RIGGS2}.  (See \texttt{README} for more explanation on this RIGGS data.)  To convert this data to a NetCDF file, as needed next, do
 
 \begin{verbatim}
 ./riggs.py -o riggs.nc

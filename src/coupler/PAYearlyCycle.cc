@@ -258,8 +258,7 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
     PetscTruth dTforcing_set;
     char dT_file[PETSC_MAX_PATH_LEN];
 
-    ierr = PetscOptionsString("-dTforcing",
-			      "Specifies the air temperature offsets file",
+    ierr = PetscOptionsString("-dTforcing", "Specifies the air temperature offsets file",
 			      "", "",
 			      dT_file, PETSC_MAX_PATH_LEN, &dTforcing_set); CHKERRQ(ierr);
 
