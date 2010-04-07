@@ -26,6 +26,8 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &/*vars*/) {
   bool regrid = false;
   int start = -1;
 
+  snow_temp_july_day = config.get("snow_temp_july_day");
+
   // Allocate internal IceModelVecs:
   ierr = temp_ma.create(grid, "airtemp_ma", false); CHKERRQ(ierr);
   ierr = temp_ma.set_attrs("diagnostic",
@@ -174,7 +176,7 @@ PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, int N,
   const PetscReal
     radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
     sperd = 8.64e4, // exact number of seconds per day
-    julydaysec = sperd * config.get("snow_temp_july_day");
+    julydaysec = sperd * snow_temp_july_day;
 
   for (PetscInt k = 0; k < N; ++k) {
     double tk = ( ts[k] - floor(ts[k]) ) * secpera; // time from the beginning of a year, in seconds

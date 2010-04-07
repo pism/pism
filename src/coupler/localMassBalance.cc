@@ -61,6 +61,18 @@ PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig) : LocalMassBala
   pddFactorIce    = config.get("pdd_factor_ice");
   pddRefreezeFrac = config.get("pdd_refreeze");
   pddStdDev       = config.get("pdd_std_dev");
+
+  beta_ice_w = config.get("pdd_fausto_beta_ice_w");
+  beta_snow_w = config.get("pdd_fausto_beta_snow_w");
+
+  T_c = config.get("pdd_fausto_T_c");
+  T_w = config.get("pdd_fausto_T_w");
+  beta_ice_c = config.get("pdd_fausto_beta_ice_c");
+  beta_snow_c = config.get("pdd_fausto_beta_snow_c");
+
+  fresh_water_density = config.get("fresh_water_density");
+  ice_density = config.get("ice_density");
+  pdd_fausto_latitude_beta_w = config.get("pdd_fausto_latitude_beta_w");
 }
 
 
@@ -88,18 +100,10 @@ PetscErrorCode PDDMassBalance::init() {
 
 PetscErrorCode PDDMassBalance::setDegreeDayFactorsFromSpecialInfo(
                                   PetscScalar latitude, PetscScalar T_mj) {
-  const PetscScalar
-    beta_ice_w = config.get("pdd_fausto_beta_ice_w"),
-    beta_snow_w = config.get("pdd_fausto_beta_snow_w");
-  if (latitude < config.get("pdd_fausto_latitude_beta_w")) { // case lat < 72 deg N
+  if (latitude < pdd_fausto_latitude_beta_w) { // case lat < 72 deg N
     pddFactorIce  = beta_ice_w;
     pddFactorSnow = beta_snow_w;
   } else { // case > 72 deg N
-    const PetscScalar  
-      T_c = config.get("pdd_fausto_T_c"),
-      T_w = config.get("pdd_fausto_T_w"),
-      beta_ice_c = config.get("pdd_fausto_beta_ice_c"),
-      beta_snow_c = config.get("pdd_fausto_beta_snow_c");
     if (T_mj >= T_w) {
       pddFactorIce  = beta_ice_w;
       pddFactorSnow = beta_snow_w;
@@ -118,7 +122,7 @@ PetscErrorCode PDDMassBalance::setDegreeDayFactorsFromSpecialInfo(
   // degree-day factors in \ref Faustoetal2009 are water-equivalent
   //   thickness per degree day; ice-equivalent thickness melted per degree
   //   day is slightly larger; for example, iwfactor = 1000/910
-  const PetscScalar iwfactor = config.get("fresh_water_density") / config.get("ice_density");
+  const PetscScalar iwfactor = fresh_water_density / ice_density;
   pddFactorSnow *= iwfactor;
   pddFactorIce  *= iwfactor;
   return 0;

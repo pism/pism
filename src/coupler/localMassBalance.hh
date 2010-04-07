@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -91,6 +91,10 @@ protected:
   virtual PetscScalar getPDDSumFromTemperatureTimeSeries(
                  PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N);
   PetscScalar CalovGreveIntegrand(PetscScalar sigma, PetscScalar Tac);
+
+  PetscScalar beta_ice_w, beta_snow_w, T_c, T_w, beta_ice_c, beta_snow_c,
+    fresh_water_density, ice_density, pdd_fausto_latitude_beta_w;
+
 
   PetscScalar  pddStdDev,        // K; daily amount of randomness
                pddFactorSnow,    // m day^-1 K^-1; amount of snow melted,

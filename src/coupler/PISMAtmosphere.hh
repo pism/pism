@@ -113,6 +113,7 @@ public:
   virtual PetscErrorCode temp_snapshot(PetscReal t_years, PetscReal dt_years,
 				       IceModelVec2S &result);
 protected:
+  PetscScalar snow_temp_july_day;
   string reference, snowprecip_filename;
   IceModelVec2S temp_ma, temp_mj, snowprecip;
 };
