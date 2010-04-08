@@ -1,6 +1,6 @@
 
-\section{Example: Modeling the Greenland ice sheet}\label{sec:eismint-greenland} \ind{PISM!running the EISMINT Greenland intercomparison}\ind{Greenland ice sheet}\ind{EISMINT!intercomparison of Greenland models} 
-\renewcommand{\optindexsection}{EISMINT-Greenland}
+\section{Example: Modeling the Greenland ice sheet}\label{sec:eismint-greenland} \index{PISM!running the EISMINT Greenland intercomparison}\index{Greenland ice sheet}\index{EISMINT!intercomparison of Greenland models} 
+\optsection{EISMINT-Greenland}
 
 In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use older data from the 1990s ice sheet modelling intercomparison EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}, but it is an excellent tutorial example.
 
@@ -37,6 +37,7 @@ If these missing values were to be left in the NetCDF handed to PISM then the re
 \verb|$ fill_missing.py -f eis_green20.nc -v topg -o eis_green_smoothed.nc|
 
 \begin{figure}[ht]
+\centering
 \includegraphics[width=2.4in,keepaspectratio=true]{EISgreen-thick}\quad\includegraphics[width=2.4in,keepaspectratio=true]{EISgreen-bed}
 \caption{Views of the thickness (left) and smoothed bed elevation (right) for EISMINT-Greenland.  The coastal topography around several fjords has been smoothed.}
 \label{fig:greendata}
@@ -49,6 +50,7 @@ Next we use a script which converts the time-series data files \texttt{specmap.0
 \noindent Two NetCDF files with one-dimensional time series data are created, namely \verb|grip_dT.nc| and \verb|specmap_dSL.nc|.  In the paleoclimate run ``CCL3'' below, the executable \verb|pgrn| will be called with options \verb|-dTforcing| and \verb|-dSLforcing| on these two \verb|.nc| files, respectively.  Thus PISM will read the GRIP data \cite{Dansgaardetal1993} for the surface temperature forcing and the SPECMAP data \cite{Imbrieetal1984} for sea level forcing.  Figure \ref{fig:gripDeltaT} shows the GRIP temperature offsets.
 
 \begin{figure}[ht]
+\centering
 \includegraphics[width=5.6in,keepaspectratio=true]{gripDeltaT}
 \caption{Change in temperature from present, from the GRIP core \cite{JohnsenetalGRIP}.}
 \label{fig:gripDeltaT}
@@ -57,7 +59,7 @@ Next we use a script which converts the time-series data files \texttt{specmap.0
 
 \subsubsection*{Bootstrapping}  \label{sect:green-bootstrapping}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the full initial conditions needed for the continuum model.  \footnote{The continuum model is the differential equations describing ice flow inside PISM.  See section \ref{sect:boot} for more on ``bootstrapping''.}
 
-We do a one model year run using option \verb|-boot_from| to ``bootstrap'' from file \verb|eis_green_smoothed.nc|.  The executable ``\verb|pgrn|'' is special to EISMINT-Greenland:\ind{pgrn}
+We do a one model year run using option \verb|-boot_from| to ``bootstrap'' from file \verb|eis_green_smoothed.nc|.  The executable ``\verb|pgrn|'' is special to EISMINT-Greenland:\index{pgrn}
 \begin{verbatim}
 $ pgrn -boot_from eis_green_smoothed.nc \
        -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 \
@@ -66,6 +68,7 @@ $ pgrn -boot_from eis_green_smoothed.nc \
 \noindent The run takes only a few seconds of real time on any machine.  Tables \ref{bootstrapEISgreen} and \ref{bootCONTINUED} show the entire PISM output at the terminal.
 
 \begin{table}
+\centering
 \scriptsize
 \begin{quote}
 \begin{verbatim}
@@ -128,6 +131,7 @@ horizontal grid cell dimensions: 20.00 km x 20.00 km
 \end{table}
 
 \begin{table}
+\centering
 \scriptsize
 \begin{quote}
 \begin{verbatim}
@@ -204,12 +208,14 @@ The SSL2 simulation is intended to go until the model reaches a ``steady state''
 FIXME:  FIGURES NEED MAINTENANCE.   In any case, one sees that the volume shows a consistent growing-but-leveling-out trend, with a final volume a bit more than $4 \times 10^{6}\,\text{km}^3$.  The time series for volume and melt fraction (the fraction of the base where the temperature is at pressure-melting) are shown in Figures \ref{fig:eisgrnvolseries} and \ref{fig:eisgrnmeltfseries}.  The volume time series is boring, but the melt fraction indicates something interesting: measured by basal melt fraction, the temperature field resulting from bootstrapping and relaxing the temperature field (above) gave a pretty good estimate of the basal melt fraction for the fully coupled steady state.
 
 \begin{figure}[ht]
+\centering
 \includegraphics[width=6.0in,keepaspectratio=true]{eisgrn-volseries}
 \caption{Volume time series for a 110k model year EISMINT-Greenland SSL2 run; units of $10^{6}\,\text{km}^3$.}
 \label{fig:eisgrnvolseries}
 \end{figure}
 
 \begin{figure}[ht]
+\centering
 \includegraphics[width=6.0in,keepaspectratio=true]{eisgrn-meltfseries}
 \caption{Time series for the fraction of the base which is at the pressure-melting temperature from a 110k model year EISMINT-Greenland run.  See the right hand part of Figure \ref{fig:ssl2thickTpa} for a map of the basal temperature.}
 \label{fig:eisgrnmeltfseries}
@@ -218,6 +224,7 @@ FIXME:  FIGURES NEED MAINTENANCE.   In any case, one sees that the volume shows 
 FIXME:  FIGURES NEED MAINTENANCE.   We will use the final NetCDF file \verb|green_ssl2_110ka.nc| to continue the EISMINT-Greenland experiments below.  The saved ice thickness, basal temperature, and vertically-averaged horizontal velocity maps are shown in Figure \ref{fig:ssl2thickTpa}.
 
 \begin{figure}[ht]
+\centering
 \mbox{\phantom{|}\hspace{-1.0in}\includegraphics[height=3.0in,keepaspectratio=true]{greenH-SSL2}\,\includegraphics[height=3.0in,width=2.3in]{greenTpa-SSL2}\,\includegraphics[height=3.0in,keepaspectratio=true]{greencbar-SSL2}}
 %\includegraphics[height=3.7in,width=2.9in]{greenTpa-SSL2}
 \caption{Ice thickness (meters; left), basal temperature (degrees C below 0; middle), and vertically-averaged horizontal velocity (m/a; right) at the end (110k model years) of a EISMINT-Greenland SSL2 run.  Note that in the temperature graph the pressure-melting temperature areas are white.}
@@ -243,6 +250,7 @@ mpiexec -n 8 pgrn -ccl3 -skip 10 -i green_ssl2_110ka.nc -ys -249900 -ye 0 \
 FIXME:  FIGURES NEED MAINTENANCE.   The resulting thickness difference, relative to the end of the SSL2 run, and the pressure-adjusted basal temperature, are shown in Figure \ref{fig:cclthickTpa}.
 
 \begin{figure}[ht]
+\centering
 \includegraphics[width=2.8in]{Hdiff-CCLSSL}\quad\includegraphics[width=2.8in]{Tpa-CCL}
 \caption{Left:  Ice thickness difference between end (year zero) of a CCL3 run and the end of an SSL2 run (meters).  Right:  Ice pressure-adjusted basal temperature (degrees C below 0; right) at the end of a EISMINT-Greenland CCL3 run.  Compare Figure \ref{fig:ssl2thickTpa}.}
 \label{fig:cclthickTpa}
@@ -257,13 +265,13 @@ A final ``greenhouse warming'' experiment ``GWL3'' (option \intextoption{gwl3}) 
 \verb|mpiexec -n 8 pgrn -gwl3 -i green_ccl3_year0.nc -y 500 -o green_gwl3_year500.nc|
 
 \subsubsection*{Visualizing the climate inputs in the Greenland case}
-\label{sec:pdd-series-with-pcctest}
+\label{sec:pdd-series-with-pclimate}
 
 Assuming that \verb|green20km_y1.nc| was produced by the run above (see section
 \ref{sect:green-bootstrapping}), one can run the following to check if the PDD
 model in PISM (see section \ref{sec:boundary-models}) is ``reasonable'':
 \begin{verbatim}
-$ pcctest -i green20km_y1.nc -sma -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
+$ pclimate -i green20km_y1.nc -sma -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
 \end{verbatim}
 This produces the file \verb|pddmovie.nc| with four variables: \verb|acab|
 (instantaneous net ice equivalent accumulation (ablation) rate), \verb|artm|
@@ -308,7 +316,7 @@ Here are two things to notice:
 \bigskip
 We can also test the surface temperature forcing code with the following command.
 \begin{verbatim}
-$ pcctest -ca -i green20km_y1.nc -o dT_movie.nc \
+$ pclimate -ca -i green20km_y1.nc -o dT_movie.nc \
           -ys -2.5e5 -ye 0 -dt 2000 -dTforcing grip_dT.nc
 \end{verbatim}
 The output \verb|dT_movie.nc| and \verb|grip_dT.nc| mentioned in section above were used to create figure \ref{fig:artm-timeseries}.
@@ -324,7 +332,7 @@ This figure shows the GRIP temperature offsets (top graph; compare to figure \re
 
 FIXME:  Variable acab in following is worth looking at.  It looks right and it may be possible to compare to other paleo-limate studies:
 \begin{verbatim}
-$ pcctest -i green20km_y1.nc -o bar.nc -ys -125000.0 -ye -0.0 -dt 1000.0  -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc -sma
+$ pclimate -i green20km_y1.nc -o bar.nc -ys -125000.0 -ye -0.0 -dt 1000.0  -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc -sma
 \end{verbatim}
 
 

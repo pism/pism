@@ -79,7 +79,7 @@ SHELL := /bin/sh
 VPATH := $(subst src,../src,src/:src/base/:src/earth/:src/verif/:src/verif/tests/:src/software_tests:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
-executables := pismr pross pismv pisms pcctest pismtests
+executables := pismr pross pismv pisms pclimate pismtests
 extras := flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
 exec_extras := $(addprefix ../bin/, $(extras))
@@ -182,9 +182,9 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 ../bin/pismtests: pismtests.o iMtests.o ${LIBPISMNAME} bedrockOnlySystem.o iceModelVec2V.o
 	${CXXLINKER} pismtests.o iMtests.o bedrockOnlySystem.o iceModelVec2V.o ${ICE_LIB_FLAGS} -o $@
 
-other_sources += pcctest.cc pgrn_atmosphere.cc
-../bin/pcctest : pcctest.o pgrn_atmosphere.o ${LIBPISMNAME}
-	${CXXLINKER} pcctest.o pgrn_atmosphere.o ${ICE_LIB_FLAGS} -o $@
+other_sources += pclimate.cc pgrn_atmosphere.cc
+../bin/pclimate : pclimate.o pgrn_atmosphere.o ${LIBPISMNAME}
+	${CXXLINKER} pclimate.o pgrn_atmosphere.o ${ICE_LIB_FLAGS} -o $@
 
 #build extra executables
 

@@ -196,7 +196,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
   global_attrs.init("global_attributes", com, grid->rank);
   global_attrs.set_string("Conventions", "CF-1.4");
-  global_attrs.set_string("source", string("pcctest ") + PISM_Revision);
+  global_attrs.set_string("source", string("pclimate ") + PISM_Revision);
 
   // Create a string with space-separated command-line arguments:
   string cmdstr;
@@ -218,10 +218,10 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   PetscInt NN;  // get number of times at which PISM boundary model state is written
   NN = (int) ceil((ye - ys) / dt_years);
   if (NN > 1000)
-    SETERRQ(2,"PCCTEST ERROR: refuse to write more than 1000 times!");
+    SETERRQ(2,"PCLIMATE ERROR: refuse to write more than 1000 times!");
   if (NN > 50) {
     ierr = PetscPrintf(com,
-        "\nPCCTEST ATTENTION: writing more than 50 times to '%s'!!\n\n",
+        "\nPCLIMATE ATTENTION: writing more than 50 times to '%s'!!\n\n",
         filename); CHKERRQ(ierr);
   }
 
@@ -230,7 +230,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   PISMGreenlandAtmosCoupler* pdd_pcc = dynamic_cast<PISMGreenlandAtmosCoupler*>(pcc);
   if ((pdd_pcc != NULL) && (dt_years > 1.0)) {
     ierr = verbPrintf(1,com,
-        "PCCTEST ATTENTION: Chosen PISM surface model will be asked for results\n"
+        "PCLIMATE ATTENTION: Chosen PISM surface model will be asked for results\n"
         "  from one year periods at the start of each desired time subinterval;\n"
         "  full subinterval evaluation is too slow ...\n\n");
       CHKERRQ(ierr);
@@ -305,8 +305,8 @@ int main(int argc, char *argv[]) {
     required.push_back("-ys");
     required.push_back("-ye");
     required.push_back("-dt");
-    ierr = show_usage_check_req_opts(com, "pcctest", required,
-      "  pcctest -i IN.nc -o OUT.nc -ys A -ye B -dt C [-atmosphere <name> -surface <name>] [OTHER PISM & PETSc OPTIONS]\n\n"
+    ierr = show_usage_check_req_opts(com, "pclimate", required,
+      "  pclimate -i IN.nc -o OUT.nc -ys A -ye B -dt C [-atmosphere <name> -surface <name>] [OTHER PISM & PETSc OPTIONS]\n\n"
       "where:\n"
       "  -i             input file in NetCDF format\n"
       "  -o             output file in NetCDF format\n"
@@ -320,7 +320,7 @@ int main(int argc, char *argv[]) {
       ); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,
-      com,"PCCTEST %s (test of PISM boundary models offline from IceModel)\n",
+      com,"PCLIMATE %s (test of PISM boundary models offline from IceModel)\n",
       PISM_Revision); CHKERRQ(ierr);
 
     // read the config option database:
@@ -330,7 +330,7 @@ int main(int argc, char *argv[]) {
     
     bool flag;
     PetscReal ys = 0.0, ye = 0.0, dt_years = 0.0;
-    ierr = PetscOptionsBegin(grid.com, "", "PCCTEST options", ""); CHKERRQ(ierr);
+    ierr = PetscOptionsBegin(grid.com, "", "PCLIMATE options", ""); CHKERRQ(ierr);
     {
       ierr = PISMOptionsString("-i", "Input file name",  inname, flag); CHKERRQ(ierr);
       ierr = PISMOptionsString("-o", "Output file name", outname, flag); CHKERRQ(ierr);

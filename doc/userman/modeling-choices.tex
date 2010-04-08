@@ -3,10 +3,10 @@
 \label{sec:modeling-choices}
 
 \subsection{Computational box} \label{subsect:coords}
-\renewcommand{\optindexsection}{Computational box}
+\optsection{Computational box}
 \optseealso{Grid}
 
-PISM does all simulations in a computational box\ind{PISM!computational box} which is rectangular in the PISM coordinates.
+PISM does all simulations in a computational box\index{PISM!computational box} which is rectangular in the PISM coordinates.
 
 The coordinate system has horizontal coordinates $x,y$ and a vertical coordinate $z$.  The $z$ coordinate is measured positive upward from the base of the ice and it is exactly opposite to the vector of gravity.  The surface $z=0$ is the base of the ice, however, and thus is usually not horizontal in the sense of being parallel to the geoid.   The surface $z=0$ is the base of the ice both when the ice is grounded and when the ice is floating.
 
@@ -18,16 +18,18 @@ The computational box can extend downward into the bedrock.  As $z=0$ is the bas
 
 The extent of the computational box, along with its bedrock extension downward, is determined by four numbers \t{Lx}, \t{Ly}, \t{Lz}, and \t{Lbz} (see Figure \ref{fig:rectilinearbox}.).  The first two of these are half-widths and have units of kilometers when set by options or displayed.  The extent of the computational box for the ice and bedrock is directly controlled by the following options. 
 
-\begin{tabular}{llp{0.7\linewidth}}
-\\\hline
-\textbf{Option} & \textbf{Meaning}
-\\\hline
-\txtopt{Lx}{(km)} & Half-width of the computational domain (in the $x$-direction) \\
-\txtopt{Ly}{(km)} & Half-width of the computational domain (in the $y$-direction) \\
-\txtopt{Lz}{(meters)} & Height of the computational domain in the ice \\
-\txtopt{Lbz}{(meters)} & Depth of the computational domain in the bedrock thermal layer
-\\\hline
-\end{tabular}
+\begin{center}
+  \begin{tabular}{llp{0.7\linewidth}}
+    \\\hline
+    \textbf{Option} & \textbf{Meaning}
+    \\\hline
+    \txtopt{Lx}{(km)} & Half-width of the computational domain (in the $x$-direction) \\
+    \txtopt{Ly}{(km)} & Half-width of the computational domain (in the $y$-direction) \\
+    \txtopt{Lz}{(meters)} & Height of the computational domain in the ice \\
+    \txtopt{Lbz}{(meters)} & Depth of the computational domain in the bedrock thermal layer
+    \\\hline
+  \end{tabular}
+\end{center}
 
 \begin{figure}[ht]
 \includegraphics[width=4.0in,keepaspectratio=true]{rectilinearbox}
@@ -38,9 +40,9 @@ The extent of the computational box, along with its bedrock extension downward, 
 
 \subsection{Spatial grid}
 \label{subsect:grid}
-\renewcommand{\optindexsection}{Grid!space}
+\optsection{Grid!space}
 
-The PISM grid\ind{PISM!grid} covering the computational box is equally spaced in horizontal ($x$ and $y$) directions.  Vertical spacing is quadratic by default (see below) but optionally a different spacing scheme can be chosen.  (Choose with options \txtopt{z_spacing}{[quadratic, equal]} and \txtopt{zb_spacing}{[quadratic, equal]}.)
+The PISM grid\index{PISM!grid} covering the computational box is equally spaced in horizontal ($x$ and $y$) directions.  Vertical spacing is quadratic by default (see below) but optionally a different spacing scheme can be chosen.  (Choose with options \txtopt{z_spacing}{[quadratic, equal]} and \txtopt{zb_spacing}{[quadratic, equal]}.)
 
 The grid is described by four numbers, namely the number of grid points \texttt{Mx} in the $x$ direction, the number \texttt{My} in the $y$ direction, the number \texttt{Mz} in the $z$ direction within the ice, and the number \texttt{Mbz} in the $z$ direction within the bedrock thermal layer.  These are specified by options \intextoption{Mx}, \intextoption{My}, \intextoption{Mz}, and \intextoption{Mbz}, respectively. The defaults are 61, 61, 31, and 1, respectively.
 
@@ -64,7 +66,7 @@ Otherwise, one is allowed to specify the grid when PISM is started.  In particul
 
 \subsection{Time}
 \label{sec:time}
-\renewcommand{\optindexsection}{Grid!time}
+\optsection{Grid!time}
 
 The following command-line options control PISM time.
 
@@ -78,7 +80,7 @@ The following command-line options control PISM time.
 \hline
 \end{tabular}
 
-\subsection{Diagnostic computations}  As a diagnostic example, using the EISMINT II final state computed in section \ref{sect:start}, try\ind{pismd}
+\subsection{Diagnostic computations}  As a diagnostic example, using the EISMINT II final state computed in section \ref{sect:start}, try\index{pismd}
 
 \verb|pismr -i eisIIA200k.nc -y 0 -o eisIIA200k_diag.nc -o_size big|
 
@@ -92,9 +94,9 @@ Note that the NetCDF model state saved by PISM at the end of an \emph{evolution}
 
 
 \subsection{Computing ice age} \label{subsect:age}
-\renewcommand{\optindexsection}{Computing ice age}
+\optsection{Computing ice age}
 
-By default, PISM does not compute the age of the ice\ind{PISM!modeling the age of the ice} because it does not directly impact ice flow using the default flow laws.   It is very easy to turn on.  Just set \intextoption{age}.
+By default, PISM does not compute the age of the ice\index{PISM!modeling the age of the ice} because it does not directly impact ice flow using the default flow laws.   It is very easy to turn on.  Just set \intextoption{age}.
 
 \subsection{Setting up PISM boundary (atmosphere, surface and ocean) models}
 \label{sec:boundary-models}
@@ -111,7 +113,7 @@ chooses a combination of SeaRISE-Greenland atmosphere model (see below),  ice-co
 Each of PISM boundary model types currently has one ``modifier'' available; the corresponding keyword is \texttt{forcing}. Please see below for details.
 
 \begin{enumerate}
-\renewcommand{\optindexsection}{Climate (boundary) models!\texttt{-atmosphere} [searise_greenland, constant, forcing]}
+\optsection{Climate (boundary) models!\texttt{-atmosphere} [searise_greenland, constant, forcing]}
 \item \textbf{PISM atmosphere models.}
 \begin{itemize}
   \item \emph{SeaRISE-Greenland} (\texttt{searise_greenland}, the default)
@@ -145,7 +147,7 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
   Note that only one air temperature forcing mechanism can be used at any time.
 
-\renewcommand{\optindexsection}{Climate (boundary) models!\texttt{-surface} [simple, constant, pdd, forcing]}
+\optsection{Climate (boundary) models!\texttt{-surface} [simple, constant, pdd, forcing]}
 \item \textbf{PISM surface (snow) process models}
 
 \begin{itemize}
@@ -160,7 +162,7 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
     Note: this surface model \emph{ignores}  the atmosphere model selection made using the \texttt{-atmosphere} option.
 
-  \item \emph{Local mass balance (PDD)} (\texttt{pdd}) \ind{positive degree day model} \ind{PDD (positive degree day model)} \ind{PISM!default positive degree day model} 
+  \item \emph{Local mass balance (PDD)} (\texttt{pdd}) \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model} 
 
    The default PDD used by PISM, turned on by option \texttt{-surface pdd}, is based on \cite{CalovGreve05} and EISMINT-Greenland intercomparison (section \ref{sec:eismint-greenland} and \cite{RitzEISMINT}). It also implements latitude- and mean July temperature dependent ice and snow factors using formulas in \cite{Faustoetal2009}.
 
@@ -173,7 +175,7 @@ The number of positive degree days is multiplied by a coefficient (config parame
 See also configuration parameters with the \texttt{pdd_fausto} prefix.
 
  \end{itemize}
-\renewcommand{\optindexsection}{Climate (boundary) models!\texttt{-ocean} [constant, forcing]}
+\optsection{Climate (boundary) models!\texttt{-ocean} [constant, forcing]}
 \item \textbf{PISM ocean models}
 PISM includes one simple ocean model: \texttt{constant}, providing constant (both in time and space) mass flux into the ocean and sea level elevation to PISM's ice flow core. The mass flux is controlled by the\\ \texttt{ocean_sub_shelf_heat_flux_into_ice} configuration parameter and the assumption that the mass flux is proportional to heat flux into ice.
 
@@ -186,10 +188,11 @@ uses \texttt{delta_SL.nc}
   
 \subsection{Floatation criterion and mask} \label{subsect:floatmask}  The most basic decision about ice dynamics made internally by PISM is whether to apply the ``floatation criterion'' to determine whether the ice is floating on the ocean or not.  In an evolution run this decision is made at each time step and the result is stored in the \t{mask}.
 
-The possible values of the \t{mask}\ind{mask} are given in Table \ref{tab:maskvals}.  The mask does not by itself determine ice dynamics.  For instance, when ice is floating (either value \texttt{MASK_FLOATING} or \texttt{MASK_FLOATING_OCEAN0}) the usual choice for ice dynamics is SSA, but the user can choose not to apply that model by leaving off the option \texttt{-ssa}.
+The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:maskvals}.  The mask does not by itself determine ice dynamics.  For instance, when ice is floating (either value \texttt{MASK_FLOATING} or \texttt{MASK_FLOATING_OCEAN0}) the usual choice for ice dynamics is SSA, but the user can choose not to apply that model by leaving off the option \texttt{-ssa}.
 
 \begin{table}[ht]
-\caption{The PISM mask\ind{mask}, in combination with user options, determines the dynamical model.}\label{tab:maskvals} 
+\centering
+\caption{The PISM mask\index{mask}, in combination with user options, determines the dynamical model.}\label{tab:maskvals} 
 \small
 \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\hline
 \textbf{Mask value} & \textbf{Meaning}\\ \hline
@@ -204,11 +207,11 @@ The possible values of the \t{mask}\ind{mask} are given in Table \ref{tab:maskva
 Assuming the geometry of the ice evolves (which can be turned off by option \intextoption{no_mass}), and assuming an ocean exists (which can be turned off by option \intextoption{dry}), then at each time step the mask can change.  Ice which becomes floating is marked as \texttt{MASK_FLOATING} while ice which becomes grounded is either marked as \texttt{MASK_SHEET} or \texttt{MASK_DRAGGING_SHEET}.  The decision between \texttt{MASK_SHEET} or \texttt{MASK_DRAGGING_SHEET} is made by a vote-by-neighbors scheme in the most general case.  When both \intextoption{ssa} and \intextoption{super} are given all grounded ice has \texttt{MASK_DRAGGING_SHEET}, however.
 
 \subsection{Plastic till free boundary problem for ice streams; SSA as a sliding law}  \label{subsect:plastic}
-\renewcommand{\optindexsection}{SSA as a sliding law}
+\optsection{SSA as a sliding law}
 
 \textbf{WARNING}: The models described in this subsection are still under active development, and thus we give only a sketch.
 
-The shallow shelf approximation (SSA)\ind{SSA (shallow shelf approximation)} stress balance is used in PISM to describe the sliding of grounded ice and the formation of ice streams \cite{BBssasliding}, as well as being used as the only stress balance for floating ice.  For the SSA with ``plastic'' or ``Coulomb'' till the locations of ice streams is determined as part of a free boundary problem \cite{SchoofStream}.  We believe that this mathematical description of ice streams, by Schoof, should be regarded as the best known ``sliding law'' for the SIA \cite{BBssasliding}.\ind{SIA (shallow ice approximation)!sliding law}
+The shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} stress balance is used in PISM to describe the sliding of grounded ice and the formation of ice streams \cite{BBssasliding}, as well as being used as the only stress balance for floating ice.  For the SSA with ``plastic'' or ``Coulomb'' till the locations of ice streams is determined as part of a free boundary problem \cite{SchoofStream}.  We believe that this mathematical description of ice streams, by Schoof, should be regarded as the best known ``sliding law'' for the SIA \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding law}
 
 Schoof's model \cite{SchoofStream} describes emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by a combination of the plastic failure of the till and the SSA approximation of the balance of momentum.  
 
@@ -260,18 +263,18 @@ In our model the till yield stress $\tau_c$ necessarily represents the strength 
 The scripts in \t{examples/pst} perform the experiments described in \cite{BBssasliding}, and represent the most thorough test of these mechanisms.
 
 FIXME:
-Test I in the verification suite\ind{verification tests} uses an exact solution to the Schoof model, that is, the model described by \t{-ssa -plastic}.
+Test I in the verification suite\index{verification tests} uses an exact solution to the Schoof model, that is, the model described by \t{-ssa -plastic}.
 
 In the \t{-ssa_sliding} case especially, the determination of basal resistance comes from a stored basal till material property \texttt{tillphi}, the till friction angle.  We find that an effective way to determine \texttt{tillphi} is to make it a function of bed elevation.  Option \intextoption{topg_to_till} does this.
 
-\subsection{Earth deformation models} \label{subsect:beddef} \ind{earth deformation} \ind{PISM!earth deformation models, using}
-\renewcommand{\optindexsection}{Earth deformation models}
+\subsection{Earth deformation models} \label{subsect:beddef} \index{earth deformation} \index{PISM!earth deformation models, using}
+\optsection{Earth deformation models}
 
 The option \txtopt{bed_def}{[none, iso, lc]} turn on bed deformation models.
 
 The former (\texttt{iso}, the isostatic model) assumes that the bed at the starting time is in equilibrium with the load so the bed elevation is equal to the starting bed elevation minus a multiple of the increase in ice thickness from the starting time, roughly: $b(t,x,y) = b(0,x,y) - f [H(t,x,y) - H(0,x,y)]$.  Here $f$ is the density of ice divided by the density of the mantle.  See Test H in Verification section. 
 
-The latter (\texttt{lc}) is much more effective.  It is based on papers by Lingle and Clark \cite{LingleClark}\ind{Lingle, Craig} \ind{Clark, J.} and \cite{BLKfastearth}.  It is essentially instantaneous computationally because of use of the Fast Fourier Transform to solve the relevant differential equation.  Among other practical features, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  If observed uplift data is available, it can be used along with \texttt{-boot_from} to initialize the model so that it starts with the given uplift rate.
+The latter (\texttt{lc}) is much more effective.  It is based on papers by Lingle and Clark \cite{LingleClark}\index{Lingle, Craig} \index{Clark, J.} and \cite{BLKfastearth}.  It is essentially instantaneous computationally because of use of the Fast Fourier Transform to solve the relevant differential equation.  Among other practical features, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  If observed uplift data is available, it can be used along with \texttt{-boot_from} to initialize the model so that it starts with the given uplift rate.
 
 Example runs to compare these models are
 \begin{verbatim}

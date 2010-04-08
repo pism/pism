@@ -1,5 +1,5 @@
 
-\section{Getting started}\label{sect:start}\ind{PISM!getting started}
+\section{Getting started}\label{sect:start}\index{PISM!getting started}
 
 In this section we give an extended example applying PISM to the Greenland ice sheet.  We use recent data sets provided by the Sea-level Response to Ice Sheet Evolution (\href{http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment}{SeaRISE}), a community-organized process to produce an upper bound of ice sheet contributions to sea level in the next 100--200 years.
 
@@ -38,6 +38,7 @@ Preprocessing creates three NetCDF files from the master data, each of which has
 Any of these NetCDF files can be viewed with \verb|ncview| or other NetCDF visualization tools.  (See Table \ref{tab:NetCDFview} below.)  Application of \verb|pyNGL| tools to \verb|Greenland_5km_v0.93.nc| produced figures \ref{fig:sr-input1} and  \ref{fig:sr-input1}, for example.
 
 \begin{figure}[ht]
+\centering
 \mbox{\includegraphics[width=2.5in,keepaspectratio=true]{sr-greenland-thk}
  \qquad\qquad\includegraphics[width=2.5in,keepaspectratio=true]{sr-greenland-prcp}}
 \caption{The input present-day ice thickness (left; m) and present-day precipitation (right; m $\text{a}^{-1}$ ice equivalent) for SeaRISE-Greenland.  Figures produced with IDV}
@@ -45,6 +46,7 @@ Any of these NetCDF files can be viewed with \verb|ncview| or other NetCDF visua
 \end{figure}
 
 \begin{figure}[ht]
+\centering
 \mbox{\includegraphics[width=2.5in,keepaspectratio=true]{sr-greenland-topg}
  \qquad\quad \includegraphics[width=2.5in,keepaspectratio=true]{sr-greenland-bheatflx}}
 \caption{The input bedrock elevation (left; m) and geothermal flux (right; W $\text{m}^{-2}$) for SeaRISE-Greenland.  Figures produced with IDV}
@@ -119,8 +121,9 @@ As suggested earlier, we regularly use \verb|ncview| to look at NetCDF files.  T
 
 \centerline{ \href{http://www.unidata.ucar.edu/software/netcdf/docs/software.html}{\t{www.unidata.ucar.edu/software/netcdf/docs/software.html}} } 
 
-\newcommand{\netcdftool}[1]{#1\ind{NetCDF!tools!#1}}
+\newcommand{\netcdftool}[1]{#1\index{NetCDF!tools!#1}}
 \begin{table}[ht]
+\centering
 \caption{Some tools for viewing and modifying NetCDF files.}\label{tab:NetCDFview} 
 \small
 \begin{tabular}{@{}llll}\hline
@@ -133,7 +136,7 @@ As suggested earlier, we regularly use \verb|ncview| to look at NetCDF files.  T
 \netcdftool{NCL} &  \href{http://www.ncl.ucar.edu}{\t{www.ncl.ucar.edu}} & NCAR Command Language, open-source\\
 \netcdftool{PyNGL} &  \href{http://www.pyngl.ucar.edu}{\t{www.pyngl.ucar.edu}} & Python version of NCL, open-source\\
 \netcdftool{VisIt} & \href{http://visit.llnl.gov}{\t{visit.llnl.gov}} & advanced parallel visualization \\
-\netcdftool{NCO}\ind{NCO (NetCDF Operators)} & \href{http://nco.sourceforge.net/}{\t{nco.sourceforge.net/}} & ``NetCDF Operators'': manipulations \\
+\netcdftool{NCO}\index{NCO (NetCDF Operators)} & \href{http://nco.sourceforge.net/}{\t{nco.sourceforge.net/}} & ``NetCDF Operators'': manipulations \\
 \quad  & & \quad at command line
 \end{tabular}
 \normalsize

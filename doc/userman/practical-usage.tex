@@ -4,7 +4,7 @@
 
 \subsection{Input and output}
 \label{sec:input-output}
-\renewcommand{\optindexsection}{Input and output}
+\optsection{Input and output}
 \optseealso{Bootstrapping}
 \optseealso{Regridding}
 
@@ -40,7 +40,7 @@ The following sections describe more input and output options.
 
 \subsubsection{PISM's Standard output}
 \label{sec:stdout}
-\renewcommand{\optindexsection}{Input and output!standard out}
+\optsection{Input and output!standard out}
 
 Please see table \ref{tab:stdout} for a summary of PISM's options controlling
 what is printed to the standard output.
@@ -67,9 +67,9 @@ what is printed to the standard output.
   \label{tab:stdout}
 \end{table}
 
-\subsection{Saving time series of scalar diagnostic quantities}\ind{time-series}\ind{PISM!saving time-series}
+\subsection{Saving time series of scalar diagnostic quantities}\index{time-series}\index{PISM!saving time-series}
 \label{sec:saving-time-series}
-\renewcommand{\optindexsection}{Saving scalar time-series}
+\optsection{Saving scalar time-series}
  It is also possible to save time-series of certain scalar diagnostic quantities using a combination of the options \texttt{-ts_file}, \texttt{-ts_times}, and \texttt{-ts_vars}.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 1e4 -o output.nc -ts_file time-series.nc \
@@ -123,9 +123,9 @@ If the file \texttt{foo.nc}, specified by \texttt{-ts_file foo.nc}, already exis
 \end{table}
 
 
-\subsection{Saving time series of spatially-varying diagnostic quantities}\ind{PISM!saving diagnostic quantities regularly}
+\subsection{Saving time series of spatially-varying diagnostic quantities}\index{PISM!saving diagnostic quantities regularly}
 \label{sec:saving-spat-vari}
-\renewcommand{\optindexsection}{Saving 2D and 3D time-series}
+\optsection{Saving 2D and 3D time-series}
 
 Sometimes it is useful to have PISM save a handful of diagnostic quantities every 10 years (or even every year).  One can use snapshots (section \ref{sec:snapshots}), but doing so can easily fill your hard-drive because snapshots are complete (re-startable) model states.  Sometimes you want a \emph{subset} of model variables saved reasonably-frequently in an output file.
 
@@ -229,9 +229,9 @@ If the file \texttt{foo.nc}, specified by \texttt{-extra_file foo.nc}, already e
 
 \clearpage
 
-\subsection{Saving re-startable snapshots of the model state}\ind{snapshots of the model state}\ind{PISM!saving snapshots of the model state}
+\subsection{Saving re-startable snapshots of the model state}\index{snapshots of the model state}\index{PISM!saving snapshots of the model state}
 \label{sec:snapshots}
-\renewcommand{\optindexsection}{Saving snapshots}
+\optsection{Saving snapshots}
 Sometimes you want to check the model state every 1000 years, for example.  One possible solution is to run PISM for a thousand years, have it save all the fields at the end of the run, then restart and run for another thousand, and etc.  This forces the adaptive time-stepping mechanism to stop \emph{exactly} at multiples of 1000 years, which may be desirable in some cases.
 
 If saving exactly at specified times is not critical, then use the \texttt{-save_file} and \texttt{-save_times} options.  For example,
@@ -258,7 +258,7 @@ If \texttt{snapshots.nc} was created by the command above, running
 \begin{verbatim}
 $ pismr -i snapshots.nc -y 1000 -o output_2.nc
 \end{verbatim}
-will initialize using the last record in the file, at about $5000$ years.  By contrast, to restart from $1500$ years (for example) it is necessary to extract the corresponding record using \texttt{ncks}\ind{NCO (NetCDF Operators)!ncks}
+will initialize using the last record in the file, at about $5000$ years.  By contrast, to restart from $1500$ years (for example) it is necessary to extract the corresponding record using \texttt{ncks}\index{NCO (NetCDF Operators)!ncks}
 \begin{verbatim}
 $ ncks -d t,1500years snapshots.nc foo.nc
 \end{verbatim}
@@ -280,8 +280,8 @@ for this purpose.  This will produce files called
 \texttt{snapshots-}year\texttt{.nc}.  This option is generally faster if many
 snapshots are needed, apparently because of the time necessary to reopen a
 large file at each snapshot when \texttt{-split_snapshots} is not used.  Note
-that tools like NCO\ind{NCO (NetCDF Operators)!wildcards} and
-\texttt{ncview}\ind{NetCDF!tools!work with wildcards} usually behave as desired with wildcards like ``\texttt{snapshots-*.nc}''.
+that tools like NCO\index{NCO (NetCDF Operators)!wildcards} and
+\texttt{ncview}\index{NetCDF!tools!work with wildcards} usually behave as desired with wildcards like ``\texttt{snapshots-*.nc}''.
 
 Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of the model state.
 
@@ -301,7 +301,7 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
 
 \subsection{Run-time diagnostic viewers}
 \label{sec:diagnostic-viewers}
-\renewcommand{\optindexsection}{Run-time diagnostic viewers}
+\optsection{Run-time diagnostic viewers}
 Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.
 All the quantities listed in table \ref{tab:extra-vars} are available.
 
@@ -361,7 +361,7 @@ Some diagnostic quantities are \emph{only} available as run-time viewers:
 
 \subsection{PISM's default flags and parameters (and how to change them)}
 \label{sec:pism-defaults}
-\renewcommand{\optindexsection}{PISM configuration file}
+\optsection{PISM configuration file}
 
 PISM's behavior depends on values of many flags and physical parameters. Most of them have default values\footnote{For \texttt{pismr}, grid parameters $Mx$, $My$, $Mz$, $Mbz$, $Lz$, $Lbz$, that have to be set at bootstrapping, are some exceptions.} which are read from the configuration file \texttt{pism_config.nc} in the \texttt{lib} sub-directory.
 
@@ -426,23 +426,23 @@ macbook:pism>
 
 
 \subsection{Visualizing climate inputs, without ice dynamics}
-\label{subsect:pcctest}
-\renewcommand{\optindexsection}{Visualizing climate inputs}
+\label{subsect:pclimate}
+\optsection{Visualizing climate inputs}
 
 Recall that internally in PISM there is a separation of climate inputs from ice
 dynamics (subsection \ref{sec:climate-inputs}). Executable
-\texttt{pcctest}\ind{PISM!pcctest} allows one to visualize climate inputs without
+\texttt{pclimate}\index{PISM!pclimate} allows one to visualize climate inputs without
 invoking the ice dynamics core of PISM. This is helpful during the process of
 creating PISM-readable data files, and modeling with such.
 
-FIXME: this section needs and overhaul!
+FIXME: this section needs an overhaul!
 
-\texttt{pcctest} takes options listed in table \ref{tab:pcctest}.
+\texttt{pclimate} takes options listed in table \ref{tab:pclimate}.
 
 \begin{table}[ht]
-  \caption{\texttt{pcctest} command-line options}
+  \caption{\texttt{pclimate} command-line options}
   \centering
-  \begin{tabular}{p{0.1\linewidth}p{0.8\linewidth}}\toprule
+  \begin{tabular}{p{0.25\linewidth}p{0.7\linewidth}}\toprule
     \textbf{Option} & \textbf{Description}\\
     \midrule
     \fileopt{i} & specifies an input file, which has been produced by PISM;\\
@@ -452,33 +452,33 @@ FIXME: this section needs and overhaul!
     \txtopt{dt}{(years)} & sets the interval between saved climate snapshots.\\
     \bottomrule
  \end{tabular}
- \label{tab:pcctest}
+ \label{tab:pclimate}
 \end{table}
 
 \bigskip
-As an example, set up an ice sheet state file and run \texttt{pcctest} on it:
+As an example, set up an ice sheet state file and run \texttt{pclimate} on it:
 \begin{verbatim}
 $ mpiexec -n 2 pisms -eisII A -y 10000 -o state.nc
-$ pcctest -i state.nc -ca -ys 0.0 -ye 2.5 -dt 0.1 -o camovie.nc
+$ pclimate -i state.nc -ca -ys 0.0 -ye 2.5 -dt 0.1 -o camovie.nc
 \end{verbatim}
 Using \texttt{pisms} merely generates demonstration climate data, using
-EISMINT II choices \cite{EISMINT00}.  \texttt{pcctest} extracts the 
+EISMINT II choices \cite{EISMINT00}.  \texttt{pclimate} extracts the 
 surface mass balance \texttt{acab} and surface temperature \texttt{artm} from \texttt{state.nc}.
 It then does nothing interesting, exactly because a constant climate
 is used.  Viewing \texttt{camovie.nc} we see these same values as from \texttt{state.nc},
 in variables \texttt{acab}, \texttt{artm}, reported back to us as the time- and space-dependent
 climate at times \texttt{ys:dt:ye}.  It is a boring ``movie.''
 
-The excuse for the executable \texttt{pcctest} becomes clearer if we use a positive degree-day
+The excuse for the executable \texttt{pclimate} becomes clearer if we use a positive degree-day
 model (subsection \ref{sec:boundary-models}).  The positive degree-day
 model uses a variable called \texttt{snowaccum}, and a calculation of melting, to get the
-surface mass balance \texttt{acab}.  As a demonstration here we use an NCO\ind{NCO (NetCDF Operators)!ncrename} (subsection 
-\ref{subsect:nctoolsintro}) to change a variable name in \texttt{state.nc}.  Then we run \texttt{pcctest}
+surface mass balance \texttt{acab}.  As a demonstration here we use an NCO\index{NCO (NetCDF Operators)!ncrename} (subsection 
+\ref{subsect:nctoolsintro}) to change a variable name in \texttt{state.nc}.  Then we run \texttt{pclimate}
 with option \texttt{-pdd} to invoke the \texttt{PISMPDDCoupler}
 object, which includes the parameterized PDD:
 \begin{verbatim}
 $ ncrename -v acab,snowaccum state.nc restate.nc
-$ pcctest -i restate.nc -pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
+$ pclimate -i restate.nc -pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
 \end{verbatim}
 In particular, a time-dependent view of the variable \texttt{artmpdd} shows the time- and space-
 dependent annual cycle.  Onto this is added a random perturbation (normally distributed with standard 
@@ -486,11 +486,11 @@ deviation of 5 degrees), but this random perturbation is not shown.  In fact the
 \cite{CalovGreve05} method to compute the expected number of positive degree days.  From this
 computation the net surface mass balance is computed, namely \texttt{acab} in \texttt{pddmovie.nc}.
 
-See section \ref{sec:eismint-greenland} for another \texttt{pcctest} example.
+See section \ref{sec:eismint-greenland} for another \texttt{pclimate} example.
 
 \subsection{Regridding}
 \label{sec:regridding}
-\renewcommand{\optindexsection}{Regridding}
+\optsection{Regridding}
 \optseealso{Bootstrapping}
 
 It is common to want to interpolate a coarse grid model state onto a finer grid or vice versa.  For example, one might want to do the EISMINT II experiment on the default grid, producing output \texttt{foo.nc}, but then interpolate both the ice thickness and the temperature onto a finer grid.  The basic idea of ``regridding'' in PISM is that one starts over from the beginning on the finer grid, but one extracts the desired variables stored in the coarse grid file and interpolates these onto the finer grid before proceeding with the actual computation.
@@ -498,7 +498,7 @@ It is common to want to interpolate a coarse grid model state onto a finer grid 
 The transfer from grid to grid is reasonably general---one can go from coarse to fine or vice versa in each dimension $x,y,z$---but the transfer must always be done by \emph{interpolation} and never \emph{extrapolation}.  (An attempt to do the latter will always produce a PISM error.)
 
 Such ``regridding'' is done using the \fileopt{regrid_file} and
-\listopt{regrid_vars} commands as in this example:\ind{pisms}
+\listopt{regrid_vars} commands as in this example:\index{pisms}
 
 \begin{verbatim}
 $  pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
@@ -513,7 +513,7 @@ See table \ref{tab:regridvar} for the regriddable variables using
 
 \begin{table}[ht]
 \centering
-\caption{Regriddable variables.\ind{regrid}\ind{regrid_vars}  Use \texttt{-regrid_vars} with these names.}\label{tab:regridvar}
+\caption{Regriddable variables.\index{regrid}\index{regrid_vars}  Use \texttt{-regrid_vars} with these names.}\label{tab:regridvar}
 \begin{tabular}{ll}\toprule
 \textbf{Name} & \textbf{Description}\\ \midrule
 \texttt{age} & age of ice\\
@@ -539,11 +539,12 @@ In this case all the model-state 2D variables present in \texttt{foo.nc} will be
 
 \newcommand\pid{\textsl{pid}s}
 
-\subsection{Signals, to control a running PISM model} \label{subsect:signal} \ind{signals} \ind{PISM!catches signals -TERM and -USR1}  Ice sheet model runs sometimes take a long time, so the state of a run may need checking.  Sometimes the run needs to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard, included in Linux and most flavors of Unix.  Table \ref{tab:signals} summarizes how PISM responds to signals.  A convenient form of \texttt{kill}, for Linux users, is \texttt{pkill} which will find processes by executable name.  Thus ``\texttt{pkill -USR1 pismr}'' might be used to send all PISM processes the same signal, avoiding an explicit list of \pid.
+\subsection{Signals, to control a running PISM model} \label{subsect:signal} \index{signals} \index{PISM!catches signals -TERM and -USR1}  Ice sheet model runs sometimes take a long time, so the state of a run may need checking.  Sometimes the run needs to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard, included in Linux and most flavors of Unix.  Table \ref{tab:signals} summarizes how PISM responds to signals.  A convenient form of \texttt{kill}, for Linux users, is \texttt{pkill} which will find processes by executable name.  Thus ``\texttt{pkill -USR1 pismr}'' might be used to send all PISM processes the same signal, avoiding an explicit list of \pid.
 
 \begin{table}[ht]
+\centering
 \caption{Signalling running PISM processes.  ``\pid''~stands for list of all identifiers of the PISM processes.}\label{tab:signals}
-\begin{tabular}{p{0.20\linewidth}p{0.10\linewidth}p{0.70\linewidth}}\toprule
+\begin{tabular}{llp{0.60\linewidth}}\toprule
 \textbf{Command} & \textbf{Signal} & \textbf{PISM behavior} \\
 \midrule
 \texttt{kill -KILL} \pid & \texttt{SIGKILL} & Terminate with extreme prejudice. PISM cannot catch it and no state is saved. \\
@@ -554,11 +555,11 @@ In this case all the model-state 2D variables present in \texttt{foo.nc} will be
 \end{tabular}
 \end{table}
 
-Here is an example.  Suppose we start a long verification run in the background, with standard out redirected into a file:\ind{pismv}
+Here is an example.  Suppose we start a long verification run in the background, with standard out redirected into a file:\index{pismv}
 
 \verb|pismv -test G -Mz 101 -y 1e6 -o testGmillion.nc >> log.txt &|
 
-\noindent This run gets a Unix process id,\ind{signals!the pid}, which we assume is ``8920''.  (Get it using \texttt{ps} or \texttt{pgrep}.)  If we want to observe the run without stopping it we send the \texttt{USR1} signal:\ind{signals!usr1}
+\noindent This run gets a Unix process id,\index{signals!the pid}, which we assume is ``8920''.  (Get it using \texttt{ps} or \texttt{pgrep}.)  If we want to observe the run without stopping it we send the \texttt{USR1} signal:\index{signals!usr1}
 
 \verb|kill -USR1 8920|
 
@@ -567,7 +568,7 @@ Here is an example.  Suppose we start a long verification run in the background,
 \begin{verbatim}
 caught signal SIGUSR1:  Writing intermediate file ... and flushing time series.
 \end{verbatim}
-\noindent appears around that time step.  Suppose, on the other hand, that the run needs to be stopped.  Then a graceful way is\ind{signals!term}
+\noindent appears around that time step.  Suppose, on the other hand, that the run needs to be stopped.  Then a graceful way is\index{signals!term}
 
 \verb|kill -TERM 8920|
 
@@ -576,8 +577,8 @@ caught signal SIGUSR1:  Writing intermediate file ... and flushing time series.
 
 
 \subsection{Understanding adaptive time-stepping} \label{subsect:adapt}
-\ind{PISM!adaptive time stepping scheme}
-\renewcommand{\optindexsection}{Adaptive time-stepping}
+\index{PISM!adaptive time stepping scheme}
+\optsection{Adaptive time-stepping}
 
 At each time step the PISM standard output includes ``flags'' and then a summary of the model state using a few numbers.  A typical example is
 \small
@@ -604,8 +605,9 @@ Now we explain what the rest of the flags line, namely
 \noindent might mean.  Note that the PISM time step is determined by an adaptive mechanism.  PISM does each step explicitly when numerically-approximating mass conservation in the map-plane.  This, and the modeling of horizontal advection in conservation of energy and age evolution, requires such an adaptive time-stepping scheme \cite{BBL}.  The first character we see here, namely ``\texttt{d}'', is the adaptive-timestepping ``reason'' flag.  See Table \ref{tab:adaptiveflag}; ``\texttt{d}'' means that the time step was limited by the diffusivity of SIA mass conservation.  We also see that there was a major time step of 1.08 model years divided into 2 substeps of about 0.54 years.  The \intextoption{skip} option sets the maximum number of such substeps, but the adaptive mechanism may choose to take fewer substeps to satisfy numerical stability criteria.
 
 \begin{table}[ht]
+\centering
 \caption{Meaning of the adaptive time-stepping ``reason'' flag in the standard output flag line.}\label{tab:adaptiveflag}
-\begin{tabular}{p{0.05\linewidth}p{0.85\linewidth}}\toprule
+\begin{tabular}{p{0.05\linewidth}p{0.9\linewidth}}\toprule
 \textbf{Flag} & \textbf{Active adaptive constraint} \\ \midrule
 \texttt{c} & three-dimensional CFL for temperature/age advection \cite{BBL} \\
 \texttt{d} & diffusivity for SIA mass conservation \cite{BBL,HindmarshPayne} \\
@@ -648,7 +650,7 @@ Now we explain what the rest of the flags line, namely
 \end{table}
 
 
-\subsection{Utility and test scripts} \label{subsect:scripts}\ind{python scripts} Some nice scripts.
+\subsection{Utility and test scripts} \label{subsect:scripts}\index{python scripts} Some nice scripts.
  
 FIXME: the python scripts are all documented at the \textsl{Packages} tab on the browser
 

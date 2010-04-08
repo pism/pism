@@ -1,4 +1,6 @@
-\documentclass[11pt,final]{amsart}
+\documentclass[titlepage,letterpaper,final]{scrartcl}
+
+\usepackage{scrindex}           % multiple index support
 
 %% THE FOLLOWING SHOULD CHANGE FOR A STABLE RELEASE:
 \newcommand{\PISMREV}{\textbf{trunk} revision \input{revision.tex}}
@@ -14,17 +16,15 @@
 \newcommand{\tablespacing}{\renewcommand{\baselinestretch}{1.0}\tiny\normalsize}
 \normalspacing
 
-
-% amsmidx (below) breaks if this is not defined :-(
-\newcommand{\indexchap}{}
-\usepackage{amsmidx}
-
-
 \usepackage[usenames]{xcolor}
 
 \usepackage{bm,url,xspace,verbatim}
 \usepackage{amssymb,amsmath}
 \usepackage[pdftex]{graphicx}
+
+% this lets us avoid the scrartcl/hyperref conflict...
+\let\ifvtex\relax
+
 \usepackage[pdftex,
                 colorlinks=true,
                 plainpages=false, % only if colorlinks=true
@@ -33,14 +33,13 @@
                 urlcolor=blue     % only if colorlinks=true
 ]{hyperref}[2010/03/30 v6.80u Hypertext links for LaTeX]
 
-\usepackage{booktabs}
-\usepackage{xtab}
+\usepackage{booktabs}           % better rules in tables
+\usepackage{xtab}               % long (multi-page) tables
 
 %% uncomment to see locations of index entries
-%\usepackage{showidx}
+% \proofmodetrue
 
 \usepackage{underscore}
-
 
 \newcommand{\ddt}[1]{\ensuremath{\frac{\partial #1}{\partial t}}}
 \newcommand{\ddx}[1]{\ensuremath{\frac{\partial #1}{\partial x}}}
@@ -55,9 +54,12 @@
 
 %% macros having to do with documentation for options; note these appear in the index
 
-\newcommand{\optindexsection}{PLEASE REDEFINE optindexsection}
+\def\optsection#1{%
+  \def\optindex##1{\index[options]{#1!##1}}
+  \def\optseealso##1{\index[options]{#1|see{##1}}}
+}
 
-\newcommand{\optindex}[1]{\index{options}{\optindexsection!#1}}
+\optsection{before ``begin document''}
 
 % Use this to index option definitions:
 \newcommand{\intextoption}[1]{\texttt{-#1}\optindex{\texttt{-#1}}}
@@ -68,8 +70,6 @@
 \newcommand{\fileopt}[1]{\txtopt{#1}{\emph{filename}}}
 \newcommand{\timeopt}[1]{\txtopt{#1}{\emph{range or list}}}
 
-\newcommand{\optseealso}[1]{\index{options}{\optindexsection|see{#1}}}
-
 \newcommand{\rawopt}[1]{\vspace{1mm}\noindent \Large\texttt{-#1}\normalsize\optindex{#1}{}}
 \newcommand{\opt}[1]{\rawopt{#1}\,:\quad}
 \newcommand{\optdef}[2]{\rawopt{#1}\,[\textsl{#2}]:\quad}
@@ -78,18 +78,8 @@
 
 
 % preamble:
-
-\makeindex{general}
-\makeindex{options}
-
-\newcommand{\ind}[1]{\index{general}{#1}}
-
-\vspace{-2ex}
-\title[PISM User's Manual]{\protect{\Large PISM, \emph{a Parallel Ice Sheet Model}\normalsize} \\ \protect{\Large \bigskip \bigskip User's Manual\normalsize}}
-
-\author[]{Ed Bueler \\ Constantine Khroulev \\ Andy Aschwanden \\ Jed Brown \\ Nathan Shemonski}
-
-\date{\today.  Support by email: \texttt{help\@@pism-docs.org}.  Based on PISM \PISMREV\,and PETSC release \PETSCREL. \PISMDOWNLOADMSG}
+\newindex{default}{idx}{ind}{General Index}
+\newindex{options}{odx}{ond}{PISM Command-line options}
 
 \pdfinfo{
 /Title (PISM User's Manual)
@@ -101,15 +91,22 @@
 \begin{document}
 \graphicspath{{figs/}}
 
-\maketitle
-\thispagestyle{empty}
+\begin{titlepage}
+  \begin{center}
+    {\huge\usekomafont{title} \emph{PISM}, a Parallel Ice Sheet Model:\\\medskip User's Manual}
+    \vspace{1cm}
 
-%\vspace{2.0in}
-\begin{center}
-\includegraphics[width=3.in,keepaspectratio=true]{grn-grl-csurf}
-\end{center}
+    {\Large Ed Bueler \\ Constantine Khroulev \\ Andy Aschwanden \\ Jed Brown \\ Nathan Shemonski}
+    \vspace{1cm}
 
-\newpage
+    \includegraphics[width=3.in,keepaspectratio=true]{grn-grl-csurf}
+    \vfill
+
+    \small \today. Support by email: \texttt{help\@@pism-docs.org}. Based
+    on PISM \PISMREV\,and PETSC release \PETSCREL. \PISMDOWNLOADMSG
+  \end{center}
+\end{titlepage}
+
 \phantom{bob}
 \vspace{1.0in}
 \begin{quote}
@@ -119,7 +116,7 @@
 \noindent \textsl{This file is part of PISM.}
 \medskip
 
-\noindent \textsl{PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.  PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have received a copy of the GNU General Public License\ind{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}.  If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
+\noindent \textsl{PISM is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.  PISM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.  You should have received a copy of the GNU General Public License\index{GPL (\emph{GNU Public License})} along with PISM; see \emph{\texttt{COPYING}}.  If not, write to the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA}
 \end{quote}
 \vspace{0.6in}
 \normalspacing
@@ -129,13 +126,13 @@
 \bigskip
 
 \small
-The NASA Modeling, Analysis, and Prediction program\ind{NASA!Modeling, Analysis, and Prediction Program} (grant \# NNX09AJ38G) supports the development of PISM from 2009 to 2013.  We thank them!  Development from 2002 to 2008 was supported by the NASA Cryospheric Sciences Program\ind{NASA!Cryospheric Sciences Program}.
+The NASA Modeling, Analysis, and Prediction program\index{NASA!Modeling, Analysis, and Prediction Program} (grant \# NNX09AJ38G) supports the development of PISM from 2009 to 2013.  We thank them!  Development from 2002 to 2008 was supported by the NASA Cryospheric Sciences Program\index{NASA!Cryospheric Sciences Program}.
 
-The Snow, Ice, and Permafrost (SIP) group\ind{Geophysical Institute!Snow, Ice, and Permafrost group} at the Geophysical Institute at UAF is now the home for PISM developers.  Find us in Elvey 410D, in a corner office facing the wilds of Alaska.
+The Snow, Ice, and Permafrost (SIP) group\index{Geophysical Institute!Snow, Ice, and Permafrost group} at the Geophysical Institute at UAF is now the home for PISM developers.  Find us in Elvey 410D, in a corner office facing the wilds of Alaska.
 
-The Arctic Region Supercomputing Center\ind{Arctic Region Supercomputing Center (ARSC)} has provided significant computational resources and technical help in the development of PISM.
+The Arctic Region Supercomputing Center\index{Arctic Region Supercomputing Center (ARSC)} has provided significant computational resources and technical help in the development of PISM.
 
-Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\ind{Lingle, Craig}.  Dave Covey, Don Bahls, and Greg Newby have supported our computers, tools, and and computations.  Martin Truffer, Regine Hock, Dani DellaGiustina and others in the SIP group provide the real-glaciology context for PISM at UAF.  Thanks to Tolly Adalgeirsdottir, Torsten Albrecht, Nick Golledge, Marianne Hasselhoff, Tore Hattermann, Jesse Johnson, Anders Levermann, Art Mahoney, David Maxwell, Maria Martin, Kent Overstreet, Ben Sperisen, Ward van Pelt, Ricarda Winkelmann, Ryan Woodard, Florian Ziemen and other PISM users/developers for helpful comments and questions on PISM and this \emph{Manual}.
+Our research into ice sheet modeling was strongly influenced and constantly motivated by Craig Lingle\index{Lingle, Craig}.  Dave Covey, Don Bahls, and Greg Newby have supported our computers, tools, and and computations.  Martin Truffer, Regine Hock, Dani DellaGiustina and others in the SIP group provide the real-glaciology context for PISM at UAF.  Thanks to Tolly Adalgeirsdottir, Torsten Albrecht, Nick Golledge, Marianne Hasselhoff, Tore Hattermann, Jesse Johnson, Anders Levermann, Art Mahoney, David Maxwell, Maria Martin, Kent Overstreet, Ben Sperisen, Ward van Pelt, Ricarda Winkelmann, Ryan Woodard, Florian Ziemen and other PISM users/developers for helpful comments and questions on PISM and this \emph{Manual}.
 \normalsize
 
 \newpage
@@ -156,12 +153,12 @@ Welcome!  All information about PISM is online at
 
 This \emph{User's Manual} describes how to run PISM using certain publicly-available data for the Greenland ice sheet and the Ross ice shelf.  It illustrates how PISM's numerical approximations are verified.  It documents all the PISM options.  But it does not explain PISM internals, nor is it a guide for extending the functionality of PISM.
 
-See the \emph{Installation Manual} for how to download\ind{PISM!download source code} the PISM source code and install it\ind{PISM!install}, along with needed libraries.  It is online at
+See the \emph{Installation Manual} for how to download\index{PISM!download source code} the PISM source code and install it\index{PISM!install}, along with needed libraries.  It is online at
    \begin{center}
      \href{http://www.pism-docs.org/dev/pdfs/installation-dev.pdf}{\t{www.pism-docs.org/dev/pdfs/installation-dev.pdf}}
    \end{center}
 
-Users who want to understand how PISM works, extend PISM, and/or generally advance the science of ice sheets will need to go beyond what is described here.  For such users there is a \emph{C++ Class Browser}\ind{PISM!\emph{C++ Class Browser (HTML)}}.  It gives a complete view of the class/object structure of the PISM source code.  It is the best tool for the job of modifying and supplementing PISM by writing derived classes.  It is online at
+Users who want to understand how PISM works, extend PISM, and/or generally advance the science of ice sheets will need to go beyond what is described here.  For such users there is a \emph{C++ Class Browser}\index{PISM!\emph{C++ Class Browser (HTML)}}.  It gives a complete view of the class/object structure of the PISM source code.  It is the best tool for the job of modifying and supplementing PISM by writing derived classes.  It is online at
    \begin{center}
      \href{http://www.pism-docs.org/dev/doxy/html/index.html}{\t{www.pism-docs.org/dev/doxy/html/index.html}}
    \end{center}
@@ -175,7 +172,7 @@ Users who want to understand how PISM works, extend PISM, and/or generally advan
 \vspace{.5in}
 \large
 \begin{center}
-\framebox{\parbox{5.0in}{ \emph{WARNING}:\ind{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and is generally not mature.  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions at \href{mailto:help@pism-docs.org}{\texttt{help@pism-docs.org}}.} }
+\framebox{\parbox{5.0in}{ \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and is generally not mature.  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions at \href{mailto:help@pism-docs.org}{\texttt{help@pism-docs.org}}.} }
 \normalsize
 \end{center}
 \normalsize
@@ -189,7 +186,7 @@ Users who want to understand how PISM works, extend PISM, and/or generally advan
 \newpage
 \section{Ice dynamics, the PISM view}\label{sect:dynamics}
 
-\subsection{PISM design principles}\ind{PISM!principles}  This section gives an overview of ice dynamics models in PISM.  First we list some high-level organizing principles:
+\subsection{PISM design principles}\index{PISM!principles}  This section gives an overview of ice dynamics models in PISM.  First we list some high-level organizing principles:
 \begin{enumerate}
 \item source code is open, free, and works well with other free software tools,
 \item numerical methods should be verifiable (i.e.~we want comparisons to exact solutions of the modeled equations),
@@ -205,15 +202,15 @@ Users who want to understand how PISM works, extend PISM, and/or generally advan
 Principle (1) is illustrated by our existence.  Principle (2) is addressed in section \ref{sect:verif}.  Principle (7) is illustrated by examples in sections \ref{sec:eismint-greenland} and \ref{sect:ross} (FIXME: and the new introduction).  Principles (3), (4), (5), and (6) are explained and expanded next.
 
 
-\subsection{Two main shallow models, SIA and SSA}\ind{PISM!SIA}\ind{PISM!SSA}  At each time-step of a typical PISM runs, the geometry, temperature, and basal strength of the ice sheet are included into stress balance equations to determine the velocity of the flowing ice.   PISM can, however, numerically solve two significantly-different shallow approximations of the full stress balance equations\footnote{The ``full stress balance equations'' form the Stokes model for slowly-flowing fluids \cite{Fowler}, in this case a non-Newtonian fluid, and they are themselves an inertia-free approximation of the conservation of momentum equations.}:\begin{itemize}
-\item the non-sliding shallow ice approximation (SIA)\ind{SIA (shallow ice approximation)} \cite{Hutter}, which describes ice as flowing by shear in planes parallel to the geoid, with an infinitely-strong contact of ice base to bedrock, and
-\item the shallow shelf approximation (SSA)\ind{SSA (shallow shelf approximation)} \cite{WeisGreveHutter}, which describes a membrane-type flow of floating ice \cite{Morland}, or grounded ice which is sliding over a weak base \cite{MacAyeal,SchoofStream}.
+\subsection{Two main shallow models, SIA and SSA}\index{PISM!SIA}\index{PISM!SSA}  At each time-step of a typical PISM runs, the geometry, temperature, and basal strength of the ice sheet are included into stress balance equations to determine the velocity of the flowing ice.   PISM can, however, numerically solve two significantly-different shallow approximations of the full stress balance equations\footnote{The ``full stress balance equations'' form the Stokes model for slowly-flowing fluids \cite{Fowler}, in this case a non-Newtonian fluid, and they are themselves an inertia-free approximation of the conservation of momentum equations.}:\begin{itemize}
+\item the non-sliding shallow ice approximation (SIA)\index{SIA (shallow ice approximation)} \cite{Hutter}, which describes ice as flowing by shear in planes parallel to the geoid, with an infinitely-strong contact of ice base to bedrock, and
+\item the shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} \cite{WeisGreveHutter}, which describes a membrane-type flow of floating ice \cite{Morland}, or grounded ice which is sliding over a weak base \cite{MacAyeal,SchoofStream}.
 \end{itemize}
 PISM numerically solves both the SIA and SSA equations in parallel.  Time-stepping solutions of the mass continuity equation are possible when using each model.
 
-The SIA\ind{SIA (shallow ice approximation)!applicability} equations are, as a rule, easier and quicker to numerically solve than the SSA, and they are also easier to parallelize.\ind{parallelization!relative ease of, between SIA and SSA}  They are a ``lubrication approximation'' \cite{Fowler} which describes the shear as a local function of the driving stress of classical glaciology \cite{Paterson}.  They can confidently be applied to those grounded parts of ice sheets for which the basal ice is frozen to the bedrock, or minimally sliding, and for which the bed topography is relatively slowly-varying in the map-plane \cite{Fowler}, which roughly characterizes the majority (by area) of the Greenland and Antarctic ice sheets.  We recommend solving the SIA with a \emph{non-sliding} base because the ad hoc addition of a ``sliding laws''\ind{SIA (shallow ice approximation)!sliding laws} into the SIA stress balance, and especially schemes which ``switch on'' at the pressure-melting temperature \cite{EISMINT00}, have bad continuum and numerical modeling consequences \cite[appendix B]{BBssasliding}.
+The SIA\index{SIA (shallow ice approximation)!applicability} equations are, as a rule, easier and quicker to numerically solve than the SSA, and they are also easier to parallelize.\index{parallelization!relative ease of, between SIA and SSA}  They are a ``lubrication approximation'' \cite{Fowler} which describes the shear as a local function of the driving stress of classical glaciology \cite{Paterson}.  They can confidently be applied to those grounded parts of ice sheets for which the basal ice is frozen to the bedrock, or minimally sliding, and for which the bed topography is relatively slowly-varying in the map-plane \cite{Fowler}, which roughly characterizes the majority (by area) of the Greenland and Antarctic ice sheets.  We recommend solving the SIA with a \emph{non-sliding} base because the ad hoc addition of a ``sliding laws''\index{SIA (shallow ice approximation)!sliding laws} into the SIA stress balance, and especially schemes which ``switch on'' at the pressure-melting temperature \cite{EISMINT00}, have bad continuum and numerical modeling consequences \cite[appendix B]{BBssasliding}.
 
-The SSA\ind{SSA (shallow shelf approximation)!applicability} equations can confidently be applied to large floating ice shelves, which have small depth-to-width ratio and negligible basal resistance \cite{Morland,MorlandZainuddin}.  Terrestrial ice sheets also have fast-flowing grounded parts, however, called ``ice streams'' or ``outlet glaciers''.  Such features appear at the margin of, and sometimes well into the interior of, the Greenland \cite{Joughinetal2001}\ind{Greenland ice sheet} and Antarctic \cite{BamberVaughanJoughin}\ind{Antarctic ice sheet} ice sheets.  Describing these faster-flowing grounded parts of ice sheets requires something more than the non-sliding SIA.  One might use the full Stokes equations, or a ``higher-order'' but still shallow stress balance \cite{Blatter,Pattyn03}, but with any stress balance model one must still specify an appropriate sliding boundary condition.  To address these faster-flowing parts, one may apply the SSA equations with additional basal resistance terms to model fast-flowing and sliding grounded ice.  This was demonstrated for the Siple Coast ice streams of Antarctica by MacAyeal\ind{MacAyeal, Doug} \cite{MacAyeal} using a linearly-viscous model for the underlying till.  A free boundary problem with the same (SSA) balance equations is the Schoof\ind{Schoof, Christian} \cite{SchoofStream} model of ice streams, in which ice streams appear where there is plastic basal till failure \cite{Paterson}.
+The SSA\index{SSA (shallow shelf approximation)!applicability} equations can confidently be applied to large floating ice shelves, which have small depth-to-width ratio and negligible basal resistance \cite{Morland,MorlandZainuddin}.  Terrestrial ice sheets also have fast-flowing grounded parts, however, called ``ice streams'' or ``outlet glaciers''.  Such features appear at the margin of, and sometimes well into the interior of, the Greenland \cite{Joughinetal2001}\index{Greenland ice sheet} and Antarctic \cite{BamberVaughanJoughin}\index{Antarctic ice sheet} ice sheets.  Describing these faster-flowing grounded parts of ice sheets requires something more than the non-sliding SIA.  One might use the full Stokes equations, or a ``higher-order'' but still shallow stress balance \cite{Blatter,Pattyn03}, but with any stress balance model one must still specify an appropriate sliding boundary condition.  To address these faster-flowing parts, one may apply the SSA equations with additional basal resistance terms to model fast-flowing and sliding grounded ice.  This was demonstrated for the Siple Coast ice streams of Antarctica by MacAyeal\index{MacAyeal, Doug} \cite{MacAyeal} using a linearly-viscous model for the underlying till.  A free boundary problem with the same (SSA) balance equations is the Schoof\index{Schoof, Christian} \cite{SchoofStream} model of ice streams, in which ice streams appear where there is plastic basal till failure \cite{Paterson}.
 
 As noted, both the SIA and SSA models are \emph{shallow} approximations.  That is, the respective partial differential equations are derived from the Stokes equations by different small-parameter arguments, both based on a small depth-to-width ratio for the ice sheet.\footnote{For this small-parameter argument in the SIA case see \cite{Fowler}.  For the corresponding SSA argument, see \cite{WeisGreveHutter} or the appendices of \cite{SchoofStream}.  See \cite{SchoofHindmarsh} on connections between these shallowest models and ``higher order'' models.  The references are, of course, the right place to find continuum equations and their physical motivation.}
 
@@ -222,7 +219,7 @@ In PISM the SSA may be used as a ``sliding law'' for grounded ice otherwise mode
 By default, PISM does not numerically solve the SSA at all.  The user must add the option \texttt{-ssa} (FIXME).  An exception is the use of the executable \texttt{pismv} for verifying the SSA balance of momentum equations, as addressed in section \ref{sect:verif}.
 
 
-\subsection{A hierarchy of simplifying assumptions for ice flow}\label{sec:model-hierarchy}\ind{PISM!hierarchy of simplifying assumptions}   Table \ref{tab:modelhierarchy} describes a hierarchy of models which are implemented in PISM or are planned.  This hierarchy is listed in order of increasing effectiveness in modeling grounded ice sheets with fast flow features.  It is also listed in order of increasing need for data to serve as boundary and initial conditions, an important consideration for the scientific user.
+\subsection{A hierarchy of simplifying assumptions for ice flow}\label{sec:model-hierarchy}\index{PISM!hierarchy of simplifying assumptions}   Table \ref{tab:modelhierarchy} describes a hierarchy of models which are implemented in PISM or are planned.  This hierarchy is listed in order of increasing effectiveness in modeling grounded ice sheets with fast flow features.  It is also listed in order of increasing need for data to serve as boundary and initial conditions, an important consideration for the scientific user.
 
 \begin{table}[ht]
 \caption{Hierarchy of current and planned flow models in PISM, for the grounded parts of ice sheets, from most to fewest simplifying assumptions \emph{and} from least to greatest need for boundary data.  The \emph{italicized} models are planned for future versions of PISM but are not implemented in \texttt{stable0.3}.}\label{tab:modelhierarchy} 
@@ -244,7 +241,7 @@ As an additional row one might list ``full Stokes'' in Table \ref{tab:modelhiera
 It makes sense to also talk about an \emph{ice shelf} model hierarchy, and even about a special hierarchy of models for the transition from grounded to floating ice \cite{SchoofMarine1}, but this would take us too far afield.  Currently, ice shelves should always be modeled by the SSA equations in PISM.
 
 
-\subsection{Evolutionary versus diagnostic ice shelf modeling} \label{subsect:basicmodes}\ind{PISM!evolution run}\ind{PISM!diagnostic run}    The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time as similarly as possible to the modeled ice sheet.  Such a goal assumes one has the right climate inputs and parameter choices at each time step.  For predictive purposes, such a goal also assumes one starts with the right initial conditions, adequately describing the present state of the ice sheet, though in fact thiss last assumption is rarely satisfied; see section \ref{sect:boot}.
+\subsection{Evolutionary versus diagnostic ice shelf modeling} \label{subsect:basicmodes}\index{PISM!evolution run}\index{PISM!diagnostic run}    The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time as similarly as possible to the modeled ice sheet.  Such a goal assumes one has the right climate inputs and parameter choices at each time step.  For predictive purposes, such a goal also assumes one starts with the right initial conditions, adequately describing the present state of the ice sheet, though in fact thiss last assumption is rarely satisfied; see section \ref{sect:boot}.
 
 Underlying an ice sheet model like PISM are evolution-in-time partial differential equations.  PISM solves these by taking small time steps.\footnote{``Small'' time steps vary from hundredths to many model years, depending primarily on both grid resolution and modeled ice flow speed.  Time steps are chosen adaptively in PISM, according to the stability criteria of the several numerical methods.}  We will describe this usual time-stepping behavior as an ``evolution run.''
 
@@ -346,15 +343,15 @@ in coupling PISM to other models. On the other hand, the PISM authors do not
 claim expertise in modeling atmosphere, ocean, or even snow processes.   So the
 separation has a code-reliability purpose. Indeed PISM users need to know that
 they are ultimately responsible for providing the climate inputs they intend.
-The auxiliary tool \texttt{pcctest}, described in subsection
-\ref{subsect:pcctest}, is intended to help users observe the climate inputs
+The auxiliary tool \texttt{pclimate}, described in subsection
+\ref{subsect:pclimate}, is intended to help users observe the climate inputs
 they have chosen, without involving ice dynamics at all.
 
 \clearpage
 \newpage
 \section{Initialization and bootstrapping}\label{sect:boot}  
 
-\subsection{``Initialization from a saved model state''}  This phrase\ind{initialization!from saved model state} has a simple meaning in PISM.  If a previous PISM run has saved a NetCDF file using ``\texttt{-o}'' then that file will contain complete initial conditions for continuing the run.  The output file from the last run can be loaded with ``\texttt{i}'':\ind{pisms}
+\subsection{``Initialization from a saved model state''}  This phrase\index{initialization!from saved model state} has a simple meaning in PISM.  If a previous PISM run has saved a NetCDF file using ``\texttt{-o}'' then that file will contain complete initial conditions for continuing the run.  The output file from the last run can be loaded with ``\texttt{i}'':\index{pisms}
 
 \begin{verbatim}
 $ pisms -eisII A -y 100 -o foo.nc
@@ -372,22 +369,22 @@ of these velocities adds efficiency in restarting.  If you want a PISM restart t
 ignore these velocities use \texttt{-dontreadSSAvels}.
 
 \subsubsection*{\texttt{-i} file format}
-PISM produces CF-1.4 compliant NetCDF\ind{PISM!NetCDF file format}\ind{NetCDF} files.  The easiest way to learn the output format \emph{and} the \texttt{-i} format is to do a simple run and then look at the metadata in the resulting file, like this:
+PISM produces CF-1.4 compliant NetCDF\index{PISM!NetCDF file format}\index{NetCDF} files.  The easiest way to learn the output format \emph{and} the \texttt{-i} format is to do a simple run and then look at the metadata in the resulting file, like this:
 \begin{verbatim}
 $ pisms -eisII A -y 10 -o foo.nc
 $ ncdump -h foo.nc | less
 \end{verbatim}
 
-Note that variables have a \texttt{pism_intent}\ind{PISM!\texttt{pism_intent} attribute} attribute.  When that attribute is \texttt{diagnostic}, the variable can be deleted from the file without affecting whether PISM can use it as a \texttt{-i} input file.  Variables with \texttt{pism_intent} = \texttt{model_state}, by contrast, must be present for use with \texttt{-i}.
+Note that variables have a \texttt{pism_intent}\index{PISM!\texttt{pism_intent} attribute} attribute.  When that attribute is \texttt{diagnostic}, the variable can be deleted from the file without affecting whether PISM can use it as a \texttt{-i} input file.  Variables with \texttt{pism_intent} = \texttt{model_state}, by contrast, must be present for use with \texttt{-i}.
 
 Regarding the automatically produced time variable, which has a \texttt{units} attribute like \texttt{"years since 1-1-1"}, note that CF metadata conventions require using a reference date in the units string of a time (\texttt{t}) variable.  PISM completely ignores this reference date.
 
 
 \subsection{``Bootstrapping''} 
-\renewcommand{\optindexsection}{Bootstrapping}
+\optsection{Bootstrapping}
 \optseealso{Grid}
 
-This phrase\ind{bootstrapping}\ind{initialization!by bootstrapping} means starting a modeling run with less than sufficient data, and letting the model fill in needed values according to heuristics.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option \fileopt{boot_from}.
+This phrase\index{bootstrapping}\index{initialization!by bootstrapping} means starting a modeling run with less than sufficient data, and letting the model fill in needed values according to heuristics.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option \fileopt{boot_from}.
 
 The need for an identified stage like ``bootstrapping'' comes from the fact that initial conditions, for the evolution equations describing an ice sheet, are not typically observable.  As a principal example of this problem, these equations require the temperature within the ice at the time the run is started.  Glaciological observations, specifically remote-sensed observations which cover a large fraction or all of an ice sheet, never include this temperature field in practice.
 
@@ -411,7 +408,7 @@ Subsection shows bootstrapping for the \ref{sec:eismint-greenland} does EISMINT-
 \item Coordinate variables \texttt{x} and \texttt{y} have to be strictly increasing.
 \item All three-dimensional variables (depending on \texttt{x,y,z} or \texttt{x,y,zb}) will be ignored in bootstrapping.
 \item The \texttt{standard_name} attribute is used to identify a variable, so the names of variables do not need to match the corresponding variables in a PISM output file.
-\item PISM expects all the input fields (NetCDF variables) to be in MKS \emph{or} to have the units specified using the \texttt{units} attribute.  PISM uses a library called UDUNITS\ind{PISM!uses UDUNITS when reading NetCDF files}\ind{UDUNITS} to convert data present in an input file to MKS.   This means that having ice thickness in feet or kilometers, or temperature in Celsius for example, is allowed.
+\item PISM expects all the input fields (NetCDF variables) to be in MKS \emph{or} to have the units specified using the \texttt{units} attribute.  PISM uses a library called UDUNITS\index{PISM!uses UDUNITS when reading NetCDF files}\index{UDUNITS} to convert data present in an input file to MKS.   This means that having ice thickness in feet or kilometers, or temperature in Celsius for example, is allowed.
 \item Any two-dimensional variable (depending on \texttt{x,y}) may be missing.  For those missing variables some heuristic will be applied.  See table \ref{tab:modelhierarchy} for a sketch of the data necessary for bootstrapping, and \texttt{src/base/iMbootstrap.cc} for all further details.
 \item Surface elevation is ignored if present.  Users with surface elevation and bed elevation data should produce an ice thickness variable, with \texttt{standard_name} = \texttt{land_ice_thickness} for bootstrapping.  The bed elevation (topography) is read by \texttt{standard_name} = \texttt{bedrock_altitude}.
 \end{enumerate}
@@ -460,23 +457,11 @@ Thus initialization sequence is also an error-prone part of writing a derived cl
 \clearpage\newpage
 \section{PISM command line options}\label{sect:options}
 
-Much of the behavior of PISM can be set at the command line by options.\ind{PISM!options available at the command line}\ind{options for PISM (and PETSc)!complete list}  For example, the command 
-
-\verb|$  pismv -test C -Mx 61 -e 1.2 -o foo.nc|
-
-\noindent includes four options ``\texttt{-test}'', ``\texttt{-Mx}'', ``\texttt{-e}'', and ``\texttt{-o}'',  The first of these options includes a single character argument, the second an integer argument, the third a floating point argument, and the fourth has a string argument.
-
-The format of the option documentation below is
-
-\centerline{``\large\texttt{-optionname} [\texttt{A}][\texttt{B} \emph{only}]: \quad Description.\normalsize''}
-
-\noindent Here ``A'' is the default value and ``\t{B}'' is a list of the allowed executables.  The option applies to all executables (\texttt{pismr}, \texttt{pisms}, \texttt{pismv}) unless the allowed executables are specifically stated by giving ``[\t{B} \textsl{only}]''.
-
 As PISM is a PETSc program \cite{petsc-user-ref}, all PETSc options are available as well.  The last subsection \ref{subsect:petscoptions} recalls some of these PETSc options.
 
 The Index on page \pageref{sect:index} contains an alphabetical list of options.
 
-\renewcommand{\optindexsection}{Old option index}
+\optsection{Old option index}
 \subsect{List of PISM options}
 
 \subsectstar{Options turning on and off major physical models}
@@ -542,7 +527,7 @@ Generally $\bar B$ is computed by a vertical-integral of a function of the tempe
 In the case of \texttt{pross}, which performs the EISMINT Ross ice shelf intercomparison, a constant value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ is the default \cite{MacAyealetal}.
 
 \begin{table}[ht]
-\caption{Choosing the rheology using \t{-ice_type}.}\label{tab:flowlaw}\ind{rheology}\ind{flow law}
+\caption{Choosing the rheology using \t{-ice_type}.}\label{tab:flowlaw}\index{rheology}\index{flow law}
 \small
 \begin{tabular}{p{0.25\linewidth}p{0.08\linewidth}p{0.57\linewidth}}\hline
 \textbf{Flow Law} & \textbf{Type} & \textbf{Comments and Reference} \\ \hline
@@ -605,7 +590,6 @@ Here $b$ is the bed elevation and $h$ is the surface elevation.  The transformat
 
 
 \subsect{PETSC options for PISM users}\label{subsect:petscoptions}
-\renewcommand{\optindexsection}{PETSc options for PISM users}
 
 All PETSc programs accept command line options which control how PETSc distributes jobs among parallel processors, how it solves linear systems, what additional information it provides, and so on.  The PETSc manual \cite{petsc-user-ref} is the complete reference on these options.  We list some here that are useful to PISM users.  They can be mixed in any order with PISM options.
 
@@ -659,8 +643,8 @@ These two PETSc mechanisms can be used together.  (The effect of duplicate or co
 
 
 \label{sect:index}
-\Printindex{general}{General Index}
-\Printindex{options}{PISM Command-line Options}
+\printindex
+\printindex[options]
 
 
 \end{document}

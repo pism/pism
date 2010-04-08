@@ -112,8 +112,8 @@ add_executable (pgrn eismint/pgrn.cc
   eismint/iceGRNModel.cc)
 target_link_libraries (pgrn ${Pism_LIBS})
 
-add_executable (pcctest pcctest.cc)
-target_link_libraries (pcctest ${Pism_LIBS})
+add_executable (pclimate pclimate.cc)
+target_link_libraries (pclimate ${Pism_LIBS})
 
 install (TARGETS
   penth pismr pisms pismv pross pgrn ## executables

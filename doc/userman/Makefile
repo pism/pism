@@ -18,10 +18,8 @@ ice-bib.bib:
 userman : manual.tex ice-bib.bib revision $(parts)
 	pdflatex manual.tex
 	BIBINPUTS=".:..:" bibtex manual
-	makeindex -l general
-	printf ",s/\\_ /\\_/g\n,wq\n" | ed general.ind 
-	makeindex -l options
-	printf ",s/\\_ /\\_/g\n,wq\n" | ed options.ind
+	makeindex -l manual
+	makeindex -l -o manual.ond manual.odx
 	pdflatex manual.tex
 	pdflatex manual.tex
 
