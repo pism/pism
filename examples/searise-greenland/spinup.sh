@@ -158,7 +158,7 @@ echo "$SCRIPTNAME     coarse grid = '$COARSEGRID' (= $CS km)"
 echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km)"
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill"
+PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -eta"
 
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -pdd_fausto"
@@ -254,7 +254,7 @@ cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_from $INNAME $FINEGRID $TILLPHI
      -bed_def lc $COUPLER_FORCING\
      -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat  \
      -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
-      -save_file $SNAPSNAME -save_times $SNAPSTIME \
+      -save_file $SNAPSNAME -save_size medium -save_times $SNAPSTIME \
      -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
@@ -274,7 +274,8 @@ echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
 cmd="$pism5kmopts -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
-     -save_file $SNAPSNAME -save_times $SNAPSTIME -i $STARTNAME -ye $ENDTIME -o $OUTNAME"
+     -save_file $SNAPSNAME -save_size medium -save_times $SNAPSTIME \
+     -i $STARTNAME -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
 STARTTIME=$ENDTIME
@@ -288,7 +289,8 @@ echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
 cmd="$pism5kmopts -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
-     -save_file $SNAPSNAME -save_times $SNAPSTIME -i $STARTNAME -ye $ENDTIME -o $OUTNAME"
+     -save_file $SNAPSNAME -save_size medium -save_times $SNAPSTIME \
+     -i $STARTNAME -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
 STARTTIME=$ENDTIME
@@ -302,7 +304,8 @@ echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE (present)"
 cmd="$pism5kmopts -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
-     -save_file $SNAPSNAME -save_times $SNAPSTIME -i $STARTNAME -ye $ENDTIME -o $OUTNAME"
+     -save_file $SNAPSNAME -save_size medium -save_times $SNAPSTIME \
+     -i $STARTNAME -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
 
