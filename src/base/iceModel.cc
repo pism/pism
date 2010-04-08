@@ -328,12 +328,16 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vLongitude.create(grid, "lon", false); CHKERRQ(ierr);
   ierr = vLongitude.set_attrs("mapping", "longitude", "degree_east", "longitude"); CHKERRQ(ierr);
   vLongitude.time_independent = true;
+  ierr = vLongitude.set_attr("coordinates", ""); CHKERRQ(ierr);
+  ierr = vLongitude.set_attr("grid_mapping", ""); CHKERRQ(ierr);
   ierr = variables.add(vLongitude); CHKERRQ(ierr);
 
   // latitude
   ierr = vLatitude.create(grid, "lat", false); CHKERRQ(ierr);
   ierr = vLatitude.set_attrs("mapping", "latitude", "degree_north", "latitude"); CHKERRQ(ierr);
   vLatitude.time_independent = true;
+  ierr = vLatitude.set_attr("coordinates", ""); CHKERRQ(ierr);
+  ierr = vLatitude.set_attr("grid_mapping", ""); CHKERRQ(ierr);
   ierr = variables.add(vLatitude); CHKERRQ(ierr);
 
   // u bar and v bar on staggered grid

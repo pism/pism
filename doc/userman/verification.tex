@@ -38,6 +38,23 @@ M & velocity solution for circular, constant-thickness  ice shelf with grounding
 \end{table}
 
 \begin{table}[ht]
+  \centering
+  \begin{tabular}{lp{0.7\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \intextoption{test} & Choose which verification test to run by giving its
+    single character name; see table \ref{tab:tests}.\\
+    \intextoption{no_report} & Do not report errors at the end of a verification run.\\
+    \intextoption{eo} & Only evaluate the exact solution (don't do numerical
+    approximation at all).
+   \\\bottomrule
+  \end{tabular}
+  \caption{pismv command-line options}
+  \label{tab:pismv-options}
+\end{table}
+
+\begin{table}[ht]
 \caption{Canonical PISM\ind{pismv!options to run verification tests}\ind{verification tests} verification runs using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests-exec}
 \small
 \begin{tabular}{@{}llll}\hline

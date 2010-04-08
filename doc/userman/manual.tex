@@ -25,7 +25,8 @@
 \usepackage[pdftex]{graphicx}
 \usepackage[pdftex]{hyperref}[2010/03/30 v6.80u Hypertext links for LaTeX]
 
-\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{xtab}
 \usepackage[usenames]{color}
 
 %% uncomment to see locations of index entries
@@ -203,7 +204,7 @@ By default, PISM does not numerically solve the SSA at all.  The user must add t
 \begin{table}[ht]
 \caption{Hierarchy of current and planned flow models in PISM, for the grounded parts of ice sheets, from most to fewest simplifying assumptions \emph{and} from least to greatest need for boundary data.  The \emph{italicized} models are planned for future versions of PISM but are not implemented in \texttt{stable0.3}.}\label{tab:modelhierarchy} 
 \small
-\begin{tabular}{p{0.25\linewidth}p{0.45\linewidth}p{0.35\linewidth}}\hline
+\begin{tabular}{p{0.18\linewidth}p{0.4\linewidth}p{0.3\linewidth}}\hline
 \textbf{Model} & \textbf{Assumptions [references]} & \textbf{Needed initial/boundary data} \\ \hline
 \emph{balance velocities}\tiny[planned]\small & steady state, ice flows down surface gradient \cite{JoughinetalGrBal97} & surface mass balance, ice  thickness, bed elevation \\
 \textsc{isothermal SIA} & non-sliding lubrication flow, fixed softness \cite{BLKCB,EISMINT96} & same, with time-dependence \\
@@ -266,7 +267,7 @@ sub-ice-shelf/ocean (shown in blue) and the bottom of the bedrock thermal layer
 \end{table}
 
 Table \ref{tab:ice-dynamics-bc} lists boundary conditions required at
-interfaces mentioned above.\footnote{This is a somewhat simplified view  corresponding to a ``generic'' PISM run.   See section \ref{sec:model-hierarchy} for details.}  The PISM ice dynamics core would like to be able to get these fields directly from observations/measurements, or directly from a GCM.  Unfortunately in most realistic modeling situations they are not so easily available.\footnote{Including cases where PISM is coupled to a GCM---due to differences in model resolutions and required down-scaling.}.
+interfaces mentioned above.\footnote{This is a somewhat simplified view  corresponding to a ``generic'' PISM run.   See section \ref{sec:model-hierarchy} for details.}  The PISM ice dynamics core would like to be able to get these fields directly from observations or measurements, or directly from a GCM.  Unfortunately in most realistic modeling situations they are not so easily available.\footnote{Including cases where PISM is coupled to a GCM---due to differences in model resolutions and required down-scaling.}.
 
 So, to be able to use data that \emph{is} available, an ice-sheet model has to
 have additional components that are responsible for modeling surface (snow)
@@ -284,7 +285,7 @@ Users wishing to customize PISM's climate inputs should see the \emph{PISM
 of \emph{PISMSurfaceModel}, \emph{PISMAtmosphereModel} and
 \emph{PISMOceanModel} therein.  Also, section \ref{sec:eismint-greenland} describes a
 modeling example using a non-standard air temperature parameterization. Looking
-at \texttt{pgrn.cc} and \texttt{pgrn\_atmosphere.cc} may be a reasonable
+at \texttt{pgrn.cc} and \texttt{pgrn_atmosphere.cc} may be a reasonable
 start.
 
 Note that figure~\ref{fig:climate-inputs} includes an interface that was not
@@ -354,7 +355,7 @@ $ pisms -eisII A -y 10 -o foo.nc
 $ ncdump -h foo.nc | less
 \end{verbatim}
 
-Note that variables have a \texttt{pism_intent}\ind{PISM!\texttt{pism\_intent} attribute} attribute.  When that attribute is \texttt{diagnostic}, the variable can be deleted from the file without affecting whether PISM can use it as a \texttt{-i} input file.  Variables with \texttt{pism_intent} = \texttt{model_state}, by contrast, must be present for use with \texttt{-i}.
+Note that variables have a \texttt{pism_intent}\ind{PISM!\texttt{pism_intent} attribute} attribute.  When that attribute is \texttt{diagnostic}, the variable can be deleted from the file without affecting whether PISM can use it as a \texttt{-i} input file.  Variables with \texttt{pism_intent} = \texttt{model_state}, by contrast, must be present for use with \texttt{-i}.
 
 Regarding the automatically produced time variable, which has a \texttt{units} attribute like \texttt{"years since 1-1-1"}, note that CF metadata conventions require using a reference date in the units string of a time (\texttt{t}) variable.  PISM completely ignores this reference date.
 
@@ -362,7 +363,7 @@ Regarding the automatically produced time variable, which has a \texttt{units} a
 \subsection{``Bootstrapping''} 
 \renewcommand{\optindexsection}{Bootstrapping}
 
-This phrase\ind{bootstrapping}\ind{initialization!by bootstrapping} means starting a modeling run with less than sufficient data, and letting the model fill in needed values according to heuristics.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option \intextoption{boot\_from}.
+This phrase\ind{bootstrapping}\ind{initialization!by bootstrapping} means starting a modeling run with less than sufficient data, and letting the model fill in needed values according to heuristics.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option \intextoption{boot_from}.
 
 The need for an identified stage like ``bootstrapping'' comes from the fact that initial conditions, for the evolution equations describing an ice sheet, are not typically observable.  As a principal example of this problem, these equations require the temperature within the ice at the time the run is started.  Glaciological observations, specifically remote-sensed observations which cover a large fraction or all of an ice sheet, never include this temperature field in practice.
 
@@ -375,11 +376,11 @@ Instead, evolutionary ice sheet modeling necessarily does something like this to
 
 The heuristics used by PISM are, for now, only documented in the source code file \texttt{src/base/iMbootstrap.cc}.
 
-When using \intextoption{boot\_from} you will need to specify both grid dimensions (using \intextoption{Mx}, \intextoption{My} and \intextoption{Mz}) and the height of the computational box for the ice with \intextoption{Lz}.  The data read from the file can determine the horizontal extent of the model, if options \intextoption{Lx}, \intextoption{Ly} are not set.  The additional specification of vertical extent by \texttt{-Lz} is reasonably natural because realistic data used in ``bootstrapping'' are two-dimensional.  Not specifying all four options \texttt{-Mx}, \texttt{-My}, \texttt{-Mz}, \texttt{-Lz} \emph{when bootstrapping with} \texttt{-boot_from} is an error.
+When using \intextoption{boot_from} you will need to specify both grid dimensions (using \t{Mx}, \t{My} and \t{Mz}) and the height of the computational box for the ice with \t{Lz}.  The data read from the file can determine the horizontal extent of the model, if options \t{Lx}, \t{Ly} are not set.  The additional specification of vertical extent by \texttt{-Lz} is reasonably natural because realistic data used in ``bootstrapping'' are two-dimensional.  Not specifying all four options \texttt{-Mx}, \texttt{-My}, \texttt{-Mz}, \texttt{-Lz} \emph{when bootstrapping with} \texttt{-boot_from} is an error.
 
 Subsection shows bootstrapping for the \ref{sec:eismint-greenland} does EISMINT-Greenland intercomparison \cite{RitzEISMINT,HuybrechtsEISMINT}.
 
-\subsubsection*{\texttt{-boot\_from} file format}
+\subsubsection*{\texttt{-boot_from} file format}
 \label{sec:bootstrapping-format}  Allowed formats for a bootstrapping file are relatively simple to describe. 
 \begin{enumerate}
 \item The NetCDF dimensions \texttt{x} and \texttt{y} and corresponding variables must be present and have the meanings of projection X coordinate and projection Y coordinate.
@@ -456,16 +457,15 @@ The Index on page \pageref{sect:index} contains an alphabetical list of options.
 
 \subsectstar{Options turning on and off major physical models}
 
+\opt{float_kill}  If ice is (or becomes) floating then it is set to thickness zero.  This is calving at the grounding line.
 
-\opt{float\_kill}  If ice is (or becomes) floating then it is set to thickness zero.  This is calving at the grounding line.
+\opt{hold_tauc}    Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-ssa} and \texttt{-plastic} are also set.  See documentation of option \texttt{-plastic} for a description of the till yield stress model.
 
-\opt{hold\_tauc}    Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-ssa} and \texttt{-plastic} are also set.  See documentation of option \texttt{-plastic} for a description of the till yield stress model.
+\opt{no_mass}  Forces PISM to not change the ice thickness.  No time steps of the mass conservation equation are computed.
 
-\opt{no\_mass}  Forces PISM to not change the ice thickness.  No time steps of the mass conservation equation are computed.
+\opt{no_temp}  Force PISM to not change temperature or age values within the ice.  No time steps of the energy conservation and age equations are computed.
 
-\opt{no\_temp}  Force PISM to not change temperature or age values within the ice.  No time steps of the energy conservation and age equations are computed.
-
-\opt{ocean\_kill}  If used with input from a NetCDF initialization file which has ice-free ocean mask (value \texttt{MASK_FLOATING_OCEAN0}$=7$), will zero out ice thicknesses in areas that were ice-free ocean at time zero.  This is calving at the location of the original calving front.  Has no effect when used in conjunction with \texttt{-no_mass}.
+\opt{ocean_kill}  If used with input from a NetCDF initialization file which has ice-free ocean mask (value \texttt{MASK_FLOATING_OCEAN0}$=7$), will zero out ice thicknesses in areas that were ice-free ocean at time zero.  This is calving at the location of the original calving front.  Has no effect when used in conjunction with \texttt{-no_mass}.
 
 \opt{plastic}  Use Schoof's plastic till model for ice streams at all grounded points on the ice sheet.  Must be used along with \texttt{-ssa} to turn on the solution of the SSA (shallow shelf approximation).  See subsection \ref{subsect:plastic}.  See options \texttt{-plastic_reg}, \texttt{-plastic_c0}, \texttt{-plastic_phi}, and \texttt{-plastic_pwfrac}, all of which control the plastic till model in various ways.
 
@@ -488,67 +488,11 @@ with zero till cohesion.  We allow a positive till cohesion, though the default 
 
 \subsubsect{File input and output from PISM}
 
-\opt{boot\_from}  The model can be ``bootstrapped'' from certain NetCDF files using less than the full initial values for the system of evolution partial differential equations.  See sections \ref{sect:boot} for generalities and \ref{sec:eismint-greenland} for an example.  Compare \texttt{-i}.
-
-\opt{dSLforcing}    Use the specified NetCDF file to apply changes in \emph{S}ea \emph{L}evel from a climate ``forcing'' record.  See section \ref{sec:eismint-greenland} for an example.
-
-\opt{dTforcing}    Use the specified NetCDF file to apply changes in surface \emph{T}emperature from a climate ``forcing'' record.  See section \ref{sec:eismint-greenland} for an example.
-
-\opt{f3d}  Save the model state with additional full velocity field.  That is, save all scalar components $u(x,y,z)$, $v(x,y,z)$, $w(x,y,z)$ of the velocity field for $(x,y,z)$ everywhere in the three-dimensional computational box.  These are saved as \texttt{uvel}, \texttt{vvel}, and \texttt{wvel}, respectively.  Also saves \texttt{uvelsurf} and \texttt{vvelsurf}, the surface values of the $x$ and $y$ components of the velocity.
-
-Has the effect of (very roughly) doubling the size of the output model state NetCDF file.
-
 \opt{i}  The model can be initialized (restarted) from a NetCDF file \texttt{foo.nc} written by the model, e.g.~\texttt{foo.nc} from \texttt{-o foo.nc}.  Compare \texttt{-boot_from}.
 
 \opt{o}  Give name of output file: \texttt{-o foo.nc} writes an output file named \texttt{foo.nc}.  See the description of option \texttt{-i}.  Default name is \texttt{unnamed.nc} under \texttt{pismr}, \texttt{simp_exper.nc} under \texttt{pisms}, and \texttt{verify.nc} under \texttt{pismv}.
 
-\opt{regrid\_from}  Give the name of the NetCDF file from which to regrid variables.  See section \ref{sec:practical-usage}.
-
-\optdef{regrid\_vars}{}  Which variables to regrid.  See section \ref{sec:practical-usage}.
-
 \opt{dontreadSSAvels} Turns off reading the \texttt{ubarSSA} and \texttt{vbarSSA} velocities saved by a previous \texttt{-ssa} run.
-
-\opt{save\_file} Give the name of the NetCDF file to which to save PISM model states
-(snapshots).  Requires setting \texttt{-save_times}.  Saving the
-snapshots \emph{does not} affect the time-stepping determined by the adaptive
-scheme.
-
-For example,
-\begin{verbatim}
-$ pismv -test G -y 1000 -save_file foo.nc -save_times 0:100:900 -o bar.nc
-\end{verbatim}
-produces two files.  File \texttt{foo.nc} has snapshots at 10 times, each a time 
-following a regular PISM timestep.  File \texttt{bar.nc} has the final PISM state,
-at time 1000.0 in this case.
-
-Note that in presence of the \texttt{-split_snapshots} option
-\texttt{-save_file} value is interpreted as a \emph{basename}. That is,
-\begin{verbatim}
-$ pismv -test G -y 1000 -save_file foo -save_times 0:100:900 -split_snapshots
-\end{verbatim}
-will produce files with names such as \texttt{foo-000112.nc}.
-
-Compare option \texttt{-o} which merely saves the final state.  
-See section \ref{sec:snapshots} for more details. 
-
-\opt{save\_times} Used in combination with option \texttt{-save_file} above.
-Takes two kinds of input: either a MATLAB-style range in the form
-$t_{0}:\Delta t:t_{f}$ or a comma-separated list of times in years.  The
-comma-separated list above can be at most 200 numbers long.
-
-Saving the snapshots \emph{does not} affect the time-stepping determined 
-by the adaptive scheme.  As a result, snapshots are saved
-\emph{on the first time-step after the time requested}, and there is
-no guarantee of producing the exact number of snapshots requested.
-
-For example, if in a particular run PISM uses time-steps of
-60 years, then \texttt{-save_times 50,80,100} might produce snapshots at 60 and 120
-years if 0.0, 60.0, 120.0, \dots were the usual PISM timesteps.
-
-See section \ref{sec:snapshots} for more details.
-
-\opt{split\_snapshots} Save model state snapshots to separate files. See the
-\texttt{-save_file} option documentation above for details.
 
 \subsubsect{Verbosity to standard out}
 
@@ -558,21 +502,21 @@ See section \ref{sec:snapshots} for more details.
 
 \subsubsect{Flow and dynamical parameters}
 
-\optdef{constant\_nuH}{30.0}  If this option is used then the velocities in ice shelves and streams (see \texttt{-ssa} below) are computed with a constant value for the product of viscosity $\nu$ and thickness $H$, obtained from the shelf extension (see \texttt{-shelfxt}).  This is useful for debugging ice-shelf flow because there is reduces the membrane stress to a linear constant-coefficient term rather than a fully nonlinear one.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
+\optdef{constant_nuH}{30.0}  If this option is used then the velocities in ice shelves and streams (see \texttt{-ssa} below) are computed with a constant value for the product of viscosity $\nu$ and thickness $H$, obtained from the shelf extension (see \texttt{-shelfxt}).  This is useful for debugging ice-shelf flow because there is reduces the membrane stress to a linear constant-coefficient term rather than a fully nonlinear one.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
 
 \optdef{e}{1.0}  Flow enhancement factor.
 
 \optdef{gk}{1.0}  Sets the flow law used in computing SIA velocity to Goldsby-Kohlstedt \cite{GoldsbyKohlstedt} and uses a constant grain size.  The option \texttt{-gk} without an argument uses default grain size of 1 mm while \texttt{-gk N} uses \texttt{N} mm grains.  See \texttt{-ice_type} for more complete option choice of flow law.
 
-\opt{gk\_age}  Sets the flow law used in computing SIA velocity to Goldsby-Kohlstedt \cite{GoldsbyKohlstedt}, but uses the modeled age to compute the grain size; compare \texttt{-gk}.  The age is used in a table from the Vostok core \cite{VostokCore} to compute a grain size.  This option should not be used unless the model age has stabilized after a long (e.g.~$\ge 100$ ka) run.
+\opt{gk_age}  Sets the flow law used in computing SIA velocity to Goldsby-Kohlstedt \cite{GoldsbyKohlstedt}, but uses the modeled age to compute the grain size; compare \texttt{-gk}.  The age is used in a table from the Vostok core \cite{VostokCore} to compute a grain size.  This option should not be used unless the model age has stabilized after a long (e.g.~$\ge 100$ ka) run.
 
-\optdef{ice\_type}{pb}  Allows choice of ice rheology, also known as the ``flow law''.  The options are in table \ref{tab:flowlaw} below.  Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
+\optdef{ice_type}{pb}  Allows choice of ice rheology, also known as the ``flow law''.  The options are in table \ref{tab:flowlaw} below.  Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
 	$$\dot \eps_{ij} = F(\sigma,T,P,d)\, \sigma_{ij}'$$
 where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$ so $\sigma$ is the second invariant of the stress deviator tensor, $P$ is the pressure, and $d$ is the grain size.  That is, we are addressing isotropic flow laws only, and one can choose the scalar function.  Note that the inverse form of such a flow law in needed for ice shelves and ice streams:
 	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,P,d)\,\dot \eps_{ij} $$
 Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inverse form of the flow law explains the ``hybrid'' law \texttt{-ice_type hybrid} (or \texttt{-gk}).
 
-\optdef{ice\_custom\_hardness}{1.9e8} Some ice types are customizable, run with \texttt{-help} to see all the customizable options for your chosen ice type (since \texttt{-help} displays many options, it is often useful to grep the output, as in \verb:pisms -ice_type custom -help | grep ice_:).  A common use the \texttt{custom} ice type is to directly specify the hardness parameter in an ice shelf study.  The viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
+\optdef{ice_custom_hardness}{1.9e8} Some ice types are customizable, run with \texttt{-help} to see all the customizable options for your chosen ice type (since \texttt{-help} displays many options, it is often useful to grep the output, as in \verb:pisms -ice_type custom -help | grep ice_:).  A common use the \texttt{custom} ice type is to directly specify the hardness parameter in an ice shelf study.  The viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
 	$$\ddx{}\left(2\nu H\left(2\ddx{u} + \ddy{v}\right)\right)$$
 where 
 	$$\nu = \frac{\bar B}{2} \left[\left(\ddx{u}\right)^2 + \left(\ddy{v}\right)^2 +
@@ -582,7 +526,7 @@ Generally $\bar B$ is computed by a vertical-integral of a function of the tempe
 In the case of \texttt{pross}, which performs the EISMINT Ross ice shelf intercomparison, a constant value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ is the default \cite{MacAyealetal}.
 
 \begin{table}[ht]
-\caption{Choosing the rheology using \t{-ice\_type}.}\label{tab:flowlaw}\ind{rheology}\ind{flow law}
+\caption{Choosing the rheology using \t{-ice_type}.}\label{tab:flowlaw}\ind{rheology}\ind{flow law}
 \small
 \begin{tabular}{p{0.25\linewidth}p{0.08\linewidth}p{0.57\linewidth}}\hline
 \textbf{Flow Law} & \textbf{Type} & \textbf{Comments and Reference} \\ \hline
@@ -603,11 +547,9 @@ Isothermal Glen & \t{custom} & Highly customizable version of the isothermal Gle
 \opt{shelfext\und} When computing ice shelf and stream velocity, PISM enforces boundary conditions using a fictitious extension of the ice shelf over the entire domain.  This extension provides strength only, it does not change the mass, driving force, or location of the calving front.  By default, it's strength will be computed using the current ice type at reference thickness, temperature, and strain rate, customizable using \texttt{-shelfext_H} (5 meters by default), \texttt{-shelfext_T} (263.15 K), \texttt{-shelfext_Du} (1 m/a per km).  The extension strength is used whenever ice thickness is less than the extension thickness to prevent the equations from becoming singular.  You can also specify the extension strength directly using \texttt{-shelfext_force_nuH} with units in Pa s.  Finally, you can compute strength using a \texttt{custom} ice type the ice used in the rest of PISM by giving \texttt{-shelfext_use_private_ice}.  This option will gives you a \texttt{custom} ice type which you can control via \texttt{-shelfext_ice_custom_} (see \texttt{-ice_type}).  All \texttt{-shelfext} options are displayed in \texttt{-help}.
 \end{comment}
 
-\optdef{mu\_sliding}{0}  The sliding law parameter in SIA regions of the ice.  \emph{This kind of sliding is not recommended, which is why it is turned off by default.  See} \texttt{-ssa} \emph{and} \texttt{-plastic} \emph{for the recommended sliding model.}  This kind of sliding is used in experiments G and H of EISMINT II \cite{EISMINT00}, but note that executable \texttt{pisms -eisII} ignors this parameter and uses the right amount of sliding for the given experiment.
+\optdef{mu_sliding}{0}  The sliding law parameter in SIA regions of the ice.  \emph{This kind of sliding is not recommended, which is why it is turned off by default.  See} \texttt{-ssa} \emph{and} \texttt{-plastic} \emph{for the recommended sliding model.}  This kind of sliding is used in experiments G and H of EISMINT II \cite{EISMINT00}, but note that executable \texttt{pisms -eisII} ignors this parameter and uses the right amount of sliding for the given experiment.
 
-\opt{surf\_vel\_to\_phi}  Computes till friction angle $\phi$=\texttt{tillphi} by inverting provided surface velocities in file.  Under development.  See \emph{Reference Manual} and source files \texttt{iMinverse.cc,iMinverseMat.cc}.
-
-\optdef{topg\_to\_phi}{5.0,15.0,-1000.0,1000.0,10.0}  Sets till friction angle $\phi$=\texttt{tillphi} to piecewise-linear function of bed elevation.  Takes zero to five comma-separated arguments.  An example, in which sliding happens in the ``trough'', is 
+\optdef{topg_to_phi}{5.0,15.0,-1000.0,1000.0,10.0}  Sets till friction angle $\phi$=\texttt{tillphi} to piecewise-linear function of bed elevation.  Takes zero to five comma-separated arguments.  An example, in which sliding happens in the ``trough'', is 
 
 \begin{verbatim}
 pisms -eisII I -ssa -super -plastic -track_Hmelt -Mx 91 -My 91 -Mz 51 \
@@ -617,15 +559,15 @@ pisms -eisII I -ssa -super -plastic -track_Hmelt -Mx 91 -My 91 -Mz 51 \
 
 \subsubsect{Plastic till model parameters}
 
-\optdef{plastic\_c0}{0.0}  Set the value of the till cohesion in the plastic till model.  The value is a pressure, given in kPa.  Only effective if used with \texttt{-plastic} and \texttt{-ssa}.
+\optdef{plastic_c0}{0.0}  Set the value of the till cohesion in the plastic till model.  The value is a pressure, given in kPa.  Only effective if used with \texttt{-plastic} and \texttt{-ssa}.
 
 Note Schoof \cite{SchoofStream} formula (2.4) uses $c_0 = 0$.
 
-\optdef{plastic\_pwfrac}{0.95}  Set what fraction of overburden pressure is assumed as the till pore water pressure.  Only relevant at basal points where there is a positive amount of basal water.  The value is a pure number.  Only effective if used with \texttt{-plastic} and \texttt{-ssa}.
+\optdef{plastic_pwfrac}{0.95}  Set what fraction of overburden pressure is assumed as the till pore water pressure.  Only relevant at basal points where there is a positive amount of basal water.  The value is a pure number.  Only effective if used with \texttt{-plastic} and \texttt{-ssa}.
 
-\optdef{plastic\_reg}{0.01 m/a}    Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  Only effective if used with \texttt{-plastic} and \texttt{-ssa}.
+\optdef{plastic_reg}{0.01 m/a}    Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  Only effective if used with \texttt{-plastic} and \texttt{-ssa}.
 
-\optdef{plastic\_phi}{30.0}  Set the till friction angle.  The value is an angle $\phi$, given in degrees, and the coefficient $\mu$ in formula (2.4) in \cite{SchoofStream} is computed from $\theta$ by this formula:
+\optdef{plastic_phi}{30.0}  Set the till friction angle.  The value is an angle $\phi$, given in degrees, and the coefficient $\mu$ in formula (2.4) in \cite{SchoofStream} is computed from $\theta$ by this formula:
 	$$\mu = \tan\left(\frac{\pi}{180} \theta\right).$$
 Only effective if used with \texttt{-plastic} and \texttt{-ssa}.
 
@@ -634,73 +576,13 @@ Only effective if used with \texttt{-plastic} and \texttt{-ssa}.
 
 \subsubsect{General methods}
 
-\optdef{adapt\_ratio}{0.12}  Adaptive time stepping ratio for the explicit scheme for the mass balance equation.
-
 \opt{eta}  The surface gradient is usually computed in the obvious way by finite differences applied to the surface elevation $h$.  Specifically, we use the Mahaffy \cite{Mahaffy} scheme.  Alternatively, if this option is set we first transform the thickness $H$ by $\eta = H^{(2n+2)/n}$ and then differentiating the sum of the thickness and the bed:
 	$$\grad h = \grad H + \grad b = \frac{n}{(2n+2)} \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.$$
 Here $b$ is the bed elevation and $h$ is the surface elevation.  The transformation sometimes has the benefits that the surface values of the horizontal velocity and vertical velocity, and the driving stress, are better behaved near the margin.  See \cite{CDDSV} for the technical explanation of this transformation and compare \cite{SaitoMargin}.
 
-\optdef{low\_temp}{200.0}  Set the temperature which PISM will regard as ``too low''.  Units in Kelvin.  Note that one kind of numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated.  In that case temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations, and if the number is too great then the run is stopped.  See option \texttt{-max_low_temps}.
+\optdef{low_temp}{200.0}  Set the temperature which PISM will regard as ``too low''.  Units in Kelvin.  Note that one kind of numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated.  In that case temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations, and if the number is too great then the run is stopped.  See option \texttt{-max_low_temps}.
 
-\optdef{max\_dt}{60.0}  The maximum time-step in years.  The adaptive time-stepping scheme will make the time-step shorter than this as needed for stability, but not longer.  See section \ref{sec:practical-usage}.
-
-\optdef{max\_low\_temps}{10}  Specify the number (a nonnegative integer) of allowed low temp violations per time step.  Note these are reported in detail (i.e.~with location) if \texttt{-verbose} is set.  Note that one kind of numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated.  In that case temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations, and if the number is too great then the run is stopped.  See option \texttt{-low_temp} for the cutoff low temperature.
-
-\optdef{skip}{10}  Number of mass-balance steps, including SIA diffusivity updates, to perform before a the temperature, age, and SSA stress balance computations are done.  This is only effective if the time step is being limited by the diffusivity time step restriction associated to mass continuity using the SIA.  The maximum recommended value for \texttt{-skip} is, unfortunately, dependent on the context.  The temperature field should be updated when the surface changes significantly, and likewise the basal sliding velocity if it comes (as it should) from the SSA calculation.
-
-
-\subsubsect{Shelf and stream numerical method}
-
-\optdef{ice\_reg\_schoof\_length}{1000 km}  Set the ``$L$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \texttt{-ssa_eps 0.0} to turn off the other regularization mechanism, otherwise there is a double regularization (the default except in \texttt{pism -test I}).
-
-\optdef{ice\_reg\_schoof\_vel}{1 m/a}  Set the \emph{first} ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  To deactivate Schoof's regularization, use \texttt{-ice_reg_schoof_vel 0}.  To use the regularization described by Schoof, one must set \texttt{-ssa_eps 0.0} to turn off the other regularization mechanism, otherwise there is a double regularization (the default except in \texttt{pismv -test I}).  Use \texttt{-plastic_reg} above to set the second ``$\eps$'' in formula (4.1) of \cite{SchoofStream}.
-
-\opt{shelves\_drag\_too}  Ice streams are modeled as ``dragging ice shelves'' in PISM, as in either linear \cite{MacAyeal} or plastic \cite{SchoofStream} or pseudo-plastic basal resistance, according to options.  If this option is turned on then the floating ice shelves also have very slight resistance, according to a linear model $\tau_b = \beta u$ where $\beta = 1.8\times 10^5\, \text{Pa}\,\text{s}\,\text{m}^{-1}$.  This value is $10^4$ times smaller than the representative drag coefficient given for ice stream E in \cite{HulbeMacAyeal}.  Ice shelves usually have precisely zero basal resistance, but nonzero drag for the ice shelf is turned on by default in MISMIP; see section \ref{sect:simp}.
-
-\optdef{ssa\_eps}{1e-15} The numerical scheme for the shallow shelf approximation  \cite{WeisGreveHutter} computes an effective viscosity which which depends on velocity and temperature.  After that computation, this constant is added to the effective viscosity (to keep it bounded away from zero).  The units are kg $\text{m}^{-1}\,\text{s}^{-1}$.  By default, the regularization in equation (4.1) of \cite{SchoofStream} is also active, use \texttt{-ice_reg_schoof_vel 0} to deactivate Schoof's regularization. Turn off this lower bound mechanise by \texttt{-ssa_eps 0.0} to exclusively use the Schoof regularization mechanism; see \texttt{-ice_reg_schoof_vel} and \texttt{-ice_reg_schoof_length} below.  Note \texttt{-ssa_eps} is set to zero automatically when running \texttt{pismv -test I}.
-
-\begin{comment}
-\opt{ssa\_external} We are experimenting with other solvers for the stream and shelf equations.  If given, this option exposes these experimental solvers.  Run with \verb:-ssa_external -help | grep ssa_: to see what options are available.
-\end{comment}
-
-\optdef{ssa\_maxi}{300}  This option sets the maximum allowed number of nonlinear iterations in solving the shallow shelf approximation.  One should usually use option \texttt{-ssa_rtol} to control convergence of the nonlinear iteration.
-
-\optdef{ssa\_rtol}{1.0e-4}  The numerical scheme for the shallow shelf approximation \cite{WeisGreveHutter} does a nonlinear iteration wherein velocities (and temperatures) are used to compute a vertically-averaged effective viscosity which is used to solve the equations for horizontal velocity.  Then the new velocities are used to recompute an effective viscosity, and so on.  This option sets the relative change tolerance for the effective viscosity.
-
-In particular, the nonlinear part of the iteration requires that successive values $\nu^{(k)}$ of the vertically-averaged effective viscosity satisfy
-	$$\frac{\|(\nu^{(k)} - \nu^{(k-1)}) H\|_2}{\|\nu^{(k)} H\|_2} \le \text{ssa\_rtol}$$
-in order to end the iteration with $\nu = \nu^{(k)}$.  See also \texttt{-ksp_rtol}, a PETSc option below, as one may want to require a high relative tolerance for the linear iteration as well.
-
-
-\subsectstar{Options special to verification and simplified geometry cases}
-
-
-\subsubsect{Verification}
-
-\optrestrict{no\_report}{pismv}  Do not report errors at the end of a verification run.
-
-\optrestrict{eo}{pismv}  Only evaluate the exact solution (don't do numerical approximation at all).  See section \ref{sect:verif}.
-
-\optdefrestrict{test}{A}{pismv}  Choose which verification test to run by giving its single character name.  See section \ref{sect:verif}.
-
-
-\subsubsect{EISMINT II}
-
-\optrestrict{bmr\_in\_cont}{pisms -eisII}  By default PISM includes the basal melt rate in the continuity equation.  The EISMINT II experiments specify that it should not be included \cite{EISMINT00}, so the default behavior of \texttt{pisms -eisII} is to not include it.  This option makes \texttt{pisms -eisII} behave like the generic PISM cases (e.g.~\texttt{pismr}).
-
-\optdefrestrict{eisII}{A}{pisms}  Choose single character name of EISMINT II \cite{EISMINT00} simplified geometry experiment.  Allowed values are A, B, C, D, E, F, G, H.
-
-\optrestrict{Mmax}{pisms -eisII}  Set value of $M_{\text{max}}$ for EISMINT II.
-
-\optrestrict{Rel}{pisms -eisII}    Set value of $R_{\text{el}}$ for EISMINT II.
-
-\optrestrict{Sb}{pisms -eisII}    Set value of $S_b$ for EISMINT II.
-
-\optrestrict{ST}{pisms -eisII}    Set value of $S_T$ for EISMINT II.
-
-\optrestrict{Tmin}{pisms -eisII}    Set value of $T_{\text{min}}$ for EISMINT II.
-
-\optrestrict{track\_Hmelt}{pisms -eisII}    Turn on the part of the conservation of energy model which accumulates (tracks) locally-stored basal melt water.
+\optdef{max_low_temps}{10}  Specify the number (a nonnegative integer) of allowed low temp violations per time step.  Note these are reported in detail (i.e.~with location) if \texttt{-verbose} is set.  Note that one kind of numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated.  In that case temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations, and if the number is too great then the run is stopped.  See option \texttt{-low_temp} for the cutoff low temperature.
 
 % FIXME: describe the pross driver.
 % \optrestrict{ross}{pismd}    Run the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  Requires data from \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.
@@ -746,7 +628,7 @@ These two PETSc mechanisms can be used together.  (The effect of duplicate or co
 
 \opt{info}  Gives excessive information about PETSc operations during run.  Option \texttt{-verbose} for PISM (above) is generally more useful, except possibly for debugging.
 
-\optdef{ksp\_rtol}{1e-5}  For solving the SSA equations with high resolution on multiple processors, it is recommended that this be tightened (set lower than the default).  For example, 
+\optdef{ksp_rtol}{1e-5}  For solving the SSA equations with high resolution on multiple processors, it is recommended that this be tightened (set lower than the default).  For example, 
 
 \verb|$  mpiexec -n 8 pismv -test I -Mx 5 -My 769|
 
@@ -756,13 +638,13 @@ These two PETSc mechanisms can be used together.  (The effect of duplicate or co
 
 \noindent works fine.
 
-\optdef{ksp\_type}{gmres}  Based on one processor evidence from \texttt{pismv -test I}, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: \t{cg}, \t{bicg}, \t{gmres}, \t{bcgs}, \t{cgs}, \t{tfqmr}, \t{tcqmr}, and \t{cr}.  It appears \t{bicg}, \t{gmres}, \t{bcgs}, and \t{tfqmr}, at least, are all among the best.
+\optdef{ksp_type}{gmres}  Based on one processor evidence from \texttt{pismv -test I}, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: \t{cg}, \t{bicg}, \t{gmres}, \t{bcgs}, \t{cgs}, \t{tfqmr}, \t{tcqmr}, and \t{cr}.  It appears \t{bicg}, \t{gmres}, \t{bcgs}, and \t{tfqmr}, at least, are all among the best.
 
-\opt{log\_summary}  At the end of the run gives a performance summary and also a synopsis of the PETSc configuration in use.
+\opt{log_summary}  At the end of the run gives a performance summary and also a synopsis of the PETSc configuration in use.
 
-\opt{options\_left}  Shows an options table which will indicate if a user option was not read or was misspelled.
+\opt{options_left}  Shows an options table which will indicate if a user option was not read or was misspelled.
 
-\optdef{pc\_type}{ilu}   Several options are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \texttt{pismv -test I} with high tolerances (e.g.~\texttt{-ssa_rtol 1e-7} \texttt{-ksp_rtol 1e-12}).
+\optdef{pc_type}{ilu}   Several options are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \texttt{pismv -test I} with high tolerances (e.g.~\texttt{-ssa_rtol 1e-7} \texttt{-ksp_rtol 1e-12}).
 
 \opt{v}   Show version number of PETSc.
 

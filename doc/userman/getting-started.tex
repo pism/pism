@@ -143,20 +143,21 @@ As suggested earlier, we regularly use \verb|ncview| to look at NetCDF files.  T
 
 \centerline{ \href{http://www.unidata.ucar.edu/software/netcdf/docs/software.html}{\t{www.unidata.ucar.edu/software/netcdf/docs/software.html}} } 
 
+\newcommand{\netcdftool}[1]{#1\ind{NetCDF!tools!#1}}
 \begin{table}[ht]
 \caption{Some tools for viewing and modifying NetCDF files.}\label{tab:NetCDFview} 
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Tool} & \textbf{Site} & \textbf{Function}\\ \hline
-\verb|ncdump| & \emph{included with any NetCDF distribution} & dump binary NetCDF as \texttt{.cdl} (text) file \\
-\verb|ncgen| & \emph{included with any NetCDF distribution} & convert \texttt{.cdl} file to binary NetCDF \\
-\verb|ncview|\ind{ncview} & \href{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}{\texttt{meteora.ucsd.edu/$\sim$pierce}} & quick graphical view \\
-IDV & \href{http://www.unidata.ucar.edu/software/idv/}{\t{www.unidata.ucar.edu/software/idv/}} & more complete visualization \\
-Paraview & \href{http://www.paraview.org}{\t{www.paraview.org}} & powerful open-source parallel visualization \\
-NCL &  \href{http://www.ncl.ucar.edu}{\t{www.ncl.ucar.edu}} & NCAR Command Language, open-source\\
-PyNGL &  \href{http://www.pyngl.ucar.edu}{\t{www.pyngl.ucar.edu}} & Python version of NCL, open-source\\
-VisIt & \href{http://visit.llnl.gov}{\t{visit.llnl.gov}} & advanced parallel visualization \\
-NCO\ind{NCO (NetCDF Operators)} & \href{http://nco.sourceforge.net/}{\t{nco.sourceforge.net/}} & ``NetCDF Operators'': manipulations \\
+\netcdftool{\texttt{ncdump}} & \emph{included with any NetCDF distribution} & dump binary NetCDF as \texttt{.cdl} (text) file \\
+\netcdftool{\texttt{ncgen}} & \emph{included with any NetCDF distribution} & convert \texttt{.cdl} file to binary NetCDF \\
+\netcdftool{\texttt{ncview}} & \href{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}{\texttt{meteora.ucsd.edu/$\sim$pierce}} & quick graphical view \\
+\netcdftool{IDV} & \href{http://www.unidata.ucar.edu/software/idv/}{\t{www.unidata.ucar.edu/software/idv/}} & more complete visualization \\
+\netcdftool{Paraview} & \href{http://www.paraview.org}{\t{www.paraview.org}} & powerful open-source parallel visualization \\
+\netcdftool{NCL} &  \href{http://www.ncl.ucar.edu}{\t{www.ncl.ucar.edu}} & NCAR Command Language, open-source\\
+\netcdftool{PyNGL} &  \href{http://www.pyngl.ucar.edu}{\t{www.pyngl.ucar.edu}} & Python version of NCL, open-source\\
+\netcdftool{VisIt} & \href{http://visit.llnl.gov}{\t{visit.llnl.gov}} & advanced parallel visualization \\
+\netcdftool{NCO}\ind{NCO (NetCDF Operators)} & \href{http://nco.sourceforge.net/}{\t{nco.sourceforge.net/}} & ``NetCDF Operators'': manipulations \\
 \quad  & & \quad at command line
 \end{tabular}
 \normalsize

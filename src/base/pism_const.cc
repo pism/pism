@@ -730,3 +730,32 @@ PetscErrorCode PISMOptionsIsSet(string option, string text,
 
   return 0;
 }
+
+//! Adds a suffix to a filename. Returns filename + separator + suffix + .nc if
+//! the original filename had the .nc suffix, otherwise filename + separator.
+//! If the old filename had the form "name + separator + more stuff + .nc",
+//! then removes the string after the separator.
+string pism_filename_add_suffix(string filename, string separator, string suffix) {
+  string basename = filename, result;
+
+  // find where the separator begins:
+  string::size_type j = basename.rfind(separator);
+  if (j == string::npos) {
+    j = basename.rfind(".nc");
+  }
+
+  // if the separator was not found, find the .nc suffix:
+  if (j == string::npos) {
+    j = basename.size();
+  }
+
+  // cut off everything starting from the separator (or the .nc suffix):
+  basename.resize(static_cast<int>(j));
+
+  result = basename + separator + suffix;
+
+  if (ends_with(filename, ".nc"))
+    result += ".nc";
+
+  return result;
+}

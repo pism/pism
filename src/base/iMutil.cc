@@ -261,6 +261,18 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   
   ierr = check_maximum_thickness_hook(old_Mz); CHKERRQ(ierr);
 
+  if (save_snapshots && (!split_snapshots) ) {
+    char tmp[20];
+    snprintf(tmp, 20, "%d", grid.Mz);
+    
+    snapshots_filename = pism_filename_add_suffix(snapshots_filename, "-Mz", tmp);
+    snapshots_file_is_ready = false;
+
+    ierr = verbPrintf(2, grid.com,
+		      "NOTE: Further snapshots will be saved to '%s'...\n",
+		      snapshots_filename.c_str()); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
