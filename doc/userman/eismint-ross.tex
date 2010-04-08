@@ -50,7 +50,7 @@ At the end of this run the computed velocity field is compared to the interpolat
 
 The output file \verb|unnamed_diag.nc| contains vertically-averaged horizontal speed in the variable \verb|cbar|.  Figure \ref{fig:rosspython} shows that computed speed as the color background; the comparison of modeled and observed vector velocities in that figure is discussed below.
 
-There are many variations on this basic ``\verb|pross|''\pismoptionindex{ross} run above.  First of all one can get more information during the run by adding diagnostic viewers and a more complete (verbose) report to standard out:\ind{pross} \pismoptionindex{ssaBC}\pismoptionindex{pause} \pismoptionindex{ssa}
+There are many variations on this basic ``\verb|pross|'' run above.  First of all one can get more information during the run by adding diagnostic viewers and a more complete (verbose) report to standard out:
 
 \begin{verbatim}
 $ pross -boot_from ross.nc -ssa -ssaBC ross.nc \
@@ -65,7 +65,7 @@ $ mpiexec -n 4 pross -boot_from ross.nc -ssa -ssaBC ross.nc \
 \end{verbatim}
 The result is very similar, as it should be.  On the other hand, since the data is only on a 6.8 km grid we expect no added accuracy on this new 5km grid.
 
-Alternately one might want to experiment with different values of the hardness parameter.  Its default value is $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ as in \cite{MacAyealetal}.   We can also use smaller (more severe) tolerances for the nonlinear iteration (\intextoption{ssa\_rtol}) and the linear iteration (\intextoption{ksp\_rtol}) to get more confidence in the numerical scheme:
+Alternately one might want to experiment with different values of the hardness parameter.  Its default value is $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ as in \cite{MacAyealetal}.   We can also use smaller (more severe) tolerances for the nonlinear iteration (\intextoption{ssa_rtol}) and the linear iteration (\intextoption{ksp_rtol}) to get more confidence in the numerical scheme:
 
 \begin{verbatim}
 $ pross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 \

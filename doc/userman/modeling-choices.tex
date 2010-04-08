@@ -4,6 +4,7 @@
 
 \subsection{Computational box} \label{subsect:coords}
 \renewcommand{\optindexsection}{Computational box}
+\optseealso{Grid}
 
 PISM does all simulations in a computational box\ind{PISM!computational box} which is rectangular in the PISM coordinates.
 
@@ -19,12 +20,12 @@ The extent of the computational box, along with its bedrock extension downward, 
 
 \begin{tabular}{llp{0.7\linewidth}}
 \\\hline
-\textbf{Option} & \textbf{Units} & \textbf{Meaning}
+\textbf{Option} & \textbf{Meaning}
 \\\hline
-\intextoption{Lx} & km & Half-width of the computational domain (in the $x$-direction) \\
-\intextoption{Ly} & km & Half-width of the computational domain (in the $y$-direction) \\
-\intextoption{Lz} & m & Height of the computational domain in the ice \\
-\intextoption{Lbz} & m & Depth of the computational domain in the bedrock thermal layer
+\txtopt{Lx}{(km)} & Half-width of the computational domain (in the $x$-direction) \\
+\txtopt{Ly}{(km)} & Half-width of the computational domain (in the $y$-direction) \\
+\txtopt{Lz}{(meters)} & Height of the computational domain in the ice \\
+\txtopt{Lbz}{(meters)} & Depth of the computational domain in the bedrock thermal layer
 \\\hline
 \end{tabular}
 
@@ -37,9 +38,9 @@ The extent of the computational box, along with its bedrock extension downward, 
 
 \subsection{Spatial grid}
 \label{subsect:grid}
-\renewcommand{\optindexsection}{Space-time grid}
+\renewcommand{\optindexsection}{Grid!space}
 
-The PISM grid\ind{PISM!grid} covering the computational box is equally spaced in horizontal ($x$ and $y$) directions.  Vertical spacing is quadratic by default (see below) but optionally a different spacing scheme can be chosen.  (Choose with options \intextoption{z_spacing} and \intextoption{zb_spacing}.)
+The PISM grid\ind{PISM!grid} covering the computational box is equally spaced in horizontal ($x$ and $y$) directions.  Vertical spacing is quadratic by default (see below) but optionally a different spacing scheme can be chosen.  (Choose with options \txtopt{z_spacing}{[quadratic, equal]} and \txtopt{zb_spacing}{[quadratic, equal]}.)
 
 The grid is described by four numbers, namely the number of grid points \texttt{Mx} in the $x$ direction, the number \texttt{My} in the $y$ direction, the number \texttt{Mz} in the $z$ direction within the ice, and the number \texttt{Mbz} in the $z$ direction within the bedrock thermal layer.  These are specified by options \intextoption{Mx}, \intextoption{My}, \intextoption{Mz}, and \intextoption{Mbz}, respectively. The defaults are 61, 61, 31, and 1, respectively.
 
@@ -59,10 +60,11 @@ If one initializes PISM from a saved model state using \t{i} then the input mode
 
 \noindent will give a warning that ``\texttt{PISM WARNING: ignoring command-line option '-Mz'}'' because \texttt{-i} input files take precedence.
 
-Otherwise, one is allowed to specify the grid when PISM is started.  In particular, the user should specify the grid when using\intextoption{boot_from} or when initializing a simplified geometry experiment or a verification test, though defaults are generally present in these cases.  See sections \ref{sect:start} and \ref{sect:boot} for examples and explanation.
+Otherwise, one is allowed to specify the grid when PISM is started.  In particular, the user should specify the grid when using\texttt{boot_from} or when initializing a simplified geometry experiment or a verification test, though defaults are generally present in these cases.  See sections \ref{sect:start} and \ref{sect:boot} for examples and explanation.
 
 \subsection{Time}
 \label{sec:time}
+\renewcommand{\optindexsection}{Grid!time}
 
 The following command-line options control PISM time.
 
@@ -70,9 +72,9 @@ The following command-line options control PISM time.
 \hline
 \textbf{Option} & \textbf{Meaning}\\
 \hline
-\intextoption{y} & Number of model years to run.\\
-\intextoption{ys} & Model year at which to start the run.  Also resets the model time, ignoring any time in the input file.\\
-\intextoption{ye} & Model year at which to end the run.  The default value is the start year  (\texttt{-ys} or initialized model time from file) plus the default or given (\texttt{-y}) run length.  If both \texttt{-ys} and \texttt{-ye} are used then the run length is set to the difference.  Using all three of \texttt{-ys}, \texttt{-y} and \texttt{-ys} is not allowed.\\
+\txtopt{y}{(years)} & Number of model years to run.\\
+\txtopt{ys}{(years)} & Model year at which to start the run.  Also resets the model time, ignoring any time in the input file.\\
+\txtopt{ye}{(years)} & Model year at which to end the run.  The default value is the start year  (\texttt{-ys} or initialized model time from file) plus the default or given (\texttt{-y}) run length.  If both \texttt{-ys} and \texttt{-ye} are used then the run length is set to the difference.  Using all three of \texttt{-ys}, \texttt{-y} and \texttt{-ys} is not allowed.\\
 \hline
 \end{tabular}
 
@@ -86,7 +88,7 @@ The velocity field saved by \texttt{pismr -y 0} is the one which would be comput
 
 This diagnostic mode is most frequently associated to the modeling of ice shelves and ice streams.  Subsection \ref{sect:ross} describes using \texttt{pross} to model the Ross ice shelf \cite{MacAyealetal}.  Verification tests I and J, section \ref{sect:verif}, are diagnostic calculations using the SSA.
 
-Note that the NetCDF model state saved by PISM at the end of an \emph{evolution} run does not, by default, contain the three-dimensional velocity field.  Instead, it contains just the variables which are needed to restart the run, especially the ice geometry and temperature field.  One can also force PISM to save all the supported diagnostic quantities at the end of a time-stepping run using the option \intextoption{o_size}.
+Note that the NetCDF model state saved by PISM at the end of an \emph{evolution} run does not, by default, contain the three-dimensional velocity field.  Instead, it contains just the variables which are needed to restart the run, especially the ice geometry and temperature field.  One can also force PISM to save all the supported diagnostic quantities at the end of a time-stepping run using the option \texttt{o_size}.
 
 
 \subsection{Computing ice age} \label{subsect:age}
@@ -96,9 +98,8 @@ By default, PISM does not compute the age of the ice\ind{PISM!modeling the age o
 
 \subsection{Setting up PISM boundary (atmosphere, surface and ocean) models}
 \label{sec:boundary-models}
-\renewcommand{\optindexsection}{Climate (boundary) models}
 
-Setting up PISM's boundary models requires selecting one model of each kind and zero or more ``model modifiers''; selected models and modifiers are chained as in Figure~\ref{fig:climate-input-data-flow}. Command-line options \intextoption{atmosphere}, \intextoption{surface} and \intextoption{ocean} take a comma-separated list of keywords as an argument; the first keyword \emph{has} to correspond to a model, the rest can be modifiers. Any of these options can be omitted to use the default atmosphere, surface or ocean model, although using a modifier requires specifying a model.
+Setting up PISM's boundary models requires selecting one model of each kind and zero or more ``model modifiers''; selected models and modifiers are chained as in Figure~\ref{fig:climate-input-data-flow}. Command-line options \texttt{atmosphere}, \texttt{surface} and \texttt{ocean} take a comma-separated list of keywords as an argument; the first keyword \emph{has} to correspond to a model, the rest can be modifiers. Any of these options can be omitted to use the default atmosphere, surface or ocean model, although using a modifier requires specifying a model.
 
 For example,
 \begin{verbatim}
@@ -110,8 +111,9 @@ chooses a combination of SeaRISE-Greenland atmosphere model (see below),  ice-co
 Each of PISM boundary model types currently has one ``modifier'' available; the corresponding keyword is \texttt{forcing}. Please see below for details.
 
 \begin{enumerate}
+\renewcommand{\optindexsection}{Climate (boundary) models!\texttt{-atmosphere} [searise_greenland, constant, forcing]}
 \item \textbf{PISM atmosphere models.}
-  \begin{itemize}
+\begin{itemize}
   \item \emph{SeaRISE-Greenland} (\texttt{searise_greenland}, the default)
 
     This atmosphere model implements a longitude, latitude and elevation dependent near-surface air temperature parameterization and a cosine yearly cycle described in \cite{Faustoetal2009} and uses a constant in time ice-equivalent snow precipitation field (in units of thickness per time, variable \texttt{snowprecip}) that is read from an input file.
@@ -134,17 +136,19 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
   The atmosphere \texttt{forcing} modifier implements temperature forcing using scalar offsets and also a mechanism applying precipitation and mean annual temperature anomalies.
   \begin{itemize}
-  \item \intextoption{dTforcing} specifies a file containing scalar temperature offsets (variable \texttt{delta_T}), 
-  \item \intextoption{anomaly_temp_ma} specifies a file containing spatially-variable mean annual near-surface air temperature anomalies (variable \texttt{temp_ma_anomaly}), and
-  \item \intextoption{anomaly_precip} specifies a file containing spatially-variable ice-equivalent precipitation anomalies (in units of thickness per time, variable \texttt{snowprecip_anomaly}).
+  \item \fileopt{dTforcing} specifies a file containing scalar temperature offsets (variable \texttt{delta_T}), 
+  \item \fileopt{anomaly_temp_ma} specifies a file containing spatially-variable mean annual near-surface air temperature anomalies (variable \texttt{temp_ma_anomaly}), and
+  \item \fileopt{anomaly_precip} specifies a file containing spatially-variable ice-equivalent precipitation anomalies (in units of thickness per time, variable \texttt{snowprecip_anomaly}).
   \end{itemize}
 
-  Options \intextoption{anomaly_temp_ma} and \intextoption{anomaly_precip} can be used to set up a PISM run using a GCM output, essentially achieving one-way coupling.
+  Options \texttt{-anomaly_temp_ma} and \texttt{-anomaly_precip} can be used to set up a PISM run using a GCM output, essentially achieving one-way coupling.
 
   Note that only one air temperature forcing mechanism can be used at any time.
 
+\renewcommand{\optindexsection}{Climate (boundary) models!\texttt{-surface} [simple, constant, pdd, forcing]}
 \item \textbf{PISM surface (snow) process models}
-  \begin{itemize}
+
+\begin{itemize}
   \item \emph{The ``invisible'' model} (\texttt{simple}, the default)
 
     This is the simplest ``surface model'' available in PISM. Its job is to re-interpret  precipitation as mass flux into the ice and mean annual near-surface air temperature as the temperature of the ice at the ice surface (below firn) (see \cite{Hock05}, for example). This implies that there is no melt as long as the precipitation field  is non-negative.
@@ -154,25 +158,26 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
     This surface model reads constant in time top surface boundary conditions and provides them to the ice dynamics model (see table \ref{tab:ice-dynamics-bc}). When PISM is used with this model, variables \texttt{artm} (ice temperature at the ice surface but below firn) and \texttt{acab} (top surface mass flux into the ice) are expected to be present in an input file.
 
-    Note: this surface model \emph{ignores}  the atmosphere model selection made using the \intextoption{atmosphere} option.
+    Note: this surface model \emph{ignores}  the atmosphere model selection made using the \texttt{-atmosphere} option.
 
   \item \emph{Local mass balance (PDD)} (\texttt{pdd}) \ind{positive degree day model} \ind{PDD (positive degree day model)} \ind{PISM!default positive degree day model} 
 
-   The default PDD used by PISM, turned on by option \intextoption{surface pdd}, is based on \cite{CalovGreve05} and EISMINT-Greenland intercomparison (section \ref{sec:eismint-greenland} and \cite{RitzEISMINT}). It also implements latitude- and mean July temperature dependent ice and snow factors using formulas in \cite{Faustoetal2009}.
+   The default PDD used by PISM, turned on by option \texttt{-surface pdd}, is based on \cite{CalovGreve05} and EISMINT-Greenland intercomparison (section \ref{sec:eismint-greenland} and \cite{RitzEISMINT}). It also implements latitude- and mean July temperature dependent ice and snow factors using formulas in \cite{Faustoetal2009}.
 
    Our PDD implementation is meant to be used with an atmosphere model implementing a cosine yearly cycle such as \texttt{searise_greenland}, but is not restricted to parameterizations like this one. A PDD generally adds ``white noise'' to the seasonal cycle to simulate additional daily variability associated to the vagaries of weather.  This additional random variation is quite significant, as the seasonal cycle may never reach the melting point but that point may be reached with some probability, in the presence of the daily variability, and thus melt may occur.  Concretely, a normally-distributed, mean zero random temperature increment is added to the seasonal cycle.  The standard deviation of the daily variability is controlled by the \texttt{pdd_std_dev} configuration parameter, and defaults to 2.53 degrees \cite{Faustoetal2009}. There is no particular assumed spatial correlation of daily variability.
 
-The number of positive degree days is computed as the magnitude of the temperature excursion above $0\!\phantom{|}^\circ \text{C}$ multiplied by the duration (in days) when it is above zero.  In PISM there are actually two methods for computing the number of positive degree days.  The first computes only the expected value, by the method described in \cite{CalovGreve05}.  This is the default when a PDD is chosen (i.e.~option \intextoption{surface pdd}).  The second is a monte carlo simulation of the white noise itself, chosen by adding the option \intextoption{pdd_rand}.  This monte carlo simulation adds the same daily variation at every point, though the seasonal cycle is (generally) location dependent.  If repeatable randomness is desired use \intextoption{pdd_rand_repeatable} instead of \texttt{-pdd_rand}.
+The number of positive degree days is computed as the magnitude of the temperature excursion above $0\!\phantom{|}^\circ \text{C}$ multiplied by the duration (in days) when it is above zero.  In PISM there are actually two methods for computing the number of positive degree days.  The first computes only the expected value, by the method described in \cite{CalovGreve05}.  This is the default when a PDD is chosen (i.e.~option \texttt{surface pdd}).  The second is a monte carlo simulation of the white noise itself, chosen by adding the option \intextoption{pdd_rand}.  This monte carlo simulation adds the same daily variation at every point, though the seasonal cycle is (generally) location dependent.  If repeatable randomness is desired use \intextoption{pdd_rand_repeatable} instead of \texttt{-pdd_rand}.
 
 The number of positive degree days is multiplied by a coefficient (config parameter \texttt{pdd_factor_snow}) to compute the amount of snow melted.  Of the melted snow, a fraction (\texttt{pdd_refreeze}) is kept as ice.  This ice, plus all unmelted snow (already measured as ice-equivalent) is added to the mass balance, unless the number of positive degree days exceeds that required to melt all of the snow.  In this latter case, in which there are excess positive degree days available for melting, the excess is multiplied by a coefficient (\texttt{pdd_factor_ice}) to compute how much ice is melted.  In this case actual ablation occurs at that location.
 
 See also configuration parameters with the \texttt{pdd_fausto} prefix.
 
  \end{itemize}
+\renewcommand{\optindexsection}{Climate (boundary) models!\texttt{-ocean} [constant, forcing]}
 \item \textbf{PISM ocean models}
-  PISM includes one simple ocean model: \texttt{constant}, providing constant (both in time and space) mass flux into the ocean and sea level elevation to PISM's ice flow core. The mass flux is controlled by the\\ \texttt{ocean_sub_shelf_heat_flux_into_ice} configuration parameter and the assumption that the mass flux is proportional to heat flux into ice.
+PISM includes one simple ocean model: \texttt{constant}, providing constant (both in time and space) mass flux into the ocean and sea level elevation to PISM's ice flow core. The mass flux is controlled by the\\ \texttt{ocean_sub_shelf_heat_flux_into_ice} configuration parameter and the assumption that the mass flux is proportional to heat flux into ice.
 
-  The ocean \texttt{forcing} modifier implements sea level forcing. The command-line option \intextoption{dSLforcing} is used to specify the file containing sea level offsets:
+  The ocean \texttt{forcing} modifier implements sea level forcing. The command-line option \fileopt{dSLforcing} is used to specify the file containing sea level offsets:
 \begin{verbatim}
 $ pismr -i in.nc -ocean constant,forcing -dSLforcing delta_SL.nc
 \end{verbatim}%$
@@ -262,11 +267,11 @@ In the \t{-ssa_sliding} case especially, the determination of basal resistance c
 \subsection{Earth deformation models} \label{subsect:beddef} \ind{earth deformation} \ind{PISM!earth deformation models, using}
 \renewcommand{\optindexsection}{Earth deformation models}
 
-The option \intextoption{bed_def} turn on bed deformation models. There are two choices: \texttt{iso} and \texttt{lc}.
+The option \txtopt{bed_def}{[none, iso, lc]} turn on bed deformation models.
 
-The former (\texttt{iso}static model) assumes that the bed at the starting time is in equilibrium with the load so the bed elevation is equal to the starting bed elevation minus a multiple of the increase in ice thickness from the starting time, roughly: $b(t,x,y) = b(0,x,y) - f [H(t,x,y) - H(0,x,y)]$.  Here $f$ is the density of ice divided by the density of the mantle.  See Test H in Verification section. 
+The former (\texttt{iso}, the isostatic model) assumes that the bed at the starting time is in equilibrium with the load so the bed elevation is equal to the starting bed elevation minus a multiple of the increase in ice thickness from the starting time, roughly: $b(t,x,y) = b(0,x,y) - f [H(t,x,y) - H(0,x,y)]$.  Here $f$ is the density of ice divided by the density of the mantle.  See Test H in Verification section. 
 
-The latter is much more effective.  It is based on papers by Lingle and Clark \cite{LingleClark}\ind{Lingle, Craig} \ind{Clark, J.} and \cite{BLKfastearth}.  It is essentially instantaneous computationally because of use of the Fast Fourier Transform to solve the relevant differential equation.  Among other practical features, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  If observed uplift data is available, it can be used along with \intextoption{boot_from} to initialize the model so that it starts with the given uplift rate.
+The latter (\texttt{lc}) is much more effective.  It is based on papers by Lingle and Clark \cite{LingleClark}\ind{Lingle, Craig} \ind{Clark, J.} and \cite{BLKfastearth}.  It is essentially instantaneous computationally because of use of the Fast Fourier Transform to solve the relevant differential equation.  Among other practical features, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  If observed uplift data is available, it can be used along with \texttt{-boot_from} to initialize the model so that it starts with the given uplift rate.
 
 Example runs to compare these models are
 \begin{verbatim}

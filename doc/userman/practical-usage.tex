@@ -2,35 +2,88 @@
 \section{Practical usage}
 \label{sec:practical-usage}
 
-\subsection{Choosing variables to save at the end of the run}
-\label{sec:output-size}
-\renewcommand{\optindexsection}{Output}
+\subsection{Input and output}
+\label{sec:input-output}
+\renewcommand{\optindexsection}{Input and output}
+\optseealso{Bootstrapping}
+\optseealso{Regridding}
 
-A PISM output file always contains variables that are necessary to restart it
-plus some diagnostic quantities. It is possible, though, to make this list
-bigger (or smaller) using the \intextoption{o_size} command-line option.
+At first glance PISM is a program that reads one or more NetCDF file and
+then produces at least one output file. Table \ref{tab:input-output-options} summarizes
+command-line options controlling input and output.
+\begin{table}
+  \centering
+  \begin{tabular}{lp{0.6\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \fileopt{i} & Chooses a PISM output file to restart from.\\
+    \fileopt{o} & Chooses the output file name.  Default name is \texttt{unnamed.nc} under \texttt{pismr}, \texttt{simp_exper.nc} under \texttt{pisms}, and \texttt{verify.nc} under \texttt{pismv}.\\
+    \txtopt{o_size}{[small, medium, big]} & Chooses the ``size'' of the output file to produce.
+    Possible options are \texttt{small} (only variables necessary to restart
+    PISM), \texttt{medium} (the default, includes some diagnostic quantities)
+    and \texttt{big} (writes all the variables mentioned in table
+    \ref{tab:extra-vars}).\\
+    \intextoption{dontreadSSAvels} & Turns off reading the \texttt{ubar_ssa}
+    and \texttt{vbar_ssa} velocities saved by a previous
+    \texttt{-ssa_floating_only} or \texttt{-ssa_sliding} run.
+    \\\bottomrule
+ \end{tabular}
+  \caption{Basic input and output options}
+  \label{tab:input-output-options}
+\end{table}
 
-Possible choices are ``\texttt{-o_size small}'' (no diagnostic variables),
-``\texttt{medium}'' (the default, adds variables listed in the \texttt{output_medium} configuration variable to model state fields) and ``\texttt{big}'',
-saving \emph{every} variable listed in Table \ref{tab:extra-vars}.
+Please see configuration variables \texttt{output_medium} and
+\texttt{output_big} for lists of variables.
+
+The following sections describe more input and output options.
+
+\subsubsection{PISM's Standard output}
+\label{sec:stdout}
+\renewcommand{\optindexsection}{Input and output!standard out}
+
+Please see table \ref{tab:stdout} for a summary of PISM's options controlling
+what is printed to the standard output.
+
+\begin{table}
+  \centering
+  \begin{tabular}{lp{0.7\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \intextoption{verbose} & Increased verbosity of standard output.  Usually given with an integer level; 0,1,2,3,4,5 are allowed.  At the extremes, \texttt{-verbose 0} produces no stdout at all, \texttt{-verbose 1} only prints only warnings and a few high priority messages, and \texttt{-verbose 5} spews a lot of usually-undesirable stuff.  If given without argument (``\texttt{-verbose}'') then sets level 3, while ``\texttt{-verbose 2}'' is the default.\\
+   \intextoption{v} &   Show version number of PETSc.\\
+    \intextoption{log_summary}  & At the end of the run gives a performance
+    summary and also a synopsis of the PETSc configuration in use.\\
+    \intextoption{options_left} & Shows an options table which will indicate if
+    a user option was not read or was misspelled.\\
+   \intextoption{display} & The option \texttt{-display :0} seems to frequently be needed to let PETSc use Xwindows when running multiple processes.  \emph{It must be given as a \emph{final} option, after all the others.}\\
+  \intextoption{help} & Gives PISM help message and then a brief description of many PETSc options.\\
+ \intextoption{info} & Gives excessive information about PETSc operations during run.  Option \texttt{-verbose} for PISM (above) is generally more useful, except possibly for debugging.
+
+    \\\bottomrule
+  \end{tabular}
+  \caption{Options controlling PISM's standard output}
+  \label{tab:stdout}
+\end{table}
 
 \subsection{Saving time series of scalar diagnostic quantities}\ind{time-series}\ind{PISM!saving time-series}
 \label{sec:saving-time-series}
 \renewcommand{\optindexsection}{Saving scalar time-series}
- It is also possible to save time-series of certain scalar diagnostic quantities using a combination of the options \intextoption{ts_file}, \intextoption{ts_times}, and \intextoption{ts_vars}.  For example,
+ It is also possible to save time-series of certain scalar diagnostic quantities using a combination of the options \texttt{-ts_file}, \texttt{-ts_times}, and \texttt{-ts_vars}.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 1e4 -o output.nc -ts_file time-series.nc \
         -ts_times 0:1:1e4 -ts_vars ivol,iareag
-\end{verbatim} %$ just to make the text editor happy
+\end{verbatim} %$ just to make emacs happy
 will run for 10000 years, saving total ice volume and grounded ice area to \texttt{time-series.nc} \emph{yearly}. See tables \ref{tab:time-series-opts} for the list of options and \ref{tab:time-series} for the full list of supported time-series.
 
 Note that, similarly to the snapshot-saving code, this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, \emph{linearly interpolated onto requested times}.
 
 PISM buffers time-series data and writes it at the end of the run or once 10000 values are stored, whichever comes first. Sending an \texttt{USR1} signal to a PISM process flushes these buffers, making it possible to monitor the run. (See section \ref{subsect:signal} for more about PISM's signal handling.)
 
-Omitting the \intextoption{ts_vars} option makes PISM save \emph{all} the variables listed in table \ref{tab:time-series}.  Because scalar time-series take very little storage space, compared to spatially-varying data, this is usually a reasonable choice.
+Omitting the \texttt{-ts_vars} option makes PISM save \emph{all} the variables listed in table \ref{tab:time-series}.  Because scalar time-series take very little storage space, compared to spatially-varying data, this is usually a reasonable choice.
 
-If the file \texttt{foo.nc}, specified by \texttt{-ts_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \intextoption{ts_append}.
+If the file \texttt{foo.nc}, specified by \texttt{-ts_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-ts_append}.
 
 \begin{table}[ht]
   \caption{Command-line options controlling saving scalar time-series}
@@ -38,9 +91,9 @@ If the file \texttt{foo.nc}, specified by \texttt{-ts_file foo.nc}, already exis
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
-    \intextoption{ts_file} [file name] & Specifies the file to save to.\\
-    \intextoption{ts_times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
-    \intextoption{ts_vars} [list of variables] & Comma-separated list of variables, see table~\ref{tab:time-series}. Omitting this option is equivalent to listing all the possible variables.\\
+    \fileopt{ts_file} & Specifies the file to save to.\\
+    \timeopt{ts_times} & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
+    \listopt{ts_vars} & Comma-separated list of variables, see table~\ref{tab:time-series}. Omitting this option is equivalent to listing all the possible variables.\\
     \intextoption{ts_append} & Append time series to file if it already exists.  No effect if file does not yet exist. \\
     \bottomrule
   \end{tabular}
@@ -76,14 +129,14 @@ If the file \texttt{foo.nc}, specified by \texttt{-ts_file foo.nc}, already exis
 
 Sometimes it is useful to have PISM save a handful of diagnostic quantities every 10 years (or even every year).  One can use snapshots (section \ref{sec:snapshots}), but doing so can easily fill your hard-drive because snapshots are complete (re-startable) model states.  Sometimes you want a \emph{subset} of model variables saved reasonably-frequently in an output file.
 
-Use options \intextoption{extra_file}, \intextoption{extra_times}, and \intextoption{extra_vars} for this.  For example,
+Use options \texttt{-extra_file}, \texttt{-extra_times}, and \texttt{-extra_vars} for this.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 10000 -o output.nc -extra_file extras.nc \
         -extra_times 0:10:1e4 -extra_vars csurf,cbase
 \end{verbatim}
 will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years. Times are specified using a comma-separated list or a MATLAB-style range. Please see table \ref{tab:extras} for all the options corresponding to this feature; table \ref{tab:extra-vars} lists all the variable choices. 
 
-If the file \texttt{foo.nc}, specified by \texttt{-extra_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \intextoption{extra_append}.
+If the file \texttt{foo.nc}, specified by \texttt{-extra_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-extra_append}.
 
 \begin{table}[ht]
   \caption{Command-line options controlling extra diagnostic output}
@@ -91,10 +144,10 @@ If the file \texttt{foo.nc}, specified by \texttt{-extra_file foo.nc}, already e
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \textbf{Option} & \textbf{Description}\\
     \midrule
-    \intextoption{extra_file} [file name] & Specifies the file to save to; should be different from the output \intextoption{o} file.\\
-    \intextoption{extra_times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list.\\
-    \intextoption{extra_vars} [list of variables]& Comma-separated list of variables, see table~\ref{tab:extra-vars}\\
-    \intextoption{extra_split} & Save to separate files, similar to \intextoption{split_snapshots}\\
+    \fileopt{extra_file} & Specifies the file to save to; should be different from the output \texttt{o} file.\\
+    \timeopt{extra_times} & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list.\\
+    \listopt{extra_vars} & Comma-separated list of variables, see table~\ref{tab:extra-vars}\\
+    \intextoption{extra_split} & Save to separate files, similar to \texttt{-split_snapshots}\\
     \intextoption{extra_append} & Append variables to file if it already exists.  No effect if file does not yet exist, and no effect if \intextoption{extra_split} is set. \\
     \bottomrule
   \end{tabular}
@@ -181,7 +234,7 @@ If the file \texttt{foo.nc}, specified by \texttt{-extra_file foo.nc}, already e
 \renewcommand{\optindexsection}{Saving snapshots}
 Sometimes you want to check the model state every 1000 years, for example.  One possible solution is to run PISM for a thousand years, have it save all the fields at the end of the run, then restart and run for another thousand, and etc.  This forces the adaptive time-stepping mechanism to stop \emph{exactly} at multiples of 1000 years, which may be desirable in some cases.
 
-If saving exactly at specified times is not critical, then use the \intextoption{save_file} and \intextoption{save_times} options.  For example,
+If saving exactly at specified times is not critical, then use the \texttt{-save_file} and \texttt{-save_times} options.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 10000 -o output.nc -save_file snapshots.nc \
         -save_times 1000:1000:10000
@@ -215,10 +268,10 @@ $ ncks -d t,1 snapshots.nc foo.nc
 \end{verbatim}
 Also note that the second snapshot will probably be \emph{around} $1500$ years and \texttt{ncks} handles this correctly: it takes the record closest to $1500$ years.
 
-Another possible use of snapshots is for restarting runs on a batch system which kills jobs which go over their allotted time.  Running PISM with options \texttt{-y 1500} \texttt{-save_times 1000:100:1400} would mean that if the job is killed before completing the whole 1500 year run, we can restart from near the last multiple of $100$ years.  Restarting with option \intextoption{ye} would finish the run on the desired year.
+Another possible use of snapshots is for restarting runs on a batch system which kills jobs which go over their allotted time.  Running PISM with options \texttt{-y 1500} \texttt{-save_times 1000:100:1400} would mean that if the job is killed before completing the whole 1500 year run, we can restart from near the last multiple of $100$ years.  Restarting with option \texttt{-ye} would finish the run on the desired year.
 
 It is also possible to save snapshots to separate files using the
-\intextoption{split_snapshots} option.  For example, the run above can be changed to
+\texttt{-split_snapshots} option.  For example, the run above can be changed to
 \begin{verbatim}
 $ pismr -i foo.nc -y 10000 -o output.nc -save_file snapshots \
         -save_times 1000,1500,2000,5000 -split_snapshots
@@ -238,8 +291,8 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
-    \intextoption{save_file} [file name] & Specifies the file to save to.\\
-    \intextoption{save_times} [range or list] & Specifies times at which to save snapshots, by either a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
+    \fileopt{save_file} & Specifies the file to save to.\\
+    \timeopt{save_times} & Specifies times at which to save snapshots, by either a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
     \intextoption{split_snapshots} & Separate the snapshot output into files named \texttt{snapshots-}year\texttt{.nc}.  Faster if you are saving more than a dozen or so snapshots. \\
     \bottomrule
   \end{tabular}
@@ -262,13 +315,13 @@ are transposed.
     \small
    \textbf{Option} & \textbf{Description}\\
     \midrule
-    \intextoption{view_map} [list of variables] & Turns on map-plane views of one or several variables, see tables \ref{tab:extra-vars}  \\
-    \intextoption{view_slice} [list of variables] & Turns on viewers showing a slice of a 3D field at a certain level above the base of ice\\
-    \intextoption{slice_level} number& Specifies the level for the previous option\\
+    \listopt{view_map} & Turns on map-plane views of one or several variables, see tables \ref{tab:extra-vars}  \\
+    \listopt{view_slice} & Turns on viewers showing a slice of a 3D field at a certain level above the base of ice\\
+    \txtopt{slice_level}{(meters)}& Specifies the level for the previous option\\
     \intextoption{viewer_size} number & desired viewer size, in pixels\\
-    \intextoption{view_sounding} [list of variables] &Turns on sounding viewers showing values in a column\\
-    \intextoption{id} number & Sounding row-index\\
-    \intextoption{jd} number & Sounding column-index\\
+    \listopt{view_sounding} &Turns on sounding viewers showing values in a column\\
+    \txtopt{id}{row} & Sounding row-index\\
+    \txtopt{jd}{column} & Sounding column-index\\
     \bottomrule
   \normalsize
   \end{tabular}
@@ -298,7 +351,7 @@ Some diagnostic quantities are \emph{only} available as run-time viewers:
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \small
     \textbf{Variable name or an option} & \textbf{Description}\\\midrule
-    \texttt{diffusivity} & diffusivity coefficient D in mass balance equation in $m^{2}/s$. Meaningful only in regions of shallow ice ﬂow.\\
+    \texttt{diffusivity} & diffusivity coefficient D in mass balance equation in $m^{2}/s$. Meaningful only in regions of shallow ice flow.\\
     \texttt{nuH} & two viewers: vertically-averaged effective viscosity times thickness; on $i$ and $j$ offset grids. Only meaningful in ice streams and shelves.\\
     \texttt{log_nuH} & log base ten of the vertically-averaged effective viscosity times thickness on the regular grid. Only meaningful in ice streams and shelves.\\
     \intextoption{ksp_monitor_draw} & Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Shows norm of residual versus iteration number.\\
@@ -312,7 +365,7 @@ Some diagnostic quantities are \emph{only} available as run-time viewers:
 
 PISM's behavior depends on values of many flags and physical parameters. Most of them have default values\footnote{For \texttt{pismr}, grid parameters $Mx$, $My$, $Mz$, $Mbz$, $Lz$, $Lbz$, that have to be set at bootstrapping, are some exceptions.} which are read from the configuration file \texttt{pism_config.nc} in the \texttt{lib} sub-directory.
 
-It is possible to run PISM with an alternate configuration file using the \intextoption{config} command-line option:
+It is possible to run PISM with an alternate configuration file using the \fileopt{config} command-line option:
 \begin{verbatim}
 $ pismr -i foo.nc -y 1000 -config my_config.nc
 \end{verbatim}
@@ -331,7 +384,7 @@ If parameters of interest can be controlled using command-line options, one can 
 
 Changing parameters not available at the command-line is also possible~--- by using a custom configuration file (see section \ref{sec:pism-defaults}). The problem is that this makes it hard to see which parameters were changed.
 
-The \intextoption{config_override} command-line option provides an alternative. First of all, a file used with this option can have \emph{a subset} of flags and parameters present in \texttt{pism_config.nc}. Moreover, PISM adds the \texttt{pism_overrides} variable present in this file to the output file, making it easy to see which parameters were used to produce it.
+The \fileopt{config_override} command-line option provides an alternative. First of all, a file used with this option can have \emph{a subset} of flags and parameters present in \texttt{pism_config.nc}. Moreover, PISM adds the \texttt{pism_overrides} variable present in this file to the output file, making it easy to see which parameters were used to produce it.
 
 Here's an example: suppose we want to compare the dynamics of an ice-sheet on Earth to the same ice-sheet on Mars.\footnote{This is an admittedly simplified example. One will surely need to change more than just the acceleration due to gravity for a real comparison.}
 
@@ -392,11 +445,11 @@ FIXME: this section needs and overhaul!
   \begin{tabular}{p{0.1\linewidth}p{0.8\linewidth}}\toprule
     \textbf{Option} & \textbf{Description}\\
     \midrule
-    \intextoption{i} & specifies an input file, which has been produced by PISM;\\
-    \intextoption{o} & sets the output file name;\\
-    \intextoption{ys} & sets the start time, in years;\\
-    \intextoption{ye} & sets the final time, in years;\\
-    \intextoption{dt} & sets the interval between saved climate snapshots.\\
+    \fileopt{i} & specifies an input file, which has been produced by PISM;\\
+    \fileopt{o} & sets the output file name;\\
+    \txtopt{ys}{(years)} & sets the start time, in years;\\
+    \txtopt{ye}{(years)} & sets the final time, in years;\\
+    \txtopt{dt}{(years)} & sets the interval between saved climate snapshots.\\
     \bottomrule
  \end{tabular}
  \label{tab:pcctest}
@@ -436,13 +489,16 @@ computation the net surface mass balance is computed, namely \texttt{acab} in \t
 See section \ref{sec:eismint-greenland} for another \texttt{pcctest} example.
 
 \subsection{Regridding}
+\label{sec:regridding}
 \renewcommand{\optindexsection}{Regridding}
+\optseealso{Bootstrapping}
 
 It is common to want to interpolate a coarse grid model state onto a finer grid or vice versa.  For example, one might want to do the EISMINT II experiment on the default grid, producing output \texttt{foo.nc}, but then interpolate both the ice thickness and the temperature onto a finer grid.  The basic idea of ``regridding'' in PISM is that one starts over from the beginning on the finer grid, but one extracts the desired variables stored in the coarse grid file and interpolates these onto the finer grid before proceeding with the actual computation.
 
 The transfer from grid to grid is reasonably general---one can go from coarse to fine or vice versa in each dimension $x,y,z$---but the transfer must always be done by \emph{interpolation} and never \emph{extrapolation}.  (An attempt to do the latter will always produce a PISM error.)
 
-Such ``regridding'' is done using the \intextoption{regrid_file} and \intextoption{regrid_vars} commands as in this example:\ind{pisms}
+Such ``regridding'' is done using the \fileopt{regrid_file} and
+\listopt{regrid_vars} commands as in this example:\ind{pisms}
 
 \begin{verbatim}
 $  pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
@@ -453,7 +509,7 @@ $  pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
 A slightly different use of regridding occurs when ``bootstrapping'', as described in section \ref{sect:boot} and illustrated by example in section \ref{sec:eismint-greenland}.
 
 See table \ref{tab:regridvar} for the regriddable variables using
-\intextoption{regrid_file}.  Only model state variables are regriddable, while climate and boundary data generally are not explicitly regriddable.  (Bootstrapping, however, allows the same general interpolation as this explicit regrid.)
+\texttt{-regrid_file}.  Only model state variables are regriddable, while climate and boundary data generally are not explicitly regriddable.  (Bootstrapping, however, allows the same general interpolation as this explicit regrid.)
 
 \begin{table}[ht]
 \centering
@@ -473,7 +529,7 @@ See table \ref{tab:regridvar} for the regriddable variables using
 \end{tabular}
 \end{table}
 
-Here is another example: suppose you have an output of a PISM run on a fairly coarse grid (stored in \texttt{foo.nc}) and you want to continue this run on a finer grid. This can be done using \intextoption{regrid_file} along with \intextoption{boot_from}:
+Here is another example: suppose you have an output of a PISM run on a fairly coarse grid (stored in \texttt{foo.nc}) and you want to continue this run on a finer grid. This can be done using \texttt{-regrid_file} along with \texttt{-boot_from}:
 \begin{verbatim}
 $ pismr -boot_from foo.nc -Mx 201 -My 201 -Mz 21 -Mbz 21 -Lz 4000 \
         -regrid_from foo.nc -regrid_vars litho_temp,age,temp -y 100 -o bar.nc
@@ -521,7 +577,7 @@ caught signal SIGUSR1:  Writing intermediate file ... and flushing time series.
 
 \subsection{Understanding adaptive time-stepping} \label{subsect:adapt}
 \ind{PISM!adaptive time stepping scheme}
-\renewcommand{\optindexsection}{Adaptive time-stepping scheme}
+\renewcommand{\optindexsection}{Adaptive time-stepping}
 
 At each time step the PISM standard output includes ``flags'' and then a summary of the model state using a few numbers.  A typical example is
 \small
@@ -571,10 +627,10 @@ Now we explain what the rest of the flags line, namely
     \\\midrule
     \intextoption{adapt_ratio} & Adaptive time stepping ratio for the explicit
     scheme for the mass balance equation. \\
-    \intextoption{max_dt} & The maximum time-step in years.  The adaptive
+    \txtopt{max_dt}{(years)} & The maximum time-step in years.  The adaptive
     time-stepping scheme will make the time-step shorter than this as needed
     for stability, but not longer.\\
-    \intextoption{dt_force} & The time step (in years) to take, overriding the
+    \txtopt{dt_force}{(years)} & The time step (in years) to take, overriding the
     adaptive scheme. \emph{Not recommended.}\\
     \intextoption{skip} & Number of mass-balance steps, including SIA
     diffusivity updates, to perform before a the temperature, age, and SSA
@@ -627,3 +683,5 @@ FIXME: the python scripts all take \texttt{fill_missing.py --help}
 %%% mode: latex
 %%% TeX-master: "manual"
 %%% End: 
+
+% LocalWords:  NetCDF Regridding emacs

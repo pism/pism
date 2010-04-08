@@ -32,7 +32,7 @@ First, \verb|cd examples/eisgreen/| from the PISM directory, and download these 
 
 The bed elevation \verb|topg| in the original data (\verb|suaq20-EISMINT|) effectively contains missing values.  These are locations where \verb|topg| is \emph{exactly} $0.0$, presumably because in these locations the observed bed elevation was not measured or the measured value was not trusted.  We think these are deep fjords locations, mostly.  Also the topography of Ellesmere island is replaced by out of range negative values.  When viewing \verb|eis_green20.nc| with \verb|ncview|, these values show as white spots.  
 
-If these missing values were to be left in the NetCDF handed to PISM then the resulting (very) rough bed elevation map would make reasonable ice flow results difficult.  We therefore smoothly fill the holes in the bed elevations.  This is done with another script named \verb|fill_missing.py|:\footnote{\texttt{fill\_missing.py} is a general tool for smoothly filling patches of missing values in variables in NetCDF files.  It looks for attributes defining missing values and then fills in specified variables essentially by averaging the neighboring non-missing values.  It is found in directory \texttt{pism/util/}, it requires \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}, and it is documented in subsection \ref{subsect:scripts}.}:
+If these missing values were to be left in the NetCDF handed to PISM then the resulting (very) rough bed elevation map would make reasonable ice flow results difficult.  We therefore smoothly fill the holes in the bed elevations.  This is done with another script named \verb|fill_missing.py|:\footnote{\texttt{fill_missing.py} is a general tool for smoothly filling patches of missing values in variables in NetCDF files.  It looks for attributes defining missing values and then fills in specified variables essentially by averaging the neighboring non-missing values.  It is found in directory \texttt{pism/util/}, it requires \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}, and it is documented in subsection \ref{subsect:scripts}.}:
 
 \verb|$ fill_missing.py -f eis_green20.nc -v topg -o eis_green_smoothed.nc|
 
@@ -193,7 +193,7 @@ $ mpiexec -n 8 pgrn -ssl2 -i green_SSL2_10k.nc -y 10000 \
 \end{verbatim}
 \noindent And so on.
 
-The script \verb|ssh2.sh| uses options \intextoption{ts\_file} and \intextoption{save\_file} to do the run with ``snapshots'' saved every 10000 model years, and the volume saved every 100 model years.  So out discussion will now assume that the user \emph{actually} did this to completion:
+The script \verb|ssh2.sh| uses options \texttt{ts_file} and \texttt{save_file} to do the run with ``snapshots'' saved every 10000 model years, and the volume saved every 100 model years.  So out discussion will now assume that the user \emph{actually} did this to completion:
 
 \verb|./ssh2.sh 2 >> out.ssl2 &|
 
@@ -286,7 +286,7 @@ Here are two things to notice:
 \begin{enumerate}
 \item The summer peak day is in the right place.  The default for this value is
   August 1 (day $243$, at approximately $243/365 \simeq 0.66$ year).  (If it is
-  important, the peak day can be changed using the \texttt{-pdd\_summer\_peak\_day}
+  important, the peak day can be changed using the \texttt{-pdd_summer_peak_day}
   option; subsection \ref{sec:boundary-models}).
 
 \item Lows of the surface mass balance rate \verb|acab| correspond to 
