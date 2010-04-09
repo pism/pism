@@ -32,6 +32,7 @@ The extent of the computational box, along with its bedrock extension downward, 
 \end{center}
 
 \begin{figure}[ht]
+\centering
 \includegraphics[width=4.0in,keepaspectratio=true]{rectilinearbox}
 \caption{PISM's computational box.}
 \label{fig:rectilinearbox}
@@ -104,7 +105,7 @@ By default, PISM does not compute the age of the ice\index{PISM!modeling the age
 \subsection{Setting up PISM boundary (atmosphere, surface and ocean) models}
 \label{sec:boundary-models}
 
-Setting up PISM's boundary models requires selecting one model of each kind and zero or more ``model modifiers''; selected models and modifiers are chained as in Figure~\ref{fig:climate-input-data-flow}. Command-line options \texttt{atmosphere}, \texttt{surface} and \texttt{ocean} take a comma-separated list of keywords as an argument; the first keyword \emph{has} to correspond to a model, the rest can be modifiers. Any of these options can be omitted to use the default atmosphere, surface or ocean model, although using a modifier requires specifying a model.
+Setting up PISM's boundary models requires selecting one model of each kind and zero or more ``model modifiers''; selected models and modifiers are chained as in Figure~\ref{fig:climate-input-data-flow}. Command-line options \texttt{-atmosphere}, \texttt{-surface} and \texttt{-ocean} take a comma-separated list of keywords as an argument; the first keyword \emph{has} to correspond to a model, the rest can be modifiers. Any of these options can be omitted to use the default atmosphere, surface or ocean model, although using a modifier requires specifying a model.
 
 For example,
 \begin{verbatim}
@@ -171,11 +172,11 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
    Our PDD implementation is meant to be used with an atmosphere model implementing a cosine yearly cycle such as \texttt{searise_greenland}, but is not restricted to parameterizations like this one. A PDD generally adds ``white noise'' to the seasonal cycle to simulate additional daily variability associated to the vagaries of weather.  This additional random variation is quite significant, as the seasonal cycle may never reach the melting point but that point may be reached with some probability, in the presence of the daily variability, and thus melt may occur.  Concretely, a normally-distributed, mean zero random temperature increment is added to the seasonal cycle.  The standard deviation of the daily variability is controlled by the \texttt{pdd_std_dev} configuration parameter, and defaults to 2.53 degrees \cite{Faustoetal2009}. There is no particular assumed spatial correlation of daily variability.
 
-The number of positive degree days is computed as the magnitude of the temperature excursion above $0\!\phantom{|}^\circ \text{C}$ multiplied by the duration (in days) when it is above zero.  In PISM there are actually two methods for computing the number of positive degree days.  The first computes only the expected value, by the method described in \cite{CalovGreve05}.  This is the default when a PDD is chosen (i.e.~option \texttt{surface pdd}).  The second is a monte carlo simulation of the white noise itself, chosen by adding the option \intextoption{pdd_rand}.  This monte carlo simulation adds the same daily variation at every point, though the seasonal cycle is (generally) location dependent.  If repeatable randomness is desired use \intextoption{pdd_rand_repeatable} instead of \texttt{-pdd_rand}.
+The number of positive degree days is computed as the magnitude of the temperature excursion above $0\!\phantom{|}^\circ \text{C}$ multiplied by the duration (in days) when it is above zero.  In PISM there are actually two methods for computing the number of positive degree days.  The first computes only the expected value, by the method described in \cite{CalovGreve05}.  This is the default when a PDD is chosen (i.e.~option \texttt{-surface pdd}).  The second is a monte carlo simulation of the white noise itself, chosen by adding the option \intextoption{pdd_rand}.  This monte carlo simulation adds the same daily variation at every point, though the seasonal cycle is (generally) location dependent.  If repeatable randomness is desired use \intextoption{pdd_rand_repeatable} instead of \texttt{-pdd_rand}.
 
 The number of positive degree days is multiplied by a coefficient (config parameter \texttt{pdd_factor_snow}) to compute the amount of snow melted.  Of the melted snow, a fraction (\texttt{pdd_refreeze}) is kept as ice.  This ice, plus all unmelted snow (already measured as ice-equivalent) is added to the mass balance, unless the number of positive degree days exceeds that required to melt all of the snow.  In this latter case, in which there are excess positive degree days available for melting, the excess is multiplied by a coefficient (\texttt{pdd_factor_ice}) to compute how much ice is melted.  In this case actual ablation occurs at that location.
 
-See also configuration parameters with the \texttt{pdd_fausto} prefix.
+In addition to this, one can use latitude- and July-air-temperature-dependent Greenland PDD model parameters $\beta_{\mathrm{ice}}$ and $\beta_{\mathrm{snow}}$ (formulas (6) and (7) in \cite{Faustoetal2009}) by adding the \intextoption{pdd_fausto}  option. See also configuration parameters with the \texttt{pdd_fausto} prefix..
 
  \end{itemize}
 \optsection{Climate (boundary) models!\texttt{-ocean} [constant, forcing]}
@@ -191,24 +192,109 @@ uses \texttt{delta_SL.nc}
   
 \subsection{Floatation criterion and mask} \label{subsect:floatmask}  The most basic decision about ice dynamics made internally by PISM is whether to apply the ``floatation criterion'' to determine whether the ice is floating on the ocean or not.  In an evolution run this decision is made at each time step and the result is stored in the \t{mask}.
 
-The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:maskvals}.  The mask does not by itself determine ice dynamics.  For instance, when ice is floating (either value \texttt{MASK_FLOATING} or \texttt{MASK_FLOATING_OCEAN0}) the usual choice for ice dynamics is SSA, but the user can choose not to apply that model by not using either option \texttt{-ssa_floating_only} or \texttt{-ssa_sliding}.
+The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:maskvals}.  The mask does not by itself determine ice dynamics.  For instance, when ice is floating (either value \texttt{MASK_FLOATING} or \texttt{MASK_FLOATING_AT_TIME_0}) the usual choice for ice dynamics is SSA, but the user can choose not to apply that model by not using either option \texttt{-ssa_floating_only} or \texttt{-ssa_sliding}.
 
 \begin{table}[ht]
 \centering
 \caption{The PISM mask\index{mask}, in combination with user options, determines the dynamical model.}\label{tab:maskvals} 
 \small
-\begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\hline
-\textbf{Mask value} & \textbf{Meaning}\\ \hline
+\begin{tabular}{p{0.25\linewidth}p{0.65\linewidth}}
+\\\toprule
+\textbf{Mask value} & \textbf{Meaning}\\\midrule
 1=\texttt{MASK_SHEET} & ice is grounded (and only the SIA is always applied) \\
 2=\texttt{MASK_DRAGGING_SHEET} & ice is grounded (and the SSA is applied if option \texttt{-ssa} is given) \\
 3=\texttt{MASK_FLOATING} & ice is floating (and the SSA is applied if option \texttt{-ssa} is given) \\
-7=\texttt{MASK_FLOATING_AT_TIME_0} & same as \texttt{MASK_FLOATING}, but the grid point was ice free ocean at initialization of the model by \texttt{-boot_from}; ice with this value will calve off if option \texttt{-ocean_kill} is given.\\
-\hline\end{tabular}
+7=\texttt{MASK_FLOATING_AT_TIME_0} & same as \texttt{MASK_FLOATING}, but the grid point was ice free ocean at initialization of the model by \texttt{-boot_from}; ice with this value will calve off if option \texttt{-ocean_kill} is given.
+\\\bottomrule
+\end{tabular}
 \normalsize
 \end{table}
 
 Assuming the geometry of the ice evolves (which can be turned off by option \intextoption{no_mass}), and assuming an ocean exists (which can be turned off by option \intextoption{dry}), then at each time step the mask can change.  Ice which becomes floating is marked as \texttt{MASK_FLOATING} while ice which becomes grounded is either marked as \texttt{MASK_SHEET} or \texttt{MASK_DRAGGING}.  The latter case occurs if the option \intextoption{ssa_sliding} is used, while otherwise all points are marked \texttt{MASK_Sheet}.
 
+\subsection{Calving}
+\label{sec:calving}
+\optsection{Calving}
+
+PISM includes two (very basic) calving mechanisms activated using options in Table \ref{tab:calving}. Including other (stress-based) calving laws (\cite{Levermannetalsubmitted} presents one possibility) is planned in the future, though.
+\begin{table}
+  \centering
+  \begin{tabular}{lp{0.7\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \intextoption{float_kill} & All floating ice is calved off immediately.\\
+    \intextoption{ocean_kill} & All ice flowing into grid cells marked as \texttt{MASK_FLOATING_AT_TIME_0} is calved off.
+    \\\bottomrule
+ \end{tabular}
+  \caption{Calving options}
+  \label{tab:calving}
+\end{table}
+
+\subsection{Rheology}
+\label{sec:rheology}
+\optsection{Rheology}
+
+\begin{comment}
+  \optdef{gk}{1.0} Sets the flow law used in computing SIA velocity to
+  Goldsby-Kohlstedt \cite{GoldsbyKohlstedt} and uses a constant grain size. The
+  option \texttt{-gk} without an argument uses default grain size of 1 mm while
+  \texttt{-gk N} uses \texttt{N} mm grains. See \texttt{-ice_type} for more
+  complete option choice of flow law.
+
+  \opt{gk_age} Sets the flow law used in computing SIA velocity to
+  Goldsby-Kohlstedt \cite{GoldsbyKohlstedt}, but uses the modeled age to
+  compute the grain size; compare \texttt{-gk}. The age is used in a table from
+  the Vostok core \cite{VostokCore} to compute a grain size. This option should
+  not be used unless the model age has stabilized after a long (e.g.~$\ge 100$
+  ka) run.
+
+\optdef{constant_nuH}{30.0}  If this option is used then the velocities in ice shelves and streams (see \texttt{-ssa} below) are computed with a constant value for the product of viscosity $\nu$ and thickness $H$, obtained from the shelf extension (see \texttt{-shelfxt}).  This is useful for debugging ice-shelf flow because there is reduces the membrane stress to a linear constant-coefficient term rather than a fully nonlinear one.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
+\end{comment}
+
+In the polythermal (default) mode of PISM there is only one choice of the flow law: the Glen-Paterson-Budd-Lliboutry-Duval \cite{LliboutryDuval1985, AschwandenBlatter}. 
+
+The following command-line options control the choice of rheology in the \texttt{-cold} mode.
+
+\optdef{ice_type}{pb}  Allows choice of ice rheology, also known as the ``flow law''.  The options are in table \ref{tab:flowlaw} below.  Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
+	$$\dot \eps_{ij} = F(\sigma,T,P,d)\, \sigma_{ij}'$$
+where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$ so $\sigma$ is the second invariant of the stress deviator tensor, $P$ is the pressure, and $d$ is the grain size.  That is, we are addressing isotropic flow laws only, and one can choose the scalar function.  Note that the inverse form of such a flow law in needed for ice shelves and ice streams:
+	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,P,d)\,\dot \eps_{ij} $$
+Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inverse form of the flow law explains the ``hybrid'' law \texttt{-ice_type hybrid} (or \texttt{-gk}).
+
+\optdef{e}{1.0}  Flow enhancement factor.
+
+\optdef{ice_custom_hardness}{1.9e8} Some ice types are customizable, run with \texttt{-help} to see all the customizable options for your chosen ice type (since \texttt{-help} displays many options, it is often useful to grep the output, as in \verb:pisms -ice_type custom -help | grep ice_:).  A common use the \texttt{custom} ice type is to directly specify the hardness parameter in an ice shelf study.  The viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
+	$$\ddx{}\left(2\nu H\left(2\ddx{u} + \ddy{v}\right)\right)$$
+where 
+	$$\nu = \frac{\bar B}{2} \left[\left(\ddx{u}\right)^2 + \left(\ddy{v}\right)^2 +
+  \frac{1}{4} \left(\ddy{u} + \ddx{v}\right)^2 + \ddx{u}\ddy{v}\right]^{(1-n)/(2n)}.$$
+Generally $\bar B$ is computed by a vertical-integral of a function of the temperature field, but it is constant for isothermal ice.  If \texttt{-ice_custom_hardness} is used then $\bar B$ is set to the given value.  The value should have units of Pa $\text{s}^{1/n}$ where $n$ is the Glen exponent (see \texttt{-ice_type}).  Note that \texttt{-ice_type} is \texttt{pb} (Paterson-Budd) by default for most runs so \texttt{-ice_custom_hardness} is only available when \texttt{-ice_type custom} is given or when the driver has changed the default ice type (such as with \texttt{pismv -test I} and \texttt{pross}).
+
+In the case of \texttt{pross}, which performs the EISMINT Ross ice shelf intercomparison, a constant value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ is the default \cite{MacAyealetal}.
+
+\begin{table}[ht]
+\centering
+\caption{Choosing the rheology using \t{-ice_type}.}\label{tab:flowlaw}\index{rheology}\index{flow law}
+\small
+\begin{tabular}{p{0.25\linewidth}p{0.08\linewidth}p{0.57\linewidth}}\hline
+\textbf{Flow Law} & \textbf{Type} & \textbf{Comments and Reference} \\ \hline
+Paterson-Budd law (usually the default)  &  \t{pb} &   Fixed Glen exponent $n=3$.  There is a split ``Arrhenius'' term $A(T) = A \exp(-Q/RT^*)$ where \mbox{$A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* < 263$ K and
+ \mbox{$A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* > 263$ K and where $T^*$ is the pressure-adjusted temperature \cite{PatersonBudd}. \\
+\emph{Cold} part of Paterson-Budd &  \t{arr} &   Regardless of temperature, the $A$ and $Q$ values for $T^*<263$ K in  the Paterson-Budd law apply.  This is the flow law used in the thermomechanically coupled exact solutions Tests \textbf{F} and \textbf{G} described in \cite{BBL,BB} and run by \texttt{pismv -test F} and \texttt{pismv -test G}. \\
+
+\emph{Warm} part of Paterson-Budd     &  \t{arrwarm} & Regardless of temperature, the $A$ and $Q$ values for $T^*>263$ K in Paterson-Budd apply.\\
+Hooke law   &  \t{hooke} &  Fixed Glen exponent $n=3$.  Here  $A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$; values of  constants as in \cite{Hooke,PayneBaldwin}.\\
+Hybrid of Goldsby-Kohlstedt and Paterson-Budd & \t{hybrid} &     Goldsby-Kohlstedt law with a combination of exponents  from $n=1.8$ to $n=4$ \cite{GoldsbyKohlstedt} in grounded  shallow ice approximation regions.  Paterson-Budd flow  for ice streams and ice sheets. See mask for SIA versus stream versus shelf by \texttt{-view_map mask}. \\
+Isothermal Glen & \t{custom} & Highly customizable version of the isothermal Glen flow law.  Allows choice of exponent, hardness/softness parameters, and density. \\
+\hline
+\normalsize	
+\end{tabular}
+\end{table}
+
+\begin{comment}
+\opt{shelfext\und} When computing ice shelf and stream velocity, PISM enforces boundary conditions using a fictitious extension of the ice shelf over the entire domain.  This extension provides strength only, it does not change the mass, driving force, or location of the calving front.  By default, it's strength will be computed using the current ice type at reference thickness, temperature, and strain rate, customizable using \texttt{-shelfext_H} (5 meters by default), \texttt{-shelfext_T} (263.15 K), \texttt{-shelfext_Du} (1 m/a per km).  The extension strength is used whenever ice thickness is less than the extension thickness to prevent the equations from becoming singular.  You can also specify the extension strength directly using \texttt{-shelfext_force_nuH} with units in Pa s.  Finally, you can compute strength using a \texttt{custom} ice type the ice used in the rest of PISM by giving \texttt{-shelfext_use_private_ice}.  This option will gives you a \texttt{custom} ice type which you can control via \texttt{-shelfext_ice_custom_} (see \texttt{-ice_type}).  All \texttt{-shelfext} options are displayed in \texttt{-help}.
+\end{comment}
 
 \subsection{Choosing the stress balance}  \label{subsect:ssacontrol}
 \optsection{SSA as a sliding law}
@@ -218,6 +304,8 @@ The shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} s
 Schoof's model \cite{SchoofStream} describes emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by a combination of the plastic failure of the till and the SSA approximation of the balance of momentum.  
 
 In PISM the user gives the option \texttt{-ssa_sliding} to turn on the use of the plastic till SSA as a sliding law.  All grounded points are immediately marked as SSA (i.e.~as \texttt{DRAGGING}).  At these points a yield stress is computed from the amount of stored basal water and from a (generally) spatially-varying till strength, \texttt{tillphi} in an input or output file.  The amount of stored basal water is thermodynamically determined.
+
+%FIXME: document "-super".
 
 \begin{table}[ht]
 \centering
@@ -249,6 +337,7 @@ In PISM the user gives the option \texttt{-ssa_sliding} to turn on the use of th
 
 \begin{center}
   \begin{xtabular}{p{0.35\linewidth}p{0.6\linewidth}}
+    \small
     \label{tab:ssausage} 
 \intextoption{ice_reg_schoof_length} (1000 km) & Set the ``$L$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \texttt{-ssa_eps 0.0} to turn off the other regularization mechanism, otherwise there is a double regularization (the default except in \texttt{pism -test I}). \\
 \intextoption{ice_reg_schoof_vel} (1 m/a) & Set the \emph{first} ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  To deactivate Schoof's regularization, use \texttt{-ice_reg_schoof_vel 0}.  To use the regularization described by Schoof, one must set \texttt{-ssa_eps 0.0} to turn off the other regularization mechanism, otherwise there is a double regularization (the default except in \texttt{pismv -test I}).  Use \texttt{-plastic_reg} above to set the second ``$\eps$'' in formula (4.1) of \cite{SchoofStream}. \\
@@ -267,21 +356,80 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \texttt{-ksp_rto
 \subsection{Controlling basal strength}  \label{subsect:basestrength}
 \optsection{Basal strength and sliding}
 
-In the \t{-ssa_sliding} case especially, the determination of basal resistance comes from a stored basal till material property \texttt{tillphi}, the till friction angle.  We find that an effective way to determine \texttt{tillphi} is to make it a function of bed elevation.  Option \intextoption{topg_to_till} does this.
+In the \t{-ssa_sliding} case especially, the determination of basal resistance comes from a stored basal till material property \texttt{tillphi}, the till friction angle.  We find that an effective way to determine \texttt{tillphi} is to make it a function of bed elevation.
+
+PISM has a mechanism setting $\phi$=\texttt{tillphi} to a \emph{piecewise-linear} function of bed elevation.  Given 5 parameters: $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}$, $b_{\mathrm{min}}$, $b_{\mathrm{max}}$, $\phi_{\mathrm{ocean}}$, where $b$ stands for the bed elevation, let 
+\begin{equation}
+  M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}})\label{eq:1}
+\end{equation}
+be the slope of the nontrivial part.  Then
+\begin{equation}
+  \phi(x,y) = \begin{cases}
+    \phi_{\text{min}}, & b(x,y) \le b_{\text{min}}, \\
+    \phi_{\text{min}} + (b(x,y) - b_{\text{min}}) \,M,
+    &  b_{\text{min}} < b(x,y) < b_{\text{max}}, \\
+    \phi_{\text{max}}, & b_{\text{max}} \le b(x,y). \end{cases}\label{eq:2}
+\end{equation}
+The exception is if the point is marked as floating, in which case the till friction angle
+is set to the value $\phi_{\mathrm{ocean}}$.
 
 The basal resistance is actually determined by a controllable ``pseudo-plastic'' model.  Specifically, stress is a generally a power law function of basal sliding velocity $\mathbf{u}$:
    $$\tau_b = \tau_c \frac{|\mathbf{u}|^{q-1}}{u_{\text{threshold}}^q}\, \mathbf{u}.$$
-Here $\tau_c$ corresponds to the variable \texttt{tauc} in PISM input and output files, $q$ is the power controlled by \intextoption{pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \intextoption{pseudo_plastic_uthreshold}.  The purely plastic case is $q=0$---see \cite{SchoofStream} for precise interpretation---and the linear case is $q=1$, in which case the coefficient of velocity, $\tau_c/u_{\text{threshold}}$, is more commonly called $\beta$ or $\beta^2$ \cite{MacAyeal}.
+Here $\tau_c$ corresponds to the variable \texttt{tauc} in PISM input and output files, $q$ is the power controlled by \texttt{-pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \texttt{-pseudo_plastic_uthreshold}.  The purely plastic case is $q=0$---see \cite{SchoofStream} for precise interpretation---and the linear case is $q=1$, in which case the coefficient of velocity, $\tau_c/u_{\text{threshold}}$, is more commonly called $\beta$ or $\beta^2$ \cite{MacAyeal}.
 
 In our model the till yield stress $\tau_c$ necessarily represents the strength of the aggregate material at the base of an ice sheet, a poorly observed mixture of liquid water, ice, and granular till.  The value of $\tau_c$ is determined by a basal water model:
 \begin{equation*}
-   \tau_c = (\tan\phi)\,(\rho g H - p_w).
+   \tau_c = c_{0} + (\tan\phi)\,(\rho g H - p_w).
 \end{equation*}
-\cite[Chapter 8]{Paterson}.  Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of gravity, $p_w$ is the modeled pore water pressure, and $\phi$ is the till friction angle \texttt{tillphi}.  The difference $(\rho g H - p_w)$ is the modeled value of the effective pressure on the material till.  Option \intextoption{plastic_pwfrac} controls how $p_w$ is determined from the effective thickness of basal water, the quantity in \texttt{bwat}.
+\cite[Chapter 8]{Paterson}.  Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of gravity, $p_w$ is the modeled pore water
+pressure, and $\phi$ is the till friction angle \texttt{tillphi}.  The difference $(\rho g H - p_w)$ is the modeled value of the effective pressure on the material till.  Option \texttt{-plastic_pwfrac} controls how $p_w$ is determined from the effective thickness of basal water, the quantity in \texttt{bwat}. Also note Schoof \cite{SchoofStream} formula (2.4) uses $c_0 = 0$.
+
+See \emph{Reference Manual}, source file \texttt{iMbasal.cc}, and \cite{BBssasliding} for the details.
+
+An example, in which sliding happens in the ``trough'', is 
+\begin{verbatim}
+pisms -eisII I -ssa_sliding -track_Hmelt -Mx 91 -My 91 -Mz 51 \
+      -topg_to_phi 5.0,15.0,0.0,1000.0 -y 12000
+\end{verbatim}
+
+\begin{table}
+  \centering
+  \begin{tabular}{lp{0.6\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \txtopt{topg_to_phi}{\emph{list of 5 numbers}} & Compute $\phi$ using \eqref{eq:1} and \eqref{eq:2}.\\
+    \txtopt{plastic_pwfrac}{pure number} & Set what fraction of overburden pressure is assumed as the till pore water pressure.  Only relevant at basal points where there is a positive amount of basal water.\\
+    \intextoption{plastic_c0} & Set the value of the till cohesion ($c_{0}$) in the plastic till model.  The value is a pressure, given in kPa.\\
+    \txtopt{plastic_reg}{(m/a)} & Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}. The default is $0.01$.\\
+    \txtopt{plastic_phi}{(degrees)} & Use a constant till friction angle. The default is $30^{\circ}$.\\
+    \intextoption{pseudo_plastic_q} & Set the exponent $q$.\\
+    \intextoption{pseudo_plastic_uthreshold} & Set $u_{\text{threshold}}$.\\
+   \\\bottomrule
+  \end{tabular}
+  \caption{Basal strength command-line options}
+  \label{tab:basal-strength}
+\end{table}
+
+% undocumented options/config. parameters
+% base/iMoptions.cc:  "thk_eff" : "thk_eff_basal_water_pressure"
+% base/iMoptions.cc:  "thk_eff_H_high" : "thk_eff_H_high"
+% base/iMoptions.cc:  "thk_eff_H_low" : "thk_eff_H_low"
+% base/iMoptions.cc:  "thk_eff_reduced" : "thk_eff_reduced"
+% base/iMoptions.cc:  "bmr_enhance" : "bmr_enhance_basal_water_pressure"
+% base/iMoptions.cc:  "bmr_enhance_scale" : "bmr_enhance_scale"
+\begin{comment}
+  \optdef{mu_sliding}{0} The sliding law parameter in SIA regions of the ice.
+  \emph{This kind of sliding is not recommended, which is why it is turned off
+    by default. See} \texttt{-ssa} \emph{and} \texttt{-plastic} \emph{for the
+    recommended sliding model.} This kind of sliding is used in experiments G
+  and H of EISMINT II \cite{EISMINT00}, but note that executable \texttt{pisms
+    -eisII} ignors this parameter and uses the right amount of sliding for the
+  given experiment.
+\end{comment}
 
 %The scripts in \t{examples/pst} perform the experiments described in \cite{BBssasliding}, and represent the most thorough test of these mechanisms.
 % Test I in the verification suite\index{verification tests} uses an exact solution to the Schoof model.
-
 
 \subsection{Earth deformation models} \label{subsect:beddef} \index{earth deformation} \index{PISM!earth deformation models, using}
 \optsection{Earth deformation models}
@@ -307,4 +455,4 @@ Test H in section \ref{sect:verif} can be used to reproduce the comparison done 
 %%% TeX-master: "manual"
 %%% End: 
 
-% LocalWords:  intercomparison PDD
+% LocalWords:  intercomparison PDD polythermal Lliboutry Duval

@@ -116,17 +116,18 @@ $ mpiexec -n 4 /pismr -ocean_kill -skip 2 -i g20km_steady.nc \
 
 The most basic tools for converting NetCDF files to and from a standard text representation are called \verb|ncdump| and \verb|ncgen|.  A glance at Unix \verb|man| pages for these tools might be wise at this time.
 
-As suggested earlier, we regularly use \verb|ncview| to look at NetCDF files.  The NetCDF tools most frequently used by the PISM developers are shown in Table \ref{tab:NetCDFview}.  This website gives additional NetCDF-related tools:
+As suggested earlier, we regularly use \verb|ncview| to look at NetCDF files.  Table \ref{tab:NetCDFview} lists NetCDF tools that can be useful for preparing data to use with PISM and/or for visualizing and post-processing PISM output files. We (PISM developers) find \texttt{ncview}, NCO, IDV and PyNGL especially useful. This website gives additional NetCDF-related tools:
 
-\centerline{ \href{http://www.unidata.ucar.edu/software/netcdf/docs/software.html}{\t{www.unidata.ucar.edu/software/netcdf/docs/software.html}} } 
+\centerline{ \url{http://www.unidata.ucar.edu/software/netcdf/docs/software.html} } 
 
 \newcommand{\netcdftool}[1]{#1\index{NetCDF!tools!#1}}
 \begin{table}[ht]
 \centering
 \caption{Some tools for viewing and modifying NetCDF files.}\label{tab:NetCDFview} 
 \small
-\begin{tabular}{@{}llll}\hline
-\textbf{Tool} & \textbf{Site} & \textbf{Function}\\ \hline
+\begin{tabular}{llp{0.4\linewidth}}
+  \\\toprule
+  \textbf{Tool} & \textbf{Site} & \textbf{Function}\\ \midrule
 \netcdftool{\texttt{ncdump}} & \emph{included with any NetCDF distribution} & dump binary NetCDF as \texttt{.cdl} (text) file \\
 \netcdftool{\texttt{ncgen}} & \emph{included with any NetCDF distribution} & convert \texttt{.cdl} file to binary NetCDF \\
 \netcdftool{\texttt{ncview}} & \href{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}{\texttt{meteora.ucsd.edu/$\sim$pierce}} & quick graphical view \\
@@ -135,8 +136,9 @@ As suggested earlier, we regularly use \verb|ncview| to look at NetCDF files.  T
 \netcdftool{NCL} &  \href{http://www.ncl.ucar.edu}{\t{www.ncl.ucar.edu}} & NCAR Command Language, open-source\\
 \netcdftool{PyNGL} &  \href{http://www.pyngl.ucar.edu}{\t{www.pyngl.ucar.edu}} & Python version of NCL, open-source\\
 \netcdftool{VisIt} & \href{http://visit.llnl.gov}{\t{visit.llnl.gov}} & advanced parallel visualization \\
-\netcdftool{NCO}\index{NCO (NetCDF Operators)} & \href{http://nco.sourceforge.net/}{\t{nco.sourceforge.net/}} & ``NetCDF Operators'': manipulations \\
-\quad  & & \quad at command line
+\netcdftool{NCO}\index{NCO (NetCDF Operators)} & \href{http://nco.sourceforge.net/}{\t{nco.sourceforge.net/}} & ``NetCDF Operators'': manipulations at command line\\
+\netcdftool{CDO} & \href{http://www.mpimet.mpg.de/fileadmin/software/cdo/}{\texttt{www.mpimet.mpg.de/fileadmin/software/cdo/}} & Climate Data Operators (a set of command-line tools)
+\\\bottomrule
 \end{tabular}
 \normalsize
 \end{table}

@@ -1,6 +1,6 @@
 \documentclass[titlepage,letterpaper,final]{scrartcl}
 
-\usepackage{scrindex}           % multiple index support
+\usepackage{scrindex}           % multiple index support using the "index" package
 
 %% THE FOLLOWING SHOULD CHANGE FOR A STABLE RELEASE:
 \newcommand{\PISMREV}{\textbf{trunk} revision \input{revision.tex}}
@@ -22,16 +22,6 @@
 \usepackage{amssymb,amsmath}
 \usepackage[pdftex]{graphicx}
 
-% this lets us avoid the scrartcl/hyperref conflict...
-\let\ifvtex\relax
-
-\usepackage[pdftex,
-                colorlinks=true,
-                plainpages=false, % only if colorlinks=true
-                linkcolor=blue,   % only if colorlinks=true
-                citecolor=blue,   % only if colorlinks=true
-                urlcolor=blue     % only if colorlinks=true
-]{hyperref}[2010/03/30 v6.80u Hypertext links for LaTeX]
 
 \usepackage{booktabs}           % better rules in tables
 \usepackage{xtab}               % long (multi-page) tables
@@ -40,6 +30,18 @@
 % \proofmodetrue
 
 \usepackage{underscore}
+
+% this lets us avoid the scrartcl/hyperref conflict...
+\let\ifvtex\relax
+
+% hyperref should be the last package we load
+\usepackage[pdftex,
+                colorlinks=true,
+                plainpages=false, % only if colorlinks=true
+                linkcolor=blue,   % only if colorlinks=true
+                citecolor=blue,   % only if colorlinks=true
+                urlcolor=blue     % only if colorlinks=true
+]{hyperref}[2010/03/30 v6.80u Hypertext links for LaTeX]
 
 \newcommand{\ddt}[1]{\ensuremath{\frac{\partial #1}{\partial t}}}
 \newcommand{\ddx}[1]{\ensuremath{\frac{\partial #1}{\partial x}}}
@@ -54,12 +56,15 @@
 
 %% macros having to do with documentation for options; note these appear in the index
 
+\newindex{default}{idx}{ind}{General Index}
+\newindex{options}{odx}{ond}{PISM Command-line options}
+
 \def\optsection#1{%
   \def\optindex##1{\index[options]{#1!##1}}
   \def\optseealso##1{\index[options]{#1|see{##1}}}
 }
 
-\optsection{before ``begin document''}
+\optsection{FIXME}
 
 % Use this to index option definitions:
 \newcommand{\intextoption}[1]{\texttt{-#1}\optindex{\texttt{-#1}}}
@@ -70,16 +75,12 @@
 \newcommand{\fileopt}[1]{\txtopt{#1}{\emph{filename}}}
 \newcommand{\timeopt}[1]{\txtopt{#1}{\emph{range or list}}}
 
-\newcommand{\rawopt}[1]{\vspace{1mm}\noindent \Large\texttt{-#1}\normalsize\optindex{#1}{}}
+\newcommand{\rawopt}[1]{\vspace{1mm}\noindent \Large\texttt{-#1}\normalsize\optindex{\texttt{-#1}}}
 \newcommand{\opt}[1]{\rawopt{#1}\,:\quad}
 \newcommand{\optdef}[2]{\rawopt{#1}\,[\textsl{#2}]:\quad}
 \newcommand{\optrestrict}[2]{\rawopt{#1}\,[\texttt{#2} \textsl{only}]:\quad}
 \newcommand{\optdefrestrict}[3]{\rawopt{#1}\,[\textsl{#2}]\,[\texttt{#3} \textsl{only}]:\quad}
 
-
-% preamble:
-\newindex{default}{idx}{ind}{General Index}
-\newindex{options}{odx}{ond}{PISM Command-line options}
 
 \pdfinfo{
 /Title (PISM User's Manual)
@@ -472,102 +473,9 @@ The Index on page \pageref{sect:index} contains an alphabetical list of options.
 
 \opt{ocean_kill}  If used with input from a NetCDF initialization file which has ice-free ocean mask (value \texttt{MASK_FLOATING_OCEAN0}$=7$), will zero out ice thicknesses in areas that were ice-free ocean at time zero.  This is calving at the location of the original calving front.  Has no effect when used in conjunction with \texttt{-no_mass}.
 
-\begin{comment}
-  \opt{plastic} Use Schoof's plastic till model for ice streams at all grounded
-  points on the ice sheet. Must be used along with \texttt{-ssa} to turn on the
-  solution of the SSA (shallow shelf approximation). See subsection
-  \ref{subsect:plastic}. See options \texttt{-plastic_reg},
-  \texttt{-plastic_c0}, \texttt{-plastic_phi}, and \texttt{-plastic_pwfrac},
-  all of which control the plastic till model in various ways.
-\end{comment}
-
-Indeed, we describe the role of the parameters for the plastic till model as follows: The effective pressure $N$ on the till is
-	$$N = P - p = (1 - (\mathtt{pwfrac}) \lambda) P$$
-where $P = \rho g H$ is the overburden or hydrostatic pressure at the base (see Paterson \cite{Paterson}, pp.~168--169) and $p = (\mathtt{pwfrac}) \lambda P$ is the pore water pressure in the till.  Here $\lambda$ is a pure number, $0\le \lambda \le 1$, measuring the amount of available basal water.  In particular, $\lambda = 0$ if the base is frozen, while $\lambda$ is a linear function of the stored basal melt water (see \texttt{-view_map bmelt}), up to the fixed maximum amount of stored basal melt water.  Thus our model says that when there is a lot (the maximum) amount of available basal water, $p= (\mathtt{pwfrac}) P$; the default value for $\mathtt{pwfrac}$ is 0.95.
-
-Note that Paterson gives this formula for the till yield stress
-	$$\tau_c = c_0 + \mu N, \qquad \mu = \tan \phi,$$
-while Schoof \cite{SchoofStream} formula (2.4) gives this one
-	$$\tau_c = \mu N,$$
-with zero till cohesion.  We allow a positive till cohesion, though the default is zero, and we describe $\mu$ as the tangent of the friction angle $\phi$.
-
 \opt{ssa}  Use the equations of the shallow shelf approximation \cite{MacAyeal,Morland,SchoofStream,WeisGreveHutter} for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \texttt{-view_map mask}.  See also \texttt{-plastic} and \texttt{-super}. See also \texttt{-dontreadSSAvels}.
 
 \opt{super}  Combine the velocity fields from the SIA and SSA models as in \cite{BBssasliding}.  Only effective if used with \texttt{-ssa}.
-
-\subsectstar{Options controlling parameters for physical models}
-
-\subsubsect{Flow and dynamical parameters}
-
-\optdef{constant_nuH}{30.0}  If this option is used then the velocities in ice shelves and streams (see \texttt{-ssa} below) are computed with a constant value for the product of viscosity $\nu$ and thickness $H$, obtained from the shelf extension (see \texttt{-shelfxt}).  This is useful for debugging ice-shelf flow because there is reduces the membrane stress to a linear constant-coefficient term rather than a fully nonlinear one.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
-
-\optdef{e}{1.0}  Flow enhancement factor.
-
-\optdef{gk}{1.0}  Sets the flow law used in computing SIA velocity to Goldsby-Kohlstedt \cite{GoldsbyKohlstedt} and uses a constant grain size.  The option \texttt{-gk} without an argument uses default grain size of 1 mm while \texttt{-gk N} uses \texttt{N} mm grains.  See \texttt{-ice_type} for more complete option choice of flow law.
-
-\opt{gk_age}  Sets the flow law used in computing SIA velocity to Goldsby-Kohlstedt \cite{GoldsbyKohlstedt}, but uses the modeled age to compute the grain size; compare \texttt{-gk}.  The age is used in a table from the Vostok core \cite{VostokCore} to compute a grain size.  This option should not be used unless the model age has stabilized after a long (e.g.~$\ge 100$ ka) run.
-
-\optdef{ice_type}{pb}  Allows choice of ice rheology, also known as the ``flow law''.  The options are in table \ref{tab:flowlaw} below.  Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
-	$$\dot \eps_{ij} = F(\sigma,T,P,d)\, \sigma_{ij}'$$
-where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$ so $\sigma$ is the second invariant of the stress deviator tensor, $P$ is the pressure, and $d$ is the grain size.  That is, we are addressing isotropic flow laws only, and one can choose the scalar function.  Note that the inverse form of such a flow law in needed for ice shelves and ice streams:
-	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,P,d)\,\dot \eps_{ij} $$
-Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inverse form of the flow law explains the ``hybrid'' law \texttt{-ice_type hybrid} (or \texttt{-gk}).
-
-\optdef{ice_custom_hardness}{1.9e8} Some ice types are customizable, run with \texttt{-help} to see all the customizable options for your chosen ice type (since \texttt{-help} displays many options, it is often useful to grep the output, as in \verb:pisms -ice_type custom -help | grep ice_:).  A common use the \texttt{custom} ice type is to directly specify the hardness parameter in an ice shelf study.  The viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
-	$$\ddx{}\left(2\nu H\left(2\ddx{u} + \ddy{v}\right)\right)$$
-where 
-	$$\nu = \frac{\bar B}{2} \left[\left(\ddx{u}\right)^2 + \left(\ddy{v}\right)^2 +
-  \frac{1}{4} \left(\ddy{u} + \ddx{v}\right)^2 + \ddx{u}\ddy{v}\right]^{(1-n)/(2n)}.$$
-Generally $\bar B$ is computed by a vertical-integral of a function of the temperature field, but it is constant for isothermal ice.  If \texttt{-ice_custom_hardness} is used then $\bar B$ is set to the given value.  The value should have units of Pa $\text{s}^{1/n}$ where $n$ is the Glen exponent (see \texttt{-ice_type}).  Note that \texttt{-ice_type} is \texttt{pb} (Paterson-Budd) by default for most runs so \texttt{-ice_custom_hardness} is only available when \texttt{-ice_type custom} is given or when the driver has changed the default ice type (such as with \texttt{pismv -test I} and \texttt{pross}).
-
-In the case of \texttt{pross}, which performs the EISMINT Ross ice shelf intercomparison, a constant value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ is the default \cite{MacAyealetal}.
-
-\begin{table}[ht]
-\caption{Choosing the rheology using \t{-ice_type}.}\label{tab:flowlaw}\index{rheology}\index{flow law}
-\small
-\begin{tabular}{p{0.25\linewidth}p{0.08\linewidth}p{0.57\linewidth}}\hline
-\textbf{Flow Law} & \textbf{Type} & \textbf{Comments and Reference} \\ \hline
-Paterson-Budd law (usually the default)  &  \t{pb} &   Fixed Glen exponent $n=3$.  There is a split ``Arrhenius'' term $A(T) = A \exp(-Q/RT^*)$ where \mbox{$A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* < 263$ K and
- \mbox{$A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* > 263$ K and where $T^*$ is the pressure-adjusted temperature \cite{PatersonBudd}. \\
-\emph{Cold} part of Paterson-Budd &  \t{arr} &   Regardless of temperature, the $A$ and $Q$ values for $T^*<263$ K in  the Paterson-Budd law apply.  This is the flow law used in the thermomechanically coupled exact solutions Tests \textbf{F} and \textbf{G} described in \cite{BBL,BB} and run by \texttt{pismv -test F} and \texttt{pismv -test G}. \\
-
-\emph{Warm} part of Paterson-Budd     &  \t{arrwarm} & Regardless of temperature, the $A$ and $Q$ values for $T^*>263$ K in Paterson-Budd apply.\\
-Hooke law   &  \t{hooke} &  Fixed Glen exponent $n=3$.  Here  $A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$; values of  constants as in \cite{Hooke,PayneBaldwin}.\\
-Hybrid of Goldsby-Kohlstedt and Paterson-Budd & \t{hybrid} &     Goldsby-Kohlstedt law with a combination of exponents  from $n=1.8$ to $n=4$ \cite{GoldsbyKohlstedt} in grounded  shallow ice approximation regions.  Paterson-Budd flow  for ice streams and ice sheets. See mask for SIA versus stream versus shelf by \texttt{-view_map mask}. \\
-Isothermal Glen & \t{custom} & Highly customizable version of the isothermal Glen flow law.  Allows choice of exponent, hardness/softness parameters, and density. \\
-\hline
-\normalsize	
-\end{tabular}
-\end{table}
-
-\begin{comment}
-\opt{shelfext\und} When computing ice shelf and stream velocity, PISM enforces boundary conditions using a fictitious extension of the ice shelf over the entire domain.  This extension provides strength only, it does not change the mass, driving force, or location of the calving front.  By default, it's strength will be computed using the current ice type at reference thickness, temperature, and strain rate, customizable using \texttt{-shelfext_H} (5 meters by default), \texttt{-shelfext_T} (263.15 K), \texttt{-shelfext_Du} (1 m/a per km).  The extension strength is used whenever ice thickness is less than the extension thickness to prevent the equations from becoming singular.  You can also specify the extension strength directly using \texttt{-shelfext_force_nuH} with units in Pa s.  Finally, you can compute strength using a \texttt{custom} ice type the ice used in the rest of PISM by giving \texttt{-shelfext_use_private_ice}.  This option will gives you a \texttt{custom} ice type which you can control via \texttt{-shelfext_ice_custom_} (see \texttt{-ice_type}).  All \texttt{-shelfext} options are displayed in \texttt{-help}.
-\end{comment}
-
-\optdef{mu_sliding}{0}  The sliding law parameter in SIA regions of the ice.  \emph{This kind of sliding is not recommended, which is why it is turned off by default.  See} \texttt{-ssa} \emph{and} \texttt{-plastic} \emph{for the recommended sliding model.}  This kind of sliding is used in experiments G and H of EISMINT II \cite{EISMINT00}, but note that executable \texttt{pisms -eisII} ignors this parameter and uses the right amount of sliding for the given experiment.
-
-\optdef{topg_to_phi}{5.0,15.0,-1000.0,1000.0,10.0}  Sets till friction angle $\phi$=\texttt{tillphi} to piecewise-linear function of bed elevation.  Takes zero to five comma-separated arguments.  An example, in which sliding happens in the ``trough'', is 
-
-\begin{verbatim}
-pisms -eisII I -ssa -super -plastic -track_Hmelt -Mx 91 -My 91 -Mz 51 \
-      -topg_to_phi 5.0,15.0,0.0,1000.0 -y 12000
-\end{verbatim}
-\noindent See \emph{Reference Manual}, source file \texttt{iMbasal.cc}, and \cite{BBssasliding}.
-
-\subsubsect{Plastic till model parameters}
-
-\optdef{plastic_c0}{0.0}  Set the value of the till cohesion in the plastic till model.  The value is a pressure, given in kPa.  Only effective if used with \texttt{-plastic} and \texttt{-ssa}.
-
-Note Schoof \cite{SchoofStream} formula (2.4) uses $c_0 = 0$.
-
-\optdef{plastic_pwfrac}{0.95}  Set what fraction of overburden pressure is assumed as the till pore water pressure.  Only relevant at basal points where there is a positive amount of basal water.  The value is a pure number.  Only effective if used with \texttt{-plastic} and \texttt{-ssa}.
-
-\optdef{plastic_reg}{0.01 m/a}    Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  Only effective if used with \texttt{-plastic} and \texttt{-ssa}.
-
-\optdef{plastic_phi}{30.0}  Set the till friction angle.  The value is an angle $\phi$, given in degrees, and the coefficient $\mu$ in formula (2.4) in \cite{SchoofStream} is computed from $\theta$ by this formula:
-	$$\mu = \tan\left(\frac{\pi}{180} \theta\right).$$
-Only effective if used with \texttt{-plastic} and \texttt{-ssa}.
-
 
 \subsectstar{Options controlling numerical methods}
 
@@ -638,8 +546,13 @@ These two PETSc mechanisms can be used together.  (The effect of duplicate or co
 
 
 
+\phantomsection
+\addcontentsline{toc}{section}{General Index}
 \label{sect:index}
 \printindex
+
+\phantomsection
+\addcontentsline{toc}{section}{PISM Command-line options}
 \printindex[options]
 
 

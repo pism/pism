@@ -352,7 +352,9 @@ PetscErrorCode IceModelVec::reset_attrs() {
 
   for (int j = 0; j < dof; ++j) {
     vars[j].reset();
-    vars[j].set("_FillValue", GSL_NAN);
+    // _FillValue should be a number and should depend on the quantity in
+    //     question. It should also be outside the valid range.
+    //     vars[j].set("_FillValue", GSL_NAN);
   }
 
   return 0;

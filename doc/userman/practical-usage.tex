@@ -374,7 +374,10 @@ The file \texttt{my_config.nc} has to contain \emph{all the flags and parameters
 
 The list of parameters is too long to include here; please see the PISM Class browser for an automatically-generated table describing them.
 
-% FIXME: needs more work
+Some command-line options \emph{set} configuration parameters; some PISM
+executables have special parameter defaults. To see the configuration used in a
+PISM run, use the option \fileopt{dump_config}. The resulting file will have values
+used, no matter \emph{how} they were set.
 
 \subsection{Managing parameter studies}
 \label{sec:parameter-studies}

@@ -1,6 +1,7 @@
 \documentclass[10pt,landscape]{article}
 
 \usepackage[left=1.5cm,top=1cm,right=1.5cm,bottom=1cm,nohead,nofoot]{geometry}
+\usepackage{underscore}
 \usepackage{multicol}
 \usepackage{longtable}
 \usepackage{bm,url,xspace,verbatim}
@@ -38,7 +39,7 @@
 \begin{document}
 
 \begin{center}
-     \Large{\textbf{PISM Cheat Sheet} Rev. \PISMREV} \\
+     \Large{\textbf{PISM Cheat Sheet} Rev. \PISMREV}
 \end{center}
 
 
@@ -63,20 +64,20 @@ processors. It is perfectly suitable for modeling of Greenland and Antarctica.
 \section{Snapshots}
 
 \begin{tabular}{@{}p{0.4\linewidth}p{0.5\linewidth}@{}}
-  \texttt{ts\und file} [file name] & Specifies the file to save to.\\
-  \texttt{ts\und times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
-  \texttt{ts\und vars} [list of variables] & Comma-separated list of variables. Omitting this option is equivalent to listing all the possible variables.\\
-  \texttt{ts\und append} & Append time series to file if it already exists.  No effect if file does not yet exist.
+  \texttt{ts_file} [file name] & Specifies the file to save to.\\
+  \texttt{ts_times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
+  \texttt{ts_vars} [list of variables] & Comma-separated list of variables. Omitting this option is equivalent to listing all the possible variables.\\
+  \texttt{ts_append} & Append time series to file if it already exists.  No effect if file does not yet exist.
 \end{tabular}
 
 
 \section{Saving time series}
 
 \begin{tabular}{@{}p{0.4\linewidth}p{0.5\linewidth}@{}}
-  \texttt{ts\und file} [file name] & Specifies the file to save to.\\
-  \texttt{ts\und times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
-  \texttt{ts\und vars} [list of variables] & Comma-separated list of variables. Omitting this option is equivalent to listing all the possible variables.\\
-  \texttt{ts\und append} & Append time series to file if it already exists.  No effect if file does not yet exist. \\
+  \texttt{ts_file} [file name] & Specifies the file to save to.\\
+  \texttt{ts_times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
+  \texttt{ts_vars} [list of variables] & Comma-separated list of variables. Omitting this option is equivalent to listing all the possible variables.\\
+  \texttt{ts_append} & Append time series to file if it already exists.  No effect if file does not yet exist. \\
 \end{tabular}
 
 
@@ -84,11 +85,11 @@ processors. It is perfectly suitable for modeling of Greenland and Antarctica.
 \section{Saving extra variables}
 
 \begin{tabular}{@{}p{0.4\linewidth}p{0.5\linewidth}@{}}
-   \texttt{extra\und file}\,[file name] & Specifies the file to save to; should be different from the output \texttt{o} file.\\
-    \texttt{extra\und times}\,[range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list.\\
-    \texttt{extra\und vars}\,[list of variables]& Comma-separated list of variables, see table~\ref{tab:extra-vars}\\
-    \texttt{extra\und split} & Save to separate files, similar to \texttt{split\und snapshots}\\
-    \texttt{extra\und append} & Append variables to file if it already exists.  No effect if file does not yet exist, and no effect if \texttt{extra\und split} is set.
+   \texttt{extra_file}\,[file name] & Specifies the file to save to; should be different from the output \texttt{o} file.\\
+    \texttt{extra_times}\,[range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list.\\
+    \texttt{extra_vars}\,[list of variables]& Comma-separated list of variables, see table~\ref{tab:extra-vars}\\
+    \texttt{extra_split} & Save to separate files, similar to \texttt{split_snapshots}\\
+    \texttt{extra_append} & Append variables to file if it already exists.  No effect if file does not yet exist, and no effect if \texttt{extra_split} is set.
 \end{tabular}
 
 
@@ -114,7 +115,7 @@ Use \verb|-extra_vars| with
     \texttt{enthalpysurf},
     \texttt{hardav},
     \texttt{lat},
-    \texttt{litho\und temp},
+    \texttt{litho_temp},
     \texttt{lon},
     \texttt{mask},
     \texttt{strainheat},
@@ -122,7 +123,7 @@ Use \verb|-extra_vars| with
     \texttt{tauc},
     \texttt{taud},
     \texttt{temp},
-    \texttt{temp\und pa},
+    \texttt{temp_pa},
     \texttt{tempbase},
     \texttt{tempsurf},
     \texttt{thk},
