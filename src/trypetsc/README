@@ -4,6 +4,8 @@ versions).  Others are by the PISM authors but are close
 to PETSc example codes anyway.  All of these examples relate to "PETSc-
 technicalities" of relevance to PISM.
 
+The makefile documents where the various codes came from.
+
 Compiling and running these allows a user to test whether PETSc
 itself is installed properly, as a way of testing
 PETSc before building PISM.

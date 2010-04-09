@@ -62,9 +62,9 @@ If one initializes PISM from a saved model state using \t{i} then the input mode
 
 \noindent will give a warning that ``\texttt{PISM WARNING: ignoring command-line option '-Mz'}'' because \texttt{-i} input files take precedence.
 
-Otherwise, one is allowed to specify the grid when PISM is started.  In particular, the user should specify the grid when using\texttt{boot_from} or when initializing a simplified geometry experiment or a verification test, though defaults are generally present in these cases.  See sections \ref{sect:start} and \ref{sect:boot} for examples and explanation.
+Otherwise, one is allowed to specify the grid when PISM is started.  In particular, the user should specify the grid when using \texttt{-boot_from} or when initializing a simplified-geometry experiment or a verification test, though defaults are generally present in the latter cases.  See sections \ref{sect:start} and \ref{sect:boot} for examples and explanation.
 
-\subsection{Time}
+\subsection{Model time}
 \label{sec:time}
 \optsection{Grid!time}
 
@@ -76,21 +76,24 @@ The following command-line options control PISM time.
 \hline
 \txtopt{y}{(years)} & Number of model years to run.\\
 \txtopt{ys}{(years)} & Model year at which to start the run.  Also resets the model time, ignoring any time in the input file.\\
-\txtopt{ye}{(years)} & Model year at which to end the run.  The default value is the start year  (\texttt{-ys} or initialized model time from file) plus the default or given (\texttt{-y}) run length.  If both \texttt{-ys} and \texttt{-ye} are used then the run length is set to the difference.  Using all three of \texttt{-ys}, \texttt{-y} and \texttt{-ys} is not allowed.\\
+\txtopt{ye}{(years)} & Model year at which to end the run.\\
 \hline
 \end{tabular}
 
-\subsection{Diagnostic computations}  As a diagnostic example, using the EISMINT II final state computed in section \ref{sect:start}, try\index{pismd}
+The default value for the end year is the start year (\texttt{-ys} or initialized model time from file) plus the default or given (\texttt{-y}) run length.  If both \texttt{-ys} and \texttt{-ye} are used then the run length is set to the difference.  Using all three of \texttt{-ys}, \texttt{-y} and \texttt{-ys} is not allowed.
+
+
+\subsection{Diagnostic computations}  As a diagnostic example, consider the second of these two runs:
+
+\verb|pisms -y 200e3 -o eisIIA200k.nc|
 
 \verb|pismr -i eisIIA200k.nc -y 0 -o eisIIA200k_diag.nc -o_size big|
 
-\noindent The result is a NetCDF file \texttt{eisIIA200k_diag.nc} which contains the full three-dimensional velocity field in the scalar NetCDF variables \texttt{uvel}, \texttt{vvel}, and \texttt{wvel}.
-
-The velocity field saved by \texttt{pismr -y 0} is the one which would be computed at the \emph{next} time step in an evolution run. 
+\noindent The result of this zero-length, ``\verb|-y 0|'', run is a NetCDF file \texttt{eisIIA200k_diag.nc} which contains the full three-dimensional velocity field in the scalar NetCDF variables \texttt{uvel}, \texttt{vvel}, and \texttt{wvel}, as well as many other variables.
 
 This diagnostic mode is most frequently associated to the modeling of ice shelves and ice streams.  Subsection \ref{sect:ross} describes using \texttt{pross} to model the Ross ice shelf \cite{MacAyealetal}.  Verification tests I and J, section \ref{sect:verif}, are diagnostic calculations using the SSA.
 
-Note that the NetCDF model state saved by PISM at the end of an \emph{evolution} run does not, by default, contain the three-dimensional velocity field.  Instead, it contains just the variables which are needed to restart the run, especially the ice geometry and temperature field.  One can also force PISM to save all the supported diagnostic quantities at the end of a time-stepping run using the option \texttt{o_size}.
+Note that the NetCDF model state saved by PISM at the end of an \emph{evolution} run does not, by default, contain the three-dimensional velocity field.  Instead, it contains just the variables which are needed to restart the run, especially the ice geometry and temperature field.  One can also force PISM to save all the supported diagnostic quantities at the end of a time-stepping run using the option \texttt{-o_size big}.
 
 
 \subsection{Computing ice age} \label{subsect:age}
@@ -188,7 +191,7 @@ uses \texttt{delta_SL.nc}
   
 \subsection{Floatation criterion and mask} \label{subsect:floatmask}  The most basic decision about ice dynamics made internally by PISM is whether to apply the ``floatation criterion'' to determine whether the ice is floating on the ocean or not.  In an evolution run this decision is made at each time step and the result is stored in the \t{mask}.
 
-The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:maskvals}.  The mask does not by itself determine ice dynamics.  For instance, when ice is floating (either value \texttt{MASK_FLOATING} or \texttt{MASK_FLOATING_OCEAN0}) the usual choice for ice dynamics is SSA, but the user can choose not to apply that model by leaving off the option \texttt{-ssa}.
+The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:maskvals}.  The mask does not by itself determine ice dynamics.  For instance, when ice is floating (either value \texttt{MASK_FLOATING} or \texttt{MASK_FLOATING_OCEAN0}) the usual choice for ice dynamics is SSA, but the user can choose not to apply that model by not using either option \texttt{-ssa_floating_only} or \texttt{-ssa_sliding}.
 
 \begin{table}[ht]
 \centering
@@ -204,12 +207,11 @@ The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:mask
 \normalsize
 \end{table}
 
-Assuming the geometry of the ice evolves (which can be turned off by option \intextoption{no_mass}), and assuming an ocean exists (which can be turned off by option \intextoption{dry}), then at each time step the mask can change.  Ice which becomes floating is marked as \texttt{MASK_FLOATING} while ice which becomes grounded is either marked as \texttt{MASK_SHEET} or \texttt{MASK_DRAGGING_SHEET}.  The decision between \texttt{MASK_SHEET} or \texttt{MASK_DRAGGING_SHEET} is made by a vote-by-neighbors scheme in the most general case.  When both \intextoption{ssa} and \intextoption{super} are given all grounded ice has \texttt{MASK_DRAGGING_SHEET}, however.
+Assuming the geometry of the ice evolves (which can be turned off by option \intextoption{no_mass}), and assuming an ocean exists (which can be turned off by option \intextoption{dry}), then at each time step the mask can change.  Ice which becomes floating is marked as \texttt{MASK_FLOATING} while ice which becomes grounded is either marked as \texttt{MASK_SHEET} or \texttt{MASK_DRAGGING}.  The latter case occurs if the option \intextoption{ssa_sliding} is used, while otherwise all points are marked \texttt{MASK_Sheet}.
 
-\subsection{Plastic till free boundary problem for ice streams; SSA as a sliding law}  \label{subsect:plastic}
+
+\subsection{Choosing the stress balance}  \label{subsect:ssacontrol}
 \optsection{SSA as a sliding law}
-
-\textbf{WARNING}: The models described in this subsection are still under active development, and thus we give only a sketch.
 
 The shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} stress balance is used in PISM to describe the sliding of grounded ice and the formation of ice streams \cite{BBssasliding}, as well as being used as the only stress balance for floating ice.  For the SSA with ``plastic'' or ``Coulomb'' till the locations of ice streams is determined as part of a free boundary problem \cite{SchoofStream}.  We believe that this mathematical description of ice streams, by Schoof, should be regarded as the best known ``sliding law'' for the SIA \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding law}
 
@@ -217,9 +219,21 @@ Schoof's model \cite{SchoofStream} describes emergent ice streams within a large
 
 In PISM the user gives the option \texttt{-ssa_sliding} to turn on the use of the plastic till SSA as a sliding law.  All grounded points are immediately marked as SSA (i.e.~as \texttt{DRAGGING}).  At these points a yield stress is computed from the amount of stored basal water and from a (generally) spatially-varying till strength, \texttt{tillphi} in an input or output file.  The amount of stored basal water is thermodynamically determined.
 
+\begin{table}[ht]
+\centering
+\caption{The basic choice of stress balance, either SIA (if no option) or these SSA options.}\label{tab:stressbalchoice} 
+\small
+\begin{tabular}{p{0.25\linewidth}p{0.65\linewidth}}\hline
+\textbf{Option} & \textbf{Semantics}\\ \hline
+    \intextoption{ssa_floating_only} & Floating ice uses SSA.  Grounded ice marked by mask value \t{SHEET} uses the (by default) nonsliding SIA. \\
+\intextoption{ssa_sliding} & The recommended default sliding law, which gives the SIA+SSA hybrid stress balance.  Combines SSA-computed velocity, using pseudo-plastic till, with SIA-computed velocity according to the combination in \cite{BBssasliding}.  \\
+\hline\end{tabular}
+\normalsize
+\end{table}
+
 % xtab stuff for the long table
 
-\topcaption{Using the SSA stress balance in PISM}
+\topcaption{Controlling the SSA stress balance in PISM}
 \tablefirsthead{\toprule\textbf{Option} & \textbf{Description}\\\midrule}
 
 \tablehead{\multicolumn{2}{c}% 
@@ -236,8 +250,6 @@ In PISM the user gives the option \texttt{-ssa_sliding} to turn on the use of th
 \begin{center}
   \begin{xtabular}{p{0.35\linewidth}p{0.6\linewidth}}
     \label{tab:ssausage} 
-    \intextoption{ssa_floating_only} & Floating ice uses SSA, and at all points marked \t{DRAGGING}. Basal resistance for grounded ice is plastic (see \t{pseudo_plastic} to control parameters) but uses fixed field \t{tauc} with no update. \\
-\intextoption{ssa_sliding} & The recommended default sliding law.  Combines SSA-computed velocity, using plastic till, with SIA-computed velocity as in \cite{BBssasliding}. \\
 \intextoption{ice_reg_schoof_length} (1000 km) & Set the ``$L$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \texttt{-ssa_eps 0.0} to turn off the other regularization mechanism, otherwise there is a double regularization (the default except in \texttt{pism -test I}). \\
 \intextoption{ice_reg_schoof_vel} (1 m/a) & Set the \emph{first} ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  To deactivate Schoof's regularization, use \texttt{-ice_reg_schoof_vel 0}.  To use the regularization described by Schoof, one must set \texttt{-ssa_eps 0.0} to turn off the other regularization mechanism, otherwise there is a double regularization (the default except in \texttt{pismv -test I}).  Use \texttt{-plastic_reg} above to set the second ``$\eps$'' in formula (4.1) of \cite{SchoofStream}. \\
 \intextoption{shelves_drag_too} & Ice streams are modeled as ``dragging ice shelves'' in PISM, as in either linear \cite{MacAyeal} or plastic \cite{SchoofStream} or pseudo-plastic basal resistance, according to options.  If this option is turned on then the floating ice shelves also have very slight resistance, according to a linear model $\tau_b = \beta u$ where $\beta = 1.8\times 10^5\, \text{Pa}\,\text{s}\,\text{m}^{-1}$.  This value is $10^4$ times smaller than the representative drag coefficient given for ice stream E in \cite{HulbeMacAyeal}.  Ice shelves usually have precisely zero basal resistance, but nonzero drag for the ice shelf is turned on by default in MISMIP; see section \ref{sect:simp}. \\
@@ -250,6 +262,13 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \texttt{-ksp_rto
 \end{xtabular}
 \end{center}
 
+
+
+\subsection{Controlling basal strength}  \label{subsect:basestrength}
+\optsection{Basal strength and sliding}
+
+In the \t{-ssa_sliding} case especially, the determination of basal resistance comes from a stored basal till material property \texttt{tillphi}, the till friction angle.  We find that an effective way to determine \texttt{tillphi} is to make it a function of bed elevation.  Option \intextoption{topg_to_till} does this.
+
 The basal resistance is actually determined by a controllable ``pseudo-plastic'' model.  Specifically, stress is a generally a power law function of basal sliding velocity $\mathbf{u}$:
    $$\tau_b = \tau_c \frac{|\mathbf{u}|^{q-1}}{u_{\text{threshold}}^q}\, \mathbf{u}.$$
 Here $\tau_c$ corresponds to the variable \texttt{tauc} in PISM input and output files, $q$ is the power controlled by \intextoption{pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \intextoption{pseudo_plastic_uthreshold}.  The purely plastic case is $q=0$---see \cite{SchoofStream} for precise interpretation---and the linear case is $q=1$, in which case the coefficient of velocity, $\tau_c/u_{\text{threshold}}$, is more commonly called $\beta$ or $\beta^2$ \cite{MacAyeal}.
@@ -260,12 +279,9 @@ In our model the till yield stress $\tau_c$ necessarily represents the strength 
 \end{equation*}
 \cite[Chapter 8]{Paterson}.  Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of gravity, $p_w$ is the modeled pore water pressure, and $\phi$ is the till friction angle \texttt{tillphi}.  The difference $(\rho g H - p_w)$ is the modeled value of the effective pressure on the material till.  Option \intextoption{plastic_pwfrac} controls how $p_w$ is determined from the effective thickness of basal water, the quantity in \texttt{bwat}.
 
-The scripts in \t{examples/pst} perform the experiments described in \cite{BBssasliding}, and represent the most thorough test of these mechanisms.
+%The scripts in \t{examples/pst} perform the experiments described in \cite{BBssasliding}, and represent the most thorough test of these mechanisms.
+% Test I in the verification suite\index{verification tests} uses an exact solution to the Schoof model.
 
-FIXME:
-Test I in the verification suite\index{verification tests} uses an exact solution to the Schoof model, that is, the model described by \t{-ssa -plastic}.
-
-In the \t{-ssa_sliding} case especially, the determination of basal resistance comes from a stored basal till material property \texttt{tillphi}, the till friction angle.  We find that an effective way to determine \texttt{tillphi} is to make it a function of bed elevation.  Option \intextoption{topg_to_till} does this.
 
 \subsection{Earth deformation models} \label{subsect:beddef} \index{earth deformation} \index{PISM!earth deformation models, using}
 \optsection{Earth deformation models}

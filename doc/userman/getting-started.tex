@@ -56,13 +56,12 @@ Any of these NetCDF files can be viewed with \verb|ncview| or other NetCDF visua
 
 \subsection{Run PISM}
 
-We are ready to run PISM, but, perhaps even more than many unix programs, PISM allows \emph{a lot} of command-line options.  In fact, because it is an ice flow simulation program designed to handle many different ice sheets, shelves, and glaciers, the list of user-configurable flags and parameters is quite long.\footnote{We believe this is a feature not a bug.}  For a complete list of configuration flags and parameters see
+We are ready to run PISM, but, perhaps even more than many unix programs, PISM allows \emph{a lot} of command-line options.  Furthermore there are configuration parameters read from a file, namely \verb|lib/pism_config.nc|.  Because it is an ice flow simulation program designed to handle many different ice sheets, shelves, and glaciers, the list of user-configurable flags and parameters is quite long.  For a complete list of configuration flags and parameters see
 \begin{center}
 \url{http://www.pism-docs.org/dev/doxy/html/config.html}
 \end{center}
-Therefore it is wise to build a \emph{script} to run PISM with the correct options. 
 
-Also, as explained in the rest of this \emph{User's Manual}, modeling ice sheets requires the integration of paleo-climatic and long-time-scale information into the model state, so our script is called ``\verb|spinup.sh|''.  The spin-up stage is the one which generally requires the most processor-hours, compared to a ``forecast'' stage.
+These many options and parameters imply that one should often build a \emph{script} to run PISM with the correct options, and that is what we have done for SeaRISE-Greenland.  Also, as explained in the rest of this \emph{User's Manual}, modeling ice sheets requires the integration of paleo-climatic and long-time-scale information into the model state, so our script is called ``\verb|spinup.sh|''.  The spin-up stage is the one which generally requires the most processor-hours, compared to a ``forecast'' stage.
 
 To see what the SeaRISE-Greenland PISM run involves, do this:
 
@@ -72,7 +71,7 @@ To see what the SeaRISE-Greenland PISM run involves, do this:
 
 \noindent Setting the environment variable \verb|PISM_DO| in this way tells \verb|spinup.sh| just to print out the commands it is about to run, not do them.
 
-Note that ``\verb|mpiexec -n 2 pismr|'' appears in the echo-ed PISM runs from \verb|spinup.sh|.  This means that the PISM executable \verb|pismr| is run in parallel on two processes (e.g.~cores on a smaller machine).  Note ``\verb|pismr|'' stands for the standard ``run'' mode of PISM, in contrast to more specific modes as described later.  Also, for the rest of this example, we assume you have a workstation with 8 cores, which is typical of 2010 resources.
+Note that ``\verb|mpiexec -n 2 pismr|'' appears in the PISM runs done by \verb|spinup.sh|.  This means that the PISM executable \verb|pismr| is run in parallel on two processes (e.g.~cores on a smaller machine).  Note ``\verb|pismr|'' stands for the standard ``run'' mode of PISM, in contrast to more specific modes as described later.  Also, for the rest of this example, we assume you have a workstation with 8 cores, which is typical of 2010 resources.
 
 The script \verb|spinup.sh| starts by ``bootstrapping.''  This means the creation, by heuristics and simplified models, of the kind of full initial conditions needed for the evolving, time-dependent model.  Specifically, the first 100 model year run with 8 processes will look like
 \begin{verbatim}

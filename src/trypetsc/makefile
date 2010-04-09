@@ -18,6 +18,8 @@ endif
 CFLAGS += -DHAVE_PETSC3=${HAVE_PETSC3} -g
 
 
+# this example is very comparable to src/ksp/ksp/examples/tutorials/ex46.c
+# in the petsc-dev tree
 lapbasic: lapbasic.o  chkopts
 	-${CLINKER} -o lapbasic lapbasic.o ${PETSC_KSP_LIB}
 	${RM} lapbasic.o
