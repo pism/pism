@@ -22,67 +22,110 @@
 
 //! Compute the maximum diffusivity associated to the SIA deformational velocity.
 /*! 
-The time-stepping scheme for mass continuity is explicit.
+The time-stepping scheme for mass continuity is explicit.  It solves an equation
+which in the simple case of flat bed and the use of the nonsliding SIA is a
+pure diffusion,
+  \f[ H_t = M - S - \nabla \cdot \mathbf{Q} \f]
+where
+  \f[ \mathbf{Q} = - D \nabla H \]
+is the horizontal ice flux and \f$D\ge 0\f$ is the diffusivity.  Because the PDE
+is actually nonlinear, this diffusivity \f$D\f$ changes at every time step.  The 
+current procedure computes the maximum of the diffusivity on the grid.
 
-For the non-sliding, deformational part of the vertically-integrated 
-horizontal mass flux \f$\mathbf{q}\f$, the partial differential equation 
-is diffusive.  Thus there is a stability criterion \ref MortonMayers 
-which depends on the diffusivity coefficient.  Of course,
-because the PDE is nonlinear, this diffusivity changes at every time step.  This 
-procedure computes the maximum of the diffusivity on the grid.
+Note that more generally the ice flow is driven by the driving stress
+\f$\tau_d = - \rho g H \nabla h\f$ which involves the surface slope, not the
+gradient of the thickness \f$H\f$.
 
-See determineTimeStep() and massContExplicitStep().
+The time-stepping for the explicit scheme is controlled by equation (25) in
+[\ref BBL], so that \f$\Delta t \sim \frac{\Delta x^2}{\max D}\f$; see also
+[\ref MortonMayers].  But also
+  \f[ \mathbf{Q} = \bar U\, H \]
+where \f$\bar U\f$ is the vertically-averaged horizontal velocity.  Because of
+how the SIA calculation is currently factored, we compute \f$D\f$ here, for the
+purpose of adaptive time stepping, by the formula
+  \f[ D = \frac{|\bar U| H}{|\nabla h|}. \f]
+The potential division by zero in (harmless) areas of flat slope is avoided by
+addition of a constant to \f$\alpha = |\nabla h|\f$.
+
+See surfaceGradientSIA(), velocitySIAStaggered(), determineTimeStep(), and
+massContExplicitStep(); all of these are related calculations.
+
+This method assumes IceModelVec2Stag uvbar holds correct deformational values of
+velocities coming out of the calculation in velocitySIAStaggered().  It also
+assumes the thickness in vH is up to date.
+
+This method puts the maximum, over all staggered points, of the diffusivities
+into the global variable IceModel::gDmax.  
+
+If the user wants a run-time view of diffusivity, then that is updated here.
  */
 PetscErrorCode IceModel::computeMaxDiffusivity(bool update_diffusivity_viewer) {
-  // assumes uvbar holds correct deformational values of velocities
-
   PetscErrorCode ierr;
-
-  const PetscScalar DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE = 1.0e-4;
-  PetscScalar **h, **H, **D;
   PetscScalar Dmax = 0.0;
 
-  ierr =        vh.get_array(h); CHKERRQ(ierr);
-  ierr =        vH.get_array(H); CHKERRQ(ierr);
-  ierr = uvbar.begin_access(); CHKERRQ(ierr);
-  ierr = vWork2d[0].get_array(D); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (H[i][j] > 0.0) {
-        if (computeSIAVelocities == PETSC_TRUE) {
-          // note: when basal sliding is proportional to surface slope, as
-          // it usually will be when sliding occurs in a MASK_SHEET area, then
-          //    D = H Ubar / alpha
-          // is the correct formula; note division by zero is avoided by
-          // addition to alpha
-          const PetscScalar h_x=(h[i+1][j]-h[i-1][j])/(2.0*grid.dx),
-                            h_y=(h[i][j+1]-h[i][j-1])/(2.0*grid.dy),
-                            alpha = sqrt(PetscSqr(h_x) + PetscSqr(h_y));
-          const PetscScalar udef = 0.5 * (uvbar(i,j,0) + uvbar(i-1,j,0)),
-                            vdef = 0.5 * (uvbar(i,j,1) + uvbar(i,j-1,1)),
-                            Ubarmag = sqrt(PetscSqr(udef) + PetscSqr(vdef));
-          const PetscScalar d =
-               H[i][j] * Ubarmag/(alpha + DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE);
-          if (d > Dmax) Dmax = d;
+  if (computeSIAVelocities == PETSC_TRUE) {
+
+    // FIXME:  there is a better way to do this, namely to compute the
+    //         diffusivity inside velocitySIAStaggered(); as it is we call
+    //         surfaceGradientSIA() twice
+
+    // uses:
+    // * thickness and bed topography or
+    // * usurf
+    // updates: surface gradient in vWork2d[0,1,2,3], including w=1 ghosts
+    ierr = surfaceGradientSIA(); CHKERRQ(ierr); // comm may happen here
+    // surface gradient temporarily stored in vWork2d[0 1 2 3] 
+
+    const PetscScalar DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE = 1.0e-4;
+    PetscScalar **D, **h_x0, **h_y1;
+    ierr = vWork2d[0].get_array(h_x0); CHKERRQ(ierr);
+    ierr = vWork2d[3].get_array(h_y1); CHKERRQ(ierr);
+    ierr = vH.begin_access(); CHKERRQ(ierr);
+    ierr = uvbar.begin_access(); CHKERRQ(ierr);
+    ierr = vWork2d[4].get_array(D); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        if ( (vH(i,j) > 0.0) || (vH(i+1,j) > 0.0) || (vH(i,j+1) > 0.0) ){
+          // note that in velocitySIAStaggered() we see this:
+          //      uvbar(i,j,o) = - Dfoffset * slope / thickness
+          // where
+          //      slope = (o==0) ? h_x[o][i][j] : h_y[o][i][j]
+          // we undo the calculation
+          // we get everything on the staggered grid points
+          // (i+1/2,j) and (i,j+1/2)
+          const PetscScalar
+             H0 = 0.5 * (vH(i,j) + vH(i+1,j)),
+             H1 = 0.5 * (vH(i,j) + vH(i,j+1)),
+             slope0 = PetscAbs(h_x0[i][j]) + DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE,
+             slope1 = PetscAbs(h_y1[i][j]) + DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE,
+             D0 = (H0 * PetscAbs(uvbar(i,j,0))) / slope0,
+             D1 = (H1 * PetscAbs(uvbar(i,j,1))) / slope1;
+          const PetscScalar  d = PetscMax(D0,D1);  // max of two staggered vals
           D[i][j] = d;
+          if (d > Dmax) Dmax = d;
         } else {
-          D[i][j] = 0.0; // no diffusivity if no SIA
+          D[i][j] = 0.0; // no diffusivity if no ice; this is consistent with
+                         // degenerate diffusivity interpretation
         }
-      } else {
-        D[i][j] = 0.0; // no diffusivity if no ice
       }
     }
-  }
-  ierr =        vh.end_access(); CHKERRQ(ierr);
-  ierr =        vH.end_access(); CHKERRQ(ierr);  
-  ierr = uvbar.end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+    ierr = vH.end_access(); CHKERRQ(ierr);  
+    ierr = uvbar.end_access(); CHKERRQ(ierr);
+    ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+    ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
+    ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
 
+  } else {
+    // if no SIA calculation at all
+    ierr = vWork2d[4].set(0.0); CHKERRQ(ierr);
+    Dmax = 0.0;
+  }
+  
   if (update_diffusivity_viewer) { // view diffusivity (m^2/s)
-    ierr = vWork2d[0].set_name("diffusivity"); CHKERRQ(ierr);
-    ierr = vWork2d[0].set_attrs("diagnostic",
+    ierr = vWork2d[4].set_name("diffusivity"); CHKERRQ(ierr);
+    ierr = vWork2d[4].set_attrs("diagnostic",
 				"diffusivity", "m2/s", ""); CHKERRQ(ierr);
-    ierr = vWork2d[0].view(300); CHKERRQ(ierr);
+    ierr = vWork2d[4].view(300); CHKERRQ(ierr);
   }
 
   ierr = PetscGlobalMax(&Dmax, &gDmax, grid.com); CHKERRQ(ierr);
@@ -162,7 +205,6 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
 
   bool do_ocean_kill = config.get_flag("ocean_kill"),
     floating_ice_killed = config.get_flag("floating_ice_killed");
-  
 
   ierr = vel_basal.get_array(basal); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);

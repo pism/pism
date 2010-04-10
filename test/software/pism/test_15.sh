@@ -21,11 +21,11 @@ run_test ()
     diff test-B-out.txt - > /dev/null <<END-OF-OUTPUT
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
-               0.075974  276.596425   11.446490    0.030469
+               0.075974  276.557369   11.445854    0.030467
 NUM ERRORS DONE
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
-               0.384904  211.835068    5.809441    0.011945
+               0.384904  211.821582    5.809095    0.011945
 NUM ERRORS DONE
 END-OF-OUTPUT
 
