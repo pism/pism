@@ -27,7 +27,7 @@ which in the simple case of flat bed and the use of the nonsliding SIA is a
 pure diffusion,
   \f[ H_t = M - S - \nabla \cdot \mathbf{Q} \f]
 where
-  \f[ \mathbf{Q} = - D \nabla H \]
+  \f[ \mathbf{Q} = - D \nabla H \f]
 is the horizontal ice flux and \f$D\ge 0\f$ is the diffusivity.  Because the PDE
 is actually nonlinear, this diffusivity \f$D\f$ changes at every time step.  The 
 current procedure computes the maximum of the diffusivity on the grid.
@@ -39,7 +39,7 @@ gradient of the thickness \f$H\f$.
 The time-stepping for the explicit scheme is controlled by equation (25) in
 [\ref BBL], so that \f$\Delta t \sim \frac{\Delta x^2}{\max D}\f$; see also
 [\ref MortonMayers].  But also
-  \f[ \mathbf{Q} = \bar U\, H \]
+  \f[ \mathbf{Q} = \bar U\, H \f]
 where \f$\bar U\f$ is the vertically-averaged horizontal velocity.  Because of
 how the SIA calculation is currently factored, we compute \f$D\f$ here, for the
 purpose of adaptive time stepping, by the formula
