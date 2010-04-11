@@ -444,7 +444,12 @@ PetscErrorCode NCVariable::write_attributes(const NCTool &nc, int varid, nc_type
     CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
 
-  double bounds[2];
+  double bounds[2], fill_value = 0.0;
+
+  if (has("_FillValue")) {
+    fill_value = get("_FillValue");
+  }
+
   // We need to save valid_min, valid_max and valid_range in the units
   // matching the ones in the output.
   if (write_in_glaciological_units) {
@@ -452,11 +457,17 @@ PetscErrorCode NCVariable::write_attributes(const NCTool &nc, int varid, nc_type
 
     ierr = utConvert(&units, &glaciological_units, &slope, &intercept); CHKERRQ(ierr);
 
-    bounds[0] = intercept + slope*get("valid_min");
-    bounds[1] = intercept + slope*get("valid_max");
+    bounds[0]  = intercept + slope*get("valid_min");
+    bounds[1]  = intercept + slope*get("valid_max");
+    fill_value = intercept + slope*fill_value;
   } else {
     bounds[0] = get("valid_min");
     bounds[1] = get("valid_max");
+  }
+
+  if (has("_FillValue")) {
+    ierr = nc_put_att_double(ncid, varid, "_FillValue", nctype, 1, &fill_value);
+    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
 
   if (has("valid_min") && has("valid_max")) {
@@ -494,6 +505,7 @@ PetscErrorCode NCVariable::write_attributes(const NCTool &nc, int varid, nc_type
     if (name == "valid_min" ||
 	name == "valid_max" ||
 	name == "valid_range" ||
+	name == "_FillValue" ||
 	values.empty())
       continue;
 

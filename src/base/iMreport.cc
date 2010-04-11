@@ -582,8 +582,8 @@ PetscErrorCode IceModel::compute_uvelsurf(IceModelVec2S &result) {
 
   PetscScalar fill_value = 0.0;
   ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr); // mask out ice-free areas
-  ierr = result.set_attr("valid_min", -1e6); CHKERRQ(ierr);
-  ierr = result.set_attr("valid_max", 1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", -1e6/secpera); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 1e6/secpera); CHKERRQ(ierr);
 //   ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
 
   return 0;
@@ -605,8 +605,8 @@ PetscErrorCode IceModel::compute_vvelsurf(IceModelVec2S &result) {
 
   PetscScalar fill_value = 0.0;
   ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr); // mask out ice-free areas
-  ierr = result.set_attr("valid_min", -1e6); CHKERRQ(ierr);
-  ierr = result.set_attr("valid_max", 1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", -1e6/secpera); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 1e6/secpera); CHKERRQ(ierr);
 //   ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
 
   return 0;
@@ -630,8 +630,8 @@ PetscErrorCode IceModel::compute_wvelsurf(IceModelVec2S &result) {
 
   PetscScalar fill_value = 0.0;
   ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr); // mask out ice-free areas
-  ierr = result.set_attr("valid_min", -1e6); CHKERRQ(ierr);
-  ierr = result.set_attr("valid_max", 1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", -1e6/secpera); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 1e6/secpera); CHKERRQ(ierr);
 //   ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
 
   return 0;
@@ -898,8 +898,8 @@ PetscErrorCode IceModel::compute_uvelbase(IceModelVec2S &result) {
 
   PetscScalar fill_value = 0.0;
   ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
-  ierr = result.set_attr("valid_min", -1e6); CHKERRQ(ierr);
-  ierr = result.set_attr("valid_max", 1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", -1e6/secpera); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 1e6/secpera); CHKERRQ(ierr);
 //   ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
 
   return 0;
@@ -919,8 +919,8 @@ PetscErrorCode IceModel::compute_vvelbase(IceModelVec2S &result) {
 
   PetscScalar fill_value = 0.0;
   ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
-  ierr = result.set_attr("valid_min", -1e6); CHKERRQ(ierr);
-  ierr = result.set_attr("valid_max", 1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", -1e6/secpera); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 1e6/secpera); CHKERRQ(ierr);
 //   ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
 
   return 0;
@@ -940,8 +940,8 @@ PetscErrorCode IceModel::compute_wvelbase(IceModelVec2S &result) {
 
   PetscScalar fill_value = 0.0;
   ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
-  ierr = result.set_attr("valid_min", -1e6); CHKERRQ(ierr);
-  ierr = result.set_attr("valid_max", 1e6); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", -1e6/secpera); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 1e6/secpera); CHKERRQ(ierr);
 //   ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
 
   return 0;
