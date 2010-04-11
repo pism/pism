@@ -871,7 +871,6 @@ bool NCConfigVariable::get_flag(string name) const {
 }
 
 string NCConfigVariable::get_string(string name) const {
-  PetscErrorCode ierr;
 
   map<string,string>::const_iterator j = strings.find(name);
   if (j != strings.end())

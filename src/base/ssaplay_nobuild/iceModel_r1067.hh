@@ -50,6 +50,54 @@ using namespace std;
 #define MY_WIDE_STENCIL 1
 #endif
 
+struct SSASNESNode {
+  PetscScalar u, v;
+};
+struct SSASNESCtx {
+  DA               ssada;
+  IceGrid          *grid;
+  IceBasalResistancePlasticLaw *basal;
+  IceModelVec2S     ctxH,
+                   ctxtauc,
+                   ctxtaudx,
+                   ctxtaudy,
+                   ctxNu[2];
+  IceModelVec2Mask ctxMask;
+  Vec              ctxBV;
+  PetscScalar      schoofReg,
+                   constantHardness;
+  bool             useConstantHardness,
+                   useConstantNu,
+                   useStoredNu,
+                   useIceBasalResistancePlasticLaw;
+};
+
+
+// two structs needed in iMinverse.cc, iMinverseMat.cc
+struct InverseModelCtx {
+  // all the fields involved in the inverse model which determines till friction angle phi
+  IceModelVec2S *usIn,     // x component of observed surf vel
+               *vsIn,     // y component of observed surf vel
+               *invMask,  // either 0, 1, or 2; 0 if no valid velocity, 1 if valid, 2 if valid
+                          // and stencil width
+               *usSIA,
+               *vsSIA, 
+               *fofv,
+               *taubxComputed,
+               *taubyComputed,
+               *effPressureN,
+               *oldtillphi;
+};
+struct RegPoissonCtx {
+  // describes Poisson-like problem solved when inverting surface velocities
+  //   using a regularization
+  DA           da;              // must be first in struct
+  IceGrid      *grid;
+  PetscReal    epsilon;
+  IceModelVec2S *f,              // = f(x,y) in PDE
+               *g;              // = g(x,y) in PDE
+};
+
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -130,6 +178,8 @@ protected:
   //! from the IceModel core to other components (such as surface and ocean models)
   PISMVars variables;
 
+  InverseModelCtx       inv;
+  
   // state variables
   IceModelVec2S
         vh,		//!< ice surface elevation; ghosted
@@ -275,6 +325,34 @@ protected:
   // see iMgrainsize.cc
   virtual PetscScalar    grainSizeVostok(PetscScalar age) const;
 
+  // see iMinverse.cc
+  virtual PetscErrorCode invertSurfaceVelocities(const char *filename);
+  virtual PetscErrorCode createInvFields();
+  virtual PetscErrorCode destroyInvFields();
+  virtual PetscErrorCode writeInvFields(const char *filename);
+  virtual PetscErrorCode readObservedSurfVels(const char *filename);
+  virtual PetscErrorCode smoothObservedSurfVels(const PetscInt passes);
+  virtual PetscErrorCode computeSIASurfaceVelocity();
+  virtual PetscErrorCode getGforInverse(
+                const PetscScalar x, const PetscScalar UsuSIAdiffsqr, 
+                const PetscScalar UsuSIAdiffdotuSIA, const PetscScalar uSIAsqr,
+                PetscScalar &G, PetscScalar &Gprime);
+  virtual PetscErrorCode computeFofVforInverse();
+  virtual PetscErrorCode removeSIApart();
+  virtual PetscErrorCode getEffectivePressureForInverse();
+  virtual PetscErrorCode getVfromUforInverse(
+                const PetscScalar U_x, const PetscScalar U_y,
+                PetscScalar &V_x, PetscScalar &V_y, PetscScalar &magVsqr);
+  virtual PetscErrorCode computeTFAFromBasalShearNoReg(
+                const PetscScalar phi_low, const PetscScalar phi_high);
+
+  // see iMinverseMat.cc
+  virtual PetscErrorCode computeBasalShearFromSSA();
+  virtual PetscErrorCode fillRegPoissonData(RegPoissonCtx &user);
+  virtual PetscErrorCode computeTFAFromBasalShear(
+                const PetscScalar phi_low, const PetscScalar phi_high,
+                const PetscScalar invRegEps, const char *invfieldsfilename);
+
   // see iMIO.cc
   virtual PetscErrorCode set_time_from_options();
   virtual PetscErrorCode dumpToFile(const char *filename);
@@ -369,6 +447,14 @@ protected:
   virtual PetscErrorCode broadcastSSAVelocity(bool updateVelocityAtDepth);
   virtual PetscErrorCode correctSigma();
   virtual PetscErrorCode correctBasalFrictionalHeating();
+
+  // see iMssaSNES.cc; UNDER DEVELOPMENT
+  virtual PetscErrorCode mapUVbarSSAToSSASNESVec(DA ssasnesda, Vec &ssasnesX);
+  virtual PetscErrorCode mapSSASNESVecToUVbarSSA(DA ssasnesda, Vec ssasnesX);
+  virtual PetscErrorCode setbdryvalSSA(DA ssasnesda, Vec &ssasnesBV);
+  virtual PetscErrorCode solvefeedback(SNES snes, Vec residual);
+  virtual PetscErrorCode getNuFromNuH(IceModelVec2S vNuH[2], SSASNESCtx *user);
+  virtual PetscErrorCode velocitySSA_SNES(IceModelVec2S vNuH[2], PetscInt *its);
 
   // see iMtemp.cc
   virtual PetscErrorCode energyStep();

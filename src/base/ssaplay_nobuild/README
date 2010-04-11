@@ -1,0 +1,19 @@
+The various sources here are for reference and ideas on re-implementation,
+abstraction, and new application of the SSA equations.  None are currently
+being built with PISM.
+
+edstressbalance/*: half-assed attempt in 2010 to clean up
+
+iMinverse.cc,iMinverseMat.cc:  new code to attempt ad hoc inversion with SSA;
+  will replace with principled version based on MacAyeal/Maxwell ideas
+  
+iMssaSNES.cc:  another of Ed's half-assed attempts
+
+see also:
+
+
+ssaJed/*:  Jed' finite element version of SSA added in early 2009; look in trunk
+  revision 831
+
+
+

@@ -652,16 +652,9 @@ converge with the default regularization.
  */
 PetscErrorCode IceModel::velocitySSA(PetscInt *numiter) {
   PetscErrorCode ierr;
-  bool dosnes;
   IceModelVec2S vNuDefault[2] = {vWork2d[0], vWork2d[1]}; // already allocated space
 
-  ierr = PISMOptionsIsSet("-ssa_bueler", dosnes); CHKERRQ(ierr);
-  if (dosnes == PETSC_TRUE) {
-    ierr = velocitySSA_SNES(vNuDefault, numiter); CHKERRQ(ierr);
-  } else {
-    ierr = velocitySSA(vNuDefault, numiter); CHKERRQ(ierr);
-  }
-
+  ierr = velocitySSA(vNuDefault, numiter); CHKERRQ(ierr);
   return 0;
 }
 

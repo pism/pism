@@ -81,8 +81,8 @@ PetscErrorCode IceModel::initBasalTillModel() {
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  if ((svphiSet) && (topgphiSet)) {
-    SETERRQ(1,"conflicting options for initializing till friction angle; ENDING ...\n");
+  if (svphiSet) {
+    SETERRQ(1,"options -surf_vel_to_phi is not available ... ENDING ...\n");
   }
 
   if (topgphiSet) {
@@ -93,12 +93,7 @@ PetscErrorCode IceModel::initBasalTillModel() {
     ierr = computePhiFromBedElevation(); CHKERRQ(ierr);
   }
 
-  if (svphiSet) {
-    ierr = verbPrintf(2, grid.com, 
-      "option -surf_vel_to_phi seen; doing ad hoc inverse model ...\n"); CHKERRQ(ierr);
-    ierr = invertSurfaceVelocities(filename.c_str()); CHKERRQ(ierr);
-  }
-  // if neither -surf_vel_to_phi OR -topg_to_phi then pass through; vtillphi is set from
+  // if not -topg_to_phi then pass through; vtillphi is set from
   //   default constant, or -i value, or -boot_from (?)
   return 0;
 }

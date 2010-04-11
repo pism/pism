@@ -684,13 +684,7 @@ PetscErrorCode IceExactSSAModel::run() {
       ierr = velocitySSA(&numiter); CHKERRQ(ierr);
     } else if (test == 'J') {
       // use locally allocated space for (computed) nu:
-      bool     dosnes;
-      ierr = PISMOptionsIsSet("-ssa_snes", dosnes); CHKERRQ(ierr);  
-      if (dosnes == PETSC_TRUE) {
-        ierr = velocitySSA_SNES(vNuForJ, &numiter); CHKERRQ(ierr); 
-      } else {
-        ierr = velocitySSA(vNuForJ, &numiter); CHKERRQ(ierr);
-      }
+      ierr = velocitySSA(vNuForJ, &numiter); CHKERRQ(ierr);
     }
     // fill in 3D velocities (u,v,w)
     ierr = broadcastSSAVelocity(true); CHKERRQ(ierr);
