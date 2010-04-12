@@ -107,7 +107,7 @@ verif_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 
 other_sources := pismr.cc pross.cc pismv.cc pisms.cc \
 	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc \
-	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc iceCalvBCModel.cc \
+	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc \
 	flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
 
 # this is the primary derived class example so it is structured as an example
@@ -174,10 +174,10 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 	${CXXLINKER} iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o \
 	${ICE_LIB_FLAGS} -o $@
 
-../bin/pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o iceCalvBCModel.o \
+../bin/pismv : iCMthermo.o iceCompModel.o iceExactSSAModel.o \
  pismv.o ${LIBVERIFNAME} ${LIBPISMNAME}
 	${CXXLINKER} iCMthermo.o iceCompModel.o iceExactSSAModel.o \
-	iceCalvBCModel.o pismv.o ${ICE_LIB_FLAGS} ${VERIF_LIB_FLAGS} -o $@
+	pismv.o ${ICE_LIB_FLAGS} ${VERIF_LIB_FLAGS} -o $@
 
 ../bin/pismtests: pismtests.o iMtests.o ${LIBPISMNAME} bedrockOnlySystem.o iceModelVec2V.o
 	${CXXLINKER} pismtests.o iMtests.o bedrockOnlySystem.o iceModelVec2V.o ${ICE_LIB_FLAGS} -o $@

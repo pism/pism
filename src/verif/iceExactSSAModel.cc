@@ -134,19 +134,13 @@ PetscErrorCode IceExactSSAModel::misc_setup() {
     have_ssa_velocities = false;
 
     ierr = ice->printInfo(3);CHKERRQ(ierr);
-    // EXPERIMENT WITH STRENGTH BEYOND CALVING FRONT:
-    ierr = ssaStrengthExtend.set_notional_strength(6.5e+16);CHKERRQ(ierr); // about optimal; compare 4.74340e+15 usual
+    // EXPERIMENT WITH STRENGTH BEYOND CALVING FRONT:  correct value is unknown!!
+    ierr = ssaStrengthExtend.set_notional_strength(1.0e+15);CHKERRQ(ierr);
     ierr = verbPrintf(3,grid.com,
 		      "IceExactSSAModel::misc_setup, for test M:\n"
 		      "  use_constant_nuh_for_ssa=%d\n",
 		      config.get_flag("use_constant_nuh_for_ssa")); CHKERRQ(ierr);
   }
-
-  // Communicate so that we can differentiate surface, and to set boundary conditions
-  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vh.endGhostComm(); CHKERRQ(ierr);
-  ierr = uvbar.beginGhostComm(); CHKERRQ(ierr);
-  ierr = uvbar.endGhostComm(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -222,6 +216,7 @@ PetscErrorCode IceExactSSAModel::taucSetI() {
     }
   }
   ierr = vtauc.end_access(); CHKERRQ(ierr);
+  // vtauc is global so no ghosts to update
   return 0;
 }
 
@@ -264,6 +259,16 @@ PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVelsI() {
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vh.end_access(); CHKERRQ(ierr);    
   ierr = vbed.end_access(); CHKERRQ(ierr);
+
+  // communicate what we have set
+  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vh.endGhostComm(); CHKERRQ(ierr);
+  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = uvbar.beginGhostComm(); CHKERRQ(ierr);
+  ierr = uvbar.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -319,6 +324,22 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = uvbar.end_access(); CHKERRQ(ierr);
+
+  // communicate what we have set
+  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vh.endGhostComm(); CHKERRQ(ierr);
+  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vH.endGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = uvbar.beginGhostComm(); CHKERRQ(ierr);
+  ierr = uvbar.endGhostComm(); CHKERRQ(ierr);
+
+  ierr = u3.beginGhostComm(); CHKERRQ(ierr);
+  ierr = u3.endGhostComm(); CHKERRQ(ierr);
+  ierr = v3.beginGhostComm(); CHKERRQ(ierr);
+  ierr = v3.endGhostComm(); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -407,6 +428,26 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
   ierr = uvbar.end_access(); CHKERRQ(ierr);
+
+  // communicate what we have set that has ghosts
+  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vh.endGhostComm(); CHKERRQ(ierr);
+  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vH.endGhostComm(); CHKERRQ(ierr);
+  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = vel_basal.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vel_basal.endGhostComm(); CHKERRQ(ierr);
+  ierr = uvbar.beginGhostComm(); CHKERRQ(ierr);
+  ierr = uvbar.endGhostComm(); CHKERRQ(ierr);
+
+  ierr = u3.beginGhostComm(); CHKERRQ(ierr);
+  ierr = u3.endGhostComm(); CHKERRQ(ierr);
+  ierr = v3.beginGhostComm(); CHKERRQ(ierr);
+  ierr = v3.endGhostComm(); CHKERRQ(ierr);
+
   return 0;
 }
 

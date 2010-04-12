@@ -17,10 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-"Ice sheet driver for PISM (SIA and SSA) verification.  Uses exact solutions\n"
-"  to various coupled subsystems.  Computes difference between exact solution\n"
-"  and numerical solution.  Can also just compute exact solution (-eo).\n"
-"  Currently implements tests A, B, C, D, E, F, G, H, I, J, K, L\n\n";
+"Ice sheet driver for PISM (SIA and SSA) verification.  Uses exact solutions to various\n"
+"  coupled subsystems.  Computes difference between exact solution and numerical solution.\n"
+"  Can also just compute exact solution (-eo).\n"
+"  Currently implements tests A, B, C, D, E, F, G, H, I, J, K, L, M.\n\n";
 
 #include <cctype>		// toupper
 #include <string>
@@ -30,6 +30,7 @@ static char help[] =
 #include "base/materials.hh"
 #include "verif/iceCompModel.hh"
 #include "verif/iceExactSSAModel.hh"
+#include "verif/iceCalvBCModel.hh"
 
 #include "coupler/PISMSurface.hh"
 #include "coupler/PISMOcean.hh"
@@ -94,7 +95,25 @@ int main(int argc, char *argv[]) {
     transform(testname.begin(), testname.end(), testname.begin(), pism_toupper);
 
     // actually construct and run one of the derived classes of IceModel
-    if ((testname == "I") || (testname == "J") || (testname == "M")) {
+    if (testname == "0") {
+      // run derived class for test M which includes new calving front stress
+      //   boundary condition implementation
+      ierr = verbPrintf(1,com, "!!!!!!!! USING IceCalvBCModel TO DO test M !!!!!!!!\n"); CHKERRQ(ierr);
+      IceCalvBCModel mCBC(g, config, overrides, 'M');
+      ierr = mCBC.setExecName("pismv"); CHKERRQ(ierr);
+      mCBC.attach_surface_model(surface);
+      mCBC.attach_ocean_model(ocean);
+
+      ierr = mCBC.init(); CHKERRQ(ierr);
+      
+      ierr = mCBC.run(); CHKERRQ(ierr);
+      ierr = verbPrintf(2,com, "done with diagnostic run\n"); CHKERRQ(ierr);
+      if (dontReport == PETSC_FALSE) {
+        ierr = mCBC.reportErrors();  CHKERRQ(ierr);
+      }
+      ierr = mCBC.writeFiles("verify.nc"); CHKERRQ(ierr);
+      ierr = mCBC.writeCFfields("verify.nc"); CHKERRQ(ierr); // add three more fields
+    } else if ((testname == "I") || (testname == "J") || (testname == "M")) {
       // run derived class for plastic till ice stream, or linearized ice shelf,
       //   or annular ice shelf with calving front
       IceExactSSAModel mSSA(g, config, overrides, testname[0]);
@@ -129,9 +148,9 @@ int main(int argc, char *argv[]) {
         if (!IceFlowLawIsPatersonBuddCold(tgaice, config) &&
 	    ((testname == "F") || (testname == "G"))) {
 	  ierr = verbPrintf(1,com, 
-            "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type arr')\n"
-            "   for reported errors in test %c to be meaningful!\n",
-            testname.c_str()); CHKERRQ(ierr);
+			    "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type arr')\n"
+			    "   for reported errors in test %c to be meaningful!\n",
+			    testname.c_str()); CHKERRQ(ierr);
         }
         ierr = mComp.reportErrors();  CHKERRQ(ierr);
       }
