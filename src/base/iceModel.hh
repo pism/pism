@@ -365,7 +365,7 @@ protected:
                                              PetscReal *norm, PetscReal *normChange);
   virtual PetscErrorCode assembleSSAMatrix(bool includeBasalShear, IceModelVec2S vNuH[2], Mat A);
   virtual PetscErrorCode assembleSSARhs(Vec rhs);
-  virtual PetscErrorCode moveVelocityToDAVectors(Vec x);
+  virtual PetscErrorCode trivialMoveSSAXtoIMV2V();
   virtual PetscErrorCode broadcastSSAVelocity(bool updateVelocityAtDepth);
   virtual PetscErrorCode correctSigma();
   virtual PetscErrorCode correctBasalFrictionalHeating();
@@ -412,8 +412,7 @@ protected:
   KSP SSAKSP;
   Mat SSAStiffnessMatrix;
   Vec SSAX, SSARHS;  // Global vectors for solution of the linear system
-  Vec SSAXLocal; // We need a local copy of the solution to map back to a DA based vector
-  VecScatter SSAScatterGlobalToLocal;
+  DA  SSADA;
 
   // Set of variables to put in the output file:
   set<string> output_vars;

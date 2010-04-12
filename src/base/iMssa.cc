@@ -30,27 +30,26 @@ within a constructor.
 PetscErrorCode IceModel::allocateSSAobjects() {
   PetscErrorCode ierr;
 
-  // SSA solve vars; note pieces of the SSA Velocity routine are defined in iMssa.cc
-  const PetscInt M = 2 * grid.Mx * grid.My;  // number of scalar variables
-  ierr = MatCreateMPIAIJ(grid.com, PETSC_DECIDE, PETSC_DECIDE, 
-                         M, M,
-                         13, PETSC_NULL, 13, PETSC_NULL,
-                         &SSAStiffnessMatrix); CHKERRQ(ierr);
-  ierr = VecCreateMPI(grid.com, PETSC_DECIDE, M, &SSAX); CHKERRQ(ierr);
-  ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
-  ierr = VecCreateSeq(PETSC_COMM_SELF, M, &SSAXLocal);
-  ierr = VecScatterCreate(SSAX, PETSC_NULL, SSAXLocal, PETSC_NULL,
-                          &SSAScatterGlobalToLocal); CHKERRQ(ierr);
+  // mimic IceGrid::createDA() with TRANSPOSE :
+  PetscInt dof=2, stencilwidth=1;
+  ierr = DACreate2d(grid.com, DA_XYPERIODIC, DA_STENCIL_BOX,
+                    grid.My, grid.Mx,
+		    grid.Ny, grid.Nx,
+                    dof, stencilwidth,
+                    PETSC_NULL,PETSC_NULL,&SSADA); CHKERRQ(ierr);
 
-  /* a NEW VERSION:
-  ierr = DACreateGlobalVector(vel_ssa.da,&SSAX); CHKERRQ(ierr);
+  ierr = DACreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);
   ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
-  ierr = DAGetMatrix(vel_ssa.da, MATMPIAIJ, &SSAStiffnessMatrix); CHKERRQ(ierr);
+
+  ierr = DAGetMatrix(SSADA, MATMPIAIJ, &SSAStiffnessMatrix); CHKERRQ(ierr);
   ierr = MatSetFromOptions(SSAStiffnessMatrix);CHKERRQ(ierr);
-  // and REMOVE SSAScatterGlobalToLocal and SSAXLocal
-  */
 
   ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
+  // the default PC type somehow is ILU, which now fails (?) while block jacobi
+  //   seems to work; runtime options can override (see test J in vfnow.py)
+  PC pc;
+  ierr = KSPGetPC(SSAKSP,&pc); CHKERRQ(ierr);
+  ierr = PCSetType(pc,PCBJACOBI); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(SSAKSP); CHKERRQ(ierr);
 
   return 0;
@@ -65,12 +64,8 @@ PetscErrorCode IceModel::destroySSAobjects() {
   ierr = MatDestroy(SSAStiffnessMatrix); CHKERRQ(ierr);
   ierr = VecDestroy(SSAX); CHKERRQ(ierr);
   ierr = VecDestroy(SSARHS); CHKERRQ(ierr);
-  ierr = VecDestroy(SSAXLocal); CHKERRQ(ierr);
-  ierr = VecScatterDestroy(SSAScatterGlobalToLocal); CHKERRQ(ierr);
+  ierr = DADestroy(SSADA);CHKERRQ(ierr);
 
-  /* a NEW VERSION:
-  // as is but without SSAScatterGlobalToLocal and SSAXLocal
-  */
   return 0;
 }
 
@@ -81,6 +76,23 @@ PetscErrorCode IceModel::initSSA() {
   if (!have_ssa_velocities) {
     ierr = vel_ssa.set(0.0); CHKERRQ(ierr);
   }
+  return 0;
+}
+
+
+PetscErrorCode IceModel::trivialMoveSSAXtoIMV2V() {
+  PetscErrorCode  ierr;
+  PISMVector2 **Xuv;
+  ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
+  ierr = DAVecGetArray(SSADA,SSAX,&Xuv); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      vel_ssa(i,j).u = Xuv[i][j].u;
+      vel_ssa(i,j).v = Xuv[i][j].v;
+    }
+  }
+  ierr = DAVecRestoreArray(SSADA,SSAX,&Xuv); CHKERRQ(ierr);
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -370,12 +382,13 @@ the second equation we also have 13 nonzeros per row.
 FIXME:  address use of DAGetMatrix and MatStencil once those are used
 
  */
-PetscErrorCode IceModel::assembleSSAMatrix(bool includeBasalShear, IceModelVec2S vNuH[2], Mat A) {
-  const PetscInt  Mx=grid.Mx, My=grid.My, M=2*My;
+PetscErrorCode IceModel::assembleSSAMatrix(
+      bool includeBasalShear, IceModelVec2S vNuH[2], Mat A) {
+  PetscErrorCode  ierr;
+
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   // next constant not too sensitive, but must match value in assembleSSARhs():
   const PetscScalar   scaling = 1.0e9;  // comparable to typical beta for an ice stream
-  PetscErrorCode  ierr;
   PetscScalar     **nuH[2], **tauc;
   PISMVector2     **uvssa;
 
@@ -394,43 +407,34 @@ PetscErrorCode IceModel::assembleSSAMatrix(bool includeBasalShear, IceModelVec2S
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscInt J = 2*j;
-      const PetscInt rowU = i*M + J;
-      const PetscInt rowV = i*M + J+1;
       const PismMask mask_value = vMask.value(i,j);
       if (mask_value == MASK_SHEET) {
         // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
         //   this is where boundary value to SSA is set
-        ierr = MatSetValues(A, 1, &rowU, 1, &rowU, &scaling, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = MatSetValues(A, 1, &rowV, 1, &rowV, &scaling, INSERT_VALUES); CHKERRQ(ierr);
+        MatStencil  row, col;
+        row.j = i; row.i = j; row.c = 0;
+        col.j = i; col.i = j; col.c = 0;
+        ierr = MatSetValuesStencil(A,1,&row,1,&col,&scaling,INSERT_VALUES); CHKERRQ(ierr);
+        row.c = 1;
+        col.c = 1;
+        ierr = MatSetValuesStencil(A,1,&row,1,&col,&scaling,INSERT_VALUES); CHKERRQ(ierr);
       } else {
-        const PetscInt im = (i + Mx - 1) % Mx, ip = (i + 1) % Mx;
-        const PetscInt Jm = 2 * ((j + My - 1) % My), Jp = 2 * ((j + 1) % My);
         const PetscScalar dx2 = dx*dx, d4 = dx*dy*4, dy2 = dy*dy;
-        /* Provide shorthand for the following staggered coefficients
+        /* Provide shorthand for the following staggered coefficients  nu H:
         *      c11
         *  c00     c01
         *      c10
         * Note that the positive i (x) direction is right and the positive j (y)
         * direction is up. */
-
-        // thickness H is incorporated here because nuH[][][] is actually 
-        //   viscosity times thickness
         const PetscScalar c00 = nuH[0][i-1][j];
         const PetscScalar c01 = nuH[0][i][j];
         const PetscScalar c10 = nuH[1][i][j-1];
         const PetscScalar c11 = nuH[1][i][j];
 
-        const PetscInt stencilSize = 13;
-        /* The locations of the stencil points for the U equation */
-        const PetscInt colU[] = {
-          /*       */ i*M+Jp,
-          im*M+Jp+1,  i*M+Jp+1,   ip*M+Jp+1,
-          im*M+J,     i*M+J,      ip*M+J,
-          im*M+J+1,               ip*M+J+1,
-          /*       */ i*M+Jm,
-          im*M+Jm+1,  i*M+Jm+1,   ip*M+Jm+1};
-        /* The values at those points */
+        const PetscInt sten = 13;
+        MatStencil  row, col[sten];
+
+        /* start with the values at the points */
         PetscScalar valU[] = {
           /*               */ -c11/dy2,
           (2*c00+c11)/d4,     2*(c00-c01)/d4,                 -(2*c01+c11)/d4,
@@ -438,16 +442,6 @@ PetscErrorCode IceModel::assembleSSAMatrix(bool includeBasalShear, IceModelVec2S
           (c11-c10)/d4,                                       (c10-c11)/d4,
           /*               */ -c10/dy2,
           -(2*c00+c10)/d4,    2*(c01-c00)/d4,                 (2*c01+c10)/d4 };
-
-        /* The locations of the stencil points for the V equation */
-        const PetscInt colV[] = {
-          im*M+Jp,        i*M+Jp,     ip*M+Jp,
-          /*           */ i*M+Jp+1,
-          im*M+J,                     ip*M+J,
-          im*M+J+1,       i*M+J+1,    ip*M+J+1,
-          im*M+Jm,        i*M+Jm,     ip*M+Jm,
-          /*           */ i*M+Jm+1 };
-        /* The values at those points */
         PetscScalar valV[] = {
           (2*c11+c00)/d4,     (c00-c01)/d4,                   -(2*c11+c01)/d4,
           /*               */ -4*c11/dy2,
@@ -473,8 +467,62 @@ PetscErrorCode IceModel::assembleSSAMatrix(bool includeBasalShear, IceModelVec2S
           valV[7] += beta_shelves_drag_too;
         }
 
-        ierr = MatSetValues(A, 1, &rowU, stencilSize, colU, valU, INSERT_VALUES); CHKERRQ(ierr);
-        ierr = MatSetValues(A, 1, &rowV, stencilSize, colV, valV, INSERT_VALUES); CHKERRQ(ierr);
+        // build "u" equation: NOTE TRANSPOSE
+        row.j = i; row.i = j; row.c = 0;
+        const PetscInt UI[] = {
+          /*       */ i,
+          i-1,        i,          i+1,
+          i-1,        i,          i+1,
+          i-1,                    i+1,
+          /*       */ i,
+          i-1,        i,          i+1};
+        const PetscInt UJ[] = {
+          /*       */ j+1,
+          j+1,        j+1,        j+1,
+          j,          j,          j,
+          j,                      j,
+          /*       */ j-1,
+          j-1,        j-1,        j-1};
+        const PetscInt UC[] = {
+          /*       */ 0,
+          1,          1,          1,
+          0,          0,          0,
+          1,                      1,
+          /*       */ 0,
+          1,          1,          1};
+        for (PetscInt m=0; m<sten; m++) {
+          col[m].j = UI[m]; col[m].i = UJ[m], col[m].c = UC[m];
+        }
+        ierr = MatSetValuesStencil(A,1,&row,sten,col,valU,INSERT_VALUES); CHKERRQ(ierr);
+
+        // build "v" equation: NOTE TRANSPOSE
+        row.j = i; row.i = j; row.c = 1;
+        const PetscInt VI[] = {
+          i-1,        i,          i+1,
+          /*       */ i,
+          i-1,                    i+1,
+          i-1,        i,          i+1,
+          i-1,        i,          i+1,
+          /*       */ i};
+        const PetscInt VJ[] = {
+          j+1,        j+1,        j+1,
+          /*       */ j+1,
+          j,                      j,
+          j,          j,          j,
+          j-1,        j-1,        j-1,
+          /*       */ j-1};
+        const PetscInt VC[] = {
+          0,          0,          0,
+          /*       */ 1,
+          0,                      0,
+          1,          1,          1,
+          0,          0,          0,
+          /*       */ 1};
+        for (PetscInt m=0; m<sten; m++) {
+          col[m].j = VI[m]; col[m].i = VJ[m], col[m].c = VC[m];
+        }
+        ierr = MatSetValuesStencil(A,1,&row,sten,col,valV,INSERT_VALUES); CHKERRQ(ierr);
+
       }
     }
   }
@@ -496,108 +544,59 @@ PetscErrorCode IceModel::assembleSSAMatrix(bool includeBasalShear, IceModelVec2S
 /*! 
 The right side of the SSA equations is just the driving stress term
    \f[ - \rho g H \nabla h. \f]
-The basal stress is put on the left side of the system.  (See comment for
-assembleSSAMatrix().)  
+The basal stress is put on the left side of the system.  This method builds the
+discrete approximation of the right side.  For more about the discretization
+of the SSA equations, see comments for assembleSSAMatrix().
 
-The surface slope is computed by centered difference onto the regular grid,
-which may use periodic ghosting.  (Optionally the surface slope can be computed 
-by only differencing into the grid for points at the edge; see test I.)
+The values of the driving stress on the i,j grid come from a call to
+computeDrivingStress().
 
-Note that the grid points with mask value MASK_SHEET correspond to the trivial 
-equations
+Grid points with mask value MASK_SHEET correspond to the trivial equations
    \f[ \bar u_{ij} = \frac{uvbar(i-1,j,0) + uvbar(i,j,0)}{2}, \f]
-and similarly for \f$\bar v_{ij}\f$.  That is, the vertically-averaged horizontal
-velocity is already known for these points because it was computed (on the staggered
-grid) using the SIA.
-
-Regarding the first argument, if \c surfGradInward == \c true then we differentiate
-the surface \f$h(x,y)\f$ inward from edge of grid at the edge of the grid.  This allows 
-certain to make sense on a period grid.  This applies to Test I and Test J, in particular.
+and similarly for \f$\bar v_{ij}\f$.  That is, the vertically-averaged
+horizontal velocity is already known for these points because it was either 
+computed (on the staggered grid) using the SIA or was set by the -ssaBC
+mechanism.
  */
 PetscErrorCode IceModel::assembleSSARhs(Vec rhs) {
-  const PetscInt  M=2*grid.My;
+  PetscErrorCode  ierr;
 
   // next constant not too sensitive, but must match value in assembleSSAMatrix():
   const PetscScalar   scaling = 1.0e9;  // comparable to typical beta for an ice stream;
-
-  PetscErrorCode  ierr;
-  PetscScalar     **taudx, **taudy;
 
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
   // get driving stress components
   ierr = computeDrivingStress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr); // in iMgeometry.cc
+
+  PetscScalar     **taudx, **taudy;
+  PISMVector2     **rhs_uv;
+
   ierr = vWork2d[0].get_array(taudx); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(taudy); CHKERRQ(ierr);
-
-  /* rhs (= right-hand side) assembly loop */
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = uvbar.begin_access(); CHKERRQ(ierr);
+  ierr = DAVecGetArray(SSADA,rhs,&rhs_uv); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscInt J = 2*j;
-      const PetscInt rowU = i*M + J;
-      const PetscInt rowV = i*M + J+1;
       if (vMask.value(i,j) == MASK_SHEET) {
-        ierr = VecSetValue(rhs, rowU, scaling * 0.5*(uvbar(i-1,j,0) + uvbar(i,j,0)),
-                           INSERT_VALUES); CHKERRQ(ierr);
-        ierr = VecSetValue(rhs, rowV, scaling * 0.5*(uvbar(i,j-1,1) + uvbar(i,j,1)),
-                           INSERT_VALUES); CHKERRQ(ierr);
+        rhs_uv[i][j].u = scaling * 0.5*(uvbar(i-1,j,0) + uvbar(i,j,0));
+        rhs_uv[i][j].v = scaling * 0.5*(uvbar(i,j-1,1) + uvbar(i,j,1));
       } else {
 	// usual case: use already computed driving stress
-	ierr = VecSetValue(rhs, rowU, taudx[i][j], INSERT_VALUES); CHKERRQ(ierr);
-	ierr = VecSetValue(rhs, rowV, taudy[i][j], INSERT_VALUES); CHKERRQ(ierr);          
+        rhs_uv[i][j].u = taudx[i][j];
+        rhs_uv[i][j].v = taudy[i][j];
       }
     }
   }
+  ierr = DAVecRestoreArray(SSADA,rhs,&rhs_uv); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = uvbar.end_access(); CHKERRQ(ierr);
-
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
 
   ierr = VecAssemblyBegin(rhs); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(rhs); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Move the solution to the SSA system into a \c Vec which is \c DA distributed.
-/*!
-Since the parallel layout of the vector \c x in the \c KSP representation of the 
-linear SSA system does not in general have anything to do with the \c DA-based
-vectors, for the rest of \c IceModel, we must scatter the entire vector to all 
-processors.  In particular, this procedure runs once for each outer iteration
-in order to put the velocities where needed to compute effective viscosity.
-
-in a NEW VERSION this entire procedure would be removed
- */
-PetscErrorCode IceModel::moveVelocityToDAVectors(Vec x) {
-  const PetscInt  M = 2 * grid.My;
-  PetscErrorCode  ierr;
-  PetscScalar     *uv;
-  Vec             xLoc = SSAXLocal;
-  PISMVector2     **uv_da;
-
-  ierr = VecScatterBegin(SSAScatterGlobalToLocal, x, xLoc, 
-           INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(SSAScatterGlobalToLocal, x, xLoc, 
-           INSERT_VALUES, SCATTER_FORWARD); CHKERRQ(ierr);
-
-  ierr = VecGetArray(xLoc, &uv); CHKERRQ(ierr);
-  ierr = vel_ssa.get_array(uv_da); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      uv_da[i][j].u = uv[i*M + 2*j];
-      uv_da[i][j].v = uv[i*M + 2*j+1];
-    }
-  }
-  ierr = VecRestoreArray(xLoc, &uv); CHKERRQ(ierr);
-  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
-
-  // Communicate so that we have stencil width for evaluation of effective viscosity (and geometry)
-  ierr = vel_ssa.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vel_ssa.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -665,9 +664,7 @@ Generally use velocitySSA(PetscInt*) unless you have a vNuH[2] already stored aw
  */
 PetscErrorCode IceModel::velocitySSA(IceModelVec2S vNuH[2], PetscInt *numiter) {
   PetscErrorCode ierr;
-  KSP ksp = SSAKSP;
-  Mat A = SSAStiffnessMatrix;
-  Vec x = SSAX, rhs = SSARHS; // solve  A x = rhs
+  Mat A = SSAStiffnessMatrix; // solve  A SSAX = SSARHS
   IceModelVec2S vNuHOld[2] = {vWork2d[2], vWork2d[3]};
   PetscReal   norm, normChange;
   PetscInt    its;
@@ -684,31 +681,33 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2S vNuH[2], PetscInt *numiter) {
 
   // computation of RHS only needs to be done once; does not depend on solution;
   //   but matrix changes under nonlinear iteration (loop over k below)
-  ierr = assembleSSARhs(rhs); CHKERRQ(ierr);
+  ierr = assembleSSARhs(SSARHS); CHKERRQ(ierr);
 
   for (PetscInt l=0; ; ++l) { // iterate with increasing regularization parameter
     ierr = computeEffectiveViscosity(vNuH, epsilon); CHKERRQ(ierr);
     ierr = update_nu_viewers(vNuH, vNuHOld, true); CHKERRQ(ierr);
     // iterate on effective viscosity: "outer nonlinear iteration":
     for (PetscInt k=0; k<ssaMaxIterations; ++k) { 
+      if (getVerbosityLevel() > 2) {
+        char tempstr[50] = "";  snprintf(tempstr,50, "  %d,%2d:", l, k);
+        stdout_ssa += tempstr;
+      }
     
       // in preparation of measuring change of effective viscosity:
       ierr = vNuH[0].copy_to(vNuHOld[0]); CHKERRQ(ierr);
       ierr = vNuH[1].copy_to(vNuHOld[1]); CHKERRQ(ierr);
 
-      // reform matrix, which depends on updated viscosity
-      if (getVerbosityLevel() > 2) {
-        char tempstr[50] = "";  snprintf(tempstr,50, "  %d,%2d:", l, k);
-        stdout_ssa += tempstr;
-      }
+      // assemble (or re-assemble) matrix, which depends on updated viscosity
       ierr = assembleSSAMatrix(true, vNuH, A); CHKERRQ(ierr);
       if (getVerbosityLevel() > 2)
         stdout_ssa += "A:";
 
       // call PETSc to solve linear system by iterative method; "inner linear iteration"
-      ierr = KSPSetOperators(ksp, A, A, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
-      ierr = KSPSolve(ksp, rhs, x); CHKERRQ(ierr); // SOLVE
-      ierr = KSPGetConvergedReason(ksp, &reason); CHKERRQ(ierr);
+      ierr = KSPSetOperators(SSAKSP, A, A, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+      ierr = KSPSolve(SSAKSP, SSARHS, SSAX); CHKERRQ(ierr); // SOLVE
+
+      // report to standard out about iteration
+      ierr = KSPGetConvergedReason(SSAKSP, &reason); CHKERRQ(ierr);
       if (reason < 0) {
         ierr = verbPrintf(1,grid.com, 
             "\n\n\nPISM ERROR:  KSPSolve() reports 'diverged'; reason = %d = '%s';\n"
@@ -716,25 +715,30 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2S vNuH[2], PetscInt *numiter) {
             reason,KSPConvergedReasons[reason]); CHKERRQ(ierr);
         PetscEnd();
       }
-      ierr = KSPGetIterationNumber(ksp, &its); CHKERRQ(ierr);
+      ierr = KSPGetIterationNumber(SSAKSP, &its); CHKERRQ(ierr);
       if (getVerbosityLevel() > 2) {
         char tempstr[50] = "";  snprintf(tempstr,50, "S:%d,%d: ", its, reason);
         stdout_ssa += tempstr;
       }
 
-      // finish iteration and report to standard out
-      ierr = moveVelocityToDAVectors(x); CHKERRQ(ierr);
+      // Communicate so that we have stencil width for evaluation of effective
+      //   viscosity on next "outer" iteration (and geometry etc. if done):
+      ierr = trivialMoveSSAXtoIMV2V(); CHKERRQ(ierr);
+      ierr = vel_ssa.beginGhostComm(); CHKERRQ(ierr);
+      ierr = vel_ssa.endGhostComm(); CHKERRQ(ierr);
+      //OLD:  ierr = moveVelocityToDAVectors(x); CHKERRQ(ierr);
+
+      // update viscosity and check for viscosity convergence
       ierr = computeEffectiveViscosity(vNuH, epsilon); CHKERRQ(ierr);
+      ierr = update_nu_viewers(vNuH, vNuHOld, true); CHKERRQ(ierr);
       ierr = testConvergenceOfNu(vNuH, vNuHOld, &norm, &normChange); CHKERRQ(ierr);
       if (getVerbosityLevel() > 2) {
-        // verbose output includes norm and change for each outer iteration
         char tempstr[100] = "";
         snprintf(tempstr,100, "|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n", 
                          norm, normChange/norm);
         stdout_ssa += tempstr;
       }
 
-      ierr = update_nu_viewers(vNuH, vNuHOld, true); CHKERRQ(ierr);
       *numiter = k + 1;
       if (norm == 0 || normChange / norm < ssaRelativeTolerance) goto done;
 
