@@ -21,11 +21,11 @@ run_test ()
     diff test-K-out.txt - > /dev/null <<END-OF-OUTPUT
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 temp      :        maxT         avT       maxTb        avTb
-               0.376380    0.069534    0.037720    0.032864
+               0.436647    0.165911    0.878458    0.633755
 NUM ERRORS DONE
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 temp      :        maxT         avT       maxTb        avTb
-               0.052752    0.008728    0.007214    0.006248
+               0.128707    0.037709    0.290305    0.196936
 NUM ERRORS DONE
 END-OF-OUTPUT
 

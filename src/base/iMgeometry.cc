@@ -461,7 +461,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   
     ierr = vdHdt.begin_access(); CHKERRQ(ierr);
     
-    if (config.get_flag("correct_cell_areas")) {
+    if (cell_area.was_created()) {
       ierr = cell_area.begin_access(); CHKERRQ(ierr);
       for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
 	for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {

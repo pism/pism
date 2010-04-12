@@ -383,10 +383,15 @@ static inline PetscReal sin_degrees(PetscReal deg) {
   return sin(deg * M_PI / 180.0);
 }
 
-//! Allocate and compute corrected cell areas. Uses linear interpolation
-//! to find latitudes of grid corners, WGS84 parameters to compute cartesian
+//! Allocate and compute corrected cell areas. Uses linear interpolation to
+//! find latitudes of grid corners, WGS84 parameters to compute cartesian
 //! Z-coordinates of grid corners and vector products to compute areas of
 //! resulting triangles.
+//!
+//! Note that the latitude field is \b not periodic, so computing corrected
+//! areas for cells at the grid boundary is not feasible. This should not
+//! matter, since these cells should be ice-free.
+
 PetscErrorCode IceModel::correct_cell_areas() {
   PetscErrorCode ierr;
 
