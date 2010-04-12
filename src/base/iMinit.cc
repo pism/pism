@@ -58,6 +58,14 @@ PetscErrorCode IceModel::set_grid_defaults() {
   ierr = nc.find_dimension("y", NULL, y_dim_exists); CHKERRQ(ierr);
   ierr = nc.find_variable("t", NULL, t_exists); CHKERRQ(ierr);
   ierr = nc.get_grid_info(gi);
+
+  bool mapping_exists;
+  ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
+  if (mapping_exists) {
+    ierr = mapping.read(filename.c_str()); CHKERRQ(ierr);
+    ierr = mapping.print(); CHKERRQ(ierr);
+  }
+
   ierr = nc.close(); CHKERRQ(ierr);
 
   // if the horizontal dimensions are absent then we can not proceed
@@ -236,6 +244,14 @@ PetscErrorCode IceModel::grid_setup() {
     // file:
     ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
     ierr = nc.get_att_text(NC_GLOBAL, "source", source); CHKERRQ(ierr);
+
+    bool mapping_exists;
+    ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
+    if (mapping_exists) {
+      ierr = mapping.read(filename.c_str()); CHKERRQ(ierr);
+      ierr = mapping.print(); CHKERRQ(ierr);
+    }
+
     ierr = nc.close(); CHKERRQ(ierr);
 
     // If it's missing, print a warning
@@ -543,7 +559,10 @@ PetscErrorCode IceModel::misc_setup() {
   //   initializes IceBasalResistancePlasticLaw* basal; sets fields vtauc, vtillphi
   ierr = initBasalTillModel(); CHKERRQ(ierr);
 #endif
-  
+
+  // compute corrected cell areas:
+  ierr = correct_cell_areas(); CHKERRQ(ierr);
+
   return 0;
 }
 

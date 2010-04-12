@@ -426,9 +426,18 @@ netcdf pism_config {
    pism_config:grid_lambda = 4.0;
    pism_config:grid_lambda_doc = "; Vertical grid spacing parameter. Roughly equal to the factor by which the grid is coarser at an end away from the ice-bedrock interface.";
 
+   pism_config:correct_cell_areas = "yes";
+   pism_config:correct_cell_areas_doc = "Compute corrected cell areas using WGS84 datum (for ice area and volume computations).";
+
+   pism_config:WGS84_semimajor_axis = 6378137.0;
+   pism_config:WGS84_semimajor_axis_doc = "m; WGS84 reference ellipsoid semi-major axis";
+
+   pism_config:WGS84_semiminor_axis = 6356752.314245;
+   pism_config:WGS84_semiminor_axis_doc = "m; WGS84 reference ellipsoid semi-minor axis";
+
    pism_config:output_medium = "cbar cbase csurf cflx dHdt tauc taud usurf wvelsurf";
    pism_config:output_medium_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size is selected. Does not include fields written by boundary models.";
-   pism_config:output_big = "acab age artm bfrict bheatflx bmelt bwat bwp cbar cbase cflx csurf dHdt dbdt dhdt enthalpybase enthalpysurf hardav lat litho_temp lon mask rank tauc taud temp tempbase tempsurf temp_pa thk tillphi topg uvbasal uvbar usurf uvel uvelbase uvelsurf vvel vvelbase vvelsurf wvel_rel wvelbase wvelsurf";
+   pism_config:output_big = "acab age artm bfrict bheatflx bmelt bwat bwp cbar cbase cell_area cflx csurf dHdt dbdt dhdt enthalpybase enthalpysurf hardav lat litho_temp lon mask rank tauc taud temp tempbase tempsurf temp_pa thk tillphi topg uvbasal uvbar usurf uvel uvelbase uvelsurf vvel vvelbase vvelsurf wvel_rel wvelbase wvelsurf";
    pism_config:output_big_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'big' output size is selected. Does not include fields written by boundary models.";
    pism_config:ts_variables = "dt ivol imass iarea iareag iareaf divoldt dimassdt total_surface_ice_flux total_basal_ice_flux total_sub_shelf_ice_flux ienthalpy dienthalpydt";
    pism_config:ts_variables_doc = "Space-separated list of scalar diagnostic quantities to save if -ts_file and -ts_times are used.";

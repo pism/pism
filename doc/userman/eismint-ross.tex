@@ -42,7 +42,7 @@ The original EISMINT-Ross data are on a 111 by 147 grid but \verb|eisross.py| ex
 \subsubsection*{Diagnostic computation of ice shelf velocity}  A basic Ross ice shelf velocity computation from these data is:
 
 \begin{verbatim}
-$pross boot_from ross.nc -ssa -ssaBC ross.nc \
+$pross -boot_from ross.nc -ssa -ssaBC ross.nc \
         -Mx 147 -My 147 -Mz 3 -Lz 1e3
 \end{verbatim}
 Here we bootstrap (\verb|-boot_from|; see section \ref{sect:boot}) from \verb|ross.nc|.  We also use a special option \verb|-ssaBC| to specify \verb|ross.nc| as the source of the boundary value data for the ice shelf equations, as mentioned in the last paragraph.  The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  The maximum thickness of the ice is 874 m so we choose a height for the computational box (\verb|-Lz|) large enough to contain the ice.  Note that using a small number of vertical levels (\verb|-Mz 11|) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at each depth is just the surface temperature \cite{MacAyealetal}.  In fact there is no thermocoupling issue because the ice hardness used here is constant.
@@ -69,8 +69,7 @@ The result is very similar, as it should be.  On the other hand, since the data 
 Alternately one might want to experiment with different values of the hardness parameter.  Its default value is $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ as in \cite{MacAyealetal}.   We can also use smaller (more severe) tolerances for the nonlinear iteration (\intextoption{ssa_rtol}) and the linear iteration (\intextoption{ksp_rtol}) to get more confidence in the numerical scheme:
 
 \begin{verbatim}
-$ pross -bo
-ot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 \
+$ pross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 \
         -Mz 11 -ssa -ice_type custom -ice_custom_hardness 1.8e8 \
         -o ross_out_1p8.nc -ssa_rtol 1e-6 -ksp_rtol 1e-10
 \end{verbatim}
@@ -107,14 +106,14 @@ Naturally, the question is ``does this $\chi^2$ value of $3637$ represent a good
 \begin{table}[ht]
 \centering
 \caption{Model performance index, $\chi^2$ (non-dimensional).  \protect{\textsl{(Reproduction of Table 1 in \cite{MacAyealetal}.)}}}\label{tab:chisqr}
-\begin{tabular}{p{0.2\linewidth}p{0.1\linewidth}p{0.3\linewidth}}\hline
-\textsl{Model} & $\chi^2$ & \textsl{Maximum velocity, m/year} \\
+\begin{tabular}{p{0.2\linewidth}p{0.1\linewidth}p{0.3\linewidth}}\toprule
+\textsl{Model} & $\chi^2$ & \textsl{Maximum velocity, m/year} \\\midrule
 Bremerhaven1 & 3605 & 1379 \\
 Bremerhaven2 & 12\,518 & 1663 \\
 Chicago1 & 5114 & 1497 \\
 Chicago2 & 5125 & 1497 \\
 Grenoble & 5237 & 1508 \\
-\hline
+\bottomrule
 \end{tabular}
 \end{table}
 \normalsize

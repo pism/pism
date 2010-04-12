@@ -333,7 +333,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vLongitude); CHKERRQ(ierr);
 
   // latitude
-  ierr = vLatitude.create(grid, "lat", false); CHKERRQ(ierr);
+  ierr = vLatitude.create(grid, "lat", true); CHKERRQ(ierr); // has ghosts so that we can compute cell areas
   ierr = vLatitude.set_attrs("mapping", "latitude", "degree_north", "latitude"); CHKERRQ(ierr);
   vLatitude.time_independent = true;
   ierr = vLatitude.set_attr("coordinates", ""); CHKERRQ(ierr);

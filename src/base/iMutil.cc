@@ -365,3 +365,120 @@ void IceModel::attach_surface_model(PISMSurfaceModel *my_surface) {
 void IceModel::attach_ocean_model(PISMOceanModel *my_ocean) {
   ocean = my_ocean;
 }
+
+//! Computes the area of a triangle using vector cross product.
+static PetscReal triangle_area(PetscReal *A, PetscReal *B, PetscReal *C) {
+  PetscReal V1[3], V2[3];
+  for (int j = 0; j < 3; ++j) {
+    V1[j] = B[j] - A[j];
+    V2[j] = C[j] - A[j];
+  }
+
+  return 0.5*sqrt(PetscSqr(V1[1]*V2[2] - V2[1]*V1[2]) +
+		  PetscSqr(V1[0]*V2[2] - V2[0]*V1[2]) +
+		  PetscSqr(V1[0]*V2[1] - V2[0]*V1[1]));
+}
+
+static inline PetscReal sin_degrees(PetscReal deg) {
+  return sin(deg * M_PI / 180.0);
+}
+
+//! Allocate and compute corrected cell areas. Uses linear interpolation
+//! to find latitudes of grid corners, WGS84 parameters to compute cartesian
+//! Z-coordinates of grid corners and vector products to compute areas of
+//! resulting triangles.
+PetscErrorCode IceModel::correct_cell_areas() {
+  PetscErrorCode ierr;
+
+  if (!mapping.has("grid_mapping_name"))
+    return 0;
+
+  if (mapping.get_string("grid_mapping_name") != "polar_stereographic")
+    return 0;
+
+  if (!config.get_flag("correct_cell_areas"))
+    return 0;
+
+  ierr = verbPrintf(2,grid.com,
+		    "* Computing corrected cell areas using WGS84 datum...\n"); CHKERRQ(ierr);
+
+  // allocate cell_area
+  ierr = cell_area.create(grid, "cell_area", false); CHKERRQ(ierr);
+  ierr = cell_area.set_attrs("internal", "corrected cell areas", "m2", ""); CHKERRQ(ierr);
+  cell_area.time_independent = true;
+  ierr = cell_area.set_glaciological_units("km2"); CHKERRQ(ierr);
+  cell_area.write_in_glaciological_units = true;
+  ierr = variables.add(cell_area); CHKERRQ(ierr);
+
+  PetscReal a = config.get("WGS84_semimajor_axis"),
+    b = config.get("WGS84_semiminor_axis"),
+    oe = acos(b/a);
+
+  // value to use near the grid boundary
+  ierr = cell_area.set(grid.dx * grid.dy);
+
+// Cell layout:
+// D (nw)      C (ne)
+// +-----------+
+// |           |
+// |           |
+// |     o     |
+// |           |
+// |           |
+// +-----------+
+// A (sw)      B (se)
+
+  PetscScalar **lat;
+  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  ierr = vLatitude.get_array(lat); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    if ((i == 0) || (i == grid.Mx-1))
+      continue;
+
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if ((j == 0) || (j == grid.My-1))
+	continue;
+
+      PetscReal 
+        x_nw = (grid.x0 - grid.Lx + i*grid.dx) - 0.5*grid.dx,
+        x_sw = x_nw,
+        x_ne = (grid.x0 - grid.Lx + i*grid.dx) + 0.5*grid.dx,
+        x_se = x_ne,
+        y_nw = (grid.y0 - grid.Ly + j*grid.dy) + 0.5*grid.dy,
+        y_sw = (grid.y0 - grid.Ly + j*grid.dy) - 0.5*grid.dy,
+        y_se = y_sw,
+        y_ne = y_nw,
+        lat_nw = 0.5 * ( lat[i][j] + lat[i-1][j+1] ),
+        lat_sw = 0.5 * ( lat[i][j] + lat[i-1][j-1] ),
+        lat_se = 0.5 * ( lat[i][j] + lat[i+1][j-1] ),
+        lat_ne = 0.5 * ( lat[i][j] + lat[i+1][j+1] );
+
+      PetscReal A[3] = {x_sw, y_sw, 0};
+      PetscReal B[3] = {x_se, y_se, 0};
+      PetscReal C[3] = {x_ne, y_ne, 0};
+      PetscReal D[3] = {x_nw, y_nw, 0};
+      
+      // compute z's (see http://en.wikipedia.org/wiki/Reference_ellipsoid)
+      PetscReal N;
+      // A
+      N = a/sqrt( 1 - PetscSqr( sin(oe)*sin_degrees(lat_sw) ) );
+      A[2] = sin_degrees(lat_sw) * N * PetscSqr(b/a);
+      // B
+      N = a/sqrt( 1 - PetscSqr( sin(oe)*sin_degrees(lat_se) ) );
+      B[2] = sin_degrees(lat_se) * N * PetscSqr(b/a);
+      // C
+      N = a/sqrt( 1 - PetscSqr( sin(oe)*sin_degrees(lat_ne) ) );
+      C[2] = sin_degrees(lat_ne) * N * PetscSqr(b/a);
+      // D
+      N = a/sqrt( 1 - PetscSqr( sin(oe)*sin_degrees(lat_nw) ) );
+      D[2] = sin_degrees(lat_nw) * N * PetscSqr(b/a);
+
+      cell_area(i,j) = triangle_area(A, B, C) + triangle_area(A, C, D);
+    }
+  }
+  ierr = cell_area.end_access(); CHKERRQ(ierr);
+  ierr = vLatitude.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+

@@ -50,16 +50,6 @@ enum PismMask {
   MASK_OCEAN_AT_TIME_0  = 7
 };
 
-// FIXME: this should be removed
-static inline int PismModMask(PetscScalar maskvalue) {
-  int intmask = static_cast<int>(floor(maskvalue + 0.5));
-  if (intmask > MASK_FLOATING) {
-    return intmask - 4;
-  } else {
-    return intmask;
-  }
-}
-
 const PetscInt TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 
 bool is_increasing(int len, double *a);

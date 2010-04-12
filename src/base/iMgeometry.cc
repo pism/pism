@@ -360,10 +360,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
 
-  PetscScalar icecount = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (vH(i,j) > 0.0)  icecount++;
 
       // get thickness averaged onto staggered grid;
       //    note Div Q = Div (- f(v) D grad h + (1-f(v)) U_b H) 
@@ -457,16 +455,40 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vHnew.add(-1.0, vH, vdHdt); CHKERRQ(ierr); // vdHdt = vHnew - vH
   ierr = vdHdt.scale(1.0/dt); CHKERRQ(ierr);	    // vdHdt = vdHdt / dt
 
-  // average value of dH/dt; also d(volume)/dt
-  PetscScalar gicecount;
-  ierr = PetscGlobalSum(&icecount, &gicecount, grid.com); CHKERRQ(ierr);
+  // d(volume)/dt
+  {
+    PetscScalar dvol=0.0;
+  
+    ierr = vdHdt.begin_access(); CHKERRQ(ierr);
+    
+    if (config.get_flag("correct_cell_areas")) {
+      ierr = cell_area.begin_access(); CHKERRQ(ierr);
+      for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+	for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	  dvol += vdHdt(i,j) * cell_area(i,j);
+	}
+      }  
+      ierr = cell_area.end_access(); CHKERRQ(ierr);
+    } else {
+      const PetscScalar a = grid.dx * grid.dy; // cell area
+      for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+	for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	  dvol += vdHdt(i,j) * a;
+	}
+      }  
+    }
+
+    ierr = vdHdt.end_access(); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&dvol, &dvoldt, grid.com); CHKERRQ(ierr);
+  }
+
+  // average value of dH/dt; 
+  PetscScalar ice_area;
+  ierr = compute_ice_area(ice_area); CHKERRQ(ierr);
 
   ierr = vdHdt.sum(gdHdtav); CHKERRQ(ierr);
-  dvoldt = gdHdtav * grid.dx * grid.dy;  // m^3/s
-  gdHdtav = gdHdtav / gicecount; // m/s
+  gdHdtav = gdHdtav / ice_area; // m/s
 
-  // now that dHdt is correctly calculated and summed, mask out for diagnostic display
-  //   ierr = vdHdt.mask_by(vHnew, GSL_NAN); CHKERRQ(ierr);
 
   // finally copy vHnew into vH and communicate ghosted values
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);

@@ -57,8 +57,7 @@ what is printed to the standard output.
     summary and also a synopsis of the PETSc configuration in use.\\
     \intextoption{options_left} & Shows an options table which will indicate if
     a user option was not read or was misspelled.\\
-   \intextoption{display} & The option \texttt{-display :0} seems to frequently be needed to let PETSc use Xwindows when running multiple processes.  \emph{It must be given as a \emph{final} option, after all the others.}\\
-  \intextoption{help} & Gives PISM help message and then a brief description of many PETSc options.\\
+ \intextoption{help} & Gives PISM help message and then a brief description of many PETSc options.\\
  \intextoption{info} & Gives excessive information about PETSc operations during run.  Option \texttt{-verbose} for PISM (above) is generally more useful, except possibly for debugging.
 
     \\\bottomrule
@@ -313,17 +312,21 @@ are transposed.
   \centering
   \begin{tabular}{p{0.4\linewidth}p{0.5\linewidth}}\toprule
     \small
-   \textbf{Option} & \textbf{Description}\\
+    \textbf{Option} & \textbf{Description}\\
     \midrule
     \listopt{view_map} & Turns on map-plane views of one or several variables, see tables \ref{tab:extra-vars}  \\
     \listopt{view_slice} & Turns on viewers showing a slice of a 3D field at a certain level above the base of ice\\
-    \txtopt{slice_level}{(meters)}& Specifies the level for the previous option\\
+    \txtopt{view_slice_level}{(meters)}& Specifies the level for the previous option\\
     \intextoption{viewer_size} number & desired viewer size, in pixels\\
     \listopt{view_sounding} &Turns on sounding viewers showing values in a column\\
     \txtopt{id}{row} & Sounding row-index\\
     \txtopt{jd}{column} & Sounding column-index\\
-    \bottomrule
-  \normalsize
+    \intextoption{display} & The option \texttt{-display :0} seems to
+    frequently be needed to let PETSc use Xwindows when running multiple
+    processes.  \emph{It must be given as a \emph{final} option, after all the
+      others.}\\
+   \bottomrule
+    \normalsize
   \end{tabular}
  \label{tab:diag-viewers}
 \end{table}
@@ -354,7 +357,7 @@ Some diagnostic quantities are \emph{only} available as run-time viewers:
     \texttt{diffusivity} & diffusivity coefficient D in mass balance equation in $m^{2}/s$. Meaningful only in regions of shallow ice flow.\\
     \texttt{nuH} & two viewers: vertically-averaged effective viscosity times thickness; on $i$ and $j$ offset grids. Only meaningful in ice streams and shelves.\\
     \texttt{log_nuH} & log base ten of the vertically-averaged effective viscosity times thickness on the regular grid. Only meaningful in ice streams and shelves.\\
-    \intextoption{ksp_monitor_draw} & Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Shows norm of residual versus iteration number.\\
+    \intextoption{ksp_monitor_draw} & Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Shows norm of residual versus iteration number.\\\bottomrule
     \normalsize
   \end{tabular}
 \end{center}

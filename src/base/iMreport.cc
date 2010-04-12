@@ -1257,13 +1257,25 @@ PetscErrorCode IceModel::compute_ice_volume(PetscScalar &result) {
   const PetscScalar a = grid.dx * grid.dy; // cell area
   
   ierr = vH.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (vH(i,j) > 0) {
-        volume += a * vH(i,j);
+
+  if (config.get_flag("correct_cell_areas")) {
+    ierr = cell_area.begin_access(); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	if (vH(i,j) > 0)
+	  volume += vH(i,j) * cell_area(i,j);
       }
-    }
-  }  
+    }  
+    ierr = cell_area.end_access(); CHKERRQ(ierr);
+  } else {
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	if (vH(i,j) > 0)
+	  volume += vH(i,j) * a;
+      }
+    }  
+  }
+
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
@@ -1277,12 +1289,25 @@ PetscErrorCode IceModel::compute_ice_area(PetscScalar &result) {
   const PetscScalar a = grid.dx * grid.dy; // cell area
   
   ierr = vH.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (vH(i,j) > 0)
-        area += a;
-    }
-  }  
+
+  if (config.get_flag("correct_cell_areas")) {
+    ierr = cell_area.begin_access(); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	if (vH(i,j) > 0)
+	  area += cell_area(i,j);
+      }
+    }  
+    ierr = cell_area.end_access(); CHKERRQ(ierr);
+  } else {
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	if (vH(i,j) > 0)
+	  area += a;
+      }
+    }  
+  }
+
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
@@ -1297,12 +1322,25 @@ PetscErrorCode IceModel::compute_ice_area_grounded(PetscScalar &result) {
   
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ( (vH(i,j) > 0) && vMask.is_grounded(i,j) )
-        area += a;
-    }
-  }  
+
+  if (config.get_flag("correct_cell_areas")) {
+    ierr = cell_area.begin_access(); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	if ( (vH(i,j) > 0) && vMask.is_grounded(i,j) )
+	  area += cell_area(i,j);
+      }
+    }  
+    ierr = cell_area.end_access(); CHKERRQ(ierr);
+  } else {
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	if ( (vH(i,j) > 0) && vMask.is_grounded(i,j) )
+	  area += a;
+      }
+    }  
+  }
+
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
@@ -1318,12 +1356,25 @@ PetscErrorCode IceModel::compute_ice_area_floating(PetscScalar &result) {
   
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ( (vH(i,j) > 0) && vMask.is_floating(i,j) )
-        area += a;
-    }
-  }  
+
+  if (config.get_flag("correct_cell_areas")) {
+    ierr = cell_area.begin_access(); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	if ( (vH(i,j) > 0) && vMask.is_floating(i,j) )
+	  area += cell_area(i,j);
+      }
+    }  
+    ierr = cell_area.end_access(); CHKERRQ(ierr);
+  } else {
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	if ( (vH(i,j) > 0) && vMask.is_floating(i,j) )
+	  area += a;
+      }
+    }  
+  }
+
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 

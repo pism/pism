@@ -62,13 +62,6 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 					     // not exist
   LocalInterpCtx *lic = new LocalInterpCtx(g, NULL, NULL, grid);
 
-  bool mapping_exists;
-  ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
-  if (mapping_exists) {
-    ierr = mapping.read(filename); CHKERRQ(ierr);
-    ierr = mapping.print(); CHKERRQ(ierr);
-  }
-
   ierr = nc.close(); CHKERRQ(ierr);
 
   // now work through all the 2d variables, regridding if present and otherwise

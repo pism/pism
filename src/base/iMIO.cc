@@ -289,14 +289,6 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     ierr = setEnth3FromT3AndLiqfrac3(Enthnew3); CHKERRQ(ierr);
   }
 
-  // read mapping parameters if present
-  bool mapping_exists;
-  ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
-  if (mapping_exists) {
-    ierr = mapping.read(filename); CHKERRQ(ierr);
-    ierr = mapping.print(); CHKERRQ(ierr);
-  }
-
   string history;
   ierr = nc.get_att_text(NC_GLOBAL, "history", history); CHKERRQ(ierr);
   global_attributes.prepend_history(history);

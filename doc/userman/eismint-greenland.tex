@@ -260,7 +260,7 @@ EISMINT-Greenland also calls for a baseline run for another 500 years which star
 
 \verb|mpiexec -n 8 pgrn -ccl3 -i green_ccl3_year0.nc -y 500 -o green_ccl3_year500.nc|
 
-A final ``greenhouse warming'' experiment ``GWL3'' (option \intextoption{gwl3}) is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It runs for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
+A final ``greenhouse warming'' experiment ``GWL3'' (options \intextoption{gwl3} and \intextoption{gwl3_start_year}) is described in the EISMINT-Greenland \cite{RitzEISMINT}.  It runs for 500 years with the temperature increasing by $0.035^\circ C/$year for the first 80 years, then at a rate of $0.0017^\circ C/$year for the last 420 years:
 
 \verb|mpiexec -n 8 pgrn -gwl3 -i green_ccl3_year0.nc -y 500 -o green_gwl3_year500.nc|
 

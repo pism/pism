@@ -97,6 +97,7 @@ public:
   virtual void attach_ocean_model(PISMOceanModel *ocean);
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
+  virtual PetscErrorCode correct_cell_areas();
 
   // see iMIO.cc
   virtual PetscErrorCode initFromFile(const char *);
@@ -148,7 +149,8 @@ protected:
     acab,		//!< accumulation/ablation rate; no ghosts
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
-    shelfbmassflux;	//<! ice mass flux into the ocean at the shelf base; no ghosts
+    shelfbmassflux,	//!< ice mass flux into the ocean at the shelf base; no ghosts
+    cell_area;		//!< cell areas (computed using the WGS84 datum)
 
   IceModelVec2Stag uvbar; //!< ubar and vbar on staggered grid; ubar at i+1/2, vbar at j+1/2
 
