@@ -325,7 +325,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vtillphi); CHKERRQ(ierr);
 
   // longitude
-  ierr = vLongitude.create(grid, "lon", false); CHKERRQ(ierr);
+  ierr = vLongitude.create(grid, "lon", true); CHKERRQ(ierr);
   ierr = vLongitude.set_attrs("mapping", "longitude", "degree_east", "longitude"); CHKERRQ(ierr);
   vLongitude.time_independent = true;
   ierr = vLongitude.set_attr("coordinates", ""); CHKERRQ(ierr);

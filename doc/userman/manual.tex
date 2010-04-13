@@ -190,7 +190,7 @@ Users who want to understand how PISM works, extend PISM, and/or generally advan
 
 \subsection{PISM design principles}\index{PISM!principles}  This section gives an overview of ice dynamics models in PISM, but first we list some organizing principles:
 \begin{enumerate}
-\item source code should be open, free, and works well with other free software tools,
+\item source code should be open, free, and work well with other free software tools,
 \item science is better if done with publicly-available data,
 \item numerical methods should be verifiable (i.e.~we want comparisons to exact solutions of the modeled equations),
 \item shallow models are (currently) the most effective at whole ice sheet scale,
@@ -289,14 +289,14 @@ interfaces mentioned above.\footnote{This is a somewhat simplified view  corresp
 
 The PISM ice dynamics core would like to be able to get these fields directly from observations or measurements, or directly from a GCM.  In many realistic modeling situations, however, PISM code must be used for all or part of the surface processes modeling necessary to provide the ice-dynamics core with the ``right'' fields.  Due to differences in model resolutions and required down-scaling, this need for some PISM-based boundary-processes modeling includes cases where PISM is coupled to a GCM.  In the kind of ``offline'' runs described in this \emph{Manual}, boundary processes are modeled, even if trivially.
 
-Thus, in able to use the data that \emph{is} available, an ice-sheet model has to
+Thus, to be able to use the data that \emph{is} available, an ice-sheet model has to
 have additional components that are responsible for modeling surface (snow)
 processes or sub-shelf/ocean interaction.  These components might be very minimal, merely turning data that we already have into data in the right units and with the right metadata, so that PISM knows what to do with it, for example.
 
 Thus we have PISM's design: the ice-dynamics-and-earth-deformation PISM
 core does not contain any parameterization or other model for boundary mass or
 energy balance.  These boundary parameterizations and models are present in the PISM source code, however, as instances of \emph{PISMComponent} classes.  This simplifies customizing and debugging PISM's climate
-inputs, promotes code reuse.  It isolates the code that needs to be changed to
+inputs, promotes code reuse.  Moreover, it isolates the code that needs to be changed to
 couple PISM to a climate model.
 
 Users wishing to customize PISM's climate inputs should see the \emph{PISM
@@ -348,7 +348,7 @@ they have chosen, without involving ice dynamics at all.
 \newpage
 \section{Initialization and bootstrapping}\label{sect:boot}  
 
-\subsection{``Initialization from a saved model state''}  This phrase\index{initialization!from saved model state} has a simple meaning in PISM.  If a previous PISM run has saved a NetCDF file using ``\texttt{-o}'' then that file will contain complete initial conditions for continuing the run.  The output file from the last run can be loaded with ``\texttt{i}'':\index{pisms}
+\subsection{``Initialization from a saved model state''}  This phrase\index{initialization!from saved model state} has a simple meaning in PISM.  If a previous PISM run has saved a NetCDF file using ``\texttt{-o}'' then that file will contain complete initial conditions for continuing the run.  The output file from the last run can be loaded with ``\texttt{-i}'':\index{pisms}
 
 \begin{verbatim}
 $ pisms -eisII A -y 100 -o foo.nc
@@ -356,7 +356,7 @@ $ pisms -eisII A -i foo.nc -y 100 -o bar.nc
 \end{verbatim}
 \smallskip
 
-Note that simplified-geometry experiments (section \ref{sect:simp}) and verification tests (section \ref{sect:verif}) do not need input files at all because they initialize from formulas in the source code.  They can be continued from saved model states using \texttt{-i}.  As in the above example, however, specifying the simplified geometry experiment or verification test \emph{is} necessary, so that the run can continue with the climate inputs for that experiment or test.  For example, based on the above \verb|pisms| runs, it is valid to do ``\verb|$ pismr -i foo.nc -y 100 -o bar.nc|'' but the climate and other parameters us PISM default values, and thus are not (necessarily) the values specified in EISMINT II.
+Note that simplified-geometry experiments (section \ref{sect:simp}) and verification tests (section \ref{sect:verif}) do not need input files at all because they initialize from formulas in the source code.  They can be continued from saved model states using \texttt{-i}.  As in the above example, however, specifying the simplified geometry experiment or verification test \emph{is} necessary, so that the run can continue with the climate inputs for that experiment or test.  For example, based on the above \texttt{pisms} runs, it is valid to do ``\texttt{\$ pismr -i foo.nc -y 100 -o bar.nc ...}'' but the climate and other parameters us PISM default values, and thus are not (necessarily) the values specified in EISMINT II.
 
 As a technical but important note about saved states, a PISM run with \texttt{-ssa_floating_only} or \texttt{-ssa_sliding}
 also saves the last SSA velocities to the output file, in variables 
@@ -366,7 +366,7 @@ of these velocities adds efficiency in restarting.  If you want a PISM restart t
 ignore these velocities use \texttt{-dontreadSSAvels}.
 
 \subsubsection*{\texttt{-i} file format}
-PISM produces CF-1.4 compliant NetCDF\index{PISM!NetCDF file format}\index{NetCDF} files.  The easiest way to learn the output format \emph{and} the \texttt{-i} format is to do a simple run and then look at the metadata in the resulting file, like this:
+PISM produces\footnote{Or, more accurately, attempts to produce; please let us know about violations you come across.} CF-1.4 compliant NetCDF\index{PISM!NetCDF file format}\index{NetCDF} files.  The easiest way to learn the output format \emph{and} the \texttt{-i} format is to do a simple run and then look at the metadata in the resulting file, like this:
 \begin{verbatim}
 $ pisms -eisII A -y 10 -o foo.nc
 $ ncdump -h foo.nc | less
@@ -438,113 +438,10 @@ Thus initialization sequence is also an error-prone part of writing a derived cl
 \clearpage\newpage
 \input{eismint-ross.tex}
 
-
 %         References
 \clearpage\newpage
 \bibliography{ice-bib}
 \bibliographystyle{siam}
-
-\appendix
-
-\newcommand{\subsect}[1]{\bigskip\subsection{#1}\rule{0mm}{2mm}\par\medskip}
-%\newcommand{\subsectstar}[1]{\bigskip\subsection*{#1}\rule{0mm}{2mm}\par\medskip}
-\newcommand{\subsectstar}[1]{\bigskip\noindent\textbf{#1.}\rule{0mm}{2mm}\par\medskip}
-\newcommand{\subsubsect}[1]{\subsubsection{#1}\rule{0mm}{2mm}\par\smallskip}
-
-\clearpage\newpage
-\section{PISM command line options}\label{sect:options}
-
-As PISM is a PETSc program \cite{petsc-user-ref}, all PETSc options are available as well.  The last subsection \ref{subsect:petscoptions} recalls some of these PETSc options.
-
-The Index on page \pageref{sect:index} contains an alphabetical list of options.
-
-\optsection{Old option index}
-\subsect{List of PISM options}
-
-\subsectstar{Options turning on and off major physical models}
-
-\opt{float_kill}  If ice is (or becomes) floating then it is set to thickness zero.  This is calving at the grounding line.
-
-\opt{hold_tauc}    Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-ssa} and \texttt{-plastic} are also set.  See documentation of option \texttt{-plastic} for a description of the till yield stress model.
-
-\opt{no_mass}  Forces PISM to not change the ice thickness.  No time steps of the mass conservation equation are computed.
-
-\opt{no_temp}  Force PISM to not change temperature or age values within the ice.  No time steps of the energy conservation and age equations are computed.
-
-\opt{ocean_kill}  If used with input from a NetCDF initialization file which has ice-free ocean mask (value \texttt{MASK_FLOATING_OCEAN0}$=7$), will zero out ice thicknesses in areas that were ice-free ocean at time zero.  This is calving at the location of the original calving front.  Has no effect when used in conjunction with \texttt{-no_mass}.
-
-\opt{ssa}  Use the equations of the shallow shelf approximation \cite{MacAyeal,Morland,SchoofStream,WeisGreveHutter} for ice shelves and dragging ice shelves (i.e.~ice streams) where so-indicated by the mask.  To view the mask use \texttt{-view_map mask}.  See also \texttt{-plastic} and \texttt{-super}. See also \texttt{-dontreadSSAvels}.
-
-\opt{super}  Combine the velocity fields from the SIA and SSA models as in \cite{BBssasliding}.  Only effective if used with \texttt{-ssa}.
-
-\subsectstar{Options controlling numerical methods}
-
-\subsubsect{General methods}
-
-\opt{eta}  The surface gradient is usually computed in the obvious way by finite differences applied to the surface elevation $h$.  Specifically, we use the Mahaffy \cite{Mahaffy} scheme.  Alternatively, if this option is set we first transform the thickness $H$ by $\eta = H^{(2n+2)/n}$ and then differentiating the sum of the thickness and the bed:
-	$$\grad h = \grad H + \grad b = \frac{n}{(2n+2)} \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.$$
-Here $b$ is the bed elevation and $h$ is the surface elevation.  The transformation sometimes has the benefits that the surface values of the horizontal velocity and vertical velocity, and the driving stress, are better behaved near the margin.  See \cite{CDDSV} for the technical explanation of this transformation and compare \cite{SaitoMargin}.
-
-\optdef{low_temp}{200.0}  Set the temperature which PISM will regard as ``too low''.  Units in Kelvin.  Note that one kind of numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated.  In that case temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations, and if the number is too great then the run is stopped.  See option \texttt{-max_low_temps}.
-
-\optdef{max_low_temps}{10}  Specify the number (a nonnegative integer) of allowed low temp violations per time step.  Note these are reported in detail (i.e.~with location) if \texttt{-verbose} is set.  Note that one kind of numerical error associated to the advection part of the conservation of energy scheme is for the maximum principle to be violated.  In that case temperatures appear at the next step which are outside the range of current temperatures.  PISM attempts to count such violations, and if the number is too great then the run is stopped.  See option \texttt{-low_temp} for the cutoff low temperature.
-
-% FIXME: describe the pross driver.
-% \optrestrict{ross}{pismd}    Run the EISMINT Ross ice shelf validation \cite{MacAyealetal}.  Requires data from \url{http://homepages.vub.ac.be/~phuybrec/eismint/iceshelf.html}.
-
-
-\subsect{PETSC options for PISM users}\label{subsect:petscoptions}
-
-All PETSc programs accept command line options which control how PETSc distributes jobs among parallel processors, how it solves linear systems, what additional information it provides, and so on.  The PETSc manual \cite{petsc-user-ref} is the complete reference on these options.  We list some here that are useful to PISM users.  They can be mixed in any order with PISM options.
-
-Both for PISM and PETSc options, there are ways of avoiding the inconvenience of long commands with many runtime options.  Obviously, and as illustrated by examples in the previous sections, shell scripts can be set up to run PISM.  But PETSc also provides two mechanisms to give runtime options without retyping at each run command.
-
-First, the environment variable \texttt{PETSC_OPTIONS} can be set.  For example, a sequence of runs might need the same refined grid, and you might want to know if other options are read, ignored, or misspelled.  Set (in bash):
-
-\texttt{export PETSC_OPTIONS="-Mx 101 -My 101 -Mz 51 -options_left"}
-
-\noindent The runs 
-\begin{verbatim}
-$ pismv -test F -y 100
-$ pismv -test G -y 100
-\end{verbatim}
-\noindent then have the same refined grid in each run, and the runs report on which options were read.
-
-Second, the file \texttt{.petscrc} is always read, if present, from the directory where PISM (i.e.~the PETSc program) is started.  It can have a list of options, one per line.  For example, to get the same options as above, \texttt{.petscrc} would contain these lines:
-\begin{verbatim}
--Mx 101
--My 101
--Mz 51
--options_left
-\end{verbatim}
-\noindent Note that the first four lines give PISM options while the last has a generic PETSc option.
-
-These two PETSc mechanisms can be used together.  (The effect of duplicate or conflicting options is not clear, however, and should be avoided.)
-\bigskip
-
-% "-da_processors_x M -da_processors_y N" should not be documented in this sub-appendix
-% because they do not work.  the reason is that IceModelVec2 and IceModelVec3 put 
-% the Mx, My dimensions in different arguments to the DACreate commands
-
-
-\optdef{ksp_rtol}{1e-5}  For solving the SSA equations with high resolution on multiple processors, it is recommended that this be tightened (set lower than the default).  For example, 
-
-\verb|$  mpiexec -n 8 pismv -test I -Mx 5 -My 769|
-
-\noindent works poorly on a certain machine, but
-
-\verb|$  mpiexec -n 8 pismv -test I -Mx 5 -My 769 -ksp_rtol 1e-10|
-
-\noindent works fine.
-
-\optdef{ksp_type}{gmres}  Based on one processor evidence from \texttt{pismv -test I}, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: \t{cg}, \t{bicg}, \t{gmres}, \t{bcgs}, \t{cgs}, \t{tfqmr}, \t{tcqmr}, and \t{cr}.  It appears \t{bicg}, \t{gmres}, \t{bcgs}, and \t{tfqmr}, at least, are all among the best.
-
-
-
-\optdef{pc_type}{ilu}   Several options are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \texttt{pismv -test I} with high tolerances (e.g.~\texttt{-ssa_rtol 1e-7} \texttt{-ksp_rtol 1e-12}).
-
-
-
 
 \phantomsection
 \addcontentsline{toc}{section}{General Index}

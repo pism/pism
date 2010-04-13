@@ -383,22 +383,52 @@ static inline PetscReal sin_degrees(PetscReal deg) {
   return sin(deg * M_PI / 180.0);
 }
 
-//! Allocate and compute corrected cell areas. Uses linear interpolation to
-//! find latitudes of grid corners, WGS84 parameters to compute cartesian
-//! Z-coordinates of grid corners and vector products to compute areas of
-//! resulting triangles.
-//!
-//! Note that the latitude field is \b not periodic, so computing corrected
-//! areas for cells at the grid boundary is not feasible. This should not
-//! matter, since these cells should be ice-free.
+static inline PetscReal cos_degrees(PetscReal deg) {
+  return cos(deg * M_PI / 180.0);
+}
 
+//! Computes geocentric x-coordinate of a point using reference ellipsoid parameters.
+//! (see http://en.wikipedia.org/wiki/Reference_ellipsoid)
+static PetscReal geo_x(PetscReal a, PetscReal b,
+		       PetscReal lon, PetscReal lat) {
+  const PetscReal oe = acos(b/a),
+    N = a/sqrt( 1 - PetscSqr( sin(oe)*sin_degrees(lat) ) );
+
+  return N * cos_degrees(lat) * cos_degrees(lon);
+}
+
+//! Computes geocentric y-coordinate of a point using reference ellipsoid parameters.
+//! (see http://en.wikipedia.org/wiki/Reference_ellipsoid)
+static PetscReal geo_y(PetscReal a, PetscReal b,
+		       PetscReal lon, PetscReal lat) {
+  const PetscReal oe = acos(b/a),
+    N = a/sqrt( 1 - PetscSqr( sin(oe)*sin_degrees(lat) ) );
+
+  return N * cos_degrees(lat) * sin_degrees(lon);
+}
+
+//! Computes geocentric z-coordinate of a point using reference ellipsoid parameters.
+//! (see http://en.wikipedia.org/wiki/Reference_ellipsoid)
+static PetscReal geo_z(PetscReal a, PetscReal b,
+		       PetscReal lon, PetscReal lat) {
+  const PetscReal oe = acos(b/a),
+    N = a/sqrt( 1 - PetscSqr( sin(oe)*sin_degrees(lat) ) );
+
+  return N * sin_degrees(lat) * PetscSqr(b/a);
+}
+
+//! Allocate and compute corrected cell areas. Uses linear interpolation to
+//! find latitudes and longitudes of grid corners, WGS84 parameters to compute
+//! cartesian coordinates of grid corners and vector products to compute areas
+//! of resulting triangles.
+//!
+//! Note that latitude and longitude fields are \b not periodic, so computing
+//! corrected areas for cells at the grid boundary is not feasible. This should
+//! not matter, since these cells should be (and in most cases are) ice-free.
 PetscErrorCode IceModel::correct_cell_areas() {
   PetscErrorCode ierr;
 
   if (!mapping.has("grid_mapping_name"))
-    return 0;
-
-  if (mapping.get_string("grid_mapping_name") != "polar_stereographic")
     return 0;
 
   if (!config.get_flag("correct_cell_areas"))
@@ -409,21 +439,20 @@ PetscErrorCode IceModel::correct_cell_areas() {
 
   // allocate cell_area
   ierr = cell_area.create(grid, "cell_area", false); CHKERRQ(ierr);
-  ierr = cell_area.set_attrs("internal", "corrected cell areas", "m2", ""); CHKERRQ(ierr);
+  ierr = cell_area.set_attrs("diagnostic", "corrected cell areas", "m2", ""); CHKERRQ(ierr);
   cell_area.time_independent = true;
   ierr = cell_area.set_glaciological_units("km2"); CHKERRQ(ierr);
   cell_area.write_in_glaciological_units = true;
   ierr = variables.add(cell_area); CHKERRQ(ierr);
 
   PetscReal a = config.get("WGS84_semimajor_axis"),
-    b = config.get("WGS84_semiminor_axis"),
-    oe = acos(b/a);
+    b = config.get("WGS84_semiminor_axis");
 
   // value to use near the grid boundary
   ierr = cell_area.set(grid.dx * grid.dy);
 
 // Cell layout:
-// D (nw)      C (ne)
+// (nw)        (ne)
 // +-----------+
 // |           |
 // |           |
@@ -431,11 +460,12 @@ PetscErrorCode IceModel::correct_cell_areas() {
 // |           |
 // |           |
 // +-----------+
-// A (sw)      B (se)
+// (sw)        (se)
 
-  PetscScalar **lat;
-  ierr = cell_area.begin_access(); CHKERRQ(ierr);
-  ierr = vLatitude.get_array(lat); CHKERRQ(ierr);
+  PetscScalar **lat, **lon;
+  ierr =  cell_area.begin_access(); CHKERRQ(ierr);
+  ierr =  vLatitude.get_array(lat); CHKERRQ(ierr);
+  ierr = vLongitude.get_array(lon); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     if ((i == 0) || (i == grid.Mx-1))
       continue;
@@ -445,44 +475,40 @@ PetscErrorCode IceModel::correct_cell_areas() {
 	continue;
 
       PetscReal 
-        x_nw = (grid.x0 - grid.Lx + i*grid.dx) - 0.5*grid.dx,
-        x_sw = x_nw,
-        x_ne = (grid.x0 - grid.Lx + i*grid.dx) + 0.5*grid.dx,
-        x_se = x_ne,
-        y_nw = (grid.y0 - grid.Ly + j*grid.dy) + 0.5*grid.dy,
-        y_sw = (grid.y0 - grid.Ly + j*grid.dy) - 0.5*grid.dy,
-        y_se = y_sw,
-        y_ne = y_nw,
+	// latitudes
         lat_nw = 0.5 * ( lat[i][j] + lat[i-1][j+1] ),
         lat_sw = 0.5 * ( lat[i][j] + lat[i-1][j-1] ),
         lat_se = 0.5 * ( lat[i][j] + lat[i+1][j-1] ),
-        lat_ne = 0.5 * ( lat[i][j] + lat[i+1][j+1] );
+        lat_ne = 0.5 * ( lat[i][j] + lat[i+1][j+1] ),
+	// longitudes
+        lon_nw = 0.5 * ( lon[i][j] + lon[i-1][j+1] ),
+        lon_sw = 0.5 * ( lon[i][j] + lon[i-1][j-1] ),
+        lon_se = 0.5 * ( lon[i][j] + lon[i+1][j-1] ),
+        lon_ne = 0.5 * ( lon[i][j] + lon[i+1][j+1] );
 
-      PetscReal A[3] = {x_sw, y_sw, 0};
-      PetscReal B[3] = {x_se, y_se, 0};
-      PetscReal C[3] = {x_ne, y_ne, 0};
-      PetscReal D[3] = {x_nw, y_nw, 0};
-      
-      // compute z's (see http://en.wikipedia.org/wiki/Reference_ellipsoid)
-      PetscReal N;
-      // A
-      N = a/sqrt( 1 - PetscSqr( sin(oe)*sin_degrees(lat_sw) ) );
-      A[2] = sin_degrees(lat_sw) * N * PetscSqr(b/a);
-      // B
-      N = a/sqrt( 1 - PetscSqr( sin(oe)*sin_degrees(lat_se) ) );
-      B[2] = sin_degrees(lat_se) * N * PetscSqr(b/a);
-      // C
-      N = a/sqrt( 1 - PetscSqr( sin(oe)*sin_degrees(lat_ne) ) );
-      C[2] = sin_degrees(lat_ne) * N * PetscSqr(b/a);
-      // D
-      N = a/sqrt( 1 - PetscSqr( sin(oe)*sin_degrees(lat_nw) ) );
-      D[2] = sin_degrees(lat_nw) * N * PetscSqr(b/a);
+      // geocentric coordinates:
+      PetscReal sw[3] = {geo_x(a, b, lon_sw, lat_sw),
+			 geo_y(a, b, lon_sw, lat_sw),
+			 geo_z(a, b, lon_sw, lat_sw)};
 
-      cell_area(i,j) = triangle_area(A, B, C) + triangle_area(A, C, D);
+      PetscReal se[3] = {geo_x(a, b, lon_se, lat_se),
+			 geo_y(a, b, lon_se, lat_se),
+			 geo_z(a, b, lon_se, lat_se)};
+
+      PetscReal ne[3] = {geo_x(a, b, lon_ne, lat_ne),
+			 geo_y(a, b, lon_ne, lat_ne),
+			 geo_z(a, b, lon_ne, lat_ne)};
+
+      PetscReal nw[3] = {geo_x(a, b, lon_nw, lat_nw),
+			 geo_y(a, b, lon_nw, lat_nw),
+			 geo_z(a, b, lon_nw, lat_nw)};
+
+      cell_area(i,j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
     }
   }
-  ierr = cell_area.end_access(); CHKERRQ(ierr);
-  ierr = vLatitude.end_access(); CHKERRQ(ierr);
+  ierr =  cell_area.end_access(); CHKERRQ(ierr);
+  ierr =  vLatitude.end_access(); CHKERRQ(ierr);
+  ierr = vLongitude.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

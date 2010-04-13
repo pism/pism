@@ -336,9 +336,8 @@ In PISM the user gives the option \texttt{-ssa_sliding} to turn on the use of th
 \tablelasttail{\bottomrule}
 
 \begin{center}
-  \begin{xtabular}{p{0.35\linewidth}p{0.6\linewidth}}
-    \small
-    \label{tab:ssausage} 
+  \begin{xtabular}{p{0.2\linewidth}p{0.75\linewidth}}
+   \label{tab:ssausage} 
 \intextoption{ice_reg_schoof_length} (1000 km) & Set the ``$L$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \texttt{-ssa_eps 0.0} to turn off the other regularization mechanism, otherwise there is a double regularization (the default except in \texttt{pism -test I}). \\
 \intextoption{ice_reg_schoof_vel} (1 m/a) & Set the \emph{first} ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  To deactivate Schoof's regularization, use \texttt{-ice_reg_schoof_vel 0}.  To use the regularization described by Schoof, one must set \texttt{-ssa_eps 0.0} to turn off the other regularization mechanism, otherwise there is a double regularization (the default except in \texttt{pismv -test I}).  Use \texttt{-plastic_reg} above to set the second ``$\eps$'' in formula (4.1) of \cite{SchoofStream}. \\
 \intextoption{shelves_drag_too} & Ice streams are modeled as ``dragging ice shelves'' in PISM, as in either linear \cite{MacAyeal} or plastic \cite{SchoofStream} or pseudo-plastic basal resistance, according to options.  If this option is turned on then the floating ice shelves also have very slight resistance, according to a linear model $\tau_b = \beta u$ where $\beta = 1.8\times 10^5\, \text{Pa}\,\text{s}\,\text{m}^{-1}$.  This value is $10^4$ times smaller than the representative drag coefficient given for ice stream E in \cite{HulbeMacAyeal}.  Ice shelves usually have precisely zero basal resistance, but nonzero drag for the ice shelf is turned on by default in MISMIP; see section \ref{sect:simp}. \\
@@ -348,6 +347,9 @@ In PISM the user gives the option \texttt{-ssa_sliding} to turn on the use of th
 In particular, the nonlinear part of the iteration requires that successive values $\nu^{(k)}$ of the vertically-averaged effective viscosity satisfy
 	$\frac{\|(\nu^{(k)} - \nu^{(k-1)}) H\|_2}{\|\nu^{(k)} H\|_2} \le \text{ssa_rtol}$
 in order to end the iteration with $\nu = \nu^{(k)}$.  See also \texttt{-ksp_rtol}, a PETSc option below, as one may want to require a high relative tolerance for the linear iteration as well.\\
+\intextoption{eta} & The surface gradient is usually computed in the obvious way by finite differences applied to the surface elevation $h$.  Specifically, we use the Mahaffy \cite{Mahaffy} scheme.  Alternatively, if this option is set we first transform the thickness $H$ by $\eta = H^{(2n+2)/n}$ and then differentiating the sum of the thickness and the bed:
+	$$\grad h = \grad H + \grad b = \frac{n}{(2n+2)} \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.$$
+Here $b$ is the bed elevation and $h$ is the surface elevation.  The transformation sometimes has the benefits that the surface values of the horizontal velocity and vertical velocity, and the driving stress, are better behaved near the margin.  See \cite{CDDSV} for the technical explanation of this transformation and compare \cite{SaitoMargin}.\\
 \end{xtabular}
 \end{center}
 
@@ -405,6 +407,7 @@ pisms -eisII I -ssa_sliding -track_Hmelt -Mx 91 -My 91 -Mz 51 \
     \txtopt{plastic_phi}{(degrees)} & Use a constant till friction angle. The default is $30^{\circ}$.\\
     \intextoption{pseudo_plastic_q} & Set the exponent $q$.\\
     \intextoption{pseudo_plastic_uthreshold} & Set $u_{\text{threshold}}$.\\
+    \intextoption{hold_tauc} &   Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-ssa_sliding} is also set.
    \\\bottomrule
   \end{tabular}
   \caption{Basal strength command-line options}
@@ -449,6 +452,12 @@ $ mpiexec -n 4 pisms -eisII A -bed_def lc -y 8000 -o eisIIA_bdlc.nc
 Compare the \texttt{topg}, \texttt{usurf}, and \texttt{dbdt} variables in the resulting output files.
 
 Test H in section \ref{sect:verif} can be used to reproduce the comparison done in \cite{BLKfastearth}.
+
+\subsection{Disabling PISM components}
+\label{sec:turning-off}
+\optsection{Disabling PISM components}
+
+Major model components, unlike ``peripheral'' ones like bed deformation, do not need to be turned ``on'' explicitly.\footnote{It would be a hassle to ask for SIA computations every time you need them, for example.} However, in some cases it is useful to be able to disable particular components (during model spin-up, for example). Currently PISM has switches disabling the mass-continuity step (command-line option \intextoption{no_mass}) and energy balance computation (option \intextoption{no_temp}).
 
 %%% Local Variables: 
 %%% mode: latex

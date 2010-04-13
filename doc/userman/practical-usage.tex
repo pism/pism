@@ -222,7 +222,7 @@ If the file \texttt{foo.nc}, specified by \texttt{-extra_file foo.nc}, already e
     \texttt{vvel} & m/year & horizontal velocity of ice in the Y direction \\
     \texttt{wvel} & m/year & vertical velocity of ice \\
     \texttt{wvelbase} & m/year &vertical velocity of ice at the ice base\\
-    \texttt{wvelsurf} & m/year & horizontal velocity of ice at the ice surface\\
+    \texttt{wvelsurf} & m/year & vertical velocity of ice at the ice surface\\
   \end{xtabular}
 \end{center}
 
@@ -366,7 +366,8 @@ Some diagnostic quantities are \emph{only} available as run-time viewers:
 \label{sec:pism-defaults}
 \optsection{PISM configuration file}
 
-PISM's behavior depends on values of many flags and physical parameters. Most of them have default values\footnote{For \texttt{pismr}, grid parameters $Mx$, $My$, $Mz$, $Mbz$, $Lz$, $Lbz$, that have to be set at bootstrapping, are some exceptions.} which are read from the configuration file \texttt{pism_config.nc} in the \texttt{lib} sub-directory.
+PISM's behavior depends on values of many flags and physical parameters (see
+\href{http://www.pism-decs.org/...}{PISM Browser} for details). Most of parameters have default values\footnote{For \texttt{pismr}, grid parameters $Mx$, $My$, $Mz$, $Mbz$, $Lz$, $Lbz$, that have to be set at bootstrapping, are some exceptions.} which are read from the configuration file \texttt{pism_config.nc} in the \texttt{lib} sub-directory.
 
 It is possible to run PISM with an alternate configuration file using the \fileopt{config} command-line option:
 \begin{verbatim}
@@ -441,9 +442,10 @@ dynamics (subsection \ref{sec:climate-inputs}). Executable
 invoking the ice dynamics core of PISM. This is helpful during the process of
 creating PISM-readable data files, and modeling with such.
 
-FIXME: this section needs an overhaul!
-
-\texttt{pclimate} takes options listed in table \ref{tab:pclimate}.
+\texttt{pclimate} shares the code implementing climate models with other PISM
+executables, so everything said in section \ref{sec:boundary-models} applies
+here. In addition to \texttt{-atmosphere}, \texttt{-surface}, \texttt{-ocean}
+and others, \texttt{pclimate} takes options listed in table \ref{tab:pclimate}.
 
 \begin{table}[ht]
   \caption{\texttt{pclimate} command-line options}
@@ -464,33 +466,33 @@ FIXME: this section needs an overhaul!
 \bigskip
 As an example, set up an ice sheet state file and run \texttt{pclimate} on it:
 \begin{verbatim}
-$ mpiexec -n 2 pisms -eisII A -y 10000 -o state.nc
-$ pclimate -i state.nc -ca -ys 0.0 -ye 2.5 -dt 0.1 -o camovie.nc
+$ mpiexec -n 2 pisms -eisII A -y 1000 -o state.nc
+$ pclimate -i state.nc -surface constant -ys 0.0 -ye 2.5 -dt 0.1 -o movie.nc
 \end{verbatim}
 Using \texttt{pisms} merely generates demonstration climate data, using
 EISMINT II choices \cite{EISMINT00}.  \texttt{pclimate} extracts the 
 surface mass balance \texttt{acab} and surface temperature \texttt{artm} from \texttt{state.nc}.
 It then does nothing interesting, exactly because a constant climate
-is used.  Viewing \texttt{camovie.nc} we see these same values as from \texttt{state.nc},
+is used.  Viewing \texttt{movie.nc} we see these same values as from \texttt{state.nc},
 in variables \texttt{acab}, \texttt{artm}, reported back to us as the time- and space-dependent
 climate at times \texttt{ys:dt:ye}.  It is a boring ``movie.''
 
 The excuse for the executable \texttt{pclimate} becomes clearer if we use a positive degree-day
 model (subsection \ref{sec:boundary-models}).  The positive degree-day
-model uses a variable called \texttt{snowaccum}, and a calculation of melting, to get the
-surface mass balance \texttt{acab}.  As a demonstration here we use an NCO\index{NCO (NetCDF Operators)!ncrename} (subsection 
-\ref{subsect:nctoolsintro}) to change a variable name in \texttt{state.nc}.  Then we run \texttt{pclimate}
-with option \texttt{-pdd} to invoke the \texttt{PISMPDDCoupler}
-object, which includes the parameterized PDD:
+model uses a variable called \texttt{snowprecip}, and a calculation of melting, to get the
+surface mass balance \texttt{acab}. 
+
+Assuming that \texttt{g20km_pre100.nc} was created as described in section
+\ref{sect:start}, running
 \begin{verbatim}
-$ ncrename -v acab,snowaccum state.nc restate.nc
-$ pclimate -i restate.nc -pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
-\end{verbatim}
-In particular, a time-dependent view of the variable \texttt{artmpdd} shows the time- and space-
-dependent annual cycle.  Onto this is added a random perturbation (normally distributed with standard 
-deviation of 5 degrees), but this random perturbation is not shown.  In fact the PDD uses the
-\cite{CalovGreve05} method to compute the expected number of positive degree days.  From this
-computation the net surface mass balance is computed, namely \texttt{acab} in \texttt{pddmovie.nc}.
+$ pclimate -i g20km_pre100.nc -atmosphere searise_greenland \
+           -surface pdd -ys 0 -ye 2.5 -dt 0.1 -o foo.nc
+\end{verbatim}%$
+produces \texttt{foo.nc}. Viewing in with \texttt{ncview} shows an annual cycle
+in the variable \texttt{airtemp} and a noticeable decrease in the surface mass
+balance during summer months (see variable \texttt{acab}). Note that
+\texttt{artm} is constant in time: this is the temperature \emph{at the ice
+  surface but below firn} and it does not include seasonal variations \cite{Hock05}.
 
 See section \ref{sec:eismint-greenland} for another \texttt{pclimate} example.
 
@@ -655,6 +657,57 @@ Now we explain what the rest of the flags line, namely
   \label{tab:time-stepping}
 \end{table}
 
+\subsection{PETSC options for PISM users}\label{subsect:petscoptions}
+\optsection{PETSC options for PISM users}
+
+All PETSc programs accept command line options which control how PETSc distributes jobs among parallel processors, how it solves linear systems, what additional information it provides, and so on.  The PETSc manual \cite{petsc-user-ref} is the complete reference on these options.  We list some here that are useful to PISM users.  They can be mixed in any order with PISM options.
+
+Both for PISM and PETSc options, there are ways of avoiding the inconvenience of long commands with many runtime options.  Obviously, and as illustrated by examples in the previous sections, shell scripts can be set up to run PISM.  But PETSc also provides two mechanisms to give runtime options without retyping at each run command.
+
+First, the environment variable \texttt{PETSC_OPTIONS} can be set.  For example, a sequence of runs might need the same refined grid, and you might want to know if other options are read, ignored, or misspelled.  Set (in bash):
+
+\texttt{export PETSC_OPTIONS="-Mx 101 -My 101 -Mz 51 -options_left"}
+
+\noindent The runs 
+\begin{verbatim}
+$ pismv -test F -y 100
+$ pismv -test G -y 100
+\end{verbatim}
+\noindent then have the same refined grid in each run, and the runs report on which options were read.
+
+Second, the file \texttt{.petscrc} is always read, if present, from the directory where PISM (i.e.~the PETSc program) is started.  It can have a list of options, one per line.  For example, to get the same options as above, \texttt{.petscrc} would contain these lines:
+\begin{verbatim}
+-Mx 101
+-My 101
+-Mz 51
+-options_left
+\end{verbatim}
+\noindent Note that the first four lines give PISM options while the last has a generic PETSc option.
+
+These two PETSc mechanisms can be used together.  (The effect of duplicate or conflicting options is not clear, however, and should be avoided.)
+\bigskip
+
+% "-da_processors_x M -da_processors_y N" should not be documented in this sub-appendix
+% because they do not work.  the reason is that IceModelVec2 and IceModelVec3 put 
+% the Mx, My dimensions in different arguments to the DACreate commands
+
+
+\optdef{ksp_rtol}{1e-5}  For solving the SSA equations with high resolution on multiple processors, it is recommended that this be tightened (set lower than the default).  For example, 
+
+\verb|$  mpiexec -n 8 pismv -test I -Mx 5 -My 769|
+
+\noindent works poorly on a certain machine, but
+
+\verb|$  mpiexec -n 8 pismv -test I -Mx 5 -My 769 -ksp_rtol 1e-10|
+
+\noindent works fine.
+
+\optdef{ksp_type}{gmres}  Based on one processor evidence from \texttt{pismv -test I}, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: \t{cg}, \t{bicg}, \t{gmres}, \t{bcgs}, \t{cgs}, \t{tfqmr}, \t{tcqmr}, and \t{cr}.  It appears \t{bicg}, \t{gmres}, \t{bcgs}, and \t{tfqmr}, at least, are all among the best.
+
+
+
+\optdef{pc_type}{ilu}   Several options are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \texttt{pismv -test I} with high tolerances (e.g.~\texttt{-ssa_rtol 1e-7} \texttt{-ksp_rtol 1e-12}).
+
 
 \subsection{Utility and test scripts} \label{subsect:scripts}\index{python scripts} Some nice scripts.
  
@@ -692,4 +745,4 @@ FIXME: the python scripts all take \texttt{fill_missing.py --help}
 %%% TeX-master: "manual"
 %%% End: 
 
-% LocalWords:  NetCDF Regridding emacs
+% LocalWords:  NetCDF Regridding emacs ncview pclimate
