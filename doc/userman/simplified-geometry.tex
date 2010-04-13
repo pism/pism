@@ -104,9 +104,9 @@ There are many runs for a complete MISMIP intercomparison submission.  There are
  
 \begin{table}[ht]
 \centering
-\caption{Special MISMIP run options in PISM.  Below the line are special interpretations of standard PISM options (Appendix \ref{sect:options}).\index{PISM!special options for MISMIP experiments}}\label{tab:MISMIPoptions}
+\caption{Special MISMIP run options in PISM.  Below the line are special interpretations of standard PISM options.\index{PISM!special options for MISMIP experiments}}\label{tab:MISMIPoptions}
 \small
-\begin{tabular}{p{0.15\linewidth}p{0.1\linewidth}p{0.65\linewidth}}\hline
+\begin{tabular}{p{0.2\linewidth}p{0.1\linewidth}p{0.6\linewidth}}\hline
 \textbf{Option} & \textbf{Default} & \textbf{Meaning} \\ \hline
 \intextoption{extras} &  & if this flag is set then, once steady state is reached, surface and bed elevation are written to an extra file with name ending ``\texttt{_extras}''; script \texttt{figsMISMIP.py} reads them\\
 \intextoption{initials} & \texttt{ABC} & initials to prepend to ASCII output file names \\
@@ -118,7 +118,7 @@ There are many runs for a complete MISMIP intercomparison submission.  There are
 \intextoption{step} & 1 & allowed values are $\{1,\dots,9\}$ for experiments 1 and 2, $\{1,\dots,13\}$ for  exper.~3a, and $\{1,\dots,15\}$ for exper.~3b; note typo in table 6 in \texttt{mismip_4.pdf}: ``step 15'' skipped \\
 \intextoption{try_calving} &  & flag to turn on experimental calving law which keeps  calving front thickness in range $[100\text{ m},200\text{ m}]$ \\
 \hline
-\intextoption{Mx} &  & this option gets additional interpretation: \texttt{-Mx 151} makes grid  mode 1 so output files have ``\texttt{_M1_}''; \texttt{-Mx 1501} is grid mode 2  (``\texttt{_M2_}''); any other value is grid mode 3 (``\texttt{_M3_}'')\\
+\intextoption{Mx} &  & this option gets additional interpretation: \texttt{-Mx 151} makes grid  mode 1 so output files have ``\texttt{_M1_}''; \texttt{-Mx 1501} is grid mode 2  (``\texttt{_M2_}''); any other value is grid mode 3 (``\texttt{_M3_}'') \\
 \intextoption{shelves_drag_too} &  & using this option has no effect because shelf drag is on by default in MISMIP; see \intextoption{no_shelf_drag} to turn off\\
 \hline\normalsize
 \end{tabular}

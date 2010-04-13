@@ -547,7 +547,7 @@ In this case all the model-state 2D variables present in \texttt{foo.nc} will be
 
 \newcommand\pid{\textsl{pid}s}
 
-\subsection{Signals, to control a running PISM model} \label{subsect:signal} \index{signals} \index{PISM!catches signals -TERM and -USR1}  Ice sheet model runs sometimes take a long time, so the state of a run may need checking.  Sometimes the run needs to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard, included in Linux and most flavors of Unix.  Table \ref{tab:signals} summarizes how PISM responds to signals.  A convenient form of \texttt{kill}, for Linux users, is \texttt{pkill} which will find processes by executable name.  Thus ``\texttt{pkill -USR1 pismr}'' might be used to send all PISM processes the same signal, avoiding an explicit list of \pid.
+\subsection{Signals, to control a running PISM model} \label{subsect:signal} \index{signals} \index{PISM!catches signals -TERM,-USR1,-USR2}  Ice sheet model runs sometimes take a long time, so the state of a run may need checking.  Sometimes the run needs to be stopped, but with the possibility of restarting.  PISM implements these behaviors using ``signals'' from the POSIX standard, included in Linux and most flavors of Unix.  Table \ref{tab:signals} summarizes how PISM responds to signals.  A convenient form of \texttt{kill}, for Linux users, is \texttt{pkill} which will find processes by executable name.  Thus ``\texttt{pkill -USR1 pismr}'' might be used to send all PISM processes the same signal, avoiding an explicit list of \pid.
 
 \begin{table}[ht]
 \centering
@@ -558,7 +558,7 @@ In this case all the model-state 2D variables present in \texttt{foo.nc} will be
 \texttt{kill -KILL} \pid & \texttt{SIGKILL} & Terminate with extreme prejudice. PISM cannot catch it and no state is saved. \\
 \texttt{kill -TERM} \pid & \texttt{SIGTERM} & End processes, but save the last model state in the output file, using \texttt{-o} name or default name as normal.  Note that the \texttt{history} string in the output file will contain an ``\texttt{EARLY EXIT caused by signal SIGTERM}'' indication. \\
 \texttt{kill -USR1} \pid & \texttt{SIGUSR1} & Allow process(es) to continue, but save the model state at the current time as ``\texttt{pism}\textsl{X}\texttt{-}\textsl{year}\texttt{.nc}''.  Time-stepping is not altered.  Also flushes time-series output buffers. \\
-\texttt{kill -USR2} \pid & \texttt{SIGUSR2} & Just flush time-series output buffers. \\
+\texttt{kill -USR2} \pid & \texttt{SIGUSR2} & Just flush time-series output buffers.\index{signals!USR2} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -567,7 +567,7 @@ Here is an example.  Suppose we start a long verification run in the background,
 
 \verb|pismv -test G -Mz 101 -y 1e6 -o testGmillion.nc >> log.txt &|
 
-\noindent This run gets a Unix process id,\index{signals!the pid}, which we assume is ``8920''.  (Get it using \texttt{ps} or \texttt{pgrep}.)  If we want to observe the run without stopping it we send the \texttt{USR1} signal:\index{signals!usr1}
+\noindent This run gets a Unix process id,\index{signals!pid (process id)}, which we assume is ``8920''.  (Get it using \texttt{ps} or \texttt{pgrep}.)  If we want to observe the run without stopping it we send the \texttt{USR1} signal:\index{signals!USR1}
 
 \verb|kill -USR1 8920|
 

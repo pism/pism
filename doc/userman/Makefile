@@ -24,4 +24,4 @@ userman : manual.tex ice-bib.bib revision $(parts)
 	pdflatex manual.tex
 
 clean : revclean
-	@rm -f *.aux *.blg *.idx *.ind *.ilg *.log *.out *.toc texput.* *.bbl
+	@rm -f *.aux *.blg *.idx *.ind *.ilg *.log *.out *.toc texput.* *.bbl *.odx *.ond
