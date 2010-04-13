@@ -32,7 +32,6 @@ if [ $# -gt 0 ] ; then  # if user says "psearise.sh 8" then NN = 8
 fi
 
 echo "$SCRIPTNAME              NN = $NN"
-set -e  # exit on error
 
 # set MPIDO if using different MPI execution command, for example:
 #  $ export PISM_MPIDO="aprun -n "

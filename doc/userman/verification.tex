@@ -79,6 +79,9 @@ L & \verb|pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000| \\
 
 Table \ref{tab:tests} summarizes the many exact solutions currently available in PISM.  Most of these exact solutions are solutions of \emph{free boundary problems} for partial differential equations; only Tests A, E, J, K are fixed boundary value problems.  Table \ref{tab:tests-exec} shows how to run each of them on a coarse grids.
 
+Numerical errors are not the dominant reasons why ice sheet models give imperfect results.  Other sources of ``errors'' include those from using the wrong (e.g.~over-simplified or incorrectly-parameterized) continuum model, and from observational or pre-processing errors present in input data.  Our focus here on numerical errors has a model-maintenance goal as much as any other, because it is \emph{easier} to maintain code by quantitatively confirming that it produces small errors in cases where those can be measured, rather than ``eyeballing'' results to see that they are ``right'' according to human intuition.
+
+
 \subsection{Refinement}  To meaningfully verify a numerical code one must go down a grid refinement path and measure numerical error for each grid \cite{Roache}.  By ``a refinement path''\index{refinement path!definition} we mean the specification of a sequence of grid cell sizes which decrease toward the refinement limit of zero size \cite{MortonMayers}.  For example, in the two spatial and one time dimension case this means a sequence of triples $(\Delta x,\Delta y,\Delta t)$ which decrease toward the unreachable continuum limit $(0,0,0)$.  By ``measuring the error for each grid'' we will mean computing a norm (or norms) of the difference between the numerical solution and the exact solution.
 
 The goal of verification is not generally to see that the error is zero at any stage on the refinement path, or even to show that the error is small in a predetermined absolute sense.  Rather the goals are
@@ -88,8 +91,6 @@ The goal of verification is not generally to see that the error is zero at any s
 \item to develop a realistic sense of the magnitude of numerical error which might occur in a realistic ice sheet model run.
 \end{itemize}
 Knowing the error decay rate may even give a prediction of how fine a grid is necessary to achieve a desired smallness for the numerical error.
-
-(Numerical errors are certainly not presumed to dominate among reasons why ice sheet models give imperfect results.  Other sources of ``errors'' include those from using the wrong (e.g.~over-simplified or incorrectly-parameterized) continuum model, and from observational or pre-processing errors present in input data.)
 
 For an example of a refinement path, consider the goal of evaluating the isothermal shallow ice approximation components of PISM.  One available exact solution is the Halfar similarity solution \cite{Halfar83}, with zero accumulation, namely test B.  Here is a refinement path for evaluating numerical error relative to test B:\index{refinement path!example}\index{pismv}
 \begin{quote}\small
@@ -113,7 +114,8 @@ pismv -test G -max_dt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
 pismv -test G -max_dt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
 \end{verbatim}
 \normalsize\end{quote}
-produced figures 13, 14, and 15 of \cite{BBL}.  The last two runs, especially, require a supercomputer; the $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.  (Appropriate use \verb|-skip 10| and \verb|-z_spacing quadratic| accelerates such runs.  See subsection \ref{sec:practical-usage}.)
+produced figures 13, 14, and 15 of \cite{BBL}.  The last two runs, especially, require a supercomputer.  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.  Appropriate use \verb|-skip| especially accelerates such fine-grid runs; see section \ref{sec:practical-usage}.
+
 
 \subsection{Sample verification results}  Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} show a sampling of the results of verifying PISM using the tests described above.\index{PISM!verification results and reporting}  These figures were produced more-or-less automatically using Python scripts \verb|test/verifynow.py|\index{verifynow.py} and \verb|test/vnreport.py|\index{vnreport.py}.  See subsection \ref{subsect:scripts}.
 
