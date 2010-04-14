@@ -72,6 +72,8 @@ int main(int argc, char *argv[]) {
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
+    config.set_flag("use_eta_transformation", false);
+
     IceGrid      g(com, rank, size, config);
 
     // Initialize boundary models:

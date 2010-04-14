@@ -139,8 +139,8 @@ protected:
         vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model); no ghosts
         vHmelt,		//!< thickness of the basal meltwater; ghosted (because of the diffusion)
         vbmr,	    //!< rate of production of basal meltwater (ice-equivalent); no ghosts
-        vLongitude,	//!< Longitude; no ghosts
-        vLatitude,	//!< Latitude; no ghosts
+        vLongitude,	//!< Longitude; ghosted to compute cell areas
+        vLatitude,	//!< Latitude; ghosted to compute cell areas
         vbed,		//!< bed topography; ghosted
         vuplift,	//!< bed uplift rate; ghosted to simplify the code computing it
         vGhf,		//!< geothermal flux; no ghosts
@@ -200,8 +200,7 @@ protected:
               ssaSystemToASCIIMatlab,
               reportPATemps,
               allowAboveMelting,
-              computeSIAVelocities,
-    transformForSurfaceGradient;
+              computeSIAVelocities;
   char        adaptReasonFlag;
 
   char        ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN];

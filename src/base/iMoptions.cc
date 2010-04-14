@@ -51,7 +51,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   bool  my_useConstantNuH, 
     myssaSystemToASCIIMatlab,
     myholdTillYieldStress, realageSet,
-    etaSet, doShelvesDragToo;
+    doShelvesDragToo;
   PetscReal my_nuH = 0;
 
   ierr = verbPrintf(3, grid.com,
@@ -109,9 +109,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.scalar_from_option("e", "enhancement_factor"); CHKERRQ(ierr);
 
-  ierr = PISMOptionsIsSet("-eta", "Use eta transformation to compute surface gradient",
-			  etaSet); CHKERRQ(ierr);
-  if (etaSet)  transformForSurfaceGradient = PETSC_TRUE;
+  ierr = config.flag_from_option("eta", "use_eta_transformation"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("f3d", "force_full_diagnostics"); CHKERRQ(ierr);
 

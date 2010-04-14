@@ -26,14 +26,14 @@ netcdf pism_config {
     pism_config:do_pseudo_plastic_till = "no";
     pism_config:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
 
+    pism_config:use_eta_transformation = "yes";
+    pism_config:use_eta_transformation_doc = "Use eta transformation to compute surface gradient.";
+
     pism_config:do_superpose = "yes";
     pism_config:do_superpose_doc = "Combine the velocity ﬁelds from the SIA and SSA models as in [\\ref BBssasliding]. Only effective if used with -ssa_sliding.";
 
     pism_config:thermal_bedrock = "yes";
     pism_config:thermal_bedrock_doc = "Use the bedrock thermal model";
-
-    pism_config:do_bed_deformation = "no";
-    pism_config:do_bed_deformation_doc = "Use a bed deformation model";
 
     pism_config:bed_deformation_model = "none";
     pism_config:bed_deformation_model_doc = "Selects a bed deformation model to use; possible choices are 'none', 'iso' (point-wise isostasy), 'lc' (see [\\ref LingleClark], requires FFTW3).";

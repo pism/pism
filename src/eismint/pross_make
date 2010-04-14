@@ -1,0 +1,8 @@
+VPATH += :../src/eismint/
+
+exec_default += ../bin/pross
+
+other_sources += pross.cc iceROSSModel.cc
+
+../bin/pross : pross.o iceROSSModel.o ${LIBPISMNAME}
+	${CXXLINKER} iceROSSModel.o pross.o ${ICE_LIB_FLAGS} -o $@

@@ -50,7 +50,6 @@ PetscErrorCode IceModel::setDefaults() {
   executable_short_name = "pism"; // drivers typically override this
 
   computeSIAVelocities = PETSC_TRUE;
-  transformForSurfaceGradient = PETSC_FALSE;
 
   ssaSystemToASCIIMatlab   = PETSC_FALSE;
   leaveNuHAloneSSA         = false;

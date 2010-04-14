@@ -29,7 +29,7 @@ The default method is to directly differentiate
 the surface elevation \f$h\f$ by the Mahaffy method \ref Mahaffy .
 
 The alternative method, using option <c>-eta</c> which sets 
-<c>transformForSurfaceGradient = PETSC_TRUE</c>, is to transform the thickness 
+<c>use_eta_transformation = true</c>, is to transform the thickness 
 to something more regular and differentiate that.  We get back to the gradient 
 of the surface by applying the chain rule.  In particular, as shown 
 in \ref CDDSV for the flat bed and \f$n=3\f$ case, if we define
@@ -61,7 +61,9 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
   ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
   ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
 
-  if (transformForSurfaceGradient == PETSC_TRUE) {
+  bool use_eta = config.get_flag("use_eta_transformation");
+
+  if (use_eta == true) {
     PetscScalar **eta, **bed, **H;
     const PetscScalar n = ice->exponent(), // presumably 3.0
                       etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
@@ -136,7 +138,7 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
     }
     ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
     ierr = vbed.end_access(); CHKERRQ(ierr);
-  } else {  // if transformForSurfaceGradient == FALSE; the Mahaffy scheme
+  } else {  // if use_eta == FALSE; the Mahaffy scheme
     PetscScalar **h;
     ierr = vh.get_array(h); CHKERRQ(ierr);
     for (PetscInt o=0; o<2; o++) {
@@ -160,7 +162,7 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
       }
     }
     ierr = vh.end_access(); CHKERRQ(ierr);
-  } // end if (transformForSurfaceGradient)
+  } // end if (use_eta)
   
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);

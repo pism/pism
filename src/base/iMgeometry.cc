@@ -27,7 +27,7 @@
 Computes the driving stress at the base of the ice:
    \f[ \tau_d = - \rho g H \nabla h \f]
 
-If transformForSurfaceGradient is TRUE then the surface gradient
+If use_eta is TRUE then the surface gradient
 \f$\nabla h\f$ is computed by the gradient of the
 transformed variable  \f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$).
 Because this quantity is more regular at ice sheet margins, we get a 
@@ -51,6 +51,7 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2S &vtaudx, IceModelVec
   const PetscScalar dx=grid.dx, dy=grid.dy;
 
   bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
+  bool use_eta = config.get_flag("use_eta_transformation");
 
   ierr =    vh.begin_access();    CHKERRQ(ierr);
   ierr =    vH.begin_access();  CHKERRQ(ierr);
@@ -69,7 +70,7 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2S &vtaudx, IceModelVec
       } else {
         PetscScalar h_x = 0.0, h_y = 0.0;
 	// FIXME: we need to handle grid periodicity correctly.
-        if (vMask.is_grounded(i,j) && (transformForSurfaceGradient == PETSC_TRUE)) {
+        if (vMask.is_grounded(i,j) && (use_eta == true)) {
 	  // in grounded case, differentiate eta = H^{8/3} by chain rule
 	  if (vH(i,j) > 0.0) {
 	    const PetscScalar myH = (vH(i,j) < minThickEtaTransform) ?

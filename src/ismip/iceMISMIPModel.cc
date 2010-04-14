@@ -294,14 +294,12 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 
   config.set_flag("do_temp",                      false);
   config.set_flag("use_ssa_when_grounded",        false);
-  config.set_flag("do_bed_deformation",           false);
   config.set_flag("is_dry_simulation",            false);
   config.set_flag("include_bmr_in_continuity",    false);
   config.set_flag("ocean_kill",                   true);
   config.set_flag("use_ssa_velocity",             true);
   config.set_flag("compute_surf_grad_inward_ssa", false);
-
-  transformForSurfaceGradient = PETSC_TRUE;
+  config.set_flag("use_eta_transformation", true);
 
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
 

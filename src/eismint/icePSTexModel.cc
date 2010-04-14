@@ -277,7 +277,7 @@ PetscErrorCode IcePSTexModel::init_physics() {
 
   updateHmelt = PETSC_TRUE;
   config.set_flag("include_bmr_in_continuity", true);
-  transformForSurfaceGradient = PETSC_TRUE;
+  config.set_flag("use_eta_transformation", true);
 
   if (exper_chosen <= 1) { // P0A and P0I are nonsliding SIA
     config.set_flag("use_ssa_velocity", false);

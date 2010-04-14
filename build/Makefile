@@ -79,7 +79,7 @@ SHELL := /bin/sh
 VPATH := $(subst src,../src,src/:src/base/:src/earth/:src/verif/:src/verif/tests/:src/software_tests:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
-executables := pismr pross pismv pisms pclimate pismtests
+executables := pismr pismv pisms pclimate pismtests
 extras := flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
 exec_extras := $(addprefix ../bin/, $(extras))
@@ -105,8 +105,8 @@ ice_csources := cubature.c pism_signal.c
 verif_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 	exactTestK.c exactTestL.c exactTestM.c
 
-other_sources := pismr.cc pross.cc pismv.cc pisms.cc \
-	iceEISModel.cc iceMISMIPModel.cc iceROSSModel.cc icePSTexModel.cc \
+other_sources := pismr.cc pismv.cc pisms.cc \
+	iceEISModel.cc iceMISMIPModel.cc icePSTexModel.cc \
 	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc \
 	flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
 
@@ -114,6 +114,8 @@ other_sources := pismr.cc pross.cc pismv.cc pisms.cc \
 #   derived class; as an example it includes "grn_make"; creates executable
 #   "pgrn"
 include ../src/eismint/grn_make
+# this creates the EISMINT-Ross driver, pross:
+include ../src/eismint/pross_make
 
 # Import additional make include files:
 ifdef PISM_CONFIG
@@ -166,9 +168,6 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 
 ../bin/pismr : pismr.o ${LIBPISMNAME}
 	${CXXLINKER} pismr.o ${ICE_LIB_FLAGS} -o $@
-
-../bin/pross : pross.o iceROSSModel.o ${LIBPISMNAME}
-	${CXXLINKER} iceROSSModel.o pross.o ${ICE_LIB_FLAGS} -o $@
 
 ../bin/pisms : iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o ${LIBPISMNAME}
 	${CXXLINKER} iceEISModel.o iceMISMIPModel.o icePSTexModel.o pisms.o \

@@ -187,7 +187,7 @@ scalar)\\
 \texttt{-anomaly_temp_ma} & mean-annual air temperature forcing\\
 \end{tabular}
 
-\section{Surface models}
+\section{Surface (snow) processes models}
 \label{sec:surface-models}
 
 \begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
@@ -253,10 +253,10 @@ balance computation\\
 \section{PISM configuration file}
 \label{sec:pism-config-file}
 \begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
-\texttt{-config} & read from an alternative config file\\
+\texttt{-config} & read model flags and parameters from an alternative config file\\
 \texttt{-config_override} & select a file to use for overriding config
 settings; useful for parameter studies\\
-\texttt{-dump_config} & save config parameters used in a run to a file
+\texttt{-dump_config} & save configuration flags and parameters used in a run to a file
 \end{tabular}
 
 \section{Regridding}
@@ -282,7 +282,7 @@ settings; useful for parameter studies\\
 \texttt{-extra_file} & Specifies the file to save to.\\
 \texttt{-extra_times} & Specifies times to save at, similar to
 \texttt{-save_times} and \mbox{\texttt{-ts_times}}. \\
-\texttt{-extra_vars} & list of variables to save\\
+\texttt{-extra_vars} & select (list) variables to save\\
 \texttt{-extra_split} & save time-series to separate files\\
 \texttt{-extra_append} & append to an existing file\\
 \end{tabular}
@@ -292,19 +292,17 @@ settings; useful for parameter studies\\
 \begin{textblock}{15}(16,1)
 
 \section{Saving scalar time-series}
-\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+\begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
   \texttt{-ts_file} & Specifies the file to save to.\\
   \texttt{-ts_times} & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
-  \texttt{-ts_vars} & Comma-separated list of variables;
-  supported variables include \texttt{ivol}, \texttt{iarea}, \texttt{iareag}, \texttt{iareaf},
-  \texttt{dt}, \texttt{divoldt}, \texttt{dimassdt}\\
- \texttt{-ts_append} & Append time series to file if it already exists.
+  \texttt{-ts_vars} & select (list) variables to save\\
+ \texttt{-ts_append} & append to an existing file\\
 \end{tabular}
 
 \section{Scalar time-series}
 \label{sec:scalar-time-series}
 
-\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+\begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
 \texttt{ivol} & total ice volume\\
 \texttt{iarea} & total area covered by ice\\
 \texttt{iareag} & total area covered by grounded ice\\
@@ -323,7 +321,7 @@ settings; useful for parameter studies\\
 \texttt{-view_slice_level} & set the horizontal slice level, in meters above
 the base of the ice\\
 \texttt{-viewer_size} & set the viewer size \\
-\texttt{-view_sounding} & a list of 3D fields to \\
+\texttt{-view_sounding} & a list of 3D fields to probe\\
 \texttt{-id} & sounding row-index\\
 \texttt{-jd} & sounding column-index\\
 \texttt{-display} & Xwindows display; might be needed to use viewers with \texttt{mpiexec}\\
