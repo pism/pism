@@ -17,14 +17,13 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petsc.h>
-#include "base/grid.hh"
-#include "base/iceModel.hh"
-#include "eismint/iceROSSModel.hh"
-
-#include "coupler/PCFactory.hh"
-#include "coupler/PISMAtmosphere.hh"
-#include "coupler/PISMSurface.hh"
-#include "coupler/PISMOcean.hh"
+#include "../base/grid.hh"
+#include "../base/iceModel.hh"
+#include "../coupler/PCFactory.hh"
+#include "../coupler/PISMAtmosphere.hh"
+#include "../coupler/PISMSurface.hh"
+#include "../coupler/PISMOcean.hh"
+#include "iceROSSModel.hh"
 
 static char help[] =
   "Driver for EISMINT-Ross diagnostic velocity computation in ice shelf.)\n";

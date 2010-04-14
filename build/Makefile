@@ -110,12 +110,13 @@ other_sources := pismr.cc pismv.cc pisms.cc \
 	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc \
 	flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
 
-# this is the primary derived class example so it is structured as an example
-#   derived class; as an example it includes "grn_make"; creates executable
-#   "pgrn"
+
+#### driver and derived-class examples are included here   ####
+# creates EISMINT-Greenland driver "pgrn"
 include ../src/eismint/grn_make
-# this creates the EISMINT-Ross driver, pross:
+# creates the EISMINT-Ross driver "pross"
 include ../src/eismint/pross_make
+
 
 # Import additional make include files:
 ifdef PISM_CONFIG

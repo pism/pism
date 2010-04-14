@@ -103,7 +103,7 @@ This \emph{Installation Manual} describes how to download the PISM source code a
 \vfill
 
 \begin{quote}
-\textsl{Copyright (C) 2004--2009 Ed Bueler and Constantine Khroulev}
+\textsl{Copyright (C) 2004--2010 Ed Bueler and Constantine Khroulev and Andy Aschwanden}
 \medskip
 
 \noindent \textsl{This file is part of PISM.}
@@ -460,33 +460,28 @@ Set the environment variable |PISM_CONFIG| to |config/foo| to include the file |
 \section{Quick tests of the installation}
 Once you're done with the installation, a few tests can confirm that PISM is functioning correctly.
 \begin{enumerate}
-\item Try a MPI four processor verification run:
+\item Try a MPI four process verification run:
 
-\verb|mpiexec -n 4 pismv -test G -y 200|
+\verb|$ mpiexec -n 4 pismv -test G -y 200|
 
 \noindent If you see some output and a final \verb|Writing model state| \verb|to file 'verify.nc'| \verb|... done| then PISM
-completed successfully.  At the end of this run you get measurements of the difference between the numerical result and
-the exact solution.\footnote{Bueler and others, 2007.  \emph{Exact solutions to the thermomechanically coupled shallow ice approximation: effective tools for verification}, J.~Glaciol.~53 (182), pp.~499--516}
+completed successfully.  At the end of this run you get measurements of the difference between the numerical result and the exact solution.  See the \emph{User's Manual} for more on PISM verification.
 
-\noindent This should work even if there is only one actual processor (core) on your machine, in which case MPI will just run multiple processes on the one processor.
+The above ``\verb|-n 4|'' run should work even if there is only one actual processor (core) on your machine, in which case MPI will just run multiple processes on the one processor.  This run will also produce a NetCDF output file \verb|verify.nc|, which can be read and viewed by NetCDF tools.
 
-\item Try a verification run using the PETSc viewers (under the X window system):
+\item Try an EISMINT II run using the PETSc viewers (under the X window system):
 
-\verb|pismv -test G -y 200 -d HTc|
+\verb|$ pisms -y 5000 -view_map thk,temppabase,csurf|
 
-\noindent When using such viewers and \verb|mpiexec| the additional final option \verb|-display :0| is sometimes required to enable MPI to use X, like this:
+\noindent When using such viewers and \verb|mpiexec| the additional final option \verb|-display :0| \,is sometimes required to enable MPI to use X, like this:
 
-\verb|mpiexec -n 2 pismv -test G -y 200 -d HTc -display :0|
+\verb|$ mpiexec -n 2 pisms -y 5000 -view_map thk,temppabase,csurf -display :0|
 
-\item Run a Python script for a basic suite of verifications:
+\item Run a a basic suite of software tests
 
-\verb|test/verifynow.py|
+\verb|$ (cd test/software && make)|
 
-\noindent or, on an $N$ processor machine,
-
-\verb|test/verifynow.py -n |$N$
-
-\noindent If you would like us to confirm that PISM is working as expected please save the one page or so of output from this script and send it to us (\href{mailto:help@pism-docs.org}{help@pism-docs.org}).  See section \emph{Verification} of the \emph{User's Manual} for more on PISM verification.
+\noindent Feel free to email us about failed tests, etc.: \href{mailto:help@pism-docs.org}{help@pism-docs.org}.
 \end{enumerate}
 
 \subsubsection*{Next steps}  Start with the \emph{User's Manual}, which has a ``Getting started'' section.  A copy is online at the PISM homepage and documentation page \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}}, along with a source code \emph{Browser} (HTML).  Completely up-to-date documenation can be built from \LaTeX~source in the |doc\| subdirectory, as described in the last section.
