@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 ## @package vfnow
-## A script for verification of numerical schemes in PISM.
-## It specifies a refinement path for each of Tests ABCDEFGIJKL and runs
+## \author Ed Bueler and Constantine Khroulev, University of Alaska Fairbanks, USA
+## \brief A script for verification of numerical schemes in PISM.
+## \details It specifies a refinement path for each of Tests ABCDEFGIJKL and runs
 ## pismv accordingly.
 ## Copyright (C) 2007--2010 Ed Bueler and Constantine Khroulev
 ##
-## Organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in section \ref{sect:verif}.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
+## Organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in the user manual.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
 ##
 ## Examples:
 ##    - \verbatim vfnow.py \endverbatim use one processor and do three levels of refinement; this command is equivalent to \verbatim vfnow.py -n 2 -l 2 -t CGIJ \endverbatim,

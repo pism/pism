@@ -7,7 +7,7 @@
 ## \verbatim nc2mat.py ross.nc \endverbatim will read all the variables from \c ross.nc and write them to \c ross.mat, \verbatim nc2mat.py -v thk,acab -o ross_matlab.mat ross.nc \endverbatim will read variables \c thk and \c acab from \c ross.nc and write them to \c ross_matlab.nc, and
 ## \verbatim nc2mat.py -e x,y,z ross.nc \endverbatim
 ## will read all the variables except \c x, \c y and \c z from \c ross.nc and write them to \c ross.mat.
-## Because PISM saves all diagnostic variables using the single precision (type \c float), while most MATLAB plotting functions expect data to have double precision (type \c double), so one might need to convert them explicitly.  For example, assuming that \c ross.nc contains data produced by a PISM run like ones in section \ref sect:ross, running
+## Because PISM saves all diagnostic variables using the single precision (type \c float), while most MATLAB plotting functions expect data to have double precision (type \c double), so one might need to convert them explicitly.  For example, assuming that \c ross.nc contains data produced by a PISM run, running
 ## \verbatim nc2mat.py -v cbar ross.nc \endverbatim and then typing
 ## \code
 ## >> load ross.mat;
@@ -20,6 +20,7 @@ try:
     from netCDF4 import Dataset as NC
 except:
     from netCDF3 import Dataset as NC
+    
 from getopt import getopt, GetoptError
 from os.path import splitext
 

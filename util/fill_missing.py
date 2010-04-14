@@ -14,7 +14,7 @@
 # Uses an approximation to Laplace's equation
 # 	\f[ \nabla^2 u = 0 \f]
 # to smoothly replace missing values in two-dimensional NetCDF variables with the average of the ``nearby'' non-missing values.
-# Section \ref{sec:eismint-greenland} gives an example application to the bed elevations in the EISMINT-Greenland data.  Here is another hypothetical example, filling the missing values in the variables \c topg and \c usurf, using a convergence tolerance of \f$10^{-4}\f$ and the initial guess of \f$100\f$, on data in the NetCDF file \c data.nc :
+# Here is hypothetical example, filling the missing values in the variables \c topg and \c usurf, using a convergence tolerance of \f$10^{-4}\f$ and the initial guess of \f$100\f$, on data in the NetCDF file \c data.nc :
 # \code
 # fill_missing.py -f data.nc -v topg,usurf --eps=1.0e-4 \
 #                 -i 100.0 -o data_smoothed.nc
