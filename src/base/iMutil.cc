@@ -417,14 +417,20 @@ static PetscReal geo_z(PetscReal a, PetscReal b,
   return N * sin_degrees(lat) * PetscSqr(b/a);
 }
 
-//! Allocate and compute corrected cell areas. Uses linear interpolation to
-//! find latitudes and longitudes of grid corners, WGS84 parameters to compute
-//! cartesian coordinates of grid corners and vector products to compute areas
-//! of resulting triangles.
-//!
-//! Note that latitude and longitude fields are \b not periodic, so computing
-//! corrected areas for cells at the grid boundary is not feasible. This should
-//! not matter, since these cells should be (and in most cases are) ice-free.
+/*!
+    Allocate and compute corrected cell areas. Uses linear interpolation to
+    find latitudes and longitudes of grid corners, WGS84 parameters to compute
+    cartesian coordinates of grid corners and vector products to compute areas
+    of resulting triangles.
+   
+    \note Latitude and longitude fields are \b not periodic, so computing
+    corrected areas for cells at the grid boundary is not feasible. This should
+    not matter, since these cells should be (and in most cases are) ice-free.
+    
+    \note Using linear interpolation introduces errors in lon/lat coordinates
+    of cell corners, but the corresponding ice volume error (present day
+    Greenland, 5km grid) is about 3.11e-04 %.
+*/
 PetscErrorCode IceModel::correct_cell_areas() {
   PetscErrorCode ierr;
 

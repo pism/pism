@@ -409,7 +409,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   }
     
   ierr = PetscOptionsReal("-force_to_thk_alpha",
-			  "Specifies the force-to-thickness alphae value",
+			  "Specifies the force-to-thickness alpha value",
 			  "", alpha * secpera,
 			  &fttalpha, &fttalphaSet); CHKERRQ(ierr);
 

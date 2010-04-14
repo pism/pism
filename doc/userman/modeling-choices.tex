@@ -117,7 +117,7 @@ chooses a combination of SeaRISE-Greenland atmosphere model (see below),  ice-co
 Each of PISM boundary model types currently has one ``modifier'' available; the corresponding keyword is \texttt{forcing}. Please see below for details.
 
 \begin{enumerate}
-\optsection{Climate (boundary) models!\texttt{-atmosphere} [searise_greenland, constant, forcing]}
+\optsection{Climate (boundary) models!\texttt{-atmosphere} [searise_greenland, constant, temp_lapse_rate, forcing]}
 \item \textbf{PISM atmosphere models.}
 \begin{itemize}
   \item \emph{SeaRISE-Greenland} (\texttt{searise_greenland}, the default)
@@ -126,7 +126,7 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
     The parameterization is controlled by configuration parameters with the \texttt{snow_temp} prefix.
 
-    In addition to the temperature parameterization it implements the SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degree Celsius of temperature change \cite{Huybrechts02}
+    In addition to the temperature parameterization it implements the SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degree Celsius of temperature change \cite{Huybrechts02} (turn on using the \intextoption{paleo_precip} option).
 
     Please see \url{http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland} for details.
 
@@ -177,8 +177,10 @@ The number of positive degree days is computed as the magnitude of the temperatu
 The number of positive degree days is multiplied by a coefficient (config parameter \texttt{pdd_factor_snow}) to compute the amount of snow melted.  Of the melted snow, a fraction (\texttt{pdd_refreeze}) is kept as ice.  This ice, plus all unmelted snow (already measured as ice-equivalent) is added to the mass balance, unless the number of positive degree days exceeds that required to melt all of the snow.  In this latter case, in which there are excess positive degree days available for melting, the excess is multiplied by a coefficient (\texttt{pdd_factor_ice}) to compute how much ice is melted.  In this case actual ablation occurs at that location.
 
 In addition to this, one can use latitude- and July-air-temperature-dependent Greenland PDD model parameters $\beta_{\mathrm{ice}}$ and $\beta_{\mathrm{snow}}$ (formulas (6) and (7) in \cite{Faustoetal2009}) by adding the \intextoption{pdd_fausto}  option. See also configuration parameters with the \texttt{pdd_fausto} prefix..
+\end{itemize}
 
- \end{itemize}
+The \texttt{forcing} modifier implements a surface mass balance adjustment mechanism forcing ice thickness to a target distribution at the end of the run; option \fileopt{force_to_thk} selects a file containing the target ice thickness field. Option \intextoption{force_to_thk_alpha} sets the $\alpha$ parameter. See the documentation  of \texttt{PSForceThickness::ice_surface_mass_flux()} for details.
+
 \optsection{Climate (boundary) models!\texttt{-ocean} [constant, forcing]}
 \item \textbf{PISM ocean models}
 PISM includes one simple ocean model: \texttt{constant}, providing constant (both in time and space) mass flux into the ocean and sea level elevation to PISM's ice flow core. The mass flux is controlled by the\\ \texttt{ocean_sub_shelf_heat_flux_into_ice} configuration parameter and the assumption that the mass flux is proportional to heat flux into ice.
@@ -210,7 +212,7 @@ The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:mask
 \normalsize
 \end{table}
 
-Assuming the geometry of the ice evolves (which can be turned off by option \intextoption{no_mass}), and assuming an ocean exists (which can be turned off by option \intextoption{dry}), then at each time step the mask can change.  Ice which becomes floating is marked as \texttt{MASK_FLOATING} while ice which becomes grounded is either marked as \texttt{MASK_SHEET} or \texttt{MASK_DRAGGING}.  The latter case occurs if the option \intextoption{ssa_sliding} is used, while otherwise all points are marked \texttt{MASK_Sheet}.
+Assuming the geometry of the ice evolves (which can be turned off by option \texttt{-no_mass}), and assuming an ocean exists (which can be turned off by option \texttt{-dry}), then at each time step the mask can change.  Ice which becomes floating is marked as \texttt{MASK_FLOATING} while ice which becomes grounded is either marked as \texttt{MASK_SHEET} or \texttt{MASK_DRAGGING}.  The latter case occurs if the option \texttt{-ssa_sliding} is used, while otherwise all points are marked \texttt{MASK_Sheet}.
 
 \subsection{Calving}
 \label{sec:calving}
@@ -254,6 +256,8 @@ PISM includes two (very basic) calving mechanisms activated using options in Tab
 
 In the polythermal (default) mode of PISM there is only one choice of the flow law: the Glen-Paterson-Budd-Lliboutry-Duval \cite{LliboutryDuval1985, AschwandenBlatter}. 
 
+The command-line option \intextoption{e} sets the flow enhancement factor and can be used with any flow law.
+
 The following command-line options control the choice of rheology in the \texttt{-cold} mode.
 
 \optdef{ice_type}{pb}  Allows choice of ice rheology, also known as the ``flow law''.  The options are in table \ref{tab:flowlaw} below.  Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
@@ -261,8 +265,6 @@ The following command-line options control the choice of rheology in the \texttt
 where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$ so $\sigma$ is the second invariant of the stress deviator tensor, $P$ is the pressure, and $d$ is the grain size.  That is, we are addressing isotropic flow laws only, and one can choose the scalar function.  Note that the inverse form of such a flow law in needed for ice shelves and ice streams:
 	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,P,d)\,\dot \eps_{ij} $$
 Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inverse form of the flow law explains the ``hybrid'' law \texttt{-ice_type hybrid} (or \texttt{-gk}).
-
-\optdef{e}{1.0}  Flow enhancement factor.
 
 \optdef{ice_custom_hardness}{1.9e8} Some ice types are customizable, run with \texttt{-help} to see all the customizable options for your chosen ice type (since \texttt{-help} displays many options, it is often useful to grep the output, as in \verb:pisms -ice_type custom -help | grep ice_:).  A common use the \texttt{custom} ice type is to directly specify the hardness parameter in an ice shelf study.  The viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
 	$$\ddx{}\left(2\nu H\left(2\ddx{u} + \ddy{v}\right)\right)$$
@@ -457,7 +459,7 @@ Test H in section \ref{sect:verif} can be used to reproduce the comparison done 
 \label{sec:turning-off}
 \optsection{Disabling PISM components}
 
-Major model components, unlike ``peripheral'' ones like bed deformation, do not need to be turned ``on'' explicitly.\footnote{It would be a hassle to ask for SIA computations every time you need them, for example.} However, in some cases it is useful to be able to disable particular components (during model spin-up, for example). Currently PISM has switches disabling the mass-continuity step (command-line option \intextoption{no_mass}) and energy balance computation (option \intextoption{no_temp}).
+Major model components, unlike ``peripheral'' ones like bed deformation, do not need to be turned ``on'' explicitly.\footnote{It would be a hassle to ask for SIA computations every time you need them, for example.} However, in some cases it is useful to be able to disable particular components (during model spin-up, for example). Currently PISM has switches disabling the mass-continuity step (command-line option \intextoption{no_mass}), energy balance computation (option \intextoption{no_temp}) and polythermal energy balance computation: option \intextoption{cold} makes PISM use temperature instead of enthalpy in the energy balance code.
 
 %%% Local Variables: 
 %%% mode: latex

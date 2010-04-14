@@ -1,11 +1,8 @@
-\documentclass[10pt,landscape]{article}
-
-\usepackage[left=1.5cm,top=1cm,right=1.5cm,bottom=1cm,nohead,nofoot]{geometry}
+\documentclass[landscape]{article}
+\usepackage{scalefnt}
 \usepackage{underscore}
-\usepackage{multicol}
-\usepackage{longtable}
-\usepackage{bm,url,xspace,verbatim}
-\usepackage{amssymb,amsmath}
+
+\usepackage{graphicx}
 \usepackage[pdftex]{hyperref}
 \hypersetup{pdftitle={PISM Cheat Sheet}}
 \hypersetup{pdfauthor={PISM (help@pism-docs.org)}}
@@ -14,147 +11,386 @@
 \hypersetup{pdfsubject={get PISM sources at http://www.pism-docs.org}}
 \hypersetup{colorlinks,
   plainpages=false, % only if colorlinks=true
-  linkcolor=black,   % only if colorlinks=true
+  linkcolor=blue,   % only if colorlinks=true
   citecolor=black,   % only if colorlinks=true
-  urlcolor=black     % only if colorlinks=true
+  urlcolor=blue     % only if colorlinks=true
 }
 
-\def\pdfBorderAttrs{/Border [0 0 0] } % No border arround Links
+% The textpos package is necessary to position textblocks at arbitrary 
+% places on the page.
+%\usepackage[absolute,showboxes]{textpos}
+\usepackage[absolute]{textpos}
 
-\newcommand{\PISMREV}{\textbf{trunk} revision \input{revision.tex}}
+\TPGrid[10mm,5mm]{47}{20}      % 3 cols of width 15, plus 2 gaps width 1
+
+\newcommand{\PISMREV}{trunk revision \input{revision.tex}}
 \newcommand{\PETSCREL}{2.3.3 or 3.0.0}
-\newcommand{\PISMDOWNLOADMSG}{Get development version of PISM source code: \\ \centerline{\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev}} \quad}
-
-%% macros having to do with documentation for options; note these appear in the index
-\newcommand{\und}{\_\!\_}
-
+\newcommand{\PISMDOWNLOADMSG}{Get development version of PISM source code: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev}}
 
 % Don't print section numbers
 \setcounter{secnumdepth}{0}
 
-\pagestyle{empty}
+\parindent=0pt
+\parskip=0.5\baselineskip
 
-% -----------------------------------------------------------------------
+\sloppy
+
+\newcommand{\tabletitle}[1]{\multicolumn{2}{c}{\textbf{#1}}}
 
 \begin{document}
+\scalefont{0.8}
+\pagestyle{empty}
 
-\begin{center}
-     \Large{\textbf{PISM Cheat Sheet} Rev. \PISMREV}
-\end{center}
+%%%%% Header
+\begin{textblock}{47}(0,0)
+  \begin{center}
+    \Large{\textbf{PISM (a Parallel Ice Sheet Model) Cheat Sheet} based on \PISMREV}
+  \end{center}
+\end{textblock}
+%%%%%
 
+\begin{textblock}{15}(0,0.8)
+\section{Input and output}
+\label{sec:input-output}
 
-\begin{multicols*}{3}
+\begin{tabular}{@{}p{0.2\linewidth}p{0.75\linewidth}@{}}
+\tabletitle{File I/O} \\
+\texttt{-i} & selects an input file for restarting \\
+\texttt{-boot_from} & selects a file to bootstrap from \\
+\texttt{-o} & selects an output file \\
+\texttt{-o_size} & specifies the ``size'' of the output; \texttt{small} means
+``only model state variables'', \texttt{medium} adds some
+diagnostic quantities, \texttt{big} saves \emph{every} supported diagnostic quantity\\
+\tabletitle{Standard output} \\
+\texttt{-verbose} & selects standard output verbosity level; \mbox{0 -- silent}; \mbox{1 --
+errors only}; \mbox{2 -- the default}; 3, 4, 5 provide more info\\
+\texttt{-help} & prints PISM and PETSc command-line option help; use with \texttt{grep}\\
+\end{tabular}
 
+\section{Domain and grid}
+\label{sec:grid-setup}
+  
+\begin{tabular}{@{}p{0.2\linewidth}p{0.75\linewidth}@{}}
+\tabletitle{Domain dimensions} \\
+ \texttt{-Lx} (km) & half-width of the domain \mbox{(x-direction)}\\
+  \texttt{-Ly} (km) & half-width of the domain \mbox{(y-direction)}\\
+  \texttt{-Lz} (m) & domain height (in the ice)\\
+  \texttt{-Lbz} (m) & domain height (in the bedrock)\\
+\tabletitle{Grid size} \\
+ \texttt{-Mx} & number of points in the x-direction\\
+  \texttt{-My} & number of points in the x-direction\\
+  \texttt{-Mz} & number of points in the z-direction in the ice\\
+  \texttt{-Mbz} & number of points in the z-direction in the bedrock\\
+\tabletitle{Vertical grid spacing} \\
+ \texttt{-z_spacing} & vertical spacing in the ice; choose one of \texttt{quadratic} (default), \texttt{equal}\\
+  \texttt{-zb_spacing} & same as \texttt{-z_spacing}, in the bedrock\\
+\end{tabular}
 
-% multicol parameters
-% These lengths are set only within the two main columns
-\setlength{\columnseprule}{0.25pt}
-\setlength{\premulticols}{1pt}
-\setlength{\postmulticols}{1pt}
-\setlength{\multicolsep}{1pt}
-\setlength{\columnsep}{2pt}
+\section{Model time}
+\label{sec:model-time}
+\begin{tabular}{@{}p{0.2\linewidth}p{0.75\linewidth}@{}}
+  \texttt{-ys} & start year \\
+  \texttt{-ye} & end year \\
+  \texttt{-y} & run length
+\end{tabular}
 
-\section{General Info}
-
-The Parallel Ice Sheet Model (PISM) is a modern, hybrid, polythermal
-ice sheet model which has been successfully run on more than 500
-processors. It is perfectly suitable for modeling of Greenland and Antarctica.
-
-
-\section{Snapshots}
-
-\begin{tabular}{@{}p{0.4\linewidth}p{0.5\linewidth}@{}}
-  \texttt{ts_file} [file name] & Specifies the file to save to.\\
-  \texttt{ts_times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
-  \texttt{ts_vars} [list of variables] & Comma-separated list of variables. Omitting this option is equivalent to listing all the possible variables.\\
-  \texttt{ts_append} & Append time series to file if it already exists.  No effect if file does not yet exist.
+\section{Time-stepping}
+\label{sec:time-stepping}
+\begin{tabular}{@{}p{0.2\linewidth}p{0.75\linewidth}@{}}
+  \texttt{-max_dt} & maximum time-step, in years; time steps determined by
+  the adaptive mechanism will not exceed this\\
+  \texttt{-skip} &  sets the maximum number of mass-balance steps to perform
+  before the temperature, age, and SSA stress balance computations
+  are done\\
 \end{tabular}
 
 
-\section{Saving time series}
 
-\begin{tabular}{@{}p{0.4\linewidth}p{0.5\linewidth}@{}}
-  \texttt{ts_file} [file name] & Specifies the file to save to.\\
-  \texttt{ts_times} [range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
-  \texttt{ts_vars} [list of variables] & Comma-separated list of variables. Omitting this option is equivalent to listing all the possible variables.\\
-  \texttt{ts_append} & Append time series to file if it already exists.  No effect if file does not yet exist. \\
+\end{textblock}
+
+\begin{textblock}{15}(16,0.8)
+
+
+\section{Stress balance}
+\label{sec:stress-balance}
+
+\begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
+\texttt{-ssa_sliding} & use SSA as a sliding law\\
+\texttt{-ssa_floating_only} & use SSA for floating ice only\\
+\texttt{-eta} & use $\eta$ transformation in the surface gradient computation\\
+\end{tabular}
+
+\section{Rheology}
+\label{sec:rheology}
+\begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
+\texttt{-e} & enhancement factor\\
+\texttt{-ice_type} & select a flow law; the default (polythermal) mode only
+supports \texttt{gpbld}, \texttt{-cold} mode allows selecting from \texttt{pb},
+\texttt{custom}, \texttt{hooke}, \texttt{arr}, \texttt{arrwarm},
+\texttt{hybrid}, \texttt{gpbld}\\
+\end{tabular}
+
+
+\section{Basal strength and sliding}
+\label{sec:basal-strength}
+\begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
+\texttt{-hold_tauc} & keep the current values of the till yield stress\\
+\texttt{-plastic_c0} & set the value of the till cohesion ($c_{0}$) in the
+plastic till model\\
+\texttt{-plastic_phi} & set the till friction angle (in degrees)\\
+\texttt{-plastic_pwfrac} & set the maximum pore water fraction\\
+\texttt{-pseudo_plastic_q} & set the exponent $q$ in the pseudo-plastic basal
+sliding law\\
+\texttt{-plastic_reg} (m/a) & set the value of $\epsilon$ regularization of plastic
+till\\
+\texttt{-pseudo_plastic_uthreshold} & set $u_{\mathrm{threshold}}$\\
+\texttt{-topg_to_phi} & compute till friction angle as a function of bed
+elevation; arguments are $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}$, $b_{\mathrm{min}}$, $b_{\mathrm{max}}$, $\phi_{\mathrm{ocean}}$
+\end{tabular}
+
+
+\section{Age of the ice}
+\label{sec:age}
+\begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
+\texttt{-age} & compute age of the ice; \mbox{default: off}\\
+\end{tabular}
+
+\section{Bed deformation}
+\label{sec:bed-deformation}
+\begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
+  \texttt{-bed_def} & turns on a bed deformation model; choose one of \texttt{iso} (isostatic), \texttt{lc}~(Lingle-Clark);\\
 \end{tabular}
 
 
 
-\section{Saving extra variables}
+\end{textblock}
 
-\begin{tabular}{@{}p{0.4\linewidth}p{0.5\linewidth}@{}}
-   \texttt{extra_file}\,[file name] & Specifies the file to save to; should be different from the output \texttt{o} file.\\
-    \texttt{extra_times}\,[range or list] & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list.\\
-    \texttt{extra_vars}\,[list of variables]& Comma-separated list of variables, see table~\ref{tab:extra-vars}\\
-    \texttt{extra_split} & Save to separate files, similar to \texttt{split_snapshots}\\
-    \texttt{extra_append} & Append variables to file if it already exists.  No effect if file does not yet exist, and no effect if \texttt{extra_split} is set.
+\begin{textblock}{15}(32,0.8)
+
+
+\section{Atmosphere models}
+\label{sec:atmosphere-models}
+
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+\texttt{-atmosphere} & selects an atmosphere model; choose one of
+\mbox{\texttt{searise_greenland}}, \texttt{constant},
+\mbox{\texttt{temp_lapse_rate}}\\
+\tabletitle{\texttt{searise_greenland} options}\\
+\texttt{-paleo_precip} & turn on SeaRISE-Greenland paleo-precipitation
+correction; use with \texttt{-dTforcing}\\
+\tabletitle{\texttt{temp_lapse_rate} options}\\
+\texttt{-lapse_rate} & set the lapse rate (in $^{\circ}$C/m)\\
+\tabletitle{Forcing} \\
+\texttt{-dTforcing} & mean-annual air temperature forcing (ice-core-based,
+scalar)\\
+\texttt{-anomaly_precip} & precipitation forcing\\
+\texttt{-anomaly_temp_ma} & mean-annual air temperature forcing\\
 \end{tabular}
 
+\section{Surface models}
+\label{sec:surface-models}
 
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+  \texttt{-surface} & selects a surface (snow) processes model; choose one of
+  \texttt{simple}, \texttt{constant}, \texttt{pdd}\\
+  \tabletitle{\texttt{pdd} options} \\
+  \texttt{-pdd_fausto} & use Fausto et al (2009) Greenland PDD parameters\\
+  \texttt{-pdd_rand} & use a monte carlo simulation to simulate daily temperature variation\\
+ \texttt{-pdd_rand_repeatable} & use a repeatable monte carlo simulation to simulate daily temperature variation\\
+  \texttt{-pdd_std_dev} & set PDD standard deviation\\
+  \tabletitle{Forcing} \\
+  \texttt{-force_to_thk} & select a file with the target ice thickness
+  distribution\\
+  \texttt{-force_to_thk_alpha} & set $\alpha$
+\end{tabular}
 
+\section{Ocean models}
+\label{sec:ocean-models}
 
-Use \verb|-extra_vars| with
-    \texttt{acab}, 
-    \texttt{age},
-    \texttt{artm},
-    \texttt{bfrict},
-    \texttt{bheatflx},
-    \texttt{bmelt},
-    \texttt{bwat},
-    \texttt{bwp},
-    \texttt{cbar},
-    \texttt{cbase},
-    \texttt{cflx},
-    \texttt{csurf},
-    \texttt{dHdt},
-    \texttt{dbdt},
-    \texttt{dhdt},
-    \texttt{enthalpybase},
-    \texttt{enthalpysurf},
-    \texttt{hardav},
-    \texttt{lat},
-    \texttt{litho_temp},
-    \texttt{lon},
-    \texttt{mask},
-    \texttt{strainheat},
-    \texttt{SigmaComp},
-    \texttt{tauc},
-    \texttt{taud},
-    \texttt{temp},
-    \texttt{temp_pa},
-    \texttt{tempbase},
-    \texttt{tempsurf},
-    \texttt{thk},
-    \texttt{tillphi},
-    \texttt{topg},
-    \texttt{ubar},
-    \texttt{ub},
-    \texttt{usurf},
-    \texttt{uvel},
-    \texttt{uvelbase},
-   \texttt{uvelsurf},
-    \texttt{vbar},
-    \texttt{vvelbase},
-    \texttt{vvelsurf},
-    \texttt{vb},
-    \texttt{vvel},
-    \texttt{wvel},
-    \texttt{wvelbase},
-    \texttt{wvelsurf},
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+\texttt{-ocean} & selects an ocean model; the only (default) choice is
+\texttt{constant} \\
+\tabletitle{Forcing} \\
+\texttt{-dSLforcing} & sea level elevation forcing\\
+\end{tabular}
 
+\section{Calving}
+\label{sec:calving}
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+  \texttt{-float_kill} & calve off floating ice (calving at the grounding
+  line)\\
+\texttt{-ocean_kill} & calve off the ice entering cells marked as ``ice-free
+ocean at the beginning of the run''
+\end{tabular}
 
+\end{textblock}
 
-\end{multicols*}
+\null\newpage
+%%%%% Footer
+\begin{textblock}{47}(0,18)
+  \begin{center}
+    \hrulefill\\
+    This cheat-sheet may be freely distributed under the terms of the GNU general
+    public licence --- Copyright \copyright\ 2010 by PISM --- v0.3 ---
+    \href{http://www.pism-docs.org}{\texttt{www.pism-docs.org}}\\
+    \PISMDOWNLOADMSG\\
+    To print this cheat-sheet, set your printer to ``two-sided, short-edge binding''.
+ \end{center}
+\end{textblock}
+%%%%%
 
-\rule{0.3\linewidth}{0.25pt}
-\scriptsize
+\begin{textblock}{15}(0,1)
 
-This card may be freely distributed under the terms of the GNU general
-public licence --- Copyright \copyright\ 2010 by PISM --- v0.3 --- \href{http://www.pism-docs.org}{\t{www.pism-docs.org}}
+\section{Disabling PISM components}
+\label{sec:switches}
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+\texttt{-cold} & disable polythermal code and use temperature in the energy
+balance computation\\
+\texttt{-no_mass} & disable mass continuity computations; \mbox{default: on}\\
+\texttt{-no_temp} & disable energy balance computations: \mbox{default: on}
+\end{tabular}
 
+\section{PISM configuration file}
+\label{sec:pism-config-file}
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+\texttt{-config} & read from an alternative config file\\
+\texttt{-config_override} & select a file to use for overriding config
+settings; useful for parameter studies\\
+\texttt{-dump_config} & save config parameters used in a run to a file
+\end{tabular}
 
+\section{Regridding}
+\label{sec:regridding}
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+  \texttt{-regrid_file} & select a file to regrid from\\
+  \texttt{-regrid_vars} & a list of variables to regrid; choose from
+  \texttt{age}, \texttt{bwat}, \texttt{dbdt}, \texttt{enthalpy}, \texttt{litho_temp}, \texttt{temp},
+  \texttt{thk}, \texttt{topg}\\
+\end{tabular}
+
+\section{Saving model snapshots}
+\label{sec:snapshots}
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+\texttt{-save_file} & set the file save to\\
+\texttt{-save_times} & a range or list of times\\
+\texttt{-split_snapshots} & save snapshots to separate files\\
+\end{tabular}
+
+\section{Saving 2D and 3D time-series}
+\label{sec:extras}
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+\texttt{-extra_file} & Specifies the file to save to.\\
+\texttt{-extra_times} & Specifies times to save at, similar to
+\texttt{-save_times} and \mbox{\texttt{-ts_times}}. \\
+\texttt{-extra_vars} & list of variables to save\\
+\texttt{-extra_split} & save time-series to separate files\\
+\texttt{-extra_append} & append to an existing file\\
+\end{tabular}
+
+\end{textblock}
+
+\begin{textblock}{15}(16,1)
+
+\section{Saving scalar time-series}
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+  \texttt{-ts_file} & Specifies the file to save to.\\
+  \texttt{-ts_times} & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
+  \texttt{-ts_vars} & Comma-separated list of variables;
+  supported variables include \texttt{ivol}, \texttt{iarea}, \texttt{iareag}, \texttt{iareaf},
+  \texttt{dt}, \texttt{divoldt}, \texttt{dimassdt}\\
+ \texttt{-ts_append} & Append time series to file if it already exists.
+\end{tabular}
+
+\section{Scalar time-series}
+\label{sec:scalar-time-series}
+
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+\texttt{ivol} & total ice volume\\
+\texttt{iarea} & total area covered by ice\\
+\texttt{iareag} & total area covered by grounded ice\\
+\texttt{iareaf} & total area covered by floating ice\\
+\texttt{dt} & mass-continuity time step\\
+\texttt{divoldt} & rate of change of the total ice volume\\
+\texttt{dimassdt} & rate of change of the total ice mass\\
+\end{tabular}
+
+\section{Run-time viewers}
+\label{sec:run-time-viewers}
+
+\begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
+\texttt{-view_map} & a list of 2D fields to view\\
+\texttt{-view_slice} & a list of 3D fields to view horizontal slices of\\
+\texttt{-view_slice_level} & set the horizontal slice level, in meters above
+the base of the ice\\
+\texttt{-viewer_size} & set the viewer size \\
+\texttt{-view_sounding} & a list of 3D fields to \\
+\texttt{-id} & sounding row-index\\
+\texttt{-jd} & sounding column-index\\
+\texttt{-display} & Xwindows display; might be needed to use viewers with \texttt{mpiexec}\\
+\texttt{-ksp_monitor_draw} & Iteration monitor for the Krylov subspace routines (KSP) 
+in PETSc. Shows norm of residual versus iteration number.
+\end{tabular}
+
+\end{textblock}
+
+\begin{textblock}{15}(32,1)
+\section{Diagnostic quantities}
+\label{sec:diagnostics}
+\begin{tabular}{@{}p{0.2\linewidth}p{0.7\linewidth}@{}}
+  \texttt{acab} &  ice-equivalent surface mass balance\\
+  \texttt{age} &  age of ice \\
+  \texttt{artm} &  annual average ice temperature at ice surface (below firn processes)\\
+  \texttt{bfrict} &  basal frictional heating from ice sliding \\
+  \texttt{bheatflx} &  geothermal flux at bedrock surface \\
+  \texttt{bmelt} &  ice basal melt rate\\
+  \texttt{bwat} &  thickness of subglacial melt water \\
+  \texttt{bwp} &  subglacial (pore) water pressure \\
+  \texttt{cbar} &  magnitude of vertically averaged horizontal ice velocity \\
+  \texttt{cbase} &  magnitude of horizontal ice velocity at the base\\
+  \texttt{cell_area} & cell areas computed using WGS84 datum\\
+  \texttt{cflx} &  magnitude of vertically-integrated horizontal flux of ice \\
+  \texttt{csurf} &  magnitude of horizontal ice velocity at ice surface \\
+  \texttt{dHdt} &  rate of change of ice thickness \\
+  \texttt{dbdt} &  bedrock uplift rate \\
+  \texttt{dhdt} &  rate of change of surface elevation \\
+  \texttt{enthalpybase} &  ice enthalpy at the ice base\\
+  \texttt{enthalpysurf} &  ice enthalpy at the ice surface\\
+  \texttt{hardav} &  vertical average of ice hardness \\
+  \texttt{lat} &  latitude \\
+  \texttt{litho_temp} &  lithosphere (bedrock) temperature\\
+  \texttt{lon} &  longitude \\
+  \texttt{mask} &  grounded/dragging/floating integer mask \\
+  \texttt{tauc} &  yield stress for basal till \\
+  \texttt{taud} &  magnitude of driving shear stress at base of ice \\
+  \texttt{temp} &  ice temperature \\
+  \texttt{temp_pa} &  pressure-adjusted ice temperature \\
+  \texttt{tempbase} &  ice temperature at the ice base\\
+  \texttt{tempsurf} &  ice temperature at the ice surface\\
+  \texttt{thk} &  ice thickness\\
+  \texttt{tillphi} &  till friction angle \\
+  \texttt{topg} &  bedrock surface elevation \\
+  \texttt{usurf} &  ice upper surface elevation \\
+  \texttt{\{u,v\}vel} &  horizontal ice velocity in the X,Y direction \\
+  \texttt{uvbasal} &  horizontal  ice velocity at the ice base\\
+  \texttt{\{u,v\}velsurf} &  horizontal ice velocity in the X,Y direction
+  at the ice surface\\
+  \texttt{uvbar} &  vertical mean of horizontal ice velocity\\
+  \texttt{wvel} &  vertical ice velocity \\
+  \texttt{wvelbase} &  vertical ice velocity at the ice base\\
+  \texttt{wvelsurf} &  vertical ice velocity at the ice surface\\
+  \end{tabular}
+
+\end{textblock}
 
 \end{document}
 
+% LocalWords:  polythermal secnumdepth pdfauthor MATLAB pdftitle pdfkeywords Lx
+% LocalWords:  pdfsubject colorlinks linkcolor citecolor urlcolor plainpages Lz
+% LocalWords:  subglacial PETSc Lbz Mx Mz Mbz zb ys dt ssa gpbld pb hooke tauc
+% LocalWords:  arrwarm pwfrac uthreshold topg iso lc searise greenland paleo et
+% LocalWords:  precip SeaRISE dTforcing pdd fausto Fausto al monte carlo dev jd
+% LocalWords:  thk dSLforcing config Regridding regrid bwat dbdt litho ivol ksp
+% LocalWords:  iarea iareag iareaf divoldt dimassdt Xwindows mpiexec Krylov bwp
+% LocalWords:  acab artm bfrict bheatflx bmelt cbar cbase WGS cflx csurf dHdt
+% LocalWords:  dhdt enthalpybase enthalpysurf hardav lon taud tempbase tempsurf
+% LocalWords:  tillphi usurf vel uvbasal velsurf uvbar wvel wvelbase wvelsurf
