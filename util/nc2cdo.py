@@ -186,6 +186,11 @@ if __name__ == "__main__":
         var_out.bounds = "lon_bounds"
         ## Assign values to variable 'lon'
         var_out[:] = lon
+    else:
+        var_out = nc.variables[var]
+        ## Assign bounds to variable 'lon'
+        var_out.bounds = "lon_bounds"
+
 
     var = 'lat'
     ## If it does not yet exist, create variable 'lat_bounds'
@@ -201,6 +206,10 @@ if __name__ == "__main__":
         var_out.bounds = "lat_bounds"
         ## Assign values to variable 'lat'
         var_out[:] = lat
+    else:
+        var_out = nc.variables[var]
+        ## Assign bounds to variable 'lat'
+        var_out.bounds = "lat_bounds"
 
     ## Make sure variables have 'coordinates' attribute
     for var in nc.variables.keys():
