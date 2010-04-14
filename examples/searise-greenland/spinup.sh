@@ -157,7 +157,7 @@ echo "$SCRIPTNAME     coarse grid = '$COARSEGRID' (= $CS km)"
 echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km)"
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -eta"
+PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -eta -e 3"
 
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -pdd_fausto"
@@ -168,7 +168,7 @@ COUPLER_FORCING="-atmosphere searise_greenland,forcing -surface pdd -pdd_fausto 
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
 
 # use "control run" parameters from Bueler et al. submitted
-PARAMS="-e 3 -pseudo_plastic_q 0.25 -plastic_pwfrac 0.98"
+PARAMS="-pseudo_plastic_q 0.25 -plastic_pwfrac 0.98"
 
 FULLPHYS="-ssa_sliding -thk_eff ${PARAMS}"
 
