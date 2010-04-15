@@ -274,6 +274,8 @@ settings; useful for parameter studies\\
 \texttt{-save_file} & set the file save to\\
 \texttt{-save_times} & a range or list of times\\
 \texttt{-split_snapshots} & save snapshots to separate files\\
+\texttt{-save_size} & adjust the ``size'' of a snapshot; select from
+\texttt{small}, \texttt{medium}, \texttt{big}. Compare to \texttt{-o_size}.
 \end{tabular}
 
 \section{Saving 2D and 3D time-series}
@@ -296,7 +298,7 @@ settings; useful for parameter studies\\
   \texttt{-ts_file} & Specifies the file to save to.\\
   \texttt{-ts_times} & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
   \texttt{-ts_vars} & select (list) variables to save\\
- \texttt{-ts_append} & append to an existing file\\
+  \texttt{-ts_append} & append to an existing file\\
 \end{tabular}
 
 \section{Scalar time-series}
@@ -307,9 +309,10 @@ settings; useful for parameter studies\\
 \texttt{iarea} & total area covered by ice\\
 \texttt{iareag} & total area covered by grounded ice\\
 \texttt{iareaf} & total area covered by floating ice\\
+\texttt{ienthalpy} & total ice enthalpy\\
 \texttt{dt} & mass-continuity time step\\
-\texttt{divoldt} & rate of change of the total ice volume\\
-\texttt{dimassdt} & rate of change of the total ice mass\\
+% \texttt{divoldt} & rate of change of the total ice volume\\
+% \texttt{dimassdt} & rate of change of the total ice mass\\
 \end{tabular}
 
 \section{Run-time viewers}

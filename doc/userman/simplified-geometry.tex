@@ -33,7 +33,7 @@ The experiments differ from each other in their various combinations of surface 
 In addition to the seven experiments published in \cite{EISMINT00}, there were an additional five experiments described in the EISMINT II intercomparison description 
 \cite{EISIIdescribe}, labeled E, I, J, K, and L.\index{EISMINT!unpublished additional EISMINT II experiments}  These experiments share most features listed above, but with the following differences.  Experiment E is the same as experiment A except that the peak of the accumulation, and also the low point of the surface temperature, are shifted by 100 km in both $x$ and $y$ directions; also experiment E starts with the final state of experiment A.  Experiments I and J are similar to experiment A but with non-flat ``trough'' bed topography.  Experiments K and L are similar to experiment C but with non-flat ``mound'' bed topography.
 
-See table \ref{tab:eisII} for how to run all EISMINT II experiments in PISM.  Note that the vertical grid is not specified in EISMINT II, and it seems that good simulation of the thermomechanically-coupled conditions near the base of the ice requires relatively-fine resolution there.  (It is difficult to be quantitative because of a lack of theory.)  We suggest using the default unequally-spaced grid with 61 levels, which gives a grid spacing of 21 m in the ice layer closest to the be.\footnote{An equally-spaced grid is an option in PISM, and in this case we suggest using 201 vertical levels to give 25 m spacing.}
+See table \ref{tab:eisII} for how to run all EISMINT II experiments in PISM.  Note that the vertical grid is not specified in EISMINT II, and it seems that good simulation of the thermomechanically-coupled conditions near the base of the ice requires relatively-fine resolution there.  (It is difficult to be quantitative because of a lack of theory.)  We suggest using the default unequally-spaced grid with 61 levels, which gives a grid spacing of 21 m in the ice layer closest to the bed.\footnote{An equally-spaced grid is an option in PISM, and in this case we suggest using 201 vertical levels to give 25 m spacing.}
 
 These SIA-only simulations parallelize particularly well.  Very roughly, for the standard $61\times 61$ horizontal grid, wall-clock-time speedups will occur up to about 30 processors, and finer grids will benefit from even more processors, of course.
 
@@ -126,17 +126,23 @@ There are many runs for a complete MISMIP intercomparison submission.  There are
 
 To do an actual MISMIP run, one uses \texttt{pisms -mismip} with additional options.  See Table \ref{tab:MISMIPoptions}.  A first run is:
 
-\verb|$ cd examples/mismip/|  \hfill \scriptsize(directory where some MISMIP-related scripts are)\normalsize
+\texttt{\$ cd examples/mismip/}  \hfill \scriptsize(directory where some MISMIP-related scripts are)\normalsize
 
-\verb|$ pisms -mismip 1a -model 1 -step 1 -My 3 -Mz 15 -Mx 151|
+\begin{verbatim}
+$ pisms -mismip 1a -model 1 -step 1 -My 3 -Mz 15 -Mx 151
+\end{verbatim}
 
 \noindent This will produce ASCII files \texttt{ABC1_1a_M1_A1_t}, \texttt{ABC1_1a_M1_A1_ss}, and \texttt{ABC1_1a_M1_A1_f}, as well as a standard NetCDF output file \texttt{ABC1_1a_M1_A1.nc}, in about 3 minutes.  Using a few processors speeds things up a little, and a little extra output is nice, so re-doing it:
 
-\verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -My 3 -Mz 15 -Mx 151 -extras|
+\begin{verbatim}
+$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -My 3 -Mz 15 -Mx 151 -extras
+\end{verbatim}
 
 \noindent This run takes about 2 minutes on an 8 core machine.  In addition to the same files as before, now we get an additional ASCII file \texttt{ABC1_1a_M1_A1_extras}.  The \texttt{_ss} file with thickness and the \texttt{_extras} file with bed and surface elevation allow us to produce a figure showing the profile for the final steady state, Figure \ref{fig:MISMIPmodel1exper1aM1A1}:
 
-\verb|$ ./figsMISMIP.py -p ABC1_1a_M1_A1 --extras|
+\begin{verbatim}
+$ ./figsMISMIP.py -p ABC1_1a_M1_A1 --extras
+\end{verbatim}
 
 \noindent The script \texttt{makefigs.sh} will apply \texttt{figsMISMIP.py} to each MISMIP output in the current directory.
 
@@ -149,7 +155,9 @@ To do an actual MISMIP run, one uses \texttt{pisms -mismip} with additional opti
 
 MISMIP runs are done in sequence using the result of a previous run but with a step change in ice hardness.  That is, you initialize as usual in PISM from a saved \texttt{.nc} file.  The next run is
 
-\verb|$ mpiexec -n 4 pisms -model 1 -mismip 1a -extras -step 2 -i ABC1_1a_M1_A1.nc|
+\begin{verbatim}
+$ mpiexec -n 4 pisms -model 1 -mismip 1a -extras -step 2 -i ABC1_1a_M1_A1.nc
+\end{verbatim}
 
 \noindent The result is \texttt{ABC1_1a_M1_A2_t}, etc.
 
@@ -175,7 +183,9 @@ Also, two physical parameters regarding PISM's ice shelf model need comment.  Fi
 
 There is an additional script \texttt{solverSM.py} which computes the profile from the Schoof's \cite{SchoofMarine1} asymptotic-matching boundary layer theory.  This script is a Python translation, using \texttt{scipy} and \texttt{pylab}, of the \Matlab codes in \url{http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar}.  For example,
 
-\verb|$ ./solverSM.py -e 1 --sliding=a -s 1|
+\begin{verbatim}
+$ ./solverSM.py -e 1 --sliding=a -s 1
+\end{verbatim}
 
 \noindent produces Figure \ref{fig:SMexper1aM1A1}.
 

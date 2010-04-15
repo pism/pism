@@ -55,11 +55,15 @@ When a thermal bedrock layer is used, the distance \texttt{Lbz} is controlled by
 
 If one initializes PISM from a saved model state using \t{i} then the input model state controls the parameters \t{Mx}, \t{My}, \t{Mz}, and \t{Mbz}.  For instance, the command
 
-\verb|$  pismr -i foo.nc -y 100|
+\begin{verbatim}
+$  pismr -i foo.nc -y 100
+\end{verbatim}
 
 \noindent should work fine if \texttt{foo.nc} was a valid PISM model file.  The command
 
-\verb|$  pismr -i foo.nc -Mz 201 -y 100|
+\begin{verbatim}
+$  pismr -i foo.nc -Mz 201 -y 100
+\end{verbatim}
 
 \noindent will give a warning that ``\texttt{PISM WARNING: ignoring command-line option '-Mz'}'' because \texttt{-i} input files take precedence.
 
@@ -86,11 +90,12 @@ The default value for the end year is the start year (\texttt{-ys} or initialize
 
 \subsection{Diagnostic computations}  As a diagnostic example, consider the second of these two runs:
 
-\verb|pisms -y 200e3 -o eisIIA200k.nc|
+\begin{verbatim}
+pisms -y 200e3 -o eisIIA200k.nc
+pismr -i eisIIA200k.nc -y 0 -o eisIIA200k_diag.nc -o_size big
+\end{verbatim}
 
-\verb|pismr -i eisIIA200k.nc -y 0 -o eisIIA200k_diag.nc -o_size big|
-
-\noindent The result of this zero-length, ``\verb|-y 0|'', run is a NetCDF file \texttt{eisIIA200k_diag.nc} which contains the full three-dimensional velocity field in the scalar NetCDF variables \texttt{uvel}, \texttt{vvel}, and \texttt{wvel}, as well as many other variables.
+\noindent The result of this zero-length, ``\texttt{-y 0}'', run is a NetCDF file \texttt{eisIIA200k_diag.nc} which contains the full three-dimensional velocity field in the scalar NetCDF variables \texttt{uvel}, \texttt{vvel}, and \texttt{wvel}, as well as many other variables.
 
 This diagnostic mode is most frequently associated to the modeling of ice shelves and ice streams.  Subsection \ref{sect:ross} describes using \texttt{pross} to model the Ross ice shelf \cite{MacAyealetal}.  Verification tests I and J, section \ref{sect:verif}, are diagnostic calculations using the SSA.
 
@@ -212,7 +217,7 @@ The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:mask
 \normalsize
 \end{table}
 
-Assuming the geometry of the ice evolves (which can be turned off by option \texttt{-no_mass}), and assuming an ocean exists (which can be turned off by option \texttt{-dry}), then at each time step the mask can change.  Ice which becomes floating is marked as \texttt{MASK_FLOATING} while ice which becomes grounded is either marked as \texttt{MASK_SHEET} or \texttt{MASK_DRAGGING}.  The latter case occurs if the option \texttt{-ssa_sliding} is used, while otherwise all points are marked \texttt{MASK_Sheet}.
+Assuming the geometry of the ice evolves (which can be turned off by option \texttt{-no_mass}), and assuming an ocean exists (which can be turned off by option \texttt{-dry}), then at each time step the mask can change.  Ice which becomes floating is marked as \texttt{MASK_FLOATING} while ice which becomes grounded is either marked as \texttt{MASK_SHEET} or \texttt{MASK_DRAGGING}.  The latter case occurs if the option \texttt{-ssa_sliding} is used, while otherwise all points are marked \texttt{MASK_SHEET}.
 
 \subsection{Calving}
 \label{sec:calving}

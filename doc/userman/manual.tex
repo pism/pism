@@ -394,7 +394,7 @@ Instead, evolutionary ice sheet modeling necessarily does something like this to
 
 The heuristics used by PISM are, for now, only documented in the source code file \texttt{src/base/iMbootstrap.cc}.
 
-When using \fileopt{boot_from} you will need to specify both grid dimensions (using \t{Mx}, \t{My} and \t{Mz}) and the height of the computational box for the ice with \t{Lz}.  The data read from the file can determine the horizontal extent of the model, if options \t{Lx}, \t{Ly} are not set.  The additional specification of vertical extent by \texttt{-Lz} is reasonably natural because realistic data used in ``bootstrapping'' are two-dimensional.  Not specifying all four options \texttt{-Mx}, \texttt{-My}, \texttt{-Mz}, \texttt{-Lz} \emph{when bootstrapping with} \texttt{-boot_from} is an error.
+When using \fileopt{boot_from} you will need to specify both grid dimensions (using \texttt{-Mx}, \texttt{-My} and \texttt{-Mz}) and the height of the computational box for the ice with \texttt{-Lz}.  The data read from the file can determine the horizontal extent of the model, if options \texttt{-Lx}, \texttt{-Ly} are not set.  The additional specification of vertical extent by \texttt{-Lz} is reasonably natural because realistic data used in ``bootstrapping'' are two-dimensional.  Not specifying all four options \texttt{-Mx}, \texttt{-My}, \texttt{-Mz}, \texttt{-Lz} \emph{when bootstrapping with} \texttt{-boot_from} is an error.
 
 Subsection \ref{sec:eismint-greenland} shows bootstrapping for the EISMINT-Greenland intercomparison.
 

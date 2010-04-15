@@ -12,7 +12,7 @@
 
 Reference \cite{Roache} gives a broad discussion of verification and validation in computational fluid dynamics. See \cite{BLKCB} and \cite{BBL} for discussion of verification issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA), respectively, and for exact solutions to these models, and \cite{BBssasliding,SchoofStream} for verification using an exact solution to the SSA equations for ice streams.  
 
-In PISM there is a separate executable \verb|pismv| which is used for verification.  The source codes which are verified by \verb|pismv| are, however, exactly the same, in exactly the same source files, as is run by the non-verification executables \verb|pismr|, \verb|pisms|, \verb|pgrn|, etc.  In technical terms, \verb|pismv| runs a derived class of the base class \verb|IceModel|\index{IceModel C++ class!derived class for verification}.  All PISM executables run \verb|IceModel|, but derived classes add bits of code, in this case the exact solutions.
+In PISM there is a separate executable \texttt{pismv} which is used for verification.  The source codes which are verified by \texttt{pismv} are, however, exactly the same, in exactly the same source files, as is run by the non-verification executables \texttt{pismr}, \texttt{pisms}, \texttt{pgrn}, etc.  In technical terms, \texttt{pismv} runs a derived class of the base class \texttt{IceModel}\index{IceModel C++ class!derived class for verification}.  All PISM executables run \texttt{IceModel}, but derived classes add bits of code, in this case the exact solutions.
 
 \begin{table}[ht]
 \centering
@@ -60,18 +60,18 @@ L & isothermal SIA, steady, non-flat bed & numerical ODE soln & [IN PREP] \\
 \small
 \begin{tabular}{@{}llll}\hline
 \textbf{Test} & \textbf{Example invocation}  \\ \hline
-A & \verb|pismv -test A -Mx 61 -My 61 -Mz 11 -y 25000| \\
-B & \verb|pismv -test B -Mx 61 -My 61 -Mz 11 -ys 422.45 -y 25000|  \\
-C & \verb|pismv -test C -Mx 61 -My 61 -Mz 11 -y 15208.0|  \\
-D & \verb|pismv -test D -Mx 61 -My 61 -Mz 11 -y 25000|  \\
-E & \verb|pismv -test E -Mx 61 -My 61 -Mz 11 -y 25000|  \\
-F & \verb|pismv -test F -Mx 61 -My 61 -Mz 61 -y 25000|  \\
-G & \verb|pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000|  \\
-H & \verb|pismv -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def_iso| \\
-I & \verb|pismv -test I -Mx 500 -My 5 -ssa_rtol 1e-6 -ksp_rtol 1e-11| \\
-J & \verb|pismv -test J -Mx 60 -My 60 -Mz 11 -ksp_rtol 1e-12| \\
-K & \verb|pismv -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000| \\
-L & \verb|pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000| \\
+A & \texttt{pismv -test A -Mx 61 -My 61 -Mz 11 -y 25000} \\
+B & \texttt{pismv -test B -Mx 61 -My 61 -Mz 11 -ys 422.45 -y 25000}  \\
+C & \texttt{pismv -test C -Mx 61 -My 61 -Mz 11 -y 15208.0}  \\
+D & \texttt{pismv -test D -Mx 61 -My 61 -Mz 11 -y 25000}  \\
+E & \texttt{pismv -test E -Mx 61 -My 61 -Mz 11 -y 25000}  \\
+F & \texttt{pismv -test F -Mx 61 -My 61 -Mz 61 -y 25000}  \\
+G & \texttt{pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000}  \\
+H & \texttt{pismv -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def_iso} \\
+I & \texttt{pismv -test I -Mx 500 -My 5 -ssa_rtol 1e-6 -ksp_rtol 1e-11} \\
+J & \texttt{pismv -test J -Mx 60 -My 60 -Mz 11 -ksp_rtol 1e-12} \\
+K & \texttt{pismv -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000} \\
+L & \texttt{pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000} \\
 \hline
 \normalsize
 \end{tabular}
@@ -114,10 +114,10 @@ pismv -test G -max_dt 10.0 -y 25000 -Mx 241 -My 241 -Mz 241
 pismv -test G -max_dt 10.0 -y 25000 -Mx 361 -My 361 -Mz 361
 \end{verbatim}
 \normalsize\end{quote}
-produced figures 13, 14, and 15 of \cite{BBL}.  The last two runs, especially, require a supercomputer.  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.  Appropriate use \verb|-skip| especially accelerates such fine-grid runs; see section \ref{sec:practical-usage}.
+produced figures 13, 14, and 15 of \cite{BBL}.  The last two runs, especially, require a supercomputer.  The $361\times 361\times 361$ run involves more than $100$ million unknowns, updated at each of millions of time steps.  Appropriate use \texttt{-skip} especially accelerates such fine-grid runs; see section \ref{sec:practical-usage}.
 
 
-\subsection{Sample verification results}  Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} show a sampling of the results of verifying PISM using the tests described above.\index{PISM!verification results and reporting}  These figures were produced more-or-less automatically using Python scripts \verb|test/verifynow.py|\index{verifynow.py} and \verb|test/vnreport.py|\index{vnreport.py}.  See subsection \ref{subsect:scripts}.
+\subsection{Sample verification results}  Figures \ref{fig:thickerrsB} through \ref{fig:temperrsK} show a sampling of the results of verifying PISM using the tests described above.\index{PISM!verification results and reporting}  These figures were produced more-or-less automatically using Python scripts \texttt{test/verifynow.py}\index{verifynow.py} and \texttt{test/vnreport.py}\index{vnreport.py}.  See subsection \ref{subsect:scripts}.
 
 It must be pointed out that, to the experienced eye, these figures \emph{do not} show outstanding rates of convergence.  For the errors in tests B and G, a partial explanation comes in the discussion of margin shape in \cite{BLKCB}, and also from presumably imperfect numerical analysis choices.  For the errors in test I, a partial explanation is low degree of smoothness present for solutions in the Sobolev space used in \cite{SchoofStream}, but again perhaps from imperfect numerical choices.  We believe, however, that the free boundary nature of the continuum problems addressed by tests B, G, and I (and most other tests, not shown) is the underlying difficulty.  Test K, as a fixed boundary problem, does a little better \cite{BuelerTestK}.
 

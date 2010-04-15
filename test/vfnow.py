@@ -237,10 +237,11 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     K.name = "K"
     K.test = "pure conduction problem in ice and bedrock"
     K.path = "(lots of levels)"
-    K.Mz   = array([21, 41, 61, 81, 101, 121, 141, 161, 181, 201, 221, 241, 261, 281, 301, 321])
+    K.Mz   = array([101, 121, 141, 161, 181, 201, 221, 241, 261, 281, 301, 321])
     K.Mbz  = (K.Mz - 1) / 4 + 1
-    K.Mx   = [4] * len(K.Mz)
+    K.Mx   = [8] * len(K.Mz)
     K.My   = K.Mx
+    K.opts = "-y 130000.0 -Lbz 1000"
     tests['K_userman'] = K
 
     # test B (for a figure in the User's Manual)
@@ -263,6 +264,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     G.Mx   = [61, 71, 81, 91, 101, 111, 121, 151, 181]
     G.My   = G.Mx
     G.Mz   = G.Mx
+    G.opts = "-y 25000.0"
     tests['G_userman'] = G
     
     # test I (for a figure in the User's Manual)
@@ -272,6 +274,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     I.path = "(lots of levels)"
     I.My   = [51, 101, 151, 201, 401, 601, 801, 1001, 1501, 2001, 2501, 3073]
     I.Mx   = [5] * len(I.My)
+    I.opts = "-ssa_rtol %1.e -ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
     tests['I_userman'] = I
 
     return tests

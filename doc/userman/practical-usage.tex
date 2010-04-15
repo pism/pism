@@ -78,7 +78,11 @@ will run for 10000 years, saving total ice volume and grounded ice area to \text
 
 Note that, similarly to the snapshot-saving code, this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, \emph{linearly interpolated onto requested times}.
 
-PISM buffers time-series data and writes it at the end of the run or once 10000 values are stored, whichever comes first. Sending an \texttt{USR1} signal to a PISM process flushes these buffers, making it possible to monitor the run. (See section \ref{subsect:signal} for more about PISM's signal handling.)
+PISM buffers time-series data and writes it at the end of the run or once 10000
+values are stored, whichever comes first. Sending an \texttt{USR1} (or
+\texttt{USR2}) signal to a PISM process flushes these buffers, making it
+possible to monitor the run. (See section \ref{subsect:signal} for more about
+PISM's signal handling.)
 
 Omitting the \texttt{-ts_vars} option makes PISM save \emph{all} the variables listed in table \ref{tab:time-series}.  Because scalar time-series take very little storage space, compared to spatially-varying data, this is usually a reasonable choice.
 
@@ -135,7 +139,10 @@ $ pismr -i foo.nc -y 10000 -o output.nc -extra_file extras.nc \
 \end{verbatim}
 will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface and at the base of ice every 10 years. Times are specified using a comma-separated list or a MATLAB-style range. Please see table \ref{tab:extras} for all the options corresponding to this feature; table \ref{tab:extra-vars} lists all the variable choices. 
 
-If the file \texttt{foo.nc}, specified by \texttt{-extra_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-extra_append}.
+If the file \texttt{foo.nc}, specified by \texttt{-extra_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc\~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-extra_append}.
+
+Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
+\emph{exactly} at the times requested (instead of using linear interpolation).
 
 \begin{table}[ht]
   \caption{Command-line options controlling extra diagnostic output}
@@ -233,6 +240,9 @@ If the file \texttt{foo.nc}, specified by \texttt{-extra_file foo.nc}, already e
 \optsection{Saving snapshots}
 Sometimes you want to check the model state every 1000 years, for example.  One possible solution is to run PISM for a thousand years, have it save all the fields at the end of the run, then restart and run for another thousand, and etc.  This forces the adaptive time-stepping mechanism to stop \emph{exactly} at multiples of 1000 years, which may be desirable in some cases.
 
+By default re-startable snapshots contain only the variables needed for
+restarting PISM. Use the command-line option \texttt{-save_size} to change what is saved.
+
 If saving exactly at specified times is not critical, then use the \texttt{-save_file} and \texttt{-save_times} options.  For example,
 \begin{verbatim}
 $ pismr -i foo.nc -y 10000 -o output.nc -save_file snapshots.nc \
@@ -292,7 +302,11 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
     \midrule
     \fileopt{save_file} & Specifies the file to save to.\\
     \timeopt{save_times} & Specifies times at which to save snapshots, by either a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
-    \intextoption{split_snapshots} & Separate the snapshot output into files named \texttt{snapshots-}year\texttt{.nc}.  Faster if you are saving more than a dozen or so snapshots. \\
+    \intextoption{split_snapshots} & Separate the snapshot output into files
+    named \texttt{snapshots-}year\texttt{.nc}.  Faster if you are saving more
+    than a dozen or so snapshots. \\
+    \txtopt{save_size}{[small, medium, big]} & similar to \texttt{o_size},
+    changes the ``size'' of the file (or files) written; the default is ``small''\\
     \bottomrule
   \end{tabular}
  \label{tab:snapshot-opts}
@@ -367,7 +381,7 @@ Some diagnostic quantities are \emph{only} available as run-time viewers:
 \optsection{PISM configuration file}
 
 PISM's behavior depends on values of many flags and physical parameters (see
-\href{http://www.pism-decs.org/...}{PISM Browser} for details). Most of parameters have default values\footnote{For \texttt{pismr}, grid parameters $Mx$, $My$, $Mz$, $Mbz$, $Lz$, $Lbz$, that have to be set at bootstrapping, are some exceptions.} which are read from the configuration file \texttt{pism_config.nc} in the \texttt{lib} sub-directory.
+\href{http://www.pism-docs.org/dev/doxy/html/index.html}{PISM Browser} for details). Most of parameters have default values\footnote{For \texttt{pismr}, grid parameters $Mx$, $My$, $Mz$, $Mbz$, $Lz$, $Lbz$, that have to be set at bootstrapping, are some exceptions.} which are read from the configuration file \texttt{pism_config.nc} in the \texttt{lib} sub-directory.
 
 It is possible to run PISM with an alternate configuration file using the \fileopt{config} command-line option:
 \begin{verbatim}
@@ -565,11 +579,15 @@ In this case all the model-state 2D variables present in \texttt{foo.nc} will be
 
 Here is an example.  Suppose we start a long verification run in the background, with standard out redirected into a file:\index{pismv}
 
-\verb|pismv -test G -Mz 101 -y 1e6 -o testGmillion.nc >> log.txt &|
+\begin{verbatim}
+pismv -test G -Mz 101 -y 1e6 -o testGmillion.nc >> log.txt &
+\end{verbatim}
 
 \noindent This run gets a Unix process id,\index{signals!pid (process id)}, which we assume is ``8920''.  (Get it using \texttt{ps} or \texttt{pgrep}.)  If we want to observe the run without stopping it we send the \texttt{USR1} signal:\index{signals!USR1}
 
-\verb|kill -USR1 8920|
+\begin{verbatim}
+kill -USR1 8920
+\end{verbatim}
 
 \noindent Suppose it happens that we caught the run at year 31871.5.  Then, for example, a NetCDF file \texttt{pismv-31871.495.nc} is produced.  Note also that in the standard out log file \texttt{log.txt} the line
 
@@ -578,7 +596,9 @@ caught signal SIGUSR1:  Writing intermediate file ... and flushing time series.
 \end{verbatim}
 \noindent appears around that time step.  Suppose, on the other hand, that the run needs to be stopped.  Then a graceful way is\index{signals!term}
 
-\verb|kill -TERM 8920|
+\begin{verbatim}
+kill -TERM 8920
+\end{verbatim}
 
 \noindent because the model state is saved and can be inspected.
 
@@ -608,7 +628,7 @@ The characters ``\texttt{ y SIA v\$th}'' at the beginning of the flag line give 
 
 Now we explain what the rest of the flags line, namely
 
-``\verb|d (dt=1.07878 in 2 substeps; av dt_sub=0.53939)|''
+``\texttt{d (dt=1.07878 in 2 substeps; av dt_sub=0.53939)}''
 
 \noindent might mean.  Note that the PISM time step is determined by an adaptive mechanism.  PISM does each step explicitly when numerically-approximating mass conservation in the map-plane.  This, and the modeling of horizontal advection in conservation of energy and age evolution, requires such an adaptive time-stepping scheme \cite{BBL}.  The first character we see here, namely ``\texttt{d}'', is the adaptive-timestepping ``reason'' flag.  See Table \ref{tab:adaptiveflag}; ``\texttt{d}'' means that the time step was limited by the diffusivity of SIA mass conservation.  We also see that there was a major time step of 1.08 model years divided into 2 substeps of about 0.54 years.  The \intextoption{skip} option sets the maximum number of such substeps, but the adaptive mechanism may choose to take fewer substeps to satisfy numerical stability criteria.
 
@@ -694,11 +714,15 @@ These two PETSc mechanisms can be used together.  (The effect of duplicate or co
 
 \optdef{ksp_rtol}{1e-5}  For solving the SSA equations with high resolution on multiple processors, it is recommended that this be tightened (set lower than the default).  For example, 
 
-\verb|$  mpiexec -n 8 pismv -test I -Mx 5 -My 769|
+\begin{verbatim}
+$  mpiexec -n 8 pismv -test I -Mx 5 -My 769
+\end{verbatim}
 
 \noindent works poorly on a certain machine, but
 
-\verb|$  mpiexec -n 8 pismv -test I -Mx 5 -My 769 -ksp_rtol 1e-10|
+\begin{verbatim}
+$  mpiexec -n 8 pismv -test I -Mx 5 -My 769 -ksp_rtol 1e-10
+\end{verbatim}
 
 \noindent works fine.
 
