@@ -12,7 +12,7 @@ The coordinate system has horizontal coordinates $x,y$ and a vertical coordinate
 
 Bed topography is, of course, allowed.  In fact, when the ice is grounded, the true physical vertical coordinate $z'$, namely the coordinate measure relative to a reference geoid, is given by $z'=z+b(x,y)$ where $b(x,y)$ is the bed topography.  The surface $z'=h(x,y)$ is the surface of the ice.
 
-In the grounded case the equation $h(x,y)=H(x,y)+b(x,y)$ always applies if $H(x,y)$ is the thickness of the ice.  In the floating case, the physical vertical coordinate is $z'=z-(\rho_i/\rho_s) H(x,y)$ where $\rho_i$ is the density of ice and $\rho_s$ the density of sea water.  Again $z=0$ is the base of the ice, which is the surface $z' = -(\rho_i/\rho_s) H(x,y)$.  The surface of the ice is $h(x,y) = (1-\rho_i/\rho_s) H(x,y)$.  All we know about the bed elevations is that they are below the base of the ice when the ice is floating.  That is, the \emph{floatation criterion} $-(\rho_i/\rho_s) H(x,y) > b(x,y)$ applies.
+In the grounded case the equation $h(x,y)=H(x,y)+b(x,y)$ always applies if $H(x,y)$ is the thickness of the ice.  In the floating case, the physical vertical coordinate is $z'=z-(\rho_i/\rho_s) H(x,y)$ where $\rho_i$ is the density of ice and $\rho_s$ the density of sea water.  Again $z=0$ is the base of the ice, which is the surface $z' = -(\rho_i/\rho_s) H(x,y)$.  The surface of the ice is $h(x,y) = (1-\rho_i/\rho_s) H(x,y)$.  All we know about the bed elevations is that they are below the base of the ice when the ice is floating.  That is, the \emph{flotation criterion} $-(\rho_i/\rho_s) H(x,y) > b(x,y)$ applies.
 
 The computational box can extend downward into the bedrock.  As $z=0$ is the base of the ice, the bedrock corresponds to negative $z$ values regardless of the sign of its true (i.e.~$z'$) elevation.
 
@@ -197,7 +197,7 @@ $ pismr -i in.nc -ocean constant,forcing -dSLforcing delta_SL.nc
 uses \texttt{delta_SL.nc}
 \end{enumerate}
   
-\subsection{Floatation criterion and mask} \label{subsect:floatmask}  The most basic decision about ice dynamics made internally by PISM is whether to apply the ``floatation criterion'' to determine whether the ice is floating on the ocean or not.  In an evolution run this decision is made at each time step and the result is stored in the \t{mask}.
+\subsection{Flotation criterion and mask} \label{subsect:floatmask}  The most basic decision about ice dynamics made internally by PISM is whether to apply the ``flotation criterion'' to determine whether the ice is floating on the ocean or not.  In an evolution run this decision is made at each time step and the result is stored in the \t{mask}.
 
 The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:maskvals}.  The mask does not by itself determine ice dynamics.  For instance, when ice is floating (either value \texttt{MASK_FLOATING} or \texttt{MASK_FLOATING_AT_TIME_0}) the usual choice for ice dynamics is SSA, but the user can choose not to apply that model by not using either option \texttt{-ssa_floating_only} or \texttt{-ssa_sliding}.
 
@@ -223,7 +223,7 @@ Assuming the geometry of the ice evolves (which can be turned off by option \tex
 \label{sec:calving}
 \optsection{Calving}
 
-PISM includes two (very basic) calving mechanisms activated using options in Table \ref{tab:calving}. Including other (stress-based) calving laws (\cite{Levermannetalsubmitted} presents one possibility) is planned in the future, though.
+PISM includes two very basic calving mechanisms activated using options in Table \ref{tab:calving}.  Other more physically-motivated calving laws (e.g.~\cite{Levermannetalsubmitted}) is planned for future versions of PISM.
 \begin{table}
   \centering
   \begin{tabular}{lp{0.7\linewidth}}
@@ -242,41 +242,27 @@ PISM includes two (very basic) calving mechanisms activated using options in Tab
 \label{sec:rheology}
 \optsection{Rheology}
 
-\begin{comment}
-  \optdef{gk}{1.0} Sets the flow law used in computing SIA velocity to
-  Goldsby-Kohlstedt \cite{GoldsbyKohlstedt} and uses a constant grain size. The
-  option \texttt{-gk} without an argument uses default grain size of 1 mm while
-  \texttt{-gk N} uses \texttt{N} mm grains. See \texttt{-ice_type} for more
-  complete option choice of flow law.
+In the polythermal (default) mode of PISM there is only one choice of the flow law: the Glen-Paterson-Budd-Lliboutry-Duval \cite{AschwandenBlatter,LliboutryDuval1985,PatersonBudd}. 
 
-  \opt{gk_age} Sets the flow law used in computing SIA velocity to
-  Goldsby-Kohlstedt \cite{GoldsbyKohlstedt}, but uses the modeled age to
-  compute the grain size; compare \texttt{-gk}. The age is used in a table from
-  the Vostok core \cite{VostokCore} to compute a grain size. This option should
-  not be used unless the model age has stabilized after a long (e.g.~$\ge 100$
-  ka) run.
-
-\optdef{constant_nuH}{30.0}  If this option is used then the velocities in ice shelves and streams (see \texttt{-ssa} below) are computed with a constant value for the product of viscosity $\nu$ and thickness $H$, obtained from the shelf extension (see \texttt{-shelfxt}).  This is useful for debugging ice-shelf flow because there is reduces the membrane stress to a linear constant-coefficient term rather than a fully nonlinear one.  The argument is given in units of MPa a, and the default value is $30$ MPa a, the value given in \cite{Ritzetal2001}.
-\end{comment}
-
-In the polythermal (default) mode of PISM there is only one choice of the flow law: the Glen-Paterson-Budd-Lliboutry-Duval \cite{LliboutryDuval1985, AschwandenBlatter}. 
-
-The command-line option \intextoption{e} sets the flow enhancement factor and can be used with any flow law.
-
-The following command-line options control the choice of rheology in the \texttt{-cold} mode.
-
-\optdef{ice_type}{pb}  Allows choice of ice rheology, also known as the ``flow law''.  The options are in table \ref{tab:flowlaw} below.  Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
+Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
 	$$\dot \eps_{ij} = F(\sigma,T,P,d)\, \sigma_{ij}'$$
 where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$ so $\sigma$ is the second invariant of the stress deviator tensor, $P$ is the pressure, and $d$ is the grain size.  That is, we are addressing isotropic flow laws only, and one can choose the scalar function.  Note that the inverse form of such a flow law in needed for ice shelves and ice streams:
 	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,P,d)\,\dot \eps_{ij} $$
-Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inverse form of the flow law explains the ``hybrid'' law \texttt{-ice_type hybrid} (or \texttt{-gk}).
+Here $\nu(\dot \eps,T,P,d)$ is the effective viscosity.  The need for this inverse form of the flow law explains the ``hybrid'' law \texttt{-ice_type hybrid}, because the inverse form of the Goldsby-Kohlstedt law is unknown.
 
-\optdef{ice_custom_hardness}{1.9e8} Some ice types are customizable, run with \texttt{-help} to see all the customizable options for your chosen ice type (since \texttt{-help} displays many options, it is often useful to grep the output, as in \verb:pisms -ice_type custom -help | grep ice_:).  A common use the \texttt{custom} ice type is to directly specify the hardness parameter in an ice shelf study.  The viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
+The command-line option \intextoption{e} sets the flow enhancement factor and can be used with any flow law.  It alters the SIA flow law to be
+	$$\dot \eps_{ij} = e\, F(\sigma,T,P,d)\, \sigma_{ij}'.$$
+
+Command-line option \intextoption{ice_type} control the flow law in the \texttt{-cold} mode.  Arguments to \verb|-ice_type| are in table \ref{tab:flowlaw} below.
+
+Some ice types are customizable, run with \texttt{-help} to see all the customizable options for your chosen ice type (since \texttt{-help} displays many options, it is often useful to grep the output, as in \verb:pisms -ice_type custom -help | grep ice_:).
+
+A common use of the \texttt{custom} ice type is to directly specify the hardness parameter in an ice shelf study.  The viscous stress term in the $x$-component (for example) of the SSA equations for ice shelves and ice streams is
 	$$\ddx{}\left(2\nu H\left(2\ddx{u} + \ddy{v}\right)\right)$$
 where 
 	$$\nu = \frac{\bar B}{2} \left[\left(\ddx{u}\right)^2 + \left(\ddy{v}\right)^2 +
   \frac{1}{4} \left(\ddy{u} + \ddx{v}\right)^2 + \ddx{u}\ddy{v}\right]^{(1-n)/(2n)}.$$
-Generally $\bar B$ is computed by a vertical-integral of a function of the temperature field, but it is constant for isothermal ice.  If \texttt{-ice_custom_hardness} is used then $\bar B$ is set to the given value.  The value should have units of Pa $\text{s}^{1/n}$ where $n$ is the Glen exponent (see \texttt{-ice_type}).  Note that \texttt{-ice_type} is \texttt{pb} (Paterson-Budd) by default for most runs so \texttt{-ice_custom_hardness} is only available when \texttt{-ice_type custom} is given or when the driver has changed the default ice type (such as with \texttt{pismv -test I} and \texttt{pross}).
+Generally $\bar B$ is computed by a vertical-integral of a function of the temperature field, but it is constant for isothermal ice.  If \intextoption{ice_custom_hardness} is used then $\bar B$ is set to the given value.  The value should have units of Pa $\text{s}^{1/n}$ where $n$ is the Glen exponent (see \texttt{-ice_type}).  Note that the cold-mode ice type (\texttt{-ice_type}) is \texttt{pb} by default, while \intextoption{-ice_custom_hardness} is only available when \texttt{-ice_type custom} is given or when the driver has changed the default ice type (such as with \texttt{pismv -test I} and \texttt{pross}).
 
 In the case of \texttt{pross}, which performs the EISMINT Ross ice shelf intercomparison, a constant value $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ is the default \cite{MacAyealetal}.
 
@@ -284,16 +270,15 @@ In the case of \texttt{pross}, which performs the EISMINT Ross ice shelf interco
 \centering
 \caption{Choosing the rheology using \t{-ice_type}.}\label{tab:flowlaw}\index{rheology}\index{flow law}
 \small
-\begin{tabular}{p{0.25\linewidth}p{0.08\linewidth}p{0.57\linewidth}}\hline
-\textbf{Flow Law} & \textbf{Type} & \textbf{Comments and Reference} \\ \hline
-Paterson-Budd law (usually the default)  &  \t{pb} &   Fixed Glen exponent $n=3$.  There is a split ``Arrhenius'' term $A(T) = A \exp(-Q/RT^*)$ where \mbox{$A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* < 263$ K and
+\begin{tabular}{p{0.15\linewidth}p{0.8\linewidth}}\hline
+\textbf{Type} & \textbf{Comments and Reference} \\ \hline
+\t{pb} &  Paterson-Budd law, the cold-mode default.  Fixed Glen exponent $n=3$.  There is a split ``Arrhenius'' term $A(T) = A \exp(-Q/RT^*)$ where \mbox{$A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* < 263$ K and
  \mbox{$A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3}$}, \mbox{$Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}$} if $T^* > 263$ K and where $T^*$ is the pressure-adjusted temperature \cite{PatersonBudd}. \\
-\emph{Cold} part of Paterson-Budd &  \t{arr} &   Regardless of temperature, the $A$ and $Q$ values for $T^*<263$ K in  the Paterson-Budd law apply.  This is the flow law used in the thermomechanically coupled exact solutions Tests \textbf{F} and \textbf{G} described in \cite{BBL,BB} and run by \texttt{pismv -test F} and \texttt{pismv -test G}. \\
-
-\emph{Warm} part of Paterson-Budd     &  \t{arrwarm} & Regardless of temperature, the $A$ and $Q$ values for $T^*>263$ K in Paterson-Budd apply.\\
-Hooke law   &  \t{hooke} &  Fixed Glen exponent $n=3$.  Here  $A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$; values of  constants as in \cite{Hooke,PayneBaldwin}.\\
-Hybrid of Goldsby-Kohlstedt and Paterson-Budd & \t{hybrid} &     Goldsby-Kohlstedt law with a combination of exponents  from $n=1.8$ to $n=4$ \cite{GoldsbyKohlstedt} in grounded  shallow ice approximation regions.  Paterson-Budd flow  for ice streams and ice sheets. See mask for SIA versus stream versus shelf by \texttt{-view_map mask}. \\
-Isothermal Glen & \t{custom} & Highly customizable version of the isothermal Glen flow law.  Allows choice of exponent, hardness/softness parameters, and density. \\
+\t{arr} &  \emph{Cold} part of Paterson-Budd.  Regardless of temperature, the $A$ and $Q$ values for $T^*<263$ K in  the Paterson-Budd law apply.  This is the flow law used in the thermomechanically coupled exact solutions Tests \textbf{F} and \textbf{G} described in \cite{BBL,BB} and run by \texttt{pismv -test F} and \texttt{pismv -test G}. \\
+\t{arrwarm} & \emph{Warm} part of Paterson-Budd.  Regardless of temperature, the $A$ and $Q$ values for $T^*>263$ K in Paterson-Budd apply.\\
+\t{hooke} & Hooke law.  Fixed Glen exponent $n=3$.  Here  $A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa)$; values of  constants as in \cite{Hooke,PayneBaldwin}.\\
+\t{hybrid} &  Hybrid of Goldsby-Kohlstedt and Paterson-Budd.  The Goldsby-Kohlstedt law has a combination of exponents  from $n=1.8$ to $n=4$ \cite{GoldsbyKohlstedt}, but in this law it is only used for the SIA, in grounded ice.  The Paterson-Budd law is used for ice streams and ice sheets, that is, the SSA stress balance. \\
+\t{custom} & Highly-customizable version of the isothermal Glen flow law.  Allows choice of exponent, hardness/softness parameters, and density. \\
 \hline
 \normalsize	
 \end{tabular}
@@ -302,6 +287,7 @@ Isothermal Glen & \t{custom} & Highly customizable version of the isothermal Gle
 \begin{comment}
 \opt{shelfext\und} When computing ice shelf and stream velocity, PISM enforces boundary conditions using a fictitious extension of the ice shelf over the entire domain.  This extension provides strength only, it does not change the mass, driving force, or location of the calving front.  By default, it's strength will be computed using the current ice type at reference thickness, temperature, and strain rate, customizable using \texttt{-shelfext_H} (5 meters by default), \texttt{-shelfext_T} (263.15 K), \texttt{-shelfext_Du} (1 m/a per km).  The extension strength is used whenever ice thickness is less than the extension thickness to prevent the equations from becoming singular.  You can also specify the extension strength directly using \texttt{-shelfext_force_nuH} with units in Pa s.  Finally, you can compute strength using a \texttt{custom} ice type the ice used in the rest of PISM by giving \texttt{-shelfext_use_private_ice}.  This option will gives you a \texttt{custom} ice type which you can control via \texttt{-shelfext_ice_custom_} (see \texttt{-ice_type}).  All \texttt{-shelfext} options are displayed in \texttt{-help}.
 \end{comment}
+
 
 \subsection{Choosing the stress balance}  \label{subsect:ssacontrol}
 \optsection{SSA as a sliding law}
@@ -326,6 +312,11 @@ In PISM the user gives the option \texttt{-ssa_sliding} to turn on the use of th
 \normalsize
 \end{table}
 
+In addition to deciding which stress balance to use, there is one option choosing between methods for computing the surface gradient which enters into the ``driving stress'' terms in both the SIA and SSA stress balances.  Usually the surface gradient is computed in an ``obvious'' way by finite differences applied to the surface elevation $h$, and specifically, we use the Mahaffy \cite{Mahaffy} scheme.  Alternatively, if pption \intextoption{eta} is set then we first transform the thickness $H$ by $\eta = H^{(2n+2)/n}$ and then differentiate the sum of the thickness and the bed:
+	$$\grad h = \grad H + \grad b = \frac{n}{(2n+2)} \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.$$
+Here $b$ is the bed elevation and $h$ is the surface elevation.  This transformation sometimes has the benefits that the surface values of the horizontal velocity and vertical velocity, and the driving stress, are better behaved near the margin.  See \cite{CDDSV,BLKCB} for technical explanation of this transformation and compare \cite{SaitoMargin}.
+
+
 % xtab stuff for the long table
 
 \topcaption{Controlling the SSA stress balance in PISM}
@@ -342,11 +333,12 @@ In PISM the user gives the option \texttt{-ssa_sliding} to turn on the use of th
 \tabletail{\midrule \multicolumn{2}{c}{{Continued on next page}} \\\bottomrule} 
 \tablelasttail{\bottomrule}
 
+%\intextoption{ice_reg_schoof_length} (1000 km) & Set the ``$L$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \texttt{-ssa_eps 0.0} to turn off the other regularization mechanism, otherwise there is a double regularization (the default except in \texttt{pism -test I}). \\
+%\intextoption{ice_reg_schoof_vel} (1 m/a) & Set the \emph{first} ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  To deactivate Schoof's regularization, use \texttt{-ice_reg_schoof_vel 0}.  To use the regularization described by Schoof, one must set \texttt{-ssa_eps 0.0} to turn off the other regularization mechanism, otherwise there is a double regularization (the default except in \texttt{pismv -test I}).  Use \texttt{-plastic_reg} above to set the second ``$\eps$'' in formula (4.1) of \cite{SchoofStream}. \\
+
 \begin{center}
   \begin{xtabular}{p{0.2\linewidth}p{0.75\linewidth}}
    \label{tab:ssausage} 
-\intextoption{ice_reg_schoof_length} (1000 km) & Set the ``$L$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \texttt{-ssa_eps 0.0} to turn off the other regularization mechanism, otherwise there is a double regularization (the default except in \texttt{pism -test I}). \\
-\intextoption{ice_reg_schoof_vel} (1 m/a) & Set the \emph{first} ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  To deactivate Schoof's regularization, use \texttt{-ice_reg_schoof_vel 0}.  To use the regularization described by Schoof, one must set \texttt{-ssa_eps 0.0} to turn off the other regularization mechanism, otherwise there is a double regularization (the default except in \texttt{pismv -test I}).  Use \texttt{-plastic_reg} above to set the second ``$\eps$'' in formula (4.1) of \cite{SchoofStream}. \\
 \intextoption{shelves_drag_too} & Ice streams are modeled as ``dragging ice shelves'' in PISM, as in either linear \cite{MacAyeal} or plastic \cite{SchoofStream} or pseudo-plastic basal resistance, according to options.  If this option is turned on then the floating ice shelves also have very slight resistance, according to a linear model $\tau_b = \beta u$ where $\beta = 1.8\times 10^5\, \text{Pa}\,\text{s}\,\text{m}^{-1}$.  This value is $10^4$ times smaller than the representative drag coefficient given for ice stream E in \cite{HulbeMacAyeal}.  Ice shelves usually have precisely zero basal resistance, but nonzero drag for the ice shelf is turned on by default in MISMIP; see section \ref{sect:simp}. \\
 \intextoption{ssa_eps} (1e-15) & The numerical scheme for the shallow shelf approximation  \cite{WeisGreveHutter} computes an effective viscosity which which depends on velocity and temperature.  After that computation, this constant is added to the effective viscosity (to keep it bounded away from zero).  The units are kg $\text{m}^{-1}\,\text{s}^{-1}$.  By default, the regularization in equation (4.1) of \cite{SchoofStream} is also active, use \texttt{-ice_reg_schoof_vel 0} to deactivate Schoof's regularization. Turn off this lower bound mechanise by \texttt{-ssa_eps 0.0} to exclusively use the Schoof regularization mechanism; see \texttt{-ice_reg_schoof_vel} and \texttt{-ice_reg_schoof_length} below.  Note \texttt{-ssa_eps} is set to zero automatically when running \texttt{pismv -test I}. \\
 \intextoption{ssa_maxi} (300) & This option sets the maximum allowed number of nonlinear iterations in solving the shallow shelf approximation.  One should usually use option \texttt{-ssa_rtol} to control convergence of the nonlinear iteration.\\
@@ -354,9 +346,6 @@ In PISM the user gives the option \texttt{-ssa_sliding} to turn on the use of th
 In particular, the nonlinear part of the iteration requires that successive values $\nu^{(k)}$ of the vertically-averaged effective viscosity satisfy
 	$\frac{\|(\nu^{(k)} - \nu^{(k-1)}) H\|_2}{\|\nu^{(k)} H\|_2} \le \text{ssa_rtol}$
 in order to end the iteration with $\nu = \nu^{(k)}$.  See also \texttt{-ksp_rtol}, a PETSc option below, as one may want to require a high relative tolerance for the linear iteration as well.\\
-\intextoption{eta} & The surface gradient is usually computed in the obvious way by finite differences applied to the surface elevation $h$.  Specifically, we use the Mahaffy \cite{Mahaffy} scheme.  Alternatively, if this option is set we first transform the thickness $H$ by $\eta = H^{(2n+2)/n}$ and then differentiating the sum of the thickness and the bed:
-	$$\grad h = \grad H + \grad b = \frac{n}{(2n+2)} \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.$$
-Here $b$ is the bed elevation and $h$ is the surface elevation.  The transformation sometimes has the benefits that the surface values of the horizontal velocity and vertical velocity, and the driving stress, are better behaved near the margin.  See \cite{CDDSV} for the technical explanation of this transformation and compare \cite{SaitoMargin}.\\
 \end{xtabular}
 \end{center}
 
