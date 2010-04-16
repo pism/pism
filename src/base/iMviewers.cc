@@ -54,7 +54,7 @@ PetscErrorCode IceModel::update_viewers() {
     switch(dims) {
     case GRID_2D:
       {
-	IceModelVec2S *v2 = dynamic_cast<IceModelVec2S*>(v);
+	IceModelVec2 *v2 = dynamic_cast<IceModelVec2*>(v);
 	if (v2 == NULL) SETERRQ(1,"grid_type() returns GRID_2D but dynamic_cast gives a NULL");
 	ierr = v2->view(viewer_size); CHKERRQ(ierr);
 	break;

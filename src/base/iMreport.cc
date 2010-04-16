@@ -1532,34 +1532,68 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
   ierr = vbmr.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // ignore ice-free cells:
-      if (vH(i,j) <= 0.0)
-	continue;
-      my_total_surface_ice_flux += acab(i,j); // note the "+="!
-      if (vMask.value(i,j) == MASK_FLOATING) {
-        // note: we are deliberately *not* including fluxes in
-        //   MASK_ICE_FREE_OCEAN and MASK_OCEAN_AT_TIME_0 areas
-	my_total_sub_shelf_ice_flux -= shelfbmassflux(i,j); // note the "-="!
-      }
-      if (vMask.is_grounded(i,j)) {
-	my_total_basal_ice_flux -= vbmr(i,j); // note the "-="!
-      }
 
-    }
-  }  
+  if (cell_area.was_created()) {
+    ierr = cell_area.begin_access(); CHKERRQ(ierr);
+
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	// ignore ice-free cells:
+	if (vH(i,j) <= 0.0)
+	  continue;
+
+	my_total_surface_ice_flux += acab(i,j) * cell_area(i,j); // note the "+="!
+
+	if (vMask.value(i,j) == MASK_FLOATING) {
+	  // note: we are deliberately *not* including fluxes in
+	  //   MASK_ICE_FREE_OCEAN and MASK_OCEAN_AT_TIME_0 areas
+	  my_total_sub_shelf_ice_flux -= shelfbmassflux(i,j) * cell_area(i,j); // note the "-="!
+	}
+
+	if (vMask.is_grounded(i,j)) {
+	  my_total_basal_ice_flux -= vbmr(i,j) * cell_area(i,j); // note the "-="!
+	}
+      }	// j
+    } // i
+
+    ierr = cell_area.end_access(); CHKERRQ(ierr);
+  } else {
+    PetscScalar cell_area = grid.dx * grid.dy;
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	// ignore ice-free cells:
+	if (vH(i,j) <= 0.0)
+	  continue;
+
+	my_total_surface_ice_flux += acab(i,j); // note the "+="!
+
+	if (vMask.value(i,j) == MASK_FLOATING) {
+	  // note: we are deliberately *not* including fluxes in
+	  //   MASK_ICE_FREE_OCEAN and MASK_OCEAN_AT_TIME_0 areas
+	  my_total_sub_shelf_ice_flux -= shelfbmassflux(i,j); // note the "-="!
+	}
+
+	if (vMask.is_grounded(i,j)) {
+	  my_total_basal_ice_flux -= vbmr(i,j); // note the "-="!
+	}
+
+      }	// j
+    } // i
+    my_total_surface_ice_flux     *= cell_area;
+    my_total_sub_shelf_ice_flux   *= cell_area;
+    my_total_basal_ice_flux       *= cell_area;
+  }
+
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = vbmr.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  PetscScalar cell_area   = grid.dx * grid.dy,
-              ice_density = config.get("ice_density");
-  my_total_surface_ice_flux     *= ice_density * cell_area;
-  my_total_sub_shelf_ice_flux   *= ice_density * cell_area;
-  my_total_basal_ice_flux       *= ice_density * cell_area;
+  PetscScalar ice_density = config.get("ice_density");
+  my_total_surface_ice_flux     *= ice_density;
+  my_total_sub_shelf_ice_flux   *= ice_density;
+  my_total_basal_ice_flux       *= ice_density;
 
   ierr = PetscGlobalSum(&my_total_surface_ice_flux,   &total_surface_ice_flux,   grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&my_total_sub_shelf_ice_flux, &total_sub_shelf_ice_flux, grid.com); CHKERRQ(ierr);

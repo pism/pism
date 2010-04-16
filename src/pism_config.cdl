@@ -224,6 +224,9 @@ netcdf pism_config {
     pism_config:pdd_fausto_T_c = 272.15;
     pism_config:pdd_fausto_T_c_doc = "Kelvin; = -1 + 273.15; for formula (6) in [\\ref Faustoetal2009] ";
 
+    pism_config:pdd_limit_timestep = "false";
+    pism_config:pdd_limit_timestep_doc = "Limit PDD time-step to 1 year; used by pclimate to make long runs faster. Is not and should not be used elsewhere.";
+
     pism_config:snow_temp_fausto_d_ma = 314.98;
     pism_config:snow_temp_fausto_d_ma_doc = "K; = 41.83+273.15; base temperature for formula (1) in [\\ref Faustoetal2009] ";
 

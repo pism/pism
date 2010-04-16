@@ -42,8 +42,7 @@ The original EISMINT-Ross data are on a 111 by 147 grid but \texttt{eisross.py} 
 \subsubsection*{Diagnostic computation of ice shelf velocity}  A basic Ross ice shelf velocity computation from these data is:
 
 \begin{verbatim}
-$pross -boot_from ross.nc -ssa -ssaBC ross.nc \
-        -Mx 147 -My 147 -Mz 3 -Lz 1e3
+$pross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3
 \end{verbatim}
 Here we bootstrap (\texttt{-boot_from}; see section \ref{sect:boot}) from \texttt{ross.nc}.  We also use a special option \texttt{-ssaBC} to specify \texttt{ross.nc} as the source of the boundary value data for the ice shelf equations, as mentioned in the last paragraph.  The computational grid specified here is the $6.822$ km data grid in EISMINT-Ross with 147 grid points in each direction.  The maximum thickness of the ice is 874 m so we choose a height for the computational box (\texttt{-Lz}) large enough to contain the ice.  Note that using a small number of vertical levels (\texttt{-Mz 11}) is reasonable because the EISMINT-Ross intercomparison specifies that the temperature at each depth is just the surface temperature \cite{MacAyealetal}.  In fact there is no thermocoupling issue because the ice hardness used here is constant.
 
@@ -52,16 +51,15 @@ At the end of this run the computed velocity field is compared to the interpolat
 The output file \texttt{unnamed_diag.nc} contains vertically-averaged horizontal speed in the variable \texttt{cbar}.  Figure \ref{fig:rosspython} shows that computed speed as the color background; the comparison of modeled and observed vector velocities in that figure is discussed below.
 
 There are many variations on this basic ``\texttt{pross}'' run above.  First of all one can get more information during the run by adding diagnostic viewers and a more complete (verbose) report to standard out:
-
+% pross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3 -view_map cbar,mask,log_nuH,uvbar -verbose -pause 10
 \begin{verbatim}
-$ pross -boot_from ross.nc -ssa -ssaBC ross.nc \
-        -Mx 147 -My 147 -Mz 3 -Lz 1e3 -view_map cbar,mask,log_nuH,ubar \
-        -verbose -pause 10
+$ pross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3 \
+        -view_map cbar,mask,log_nuH,ubar -verbose -pause 10
 \end{verbatim}
 Secondly one might want to do the run in parallel and do it on a finer grid.  For example,
 
 \begin{verbatim}
-$ mpiexec -n 4 pross -boot_from ross.nc -ssa -ssaBC ross.nc \
+$ mpiexec -n 4 pross -boot_from ross.nc -ssaBC ross.nc \
           -Mx 201 -My 201 -Mz 3 -Lz 1e3
 \end{verbatim}
 The result is very similar, as it should be.  On the other hand, since the data is only on a 6.8 km grid we expect no added accuracy on this new 5km grid.
