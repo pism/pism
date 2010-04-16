@@ -162,7 +162,7 @@ PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -eta -e 3"
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -pdd_fausto"
 # coupler settings for spin-up (i.e. with forcing)
-COUPLER_FORCING="-atmosphere searise_greenland,forcing -surface pdd -pdd_fausto -dTforcing $PISM_TEMPSERIES -dSLforcing $PISM_SLSERIES"
+COUPLER_FORCING="-atmosphere searise_greenland,forcing -surface pdd -pdd_fausto -dTforcing $PISM_TEMPSERIES -ocean constant,forcing -dSLforcing $PISM_SLSERIES"
 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
