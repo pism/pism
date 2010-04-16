@@ -258,6 +258,10 @@ PetscErrorCode PSLocalMassBalance::init(PISMVars &vars) {
     mbscheme = new PDDMassBalance(config);
   }
 
+  if (config.get_flag("pdd_limit_timestep")) {
+    ierr = verbPrintf(2, grid.com, "  NOTE: Limiting time-steps to 1 year.\n"); CHKERRQ(ierr);
+  }
+
   ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
   ierr = acab.set_attrs("climate_state",
 			"instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
@@ -361,6 +365,12 @@ PetscErrorCode PSLocalMassBalance::update(PetscReal t_years, PetscReal dt_years)
 PetscErrorCode PSLocalMassBalance::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
 							 IceModelVec2S &result) {
   PetscErrorCode ierr;
+
+  // This flag is set in pclimate to allow testing the model. It does not
+  // affect the normal operation of PISM.
+  if (config.get_flag("pdd_limit_timestep")) {
+    dt_years = PetscMin(dt_years, 1.0);
+  }
 
   ierr = update(t_years, dt_years); CHKERRQ(ierr);
 

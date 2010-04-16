@@ -135,7 +135,6 @@ done reading eis_green_smoothed.nc; bootstrapping done
 \end{quote}
 \normalsize
 \bigskip
-
 \caption{Output of bootstrapping command.  Continues in Table \ref{bootCONTINUED}.}
 \label{bootstrapEISgreen}
 \end{table}
@@ -293,6 +292,7 @@ mpiexec -n 8 pgrn -gwl3 -i green_ccl3_year0.nc -y 500 -o green_gwl3_year500.nc
 Assuming that \texttt{green20km_y1.nc} was produced by the run above (see section
 \ref{sect:green-bootstrapping}), one can run the following to check if the PDD
 model in PISM (see section \ref{sec:boundary-models}) is ``reasonable'':
+% pclimate -i green20km_y1.nc -atmosphere eismint_greenland -surface pdd -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc 
 \begin{verbatim}
 $ pclimate -i green20km_y1.nc -atmosphere eismint_greenland -surface pdd \
            -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc 
@@ -359,8 +359,11 @@ This figure shows the GRIP temperature offsets (top graph; compare to figure \re
 \begin{comment}
   FIXME: Variable acab in following is worth looking at. It looks right and it
   may be possible to compare to other paleo-limate studies:
+% pclimate -i green20km_y1.nc -o bar.nc -ys -125000.0 -ye -0.0 -dt 1000.0  -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc -atmosphere eismint_greenland,forcing -surface pdd -ocean constant,forcing
 \begin{verbatim}
-$ pclimate -i green20km_y1.nc -o bar.nc -ys -125000.0 -ye -0.0 -dt 1000.0  -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc -sma
+$ pclimate -i green20km_y1.nc -o bar.nc -ys -125000.0 -ye -0.0 -dt 1000.0 \
+           -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc \
+           -atmosphere eismint_greenland,forcing -surface pdd -ocean constant,forcing
 \end{verbatim}%$
 \end{comment}
 
