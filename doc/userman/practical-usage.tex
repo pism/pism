@@ -38,7 +38,9 @@ what is printed to the standard output.  This includes the \texttt{-help} and \t
 \begin{table}[ht]
   \centering
   \begin{tabular}{lp{0.7\linewidth}}
-    \\\toprule
+  \caption{Options controlling PISM's standard output}
+  \label{tab:stdout}
+   \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
  \intextoption{help} & Gives PISM help message and then a brief description of many PISM and PETSc options.  The run occurs as usual according to the other options, while the option documentation does not get listed if the run didn't get started properly.\\
@@ -51,11 +53,8 @@ what is printed to the standard output.  This includes the \texttt{-help} and \t
    \intextoption{usage} &   Short summary of PISM executable usage, without listing all the options, and without doing the run.\\
     \intextoption{verbose} & Increased verbosity of standard output.  Usually given with an integer level; 0,1,2,3,4,5 are allowed.  At the extremes, \texttt{-verbose 0} produces no stdout at all, \texttt{-verbose 1} only prints only warnings and a few high priority messages, and \texttt{-verbose 5} spews a lot of usually-undesirable stuff.  \texttt{-verbose 3} adds a bit more about initialization, especially.  If given without argument (``\texttt{-verbose}'') then sets level 3, while ``\texttt{-verbose 2}'' is the default.\\
    \intextoption{version} &   Show version numbers of PETSc and of PISM.\\
-
-    \\\bottomrule
+   \\\bottomrule
   \end{tabular}
-  \caption{Options controlling PISM's standard output}
-  \label{tab:stdout}
 \end{table}
 
 
@@ -83,6 +82,12 @@ PISM's signal handling.)
 Omitting the \texttt{-ts_vars} option makes PISM save \emph{all} the variables listed in table \ref{tab:time-series}.  Because scalar time-series take very little storage space, compared to spatially-varying data, this is usually a reasonable choice.
 
 If the file \texttt{foo.nc}, specified by \texttt{-ts_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-ts_append}.
+
+If a PISM input file contains the \texttt{mapping} variable which has the
+\texttt{grid_mapping_name} attribute, PISM computes corrected cell areas
+using stored latitude and longitude fields and the WGS84 reference ellipsoid.
+This allows us to compute areas and volumes (see table \ref{tab:time-series})
+more accurately.
 
 \begin{table}[h]
   \caption{Command-line options controlling saving scalar time-series}
@@ -456,7 +461,7 @@ macbook:pism>
 
 Recall that internally in PISM there is a separation of climate inputs from ice
 dynamics (subsection \ref{sec:climate-inputs}). Executable
-\texttt{pclimate}\index{PISM!pclimate} allows one to visualize climate inputs without
+\texttt{pclimate}\index{executables!pclimate} allows one to visualize climate inputs without
 invoking the ice dynamics core of PISM. This is helpful during the process of
 creating PISM-readable data files, and modeling with such.
 
@@ -524,7 +529,7 @@ It is common to want to interpolate a coarse grid model state onto a finer grid 
 The transfer from grid to grid is reasonably general---one can go from coarse to fine or vice versa in each dimension $x,y,z$---but the transfer must always be done by \emph{interpolation} and never \emph{extrapolation}.  (An attempt to do the latter will always produce a PISM error.)
 
 Such ``regridding'' is done using the \fileopt{regrid_file} and
-\listopt{regrid_vars} commands as in this example:\index{pisms}
+\listopt{regrid_vars} commands as in this example:\index{executables!pisms}
 
 \begin{verbatim}
 $  pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
@@ -539,7 +544,7 @@ See table \ref{tab:regridvar} for the regriddable variables using
 
 \begin{table}[ht]
 \centering
-\caption{Regriddable variables.\index{regrid}\index{regrid_vars}  Use \texttt{-regrid_vars} with these names.}\label{tab:regridvar}
+\caption{Regriddable variables.\index{regrid}  Use \texttt{-regrid_vars} with these names.}\label{tab:regridvar}
 \begin{tabular}{ll}\toprule
 \textbf{Name} & \textbf{Description}\\ \midrule
 \texttt{age} & age of ice\\
@@ -550,12 +555,16 @@ See table \ref{tab:regridvar} for the regriddable variables using
 \texttt{temp} & ice temperature \\
 \texttt{thk} & land ice thickness \\
 \texttt{topg} & bedrock surface elevation \\
+\texttt{enthalpy} & ice enthalpy\\
 \bottomrule
 \normalsize
 \end{tabular}
 \end{table}
 
-Here is another example: suppose you have an output of a PISM run on a fairly coarse grid (stored in \texttt{foo.nc}) and you want to continue this run on a finer grid. This can be done using \texttt{-regrid_file} along with \texttt{-boot_from}:
+Here is another example: suppose you have an output of a PISM run on a fairly
+coarse grid (stored in \texttt{foo.nc}) and you want to continue this run on a
+finer grid. This can be done using \texttt{-regrid_file} along with
+\texttt{-boot_from}\index{refining the grid}:
 \begin{verbatim}
 $ pismr -boot_from foo.nc -Mx 201 -My 201 -Mz 21 -Mbz 21 -Lz 4000 \
         -regrid_from foo.nc -regrid_vars litho_temp,age,temp -y 100 -o bar.nc
@@ -581,7 +590,7 @@ In this case all the model-state 2D variables present in \texttt{foo.nc} will be
 \end{tabular}
 \end{table}
 
-Here is an example.  Suppose we start a long verification run in the background, with standard out redirected into a file:\index{pismv}
+Here is an example.  Suppose we start a long verification run in the background, with standard out redirected into a file:\index{executables!pismv}
 
 \begin{verbatim}
 pismv -test G -Mz 101 -y 1e6 -o testGmillion.nc >> log.txt &
@@ -733,12 +742,14 @@ Actually the KSP uses preconditioning.  This aspect of the solve is critical for
     \scripthead{test/vfnow.py} & Organizes the process of verifying PISM.  Specifies standard refinement paths for each of the tests (section \ref{sect:verif}). \\
     \scripthead{test/vnreport.py} & Automates the creation of convergence graphs like figures \ref{fig:thickerrsB}--~\ref{fig:temperrsK}. \\
     \scripthead{util/fill_missing.py} & Uses an approximation to Laplace's equation $\grad^2 u = 0$ to smoothly replace missing values in a two-dimensional NetCDF variable.  The ``hole'' is filled with an average of the boundary non-missing values. Section \ref{sec:eismint-greenland} gives an example application to the bed elevations in the EISMINT-Greenland data.  Depends on \texttt{netcdf4-python} and \texttt{scipy} Python packages. \\
-    %\scripthead{util/check_polarstereo.py} & \\
-    \scripthead{util/check_stationarity.py} & \\
+   \scripthead{util/check_stationarity.py} & \\
     \scripthead{util/nc2mat.py} & Reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format \texttt{.mat}, supported by MATLAB version 5 and later.  Depends on \texttt{netcdf4-python} and \texttt{scipy} Python packages. \\
-    \scripthead{util/nccmp.py} & \\
-    \scripthead{util/pism_config_editor.py} & \\
-    \scripthead{util/pism_matlab.m} & \\
+    \scripthead{util/nccmp.py} & a script comparing variables in a given pair
+    of NetCDF files; used by PISM software tests\\
+    \scripthead{util/pism_config_editor.py} & a script that makes modifying or
+    creating PISM configuration files easier \\
+    \scripthead{util/pism_matlab.m} & an example MATLAB script showing how to
+    create a simple NetCDF file PISM can bootstrap from\index{bootstrapping!preparing data using MATLAB}\\
    \bottomrule
   \end{tabular}
   \caption{Some scripts which help in using PISM.}

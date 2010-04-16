@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 ## @package nc2mat
-## Reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format \c .mat, supported by MATLAB version 5 and later). It depends on \c netcdf4-python and \ c SciPy.
+## Reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format \c .mat, supported by MATLAB version 5 and later). It depends on \c netcdf4-python and \c SciPy.
 ##
 ## The options go before the input file name.  Here are some examples:
 ## \verbatim nc2mat.py ross.nc \endverbatim will read all the variables from \c ross.nc and write them to \c ross.mat, \verbatim nc2mat.py -v thk,acab -o ross_matlab.mat ross.nc \endverbatim will read variables \c thk and \c acab from \c ross.nc and write them to \c ross_matlab.nc, and

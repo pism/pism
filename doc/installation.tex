@@ -1,11 +1,11 @@
 \documentclass[11pt,final]{amsart}
 \usepackage[margin=1in]{geometry}
-\usepackage{fancyvrb}
+\usepackage{underscore}
 
-\DefineShortVerb{\|} % this changes the meaning of the | character.
+\usepackage{booktabs}           % better rules in tables
 
 \newcommand{\PISMREV}{\input{revision.tex}}
-\newcommand{\PETSCREL}{2.3.3 or 3.0.0}
+\newcommand{\PETSCREL}{2.3.3 or 3.0.0 or 3.1.0}
 
 \addtolength\topmargin{+.3in}
 \addtolength\textheight{-0.2in}
@@ -19,7 +19,14 @@
 \usepackage{bm,url,xspace,verbatim}
 \usepackage{amssymb,amsmath}
 \usepackage[final,pdftex]{graphicx}
-\usepackage[pdftex]{hyperref}
+
+\usepackage[pdftex,
+                colorlinks=true,
+                plainpages=false, % only if colorlinks=true
+                linkcolor=blue,   % only if colorlinks=true
+                citecolor=blue,   % only if colorlinks=true
+                urlcolor=blue     % only if colorlinks=true
+]{hyperref}[2010/03/30 v6.80u Hypertext links for LaTeX]
 
 %% uncomment to see locations of index entries
 %\usepackage{showidx}
@@ -134,13 +141,14 @@ The following table lists the \emph{required} dependencies for PISM, arranged al
 \newcommand\pairstack[2]{#1 \quad (\small#2\normalsize)}
 %\newcommand\pairstack[2]{\begin{tabular}{lc} #1 \\ \quad (\small#2\normalsize)\end{tabular}}
 \begin{center}
-\begin{tabular*}{1.0\linewidth}{lp{0.5\linewidth}}\hline
+\begin{tabular*}{1.0\linewidth}{lp{0.5\linewidth}}\toprule
   \textbf{Required Library} & \textbf{Comment} \\
+  \midrule
   \pairstack{GSL}{\href{http://www.gnu.org/software/gsl/}{\t{www.gnu.org/software/gsl}}}  &  \\
   \pairstack{MPI}{\href{http://www-unix.mcs.anl.gov/mpi/}{\t{www-unix.mcs.anl.gov/mpi}}}  & \\
   \pairstack{NetCDF}{\href{http://www.unidata.ucar.edu/software/netcdf/}{\t{www.unidata.ucar.edu/software/netcdf}}}  & version $\ge$ 3.6.1\\
   \pairstack{PETSc}{\href{http://www-unix.mcs.anl.gov/petsc/petsc-as/}{\t{www-unix.mcs.anl.gov/petsc}}}  & version $\ge$ \PETSCREL \\
-  \hline
+  \bottomrule
 \end{tabular*}
 \end{center}
 \normalspacing\bigskip
@@ -149,10 +157,11 @@ The following table lists the \emph{required} dependencies for PISM, arranged al
 \bigskip
 \fattablespacing
 \begin{center}
-\begin{tabular*}{1.0\linewidth}{ll}\hline
+\begin{tabular*}{1.0\linewidth}{ll}\toprule
   \textbf{Recommended Library} & \textbf{Comment} \\
-  \pairstack{FFTW}{\href{http://www.fftw.org/}{\t{www.fftw.org}}}\hspace{1.9in} & if not present set |PISM_HAVE_FFTW=0|\\
-  \hline
+  \midrule
+  \pairstack{FFTW}{\href{http://www.fftw.org/}{\t{www.fftw.org}}}\hspace{1.9in} & if not present set \texttt{PISM_HAVE_FFTW=0}\\
+  \bottomrule
 \end{tabular*}
 \end{center}
 \normalspacing
@@ -164,13 +173,14 @@ The following table lists the \emph{required} dependencies for PISM, arranged al
 These Python packages are needed to do all the examples in the \emph{User's Manual} by running python scripts.
 \bigskip\fattablespacing
 \begin{center}
-\begin{tabular*}{1.0\linewidth}{lp{0.35\linewidth}}\hline
+\begin{tabular*}{1.0\linewidth}{lp{0.35\linewidth}}\toprule
   \textbf{Recommended Python Package} & \textbf{Importance} \\
+  \midrule
   \pairstack{\t{matplotlib}}{\href{http://matplotlib.sourceforge.net/}{\t{matplotlib.sourceforge.net}}} & used in some scripts \\
   \pairstack{\t{netcdf4-python}}{\href{http://code.google.com/p/netcdf4-python/}{\t{code.google.com/p/netcdf4-python}}}  & used in \emph{most} scripts  \\    
   \pairstack{\t{numpy}}{\href{http://numpy.scipy.org/}{\t{numpy.scipy.org}}} & used in \emph{most} scripts \\
   \pairstack{\t{scikits.delaunay}}{\href{http://scipy.org/scipy/scikits}{\t{scipy.org/scipy/scikits}}} & used in only one script \\
-  \hline
+  \bottomrule
 \end{tabular*}
 \end{center}
 \normalspacing
@@ -183,24 +193,25 @@ These Python packages are needed to do all the examples in the \emph{User's Manu
 Of all operating systems it is probably quickest to install all the PISM prerequisites on a Debian-based Linux system using a package manager.  PISM requires PETSc revision \PETSCREL{} or newer, so you should only use this method if an up-to-date PETSc package is available.
 
 \begin{enumerate}
-\item Find and install (using |apt-get| or |synaptic|, for example) the following packages:
+\item Find and install (using \texttt{apt-get} or \texttt{synaptic}, for example) the following packages:
   \begin{center}
     \begin{tabular*}{0.9\linewidth}{p{0.2\linewidth}p{0.7\linewidth}}
-      \hline
+      \toprule
       \emph{Package name} & \emph{Comments}\\
-      |petsc-dev| & depends on |libpetsc3.x.x-dev|; this package 
-      depends on |libpetsc3.x.x|, |libopenmpi-dev|, |libx11-dev|,
-      |libblas-dev|, |liblapack-dev|, |gfortran|, and others; 
-      note |libopenmpi-dev| depends on |libopenmpi1| and
+      \midrule
+      \texttt{petsc-dev} & depends on \texttt{libpetsc3.x.x-dev}; this package 
+      depends on \texttt{libpetsc3.x.x}, \texttt{libopenmpi-dev}, \texttt{libx11-dev},
+      \texttt{libblas-dev}, \texttt{liblapack-dev}, \texttt{gfortran}, and others; 
+      note \texttt{libopenmpi-dev} depends on \texttt{libopenmpi1} and
       replaces openmpi-bin\\
-      |libgsl0-dev| & \\
-      |libfftw3-dev| & \\
-      |netcdf-bin| & (and perhaps grab |nco| at the same time)\\
-      |libnetcdf-dev| & \\
-      |g++| & without this you may see a compiler error: ``|gcc: error| |trying to| |exec 'cc1plus'|''\\
-      |subversion| & \\
-      |python-dev| & (helps with scripts \dots perhaps not essential) \\
-      \hline
+      \texttt{libgsl0-dev} & \\
+      \texttt{libfftw3-dev} & \\
+      \texttt{netcdf-bin} & (and perhaps grab \texttt{nco} at the same time)\\
+      \texttt{libnetcdf-dev} & \\
+      \texttt{g++} & without this you may see a compiler error: ``\texttt{gcc: error} \texttt{trying to} \texttt{exec 'cc1plus'}''\\
+      \texttt{subversion} & \\
+      \texttt{python-dev} & (helps with scripts \dots perhaps not essential) \\
+      \bottomrule
     \end{tabular*}
   \end{center}
 \item Get the PISM development version:
@@ -213,7 +224,7 @@ export PETSC_DIR=/usr/lib/petscdir/2.3.3/
 export PETSC_ARCH=linux-gnu-c-opt
 export PATH=/home/user/pism-dev/bin/:/home/user/pism-dev/util/:$PATH
 \end{verbatim}
-to your |.bashrc| equivalent.  (See ``Installed files'' reported for |libpetsc2.3.3-dev| using |synaptic|, for example.)
+to your \texttt{.bashrc} equivalent.  (See ``Installed files'' reported for \texttt{libpetsc2.3.3-dev} using \texttt{synaptic}, for example.)
 \item Next, build PISM:
 \begin{verbatim}
 $  cd pism-dev
@@ -223,7 +234,7 @@ $  make all
 \begin{verbatim}
 $  mpiexec -n 2 pismv -y 1
 \end{verbatim}
-If you see ``|Writing model state to file|\dots'' at the end then the run completed.
+If you see ``\texttt{Writing model state to file}\dots'' at the end then the run completed.
 \item See the \emph{Getting Started} section \emph{User's Manual} to continue.
 \end{enumerate}
 
@@ -243,19 +254,19 @@ initializing Test A ...
 \end{verbatim}
 According to this comment found online at \url{http://lists.alioth.debian.org/pipermail/pkg-openmpi-commits/2007-August/000044.html},
 \begin{quote}
-   To get rid of the warning, you can either disable the use of the ``|openib|'' btl
-   in |/etc/openmpi/openmpi-mca-params.conf| or pass ``|--mca btl ^openib|'' to |mpirun|
-   or |mpiexec|.  The configuration file contains a line to disable InfiniBand, you
+   To get rid of the warning, you can either disable the use of the ``\texttt{openib}'' btl
+   in \texttt{/etc/openmpi/openmpi-mca-params.conf} or pass ``\texttt{--mca btl \^{}openib}'' to \texttt{mpirun}
+   or \texttt{mpiexec}.  The configuration file contains a line to disable InfiniBand, you
    just have to comment it out.
 \end{quote}
 \bigskip
 
-\subsubsection*{NCVIEW}  There seems to be no |ncview| Debian package
+\subsubsection*{NCVIEW}  There seems to be no \texttt{ncview} Debian package
 yet.  But this sequence worked with minimal pain.  Grab latest source from
 \begin{center}
   \url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}
 \end{center}
-Basically just get the |.tar.gz| and follow install instructions in top-level ``|README|''.  An error on a Debian system about missing |X| headers etc may be resolved by getting the |xorg-dev| package.  More generally, one may tell the |ncview| |configure| script where to find |X|:
+Basically just get the \texttt{.tar.gz} and follow install instructions in top-level ``\texttt{README}''.  An error on a Debian system about missing \texttt{X} headers etc may be resolved by getting the \texttt{xorg-dev} package.  More generally, one may tell the \texttt{ncview} \texttt{configure} script where to find \texttt{X}:
 \begin{verbatim}
 $  ./configure --x-libraries=/usr/lib
 \end{verbatim}
@@ -290,23 +301,23 @@ $  ./configure --x-libraries=/usr/lib
       West})}\index{FFTW (\emph{Fastest Fourier Transform in the West})} in one approximation of the deformation of the solid earth (bed) under
   ice loads.\footnote{Bueler and others (2007). \emph{Fast computation of a viscoelastic deformable Earth model for ice sheet simulation}, Ann.~Glaciol.~46, pp.~97–-105.}  If you want the functionality of this bed deformation model, which is coupled to the ice flow and which we
   recommend, install FFTW or check that it is installed already.  If FFTW is \emph{not installed}, however, turn off PISM's attempt
-  to build with it by setting the environment variable |PISM_HAVE_FFTW=0|.  If this library is absent, all of PISM will work
+  to build with it by setting the environment variable \texttt{PISM_HAVE_FFTW=0}.  If this library is absent, all of PISM will work
   \emph{except} for this bed deformation model.
 
 \item You will need a version of \href{http://www-unix.mcs.anl.gov/mpi/}{MPI (= \emph{Message Passing Interface})}.\index{MPI
     (\emph{Message Passing Interface})} Your system may have an existing MPI installation, in which case the path to the MPI
   directory will be used when installing PETSc below. Otherwise we recommend that you allow PETSc to download
   \href{http://www-unix.mcs.anl.gov/mpi/mpich2/}{MPICH2} as part of the PETSc configure process (next). In either case, once MPI
-  is installed, you will want to add the MPI |bin| directory to your path so that you can invoke MPI using the |mpiexec|
-  or |mpirun| command. For example, you can add it with the statement
+  is installed, you will want to add the MPI \texttt{bin} directory to your path so that you can invoke MPI using the \texttt{mpiexec}
+  or \texttt{mpirun} command. For example, you can add it with the statement
 
-\verb|export PATH=/home/user/mympi/bin:$PATH|  \qquad (for |bash| shell)
+\texttt{export PATH=/home/user/mympi/bin:\$PATH}  \qquad (for \texttt{bash} shell)
 
 \noindent or
 
-\verb|setenv PATH /home/user/mympi/bin:$PATH|  \qquad (for |csh| or |tcsh| shell).
+\texttt{setenv PATH /home/user/mympi/bin:\$PATH}  \qquad (for \texttt{csh} or \texttt{tcsh} shell).
 
-\noindent Such a statement can, of course, appear in your |.bashrc|, |.profile|, or |.cshrc| file so that there is
+\noindent Such a statement can, of course, appear in your \texttt{.bashrc}, \texttt{.profile}, or \texttt{.cshrc} file so that there is
 no need to retype it each time you use MPI.
 
 \medskip
@@ -325,7 +336,7 @@ PISM requires a version of PETSc which is \texttt{\PETSCREL} or later.  The ``li
 You should configure and build PETSc \emph{essentially} as described on the PETSc installation page, but it might be best to read the following comments on the PETSc configure and build process first:
 
 \renewcommand{\labelenumii}{(\roman{enumii})}\begin{enumerate}
-\item Untar in your preferred location, but note PETSc should \emph{not} be configured (next) using root privileges.  Note that you will need to define the environment variable |PETSC_DIR|\index{PETSC\und DIR} before configuring PETSc (next).  For instance, once you have entered the PETSc directory just untarred, \verb|export PETSC_DIR=$PWD|. (Or \verb|PETSC_DIR=`pwd`|.  In this case, note the use of the backprime (\emph{accent-grave}) character, and not the single apostrophe |'|.)
+\item Untar in your preferred location, but note PETSc should \emph{not} be configured (next) using root privileges.  Note that you will need to define the environment variable \texttt{PETSC_DIR}\index{PETSC\und DIR} before configuring PETSc (next).  For instance, once you have entered the PETSc directory just untarred, \texttt{export PETSC_DIR=\$PWD}. (Or \texttt{PETSC_DIR=`pwd`}.  In this case, note the use of the backprime (\emph{accent-grave}) character, and not the single apostrophe \texttt{'}.)
 
 \item When you run the configure script in the PETSc directory, the following options are recommended; note PISM uses shared libraries by default:\index{PETSC\und ARCH}
 \begin{verbatim}
@@ -337,19 +348,19 @@ Turning off the inclusion of the debugging symbols gives a significant speed imp
 
 Using shared and dynamic libraries may be unwise on certain clusters, etc.; check with your system administrator.
 
-Note that there is no PISM use of Fortran, and that it is sometimes convenient to have PETSc grab a local copy of BLAS\index{BLAS (\emph{Basic Linear Algebra Subsystem})} and LAPACK\index{LAPACK (\emph{Linear Algebra PACKage})} rather than using the system-wide version.  So one may add ``\verb|--with-fortran=0| \verb|--download-c-blas-lapack=1|'' to the other configure options.
+Note that there is no PISM use of Fortran, and that it is sometimes convenient to have PETSc grab a local copy of BLAS\index{BLAS (\emph{Basic Linear Algebra Subsystem})} and LAPACK\index{LAPACK (\emph{Linear Algebra PACKage})} rather than using the system-wide version.  So one may add ``\texttt{--with-fortran=0} \texttt{--download-c-blas-lapack=1}'' to the other configure options.
 
-\item If there is an existing MPI\index{MPI (\emph{Message Passing Interface})} installation, for example at \verb|/home/user/mympi/|, one can point PETSc to it by adding the option \verb|--with-mpi-dir=/home/user/mympi/|.  The path used in this option must have MPI executables \verb|mpicxx| and \verb|mpicc|, and either \verb|mpiexec| or \verb|mpirun|, in subdirectory \verb|bin/| and MPI library files in subdirectory \verb|lib/|.
+\item If there is an existing MPI\index{MPI (\emph{Message Passing Interface})} installation, for example at \texttt{/home/user/mympi/}, one can point PETSc to it by adding the option \texttt{--with-mpi-dir=/home/user/mympi/}.  The path used in this option must have MPI executables \texttt{mpicxx} and \texttt{mpicc}, and either \texttt{mpiexec} or \texttt{mpirun}, in subdirectory \texttt{bin/} and MPI library files in subdirectory \texttt{lib/}.
 
-\item On the other hand, it seems common that one needs to tell PETSc to download MPI\index{MPI (\emph{Message Passing Interface})} into a place it understands, even if there is an existing MPI.  If you get messages suggesting that PETSc cannot configure using your existing MPI, you might try \verb|configure.py| with option \verb|--download-mpich=1|.
+\item On the other hand, it seems common that one needs to tell PETSc to download MPI\index{MPI (\emph{Message Passing Interface})} into a place it understands, even if there is an existing MPI.  If you get messages suggesting that PETSc cannot configure using your existing MPI, you might try \texttt{configure.py} with option \texttt{--download-mpich=1}.
 
-\item Configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.  One starts with a configure option \verb|--with-batch=1|.  See the ``Installing on machine requiring cross compiler or a job scheduler'' section of the \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}{PETSc installation page}.
+\item Configuration of PETSc for a batch system requires special procedures described at the PETSc documentation site.  One starts with a configure option \texttt{--with-batch=1}.  See the ``Installing on machine requiring cross compiler or a job scheduler'' section of the \href{http://www-unix.mcs.anl.gov/petsc/petsc-2/documentation/installation.html}{PETSc installation page}.
 
-\item  Configuring PETSc takes many minutes even when everything goes smoothly.   A value for the environment variable \verb|PETSC_ARCH| will be reported at the end of the configure process; take note of this value.  (Note that a previously installed PETSc can be reconfigured with a new \verb|PETSC_ARCH| if necessary.)
+\item  Configuring PETSc takes many minutes even when everything goes smoothly.   A value for the environment variable \texttt{PETSC_ARCH} will be reported at the end of the configure process; take note of this value.  (Note that a previously installed PETSc can be reconfigured with a new \texttt{PETSC_ARCH} if necessary.)
 
-\item  After \verb|configure.py| finishes, you will need to \verb|make all test| in the PETSc directory and watch the result.  If the X Windows system is functional some example viewers will appear; as noted you will need the X header files for this to work.
+\item  After \texttt{configure.py} finishes, you will need to \texttt{make all test} in the PETSc directory and watch the result.  If the X Windows system is functional some example viewers will appear; as noted you will need the X header files for this to work.
 
-\item Finally, you will want to set the \verb|PETSC_DIR| and the \verb|PETSC_ARCH| environment variables in your \verb|.profile| or \verb|.bashrc| file.  Also remember to add the MPI \verb|bin| directory to your \verb|PATH|.  For instance, if you used the option \verb|--download-mpich=1| in the PETSc configure, the MPI \verb|bin| directory will have a path like \verb|$PETSC_DIR/| \verb|externalpackages/mpich2-1.0.4p1/$PETSC_ARCH/bin/|.  Therefore the lines 
+\item Finally, you will want to set the \texttt{PETSC_DIR} and the \texttt{PETSC_ARCH} environment variables in your \texttt{.profile} or \texttt{.bashrc} file.  Also remember to add the MPI \texttt{bin} directory to your \texttt{PATH}.  For instance, if you used the option \texttt{--download-mpich=1} in the PETSc configure, the MPI \texttt{bin} directory will have a path like \texttt{\$PETSC_DIR/} \texttt{externalpackages/mpich2-1.0.4p1/\$PETSC_ARCH/bin/}.  Therefore the lines 
 \begin{verbatim}
 export PETSC_DIR=/home/user/petsc-2.3.3-p2/
 export PETSC_ARCH=linux-gnu-cxx
@@ -373,7 +384,7 @@ At this point you have configured the environment which PISM needs.  You are rea
 \begin{verbatim}
 $  svn co http://svn.gna.org/svn/pism/trunk pism-dev
 \end{verbatim}
-\item A directory called ``\verb|pism-dev/|'' will be created.  Note that in the future when you enter that directory, \verb|svn update| will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make all} to recompile and relink PISM. Alternatively, you can \t{make update}, which will run \t{svn update} and then rebuild PISM if necessary.}
+\item A directory called ``\texttt{pism-dev/}'' will be created.  Note that in the future when you enter that directory, \texttt{svn update} will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make all} to recompile and relink PISM. Alternatively, you can \t{make update}, which will run \t{svn update} and then rebuild PISM if necessary.}
 \end{enumerate}
 
 \item Build PISM:\footnote{Please report any problems you meet at this build stage by sending us the output: \href{mailto:help@pism-docs.org}{help@pism-docs.org}.}
@@ -382,11 +393,11 @@ $  cd pism-dev
 $  make all
 \end{verbatim}
 
-If your operating system does not support shared libraries, then do \verb|export PISM_STATIC=1| before building.  This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.
+If your operating system does not support shared libraries, then do \texttt{export PISM_STATIC=1} before building.  This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.
 
-Note that the ``\verb|make all|'' puts executables, including \verb|pross|,\index{pross} \verb|pismr|,\index{pismr} \verb|pismv|,\index{pismv} and \verb|pisms|,\index{pisms} in the \verb|pism-dev/bin/| subdirectory.  Object files created during the build process (located in the \verb|build| subdirectory) are not deleted, so do ``\verb|make clean|'' to delete these if space is an issue.
+Note that the ``\texttt{make all}'' puts executables, including \texttt{pross},\index{pross} \texttt{pismr},\index{pismr} \texttt{pismv},\index{pismv} and \texttt{pisms},\index{pisms} in the \texttt{pism-dev/bin/} subdirectory.  Object files created during the build process (located in the \texttt{build} subdirectory) are not deleted, so do ``\texttt{make clean}'' to delete these if space is an issue.
 
-\item PISM executables can be run most easily by adding the directories \verb|pism-dev/bin/| and \verb|pism-dev/util/| to your \verb|PATH|.  The former directory contains the major PISM executables while the latter contains several useful scripts.  For instance, this command can be done in the \verb|bash| shell or in your \verb|.bashrc| file:\index{setting the \$PATH to find PISM executables}
+\item PISM executables can be run most easily by adding the directories \texttt{pism-dev/bin/} and \texttt{pism-dev/util/} to your \texttt{PATH}.  The former directory contains the major PISM executables while the latter contains several useful scripts.  For instance, this command can be done in the \texttt{bash} shell or in your \texttt{.bashrc} file:\index{setting the \$PATH to find PISM executables}
 \begin{verbatim}
 export PATH=/home/user/pism-dev/bin:/home/user/pism-dev/util:$PATH
 \end{verbatim}
@@ -406,13 +417,13 @@ instructions. This section describes an adaptation of the same process to the Ma
   \href{http://developer.apple.com/tools/xcode/}{Apple Developer Connection} or using the Mac OS X installation DVD.
 \item The use of \href{http://www.macports.org/}{MacPorts} is recommended, as it significantly simplifies installing many
   open-source libraries. Download the package from the \href{http://www.macports.org/install.php}{MacPorts homepage}, install and
-  then add \verb|/opt/local/bin| and \verb|/opt/local/sbin| to your |PATH|:
+  then add \texttt{/opt/local/bin} and \texttt{/opt/local/sbin} to your \texttt{PATH}:
 \begin{verbatim}
 export PATH=/opt/local/bin:/opt/local/sbin:$PATH
 \end{verbatim}
 \item Note that it is not necessary to install Python, as it is bundled with the operating system (as are BLAS, LAPACK, OpenMPI and
   Subversion). The easiest way to get SciPy et al to work on an Intel-based Mac with Mac OS X is to use SciPy Superpack from
-  \url{http://macinscience.org/?page_id=6/}. This package includes |numpy|, |SciPy| and |matplotlib|, as well as |ipython|, a very useful
+  \url{http://macinscience.org/?page_id=6/}. This package includes \texttt{numpy}, \texttt{SciPy} and \texttt{matplotlib}, as well as \texttt{ipython}, a very useful
   interactive Python shell. Unfortunately, Scipy Superpack does not support PowerPC-based Macs; we recommend using \href{http://www.enthought.com/}{Enthought Python Distributions} on older Macs. \href{http://www.enthought.com/}{Enthought Python Distributions (EPD)}, which is free for Academic use, may also be used on Intel-based Macs. In fact, this is probably the easiest way as EPD already includes all modules mentioned above.
 \item After installing MacPorts, do
 \begin{verbatim}
@@ -434,14 +445,14 @@ $  make all test
 $  export PISM_CONFIG=config/macosx_macports
 $  make all
 \end{verbatim}
-  The first command includes the file |config/macosx_macports| into |build/Makefile|, modifying compiler and linker flags. See
+  The first command includes the file \texttt{config/macosx_macports} into \texttt{build/Makefile}, modifying compiler and linker flags. See
   section \ref{subsec:config} for more info.
 
   Note that it might also be necessary to add
 \begin{verbatim}
 export DYLD_LIBRARY_PATH=~/pism-dev/lib/
 \end{verbatim}
-  to your |.bashrc| or equivalent to tell the dynamic library loader where to find PISM libraries.
+  to your \texttt{.bashrc} or equivalent to tell the dynamic library loader where to find PISM libraries.
 \end{enumerate}
 
 
@@ -450,9 +461,9 @@ export DYLD_LIBRARY_PATH=~/pism-dev/lib/
 \label{subsec:config}
 
 On some platforms it is necessary to use compiler or linker flags different from ones used on
-Linux, the default.  This can be done by editing the top-level makefile (|Makefile|) or |build/Makefile|, but here is a more robust approach.
+Linux, the default.  This can be done by editing the top-level makefile (\texttt{Makefile}) or \texttt{build/Makefile}, but here is a more robust approach.
 
-Set the environment variable |PISM_CONFIG| to |config/foo| to include the file |config/foo| into the makefile.  It is included \emph{after} all the flags, both compiler and linker, are defined, so it is possible to override any of them.   This is the way the PISM build process works on Mac OS X, using |PISM_CONFIG=config/macosx_macports|.  There are two advantages of this approach: first, settings for different systems can be kept separate.  Second, this allows building PISM on different systems using the same set of makefiles, so an |svn update| is less likely to break the build process on your system.
+Set the environment variable \texttt{PISM_CONFIG} to \texttt{config/foo} to include the file \texttt{config/foo} into the makefile.  It is included \emph{after} all the flags, both compiler and linker, are defined, so it is possible to override any of them.   This is the way the PISM build process works on Mac OS X, using \texttt{PISM_CONFIG=config/macosx_macports}.  There are two advantages of this approach: first, settings for different systems can be kept separate.  Second, this allows building PISM on different systems using the same set of makefiles, so an \texttt{svn update} is less likely to break the build process on your system.
 
 
 
@@ -462,40 +473,48 @@ Once you're done with the installation, a few tests can confirm that PISM is fun
 \begin{enumerate}
 \item Try a MPI four process verification run:
 
-\verb|$ mpiexec -n 4 pismv -test G -y 200|
+\begin{verbatim}
+$ mpiexec -n 4 pismv -test G -y 200
+\end{verbatim}
 
-\noindent If you see some output and a final \verb|Writing model state| \verb|to file 'verify.nc'| \verb|... done| then PISM
+\noindent If you see some output and a final \texttt{Writing model state} \texttt{to file 'verify.nc'} \texttt{... done} then PISM
 completed successfully.  At the end of this run you get measurements of the difference between the numerical result and the exact solution.  See the \emph{User's Manual} for more on PISM verification.
 
-The above ``\verb|-n 4|'' run should work even if there is only one actual processor (core) on your machine, in which case MPI will just run multiple processes on the one processor.  This run will also produce a NetCDF output file \verb|verify.nc|, which can be read and viewed by NetCDF tools.
+The above ``\texttt{-n 4}'' run should work even if there is only one actual processor (core) on your machine, in which case MPI will just run multiple processes on the one processor.  This run will also produce a NetCDF output file \texttt{verify.nc}, which can be read and viewed by NetCDF tools.
 
 \item Try an EISMINT II run using the PETSc viewers (under the X window system):
 
-\verb|$ pisms -y 5000 -view_map thk,temppabase,csurf|
+\begin{verbatim}
+$ pisms -y 5000 -view_map thk,temppabase,csurf
+\end{verbatim}
 
-\noindent When using such viewers and \verb|mpiexec| the additional final option \verb|-display :0| \,is sometimes required to enable MPI to use X, like this:
+\noindent When using such viewers and \texttt{mpiexec} the additional final option \texttt{-display :0} \,is sometimes required to enable MPI to use X, like this:
 
-\verb|$ mpiexec -n 2 pisms -y 5000 -view_map thk,temppabase,csurf -display :0|
+\begin{verbatim}
+$ mpiexec -n 2 pisms -y 5000 -view_map thk,temppabase,csurf -display :0
+\end{verbatim}
 
-\item Run a a basic suite of software tests
-
-\verb|$ (cd test/software && make)|
+\item Run a basic suite of software tests: \footnote{Note that these tests use NCO and depend on Python packages \texttt{numpy} and
+  \texttt{netcdf4-python}}
+\begin{verbatim}
+$ (cd test/software && make)
+\end{verbatim}
 
 \noindent Feel free to email us about failed tests, etc.: \href{mailto:help@pism-docs.org}{help@pism-docs.org}.
 \end{enumerate}
 
-\subsubsection*{Next steps}  Start with the \emph{User's Manual}, which has a ``Getting started'' section.  A copy is online at the PISM homepage and documentation page \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}}, along with a source code \emph{Browser} (HTML).  Completely up-to-date documenation can be built from \LaTeX~source in the |doc\| subdirectory, as described in the last section.
+\subsubsection*{Next steps}  Start with the \emph{User's Manual}, which has a ``Getting started'' section.  A copy is online at the PISM homepage and documentation page \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}}, along with a source code \emph{Browser} (HTML).  Completely up-to-date documenation can be built from \LaTeX~source in the \texttt{doc/} subdirectory, as described in the last section.
 
-A final reminder with respect to installation:  Let's assume you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above.  You can update your copy of PISM to the latest version by \verb|make update| in the PISM directory.
+A final reminder with respect to installation:  Let's assume you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above.  You can update your copy of PISM to the latest version by \texttt{make update} in the PISM directory.
 
 
 \newpage
 \section{Installing Python packages}
 \label{sec:python}
 
-If you're lucky, you might be able to install all the Python packages mentioned in section \ref{sec:prerequisites} using a package manager. On the other hand, the Python packages below are not currently available in Debian package repositories. They are easy to install using Python |setuptools|, however; these tools are included with recent versions of Python.  And you might not be using a package manager!
+If you're lucky, you might be able to install all the Python packages mentioned in section \ref{sec:prerequisites} using a package manager. On the other hand, the Python packages below are not currently available in Debian package repositories. They are easy to install using Python \texttt{setuptools}, however; these tools are included with recent versions of Python.  And you might not be using a package manager!
 
-\subsubsection*{Python module \texttt{netCDF3}, from package \texttt{netcdf4-python}}  You can skip this paragraph if you have \href{http://www.enthought.com/}{Enthought Python Distributions} installed. Typical users have NetCDF 3.6.2.  You can install |netcdf4-python|, to get |netCDF3| needed by PISM scripts, by downloading a tarball from the project homepage \url{http://code.google.com/p/netcdf4-python/}.  Go to that site to identify the latest one, and download with a web browser or do something like the following, using the appropriate version number:
+\subsubsection*{Python module \texttt{netCDF3}, from package \texttt{netcdf4-python}}  You can skip this paragraph if you have \href{http://www.enthought.com/}{Enthought Python Distributions} installed. Typical users have NetCDF 3.6.2.  You can install \texttt{netcdf4-python}, to get \texttt{netCDF3} needed by PISM scripts, by downloading a tarball from the project homepage \url{http://code.google.com/p/netcdf4-python/}.  Go to that site to identify the latest one, and download with a web browser or do something like the following, using the appropriate version number:
 \begin{verbatim}
 $  wget http://netcdf4-python.googlecode.com/files/netCDF4-NUMBER.tar.gz
 $  tar -xvf netCDF4-NUMBER.tar.gz
@@ -505,7 +524,7 @@ Enter the directory you just untarred and install:
 $  cd netCDF4-NUMBER/
 $  sudo NETCDF3_DIR=/usr/ python setup-nc3.py install
 \end{verbatim}
-assuming that NetCDF was installed in the |/usr/| tree.
+assuming that NetCDF was installed in the \texttt{/usr/} tree.
 
 Under Mac OS X,
 \begin{verbatim}
@@ -515,12 +534,12 @@ If you actually use NetCDF 4.0,
 \begin{verbatim}
 $  sudo NETCDF4_DIR=/usr/ HDF5_DIR=/usr/ python setup.py install
 \end{verbatim}
-assuming that HDF5 and NetCDF were installed in the |/usr/| tree.
+assuming that HDF5 and NetCDF were installed in the \texttt{/usr/} tree.
 
-The scripts in directories |util/|, |examples/eisgreen|, |examples/eisross|, |examples/mismip|, and so on, which need |netCDF3|, should now work.
+The scripts in directories \texttt{util/}, \texttt{examples/eisgreen}, \texttt{examples/eisross}, \texttt{examples/mismip}, and so on, which need \texttt{netCDF3}, should now work.
 
 
-\subsubsection*{Python package \texttt{scikits.delaunay}}  One PISM script, |examples/eisross/ross_plot.py|, needs this. \href{http://www.enthought.com/}{Enthought Python Distributions} users do (make sure you have version 6.0 or greater): 
+\subsubsection*{Python package \texttt{scikits.delaunay}}  One PISM script, \texttt{examples/eisross/ross_plot.py}, needs this. \href{http://www.enthought.com/}{Enthought Python Distributions} users do (make sure you have version 6.0 or greater): 
 \begin{verbatim}
 $ sudo easy_install http://svn.scipy.org/svn/scikits/trunk/delaunay
 \end{verbatim}
@@ -530,7 +549,7 @@ $  svn co http://svn.scipy.org/svn/scikits/trunk/delaunay
 $  cd delaunay
 $  sudo python setup.py install
 \end{verbatim}
-(The above use of \verb|setup.py| will work if the python ``\verb|setuptools|'' are installed.  On a Debian, that may require getting the \verb|python-setuptools| package, for example.)
+(The above use of \texttt{setup.py} will work if the python ``\texttt{setuptools}'' are installed.  On a Debian, that may require getting the \texttt{python-setuptools} package, for example.)
 
 \newpage
 \section{Rebuilding PISM documentation}
@@ -540,23 +559,24 @@ You might want to rebuild the documentation from source, as PISM and its documen
 \bigskip
 \begin{center}
   \begin{tabular*}{0.9\linewidth}{llp{0.55\linewidth}}
-    \hline
+    \toprule
     \LaTeX & \href{http://www.latex-project.org/}{\t{www.latex-project.org}} &  needed for rebuilding any of the documentation \\
-    |doxygen|\index{doxygen} & \href{http://www.stack.nl/~dimitri/doxygen/}{\t{www.doxygen.org}} &  for rebuilding the \emph{Browser} from source  \\
-    |graphviz|\index{graphviz} & \href{http://www.graphviz.org/}{\t{www.graphviz.org}} &  used in diagrams in the \emph{Browser}  \\
-    \hline
+    \texttt{doxygen}\index{doxygen} & \href{http://www.stack.nl/~dimitri/doxygen/}{\t{www.doxygen.org}} &  for rebuilding the \emph{Browser} from source  \\
+    \texttt{graphviz}\index{graphviz} & \href{http://www.graphviz.org/}{\t{www.graphviz.org}} &  used in diagrams in the \emph{Browser}  \\
+    \bottomrule
   \end{tabular*}
 \end{center}
 \bigskip
 \noindent To rebuild PISM documentation, change to the PISM root directory and do
 \begin{center}
-  \begin{tabular*}{0.9\linewidth}{lp{0.8\linewidth}}
-    |make userman| & to build the \emph{User's Manual}, |doc/manual.pdf|\\
-    |make installation| & to build this document, the \emph{Installation Manual}, |doc/installation.pdf|\\
-    |make browser| & to build the \emph{Browser}, |doc/doxy/index.html|\\
-  \end{tabular*}
+  \begin{tabular}{p{0.25\linewidth}p{0.7\linewidth}}
+    \texttt{make userman} & to build the \emph{User's Manual}, \texttt{doc/manual.pdf}\\
+    \texttt{make installation} & to build this document, the \emph{Installation Manual}, \texttt{doc/installation.pdf}\\
+    \texttt{make browser} & to build the \emph{Browser}, \texttt{doc/doxy/index.html}\\
+    \texttt{make cheatsheet} & to build the 2-page PISM Cheat-Sheet summarizing its command-line options\\
+  \end{tabular}
 \end{center}
-The default |make| targets in the |doc/| subdirectory include all of these.
+The default \texttt{make} targets in the \texttt{doc/} subdirectory include all of these.
 
 
 \end{document}

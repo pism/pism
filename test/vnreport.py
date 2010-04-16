@@ -1,7 +1,17 @@
 #!/usr/bin/env python
 
 ## @package vnreport
-## Create convergence graphs
+## Plots error graphs using \c pismv of \c vfnow.py report files.
+## 
+## Has two command-line options: -i specifies a \c pismv report file to use, \c
+## -t selects tests to plot. Use "-t all" to plot error graphs using all the
+## error reports saved in a file given with -i.
+## 
+## For example:
+## \verbatim
+## vnreport.py -i r1084.nc -t G,B
+## \endverbatim
+## will use \c r1084.nc and plot tests "G" and "B".
 
 from pylab import close, figure, clf, hold, plot, xlabel, ylabel, xticks, yticks, axis, legend, title, grid, show, savefig
 from numpy import array, polyfit, polyval, log10, floor, ceil, unique

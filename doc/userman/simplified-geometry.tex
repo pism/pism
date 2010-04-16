@@ -43,21 +43,21 @@ Table \ref{tab:eisII} shows how all EISMINT II experiments are done in PISM.  Ex
 \centering
 \caption{Running the EISMINT II experiments in PISM.\index{PISM!running the EISMINT II experiments in}  Use \t{-skip 5}, on the $61\times 61$ default grid, for significant speedup.}\label{tab:eisII}
 \small
-\begin{tabular}{@{}llll}\hline
-\textbf{Command: ``\t{pisms }'' $+$} & \textbf{Relation to experiment A} \\ \hline
+\begin{tabular}{@{}llll}\toprule
+\textbf{Command: ``\t{pisms }'' $+$} & \textbf{Relation to experiment A} \\ \midrule
 \texttt{-eisII A -Mx 61 -My 61 -Mz 61 -y 200000 -o eisIIA.nc} & \\
 \texttt{-eisII B -i eisIIA.nc -y 2e5 -o eisIIB.nc} & warmer \\
 \texttt{-eisII C -i eisIIA.nc -y 2e5 -o eisIIC.nc} & less snow (lower accumulation)\\
 \texttt{-eisII D -i eisIIA.nc -y 2e5 -o eisIID.nc} & smaller area of accumulation \\
 \texttt{-eisII F -Mx 61 -My 61 -Mz 61 -y 2e5 -o eisIIF.nc} & colder; famous spokes \cite{BBL} \\
 \texttt{-eisII G -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIG.nc} & sliding (regardless of temperature) \\
-\texttt{-eisII H -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIH.nc} & melt-temperature activated sliding \\ \hline
+\texttt{-eisII H -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIH.nc} & melt-temperature activated sliding \\ \midrule
 \texttt{-eisII E -i eisIIA.nc -y 2e5 -o eisIIE.nc} & shifted climate maps \\
 \texttt{-eisII I -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIII.nc} & trough topography \\
 \texttt{-eisII J -i eisIII.nc -y 2e5 -o eisIIJ.nc} & trough topography and less snow \\
 \texttt{-eisII K -Mx 61 -My 61 -Mz 201 -y 2e5 -o eisIIK.nc} & mound topography \\
 \texttt{-eisII L -i eisIIK.nc -y 2e5 -o eisIIL.nc} & mound topography and less snow \\
-\hline\normalsize
+\bottomrule\normalsize
 \end{tabular}\end{table}
 
 The EISMINT II experiments can be run with various modifications of the default settings.  Of course the grid can be refined.  For instance, a twice as fine grid in the horizontal is ``\t{-Mx 121 -My 121}''.  Table \ref{tab:eisIIoptions} lists some optional settings which are particular to the EISMINT II experiments.
@@ -106,8 +106,8 @@ There are many runs for a complete MISMIP intercomparison submission.  There are
 \centering
 \caption{Special MISMIP run options in PISM.  Below the line are special interpretations of standard PISM options.\index{PISM!special options for MISMIP experiments}}\label{tab:MISMIPoptions}
 \small
-\begin{tabular}{p{0.2\linewidth}p{0.1\linewidth}p{0.6\linewidth}}\hline
-\textbf{Option} & \textbf{Default} & \textbf{Meaning} \\ \hline
+\begin{tabular}{p{0.2\linewidth}p{0.1\linewidth}p{0.6\linewidth}}\toprule
+\textbf{Option} & \textbf{Default} & \textbf{Meaning} \\ \midrule
 \intextoption{extras} &  & if this flag is set then, once steady state is reached, surface and bed elevation are written to an extra file with name ending ``\texttt{_extras}''; script \texttt{figsMISMIP.py} reads them\\
 \intextoption{initials} & \texttt{ABC} & initials to prepend to ASCII output file names \\
 \intextoption{initialthk} & 10.0 & initial thickness (m) at start of run \\
@@ -117,10 +117,10 @@ There are many runs for a complete MISMIP intercomparison submission.  There are
 \intextoption{steady_atol} & \texttt{1.0e-4} & m/a; tolerance for steady state; criterion is  $\|dH/dt\|_\infty <$(\texttt{steady_atol} value) \\
 \intextoption{step} & 1 & allowed values are $\{1,\dots,9\}$ for experiments 1 and 2, $\{1,\dots,13\}$ for  exper.~3a, and $\{1,\dots,15\}$ for exper.~3b; note typo in table 6 in \texttt{mismip_4.pdf}: ``step 15'' skipped \\
 \intextoption{try_calving} &  & flag to turn on experimental calving law which keeps  calving front thickness in range $[100\text{ m},200\text{ m}]$ \\
-\hline
+\midrule
 \intextoption{Mx} &  & this option gets additional interpretation: \texttt{-Mx 151} makes grid  mode 1 so output files have ``\texttt{_M1_}''; \texttt{-Mx 1501} is grid mode 2  (``\texttt{_M2_}''); any other value is grid mode 3 (``\texttt{_M3_}'') \\
 \intextoption{shelves_drag_too} &  & using this option has no effect because shelf drag is on by default in MISMIP; see \intextoption{no_shelf_drag} to turn off\\
-\hline\normalsize
+\bottomrule\normalsize
 \end{tabular}
 \end{table}
 

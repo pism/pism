@@ -2,6 +2,32 @@
 from sys import argv, exit
 from getopt import getopt, GetoptError
 
+## @package nccmp
+## Compares NetCDF files by absolute max norms of difference of variables
+##
+## Without options,
+## \code
+## nccmp.py foo.nc bar.nc
+## \endcode 
+## compares all the variables in \c foo.nc and \c bar.nc.
+## 
+## Option \c -v allows selecting varibles to compare:
+## \code
+## nccmp.py -v thk,cbar foo.nc bar.nc
+## \endcode
+## only compares \c thk and \c cbar.
+## 
+## Option \c -t sets the tolerance:
+## \code
+## nccmp.py -t 1e-6 foo.nc bar.nc
+## \endcode
+## compares all the variables using the tolerance of 1e-6.
+## 
+## Finally, option \c -x \b excludes variables given with \c -v, instead of
+## selecting them for comparison.
+## 
+## Run with --help to get a "usage" message.
+
 tol = 0.0   # default tolerance is perfection
 
 def success():

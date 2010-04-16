@@ -1,25 +1,24 @@
 
 PISM is documented by two PDF manuals for users.  For developers there is also
 an HTML browser giving class structure and additional documentation of various 
-kinds.
+kinds. A two-page PDF cheat-sheet summarizes PISM's command-line options.
 
     
   PISM User's Manual (PDF)          [doc/manual.pdf]
   
       Build by "make" or "make userman" in doc/.  
 
-      This manual is hand-generated; doc/manual.tex is the LaTeX source.
+      This manual is hand-generated; doc/userman/*.tex are the LaTeX sources.
       Thus it can easily get out-of-date relative to the source files for PISM,
-      but the goal is to keep it up to date.  Sources for the User's Manual are
-      doc/manual.tex, doc/ice_bib.bib, and the figure files in doc/figs.  
+      but the goal is to keep it up to date.
 
-      The goal of the User's Manual is, naturally, to help people use PISM.  
+      The goal of the User's Manual is, naturally, to help people use PISM.
       That is, to use its existing abilities, those which don't require
-      modifying the source code.  A secondary goal is for users to understand
+      modifying the source code. A secondary goal is for users to understand
       what PISM is doing, more seriously addressed in the developer
-      documentation below.  A final goal is to specify those capabilities which
+      documentation below. A final goal is to specify those capabilities which
       the PISM developers will attempt to maintain in all future stable
-      versions.  PISM features/capabilities which are not documented in the
+      versions. PISM features/capabilities which are not documented in the
       User's Manual should be presumed to be unstable (in the software sense!).
 
 
@@ -28,6 +27,12 @@ kinds.
       Build by "make" or "make installation" in doc/.  
 
       This manual is hand-generated; doc/installation.tex is the LaTeX source.
+
+  PISM Cheat Sheet (PDF)            [doc/cheatsheet.pdf]
+
+      Build by "make" or "make cheatsheet" in doc/.
+
+      This document is hand-generated; doc/cheatsheet.tex is the LaTeX source.
 
   
   PISM Browser (HTML)               [doc/doxy/html/index.html]

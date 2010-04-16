@@ -1,5 +1,5 @@
 
-\section{Example: Validating PISM as a flow model for the Ross ice shelf (EISMINT-Ross)}\label{sect:ross} \index{PISM!running the EISMINT-Ross ice shelf intercomparison in}\index{Antarctic ice sheet!Ross ice shelf} \index{EISMINT!intercomparison of Ross ice shelf models} \index{PISM!validation of ice shelf model} \index{Ross ice shelf}
+\section{Example: Validating PISM as a flow model for the Ross ice shelf (EISMINT-Ross)}\label{sect:ross} \index{PISM!running the EISMINT-Ross ice shelf intercomparison in}\index{Ice Sheets!Antarctic ice sheet!Ross ice shelf} \index{EISMINT!intercomparison of Ross ice shelf models} \index{PISM!validation of ice shelf model} \index{Ross ice shelf}
 \optsection{EISMINT-Ross}
 
 The term ``validation'' describes the comparison of model output with physical observations in cases where those physical observations are believed to be sufficiently complete and of sufficient quality so that the performance of the numerical model can be assessed \cite{Roache,Wesseling}.  Roughly speaking, validation can happen when the observations or data are better than the model, so the comparison measures the quality of the numerical model and not merely errors in, incompleteness of, or lack of confidence in, the data.
@@ -86,21 +86,22 @@ Now, \texttt{pross} can read this data and compute a $\chi^2$ statistic comparin
 
 \small
 \begin{verbatim}
-$ pross -boot_from ross.nc -ssaBC ross.nc -Mx 147 -My 147 -Lz 1000 -Mz 3 \
-        -riggs riggs.nc
-PROSS stable0.2 (diagnostic velocity computation mode)
+$ pross -boot_from ross.nc -Mx 147 -My 147 -Lz 1e3 -Mz 3 \
+        -ssaBC ross.nc -riggs riggs.nc
+PROSS revision 1073M trunk (EISMINT-Ross diagnostic velocity computation mode)
 . . .
-initializing EISMINT-Ross ice shelf velocity computation ...
-. . . 
-maximum computed speed in ice shelf is   1364.786 (m/a)
+initializing EISMINT-Ross ice shelf velocity computation ... 
+. . .
+maximum computed speed in ice shelf is   1365.053 (m/a)
 . . .
 comparing to RIGGS data in riggs.nc ...
-Chi^2 statistic for computed results compared to RIGGS is   3636.782
-Writing model state, with full 3D velocities, to file `unnamed_diag.nc'
+. . .
+Chi^2 statistic for computed results compared to RIGGS is   3638.850
+Writing model state to file `rossComputed.nc'
 \end{verbatim}
 \normalsize
 
-Naturally, the question is ``does this $\chi^2$ value of $3637$ represent a good fit of model result to observations''?  Also naturally, there is no objective answer.  For comparison, Table 1 in \cite{MacAyealetal} is reproduced here as Table \ref{tab:chisqr}.  As noted, all these results are with a constant hardness parameter $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ \cite{MacAyealetal}. The maximum computed horizontal ice speed above of $1365$ m/a is slightly lower than the maximum velocities reported by the other models but, on the other hand, the maximum measured speed in the RIGGS data set is $1007$ m/a (occurring near the calving front, naturally).  The $\chi^2$ result is essentially as good as the best in the Table, noting smaller $\chi^2$ is better.
+Naturally, the question is ``does this $\chi^2$ value of $3639$ represent a good fit of model result to observations''?  Also naturally, there is no objective answer.  For comparison, Table 1 in \cite{MacAyealetal} is reproduced here as Table \ref{tab:chisqr}.  As noted, all these results are with a constant hardness parameter $\bar B = 1.9 \times 10^8 \, \text{Pa}\, \text{s}^{1/3}$ \cite{MacAyealetal}. The maximum computed horizontal ice speed above of $1365$ m/a is slightly lower than the maximum velocities reported by the other models but, on the other hand, the maximum measured speed in the RIGGS data set is $1007$ m/a (occurring near the calving front, naturally).  The $\chi^2$ result is essentially as good as the best in the Table, noting smaller $\chi^2$ is better.
 
 \small
 \begin{table}[ht]

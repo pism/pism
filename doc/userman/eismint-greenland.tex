@@ -1,14 +1,14 @@
 
-\section{Example: Modeling the Greenland ice sheet (EISMINT-Greenland)}\label{sec:eismint-greenland} \index{PISM!running the EISMINT-Greenland intercomparison}\index{Greenland ice sheet}\index{EISMINT!intercomparison of Greenland models} 
+\section{Example: Modeling the Greenland ice sheet (EISMINT-Greenland)}\label{sec:eismint-greenland} \index{PISM!running the EISMINT-Greenland intercomparison}\index{Ice Sheets!Greenland ice sheet}\index{EISMINT!intercomparison of Greenland models} 
 \optsection{EISMINT-Greenland}
 
 In this section we give an extended example of how to use PISM to model the Greenland ice sheet.  We use older data from the 1990s ice sheet modelling intercomparison EISMINT-Greenland \cite{HuybrechtsEISMINT,RitzEISMINT}, but it is an excellent tutorial example.
 
 The data are freely available at
-\medskip
 
-\centerline{\protect{\textbf{\url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}}}}
-\medskip
+\begin{center}
+  \url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}
+\end{center}
 
 \noindent The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  In the ``forced climate'' CCL3 run, described below, the modeled ice sheet is sees changes in surface temperature from the GRIP core \cite{Dansgaardetal1993} and sea level changes from SPECMAP \cite{Imbrieetal1984}.
 
@@ -38,7 +38,7 @@ ncdump -h eis_green20.nc
 
 The bed elevation \texttt{topg} in the original data (\texttt{suaq20-EISMINT}) effectively contains missing values.  These are locations where \texttt{topg} is \emph{exactly} $0.0$, presumably because in these locations the observed bed elevation was not measured or the measured value was not trusted.  We think these are deep fjords locations, mostly.  Also the topography of Ellesmere island is replaced by out of range negative values.  When viewing \texttt{eis_green20.nc} with \texttt{ncview}, these values show as white spots.  
 
-If these missing values were to be left in the NetCDF handed to PISM then the resulting (very) rough bed elevation map would make reasonable ice flow results difficult.  We therefore smoothly fill the holes in the bed elevations.  This is done with another script named \texttt{fill_missing.py}:\footnote{\texttt{fill_missing.py} is a general tool for smoothly filling patches of missing values in variables in NetCDF files.  It looks for attributes defining missing values and then fills in specified variables essentially by averaging the neighboring non-missing values.  It is found in directory \texttt{pism/util/}, it requires \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}, and it is documented in subsection \ref{subsect:scripts}.}:
+If these missing values were to be left in the NetCDF handed to PISM then the resulting (very) rough bed elevation map would make reasonable ice flow results difficult.  We therefore smoothly fill the holes in the bed elevations.  This is done with another script named \texttt{fill_missing.py}\index{executables!python scripts!\texttt{fill_missing.py}}:\footnote{\texttt{fill_missing.py} is a general tool for smoothly filling patches of missing values in variables in NetCDF files.  It looks for attributes defining missing values and then fills in specified variables essentially by averaging the neighboring non-missing values.  It is found in directory \texttt{pism/util/}, it requires \href{http://code.google.com/p/netcdf4-python/}{\texttt{netcdf4-python}}, and it is documented in subsection \ref{subsect:scripts}.}:
 
 \begin{verbatim}
 $ fill_missing.py -f eis_green20.nc -v topg -o eis_green_smoothed.nc
@@ -69,10 +69,10 @@ $ ./eiscore.py
 
 \subsubsection*{Bootstrapping}  \label{sect:green-bootstrapping}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the full initial conditions needed for the continuum model.  \footnote{The continuum model is the differential equations describing ice flow inside PISM.  See section \ref{sect:boot} for more on ``bootstrapping''.}
 
-We do a one model year run using option \texttt{-boot_from} to ``bootstrap'' from file \texttt{eis_green_smoothed.nc}.  The executable ``\texttt{pgrn}'' is special to EISMINT-Greenland:\index{pgrn}
+We do a one model year run using option \texttt{-boot_from} to ``bootstrap'' from file \texttt{eis_green_smoothed.nc}.  The executable ``\texttt{pgrn}'' is special to EISMINT-Greenland\footnote{It sets EISMINT-Greenland parameters and implements the elevation- and latitude-dependent near-surface air temperature parameterization but shares all the ice-dynamics code with \texttt{pismr}.}:\index{executables!pgrn}
+% pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 -skip 1 -y 1 -o green20km_y1.nc
 \begin{verbatim}
-$ pgrn -boot_from eis_green_smoothed.nc \
-       -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 \
+$ pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 \
        -skip 1 -y 1 -o green20km_y1.nc
 \end{verbatim}%$
 \noindent The run takes only a few seconds of real time on any machine.  Tables \ref{bootstrapEISgreen} and \ref{bootCONTINUED} show the entire PISM output at the terminal.
@@ -82,39 +82,42 @@ $ pgrn -boot_from eis_green_smoothed.nc \
 \scriptsize
 \begin{quote}
 \begin{verbatim}
-PGRN revision 797M trunk (PISM EISMINT-Greenland mode)
-  time dimension was not found; setting current year to t = 0.0 years
+PGRN revision 1073M trunk (PISM EISMINT-Greenland mode)
   setting flags equivalent to '-e 3 -ocean_kill'; user options may override ...
-  initializing atmospheric climate coupler with a snow process model ...
+Setting PDD parameters to EISMINT-Greenland values...
+  pdd_factor_ice  = 0.00879 m (ice equivalent) K-1 day-1
+  pdd_factor_snow = 0.00330 m (ice equivalent) K-1 day-1
+  pdd_refreeze    = 0.60000 1
+  pdd_std_dev     = 5.00000 K
+  time dimension was not found; setting current year to 0.0 years
+  setting flow law to polythermal type ...
+* Initializing Greenland atmosphere model based on the EISMINT Greenland (C. Ritz, 1997)
+  air temperature parameterization and using stored time-independent precipitation...
     reading mean annual ice-equivalent snow precipitation rate 'snowprecip'
       from eis_green_smoothed.nc ... 
   FOUND  snowprecip/ mean annual ice-equivalent snow precipitation rate          
                    \ min,max =     0.030,    2.820 (m year-1)
-    using default snow-surface temperature parameterization
-    attempting to read ice surface temperature (energy conservation boundary values) 'artm'
-      from eis_green_smoothed.nc ...
-  absent artm      / ice temperature at ice surface but below firn processes     
-                   \ not found; continuing without setting it
-  special climate coupler for EISMINT-Greenland
-    -- non-default snow and ice surface temperature parameterizations
-    -- non-default interpretation of PDD factors
-    -- can add greenhouse warming if -gwl3 chosen
+* Initializing the PDD-based surface (snow) processes model...
+  Using a PDD implementation based on an expectation integral.
+* Initializing the constant ocean model...
 bootstrapping by PISM default method from file eis_green_smoothed.nc
   rescaling computational box for ice from -boot_from file and
     user options to dimensions:
-    [-1400.00 km, 1400.00 km] x [-820.00 km, 820.00 km] x [0 m, 4000.00 m]
+    [-820.00 km, 820.00 km] x [-1400.00 km, 1400.00 km] x [0 m, 4000.00 m]
   WARNING: surface elevation 'usurf' found; IGNORING IT!
   reading 2D model state variables by regridding ...
-  FOUND  lon       / standard_name=longitude                          
+  FOUND  lon       / standard_name=longitude                                                   
                    \ min,max =   -94.194,   12.889 (degree_east)
-  FOUND  lat       / standard_name=latitude         
+  FOUND  lat       / standard_name=latitude                                                    
                    \ min,max =    58.275,   84.458 (degree_north)
-  FOUND  thk       / standard_name=land_ice_thickness                              
+  FOUND  thk       / standard_name=land_ice_thickness                                          
                    \ min,max =     0.000, 3200.000 (m)
-  FOUND  topg      / standard_name=bedrock_altitude                  
+  FOUND  topg      / standard_name=bedrock_altitude                                            
                    \ min,max = -3859.000, 2151.000 (m)
   absent bwat      / effective thickness of subglacial melt water                
                    \ not found; using default constant    0.00 (m)
+  absent bmelt     / ice basal melt rate in ice thickness per time               
+                   \ not found; using default constant    0.00 (m year-1)
   absent tillphi   / friction angle for till under grounded ice sheet            
                    \ not found; using default constant   15.00 (degrees)
   absent bheatflx  / upward geothermal flux at bedrock surface                   
@@ -122,15 +125,12 @@ bootstrapping by PISM default method from file eis_green_smoothed.nc
   absent dbdt      / bedrock uplift rate                                         
                    \ not found; using default constant    0.00 (m year-1)
   determining surface elevation by  usurf = topg + thk  where grounded
-    and by floatation crit  usurf = (1-rho_i/rho_w) thk  where floating
+    and by flotation crit  usurf = (1-rho_i/rho_w) thk  where floating
   preliminary determination of mask for grounded/floating and sheet/dragging
     option -ocean_kill seen: floating ice mask=3; ice free ocean mask=7
   filling in ice and bedrock temperatures using surface temperatures and quartic guess
+  ice enthalpy set from temperature, as cold ice (zero liquid fraction)
 done reading eis_green_smoothed.nc; bootstrapping done
-computational box: 2800.00 km x 1640.00 km x (4000.00 m + 2000.00 m bedrock)
-horizontal grid cell dimensions: 20.00 km x 20.00 km
-  vertical grid spacing in ice: uneven, 51 levels, 21.200 m < dz < 138.800 m
-  vertical grid spacing in bedrock: uneven, 17 levels, 21.200 m < dz < 228.800 m
 \end{verbatim}
 \end{quote}
 \normalsize
@@ -145,19 +145,25 @@ horizontal grid cell dimensions: 20.00 km x 20.00 km
 \scriptsize
 \begin{quote}
 \begin{verbatim}
-P         YEAR:     ivol   iarea    meltf     thick0     temp0
-U        years 10^6_km^3 10^6_km^2 (none)          m         K
-S      0.00000:  2.82500  1.6708   0.2071   3042.000  270.5156
- $$ SIA        vath 0d  +0.18294
-S      0.18294:  2.82513  2.1068   0.1665   3041.887  270.5156
- $$ SIA        vath 0d  +0.23543
-S      0.41837:  2.82480  1.6704   0.2079   3041.702  270.5157
- $$ SIA        vath 0d  +0.26969
-S      0.68806:  2.82498  2.0444   0.1708   3041.457  270.5159
- $$ SIA        vath 0d  +0.29958
-S      0.98765:  2.82522  2.2280   0.1682   3041.175  270.5161
- $$ SIA        vath 0e  +0.01235
-S      1.00000:  2.82523  2.2300   0.1690   3041.164  270.5163
+computational domain and grid:
+           spatial domain   1640.00 km x 2800.00 km x 4000.00 m
+            time interval   [ 0.00 a, 1.00 a ]; run length = 1.0000 a
+     horizontal grid cell   20.00 km x 20.00 km
+  vertical spacing in ice   uneven, 51 levels, 21.200 m < dz < 138.800 m
+* Computing corrected cell areas using WGS84 datum...
+P         YEAR:     ivol   iarea     thick0     temp0
+U        years 10^6_km^3 10^6_km^2        m         K
+S      0.00000:  2.82500  1.6708   3042.000  271.0047
+ $ SIA v$th d (dt=0.16118)
+S      0.16118:  2.82512  2.1824   3041.911  271.0047
+ $ SIA v$th d (dt=0.22242)
+S      0.38361:  2.82484  1.6716   3041.748  271.0047
+ $ SIA v$th d (dt=0.26367)
+S      0.64727:  2.82499  1.8828   3041.531  271.0050
+ $ SIA v$th d (dt=0.28997)
+S      0.93725:  2.82523  2.2300   3041.264  271.0050
+ $ SIA v$th e (dt=0.06275)
+S      1.00000:  2.82528  2.2300   3041.208  271.0052
 done with run ... 
 Writing model state to file `green20km_y1.nc'
 \end{verbatim}
@@ -186,12 +192,11 @@ In addition to the default bootstrapping actions there are additional settings s
 As suggested a few paragraphs back, it is helpful to do a better job of filling in the temperatures within the ice.  One way to do this is to have the temperature field and velocity field co-evolve according to the thermomechanical flow model while holding the upper ice surface stationary.  This is a continuation of ``bootstrapping''.  The effect is to create a temperature field which is approximately stationary with respect to advection and conduction.\footnote{The resulting temperature field is not a fully physical temperature field, however, because it comes from a steadiness assumption about the geometry of the ice sheet.  Said another way, it is a temperature field in equilibrium with a velocity field for which the surface kinematical equation \cite{Fowler} is \emph{not} satisfied.}  We create this temperature field by running for 25000 years\footnote{In fact a longer run is reasonable.  The exponential time constant for decay of the thermomechanically-coupled system toward equilibrium is on the order of 100k years.  But the goal is merely to get to a state which is reasonable for starting a complete steady-state run.} with non-evolving surface.  The option \texttt{-no_mass} turns off the map-plane mass continuity scheme, and thus any evolution of the surface.
 
 \begin{verbatim}
-$ mpiexec -n 2 pgrn -i green20km_y1.nc -no_mass -y 25000 \
-          -o green20km_Tsteady.nc
+$ mpiexec -n 2 pgrn -i green20km_y1.nc -no_mass -y 25000 -o green20km_Tsteady.nc
 \end{verbatim}%$
 \noindent This last run takes less than half of a processor-hour.  Parallel processing is effective here, up to perhaps a peak real time speed with 40 processors for this coarse 83$\times$141 grid.  (Finer grid computations, for instance on a 5km grid for a Greenland-sized ice sheet, are \emph{easier} to parallelize in the sense that greater a maximum speedup over one processor is attainable \cite{BBssasliding}.)
 
-The EISMINT-Greenland experiments \cite{RitzEISMINT} specify a positive degree day (PDD) model which is automatically turned on when using the \texttt{pgrn} executable.  (The base executable \texttt{pismr} requires option \texttt{-pdd} or \texttt{-pdd_rand} to turn on the PDD model.)  The PDD model is, by default, implemented by the deterministic scheme described in \cite{CalovGreve05}, but the user can add option \texttt{-pdd_rand} to use a stochastic PDD implementation.  The temperature parameterization and positive degree day factors are from \cite{RitzEISMINT} instead of the default for \texttt{pismr}, which uses \cite{Faustoetal2009}.
+The EISMINT-Greenland experiments \cite{RitzEISMINT} specify a positive degree day (PDD) model which is automatically turned on when using the \texttt{pgrn} executable.  (The base executable \texttt{pismr} requires option \texttt{-surface pdd} to turn on the PDD model.)  The PDD model is, by default, implemented by the deterministic scheme described in \cite{CalovGreve05}, but the user can add option \texttt{-pdd_rand} to use a stochastic PDD implementation.  The temperature parameterization and positive degree day factors are from \cite{RitzEISMINT} instead of the default for \texttt{pismr}, which uses \cite{Faustoetal2009}.
 
 
 \subsubsection*{Running the EISMINT-Greenland steady state experiments}  Now that we have initial conditions including a vaguely-credible temperature field, our first experiment is the steady state run ``SSL2'' (turned on using the option \intextoption{ssl2}).  This experiment uses the parameters specified in the EISMINT-Greenland description \cite{RitzEISMINT}.  If 8 processors are used, a ten thousand model year run might look like this:
@@ -253,9 +258,11 @@ The next experiment starts from the end of the steady state SSL2 run above.  Rec
 The script \texttt{ccl3.sh} runs the CCL3 experiment for the full 250ka period, with this single command
 \begin{verbatim}
 mpiexec -n 8 pgrn -ccl3 -skip 10 -i green_ssl2_110ka.nc -ys -249900 -ye 0 \
-  -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc \
-  -save_file snaps_ccl3.nc -save_times -240000:10000:-10000 \
-  -ts_file vol_ccl3.nc -ts_vars ivol -ts_times -249800:100:0 -o green_ccl3_year0.nc
+        -atmosphere eismint_greenland,forcing -ocean constant,forcing \
+        -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc \
+        -save_file snaps_ccl3.nc -save_times -240000:10000:-10000 \
+        -ts_file vol_ccl3.nc -ts_vars ivol -ts_times -249900:100:0 \
+        -o green_ccl3_year0.nc
 \end{verbatim}
 \noindent Option \intextoption{ccl3} also turns on the Lingle and Clark \cite{BLKfastearth,LingleClark} two layer, flat earth bed deformation model with an assumption of zero uplift rate at the start of the run.
 
@@ -287,13 +294,14 @@ Assuming that \texttt{green20km_y1.nc} was produced by the run above (see sectio
 \ref{sect:green-bootstrapping}), one can run the following to check if the PDD
 model in PISM (see section \ref{sec:boundary-models}) is ``reasonable'':
 \begin{verbatim}
-$ pclimate -i green20km_y1.nc -sma -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc
+$ pclimate -i green20km_y1.nc -atmosphere eismint_greenland -surface pdd \
+           -ys 0.0 -ye 2.5 -dt 0.1 -o pddmovie.nc 
 \end{verbatim}%$
-This produces the file \texttt{pddmovie.nc} with four variables: \texttt{acab}
+This produces the file \texttt{pddmovie.nc} with several variables: \texttt{acab}
 (instantaneous net ice equivalent accumulation (ablation) rate), \texttt{artm}
 (mean annual temperature at ice surface but below firn), \texttt{snowtemp}
-(instantaneous snow temperature) and \texttt{snowprecip} (mean annual
-ice-equivalent snow accumulation rate).
+(instantaneous snow temperature), \texttt{snowprecip} (mean annual
+ice-equivalent snow accumulation rate) and some others.
 
 Variables \texttt{artm} and \texttt{snowprecip} do not evolve over time because the 
 former is generated from ice sheet geometry and latitude by the EISMINT-Greenland
@@ -331,9 +339,11 @@ Here are two things to notice:
 
 \bigskip
 We can also test the surface temperature forcing code with the following command.
+% pclimate -i green20km_y1.nc -o dT_movie.nc -atmosphere eismint_greenland,forcing -dTforcing grip_dT.nc -ys -2.5e5 -ye 0 -dt 2000
 \begin{verbatim}
-$ pclimate -ca -i green20km_y1.nc -o dT_movie.nc \
-          -ys -2.5e5 -ye 0 -dt 2000 -dTforcing grip_dT.nc
+$ pclimate -i green20km_y1.nc -o dT_movie.nc \
+           -atmosphere eismint_greenland,forcing -dTforcing grip_dT.nc \
+           -ys -2.5e5 -ye 0 -dt 2000
 \end{verbatim}%$
 The output \texttt{dT_movie.nc} and \texttt{grip_dT.nc} mentioned in section above were used to create figure \ref{fig:artm-timeseries}.
 
@@ -346,13 +356,17 @@ This figure shows the GRIP temperature offsets (top graph; compare to figure \re
   \label{fig:artm-timeseries}
 \end{figure}
 
-FIXME:  Variable acab in following is worth looking at.  It looks right and it may be possible to compare to other paleo-limate studies:
+\begin{comment}
+  FIXME: Variable acab in following is worth looking at. It looks right and it
+  may be possible to compare to other paleo-limate studies:
 \begin{verbatim}
 $ pclimate -i green20km_y1.nc -o bar.nc -ys -125000.0 -ye -0.0 -dt 1000.0  -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc -sma
 \end{verbatim}%$
-
+\end{comment}
 
 %%% Local Variables: 
 %%% mode: latex
 %%% TeX-master: "manual"
 %%% End: 
+
+% LocalWords:  parameterized

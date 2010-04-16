@@ -130,17 +130,17 @@ putmask(B, B == 0, topg_fill_value)
 ncfile = NC(WRIT_FILE, 'w',format='NETCDF3_CLASSIC')
 
 # set global attributes
-setattr(ncfile, 'Conventions', 'CF-1.4')
+ncfile.Conventions = 'CF-1.4'
 historysep = ' '
 historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
-setattr(ncfile, 'history', historystr)
+ncfile.history = historystr
 
 # define the dimensions
 xdim = ncfile.createDimension('x', int(dim[1]))
 ydim = ncfile.createDimension('y', int(dim[0]))
 
 # define the variables
-polarVar = ncfile.createVariable('polar_stereographic', 'i4')
+polarVar = ncfile.createVariable('mapping', 'i4')
 xvar = ncfile.createVariable('x', 'f8', dimensions=('x',))
 yvar = ncfile.createVariable('y', 'f8', dimensions=('y',))
 lonvar = ncfile.createVariable('lon', 'f4', dimensions=('y', 'x'))
@@ -151,45 +151,45 @@ bedvar = ncfile.createVariable('topg', 'f4', dimensions=('y', 'x'))
 accvar = ncfile.createVariable('snowprecip', 'f4', dimensions=('y', 'x'))
 
 # set the attributes of the variables
-setattr(polarVar, 'grid_mapping_name', 'polar_stereographic')
-setattr(polarVar, 'straight_vertical_longitude_from_pole', -41.1376)
-setattr(polarVar, 'latitude_of_projection_origin', 71.6468)
-setattr(polarVar, 'standard_parallel', 71)
+polarVar.grid_mapping_name = 'polar_stereographic'
+polarVar.straight_vertical_longitude_from_pole = -41.1376
+polarVar.latitude_of_projection_origin = 71.6468
+polarVar.standard_parallel = 71
 
-setattr(xvar, 'axis', 'X')
-setattr(xvar, 'long_name', 'x-coordinate in Cartesian system')
-setattr(xvar, 'standard_name', 'projection_x_coordinate')
-setattr(xvar, 'units', 'm')
+xvar.axis = 'X'
+xvar.long_name = 'x-coordinate in Cartesian system'
+xvar.standard_name = 'projection_x_coordinate'
+xvar.units = 'm'
 
-setattr(yvar, 'axis', 'Y')
-setattr(yvar, 'long_name', 'y-coordinate in Cartesian system')
-setattr(yvar, 'standard_name', 'projection_y_coordinate')
-setattr(yvar, 'units', 'm')
+yvar.axis = 'Y'
+yvar.long_name = 'y-coordinate in Cartesian system'
+yvar.standard_name = 'projection_y_coordinate'
+yvar.units = 'm'
 
-setattr(lonvar, 'long_name', 'longitude')
-setattr(lonvar, 'standard_name', 'longitude')
-setattr(lonvar, 'units', 'degrees_east')
+lonvar.long_name = 'longitude'
+lonvar.standard_name = 'longitude'
+lonvar.units = 'degrees_east'
 
-setattr(latvar, 'long_name', 'latitude')
-setattr(latvar, 'standard_name', 'latitude')
-setattr(latvar, 'units', 'degrees_north')
+latvar.long_name = 'latitude'
+latvar.standard_name = 'latitude'
+latvar.units = 'degrees_north'
 
-setattr(hvar, 'long_name', 'ice upper surface elevation')
-setattr(hvar, 'standard_name', 'surface_altitude')
-setattr(hvar, 'units', 'm')
+hvar.long_name = 'ice upper surface elevation'
+hvar.standard_name = 'surface_altitude'
+hvar.units = 'm'
 
-setattr(thkvar, 'long_name', 'land ice thickness')
-setattr(thkvar, 'standard_name', 'land_ice_thickness')
-setattr(thkvar, 'units', 'm')
+thkvar.long_name = 'land ice thickness'
+thkvar.standard_name = 'land_ice_thickness'
+thkvar.units = 'm'
 
-setattr(bedvar, 'long_name', 'bedrock surface elevation')
-setattr(bedvar, 'standard_name', 'bedrock_altitude')
-setattr(bedvar, 'units', 'm')
-setattr(bedvar, 'valid_min', topg_valid_min)
-setattr(bedvar, '_FillValue', topg_fill_value)
+bedvar.long_name = 'bedrock surface elevation'
+bedvar.standard_name = 'bedrock_altitude'
+bedvar.units = 'm'
+bedvar.valid_min = topg_valid_min
+bedvar._FillValue = topg_fill_value
 
-setattr(accvar, 'long_name', 'mean annual ice-equivalent snow accumulation rate')
-setattr(accvar, 'units', 'm year-1')
+accvar.long_name = 'mean annual ice-equivalent snow accumulation rate'
+accvar.units = 'm year-1'
 
 # write the data to the NetCDF file
 spacing = float(dim[2])*1000

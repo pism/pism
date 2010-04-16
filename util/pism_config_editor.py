@@ -1,5 +1,64 @@
 #!/usr/bin/env python
 # import modules:
+
+## @package pism_config_editor
+##
+## A script simplifying creating configuration files to use with PISM's -config_override option.
+## 
+## Does not take any command-line options; the only argument is a name of a
+## NetCDF configuration file to start from. Run
+## \verbatim
+## pism_config_editor.py lib/pism_config.nc
+## \endverbatim
+## to edit lib/pism_config.nc or create a file based on lib/pism_config.nc
+##
+## \verbatim
+## macbook:pism> pism_config_editor.py lib/pism_config.nc 
+## PISM config file editor: using attributes from 'pism_config' in 'lib/pism_config.nc'.
+## 
+## # Please enter a parameter name or hit Return to save your changes.
+## # You can also hit 'tab' for completions.
+## >
+## \endverbatim
+## Next, start typing the name of a flag or parameter you want to change; hit <tab> to complete:
+## \verbatim
+## > sta<tab><tab>
+## standard_gravity  start_year        
+## > sta
+## \endverbatim
+## typing "n<tab><return>" produces:
+## \verbatim 
+## > standard_gravity
+## 
+## # Documentation: m s-2; acceleration due to gravity on Earth geoid
+## # Current value: standard_gravity = 9.8100000000000005
+## #     New value: standard_gravity =
+## \endverbatim
+## enter the new value (10, for example), press <return>; you would see
+## \verbatim 
+## # New value set: standard_gravity = 10.0
+## 
+## ## List of changes so far:
+## ## standard_gravity = 10.0
+## 
+## # Please enter a parameter name or hit Return to save your changes.
+## # You can also hit 'tab' for completions.
+## >
+## \endverbatim
+## 
+## Now you can select a different parameter or hit <return> to save to a file:
+## \verbatim
+## Please enter the file name to save to or hit Return to save to the original file (lib/pism_config.nc).
+## > g_equals_10.nc
+## \endverbatim
+## Next, press <return> if you edited a PISM config file containing \b all the
+## parameters or type "pism_overrides<return>" to create a config to use with -config_override.
+## \verbatim
+## > pism_overrides
+## # Created variable pism_overrides in g_equals_10.nc.
+## Done.
+## \endverbatim
+
 import sys
 from numpy import double
 try:
@@ -153,12 +212,25 @@ def save(dict, changes, default_filename, default_varname):
     nc.close()
     return True
 
+from optparse import OptionParser
+
+parser = OptionParser()
+
+parser.usage = """Run "%prog config.nc"
+  to edit config.nc or create a new configuration file (such as an "overrides" file)
+  based on config.nc"""
+parser.description = "This scrips simplifies creating a customized PISM configuration file."
+
+(options, args) = parser.parse_args()
+
+if (len(args) != 1):
+    print "Please specify an input file. Exiting..."
+    sys.exit(1)
 
 # Get the input filename:
 try:
-    filename = sys.argv[1]
+    filename = args[0]
 except:
-    print "Usage: pism_config_editor.py <filename>"
     sys.exit(0)
 
 # Read attributes:

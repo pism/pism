@@ -26,10 +26,9 @@ Ed's cookbook for maintaining PISM:
   These files:
    
    doc/
-     refman.pdf
      manual.pdf
      installation.pdf
-
+     cheatsheet.pdf
 
 3)  How do I upload a recent version of the C++ class browser?
 
