@@ -8,63 +8,59 @@
 \optseealso{Bootstrapping}
 \optseealso{Regridding}
 
-At first glance PISM is a program that reads one or more NetCDF file and
-then produces at least one output file. Table \ref{tab:input-output-options} summarizes
-command-line options controlling input and output.
-\begin{table}
+PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table \ref{tab:input-output-options} summarizes command-line options controlling the most basic input and output of NetCDF files relating to starting and ending PISM runs.
+
+\begin{table}[h]
   \centering
   \begin{tabular}{lp{0.6\linewidth}}
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
-    \fileopt{i} & Chooses a PISM output file to restart from.\\
+    \fileopt{i} & Chooses a PISM output file to restart from.  (``Restart'' because normally the first PISM run must come from data by bootstrapping (\intextoption{boot_from}) or using executables \texttt{pisms} or \texttt{pismv}.) \\
     \fileopt{o} & Chooses the output file name.  Default name is \texttt{unnamed.nc} under \texttt{pismr}, \texttt{simp_exper.nc} under \texttt{pisms}, and \texttt{verify.nc} under \texttt{pismv}.\\
     \txtopt{o_size}{[small, medium, big]} & Chooses the ``size'' of the output file to produce.
     Possible options are \texttt{small} (only variables necessary to restart
     PISM), \texttt{medium} (the default, includes some diagnostic quantities)
     and \texttt{big} (writes all the variables mentioned in table
-    \ref{tab:extra-vars}).\\
+    \ref{tab:extra-vars}).  Configuration variables \texttt{output_medium} and \texttt{output_big} list the written variables for those sizes. \\
     \intextoption{dontreadSSAvels} & Turns off reading the \texttt{ubar_ssa}
     and \texttt{vbar_ssa} velocities saved by a previous
     \texttt{-ssa_floating_only} or \texttt{-ssa_sliding} run.
     \\\bottomrule
  \end{tabular}
-  \caption{Basic input and output options}
+  \caption{Basic NetCDF input and output options}
   \label{tab:input-output-options}
 \end{table}
 
-Please see configuration variables \texttt{output_medium} and
-\texttt{output_big} for lists of variables.
+Table \ref{tab:stdout} gives a summary of PISM's options controlling
+what is printed to the standard output.  This includes the \texttt{-help} and \texttt{-usage} options for getting help at the command line.
 
-The following sections describe more input and output options.
-
-\subsubsection{PISM's Standard output}
-\label{sec:stdout}
-\optsection{Input and output!standard out}
-
-Please see table \ref{tab:stdout} for a summary of PISM's options controlling
-what is printed to the standard output.
-
-\begin{table}
+\begin{table}[ht]
   \centering
   \begin{tabular}{lp{0.7\linewidth}}
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
-    \intextoption{verbose} & Increased verbosity of standard output.  Usually given with an integer level; 0,1,2,3,4,5 are allowed.  At the extremes, \texttt{-verbose 0} produces no stdout at all, \texttt{-verbose 1} only prints only warnings and a few high priority messages, and \texttt{-verbose 5} spews a lot of usually-undesirable stuff.  If given without argument (``\texttt{-verbose}'') then sets level 3, while ``\texttt{-verbose 2}'' is the default.\\
-   \intextoption{v} &   Show version number of PETSc.\\
+ \intextoption{help} & Gives PISM help message and then a brief description of many PISM and PETSc options.  The run occurs as usual according to the other options, while the option documentation does not get listed if the run didn't get started properly.\\
+ \intextoption{info} & Gives almost-always excessive information about PETSc operations during run.  Option \texttt{-verbose} is generally more useful for users. \\
     \intextoption{log_summary}  & At the end of the run gives a performance
     summary and also a synopsis of the PETSc configuration in use.\\
+   \intextoption{pismversion} &   Show version number of PISM.\\
     \intextoption{options_left} & Shows an options table which will indicate if
     a user option was not read or was misspelled.\\
- \intextoption{help} & Gives PISM help message and then a brief description of many PETSc options.\\
- \intextoption{info} & Gives excessive information about PETSc operations during run.  Option \texttt{-verbose} for PISM (above) is generally more useful, except possibly for debugging.
+   \intextoption{usage} &   Short summary of PISM executable usage, without listing all the options, and without doing the run.\\
+    \intextoption{verbose} & Increased verbosity of standard output.  Usually given with an integer level; 0,1,2,3,4,5 are allowed.  At the extremes, \texttt{-verbose 0} produces no stdout at all, \texttt{-verbose 1} only prints only warnings and a few high priority messages, and \texttt{-verbose 5} spews a lot of usually-undesirable stuff.  \texttt{-verbose 3} adds a bit more about initialization, especially.  If given without argument (``\texttt{-verbose}'') then sets level 3, while ``\texttt{-verbose 2}'' is the default.\\
+   \intextoption{version} &   Show version numbers of PETSc and of PISM.\\
 
     \\\bottomrule
   \end{tabular}
   \caption{Options controlling PISM's standard output}
   \label{tab:stdout}
 \end{table}
+
+
+The following sections describe more input and output options, especially related to saving quantities during a run, or adding to the ``diagnostic'' outputs of PISM.
+
 
 \subsection{Saving time series of scalar diagnostic quantities}\index{time-series}\index{PISM!saving time-series}
 \label{sec:saving-time-series}
@@ -88,7 +84,7 @@ Omitting the \texttt{-ts_vars} option makes PISM save \emph{all} the variables l
 
 If the file \texttt{foo.nc}, specified by \texttt{-ts_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-ts_append}.
 
-\begin{table}[ht]
+\begin{table}[h]
   \caption{Command-line options controlling saving scalar time-series}
   \centering
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
@@ -160,7 +156,8 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
  \label{tab:extras}
 \end{table}
 
-\newpage
+%\clearpage
+%\newpage
 % xtab stuff for the long table
 \topcaption{Diagnostic quantities}
 \tablefirsthead{\toprule\textbf{Name} & \textbf{Units} & \textbf{Description}\\\midrule}
@@ -233,7 +230,7 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
   \end{xtabular}
 \end{center}
 
-\clearpage
+%\clearpage
 
 \subsection{Saving re-startable snapshots of the model state}\index{snapshots of the model state}\index{PISM!saving snapshots of the model state}
 \label{sec:snapshots}
@@ -312,6 +309,7 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
  \label{tab:snapshot-opts}
 \end{table}
 
+
 \subsection{Run-time diagnostic viewers}
 \label{sec:diagnostic-viewers}
 \optsection{Run-time diagnostic viewers}
@@ -363,18 +361,23 @@ $ pismr -i input.nc -y 1000 -o output.nc -view_sounding temp
 shows the dependence of the ice temperature on $z$ (more precisely, on the
 number of the vertical grid layer) at the center of the domain. One can use options \texttt{-id} and \texttt{-jd} to choose a different point.
 
-Some diagnostic quantities are \emph{only} available as run-time viewers:
-\begin{center}
+The handful of diagnostic quantities which are \emph{only} available as run-time viewers are shown in table \ref{tab:special-diag-viewers}.
+
+\begin{table}[ht]
+  \caption{Special run-time-only diagnostic viewers}
+  \centering
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \small
     \textbf{Variable name or an option} & \textbf{Description}\\\midrule
-    \texttt{diffusivity} & diffusivity coefficient D in mass balance equation in $m^{2}/s$. Meaningful only in regions of shallow ice flow.\\
+    \texttt{diffusivity} & diffusivity coefficient D in map-plane mass-continuity equation in $m^{2}/s$. Meaningful only in regions of shallow ice flow.\\
     \texttt{nuH} & two viewers: vertically-averaged effective viscosity times thickness; on $i$ and $j$ offset grids. Only meaningful in ice streams and shelves.\\
-    \texttt{log_nuH} & log base ten of the vertically-averaged effective viscosity times thickness on the regular grid. Only meaningful in ice streams and shelves.\\
-    \intextoption{ksp_monitor_draw} & Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Shows norm of residual versus iteration number.\\\bottomrule
+    \texttt{log_nuH} & log base ten of \texttt{nuH} \\
+    \intextoption{ksp_monitor_draw} & Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Residual norm versus iteration number.\\\bottomrule
     \normalsize
   \end{tabular}
-\end{center}
+ \label{tab:special-diag-viewers}
+\end{table}
+
 
 \subsection{PISM's default flags and parameters (and how to change them)}
 \label{sec:pism-defaults}
@@ -680,7 +683,7 @@ Now we explain what the rest of the flags line, namely
 \subsection{PETSC options for PISM users}\label{subsect:petscoptions}
 \optsection{PETSC options for PISM users}
 
-All PETSc programs accept command line options which control how PETSc distributes jobs among parallel processors, how it solves linear systems, what additional information it provides, and so on.  The PETSc manual \cite{petsc-user-ref} is the complete reference on these options.  We list some here that are useful to PISM users.  They can be mixed in any order with PISM options.
+All PETSc programs including PISM accept command line options which control how PETSc distributes jobs among parallel processors, how it solves linear systems, what additional information it provides, and so on.  The PETSc manual \cite{petsc-user-ref} is the complete reference on these options.  We list some here that are useful to PISM users.  They can be mixed in any order with PISM options.
 
 Both for PISM and PETSc options, there are ways of avoiding the inconvenience of long commands with many runtime options.  Obviously, and as illustrated by examples in the previous sections, shell scripts can be set up to run PISM.  But PETSc also provides two mechanisms to give runtime options without retyping at each run command.
 
@@ -695,49 +698,28 @@ $ pismv -test G -y 100
 \end{verbatim}
 \noindent then have the same refined grid in each run, and the runs report on which options were read.
 
-Second, the file \texttt{.petscrc} is always read, if present, from the directory where PISM (i.e.~the PETSc program) is started.  It can have a list of options, one per line.  For example, to get the same options as above, \texttt{.petscrc} would contain these lines:
-\begin{verbatim}
--Mx 101
--My 101
--Mz 51
--options_left
-\end{verbatim}
-\noindent Note that the first four lines give PISM options while the last has a generic PETSc option.
-
-These two PETSc mechanisms can be used together.  (The effect of duplicate or conflicting options is not clear, however, and should be avoided.)
-\bigskip
+Alternatively, the file \texttt{.petscrc} is always read, if present, from the directory where PISM (i.e.~the PETSc program) is started.  It can have a list of options, one per line.   In theory, these two PETSc mechanisms (\verb|PETSC_OPTIONS| and \verb|.petscrc|) can be used together.
 
 % "-da_processors_x M -da_processors_y N" should not be documented in this sub-appendix
 % because they do not work.  the reason is that IceModelVec2 and IceModelVec3 put 
 % the Mx, My dimensions in different arguments to the DACreate commands
 
+Now we address controls on how PETSc solves systems of linear equations, which uses the PETSc ``KSP'' component (Krylov methods).  Such linear solves are needed each time the nonlinear SSA stress balance equations are used (e.g.~with options \texttt{-ssa_sliding} and \texttt{-ssa_floating_only}).
 
-\optdef{ksp_rtol}{1e-5}  For solving the SSA equations with high resolution on multiple processors, it is recommended that this be tightened (set lower than the default).  For example, 
+Especially for solving the SSA equations with high resolution on multiple processors, it is recommended that the option \intextoption{ksp_rtol} be set lower than its default value of $10^{-5}$.  For example, 
 
 \begin{verbatim}
 $  mpiexec -n 8 pismv -test I -Mx 5 -My 769
 \end{verbatim}
 
-\noindent works poorly on a certain machine, but
+\noindent works poorly on a certain machine, but adding ``\verb|-ksp_rtol 1e-10|'' works fine.
 
-\begin{verbatim}
-$  mpiexec -n 8 pismv -test I -Mx 5 -My 769 -ksp_rtol 1e-10
-\end{verbatim}
+There is also the question of solver \emph{type}, using option \intextoption{ksp_type}.  Based on one processor evidence from \texttt{pismv -test I}, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: \t{cg}, \t{bicg}, \t{gmres}, \t{bcgs}, \t{cgs}, \t{tfqmr}, \t{tcqmr}, and \t{cr}.  It appears \t{bicg}, \t{gmres}, \t{bcgs}, and \t{tfqmr}, at least, are all among the best.  The default is \t{gmres}.
 
-\noindent works fine.
-
-\optdef{ksp_type}{gmres}  Based on one processor evidence from \texttt{pismv -test I}, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: \t{cg}, \t{bicg}, \t{gmres}, \t{bcgs}, \t{cgs}, \t{tfqmr}, \t{tcqmr}, and \t{cr}.  It appears \t{bicg}, \t{gmres}, \t{bcgs}, and \t{tfqmr}, at least, are all among the best.
+Actually the KSP uses preconditioning.  This aspect of the solve is critical for parallel scalability, but it gives results which are dependent on the number of processors.  The preconditioner type can be chosen with \intextoption{pc_type}. Several choices are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \texttt{pismv -test I} with high tolerances (e.g.~\texttt{-ssa_rtol 1e-7} \texttt{-ksp_rtol 1e-12}).  The default (as set by PISM) is \t{bjacobi}.  To force no preconditioning, which removes processor-number-dependence of results but may make the solves fail, use \t{-pc_type none}.
 
 
-
-\optdef{pc_type}{ilu}   Several options are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \texttt{pismv -test I} with high tolerances (e.g.~\texttt{-ssa_rtol 1e-7} \texttt{-ksp_rtol 1e-12}).
-
-
-\subsection{Utility and test scripts} \label{subsect:scripts}\index{python scripts} Some nice scripts.
- 
-FIXME: the python scripts are all documented at the \textsl{Packages} tab on the browser
-
-FIXME: the python scripts all take \texttt{fill_missing.py --help}
+\subsection{Utility and test scripts} \label{subsect:scripts}\index{python scripts} In the \verb|test/| and \verb|util/| subdirectories of the PISM directory the user will find some python scripts and one Matlab script, listed in Table \ref{tab:scripts-overview}.  The python scripts are all documented at the \textsl{Packages} tab on the browser \url{http://www.pism-docs.org/dev/doxy/html/index.html}. The python scripts all take option \texttt{--help}.
 
 \newcommand{\scripthead}[1]{\texttt{#1}}
 
@@ -750,7 +732,7 @@ FIXME: the python scripts all take \texttt{fill_missing.py --help}
     \scripthead{test/vfnow.py} & Organizes the process of verifying PISM.  Specifies standard refinement paths for each of the tests (section \ref{sect:verif}). \\
     \scripthead{test/vnreport.py} & Automates the creation of convergence graphs like figures \ref{fig:thickerrsB}--~\ref{fig:temperrsK}. \\
     \scripthead{util/fill_missing.py} & Uses an approximation to Laplace's equation $\grad^2 u = 0$ to smoothly replace missing values in a two-dimensional NetCDF variable.  The ``hole'' is filled with an average of the boundary non-missing values. Section \ref{sec:eismint-greenland} gives an example application to the bed elevations in the EISMINT-Greenland data.  Depends on \texttt{netcdf4-python} and \texttt{scipy} Python packages. \\
-    \scripthead{util/check_polarstereo.py} & \\
+    %\scripthead{util/check_polarstereo.py} & \\
     \scripthead{util/check_stationarity.py} & \\
     \scripthead{util/nc2mat.py} & Reads specified variables from a NetCDF file and writes them to an output file in the MATLAB binary data file format \texttt{.mat}, supported by MATLAB version 5 and later.  Depends on \texttt{netcdf4-python} and \texttt{scipy} Python packages. \\
     \scripthead{util/nccmp.py} & \\
@@ -758,7 +740,7 @@ FIXME: the python scripts all take \texttt{fill_missing.py --help}
     \scripthead{util/pism_matlab.m} & \\
    \bottomrule
   \end{tabular}
-  \caption{Some scripts for helping PISM users.}
+  \caption{Some scripts which help in using PISM.}
   \label{tab:scripts-overview}
 \end{table}
 

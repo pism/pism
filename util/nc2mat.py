@@ -23,6 +23,7 @@ except:
     
 from getopt import getopt, GetoptError
 from os.path import splitext
+from sys import argv
 
 def print_options_and_exit(exit_code=0):
     print """nc2mat.py converts a NetCDF file to a MATLAB .mat binary data file
