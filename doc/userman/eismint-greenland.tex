@@ -69,7 +69,7 @@ $ ./eiscore.py
 
 \subsubsection*{Bootstrapping}  \label{sect:green-bootstrapping}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the full initial conditions needed for the continuum model.  \footnote{The continuum model is the differential equations describing ice flow inside PISM.  See section \ref{sect:boot} for more on ``bootstrapping''.}
 
-We do a one model year run using option \texttt{-boot_from} to ``bootstrap'' from file \texttt{eis_green_smoothed.nc}.  The executable ``\texttt{pgrn}'' is special to EISMINT-Greenland\footnote{It sets EISMINT-Greenland parameters and implements the elevation- and latitude-dependent near-surface air temperature parameterization but shares all the ice-dynamics code with \texttt{pismr}.}:\index{executables!pgrn}
+We do a one model year run using option \texttt{-boot_from} to ``bootstrap'' from file \texttt{eis_green_smoothed.nc}.  The executable ``\texttt{pgrn}'' is special to EISMINT-Greenland\footnote{It sets EISMINT-Greenland parameters and implements the elevation- and latitude-dependent near-surface air temperature parameterization but shares all the ice-dynamics code with \texttt{pismr}.}: \index{executables!\texttt{pgrn}}
 % pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 -skip 1 -y 1 -o green20km_y1.nc
 \begin{verbatim}
 $ pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 \

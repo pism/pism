@@ -56,7 +56,7 @@ L & isothermal SIA, steady, non-flat bed & numerical ODE soln & [IN PREP] \\
 
 \begin{table}[ht]
 \centering
-\caption{Canonical PISM\index{executables!pismv!options to run verification tests}\index{verification tests} verification runs using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests-exec}
+\caption{Canonical PISM \index{executables!\texttt{pismv}!options to run verification tests}\index{verification tests} verification runs using the exact solutions listed in table \ref{tab:tests}.}\label{tab:tests-exec}
 \small
 \begin{tabular}{@{}llll}\toprule
 \textbf{Test} & \textbf{Example invocation}  \\ \midrule
@@ -92,7 +92,11 @@ The goal of verification is not generally to see that the error is zero at any s
 \end{itemize}
 Knowing the error decay rate may even give a prediction of how fine a grid is necessary to achieve a desired smallness for the numerical error.
 
-For an example of a refinement path, consider the goal of evaluating the isothermal shallow ice approximation components of PISM.  One available exact solution is the Halfar similarity solution \cite{Halfar83}, with zero accumulation, namely test B.  Here is a refinement path for evaluating numerical error relative to test B:\index{refinement path!example}\index{executables!pismv}
+For an example of a refinement path, consider the goal of evaluating the
+isothermal shallow ice approximation components of PISM.  One available exact
+solution is the Halfar similarity solution \cite{Halfar83}, with zero
+accumulation, namely test B.  Here is a refinement path for evaluating
+numerical error relative to test B: \index{refinement path!example} \index{executables!\texttt{pismv}}
 \begin{quote}\small
 \begin{verbatim}
 pismv -test B -ys 422.45 -y 25000 -Mx 31 -My 31 -Mz 11
@@ -121,7 +125,7 @@ produced figures 13, 14, and 15 of \cite{BBL}.  The last two runs, especially, r
 \ref{fig:temperrsK} show a sampling of the results of verifying PISM using the
 tests described above.\index{PISM!verification results and reporting}  These
 figures were produced more-or-less automatically using Python scripts
-\texttt{test/vfnow.py} \index{executables!python scripts!vfnow.py} and \texttt{test/vnreport.py} \index{executables!python scripts!vnreport.py}.  See subsection \ref{subsect:scripts}.
+\texttt{test/vfnow.py} \index{executables!python scripts!\texttt{vfnow.py}} and \texttt{test/vnreport.py} \index{executables!python scripts!\texttt{vnreport.py}}.  See subsection \ref{subsect:scripts}.
 
 It must be pointed out that, to the experienced eye, these figures \emph{do not} show outstanding rates of convergence.  For the errors in tests B and G, a partial explanation comes in the discussion of margin shape in \cite{BLKCB}, and also from presumably imperfect numerical analysis choices.  For the errors in test I, a partial explanation is low degree of smoothness present for solutions in the Sobolev space used in \cite{SchoofStream}, but again perhaps from imperfect numerical choices.  We believe, however, that the free boundary nature of the continuum problems addressed by tests B, G, and I (and most other tests, not shown) is the underlying difficulty.  Test K, as a fixed boundary problem, does a little better \cite{BuelerTestK}.
 

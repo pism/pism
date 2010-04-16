@@ -256,7 +256,7 @@ Figure~\ref{fig:climate-inputs} is an illustration emphasizing that the ice shee
 
 \begin{figure}
   \centering
-  \includegraphics[width=5in]{figs/climate-cartoon-new.pdf}
+  \includegraphics[width=5in]{figs/climate-cartoon.pdf}
   \caption{PISM's view of interfaces between an ice sheet and the outside world}
   \label{fig:climate-inputs}
 \end{figure}
@@ -343,7 +343,7 @@ they have chosen, without involving ice dynamics at all.
 \newpage
 \section{Initialization and bootstrapping}\label{sect:boot}  
 
-\subsection{``Initialization from a saved model state''}  This phrase\index{initialization!from saved model state} has a simple meaning in PISM.  If a previous PISM run has saved a NetCDF file using ``\texttt{-o}'' then that file will contain complete initial conditions for continuing the run.  The output file from the last run can be loaded with ``\texttt{-i}'':\index{executables!pisms}
+\subsection{``Initialization from a saved model state''}  This phrase\index{initialization!from saved model state} has a simple meaning in PISM.  If a previous PISM run has saved a NetCDF file using ``\texttt{-o}'' then that file will contain complete initial conditions for continuing the run.  The output file from the last run can be loaded with ``\texttt{-i}'': \index{executables!\texttt{pisms}}
 
 \begin{verbatim}
 $ pisms -eisII A -y 100 -o foo.nc

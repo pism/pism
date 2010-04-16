@@ -191,6 +191,8 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \texttt{bwp} & Pa & subglacial (pore) water pressure \\
     \texttt{cbar} & m/year & magnitude of vertically-integrated horizontal velocity of ice \\
     \texttt{cbase} & m/year & magnitude of horizontal velocity of ice at base of ice \\
+    \texttt{cell_area} & km$^{2}$ & corrected cell areas, computed using WGS84
+    reference ellipsoid\\
     \texttt{cflx} & m$^{2}$/year & magnitude of vertically-integrated horizontal flux of ice \\
     \texttt{csurf} & m/year & magnitude of horizontal velocity of ice at ice surface \\
     \texttt{dHdt} & m/year & rate of change of ice thickness \\
@@ -208,29 +210,27 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \texttt{tauc} & Pa & yield stress for basal till (plastic or pseudo-plastic model) \\
     \texttt{taud} & Pa & magnitude of driving shear stress at base of ice \\
     \texttt{temp} & K & ice temperature \\
-    \texttt{temp_pa} & $^{\circ}$C & pressure-adjusted ice temperature \\
-   \texttt{tempbase} & K & ice temperature at the ice base\\
+    \texttt{tempbase} & K & ice temperature at the ice base\\
     \texttt{temppabase} & $^{\circ}$C & pressure-adjusted ice temperature at the base of ice\\
+    \texttt{temp_pa} & $^{\circ}$C & pressure-adjusted ice temperature \\
     \texttt{tempsurf} & K & ice temperature at the ice surface\\
     \texttt{thk} & m & ice thickness\\
     \texttt{tillphi} & degrees & friction angle for till under grounded ice sheet \\
     \texttt{topg} & m & bedrock surface elevation \\
-    \texttt{ubar} & m/year & vertical mean of horizontal ice velocity in the X direction \\
-    \texttt{ub} & m/year & basal ice velocity in the X direction \\
+    \texttt{uvbar} & m/year & vertical mean of horizontal ice velocity (both components) \\
+    \texttt{uvbasal} & m/year & basal ice velocity (both components)\\
     \texttt{usurf} & m & ice upper surface elevation \\
     \texttt{uvel} & m/year & horizontal velocity of ice in the X direction \\
     \texttt{uvelbase} & m/year & horizontal velocity of ice in the X direction
     at the ice base\\
     \texttt{uvelsurf} & m/year & horizontal velocity of ice in the X direction
     at the ice surface\\
-    \texttt{vbar} & m/year & vertical mean of horizontal ice velocity in the Y direction \\
-    \texttt{vvelbase} & m/year & horizontal velocity of ice in the Y direction
+   \texttt{vvelbase} & m/year & horizontal velocity of ice in the Y direction
     at the ice base\\
     \texttt{vvelsurf} & m/year & horizontal velocity of ice in the Y direction
     at the ice surface\\
-    \texttt{vb} & m/year & basal ice velocity in the Y direction \\
-    \texttt{vvel} & m/year & horizontal velocity of ice in the Y direction \\
-    \texttt{wvel} & m/year & vertical velocity of ice \\
+   \texttt{vvel} & m/year & horizontal velocity of ice in the Y direction \\
+    \texttt{wvel_rel} & m/year & vertical velocity of ice \\
     \texttt{wvelbase} & m/year &vertical velocity of ice at the ice base\\
     \texttt{wvelsurf} & m/year & vertical velocity of ice at the ice surface\\
   \end{xtabular}
@@ -461,7 +461,7 @@ macbook:pism>
 
 Recall that internally in PISM there is a separation of climate inputs from ice
 dynamics (subsection \ref{sec:climate-inputs}). Executable
-\texttt{pclimate}\index{executables!pclimate} allows one to visualize climate inputs without
+\texttt{pclimate} \index{executables!\texttt{pclimate}} allows one to visualize climate inputs without
 invoking the ice dynamics core of PISM. This is helpful during the process of
 creating PISM-readable data files, and modeling with such.
 
@@ -529,7 +529,7 @@ It is common to want to interpolate a coarse grid model state onto a finer grid 
 The transfer from grid to grid is reasonably general---one can go from coarse to fine or vice versa in each dimension $x,y,z$---but the transfer must always be done by \emph{interpolation} and never \emph{extrapolation}.  (An attempt to do the latter will always produce a PISM error.)
 
 Such ``regridding'' is done using the \fileopt{regrid_file} and
-\listopt{regrid_vars} commands as in this example:\index{executables!pisms}
+\listopt{regrid_vars} commands as in this example: \index{executables!\texttt{pisms}}
 
 \begin{verbatim}
 $  pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
@@ -590,7 +590,8 @@ In this case all the model-state 2D variables present in \texttt{foo.nc} will be
 \end{tabular}
 \end{table}
 
-Here is an example.  Suppose we start a long verification run in the background, with standard out redirected into a file:\index{executables!pismv}
+Here is an example.  Suppose we start a long verification run in the
+background, with standard out redirected into a file: \index{executables!\texttt{pismv}}
 
 \begin{verbatim}
 pismv -test G -Mz 101 -y 1e6 -o testGmillion.nc >> log.txt &
