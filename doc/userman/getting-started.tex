@@ -1,7 +1,7 @@
 
 \section{Getting started}\label{sect:start}\index{PISM!getting started}
 
-In this section we give an extended example applying PISM to the Greenland ice sheet.  We use recent data sets provided by the \href{http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment}{Sea-level Response to Ice Sheet Evolution (SeaRISE)}) group.  SeaRISE is a community-organized assessment process to provide an upper bound of ice sheet contributions to sea level in the next 100--200 years, especially for the next IPCC report in 2013.
+In this section we give an extended example applying PISM to model the Greenland ice sheet.  We use recent data sets provided by the \href{http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment}{Sea-level Response to Ice Sheet Evolution (SeaRISE)}) group.  SeaRISE is a community-organized assessment process to provide an upper bound of ice sheet contributions to sea level in the next 100--200 years, especially for the next IPCC report in 2013.
 
 The example in this section is a quick, hands-on first look at PISM.  It is not an in-depth tutorial, and many details of what is happening will only be explained later.  The sections on the older EISMINT-Greenland and EISMINT-Ross modeling cases, for instance, do a more complete job of explaining the ways users will need to preprocess not-so-clean input data and then make, and evaluate, modeling choices.
 
@@ -34,23 +34,16 @@ $ ./preprocess.sh
 
 Pre-processing creates three NetCDF files from the master data, each of which has small ``metadata'' changes so that they can be read by PISM.  These metadata can be listed at the command line, or put in a text file, by \texttt{ncdump -h}.  Two of the new files contain famous time-dependent paleo-climate records from ice core (\texttt{pism_dT.nc} has GRIP) and seabed core records (\texttt{pism_dSL.nc} has SPECMAP).
 
-Any of these NetCDF files can be viewed with \texttt{ncview} or other NetCDF visualization tools.  (See Table \ref{tab:NetCDFview} below.)  Application of IDV to \texttt{Greenland_5km_v0.93.nc} produced figures \ref{fig:sr-input1} and  \ref{fig:sr-input2}, for example.
+Any of these NetCDF files can be viewed with \texttt{ncview} or other NetCDF visualization tools.  (See Table \ref{tab:NetCDFview} below.)  Application of IDV to \texttt{Greenland_5km_v0.93.nc} produced Figure \ref{fig:sr-input}, for example.
 
 \begin{figure}[ht]
 \centering
-\mbox{\includegraphics[width=2.5in,keepaspectratio=true]{sr-greenland-thk}
- \qquad\qquad\includegraphics[width=2.5in,keepaspectratio=true]{sr-greenland-prcp}}
-\caption{The input present-day ice thickness (left; m) and present-day precipitation (right; m $\text{a}^{-1}$ ice equivalent) for SeaRISE-Greenland.  Figures produced with IDV}
-\label{fig:sr-input1}
+\mbox{\includegraphics[width=2.0in,keepaspectratio=true]{sr-greenland-thk}
+ \qquad \includegraphics[width=2.0in,keepaspectratio=true]{sr-greenland-prcp} \qquad \includegraphics[width=2.0in,keepaspectratio=true]{sr-greenland-topg}}
+\caption{The input present-day ice thickness (left; m), bedrock elevation (center; m), and present-day precipitation (right; m $\text{a}^{-1}$ ice equivalent) for SeaRISE-Greenland.  Figures produced with IDV}
+\label{fig:sr-input}
 \end{figure}
 
-\begin{figure}[ht]
-\centering
-\mbox{\includegraphics[width=2.5in,keepaspectratio=true]{sr-greenland-topg}
- \qquad\quad \includegraphics[width=2.5in,keepaspectratio=true]{sr-greenland-bheatflx}}
-\caption{The input bedrock elevation (left; m) and geothermal flux (right; W $\text{m}^{-2}$) for SeaRISE-Greenland.  Figures produced with IDV}
-\label{fig:sr-input2}
-\end{figure}
 
 
 \subsection{Run PISM}
@@ -111,7 +104,7 @@ FIXME: add temppabase from end of ex_g20km_steady.nc and driving stress taud fro
 FIXME
 
 
-
+In the same \verb|examples/searise-greenland| directory is a script \verb|forecast.sh|.  It does a ``control'' run for 500 years into the future, initializing from the modeled present-day state in \verb|g5km_0.nc| and assuming a steady climate for the entire 500 year period.  Please run it, play with it, and modify it, but it is merely a demonstration.  Because ice sheets, and ice sheet models, have a ``memory'' of past climates, whether real or modeled, the results strongly depend on the nature of the spinup process which preceded this ``forecast'' run.  Evaluating the quality of the spunup state, for example using present-day observations of surface velocity \cite{BKAJS}, and other observations including ice temperature in ice bore-holes and , is a critical prerequisite to building models of future behavior.  Naive or casual use of PISM to generate ice sheet predictions is \emph{not} recommended!
 
 
 \subsection{Handling NetCDF files}\label{subsect:nctoolsintro}  At a superficial level, PISM is just a program which takes one or more NetCDF files as input, does some computation, and produces one or more NetCDF files as output.  As a result, the user must and extract some meaning from the NetCDF output files and also, in the general case, use other tools to create NetCDF files for input to PISM.\footnote{Regarding the creation of input files, see the section \ref{sec:bootstrapping-format} and table \ref{tab:modelhierarchy} for ideas about the data necessary for modeling.}
