@@ -4,7 +4,7 @@
 /*! \mainpage PISM C++ Class Browser
 <CENTER>
 <i>
-for PISM trunk revision \verbinclude revision.tex
+for PISM stable0.3 revision \verbinclude revision.tex
 </i></CENTER>
 
 This searchable \e Browser shows the C++ class (object) structure of

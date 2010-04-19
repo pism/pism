@@ -5,7 +5,8 @@
 \usepackage{booktabs}           % better rules in tables
 
 \newcommand{\PISMREV}{\input{revision.tex}}
-\newcommand{\PETSCREL}{2.3.3 or 3.0.0 or 3.1.0}
+\newcommand{\PETSCREL}{2.3.3 or 3.0.0 or 3.1}
+\newcommand{\PISMDOWNLOADMSG}{Get stable version of PISM source code: \quad\texttt{svn co http://svn.gna.org/svn/pism/tags/stable0.3 pism0.3} \quad}
 
 \addtolength\topmargin{+.3in}
 \addtolength\textheight{-0.2in}
@@ -67,8 +68,7 @@
 
 \author[]{Constantine Khroulev \\ Ed Bueler \\ Andy Aschwanden}
 
-\date{\today.  Get PISM development version by \\
-\phantom{foobar} \qquad\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev} \\
+\date{\today.\\  \PISMDOWNLOADMSG\\
 Based on PISM revision \PISMREV\quad and PETSC release \PETSCREL.}
 
 
@@ -422,7 +422,7 @@ instructions. This section describes an adaptation of the same process to the Ma
 export PATH=/opt/local/bin:/opt/local/sbin:$PATH
 \end{verbatim}
 \item Note that it is not necessary to install Python, as it is bundled with the operating system (as are BLAS, LAPACK, OpenMPI and
-  Subversion). The easiest way to get SciPy et al to work on an Intel-based Mac with Mac OS X is to use SciPy Superpack from
+  Subversion). One way to get SciPy et al to work on an Intel-based Mac with Mac OS X is to use SciPy Superpack from
   \url{http://macinscience.org/?page_id=6/}. This package includes \texttt{numpy}, \texttt{SciPy} and \texttt{matplotlib}, as well as \texttt{ipython}, a very useful
   interactive Python shell. Unfortunately, Scipy Superpack does not support PowerPC-based Macs; we recommend using \href{http://www.enthought.com/}{Enthought Python Distributions} on older Macs. \href{http://www.enthought.com/}{Enthought Python Distributions (EPD)}, which is free for Academic use, may also be used on Intel-based Macs. In fact, this is probably the easiest way as EPD already includes all modules mentioned above.
 \item After installing MacPorts, do

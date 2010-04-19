@@ -3,14 +3,14 @@ ifndef PISM_INSTALL_DIR
 endif
 
 # Get the current PISM revision:
-url = $(shell svn info | grep URL)
+url = $(shell svn info ../| grep URL)
 rev = $(shell svnversion ../)
 ifeq ($(findstring trunk,$(url)),trunk)
   PISM_REVISION = revision $(rev) trunk
   # PISM_REVISION = trunk: revision $(rev)
 endif
 ifeq ($(findstring tags,$(url)),tags)
-  PISM_REVISION = revision $(rev) tags $(lastword $(subst /, ,$(url)))
+  PISM_REVISION = revision $(rev) $(lastword $(subst /, ,$(url)))
   # PISM_REVISION = tags $(lastword $(subst /, ,$(url))): revision $(rev)
 endif
 ifndef PISM_REVISION
