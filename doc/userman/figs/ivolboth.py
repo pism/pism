@@ -32,7 +32,7 @@ plot(t20km, ivol20km / vfactor, 'b', linewidth=1.0), hold(True)
 plot(t10km, ivol10km / vfactor, 'r', linewidth=2.0), hold(False)
 legend(('20 km','10 km'))
 xlabel("t (years)", size=16)
-ylabel("volume (10^6 km^3)", size=16)
+ylabel("volume ($10^6$ km$^3$)", size=16)
 grid(True)
 
 last=-10000.0

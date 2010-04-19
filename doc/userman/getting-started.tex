@@ -95,8 +95,8 @@ Before the start of the actual spinup and its paleo-climate forcing, we add anot
 \begin{figure}[ht]
 \centering
 %  FIXME: PLACEHOLDERS ONLY FOR NOW!  add temppabase from last time in ex_g10km_steady.nc and driving stress taud from g10km_SIA.nc
-\mbox{\includegraphics[width=2.0in,keepaspectratio=true]{sr-greenland-thk}
-  \qquad \includegraphics[width=2.0in,keepaspectratio=true]{sr-greenland-thk}}
+\mbox{\includegraphics[width=2.0in,keepaspectratio=true]{temppabase}
+  \qquad \includegraphics[width=2.0in,keepaspectratio=true]{taud}}
 \caption{A look at the model state at the beginning of paleo-climate-modeling ice sheet spinup.  Left: pressure-adjusted basal temperature ($\phantom{|}^\circ$C).  Right: driving stress $\rho g H |\grad h|$ (Pa).}
 \label{fig:sr-spinstart}
 \end{figure}
@@ -106,9 +106,9 @@ The resulting model state in \texttt{g20km_SIA.nc} is our model for the state of
 \begin{figure}[ht]
 \centering
 %  FIXME: PLACEHOLDERS ONLY FOR NOW!  add thk, cbase, csurf from g10km_0.nc
-\mbox{\includegraphics[width=2.0in,keepaspectratio=true]{sr-greenland-thk}
-  \qquad \includegraphics[width=2.0in,keepaspectratio=true]{sr-greenland-thk}
-  \qquad \includegraphics[width=2.0in,keepaspectratio=true]{sr-greenland-thk}}
+\mbox{\includegraphics[width=2.0in,keepaspectratio=true]{thk}
+  \qquad \includegraphics[width=2.0in,keepaspectratio=true]{cbase}
+  \qquad \includegraphics[width=2.0in,keepaspectratio=true]{csurf}}
 \caption{Model for the present-day Greenland ice sheet, based on spin-up over 125,000 model years using paleo-climate forcing.  Left: ice thickness (m).  Center: basal sliding velocity (m/a).  Right: surface velocity (m/a).}
 \label{fig:sr-spindone-map}
 \end{figure}
@@ -125,7 +125,7 @@ Over the course of the spinup we have saved the modeled ice volume in ``time-ser
 $ ncrcat ts_g20km_m40ka.nc ts_g20km_m30ka.nc ts_g20km_m20ka.nc ts_g20km_m10ka.nc \
   ts_g20km_0.nc -o ts_g20km_whole.nc
 \end{verbatim}
-\noindent Figure \ref{fig:sr-spindone-ivolboth} shows the ice volume time series for the whole spinup.  We see the modeled volatility of ice volume in the late ``Eemian'' period (between -120,000 and -115,000 BPE in the SeaRISE version of the GRIP temperature data).  The Figure shows that over shorter periods, like the last 10,000 years before present, there are possibly-significant differences between the 10km and 20km runs.  That the curves come close so together at time 0 is a coincidence.
+\noindent Figure \ref{fig:sr-spindone-ivolboth} shows the ice volume time series for the whole spinup.  We see the modeled volatility of ice volume in the late ``Eemian'' period (between -120,000 and -115,000 BPE in the SeaRISE version of the GRIP temperature data).  The inset in the Figure~\ref{fig:sr-spindone-ivolboth} shows that over shorter periods, like the last 10,000 years before present, there are possibly-significant differences between the 10km and 20km runs.  That the curves come so close together at time 0 is a coincidence.
 
 \begin{figure}[ht]
 \centering
