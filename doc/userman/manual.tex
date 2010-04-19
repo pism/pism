@@ -9,7 +9,7 @@
 \newcommand{\PISMDOWNLOADMSG}{Get development version of PISM source code: \quad\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev} \quad}
 
 %\addtolength\topmargin{-.1in}
-\addtolength\textheight{0.4in}
+\addtolength\textheight{0.6in}
 \addtolength{\oddsidemargin}{-.4in}
 \addtolength{\evensidemargin}{-.4in}
 \addtolength{\textwidth}{0.9in}
@@ -79,7 +79,7 @@
 
 \pdfinfo{
 /Title (PISM User's Manual)
-/Author (Ed Bueler and Constantine Khroulev and Andy Aschwanden and Jed Brown and Nathan Shemonski)
+/Author (Constantine Khroulev and Ed Bueler and Andy Aschwanden and Jed Brown and Nathan Shemonski)
 /Subject (Using PISM, a Parallel Ice-Sheet Model)
 /Keywords (PISM ice sheet modeling)
 }
@@ -92,7 +92,7 @@
     {\huge\usekomafont{title} \emph{PISM}, a Parallel Ice Sheet Model:\\\medskip User's Manual}
     \vspace{1cm}
 
-    {\Large Ed Bueler \\ Constantine Khroulev \\ Andy Aschwanden \\ Jed Brown \\ Nathan Shemonski}
+    {\Large Constantine Khroulev \\ Ed Bueler \\ Andy Aschwanden \\ Jed Brown \\ Nathan Shemonski}
     \vspace{1cm}
 
     \includegraphics[width=3.in,keepaspectratio=true]{grn-grl-csurf}
@@ -107,7 +107,7 @@
 \phantom{bob}
 \vspace{1.0in}
 \begin{quote}
-\textsl{Copyright (C) 2004--2010 Ed Bueler and Constantine Khroulev and Andy Aschwanden and Jed Brown and Nathan Shemonski}
+\textsl{Copyright (C) 2004--2010 Constantine Khroulev and Ed Bueler and Andy Aschwanden and Jed Brown and Nathan Shemonski}
 \medskip
 
 \noindent \textsl{This file is part of PISM.}
@@ -160,13 +160,14 @@ Users who want to understand how PISM works, extend PISM, and/or generally advan
      \href{http://www.pism-docs.org/dev/doxy/html/index.html}{\t{www.pism-docs.org/dev/doxy/html/index.html}}
    \end{center}
 
-\vspace{.5in}
+\vspace{.4in}
   
 \begin{center}
-\includegraphics[width=3in,keepaspectratio=true]{rossquiver}
+\includegraphics[width=3.5in,keepaspectratio=true]{rossquiver}
 \end{center}
 
-\vspace{.5in}
+\vspace{.4in}
+
 \large
 \begin{center}
 \framebox{\parbox{5.0in}{ \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and is generally not mature.  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions at \href{mailto:help@pism-docs.org}{\texttt{help@pism-docs.org}}.} }
@@ -216,19 +217,19 @@ In PISM the SSA may be used as a ``sliding law'' for grounded ice which is other
 By default, PISM does not numerically solve the SSA because any such solution must go with a conscious user choice about basal strength.  The user must both use one of two options to turn on the SSA (section \ref{subsect:ssacontrol}) and also make choices in input files and runtime options about basal strength (section \ref{subsect:basestrength}).
 
 
-\subsection{A hierarchy of simplifying assumptions for ice flow}\label{sec:model-hierarchy}\index{PISM!hierarchy of simplifying assumptions}   Table \ref{tab:modelhierarchy} describes a hierarchy of models which are implemented in PISM or are planned.  This hierarchy is listed in order of increasing effectiveness in modeling grounded ice sheets with fast flow features.  It is also listed in order of increasing need for data to serve as boundary and initial conditions, an important consideration for the scientific user.
+\subsection{A hierarchy of simplifying assumptions for grounded ice flow}\label{sec:model-hierarchy}\index{PISM!hierarchy of simplifying assumptions}   Table \ref{tab:modelhierarchy} describes a hierarchy of models which are implemented in PISM or are planned.  This hierarchy is listed in order of increasing effectiveness in modeling grounded ice sheets with fast flow features.  It is also listed in order of increasing need for data to serve as boundary and initial conditions, an important consideration for the scientific user.
 
 \begin{table}[ht]
 \caption{Hierarchy of current and planned flow models in PISM, for the grounded parts of ice sheets, from most to fewest simplifying assumptions \emph{and} from least to greatest need for boundary data.  The \emph{italicized} models are planned for future versions of PISM but are not implemented in \texttt{stable0.3}.}\label{tab:modelhierarchy} 
-\small
-\begin{tabular}{p{0.25\linewidth}p{0.35\linewidth}p{0.3\linewidth}}\hline
+\small\medskip
+\begin{tabular}{p{0.24\linewidth}p{0.37\linewidth}p{0.32\linewidth}}\hline
 \textbf{Model} & \textbf{Assumptions [references]} & \textbf{Needed initial/boundary data} \\ \hline
 \emph{perfectly-plastic ice} \tiny[planned]\small & \emph{steady state}; all points in the ice have shear stresses at or below a pre-determined ``yield stress'' & bed elevation, chosen location for margin \\
 \emph{balance velocities} \tiny[planned]\small & \emph{steady state}; ice flows down surface gradient \cite{JoughinetalGrBal97} & surface mass balance, ice  thickness, bed elevation \\
 \textsc{isothermal SIA} & non-sliding lubrication flow, fixed softness \cite{BLKCB,EISMINT96} & same, with time-dependence \\
 \textsc{thermo-coupled SIA} & non-sliding lubrication flow, temperature-dependent softness \cite{BBL,EISMINT00} & same, plus surface temperature,  geothermal flux \\
-\textsc{polythermal SIA} & same, but allowing liquid water in the temperate ice matrix and conserving energy more completely \cite{AschwandenBlatter,Greve} & same, plus surface liquid water fraction if available \\
-\textsc{SIA + SSA hybrid} & SSA as a sliding law for thermo-coupled SIA \cite{BBssasliding} & same, plus basal layer (till) strength \\
+\textsc{polythermal SIA} & same, but allowing liquid water in the temperate ice matrix and conserving energy more completely \cite{AschwandenBlatter,Greve}; the default model in PISM & same, plus surface liquid water fraction if available \\
+\textsc{SIA + SSA hybrid} & SSA as a sliding law for thermo-coupled SIA \cite{BBssasliding}; polythermal is the default & same, plus basal layer (``till'') strength \\
 \emph{Blatter-Pattyn} \tiny[planned]\small & ``higher-order'', bridging stresses \cite{Blatter,Pattyn03,SchoofCoulombBlatter} & same \\ \hline
 \end{tabular}
 \normalsize
@@ -236,18 +237,18 @@ By default, PISM does not numerically solve the SSA because any such solution mu
 
 As an additional row one might list ``full Stokes'' in Table \ref{tab:modelhierarchy}.  That stress balance is \emph{not} planned for PISM at any time, however, as its numerical solution requires a fundamentally different computational architecture.
 
-It makes sense to also talk about an \emph{ice shelf} model hierarchy, and even about a special hierarchy of models for the transition from grounded to floating ice \cite{SchoofMarine1}, but this would take us too far afield.  Currently, ice shelves should always be modeled by the SSA equations in PISM.
+It makes sense to also talk about an \emph{ice shelf} model hierarchy, and even about a special hierarchy of models for the transition from grounded to floating ice \cite{SchoofMarine1}, but this would take us too far afield.  Currently, ice shelves should always be modeled by the SSA equations in PISM.  See section \ref{sect:ross}.
 
 
-\subsection{Evolutionary versus diagnostic ice shelf modeling} \label{subsect:basicmodes}\index{PISM!evolution run}\index{PISM!diagnostic run}    The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time as similarly as possible to the modeled ice sheet.  Such a goal assumes one has the right climate inputs and parameter choices at each time step.  For predictive purposes, such a goal also assumes one starts with the right initial conditions, adequately describing the present state of the ice sheet.  (In fact this last assumption is rarely satisfied and heuristics must be used to minimally-initialize an ice sheet model, before a possible stage of paleo-climate driven spinup; see section \ref{sect:boot}.)
+\subsection{Evolutionary and diagnostic modeling} \label{subsect:basicmodes}\index{PISM!evolution run}\index{PISM!diagnostic run}    The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time as similarly as possible to the modeled ice sheet.  Such a goal assumes one has the right climate inputs and parameter choices at each time step.  For predictive purposes, it also assumes one has the right initial conditions, adequately describing the present state of the ice sheet.  This last assumption is rarely satisfied.  Instead, heuristics must be used to minimally-initialize an ice sheet model, before a possible stage of paleo-climate driven spinup; see section \ref{sect:boot}.
 
 Underlying an ice sheet model like PISM are evolution-in-time partial differential equations.  PISM solves these by taking small time steps.  ``Small'' time steps vary from hundredths to many model years, depending primarily on both grid resolution and modeled ice flow speed.  Time steps are chosen adaptively in PISM, according to the stability criteria of the several numerical methods.  We will describe this usual time-stepping behavior as an ``evolution run.''
 
-However, much ice flow modeling, especially of streams and shelves, uses only instantaneous ``diagnostic'' solution of the partial differential equations which determine the velocity field.  The existence of such ``instantaneous'' velocity fields follows from the slowness of the ice, which implies that inertia can be neglected in the stress balance \cite{Fowler}.  The goal of a ``diagnostic run'' is usually to compute the velocity field, including the instantaneous rate of surface movement in particular.  This will be our definition of ``diagnostic run'' from now on.  (Especially for grounded ice, making diagnostic runs may be the ``forward model'' step in inverting surface velocities for basal strength.  But again that would take us far afield.)
+However, much ice flow modeling, especially of streams and shelves, uses only instantaneous ``diagnostic'' solution of the partial differential equations which determine the velocity field.  The existence of such ``instantaneous'' velocity fields follows from the slowness of the ice, which implies that inertia can be neglected in the stress balance \cite{Fowler}.  The goal of a ``diagnostic run'' is usually to compute the velocity field, including the instantaneous rate of surface movement in particular.  This will be our definition of ``diagnostic run'' from now on.  Especially for grounded ice, making diagnostic runs may be the ``forward model'' step in inverting surface velocities for basal strength \dots but that would take us to territory not covered by this \emph{Manual}.
 
 Sections \ref{sec:eismint-greenland} and \ref{sect:ross} are examples which illustrate the evolutionary and diagnostic modeling modes of PISM.  The first of these describes time-stepping evolution models for the Greenland ice sheet, while the second describes a diagnostic SSA model for the Ross ice shelf.
 
-\subsection{Climate inputs and their separation from ice dynamics}
+\subsection{Climate inputs, and their interface with ice dynamics}
 \label{sec:climate-inputs}  This section applies the seventh PISM organizing principle above (section \ref{sect:dynamics}): \emph{climate inputs affect ice dynamics by a well-defined interface}.
 
 Because PISM's job is to approximate ice flow, its world view is centered around ice dynamics.  The boundary conditions required to model dynamics, and the corresponding interfaces, are necessarily ``ice-centric'' in our description here, but we believe there is no actual constraint on the nature of the other climate models which could be coupled to PISM.
