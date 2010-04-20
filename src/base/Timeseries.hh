@@ -108,15 +108,16 @@ protected:
   the second call.  Therefore, even if interpolation is not really needed
   because time==t_years, the call to interp() should still occur.
   
-  Finally, make sure to write before destroying:
+  Finally, the destructor of DiagnosticTimeseries will flush(), which writes out
+  the buffered values:
 
   \code
-  offsets->flush();
   delete offsets;
   \endcode
 
   Note that every time you exceed the \c buffer_size limit, all the entries are
-  written to a file by flush() <b> and removed from memory</b>.
+  written to a file by flush() <b> and removed from memory</b>.  One may also
+  explicitly call flush().
  */
 class DiagnosticTimeseries : public Timeseries {
 public:
