@@ -61,7 +61,7 @@ PetscErrorCode IceModelVec3::create_da(DA &result, PetscInt Mz) {
   PetscInt *lx = NULL, *ly = NULL;
 #endif
 
-  ierr = DACreate3d(grid->com, DA_YZPERIODIC, DA_STENCIL_STAR,
+  ierr = DACreate3d(grid->com, DA_YZPERIODIC, DA_STENCIL_BOX,
 		    Mz, grid->My, grid->Mx, // P, N, M
 		    1,  grid->Ny, grid->Nx, // p, n, m
 		    1, s_width,	// dof, stencil_width
