@@ -1,17 +1,34 @@
 
-Welcome!
+Welcome to PISM!
 
-PETSc must be installed and functioning before PISM can be built.
-See http://www-unix.mcs.anl.gov/petsc/.
+All information about PISM can be found at
 
-Assuming PETSC_DIR and PETSC_ARCH are set properly:
+   www.pism-docs.org
+   
+To download the latest stable version use subversion:
 
-  $ cd pism-dev
+   svn co http://svn.gna.org/svn/pism/tags/stable0.3 pism0.3
+
+For complete installation instructions get the PISM Installation Manual (PDF)
+from www.pism-docs.org.
+
+Intallation high points:  PETSc (http://www-unix.mcs.anl.gov/petsc/) must be
+installed and functioning before PISM can be built, so we assume now that
+PETSC_DIR and PETSC_ARCH are set properly.  If FFTW is not available do 
+"export WITH_FFTW=0".  Now do:
+
+  $ cd pism-dev/
   $ make
+  $ PATH=bin/:util/:$PATH
 
-If FFTW is not available do "export WITH_FFTW=0" before make.
+Now run a simplified geometry experiment with 2 processes
 
-More complete installation information, including on installing
-PETSc and other libraries used by PISM, is in the PISM 
-Installation Manual.
+  $ mpiexec -n 2 pisms
+
+To get source code updates including bug fixes, do
+
+  $ svn up
+
+We have written a good PISM User's Manual (PDF) which will explain most of what
+you want to know.  Find it at (you guessed it ...) www.pism-docs.org.
 
