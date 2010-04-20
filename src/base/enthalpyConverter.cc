@@ -128,6 +128,11 @@ and less than one for cold ice.  Presumably only used for postprocessing.
 */ 
 double EnthalpyConverter::getCTS(double E, double p) const {
   const double E_s = getEnthalpyCTS(p);
+#ifdef PISM_DEBUG
+  if (E <= 0.0) {
+    SETERRQ1(1,"\n\nE = %f <= 0 is not a valid enthalpy\n\n",E);
+  }
+#endif
   return E / E_s;
 }
 
@@ -135,6 +140,11 @@ double EnthalpyConverter::getCTS(double E, double p) const {
 //! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
 bool EnthalpyConverter::isTemperate(double E, double p) const {
   const double E_s = getEnthalpyCTS(p);
+#ifdef PISM_DEBUG
+  if (E <= 0.0) {
+    SETERRQ1(1,"\n\nE = %f <= 0 is not a valid enthalpy\n\n",E);
+  }
+#endif
   return (E >= E_s);
 }
 
@@ -154,6 +164,11 @@ a 1 as output PetscErrorCode if \f$E \ge E_l(p)\f$.
 PetscErrorCode EnthalpyConverter::getAbsTemp(double E, double p, double &T) const {
   double E_s, E_l;
   PetscErrorCode ierr = getEnthalpyInterval(p, E_s, E_l); CHKERRQ(ierr);
+#ifdef PISM_DEBUG
+  if (E <= 0.0) {
+    SETERRQ1(1,"\n\nE = %f <= 0 is not a valid enthalpy\n\n",E);
+  }
+#endif
   if (E < E_s) {
     T = E / c_i;
   } else { // two cases in (12)
@@ -199,6 +214,11 @@ We do not allow liquid water (i.e. water fraction \f$\omega=1.0\f$) so we fail i
 PetscErrorCode EnthalpyConverter::getWaterFraction(double E, double p, double &omega) const {
   double E_s, E_l;
   PetscErrorCode ierr = getEnthalpyInterval(p, E_s, E_l); CHKERRQ(ierr);
+#ifdef PISM_DEBUG
+  if (E <= 0.0) {
+    SETERRQ1(1,"\n\nE = %f <= 0 is not a valid enthalpy\n\n",E);
+  }
+#endif
   if (E <= E_s) { // two cases in (12)
     omega = 0.0;
   } else {
@@ -220,6 +240,11 @@ Useful in allowing the computation of (appropriately) high basal melt rates.
 double EnthalpyConverter::getWaterFractionLimited(double E, double p) const {
   double E_s, E_l;
   getEnthalpyInterval(p, E_s, E_l);
+#ifdef PISM_DEBUG
+  if (E <= 0.0) {
+    SETERRQ1(1,"\n\nE = %f <= 0 is not a valid enthalpy\n\n",E);
+  }
+#endif
   if (E <= E_s) { // two cases in (12)
     return 0.0;
   } else if (E < E_l) {
@@ -234,6 +259,11 @@ double EnthalpyConverter::getWaterFractionLimited(double E, double p) const {
 bool EnthalpyConverter::isLiquified(double E, double p) const {
   double E_s, E_l;
   getEnthalpyInterval(p, E_s, E_l);
+#ifdef PISM_DEBUG
+  if (E <= 0.0) {
+    SETERRQ1(1,"\n\nE = %f <= 0 is not a valid enthalpy\n\n",E);
+  }
+#endif
   if (E < E_l) {
     return false;
   } else {
@@ -304,9 +334,11 @@ Checks that \f$T > 0\f$ and returns error if not.
 PetscErrorCode EnthalpyConverter::getEnthPermissive(
                   double T, double omega, double p, double &E) const {
   PetscErrorCode ierr;
+#ifdef PISM_DEBUG
   if (T <= 0.0) {
     SETERRQ1(1,"\n\nT = %f <= 0 is not a valid absolute temperature\n\n",T);
   }
+#endif
   const double T_m = getMeltingTemp(p);
   if (T <= T_m) {
     ierr = getEnth(T, 0.0, p, E); CHKERRQ(ierr);
@@ -323,9 +355,11 @@ PetscErrorCode EnthalpyConverter::getEnthPermissive(
  */
 PetscErrorCode EnthalpyConverter::getEnthAtWaterFraction(
                         double omega, double p, double &E) const {
+#ifdef PISM_DEBUG
   if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
     SETERRQ1(2,"\n\nwater fraction omega=%f not in range [0,1]\n\n",omega);
   }
+#endif
   const PetscScalar E_s = getEnthalpyCTS(p);
   E = E_s + omega * L;
   return 0;

@@ -406,7 +406,7 @@ PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(
   PetscErrorCode ierr;
 #ifdef PISM_DEBUG
   if (enthalpy < 0) {
-    SETERRQ(1, "Negative enthaply; this should never happen");
+    SETERRQ(1, "Negative enthalpy in PolyThermalGPBLDIce::softnessParameterFromEnth() ... this should never happen");
   }
 #endif
 
