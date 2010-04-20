@@ -188,6 +188,8 @@ PetscErrorCode IceExactSSAModel::set_vars_from_options() {
   ierr =  T3.set(T0); CHKERRQ(ierr);
   ierr = Tb3.set(T0); CHKERRQ(ierr);
 
+  ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+
   // set initial velocities (for start of iteration)
   ierr = vel_bar.set(0.0); CHKERRQ(ierr);
   ierr = uvbar.set(0.0); CHKERRQ(ierr);

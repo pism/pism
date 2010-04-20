@@ -37,7 +37,7 @@ ifeq (${PISM_USE_GNU_FLAGS}, 1)
   CFLAGS += -Woverloaded-virtual -Wall -pipe -O2
 endif
 ifeq (${PISM_USE_DEBUG}, 1)
-  CFLAGS += -g
+  CFLAGS += -g -DPISM_DEBUG
 endif
 
 # Flags needed by UDUNITS:
