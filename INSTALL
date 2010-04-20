@@ -23,7 +23,7 @@ PETSC_DIR and PETSC_ARCH are set properly.  If FFTW is not available do
 
 Now run a simplified geometry experiment with 2 processes
 
-  $ pisms
+  $ mpiexec -n 2 pisms
 
 To get source code updates including bug fixes, do
 
