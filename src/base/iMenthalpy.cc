@@ -256,29 +256,26 @@ PetscErrorCode IceModel::getEnthalpyCTSColumn(PetscScalar p_air,
 /******  next 3 are helper functions for enthalpyDrainageStep() ******/
 
 PetscErrorCode reportColumnSolveError(
-    const PetscErrorCode solve_ierr, MPI_Comm com, columnSystemCtx &sys, 
+    const PetscErrorCode solve_ierr, columnSystemCtx &sys, 
     const char *prefix, const PetscInt i, const PetscInt j) {
 
   char fname[PETSC_MAX_PATH_LEN];
   snprintf(fname, PETSC_MAX_PATH_LEN, "%s_i%d_j%d_zeropivot%d.m",
            prefix,i,j,solve_ierr);
   PetscErrorCode ierr;
-  ierr = PetscPrintf(com,
+  ierr = PetscPrintf(PETSC_COMM_SELF,
     "\n\ntridiagonal solve in enthalpyAndDrainageStep(), for %sSystemCtx,\n"
         "   failed at (%d,%d) with zero pivot position %d\n"
         "   viewing system to file %s ... \n",
         prefix, i, j, solve_ierr, fname); CHKERRQ(ierr);
   PetscViewer viewer;
-  ierr = PetscViewerCreate(com, &viewer);CHKERRQ(ierr);
+  ierr = PetscViewerCreate(PETSC_COMM_SELF, &viewer);CHKERRQ(ierr);
   ierr = PetscViewerSetType(viewer, PETSC_VIEWER_ASCII);CHKERRQ(ierr);
   ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
   ierr = PetscViewerFileSetName(viewer, fname);CHKERRQ(ierr);
-
   ierr = sys.viewSystem(viewer,"system"); CHKERRQ(ierr);
-
   ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
-  ierr = PetscPrintf(com, "\n   ENDING ...\n"); CHKERRQ(ierr);
-  PetscEnd();
+
   return 0;
 }
 
@@ -293,7 +290,7 @@ PetscErrorCode reportColumn(
   PetscErrorCode ierr;
   ierr = PetscPrintf(com,
     "\n\nviewing %s system and solution at (i,j)=(%d,%d):\n"
-        "   viewing system to file %s ... \n",
+        "   viewing system to file %s ... \n\n\n",
         prefix, i, j, fname); CHKERRQ(ierr);
   PetscViewer viewer;
   ierr = PetscViewerCreate(com, &viewer);CHKERRQ(ierr);
@@ -463,7 +460,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           ierr = Tb3.getValColumnPL(i,j,bosys.Tb); CHKERRQ(ierr);
           ierr = bosys.setBoundaryValuesThisColumn(Tbtop, vGhf(i,j)); CHKERRQ(ierr);
           ierr = bosys.solveThisColumn(&Tbnew);
-          if (ierr)  reportColumnSolveError(ierr, grid.com, bosys, "bedrockOnly", i, j);
+          if (ierr)  reportColumnSolveError(ierr, bosys, "bedrockOnly", i, j);
+          CHKERRQ(ierr);
           if (viewOneColumn && issounding(i,j)) {
             ierr = reportColumn(grid.com, bosys, "bedrockOnly",
                                 i, j, Tbnew, fMbz); CHKERRQ(ierr);
@@ -521,7 +519,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
             CHKERRQ(ierr);
 
         ierr = cbsys.solveThisColumn(&xcombined);
-        if (ierr) reportColumnSolveError(ierr, grid.com, cbsys, "combined", i, j);
+        if (ierr) reportColumnSolveError(ierr, cbsys, "combined", i, j);
+        CHKERRQ(ierr);
         if (viewOneColumn && issounding(i,j)) {
           ierr = reportColumn(grid.com, cbsys, "combined", i, j,
                               xcombined, fMbz+fMz-1); CHKERRQ(ierr);
@@ -562,7 +561,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
               CHKERRQ(ierr);
 
           ierr = bosys.solveThisColumn(&Tbnew);
-          if (ierr) reportColumnSolveError(ierr, grid.com, bosys, "bedrockOnly", i, j);
+          if (ierr) reportColumnSolveError(ierr, bosys, "bedrockOnly", i, j);
+          CHKERRQ(ierr);
           if (viewOneColumn && issounding(i,j)) {
             ierr = reportColumn(grid.com, bosys, "bedrockOnly",
                                 i, j, Tbnew, fMbz); CHKERRQ(ierr);
@@ -652,7 +652,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         }
 
         ierr = iosys.solveThisColumn(&Enthnew);
-        if (ierr) reportColumnSolveError(ierr, grid.com, iosys, "iceenthOnly", i, j);
+        if (ierr) reportColumnSolveError(ierr, iosys, "iceenthOnly", i, j);
+        CHKERRQ(ierr);
         if (viewOneColumn && issounding(i,j)) {
           ierr = reportColumn(grid.com, iosys, "iceenthOnly", 
                               i, j, Enthnew, fMz); CHKERRQ(ierr);
