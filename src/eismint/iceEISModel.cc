@@ -168,7 +168,7 @@ PetscErrorCode IceEISModel::init_physics() {
   config.set_flag("use_ssa_velocity", false);
   config.set("enhancement_factor", 1.0);
 
-  // basal melt does not change computation of vertical velocity:
+  // basal melt does not change computation of mass continuity or vertical velocity:
   config.set_flag("include_bmr_in_continuity", false);
 
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
