@@ -377,6 +377,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
 
   double ocean_rho = config.get("sea_water_density");
   double bed_thermal_k = config.get("bedrock_thermal_conductivity");
+  const bool do_cold = config.get_flag("do_cold_ice_methods");
 
   if (surface != NULL) {
     ierr = surface->ice_surface_temperature(grid.year, 0.0, artm); CHKERRQ(ierr);
@@ -385,7 +386,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   }
 
   IceModelVec3 *result;
-  if (config.get_flag("do_cold_ice_methods")) 
+  if (do_cold) 
     result = &T3;
   else
     result = &Enth3;
@@ -424,7 +425,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
                                          ? ice->meltingTemp : T[0];
       ierr = bootstrapSetBedrockColumnTemp(i,j,T_top_bed,Ghf[i][j],bed_thermal_k); CHKERRQ(ierr);
       
-      if (config.get_flag("do_cold_ice_methods") == false) {
+      if (!do_cold) {
 	for (PetscInt k = 0; k < grid.Mz; ++k) {
 	  const PetscScalar depth = HH - grid.zlevels[k];
 	  const PetscScalar pressure = 
@@ -449,6 +450,10 @@ PetscErrorCode IceModel::putTempAtDepth() {
 
   ierr = result->beginGhostComm(); CHKERRQ(ierr);
   ierr = result->endGhostComm(); CHKERRQ(ierr);
+
+  if (do_cold) {
+    ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+  }
 
   return 0;
 }
