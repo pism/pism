@@ -1513,6 +1513,8 @@ divoldt = surface_ice_flux * iarea + basal_ice_flux * iareag + sub_shelf_ice_flu
 PetscErrorCode IceModel::ice_mass_bookkeeping() {
   PetscErrorCode ierr;
 
+  bool include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity");
+
   // note acab and shelfbmassflux are IceModelVec2S owned by IceModel
   if (surface != PETSC_NULL) {
     ierr = surface->ice_surface_mass_flux(grid.year, dt / secpera, acab);
@@ -1544,13 +1546,13 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
 
 	my_total_surface_ice_flux += acab(i,j) * cell_area(i,j); // note the "+="!
 
-	if (vMask.value(i,j) == MASK_FLOATING) {
+	if ((vMask.value(i,j) == MASK_FLOATING) && include_bmr_in_continuity) {
 	  // note: we are deliberately *not* including fluxes in
 	  //   MASK_ICE_FREE_OCEAN and MASK_OCEAN_AT_TIME_0 areas
 	  my_total_sub_shelf_ice_flux -= shelfbmassflux(i,j) * cell_area(i,j); // note the "-="!
 	}
 
-	if (vMask.is_grounded(i,j)) {
+	if (vMask.is_grounded(i,j) && include_bmr_in_continuity) {
 	  my_total_basal_ice_flux -= vbmr(i,j) * cell_area(i,j); // note the "-="!
 	}
       }	// j
@@ -1567,13 +1569,13 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
 
 	my_total_surface_ice_flux += acab(i,j); // note the "+="!
 
-	if (vMask.value(i,j) == MASK_FLOATING) {
+	if ((vMask.value(i,j) == MASK_FLOATING) && include_bmr_in_continuity) {
 	  // note: we are deliberately *not* including fluxes in
 	  //   MASK_ICE_FREE_OCEAN and MASK_OCEAN_AT_TIME_0 areas
 	  my_total_sub_shelf_ice_flux -= shelfbmassflux(i,j); // note the "-="!
 	}
 
-	if (vMask.is_grounded(i,j)) {
+	if (vMask.is_grounded(i,j) && include_bmr_in_continuity) {
 	  my_total_basal_ice_flux -= vbmr(i,j); // note the "-="!
 	}
 
