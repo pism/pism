@@ -101,7 +101,7 @@ This \emph{Installation Manual} describes how to download the PISM source code a
   \href{http://www.pism-docs.org}{\t{www.pism-docs.org}}
 \end{center}
 \bigskip
-\noindent The fastest path to a fully functional PISM installation is to use a Linux system with a Debian-based package system (e.g.~Ubuntu), subsection \ref{subsec:debian}, and then install Python packages following section \ref{sec:python}.
+\noindent The fastest path to a fully functional PISM installation is to use a Linux system with a Debian-based package system (e.g.~Ubuntu)---see subsection \ref{subsec:debian} about the Debian route---and then install Python packages following section \ref{sec:python}.
 \vfill
 
 \large
@@ -137,12 +137,13 @@ This \emph{Installation Manual} describes how to download the PISM source code a
 \label{sec:prerequisites}
 
 \bigskip
-The following table lists the \emph{required} dependencies for PISM, arranged alphabetically.
+\normalspacing
+The following table lists the \emph{required} dependencies for PISM, arranged alphabetically.  (Before installing these ``by hand'', check the debian and macosx sections below for specific how-to.)
 \bigskip
 \newcommand{\fattablespacing}{\renewcommand{\baselinestretch}{1.5}\tiny\normalsize}
+
 \fattablespacing
 \newcommand\pairstack[2]{#1 \quad (\small#2\normalsize)}
-%\newcommand\pairstack[2]{\begin{tabular}{lc} #1 \\ \quad (\small#2\normalsize)\end{tabular}}
 \begin{center}
 \begin{tabular*}{1.0\linewidth}{lp{0.5\linewidth}}\toprule
   \textbf{Required Library} & \textbf{Comment} \\
@@ -154,10 +155,20 @@ The following table lists the \emph{required} dependencies for PISM, arranged al
   \bottomrule
 \end{tabular*}
 \end{center}
-\normalspacing\bigskip
 
-\noindent One library is only used for the earth deformation (``isostatic rebound'') model
+\normalspacing
+
+\vspace{0.2in}
+
+\begin{quote}
+\emph{WARNING}: If multiple MPI implementations (e.g.~MPICH and OPEN-MPI) are installed then PETSc can under some situations ``get confused'' and throw MPI-related errors.  Even package systems have been known to allow this confusion.  We have seen several variations on this theme.
+\end{quote}
+
+\vspace{0.2in}
+
+One library is only used for the earth deformation (``isostatic rebound'') model:
 \bigskip
+
 \fattablespacing
 \begin{center}
 \begin{tabular*}{1.0\linewidth}{ll}\toprule
@@ -167,14 +178,18 @@ The following table lists the \emph{required} dependencies for PISM, arranged al
   \bottomrule
 \end{tabular*}
 \end{center}
+
 \normalspacing
+
+\vspace{0.2in}
+
 \bigskip
 
-\noindent In addition, Python (\url{http://python.org/}) is needed both in the PETSc installation process and in scripts related to PISM pre- and post-processing, while Subversion (\url{http://subversion.tigris.org/}) is usually needed to download the PISM code.  Both should be included in any Linux/Unix distribution.
 
-\vspace{0.5in}
-These Python packages are needed to do all the examples in the \emph{User's Manual} by running python scripts.
-\bigskip\fattablespacing
+In addition, Python (\url{http://python.org/}) is needed both in the PETSc installation process and in scripts related to PISM pre- and post-processing, while Subversion (\url{http://subversion.tigris.org/}) is usually needed to download the PISM code.  Both should be included in any Linux/Unix distribution.  Additionally, the following Python packages are needed to do all the examples in the \emph{User's Manual} (which run python scripts).
+\bigskip
+
+\fattablespacing
 \begin{center}
 \begin{tabular*}{1.0\linewidth}{lp{0.35\linewidth}}\toprule
   \textbf{Recommended Python Package} & \textbf{Importance} \\
@@ -182,7 +197,7 @@ These Python packages are needed to do all the examples in the \emph{User's Manu
   \pairstack{\t{matplotlib}}{\href{http://matplotlib.sourceforge.net/}{\t{matplotlib.sourceforge.net}}} & used in some scripts \\
   \pairstack{\t{netcdf4-python}}{\href{http://code.google.com/p/netcdf4-python/}{\t{code.google.com/p/netcdf4-python}}}  & used in \emph{most} scripts  \\    
   \pairstack{\t{numpy}}{\href{http://numpy.scipy.org/}{\t{numpy.scipy.org}}} & used in \emph{most} scripts \\
-  \pairstack{\t{scikits.delaunay}}{\href{http://scipy.org/scipy/scikits}{\t{scipy.org/scipy/scikits}}} & used in only one script \\
+  \pairstack{\t{scikits.delaunay}}{\href{http://scipy.org/scipy/scikits}{\t{scipy.org/scipy/scikits}}} & used in few scripts \\
   \bottomrule
 \end{tabular*}
 \end{center}
@@ -193,7 +208,7 @@ These Python packages are needed to do all the examples in the \emph{User's Manu
 \section{Installation Cookbook}\label{sec:cookbook}
 
 \subsection{Installing PISM on a Debian-based Linux system} \label{subsec:debian}
-Of all operating systems it is probably quickest to install all the PISM prerequisites on a Debian-based Linux system using a package manager.  PISM requires PETSc revision \PETSCREL{} or newer, so you should only use this method if an up-to-date PETSc package is available.
+Of all operating systems it is probably quickest to install all the PISM prerequisites on a Debian-based Linux system using a package manager.
 
 \begin{enumerate}
 \item Find and install (using \texttt{apt-get} or \texttt{synaptic}, for example) the following packages:
@@ -205,8 +220,7 @@ Of all operating systems it is probably quickest to install all the PISM prerequ
       \texttt{petsc-dev} & depends on \texttt{libpetsc3.x.x-dev}; this package 
       depends on \texttt{libpetsc3.x.x}, \texttt{libopenmpi-dev}, \texttt{libx11-dev},
       \texttt{libblas-dev}, \texttt{liblapack-dev}, \texttt{gfortran}, and others; 
-      note \texttt{libopenmpi-dev} depends on \texttt{libopenmpi1} and
-      replaces openmpi-bin\\
+      note \texttt{libopenmpi-dev} depends on \texttt{libopenmpi1}\\
       \texttt{libgsl0-dev} & \\
       \texttt{libfftw3-dev} & \\
       \texttt{netcdf-bin} & (and perhaps grab \texttt{nco} at the same time)\\
@@ -219,40 +233,39 @@ Of all operating systems it is probably quickest to install all the PISM prerequ
   \end{center}
 \item Get the PISM development version:
 \begin{verbatim}
-$  svn co http://svn.gna.org/svn/pism/trunk pism-dev
+$  svn co http://svn.gna.org/svn/pism/stable0.3 pism0.3
 \end{verbatim}
-\item Based on the locations of installed files, add the lines similar to
+\item Based on the locations of installed files, add the lines \emph{similar} to
 \begin{verbatim}
-export PETSC_DIR=/usr/lib/petscdir/2.3.3/
+export PETSC_DIR=/usr/lib/petscdir/3.x.x/
 export PETSC_ARCH=linux-gnu-c-opt
-export PATH=/home/user/pism-dev/bin/:/home/user/pism-dev/util/:$PATH
+export PATH=/home/user/pism0.3/bin/:/home/user/pism0.3/util/:$PATH
 \end{verbatim}
-to your \texttt{.bashrc} equivalent.  (See ``Installed files'' reported for \texttt{libpetsc2.3.3-dev} using \texttt{synaptic}, for example.)
+to your \texttt{.bashrc} equivalent.  (See ``Installed files'' reported for \texttt{libpetsc3.x.x-dev} using \texttt{synaptic}, for example.)
 \item Next, build PISM:
 \begin{verbatim}
-$  cd pism-dev
-$  make all
+$  cd pism0.3
+$  make
 \end{verbatim}
 \item Try it:
 \begin{verbatim}
-$  mpiexec -n 2 pismv -y 1
+$  mpiexec -n 2 pisms
 \end{verbatim}
 If you see ``\texttt{Writing model state to file}\dots'' at the end then the run completed.
 \item See the \emph{Getting Started} section \emph{User's Manual} to continue.
 \end{enumerate}
 
-Running PISM might produce a warning message like the following:
+\vspace{0.3in}
+
+\subsubsection*{OpenIB WEIRDNESS} Running PISM might produce a warning message like the following:
 \begin{verbatim}
-$ mpiexec -n 2 pismv -y 1
+$ mpiexec -n 2 pisms
 libibverbs: Fatal: couldn't read uverbs ABI version.
 --------------------------------------------------------------------------
 [0,1,0]: OpenIB on host user-laptop was unable to find any HCAs.
 Another transport will be used instead, although this may result in 
 lower performance.
 --------------------------------------------------------------------------
-. . .
-PISMV (verification mode)
-initializing Test A ...
 . . .
 \end{verbatim}
 According to this comment found online at \url{http://lists.alioth.debian.org/pipermail/pkg-openmpi-commits/2007-August/000044.html},
@@ -274,7 +287,9 @@ Basically just get the \texttt{.tar.gz} and follow install instructions in top-l
 $  ./configure --x-libraries=/usr/lib
 \end{verbatim}
 
-\clearpage
+\vspace{0.3in}
+
+\newpage
 \subsection{Generic PISM installation, using PETSc source code}\label{subsec:generic}
 
 \subsubsection{Installing prerequisities}
@@ -385,25 +400,27 @@ At this point you have configured the environment which PISM needs.  You are rea
 \item \label{getPISMstep} Check the website \url{http://www.pism-docs.org/} for the latest version of PISM.
 \item Do
 \begin{verbatim}
-$  svn co http://svn.gna.org/svn/pism/trunk pism-dev
+$  svn co http://svn.gna.org/svn/pism/stable0.3 pism0.3
 \end{verbatim}
-\item A directory called ``\texttt{pism-dev/}'' will be created.  Note that in the future when you enter that directory, \texttt{svn update} will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make all} to recompile and relink PISM. Alternatively, you can \t{make update}, which will run \t{svn update} and then rebuild PISM if necessary.}
+\item A directory called ``\texttt{pism0.3/}'' will be created.  Note that in the future when you enter that directory, \texttt{svn update} will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make all} to recompile and relink PISM. Alternatively, you can \t{make update}, which will run \t{svn update} and then rebuild PISM if necessary.}
 \end{enumerate}
 
 \item Build PISM:\footnote{Please report any problems you meet at this build stage by sending us the output: \href{mailto:help@pism-docs.org}{help@pism-docs.org}.}
 \begin{verbatim}
-$  cd pism-dev
-$  make all
+$  cd pism0.3
+$  make
 \end{verbatim}
 
 If your operating system does not support shared libraries, then do \texttt{export PISM_STATIC=1} before building.  This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.
 
-Note that the ``\texttt{make all}'' puts executables, including \texttt{pross},\index{pross} \texttt{pismr},\index{pismr} \texttt{pismv},\index{pismv} and \texttt{pisms},\index{pisms} in the \texttt{pism-dev/bin/} subdirectory.  Object files created during the build process (located in the \texttt{build} subdirectory) are not deleted, so do ``\texttt{make clean}'' to delete these if space is an issue.
+Note that the ``\texttt{make}'' puts executables, including \texttt{pross},\index{pross} \texttt{pismr},\index{pismr} \texttt{pismv},\index{pismv} and \texttt{pisms},\index{pisms} in the \texttt{pism0.3/bin/} subdirectory.  Object files created during the build process (located in the \texttt{build} subdirectory) are not deleted, so do ``\texttt{make clean}'' to delete these if space is an issue.
 
-\item PISM executables can be run most easily by adding the directories \texttt{pism-dev/bin/} and \texttt{pism-dev/util/} to your \texttt{PATH}.  The former directory contains the major PISM executables while the latter contains several useful scripts.  For instance, this command can be done in the \texttt{bash} shell or in your \texttt{.bashrc} file:\index{setting the \$PATH to find PISM executables}
+\item PISM executables can be run most easily by adding the directories \texttt{pism0.3/bin/} and \texttt{pism0.3/util/} to your \texttt{PATH}.  The former directory contains the major PISM executables while the latter contains several useful scripts.  For instance, this command can be done in the \texttt{bash} shell or in your \texttt{.bashrc} file:\index{setting the \$PATH to find PISM executables}
 \begin{verbatim}
-export PATH=/home/user/pism-dev/bin:/home/user/pism-dev/util:$PATH
+export PATH=/home/user/pism0.3/bin:/home/user/pism0.3/util:$PATH
 \end{verbatim}
+
+\item See the \emph{Getting Started} section \emph{User's Manual} to continue.
 \end{enumerate}
 
 
@@ -453,9 +470,11 @@ $  make all
 
   Note that it might also be necessary to add
 \begin{verbatim}
-export DYLD_LIBRARY_PATH=~/pism-dev/lib/
+export DYLD_LIBRARY_PATH=~/pism0.3/lib/
 \end{verbatim}
   to your \texttt{.bashrc} or equivalent to tell the dynamic library loader where to find PISM libraries.
+  
+\item See the \emph{Getting Started} section \emph{User's Manual} to continue.
 \end{enumerate}
 
 
