@@ -28,7 +28,7 @@
 
 //! Manage the solution of the energy equation, and related parallel communication.
 /*!
-Calls the method enthalpyAndDrainageStep(), or temperatureStep() if
+Normally calls the method enthalpyAndDrainageStep().  Calls temperatureStep() if
 do_cold_ice_methods == true.
 
 This method (energyStep()) \e must update these four fields:
@@ -45,16 +45,16 @@ PetscErrorCode IceModel::energyStep() {
   PetscErrorCode  ierr;
 
   PetscScalar  myCFLviolcount = 0.0,   // these are counts but they are type "PetscScalar"
-               myVertSacrCount = 0.0;  //   because that type works with PetscGlobalSum()
-  PetscScalar gVertSacrCount;
+               myVertSacrCount = 0.0,  //   because that type works with PetscGlobalSum()
+               myBulgeCount = 0.0;
+  PetscScalar gVertSacrCount, gBulgeCount;
 
   // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
   ierr = countCFLViolations(&myCFLviolcount); CHKERRQ(ierr);
 
   if (config.get_flag("do_cold_ice_methods")) {
-    PetscScalar  mybulgeCount = 0.0, gbulgeCount;
     // new temperature values go in vTnew; also updates Hmelt:
-    ierr = temperatureStep(&myVertSacrCount,&mybulgeCount); CHKERRQ(ierr);  
+    ierr = temperatureStep(&myVertSacrCount,&myBulgeCount); CHKERRQ(ierr);  
 
     ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
     ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
@@ -64,23 +64,12 @@ PetscErrorCode IceModel::energyStep() {
     // (do_cold_ice_methods) is a rare case.
     ierr = setEnth3FromT3_ColdIce();  CHKERRQ(ierr);
 
-    ierr = PetscGlobalSum(&mybulgeCount, &gbulgeCount, grid.com); CHKERRQ(ierr);
-    if (gbulgeCount > 0.0) {   // count of when advection bulges are limited;
-                               //    frequently it is identically zero
-      const PetscScalar bulgePRCNT
-             = 100.0 * (gbulgeCount / (grid.Mx * grid.My * (grid.Mz + grid.Mbz)) );
-      const PetscScalar BPBULGE_REPORT_PERCENT = 0.0001; // only report if above 1 / 10^6
-      if (bulgePRCNT > BPBULGE_REPORT_PERCENT) {
-        char tempstr[50] = "";
-        snprintf(tempstr,50, "  [BPbulge=%.5f%%] ", bulgePRCNT);
-        stdout_flags = tempstr + stdout_flags;
-      }
-    }
   } else {
     // new enthalpy values go in Enthnew3; also updates (and communicates) Hmelt
     PetscScalar myLiquifiedVol = 0.0, gLiquifiedVol;
 
-    ierr = enthalpyAndDrainageStep(&myVertSacrCount,&myLiquifiedVol);  CHKERRQ(ierr);
+    ierr = enthalpyAndDrainageStep(&myVertSacrCount,&myLiquifiedVol,&myBulgeCount);
+       CHKERRQ(ierr);
 
     ierr = Enth3.beginGhostCommTransfer(Enthnew3); CHKERRQ(ierr);
     ierr = Enth3.endGhostCommTransfer(Enthnew3); CHKERRQ(ierr);
@@ -94,6 +83,7 @@ PetscErrorCode IceModel::energyStep() {
   }
 
   ierr = PetscGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
+
   ierr = PetscGlobalSum(&myVertSacrCount, &gVertSacrCount, grid.com); CHKERRQ(ierr);
   if (gVertSacrCount > 0.0) { // count of when BOMBPROOF switches to lower accuracy
     const PetscScalar bfsacrPRCNT = 100.0 * (gVertSacrCount / (grid.Mx * grid.My));
@@ -104,6 +94,14 @@ PetscErrorCode IceModel::energyStep() {
       snprintf(tempstr,50, "  [BPsacr=%.4f%%] ", bfsacrPRCNT);
       stdout_flags = tempstr + stdout_flags;
     }
+  }
+
+  ierr = PetscGlobalSum(&myBulgeCount, &gBulgeCount, grid.com); CHKERRQ(ierr);
+  if (gBulgeCount > 0.0) {   // count of when advection bulges are limited;
+                             //    frequently it is identically zero
+    char tempstr[50] = "";
+    snprintf(tempstr,50, " BULGE=%d ", static_cast<int>(ceil(gBulgeCount)) );
+    stdout_flags = tempstr + stdout_flags;
   }
 
   return 0;
@@ -204,7 +202,7 @@ PetscErrorCode IceModel::temperatureStep(
                     rho_c_av = (fdz * rho_c_I + fdzb * rho_c_br) / (fdz + fdzb);
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature
-  const PetscScalar bulgeMax   = 15.0; 
+  const PetscScalar bulgeMax  = config.get("enthalpy_cold_bulge_max") / ice->c_p;
 
   PetscScalar *Tnew, *Tbnew;
   // pointers to values in current column

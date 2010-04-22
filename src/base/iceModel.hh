@@ -171,7 +171,7 @@ protected:
 
   // parameters
   PetscReal   dt,     //!< mass continuity time step, s
-    dtTempAge,  // enthalpy (temperature) and age time steps in seconds
+              dtTempAge,  //!< enthalpy/temperature and age time-steps in seconds
               maxdt_temporary, dt_force,
               CFLviolcount,    //!< really is just a count, but PetscGlobalSum requires this type
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax,
@@ -264,7 +264,8 @@ protected:
 					      PetscScalar *lambda,
 					      PetscScalar **Enth_s);
   virtual PetscErrorCode enthalpyAndDrainageStep(
-                PetscScalar* vertSacrCount, PetscScalar* liquifiedVol);
+                PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
+                PetscScalar* bulgeCount);
 
   // see iMgeometry.cc
   virtual PetscErrorCode computeDrivingStress(IceModelVec2S &vtaudx, IceModelVec2S &vtaudy);

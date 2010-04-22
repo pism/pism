@@ -334,7 +334,8 @@ Heuristic: Once liquid water fraction exceeds a cap, all of it goes to the base.
 Follows [\ref Greve97Greenland] and references therein.
  */
 PetscErrorCode IceModel::enthalpyAndDrainageStep(
-                      PetscScalar* vertSacrCount, PetscScalar* liquifiedVol) {
+                      PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
+                      PetscScalar* bulgeCount) {
   PetscErrorCode  ierr;
 
   if (config.get_flag("do_cold_ice_methods")) {
@@ -363,6 +364,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
     omega_max = config.get("liquid_water_fraction_max"), // pure
     warm_dE   = config.get("warm_base_flux_enthalpy_fraction") * L,
     refreeze_rate = config.get("cold_base_refreeze_rate"), // m s-1
+    bulgeEnthMax  = config.get("enthalpy_cold_bulge_max"), // J kg-1
     hmelt_max = config.get("hmelt_max");                 // m
 
   PetscScalar *Enthnew, *Tbnew;
@@ -697,8 +699,16 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         Hmeltnew += Hdrainedtotal;
       }
 
-      // Enthnew[] is finalized!:  transfer column into Enthnew3; communication
-      //   will occur later
+      // Enthnew[] is finalized!:  apply bulge limiter and transfer column
+      //   into Enthnew3; communication will occur later
+      const PetscReal lowerEnthLimit = Enth_ks - bulgeEnthMax;
+      for (PetscInt k=0; k < ks; k++) {
+        if (Enthnew[k] < lowerEnthLimit) {
+          *bulgeCount += 1;      // count the columns which have very large cold 
+          Enthnew[k] = lowerEnthLimit;  // advection bulge ... and then actually
+                                        // limit how low the enthalpy
+        }
+      }
       ierr = Enthnew3.setValColumnPL(i,j,Enthnew); CHKERRQ(ierr);
 
       // if no thermal layer then need to fill Tbnew[0] directly
