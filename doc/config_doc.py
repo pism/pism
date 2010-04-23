@@ -30,7 +30,10 @@ print """
   
 \par To create and use an alternate config file:
 
-\par Method 1, by editing a .cdl text file:
+\par Method 1, by using util/pism_config_editor.py:
+- Explained at pism_config_editor.  It may be the easiest way!
+
+\par Method 2, by editing a .cdl text file:
 - Make a copy of src/pism_config.cdl:
   \code
     cp src/pism_config.cdl myconfig.cdl
@@ -47,7 +50,7 @@ print """
   (Runtime option "-verbose 4" will report back your values as the PISM
   executable starts.)
 
-\par Method 2, using a netCDF Operator (NCO):
+\par Method 3, using a netCDF Operator (NCO):
 - This illustration changes the Clausius-Clapeyron constant from its default value to
   9.7008e-8 K Pa-1.  First you make a copy of lib/pism_config.nc, assuming the 
   PISM source is built.  Then make your modification of the desired attribute

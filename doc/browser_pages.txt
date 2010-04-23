@@ -1,7 +1,7 @@
 
 // adds commentary and GPL to first page of doxygen-erated HTML browser
 
-/*! \mainpage PISM C++ Class Browser
+/*! \mainpage PISM Source Code Browser
 <CENTER>
 <i>
 for PISM stable0.3 revision \verbinclude revision.tex
