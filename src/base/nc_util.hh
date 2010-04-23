@@ -21,9 +21,11 @@
 
 #include <petsc.h>
 
-// The following line is a stupid kludge necessary to make NetCDF 4.x work in
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
+#ifndef MPI_INCLUDED
 #define MPI_INCLUDED 1
+#endif
 #include <netcdf.h>		// nc_type
 
 #include "../udunits/udunits.h"	// utUnit
