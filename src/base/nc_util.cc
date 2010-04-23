@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
-#include <netcdf.h>
 #include "../udunits/udunits.h"
 #include "pism_const.hh"
 #include "nc_util.hh"

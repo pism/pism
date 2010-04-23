@@ -20,7 +20,12 @@
 #define __nc_util_hh
 
 #include <petsc.h>
+
+// The following line is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+#define MPI_INCLUDED 1
 #include <netcdf.h>		// nc_type
+
 #include "../udunits/udunits.h"	// utUnit
 #include <string>
 #include <vector>

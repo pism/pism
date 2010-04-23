@@ -22,7 +22,6 @@
 #include <cstring>
 #include <cstdlib>
 #include <petscda.h>
-#include <netcdf.h>
 #include "../udunits/udunits.h"
 #include "nc_util.hh"
 #include "NCSpatialVariable.hh"
