@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 ## @package fill_missing
-# \brief This script solves the Laplace equation.
+# \brief This script solves the Laplace equation as a method of filling holes in map-plane data.
 #
 # \details The script is an implementation of the SOR method with Chebyshev
 # acceleration for the Laplace equation, as described in 'Numerical Recipes in
