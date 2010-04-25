@@ -213,6 +213,42 @@ PetscScalar& IceModelVec2S::operator() (int i, int j) {
   return static_cast<PetscScalar**>(array)[i][j];
 }
 
+
+//! Checks if the current IceModelVec2S has NANs and reports if it does.
+/*! Up to a fixed number of messages are printed at stdout.  Returns the full
+ count of NANs (which is a nonzero) on this rank. */
+PetscErrorCode IceModelVec2S::has_nan() {
+  PetscErrorCode ierr;
+  const PetscInt max_print_this_rank=10;
+  PetscInt retval=0;
+
+  ierr = begin_access(); CHKERRQ(ierr);
+  PetscInt i, j;
+  for (i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (j=grid->ys; j<grid->ys+grid->ym; ++j) {
+      if (gsl_isnan((*this)(i,j))) {
+        retval++;
+        if (retval <= max_print_this_rank) {
+          ierr = PetscSynchronizedPrintf(grid->com, 
+             "IceModelVec2S %s: NAN (or uninitialized) at i = %d, j = %d on rank = %d\n",
+             name.c_str(), i, j, grid->rank); CHKERRQ(ierr);
+        }
+      }
+    }
+  }
+  ierr = end_access(); CHKERRQ(ierr);
+
+  if (retval > 0) {
+    ierr = PetscSynchronizedPrintf(grid->com, 
+       "IceModelVec2S %s: detected %d NANs (or uninitialized) on rank = %d\n",
+             name.c_str(), retval, grid->rank); CHKERRQ(ierr);
+  }
+
+  ierr = PetscSynchronizedFlush(grid->com); CHKERRQ(ierr);
+  return retval;
+}
+
+
 // IceModelVec2Mask
 
 PetscErrorCode  IceModelVec2Mask::create(IceGrid &my_grid, const char my_name[], bool local, int width) {
@@ -522,3 +558,4 @@ PetscErrorCode IceModelVec2Stag::get_array(PetscScalar*** &a) {
   a = static_cast<PetscScalar***>(array);
   return 0;
 }
+

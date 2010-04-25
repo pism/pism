@@ -163,6 +163,7 @@ public:
   virtual PetscScalar diff_y_p(int i, int j);
   virtual PetscErrorCode view_matlab(PetscViewer my_viewer);
   virtual PetscScalar& operator() (int i, int j);
+  virtual PetscErrorCode has_nan();
 };
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.

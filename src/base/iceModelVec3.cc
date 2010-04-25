@@ -1018,11 +1018,16 @@ PetscErrorCode IceModelVec3Bedrock::view_sounding(int i, int j, PetscInt viewer_
   return 0;
 }
 
+//! Checks if the current IceModelVec2S has NANs and reports if it does.
+/*! Up to a fixed number of messages are printed at stdout.  Returns the full
+ count of NANs (which is a nonzero) on this rank. */
 PetscErrorCode  IceModelVec3::has_nan() {
   PetscErrorCode ierr;
   vector<PetscReal> V;
   V.resize(grid->Mz);
   PetscReal *tmp = &V[0];
+  PetscInt retval=0;
+  const PetscInt max_print_this_rank=10;
 
   ierr = begin_access(); CHKERRQ(ierr);
   PetscInt i, j, k;
@@ -1031,8 +1036,12 @@ PetscErrorCode  IceModelVec3::has_nan() {
       ierr = getInternalColumn(i, j, &tmp); CHKERRQ(ierr);
       for (k = 0; k < grid->Mz; k++) {
 	if (gsl_isnan(tmp[k])) {
-	  ierr = PetscSynchronizedPrintf(grid->com, "IceModelVec3 %s: NAN (or uninitialized) at i = %d, j = %d\n",
-					 name.c_str(), i, j); CHKERRQ(ierr);
+	  retval++;
+          if (retval <= max_print_this_rank) {
+            ierr = PetscSynchronizedPrintf(grid->com, 
+               "IceModelVec3 %s: NAN (or uninitialized) at i = %d, j = %d, k = %d on rank = %d\n",
+               name.c_str(), i, j, k, grid->rank); CHKERRQ(ierr);
+          }
 	  break;
 	}
       }
@@ -1040,7 +1049,13 @@ PetscErrorCode  IceModelVec3::has_nan() {
   }
   ierr = end_access(); CHKERRQ(ierr);
 
+  if (retval > 0) {
+    ierr = PetscSynchronizedPrintf(grid->com, 
+       "IceModelVec3 %s: detected %d NANs (or uninitialized) on rank = %d\n",
+             name.c_str(), retval, grid->rank); CHKERRQ(ierr);
+  }
+
   ierr = PetscSynchronizedFlush(grid->com); CHKERRQ(ierr);
 
-  return 0;
+  return retval;
 }

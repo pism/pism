@@ -575,7 +575,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   char tempstr[5];  snprintf(tempstr,5," %c", adaptReasonFlag);
   stdout_flags += tempstr;
 
-  //  ierr = variables.check_for_nan(); CHKERRQ(ierr);
+#ifdef PISM_DEBUG
+  ierr = variables.check_for_nan(); CHKERRQ(ierr);
+#endif
 
   return 0;
 }
@@ -621,7 +623,15 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   dtTempAge = 0.0;
   dt = 0.0;
   PetscReal end_year = grid.end_year;
-  grid.end_year = grid.start_year + 1; // all what matters is that it is
+  
+  // FIXME:  In the case of derived class diagnostic time series this fixed
+  //         step-length can be problematic.  The fix may have to be in the derived class.
+  //         The problem is that unless the derived class fully reinitializes its
+  //         time series then there can be a request for an interpolation on [A,B]
+  //         where A>B.  See IcePSTexModel.
+  //grid.end_year = grid.start_year + 1; // all what matters is that it is
+  //				       // greater than start_year
+  grid.end_year = grid.start_year + 0.01; // all what matters is that it is
 				       // greater than start_year
 
   ierr = step(do_mass_conserve, do_temp, do_age,
