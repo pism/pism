@@ -80,8 +80,7 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2S &vtaudx, IceModelVec
 	    h_y = factor * (pow(vH(i,j+1),etapow) - pow(vH(i,j-1),etapow)) / (2*dy);
 	  }
 	  // now add bed slope to get actual h_x,h_y
-	  // FIXME: there is no reason to assume user's bed is periodized; see vertical
-	  //   velocity computation
+	  // FIXME: there is no reason to assume user's bed is periodized
 	  h_x += vbed.diff_x(i,j);
 	  h_y += vbed.diff_y(i,j);
         } else {  // floating or eta transformation is not used

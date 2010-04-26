@@ -159,6 +159,10 @@ public:
   virtual PetscErrorCode sum(PetscScalar &result);
   virtual PetscScalar diff_x(int i, int j);
   virtual PetscScalar diff_y(int i, int j);
+  virtual PetscScalar diff_x_stagE(int i, int j);
+  virtual PetscScalar diff_y_stagE(int i, int j);
+  virtual PetscScalar diff_x_stagN(int i, int j);
+  virtual PetscScalar diff_y_stagN(int i, int j);
   virtual PetscScalar diff_x_p(int i, int j);
   virtual PetscScalar diff_y_p(int i, int j);
   virtual PetscErrorCode view_matlab(PetscViewer my_viewer);

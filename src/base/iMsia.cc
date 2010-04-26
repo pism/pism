@@ -64,7 +64,7 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
   bool use_eta = config.get_flag("use_eta_transformation");
 
   if (use_eta == true) {
-    PetscScalar **eta, **bed, **H;
+    PetscScalar **eta, **H;
     const PetscScalar n = ice->exponent(), // presumably 3.0
                       etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
                       invpow  = 1.0 / etapow,
@@ -92,7 +92,7 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
 
     // now use Mahaffy on eta to get grad h on staggered;
     // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
-    ierr = vbed.get_array(bed); CHKERRQ(ierr);
+    ierr = vbed.begin_access(); CHKERRQ(ierr);
     ierr = vWork2d[4].get_array(eta); CHKERRQ(ierr);
     for (PetscInt o=0; o<2; o++) {
 #ifdef LOCAL_GHOST_UPDATE
@@ -114,9 +114,8 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
               h_y[o][i][j] = 0.0;
             }
             // now add bed slope to get actual h_x,h_y
-            h_x[o][i][j] += (bed[i+1][j] - bed[i][j]) / dx;
-            h_y[o][i][j] += (+ bed[i+1][j+1] + bed[i][j+1]
-                             - bed[i+1][j-1] - bed[i][j-1]) / (4.0*dy);
+            h_x[o][i][j] += vbed.diff_x_stagE(i,j);
+            h_y[o][i][j] += vbed.diff_y_stagE(i,j);
           } else {        // J-offset
             const PetscScalar mean_eta = 0.5 * (eta[i][j+1] + eta[i][j]);
             if (mean_eta > 0.0) {
@@ -129,9 +128,8 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
               h_x[o][i][j] = 0.0;
             }
             // now add bed slope to get actual h_x,h_y
-            h_y[o][i][j] += (bed[i][j+1] - bed[i][j]) / dy;
-            h_x[o][i][j] += (+ bed[i+1][j+1] + bed[i+1][j]
-                             - bed[i-1][j+1] - bed[i-1][j]) / (4.0*dx);
+            h_y[o][i][j] += vbed.diff_y_stagN(i,j);
+            h_x[o][i][j] += vbed.diff_x_stagN(i,j);
           }
         }
       }
