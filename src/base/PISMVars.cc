@@ -66,7 +66,11 @@ void PISMVars::remove(string name) {
 //! \brief Returns a pointer to an IceModelVec containing variable \c name or
 //! NULL if that variable was not found.
 IceModelVec* PISMVars::get(string name) const {
-  return variables[name];
+  map<string, IceModelVec* >::const_iterator j = variables.find(name);
+  if (j != variables.end())
+    return (j->second);
+  else
+    return NULL;
 }
 
 //! Returns a set of pointers to all the variables in the dictionary.
