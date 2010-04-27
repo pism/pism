@@ -23,7 +23,6 @@
 #include <vector>
 #include <string>
 #include <petscda.h>
-#include <netcdf.h>
 #include "../udunits/udunits.h"
 #include "nc_util.hh"
 

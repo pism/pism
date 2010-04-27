@@ -18,7 +18,6 @@
 
 #include <cstring>
 #include <cstdlib>
-#include <netcdf.h>
 #include "nc_util.hh"
 #include "pism_const.hh"
 #include "iceModel.hh"
