@@ -49,7 +49,9 @@ set -e  # exit on error
 # function to run "pisms -pst" on NN processors
 mpst()
 {
-    cmd="mpiexec -n $1 pisms -pst $2"  # change if "mpirun" or "bin/pisms", etc.
+    # run pisms from the bin directory for the current PISM;
+    #   (change the next line if using "mpirun" or a different pisms or etc.)
+    cmd="mpiexec -n $1 ../../bin/pisms -pst $2"
     
     echo "date = '`date`' on host '`uname -n`':"
     echo "trying '$cmd'"
@@ -65,9 +67,9 @@ mpst_vg()
     if [ "$2" = "e" ] ; then  # equal spaced default vertical grid
         vg="-Lz 5000 -Mz 251 -Lbz 515 -Mbz 51 -z_spacing equal $3"
     elif [ "$2" = "u" ] ; then # un-equal spaced default vertical grid
-        vg="-Lz 5000 -Mz 101 -Lbz 515 -Mbz 21 $3"
+        vg="-Lz 5000 -Mz 51 -Lbz 515 -Mbz 11 $3"
     elif [ "$2" = "t" ] ; then # un-equal spaced default vertical grid, *t*wice finer
-        vg="-Lz 5000 -Mz 201 -Lbz 515 -Mbz 41 $3"
+        vg="-Lz 5000 -Mz 101 -Lbz 515 -Mbz 21 $3"
     else
         return 1
     fi
