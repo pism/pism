@@ -325,9 +325,8 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
             I[k] = I[ks];
           }  
 
-          // diffusivity for deformational flow (vs basal diffusivity, incorporated in ub,vb)
-          const PetscScalar  Jks = grid.zlevels[ks] * I[ks] - K[ks];
-          const PetscScalar  Dfoffset = Jks + (thickness - grid.zlevels[ks]) * I[ks];
+          // diffusivity for deformational SIA flow
+          const PetscScalar  Dfoffset = thickness * I[ks] - K[ks];
 
           // vertically-averaged SIA-only velocity, sans sliding;
           //   note uvbar(i,j,0) is  u  at right staggered point (i+1/2,j)
