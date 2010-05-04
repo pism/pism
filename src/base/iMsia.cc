@@ -182,33 +182,54 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
 /*!
 See the comment for massContExplicitStep() before reading the rest of this comment.
 
-Note that one may write 
-  \f[ \mathbf{q} = \bar{\mathbf{U}} H = D \nabla h + \mathbf{U}_b \cdot H\f]
-in shallow ice approximation (SIA) areas.  Here \f$h\f$ is the surface elevation of the ice
-\f$\mathbf{U}_b\f$ is the basal sliding velocity, and \f$D\f$ is the diffusivity (which 
-is computed in this method).
+In shallow ice approximation (SIA) areas, one may write either of two forms for
+the vertically-integrated mass flux:
+  \f[ \mathbf{q} = \bar{\mathbf{U}} H = - D \nabla h + \mathbf{U}_b \cdot H.\f]
+Here \f$h\f$ is the surface elevation of the ice
+\f$\mathbf{U}_b\f$ is the basal sliding velocity, and \f$D\f$ is the diffusivity,
+which is computed in this method.
 
-At the end of this routine the value of \f$D\f$ and of the <em>deformational part of</em> 
-the vertically-averaged horizontal velocity, namely \f$D \nabla h\f$, is known at all staggered 
-grid points.  It is stored in an IceModelVec2Stag called \c uvbar.
+At the end of this routine the value of \f$D\f$ and of the <em>deformational
+part of</em>  the vertically-averaged horizontal velocity \f$\bar{\mathbf{U}}\f$,
+namely \f$- D \nabla h / H\f$, are known at all staggered grid points.  The
+latter is stored in an IceModelVec2Stag called \c uvbar.
 
-The scheme used for this is
+Two vertical integrals are computed.  Both are in terms of this internal quantity,
+	\f[\delta(z) = e\,2\rho g (H-z) \,F,\f]
+where \f$F\f$ is the result of the flow law, which depends on pressure and stress;
+see IceFlowLaw::flow().
+
+One integral is evaluated at every level in the ice,
+	\f[I(z) = \int_0^z \delta(z')\,dz'.\f]
+These values are then stored in \c IceModelVec3 \c Istag3[2] and used later by
+IceModel::horizontalVelocitySIARegular() if the horizontal velocity is needed
+"at depth", that is, within the three dimensional ice fluid.
+
+The other integral is the diffusivity of the SIA, used to compute
+\c IceModelVec2Stag \c uvbar:
+	\f[D = \int_0^H (H-z)\delta(z)\,dz.\f]
+See [\ref BBL] on the meaning of \f$D\f$.
+
+Both integrals are approximated by the trapezoid rule.
+
+The scheme used here for the SIA
 the one first proposed in the context of ice sheets by Mahaffy (1976).  That is, the method 
 is "type I" in the classification described in (Hindmarsh and Payne 1996).  Note that the 
 surface slope \f$\nabla h\f$ is needed on the staggered grid although the surface 
 elevation \f$h\f$ itself is known on the regular grid.  
 
-This routine also computes the (ice volume but not basal) strain-heating.  In particular,
-the staggered grid value of \f$\Sigma\f$ is computed using the formula appropriate to the SIA
-case and is put in a workspace \c Vec.  See correctSigma().
+This routine also computes the strain-heating.  This means the deformational-heating
+within the ice volume, but not basal the basal friction.  In particular,
+the staggered grid value of \f$\Sigma\f$ is computed using the formula appropriate
+to the SIA, and is put in \c IceModelVec3 \c Sigmastag3[2].  See correctSigma()
+for how the SIA+SSA hybrid \f$\Sigma\f$ is computed.
  */
 PetscErrorCode IceModel::velocitySIAStaggered() {
   PetscErrorCode  ierr;
 
-  PetscScalar *delta, *I, *K, *Sigma;
+  PetscScalar *delta, *I, *Sigma;
   delta = new PetscScalar[grid.Mz];
   I = new PetscScalar[grid.Mz];
-  K = new PetscScalar[grid.Mz];
   Sigma = new PetscScalar[grid.Mz];
 
   const double enhancement_factor = config.get("enhancement_factor"),
@@ -288,7 +309,8 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           const PetscScalar   alpha =
                   sqrt(PetscSqr(h_x[o][i][j]) + PetscSqr(h_y[o][i][j]));
 
-          I[0] = 0;   K[0] = 0;
+          I[0] = 0;
+          PetscScalar  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
           for (PetscInt k=0; k<=ks; ++k) {
 	    // pressure added by the ice (i.e. pressure difference between the
 	    // current level and the top of the column)
@@ -307,7 +329,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
               flow = gpbldi->flowFromEnth(alpha * pressure, E, pressure, grainsize);
             }
 
-            delta[k] = 2.0 * pressure * enhancement_factor * flow;
+            delta[k] = enhancement_factor * 2.0 * pressure * flow;
 
             // for Sigma, ignore mask value and assume SHEET; will be overwritten
             // by correctSigma() in iMssa.cc
@@ -316,17 +338,14 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
             if (k>0) { // trapezoid rule for I[k] and K[k]
               const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
               I[k] = I[k-1] + 0.5 * dz * (delta[k-1] + delta[k]);
-              K[k] = K[k-1] + 0.5 * dz * (grid.zlevels[k-1] * delta[k-1]
-                                          + grid.zlevels[k] * delta[k]);
+              Dfoffset += 0.5 * dz * ((thickness - grid.zlevels[k-1]) * delta[k-1]
+                                          + (thickness - grid.zlevels[k]) * delta[k]);
             }
           }
           for (PetscInt k=ks+1; k<grid.Mz; ++k) { // above the ice
             Sigma[k] = 0.0;
             I[k] = I[ks];
           }  
-
-          // diffusivity for deformational SIA flow
-          const PetscScalar  Dfoffset = thickness * I[ks] - K[ks];
 
           // vertically-averaged SIA-only velocity, sans sliding;
           //   note uvbar(i,j,0) is  u  at right staggered point (i+1/2,j)
@@ -362,7 +381,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
   ierr = Enth3.end_access(); CHKERRQ(ierr);
 
-  delete [] delta;   delete [] I;   delete [] K;   delete [] Sigma;
+  delete [] delta;   delete [] I;   delete [] Sigma;
 
 #ifndef LOCAL_GHOST_UPDATE
   ierr = uvbar.beginGhostComm(); CHKERRQ(ierr);
@@ -580,10 +599,11 @@ PetscErrorCode IceModel::SigmaSIAToRegular() {
 //! Update regular grid horizontal velocities u,v at depth for SIA regions.
 /*! 
 The procedure velocitySIAStaggered() computes several scalar
-quantities at depth (the details of which are too complicated to explain).  
-These quantities correspond to three-dimensional arrays.  This procedure takes those 
-quantities and computes the three-dimensional arrays for the horizontal components \f$u\f$ and 
-\f$v\f$ of the velocity field.
+quantities at depth, including \f$I(z)\f$.  This procedure takes \f$I(z)\f$ and
+the surface slope, both known on the staggered grid, and computes
+the three-dimensional arrays for the horizontal components \f$u\f$ and 
+\f$v\f$ of the velocity field:
+	\f[(u(z),v(z)) = - I(z) (h_x, h_y).\f]
 
 The vertical component \f$w\f$ of the velocity field 
 is computed later by vertVelocityFromIncompressibility().
