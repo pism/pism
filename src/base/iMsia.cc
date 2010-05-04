@@ -205,10 +205,9 @@ case and is put in a workspace \c Vec.  See correctSigma().
 PetscErrorCode IceModel::velocitySIAStaggered() {
   PetscErrorCode  ierr;
 
-  PetscScalar *delta, *I, *J, *K, *Sigma;
+  PetscScalar *delta, *I, *K, *Sigma;
   delta = new PetscScalar[grid.Mz];
   I = new PetscScalar[grid.Mz];
-  J = new PetscScalar[grid.Mz];
   K = new PetscScalar[grid.Mz];
   Sigma = new PetscScalar[grid.Mz];
 
@@ -289,7 +288,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           const PetscScalar   alpha =
                   sqrt(PetscSqr(h_x[o][i][j]) + PetscSqr(h_y[o][i][j]));
 
-          I[0] = 0;   J[0] = 0;   K[0] = 0;
+          I[0] = 0;   K[0] = 0;
           for (PetscInt k=0; k<=ks; ++k) {
 	    // pressure added by the ice (i.e. pressure difference between the
 	    // current level and the top of the column)
@@ -319,17 +318,16 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
               I[k] = I[k-1] + 0.5 * dz * (delta[k-1] + delta[k]);
               K[k] = K[k-1] + 0.5 * dz * (grid.zlevels[k-1] * delta[k-1]
                                           + grid.zlevels[k] * delta[k]);
-              J[k] = grid.zlevels[k] * I[k] - K[k];
             }
           }
           for (PetscInt k=ks+1; k<grid.Mz; ++k) { // above the ice
             Sigma[k] = 0.0;
             I[k] = I[ks];
-            J[k] = grid.zlevels[k] * I[ks];
           }  
 
           // diffusivity for deformational flow (vs basal diffusivity, incorporated in ub,vb)
-          const PetscScalar  Dfoffset = J[ks] + (thickness - grid.zlevels[ks]) * I[ks];
+          const PetscScalar  Jks = grid.zlevels[ks] * I[ks] - K[ks];
+          const PetscScalar  Dfoffset = Jks + (thickness - grid.zlevels[ks]) * I[ks];
 
           // vertically-averaged SIA-only velocity, sans sliding;
           //   note uvbar(i,j,0) is  u  at right staggered point (i+1/2,j)
@@ -365,7 +363,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
   ierr = Enth3.end_access(); CHKERRQ(ierr);
 
-  delete [] delta;   delete [] I;   delete [] J;   delete [] K;   delete [] Sigma;
+  delete [] delta;   delete [] I;   delete [] K;   delete [] Sigma;
 
 #ifndef LOCAL_GHOST_UPDATE
   ierr = uvbar.beginGhostComm(); CHKERRQ(ierr);
