@@ -236,37 +236,36 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
                constant_grain_size = config.get("constant_grain_size");
   const bool   do_cold_ice = config.get_flag("do_cold_ice_methods");
 
-  PetscScalar **h_x[2], **h_y[2], **H;
-
-  PetscScalar *ageij, *ageoffset;
-
-  if ((realAgeForGrainSize==PETSC_TRUE) && (!config.get_flag("do_age"))) {
-    PetscPrintf(grid.com,
-       "PISM ERROR in IceModel::velocitySIAStaggered(): do_age not set but\n"
-       "age is needed for grain-size-based flow law ...  ENDING! ...\n\n");
-    PetscEnd();
-  }
-
-  const bool usetau3 = (IceFlowLawUsesGrainSize(ice) && (realAgeForGrainSize==PETSC_TRUE) && (config.get_flag("do_age")));
-
-  const PetscTruth usesGrainSize = IceFlowLawUsesGrainSize(ice);
-  
+  PetscScalar **h_x[2], **h_y[2], **H;  
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
   ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
   ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
   ierr = uvbar.begin_access(); CHKERRQ(ierr);
-
-  if (usetau3) {
-    ierr = tau3.begin_access(); CHKERRQ(ierr);
-  }
   ierr = w3.begin_access(); CHKERRQ(ierr);
   ierr = Istag3[0].begin_access(); CHKERRQ(ierr);
   ierr = Istag3[1].begin_access(); CHKERRQ(ierr);
   ierr = Sigmastag3[0].begin_access(); CHKERRQ(ierr);
   ierr = Sigmastag3[1].begin_access(); CHKERRQ(ierr);
-  
+
+  // some flow laws use grainsize, and even need age to update grainsize
+  if ((realAgeForGrainSize==PETSC_TRUE) && (!config.get_flag("do_age"))) {
+    PetscPrintf(grid.com,
+       "PISM ERROR in IceModel::velocitySIAStaggered(): do_age not set but\n"
+       "age is needed for grain-size-based flow law ...  ENDING! ...\n\n");
+    PetscEnd();
+  }
+  const bool usetau3 =    (IceFlowLawUsesGrainSize(ice)
+                       && (realAgeForGrainSize==PETSC_TRUE)
+                       && (config.get_flag("do_age"))),
+             usesGrainSize = IceFlowLawUsesGrainSize(ice);
+  PetscScalar *ageij, *ageoffset;
+  if (usetau3) {
+    ierr = tau3.begin_access(); CHKERRQ(ierr);
+  }
+
+  // some flow laws use enthalpy while some ("cold ice methods") use temperature
   PetscScalar *Enthij, *Enthoffset;
   PolyThermalGPBLDIce *gpbldi = NULL;
   if (!do_cold_ice) {
@@ -280,7 +279,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   }
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
 
-  // staggered grid computation of: I, J, Sigma
+  // staggered grid computation of: uvbar, I, Sigma
   for (PetscInt o=0; o<2; o++) {
 #ifdef LOCAL_GHOST_UPDATE
     PetscInt GHOSTS = 1;
@@ -342,18 +341,22 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
                                           + (thickness - grid.zlevels[k]) * delta[k]);
             }
           }
+          // finish off D with (1/2) dz (0 + (H-z[ks])*delta[ks]), but dz=H-z[ks]:
+          const PetscScalar dz = thickness - grid.zlevels[ks];
+          Dfoffset += 0.5 * dz * dz * delta[ks];
+
           for (PetscInt k=ks+1; k<grid.Mz; ++k) { // above the ice
             Sigma[k] = 0.0;
             I[k] = I[ks];
           }  
-
-          // vertically-averaged SIA-only velocity, sans sliding;
-          //   note uvbar(i,j,0) is  u  at right staggered point (i+1/2,j)
-          //   but uvbar(i,j,1) is  v  at up staggered point (i,j+1/2)
-          uvbar(i,j,o) = - Dfoffset * slope / thickness;
-         
           ierr = Istag3[o].setInternalColumn(i, j, I); CHKERRQ(ierr);
           ierr = Sigmastag3[o].setInternalColumn(i, j, Sigma); CHKERRQ(ierr);
+
+          // vertically-averaged SIA-only velocity, sans sliding; note
+          //   uvbar(i,j,0) is  u  at E (east)  staggered point (i+1/2,j)
+          //   uvbar(i,j,1) is  v  at N (north) staggered point (i,j+1/2)
+          uvbar(i,j,o) = - Dfoffset * slope / thickness;
+         
         } else {  // zero thickness case
           uvbar(i,j,o) = 0;
           ierr = Istag3[o].setColumn(i,j,0.0); CHKERRQ(ierr);

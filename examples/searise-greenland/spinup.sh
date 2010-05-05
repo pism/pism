@@ -4,11 +4,10 @@
 
 # PISM SeaRISE Greenland
 #
-#
 # before using this script, run preprocess.sh to download and adjust metadata
 # on SeaRISE "Present Day Greenland" master dataset
 #
-# recommended way to run with N processors is " ./psearise-spinup.sh N >& out.psea & "
+# recommended way to run with N processors is " ./spinup.sh N >& out.psea & "
 # which gives a viewable (with "less", for example) transcript in out.psea
 
 if [ -n "${SCRIPTNAME:+1}" ] ; then
@@ -116,7 +115,7 @@ SKIPTWENTYKM=5
 SKIPTENKM=20
 SKIPFIVEKM=50
 
-# "standard" spinup 10km / 5km
+# defaults to coarse grid choices
 COARSEGRID=$TWENTYKMGRID
 FINEGRID=$TWENTYKMGRID
 COARSESKIP=$SKIPTWENTYKM
@@ -157,7 +156,7 @@ echo "$SCRIPTNAME     coarse grid = '$COARSEGRID' (= $CS km)"
 echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km)"
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -eta -e 3"
+PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -e 3"
 
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -pdd_fausto"
@@ -202,7 +201,7 @@ $PISM_DO $cmd
 PRE1NAME=g${CS}km_steady.nc
 EX1NAME=ex_${PRE1NAME}
 EXTIMES=0:500:${NOMASSSIARUNLENGTH}
-EXVARS="enthalpybase,temppabase,bmelt,bwat,mask" # add mask, so that check_stationarity.py ignores ice-free areas.
+EXVARS="enthalpybase,temppabase,bmelt,bwat,csurf,mask" # add mask, so that check_stationarity.py ignores ice-free areas.
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA run to achieve approximate temperature equilibrium, for ${NOMASSSIARUNLENGTH}a"
 cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE0NAME $COUPLER_SIMPLE \
