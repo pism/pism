@@ -48,6 +48,8 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
 
   PISMIO nc(&grid);
   ierr = nc.get_grid(filename.c_str()); CHKERRQ(ierr);
+  grid.compute_nprocs();
+  grid.compute_ownership_ranges();
   ierr = grid.createDA(); CHKERRQ(ierr);  
   return 0;
 }

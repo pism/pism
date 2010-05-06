@@ -697,7 +697,7 @@ PetscErrorCode PISMOptionsIntArray(string option, string text,
   ierr = PISMOptionsRealArray(option, text, tmp, is_set); CHKERRQ(ierr);
 
   result.clear();
-  for (int j = 0; j < tmp.size(); ++j)
+  for (unsigned int j = 0; j < tmp.size(); ++j)
     result.push_back(static_cast<PetscInt>(tmp[j]));
 
   return 0;
