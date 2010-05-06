@@ -689,7 +689,19 @@ PetscErrorCode PISMOptionsRealArray(string option, string text,
   return 0;
 }
 
+PetscErrorCode PISMOptionsIntArray(string option, string text,
+				    vector<PetscInt> &result, bool &is_set) {
+  PetscErrorCode ierr;
+  vector<PetscReal> tmp;
 
+  ierr = PISMOptionsRealArray(option, text, tmp, is_set); CHKERRQ(ierr);
+
+  result.clear();
+  for (int j = 0; j < tmp.size(); ++j)
+    result.push_back(static_cast<PetscInt>(tmp[j]));
+
+  return 0;
+}
 
 //! Checks if an option is present in the PETSc option database.
 /*!

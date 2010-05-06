@@ -83,6 +83,7 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
   Mbz = static_cast<PetscInt>(config.get("grid_Mbz"));
 
   Nx = Ny = 0;			// will be set to a correct value in createDA()
+  procs_x = procs_y = NULL;
 
   initial_Mz = 0;		// will be set to a correct value in
 				// IceModel::check_maximum_thickness()
@@ -118,6 +119,9 @@ IceGrid::~IceGrid() {
   delete [] ice_fine2storage;
   delete [] bed_storage2fine;
   delete [] bed_fine2storage;
+
+  delete [] procs_x;
+  delete [] procs_y;
 }
 
 
@@ -399,6 +403,27 @@ void IceGrid::compute_nprocs() {
 
 }
 
+//! Computes processor ownership ranges corresponding to equal area
+//! distribution among processors.
+/*!
+  Expects grid.Nx and grid.Ny to be valid.
+ */
+void IceGrid::compute_ownership_ranges() {
+  delete [] procs_x;
+  delete [] procs_y;
+
+  procs_x = new PetscInt[Nx];
+  procs_y = new PetscInt[Ny];
+  
+  for (PetscInt i=0; i < Nx; i++) {
+    procs_x[i] = Mx/Nx + ((Mx % Nx) > i);
+  }
+
+  for (PetscInt i=0; i < Ny; i++) {
+    procs_y[i] = My/Ny + ((My % Ny) > i);
+  }
+}
+
 //! Create the PETSc DA \c da2 for the horizontal grid.  Determine how the horizontal grid is divided among processors.
 /*!
   This procedure should only be called after the parameters describing the
@@ -428,14 +453,13 @@ PetscErrorCode IceGrid::createDA() {
   if (da2 != PETSC_NULL)
     SETERRQ(1, "IceGrid::createDA(): da2 != PETSC_NULL");
 
-  compute_nprocs();
-
   // Transpose:
   ierr = DACreate2d(com, DA_XYPERIODIC, DA_STENCIL_BOX,
                     My, Mx,
 		    Ny, Nx,
 		    1, WIDE_STENCIL, // dof, stencil width
-                    PETSC_NULL, PETSC_NULL, &da2);
+                    procs_y, procs_x,
+		    &da2);
   if (ierr != 0) {
     PetscErrorCode ierr2;
     ierr2 = verbPrintf(1, com,

@@ -50,19 +50,13 @@ PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const char my_short_name
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, local, DA_STENCIL_BOX,
 					     stencil_width, dof); CHKERRQ(ierr);
 
-#if PETSC_VERSION_MAJOR >= 3
-  const PetscInt *lx = NULL, *ly = NULL;
-  ierr = DAGetOwnershipRanges(my_grid.da2, &ly, &lx, PETSC_NULL); CHKERRQ(ierr);
-#else
-  PetscInt *lx = NULL, *ly = NULL;
-#endif
-
   // component DA:
   ierr = DACreate2d(grid->com, DA_XYPERIODIC, DA_STENCIL_BOX,
 		    grid->My, grid->Mx,
 		    grid->Ny, grid->Nx,
 		    1, stencil_width, // "1" is the dof of a component
-                    ly, lx, &component_da); CHKERRQ(ierr);
+                    grid->procs_y, grid->procs_x,
+		    &component_da); CHKERRQ(ierr);
 
   string s_name = name;
   vars[0].init("u" + s_name, my_grid, GRID_2D);

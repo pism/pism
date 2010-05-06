@@ -36,7 +36,8 @@ PetscErrorCode IceModel::allocateSSAobjects() {
                     grid.My, grid.Mx,
 		    grid.Ny, grid.Nx,
                     dof, stencilwidth,
-                    PETSC_NULL,PETSC_NULL,&SSADA); CHKERRQ(ierr);
+                    grid.procs_y, grid.procs_x,
+		    &SSADA); CHKERRQ(ierr);
 
   ierr = DACreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);
   ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);

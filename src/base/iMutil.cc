@@ -125,14 +125,20 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
   PetscLogDouble flops, my_flops;
   char str[TEMPORARY_STRING_LENGTH];
   MPI_Datatype mpi_type;
+  PetscLogDouble current_time;
+  PetscReal mypph;		// model years per proc. hour
 
   ierr = PetscGetFlops(&my_flops); CHKERRQ(ierr);
+
+  ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
+
+  mypph = 3600 * (grid.year - grid.start_year) / (grid.size * (current_time - start_time));
 
   ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
   MPI_Reduce(&my_flops, &flops, 1, mpi_type, MPI_SUM, 0, grid.com);
   
-  snprintf(str, sizeof(str), "PISM done.  PETSc MFlops = %.2f.",
-           flops * 1.0e-6);
+  snprintf(str, sizeof(str), "PISM done.  PETSc MFlops = %.2f; %.2f years per processor hour.",
+           flops * 1.0e-6, mypph);
 
   ierr = stampHistory(str); CHKERRQ(ierr);
   

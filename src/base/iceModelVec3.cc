@@ -53,18 +53,11 @@ IceModelVec3::IceModelVec3(const IceModelVec3 &other)
 PetscErrorCode IceModelVec3::create_da(DA &result, PetscInt Mz) {
   PetscErrorCode ierr;
 
-#if PETSC_VERSION_MAJOR >= 3
-  const PetscInt *lx = NULL, *ly = NULL;
-  ierr = DAGetOwnershipRanges(grid->da2, &ly, &lx, PETSC_NULL); CHKERRQ(ierr);
-#else
-  PetscInt *lx = NULL, *ly = NULL;
-#endif
-
   ierr = DACreate3d(grid->com, DA_YZPERIODIC, DA_STENCIL_BOX,
 		    Mz, grid->My, grid->Mx, // P, N, M
 		    1,  grid->Ny, grid->Nx, // p, n, m
 		    1, s_width,	// dof, stencil_width
-                    PETSC_NULL, ly, lx, // lz, ly, lx
+                    PETSC_NULL, grid->procs_y, grid->procs_x, // lz, ly, lx
 		    &result); CHKERRQ(ierr);
 
   return 0;
@@ -609,18 +602,11 @@ PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid,
   
   PetscErrorCode ierr;
 
-#if PETSC_VERSION_MAJOR >= 3
-  const PetscInt *lx = NULL, *ly = NULL;
-  ierr = DAGetOwnershipRanges(grid->da2, &ly, &lx, PETSC_NULL); CHKERRQ(ierr);
-#else
-  PetscInt *lx = NULL, *ly = NULL;
-#endif
-
   ierr = DACreate3d(grid->com, DA_YZPERIODIC, DA_STENCIL_STAR,
 		    grid->Mbz, grid->My, grid->Mx, // P, N, M
 		    1, grid->Ny, grid->Nx,	   // p, n, m
 		    1, 1,		// dof, stencil width
-                    PETSC_NULL, ly, lx, // lz, ly, lx
+                    PETSC_NULL, grid->procs_y, grid->procs_x, // lz, ly, lx
 		    &da); CHKERRQ(ierr);
 
   ierr = DACreateGlobalVector(da, &v); CHKERRQ(ierr);

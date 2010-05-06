@@ -495,18 +495,11 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
   grid = &my_grid;
   dims = GRID_2D;
 
-#if PETSC_VERSION_MAJOR >= 3
-  const PetscInt *lx = NULL, *ly = NULL;
-  ierr = DAGetOwnershipRanges(my_grid.da2, &ly, &lx, PETSC_NULL); CHKERRQ(ierr);
-#else
-  PetscInt *lx = NULL, *ly = NULL;
-#endif
-
   ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, my_sten,
 		    grid->My, grid->Mx,
 		    grid->Ny, grid->Nx,
 		    dof, stencil_width,
-                    ly, lx, &da); CHKERRQ(ierr);
+                    grid->procs_y, grid->procs_x, &da); CHKERRQ(ierr);
 
   if (local) {
     ierr = DACreateLocalVector(da, &v); CHKERRQ(ierr);

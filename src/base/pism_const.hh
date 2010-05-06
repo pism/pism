@@ -79,6 +79,9 @@ PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_va
 
 PetscErrorCode PISMOptionsInt(string option, string text,
 			      PetscInt &result, bool &is_set);
+PetscErrorCode PISMOptionsIntArray(string option, string text,
+				   vector<PetscInt> &result, bool &is_set);
+
 PetscErrorCode PISMOptionsReal(string option, string text,
 			       PetscReal &result, bool &is_set);
 PetscErrorCode PISMOptionsRealArray(string option, string text,

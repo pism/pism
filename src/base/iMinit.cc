@@ -289,6 +289,93 @@ PetscErrorCode IceModel::grid_setup() {
     ierr = set_grid_from_options(); CHKERRQ(ierr);
   }
 
+  bool Nx_set, Ny_set;
+  ierr = PISMOptionsInt("-Nx", "Number of processors in the x direction",
+			grid.Nx, Nx_set); CHKERRQ(ierr);
+  ierr = PISMOptionsInt("-Ny", "Number of processors in the y direction",
+			grid.Ny, Ny_set); CHKERRQ(ierr);
+
+  if (Nx_set ^ Ny_set) {
+    ierr = PetscPrintf(grid.com,
+		       "PISM ERROR: Please set both -Nx and -Ny.\n");
+    CHKERRQ(ierr);
+    PetscEnd();
+  }
+
+  if ((!Nx_set) && (!Ny_set)) {
+    grid.compute_nprocs();
+    grid.compute_ownership_ranges();
+  } else {
+
+    if ((grid.Mx / grid.Nx) < 2) {
+      ierr = PetscPrintf(grid.com,
+			 "PISM ERROR: Can't split %d grid points between %d processors.\n",
+			 grid.Mx, grid.Nx);
+      CHKERRQ(ierr);
+      PetscEnd();
+    }
+
+    if ((grid.My / grid.Ny) < 2) {
+      ierr = PetscPrintf(grid.com,
+			 "PISM ERROR: Can't split %d grid points between %d processors.\n",
+			 grid.My, grid.Ny);
+      CHKERRQ(ierr);
+      PetscEnd();
+    }
+
+    if (grid.Nx * grid.Ny != grid.size) {
+      ierr = PetscPrintf(grid.com,
+			 "PISM ERROR: Nx * Ny has to be equal to %d.\n",
+			 grid.size);
+      CHKERRQ(ierr);
+      PetscEnd();
+    }
+
+    bool procs_x_set, procs_y_set;
+    vector<PetscInt> tmp_x, tmp_y;
+    ierr = PISMOptionsIntArray("-procs_x", "Processor ownership ranges (x direction)",
+			       tmp_x, procs_x_set); CHKERRQ(ierr);
+    ierr = PISMOptionsIntArray("-procs_y", "Processor ownership ranges (y direction)",
+			       tmp_y, procs_y_set); CHKERRQ(ierr);
+
+    if (procs_x_set ^ procs_y_set) {
+      ierr = PetscPrintf(grid.com,
+			 "PISM ERROR: Please set both -procs_x and -procs_y.\n");
+      CHKERRQ(ierr);
+      PetscEnd();
+    }
+
+    if (procs_x_set && procs_y_set) {
+      if (tmp_x.size() != (unsigned int)grid.Nx) {
+	ierr = PetscPrintf(grid.com,
+			   "PISM ERROR: -Nx has to be equal to the -procs_x size.\n");
+	CHKERRQ(ierr);
+	PetscEnd();
+      }
+
+      if (tmp_y.size() != (unsigned int)grid.Ny) {
+	ierr = PetscPrintf(grid.com,
+			   "PISM ERROR: -Ny has to be equal to the -procs_y size.\n");
+	CHKERRQ(ierr);
+	PetscEnd();
+      }
+
+      delete [] grid.procs_x;
+      delete [] grid.procs_y;
+
+      grid.procs_x = new PetscInt[grid.Nx];
+      grid.procs_y = new PetscInt[grid.Ny];
+
+      for (PetscInt j=0; j < grid.Nx; j++)
+	grid.procs_x[j] = tmp_x[j];
+
+      for (PetscInt j=0; j < grid.Ny; j++)
+	grid.procs_y[j] = tmp_y[j];
+    } else {
+      grid.compute_ownership_ranges();
+    }
+  }
+
   // Process -y, -ys, -ye. We are reading these options here because couplers
   // might need to know what year it is.
   ierr = set_time_from_options(); CHKERRQ(ierr);

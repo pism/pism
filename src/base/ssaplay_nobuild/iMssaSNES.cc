@@ -163,7 +163,8 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2S vNuH[2], PetscInt *its) 
   // DA with dof = 2; otherwise same as grid.da2
   ierr = DACreate2d(grid.com, DA_XYPERIODIC, DA_STENCIL_BOX,
   	            grid.My, grid.Mx, PETSC_DECIDE, PETSC_DECIDE, 2, 1,
-  	            PETSC_NULL, PETSC_NULL, &user.ssada); CHKERRQ(ierr);
+  	            grid.procs_y, grid.procs_x,
+		    &user.ssada); CHKERRQ(ierr);
 
   // space for solution and residual
   ierr = DACreateGlobalVector(user.ssada, &X); CHKERRQ(ierr);

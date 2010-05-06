@@ -22,6 +22,7 @@
 #include <signal.h>
 #include <gsl/gsl_rng.h>
 #include <petscsnes.h>
+#include <petsctime.h>		// PetscGetTime()
 
 #include "materials.hh"
 #include "pism_const.hh"
@@ -461,6 +462,7 @@ protected:
 private:
   // for event logging (profiling); see run() and velocity()
   int siaEVENT, ssaEVENT, velmiscEVENT, beddefEVENT, massbalEVENT, tempEVENT;
+  PetscLogDouble start_time;
 };
 
 #endif /* __iceModel_hh */
