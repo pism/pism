@@ -390,7 +390,7 @@ The handful of diagnostic quantities which are \emph{only} available as run-time
 \optsection{PISM configuration file}
 
 PISM's behavior depends on values of many flags and physical parameters (see
-\href{http://www.pism-docs.org/dev/doxy/html/index.html}{PISM Browser} for details). Most of parameters have default values\footnote{For \texttt{pismr}, grid parameters $Mx$, $My$, $Mz$, $Mbz$, $Lz$, $Lbz$, that have to be set at bootstrapping, are some exceptions.} which are read from the configuration file \texttt{pism_config.nc} in the \texttt{lib} sub-directory.
+\href{http://www.pism-docs.org/doxy/html/index.html}{PISM Source Code Browser} for details). Most of parameters have default values\footnote{For \texttt{pismr}, grid parameters $Mx$, $My$, $Mz$, $Mbz$, $Lz$, $Lbz$, that have to be set at bootstrapping, are some exceptions.} which are read from the configuration file \texttt{pism_config.nc} in the \texttt{lib} sub-directory.
 
 It is possible to run PISM with an alternate configuration file using the \fileopt{config} command-line option:
 \begin{verbatim}
@@ -399,7 +399,7 @@ $ pismr -i foo.nc -y 1000 -config my_config.nc
 
 The file \texttt{my_config.nc} has to contain \emph{all the flags and parameters} present in \texttt{pism_config.nc}.
 
-The list of parameters is too long to include here; please see the PISM Class browser for an automatically-generated table describing them.
+The list of parameters is too long to include here; please see the \href{http://www.pism-docs.org/doxy/html/index.html}{PISM Source Code Browser} for an automatically-generated table describing them.
 
 Some command-line options \emph{set} configuration parameters; some PISM
 executables have special parameter defaults. To see the configuration used in a
@@ -730,7 +730,7 @@ There is also the question of solver \emph{type}, using option \intextoption{ksp
 Actually the KSP uses preconditioning.  This aspect of the solve is critical for parallel scalability, but it gives results which are dependent on the number of processors.  The preconditioner type can be chosen with \intextoption{pc_type}. Several choices are possible, but for solving the ice stream and shelf equations we recommend only \t{bjacobi}, \t{ilu}, and \t{asm}.  Of these it is not currently clear which is fastest; they are all about the same for \texttt{pismv -test I} with high tolerances (e.g.~\texttt{-ssa_rtol 1e-7} \texttt{-ksp_rtol 1e-12}).  The default (as set by PISM) is \t{bjacobi}.  To force no preconditioning, which removes processor-number-dependence of results but may make the solves fail, use \t{-pc_type none}.
 
 
-\subsection{Utility and test scripts} \label{subsect:scripts}\index{python scripts} In the \verb|test/| and \verb|util/| subdirectories of the PISM directory the user will find some python scripts and one Matlab script, listed in Table \ref{tab:scripts-overview}.  The python scripts are all documented at the \textsl{Packages} tab on the browser \url{http://www.pism-docs.org/dev/doxy/html/index.html}. The python scripts all take option \texttt{--help}.
+\subsection{Utility and test scripts} \label{subsect:scripts}\index{python scripts} In the \verb|test/| and \verb|util/| subdirectories of the PISM directory the user will find some python scripts and one Matlab script, listed in Table \ref{tab:scripts-overview}.  The python scripts are all documented at the \textsl{Packages} tab on the \href{http://www.pism-docs.org/doxy/html/index.html}{PISM Source Code Browser}.  The python scripts all take option \texttt{--help}.
 
 \newcommand{\scripthead}[1]{\texttt{#1}}
 
