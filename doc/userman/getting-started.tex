@@ -10,10 +10,7 @@ The PISM output figures in this section were produced using a supercomputer.  Ho
 
 \subsection{Install PISM}
 
-See the \emph{Installation Manual}
-   \begin{center}
-     \href{http://www.pism-docs.org/dev/pdfs/installation-dev.pdf}{\t{www.pism-docs.org/dev/pdfs/installation-dev.pdf}}
-   \end{center}
+See the \emph{Installation Manual} at \url{http://www.pism-docs.org}
 to install PISM.  Once installed, executables \texttt{pismr} and \texttt{pclimate}, and several others, will be in the \texttt{bin} subdirectory of the main PISM directory.  The main PISM directory might be at \texttt{/home/username/pism-dev/}, for example.  The instructions below assume you start from that main PISM directory.  We also assume you are using a \texttt{bash} shell or at least one that accepts \texttt{bash} syntax.
 
 
@@ -50,7 +47,7 @@ Any of these NetCDF files can be viewed with \texttt{ncview} or other NetCDF vis
 
 \subsection{Run PISM}   \label{subsect:runscript}  We are ready to run PISM, but, like some other Unix programs, PISM allows \emph{a lot} of command-line options.  Furthermore there are configuration parameters that get read from a file, namely in \texttt{lib/pism_config.nc}.  Because it is an ice flow simulation program designed to handle many different ice sheet, shelf, and glacier configurations, the list of user-configurable flags and parameters is quite long.  For a complete list see
 \begin{center}
-\url{http://www.pism-docs.org/dev/doxy/html/config.html}
+\url{http://www.pism-docs.org/doxy/html/config.html}
 \end{center}
 
 These many options and parameters imply that one should often build a \emph{script} to run PISM with the correct options.  We have done this for SeaRISE-Greenland, and the script is in the PISM download.

@@ -156,7 +156,7 @@ echo "$SCRIPTNAME     coarse grid = '$COARSEGRID' (= $CS km)"
 echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km)"
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -e 3"
+PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -e 3 -no_eta"
 
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -pdd_fausto"
@@ -201,7 +201,7 @@ $PISM_DO $cmd
 PRE1NAME=g${CS}km_steady.nc
 EX1NAME=ex_${PRE1NAME}
 EXTIMES=0:500:${NOMASSSIARUNLENGTH}
-EXVARS="enthalpybase,temppabase,bmelt,bwat,csurf,mask" # add mask, so that check_stationarity.py ignores ice-free areas.
+EXVARS="enthalpybase,temppabase,bmelt,bwat,csurf,hardav,mask" # check_stationarity.py can be applied to ex_${PRE1NAME}
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA run to achieve approximate temperature equilibrium, for ${NOMASSSIARUNLENGTH}a"
 cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE0NAME $COUPLER_SIMPLE \
