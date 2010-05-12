@@ -137,8 +137,8 @@ PetscErrorCode  IceModel::stampHistoryEnd() {
   ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
   MPI_Reduce(&my_flops, &flops, 1, mpi_type, MPI_SUM, 0, grid.com);
   
-  snprintf(str, sizeof(str), "PISM done.  PETSc MFlops = %.2f; %.2f years per processor hour.",
-           flops * 1.0e-6, mypph);
+  snprintf(str, sizeof(str), "PISM done.  %.4f model years per processor-hour.  PETSc MFlops = %.2f.",
+           mypph, flops * 1.0e-6);
 
   ierr = stampHistory(str); CHKERRQ(ierr);
   
