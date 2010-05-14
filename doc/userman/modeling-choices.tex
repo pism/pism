@@ -196,6 +196,7 @@ $ pismr -i in.nc -ocean constant,forcing -dSLforcing delta_SL.nc
 \end{verbatim}%$
 uses \texttt{delta_SL.nc}
 \end{enumerate}
+
   
 \subsection{Flotation criterion and mask} \label{subsect:floatmask}  The most basic decision about ice dynamics made internally by PISM is whether to apply the ``flotation criterion'' to determine whether the ice is floating on the ocean or not.  In an evolution run this decision is made at each time step and the result is stored in the \t{mask}.
 
@@ -309,9 +310,6 @@ In PISM the user gives the option \texttt{-ssa_sliding} to turn on the use of th
 \normalsize
 \end{table}
 
-In addition to deciding which stress balance to use, there is one option choosing between methods for computing the surface gradient which enters into the ``driving stress'' terms in both the SIA and SSA stress balances.  Usually the surface gradient is computed in an ``obvious'' way by finite differences applied to the surface elevation $h$, and specifically, we use the Mahaffy \cite{Mahaffy} scheme.  Alternatively, if pption \intextoption{eta} is set then we first transform the thickness $H$ by $\eta = H^{(2n+2)/n}$ and then differentiate the sum of the thickness and the bed:
-	$$\grad h = \grad H + \grad b = \frac{n}{(2n+2)} \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.$$
-Here $b$ is the bed elevation and $h$ is the surface elevation.  This transformation sometimes has the benefits that the surface values of the horizontal velocity and vertical velocity, and the driving stress, are better behaved near the margin.  See \cite{CDDSV,BLKCB} for technical explanation of this transformation and compare \cite{SaitoMargin}.
 %\intextoption{ice_reg_schoof_length} (1000 km) & Set the ``$L$'' in formula (4.1) in \cite{SchoofStream}.  To use the regularization described by Schoof, one must set \texttt{-ssa_eps 0.0} to turn off the other regularization mechanism, otherwise there is a double regularization (the default except in \texttt{pism -test I}). \\
 %\intextoption{ice_reg_schoof_vel} (1 m/a) & Set the \emph{first} ``$\eps$'' in formula (4.1) in \cite{SchoofStream}.  To deactivate Schoof's regularization, use \texttt{-ice_reg_schoof_vel 0}.  To use the regularization described by Schoof, one must set \texttt{-ssa_eps 0.0} to turn off the other regularization mechanism, otherwise there is a double regularization (the default except in \texttt{pismv -test I}).  Use \texttt{-plastic_reg} above to set the second ``$\eps$'' in formula (4.1) of \cite{SchoofStream}. \\
 
@@ -331,6 +329,21 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \texttt{-ksp_rto
 \bottomrule
 \end{tabular}
 \end{table}
+
+
+\subsection{Surface gradient method} \label{subsect:gradient}  PISM computes surface gradients to determine the ``driving stress''
+	$$(\tau_{d,x},\tau_{d,y}) = - \rho g H \grad h,$$
+where $H$ is the ice thickness, and $h = H+b$ is the ice surface elevation.  The driving stress enters into both the SIA and SSA stress balances, but in the former the driving stress is needed on a staggered grid, while in the latter the driving stress is needed on the regular grid.
+
+Surface gradients are computed by finite differences in several slightly-different ways.  There are options for choosing which method to use, but to the best of our knowledge there is no over-arching theoretical advice on the best, most robust mechanism.  There are three methods in PISM, chosen by option \intextoption{gradient}:
+
+\noindent\texttt{-gradient mahaffy}\quad  This most ``standard'' way computes the surface slope onto the staggered grid for the SIA \cite{Mahaffy}.  It makes $O(\Delta x^2,\Delta y^2)$ errors.  For computations of driving stress on the regular grid, centered differencing is used instead.
+
+\noindent\texttt{-gradient haseloff}\quad  This is the default method, but it only differs from the Mahaffy method at ice-margin locations.  It alters the formula for the slope in those cases where an adjacent ice-free bedrock surface elevation is above the ice elevation.  The scheme only differs from \texttt{mahaffy} at such unusual margin points.
+
+\noindent\texttt{-gradient eta}\quad  In this method we first transform the thickness $H$ by $\eta = H^{(2n+2)/n}$ and then differentiate the sum of the thickness and the bed using centered differences:
+	$$\grad h = \grad H + \grad b = \frac{n}{(2n+2)} \eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.$$
+Here $b$ is the bed elevation and $h$ is the surface elevation.  This transformation sometimes has the benefits that the surface values of the horizontal velocity and vertical velocity, and the driving stress, are better behaved near the margin.  See \cite{BLKCB,CDDSV} for technical explanation of this transformation and compare \cite{SaitoMargin}.  The actual finite difference schemes applied to compute the surface slope are similar to option \texttt{mahaffy}.
 
 
 \subsection{Controlling basal strength}  \label{subsect:basestrength}

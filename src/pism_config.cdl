@@ -26,9 +26,6 @@ netcdf pism_config {
     pism_config:do_pseudo_plastic_till = "no";
     pism_config:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
 
-    pism_config:use_eta_transformation = "yes";
-    pism_config:use_eta_transformation_doc = "Use eta transformation to compute surface gradient.";
-
     pism_config:do_superpose = "yes";
     pism_config:do_superpose_doc = "Combine the velocity ﬁelds from the SIA and SSA models as in [\\ref BBssasliding]. Only effective if used with -ssa_sliding.";
 
@@ -396,6 +393,9 @@ netcdf pism_config {
     pism_config:slice_level_doc = "meters; level (in meters above the base of ice) used in slice viewers";
 
 // Strings:
+   pism_config:surface_gradient_method = "haseloff";
+   pism_config:surface_gradient_method_doc = "method used for surface gradient calculation at staggered grid points; possible values are 'mahaffy', 'eta', 'haseloff' (lowercase)";
+
    pism_config:grid_periodicity = "none";
    pism_config:grid_periodicity_doc = "PISM grid periodicity; possible values are 'none', 'x', 'y', 'xy' (lowercase).";
 

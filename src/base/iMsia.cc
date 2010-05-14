@@ -23,14 +23,18 @@
 
 //! Compute the surface gradient in advance of the SIA velocity computation.
 /*! 
-There are two methods for computing the surface gradient.  
+There are three methods for computing the surface gradient.  Which method is
+controlled by configuration parameter \c surface_gradient_method which can have
+values \c haseloff, \c mahaffy, or \c eta.
 
-The default method is to directly differentiate 
-the surface elevation \f$h\f$ by the Mahaffy method \ref Mahaffy .
+The most traditional method is to directly differentiate 
+the surface elevation \f$h\f$ by the Mahaffy method \ref Mahaffy.  The \c haseloff
+method, suggested by Marianne Haseloff, modifies the Mahaffy method only where
+ice-free adjacent bedrock points are above the ice surface, and in those cases
+the returned gradient component is zero.
 
-The alternative method, using option <c>-eta</c> which sets 
-<c>use_eta_transformation = true</c>, is to transform the thickness 
-to something more regular and differentiate that.  We get back to the gradient 
+The alternative method, when \c surface_gradient_method = \c eta, transforms the thickness 
+to something more regular and differentiates that.  We get back to the gradient 
 of the surface by applying the chain rule.  In particular, as shown 
 in \ref CDDSV for the flat bed and \f$n=3\f$ case, if we define
 	\f[\eta = H^{(2n+2)/n}\f]
@@ -40,30 +44,39 @@ the surface gradient by
 recalling that \f$h = H + b\f$.  This method is only applied when \f$\eta > 0\f$
 at a given point; otherwise \f$\nabla h = \nabla b\f$.
 
-In both cases we are computing the gradient by finite differences onto 
+In all cases we are computing the gradient by finite differences onto 
 a staggered grid.  In the method with \f$\eta\f$ we apply centered differences
 using (roughly) the same method for \f$\eta\f$ and \f$b\f$ that applies 
-directly to the surface elevation \f$h\f$ in the alternative method.
+directly to the surface elevation \f$h\f$ in the \c mahaffy and \c haseloff methods.
 
-The resulting surface gradient on the staggered grid is in four \c Vecs,
+The resulting surface gradient on the staggered grid is put in four \c Vecs,
 <c>vWork2d[k]</c> for \c k=0,1,2,3; recall there are two staggered grid points
-per regular grid point.  These \c Vecs are used in velocitySIAStaggered(),
+per regular grid point and two scalar components to the vector gradient.
+The surface gradient values stored in these \c Vecs are used in velocitySIAStaggered(),
 basalSlidingHeatingSIA(), and horizontalVelocitySIARegular().
  */
 PetscErrorCode IceModel::surfaceGradientSIA() {
   PetscErrorCode  ierr;
 
-  const PetscScalar   dx=grid.dx, dy=grid.dy;
-  PetscScalar **h_x[2], **h_y[2];
+  const string method = config.get_string("surface_gradient_method");
+  // here is where the three versions are implemented, so check that it is one
+  //   of the three
+  if ((method!="eta") && (method!="mahaffy") && (method!="haseloff")) {
+    verbPrintf(1, grid.com,
+      "PISM ERROR: value of surface_gradient_method, option -gradient, not valid ... ending\n");
+    PetscEnd();
+  }
 
+  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
+  const PetscScalar Hicefree = 0.0;  // standard for ice-free, in Haseloff
+
+  PetscScalar **h_x[2], **h_y[2];
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
   ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
   ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
 
-  bool use_eta = config.get_flag("use_eta_transformation");
-
-  if (use_eta == true) {
+  if (method == "eta") {
     PetscScalar **eta, **H;
     const PetscScalar n = ice->exponent(), // presumably 3.0
                       etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
@@ -101,7 +114,7 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
       GHOSTS = 0;
 #endif
       for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-	for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+        for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
           if (o==0) {     // If I-offset
             const PetscScalar mean_eta = 0.5 * (eta[i+1][j] + eta[i][j]);
             if (mean_eta > 0.0) {
@@ -136,8 +149,11 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
     }
     ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
     ierr = vbed.end_access(); CHKERRQ(ierr);
-  } else {  // if use_eta == FALSE; the Mahaffy scheme
-    PetscScalar **h;
+  } else {  // not eta, so method is Mahaffy or Haseloff
+    const bool haseloff = (method == "haseloff");
+    PetscScalar **h, **b, **H;
+    ierr = vbed.get_array(b); CHKERRQ(ierr);
+    ierr = vH.get_array(H); CHKERRQ(ierr);
     ierr = vh.get_array(h); CHKERRQ(ierr);
     for (PetscInt o=0; o<2; o++) {
 #ifdef LOCAL_GHOST_UPDATE
@@ -146,19 +162,79 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
       PetscInt GHOSTS = 0;
 #endif
       for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-	for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-          if (o==0) {     // If I-offset
-            h_x[o][i][j] = (h[i+1][j] - h[i][j]) / dx;
-            h_y[o][i][j] = (+ h[i+1][j+1] + h[i][j+1]
-                            - h[i+1][j-1] - h[i][j-1]) / (4.0*dy);
-          } else {        // J-offset
-            h_y[o][i][j] = (h[i][j+1] - h[i][j]) / dy;
-            h_x[o][i][j] = (+ h[i+1][j+1] + h[i+1][j]
-                            - h[i-1][j+1] - h[i-1][j]) / (4.0*dx);
+        for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+          if (haseloff) { // Marianne Haseloff method: deals correctly with 
+	                        //   adjacent ice-free points with bed elevations which
+	                        //   are above the surface of the ice
+            if (o==0) {     // If I-offset
+              const bool icefreeP  = (H[i][j]     <= Hicefree),
+                         icefreeE  = (H[i+1][j]   <= Hicefree),
+                         icefreeN  = (H[i][j+1]   <= Hicefree),
+                         icefreeS  = (H[i][j-1]   <= Hicefree),
+                         icefreeNE = (H[i+1][j+1] <= Hicefree),
+                         icefreeSE = (H[i+1][j-1] <= Hicefree);
+
+              PetscScalar hhE = h[i+1][j];  // east pseudo-surface elevation
+              if (icefreeE  && (b[i+1][j]   > h[i][j]    ))  hhE  = h[i][j];
+              if (icefreeP  && (b[i][j]     > h[i+1][j]  ))  hhE  = h[i][j];
+              h_x[o][i][j] = (hhE - h[i][j]) / dx;
+
+              PetscScalar hhN  = h[i][j+1];  // north pseudo-surface elevation
+              if (icefreeN  && (b[i][j+1]   > h[i][j]    ))  hhN  = h[i][j];
+              if (icefreeP  && (b[i][j]     > h[i][j+1]  ))  hhN  = h[i][j];
+              PetscScalar hhS  = h[i][j-1];  // south pseudo-surface elevation
+              if (icefreeS  && (b[i][j-1]   > h[i][j]    ))  hhS  = h[i][j];
+              if (icefreeP  && (b[i][j]     > h[i][j-1]  ))  hhS  = h[i][j];
+              PetscScalar hhNE = h[i+1][j+1];// northeast pseudo-surface elevation
+              if (icefreeNE && (b[i+1][j+1] > h[i+1][j]  ))  hhNE = h[i+1][j];
+              if (icefreeE  && (b[i+1][j]   > h[i+1][j+1]))  hhNE = h[i+1][j];
+              PetscScalar hhSE = h[i+1][j-1];// southeast pseudo-surface elevation
+              if (icefreeSE && (b[i+1][j-1] > h[i+1][j]  ))  hhSE = h[i+1][j];
+              if (icefreeE  && (b[i+1][j]   > h[i+1][j-1]))  hhSE = h[i+1][j];
+              h_y[o][i][j] = (hhNE + hhN - hhSE - hhS) / (4.0 * dy);
+            } else {        // J-offset
+              const bool icefreeP  = (H[i][j]     <= Hicefree),
+                         icefreeN  = (H[i][j+1]   <= Hicefree),
+                         icefreeE  = (H[i+1][j]   <= Hicefree),
+                         icefreeW  = (H[i-1][j]   <= Hicefree),
+                         icefreeNE = (H[i+1][j+1] <= Hicefree),
+                         icefreeNW = (H[i-1][j+1] <= Hicefree);
+
+              PetscScalar hhN  = h[i][j+1];  // north pseudo-surface elevation
+              if (icefreeN  && (b[i][j+1]   > h[i][j]    ))  hhN  = h[i][j];
+              if (icefreeP  && (b[i][j]     > h[i][j+1]  ))  hhN  = h[i][j];
+              h_y[o][i][j] = (hhN - h[i][j]) / dy;
+
+              PetscScalar hhE  = h[i+1][j];  // east pseudo-surface elevation
+              if (icefreeE  && (b[i+1][j]   > h[i][j]    ))  hhE  = h[i][j];
+              if (icefreeP  && (b[i][j]     > h[i+1][j]  ))  hhE  = h[i][j];
+              PetscScalar hhW  = h[i-1][j];  // west pseudo-surface elevation
+              if (icefreeW  && (b[i-1][j]   > h[i][j]    ))  hhW  = h[i][j];
+              if (icefreeP  && (b[i][j]     > h[i-1][j]  ))  hhW  = h[i][j];
+              PetscScalar hhNE = h[i+1][j+1];// northeast pseudo-surface elevation
+              if (icefreeNE && (b[i+1][j+1] > h[i][j+1]  ))  hhNE = h[i][j+1];
+              if (icefreeN  && (b[i][j+1]   > h[i+1][j+1]))  hhNE = h[i][j+1];
+              PetscScalar hhNW = h[i-1][j+1];// northwest pseudo-surface elevation
+              if (icefreeNW && (b[i-1][j+1] > h[i][j+1]  ))  hhNW = h[i][j+1];
+              if (icefreeN  && (b[i][j+1]   > h[i-1][j+1]))  hhNW = h[i][j+1];
+              h_x[o][i][j] = (hhNE + hhE - hhNW - hhW) / (4.0 * dx);
+            }
+          } else { // Mary Anne Mahaffy method: see Mahaffy (1976)
+            if (o==0) {     // If I-offset
+              h_x[o][i][j] = (h[i+1][j] - h[i][j]) / dx;
+              h_y[o][i][j] = (+ h[i+1][j+1] + h[i][j+1]
+                              - h[i+1][j-1] - h[i][j-1]) / (4.0*dy);
+            } else {        // J-offset
+              h_y[o][i][j] = (h[i][j+1] - h[i][j]) / dy;
+              h_x[o][i][j] = (+ h[i+1][j+1] + h[i+1][j]
+                              - h[i-1][j+1] - h[i-1][j]) / (4.0*dx);
+            }
           }
         }
       }
     }
+    ierr = vH.end_access(); CHKERRQ(ierr);
+    ierr = vbed.end_access(); CHKERRQ(ierr);
     ierr = vh.end_access(); CHKERRQ(ierr);
   } // end if (use_eta)
   

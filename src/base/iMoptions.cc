@@ -109,7 +109,15 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.scalar_from_option("e", "enhancement_factor"); CHKERRQ(ierr);
 
-  ierr = config.flag_from_option("eta", "use_eta_transformation"); CHKERRQ(ierr);
+  string sgmoption;
+  bool sgm;
+  ierr = PISMOptionsString("-gradient", "Choose enumerated value for surface_gradient_method",
+			   sgmoption, sgm); CHKERRQ(ierr);
+  if (sgm)  config.set_string("surface_gradient_method",sgmoption);
+
+  // related old options
+  ierr = check_old_option_and_stop(grid.com, "-eta", "-gradient"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(grid.com, "-no_eta", "-gradient"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("f3d", "force_full_diagnostics"); CHKERRQ(ierr);
 

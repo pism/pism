@@ -27,7 +27,7 @@
 Computes the driving stress at the base of the ice:
    \f[ \tau_d = - \rho g H \nabla h \f]
 
-If use_eta is TRUE then the surface gradient
+If configuration parameter \c surface_gradient_method = \c eta then the surface gradient
 \f$\nabla h\f$ is computed by the gradient of the
 transformed variable  \f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$).
 Because this quantity is more regular at ice sheet margins, we get a 
@@ -35,7 +35,7 @@ better surface gradient.  When the thickness at a grid point is very small
 (below \c minThickEtaTransform in the procedure), the formula is slightly 
 modified to give a lower driving stress.
 
-In floating parts the surface gradient is always computed by the regular formula.
+In floating parts the surface gradient is always computed by the \c mahaffy formula.
  
 Saves it in user supplied Vecs \c vtaudx and \c vtaudy, which are treated 
 as global.  (I.e. we do not communicate ghosts.)
@@ -51,7 +51,7 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2S &vtaudx, IceModelVec
   const PetscScalar dx=grid.dx, dy=grid.dy;
 
   bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
-  bool use_eta = config.get_flag("use_eta_transformation");
+  bool use_eta = (config.get_string("surface_gradient_method") == "eta");
 
   ierr =    vh.begin_access();    CHKERRQ(ierr);
   ierr =    vH.begin_access();  CHKERRQ(ierr);
@@ -69,28 +69,28 @@ PetscErrorCode IceModel::computeDrivingStress(IceModelVec2S &vtaudx, IceModelVec
         vtaudy(i,j) = 0.0;
       } else {
         PetscScalar h_x = 0.0, h_y = 0.0;
-	// FIXME: we need to handle grid periodicity correctly.
+        // FIXME: we need to handle grid periodicity correctly.
         if (vMask.is_grounded(i,j) && (use_eta == true)) {
-	  // in grounded case, differentiate eta = H^{8/3} by chain rule
-	  if (vH(i,j) > 0.0) {
-	    const PetscScalar myH = (vH(i,j) < minThickEtaTransform) ?
-	      minThickEtaTransform : vH(i,j);
-	    const PetscScalar eta = pow(myH, etapow), factor = invpow * pow(eta, dinvpow);
-	    h_x = factor * (pow(vH(i+1,j),etapow) - pow(vH(i-1,j),etapow)) / (2*dx);
-	    h_y = factor * (pow(vH(i,j+1),etapow) - pow(vH(i,j-1),etapow)) / (2*dy);
-	  }
-	  // now add bed slope to get actual h_x,h_y
-	  // FIXME: there is no reason to assume user's bed is periodized
-	  h_x += vbed.diff_x(i,j);
-	  h_y += vbed.diff_y(i,j);
+	        // in grounded case, differentiate eta = H^{8/3} by chain rule
+          if (vH(i,j) > 0.0) {
+            const PetscScalar myH = (vH(i,j) < minThickEtaTransform) ?
+	                                  minThickEtaTransform : vH(i,j);
+            const PetscScalar eta = pow(myH, etapow), factor = invpow * pow(eta, dinvpow);
+            h_x = factor * (pow(vH(i+1,j),etapow) - pow(vH(i-1,j),etapow)) / (2*dx);
+            h_y = factor * (pow(vH(i,j+1),etapow) - pow(vH(i,j-1),etapow)) / (2*dy);
+          }
+          // now add bed slope to get actual h_x,h_y
+          // FIXME: there is no reason to assume user's bed is periodized
+          h_x += vbed.diff_x(i,j);
+          h_y += vbed.diff_y(i,j);
         } else {  // floating or eta transformation is not used
           if (compute_surf_grad_inward_ssa) {
-	    h_x = vh.diff_x_p(i,j);
-	    h_y = vh.diff_y_p(i,j);
+            h_x = vh.diff_x_p(i,j);
+            h_y = vh.diff_y_p(i,j);
           } else {
-	    h_x = vh.diff_x(i,j);
-	    h_y = vh.diff_y(i,j);
-	  }
+            h_x = vh.diff_x(i,j);
+            h_y = vh.diff_y(i,j);
+          }
         }
 
         vtaudx(i,j) = - pressure * h_x;
