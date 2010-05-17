@@ -449,6 +449,23 @@ void IceGrid::compute_ownership_ranges() {
  */
 PetscErrorCode IceGrid::createDA() {
   PetscErrorCode ierr;
+
+  if (Mx < 3) {
+    SETERRQ(1, "IceGrid::set_horizontal_dims(): Mx has to be at least 3.");
+  }
+
+  if (My < 3) {
+    SETERRQ(2, "IceGrid::set_horizontal_dims(): My has to be at least 3.");
+  }
+
+  if (Lx <= 0) {
+    SETERRQ(3, "IceGrid::set_horizontal_dims(): Lx has to be positive.");
+  }
+
+  if (Ly <= 0) {
+    SETERRQ(3, "IceGrid::set_horizontal_dims(): Ly has to be positive.");
+  }
+
   PetscInt WIDE_STENCIL = 2;
   if (da2 != PETSC_NULL)
     SETERRQ(1, "IceGrid::createDA(): da2 != PETSC_NULL");
@@ -574,21 +591,6 @@ The upshot is that if one computes in a truly periodic way then the gap between 
 Thus we compute  <tt>dx = 2 * Lx / Mx</tt>.
  */
 PetscErrorCode IceGrid::compute_horizontal_spacing() {
-  if (Mx < 3) {
-    SETERRQ(1, "IceGrid::set_horizontal_dims(): Mx has to be at least 3.");
-  }
-
-  if (My < 3) {
-    SETERRQ(2, "IceGrid::set_horizontal_dims(): My has to be at least 3.");
-  }
-
-  if (Lx <= 0) {
-    SETERRQ(3, "IceGrid::set_horizontal_dims(): Lx has to be positive.");
-  }
-
-  if (Ly <= 0) {
-    SETERRQ(3, "IceGrid::set_horizontal_dims(): Ly has to be positive.");
-  }
 
   if (periodicity & X_PERIODIC) {
     dx = 2.0 * Lx / Mx;

@@ -23,6 +23,8 @@
 #include <sstream>
 #include <ctime>
 #include <algorithm>
+#include <sys/types.h>
+#include <unistd.h>
 
 static PetscInt verbosityLevel;
 

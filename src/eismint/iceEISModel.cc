@@ -193,10 +193,8 @@ PetscErrorCode IceEISModel::init_couplers() {
   ierr = IceModel::init_couplers(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com,
-    "  setting surface mass balance and surface temperature variables ...\n");
+    "  setting surface mass balance and surface temperature variables from formulas...\n");
   CHKERRQ(ierr);
-
-  ierr = ignore_option(grid.com, "-i"); CHKERRQ(ierr);
 
   // now fill in accum and surface temp
   ierr = artm.begin_access(); CHKERRQ(ierr);

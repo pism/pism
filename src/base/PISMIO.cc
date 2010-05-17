@@ -567,6 +567,9 @@ int PISMIO::compute_block_size(GridType dims, int* count) const {
   varying dimension of the netCDF variable. Intervening imap elements
   correspond to other dimensions of the netCDF variable in the obvious way.
   Distances between elements are speciﬁed in type-independent units of elements
+
+  The default I/O code (sending data to/from processor 0) only calls this on
+  processor 0.
 */
 PetscErrorCode PISMIO::compute_start_and_count(const int varid, int *start, int *count, GridType dims,
 					       size_t* &nc_start, size_t* &nc_count, ptrdiff_t* &imap) const {
@@ -577,9 +580,6 @@ PetscErrorCode PISMIO::compute_start_and_count(const int varid, int *start, int 
   int t_id, x_id, y_id, z_id, zb_id;
   // IDs of all the dimensions a variables depends on:
   int *dimids;
-
-  // Quit if this is not processor zero:
-  if (rank != 0) return 0;
 
 //   for (int j = 0; j < 5; j++)
 //     fprintf(stderr, "start[%d] = %d, count[%d] = %d\n", j, start[j], j, count[j]);
