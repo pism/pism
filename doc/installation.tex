@@ -228,6 +228,7 @@ Of all operating systems it is probably quickest to install all the PISM prerequ
       \texttt{g++} & without this you may see a compiler error: ``\texttt{gcc: error} \texttt{trying to} \texttt{exec 'cc1plus'}''\\
       \texttt{subversion} & \\
       \texttt{python-dev} & (helps with scripts \dots perhaps not essential) \\
+      \texttt{ncview} & (grab if available) \\
       \bottomrule
     \end{tabular*}
   \end{center}
@@ -239,6 +240,7 @@ $  svn co http://svn.gna.org/svn/pism/tags/stable0.3 pism0.3
 \begin{verbatim}
 export PETSC_DIR=/usr/lib/petscdir/3.x.x/
 export PETSC_ARCH=linux-gnu-c-opt
+export PISM_USE_GNU_FLAGS=1
 export PATH=/home/user/pism0.3/bin/:/home/user/pism0.3/util/:$PATH
 \end{verbatim}
 to your \texttt{.bashrc} equivalent.  (See ``Installed files'' reported for \texttt{libpetsc3.x.x-dev} using \texttt{synaptic}, for example.)
@@ -277,8 +279,9 @@ According to this comment found online at \url{http://lists.alioth.debian.org/pi
 \end{quote}
 \bigskip
 
-\subsubsection*{NCVIEW}  There seems to be no \texttt{ncview} Debian package
-yet.  But this sequence worked with minimal pain.  Grab latest source from
+\subsubsection*{NCVIEW}  Depending on the age of your Debian-based Linux, there may not be a \texttt{ncview} Debian package.  The following sequence has worked with minimal pain for installation from the \texttt{ncview} homepage:
+
+Grab latest source from
 \begin{center}
   \url{http://meteora.ucsd.edu/~pierce/ncview_home_page.html}
 \end{center}
