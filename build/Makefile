@@ -33,7 +33,7 @@ CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_REVISION='"$(PISM_REVISION)"
           -I../src/udunits -I../src/base -DPISM_DEFAULT_CONFIG_FILE='"$(PISM_INSTALL_DIR)/lib/pism_config.nc"' \
 
 ifeq (${PISM_USE_GNU_FLAGS}, 1)
-  CFLAGS += -Woverloaded-virtual -Wall -pipe -O2
+  CFLAGS += -Woverloaded-virtual -Wall -pipe -O2 -fPIC
 endif
 ifeq (${PISM_USE_DEBUG}, 1)
   CFLAGS += -g -DPISM_DEBUG
