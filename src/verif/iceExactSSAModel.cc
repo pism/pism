@@ -92,7 +92,7 @@ PetscErrorCode IceExactSSAModel::setFromOptions() {
 
 PetscErrorCode IceExactSSAModel::createVecs() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = MY_WIDE_STENCIL;
+  PetscInt WIDE_STENCIL = 2;
 
   ierr = IceModel::createVecs(); CHKERRQ(ierr);
 

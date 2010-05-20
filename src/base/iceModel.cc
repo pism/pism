@@ -80,6 +80,8 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
 
   // Default ice type:
   iceFactory.setType(ICE_PB);
+
+  prof = NULL;
 }
 
 
@@ -99,6 +101,7 @@ IceModel::~IceModel() {
   delete basal;
   delete EC;
   delete ice;
+  delete prof;
 
   utTerm(); // Clean up after UDUNITS
 }
@@ -115,7 +118,7 @@ IceModel::~IceModel() {
 */
 PetscErrorCode IceModel::createVecs() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = MY_WIDE_STENCIL;
+  PetscInt WIDE_STENCIL = 2;
 
   ierr = verbPrintf(3, grid.com,
 		    "Allocating memory...\n"); CHKERRQ(ierr);
@@ -483,11 +486,13 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   PetscLogEventBegin(beddefEVENT,0,0,0,0);
 
+  prof->begin(event_beddef);
   // \li compute the bed deformation, which only depends on current thickness and bed elevation
   if (beddef) {
     ierr = bed_def_step(); CHKERRQ(ierr); // prints "b" or "$" as appropriate
   } else stdout_flags += " ";
-    
+  prof->end(event_beddef);
+
   PetscLogEventEnd(beddefEVENT,0,0,0,0);
 
   //! \li update the yield stress for the plastic till model (if appropriate)
@@ -504,9 +509,14 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //   only update velocities at depth if suggested by temp and age
   //   stability criterion; note *lots* of communication is avoided by 
   //   skipping SSA (and temp/age)
+
+  prof->begin(event_velocity);
+
   bool updateAtDepth = (skipCountDown == 0);
   ierr = velocity(updateAtDepth); CHKERRQ(ierr);  // event logging in here
   stdout_flags += (updateAtDepth ? "v" : "V");
+
+  prof->end(event_velocity);
 
   //! \li determine the time step according to a variety of stability criteria;
   //!  see determineTimeStep()
@@ -521,6 +531,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   PetscLogEventBegin(tempEVENT,0,0,0,0);
 
+  prof->begin(event_age);
   //! \li update the age of the ice (if appropriate)
   if (do_age) {
     ierr = ageStep(); CHKERRQ(ierr);
@@ -528,6 +539,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   } else {
     stdout_flags += "$";
   }
+  prof->end(event_age);
+
+  prof->begin(event_energy);
 
   //! \li update the enthalpy (or temperature) field according to the conservation of
   //!  energy model based (especially) on the new velocity field; see
@@ -544,6 +558,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   dtTempAge = 0.0;
 
+  prof->end(event_energy);
+
   PetscLogEventEnd(tempEVENT,0,0,0,0);
 
   //! \li compute fluxes through ice boundaries
@@ -551,6 +567,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   PetscLogEventBegin(massbalEVENT,0,0,0,0);
 
+  prof->begin(event_mass);
   //! \li update the thickness of the ice according to the mass conservation
   //!  model; see massContExplicitStep()
   if (do_mass_continuity) {
@@ -565,6 +582,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     // dH/dt = 0:
     ierr = vdHdt.set(0.0); CHKERRQ(ierr);
   }
+  prof->end(event_mass);
 
   PetscLogEventEnd(massbalEVENT,0,0,0,0);
 
@@ -684,8 +702,10 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
     dt_force = -1.0;
     maxdt_temporary = -1.0;
 
+    prof->begin(event_step);
     ierr = step(do_mass_conserve, do_temp, do_age,
 		do_skip, use_ssa_when_grounded); CHKERRQ(ierr);
+    prof->end(event_step);
 
     // report a summary for major steps or the last one
     bool updateAtDepth = (skipCountDown == 0);

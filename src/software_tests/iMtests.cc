@@ -16,11 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <vector>
 #include <petscda.h>
 #include "iMtests.hh"
 #include "../coupler/iceModelVec2T.hh"
 #include "../base/PISMIO.hh"
-#include <vector>
+#include "../base/PISMProf.hh"
 
 //! Set grid defaults for a particular unit test.
 PetscErrorCode IceUnitModel::set_grid_defaults() {
@@ -104,6 +105,11 @@ PetscErrorCode IceUnitModel::run() {
   ierr = PISMOptionsIsSet("-dof2", flag); CHKERRQ(ierr);
   if (flag) {
     ierr = test_dof2comm(); CHKERRQ(ierr);
+  }
+
+  ierr = PISMOptionsIsSet("-prof", flag); CHKERRQ(ierr);
+  if (flag) {
+    ierr = test_pismprof(); CHKERRQ(ierr);
   }
 
 
@@ -523,5 +529,49 @@ PetscErrorCode IceUnitModel::test_dof2comm() {
     ierr = uvbar_ssa.beginGhostComm(); CHKERRQ(ierr);
     ierr = uvbar_ssa.endGhostComm(); CHKERRQ(ierr);
   }
+  return 0;
+}
+
+//! Test the PISM profiler class.
+PetscErrorCode IceUnitModel::test_pismprof() {
+  PetscErrorCode ierr;
+
+  PISMProf *prof;
+
+  prof = new PISMProf(grid, config);
+
+  int event_total, event_wait, event_sleep;
+  event_total = prof->create("total",    "total");
+  event_wait  = prof->create("waiting",  "waiting");
+  event_sleep = prof->create("sleeping", "sleeping");
+
+  prof->begin(event_total);
+  {
+
+    prof->begin(event_sleep);
+    {
+      fprintf(stderr, "Rank %d will sleep for %d seconds...\n", grid.rank, grid.rank);
+      PetscSleep(grid.rank);
+      fprintf(stderr, "Rank %d is up...\n", grid.rank);
+    }
+    prof->end(event_sleep);   
+
+    prof->begin(event_wait);
+    {
+      ierr = prof->barrier(); CHKERRQ(ierr);
+    }
+    prof->end(event_wait);   
+
+  }
+  prof->end(event_total);   
+
+  string output_name = "pism_out.nc";
+
+  output_name = pism_filename_add_suffix(output_name, "-prof", "");
+
+  ierr = prof->save_report(output_name); CHKERRQ(ierr); 
+
+  delete prof;
+
   return 0;
 }

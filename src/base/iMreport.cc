@@ -301,7 +301,6 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   if (getVerbosityLevel() >= EXTRAS_VERB_LEVEL) {
     PetscScalar Ubarmax, UbarSIAav, Ubarstreamav, Ubarshelfav, icegridfrac,
          SIAgridfrac, streamgridfrac, shelfgridfrac;
-    ierr = computeMaxDiffusivity(false); CHKERRQ(ierr); 
     ierr = computeFlowUbarStats(&Ubarmax,
               &UbarSIAav, &Ubarstreamav, &Ubarshelfav, &icegridfrac,
               &SIAgridfrac, &streamgridfrac, &shelfgridfrac); CHKERRQ(ierr);
@@ -1246,6 +1245,13 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
     return 0;
   }
 
+  if (name == "diffusivity") {
+    ierr = surfaceGradientSIA(); CHKERRQ(ierr); // uses vWork2d[0,1,2,3]
+    ierr = compute_diffusivity(vWork2d[4]); CHKERRQ(ierr);
+    result = &vWork2d[4];
+    return 0;
+  }
+
   return 0;
 }
 
@@ -1419,6 +1425,52 @@ PetscErrorCode IceModel::compute_ice_enthalpy(PetscScalar &result) {
   return 0;
 }
 
+//! Compute diffusivity.
+/*! Expects to find surface gradient in vWork2d[0,1,2,3], also uses vH and
+  uvbar. */
+PetscErrorCode IceModel::compute_diffusivity(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  const PetscScalar DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE = 1.0e-4;
+  PetscScalar **D, **h_x0, **h_y1;
+  ierr = vWork2d[0].get_array(h_x0); CHKERRQ(ierr);
+  ierr = vWork2d[3].get_array(h_y1); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = uvbar.begin_access(); CHKERRQ(ierr);
+  ierr = result.get_array(D); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if ( (vH(i,j) > 0.0) || (vH(i+1,j) > 0.0) || (vH(i,j+1) > 0.0) ){
+	// note that in velocitySIAStaggered() we see this:
+	//      uvbar(i,j,o) = - Dfoffset * slope / thickness
+	// where
+	//      slope = (o==0) ? h_x[o][i][j] : h_y[o][i][j]
+	// we undo the calculation
+	// we get everything on the staggered grid points
+	// (i+1/2,j) and (i,j+1/2)
+	const PetscScalar
+	  H0 = 0.5 * (vH(i,j) + vH(i+1,j)),
+	  H1 = 0.5 * (vH(i,j) + vH(i,j+1)),
+	  slope0 = PetscAbs(h_x0[i][j]) + DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE,
+	  slope1 = PetscAbs(h_y1[i][j]) + DEFAULT_ADDED_TO_SLOPE_FOR_DIFF_IN_ADAPTIVE,
+	  D0 = (H0 * PetscAbs(uvbar(i,j,0))) / slope0,
+	  D1 = (H1 * PetscAbs(uvbar(i,j,1))) / slope1;
+	const PetscScalar  d = PetscMax(D0,D1);  // max of two staggered vals
+	D[i][j] = d;
+      } else {
+	D[i][j] = 0.0; // no diffusivity if no ice; this is consistent with
+	// degenerate diffusivity interpretation
+      }
+    }
+  }
+  ierr = vH.end_access(); CHKERRQ(ierr);  
+  ierr = uvbar.end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
 
 //! Compute a scalar diagnostic quantity by name.
 PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {

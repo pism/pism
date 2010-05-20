@@ -38,6 +38,7 @@ public:
   PetscErrorCode test_IceModelVec2V();
   PetscErrorCode test_dof1comm();
   PetscErrorCode test_dof2comm();
+  PetscErrorCode test_pismprof();
 };
 
 #endif // 

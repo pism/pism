@@ -207,7 +207,6 @@ PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) {
 /*!
   Note that i corresponds to the x direction and j to the y.
  */
-inline
 PetscScalar& IceModelVec2S::operator() (int i, int j) {
   return static_cast<PetscScalar**>(array)[i][j];
 }
@@ -276,7 +275,6 @@ PismMask IceModelVec2Mask::value(int i, int j) {
   return static_cast<PismMask>(ival);
 }
 
-inline
 PetscScalar& IceModelVec2Mask::operator() (int i, int j) {
   return static_cast<PetscScalar**>(array)[i][j];
 }
@@ -333,14 +331,12 @@ PetscErrorCode IceModelVec2Mask::fill_where_floating(IceModelVec2S &v, const Pet
 
 //! \brief Returns the x-derivative at i,j approximated using centered finite
 //! differences.
-inline
 PetscScalar IceModelVec2S::diff_x(int i, int j) {
   return ( (*this)(i + 1,j) - (*this)(i - 1,j) ) / (2 * grid->dx);
 }
 
 //! \brief Returns the y-derivative at i,j approximated using centered finite
 //! differences.
-inline
 PetscScalar IceModelVec2S::diff_y(int i, int j) {
   return ( (*this)(i,j + 1) - (*this)(i,j - 1) ) / (2 * grid->dy);
 }
@@ -348,14 +344,12 @@ PetscScalar IceModelVec2S::diff_y(int i, int j) {
 
 //! \brief Returns the x-derivative at East staggered point i+1/2,j approximated 
 //! using centered (obvious) finite differences.
-inline
 PetscScalar IceModelVec2S::diff_x_stagE(int i, int j) {
   return ( (*this)(i+1,j) - (*this)(i,j) ) / (grid->dx);
 }
 
 //! \brief Returns the y-derivative at East staggered point i+1/2,j approximated 
 //! using centered [\ref Mahaffy] finite differences.
-inline
 PetscScalar IceModelVec2S::diff_y_stagE(int i, int j) {
   return (   (*this)(i+1,j+1) + (*this)(i,j+1)
            - (*this)(i+1,j-1) - (*this)(i,j-1) ) / ( 4* grid->dy);
@@ -363,7 +357,6 @@ PetscScalar IceModelVec2S::diff_y_stagE(int i, int j) {
 
 //! \brief Returns the x-derivative at North staggered point i,j+1/2 approximated 
 //! using centered [\ref Mahaffy] finite differences.
-inline
 PetscScalar IceModelVec2S::diff_x_stagN(int i, int j) {
   return (   (*this)(i+1,j+1) + (*this)(i+1,j)
            - (*this)(i-1,j+1) - (*this)(i-1,j) ) / ( 4* grid->dx);
@@ -371,7 +364,6 @@ PetscScalar IceModelVec2S::diff_x_stagN(int i, int j) {
 
 //! \brief Returns the y-derivative at North staggered point i,j+1/2 approximated 
 //! using centered (obvious) finite differences.
-inline
 PetscScalar IceModelVec2S::diff_y_stagN(int i, int j) {
   return ( (*this)(i,j+1) - (*this)(i,j) ) / (grid->dy);
 }
@@ -571,7 +563,6 @@ PetscErrorCode  IceModelVec2Stag::end_access() {
   return 0;
 }
 
-inline
 PetscScalar& IceModelVec2Stag::operator() (int i, int j, int k) {
   return static_cast<PetscScalar***>(array)[i][j][k];
 }

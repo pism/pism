@@ -35,6 +35,7 @@ PetscErrorCode IceModel::velocity(bool updateVelocityAtDepth) {
   bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
 PetscLogEventBegin(siaEVENT,0,0,0,0);
+  prof->begin(event_sia);
 
   // do SIA
   if (computeSIAVelocities == PETSC_TRUE) {
@@ -57,6 +58,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     // * SIA velocities on the staggered grid (uvbar), including w=1 ghosts
     // * Sigma on the staggered grid (Sigmastag3[0,1]), including w=1 ghosts
     // * I on the staggered grid (Istag3[0,1])
+    // * computes max diffusivity
     ierr = velocitySIAStaggered(); CHKERRQ(ierr);
     ierr = verbPrintf(5,grid.com, "{velocitySIAStaggered()}"); CHKERRQ(ierr);
 
@@ -124,9 +126,11 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     }
   }
 
+  prof->end(event_sia);
 PetscLogEventEnd(siaEVENT,0,0,0,0);
 PetscLogEventBegin(ssaEVENT,0,0,0,0);
-  
+ prof->begin(event_ssa);
+
   // do SSA
   if ((firstTime == PETSC_TRUE) && use_ssa_velocity) {
     ierr = initSSA(); CHKERRQ(ierr);
@@ -166,9 +170,11 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
     ierr = correctBasalFrictionalHeating(); CHKERRQ(ierr);
   } // end of if (use_ssa_velocity) { ...
 
+  prof->end(event_ssa);
 PetscLogEventEnd(ssaEVENT,0,0,0,0);
 PetscLogEventBegin(velmiscEVENT,0,0,0,0);
 
+ prof->begin(event_vel_com);
   // in latter case u,v are modified by broadcastSSAVelocity():
   if (updateVelocityAtDepth) {  
     ierr = u3.beginGhostComm(); CHKERRQ(ierr);
@@ -176,6 +182,7 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
     ierr = u3.endGhostComm(); CHKERRQ(ierr);
     ierr = v3.endGhostComm(); CHKERRQ(ierr);
   }
+ prof->end(event_vel_com);
 
   // finally update w
   if (updateVelocityAtDepth) {

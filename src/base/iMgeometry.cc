@@ -150,11 +150,7 @@ PetscErrorCode IceModel::update_mask() {
   ierr =  vbed.get_array(bed);  CHKERRQ(ierr);
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
 
-#ifdef LOCAL_GHOST_UPDATE
   PetscInt GHOSTS = 2;
-#else
-  PetscInt GHOSTS = 0;
-#endif
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
 
@@ -201,11 +197,6 @@ PetscErrorCode IceModel::update_mask() {
   ierr =       vbed.end_access(); CHKERRQ(ierr);
   ierr =      vMask.end_access(); CHKERRQ(ierr);
 
-#ifndef LOCAL_GHOST_UPDATE
-  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
-#endif
-
   return 0;
 }
 
@@ -226,11 +217,7 @@ PetscErrorCode IceModel::update_surface_elevation() {
   ierr =  vbed.get_array(bed);  CHKERRQ(ierr);
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
 
-#ifdef LOCAL_GHOST_UPDATE
   PetscInt GHOSTS = 2;
-#else
-  PetscInt GHOSTS = 0;
-#endif
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
       // take this opportunity to check that vH(i,j) >= 0
@@ -272,11 +259,6 @@ PetscErrorCode IceModel::update_surface_elevation() {
   ierr =         vH.end_access(); CHKERRQ(ierr);
   ierr =       vbed.end_access(); CHKERRQ(ierr);
   ierr =      vMask.end_access(); CHKERRQ(ierr);
-
-#ifndef LOCAL_GHOST_UPDATE
-  ierr = vh.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vh.endGhostComm(); CHKERRQ(ierr);
-#endif
 
   return 0;
 }
@@ -490,9 +472,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
   gdHdtav = gdHdtav / ice_area; // m/s
 
 
+  prof->begin(event_thk_com);
   // finally copy vHnew into vH and communicate ghosted values
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
+  prof->end(event_thk_com);
 
   // Check if the ice thickness is exceeded the height of the computational box
   // and extend the grid if necessary:

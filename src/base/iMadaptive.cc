@@ -120,13 +120,6 @@ PetscErrorCode IceModel::computeMaxDiffusivity(bool update_diffusivity_viewer) {
     ierr = vWork2d[4].set(0.0); CHKERRQ(ierr);
     Dmax = 0.0;
   }
-  
-  if (update_diffusivity_viewer) { // view diffusivity (m^2/s)
-    ierr = vWork2d[4].set_name("diffusivity"); CHKERRQ(ierr);
-    ierr = vWork2d[4].set_attrs("diagnostic",
-				"diffusivity", "m2/s", ""); CHKERRQ(ierr);
-    ierr = vWork2d[4].view(300); CHKERRQ(ierr);
-  }
 
   ierr = PetscGlobalMax(&Dmax, &gDmax, grid.com); CHKERRQ(ierr);
   return 0;
@@ -231,7 +224,7 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
 
 //! Compute the maximum time step allowed by the diffusive SIA.
 /*!
-Note computeMaxDiffusivity() must be called before this to set \c gDmax.  Note
+Note computeMaxDiffusivity() or velocitySIAStaggered() must be called before this to set \c gDmax.  Note
 adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so dt <= adapt_ratio * dx^2/maxD
 (if dx=dy)
 
@@ -279,9 +272,6 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   bool do_mass_conserve = config.get_flag("do_mass_conserve"),
     do_temp = config.get_flag("do_temp");
 
-  if ( ( (doAdaptTimeStep == PETSC_TRUE) && do_mass_conserve ) ) {
-    ierr = computeMaxDiffusivity(view_diffusivity); CHKERRQ(ierr);
-  }
   const PetscScalar timeToEnd = (grid.end_year - grid.year) * secpera;
   if (dt_force > 0.0) {
     dt = dt_force; // override usual dt mechanism

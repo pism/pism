@@ -32,6 +32,7 @@
 #include "NCVariable.hh"
 #include "PISMVars.hh"
 #include "Timeseries.hh"
+#include "PISMProf.hh"
 
 #include "../earth/PISMBedDef.hh"
 #include "../coupler/PISMOcean.hh"
@@ -41,16 +42,6 @@
 /// @cond NAMESPACE_BROWSER
 using namespace std;
 /// @endcond
-
-// comment out the next line to disable local ghost updating
-#define LOCAL_GHOST_UPDATE 1
-
-#ifdef LOCAL_GHOST_UPDATE
-#define MY_WIDE_STENCIL 2
-#else
-#define MY_WIDE_STENCIL 1
-#endif
-
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
@@ -175,7 +166,8 @@ protected:
               dtTempAge,  //!< enthalpy/temperature and age time-steps in seconds
               maxdt_temporary, dt_force,
               CFLviolcount,    //!< really is just a count, but PetscGlobalSum requires this type
-              dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D, gDmax,
+              dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D,
+              gDmax,		// global max of the diffusivity
               gmaxu, gmaxv, gmaxw,  // global maximums on 3D grid of abs value of vel components
               gdHdtav,  //!< average value in map-plane (2D) of dH/dt, where there is ice; m s-1
     total_sub_shelf_ice_flux,
@@ -316,6 +308,7 @@ protected:
   virtual PetscErrorCode compute_cflx(IceModelVec2S &result, IceModelVec2S &cbar);
   virtual PetscErrorCode compute_csurf(IceModelVec2S &result, IceModelVec2S &tmp);
   virtual PetscErrorCode compute_dhdt(IceModelVec2S &result);
+  virtual PetscErrorCode compute_diffusivity(IceModelVec2S &result);
   virtual PetscErrorCode compute_enthalpybase(IceModelVec2S &result);
   virtual PetscErrorCode compute_enthalpysurf(IceModelVec2S &result);
   virtual PetscErrorCode compute_hardav(IceModelVec2S &result);
@@ -463,6 +456,10 @@ private:
   // for event logging (profiling); see run() and velocity()
   int siaEVENT, ssaEVENT, velmiscEVENT, beddefEVENT, massbalEVENT, tempEVENT;
   PetscLogDouble start_time;
+
+  PISMProf *prof;
+  int event_step, event_velocity, event_sia, event_ssa, event_energy,
+    event_vel_com, event_thk_com, event_mass, event_age, event_beddef;
 };
 
 #endif /* __iceModel_hh */

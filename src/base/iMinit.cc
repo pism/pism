@@ -570,7 +570,7 @@ PetscErrorCode IceModel::init_couplers() {
 //! Allocates work vectors (and calls more).
 PetscErrorCode IceModel::allocate_internal_objects() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = MY_WIDE_STENCIL;
+  PetscInt WIDE_STENCIL = 2;
 
   // since SSA tools are part of IceModel, allocate them here
   ierr = allocateSSAobjects(); CHKERRQ(ierr);
@@ -650,6 +650,17 @@ PetscErrorCode IceModel::misc_setup() {
   // compute corrected cell areas:
   ierr = correct_cell_areas(); CHKERRQ(ierr);
 
+  prof = new PISMProf(grid, config);
+  event_step     = prof->create("step",     "time stepping (total)");
+  event_velocity = prof->create("velocity", "velocity computation");
+  event_sia      = prof->create("vel_sia",  "SIA velocity computation");
+  event_ssa      = prof->create("vel_ssa",  "SSA velocity computation");
+  event_energy   = prof->create("energy",   "energy balance computation");
+  event_vel_com  = prof->create("vel_com",  "velocity ghost points communication");
+  event_thk_com  = prof->create("thk_com",  "ice thickness ghost points communication");
+  event_mass     = prof->create("mass",     "mass conservation computation");
+  event_age      = prof->create("age",      "age computation");
+  event_beddef   = prof->create("beddef",   "bed deformation computation");
   return 0;
 }
 

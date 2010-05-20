@@ -7,11 +7,9 @@ url = $(shell svn info | grep URL)
 rev = $(shell svnversion ../)
 ifeq ($(findstring trunk,$(url)),trunk)
   PISM_REVISION = revision $(rev) trunk
-  # PISM_REVISION = trunk: revision $(rev)
 endif
 ifeq ($(findstring tags,$(url)),tags)
   PISM_REVISION = revision $(rev) tags $(lastword $(subst /, ,$(url)))
-  # PISM_REVISION = tags $(lastword $(subst /, ,$(url))): revision $(rev)
 endif
 ifndef PISM_REVISION
   $(error Can not determine revision number.  Please define PISM_REVISION in the top-level Makefile)
@@ -21,7 +19,7 @@ DISPLAY = :0.0
 
 # Get PETSc environment and rules:
 PETSC3_BASE := $(wildcard ${PETSC_DIR}/conf/variables)
-# PETSC3_BASE is empty string if not 3.0.0
+# PETSC3_BASE is empty string if not 3.x
 ifeq ($(strip $(PETSC3_BASE)),) 
   # include file which is only present in 2.3.3 and earlier
   include ${PETSC_DIR}/bmake/common/variables
@@ -31,8 +29,9 @@ else
 endif
 
 # Compiler flags:
-CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_REVISION='"$(PISM_REVISION)"' \
-          -I../src/udunits -I../src/base -DPISM_DEFAULT_CONFIG_FILE='"$(PISM_INSTALL_DIR)/lib/pism_config.nc"'
+CFLAGS += -DPISM_HAVE_FFTW=${PISM_HAVE_FFTW} -DPISM_REVISION='"$(PISM_REVISION)"' $(PETSC_INCLUDE) \
+          -I../src/udunits -I../src/base -DPISM_DEFAULT_CONFIG_FILE='"$(PISM_INSTALL_DIR)/lib/pism_config.nc"' \
+
 ifeq (${PISM_USE_GNU_FLAGS}, 1)
   CFLAGS += -Woverloaded-virtual -Wall -pipe -O2
 endif
@@ -97,7 +96,8 @@ ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc PISMIO.cc	\
 	enthalpyConverter.cc combinedSystem.cc bedrockOnlySystem.cc		\
 	iceenthOnlySystem.cc iceModelVec2T.cc iceModelVec2V.cc PISMComponent.cc	\
 	PAConstant.cc PAYearlyCycle.cc PAForcing.cc PISMSurface.cc PISMOcean.cc	\
-	PCFactory.cc PALapseRates.cc PISMBedDef.cc PBPointwiseIsostasy.cc
+	PCFactory.cc PALapseRates.cc PISMBedDef.cc PBPointwiseIsostasy.cc	\
+	PISMProf.cc
 
 ifeq (${PISM_HAVE_FFTW},1)
 ice_sources += PBLingleClark.cc deformation.cc 

@@ -101,6 +101,21 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
 
   ierr = write_extra_fields(filename); CHKERRQ(ierr); // chance for derived classes to do more
 
+#ifdef PISM_PROFILE
+  bool flag;
+  ierr = PISMOptionsIsSet("-prof", flag); CHKERRQ(ierr);
+  string prof_output_name;
+  if (flag) {
+    prof_output_name = pism_filename_add_suffix(filename, "-prof", "");
+
+    ierr = verbPrintf(2, grid.com, "Saving profiling data to '%s'...\n",
+		      prof_output_name.c_str());
+    CHKERRQ(ierr);
+
+    ierr = prof->save_report(prof_output_name); CHKERRQ(ierr);
+  }
+#endif
+
   return 0;
 }
 

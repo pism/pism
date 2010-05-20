@@ -85,11 +85,8 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
     // compute eta = H^{8/3}, which is more regular, on reg grid
     ierr = vWork2d[4].get_array(eta); CHKERRQ(ierr);
     ierr = vH.get_array(H); CHKERRQ(ierr);
-#ifdef LOCAL_GHOST_UPDATE
+
     PetscInt GHOSTS = 2;
-#else
-    PetscInt GHOSTS = 0;
-#endif
     for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
       for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         eta[i][j] = pow(H[i][j], etapow);
@@ -97,22 +94,14 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
     }
     ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
     ierr = vH.end_access(); CHKERRQ(ierr);
-    // communicate eta: other processors will need ghosted for d/dx and d/dy
-#ifndef LOCAL_GHOST_UPDATE
-    ierr = vWork2d[4].beginGhostComm(); CHKERRQ(ierr);
-    ierr = vWork2d[4].endGhostComm(); CHKERRQ(ierr);
-#endif
 
     // now use Mahaffy on eta to get grad h on staggered;
     // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
     ierr = vbed.begin_access(); CHKERRQ(ierr);
     ierr = vWork2d[4].get_array(eta); CHKERRQ(ierr);
     for (PetscInt o=0; o<2; o++) {
-#ifdef LOCAL_GHOST_UPDATE
+
       GHOSTS = 1;
-#else
-      GHOSTS = 0;
-#endif
       for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
         for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
           if (o==0) {     // If I-offset
@@ -156,11 +145,8 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
     ierr = vH.get_array(H); CHKERRQ(ierr);
     ierr = vh.get_array(h); CHKERRQ(ierr);
     for (PetscInt o=0; o<2; o++) {
-#ifdef LOCAL_GHOST_UPDATE
+
       PetscInt GHOSTS = 1;
-#else
-      PetscInt GHOSTS = 0;
-#endif
       for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
         for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
           if (haseloff) { // Marianne Haseloff method: deals correctly with 
@@ -242,13 +228,6 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
-
-#ifndef LOCAL_GHOST_UPDATE
-  for (int j = 0; j < 4; ++j) {
-    ierr = vWork2d[j].beginGhostComm(); CHKERRQ(ierr);
-    ierr = vWork2d[j].endGhostComm(); CHKERRQ(ierr);
-  }
-#endif
 
   return 0;
 }
@@ -355,13 +334,10 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   }
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
 
+  PetscScalar Dmax = 0.0;
   // staggered grid computation of: uvbar, I, Sigma
   for (PetscInt o=0; o<2; o++) {
-#ifdef LOCAL_GHOST_UPDATE
     PetscInt GHOSTS = 1;
-#else
-    PetscInt GHOSTS = 0;
-#endif
     for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
       for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         // staggered point: o=0 is i+1/2, o=1 is j+1/2,
@@ -421,6 +397,8 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           const PetscScalar dz = thickness - grid.zlevels[ks];
           Dfoffset += 0.5 * dz * dz * delta[ks];
 
+	  Dmax = PetscMax(Dmax, Dfoffset);
+
           for (PetscInt k=ks+1; k<grid.Mz; ++k) { // above the ice
             Sigma[k] = 0.0;
             I[k] = I[ks];
@@ -462,20 +440,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
   delete [] delta;   delete [] I;   delete [] Sigma;
 
-#ifndef LOCAL_GHOST_UPDATE
-  ierr = uvbar.beginGhostComm(); CHKERRQ(ierr);
-  ierr = uvbar.endGhostComm(); CHKERRQ(ierr);
-
-    ierr = Sigmastag3[0].beginGhostComm(); CHKERRQ(ierr);
-    ierr = Sigmastag3[1].beginGhostComm(); CHKERRQ(ierr);
-    ierr = Istag3[0].beginGhostComm(); CHKERRQ(ierr);
-    ierr = Istag3[1].beginGhostComm(); CHKERRQ(ierr);
-    ierr = Sigmastag3[0].endGhostComm(); CHKERRQ(ierr);
-    ierr = Sigmastag3[1].endGhostComm(); CHKERRQ(ierr);
-    ierr = Istag3[0].endGhostComm(); CHKERRQ(ierr);
-    ierr = Istag3[1].endGhostComm(); CHKERRQ(ierr);
-#endif
-
+  ierr = PetscGlobalMax(&Dmax, &gDmax, grid.com); CHKERRQ(ierr);
   
   return 0;
 }

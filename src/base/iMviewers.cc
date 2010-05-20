@@ -26,7 +26,6 @@
 //! Update the runtime graphical viewers.
 /*!
 Most viewers are updated by this routine, but some other are updated elsewhere:
-  \li see computeMaxDiffusivity() in iMutil.cc for the diffusivity viewer.
   \li see update_nu_viewers() for nuH and log_nuH viewers.
  */
 PetscErrorCode IceModel::update_viewers() {
@@ -158,9 +157,7 @@ PetscErrorCode IceModel::init_viewers() {
     istringstream arg(tmp);
 
     while (getline(arg, var_name, ',')) {
-      if (var_name == "diffusivity")
-	view_diffusivity = true;
-      else if (var_name == "log_nuH")
+      if (var_name == "log_nuH")
 	view_log_nuH = true;
       else if (var_name == "nuH")
 	view_nuH = true;
