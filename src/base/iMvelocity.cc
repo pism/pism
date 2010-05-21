@@ -190,7 +190,7 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
     ierr = vertVelocityFromIncompressibility(); CHKERRQ(ierr);
     // no communication needed for w, which is only differenced in the column
   }
-  prof->begin(event_vel_inc);
+  prof->end(event_vel_inc);
   
   // communication here for global max; sets CFLmaxdt2D
   ierr = computeMax2DSlidingSpeed(); CHKERRQ(ierr);   

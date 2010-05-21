@@ -651,6 +651,7 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = correct_cell_areas(); CHKERRQ(ierr);
 
   prof = new PISMProf(grid, config);
+
   event_step     = prof->create("step",     "time stepping (total)");
   event_velocity = prof->create("velocity", "velocity computation");
   event_vel_inc  = prof->create("vel_inc",  "vert. velocity using incompressibility");
@@ -662,6 +663,8 @@ PetscErrorCode IceModel::misc_setup() {
   event_mass     = prof->create("mass",     "mass conservation computation");
   event_age      = prof->create("age",      "age computation");
   event_beddef   = prof->create("beddef",   "bed deformation computation");
+  event_output   = prof->create("output",   "writing the output file");
+
   return 0;
 }
 

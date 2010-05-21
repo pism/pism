@@ -647,6 +647,37 @@ PetscErrorCode IceModel::compute_wvel(IceModelVec3 &result) {
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr); 
 
+  ierr = result.set_name("wvel"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", 
+			  "vertical velocity of ice, relative to geoid",
+			  "m s-1", ""); CHKERRQ(ierr);
+  ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  result.write_in_glaciological_units = true;
+
+  ierr = result.set_attr("valid_min", -1e6/secpera); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 1e6/secpera); CHKERRQ(ierr);
+
+  return 0;
+}
+//! Computes vertical velocity at the base of ice.
+PetscErrorCode IceModel::compute_wvelbase(IceModelVec3 &wvel, IceModelVec2S &result) {
+  PetscErrorCode ierr;
+  ierr = wvel.begin_access(); CHKERRQ(ierr);
+  ierr = wvel.getHorSlice(result, 0.0); CHKERRQ(ierr);
+  ierr = wvel.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_name("wvelbase"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "vertical velocity of ice at the base of ice",
+			  "m s-1", ""); CHKERRQ(ierr);
+  ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  result.write_in_glaciological_units = true;
+
+  PetscScalar fill_value = 0.0;
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", -1e6/secpera); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_max", 1e6/secpera); CHKERRQ(ierr);
+//   ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -654,11 +685,11 @@ PetscErrorCode IceModel::compute_wvel(IceModelVec3 &result) {
 /*! Note that there is no need to mask out ice-free areas here, because
   wvelsurf is zero at those locations.
  */
-PetscErrorCode IceModel::compute_wvelsurf(IceModelVec2S &result) {
+PetscErrorCode IceModel::compute_wvelsurf(IceModelVec3 &wvel, IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = w3.begin_access(); CHKERRQ(ierr);
-  ierr = w3.getSurfaceValues(result, vH); CHKERRQ(ierr);
-  ierr = w3.end_access(); CHKERRQ(ierr);
+  ierr = wvel.begin_access(); CHKERRQ(ierr);
+  ierr = wvel.getSurfaceValues(result, vH); CHKERRQ(ierr);
+  ierr = wvel.end_access(); CHKERRQ(ierr);
 
   ierr = result.set_name("wvelsurf"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "vertical velocity of ice at ice surface",
@@ -964,26 +995,6 @@ PetscErrorCode IceModel::compute_vvelbase(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode IceModel::compute_wvelbase(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = w3.begin_access(); CHKERRQ(ierr);
-  ierr = w3.getHorSlice(result, 0.0); CHKERRQ(ierr);
-  ierr = w3.end_access(); CHKERRQ(ierr);
-
-  ierr = result.set_name("wvelbase"); CHKERRQ(ierr);
-  ierr = result.set_attrs("diagnostic", "vertical velocity of ice at the base of ice",
-			  "m s-1", ""); CHKERRQ(ierr);
-  ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  result.write_in_glaciological_units = true;
-
-  PetscScalar fill_value = 0.0;
-  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
-  ierr = result.set_attr("valid_min", -1e6/secpera); CHKERRQ(ierr);
-  ierr = result.set_attr("valid_max", 1e6/secpera); CHKERRQ(ierr);
-//   ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
-
-  return 0;
-}
 
 //! Computes ice enthalpy at the base of ice.
 PetscErrorCode IceModel::compute_enthalpybase(IceModelVec2S &result) {
@@ -1248,12 +1259,6 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
     return 0;
   }
 
-  if (name == "wvelbase") {
-    ierr = compute_wvelbase(vWork2d[0]); CHKERRQ(ierr);
-    result = &vWork2d[0];
-    return 0;
-  }
-
   if (name == "uvelsurf") {
     ierr = compute_uvelsurf(vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
@@ -1266,8 +1271,22 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
     return 0;
   }
 
+  if (name == "wvel") {
+    ierr = compute_wvel(Enthnew3); CHKERRQ(ierr);
+    result = &Enthnew3;
+    return 0;
+  }
+
+  if (name == "wvelbase") {
+    ierr = compute_wvel(Enthnew3); CHKERRQ(ierr);
+    ierr = compute_wvelbase(Enthnew3, vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
   if (name == "wvelsurf") {
-    ierr = compute_wvelsurf(vWork2d[0]); CHKERRQ(ierr);
+    ierr = compute_wvel(Enthnew3); CHKERRQ(ierr);
+    ierr = compute_wvelsurf(Enthnew3, vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }

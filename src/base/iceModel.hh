@@ -328,8 +328,8 @@ protected:
   virtual PetscErrorCode compute_vvelbase(IceModelVec2S &result);
   virtual PetscErrorCode compute_vvelsurf(IceModelVec2S &result);
   virtual PetscErrorCode compute_wvel(IceModelVec3 &result);
-  virtual PetscErrorCode compute_wvelbase(IceModelVec2S &result);
-  virtual PetscErrorCode compute_wvelsurf(IceModelVec2S &result);
+  virtual PetscErrorCode compute_wvelbase(IceModelVec3 &wvel, IceModelVec2S &result);
+  virtual PetscErrorCode compute_wvelsurf(IceModelVec3 &wvel, IceModelVec2S &result);
   // profiling, etc:
   virtual PetscErrorCode compute_rank(IceModelVec2S &result);
   virtual PetscErrorCode compute_proc_ice_area(IceModelVec2S &result);
@@ -471,7 +471,8 @@ private:
     event_thk_com,		//!< thickness communication
     event_mass,			//!< mass balance computation
     event_age,			//!< age computation
-    event_beddef;		//!< bed deformation step
+    event_beddef,		//!< bed deformation step
+    event_output;		//!< time spent writing the output file
 };
 
 #endif /* __iceModel_hh */

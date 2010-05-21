@@ -59,7 +59,7 @@ void PISMProf::begin(int) {}
 void PISMProf::begin(int index) {
   PISMEvent &event = events[index];
 
-  // fprintf(stderr, "Rank %d: Start of event %d\n", g->rank, index);
+  // fprintf(stderr, "Rank %d: Start '%s'\n", g->rank, events[index].description.c_str());
 
   event.parent = current_event;
 
@@ -84,7 +84,8 @@ void PISMProf::end(int index) {
   event.total_time += (time - event.start_time);
   event.total_cpu_time += (cpu_time - event.start_cpu_time);
 
-  // fprintf(stderr, "Rank %d: End of event %d (%3.9f s lapsed)\n", g->rank, current_event, event.total_time);
+  // fprintf(stderr, "Rank %d: End   '%s' (%3.9f s lapsed)\n", g->rank,
+  // 	  events[current_event].description.c_str(), event.total_time);
 
   current_event = event.parent;
 }

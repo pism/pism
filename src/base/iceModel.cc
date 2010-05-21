@@ -652,8 +652,10 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   grid.end_year = grid.start_year + 0.01; // all what matters is that it is
 				       // greater than start_year
 
+  prof->begin(event_step);
   ierr = step(do_mass_conserve, do_temp, do_age,
 	      do_skip, use_ssa_when_grounded); CHKERRQ(ierr);
+  prof->end(event_step);
 
   // print verbose messages according to user-set verbosity
   if (tmp_verbosity > 2) {
