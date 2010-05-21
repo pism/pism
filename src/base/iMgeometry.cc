@@ -310,6 +310,7 @@ as is the rate of volume loss or gain.
  */
 PetscErrorCode IceModel::massContExplicitStep() {
   PetscErrorCode ierr;
+  PetscScalar whacked = 0, nuked = 0, fried = 0;
 
   const PetscScalar   dx = grid.dx, dy = grid.dy;
   bool do_ocean_kill = config.get_flag("ocean_kill"),
@@ -406,21 +407,27 @@ PetscErrorCode IceModel::massContExplicitStep() {
       }
 
       // apply free boundary rule: negative thickness becomes zero
-      if (vHnew(i,j) < 0)
+      if (vHnew(i,j) < 0) {
+	whacked += (-vHnew(i,j));
         vHnew(i,j) = 0.0;
+      }
 
       // the following conditionals, both -ocean_kill and -float_kill, are also applied in 
       //   IceModel::computeMax2DSlidingSpeed() when determining CFL
       
       // force zero thickness at points which were originally ocean (if "-ocean_kill");
       //   this is calving at original calving front location
-      if ( do_ocean_kill && (vMask.value(i,j) == MASK_OCEAN_AT_TIME_0) )
+      if ( do_ocean_kill && (vMask.value(i,j) == MASK_OCEAN_AT_TIME_0) ) {
+	nuked += vHnew(i,j);
         vHnew(i,j) = 0.0;
+      }
 
       // force zero thickness at points which are floating (if "-float_kill");
       //   this is calving at grounding line
-      if ( floating_ice_killed && vMask.is_floating(i,j) )
+      if ( floating_ice_killed && vMask.is_floating(i,j) ) {
+	fried += vHnew(i,j);
         vHnew(i,j) = 0.0;
+      }
 
     } // end of the inner for loop
   } // end of the outer for loop
@@ -434,6 +441,20 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
+
+  // whacked, nuked, fried global sums:
+  {
+    ierr = PetscGlobalSum(&whacked, &total_whacked, grid.com); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&nuked,   &total_nuked,   grid.com); CHKERRQ(ierr);
+    ierr = PetscGlobalSum(&fried,   &total_fried,   grid.com); CHKERRQ(ierr);
+
+    // FIXME: use corrected cell areas (when available)
+    PetscScalar ice_density = config.get("ice_density"),
+      factor = ice_density * (dx * dy) / dt;
+    total_whacked *= factor;
+    total_nuked   *= factor;
+    total_fried   *= factor;
+  }
 
   // compute dH/dt (thickening rate) for viewing and for saving at end; only diagnostic
   ierr = vHnew.add(-1.0, vH, vdHdt); CHKERRQ(ierr); // vdHdt = vHnew - vH

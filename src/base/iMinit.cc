@@ -653,6 +653,7 @@ PetscErrorCode IceModel::misc_setup() {
   prof = new PISMProf(grid, config);
   event_step     = prof->create("step",     "time stepping (total)");
   event_velocity = prof->create("velocity", "velocity computation");
+  event_vel_inc  = prof->create("vel_inc",  "vert. velocity using incompressibility");
   event_sia      = prof->create("vel_sia",  "SIA velocity computation");
   event_ssa      = prof->create("vel_ssa",  "SSA velocity computation");
   event_energy   = prof->create("energy",   "energy balance computation");

@@ -127,9 +127,9 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
   }
 
   prof->end(event_sia);
-PetscLogEventEnd(siaEVENT,0,0,0,0);
-PetscLogEventBegin(ssaEVENT,0,0,0,0);
- prof->begin(event_ssa);
+  PetscLogEventEnd(siaEVENT,0,0,0,0);
+  PetscLogEventBegin(ssaEVENT,0,0,0,0);
+  prof->begin(event_ssa);
 
   // do SSA
   if ((firstTime == PETSC_TRUE) && use_ssa_velocity) {
@@ -174,7 +174,7 @@ PetscLogEventBegin(ssaEVENT,0,0,0,0);
 PetscLogEventEnd(ssaEVENT,0,0,0,0);
 PetscLogEventBegin(velmiscEVENT,0,0,0,0);
 
- prof->begin(event_vel_com);
+  prof->begin(event_vel_com);
   // in latter case u,v are modified by broadcastSSAVelocity():
   if (updateVelocityAtDepth) {  
     ierr = u3.beginGhostComm(); CHKERRQ(ierr);
@@ -182,13 +182,15 @@ PetscLogEventBegin(velmiscEVENT,0,0,0,0);
     ierr = u3.endGhostComm(); CHKERRQ(ierr);
     ierr = v3.endGhostComm(); CHKERRQ(ierr);
   }
- prof->end(event_vel_com);
+  prof->end(event_vel_com);
 
+  prof->begin(event_vel_inc);
   // finally update w
   if (updateVelocityAtDepth) {
     ierr = vertVelocityFromIncompressibility(); CHKERRQ(ierr);
     // no communication needed for w, which is only differenced in the column
   }
+  prof->begin(event_vel_inc);
   
   // communication here for global max; sets CFLmaxdt2D
   ierr = computeMax2DSlidingSpeed(); CHKERRQ(ierr);   

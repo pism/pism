@@ -611,6 +611,45 @@ PetscErrorCode IceModel::compute_vvelsurf(IceModelVec2S &result) {
   return 0;
 }
 
+//! Computes vertical ice velocity (relative to the geoid).
+/*!
+  \f[
+  w(s) = \tilde w(s) + \frac{\partial b}{\partial t} + U(s) \cdot \nabla b
+  \f]
+ */
+PetscErrorCode IceModel::compute_wvel(IceModelVec3 &result) {
+  PetscErrorCode ierr;
+  PetscScalar *res, *w, *u, *v;
+  
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
+  ierr = u3.begin_access(); CHKERRQ(ierr);
+  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = w3.begin_access(); CHKERRQ(ierr);
+  ierr = vuplift.begin_access(); CHKERRQ(ierr); 
+  ierr = result.begin_access(); CHKERRQ(ierr);
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = u3.getInternalColumn(i, j, &u); CHKERRQ(ierr);
+      ierr = v3.getInternalColumn(i, j, &v); CHKERRQ(ierr);
+      ierr = w3.getInternalColumn(i, j, &w); CHKERRQ(ierr);
+      ierr = result.getInternalColumn(i, j, &res); CHKERRQ(ierr);
+
+      for (PetscInt k = 0; k < grid.Mz; ++k)
+	res[k] = w[k] + vuplift(i,j) + u[k] * vbed.diff_x_p(i,j) + v[k] * vbed.diff_y_p(i,j);
+    }
+  }
+
+  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = vuplift.end_access(); CHKERRQ(ierr);
+  ierr = w3.end_access(); CHKERRQ(ierr);
+  ierr = v3.end_access(); CHKERRQ(ierr);
+  ierr = u3.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr); 
+
+  return 0;
+}
+
 //! Computes wvelsurf, the vertical velocity of ice at ice surface.
 /*! Note that there is no need to mask out ice-free areas here, because
   wvelsurf is zero at those locations.
@@ -1525,6 +1564,11 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
     result = dvoldt * ice_density;
   }
 
+  if (name == "ienthalpy") {
+    errcode = 0;
+    ierr = compute_ice_enthalpy(result); CHKERRQ(ierr);
+  }
+
   if (name == "total_basal_ice_flux") {
     errcode = 0;
     result = total_basal_ice_flux;
@@ -1540,9 +1584,19 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
     result = total_sub_shelf_ice_flux;
   }
 
-  if (name == "ienthalpy") {
+  if (name == "total_whacked") {
     errcode = 0;
-    ierr = compute_ice_enthalpy(result); CHKERRQ(ierr);
+    result = total_whacked;
+  }
+
+  if (name == "total_nuked") {
+    errcode = 0;
+    result = total_nuked;
+  }
+
+  if (name == "total_fried") {
+    errcode = 0;
+    result = total_fried;
   }
 
   return errcode;

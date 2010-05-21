@@ -109,11 +109,16 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.scalar_from_option("e", "enhancement_factor"); CHKERRQ(ierr);
 
-  string sgmoption;
-  bool sgm;
-  ierr = PISMOptionsString("-gradient", "Choose enumerated value for surface_gradient_method",
-			   sgmoption, sgm); CHKERRQ(ierr);
-  if (sgm)  config.set_string("surface_gradient_method",sgmoption);
+  bool gradient_set;
+  string keyword;
+  set<string> choices;
+  choices.insert("eta");
+  choices.insert("haseloff");
+  choices.insert("mahaffy");
+  ierr = PISMOptionsList(grid.com, "-gradient", "Surface gradient computation method.",
+			 choices, "haseloff", keyword, gradient_set); CHKERRQ(ierr);
+  if (gradient_set)
+    config.set_string("surface_gradient_method", keyword);
 
   // related old options
   ierr = check_old_option_and_stop(grid.com, "-eta", "-gradient"); CHKERRQ(ierr);

@@ -173,6 +173,9 @@ protected:
     total_sub_shelf_ice_flux,
     total_basal_ice_flux,
     total_surface_ice_flux,
+    total_whacked,
+    total_nuked,
+    total_fried,
     dvoldt;  //!< d(total ice volume)/dt; m3 s-1
   PetscInt    skipCountDown;
 
@@ -324,6 +327,7 @@ protected:
   virtual PetscErrorCode compute_uvelsurf(IceModelVec2S &result);
   virtual PetscErrorCode compute_vvelbase(IceModelVec2S &result);
   virtual PetscErrorCode compute_vvelsurf(IceModelVec2S &result);
+  virtual PetscErrorCode compute_wvel(IceModelVec3 &result);
   virtual PetscErrorCode compute_wvelbase(IceModelVec2S &result);
   virtual PetscErrorCode compute_wvelsurf(IceModelVec2S &result);
   // profiling, etc:
@@ -457,8 +461,17 @@ private:
   PetscLogDouble start_time;
 
   PISMProf *prof;
-  int event_step, event_velocity, event_sia, event_ssa, event_energy,
-    event_vel_com, event_thk_com, event_mass, event_age, event_beddef;
+  int event_step,		//!< total time spent doing time-stepping
+    event_velocity,		//!< total velocity computation
+    event_vel_inc,		//!< vert. velocity from incompressibility
+    event_sia,			//!< SIA computation
+    event_ssa,			//!< SSA computation
+    event_energy,		//!< energy balance computation
+    event_vel_com,		//!< velocity communication
+    event_thk_com,		//!< thickness communication
+    event_mass,			//!< mass balance computation
+    event_age,			//!< age computation
+    event_beddef;		//!< bed deformation step
 };
 
 #endif /* __iceModel_hh */

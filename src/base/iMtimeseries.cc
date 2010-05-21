@@ -266,6 +266,42 @@ PetscErrorCode IceModel::create_timeseries() {
     timeseries.push_back(tssif);
   }
 
+  if (find(ts_vars.begin(), ts_vars.end(), "total_whacked") != ts_vars.end()) {
+    DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "total_whacked", "t");
+
+    ts->set_units("kg s-1", "");
+    ts->set_dimension_units("years", "");
+    ts->output_filename = ts_filename;
+
+    ts->set_attr("long_name", "total rate of whacking the ice");
+
+    timeseries.push_back(ts);
+  }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "total_nuked") != ts_vars.end()) {
+    DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "total_nuked", "t");
+
+    ts->set_units("kg s-1", "");
+    ts->set_dimension_units("years", "");
+    ts->output_filename = ts_filename;
+
+    ts->set_attr("long_name", "total rate of nuking the ice");
+
+    timeseries.push_back(ts);
+  }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "total_fried") != ts_vars.end()) {
+    DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "total_fried", "t");
+
+    ts->set_units("kg s-1", "");
+    ts->set_dimension_units("years", "");
+    ts->output_filename = ts_filename;
+
+    ts->set_attr("long_name", "total rate of frying the ice");
+
+    timeseries.push_back(ts);
+  }
+
   return 0;
 }
 
