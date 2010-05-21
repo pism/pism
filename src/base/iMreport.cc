@@ -1425,8 +1425,14 @@ PetscErrorCode IceModel::compute_ice_enthalpy(PetscScalar &result) {
   return 0;
 }
 
-//! Compute diffusivity.
-/*! Expects to find surface gradient in vWork2d[0,1,2,3], also uses vH and
+//! Compute diffusivity associated to the SIA mass continuity equation (for diagnostic purposes).
+/*! Because of how the SIA calculation is currently factored, we compute
+\f$D\f$ here, for the purpose of diagnostic viewing, by the formula
+  \f[ D = \frac{|\bar U| H}{|\nabla h|}. \f]
+The potential division by zero in (harmless) areas of flat slope is avoided by
+addition of a constant to \f$\alpha = |\nabla h|\f$.
+
+Expects to find surface gradient in vWork2d[0,1,2,3], also uses vH and
   uvbar. */
 PetscErrorCode IceModel::compute_diffusivity(IceModelVec2S &result) {
   PetscErrorCode ierr;

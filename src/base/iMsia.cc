@@ -263,19 +263,23 @@ IceModel::horizontalVelocitySIARegular() if the horizontal velocity is needed
 The other integral is the diffusivity of the SIA, used to compute
 \c IceModelVec2Stag \c uvbar:
 	\f[D = \int_0^H (H-z)\delta(z)\,dz.\f]
-See [\ref BBL] on the meaning of \f$D\f$.
+See [\ref BBL] on the meaning of \f$D\f$.  This method puts the maximum, over
+all staggered points, of the diffusivities into the global variable gDmax.
+Because the mass continuity PDE is actually nonlinear, this diffusivity \f$D\f$
+changes at every time step.
 
 Both integrals are approximated by the trapezoid rule.
 
-The scheme used here for the SIA
-the one first proposed in the context of ice sheets by Mahaffy (1976).  That is, the method 
-is "type I" in the classification described in (Hindmarsh and Payne 1996).  Note that the 
-surface slope \f$\nabla h\f$ is needed on the staggered grid although the surface 
-elevation \f$h\f$ itself is known on the regular grid.  
+The method surfaceGradientSIA() should be called before this one.  The
+staggered-grid values of the surface gradient  \f$\nabla h\f$ are assumed to
+reside in vWork2d[0],..,vWork2d[3].  In any case, all schemes here are essentially
+"type I" in the classification described in (Hindmarsh and Payne 1996).
+Note that \f$\nabla h\f$ is needed on the staggered grid although the surface 
+elevation \f$h\f$ and thickness \f$H\f$ are known on the regular grid.  
 
-This routine also computes the strain-heating.  This means the deformational-heating
-within the ice volume, but not basal the basal friction.  In particular,
-the staggered grid value of \f$\Sigma\f$ is computed using the formula appropriate
+This routine also computes the strain-heating \f$\Sigma\f$ in the SIA model.
+This means the deformational-heating, not the basal friction.  The staggered
+grid value of \f$\Sigma\f$ is computed using the formula appropriate
 to the SIA, and is put in \c IceModelVec3 \c Sigmastag3[2].  See correctSigma()
 for how the SIA+SSA hybrid \f$\Sigma\f$ is computed.
  */
@@ -352,8 +356,8 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
             ierr = tau3.getInternalColumn(i+oi,j+oj,&ageoffset); CHKERRQ(ierr);
           }
 	  
-	  ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-	  ierr = Enth3.getInternalColumn(i+oi,j+oj,&Enthoffset); CHKERRQ(ierr);
+          ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+          ierr = Enth3.getInternalColumn(i+oi,j+oj,&Enthoffset); CHKERRQ(ierr);
 
           // does validity check for thickness:
           const PetscInt      ks = grid.kBelowHeight(thickness);  
@@ -363,18 +367,18 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           I[0] = 0;
           PetscScalar  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
           for (PetscInt k=0; k<=ks; ++k) {
-	    // pressure added by the ice (i.e. pressure difference between the
-	    // current level and the top of the column)
+            // pressure added by the ice (i.e. pressure difference between the
+            // current level and the top of the column)
             const PetscScalar   pressure = ice->rho * standard_gravity * (thickness - grid.zlevels[k]);
             PetscScalar flow, grainsize = constant_grain_size;
             if (usetau3 && usesGrainSize && realAgeForGrainSize) {
               grainsize = grainSizeVostok(0.5 * (ageij[k] + ageoffset[k]));
             }
             // If the flow law does not use grain size, it will just ignore it, no harm there
-	    PetscScalar E = 0.5 * (Enthij[k] + Enthoffset[k]);
+            PetscScalar E = 0.5 * (Enthij[k] + Enthoffset[k]);
             if (do_cold_ice) {
-	      PetscScalar T;
-	      ierr = EC->getAbsTemp(E, pressure, T); CHKERRQ(ierr);
+              PetscScalar T;
+              ierr = EC->getAbsTemp(E, pressure, T); CHKERRQ(ierr);
               flow = ice->flow(alpha * pressure, T, pressure, grainsize);
             } else {
               flow = gpbldi->flowFromEnth(alpha * pressure, E, pressure, grainsize);
@@ -397,7 +401,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           const PetscScalar dz = thickness - grid.zlevels[ks];
           Dfoffset += 0.5 * dz * dz * delta[ks];
 
-	  Dmax = PetscMax(Dmax, Dfoffset);
+          Dmax = PetscMax(Dmax, Dfoffset);
 
           for (PetscInt k=ks+1; k<grid.Mz; ++k) { // above the ice
             Sigma[k] = 0.0;

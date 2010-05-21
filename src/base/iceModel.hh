@@ -208,7 +208,6 @@ protected:
   virtual void setConstantNuHForSSA(PetscScalar);
 
   // see iMadaptive.cc
-  virtual PetscErrorCode computeMaxDiffusivity(bool update_diffusivity_viewer);
   virtual PetscErrorCode computeMax3DVelocities();
   virtual PetscErrorCode computeMax2DSlidingSpeed();
   virtual PetscErrorCode adaptTimeStepDiffusivity();

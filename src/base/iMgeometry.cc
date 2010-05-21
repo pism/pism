@@ -289,7 +289,9 @@ The methods used are first-order explicit in time.  The derivatives in
 \f$\nabla \cdot \mathbf{q}\f$ are computed by centered finite difference methods.  In the case 
 of the SIA contribution, the value of \f$D \nabla h\f$ is already stored in 
 \c IceModelVec2Stag \c uvbar on the staggered grid by velocitySIAStaggered().  It is differenced in 
-the standard centered manner (with averaging of the thickness onto the staggered grid).
+the standard centered manner (with averaging of the thickness onto the staggered grid).  The time-stepping for the explicit scheme is controlled by equation (25) in
+[\ref BBL], so that \f$\Delta t \sim \frac{\Delta x^2}{\max D}\f$; see also
+[\ref MortonMayers].
 
 Basal sliding may come from SSA or from a sliding law in SIA (the latter is usually inferior as a
 physical model).  The divergence of \f$\mathbf{U}_b H\f$ is computed by upwinding after expanding
