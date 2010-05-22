@@ -49,7 +49,7 @@ Note \f$E\f$ is the ice enthalpy and \f$T\f$ is the ice temperature (which is a 
 
 Now the vertical velocity is computed by IceModel::vertVelocityFromIncompressibility().  In the old coordinates \f$(x,y,z,t)\f$ it has this formula:
         \f[ w(z) = -\int_b^z \frac{\partial u}{\partial x}(z') + \frac{\partial v}{\partial y}(z')\,dz' + \frac{\partial b}{\partial t} + \mathbf{U}_b \cdot \nabla b - S.\f]
-Here \f$S\f$ is the basal melt rate, positive when ice is being melted (= IceModel::vbasalMeltRate).  We have used the basal kinematical equation and integrated the incompressibility statement
+Here \f$S\f$ is the basal melt rate, positive when ice is being melted (= IceModel::vbmr).  We have used the basal kinematical equation and integrated the incompressibility statement
         \f[ \frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} + \frac{\partial w}{\partial z} = 0.\f]
 
 In the new coordinates we have
@@ -65,10 +65,7 @@ The conservation of energy equation is now, in the new coordinate \f$s\f$ and ne
   \f[ \rho_i \left(\frac{\partial E}{\partial t} + \mathbf{U}\cdot\nabla E + \tilde w \frac{\partial E}{\partial s}\right) = \frac{k_i}{c_i} \frac{\partial^2 E}{\partial s^2} + Q \f]
 Thus it looks just like the conservation of energy equation in the original vertical velocity \f$z\f$.  This is the form of the equation solved by IceModel::enthalpyAndDrainageStep().
 
-FIXME:  The vertical velocity relative to the geoid, the "actual" vertical velocity \f$w(x,y,s,t)\f$, should be computed by \f$w(s) = \tilde w(s) + \frac{\partial b}{\partial t} + \mathbf{U}(s)\cdot\nabla b\f$ and, under <code>-o_size big</code> at least, written into the output file as the diagnostic variable \c wvel.
-
-FIXME:  The diagnostic variables \c wvelsurf and \c wvelbase should be fixed so they are the surface and basal values of the true vertical velocity \c wvel, and not values from slices of \c wvel_rel, as is the situation currently (r997).
-
+Under option <code>-o_size big</code>, all of these vertical velocity fields are available as fields in the output NetCDFfile.  The vertical velocity relative to the geoid, as a three-dimensional field, uis writtenas the diagnostic variable \c wvel.  This is the "actual" vertical velocity \f$w = \tilde w + \frac{\partial b}{\partial t} + \mathbf{U}(s)\cdot\nabla b\f$.  Its surface value is written as \c wvelsurf, and its basal value as \c wvelbase.  The relative vertical velocity \f$\tilde w\f$ is written to the NetCDF output file as \c wvel_rel.
 
 
 */  /* <--- IF THIS END-OF-COMMENT IS LOST, CONFUSION RESULTS ... */

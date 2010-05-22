@@ -667,7 +667,7 @@ PetscErrorCode IceModel::compute_wvelbase(IceModelVec3 &wvel, IceModelVec2S &res
   ierr = wvel.end_access(); CHKERRQ(ierr);
 
   ierr = result.set_name("wvelbase"); CHKERRQ(ierr);
-  ierr = result.set_attrs("diagnostic", "vertical velocity of ice at the base of ice",
+  ierr = result.set_attrs("diagnostic", "vertical velocity of ice at the base of ice, relative to the geoid",
 			  "m s-1", ""); CHKERRQ(ierr);
   ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   result.write_in_glaciological_units = true;
@@ -692,7 +692,7 @@ PetscErrorCode IceModel::compute_wvelsurf(IceModelVec3 &wvel, IceModelVec2S &res
   ierr = wvel.end_access(); CHKERRQ(ierr);
 
   ierr = result.set_name("wvelsurf"); CHKERRQ(ierr);
-  ierr = result.set_attrs("diagnostic", "vertical velocity of ice at ice surface",
+  ierr = result.set_attrs("diagnostic", "vertical velocity of ice at ice surface, relative to the geoid",
 			  "m s-1", ""); CHKERRQ(ierr);
   ierr = result.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   result.write_in_glaciological_units = true;
