@@ -227,77 +227,80 @@ PetscErrorCode IceModel::create_timeseries() {
     timeseries.push_back(dimassdt);
   }
 
-  if (find(ts_vars.begin(), ts_vars.end(), "total_surface_ice_flux") != ts_vars.end()) {
-    DiagnosticTimeseries *tsif = new DiagnosticTimeseries(&grid, "total_surface_ice_flux", "t");
+  if (find(ts_vars.begin(), ts_vars.end(), "surface_ice_flux") != ts_vars.end()) {
+    DiagnosticTimeseries *tsif = new DiagnosticTimeseries(&grid, "surface_ice_flux", "t");
 
     tsif->set_units("kg s-1", "");
     tsif->set_dimension_units("years", "");
     tsif->output_filename = ts_filename;
 
-    tsif->set_attr("long_name", "total top surface ice flux");
+    tsif->set_attr("long_name", "total over domain of top surface ice mass flux");
     tsif->set_attr("comment", "positive means ice gain");
 
     timeseries.push_back(tsif);
   }
 
-  if (find(ts_vars.begin(), ts_vars.end(), "total_basal_ice_flux") != ts_vars.end()) {
-    DiagnosticTimeseries *tbif = new DiagnosticTimeseries(&grid, "total_basal_ice_flux", "t");
+  if (find(ts_vars.begin(), ts_vars.end(), "basal_ice_flux") != ts_vars.end()) {
+    DiagnosticTimeseries *tbif = new DiagnosticTimeseries(&grid, "basal_ice_flux", "t");
 
     tbif->set_units("kg s-1", "");
     tbif->set_dimension_units("years", "");
     tbif->output_filename = ts_filename;
 
-    tbif->set_attr("long_name", "total basal ice flux");
+    tbif->set_attr("long_name", "total over domain of basal surface ice mass flux");
     tbif->set_attr("comment", "positive means ice gain");
 
     timeseries.push_back(tbif);
   }
 
-  if (find(ts_vars.begin(), ts_vars.end(), "total_sub_shelf_ice_flux") != ts_vars.end()) {
-    DiagnosticTimeseries *tssif = new DiagnosticTimeseries(&grid, "total_sub_shelf_ice_flux", "t");
+  if (find(ts_vars.begin(), ts_vars.end(), "sub_shelf_ice_flux") != ts_vars.end()) {
+    DiagnosticTimeseries *tssif = new DiagnosticTimeseries(&grid, "sub_shelf_ice_flux", "t");
 
     tssif->set_units("kg s-1", "");
     tssif->set_dimension_units("years", "");
     tssif->output_filename = ts_filename;
 
-    tssif->set_attr("long_name", "total sub-ice-shelf ice flux");
+    tssif->set_attr("long_name", "total over domain of sub-ice-shelf ice mass flux");
     tssif->set_attr("comment", "positive means ice gain");
 
     timeseries.push_back(tssif);
   }
 
-  if (find(ts_vars.begin(), ts_vars.end(), "total_whacked") != ts_vars.end()) {
-    DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "total_whacked", "t");
+  if (find(ts_vars.begin(), ts_vars.end(), "nonneg_rule_flux") != ts_vars.end()) {
+    DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "nonneg_rule_flux", "t");
 
     ts->set_units("kg s-1", "");
     ts->set_dimension_units("years", "");
     ts->output_filename = ts_filename;
 
-    ts->set_attr("long_name", "total rate of whacking the ice");
+    ts->set_attr("long_name", "total over domain of ice mass gain by application of non-negative thickness rule");
+    ts->set_attr("comment", "positive means ice gain");
 
     timeseries.push_back(ts);
   }
 
-  if (find(ts_vars.begin(), ts_vars.end(), "total_nuked") != ts_vars.end()) {
-    DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "total_nuked", "t");
+  if (find(ts_vars.begin(), ts_vars.end(), "ocean_kill_flux") != ts_vars.end()) {
+    DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "ocean_kill_flux", "t");
 
     ts->set_units("kg s-1", "");
     ts->set_dimension_units("years", "");
     ts->output_filename = ts_filename;
 
-    ts->set_attr("long_name", "total rate of nuking the ice");
+    ts->set_attr("long_name", "total over domain of ice mass gain by calving by application of -ocean_kill mechanism");
+    ts->set_attr("comment", "positive means ice gain");
 
     timeseries.push_back(ts);
   }
 
-  if (find(ts_vars.begin(), ts_vars.end(), "total_fried") != ts_vars.end()) {
-    DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "total_fried", "t");
+  if (find(ts_vars.begin(), ts_vars.end(), "float_kill_flux") != ts_vars.end()) {
+    DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "float_kill_flux", "t");
 
     ts->set_units("kg s-1", "");
     ts->set_dimension_units("years", "");
     ts->output_filename = ts_filename;
 
-    ts->set_attr("long_name", "total rate of frying the ice");
+    ts->set_attr("long_name", "total over domain of ice mass gain by calving by application of -float_kill mechanism");
+    ts->set_attr("comment", "positive means ice gain");
 
     timeseries.push_back(ts);
   }

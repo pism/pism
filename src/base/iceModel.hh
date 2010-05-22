@@ -173,9 +173,9 @@ protected:
     total_sub_shelf_ice_flux,
     total_basal_ice_flux,
     total_surface_ice_flux,
-    total_whacked,
-    total_nuked,
-    total_fried,
+    nonneg_rule_flux,
+    ocean_kill_flux,
+    float_kill_flux,
     dvoldt;  //!< d(total ice volume)/dt; m3 s-1
   PetscInt    skipCountDown;
 

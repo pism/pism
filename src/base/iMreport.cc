@@ -1588,34 +1588,34 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
     ierr = compute_ice_enthalpy(result); CHKERRQ(ierr);
   }
 
-  if (name == "total_basal_ice_flux") {
+  if (name == "basal_ice_flux") {
     errcode = 0;
     result = total_basal_ice_flux;
   }
 
-  if (name == "total_surface_ice_flux") {
+  if (name == "surface_ice_flux") {
     errcode = 0;
     result = total_surface_ice_flux;
   }
 
-  if (name == "total_sub_shelf_ice_flux") {
+  if (name == "sub_shelf_ice_flux") {
     errcode = 0;
     result = total_sub_shelf_ice_flux;
   }
 
-  if (name == "total_whacked") {
+  if (name == "nonneg_rule_flux") {
     errcode = 0;
-    result = total_whacked;
+    result = nonneg_rule_flux;
   }
 
-  if (name == "total_nuked") {
+  if (name == "ocean_kill_flux") {
     errcode = 0;
-    result = total_nuked;
+    result = ocean_kill_flux;
   }
 
-  if (name == "total_fried") {
+  if (name == "float_kill_flux") {
     errcode = 0;
-    result = total_fried;
+    result = float_kill_flux;
   }
 
   return errcode;
