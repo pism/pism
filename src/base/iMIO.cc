@@ -502,7 +502,8 @@ PetscErrorCode IceModel::write_snapshot() {
   if ( (grid.year >= snapshot_times[current_snapshot]) && (current_snapshot < snapshot_times.size()) ) {
     saving_after = snapshot_times[current_snapshot];
 
-    while (snapshot_times[current_snapshot] <= grid.year)
+    while ((current_snapshot < snapshot_times.size()) &&
+           (snapshot_times[current_snapshot] <= grid.year))
       current_snapshot++;
   } else {
     // we don't need to save now, so just return
