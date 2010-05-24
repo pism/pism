@@ -334,8 +334,8 @@ PetscErrorCode IceModel::write_timeseries() {
   }
 
   // Interpolate to put them on requested times:
-  while ((ts_times[current_ts] <= grid.year) &&
-	 (current_ts < ts_times.size())) {
+  while ((current_ts < ts_times.size()) &&
+         (ts_times[current_ts] <= grid.year)) {
     
     vector<DiagnosticTimeseries*>::iterator i;
     for (i = timeseries.begin(); i < timeseries.end(); ++i) {
@@ -479,7 +479,8 @@ PetscErrorCode IceModel::write_extras() {
        (current_extra < extra_times.size()) ) {
     saving_after = extra_times[current_extra];
 
-    while (extra_times[current_extra] <= grid.year)
+    while ((current_extra < extra_times.size()) && 
+           (extra_times[current_extra] <= grid.year))
       current_extra++;
   } else {
     // we don't need to save now, so just return
