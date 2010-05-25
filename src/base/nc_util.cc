@@ -763,3 +763,31 @@ PetscErrorCode NCTool::inq_unlimdim(int &unlimdimid) const {
 
   return 0;
 }
+
+PetscErrorCode NCTool::move_if_exists(const char filename[]) {
+  PetscErrorCode ierr;
+
+  if (rank == 0) {
+    // Check if the file exists:
+    if (FILE *f = fopen(filename, "r")) {
+      fclose(f);
+    } else {
+      return 0;
+    }
+  
+    string tmp = filename;
+    tmp = tmp + "~";
+      
+    ierr = rename(filename, tmp.c_str());
+    if (ierr != 0) {
+      ierr = verbPrintf(1, com, "PISM ERROR: can't move '%s' to '%s'.\n",
+                        filename, tmp.c_str());
+      PetscEnd();
+    }
+    ierr = verbPrintf(2, com, 
+                      "PISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",
+                      filename, tmp.c_str());
+  }
+
+  return 0;
+}

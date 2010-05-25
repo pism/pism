@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMProf.hh"
-#include "PISMIO.hh"
+#include "nc_util.hh"
 
 /// PISMEvent
 PISMEvent::PISMEvent() {
@@ -29,14 +29,13 @@ PISMEvent::PISMEvent() {
 }
 
 /// PISMProf
-
-PISMProf::PISMProf(IceGrid &grid, const NCConfigVariable &config) {
-  create_profiling_grid(grid, config);
+PISMProf::PISMProf(IceGrid *g) {
+  com = g->com;
+  rank = g->rank;
+  size = g->size;
+  Nx = g->Nx;
+  Ny = g->Ny;
   current_event = -1;
-}
-
-PISMProf::~PISMProf() {
-  delete g;
 }
 
 //! Create a profiling event.
@@ -59,7 +58,7 @@ void PISMProf::begin(int) {}
 void PISMProf::begin(int index) {
   PISMEvent &event = events[index];
 
-  // fprintf(stderr, "Rank %d: Start '%s'\n", g->rank, events[index].description.c_str());
+  // fprintf(stderr, "Rank %d: Start '%s'\n", rank, events[index].description.c_str());
 
   event.parent = current_event;
 
@@ -84,59 +83,25 @@ void PISMProf::end(int index) {
   event.total_time += (time - event.start_time);
   event.total_cpu_time += (cpu_time - event.start_cpu_time);
 
-  // fprintf(stderr, "Rank %d: End   '%s' (%3.9f s lapsed)\n", g->rank,
+  // fprintf(stderr, "Rank %d: End   '%s' (%3.9f s lapsed)\n", rank,
   // 	  events[current_event].description.c_str(), event.total_time);
 
   current_event = event.parent;
 }
 #endif
 
-//! Create a grid that contains 2D information necessary to create x and y
-//! dimensions (and variables) in the profiling output file.
-PetscErrorCode PISMProf::create_profiling_grid(IceGrid &grid,
-					       const NCConfigVariable &config) {
-  g = new IceGrid(grid.com, grid.rank, grid.size, config);
-
-  g->xs = grid.xs;
-  g->ys = grid.ys;
-  g->xm = grid.xm;
-  g->ym = grid.ym;
-  g->zlevels = new PetscScalar;
-  g->zlevels[0] = 0;
-  g->zblevels = new PetscScalar;
-  g->zblevels[0] = 0;
-
-  g->x0 = grid.x0;
-  g->y0 = grid.y0;
-  g->Lx = grid.Lx;
-  g->Ly = grid.Ly;
-
-  // Set Mx and My to Nx and Ny:
-  g->Mx = grid.Nx;
-  g->My = grid.Ny;
-
-  g->Nx = grid.Nx;
-  g->Ny = grid.Ny;
-
-  g->dx = g->dy  = 0;
-  g->Lz = g->Lbz = 0;
-  g->Mz = g->Mbz = 1;
-
-  return 0;
-}
-
 //! Save a profiling report to a file.
 PetscErrorCode PISMProf::save_report(string filename) {
   PetscErrorCode ierr;
   int ncid, varid, varid_cpu;
-  PISMIO nc(g);
+  NCTool nc(com, rank);
 
-  ierr = nc.open_for_writing(filename.c_str(),
-			     false, // append
-			     true); // check_dimensions
-  CHKERRQ(ierr);
+  ierr = nc.move_if_exists(filename.c_str()); CHKERRQ(ierr);
 
+  ierr = nc.open_for_writing(filename.c_str()); CHKERRQ(ierr);
   ncid = nc.get_ncid();
+
+  ierr = create_dimensions(ncid); CHKERRQ(ierr); 
 
   for (unsigned int j = 0; j < events.size(); ++j) {
     string &name = events[j].name;
@@ -157,9 +122,11 @@ PetscErrorCode PISMProf::save_report(string filename) {
       descr_cpu = descr + " (CPU time)",
       parent_cpu = parent + "_cpu";
 
+    ierr = put_att_text(ncid, varid, "units", "seconds"); CHKERRQ(ierr); 
     ierr = put_att_text(ncid, varid, "parent", parent); CHKERRQ(ierr); 
     ierr = put_att_text(ncid, varid, "long_name", descr); CHKERRQ(ierr);
 
+    ierr = put_att_text(ncid, varid_cpu, "units", "seconds"); CHKERRQ(ierr); 
     ierr = put_att_text(ncid, varid_cpu, "parent", parent_cpu); CHKERRQ(ierr); 
     ierr = put_att_text(ncid, varid_cpu, "long_name", descr_cpu); CHKERRQ(ierr);
   }
@@ -179,16 +146,16 @@ PetscErrorCode PISMProf::save_report(int index, int ncid, int varid, int varid_c
   data[0] = events[index].total_time;
   data[1] = events[index].total_cpu_time;
 
-  if (g->rank == 0) { // on processor 0: receive messages from every other
-    for (int proc = 0; proc < g->size; proc++) {
+  if (rank == 0) { // on processor 0: receive messages from every other
+    for (int proc = 0; proc < size; proc++) {
       if (proc != 0) {
-	MPI_Recv(data, 2, MPI_DOUBLE, proc, data_tag, g->com, &mpi_stat);
+	MPI_Recv(data, 2, MPI_DOUBLE, proc, data_tag, com, &mpi_stat);
       }
 
       // fprintf(stderr, "Event %d: proc %d: data: %f, %f\n", index, proc, data[0], data[1]);
 
-      start[0] = proc % (g->Ny);
-      start[1] = proc / (g->Ny);
+      start[0] = proc % (Ny);
+      start[1] = proc / (Ny);
 
       ierr = nc_put_var1_double(ncid, varid,     start, &data[0]);
       CHKERRQ(check_err(ierr,__LINE__,__FILE__));
@@ -198,14 +165,14 @@ PetscErrorCode PISMProf::save_report(int index, int ncid, int varid, int varid_c
 
     }
   } else {  // all other processors: send data to processor 0
-    MPI_Send(data, 2, MPI_DOUBLE, 0, data_tag, g->com);
+    MPI_Send(data, 2, MPI_DOUBLE, 0, data_tag, com);
   }
 
   return 0;
 }
 
 //! Find NetCDF variables to save total and CPU times into.
-PetscErrorCode PISMProf::find_variables(PISMIO &nc, string name,
+PetscErrorCode PISMProf::find_variables(NCTool &nc, string name,
 					int &varid, int &varid_cpu) {
   PetscErrorCode ierr;
   bool exists;
@@ -232,7 +199,7 @@ PetscErrorCode PISMProf::define_variable(int ncid, string name, int &varid) {
   PetscErrorCode ierr;
   int dimids[2];
 
-  if (g->rank == 0) {
+  if (rank == 0) {
     ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
     ierr = nc_inq_dimid(ncid, "y", &dimids[0]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
@@ -252,7 +219,7 @@ PetscErrorCode PISMProf::put_att_text(int ncid, int varid,
 				      string name, string text) {
   PetscErrorCode ierr;
 
-  if (g->rank != 0) return 0;
+  if (rank != 0) return 0;
 
   ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   {
@@ -270,8 +237,24 @@ PetscErrorCode PISMProf::barrier() {
 
 #ifdef PISM_PROFILE
   PetscErrorCode ierr;
-  ierr = MPI_Barrier(g->com); CHKERRQ(ierr);
+  ierr = MPI_Barrier(com); CHKERRQ(ierr);
 #endif
+
+  return 0;
+}
+
+//! Creates x and y dimensions.
+PetscErrorCode PISMProf::create_dimensions(int ncid) {
+
+  int stat, dimid;
+  if (rank == 0) {
+    stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    // 
+    stat = nc_def_dim(ncid, "x", Nx, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_def_dim(ncid, "y", Ny, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    // 
+    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
 
   return 0;
 }

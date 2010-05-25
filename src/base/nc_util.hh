@@ -54,6 +54,7 @@ public:
   virtual ~NCTool();
   virtual PetscErrorCode open_for_reading(const char filename[]);
   virtual PetscErrorCode open_for_writing(const char filename[]);
+  virtual PetscErrorCode move_if_exists(const char filename[]);
   virtual PetscErrorCode close();
 
   virtual PetscErrorCode find_variable(string short_name, string standard_name,

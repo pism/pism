@@ -650,7 +650,7 @@ PetscErrorCode IceModel::misc_setup() {
   // compute corrected cell areas:
   ierr = correct_cell_areas(); CHKERRQ(ierr);
 
-  prof = new PISMProf(grid, config);
+  prof = new PISMProf(&grid);
 
   event_step     = prof->create("step",     "time stepping (total)");
   event_velocity = prof->create("velocity", "velocity computation");

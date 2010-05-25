@@ -64,8 +64,8 @@ public:
  */
 class PISMProf {
 public:
-  PISMProf(IceGrid &grid, const NCConfigVariable &config);
-  ~PISMProf();
+  PISMProf(IceGrid *g);
+  ~PISMProf() {}
   int create(string name, string description);
   void begin(int index);
   void end(int index);
@@ -73,13 +73,15 @@ public:
   PetscErrorCode save_report(string filename);
 protected:
   vector<PISMEvent> events;
-  int current_event;
-  IceGrid *g;
-  PetscErrorCode create_profiling_grid(IceGrid &grid, const NCConfigVariable &config);
+  int current_event, Nx, Ny;
+  PetscMPIInt rank, size;
+  MPI_Comm com;
+
   PetscErrorCode save_report(int index, int ncid, int varid, int varid_cpu);
-  PetscErrorCode find_variables(PISMIO &nc, string name, int &varid, int &varid_cpu);
+  PetscErrorCode find_variables(NCTool &nc, string name, int &varid, int &varid_cpu);
   PetscErrorCode define_variable(int ncid, string name, int &varid);
   PetscErrorCode put_att_text(int ncid, int varid, string name, string text);
+  PetscErrorCode create_dimensions(int ncid);
 };
 
 #endif // __PISMProf_hh

@@ -538,7 +538,7 @@ PetscErrorCode IceUnitModel::test_pismprof() {
 
   PISMProf *prof;
 
-  prof = new PISMProf(grid, config);
+  prof = new PISMProf(&grid);
 
   int event_total, event_wait, event_sleep;
   event_total = prof->create("total",    "total");
