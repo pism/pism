@@ -33,14 +33,14 @@ except GetoptError:
   
 try:
   name = mprefix + '_ss'
-  A = load(name)
+  A = loadtxt(name)
 except IOError:
   print "file '%s' not found" % name
   sys.exit(2)
 
 try:
   name = mprefix + '_f'
-  B = load(name)
+  B = loadtxt(name)
 except IOError:
   print "file '%s' not found" % name
   sys.exit(2)
@@ -50,7 +50,7 @@ figure(1)
 if haveExtras:
   try:
     name = mprefix + '_extras'
-    E = load(name)
+    E = loadtxt(name)
   except IOError:
     print "can't find _extras, so showing just thickness from _ss"
     haveExtras = False

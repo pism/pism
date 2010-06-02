@@ -34,6 +34,11 @@ THIS IS REALLY BEING USED!!" below.
 IceMISMIPModel::IceMISMIPModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides) : 
   IceModel(g, conf, conf_overrides) {
 
+  // following flag must be here in constructor because IceModel::createVecs()
+  //   uses it; can't wait till init_physics()
+  // non-polythermal methods; can be overridden by the command-line option -no_cold:
+  config.set_flag("do_cold_ice_methods", true);
+
   iceFactory.setType(ICE_CUSTOM);  // ICE_CUSTOM has easy setting of ice density, hardness, etc.
 
   // some are the defaults, while some are merely in a valid range;
@@ -82,31 +87,31 @@ PetscErrorCode IceMISMIPModel::printBasalAndIceInfo() {
 
 
 PetscScalar IceMISMIPModel::basalDragx(PetscScalar **/*tauc*/,
-                                       PetscScalar **u, PetscScalar **v,
+                                       PISMVector2 **uv,
                                        PetscInt i, PetscInt j) const {
   // MAKE SURE THIS IS REALLY BEING USED!!:
   //PetscPrintf(PETSC_COMM_SELF,"IceMISMIPModel::basalDragx()\n");
-  return basalIsotropicDrag(u, v, i, j);
+  return basalIsotropicDrag(uv[i][j].u, uv[i][j].v);
 }
 
 
 PetscScalar IceMISMIPModel::basalDragy(PetscScalar **/*tauc*/,
-                                       PetscScalar **u, PetscScalar **v,
+                                       PISMVector2 **uv,
                                        PetscInt i, PetscInt j) const {
   // MAKE SURE THIS IS REALLY BEING USED!!:
   //PetscPrintf(PETSC_COMM_SELF,"IceMISMIPModel::basalDragy()\n");
-  return basalIsotropicDrag(u, v, i, j);
+  return basalIsotropicDrag(uv[i][j].u, uv[i][j].v);
 }
 
 
 PetscScalar IceMISMIPModel::basalIsotropicDrag(
-            PetscScalar **u, PetscScalar **v, PetscInt i, PetscInt j) const {
+            PetscScalar u, PetscScalar v) const {
 
   PetscScalar       myC = C_MISMIP;
   if (m_MISMIP == 1.0) {
     return myC;
   } else {
-    const PetscScalar magsliding = PetscSqr(u[i][j]) + PetscSqr(v[i][j])
+    const PetscScalar magsliding = PetscSqr(u) + PetscSqr(v)
                                    + PetscSqr(regularize_MISMIP);
     return myC * pow(magsliding, (m_MISMIP - 1.0) / 2.0);
   }
@@ -293,13 +298,14 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   ierr = PISMOptionsIsSet("-try_calving", tryCalving); CHKERRQ(ierr);
 
   config.set_flag("do_temp",                      false);
-  config.set_flag("use_ssa_when_grounded",        false);
+  config.set_flag("use_ssa_when_grounded",        true);
   config.set_flag("is_dry_simulation",            false);
   config.set_flag("include_bmr_in_continuity",    false);
   config.set_flag("ocean_kill",                   true);
   config.set_flag("use_ssa_velocity",             true);
   config.set_flag("compute_surf_grad_inward_ssa", false);
-  config.set_flag("use_eta_transformation", true);
+  config.set_flag("use_eta_transformation",       true);  // -gradient mahaffy or haseloff show surface
+                                                          // wiggles just upstream of grounding line
 
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
 
@@ -485,7 +491,7 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no bed deformation
   ierr =  T3.set(ice->meltingTemp); CHKERRQ(ierr);
   ierr = Tb3.set(ice->meltingTemp); CHKERRQ(ierr);
-  
+
   ierr = vH.set(initialthickness); CHKERRQ(ierr);
 
   ierr = vbmr.set(0.0); CHKERRQ(ierr);
@@ -497,6 +503,8 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
 
   ierr = setBed(); CHKERRQ(ierr);
   ierr = setMask(); CHKERRQ(ierr);
+
+  ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
 
   return 0;
 }
