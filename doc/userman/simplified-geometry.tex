@@ -200,14 +200,14 @@ We see immediately that the PISM result does not put the grounding line in the s
 
 We can learn more about the problem.  It turns out that the numerical flaw in the flux also keeps the grounding line from moving properly, we think.  The problem is that the numerical result doesn't move the grounding line to its correct location if the ice sheet and shelf are initially 10 m as specified in MISMIP.  On the other hand, the correct location for the grounding line is also approximately a steady state for PISM numerics; the grounding line stays where you put it (compare \cite{SchoofMarine2} and \cite{VieliPayne}).
 
-But \texttt{solverSM.py} has an option which allows the asymptotic-matching thickness result from the \cite{SchoofMarine1} theory to be written into a NetCDF file.  We can then initialize the PISM thickness from it, using \texttt{-regrid_from} (section \ref{sec:practical-usage}).
+But \texttt{solverSM.py} has an option which allows the asymptotic-matching thickness result from the \cite{SchoofMarine1} theory to be written into a NetCDF file.  We can then initialize the PISM thickness from it, using regridding (subsection \ref{sec:regridding}).
 
 The effect when we do this at higher resolution (grid mode 3 with 6km spacing, instead of 24 km), is a step forward:
 
 \begin{verbatim}
 $ ./solverSM.py  --Mx=601 -e 1 --sliding=a -s 1 -n SM.nc
-$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -extras -regrid_from SM.nc \
-          -regrid_vars H -ksp_rtol 1.0e-7 -My 3 -Mz 15 -Mx 601
+$ mpiexec -n 4 pisms -model 1 -mismip 1a -step 1 -extras -regrid_file SM.nc \
+          -regrid_vars thk -ksp_rtol 1.0e-7 -My 3 -Mz 15 -Mx 601
 \end{verbatim}
 \noindent The result, Figure \ref{fig:MISMIPmodel1exper1aM3A1FROMSM}, is more satisfactory.  On the other hand, inspection of the flux for this new run shows a smaller, but similarly worrying, jump in flux.
 

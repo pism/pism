@@ -97,13 +97,14 @@ public:
                  PetscScalar volume,  PetscScalar area,
                  PetscScalar meltfrac,  PetscScalar H0,  PetscScalar T0);
   using IceModel::basalDragx;
-  virtual PetscScalar    basalDragx(PetscScalar **tauc,
-                                    PetscScalar **u, PetscScalar **v,
+  virtual PetscScalar    basalDragx(PetscScalar **/*tauc*/,
+                                    PISMVector2 **uv,
                                     PetscInt i, PetscInt j) const;
   using IceModel::basalDragy;
-  virtual PetscScalar    basalDragy(PetscScalar **tauc,
-                                    PetscScalar **u, PetscScalar **v,
+  virtual PetscScalar    basalDragy(PetscScalar **/*tauc*/,
+                                    PISMVector2 **uv,
                                     PetscInt i, PetscInt j) const;
+
   PetscErrorCode         printBasalAndIceInfo();
   PetscErrorCode         writeMISMIPFinalFiles();
 
@@ -130,8 +131,7 @@ private:
   PetscScalar regularize_MISMIP;
 
   PetscErrorCode calving();
-  PetscScalar    basalIsotropicDrag(PetscScalar **u, PetscScalar **v, 
-                                    PetscInt i, PetscInt j) const;
+  PetscScalar    basalIsotropicDrag(PetscScalar u, PetscScalar v) const;
   PetscErrorCode writeMISMIPasciiFile(const char mismiptype, char* filename);
 };
 
