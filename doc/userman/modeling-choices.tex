@@ -107,17 +107,18 @@ Note that the NetCDF model state saved by PISM at the end of an \emph{evolution}
 
 By default, PISM does not compute the age of the ice\index{PISM!modeling the age of the ice} because it does not directly impact ice flow using the default flow laws.   It is very easy to turn on.  Just set \intextoption{age}.
 
+
 \subsection{Setting up PISM boundary (atmosphere, surface and ocean) models}
 \label{sec:boundary-models}
 
-Setting up PISM's boundary models requires selecting one model of each kind and zero or more ``model modifiers''; selected models and modifiers are chained as in Figure~\ref{fig:climate-input-data-flow}. Command-line options \texttt{-atmosphere}, \texttt{-surface} and \texttt{-ocean} take a comma-separated list of keywords as an argument; the first keyword \emph{has} to correspond to a model, the rest can be modifiers. Any of these options can be omitted to use the default atmosphere, surface or ocean model, although using a modifier requires specifying a model.
+Setting up PISM's boundary models requires selecting one model of each kind and zero or more ``model modifiers''.  The selected models and modifiers are chained as in Figure~\ref{fig:climate-input-data-flow}. Command-line options \texttt{-atmosphere}, \texttt{-surface} and \texttt{-ocean} take a comma-separated list of keywords as an argument; the first keyword \emph{has} to correspond to a model, the rest can be modifiers. Any of these options can be omitted to use the default atmosphere, surface or ocean model, although using a modifier requires specifying a model.
 
 For example,
 \begin{verbatim}
 $ pismr -i foo.nc -atmosphere searise_greenland,forcing \
         -dTforcing delta_T.nc -surface pdd
 \end{verbatim}%$
-chooses a combination of SeaRISE-Greenland atmosphere model (see below),  ice-core derived temperature forcing, a PDD local surface mass balance model, and a default (constant) ocean model.
+chooses a combination of SeaRISE-Greenland atmosphere model (see below),  ice-core derived temperature forcing, a positive degree-day (PDD) local surface mass balance model, and a default (constant) ocean model.
 
 Each of PISM boundary model types currently has one ``modifier'' available; the corresponding keyword is \texttt{forcing}. Please see below for details.
 
@@ -131,9 +132,7 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
     The parameterization is controlled by configuration parameters with the \texttt{snow_temp} prefix.
 
-    In addition to the temperature parameterization it implements the SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degree Celsius of temperature change \cite{Huybrechts02} (turn on using the \intextoption{paleo_precip} option).
-
-    Please see \url{http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland} for details.
+    In addition to the temperature parameterization it allows the SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degree Celsius of temperature change \cite{Huybrechts02}.  See \url{http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland} for details.  Turn on this mechanism by using the \intextoption{paleo_precip} option.
 
     It expects variables \texttt{snowprecip}, latitude and longitude to be present in an input file.
 
