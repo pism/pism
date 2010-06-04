@@ -419,7 +419,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   }
     
   ierr = PetscOptionsReal("-force_to_thk_alpha",
-			  "Specifies the force-to-thickness alpha value",
+			  "Specifies the force-to-thickness alpha value in per-year units",
 			  "", alpha * secpera,
 			  &fttalpha, &fttalphaSet); CHKERRQ(ierr);
 
@@ -512,22 +512,42 @@ of the run.  In particular,
 where
   \f[\lambda(t) = \frac{t-t_s}{t_e-t_s}\f]
 
-In terms of files generated from the EISMINT-Greenland example, a use of the
-\c -force_to_thk mechanism looks like the following:  Suppose we regard the SSL2
-run as a spin-up to reach a better temperature field.  Suppose that run is stopped
-at the 100 ka stage.  And note that the early file \c green20km_y1.nc has the target
-thickness, because it is essentially the measured thickness.  Thus we add a 2000 a
-run (it might make sense to make it longer, but this will take a little while anyway)
-in which the thickness goes from the values in \c green_SSL2_100k.nc to values very
-close to those in \c green20km_y1.nc:
+The next exacmple uses files generated from the EISMINT-Greenland experiment;
+see the corresponding chapter of the User's Manual.
+
+Suppose we regard the SSL2 run as a spin-up to reach a better temperature field.
+It is a spinup in which the surface was allowed to evolve.  Assume the 
+early file \c green20km_y1.nc has the target thickness, because it essentially
+has the input thickness.  This script adds a 500 a run, to finalize the spinup,
+in which the ice sheet geometry goes from the the thickness values in 
+\c green_ssl2_110ka.nc to values very close to those in \c green20km_y1.nc:
 \code
-pgrn -ys -2000.0 -ye 0.0 -skip 5 -i green_SSL2_100k.nc -force_to_thk green20km_y1.nc -o green20km_spunup_to_present.nc
+#!/bin/bash
+
+NN=8
+
+mpiexec -n $NN pismr -ys -500.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
+  -surface pdd,forcing -pdd_fausto -force_to_thk green20km_y1.nc \
+  -o with_force.nc -ts_file ts_with_force.nc -ts_times -500:10:0
+  
+mpiexec -n $NN pismr -ys -500.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
+  -surface pdd -pdd_fausto \
+  -o no_force.nc -ts_file ts_no_force.nc -ts_times -500:10:0
+
+mpiexec -n $NN pismr -ys -500.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
+  -surface pdd,forcing -pdd_fausto -force_to_thk green20km_y1.nc -force_to_thk_alpha 0.0002 \
+  -o weak_force.nc -ts_file ts_weak_force.nc -ts_times -500:10:0
 \endcode
-Recall \c pgrn uses a PDD scheme by default, so with \c pismr
-the we would need to use the \c -pdd option:
-\code
-pismr -ys -2000.0 -ye 0.0 -skip 5 -pdd -i green_SSL2_100k.nc -force_to_thk green20km_y1.nc -o green20km_spunup_to_present.nc
-\endcode
+The script also has a run with no forcing, and one with forcing at a lower alpha value,
+a factor of ten smaller than the default.
+
+As shown below, the time series for \c ivol in the
+above time series files show that the force-to-thickness mechanism is forcing
+a system with negative feedback.  We see decaying oscillations toward the
+intended volume.
+
+\image html ivol_force_to_thk.png "\b Volume results from the -force_to_thk mechanism."
+\anchor ivol_force_to_thk
  */
 PetscErrorCode PSForceThickness::ice_surface_mass_flux(PetscReal t_years, PetscReal /*dt_years*/,
 						       IceModelVec2S &result) {
