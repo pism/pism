@@ -353,7 +353,7 @@ PetscErrorCode just_show_usage(
       "\nTo run in parallel using N processors (in typical MPI case):\n"
       "  mpiexec -n N %s ...\n"
       "\nFor more help on %s and PISM,\n"
-      "  1. Download User's Manual for PISM: http://www.pism-docs.org/pdfs/manual0.2.pdf\n"
+      "  1. Download User's Manual for PISM: http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=manual.pdf\n"
       "  2. Read browser for technical details on PISM: http://www.pism-docs.org/doxy/html/index.html\n"
       "  3. Search bugs and tasks at PISM source host: https://gna.org/projects/pism\n"
       "  4. Run with '-help | grep foo' to see PETSc options which relate to 'foo'.\n"

@@ -53,8 +53,7 @@ MPIDO=mpiexec      # change this if need "mpirun", etc.
 MYINITIALS=ABC     # MISMIP says "first character of the first name followed
                    #    by the first two characters of the last name"
 
-#MODELRANGE="1 2"   # model 1 is pure SSA, model 2 is SIA+SSA
-MODELRANGE="2"
+MODELRANGE="1 2"   # model 1 is pure SSA, model 2 is SIA+SSA
 
 #GRIDRANGE="1 2 3" # grid 1 is "-My 151", grid 2 is "-My 1501", grid 3 is "-My 601"
                    # 3 is slow, 2 is practically impossible!!
@@ -199,7 +198,7 @@ do
 
     # exper 3b
     smncname=SMthk_3b_M${GRID}_A1.nc
-    regridstart="-regrid ${smncname} -regrid_vars thk"
+    regridstart="-regrid_file ${smncname} -regrid_vars thk"
     ### replace regridstart by empty string if we want to start w 10 m thickness
     #regridstart=
     options="-step 1 ${SKIP} -Mx ${GRIDMX} -Mz 15 -My 3 ${regridstart}"
