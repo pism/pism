@@ -49,10 +49,10 @@ int main(int argc, char *argv[]) {
     ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_from", bfset); CHKERRQ(ierr);
     string usage =
-      "  pross {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n\n"
+      "  pross {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
-      "  -i          input file in NetCDF format: contains PISM-written model state\n"
-      "  -boot_from  input file in NetCDF format: contains a few fields, from which\n"
+      "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
+      "  -boot_from  IN.nc is input file in NetCDF format: contains a few fields, from which\n"
       "              heuristics will build initial model state\n"
       "  -ssaBC      read SSA boundary conditions from a file\n"
       "  -riggs      read RIGGS data from a file\n"

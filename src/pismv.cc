@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     vector<string> required;
     required.push_back("-test");
     ierr = show_usage_check_req_opts(com, "pismv", required,
-      "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n\n"
+      "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -test x     verification test (x = A|B|...|L)\n"
       "  -no_report  do not give error report at end of run\n"

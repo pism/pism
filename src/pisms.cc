@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     vector<string> required;
     required.clear(); // no actually required options; "-eisII A" is default
     ierr = show_usage_check_req_opts(com, "pisms", required,
-      "  pisms [-eisII x|-pst -xxx|-mismip N] [OTHER PISM & PETSc OPTIONS]\n\n"
+      "  pisms [-eisII x|-pst -xxx|-mismip N] [OTHER PISM & PETSc OPTIONS]\n"
       "where major option chooses type of simplified experiment:\n"
       "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n"
       "  -mismip Nx  choose MISMIP experiment (Nx = 1a|1b|2a|2b|3a|3b)\n"

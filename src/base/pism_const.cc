@@ -345,21 +345,21 @@ PetscErrorCode just_show_usage(
     MPI_Comm com, const char execname[], const char usage[]) {
   PetscErrorCode ierr;
   ierr = verbPrintf(1,com,
-      "%s is a PISM (http://www.pism-docs.org) executable.", execname); CHKERRQ(ierr);
-  ierr = verbPrintf(1,com,"\nOptions cheat-sheet:\n\n");
-      CHKERRQ(ierr);
+      "%s is a PISM (http://www.pism-docs.org) executable.  Options cheat-sheet:\n",
+      execname); CHKERRQ(ierr);
   ierr = verbPrintf(1,com,usage); CHKERRQ(ierr);
   ierr = verbPrintf(1,com,
-      "\nTo run in parallel using N processors (in typical MPI case):\n"
-      "  mpiexec -n N %s ...\n"
-      "\nFor more help on %s and PISM,\n"
-      "  1. Download User's Manual for PISM: http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=manual.pdf\n"
-      "  2. Read browser for technical details on PISM: http://www.pism-docs.org/doxy/html/index.html\n"
-      "  3. Search bugs and tasks at PISM source host: https://gna.org/projects/pism\n"
-      "  4. Run with '-help | grep foo' to see PETSc options which relate to 'foo'.\n"
-      "  5. Email for help:  help AT pism-docs.org\n", 
-      execname, execname, execname);
-      CHKERRQ(ierr);
+      "to run in parallel using N processes (typical MPI case):\n"
+      "  mpiexec -n N %s ...\n\n"
+      "For more help,\n"
+      "  1. download User's Manual for PISM:\n"
+      "       http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=manual.pdf\n"
+      "  2. read browser for technical details on PISM:\n"
+      "       http://www.pism-docs.org/doxy/html/index.html\n"
+      "  3. search bugs and tasks at PISM source host: https://gna.org/projects/pism\n"
+      "  4. run with '-help | grep foo' to see PETSc options which relate to 'foo'.\n"
+      "  5. email for help:  help AT pism-docs.org\n", 
+      execname);  CHKERRQ(ierr);
   return 0;
 }
 

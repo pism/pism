@@ -145,13 +145,13 @@ int main(int argc, char *argv[]){
     ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_from", bfset); CHKERRQ(ierr);
     string usage =
-      "  pgrn {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n\n"
+      "  pgrn {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
-      "  -i          input file in NetCDF format: contains PISM-written model state\n"
-      "  -boot_from  input file in NetCDF format: contains a few fields, from which\n"
+      "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
+      "  -boot_from  IN.nc is input file in NetCDF format: contains a few fields, from which\n"
       "              heuristics will build initial model state\n"
       "notes:\n"
-      "  * special executable for EISMINT-Greenland\n"
+      "  * pgrn is a special executable for EISMINT-Greenland\n"
       "  * one of -i or -boot_from is required\n"
       "  * if -boot_from is used then in fact '-Mx A -My B -Mz C -Lz D' is also required\n"
       "  * generally behaves like pismr after initialization\n";

@@ -53,14 +53,14 @@ int main(int argc, char *argv[]) {
     ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-boot_from", bfset); CHKERRQ(ierr);
     string usage =
-      "  pismr {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n\n"
+      "  pismr {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
-      "  -i          input file in NetCDF format: contains PISM-written model state\n"
-      "  -boot_from  input file in NetCDF format: contains a few fields, from which\n"
+      "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
+      "  -boot_from  IN.nc is input file in NetCDF format: contains a few fields, from which\n"
       "              heuristics will build initial model state\n"
       "notes:\n"
       "  * one of -i or -boot_from is required\n"
-      "  * if -boot_from is used then in fact '-Mx A -My B -Mz C -Lz D' is also required\n";
+      "  * if -boot_from is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
     if ((iset == PETSC_FALSE) && (bfset == PETSC_FALSE)) {
       ierr = PetscPrintf(com,
          "\nPISM ERROR: one of options -i,-boot_from is required\n\n"); CHKERRQ(ierr);

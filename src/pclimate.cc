@@ -308,7 +308,7 @@ int main(int argc, char *argv[]) {
     required.push_back("-ye");
     required.push_back("-dt");
     ierr = show_usage_check_req_opts(com, "pclimate", required,
-      "  pclimate -i IN.nc -o OUT.nc -ys A -ye B -dt C [-atmosphere <name> -surface <name>] [OTHER PISM & PETSc OPTIONS]\n\n"
+      "  pclimate -i IN.nc -o OUT.nc -ys A -ye B -dt C [-atmosphere <name> -surface <name>] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -i             input file in NetCDF format\n"
       "  -o             output file in NetCDF format\n"
@@ -316,9 +316,9 @@ int main(int argc, char *argv[]) {
       "  -ye            end time B (= float), B > A, in years\n"
       "  -dt            time step C (= positive float) in years\n"
       "and set up the models:\n"
-      "  -atmosphere    Chooses an atmosphere model (one of [constant, greenland])\n\n"
+      "  -atmosphere    Chooses an atmosphere model (one of [constant, greenland])\n"
       "  -surface       Chooses a surface model (one of [simple, pdd]) \n"
-      "  -pdd_greenland Sets PDD parameters using formulas (6) and (7) in [Faustoetal2009]\n"
+      "  -pdd_greenland Sets PDD parameters using formulas (6) and (7) in Fausto et al (2009)\n"
       ); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,
