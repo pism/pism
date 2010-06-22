@@ -125,6 +125,31 @@ PetscErrorCode IceModel::create_timeseries() {
     timeseries.push_back(ivol);
   }
 
+  if (find(ts_vars.begin(), ts_vars.end(), "ivoltemp") != ts_vars.end()) {
+    DiagnosticTimeseries *ivoltemp = new DiagnosticTimeseries(&grid, "ivoltemp", "t");
+
+    ivoltemp->set_units("m3", "");
+    ivoltemp->set_dimension_units("years", "");
+    ivoltemp->output_filename = ts_filename;
+
+    ivoltemp->set_attr("long_name", "total temperate ice volume");
+    ivoltemp->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(ivoltemp);
+  }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "ivolcold") != ts_vars.end()) {
+    DiagnosticTimeseries *ivolcold = new DiagnosticTimeseries(&grid, "ivolcold", "t");
+
+    ivolcold->set_units("m3", "");
+    ivolcold->set_dimension_units("years", "");
+    ivolcold->output_filename = ts_filename;
+
+    ivolcold->set_attr("long_name", "total cold ice volume");
+    ivolcold->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(ivolcold);
+  }
   if (find(ts_vars.begin(), ts_vars.end(), "ienthalpy") != ts_vars.end()) {
     DiagnosticTimeseries *ienthalpy = new DiagnosticTimeseries(&grid, "ienthalpy", "t");
 
@@ -162,6 +187,32 @@ PetscErrorCode IceModel::create_timeseries() {
     iarea->set_attr("valid_min", 0.0);
 
     timeseries.push_back(iarea);
+  }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "iareatemp") != ts_vars.end()) {
+    DiagnosticTimeseries *iareatemp = new DiagnosticTimeseries(&grid, "iareatemp", "t");
+
+    iareatemp->set_units("m2", "");
+    iareatemp->set_dimension_units("years", "");
+    iareatemp->output_filename = ts_filename;
+
+    iareatemp->set_attr("long_name", "ice area temperate");
+    iareatemp->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(iareatemp);
+  }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "iareacold") != ts_vars.end()) {
+    DiagnosticTimeseries *iareacold = new DiagnosticTimeseries(&grid, "iareacold", "t");
+
+    iareacold->set_units("m2", "");
+    iareacold->set_dimension_units("years", "");
+    iareacold->output_filename = ts_filename;
+
+    iareacold->set_attr("long_name", "ice area cold");
+    iareacold->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(iareacold);
   }
 
   if (find(ts_vars.begin(), ts_vars.end(), "iareag") != ts_vars.end()) {

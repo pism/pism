@@ -111,7 +111,11 @@ more accurately.
    \textbf{Variable name} & \textbf{Units} & \textbf{Description}\\
    \midrule
     \texttt{ivol} &m$^{3}$ & total ice volume\\
+    \texttt{ivolcold} &m$^{3}$ & cold ice volume\\
+    \texttt{ivoltemp} &m$^{3}$ & temperate ice volume\\
     \texttt{iarea} & m$^{2}$ & total area covered by ice \\
+    \texttt{iareacold} & m$^{2}$ & area covered by cold ice \\
+    \texttt{iareatemp} & m$^{2}$ & area covered by temperate ice \\
     \texttt{iareag} & m$^{2}$ & area covered by grounded ice\\
     \texttt{iareaf} & m$^{2}$ & area covered by floating ice\\
     \texttt{dt} & years & mass-continuity time-step\\
@@ -213,6 +217,7 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \texttt{tempbase} & K & ice temperature at the ice base\\
     \texttt{temppabase} & $^{\circ}$C & pressure-adjusted ice temperature at the base of ice\\
     \texttt{temp_pa} & $^{\circ}$C & pressure-adjusted ice temperature \\
+    \texttt{tempicethk} & m & thickness of the temperate ice \\
     \texttt{tempsurf} & K & ice temperature at the ice surface\\
     \texttt{thk} & m & ice thickness\\
     \texttt{tillphi} & degrees & friction angle for till under grounded ice sheet \\

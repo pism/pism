@@ -315,6 +315,7 @@ protected:
   virtual PetscErrorCode compute_enthalpysurf(IceModelVec2S &result);
   virtual PetscErrorCode compute_hardav(IceModelVec2S &result);
   virtual PetscErrorCode compute_taud(IceModelVec2S &result, IceModelVec2S &tmp);
+  virtual PetscErrorCode compute_tempicethk(IceModelVec2S &result);
   virtual PetscErrorCode compute_cts(IceModelVec3 &useForCTS);
   virtual PetscErrorCode compute_liqfrac(IceModelVec3 &useForLiqfrac);
   virtual PetscErrorCode compute_temp(IceModelVec3 &result);
@@ -336,7 +337,11 @@ protected:
   // scalar:
   virtual PetscErrorCode ice_mass_bookkeeping();
   virtual PetscErrorCode compute_ice_volume(PetscScalar &result);
+  virtual PetscErrorCode compute_ice_volume_temperate(PetscScalar &result);
+  virtual PetscErrorCode compute_ice_volume_cold(PetscScalar &result);
   virtual PetscErrorCode compute_ice_area(PetscScalar &result);
+  virtual PetscErrorCode compute_ice_area_temperate(PetscScalar &result);
+  virtual PetscErrorCode compute_ice_area_cold(PetscScalar &result);
   virtual PetscErrorCode compute_ice_area_grounded(PetscScalar &result);
   virtual PetscErrorCode compute_ice_area_floating(PetscScalar &result);
   virtual PetscErrorCode compute_ice_enthalpy(PetscScalar &result);
