@@ -42,13 +42,59 @@ PetscScalar IceModel::basalDragy(PetscScalar **tauc,
 
 //! Initialize the pseudo-plastic till mechanical model.
 /*! 
-See IceBasalResistancePlasticLaw and updateYieldStressUsingBasalWater() and 
-getBasalWaterPressure() and diffuseHmelt() for important model equations.  
+The pseudo-plastic till basal resistance model is governed by this power law
+equation,
+    \f[ \tau_b = - \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U}, \f]
+where \f$\tau_b=(\tau_{(b)x},\tau_{(b)y})\f$ is the basal shear stress and
+\f$U=(u,v)\f$ is the sliding velocity.  We call the scalar field 
+\f$\tau_c(t,x,y)\f$ the \e pseudo \e yield \e stress.  The constant
+\f$U_{\mathtt{th}}\f$ is the \e threshhold \e speed, and \f$q\f$ is the \e pseudo
+\e plasticity \e exponent.  See IceBasalResistancePlasticLaw::drag().  See also
+updateYieldStressUsingBasalWater() and getBasalWaterPressure() and diffuseHmelt()
+for important model equations.  
 
-Calls either invertSurfaceVelocities(), for one way to get a map of till friction angle
-\c vtillphi, or computePhiFromBedElevation() for another way, or leaves \c vtillphi
-unchanged.  First two of these are according to options \c -surf_vel_to_phi
-and \c -topg_to_phi, respectively.
+Because the strength of the saturated till material is modeled by a Mohr-Coulomb
+relation (\ref Paterson, \ref SchoofStream),
+    \f[   \tau_c = c_0 + (\tan \varphi) N, \f]
+where \f$N = \rho g H - p_w\f$ is the effective pressure on the till (see
+getBasalWaterPressure()), the determination of the till friction angle
+\f$\varphi(x,y)\f$  is important.  The till friction angle is assumed to be a
+time-independent factor which describes the strength of the unsaturated "dry"
+till material.  Thus it is assumed to change more slowly than the basal water 
+pressure.  It follows that it changes more slowly than the yield stress and/or
+the basal shear stress.
+
+The current method determines the map of till friction angle \c vtillphi
+according to options.  Option \c -surf_vel_to_phi causes a call to
+invertSurfaceVelocities(), <i>but this method is a stub, and currently
+unimplemented</i>.  Option \c -topg_to_phi causes call to
+computePhiFromBedElevation().  If neither option is given, the current method
+leaves \c vtillphi unchanged, and thus either in its read-in-from-file state or 
+with a default constant value from the config file.
+
+The current method reads the experimental parameter option \c -sliding_scale.
+A scale factor of \f$A\f$ is intended to increase basal sliding rate by
+\f$A\f$.  It would have exactly this effect \e if the driving stress were
+\e hypothetically completely held by the basal resistance.  Thus this scale factor
+is used to reduce (if \c -sliding_scale \f$A\f$ with \f$A > 1\f$) or increase
+(if \f$A < 1\f$) the value of the (pseudo-) yield stress \c tauc.  The concept
+behind this is described at
+http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet#Initial_Experiment_-_E1_-_Increased_Basal_Lubrication.
+Specifically, the concept behind this mechanism is to suppose equality of driving
+and basal shear stresses,
+    \f[ \rho g H \nabla h = \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U}. \f]
+(<i>For emphasis:</i> The membrane stress held by the ice itself is missing from
+this incomplete stress balance.)  Thus the pseudo yield stress
+\f$\tau_c\f$ would be related to the sliding speed \f$|\mathbf{U}|\f$ by
+  \f[ |\mathbf{U}| = \frac{C}{\tau_c^{1/q}} \f]
+for some (geometry-dependent) constant \f$C\f$.  Multiplying \f$|\mathbf{U}|\f$
+by \f$A\f$ in this equation corresponds to dividing \f$\tau_c\f$ by \f$A^q\f$.
+The current method sets-up the mechanism, and updateYieldStressUsingBasalWater()
+actually computes it.  Note that the mechanism has no effect whatsoever if 
+\f$q=0\f$, which is the purely plastic case; in that case there is \e no direct
+relation between the yield stress and the sliding velocity, and the difference 
+between the driving stress and the yield stress is entirely held by the membrane
+stresses.  (There is also no singular mathematical operation as \f$A^q = A^0 = 1\f$.)
  */
 PetscErrorCode IceModel::initBasalTillModel() {
   PetscErrorCode ierr;
@@ -75,9 +121,30 @@ PetscErrorCode IceModel::initBasalTillModel() {
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling the basal till model", ""); CHKERRQ(ierr);
   {
     // initialize till friction angle (vtillphi) from options
-    ierr = PISMOptionsIsSet("-topg_to_phi", "Use the till friction angle parameterization", topgphiSet); CHKERRQ(ierr);
-    ierr = PISMOptionsString("-surf_vel_to_phi", "Specifies the file containing surface velocities to invert",
-			     filename, svphiSet); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-topg_to_phi", 
+      "Use the till friction angle parameterization", topgphiSet); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-surf_vel_to_phi", 
+      "Specifies the file containing surface velocities to invert",
+			filename, svphiSet); CHKERRQ(ierr);
+			
+	  bool scaleSet;
+	  double slidescale;
+    ierr = PISMOptionsReal("-sliding_scale", 
+      "Divides pseudo-plastic tauc (yield stress) by given factor; this would increase sliding by given factor in absence of membrane stresses",
+      slidescale,scaleSet); CHKERRQ(ierr);
+    if (scaleSet) { // only modify config if option set; otherwise leave alone
+      if (slidescale > 0.0) {
+        ierr = verbPrintf(2, grid.com, 
+          "option -sliding_scale read; pseudo yield stress tauc will be divided by %.4f to\n"
+          "  cause notional sliding speed-up by given factor %.4f ...\n",
+          pow(slidescale,pseudo_plastic_q),slidescale);  CHKERRQ(ierr);
+        config.set("sliding_scale_factor_reduces_tauc",slidescale);
+      } else {
+        ierr = verbPrintf(1, grid.com, 
+          "PISM WARNING: negative or zero value given for option -sliding_scale ignored\n");
+          CHKERRQ(ierr);
+      }
+    }
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -93,8 +160,6 @@ PetscErrorCode IceModel::initBasalTillModel() {
     ierr = computePhiFromBedElevation(); CHKERRQ(ierr);
   }
 
-  // if not -topg_to_phi then pass through; vtillphi is set from
-  //   default constant, or -i value, or -boot_from (?)
   return 0;
 }
 
@@ -370,6 +435,13 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
     ierr = vtillphi.end_access(); CHKERRQ(ierr);
     ierr =     vbmr.end_access(); CHKERRQ(ierr);
     ierr =   vHmelt.end_access(); CHKERRQ(ierr);
+  }
+
+  // scale tauc if desired
+  double A = config.get("sliding_scale_factor_reduces_tauc");
+  if (A > 0.0) {
+    const PetscScalar q = config.get("pseudo_plastic_q");
+    vtauc.scale(1.0 / pow(A,q));
   }
 
   return 0;

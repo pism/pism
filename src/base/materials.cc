@@ -814,10 +814,18 @@ PetscErrorCode IceBasalResistancePlasticLaw::printInfo(int verbthresh, MPI_Comm 
 //! Compute the drag coefficient for the basal shear stress.
 /*!
 The basal shear stress term \f$\tau_b\f$ in the SSA stress balance for ice
-is minus the return value here times (vx,vy).
+is minus the return value here times (vx,vy).  Thus this method computes the
+basal shear stress as
+    \f[ \tau_b = - \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U} \f]
+where \f$\tau_b=(\tau_{(b)x},\tau_{(b)y})\f$, \f$U=(u,v)\f$,
+\f$q=\f$ <tt>pseudo_q</tt>, and \f$U_{\mathtt{th}}=\f$ <tt>pseudo_u_threshold</tt>.
+Typical values for the constants are \f$q=0.25\f$ and \f$U_{\mathtt{th}} = 100\f$
+m/a.
 
-Purely plastic is the pseudo_q = 0.0 case; linear is pseudo_q = 1.0; set 
-pseudo_q using IceBasalResistancePlasticLaw constructor.
+The linearly-viscous till case pseudo_q = 1.0 is allowed, in which case 
+\f$\beta = \tau_c/U_{\mathtt{th}}\f$.  The purely-plastic till case pseudo_q = 0.0
+is also allowed; note that there is still a regularization with data member
+plastic_regularize.
  */
 PetscScalar IceBasalResistancePlasticLaw::drag(PetscScalar tauc,
                                    PetscScalar vx, PetscScalar vy) {

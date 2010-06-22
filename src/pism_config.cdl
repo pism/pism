@@ -107,6 +107,9 @@ netcdf pism_config {
     pism_config:default_tauc = 1e4;
     pism_config:default_tauc_doc = "Pa; fill value for yield stress for basal till (plastic or pseudo-plastic model); note 10^4 Pa = 0.1 bar";
 
+    pism_config:sliding_scale_factor_reduces_tauc = -1.0;
+    pism_config:sliding_scale_factor_reduces_tauc_doc = "; divides pseudo-plastic tauc (yield stress) by given factor; this would increase sliding by given factor in absence of membrane stresses; not used if negative or zero; not used by default";
+
     pism_config:hmelt_max = 2.0;
     pism_config:hmelt_max_doc = "meters; maximum thickness of the basal melt water layer";
 

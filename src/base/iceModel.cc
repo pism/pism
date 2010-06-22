@@ -627,9 +627,8 @@ PismLogEventRegister("mass bal calc",0,&massbalEVENT);
 PismLogEventRegister("temp age calc",0,&tempEVENT);
 
   // do a one-step diagnostic run:
-
-  ierr = verbPrintf(3,grid.com,
-      "  doing preliminary step to fill diagnostic quantities ..."); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,
+      "doing preliminary step to fill diagnostic quantities ...\n"); CHKERRQ(ierr);
 
   // set verbosity to 1 to suppress reporting
   PetscInt tmp_verbosity = getVerbosityLevel(); 
@@ -679,8 +678,9 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   ierr = write_timeseries(); CHKERRQ(ierr);
   ierr = write_extras(); CHKERRQ(ierr);
 
-  stdout_flags.erase(); // clear it out
+  ierr = verbPrintf(2,grid.com, "running forward ...\n"); CHKERRQ(ierr);
 
+  stdout_flags.erase(); // clear it out
   ierr = summaryPrintLine(PETSC_TRUE,do_temp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   skipCountDown = 0;
@@ -692,9 +692,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   total_surface_ice_flux = 0;
   total_basal_ice_flux = 0;
   total_sub_shelf_ice_flux = 0;
-
   gmaxu = gmaxv = gmaxw = -1;
-
   ierr = summary(do_temp,reportPATemps); CHKERRQ(ierr);  // report starting state
 
   // main loop for time evolution

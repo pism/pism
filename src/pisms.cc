@@ -103,12 +103,12 @@ int main(int argc, char *argv[]) {
 
     m->attach_surface_model(surface);
     m->attach_ocean_model(ocean);
+    ierr = m->setExecName("pisms"); CHKERRQ(ierr);
 
     ierr = m->init(); CHKERRQ(ierr);
 
-    ierr = m->setExecName("pisms"); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com, "running ...\n"); CHKERRQ(ierr);
     ierr = m->run(); CHKERRQ(ierr);
+
     ierr = verbPrintf(2,com, "... done with run \n"); CHKERRQ(ierr);
     ierr = m->writeFiles("simp_exper.nc"); CHKERRQ(ierr);
 
