@@ -23,8 +23,7 @@
 PISMEvent::PISMEvent() {
   name = "unknown";
   start_time = -1;
-  start_cpu_time = -1;
-  total_time = total_cpu_time = 0;
+  total_time = 0;
   parent = -1;
 }
 
@@ -49,7 +48,7 @@ int PISMProf::create(string name, string description) {
   return events.size() - 1;
 }
 
-// This ensures that start_event and end_event code is optimized away if
+// This ensures that begin() and end() code is optimized away if
 // PISM_PROFILE is not defined.
 #ifndef PISM_PROFILE
 void PISMProf::begin(int) {}
@@ -63,7 +62,6 @@ void PISMProf::begin(int index) {
   event.parent = current_event;
 
   PetscGetTime(&event.start_time);
-  PetscGetCPUTime(&event.start_cpu_time);
 
   current_event = index;
 }
@@ -74,14 +72,12 @@ void PISMProf::end(int) {}
 #else
 //! End a profiling event.
 void PISMProf::end(int index) {
-  PetscLogDouble time, cpu_time;
+  PetscLogDouble time;
   PISMEvent &event = events[current_event];
 
   PetscGetTime(&time);
-  PetscGetCPUTime(&cpu_time);
 
   event.total_time += (time - event.start_time);
-  event.total_cpu_time += (cpu_time - event.start_cpu_time);
 
   // fprintf(stderr, "Rank %d: End   '%s' (%3.9f s lapsed)\n", rank,
   // 	  events[current_event].description.c_str(), event.total_time);
@@ -93,7 +89,7 @@ void PISMProf::end(int index) {
 //! Save a profiling report to a file.
 PetscErrorCode PISMProf::save_report(string filename) {
   PetscErrorCode ierr;
-  int ncid, varid, varid_cpu;
+  int ncid, varid;
   NCTool nc(com, rank);
 
   ierr = nc.move_if_exists(filename.c_str()); CHKERRQ(ierr);
@@ -108,9 +104,9 @@ PetscErrorCode PISMProf::save_report(string filename) {
     if (name == "unknown")
       continue;
 
-    ierr = find_variables(nc, name, varid, varid_cpu); CHKERRQ(ierr);
+    ierr = find_variables(nc, name, varid); CHKERRQ(ierr);
 
-    ierr = save_report(j, ncid, varid, varid_cpu); CHKERRQ(ierr);
+    ierr = save_report(j, ncid, varid); CHKERRQ(ierr);
 
     int parent_index = events[j].parent;
     string parent;
@@ -118,17 +114,11 @@ PetscErrorCode PISMProf::save_report(string filename) {
       parent = "root";
     else
       parent = events[parent_index].name;
-    string descr = events[j].description,
-      descr_cpu = descr + " (CPU time)",
-      parent_cpu = parent + "_cpu";
+    string descr = events[j].description;
 
     ierr = put_att_text(ncid, varid, "units", "seconds"); CHKERRQ(ierr); 
     ierr = put_att_text(ncid, varid, "parent", parent); CHKERRQ(ierr); 
     ierr = put_att_text(ncid, varid, "long_name", descr); CHKERRQ(ierr);
-
-    ierr = put_att_text(ncid, varid_cpu, "units", "seconds"); CHKERRQ(ierr); 
-    ierr = put_att_text(ncid, varid_cpu, "parent", parent_cpu); CHKERRQ(ierr); 
-    ierr = put_att_text(ncid, varid_cpu, "long_name", descr_cpu); CHKERRQ(ierr);
   }
 
   ierr = nc.close();
@@ -136,23 +126,20 @@ PetscErrorCode PISMProf::save_report(string filename) {
 }
 
 //! Save the report corresponding to an event events[index].
-PetscErrorCode PISMProf::save_report(int index, int ncid, int varid, int varid_cpu) {
+PetscErrorCode PISMProf::save_report(int index, int ncid, int varid) {
   PetscErrorCode ierr;
   const int data_tag = 1;
   MPI_Status mpi_stat;
-  double data[2];
+  double data[1];
   size_t start[2];
 
   data[0] = events[index].total_time;
-  data[1] = events[index].total_cpu_time;
 
   if (rank == 0) { // on processor 0: receive messages from every other
     for (int proc = 0; proc < size; proc++) {
       if (proc != 0) {
-	MPI_Recv(data, 2, MPI_DOUBLE, proc, data_tag, com, &mpi_stat);
+	MPI_Recv(data, 1, MPI_DOUBLE, proc, data_tag, com, &mpi_stat);
       }
-
-      // fprintf(stderr, "Event %d: proc %d: data: %f, %f\n", index, proc, data[0], data[1]);
 
       start[0] = proc % (Ny);
       start[1] = proc / (Ny);
@@ -160,20 +147,16 @@ PetscErrorCode PISMProf::save_report(int index, int ncid, int varid, int varid_c
       ierr = nc_put_var1_double(ncid, varid,     start, &data[0]);
       CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
-      ierr = nc_put_var1_double(ncid, varid_cpu, start, &data[1]);
-      CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-
     }
   } else {  // all other processors: send data to processor 0
-    MPI_Send(data, 2, MPI_DOUBLE, 0, data_tag, com);
+    MPI_Send(data, 1, MPI_DOUBLE, 0, data_tag, com);
   }
 
   return 0;
 }
 
 //! Find NetCDF variables to save total and CPU times into.
-PetscErrorCode PISMProf::find_variables(NCTool &nc, string name,
-					int &varid, int &varid_cpu) {
+PetscErrorCode PISMProf::find_variables(NCTool &nc, string name, int &varid) {
   PetscErrorCode ierr;
   bool exists;
   int ncid;
@@ -183,12 +166,6 @@ PetscErrorCode PISMProf::find_variables(NCTool &nc, string name,
   ierr = nc.find_variable(name, &varid, exists); CHKERRQ(ierr); 
   if (!exists) {
     ierr = define_variable(ncid, name, varid); CHKERRQ(ierr); 
-  }
-
-  string name_cpu = name + "_cpu";
-  ierr = nc.find_variable(name_cpu, &varid_cpu, exists); CHKERRQ(ierr);
-  if (!exists) {
-    ierr = define_variable(ncid, name_cpu, varid_cpu); CHKERRQ(ierr); 
   }
 
   return 0;

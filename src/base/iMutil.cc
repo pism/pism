@@ -48,6 +48,7 @@ NetCDF file because there is no effect on it, but there is an indication at \c s
 Signal \c SIGUSR2 makes PISM flush time-series, without saving model state.
  */
 int IceModel::endOfTimeStepHook() {
+  PetscErrorCode ierr;
   
   if (pism_signal == SIGTERM) {
     verbPrintf(1, grid.com, 
@@ -71,10 +72,7 @@ int IceModel::endOfTimeStepHook() {
     dumpToFile(file_name);
 
     // flush all the time-series buffers:
-    vector<DiagnosticTimeseries*>::iterator i;
-    for (i = timeseries.begin(); i < timeseries.end(); ++i) {
-      (*i)->flush();
-    }
+    ierr = flush_timeseries(); CHKERRQ(ierr); 
   }
 
   if (pism_signal == SIGUSR2) {
@@ -83,10 +81,7 @@ int IceModel::endOfTimeStepHook() {
     pism_signal = 0;
 
     // flush all the time-series buffers:
-    vector<DiagnosticTimeseries*>::iterator i;
-    for (i = timeseries.begin(); i < timeseries.end(); ++i) {
-      (*i)->flush();
-    }
+    ierr = flush_timeseries(); CHKERRQ(ierr);
   }
 
   return 0;

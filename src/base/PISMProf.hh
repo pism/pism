@@ -35,11 +35,9 @@ public:
   string name,			//!< NetCDF variable name
     description;		//!< NetCDF variable long_name attribute
   int parent;			//!< index of the parent event
-  PetscLogDouble start_time,	//!< event start time
-    start_cpu_time;		//!< event start CPU time
-  double total_time,		//!< total time spent in an event; includes
+  PetscLogDouble start_time;	//!< event start time
+  double total_time;		//!< total time spent in an event; includes
 				//!< time spent doing nothing
-    total_cpu_time;		//!< total CPU time spent in an event
 };
 
 //! PISM profiler class.
@@ -77,8 +75,8 @@ protected:
   PetscMPIInt rank, size;
   MPI_Comm com;
 
-  PetscErrorCode save_report(int index, int ncid, int varid, int varid_cpu);
-  PetscErrorCode find_variables(NCTool &nc, string name, int &varid, int &varid_cpu);
+  PetscErrorCode save_report(int index, int ncid, int varid);
+  PetscErrorCode find_variables(NCTool &nc, string name, int &varid);
   PetscErrorCode define_variable(int ncid, string name, int &varid);
   PetscErrorCode put_att_text(int ncid, int varid, string name, string text);
   PetscErrorCode create_dimensions(int ncid);

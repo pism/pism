@@ -41,6 +41,9 @@ IceExactSSAModel::IceExactSSAModel(IceGrid &g, NCConfigVariable &conf, NCConfigV
   : IceModel(g, conf, conf_overrides) {
   test = mytest;
   
+  exactOnly = PETSC_FALSE;
+  dt = 0;
+
   config.set("max_iterations_ssa", 500);
   config.set_flag("use_ssa_velocity",         true);
   config.set_flag("use_constant_nuh_for_ssa", false);

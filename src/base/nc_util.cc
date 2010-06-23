@@ -56,11 +56,12 @@ NCTool::~NCTool() {
   }
 }
 
-//! 
+//! Returns ncid corresponding to the current NetCDF file.
 int NCTool::get_ncid() const {
   return ncid;
 }
 
+//! Finds a NetCDF dimension by its name.
 PetscErrorCode  NCTool::find_dimension(const char short_name[], int *dimid, bool &exists) const {
   PetscErrorCode ierr;
   int stat, found = 0, my_dimid;
@@ -412,14 +413,22 @@ PetscErrorCode NCTool::open_for_writing(const char filename[]) {
 	stat = PetscPrintf(com, "PISM ERROR: Can't open file '%s'. NetCDF error: %s\n",
 			   filename, nc_strerror(stat)); CHKERRQ(stat);
 	PetscEnd();
-	}
+      }
+      stat = nc_set_fill(ncid, NC_NOFILL, NULL); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     } else {
       stat = nc_create(filename, NC_CLOBBER|NC_64BIT_OFFSET, &ncid); 
+
+      // use this to create NetCDF-4 files:
+      // stat = nc_create(filename, NC_CLOBBER|NC_NETCDF4, &ncid); 
+
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
+      stat = nc_set_fill(ncid, NC_NOFILL, NULL); CHKERRQ(check_err(stat,__LINE__,__FILE__));
       stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+      // I should check if this is faster... (CK)
+      // stat = nc__enddef(ncid, 1024*1024, 4, 0, 4); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     }
 
-    stat = nc_set_fill(ncid, NC_NOFILL, NULL); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   } // end of if (rank == 0)
 
   stat = MPI_Bcast(&ncid, 1, MPI_INT, 0, com); CHKERRQ(stat);
@@ -764,30 +773,32 @@ PetscErrorCode NCTool::inq_unlimdim(int &unlimdimid) const {
   return 0;
 }
 
+//! Moves \c filename to \c filename~ if \c filename exists.
 PetscErrorCode NCTool::move_if_exists(const char filename[]) {
   PetscErrorCode ierr;
 
-  if (rank == 0) {
-    // Check if the file exists:
-    if (FILE *f = fopen(filename, "r")) {
-      fclose(f);
-    } else {
-      return 0;
-    }
-  
-    string tmp = filename;
-    tmp = tmp + "~";
-      
-    ierr = rename(filename, tmp.c_str());
-    if (ierr != 0) {
-      ierr = verbPrintf(1, com, "PISM ERROR: can't move '%s' to '%s'.\n",
-                        filename, tmp.c_str());
-      PetscEnd();
-    }
-    ierr = verbPrintf(2, com, 
-                      "PISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",
-                      filename, tmp.c_str());
+  if (rank != 0)
+    return 0;
+
+  // Check if the file exists:
+  if (FILE *f = fopen(filename, "r")) {
+    fclose(f);
+  } else {
+    return 0;
   }
+  
+  string tmp = filename;
+  tmp = tmp + "~";
+      
+  ierr = rename(filename, tmp.c_str());
+  if (ierr != 0) {
+    ierr = verbPrintf(1, com, "PISM ERROR: can't move '%s' to '%s'.\n",
+                      filename, tmp.c_str());
+    PetscEnd();
+  }
+  ierr = verbPrintf(2, com, 
+                    "PISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",
+                    filename, tmp.c_str());
 
   return 0;
 }

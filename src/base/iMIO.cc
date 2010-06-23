@@ -529,6 +529,9 @@ PetscErrorCode IceModel::write_snapshot() {
     return 0;
   }
 
+  // flush time-series buffers
+  ierr = flush_timeseries(); CHKERRQ(ierr);
+
   if (split_snapshots) {
     snapshots_file_is_ready = false;	// each snapshot is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s-%06.0f.nc",

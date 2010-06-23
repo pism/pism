@@ -156,8 +156,8 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
 
   // We need to compute integrated effective viscosity (\bar\nu * H).
   // It is locally determined by the strain rates and temperature field.
-  PetscScalar *Tij = NULL, *Toffset = NULL, **H, **nuH[2];
-  ierr = vH.get_array(H); CHKERRQ(ierr);
+  PetscScalar *Tij = NULL, *Toffset = NULL, **nuH[2];
+  ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vNuH[0].get_array(nuH[0]); CHKERRQ(ierr);
   ierr = vNuH[1].get_array(nuH[1]); CHKERRQ(ierr);
 
@@ -184,7 +184,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
   for (PetscInt o=0; o<2; ++o) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (H[i][j] < ssaStrengthExtend.min_thickness_for_extension()) {
+        if (vH(i,j) < ssaStrengthExtend.min_thickness_for_extension()) {
           // Extends strength of SSA (i.e. nuH coeff) into the ice free region.
           //  Does not add or subtract ice mass.
           nuH[o][i][j] = ssaStrengthExtend.notional_strength();
@@ -205,7 +205,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
             v_x = (uv[i+1][j].v + uv[i+1][j+1].v - uv[i-1][j].v - uv[i-1][j+1].v) / (4*dx);
             v_y = (uv[i][j+1].v - uv[i][j].v) / dy;
           }
-          const PetscScalar myH = 0.5 * (H[i][j] + H[i+oi][j+oj]);
+          const PetscScalar myH = 0.5 * (vH(i,j) + vH(i+oi,j+oj));
 
 	  ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
 	  ierr = Enth3.getInternalColumn(i+oi,j+oj,&Enthoffset); CHKERRQ(ierr);
@@ -213,10 +213,10 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
           if (config.get_flag("do_cold_ice_methods") == true) {
 	    for (int k = 0; k < grid.Mz; ++k) {
 	      ierr = EC->getAbsTemp(Enthij[k],
-				    EC->getPressureFromDepth(H[i][j]-grid.zlevels[k]),
+				    EC->getPressureFromDepth(vH(i,j)-grid.zlevels[k]),
 				    Tij[k]); CHKERRQ(ierr);
 	      ierr = EC->getAbsTemp(Enthoffset[k],
-				    EC->getPressureFromDepth(H[i][j]-grid.zlevels[k]),
+				    EC->getPressureFromDepth(vH(i,j)-grid.zlevels[k]),
 				    Toffset[k]); CHKERRQ(ierr);
 	    }
 
@@ -239,7 +239,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
           
           // We ensure that nuH is bounded below by a positive constant.
           nuH[o][i][j] += epsilon;
-        } // end of if (H[i][j] < ssaStrengthExtend.min_thickness_for_extension()) { ... } else {
+        } // end of if (vH(i,j) < ssaStrengthExtend.min_thickness_for_extension()) { ... } else {
       } // j
     } // i
   } // o

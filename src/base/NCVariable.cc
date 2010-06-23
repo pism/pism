@@ -605,51 +605,49 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
 
 //! Define a NetCDF variable corresponding to a NCVariable object.
 PetscErrorCode NCSpatialVariable::define(int ncid, nc_type nctype, int &varid) {
-  int stat, var_id;
+  int stat;
 
   if (grid == NULL)
     SETERRQ(1, "NCSpatialVariable::define: grid is NULL.");
 
-  if (rank == 0) {
-    int i = 0, ndims, dimids[4];
-    int *dimids_ptr = dimids;
-
-    stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_inq_dimid(ncid, "t", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    switch (dims) {
-    case GRID_3D:
-      stat = nc_inq_dimid(ncid, "z", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-      ndims = 4;
-      break;
-    case GRID_3D_BEDROCK:
-      stat = nc_inq_dimid(ncid, "zb", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-      ndims = 4;
-      break;
-    case GRID_2D:
-    default:
-      ndims = 3;
-      break;
-    }
-
-    stat = nc_inq_dimid(ncid, "y", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimid(ncid, "x", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    if (time_independent) {
-      ndims--;
-      dimids_ptr = &dimids[1];
-    }
-    
-    stat = nc_def_var(ncid, short_name.c_str(), nctype, ndims, dimids_ptr, &var_id);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  if (rank != 0) {
+    varid = 0;
+    return 0;
   }
 
-  stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, com); CHKERRQ(stat);
+  int i = 0, ndims, dimids[4];
+  stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-  varid = var_id;
+  if (!time_independent) {
+    stat = nc_inq_dimid(ncid, "t", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  }
+
+  switch (dims) {
+  case GRID_3D:
+    stat = nc_inq_dimid(ncid, "z", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    ndims = 4 - time_independent;
+    break;
+  case GRID_3D_BEDROCK:
+    stat = nc_inq_dimid(ncid, "zb", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    ndims = 4 - time_independent;
+    break;
+  case GRID_2D:
+  default:
+    ndims = 3 - time_independent;
+    break;
+  }
+
+  stat = nc_inq_dimid(ncid, "y", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_inq_dimid(ncid, "x", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    
+  stat = nc_def_var(ncid, short_name.c_str(), nctype, ndims, dimids, &varid);
+  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+  // this is all we need to turn on compression:
+  // stat = nc_def_var_deflate(ncid, varid, 0, 1, 9);
+  // CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+  stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
   return 0;
 }

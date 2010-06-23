@@ -439,6 +439,7 @@ protected:
   vector<DiagnosticTimeseries*> timeseries;
   PetscErrorCode init_timeseries();
   PetscErrorCode create_timeseries();
+  PetscErrorCode flush_timeseries();
   PetscErrorCode write_timeseries();
   PetscErrorCode ts_max_timestep(double t_years, double& dt_years);
 

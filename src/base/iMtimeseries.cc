@@ -482,7 +482,8 @@ PetscErrorCode IceModel::init_extras() {
       extra_vars.insert(var_name);
 
   } else {
-    ierr = verbPrintf(2, grid.com, "PISM WARNING: -extra_vars was not set. Writing model_state, mapping and climate_steady variables...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, "PISM WARNING: -extra_vars was not set."
+                      " Writing model_state, mapping and climate_steady variables...\n"); CHKERRQ(ierr);
 
     set<IceModelVec*> vars = variables.get_variables();
     set<IceModelVec*>::iterator i = vars.begin();
@@ -654,5 +655,18 @@ PetscErrorCode IceModel::ts_max_timestep(double t_years, double& dt_years) {
   }
 
   dt_years = *j - t_years;
+  return 0;
+}
+
+//! Flush scalar time-series.
+PetscErrorCode IceModel::flush_timeseries() {
+  PetscErrorCode ierr;
+
+  // flush all the time-series buffers:
+  vector<DiagnosticTimeseries*>::iterator i;
+  for (i = timeseries.begin(); i < timeseries.end(); ++i) {
+    (*i)->flush();
+  }
+
   return 0;
 }

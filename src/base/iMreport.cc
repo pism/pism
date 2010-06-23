@@ -1000,6 +1000,7 @@ PetscErrorCode IceModel::compute_tempicethk(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PetscScalar *Enth;
 
+  ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -1022,7 +1023,7 @@ PetscErrorCode IceModel::compute_tempicethk(IceModelVec2S &result) {
   }
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
-
+  ierr = result.end_access(); CHKERRQ(ierr);
 
   ierr = result.set_name("tempicethk"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "temperate ice thickness",
@@ -1113,7 +1114,7 @@ PetscErrorCode IceModel::compute_tempsurf(IceModelVec2S &result) {
 
   ierr = compute_temp(Enthnew3); CHKERRQ(ierr);
 
-  ierr = Enthnew3.getSurfaceValues(result, result); CHKERRQ(ierr);  // z=0 slice
+  ierr = Enthnew3.getSurfaceValues(result, result); CHKERRQ(ierr);  // z=H-1 slice
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
