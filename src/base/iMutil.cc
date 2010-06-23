@@ -432,8 +432,12 @@ static PetscReal geo_z(PetscReal a, PetscReal b,
     of cell corners, but the corresponding ice volume error (present day
     Greenland, 5km grid) is about 3.11e-04 %.
 */
-PetscErrorCode IceModel::correct_cell_areas() {
+PetscErrorCode IceModel::compute_cell_areas() {
   PetscErrorCode ierr;
+
+  // this value will be used near the grid boundary even when we compute
+  // corrected areas inside the domain
+  ierr = cell_area.set(grid.dx * grid.dy);
 
   if (!mapping.has("grid_mapping_name"))
     return 0;
@@ -444,19 +448,8 @@ PetscErrorCode IceModel::correct_cell_areas() {
   ierr = verbPrintf(2,grid.com,
 		    "* Computing corrected cell areas using WGS84 datum...\n"); CHKERRQ(ierr);
 
-  // allocate cell_area
-  ierr = cell_area.create(grid, "cell_area", false); CHKERRQ(ierr);
-  ierr = cell_area.set_attrs("diagnostic", "corrected cell areas", "m2", ""); CHKERRQ(ierr);
-  cell_area.time_independent = true;
-  ierr = cell_area.set_glaciological_units("km2"); CHKERRQ(ierr);
-  cell_area.write_in_glaciological_units = true;
-  ierr = variables.add(cell_area); CHKERRQ(ierr);
-
   PetscReal a = config.get("WGS84_semimajor_axis"),
     b = config.get("WGS84_semiminor_axis");
-
-  // value to use near the grid boundary
-  ierr = cell_area.set(grid.dx * grid.dy);
 
 // Cell layout:
 // (nw)        (ne)

@@ -1364,28 +1364,16 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 PetscErrorCode IceModel::compute_ice_volume(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     volume=0.0;
-  const PetscScalar a = grid.dx * grid.dy; // cell area
   
   ierr = vH.begin_access(); CHKERRQ(ierr);
-
-  if (cell_area.was_created()) {
-    ierr = cell_area.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if (vH(i,j) > 0)
-	  volume += vH(i,j) * cell_area(i,j);
-      }
-    }  
-    ierr = cell_area.end_access(); CHKERRQ(ierr);
-  } else {
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if (vH(i,j) > 0)
-	  volume += vH(i,j) * a;
-      }
-    }  
-  }
-
+  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (vH(i,j) > 0)
+        volume += vH(i,j) * cell_area(i,j);
+    }
+  }  
+  ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalSum(&volume, &result, grid.com); CHKERRQ(ierr);
@@ -1397,51 +1385,29 @@ PetscErrorCode IceModel::compute_ice_volume(PetscScalar &result) {
 PetscErrorCode IceModel::compute_ice_volume_temperate(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     volume=0.0;
-  const PetscScalar a = grid.dx * grid.dy; // cell area
   
   PetscScalar *Enth;  // do NOT delete this pointer: space returned by
                       //   getInternalColumn() is allocated already
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
-
-  if (cell_area.was_created()) {
-    ierr = cell_area.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if (vH(i,j) > 0) {
-	  const PetscInt ks = grid.kBelowHeight(vH(i,j));
-	  ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
-	  for (PetscInt k=0; k<ks; ++k) {	  
-	    if (EC->isTemperate(Enth[k],EC->getPressureFromDepth(vH(i,j)))) {
-	      volume += (grid.zlevels[k+1] - grid.zlevels[k]) * cell_area(i,j);
-	    }
-	  }
-	  if (EC->isTemperate(Enth[ks],EC->getPressureFromDepth(vH(i,j)))) {
-	    volume += (vH(i,j) - grid.zlevels[ks]) * cell_area(i,j);
-	  }
-	}
+  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (vH(i,j) > 0) {
+        const PetscInt ks = grid.kBelowHeight(vH(i,j));
+        ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
+        for (PetscInt k=0; k<ks; ++k) {	  
+          if (EC->isTemperate(Enth[k],EC->getPressureFromDepth(vH(i,j)))) {
+            volume += (grid.zlevels[k+1] - grid.zlevels[k]) * cell_area(i,j);
+          }
+        }
+        if (EC->isTemperate(Enth[ks],EC->getPressureFromDepth(vH(i,j)))) {
+          volume += (vH(i,j) - grid.zlevels[ks]) * cell_area(i,j);
+        }
       }
-    }  
-    ierr = cell_area.end_access(); CHKERRQ(ierr);
-  } else {
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if (vH(i,j) > 0) {
-	  const PetscInt ks = grid.kBelowHeight(vH(i,j));
-	  ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
-	  for (PetscInt k=0; k<ks; ++k) {	  
-	    if (EC->isTemperate(Enth[k],EC->getPressureFromDepth(vH(i,j)))) {
-	      volume += (grid.zlevels[k+1] - grid.zlevels[k]) * a;
-	    }
-	  }
-	  if (EC->isTemperate(Enth[ks],EC->getPressureFromDepth(vH(i,j)))) {
-	    volume += (vH(i,j) - grid.zlevels[ks]) * a;
-	  }
-	}
-      }
-    } 
-  } 
-
+    }
+  }  
+  ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
@@ -1459,45 +1425,24 @@ PetscErrorCode IceModel::compute_ice_volume_cold(PetscScalar &result) {
                       //   getInternalColumn() is allocated already
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
-
-  if (cell_area.was_created()) {
-    ierr = cell_area.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if (vH(i,j) > 0) {
-	  const PetscInt ks = grid.kBelowHeight(vH(i,j));
-	  ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
-	  for (PetscInt k=0; k<ks; ++k) {	  
-	    if (!EC->isTemperate(Enth[k],EC->getPressureFromDepth(vH(i,j)))) {
-	      volume += (grid.zlevels[k+1] - grid.zlevels[k]) * cell_area(i,j);
-	    }
-	  }
-	  if (!EC->isTemperate(Enth[ks],EC->getPressureFromDepth(vH(i,j)))) {
-	    volume += (vH(i,j) - grid.zlevels[ks]) * cell_area(i,j);
-	  }
-	}
+  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (vH(i,j) > 0) {
+        const PetscInt ks = grid.kBelowHeight(vH(i,j));
+        ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
+        for (PetscInt k=0; k<ks; ++k) {	  
+          if (!EC->isTemperate(Enth[k],EC->getPressureFromDepth(vH(i,j)))) {
+            volume += (grid.zlevels[k+1] - grid.zlevels[k]) * cell_area(i,j);
+          }
+        }
+        if (!EC->isTemperate(Enth[ks],EC->getPressureFromDepth(vH(i,j)))) {
+          volume += (vH(i,j) - grid.zlevels[ks]) * cell_area(i,j);
+        }
       }
-    }  
-    ierr = cell_area.end_access(); CHKERRQ(ierr);
-  } else {
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if (vH(i,j) > 0) {
-	  const PetscInt ks = grid.kBelowHeight(vH(i,j));
-	  ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
-	  for (PetscInt k=0; k<ks; ++k) {	  
-	    if (!EC->isTemperate(Enth[k],EC->getPressureFromDepth(vH(i,j)))) {
-	      volume += (grid.zlevels[k+1] - grid.zlevels[k]) * a;
-	    }
-	  }
-	  if (!EC->isTemperate(Enth[ks],EC->getPressureFromDepth(vH(i,j)))) {
-	    volume += (vH(i,j) - grid.zlevels[ks]) * a;
-	  }
-	}
-      }
-    } 
-  } 
-
+    }
+  }  
+  ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
@@ -1509,28 +1454,16 @@ PetscErrorCode IceModel::compute_ice_volume_cold(PetscScalar &result) {
 PetscErrorCode IceModel::compute_ice_area(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     area=0.0;
-  const PetscScalar a = grid.dx * grid.dy; // cell area
   
   ierr = vH.begin_access(); CHKERRQ(ierr);
-
-  if (cell_area.was_created()) {
-    ierr = cell_area.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if (vH(i,j) > 0)
-	  area += cell_area(i,j);
-      }
-    }  
-    ierr = cell_area.end_access(); CHKERRQ(ierr);
-  } else {
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if (vH(i,j) > 0)
-	  area += a;
-      }
-    }  
-  }
-
+  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (vH(i,j) > 0)
+        area += cell_area(i,j);
+    }
+  }  
+  ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
@@ -1548,25 +1481,14 @@ PetscErrorCode IceModel::compute_ice_area_temperate(PetscScalar &result) {
   ierr = vWork2d[0].get_array(Enthbase); CHKERRQ(ierr);
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
-
-  if (cell_area.was_created()) {
-    ierr = cell_area.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if ( (vH(i,j) > 0) && (EC->isTemperate(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)))) )
-	  area += cell_area(i,j);
-      }
-    }  
-    ierr = cell_area.end_access(); CHKERRQ(ierr);
-  } else {
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if ( (vH(i,j) > 0) && (EC->isTemperate(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)))) )
-	  area += a;
-      }
-    }  
-  }
-
+  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if ( (vH(i,j) > 0) && (EC->isTemperate(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)))) )
+        area += cell_area(i,j);
+    }
+  }  
+  ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
@@ -1584,25 +1506,14 @@ PetscErrorCode IceModel::compute_ice_area_cold(PetscScalar &result) {
   ierr = vWork2d[0].get_array(Enthbase); CHKERRQ(ierr);
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
-
-  if (cell_area.was_created()) {
-    ierr = cell_area.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if ( (vH(i,j) > 0) && (!EC->isTemperate(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)))) )
-	  area += cell_area(i,j);
-      }
-    }  
-    ierr = cell_area.end_access(); CHKERRQ(ierr);
-  } else {
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if ( (vH(i,j) > 0) && (!EC->isTemperate(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)))) )
-	  area += a;
-      }
-    }  
-  }
-
+  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if ( (vH(i,j) > 0) && (!EC->isTemperate(Enthbase[i][j],EC->getPressureFromDepth(vH(i,j)))) )
+        area += cell_area(i,j);
+    }
+  }  
+  ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalSum(&area, &result, grid.com); CHKERRQ(ierr);
@@ -1617,25 +1528,14 @@ PetscErrorCode IceModel::compute_ice_area_grounded(PetscScalar &result) {
   
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
-
-  if (cell_area.was_created()) {
-    ierr = cell_area.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if ( (vH(i,j) > 0) && vMask.is_grounded(i,j) )
-	  area += cell_area(i,j);
-      }
-    }  
-    ierr = cell_area.end_access(); CHKERRQ(ierr);
-  } else {
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if ( (vH(i,j) > 0) && vMask.is_grounded(i,j) )
-	  area += a;
-      }
-    }  
-  }
-
+  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if ( (vH(i,j) > 0) && vMask.is_grounded(i,j) )
+        area += cell_area(i,j);
+    }
+  }  
+  ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
@@ -1651,25 +1551,14 @@ PetscErrorCode IceModel::compute_ice_area_floating(PetscScalar &result) {
   
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
-
-  if (cell_area.was_created()) {
-    ierr = cell_area.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if ( (vH(i,j) > 0) && vMask.is_floating(i,j) )
-	  area += cell_area(i,j);
-      }
-    }  
-    ierr = cell_area.end_access(); CHKERRQ(ierr);
-  } else {
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	if ( (vH(i,j) > 0) && vMask.is_floating(i,j) )
-	  area += a;
-      }
-    }  
-  }
-
+  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if ( (vH(i,j) > 0) && vMask.is_floating(i,j) )
+        area += cell_area(i,j);
+    }
+  }  
+  ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
@@ -1900,79 +1789,50 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
   // note acab and shelfbmassflux are IceModelVec2S owned by IceModel
   if (surface != PETSC_NULL) {
     ierr = surface->ice_surface_mass_flux(grid.year, dt / secpera, acab);
-           CHKERRQ(ierr);
+    CHKERRQ(ierr);
   } else { SETERRQ(2,"PISM ERROR: surface == PETSC_NULL"); }
 
   if (ocean != PETSC_NULL) {
     ierr = ocean->shelf_base_mass_flux(grid.year, dt / secpera, shelfbmassflux);
-           CHKERRQ(ierr);
+    CHKERRQ(ierr);
   } else { SETERRQ(2,"PISM ERROR: ocean == PETSC_NULL"); }
 
   PetscScalar my_total_surface_ice_flux = 0.0, my_total_basal_ice_flux = 0.0,
-              my_total_sub_shelf_ice_flux = 0.0;
+    my_total_sub_shelf_ice_flux = 0.0;
 
   ierr = acab.begin_access(); CHKERRQ(ierr);
+  ierr = cell_area.begin_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
-  ierr = vbmr.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
+  ierr = vbmr.begin_access(); CHKERRQ(ierr);
 
-  if (cell_area.was_created()) {
-    ierr = cell_area.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      // ignore ice-free cells:
+      if (vH(i,j) <= 0.0)
+        continue;
 
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	// ignore ice-free cells:
-	if (vH(i,j) <= 0.0)
-	  continue;
+      my_total_surface_ice_flux += acab(i,j) * cell_area(i,j); // note the "+="!
 
-	my_total_surface_ice_flux += acab(i,j) * cell_area(i,j); // note the "+="!
+      if ((vMask.value(i,j) == MASK_FLOATING) && include_bmr_in_continuity) {
+        // note: we are deliberately *not* including fluxes in
+        //   MASK_ICE_FREE_OCEAN and MASK_OCEAN_AT_TIME_0 areas
+        my_total_sub_shelf_ice_flux -= shelfbmassflux(i,j) * cell_area(i,j); // note the "-="!
+      }
 
-	if ((vMask.value(i,j) == MASK_FLOATING) && include_bmr_in_continuity) {
-	  // note: we are deliberately *not* including fluxes in
-	  //   MASK_ICE_FREE_OCEAN and MASK_OCEAN_AT_TIME_0 areas
-	  my_total_sub_shelf_ice_flux -= shelfbmassflux(i,j) * cell_area(i,j); // note the "-="!
-	}
-
-	if (vMask.is_grounded(i,j) && include_bmr_in_continuity) {
-	  my_total_basal_ice_flux -= vbmr(i,j) * cell_area(i,j); // note the "-="!
-	}
-      }	// j
-    } // i
-
-    ierr = cell_area.end_access(); CHKERRQ(ierr);
-  } else {
-    PetscScalar cell_area = grid.dx * grid.dy;
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	// ignore ice-free cells:
-	if (vH(i,j) <= 0.0)
-	  continue;
-
-	my_total_surface_ice_flux += acab(i,j); // note the "+="!
-
-	if ((vMask.value(i,j) == MASK_FLOATING) && include_bmr_in_continuity) {
-	  // note: we are deliberately *not* including fluxes in
-	  //   MASK_ICE_FREE_OCEAN and MASK_OCEAN_AT_TIME_0 areas
-	  my_total_sub_shelf_ice_flux -= shelfbmassflux(i,j); // note the "-="!
-	}
-
-	if (vMask.is_grounded(i,j) && include_bmr_in_continuity) {
-	  my_total_basal_ice_flux -= vbmr(i,j); // note the "-="!
-	}
-
-      }	// j
-    } // i
-    my_total_surface_ice_flux     *= cell_area;
-    my_total_sub_shelf_ice_flux   *= cell_area;
-    my_total_basal_ice_flux       *= cell_area;
-  }
+      if (vMask.is_grounded(i,j) && include_bmr_in_continuity) {
+        my_total_basal_ice_flux -= vbmr(i,j) * cell_area(i,j); // note the "-="!
+      }
+    }	// j
+  } // i
 
   ierr = acab.end_access(); CHKERRQ(ierr);
+  ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
-  ierr = vbmr.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vbmr.end_access(); CHKERRQ(ierr);
 
   PetscScalar ice_density = config.get("ice_density");
   my_total_surface_ice_flux     *= ice_density;

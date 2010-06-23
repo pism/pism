@@ -89,7 +89,7 @@ public:
   virtual void attach_ocean_model(PISMOceanModel *ocean);
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
-  virtual PetscErrorCode correct_cell_areas();
+  virtual PetscErrorCode compute_cell_areas();
 
   // see iMIO.cc
   virtual PetscErrorCode initFromFile(const char *);

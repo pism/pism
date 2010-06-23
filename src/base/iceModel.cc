@@ -343,6 +343,18 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vLatitude.set_attr("grid_mapping", ""); CHKERRQ(ierr);
   ierr = variables.add(vLatitude); CHKERRQ(ierr);
 
+  // cell areas
+  ierr = cell_area.create(grid, "cell_area", false); CHKERRQ(ierr);
+  ierr = cell_area.set_attrs("diagnostic", "cell areas", "m2", ""); CHKERRQ(ierr);
+  ierr = cell_area.set_attr("comment",
+                            "values are equal to dx*dy "
+                            "if latitude and longitude fields are not available; "
+                            "otherwise WGS84 ellipsoid is used"); CHKERRQ(ierr); 
+  cell_area.time_independent = true;
+  ierr = cell_area.set_glaciological_units("km2"); CHKERRQ(ierr);
+  cell_area.write_in_glaciological_units = true;
+  ierr = variables.add(cell_area); CHKERRQ(ierr);
+
   // u bar and v bar on staggered grid
   ierr = uvbar.create(grid, "uvbar", true); CHKERRQ(ierr);
   ierr = uvbar.set_attrs("internal", 

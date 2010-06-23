@@ -465,25 +465,15 @@ PetscErrorCode IceModel::massContExplicitStep() {
     PetscScalar dvol=0.0;
   
     ierr = vdHdt.begin_access(); CHKERRQ(ierr);
-    
-    if (cell_area.was_created()) {
-      ierr = cell_area.begin_access(); CHKERRQ(ierr);
-      for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-	for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	  dvol += vdHdt(i,j) * cell_area(i,j);
-	}
-      }  
-      ierr = cell_area.end_access(); CHKERRQ(ierr);
-    } else {
-      const PetscScalar a = grid.dx * grid.dy; // cell area
-      for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-	for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	  dvol += vdHdt(i,j) * a;
-	}
-      }  
-    }
-
+    ierr = cell_area.begin_access(); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        dvol += vdHdt(i,j) * cell_area(i,j);
+      }
+    }  
+    ierr = cell_area.end_access(); CHKERRQ(ierr);
     ierr = vdHdt.end_access(); CHKERRQ(ierr);
+
     ierr = PetscGlobalSum(&dvol, &dvoldt, grid.com); CHKERRQ(ierr);
   }
 

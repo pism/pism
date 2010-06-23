@@ -647,8 +647,8 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = initBasalTillModel(); CHKERRQ(ierr);
 #endif
 
-  // compute corrected cell areas:
-  ierr = correct_cell_areas(); CHKERRQ(ierr);
+  // compute (possibly corrected) cell areas:
+  ierr = compute_cell_areas(); CHKERRQ(ierr);
 
   prof = new PISMProf(&grid);
 
