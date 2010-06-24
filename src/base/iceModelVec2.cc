@@ -574,3 +574,18 @@ PetscErrorCode IceModelVec2Stag::get_array(PetscScalar*** &a) {
   return 0;
 }
 
+PetscErrorCode IceModelVec2Stag::get_component(int n, IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  ierr = IceModelVec2::get_component(n, result.v); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModelVec2Stag::set_component(int n, IceModelVec2S &source) {
+  PetscErrorCode ierr;
+
+  ierr = IceModelVec2::set_component(n, source.v); CHKERRQ(ierr);
+
+  return 0;
+}
