@@ -212,7 +212,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
 
   // Done with the grid. Now we need to extend IceModelVec3s.
 
-  // We use surface temperatures to extend T3 and Tnew3. We get them from the
+  // We use surface temperatures to extend T3. We get them from the
   // PISMSurfaceModel.
 
   if (surface != PETSC_NULL) {
@@ -221,7 +221,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
     SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }
 
-  // for extending the variables Enth3 and Enthnew3 vertically, put into
+  // for extending the variables Enth3 and vWork3d vertically, put into
   //   vWork2d[0] the enthalpy of the air
   ierr = vWork2d[0].begin_access(); CHKERRQ(ierr);
   ierr = artm.begin_access(); CHKERRQ(ierr);
@@ -243,7 +243,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr =  Enth3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
 
   // Work 3D vectors:
-  ierr =      Enthnew3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
+  ierr =       vWork3d.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr = Sigmastag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr = Sigmastag3[1].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =     Istag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
@@ -251,13 +251,11 @@ PetscErrorCode IceModel::check_maximum_thickness() {
 
   if (config.get_flag("do_cold_ice_methods")) {
     ierr =    T3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
-    ierr = Tnew3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
   }
 
   // deal with 3D age conditionally
   if (config.get_flag("do_age")) {
     ierr = tau3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
-    ierr = taunew3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   }
   
   ierr = check_maximum_thickness_hook(old_Mz); CHKERRQ(ierr);

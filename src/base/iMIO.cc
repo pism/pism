@@ -299,13 +299,13 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
   } else if (initfromTandOm) {
     ierr = verbPrintf(2, grid.com,
       "  option -init_from_temp_and_liqfrac seen; computing enthalpy from ice temperature, liquid water fraction and thickness ...\n"); CHKERRQ(ierr);
-    // use Enthnew3 as already-allocated space 
-    ierr = Enthnew3.set_name("liqfrac"); CHKERRQ(ierr);
-    ierr = Enthnew3.set_attrs(
+    // use vWork3d as already-allocated space 
+    ierr = vWork3d.set_name("liqfrac"); CHKERRQ(ierr);
+    ierr = vWork3d.set_attrs(
       "internal", "liqfrac; temporary use during initialization",
       "", ""); CHKERRQ(ierr);
-    ierr = Enthnew3.read(filename,last_record); CHKERRQ(ierr);
-    ierr = setEnth3FromT3AndLiqfrac3(Enthnew3); CHKERRQ(ierr);
+    ierr = vWork3d.read(filename,last_record); CHKERRQ(ierr);
+    ierr = setEnth3FromT3AndLiqfrac3(vWork3d); CHKERRQ(ierr);
   }
 
   string history;

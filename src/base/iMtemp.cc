@@ -56,8 +56,8 @@ PetscErrorCode IceModel::energyStep() {
     // new temperature values go in vTnew; also updates Hmelt:
     ierr = temperatureStep(&myVertSacrCount,&myBulgeCount); CHKERRQ(ierr);  
 
-    ierr = T3.beginGhostCommTransfer(Tnew3); CHKERRQ(ierr);
-    ierr = T3.endGhostCommTransfer(Tnew3); CHKERRQ(ierr);
+    ierr = T3.beginGhostCommTransfer(vWork3d); CHKERRQ(ierr);
+    ierr = T3.endGhostCommTransfer(vWork3d); CHKERRQ(ierr);
 
     // setEnth3FromT3_ColdIce() updates ghosts of Enth3 using a
     // begin/endGhostComm pair. Is not optimized because this
@@ -65,14 +65,14 @@ PetscErrorCode IceModel::energyStep() {
     ierr = setEnth3FromT3_ColdIce();  CHKERRQ(ierr);
 
   } else {
-    // new enthalpy values go in Enthnew3; also updates (and communicates) Hmelt
+    // new enthalpy values go in vWork3d; also updates (and communicates) Hmelt
     PetscScalar myLiquifiedVol = 0.0, gLiquifiedVol;
 
     ierr = enthalpyAndDrainageStep(&myVertSacrCount,&myLiquifiedVol,&myBulgeCount);
        CHKERRQ(ierr);
 
-    ierr = Enth3.beginGhostCommTransfer(Enthnew3); CHKERRQ(ierr);
-    ierr = Enth3.endGhostCommTransfer(Enthnew3); CHKERRQ(ierr);
+    ierr = Enth3.beginGhostCommTransfer(vWork3d); CHKERRQ(ierr);
+    ierr = Enth3.endGhostCommTransfer(vWork3d); CHKERRQ(ierr);
 
     ierr = PetscGlobalSum(&myLiquifiedVol, &gLiquifiedVol, grid.com); CHKERRQ(ierr);
     if (gLiquifiedVol > 0.0) {
@@ -144,9 +144,9 @@ grid to the (usually) non-equally spaced storage grid.
 
 An instance of tempSystemCtx is used to solve the tridiagonal system set-up here.
 
-In this procedure four scalar fields are modified: vHmelt, vbmr, Tb3, and Tnew3.
+In this procedure four scalar fields are modified: vHmelt, vbmr, Tb3, and vWork3d.
 But vbmr and Tb3 will never need to communicate ghosted values (horizontal 
-stencil neighbors).  The ghosted values for T3 are updated from the values in Tnew3 in the
+stencil neighbors).  The ghosted values for T3 are updated from the values in vWork3d in the
 communication done by energyStep().  There is a diffusion model for vHmelt in 
 diffuseHmelt() which does communication for vHmelt.
 
@@ -253,7 +253,7 @@ PetscErrorCode IceModel::temperatureStep(
   ierr = w3.begin_access(); CHKERRQ(ierr);
   ierr = Sigma3.begin_access(); CHKERRQ(ierr);
   ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = Tnew3.begin_access(); CHKERRQ(ierr);
+  ierr = vWork3d.begin_access(); CHKERRQ(ierr);
 
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
 
@@ -429,8 +429,8 @@ PetscErrorCode IceModel::temperatureStep(
         Tnew[k] = artm(i,j);
       }
 
-      // transfer column into Tnew3; communication later
-      ierr = Tnew3.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
+      // transfer column into vWork3d; communication later
+      ierr = vWork3d.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
 
       // basalMeltRate[][] is rate of mass loss at bottom of ice everywhere;
       //   note massContExplicitStep() calls PISMOceanCoupler separately
@@ -474,7 +474,7 @@ PetscErrorCode IceModel::temperatureStep(
   ierr = w3.end_access(); CHKERRQ(ierr);
   ierr = Sigma3.end_access(); CHKERRQ(ierr);
   ierr = T3.end_access(); CHKERRQ(ierr);
-  ierr = Tnew3.end_access(); CHKERRQ(ierr);
+  ierr = vWork3d.end_access(); CHKERRQ(ierr);
   
   delete [] x;
   delete [] system.T;  delete [] system.Tb;  
@@ -591,7 +591,7 @@ PetscErrorCode IceModel::ageStep() {
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
   ierr = w3.begin_access(); CHKERRQ(ierr);
-  ierr = taunew3.begin_access(); CHKERRQ(ierr);
+  ierr = vWork3d.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -599,7 +599,7 @@ PetscErrorCode IceModel::ageStep() {
       const PetscInt  fks = static_cast<PetscInt>(floor(H[i][j]/fdz));
 
       if (fks == 0) { // if no ice, set the entire column to zero age
-        ierr = taunew3.setColumn(i,j,0.0); CHKERRQ(ierr);
+        ierr = vWork3d.setColumn(i,j,0.0); CHKERRQ(ierr);
       } else { // general case: solve advection PDE; start by getting 3D velocity ...
 
 	ierr = u3.getValColumn(i,j,fks,system.u); CHKERRQ(ierr);
@@ -626,7 +626,7 @@ PetscErrorCode IceModel::ageStep() {
         }
         
         // put solution in IceModelVec3
-        ierr = taunew3.setValColumnPL(i,j,x); CHKERRQ(ierr);
+        ierr = vWork3d.setValColumnPL(i,j,x); CHKERRQ(ierr);
       }
     }
   }
@@ -636,14 +636,14 @@ PetscErrorCode IceModel::ageStep() {
   ierr = u3.end_access();  CHKERRQ(ierr);
   ierr = v3.end_access();  CHKERRQ(ierr);
   ierr = w3.end_access();  CHKERRQ(ierr);
-  ierr = taunew3.end_access();  CHKERRQ(ierr);
+  ierr = vWork3d.end_access();  CHKERRQ(ierr);
 
   delete [] x;  
   delete [] system.u;  delete [] system.v;  delete [] system.w;
   delete [] fzlev;
 
-  ierr = tau3.beginGhostCommTransfer(taunew3); CHKERRQ(ierr);
-  ierr = tau3.endGhostCommTransfer(taunew3); CHKERRQ(ierr);
+  ierr = tau3.beginGhostCommTransfer(vWork3d); CHKERRQ(ierr);
+  ierr = tau3.endGhostCommTransfer(vWork3d); CHKERRQ(ierr);
 
   return 0;
 }

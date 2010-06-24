@@ -850,15 +850,15 @@ PetscErrorCode IceModel::compute_hardav(IceModelVec2S &result) {
   
   const PetscScalar fillval = -0.01;
 
-  ierr = compute_temp(Enthnew3); CHKERRQ(ierr);
+  ierr = compute_temp(vWork3d); CHKERRQ(ierr);
   
   PetscScalar *Tij; // columns of temperature values
-  ierr = Enthnew3.begin_access(); CHKERRQ(ierr);
+  ierr = vWork3d.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = Enthnew3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+      ierr = vWork3d.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
       const PetscScalar H = vH(i,j);
       if (H > 0.0) {
         result(i,j) = ice->averagedHarness(H, grid.kBelowHeight(H), grid.zlevels, Tij);
@@ -867,7 +867,7 @@ PetscErrorCode IceModel::compute_hardav(IceModelVec2S &result) {
       }
     }
   }
-  ierr = Enthnew3.end_access(); CHKERRQ(ierr);
+  ierr = vWork3d.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
 
@@ -1058,10 +1058,10 @@ PetscErrorCode IceModel::compute_enthalpybase(IceModelVec2S &result) {
 PetscErrorCode IceModel::compute_tempbase(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = compute_temp(Enthnew3); CHKERRQ(ierr);
+  ierr = compute_temp(vWork3d); CHKERRQ(ierr);
 
   // put basal ice temperature in vWork2d[0]
-  ierr = Enthnew3.getHorSlice(result, 0.0); CHKERRQ(ierr);  // z=0 slice
+  ierr = vWork3d.getHorSlice(result, 0.0); CHKERRQ(ierr);  // z=0 slice
 
   ierr = result.set_name("tempbase"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "ice temperature at the base of ice",
@@ -1112,9 +1112,9 @@ PetscErrorCode IceModel::compute_tempsurf(IceModelVec2S &result) {
   }
   ierr = result.end_access(); CHKERRQ(ierr);
 
-  ierr = compute_temp(Enthnew3); CHKERRQ(ierr);
+  ierr = compute_temp(vWork3d); CHKERRQ(ierr);
 
-  ierr = Enthnew3.getSurfaceValues(result, result); CHKERRQ(ierr);  // z=H-1 slice
+  ierr = vWork3d.getSurfaceValues(result, result); CHKERRQ(ierr);  // z=H-1 slice
 
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -1173,7 +1173,7 @@ PetscErrorCode IceModel::compute_enthalpysurf(IceModelVec2S &result) {
 //! pointer to a pre-allocated work vector containing it.
 /*! For 2D quantities, result will point to vWork2d[0].
 
-  For 3D -- to Enthnew3, because we don't have a general-purpose 3D work vector.
+  For 3D -- to vWork3d.
 
   Note that (depending on the quantity requested) vWork2d[1] might get used as
   a temporary storage.
@@ -1215,8 +1215,8 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   }
 
   if (name == "cts") {
-    ierr = compute_cts(Enthnew3); CHKERRQ(ierr);
-    result = &Enthnew3;
+    ierr = compute_cts(vWork3d); CHKERRQ(ierr);
+    result = &vWork3d;
     return 0;
   }
 
@@ -1245,8 +1245,8 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   }
 
   if (name == "liqfrac") {
-    ierr = compute_liqfrac(Enthnew3); CHKERRQ(ierr);
-    result = &Enthnew3;
+    ierr = compute_liqfrac(vWork3d); CHKERRQ(ierr);
+    result = &vWork3d;
     return 0;
   }
 
@@ -1257,14 +1257,14 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   }
 
   if (name == "temp") {
-    ierr = compute_temp(Enthnew3); CHKERRQ(ierr);
-    result = &Enthnew3;
+    ierr = compute_temp(vWork3d); CHKERRQ(ierr);
+    result = &vWork3d;
     return 0;
   }
 
   if (name == "temp_pa") {
-    ierr = compute_temp_pa(Enthnew3); CHKERRQ(ierr);
-    result = &Enthnew3;
+    ierr = compute_temp_pa(vWork3d); CHKERRQ(ierr);
+    result = &vWork3d;
     return 0;
   }
 
@@ -1281,8 +1281,8 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   }
 
   if (name == "temppabase") {
-    ierr = compute_temp_pa(Enthnew3); CHKERRQ(ierr);
-    ierr = compute_temppabase(Enthnew3,vWork2d[0]); CHKERRQ(ierr);
+    ierr = compute_temp_pa(vWork3d); CHKERRQ(ierr);
+    ierr = compute_temppabase(vWork3d,vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }
@@ -1318,21 +1318,21 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   }
 
   if (name == "wvel") {
-    ierr = compute_wvel(Enthnew3); CHKERRQ(ierr);
-    result = &Enthnew3;
+    ierr = compute_wvel(vWork3d); CHKERRQ(ierr);
+    result = &vWork3d;
     return 0;
   }
 
   if (name == "wvelbase") {
-    ierr = compute_wvel(Enthnew3); CHKERRQ(ierr);
-    ierr = compute_wvelbase(Enthnew3, vWork2d[0]); CHKERRQ(ierr);
+    ierr = compute_wvel(vWork3d); CHKERRQ(ierr);
+    ierr = compute_wvelbase(vWork3d, vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }
 
   if (name == "wvelsurf") {
-    ierr = compute_wvel(Enthnew3); CHKERRQ(ierr);
-    ierr = compute_wvelsurf(Enthnew3, vWork2d[0]); CHKERRQ(ierr);
+    ierr = compute_wvel(vWork3d); CHKERRQ(ierr);
+    ierr = compute_wvelsurf(vWork3d, vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }
@@ -1419,7 +1419,6 @@ PetscErrorCode IceModel::compute_ice_volume_temperate(PetscScalar &result) {
 PetscErrorCode IceModel::compute_ice_volume_cold(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     volume=0.0;
-  const PetscScalar a = grid.dx * grid.dy; // cell area
   
   PetscScalar *Enth;  // do NOT delete this pointer: space returned by
                       //   getInternalColumn() is allocated already
@@ -1474,7 +1473,6 @@ PetscErrorCode IceModel::compute_ice_area(PetscScalar &result) {
 PetscErrorCode IceModel::compute_ice_area_temperate(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     area=0.0;
-  const PetscScalar a = grid.dx * grid.dy; // cell area
   
   ierr = Enth3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
   PetscScalar **Enthbase;
@@ -1499,7 +1497,6 @@ PetscErrorCode IceModel::compute_ice_area_temperate(PetscScalar &result) {
 PetscErrorCode IceModel::compute_ice_area_cold(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     area=0.0;
-  const PetscScalar a = grid.dx * grid.dy; // cell area
   
   ierr = Enth3.getHorSlice(vWork2d[0], 0.0); CHKERRQ(ierr);  // z=0 slice
   PetscScalar **Enthbase;
@@ -1524,7 +1521,6 @@ PetscErrorCode IceModel::compute_ice_area_cold(PetscScalar &result) {
 PetscErrorCode IceModel::compute_ice_area_grounded(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     area=0.0;
-  const PetscScalar a = grid.dx * grid.dy; // cell area
   
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
@@ -1547,7 +1543,6 @@ PetscErrorCode IceModel::compute_ice_area_grounded(PetscScalar &result) {
 PetscErrorCode IceModel::compute_ice_area_floating(PetscScalar &result) {
   PetscErrorCode ierr;
   PetscScalar     area=0.0;
-  const PetscScalar a = grid.dx * grid.dy; // cell area
   
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);

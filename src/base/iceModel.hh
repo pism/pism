@@ -403,7 +403,7 @@ protected:
   static const PetscInt nWork2d=5;
   IceModelVec2S vWork2d[nWork2d];
   // 3D working space (with specific purposes)
-  IceModelVec3 Tnew3, Enthnew3, taunew3;
+  IceModelVec3 vWork3d;
   IceModelVec3 Sigmastag3[2], Istag3[2];
 
   // for saving SSA velocities for restart

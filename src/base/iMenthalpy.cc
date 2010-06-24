@@ -324,7 +324,7 @@ This method is documented by the page \ref bombproofenth.
 This method uses instances of combinedSystemCtx, bedrockOnlySystemCtx, and
 iceenthOnlySystemCtx.
 
-This method modifies IceModelVec3 Enthnew3, IceModelVec3Bedrock Tb3,
+This method modifies IceModelVec3 vWork3d, IceModelVec3Bedrock Tb3,
 IceModelVec2S vBasalMeltRate, and IceModelVec2S vHmelt.  No communication of
 ghosts is done for any of these fields.
 
@@ -428,7 +428,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   ierr = w3.begin_access(); CHKERRQ(ierr);
   ierr = Sigma3.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  ierr = Enthnew3.begin_access(); CHKERRQ(ierr);
+  ierr = vWork3d.begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
 
   PetscInt liquifiedCount = 0;
@@ -450,7 +450,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
       // deal completely with columns with no ice; note bedrock does need actions
       if (ks == 0) {
-        ierr = Enthnew3.setColumn(i,j,Enth_ks); CHKERRQ(ierr);
+        ierr = vWork3d.setColumn(i,j,Enth_ks); CHKERRQ(ierr);
         PetscScalar Tbtop;
         if (is_floating) {
           Tbtop = shelfbtemp(i,j);
@@ -700,7 +700,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       }
 
       // Enthnew[] is finalized!:  apply bulge limiter and transfer column
-      //   into Enthnew3; communication will occur later
+      //   into vWork3d; communication will occur later
       const PetscReal lowerEnthLimit = Enth_ks - bulgeEnthMax;
       for (PetscInt k=0; k < ks; k++) {
         if (Enthnew[k] < lowerEnthLimit) {
@@ -709,7 +709,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
                                         // limit how low the enthalpy
         }
       }
-      ierr = Enthnew3.setValColumnPL(i,j,Enthnew); CHKERRQ(ierr);
+      ierr = vWork3d.setValColumnPL(i,j,Enthnew); CHKERRQ(ierr);
 
       // if no thermal layer then need to fill Tbnew[0] directly
       if (fMbz == 1) {
@@ -778,7 +778,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   ierr = w3.end_access(); CHKERRQ(ierr);
   ierr = Sigma3.end_access(); CHKERRQ(ierr);
   ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = Enthnew3.end_access(); CHKERRQ(ierr);
+  ierr = vWork3d.end_access(); CHKERRQ(ierr);
 
   delete [] Enthnew; delete [] Tbnew;  delete [] xcombined;
 

@@ -183,6 +183,9 @@ public:
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();
   virtual PetscScalar& operator() (int i, int j, int k);
+  // component-wise access:
+  virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
+  virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
 };
 
 //! \brief A simple class "hiding" the fact that the mask is stored as

@@ -586,17 +586,9 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   ierr = vel_ssa_old.create(grid, "bar_ssa_old", true, WIDE_STENCIL); CHKERRQ(ierr);
   // components are ubar_ssa_old and vbar_ssa_old
 
-  // 3d dedicated work vectors
-  if (config.get_flag("do_cold_ice_methods")) {
-    ierr = Tnew3.create(grid,"temp_new",false); CHKERRQ(ierr);
-    ierr = Tnew3.set_attrs("internal", "ice temperature; temporary during update",
-			   "K", ""); CHKERRQ(ierr);
-  }
+  // 3d work vectors
+  ierr = vWork3d.create(grid,"work_vector_3d",false); CHKERRQ(ierr);
 
-  ierr = Enthnew3.create(grid,"enthalpy_new",false); CHKERRQ(ierr);
-  ierr = Enthnew3.set_attrs("internal",
-             "ice enthalpy; temporary space during timestep",
-             "J kg-1", ""); CHKERRQ(ierr);
   ierr = Sigmastag3[0].create(grid,"Sigma_stagx",true); CHKERRQ(ierr);
   ierr = Sigmastag3[0].set_attrs("internal",
              "rate of strain heating; on staggered grid offset in X direction",
@@ -609,13 +601,6 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   ierr = Istag3[0].set_attrs("internal","","",""); CHKERRQ(ierr);
   ierr = Istag3[1].create(grid,"I_stagy",true); CHKERRQ(ierr);
   ierr = Istag3[1].set_attrs("internal","","",""); CHKERRQ(ierr);
-
-  // extra work vector for age if needed
-  if (config.get_flag("do_age")) {
-    ierr = taunew3.create(grid,"age_new",false); CHKERRQ(ierr);
-    ierr = taunew3.set_attrs("internal", "age of ice; temporary during update",
-                             "s", ""); CHKERRQ(ierr);
-  }
 
   return 0;
 }
