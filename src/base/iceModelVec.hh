@@ -144,6 +144,7 @@ protected:
 //! A class for storing and accessing scalar 2D fields.
 class IceModelVec2S : public IceModelVec2 {
   friend class IceModelVec2V;
+  friend class IceModelVec2Stag;
 public:
   IceModelVec2S() {}
   IceModelVec2S(const IceModelVec2S &other) : IceModelVec2(other) {}
