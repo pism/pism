@@ -792,7 +792,7 @@ PetscErrorCode IceModel::compute_hardav(IceModelVec2S &result) {
       ierr = Enthnew3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
       const PetscScalar H = vH(i,j);
       if (H > 0.0) {
-        result(i,j) = ice->averagedHarness(H, grid.kBelowHeight(H), grid.zlevels, Tij);
+        result(i,j) = ice->averagedHardness(H, grid.kBelowHeight(H), grid.zlevels, Tij);
       } else { // put negative value below valid range
         result(i,j) = fillval;
       }

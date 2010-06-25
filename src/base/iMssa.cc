@@ -215,7 +215,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
 				    EC->getPressureFromDepth(H[i][j]-grid.zlevels[k]),
 				    Tij[k]); CHKERRQ(ierr);
 	      ierr = EC->getAbsTemp(Enthoffset[k],
-				    EC->getPressureFromDepth(H[i][j]-grid.zlevels[k]),
+				    EC->getPressureFromDepth(H[i+oi][j+oj]-grid.zlevels[k]),
 				    Toffset[k]); CHKERRQ(ierr);
 	    }
 

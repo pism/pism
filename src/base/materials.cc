@@ -128,7 +128,7 @@ PetscScalar CustomGlenIce::softnessParameter(PetscScalar /*T*/) const { return s
 PetscScalar CustomGlenIce::hardnessParameter(PetscScalar /*T*/) const { return hardness_B; }
 
 
-PetscScalar CustomGlenIce::averagedHarness(
+PetscScalar CustomGlenIce::averagedHardness(
                 PetscScalar /* H */, PetscInt /* kbelowH */, const PetscScalar /* zlevels */ [],
                 const PetscScalar /* T */[]) const  { return hardness_B; }
 
@@ -316,7 +316,7 @@ PetscScalar ThermoGlenIce::hardnessParameter(PetscScalar T) const {
 //! Computes vertical average of B(T) ice hardness, namely \f$\bar B(T)\f$.  See comment for hardnessParameter().
 /*! Note T[0],...,T[kbelowH] must be valid.  In particular, even if kbelowH == 0, we still use
     T[0].  Uses trapezoid rule to do integral.  */
-PetscScalar ThermoGlenIce::averagedHarness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
+PetscScalar ThermoGlenIce::averagedHardness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
                                            const PetscScalar T[]) const {
   PetscScalar B;
   if ((kbelowH > 0) && (H > 1.0)) {
