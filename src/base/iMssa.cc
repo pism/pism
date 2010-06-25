@@ -216,7 +216,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
 				    EC->getPressureFromDepth(vH(i,j)-grid.zlevels[k]),
 				    Tij[k]); CHKERRQ(ierr);
 	      ierr = EC->getAbsTemp(Enthoffset[k],
-				    EC->getPressureFromDepth(vH(i,j)-grid.zlevels[k]),
+				    EC->getPressureFromDepth(vH(i+oi,j+oj)-grid.zlevels[k]),
 				    Toffset[k]); CHKERRQ(ierr);
 	    }
 
@@ -1012,3 +1012,69 @@ PetscErrorCode IceModel::correctSigma() {
   return 0;
 }
 
+PetscErrorCode IceModel::compute_hardav_staggered() {
+  PetscErrorCode ierr;
+  PolyThermalGPBLDIce *gpbldi = NULL;
+  PetscScalar *tmp, *tmp_ij, *tmp_offset;
+
+  tmp = new PetscScalar[grid.Mz];
+
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  ierr = hardav.begin_access(); CHKERRQ(ierr);
+  
+  if (config.get_flag("do_cold_ice_methods") == true) {
+    ierr = T3.begin_access(); CHKERRQ(ierr); 
+  } else {
+    gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
+  }
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      for (PetscInt o=0; o<2; o++) {
+        const PetscInt oi = 1-o, oj=o;  
+        const PetscScalar H = vH(i+oi,j+oj);
+
+        if (H == 0) {
+          hardav(i,j,o) = -1e6; // an obviously impossible value
+          continue;
+        }
+
+        if (config.get_flag("do_cold_ice_methods") == false) {
+          ierr = Enth3.getInternalColumn(i,j,&tmp_ij); CHKERRQ(ierr);
+          ierr = Enth3.getInternalColumn(i+oi,j+oj,&tmp_offset); CHKERRQ(ierr);
+        } else {
+          ierr = T3.getInternalColumn(i,j,&tmp_ij); CHKERRQ(ierr);
+          ierr = T3.getInternalColumn(i+oi,j+oj,&tmp_offset); CHKERRQ(ierr);
+        }
+
+        // build a column of enthalpy (or temperature) values a the current
+        // location:
+        for (int k = 0; k < grid.Mz; ++k) {
+          tmp[k] = 0.5 * (tmp_ij[k] + tmp_offset[k]);
+        }
+        
+        if (config.get_flag("do_cold_ice_methods") == false) {
+          hardav(i,j,o) = gpbldi->averagedHardnessFromEnth(H, grid.kBelowHeight(H),
+                                                           grid.zlevels, tmp); CHKERRQ(ierr); 
+        } else {
+          hardav(i,j,o) = ice->averagedHardness(H, grid.kBelowHeight(H),
+                                                grid.zlevels, tmp);
+        }
+        
+      }
+    }
+  }
+
+  if (config.get_flag("do_cold_ice_methods") == true) {
+    ierr = T3.end_access(); CHKERRQ(ierr); 
+  }
+
+  ierr = hardav.end_access(); CHKERRQ(ierr);
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  delete [] tmp;
+
+  return 0;
+}

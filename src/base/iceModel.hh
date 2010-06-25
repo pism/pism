@@ -144,8 +144,9 @@ protected:
     shelfbmassflux,	//!< ice mass flux into the ocean at the shelf base; no ghosts
     cell_area;		//!< cell areas (computed using the WGS84 datum)
 
-  IceModelVec2Stag uvbar; //!< ubar and vbar on staggered grid; ubar at i+1/2, vbar at j+1/2
-
+  IceModelVec2Stag uvbar, //!< ubar and vbar on staggered grid; ubar at i+1/2, vbar at j+1/2
+    hardav;               //!< averaged ice hardness on the staggered grid
+ 
   IceModelVec2V vel_basal,	//!< basal velocities on standard grid; ghosted
     vel_bar; //!< vertically-averaged horizontal velocity on standard grid; ghosted
 
@@ -373,7 +374,8 @@ protected:
   virtual PetscErrorCode broadcastSSAVelocity(bool updateVelocityAtDepth);
   virtual PetscErrorCode correctSigma();
   virtual PetscErrorCode correctBasalFrictionalHeating();
-
+  virtual PetscErrorCode compute_hardav_staggered();
+  
   // see iMtemp.cc
   virtual PetscErrorCode energyStep();
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);

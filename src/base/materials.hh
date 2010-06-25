@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2010 Jed Brown and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -71,9 +71,11 @@ public:
   virtual PetscScalar effectiveViscosityColumn(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
                                                PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
                                                const PetscScalar *T1, const PetscScalar *T2) const = 0;
+  // virtual PetscScalar effectiveViscosity(PetscScalar hardness,
+  //                                        PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y) const = 0;
   virtual PetscScalar exponent() const = 0;
   virtual PetscScalar hardnessParameter(PetscScalar T) const = 0;
-  virtual PetscScalar averagedHarness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
+  virtual PetscScalar averagedHardness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
                                       const PetscScalar T[]) const = 0;
 
 protected:
@@ -105,7 +107,7 @@ public:
   virtual PetscScalar exponent() const;
   virtual PetscScalar softnessParameter(PetscScalar T) const;
   virtual PetscScalar hardnessParameter(PetscScalar T) const;
-  virtual PetscScalar averagedHarness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
+  virtual PetscScalar averagedHardness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
                                       const PetscScalar T[]) const;
 private:
   PetscReal exponent_n,softness_A,hardness_B,schoofVel,schoofLen,schoofReg;
@@ -126,7 +128,7 @@ public:
   virtual PetscScalar exponent() const;
   virtual PetscScalar softnessParameter(PetscScalar T) const;
   virtual PetscScalar hardnessParameter(PetscScalar T) const;
-  virtual PetscScalar averagedHarness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
+  virtual PetscScalar averagedHardness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
                                       const PetscScalar T[]) const;
 protected:
   PetscReal schoofLen,schoofVel,schoofReg,
@@ -160,6 +162,9 @@ public:
 
   virtual PetscScalar flowFromEnth(PetscScalar stress, PetscScalar enthalpy, PetscScalar pressure,
                                        PetscScalar gs) const; // grainsize arg gs not used
+
+  virtual PetscScalar averagedHardnessFromEnth(PetscScalar, PetscInt, const PetscScalar*,
+                                               const PetscScalar*);
 
   virtual PetscScalar effectiveViscosityColumnFromEnth(
                 PetscScalar thickness,  PetscInt kbelowH, const PetscScalar *zlevels,

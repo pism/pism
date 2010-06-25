@@ -849,7 +849,7 @@ PetscErrorCode IceModel::compute_hardav(IceModelVec2S &result) {
   PetscErrorCode ierr;
   
   const PetscScalar fillval = -0.01;
-
+  // FIXME: this method does not work correctly in the polythermal mode.
   ierr = compute_temp(vWork3d); CHKERRQ(ierr);
   
   PetscScalar *Tij; // columns of temperature values
@@ -861,7 +861,7 @@ PetscErrorCode IceModel::compute_hardav(IceModelVec2S &result) {
       ierr = vWork3d.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
       const PetscScalar H = vH(i,j);
       if (H > 0.0) {
-        result(i,j) = ice->averagedHarness(H, grid.kBelowHeight(H), grid.zlevels, Tij);
+        result(i,j) = ice->averagedHardness(H, grid.kBelowHeight(H), grid.zlevels, Tij);
       } else { // put negative value below valid range
         result(i,j) = fillval;
       }

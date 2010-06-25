@@ -602,6 +602,10 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   ierr = Istag3[1].create(grid,"I_stagy",true); CHKERRQ(ierr);
   ierr = Istag3[1].set_attrs("internal","","",""); CHKERRQ(ierr);
 
+  ierr = hardav.create(grid, "averaged_hardness", false); CHKERRQ(ierr);
+  ierr = hardav.set_attrs("internal", "vertically-averaged ice hardness",
+                          "", ""); CHKERRQ(ierr);
+
   return 0;
 }
 

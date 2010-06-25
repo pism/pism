@@ -128,7 +128,7 @@ PetscScalar CustomGlenIce::softnessParameter(PetscScalar /*T*/) const { return s
 PetscScalar CustomGlenIce::hardnessParameter(PetscScalar /*T*/) const { return hardness_B; }
 
 
-PetscScalar CustomGlenIce::averagedHarness(
+PetscScalar CustomGlenIce::averagedHardness(
                 PetscScalar /* H */, PetscInt /* kbelowH */, const PetscScalar /* zlevels */ [],
                 const PetscScalar /* T */[]) const  { return hardness_B; }
 
@@ -316,7 +316,7 @@ PetscScalar ThermoGlenIce::hardnessParameter(PetscScalar T) const {
 //! Computes vertical average of B(T) ice hardness, namely \f$\bar B(T)\f$.  See comment for hardnessParameter().
 /*! Note T[0],...,T[kbelowH] must be valid.  In particular, even if kbelowH == 0, we still use
     T[0].  Uses trapezoid rule to do integral.  */
-PetscScalar ThermoGlenIce::averagedHarness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
+PetscScalar ThermoGlenIce::averagedHardness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
                                            const PetscScalar T[]) const {
   PetscScalar B;
   if ((kbelowH > 0) && (H > 1.0)) {
@@ -490,6 +490,41 @@ PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
   return 0.5 * B * pow(schoofReg + alpha, (1-n)/(2*n));
 }
 
+PetscScalar PolyThermalGPBLDIce::averagedHardnessFromEnth(
+                PetscScalar thickness,  PetscInt kbelowH, const PetscScalar *zlevels,
+                const PetscScalar *enthalpy) {
+  if (EC == NULL) {
+    PetscErrorPrintf(
+      "EC is NULL in PolyThermalGPBLDIce::averagedHardnessFromEnth()\n");
+    endPrintRank();
+  }
+
+  PetscScalar B = 0;
+  if (kbelowH > 0) {
+    PetscScalar dz = zlevels[1] - zlevels[0];
+    B += 0.5 * dz * hardnessParameterFromEnth(enthalpy[0],
+                                              EC->getPressureFromDepth(thickness) );
+    for (PetscInt m=1; m < kbelowH; m++) {
+      const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m],
+                        depth  = thickness - 0.5 * (zlevels[m+1] + zlevels[m]);
+      B += 0.5 * (dz + dzNEXT) * hardnessParameterFromEnth(enthalpy[m],
+                                                           EC->getPressureFromDepth(depth) );
+      dz = dzNEXT;
+    }
+    // use last dz from for loop
+    const PetscScalar depth  = 0.5 * (thickness - zlevels[kbelowH]);
+    B += 0.5 * dz * hardnessParameterFromEnth(enthalpy[kbelowH],
+                                              EC->getPressureFromDepth(depth));
+  }
+
+  // so far B is an integral of ice hardness; compute the average now:
+  if (thickness > 0)
+    B = B / thickness;
+  else
+    B = 0;
+
+  return B;
+}
 
 //! This is the Hooke flow law, see [\ref Hooke].
 ThermoGlenIceHooke::ThermoGlenIceHooke(MPI_Comm c,const char pre[],

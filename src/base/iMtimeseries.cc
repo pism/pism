@@ -660,8 +660,6 @@ PetscErrorCode IceModel::ts_max_timestep(double t_years, double& dt_years) {
 
 //! Flush scalar time-series.
 PetscErrorCode IceModel::flush_timeseries() {
-  PetscErrorCode ierr;
-
   // flush all the time-series buffers:
   vector<DiagnosticTimeseries*>::iterator i;
   for (i = timeseries.begin(); i < timeseries.end(); ++i) {
