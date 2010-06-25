@@ -90,6 +90,13 @@ PetscScalar CustomGlenIce::effectiveViscosityColumn(PetscScalar H, PetscInt, con
   return H * (hardness_B / 2) * pow(schoofReg + secondInvariant(u_x,u_y,v_x,v_y), (1-exponent_n)/(2*exponent_n));
 }
 
+PetscScalar CustomGlenIce::effectiveViscosity(PetscScalar hardness,
+                                              PetscScalar u_x, PetscScalar u_y,
+                                              PetscScalar v_x, PetscScalar v_y) const {
+  const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
+  return 0.5 * hardness * pow(schoofReg + alpha, (1-exponent_n)/(2*exponent_n));
+}
+
 
 PetscErrorCode CustomGlenIce::setDensity(PetscReal r) {rho = r; return 0;}
 
@@ -260,6 +267,13 @@ PetscScalar ThermoGlenIce::flow(PetscScalar stress,PetscScalar temp,PetscScalar 
   return softnessParameter(T) * pow(stress,n-1);
 }
 
+//! Returns viscosity and \b not the nu * H product.
+PetscScalar ThermoGlenIce::effectiveViscosity(PetscScalar hardness,
+                                              PetscScalar u_x, PetscScalar u_y,
+                                              PetscScalar v_x, PetscScalar v_y) const {
+  const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
+  return 0.5 * hardness * pow(schoofReg + alpha, (1-n)/(2*n));
+}
 
 //! DESPITE NAME, does *not* return effective viscosity. The result is \f$\nu_e H\f$,
 //! i.e. viscosity times thickness. \f$B\f$ is really hardness times thickness.
@@ -491,7 +505,7 @@ PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
 }
 
 PetscScalar PolyThermalGPBLDIce::averagedHardnessFromEnth(
-                PetscScalar thickness,  PetscInt kbelowH, const PetscScalar *zlevels,
+                PetscScalar thickness, PetscInt kbelowH, const PetscScalar *zlevels,
                 const PetscScalar *enthalpy) {
   if (EC == NULL) {
     PetscErrorPrintf(
@@ -698,6 +712,17 @@ PetscScalar HybridIce::flow(PetscScalar stress, PetscScalar temp,
       exp(-(gbs_Q_cold + pV)/RT);
 
   return eps_diff + eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
+}
+
+PetscScalar HybridIce::effectiveViscosity(PetscScalar hardness,
+                                          PetscScalar u_x, PetscScalar u_y,
+                                          PetscScalar v_x, PetscScalar v_y) const {
+
+  PetscPrintf(PETSC_COMM_WORLD,
+              "PISM ERROR: the Goldsby-Kohlstedt flow law does not have a B(T)*f(...) factorization.\n");
+  PetscEnd();
+
+  return 0;
 }
 
 /*****************

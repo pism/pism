@@ -154,32 +154,24 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
     return 0;
   }
 
+  HybridIce *hi = dynamic_cast<HybridIce*>(ice);
+  if (hi) {
+    ierr = PetscPrintf(grid.com,
+                       "PISM ERROR: current implementation of the viscosity computation "
+                       "does not support the Goldsby-Kohlstedt flow law.\n");
+    PetscEnd();
+  }
+
   // We need to compute integrated effective viscosity (\bar\nu * H).
   // It is locally determined by the strain rates and temperature field.
-  PetscScalar *Tij = NULL, *Toffset = NULL, **nuH[2];
+  PetscScalar **nuH[2];
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vNuH[0].get_array(nuH[0]); CHKERRQ(ierr);
   ierr = vNuH[1].get_array(nuH[1]); CHKERRQ(ierr);
 
   PISMVector2 **uv;
   ierr = vel_ssa.get_array(uv); CHKERRQ(ierr);
-
-  PetscScalar *Enthij, *Enthoffset;
-  PolyThermalGPBLDIce *gpbldi = NULL;
-  if (config.get_flag("do_cold_ice_methods") == false) {
-    gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
-    if (!gpbldi) {
-      PetscPrintf(grid.com,
-        "do_cold_ice_methods == false in IceModel::computeEffectiveViscosity()\n"
-        "   but not using PolyThermalGPBLDIce ... ending ....\n");
-      PetscEnd();
-    }
-  } else {
-    Tij = new PetscScalar[grid.Mz];
-    Toffset = new PetscScalar[grid.Mz];
-  }
-
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  ierr = hardav.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt o=0; o<2; ++o) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -207,27 +199,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
           }
           const PetscScalar myH = 0.5 * (vH(i,j) + vH(i+oi,j+oj));
 
-	  ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-	  ierr = Enth3.getInternalColumn(i+oi,j+oj,&Enthoffset); CHKERRQ(ierr);
-
-          if (config.get_flag("do_cold_ice_methods") == true) {
-	    for (int k = 0; k < grid.Mz; ++k) {
-	      ierr = EC->getAbsTemp(Enthij[k],
-				    EC->getPressureFromDepth(vH(i,j)-grid.zlevels[k]),
-				    Tij[k]); CHKERRQ(ierr);
-	      ierr = EC->getAbsTemp(Enthoffset[k],
-				    EC->getPressureFromDepth(vH(i+oi,j+oj)-grid.zlevels[k]),
-				    Toffset[k]); CHKERRQ(ierr);
-	    }
-
-            nuH[o][i][j] = ice->effectiveViscosityColumn(
-                                myH, grid.kBelowHeight(myH), grid.zlevels,
-                                u_x, u_y, v_x, v_y, Tij, Toffset);
-          } else {
-            nuH[o][i][j] = gpbldi->effectiveViscosityColumnFromEnth(
-                                myH, grid.kBelowHeight(myH), grid.zlevels,
-                                u_x, u_y, v_x, v_y, Enthij, Enthoffset);
-          }
+          nuH[o][i][j] = myH * ice->effectiveViscosity(hardav(i,j,o), u_x, u_y, v_x, v_y);
 
           if (! finite(nuH[o][i][j]) || false) {
             ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, nuH[o][i][j]);
@@ -248,11 +220,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
   ierr = vNuH[1].end_access(); CHKERRQ(ierr);
 
   ierr = vel_ssa.end_access(); CHKERRQ(ierr);
-
-  ierr = Enth3.end_access(); CHKERRQ(ierr);
-
-  delete[] Tij;
-  delete[] Toffset;
+  ierr = hardav.end_access(); CHKERRQ(ierr);
 
   // Some communication
   ierr = vNuH[0].beginGhostComm(); CHKERRQ(ierr);
@@ -684,6 +652,8 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2S vNuH[2], PetscInt *numiter) {
   //   but matrix changes under nonlinear iteration (loop over k below)
   ierr = assembleSSARhs(SSARHS); CHKERRQ(ierr);
 
+  ierr = compute_hardav_staggered(); CHKERRQ(ierr);
+
   for (PetscInt l=0; ; ++l) { // iterate with increasing regularization parameter
     ierr = computeEffectiveViscosity(vNuH, epsilon); CHKERRQ(ierr);
     ierr = update_nu_viewers(vNuH, vNuHOld, true); CHKERRQ(ierr);
@@ -1012,10 +982,13 @@ PetscErrorCode IceModel::correctSigma() {
   return 0;
 }
 
+//! Computes vertically-averaged ice hardness on the staggered grid.
 PetscErrorCode IceModel::compute_hardav_staggered() {
   PetscErrorCode ierr;
   PolyThermalGPBLDIce *gpbldi = NULL;
   PetscScalar *tmp, *tmp_ij, *tmp_offset;
+
+  bool do_cold_ice = config.get_flag("do_cold_ice_methods");
 
   tmp = new PetscScalar[grid.Mz];
 
@@ -1023,11 +996,12 @@ PetscErrorCode IceModel::compute_hardav_staggered() {
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = hardav.begin_access(); CHKERRQ(ierr);
   
-  if (config.get_flag("do_cold_ice_methods") == true) {
+  if (do_cold_ice) {
     ierr = T3.begin_access(); CHKERRQ(ierr); 
   } else {
     gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
   }
+
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -1040,7 +1014,7 @@ PetscErrorCode IceModel::compute_hardav_staggered() {
           continue;
         }
 
-        if (config.get_flag("do_cold_ice_methods") == false) {
+        if (do_cold_ice == false) {
           ierr = Enth3.getInternalColumn(i,j,&tmp_ij); CHKERRQ(ierr);
           ierr = Enth3.getInternalColumn(i+oi,j+oj,&tmp_offset); CHKERRQ(ierr);
         } else {
@@ -1054,7 +1028,7 @@ PetscErrorCode IceModel::compute_hardav_staggered() {
           tmp[k] = 0.5 * (tmp_ij[k] + tmp_offset[k]);
         }
         
-        if (config.get_flag("do_cold_ice_methods") == false) {
+        if (do_cold_ice == false) {
           hardav(i,j,o) = gpbldi->averagedHardnessFromEnth(H, grid.kBelowHeight(H),
                                                            grid.zlevels, tmp); CHKERRQ(ierr); 
         } else {
@@ -1062,11 +1036,11 @@ PetscErrorCode IceModel::compute_hardav_staggered() {
                                                 grid.zlevels, tmp);
         }
         
-      }
-    }
-  }
+      } // o
+    }   // j
+  }     // i
 
-  if (config.get_flag("do_cold_ice_methods") == true) {
+  if (do_cold_ice) {
     ierr = T3.end_access(); CHKERRQ(ierr); 
   }
 

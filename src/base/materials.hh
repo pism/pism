@@ -71,8 +71,8 @@ public:
   virtual PetscScalar effectiveViscosityColumn(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
                                                PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
                                                const PetscScalar *T1, const PetscScalar *T2) const = 0;
-  // virtual PetscScalar effectiveViscosity(PetscScalar hardness,
-  //                                        PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y) const = 0;
+  virtual PetscScalar effectiveViscosity(PetscScalar hardness,
+                                         PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y) const = 0;
   virtual PetscScalar exponent() const = 0;
   virtual PetscScalar hardnessParameter(PetscScalar T) const = 0;
   virtual PetscScalar averagedHardness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
@@ -101,6 +101,8 @@ public:
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar flow(PetscScalar,PetscScalar,PetscScalar,PetscScalar) const;
+  virtual PetscScalar effectiveViscosity(PetscScalar hardness,
+                                         PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y) const;
   virtual PetscScalar effectiveViscosityColumn(PetscScalar,PetscInt,const PetscScalar *,
                                                PetscScalar,PetscScalar,PetscScalar,PetscScalar,
                                                const PetscScalar *,const PetscScalar *) const;
@@ -122,6 +124,8 @@ public:
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
+  virtual PetscScalar effectiveViscosity(PetscScalar hardness,
+                                         PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y) const;
   virtual PetscScalar effectiveViscosityColumn(PetscScalar,PetscInt,const PetscScalar *,
                                                PetscScalar,PetscScalar,PetscScalar,PetscScalar,
                                                const PetscScalar *,const PetscScalar *) const;
@@ -227,6 +231,8 @@ public:
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
+  virtual PetscScalar effectiveViscosity(PetscScalar hardness,
+                                         PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y) const;
   virtual PetscTruth usesGrainSize() const { return PETSC_TRUE; }
   GKparts flowParts(PetscScalar stress, PetscScalar temp, PetscScalar pressure) const;
 
