@@ -179,7 +179,7 @@ PetscErrorCode IceROSSModel::finishROSS() {
   ierr = myvNu[0].create(grid, "myvNu", true); CHKERRQ(ierr);
   ierr = myvNu[1].create(grid, "myvNu", true); CHKERRQ(ierr);
   ierr = computeEffectiveViscosity(myvNu, ssaEpsilon); CHKERRQ(ierr);
-  ierr = update_nu_viewers(myvNu,myvNu,false); CHKERRQ(ierr);
+  ierr = update_nu_viewers(myvNu); CHKERRQ(ierr);
   
   return 0;
 }

@@ -51,7 +51,7 @@ mpst()
 {
     # run pisms from the bin directory for the current PISM;
     #   (change the next line if using "mpirun" or a different pisms or etc.)
-    cmd="mpiexec -n $1 ../../bin/pisms -pst $2"
+    cmd="mpiexec -n $1 ../../bin/pisms -prof -pst $2"
     
     echo "date = '`date`' on host '`uname -n`':"
     echo "trying '$cmd'"
@@ -82,7 +82,7 @@ mpst_vg()
 #if [ ]; then   # always goes to "else"
 #else           # put this before restart location
 
-regridv="-regrid_vars bwat,temp,litho_temp,thk"
+regridv="-regrid_vars bwat,enthalpy,temp,litho_temp,thk"  # actually will only use temp in ice, by default
 
 # P0A: run without trough on refining grid for total of 200k years:
 mpst_vg $NN u "-P0A -Mx 61 -My 61 -y 1e5 -skip 20 -o P0A_100k.nc"

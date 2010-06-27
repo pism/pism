@@ -100,14 +100,14 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 
   ierr = artm->create(grid, "artm", false); CHKERRQ(ierr);
   ierr = artm->set_attrs("climate_state",
-			 "ice temperature (at the ice surface)",
+			 "annual average ice surface temperature, below firn processes",
 			 "K",
 			 ""); CHKERRQ(ierr);
   ierr = variables.add(*artm); CHKERRQ(ierr);
 
   ierr = acab->create(grid, "acab", false); CHKERRQ(ierr);
   ierr = acab->set_attrs("climate_state", 
-			 "ice-equivalent accumulation/ablation rate",
+			 "ice-equivalent surface mass balance (accumulation/ablation) rate",
 			 "m s-1", 
 			 ""); CHKERRQ(ierr);
   ierr = acab->set_glaciological_units("m year-1"); CHKERRQ(ierr);

@@ -151,10 +151,17 @@ PetscErrorCode IceModelVec2::view(PetscInt viewer_size) {
 
   ierr = DACreateGlobalVector(grid->da2, &g2); CHKERRQ(ierr);
   
+  const string tname = (string_attr("long_name").length() > 0)
+                        ? string_attr("long_name") : vars[0].short_name,
+               tunits = (string_attr("glaciological_units").length() > 0)
+                        ? " (" + string_attr("glaciological_units") + ")" : "",
+               title = tname + tunits;
   if ((*map_viewers)[name] == PETSC_NULL) {
-    string title = string_attr("long_name") + " (" + string_attr("glaciological_units") + ")";
-
     ierr = create_viewer(viewer_size, title, (*map_viewers)[name]); CHKERRQ(ierr);
+  } else {
+    PetscDraw draw;
+    ierr = PetscViewerDrawGetDraw((*map_viewers)[name], 0, &draw); CHKERRQ(ierr);
+    ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
   }
 
   if (localp) {

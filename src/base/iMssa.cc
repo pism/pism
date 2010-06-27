@@ -656,7 +656,7 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2S vNuH[2], PetscInt *numiter) {
 
   for (PetscInt l=0; ; ++l) { // iterate with increasing regularization parameter
     ierr = computeEffectiveViscosity(vNuH, epsilon); CHKERRQ(ierr);
-    ierr = update_nu_viewers(vNuH, vNuHOld, true); CHKERRQ(ierr);
+    ierr = update_nu_viewers(vNuH); CHKERRQ(ierr);
     // iterate on effective viscosity: "outer nonlinear iteration":
     for (PetscInt k=0; k<ssaMaxIterations; ++k) { 
       if (getVerbosityLevel() > 2) {
@@ -701,7 +701,7 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2S vNuH[2], PetscInt *numiter) {
 
       // update viscosity and check for viscosity convergence
       ierr = computeEffectiveViscosity(vNuH, epsilon); CHKERRQ(ierr);
-      ierr = update_nu_viewers(vNuH, vNuHOld, true); CHKERRQ(ierr);
+      ierr = update_nu_viewers(vNuH); CHKERRQ(ierr);
       ierr = testConvergenceOfNu(vNuH, vNuHOld, &norm, &normChange); CHKERRQ(ierr);
       if (getVerbosityLevel() > 2) {
         char tempstr[100] = "";

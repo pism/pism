@@ -380,7 +380,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
   ierr = acab.set_attrs(
             "climate_state",
-            "instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
+            "ice-equivalent surface mass balance (accumulation/ablation) rate",
 	    "m s-1",  // m *ice-equivalent* per second
 	    "land_ice_surface_specific_mass_balance");  // CF standard_name
 	    CHKERRQ(ierr);
@@ -394,7 +394,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = artm.create(grid, "artm", false); CHKERRQ(ierr);
   ierr = artm.set_attrs(
             "climate_state",
-            "time-dependent annual average ice temperature at ice surface but below firn processes",
+            "annual average ice surface temperature, below firn processes",
             "K", 
             "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
             CHKERRQ(ierr);

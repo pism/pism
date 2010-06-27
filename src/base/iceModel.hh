@@ -458,7 +458,7 @@ protected:
   // diagnostic viewers; see iMviewers.cc
   virtual PetscErrorCode init_viewers();
   virtual PetscErrorCode update_viewers();
-  virtual PetscErrorCode update_nu_viewers(IceModelVec2S vNu[2], IceModelVec2S[2], bool);
+  virtual PetscErrorCode update_nu_viewers(IceModelVec2S vNu[2]);
   set<string> map_viewers, slice_viewers, sounding_viewers;
   PetscInt     id, jd;	     // sounding indices
   bool view_diffusivity, view_log_nuH, view_nuH;

@@ -214,7 +214,7 @@ PetscErrorCode IceModel::init_viewers() {
 
 
 //! Update nuH viewers.
-PetscErrorCode IceModel::update_nu_viewers(IceModelVec2S vNu[2], IceModelVec2S /*vNuOld*/[2], bool /*updateNu_tView*/) {
+PetscErrorCode IceModel::update_nu_viewers(IceModelVec2S vNu[2]) {
   // this one is called when solving an SSA system
 
   PetscErrorCode ierr;
@@ -237,14 +237,14 @@ PetscErrorCode IceModel::update_nu_viewers(IceModelVec2S vNu[2], IceModelVec2S /
     ierr = vNu[1].end_access(); CHKERRQ(ierr);
     ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
 
-    ierr = vWork2d[4].set_name("log10(nuH)"); CHKERRQ(ierr);
+    ierr = vWork2d[4].set_name("log10(nuH) (log of Pa s m)"); CHKERRQ(ierr);
     ierr = vWork2d[4].view(300); CHKERRQ(ierr);
   }
 
   if (view_nuH) {
-    ierr = vNu[0].set_name("nuH[0]"); CHKERRQ(ierr);
+    ierr = vNu[0].set_name("nuH[0] (Pa s m)"); CHKERRQ(ierr);
     ierr = vNu[0].view(300); CHKERRQ(ierr);
-    ierr = vNu[1].set_name("nuH[1]"); CHKERRQ(ierr);
+    ierr = vNu[1].set_name("nuH[1] (Pa s m)"); CHKERRQ(ierr);
     ierr = vNu[1].view(300); CHKERRQ(ierr);
   }
 

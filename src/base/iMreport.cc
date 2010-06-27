@@ -1352,6 +1352,7 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   if (name == "diffusivity") {
     ierr = surfaceGradientSIA(); CHKERRQ(ierr); // uses vWork2d[0,1,2,3]
     ierr = compute_diffusivity(vWork2d[4]); CHKERRQ(ierr);
+    ierr = vWork2d[4].set_name("diffusivity (m2 s-1)"); CHKERRQ(ierr);
     result = &vWork2d[4];
     return 0;
   }
