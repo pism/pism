@@ -173,17 +173,18 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
   ierr = vel_ssa.get_array(uv); CHKERRQ(ierr);
   ierr = hardav.begin_access(); CHKERRQ(ierr);
 
+  const PetscScalar   dx = grid.dx, dy = grid.dy;
+
   for (PetscInt o=0; o<2; ++o) {
+    const PetscInt oi = 1 - o, oj=o;
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        if (vH(i,j) < ssaStrengthExtend.min_thickness_for_extension()) {
+        const PetscScalar H = 0.5 * (vH(i,j) + vH(i+oi,j+oj));
+        if (H < ssaStrengthExtend.min_thickness_for_extension()) {
           // Extends strength of SSA (i.e. nuH coeff) into the ice free region.
           //  Does not add or subtract ice mass.
           nuH[o][i][j] = ssaStrengthExtend.notional_strength();
         } else {
-          const PetscInt      oi = 1-o, oj=o;
-          const PetscScalar   dx = grid.dx, 
-                              dy = grid.dy;
           PetscScalar u_x, u_y, v_x, v_y;
           // Check the offset to determine how to differentiate velocity
           if (o == 0) {
@@ -197,9 +198,18 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
             v_x = (uv[i+1][j].v + uv[i+1][j+1].v - uv[i-1][j].v - uv[i-1][j+1].v) / (4*dx);
             v_y = (uv[i][j+1].v - uv[i][j].v) / dy;
           }
-          const PetscScalar myH = 0.5 * (vH(i,j) + vH(i+oi,j+oj));
 
-          nuH[o][i][j] = myH * ice->effectiveViscosity(hardav(i,j,o), u_x, u_y, v_x, v_y);
+          const PetscScalar hardness = hardav(i,j,o);
+
+#ifdef PISM_DEBUG
+          if (hardness < 0) {   // check if we are using ice hardness in an
+                                // ice-free area (should never happen)
+            ierr = PetscPrintf(grid.com, "hardav(%d,%d,%d) = %e\n", i, j, o, hardness);
+            CHKERRQ(ierr); 
+          }
+#endif
+
+          nuH[o][i][j] = H * ice->effectiveViscosity(hardness, u_x, u_y, v_x, v_y);
 
           if (! finite(nuH[o][i][j]) || false) {
             ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, nuH[o][i][j]);
@@ -1007,7 +1017,7 @@ PetscErrorCode IceModel::compute_hardav_staggered() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       for (PetscInt o=0; o<2; o++) {
         const PetscInt oi = 1-o, oj=o;  
-        const PetscScalar H = vH(i+oi,j+oj);
+        const PetscScalar H = 0.5 * (vH(i,j) + vH(i+oi,j+oj));
 
         if (H == 0) {
           hardav(i,j,o) = -1e6; // an obviously impossible value
