@@ -81,7 +81,8 @@ public:
   virtual PetscErrorCode getEnthAtWaterFraction(double omega, double p, double &E) const;
 
 protected:
-  double T_0, L, c_i, rho_i, g, p_air, beta;
+  double T_0, L, c_i, rho_i, g, p_air, beta, T_tol;
+  bool do_cold_ice_methods;
 };
 
 #endif

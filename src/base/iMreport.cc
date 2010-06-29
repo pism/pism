@@ -775,11 +775,7 @@ PetscErrorCode IceModel::compute_proc_ice_area(IceModelVec2S &result) {
 PetscErrorCode IceModel::compute_cts(IceModelVec3 &useForCTS) {
   PetscErrorCode ierr;
 
-  if (config.get_flag("do_cold_ice_methods")) {
-    ierr = useForCTS.set(0.0); CHKERRQ(ierr);
-  } else {
-    ierr = setCTSFromEnthalpy(useForCTS); CHKERRQ(ierr);
-  }
+  ierr = setCTSFromEnthalpy(useForCTS); CHKERRQ(ierr);
   ierr = useForCTS.set_name("cts"); CHKERRQ(ierr);
   ierr = useForCTS.set_attrs(
      "diagnostic",
@@ -827,8 +823,14 @@ PetscErrorCode IceModel::compute_temp_pa(IceModelVec3 &result) {
       ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
         const PetscScalar depth = vH(i,j) - grid.zlevels[k];
-        ierr = EC->getPATemp(Enthij[k],EC->getPressureFromDepth(depth), Tpaij[k]);
+	const PetscScalar p = EC->getPressureFromDepth(depth);
+        ierr = EC->getPATemp(Enthij[k],p,Tpaij[k]);
           CHKERRQ(ierr);
+	  if (config.get_flag("do_cold_ice_methods")) {
+	    if ( EC->isTemperate(Enthij[k],p) && (vH(i,j) > 0)) {
+	      Tpaij[k] = config.get("water_melting_temperature");
+	    }
+	  }
       }
     }
   }

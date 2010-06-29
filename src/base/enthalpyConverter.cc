@@ -24,11 +24,13 @@
 EnthalpyConverter::EnthalpyConverter(const NCConfigVariable &config) {
   beta  = config.get("beta_CC");                                 // K Pa-1
   c_i   = config.get("ice_specific_heat_capacity");              // J kg-1 K-1
+  do_cold_ice_methods  = config.get_flag("do_cold_ice_methods");
   g     = config.get("standard_gravity");			 // m s-2
   L     = config.get("water_latent_heat_fusion");                // J kg-1
   p_air = config.get("surface_pressure");                        // Pa
   rho_i = config.get("ice_density");                             // kg m-3
   T_0   = config.get("water_melting_temperature");               // K  
+  T_tol  = config.get("cold_mode_is_temperate_ice_tolerance");   // K 
 }
 
 
@@ -145,7 +147,12 @@ bool EnthalpyConverter::isTemperate(double E, double p) const {
     SETERRQ1(1,"\n\nE = %f <= 0 is not a valid enthalpy\n\n",E);
   }
 #endif
-  return (E >= E_s);
+
+  if (do_cold_ice_methods) {
+      double E_tol;
+      getEnthPermissive(T_tol,0.0,p,E_tol);
+      return ( E >= E_s - E_tol);
+    } else return (E >= E_s);
 }
 
 

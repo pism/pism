@@ -435,6 +435,9 @@ netcdf pism_config {
    pism_config:grid_lambda = 4.0;
    pism_config:grid_lambda_doc = "; Vertical grid spacing parameter. Roughly equal to the factor by which the grid is coarser at an end away from the ice-bedrock interface.";
 
+   pism_config:cold_mode_is_temperate_ice_tolerance = 0.001;
+   pism_config:cold_mode_is_temperate_ice_tolerance_doc = "Kelvin; Tolerance within which ice is treated as temperate (cold-ice mode only).";
+
    pism_config:correct_cell_areas = "yes";
    pism_config:correct_cell_areas_doc = "Compute corrected cell areas using WGS84 datum (for ice area and volume computations).";
 
