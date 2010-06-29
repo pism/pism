@@ -3,39 +3,56 @@
 source ../functions.sh
 
 # Test name:
-test="Test #14: Verification test E regression."
+test="Test #14: enthalpy symmetry near the base (pisms -no_cold)."
 # The list of files to delete when done.
-files="test_14-E-out.txt verify.nc"
+files="simp_exper.nc"
 dir=`pwd`
 
 run_test ()
 {
     cleanup
+    # run pisms
+    run -n 2 pisms -y 8e3 -Lz 4100 -o_size big -no_cold
 
-    # run test E
-    OPTS="-test E -y 1000 -o_size small -verbose 1 -Mbz 1"
-    pismv -Mx 21 -My 21 -Mz 21 $OPTS  > test_14-E-out.txt
-    pismv -Mx 41 -My 41 -Mz 41 $OPTS >> test_14-E-out.txt
+    python <<EOF
+try:
+    from netCDF3 import Dataset as NC
+except:
+    from netCDF4 import Dataset as NC
+from numpy import abs, arange
+from sys import exit
 
-    # compare results
-    diff test_14-E-out.txt - > /dev/null <<END-OF-OUTPUT
-NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-geometry  :    prcntVOL        maxH         avH   relmaxETA
-               6.571588  747.089432   89.407623    0.109291
-base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
-                5.9483    0.29471     0.58051    5.9475    2.7752
-NUM ERRORS DONE
-NUMERICAL ERRORS evaluated at final time (relative to exact solution):
-geometry  :    prcntVOL        maxH         avH   relmaxETA
-               3.609672  720.379860   51.405684    0.058540
-base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
-                1.8179    0.14171     0.27914    1.6160    1.2159
-NUM ERRORS DONE
-END-OF-OUTPUT
+nc = NC("simp_exper.nc", 'r')
+var = nc.variables['enthalpy']
+n = 61; m = 61; tol = 1e-3
+
+for k in [0, 1, 2]:
+    v = var[0,k,:,:]	# time,z,y,x
+    for i in arange((n-1)/2):
+        for j in arange((m-1)/2):
+            ii = (n-1) - i
+            jj = (m-1) - j
+
+            delta = abs(v[i,j] - v[ii,j])
+            if (delta >= tol):
+                print "X-symmetry failure at (%d,%d),(%d,%d) level %d (delta = %2.2e)" % (i,j,ii,j,k,delta)
+                exit(1)
+
+            delta = abs(v[i,j] - v[i,jj])
+            if (delta >= tol):
+                print "Y-symmetry failure at (%d,%d),(%d,%d) level %d (delta = %2.2e)" % (i,j,i,jj,k,delta)
+                exit(1)
+                
+            delta = abs(v[i,j] - v[ii,jj])
+            if (delta >= tol):
+                print "Radial symmetry failure at (%d,%d),(%d,%d) level %d (delta = %2.2e)" % (i,j,ii,jj,k,delta)
+                exit(1)
+exit(0)
+EOF
 
     if [ $? != 0 ];
     then
-	fail "numerical error report does not match the one stored"
+	fail "asymmetry detected"
 	# the return statement *is* needed here, because 'fail' does not
 	# terminate the test execution
 	return 1
