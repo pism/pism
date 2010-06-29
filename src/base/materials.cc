@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -104,9 +104,10 @@ PetscErrorCode CustomGlenIce::setDensity(PetscReal r) {rho = r; return 0;}
 PetscErrorCode CustomGlenIce::setExponent(PetscReal n) {exponent_n = n; return 0;}
 
 
-PetscErrorCode CustomGlenIce::setSchoofRegularization(PetscReal vel,PetscReal len) {
-  schoofVel = vel/secpera;  // vel has units m/a
-  schoofLen = len*1e3;      // len has units km
+PetscErrorCode CustomGlenIce::setSchoofRegularization(
+                  PetscReal vel_peryear,PetscReal len_km) {
+  schoofVel = vel_peryear/secpera;
+  schoofLen = len_km*1e3;
   schoofReg = PetscSqr(schoofVel/schoofLen); 
   return 0;
 }
@@ -471,39 +472,6 @@ PetscScalar PolyThermalGPBLDIce::flowFromEnth(
 }
 
 
-PetscScalar PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth(
-                PetscScalar thickness,  PetscInt kbelowH, const PetscScalar *zlevels,
-                PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
-                const PetscScalar *enthalpy1, const PetscScalar *enthalpy2) const {
-  if (EC == NULL) {
-    PetscErrorPrintf(
-      "EC is NULL in PolyThermalGPBLDIce::effectiveViscosityColumnFromEnth()\n");
-    endPrintRank();
-  }
-
-  // result is \nu_e H, i.e. viscosity times thickness; B is really hardness times thickness
-  // integrates the hardness parameter using the trapezoid rule.
-  PetscScalar B = 0;
-  if (kbelowH > 0) {
-    PetscScalar dz = zlevels[1] - zlevels[0];
-    B += 0.5 * dz * hardnessParameterFromEnth( 0.5 * (enthalpy1[0] + enthalpy2[0]),
-                                               EC->getPressureFromDepth(thickness) );
-    for (PetscInt m=1; m < kbelowH; m++) {
-      const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m],
-                        depth  = thickness - 0.5 * (zlevels[m+1] + zlevels[m]);
-      B += 0.5 * (dz + dzNEXT) * hardnessParameterFromEnth( 0.5 * (enthalpy1[m] + enthalpy2[m]),
-                                                            EC->getPressureFromDepth(depth) );
-      dz = dzNEXT;
-    }
-    // use last dz from for loop
-    const PetscScalar depth  = 0.5 * (thickness - zlevels[kbelowH]);
-    B += 0.5 * dz * hardnessParameterFromEnth( 0.5 * (enthalpy1[kbelowH] + enthalpy2[kbelowH]),
-                                               EC->getPressureFromDepth(depth) );
-  }
-  const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
-  return 0.5 * B * pow(schoofReg + alpha, (1-n)/(2*n));
-}
-
 PetscScalar PolyThermalGPBLDIce::averagedHardnessFromEnth(
                 PetscScalar thickness, PetscInt kbelowH, const PetscScalar *zlevels,
                 const PetscScalar *enthalpy) {
@@ -539,6 +507,7 @@ PetscScalar PolyThermalGPBLDIce::averagedHardnessFromEnth(
 
   return B;
 }
+
 
 //! This is the Hooke flow law, see [\ref Hooke].
 ThermoGlenIceHooke::ThermoGlenIceHooke(MPI_Comm c,const char pre[],
@@ -714,16 +683,6 @@ PetscScalar HybridIce::flow(PetscScalar stress, PetscScalar temp,
   return eps_diff + eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
 }
 
-PetscScalar HybridIce::effectiveViscosity(PetscScalar hardness,
-                                          PetscScalar u_x, PetscScalar u_y,
-                                          PetscScalar v_x, PetscScalar v_y) const {
-
-  PetscPrintf(PETSC_COMM_WORLD,
-              "PISM ERROR: the Goldsby-Kohlstedt flow law does not have a B(T)*f(...) factorization.\n");
-  PetscEnd();
-
-  return 0;
-}
 
 /*****************
 THE NEXT PROCEDURE REPEATS CODE; INTENDED ONLY FOR DEBUGGING

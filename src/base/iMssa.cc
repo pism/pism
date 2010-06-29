@@ -561,8 +561,7 @@ PetscErrorCode IceModel::assembleSSARhs(Vec rhs) {
       if (vMask.value(i,j) == MASK_SHEET) {
         rhs_uv[i][j].u = scaling * 0.5*(uvbar(i-1,j,0) + uvbar(i,j,0));
         rhs_uv[i][j].v = scaling * 0.5*(uvbar(i,j-1,1) + uvbar(i,j,1));
-      } else {
-	// usual case: use already computed driving stress
+      } else {	// usual case: use already computed driving stress
         rhs_uv[i][j].u = taudx[i][j];
         rhs_uv[i][j].v = taudy[i][j];
       }

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,29 +23,8 @@
 #include "enthalpyConverter.hh"
 #include "NCVariable.hh"
 
-/*******************
-REGARDING IceFlowLaw and HybridIce:  The main hierarchy is:
-  IceFlowLaw <- ThermoGlenIce <- HybridIce <- HybridIceStripped,
-where "<-" means "derived class".  IceFlowLaw is a virtual
-class; it should never be used "as is".
 
-ThermoGlenIce     means *Paterson-Budd* version of Arhennius relation
-ThermoGlenArrIceHooke  means *Hooke* version ...
-ThermoGlenArrIce       uses only cold part of Paterson-Budd
-ThermoGlenArrIceWarm   uses only warm part of Paterson-Budd
-HybridIce         means *Goldsby-Kohlstedt* flow law where vMask=SHEET,
-                  and otherwise Paterson-Budd
-HybridIceStripped means, where SHEET, G-K without the pressure dependence and without the
-                  diffusional part; also grain size fixed at 3mm
-
-Note each IceFlowLaw has both a forward flow law ("flow") and an
-inverted-and-vertically-integrated flow law ("effectiveViscosityColumn").  Only the
-former form of the flow law is known for Goldsby-Kohlstedt.  If one can
-invert-and-vertically-integrate the G-K law then one can build a "trueGKIce"
-derived class.
-*******************/
-
-//! Abstract class containing physical constants and the constitutive relation describing ice.
+//! Abstract class containing the constitutive relation for the flow of ice.
 /*!
 This is the interface which most of PISM uses for rheology.
  */
@@ -66,17 +45,21 @@ public:
   virtual PetscErrorCode setFromOptions() {return 0;}
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const {return 0;}
-  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const = 0;
+  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp,
+                           PetscScalar pressure, PetscScalar gs) const = 0;
   // returns nu * H; it is adapted to a staggered grid so T1,T2 get averaged
-  virtual PetscScalar effectiveViscosityColumn(PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
-                                               PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
-                                               const PetscScalar *T1, const PetscScalar *T2) const = 0;
-  virtual PetscScalar effectiveViscosity(PetscScalar hardness,
-                                         PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y) const = 0;
+  virtual PetscScalar effectiveViscosityColumn(
+             PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
+             PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
+             const PetscScalar *T1, const PetscScalar *T2) const = 0;
+  virtual PetscScalar effectiveViscosity(
+             PetscScalar hardness, PetscScalar u_x, PetscScalar u_y,
+             PetscScalar v_x, PetscScalar v_y) const = 0;
   virtual PetscScalar exponent() const = 0;
   virtual PetscScalar hardnessParameter(PetscScalar T) const = 0;
-  virtual PetscScalar averagedHardness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
-                                      const PetscScalar T[]) const = 0;
+  virtual PetscScalar averagedHardness(
+             PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
+             const PetscScalar T[]) const = 0;
 
 protected:
   MPI_Comm comm;
@@ -96,21 +79,24 @@ public:
   PetscErrorCode setExponent(PetscReal);
   PetscErrorCode setHardness(PetscReal);
   PetscErrorCode setSoftness(PetscReal);
-  PetscErrorCode setSchoofRegularization(PetscReal vel,PetscReal len); // vel has units m/a, len has units km
+  PetscErrorCode setSchoofRegularization(PetscReal vel_peryear,PetscReal len_km);
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar flow(PetscScalar,PetscScalar,PetscScalar,PetscScalar) const;
-  virtual PetscScalar effectiveViscosity(PetscScalar hardness,
-                                         PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y) const;
-  virtual PetscScalar effectiveViscosityColumn(PetscScalar,PetscInt,const PetscScalar *,
-                                               PetscScalar,PetscScalar,PetscScalar,PetscScalar,
-                                               const PetscScalar *,const PetscScalar *) const;
+  virtual PetscScalar effectiveViscosity(
+              PetscScalar hardness, PetscScalar u_x, PetscScalar u_y,
+              PetscScalar v_x, PetscScalar v_y) const;
+  virtual PetscScalar effectiveViscosityColumn(
+              PetscScalar,PetscInt,const PetscScalar *,
+              PetscScalar,PetscScalar,PetscScalar,PetscScalar,
+              const PetscScalar *,const PetscScalar *) const;
   virtual PetscScalar exponent() const;
   virtual PetscScalar softnessParameter(PetscScalar T) const;
   virtual PetscScalar hardnessParameter(PetscScalar T) const;
-  virtual PetscScalar averagedHardness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
-                                      const PetscScalar T[]) const;
+  virtual PetscScalar averagedHardness(
+              PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
+              const PetscScalar T[]) const;
 private:
   PetscReal exponent_n,softness_A,hardness_B,schoofVel,schoofLen,schoofReg;
 };
@@ -123,20 +109,24 @@ public:
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const;
-  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
-  virtual PetscScalar effectiveViscosity(PetscScalar hardness,
-                                         PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y) const;
-  virtual PetscScalar effectiveViscosityColumn(PetscScalar,PetscInt,const PetscScalar *,
-                                               PetscScalar,PetscScalar,PetscScalar,PetscScalar,
-                                               const PetscScalar *,const PetscScalar *) const;
+  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp,
+                           PetscScalar pressure, PetscScalar gs) const;
+  virtual PetscScalar effectiveViscosity(
+              PetscScalar hardness, PetscScalar u_x, PetscScalar u_y,
+              PetscScalar v_x, PetscScalar v_y) const;
+  virtual PetscScalar effectiveViscosityColumn(
+              PetscScalar,PetscInt,const PetscScalar *,
+              PetscScalar,PetscScalar,PetscScalar,PetscScalar,
+              const PetscScalar *,const PetscScalar *) const;
   virtual PetscScalar exponent() const;
   virtual PetscScalar softnessParameter(PetscScalar T) const;
   virtual PetscScalar hardnessParameter(PetscScalar T) const;
-  virtual PetscScalar averagedHardness(PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
-                                      const PetscScalar T[]) const;
+  virtual PetscScalar averagedHardness(
+              PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
+              const PetscScalar T[]) const;
 protected:
   PetscReal schoofLen,schoofVel,schoofReg,
-            A_cold, A_warm, Q_cold, Q_warm,  // these four constants from Paterson & Budd (1982)
+            A_cold, A_warm, Q_cold, Q_warm,  // see Paterson & Budd (1982)
             crit_temp, n;
 };
 
@@ -161,22 +151,18 @@ public:
      $ grep ice->hardnessParameter *.cc
   note for grep: arrow (>) must actually be escaped with backslash
   */
-  virtual PetscScalar softnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const;
-  virtual PetscScalar hardnessParameterFromEnth(PetscScalar enthalpy, PetscScalar pressure) const;
+  virtual PetscScalar softnessParameterFromEnth(
+              PetscScalar enthalpy, PetscScalar pressure) const;
+  virtual PetscScalar hardnessParameterFromEnth(
+              PetscScalar enthalpy, PetscScalar pressure) const;
 
-  virtual PetscScalar flowFromEnth(PetscScalar stress, PetscScalar enthalpy, PetscScalar pressure,
-                                       PetscScalar gs) const; // grainsize arg gs not used
+  virtual PetscScalar flowFromEnth(
+              PetscScalar stress, PetscScalar enthalpy, PetscScalar pressure,
+              PetscScalar gs) const; // grainsize arg gs not used
 
-  virtual PetscScalar averagedHardnessFromEnth(PetscScalar, PetscInt, const PetscScalar*,
-                                               const PetscScalar*);
-
-  virtual PetscScalar effectiveViscosityColumnFromEnth(
-                PetscScalar thickness,  PetscInt kbelowH, const PetscScalar *zlevels,
-                PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
-                const PetscScalar *enthalpy1, const PetscScalar *enthalpy2) const;
-
-  // these are used in src/base/ssaJed/ stuff only, so not addressed for now:
-  //    integratedStoreSize(), integratedStore(), integratedViscosity()
+  virtual PetscScalar averagedHardnessFromEnth(
+              PetscScalar, PetscInt, const PetscScalar*,
+              const PetscScalar*);
 
 protected:
   PetscReal T_0, water_frac_coeff;
@@ -197,7 +183,8 @@ protected:
 //! Derived class of IceFlowLaw for Arrhenius-Glen ice.  \e Cold case of Paterson-Budd (1982) ice.
 class ThermoGlenArrIce : public ThermoGlenIce {
 public:
-  ThermoGlenArrIce(MPI_Comm c,const char pre[], const NCConfigVariable &conf) : ThermoGlenIce(c,pre,conf) {}
+  ThermoGlenArrIce(MPI_Comm c,const char pre[], const NCConfigVariable &conf)
+      : ThermoGlenIce(c,pre,conf) {}
   virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar softnessParameter(PetscScalar T) const;
   virtual PetscScalar tempFromSoftness(PetscScalar A) const; 
@@ -211,7 +198,8 @@ public:
 //! Derived class of IceFlowLaw for Arrhenius-Glen ice.  \e Warm case of Paterson-Budd (1982) ice.
 class ThermoGlenArrIceWarm : public ThermoGlenArrIce {
 public:
-  ThermoGlenArrIceWarm(MPI_Comm c,const char pre[], const NCConfigVariable &conf) : ThermoGlenArrIce(c,pre,conf) {}
+  ThermoGlenArrIceWarm(MPI_Comm c,const char pre[], const NCConfigVariable &conf)
+      : ThermoGlenArrIce(c,pre,conf) {}
   virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar A() const;  // returns A_warm for Paterson-Budd
   virtual PetscScalar Q() const;  // returns Q_warm for Paterson-Budd
@@ -224,15 +212,21 @@ struct GKparts {
 };
 
 
-//! Derived class of IceFlowLaw for a hybrid of Goldsby-Kohlstedt (2001) ice in SIA, with Paterson-Budd (1982)-Glen behavior when needed in viscosity form (e.g. SSA).
+//! A hybrid of Goldsby-Kohlstedt (2001) ice (constitutive form) and Paterson-Budd (1982)-Glen (viscosity form).
+/*!
+Each IceFlowLaw has both a forward flow law in "constitutive law" form ("flow()") and an
+inverted-and-vertically-integrated flow law ("effectiveViscosity()").  Only the
+former form of the flow law is known for Goldsby-Kohlstedt.  If one can
+invert-and-vertically-integrate the G-K law then one can build a "trueGKIce"
+derived class.
+ */
 class HybridIce : public ThermoGlenIce {
 public:
   HybridIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const;
-  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
-  virtual PetscScalar effectiveViscosity(PetscScalar hardness,
-                                         PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y) const;
+  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp,
+                           PetscScalar pressure, PetscScalar gs) const;
   virtual PetscTruth usesGrainSize() const { return PETSC_TRUE; }
   GKparts flowParts(PetscScalar stress, PetscScalar temp, PetscScalar pressure) const;
 
@@ -245,11 +239,12 @@ protected:
              //--- easy slip (basal) ---
              basal_A, basal_n, basal_Q,
              //--- grain boundary sliding ---
-             gbs_crit_temp, gbs_A_cold, gbs_A_warm, gbs_n, gbs_Q_cold, p_grain_sz_exp, gbs_Q_warm;
+             gbs_crit_temp, gbs_A_cold, gbs_A_warm, gbs_n, gbs_Q_cold,
+             p_grain_sz_exp, gbs_Q_warm;
 };
 
 
-//! Derived class of HybridIce; for testing only.
+//! Derived class of HybridIce for testing purposes only.
 /*! 
 HybridIceStripped is a simplification of Goldsby-Kohlstedt.  Compare to that used in 
 Peltier et al 2000, which is even simpler.
@@ -257,7 +252,8 @@ Peltier et al 2000, which is even simpler.
 class HybridIceStripped : public HybridIce {
 public:
   HybridIceStripped(MPI_Comm c,const char pre[], const NCConfigVariable &config);
-  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar gs) const;
+  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp,
+                           PetscScalar pressure, PetscScalar gs) const;
   virtual PetscTruth usesGrainSize() const { return PETSC_FALSE; }
 protected:
   PetscReal d_grain_size_stripped;
@@ -277,7 +273,8 @@ public:
   virtual PetscScalar drag(PetscScalar tauc,
                            PetscScalar vx, PetscScalar vy);
   // Also get the derivative of drag with respect to \f$ alpha=\frac 1 2 \abs{u}^2 \f$.
-  virtual void dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy, PetscScalar *drag, PetscScalar *ddrag) const;
+  virtual void dragWithDerivative(PetscReal tauc, PetscScalar vx, PetscScalar vy,
+                                  PetscScalar *drag, PetscScalar *ddrag) const;
   virtual ~IceBasalResistancePlasticLaw() {} // class w virtual methods needs virtual destructor?
 
   PetscReal   plastic_regularize, pseudo_q, pseudo_u_threshold;
@@ -285,7 +282,7 @@ public:
 };
 
 
-//! Where ice thickness is zero the SSA is no longer "elliptic".  This class provides an extension coefficient to maintain well-posedness/"ellipticity".
+//! Extension coefficient to maintain well-posedness/"ellipticity" of SSA where ice thickness is zero.
 /*!
 More specifically, the SSA equations are
 \latexonly
@@ -314,8 +311,8 @@ public:
   virtual PetscErrorCode set_notional_strength(PetscReal my_nuH);
   //! Set minimum thickness to trigger use of extension.
   virtual PetscErrorCode set_min_thickness(PetscReal my_min_thickness);
-  virtual PetscReal      notional_strength() const;           //!< Returns strength with units (viscosity times thickness).
-  virtual PetscReal      min_thickness_for_extension() const; //!< Returns minimum thickness to trigger use of extension.
+  virtual PetscReal notional_strength() const;           //!< Returns strength with units (viscosity times thickness).
+  virtual PetscReal min_thickness_for_extension() const; //!< Returns minimum thickness to trigger use of extension.
 private:
   PetscReal  min_thickness, nuH;
 };
@@ -330,8 +327,9 @@ private:
 #define ICE_HYBRID  "hybrid"        /* Goldsby-Kohlstedt for SIA, PB for SSA */
 #define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
 
+//! Tool for choosing ice flow law at run-time from user options.
 /*!
-Excerpt from Jed email to ELB, 2/21 (with fixes to reflect present names of objects (CK)):
+Excerpt from Jed email to ELB, 2/21/2007 (with fixes to reflect present names of objects (CK)):
 
 IceModel creates an IceFlowLawFactory in it's constructor.  Derived classes
 can set options, and driver programs can get a reference and set
@@ -369,7 +367,7 @@ public:
   PetscErrorCode setType(const char[]);
   PetscErrorCode setFromOptions();
   PetscErrorCode registerType(const char[],
-			      PetscErrorCode(*)(MPI_Comm,const char[], const NCConfigVariable &,IceFlowLaw **));
+		  PetscErrorCode(*)(MPI_Comm,const char[], const NCConfigVariable &,IceFlowLaw **));
   PetscErrorCode create(IceFlowLaw **);
 private:
   PetscErrorCode registerAll();
@@ -382,7 +380,8 @@ private:
 
 // This uses the definition of second invariant from Hutter and several others, namely
 // \f$ \frac 1 2 D_{ij} D_{ij} \f$ where incompressibility is used to compute \f$ D_{zz} \f$
-static inline PetscScalar secondInvariant(PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y)
+static inline PetscScalar secondInvariant(PetscScalar u_x, PetscScalar u_y,
+                                          PetscScalar v_x, PetscScalar v_y)
 { return 0.5 * (PetscSqr(u_x) + PetscSqr(v_y) + PetscSqr(u_x + v_y) + 0.5*PetscSqr(u_y + v_x)); }
 
 // The second invariant of a symmetric strain rate tensor in compressed form [u_x, v_y, 0.5(u_y+v_x)]
