@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #15: Verification test E regression."
+test="Test #15: verification test E regression: isothermal SIA with sliding."
 # The list of files to delete when done.
 files="test_15-E-out.txt verify.nc"
 dir=`pwd`

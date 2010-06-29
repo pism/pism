@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-test="Test #1: pismr exact restartability (SIA only)."
+test="Test # 1: pismr exact restartability (SIA only)."
 files="verify.nc foo.nc joe.nc bar.nc"
 dir=`pwd`
 

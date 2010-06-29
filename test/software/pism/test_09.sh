@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-test="Test #9: 3D regridding from files with different variable orders."
+test="Test # 9: 3D regridding from files with different variable orders."
 files="foo.nc bar.nc baz.nc"
 dir=`pwd`
 

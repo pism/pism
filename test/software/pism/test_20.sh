@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #20: Verification test J regression."
+test="Test #20: verification test J regression: linearized SSA, floating."
 # The list of files to delete when done.
 files="test-J-out.txt verify.nc"
 dir=`pwd`

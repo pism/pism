@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-test="Test #4: regridding during bootstrapping: coarse -> fine -> coarse."
+test="Test # 4: regridding during bootstrapping: coarse -> fine -> coarse."
 files="foo.nc bar.nc baz.nc"
 dir=`pwd`
 

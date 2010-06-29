@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-test="Test #3: no information loss on -y 0 runs (ignoring diagnostic variables)."
+test="Test # 3: no information loss on -y 0 runs (ignoring diagnostic variables)."
 files="foo.nc bar.nc baz.nc"
 dir=`pwd`
 

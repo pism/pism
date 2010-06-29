@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-test="Test #5: bootstrapping from files with different variable orders."
+test="Test # 5: bootstrapping from files with different variable orders."
 files="foo.nc bar.nc baz.nc"
 dir=`pwd`
 

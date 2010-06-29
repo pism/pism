@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #0: presence of tools and Python modules needed by other tests."
+test="Test # 0: presence of tools and Python modules needed by other tests."
 # The list of files to delete when done.
 files="foo.txt"
 dir=`pwd`

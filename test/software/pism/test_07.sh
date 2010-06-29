@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #7: comparing regridding via -boot_from and -regrid_file."
+test="Test # 7: comparing regridding via -boot_from and -regrid_file."
 # The list of files to delete when done:
 files="foo.nc bar.nc baz.nc"
 dir=`pwd`

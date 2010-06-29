@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #16: Verification test C regression."
+test="Test #16: verification test C regression: isothermal SIA with time-dependent mass balance."
 # The list of files to delete when done.
 files="test_16-C-out.txt verify.nc"
 dir=`pwd`
