@@ -34,10 +34,10 @@ PetscErrorCode IceModel::allocateSSAobjects() {
   PetscInt dof=2, stencilwidth=1;
   ierr = DACreate2d(grid.com, DA_XYPERIODIC, DA_STENCIL_BOX,
                     grid.My, grid.Mx,
-		    grid.Ny, grid.Nx,
+                    grid.Ny, grid.Nx,
                     dof, stencilwidth,
                     grid.procs_y, grid.procs_x,
-		    &SSADA); CHKERRQ(ierr);
+                    &SSADA); CHKERRQ(ierr);
 
   ierr = DACreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);
   ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
@@ -104,11 +104,15 @@ In PISM the product \f$\nu H\f$ can be
   - constant, or
   - can be computed with a constant ice hardness \f$\bar B\f$ (temperature-independent)
     but with dependence of the viscosity on the strain rates, or 
-  - it can depend on the strain rates and have a vertically-averaged ice hardness.
+  - it can depend on the strain rates \e and have a vertically-averaged ice
+    hardness depending on temperature or enthalpy.
 
-The flow law in ice stream and ice shelf regions must, for now, be a temperature-dependent Glen
-law.  This is the only flow law we know how to convert to ``viscosity form''.  (More general 
-forms like Goldsby-Kohlstedt are not yet inverted.)  The viscosity form is
+The flow law in ice stream and ice shelf regions must, for now, be a 
+(temperature-dependent) Glen law.  This is the only flow law we know how to
+convert to ``viscosity form''.  More general forms like Goldsby-Kohlstedt are
+not yet inverted.
+
+The viscosity form of a Glen law is
    \f[ \nu(T^*,D) = \frac{1}{2} B(T^*) D^{(1/n)-1}\, D_{ij} \f]
 where 
    \f[  D_{ij} = \frac{1}{2} \left(\frac{\partial U_i}{\partial x_j} +
@@ -116,7 +120,8 @@ where
 is the strain rate tensor and \f$B\f$ is an ice hardness related to 
 the ice softness \f$A(T^*)\f$ by
    \f[ B(T^*)=A(T^*)^{-1/n}  \f]
-in the case of a temperature dependent Glen-type law.  (Here \f$T^*\f$ is the pressure-adjusted temperature.)
+in the case of a temperature dependent Glen-type law.  (Here \f$T^*\f$ is the
+pressure-adjusted temperature.)
 
 The effective viscosity is then
    \f[ \nu = \frac{\bar B}{2} \left[\left(\frac{\partial u}{\partial x}\right)^2 + 
@@ -124,12 +129,12 @@ The effective viscosity is then
                                \frac{\partial u}{\partial x} \frac{\partial v}{\partial y} + 
                                \frac{1}{4} \left(\frac{\partial u}{\partial y}
                                                  + \frac{\partial v}{\partial x}\right)^2
-                               \right]^{(1-n)/(2n)}                                                \f]
+                               \right]^{(1-n)/(2n)}  \f]
 where in the temperature-dependent case
    \f[ \bar B = \frac{1}{H}\,\int_b^h B(T^*)\,dz\f]
 This integral is approximately computed by the trapezoid rule.
 
-In fact the integral is regularized as described in [\ref SchoofStream].
+In fact the entire effective viscosity is regularized by adding a constant.
 The regularization constant \f$\epsilon\f$ is an argument to this procedure.
 
 Also we put \f$\bar\nu H = \f$\c constantNuHForSSA anywhere the ice is thinner
@@ -146,20 +151,12 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
 
   bool use_constant_nuh_for_ssa = config.get_flag("use_constant_nuh_for_ssa");
   if (use_constant_nuh_for_ssa) {
-    // Intended only for debugging, this treats the entire domain as though it was the strength extension
-    // (i.e. strength does not even depend on thickness)
+    // Intended only for debugging, this treats the entire domain as though
+    // it were the strength extension (i.e. strength does not depend on thickness)
     PetscReal nuH = ssaStrengthExtend.notional_strength();
     ierr = vNuH[0].set(nuH); CHKERRQ(ierr);
     ierr = vNuH[1].set(nuH); CHKERRQ(ierr);
     return 0;
-  }
-
-  HybridIce *hi = dynamic_cast<HybridIce*>(ice);
-  if (hi) {
-    ierr = PetscPrintf(grid.com,
-                       "PISM ERROR: current implementation of the viscosity computation "
-                       "does not support the Goldsby-Kohlstedt flow law.\n");
-    PetscEnd();
   }
 
   // We need to compute integrated effective viscosity (\bar\nu * H).
@@ -200,15 +197,6 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
           }
 
           const PetscScalar hardness = hardav(i,j,o);
-
-#ifdef PISM_DEBUG
-          if (hardness < 0) {   // check if we are using ice hardness in an
-                                // ice-free area (should never happen)
-            ierr = PetscPrintf(grid.com, "hardav(%d,%d,%d) = %e\n", i, j, o, hardness);
-            CHKERRQ(ierr); 
-          }
-#endif
-
           nuH[o][i][j] = H * ice->effectiveViscosity(hardness, u_x, u_y, v_x, v_y);
 
           if (! finite(nuH[o][i][j]) || false) {

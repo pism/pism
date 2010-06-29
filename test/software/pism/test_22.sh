@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #22: SeaRISE-Greenland regression: 40km, paleo, SIA+SSA, topography, tillphi, enthalpy."
+test="Test #22: SeaRISE-Greenland regression: paleo, SIA+SSA, topog., tillphi, enthalpy."
 # The list of files to delete when done.
 files="unnamed.nc g40km_m124980.nc g40km_SIA.nc pism_dT.nc"
 dir=`pwd`
@@ -28,13 +28,27 @@ run_test ()
       -atmosphere searise_greenland,forcing -dTforcing pism_dT.nc \
       -surface pdd -pdd_fausto -ocean constant -ys -125000 -y 20
 
-    # compare key variables in result:
-    run nccmp.py -v bmelt,bwat,tauc,tauc,thk,csurf,cbase,mask unnamed.nc g40km_m124980.nc
-    if [ $? != 0 ];
-    then
-	fail "recomputed and stored results of SeaRISE-Greenland runs are different."
-	return 1
-    fi
+    # compare; goal is 7 digit agreement; comment at right gives scale
+    run nccmp.py -v temp_pa -t 1e-7 unnamed.nc g40km_m124980.nc # 1 degree C
+    if [ $? != 0 ]; then
+	fail "recomputed and stored temp_pa differ by more than 1e-7 relative."
+	return 1;  fi
+    run nccmp.py -v liqfrac -t 1e-9 unnamed.nc g40km_m124980.nc # 0.01 [pure]
+    if [ $? != 0 ]; then
+	fail "recomputed and stored liqfrac differ by more than 1e-7 relative."
+	return 2;  fi
+    run nccmp.py -v thk -t 1e-4 unnamed.nc g40km_m124980.nc # 1000 m
+    if [ $? != 0 ]; then
+	fail "recomputed and stored thk differ by more than 1e-7 relative."
+	return 3;  fi
+    run nccmp.py -v csurf -t 1e-5 unnamed.nc g40km_m124980.nc # 100 m/a
+    if [ $? != 0 ]; then
+	fail "recomputed and stored csurf differ by more than 1e-7 relative."
+	return 4;  fi
+    run nccmp.py -v cbase -t 1e-5 unnamed.nc g40km_m124980.nc # 100 m/a
+    if [ $? != 0 ]; then
+	fail "recomputed and stored cbase differ by more than 1e-7 relative."
+	return 5;  fi
 
     pass
     return 0
