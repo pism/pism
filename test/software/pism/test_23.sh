@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #23: PST regression of short P1 on 25km grid; tests SIA+SSA hybrid, flat bed, cold ice."
+test="Test #23: PST regression P1 on 25km grid: SIA+SSA hybrid, flat bed, cold ice."
 # The list of files to delete when done.
 files="simp_exper.nc ser_pst_unnamedpst.nc P0A_small.nc P1_small50.nc"
 dir=`pwd`
