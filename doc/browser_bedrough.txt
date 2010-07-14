@@ -1,0 +1,28 @@
+/*! \page bedrough Using Schoof's bed-roughness-effect technique in PISM
+
+PISM stable0.3 (i.e.~PISM in 2010) is not particularly fast for rough beds, though there is no reason to believe that the physical model is doing something wrong.  We observe, in particular, that if the bed elevation \c topg is smoothed by preprocessing then the peak SIA diffusivities, and also peak horizontal velocities from both the SIA and SSA models, are smaller and thus the adaptive time-stepping mechanism can take longer time steps and runs can complete in shorter time.  This effect is noticable 
+- using the <A HREF="http://www.pism-docs.org/wiki/doku.php?id=worked-searise-greenland">SeaRISE-Greenland present-day data including recent CReSIS data on 5km and finer grid resolution runs</A>, and
+- using the <A HREF="http://www.pism-docs.org/wiki/doku.php?id=worked-searise-antarctica-uaf">SeaRISE-Antarctica data on 10km grid resolution runs</A>.
+
+The peak diffusivities, which cause much shorter time-steps, occur generically at margin locations where the ice is on, or has flowed into, fjord-like bedrock topography.  It appears that at coarser resolutions (%e.g. 20km and up) the effect of increasing bed roughness is not as severe as at higher resolutions (10km, 5km).  Of course the shallow models we use, SIA and SSA, are missing significant stress gradients at these margin locations which have large bed slopes.
+
+There is a theory which addresses \e exactly this situation for the SIA model, and explains that one can use a smoothed bed if one also \e reduces the SIA diffusivity.  Thus this theory both explains how to improve the SIA model to handle bed roughness more correctly, \e and it explains how to be a double performance boost:
+- smoothed beds give longer time steps in PISM directly, and
+- the theory explains that the effect of the local bed roughness is to further reduce the diffusivity, and thus get longer time-steps.
+
+How could I have missed this theory until now?  It is in this paper,
+- \ref Schoofbasaltopg2003 : C. Schoof, 2003.  <i>The effect of basal topography on ice sheet dynamics</i>. Continuum Mech. Thermodyn. 15, 295–307. doi: 10.1007/s00161-003-0119-3.
+
+The rest of this note [WILL] explain how this intellectual technology [CAN BE] implemented in PISM.
+
+
+*/  /* <--- IF THIS END-OF-COMMENT IS LOST, CONFUSION RESULTS ... */
+
+
+
+
+
+
+
+
+
