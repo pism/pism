@@ -1099,6 +1099,7 @@ PAPER_TYPE             = letter
 # packages that should be included in the LaTeX output.
 
 EXTRA_PACKAGES         = amsmath \
+                         txfonts \
                          ../../pismbrowser
 
 # The LATEX_HEADER tag can be used to specify a personal LaTeX header for
