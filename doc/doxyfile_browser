@@ -677,8 +677,8 @@ EXCLUDE                = ../src/.svn/ \
                          ../src/earth/cubature.c \
                          ../src/udunits/ \
                          ../src/verif/tests/exactM.py \
-                         ../src/base/ssaplay_nobuild/ \
-                         ../src/base/lsdiff_play/
+                         ../src/base/ssaplay/ \
+                         ../src/base/lsdiffplay/
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or
 # directories that are symbolic links (a Unix filesystem feature) are excluded
