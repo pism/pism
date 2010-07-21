@@ -1,34 +1,38 @@
 /*! \page bedrough Using Schoof's (2003) parameterized bed roughness technique in PISM
 
-PISM stable0.3 (i.e.~early 2010) is not as fast as we want.  This is especially noticable for rough beds.  There is no reason to believe that the physical model is doing something wrong, but the effect of roughness is a loss of performance because the time-stepping mechanism is slowed by the evolution of the sheet to have high diffusivities.  If the bed elevation \c topg is smoothed by preprocessing then we observe a reduction in the peak values of the SIA diffusivities.  There is generically also a reduction in the peak magnitudes of horizontal velocities from both the SIA and SSA models as a result of smoothing.  The consequence of these reductions, through the adaptive time-stepping mechanism, is that PISM can take longer time steps and thus that it can complete model runs in shorter time.  This effect is noticable and significant in the major PISM worked examples:
+PISM stable0.3 (i.e.~early 2010) is not as fast as we want.  This is especially noticable for rough beds.  There is no reason to believe that the physical model is doing something wrong, but the effect of roughness is a loss of performance because the time-stepping mechanism is slowed by high diffusivities.  The ice sheet tends to evolve to have high diffusivities even when they are not present early in the run.  These effects are noticable and significant in the major PISM worked examples:
 - the <A HREF="http://www.pism-docs.org/wiki/doku.php?id=worked-searise-greenland">SeaRISE-Greenland model using present-day data, including recent CReSIS radar data, on 5km and finer grid resolution</A>, and
 - the <A HREF="http://www.pism-docs.org/wiki/doku.php?id=worked-searise-antarctica-uaf">SeaRISE-Antarctica demo model using 10km grid resolution</A>.
 
-The large peak diffusivities, which cause shorter time-steps, occur generically at margin locations where the ice is on, or has flowed into, fjord-like bedrock topography.  At coarser resolutions (%e.g. 20km and up), it appears that the effect of increasing bed roughness is not as severe as at finer resolutions (%e.g. 10km, 5km and finer).  While it is true that the shallow models we use--SIA and SSA models--are missing significant stress gradients at the same margin locations which have large bed slopes, here we are emphasizing the performance "hit" which the whole model experiences if some small part of the ice sheet is on rough bed.  (That part therefore is not well-modeled anyway, compared to the majority of the ice sheet.  Switching to full Stokes or Blatter higher order models would probably mean a gain in the balanced stress components \e and a loss of the ability to model the ice sheet at high resolution.  There is always a tradeoff between completeness of the continuum model, and the resolution needed to resolve the features provided in the gridded data.)
+If the bed elevation \c topg is smoothed by preprocessing then we observe a reduction in the peak values of the SIA diffusivities.  From such smoothing there is (generically) also a reduction in the peak magnitudes of horizontal velocities from both the SIA and SSA models.  The major consequence of these reductions, through the adaptive time-stepping mechanism, is that PISM can take longer time steps and thus that it can complete model runs in shorter time.
 
-There exists, however, a theory which addresses \e exactly this situation for the SIA model, and explains that one may use a smoothed bed if one also lowers the SIA diffusivity.  This theory both explains how to improve the SIA model to handle bed roughness more correctly, \e and it explains how to get a double performance boost:
+Large peak diffusivities coming from bed roughness are located (generically) at margin locations where the ice is on, or has flowed into, fjord-like bed topography.  At coarser resolutions (%e.g. 20km and up), it appears that the effect of increasing bed roughness is not as severe as at finer resolutions (%e.g. 10km, 5km and finer).  While it is true that the shallow models we use--SIA and SSA models--are missing significant stress gradients at the same margin locations which have large bed slopes, here we are emphasizing the performance "hit" which the whole model experiences if some small part of the ice sheet is on rough bed.  (That part therefore is not well-modeled anyway, compared to the majority of the ice sheet.  Switching to full Stokes or Blatter higher order models would probably mean a gain in the balanced stress components \e and a loss of the ability to model the ice sheet at high resolution.  There is always a tradeoff between \e completeness of the continuum model and usable \e resolution needed to resolve the features of the real ice sheet.)
+
+There exists, however, a theory which addresses \e exactly this situation for the SIA model, and explains that one may use a smoothed bed if one also lowers the SIA diffusivity.  This theory both explains how to improve the SIA model to handle bed roughness more correctly, because it parameterizes the effects of "higher-order" stresses which act on the ice as it flows over bed topography, \e and it explains how to get a double performance boost:
 -# smoothed beds give longer time steps in PISM directly, and
 -# the parameterized effect of the local bed roughness is to further reduce the diffusivity, giving even longer time-steps.
 
-How could we have missed this theory until now?  It is in the paper, Christian Schoof's (2003) <i>The effect of basal topography on ice sheet dynamics</i> [\ref Schoofbasaltopg2003].  Schoof's main idea is to expand the Stokes equations in two levels of horizontal scales, one for the entire ice sheet (denoted \f$[L]\f$) and one for the wavelength of "typical" bed features (\f$[S]\f$).  The "inner" scaling assumes that the typical ice sheet thickness \f$[D]\f$ is small compared to \f$[S]\f$, while the "outer" scaling assumes that \f$[S]\f$ is small compared to \f$[L]\f$:
+How could we have missed this theory until now?
+
+The theory is in Christian Schoof's (2003) <i>The effect of basal topography on ice sheet dynamics</i> [\ref Schoofbasaltopg2003].  His mathematical technique is to expand the Stokes equations in two levels of horizontal scales, one for the entire ice sheet (denoted \f$[L]\f$) and one for the horizontal scale (wavelength) of bed topography (\f$[S]\f$).  The "inner" scaling assumes that the typical ice sheet thickness \f$[D]\f$ is small compared to \f$[S]\f$, while the "outer" scaling assumes that \f$[S]\f$ is small compared to \f$[L]\f$:
 	\f[\nu = \frac{[D]}{[S]} \ll 1, \qquad \delta = \frac{[S]}{[L]} \ll 1.  \f]
 Specifically, there is an "inner" horizontal variable \f$x\f$ describing the local topography on scales comparable to \f$[S]\f$ or smaller, and an "outer" horizontal variable \f$X\f$ describing the large scale bed topography and ice sheet flow on scales larger than \f$[S]\f$.
 
 In order to describe the Schoof scheme using PISM notation, we start by recalling the mass continuity equation which is fundamental to any shallow ice theory:
   \f[ \frac{\partial H}{\partial t} = (M - S) - \nabla\cdot \mathbf{q}. \f]
-Within PISM this equation is handled by IceModel::massContExplicitStep().  Recall that \f$M-S\f$ is the mass balance added to the ice column per time, but it plays no further role here.  In the SIA case with no basal sliding, the horizontal mass flux is
-  \f[ \mathbf{q} = - D \nabla h, \f]
-where \f$D\ge 0\f$ is given next.  Thus the mass continuity equation is \e diffusive.  The diffusivity \f$D\f$ is a function of the ice geometry and the ice flow law.  In the isothermal Glen power law (power \f$= n\f$) case we recall
-  \f[ D = \Gamma H^{n+2} |\nabla h|^{n-1}, \f]
-where \f$\Gamma = 2 A (\rho g)^n / (n+2)\f$ [see details in \ref BLKCB].
+Within PISM this equation is handled by IceModel::massContExplicitStep().  Recall that \f$M-S\f$ is the mass balance added to the ice column per time.  (It plays no further role here.)  In the SIA case with zero basal sliding, the horizontal mass flux is
+  \f[ \mathbf{q} = - D_{SIA} \nabla h, \f]
+where \f$D_{SIA}\ge 0\f$ is given next.  Thus the mass continuity equation is \e diffusive.  The diffusivity \f$D_{SIA}\f$ is a function of the ice geometry and the ice flow law.  In the isothermal Glen power law (power \f$= n\f$) case we recall
+  \f[ D_{SIA} = \Gamma H^{n+2} |\nabla h|^{n-1} \tag{siadiffusivity} \f]
+where \f$\Gamma = 2 A (\rho g)^n / (n+2)\f$ [%c.f. details in \ref BLKCB].
 
-Consider now the "original" bed topography \f$b_0(x_1,x_2)\f$, which we assume for the moment is independent of time.  (This time-independence is not critical, and such a restriction can be removed.  We will use \f$x_1,x_2\f$ to denote the horizontal model coordinates, though they are denoted \f$x,y\f$ elsewhere in these PISM docs.)  Suppose a locally-smoothed bed is computed by averaging \f$b_0\f$ over a rectangular region of sides \f$2\lambda_1\f$ by \f$2\lambda_2\f$, namely:
+Consider now the "original" bed topography \f$b_0(x_1,x_2)\f$, which we assume for the moment is independent of time.  (Time-independence is not actually critical, and such a restriction can be removed.)  We will use \f$x_1,x_2\f$ to denote the horizontal model coordinates, though they are denoted \f$x,y\f$ elsewhere in these PISM docs.  Suppose a locally-smoothed bed is computed by averaging \f$b_0\f$ over a rectangular region of sides \f$2\lambda_1\f$ by \f$2\lambda_2\f$, namely:
   \f[ b_s(x_1,x_2) = \fint b_0(x_1+\xi_1,x_2+\xi_2)\,d\xi_1\,d\xi_2  \f]
 where the slashed integral symbol is defined as
   \f[ \fint F(\xi_1,\xi_2)\,d\xi_1\,d\xi_2 = \frac{1}{(2\lambda_1)(2\lambda_2)} \int_{-\lambda_1}^{\lambda_2} \int_{-\lambda_1}^{\lambda_2} F(\xi_1,\xi_2)\,d\xi_1\,d\xi_2. \f]
 Consider also the "local bed topography"
   \f[ \tilde b(x_1,x2,\xi_1,\xi_2) = b_0(x_1+\xi_1,x_2+\xi_2) - b_s(x_1,x_2). \f]
-That is, as a function of the local coordinates \f$\xi_1,\xi_2\f$, the local bed topography \f$\tilde b\f$ is the amount by which the bed deviates from the "local average" \f$b_s(x_1,x_2)\f$.  Generally we will use \f$-\lambda_1 \le \xi_1 \le \lambda_1\f$, \f$-\lambda_2 \le \xi_2 \le \lambda_2\f$ as the smoothing domain, but these specific ranges are not required by the formulas above.  Note that the average of the local bed topgraphy is zero by definition:
+As a function of the local coordinates \f$\xi_1,\xi_2\f$, the local bed topography \f$\tilde b\f$ is the amount by which the bed deviates from the "local average" \f$b_s(x_1,x_2)\f$.  Generally we will use \f$-\lambda_1 \le \xi_1 \le \lambda_1\f$, \f$-\lambda_2 \le \xi_2 \le \lambda_2\f$ as the smoothing domain, but these specific ranges are not required by the formulas above.  Note that the average of the local bed topgraphy is zero by definition:
   \f[ \fint \tilde b(x_1,x_2,\xi_1,\xi_2)\,d\xi_1\,d\xi_2 = 0. \f]
 
 In the following discussion the ice thickness and ice surface elevation are related to the \e smoothed bed topography.  In the current notation,
@@ -36,8 +40,8 @@ In the following discussion the ice thickness and ice surface elevation are rela
 This can be treated as the \e definition of the ice thickness for the current purposes.
 
 The result of Schoof's scaling arguments [\ref Schoofbasaltopg2003, equation (49)] is to modify the diffusivity by multiplying by a factor \f$0 \le \theta \le 1\f$:
-  \f[ D = \theta(H(x_1,x_2),x_1,x_2) \, D_0. \f]
-where \f$D_0\f$ in our notation is the diffusivity coming directly from the formla earlier, and
+  \f[ D = \theta(H(x_1,x_2),x_1,x_2) \, D_{SIA}. \f]
+where \f$D_{SIA}\f$ is defined by (\ref siadiffusivity) earlier, and
   \f[ \theta(H,x_1,x_2) = \left[ \fint \left(1 - \frac{\tilde b(x_1,x2,\xi_1,\xi_2)}{H}\right)^{-(n+2)/n}\,d\xi_1\,d\xi_2 \right]^{-n} \tag{theta} \f]
 This formula has additional terms if there is basal sliding, but we consider only the non-sliding SIA here.
 
@@ -45,18 +49,24 @@ The very important fact that \f$0 \le \theta \le 1\f$ is proven in appendix A of
 
 The above formulas already reflect the recommendations Schoof gives on how to apply his formulas [\ref Schoofbasaltopg2003, subsection 4.2].  The averages appearing in his scaling arguments are over an infinite domain, %e.g.
   \f[ f_s(x) = \lim_{R\to\infty} \frac{1}{2R} \int_{-R}^R f(\xi,x)\,d\xi. \f]
-But Schoof specifically recommends averaging over some finite length scale which should be "considerably greater than the grid spacing, but much smaller than the size of the ice sheet."  Furthermore he recommends that, because of the typical aspect ratio of ice sheets, ""Bed topography on much larger length scales than 10 km should then be resolved explicitly through the smoothed bed height \f$b_s\f$ rather than the correction factor \f$\theta\f$.""  Thus in PISM we use \f$\lambda_1 = \lambda_2 = 10\f$ km as the default.  Naturally the values are configurable also.  (The condition \f$\lambda_i \le 0\f$ could, perhaps, be a sign to turn off this mechanism.)
 
-It is, of course, possible to have bed roughness of significant magnitude at essentially any wavelength.  We make no claim that PISM results are good models of ice flow over \e arbitrary geometry; clearly the current models cannot come close to the non-shallow solution (Stokes) in such cases.  Rather, the goal right now is to improve on the existing shallow models, the diffusive SIA especially, while maintaining or increasing high-resolution performance and comprehensive model quality, including many other modeled physical processes like ice thermal state, basal lubrication, and so on.  The desirable properties of the Schoof scheme are accepted not because the resulting model is perfect, but because we gain both a physical modeling improvement \e and a computational performance improvement from its use.
+For practical modeling use, Schoof specifically recommends averaging over some finite length scale which should be "considerably greater than the grid spacing, but much smaller than the size of the ice sheet."  Furthermore he recommends that, because of the typical aspect ratio of ice sheets, ""Bed topography on much larger length scales than 10 km should then be resolved explicitly through the smoothed bed height \f$b_s\f$ rather than the correction factor \f$\theta\f$.""  Thus in PISM we use \f$\lambda_1 = \lambda_2 = 10\f$ km as the default.  Naturally the values are configurable also.  (The condition \f$\lambda_i \le 0\f$ could, perhaps, be a sign to turn off this mechanism.)
 
-How do we actually compute expression (\ref theta) quickly?  Schoof has this suggestion: ""To find \f$\theta\f$ for values of [thickness for which \f$\theta\f$ has not already been computed], some interpolation scheme should then be used.  \f$\theta\f$ is then represented at each grid point by some locally-defined interpolating function with argument \f$H\f$.""  
+It is, of course, possible to have bed roughness of significant magnitude at essentially any wavelength.  We make no claim that PISM results are good models of ice flow over \e arbitrary geometry; clearly the current models cannot come close to the non-shallow solution (Stokes) in such cases.  Rather, the goal right now is to improve on the existing shallow models, the diffusive SIA specifically, while maintaining or increasing high-resolution performance and comprehensive model quality, which necessarily includes many other modeled physical processes like ice thermal state, basal lubrication, and so on.  The desirable properties of the Schoof scheme are accepted not because the resulting model is perfect, but because we gain both a physical modeling improvement \e and a computational performance improvement from its use.
 
-(PROCEED TO EXPLAIN THE USE OF 5th ORDER Maclaurin IN PREFERENCE TO PADE, FOR EXAMPLE.
+How do we actually compute expression (\ref theta) quickly?  Schoof has this suggestion, which we follow: ""To find \f$\theta\f$ for values of [thickness for which \f$\theta\f$ has not already been computed], some interpolation scheme should then be used.  \f$\theta\f$ is then represented at each grid point by some locally-defined interpolating function with argument \f$H\f$.""  
 
+We need a "locally-defined interpolating function" of the ice thickness.  After consideration of Pade rational approximations, which were excluded because of the appearance of uncontrolled poles in the domain of approximation, a 5th order Taylor polynomial was decided upon.  This Taylor polynomial only requires the storage of four fields (below), but it has been demonstrated to be reasonably accurate by trying beds of various roughnesses in Matlab/Octave scripts.  The derivation of the Taylor polynomial is most easily understood by starting with an abstract rational function like the one which appears in (\ref theta), as follows.
 
-see  and IceModel::velocitySIAStaggered()
+Suppose \f$F(s) = (1-s)^{-k}\f$.  The fifth-order Taylor polynomial around \f$s=0\f$ is
+    \f[ F(s) \approx P_5(s) = 1 + k s + \frac{k(k+1)}{2} s^2 + \dots + \frac{k(k+1)(k+2)(k+3)(k+4)}{5!} s^5 + O(s^6). \f]
+Let
+    \f[ \omega(f,z) = \fint (1 - f(\xi) z)^{-k}\,d\xi = \fint F(f(\xi) z)\,d\xi \f]
+where \f$f\f$ is some function and \f$z\f$ a scalar, so that
+  \f[ \theta(H,x_1,x_2) = \left[ \omega(\tilde b(x_1,x2,\cdot,\cdot), H^{-1}) \right]^{-n}  \f]
+We can now precisely say that we will approximate \f$\omega(\tilde b(x_1,x2,\cdot,\cdot), H^{-1})\f$ by a 5th order Taylor polynomial in \f$H^{-1}\f$, and that the coefficients of this polynomial will depend on \f$(x_1,x_2)\f$.
 
-
+In fact,
 
 
 
