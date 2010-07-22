@@ -145,8 +145,7 @@ fprintf('  [time to pre-compute coeffs maxtl,C2,C3,C4,C5:  %.5f s]\n',toc)
 
 % get theta by fast method from stored maxtl,C2,C3 above; computation scales like  J * K
 tic
-fasttheta = zeros(J+1,K+1); % note zero *is* the correct value for no valid pts in
-                        % average below
+fasttheta = zeros(J+1,K+1);
 thks = h_level - topgs;
 msk = (thks > maxtl);
 thksm2 = zeros(J+1,K+1);  % just to allocate

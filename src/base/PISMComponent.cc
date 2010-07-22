@@ -55,7 +55,7 @@ PetscErrorCode PISMComponent::find_pism_input(string &filename, //!< name of the
     filename = boot_from_file;
   }
 
-  // filename now contains name of PISM input (bootstrapping) file; now check
+  // filename now contains name of PISM input (or bootstrapping) file; now check
   // it is really there; if so, read the dimensions of computational grid so
   // that we can set up a LocalInterpCtx for actual reading of climate data
   PISMIO nc(&grid);

@@ -112,7 +112,7 @@ verif_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 other_sources := pismr.cc pismv.cc pisms.cc \
 	iceEISModel.cc iceMISMIPModel.cc icePSTexModel.cc \
 	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc \
-	flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc
+	flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc trybedrough.cc
 
 
 #### driver and derived-class examples are included here   ####
@@ -192,11 +192,14 @@ other_sources += pclimate.cc pgrn_atmosphere.cc
 
 #build extra executables
 
-../bin/flowTable : flowTable.o materials.o pism_const.o ${LIBPISMNAME}
-	${CXXLINKER} flowTable.o materials.o pism_const.o ${ICE_LIB_FLAGS} -o $@
+../bin/flowTable : flowTable.o ${LIBPISMNAME}
+	${CXXLINKER} flowTable.o ${ICE_LIB_FLAGS} -o $@
 
-../bin/tryLCbd : tryLCbd.o deformation.o greens.o materials.o pism_const.o ${LIBPISMNAME}
-	${CXXLINKER} tryLCbd.o deformation.o greens.o materials.o pism_const.o ${ICE_LIB_FLAGS} -o $@
+../bin/tryLCbd : tryLCbd.o deformation.o greens.o ${LIBPISMNAME}
+	${CXXLINKER} tryLCbd.o deformation.o greens.o ${ICE_LIB_FLAGS} -o $@
+
+../bin/trybedrough : trybedrough.o ${LIBPISMNAME}
+	${CXXLINKER} trybedrough.o ${ICE_LIB_FLAGS} -o $@
 
 # Rules making object files from sources.
 %.o: %.c

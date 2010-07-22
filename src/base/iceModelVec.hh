@@ -67,8 +67,10 @@ public:
   virtual PetscErrorCode  write(const char filename[]);
   virtual PetscErrorCode  write(const char filename[], nc_type nctype);
   virtual PetscErrorCode  read(const char filename[], unsigned int time);
-  virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, bool critical);
-  virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value);
+  virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic,
+                                 bool critical);
+  virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, 
+                                 PetscScalar default_value);
 
   virtual PetscErrorCode  begin_access();
   virtual PetscErrorCode  end_access();
@@ -76,7 +78,6 @@ public:
   virtual PetscErrorCode  endGhostComm();
   virtual PetscErrorCode  beginGhostComm(IceModelVec &destination);
   virtual PetscErrorCode  endGhostComm(IceModelVec &destination);
-
 
   virtual PetscErrorCode  set(PetscScalar c);
  
