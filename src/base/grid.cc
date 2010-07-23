@@ -287,8 +287,11 @@ PetscErrorCode IceGrid::printInfo(const int verbosity) {
          "            Mx = %d, My = %d, Mz = %d, Mbz = %d,\n",
          Mx,My,Mz,Mbz); CHKERRQ(ierr);
   ierr = verbPrintf(verbosity,com,
-         "            dx = %6.3f km, dy = %6.3f km, year = %8.4f]\n",
+         "            dx = %6.3f km, dy = %6.3f km, year = %8.4f,\n",
          dx/1000.0,dy/1000.0,year); CHKERRQ(ierr);
+  ierr = verbPrintf(verbosity,com,
+         "            Nx = %d, Ny = %d]\n",
+         Nx,Ny); CHKERRQ(ierr);
   return 0;
 }
 

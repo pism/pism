@@ -43,7 +43,9 @@ int main(int argc, char *argv[]) {
   ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
-  {
+  {  
+    ierr = setVerbosityLevel(2); CHKERRQ(ierr);
+
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
@@ -52,25 +54,58 @@ int main(int argc, char *argv[]) {
     grid.My = 81;
     grid.Lx = 1200e3;
     grid.Ly = grid.Lx;
-    ierr = grid.createDA(); CHKERRQ(ierr);
+    grid.compute_nprocs();
+    grid.compute_ownership_ranges();
     ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-
     double *x, *y;
     ierr = grid.compute_horizontal_coordinates(x, y); CHKERRQ(ierr);
+    //ierr = grid.printInfo(1); CHKERRQ(ierr);
+    ierr = grid.createDA(); CHKERRQ(ierr);
 
+    IceModelVec2S topg, thk, theta;
+    ierr = topg.create(grid, "topg", false); CHKERRQ(ierr);
+    ierr = topg.set_attrs(
+      "trybedrough_tool", "original topography",
+      "m", "bedrock_altitude"); CHKERRQ(ierr);
+    ierr = thk.create(grid, "thk", false); CHKERRQ(ierr);
+    ierr = thk.set_attrs(
+      "trybedrough_tool", "ice thickness",
+      "m", "land_ice_thickness"); CHKERRQ(ierr);
+    ierr = theta.create(grid, "theta", false); CHKERRQ(ierr);
+    ierr = theta.set_attrs(
+      "trybedrough_tool",
+      "coefficient theta in Schoof (2003) bed roughness parameterization",
+      "", ""); CHKERRQ(ierr);
+
+    // put in bed elevations, a la this Matlab:
+    //    topg0 = 400 * sin(2 * pi * xx / 600e3) + ...
+    //            100 * sin(2 * pi * (xx + 1.5 * yy) / 40e3);
+    ierr = topg.begin_access(); CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        topg(i,j) = 400.0 * sin(2.0 * pi * x[i] / 600.0e3) +
+                    100.0 * sin(2.0 * pi * (x[i] + 1.5 * y[j]) / 40.0e3);
+      }
+    }
+    ierr = topg.end_access(); CHKERRQ(ierr);
+
+    ierr = thk.set(1000.0); CHKERRQ(ierr);  // compute theta for this constant thk
+
+    // actually use the smoother/bed-roughness-parameterizer
     PISMBedSmoother smoother(grid, config);
+    ierr = smoother.preprocess_bed(topg, 50.0e3, 3.0); CHKERRQ(ierr);
+    ierr = smoother.get_theta(thk, 3.0, &theta); CHKERRQ(ierr);
 
-    IceModelVec2S topg, theta;
-
-    const PetscInt  window = 500;
+    const PetscInt  window = 400;
     ierr = topg.view(window);  CHKERRQ(ierr);
     ierr = smoother.topgsmooth.view(window);  CHKERRQ(ierr);
     ierr = theta.view(window);  CHKERRQ(ierr);
 
+    ierr = PetscSleep(15); CHKERRQ(ierr);
 
-    // FIXME do nothing
+// FIXME ideas:  write theta in ascii and compare to Matlab/Octave out of same thing
 
-
+    delete [] x; delete [] y;
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
