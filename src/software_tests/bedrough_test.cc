@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -16,10 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-// get this message with 'tryLCbd -help':
 static char help[] =
   "Simple testing program for Schoof (2003)-based bed smoothing and bed roughness\n"
-  "  parameterization schemes.\n\n";
+  "  parameterization schemes.  Allows comparison of computed theta to result\n"
+  "  from Matlab/Octave code exampletheta.m in src/base/bedroughplay.  Also\n"
+  "  used in software regression test.\n\n";
 
 #include <cmath>
 #include <cstdio>
@@ -27,6 +28,7 @@ static char help[] =
 #include <petscda.h>
 #include "../base/pism_const.hh"
 #include "../base/grid.hh"
+#include "../base/iceModelVec.hh"
 #include "../base/NCVariable.hh"
 #include "../base/PISMBedSmoother.hh"
 
@@ -44,8 +46,6 @@ int main(int argc, char *argv[]) {
   
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   {  
-    ierr = setVerbosityLevel(2); CHKERRQ(ierr);
-
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
@@ -57,10 +57,14 @@ int main(int argc, char *argv[]) {
     grid.compute_nprocs();
     grid.compute_ownership_ranges();
     ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-    double *x, *y;
-    ierr = grid.compute_horizontal_coordinates(x, y); CHKERRQ(ierr);
+    //ierr = setVerbosityLevel(2); CHKERRQ(ierr);
     //ierr = grid.printInfo(1); CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
+
+    PetscPrintf(grid.com,"PISMBedSmoother TEST\n");
+
+    bool show;
+    ierr = PISMOptionsIsSet("-show", show); CHKERRQ(ierr);
 
     IceModelVec2S topg, thk, theta;
     ierr = topg.create(grid, "topg", false); CHKERRQ(ierr);
@@ -80,6 +84,8 @@ int main(int argc, char *argv[]) {
     // put in bed elevations, a la this Matlab:
     //    topg0 = 400 * sin(2 * pi * xx / 600e3) + ...
     //            100 * sin(2 * pi * (xx + 1.5 * yy) / 40e3);
+    double *x, *y;
+    ierr = grid.compute_horizontal_coordinates(x, y); CHKERRQ(ierr);
     ierr = topg.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -88,24 +94,46 @@ int main(int argc, char *argv[]) {
       }
     }
     ierr = topg.end_access(); CHKERRQ(ierr);
+    delete [] x; delete [] y;
 
     ierr = thk.set(1000.0); CHKERRQ(ierr);  // compute theta for this constant thk
 
     // actually use the smoother/bed-roughness-parameterizer
     PISMBedSmoother smoother(grid, config);
-    ierr = smoother.preprocess_bed(topg, 50.0e3, 3.0); CHKERRQ(ierr);
-    ierr = smoother.get_theta(thk, 3.0, &theta); CHKERRQ(ierr);
+    const PetscReal n = 3.0, 
+                    lambda = 50.0e3;
+    ierr = smoother.preprocess_bed(topg, n, lambda); CHKERRQ(ierr);
+    PetscInt Nx,Ny;
+    ierr = smoother.get_smoothing_domain(Nx,Ny); CHKERRQ(ierr);
+    PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
+    ierr = smoother.get_theta(thk, n, &theta); CHKERRQ(ierr);
 
-    const PetscInt  window = 400;
-    ierr = topg.view(window);  CHKERRQ(ierr);
-    ierr = smoother.topgsmooth.view(window);  CHKERRQ(ierr);
-    ierr = theta.view(window);  CHKERRQ(ierr);
+    if (show) {
+      const PetscInt  window = 400;
+      ierr = topg.view(window);  CHKERRQ(ierr);
+      ierr = smoother.topgsmooth.view(window);  CHKERRQ(ierr);
+      ierr = theta.view(window);  CHKERRQ(ierr);
+      printf("[showing topg, smoother.topgsmooth, theta in X windows for 10 seconds ...]\n");
+      ierr = PetscSleep(10); CHKERRQ(ierr);
+    }
 
-    ierr = PetscSleep(15); CHKERRQ(ierr);
+    PetscReal topg_min, topg_max, topgs_min, topgs_max, theta_min, theta_max;
+    ierr = topg.min(topg_min); CHKERRQ(ierr);
+    ierr = topg.max(topg_max); CHKERRQ(ierr);
+    ierr = smoother.topgsmooth.min(topgs_min); CHKERRQ(ierr);
+    ierr = smoother.topgsmooth.max(topgs_max); CHKERRQ(ierr);
+    ierr = theta.min(theta_min); CHKERRQ(ierr);
+    ierr = theta.max(theta_max); CHKERRQ(ierr);
+    PetscPrintf(grid.com,
+           "  original bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
+           topg_min, topg_max);
+    PetscPrintf(grid.com,
+           "  smoothed bed    :  min elev = %12.6f m,  max elev = %12.6f m\n",
+           topgs_min, topgs_max);
+    PetscPrintf(grid.com,
+           "  Schoof's theta  :  min      = %12.9f,    max      = %12.9f\n",
+           theta_min, theta_max);
 
-// FIXME ideas:  write theta in ascii and compare to Matlab/Octave out of same thing
-
-    delete [] x; delete [] y;
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;

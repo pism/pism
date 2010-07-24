@@ -158,6 +158,8 @@ public:
   virtual PetscErrorCode set_to_magnitude(IceModelVec2S &v_x, IceModelVec2S &v_y);
   virtual PetscErrorCode mask_by(IceModelVec2S &M, PetscScalar fill = 0.0);
   virtual PetscErrorCode sum(PetscScalar &result);
+  virtual PetscErrorCode min(PetscScalar &result);
+  virtual PetscErrorCode max(PetscScalar &result);
   virtual PetscScalar diff_x(int i, int j);
   virtual PetscScalar diff_y(int i, int j);
   virtual PetscScalar diff_x_stagE(int i, int j);

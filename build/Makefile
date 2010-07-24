@@ -78,8 +78,8 @@ SHELL := /bin/sh
 VPATH := $(subst src,../src,src/:src/base/:src/earth/:src/verif/:src/verif/tests/:src/software_tests:src/eismint/:src/ismip/:src/udunits/:src/coupler/):../lib
 
 # Variables:
-executables := pismr pismv pisms pclimate pismtests flowlaw_test
-extras := flowTable tryLCbd flowlaw_test
+executables := pismr pismv pisms pclimate pismtests flowlaw_test bedrough_test
+extras := flowTable tryLCbd
 exec_default := $(addprefix ../bin/, $(executables))
 exec_extras := $(addprefix ../bin/, $(extras))
 config_file := ../lib/pism_config.nc
@@ -112,7 +112,8 @@ verif_sources := exactTestsABCDE.c exactTestsFG.c exactTestH.c exactTestsIJ.c \
 other_sources := pismr.cc pismv.cc pisms.cc \
 	iceEISModel.cc iceMISMIPModel.cc icePSTexModel.cc \
 	iceCompModel.cc iCMthermo.cc iceExactSSAModel.cc \
-	flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc trybedrough.cc flowlaw_test.cc
+	flowTable.cc tryLCbd.cc iMtests.cc pismtests.cc flowlaw_test.cc \
+	bedrough_test.cc
 
 
 #### driver and derived-class examples are included here   ####
@@ -201,8 +202,8 @@ other_sources += pclimate.cc pgrn_atmosphere.cc
 ../bin/tryLCbd : tryLCbd.o deformation.o greens.o ${LIBPISMNAME}
 	${CXXLINKER} tryLCbd.o deformation.o greens.o ${ICE_LIB_FLAGS} -o $@
 
-../bin/trybedrough : trybedrough.o ${LIBPISMNAME}
-	${CXXLINKER} trybedrough.o ${ICE_LIB_FLAGS} -o $@
+../bin/bedrough_test : bedrough_test.o ${LIBPISMNAME}
+	${CXXLINKER} bedrough_test.o ${ICE_LIB_FLAGS} -o $@
 
 # Rules making object files from sources.
 %.o: %.c

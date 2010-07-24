@@ -19,9 +19,12 @@ topg0 = 400 * sin(2 * pi * xx / 600e3) + 100 * sin(2 * pi * (xx + 1.5 * yy) / 40
 
 [topg_smooth,theta,fasttheta] = gettheta(x,y,topg0,lambdax,lambday,h_level);
 
-fprintf('max(theta)     = %f, min(theta)     = %f\n',max(max(theta)),min(min(theta)))
-fprintf('max(fasttheta) = %f, min(fasttheta) = %f\n',max(max(fasttheta)),min(min(fasttheta)))
-%return
+fprintf('min(topg_smooth) = %f, max(topg_smooth)     = %f\n',...
+        min(min(topg_smooth)),max(max(topg_smooth)) )
+fprintf('min(theta)       = %f, max(theta)     = %f\n',...
+        min(min(theta)),max(max(theta)) )
+fprintf('min(fasttheta)   = %f, max(fasttheta) = %f\n',...
+        min(min(fasttheta)),max(max(fasttheta)) )
 
 figure(1), mesh(x/1000,y/1000,topg0)
 zmax = max(max(topg0));  zmin = min(min(topg0));
@@ -34,17 +37,19 @@ axis([-L/1000 L/1000 -L/1000 L/1000 zmin zmax])
 xlabel('x  (km)'), ylabel('y  (km)'), zlabel('topg_smooth  (m)')
 title('smoothed topography')
 
-figure(3), clf, imagesc(x/1000,y/1000,theta,[0 1]), colorbar
+figure(3), clf
+imagesc(x/1000,y/1000,theta,[min(min(theta)) max(max(theta))]), colorbar
 xlabel('x  (km)'), ylabel('y  (km)')
 title('theta (directly)')
 
-figure(4), clf, imagesc(x/1000,y/1000,fasttheta,[0 1]), colorbar
+figure(4), clf
+imagesc(x/1000,y/1000,fasttheta,[min(min(theta)) max(max(theta))]), colorbar
 xlabel('x  (km)'), ylabel('y  (km)')
 title('approx theta (by fast method)')
 
 difftheta = fasttheta-theta;
-fprintf('max(difftheta) = %f, min(difftheta) = %f\n',max(max(difftheta)),min(min(difftheta)))
-fprintf('average(difftheta) = %f\n',mean(mean(difftheta)))
+fprintf('max(difftheta) = %f, min(difftheta) = %f, average(difftheta) = %f\n',...
+        max(max(difftheta)),min(min(difftheta)),mean(mean(difftheta)) )
 
 figure(5), clf, imagesc(x/1000,y/1000,difftheta), colorbar
 xlabel('x  (km)'), ylabel('y  (km)')

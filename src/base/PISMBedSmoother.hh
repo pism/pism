@@ -43,9 +43,15 @@ public:
   PISMBedSmoother(IceGrid &g, const NCConfigVariable &conf);
   virtual ~PISMBedSmoother();
 
-  virtual PetscErrorCode preprocess_bed(IceModelVec2S topg, PetscReal lambda, PetscReal n);
+  virtual PetscErrorCode preprocess_bed(IceModelVec2S topg, PetscReal n, 
+                                        PetscReal lambda);
 
-  virtual PetscErrorCode get_theta(IceModelVec2S thk, PetscReal n, IceModelVec2S *theta);
+  virtual PetscErrorCode preprocess_bed(IceModelVec2S topg, PetscReal n,
+                                        PetscInt Nx_in, PetscInt Ny_in);
+
+  virtual PetscErrorCode get_smoothing_domain(PetscInt &Nx_out, PetscInt &Ny_out);
+
+  virtual PetscErrorCode get_theta(IceModelVec2S usurf, PetscReal n, IceModelVec2S *theta);
 
   IceModelVec2S topgsmooth;  //!< smoothed bed elevation; publicly-available; set by calling preprocess_bed()
 
@@ -53,10 +59,11 @@ protected:
   IceGrid &grid;
   const NCConfigVariable &config;
   IceModelVec2S maxtl,C2,C3,C4,C5;
+
   PetscInt Nx,Ny;  //!< number of grid points to smooth over; e.g. i=-Nx,-Nx+1,...,-1,0,1,...,Nx-1,Nx; note Nx>=1 and Ny>=1 always, unless lambda<=0
 
-  PetscErrorCode smooth_the_bed();
-  PetscErrorCode compute_coefficients(PetscReal n);
+  PetscErrorCode smooth_the_bed_on_proc0();
+  PetscErrorCode compute_coefficients_on_proc0(PetscReal n);
 
   PetscErrorCode allocate();
   PetscErrorCode deallocate();

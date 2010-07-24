@@ -429,6 +429,38 @@ PetscErrorCode IceModelVec2S::sum(PetscScalar &result) {
 }
 
 
+//! Finds maximum over all the values in an IceModelVec2S object.  Ignores ghosts.
+PetscErrorCode IceModelVec2S::max(PetscScalar &result) {
+  PetscErrorCode ierr;
+  ierr = begin_access(); CHKERRQ(ierr);
+  PetscScalar my_result = (*this)(grid->xs,grid->ys);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+      my_result = PetscMax(my_result,(*this)(i,j));
+    }
+  }
+  ierr = end_access(); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&my_result, &result, grid->com); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! Finds minimum over all the values in an IceModelVec2S object.  Ignores ghosts.
+PetscErrorCode IceModelVec2S::min(PetscScalar &result) {
+  PetscErrorCode ierr;
+  ierr = begin_access(); CHKERRQ(ierr);
+  PetscScalar my_result = (*this)(grid->xs,grid->ys);
+  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
+    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
+      my_result = PetscMin(my_result,(*this)(i,j));
+    }
+  }
+  ierr = end_access(); CHKERRQ(ierr);
+  ierr = PetscGlobalMin(&my_result, &result, grid->com); CHKERRQ(ierr);
+  return 0;
+}
+
+
 // IceModelVec2
 
 PetscErrorCode IceModelVec2::get_component(int N, Vec result) {

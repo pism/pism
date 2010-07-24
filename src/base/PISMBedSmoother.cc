@@ -180,11 +180,11 @@ Input lambda gives physical half-width (in m) of square over which to do the
 average.  Only square smoothing domains are allowed.
  */
 PetscErrorCode PISMBedSmoother::preprocess_bed(
-                 IceModelVec2S topg, PetscReal lambda, PetscReal n) {
+                 IceModelVec2S topg, PetscReal n, PetscReal lambda) {
   PetscErrorCode ierr;
 
   if (lambda <= 0) {
-    // smoothing completely inactive.  we will transfer the original bed topg
+    // smoothing completely inactive.  we transfer the original bed topg
     // to public member topgsmooth ...
     ierr = topgsmooth.copy_from(topg); CHKERRQ(ierr);
     // and tell get_theta() to return theta=1
@@ -198,15 +198,40 @@ PetscErrorCode PISMBedSmoother::preprocess_bed(
   Ny = static_cast<PetscInt>(ceil(lambda / grid.dy));
   if (Nx < 1)  Nx = 1;
   if (Ny < 1)  Ny = 1;
-  if ((Nx >= grid.Mx) || (Ny >= grid.My)) {
-    SETERRQ(1,"PISM ERROR: lambda in bed smoother too large; domain of smoothing exceeds domain");
+  //PetscPrintf(grid.com,"PISMBedSmoother:  Nx = %d, Ny = %d\n",Nx,Ny);
+
+  ierr = preprocess_bed(topg, n, Nx, Ny); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+/*!
+Input lambda gives physical half-width (in m) of square over which to do the
+average.  Only square smoothing domains are allowed.
+ */
+PetscErrorCode PISMBedSmoother::preprocess_bed(
+                 IceModelVec2S topg, PetscReal n, PetscInt Nx_in, PetscInt Ny_in) {
+  PetscErrorCode ierr;
+
+  if ((Nx_in >= grid.Mx) || (Ny_in >= grid.My)) {
+    SETERRQ(1,"PISM ERROR: input Nx, Ny in bed smoother is too large because\n"
+              "            domain of smoothing exceeds IceGrid domain\n");
+  }
+  Nx = Nx_in; Ny = Ny_in;
+
+  if ((Nx < 0) || (Ny < 0)) {
+    // smoothing completely inactive.  we transfer the original bed topg
+    // to public member topgsmooth ...
+    ierr = topgsmooth.copy_from(topg); CHKERRQ(ierr);
+    return 0;
   }
 
   // manage the preprocessing by calling procedures which only act on proc 0
   ierr = transfer_to_proc0(topg, &topgp0); CHKERRQ(ierr);
-  ierr = smooth_the_bed(); CHKERRQ(ierr);
+  ierr = smooth_the_bed_on_proc0(); CHKERRQ(ierr);
   ierr = transfer_from_proc0(topgsmoothp0, &topgsmooth); CHKERRQ(ierr);
-  ierr = compute_coefficients(n); CHKERRQ(ierr);
+  ierr = compute_coefficients_on_proc0(n); CHKERRQ(ierr);
   ierr = transfer_from_proc0(maxtlp0, &maxtl); CHKERRQ(ierr);
   ierr = transfer_from_proc0(C2p0, &C2); CHKERRQ(ierr);
   ierr = transfer_from_proc0(C3p0, &C3); CHKERRQ(ierr);
@@ -217,8 +242,15 @@ PetscErrorCode PISMBedSmoother::preprocess_bed(
 }
 
 
+PetscErrorCode PISMBedSmoother::get_smoothing_domain(PetscInt &Nx_out, PetscInt &Ny_out) {
+  Nx_out = Nx;
+  Ny_out = Ny;
+  return 0;
+}
+
+
 //! Computes the smoothed bed by a simple average over a rectangle of grid points.
-PetscErrorCode PISMBedSmoother::smooth_the_bed() {
+PetscErrorCode PISMBedSmoother::smooth_the_bed_on_proc0() {
 
   if (grid.rank == 0) {
     PetscErrorCode ierr;
@@ -252,7 +284,7 @@ PetscErrorCode PISMBedSmoother::smooth_the_bed() {
 }
 
 
-PetscErrorCode PISMBedSmoother::compute_coefficients(PetscReal n) {
+PetscErrorCode PISMBedSmoother::compute_coefficients_on_proc0(PetscReal n) {
 
   if (grid.rank == 0) {
     PetscErrorCode ierr;
@@ -337,17 +369,18 @@ and \f$\tilde b\f$ is the local bed topography, a function with mean zero.
 The coefficients \f$C_2,\dots,C_5\f$ are precomputed by preprocess_bed().
  */
 PetscErrorCode PISMBedSmoother::get_theta(
-      IceModelVec2S thk, PetscReal n, IceModelVec2S *theta) {
+      IceModelVec2S usurf, PetscReal n, IceModelVec2S *theta) {
   PetscErrorCode ierr;
 
-  if ((Nx <=0) || (Ny <= 0)) {
+  if ((Nx < 0) || (Ny < 0)) {
     ierr = theta->set(1.0); CHKERRQ(ierr);
     return 0;
   }
 
   PetscScalar **mytheta;
   ierr = theta->get_array(mytheta); CHKERRQ(ierr);
-  ierr = thk.begin_access(); CHKERRQ(ierr);
+  ierr = usurf.begin_access(); CHKERRQ(ierr);
+  ierr = topgsmooth.begin_access(); CHKERRQ(ierr);
   ierr = maxtl.begin_access(); CHKERRQ(ierr);
   ierr = C2.begin_access(); CHKERRQ(ierr);
   ierr = C3.begin_access(); CHKERRQ(ierr);
@@ -356,21 +389,22 @@ PetscErrorCode PISMBedSmoother::get_theta(
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (thk(i,j) > maxtl(i,j)) { 
+      const PetscScalar H = usurf(i,j) - topgsmooth(i,j);
+      if (H > maxtl(i,j)) { 
         // if thickness exceeds maximum variation in patch of local topography,
         // so ice buries local topography; note maxtl >= 0 always
-        const PetscReal
-          Hinv = 1.0 / thk(i,j),
-          omega = 1.0 + Hinv * Hinv * 
-                   ( C2(i,j) + Hinv * ( C3(i,j) + Hinv * 
-                      ( C4(i,j) + Hinv * C5(i,j) ) ) );
+        const PetscReal Hinv = 1.0 / H;
+        PetscReal omega;
+        omega = 1.0 + Hinv * Hinv * ( C2(i,j) + Hinv * ( C3(i,j) + Hinv * 
+                                             ( C4(i,j) + Hinv * C5(i,j) ) ) );
         if (omega <= 0) {
           SETERRQ2(1,"PISM ERROR: omega is negative for i=%d,j=%d\n"
                      "    in PISMBedSmoother.get_theta() ... ending\n",i,j);
         }
+        if (omega < 0.001)  omega = 0.001;
         mytheta[i][j] = pow(omega,-n);
       } else {
-        mytheta[i][j] = 0.05;  // FIXME = min_theta; make configurable
+        mytheta[i][j] = 0.00;  // FIXME = min_theta; make configurable
       }
       // now guarantee in [0,1]
       if (mytheta[i][j] > 1.0)  mytheta[i][j] = 1.0;
@@ -383,7 +417,8 @@ PetscErrorCode PISMBedSmoother::get_theta(
   ierr = C3.end_access(); CHKERRQ(ierr);
   ierr = C2.end_access(); CHKERRQ(ierr);
   ierr = maxtl.end_access(); CHKERRQ(ierr);
-  ierr = thk.end_access(); CHKERRQ(ierr);
+  ierr = topgsmooth.end_access(); CHKERRQ(ierr);
+  ierr = usurf.end_access(); CHKERRQ(ierr);
   ierr = theta->end_access(); CHKERRQ(ierr);
 
   return 0;

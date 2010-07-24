@@ -38,8 +38,8 @@ ccc4 = ccc3 * (4 * n + 2) / (4 * n);
 ccc5 = ccc4 * (5 * n + 2) / (5 * n);
 
 J = length(x)-1;  K = length(y)-1;
-dx = x(2) - x(1);  Nx = ceil(lambdax / dx)
-dy = y(2) - y(1);  Ny = ceil(lambday / dy)
+dx = x(2) - x(1);  Nx = ceil(lambdax / dx);
+dy = y(2) - y(1);  Ny = ceil(lambday / dy);
 
 % smooth the bed; computation scales like  J * K * 2Nx * 2Ny
 tic
@@ -95,8 +95,8 @@ end
 fprintf('  [time to compute theta directly:                %.5f s]\n',toc)
 
 
-% precompute coefficients in fasttheta method; this is just like smoothing, but
-% we are averaging square and cube of local topography; again computation
+% precompute coefficients in fasttheta method; similar code to smoothing, but
+% we are averaging square and cube etc. of local topography; again computation
 % scales like  J * K * 2Nx * 2Ny
 tic
 maxtl = zeros(J+1,K+1);
