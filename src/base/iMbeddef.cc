@@ -61,7 +61,7 @@ PetscErrorCode IceModel::bed_def_setup() {
   return 0;
 }
 
-PetscErrorCode IceModel::bed_def_step() {
+PetscErrorCode IceModel::bed_def_step(bool &bed_changed) {
   PetscErrorCode  ierr;
 
   if (beddef == NULL) SETERRQ(1, "beddef == NULL");
@@ -80,9 +80,9 @@ PetscErrorCode IceModel::bed_def_step() {
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
     last_bed_def_update = grid.year;
-    stdout_flags += "b";
+    bed_changed = true;
   } else {
-    stdout_flags += "$";
+    bed_changed = false;
   }
   return 0;
 }

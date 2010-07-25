@@ -51,6 +51,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   beddef  = NULL;
 
   EC = NULL;
+  sia_bed_smoother = NULL;
 
   ierr = setDefaults();  // lots of parameters and flags set here, including by reading from a config file
   if (ierr != 0) {
@@ -435,6 +436,9 @@ PetscErrorCode IceModel::deallocate_internal_objects() {
   // since SSA tools are currently part of IceModel, de-allocate them here
   ierr = destroySSAobjects(); CHKERRQ(ierr);
 
+  // SIA has Schoof (2003)-type smoother, allocate it here
+  delete sia_bed_smoother;
+
   return 0;
 }
 
@@ -485,7 +489,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   }
 
   //! \li apply the time-step restriction from the -extra_{times,file,vars}
-  //! mechanism:
+  //! mechanism
   double extras_dt;
   ierr = extras_max_timestep(grid.year, extras_dt); CHKERRQ(ierr);
   extras_dt *= secpera;
@@ -499,9 +503,18 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   PetscLogEventBegin(beddefEVENT,0,0,0,0);
 
   prof->begin(event_beddef);
-  // \li compute the bed deformation, which only depends on current thickness and bed elevation
+  //! \li compute the bed deformation, which only depends on current thickness
+  //! and bed elevation
   if (beddef) {
-    ierr = bed_def_step(); CHKERRQ(ierr); // prints "b" or "$" as appropriate
+    bool bed_changed;
+    ierr = bed_def_step(bed_changed); CHKERRQ(ierr);
+    if (bed_changed) {
+      stdout_flags += "b";
+      // since bed changed we need to update info in bed smoother
+      ierr = sia_bed_smoother->preprocess_bed(vbed,
+               config.get("Glen_exponent"), config.get("bed_smoother_range") );
+               CHKERRQ(ierr);
+    } else stdout_flags += "$";
   } else stdout_flags += " ";
   prof->end(event_beddef);
 

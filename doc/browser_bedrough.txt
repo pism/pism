@@ -35,15 +35,15 @@ Consider also the "local bed topography"
 As a function of the local coordinates \f$\xi_1,\xi_2\f$, the local bed topography \f$\tilde b\f$ is the amount by which the bed deviates from the "local average" \f$b_s(x_1,x_2)\f$.  Generally we will use \f$-\lambda_1 \le \xi_1 \le \lambda_1\f$, \f$-\lambda_2 \le \xi_2 \le \lambda_2\f$ as the smoothing domain, but these specific ranges are not required by the formulas above.  Note that the average of the local bed topgraphy is zero by definition:
   \f[ \fint \tilde b(x_1,x_2,\xi_1,\xi_2)\,d\xi_1\,d\xi_2 = 0. \f]
 
-In the following discussion the ice thickness and ice surface elevation are related to the \e smoothed bed topography.  In the current notation,
-  \f[ H(t,x_1,x_2) = h(t,x_1,x_2) -b_s(x_1,x_2). \f]
-This can be treated as the \e definition of the ice thickness for the current purposes.
-
 The result of Schoof's scaling arguments [\ref Schoofbasaltopg2003, equation (49)] is to modify the diffusivity by multiplying by a factor \f$0 \le \theta \le 1\f$:
-  \f[ D = \theta(H(x_1,x_2),x_1,x_2) \, D_{SIA}. \f]
+  \f[ D = \theta(h(x_1,x_2),x_1,x_2) \, D_{SIA}. \f]
 where \f$D_{SIA}\f$ is defined by (\ref siadiffusivity) earlier, and
-  \f[ \theta(H,x_1,x_2) = \left[ \fint \left(1 - \frac{\tilde b(x_1,x_2,\xi_1,\xi_2)}{H}\right)^{-(n+2)/n}\,d\xi_1\,d\xi_2 \right]^{-n} \tag{theta} \f]
-This formula has additional terms if there is basal sliding, but we consider only the non-sliding SIA here.
+  \f[ \theta(h,x_1,x_2) = \left[ \fint \left(1 - \frac{\tilde b(x_1,x_2,\xi_1,\xi_2)}{H}\right)^{-(n+2)/n}\,d\xi_1\,d\xi_2 \right]^{-n} \tag{theta} \f]
+Here the ice thickness and ice surface elevation are related to the \e smoothed bed topography, so that in PISM notation
+  \f[ H(t,x_1,x_2) = h(t,x_1,x_2) - b_s(x_1,x_2). \f]
+This can be treated as the \e definition of the ice thickness \f$H\f$ in the above formula for \f$\theta\f$.
+
+The formula for \f$\theta\f$ has additional terms if there is basal sliding, but we consider only the non-sliding SIA here.
 
 The very important fact that \f$0 \le \theta \le 1\f$ is proven in appendix A of [\ref Schoofbasaltopg2003] by a Jensen's inequality argument.
 
@@ -69,9 +69,9 @@ where \f$f\f$ is some function and \f$z\f$ a scalar.  Then
 \f}
 
 Now, \f$\theta\f$ can be written
-  \f[ \theta(H,x_1,x_2) = \left[ \omega(\tilde b(x_1,x_2,\cdot,\cdot), H^{-1}) \right]^{-n}.  \f]
+  \f[ \theta(h,x_1,x_2) = \left[ \omega(\tilde b(x_1,x_2,\cdot,\cdot), H^{-1}) \right]^{-n}.  \f]
 So our strategy should be clear, to approximate \f$\omega(\tilde b(x_1,x2,\cdot,\cdot), H^{-1})\f$ by a 5th order Taylor polynomial in \f$H^{-1}\f$ whose the coefficients depend on \f$x_1,x_2\f$.  We thereby get a rapidly-computable approximation for \f$\theta\f$ using stored coefficients which depend on \f$x_1,x_2\f$.  In fact, let \f$f(\xi) = \tilde b(x_1,x_2,\xi_1,\xi_2)\f$ for fixed \f$x_1,x_2\f$, and let \f$z=H^{-1}\f$.  Recall that the mean of this \f$f(\xi)\f$ is zero, so that the first-order term drops out in the above expansion of \f$\omega\f$.  We have the following approximation of the coefficient \f$\theta\f$:
-   \f[ \theta(H,x_1,x_2) \approx \left[ 1 + C_2(x_1,x_2) H^{-2} + \dots + C_5(x_1,x_2) H^{-5} \right]^{-n} \tag{thetaapprox} \f]
+   \f[ \theta(h,x_1,x_2) \approx \left[ 1 + C_2(x_1,x_2) H^{-2} + \dots + C_5(x_1,x_2) H^{-5} \right]^{-n} \tag{thetaapprox} \f]
 where
   \f[ C_q(x_1,x_2) = \frac{k(k+1)\dots(k+q-1)}{q!} \fint \tilde b(x_1,x_2,\xi_1,\xi_2)^q\,d\xi_1\,d\xi_2 \f]
 for \f$q=2,3,4,5\f$ and \f$k = (n+2)/n\f$.
@@ -81,17 +81,5 @@ Note that the coefficients \f$C_q\f$ depend only on the bed topography, and not 
 The computation of the coefficients \f$C_q\f$ and the smoothed bed \f$b_s\f$ at the pre-processing stage is more involved, especially when done in parallel.  The parameters \f$\lambda_1,\lambda_2\f$ must be set, but as noted above we proposed the default value of 10 km based on Schoof's recommendation.  This physical distance may be less than or more than the grid spacing, and in the case that the grid spacing is 1 km we see that there is a large smoothing domain in terms of the number of grid points.  We propose to move the unsmoothed topography to processor zero and do the smoothing and the coefficient-computing there.
 
 
-
-
-
-
 */  /* <--- IF THIS END-OF-COMMENT IS LOST, CONFUSION RESULTS ... */
-
-
-
-
-
-
-
-
 

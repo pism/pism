@@ -58,8 +58,8 @@ PetscErrorCode IceModelVec2S::put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
 
-  if (!localp)
-    SETERRQ1(1, "Can't put a global IceModelVec '%s' on proc 0.", name.c_str());
+//  if (!localp)
+//    SETERRQ1(1, "Can't put a global IceModelVec '%s' on proc 0.", name.c_str());
 
   ierr =        DALocalToGlobal(da, v,  INSERT_VALUES, g2);        CHKERRQ(ierr);
   ierr = DAGlobalToNaturalBegin(grid->da2, g2, INSERT_VALUES, g2natural); CHKERRQ(ierr);
@@ -83,8 +83,8 @@ PetscErrorCode IceModelVec2S::get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, V
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
 
-  if (!localp)
-    SETERRQ1(1, "Can't get a global IceModelVec '%s' from proc 0.", name.c_str());
+//  if (!localp)
+//    SETERRQ1(1, "Can't get a global IceModelVec '%s' from proc 0.", name.c_str());
 
   ierr = VecScatterBegin(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);
   ierr =   VecScatterEnd(ctx, onp0, g2natural, INSERT_VALUES, SCATTER_REVERSE); CHKERRQ(ierr);

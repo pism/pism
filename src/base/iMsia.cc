@@ -295,12 +295,25 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
                constant_grain_size = config.get("constant_grain_size");
   const bool   do_cold_ice = config.get_flag("do_cold_ice_methods");
 
-  PetscScalar **h_x[2], **h_y[2], **H;  
-  ierr = vH.get_array(H); CHKERRQ(ierr);
+  // put "theta" from Schoof (2003) bed smoothness calculation in vWork2d[4]
+  //   and a smoothed version of the thickness in vWork2d[5]; all of the fields
+  //   vh,vH,vWork2d[4,5],sia_bed_smoother->topgsmooth must have stencil width
+  //   WIDE_GHOSTS
+  const PetscInt WIDE_GHOSTS = 2;
+  ierr = update_surface_elevation(); CHKERRQ(ierr);
+  ierr = sia_bed_smoother->get_theta(
+    vh, config.get("Glen_exponent"), WIDE_GHOSTS, &vWork2d[4]); CHKERRQ(ierr);
+  ierr = sia_bed_smoother->get_smoothed_thk(
+    vh, vH, WIDE_GHOSTS, &vWork2d[5]); CHKERRQ(ierr);
+
+  PetscScalar **h_x[2], **h_y[2];  
+  ierr = vh.begin_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
   ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
   ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
+  ierr = vWork2d[4].begin_access(); CHKERRQ(ierr);
+  ierr = vWork2d[5].begin_access(); CHKERRQ(ierr);
   ierr = uvbar.begin_access(); CHKERRQ(ierr);
   ierr = w3.begin_access(); CHKERRQ(ierr);
   ierr = Istag3[0].begin_access(); CHKERRQ(ierr);
@@ -348,7 +361,13 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
         //   (i,j) and (i+oi,j+oj) are reg grid neighbors of staggered pt:
         const PetscInt     oi = 1-o, oj=o;  
         const PetscScalar  slope = (o==0) ? h_x[o][i][j] : h_y[o][i][j];
-        const PetscScalar  thickness = 0.5 * (H[i][j] + H[i+oi][j+oj]);
+
+        //CHANGE r1200; was:   thickness = 0.5 * (H[i][j] + H[i+oi][j+oj]);
+//        const PetscScalar
+//          thickness = 0.5 * ( vh(i,j) - sia_bed_smoother->topgsmooth(i,j) +
+//                                vh(i+oi,j+oj) - sia_bed_smoother->topgsmooth(i+oi,j+oj) );
+        const PetscScalar
+          thickness = 0.5 * ( vWork2d[5](i,j) + vWork2d[5](i+oi,j+oj) );
 
         if (thickness > 0) { 
           if (usetau3) {
@@ -363,6 +382,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           const PetscInt      ks = grid.kBelowHeight(thickness);  
           const PetscScalar   alpha =
                   sqrt(PetscSqr(h_x[o][i][j]) + PetscSqr(h_y[o][i][j]));
+          const PetscReal     theta = vWork2d[4](i,j);
 
           I[0] = 0;
           PetscScalar  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
@@ -384,7 +404,8 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
               flow = gpbldi->flowFromEnth(alpha * pressure, E, pressure, grainsize);
             }
 
-            delta[k] = enhancement_factor * 2.0 * pressure * flow;
+            //CHANGE r1200; was:  delta[k] = enhancement_factor * 2.0 * pressure * flow;
+            delta[k] = enhancement_factor * theta * 2.0 * pressure * flow;
 
             // for Sigma, ignore mask value and assume SHEET; will be overwritten
             // by correctSigma() in iMssa.cc
@@ -424,12 +445,15 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
     } // j
   } // i
 
-  ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = uvbar.end_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
+
+  ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[5].end_access(); CHKERRQ(ierr);
+  ierr = vh.end_access(); CHKERRQ(ierr);
 
   if (usetau3) {
     ierr = tau3.end_access(); CHKERRQ(ierr);
@@ -470,7 +494,7 @@ See correctBasalFrictionalHeating() for the SSA contribution.
  */
 PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   PetscErrorCode  ierr;
-  PetscScalar **h_x[2], **h_y[2], **Rb, **H;
+  PetscScalar **h_x[2], **h_y[2], **Rb;
 
   PISMVector2 **bvel;
 
@@ -486,7 +510,8 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
   ierr = vel_basal.get_array(bvel); CHKERRQ(ierr);
   ierr = vRb.get_array(Rb); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vh.begin_access(); CHKERRQ(ierr);
+  ierr = sia_bed_smoother->topgsmooth.begin_access(); CHKERRQ(ierr);
   
   for (PetscInt o=0; o<2; o++) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
@@ -504,13 +529,16 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
                                  + h_x[1][i][j] + h_x[1][i][j-1]),
                   myhy = 0.25 * (  h_y[0][i][j] + h_y[0][i-1][j]
                                  + h_y[1][i][j] + h_y[1][i][j-1]),
-	    alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
-	  PetscScalar T, basalC;
+                  alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
+          PetscScalar T, basalC;
 
-	  ierr = EC->getAbsTemp(Enth3.getValZ(i,j,0.0),
-				EC->getPressureFromDepth(H[i][j]), T); CHKERRQ(ierr);
+          // change r1200: new meaning of H
+          const PetscScalar H = vh(i,j) - sia_bed_smoother->topgsmooth(i,j);
 
-	  basalC = basalVelocitySIA(myx, myy, H[i][j], T, 
+          ierr = EC->getAbsTemp(Enth3.getValZ(i,j,0.0),
+                                EC->getPressureFromDepth(H), T); CHKERRQ(ierr);
+
+          basalC = basalVelocitySIA(myx, myy, H, T, 
 				    alpha, mu_sliding,
 				    minimum_temperature_for_sliding);
           bvel[i][j].u = - basalC * myhx;
@@ -518,14 +546,15 @@ PetscErrorCode IceModel::basalSlidingHeatingSIA() {
           // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
           // in ice streams this result will be *overwritten* by
           //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
-          const PetscScalar P = ice->rho * standard_gravity * H[i][j];
+          const PetscScalar P = ice->rho * standard_gravity * H;
           Rb[i][j] = - (P * myhx) * bvel[i][j].u - (P * myhy) * bvel[i][j].v;
         }
       }
     }
   }
   
-  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vh.end_access(); CHKERRQ(ierr);
+  ierr = sia_bed_smoother->topgsmooth.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);

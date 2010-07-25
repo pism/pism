@@ -26,34 +26,63 @@
 
 //! PISM bed smoother, plus bed roughness parameterization, based on Schoof (2003).
 /*!
-This class both smooths the bed and computes coefficients which allow the computation of a factor \f$0\le \theta \le 1\f$ which multiplies the diffusivity in the SIA.  The theory is from Christian Schoof's (2003) <i>The effect of basal topography on ice sheet dynamics</i> [\ref Schoofbasaltopg2003].
+This class both smooths the bed and computes coefficients for an approximation
+to \f$\theta\f$.  The factor \f$0\le \theta \le 1\f$ multiplies the diffusivity
+in the theory of the effect of bed roughness in the SIA by Christian Schoof
+(2003; <i>The effect of basal topography on ice sheet dynamics</i>) [\ref
+Schoofbasaltopg2003].
 
-PISMBedSmoother provides three functionalities, besides construction and
-destruction:
--# User hands PISMBedSmoother an "original" topography, and it is preprocessed.
-   This call to preprocess_bed() requires the half-width of the smoothing square
-   (a distance in m) and the Glen exponent.
--# User asks for gridded values of \f$\theta(H,x,y)\f$ using get_theta().  This
-   call must follow a call to preprocess_bed().
--# User accesses public IceModelVec2S topgsmooth, the smoothed bed itself.
-   This access must also follow a call to preprocess_bed().
+The user of this class hands PISMBedSmoother an "original" topography, and it
+is preprocessed to fill the smoothed toporgaphy \c topgsmooth, and the
+coefficients in an approximation to \f$\theta\f$.  This is done by a call to 
+\c preprocess_bed().  The call requires the half-width of the smoothing square
+(a distance in m), or the number of grid points in each direction in the
+smoothing rectangle, and the Glen exponent.
+
+The call to \c preprocess_bed() must be repeated any time the "original"
+topography changes, for instance at the start of an IceModel run, or at a bed
+deformation step in an IceModel run.
+
+PISMBedSmoother then provides three major functionalities, all of which \e must
+\e follow the call to \c preprocess_bed():
+-# User accesses public IceModelVec2S \c topgsmooth, the smoothed bed itself.
+-# User asks \c get_smoothed_thk() for gridded values of the consistent smoothed
+   version of the ice thickness, which is the thickness corresponding to a given
+   surface elevation and the pre-computed smoothed bed.
+-# User asks for gridded values of \f$\theta(h,x,y)\f$ using \c get_theta().
+
+Here is an example of the creation and usage of a \c PISMBedSmoother instance:
+\code
+    PISMBedSmoother smoother(grid, config);
+    const PetscReal n = 3.0, 
+                    lambda = 50.0e3;
+    ierr = smoother.preprocess_bed(topg, n, lambda); CHKERRQ(ierr);
+    PetscInt Nx,Ny;
+    ierr = smoother.get_smoothing_domain(Nx,Ny); CHKERRQ(ierr);
+    PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
+    ierr = smoother.get_theta(usurf, n, &theta); CHKERRQ(ierr);
+\endcode
+
  */
 class PISMBedSmoother {
 public:
-  PISMBedSmoother(IceGrid &g, const NCConfigVariable &conf);
+  PISMBedSmoother(IceGrid &g, const NCConfigVariable &conf, PetscInt MAX_GHOSTS);
   virtual ~PISMBedSmoother();
 
   virtual PetscErrorCode preprocess_bed(IceModelVec2S topg, PetscReal n, 
                                         PetscReal lambda);
-
   virtual PetscErrorCode preprocess_bed(IceModelVec2S topg, PetscReal n,
                                         PetscInt Nx_in, PetscInt Ny_in);
 
   virtual PetscErrorCode get_smoothing_domain(PetscInt &Nx_out, PetscInt &Ny_out);
+  virtual PetscInt       get_max_ghosts() { return maxGHOSTS; }
 
-  virtual PetscErrorCode get_theta(IceModelVec2S usurf, PetscReal n, IceModelVec2S *theta);
+  virtual PetscErrorCode get_smoothed_thk(IceModelVec2S usurf, IceModelVec2S thk,
+                                          PetscInt GHOSTS, IceModelVec2S *thksmooth);
+  virtual PetscErrorCode get_theta(IceModelVec2S usurf, PetscReal n,
+                                   PetscInt GHOSTS, IceModelVec2S *theta);
 
-  IceModelVec2S topgsmooth;  //!< smoothed bed elevation; publicly-available; set by calling preprocess_bed()
+  IceModelVec2S topgsmooth;  //!< smoothed bed elevation; publicly-available; set by calling preprocess_bed(); has ghosts with width get_max_ghosts()
 
 protected:
   IceGrid &grid;
@@ -61,20 +90,20 @@ protected:
   IceModelVec2S maxtl,C2,C3,C4,C5;
 
   PetscInt Nx,Ny;  //!< number of grid points to smooth over; e.g. i=-Nx,-Nx+1,...,-1,0,1,...,Nx-1,Nx; note Nx>=1 and Ny>=1 always, unless lambda<=0
-
-  PetscErrorCode smooth_the_bed_on_proc0();
-  PetscErrorCode compute_coefficients_on_proc0(PetscReal n);
+  PetscInt maxGHOSTS; //!< topg will be read, and topgsmooth will be created, with this ghosting width; thksmooth and theta can be filled at this ghosting level or less
 
   PetscErrorCode allocate();
   PetscErrorCode deallocate();
-  PetscErrorCode transfer_to_proc0(IceModelVec2S source, Vec *result);
-  PetscErrorCode transfer_from_proc0(Vec source, IceModelVec2S *result);
+
   Vec g2, g2natural;  //!< global Vecs used to transfer data to/from processor 0.
   VecScatter scatter; //!< VecScatter used to transfer data to/from processor 0.
   Vec topgp0,         //!< original bed elevation on processor 0
       topgsmoothp0,   //!< smoothed bed elevation on processor 0
       maxtlp0,        //!< maximum elevation at (i,j) of local topography (nearby patch)
       C2p0,C3p0,C4p0,C5p0;
+
+  PetscErrorCode smooth_the_bed_on_proc0();
+  PetscErrorCode compute_coefficients_on_proc0(PetscReal n);
 };
 
 #endif	// __PISMBedSmoother_hh

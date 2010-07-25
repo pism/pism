@@ -17,10 +17,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "Simple testing program for Schoof (2003)-based bed smoothing and bed roughness\n"
+  "\nBEDROUGH_TEST\n"
+  "  Simple testing program for Schoof (2003)-type bed smoothing and roughness-\n"
   "  parameterization schemes.  Allows comparison of computed theta to result\n"
   "  from Matlab/Octave code exampletheta.m in src/base/bedroughplay.  Also\n"
-  "  used in software regression test.\n\n";
+  "  used in PISM software (regression) test.\n\n";
 
 #include <cmath>
 #include <cstdio>
@@ -66,15 +67,15 @@ int main(int argc, char *argv[]) {
     bool show;
     ierr = PISMOptionsIsSet("-show", show); CHKERRQ(ierr);
 
-    IceModelVec2S topg, thk, theta;
+    IceModelVec2S topg, usurf, theta;
     ierr = topg.create(grid, "topg", false); CHKERRQ(ierr);
     ierr = topg.set_attrs(
       "trybedrough_tool", "original topography",
       "m", "bedrock_altitude"); CHKERRQ(ierr);
-    ierr = thk.create(grid, "thk", false); CHKERRQ(ierr);
-    ierr = thk.set_attrs(
-      "trybedrough_tool", "ice thickness",
-      "m", "land_ice_thickness"); CHKERRQ(ierr);
+    ierr = usurf.create(grid, "usurf", false); CHKERRQ(ierr);
+    ierr = usurf.set_attrs(
+      "trybedrough_tool", "ice surface elevation",
+      "m", "surface_altitude"); CHKERRQ(ierr);
     ierr = theta.create(grid, "theta", false); CHKERRQ(ierr);
     ierr = theta.set_attrs(
       "trybedrough_tool",
@@ -96,17 +97,17 @@ int main(int argc, char *argv[]) {
     ierr = topg.end_access(); CHKERRQ(ierr);
     delete [] x; delete [] y;
 
-    ierr = thk.set(1000.0); CHKERRQ(ierr);  // compute theta for this constant thk
+    ierr = usurf.set(1000.0); CHKERRQ(ierr);  // compute theta for this constant thk
 
     // actually use the smoother/bed-roughness-parameterizer
-    PISMBedSmoother smoother(grid, config);
+    PISMBedSmoother smoother(grid, config, 0);
     const PetscReal n = 3.0, 
                     lambda = 50.0e3;
     ierr = smoother.preprocess_bed(topg, n, lambda); CHKERRQ(ierr);
     PetscInt Nx,Ny;
     ierr = smoother.get_smoothing_domain(Nx,Ny); CHKERRQ(ierr);
     PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
-    ierr = smoother.get_theta(thk, n, &theta); CHKERRQ(ierr);
+    ierr = smoother.get_theta(usurf, n, 0, &theta); CHKERRQ(ierr);
 
     if (show) {
       const PetscInt  window = 400;

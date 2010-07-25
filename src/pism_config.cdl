@@ -158,6 +158,9 @@ netcdf pism_config {
     pism_config:bed_def_interval_years = 10.0;
     pism_config:bed_def_interval_years_doc = "years; Interval between bed deformation updates";
 
+    pism_config:bed_smoother_range = 0.0;
+    pism_config:bed_smoother_range_doc = "m; half-width of smoothing domain for PISMBedSmoother, in implementing [\\ref Schoofbasaltopg2003] bed roughness parameterization for SIA";
+
     pism_config:max_iterations_ssa = 300;
     pism_config:max_iterations_ssa_doc = "Maximum number of iterations for the ice viscosity computation";
 

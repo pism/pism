@@ -435,13 +435,11 @@ PetscErrorCode IceModel::model_state_setup() {
     last_bed_def_update = grid.year;
   }
 
-#if 1
   // init basal till model, possibly inverting for phi, if desired;
   //   reads options "-topg_to_phi phi_min,phi_max,phi_ocean,topg_min,topg_max"
   //   or "-surf_vel_to_phi foo.nc";
   //   initializes IceBasalResistancePlasticLaw* basal; sets fields vtauc, vtillphi
   ierr = initBasalTillModel(); CHKERRQ(ierr);
-#endif
 
   ierr = stampHistoryCommand(); CHKERRQ(ierr);
 
@@ -575,6 +573,9 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   // since SSA tools are part of IceModel, allocate them here
   ierr = allocateSSAobjects(); CHKERRQ(ierr);
 
+  // SIA needs a Schoof (2003)-type smoother, allocate it here
+  sia_bed_smoother = new PISMBedSmoother(grid, config, WIDE_STENCIL);
+
   // various internal quantities
   // 2d work vectors
   for (int j = 0; j < nWork2d; j++) {
@@ -628,13 +629,10 @@ PetscErrorCode IceModel::misc_setup() {
   global_attributes.set_flag("pism_ssa_velocities_are_valid",
 			     config.get_flag("use_ssa_velocity"));
 
-#if 0
-  // init basal till model, possibly inverting for phi, if desired;
-  //   reads options "-topg_to_phi phi_min,phi_max,phi_ocean,topg_min,topg_max"
-  //   or "-surf_vel_to_phi foo.nc";
-  //   initializes IceBasalResistancePlasticLaw* basal; sets fields vtauc, vtillphi
-  ierr = initBasalTillModel(); CHKERRQ(ierr);
-#endif
+  // set info in bed smoother based on initial bed
+  ierr = sia_bed_smoother->preprocess_bed(vbed,
+               config.get("Glen_exponent"), config.get("bed_smoother_range") );
+               CHKERRQ(ierr);
 
   // compute (possibly corrected) cell areas:
   ierr = compute_cell_areas(); CHKERRQ(ierr);

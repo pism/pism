@@ -30,6 +30,7 @@
 #include "grid.hh"
 #include "iceModelVec.hh"
 #include "NCVariable.hh"
+#include "PISMBedSmoother.hh"
 #include "PISMVars.hh"
 #include "Timeseries.hh"
 #include "PISMProf.hh"
@@ -115,6 +116,8 @@ protected:
 
   EnthalpyConverter *EC;
  
+  PISMBedSmoother   *sia_bed_smoother;
+
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;
   PISMBedDef       *beddef;
@@ -234,7 +237,7 @@ protected:
   // see iMbeddef.cc
   PetscScalar last_bed_def_update;
   virtual PetscErrorCode bed_def_setup();
-  virtual PetscErrorCode bed_def_step();
+  virtual PetscErrorCode bed_def_step(bool &bed_changed);
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode putTempAtDepth();
@@ -402,7 +405,7 @@ protected:
 
 protected:
   // working space (a convenience)
-  static const PetscInt nWork2d=5;
+  static const PetscInt nWork2d=6;
   IceModelVec2S vWork2d[nWork2d];
   // 3D working space (with specific purposes)
   IceModelVec3 vWork3d;
