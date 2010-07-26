@@ -68,15 +68,15 @@ int main(int argc, char *argv[]) {
     ierr = PISMOptionsIsSet("-show", show); CHKERRQ(ierr);
 
     IceModelVec2S topg, usurf, theta;
-    ierr = topg.create(grid, "topg", false); CHKERRQ(ierr);
+    ierr = topg.create(grid, "topg", true, 1); CHKERRQ(ierr);
     ierr = topg.set_attrs(
       "trybedrough_tool", "original topography",
       "m", "bedrock_altitude"); CHKERRQ(ierr);
-    ierr = usurf.create(grid, "usurf", false); CHKERRQ(ierr);
+    ierr = usurf.create(grid, "usurf", true, 1); CHKERRQ(ierr);
     ierr = usurf.set_attrs(
       "trybedrough_tool", "ice surface elevation",
       "m", "surface_altitude"); CHKERRQ(ierr);
-    ierr = theta.create(grid, "theta", false); CHKERRQ(ierr);
+    ierr = theta.create(grid, "theta", true, 1); CHKERRQ(ierr);
     ierr = theta.set_attrs(
       "trybedrough_tool",
       "coefficient theta in Schoof (2003) bed roughness parameterization",
@@ -100,14 +100,14 @@ int main(int argc, char *argv[]) {
     ierr = usurf.set(1000.0); CHKERRQ(ierr);  // compute theta for this constant thk
 
     // actually use the smoother/bed-roughness-parameterizer
-    PISMBedSmoother smoother(grid, config, 0);
+    PISMBedSmoother smoother(grid, config, 1);
     const PetscReal n = 3.0, 
                     lambda = 50.0e3;
     ierr = smoother.preprocess_bed(topg, n, lambda); CHKERRQ(ierr);
     PetscInt Nx,Ny;
     ierr = smoother.get_smoothing_domain(Nx,Ny); CHKERRQ(ierr);
     PetscPrintf(grid.com,"  smoothing domain:  Nx = %d, Ny = %d\n",Nx,Ny);
-    ierr = smoother.get_theta(usurf, n, 0, &theta); CHKERRQ(ierr);
+    ierr = smoother.get_theta(usurf, n, 1, &theta); CHKERRQ(ierr);
 
     if (show) {
       const PetscInt  window = 400;

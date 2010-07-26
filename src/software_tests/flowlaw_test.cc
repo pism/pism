@@ -44,7 +44,6 @@ int main(int argc, char *argv[]) {
     EnthalpyConverter EC(config);
 
     IceFlowLaw *ice = NULL;
-    PolyThermalGPBLDIce *poly_ice;
     IceFlowLawFactory ice_factory(com, NULL, config);
 
     string ice_type = ICE_GPBLD;
@@ -63,13 +62,16 @@ int main(int argc, char *argv[]) {
     printf("flowtable:  [pressure = %10.2e throughout]\n",p);
     printf("  (stress)   (enthalpy)    (temp)     =   (flow)\n");
 
+    PolyThermalGPBLDIce *poly_ice;
     if (ice_type == "gpbld") {
       poly_ice = dynamic_cast<PolyThermalGPBLDIce*>(ice);
       if (poly_ice == NULL) {
-        PetscPrintf(com, "ERROR: poly_ice == NULL\n");
+        PetscPrintf(com,
+          "ERROR: poly_ice == NULL after dynamic cast, when given '-ice_type gpbld'\n");
         PetscEnd();
       }
-    }
+    } else
+      poly_ice = NULL;
 
     for (int i=0; i<4; ++i) {
       for (int j=0; j<5; ++j) {

@@ -300,7 +300,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   //   vh,vH,vWork2d[4,5],sia_bed_smoother->topgsmooth must have stencil width
   //   WIDE_GHOSTS
   const PetscInt WIDE_GHOSTS = 2;
-  ierr = update_surface_elevation(); CHKERRQ(ierr);
+  //ierr = update_surface_elevation(); CHKERRQ(ierr);
   ierr = sia_bed_smoother->get_theta(
     vh, config.get("Glen_exponent"), WIDE_GHOSTS, &vWork2d[4]); CHKERRQ(ierr);
   ierr = sia_bed_smoother->get_smoothed_thk(
