@@ -1,5 +1,5 @@
 function exampletheta(J,h_level,lambdax,lambday)
-% EXAMPLETHETA  Show the difference between "raw" and faster (Maclaurin O(5))
+% EXAMPLETHETA  Show the difference between "raw" and faster (Taylor P_4)
 % methods for computing \theta in equation (49) in Schoof (2003).
 
 if nargin < 1, J = 80; end
@@ -13,6 +13,8 @@ x = -L:dx:L;  y = x;  [xx,yy] = meshgrid(x, y);
 
 % construct a bumpy bed
 topg0 = 400 * sin(2 * pi * xx / 600e3) + 100 * sin(2 * pi * (xx + 1.5 * yy) / 40e3);
+
+% OTHER BUMPYS:
 %topg0 = 400 * sin(2 * pi * xx / 400e3) + 100 * randn(size(xx));
 %topg0 = 100 * randn(size(xx));
 %topg0 = zeros(size(xx));
@@ -48,7 +50,7 @@ xlabel('x  (km)'), ylabel('y  (km)')
 title('approx theta (by fast method)')
 
 difftheta = fasttheta-theta;
-fprintf('max(difftheta) = %f, min(difftheta) = %f, average(difftheta) = %f\n',...
+fprintf('max(difftheta) = %.6f, min(difftheta) = %.6f, average(difftheta) = %.6f\n',...
         max(max(difftheta)),min(min(difftheta)),mean(mean(difftheta)) )
 
 figure(5), clf, imagesc(x/1000,y/1000,difftheta), colorbar

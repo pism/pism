@@ -8,7 +8,7 @@ function [topgs,theta,fasttheta] = gettheta(x,y,topg0,lambdax,lambday,h_level)
 %                       /-lx /-ly
 % where
 %   n = exponent in Glen law,
-%   lx = lambdax, ly = lambday,
+%   lx = lambdax, ly = lambday,  (half-widths of smoothing/averaging rectangle)
 %   b0 = topg0,
 %   h = h_level,   [a scalar here]
 %   NORM = (4 * lambdax * lambday)^-1  [a normalizing factor; gives an average],
@@ -18,10 +18,16 @@ function [topgs,theta,fasttheta] = gettheta(x,y,topg0,lambdax,lambday,h_level)
 %  bs(x,y) = NORM * |    |     b0(x+xi,y+nu) dxi dnu
 %                   /-lx /-ly
 % with the same meaning for NORM.
+%   Additionally, the integrand rational function  f(z) = (1 - z)^{-(n+2)/n} is 
+% approximated by its 4th degree Taylor polynomial  p4(z),  for a fast method
+%                           / lx / ly
+% fasttheta^{-1/n} = NORM * |    |    p4( btilde(x,y,xi,nu) / (h - b0(x,y)) ) dxi dnu
+%                           /-lx /-ly
+% Degree 4 approximation is chosen because, like f(z) itself, p4(z) is convex.
 % The output variables are
 %   topgs = bs(x,y)       [smoothed bed; averages over (-lx,lx) x (-ly,ly) box],
 %   theta = theta(h,x,y),
-%   fasttheta = (approximation to theta using ??).
+%   fasttheta = (approximation to theta using p4(z)).
 
 
 if ~all(size(topg0) == [length(x), length(y)]), error('array "topg" of wrong size'), end
@@ -35,7 +41,6 @@ pow = (n + 2) / n;
 ccc2 = pow * (2 * n + 2) / (2 * n);
 ccc3 = ccc2 * (3 * n + 2) / (3 * n);
 ccc4 = ccc3 * (4 * n + 2) / (4 * n);
-ccc5 = ccc4 * (5 * n + 2) / (5 * n);
 
 J = length(x)-1;  K = length(y)-1;
 dx = x(2) - x(1);  Nx = ceil(lambdax / dx);
@@ -61,7 +66,7 @@ for j=1:J+1
 end
 fprintf('  [time to smooth the bed:                        %.5f s]\n',toc)
 
-% get theta directly; again computation scales like  J * K * 2Nx * 2Ny
+% get theta directly (again computation scales as J * K * 2Nx * 2Ny)
 tic
 theta = zeros(J+1,K+1); % note zero *is* the correct value for no valid pts in
                         % average below
@@ -96,14 +101,13 @@ fprintf('  [time to compute theta directly:                %.5f s]\n',toc)
 
 
 % precompute coefficients in fasttheta method; similar code to smoothing, but
-% we are averaging square and cube etc. of local topography; again computation
-% scales like  J * K * 2Nx * 2Ny
+%   we are averaging square and cube etc. of local topography
+%   (again computation scales as J * K * 2Nx * 2Ny)
 tic
 maxtl = zeros(J+1,K+1);
 C2 = zeros(J+1,K+1);
 C3 = C2;
 C4 = C2;
-C5 = C2;
 for j=1:J+1
   for k=1:K+1
     topg_s = topgs(j,k);      % Schoof: "H"
@@ -111,7 +115,6 @@ for j=1:J+1
     sm2   = 0.0;
     sm3   = 0.0;
     sm4   = 0.0;
-    sm5   = 0.0;
     count = 0;
     for r=-Nx:Nx
       for s=-Ny:Ny
@@ -119,12 +122,10 @@ for j=1:J+1
           tl    = topg0(j+r,k+s) - topg_s;  % Schoof: "h(x)"; has mean zero
                                             % over (j-Nx,j+Nx) x (k-Ny,k+Ny) patch
           tl2   = tl * tl;
-          tl4   = tl2 * tl2;
           maxtljk = max(tl,maxtljk);
           sm2   = sm2 + tl2;
           sm3   = sm3 + tl2 * tl;
-          sm4   = sm4 + tl4;
-          sm5   = sm5 + tl4 * tl;
+          sm4   = sm4 + tl2 * tl2;
           count = count + 1;
         end
       end
@@ -132,35 +133,29 @@ for j=1:J+1
     C2(j,k) = sm2 / count;
     C3(j,k) = sm3 / count;
     C4(j,k) = sm4 / count;
-    C5(j,k) = sm5 / count;
     maxtl(j,k) = maxtljk;
   end
 end
 C2 = ccc2 * C2;
 C3 = ccc3 * C3;
 C4 = ccc4 * C4;
-C5 = ccc5 * C5;
-fprintf('  [time to pre-compute coeffs maxtl,C2,C3,C4,C5:  %.5f s]\n',toc)
+fprintf('  [time to pre-compute coeffs maxtl,C2,C3,C4:     %.5f s]\n',toc)
 
 
-% get theta by fast method from stored maxtl,C2,C3 above; computation scales like  J * K
+% get theta by fast method from stored maxtl,C2,C3,C4 above
+%   (computation scales as J * K)
 tic
 fasttheta = zeros(J+1,K+1);
 thks = h_level - topgs;
 msk = (thks > maxtl);
-thksm2 = zeros(J+1,K+1);  % just to allocate
-thksm4 = zeros(J+1,K+1);  % just to allocate
+thksm2 = zeros(J+1,K+1);
 thksm2(msk) = 1.0 ./ (thks(msk) .* thks(msk));
-thksm4(msk) = thksm2(msk) .* thksm2(msk);
-% high order version
 fastomega = fasttheta;
-fastomega(msk) = 1.0 + C2(msk) .* thksm2(msk) + C3(msk) .* (thksm2(msk) ./ thks(msk)) + ...
-                         C4(msk) .* thksm4(msk) + C5(msk) .* (thksm4(msk) ./ thks(msk));
+fastomega(msk) = 1.0 + thksm2(msk) .* ...
+        ( C2(msk) + ( C3(msk) + C4(msk) ./ thks(msk) ) ./ thks(msk) );
 fastomega(fastomega < 0.001) = 0.001;
 fasttheta(msk) = fastomega(msk).^(-3);
 fasttheta(fasttheta > 1.0) = 1.0;
 fasttheta(fasttheta < 0.0) = 0.0;
-%lower order version:
-%  fasttheta(msk) = ( 1.0 + C2(msk) .* thksm2(msk) + C3(msk) .* (thksm2(msk) ./ thks(msk)) ).^(-3);
 fprintf('  [time to compute fasttheta from stored coeffs:  %.5f s]\n',toc)
 

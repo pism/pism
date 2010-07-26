@@ -1,18 +1,23 @@
 /*! \page bedrough Using Schoof's (2003) parameterized bed roughness technique in PISM
 
+\section justify An explanation
+
 PISM stable0.3 (i.e.~early 2010) is not as fast as we want.  This is especially noticable for rough beds.  There is no reason to believe that the physical model is doing something wrong, but the effect of roughness is a loss of performance because the time-stepping mechanism is slowed by high diffusivities.  The ice sheet tends to evolve to have high diffusivities even when they are not present early in the run.  These effects are noticable and significant in the major PISM worked examples:
 - the <A HREF="http://www.pism-docs.org/wiki/doku.php?id=worked-searise-greenland">SeaRISE-Greenland model using present-day data, including recent CReSIS radar data, on 5km and finer grid resolution</A>, and
 - the <A HREF="http://www.pism-docs.org/wiki/doku.php?id=worked-searise-antarctica-uaf">SeaRISE-Antarctica demo model using 10km grid resolution</A>.
 
 If the bed elevation \c topg is smoothed by preprocessing then we observe a reduction in the peak values of the SIA diffusivities.  From such smoothing there is (generically) also a reduction in the peak magnitudes of horizontal velocities from both the SIA and SSA models.  The major consequence of these reductions, through the adaptive time-stepping mechanism, is that PISM can take longer time steps and thus that it can complete model runs in shorter time.
 
-Large peak diffusivities coming from bed roughness are located (generically) at margin locations where the ice is on, or has flowed into, fjord-like bed topography.  At coarser resolutions (%e.g. 20km and up), it appears that the effect of increasing bed roughness is not as severe as at finer resolutions (%e.g. 10km, 5km and finer).  While it is true that the shallow models we use--SIA and SSA models--are missing significant stress gradients at the same margin locations which have large bed slopes, here we are emphasizing the performance "hit" which the whole model experiences if some small part of the ice sheet is on rough bed.  (That part therefore is not well-modeled anyway, compared to the majority of the ice sheet.  Switching to full Stokes or Blatter higher order models would probably mean a gain in the balanced stress components \e and a loss of the ability to model the ice sheet at high resolution.  There is always a tradeoff between \e completeness of the continuum model and usable \e resolution needed to resolve the features of the real ice sheet.)
+Large peak diffusivities coming from bed roughness are located (generically) at margin locations where the ice is on, or has flowed into, fjord-like bed topography.  At coarser resolutions (%e.g. 20km and up), it appears that the effect of increasing bed roughness is not as severe as at finer resolutions (%e.g. 10km, 5km and finer).  While it is true that the shallow models we use--SIA and SSA models--are missing significant stress gradients at the same margin locations which have large bed slopes, here we are emphasizing the performance "hit" which the whole model experiences if some small part of the ice sheet is on rough bed.  That part therefore is not well-modeled anyway, compared to the majority of the ice sheet.  (Switching to full Stokes or Blatter higher order models would probably mean a gain in the balanced stress components \e and a loss of the ability to model the ice sheet at high resolution.  There is always a tradeoff between \e completeness of the continuum model and usable \e resolution needed to resolve the features of the real ice sheet.)
 
-There exists, however, a theory which addresses \e exactly this situation for the SIA model, and explains that one may use a smoothed bed if one also lowers the SIA diffusivity.  This theory both explains how to improve the SIA model to handle bed roughness more correctly, because it parameterizes the effects of "higher-order" stresses which act on the ice as it flows over bed topography, \e and it explains how to get a double performance boost:
--# smoothed beds give longer time steps in PISM directly, and
+There exists, however, a theory which addresses exactly this situation for the SIA model, and explains that one \e should use a smoothed bed if one also lowers the SIA diffusivity.  This theory both explains how to improve the SIA model to handle bed roughness more correctly, because it parameterizes the effects of "higher-order" stresses which act on the ice as it flows over bed topography.  Specifically it shows the way to a double performance boost for PISM:
+-# smoothed beds give longer time steps directly, and
 -# the parameterized effect of the local bed roughness is to further reduce the diffusivity, giving even longer time-steps.
 
 How could we have missed this theory until now?
+
+
+\section schoofstheory Theory
 
 The theory is in Christian Schoof's (2003) <i>The effect of basal topography on ice sheet dynamics</i> [\ref Schoofbasaltopg2003].  His mathematical technique is to expand the Stokes equations in two levels of horizontal scales, one for the entire ice sheet (denoted \f$[L]\f$) and one for the horizontal scale (wavelength) of bed topography (\f$[S]\f$).  The "inner" scaling assumes that the typical ice sheet thickness \f$[D]\f$ is small compared to \f$[S]\f$, while the "outer" scaling assumes that \f$[S]\f$ is small compared to \f$[L]\f$:
 	\f[\nu = \frac{[D]}{[S]} \ll 1, \qquad \delta = \frac{[S]}{[L]} \ll 1.  \f]
@@ -45,40 +50,56 @@ This can be treated as the \e definition of the ice thickness \f$H\f$ in the abo
 
 The formula for \f$\theta\f$ has additional terms if there is basal sliding, but we consider only the non-sliding SIA here.
 
-The very important fact that \f$0 \le \theta \le 1\f$ is proven in appendix A of [\ref Schoofbasaltopg2003] by a Jensen's inequality argument.
+The very important fact that \f$0 \le \theta \le 1\f$ is proven in appendix A of [\ref Schoofbasaltopg2003] by a Jensen's inequality argument.  (See also the convexity argument at the bottom of this page.)
 
-The above formulas already reflect the recommendations Schoof gives on how to apply his formulas [\ref Schoofbasaltopg2003, subsection 4.2].  The averages appearing in his scaling arguments are over an infinite domain, %e.g.
+
+\section application Practical application, and Taylor approximation
+
+The above formulas already reflect the recommendations Schoof gives on how to apply his formulas [\ref Schoofbasaltopg2003, subsection 4.2].  The rest of this page is devoted to how the class PISMBedSmoother implements a practical version of this theory, based on these recommendations plus some additional approximation.
+
+The averages appearing in his scaling arguments are over an infinite domain, %e.g.
   \f[ f_s(x) = \lim_{R\to\infty} \frac{1}{2R} \int_{-R}^R f(\xi,x)\,d\xi. \f]
 
 For practical modeling use, Schoof specifically recommends averaging over some finite length scale which should be "considerably greater than the grid spacing, but much smaller than the size of the ice sheet."  Furthermore he recommends that, because of the typical aspect ratio of ice sheets, ""Bed topography on much larger length scales than 10 km should then be resolved explicitly through the smoothed bed height \f$b_s\f$ rather than the correction factor \f$\theta\f$.""  Thus in PISM we use \f$\lambda_1 = \lambda_2 = 10\f$ km as the default.  Naturally the values are configurable also.  (The condition \f$\lambda_i \le 0\f$ could, perhaps, be a sign to turn off this mechanism.)
 
 It is, of course, possible to have bed roughness of significant magnitude at essentially any wavelength.  We make no claim that PISM results are good models of ice flow over \e arbitrary geometry; clearly the current models cannot come close to the non-shallow solution (Stokes) in such cases.  Rather, the goal right now is to improve on the existing shallow models, the diffusive SIA specifically, while maintaining or increasing high-resolution performance and comprehensive model quality, which necessarily includes many other modeled physical processes like ice thermal state, basal lubrication, and so on.  The desirable properties of the Schoof scheme are accepted not because the resulting model is perfect, but because we gain both a physical modeling improvement \e and a computational performance improvement from its use.
 
-How do we actually compute expression (\ref theta) quickly?  Schoof has this suggestion, which we follow: ""To find \f$\theta\f$ for values of [thickness for which \f$\theta\f$ has not already been computed], some interpolation scheme should then be used.  \f$\theta\f$ is then represented at each grid point by some locally-defined interpolating function with argument \f$H\f$.""  
+How do we actually compute expression (\ref theta) quickly?  Schoof has this suggestion, which we follow: ""To find \f$\theta\f$ for values of [surface elevation for which \f$\theta\f$ has not already been computed], some interpolation scheme should then be used.  \f$\theta\f$ is then represented at each grid point by some locally-defined interpolating function [of the surface elevation].""  
 
-We need a "locally-defined interpolating function" of the ice thickness.  After consideration of Pade rational approximations, which were excluded because of the appearance of uncontrolled poles in the domain of approximation, a 5th order Taylor polynomial was decided upon.  This Taylor polynomial only requires the storage of four fields (below), but it has been demonstrated to be reasonably accurate by trying beds of various roughnesses in Matlab/Octave scripts.  The derivation of the Taylor polynomial is most easily understood by starting with an abstract rational function like the one which appears in (\ref theta), as follows.
+We need a "locally-defined interpolating function".  As with any approximation scheme, higher accuracy is achieved by doing "more work", which here is an increase in memory used for storing spatially-dependent coefficients.  Pade rational approximations, for example, were considered but are excluded because of the appearance of uncontrolled poles in the domain of approximation.  The 4th degree Taylor polynomial is chosen here because it shares the same convexity as the rational function it approximates; this is proven below.
 
-The fifth-order Taylor polynomial of the function \f$(1-s)^{-k}\f$ around \f$s=0\f$ is
-    \f[ P_5(s) = 1 + k s + \frac{k(k+1)}{2} s^2 + \dots + \frac{k(k+1)(k+2)(k+3)(k+4)}{5!} s^5, \f]
-so \f$(1-s)^{-k} = P_5(s) + O(s^6)\f$.  Let
+Use of Taylor polynomial \f$P_4(x)\f$ only requires the storage of three fields (below), but it has been demonstrated to be reasonably accurate by trying beds of various roughnesses in Matlab/Octave scripts.  The derivation of the Taylor polynomial is most easily understood by starting with an abstract rational function like the one which appears in (\ref theta), as follows.
+
+The fourth-order Taylor polynomial of the function \f$F(s)=(1-s)^{-k}\f$ around \f$s=0\f$ is
+    \f[ P_4(s) = 1 + k s + \frac{k(k+1)}{2} s^2 + \dots + \frac{k(k+1)(k+2)(k+3)}{4!} s^4, \f]
+so \f$F(s) = P_4(s) + O(s^5)\f$.  Let
     \f[ \omega(f,z) = \fint (1 - f(\xi) z)^{-k}\,d\xi \f]
 where \f$f\f$ is some function and \f$z\f$ a scalar.  Then
 \f{align*}
-\omega(f,z) &= \fint (1 - f(\xi) z)^{-k}\,d\xi = \fint P_5(f(\xi) z)\,d\xi + O((\max |f(\xi)|)^6 |z|^6) \\
-   &\approx 1 + k z \fint f(\xi)\,d\xi + \frac{k(k+1)}{2} z^2 \fint f(\xi)^2\,d\xi + \dots + \frac{k(k+1)(k+2)(k+3)(k+4)}{5!} z^5 \fint f(\xi)^5\,d\xi.
+\omega(f,z) &= \fint (1 - f(\xi) z)^{-k}\,d\xi = \fint P_4(f(\xi) z)\,d\xi + O((\max |f(\xi)|)^5 |z|^5) \\
+   &\approx 1 + k z \fint f(\xi)\,d\xi + \frac{k(k+1)}{2} z^2 \fint f(\xi)^2\,d\xi + \dots + \frac{k(k+1)(k+2)(k+3)}{4!} z^5 \fint f(\xi)^4\,d\xi.
 \f}
 
 Now, \f$\theta\f$ can be written
   \f[ \theta(h,x_1,x_2) = \left[ \omega(\tilde b(x_1,x_2,\cdot,\cdot), H^{-1}) \right]^{-n}.  \f]
-So our strategy should be clear, to approximate \f$\omega(\tilde b(x_1,x2,\cdot,\cdot), H^{-1})\f$ by a 5th order Taylor polynomial in \f$H^{-1}\f$ whose the coefficients depend on \f$x_1,x_2\f$.  We thereby get a rapidly-computable approximation for \f$\theta\f$ using stored coefficients which depend on \f$x_1,x_2\f$.  In fact, let \f$f(\xi) = \tilde b(x_1,x_2,\xi_1,\xi_2)\f$ for fixed \f$x_1,x_2\f$, and let \f$z=H^{-1}\f$.  Recall that the mean of this \f$f(\xi)\f$ is zero, so that the first-order term drops out in the above expansion of \f$\omega\f$.  We have the following approximation of the coefficient \f$\theta\f$:
-   \f[ \theta(h,x_1,x_2) \approx \left[ 1 + C_2(x_1,x_2) H^{-2} + \dots + C_5(x_1,x_2) H^{-5} \right]^{-n} \tag{thetaapprox} \f]
+So our strategy should be clear, to approximate \f$\omega(\tilde b(x_1,x2,\cdot,\cdot), H^{-1})\f$ by the Taylor polynomial as a function of \f$H^{-1}\f$, whose the coefficients depend on \f$x_1,x_2\f$.  We thereby get a rapidly-computable approximation for \f$\theta\f$ using stored coefficients which depend on \f$x_1,x_2\f$.  In fact, let \f$f(\xi) = \tilde b(x_1,x_2,\xi_1,\xi_2)\f$ for fixed \f$x_1,x_2\f$, and let \f$z=H^{-1}\f$.  Recall that the mean of this \f$f(\xi)\f$ is zero, so that the first-order term drops out in the above expansion of \f$\omega\f$.  We have the following approximation of \f$\theta\f$:
+   \f[ \theta(h,x_1,x_2) \approx \left[ 1 + C_2(x_1,x_2) H^{-2} + C_3(x_1,x_2) H^{-3} + C_4(x_1,x_2) H^{-4} \right]^{-n} \tag{thetaapprox} \f]
 where
   \f[ C_q(x_1,x_2) = \frac{k(k+1)\dots(k+q-1)}{q!} \fint \tilde b(x_1,x_2,\xi_1,\xi_2)^q\,d\xi_1\,d\xi_2 \f]
-for \f$q=2,3,4,5\f$ and \f$k = (n+2)/n\f$.
+for \f$q=2,3,4\f$ and \f$k = (n+2)/n\f$.
 
-Note that the coefficients \f$C_q\f$ depend only on the bed topography, and not on the ice geometry.  Thus we will pre-process the original bed elevations \f$b_0\f$ to compute and store the fields \f$b_s,C_2,C_3,C_4,C_5\f$.  The computation of equation (\ref thetaapprox) is fast and easily-parallelized if these fields are pre-stored.  
+Note that the coefficients \f$C_q\f$ depend only on the bed topography, and not on the ice geometry.  Thus we will pre-process the original bed elevations \f$b_0\f$ to compute and store the fields \f$b_s,C_2,C_3,C_4\f$.  The computation of equation (\ref thetaapprox) is fast and easily-parallelized if these fields are pre-stored.  
 
-The computation of the coefficients \f$C_q\f$ and the smoothed bed \f$b_s\f$ at the pre-processing stage is more involved, especially when done in parallel.  The parameters \f$\lambda_1,\lambda_2\f$ must be set, but as noted above we proposed the default value of 10 km based on Schoof's recommendation.  This physical distance may be less than or more than the grid spacing, and in the case that the grid spacing is 1 km we see that there is a large smoothing domain in terms of the number of grid points.  We propose to move the unsmoothed topography to processor zero and do the smoothing and the coefficient-computing there.
+The computation of the coefficients \f$C_q\f$ and the smoothed bed \f$b_s\f$ at the pre-processing stage is more involved, especially when done in parallel.  The parameters \f$\lambda_1,\lambda_2\f$ must be set, but as noted above we use a default value of 10 km based on Schoof's recommendation.  This physical distance may be less than or more than the grid spacing.  In the case that the grid spacing is 1 km, for example, we see that there is a large smoothing domain in terms of the number of grid points.  Therefore move the unsmoothed topography to processor zero and do the smoothing and the coefficient-computing there.  The class PISMBedSmoother implements these details.
+
+\subsection proveconvex Convexity of P_4
+
+The approximation (\ref thetaapprox) given above relates to the Jensen's inequality argument used by Schoof in Appendix A of [\ref Schoofbasaltopg2003].  For the nonsliding case, his argument shows that because \f$F(s)=(1-s)^{-k}\f$ is convex on \f$[-1,1]\f$ for \f$k>0\f$, therefore \f$0 \le \theta \le 1\f$.
+
+Thus it is desirable for the approximation \f$P_4(z)\f$ to be convex on the same interval, and this is true.  In fact,
+   \f[ P_4''(s) =  k(k+1) \left[1 + (k+2) s + \frac{(k+2)(k+3)}{2} s^2\right], \f]
+and this function turns out to be positive for all \f$s\f$.  In fact we will show that the minimum of \f$P_4''(s)\f$ is positive.  That minimum occurs where \f$P_4'''(s)=0\f$ or \f$s=s_{min}=-1/(k+3)\f$.  It is a minimum because \f$P_4^{(4)}(s)\f$ is a positive constant.  And 
+   \f[ P_4''(s_{min}) =  \frac{k(k+1)(k+4)}{2(k+3)} > 0. \f]
 
 
 */  /* <--- IF THIS END-OF-COMMENT IS LOST, CONFUSION RESULTS ... */

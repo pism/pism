@@ -19,7 +19,7 @@ PISMBedSmoother TEST
   smoothing domain:  Nx = 2, Ny = 2
   original bed    :  min elev =  -500.000000 m,  max elev =   500.000000 m
   smoothed bed    :  min elev =  -372.992474 m,  max elev =   372.992474 m
-  Schoof's theta  :  min      =  0.712193563,    max      =  0.988485420
+  Schoof's theta  :  min      =  0.714730065,    max      =  0.988484365
 END-OF-OUTPUT
 
     if [ $? != 0 ];

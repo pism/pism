@@ -58,8 +58,6 @@ int main(int argc, char *argv[]) {
     grid.compute_nprocs();
     grid.compute_ownership_ranges();
     ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-    //ierr = setVerbosityLevel(2); CHKERRQ(ierr);
-    //ierr = grid.printInfo(1); CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
 
     PetscPrintf(grid.com,"PISMBedSmoother TEST\n");
