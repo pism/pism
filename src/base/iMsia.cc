@@ -296,11 +296,10 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   const bool   do_cold_ice = config.get_flag("do_cold_ice_methods");
 
   // put "theta" from Schoof (2003) bed smoothness calculation in vWork2d[4]
-  //   and a smoothed version of the thickness in vWork2d[5]; all of the fields
+  //   and the thickness relative to the smoothed bed in vWork2d[5]; each of
   //   vh,vH,vWork2d[4,5],sia_bed_smoother->topgsmooth must have stencil width
-  //   WIDE_GHOSTS
+  //   WIDE_GHOSTS for this too work
   const PetscInt WIDE_GHOSTS = 2;
-  //ierr = update_surface_elevation(); CHKERRQ(ierr);
   ierr = sia_bed_smoother->get_theta(
     vh, config.get("Glen_exponent"), WIDE_GHOSTS, &vWork2d[4]); CHKERRQ(ierr);
   ierr = sia_bed_smoother->get_smoothed_thk(
@@ -362,10 +361,6 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
         const PetscInt     oi = 1-o, oj=o;  
         const PetscScalar  slope = (o==0) ? h_x[o][i][j] : h_y[o][i][j];
 
-        //CHANGE r1200; was:   thickness = 0.5 * (H[i][j] + H[i+oi][j+oj]);
-//        const PetscScalar
-//          thickness = 0.5 * ( vh(i,j) - sia_bed_smoother->topgsmooth(i,j) +
-//                                vh(i+oi,j+oj) - sia_bed_smoother->topgsmooth(i+oi,j+oj) );
         const PetscScalar
           thickness = 0.5 * ( vWork2d[5](i,j) + vWork2d[5](i+oi,j+oj) );
 
@@ -382,7 +377,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           const PetscInt      ks = grid.kBelowHeight(thickness);  
           const PetscScalar   alpha =
                   sqrt(PetscSqr(h_x[o][i][j]) + PetscSqr(h_y[o][i][j]));
-          const PetscReal     theta = vWork2d[4](i,j);
+          const PetscReal     theta = 0.5 * ( vWork2d[4](i,j) + vWork2d[4](i+oi,j+oj) );
 
           I[0] = 0;
           PetscScalar  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
@@ -404,7 +399,6 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
               flow = gpbldi->flowFromEnth(alpha * pressure, E, pressure, grainsize);
             }
 
-            //CHANGE r1200; was:  delta[k] = enhancement_factor * 2.0 * pressure * flow;
             delta[k] = enhancement_factor * theta * 2.0 * pressure * flow;
 
             // for Sigma, ignore mask value and assume SHEET; will be overwritten

@@ -630,6 +630,8 @@ PetscErrorCode IceModel::misc_setup() {
 			     config.get_flag("use_ssa_velocity"));
 
   // set info in bed smoother based on initial bed
+  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
   ierr = sia_bed_smoother->preprocess_bed(vbed,
                config.get("Glen_exponent"), config.get("bed_smoother_range") );
                CHKERRQ(ierr);
