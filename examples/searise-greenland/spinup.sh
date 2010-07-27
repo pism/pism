@@ -127,7 +127,7 @@ COARSEENDTIME=-40000 # BP
 
 echo ""
 if [ $# -gt 1 ] ; then
-  if [ $2 -eq "1" ] ; then  # if user says "spinup.sh N 1" then COARSE:
+  if [ $2 -eq "1" ] ; then  # if user says "spinup.sh N 1" then MEDIUM:
     echo "$SCRIPTNAME grid: ALL RUNS ON 10km"
     echo "$SCRIPTNAME       WARNING: LARGE COMPUTATIONAL TIME"
     COARSEGRID=$TENKMGRID
@@ -137,7 +137,7 @@ if [ $# -gt 1 ] ; then
     CS=10 # km
     FS=10 # km
   fi
-  if [ $2 -eq "2" ] ; then  # if user says "spinup.sh N 2" then SHORT PALEO and VERY COARSE:
+  if [ $2 -eq "2" ] ; then  # if user says "spinup.sh N 2" then FINE:
     echo "$SCRIPTNAME grid: ON 10km TILL ${COARSEENDTIME}a THEN ON 5km"
     echo "$SCRIPTNAME       WARNING: VERY LARGE COMPUTATIONAL TIME"
     COARSEGRID=$TENKMGRID

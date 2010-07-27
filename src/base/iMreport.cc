@@ -1171,14 +1171,99 @@ PetscErrorCode IceModel::compute_enthalpysurf(IceModelVec2S &result) {
   return 0;
 }
 
+
+//! \brief Computes the multiplier \f$\theta\f$ in Schoof's (2003) theory of the
+//! effect of bed roughness on the diffusivity of the SIA.
+/*!
+See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
+ */
+PetscErrorCode IceModel::compute_schoofs_theta(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  if (sia_bed_smoother==NULL) {
+    SETERRQ(1,"PISM ERROR: sia_bed_smoother==NULL in compute_schoofs_theta()");
+  }
+  
+  ierr = sia_bed_smoother->preprocess_bed(vbed,
+               config.get("Glen_exponent"), config.get("bed_smoother_range") );
+               CHKERRQ(ierr);
+  ierr = sia_bed_smoother->get_theta(
+               vh, config.get("Glen_exponent"), 0, &result); CHKERRQ(ierr);
+
+  ierr = result.set_name("schoofs_theta"); CHKERRQ(ierr);
+  ierr = result.set_attrs(
+        "diagnostic", 
+        "multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA",
+        "", ""); CHKERRQ(ierr);
+
+  ierr = result.set_attr("valid_max", 1.0); CHKERRQ(ierr);
+  ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  const PetscScalar fill_value = -1.0;
+  ierr = result.mask_by(vH,fill_value); CHKERRQ(ierr);	// set no-ice to _FillValue
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! \brief Computes the smoothed bed elevation from Schoof's (2003) theory of the
+//! effect of bed roughness on the SIA.
+/*!
+See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
+ */
+PetscErrorCode IceModel::compute_topgsmooth(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  if (sia_bed_smoother==NULL) {
+    SETERRQ(1,"PISM ERROR: sia_bed_smoother==NULL in compute_topgsmooth()");
+  }
+  
+  ierr = sia_bed_smoother->preprocess_bed(vbed,
+               config.get("Glen_exponent"), config.get("bed_smoother_range") );
+               CHKERRQ(ierr);
+  ierr = result.copy_from(sia_bed_smoother->topgsmooth); CHKERRQ(ierr);
+
+  ierr = result.set_name("topgsmooth"); CHKERRQ(ierr);
+  ierr = result.set_attrs(
+        "diagnostic", 
+        "smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
+        "m", ""); CHKERRQ(ierr);
+  return 0;
+}
+
+
+//! \brief Computes the thickness relative to the smoothed bed elevation in
+//! Schoof's (2003) theory of the effect of bed roughness on the SIA.
+/*!
+See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
+ */
+PetscErrorCode IceModel::compute_thksmooth(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  if (sia_bed_smoother==NULL) {
+    SETERRQ(1,"PISM ERROR: sia_bed_smoother==NULL in compute_thksmooth()");
+  }
+  
+  ierr = sia_bed_smoother->preprocess_bed(vbed,
+               config.get("Glen_exponent"), config.get("bed_smoother_range") );
+               CHKERRQ(ierr);
+  ierr = sia_bed_smoother->get_smoothed_thk(vh, vH, 0, &result); CHKERRQ(ierr);
+
+  ierr = result.set_name("thksmooth"); CHKERRQ(ierr);
+  ierr = result.set_attrs(
+        "diagnostic", 
+        "thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
+        "m", ""); CHKERRQ(ierr);
+  //ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  return 0;
+}
+
+
 //! \brief Computes a diagnostic quantity given by \c name and returns a
 //! pointer to a pre-allocated work vector containing it.
-/*! For 2D quantities, result will point to vWork2d[0].
-
-  For 3D -- to vWork3d.
-
-  Note that (depending on the quantity requested) vWork2d[1] might get used as
-  a temporary storage.
+/*! 
+For 2D quantities, result will point to vWork2d[0].  For 3D -- to vWork3d.
+Depending on the quantity requested, vWork2d[1] might get used as temporary
+storage.
  */
 PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
   PetscErrorCode ierr;
@@ -1252,6 +1337,12 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
     return 0;
   }
 
+  if (name == "schoofs_theta") {
+    ierr = compute_schoofs_theta(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
   if (name == "taud") {
     ierr = compute_taud(vWork2d[0], vWork2d[1]); CHKERRQ(ierr);
     result = &vWork2d[0];
@@ -1291,6 +1382,18 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 
   if (name == "tempicethk") {
     ierr = compute_tempicethk(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "thksmooth") {
+    ierr = compute_thksmooth(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "topgsmooth") {
+    ierr = compute_topgsmooth(vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }

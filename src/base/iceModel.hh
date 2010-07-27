@@ -313,21 +313,24 @@ protected:
   virtual PetscErrorCode compute_cbase(IceModelVec2S &result, IceModelVec2S &tmp);
   virtual PetscErrorCode compute_cflx(IceModelVec2S &result, IceModelVec2S &cbar);
   virtual PetscErrorCode compute_csurf(IceModelVec2S &result, IceModelVec2S &tmp);
+  virtual PetscErrorCode compute_cts(IceModelVec3 &useForCTS);
   virtual PetscErrorCode compute_dhdt(IceModelVec2S &result);
   virtual PetscErrorCode compute_diffusivity(IceModelVec2S &result);
   virtual PetscErrorCode compute_enthalpybase(IceModelVec2S &result);
   virtual PetscErrorCode compute_enthalpysurf(IceModelVec2S &result);
   virtual PetscErrorCode compute_hardav(IceModelVec2S &result);
-  virtual PetscErrorCode compute_taud(IceModelVec2S &result, IceModelVec2S &tmp);
-  virtual PetscErrorCode compute_tempicethk(IceModelVec2S &result);
-  virtual PetscErrorCode compute_cts(IceModelVec3 &useForCTS);
   virtual PetscErrorCode compute_liqfrac(IceModelVec3 &useForLiqfrac);
+  virtual PetscErrorCode compute_schoofs_theta(IceModelVec2S &result);
+  virtual PetscErrorCode compute_taud(IceModelVec2S &result, IceModelVec2S &tmp);
   virtual PetscErrorCode compute_temp(IceModelVec3 &result);
   virtual PetscErrorCode compute_temp_pa(IceModelVec3 &result);
   virtual PetscErrorCode compute_tempbase(IceModelVec2S &result);
+  virtual PetscErrorCode compute_tempicethk(IceModelVec2S &result);
   virtual PetscErrorCode compute_temppabase(IceModelVec3 &hasPATemp,
                                             IceModelVec2S &result);
   virtual PetscErrorCode compute_tempsurf(IceModelVec2S &result);
+  virtual PetscErrorCode compute_thksmooth(IceModelVec2S &result);
+  virtual PetscErrorCode compute_topgsmooth(IceModelVec2S &result);
   virtual PetscErrorCode compute_uvelbase(IceModelVec2S &result);
   virtual PetscErrorCode compute_uvelsurf(IceModelVec2S &result);
   virtual PetscErrorCode compute_vvelbase(IceModelVec2S &result);
@@ -335,6 +338,7 @@ protected:
   virtual PetscErrorCode compute_wvel(IceModelVec3 &result);
   virtual PetscErrorCode compute_wvelbase(IceModelVec3 &wvel, IceModelVec2S &result);
   virtual PetscErrorCode compute_wvelsurf(IceModelVec3 &wvel, IceModelVec2S &result);
+
   // profiling, etc:
   virtual PetscErrorCode compute_rank(IceModelVec2S &result);
   virtual PetscErrorCode compute_proc_ice_area(IceModelVec2S &result);

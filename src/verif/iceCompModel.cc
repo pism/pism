@@ -60,12 +60,14 @@ IceCompModel::IceCompModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable 
   
   // Override some defaults from parent class
   config.set("enhancement_factor", 1.0);
+  config.set("bed_smoother_range", 0.0);  // none use bed smoothing & bed roughness
+                                          // parameterization
 
   // set values of flags in run() 
   config.set_flag("do_mass_conserve", true);
   config.set_flag("use_ssa_velocity", false);
   config.set_flag("include_bmr_in_continuity", false);
-  config.set_flag("use_ssa_when_grounded", false);
+  config.set_flag("use_ssa_when_grounded", false);  
 }
 
 PetscErrorCode IceCompModel::createVecs() {

@@ -168,6 +168,9 @@ PetscErrorCode IceEISModel::init_physics() {
   config.set_flag("use_ssa_velocity", false);
   config.set("enhancement_factor", 1.0);
 
+  config.set("bed_smoother_range", 0.0);  // none use bed smoothing & bed roughness
+                                          // parameterization
+
   // basal melt does not change computation of mass continuity or vertical velocity:
   config.set_flag("include_bmr_in_continuity", false);
 

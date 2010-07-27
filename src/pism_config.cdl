@@ -158,8 +158,8 @@ netcdf pism_config {
     pism_config:bed_def_interval_years = 10.0;
     pism_config:bed_def_interval_years_doc = "years; Interval between bed deformation updates";
 
-    pism_config:bed_smoother_range = 0.0;
-    pism_config:bed_smoother_range_doc = "m; half-width of smoothing domain for PISMBedSmoother, in implementing [\\ref Schoofbasaltopg2003] bed roughness parameterization for SIA";
+    pism_config:bed_smoother_range = 5.0e3;
+    pism_config:bed_smoother_range_doc = "m; half-width of smoothing domain for PISMBedSmoother, in implementing [\\ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism";
 
     pism_config:max_iterations_ssa = 300;
     pism_config:max_iterations_ssa_doc = "Maximum number of iterations for the ice viscosity computation";
@@ -450,7 +450,8 @@ netcdf pism_config {
    pism_config:WGS84_semiminor_axis = 6356752.314245;
    pism_config:WGS84_semiminor_axis_doc = "m; WGS84 reference ellipsoid semi-minor axis";
 
-   pism_config:output_medium = "cbar cbase csurf cflx dHdt tauc taud usurf wvelsurf";
+//   pism_config:output_medium = "cbar cbase csurf cflx dHdt tauc taud usurf wvelsurf";
+   pism_config:output_medium = "cbar cbase csurf cflx dHdt schoofs_theta tauc taud thksmooth topgsmooth usurf wvelsurf";
    pism_config:output_medium_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size is selected. Does not include fields written by boundary models.";
 
    pism_config:output_big = "acab age artm bfrict bheatflx bmelt bwat bwp cbar cbase cell_area cflx csurf dHdt dbdt dhdt enthalpybase enthalpysurf hardav lat litho_temp lon mask rank tauc taud temp tempbase tempsurf temp_pa tempicethk thk tillphi topg uvbasal uvbar usurf uvel uvelbase uvelsurf vvel vvelbase vvelsurf wvel wvel_rel wvelbase wvelsurf";

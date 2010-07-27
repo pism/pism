@@ -27,7 +27,6 @@ PISMBedSmoother::PISMBedSmoother(
     PetscPrintf(grid.com, "PISMBedSmoother constructor: allocate() failed\n");
     PetscEnd();
   }
-  
 }
 
 
@@ -37,7 +36,6 @@ PISMBedSmoother::~PISMBedSmoother() {
     PetscPrintf(grid.com, "PISMBedSmoother destructor: deallocate() failed\n");
     PetscEnd();
   }
-
 }
 
 
@@ -107,7 +105,6 @@ PetscErrorCode PISMBedSmoother::allocate() {
      "bed_smoother_tool", 
      "polynomial coeff of H^-4, in bed roughness parameterization",
      "m4", ""); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -125,7 +122,6 @@ PetscErrorCode PISMBedSmoother::deallocate() {
   ierr = VecDestroy(C2p0); CHKERRQ(ierr);
   ierr = VecDestroy(C3p0); CHKERRQ(ierr);
   ierr = VecDestroy(C4p0); CHKERRQ(ierr);
-
   // no need to destroy topgsmooth,maxtl,C2,C3,C4; their destructors do it
   return 0;
 }
@@ -159,7 +155,6 @@ PetscErrorCode PISMBedSmoother::preprocess_bed(
   //PetscPrintf(grid.com,"PISMBedSmoother:  Nx = %d, Ny = %d\n",Nx,Ny);
 
   ierr = preprocess_bed(topg, n, Nx, Ny); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -197,7 +192,6 @@ PetscErrorCode PISMBedSmoother::preprocess_bed(
   ierr = C2.get_from_proc0(C2p0, scatter, g2, g2natural); CHKERRQ(ierr);
   ierr = C3.get_from_proc0(C3p0, scatter, g2, g2natural); CHKERRQ(ierr);
   ierr = C4.get_from_proc0(C4p0, scatter, g2, g2natural); CHKERRQ(ierr);
-  
   return 0;
 }
 
@@ -275,7 +269,7 @@ PetscErrorCode PISMBedSmoother::compute_coefficients_on_proc0(PetscReal n) {
               // tl is elevation of local topography at a pt in patch
               const PetscReal tl  = b0[i+r][j+s] - topgs;  
               maxtltemp = PetscMax(maxtltemp, tl);
-              // accumulate 2nd, 3rd, 4th, and 5th powers with only 4 mults
+              // accumulate 2nd, 3rd, and 4th powers with only 3 mults
               const PetscReal tl2 = tl * tl;
               sum2 += tl2;
               sum3 += tl2 * tl;
@@ -334,7 +328,7 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(
   PetscErrorCode ierr;  
   
   if (GHOSTS > maxGHOSTS) {
-    SETERRQ2(1,"PISM ERROR:  PISMBedSmoother::topgsmooth does not have stencil\n"
+    SETERRQ2(1,"PISM ERROR:  PISMBedSmoother fields do not have stencil\n"
                "  width sufficient to fill thksmooth with GHOSTS=%d;\n"
                "  construct PISMBedSmoother with MAX_GHOSTS>=%d\n",
                GHOSTS,GHOSTS);
@@ -342,19 +336,28 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(
 
   PetscScalar **thks;  
   ierr = topgsmooth.begin_access(); CHKERRQ(ierr);
+  ierr = maxtl.begin_access(); CHKERRQ(ierr);
   ierr = usurf.begin_access(); CHKERRQ(ierr);
   ierr = thk.begin_access(); CHKERRQ(ierr);
   ierr = thksmooth->get_array(thks); CHKERRQ(ierr);
   for (PetscInt i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      if (thk(i,j) <= 0.0) {
+      if (thk(i,j) < 0.0) {
+        SETERRQ2(2,
+          "PISM ERROR:  PISMBedSmoother detects negative original thickness\n"
+          "  at location (i,j) = (%d,%d) ... ending\n",i,j);
+      } else if (thk(i,j) == 0.0) {
         thks[i][j] = 0.0;
+      } else if (maxtl(i,j) >= thk(i,j)) {
+        thks[i][j] = thk(i,j);
       } else {
-        thks[i][j] = usurf(i,j) - topgsmooth(i,j);
+        const PetscScalar thks_try = usurf(i,j) - topgsmooth(i,j);
+        thks[i][j] = (thks_try > 0.0) ? thks_try : 0.0;
       }
     }
   }
   ierr = topgsmooth.end_access(); CHKERRQ(ierr);
+  ierr = maxtl.end_access(); CHKERRQ(ierr);
   ierr = usurf.end_access(); CHKERRQ(ierr);
   ierr = thk.end_access(); CHKERRQ(ierr);
   ierr = thksmooth->end_access(); CHKERRQ(ierr);
@@ -413,23 +416,23 @@ PetscErrorCode PISMBedSmoother::get_theta(
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
       const PetscScalar H = usurf(i,j) - topgsmooth(i,j);
       if (H > maxtl(i,j)) { 
-        // if thickness exceeds maximum variation in patch of local topography,
+        // thickness exceeds maximum variation in patch of local topography,
         // so ice buries local topography; note maxtl >= 0 always
         const PetscReal Hinv = 1.0 / H;
         PetscReal omega;
         omega = 1.0 + Hinv*Hinv * ( C2(i,j) + Hinv * ( C3(i,j) + Hinv*C4(i,j) ) );
-        if (omega <= 0) {  // this check *should* be unnecessary: p4(s) > 0
+        if (omega <= 0) {  // this check *should not* be necessary: p4(s) > 0
           SETERRQ2(1,"PISM ERROR: omega is negative for i=%d,j=%d\n"
                      "    in PISMBedSmoother.get_theta() ... ending\n",i,j);
         }
         if (omega < 0.001)  omega = 0.001;
         mytheta[i][j] = pow(omega,-n);
+        // now guarantee in [0,1]; this check *should not* be necessary, by convexity of p4
+        if (mytheta[i][j] > 1.0)  mytheta[i][j] = 1.0;
+        if (mytheta[i][j] < 0.0)  mytheta[i][j] = 0.0;
       } else {
         mytheta[i][j] = 0.00;  // FIXME = min_theta; make configurable
       }
-      // now guarantee in [0,1]
-      if (mytheta[i][j] > 1.0)  mytheta[i][j] = 1.0;
-      if (mytheta[i][j] < 0.0)  mytheta[i][j] = 0.0;
     }
   }  
   ierr = C4.end_access(); CHKERRQ(ierr);
