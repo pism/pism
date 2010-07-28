@@ -114,27 +114,32 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
 }
 
 
-//! Build the particular history string associated to the end of a PISM run.
+//! Build the particular history string associated to the end of a PISM run,
+//! including a minimal performance assessment.
 PetscErrorCode  IceModel::stampHistoryEnd() {
   PetscErrorCode ierr;
-  PetscLogDouble flops, my_flops;
-  char str[TEMPORARY_STRING_LENGTH];
-  MPI_Datatype mpi_type;
+
+  // timing stats
   PetscLogDouble current_time;
-  PetscReal mypph;		// model years per proc. hour
-
-  ierr = PetscGetFlops(&my_flops); CHKERRQ(ierr);
-
+  PetscReal wall_clock_hours, proc_hours, mypph;
   ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
+  wall_clock_hours = (current_time - start_time) / 3600.0;
+  proc_hours = grid.size * wall_clock_hours;
+  mypph = (grid.year - grid.start_year) / proc_hours;
 
-  mypph = 3600 * (grid.year - grid.start_year) / (grid.size * (current_time - start_time));
-
+  // get PETSc's reported number of floating point ops (*not* per time) on this
+  //   process, then sum over all processes
+  PetscLogDouble flops, my_flops;
+  MPI_Datatype mpi_type;
+  ierr = PetscGetFlops(&my_flops); CHKERRQ(ierr);
   ierr = PetscDataTypeToMPIDataType(PETSC_DOUBLE, &mpi_type); CHKERRQ(ierr);
   MPI_Reduce(&my_flops, &flops, 1, mpi_type, MPI_SUM, 0, grid.com);
-  
-  snprintf(str, sizeof(str), "PISM done.  %.4f model years per processor-hour.  PETSc MFlops = %.2f.",
-           mypph, flops * 1.0e-6);
 
+  // build and put string into global attribute "history"
+  char str[TEMPORARY_STRING_LENGTH];
+  snprintf(str, sizeof(str), 
+    "PISM done.  Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour, PETSc MFlops = %.2f.",
+    wall_clock_hours, proc_hours, mypph, flops * 1.0e-6);
   ierr = stampHistory(str); CHKERRQ(ierr);
   
   return 0;

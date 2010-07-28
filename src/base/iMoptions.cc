@@ -83,6 +83,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = check_old_option_and_stop(grid.com, "-bed_def_iso", "-bed_def"); CHKERRQ(ierr);
   ierr = check_old_option_and_stop(grid.com, "-bed_def_lc", "-bed_def"); CHKERRQ(ierr);
 
+  ierr = config.scalar_from_option("bed_smoother_range", "bed_smoother_range"); CHKERRQ(ierr);
+
   // see getBasalWaterPressure()
   ierr = config.flag_from_option("bmr_enhance", "bmr_enhance_basal_water_pressure");
      CHKERRQ(ierr);

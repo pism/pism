@@ -419,6 +419,16 @@ A final note on basal sliding is in order.  There can be sliding in the SIA stre
 %The scripts in \t{examples/pst} perform the experiments described in \cite{BBssasliding}, and represent the most thorough test of these mechanisms.
 % Test I in the verification suite\index{verification tests} uses an exact solution to the Schoof model.
 
+\subsection{Schoof's parameterization of bed roughness in the SIA} \label{subsect:bedsmooth} \index{Schoof's parameterization of bed roughness}
+\optsection{Schoof's parameterization of bed roughness}
+
+Christian Schoof's article \emph{The effect of basal topography on ice sheet dynamics} from 2003 \cite{Schoofbasaltopg2003} describes how to alter the SIA model to more-effectively preproduce ice flow in the vicinity of significant subglacial bedrock topgraphy.  This theory explains that one should use a smoothed (spatially-averaged) bed, but then lower the SIA diffusivity in a precise way in those regions where the significant topography was smoothed-away.  As a practical matter for PISM, this theory improves the SIA model's ability to handle bed roughness because it parameterizes the effects of "higher-order" stresses which act on the ice as it flows over bed topography.   But it also provides s double performance boost, because smoothed beds give longer time steps through the adaptive time-stepping mechanism, \emph{and} because the reduction of diffusivity, which is the parameterized effect of the local bed roughness, gives even longer time-steps.  For a technical description of PISM's implementation of this theory, see the \emph{Browser} page ``Using Schoof's (2003) parameterized bed roughness technique in PISM''.
+
+There is one option which controls this mechanism: \intextoption{bed_smoother_range} gives the half-width of the square smoothing domain in meters.  If zero is given, \texttt{-bed_smoother_range 0} then the mechanism is turned off.  The mechanism is on by default using executable \texttt{pismr}, with the half-width set to 5 km (\texttt{-bed_smoother_range 5.0e3}), giving the recommended smoothing size of 10 km \cite{Schoofbasaltopg2003}.  This mechanism is turned off by default in executables \texttt{pisms} and \texttt{pismv}.
+
+PISM [can? FIXME: decide on and document relevant outputs] write fields \texttt{topgsmooth}, \texttt{schoofs_omega}, \texttt{thksmooth} from this mechanism.  (Regarding the last, the thickness is never smoothed, but the thickness relative to the smoothed bedrock elevation, i.e.~the difference between the unsmoothed surface elevation and the smoothed bedrock elevation, is used internally in the mechanism.)
+
+
 \subsection{Earth deformation models} \label{subsect:beddef} \index{earth deformation} \index{PISM!earth deformation models, using}
 \optsection{Earth deformation models}
 
