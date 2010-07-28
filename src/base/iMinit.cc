@@ -584,12 +584,20 @@ PetscErrorCode IceModel::allocate_internal_objects() {
     ierr = vWork2d[j].create(grid, namestr, true, WIDE_STENCIL); CHKERRQ(ierr);
   }
 
-  ierr = vel_ssa_old.create(grid, "bar_ssa_old", true, WIDE_STENCIL); CHKERRQ(ierr);
-  // components are ubar_ssa_old and vbar_ssa_old
-
-  // 3d work vectors
+  // 2dStag and 3d work vectors
+//CHANGE r1206:  ierr = vWork2dStag.create(grid, "work_vector_2dStag", false); CHKERRQ(ierr);
+  ierr = vWork2dStag.create(grid, "work_vector_2dStag", true, 1); CHKERRQ(ierr);
+  ierr = vWork2dStag.set_attrs(
+           "internal", 
+           "e.g. diffusivity or vertically-averaged ice hardness on staggered grid",
+           "", ""); CHKERRQ(ierr);
   ierr = vWork3d.create(grid,"work_vector_3d",false); CHKERRQ(ierr);
+  ierr = vWork3d.set_attrs(
+           "internal", 
+           "e.g. new values of temperature or age or enthalpy during time step",
+           "", ""); CHKERRQ(ierr);
 
+  // working space dedicated to SIA staggered grid purposes
   ierr = Sigmastag3[0].create(grid,"Sigma_stagx",true); CHKERRQ(ierr);
   ierr = Sigmastag3[0].set_attrs("internal",
              "rate of strain heating; on staggered grid offset in X direction",
@@ -603,9 +611,12 @@ PetscErrorCode IceModel::allocate_internal_objects() {
   ierr = Istag3[1].create(grid,"I_stagy",true); CHKERRQ(ierr);
   ierr = Istag3[1].set_attrs("internal","","",""); CHKERRQ(ierr);
 
-  ierr = hardav.create(grid, "averaged_hardness", false); CHKERRQ(ierr);
-  ierr = hardav.set_attrs("internal", "vertically-averaged ice hardness",
-                          "", ""); CHKERRQ(ierr);
+  // components of this SSA working space are ubar_ssa_old and vbar_ssa_old:
+  ierr = vel_ssa_old.create(grid, "bar_ssa_old", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = vel_ssa_old.set_attrs(
+           "internal",
+           "latest SSA velocities for rapid re-solve of SSA equations",
+           "",""); CHKERRQ(ierr);
 
   return 0;
 }
@@ -630,15 +641,24 @@ PetscErrorCode IceModel::misc_setup() {
 			     config.get_flag("use_ssa_velocity"));
 
   // set info in bed smoother based on initial bed
-  ierr = verbPrintf(3, grid.com, 
-    "  initializing bed smoother object with lambda = %.3f km half-width\n"
-    "    of smoothing domain ...\n",config.get("bed_smoother_range"));
-    CHKERRQ(ierr);
+  if (config.get("bed_smoother_range") > 0.0) {
+    ierr = verbPrintf(2, grid.com, 
+      "  initializing bed smoother object with chosen lambda = %.3f km half-width\n"
+      "    for intended square smoothing domain ...\n",
+      config.get("bed_smoother_range")); CHKERRQ(ierr);
+  }
   ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
   ierr = vbed.endGhostComm(); CHKERRQ(ierr);
   ierr = sia_bed_smoother->preprocess_bed(vbed,
                config.get("Glen_exponent"), config.get("bed_smoother_range") );
                CHKERRQ(ierr);
+  if (config.get("bed_smoother_range") > 0.0) {
+    PetscInt pbs_Nx,pbs_Ny;
+    ierr = sia_bed_smoother->get_smoothing_domain(pbs_Nx,pbs_Ny); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, 
+      "    (bed smoother object reports effective lambdax = %.3f km, lambday = %.3f km)\n",
+      pbs_Nx * grid.dx, pbs_Ny * grid.dy); CHKERRQ(ierr);
+  }
 
   // compute (possibly corrected) cell areas:
   ierr = compute_cell_areas(); CHKERRQ(ierr);

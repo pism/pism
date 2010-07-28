@@ -168,7 +168,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
 
   PISMVector2 **uv;
   ierr = vel_ssa.get_array(uv); CHKERRQ(ierr);
-  ierr = hardav.begin_access(); CHKERRQ(ierr);
+  ierr = vWork2dStag.begin_access(); CHKERRQ(ierr);
 
   const PetscScalar   dx = grid.dx, dy = grid.dy;
 
@@ -196,8 +196,8 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
             v_y = (uv[i][j+1].v - uv[i][j].v) / dy;
           }
 
-          const PetscScalar hardness = hardav(i,j,o);
-          nuH[o][i][j] = H * ice->effectiveViscosity(hardness, u_x, u_y, v_x, v_y);
+          const PetscScalar hardav = vWork2dStag(i,j,o);
+          nuH[o][i][j] = H * ice->effectiveViscosity(hardav, u_x, u_y, v_x, v_y);
 
           if (! finite(nuH[o][i][j]) || false) {
             ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, nuH[o][i][j]);
@@ -218,7 +218,7 @@ PetscErrorCode IceModel::computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscR
   ierr = vNuH[1].end_access(); CHKERRQ(ierr);
 
   ierr = vel_ssa.end_access(); CHKERRQ(ierr);
-  ierr = hardav.end_access(); CHKERRQ(ierr);
+  ierr = vWork2dStag.end_access(); CHKERRQ(ierr);
 
   // Some communication
   ierr = vNuH[0].beginGhostComm(); CHKERRQ(ierr);
@@ -649,7 +649,7 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2S vNuH[2], PetscInt *numiter) {
   //   but matrix changes under nonlinear iteration (loop over k below)
   ierr = assembleSSARhs(SSARHS); CHKERRQ(ierr);
 
-  ierr = compute_hardav_staggered(); CHKERRQ(ierr);
+  ierr = compute_hardav_staggered(vWork2dStag); CHKERRQ(ierr);
 
   for (PetscInt l=0; ; ++l) { // iterate with increasing regularization parameter
     ierr = computeEffectiveViscosity(vNuH, epsilon); CHKERRQ(ierr);
@@ -980,7 +980,7 @@ PetscErrorCode IceModel::correctSigma() {
 }
 
 //! Computes vertically-averaged ice hardness on the staggered grid.
-PetscErrorCode IceModel::compute_hardav_staggered() {
+PetscErrorCode IceModel::compute_hardav_staggered(IceModelVec2Stag &result) {
   PetscErrorCode ierr;
   PolyThermalGPBLDIce *gpbldi = NULL;
   PetscScalar *tmp, *tmp_ij, *tmp_offset;
@@ -991,7 +991,7 @@ PetscErrorCode IceModel::compute_hardav_staggered() {
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  ierr = hardav.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
   
   if (do_cold_ice) {
     ierr = T3.begin_access(); CHKERRQ(ierr); 
@@ -1007,7 +1007,7 @@ PetscErrorCode IceModel::compute_hardav_staggered() {
         const PetscScalar H = 0.5 * (vH(i,j) + vH(i+oi,j+oj));
 
         if (H == 0) {
-          hardav(i,j,o) = -1e6; // an obviously impossible value
+          result(i,j,o) = -1e6; // an obviously impossible value
           continue;
         }
 
@@ -1026,10 +1026,10 @@ PetscErrorCode IceModel::compute_hardav_staggered() {
         }
         
         if (do_cold_ice == false) {
-          hardav(i,j,o) = gpbldi->averagedHardnessFromEnth(H, grid.kBelowHeight(H),
+          result(i,j,o) = gpbldi->averagedHardnessFromEnth(H, grid.kBelowHeight(H),
                                                            grid.zlevels, tmp); CHKERRQ(ierr); 
         } else {
-          hardav(i,j,o) = ice->averagedHardness(H, grid.kBelowHeight(H),
+          result(i,j,o) = ice->averagedHardness(H, grid.kBelowHeight(H),
                                                 grid.zlevels, tmp);
         }
         
@@ -1041,7 +1041,7 @@ PetscErrorCode IceModel::compute_hardav_staggered() {
     ierr = T3.end_access(); CHKERRQ(ierr); 
   }
 
-  ierr = hardav.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
@@ -1049,3 +1049,4 @@ PetscErrorCode IceModel::compute_hardav_staggered() {
 
   return 0;
 }
+

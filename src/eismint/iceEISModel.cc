@@ -88,6 +88,12 @@ PetscErrorCode IceEISModel::setFromOptions() {
 
   ierr = set_expername_from_options(); CHKERRQ(ierr);
 
+  config.set("enhancement_factor", 1.0);
+  config.set("bed_smoother_range", 0.0);  // none use bed smoothing & bed roughness
+                                          // parameterization
+  // basal melt does not change computation of mass continuity or vertical velocity:
+  config.set_flag("include_bmr_in_continuity", false);
+
   ierr = verbPrintf(2,grid.com, 
     "setting parameters for surface mass balance and temperature in EISMINT II experiment %c ... \n", 
     expername); CHKERRQ(ierr);
@@ -166,13 +172,6 @@ PetscErrorCode IceEISModel::init_physics() {
   // see EISMINT II description; choose no ocean interaction, purely SIA, and E=1
   config.set_flag("is_dry_simulation", true);
   config.set_flag("use_ssa_velocity", false);
-  config.set("enhancement_factor", 1.0);
-
-  config.set("bed_smoother_range", 0.0);  // none use bed smoothing & bed roughness
-                                          // parameterization
-
-  // basal melt does not change computation of mass continuity or vertical velocity:
-  config.set_flag("include_bmr_in_continuity", false);
 
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 

@@ -314,6 +314,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = vWork2d[4].begin_access(); CHKERRQ(ierr);
   ierr = vWork2d[5].begin_access(); CHKERRQ(ierr);
   ierr = uvbar.begin_access(); CHKERRQ(ierr);
+  ierr = vWork2dStag.begin_access(); CHKERRQ(ierr);
   ierr = w3.begin_access(); CHKERRQ(ierr);
   ierr = Istag3[0].begin_access(); CHKERRQ(ierr);
   ierr = Istag3[1].begin_access(); CHKERRQ(ierr);
@@ -416,6 +417,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           const PetscScalar dz = thickness - grid.zlevels[ks];
           Dfoffset += 0.5 * dz * dz * delta[ks];
 
+          vWork2dStag(i,j,o) = Dfoffset;
           Dmax = PetscMax(Dmax, Dfoffset);
 
           for (PetscInt k=ks+1; k<grid.Mz; ++k) { // above the ice
@@ -440,15 +442,14 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   } // i
 
   ierr = uvbar.end_access(); CHKERRQ(ierr);
+  ierr = vWork2dStag.end_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
-
   ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[5].end_access(); CHKERRQ(ierr);
   ierr = vh.end_access(); CHKERRQ(ierr);
-
   if (usetau3) {
     ierr = tau3.end_access(); CHKERRQ(ierr);
   }
