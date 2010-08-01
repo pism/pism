@@ -433,7 +433,8 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           uvbar(i,j,o) = - Dfoffset * slope / thickness;
          
         } else {  // zero thickness case
-          uvbar(i,j,o) = 0;
+          uvbar(i,j,o) = 0.0;
+          vWork2dStag(i,j,o) = 0.0;  // zero diffusivity
           ierr = Istag3[o].setColumn(i,j,0.0); CHKERRQ(ierr);
           ierr = Sigmastag3[o].setColumn(i,j,0.0); CHKERRQ(ierr);
         } 
