@@ -216,7 +216,7 @@ struct PISMVector2 {
 class IceModelVec2V : public IceModelVec2 {
 public:
   IceModelVec2V();
-  IceModelVec2V(const IceModelVec2V &original);
+  //IceModelVec2V(const IceModelVec2V &original);
   ~IceModelVec2V();
   using IceModelVec2::create;
   virtual PetscErrorCode create(IceGrid &my_grid, const char my_short_name[],
