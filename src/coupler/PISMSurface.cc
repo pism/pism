@@ -263,7 +263,7 @@ PetscErrorCode PSLocalMassBalance::init(PISMVars &vars) {
   }
 
   ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
-  ierr = acab.set_attrs("climate_state",
+  ierr = acab.set_attrs("diagnostic",
 			"instantaneous ice-equivalent surface mass balance (accumulation/ablation) rate",
 			"m s-1",  // m *ice-equivalent* per second
 			"land_ice_surface_specific_mass_balance");  // CF standard_name

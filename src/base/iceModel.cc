@@ -376,11 +376,11 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vel_ssa.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   ierr = variables.add(vel_ssa, "uvbar_ssa"); CHKERRQ(ierr);
 
-  // input fields:
+  // fields owned by IceModel but filled by PISMSurfaceModel *surface:
   // mean annual net ice equivalent surface mass balance rate
   ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
   ierr = acab.set_attrs(
-            "climate_state",
+            "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
             "ice-equivalent surface mass balance (accumulation/ablation) rate",
 	    "m s-1",  // m *ice-equivalent* per second
 	    "land_ice_surface_specific_mass_balance");  // CF standard_name
@@ -394,7 +394,7 @@ PetscErrorCode IceModel::createVecs() {
   //   processes (e.g. "10 m" or ice temperatures)
   ierr = artm.create(grid, "artm", false); CHKERRQ(ierr);
   ierr = artm.set_attrs(
-            "climate_state",
+            "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
             "annual average ice surface temperature, below firn processes",
             "K", 
             "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
@@ -587,7 +587,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   PetscLogEventEnd(tempEVENT,0,0,0,0);
 
-  //! \li compute fluxes through ice boundaries
+  //! \li compute fluxes through ice boundaries; this method frequently updates
+  //! the surface process models pre-emptively, so that massContExplicitStep()
+  //! does not do that work again
   ierr = ice_mass_bookkeeping(); CHKERRQ(ierr);
 
   PetscLogEventBegin(massbalEVENT,0,0,0,0);
