@@ -1755,9 +1755,25 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
     ierr = compute_ice_volume_temperate(result); CHKERRQ(ierr);
   }
 
+  if (name == "ivoltempf") {
+    errcode = 0;
+    PetscScalar ivol;
+    ierr = compute_ice_volume(ivol); CHKERRQ(ierr);
+    ierr = compute_ice_volume_temperate(result); CHKERRQ(ierr);
+    result /= ivol;
+  }
+
   if (name == "ivolcold") {
     errcode = 0;
     ierr = compute_ice_volume_cold(result); CHKERRQ(ierr);
+  }
+
+  if (name == "ivolcoldf") {
+    errcode = 0;
+    PetscScalar ivol;
+    ierr = compute_ice_volume(ivol); CHKERRQ(ierr);
+    ierr = compute_ice_volume_cold(result); CHKERRQ(ierr);
+    result /= ivol;
   }
 
   if (name == "imass") {
@@ -1777,9 +1793,25 @@ PetscErrorCode IceModel::compute_by_name(string name, PetscScalar &result) {
     ierr = compute_ice_area_temperate(result); CHKERRQ(ierr);
   }
 
+  if (name == "iareatempf") {
+    errcode = 0;
+    PetscScalar iarea;
+    ierr = compute_ice_area(iarea); CHKERRQ(ierr);
+    ierr = compute_ice_area_temperate(result); CHKERRQ(ierr);
+    result /= iarea;
+  }
+
   if (name == "iareacold") {
     errcode = 0;
     ierr = compute_ice_area_cold(result); CHKERRQ(ierr);
+  }
+
+  if (name == "iareacoldf") {
+    errcode = 0;
+    PetscScalar iarea;
+    ierr = compute_ice_area(iarea); CHKERRQ(ierr);
+    ierr = compute_ice_area_cold(result); CHKERRQ(ierr);
+    result /= iarea;
   }
 
   if (name == "iareag") {

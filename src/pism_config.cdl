@@ -456,6 +456,6 @@ netcdf pism_config {
    pism_config:output_big = "acab age artm bfrict bheatflx bmelt bwat bwp cbar cbase cell_area cflx csurf dbdt dHdt dhdt diffusivity enthalpybase enthalpysurf hardav lat litho_temp lon mask rank schoofs_theta tauc taud temp tempbase tempsurf temp_pa tempicethk thk thksmooth tillphi topg topgsmooth uvbasal uvbar usurf uvel uvelbase uvelsurf vvel vvelbase vvelsurf wvel wvel_rel wvelbase wvelsurf";
    pism_config:output_big_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'big' output size is selected. Does not include fields written by boundary models.";
 
-   pism_config:ts_variables = "dt ivol ivolcold ivoltemp imass iarea iareacold iareatemp iareag iareaf divoldt dimassdt surface_ice_flux basal_ice_flux sub_shelf_ice_flux nonneg_rule_flux ocean_kill_flux float_kill_flux ienthalpy dienthalpydt";
+   pism_config:ts_variables = "dt ivol ivolcoldf ivoltempf imass iarea iareacoldf iareatempf iareag iareaf divoldt dimassdt surface_ice_flux basal_ice_flux sub_shelf_ice_flux nonneg_rule_flux ocean_kill_flux float_kill_flux ienthalpy dienthalpydt";
    pism_config:ts_variables_doc = "Space-separated list of scalar diagnostic quantities to save if -ts_file and -ts_times are used.";
 }

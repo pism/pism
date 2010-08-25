@@ -138,6 +138,19 @@ PetscErrorCode IceModel::create_timeseries() {
     timeseries.push_back(ivoltemp);
   }
 
+  if (find(ts_vars.begin(), ts_vars.end(), "ivoltempf") != ts_vars.end()) {
+    DiagnosticTimeseries *ivoltempf = new DiagnosticTimeseries(&grid, "ivoltempf", "t");
+
+    ivoltempf->set_units("1", "");
+    ivoltempf->set_dimension_units("years", "");
+    ivoltempf->output_filename = ts_filename;
+
+    ivoltempf->set_attr("long_name", "total temperate ice volume fraction");
+    ivoltempf->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(ivoltempf);
+  }
+
   if (find(ts_vars.begin(), ts_vars.end(), "ivolcold") != ts_vars.end()) {
     DiagnosticTimeseries *ivolcold = new DiagnosticTimeseries(&grid, "ivolcold", "t");
 
@@ -150,6 +163,20 @@ PetscErrorCode IceModel::create_timeseries() {
 
     timeseries.push_back(ivolcold);
   }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "ivolcoldf") != ts_vars.end()) {
+    DiagnosticTimeseries *ivolcoldf = new DiagnosticTimeseries(&grid, "ivolcoldf", "t");
+
+    ivolcoldf->set_units("1", "");
+    ivolcoldf->set_dimension_units("years", "");
+    ivolcoldf->output_filename = ts_filename;
+
+    ivolcoldf->set_attr("long_name", "total cold ice volume fraction");
+    ivolcoldf->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(ivolcoldf);
+  }
+
   if (find(ts_vars.begin(), ts_vars.end(), "ienthalpy") != ts_vars.end()) {
     DiagnosticTimeseries *ienthalpy = new DiagnosticTimeseries(&grid, "ienthalpy", "t");
 
@@ -202,6 +229,19 @@ PetscErrorCode IceModel::create_timeseries() {
     timeseries.push_back(iareatemp);
   }
 
+  if (find(ts_vars.begin(), ts_vars.end(), "iareatempf") != ts_vars.end()) {
+    DiagnosticTimeseries *iareatempf = new DiagnosticTimeseries(&grid, "iareatempf", "t");
+
+    iareatempf->set_units("1", "");
+    iareatempf->set_dimension_units("years", "");
+    iareatempf->output_filename = ts_filename;
+
+    iareatempf->set_attr("long_name", "ice area temperate fraction");
+    iareatempf->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(iareatempf);
+  }
+
   if (find(ts_vars.begin(), ts_vars.end(), "iareacold") != ts_vars.end()) {
     DiagnosticTimeseries *iareacold = new DiagnosticTimeseries(&grid, "iareacold", "t");
 
@@ -213,6 +253,19 @@ PetscErrorCode IceModel::create_timeseries() {
     iareacold->set_attr("valid_min", 0.0);
 
     timeseries.push_back(iareacold);
+  }
+
+  if (find(ts_vars.begin(), ts_vars.end(), "iareacoldf") != ts_vars.end()) {
+    DiagnosticTimeseries *iareacoldf = new DiagnosticTimeseries(&grid, "iareacoldf", "t");
+
+    iareacoldf->set_units("1", "");
+    iareacoldf->set_dimension_units("years", "");
+    iareacoldf->output_filename = ts_filename;
+
+    iareacoldf->set_attr("long_name", "ice area cold fraction");
+    iareacoldf->set_attr("valid_min", 0.0);
+
+    timeseries.push_back(iareacoldf);
   }
 
   if (find(ts_vars.begin(), ts_vars.end(), "iareag") != ts_vars.end()) {
