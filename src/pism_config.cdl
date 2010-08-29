@@ -5,6 +5,9 @@ netcdf pism_config {
     pism_config:force_output_times = "yes";
     pism_config:force_output_times_doc = "Modify the time-stepping mechanism to hit times requested using -extra_times and -ts_times.";
 
+    pism_config:interpret_precip_as_snow = "no";
+    pism_config:interpret_precip_as_snow_doc = "Interpret preciptation as snow fall.";
+
     pism_config:do_cold_ice_methods = "no";
     pism_config:do_cold_ice_methods_doc = "Use cold ice (i.e. not polythermal) methods.";
 
@@ -255,7 +258,13 @@ netcdf pism_config {
     pism_config:snow_temp_fausto_kappa_mj_doc = "Kelvin (degW)-1; longitude-dependence coefficient for formula (2) in [\\ref Faustoetal2009] ";
 
     pism_config:snow_temp_july_day = 196;
-    pism_config:snow_temp_july_day_doc = "day; = Julian day for July 15; used in corrected formula (4) in [\\ref Faustoetal2009] ";
+    pism_config:snow_temp_july_day_doc = "day; = day of year for July 15; used in corrected formula (4) in [\\ref Faustoetal2009] ";
+
+    pism_config:snow_precip_threshold = 273.15;
+    pism_config:snow_precip_threshold_doc = "Kelvin; threshold temperature at which precip  = 0.5*snow + 0.5*rain";
+
+    pism_config:snow_precip_delta = 1.;
+    pism_config:snow_precip_delta_doc = "Kelvin; half-width of linear interpolation between snow and rain";
 
     pism_config:precip_exponential_factor_for_temperature = 0.07041666667;
     pism_config:precip_exponential_factor_for_temperature_doc = "Kelvin-1; = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change [\\ref Huybrechts02] ";
