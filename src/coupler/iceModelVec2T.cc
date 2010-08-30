@@ -210,7 +210,7 @@ PetscErrorCode IceModelVec2T::update(int start) {
   
   T.resize(kept + missing);
   string long_name = string_attr("long_name");
-  ierr = verbPrintf(2, grid->com, "  reading \"%s\"\n    (short_name = %s): %d records, years %3.3f through %3.3f...\n",
+  ierr = verbPrintf(2, grid->com, "  reading \"%s\" records into buffer\n    (short_name = %s): %d records, years %3.3f through %3.3f...\n",
 		    long_name.c_str(), name.c_str(), missing,
 		    times[start], times[start + missing - 1]);
 

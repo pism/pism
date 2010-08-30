@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] = 
-  "Driver for testing PISM's boundary models without IceModel.\n";
+  "Driver for testing PISM's boundary (surface and shelf-base) models without IceModel.\n";
 
 #include <set>
 #include <ctime>
@@ -182,7 +182,10 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   PetscErrorCode ierr;
   PISMIO nc(grid);
   NCGlobalAttributes global_attrs;
-  IceModelVec2S *artm, *acab, *shelfbasetemp, *shelfbasemassflux;
+  IceModelVec2S *usurf, *artm, *acab, *shelfbasetemp, *shelfbasemassflux;
+
+  usurf = dynamic_cast<IceModelVec2S*>(variables.get("usurf"));
+  if (usurf == NULL) { SETERRQ(1, "usurf is not available"); }
 
   artm = dynamic_cast<IceModelVec2S*>(variables.get("artm"));
   if (artm == NULL) { SETERRQ(1, "artm is not available"); }
@@ -259,6 +262,8 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = nc.write_history(timestr); CHKERRQ(ierr); // append the history
     ierr = nc.close(); CHKERRQ(ierr);
 
+    ierr = usurf->write(filename, NC_FLOAT); CHKERRQ(ierr);
+
     ierr = surface->ice_surface_mass_flux(pccyear, dt_update_years, *acab); CHKERRQ(ierr);
     ierr = acab->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
@@ -322,7 +327,7 @@ int main(int argc, char *argv[]) {
       ); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,
-      com,"PCLIMATE %s (test of PISM boundary models offline from IceModel)\n",
+      com,"PCLIMATE %s (surface and shelf-base boundary models, without IceModel)\n",
       PISM_Revision); CHKERRQ(ierr);
 
     // read the config option database:

@@ -144,35 +144,41 @@ PetscErrorCode PDDMassBalance::getNForTemperatureSeries(
 }
 
 
-//! Compute the surface balance at a location given number of positive degree days and snowfall.
-/*!  
+//! Compute the surface mass balance at a location from the number of positive degree days and the precipitation rate in a time interval.
+/*!
 The net surface mass balance, as ice equivalent thickness per time, is computed 
-from the number of positive degree days and the yearly snowfall.
+from the number of positive degree days and the yearly (mean annual) precipitation.
+The returned value is a rate of surface mass balance, in units of ice-equivalent
+meters per second.
 
-The number, or expected number, of positive degree days must be determined before 
-calling this procedure.
+The first action of this method is to compute the (expected) number of positive
+degree days by a call to getPDDSumFromTemperatureTimeSeries().
 
-We assume a constant rate of melting per positive degree day for snow.  The rate is set
-by the option <tt>-pdd_factor_snow</tt>.  A fraction of the melted snow refreezes; 
-this fraction is controlled by <tt>-pdd_refreeze</tt>.  If the number of positive 
-degree days exceeds those needed to melt all of the snow then the excess number are 
-used to melt both the ice that came from refreeze and perhaps ice which is already
-present.
+The time-dependent temperature series is used to determine whether the
+precipitation is snow or rain.  Rain is removed entirely from the surface mass
+balance.  There is an allowed linear 
 
-In either case, ice also melts at a constant rate per positive degree day, 
-and this rate can be controlled by option <tt>-pdd_factor_ice</tt>.
+This is a PDD scheme.  We assume a constant rate of melting per positive degree
+day for snow.  The rate is set by the option <tt>-pdd_factor_snow</tt>.  A
+fraction of the melted snow refreezes, controlled by option <tt>-pdd_refreeze</tt>.
+If the number of positive degree days exceeds those needed to melt all of the
+snow then the excess is used to melt both the ice that came from refreeze and
+perhaps ice which is already present.  In either case, \e ice melts at a
+constant rate per positive degree day, controlled by option <tt>-pdd_factor_ice</tt>.
 
-If the rate of snowfall is negative then the rate is interpreted as an ice-equivalent
-(direct) ablation rate and the PDD contribution is added (i.e. there is additional 
-ablation), by melting ice.  Snowfall rates are generally positive nearly everywhere
-on ice sheets, however.
+In the weird case where the rate of precipitation is negative, it is interpreted
+as an (ice-equivalent) direct ablation rate.  Precipitation rates are generally
+positive everywhere on ice sheets, however.
 
-The scheme here came from EISMINT-Greenland \ref RitzEISMINT .
+The scheme here came from EISMINT-Greenland \ref RitzEISMINT, but is influenced
+by \ref Faustoetal2009 and R. Hock (personal communication).
 
-Arguments are snow fall rate precip in (ice-equivalent) m s-1, t and dt in s, T[] in
-K.  There are N temperature values T[0],...,T[N-1] at times
-t,t+dt_series,...,t+(N-1)*dt_series.  This time series covers the interval [t,t+dt]
-where dt = (N-1)*dt_series.
+The last input argument to this procedure is the precipitation rate in (ice-equivalent)
+m s-1.  It is assumed to be constant in the entire interval [t,t+dt].
+
+The other arguments are t and dt in seconds and an array T[N] in Kelvin.
+These are N temperature values T[0],...,T[N-1] at times t,t+dt_series,...,
+t+(N-1)*dt_series.  Note dt = (N-1)*dt_series.
  */
 PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
              PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N,
@@ -181,7 +187,7 @@ PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
   const PetscScalar
       pddsum = getPDDSumFromTemperatureTimeSeries(t,dt_series,T,N), // units: K day
       dt     = (N-1) * dt_series; 
-  if (precip < 0.0) {
+  if (precip < 0.0) { // weird, but allowed, case
     // neg precip interpreted as ablation, so positive degree-days are ignored
     return precip;
   } else {
@@ -190,32 +196,31 @@ PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
       // positive precip: it snowed (precip = snow; never rain)
       snow = precip * dt;   // units: m (ice-equivalent)
     } else {
-      // Following Hock (reference needed) we employ a linear transition
-      // snow = precip if T < Tthresh - deltaT
-      // snow = 0 if T > Thresh + deltaT
+      // Following Hock (reference needed) we employ a linear transition between
+      //   snow = precip if T < Tthresh - deltaT
+      //   snow = 0      if T > Tthresh + deltaT
       const PetscScalar deltaT = config.get("snow_precip_delta"),
                         Tthresh = config.get("snow_precip_threshold");
-      for (PetscInt i=0; i<N; i++) { // go over all slices in interval[t,t+dt_series]
-	PetscScalar snow_sub = 0.; // snow accumulation in subinterval [t(i),t(i)+dt_series]
-	if (T[i] < Tthresh - deltaT) { // T <= Tthresh - deltaT, all precip is snow
-	  snow_sub  = precip * dt_series;
-	} else if ( (T[i] >= Tthresh - deltaT) && (T[i] <= Tthresh + deltaT)) {
-	  // linear transition from 
-	  // snow = precip at T = Tthresh - deltaT to 
-	  // snow = 0.     at T = Tthresh + deltaT
-	  snow_sub = (-precip/(2*deltaT)*T[i] + precip/(2*deltaT)*(Tthresh+deltaT)) * dt_series;
+      snow = 0.0;
+      for (PetscInt i=0; i<N-1; i++) { // go over all subintervals with endpoints
+                                       //   t=t_0, ... , t_{N-1}=t+dt
+        const PetscScalar Tav = (T[i] + T[i+1]) / 2.0;  // we use trapezoid/midpoint rule
+	if (Tav <= Tthresh - deltaT) {
+	  snow += precip * dt_series;
+	} else if (Tav < Tthresh + deltaT) {
+	  // linear transition from snow = precip at T=Tthresh-deltaT to 
+	  //   snow = 0 at T+Tthresh+deltaT
+	  snow += precip * dt_series * (Tthresh + deltaT - Tav) / (2.0 * deltaT);
+	} else { // it is rain---ignor it!
+	  snow += 0.0;
 	}
-	else { // T >= Tthresh + deltaT, all precip is rain
-	  snow_sub = 0.;
-	}
-	snow += snow_sub;
       }
     }
-    const PetscScalar snow_melted = pddsum * pddFactorSnow;  // units: m (ice-equivalent)
-    if (snow_melted <= snow) {
-      return ((snow - snow_melted) + (snow_melted * pddRefreezeFrac)) / dt;
-    } else { // it is snowing, but all the snow melts and refreezes; this ice is
-             // then removed, plus possibly more of the underlying ice
+    const PetscScalar snow_max_melted = pddsum * pddFactorSnow;  // units: m (ice-equivalent)
+    if (snow_max_melted <= snow) {
+      return ((snow - snow_max_melted) + (snow_max_melted * pddRefreezeFrac)) / dt;
+    } else { // it is snowing, but all the snow melts; some of this ice is kept
+             // (refreeze); additional PDDs remove this ice and more of the underlying ice
       const PetscScalar ice_deposited = snow * pddRefreezeFrac,
                         excess_pddsum = pddsum - (snow / pddFactorSnow), // positive!; units K day
                         ice_melted    = excess_pddsum * pddFactorIce; // units: K day
