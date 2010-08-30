@@ -185,29 +185,30 @@ PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
     // neg precip interpreted as ablation, so positive degree-days are ignored
     return precip;
   } else {
-    PetscScalar snow;
+    PetscScalar snow = 0.;
     if (config.get_flag("interpret_precip_as_snow")) {
       // positive precip: it snowed (precip = snow; never rain)
       snow = precip * dt;   // units: m (ice-equivalent)
     } else {
       // Following Hock (reference needed) we employ a linear transition
-      // snow = precip if T<Tthresh-deltaT
-      // snow = 0 if T>Thresh+deltaT
+      // snow = precip if T < Tthresh - deltaT
+      // snow = 0 if T > Thresh + deltaT
       const PetscScalar deltaT = config.get("snow_precip_delta"),
                         Tthresh = config.get("snow_precip_threshold");
-      for (PetscInt i=0; i<N; i++) { // go over all slices in interval[t,t+dt]
-	if (T[i] < Tthresh - deltaT) {
-	  snow  = precip * dt;
+      for (PetscInt i=0; i<N; i++) { // go over all slices in interval[t,t+dt_series]
+	PetscScalar snow_sub = 0.; // snow accumulation in subinterval [t(i),t(i)+dt_series]
+	if (T[i] < Tthresh - deltaT) { // T <= Tthresh - deltaT, all precip is snow
+	  snow_sub  = precip * dt_series;
 	} else if ( (T[i] >= Tthresh - deltaT) && (T[i] <= Tthresh + deltaT)) {
-	  // linear transition from snow = precip at T=Tthresh-deltaT to 
-	  // snow = 0. at T+Tthresh+deltaT
-
-	  // FIX ME: this does NOT work, we should have snow[i] = ... instead ????
-	  snow = (-precip/(2*deltaT)*T[i] + precip/(2*deltaT)*(Tthresh+deltaT)) * dt;
+	  // linear transition from 
+	  // snow = precip at T = Tthresh - deltaT to 
+	  // snow = 0.     at T = Tthresh + deltaT
+	  snow_sub = (-precip/(2*deltaT)*T[i] + precip/(2*deltaT)*(Tthresh+deltaT)) * dt_series;
 	}
-	else {
-	  snow = 0.;
+	else { // T >= Tthresh + deltaT, all precip is rain
+	  snow_sub = 0.;
 	}
+	snow += snow_sub;
       }
     }
     const PetscScalar snow_melted = pddsum * pddFactorSnow;  // units: m (ice-equivalent)
