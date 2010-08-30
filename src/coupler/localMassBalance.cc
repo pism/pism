@@ -156,7 +156,8 @@ degree days by a call to getPDDSumFromTemperatureTimeSeries().
 
 The time-dependent temperature series is used to determine whether the
 precipitation is snow or rain.  Rain is removed entirely from the surface mass
-balance.  There is an allowed linear 
+balance.  There is an allowed linear transition for Tmin below which all precipitation
+is interpreted as snow, and Tmax above which all precipitation is rain.
 
 This is a PDD scheme.  We assume a constant rate of melting per positive degree
 day for snow.  The rate is set by the option <tt>-pdd_factor_snow</tt>.  A
@@ -191,28 +192,25 @@ PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
     // neg precip interpreted as ablation, so positive degree-days are ignored
     return precip;
   } else {
-    PetscScalar snow = 0.;
+    PetscScalar snow = 0.0;
     if (config.get_flag("interpret_precip_as_snow")) {
       // positive precip: it snowed (precip = snow; never rain)
       snow = precip * dt;   // units: m (ice-equivalent)
     } else {
-      // Following Hock (reference needed) we employ a linear transition between
-      //   snow = precip if T < Tthresh - deltaT
-      //   snow = 0      if T > Tthresh + deltaT
-      const PetscScalar deltaT = config.get("snow_precip_delta"),
-                        Tthresh = config.get("snow_precip_threshold");
-      snow = 0.0;
-      for (PetscInt i=0; i<N-1; i++) { // go over all subintervals with endpoints
-                                       //   t=t_0, ... , t_{N-1}=t+dt
-        const PetscScalar Tav = (T[i] + T[i+1]) / 2.0;  // we use trapezoid/midpoint rule
-	if (Tav <= Tthresh - deltaT) {
+      // Following Hock (reference needed) we employ a linear transition from Tmin to Tmax, where
+      // Tmin is the temperature below which all precipitation is snow
+      // Tmax is the temperature above which all precipitation is rain
+      const PetscScalar Tmin = config.get("air_temp_all_precip_as_snow"),
+                        Tmax = config.get("air_temp_all_precip_as_rain");
+      for (PetscInt i=0; i<N; i++) { // go over all slices in interval[t,t+dt_series]
+	if (T[i] < Tmin) { // T <= Tmin, all precip is snow
 	  snow += precip * dt_series;
-	} else if (Tav < Tthresh + deltaT) {
-	  // linear transition from snow = precip at T=Tthresh-deltaT to 
-	  //   snow = 0 at T+Tthresh+deltaT
-	  snow += precip * dt_series * (Tthresh + deltaT - Tav) / (2.0 * deltaT);
-	} else { // it is rain---ignor it!
-	  snow += 0.0;
+	} else if ( (T[i] >= Tmin) && (T[i] <= Tmax)) {
+	  // linear transition from Tmin to Tmax
+	  snow += ((Tmax-T[i])/(Tmax-Tmin)) * precip * dt_series;  // units: m (ice-equivalent)
+	}
+	else { // T >= Tmax, all precip is rain -- ignor it
+	  snow += 0.;  // units: m (ice-equivalent)
 	}
       }
     }

@@ -260,11 +260,11 @@ netcdf pism_config {
     pism_config:snow_temp_july_day = 196;
     pism_config:snow_temp_july_day_doc = "day; = day of year for July 15; used in corrected formula (4) in [\\ref Faustoetal2009] ";
 
-    pism_config:snow_precip_threshold = 273.15;
-    pism_config:snow_precip_threshold_doc = "Kelvin; threshold temperature at which precip  = 0.5*snow + 0.5*rain";
+    pism_config:air_temp_all_precip_as_snow = 272.15;
+    pism_config:air_temp_all_precip_as_snow_doc = "Kelvin; threshold temperature below which all precipitation is snow";
 
-    pism_config:snow_precip_delta = 1.;
-    pism_config:snow_precip_delta_doc = "Kelvin; half-width of linear interpolation between snow and rain; this number must be positive because it is used in a division";
+    pism_config:air_temp_all_precip_as_rain = 274.15;
+    pism_config:air_temp_all_precip_as_rain_doc = "Kelvin; threshold temperature above which all precipitation is rain";
 
     pism_config:precip_exponential_factor_for_temperature = 0.07041666667;
     pism_config:precip_exponential_factor_for_temperature_doc = "Kelvin-1; = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change [\\ref Huybrechts02] ";
