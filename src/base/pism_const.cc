@@ -345,21 +345,20 @@ PetscErrorCode just_show_usage(
     MPI_Comm com, const char execname[], const char usage[]) {
   PetscErrorCode ierr;
   ierr = verbPrintf(1,com,
-      "%s is a PISM (http://www.pism-docs.org) executable.  Options cheat-sheet:\n",
+      "%s is a PISM (http://www.pism-docs.org) executable.\nOptions cheat-sheet:\n",
       execname); CHKERRQ(ierr);
   ierr = verbPrintf(1,com,usage); CHKERRQ(ierr);
   ierr = verbPrintf(1,com,
-      "to run in parallel using N processes (typical MPI case):\n"
-      "  mpiexec -n N %s ...\n\n"
-      "For more help,\n"
-      "  1. download User's Manual for PISM:\n"
+      "Parallel run using N processes (typical case):  mpiexec -n N %s ...\n"
+      "For more help with PISM:\n"
+      "  1. download PDF User's Manual:\n"
       "       http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=manual.pdf\n"
-      "  2. read browser for technical details on PISM:\n"
+      "  2. read browser for technical details:\n"
       "       http://www.pism-docs.org/doxy/html/index.html\n"
-      "  3. search bugs and tasks at PISM source host: https://gna.org/projects/pism\n"
-      "  4. run with '-help | grep foo' to see PETSc options which relate to 'foo'.\n"
-      "  5. email for help:  help AT pism-docs.org\n", 
-      execname);  CHKERRQ(ierr);
+      "  3. search bugs and tasks source host: https://gna.org/projects/pism\n"
+      "  4. do '%s -help | grep foo' to see PISM and PETSc options with 'foo'.\n"
+      "  5. email:  help@pism-docs.org\n", 
+      execname,execname);  CHKERRQ(ierr);
   return 0;
 }
 

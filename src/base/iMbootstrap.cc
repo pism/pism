@@ -128,7 +128,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   }
   
   ierr = verbPrintf(2, grid.com, 
-     "  filling in ice and bedrock temperatures using surface temperatures and quartic guess\n");
+     "  filling in ice and bedrock temperatures using surface temps and quartic guess\n");
      CHKERRQ(ierr);
   ierr = putTempAtDepth(); CHKERRQ(ierr);
 
@@ -274,8 +274,9 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
   double ocean_rho = config.get("sea_water_density");
 
   ierr = verbPrintf(2, grid.com, 
-    "  determining surface elevation by  usurf = topg + thk  where grounded\n"
-    "    and by flotation crit  usurf = (1-rho_i/rho_w) thk  where floating\n"); CHKERRQ(ierr);
+    "  determining surface elevation by  usurf = topg + thk           (grounded ice)\n"
+    "        and by flotation criterion  usurf = (1-rho_i/rho_w) thk  (floating ice)\n");
+    CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
            "  preliminary determination of mask for grounded/floating and sheet/dragging\n"); CHKERRQ(ierr);

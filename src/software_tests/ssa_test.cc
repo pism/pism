@@ -21,11 +21,18 @@
 
 /*
 
-Example use, from a PISM directory:
+Example uses, from a PISM directory:
+
+$ pismv -test I -My 25 -Mx 3 -o testI.nc
+$ ssa_test -i testI.nc
+
+$ pismv -test J -Mx 40 -My 40 -o testJ.nc
+$ ssa_test -i testJ.nc
 
 $ cd example/pst/
 $ ./pst.sh 8 >> out.pst &  # takes a while; produces P1.nc; can be shortened
 $ ssa_test -i P1.nc
+
 
 */
 

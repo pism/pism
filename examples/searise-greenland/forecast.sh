@@ -89,7 +89,7 @@ echo "$SCRIPTNAME         coupler = '$COUPLER'"
 
 pismopts="$PISM_MPIDO $NN $PISM -skip 50 $FULLPHYS -bed_def lc"
 
-expackage="-extra_vars usurf,topg,thk,bmelt,bwat,dHdt,mask,uvelsurf,vvelsurf,wvelsurf,uvelbase,vvelbase,wvelbase,tempsurf,tempbase"
+expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,dHdt,mask,uvelsurf,vvelsurf,wvelsurf,uvelbase,vvelbase,wvelbase,tempsurf,tempbase"
 
 ENDTIME=500
 EXTSTIMES=0:5:${ENDTIME}

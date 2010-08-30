@@ -43,7 +43,6 @@ PetscErrorCode IceModel::allocateSSAobjects() {
   ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
 
   ierr = DAGetMatrix(SSADA, MATMPIAIJ, &SSAStiffnessMatrix); CHKERRQ(ierr);
-  ierr = MatSetFromOptions(SSAStiffnessMatrix);CHKERRQ(ierr);
 
   ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
   // the default PC type somehow is ILU, which now fails (?) while block jacobi
