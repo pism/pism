@@ -264,7 +264,7 @@ netcdf pism_config {
     pism_config:air_temp_all_precip_as_snow_doc = "Kelvin; threshold temperature below which all precipitation is snow";
 
     pism_config:air_temp_all_precip_as_rain = 274.15;
-    pism_config:air_temp_all_precip_as_rain_doc = "Kelvin; threshold temperature above which all precipitation is rain";
+    pism_config:air_temp_all_precip_as_rain_doc = "Kelvin; threshold temperature above which all precipitation is rain; must exceed air_temp_all_precip_as_snow to avoid division by zero, because difference is in a denominator";
 
     pism_config:precip_exponential_factor_for_temperature = 0.07041666667;
     pism_config:precip_exponential_factor_for_temperature_doc = "Kelvin-1; = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change [\\ref Huybrechts02] ";

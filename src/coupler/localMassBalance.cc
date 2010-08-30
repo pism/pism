@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -202,14 +202,13 @@ PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
       // Tmax is the temperature above which all precipitation is rain
       const PetscScalar Tmin = config.get("air_temp_all_precip_as_snow"),
                         Tmax = config.get("air_temp_all_precip_as_rain");
-      for (PetscInt i=0; i<N; i++) { // go over all slices in interval[t,t+dt_series]
-	if (T[i] < Tmin) { // T <= Tmin, all precip is snow
+      for (PetscInt i=0; i<N-1; i++) { // go over all N-1 subintervals in interval[t,t+dt_series]
+        const PetscScalar Tav = (T[i] + T[i+1]) / 2.0; // use midpt of temp series for subinterval
+	if (Tav <= Tmin) { // T <= Tmin, all precip is snow
 	  snow += precip * dt_series;
-	} else if ( (T[i] >= Tmin) && (T[i] <= Tmax)) {
-	  // linear transition from Tmin to Tmax
-	  snow += ((Tmax-T[i])/(Tmax-Tmin)) * precip * dt_series;  // units: m (ice-equivalent)
-	}
-	else { // T >= Tmax, all precip is rain -- ignor it
+	} else if (Tav < Tmax) { // linear transition from Tmin to Tmax
+	  snow += ((Tmax-Tav)/(Tmax-Tmin)) * precip * dt_series;  // units: m (ice-equivalent)
+	} else { // T >= Tmax, all precip is rain -- ignor it
 	  snow += 0.;  // units: m (ice-equivalent)
 	}
       }

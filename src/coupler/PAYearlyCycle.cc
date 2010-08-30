@@ -31,14 +31,14 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &/*vars*/) {
   // Allocate internal IceModelVecs:
   ierr = temp_ma.create(grid, "airtemp_ma", false); CHKERRQ(ierr);
   ierr = temp_ma.set_attrs("diagnostic",
-			   "mean annual near-surface air temperature",
+			   "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
 			   "K", 
 			   ""); CHKERRQ(ierr);  // no CF standard_name ??
   ierr = temp_ma.set_attr("source", reference);
 
   ierr = temp_mj.create(grid, "airtemp_mj", false); CHKERRQ(ierr);
   ierr = temp_mj.set_attrs("diagnostic",
-			   "mean July near-surface air temperature",
+			   "mean July near-surface air temperature (without sub-year time-dependence or forcing)",
 			   "Kelvin",
 			   ""); CHKERRQ(ierr);  // no CF standard_name ??
   ierr = temp_mj.set_attr("source", reference);
@@ -98,7 +98,8 @@ PetscErrorCode PAYearlyCycle::write_diagnostic_fields(PetscReal t_years, PetscRe
   IceModelVec2S tmp;		// will be de-allocated at the end of scope
 
   ierr = tmp.create(grid, "airtemp", false); CHKERRQ(ierr);
-  ierr = tmp.set_attrs("diagnostic", "near-surface air temperature snapshot",
+  ierr = tmp.set_attrs("diagnostic", 
+                       "near-surface air temperature snapshot (including sub-year time-dependence)",
 		       "K", ""); CHKERRQ(ierr);
 
   ierr = temp_snapshot(t_years, dt_years, tmp); CHKERRQ(ierr);
@@ -117,7 +118,7 @@ PetscErrorCode PAYearlyCycle::write_fields(set<string> vars, PetscReal t_years,
     IceModelVec2S airtemp;
     ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
     ierr = airtemp.set_attrs("diagnostic",
-			     "snapshot of the near-surface air temperature",
+                             "near-surface air temperature snapshot (including sub-year time-dependence)",
 			     "K",
 			     ""); CHKERRQ(ierr);
 

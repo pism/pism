@@ -210,7 +210,7 @@ PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
     IceModelVec2S airtemp;
     ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
     ierr = airtemp.set_attrs("diagnostic",
-			     "snapshot of the near-surface air temperature",
+                             "near-surface air temperature snapshot (including sub-year time-dependence and forcing)",
 			     "K",
 			     ""); CHKERRQ(ierr);
 
