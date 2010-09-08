@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2009 Nathan Shemonski, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2010 Nathan Shemonski, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,6 @@
 
 #include <petscda.h>
 #include <cstring>
-#include <netcdf.h>
 #include "../base/nc_util.hh"
 #include "../base/grid.hh"
 #include "../base/materials.hh"

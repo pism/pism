@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Nathan Shemonski, Ed Bueler and
+// Copyright (C) 2004-2010 Jed Brown, Nathan Shemonski, Ed Bueler and
 // Constantine Khroulev
 //
 // This file is part of PISM.
@@ -20,7 +20,6 @@
 #include <cstring>
 #include <cstdlib>
 #include <petscda.h>
-#include <netcdf.h>
 #include "nc_util.hh"
 #include "iceModel.hh"
 

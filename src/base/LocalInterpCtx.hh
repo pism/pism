@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -19,7 +19,6 @@
 #ifndef __lic_hh
 #define __lic_hh
 
-#include <netcdf.h>
 #include <petscmat.h>
 #include "grid.hh"
 

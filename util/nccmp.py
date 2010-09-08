@@ -33,7 +33,10 @@ def compare_vars(nc1, nc2, name, tol):
     
 
 def compare(file1, file2, variables, exclude, tol):
-    from netCDF3 import Dataset as CDF
+    try:
+        from netCDF3 import Dataset as CDF
+    except:
+        from netCDF4 import Dataset as CDF
     from numpy import unique, r_
 
     try:

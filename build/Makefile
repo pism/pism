@@ -20,16 +20,14 @@ PISM_REVISION = revision $(rev) stable0.2
 DISPLAY = :0.0
 
 # Get PETSc environment and rules:
-PETSC3_BASE := $(wildcard ${PETSC_DIR}/conf/base)
-# PETSC3_BASE is empty string if not 3.0.0
+PETSC3_BASE := $(wildcard ${PETSC_DIR}/conf/variables)
+# PETSC3_BASE is empty string if not 3.x
 ifeq ($(strip $(PETSC3_BASE)),) 
   # include file which is only present in 2.3.3 and earlier
-  PISM_HAVE_PETSC3 ?= 0
-  include ${PETSC_DIR}/bmake/common/base
+  include ${PETSC_DIR}/bmake/common/variables
 else
   # include file which is only present in 3.0.0 and later
-  PISM_HAVE_PETSC3 ?= 1
-  include ${PETSC_DIR}/conf/base
+  include ${PETSC_DIR}/conf/variables
 endif
 
 # Compiler flags:
@@ -194,6 +192,12 @@ $(exec_default) : $(LIBPISMNAME) $(LIBUDUNITS)
 ../bin/simple% : simple%.o $(LIBTESTSNAME)
 	$(CLINKER) $< $(TESTS_LIB_FLAGS) -o $@
 
+# Rules making object files from sources.
+%.o: %.c
+	$(CC)  -c $< -o $@ $(CFLAGS) $(PCC_FLAGS) $(CPPFLAGS) $(PETSC_INCLUDE)
+%.o: %.cc
+	$(CXX) -c $< -o $@ $(CFLAGS) $(PCC_FLAGS) $(CPPFLAGS) $(PETSC_INCLUDE)
+
 # The GNU recommended procedure for automatically generating prerequisites.
 # (The obscure sed command comes straight from the GNU Make manual.)
 
@@ -231,7 +235,6 @@ showEnv:
 	@echo 'LIBTESTSNAME = ' ${LIBTESTSNAME}
 	@echo 'PISM_REVISION = ' ${PISM_REVISION}
 	@echo 'PISM_PREFIX = ' ${PISM_PREFIX}
-	@echo 'PISM_HAVE_PETSC3 = ' ${PISM_HAVE_PETSC3}
 	@echo 'PISM_HAVE_FFTW = ' ${PISM_HAVE_FFTW}
 	@echo 'PISM_STATIC = ' ${PISM_STATIC}
 	@echo 'PISM_USE_DEBUG = ' ${PISM_USE_DEBUG}
@@ -246,12 +249,8 @@ depend: ;
 
 .PHONY: clean distclean depclean
 
-ifeq (${PISM_HAVE_PETSC3}, 1)
-# PETSc 3.0.0 apparently adds a "clean::" target
-clean:: depclean
-else
-clean: depclean
-endif
+clean:
+	@rm -f *.o *.d
 
 depclean:
 	@rm -f $(depfiles)

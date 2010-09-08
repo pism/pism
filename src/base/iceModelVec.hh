@@ -1,4 +1,4 @@
-// Copyright (C) 2008, 2009 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008, 2009, 2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,6 @@
 #include <cstring>
 #include <cstdlib>
 #include <petscda.h>
-#include <netcdf.h>
 #include "../udunits/udunits.h"
 #include "nc_util.hh"
 

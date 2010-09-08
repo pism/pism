@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define __iceModel_hh
 
 #include <signal.h>
-#include <netcdf.h>
 #include <gsl/gsl_rng.h>
 #include <petscsnes.h>
 
