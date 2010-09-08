@@ -162,7 +162,7 @@ protected:
   string input_file;
   PetscReal alpha;
   IceModelVec2S *ice_thickness;	//!< current ice thickness produced by IceModel.
-  IceModelVec2S target_thickness;
+  IceModelVec2S target_thickness, ftt_mask;
 };
 
 class PSLocalMassBalance : public PISMSurfaceModel {

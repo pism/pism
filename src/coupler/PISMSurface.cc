@@ -435,6 +435,13 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 				    "m", 
 				    "land_ice_thickness"); CHKERRQ(ierr); // standard_name to read by
 
+  ierr = ftt_mask.create(grid, "ftt_mask", false); CHKERRQ(ierr);
+  ierr = ftt_mask.set_attrs("internal",
+                            "mask specifying whether to apply the force-to-thickness mechanism",
+                            "", ""); CHKERRQ(ierr); // no units and no standard name
+  ierr = ftt_mask.set(1.0); CHKERRQ(ierr);          // apply to the whole model
+                                                    // domain by default
+
   input_file = fttfile;
 
   // determine exponential rate alpha from user option or from factor; option
@@ -457,8 +464,10 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   // that we can set up a LocalInterpCtx for actual reading of target thickness
   PISMIO nc(&grid);
   grid_info gi;
+  bool mask_exists = false;
   ierr = nc.open_for_reading(fttfile); CHKERRQ(ierr);
   ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
+  ierr = nc.find_variable("ftt_mask", NULL, mask_exists); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   LocalInterpCtx* lic;
@@ -466,6 +475,13 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com, 
 		    "    reading target thickness 'thk' from %s ...\n", fttfile); CHKERRQ(ierr); 
   ierr = target_thickness.regrid(fttfile, *lic, true); CHKERRQ(ierr);
+
+  if (mask_exists) {
+    ierr = verbPrintf(2, grid.com, 
+                      "    reading force-to-thickness mask 'ftt_mask' from %s ...\n", fttfile); CHKERRQ(ierr); 
+    ierr = ftt_mask.regrid(fttfile, *lic, true); CHKERRQ(ierr);
+  }
+
   delete lic;
 
   // reset name to avoid confusion; attributes again because lost by set_name()?
@@ -568,14 +584,18 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(PetscReal t_years, PetscR
   PetscScalar **H;
   ierr = ice_thickness->get_array(H);   CHKERRQ(ierr);
   ierr = target_thickness.begin_access(); CHKERRQ(ierr);
+  ierr = ftt_mask.begin_access(); CHKERRQ(ierr); 
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      result(i,j) += lambda * alpha * (target_thickness(i,j) - H[i][j]);
+      if (ftt_mask(i,j) > 0.5) {
+        result(i,j) += lambda * alpha * (target_thickness(i,j) - H[i][j]);
+      }
     }
   }
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = target_thickness.end_access(); CHKERRQ(ierr);
+  ierr = ftt_mask.end_access(); CHKERRQ(ierr); 
   ierr = result.end_access(); CHKERRQ(ierr);
   // no communication needed
 
