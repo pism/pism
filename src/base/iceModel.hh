@@ -416,8 +416,8 @@ protected:
   IceModelVec3 Sigmastag3[2], Istag3[2];
 
   // for saving SSA velocities for restart
-  int have_ssa_velocities;	//!< use ubar_ssa and vbar_ssa from a previous
-				//! run if 1, otherwise set them to zero in
+  bool have_ssa_velocities;	//!< use ubar_ssa and vbar_ssa from a previous
+				//! run if true, otherwise set them to zero in
 				//! IceModel::initSSA()
   IceModelVec2V vel_ssa, vel_ssa_old;
 

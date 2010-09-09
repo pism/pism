@@ -158,7 +158,7 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \fileopt{extra_file} & Specifies the file to save to; should be different from the output \texttt{o} file.\\
     \timeopt{extra_times} & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list.\\
     \listopt{extra_vars} & Comma-separated list of variables, see table~\ref{tab:extra-vars}\\
-    \intextoption{extra_split} & Save to separate files, similar to \texttt{-split_snapshots}\\
+    \intextoption{extra_split} & Save to separate files, similar to \texttt{-save_split}\\
     \intextoption{extra_append} & Append variables to file if it already exists.  No effect if file does not yet exist, and no effect if \intextoption{extra_split} is set. \\
     \bottomrule
   \end{tabular}
@@ -288,15 +288,15 @@ Also note that the second snapshot will probably be \emph{around} $1500$ years a
 Another possible use of snapshots is for restarting runs on a batch system which kills jobs which go over their allotted time.  Running PISM with options \texttt{-y 1500} \texttt{-save_times 1000:100:1400} would mean that if the job is killed before completing the whole 1500 year run, we can restart from near the last multiple of $100$ years.  Restarting with option \texttt{-ye} would finish the run on the desired year.
 
 It is also possible to save snapshots to separate files using the
-\texttt{-split_snapshots} option.  For example, the run above can be changed to
+\texttt{-save_split} option.  For example, the run above can be changed to
 \begin{verbatim}
 $ pismr -i foo.nc -y 10000 -o output.nc -save_file snapshots \
-        -save_times 1000,1500,2000,5000 -split_snapshots
+        -save_times 1000,1500,2000,5000 -save_split
 \end{verbatim}
 for this purpose.  This will produce files called
 \texttt{snapshots-}year\texttt{.nc}.  This option is generally faster if many
 snapshots are needed, apparently because of the time necessary to reopen a
-large file at each snapshot when \texttt{-split_snapshots} is not used.  Note
+large file at each snapshot when \texttt{-save_split} is not used.  Note
 that tools like NCO\index{NCO (NetCDF Operators)!wildcards} and
 \texttt{ncview}\index{NetCDF!tools!work with wildcards} usually behave as desired with wildcards like ``\texttt{snapshots-*.nc}''.
 
@@ -310,7 +310,7 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
     \midrule
     \fileopt{save_file} & Specifies the file to save to.\\
     \timeopt{save_times} & Specifies times at which to save snapshots, by either a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
-    \intextoption{split_snapshots} & Separate the snapshot output into files
+    \intextoption{save_split} & Separate the snapshot output into files
     named \texttt{snapshots-}year\texttt{.nc}.  Faster if you are saving more
     than a dozen or so snapshots. \\
     \txtopt{save_size}{[small, medium, big]} & similar to \texttt{o_size},

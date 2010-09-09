@@ -75,7 +75,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   total_basal_ice_flux = 0;
   total_sub_shelf_ice_flux = 0;
 
-  have_ssa_velocities = 0;	// no SSA velocities at the start of the run
+  have_ssa_velocities = false;	// no SSA velocities at the start of the run
 
   allowAboveMelting = PETSC_FALSE;  // only IceCompModel ever sets it to true
 
