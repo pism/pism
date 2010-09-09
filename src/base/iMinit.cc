@@ -643,9 +643,9 @@ PetscErrorCode IceModel::misc_setup() {
   // set info in bed smoother based on initial bed
   if (config.get("bed_smoother_range") > 0.0) {
     ierr = verbPrintf(2, grid.com, 
-      "  initializing bed smoother object with chosen lambda = %.3f km half-width\n"
-      "    for intended square smoothing domain ...\n",
-      config.get("bed_smoother_range")); CHKERRQ(ierr);
+      "  initializing bed smoother object with %.3f km half-width for intended smoothing\n"
+      "    domain ...",
+      config.get("bed_smoother_range") / 1000.0); CHKERRQ(ierr);
   }
   ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
   ierr = vbed.endGhostComm(); CHKERRQ(ierr);
@@ -656,8 +656,8 @@ PetscErrorCode IceModel::misc_setup() {
     PetscInt pbs_Nx,pbs_Ny;
     ierr = sia_bed_smoother->get_smoothing_domain(pbs_Nx,pbs_Ny); CHKERRQ(ierr);
     ierr = verbPrintf(2, grid.com, 
-      "    (bed smoother object reports effective lambdax = %.3f km, lambday = %.3f km)\n",
-      pbs_Nx * grid.dx, pbs_Ny * grid.dy); CHKERRQ(ierr);
+      " (object reports effective lam_x = %.3f km, lam_y = %.3f km)\n",
+      pbs_Nx * grid.dx / 1000.0, pbs_Ny * grid.dy / 1000.0); CHKERRQ(ierr);
   }
 
   // compute (possibly corrected) cell areas:
