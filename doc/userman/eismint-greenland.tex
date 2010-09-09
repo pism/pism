@@ -70,9 +70,9 @@ $ ./eiscore.py
 \subsubsection*{Bootstrapping}  \label{sect:green-bootstrapping}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the full initial conditions needed for the continuum model.  \footnote{The continuum model is the differential equations describing ice flow inside PISM.  See section \ref{sect:boot} for more on ``bootstrapping''.}
 
 We do a one model year run using option \texttt{-boot_from} to ``bootstrap'' from file \texttt{eis_green_smoothed.nc}.  The executable ``\texttt{pgrn}'' is special to EISMINT-Greenland\footnote{It sets EISMINT-Greenland parameters and implements the elevation- and latitude-dependent near-surface air temperature parameterization but shares all the ice-dynamics code with \texttt{pismr}.}: \index{executables!\texttt{pgrn}}
-% pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 -skip 1 -y 1 -o green20km_y1.nc
+% pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 -Mbz 21 -skip 1 -y 1 -o green20km_y1.nc
 \begin{verbatim}
-$ pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 \
+$ pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 -Mbz 21\
        -skip 1 -y 1 -o green20km_y1.nc
 \end{verbatim}%$
 \noindent The run takes only a few seconds of real time on any machine.  Tables \ref{bootstrapEISgreen} and \ref{bootCONTINUED} show the entire PISM output at the terminal.
@@ -82,7 +82,7 @@ $ pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000
 \scriptsize
 \begin{quote}
 \begin{verbatim}
-PGRN revision 1073M trunk (PISM EISMINT-Greenland mode)
+PGRN revision 998:1212M trunk (PISM EISMINT-Greenland mode)
   setting flags equivalent to '-e 3 -ocean_kill'; user options may override ...
 Setting PDD parameters to EISMINT-Greenland values...
   pdd_factor_ice  = 0.00879 m (ice equivalent) K-1 day-1
@@ -124,11 +124,11 @@ bootstrapping by PISM default method from file eis_green_smoothed.nc
                    \ not found; using default constant   50.00 (mW m-2)
   absent dbdt      / bedrock uplift rate                                         
                    \ not found; using default constant    0.00 (m year-1)
-  determining surface elevation by  usurf = topg + thk  where grounded
-    and by flotation crit  usurf = (1-rho_i/rho_w) thk  where floating
+  determining surface elevation by  usurf = topg + thk           (grounded ice)
+        and by flotation criterion  usurf = (1-rho_i/rho_w) thk  (floating ice)
   preliminary determination of mask for grounded/floating and sheet/dragging
     option -ocean_kill seen: floating ice mask=3; ice free ocean mask=7
-  filling in ice and bedrock temperatures using surface temperatures and quartic guess
+  filling in ice and bedrock temperatures using surface temps and quartic guess
   ice enthalpy set from temperature, as cold ice (zero liquid fraction)
 done reading eis_green_smoothed.nc; bootstrapping done
 \end{verbatim}
@@ -145,24 +145,30 @@ done reading eis_green_smoothed.nc; bootstrapping done
 \begin{quote}
 \begin{verbatim}
 computational domain and grid:
-           spatial domain   1640.00 km x 2800.00 km x 4000.00 m
+           spatial domain   1640.00 km x 2800.00 km x (4000.00 m + 2000.00 m bedrock)
             time interval   [ 0.00 a, 1.00 a ]; run length = 1.0000 a
      horizontal grid cell   20.00 km x 20.00 km
   vertical spacing in ice   uneven, 51 levels, 21.200 m < dz < 138.800 m
+  vert spacing in bedrock   uneven, 21 levels, 16.875 m < dz < 183.125 m
+  initializing bed smoother object with chosen lambda = 5000.000 km half-width
+    for intended square smoothing domain ...
+    (bed smoother object reports effective lambdax = 20000.000 km, lambday = 20000.000 km)
 * Computing corrected cell areas using WGS84 datum...
+doing preliminary step to fill diagnostic quantities ...
+running forward ...
 P         YEAR:     ivol   iarea     thick0     temp0
 U        years 10^6_km^3 10^6_km^2        m         K
 S      0.00000:  2.82500  1.6708   3042.000  271.0047
- $ SIA v$th d (dt=0.16118)
-S      0.16118:  2.82512  2.1824   3041.911  271.0047
- $ SIA v$th d (dt=0.22242)
-S      0.38361:  2.82484  1.6716   3041.748  271.0047
- $ SIA v$th d (dt=0.26367)
-S      0.64727:  2.82499  1.8828   3041.531  271.0050
- $ SIA v$th d (dt=0.28997)
-S      0.93725:  2.82523  2.2300   3041.264  271.0050
- $ SIA v$th e (dt=0.06275)
-S      1.00000:  2.82528  2.2300   3041.208  271.0052
+ $ SIA v$th d (dt=0.15390)
+S      0.15390:  2.82512  2.1980   3041.914  271.0047
+ $ SIA v$th d (dt=0.21156)
+S      0.36546:  2.82486  1.6728   3041.758  271.0047
+ $ SIA v$th d (dt=0.24794)
+S      0.61340:  2.82493  1.7320   3041.554  271.0050
+ $ SIA v$th d (dt=0.27587)
+S      0.88927:  2.82516  2.2300   3041.304  271.0050
+ $ SIA v$th e (dt=0.11073)
+S      1.00000:  2.82525  2.2300   3041.205  271.0052
 done with run ... 
 Writing model state to file `green20km_y1.nc'
 \end{verbatim}

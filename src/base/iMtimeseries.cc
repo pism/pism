@@ -132,7 +132,7 @@ PetscErrorCode IceModel::create_timeseries() {
     ivoltemp->set_dimension_units("years", "");
     ivoltemp->output_filename = ts_filename;
 
-    ivoltemp->set_attr("long_name", "total temperate ice volume");
+    ivoltemp->set_attr("long_name", "temperate ice volume");
     ivoltemp->set_attr("valid_min", 0.0);
 
     timeseries.push_back(ivoltemp);
@@ -145,7 +145,7 @@ PetscErrorCode IceModel::create_timeseries() {
     ivoltempf->set_dimension_units("years", "");
     ivoltempf->output_filename = ts_filename;
 
-    ivoltempf->set_attr("long_name", "total temperate ice volume fraction");
+    ivoltempf->set_attr("long_name", "temperate ice volume fraction");
     ivoltempf->set_attr("valid_min", 0.0);
 
     timeseries.push_back(ivoltempf);
@@ -158,7 +158,7 @@ PetscErrorCode IceModel::create_timeseries() {
     ivolcold->set_dimension_units("years", "");
     ivolcold->output_filename = ts_filename;
 
-    ivolcold->set_attr("long_name", "total cold ice volume");
+    ivolcold->set_attr("long_name", "cold ice volume");
     ivolcold->set_attr("valid_min", 0.0);
 
     timeseries.push_back(ivolcold);
@@ -171,7 +171,7 @@ PetscErrorCode IceModel::create_timeseries() {
     ivolcoldf->set_dimension_units("years", "");
     ivolcoldf->output_filename = ts_filename;
 
-    ivolcoldf->set_attr("long_name", "total cold ice volume fraction");
+    ivolcoldf->set_attr("long_name", "cold ice volume fraction");
     ivolcoldf->set_attr("valid_min", 0.0);
 
     timeseries.push_back(ivolcoldf);
