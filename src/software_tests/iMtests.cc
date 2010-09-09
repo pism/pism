@@ -133,28 +133,28 @@ PetscErrorCode IceUnitModel::test_IceModelVec3()    {
 
   ierr = verbPrintf(1,grid.com,"\n\ntesting IceModelVec3; setting to constant %f",
                     60402.70804); CHKERRQ(ierr);
-  ierr = T3.set(60402.70804); CHKERRQ(ierr);
+  ierr = Enth3.set(60402.70804); CHKERRQ(ierr);
 
-  ierr = T3.begin_access(); CHKERRQ(ierr);
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com,"\n\nIceModelVec3::getValZ() says value is %f",
-                    T3.getValZ(grid.xs,grid.ys,0.0) ); CHKERRQ(ierr);
-  ierr = T3.end_access(); CHKERRQ(ierr);
+                    Enth3.getValZ(grid.xs,grid.ys,0.0) ); CHKERRQ(ierr);
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
 
-  ierr = T3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = T3.endGhostComm(); CHKERRQ(ierr);
+  ierr = Enth3.beginGhostComm(); CHKERRQ(ierr);
+  ierr = Enth3.endGhostComm(); CHKERRQ(ierr);
 
   PetscScalar *values_in = new PetscScalar[grid.Mz_fine],
     *values_out = new PetscScalar[grid.Mz_fine];
 
-  ierr = T3.begin_access(); CHKERRQ(ierr);
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com,
     "\n\ntesting IceModelVec3::setValColumnPL() and getValColumnPL()\n"); CHKERRQ(ierr);
   for (PetscInt k=0; k < grid.Mz_fine; k++) {
     values_in[k] = sin(grid.zlevels_fine[k]/1000.0);
   }
-  ierr = T3.setValColumnPL(grid.xs, grid.ys, values_in); CHKERRQ(ierr);
-  ierr = T3.getValColumnPL(grid.xs, grid.ys, grid.Mz_fine, values_out); CHKERRQ(ierr);
+  ierr = Enth3.setValColumnPL(grid.xs, grid.ys, values_in); CHKERRQ(ierr);
+  ierr = Enth3.getValColumnPL(grid.xs, grid.ys, grid.Mz_fine, values_out); CHKERRQ(ierr);
   for (PetscInt k=0; k < grid.Mz_fine; k++) {
     ierr = verbPrintf(1,grid.com,
         "   k=%d:   level=%7.2f   values_in=%7.4f   values_out=%7.4f   |diff|=%5.4e\n",
@@ -165,7 +165,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec3()    {
   ierr = verbPrintf(1,grid.com,
     "\n\ntesting IceModelVec3::setValColumnPL() and getValColumnQUAD()\n");
   CHKERRQ(ierr);
-  ierr = T3.getValColumnQUAD(grid.xs, grid.ys, grid.Mz_fine, values_out); CHKERRQ(ierr);
+  ierr = Enth3.getValColumnQUAD(grid.xs, grid.ys, grid.Mz_fine, values_out); CHKERRQ(ierr);
   for (PetscInt k=0; k < grid.Mz_fine; k++) {
     ierr = verbPrintf(1,grid.com,
        "   k=%d:   level=%7.2f   values_in=%7.4f   values_out=%7.4f   |diff|=%5.4e\n",
@@ -174,7 +174,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec3()    {
   }
   ierr = verbPrintf(1,grid.com,"done\n\n\n"); CHKERRQ(ierr);
 
-  ierr = T3.end_access(); CHKERRQ(ierr);
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
 
   delete[] values_in;
   delete[] values_out;

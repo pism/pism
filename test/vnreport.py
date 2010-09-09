@@ -99,7 +99,7 @@ def plot_errors(nc, x, vars, testname, plot_title, filename = None):
         pass
 
     # Legend, grid and the title:
-    legend(loc='best', pad=0.05, labelsep = 0, handletextsep = 0.02, handlelen = 0.02)
+    legend(loc='best', borderpad=1, labelspacing = 0.5, handletextpad = 0.75, handlelength = 0.02)
     #  prop = FontProperties(size='smaller'),
     grid(True)
     title("Test %s %s (%s)" % (testname, plot_title, nc.source))
