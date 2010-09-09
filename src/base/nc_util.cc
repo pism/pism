@@ -416,7 +416,7 @@ PetscErrorCode NCTool::open_for_writing(const char filename[]) {
     } else {
       stat = nc_create(filename, NC_CLOBBER|NC_64BIT_OFFSET, &ncid); 
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
-      stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+      stat = nc__enddef(ncid,50000,4,0,4); CHKERRQ(check_err(stat,__LINE__,__FILE__))
     }
 
     stat = nc_set_fill(ncid, NC_NOFILL, NULL); CHKERRQ(check_err(stat,__LINE__,__FILE__));
