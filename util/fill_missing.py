@@ -240,7 +240,7 @@ if __name__ == "__main__":
         print "Processing %s..." % name
         try:
             var = nc.variables[name]
-            data = squeeze(var[:])
+            data = asarray(squeeze(var[:]))
 
             attributes = ["valid_range", "valid_min", "valid_max",
                           "_FillValue", "missing_value"]
