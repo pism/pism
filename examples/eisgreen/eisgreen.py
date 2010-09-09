@@ -147,7 +147,7 @@ lonvar = ncfile.createVariable('lon', 'f4', dimensions=('y', 'x'))
 latvar = ncfile.createVariable('lat', 'f4', dimensions=('y', 'x'))
 hvar = ncfile.createVariable('usurf', 'f4', dimensions=('y', 'x'))
 thkvar = ncfile.createVariable('thk', 'f4', dimensions=('y', 'x'))
-bedvar = ncfile.createVariable('topg', 'f4', dimensions=('y', 'x')) 
+bedvar = ncfile.createVariable('topg', 'f4', dimensions=('y', 'x'), fill_value=topg_fill_value) 
 accvar = ncfile.createVariable('snowprecip', 'f4', dimensions=('y', 'x'))
 
 # set the attributes of the variables
@@ -186,7 +186,6 @@ bedvar.long_name = 'bedrock surface elevation'
 bedvar.standard_name = 'bedrock_altitude'
 bedvar.units = 'm'
 bedvar.valid_min = topg_valid_min
-bedvar._FillValue = topg_fill_value
 
 accvar.long_name = 'mean annual ice-equivalent snow accumulation rate'
 accvar.units = 'm year-1'
