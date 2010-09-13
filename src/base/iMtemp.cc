@@ -642,7 +642,6 @@ PetscErrorCode IceModel::ageStep() {
 
   delete [] x;  
   delete [] system.u;  delete [] system.v;  delete [] system.w;
-  delete [] fzlev;
 
   ierr = tau3.beginGhostCommTransfer(taunew3); CHKERRQ(ierr);
   ierr = tau3.endGhostCommTransfer(taunew3); CHKERRQ(ierr);
