@@ -1003,7 +1003,7 @@ PetscErrorCode IceModelVec3Bedrock::view_sounding(int i, int j, PetscInt viewer_
   return 0;
 }
 
-//! Checks if the current IceModelVec2S has NANs and reports if it does.
+//! Checks if the current IceModelVec3 has NANs and reports if it does.
 /*! Up to a fixed number of messages are printed at stdout.  Returns the full
  count of NANs (which is a nonzero) on this rank. */
 PetscErrorCode  IceModelVec3::has_nan() {
