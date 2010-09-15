@@ -196,7 +196,6 @@ int main(int argc, char *argv[]) {
         const PetscScalar tyears = k*dtyears;
         ierr = bdlc.step(dtyears, tyears); CHKERRQ(ierr);
         ierr = VecView(bed,viewer); CHKERRQ(ierr);
-        PetscScalar **b;
         ierr = VecGetArray2d(bed, Mx, My, 0, 0, &b); CHKERRQ(ierr);
         const PetscScalar b0new = b[imid][jmid];
         ierr = VecRestoreArray2d(bed, Mx, My, 0, 0, &b); CHKERRQ(ierr);

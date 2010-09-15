@@ -87,13 +87,13 @@ sliding case we have a CFL condition.
  */
 PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   PetscErrorCode ierr;
-  PISMVector2 **basal;
+  PISMVector2 **v_basal;
   PetscScalar locCFLmaxdt2D = config.get("maximum_time_step_years") * secpera;
 
   bool do_ocean_kill = config.get_flag("ocean_kill"),
     floating_ice_killed = config.get_flag("floating_ice_killed");
 
-  ierr = vel_basal.get_array(basal); CHKERRQ(ierr);
+  ierr = vel_basal.get_array(v_basal); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -102,7 +102,7 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
       const bool ignorableOcean = ( do_ocean_kill && (vMask.value(i,j) == MASK_OCEAN_AT_TIME_0) )
 	|| ( floating_ice_killed && vMask.is_floating(i,j) );
       if (!ignorableOcean) {
-        PetscScalar denom = PetscAbs(basal[i][j].u)/grid.dx + PetscAbs(basal[i][j].v)/grid.dy;
+        PetscScalar denom = PetscAbs(v_basal[i][j].u)/grid.dx + PetscAbs(v_basal[i][j].v)/grid.dy;
         denom += (0.01/secpera)/(grid.dx + grid.dy);  // make sure it's pos.
         locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);
       }

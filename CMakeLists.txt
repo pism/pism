@@ -10,8 +10,8 @@ find_package (NetCDF REQUIRED)
 find_package (FFTW)
 
 # use the PETSc compiler as a hint when looking for an MPI compiler
+find_package (MPI REQUIRED)
 set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
-#find_package (MPI REQUIRED)
 
 # The default options cache
 option (Pism_BUILD_TESTS       "Build tests"                                           ON)
@@ -56,7 +56,7 @@ endif (NOT Pism_REVISION)
 
 # set Pism_DEFAULT_CONFIG_FILE
 if (NOT Pism_DEFAULT_CONFIG_FILE)
-  set (Pism_DEFAULT_CONFIG_FILE "${Pism_SOURCE_DIR}/lib/pism_config.nc")
+  set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/lib/pism_config.nc")
 endif ()
 
 # We could set this here, but it forces a full recompile if the version
@@ -65,7 +65,7 @@ endif ()
 #add_definitions (-DPISM_REVISION=\\\"${Pism_REVISION}\\\")
 
 if (Pism_PEDANTIC_WARNINGS)
-  set (DEFAULT_PEDANTIC_CFLAGS "-pedantic -Wall -Wextra -Wundef -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wconversion -Wlogical-op -Wsign-compare -Waggregate-return -Wmissing-declarations -Wno-redundant-decls -Winline -Wno-long-long -Wmissing-format-attribute -Wmissing-noreturn -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wunsafe-loop-optimizations -Wvolatile-register-var -Wvla -Wstrict-aliasing -funit-at-a-time -Wno-sign-conversion")
+  set (DEFAULT_PEDANTIC_CFLAGS "-pedantic -Wall -Wextra -Wundef -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wconversion -Wsign-compare -Wno-redundant-decls -Winline -Wno-long-long -Wmissing-format-attribute -Wmissing-noreturn -Wpacked -Wdisabled-optimization -Wmultichar -Wformat-nonliteral -Wformat-security -Wformat-y2k -Wendif-labels -Winvalid-pch -Wmissing-field-initializers -Wvariadic-macros -Wunsafe-loop-optimizations -Wvolatile-register-var -Wstrict-aliasing -funit-at-a-time")
   set (DEFAULT_PEDANTIC_CXXFLAGS "${DEFAULT_PEDANTIC_CFLAGS} -Woverloaded-virtual")
   set (PEDANTIC_CFLAGS ${DEFAULT_PEDANTIC_CFLAGS} CACHE STRING "Compiler flags to enable pedantic warnings")
   set (PEDANTIC_CXXFLAGS ${DEFAULT_PEDANTIC_CXXFLAGS} CACHE STRING "Compiler flags to enable pedantic warnings for C++")
@@ -91,7 +91,7 @@ add_custom_target (etags
 
 ## Use full RPATH, with this setting Pism libraries cannot be moved after installation
 ## but the correct libraries will always be found regardless of LD_LIBRARY_PATH
-# use, i.e. don't skip the full RPATH for the build tree
+## in use, i.e. don't skip the full RPATH for the build tree
 set (CMAKE_SKIP_BUILD_RPATH  FALSE)
 # when building, don't use the install RPATH already
 # (but later on when installing)
@@ -102,4 +102,8 @@ set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 # which point to directories outside the build tree to the install RPATH
 set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+# Mac OS X install_name fix:
+set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
+
 add_subdirectory (src)
+add_subdirectory (doc)

@@ -415,6 +415,7 @@ PetscErrorCode IceModel::create_timeseries() {
 //! Write time-series.
 PetscErrorCode IceModel::write_timeseries() {
   PetscErrorCode ierr;
+  vector<DiagnosticTimeseries*>::iterator i;
 
   // return if no time-series requested
   if (!save_ts) return 0;
@@ -428,7 +429,6 @@ PetscErrorCode IceModel::write_timeseries() {
     return 0;
 
   // compute values of requested scalar quantities:
-  vector<DiagnosticTimeseries*>::iterator i;
   for (i = timeseries.begin(); i < timeseries.end(); ++i) {
     PetscScalar tmp;
 
@@ -441,7 +441,6 @@ PetscErrorCode IceModel::write_timeseries() {
   while ((current_ts < ts_times.size()) &&
          (ts_times[current_ts] <= grid.year)) {
     
-    vector<DiagnosticTimeseries*>::iterator i;
     for (i = timeseries.begin(); i < timeseries.end(); ++i) {
       ierr = (*i)->interp(ts_times[current_ts]); CHKERRQ(ierr);
     }
@@ -538,9 +537,9 @@ PetscErrorCode IceModel::init_extras() {
     ierr = verbPrintf(2, grid.com, "PISM WARNING: -extra_vars was not set."
                       " Writing model_state, mapping and climate_steady variables...\n"); CHKERRQ(ierr);
 
-    set<IceModelVec*> vars = variables.get_variables();
-    set<IceModelVec*>::iterator i = vars.begin();
-    while (i != vars.end()) {
+    set<IceModelVec*> vars_set = variables.get_variables();
+    set<IceModelVec*>::iterator i = vars_set.begin();
+    while (i != vars_set.end()) {
       
       string intent = (*i)->string_attr("pism_intent");
       if ( (intent == "model_state") || (intent == "mapping") ||

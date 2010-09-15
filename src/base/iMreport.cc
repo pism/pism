@@ -154,7 +154,7 @@ center of the ice sheet.
 
 Communication occurs here.
  */
-PetscErrorCode IceModel::energyStats(PetscScalar iarea, bool useHomoTemp, 
+PetscErrorCode IceModel::energyStats(PetscScalar iarea, bool /*useHomoTemp*/, 
                                      PetscScalar &gmeltfrac, PetscScalar &gtemp0) {
   PetscErrorCode    ierr;
   PetscScalar       meltarea = 0.0, temp0 = 0.0;

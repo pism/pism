@@ -244,7 +244,8 @@ PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVelsI() {
       PetscScalar junk, myu, myv;
       const PetscInt ifrom0 = i - (grid.Mx - 1)/2,
                      jfrom0 = j - (grid.My - 1)/2;
-      const PetscScalar myx = grid.dx * ifrom0, myy = grid.dy * jfrom0;
+      const PetscScalar myx = grid.dx * ifrom0,
+        myy = grid.dy * jfrom0;
       // eval exact solution; will only use exact vels if at edge
       exactI(m_schoof, myx, myy, &(bed[i][j]), &junk, &myu, &myv); 
       h[i][j] = bed[i][j] + H0_schoof;
@@ -302,7 +303,8 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
       PetscScalar junk1, myu, myv;
       const PetscInt ifrom0 = i - (grid.Mx)/2,
                      jfrom0 = j - (grid.My)/2;
-      const PetscScalar myx = grid.dx * ifrom0, myy = grid.dy * jfrom0;
+      const PetscScalar myx = grid.dx * ifrom0,
+        myy = grid.dy * jfrom0;
       // set H,h on regular grid
       ierr = exactJ(myx, myy, &H[i][j], &junk1, &myu, &myv); CHKERRQ(ierr);
       h[i][j] = (1.0 - ice->rho / ocean_rho) * H[i][j];
@@ -484,7 +486,8 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
       } else if (test == 'J') {
         const PetscInt ifrom0 = i - (grid.Mx)/2,
                        jfrom0 = j - (grid.My)/2;
-        const PetscScalar myx = grid.dx * ifrom0, myy = grid.dy * jfrom0;
+        myx = grid.dx * ifrom0;
+        myy = grid.dy * jfrom0;
         exactJ(myx, myy, &junk1, &junk2, &uexact, &vexact);
       } else if (test == 'M') {
         PetscScalar alpha;
@@ -666,7 +669,8 @@ PetscErrorCode IceExactSSAModel::fillFromExactSolution() {
       } else if (test == 'J') {
         const PetscInt ifrom0 = i - (grid.Mx)/2,
                        jfrom0 = j - (grid.My)/2;
-        const PetscScalar myx = grid.dx * ifrom0, myy = grid.dy * jfrom0;
+        myx = grid.dx * ifrom0;
+        myy = grid.dy * jfrom0;
         ierr = exactJ(myx, myy, &junk1, &junk2, &vel_bar(i,j).u, &vel_bar(i,j).v); CHKERRQ(ierr);
       } else if (test == 'M') {
         PetscScalar alpha;

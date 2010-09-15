@@ -45,7 +45,7 @@ clean:
 	@$(MAKE) -C $(BUILD_DIR) clean
 	@$(MAKE) -C doc clean
 
-userman refman browser summary fullbib installation:
+userman browser summary installation:
 	@cd doc && $(MAKE) $@
 
 .DEFAULT:

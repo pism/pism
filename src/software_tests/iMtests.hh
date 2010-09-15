@@ -24,7 +24,7 @@
 
 class IceUnitModel : public IceModel {
 public:
-  IceUnitModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides) : IceModel(g, config, overrides) {}
+  IceUnitModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &over) : IceModel(g, conf, over) {}
   PetscErrorCode set_grid_defaults();
   PetscErrorCode set_vars_from_options();
   PetscErrorCode run();

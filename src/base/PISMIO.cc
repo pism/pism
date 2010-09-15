@@ -98,12 +98,11 @@ PetscErrorCode PISMIO::get_var(const int varid, Vec g, GridType dims, int t) con
       delete[] imap;
 
       if (proc != 0) {
-        int block_size;
 	block_size = compute_block_size(dims, count);
 	MPI_Send(a_double, block_size, MPI_DOUBLE, proc, data_tag, com);
       }
     }
-  } else {
+  } else {                      // if (rank == 0)
     MPI_Send(start, N, MPI_INT, 0, start_tag, com);
     MPI_Send(count, N, MPI_INT, 0, count_tag, com);
     MPI_Recv(a_double, buffer_size, MPI_DOUBLE, 0, data_tag, com, &mpi_stat);

@@ -1,9 +1,46 @@
+add_library (pismmisc
+  base/PISMBedSmoother.cc
+  base/LocalInterpCtx.cc
+  base/NCVariable.cc
+  base/PISMComponent.cc
+  base/PISMIO.cc
+  base/PISMProf.cc
+  base/PISMVars.cc
+  base/Timeseries.cc
+  base/enthalpyConverter.cc
+  base/grid.cc
+  base/iceModelVec.cc
+  base/iceModelVec2.cc
+  base/iceModelVec2V.cc
+  base/iceModelVec3.cc
+  base/materials.cc
+  base/nc_util.cc
+  base/pism_const.cc
+  base/pism_default_config.cc
+  base/pism_revision.cc
+  base/pism_signal.c
+  coupler/PAConstant.cc
+  coupler/PAForcing.cc
+  coupler/PALapseRates.cc
+  coupler/PAYearlyCycle.cc
+  coupler/PCFactory.cc
+  coupler/PISMOcean.cc
+  coupler/PISMSurface.cc
+  coupler/iceModelVec2T.cc
+  coupler/localMassBalance.cc
+)
+target_link_libraries (pismmisc pismudunits ${Pism_EXTERNAL_LIBS})
+
 add_library (pismearth
+  earth/PBLingleClark.cc
+  earth/PBPointwiseIsostasy.cc
+  earth/PISMBedDef.cc
   earth/cubature.c
   earth/deformation.cc
   earth/greens.cc
   earth/matlablike.cc
-  )
+)
+target_link_libraries (pismearth pismmisc)
 
 set_source_files_properties (base/pism_revision.cc
   PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION}\"')
@@ -16,131 +53,124 @@ set_source_files_properties (udunits/utlib.c
 include_directories (base udunits)
 
 add_library (pismbase
-  base/LocalInterpCtx.cc
-  base/NCVariable.cc
-  base/Timeseries.cc
+  base/bedrockOnlySystem.cc
   base/columnSystem.cc
-  base/grid.cc
+  base/combinedSystem.cc
+  base/iceenthOnlySystem.cc
   base/iMIO.cc
   base/iMadaptive.cc
   base/iMbasal.cc
   base/iMbeddef.cc
   base/iMbootstrap.cc
   base/iMdefaults.cc
+  base/iMenthalpy.cc
   base/iMgeometry.cc
   base/iMgrainsize.cc
   base/iMinit.cc
-  base/iMinverse.cc
-  base/iMinverseMat.cc
   base/iMmatlab.cc
-  base/iMnames.cc
   base/iMoptions.cc
   base/iMreport.cc
   base/iMsia.cc
   base/iMssa.cc
-  base/iMssaSNES.cc
   base/iMtemp.cc
-  base/iMtests.cc
+  base/iMtimeseries.cc
   base/iMutil.cc
   base/iMvelocity.cc
   base/iMviewers.cc
   base/iceModel.cc
-  base/iceModelVec.cc
-  base/iceModelVec2.cc
-  base/iceModelVec3.cc
-  base/materials.cc
-  base/nc_util.cc
-  base/pism_const.cc
-  base/pism_default_config.cc
-  base/pism_revision.cc
-  base/pism_signal.c
-  base/ssaJed/iceShelfExtension.cc
-  base/ssaJed/ssa.cc
-  base/ssaJed/ssafe.cc
-  coupler/localMassBalance.cc
-  coupler/monthlyDataMaps.cc
-  coupler/pccoupler.cc
-  )
+)
+target_link_libraries (pismbase pismearth pismmisc)
 
 add_library (pismverif
-  verif/exactTestH.c
-  verif/exactTestK.c
-  verif/exactTestL.c
-  verif/exactTestM.c
-  verif/exactTestsABCDE.c
-  verif/exactTestsFG.c
-  verif/exactTestsIJ.c)
+  verif/iCMthermo.cc
+  verif/iceCompModel.cc
+  verif/iceExactSSAModel.cc
+  verif/tests/exactTestH.c
+  verif/tests/exactTestK.c
+  verif/tests/exactTestL.c
+  verif/tests/exactTestM.c
+  verif/tests/exactTestsABCDE.c
+  verif/tests/exactTestsFG.c
+  verif/tests/exactTestsIJ.c
+)
+target_link_libraries (pismverif pismbase)
 
 add_library (pismudunits
   udunits/udalloc.c
   udunits/utlib.c
   udunits/utparse.c
-  udunits/utscan.c)
+  udunits/utscan.c
+)
 
-# All Pism executables must link against this
-set (Pism_LIBS pismbase pismearth pismudunits ${Pism_EXTERNAL_LIBS})
-
-
-add_executable (penth penth.cc
-  base/iceEnthalpyModel.cc
-  base/enthColumnSystem.cc
-  base/enthalpyConverter.cc
-  )
-target_link_libraries (penth ${Pism_LIBS})
-
+# Main executables:
 add_executable (pismr pismr.cc)
-target_link_libraries (pismr ${Pism_LIBS})
-
-add_executable (pross pross.cc
-  eismint/iceROSSModel.cc)
-target_link_libraries (pross ${Pism_LIBS})
 
 add_executable (pisms pisms.cc 
   eismint/iceEISModel.cc
   eismint/icePSTexModel.cc
   ismip/iceMISMIPModel.cc)
-target_link_libraries (pisms ${Pism_LIBS})
+
+add_executable (pgrn eismint/pgrn.cc eismint/pgrn_atmosphere.cc)
+
+add_executable (pross eismint/pross.cc eismint/iceROSSModel.cc)
+
+# All of the following are linked against pismbase
+foreach (EXEC pismr pisms pgrn pross)
+  target_link_libraries (${EXEC} pismbase)
+endforeach (EXEC)
 
 add_executable (pismv pismv.cc
   verif/iceCompModel.cc
   verif/iCMthermo.cc
-  verif/iceCalvBCModel.cc
   verif/iceExactSSAModel.cc)
-target_link_libraries (pismv pismverif ${Pism_LIBS})
+target_link_libraries (pismv pismverif pismbase)
 
-add_executable (pgrn eismint/pgrn.cc
-  eismint/iceGRNModel.cc)
-target_link_libraries (pgrn ${Pism_LIBS})
+add_executable (pclimate pclimate.cc eismint/pgrn_atmosphere.cc)
+target_link_libraries (pclimate pismmisc)
 
-add_executable (pclimate pclimate.cc)
-target_link_libraries (pclimate ${Pism_LIBS})
+add_custom_target (pismconfig ALL
+  COMMAND ncgen -o ${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_SOURCE_DIR}/pism_config.cdl
+  DEPENDS pism_config.cdl
+)
 
 install (TARGETS
-  penth pismr pisms pismv pross pgrn ## executables
-  pismverif pismbase pismearth pismudunits # libraries
+  pismr pisms pismv pgrn pross ## executables
+  pismmisc pismverif pismbase pismearth pismudunits # libraries
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib)
 
 install (FILES
-  "${CMAKE_CURRENT_SOURCE_DIR}/udunits/pismudunits.dat"
+  "udunits/pismudunits.dat"
+  "${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc"
   DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
 
 
 if (Pism_BUILD_EXTRA_EXECS)
   # These don't require Pism at all
-  set (EXTRA_EXECS simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleL gridL)
+  set (EXTRA_EXECS simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleL)
   foreach (EXEC ${EXTRA_EXECS})
-    add_executable (${EXEC} verif/${EXEC}.c)
-    target_link_libraries (${EXEC} pismverif ${GSL_LIBRARIES} ${PETSC_LIBRARIES}) # Link against PETSC because it's guaranteed to have BLAS
+    add_executable (${EXEC} verif/tests/${EXEC}.c)
+    target_link_libraries (${EXEC} pismverif)
   endforeach (EXEC)
   # These use Pism in a trivial way and could be made to link without Pism
-  add_executable (flowTable flowTable.cc)
-  target_link_libraries (flowTable ${Pism_LIBS})
-  add_executable (tryLCbd verif/tryLCbd.cc)
-  target_link_libraries (tryLCbd ${Pism_LIBS})
+
+  add_executable (flowTable software_tests/flowTable.cc)
+  target_link_libraries (flowTable pismmisc)
+
+  add_executable (tryLCbd earth/tryLCbd.cc)
+  target_link_libraries (tryLCbd pismearth)
+
+  add_executable (pismtests software_tests/pismtests.cc software_tests/iMtests.cc)
+  target_link_libraries (pismtests pismbase)
+
+  foreach (EXEC bedrough_test flowlaw_test ssa_test)
+    add_executable (${EXEC} software_tests/${EXEC}.cc)
+    target_link_libraries (${EXEC} pismmisc)
+  endforeach (EXEC)
+
   install (TARGETS
-    ${EXTRA_EXECS} flowTable tryLCbd
+    ${EXTRA_EXECS} flowTable tryLCbd flowlaw_test pismtests bedrough_test ssa_test
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib)

@@ -264,7 +264,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
   ierr = global_attributes.write(filename); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
   
-  double t = 0, t_max = 50, dt = 0.35;
+  double t = 0, t_max = 50, my_dt = 0.35;
   while (t < t_max) {
     ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
     ierr = nc.append_time(t); CHKERRQ(ierr);
@@ -272,7 +272,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
 
     ierr = vH.set(t*t); CHKERRQ(ierr);
     ierr = vH.write(filename);
-    t = t + dt;
+    t = t + my_dt;
   }
 
   v.set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
@@ -290,10 +290,10 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
 
   int N = 11;
   vector<double> ts(N), values(N);
-  dt = floor(max_dt) / (N - 1);
+  my_dt = floor(max_dt) / (N - 1);
 
   for (int j = 0; j < N; ++j) {
-    ts[j] = T + dt * j;
+    ts[j] = T + my_dt * j;
   }
 
   ierr = v.begin_access(); CHKERRQ(ierr);
@@ -307,7 +307,7 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
   T += 3;
   ierr = v.update(T, max_dt); CHKERRQ(ierr);
   for (int j = 0; j < N; ++j) {
-    ts[j] = T + dt * j;
+    ts[j] = T + my_dt * j;
   }
 
   ierr = v.begin_access(); CHKERRQ(ierr);
@@ -334,18 +334,18 @@ PetscErrorCode IceUnitModel::test_IceModelVec2T() {
   ierr = v.write(output, NC_DOUBLE); CHKERRQ(ierr);
 
   T = 13;
-  dt = 10;
+  my_dt = 10;
   double average;
 
-  ierr = v.update(T, dt); CHKERRQ(ierr);
+  ierr = v.update(T, my_dt); CHKERRQ(ierr);
 
   ierr = v.begin_access(); CHKERRQ(ierr);
-  ierr = v.average(grid.xs, grid.ys, T, dt, average); CHKERRQ(ierr);
+  ierr = v.average(grid.xs, grid.ys, T, my_dt, average); CHKERRQ(ierr);
   ierr = v.end_access(); CHKERRQ(ierr);
 
   PetscPrintf(grid.com,
 	      "   average(%3.3f, %3.3f) = %3.3f, ideally should be 997/3 ~= 332.33333\n",
-	      T, T + dt, average);
+	      T, T + my_dt, average);
 
   return 0;
 }
@@ -536,42 +536,42 @@ PetscErrorCode IceUnitModel::test_dof2comm() {
 PetscErrorCode IceUnitModel::test_pismprof() {
   PetscErrorCode ierr;
 
-  PISMProf *prof;
+  PISMProf *my_prof;
 
-  prof = new PISMProf(&grid);
+  my_prof = new PISMProf(&grid);
 
   int event_total, event_wait, event_sleep;
-  event_total = prof->create("total",    "total");
-  event_wait  = prof->create("waiting",  "waiting");
-  event_sleep = prof->create("sleeping", "sleeping");
+  event_total = my_prof->create("total",    "total");
+  event_wait  = my_prof->create("waiting",  "waiting");
+  event_sleep = my_prof->create("sleeping", "sleeping");
 
-  prof->begin(event_total);
+  my_prof->begin(event_total);
   {
 
-    prof->begin(event_sleep);
+    my_prof->begin(event_sleep);
     {
       fprintf(stderr, "Rank %d will sleep for %d seconds...\n", grid.rank, grid.rank);
       PetscSleep(grid.rank);
       fprintf(stderr, "Rank %d is up...\n", grid.rank);
     }
-    prof->end(event_sleep);   
+    my_prof->end(event_sleep);   
 
-    prof->begin(event_wait);
+    my_prof->begin(event_wait);
     {
-      ierr = prof->barrier(); CHKERRQ(ierr);
+      ierr = my_prof->barrier(); CHKERRQ(ierr);
     }
-    prof->end(event_wait);   
+    my_prof->end(event_wait);   
 
   }
-  prof->end(event_total);   
+  my_prof->end(event_total);   
 
   string output_name = "pism_out.nc";
 
   output_name = pism_filename_add_suffix(output_name, "-prof", "");
 
-  ierr = prof->save_report(output_name); CHKERRQ(ierr); 
+  ierr = my_prof->save_report(output_name); CHKERRQ(ierr); 
 
-  delete prof;
+  delete my_prof;
 
   return 0;
 }

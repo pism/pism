@@ -30,19 +30,17 @@
 
 #include "iceCompModel.hh"
 
-PetscErrorCode ICMEnthalpyConverter::getAbsTemp(double E, double p, double &T) const {
+PetscErrorCode ICMEnthalpyConverter::getAbsTemp(double E, double /*p*/, double &T) const {
   T = E / c_i;
   return 0;
 }
 
-PetscErrorCode ICMEnthalpyConverter::getEnth(
-                 double T, double omega, double p, double &E) const {
+PetscErrorCode ICMEnthalpyConverter::getEnth(double T, double /*omega*/, double /*p*/, double &E) const {
  E = T * c_i;
  return 0;
 }
 
-PetscErrorCode ICMEnthalpyConverter::getEnthPermissive(
-                 double T, double omega, double p, double &E) const {
+PetscErrorCode ICMEnthalpyConverter::getEnthPermissive(double T, double /*omega*/, double /*p*/, double &E) const {
  E = T * c_i;
  return 0;
 }

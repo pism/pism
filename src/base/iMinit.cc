@@ -134,7 +134,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
 PetscErrorCode IceModel::set_grid_from_options() {
   PetscErrorCode ierr;
   bool Mx_set, My_set, Mz_set, Mbz_set, Lx_set, Ly_set, Lz_set, Lbz_set,
-    z_spacing_set, zb_spacing_set;
+    z_spacing_set, zb_spacing_set, periodicity_set;
   PetscReal x_scale = grid.Lx / 1000.0,
     y_scale = grid.Ly / 1000.0,
     z_scale = grid.Lz,
@@ -193,7 +193,26 @@ PetscErrorCode IceModel::set_grid_from_options() {
       PetscEnd();
     }
   }
-  
+
+  // Determine grid periodicity:
+  set<string> periodicity_choices;
+  periodicity_choices.insert("none");
+  periodicity_choices.insert("x");
+  periodicity_choices.insert("y");
+  periodicity_choices.insert("xy");
+  ierr = PISMOptionsList(grid.com, "-periodicity", "Horizontal grid periodicity.",
+			 periodicity_choices, "none", keyword, periodicity_set); CHKERRQ(ierr);
+  if (periodicity_set) {
+    if (keyword == "none")
+      grid.periodicity = NONE;
+    else if (keyword == "x")
+      grid.periodicity = X_PERIODIC;
+    else if (keyword == "y")
+      grid.periodicity = Y_PERIODIC;
+    else if (keyword == "xy")
+      grid.periodicity = XY_PERIODIC;
+  }
+
   // Use the information obtained above:
   if (Lx_set)    grid.Lx  = x_scale * 1000.0; // convert to meters
   if (Ly_set)    grid.Ly  = y_scale * 1000.0; // convert to meters

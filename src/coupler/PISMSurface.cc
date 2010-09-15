@@ -328,9 +328,9 @@ PetscErrorCode PSLocalMassBalance::update(PetscReal t_years, PetscReal dt_years)
     const PetscReal
       sperd = 8.64e4, // exact number of seconds per day
       julydaysec = sperd * config.get("snow_temp_july_day"),
-      T = floor(t_years) + julydaysec / secpera;
+      Time = floor(t_years) + julydaysec / secpera;
 
-    ierr = atmosphere->temp_snapshot(T, 0.0, temp_mj); CHKERRQ(ierr);
+    ierr = atmosphere->temp_snapshot(Time, 0.0, temp_mj); CHKERRQ(ierr);
     ierr = temp_mj.begin_access(); CHKERRQ(ierr);
     ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
   }

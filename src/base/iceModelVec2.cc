@@ -299,38 +299,38 @@ bool IceModelVec2Mask::is_floating(int i, int j) {
   return (m == MASK_FLOATING) || (m == MASK_ICE_FREE_OCEAN) || (m == MASK_OCEAN_AT_TIME_0);
 }
 
-PetscErrorCode IceModelVec2Mask::fill_where_grounded(IceModelVec2S &v, const PetscScalar fillval) {
+PetscErrorCode IceModelVec2Mask::fill_where_grounded(IceModelVec2S &result, const PetscScalar fillval) {
   PetscErrorCode ierr;
 
   ierr = begin_access(); CHKERRQ(ierr);
-  ierr = v.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
       if (is_grounded(i,j)) {
-        v(i,j) = fillval;
+        result(i,j) = fillval;
       }
     }
   }
-  ierr = v.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
   
   return 0;
 }
 
 
-PetscErrorCode IceModelVec2Mask::fill_where_floating(IceModelVec2S &v, const PetscScalar fillval) {
+PetscErrorCode IceModelVec2Mask::fill_where_floating(IceModelVec2S &result, const PetscScalar fillval) {
   PetscErrorCode ierr;
 
   ierr = begin_access(); CHKERRQ(ierr);
-  ierr = v.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
       if (is_floating(i,j)) {
-        v(i,j) = fillval;
+        result(i,j) = fillval;
       }
     }
   }
-  ierr = v.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
   ierr = end_access(); CHKERRQ(ierr);
   
   return 0;

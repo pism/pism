@@ -71,7 +71,7 @@ void PISMProf::begin(int index) {
 void PISMProf::end(int) {}
 #else
 //! End a profiling event.
-void PISMProf::end(int index) {
+void PISMProf::end(int /*index*/) {
   PetscLogDouble time;
   PISMEvent &event = events[current_event];
 

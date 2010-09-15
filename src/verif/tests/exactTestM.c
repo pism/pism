@@ -144,9 +144,9 @@ int exactM(double r,
        printf("INVALID ode_method in exactM(): must be 1,2,3,4\n");
        return INVALID_METHOD;
    }
-   gsl_odeiv_step* s = gsl_odeiv_step_alloc(T, 1);     /* one scalar ode */
+   gsl_odeiv_step* s = gsl_odeiv_step_alloc(T, (size_t)1);     /* one scalar ode */
    gsl_odeiv_control* c = gsl_odeiv_control_y_new(EPS_ABS,EPS_REL);
-   gsl_odeiv_evolve* e = gsl_odeiv_evolve_alloc(1);    /* one scalar ode */
+   gsl_odeiv_evolve* e = gsl_odeiv_evolve_alloc((size_t)1);    /* one scalar ode */
    gsl_odeiv_system sys = {funcM_ode_G, NULL, 1, NULL};  /* Jac-free method and no params */
 
    /* initial conditions: (r,alf) = (Rg,ug);  r increases */

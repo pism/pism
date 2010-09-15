@@ -44,8 +44,6 @@ int funcL(double r, const double u[], double f[], void *params) {
       -- = - (8/3) b'(r) u    - |---------------------|       
       dr                        \ 2 L^2 \tilde\Gamma  /
   */
-
-  if (params == NULL) {} /* quash warning "unused parameters" */
   
   const double Lsqr = L * L;
   const double a0 = 0.3 / SperA;   /* m/s;  i.e. 0.3 m/a */
@@ -53,6 +51,9 @@ int funcL(double r, const double u[], double f[], void *params) {
   const double Gamma = 2 * pow(rho * g,n) * A / (n+2);
   const double tilGamma = Gamma * pow(n,n) / (pow(2.0 * n + 2.0, n));
   const double C = a0 / (2.0 * Lsqr * tilGamma);
+
+  if (params == NULL) {} /* quash warning "unused parameters" */
+
   if ((r >= 0.0) && (r <= L)) {
     const double freq = z0 * pi / L;
     const double bprime = b0 * freq * sin(freq * r);
@@ -97,9 +98,9 @@ int getU(double *r, int N, double *u,
        printf("INVALID ode_method in getU(): must be 1,2,3,4\n");
        return TESTL_INVALID_METHOD;
    }
-   gsl_odeiv_step* s = gsl_odeiv_step_alloc(T, 1);     /* one scalar ode */
+   gsl_odeiv_step* s = gsl_odeiv_step_alloc(T, (size_t)1);     /* one scalar ode */
    gsl_odeiv_control* c = gsl_odeiv_control_y_new(EPS_ABS,EPS_REL);
-   gsl_odeiv_evolve* e = gsl_odeiv_evolve_alloc(1);    /* one scalar ode */
+   gsl_odeiv_evolve* e = gsl_odeiv_evolve_alloc((size_t)1);    /* one scalar ode */
    gsl_odeiv_system sys = {funcL, NULL, 1, NULL};  /* Jac-free method and no params */
 
    int status = TESTL_NOT_DONE;

@@ -498,7 +498,7 @@ PetscErrorCode IceGrid::createDA() {
   return 0;
 }
 
-PetscErrorCode IceGrid::createDA(PetscInt procs_x, PetscInt procs_y,
+PetscErrorCode IceGrid::createDA(PetscInt my_procs_x, PetscInt my_procs_y,
 				 PetscInt* &lx, PetscInt* &ly) {
   PetscErrorCode ierr;
   PetscInt WIDE_STENCIL = 2;
@@ -510,7 +510,7 @@ PetscErrorCode IceGrid::createDA(PetscInt procs_x, PetscInt procs_y,
   // Transpose:
   ierr = DACreate2d(com, DA_XYPERIODIC, DA_STENCIL_BOX,
                     My, Mx,
-		    procs_y, procs_x,
+		    my_procs_y, my_procs_x,
 		    1, WIDE_STENCIL,
                     ly, lx, &da2);
   if (ierr != 0) {

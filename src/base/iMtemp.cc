@@ -565,7 +565,7 @@ PetscErrorCode IceModel::ageStep() {
 
   // set up fine grid in ice
   PetscInt    fMz = grid.Mz_fine;
-  PetscScalar fdz = grid.dz_fine, *fzlev = grid.zlevels_fine;
+  PetscScalar fdz = grid.dz_fine;
 
   PetscScalar *x;  
   x = new PetscScalar[fMz]; // space for solution

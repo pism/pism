@@ -54,7 +54,7 @@ macro (FIND_PACKAGE_MULTIPASS _name _current)
   endif (NOT ${_stored})
 
   set (${_current} ${_states_current})
-  if (NOT ${_current})
+  if (NOT ${_current} AND PACKAGE_MULTIPASS_${_name}_CALLED)
     message (STATUS "Clearing ${_name} dependent variables")
     # Clear all the dependent variables so that the module can reset them
     list (GET _args 0 _cmd)
@@ -65,13 +65,13 @@ macro (FIND_PACKAGE_MULTIPASS _name _current)
       endforeach (dep)
     endif (_cmd STREQUAL "DEPENDENTS")
     set (${_NAME}_FOUND "NOTFOUND" CACHE INTERNAL "Cleared" FORCE)
-  endif (NOT ${_current})
+  endif ()
+  set (PACKAGE_MULTIPASS_${name}_CALLED YES CACHE INTERNAL "Private" FORCE)
 endmacro (FIND_PACKAGE_MULTIPASS)
 
 
-macro (MULTIPASS_C_SOURCE_RUNS name includes libraries source runs)
+macro (MULTIPASS_C_SOURCE_RUNS includes libraries source runs)
   include (CheckCSourceRuns)
-  string (TOUPPER ${name} _NAME)
   # This is a ridiculous hack.  CHECK_C_SOURCE_* thinks that if the
   # *name* of the return variable doesn't change, then the test does
   # not need to be re-run.  We keep an internal count which we

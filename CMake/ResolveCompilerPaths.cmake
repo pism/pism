@@ -15,7 +15,7 @@
 #
 #  if the filesystem looks like
 #
-#    /A:       liba.so libb.so libc.so
+#    /A:       liba.so         libc.so
 #    /B:       liba.so libb.so
 #    /usr/lib: liba.so libb.so libc.so libd.so
 #
@@ -42,22 +42,22 @@
 macro (RESOLVE_LIBRARIES LIBS LINK_LINE)
   string (REGEX MATCHALL "((-L|-l|-Wl)([^\" ]+|\"[^\"]+\")|/[^\" ]+(a|so|dll))" _all_tokens "${LINK_LINE}")
   set (_libs_found)
-  set (_directory_stack)
+  set (_directory_list)
   foreach (token ${_all_tokens})
     if (token MATCHES "-L([^\" ]+|\"[^\"]+\")")
-      # If it's a library path, push it on the stack
+      # If it's a library path, add it to the list
       string (REGEX REPLACE "^-L" "" token ${token})
       string (REGEX REPLACE "//" "/" token ${token})
-      list (INSERT _directory_stack 0 ${token})
+      list (APPEND _directory_list ${token})
     elseif (token MATCHES "^(-l([^\" ]+|\"[^\"]+\")|/[^\" ]+(a|so|dll))")
-      # It's a library, resolve the path by looking in the stack and then (by default) in system directories
+      # It's a library, resolve the path by looking in the list and then (by default) in system directories
       string (REGEX REPLACE "^-l" "" token ${token})
       set (_root)
       if (token MATCHES "^/")	# We have an absolute path, add root to the search path
 	set (_root "/")
       endif (token MATCHES "^/")
       set (_lib "NOTFOUND" CACHE FILEPATH "Cleared" FORCE)
-      find_library (_lib ${token} HINTS ${_directory_stack} ${_root})
+      find_library (_lib ${token} HINTS ${_directory_list} ${_root})
       if (_lib)
 	string (REPLACE "//" "/" _lib ${_lib})
         list (APPEND _libs_found ${_lib})

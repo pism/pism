@@ -53,16 +53,16 @@ PetscErrorCode IceModel::update_viewers() {
     switch(dims) {
     case GRID_2D:
       {
-	IceModelVec2 *v2 = dynamic_cast<IceModelVec2*>(v);
-	if (v2 == NULL) SETERRQ(1,"grid_type() returns GRID_2D but dynamic_cast gives a NULL");
-	ierr = v2->view(viewer_size); CHKERRQ(ierr);
+	IceModelVec2 *v2d = dynamic_cast<IceModelVec2*>(v);
+	if (v2d == NULL) SETERRQ(1,"grid_type() returns GRID_2D but dynamic_cast gives a NULL");
+	ierr = v2d->view(viewer_size); CHKERRQ(ierr);
 	break;
       }
     case GRID_3D:
       {
-	IceModelVec3 *v3 = dynamic_cast<IceModelVec3*>(v);
-	if (v3 == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
-	ierr = v3->view_surface(vH, viewer_size); CHKERRQ(ierr);
+	IceModelVec3 *v3d = dynamic_cast<IceModelVec3*>(v);
+	if (v3d == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
+	ierr = v3d->view_surface(vH, viewer_size); CHKERRQ(ierr);
 	break;
       }
     case GRID_3D_BEDROCK:
@@ -97,9 +97,9 @@ PetscErrorCode IceModel::update_viewers() {
     }
 
     if (dims == GRID_3D) {
-	IceModelVec3 *v3 = dynamic_cast<IceModelVec3*>(v);
-	if (v3 == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
-	ierr = v3->view_horizontal_slice(slice_level, viewer_size); CHKERRQ(ierr);
+	IceModelVec3 *v3d = dynamic_cast<IceModelVec3*>(v);
+	if (v3d == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
+	ierr = v3d->view_horizontal_slice(slice_level, viewer_size); CHKERRQ(ierr);
     }
   }
 
@@ -125,15 +125,15 @@ PetscErrorCode IceModel::update_viewers() {
     }
 
     if (dims == GRID_3D) {
-	IceModelVec3 *v3 = dynamic_cast<IceModelVec3*>(v);
-	if (v3 == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
-	ierr = v3->view_sounding(id, jd, viewer_size); CHKERRQ(ierr);
+	IceModelVec3 *v3d = dynamic_cast<IceModelVec3*>(v);
+	if (v3d == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
+	ierr = v3d->view_sounding(id, jd, viewer_size); CHKERRQ(ierr);
     }
 
     if (dims == GRID_3D_BEDROCK) {
-	IceModelVec3Bedrock *v3 = dynamic_cast<IceModelVec3Bedrock*>(v);
-	if (v3 == NULL) SETERRQ(1,"grid_type() returns GRID_3D_BEDROCK but dynamic_cast gives a NULL");
-	ierr = v3->view_sounding(id, jd, viewer_size); CHKERRQ(ierr);
+	IceModelVec3Bedrock *v3d = dynamic_cast<IceModelVec3Bedrock*>(v);
+	if (v3d == NULL) SETERRQ(1,"grid_type() returns GRID_3D_BEDROCK but dynamic_cast gives a NULL");
+	ierr = v3d->view_sounding(id, jd, viewer_size); CHKERRQ(ierr);
     }
   }
   return 0;
