@@ -28,6 +28,7 @@
 15jan09 E. Bueler: initialization values for esterr struct; stops warnings
                    from -Wall
 
+16Sep10 C. Khroulev: very minor changes to get rid of *very* pedantic warnings
 */
 
 
@@ -217,11 +218,11 @@ double *r)
 
      /* Loop through the points in gray-code ordering */
      for (i = 0;; ++i) {
-      unsigned mask;
+      unsigned mask, d;
 
       sum += f(dim, p, fdata);
 
-      unsigned d = ls0(i);  /* which coordinate to flip */
+      d = ls0(i);  /* which coordinate to flip */
       if (d >= dim)
            break;
 
@@ -354,7 +355,7 @@ esterr *ee)
 
      rule75genzmalik *r = (rule75genzmalik *) r_;
      unsigned i, dimDiffMax, dim = r_->dim;
-     double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0, sum4, result, res5th;
+     double sum1 = 0.0, sum2 = 0.0, sum3 = 0.0, sum4, sum5, result, res5th;
      const double *center = h->data;
      const double *width = h->data + dim;
 
@@ -377,7 +378,7 @@ r->widthLambda, &sum3);
      /* Calculate sum5 for f(lambda5, lambda5, ..., lambda5) */
      for (i = 0; i < dim; ++i)
       r->widthLambda[i] = width[i] * lambda5;
-     double sum5 = evalR_Rfs(f, fdata, dim, r->p, center, r->widthLambda);
+     sum5 = evalR_Rfs(f, fdata, dim, r->p, center, r->widthLambda);
 
      /* Calculate fifth and seventh order results */
 
@@ -429,8 +430,6 @@ static rule *make_rule75genzmalik(unsigned dim)
 static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
                       const hypercube *h, esterr *ee)
 {
-    if (r == NULL) {}  /* should quash unused parameter pedantic msg */
-    
      /* Gauss quadrature weights and kronrod quadrature abscissae and
     weights as evaluated with 80 decimal digit arithmetic by
     L. W. Fullerton, Bell Labs, Nov. 1981. */
@@ -466,7 +465,7 @@ static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
 
      const double center = h->data[0];
      const double width = h->data[1];
-     double fv1[n - 1], fv2[n - 1];
+     double fv1[7], fv2[7]; /* C. Khroulev, 16Sep10: hard-wired 7 = n - 1 */
      const double f_center = f(1, &center, fdata);
      double result_gauss = f_center * wg[n/2 - 1];
      double result_kronrod = f_center * wgk[n - 1];
@@ -474,8 +473,10 @@ static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
      double result_asc, mean, err;
      unsigned j;
 
+     if (r == NULL) {}  /* should quash unused parameter pedantic msg */
+
      for (j = 0; j < (n - 1) / 2; ++j) {
-      int j2 = 2*j + 1;
+      unsigned int j2 = 2*j + 1;
       double x, f1, f2, fsum, w = width * xgk[j2];
       x = center - w; fv1[j2] = f1 = f(1, &x, fdata);
       x = center + w; fv2[j2] = f2 = f(1, &x, fdata);
@@ -486,7 +487,7 @@ static unsigned rule15gauss_evalError(rule *r, integrand f, void *fdata,
      }
 
      for (j = 0; j < n/2; ++j) {
-      int j2 = 2*j;
+      unsigned int j2 = 2*j;
       double x, f1, f2, w = width * xgk[j2];
       x = center - w; fv1[j2] = f1 = f(1, &x, fdata);
           x = center + w; fv2[j2] = f2 = f(1, &x, fdata);
@@ -697,6 +698,7 @@ int adapt_integrate(integrand f, void *fdata,
      rule *r;
      hypercube h;
      esterr ee;
+     int status;
      /* initialization values by E. Bueler 1/15/09 */
      ee.err = 1.0e30; ee.val = 1.0e30;
 
@@ -707,7 +709,7 @@ int adapt_integrate(integrand f, void *fdata,
      }
      r = dim == 1 ? make_rule15gauss(dim) : make_rule75genzmalik(dim);
      h = make_hypercube_range(dim, xmin, xmax);
-     int status = ruleadapt_integrate(r, f, fdata, &h,
+     status = ruleadapt_integrate(r, f, fdata, &h,
                       maxEval, reqAbsError, reqRelError,
                       &ee);
      *val = ee.val;

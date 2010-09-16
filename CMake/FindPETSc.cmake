@@ -129,7 +129,7 @@ show :
 
   macro (PETSC_FIND_LIBRARY suffix name)
     set (PETSC_LIBRARY_${suffix} "NOTFOUND" CACHE INTERNAL "Cleared" FORCE) # Clear any stale value, if we got here, we need to find it again
-    find_library (PETSC_LIBRARY_${suffix} NAMES ${name} HINTS ${petsc_lib_dir})
+    find_library (PETSC_LIBRARY_${suffix} NAMES ${name} HINTS ${petsc_lib_dir} NO_DEFAULT_PATH)
     set (PETSC_LIBRARIES_${suffix} "${PETSC_LIBRARY_${suffix}}")
     mark_as_advanced (PETSC_LIBRARY_${suffix})
   endmacro (PETSC_FIND_LIBRARY suffix name)
