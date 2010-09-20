@@ -818,7 +818,8 @@ PetscErrorCode IceModel::init() {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   //! The following flow-chart illustrates the process.
-  //! \dotfile initialization-sequence.dot IceModel initialization sequence
+  //!
+  //! \dotfile initialization-sequence.dot "IceModel initialization sequence"
 
   ierr = PetscGetTime(&start_time); CHKERRQ(ierr);
 

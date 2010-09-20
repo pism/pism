@@ -2,7 +2,8 @@
 import re
 from os import popen, system
 
-input = "ice_bib"
+input  = "../ice_bib"
+bbl    = "texput.bbl"
 output = "doxybib.txt"
 
 notes = """
@@ -18,8 +19,6 @@ latexdummy = """\\documentclass{article}
 \\cite{*}\\bibliography{%s}\\bibliographystyle{doxybib}
 \\end{document}
 """ % input
-
-bbl = "texput.bbl"
 
 # Remove an old .bbl so that LaTeX does not choke on it:
 system("rm -f %s" % bbl)
@@ -56,6 +55,7 @@ subs = [(r"%\n",                      r""), # lines wrapped by BibTeX
         (r'``',                       r'"'),                   # opening quotes
         (r"''",                       r'"'),                   # closing quotes
         (r"\\,",                      r""),                    # \, LaTeX math spacing command
+        (r"\\ae",                     r"&aelig;"),             # ae ligature
         ]
 
 for (regex, substitution) in subs:

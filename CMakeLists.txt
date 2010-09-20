@@ -14,7 +14,7 @@ find_package (MPI REQUIRED)
 set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
 
 # The default options cache
-option (Pism_BUILD_TESTS       "Build tests"                                           ON)
+#option (Pism_BUILD_TESTS       "Build tests"                                           ON)
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
 
@@ -86,8 +86,12 @@ else (FFTW_FOUND)
 endif (FFTW_FOUND)
 
 add_custom_target (etags
-  etags `find src -name *.{c,cc,h,hh}`
-  WORKING_DIRECTORY ${Pism_SOURCE_DIR})
+  COMMAND etags `find src -name *.c`
+  COMMAND etags `find src -name *.cc`
+  COMMAND etags `find src -name *.h`
+  COMMAND etags `find src -name *.hh`
+  WORKING_DIRECTORY ${Pism_SOURCE_DIR}
+)
 
 ## Use full RPATH, with this setting Pism libraries cannot be moved after installation
 ## but the correct libraries will always be found regardless of LD_LIBRARY_PATH

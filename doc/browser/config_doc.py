@@ -4,9 +4,14 @@ from numpy import sort
 try:
     from netCDF4 import *
 except:
-    from netCDF3 import *
+    try:
+        from netCDF3 import *
+    except:
+        print "ERROR: Neither netCDF3 nor netCDF4 in installed!"
+        import sys
+        sys.exit(1)
 
-input = "../lib/pism_config.nc"
+input = "pism_config.nc"
 
 nc = Dataset(input, 'r')
 
@@ -72,7 +77,7 @@ print """
 print """
 \section flags Boolean flags
 <table style="width: 100%">
-<tr> <td> <b> Flag name </b> </td> <td> <b> Default value </b> </td> <td> <b> Description </b> </td> </tr>"""
+<tr> <td class="indexkey"> Flag name </td> <td class="indexvalue"> <b> Default value </b> </td> <td class="indexvalue"> <b> Description </b> </td> </tr>"""
 
 for attr in sort(var.ncattrs()):
     if attr.endswith("_doc"):
@@ -88,14 +93,14 @@ for attr in sort(var.ncattrs()):
     if (value not in ["yes", "true", "on", "no", "false", "off"]):
         continue
 
-    print "<tr><td>%s</td><td>\"%s\"</td><td>%s</td></tr>" % (attr, value, docstring)
+    print '<tr><td class="indexkey">%s</td><td class="indexvalue">\"%s\"</td><td class="indexvalue">%s</td></tr>' % (attr, value, docstring)
 
 print "</table>"
 
 print """
 \section params Scalar parameters
 <table style="width: 100%">
-<tr> <td> <b>Parameter name </b> </td> <td> <b> Default value </b> </td> <td> <b> Description </b> </td> </tr>"""
+<tr> <td class="indexkey"> <b>Parameter name </b> </td> <td class="indexvalue"> <b> Default value </b> </td> <td class="indexvalue"> <b> Description </b> </td> </tr>"""
 
 for attr in sort(var.ncattrs()):
     if attr.endswith("_doc"):
@@ -110,25 +115,25 @@ for attr in sort(var.ncattrs()):
     if type(value) == str:
         continue
 
-    print "<tr><td>%s</td>" % attr
+    print '<tr><td class="indexkey">%s</td>' % attr
     
     if (abs(value) >= 1e7):
-        print "<td>%e</td>" % value, # use scientific notation if a number is big
+        print '<td class="indexvalue">%e</td>' % value, # use scientific notation if a number is big
     elif (int(value) == value):
-        print "<td>%d</td>" % int(value), # remove zeros after the decimal point
+        print '<td class="indexvalue">%d</td>' % int(value), # remove zeros after the decimal point
     elif (abs(value) <= 1e-5):
-        print "<td>%e</td>" % value, # use scientific notation if small (and not zero; prev case)
+        print '<td class="indexvalue">%e</td>' % value, # use scientific notation if small (and not zero; prev case)
     else:
-        print "<td>%f</td>" % value,
+        print '<td class="indexvalue">%f</td>' % value,
     
-    print "<td>%s</td></tr>" % docstring
+    print '<td class="indexvalue">%s</td></tr>' % docstring
 
 print "</table>"
 
 print """
 \section strings String parameters
 <table style="width: 100%">
-<tr> <td> <b> Parameter name </b> </td> <td> <b> Default value </b> </td> <td> <b> Description </b> </td> </tr>"""
+<tr> <td class="indexkey"> <b> Parameter name </b> </td> <td class="indexvalue"> <b> Default value </b> </td> <td class="indexvalue"> <b> Description </b> </td> </tr>"""
 
 for attr in sort(var.ncattrs()):
     if attr.endswith("_doc"):
@@ -144,6 +149,6 @@ for attr in sort(var.ncattrs()):
     if (type(value) != str) or (value in ["yes", "true", "on", "no", "false", "off"]):
         continue
 
-    print "<tr><td>%s</td><td>\"%s\"</td><td>%s</td></tr>" % (attr, value, docstring)
+    print '<tr><td class="indexkey">%s</td><td class="indexvalue">\'%s\'</td><td class="indexvalue">%s</td></tr>' % (attr, value, docstring)
 
 print "</table> */"

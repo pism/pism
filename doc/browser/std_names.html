@@ -17,7 +17,7 @@ Readers other than PISM programmers should ignore the final column, which gives 
 
 Because of the use of UDUNITS, PISM input files do not have to have fields already in the canonical units.  Rather, the units attribute has to be valid for UDUNITS conversion into the canonical units.  Generally within PISM, the canonical units are used internally.
 
-<table style="width: 100%;">
+<table class="doxtable" style="width: 100%;">
   <tr><td> standard_name </td> <td> canonical units (SI) </td> <td> PISM short name (NetCDF variable name) </td> <td> PISM IceModelVec name [type]</td></tr>
   <tr><td>bedrock_altitude</td> <td>m</td> <td>topg</td> <td>vbed [IceModelVec2S]</td></tr>
   <tr><td>land_ice_area_fraction</td><td>1</td><td></td><td></td></tr>
@@ -49,7 +49,7 @@ Because of the use of UDUNITS, PISM input files do not have to have fields alrea
 
 These are merely proposed by Bueler and Aschwanden, for now.
 
-<table style="width: 100%;">
+<table class="doxtable" style="width: 100%;">
   <tr><td> proposed_standard_name </td><td> canonical units (SI) </td><td> PISM short name in NetCDF </td><td> PISM IceModelVec name [type]</td><td> comments </td></tr>  
   <tr><td>ice_shelf_basal_specific_mass_balance</td><td>m s-1</td><td>shelfbmassflux</td><td>shelfbmassflux [IceModelVec2S]</td><td>positive is loss of ice shelf mass (%i.e. use outward normal from ice shelf)</td></tr>
   <tr><td>ice_shelf_basal_temperature</td><td>K</td><td>shelfbtemp</td><td>shelfbtemp [IceModelVec2S]</td><td>absolute (not pressure-adjusted) temperature</td></tr>
@@ -69,7 +69,7 @@ These are merely proposed by Bueler and Aschwanden, for now.
 
 Used in PISM but no proposed standard name for now.  This is an incomplete list.
 
-<table style="width: 100%;" border="1">
+<table class="doxtable" style="width: 100%;">
   <tr><td> PISM long_name </td><td> canonical units (SI) </td><td> PISM short name in NetCDF </td><td> PISM internal IceModelVec name </td><td> comments</td></tr>  
   <tr><td>rate of strain heating</td><td>W m-3</td><td>strainheat</td><td>Sigma3 [IceModelVec3]</td><td></td></tr>
   <tr><td>grounded_dragging_floating integer mask</td><td></td><td>mask</td><td>vMask [IceModelVec2Mask]</td><td>assumes integer values</td></tr>

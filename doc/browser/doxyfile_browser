@@ -585,16 +585,16 @@ INPUT                  = config_doc.txt \
                          browser_vertchange.txt \
                          browser_bedrough.txt \
                          doxybib.txt \
-                         ../src/ \
-                         ../src/base/ \
-                         ../src/software_tests/ \
-                         ../src/coupler/ \
-                         ../src/earth/ \
-                         ../src/verif/ \
-                         ../src/eismint/ \
-                         ../src/ismip/ \
-			 ../test/ \
-			 ../util/
+                         ../../src/ \
+                         ../../src/base/ \
+                         ../../src/software_tests/ \
+                         ../../src/coupler/ \
+                         ../../src/earth/ \
+                         ../../src/verif/ \
+                         ../../src/eismint/ \
+                         ../../src/ismip/ \
+			 ../../test/ \
+			 ../../util/
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -726,7 +726,7 @@ EXAMPLE_RECURSIVE      = NO
 # directories that contain image that are included in the documentation (see
 # the \image command).
 
-IMAGE_PATH             = userman/figs/
+IMAGE_PATH             = ../userman/figs/
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
@@ -1547,7 +1547,7 @@ DOT_PATH               =
 # contain dot files that are included in the documentation (see the
 # \dotfile command).
 
-DOTFILE_DIRS           = .
+DOTFILE_DIRS           = ../../ ../ .
 
 # The DOT_GRAPH_MAX_NODES tag can be used to set the maximum number of
 # nodes that will be shown in the graph. If the number of nodes in a graph

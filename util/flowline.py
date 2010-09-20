@@ -1,5 +1,23 @@
 #!/usr/bin/env python
-# update the history attribute
+
+## @package flowline
+# \brief This script aids in setting up and visualizing flow-line modeling runs.
+#
+# \details This script expands and collapses NetCDF datasets along the 'x' or
+# 'y' dimension. Run flowline.py --help to see the command-line options.
+#
+# To set up a data-set for flow-line modeling, create a NetCDF file with an 'x'
+# dimension and appropriate variables (usually x(x), acab(x), artm(x),
+# bheatflx(x), thk(x) and topg(x)), then run
+# \code
+# flowline.py -e -o foo_pism.nc foo.nc
+# \endcode
+# Then bootstrap from foo_pism.nc, adding -periodicity y to PISM command-line options.
+#
+# To collapse a PISM flow-line model output for plotting, etc, run
+# \code
+# flowline.py -c -o bar.nc pism_output.nc
+# \endcode
 
 from optparse import OptionParser
 
@@ -21,10 +39,10 @@ def copy_dim(nc1, nc2, name, direction):
     dim2 = nc2.createDimension(name, len(dim1))
 
 def copy_attributes(var1, var2):
-    """Copy attributes of var1 to var2."""
+    """Copy attributes of var1 to var2. Skips _FillValue."""
     for each in var1.ncattrs():
-        var2.setncattr(each, var1.getncattr(each))
-
+        if each != "_FillValue":
+            setattr(var2, each, getattr(var1, each))
 
 def process(input, output, direction, collapse):
     """Process the file 'input', expanding or collapsing data according to
@@ -90,8 +108,15 @@ def collapse_var(nc, out, name, direction):
     dims = var1.dimensions
     if len(dims) > 1:                   # only collapse spatial fields
         dims = filter(lambda(x): x != direction, dims)
+
+    try:
+        fill_value = var1._FillValue
+        var2 = out.createVariable(name, var1.dtype,
+                                  dimensions=dims, fill_value = fill_value)
+    except:
+        var2 = out.createVariable(name, var1.dtype,
+                                  dimensions=dims)
         
-    var2 = out.createVariable(name, var1.dtype, dimensions=dims)
     copy_attributes(var1, var2)
 
     # Note: the following depends on the current PISM variable storage order: (t, z, y, x)

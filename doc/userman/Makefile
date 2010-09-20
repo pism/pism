@@ -6,6 +6,7 @@ parts := eismint-greenland.tex eismint-ross.tex getting-started.tex \
 
 revision:
 	@svnversion > revision.tex
+.PHONY: revision
 
 revclean:
 	@rm -f revision.tex
