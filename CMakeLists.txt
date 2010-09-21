@@ -87,9 +87,9 @@ endif (FFTW_FOUND)
 
 add_custom_target (etags
   COMMAND etags `find src -name *.c`
-  COMMAND etags `find src -name *.cc`
-  COMMAND etags `find src -name *.h`
-  COMMAND etags `find src -name *.hh`
+  COMMAND etags -a `find src -name *.cc`
+  COMMAND etags -a `find src -name *.h`
+  COMMAND etags -a `find src -name *.hh`
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
 )
 

@@ -159,14 +159,6 @@ PetscErrorCode IceModel::createVecs() {
   ierr = Sigma3.set_glaciological_units("mW m-3"); CHKERRQ(ierr);
   ierr = variables.add(Sigma3); CHKERRQ(ierr);
 
-  if (config.get_flag("do_cold_ice_methods")) {
-    // ice temperature
-    ierr = T3.create(grid, "temp", true); CHKERRQ(ierr);
-    ierr = T3.set_attrs("model_state","ice temperature",
-			"K", "land_ice_temperature"); CHKERRQ(ierr);
-    ierr = T3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-    ierr = variables.add(T3); CHKERRQ(ierr);
-  }
 
   ierr = Enth3.create(grid, "enthalpy", true, WIDE_STENCIL); CHKERRQ(ierr);
   // POSSIBLE standard name = land_ice_enthalpy
@@ -175,6 +167,17 @@ PetscErrorCode IceModel::createVecs() {
      "ice enthalpy (includes sensible heat, latent heat, pressure)",
      "J kg-1", ""); CHKERRQ(ierr);
   ierr = variables.add(Enth3); CHKERRQ(ierr);
+
+  if (config.get_flag("do_cold_ice_methods")) {
+    // ice temperature
+    ierr = T3.create(grid, "temp", true); CHKERRQ(ierr);
+    ierr = T3.set_attrs("model_state","ice temperature",
+			"K", "land_ice_temperature"); CHKERRQ(ierr);
+    ierr = T3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+    ierr = variables.add(T3); CHKERRQ(ierr);
+
+    ierr = Enth3.set_attr("pism_intent", "diagnostic"); CHKERRQ(ierr); 
+  }
 
   // age of ice but only if age will be computed
   if (config.get_flag("do_age")) {

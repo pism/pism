@@ -118,11 +118,15 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
 		 -g.zb_min, Lbz);
       no_regrid_bedrock = true;
     }
-  }
 
-  // This disables regridding bedrock temperature if an input file has only
-  // one bedrock layer.
-  if (g.zb_len < 2) no_regrid_bedrock = true;
+    // This disables regridding bedrock temperature if an input file has no bedrock
+    if (g.zb_len < 1) {
+      verbPrintf(2,com,
+		 "  NOTE: bootstrapping (or regridding) file has no bedrock.\n"
+		 "    DISABLING BEDROCK REGRIDDING ...\n");
+      no_regrid_bedrock = true;
+    }
+  }
 
   verbPrintf(5, com, "LIC INFO: no_regrid_ice = %d, no_regrid_bedrock = %d\n",
 	     no_regrid_ice, no_regrid_bedrock);

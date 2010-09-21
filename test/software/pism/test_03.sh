@@ -3,7 +3,7 @@
 source ../functions.sh
 
 test="Test # 3: no information loss on -y 0 runs (ignoring diagnostic variables)."
-files="foo.nc bar.nc baz.nc"
+files="foo.nc bar.nc"
 dir=`pwd`
 
 OPTS="-surface constant -o_size small"
@@ -15,19 +15,15 @@ test_03 ()
     set -e
 
     # Create a file to start from:
-    run -n 2 pismv -test G -Mx 61 -My 61 -Mz 61 -y 10 -verbose 1 -o foo.nc
-
-    # Run for a year using pismr (so that all the parameters, including
-    # rheology, are the same):
-    run -n 2 pismr -i foo.nc -y 1 $OPTS -o bar.nc
+    run -n 2 pisms -no_cold -y 1000 $OPTS -o foo.nc
 
     # Run for 0 years:
-    run -n 2 pismr -i bar.nc -y 0 $OPTS -o baz.nc
+    run -n 2 pismr -i foo.nc -y 0 $OPTS -o bar.nc
 
     set +e
 
     # Compare, excluding irrelevant diagnostic variables:
-    run nccmp.py -x -v t bar.nc baz.nc
+    run nccmp.py foo.nc bar.nc
     if [ $? != 0 ];
     then
 	fail "foo.nc and bar.nc are different."
