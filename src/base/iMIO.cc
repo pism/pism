@@ -344,7 +344,7 @@ PetscErrorCode IceModel::regrid() {
   } else {
     vars.insert("litho_temp");
 
-    if (config.get("do_age"))
+    if (config.get_flag("do_age"))
 	vars.insert("age");
 
     if (config.get_flag("do_cold_ice_methods"))
