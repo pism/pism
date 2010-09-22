@@ -16,7 +16,7 @@ run_test ()
 
     set -e
 
-    # create foo.nc
+    # create foo.nc (at about 6500 years we get some basal melting...)
     run -n 2 pisms -no_cold -y 6500 $bedrock -o_size small -o foo.nc
 
     # bootstrap from it, re-gridding all the variables we can
@@ -25,7 +25,7 @@ run_test ()
     set +e
 
     # compare results (foo.nc and bar.nc contain model_state variables only)
-    nccmp.py foo.nc bar.nc
+    run nccmp.py foo.nc bar.nc
     if [ $? != 0 ];
     then
 	fail "foo.nc and bar.nc are different."

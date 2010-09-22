@@ -252,7 +252,7 @@ latter is stored in an IceModelVec2Stag called \c uvbar.
 Two vertical integrals are computed.  Both are in terms of this internal quantity,
 	\f[\delta(z) = e\,2\rho g (H-z) \,F,\f]
 where \f$F\f$ is the result of the flow law, which depends on pressure and stress;
-see IceFlowLaw::flow().
+see IceFlowLaw::flow_from_temp().
 
 One integral is evaluated at every level in the ice,
 	\f[I(z) = \int_0^z \delta(z')\,dz'.\f]
@@ -395,9 +395,9 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
             if (do_cold_ice) {
               PetscScalar T;
               ierr = EC->getAbsTemp(E, pressure, T); CHKERRQ(ierr);
-              flow = ice->flow(alpha * pressure, T, pressure, grainsize);
+              flow = ice->flow_from_temp(alpha * pressure, T, pressure, grainsize);
             } else {
-              flow = gpbldi->flowFromEnth(alpha * pressure, E, pressure, grainsize);
+              flow = gpbldi->flow_from_enth(alpha * pressure, E, pressure, grainsize);
             }
 
             delta[k] = enhancement_factor * theta * 2.0 * pressure * flow;

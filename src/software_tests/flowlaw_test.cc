@@ -22,7 +22,7 @@
 #include "../base/NCVariable.hh"
 
 static char help[] =
-  "Calls IceFlowLaw::flow() with various values of arguments and prints results (for software tests).\n";
+  "Calls IceFlowLaw::flow...() with various values of arguments and prints results (for software tests).\n";
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -79,10 +79,10 @@ int main(int argc, char *argv[]) {
         EC.getAbsTemp(E, p, T);
         if (ice_type == "gpbld") {
           printf("%10.2e   %10.3f    %10.6f = %10.6e\n",
-                 sigma[i], E, T, poly_ice->flowFromEnth(sigma[i], E, p, gs));
+                 sigma[i], E, T, poly_ice->flow_from_enth(sigma[i], E, p, gs));
         } else {
           printf("%10.2e   %10.3f    %10.6f = %10.6e\n",
-                 sigma[i], E, T, ice->flow(sigma[i], T, p, gs));
+                 sigma[i], E, T, ice->flow_from_temp(sigma[i], T, p, gs));
         }
       }
     }

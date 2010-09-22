@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2007, 2010 Jed Brown and Ed Bueler
 //
 // This file is part of Pism.
 //
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
   for (int i=0; i<4; ++i) {
     for (int j=0; j<5; ++j) {
       double T = T0 - j*dT;
-      printf("%10.2e %10.3f = %10.2e\n", sigma[i], T, tglen.flow(sigma[i], T, p, 0));
+      printf("%10.2e %10.3f = %10.2e\n", sigma[i], T, tglen.flow_from_temp(sigma[i], T, p, 0));
     }
   }
 

@@ -270,7 +270,7 @@ PetscErrorCode PSLocalMassBalance::init(PISMVars &vars) {
   CHKERRQ(ierr);
   ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   acab.write_in_glaciological_units = true;
-  acab.set_attr("comment", "positive values correspond to ice gain");
+  ierr = acab.set_attr("comment", "positive values correspond to ice gain"); CHKERRQ(ierr); 
 
   if (fausto_params) {
     ierr = verbPrintf(2, grid.com, "  Setting PDD parameters using formulas (6) and (7) in [Faustoetal2009]...\n"); CHKERRQ(ierr);

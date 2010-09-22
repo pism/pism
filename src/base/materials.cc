@@ -33,8 +33,17 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &conf
   c_p          = config.get("ice_specific_heat_capacity");
   latentHeat   = config.get("water_latent_heat_fusion");
   meltingTemp  = config.get("water_melting_temperature");
+
+  if (config.get_flag("verification_mode")) {
+    EC = new ICMEnthalpyConverter(config);
+  } else {
+    EC = new EnthalpyConverter(config);
+  }
 }
 
+IceFlowLaw::~IceFlowLaw() {
+  delete EC;
+}
 
 PetscErrorCode IceFlowLaw::printInfo(PetscInt) const {
   PetscPrintf(comm,"WARNING:  IceFlowLaw::printInfo() called but base class IceFlowLaw is virtual!!\n");
@@ -47,8 +56,8 @@ PetscTruth IceFlowLawIsPatersonBuddCold(IceFlowLaw *ice, const NCConfigVariable 
     {1e3,223,1e6,1e-3},{2e4,254,3e6,2e-3},{5e4,268,5e6,3e-3},{1e5,273,8e6,5e-3}};
   ThermoGlenArrIce cpb(PETSC_COMM_SELF,NULL,config); // This is unmodified cold Paterson-Budd
   for (int i=0; i<4; i++) {
-    const PetscReal left  = ice->flow(v[i].s, v[i].T, v[i].p, v[i].gs),
-                    right =  cpb.flow(v[i].s, v[i].T, v[i].p, v[i].gs);
+    const PetscReal left  = ice->flow_from_temp(v[i].s, v[i].T, v[i].p, v[i].gs),
+                    right =  cpb.flow_from_temp(v[i].s, v[i].T, v[i].p, v[i].gs);
     if (PetscAbs((left - right)/left)>1.0e-15) {
       return PETSC_FALSE;
     }
@@ -56,11 +65,51 @@ PetscTruth IceFlowLawIsPatersonBuddCold(IceFlowLaw *ice, const NCConfigVariable 
   return PETSC_TRUE;
 }
 
+PetscScalar IceFlowLaw::hardnessParameter(PetscScalar E, PetscScalar pressure) const {
+  PetscScalar T_pa;
+  EC->getPATemp(E, pressure, T_pa);
+  return hardnessParameter(T_pa);
+}
+
+//! Computes vertical average of B(E,pressure) ice hardness, namely \f$\bar
+//! B(E,p)\f$. See comment for hardnessParameter().
+/*! Note E[0],...,E[kbelowH] must be valid.  */
+PetscScalar IceFlowLaw::averagedHardness_from_enth(
+                PetscScalar thickness, PetscInt kbelowH, const PetscScalar *zlevels,
+                const PetscScalar *enthalpy) const {
+
+  PetscScalar B = 0;
+  if (kbelowH > 0) {
+    PetscScalar dz = zlevels[1] - zlevels[0];
+    B += 0.5 * dz * hardnessParameter(enthalpy[0],
+                                      EC->getPressureFromDepth(thickness) );
+    for (PetscInt m=1; m < kbelowH; m++) {
+      const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m],
+                        depth  = thickness - 0.5 * (zlevels[m+1] + zlevels[m]);
+      B += 0.5 * (dz + dzNEXT) * hardnessParameter(enthalpy[m],
+                                                   EC->getPressureFromDepth(depth) );
+      dz = dzNEXT;
+    }
+    // use last dz from for loop
+    const PetscScalar depth  = 0.5 * (thickness - zlevels[kbelowH]);
+    B += 0.5 * dz * hardnessParameter(enthalpy[kbelowH],
+                                      EC->getPressureFromDepth(depth) );
+  }
+
+  // so far B is an integral of ice hardness; compute the average now:
+  if (thickness > 0)
+    B = B / thickness;
+  else
+    B = 0;
+
+  return B;
+}
+
 PetscTruth IceFlowLawUsesGrainSize(IceFlowLaw *ice) {
   static const PetscReal gs[] = {1e-4,1e-3,1e-2,1},s=1e4,T=260,p=1e6;
-  PetscReal ref = ice->flow(s,T,p,gs[0]);
+  PetscReal ref = ice->flow_from_temp(s,T,p,gs[0]);
   for (int i=1; i<4; i++) {
-    if (ice->flow(s,T,p,gs[i]) != ref) return PETSC_TRUE;
+    if (ice->flow_from_temp(s,T,p,gs[i]) != ref) return PETSC_TRUE;
   }
   return PETSC_FALSE;
 }
@@ -78,7 +127,7 @@ CustomGlenIce::CustomGlenIce(MPI_Comm c,const char pre[], const NCConfigVariable
 }
 
 
-PetscScalar CustomGlenIce::flow(PetscScalar stress,PetscScalar,PetscScalar,PetscScalar) const
+PetscScalar CustomGlenIce::flow_from_temp(PetscScalar stress,PetscScalar,PetscScalar,PetscScalar) const
 {
   return softness_A * pow(stress,exponent_n-1);
 }
@@ -263,7 +312,7 @@ PetscErrorCode ThermoGlenIce::view(PetscViewer viewer) const {
 }
 
 
-PetscScalar ThermoGlenIce::flow(PetscScalar stress,PetscScalar temp,PetscScalar pressure,PetscScalar) const {
+PetscScalar ThermoGlenIce::flow_from_temp(PetscScalar stress,PetscScalar temp,PetscScalar pressure,PetscScalar) const {
   const PetscScalar T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure; // pressure-adjusted temp
   return softnessParameter(T) * pow(stress,n-1);
 }
@@ -360,15 +409,9 @@ This constructor just sets flow law factor for nonzero water content, from
  */
 PolyThermalGPBLDIce::PolyThermalGPBLDIce(MPI_Comm c,const char pre[],
 					 const NCConfigVariable &config) : ThermoGlenIce(c,pre,config) {
-  EC = new EnthalpyConverter(config);
   T_0  = config.get("water_melting_temperature");    // K
   water_frac_coeff = config.get("gpbld_water_frac_coeff");                
 }
-
-PolyThermalGPBLDIce::~PolyThermalGPBLDIce() {
-  delete EC;
-}
-
 
 PetscErrorCode PolyThermalGPBLDIce::setFromOptions() {
   PetscErrorCode ierr;
@@ -416,17 +459,17 @@ the pressure then the softness we compute is
    \f[A = A(T_{pa}(E,p))(1+184\omega).\f]
 The pressure-melting temperature \f$T_{pa}(E,p)\f$ is computed by getPATemp().
  */
-PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(
+PetscScalar PolyThermalGPBLDIce::softnessParameter_from_enth(
                 PetscScalar enthalpy, PetscScalar pressure) const {
   PetscErrorCode ierr;
 #ifdef PISM_DEBUG
   if (enthalpy < 0) {
-    SETERRQ(1, "Negative enthalpy in PolyThermalGPBLDIce::softnessParameterFromEnth() ... this should never happen");
+    SETERRQ(1, "Negative enthalpy in PolyThermalGPBLDIce::softnessParameter_from_enth() ... this should never happen");
   }
 #endif
 
   if (EC == NULL) {
-    PetscErrorPrintf("EC is NULL in PolyThermalGPBLDIce::flowFromEnth()\n");
+    PetscErrorPrintf("EC is NULL in PolyThermalGPBLDIce::flow_from_enth()\n");
     endPrintRank();
   }
   PetscScalar E_s, E_l;
@@ -436,7 +479,7 @@ PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(
     ierr = EC->getPATemp(enthalpy,pressure,T_pa);
     if (ierr) {
       PetscErrorPrintf(
-        "getPATemp() returned ierr>0 in PolyThermalGPBLDIce::softnessParameterFromEnth()\n");
+        "getPATemp() returned ierr>0 in PolyThermalGPBLDIce::softnessParameter_from_enth()\n");
       endPrintRank();
     }
     return softnessParameter( T_pa ); // uses ThermoGlenIce formula
@@ -445,13 +488,13 @@ PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(
     ierr = EC->getWaterFraction(enthalpy,pressure,omega);
     if (ierr) {
       PetscErrorPrintf(
-        "getWaterFraction() returned ierr>0 in PolyThermalGPBLDIce::softnessParameterFromEnth()\n");
+        "getWaterFraction() returned ierr>0 in PolyThermalGPBLDIce::softnessParameter_from_enth()\n");
       endPrintRank();
     }
     // next line implements eqn (23) in \ref AschwandenBlatter2009
     return softnessParameter(T_0) * (1.0 + water_frac_coeff * omega);  // uses ThermoGlenIce formula
   } else { // liquid water not allowed
-    PetscErrorPrintf("ERROR in PolyThermalGlenPBLDIce::flow(): liquid water not allowed\n\n");
+    PetscErrorPrintf("ERROR in PolyThermalGlenPBLDIce::flow_from_temp(): liquid water not allowed\n\n");
     endPrintRank();
     return 0.0;
   }
@@ -459,43 +502,43 @@ PetscScalar PolyThermalGPBLDIce::softnessParameterFromEnth(
 
 
 //! The hardness factor in the Paterson-Budd-Lliboutry-Duval flow law.  For viscosity form.
-PetscScalar PolyThermalGPBLDIce::hardnessParameterFromEnth(
+PetscScalar PolyThermalGPBLDIce::hardnessParameter_from_enth(
                 PetscScalar enthalpy, PetscScalar pressure) const {
-  return pow(softnessParameterFromEnth(enthalpy,pressure), -1.0/n);
+  return pow(softnessParameter_from_enth(enthalpy,pressure), -1.0/n);
 }
 
 
 //! Glen-Paterson-Budd-Lliboutry-Duval flow law itself.
-PetscScalar PolyThermalGPBLDIce::flowFromEnth(
+PetscScalar PolyThermalGPBLDIce::flow_from_enth(
                 PetscScalar stress, PetscScalar enthalpy, PetscScalar pressure, PetscScalar /* gs */) const {
-  return softnessParameterFromEnth(enthalpy,pressure) * pow(stress,n-1);
+  return softnessParameter_from_enth(enthalpy,pressure) * pow(stress,n-1);
 }
 
 
-PetscScalar PolyThermalGPBLDIce::averagedHardnessFromEnth(
+PetscScalar PolyThermalGPBLDIce::averagedHardness_from_enth(
                 PetscScalar thickness, PetscInt kbelowH, const PetscScalar *zlevels,
                 const PetscScalar *enthalpy) {
   if (EC == NULL) {
     PetscErrorPrintf(
-      "EC is NULL in PolyThermalGPBLDIce::averagedHardnessFromEnth()\n");
+      "EC is NULL in PolyThermalGPBLDIce::averagedHardness_from_enth()\n");
     endPrintRank();
   }
 
   PetscScalar B = 0;
   if (kbelowH > 0) {
     PetscScalar dz = zlevels[1] - zlevels[0];
-    B += 0.5 * dz * hardnessParameterFromEnth(enthalpy[0],
+    B += 0.5 * dz * hardnessParameter_from_enth(enthalpy[0],
                                               EC->getPressureFromDepth(thickness) );
     for (PetscInt m=1; m < kbelowH; m++) {
       const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m],
                         depth  = thickness - 0.5 * (zlevels[m+1] + zlevels[m]);
-      B += 0.5 * (dz + dzNEXT) * hardnessParameterFromEnth(enthalpy[m],
+      B += 0.5 * (dz + dzNEXT) * hardnessParameter_from_enth(enthalpy[m],
                                                            EC->getPressureFromDepth(depth) );
       dz = dzNEXT;
     }
     // use last dz from for loop
     const PetscScalar depth  = 0.5 * (thickness - zlevels[kbelowH]);
-    B += 0.5 * dz * hardnessParameterFromEnth(enthalpy[kbelowH],
+    B += 0.5 * dz * hardnessParameter_from_enth(enthalpy[kbelowH],
                                               EC->getPressureFromDepth(depth));
   }
 
@@ -562,7 +605,7 @@ PetscScalar ThermoGlenArrIce::tempFromSoftness(PetscScalar myA) const {
 }
 
 
-PetscScalar ThermoGlenArrIce::flow(PetscScalar stress, PetscScalar temp, PetscScalar,PetscScalar) const {
+PetscScalar ThermoGlenArrIce::flow_from_temp(PetscScalar stress, PetscScalar temp, PetscScalar,PetscScalar) const {
   // ignores pressure
   return softnessParameter(temp) * pow(stress,n-1);  // uses NON-pressure-adjusted temp
 }
@@ -651,7 +694,7 @@ HybridIce::HybridIce(MPI_Comm c,const char pre[],
   D. L. Goldsby & D. L. Kohlstedt (2001), "Superplastic deformation
   of ice: experimental observations", J. Geophys. Res. 106(M6), 11017-11030.
 */
-PetscScalar HybridIce::flow(PetscScalar stress, PetscScalar temp,
+PetscScalar HybridIce::flow_from_temp(PetscScalar stress, PetscScalar temp,
                             PetscScalar pressure, PetscScalar gs) const {
   PetscScalar eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
 
@@ -766,7 +809,7 @@ HybridIceStripped::HybridIceStripped(MPI_Comm c,const char pre[],
 }
 
 
-PetscScalar HybridIceStripped::flow(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar) const {
+PetscScalar HybridIceStripped::flow_from_temp(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar) const {
   // note value of gs is ignored
   // note pressure only effects the temperature; the "P V" term is dropped
   // note no diffusional flow

@@ -278,7 +278,7 @@ a growth factor less than one for all modes on the grid.
 \subsection remark Remarks.
 The phrases <i>maximum principle</i> and <i>von Neumann analysis</i> will be precisely illustrated in the following proof.  Both approaches are in [\ref MortonMayers].  There is additional information on the von Neumann analysis of implicit finite difference methods for advection in [\ref Strikwerda].
 
-These statements also apply in case \f$k_i=0\f$, in which case (\ref lambdachoice) implies \f$\lambda=0\f$, and the method reduces to implicit first-order upwinding.  (Implicit first-order upwinding has properties 1 and 2 [\ref Strikwerda].)  The case \f$k_i=0\f$ is relevant because it applies to temperate ice in which there is no assumed enthalpy conduction.  (One reasonable model for temperate ice is to assume no transport of the liquid fraction, whether diffusive transport or otherwise, and to ignor conduction along the temperature gradient, because the gradient is only from pressure-melting temperature differences.)
+These statements also apply in case \f$k_i=0\f$, in which case (\ref lambdachoice) implies \f$\lambda=0\f$, and the method reduces to implicit first-order upwinding.  (Implicit first-order upwinding has properties 1 and 2 [\ref Strikwerda].)  The case \f$k_i=0\f$ is relevant because it applies to temperate ice in which there is no assumed enthalpy conduction.  (One reasonable model for temperate ice is to assume no transport of the liquid fraction, whether diffusive transport or otherwise, and to ignore conduction along the temperature gradient, because the gradient is only from pressure-melting temperature differences.)
 
 \subsection proofone Proof of 1.
 

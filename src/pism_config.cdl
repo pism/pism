@@ -341,6 +341,9 @@ netcdf pism_config {
     pism_config:Paterson-Budd_critical_temperature = 263.15;
     pism_config:Paterson-Budd_critical_temperature_doc = "Kelvin; Paterson-Budd critical temperature, see [\\ref PatersonBudd]";
 
+    pism_config:verification_mode = "no";
+    pism_config:verification_mode_doc = "; shows whether PISM is running in the verification mode";
+
     pism_config:enthalpy_cold_bulge_max = 60270.0;
     pism_config:enthalpy_cold_bulge_max_doc = "J kg-1; = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";
                               

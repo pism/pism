@@ -28,7 +28,7 @@ def vprint(s):
 # function to read a 2d variable from EISMINT-ROSS data file
 # allows choice of _FillValue, shifting, and scaling
 def read2dROSSfloat(mygrid,myarray,xs,xm,My,mymissing,myshift,myscale):
-  vprint(mygrid.readline()) # ignor two lines
+  vprint(mygrid.readline()) # ignore two lines
   vprint(mygrid.readline())
   Mx = xs + xm
   for i in range(xs):
@@ -68,7 +68,7 @@ except getopt.GetoptError:
 print "reading grid data from ",GRID_FILE
 vprint("VERBOSE > 0, so printing ignored lines in " + GRID_FILE)
 grid=open(GRID_FILE, 'r')
-vprint(grid.readline()) # ignor first line
+vprint(grid.readline()) # ignore first line
 # second line gives dimensions; read and allocate accordingly
 dim=[]
 for num in grid.readline().split():
@@ -99,7 +99,7 @@ accum = zeros((MxROSS, MyROSS), float32)
 barB = zeros((MxROSS, MyROSS), float32)
 Ts = zeros((MxROSS, MyROSS), float32)
 # note there are actually 112 "rows position" values in 111by147Grid.dat file
-vprint(grid.readline()) # ignor two more lines
+vprint(grid.readline()) # ignore two more lines
 vprint(grid.readline())
 j=0;
 for line in range(xsROSS):
@@ -113,7 +113,7 @@ for line in range(xmROSS):
    j = j + 1
 vprint(grid.readline()) # read extra value
 # note there are actually 148 "columns position" values in 111by147Grid.dat file
-vprint(grid.readline()) # ignor two lines
+vprint(grid.readline()) # ignore two lines
 vprint(grid.readline())
 i=0;
 for line in range(MyROSS):
@@ -122,7 +122,7 @@ for line in range(MyROSS):
       eislon[j,i] = lonvalue
    i = i + 1
 vprint(grid.readline()) # read extra value
-vprint(grid.readline()) # ignor two lines
+vprint(grid.readline()) # ignore two lines
 vprint(grid.readline())
 for i in [0, 1]:
   for j in range(MyROSS):
@@ -141,7 +141,7 @@ for i in range(xmROSS):
 read2dROSSfloat(grid,azi,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0)
 read2dROSSfloat(grid,mag,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0 / SECPERA)
 read2dROSSfloat(grid,thk,xsROSS,xmROSS,MyROSS,1.0,0.0,1.0)
-vprint(grid.readline()) # ignor two lines
+vprint(grid.readline()) # ignore two lines
 vprint(grid.readline())
 for i in range(xsROSS):
   for j in range(MyROSS):
@@ -156,7 +156,7 @@ for i in range(xmROSS):
     j = j + 1
 read2dROSSfloat(grid,bed,xsROSS,xmROSS,MyROSS,-600.0,0.0,-1.0)
 # set thickness to 1.0 m according to this info
-vprint(grid.readline()) # ignor two lines
+vprint(grid.readline()) # ignore two lines
 vprint(grid.readline())
 for i in range(xmROSS):
   j = 0

@@ -41,11 +41,11 @@ public:
               ideal_gas_constant;
 
   IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &config);
-  virtual ~IceFlowLaw() {}
+  virtual ~IceFlowLaw();
   virtual PetscErrorCode setFromOptions() {return 0;}
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const {return 0;}
-  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp,
+  virtual PetscScalar flow_from_temp(PetscScalar stress, PetscScalar temp,
                            PetscScalar pressure, PetscScalar gs) const = 0;
   // returns nu * H; it is adapted to a staggered grid so T1,T2 get averaged
   virtual PetscScalar effectiveViscosityColumn(
@@ -57,13 +57,22 @@ public:
              PetscScalar v_x, PetscScalar v_y) const = 0;
   virtual PetscScalar exponent() const = 0;
   virtual PetscScalar hardnessParameter(PetscScalar T) const = 0;
+
   virtual PetscScalar averagedHardness(
              PetscScalar H, PetscInt kbelowH, const PetscScalar zlevels[],
              const PetscScalar T[]) const = 0;
 
+  virtual PetscScalar hardnessParameter(PetscScalar E, PetscScalar p) const;
+
+  virtual PetscScalar averagedHardness_from_enth(PetscScalar thickness,
+                                                 PetscInt kbelowH,
+                                                 const PetscScalar *zlevels,
+                                                 const PetscScalar *enthalpy) const;
+
 protected:
   MPI_Comm comm;
   char prefix[256];
+  EnthalpyConverter *EC;
 };
 
 
@@ -83,7 +92,7 @@ public:
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const;
-  virtual PetscScalar flow(PetscScalar,PetscScalar,PetscScalar,PetscScalar) const;
+  virtual PetscScalar flow_from_temp(PetscScalar,PetscScalar,PetscScalar,PetscScalar) const;
   virtual PetscScalar effectiveViscosity(
               PetscScalar hardness, PetscScalar u_x, PetscScalar u_y,
               PetscScalar v_x, PetscScalar v_y) const;
@@ -109,7 +118,7 @@ public:
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const;
-  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp,
+  virtual PetscScalar flow_from_temp(PetscScalar stress, PetscScalar temp,
                            PetscScalar pressure, PetscScalar gs) const;
   virtual PetscScalar effectiveViscosity(
               PetscScalar hardness, PetscScalar u_x, PetscScalar u_y,
@@ -139,7 +148,7 @@ and \ref LliboutryDuval1985.
 class PolyThermalGPBLDIce : public ThermoGlenIce {
 public:
   PolyThermalGPBLDIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
-  virtual ~PolyThermalGPBLDIce();
+  virtual ~PolyThermalGPBLDIce() {}
   virtual PetscErrorCode setFromOptions();
   virtual PetscErrorCode view(PetscViewer viewer) const;
 
@@ -151,22 +160,21 @@ public:
      $ grep ice->hardnessParameter *.cc
   note for grep: arrow (>) must actually be escaped with backslash
   */
-  virtual PetscScalar softnessParameterFromEnth(
+  virtual PetscScalar softnessParameter_from_enth(
               PetscScalar enthalpy, PetscScalar pressure) const;
-  virtual PetscScalar hardnessParameterFromEnth(
+  virtual PetscScalar hardnessParameter_from_enth(
               PetscScalar enthalpy, PetscScalar pressure) const;
 
-  virtual PetscScalar flowFromEnth(
+  virtual PetscScalar flow_from_enth(
               PetscScalar stress, PetscScalar enthalpy, PetscScalar pressure,
               PetscScalar gs) const; // grainsize arg gs not used
 
-  virtual PetscScalar averagedHardnessFromEnth(
+  virtual PetscScalar averagedHardness_from_enth(
               PetscScalar, PetscInt, const PetscScalar*,
               const PetscScalar*);
 
 protected:
   PetscReal T_0, water_frac_coeff;
-  EnthalpyConverter *EC;
 };
 
 
@@ -188,8 +196,8 @@ public:
   virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar softnessParameter(PetscScalar T) const;
   virtual PetscScalar tempFromSoftness(PetscScalar A) const; 
-  using ThermoGlenIce::flow;
-  virtual PetscScalar flow(PetscScalar,PetscScalar,PetscScalar,PetscScalar) const;
+  using ThermoGlenIce::flow_from_temp;
+  virtual PetscScalar flow_from_temp(PetscScalar,PetscScalar,PetscScalar,PetscScalar) const;
   virtual PetscScalar A() const;  // returns A_cold for Paterson-Budd
   virtual PetscScalar Q() const;  // returns Q_cold for Paterson-Budd
 };
@@ -214,7 +222,7 @@ struct GKparts {
 
 //! A hybrid of Goldsby-Kohlstedt (2001) ice (constitutive form) and Paterson-Budd (1982)-Glen (viscosity form).
 /*!
-Each IceFlowLaw has both a forward flow law in "constitutive law" form ("flow()") and an
+Each IceFlowLaw has both a forward flow law in "constitutive law" form ("flow_from_temp()") and an
 inverted-and-vertically-integrated flow law ("effectiveViscosity()").  Only the
 former form of the flow law is known for Goldsby-Kohlstedt.  If one can
 invert-and-vertically-integrate the G-K law then one can build a "trueGKIce"
@@ -225,7 +233,7 @@ public:
   HybridIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
   virtual PetscErrorCode printInfo(PetscInt) const;
   virtual PetscErrorCode view(PetscViewer) const;
-  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp,
+  virtual PetscScalar flow_from_temp(PetscScalar stress, PetscScalar temp,
                            PetscScalar pressure, PetscScalar gs) const;
   virtual PetscTruth usesGrainSize() const { return PETSC_TRUE; }
   GKparts flowParts(PetscScalar stress, PetscScalar temp, PetscScalar pressure) const;
@@ -252,7 +260,7 @@ Peltier et al 2000, which is even simpler.
 class HybridIceStripped : public HybridIce {
 public:
   HybridIceStripped(MPI_Comm c,const char pre[], const NCConfigVariable &config);
-  virtual PetscScalar flow(PetscScalar stress, PetscScalar temp,
+  virtual PetscScalar flow_from_temp(PetscScalar stress, PetscScalar temp,
                            PetscScalar pressure, PetscScalar gs) const;
   virtual PetscTruth usesGrainSize() const { return PETSC_FALSE; }
 protected:

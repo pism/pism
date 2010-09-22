@@ -73,6 +73,7 @@ int main(int argc, char *argv[]) {
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     config.set_flag("use_eta_transformation", false);
+    config.set_flag("verification_mode",      true);
 
     IceGrid      g(com, rank, size, config);
 

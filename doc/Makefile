@@ -47,7 +47,7 @@ browsenow : browser
 .PHONY:  clean revision revclean svn_update userman installation browsenow browser vfigs
 
 clean : revclean
-	@rm -f *.aux *.blg *.idx *.ind *.ilg *.log *.out *.toc texput.* *.bbl
+	@rm -f *.aux *.blg *.idx *.ind *.ilg *.log *.out *.toc texput.* *.bbl *.rel *.synctex.gz
 	@$(MAKE) -C userman clean
 	@$(MAKE) -C browser clean
 

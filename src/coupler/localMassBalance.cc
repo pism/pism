@@ -208,7 +208,7 @@ PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
 	  snow += precip * dt_series;
 	} else if (Tav < Tmax) { // linear transition from Tmin to Tmax
 	  snow += ((Tmax-Tav)/(Tmax-Tmin)) * precip * dt_series;  // units: m (ice-equivalent)
-	} else { // T >= Tmax, all precip is rain -- ignor it
+	} else { // T >= Tmax, all precip is rain -- ignore it
 	  snow += 0.;  // units: m (ice-equivalent)
 	}
       }

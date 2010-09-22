@@ -1025,8 +1025,8 @@ PetscErrorCode IceModel::compute_hardav_staggered(IceModelVec2Stag &result) {
         }
         
         if (do_cold_ice == false) {
-          result(i,j,o) = gpbldi->averagedHardnessFromEnth(H, grid.kBelowHeight(H),
-                                                           grid.zlevels, tmp); CHKERRQ(ierr); 
+          result(i,j,o) = gpbldi->averagedHardness_from_enth(H, grid.kBelowHeight(H),
+                                                             grid.zlevels, tmp); CHKERRQ(ierr); 
         } else {
           result(i,j,o) = ice->averagedHardness(H, grid.kBelowHeight(H),
                                                 grid.zlevels, tmp);

@@ -85,5 +85,15 @@ protected:
   bool do_cold_ice_methods;
 };
 
-#endif
+class ICMEnthalpyConverter : public EnthalpyConverter {
+public:
+  ICMEnthalpyConverter(const NCConfigVariable &config) : EnthalpyConverter(config) {}
+  virtual ~ICMEnthalpyConverter() {}
+  virtual PetscErrorCode getAbsTemp(double E, double p, double &T) const;
+  virtual PetscErrorCode getEnth(double T, double omega, double p, double &E) const;
+  virtual PetscErrorCode getEnthPermissive(double T, double omega, double p, double &E) const;
+};
+
+
+#endif // __enthalpyConverter_hh
 

@@ -320,7 +320,7 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
 //! Manage regridding based on user options.  Call IceModelVec::regrid() to do each selected variable.
 /*!
 For each variable selected by option <tt>-regrid_vars</tt>, we regrid it onto the current grid from 
-the NetCDF file specified by <tt>-regrid_from</tt>.
+the NetCDF file specified by <tt>-regrid_file</tt>.
 
 The default, if <tt>-regrid_vars</tt> is not given, is to regrid the 3
 dimensional quantities \c tau3, \c Tb3 and either \c T3 or \c Enth3. This is
@@ -331,7 +331,7 @@ should carefully specify which variables to regrid.
 PetscErrorCode IceModel::regrid() {
   PetscErrorCode ierr;
   string filename, tmp;
-  bool regridVarsSet, regrid_from_set;
+  bool regridVarsSet, regrid_file_set;
   PISMIO nc(&grid);
 
   ierr = PetscOptionsBegin(grid.com, PETSC_NULL,
@@ -340,7 +340,7 @@ PetscErrorCode IceModel::regrid() {
 
   // Get the regridding file name:
   ierr = PISMOptionsString("-regrid_file", "Specifies the file to regrid from",
-			   filename, regrid_from_set); CHKERRQ(ierr);
+			   filename, regrid_file_set); CHKERRQ(ierr);
 
   ierr = PISMOptionsString("-regrid_vars", "Specifies the list of variable to regrid",
 			   tmp, regridVarsSet); CHKERRQ(ierr);
@@ -349,7 +349,7 @@ PetscErrorCode IceModel::regrid() {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   // Return if no regridding is requested:
-  if (!regrid_from_set) return 0;
+  if (!regrid_file_set) return 0;
 
   ierr = verbPrintf(2, grid.com, "regridding from file %s ...\n",filename.c_str()); CHKERRQ(ierr);
   

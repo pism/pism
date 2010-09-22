@@ -52,7 +52,7 @@ while 1:
   riggslat[count] = - ( float(line[3]) + float(line[4])/60.0 + float(line[5])/3600.0 )
   riggslon[count] = float(line[6]) + float(line[7])/60.0 + float(line[8])/3600.0
   riggslon[count] = - float(line[9]) * riggslon[count]
-  #ignor line[11] and line[13]
+  #ignore line[11] and line[13]
   riggsmag[count] = float(line[10])
   riggsazi[count] = float(line[12])
   riggsu[count] = riggsmag[count] * sin( (pi/180.0) * riggsazi[count] )
