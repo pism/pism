@@ -20,7 +20,7 @@ run_test ()
     # Bootstrap:
     for NN in $NRANGE;
     do 
-	run -n $NN pismr -boot_from foo0.nc -surface constant -Mx 101 -My 201 -Mz 11 -Lz 5000 -y 0 -o foo$NN.nc -o_size small
+	run -n $NN pismr -boot_file foo0.nc -surface constant -Mx 101 -My 201 -Mz 11 -Lz 5000 -y 0 -o foo$NN.nc -o_size small
     done
 
     set +e

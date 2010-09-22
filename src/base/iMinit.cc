@@ -30,18 +30,18 @@
  */
 PetscErrorCode IceModel::set_grid_defaults() {
   PetscErrorCode ierr;
-  bool Mx_set, My_set, Mz_set, Lz_set, boot_from_set;
+  bool Mx_set, My_set, Mz_set, Lz_set, boot_file_set;
   string filename;
   grid_info gi;
 
   // Get the bootstrapping file name:
   
-  ierr = PISMOptionsString("-boot_from", "Specifies the file to bootstrap from",
-			   filename, boot_from_set); CHKERRQ(ierr);
+  ierr = PISMOptionsString("-boot_file", "Specifies the file to bootstrap from",
+			   filename, boot_file_set); CHKERRQ(ierr);
 
-  if (!boot_from_set) {
+  if (!boot_file_set) {
     ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: Please specify an input file using -i or -boot_from.\n");
+		       "PISM ERROR: Please specify an input file using -i or -boot_file.\n");
     CHKERRQ(ierr);
     PetscEnd();
   }
@@ -113,7 +113,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
   ierr = PISMOptionsIsSet("-Mz", Mz_set); CHKERRQ(ierr);
   if ( !(Mx_set && My_set && Mz_set) ) {
     ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: All of -boot_from, -Mx, -My, -Mz are required for bootstrapping.\n");
+		       "PISM ERROR: All of -boot_file, -Mx, -My, -Mz are required for bootstrapping.\n");
     CHKERRQ(ierr);
     PetscEnd();
   }
@@ -475,16 +475,16 @@ PetscErrorCode IceModel::model_state_setup() {
  */
 PetscErrorCode IceModel::set_vars_from_options() {
   PetscErrorCode ierr;
-  bool boot_from_set;
+  bool boot_file_set;
   string filename;
 
   ierr = verbPrintf(3, grid.com,
 		    "Setting initial values of model state variables...\n"); CHKERRQ(ierr);
 
-  ierr = PISMOptionsString("-boot_from", "Specifies the file to bootstrap from",
-			   filename, boot_from_set); CHKERRQ(ierr);
+  ierr = PISMOptionsString("-boot_file", "Specifies the file to bootstrap from",
+			   filename, boot_file_set); CHKERRQ(ierr);
   
-  if (boot_from_set) {
+  if (boot_file_set) {
     ierr = bootstrapFromFile(filename.c_str()); CHKERRQ(ierr);
   } else {
     ierr = PetscPrintf(grid.com, "PISM ERROR: No input file specified.\n"); CHKERRQ(ierr);

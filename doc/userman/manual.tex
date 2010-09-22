@@ -374,7 +374,7 @@ Regarding the automatically produced time variable, which has a \texttt{units} a
 \optsection{Bootstrapping}
 \optseealso{Grid}
 
-This phrase\index{bootstrapping}\index{initialization!by bootstrapping} means starting a modeling run with less than sufficient data, and letting the model fill in needed values according to heuristics.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option \fileopt{boot_from}.
+This phrase\index{bootstrapping}\index{initialization!by bootstrapping} means starting a modeling run with less than sufficient data, and letting the model fill in needed values according to heuristics.  These heuristics are applied before the first time step is taken, so they are part of an initialization process.  Bootstrapping uses the option \fileopt{boot_file}.
 
 The need for an identified stage like ``bootstrapping'' comes from the fact that initial conditions, for the evolution equations describing an ice sheet, are not typically observable.  As a principal example of this problem, these equations require the temperature within the ice at the time the run is started.  Glaciological observations, specifically remote-sensed observations which cover a large fraction or all of an ice sheet, never include this temperature field in practice.
 
@@ -387,11 +387,11 @@ Instead, evolutionary ice sheet modeling necessarily does something like this to
 
 The heuristics used by PISM are, for now, only documented in the source code file \texttt{src/base/iMbootstrap.cc}.
 
-When using \fileopt{boot_from} you will need to specify both grid dimensions (using \texttt{-Mx}, \texttt{-My} and \texttt{-Mz}) and the height of the computational box for the ice with \texttt{-Lz}.  The data read from the file can determine the horizontal extent of the model, if options \texttt{-Lx}, \texttt{-Ly} are not set.  The additional specification of vertical extent by \texttt{-Lz} is reasonably natural because realistic data used in ``bootstrapping'' are two-dimensional.  Not specifying all four options \texttt{-Mx}, \texttt{-My}, \texttt{-Mz}, \texttt{-Lz} \emph{when bootstrapping with} \texttt{-boot_from} is an error.
+When using \fileopt{boot_file} you will need to specify both grid dimensions (using \texttt{-Mx}, \texttt{-My} and \texttt{-Mz}) and the height of the computational box for the ice with \texttt{-Lz}.  The data read from the file can determine the horizontal extent of the model, if options \texttt{-Lx}, \texttt{-Ly} are not set.  The additional specification of vertical extent by \texttt{-Lz} is reasonably natural because realistic data used in ``bootstrapping'' are two-dimensional.  Not specifying all four options \texttt{-Mx}, \texttt{-My}, \texttt{-Mz}, \texttt{-Lz} \emph{when bootstrapping with} \texttt{-boot_file} is an error.
 
 Subsection \ref{sec:eismint-greenland} shows bootstrapping for the EISMINT-Greenland intercomparison.
 
-\subsubsection*{\texttt{-boot_from} file format}
+\subsubsection*{\texttt{-boot_file} file format}
 \label{sec:bootstrapping-format}  Allowed formats for a bootstrapping file are relatively simple to describe. 
 \begin{enumerate}
 \item The NetCDF dimensions \texttt{x} and \texttt{y} and corresponding variables must be present and have the meanings of projection X coordinate and projection Y coordinate.
@@ -406,7 +406,7 @@ Subsection \ref{sec:eismint-greenland} shows bootstrapping for the EISMINT-Green
 \subsection{For programmers deriving/modifying PISM:  Initialization sequence}  As described already, there are three ways to start PISM,\begin{itemize}
 \item executables \texttt{pisms} and \texttt{pismv} initialize simplified-geometry experiments and verification tests, respectively, from formulas in the source code,
 \item \texttt{-i} reads a previously-saved PISM model state in NetCDF form, and
-\item \texttt{-boot_from} reads a NetCDF file and uses heuristics to fill in needed fields.
+\item \texttt{-boot_file} reads a NetCDF file and uses heuristics to fill in needed fields.
 \end{itemize}
 As a consequence of these options, and generally from the complexity of getting a computation started on a parallel computer, we observe that initializing PISM is one of the most error-prone parts of maintaining it.
 

@@ -66,7 +66,7 @@ For the rest of this example, we assume you have a workstation with 8 cores, but
 The script \texttt{spinup.sh} starts by ``bootstrapping.''  This term describes the creation, by heuristics and simplified models, of the kind of full initial conditions needed for the evolving, time-dependent model.  Concretely, the first 100 model year run with 8 processes will look like this (\emph{but there is no need to type here \dots patience \dots}):
 \small
 \begin{verbatim}
-  mpiexec -n 8 pismr -ocean_kill -eta -skip 2 -boot_from pism_Greenland_5km_v0.93.nc \
+  mpiexec -n 8 pismr -ocean_kill -eta -skip 2 -boot_file pism_Greenland_5km_v0.93.nc \
     -Mx 76 -My 141 -Lz 4000 -Lbz 2000 -Mz 41 -Mbz 16 \
     -atmosphere searise_greenland -surface pdd -pdd_fausto \
     -y 100 -o g20km_pre100.nc

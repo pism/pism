@@ -25,7 +25,7 @@ PISMComponent::PISMComponent(IceGrid &g, const NCConfigVariable &conf)
   t = dt = GSL_NAN;
 }
 
-//! Finds PISM's input (-i or -boot_from) file using command-line options.
+//! Finds PISM's input (-i or -boot_file) file using command-line options.
 /*! This might be useful since coupling fields are usually in the file
   IceModel uses to initialize from.
 */
@@ -35,24 +35,24 @@ PetscErrorCode PISMComponent::find_pism_input(string &filename, //!< name of the
 					      int &start    //!< "start" to use when reading from filename
 					      ) {
   PetscErrorCode ierr;
-  PetscTruth i_set, boot_from_set;
+  PetscTruth i_set, boot_file_set;
 
   // read file names:
-  char i_file[PETSC_MAX_PATH_LEN], boot_from_file[PETSC_MAX_PATH_LEN];
+  char i_file[PETSC_MAX_PATH_LEN], boot_file_file[PETSC_MAX_PATH_LEN];
   ierr = PetscOptionsGetString(PETSC_NULL, "-i", i_file, 
 			       PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
-  ierr = PetscOptionsGetString(PETSC_NULL, "-boot_from", boot_from_file, 
-			       PETSC_MAX_PATH_LEN, &boot_from_set); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL, "-boot_file", boot_file_file, 
+			       PETSC_MAX_PATH_LEN, &boot_file_set); CHKERRQ(ierr);
   if (i_set) {
-    if (boot_from_set) {
+    if (boot_file_set) {
       ierr = PetscPrintf(grid.com,
-	"PISMClimateCoupler ERROR: both '-i' and '-boot_from' are used. Exiting...\n"); CHKERRQ(ierr);
+	"PISMClimateCoupler ERROR: both '-i' and '-boot_file' are used. Exiting...\n"); CHKERRQ(ierr);
       PetscEnd();
     }
     filename = i_file;
   }
-  else if (boot_from_set) {
-    filename = boot_from_file;
+  else if (boot_file_set) {
+    filename = boot_file_file;
   }
 
   // filename now contains name of PISM input (or bootstrapping) file; now check
@@ -67,7 +67,7 @@ PetscErrorCode PISMComponent::find_pism_input(string &filename, //!< name of the
   last_record -= 1;
   ierr = nc.close(); CHKERRQ(ierr);
 
-  if (boot_from_set) {
+  if (boot_file_set) {
     // *caller* of find_pism_input() is in charge of destroying
     lic = new LocalInterpCtx(gi, NULL, NULL, grid); // 2D only
     regrid = true;

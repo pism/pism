@@ -2,7 +2,7 @@
 
 NN=2
 
-mpiexec -n $NN pismr -ocean_kill -e 3 -skip 5 -boot_from pism_Greenland_5km_v0.93.nc -Mx 39 -My 71 -Lz 4000 -Lbz 2000 -Mz 21 -Mbz 6 -atmosphere searise_greenland -surface pdd -pdd_fausto -y 100 -o g40km_pre100.nc
+mpiexec -n $NN pismr -ocean_kill -e 3 -skip 5 -boot_file pism_Greenland_5km_v0.93.nc -Mx 39 -My 71 -Lz 4000 -Lbz 2000 -Mz 21 -Mbz 6 -atmosphere searise_greenland -surface pdd -pdd_fausto -y 100 -o g40km_pre100.nc
 
 mpiexec -n $NN pismr -ocean_kill -e 3 -skip 5 -i g40km_pre100.nc -atmosphere searise_greenland -surface pdd -pdd_fausto -no_mass -y 50000 -extra_file ex_g40km_steady.nc -extra_vars enthalpybase,temppabase,bmelt,bwat,csurf,hardav,mask -extra_times 0:500:50000 -o g40km_steady.n
 

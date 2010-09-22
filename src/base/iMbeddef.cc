@@ -22,6 +22,9 @@ PetscErrorCode IceModel::bed_def_setup() {
   PetscErrorCode ierr;
   string model = config.get_string("bed_deformation_model");
   set<string> choices;
+
+  ierr = check_old_option_and_stop(grid.com, "-bed_def_iso", "-bed_def"); CHKERRQ(ierr);
+  ierr = check_old_option_and_stop(grid.com, "-bed_def_lc",  "-bed_def"); CHKERRQ(ierr);
   
   choices.insert("none");
   choices.insert("iso");

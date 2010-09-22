@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test # 7: comparing regridding via -boot_from and -regrid_file."
+test="Test # 7: comparing regridding via -boot_file and -regrid_file."
 # The list of files to delete when done:
 files="foo.nc bar.nc baz.nc"
 dir=`pwd`
@@ -19,7 +19,7 @@ run_test ()
     run -n 1 pismv -test G -Lx 4000 -Ly 4000 -Lz 4000 -Mx 41 -My 41 -Mz 41 -y 0 -o foo.nc
 
     # Bootstrap from this file:
-    run -n 1 pismr -boot_from foo.nc -Lx 2000 -Ly 2000 -Lz 4000 -Mx 41 -My 41 -Mz 41 $OPTS -o bar.nc
+    run -n 1 pismr -boot_file foo.nc -Lx 2000 -Ly 2000 -Lz 4000 -Mx 41 -My 41 -Mz 41 $OPTS -o bar.nc
 
     # Overwrite topg using -regrig_from and save the result to baz.nc:
     run -n 1 pismr -i bar.nc -regrid_file foo.nc -regrid_vars topg $OPTS -o baz.nc

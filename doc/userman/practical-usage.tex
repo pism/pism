@@ -16,7 +16,7 @@ PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table 
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
-    \fileopt{i} & Chooses a PISM output file to restart from.  (``Restart'' because normally the first PISM run must come from data by bootstrapping (\intextoption{boot_from}) or using executables \texttt{pisms} or \texttt{pismv}.) \\
+    \fileopt{i} & Chooses a PISM output file to restart from.  (``Restart'' because normally the first PISM run must come from data by bootstrapping (\intextoption{boot_file}) or using executables \texttt{pisms} or \texttt{pismv}.) \\
     \fileopt{o} & Chooses the output file name.  Default name is \texttt{unnamed.nc} under \texttt{pismr}, \texttt{simp_exper.nc} under \texttt{pisms}, and \texttt{verify.nc} under \texttt{pismv}.\\
     \txtopt{o_size}{[small, medium, big]} & Chooses the ``size'' of the output file to produce.
     Possible options are \texttt{small} (only variables necessary to restart
@@ -569,9 +569,9 @@ See table \ref{tab:regridvar} for the regriddable variables using
 Here is another example: suppose you have an output of a PISM run on a fairly
 coarse grid (stored in \texttt{foo.nc}) and you want to continue this run on a
 finer grid. This can be done using \texttt{-regrid_file} along with
-\texttt{-boot_from}\index{refining the grid}:
+\texttt{-boot_file}\index{refining the grid}:
 \begin{verbatim}
-$ pismr -boot_from foo.nc -Mx 201 -My 201 -Mz 21 -Mbz 21 -Lz 4000 \
+$ pismr -boot_file foo.nc -Mx 201 -My 201 -Mz 21 -Mbz 21 -Lz 4000 \
         -regrid_from foo.nc -regrid_vars litho_temp,age,temp -y 100 -o bar.nc
 \end{verbatim}
 In this case all the model-state 2D variables present in \texttt{foo.nc} will be interpolated onto the new grid during bootstrapping, which happens first, while three-dimensional variables are filled using heuristics mentioned in section \ref{sect:boot}.  Then temperature in bedrock (\texttt{litho_temp})\footnote{Assumes that foo.nc has \t{Mbz}$>1$.}, age of the ice (\texttt{age}) and ice temperature (\texttt{temp}) will be interpolated from \texttt{foo.nc} onto the new grid during the regridding stage, overriding values set at the bootstrapping stage.  All of this, bootstrapping and regridding, occurs before the first timestep.

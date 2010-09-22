@@ -119,7 +119,7 @@ PetscErrorCode IceROSSModel::set_vars_from_options() {
     "initializing EISMINT-Ross ice shelf velocity computation ... \n");
   CHKERRQ(ierr);
 
-  // This reads the -boot_from option and does the bootstrapping:
+  // This reads the -boot_file option and does the bootstrapping:
   ierr = IceModel::set_vars_from_options(); CHKERRQ(ierr);
 
   // fill in temperatures at depth according to special rule: temp in column

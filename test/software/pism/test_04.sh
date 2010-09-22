@@ -19,10 +19,10 @@ test_04 ()
     run -n 1 pismv -test G $COARSE -y 0 -o foo.nc
 
     # Coarse -> fine:
-    run -n 1 pismr -boot_from foo.nc $FINE   $OPTS -o bar.nc
+    run -n 1 pismr -boot_file foo.nc $FINE   $OPTS -o bar.nc
 
     # Fine -> coarse:
-    run -n 1 pismr -boot_from bar.nc $COARSE $OPTS -o baz.nc
+    run -n 1 pismr -boot_file bar.nc $COARSE $OPTS -o baz.nc
 
     set +e
 

@@ -17,13 +17,13 @@ run_test ()
     run -n 1 pisms -eisII I -Mx 61 -My 61 -Mz 21 -Mbz 21 -Lbz 1000 -y 0 -o foo.nc
 
     # Bootstrap from this file and run for 0 years:
-    run -n 2 pismr -boot_from foo.nc $OPTS -o bar.nc
+    run -n 2 pismr -boot_file foo.nc $OPTS -o bar.nc
 
     # Change the variable order in foo.nc to z,y,x:
     run ncpdq -O -a z,y,x foo.nc foo.nc
 
     # Bootstrap from this file and run for 0 years:
-    run -n 2 pismr -boot_from foo.nc $OPTS -o baz.nc
+    run -n 2 pismr -boot_file foo.nc $OPTS -o baz.nc
 
     set +e
 

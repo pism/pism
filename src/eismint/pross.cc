@@ -47,21 +47,21 @@ int main(int argc, char *argv[]) {
 
     bool iset, bfset;
     ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-boot_from", bfset); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-boot_file", bfset); CHKERRQ(ierr);
     string usage =
-      "  pross {-i IN.nc|-boot_from IN.nc} [OTHER PISM & PETSc OPTIONS]\n"
+      "  pross {-i IN.nc|-boot_file IN.nc} [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
       "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
-      "  -boot_from  IN.nc is input file in NetCDF format: contains a few fields, from which\n"
+      "  -boot_file  IN.nc is input file in NetCDF format: contains a few fields, from which\n"
       "              heuristics will build initial model state\n"
       "  -ssaBC      read SSA boundary conditions from a file\n"
       "  -riggs      read RIGGS data from a file\n"
       "notes:\n"
-      "  * one of -i or -boot_from is required\n"
-      "  * if -boot_from is used then in fact '-Mx A -My B -Mz C -Lz D' is also required\n";
+      "  * one of -i or -boot_file is required\n"
+      "  * if -boot_file is used then in fact '-Mx A -My B -Mz C -Lz D' is also required\n";
     if ((iset == PETSC_FALSE) && (bfset == PETSC_FALSE)) {
       ierr = PetscPrintf(com,
-         "PISM ERROR: one of options -i,-boot_from is required\n\n"); CHKERRQ(ierr);
+         "PISM ERROR: one of options -i,-boot_file is required\n\n"); CHKERRQ(ierr);
       ierr = show_usage_and_quit(com, "pross", usage.c_str()); CHKERRQ(ierr);
     } else {
       vector<string> required;  required.clear();

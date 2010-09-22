@@ -69,10 +69,10 @@ $ ./eiscore.py
 
 \subsubsection*{Bootstrapping}  \label{sect:green-bootstrapping}  Once the EISMINT Greenland data is obtained and converted to NetCDF, as above, ``bootstrapping'' can begin.  By ``bootstrapping'' we mean the creation, by heuristics and simplified models, of the full initial conditions needed for the continuum model.  \footnote{The continuum model is the differential equations describing ice flow inside PISM.  See section \ref{sect:boot} for more on ``bootstrapping''.}
 
-We do a one model year run using option \texttt{-boot_from} to ``bootstrap'' from file \texttt{eis_green_smoothed.nc}.  The executable ``\texttt{pgrn}'' is special to EISMINT-Greenland\footnote{It sets EISMINT-Greenland parameters and implements the elevation- and latitude-dependent near-surface air temperature parameterization but shares all the ice-dynamics code with \texttt{pismr}.}: \index{executables!\texttt{pgrn}}
-% pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 -Mbz 21 -skip 1 -y 1 -o green20km_y1.nc
+We do a one model year run using option \texttt{-boot_file} to ``bootstrap'' from file \texttt{eis_green_smoothed.nc}.  The executable ``\texttt{pgrn}'' is special to EISMINT-Greenland\footnote{It sets EISMINT-Greenland parameters and implements the elevation- and latitude-dependent near-surface air temperature parameterization but shares all the ice-dynamics code with \texttt{pismr}.}: \index{executables!\texttt{pgrn}}
+% pgrn -boot_file eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 -Mbz 21 -skip 1 -y 1 -o green20km_y1.nc
 \begin{verbatim}
-$ pgrn -boot_from eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 -Mbz 21\
+$ pgrn -boot_file eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000 -Mbz 21\
        -skip 1 -y 1 -o green20km_y1.nc
 \end{verbatim}%$
 \noindent The run takes only a few seconds of real time on any machine.  Tables \ref{bootstrapEISgreen} and \ref{bootCONTINUED} show the entire PISM output at the terminal.
@@ -101,7 +101,7 @@ Setting PDD parameters to EISMINT-Greenland values...
   Using a PDD implementation based on an expectation integral.
 * Initializing the constant ocean model...
 bootstrapping by PISM default method from file eis_green_smoothed.nc
-  rescaling computational box for ice from -boot_from file and
+  rescaling computational box for ice from -boot_file file and
     user options to dimensions:
     [-820.00 km, 820.00 km] x [-1400.00 km, 1400.00 km] x [0 m, 4000.00 m]
   WARNING: surface elevation 'usurf' found; IGNORING IT!
@@ -184,7 +184,7 @@ What has happened?  As noted, \emph{all} real ice sheet data fails to contain ce
 
 Note that EISMINT-Greenland specifies an 83 by 141 point grid, but you may use other numbers for \texttt{-Mx} and \texttt{-My} if desired.  In such cases the data will be linearly interpolated onto your grid.  Larger values will produce slower runs.
 
-The option \texttt{-boot_from} stands for ``bootstrap from''.  A different option \texttt{-i}, for ``input file'', is used for a file which has full initial conditions.  In practice, \texttt{-i} is only used with a NetCDF file which was previously saved by PISM.  That is, \texttt{-i} is used to continue a run from a saved state.
+The option \texttt{-boot_file} stands for ``bootstrap from''.  A different option \texttt{-i}, for ``input file'', is used for a file which has full initial conditions.  In practice, \texttt{-i} is only used with a NetCDF file which was previously saved by PISM.  That is, \texttt{-i} is used to continue a run from a saved state.
 
 Note the choice of the height of the computational box (``\texttt{-Lz 4000}''), of the number of vertical levels (``\texttt{-Mz 51}'' for levels in ice and ``\texttt{-Mbz 51}'' for levels in bedrock). The messages to standard out show that the vertical spacing is about 20 m near the base and more than 130 m at the top of the computational box (where it matters less).
 

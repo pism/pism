@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #27: comparing restarting with \"-i\" to \"-boot_from ... -regrid_file ...\""
+test="Test #27: comparing restarting with \"-i\" to \"-boot_file ... -regrid_file ...\""
 # The list of files to delete when done.
 files="foo.nc bar.nc"
 dir=`pwd`
@@ -20,7 +20,7 @@ run_test ()
     run -n 2 pisms -no_cold -y 6500 $bedrock -o_size small -o foo.nc
 
     # bootstrap from it, re-gridding all the variables we can
-    run pismr -boot_from foo.nc -regrid_file foo.nc $opts -o bar.nc -no_temp
+    run pismr -boot_file foo.nc -regrid_file foo.nc $opts -o bar.nc -no_temp
 
     set +e
 

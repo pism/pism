@@ -270,8 +270,8 @@ PetscErrorCode IceCompModel::init_physics() {
 PetscErrorCode IceCompModel::set_vars_from_options() {
   PetscErrorCode ierr;
 
-  // -boot_from command-line option is not allowed here.
-  ierr = stop_if_set(grid.com, "-boot_from"); CHKERRQ(ierr);
+  // -boot_file command-line option is not allowed here.
+  ierr = stop_if_set(grid.com, "-boot_file"); CHKERRQ(ierr);
 
   ierr = SigmaComp3.set(0.0); CHKERRQ(ierr);
   ierr = vtillphi.set(config.get("default_till_phi")); CHKERRQ(ierr);

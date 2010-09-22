@@ -27,7 +27,7 @@
 
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
 /*! 
-This procedure is called by the base class when option <tt>-boot_from</tt> is used.
+This procedure is called by the base class when option <tt>-boot_file</tt> is used.
 
 See chapter 4 of the User's Manual.  We read only 2D information from the bootstrap file.
  */
@@ -43,7 +43,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   // report on resulting computational box, rescale grid, actually create local
   // interpolation context
   ierr = verbPrintf(2, grid.com, 
-         "  rescaling computational box for ice from -boot_from file and\n"
+         "  rescaling computational box for ice from -boot_file file and\n"
          "    user options to dimensions:\n"
          "    [-%6.2f km, %6.2f km] x [-%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
          grid.Lx/1000.0,grid.Lx/1000.0,grid.Ly/1000.0,grid.Ly/1000.0,grid.Lz); 

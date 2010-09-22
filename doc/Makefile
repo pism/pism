@@ -48,7 +48,8 @@ browsenow : browser
 
 clean : revclean
 	@rm -f *.aux *.blg *.idx *.ind *.ilg *.log *.out *.toc texput.* *.bbl
-	@rm -f config_doc.txt doxybib.txt
+	@$(MAKE) -C userman clean
+	@$(MAKE) -C browser clean
 
 svn_update:
 	@echo "Running 'svn update' ($(shell svn info |grep 'Repository Root'))..."

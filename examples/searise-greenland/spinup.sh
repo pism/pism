@@ -183,7 +183,7 @@ echo "$SCRIPTNAME forcing coupler = '$COUPLER_FORCING'"
 PRE0NAME=g${CS}km_pre100.nc
 echo
 echo "$SCRIPTNAME  bootstrapping plus short smoothing run (for ${SMOOTHRUNLENGTH}a)"
-cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -boot_from $INNAME $COARSEGRID \
+cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -boot_file $INNAME $COARSEGRID \
   $COUPLER_SIMPLE -y ${SMOOTHRUNLENGTH} -o $PRE0NAME"
 $PISM_DO $cmd
 
@@ -249,7 +249,7 @@ TSNAME=ts_g${FS}km_m30ka.nc
 echo
 echo "$SCRIPTNAME  regrid and do paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
-cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_from $INNAME $FINEGRID $TILLPHI $FULLPHYS \
+cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_file $INNAME $FINEGRID $TILLPHI $FULLPHYS \
      -bed_def lc $COUPLER_FORCING\
      -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat  \
      -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \

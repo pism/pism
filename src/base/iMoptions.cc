@@ -77,11 +77,6 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.flag_from_option("age", "do_age"); CHKERRQ(ierr);
 
-  // FIXME: -bed_def options should be handled by the bed deformation module.
-  // I'm leaving it as it is so far; will fix once that code is re-factored (CK).
-
-  ierr = check_old_option_and_stop(grid.com, "-bed_def_iso", "-bed_def"); CHKERRQ(ierr);
-  ierr = check_old_option_and_stop(grid.com, "-bed_def_lc", "-bed_def"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("bed_smoother_range", "bed_smoother_range"); CHKERRQ(ierr);
 
@@ -167,7 +162,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   // whether or not to kill ice at locations where mask=FLOATING_OCEAN0;
   //   also determines if mask=FLOATING_OCEAN0 or mask=FLOATING
-  //   at bootstrapping (-boot_from), if original condition was ice-free ocean
+  //   at bootstrapping (-boot_file), if original condition was ice-free ocean
   ierr = config.flag_from_option("ocean_kill", "ocean_kill"); CHKERRQ(ierr);
 
 

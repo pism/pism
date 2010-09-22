@@ -35,7 +35,7 @@ To use the result in Matlab/Octave type\code
 
 For example, to see the matrix from a low resolution EISMINT-Ross
 calculation, the corresponding thickness, and the vector field solution do:\code
-$ pross -boot_from ross.nc -Mx 21 -My 21 -Mz 3 -Lz 1e3 -ssaBC ross.nc -riggs riggs.nc -ssa_matlab rosslow
+$ pross -boot_file ross.nc -Mx 21 -My 21 -Mz 3 -Lz 1e3 -ssaBC ross.nc -riggs riggs.nc -ssa_matlab rosslow
 $ octave
 ...
 >> rosslow_y0
