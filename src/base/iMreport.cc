@@ -851,7 +851,6 @@ PetscErrorCode IceModel::compute_hardav(IceModelVec2S &result) {
   PetscErrorCode ierr;
   
   const PetscScalar fillval = -0.01;
-  // FIXME: this method does not work correctly in the polythermal mode.
   ierr = compute_temp(vWork3d); CHKERRQ(ierr);
   
   PetscScalar *Tij; // columns of temperature values

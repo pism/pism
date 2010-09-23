@@ -445,16 +445,20 @@ $  mkdir cmake-build
 $  cd cmake-build
 \end{verbatim}
 
-Now, run CMake to configure PISM and build.
+Now, run the following commands to configure, build and install PISM.
 \begin{verbatim}
 $  cmake ..
 $  make
-\end{verbatim}
-CMake build system does \emph{not} install executables and libraries by default, so the final step is
-\begin{verbatim}
-$  DESTDIR=/some/path make install
+$  make install
 \end{verbatim}%$
-with \texttt{/some/path} replaced with a directory you want PISM in.
+
+The default install prefix is \texttt{/usr/local}. To install executables in \texttt{/home/user/bin}, libraries in
+\texttt{/home/user/lib}, etc do
+\begin{verbatim}
+$  PISM_PREFIX=/home/user cmake ..
+$  make
+$  make install
+\end{verbatim}
 
 Running \texttt{ccmake} instead of \texttt{cmake} displays a GUI allowing changing the installation directory and other build
 parameters.

@@ -1,3 +1,8 @@
+add_library (pismflowlaw
+  base/flowlaws.cc
+)
+target_link_libraries (pismflowlaw pismmisc)
+
 add_library (pismmisc
   base/PISMBedSmoother.cc
   base/LocalInterpCtx.cc

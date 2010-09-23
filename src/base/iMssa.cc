@@ -888,7 +888,7 @@ PetscErrorCode IceModel::correctBasalFrictionalHeating() {
 
 //! At SSA points, correct the previously-computed volume strain heating (dissipation heating).
 /*!
-Documented in \ref BBssasliding.
+Documented in [\ref BBssasliding].
  */
 PetscErrorCode IceModel::correctSigma() {
   PetscErrorCode  ierr;

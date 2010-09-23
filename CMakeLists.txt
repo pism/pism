@@ -2,6 +2,16 @@ project (Pism)
 
 cmake_minimum_required (VERSION 2.6.2)
 
+# Put eecutables in the build directory:
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
+
+# Allow setting a custom install prefix using the PISM_PREFIX environment variable.
+string (LENGTH "$ENV{PISM_PREFIX}" INSTALL_PREFIX_LENGTH)
+if (INSTALL_PREFIX_LENGTH)
+  set (CMAKE_INSTALL_PREFIX $ENV{PISM_PREFIX} CACHE PATH "PISM install prefix" FORCE)
+  message ("-- Setting PISM install prefix to ${CMAKE_INSTALL_PREFIX}.")
+endif()
+
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
 find_package (PETSc REQUIRED)

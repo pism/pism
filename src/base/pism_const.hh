@@ -21,10 +21,10 @@
 
 #include <gsl/gsl_math.h>
 #include <petsc.h>
-#include "materials.hh"
 #include <string>
 #include <vector>
 #include <set>
+#include "NCVariable.hh"
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
