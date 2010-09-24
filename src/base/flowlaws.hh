@@ -174,8 +174,6 @@ public:
   virtual void setExponent(PetscReal exponent);
   virtual void setDensity(PetscReal density);
   virtual void setSchoofRegularization(PetscReal vel_peryear, PetscReal len_km);
-  virtual PetscErrorCode setFromOptions();
-
 protected:
   PetscReal softness_A, hardness_B;
 };
@@ -191,6 +189,7 @@ protected:
   // R_Hooke is the ideal_gas_constant.
 };
 
+//! Cold case of Paterson-Budd
 class ThermoGlenArrIce : public ThermoGlenIce {
 public:
   ThermoGlenArrIce(MPI_Comm c, const char pre[], const NCConfigVariable &config)
@@ -213,13 +212,64 @@ public:
   { return softnessParameter(temp) * pow(stress,n-1); }
 };
 
+//! Warm case of Paterson-Budd
 class ThermoGlenArrIceWarm : public ThermoGlenArrIce {
+public:
   ThermoGlenArrIceWarm(MPI_Comm c, const char pre[], const NCConfigVariable &config)
     : ThermoGlenArrIce(c, pre, config) {}
   virtual ~ThermoGlenArrIceWarm() {}
 
   virtual PetscReal A() const { return A_warm; }
   virtual PetscReal Q() const { return Q_warm; }
+};
+
+// Hybrid (Goldsby-Kohlstedt/Glen) ice flow law
+
+struct GKparts {
+  PetscScalar eps_total, eps_diff, eps_disl, eps_basal, eps_gbs;
+};
+
+
+//! A hybrid of Goldsby-Kohlstedt (2001) ice (constitutive form) and Paterson-Budd (1982)-Glen (viscosity form).
+/*!
+Each IceFlowLaw has both a forward flow law in "constitutive law" form ("flow_from_temp()") and an
+inverted-and-vertically-integrated flow law ("effectiveViscosity()").  Only the
+former form of the flow law is known for Goldsby-Kohlstedt.  If one can
+invert-and-vertically-integrate the G-K law then one can build a "trueGKIce"
+derived class.
+ */
+class HybridIce : public ThermoGlenIce {
+public:
+  HybridIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
+  virtual PetscScalar flow_from_temp(PetscScalar stress, PetscScalar temp,
+                                     PetscScalar pressure, PetscScalar gs) const;
+  GKparts flowParts(PetscScalar stress, PetscScalar temp, PetscScalar pressure) const;
+
+protected:
+  PetscReal  V_act_vol,  d_grain_size,
+             //--- diffusional flow ---
+             diff_crit_temp, diff_V_m, diff_D_0v, diff_Q_v, diff_D_0b, diff_Q_b, diff_delta,
+             //--- dislocation creep ---
+             disl_crit_temp, disl_A_cold, disl_A_warm, disl_n, disl_Q_cold, disl_Q_warm,
+             //--- easy slip (basal) ---
+             basal_A, basal_n, basal_Q,
+             //--- grain boundary sliding ---
+             gbs_crit_temp, gbs_A_cold, gbs_A_warm, gbs_n, gbs_Q_cold,
+             p_grain_sz_exp, gbs_Q_warm;
+};
+
+//! Derived class of HybridIce for testing purposes only.
+/*! 
+HybridIceStripped is a simplification of Goldsby-Kohlstedt.  Compare to that used in 
+Peltier et al 2000, which is even simpler.
+ */
+class HybridIceStripped : public HybridIce {
+public:
+  HybridIceStripped(MPI_Comm c, const char pre[], const NCConfigVariable &config);
+  virtual PetscScalar flow_from_temp(PetscScalar stress, PetscScalar temp,
+                                     PetscScalar pressure, PetscScalar gs) const;
+protected:
+  PetscReal d_grain_size_stripped;
 };
 
 #endif // __flowlaws_hh

@@ -222,7 +222,6 @@ public:
   virtual PetscErrorCode view(PetscViewer) const;
   virtual PetscScalar flow_from_temp(PetscScalar stress, PetscScalar temp,
                            PetscScalar pressure, PetscScalar gs) const;
-  virtual PetscTruth usesGrainSize() const { return PETSC_TRUE; }
   GKparts flowParts(PetscScalar stress, PetscScalar temp, PetscScalar pressure) const;
 
 protected:
@@ -249,7 +248,6 @@ public:
   HybridIceStripped(MPI_Comm c,const char pre[], const NCConfigVariable &config);
   virtual PetscScalar flow_from_temp(PetscScalar stress, PetscScalar temp,
                            PetscScalar pressure, PetscScalar gs) const;
-  virtual PetscTruth usesGrainSize() const { return PETSC_FALSE; }
 protected:
   PetscReal d_grain_size_stripped;
 };

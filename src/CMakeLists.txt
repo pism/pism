@@ -1,8 +1,3 @@
-add_library (pismflowlaw
-  base/flowlaws.cc
-)
-target_link_libraries (pismflowlaw pismmisc)
-
 add_library (pismmisc
   base/PISMBedSmoother.cc
   base/LocalInterpCtx.cc
@@ -18,7 +13,6 @@ add_library (pismmisc
   base/iceModelVec2.cc
   base/iceModelVec2V.cc
   base/iceModelVec3.cc
-  base/materials.cc
   base/nc_util.cc
   base/pism_const.cc
   base/pism_default_config.cc
@@ -58,6 +52,7 @@ set_source_files_properties (udunits/utlib.c
 include_directories (base udunits)
 
 add_library (pismbase
+  base/materials.cc
   base/bedrockOnlySystem.cc
   base/columnSystem.cc
   base/combinedSystem.cc
@@ -153,15 +148,11 @@ install (FILES
 
 if (Pism_BUILD_EXTRA_EXECS)
   # These don't require Pism at all
-  set (EXTRA_EXECS simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleL)
-  foreach (EXEC ${EXTRA_EXECS})
+  set (SIMPLE_EXECS simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleL)
+  foreach (EXEC ${SIMPLE_EXECS})
     add_executable (${EXEC} verif/tests/${EXEC}.c)
     target_link_libraries (${EXEC} pismverif)
   endforeach (EXEC)
-  # These use Pism in a trivial way and could be made to link without Pism
-
-  add_executable (flowTable software_tests/flowTable.cc)
-  target_link_libraries (flowTable pismmisc)
 
   add_executable (tryLCbd earth/tryLCbd.cc)
   target_link_libraries (tryLCbd pismearth)
@@ -169,13 +160,26 @@ if (Pism_BUILD_EXTRA_EXECS)
   add_executable (pismtests software_tests/pismtests.cc software_tests/iMtests.cc)
   target_link_libraries (pismtests pismbase)
 
-  foreach (EXEC bedrough_test flowlaw_test ssa_test)
+  add_library (pismflowlaw base/materials.cc)
+  target_link_libraries (pismflowlaw pismmisc)
+
+  add_library (pismflowlaw_new base/flowlaws.cc base/flowlaw_factory.cc)
+  target_link_libraries (pismflowlaw_new pismmisc)
+
+  set (UNIT_EXECS bedrough_test ssa_test flowTable flowlaw_test flowlaw_test_new)
+  foreach (EXEC ${UNIT_EXECS})
     add_executable (${EXEC} software_tests/${EXEC}.cc)
     target_link_libraries (${EXEC} pismmisc)
   endforeach (EXEC)
 
+  target_link_libraries (flowlaw_test pismflowlaw)
+  target_link_libraries (flowTable pismflowlaw)
+  target_link_libraries (ssa_test pismflowlaw)
+
+  target_link_libraries (flowlaw_test_new pismflowlaw_new)
+
   install (TARGETS
-    ${EXTRA_EXECS} flowTable tryLCbd flowlaw_test pismtests bedrough_test ssa_test
+    ${SIMPLE_EXECS} flowTable tryLCbd pismtests ${UNIT_EXECS} pismflowlaw pismflowlaw_new
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib)

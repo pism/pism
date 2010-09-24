@@ -329,3 +329,165 @@ PetscReal HookeIce::softnessParameter(PetscReal T_pa) const {
   return A_Hooke * exp( -Q_Hooke/(ideal_gas_constant * T_pa)
                         + 3.0 * C_Hooke * pow(Tr_Hooke - T_pa, -K_Hooke));
 }
+
+// Hybrid (Goldsby-Kohlstedt / Glen) ice flow law
+
+HybridIce::HybridIce(MPI_Comm c,const char pre[],
+		     const NCConfigVariable &config) : ThermoGlenIce(c,pre,config) {
+
+  V_act_vol    = -13.e-6;  // m^3/mol
+  d_grain_size = 1.0e-3;   // m  (see p. ?? of G&K paper)
+  //--- dislocation creep ---
+  disl_crit_temp=258.0,    // Kelvin
+  //disl_A_cold=4.0e5,                  // MPa^{-4.0} s^{-1}
+  //disl_A_warm=6.0e28,                 // MPa^{-4.0} s^{-1}
+  disl_A_cold=4.0e-19,     // Pa^{-4.0} s^{-1}
+  disl_A_warm=6.0e4,       // Pa^{-4.0} s^{-1} (GK)
+  disl_n=4.0,              // stress exponent
+  disl_Q_cold=60.e3,       // J/mol Activation energy
+  disl_Q_warm=180.e3;      // J/mol Activation energy (GK)
+  //--- grain boundary sliding ---
+  gbs_crit_temp=255.0,     // Kelvin
+  //gbs_A_cold=3.9e-3,                  // MPa^{-1.8} m^{1.4} s^{-1}
+  //gbs_A_warm=3.e26,                   // MPa^{-1.8} m^{1.4} s^{-1}
+  gbs_A_cold=6.1811e-14,   // Pa^{-1.8} m^{1.4} s^{-1}
+  gbs_A_warm=4.7547e15,    // Pa^{-1.8} m^{1.4} s^{-1}
+  gbs_n=1.8,               // stress exponent
+  gbs_Q_cold=49.e3,        // J/mol Activation energy
+  gbs_Q_warm=192.e3,       // J/mol Activation energy
+  p_grain_sz_exp=1.4;      // from Peltier
+  //--- easy slip (basal) ---
+  //basal_A=5.5e7,                      // MPa^{-2.4} s^{-1}
+  basal_A=2.1896e-7,       // Pa^{-2.4} s^{-1}
+  basal_n=2.4,             // stress exponent
+  basal_Q=60.e3;           // J/mol Activation energy
+  //--- diffusional flow ---
+  diff_crit_temp=258.0,    // when to use enhancement factor
+  diff_V_m=1.97e-5,        // Molar volume (m^3/mol)
+  diff_D_0v=9.10e-4,       // Preexponential volume diffusion (m^2/s)
+  diff_Q_v=59.4e3,         // activation energy, vol. diff. (J/mol)
+  diff_D_0b=5.8e-4,        // preexponential grain boundary coeff.
+  diff_Q_b=49.e3,          // activation energy, g.b. (J/mol)
+  diff_delta=9.04e-10;     // grain boundary width (m)
+}
+
+
+/*!
+  This is the (forward) Goldsby-Kohlstedt flow law.  See:
+  D. L. Goldsby & D. L. Kohlstedt (2001), "Superplastic deformation
+  of ice: experimental observations", J. Geophys. Res. 106(M6), 11017-11030.
+*/
+PetscScalar HybridIce::flow_from_temp(PetscScalar stress, PetscScalar temp,
+                            PetscScalar pressure, PetscScalar gs) const {
+  PetscScalar eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
+
+  if (PetscAbs(stress) < 1e-10) return 0;
+  const PetscScalar T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
+  const PetscScalar pV = pressure * V_act_vol;
+  const PetscScalar RT = ideal_gas_constant * T;
+  // Diffusional Flow
+  const PetscScalar diff_D_v = diff_D_0v * exp(-diff_Q_v/RT);
+  diff_D_b = diff_D_0b * exp(-diff_Q_b/RT);
+  if (T > diff_crit_temp) diff_D_b *= 1000; // Coble creep scaling
+  eps_diff = 14 * diff_V_m *
+    (diff_D_v + M_PI * diff_delta * diff_D_b / gs) / (RT*PetscSqr(gs));
+  // Dislocation Creep
+  if (T > disl_crit_temp)
+    eps_disl = disl_A_warm * pow(stress, disl_n-1) * exp(-(disl_Q_warm + pV)/RT);
+  else
+    eps_disl = disl_A_cold * pow(stress, disl_n-1) * exp(-(disl_Q_cold + pV)/RT);
+  // Basal Slip
+  eps_basal = basal_A * pow(stress, basal_n-1) * exp(-(basal_Q + pV)/RT);
+  // Grain Boundary Sliding
+  if (T > gbs_crit_temp)
+    eps_gbs = gbs_A_warm * (pow(stress, gbs_n-1) / pow(gs, p_grain_sz_exp)) *
+      exp(-(gbs_Q_warm + pV)/RT);
+  else
+    eps_gbs = gbs_A_cold * (pow(stress, gbs_n-1) / pow(gs, p_grain_sz_exp)) *
+      exp(-(gbs_Q_cold + pV)/RT);
+
+  return eps_diff + eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
+}
+
+
+/*****************
+THE NEXT PROCEDURE REPEATS CODE; INTENDED ONLY FOR DEBUGGING
+*****************/
+GKparts HybridIce::flowParts(PetscScalar stress,PetscScalar temp,PetscScalar pressure) const {
+  PetscScalar gs, eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
+  GKparts p;
+
+  if (PetscAbs(stress) < 1e-10) {
+    p.eps_total=0.0;
+    p.eps_diff=0.0; p.eps_disl=0.0; p.eps_gbs=0.0; p.eps_basal=0.0;
+    return p;
+  }
+  const PetscScalar T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
+  const PetscScalar pV = pressure * V_act_vol;
+  const PetscScalar RT = ideal_gas_constant * T;
+  // Diffusional Flow
+  const PetscScalar diff_D_v = diff_D_0v * exp(-diff_Q_v/RT);
+  diff_D_b = diff_D_0b * exp(-diff_Q_b/RT);
+  if (T > diff_crit_temp) diff_D_b *= 1000; // Coble creep scaling
+  gs = d_grain_size;
+  eps_diff = 14 * diff_V_m *
+    (diff_D_v + M_PI * diff_delta * diff_D_b / gs) / (RT*PetscSqr(gs));
+  // Dislocation Creep
+  if (T > disl_crit_temp)
+    eps_disl = disl_A_warm * pow(stress, disl_n-1) * exp(-(disl_Q_warm + pV)/RT);
+  else
+    eps_disl = disl_A_cold * pow(stress, disl_n-1) * exp(-(disl_Q_cold + pV)/RT);
+  // Basal Slip
+  eps_basal = basal_A * pow(stress, basal_n-1) * exp(-(basal_Q + pV)/RT);
+  // Grain Boundary Sliding
+  if (T > gbs_crit_temp)
+    eps_gbs = gbs_A_warm * (pow(stress, gbs_n-1) / pow(gs, p_grain_sz_exp)) *
+      exp(-(gbs_Q_warm + pV)/RT);
+  else
+    eps_gbs = gbs_A_cold * (pow(stress, gbs_n-1) / pow(gs, p_grain_sz_exp)) *
+      exp(-(gbs_Q_cold + pV)/RT);
+
+  p.eps_diff=eps_diff;
+  p.eps_disl=eps_disl;
+  p.eps_basal=eps_basal;
+  p.eps_gbs=eps_gbs;
+  p.eps_total=eps_diff + eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
+  return p;
+}
+/*****************/
+
+HybridIceStripped::HybridIceStripped(MPI_Comm c,const char pre[],
+				     const NCConfigVariable &config) : HybridIce(c,pre,config) {
+  d_grain_size_stripped = 3.0e-3;  // m; = 3mm  (see Peltier et al 2000 paper)
+}
+
+
+PetscScalar HybridIceStripped::flow_from_temp(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar) const {
+  // note value of gs is ignored
+  // note pressure only effects the temperature; the "P V" term is dropped
+  // note no diffusional flow
+  PetscScalar eps_disl, eps_basal, eps_gbs;
+
+  if (PetscAbs(stress) < 1e-10) return 0;
+  const PetscScalar T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
+  const PetscScalar RT = ideal_gas_constant * T;
+  // NO Diffusional Flow
+  // Dislocation Creep
+  if (T > disl_crit_temp)
+    eps_disl = disl_A_warm * pow(stress, disl_n-1) * exp(-disl_Q_warm/RT);
+  else
+    eps_disl = disl_A_cold * pow(stress, disl_n-1) * exp(-disl_Q_cold/RT);
+  // Basal Slip
+  eps_basal = basal_A * pow(stress, basal_n-1) * exp(-basal_Q/RT);
+  // Grain Boundary Sliding
+  if (T > gbs_crit_temp)
+    eps_gbs = gbs_A_warm *
+              (pow(stress, gbs_n-1) / pow(d_grain_size_stripped, p_grain_sz_exp)) *
+              exp(-gbs_Q_warm/RT);
+  else
+    eps_gbs = gbs_A_cold *
+              (pow(stress, gbs_n-1) / pow(d_grain_size_stripped, p_grain_sz_exp)) *
+              exp(-gbs_Q_cold/RT);
+
+  return eps_disl + (eps_basal * eps_gbs) / (eps_basal + eps_gbs);
+}
