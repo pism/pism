@@ -303,7 +303,7 @@ netcdf pism_config {
     pism_config:Glen_exponent_doc = "; Glen exponent in ice flow law";
 
     pism_config:ice_softness = 4e-25;
-    pism_config:ice_softness_doc = "Pa-3 s-1; ice softness";
+    pism_config:ice_softness_doc = "Pa-3 s-1; ice softness used by CustomGlenIce";
 
     pism_config:Hooke_A = 4.42165e-9;
     pism_config:Hooke_A_doc = "s-1 Pa-3; A_Hooke = (1/B_0)^n where n=3 and B_0 = 1.928 a^(1/3) Pa. See [\\ref Hooke]";

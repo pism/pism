@@ -47,11 +47,6 @@ public:
   virtual PetscErrorCode view(PetscViewer) const {return 0;}
   virtual PetscScalar flow_from_temp(PetscScalar stress, PetscScalar temp,
                            PetscScalar pressure, PetscScalar gs) const = 0;
-  // returns nu * H; it is adapted to a staggered grid so T1,T2 get averaged
-  virtual PetscScalar effectiveViscosityColumn(
-             PetscScalar H, PetscInt kbelowH, const PetscScalar *zlevels,
-             PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
-             const PetscScalar *T1, const PetscScalar *T2) const = 0;
   virtual PetscScalar effectiveViscosity(
              PetscScalar hardness, PetscScalar u_x, PetscScalar u_y,
              PetscScalar v_x, PetscScalar v_y) const = 0;
@@ -96,10 +91,6 @@ public:
   virtual PetscScalar effectiveViscosity(
               PetscScalar hardness, PetscScalar u_x, PetscScalar u_y,
               PetscScalar v_x, PetscScalar v_y) const;
-  virtual PetscScalar effectiveViscosityColumn(
-              PetscScalar,PetscInt,const PetscScalar *,
-              PetscScalar,PetscScalar,PetscScalar,PetscScalar,
-              const PetscScalar *,const PetscScalar *) const;
   virtual PetscScalar exponent() const;
   virtual PetscScalar softnessParameter(PetscScalar T) const;
   virtual PetscScalar hardnessParameter(PetscScalar T) const;
@@ -123,10 +114,6 @@ public:
   virtual PetscScalar effectiveViscosity(
               PetscScalar hardness, PetscScalar u_x, PetscScalar u_y,
               PetscScalar v_x, PetscScalar v_y) const;
-  virtual PetscScalar effectiveViscosityColumn(
-              PetscScalar,PetscInt,const PetscScalar *,
-              PetscScalar,PetscScalar,PetscScalar,PetscScalar,
-              const PetscScalar *,const PetscScalar *) const;
   virtual PetscScalar exponent() const;
   virtual PetscScalar softnessParameter(PetscScalar T) const;
   virtual PetscScalar hardnessParameter(PetscScalar T) const;

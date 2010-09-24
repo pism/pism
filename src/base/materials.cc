@@ -132,13 +132,6 @@ PetscScalar CustomGlenIce::flow_from_temp(PetscScalar stress,PetscScalar,PetscSc
   return softness_A * pow(stress,exponent_n-1);
 }
 
-
-PetscScalar CustomGlenIce::effectiveViscosityColumn(PetscScalar H, PetscInt, const PetscScalar *,
-                           PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y,
-                           const PetscScalar *, const PetscScalar *) const  {
-  return H * (hardness_B / 2) * pow(schoofReg + secondInvariant(u_x,u_y,v_x,v_y), (1-exponent_n)/(2*exponent_n));
-}
-
 PetscScalar CustomGlenIce::effectiveViscosity(PetscScalar hardness,
                                               PetscScalar u_x, PetscScalar u_y,
                                               PetscScalar v_x, PetscScalar v_y) const {
@@ -324,33 +317,6 @@ PetscScalar ThermoGlenIce::effectiveViscosity(PetscScalar hardness,
   const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
   return 0.5 * hardness * pow(schoofReg + alpha, (1-n)/(2*n));
 }
-
-//! DESPITE NAME, does *not* return effective viscosity. The result is \f$\nu_e H\f$,
-//! i.e. viscosity times thickness. \f$B\f$ is really hardness times thickness.
-PetscScalar ThermoGlenIce::effectiveViscosityColumn(
-                PetscScalar H,  PetscInt kbelowH, const PetscScalar *zlevels,
-                PetscScalar u_x,  PetscScalar u_y, PetscScalar v_x,  PetscScalar v_y,
-                const PetscScalar *T1, const PetscScalar *T2) const {
-//  const PetscInt  ks = static_cast<PetscInt>(floor(H/dz));
-  // Integrate the hardness parameter using the trapezoid rule.
-  PetscScalar B = 0;
-  if (kbelowH > 0) {
-    PetscScalar dz = zlevels[1] - zlevels[0];
-    B += 0.5 * dz * hardnessParameter(0.5 * (T1[0] + T2[0]) + beta_CC_grad * H);
-    for (PetscInt m=1; m < kbelowH; m++) {
-      const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m];
-      B += 0.5 * (dz + dzNEXT) * hardnessParameter(0.5 * (T1[m] + T2[m])
-           + beta_CC_grad * (H - zlevels[m]));
-      dz = dzNEXT;
-    }
-    // use last dz
-    B += 0.5 * dz * hardnessParameter(0.5 * (T1[kbelowH] + T2[kbelowH])
-                                      + beta_CC_grad * (H - zlevels[kbelowH]));
-  }
-  const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
-  return 0.5 * B * pow(schoofReg + alpha, (1-n)/(2*n));
-}
-
 
 /*! This is not a natural part of all IceFlowLaw instances since it doesn't make any sense
     for plenty of rheologies.  Specifically, however, we need some exponent to compute the coordinate
