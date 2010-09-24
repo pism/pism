@@ -1,5 +1,5 @@
 .PHONY : all
-all : simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleK simpleL simpleM
+all : simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleK simpleL simpleM simpleN
 
 # TYPICAL BY-HAND COMPILE-LINK-RUN EXAMPLE:
 #   $ gcc -c simpleABCD.c -o simpleABCD.o
@@ -34,7 +34,11 @@ simpleL : simpleL.o exactTestL.o
 simpleM : simpleM.o exactTestM.o
 	$(CC) -lm -lgsl -lgslcblas $^ -o $@
 
+simpleN : simpleN.o exactTestN.o
+	$(CC) -lm $^ -o $@
+
 .PHONY: clean
 clean:
-	@rm -f *.o simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleK simpleL simpleM
+	@rm -f *.o simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleK \
+	           simpleL simpleM simpleN
 
