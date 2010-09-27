@@ -111,7 +111,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # A
     A = PISMVerificationTest()
     A.name = "A"
-    A.test = "isothermal SIA with a marine margin"
+    A.test = "steady, marine margin isothermal SIA"
     A.path = "(refine dx=53.33,40,26.67,20,13.33,km, dx=dy and Mx=My=31,41,61,81,121)"
     A.Mx   = [31, 41, 61, 81, 121]
     A.My   = A.Mx
@@ -120,7 +120,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # B
     B = PISMVerificationTest()
     B.name = "B"
-    B.test = "isothermal SIA with a moving margin"
+    B.test = "moving margin isothermal SIA (Halfar)"
     B.path = "(refine dx=80,60,40,30,20,km, dx=dy and Mx=My=31,41,61,81,121)"
     B.Mx   = [31, 41, 61, 81, 121]
     B.My   = B.Mx
@@ -129,7 +129,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # C
     C = PISMVerificationTest()
     C.name = "C"
-    C.test = "isothermal SIA w moving margin"
+    C.test = "non-zero accumulation moving margin isothermal SIA"
     C.path = "(refine dx=50,33.33,25,20,16,km, dx=dy and Mx=My=41,61,81,101,121)"
     C.Mx   = [41, 61, 81, 101, 121]
     C.My   = C.Mx
@@ -138,7 +138,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # D
     D = PISMVerificationTest()
     D.name = "D"
-    D.test = "isothermal SIA with variable accumulation"
+    D.test = "time-dependent isothermal SIA"
     D.path = "(refine dx=50,33.33,25,20,16.67,km, dx=dy and Mx=My=41,61,81,101,121)"
     D.Mx   = [41, 61, 81, 101, 121]
     D.My   = D.Mx
@@ -147,7 +147,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # E
     E = PISMVerificationTest()
     E.name = "E"
-    E.test = "isothermal SIA with sliding"
+    E.test = "steady sliding marine margin isothermal SIA"
     E.path = "(refine dx=53.33,40,26.67,20,13.33,km, dx=dy and Mx=My=31,41,61,81,121)"
     E.Mx   = [31, 41, 61, 81, 121]
     E.My   = E.Mx
@@ -156,7 +156,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # F
     F = PISMVerificationTest()
     F.name = "F"
-    F.test = "thermocoupled SIA"
+    F.test = "steady thermomechanically-coupled SIA"
     F.path = "(refine dx=30,20,15,10,7.5,km, dx=dy, dz=66.67,44.44,33.33,22.22,16.67 m\n  and Mx=My=Mz=61,91,121,181,241)"
     F.Mx   = [61, 91, 121, 181, 241]
     F.My   = F.Mx
@@ -166,7 +166,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # G
     G = PISMVerificationTest()
     G.name = "G"
-    G.test = "thermocoupled SIA with variable accumulation"
+    G.test = "time-dependent thermomechanically-coupled SIA"
     G.path = "(refine dx=30,20,15,10,7.5,km, dx=dy, dz=66.67,44.44,33.33,22.22,16.67 m\n  and Mx=My=Mz=61,91,121,181,241)"
     G.Mx   = [61, 91, 121, 181, 241]
     G.My   = G.Mx
@@ -176,7 +176,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # H
     H = PISMVerificationTest()
     H.name = "H"
-    H.test = "isothermal SIA with a moving margin and isostatic bed deformation"
+    H.test = "moving margin, isostatic bed, isothermal SIA"
     H.path = "(refine dx=80,60,40,30,20,km, dx=dy and Mx=My=31,41,61,81,121)"
     H.Mx   = [31, 41, 61, 81, 121]
     H.My   = H.Mx
@@ -185,7 +185,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # I
     I = PISMVerificationTest()
     I.name = "I"
-    I.test = "plastic till ice stream"
+    I.test = "plastic till ice stream (SSA)"
     I.path = "(refine dy=5000,1250,312.5,78.13,19.53,m, My=49,193,769,3073,12289)"
     I.Mx   = [5] * 5
     I.My   = [49, 193, 769, 3073, 12289]
@@ -194,7 +194,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # J
     J = PISMVerificationTest()
     J.name = "J"
-    J.test = "linearized periodic ice shelf"
+    J.test = "periodic ice shelf (linearized SSA)"
     J.path = "(refine dy=5000,1250,312.5,78.13,19.53,m, Mx=49,193,769,3073,12289)"
     J.Mx   = [49, 98, 196, 392, 784]
     J.My   = J.Mx
@@ -215,7 +215,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # L
     L = PISMVerificationTest()
     L.name = "L"
-    L.test = "isothermal SIA with a non-flat bed"
+    L.test = "non-flat bed stead isothermal SIA"
     L.path = "(refine dx=60,30,20,15,10,km, dx=dy and Mx=My=31,61,91,121,181)"
     L.Mx   = [31, 61, 91, 121, 181]
     L.My   = L.Mx
@@ -224,7 +224,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # M
     M = PISMVerificationTest()
     M.name = "M"
-    M.test = "annular ice shelf with a calving front"
+    M.test = "annular ice shelf with a calving front (SSA)"
     M.path = "(refine dx=50,25,16.666,12.5,8.333 km; dx=dy and My=31,61,91,121,181)"
     M.Mx   = [31, 61, 91, 121, 181]
     M.My   = M.Mx
@@ -247,7 +247,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # test B (for a figure in the User's Manual)
     B = PISMVerificationTest()
     B.name = "B"
-    B.test = "isothermal SIA with a moving margin"
+    B.test = "moving margin isothermal SIA (Halfar)"
     B.path = "(lots of levels)"
     B.Mx   = [31, 41, 51, 61, 71, 81, 91, 101, 111, 121]
     B.My   = B.Mx
@@ -259,7 +259,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # test G (for a figure in the User's Manual)
     G = PISMVerificationTest()
     G.name = "G"
-    G.test = "thermocoupled SIA with variable accumulation"
+    G.test = "time-dependent thermomechanically-coupled SIA"
     G.path = "(lots of levels)"
     G.Mx   = [61, 71, 81, 91, 101, 111, 121, 151, 181]
     G.My   = G.Mx
@@ -270,7 +270,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     # test I (for a figure in the User's Manual)
     I = PISMVerificationTest()
     I.name = "I"
-    I.test = "plastic till ice stream"
+    I.test = "plastic till ice stream (SSA)"
     I.path = "(lots of levels)"
     I.My   = [51, 101, 151, 201, 401, 601, 801, 1001, 1501, 2001, 2501, 3073]
     I.Mx   = [5] * len(I.My)

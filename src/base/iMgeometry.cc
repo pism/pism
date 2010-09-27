@@ -442,7 +442,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
 
-  // whacked, nuked, fried global sums:
   {
     ierr = PetscGlobalSum(&my_nonneg_rule_flux, &nonneg_rule_flux, grid.com); CHKERRQ(ierr);
     ierr = PetscGlobalSum(&my_ocean_kill_flux,  &ocean_kill_flux,  grid.com); CHKERRQ(ierr);
