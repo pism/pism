@@ -185,6 +185,16 @@ PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
              PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N,
              PetscScalar precip) {
 
+/*FIXME:  new suggested signature:
+PetscError PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
+             PetscScalar t,
+             PetscScalar dt_series, PetscScalar *T, PetscInt N,
+             PetscScalar precip,
+             PetscScalar &melt_rate, PetscScalar &runoff_rate, PetscScalar &smb);
+*/
+/*FIXME:  Regine also suggested accumulation, I think, but I am not sure
+          which quantity it is! */
+
   const PetscScalar
       pddsum = getPDDSumFromTemperatureTimeSeries(t,dt_series,T,N), // units: K day
       dt     = (N-1) * dt_series; 
@@ -215,12 +225,16 @@ PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
     }
     const PetscScalar snow_max_melted = pddsum * pddFactorSnow;  // units: m (ice-equivalent)
     if (snow_max_melted <= snow) {
+      // FIXME:  return melt:   melt_rate   = snow_max_melted / dt
+      // FIXME:  return runoff: runoff_rate = snow_max_melted * (1 - pddRefreezeFrac) / dt
       return ((snow - snow_max_melted) + (snow_max_melted * pddRefreezeFrac)) / dt;
     } else { // it is snowing, but all the snow melts; some of this ice is kept
              // (refreeze); additional PDDs remove this ice and more of the underlying ice
       const PetscScalar ice_deposited = snow * pddRefreezeFrac,
                         excess_pddsum = pddsum - (snow / pddFactorSnow), // positive!; units K day
-                        ice_melted    = excess_pddsum * pddFactorIce; // units: K day
+                        ice_melted    = excess_pddsum * pddFactorIce; // units: m
+      // FIXME:  return melt:   melt_rate   = (snow + ice_melted) / dt 
+      // FIXME:  return runoff: runoff_rate = (snow * (1 - pddRefreezeFrac) + ice_melted) / dt
       return (ice_deposited - ice_melted) / dt;
     }
   }

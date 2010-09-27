@@ -33,8 +33,10 @@ simply computes the surface mass balance from three quantities
     \f$t,t+\Delta t,\dots,t+(N-1)\Delta t]\f$, and
   - a scalar precipation rate which is taken to apply in the whole time interval.
 
-It may be that this base class should be more general.  For instance, to allow as
-input a time series for precipation rate.
+FIXME:  This base class should be more general.  For instance, to allow as
+input a time series for precipation rate.  Furthermore it implicitly implies
+a temperature index model (i.e. from temperature and precipitation we get surface
+mass balance), which is too inflexible.
  */
 class LocalMassBalance {
 
@@ -49,11 +51,12 @@ public:
   virtual PetscErrorCode getNForTemperatureSeries(
                 PetscScalar t, PetscScalar dt, PetscInt &N);
 
-  /*! T[0],...,T[N-1] are temperatures (K) at times t, t+dt, ..., t+(N-1)dt 
-      Input t,dt in seconds.  Input precip and return value are in 
-      ice-equivalent thickness per time (m s-1).  Input precip is amount of snow.
-      Rain is not modeled.  If input precip is negative then it is treated 
-      directly as ablation and positive degree days are ignored.  */
+  /*! Inputs T[0],...,T[N-1] are temperatures (K) at times t, t+dt, ..., t+(N-1)dt 
+      Input t,dt in seconds.  Input precip, and returned surface mass balance, are in 
+      ice-equivalent thickness per time (m s-1).  Input precip is (ice-equivalent)
+      snow at low temperatures and becomes rain at higher; the rain is "thrown
+      away" and does not add to surface balance.  If input precip is negative
+      then it is treated directly as ablation and positive degree days are ignored.  */
   virtual PetscScalar getMassFluxFromTemperatureTimeSeries(
              PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N,
              PetscScalar precip);

@@ -50,7 +50,13 @@ protected:
   PISMAtmosphereModel *atmosphere;
 };
 
-//! A do-nothing (dummy) surface model. <b> Please avoid using it! </b>
+
+//! A do-nothing (dummy) surface model. <b> Please avoid using it for real modeling! </b>
+/*!
+This dummy class is used, for example, when an internal formula generates the
+surface mass balance.  A specific case is the manufactured solutions used in
+verification.
+*/
 class PSDummy : public PISMSurfaceModel {
 public:
   PSDummy(IceGrid &g, const NCConfigVariable &conf)
@@ -74,6 +80,7 @@ public:
   { return 0; }
 };
 
+
 //! \brief A class implementing a primitive surface model.
 /*! 
   This is an "invisible" model; it implements two modeling choices:
@@ -94,6 +101,7 @@ public:
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
 						 IceModelVec2S &result);
 };
+
 
 //! \brief A class implementing a constant-in-time surface model. Reads data
 //! from a PISM input file.
@@ -121,6 +129,7 @@ protected:
   IceModelVec2S acab, artm;
 };
 
+
 class PSModifier : public PISMSurfaceModel {
 public:
   PSModifier(IceGrid &g, const NCConfigVariable &conf)
@@ -134,6 +143,7 @@ public:
 protected:
   PISMSurfaceModel *input_model;
 };
+
 
 //! A class implementing a mechanism modifying surface mass balance to force
 //! ice thickness to a given target at the end of the run.
@@ -165,6 +175,7 @@ protected:
   IceModelVec2S target_thickness, ftt_mask;
 };
 
+
 class PSLocalMassBalance : public PISMSurfaceModel {
 public:
   PSLocalMassBalance(IceGrid &g, const NCConfigVariable &conf);
@@ -184,3 +195,4 @@ protected:
 };
 
 #endif	// __PISMSurfaceModel_hh
+
