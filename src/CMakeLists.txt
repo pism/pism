@@ -1,18 +1,21 @@
 add_library (pismmisc
-  base/PISMBedSmoother.cc
   base/LocalInterpCtx.cc
   base/NCVariable.cc
+  base/PISMBedSmoother.cc
   base/PISMComponent.cc
   base/PISMIO.cc
   base/PISMProf.cc
   base/PISMVars.cc
   base/Timeseries.cc
   base/enthalpyConverter.cc
+  base/flowlaw_factory.cc
+  base/flowlaws.cc
   base/grid.cc
   base/iceModelVec.cc
   base/iceModelVec2.cc
   base/iceModelVec2V.cc
   base/iceModelVec3.cc
+  base/materials.cc
   base/nc_util.cc
   base/pism_const.cc
   base/pism_default_config.cc
@@ -145,9 +148,15 @@ install (FILES
   "${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc"
   DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
 
+# miscellaneous executables needed by software tests
+set (UNIT_EXECS bedrough_test ssa_test flowlaw_test)
+foreach (EXEC ${UNIT_EXECS})
+  add_executable (${EXEC} software_tests/${EXEC}.cc)
+  target_link_libraries (${EXEC} pismmisc)
+  install (TARGETS ${EXEC} RUNTIME DESTINATION bin)
+endforeach (EXEC)
 
 if (Pism_BUILD_EXTRA_EXECS)
-  # These don't require Pism at all
   set (SIMPLE_EXECS simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleL)
   foreach (EXEC ${SIMPLE_EXECS})
     add_executable (${EXEC} verif/tests/${EXEC}.c)
@@ -160,26 +169,11 @@ if (Pism_BUILD_EXTRA_EXECS)
   add_executable (pismtests software_tests/pismtests.cc software_tests/iMtests.cc)
   target_link_libraries (pismtests pismbase)
 
-  add_library (pismflowlaw base/materials.cc)
-  target_link_libraries (pismflowlaw pismmisc)
-
-  add_library (pismflowlaw_new base/flowlaws.cc base/flowlaw_factory.cc)
-  target_link_libraries (pismflowlaw_new pismmisc)
-
-  set (UNIT_EXECS bedrough_test ssa_test flowTable flowlaw_test flowlaw_test_new)
-  foreach (EXEC ${UNIT_EXECS})
-    add_executable (${EXEC} software_tests/${EXEC}.cc)
-    target_link_libraries (${EXEC} pismmisc)
-  endforeach (EXEC)
-
-  target_link_libraries (flowlaw_test pismflowlaw)
-  target_link_libraries (flowTable pismflowlaw)
-  target_link_libraries (ssa_test pismflowlaw)
-
-  target_link_libraries (flowlaw_test_new pismflowlaw_new)
+  add_executable (flowTable software_tests/flowTable.cc)
+  target_link_libraries (flowTable pismmisc)
 
   install (TARGETS
-    ${SIMPLE_EXECS} flowTable tryLCbd pismtests ${UNIT_EXECS} pismflowlaw pismflowlaw_new
+    ${SIMPLE_EXECS} tryLCbd pismtests flowTable
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib)

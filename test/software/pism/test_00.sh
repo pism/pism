@@ -12,7 +12,7 @@ run_test ()
 {
     cleanup
 
-    tools="pismr pismv pisms nccmp.py ncpdq ncap2 ncks ncrename diff"
+    tools="pismr pismv pisms flowlaw_test ssa_test bedrough_test nccmp.py ncpdq ncap2 ncks ncrename diff"
     modules="numpy sys"
     success=1
 

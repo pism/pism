@@ -27,7 +27,6 @@ static char help[] =
 #include <algorithm>		// std::transform()
 #include <petscda.h>
 #include "base/grid.hh"
-#include "base/materials.hh"
 #include "verif/iceCompModel.hh"
 #include "verif/iceExactSSAModel.hh"
 

@@ -18,7 +18,7 @@
 
 #include <petsc.h>
 #include "../base/pism_const.hh"
-#include "../base/materials.hh"
+#include "../base/flowlaws.hh"
 #include "../base/NCVariable.hh"
 
 static char help[] =

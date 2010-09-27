@@ -122,7 +122,9 @@ protected:
 class ThermoGlenIce : public IceFlowLaw {
 public:
   ThermoGlenIce(MPI_Comm c, const char pre[], const NCConfigVariable &config)
-    : IceFlowLaw(c, pre, config) {}
+    : IceFlowLaw(c, pre, config) {
+    n = 3;    // Paterson-Budd has the fixed Glen exponent, so it's hard-wired.
+  }
   virtual ~ThermoGlenIce() {}
 
   // This also takes care of hardnessParameter_from_enth

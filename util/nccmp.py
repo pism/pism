@@ -30,8 +30,11 @@ from getopt import getopt, GetoptError
 
 tol = 0.0   # default tolerance is perfection
 
-def success():
-    print "Files are the same within tolerance %.1e" % tol
+def success(relative):
+    if relative:
+        print "Files are the same within relative tolerance %.1e" % tol
+    else:        
+        print "Files are the same within tolerance %.1e" % tol
     exit(0)
 
 def failure():
@@ -51,7 +54,7 @@ def usagefailure(message):
     print usage
     exit(2)
 
-def compare_vars(nc1, nc2, name, tol):
+def compare_vars(nc1, nc2, name, tol, relative=False):
     from numpy import squeeze, isnan, ma
 
     try:
@@ -77,13 +80,19 @@ def compare_vars(nc1, nc2, name, tol):
 
     delta = abs(var1 - var2).max()
 
+    if relative:
+        denom = max(abs(var1).max(), abs(var2).max())
+        print delta, denom
+        if denom > 0:
+            delta = delta / denom
+
     # The actual check:
     if (delta > tol):
         print "name = %s, delta = %e, tol = %e" % (name, delta, tol)
         failure()
 
 
-def compare(file1, file2, variables, exclude, tol):
+def compare(file1, file2, variables, exclude, tol, relative):
     try:
         from netCDF4 import Dataset as NC
     except:
@@ -107,7 +116,7 @@ def compare(file1, file2, variables, exclude, tol):
             variables = unique(r_[vars1, vars2])
 
         for each in variables:
-            compare_vars(nc1, nc2, each, tol)
+            compare_vars(nc1, nc2, each, tol, relative)
     else:
         vars1 = nc1.variables.keys()
         vars2 = nc2.variables.keys()
@@ -116,23 +125,26 @@ def compare(file1, file2, variables, exclude, tol):
         for each in vars:
             if (each in variables):
                 continue
-            compare_vars(nc1, nc2, each, tol)
+            compare_vars(nc1, nc2, each, tol, relative)
 
 if __name__ == "__main__":
     from numpy import double
     try:
-      opts, args = getopt(argv[1:], "t:v:x", ["help","usage"])
+      opts, args = getopt(argv[1:], "t:v:xr", ["help","usage"])
     except GetoptError:
       usagefailure('ERROR: INCORRECT COMMAND LINE ARGUMENTS FOR nccmp.py')
     file1 = ""
     file2 = ""
     variables = []
     exclude = False
+    relative = False
     for (opt, arg) in opts:
         if opt == "-t":
             tol = double(arg)
         if opt == "-x":
             exclude = True
+        if opt == "-r":
+            relative = True
         if opt == "-v":
             variables = arg.split(",")
         if opt in ("--help", "--usage"):
@@ -142,7 +154,7 @@ if __name__ == "__main__":
     if len(args) != 2:
         usagefailure('ERROR: WRONG NUMBER OF ARGUMENTS FOR nccmp.py')
 
-    compare(args[0],args[1], variables, exclude, tol)
+    compare(args[0],args[1], variables, exclude, tol, relative)
 
-    success()
+    success(relative)
 

@@ -18,7 +18,6 @@
 
 #include <cmath>
 #include "../base/grid.hh"
-#include "../base/materials.hh"
 #include "../base/iceModel.hh"
 #include "tests/exactTestsIJ.h"
 #include "tests/exactTestM.h"
@@ -65,7 +64,7 @@ PetscErrorCode IceExactSSAModel::init_physics() {
     ierr = verbPrintf(2,grid.com,"Warning, custom ice not in use, reported errors will not be correct\n",test); CHKERRQ(ierr);
   } else {
     // Use Schoof's parameter
-    ierr = cust->setHardness(B_schoof);CHKERRQ(ierr);
+    cust->setHardness(B_schoof);
   }
 
   // If the user changes settings with -ice_custom_XXX, they asked for it.  If you don't want to allow this, disable the
@@ -136,7 +135,7 @@ PetscErrorCode IceExactSSAModel::misc_setup() {
     config.set_flag("compute_surf_grad_inward_ssa", false);
     have_ssa_velocities = false;
 
-    ierr = ice->printInfo(3);CHKERRQ(ierr);
+    // ierr = ice->printInfo(3);CHKERRQ(ierr);
     // EXPERIMENT WITH STRENGTH BEYOND CALVING FRONT:  correct value is unknown!!
     ierr = ssaStrengthExtend.set_notional_strength(1.0e+15);CHKERRQ(ierr);
     ierr = verbPrintf(3,grid.com,

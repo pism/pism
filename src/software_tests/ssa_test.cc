@@ -48,7 +48,8 @@ static char help[] =
 #include "../base/pism_const.hh"
 #include "../base/grid.hh"
 #include "../base/iceModelVec.hh"
-#include "../base/materials.hh"
+#include "../base/flowlaw_factory.hh" // IceFlowLawFactory, IceFlowLaw
+#include "../base/materials.hh" // SSAStrengthExtension, IceBasalResistancePlasticLaw
 #include "../base/nc_util.hh"
 #include "../base/PISMIO.hh"
 #include "../base/NCVariable.hh"

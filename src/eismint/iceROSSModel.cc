@@ -138,7 +138,7 @@ PetscErrorCode IceROSSModel::init_physics() {
 
   CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
   if (cgi) {
-    ierr = cgi->setHardness(1.9e8);CHKERRQ(ierr); // Pa s^{1/3}; (MacAyeal et al 1996) value
+    cgi->setHardness(1.9e8); // Pa s^{1/3}; (MacAyeal et al 1996) value
     // This sets a default hardness parameter if CustomGlenIce is chosen (the default we set in the constructor).
     // The user will still be able to override it without a warning
   }
@@ -148,7 +148,7 @@ PetscErrorCode IceROSSModel::init_physics() {
                       "WARNING: Not using CustomGlenIce so cannot set hardness defaults\n"
                       "         (Perhaps you chose something else with -ice_type xxx)\n"
                       "         Details on your chosen ice follows\n"); CHKERRQ(ierr);
-    ierr = ice->printInfo(2);CHKERRQ(ierr);
+    // ierr = ice->printInfo(2);CHKERRQ(ierr);
   }
 
   return 0;

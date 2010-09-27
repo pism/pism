@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../base/grid.hh"
-#include "../base/materials.hh"
 #include "../base/iceModel.hh"
 #include "iceEISModel.hh"
 

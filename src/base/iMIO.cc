@@ -250,7 +250,12 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
 
     ++i;
   }
- 
+
+  ierr = verbPrintf(3,grid.com,"Setting enthalpy from temperature...\n"); CHKERRQ(ierr);
+  if (config.get_flag("do_cold_ice_methods")) {
+    ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+  }
+
   // Read vel_ssa if SSA is on, if not asked to ignore them and
   // if they are present in the input file.
   have_ssa_velocities = false;

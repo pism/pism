@@ -530,7 +530,7 @@ PetscErrorCode IceModel::init_physics() {
     iceFactory.setType(ICE_GPBLD); // new flowlaw which has dependence on enthalpy
                                    //   not temperature
     iceFactory.create(&ice);
-    PolyThermalGPBLDIce *gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
+    GPBLDIce *gpbldi = dynamic_cast<GPBLDIce*>(ice);
     if (gpbldi == NULL) {
       ThermoGlenIce *tgi = dynamic_cast<ThermoGlenIce*>(ice);
       if (tgi) {
@@ -557,7 +557,6 @@ PetscErrorCode IceModel::init_physics() {
 
   // set options specific to this particular ice type:
   ierr = ice->setFromOptions(); CHKERRQ(ierr);
-  ierr = ice->printInfo(4);CHKERRQ(ierr);
 
   ierr = bed_def_setup(); CHKERRQ(ierr);
 

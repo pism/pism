@@ -24,7 +24,8 @@
 #include <petscsnes.h>
 #include <petsctime.h>		// PetscGetTime()
 
-#include "materials.hh"
+#include "flowlaw_factory.hh"   // IceFlowLawFactory and friends
+#include "materials.hh"         // IceBasalResistancePlasticLaw, SSAStrengthExtension
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
 #include "grid.hh"

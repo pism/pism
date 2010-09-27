@@ -851,24 +851,24 @@ PetscErrorCode IceModel::compute_hardav(IceModelVec2S &result) {
   PetscErrorCode ierr;
   
   const PetscScalar fillval = -0.01;
-  ierr = compute_temp(vWork3d); CHKERRQ(ierr);
   
-  PetscScalar *Tij; // columns of temperature values
-  ierr = vWork3d.begin_access(); CHKERRQ(ierr);
+  PetscScalar *Eij; // columns of temperature values
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = vWork3d.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+      ierr = Enth3.getInternalColumn(i,j,&Eij); CHKERRQ(ierr);
       const PetscScalar H = vH(i,j);
       if (H > 0.0) {
-        result(i,j) = ice->averagedHardness(H, grid.kBelowHeight(H), grid.zlevels, Tij);
+        result(i,j) = ice->averagedHardness_from_enth(H, grid.kBelowHeight(H),
+                                                      grid.zlevels, Eij);
       } else { // put negative value below valid range
         result(i,j) = fillval;
       }
     }
   }
-  ierr = vWork3d.end_access(); CHKERRQ(ierr);
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
 

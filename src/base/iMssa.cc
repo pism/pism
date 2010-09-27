@@ -909,7 +909,9 @@ PetscErrorCode IceModel::correctSigma() {
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
 
   const PetscScalar dx = grid.dx, 
-                    dy = grid.dy;
+    dy = grid.dy,
+    n_glen  = ice->exponent(),
+    Sig_pow = (1.0 + n_glen) / (2.0 * n_glen);
   // next constant is the form of regularization used by C. Schoof 2006 "A variational
   // approach to ice streams" J Fluid Mech 556 pp 227--251
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -940,18 +942,13 @@ PetscErrorCode IceModel::correctSigma() {
         ierr = Enth3.getInternalColumn(i,j,&E); CHKERRQ(ierr);
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
         for (PetscInt k=0; k<ks; ++k) {
-          // use hydrostatic pressure; presumably this is not quite right in context
+          // Use hydrostatic pressure; presumably this is not quite right in context
           //   of shelves and streams; here we hard-wire the Glen law
-	  PetscScalar T;
-	  ierr = EC->getAbsTemp(E[k], EC->getPressureFromDepth(H[i][j]-grid.zlevels[k]), T); CHKERRQ(ierr);
-          const PetscScalar
-            n_glen  = ice->exponent(),
-            Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
-            Tstar   = T + ice->beta_CC_grad * (H[i][j] - grid.zlevels[k]),
-            // Use pressure-adjusted temperature and account for the enhancement factor.
-            //   Note, enhancement factor is not used in SSA anyway.
-            //   Should we get rid of it completely?  If not, what is most consistent here?
-            BofT    = ice->hardnessParameter(Tstar) * pow(enhancement_factor,-1/n_glen);
+          PetscScalar pressure = EC->getPressureFromDepth(H[i][j]-grid.zlevels[k]),
+          // Account for the enhancement factor.
+          //   Note, enhancement factor is not used in SSA anyway.
+          //   Should we get rid of it completely?  If not, what is most consistent here?
+            BofT    = ice->hardnessParameter_from_enth(E[k], pressure) * pow(enhancement_factor,-1/n_glen);
           if (addVels) {
             const PetscScalar D2sia = pow(Sigma[k] / (2 * BofT), 1.0 / Sig_pow);
             Sigma[k] = 2.0 * BofT * pow(fv*fv*D2sia + omfv*omfv*D2ssa, Sig_pow);
@@ -981,26 +978,17 @@ PetscErrorCode IceModel::correctSigma() {
 //! Computes vertically-averaged ice hardness on the staggered grid.
 PetscErrorCode IceModel::compute_hardav_staggered(IceModelVec2Stag &result) {
   PetscErrorCode ierr;
-  PolyThermalGPBLDIce *gpbldi = NULL;
-  PetscScalar *tmp, *tmp_ij, *tmp_offset;
+  PetscScalar *E, *E_ij, *E_offset;
 
-  bool do_cold_ice = config.get_flag("do_cold_ice_methods");
-
-  tmp = new PetscScalar[grid.Mz];
+  E = new PetscScalar[grid.Mz];
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  
-  if (do_cold_ice) {
-    ierr = T3.begin_access(); CHKERRQ(ierr); 
-  } else {
-    gpbldi = dynamic_cast<PolyThermalGPBLDIce*>(ice);
-  }
-
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = Enth3.getInternalColumn(i,j,&E_ij); CHKERRQ(ierr);
       for (PetscInt o=0; o<2; o++) {
         const PetscInt oi = 1-o, oj=o;  
         const PetscScalar H = 0.5 * (vH(i,j) + vH(i+oi,j+oj));
@@ -1010,41 +998,23 @@ PetscErrorCode IceModel::compute_hardav_staggered(IceModelVec2Stag &result) {
           continue;
         }
 
-        if (do_cold_ice == false) {
-          ierr = Enth3.getInternalColumn(i,j,&tmp_ij); CHKERRQ(ierr);
-          ierr = Enth3.getInternalColumn(i+oi,j+oj,&tmp_offset); CHKERRQ(ierr);
-        } else {
-          ierr = T3.getInternalColumn(i,j,&tmp_ij); CHKERRQ(ierr);
-          ierr = T3.getInternalColumn(i+oi,j+oj,&tmp_offset); CHKERRQ(ierr);
-        }
-
-        // build a column of enthalpy (or temperature) values a the current
-        // location:
+        ierr = Enth3.getInternalColumn(i+oi,j+oj,&E_offset); CHKERRQ(ierr);
+        // build a column of enthalpy values a the current location:
         for (int k = 0; k < grid.Mz; ++k) {
-          tmp[k] = 0.5 * (tmp_ij[k] + tmp_offset[k]);
+          E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
         
-        if (do_cold_ice == false) {
-          result(i,j,o) = gpbldi->averagedHardness_from_enth(H, grid.kBelowHeight(H),
-                                                             grid.zlevels, tmp); CHKERRQ(ierr); 
-        } else {
-          result(i,j,o) = ice->averagedHardness(H, grid.kBelowHeight(H),
-                                                grid.zlevels, tmp);
-        }
-        
+        result(i,j,o) = ice->averagedHardness_from_enth(H, grid.kBelowHeight(H),
+                                                        grid.zlevels, E); CHKERRQ(ierr); 
       } // o
     }   // j
   }     // i
-
-  if (do_cold_ice) {
-    ierr = T3.end_access(); CHKERRQ(ierr); 
-  }
 
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  delete [] tmp;
+  delete [] E;
 
   return 0;
 }

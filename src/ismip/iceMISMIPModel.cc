@@ -20,7 +20,6 @@
 #include <petscda.h>
 #include "../base/pism_const.hh"
 #include "../base/grid.hh"
-#include "../base/materials.hh"
 #include "../base/iceModel.hh"
 #include "iceMISMIPModel.hh"
 
@@ -81,7 +80,7 @@ PetscErrorCode IceMISMIPModel::printBasalAndIceInfo() {
       "   m=%5.4f, C=%5.4e, and eps = %5.4f m/a.\n",
       m_MISMIP, C_MISMIP, regularize_MISMIP * secpera); CHKERRQ(ierr);
   }
-  ierr = ice->printInfo(2); CHKERRQ(ierr);
+  // ierr = ice->printInfo(2); CHKERRQ(ierr);
   return 0;
 }
 
@@ -399,17 +398,17 @@ PetscErrorCode IceMISMIPModel::init_physics() {
   CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
   if (cgi) {
     // following values are from MISMIP spec:
-    ierr = cgi->setDensity(900.0); CHKERRQ(ierr);
-    ierr = cgi->setExponent(3); CHKERRQ(ierr);
+    cgi->setDensity(900.0);
+    cgi->setExponent(3);
 
     // exper and stepindex range checking was done in setFromOptions
     if ((exper == 1) || (exper == 2)) {
-      ierr = cgi->setSoftness(Aexper1or2[stepindex]); CHKERRQ(ierr);
+      cgi->setSoftness(Aexper1or2[stepindex]);
     } else if (exper == 3) {
       if (sliding == 'a') {
-        ierr = cgi->setSoftness(Aexper3a[stepindex]); CHKERRQ(ierr);
+        cgi->setSoftness(Aexper3a[stepindex]);
       } else if (sliding == 'b') {
-        ierr = cgi->setSoftness(Aexper3b[stepindex]); CHKERRQ(ierr);
+        cgi->setSoftness(Aexper3b[stepindex]);
       } else {
         SETERRQ(99, "how did I get here?");
       }
@@ -420,7 +419,7 @@ PetscErrorCode IceMISMIPModel::init_physics() {
     // if needed, get B_MISMIP  by  cgi->hardnessParameter(273.15)
   }
 
-  ierr = ice->printInfo(1);CHKERRQ(ierr); // DEBUG
+  // ierr = ice->printInfo(1);CHKERRQ(ierr); // DEBUG
 
   ierr = ice->setFromOptions();CHKERRQ(ierr);
   if (!cgi) {
@@ -428,7 +427,7 @@ PetscErrorCode IceMISMIPModel::init_physics() {
                       "WARNING: Not using CustomGlenIce so cannot set hardness defaults\n"
                       "         (Perhaps you chose something else with -ice_type xxx)\n"
                       "         Details on your chosen ice follow\n"); CHKERRQ(ierr);
-    ierr = ice->printInfo(2);CHKERRQ(ierr);
+    // ierr = ice->printInfo(2);CHKERRQ(ierr);
   }
 
   ssaStrengthExtend.set_min_thickness(5.0); // m

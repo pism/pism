@@ -18,7 +18,7 @@
 
 #include <petsc.h>
 #include "../base/pism_const.hh"
-#include "../base/materials.hh"
+#include "../base/flowlaw_factory.hh"
 #include "../base/NCVariable.hh"
 
 static char help[] =
@@ -62,28 +62,12 @@ int main(int argc, char *argv[]) {
     printf("flowtable:  [pressure = %10.2e throughout]\n",p);
     printf("  (stress)   (enthalpy)    (temp)     =   (flow)\n");
 
-    PolyThermalGPBLDIce *poly_ice;
-    if (ice_type == "gpbld") {
-      poly_ice = dynamic_cast<PolyThermalGPBLDIce*>(ice);
-      if (poly_ice == NULL) {
-        PetscPrintf(com,
-          "ERROR: poly_ice == NULL after dynamic cast, when given '-ice_type gpbld'\n");
-        PetscEnd();
-      }
-    } else
-      poly_ice = NULL;
-
     for (int i=0; i<4; ++i) {
       for (int j=0; j<5; ++j) {
         double E = E0 - j*dE;
         EC.getAbsTemp(E, p, T);
-        if (ice_type == "gpbld") {
-          printf("%10.2e   %10.3f    %10.6f = %10.6e\n",
-                 sigma[i], E, T, poly_ice->flow_from_enth(sigma[i], E, p, gs));
-        } else {
-          printf("%10.2e   %10.3f    %10.6f = %10.6e\n",
-                 sigma[i], E, T, ice->flow_from_temp(sigma[i], T, p, gs));
-        }
+        printf("%10.2e   %10.3f    %10.6f = %10.6e\n",
+               sigma[i], E, T, ice->flow_from_enth(sigma[i], E, p, gs));
       }
     }
 

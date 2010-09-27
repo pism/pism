@@ -43,7 +43,6 @@ static char help[] =
 #include <petscda.h>
 #include "../base/pism_const.hh"
 #include "../base/NCVariable.hh"
-#include "../base/materials.hh"
 #include "../earth/deformation.hh"
 
 int main(int argc, char *argv[]) {
