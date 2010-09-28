@@ -37,29 +37,37 @@ FIXME:  This base class should be more general.  For instance, to allow as
 input a time series for precipation rate.  Furthermore it implicitly implies
 a temperature index model (i.e. from temperature and precipitation we get surface
 mass balance), which is too inflexible.
+
+\note Please avoid using config.get("...") and config.get_flag("...") calls in
+methods to reduce computational costs. (Looking up configuration flags and
+parameters in constructors is OK.)
  */
 class LocalMassBalance {
-
 public:
-  LocalMassBalance(const NCConfigVariable &myconfig);
+  LocalMassBalance(const NCConfigVariable &myconfig)
+    : config(myconfig) {}
   virtual ~LocalMassBalance() {}
-  virtual PetscErrorCode init();
+  virtual PetscErrorCode init() = 0;
 
   /*! Call before getMassFluxFromTemperatureTimeSeries() so that mass balance method can
       decide how to cut up the time interval.  Most implementations will ignore
       t and just use dt.  Input t,dt in seconds.  */
   virtual PetscErrorCode getNForTemperatureSeries(
-                PetscScalar t, PetscScalar dt, PetscInt &N);
+                PetscScalar t, PetscScalar dt, PetscInt &N) = 0;
 
   /*! Inputs T[0],...,T[N-1] are temperatures (K) at times t, t+dt, ..., t+(N-1)dt 
-      Input t,dt in seconds.  Input precip, and returned surface mass balance, are in 
+      Input t,dt in seconds.  Input precip_rate, and returned surface mass balance (smb) , are in 
       ice-equivalent thickness per time (m s-1).  Input precip is (ice-equivalent)
       snow at low temperatures and becomes rain at higher; the rain is "thrown
-      away" and does not add to surface balance.  If input precip is negative
+      away" and does not add to surface balance.  If input precip_rate is negative
       then it is treated directly as ablation and positive degree days are ignored.  */
-  virtual PetscScalar getMassFluxFromTemperatureTimeSeries(
-             PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N,
-             PetscScalar precip);
+  virtual PetscErrorCode getMassFluxFromTemperatureTimeSeries(PetscScalar t, PetscScalar dt_series,
+                                                              PetscScalar *T, PetscInt N,
+                                                              PetscScalar precip_rate,
+                                                              PetscScalar &accumulation_rate,
+                                                              PetscScalar &melt_rate,
+                                                              PetscScalar &runoff_rate,
+                                                              PetscScalar &smb) = 0;
 
 protected:
   const NCConfigVariable& config;
@@ -85,10 +93,13 @@ public:
   virtual PetscErrorCode setDegreeDayFactorsFromSpecialInfo(
              PetscScalar latitude, PetscScalar T_mj);
 
-  virtual PetscScalar getMassFluxFromTemperatureTimeSeries(
-             PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N,
-             PetscScalar precip);
-
+  virtual PetscErrorCode getMassFluxFromTemperatureTimeSeries(PetscScalar t, PetscScalar dt_series,
+                                                              PetscScalar *T, PetscInt N,
+                                                              PetscScalar precip_rate,
+                                                              PetscScalar &accumulation_rate,
+                                                              PetscScalar &melt_rate,
+                                                              PetscScalar &runoff_rate,
+                                                              PetscScalar &smb);
 protected:
   /*! Return value is number of positive degree days (units: K day)  */
   virtual PetscScalar getPDDSumFromTemperatureTimeSeries(
@@ -106,6 +117,10 @@ protected:
                                  //    per positive degree day
                pddRefreezeFrac;  // [pure fraction]; amount of melted snow which refreezes
                                  //    as ice
+
+  bool precip_as_snow;          //!< interpret all the precipitation as snow (no rain)
+  PetscScalar Tmin,             //!< the temperature below which all precipitation is snow
+    Tmax;                       //!< the temperature above which all precipitation is rain
 };
 
 

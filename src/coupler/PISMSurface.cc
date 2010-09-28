@@ -272,6 +272,32 @@ PetscErrorCode PSLocalMassBalance::init(PISMVars &vars) {
   acab.write_in_glaciological_units = true;
   ierr = acab.set_attr("comment", "positive values correspond to ice gain"); CHKERRQ(ierr); 
 
+  // diagnostic fields:
+
+  ierr = accumulation_rate.create(grid, "saccum", false); CHKERRQ(ierr);
+  ierr = accumulation_rate.set_attrs("diagnostic",
+                                     "instantaneous ice-equivalent surface accumulation rate",
+                                     "m s-1",
+                                     ""); CHKERRQ(ierr);
+  ierr = accumulation_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  accumulation_rate.write_in_glaciological_units = true;
+
+  ierr = melt_rate.create(grid, "smelt", false); CHKERRQ(ierr);
+  ierr = melt_rate.set_attrs("diagnostic",
+                             "instantaneous ice-equivalent surface melt rate",
+                             "m s-1",
+                             ""); CHKERRQ(ierr);
+  ierr = melt_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  melt_rate.write_in_glaciological_units = true;
+
+  ierr = runoff_rate.create(grid, "srunoff", false); CHKERRQ(ierr);
+  ierr = runoff_rate.set_attrs("diagnostic",
+                               "instantaneous ice-equivalent surface runoff rate",
+                               "m s-1",
+                               ""); CHKERRQ(ierr);
+  ierr = runoff_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  runoff_rate.write_in_glaciological_units = true;
+
   if (fausto_params) {
     ierr = verbPrintf(2, grid.com, "  Setting PDD parameters using formulas (6) and (7) in [Faustoetal2009]...\n"); CHKERRQ(ierr);
     use_fausto_pdd_parameters = true;
@@ -337,6 +363,11 @@ PetscErrorCode PSLocalMassBalance::update(PetscReal t_years, PetscReal dt_years)
 
   ierr = atmosphere->begin_pointwise_access(); CHKERRQ(ierr);
   ierr = acab.begin_access(); CHKERRQ(ierr);
+
+  ierr = accumulation_rate.begin_access(); CHKERRQ(ierr);
+  ierr = melt_rate.begin_access(); CHKERRQ(ierr);
+  ierr = runoff_rate.begin_access(); CHKERRQ(ierr);
+
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = atmosphere->temp_time_series(i, j, Nseries, &ts[0], &T[0]); CHKERRQ(ierr);
@@ -350,11 +381,22 @@ PetscErrorCode PSLocalMassBalance::update(PetscReal t_years, PetscReal dt_years)
 	}
       }
 
-      acab(i,j) = mbscheme->getMassFluxFromTemperatureTimeSeries(tseries, dtseries, &T[0],
-								 Nseries,
-								 acab(i,j)); // precipitation
+      ierr = mbscheme->getMassFluxFromTemperatureTimeSeries(tseries, dtseries, &T[0],
+                                                            Nseries,
+                                                            acab(i,j), // precipitation rate (input)
+                                                            accumulation_rate(i,j),
+                                                            melt_rate(i,j),
+                                                            runoff_rate(i,j),
+                                                            acab(i,j) // smb (output)
+                                                            );
+      CHKERRQ(ierr); 
     }
   }
+
+  ierr = accumulation_rate.end_access(); CHKERRQ(ierr);
+  ierr = melt_rate.end_access(); CHKERRQ(ierr);
+  ierr = runoff_rate.end_access(); CHKERRQ(ierr);
+
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = atmosphere->end_pointwise_access(); CHKERRQ(ierr);
 
@@ -390,6 +432,41 @@ PetscErrorCode PSLocalMassBalance::ice_surface_temperature(PetscReal t_years, Pe
 
   return 0;
 }
+
+PetscErrorCode PSLocalMassBalance::write_fields(set<string> vars, PetscReal t_years,
+					      PetscReal dt_years, string filename) {
+  PetscErrorCode ierr;
+
+  ierr = PISMSurfaceModel::write_fields(vars, t_years, dt_years, filename); CHKERRQ(ierr);
+
+  if (vars.find("saccum") != vars.end()) {
+    ierr = accumulation_rate.write(filename.c_str()); CHKERRQ(ierr);
+  }  
+
+  if (vars.find("smelt") != vars.end()) {
+    ierr = melt_rate.write(filename.c_str()); CHKERRQ(ierr);
+  }  
+
+  if (vars.find("srunoff") != vars.end()) {
+    ierr = runoff_rate.write(filename.c_str()); CHKERRQ(ierr); 
+  }  
+
+  return 0;
+}
+
+PetscErrorCode PSLocalMassBalance::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
+                                                           string filename) {
+  PetscErrorCode ierr;
+
+  ierr = PISMSurfaceModel::write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
+
+  ierr = accumulation_rate.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = melt_rate.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = runoff_rate.write(filename.c_str()); CHKERRQ(ierr); 
+
+  return 0;
+}
+
 
 ///// "Force-to-thickness" mechanism
 

@@ -267,7 +267,7 @@ PetscScalar GPBLDIce::softnessParameter_from_enth(
 PetscReal ThermoGlenIce::softnessParameter_from_enth(PetscReal E, PetscReal pressure) const {
   PetscReal T_pa;
   EC->getPATemp(E, pressure, T_pa);
-  return softnessParameter(T_pa);
+  return softnessParameter_from_temp(T_pa);
 }
 
 /*! Converts enthalpy to temperature and calls flow_from_temp. */
@@ -283,7 +283,7 @@ PetscReal ThermoGlenIce::flow_from_temp(PetscReal stress, PetscReal temp,
                                         PetscReal pressure, PetscReal /*gs*/) const {
   // pressure-adjusted temperature:
   const PetscScalar T_pa = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
-  return softnessParameter(T_pa) * pow(stress,n-1);
+  return softnessParameter_from_temp(T_pa) * pow(stress,n-1);
 }
 
 // CustomGlenIce
@@ -325,7 +325,7 @@ HookeIce::HookeIce(MPI_Comm c, const char pre[], const NCConfigVariable &config)
   Tr_Hooke = config.get("Hooke_Tr");
 }
 
-PetscReal HookeIce::softnessParameter(PetscReal T_pa) const {
+PetscReal HookeIce::softnessParameter_from_temp(PetscReal T_pa) const {
   return A_Hooke * exp( -Q_Hooke/(ideal_gas_constant * T_pa)
                         + 3.0 * C_Hooke * pow(Tr_Hooke - T_pa, -K_Hooke));
 }

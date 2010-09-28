@@ -137,7 +137,7 @@ add_custom_target (pismconfig ALL
 )
 
 install (TARGETS
-  pismr pisms pismv pgrn pross ## executables
+  pismr pisms pismv pgrn pross pclimate ## executables
   pismmisc pismverif pismbase pismearth pismudunits # libraries
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib

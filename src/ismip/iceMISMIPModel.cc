@@ -455,7 +455,7 @@ PetscErrorCode IceMISMIPModel::initFromFile(const char *fname) {
     fname,modelnum,exper,sliding,gridmode,stepindex); CHKERRQ(ierr);
   CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
   if (cgi) {
-    ierr = verbPrintf(2,grid.com, " (A=%5.4e)\n",cgi->softnessParameter(273.15)); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, " (A=%5.4e)\n",cgi->softnessParameter_from_temp(273.15)); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com," (WARNING: SOFTNESS A UNKNOWN!)\n"); CHKERRQ(ierr);
   }
@@ -480,7 +480,7 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
       modelnum,exper,sliding,gridmode,stepindex); CHKERRQ(ierr);
   CustomGlenIce *cgi = dynamic_cast<CustomGlenIce*>(ice);
   if (cgi) {
-    ierr = verbPrintf(2,grid.com, " (A=%5.4e)\n",cgi->softnessParameter(273.15)); CHKERRQ(ierr);
+    ierr = verbPrintf(2,grid.com, " (A=%5.4e)\n",cgi->softnessParameter_from_temp(273.15)); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com," (WARNING: SOFTNESS A UNKNOWN!)\n"); CHKERRQ(ierr);
   }

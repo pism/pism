@@ -186,11 +186,18 @@ public:
 					       IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
 						 IceModelVec2S &result);
+  virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
+				      PetscReal dt_years, string filename);
+  virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
+                                                 string filename);
 protected:
   LocalMassBalance *mbscheme;	//!< mass balance scheme to use
   bool use_fausto_pdd_parameters;
   IceModelVec2S temp_mj,	//!< for the mean July temperature needed to set PDD parameters as in [\ref Faustoetal2009].
     acab,			//!< cached accumulation/ablation rates
+    accumulation_rate,
+    melt_rate,
+    runoff_rate,
     *lat;		//!< latitude needed to set PDD parameters as in [\ref Faustoetal2009].
 };
 

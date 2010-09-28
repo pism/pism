@@ -321,9 +321,8 @@ int main(int argc, char *argv[]) {
       "  -ye            end time B (= float), B > A, in years\n"
       "  -dt            time step C (= positive float) in years\n"
       "and set up the models:\n"
-      "  -atmosphere    Chooses an atmosphere model (one of [constant, greenland])\n"
-      "  -surface       Chooses a surface model (one of [simple, pdd]) \n"
-      "  -pdd_greenland Sets PDD parameters using formulas (6) and (7) in Fausto et al (2009)\n"
+      "  -atmosphere    Chooses an atmosphere model (one of [constant, eismint_greenland, searise_greenland, temp_lapse_rate])\n"
+      "  -surface       Chooses a surface model (one of [constant, simple, pdd]) \n"
       ); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,

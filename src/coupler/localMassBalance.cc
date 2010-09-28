@@ -25,38 +25,7 @@
 #include "../base/NCVariable.hh"
 #include "localMassBalance.hh"
 
-
-LocalMassBalance::LocalMassBalance(const NCConfigVariable& myconfig) : config(myconfig) {
-}
-
-
-PetscErrorCode LocalMassBalance::init() {
-  PetscPrintf(PETSC_COMM_WORLD,"LocalMassBalance is a virtual class.  ENDING ...\n");
-  PetscEnd();
-  return 0;
-}
-
-
-PetscErrorCode LocalMassBalance::getNForTemperatureSeries(
-                   PetscScalar /* t */, PetscScalar /* dt */, PetscInt & /* N */) {
-  PetscPrintf(PETSC_COMM_WORLD,"LocalMassBalance is a virtual class.  ENDING ...\n");
-  PetscEnd();
-  return 0;
-}
-
-
-PetscScalar LocalMassBalance::getMassFluxFromTemperatureTimeSeries(
-             PetscScalar /* t */, PetscScalar /* dt_series */, PetscScalar * /* T */, PetscInt /* N */,
-             PetscScalar /* precip */) {
-  PetscPrintf(PETSC_COMM_WORLD,"LocalMassBalance is a virtual class.  ENDING ...\n");
-  PetscEnd();
-  return 0.0;
-}
-
-
 PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig) : LocalMassBalance(myconfig) {
-  // FIXME: switch over scheme and defaults to Fausto choice; make EISMINT-Greenland a special case,
-  //   but not needing a derived class (I think)
   pddFactorSnow   = config.get("pdd_factor_snow");
   pddFactorIce    = config.get("pdd_factor_ice");
   pddRefreezeFrac = config.get("pdd_refreeze");
@@ -73,6 +42,10 @@ PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig) : LocalMassBala
   fresh_water_density = config.get("fresh_water_density");
   ice_density = config.get("ice_density");
   pdd_fausto_latitude_beta_w = config.get("pdd_fausto_latitude_beta_w");
+
+  precip_as_snow = config.get_flag("interpret_precip_as_snow");
+  Tmin = config.get("air_temp_all_precip_as_snow");
+  Tmax = config.get("air_temp_all_precip_as_rain");
 }
 
 
@@ -181,65 +154,73 @@ The other arguments are t and dt in seconds and an array T[N] in Kelvin.
 These are N temperature values T[0],...,T[N-1] at times t,t+dt_series,...,
 t+(N-1)*dt_series.  Note dt = (N-1)*dt_series.
  */
-PetscScalar PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
-             PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N,
-             PetscScalar precip) {
-
-/*FIXME:  new suggested signature:
-PetscError PDDMassBalance::getMassFluxFromTemperatureTimeSeries(
-             PetscScalar t,
-             PetscScalar dt_series, PetscScalar *T, PetscInt N,
-             PetscScalar precip,
-             PetscScalar &melt_rate, PetscScalar &runoff_rate, PetscScalar &smb);
-*/
-/*FIXME:  Regine also suggested accumulation, I think, but I am not sure
-          which quantity it is! */
+PetscErrorCode PDDMassBalance::getMassFluxFromTemperatureTimeSeries(PetscScalar t, PetscScalar dt_series,
+                                                                    PetscScalar *T,
+                                                                    PetscInt N,
+                                                                    PetscScalar precip_rate,
+                                                                    PetscScalar &accumulation_rate,
+                                                                    PetscScalar &melt_rate,
+                                                                    PetscScalar &runoff_rate,
+                                                                    PetscScalar &smb) {
 
   const PetscScalar
-      pddsum = getPDDSumFromTemperatureTimeSeries(t,dt_series,T,N), // units: K day
-      dt     = (N-1) * dt_series; 
-  if (precip < 0.0) { // weird, but allowed, case
-    // neg precip interpreted as ablation, so positive degree-days are ignored
-    return precip;
-  } else {
-    PetscScalar snow = 0.0;
-    if (config.get_flag("interpret_precip_as_snow")) {
-      // positive precip: it snowed (precip = snow; never rain)
-      snow = precip * dt;   // units: m (ice-equivalent)
-    } else {
-      // Following Hock (reference needed) we employ a linear transition from Tmin to Tmax, where
-      // Tmin is the temperature below which all precipitation is snow
-      // Tmax is the temperature above which all precipitation is rain
-      const PetscScalar Tmin = config.get("air_temp_all_precip_as_snow"),
-                        Tmax = config.get("air_temp_all_precip_as_rain");
-      for (PetscInt i=0; i<N-1; i++) { // go over all N-1 subintervals in interval[t,t+dt_series]
-        const PetscScalar Tav = (T[i] + T[i+1]) / 2.0; // use midpt of temp series for subinterval
-	if (Tav <= Tmin) { // T <= Tmin, all precip is snow
-	  snow += precip * dt_series;
-	} else if (Tav < Tmax) { // linear transition from Tmin to Tmax
-	  snow += ((Tmax-Tav)/(Tmax-Tmin)) * precip * dt_series;  // units: m (ice-equivalent)
-	} else { // T >= Tmax, all precip is rain -- ignore it
-	  snow += 0.;  // units: m (ice-equivalent)
-	}
-      }
-    }
-    const PetscScalar snow_max_melted = pddsum * pddFactorSnow;  // units: m (ice-equivalent)
-    if (snow_max_melted <= snow) {
-      // FIXME:  return melt:   melt_rate   = snow_max_melted / dt
-      // FIXME:  return runoff: runoff_rate = snow_max_melted * (1 - pddRefreezeFrac) / dt
-      return ((snow - snow_max_melted) + (snow_max_melted * pddRefreezeFrac)) / dt;
-    } else { // it is snowing, but all the snow melts; some of this ice is kept
-             // (refreeze); additional PDDs remove this ice and more of the underlying ice
-      const PetscScalar ice_deposited = snow * pddRefreezeFrac,
-                        excess_pddsum = pddsum - (snow / pddFactorSnow), // positive!; units K day
-                        ice_melted    = excess_pddsum * pddFactorIce; // units: m
-      // FIXME:  return melt:   melt_rate   = (snow + ice_melted) / dt 
-      // FIXME:  return runoff: runoff_rate = (snow * (1 - pddRefreezeFrac) + ice_melted) / dt
-      return (ice_deposited - ice_melted) / dt;
-    }
-  }
-}
+    pddsum = getPDDSumFromTemperatureTimeSeries(t,dt_series,T,N), // units: K day
+    dt     = (N-1) * dt_series; 
 
+  if (precip_rate < 0.0) {           // weird, but allowed, case
+    accumulation_rate = 0.0;
+    melt_rate = precip_rate;
+    runoff_rate = precip_rate;
+    smb = precip_rate;
+    return 0;
+  }
+
+  // compute snow accumulation:
+  PetscScalar snow = 0.0;
+  if (precip_as_snow) {
+    // positive precip_rate: it snowed (precip = snow; never rain)
+    snow  = precip_rate * dt;   // units: m (ice-equivalent)
+  } else {
+    // Following Hock (reference needed) we employ a linear transition from Tmin to Tmax, where
+    // Tmin is the temperature below which all precipitation is snow
+    // Tmax is the temperature above which all precipitation is rain
+
+    for (PetscInt i=0; i<N-1; i++) { // go over all N-1 subintervals in interval[t,t+dt_series]
+      const PetscScalar Tav = (T[i] + T[i+1]) / 2.0; // use midpt of temp series for subinterval
+      PetscScalar acc_rate = 0.0;                    // accumulation rate during a sub-interval
+
+      if (Tav <= Tmin) { // T <= Tmin, all precip is snow
+        acc_rate = precip_rate;
+      } else if (Tav < Tmax) { // linear transition from Tmin to Tmax
+        acc_rate = ((Tmax-Tav)/(Tmax-Tmin)) * precip_rate;
+      } else { // T >= Tmax, all precip is rain -- ignore it
+        acc_rate = 0;
+      }
+      snow += acc_rate * dt_series;  // units: m (ice-equivalent)
+    }
+  } // end of (not precip_as_snow)
+
+  accumulation_rate = snow / dt;
+
+  const PetscScalar snow_max_melted = pddsum * pddFactorSnow;  // units: m (ice-equivalent)
+  if (snow_max_melted <= snow) {
+    melt_rate   = snow_max_melted / dt;
+    runoff_rate = snow_max_melted * (1 - pddRefreezeFrac) / dt;
+    smb         =  ((snow - snow_max_melted) + (snow_max_melted * pddRefreezeFrac)) / dt;
+  } else {
+    // it is snowing, but all the snow melts; some of this ice is kept
+    // (refreeze); additional PDDs remove this ice and more of the underlying ice
+    const PetscScalar ice_deposited = snow * pddRefreezeFrac,
+      excess_pddsum = pddsum - (snow / pddFactorSnow), // positive!; units K day
+      ice_melted    = excess_pddsum * pddFactorIce; // units: m
+
+    melt_rate   = (snow + ice_melted) / dt; 
+    runoff_rate = (snow * (1 - pddRefreezeFrac) + ice_melted) / dt;
+    smb         = (ice_deposited - ice_melted) / dt;
+  }
+
+  return 0;
+}
 
 //! Compute the integrand in integral (6) in [\ref CalovGreve05].
 /*!

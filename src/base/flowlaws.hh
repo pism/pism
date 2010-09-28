@@ -131,10 +131,10 @@ public:
   virtual PetscReal softnessParameter_from_enth(PetscReal enthalpy, PetscReal pressure) const;
 
   // expose Paterson-Budd softness and hardness formulas
-  virtual PetscReal softnessParameter(PetscReal T_pa) const
+  virtual PetscReal softnessParameter_from_temp(PetscReal T_pa) const
   { return softnessParameter_paterson_budd(T_pa); }
-  virtual PetscReal hardnessParameter(PetscReal T_pa) const
-  { return pow(softnessParameter(T_pa), -1.0/n); }
+  virtual PetscReal hardnessParameter_from_temp(PetscReal T_pa) const
+  { return pow(softnessParameter_from_temp(T_pa), -1.0/n); }
 
   virtual PetscReal flow_from_enth(PetscReal stress, PetscReal E,
                                    PetscReal pressure, PetscReal gs) const;
@@ -152,12 +152,12 @@ public:
 
   virtual PetscReal softnessParameter_from_enth(PetscReal, PetscReal) const
   { return softness_A; }
-  virtual PetscReal softnessParameter(PetscReal) const
+  virtual PetscReal softnessParameter_from_temp(PetscReal) const
   { return softness_A; }
 
   virtual PetscReal hardnessParameter_from_enth(PetscReal, PetscReal) const
   { return hardness_B; }
-  virtual PetscReal hardnessParameter(PetscReal) const
+  virtual PetscReal hardnessParameter_from_temp(PetscReal) const
   { return hardness_B; }
   virtual PetscReal averagedHardness_from_enth(PetscReal, PetscInt,
                                                const PetscReal*, const PetscReal*) const
@@ -185,7 +185,7 @@ class HookeIce : public ThermoGlenIce {
 public:
   HookeIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
   virtual ~HookeIce() {}
-  virtual PetscReal softnessParameter(PetscReal T_pa) const;
+  virtual PetscReal softnessParameter_from_temp(PetscReal T_pa) const;
 protected:
   PetscReal A_Hooke, Q_Hooke, C_Hooke, K_Hooke, Tr_Hooke; // constants from Hooke (1981)
   // R_Hooke is the ideal_gas_constant.
@@ -201,7 +201,7 @@ public:
   virtual PetscReal Q() const { return Q_cold; }
 
   // takes care of hardnessParameter...
-  virtual PetscReal softnessParameter(PetscReal T_pa) const
+  virtual PetscReal softnessParameter_from_temp(PetscReal T_pa) const
   { return A() * exp(-Q()/(ideal_gas_constant * T_pa)); }
 
   //! Return the temperature T corresponding to a given value A=A(T).
@@ -211,7 +211,7 @@ public:
   // ignores pressure and uses non-pressure-adjusted temperature
   virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
                                    PetscReal , PetscReal ) const
-  { return softnessParameter(temp) * pow(stress,n-1); }
+  { return softnessParameter_from_temp(temp) * pow(stress,n-1); }
 };
 
 //! Warm case of Paterson-Budd
