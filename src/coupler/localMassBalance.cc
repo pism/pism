@@ -130,7 +130,7 @@ degree days by a call to getPDDSumFromTemperatureTimeSeries().
 The time-dependent temperature series is used to determine whether the
 precipitation is snow or rain.  Rain is removed entirely from the surface mass
 balance.  There is an allowed linear transition for Tmin below which all precipitation
-is interpreted as snow, and Tmax above which all precipitation is rain.
+is interpreted as snow, and Tmax above which all precipitation is rain (see, e.g. \ref Hock2005b).
 
 This is a PDD scheme.  We assume a constant rate of melting per positive degree
 day for snow.  The rate is set by the option <tt>-pdd_factor_snow</tt>.  A
@@ -181,7 +181,7 @@ PetscErrorCode PDDMassBalance::getMassFluxFromTemperatureTimeSeries(PetscScalar 
     // positive precip_rate: it snowed (precip = snow; never rain)
     snow  = precip_rate * dt;   // units: m (ice-equivalent)
   } else {
-    // Following Hock (reference needed) we employ a linear transition from Tmin to Tmax, where
+    // Following \ref Hock2005b we employ a linear transition from Tmin to Tmax, where
     // Tmin is the temperature below which all precipitation is snow
     // Tmax is the temperature above which all precipitation is rain
 
