@@ -6,9 +6,9 @@ cmake_minimum_required (VERSION 2.6.2)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 
 # Allow setting a custom install prefix using the PISM_PREFIX environment variable.
-string (LENGTH "$ENV{PISM_PREFIX}" INSTALL_PREFIX_LENGTH)
+string (LENGTH "$ENV{PISM_INSTALL_PREFIX}" INSTALL_PREFIX_LENGTH)
 if (INSTALL_PREFIX_LENGTH)
-  set (CMAKE_INSTALL_PREFIX $ENV{PISM_PREFIX} CACHE PATH "PISM install prefix" FORCE)
+  set (CMAKE_INSTALL_PREFIX $ENV{PISM_INSTALL_PREFIX} CACHE PATH "PISM install prefix" FORCE)
   message ("-- Setting PISM install prefix to ${CMAKE_INSTALL_PREFIX}.")
 endif()
 
@@ -34,10 +34,11 @@ set (Pism_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are
 set (CMAKE_BUILD_TYPE ${Pism_BUILD_TYPE} CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
 mark_as_advanced (CMAKE_BUILD_TYPE) # hide the default entry
 if (Pism_BUILD_TYPE MATCHES "Debug")
-  option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings" ON)
+  option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings" OFF)
 endif (Pism_BUILD_TYPE MATCHES "Debug")
 
 # Set Pism_REVISION
+# Git
 if (EXISTS ${Pism_SOURCE_DIR}/.git)
   find_program (GIT git DOC "Git executable")
   execute_process (COMMAND ${GIT} svn info
@@ -55,11 +56,13 @@ if (EXISTS ${Pism_SOURCE_DIR}/.git)
   set (Pism_REVISION "[${Pism_SVN_URL} ${Pism_SVN_REVISION}]")
   #set (Pism_REVISION "${Pism_SVN_REVISION}")
 endif (EXISTS ${Pism_SOURCE_DIR}/.git)
+# Subversion
 if (EXISTS ${Pism_SOURCE_DIR}/.svn)
   find_package (Subversion REQUIRED)
   Subversion_WC_INFO (${Pism_SOURCE_DIR} Pism)
   set (Pism_REVISION "${Pism_WC_URL} ${Pism_WC_REVISION}")
 endif (EXISTS ${Pism_SOURCE_DIR}/.svn)
+# Otherwise...
 if (NOT Pism_REVISION)
   set (Pism_REVISION "Unknown revision")
 endif (NOT Pism_REVISION)

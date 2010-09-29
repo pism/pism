@@ -1,4 +1,4 @@
-ALL : installation cheatsheet userman
+all : installation cheatsheet userman
 
 update: svn_update revclean
 ifeq ($(shell touch revision.tex; svnversion | diff revision.tex -),)
@@ -21,11 +21,11 @@ revclean:
 userman:
 	$(MAKE) -C userman
 
-installation : installation.tex
+installation : installation.tex revision
 	pdflatex installation.tex
 	pdflatex installation.tex
 
-cheatsheet : cheatsheet.tex
+cheatsheet : cheatsheet.tex revision
 	pdflatex cheatsheet.tex
 	pdflatex cheatsheet.tex
 
@@ -40,7 +40,7 @@ browser.tgz :
 
 # rebuild browser and then open it with firefox:
 browsenow : browser
-	firefox browser/doxy/html/index.html &
+	firefox browser/html/index.html &
 
 # utility targets:
 

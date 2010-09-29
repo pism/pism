@@ -205,7 +205,7 @@ public:
   { return A() * exp(-Q()/(ideal_gas_constant * T_pa)); }
 
   //! Return the temperature T corresponding to a given value A=A(T).
-  PetscReal tempFromSoftness(PetscScalar myA) const
+  PetscReal tempFromSoftness(PetscReal myA) const
   { return - Q() / (ideal_gas_constant * (log(myA) - log(A()))); }
 
   // ignores pressure and uses non-pressure-adjusted temperature
@@ -228,7 +228,7 @@ public:
 // Hybrid (Goldsby-Kohlstedt/Glen) ice flow law
 
 struct GKparts {
-  PetscScalar eps_total, eps_diff, eps_disl, eps_basal, eps_gbs;
+  PetscReal eps_total, eps_diff, eps_disl, eps_basal, eps_gbs;
 };
 
 
@@ -243,9 +243,9 @@ derived class.
 class HybridIce : public ThermoGlenIce {
 public:
   HybridIce(MPI_Comm c, const char pre[], const NCConfigVariable &config);
-  virtual PetscScalar flow_from_temp(PetscScalar stress, PetscScalar temp,
-                                     PetscScalar pressure, PetscScalar gs) const;
-  GKparts flowParts(PetscScalar stress, PetscScalar temp, PetscScalar pressure) const;
+  virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
+                                     PetscReal pressure, PetscReal gs) const;
+  GKparts flowParts(PetscReal stress, PetscReal temp, PetscReal pressure) const;
 
 protected:
   PetscReal  V_act_vol,  d_grain_size,
@@ -268,8 +268,8 @@ Peltier et al 2000, which is even simpler.
 class HybridIceStripped : public HybridIce {
 public:
   HybridIceStripped(MPI_Comm c, const char pre[], const NCConfigVariable &config);
-  virtual PetscScalar flow_from_temp(PetscScalar stress, PetscScalar temp,
-                                     PetscScalar pressure, PetscScalar gs) const;
+  virtual PetscReal flow_from_temp(PetscReal stress, PetscReal temp,
+                                     PetscReal pressure, PetscReal gs) const;
 protected:
   PetscReal d_grain_size_stripped;
 };

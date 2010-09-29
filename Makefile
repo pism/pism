@@ -1,54 +1,24 @@
-# Configuration flags:
-PISM_INSTALL_DIR ?= $(PWD)
-PISM_HAVE_FFTW ?= 1
-PISM_STATIC ?= 0
-# if ==1 then adds -g
-PISM_USE_DEBUG ?= 0
-# PETSc has troubles choosing a linker which can link C++. PISM is C++. Setting
-# this to zero would let PETSc choose a linker.
-PISM_USE_MPICXX ?= 1
-# if ==1 then adds -Woverloaded-virtual -pipe to CFLAGS
-PISM_USE_GNU_FLAGS ?= 0
+PISM_INSTALL_PREFIX ?= $(PWD)
+BUILD_DIR=build
 
-# Put additional make include files here: 
-#CONFIG = config/macosx_macports
+ALL: install
 
-# Miscellaneous variables:
-BUILD_DIR = $(PWD)/build
-GOALS = $(MAKECMDGOALS)
+install:
+	cd build && PISM_INSTALL_PREFIX=$(PISM_INSTALL_PREFIX) cmake ..
+	$(MAKE) -C $(BUILD_DIR) install
+.PHONY: install
 
-ALL: all
+userman browser installation:
+	@cd doc && $(MAKE) $@
 
-update: svn_update
-	@$(MAKE) rebuild
-
-rebuild:
-ifeq ($(shell touch src/revision; svnversion src/ | diff src/revision -),)
-	@echo "src/ directory is up to date."
-else
-	@echo "Rebuilding PISM..."
-	@$(MAKE) all
-endif
-
-#FIXME: this has undesirable effect that "make clean && make"  does not rebuild executables
-#pismr pismv pross pgrn pclimate flowTable tryLCbd gridL simple%:
-#	$(MAKE) -C build ../bin/$@
-
-depclean:
-	@rm -f $(BUILD_DIR)/*.d
-
-svn_update:
-	@echo "Running 'svn update' ($(shell svn info |grep 'Repository Root'))..."
-	@svn update
+update:
+	@svn up
+	$(MAKE) install
+.PHONY: update
 
 clean:
 	@$(MAKE) -C $(BUILD_DIR) clean
 	@$(MAKE) -C doc clean
 
-userman browser summary installation:
-	@cd doc && $(MAKE) $@
-
 .DEFAULT:
-	@cd $(BUILD_DIR) && $(MAKE) $@
-
-.EXPORT_ALL_VARIABLES: ;
+	$(MAKE) -C $(BUILD_DIR) $@

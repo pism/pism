@@ -192,8 +192,8 @@ PetscErrorCode testConvergenceOfNu(IceGrid &grid,
 }
 
 
-PetscErrorCode assembleSSAMatrix(
-    IceGrid &grid, NCConfigVariable &config, IceBasalResistancePlasticLaw &basal,
+PetscErrorCode assembleSSAMatrix(IceGrid &grid, NCConfigVariable &/*config*/,
+                                 IceBasalResistancePlasticLaw &basal,
     IceModelVec2S &vtauc, IceModelVec2Mask &vMask, IceModelVec2V &vel_ssa,
     bool includeBasalShear, IceModelVec2S vNuH[2], Mat &A) {
   PetscErrorCode  ierr;

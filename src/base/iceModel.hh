@@ -259,10 +259,11 @@ protected:
   virtual PetscErrorCode getEnthalpyCTSColumn(PetscScalar p_air, //!< atmospheric pressure
 					      PetscScalar thk,	 //!< ice thickness
 					      PetscInt ks,	 //!< index of the level just below the surface
-					      const PetscScalar *Enth,
-					      const PetscScalar *w,
-					      PetscScalar *lambda,
-					      PetscScalar **Enth_s);
+					      const PetscScalar *Enth, //!< Enthalpy
+					      const PetscScalar *w,    //!< vert. velocity
+					      PetscScalar *lambda,     //!< labmda
+					      PetscScalar **Enth_s//!< enthalpy for the pr.-melting temp.
+                                              );   
   virtual PetscErrorCode enthalpyAndDrainageStep(
                 PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
                 PetscScalar* bulgeCount);

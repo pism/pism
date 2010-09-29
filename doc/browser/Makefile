@@ -1,25 +1,29 @@
 # non-default targets: browser and related
 
-revision.tex:
-	svnversion > revision.tex
-.PHONY: revision.tex
+ALL: browser
 
-doxybib.txt: doxybib.py ../ice_bib.bib
+ice_bib.bib:
+	ln -s ../ice_bib.bib ice_bib.bib
+
+references.txt: doxybib.py ice_bib.bib
 	./doxybib.py
 
 pism_config.nc:
 	ncgen -o pism_config.nc ../../src/pism_config.cdl
 
-config_doc.txt: config_doc.py pism_config.nc
-	./config_doc.py > config_doc.txt
+pism_config.txt: config_doc.py pism_config.nc
+	./config_doc.py > $@
 
-browser : doxyfile_browser doxybib.txt config_doc.txt std_names.html \
-		browser_pages.txt browser_bombproof_enth.txt revision.tex \
+browser : my_doxyfile references.txt pism_config.txt std_names.txt \
+		pages.txt bombproof_enth.txt \
                 initialization-sequence.dot
-	doxygen doxyfile_browser
+	doxygen my_doxyfile
 
-browser.tgz : doxy/html/index.html
-	cd doxy/html && tar czvf ../../browser.tgz *
+browser.tgz : html/index.html
+	tar czvf browser.tgz html
+
+my_doxyfile: doxyfile sed_script.txt
+	sed -f sed_script.txt < doxyfile > $@
 
 clean:
-	@rm -f config_doc.txt doxybib.txt pism_config.nc revision.tex texput.*
+	@rm -f references.txt pism_config.txt pism_config.nc texput.* my_doxyfile ice_bib.bib

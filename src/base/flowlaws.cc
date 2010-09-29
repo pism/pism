@@ -124,16 +124,16 @@ PetscErrorCode IceFlowLaw::setFromOptions() {
 }
 
 //! Returns viscosity and \b not the nu * H product.
-PetscScalar IceFlowLaw::effectiveViscosity(PetscScalar hardness,
-                                         PetscScalar u_x, PetscScalar u_y,
-                                         PetscScalar v_x, PetscScalar v_y) const {
-  const PetscScalar alpha = secondInvariant(u_x, u_y, v_x, v_y);
+PetscReal IceFlowLaw::effectiveViscosity(PetscReal hardness,
+                                         PetscReal u_x, PetscReal u_y,
+                                         PetscReal v_x, PetscReal v_y) const {
+  const PetscReal alpha = secondInvariant(u_x, u_y, v_x, v_y);
   return 0.5 * hardness * pow(schoofReg + alpha, (1-n)/(2*n));
 }
 
 //! Return the softness parameter A(T) for a given temperature T.
 /*! This is not a natural part of all IceFlowLaw instances.   */
-PetscScalar IceFlowLaw::softnessParameter_paterson_budd(PetscScalar T_pa) const {
+PetscReal IceFlowLaw::softnessParameter_paterson_budd(PetscReal T_pa) const {
   if (T_pa < crit_temp) {
     return A_cold * exp(-Q_cold/(ideal_gas_constant * T_pa));
   }
@@ -141,36 +141,36 @@ PetscScalar IceFlowLaw::softnessParameter_paterson_budd(PetscScalar T_pa) const 
 }
 
 //! The flow law itself.
-PetscScalar IceFlowLaw::flow_from_enth(PetscScalar stress, PetscScalar enthalpy,
-                                       PetscScalar pressure, PetscScalar /* gs */) const {
+PetscReal IceFlowLaw::flow_from_enth(PetscReal stress, PetscReal enthalpy,
+                                       PetscReal pressure, PetscReal /* gs */) const {
   return softnessParameter_from_enth(enthalpy,pressure) * pow(stress,n-1);
 }
 
-PetscScalar IceFlowLaw::hardnessParameter_from_enth(PetscReal E, PetscReal p) const {
+PetscReal IceFlowLaw::hardnessParameter_from_enth(PetscReal E, PetscReal p) const {
   return pow(softnessParameter_from_enth(E, p), -1.0/n);
 }
 
 //! Computes vertical average of B(E,pressure) ice hardness, namely \f$\bar
 //! B(E,p)\f$. See comment for hardnessParameter().
 /*! Note E[0],...,E[kbelowH] must be valid.  */
-PetscScalar IceFlowLaw::averagedHardness_from_enth(PetscScalar thickness, PetscInt kbelowH,
-                                                   const PetscScalar *zlevels,
-                                                   const PetscScalar *enthalpy) const {
+PetscReal IceFlowLaw::averagedHardness_from_enth(PetscReal thickness, PetscInt kbelowH,
+                                                 const PetscReal *zlevels,
+                                                 const PetscReal *enthalpy) const {
 
-  PetscScalar B = 0;
+  PetscReal B = 0;
   if (kbelowH > 0) {
-    PetscScalar dz = zlevels[1] - zlevels[0];
+    PetscReal dz = zlevels[1] - zlevels[0];
     B += 0.5 * dz * hardnessParameter_from_enth(enthalpy[0],
                                                 EC->getPressureFromDepth(thickness) );
     for (PetscInt m=1; m < kbelowH; m++) {
-      const PetscScalar dzNEXT = zlevels[m+1] - zlevels[m],
+      const PetscReal dzNEXT = zlevels[m+1] - zlevels[m],
                         depth  = thickness - 0.5 * (zlevels[m+1] + zlevels[m]);
       B += 0.5 * (dz + dzNEXT) * hardnessParameter_from_enth(enthalpy[m],
                                                              EC->getPressureFromDepth(depth) );
       dz = dzNEXT;
     }
     // use last dz from for loop
-    const PetscScalar depth  = 0.5 * (thickness - zlevels[kbelowH]);
+    const PetscReal depth  = 0.5 * (thickness - zlevels[kbelowH]);
     B += 0.5 * dz * hardnessParameter_from_enth(enthalpy[kbelowH],
                                                 EC->getPressureFromDepth(depth) );
   }
@@ -220,8 +220,8 @@ the pressure then the softness we compute is
    \f[A = A(T_{pa}(E,p))(1+184\omega).\f]
 The pressure-melting temperature \f$T_{pa}(E,p)\f$ is computed by getPATemp().
  */
-PetscScalar GPBLDIce::softnessParameter_from_enth(
-                PetscScalar enthalpy, PetscScalar pressure) const {
+PetscReal GPBLDIce::softnessParameter_from_enth(
+                PetscReal enthalpy, PetscReal pressure) const {
   PetscErrorCode ierr;
 #ifdef PISM_DEBUG
   if (enthalpy < 0) {
@@ -233,10 +233,10 @@ PetscScalar GPBLDIce::softnessParameter_from_enth(
     PetscErrorPrintf("EC is NULL in GPBLDIce::flow_from_enth()\n");
     endPrintRank();
   }
-  PetscScalar E_s, E_l;
+  PetscReal E_s, E_l;
   EC->getEnthalpyInterval(pressure, E_s, E_l);
   if (enthalpy <= E_s) {       // cold ice
-    PetscScalar T_pa;
+    PetscReal T_pa;
     ierr = EC->getPATemp(enthalpy,pressure,T_pa);
     if (ierr) {
       PetscErrorPrintf(
@@ -245,7 +245,7 @@ PetscScalar GPBLDIce::softnessParameter_from_enth(
     }
     return softnessParameter_paterson_budd( T_pa );
   } else if (enthalpy < E_l) { // temperate ice
-    PetscScalar omega;
+    PetscReal omega;
     ierr = EC->getWaterFraction(enthalpy,pressure,omega);
     if (ierr) {
       PetscErrorPrintf(
@@ -282,7 +282,7 @@ PetscReal ThermoGlenIce::flow_from_enth(PetscReal stress, PetscReal E,
 PetscReal ThermoGlenIce::flow_from_temp(PetscReal stress, PetscReal temp,
                                         PetscReal pressure, PetscReal /*gs*/) const {
   // pressure-adjusted temperature:
-  const PetscScalar T_pa = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
+  const PetscReal T_pa = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
   return softnessParameter_from_temp(T_pa) * pow(stress,n-1);
 }
 
@@ -377,16 +377,16 @@ HybridIce::HybridIce(MPI_Comm c,const char pre[],
   D. L. Goldsby & D. L. Kohlstedt (2001), "Superplastic deformation
   of ice: experimental observations", J. Geophys. Res. 106(M6), 11017-11030.
 */
-PetscScalar HybridIce::flow_from_temp(PetscScalar stress, PetscScalar temp,
-                            PetscScalar pressure, PetscScalar gs) const {
-  PetscScalar eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
+PetscReal HybridIce::flow_from_temp(PetscReal stress, PetscReal temp,
+                                    PetscReal pressure, PetscReal gs) const {
+  PetscReal eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
 
   if (PetscAbs(stress) < 1e-10) return 0;
-  const PetscScalar T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
-  const PetscScalar pV = pressure * V_act_vol;
-  const PetscScalar RT = ideal_gas_constant * T;
+  const PetscReal T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
+  const PetscReal pV = pressure * V_act_vol;
+  const PetscReal RT = ideal_gas_constant * T;
   // Diffusional Flow
-  const PetscScalar diff_D_v = diff_D_0v * exp(-diff_Q_v/RT);
+  const PetscReal diff_D_v = diff_D_0v * exp(-diff_Q_v/RT);
   diff_D_b = diff_D_0b * exp(-diff_Q_b/RT);
   if (T > diff_crit_temp) diff_D_b *= 1000; // Coble creep scaling
   eps_diff = 14 * diff_V_m *
@@ -413,8 +413,8 @@ PetscScalar HybridIce::flow_from_temp(PetscScalar stress, PetscScalar temp,
 /*****************
 THE NEXT PROCEDURE REPEATS CODE; INTENDED ONLY FOR DEBUGGING
 *****************/
-GKparts HybridIce::flowParts(PetscScalar stress,PetscScalar temp,PetscScalar pressure) const {
-  PetscScalar gs, eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
+GKparts HybridIce::flowParts(PetscReal stress,PetscReal temp,PetscReal pressure) const {
+  PetscReal gs, eps_diff, eps_disl, eps_basal, eps_gbs, diff_D_b;
   GKparts p;
 
   if (PetscAbs(stress) < 1e-10) {
@@ -422,11 +422,11 @@ GKparts HybridIce::flowParts(PetscScalar stress,PetscScalar temp,PetscScalar pre
     p.eps_diff=0.0; p.eps_disl=0.0; p.eps_gbs=0.0; p.eps_basal=0.0;
     return p;
   }
-  const PetscScalar T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
-  const PetscScalar pV = pressure * V_act_vol;
-  const PetscScalar RT = ideal_gas_constant * T;
+  const PetscReal T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
+  const PetscReal pV = pressure * V_act_vol;
+  const PetscReal RT = ideal_gas_constant * T;
   // Diffusional Flow
-  const PetscScalar diff_D_v = diff_D_0v * exp(-diff_Q_v/RT);
+  const PetscReal diff_D_v = diff_D_0v * exp(-diff_Q_v/RT);
   diff_D_b = diff_D_0b * exp(-diff_Q_b/RT);
   if (T > diff_crit_temp) diff_D_b *= 1000; // Coble creep scaling
   gs = d_grain_size;
@@ -462,15 +462,15 @@ HybridIceStripped::HybridIceStripped(MPI_Comm c,const char pre[],
 }
 
 
-PetscScalar HybridIceStripped::flow_from_temp(PetscScalar stress, PetscScalar temp, PetscScalar pressure, PetscScalar) const {
+PetscReal HybridIceStripped::flow_from_temp(PetscReal stress, PetscReal temp, PetscReal pressure, PetscReal) const {
   // note value of gs is ignored
   // note pressure only effects the temperature; the "P V" term is dropped
   // note no diffusional flow
-  PetscScalar eps_disl, eps_basal, eps_gbs;
+  PetscReal eps_disl, eps_basal, eps_gbs;
 
   if (PetscAbs(stress) < 1e-10) return 0;
-  const PetscScalar T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
-  const PetscScalar RT = ideal_gas_constant * T;
+  const PetscReal T = temp + (beta_CC_grad / (rho * standard_gravity)) * pressure;
+  const PetscReal RT = ideal_gas_constant * T;
   // NO Diffusional Flow
   // Dislocation Creep
   if (T > disl_crit_temp)

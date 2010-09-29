@@ -20,13 +20,13 @@
 ## # You can also hit 'tab' for completions.
 ## >
 ## \endverbatim
-## Next, start typing the name of a flag or parameter you want to change; hit <tab> to complete:
+## Next, start typing the name of a flag or parameter you want to change; hit [tab] to complete:
 ## \verbatim
-## > sta<tab><tab>
+## > sta[tab][tab]
 ## standard_gravity  start_year        
 ## > sta
 ## \endverbatim
-## typing "n<tab><return>" produces:
+## typing "n[tab][return]" produces:
 ## \verbatim 
 ## > standard_gravity
 ## 
@@ -34,7 +34,7 @@
 ## # Current value: standard_gravity = 9.8100000000000005
 ## #     New value: standard_gravity =
 ## \endverbatim
-## enter the new value (10, for example), press <return>; you would see
+## enter the new value (10, for example), press [return]; you would see
 ## \verbatim 
 ## # New value set: standard_gravity = 10.0
 ## 
@@ -46,13 +46,13 @@
 ## >
 ## \endverbatim
 ## 
-## Now you can select a different parameter or hit <return> to save to a file:
+## Now you can select a different parameter or hit [return] to save to a file:
 ## \verbatim
 ## Please enter the file name to save to or hit Return to save to the original file (lib/pism_config.nc).
 ## > g_equals_10.nc
 ## \endverbatim
-## Next, press <return> if you edited a PISM config file containing \b all the
-## parameters or type "pism_overrides<return>" to create a config to use with -config_override.
+## Next, press [return] if you edited a PISM config file containing \b all the
+## parameters or type "pism_overrides[return]" to create a config to use with -config_override.
 ## \verbatim
 ## > pism_overrides
 ## # Created variable pism_overrides in g_equals_10.nc.

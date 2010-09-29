@@ -448,17 +448,15 @@ $  cd cmake-build
 Now, run the following commands to configure, build and install PISM.
 \begin{verbatim}
 $  cmake ..
-$  make
 $  make install
 \end{verbatim}%$
 
 The default install prefix is \texttt{/usr/local}. To install executables in \texttt{/home/user/bin}, libraries in
 \texttt{/home/user/lib}, etc do
 \begin{verbatim}
-$  PISM_PREFIX=/home/user cmake ..
-$  make
+$  PISM_INSTALL_PREFIX=/home/user cmake ..
 $  make install
-\end{verbatim}
+\end{verbatim}%$
 
 Running \texttt{ccmake} instead of \texttt{cmake} displays a GUI allowing changing the installation directory and other build
 parameters.

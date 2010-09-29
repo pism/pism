@@ -293,7 +293,6 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
 
   const double enhancement_factor = config.get("enhancement_factor"),
                constant_grain_size = config.get("constant_grain_size");
-  const bool   do_cold_ice = config.get_flag("do_cold_ice_methods");
 
   // put "theta" from Schoof (2003) bed smoothness calculation in vWork2d[4]
   //   and the thickness relative to the smoothed bed in vWork2d[5]; each of

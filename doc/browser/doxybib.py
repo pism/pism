@@ -2,9 +2,9 @@
 import re
 from os import popen, system
 
-input  = "../ice_bib"
+input  = "ice_bib"
 bbl    = "texput.bbl"
-output = "doxybib.txt"
+output = "references.txt"
 
 notes = """
 \par Notes

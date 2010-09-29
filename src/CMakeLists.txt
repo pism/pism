@@ -32,6 +32,7 @@ add_library (pismmisc
   coupler/localMassBalance.cc
 )
 target_link_libraries (pismmisc pismudunits ${Pism_EXTERNAL_LIBS})
+add_dependencies(pismmisc pism_config)
 
 add_library (pismearth
   earth/PBLingleClark.cc
@@ -84,6 +85,7 @@ add_library (pismbase
 )
 target_link_libraries (pismbase pismearth pismmisc)
 
+
 add_library (pismverif
   verif/iCMthermo.cc
   verif/iceCompModel.cc
@@ -131,10 +133,11 @@ target_link_libraries (pismv pismverif pismbase)
 add_executable (pclimate pclimate.cc eismint/pgrn_atmosphere.cc)
 target_link_libraries (pclimate pismmisc)
 
-add_custom_target (pismconfig ALL
+add_custom_command (OUTPUT pism_config.nc
   COMMAND ncgen -o ${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_SOURCE_DIR}/pism_config.cdl
   DEPENDS pism_config.cdl
 )
+add_custom_target (pism_config DEPENDS pism_config.nc)
 
 install (TARGETS
   pismr pisms pismv pgrn pross pclimate ## executables
