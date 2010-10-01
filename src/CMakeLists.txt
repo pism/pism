@@ -51,7 +51,7 @@ set_source_files_properties (base/pism_default_config.cc
   PROPERTIES COMPILE_FLAGS -DPISM_DEFAULT_CONFIG_FILE='\"${Pism_DEFAULT_CONFIG_FILE}\"')
 set_source_files_properties (udunits/utlib.c
   PROPERTIES COMPILE_FLAGS
-  "-DUT_INSTALL_PATH='\"${CMAKE_INSTALL_PREFIX}/lib/pismudunits.dat\"' -DUT_SOURCE_PATH='\"${CMAKE_SOURCE_DIR}/src/udunits/pismudunits.dat\"'")
+  "-DUT_INSTALL_PATH='\"${CMAKE_INSTALL_PREFIX}/lib/pism/pismudunits.dat\"' -DUT_SOURCE_PATH='\"${CMAKE_SOURCE_DIR}/src/udunits/pismudunits.dat\"'")
 
 include_directories (base udunits)
 
@@ -107,6 +107,13 @@ add_library (pismudunits
   udunits/utscan.c
 )
 
+set (pism_libraries pismmisc pismearth pismverif pismbase pismudunits)
+foreach (lib ${pism_libraries})
+  set_target_properties(${lib}
+    PROPERTIES VERSION "${Pism_REVISION}"
+    SOVERSION "${Pism_REVISION}")
+endforeach()
+
 # Main executables:
 add_executable (pismr pismr.cc)
 
@@ -143,13 +150,13 @@ install (TARGETS
   pismr pisms pismv pgrn pross pclimate ## executables
   pismmisc pismverif pismbase pismearth pismudunits # libraries
   RUNTIME DESTINATION bin
-  LIBRARY DESTINATION lib
+  LIBRARY DESTINATION lib/pism
   ARCHIVE DESTINATION lib)
 
 install (FILES
   "udunits/pismudunits.dat"
   "${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc"
-  DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
+  DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pism")
 
 # miscellaneous executables needed by software tests
 set (UNIT_EXECS bedrough_test ssa_test flowlaw_test)
@@ -178,6 +185,5 @@ if (Pism_BUILD_EXTRA_EXECS)
   install (TARGETS
     ${SIMPLE_EXECS} tryLCbd pismtests flowTable
     RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib)
 endif (Pism_BUILD_EXTRA_EXECS)

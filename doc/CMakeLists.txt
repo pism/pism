@@ -7,7 +7,7 @@ if (PDFLATEX_COMPILER)
 endif()
 
 if (PDFLATEX_COMPILER AND Pism_BUILD_DOCS)
-  file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/revision.tex "${Pism_WC_REVISION}")
+  file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/revision.tex "${Pism_REVISION}")
 
   # Installation manual and the cheatsheet:
   foreach (NAME installation cheatsheet)

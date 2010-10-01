@@ -146,7 +146,7 @@ The following table lists the \emph{required} dependencies for PISM, arranged al
 \newcommand\pairstack[2]{#1 \quad (\small#2\normalsize)}
 \begin{center}
 \begin{tabular*}{1.0\linewidth}{lp{0.5\linewidth}}\toprule
-  \textbf{Required Library} & \textbf{Comment} \\
+  \textbf{Required Program or Library} & \textbf{Comment} \\
   \midrule
   \pairstack{GSL}{\href{http://www.gnu.org/software/gsl/}{\t{www.gnu.org/software/gsl}}}  &  \\
   \pairstack{MPI}{\href{http://www-unix.mcs.anl.gov/mpi/}{\t{www-unix.mcs.anl.gov/mpi}}}  & \\
@@ -529,13 +529,13 @@ Please refer to \ref{sec:pism-itself} for details.
 \end{enumerate}
 
 \clearpage
-\subsection{If nothing else works: modifying makefiles}
+\subsection{If it still does not work}
 \label{subsec:config}
 
 On some platforms it is necessary to use compiler or linker flags different from ones used on
-Linux, the default.  This can be done by editing the top-level makefile (\texttt{Makefile}) or \texttt{build/Makefile}, but here is a more robust approach.
+Linux, the default.
 
-Set the environment variable \texttt{PISM_CONFIG} to \texttt{config/foo} to include the file \texttt{config/foo} into the makefile.  It is included \emph{after} all the flags, both compiler and linker, are defined, so it is possible to override any of them.   This is the way the PISM build process works on Mac OS X, using \texttt{PISM_CONFIG=config/macosx_macports}.  There are two advantages of this approach: first, settings for different systems can be kept separate.  Second, this allows building PISM on different systems using the same set of makefiles, so an \texttt{svn update} is less likely to break the build process on your system.
+FIXME: describe modifying compiler and linker flags with CMake.
 
 \clearpage
 \section{Quick tests of the installation}
