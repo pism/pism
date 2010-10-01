@@ -37,6 +37,7 @@ if (Pism_BUILD_TYPE MATCHES "Debug")
   option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings" OFF)
 endif (Pism_BUILD_TYPE MATCHES "Debug")
 
+set (Pism_BRANCH "trunk")
 # Set Pism_REVISION
 # Git
 if (EXISTS ${Pism_SOURCE_DIR}/.git)
@@ -53,19 +54,20 @@ if (EXISTS ${Pism_SOURCE_DIR}/.git)
     OUTPUT_VARIABLE Pism_GIT_LOG)
   string (REGEX REPLACE "\"(.*)\"" "\\1" Pism_GIT_LOG "${Pism_GIT_LOG}")
   string (REGEX REPLACE "'" "" Pism_GIT_LOG "${Pism_GIT_LOG}")
-  set (Pism_REVISION "trunk ${Pism_SVN_REVISION}")
-  #set (Pism_REVISION "${Pism_SVN_REVISION}")
+  set (Pism_REVISION "${Pism_SVN_REVISION}")
 endif (EXISTS ${Pism_SOURCE_DIR}/.git)
 # Subversion
 if (EXISTS ${Pism_SOURCE_DIR}/.svn)
   find_package (Subversion REQUIRED)
   Subversion_WC_INFO (${Pism_SOURCE_DIR} Pism)
-  set (Pism_REVISION "trunk ${Pism_WC_REVISION}")
+  set (Pism_REVISION "${Pism_WC_REVISION}")
 endif (EXISTS ${Pism_SOURCE_DIR}/.svn)
 # Otherwise...
 if (NOT Pism_REVISION)
-  set (Pism_REVISION "trunk unknown revision")
+  set (Pism_REVISION "0")
 endif (NOT Pism_REVISION)
+
+set (Pism_REVISION_TAG "${Pism_BRANCH} ${Pism_REVISION}")
 
 # set Pism_DEFAULT_CONFIG_FILE
 if (NOT Pism_DEFAULT_CONFIG_FILE)
@@ -141,7 +143,7 @@ set (CPACK_DEBIAN_PACKAGE_SUGGESTS "nco")
 
 set (CPACK_PACKAGE_CONTACT "Constantine Khroulev <ckhroulev@alaska.edu>")
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "PISM, A Parallel Ice Sheet Model (development version)")
-set (CPACK_PACKAGE_NAME "pism-trunk")
+set (CPACK_PACKAGE_NAME "pism-${Pism_BRANCH}")
 set (CPACK_PACKAGE_VENDOR "PISM Developers")
 set (CPACK_PACKAGE_VERSION_MAJOR "0")
 set (CPACK_PACKAGE_VERSION_MINOR "3")
