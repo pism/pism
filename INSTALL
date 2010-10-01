@@ -17,7 +17,7 @@ installed and functioning before PISM can be built, so we assume now that
 PETSC_DIR and PETSC_ARCH are set properly.  If FFTW is not available do 
 "export WITH_FFTW=0".  Now do:
 
-  $ cd pism-dev/
+  $ cd pism0.3/
   $ make
   $ PATH=bin/:util/:$PATH
 
