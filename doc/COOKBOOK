@@ -48,13 +48,14 @@ Ed's cookbook for maintaining PISM:
 4)  How big is the PISM source code?
 
    $ cd src
-   $ wc -l *.cc base/*.hh base/*.cc coupler/*.hh coupler/*.cc eismint/*.hh eismint/*.cc \
-           ismip/*.hh ismip/*.cc verif/*.hh verif/*.cc verif/*.c \
-           ../examples/*/*.py ../examples/*/*.sh
+   $ wc -l *.cc base/*.hh base/*.cc coupler/*.hh coupler/*.cc \
+           eismint/*.hh eismint/*.cc earth/*.hh earth/*.cc trypetsc/l*.c \
+           verif/*.hh verif/*.cc verif/tests/*.h verif/tests/*.c \
+           ../examples/*/*.py ../examples/*/*.sh ../test/*/*/*.sh
    
-  In r504 this gives 34,019 lines.  Another way to count is to use  wc -c  on the same
-  files.  In r504 this gives 1325585 characters or about 16,000 (= 1325585.0 / 81.0) lines
-  if a line is defined as 80 screen characters.
+  In r1254 this gives 44,586 lines.  Another way to count is to use  wc -c  on
+  the same files.  In r1254 this gives 1575926 characters or about 19,700 lines
+  if a line is 80 characters.
   
-  The biggest files are base/iceModelVec.cc and base/nc_util.cc.
+  The biggest files in r1254 are base/iMreport.cc and base/NCVariable.cc.
 

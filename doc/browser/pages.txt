@@ -1,7 +1,7 @@
 
 // adds commentary and GPL to first page of doxygen-erated HTML browser
 
-/*! \mainpage Source Code Browser
+/*! \mainpage PISM Source Code Browser
 
 This searchable \e Browser shows the C++ class (object) structure of
 PISM, the <a href="http://www.pism-docs.org/">Parallel Ice Sheet Model</a>.  It
