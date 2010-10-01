@@ -42,7 +42,7 @@ add_library (pismearth
 target_link_libraries (pismearth pismmisc)
 
 set_source_files_properties (base/pism_revision.cc
-  PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION}\"')
+  PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
 set_source_files_properties (base/pism_default_config.cc
   PROPERTIES COMPILE_FLAGS -DPISM_DEFAULT_CONFIG_FILE='\"${Pism_DEFAULT_CONFIG_FILE}\"')
 set_source_files_properties (udunits/utlib.c
