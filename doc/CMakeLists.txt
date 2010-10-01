@@ -1,5 +1,6 @@
 # Find latex and create doc targets:
 find_package(LATEX)
+find_package(Doxygen)
 
 # Only offer to build docs if LaTeX is found.
 if (PDFLATEX_COMPILER)
@@ -20,7 +21,7 @@ if (PDFLATEX_COMPILER AND Pism_BUILD_DOCS)
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     install (FILES "${CMAKE_CURRENT_BINARY_DIR}/${NAME}.pdf"
-      DESTINATION doc/)
+      DESTINATION share/doc/pism)
   endforeach ()
 
   # User's Manual:
@@ -57,7 +58,7 @@ if (PDFLATEX_COMPILER AND Pism_BUILD_DOCS)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   install (FILES "${CMAKE_CURRENT_BINARY_DIR}/manual.pdf"
-    DESTINATION doc/)
+    DESTINATION share/doc/pism)
 
   # A global target that gets built with "make all". Ensures that PISM
   # documentation is built for "make install"
@@ -120,7 +121,7 @@ if (PDFLATEX_COMPILER AND Pism_BUILD_DOCS)
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser)
 
     install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser/html
-      DESTINATION doc)
+      DESTINATION share/doc/pism)
 
   endif()
 endif ()

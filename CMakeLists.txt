@@ -2,7 +2,7 @@ project (Pism)
 
 cmake_minimum_required (VERSION 2.6.2)
 
-# Put eecutables in the build directory:
+# Put executables in the build directory:
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 
 # Allow setting a custom install prefix using the PISM_PREFIX environment variable.
@@ -53,23 +53,23 @@ if (EXISTS ${Pism_SOURCE_DIR}/.git)
     OUTPUT_VARIABLE Pism_GIT_LOG)
   string (REGEX REPLACE "\"(.*)\"" "\\1" Pism_GIT_LOG "${Pism_GIT_LOG}")
   string (REGEX REPLACE "'" "" Pism_GIT_LOG "${Pism_GIT_LOG}")
-  set (Pism_REVISION "${Pism_SVN_REVISION}")
+  set (Pism_REVISION "trunk ${Pism_SVN_REVISION}")
   #set (Pism_REVISION "${Pism_SVN_REVISION}")
 endif (EXISTS ${Pism_SOURCE_DIR}/.git)
 # Subversion
 if (EXISTS ${Pism_SOURCE_DIR}/.svn)
   find_package (Subversion REQUIRED)
   Subversion_WC_INFO (${Pism_SOURCE_DIR} Pism)
-  set (Pism_REVISION "${Pism_WC_REVISION}")
+  set (Pism_REVISION "trunk ${Pism_WC_REVISION}")
 endif (EXISTS ${Pism_SOURCE_DIR}/.svn)
 # Otherwise...
 if (NOT Pism_REVISION)
-  set (Pism_REVISION "Unknown revision")
+  set (Pism_REVISION "trunk unknown revision")
 endif (NOT Pism_REVISION)
 
 # set Pism_DEFAULT_CONFIG_FILE
 if (NOT Pism_DEFAULT_CONFIG_FILE)
-  set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/lib/pism_config.nc")
+  set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/lib/pism/pism_config.nc")
 endif ()
 
 # We could set this here, but it forces a full recompile if the version
@@ -114,32 +114,30 @@ set (CMAKE_SKIP_BUILD_RPATH  FALSE)
 # (but later on when installing)
 set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
 # the RPATH to be used when installing
-set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/pism")
 # add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
 set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Mac OS X install_name fix:
-set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
+set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib/pism")
 
 add_subdirectory (src)
 add_subdirectory (doc)
 
 # Packaging:
 if (APPLE)
-  set (CPACK_GENERATOR "TGZ")
+  set (CPACK_GENERATOR "TGZ")   # just so that we can test it (it's quite useless)
 else()
   set (CPACK_GENERATOR "DEB")
 endif()
 
-#set (CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_SOURCE_DIR}/README.txt")
-set (CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/debian/control_extra")
-set (CPACK_DEBIAN_PACKAGE_DEPENDS "libfftw3-3, libpetsc3.0.0, libnetcdf4, libgsl0ldbl")
+#set (CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/debian/control_extra")
+set (CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libfftw3-3, libpetsc3.0.0, libnetcdf4, libgsl0ldbl")
 set (CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
 set (CPACK_DEBIAN_PACKAGE_RECOMMENDS "ncview, python-numpy")
 set (CPACK_DEBIAN_PACKAGE_SECTION "science")
 set (CPACK_DEBIAN_PACKAGE_SUGGESTS "nco")
-set (CPACK_INSTALL_PREFIX "/usr")
 
 set (CPACK_PACKAGE_CONTACT "Constantine Khroulev <ckhroulev@alaska.edu>")
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "PISM, A Parallel Ice Sheet Model (development version)")
@@ -149,8 +147,6 @@ set (CPACK_PACKAGE_VERSION_MAJOR "0")
 set (CPACK_PACKAGE_VERSION_MINOR "3")
 set (CPACK_PACKAGE_VERSION_PATCH "${Pism_REVISION}")
 
-set (CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYING")
-#set (CPACK_RESOURCE_FILE_README "")
 set (CPACK_SET_DESTDIR ON)
 set (CPACK_STRIP_FILES ON)
 

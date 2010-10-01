@@ -107,13 +107,6 @@ add_library (pismudunits
   udunits/utscan.c
 )
 
-set (pism_libraries pismmisc pismearth pismverif pismbase pismudunits)
-foreach (lib ${pism_libraries})
-  set_target_properties(${lib}
-    PROPERTIES VERSION "${Pism_REVISION}"
-    SOVERSION "${Pism_REVISION}")
-endforeach()
-
 # Main executables:
 add_executable (pismr pismr.cc)
 
@@ -185,5 +178,5 @@ if (Pism_BUILD_EXTRA_EXECS)
   install (TARGETS
     ${SIMPLE_EXECS} tryLCbd pismtests flowTable
     RUNTIME DESTINATION bin
-    ARCHIVE DESTINATION lib)
+    ARCHIVE DESTINATION lib/pism)
 endif (Pism_BUILD_EXTRA_EXECS)
