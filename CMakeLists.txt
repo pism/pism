@@ -53,17 +53,17 @@ if (EXISTS ${Pism_SOURCE_DIR}/.git)
     OUTPUT_VARIABLE Pism_GIT_LOG)
   string (REGEX REPLACE "\"(.*)\"" "\\1" Pism_GIT_LOG "${Pism_GIT_LOG}")
   string (REGEX REPLACE "'" "" Pism_GIT_LOG "${Pism_GIT_LOG}")
-  set (Pism_REVISION "${Pism_SVN_REVISION}")
+  set (Pism_REVISION "stable0.3 ${Pism_SVN_REVISION}")
 endif (EXISTS ${Pism_SOURCE_DIR}/.git)
 # Subversion
 if (EXISTS ${Pism_SOURCE_DIR}/.svn)
   find_package (Subversion REQUIRED)
   Subversion_WC_INFO (${Pism_SOURCE_DIR} Pism)
-  set (Pism_REVISION "${Pism_WC_REVISION}")
+  set (Pism_REVISION "stable0.3 ${Pism_WC_REVISION}")
 endif (EXISTS ${Pism_SOURCE_DIR}/.svn)
 # Otherwise...
 if (NOT Pism_REVISION)
-  set (Pism_REVISION "Unknown revision")
+  set (Pism_REVISION "stable0.3 unknown revision")
 endif (NOT Pism_REVISION)
 
 # set Pism_DEFAULT_CONFIG_FILE

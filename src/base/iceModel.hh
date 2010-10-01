@@ -460,6 +460,7 @@ protected:
 private:
   // for event logging (profiling); see run() and velocity()
   int siaEVENT, ssaEVENT, velmiscEVENT, beddefEVENT, massbalEVENT, tempEVENT;
+  PetscLogDouble start_time;
 };
 
 #endif /* __iceModel_hh */

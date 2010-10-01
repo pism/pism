@@ -765,5 +765,7 @@ PetscErrorCode IceModel::init() {
   //! The following flow-chart illustrates the process.
   //! \dotfile initialization-sequence.dot IceModel initialization sequence
 
+  ierr = PetscGetTime(&start_time); CHKERRQ(ierr);
+
   return 0; 
 }
