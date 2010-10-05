@@ -1,4 +1,7 @@
 project (Pism)
+set (Pism_BRANCH "stable")
+set (Pism_VERSION_MAJOR "0")
+set (Pism_VERSION_MINOR "3")
 
 cmake_minimum_required (VERSION 2.6.2)
 
@@ -37,7 +40,6 @@ if (Pism_BUILD_TYPE MATCHES "Debug")
   option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings" OFF)
 endif (Pism_BUILD_TYPE MATCHES "Debug")
 
-set (Pism_BRANCH "stable0.3")
 # Set Pism_REVISION
 # Git
 if (EXISTS ${Pism_SOURCE_DIR}/.git)
@@ -67,7 +69,7 @@ if (NOT Pism_REVISION)
   set (Pism_REVISION "0")
 endif (NOT Pism_REVISION)
 
-set (Pism_REVISION_TAG "${Pism_BRANCH} ${Pism_REVISION}")
+set (Pism_REVISION_TAG "${Pism_BRANCH} ${Pism_VERSION_MAJOR}.${Pism_VERSION_MINOR}.${Pism_REVISION}")
 
 # set Pism_DEFAULT_CONFIG_FILE
 if (NOT Pism_DEFAULT_CONFIG_FILE)
@@ -142,10 +144,18 @@ set (CPACK_DEBIAN_PACKAGE_SUGGESTS "nco")
 
 set (CPACK_PACKAGE_CONTACT "Constantine Khroulev <ckhroulev@alaska.edu>")
 set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "PISM, A Parallel Ice Sheet Model (development version)")
+set (CPACK_PACKAGE_DESCRIPTION "The Parallel Ice Sheet Model project provides an open source, fully-parallel, high-resolution ice sheet model. It has these features:
+* a hierarchy of available stress balances, including shallow ice and shelf approximations and a hybrid of these
+* verification and validation tools
+* a polythermal, enthalpy-based conservation of energy scheme
+* extensible coupling to atmospheric and ocean models
+* complete documentation for users and developers
+
+Please see http://www.pismdocs.org/ for more information.")
 set (CPACK_PACKAGE_NAME "pism-${Pism_BRANCH}")
 set (CPACK_PACKAGE_VENDOR "PISM Developers")
-set (CPACK_PACKAGE_VERSION_MAJOR "0")
-set (CPACK_PACKAGE_VERSION_MINOR "3")
+set (CPACK_PACKAGE_VERSION_MAJOR "${Pism_VERSION_MAJOR}")
+set (CPACK_PACKAGE_VERSION_MINOR "${Pism_VERSION_MINOR}")
 set (CPACK_PACKAGE_VERSION_PATCH "${Pism_REVISION}")
 
 set (CPACK_SET_DESTDIR ON)

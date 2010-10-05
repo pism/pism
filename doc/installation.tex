@@ -426,7 +426,39 @@ export PATH=/home/user/pism0.3/bin:/home/user/pism0.3/util:$PATH
 \item See the \emph{Getting Started} section \emph{User's Manual} to continue.
 \end{enumerate}
 
+\subsubsection{Installing PISM using the CMake build system}
+\label{sec:install-cmake}
 
+It is also possible to build and install PISM using CMake.
+
+To use this route, get PISM sources as described above.
+\begin{verbatim}
+$  svn co http://svn.gna.org/svn/pism/tags/stable0.3 pism0.3
+$  cd pism0.3
+\end{verbatim}
+
+Then create a directory to build in (CMake allows and recomends out-of-source builds) and make sure that \texttt{PETSC_ARCH} and
+\texttt{PETSC_DIR} variables are set.
+\begin{verbatim}
+$  mkdir cmake-build
+$  cd cmake-build
+\end{verbatim}
+
+Now, run the following commands to configure, build and install PISM.
+\begin{verbatim}
+$  cmake ..
+$  make install
+\end{verbatim}%$
+
+The default install prefix is \texttt{/usr/local}. To install executables in \texttt{/home/user/bin}, libraries in
+\texttt{/home/user/lib}, etc do
+\begin{verbatim}
+$  PISM_INSTALL_PREFIX=/home/user cmake ..
+$  make install
+\end{verbatim}%$
+
+Running \texttt{ccmake} instead of \texttt{cmake} displays a GUI allowing changing the installation directory and other build
+parameters.
 
 \clearpage
 \subsection{Installing PISM on Mac OS X}  \label{subsec:macosx}
