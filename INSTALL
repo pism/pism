@@ -5,7 +5,7 @@ All information about PISM can be found at
 
    www.pism-docs.org
    
-To download the trunk use subversion:
+To download the trunk, namely "pism-dev", use subversion:
 
    svn co http://svn.gna.org/svn/pism/trunk pism-dev
 
@@ -13,15 +13,37 @@ For complete installation instructions get the PISM Installation Manual (PDF)
 from www.pism-docs.org.
 
 Intallation high points:  PETSc (http://www-unix.mcs.anl.gov/petsc/) must be
-installed and functioning before PISM can be built, so we assume now that
+installed and functioning before PISM can be built.  In fact we assume now that
 PETSC_DIR and PETSC_ARCH are set properly.  If FFTW is not available do 
-"export WITH_FFTW=0".  Now do:
+"export WITH_FFTW=0".
 
-  $ cd pism-dev/
+Now do:
+
+  $ cd build/
+  $ cmake ..
   $ make
-  $ PATH=bin/:util/:$PATH
+  $ make install    # puts PISM binaries in /usr/local/bin/ and
+                    # /usr/local/lib/  (note: may require "sudo")
+  
+If you want to specify a directory where PISM executables should be put, for
+example into /home/user/bin/, it looks like this:
+  $ cd build/
+  $ PISM_PREFIX=/home/user cmake ..
+  $ make
+  $ make install
+  $ PATH=bin/:util/:$PATH  # or similar: make sure PATH includes the PISM executables
+You can check that the PISM executables can be found by something like:
+  $ which pismr
+and this should tell you a directory in which executable "pismr" is found.
 
 Now run a simplified geometry experiment with 2 processes
+
+  $ pisms
+
+Everything is working if this run goes for 1000 model years and ends with
+"... done with run".
+
+With 2 processes:
 
   $ mpiexec -n 2 pisms
 
@@ -29,6 +51,6 @@ To get source code updates including bug fixes, do
 
   $ svn up
 
-We have written a good PISM User's Manual (PDF) which will explain most of what
-you want to know.  Find it at (you guessed it ...) www.pism-docs.org.
+We have written a PISM User's Manual (PDF) which will explain most of what
+you want to know.  We hope.  Find it at (you guessed it ...) www.pism-docs.org.
 

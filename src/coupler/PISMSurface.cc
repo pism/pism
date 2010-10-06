@@ -721,6 +721,10 @@ PetscErrorCode PSForceThickness::write_model_state(PetscReal t_years, PetscReal 
 
   ierr = input_model->write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
 
+  // FIXME, probably:  this version *always* writes the ftt_mask, even if it
+  //   is all filled with ones
+  ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr);
+  
   return 0;
 }
 
