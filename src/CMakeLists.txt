@@ -110,6 +110,8 @@ add_library (pismudunits
 # Main executables:
 add_executable (pismr pismr.cc)
 
+add_executable (pismo pismo.cc)
+
 add_executable (pisms pisms.cc 
   eismint/iceEISModel.cc
   eismint/icePSTexModel.cc
@@ -120,7 +122,7 @@ add_executable (pgrn eismint/pgrn.cc eismint/pgrn_atmosphere.cc)
 add_executable (pross eismint/pross.cc eismint/iceROSSModel.cc)
 
 # All of the following are linked against pismbase
-foreach (EXEC pismr pisms pgrn pross)
+foreach (EXEC pismr pismo pisms pgrn pross)
   target_link_libraries (${EXEC} pismbase)
 endforeach (EXEC)
 
@@ -140,7 +142,7 @@ add_custom_command (OUTPUT pism_config.nc
 add_custom_target (pism_config DEPENDS pism_config.nc)
 
 install (TARGETS
-  pismr pisms pismv pgrn pross pclimate ## executables
+  pismr pismo pisms pismv pgrn pross pclimate ## executables
   pismmisc pismverif pismbase pismearth pismudunits # libraries
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib/pism

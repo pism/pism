@@ -513,7 +513,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 				    "land_ice_thickness"); CHKERRQ(ierr); // standard_name to read by
 
   ierr = ftt_mask.create(grid, "ftt_mask", false); CHKERRQ(ierr);
-  ierr = ftt_mask.set_attrs("internal",
+  ierr = ftt_mask.set_attrs("climate_state",
                             "mask specifying whether to apply the force-to-thickness mechanism",
                             "", ""); CHKERRQ(ierr); // no units and no standard name
   ierr = ftt_mask.set(1.0); CHKERRQ(ierr);          // apply to the whole model
