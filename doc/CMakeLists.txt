@@ -8,7 +8,7 @@ if (PDFLATEX_COMPILER)
 endif()
 
 if (PDFLATEX_COMPILER AND Pism_BUILD_DOCS)
-  file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/revision.tex "${Pism_REVISION}")
+  file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/revision.tex "${Pism_REVISION_TAG}")
 
   # Installation manual and the cheatsheet:
   foreach (NAME installation cheatsheet)
@@ -74,14 +74,14 @@ if (PDFLATEX_COMPILER AND Pism_BUILD_DOCS)
       browser/config_doc.py
       browser/doxybib.bst
       browser/doxybib.py
-      ice_bib.bib
-
       browser/bedrough.txt
       browser/bombproof_enth.txt
       browser/pages.txt
       browser/std_names.txt
       browser/vertchange.txt
       )
+
+    configure_file (ice_bib.bib browser/ice_bib.bib COPYONLY)
 
     # copy all the files needed to generate browser sources
     foreach (filename ${browser_helpers})

@@ -362,7 +362,7 @@ PetscErrorCode IceModel::set_output_size(string option,
     }
 
     if (!config.get_flag("do_age"))
-      result.remove("age");
+      result.erase("age");
 
     return 0;
   } else {

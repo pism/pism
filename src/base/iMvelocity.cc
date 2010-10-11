@@ -63,8 +63,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     ierr = verbPrintf(5,grid.com, "{velocitySIAStaggered()}"); CHKERRQ(ierr);
 
     // no need to communicate uvbar for boundary conditions for SSA and
-    // vertAveragedVelocityToRegular() and velocities2DSIAToRegular(): w=1
-    // ghosts were updated locally
+    // velocities2DSIAToRegular(): w=1 ghosts were updated locally
 
     if (mu_sliding == 0.0) { // no need to spend time on nothing
       ierr = vel_basal.set(0.0); CHKERRQ(ierr);

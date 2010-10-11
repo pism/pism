@@ -460,7 +460,7 @@ This routine is only called, by velocity(), if \f$\mu\f$=\c mu_sliding is
 non-zero.
 
 THIS KIND OF SIA SLIDING LAW IS A BAD IDEA.  THAT'S WHY \f$\mu\f$ IS SET TO 
-ZERO BY DEFAULT.  See Appendix B of \ref BBssasliding for the dangers in this
+ZERO BY DEFAULT.  See Appendix B of [\ref BBssasliding] for the dangers in this
 mechanism.
 
 This routine calls the SIA-type sliding law, which may return zero in the
@@ -743,7 +743,7 @@ temperature, and the horizontal location.
 
 The default version for IceModel here is location-independent 
 pressure-melting-temperature-activated linear sliding.  See Appendix B of
-\ref BBssasliding for the dangers in this mechanism.
+[\ref BBssasliding] for the dangers in this mechanism.
 
 Parameter \f$\mu\f$ can be set by option \c -mu_sliding.
 

@@ -571,10 +571,18 @@ coarse grid (stored in \texttt{foo.nc}) and you want to continue this run on a
 finer grid. This can be done using \texttt{-regrid_file} along with
 \texttt{-boot_file}\index{refining the grid}:
 \begin{verbatim}
-$ pismr -boot_file foo.nc -Mx 201 -My 201 -Mz 21 -Mbz 21 -Lz 4000 \
-        -regrid_from foo.nc -regrid_vars litho_temp,age,temp -y 100 -o bar.nc
+$ pismr -boot_file foo.nc -Mx 201 -My 201 -Mz 21 -Lz 4000 \
+        -regrid_file foo.nc -regrid_vars litho_temp,enthalpy -y 100 -o bar.nc \
+        -surface constant
 \end{verbatim}
-In this case all the model-state 2D variables present in \texttt{foo.nc} will be interpolated onto the new grid during bootstrapping, which happens first, while three-dimensional variables are filled using heuristics mentioned in section \ref{sect:boot}.  Then temperature in bedrock (\texttt{litho_temp})\footnote{Assumes that foo.nc has \t{Mbz}$>1$.}, age of the ice (\texttt{age}) and ice temperature (\texttt{temp}) will be interpolated from \texttt{foo.nc} onto the new grid during the regridding stage, overriding values set at the bootstrapping stage.  All of this, bootstrapping and regridding, occurs before the first timestep.
+In this case all the model-state 2D variables present in \texttt{foo.nc} will
+be interpolated onto the new grid during bootstrapping, which happens first,
+while three-dimensional variables are filled using heuristics mentioned in
+section \ref{sect:boot}.  Then temperature in bedrock (\texttt{litho_temp}) and
+ice enthalpy (\texttt{temp}) will be interpolated from \texttt{foo.nc} onto the
+new grid during the regridding stage, overriding values set at the
+bootstrapping stage.  All of this, bootstrapping and regridding, occurs before
+the first timestep.
 
 
 \newcommand\pid{\textsl{pid}s}

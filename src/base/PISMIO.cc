@@ -805,7 +805,7 @@ PetscErrorCode PISMIO::create_dimensions() const {
     stat = nc_def_var(ncid, "t", NC_DOUBLE, 1, &dimid, &t); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_put_att_text(ncid, t, "long_name", 4, "time"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, t, "units", 17, "years since 1-1-1"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, t, "calendar", 4, "none"); check_err(stat,__LINE__,__FILE__);
+    stat = nc_put_att_text(ncid, t, "calendar", 7, "365_day"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, t, "axis", 1, "T"); check_err(stat,__LINE__,__FILE__);
     // x
     stat = nc_def_dim(ncid, "x", grid->Mx, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
