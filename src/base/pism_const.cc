@@ -590,6 +590,13 @@ PetscErrorCode PISMOptionsString(string option, string text,
 
   is_set = (flag == PETSC_TRUE);
 
+  if (is_set && (strlen(tmp) == 0)) {
+    ierr = PetsPrintf(PETSC_COMM_WORLD,
+                      "ERROR: command line option '%s' requires an argument.\n",
+                      option.c_str()); CHKERRQ(ierr);
+    PetscEnd();
+  }
+
   if (is_set)
     result = tmp;
 
@@ -614,8 +621,15 @@ PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_va
     while (getline(arg, word, ','))
       result.push_back(word);
 
+    if (result.empty()) {
+      ierr = PetsPrintf(PETSC_COMM_WORLD,
+                        "ERROR: command line option '%s' requires an argument.\n",
+                        opt.c_str()); CHKERRQ(ierr);
+      PetscEnd();
+    }
+
     flag = true;
-  } else {
+  } else {                      // parse the default list given
     istringstream arg(default_value);
     while (getline(arg, word, ','))
       result.push_back(word);

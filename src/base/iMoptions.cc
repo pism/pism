@@ -360,8 +360,11 @@ PetscErrorCode IceModel::set_output_size(string option,
       if (!tmp.empty())		// this ignores multiple spaces separating variable names
 	result.insert(tmp);
     }
-    return 0;
 
+    if (!config.get_flag("do_age"))
+      result.remove("age");
+
+    return 0;
   } else {
     SETERRQ(1, "can't happen");
   }
