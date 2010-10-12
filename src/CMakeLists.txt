@@ -21,6 +21,11 @@ add_library (pismmisc
   base/pism_default_config.cc
   base/pism_revision.cc
   base/pism_signal.c
+  )
+target_link_libraries (pismmisc pismudunits ${Pism_EXTERNAL_LIBS})
+add_dependencies(pismmisc pism_config)
+
+add_library (pismboundary
   coupler/PAConstant.cc
   coupler/PAForcing.cc
   coupler/PALapseRates.cc
@@ -30,9 +35,9 @@ add_library (pismmisc
   coupler/PISMSurface.cc
   coupler/iceModelVec2T.cc
   coupler/localMassBalance.cc
-)
-target_link_libraries (pismmisc pismudunits ${Pism_EXTERNAL_LIBS})
-add_dependencies(pismmisc pism_config)
+  coupler/PSExternal.cc
+  )
+target_link_libraries (pismboundary pismmisc)
 
 add_library (pismearth
   earth/PBLingleClark.cc
@@ -83,7 +88,7 @@ add_library (pismbase
   base/iMviewers.cc
   base/iceModel.cc
 )
-target_link_libraries (pismbase pismearth pismmisc)
+target_link_libraries (pismbase pismearth pismboundary pismmisc)
 
 
 add_library (pismverif
@@ -133,7 +138,7 @@ add_executable (pismv pismv.cc
 target_link_libraries (pismv pismverif pismbase)
 
 add_executable (pclimate pclimate.cc eismint/pgrn_atmosphere.cc)
-target_link_libraries (pclimate pismmisc)
+target_link_libraries (pclimate pismboundary)
 
 add_custom_command (OUTPUT pism_config.nc
   COMMAND ncgen -o ${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_SOURCE_DIR}/pism_config.cdl
@@ -143,15 +148,15 @@ add_custom_target (pism_config DEPENDS pism_config.nc)
 
 install (TARGETS
   pismr pismo pisms pismv pgrn pross pclimate ## executables
-  pismmisc pismverif pismbase pismearth pismudunits # libraries
+  pismmisc pismboundary pismverif pismbase pismearth pismudunits # libraries
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib/pism
-  ARCHIVE DESTINATION lib)
+  ARCHIVE DESTINATION lib/pism)
 
 install (FILES
   "udunits/pismudunits.dat"
   "${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc"
-  DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pism")
+  DESTINATION lib/pism)
 
 # miscellaneous executables needed by software tests
 set (UNIT_EXECS bedrough_test ssa_test flowlaw_test)

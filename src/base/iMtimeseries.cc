@@ -633,17 +633,6 @@ PetscErrorCode IceModel::write_extras() {
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = write_variables(filename, extra_vars, NC_FLOAT);  CHKERRQ(ierr);
-
-  if (surface != PETSC_NULL) {
-    ierr = surface->write_fields(extra_vars, grid.year, dt / secpera, filename); CHKERRQ(ierr);
-  } else {
-    SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
-  }
-  if (ocean != PETSC_NULL) {
-    ierr = ocean->write_fields(extra_vars, grid.year, dt / secpera, filename); CHKERRQ(ierr);
-  } else {
-    SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
-  }
     
   return 0;
 }

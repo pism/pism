@@ -215,6 +215,10 @@ public:
   { delete input_model; }
 
   virtual void attach_input(PISMSurfaceModel *input);
+  virtual void add_vars_to_output(string key, set<string> &result) {
+    if (input_model != NULL)
+      add_vars_to_output(key, result);
+  }
 protected:
   PISMSurfaceModel *input_model;
 };
@@ -229,6 +233,7 @@ public:
   {
     ice_thickness = NULL;
     alpha = config.get("force_to_thickness_alpha");
+    write_ftt_mask = false;
   }
 
   virtual ~PSForceThickness() {}
@@ -245,9 +250,11 @@ public:
                                       PetscReal dt_years, string filename);
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 						 string filename);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
 protected:
   string input_file;
   PetscReal alpha;
+  bool write_ftt_mask;
   IceModelVec2S *ice_thickness;	//!< current ice thickness produced by IceModel.
   IceModelVec2S target_thickness, ftt_mask, ftt_modified_acab;
 };

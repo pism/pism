@@ -155,6 +155,10 @@ public:
   { delete input_model; }
 
   virtual void attach_input(PISMAtmosphereModel *input);
+  virtual void add_vars_to_output(string key, set<string> &result) {
+    if (input_model != NULL)
+      add_vars_to_output(key, result);
+  }
 protected:
   PISMAtmosphereModel *input_model;
 };

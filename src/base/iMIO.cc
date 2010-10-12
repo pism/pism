@@ -119,7 +119,6 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
 
   ierr = write_extra_fields(filename); CHKERRQ(ierr); // chance for derived classes to do more
 
-
   return 0;
 }
 
@@ -148,7 +147,8 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
     }
   }
 
-  // All the remaining names in vars must be of diagnostic quantities.
+  // All the remaining names in vars must be of diagnostic quantities or filds
+  // written by other PISM components.
   i = vars.begin();
   while (i != vars.end()) {
     ierr = compute_by_name(*i, v); CHKERRQ(ierr);
@@ -163,12 +163,24 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
 
   // check if we have any variables we didn't write
   if (!vars.empty()) {
-    ierr = verbPrintf(2, grid.com,
-		      "PISM WARNING: the following variables were *not* written: "); CHKERRQ(ierr);
+    ierr = verbPrintf(3, grid.com,
+		      "PISM WARNING: the following variables were *not* written by the PISM core: "); CHKERRQ(ierr);
     for (i = vars.begin(); i != vars.end(); ++i) {
-      ierr = verbPrintf(2, grid.com, "%s, ", (*i).c_str()); CHKERRQ(ierr);
+      ierr = verbPrintf(3, grid.com, "%s, ", (*i).c_str()); CHKERRQ(ierr);
     }
-    ierr = verbPrintf(2, grid.com, "\b\b\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(3, grid.com, "\b\b\n"); CHKERRQ(ierr);
+  }
+
+  // Ask boundary models to write their variables:
+  if (surface != PETSC_NULL) {
+    ierr = surface->write_fields(vars, grid.year, dt / secpera, filename); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
+  }
+  if (ocean != PETSC_NULL) {
+    ierr = ocean->write_fields(vars, grid.year, dt / secpera, filename); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
   }
 
   return 0;

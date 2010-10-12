@@ -62,13 +62,19 @@ public:
   virtual PetscErrorCode update(PetscReal /*t_years*/, PetscReal /*dt_years*/)
   { return 0; }
 
+  //! \brief Adds more variable names to result (to let boundary models write
+  //! more if -o_size or -save_size is given).
+  /*!
+    Keyword can be one of "small", "medium" or "big".
+   */
+  virtual void add_vars_to_output(string keyword, set<string> &result) {}
 protected:
   virtual PetscErrorCode find_pism_input(string &filename, LocalInterpCtx* &lic,
 					 bool &regrid, int &start);
   IceGrid &grid;
   const NCConfigVariable &config;
   PetscReal t,			//!< Last time used as an argument for the update() method.
-    dt;				//!< Lasr time-step used as an argument for the update() method.
+    dt;				//!< Last time-step used as an argument for the update() method.
 };
 
 #endif // __PISMComponent_hh

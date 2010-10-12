@@ -585,6 +585,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
     ierr = verbPrintf(2, grid.com, 
                       "    reading force-to-thickness mask 'ftt_mask' from %s ...\n", fttfile); CHKERRQ(ierr); 
     ierr = ftt_mask.regrid(fttfile, *lic, true); CHKERRQ(ierr);
+    write_ftt_mask = true;
   }
 
   delete lic;
@@ -756,17 +757,18 @@ PetscErrorCode PSForceThickness::write_model_state(PetscReal t_years, PetscReal 
 
   ierr = input_model->write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
 
-  // FIXME, probably:  this version *always* writes the ftt_mask, even if it
-  //   is all filled with ones
-  ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr);
+  if (write_ftt_mask) {
+    ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr);
+  }  
 
-  // FIXME: this variable is NOT part of the model state, but this is the only
-  //   way I could get it to write at the end of the run
-  ierr = ftt_modified_acab.write(filename.c_str()); CHKERRQ(ierr);
-  
   return 0;
 }
 
+//! Adds ftt_modified_acab to "big" output files.
+void PSForceThickness::add_vars_to_output(string key, set<string> &result) {
+  if (key == "big")
+    result.insert("ftt_modified_acab");
+}
 
 PetscErrorCode PSForceThickness::write_fields(set<string> vars, PetscReal t_years,
 					      PetscReal dt_years, string filename) {
@@ -776,6 +778,10 @@ PetscErrorCode PSForceThickness::write_fields(set<string> vars, PetscReal t_year
 
   if (vars.find("ftt_modified_acab") != vars.end()) {
     ierr = ftt_modified_acab.write(filename.c_str()); CHKERRQ(ierr); 
+  }  
+
+  if (vars.find("ftt_mask") != vars.end()) {
+    ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr); 
   }  
 
   return 0;
@@ -788,9 +794,9 @@ PetscErrorCode PSForceThickness::write_diagnostic_fields(PetscReal t_years, Pets
 
   ierr = input_model->write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
 
-  // FIXME, probably:  this version *always* writes the ftt_mask, even if it
-  //   is all filled with ones
-  ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr);
+  if (write_ftt_mask) {
+    ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr);
+  }
 
   ierr = ftt_modified_acab.write(filename.c_str()); CHKERRQ(ierr);
 

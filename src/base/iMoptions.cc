@@ -334,6 +334,13 @@ PetscErrorCode IceModel::set_output_size(string option,
   if (config.get_flag("force_full_diagnostics"))
     keyword = "big";
 
+  // Ask ocean and surface models to add more variables to the list:
+  if (ocean != NULL)
+    ocean->add_vars_to_output(keyword, result);
+
+  if (surface != NULL)
+    surface->add_vars_to_output(keyword, result);
+
   if (keyword == "small") {
     // only model-state variables are saved; we're done
     return 0;
