@@ -62,9 +62,10 @@
 ``only model state variables'', \texttt{medium} adds some
 diagnostic quantities, \texttt{big} saves \emph{every} supported diagnostic quantity\\
 \tabletitle{Standard output} \\
-\texttt{-verbose} & selects standard output verbosity level; \mbox{0 -- silent}; \mbox{1 --
-errors only}; \mbox{2 -- the default}; 3, 4, 5 provide more info\\
+\texttt{-verbose} & selects stdout verbosity level; \mbox{0 -- silent}; \mbox{1 --
+errors only}; \mbox{2 -- the default}; \mbox{3,4,5 -- more}\\
 \texttt{-help} & prints PISM and PETSc command-line option help; use with \texttt{grep}\\
+\texttt{-usage} & a basic usage message; gives links to online docs\\
 \end{tabular}
 
 \section{Domain and grid}
@@ -86,17 +87,12 @@ errors only}; \mbox{2 -- the default}; 3, 4, 5 provide more info\\
   \texttt{-zb_spacing} & same as \texttt{-z_spacing}, in the bedrock\\
 \end{tabular}
 
-\section{Model time}
-\label{sec:model-time}
+\section{Model time and time-stepping}
+\label{sec:model-time} \label{sec:time-stepping}
 \begin{tabular}{@{}p{0.2\linewidth}p{0.75\linewidth}@{}}
   \texttt{-ys} & start year \\
   \texttt{-ye} & end year \\
-  \texttt{-y} & run length
-\end{tabular}
-
-\section{Time-stepping}
-\label{sec:time-stepping}
-\begin{tabular}{@{}p{0.2\linewidth}p{0.75\linewidth}@{}}
+  \texttt{-y} & run length \\
   \texttt{-max_dt} & maximum time-step, in years; time steps determined by
   the adaptive mechanism will not exceed this\\
   \texttt{-skip} &  sets the maximum number of mass-balance steps to perform
@@ -214,13 +210,13 @@ scalar)\\
 \texttt{-dSLforcing} & sea level elevation forcing\\
 \end{tabular}
 
-\section{Calving}
+\section{Simplified calving}
 \label{sec:calving}
 \begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
   \texttt{-float_kill} & calve off floating ice (calving at the grounding
   line)\\
-\texttt{-ocean_kill} & calve off the ice entering cells marked as ``ice-free
-ocean at the beginning of the run''
+\texttt{-ocean_kill} & calve off in ice in cells marked as ``ice-free
+ocean'' at start of run
 \end{tabular}
 
 \end{textblock}
@@ -278,7 +274,7 @@ settings; useful for parameter studies\\
 \texttt{small}, \texttt{medium}, \texttt{big}. Compare to \texttt{-o_size}.
 \end{tabular}
 
-\section{Saving 2D and 3D time-series}
+\section{Saving 2D and 3D diagnostics}
 \label{sec:extras}
 \begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
 \texttt{-extra_file} & Specifies the file to save to.\\
@@ -301,7 +297,7 @@ settings; useful for parameter studies\\
   \texttt{-ts_append} & append to an existing file\\
 \end{tabular}
 
-\section{Scalar time-series}
+\section{Diagnostic scalar time-series}
 \label{sec:scalar-time-series}
 
 \begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
@@ -339,7 +335,7 @@ in PETSc. Shows norm of residual versus iteration number.
 \end{textblock}
 
 \begin{textblock}{15}(32,0.8)
-\section{Diagnostic quantities}
+\section{Diagnostic 2D and 3D quantities}
 \label{sec:diagnostics}
 \begin{tabular}{@{}p{0.2\linewidth}p{0.7\linewidth}@{}}
   \texttt{acab} &  ice-equivalent surface mass balance\\

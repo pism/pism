@@ -506,7 +506,8 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 			    fttfile, PETSC_MAX_PATH_LEN, &opt_set); CHKERRQ(ierr);
 
   if (!opt_set) {
-    ierr = PetscPrintf(grid.com, "ERROR: surface model forcing requires the -force_to_thk option.\n"); CHKERRQ(ierr);
+    ierr = PetscPrintf(grid.com,
+      "ERROR: surface model forcing requires the -force_to_thk option.\n"); CHKERRQ(ierr);
     PetscEnd();
   }
     
@@ -538,7 +539,8 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   ierr = ftt_modified_acab.create(grid, "ftt_modified_acab", false); CHKERRQ(ierr);
   ierr = ftt_modified_acab.set_attrs(
      "diagnostic",
-     "modified ice-equivalent surface mass balance (accumulation/ablation) rate; result from force-to-thickness PSModifier",
+     "modified ice-equivalent surface mass balance (accumulation/ablation) rate;"
+       " result from force-to-thickness PSModifier",
      "m s-1", 
      ""); CHKERRQ(ierr); // no standard name
   ierr = ftt_modified_acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
@@ -551,9 +553,8 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   // determine exponential rate alpha from user option or from factor; option
   // is given in a^{-1}
   if (fttalphaSet == PETSC_TRUE) {
-    ierr = verbPrintf(2, grid.com,
-		      "    option -force_to_thk_alpha seen; setting alpha to %.2f a-1\n",
-		      fttalpha); CHKERRQ(ierr);
+    ierr = verbPrintf(3, grid.com, "    option -force_to_thk_alpha seen\n");
+       CHKERRQ(ierr);
     alpha = fttalpha / secpera;
   }
     
@@ -590,12 +591,12 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 
   // reset name to avoid confusion; attributes again because lost by set_name()?
   ierr = target_thickness.set_name("target_thickness"); CHKERRQ(ierr);
-  ierr = target_thickness.set_attrs("",  // pism_intent unknown
-				    "target thickness for force-to-thickness-spinup mechanism (hit this at end of run)",
-				    "m",
-				    "");  // no CF standard_name, to put it mildly
+  ierr = target_thickness.set_attrs(
+    "",  // pism_intent unknown
+    "target thickness for force-to-thickness-spinup mechanism (hit this at end of run)",
+    "m",
+    "");  // no CF standard_name, to put it mildly
   CHKERRQ(ierr);
-
 
   return 0;
 }
@@ -670,11 +671,15 @@ intended volume.
 \anchor ivol_force_to_thk
  */
 PetscErrorCode PSForceThickness::ice_surface_mass_flux(
-       PetscReal t_years, PetscReal /*dt_years*/, IceModelVec2S &result) {
+       PetscReal t_years, PetscReal dt_years, IceModelVec2S &result) {
   PetscErrorCode ierr;
 
+  // get the surface mass balance result from the next level up
+  ierr = input_model->ice_surface_mass_flux(t_years, dt_years, result); CHKERRQ(ierr);
+
   ierr = verbPrintf(5, grid.com,
-		    "    updating vsurfmassflux from -force_to_thk mechanism ..."); CHKERRQ(ierr);
+     "    updating surface mass balance using -force_to_thk mechanism ...");
+     CHKERRQ(ierr);
     
   // force-to-thickness mechanism is only full-strength at end of run
   const PetscScalar lambda = (t_years - grid.start_year) / (grid.end_year - grid.start_year);
@@ -766,8 +771,6 @@ PetscErrorCode PSForceThickness::write_model_state(PetscReal t_years, PetscReal 
 PetscErrorCode PSForceThickness::write_fields(set<string> vars, PetscReal t_years,
 					      PetscReal dt_years, string filename) {
   PetscErrorCode ierr;
-
-// FIXME:  why can't this procedure get called by the -ex_vars mechanism?
 
   ierr = input_model->write_fields(vars, t_years, dt_years, filename); CHKERRQ(ierr);
 

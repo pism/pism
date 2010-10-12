@@ -66,8 +66,9 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
 
   ierr = IceModel::initFromFile(filename); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com, "IceRegionalModel initializing from NetCDF file '%s'...\n",
-		    filename); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+     "* Initializing IceRegionalModel from NetCDF file '%s'...\n",
+     filename); CHKERRQ(ierr);
   NCTool nc(grid.com, grid.rank);
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
   int last_record;  // find index of the last record in the file
@@ -77,14 +78,14 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
   ierr = nc.find_variable("no_model_mask", NULL, nmm_exists); CHKERRQ(ierr);
 
   if (nmm_exists) {
-    ierr = no_model_mask.read(filename, last_record); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com,
-	"  ... has read 'no_model_mask' from input file '%s' ...\n",
+	"  reading 'no_model_mask' from %s ...\n",
 	filename); CHKERRQ(ierr);
+    ierr = no_model_mask.read(filename, last_record); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com,
-	"PISM IceRegionalModel WARNING: input file '%s' does not have the 'no_model_mask'\n"
-	"variable.  Keeping its value as identically one.\n",
+	"IceRegionalModel WARNING: input file %s does not contain 'no_model_mask'\n"
+	"  variable.  Keeping its value as identically zero (= everywhere modeled).\n",
 	filename); CHKERRQ(ierr);
   } 
 
@@ -96,13 +97,12 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
 PetscErrorCode IceRegionalModel::set_vars_from_options() {
   PetscErrorCode ierr;
 
-  // This reads the -boot_file option and does the bootstrapping:
+  // base class reads the -boot_file option and does the bootstrapping:
   ierr = IceModel::set_vars_from_options(); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "IceRegionalModel", ""); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com, 
-    "initializing IceRegionalModel ... reading option -no_model_strip ...\n");
-  CHKERRQ(ierr);
+     "* Initializing IceRegionalModel variables ...\n"); CHKERRQ(ierr);
 
   PetscReal stripkm;
   PetscTruth  nmstripSet;
@@ -113,8 +113,8 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
 
   if (nmstripSet == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com,
-		      "    setting no-modeling boundary strip width to %.2f km\n",
-		      stripkm); CHKERRQ(ierr);
+       "    option -no_model_strip read ... setting boundary strip width to %.2f km\n",
+       stripkm); CHKERRQ(ierr);
     double *x_coords, *y_coords, strip = 1000.0*stripkm;
     ierr = grid.compute_horizontal_coordinates(x_coords, y_coords); CHKERRQ(ierr);
 

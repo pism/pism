@@ -107,8 +107,8 @@ netcdf pism_config {
     pism_config:epsilon_ssa = 1.0e15;
     pism_config:epsilon_ssa_doc = "initial amount of (denominator) regularization in computation of effective viscosity";
 
-    pism_config:default_tauc = 1e4;
-    pism_config:default_tauc_doc = "Pa; fill value for yield stress for basal till (plastic or pseudo-plastic model); note 10^4 Pa = 0.1 bar";
+    pism_config:default_tauc = 2e5;
+    pism_config:default_tauc_doc = "Pa; fill value for yield stress for basal till (plastic or pseudo-plastic model); note 2 x 10^5 Pa = 2.0 bar is quite strong and little sliding should occur without an explicit tauc choice altering this default";
 
     pism_config:sliding_scale_factor_reduces_tauc = -1.0;
     pism_config:sliding_scale_factor_reduces_tauc_doc = "; divides pseudo-plastic tauc (yield stress) by given factor; this would increase sliding by given factor in absence of membrane stresses; not used if negative or zero; not used by default";

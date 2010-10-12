@@ -662,8 +662,7 @@ PetscErrorCode IceModel::misc_setup() {
   // set info in bed smoother based on initial bed
   if (config.get("bed_smoother_range") > 0.0) {
     ierr = verbPrintf(2, grid.com, 
-      "  initializing bed smoother object with %.3f km half-width for intended smoothing\n"
-      "    domain ...",
+      "* Initializing bed smoother object with %.3f km half-width ...\n",
       config.get("bed_smoother_range") / 1000.0); CHKERRQ(ierr);
   }
   ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
@@ -675,7 +674,7 @@ PetscErrorCode IceModel::misc_setup() {
     PetscInt pbs_Nx,pbs_Ny;
     ierr = sia_bed_smoother->get_smoothing_domain(pbs_Nx,pbs_Ny); CHKERRQ(ierr);
     ierr = verbPrintf(2, grid.com, 
-      " (object reports effective lam_x = %.3f km, lam_y = %.3f km)\n",
+      "    (object reports effective lam_x = %.3f km, lam_y = %.3f km)\n",
       pbs_Nx * grid.dx / 1000.0, pbs_Ny * grid.dy / 1000.0); CHKERRQ(ierr);
   }
 
