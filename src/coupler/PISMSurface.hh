@@ -241,13 +241,15 @@ public:
   virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
   virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					   string filename);
+  virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
+                                      PetscReal dt_years, string filename);
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 						 string filename);
 protected:
   string input_file;
   PetscReal alpha;
   IceModelVec2S *ice_thickness;	//!< current ice thickness produced by IceModel.
-  IceModelVec2S target_thickness, ftt_mask;
+  IceModelVec2S target_thickness, ftt_mask, ftt_modified_acab;
 };
 
 #endif	// __PISMSurfaceModel_hh

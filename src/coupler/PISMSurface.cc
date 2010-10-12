@@ -135,7 +135,7 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
   // create mean annual ice equivalent snow precipitation rate (before melt, and not including rain)
   ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
   ierr = acab.set_attrs("climate_state", 
-			"constant-in-time ice-equivalent accumulation/ablation rate",
+			"constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
 			"m s-1", 
 			"land_ice_surface_specific_mass_balance"); // CF standard_name
 			CHKERRQ(ierr);
@@ -144,7 +144,7 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
 
   ierr = artm.create(grid, "artm", false); CHKERRQ(ierr);
   ierr = artm.set_attrs("climate_state",
-			"constant-in-time ice temperature (at the ice surface)",
+			"constant-in-time ice temperature at the ice surface",
 			"K",
 			""); CHKERRQ(ierr);
   
@@ -522,17 +522,29 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   if (!ice_thickness) SETERRQ(1, "ERROR: land_ice_thickness is not available");
 
   ierr = target_thickness.create(grid, "thk", false); CHKERRQ(ierr); // name to read by
-  ierr = target_thickness.set_attrs("climate_state", 
-				    "target ice thickness (to be reached at the end of the run",
-				    "m", 
-				    "land_ice_thickness"); CHKERRQ(ierr); // standard_name to read by
+  ierr = target_thickness.set_attrs(
+     "climate_state", 
+     "target ice thickness (to be reached at the end of the run",
+     "m", 
+     "land_ice_thickness"); CHKERRQ(ierr); // standard_name to read by
 
   ierr = ftt_mask.create(grid, "ftt_mask", false); CHKERRQ(ierr);
-  ierr = ftt_mask.set_attrs("climate_state",
-                            "mask specifying whether to apply the force-to-thickness mechanism",
-                            "", ""); CHKERRQ(ierr); // no units and no standard name
-  ierr = ftt_mask.set(1.0); CHKERRQ(ierr);          // apply to the whole model
-                                                    // domain by default
+  ierr = ftt_mask.set_attrs(
+     "climate_state",
+     "mask specifying where to apply the force-to-thickness mechanism",
+     "", ""); CHKERRQ(ierr); // no units and no standard name
+  ierr = ftt_mask.set(1.0); CHKERRQ(ierr); // default: applied in whole domain
+
+  ierr = ftt_modified_acab.create(grid, "ftt_modified_acab", false); CHKERRQ(ierr);
+  ierr = ftt_modified_acab.set_attrs(
+     "diagnostic",
+     "modified ice-equivalent surface mass balance (accumulation/ablation) rate; result from force-to-thickness PSModifier",
+     "m s-1", 
+     ""); CHKERRQ(ierr); // no standard name
+  ierr = ftt_modified_acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  ftt_modified_acab.write_in_glaciological_units = true;
+  ierr = ftt_modified_acab.set_attr("comment", "positive values correspond to ice gain"); CHKERRQ(ierr); 
+  ierr = ftt_modified_acab.set(0.0); CHKERRQ(ierr); // no useful default
 
   input_file = fttfile;
 
@@ -657,8 +669,8 @@ intended volume.
 \image html ivol_force_to_thk.png "\b Volume results from the -force_to_thk mechanism."
 \anchor ivol_force_to_thk
  */
-PetscErrorCode PSForceThickness::ice_surface_mass_flux(PetscReal t_years, PetscReal /*dt_years*/,
-						       IceModelVec2S &result) {
+PetscErrorCode PSForceThickness::ice_surface_mass_flux(
+       PetscReal t_years, PetscReal /*dt_years*/, IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(5, grid.com,
@@ -677,17 +689,20 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(PetscReal t_years, PetscR
   ierr = ice_thickness->get_array(H);   CHKERRQ(ierr);
   ierr = target_thickness.begin_access(); CHKERRQ(ierr);
   ierr = ftt_mask.begin_access(); CHKERRQ(ierr); 
+  ierr = ftt_modified_acab.begin_access(); CHKERRQ(ierr); 
   ierr = result.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (ftt_mask(i,j) > 0.5) {
         result(i,j) += lambda * alpha * (target_thickness(i,j) - H[i][j]);
       }
+      ftt_modified_acab(i,j) = result(i,j);
     }
   }
   ierr = ice_thickness->end_access(); CHKERRQ(ierr);
   ierr = target_thickness.end_access(); CHKERRQ(ierr);
   ierr = ftt_mask.end_access(); CHKERRQ(ierr); 
+  ierr = ftt_modified_acab.end_access(); CHKERRQ(ierr); 
   ierr = result.end_access(); CHKERRQ(ierr);
   // no communication needed
 
@@ -739,15 +754,42 @@ PetscErrorCode PSForceThickness::write_model_state(PetscReal t_years, PetscReal 
   // FIXME, probably:  this version *always* writes the ftt_mask, even if it
   //   is all filled with ones
   ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr);
+
+  // FIXME: this variable is NOT part of the model state, but this is the only
+  //   way I could get it to write at the end of the run
+  ierr = ftt_modified_acab.write(filename.c_str()); CHKERRQ(ierr);
   
   return 0;
 }
+
+
+PetscErrorCode PSForceThickness::write_fields(set<string> vars, PetscReal t_years,
+					      PetscReal dt_years, string filename) {
+  PetscErrorCode ierr;
+
+// FIXME:  why can't this procedure get called by the -ex_vars mechanism?
+
+  ierr = input_model->write_fields(vars, t_years, dt_years, filename); CHKERRQ(ierr);
+
+  if (vars.find("ftt_modified_acab") != vars.end()) {
+    ierr = ftt_modified_acab.write(filename.c_str()); CHKERRQ(ierr); 
+  }  
+
+  return 0;
+}
+
 
 PetscErrorCode PSForceThickness::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
 							 string filename) {
   PetscErrorCode ierr;
 
   ierr = input_model->write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
+
+  // FIXME, probably:  this version *always* writes the ftt_mask, even if it
+  //   is all filled with ones
+  ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr);
+
+  ierr = ftt_modified_acab.write(filename.c_str()); CHKERRQ(ierr);
 
   return 0;
 }
