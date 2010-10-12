@@ -19,6 +19,7 @@
 
 #include "PISMSurface.hh"
 #include "../base/PISMIO.hh"
+
 ///// PISMSurfaceModel base class:
 
 void PISMSurfaceModel::attach_atmosphere_model(PISMAtmosphereModel *input) {
@@ -83,9 +84,12 @@ PetscErrorCode PSSimple::init(PISMVars &vars) {
   ierr = atmosphere->init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-		    "* Initializing the simplest PISM surface (snow) processes model\n"
-		    "  (precipitation == mass balance, 2m air temperature == ice surface temperature)...\n"); CHKERRQ(ierr);
-
+     "* Initializing the simplest PISM surface (snow) processes model PSSimple.\n"
+     "  It passes atmospheric state directly to upper ice fluid surface:\n"
+     "    surface mass balance          := precipitation,\n"
+     "    ice upper surface temperature := 2m air temperature.\n"
+     "  Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n");
+     CHKERRQ(ierr);
   return 0;
 }
 
@@ -95,7 +99,7 @@ PetscErrorCode PSSimple::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_y
   ierr = atmosphere->mean_precip(t_years, dt_years, result); CHKERRQ(ierr);
 
   string history = result.string_attr("history");
-  history = "re-interpreted mean precipitation as surface mass balance\n" + history;
+  history = "re-interpreted precipitation as surface mass balance (PSSimple)\n" + history;
   ierr = result.set_attr("history", history); CHKERRQ(ierr);
 
   return 0;
@@ -107,7 +111,7 @@ PetscErrorCode PSSimple::ice_surface_temperature(PetscReal t_years, PetscReal dt
   ierr = atmosphere->mean_annual_temp(t_years, dt_years, result); CHKERRQ(ierr);
 
   string history = result.string_attr("history");
-  history = "re-interpreted mean annual 2 m air temperature as instantaneous ice temperature at the ice surface\n" + history;
+  history = "re-interpreted mean annual 2 m air temperature as instantaneous ice temperature at the ice surface (PSSimple)\n" + history;
   ierr = result.set_attr("history", history); CHKERRQ(ierr);
 
   return 0;
@@ -121,7 +125,10 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
   bool regrid = false;
   int start = -1;
 
-  ierr = verbPrintf(2, grid.com, "* Initializing the constant-in-time surface (snow) processes model...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, 
+     "* Initializing the constant-in-time surface processes model PSConstant.\n"
+     "  It reads surface mass balance and ice upper-surface temperature\n"
+     "  directly from the file and holds them constant.\n"); CHKERRQ(ierr);
 
   // allocate IceModelVecs for storing temperature and surface mass balance fields
 
@@ -130,7 +137,8 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
   ierr = acab.set_attrs("climate_state", 
 			"constant-in-time ice-equivalent accumulation/ablation rate",
 			"m s-1", 
-			""); CHKERRQ(ierr); // no CF standard_name ??
+			"land_ice_surface_specific_mass_balance"); // CF standard_name
+			CHKERRQ(ierr);
   ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   acab.write_in_glaciological_units = true;
 
@@ -141,14 +149,13 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
 			""); CHKERRQ(ierr);
   
   // find PISM input file to read data from:
-
   ierr = find_pism_input(input_file, lic, regrid, start); CHKERRQ(ierr);
 
   // read snow precipitation rate and temperatures from file
   ierr = verbPrintf(2, grid.com, 
-		    "    reading time-independent ice-equivalent accumulation/ablation rate 'acab'\n"
-		    "    and time-independent ice temperature (at the ice surface) 'artm' from %s ... \n",
-		    input_file.c_str()); CHKERRQ(ierr); 
+    "    reading ice-equivalent surface mass balance (accumulation/ablation) rate 'acab'\n"
+    "    and ice surface temperature  'artm' from %s ... \n",
+    input_file.c_str()); CHKERRQ(ierr); 
   if (regrid) {
     ierr = acab.regrid(input_file.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
     ierr = artm.regrid(input_file.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
@@ -158,7 +165,6 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
   }
 
   delete lic;
-	    
   return 0;
 }
 
@@ -216,24 +222,24 @@ void PSModifier::attach_input(PISMSurfaceModel *input) {
 
 ///// PISM surface model implementing a PDD scheme.
 
-PSLocalMassBalance::PSLocalMassBalance(IceGrid &g, const NCConfigVariable &conf)
+PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const NCConfigVariable &conf)
   : PISMSurfaceModel(g, conf) {
   mbscheme = NULL;
   use_fausto_pdd_parameters = false;
   lat = NULL;
 }
 
-PSLocalMassBalance::~PSLocalMassBalance() {
+PSTemperatureIndex::~PSTemperatureIndex() {
   delete mbscheme;
 }
 
-PetscErrorCode PSLocalMassBalance::init(PISMVars &vars) {
+PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   PetscErrorCode ierr;
   bool pdd_rand, pdd_rand_repeatable, fausto_params;
 
   ierr = PISMSurfaceModel::init(vars); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "Local mass balance model", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", "Temperature-index (PDD) scheme for surface (snow) processes", ""); CHKERRQ(ierr);
   {
     ierr = PISMOptionsIsSet("-pdd_rand", "Use a PDD implementation based on simulating a random process",
 			    pdd_rand); CHKERRQ(ierr);
@@ -245,7 +251,13 @@ PetscErrorCode PSLocalMassBalance::init(PISMVars &vars) {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
 
-  ierr = verbPrintf(2, grid.com, "* Initializing the PDD-based surface (snow) processes model...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+    "* Initializing the default temperature-index, PDD-based surface (snow) processes\n"
+    "  scheme.  Precipitation and 2m air temperature provided by atmosphere above\n"
+    "  (PISMAtmosphere) are inputs.  Surface mass balance and ice fluid upper surface\n"
+    "  temperature are outputs.  See PISM User's Manual for control of PDD parameters\n"
+    "  (degree-day factors.\n");
+    CHKERRQ(ierr);
 
   if (pdd_rand_repeatable) {
     ierr = verbPrintf(2, grid.com, "  Using a PDD implementation based on simulating a random process.\n"); CHKERRQ(ierr);
@@ -299,7 +311,9 @@ PetscErrorCode PSLocalMassBalance::init(PISMVars &vars) {
   runoff_rate.write_in_glaciological_units = true;
 
   if (fausto_params) {
-    ierr = verbPrintf(2, grid.com, "  Setting PDD parameters using formulas (6) and (7) in [Faustoetal2009]...\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, 
+       "  Setting PDD parameters using formulas (6) and (7) in [Faustoetal2009]...\n");
+       CHKERRQ(ierr);
     use_fausto_pdd_parameters = true;
 
     // allocate an IceModelVec2S to store mean July temperatures:
@@ -315,7 +329,7 @@ PetscErrorCode PSLocalMassBalance::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSLocalMassBalance::update(PetscReal t_years, PetscReal dt_years) {
+PetscErrorCode PSTemperatureIndex::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr;
   PetscScalar **lat_degN;
 
@@ -377,7 +391,8 @@ PetscErrorCode PSLocalMassBalance::update(PetscReal t_years, PetscReal dt_years)
 	// according to formula (6) in [\ref Faustoetal2009]
 	PDDMassBalance* pddscheme = dynamic_cast<PDDMassBalance*>(mbscheme);
 	if (pddscheme != NULL) {
-	  ierr = pddscheme->setDegreeDayFactorsFromSpecialInfo(lat_degN[i][j], temp_mj(i,j)); CHKERRQ(ierr);
+	  ierr = pddscheme->setDegreeDayFactorsFromSpecialInfo(
+	                        lat_degN[i][j], temp_mj(i,j)); CHKERRQ(ierr);
 	}
       }
 
@@ -404,7 +419,7 @@ PetscErrorCode PSLocalMassBalance::update(PetscReal t_years, PetscReal dt_years)
 }
 
 
-PetscErrorCode PSLocalMassBalance::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
+PetscErrorCode PSTemperatureIndex::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
 							 IceModelVec2S &result) {
   PetscErrorCode ierr;
 
@@ -421,7 +436,7 @@ PetscErrorCode PSLocalMassBalance::ice_surface_mass_flux(PetscReal t_years, Pets
   return 0;
 }
 
-PetscErrorCode PSLocalMassBalance::ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
+PetscErrorCode PSTemperatureIndex::ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
 							   IceModelVec2S &result) {
   PetscErrorCode ierr;
   ierr = atmosphere->mean_annual_temp(t_years, dt_years, result); CHKERRQ(ierr);
@@ -433,7 +448,7 @@ PetscErrorCode PSLocalMassBalance::ice_surface_temperature(PetscReal t_years, Pe
   return 0;
 }
 
-PetscErrorCode PSLocalMassBalance::write_fields(set<string> vars, PetscReal t_years,
+PetscErrorCode PSTemperatureIndex::write_fields(set<string> vars, PetscReal t_years,
 					      PetscReal dt_years, string filename) {
   PetscErrorCode ierr;
 
@@ -454,7 +469,7 @@ PetscErrorCode PSLocalMassBalance::write_fields(set<string> vars, PetscReal t_ye
   return 0;
 }
 
-PetscErrorCode PSLocalMassBalance::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
+PetscErrorCode PSTemperatureIndex::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
                                                            string filename) {
   PetscErrorCode ierr;
 

@@ -28,7 +28,7 @@ Now do:
 If you want to specify a directory where PISM executables should be put, for
 example into /home/user/bin/, it looks like this:
   $ cd build/
-  $ PISM_PREFIX=/home/user cmake ..
+  $ PISM_INSTALL_PREFIX=/home/user cmake ..
   $ make
   $ make install
   $ PATH=bin/:util/:$PATH  # or similar: make sure PATH includes the PISM executables

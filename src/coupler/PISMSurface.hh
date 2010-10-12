@@ -83,13 +83,16 @@ public:
 
 //! \brief A class implementing a primitive surface model.
 /*! 
-  This is an "invisible" model; it implements two modeling choices:
-  \li accumulation obtained from an atmosphere model is interpreted as surface
-  mass flux;
-
+This is an "invisible" surface processes model which "passes through"
+information from the atmosphere above directly to the ice below the surface
+layers.  It implements two modeling choices:
+  \li accumulation which is obtained from an atmosphere model is interpreted
+      as surface mass flux;
   \li mean-annual near-surface air temperature is interpreted as instantaneous
-  temperature of the ice at the ice surface (i.e. the boundary condition of the
-  conservation of energy scheme).
+      temperature of the ice at the ice surface.
+
+The second choice means that the upper boundary condition of the conservation of
+energy scheme for the ice fluid is exactly the 2m air temperature.
 */
 class PSSimple : public PISMSurfaceModel {
 public:
@@ -103,8 +106,28 @@ public:
 };
 
 
-//! \brief A class implementing a constant-in-time surface model. Reads data
+//! \brief A class implementing a constant-in-time surface model.  Reads data
 //! from a PISM input file.
+/*! 
+This is model is just as simple as PSSimple, but it assumes results from a
+surface processes model are already known.  But they are treated as constant in
+time and they are read from the input file at the beginning of the PISM run.
+
+Specifically, these two fields are read from the \c -i or \c -boot_file file:
+  \li \c acab = ice-equivalent surface mass balance
+  \li \c artm = ice fluid upper surface temperature.
+
+This surface model does not use an atmosphere model at all, so the
+\c attach_atmosphere_model() method is null.  Any choice of PISMAtmosphereModel
+made using option \c -atmosphere is ignored.  This may be an advantage in coupler
+code simplicity.
+
+Note that a very minimal coupling of an existing atmosphere and surface processes
+model to the ice dynamics core in PISM could be accomplished by using this
+PSConstant class for relatively short ice dynamics runs, each of which starts by
+reading the latest \c acab and \c artm fields supplied by the atmosphere and
+surface processes model.
+*/
 class PSConstant : public PISMSurfaceModel {
 public:
   PSConstant(IceGrid &g, const NCConfigVariable &conf)
@@ -130,6 +153,58 @@ protected:
 };
 
 
+//! \brief A class implementing a temperature-index (positive degree-day) scheme
+//! to compute melt and runoff, and thus surface mass balance, from
+//! precipitation and air temperature.
+/*! 
+Temperature-index schemes are far from perfect as a way of modeling surface mass
+balance on ice sheets which experience surface melt, but they are known to have
+reasonable data requirements and to do a good job when tuned appropriately
+[\ref Hock05].
+
+This base class already accesses a fair amount of functionality.  It holds a
+pointer to an instance of the LocalMassBalance class.  This class has method
+LocalMassBalance::getMassFluxFromTemperatureTimeSeries() which uses the
+precipitation during the ice sheet model time step, plus a variable temperature
+over that time step, to compute melt, refreeze, and surface balance. 
+*/
+class PSTemperatureIndex : public PISMSurfaceModel {
+public:
+  PSTemperatureIndex(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~PSTemperatureIndex();
+  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
+					       IceModelVec2S &result);
+  virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
+						 IceModelVec2S &result);
+  virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
+				      PetscReal dt_years, string filename);
+  virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
+                                                 string filename);
+protected:
+  LocalMassBalance *mbscheme;	//!< mass balance scheme to use
+  bool use_fausto_pdd_parameters;
+  IceModelVec2S temp_mj,	//!< for the mean July temperature needed to set PDD parameters as in [\ref Faustoetal2009].
+    acab,			//!< cached accumulation/ablation rates
+    accumulation_rate,
+    melt_rate,
+    runoff_rate,
+    *lat;		//!< latitude needed to set PDD parameters as in [\ref Faustoetal2009].
+};
+
+
+//! \brief A base class for mechanisms which modify the results of a surface
+//! processes model (an instance of PISMSurfaceModel) before they reach the ice.
+/*! 
+Frequently ice sheet models are driven by a "basic" surface model plus "forcings".
+This modifier class allows the implementations of forcings which alter the 
+results of the surface processes model.  That is, if the atmospheric inputs 
+are already dealt-with, and a basic surface processes model is in use which 
+generates surface mass balance and ice upper surface temperature, then instances
+of this PSModifier class can be used to modify the surface mass balance and ice
+upper surface temperature "just before" it gets to the ice itself.
+*/
 class PSModifier : public PISMSurfaceModel {
 public:
   PSModifier(IceGrid &g, const NCConfigVariable &conf)
@@ -145,8 +220,8 @@ protected:
 };
 
 
-//! A class implementing a mechanism modifying surface mass balance to force
-//! ice thickness to a given target at the end of the run.
+//! A class implementing a modified surface mass balance which forces
+//! ice thickness to a given target by the end of the run.
 class PSForceThickness : public PSModifier {
 public:
   PSForceThickness(IceGrid &g, const NCConfigVariable &conf)
@@ -173,32 +248,6 @@ protected:
   PetscReal alpha;
   IceModelVec2S *ice_thickness;	//!< current ice thickness produced by IceModel.
   IceModelVec2S target_thickness, ftt_mask;
-};
-
-
-class PSLocalMassBalance : public PISMSurfaceModel {
-public:
-  PSLocalMassBalance(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PSLocalMassBalance();
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-					       IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2S &result);
-  virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
-				      PetscReal dt_years, string filename);
-  virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-                                                 string filename);
-protected:
-  LocalMassBalance *mbscheme;	//!< mass balance scheme to use
-  bool use_fausto_pdd_parameters;
-  IceModelVec2S temp_mj,	//!< for the mean July temperature needed to set PDD parameters as in [\ref Faustoetal2009].
-    acab,			//!< cached accumulation/ablation rates
-    accumulation_rate,
-    melt_rate,
-    runoff_rate,
-    *lat;		//!< latitude needed to set PDD parameters as in [\ref Faustoetal2009].
 };
 
 #endif	// __PISMSurfaceModel_hh

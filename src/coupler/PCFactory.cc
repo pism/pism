@@ -45,8 +45,8 @@ void POFactory::add_standard_types() {
 }
 
 // Surface
-static void create_ps_localmassbalance(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
-  result = new PSLocalMassBalance(g, conf);
+static void create_ps_temperatureindex(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
+  result = new PSTemperatureIndex(g, conf);
 }
 
 static void create_ps_simple(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
@@ -64,7 +64,7 @@ static void create_ps_forcing(IceGrid& g, const NCConfigVariable& conf, PSModifi
 void PSFactory::add_standard_types() {
   add_model("constant",     &create_ps_constant);
   add_model("simple",       &create_ps_simple);
-  add_model("pdd",          &create_ps_localmassbalance); 
+  add_model("pdd",          &create_ps_temperatureindex); 
   set_default("simple");
 
   add_modifier("forcing",   &create_ps_forcing);

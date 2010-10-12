@@ -69,6 +69,7 @@ $  pismr -i foo.nc -Mz 201 -y 100
 
 Otherwise, one is allowed to specify the grid when PISM is started.  In particular, the user should specify the grid when using \texttt{-boot_file} or when initializing a simplified-geometry experiment or a verification test, though defaults are generally present in the latter cases.  See sections \ref{sect:start} and \ref{sect:boot} for examples and explanation.
 
+
 \subsection{Model time}
 \label{sec:time}
 \optsection{Grid!time}
@@ -107,95 +108,6 @@ Note that the NetCDF model state saved by PISM at the end of an \emph{evolution}
 
 By default, PISM does not compute the age of the ice\index{PISM!modeling the age of the ice} because it does not directly impact ice flow using the default flow laws.   It is very easy to turn on.  Just set \intextoption{age}.
 
-
-\subsection{Setting up PISM boundary (atmosphere, surface and ocean) models}
-\label{sec:boundary-models}
-
-Setting up PISM's boundary models requires selecting one model of each kind and zero or more ``model modifiers''.  The selected models and modifiers are chained as in Figure~\ref{fig:climate-input-data-flow}. Command-line options \texttt{-atmosphere}, \texttt{-surface} and \texttt{-ocean} take a comma-separated list of keywords as an argument; the first keyword \emph{has} to correspond to a model, the rest can be modifiers. Any of these options can be omitted to use the default atmosphere, surface or ocean model, although using a modifier requires specifying a model.
-
-For example,
-\begin{verbatim}
-$ pismr -i foo.nc -atmosphere searise_greenland,forcing \
-        -dTforcing delta_T.nc -surface pdd
-\end{verbatim}%$
-chooses a combination of SeaRISE-Greenland atmosphere model (see below),  ice-core derived temperature forcing, a positive degree-day (PDD) local surface mass balance model, and a default (constant) ocean model.
-
-Each of PISM boundary model types currently has one ``modifier'' available; the corresponding keyword is \texttt{forcing}. Please see below for details.
-
-\begin{enumerate}
-\optsection{Climate (boundary) models!\texttt{-atmosphere} [searise_greenland, constant, temp_lapse_rate, forcing]}
-\item \textbf{PISM atmosphere models.}
-\begin{itemize}
-  \item \emph{SeaRISE-Greenland} (\texttt{searise_greenland}, the default)
-
-    This atmosphere model implements a longitude, latitude and elevation dependent near-surface air temperature parameterization and a cosine yearly cycle described in \cite{Faustoetal2009} and uses a constant in time ice-equivalent snow precipitation field (in units of thickness per time, variable \texttt{snowprecip}) that is read from an input file.
-
-    The parameterization is controlled by configuration parameters with the \texttt{snow_temp} prefix.
-
-    In addition to the temperature parameterization it allows the SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degree Celsius of temperature change \cite{Huybrechts02}.  See \url{http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland} for details.  Turn on this mechanism by using the \intextoption{paleo_precip} option.
-
-    It expects variables \texttt{snowprecip}, latitude and longitude to be present in an input file.
-
- \item \emph{Constant in time} (\texttt{constant})
-
-    This atmosphere model reads the snow precipitation (variable \texttt{snowprecip}) and the mean annual near-surface air temperature (variable \texttt{temp_ma}) and provides them to a surface model.
-  \item \emph{Constant precipitation using a temperature lapse rate} (\texttt{temp_lapse_rate})
-    
-    This atmosphere model also uses a constant snow precipitation field (\texttt{snowprecip}) and requires the mean annual near-surface air temperature (\texttt{temp_ma}) to be present in an input file. In addition to this, it dynamically corrects air temperature using a location-independent elevation lapse rate specified using the \intextoption{lapse_rate} command-line option (in units of degrees Celsius per meter).
- \end{itemize}
-
-  The atmosphere \texttt{forcing} modifier implements temperature forcing using scalar offsets and also a mechanism applying precipitation and mean annual temperature anomalies.
-  \begin{itemize}
-  \item \fileopt{dTforcing} specifies a file containing scalar temperature offsets (variable \texttt{delta_T}), 
-  \item \fileopt{anomaly_temp_ma} specifies a file containing spatially-variable mean annual near-surface air temperature anomalies (variable \texttt{temp_ma_anomaly}), and
-  \item \fileopt{anomaly_precip} specifies a file containing spatially-variable ice-equivalent precipitation anomalies (in units of thickness per time, variable \texttt{snowprecip_anomaly}).
-  \end{itemize}
-
-  Options \texttt{-anomaly_temp_ma} and \texttt{-anomaly_precip} can be used to set up a PISM run using a GCM output, essentially achieving one-way coupling.
-
-  Note that only one air temperature forcing mechanism can be used at any time.
-
-\optsection{Climate (boundary) models!\texttt{-surface} [simple, constant, pdd, forcing]}
-\item \textbf{PISM surface (snow) process models}
-
-\begin{itemize}
-  \item \emph{The ``invisible'' model} (\texttt{simple}, the default)
-
-    This is the simplest ``surface model'' available in PISM. Its job is to re-interpret  precipitation as mass flux into the ice and mean annual near-surface air temperature as the temperature of the ice at the ice surface (below firn) (see \cite{Hock05}, for example). This implies that there is no melt as long as the precipitation field  is non-negative.
-
-    However primitive it may be, this model can be useful; modeling Antarctica is one example.
-  \item \emph{Constant in time} (\texttt{constant})
-
-    This surface model reads constant in time top surface boundary conditions and provides them to the ice dynamics model (see table \ref{tab:ice-dynamics-bc}). When PISM is used with this model, variables \texttt{artm} (ice temperature at the ice surface but below firn) and \texttt{acab} (top surface mass flux into the ice) are expected to be present in an input file.
-
-    Note: this surface model \emph{ignores}  the atmosphere model selection made using the \texttt{-atmosphere} option.
-
-  \item \emph{Local mass balance (PDD)} (\texttt{pdd}) \index{positive degree day model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model} 
-
-   The default PDD used by PISM, turned on by option \texttt{-surface pdd}, is based on \cite{CalovGreve05} and EISMINT-Greenland intercomparison (section \ref{sec:eismint-greenland} and \cite{RitzEISMINT}). It also implements latitude- and mean July temperature dependent ice and snow factors using formulas in \cite{Faustoetal2009}.
-
-   Our PDD implementation is meant to be used with an atmosphere model implementing a cosine yearly cycle such as \texttt{searise_greenland}, but is not restricted to parameterizations like this one. A PDD generally adds ``white noise'' to the seasonal cycle to simulate additional daily variability associated to the vagaries of weather.  This additional random variation is quite significant, as the seasonal cycle may never reach the melting point but that point may be reached with some probability, in the presence of the daily variability, and thus melt may occur.  Concretely, a normally-distributed, mean zero random temperature increment is added to the seasonal cycle.  The standard deviation of the daily variability is controlled by the \intextoption{pdd_std_dev} option (and the corresponding config. parameter), and defaults to 2.53 degrees \cite{Faustoetal2009}. There is no assumed spatial correlation of daily variability.
-
-The number of positive degree days is computed as the magnitude of the temperature excursion above $0\!\phantom{|}^\circ \text{C}$ multiplied by the duration (in days) when it is above zero.  In PISM there are actually two methods for computing the number of positive degree days.  The first computes only the expected value, by the method described in \cite{CalovGreve05}.  This is the default when a PDD is chosen (i.e.~option \texttt{-surface pdd}).  The second is a monte carlo simulation of the white noise itself, chosen by adding the option \intextoption{pdd_rand}.  This monte carlo simulation adds the same daily variation at every point, though the seasonal cycle is (generally) location dependent.  If repeatable randomness is desired use \intextoption{pdd_rand_repeatable} instead of \texttt{-pdd_rand}.
-
-The number of positive degree days is multiplied by a coefficient (config parameter \texttt{pdd_factor_snow}) to compute the amount of snow melted.  Of the melted snow, a fraction (\texttt{pdd_refreeze}) is kept as ice.  This ice, plus all unmelted snow (already measured as ice-equivalent) is added to the mass balance, unless the number of positive degree days exceeds that required to melt all of the snow.  In this latter case, in which there are excess positive degree days available for melting, the excess is multiplied by a coefficient (\texttt{pdd_factor_ice}) to compute how much ice is melted.  In this case actual ablation occurs at that location.
-
-In addition to this, one can use latitude- and July-air-temperature-dependent Greenland PDD model parameters $\beta_{\mathrm{ice}}$ and $\beta_{\mathrm{snow}}$ (formulas (6) and (7) in \cite{Faustoetal2009}) by adding the \intextoption{pdd_fausto}  option. See also configuration parameters with the \texttt{pdd_fausto} prefix..
-\end{itemize}
-
-The \texttt{forcing} modifier implements a surface mass balance adjustment mechanism forcing ice thickness to a target distribution at the end of the run; option \fileopt{force_to_thk} selects a file containing the target ice thickness field. Option \intextoption{force_to_thk_alpha} sets the $\alpha$ parameter. See the documentation  of \texttt{PSForceThickness::ice_surface_mass_flux()} for details.
-
-\optsection{Climate (boundary) models!\texttt{-ocean} [constant, forcing]}
-\item \textbf{PISM ocean models}
-PISM includes one simple ocean model: \texttt{constant}, providing constant (both in time and space) mass flux into the ocean and sea level elevation to PISM's ice flow core. The mass flux is controlled by the\\ \texttt{ocean_sub_shelf_heat_flux_into_ice} configuration parameter and the assumption that the mass flux is proportional to heat flux into ice.
-
-  The ocean \texttt{forcing} modifier implements sea level forcing. The command-line option \fileopt{dSLforcing} is used to specify the file containing sea level offsets:
-\begin{verbatim}
-$ pismr -i in.nc -ocean constant,forcing -dSLforcing delta_SL.nc
-\end{verbatim}%$
-uses \texttt{delta_SL.nc}
-\end{enumerate}
-
   
 \subsection{Flotation criterion and mask} \label{subsect:floatmask}  The most basic decision about ice dynamics made internally by PISM is whether to apply the ``flotation criterion'' to determine whether the ice is floating on the ocean or not.  In an evolution run this decision is made at each time step and the result is stored in the \t{mask}.
 
@@ -219,25 +131,6 @@ The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:mask
 
 Assuming the geometry of the ice evolves (which can be turned off by option \texttt{-no_mass}), and assuming an ocean exists (which can be turned off by option \texttt{-dry}), then at each time step the mask changes by the flotation criterion.  Ice which becomes floating is marked as \texttt{MASK_FLOATING} while ice which becomes grounded is either marked as \texttt{MASK_SHEET} or \texttt{MASK_DRAGGING}.  The latter case occurs if the option \texttt{-ssa_sliding} is used, while otherwise all points are marked \texttt{MASK_SHEET}.
 
-\subsection{Calving}
-\label{sec:calving}
-\optsection{Calving}
-
-PISM includes two very basic calving mechanisms activated using options in Table \ref{tab:calving}.  Other more physically-motivated calving laws (e.g.~\cite{Levermannetalsubmitted}) is planned for future versions of PISM.
-
-\begin{table}[ht]
-  \centering
-  \begin{tabular}{lp{0.7\linewidth}}
-    \\\toprule
-    \textbf{Option} & \textbf{Description}
-    \\\midrule
-    \intextoption{float_kill} & All floating ice is calved off immediately.\\
-    \intextoption{ocean_kill} & All ice flowing into grid cells marked as \texttt{MASK_FLOATING_AT_TIME_0} is calved off.
-    \\\bottomrule
- \end{tabular}
-  \caption{Calving options}
-  \label{tab:calving}
-\end{table}
 
 \subsection{Rheology}
 \label{sec:rheology}
@@ -345,80 +238,6 @@ Surface gradients are computed by finite differences in several slightly-differe
 Here $b$ is the bed elevation and $h$ is the surface elevation.  This transformation sometimes has the benefits that the surface values of the horizontal velocity and vertical velocity, and the driving stress, are better behaved near the margin.  See \cite{BLKCB,CDDSV} for technical explanation of this transformation and compare \cite{SaitoMargin}.  The actual finite difference schemes applied to compute the surface slope are similar to option \texttt{mahaffy}.
 
 
-\subsection{Controlling basal strength}  \label{subsect:basestrength}
-\optsection{Basal strength and sliding}
-
-In the \t{-ssa_sliding} case of a SIA+SSA hybrid model, the determination of basal resistance comes in part from a stored basal till material property $\phi=$\texttt{tillphi}, the till friction angle \cite{Paterson}.  The actual strength value is a till yield stress $\tau_c$, which necessarily represents the strength of the aggregate material at the base of an ice sheet, a poorly observed mixture of liquid water, ice, and granular till.  The value of $\tau_c$ is determined in part by a basal water model and in part $\phi$, using a Mohr-Coulomb criterion \cite[Chapter 8]{Paterson}, 
-\begin{equation*}
-   \tau_c = c_{0} + (\tan\phi)\,(\rho g H - p_w).
-\end{equation*}
-Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of gravity, $p_w$ is the modeled pore water pressure, and $\phi$ is the till friction angle.  The difference $(\rho g H - p_w)$ is the modeled value of the effective pressure on the material till.  Note Schoof \cite{SchoofStream} formula (2.4) uses till cohesion $c_0 = 0$ and that is the default value.
-
-Option \texttt{-plastic_pwfrac} determines $\alpha$, the quantity controlling how $p_w$ is determined from the effective thickness of basal water, the quantity $w=$\texttt{bwat}.  The formula is $p_w = \alpha\, w \rho g H$.  See \cite{BKAJS}.
-
-We find that an effective, though heuristic, way to determine \texttt{tillphi} is to make it a function of bed elevation \cite{BKAJS}.  This heuristic is motivated by hypothesis that basal material with a marine history should be weak \cite{HuybrechtsdeWolde}.
-
-Thus PISM has a mechanism setting $\phi$=\texttt{tillphi} to a \emph{piecewise-linear} function of bed elevation.  Given 5 parameters: $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}$, $b_{\mathrm{min}}$, $b_{\mathrm{max}}$, $\phi_{\mathrm{ocean}}$, where $b$ stands for the bed elevation, let 
-\begin{equation}
-  M = (\phi_{\text{max}} - \phi_{\text{min}}) / (b_{\text{max}} - b_{\text{min}})\label{eq:1}
-\end{equation}
-be the slope of the nontrivial part.  Then
-\begin{equation}
-  \phi(x,y) = \begin{cases}
-    \phi_{\text{min}}, & b(x,y) \le b_{\text{min}}, \\
-    \phi_{\text{min}} + (b(x,y) - b_{\text{min}}) \,M,
-    &  b_{\text{min}} < b(x,y) < b_{\text{max}}, \\
-    \phi_{\text{max}}, & b_{\text{max}} \le b(x,y). \end{cases}\label{eq:2}
-\end{equation}
-The exception is if the point is marked as floating, in which case the till friction angle
-is set to the value $\phi_{\mathrm{ocean}}$.
-
-Actually the ``yield stress'' $\tau_c$ can be part of a power law model.  In fact, the basal resistance is normally determined by a user-configurable ``pseudo-plastic'' power law.  Specifically, stress is a generally a power law function of basal sliding velocity $\mathbf{u}$:
-   $$\tau_b = \tau_c \frac{|\mathbf{u}|^{q-1}}{u_{\text{threshold}}^q}\, \mathbf{u}.$$
-Here $\tau_c$ corresponds to the variable \texttt{tauc} in PISM input and output files, $q$ is the power controlled by \texttt{-pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \texttt{-pseudo_plastic_uthreshold}.  The purely plastic case is $q=0$---see \cite{SchoofStream} for precise interpretation---and the linear case is $q=1$, in which case the coefficient of velocity, $\tau_c/u_{\text{threshold}}$, is more commonly called $\beta$ or $\beta^2$ \cite{MacAyeal}.
-
-See \emph{Reference Manual}, source file \texttt{iMbasal.cc}, and \cite{BBssasliding,BKAJS} for more details.
-
-The major example of \texttt{-ssa_sliding} usage is in the first section of this manual.  A made-up example, in which sliding happens in the ``trough'', is
-\begin{verbatim}
-pisms -eisII I -ssa_sliding -track_Hmelt -Mx 91 -My 91 -Mz 51 \
-      -topg_to_phi 5.0,15.0,0.0,1000.0 -y 12000
-\end{verbatim}
-
-A final note on basal sliding is in order.  There can be sliding in the SIA stress balance model (paradigm) itself.  \emph{This kind of sliding is not recommended}, which is why it is turned off by default.  Within PISM this kind of sliding is used in a few special cases, namely verification test E and experiments G and H of EISMINT II \cite{EISMINT00}.  Outside of PISM the SIA sliding mechanism appears in ISMIP-HEINO \cite{Calovetal2009HEINOfinal} and many other SIA-based modeling efforts.  But here is the rope to hang yourself by turning the mechanism on:  Such sliding is controlled by option \intextoption{mu_sliding}.  See source file \texttt{iMsia.cc} if you really want this.
-
-\begin{table}
-  \centering
-  \begin{tabular}{lp{0.6\linewidth}}
-    \\\toprule
-    \textbf{Option} & \textbf{Description}
-    \\\midrule
-    \txtopt{topg_to_phi}{\emph{list of 5 numbers}} & Compute $\phi$ using \eqref{eq:1} and \eqref{eq:2}.\\
-    \txtopt{plastic_pwfrac}{pure number} & Set what fraction of overburden pressure is assumed as the till pore water pressure.  Only relevant at basal points where there is a positive amount of basal water.\\
-    \intextoption{plastic_c0} & Set the value of the till cohesion ($c_{0}$) in the plastic till model.  The value is a pressure, given in kPa.\\
-    \txtopt{plastic_reg}{(m/a)} & Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}. The default is $0.01$.\\
-    \txtopt{plastic_phi}{(degrees)} & Use a constant till friction angle. The default is $30^{\circ}$.\\
-    \intextoption{pseudo_plastic_q} & Set the exponent $q$.\\
-    \intextoption{pseudo_plastic_uthreshold} & Set $u_{\text{threshold}}$.\\
-    \intextoption{hold_tauc} &   Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-ssa_sliding} is also set.
-   \\\bottomrule
-  \end{tabular}
-  \caption{Basal strength command-line options}
-  \label{tab:basal-strength}
-\end{table}
-
-% undocumented options/config. parameters
-% base/iMoptions.cc:  "thk_eff" : "thk_eff_basal_water_pressure"
-% base/iMoptions.cc:  "thk_eff_H_high" : "thk_eff_H_high"
-% base/iMoptions.cc:  "thk_eff_H_low" : "thk_eff_H_low"
-% base/iMoptions.cc:  "thk_eff_reduced" : "thk_eff_reduced"
-% base/iMoptions.cc:  "bmr_enhance" : "bmr_enhance_basal_water_pressure"
-% base/iMoptions.cc:  "bmr_enhance_scale" : "bmr_enhance_scale"
-
-
-%The scripts in \t{examples/pst} perform the experiments described in \cite{BBssasliding}, and represent the most thorough test of these mechanisms.
-% Test I in the verification suite\index{verification tests} uses an exact solution to the Schoof model.
-
 \subsection{Schoof's parameterization of bed roughness in the SIA} \label{subsect:bedsmooth} \index{Schoof's parameterization of bed roughness}
 \optsection{Schoof's parameterization of bed roughness}
 
@@ -436,7 +255,7 @@ The option \txtopt{bed_def}{[none, iso, lc]} turns on bed deformation models.
 
 The first model \verb|-bed_def iso|, is instantaneous pointwise isostasy.  This model assumes that the bed at the starting time is in equilibrium with the load.  Then, as the ice geometry evolves, the bed elevation is equal to the starting bed elevation minus a multiple of the increase in ice thickness from the starting time: $b(t,x,y) = b(0,x,y) - f [H(t,x,y) - H(0,x,y)]$.  Here $f$ is the density of ice divided by the density of the mantle, so its value is determined by setting the values of \verb|lithosphere_density| and \verb|ice_density| in the configuration file; see subsection \ref{sec:pism-defaults}.  For an example and verification, see Test H in Verification section. 
 
-The second model \verb|-bed_def lc| is much more effective.  It is based on papers by Lingle and Clark \cite{LingleClark}\index{People!Lingle, Craig} \index{People!Clark, J.} and Bueler and others \cite{BLKfastearth}.  It generalizes and improves the most widely-used earth deformation model in ice sheet modeling, the flat earth Elastic Lithosphere Relaxing Asthenosphere (ELRA) model \cite[c.f.][]{Greve2001}.  It is imposes  essentially no computational burden because the Fast Fourier Transform to solve the linear differential equation \cite{BLKfastearth}.  When using this model in PISM, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  In fact, if gridded ``observed'' uplift data is available, for instance from a combination of actual point observations and/or paleo ice load modeling, and it that uplift field is put in a NetCDF variable with standard name \verb|tendency_of_bedrock_altitude| in the  \texttt{-boot_file} file, then this model will initialize so that it starts with the given uplift rate.
+The second model \verb|-bed_def lc| is much more effective.  It is based on papers by Lingle and Clark \cite{LingleClark}\index{People!Lingle, Craig} \index{People!Clark, J.} and Bueler and others \cite{BLKfastearth}.  It generalizes and improves the most widely-used earth deformation model in ice sheet modeling, the flat earth Elastic Lithosphere Relaxing Asthenosphere (ELRA) model \cite{Greve2001}.  It is imposes  essentially no computational burden because the Fast Fourier Transform to solve the linear differential equation \cite{BLKfastearth}.  When using this model in PISM, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  In fact, if gridded ``observed'' uplift data is available, for instance from a combination of actual point observations and/or paleo ice load modeling, and it that uplift field is put in a NetCDF variable with standard name \verb|tendency_of_bedrock_altitude| in the  \texttt{-boot_file} file, then this model will initialize so that it starts with the given uplift rate.
 
 Minimal example runs to compare these models:
 \begin{verbatim}
