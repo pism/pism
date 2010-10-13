@@ -651,6 +651,7 @@ PetscErrorCode IceModel::misc_setup() {
 			 "medium", output_vars); CHKERRQ(ierr);
 
   ierr = init_snapshots(); CHKERRQ(ierr);
+  ierr = init_backups(); CHKERRQ(ierr);
   ierr = init_timeseries(); CHKERRQ(ierr);
   ierr = init_extras(); CHKERRQ(ierr);
   ierr = init_viewers(); CHKERRQ(ierr);

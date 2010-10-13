@@ -607,3 +607,83 @@ PetscErrorCode IceModel::write_snapshot() {
 
   return 0;
 }
+
+//! Initialize the backup (snapshot-on-wallclock-time) mechanism.
+PetscErrorCode IceModel::init_backups() {
+  PetscErrorCode ierr;
+  bool o_set;
+
+  backup_interval = config.get("backup_interval");
+
+  ierr = PetscOptionsBegin(grid.com, "", "PISM output options", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-o", "Output file name", backup_filename, o_set); CHKERRQ(ierr);
+    if (!o_set)
+      backup_filename = executable_short_name + "_backup.nc";
+    else
+      backup_filename = pism_filename_add_suffix(backup_filename, "_backup", "");
+
+    ierr = PISMOptionsReal("-backup_interval", "Automatic backup interval, hours",
+                           backup_interval, o_set); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  last_backup_time = 0.0;
+
+  return 0;
+}
+
+//! Write a backup (i.e. an intermediate result of a run).
+PetscErrorCode IceModel::write_backup() {
+  PetscErrorCode ierr;
+  PetscLogDouble current_time;
+  PetscReal wall_clock_hours;
+  PISMIO nc(&grid);
+
+  ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
+  wall_clock_hours = (current_time - start_time) / 3600.0;
+
+  if (wall_clock_hours - last_backup_time < backup_interval)
+    return 0;
+
+  last_backup_time = wall_clock_hours;
+
+  // create a history string:
+  string date_str = pism_timestamp();
+  char tmp[TEMPORARY_STRING_LENGTH];
+  snprintf(tmp, TEMPORARY_STRING_LENGTH,
+	   "%s: %s automatic backup at %10.5f a, %3.3f hours after the beginning of the run\n",
+	   date_str.c_str(), executable_short_name.c_str(), grid.year, wall_clock_hours);
+
+  ierr = verbPrintf(2, grid.com, 
+                    "  Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
+                    backup_filename.c_str(), wall_clock_hours); CHKERRQ(ierr);
+
+  stampHistory(tmp);
+
+  // write metadata:
+  ierr = nc.open_for_writing(backup_filename.c_str(), false, true); CHKERRQ(ierr);
+  // append == false, check_dims == true
+  ierr = nc.append_time(grid.year); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  ierr = global_attributes.write(backup_filename.c_str()); CHKERRQ(ierr);
+  ierr = mapping.write(backup_filename.c_str()); CHKERRQ(ierr);
+
+  // write the model state
+  ierr = write_model_state(backup_filename.c_str()); CHKERRQ(ierr);
+
+  if (surface != PETSC_NULL) {
+    ierr = surface->write_model_state(grid.year, dt / secpera, backup_filename); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
+  }
+
+  if (ocean != PETSC_NULL) {
+    ierr = ocean->write_model_state(grid.year, dt / secpera, backup_filename); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
+  }
+  
+  return 0;
+}

@@ -464,6 +464,13 @@ protected:
   PetscErrorCode write_extras();
   PetscErrorCode extras_max_timestep(double t_years, double& dt_years);
 
+  // automatic backups
+  double backup_interval;
+  string backup_filename;
+  PetscReal last_backup_time;
+  PetscErrorCode init_backups();
+  PetscErrorCode write_backup();
+
   // diagnostic viewers; see iMviewers.cc
   virtual PetscErrorCode init_viewers();
   virtual PetscErrorCode update_viewers();

@@ -748,6 +748,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
     ierr = write_snapshot(); CHKERRQ(ierr);
     ierr = write_timeseries(); CHKERRQ(ierr);
     ierr = write_extras(); CHKERRQ(ierr);
+    ierr = write_backup(); CHKERRQ(ierr);
 
     ierr = update_viewers(); CHKERRQ(ierr);
 
