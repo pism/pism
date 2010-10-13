@@ -50,13 +50,16 @@ private:
 PetscErrorCode IceRegionalModel::createVecs() {
   PetscErrorCode ierr;
 
-  ierr = no_model_mask.create(grid, "no_model_mask", false); CHKERRQ(ierr);
+  ierr = IceModel::createVecs(); CHKERRQ(ierr);
+
+  // stencil width of 2 needed for surfaceGradientSIA() action
+  ierr = no_model_mask.create(grid, "no_model_mask", true, 2); CHKERRQ(ierr);
   ierr = no_model_mask.set_attrs("internal",
                             "mask specifying whether to model the ice sheet (=0), or hold to boundary values already set by input file [or externally in future] (=1)",
                             "", ""); CHKERRQ(ierr); // no units and no standard name
   ierr = no_model_mask.set(0.0); CHKERRQ(ierr);    // set to no such strip of boundary values
+  ierr = variables.add(no_model_mask); CHKERRQ(ierr);
 
-  ierr = IceModel::createVecs(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -81,6 +84,7 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
     ierr = verbPrintf(2,grid.com,
 	"  reading 'no_model_mask' from %s ...\n",
 	filename); CHKERRQ(ierr);
+    // note: communication to fill stencil width should occur inside this call
     ierr = no_model_mask.read(filename, last_record); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com,
@@ -119,8 +123,8 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
     ierr = grid.compute_horizontal_coordinates(x_coords, y_coords); CHKERRQ(ierr);
 
     ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
         if ((x_coords[i] <= x_coords[0]+strip)
             || (x_coords[i] >= x_coords[grid.Mx-1]-strip)) {
           no_model_mask(i, j) = 1; CHKERRQ(ierr);
@@ -135,6 +139,9 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
     ierr = no_model_mask.end_access(); CHKERRQ(ierr);
 
     delete[] x_coords;  delete[] y_coords;
+
+    ierr = no_model_mask.beginGhostComm(); CHKERRQ(ierr);
+    ierr = no_model_mask.endGhostComm(); CHKERRQ(ierr);
   }
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
@@ -155,8 +162,9 @@ PetscErrorCode IceRegionalModel::computeDrivingStress(
                     IceModelVec2S &vtaudx, IceModelVec2S &vtaudy) {
   PetscErrorCode ierr;
 
+  // note that base class does not use GHOSTS>0;  why not?
   ierr = IceModel::computeDrivingStress(vtaudx, vtaudy); CHKERRQ(ierr);
-                    
+
   ierr = vtaudx.begin_access(); CHKERRQ(ierr);
   ierr = vtaudy.begin_access(); CHKERRQ(ierr);
   ierr = no_model_mask.begin_access();  CHKERRQ(ierr);
@@ -188,15 +196,16 @@ PetscErrorCode IceRegionalModel::surfaceGradientSIA() {
   ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
   ierr = no_model_mask.begin_access();  CHKERRQ(ierr);
 
-  // FIXME:  because no_model_mask does not have stencil width, we are not doing
-  //   ghosts here, as is done in iMsia.cc
-  for (PetscInt o=0; o<2; o++) {
-    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        if (no_model_mask(i,j) > 0.5) {
-          h_x[o][i][j] = 0.0;
-          h_y[o][i][j] = 0.0;
-        }
+  PetscInt  GHOSTS = 1;
+  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+      if ( (no_model_mask(i,j) > 0.5) && (no_model_mask(i+1,j) > 0.5) ) {
+        h_x[0][i][j] = 0.0;
+        h_y[0][i][j] = 0.0;
+      }
+      if ( (no_model_mask(i,j) > 0.5) && (no_model_mask(i,j+1) > 0.5) ) {
+        h_x[1][i][j] = 0.0;
+        h_y[1][i][j] = 0.0;
       }
     }
   }
@@ -206,14 +215,6 @@ PetscErrorCode IceRegionalModel::surfaceGradientSIA() {
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
-
-  // FIXME:  probably this communication is necessary for now; probably no_model_mask should
-  //   have ghosts of stencil width 1 so that the communication can be removed
-  //   and the loop above can do local update of ghosts like the loop in iMsia.cc
-  for (PetscInt k=0; k<4; k++) {
-    ierr = vWork2d[k].beginGhostComm(); CHKERRQ(ierr);
-    ierr = vWork2d[k].endGhostComm(); CHKERRQ(ierr);
-  }
 
   return 0;
 }
@@ -267,7 +268,6 @@ int main(int argc, char *argv[]) {
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
     IceGrid g(com, rank, size, config);
-//    IceModel m(g, config, overrides);
     IceRegionalModel m(g, config, overrides);
 
     // Initialize boundary models:
