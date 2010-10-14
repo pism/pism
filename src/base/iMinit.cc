@@ -394,7 +394,7 @@ PetscErrorCode IceModel::grid_setup() {
     } else {
       grid.compute_ownership_ranges();
     }
-  }
+  } // -Nx and -Ny set
 
   // Process -y, -ys, -ye. We are reading these options here because couplers
   // might need to know what year it is.
@@ -688,7 +688,10 @@ PetscErrorCode IceModel::misc_setup() {
   event_velocity = prof->create("velocity", "velocity computation");
   event_vel_inc  = prof->create("vel_inc",  "vert. velocity using incompressibility");
   event_sia      = prof->create("vel_sia",  "SIA velocity computation");
+  event_sia_2d   = prof->create("vel_sia_2d",  "SIA (2D)");
+  event_sia_3d   = prof->create("vel_sia_3d",  "SIA (3D)");
   event_ssa      = prof->create("vel_ssa",  "SSA velocity computation");
+  event_ssa_3d   = prof->create("vel_ssa_3d",  "SSA (3D)");
   event_energy   = prof->create("energy",   "energy balance computation");
   event_vel_com  = prof->create("vel_com",  "velocity ghost points communication");
   event_thk_com  = prof->create("thk_com",  "ice thickness ghost points communication");

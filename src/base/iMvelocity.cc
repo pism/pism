@@ -41,6 +41,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
   if (computeSIAVelocities == PETSC_TRUE) {
     stdout_flags += " SIA ";
 
+    prof->begin(event_sia_2d);
     // uses:
     // * thickness and bed topography or
     // * usurf
@@ -88,7 +89,10 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     // * vel_bar
     ierr = velocities2DSIAToRegular(); CHKERRQ(ierr);
     ierr = verbPrintf(5,grid.com, "{velocities2DSIAToRegular()}"); CHKERRQ(ierr);
-  
+
+    prof->end(event_sia_2d);
+
+    prof->begin(event_sia_3d);
     if (updateVelocityAtDepth) {  
       // I on staggered is used in  horizontalVelocitySIARegular()
       // Sigma on staggered is used in SigmaSIAToRegular()
@@ -111,6 +115,7 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
       ierr = verbPrintf(5,grid.com, "{SigmaSIAToRegular(),horizontalVelocitySIARegular()}");
                 CHKERRQ(ierr);
     }
+    prof->end(event_sia_3d);
   } else { // if computeSIAVelocities == PETSC_FALSE
     // do NOT zero out uvbar; they are used to communicate boundary
     // conditions to SSA calculation

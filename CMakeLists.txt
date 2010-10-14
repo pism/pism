@@ -130,7 +130,7 @@ add_subdirectory (src)
 add_subdirectory (doc)
 
 # Install helper scripts residing in util/
-install (FILES
+install (PROGRAMS
   util/check_stationarity.py
   util/fill_missing.py
   util/flowline.py

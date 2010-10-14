@@ -1719,17 +1719,7 @@ PetscErrorCode IceModel::compute_diffusivity(IceModelVec2S &result) {
   ierr = surfaceGradientSIA(); CHKERRQ(ierr);
   ierr = velocitySIAStaggered(); CHKERRQ(ierr); // ends with staggered
                                                 //   diffusivity in vWork2dStag
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = vWork2dStag.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // sum of stag. neighbors:  EAST + NORTH + SOUTH + WEST
-      result(i,j) = 0.25 * (  vWork2dStag(i,j,0) + vWork2dStag(i,j,1)
-                            + vWork2dStag(i,j-1,1) + vWork2dStag(i-1,j,0) );
-    }
-  }
-  ierr = vWork2dStag.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = vWork2dStag.staggered_to_regular(result); CHKERRQ(ierr); 
 
   ierr = result.set_name("diffusivity"); CHKERRQ(ierr);
   ierr = result.set_attrs(

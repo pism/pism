@@ -190,6 +190,7 @@ public:
   // component-wise access:
   virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
   virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
+  virtual PetscErrorCode staggered_to_regular(IceModelVec2S &result);
 };
 
 //! \brief A simple class "hiding" the fact that the mask is stored as

@@ -489,7 +489,10 @@ private:
     event_velocity,		//!< total velocity computation
     event_vel_inc,		//!< vert. velocity from incompressibility
     event_sia,			//!< SIA computation
+    event_sia_2d,               //!< 2D SIA computation
+    event_sia_3d,               //!< filling u3 and v3 with SIA velocities
     event_ssa,			//!< SSA computation
+    event_ssa_3d,               //!< combining SIA and SSA and filling u3 and v3
     event_energy,		//!< energy balance computation
     event_vel_com,		//!< velocity communication
     event_thk_com,		//!< thickness communication

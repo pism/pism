@@ -77,19 +77,19 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
   ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
 
   if (method == "eta") {
-    PetscScalar **eta, **H;
+    PetscScalar **eta;
     const PetscScalar n = ice->exponent(), // presumably 3.0
                       etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
                       invpow  = 1.0 / etapow,
                       dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
     // compute eta = H^{8/3}, which is more regular, on reg grid
     ierr = vWork2d[4].get_array(eta); CHKERRQ(ierr);
-    ierr = vH.get_array(H); CHKERRQ(ierr);
+    ierr = vH.begin_access(); CHKERRQ(ierr);
 
     PetscInt GHOSTS = 2;
     for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
       for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        eta[i][j] = pow(H[i][j], etapow);
+        eta[i][j] = pow(vH(i,j), etapow);
       }
     }
     ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
@@ -305,7 +305,6 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
     vh, vH, WIDE_GHOSTS, &vWork2d[5]); CHKERRQ(ierr);
 
   PetscScalar **h_x[2], **h_y[2];  
-  ierr = vh.begin_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
   ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
@@ -434,7 +433,6 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
   ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[5].end_access(); CHKERRQ(ierr);
-  ierr = vh.end_access(); CHKERRQ(ierr);
   if (usetau3) {
     ierr = tau3.end_access(); CHKERRQ(ierr);
   }
@@ -561,9 +559,7 @@ vertically-averaged horizontal velocity.  Therefore the values in \c Vec\ s
 \c vel_bar are merely tentative.  The values in \c uvbar are, however,
 PISM's estimate of \e deformation by shear in vertical planes.
 
-Note that communication of ghosted values must occur between calling
-velocitySIAStaggered() and this procedure for the averaging to work.  Only
-two-dimensional regular grid velocities are updated here.  The full
+Only two-dimensional regular grid velocities are updated here. The full
 three-dimensional velocity field is not updated here but instead in
 horizontalVelocitySIARegular() and in vertVelocityFromIncompressibility().
  */
@@ -577,7 +573,7 @@ PetscErrorCode IceModel::velocities2DSIAToRegular() {
   if (mu_sliding == 0.0) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        // compute ubar,vbar on regular grid by averaging deformational onto
+        // compute ubar,vbar on regular grid by averaging deformational on the
         //   staggered grid
         vel_bar(i,j).u = 0.5*(uvbar(i-1,j,0) + uvbar(i,j,0));
         vel_bar(i,j).v = 0.5*(uvbar(i,j-1,1) + uvbar(i,j,1));
@@ -613,20 +609,18 @@ velocitySIAStaggered() and this procedure for the averaging to work.
  */
 PetscErrorCode IceModel::SigmaSIAToRegular() {
   PetscErrorCode  ierr;
-  PetscScalar **H;
-
   PetscScalar *Sigmareg, *SigmaEAST, *SigmaWEST, *SigmaNORTH, *SigmaSOUTH;
 
-  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = Sigma3.begin_access(); CHKERRQ(ierr);
   ierr = Sigmastag3[0].begin_access(); CHKERRQ(ierr);
   ierr = Sigmastag3[1].begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (H[i][j] > 0.0) {
+      if (vH(i,j) > 0.0) {
         // horizontally average Sigma onto regular grid
-        const PetscInt ks = grid.kBelowHeight(H[i][j]);
+        const PetscInt ks = grid.kBelowHeight(vH(i,j));
         ierr = Sigma3.getInternalColumn(i,j,&Sigmareg); CHKERRQ(ierr);
         ierr = Sigmastag3[0].getInternalColumn(i,j,&SigmaEAST); CHKERRQ(ierr);
         ierr = Sigmastag3[0].getInternalColumn(i-1,j,&SigmaWEST); CHKERRQ(ierr);

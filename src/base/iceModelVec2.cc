@@ -628,3 +628,21 @@ PetscErrorCode IceModelVec2Stag::set_component(int n, IceModelVec2S &source) {
 
   return 0;
 }
+
+//! Averages staggered grid values and puts them on a regular grid.
+PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = begin_access(); CHKERRQ(ierr);
+  for (PetscInt i = grid->xs; i < grid->xs+grid->xm; ++i) {
+    for (PetscInt j = grid->ys; j < grid->ys+grid->ym; ++j) {
+      result(i,j) = 0.25 * (  (*this)(i,j,0) + (*this)(i,j,1)
+                              + (*this)(i,j-1,1) + (*this)(i-1,j,0) );
+    } // j
+  }   // i
+  ierr = end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}

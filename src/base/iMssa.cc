@@ -950,8 +950,13 @@ PetscErrorCode IceModel::correctSigma() {
           //   Should we get rid of it completely?  If not, what is most consistent here?
             BofT    = ice->hardnessParameter_from_enth(E[k], pressure) * pow(enhancement_factor,-1/n_glen);
           if (addVels) {
+
+            // extract (D(u)_{13}^2 + D(u)_{23}^2) from Sigma computed earlier:
             const PetscScalar D2sia = pow(Sigma[k] / (2 * BofT), 1.0 / Sig_pow);
+
+            // compute combined D^2 (see section 2.8 of BBssasliding)
             Sigma[k] = 2.0 * BofT * pow(fv*fv*D2sia + omfv*omfv*D2ssa, Sig_pow);
+
           } else { // floating (or grounded SSA sans super)
             Sigma[k] = 2.0 * BofT * pow(D2ssa, Sig_pow);
           }
