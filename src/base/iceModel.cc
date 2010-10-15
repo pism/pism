@@ -608,7 +608,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     stdout_flags += "h";
   } else {
     stdout_flags += "$";
-    // if do_mass_conserve is false, then ice thickness does not change and
+    // if do_mass_continuity is false, then ice thickness does not change and
     // dH/dt = 0:
     ierr = vdHdt.set(0.0); CHKERRQ(ierr);
   }

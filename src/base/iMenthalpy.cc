@@ -349,6 +349,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   PetscScalar fdz = grid.dz_fine,
     *fzlev = grid.zlevels_fine;
 
+  const bool bedrock_is_present = fMbz > 1;
+
   if (fMbz == 2) {
     SETERRQ(2,
       "PISM ERROR:  enthalpyAndDrainageStep() does not currently allow fMbz == 2;\n"
@@ -439,6 +441,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       // for fine grid; this should *not* be replaced by call to grid.kBelowHeight()
       const PetscInt ks = static_cast<PetscInt>(floor(vH(i,j)/fdz));
 
+      const bool ice_free_column = (ks == 0);
+
       // enthalpy and pressures at top of ice
       const PetscScalar p_ks = EC->getPressureFromDepth(vH(i,j) - fzlev[ks]);
       PetscScalar Enth_ks;
@@ -446,18 +450,20 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       //   now there is no case where we have that:
       ierr = EC->getEnthPermissive(artm(i,j), 0.0, p_ks,  Enth_ks); CHKERRQ(ierr);
 
-      const bool is_floating = vMask.is_floating(i,j);
+      const bool is_floating = vMask.is_floating(i,j),
+        is_grounded = !is_floating;
 
       // deal completely with columns with no ice; note bedrock does need actions
-      if (ks == 0) {
+      if (ice_free_column) {
         ierr = vWork3d.setColumn(i,j,Enth_ks); CHKERRQ(ierr);
         PetscScalar Tbtop;
         if (is_floating) {
           Tbtop = shelfbtemp(i,j);
         } else {
+          // FIXME: doesn't this just give us artm(i,j) over again?
           ierr = EC->getAbsTemp(Enth_ks, p_ks, Tbtop); CHKERRQ(ierr);
         }
-        if (fMbz > 1) { // bedrock layer if present
+        if (bedrock_is_present) { // bedrock layer if present
           ierr = bosys.setIndicesAndClearThisColumn(i,j,-1); CHKERRQ(ierr);  
           ierr = Tb3.getValColumnPL(i,j,bosys.Tb); CHKERRQ(ierr);
           ierr = bosys.setBoundaryValuesThisColumn(Tbtop, vGhf(i,j)); CHKERRQ(ierr);
@@ -482,7 +488,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         }
        
         goto donewithcolumn;
-      }
+      } // end of if (ice_free_column)
 
       { // explicit scoping to deal with goto and initializers
 
@@ -499,10 +505,12 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       ierr = getEnthalpyCTSColumn(p_air, vH(i,j), ks, iosys.Enth, iosys.w,
                                   &lambda, &iosys.Enth_s); CHKERRQ(ierr);
 
+      bool base_is_cold = iosys.Enth[0] < iosys.Enth_s[0];
+
       if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
 
       // major decision: is cold base and grounded and has bedrock layer?:
-      if ( (iosys.Enth[0] < iosys.Enth_s[0]) && (fMbz > 1) && (!is_floating) ) {
+      if ( base_is_cold && bedrock_is_present && is_grounded ) {
 
         // ***** COLD BASE, GROUNDED CASE WITH BEDROCK *****
         ierr = cbsys.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
@@ -579,7 +587,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         if (is_floating) {
           vbmr(i,j) = shelfbmassflux(i,j);
         } else {
-          if (iosys.Enth[0] < iosys.Enth_s[0]) {
+          if (base_is_cold) {
             // this case occurs only if no bedrock thermal layer
             vbmr(i,j) = 0.0;  // zero melt rate if cold base
           } else {
@@ -601,7 +609,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
         // ***** determine lowest-level equation at bottom of ice
         //       see page documenting BOMBPROOF
-        if (iosys.Enth[0] < iosys.Enth_s[0]) {
+        if (base_is_cold) {
           // cold base case with fMbz==1: ice base equation says heat flux is known
           // this case only if no bedrock thermal layer
           const PetscScalar C = ice_c * fdz / ice_k;
@@ -648,7 +656,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           a0  = (1.0 - alpha) * a0  + alpha * 1.0,
           a1  = (1.0 - alpha) * a1  + alpha * (-1.0);
 
-          if (!is_floating)    vbmr(i,j) *= 1.0 - alpha;
+          if (is_grounded)    vbmr(i,j) *= 1.0 - alpha;
 
           ierr = iosys.setLevel0EqnThisColumn(a0,a1,rhs); CHKERRQ(ierr);
         }
@@ -664,7 +672,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
       // thermodynamic basal melt rate causes water to be added to layer
       PetscScalar Hmeltnew = vHmelt(i,j);
-      if (!is_floating) {
+      if (is_grounded) {
         Hmeltnew += vbmr(i,j) * dtTempAge;
       }
 
@@ -694,7 +702,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       }
       // in grounded case, add to both basal melt rate and Hmelt; if floating,
       // Hdrainedtotal is discarded because ocean determines basal melt rate
-      if (!is_floating) {
+      if (is_grounded) {
         vbmr(i,j) += Hdrainedtotal / dtTempAge;
         Hmeltnew += Hdrainedtotal;
       }
@@ -712,7 +720,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       ierr = vWork3d.setValColumnPL(i,j,Enthnew); CHKERRQ(ierr);
 
       // if no thermal layer then need to fill Tbnew[0] directly
-      if (fMbz == 1) {
+      if (!bedrock_is_present) {
         if (is_floating) { // floating: get from PISMOceanModel
           Tbnew[0] = shelfbtemp(i,j);
         } else {                      // grounded: duplicate temp from ice
@@ -730,7 +738,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           // if floating assume maximally saturated "till"
           // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
           vHmelt(i,j) = hmelt_max;
-        } else if (ks == 0) {
+        } else if (ice_free_column) {
           vHmelt(i,j) = 0.0;  // no stored water on ice free land
         } else {
           // limit Hmelt to be in [0.0, hmelt_max]

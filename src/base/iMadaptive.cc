@@ -122,7 +122,7 @@ Note velocitySIAStaggered() must be called before this to set \c gDmax.  Note
 adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so dt <= adapt_ratio * dx^2/maxD
 (if dx=dy)
 
-Reference: \ref MortonMayers pp 62--63.
+Reference: [\ref MortonMayers] pp 62--63.
  */
 PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
 
