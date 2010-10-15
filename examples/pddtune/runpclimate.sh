@@ -67,8 +67,8 @@ done
 TENKMGRID="-Mx 151 -My 281 -Lz 4000 -Lbz 2000 -Mz 41 -Mbz 11 -z_spacing equal -zb_spacing equal"
 TWENTYKMGRID="-Mx 76 -My 141 -Lz 4000 -Lbz 2000 -Mz 41 -Mbz 11 -z_spacing equal -zb_spacing equal"
 
-GRID=$TWENTYKMGRID
-CS=20
+GRID=$TENKMGRID
+CS=10
 
 # cat prefix and exec together
 PISM="${PISM_PREFIX}pismr -ocean_kill -e 3"
@@ -87,21 +87,21 @@ cmd="$PISM_MPIDO $NN $PISM -boot_file $PISM_DATANAME $GRID \
 $PISM_DO $cmd
 
 
-# quick look at climate in a particular period
-CLIMSTARTTIME=1958
-#CLIMENDTIME=2007
-CLIMENDTIME=1977
-CLIMATE0=g${CS}km_clim_${CLIMSTARTTIME}-${CLIMENDTIME}.nc
+# climate in one year, thought of as a year in the middle of the period where
+#   Ettema et al precip and smb and melt and runoff are available
+CLIMSTARTTIME=1990.0833333333
+CLIMENDTIME=1991
+DT=0.0833333333 # monthly = (1/12) of year
+CLIMATE0=g${CS}km_clim_one_year.nc
 echo
 echo "$SCRIPTNAME  running pclimate with monthly timesteps to generate $CLIMATE0"
 echo "$SCRIPTNAME    to get ice surface climate in period $CLIMSTARTTIME-$CLIMENDTIME"
 echo
 cmd="$PISM_MPIDO $NN ${PISM_PREFIX}pclimate -i $PRE0NAME $COUPLER \
-  -ys $CLIMSTARTTIME -ye $CLIMENDTIME -dt 0.0833333333 -o $CLIMATE0"
+  -ys $CLIMSTARTTIME -ye $CLIMENDTIME -dt $DT -o $CLIMATE0 -on_error_attach_debugger"
 $PISM_DO $cmd
 
-
-CLIMATE=will_break_it.nc
+CLIMATE=mask$CLIMATE0.nc
 echo
 echo "$SCRIPTNAME  removing some fields and adding in thk (in prep for masking), using NCO;"
 echo "$SCRIPTNAME    generating $CLIMATE"

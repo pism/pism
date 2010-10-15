@@ -166,7 +166,12 @@ This base class already accesses a fair amount of functionality.  It holds a
 pointer to an instance of the LocalMassBalance class.  This class has method
 LocalMassBalance::getMassFluxFromTemperatureTimeSeries() which uses the
 precipitation during the ice sheet model time step, plus a variable temperature
-over that time step, to compute melt, refreeze, and surface balance. 
+over that time step, to compute melt, refreeze, and surface balance.
+
+This base class reads options <tt>-pdd_factor_snow</tt>, <tt>-pdd_factor_ice</tt>,
+and <tt>-pdd_refreeze</tt> and sets these factors accordingly, in the case where
+the factors are independent of location.  If option <tt>-pdd_fausto</tt> is used
+then an object is called which updates these values based on the location.
 */
 class PSTemperatureIndex : public PISMSurfaceModel {
 public:
@@ -184,13 +189,19 @@ public:
                                                  string filename);
 protected:
   LocalMassBalance *mbscheme;	//!< mass balance scheme to use
-  bool use_fausto_pdd_parameters;
-  IceModelVec2S temp_mj,	//!< for the mean July temperature needed to set PDD parameters as in [\ref Faustoetal2009].
-    acab,			//!< cached accumulation/ablation rates
+
+  FaustoGrevePDDObject *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
+
+  DegreeDayFactors base_ddf;
+  PetscScalar  base_pddStdDev;       //!< K; daily amount of randomness
+
+  IceModelVec2S
+    acab,		//!< cached surface mass balance (accumulation/ablation) rate
     accumulation_rate,
     melt_rate,
-    runoff_rate,
-    *lat;		//!< latitude needed to set PDD parameters as in [\ref Faustoetal2009].
+    runoff_rate;
+
+  IceModelVec2S *lat, *lon, *usurf;  //!< PSTemperatureIndex must hold these pointers in order to use object which needs 3D location to determine degree day factors.
 };
 
 

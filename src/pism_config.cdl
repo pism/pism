@@ -193,6 +193,9 @@ netcdf pism_config {
 
   // PISMAtmosphereModel and PISMOceanModel constants, including LocalMassBalance
 
+    pism_config:pdd_max_temperature_evals_per_year = 53;
+    pism_config:pdd_max_temperature_evals_per_year_doc = "integer; maximum number of times the PDD scheme will ask for temperatures to build location-dependent time series for computing (expected) number of positive degree days; the default means the PDD uses weekly samples of the annual cycle; see also pdd_std_dev";
+
     pism_config:force_to_thickness_alpha = 6.33775292816370e-11;
     pism_config:force_to_thickness_alpha_doc = "s-1; = 0.002 a-1; exponential coefficient in force-to-thickness mechanism";
 
