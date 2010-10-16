@@ -188,18 +188,18 @@ public:
   virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
                                                  string filename);
 protected:
-  LocalMassBalance *mbscheme;	//!< mass balance scheme to use
+  LocalMassBalance *mbscheme;	      //!< mass balance scheme to use
 
   FaustoGrevePDDObject *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
 
-  DegreeDayFactors base_ddf;
-  PetscScalar  base_pddStdDev;       //!< K; daily amount of randomness
-
+  DegreeDayFactors base_ddf;          //!< holds degree-day factors in location-independent case
+  PetscScalar  base_pddStdDev,        //!< K; daily amount of randomness
+               base_pddThresholdTemp; //!< K; temps are positive above this
   IceModelVec2S
-    acab,		//!< cached surface mass balance (accumulation/ablation) rate
-    accumulation_rate,
-    melt_rate,
-    runoff_rate;
+    acab,		//!< cached surface mass balance rate
+    accumulation_rate,  //!< diagnostic output accumulation rate (snow - rain)
+    melt_rate,          //!< diagnostic output melt rate (rate at which snow and ice is melted, but some snow melt refreezes)
+    runoff_rate;        //!< diagnostic output meltwater runoff rate
 
   IceModelVec2S *lat, *lon, *usurf;  //!< PSTemperatureIndex must hold these pointers in order to use object which needs 3D location to determine degree day factors.
 };

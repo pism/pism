@@ -29,20 +29,28 @@ def usagefailure(message):
 def maskout(nc, thk, name, thktol=1.0):
     from numpy import squeeze, isnan, ma
 
-    fill_value = -9999.0
+    fill_value = -9999.0e+25
+    valid_min = -1.0e+10
 
     try:
-        var = squeeze(nc.variables[name][:])
-        dims = nc.variables[name].dimensions
+        nc.variables[name]._FillValue = fill_value
+        nc.variables[name].valid_min = valid_min
     except:
         usagefailure("ERROR: VARIABLE '%s' NOT FOUND IN FILE" % name)
 
+    dims = nc.variables[name].dimensions
+    var = nc.variables[name][:]
+    # print var.shape
+    
     if 't' in dims:
+        if var.shape[0] > 1:
+            var = squeeze(var)
         for j in range(var.shape[0]):
             tmp = var[j]
             tmp[thk<thktol] = fill_value
             var[j] = tmp
     else:
+        var = squeeze(var)
         var[thk<thktol] = fill_value
         
     return var

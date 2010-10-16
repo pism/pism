@@ -75,20 +75,32 @@ public:
   virtual PetscErrorCode getNForTemperatureSeries(
                 PetscScalar t, PetscScalar dt, PetscInt &N) = 0;
 
-  /*! Inputs T[0],...,T[N-1] are temperatures (K) at times t, t+dt, ..., t+(N-1)dt.
-      Inputs \c t, \c dt are in seconds.  Input \c precip_rate, and returned mass fluxes,
-      including \c accumulation_rate, \c melt_rate, \c runoff_rate,
-      and \c smb (= surface mass balance) , are in 
+  //! Count positive degree days (PDDs).  Returned value in units of K day.
+  /*! Inputs T[0],...,T[N-1] are temperatures (K) at times t, t+dt_series, ..., t+(N-1)dt_series.
+      Inputs \c t, \c dt_series are in seconds.  */
+  virtual PetscScalar getPDDSumFromTemperatureTimeSeries(
+                 PetscScalar pddStdDev, PetscScalar pddThresholdTemp,
+                 PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N) = 0;
+
+  /*! Remove rain from precip.  Returned value is amount of snow in ice-equivalent m. */
+  /*! Inputs \c precip_rate is in ice-equivalent m s-1.  Note
+      <tt>dt = N * dt_series</tt> is the full time-step.  */
+  virtual PetscScalar getSnowFromPrecipAndTemperatureTimeSeries(
+                 PetscScalar precip_rate,
+                 PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N) = 0;
+
+  /*! Input \c dt is in seconds.  Input \c pddsum is in K day.  
+      Input \c snow is in ice-equivalent m. 
+      Returned mass fluxes, including \c accumulation_rate, \c melt_rate,
+      \c runoff_rate, and \c smb (= surface mass balance), are in 
       ice-equivalent thickness per time (m s-1).  */
-  virtual PetscErrorCode getMassFluxesFromTemperatureTimeSeries(const DegreeDayFactors &ddf,
-                                                              PetscScalar pddStdDev,
-                                                              PetscScalar t, PetscScalar dt_series,
-                                                              PetscScalar *T, PetscInt N,
-                                                              PetscScalar precip_rate,
-                                                              PetscScalar &accumulation_rate,
-                                                              PetscScalar &melt_rate,
-                                                              PetscScalar &runoff_rate,
-                                                              PetscScalar &smb) = 0;
+  virtual PetscErrorCode getMassFluxesFromPDDs(const DegreeDayFactors &ddf,
+                                               PetscScalar dt, PetscScalar pddsum,
+                                               PetscScalar snow,
+                                               PetscScalar &accumulation_rate,
+                                               PetscScalar &melt_rate,
+                                               PetscScalar &runoff_rate,
+                                               PetscScalar &smb_rate) = 0;
 
 protected:
   const NCConfigVariable& config;
@@ -110,22 +122,24 @@ public:
   virtual PetscErrorCode getNForTemperatureSeries(
              PetscScalar t, PetscScalar dt, PetscInt &N);
 
-  virtual PetscErrorCode getMassFluxesFromTemperatureTimeSeries(const DegreeDayFactors &ddf,
-                                                              PetscScalar pddStdDev,
-                                                              PetscScalar t, PetscScalar dt_series,
-                                                              PetscScalar *T, PetscInt N,
-                                                              PetscScalar precip_rate,
-                                                              PetscScalar &accumulation_rate,
-                                                              PetscScalar &melt_rate,
-                                                              PetscScalar &runoff_rate,
-                                                              PetscScalar &smb);
-protected:
-  /*! Return value is number of positive degree days (units: K day)  */
   virtual PetscScalar getPDDSumFromTemperatureTimeSeries(
-                 PetscScalar pddStdDev,
+                 PetscScalar pddStdDev, PetscScalar pddThresholdTemp,
                  PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N);
 
-  PetscScalar CalovGreveIntegrand(PetscScalar sigma, PetscScalar Tac);
+  virtual PetscScalar getSnowFromPrecipAndTemperatureTimeSeries(
+                 PetscScalar precip_rate,
+                 PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N);
+
+  virtual PetscErrorCode getMassFluxesFromPDDs(const DegreeDayFactors &ddf,
+                                               PetscScalar dt, PetscScalar pddsum,
+                                               PetscScalar snow,
+                                               PetscScalar &accumulation_rate,
+                                               PetscScalar &melt_rate,
+                                               PetscScalar &runoff_rate,
+                                               PetscScalar &smb_rate);
+
+protected:
+  PetscScalar CalovGreveIntegrand(PetscScalar sigma, PetscScalar TacC);
 
   bool precip_as_snow;          //!< interpret all the precipitation as snow (no rain)
   PetscScalar Tmin,             //!< the temperature below which all precipitation is snow
@@ -154,10 +168,11 @@ public:
   virtual PetscErrorCode getNForTemperatureSeries(
                 PetscScalar t, PetscScalar dt, PetscInt &N);
 
-protected:
   virtual PetscScalar getPDDSumFromTemperatureTimeSeries(
-               PetscScalar pddStdDev,
+               PetscScalar pddStdDev, PetscScalar pddThresholdTemp,
                PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N);
+
+protected:
   gsl_rng *pddRandGen;
 };
 

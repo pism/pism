@@ -65,47 +65,60 @@ done
 
 # grids
 TENKMGRID="-Mx 151 -My 281 -Lz 4000 -Lbz 2000 -Mz 41 -Mbz 11 -z_spacing equal -zb_spacing equal"
-TWENTYKMGRID="-Mx 76 -My 141 -Lz 4000 -Lbz 2000 -Mz 41 -Mbz 11 -z_spacing equal -zb_spacing equal"
+#TWENTYKMGRID="-Mx 76 -My 141 -Lz 4000 -Lbz 2000 -Mz 41 -Mbz 11 -z_spacing equal -zb_spacing equal"
 
 GRID=$TENKMGRID
 CS=10
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}pismr -ocean_kill -e 3"
+PISMR="${PISM_PREFIX}pismr -ocean_kill -e 3"
 
-# coupler settings
-COUPLER="-atmosphere searise_greenland -surface pdd -pdd_fausto"
+# coupler settings: Fausto 2m air temp parameterization, but default PDD
+#   (w/o Greve 2005 settings of PDD parameters)
+COUPLER="-atmosphere searise_greenland -surface pdd"
 
-# bootstrap and do smoothing run for 1 year
-SMOOTHRUNLENGTH=1
+
+# config file
+CDLCONFIG=base_config.cdl
+PCONFIG=base_config.nc
+echo
+echo "$SCRIPTNAME  generating $PCONFIG file from $CDLCONFIG"
+cmd="rm -rf $PCONFIG"
+$PISM_DO $cmd
+cmd="ncgen -o $PCONFIG $CDLCONFIG"
+$PISM_DO $cmd
+
+
+# bootstrap and do very short smoothing run
+SMOOTHRUNLENGTH=0.1
 PRE0NAME=g${CS}km_pre${SMOOTHRUNLENGTH}.nc
 echo
-echo "$SCRIPTNAME  bootstrapping plus short smoothing run (for ${SMOOTHRUNLENGTH}a)"
-echo
-cmd="$PISM_MPIDO $NN $PISM -boot_file $PISM_DATANAME $GRID \
+echo "$SCRIPTNAME  bootstrapping plus very short smoothing run (for ${SMOOTHRUNLENGTH}a)"
+cmd="$PISM_MPIDO $NN $PISMR -boot_file $PISM_DATANAME $GRID \
   $COUPLER -y ${SMOOTHRUNLENGTH} -o $PRE0NAME"
 $PISM_DO $cmd
 
 
-# climate in one year, thought of as a year in the middle of the period where
+# climate in one year, a year in the middle of the period where
 #   Ettema et al precip and smb and melt and runoff are available
-CLIMSTARTTIME=1990.0833333333
+CLIMSTARTTIME=1990
 CLIMENDTIME=1991
-DT=0.0833333333 # monthly = (1/12) of year
+#DT=0.0833333333 # monthly = (1/12) of year
+DT=1.0
 CLIMATE0=g${CS}km_clim_one_year.nc
 echo
 echo "$SCRIPTNAME  running pclimate with monthly timesteps to generate $CLIMATE0"
-echo "$SCRIPTNAME    to get ice surface climate in period $CLIMSTARTTIME-$CLIMENDTIME"
-echo
+echo "$SCRIPTNAME    to get ice surface climate in one year period"
 cmd="$PISM_MPIDO $NN ${PISM_PREFIX}pclimate -i $PRE0NAME $COUPLER \
-  -ys $CLIMSTARTTIME -ye $CLIMENDTIME -dt $DT -o $CLIMATE0 -on_error_attach_debugger"
+  -config_override $PCONFIG -ys $CLIMSTARTTIME -ye $CLIMENDTIME -dt $DT -o $CLIMATE0"
 $PISM_DO $cmd
 
-CLIMATE=mask$CLIMATE0.nc
+CLIMATE=mask$CLIMATE0
 echo
 echo "$SCRIPTNAME  removing some fields and adding in thk (in prep for masking), using NCO;"
 echo "$SCRIPTNAME    generating $CLIMATE"
-echo
+cmd="rm -rf $CLIMATE"
+$PISM_DO $cmd
 cmd="ncks -O $CLIMATE0 $CLIMATE"
 $PISM_DO $cmd
 cmd="ncks -O -x -v shelfbasetemp,shelfbasemassflux $CLIMATE $CLIMATE"
@@ -120,9 +133,10 @@ cmd="rm -f tempthk.nc"
 $PISM_DO $cmd
 
 echo
-echo "$SCRIPTNAME  masking using python script to remove ice-free areas"
-echo
-cmd="./climmask.py -v acab,artm,smelt,srunoff $CLIMATE"
+echo "$SCRIPTNAME  masking $CLIMATE using climmask.py to remove ice-free areas"
+cmd="./climmask.py -v acab,smelt,srunoff $CLIMATE"
 $PISM_DO $cmd
 echo
+
+echo "$SCRIPTNAME  file $CLIMATE done"
 

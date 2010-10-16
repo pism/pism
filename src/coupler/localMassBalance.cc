@@ -47,94 +47,75 @@ PetscErrorCode PDDMassBalance::getNForTemperatureSeries(
 }
 
 
-//! Compute the surface mass balance at a location from the number of positive degree days and the precipitation rate in a time interval.
+//! Compute the integrand in integral (6) in [\ref CalovGreve05].
 /*!
-Several mass fluxes, including the final surface mass balance, are computed 
-as ice-equivalent meters per second from the number of positive degree days
-and a precipitation value which is assumed to be the constant precipitation rate
-in the time interval.
+The integral is
+   \f[\mathrm{PDD} = \int_{t_0}^{t_0+\mathtt{dt}} dt\,
+         \bigg[\frac{\sigma}{\sqrt{2\pi}}\,\exp\left(-\frac{T_{ac}(t)^2}{2\sigma^2}\right)
+               + \frac{T_{ac}(t)}{2}\,\mathrm{erfc}
+               \left(-\frac{T_{ac}(t)}{\sqrt{2}\,\sigma}\right)\bigg] \f]
+This procedure computes the quantity in square brackets.  The value \f$T_{ac}(t)\f$
+in the above integral is in degrees C.  Here we think of the argument \c TacC
+as temperature in Celsius, but really it is the temperature above a threshold
+at which it is "positive".
 
-The first action of this method is to compute the (expected) number of positive
-degree days, from the input temperature time-series, by a call to
-getPDDSumFromTemperatureTimeSeries().
+This integral is used for the expected number of positive degree days, unless the
+user selects a random PDD implementation with <tt>-pdd_rand</tt> or 
+<tt>-pdd_rand_repeatable</tt>.  The user can choose \f$\sigma\f$ by option
+<tt>-pdd_std_dev</tt>.  Note that the integral is over a time interval of length
+\c dt instead of a whole year as stated in \ref CalovGreve05 .
+ */
+PetscScalar PDDMassBalance::CalovGreveIntegrand(
+               PetscScalar sigma, PetscScalar TacC) {
+  const PetscScalar Z    = TacC / (sqrt(2.0) * sigma);
+  return (sigma / sqrt(2.0 * pi)) * exp(-Z*Z) + (TacC / 2.0) * gsl_sf_erfc(-Z);
+}
 
-The temperature time-series is also used to determine whether the
+
+//! Compute the expected number of positive degree days from the input temperature time-series.
+PetscScalar PDDMassBalance::getPDDSumFromTemperatureTimeSeries(
+               PetscScalar pddStdDev, PetscScalar pddThresholdTemp,
+               PetscScalar /* t */, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
+  PetscScalar  pdd_sum = 0.0;  // return value has units  K day
+  const PetscScalar sperd = 8.64e4, // exact seconds per day
+                    h_days = dt_series / sperd;
+  const PetscInt Nsimp = ((N % 2) == 1) ? N : N-1; // odd N case is pure simpson's
+  // Simpson's rule is:
+  //   integral \approx (h/3) * sum( [1 4 2 4 2 4 ... 4 1] .* [f(t_0) f(t_1) ... f(t_N-1)] )
+  for (PetscInt m = 0; m < Nsimp; ++m) {
+    PetscScalar  coeff = ((m % 2) == 1) ? 4.0 : 2.0;
+    if ( (m == 0) || (m == (Nsimp-1)) )  coeff = 1.0;
+    pdd_sum += coeff * CalovGreveIntegrand(pddStdDev,T[m]-pddThresholdTemp);  // pass in temp in K
+  }
+  pdd_sum = (h_days / 3.0) * pdd_sum;
+  if (Nsimp < N) { // add one more subinterval by trapezoid
+    pdd_sum += (h_days / 2.0) * ( CalovGreveIntegrand(pddStdDev,T[N-2]-pddThresholdTemp)
+                                  + CalovGreveIntegrand(pddStdDev,T[N-1]-pddThresholdTemp) );
+  }
+  return pdd_sum;
+}
+
+
+//! /brief Report the amount of snow fallen in the given time period, according
+//!        to the temperature time-series; remove the rain.
+/*! 
+Use the temperature time-series to determine whether the
 precipitation is snow or rain.  Rain is removed entirely from the surface mass
-balance, and is not included in the computed runoff, which is meltwater runoff.
+balance, and will not be included in the computed runoff, which is meltwater runoff.
 There is an allowed linear transition for Tmin below which all
 precipitation is interpreted as snow, and Tmax above which all precipitation is
 rain (see, e.g. \ref Hock2005b).
-
-This is a PDD scheme.  The input parameter \c ddf.snow is a rate of melting per
-positive degree day for snow.  A fraction of the melted snow refreezes,
-controlled by parameter \c ddf.refreezeFrac.  If the number of PDDs, which
-describes an energy available for melt, exceeds those needed to melt all of the
-snow then the excess number of PDDs is used to melt both the ice that came from
-refreeze and (perhaps) ice which is already present.  In either case, \e ice
-melts at a constant rate per positive degree day, controlled by parameter
-\c ddf.ice.
-
-In the weird case where the rate of precipitation is negative, it is interpreted
-as an (ice-equivalent) direct ablation rate.  Precipitation rates are generally
-positive everywhere on ice sheets, however.
-
-The scheme here came from EISMINT-Greenland [\ref RitzEISMINT], but is influenced
-by [\ref Faustoetal2009], [\ref Greve2005geothermal] and R. Hock (personal
-communication).
-
-The input arguments are t and dt in seconds and an array T[N] in Kelvin.
-These are N temperature values T[0],...,T[N-1] at times t,t+dt_series,...,
-t+(N-1)*dt_series.  Note dt = (N-1)*dt_series.  The last input argument to this
-procedure is the precipitation rate in (ice-equivalent) m s-1.  It is assumed
-to be constant in the entire interval [t,t+dt].
-
-There are four outputs
-  \li \c accumulation_rate,
-  \li \c melt_rate,
-  \li \c runoff_rate,
-  \li \c smb_rate.
-
-All are rates and all are in ice-equivalent m s-1.  Note "accumulation"
-is the part of precipitation which is not rain, so, if needed, the modeled
-rain rate is <tt>rain_rate = precip_rate - accum_rate</tt>.  Again, "runoff" is 
-meltwater runoff and does not include rain.
-
-In normal areas where \c precip_rate > 0, the output quantities satisfy
-  \li <tt>smb_rate = accumulation_rate - runoff_rate</tt>.
  */
-PetscErrorCode PDDMassBalance::getMassFluxesFromTemperatureTimeSeries(const DegreeDayFactors &ddf,
-                                                                    PetscScalar pddStdDev,
-                                                                    PetscScalar t, PetscScalar dt_series,
-                                                                    PetscScalar *T,
-                                                                    PetscInt N,
-                                                                    PetscScalar precip_rate,
-                                                                    PetscScalar &accumulation_rate,
-                                                                    PetscScalar &melt_rate,
-                                                                    PetscScalar &runoff_rate,
-                                                                    PetscScalar &smb_rate) {
+PetscScalar PDDMassBalance::getSnowFromPrecipAndTemperatureTimeSeries(
+                 PetscScalar precip_rate,
+                 PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
 
-  const PetscScalar
-    pddsum = getPDDSumFromTemperatureTimeSeries(pddStdDev,t,dt_series,T,N), // units: K day
-    dt     = (N-1) * dt_series; 
-
-  if (precip_rate < 0.0) {           // weird, but allowed, case
-    accumulation_rate = 0.0;
-    melt_rate         = precip_rate;
-    runoff_rate       = precip_rate;
-    smb_rate          = precip_rate;
-    return 0;
-  }
-
-  // compute snow accumulation:
   PetscScalar snow = 0.0;
   if (precip_as_snow) {
     // positive precip_rate: it snowed (precip = snow; never rain)
-    snow  = precip_rate * dt;   // units: m (ice-equivalent)
+    snow = precip_rate * (N-1) * dt_series;   // units: m (ice-equivalent)
   } else {
-    // Following \ref Hock2005b we employ a linear transition from Tmin to Tmax, where
-    // Tmin is the temperature below which all precipitation is snow
-    // Tmax is the temperature above which all precipitation is rain
-
+    // Following \ref Hock2005b we employ a linear transition from Tmin to Tmax
     for (PetscInt i=0; i<N-1; i++) { // go over all N-1 subintervals in interval[t,t+dt_series]
       const PetscScalar Tav = (T[i] + T[i+1]) / 2.0; // use midpt of temp series for subinterval
       PetscScalar acc_rate = 0.0;                    // accumulation rate during a sub-interval
@@ -148,7 +129,69 @@ PetscErrorCode PDDMassBalance::getMassFluxesFromTemperatureTimeSeries(const Degr
       }
       snow += acc_rate * dt_series;  // units: m (ice-equivalent)
     }
-  } // end of (not precip_as_snow)
+  }
+  return snow;
+}
+
+
+//! /brief Compute the surface mass balance at a location from the number of positive
+//! degree days and the amount of snow which fell in a time interval.
+/*!
+Several mass fluxes, including the final surface mass balance, are computed 
+as ice-equivalent meters per second from the number of positive degree days
+and an amount of snow in the time interval.
+
+This is a PDD scheme.  The input parameter \c ddf.snow is a rate of melting per
+positive degree day for snow.  A fraction of the melted snow refreezes,
+controlled by parameter \c ddf.refreezeFrac.  If the number of PDDs, which
+describes an energy available for melt, exceeds those needed to melt all of the
+snow then the excess number of PDDs is used to melt both the ice that came from
+refreeze and (perhaps) ice which is already present.  In either case, \e ice
+melts at a constant rate per positive degree day, controlled by parameter
+\c ddf.ice.
+
+In the weird case where the amount of snow is negative, it is interpreted
+as an (ice-equivalent) direct ablation rate.  Snow amounts are generally
+positive everywhere on ice sheets, however.
+
+The scheme here came from EISMINT-Greenland [\ref RitzEISMINT], but is influenced
+by [\ref Faustoetal2009], [\ref Greve2005geothermal] and R. Hock (personal
+communication).
+
+The input argument \c dt is in seconds.  The input argument \c pddsum is in K day.
+These strange units work because the degree day factors in \c ddf have their
+usual glaciological units, namely m K-1 day-1, and we only multiply degree 
+day factors times \e amounts of snow, not rates.
+
+There are four outputs
+  \li \c accumulation_rate,
+  \li \c melt_rate,
+  \li \c runoff_rate,
+  \li \c smb_rate.
+
+All are rates and all are in ice-equivalent m s-1.  Note "accumulation"
+is the part of precipitation which is not rain, so, if needed, the modeled
+rain rate is <tt>rain_rate = precip_rate - accum_rate</tt>.  Again, "runoff" is 
+meltwater runoff and does not include rain.
+
+In normal areas where \c snow > 0, the output quantities satisfy
+  \li <tt>smb_rate = accumulation_rate - runoff_rate</tt>.
+ */
+PetscErrorCode PDDMassBalance::getMassFluxesFromPDDs(const DegreeDayFactors &ddf,
+                                                     PetscScalar dt, PetscScalar pddsum,
+                                                     PetscScalar snow,
+                                                     PetscScalar &accumulation_rate,
+                                                     PetscScalar &melt_rate,
+                                                     PetscScalar &runoff_rate,
+                                                     PetscScalar &smb_rate) {
+
+  if (snow < 0.0) {           // weird, but allowed, case
+    accumulation_rate = 0.0;
+    melt_rate         = snow / dt;
+    runoff_rate       = melt_rate;
+    smb_rate          = melt_rate;
+    return 0;
+  }
 
   accumulation_rate = snow / dt;
   
@@ -191,57 +234,6 @@ PetscErrorCode PDDMassBalance::getMassFluxesFromTemperatureTimeSeries(const Degr
 }
 
 
-//! Compute the integrand in integral (6) in [\ref CalovGreve05].
-/*!
-The integral is
-   \f[\mathrm{PDD} = \int_{t_0}^{t_0+\mathtt{dt}} dt\,
-         \bigg[\frac{\sigma}{\sqrt{2\pi}}\,\exp\left(-\frac{T_{ac}(t)^2}{2\sigma^2}\right)
-               + \frac{T_{ac}(t)}{2}\,\mathrm{erfc}
-               \left(-\frac{T_{ac}(t)}{\sqrt{2}\,\sigma}\right)\bigg] \f]
-This procedure computes the quantity in square brackets.
-
-This integral is used for the expected number of positive degree days, unless the
-user selects a random PDD implementation with <tt>-pdd_rand</tt> or 
-<tt>-pdd_rand_repeatable</tt>.  The user can choose \f$\sigma\f$ by option
-<tt>-pdd_std_dev</tt>.  Note that the integral is over a time interval of length
-\c dt instead of a whole year as stated in \ref CalovGreve05 .
-
-The argument \c Tac is the temperature in K.  The value \f$T_{ac}(t)\f$
-in the above integral must be in degrees C, so the shift is done within this 
-procedure.
- */
-PetscScalar PDDMassBalance::CalovGreveIntegrand(
-               PetscScalar sigma, PetscScalar Tac) {
-  const PetscScalar TacC = Tac - 273.15, // convert to Celsius
-                    Z    = TacC / (sqrt(2.0) * sigma);
-  return (sigma / sqrt(2.0 * pi)) * exp(-Z*Z) + (TacC / 2.0) * gsl_sf_erfc(-Z);
-}
-
-
-PetscScalar PDDMassBalance::getPDDSumFromTemperatureTimeSeries(
-               PetscScalar pddStdDev,
-               PetscScalar /* t */, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
-  PetscScalar  pdd_sum = 0.0;  // return value has units  K day
-  const PetscScalar sperd = 8.64e4, // exact seconds per day
-                    h_days = dt_series / sperd;
-  const PetscInt Nsimp = ((N % 2) == 1) ? N : N-1; // odd N case is pure simpson's
-  // Simpson's rule is:
-  //   integral \approx (h/3) * sum( [1 4 2 4 2 4 ... 4 1] .* [f(t_0) f(t_1) ... f(t_N-1)] )
-  for (PetscInt m = 0; m < Nsimp; ++m) {
-    PetscScalar  coeff = ((m % 2) == 1) ? 4.0 : 2.0;
-    if ( (m == 0) || (m == (Nsimp-1)) )  coeff = 1.0;
-    pdd_sum += coeff * CalovGreveIntegrand(pddStdDev,T[m]);  // pass in temp in K
-  }
-  pdd_sum = (h_days / 3.0) * pdd_sum;
-  if (Nsimp < N) { // add one more subinterval by trapezoid
-    pdd_sum += (h_days / 2.0) * ( CalovGreveIntegrand(pddStdDev,T[N-2])
-                                  + CalovGreveIntegrand(pddStdDev,T[N-1]) );
-  }
-
-  return pdd_sum;
-}
-
-
 /*!
 Initializes the random number generator (RNG).  The RNG is GSL's recommended default,
 which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
@@ -250,17 +242,7 @@ wall clock time in seconds in non-repeatable case, and with 0 in repeatable case
 PDDrandMassBalance::PDDrandMassBalance(const NCConfigVariable& myconfig, bool repeatable)
     : PDDMassBalance(myconfig) {
   pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
-  gsl_rng_set(pddRandGen, repeatable ? 0 : time(0)); 
-#if 0
-  PetscTruth     pSet;
-  PetscOptionsGetScalar(PETSC_NULL, "-pdd_std_dev", &pddStdDev, &pSet);
-  PetscPrintf(PETSC_COMM_WORLD,"\nPDDrandMassBalance constructor; pddStdDev = %10.4f\n",
-              pddStdDev);
-  for (int k=0; k<20; k++) {
-    PetscPrintf(PETSC_COMM_WORLD,"  %9.4f\n",gsl_ran_gaussian(pddRandGen, pddStdDev));
-  }
-  PetscPrintf(PETSC_COMM_WORLD,"\n\n");
-#endif
+  gsl_rng_set(pddRandGen, repeatable ? 0 : time(0));
 }
 
 
@@ -293,18 +275,18 @@ PetscErrorCode PDDrandMassBalance::getNForTemperatureSeries(
 
 
 PetscScalar PDDrandMassBalance::getPDDSumFromTemperatureTimeSeries(
-             PetscScalar pddStdDev,
+             PetscScalar pddStdDev, PetscScalar pddThresholdTemp,
              PetscScalar /* t */, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
   PetscScalar       pdd_sum = 0.0;  // return value has units  K day
   const PetscScalar sperd = 8.64e4, // exact seconds per day
                     h_days = dt_series / sperd;
   // there are N-1 intervals [t,t+dt],...,[t+(N-2)dt,t+(N-1)dt]
   for (PetscInt m = 0; m < N-1; ++m) {
-    PetscScalar temp = 0.5 * (T[m] + T[m+1]); // av temp in [t+m*dt,t+(m+1)*dt]
+    PetscScalar temp = 0.5*(T[m] + T[m+1]); // av temp in [t+m*dt,t+(m+1)*dt]
     temp += gsl_ran_gaussian(pddRandGen, pddStdDev); // add random: N(0,sigma)
-    if (temp > 273.15)   pdd_sum += h_days * (temp - 273.15);
+    if (temp > pddThresholdTemp)
+      pdd_sum += h_days * (temp - pddThresholdTemp);
   }
-
   return pdd_sum;
 }
 

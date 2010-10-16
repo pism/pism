@@ -191,15 +191,14 @@ netcdf pism_config {
     pism_config:beta_shelves_drag_too_doc = "Pa s m^{-1}; (1/10000) of value stated in [\\ref HulbeMacAyeal] for ice stream E";
 
 
-  // PISMAtmosphereModel and PISMOceanModel constants, including LocalMassBalance
+   // PISMAtmosphereModel and PISMSurfaceModel and PSModifier and LocalMassBalance constants
 
     pism_config:pdd_max_temperature_evals_per_year = 53;
     pism_config:pdd_max_temperature_evals_per_year_doc = "integer; maximum number of times the PDD scheme will ask for temperatures to build location-dependent time series for computing (expected) number of positive degree days; the default means the PDD uses weekly samples of the annual cycle; see also pdd_std_dev";
 
-    pism_config:force_to_thickness_alpha = 6.33775292816370e-11;
-    pism_config:force_to_thickness_alpha_doc = "s-1; = 0.002 a-1; exponential coefficient in force-to-thickness mechanism";
+    pism_config:pdd_positive_threshold_temp = 273.15;
+    pism_config:pdd_positive_threshold_temp_doc = "K; temperature used to determine meaning of 'positive' degree day";
 
-    // The default values for the factors come from EISMINT-Greenland, [\\ref RitzEISMINT] .
     pism_config:pdd_factor_snow = 0.003;
     pism_config:pdd_factor_snow_doc = "m K-1 day-1; EISMINT-Greenland value [\\ref RitzEISMINT] ; = (3 mm ice-equivalent) / (pos degree day)";
 
@@ -271,6 +270,12 @@ netcdf pism_config {
 
     pism_config:precip_exponential_factor_for_temperature = 0.07041666667;
     pism_config:precip_exponential_factor_for_temperature_doc = "Kelvin-1; = 0.169/2.4; in SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degC of temperature change [\\ref Huybrechts02] ";
+
+    pism_config:force_to_thickness_alpha = 6.33775292816370e-11;
+    pism_config:force_to_thickness_alpha_doc = "s-1; = 0.002 a-1; exponential coefficient in force-to-thickness mechanism";
+
+
+    // PISMOceanModel constants
 
     pism_config:ocean_sub_shelf_heat_flux_into_ice = 0.5;
     pism_config:ocean_sub_shelf_heat_flux_into_ice_doc = "W m-2; = J m-2 s-1; naively chosen default value for heat from ocean; see comments in src/coupler/PISMOcean.cc";

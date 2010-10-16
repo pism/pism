@@ -230,6 +230,7 @@ PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const NCConfigVariable &conf)
   base_ddf.ice  = config.get("pdd_factor_ice");
   base_ddf.refreezeFrac = config.get("pdd_refreeze");
   base_pddStdDev = config.get("pdd_std_dev");
+  base_pddThresholdTemp = config.get("pdd_positive_threshold_temp");
 }
 
 PSTemperatureIndex::~PSTemperatureIndex() {
@@ -264,8 +265,12 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
                            base_ddf.ice, pSet); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-pdd_refreeze", "PDD refreeze fraction",
                            base_ddf.refreezeFrac, pSet); CHKERRQ(ierr);
+
     ierr = PISMOptionsReal("-pdd_std_dev", "PDD standard deviation",
                            base_pddStdDev, pSet); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-pdd_positive_threshold_temp", 
+                           "PDD uses this temp in K to determine 'positive' temperatures",
+                           base_pddThresholdTemp, pSet); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -420,17 +425,21 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal t_years, PetscReal dt_years)
 	           CHKERRQ(ierr);
       }
 
-      ierr = mbscheme->getMassFluxesFromTemperatureTimeSeries(ddf,
-                                                            base_pddStdDev,
-                                                            tseries, dtseries, &T[0],
-                                                            Nseries,
-                                                            acab(i,j), // precipitation rate (input)
-                                                            accumulation_rate(i,j),
-                                                            melt_rate(i,j),
-                                                            runoff_rate(i,j),
-                                                            acab(i,j) // smb (output)
-                                                            );
-      CHKERRQ(ierr); 
+      PetscScalar pddsum = mbscheme->getPDDSumFromTemperatureTimeSeries(
+                                  base_pddStdDev, base_pddThresholdTemp,
+                                  tseries, dtseries, &T[0], Nseries);
+
+      PetscScalar snow_amount = mbscheme->getSnowFromPrecipAndTemperatureTimeSeries(
+                                  acab(i,j), // precipitation rate (input)
+                                  tseries, dtseries, &T[0], Nseries);
+
+      ierr = mbscheme->getMassFluxesFromPDDs(ddf,
+                                             dt_years * secpera, pddsum, snow_amount,
+                                             accumulation_rate(i,j), // output
+                                             melt_rate(i,j), // output
+                                             runoff_rate(i,j), // output
+                                             acab(i,j)); // acab = smb (output)
+                                             CHKERRQ(ierr); 
     }
   }
 
