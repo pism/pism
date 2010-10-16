@@ -1002,10 +1002,10 @@ PetscErrorCode NCConfigVariable::scalar_from_option(string name, string paramete
 }
 
 //! Print all the attributes of a configuration variable.
-PetscErrorCode NCConfigVariable::print() const {
+PetscErrorCode NCConfigVariable::print(PetscInt vt) const {
   PetscErrorCode ierr;
 
-  ierr = verbPrintf(4, com, "PISM parameters read from %s:\n",
+  ierr = verbPrintf(vt, com, "PISM parameters read from %s:\n",
 		    config_filename.c_str());
 
   // Print text attributes:
@@ -1016,7 +1016,7 @@ PetscErrorCode NCConfigVariable::print() const {
 
     if (value.empty()) continue;
 
-    ierr = verbPrintf(4, com, "  %s = \"%s\"\n",
+    ierr = verbPrintf(vt, com, "  %s = \"%s\"\n",
 		      name.c_str(), value.c_str()); CHKERRQ(ierr);
   }
 
@@ -1030,10 +1030,10 @@ PetscErrorCode NCConfigVariable::print() const {
     
     if ((fabs(values[0]) >= 1.0e7) || (fabs(values[0]) <= 1.0e-4)) {
       // use scientific notation if a number is big or small
-      ierr = verbPrintf(4, com, "  %s = %12.3e\n",
+      ierr = verbPrintf(vt, com, "  %s = %12.3e\n",
 		        name.c_str(), values[0]); CHKERRQ(ierr);
     } else {
-      ierr = verbPrintf(4, com, "  %s = %12.5f\n",
+      ierr = verbPrintf(vt, com, "  %s = %12.5f\n",
 		        name.c_str(), values[0]); CHKERRQ(ierr);
     }
 
@@ -1041,6 +1041,12 @@ PetscErrorCode NCConfigVariable::print() const {
 
   return 0;
 }
+
+
+string NCConfigVariable::get_config_filename() const {
+  return config_filename;
+};
+
 
 //! Imports values from the other config variable, silently overwriting present values.
 void NCConfigVariable::import_from(const NCConfigVariable &other) {

@@ -231,17 +231,6 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   }
 
   PetscScalar use_dt_years = dt_years;
-  /*
-  PISMGreenlandAtmosCoupler* pdd_pcc = dynamic_cast<PISMGreenlandAtmosCoupler*>(pcc);
-  if ((pdd_pcc != NULL) && (dt_years > 1.0)) {
-    ierr = verbPrintf(1,com,
-        "PCLIMATE ATTENTION: Chosen PISM surface model will be asked for results\n"
-        "  from one year periods at the start of each desired time subinterval;\n"
-        "  full subinterval evaluation is too slow ...\n\n");
-      CHKERRQ(ierr);
-    use_dt_years = 1.0;
-  }
-  */
 
   // write the states
   for (PetscInt k=0; k < NN; k++) {
@@ -332,6 +321,15 @@ int main(int argc, char *argv[]) {
     // read the config option database:
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
+    bool override_used;
+    ierr = PISMOptionsIsSet("-config_override", override_used); CHKERRQ(ierr);
+    if (override_used) {
+      ierr = verbPrintf(2, com,
+         "  option -config_override seen; configuration parameter overrides read from '%s'\n",
+         overrides.get_config_filename().c_str()); CHKERRQ(ierr);
+      overrides.print(3);
+    }
+
     // set an un-documented (!) flag to limit time-steps to 1 year.
     config.set_flag("pdd_limit_timestep", true);
 
@@ -408,23 +406,33 @@ int main(int argc, char *argv[]) {
     ierr = surface->init(variables); CHKERRQ(ierr);
     ierr = ocean->init(variables); CHKERRQ(ierr);
 
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-    // done initializing boundary models.
+    ierr = PetscOptionsEnd(); CHKERRQ(ierr);  // done initializing boundary models.
 
-
-    ierr = verbPrintf(2,
-      com, "  writing boundary model states to NetCDF file '%s'...\n",
-		      outname.c_str()); CHKERRQ(ierr);
+    ierr = verbPrintf(2, com,
+        "writing boundary model states to NetCDF file '%s' ...\n",
+        outname.c_str()); CHKERRQ(ierr);
 
     ierr = writePCCStateAtTimes(variables, surface, ocean, outname.c_str(), &grid, argc, argv,
 				ys, ye, dt_years,
                                 mapping); CHKERRQ(ierr);
 
+    if (override_used) {
+      ierr = verbPrintf(3, com,
+        "  recording config overrides in NetCDF file '%s' ...\n",
+	outname.c_str()); CHKERRQ(ierr);
+      overrides.update_from(config);
+      PISMIO nc(&grid);
+      // append == true, check_dims == false:
+      ierr = nc.open_for_writing(outname.c_str(), true, false); CHKERRQ(ierr);
+      ierr = overrides.write(outname.c_str()); CHKERRQ(ierr);
+      ierr = nc.close(); CHKERRQ(ierr);
+    }
+
     delete surface;
     delete ocean;
     ierr = doneWithIceInfo(variables); CHKERRQ(ierr);
 
-    ierr = verbPrintf(2,com, "... done\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, "done.\n"); CHKERRQ(ierr);
     
   }
 

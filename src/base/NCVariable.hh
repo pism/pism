@@ -98,9 +98,11 @@ protected:
 //! A class for reading, writing and accessing PISM configuration flags and parameters.
 class NCConfigVariable : public NCVariable {
 public:
-  virtual PetscErrorCode print() const;
+  virtual PetscErrorCode print(PetscInt verbosity_threshhold) const;
+  virtual PetscErrorCode print() const { print(4); };
   virtual PetscErrorCode read(const char filename[]);
   virtual PetscErrorCode write(const char filename[]) const;
+  virtual string get_config_filename() const;
   virtual double get(string) const;
   virtual bool   get_flag(string) const;
   virtual string get_string(string name) const;
