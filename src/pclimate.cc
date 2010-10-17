@@ -421,11 +421,7 @@ int main(int argc, char *argv[]) {
         "  recording config overrides in NetCDF file '%s' ...\n",
 	outname.c_str()); CHKERRQ(ierr);
       overrides.update_from(config);
-      PISMIO nc(&grid);
-      // append == true, check_dims == false:
-      ierr = nc.open_for_writing(outname.c_str(), true, false); CHKERRQ(ierr);
       ierr = overrides.write(outname.c_str()); CHKERRQ(ierr);
-      ierr = nc.close(); CHKERRQ(ierr);
     }
 
     delete surface;

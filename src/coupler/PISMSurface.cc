@@ -808,6 +808,9 @@ PetscErrorCode PSForceThickness::write_model_state(PetscReal t_years, PetscReal 
 
 //! Adds ftt_modified_acab to "big" output files.
 void PSForceThickness::add_vars_to_output(string key, set<string> &result) {
+  if (input_model != NULL)
+    input_model->add_vars_to_output(key, result);
+
   if (key == "big")
     result.insert("ftt_modified_acab");
 }
