@@ -416,6 +416,8 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal t_years, PetscReal dt_years)
   
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
+
+      // the temperature time series from the PISMAtmosphereModel and its modifiers
       ierr = atmosphere->temp_time_series(i, j, Nseries, &ts[0], &T[0]); CHKERRQ(ierr);
 
       if (faustogreve != NULL) {
@@ -425,14 +427,18 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal t_years, PetscReal dt_years)
 	           CHKERRQ(ierr);
       }
 
+      // use the temperature time series to get the number of positive degree days (PDDs)
       PetscScalar pddsum = mbscheme->getPDDSumFromTemperatureTimeSeries(
                                   base_pddStdDev, base_pddThresholdTemp,
                                   tseries, dtseries, &T[0], Nseries);
 
+      // use the temperature time series to remove the rainfall from the precipitation
       PetscScalar snow_amount = mbscheme->getSnowFromPrecipAndTemperatureTimeSeries(
                                   acab(i,j), // precipitation rate (input)
                                   tseries, dtseries, &T[0], Nseries);
 
+      // use degree-day factors, and number of PDDs, and the snow precipitation, to
+      //   get surface mass balance (and diagnostics: accumulation, melt, runoff)
       ierr = mbscheme->getMassFluxesFromPDDs(ddf,
                                              dt_years * secpera, pddsum, snow_amount,
                                              accumulation_rate(i,j), // output

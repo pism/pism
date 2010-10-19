@@ -53,7 +53,7 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
 
   ierr = PetscOptionsBegin(grid.com, "", "Air temperature and precipitation forcing", ""); CHKERRQ(ierr);
 
-  ierr = PetscOptionsString("-anomaly_temp_ma",
+  ierr = PetscOptionsString("-anomaly_temp",
 			    "Specifies the air temperature anomalies file",
 			    "", "",
 			    temp_ma_anomalies_file, PETSC_MAX_PATH_LEN, &temp_ma_anomaly_set); CHKERRQ(ierr);
@@ -74,9 +74,11 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
 
   // check on whether we should read mean annual temperature anomalies
   if (temp_ma_anomaly_set) {
+  
+// FIXME for r1280:  under the new interpretation it seems there is no conflict here?:
     // stop if -dTforcing is set:
     if (dTforcing_set) {
-      ierr = PetscPrintf(grid.com, "PISM ERROR: option -anomaly_temp_ma is incompatible with -dTforcing.\n");
+      ierr = PetscPrintf(grid.com, "PISM ERROR: option -anomaly_temp is incompatible with -dTforcing.\n");
       PetscEnd();
     }
 
@@ -311,6 +313,9 @@ PetscErrorCode PAForcing::mean_annual_temp(PetscReal t_years, PetscReal dt_years
 
   ierr = input_model->mean_annual_temp(t_years, dt_years, result); CHKERRQ(ierr);
 
+// FIXME for r1280:  perhaps -dTforcing has issues like the ones below for
+//   -anomaly_temp
+
   if (dTforcing != NULL) {
     string history = "added the temperature offset\n" + result.string_attr("history");
 
@@ -321,6 +326,31 @@ PetscErrorCode PAForcing::mean_annual_temp(PetscReal t_years, PetscReal dt_years
   
   if (temp_ma_anomaly != NULL) {
     string history = "added temperature anomalies\n" + result.string_attr("history");
+
+// FIXME for r1280:  If the temperature anomaly has sub-annual cycle then
+//   this code is now wrong.  *Suggested* fix:  temp_ma_anomaly is of type
+//   IceModelVec2T.  It has an average() method.  Use it here, something like
+//    
+//     PetscScalar ys = floor(t_years);
+//     ierr = temp_ma_anomaly->update(ys, 1.0); CHKERRQ(ierr);
+//
+//     PetscScalar foo;
+//     ierr = temp_ma_anomaly->begin_access(); CHKERRQ(ierr);
+//     ierr = result.begin_access(); CHKERRQ(ierr);
+//     for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
+//       for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
+//         ierr = temp_ma_anomaly->average(i,j,ys,1.0,foo); CHKERRQ(ierr);
+//         result(i,j) += foo;
+//       }
+//     }
+//     ierr = temp_ma_anomaly->end_access(); CHKERRQ(ierr);
+//     ierr = result.end_access(); CHKERRQ(ierr);
+//  
+//  What I do not know about this 'fix' is whether it screws up the
+//  IceModelVec2T "update()" strategy.  Do the t_years used in update()
+//  calls need to be increasing?
+//
+//  Certainly I acknowledge that this 'fix' is not stellar for performance.
 
     ierr = temp_ma_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
     ierr = temp_ma_anomaly->interp(T); CHKERRQ(ierr);
@@ -387,6 +417,9 @@ PetscErrorCode PAForcing::temp_snapshot(PetscReal t_years, PetscReal dt_years,
   double T = t_years + 0.5 * dt_years;
 
   ierr = input_model->temp_snapshot(t_years, dt_years, result); CHKERRQ(ierr);
+
+// FIXME for r1280:  here I think we have no problem, but see FIXME in 
+//   mean_annual_temp()
 
   if (temp_ma_anomaly != NULL) {
     string history = "added temperature anomalies\n" + result.string_attr("history");
