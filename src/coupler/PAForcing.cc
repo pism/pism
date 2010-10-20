@@ -19,48 +19,46 @@
 
 #include "PISMAtmosphere.hh"
 
-void PAModifier::attach_input(PISMAtmosphereModel *input) {
-  if (input_model != NULL)
-    delete input_model;
-  input_model = input;
-}
-
 PAForcing::PAForcing(IceGrid &g, const NCConfigVariable &conf)
   : PAModifier(g, conf) {
   dTforcing = NULL;
   delta_T = NULL;
-  temp_ma_anomaly = NULL;
-  snowprecip_anomaly = NULL;
+  temp_anomaly = NULL;
+  precip_anomaly = NULL;
 }
 
 PAForcing::~PAForcing() {
   delete dTforcing;
   delete delta_T;
-  delete temp_ma_anomaly;
-  delete snowprecip_anomaly;
+  delete temp_anomaly;
+  delete precip_anomaly;
 }
 
 PetscErrorCode PAForcing::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  PetscTruth dTforcing_set, temp_ma_anomaly_set, snowprecip_anomaly_set;
-  char temp_ma_anomalies_file[PETSC_MAX_PATH_LEN],
-    snowprecip_anomalies_file[PETSC_MAX_PATH_LEN],
+  PetscTruth dTforcing_set, temp_anomaly_set, precip_anomaly_set;
+  char temp_anomalies_file[PETSC_MAX_PATH_LEN],
+    precip_anomalies_file[PETSC_MAX_PATH_LEN],
     dT_file[PETSC_MAX_PATH_LEN];
 
   ierr = input_model->init(vars); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2, grid.com, "* Initializing air temperature and precipitation forcing...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+     "* Initializing air temperature and precipitation forcing...\n"); CHKERRQ(ierr);
 
-  ierr = PetscOptionsBegin(grid.com, "", "Air temperature and precipitation forcing", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "", 
+                           "Air temperature and precipitation forcing", ""); CHKERRQ(ierr);
 
   ierr = PetscOptionsString("-anomaly_temp",
 			    "Specifies the air temperature anomalies file",
 			    "", "",
-			    temp_ma_anomalies_file, PETSC_MAX_PATH_LEN, &temp_ma_anomaly_set); CHKERRQ(ierr);
+			    temp_anomalies_file, PETSC_MAX_PATH_LEN, &temp_anomaly_set);
+			    CHKERRQ(ierr);
   ierr = PetscOptionsString("-anomaly_precip", 
 			    "Specifies the precipitation anomalies file",
 			    "", "",
-			    snowprecip_anomalies_file, PETSC_MAX_PATH_LEN, &snowprecip_anomaly_set); CHKERRQ(ierr);
+			    precip_anomalies_file, PETSC_MAX_PATH_LEN, &precip_anomaly_set);
+			    CHKERRQ(ierr);
   ierr = PetscOptionsString("-dTforcing",
 			    "Specifies the air temperature offsets file",
 			    "", "",
@@ -68,14 +66,15 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  if (! (dTforcing_set || temp_ma_anomaly_set || snowprecip_anomaly_set) ) {
+  if (! (dTforcing_set || temp_anomaly_set || precip_anomaly_set) ) {
     ierr = verbPrintf(2, grid.com, "  NOTE: Forcing is inactive...\n"); CHKERRQ(ierr);
   }
 
-  // check on whether we should read mean annual temperature anomalies
-  if (temp_ma_anomaly_set) {
+  // check on whether we should read temperature anomalies
+  if (temp_anomaly_set) {
   
-// FIXME for r1280:  under the new interpretation it seems there is no conflict here?:
+// FIXME  under r1281 (the new interpretation of former temp_ma_anomaly) it
+//        seems there is no conflict here?  so we should remove this?
     // stop if -dTforcing is set:
     if (dTforcing_set) {
       ierr = PetscPrintf(grid.com, "PISM ERROR: option -anomaly_temp is incompatible with -dTforcing.\n");
@@ -84,31 +83,31 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
 
     ierr = verbPrintf(2,grid.com,
 		      "    reading air temperature anomalies from %s ...\n",
-		      temp_ma_anomalies_file); CHKERRQ(ierr);
-
-    temp_ma_anomaly = new IceModelVec2T;
-    temp_ma_anomaly->set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
-    ierr = temp_ma_anomaly->create(grid, "temp_ma_anomaly", false); CHKERRQ(ierr);
-    ierr = temp_ma_anomaly->set_attrs("climate_forcing", "mean annual near-surface temperature anomalies",
-				      "Kelvin", ""); CHKERRQ(ierr);
-    ierr = temp_ma_anomaly->init(temp_ma_anomalies_file); CHKERRQ(ierr);
+		      temp_anomalies_file); CHKERRQ(ierr);
+    temp_anomaly = new IceModelVec2T;
+    temp_anomaly->set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
+    ierr = temp_anomaly->create(grid, "temp_anomaly", false); CHKERRQ(ierr);
+    ierr = temp_anomaly->set_attrs("climate_forcing",
+                                   "near-surface temperature anomalies",
+				   "Kelvin", ""); CHKERRQ(ierr);
+    ierr = temp_anomaly->init(temp_anomalies_file); CHKERRQ(ierr);
   }
 
-  // check on whether we should read snow precipitation anomalies
-  if (snowprecip_anomaly_set) {
+  // check on whether we should read precipitation anomalies
+  if (precip_anomaly_set) {
     ierr = verbPrintf(2,grid.com,
-		      "    reading ice-equivalent snow precipitation rate anomalies from %s ...\n",
-		      snowprecip_anomalies_file); CHKERRQ(ierr);
+		      "    reading ice-equivalent precipitation rate anomalies from %s ...\n",
+		      precip_anomalies_file); CHKERRQ(ierr);
 
-    snowprecip_anomaly = new IceModelVec2T;
-    snowprecip_anomaly->set_n_records((unsigned int) config.get("climate_forcing_buffer_size")); 
-    ierr = snowprecip_anomaly->create(grid, "snowprecip_anomaly", false); CHKERRQ(ierr);
-    ierr = snowprecip_anomaly->set_attrs("climate_forcing",
-					 "anomalies of ice-equivalent snow precipitation rate",
+    precip_anomaly = new IceModelVec2T;
+    precip_anomaly->set_n_records((unsigned int) config.get("climate_forcing_buffer_size")); 
+    ierr = precip_anomaly->create(grid, "precip_anomaly", false); CHKERRQ(ierr);
+    ierr = precip_anomaly->set_attrs("climate_forcing",
+					 "anomalies of ice-equivalent precipitation rate",
 					 "m s-1", ""); CHKERRQ(ierr);
-    ierr = snowprecip_anomaly->init(snowprecip_anomalies_file); CHKERRQ(ierr);
-    ierr = snowprecip_anomaly->set_glaciological_units("m year-1");
-    snowprecip_anomaly->write_in_glaciological_units = true;
+    ierr = precip_anomaly->init(precip_anomalies_file); CHKERRQ(ierr);
+    ierr = precip_anomaly->set_glaciological_units("m year-1");
+    precip_anomaly->write_in_glaciological_units = true;
   }
 
   // check user option -dTforcing for a surface temperature forcing data set
@@ -116,17 +115,20 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
     dTforcing = new Timeseries(grid.com, grid.rank, "delta_T", "t");
     ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);
     ierr = dTforcing->set_dimension_units("years", ""); CHKERRQ(ierr);
-    ierr = dTforcing->set_attr("long_name", "near-surface air temperature offsets"); CHKERRQ(ierr);
+    ierr = dTforcing->set_attr("long_name", "near-surface air temperature offsets");
+             CHKERRQ(ierr);
 
     ierr = verbPrintf(2, grid.com, 
-		      "  reading delta T data from forcing file %s...\n", dT_file);  CHKERRQ(ierr);
+		      "  reading delta T data from forcing file %s...\n", dT_file);
+		      CHKERRQ(ierr);
 	 
     ierr = dTforcing->read(dT_file); CHKERRQ(ierr);
 
     delta_T = new DiagnosticTimeseries(grid.com, grid.rank, "delta_T", "t");
     ierr = delta_T->set_units("Celsius", ""); CHKERRQ(ierr);
     ierr = delta_T->set_dimension_units("years", ""); CHKERRQ(ierr);
-    ierr = delta_T->set_attr("long_name", "near-surface air temperature offset"); CHKERRQ(ierr);
+    ierr = delta_T->set_attr("long_name", "near-surface air temperature offset");
+             CHKERRQ(ierr);
   }
 
   return 0;
@@ -139,8 +141,8 @@ PetscErrorCode PAForcing::max_timestep(PetscReal t_years,
   
   ierr = input_model->max_timestep(t_years, dt_years); CHKERRQ(ierr);
 
-  if (temp_ma_anomaly != NULL) {
-    max_dt = temp_ma_anomaly->max_timestep(t_years);
+  if (temp_anomaly != NULL) {
+    max_dt = temp_anomaly->max_timestep(t_years);
 
     if (dt_years > 0) {
       if (max_dt > 0)
@@ -149,8 +151,8 @@ PetscErrorCode PAForcing::max_timestep(PetscReal t_years,
     else dt_years = max_dt;
   }
 
-  if (snowprecip_anomaly != NULL) {
-    dt_years = snowprecip_anomaly->max_timestep(t_years);
+  if (precip_anomaly != NULL) {
+    dt_years = precip_anomaly->max_timestep(t_years);
 
     if (dt_years > 0) {
       if (max_dt > 0)
@@ -179,19 +181,16 @@ PetscErrorCode PAForcing::write_diagnostic_fields(PetscReal t_years, PetscReal d
   ierr = input_model->write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
 
   // also write temperature and precipitation offsets (if used)
-
-  if (temp_ma_anomaly != NULL) {
-    ierr = temp_ma_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
-    ierr = temp_ma_anomaly->interp(T); CHKERRQ(ierr);
-    ierr = temp_ma_anomaly->write(filename.c_str()); CHKERRQ(ierr);
+  if (temp_anomaly != NULL) {
+    ierr = temp_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
+    ierr = temp_anomaly->interp(T); CHKERRQ(ierr);
+    ierr = temp_anomaly->write(filename.c_str()); CHKERRQ(ierr);
   }
-
-  if (snowprecip_anomaly != NULL) {
-    ierr = snowprecip_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
-    ierr = snowprecip_anomaly->interp(T); CHKERRQ(ierr);
-    ierr = snowprecip_anomaly->write(filename.c_str()); CHKERRQ(ierr);
+  if (precip_anomaly != NULL) {
+    ierr = precip_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
+    ierr = precip_anomaly->interp(T); CHKERRQ(ierr);
+    ierr = precip_anomaly->write(filename.c_str()); CHKERRQ(ierr);
   }
-
   if (dTforcing != NULL) {
     delta_T->output_filename = filename;
     ierr = delta_T->append(T, (*dTforcing)(T)); CHKERRQ(ierr);
@@ -222,21 +221,21 @@ PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
     vars.erase("airtemp");
   }
 
-  if (temp_ma_anomaly != NULL) {
-    if (vars.find("temp_ma_anomaly") != vars.end()) {
-      ierr = temp_ma_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
-      ierr = temp_ma_anomaly->interp(T); CHKERRQ(ierr);
-      ierr = temp_ma_anomaly->write(filename.c_str()); CHKERRQ(ierr);
-      vars.erase("temp_ma_anomaly");
+  if (temp_anomaly != NULL) {
+    if (vars.find("temp_anomaly") != vars.end()) {
+      ierr = temp_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
+      ierr = temp_anomaly->interp(T); CHKERRQ(ierr);
+      ierr = temp_anomaly->write(filename.c_str()); CHKERRQ(ierr);
+      vars.erase("temp_anomaly");
     }
   }
 
-  if (snowprecip_anomaly != NULL) {
-    if (vars.find("snowprecip_anomaly") != vars.end()) {
-      ierr = snowprecip_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
-      ierr = snowprecip_anomaly->interp(T); CHKERRQ(ierr);
-      ierr = snowprecip_anomaly->write(filename.c_str()); CHKERRQ(ierr);
-      vars.erase("snowprecip_anomaly");
+  if (precip_anomaly != NULL) {
+    if (vars.find("precip_anomaly") != vars.end()) {
+      ierr = precip_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
+      ierr = precip_anomaly->interp(T); CHKERRQ(ierr);
+      ierr = precip_anomaly->write(filename.c_str()); CHKERRQ(ierr);
+      vars.erase("precip_anomaly");
     }
 
   }
@@ -266,12 +265,12 @@ PetscErrorCode PAForcing::update(PetscReal t_years, PetscReal dt_years) {
   t  = t_years;
   dt = dt_years;
 
-  if (temp_ma_anomaly != NULL) {
-    ierr = temp_ma_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
+  if (temp_anomaly != NULL) {
+    ierr = temp_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
   }
 
-  if (snowprecip_anomaly != NULL) {
-    ierr = snowprecip_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
+  if (precip_anomaly != NULL) {
+    ierr = precip_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
   }
 
   return 0;
@@ -283,22 +282,22 @@ PetscErrorCode PAForcing::mean_precip(PetscReal t_years, PetscReal dt_years,
 
   ierr = input_model->mean_precip(t_years, dt_years, result); CHKERRQ(ierr);
 
-  if (snowprecip_anomaly != NULL) {
-    string history = "added precipitation anomalies\n" + result.string_attr("history");
+  if (precip_anomaly != NULL) {
+    string history = "added average over time-step of precipitation anomalies\n" + result.string_attr("history");
 
     double anomaly;
-    ierr = snowprecip_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
+    ierr = precip_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
 
-    ierr = snowprecip_anomaly->begin_access(); CHKERRQ(ierr);
+    ierr = precip_anomaly->begin_access(); CHKERRQ(ierr);
     ierr = result.begin_access(); CHKERRQ(ierr);
     for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-	ierr = snowprecip_anomaly->average(i, j, t_years, dt_years, anomaly); CHKERRQ(ierr);
+	ierr = precip_anomaly->average(i, j, t_years, dt_years, anomaly); CHKERRQ(ierr);
 	result(i,j) += anomaly;
       }
     }
     ierr = result.end_access(); CHKERRQ(ierr);
-    ierr = snowprecip_anomaly->end_access(); CHKERRQ(ierr);
+    ierr = precip_anomaly->end_access(); CHKERRQ(ierr);
 
     ierr = result.set_attr("history", history); CHKERRQ(ierr);
   }
@@ -309,52 +308,41 @@ PetscErrorCode PAForcing::mean_precip(PetscReal t_years, PetscReal dt_years,
 PetscErrorCode PAForcing::mean_annual_temp(PetscReal t_years, PetscReal dt_years,
 					   IceModelVec2S &result) {
   PetscErrorCode ierr;
-  double T = t_years + 0.5 * dt_years;
 
   ierr = input_model->mean_annual_temp(t_years, dt_years, result); CHKERRQ(ierr);
 
-// FIXME for r1280:  perhaps -dTforcing has issues like the ones below for
-//   -anomaly_temp
-
+// FIXME:  -dTforcing mechanism has mean_annual-needs-averaging-if-data-is-sub-annual
+//   issues like the ones below for -anomaly_temp; for the -anomaly_temp see commits
+//   around r1280:1285; this suggests a new method Timeseries::average() perhaps
   if (dTforcing != NULL) {
     string history = "added the temperature offset\n" + result.string_attr("history");
 
+    double T = t_years + 0.5 * dt_years;
     ierr = result.shift( (*dTforcing)(T) ); CHKERRQ(ierr);
 
     ierr = result.set_attr("history", history); CHKERRQ(ierr);
   }
   
-  if (temp_ma_anomaly != NULL) {
-    string history = "added temperature anomalies\n" + result.string_attr("history");
-
-// FIXME for r1280:  If the temperature anomaly has sub-annual cycle then
-//   this code is now wrong.  *Suggested* fix:  temp_ma_anomaly is of type
-//   IceModelVec2T.  It has an average() method.  Use it here, something like
-//    
-//     PetscScalar ys = floor(t_years);
-//     ierr = temp_ma_anomaly->update(ys, 1.0); CHKERRQ(ierr);
-//
-//     PetscScalar foo;
-//     ierr = temp_ma_anomaly->begin_access(); CHKERRQ(ierr);
-//     ierr = result.begin_access(); CHKERRQ(ierr);
-//     for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-//       for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-//         ierr = temp_ma_anomaly->average(i,j,ys,1.0,foo); CHKERRQ(ierr);
-//         result(i,j) += foo;
-//       }
-//     }
-//     ierr = temp_ma_anomaly->end_access(); CHKERRQ(ierr);
-//     ierr = result.end_access(); CHKERRQ(ierr);
-//  
-//  What I do not know about this 'fix' is whether it screws up the
-//  IceModelVec2T "update()" strategy.  Do the t_years used in update()
-//  calls need to be increasing?
-//
-//  Certainly I acknowledge that this 'fix' is not stellar for performance.
-
-    ierr = temp_ma_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
-    ierr = temp_ma_anomaly->interp(T); CHKERRQ(ierr);
-    ierr = result.add(1.0, *temp_ma_anomaly); CHKERRQ(ierr);
+  if (temp_anomaly != NULL) {
+    string history = "added annual average of temperature anomalies\n"
+                     + result.string_attr("history");
+    // if the temperature anomaly has sub-annual cycle we need to average it
+    // FIXME: if the anomaly is provided with a flag indicating it is already
+    //        mean annual, then we could save some work
+    
+    // average over the year starting at t_years
+    ierr = temp_anomaly->update(t_years, 1.0); CHKERRQ(ierr);
+    PetscScalar av_ij;
+    ierr = temp_anomaly->begin_access(); CHKERRQ(ierr);
+    ierr = result.begin_access(); CHKERRQ(ierr);
+    for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
+        ierr = temp_anomaly->average(i,j,t_years,1.0,av_ij); CHKERRQ(ierr);
+        result(i,j) += av_ij;
+      }
+    }
+    ierr = temp_anomaly->end_access(); CHKERRQ(ierr);
+    ierr = result.end_access(); CHKERRQ(ierr);
 
     ierr = result.set_attr("history", history); CHKERRQ(ierr);
   }
@@ -367,8 +355,8 @@ PetscErrorCode PAForcing::begin_pointwise_access() {
 
   ierr = input_model->begin_pointwise_access(); CHKERRQ(ierr);
 
-  if (temp_ma_anomaly != NULL) {
-    ierr = temp_ma_anomaly->begin_access(); CHKERRQ(ierr);
+  if (temp_anomaly != NULL) {
+    ierr = temp_anomaly->begin_access(); CHKERRQ(ierr);
   }
 
   return 0;
@@ -379,8 +367,8 @@ PetscErrorCode PAForcing::end_pointwise_access() {
 
   ierr = input_model->end_pointwise_access(); CHKERRQ(ierr);
 
-  if (temp_ma_anomaly != NULL) {
-    ierr = temp_ma_anomaly->end_access(); CHKERRQ(ierr);
+  if (temp_anomaly != NULL) {
+    ierr = temp_anomaly->end_access(); CHKERRQ(ierr);
   }
 
   return 0;
@@ -397,10 +385,10 @@ PetscErrorCode PAForcing::temp_time_series(int i, int j, int N,
       values[k] += (*dTforcing)(ts[k]);
   }
 
-  if (temp_ma_anomaly != NULL) {
+  if (temp_anomaly != NULL) {
     PetscScalar *tmp = new PetscScalar[N];
 
-    ierr = temp_ma_anomaly->interp(i, j, N, ts, tmp); CHKERRQ(ierr);
+    ierr = temp_anomaly->interp(i, j, N, ts, tmp); CHKERRQ(ierr);
 
     for (PetscInt k = 0; k < N; k++)
       values[k] += tmp[k];
@@ -418,15 +406,13 @@ PetscErrorCode PAForcing::temp_snapshot(PetscReal t_years, PetscReal dt_years,
 
   ierr = input_model->temp_snapshot(t_years, dt_years, result); CHKERRQ(ierr);
 
-// FIXME for r1280:  here I think we have no problem, but see FIXME in 
-//   mean_annual_temp()
+  if (temp_anomaly != NULL) {
+    string history = "added temperature anomalies at midpoint of time-step\n"
+                     + result.string_attr("history");
 
-  if (temp_ma_anomaly != NULL) {
-    string history = "added temperature anomalies\n" + result.string_attr("history");
-
-    ierr = temp_ma_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
-    ierr = temp_ma_anomaly->interp(T); CHKERRQ(ierr);
-    ierr = result.add(1.0, *temp_ma_anomaly); CHKERRQ(ierr);
+    ierr = temp_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
+    ierr = temp_anomaly->interp(T); CHKERRQ(ierr);
+    ierr = result.add(1.0, *temp_anomaly); CHKERRQ(ierr);
 
     ierr = result.set_attr("history", history); CHKERRQ(ierr);
   }

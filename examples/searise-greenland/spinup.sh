@@ -156,8 +156,9 @@ echo "$SCRIPTNAME     coarse grid = '$COARSEGRID' (= $CS km)"
 echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km)"
 
 # cat prefix and exec together
-PISM_PROF="-prof"
-PISM="${PISM_PREFIX}${PISM_EXEC} ${PISM_PROF} -ocean_kill -e 3"
+#uncomment to add profiling: PISM_PROF=" -prof"
+PISM_PROF=
+PISM="${PISM_PREFIX}${PISM_EXEC}${PISM_PROF} -ocean_kill -e 3"
 
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -pdd_fausto"

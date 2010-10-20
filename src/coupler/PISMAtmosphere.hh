@@ -122,6 +122,7 @@ protected:
   IceModelVec2S temp_ma, temp_mj, snowprecip;
 };
 
+
 //! \brief A modification of PAYearlyCycle tailored for the
 //! SeaRISE-Greenland assessment. Uses the Fausto [\ref Faustoetal2009]
 //! present-day temperature parameterization and stored precipitation data.
@@ -148,6 +149,7 @@ protected:
   Timeseries *dTforcing;
   IceModelVec2S *lat, *lon, *surfelev;
 };
+
 
 //! A class implementing a simple atmospheric lapse rate model.
 /*!
@@ -205,20 +207,29 @@ public:
   virtual ~PAModifier()
   { delete input_model; }
 
-  virtual void attach_input(PISMAtmosphereModel *input);
-  virtual void add_vars_to_output(string key, set<string> &result) {
-    if (input_model != NULL)
-      input_model->add_vars_to_output(key, result);
+  virtual void attach_input(PISMAtmosphereModel *input) {
+    if (input_model != NULL)  delete input_model;
+    input_model = input;
   }
+
+  virtual void add_vars_to_output(string key, set<string> &result) {
+    if (input_model != NULL)  input_model->add_vars_to_output(key, result);
+  }
+
 protected:
   PISMAtmosphereModel *input_model;
 };
 
-//! \brief A class implementing an "atmosphere model" applying forcing data
-//! (anomalies, temperature offsets...) to results of another PISM atmosphere
-//! model.
-/*! Processes command-line options -dTforcing, -temp_ma_anomaly,
-  -snowprecip_anomaly.
+//! \brief A class implementing an "atmosphere modifier" model applying forcing data
+//! (anomalies, temperature offsets...) to results of another PISM atmosphere model.
+/*!
+Processes command-line options -dTforcing, -anomaly_temp, -anomaly_precip.
+
+The temperature anomaly should be interpreted as a change to the \e air temperature,
+for example at 2m.  An underlying PISMSurfaceModel is in charge of producing an
+actual ice fluid upper surface temperature.  The precipitation anomaly could
+include rain, and again the underlying PISMSurfaceModel is in charge of removing
+rain (if that's the model ...) using (for example) the 2m air temperature.
  */
 class PAForcing : public PAModifier {
 public:
@@ -245,8 +256,8 @@ public:
 				       IceModelVec2S &result);
 protected:
   Timeseries *dTforcing;
-  DiagnosticTimeseries *delta_T; //!< for debugging
-  IceModelVec2T *temp_ma_anomaly, *snowprecip_anomaly;
+  DiagnosticTimeseries *delta_T; //!< for diagnostic time series output (-ts_vars?)
+  IceModelVec2T *temp_anomaly, *precip_anomaly;
 };
 
 

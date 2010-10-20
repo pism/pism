@@ -73,9 +73,11 @@ else
 fi
 
 # cat prefix and exec together
-PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -eta"
+PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill"
+SKIP=50
+CS=5
 
-COUPLER="-atmosphere searise_greenland -surface pdd -pdd_fausto"
+COUPLER="-atmosphere searise_greenland -surface pdd -pdd_fausto -ocean constant"
 
 # use "control run" parameters from Bueler et al. submitted
 PARAMS="-e 3 -pseudo_plastic_q 0.25 -plastic_pwfrac 0.98"
@@ -87,9 +89,9 @@ echo "$SCRIPTNAME    full physics = '$FULLPHYS'"
 echo "$SCRIPTNAME         coupler = '$COUPLER'"
 
 
-pismopts="$PISM_MPIDO $NN $PISM -skip 50 $FULLPHYS -bed_def lc"
+pismopts="$PISM_MPIDO $NN $PISM -skip $SKIP $FULLPHYS -bed_def lc"
 
-expackage="-extra_vars usurf,topg,thk,bmelt,bwat,bwp,dHdt,mask,uvelsurf,vvelsurf,wvelsurf,uvelbase,vvelbase,wvelbase,tempsurf,tempbase"
+expackage="-extra_vars csurf,cbase,usurf,topg,thk,bmelt,bwat,bwp,dHdt,mask,uvelsurf,vvelsurf,wvelsurf,uvelbase,vvelbase,wvelbase,tempsurf,tempbase"
 
 ENDTIME=500
 EXTSTIMES=0:5:${ENDTIME}
@@ -98,7 +100,7 @@ OUTNAME=control_y${ENDTIME}.nc
 EXNAME=ex_y${ENDTIME}.nc
 TSNAME=ts_y${ENDTIME}.nc
 echo
-echo "$SCRIPTNAME  5km grid: control run from 0 to $ENDTIME years w save every 5 years:"
+echo "$SCRIPTNAME  ${CS} km grid: control run from 0 to $ENDTIME years w save every 5 years:"
 echo
 cmd="$pismopts -i $PISM_SPUNUP $COUPLER -ye $ENDTIME \
   -extra_file $EXNAME -extra_times $EXTSTIMES $expackage \

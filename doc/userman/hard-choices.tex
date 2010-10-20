@@ -63,16 +63,16 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
     This atmosphere model also uses a constant snow precipitation field (\texttt{snowprecip}) and requires the mean annual near-surface air temperature (\texttt{temp_ma}) to be present in an input file. In addition to this, it dynamically corrects air temperature using a location-independent elevation lapse rate specified using the \intextoption{lapse_rate} command-line option (in units of degrees Celsius per meter).
  \end{itemize}
 
-  The atmosphere \texttt{forcing} modifier implements temperature forcing using scalar offsets and also a mechanism applying precipitation and mean annual temperature anomalies.
+  The atmosphere \texttt{forcing} modifier implements temperature forcing using scalar offsets and also a mechanism applying precipitation and temperature anomalies.
   \begin{itemize}
   \item \fileopt{dTforcing} specifies a file containing scalar temperature offsets (variable \texttt{delta_T}), 
-  \item \fileopt{anomaly_temp_ma} specifies a file containing spatially-variable mean annual near-surface air temperature anomalies (variable \texttt{temp_ma_anomaly}), and
+  \item \fileopt{anomaly_temp} specifies a file containing spatially-variable near-surface air temperature anomalies (variable \texttt{temp_anomaly}), and
   \item \fileopt{anomaly_precip} specifies a file containing spatially-variable ice-equivalent precipitation anomalies (in units of thickness per time, variable \texttt{snowprecip_anomaly}).
   \end{itemize}
 
   Options \texttt{-anomaly_temp} and \texttt{-anomaly_precip} can be used to set up a PISM run using a GCM output, essentially achieving one-way coupling.
 
-  Note that only one air temperature forcing mechanism can be used at any time.
+  Note that only one air temperature forcing mechanism can be used at any time.  %FIXME:  why?  esp. under r1281, should we allow "-dTforcing foo.nc -anomaly_temp bar.nc"?
 
 \optsection{Climate (boundary) models!\texttt{-surface} [simple, constant, pdd, forcing]}
 \item \textbf{PISM surface (snow) process models}

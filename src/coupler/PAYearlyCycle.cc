@@ -261,23 +261,22 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
     PetscTruth dTforcing_set;
     char dT_file[PETSC_MAX_PATH_LEN];
 
+    ierr = verbPrintf(2, grid.com, 
+      "  reading delta T data from forcing file %s for -paleo_precip actions ...\n",
+      dT_file);  CHKERRQ(ierr);
+
     ierr = PetscOptionsString("-dTforcing", "Specifies the air temperature offsets file",
 			      "", "",
 			      dT_file, PETSC_MAX_PATH_LEN, &dTforcing_set); CHKERRQ(ierr);
-
     if (!dTforcing_set) {
       ierr = PetscPrintf(grid.com, "ERROR: option -paleo_precip requires -dTforcing.\n"); CHKERRQ(ierr);
       PetscEnd();
     }
-
     dTforcing = new Timeseries(grid.com, grid.rank, "delta_T", "t");
     ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);
     ierr = dTforcing->set_dimension_units("years", ""); CHKERRQ(ierr);
-    ierr = dTforcing->set_attr("long_name", "near-surface air temperature offsets"); CHKERRQ(ierr);
-
-    ierr = verbPrintf(2, grid.com, 
-		      "  reading delta T data from forcing file %s...\n", dT_file);  CHKERRQ(ierr);
-	 
+    ierr = dTforcing->set_attr("long_name", "near-surface air temperature offsets");
+             CHKERRQ(ierr);
     ierr = dTforcing->read(dT_file); CHKERRQ(ierr);
   }
 
@@ -334,8 +333,10 @@ PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal t_years, PetscReal dt_year
 
   for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-      temp_ma(i,j) = d_ma + gamma_ma * h[i][j] + c_ma * lat_degN[i][j] + kappa_ma * (-lon_degE[i][j]);
-      temp_mj(i,j) = d_mj + gamma_mj * h[i][j] + c_mj * lat_degN[i][j] + kappa_mj * (-lon_degE[i][j]);
+      temp_ma(i,j) = d_ma + gamma_ma * h[i][j] + c_ma * lat_degN[i][j]
+                       + kappa_ma * (-lon_degE[i][j]);
+      temp_mj(i,j) = d_mj + gamma_mj * h[i][j] + c_mj * lat_degN[i][j]
+                       + kappa_mj * (-lon_degE[i][j]);
     }
   }
   
