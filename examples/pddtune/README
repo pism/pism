@@ -10,12 +10,11 @@ set are from the RACMO/GR model.  They are described in this paper:
   sheet revealed by high-resolution climate modeling", Geophys. Res. Lett.,
   36, L12501, doi:10.1029/2009GL038110
 
-The tuning procedure is to hold some PDD parameters steady, but to adjust these
-parameters; [X] is default value:
+The tuning procedure is to adjust these PDD parameters; [X] is default value:
   pdd_positive_threshold_temp [273.15 K]
   pdd_factor_snow             [0.003 m K-1 day-1]
   pdd_refreeze                [0.6]
-There are other parameters in base_config, but these are the only ones we alter.
+(See base_config.cdl for other PDD parameters which might be worth exploring.)
 
 The top-level script is dotune.sh.  It calls:
 

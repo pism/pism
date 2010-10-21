@@ -79,7 +79,7 @@ if __name__ == "__main__":
     try:
       nc = NC(args[0], 'a')
     except:
-      usagefailure("ERROR: FILE '%s' CANNOT BE OPENED FOR READING" % args[0])
+      usagefailure("ERROR: FILE '%s' CANNOT BE OPENED FOR MODIFYING" % args[0])
 
     from numpy import squeeze
 

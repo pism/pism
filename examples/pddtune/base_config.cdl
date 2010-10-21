@@ -1,9 +1,11 @@
 netcdf base_config {
     variables:
     byte pism_overrides;
+    
+    // Note: Commented-out options are possible additional parameters to tune.
 
-    pism_overrides:pdd_max_temperature_evals_per_year = 53;
-    pism_overrides:pdd_max_temperature_evals_per_year_doc = "integer; maximum number of times the PDD scheme will ask for temperatures to build location-dependent time series for computing (expected) number of positive degree days; the default means the PDD uses weekly samples of the annual cycle; see also pdd_std_dev";
+    //pism_overrides:pdd_max_temperature_evals_per_year = 53;
+    //pism_overrides:pdd_max_temperature_evals_per_year_doc = "integer; maximum number of times the PDD scheme will ask for temperatures to build location-dependent time series for computing (expected) number of positive degree days; the default means the PDD uses weekly samples of the annual cycle; see also pdd_std_dev";
 
     pism_overrides:pdd_positive_threshold_temp = 273.15;
     pism_overrides:pdd_positive_threshold_temp_doc = "K; temperature used to determine meaning of 'positive' degree day";
@@ -11,14 +13,14 @@ netcdf base_config {
     pism_overrides:pdd_factor_snow = 0.003;
     pism_overrides:pdd_factor_snow_doc = "m K-1 day-1; EISMINT-Greenland value [\\ref RitzEISMINT] ; = (3 mm ice-equivalent) / (pos degree day)";
 
-    pism_overrides:pdd_factor_ice = 0.008;
-    pism_overrides:pdd_factor_ice_doc = "m K-1 day-1; EISMINT-Greenland value [\\ref RitzEISMINT] ; = (8 mm ice-equivalent) / (pos degree day)";
+    //pism_overrides:pdd_factor_ice = 0.008;
+    //pism_overrides:pdd_factor_ice_doc = "m K-1 day-1; EISMINT-Greenland value [\\ref RitzEISMINT] ; = (8 mm ice-equivalent) / (pos degree day)";
 
     pism_overrides:pdd_refreeze = 0.6;
     pism_overrides:pdd_refreeze_doc = "pure fraction; EISMINT-Greenland value [\\ref RitzEISMINT] ";
 
-    pism_overrides:pdd_std_dev = 2.53;
-    pism_overrides:pdd_std_dev_doc = "Kelvin; std dev of daily temp variation; value from [\\ref Faustoetal2009]; compare EISMINT-Greenland value of 5.0 [\\ref RitzEISMINT] ";
+    //pism_overrides:pdd_std_dev = 2.53;
+    //pism_overrides:pdd_std_dev_doc = "Kelvin; std dev of daily temp variation; value from [\\ref Faustoetal2009]; compare EISMINT-Greenland value of 5.0 [\\ref RitzEISMINT] ";
 
 data:
     pism_overrides = 0;   // value irrelevant

@@ -9,12 +9,16 @@
 
 # This is the top-level script.  See also README.
 
+# Suggested way to run:  $ ./dotune.sh >& out.dotune &
+
 # This script uses NCO (http://nco.sourceforge.net/).
 
 set -e  # exit on error
 
 DATANAME=Greenland_5km_v1.1.nc
 PISMDATA=pism_$DATANAME
+
+DIFFSFILE=diffs.txt
 
 ./preprocess.sh # generates pism_Greenland_5km_v1.1.nc and base_config.nc
 
@@ -42,6 +46,8 @@ do
 
       CLIMATE0=out_$NAMEROOT.nc
       ./runcase.sh $CONFIG start.nc $CLIMATE0
+      rm -rf $CONFIG  # don't need this file any more BECAUSE pism_overrides are
+                      #   carried forward into $CLIMATE0
 
       CLIMATE=clim_$NAMEROOT.nc
       echo "  removing some fields from $CLIMATE0 and adding in thk in prep for masking;"
@@ -52,12 +58,14 @@ do
       ncks -A -v thk tempthk.nc $CLIMATE  # put the thk variable in $CLIMATE
       rm -rf $CLIMATE0  # don't need this file any more
 
+      echo
       echo "  masking $CLIMATE using climmask.py to remove ice-free areas from consideration"
       ./climmask.py -v acab,smelt,srunoff,saccum $CLIMATE
       
+      echo
       echo "  computing objective function by comparing 'acab' in $CLIMATE"
-      echo "    to 'smb' in $PISMDATA"
-      #FIXME:  ./objective.py -v acab -s smb $CLIMATE $PISMDATA
+      echo "    to 'smb' in $PISMDATA and putting objective value in $DIFFSFILE"
+      ./objective.py -v acab,smb $CLIMATE $PISMDATA $DIFFSFILE
       echo
     done
   done
