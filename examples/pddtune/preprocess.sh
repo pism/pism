@@ -2,43 +2,44 @@
 
 # Copyright (C) 2010 Ed Bueler
 
-# uses the PISM SeaRISE Greenland example to illustrate the use of regional
-# climate model (RCM) output to find PDD parameters which produce closer fit of
-# surface mass balance from PISM's PDD model to the RCM model output
+# Uses a SeaRISE-Greenland data set to illustrate the use of regional
+# climate model (RCM) output to find PDD parameters.  The goal is for the
+# surface mass balance from PISM's PDD model to closely fit the corresponding
+# RACMO/GR regional climate model output, from Ettema et al.
 
-# depends on all tools in examples/searise-greenland
+# This script uses NCO (http://nco.sourceforge.net/).
 
 set -e  # exit on error
 
 echo
-echo "# PDDGREEN example: preprocessing"
+echo "# PDDTUNE example: preprocessing"
 echo
-# FIXME: could do  echo "# running ../searise-greenland/preprocess.sh and making links to result .."
 
 # get file; see page http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
-DATAVERSION=1.1
-DATANAME=Greenland_5km_v$DATAVERSION.nc
-PISMVERSION=pism_$DATANAME
+DATANAME=Greenland_5km_v1.1.nc
+PISMDATA=pism_$DATANAME
 wget -nc http://websrv.cs.umt.edu/isis/images/a/a5/$DATANAME
 
-ncks -O $DATANAME $PISMVERSION  # just copies over, but preserves history and global attrs
+ncks -O $DATANAME $PISMDATA  # copies over
 
-# adjust metadata; uses NCO (http://nco.sourceforge.net/)
-ncrename -O -v x1,x -v y1,y -d x1,x -d y1,y $PISMVERSION
-ncrename -O -v time,t -d time,t $PISMVERSION
-ncrename -O -v usrf,usurf $PISMVERSION
+# adjust metadata
+ncrename -O -v x1,x -v y1,y -d x1,x -d y1,y $PISMDATA
+ncrename -O -v time,t -d time,t $PISMDATA
+ncrename -O -v usrf,usurf $PISMDATA
 
-# we will use present surface temps from Fausto et al 2009 (J. Glaciol. vol 55 no 189)
-#   so we don't mess with the Ettema-provided air temps
-
-# convert from water equiv to ice thickness change rate; assumes ice density 910.0 kg m-3
-ncap -O -s "snowprecip=presprcp*(1000.0/910.0)" $PISMVERSION $PISMVERSION
-ncatted -O -a units,snowprecip,a,c,"m a-1" $PISMVERSION
-ncatted -O -a long_name,snowprecip,a,c,"ice-equivalent precipitation rate" $PISMVERSION
+# convert from water equiv to ice thickness change rate using ice density 910.0 kg m-3
+ncap -O -s "precip=presprcp*(1000.0/910.0)" $PISMDATA $PISMDATA
+ncatted -O -a units,precip,a,c,"m a-1" $PISMDATA
+ncatted -O -a long_name,precip,a,c,"ice-equivalent precipitation rate" $PISMDATA
 
 # delete incorrect standard_name attribute from bheatflx; there is no known standard_name
-ncatted -a standard_name,bheatflx,d,, $PISMVERSION
+ncatted -a standard_name,bheatflx,d,, $PISMDATA
+echo "  PISM-readable (-boot_file) file $PISMDATA created from $DATANAME"
 
-echo "  PISM-readable file $PISMVERSION created from $DATANAME"
-
+# form NetCDF version of basic config file
+CONFIG=base_config
+echo
+echo "  generating parameter-override (-config_override) $CONFIG.nc file from $CONFIG.cdl"
+rm -rf $CONFIG.nc   # remove old if present
+ncgen -o $CONFIG.nc $CONFIG.cdl
 

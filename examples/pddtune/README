@@ -1,0 +1,33 @@
+The scripts in this file demonstrate how to tune PDD parameters to match
+regional climate model output available in a publicly-available data set.
+
+The data set we use is the v1.1 version of the SeaRISE-Greenland data:
+  http://websrv.cs.umt.edu/isis/images/a/a5/Greenland_5km_v1.1.nc
+  
+The field "smb" in this data set is the RACMO/GR generated surface mass balance
+described in this paper:
+  Ettema J., et al. (2009), "Higher surface mass balance of the Greenland ice
+  sheet revealed by high-resolution climate modeling", Geophys. Res. Lett.,
+  36, L12501, doi:10.1029/2009GL038110
+
+The tuning procedure is to hold some PDD parameters steady, but to adjust these
+parameters; [X] is default value:
+  pdd_positive_threshold_temp [273.15 K]
+  pdd_factor_snow             [0.003 m K-1 day-1]
+  pdd_refreeze                [0.6]
+There are other parameters in base_config, but these are the only ones we alter.
+
+The top-level script is dotune.sh.  It calls:
+
+  1.  preprocess.sh to download and clean-up metadata in the SeaRISE-Greenland
+      file, in preparation for next steps; also runs ncgen on .cdl version of
+      configuration file
+
+  2.  boot.sh to create a PISM-output file of the type pclimate can read
+  
+  3.  it runs over ranges of parameters, generating cases and calling for each one:
+         a) runcase.sh to call pclimate and generate PISM's smb
+         b) climmask.py to mask out ocean areas AND ETC
+         c) FOO.py TO COMPUTE OBJECTIVE FUNCTION
+         d) AND IT WRITES RESULTS INTO A FILE, MAYBE
+
