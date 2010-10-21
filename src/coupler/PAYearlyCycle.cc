@@ -19,7 +19,7 @@
 
 #include "PISMAtmosphere.hh"
 
-//! Allocates memory and reads in the snow precipitaion data.
+//! Allocates memory and reads in the precipitaion data.
 PetscErrorCode PAYearlyCycle::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
   LocalInterpCtx *lic = NULL;
@@ -43,30 +43,30 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &/*vars*/) {
 			   ""); CHKERRQ(ierr);  // no CF standard_name ??
   ierr = temp_mj.set_attr("source", reference);
 
-  ierr = snowprecip.create(grid, "snowprecip", false); CHKERRQ(ierr);
-  ierr = snowprecip.set_attrs("climate_state", 
-			      "mean annual ice-equivalent snow precipitation rate",
+  ierr = precip.create(grid, "precip", false); CHKERRQ(ierr);
+  ierr = precip.set_attrs("climate_state", 
+			      "mean annual ice-equivalent precipitation rate",
 			      "m s-1", 
 			      ""); CHKERRQ(ierr); // no CF standard_name ??
-  ierr = snowprecip.set_glaciological_units("m year-1");
-  snowprecip.write_in_glaciological_units = true;
-  snowprecip.time_independent = true;
+  ierr = precip.set_glaciological_units("m year-1");
+  precip.write_in_glaciological_units = true;
+  precip.time_independent = true;
 
-  ierr = find_pism_input(snowprecip_filename, lic, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(precip_filename, lic, regrid, start); CHKERRQ(ierr);
 
-  // read snow precipitation rate from file
+  // read precipitation rate from file
   ierr = verbPrintf(2, grid.com, 
-		    "    reading mean annual ice-equivalent snow precipitation rate 'snowprecip'\n"
+		    "    reading mean annual ice-equivalent precipitation rate 'precip'\n"
 		    "      from %s ... \n",
-		    snowprecip_filename.c_str()); CHKERRQ(ierr); 
+		    precip_filename.c_str()); CHKERRQ(ierr); 
   if (regrid) {
-    ierr = snowprecip.regrid(snowprecip_filename.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
+    ierr = precip.regrid(precip_filename.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
   } else {
-    ierr = snowprecip.read(snowprecip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = precip.read(precip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
-  string snowprecip_history = "read from " + snowprecip_filename + "\n";
+  string precip_history = "read from " + precip_filename + "\n";
 
-  ierr = snowprecip.set_attr("history", snowprecip_history); CHKERRQ(ierr);
+  ierr = precip.set_attr("history", precip_history); CHKERRQ(ierr);
 
   delete lic;
 
@@ -77,7 +77,7 @@ PetscErrorCode PAYearlyCycle::write_model_state(PetscReal /*t_years*/, PetscReal
 								string filename) {
   PetscErrorCode ierr;
 
-  ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
 
   return 0;
 }
@@ -135,24 +135,24 @@ PetscErrorCode PAYearlyCycle::write_fields(set<string> vars, PetscReal t_years,
     ierr = temp_mj.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (vars.find("snowprecip") != vars.end()) {
-    ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
+  if (vars.find("precip") != vars.end()) {
+    ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   return 0;
 }
 
-//! Copies the stored snow precipitation field into result.
+//! Copies the stored precipitation field into result.
 PetscErrorCode PAYearlyCycle::mean_precip(PetscReal t_years, PetscReal dt_years,
 							 IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = update(t_years, dt_years); CHKERRQ(ierr);
 
-  string snowprecip_history = "read from " + snowprecip_filename + "\n";
+  string precip_history = "read from " + precip_filename + "\n";
 
-  ierr = snowprecip.copy_to(result); CHKERRQ(ierr);
-  ierr = result.set_attr("history", snowprecip_history); CHKERRQ(ierr);
+  ierr = precip.copy_to(result); CHKERRQ(ierr);
+  ierr = result.set_attr("history", precip_history); CHKERRQ(ierr);
 
   return 0;
 }
@@ -302,7 +302,7 @@ PetscErrorCode PA_SeaRISE_Greenland::mean_precip(PetscReal t_years, PetscReal dt
 }
 
 //! \brief Updates mean annual and mean July near-surface air temperatures.
-//! Note that the snow precipitation rate is time-independent and does not need
+//! Note that the precipitation rate is time-independent and does not need
 //! to be updated.
 PetscErrorCode PA_SeaRISE_Greenland::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr;

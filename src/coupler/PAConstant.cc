@@ -29,15 +29,16 @@ PetscErrorCode PAConstant::init(PISMVars &/*vars*/) {
 
   // allocate IceModelVecs for storing temperature and precipitation fields:
 
-  // create mean annual ice equivalent snow precipitation rate (before melt, and not including rain)
-  ierr = snowprecip.create(grid, "snowprecip", false); CHKERRQ(ierr);
-  ierr = snowprecip.set_attrs("climate_state", 
-			      "mean annual ice-equivalent snow precipitation rate",
-			      "m s-1", 
+  // create mean annual ice equivalent precipitation rate (before separating rain,
+  //   and before melt, etc. in PISMSurfaceModel)
+  ierr = precip.create(grid, "precip", false); CHKERRQ(ierr);
+  ierr = precip.set_attrs("climate_state", 
+			      "mean annual ice-equivalent precipitation rate",
+			      "m s-1",
 			      ""); CHKERRQ(ierr); // no CF standard_name ??
-  ierr = snowprecip.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  snowprecip.write_in_glaciological_units = true;
-  snowprecip.time_independent = true;
+  ierr = precip.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  precip.write_in_glaciological_units = true;
+  precip.time_independent = true;
 
   ierr = temperature.create(grid, "temp_ma", false); CHKERRQ(ierr); // FIXME! choose the right name
   ierr = temperature.set_attrs(
@@ -53,14 +54,14 @@ PetscErrorCode PAConstant::init(PISMVars &/*vars*/) {
 
   // read snow precipitation rate and temperatures from file
   ierr = verbPrintf(2, grid.com, 
-		    "    reading mean annual ice-equivalent snow precipitation rate 'snowprecip'\n"
+		    "    reading mean annual ice-equivalent precipitation rate 'precip'\n"
 		    "    and mean annual near-surface air temperature 'temp_ma' from %s ... \n",
 		    input_file.c_str()); CHKERRQ(ierr); 
   if (regrid) {
-    ierr = snowprecip.regrid(input_file.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
+    ierr = precip.regrid(input_file.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
     ierr = temperature.regrid(input_file.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
   } else {
-    ierr = snowprecip.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
+    ierr = precip.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
     ierr = temperature.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
 
@@ -73,10 +74,10 @@ PetscErrorCode PAConstant::mean_precip(PetscReal /*t_years*/, PetscReal /*dt_yea
 						   IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  string snowprecip_history = "read from " + input_file + "\n";
+  string precip_history = "read from " + input_file + "\n";
 
-  ierr = snowprecip.copy_to(result); CHKERRQ(ierr);
-  ierr = result.set_attr("history", snowprecip_history);
+  ierr = precip.copy_to(result); CHKERRQ(ierr);
+  ierr = result.set_attr("history", precip_history);
   return 0;
 }
 
@@ -123,7 +124,7 @@ PetscErrorCode PAConstant::write_model_state(PetscReal /*t_years*/, PetscReal /*
 					      string filename) {
   PetscErrorCode ierr;
 
-  ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
   ierr = temperature.write(filename.c_str()); CHKERRQ(ierr);
 
   return 0;
@@ -133,7 +134,7 @@ PetscErrorCode PAConstant::write_diagnostic_fields(PetscReal /*t_years*/, PetscR
 						   string filename) {
   PetscErrorCode ierr;
 
-  ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
   ierr = temperature.write(filename.c_str()); CHKERRQ(ierr);
 
   return 0;
@@ -156,9 +157,10 @@ PetscErrorCode PAConstant::write_fields(set<string> vars, PetscReal t_years,
     ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (vars.find("snowprecip") != vars.end()) {
-    ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
+  if (vars.find("precip") != vars.end()) {
+    ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   return 0;
 }
+

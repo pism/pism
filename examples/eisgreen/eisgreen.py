@@ -148,7 +148,7 @@ latvar = ncfile.createVariable('lat', 'f4', dimensions=('y', 'x'))
 hvar = ncfile.createVariable('usurf', 'f4', dimensions=('y', 'x'))
 thkvar = ncfile.createVariable('thk', 'f4', dimensions=('y', 'x'))
 bedvar = ncfile.createVariable('topg', 'f4', dimensions=('y', 'x'), fill_value=topg_fill_value) 
-accvar = ncfile.createVariable('snowprecip', 'f4', dimensions=('y', 'x'))
+accvar = ncfile.createVariable('precip', 'f4', dimensions=('y', 'x'))
 
 # set the attributes of the variables
 polarVar.grid_mapping_name = 'polar_stereographic'
@@ -187,7 +187,7 @@ bedvar.standard_name = 'bedrock_altitude'
 bedvar.units = 'm'
 bedvar.valid_min = topg_valid_min
 
-accvar.long_name = 'mean annual ice-equivalent snow accumulation rate'
+accvar.long_name = 'mean annual ice-equivalent precipitation rate'
 accvar.units = 'm year-1'
 
 # write the data to the NetCDF file

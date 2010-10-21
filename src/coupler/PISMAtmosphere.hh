@@ -60,6 +60,7 @@ public:
 				       IceModelVec2S &result) = 0;
 };
 
+
 //! \brief A class implementing a constant-in-time atmosphere model. Reads data
 //! from a PISM input file.
 class PAConstant : public PISMAtmosphereModel {
@@ -85,8 +86,9 @@ public:
 				       IceModelVec2S &result);
 protected:
   string input_file;
-  IceModelVec2S snowprecip, temperature;
+  IceModelVec2S precip, temperature;
 };
+
 
 //! A class containing an incomplete implementation of an atmosphere model
 //! based on a temperature parameterization using mean annual and mean July
@@ -118,8 +120,8 @@ public:
 				       IceModelVec2S &result);
 protected:
   PetscScalar snow_temp_july_day;
-  string reference, snowprecip_filename;
-  IceModelVec2S temp_ma, temp_mj, snowprecip;
+  string reference, precip_filename;
+  IceModelVec2S temp_ma, temp_mj, precip;
 };
 
 

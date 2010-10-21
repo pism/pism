@@ -47,27 +47,25 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 \begin{itemize}
   \item \emph{SeaRISE-Greenland} (\texttt{searise_greenland}, the default)
 
-    This atmosphere model implements a longitude, latitude and elevation dependent near-surface air temperature parameterization and a cosine yearly cycle described in \cite{Faustoetal2009} and uses a constant in time ice-equivalent snow precipitation field (in units of thickness per time, variable \texttt{snowprecip}) that is read from an input file.
-
-    The parameterization is controlled by configuration parameters with the \texttt{snow_temp} prefix.
+    This atmosphere model implements a longitude, latitude and elevation dependent near-surface air temperature parameterization and a cosine yearly cycle described in \cite{Faustoetal2009} and uses a constant in time ice-equivalent precipitation field (in units of thickness per time, variable \texttt{precip}) that is read from an input file.  The air temperature parameterization is controlled by configuration parameters with the \texttt{snow_temp_fausto} prefix.
 
     In addition to the temperature parameterization it allows the SeaRISE-Greenland formula for paleo-precipitation from present; a 7.3\% change of precipitation rate for every one degree Celsius of temperature change \cite{Huybrechts02}.  See \url{http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland} for details.  Turn on this mechanism by using the \intextoption{paleo_precip} option.
 
-    It expects variables \texttt{snowprecip}, latitude and longitude to be present in an input file.
+    It expects variables \texttt{precip}, latitude and longitude to be present in an input file.
 
  \item \emph{Constant in time} (\texttt{constant})
 
-    This atmosphere model reads the snow precipitation (variable \texttt{snowprecip}) and the mean annual near-surface air temperature (variable \texttt{temp_ma}) and provides them to a surface model.
+    This atmosphere model reads the snow precipitation (variable \texttt{precip}) and the mean annual near-surface air temperature (variable \texttt{temp_ma}) and provides them to a surface model.
   \item \emph{Constant precipitation using a temperature lapse rate} (\texttt{temp_lapse_rate})
     
-    This atmosphere model also uses a constant snow precipitation field (\texttt{snowprecip}) and requires the mean annual near-surface air temperature (\texttt{temp_ma}) to be present in an input file. In addition to this, it dynamically corrects air temperature using a location-independent elevation lapse rate specified using the \intextoption{lapse_rate} command-line option (in units of degrees Celsius per meter).
+    This atmosphere model also uses a constant (time-independent) precipitation field (\texttt{precip}) and requires the mean annual near-surface air temperature (\texttt{temp_ma}) to be present in an input file. In addition to this, it dynamically corrects air temperature using a location-independent elevation lapse rate specified using the \intextoption{lapse_rate} command-line option (in units of degrees Celsius per meter).
  \end{itemize}
 
   The atmosphere \texttt{forcing} modifier implements temperature forcing using scalar offsets and also a mechanism applying precipitation and temperature anomalies.
   \begin{itemize}
   \item \fileopt{dTforcing} specifies a file containing scalar temperature offsets (variable \texttt{delta_T}), 
   \item \fileopt{anomaly_temp} specifies a file containing spatially-variable near-surface air temperature anomalies (variable \texttt{temp_anomaly}), and
-  \item \fileopt{anomaly_precip} specifies a file containing spatially-variable ice-equivalent precipitation anomalies (in units of thickness per time, variable \texttt{snowprecip_anomaly}).
+  \item \fileopt{anomaly_precip} specifies a file containing spatially-variable ice-equivalent precipitation anomalies (in units of thickness per time, variable \texttt{precip_anomaly}).
   \end{itemize}
 
   Options \texttt{-anomaly_temp} and \texttt{-anomaly_precip} can be used to set up a PISM run using a GCM output, essentially achieving one-way coupling.

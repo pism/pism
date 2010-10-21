@@ -1,3 +1,20 @@
+// Copyright (C) 2008-2010 Constantine Khroulev and Ed Bueler
+//
+// This file is part of PISM.
+//
+// PISM is free software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the Free Software
+// Foundation; either version 2 of the License, or (at your option) any later
+// version.
+//
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License
+// along with PISM; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMAtmosphere.hh"
 
@@ -30,7 +47,7 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
 
   ierr = find_pism_input(input_file, lic, regrid, start); CHKERRQ(ierr);
 
-  // read snow precipitation rate and temperatures from file
+  // read precipitation rate and temperatures from file
   ierr = verbPrintf(2, grid.com, 
 		    "    reading surface elevation 'usurf' from %s...\n",
 		    input_file.c_str()); CHKERRQ(ierr); 
@@ -97,7 +114,7 @@ PetscErrorCode PALapseRates::write_model_state(PetscReal t_years, PetscReal dt_y
 						string filename) {
   PetscErrorCode ierr;
 
-  ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
 
   IceModelVec2S temp_ma;
   ierr = temp_ma.create(grid, "airtemp_ma", false); CHKERRQ(ierr); // FIXME! choose the right name

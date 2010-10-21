@@ -34,8 +34,8 @@ ncrename -O -v usrf,usurf $PISMVERSION
 ncap -O -s "temp_ma=presartm+273.15" $PISMVERSION $PISMVERSION
 ncatted -O -a units,temp_ma,a,c,"K" $PISMVERSION
 # convert from water equiv to ice thickness change rate; assumes ice density 910.0 kg m-3
-ncap -O -s "snowprecip=presprcp*(1000.0/910.0)" $PISMVERSION $PISMVERSION
-ncatted -O -a units,snowprecip,a,c,"m a-1" $PISMVERSION
+ncap -O -s "precip=presprcp*(1000.0/910.0)" $PISMVERSION $PISMVERSION
+ncatted -O -a units,precip,a,c,"m a-1" $PISMVERSION
 # delete incorrect standard_name attribute from bheatflx; there is no known standard_name
 ncatted -a standard_name,bheatflx,d,, $PISMVERSION
 ncks -O -v x,y,lat,lon,bheatflx,topg,thk,snowprecip,temp_ma,mapping \

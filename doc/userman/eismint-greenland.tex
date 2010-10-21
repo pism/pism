@@ -30,7 +30,7 @@ grid20-EISMINT,  suaq20-EISMINT,  specmap.017,  sum89-92-ss09-50yr.stp
 $ ./eisgreen.py
 \end{verbatim}%$
 
-\noindent The NetCDF file \texttt{eis_green20.nc} will be created from the data in \texttt{grid20-EISMINT} and \texttt{suaq20-EISMINT}.  It contains variables for the gridded latitude (\texttt{lat}), longitude (\texttt{lon}), surface altitude (``\texttt{usurf}'' for \textbf{u}pper \textbf{surf}ace elevation), ice thickness (\texttt{thk}), bedrock altitude (\texttt{topg}), and snow precipitation rate (\texttt{snowprecip}; in ice-equivalent thickness units).  These values can be viewed graphically with \texttt{ncview}.  The metadata for these variables (the NetCDF ``header'') can be viewed by
+\noindent The NetCDF file \texttt{eis_green20.nc} will be created from the data in \texttt{grid20-EISMINT} and \texttt{suaq20-EISMINT}.  It contains variables for the gridded latitude (\texttt{lat}), longitude (\texttt{lon}), surface altitude (``\texttt{usurf}'' for \textbf{u}pper \textbf{surf}ace elevation), ice thickness (\texttt{thk}), bedrock altitude (\texttt{topg}), and snow precipitation rate (\texttt{precip}; in ice-equivalent thickness units).  These values can be viewed graphically with \texttt{ncview}.  The metadata for these variables (the NetCDF ``header'') can be viewed by
 
 \begin{verbatim}
 ncdump -h eis_green20.nc
@@ -82,6 +82,8 @@ $ pgrn -boot_file eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000
 \scriptsize
 \begin{quote}
 \begin{verbatim}
+FIXME:  far out of date!!
+
 PGRN revision 998:1212M trunk (PISM EISMINT-Greenland mode)
   setting flags equivalent to '-e 3 -ocean_kill'; user options may override ...
 Setting PDD parameters to EISMINT-Greenland values...
@@ -305,11 +307,11 @@ $ pclimate -i green20km_y1.nc -atmosphere eismint_greenland -surface pdd \
 \end{verbatim}%$
 This produces the file \texttt{pddmovie.nc} with several variables: \texttt{acab}
 (instantaneous net ice equivalent accumulation (ablation) rate), \texttt{artm}
-(mean annual temperature at ice surface but below firn), \texttt{snowtemp}
-(instantaneous snow temperature), \texttt{snowprecip} (mean annual
-ice-equivalent snow accumulation rate) and some others.
+(mean annual temperature at ice surface but below firn), \texttt{snowtemp???}
+(instantaneous surface temperature), \texttt{precip} (mean annual
+ice-equivalent precipitation rate) and some others.
 
-Variables \texttt{artm} and \texttt{snowprecip} do not evolve over time because the 
+Variables \texttt{artm} and \texttt{precip} do not evolve over time because the 
 former is generated from ice sheet geometry and latitude by the EISMINT-Greenland
 formulas \cite{RitzEISMINT}, while the latter is part of the EISMINT-Greenland data
 itself.
