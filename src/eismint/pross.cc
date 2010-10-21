@@ -80,7 +80,6 @@ int main(int argc, char *argv[]) {
     config.set_flag("do_cold_ice_methods", true);
     config.set("epsilon_ssa", 0.0);  // don't use this lower bound on effective viscosity
     config.set("run_length_years", 0);
-    config.set_flag("force_full_diagnostics", true);
 
     IceGrid    g(com, rank, size, config);
 

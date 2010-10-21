@@ -414,7 +414,7 @@ PetscErrorCode computeDrivingStress(
 
 PetscErrorCode assembleSSARhs(
     IceGrid &grid, NCConfigVariable &config, PetscReal n, PetscReal rho,
-    DA &SSADA, IceModelVec2S *vWork2d, IceModelVec2Stag &uvbar,
+    DA &SSADA, IceModelVec2S *vWork2d, IceModelVec2V &vel_bar,
     IceModelVec2S &vh, IceModelVec2S &vH,
     IceModelVec2S &vbed, IceModelVec2Mask &vMask,
     Vec &rhs) {
@@ -435,13 +435,13 @@ PetscErrorCode assembleSSARhs(
   ierr = vWork2d[0].get_array(taudx); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(taudy); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = uvbar.begin_access(); CHKERRQ(ierr);
+  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
   ierr = DAVecGetArray(SSADA,rhs,&rhs_uv); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (vMask.value(i,j) == MASK_SHEET) {
-        rhs_uv[i][j].u = scaling * 0.5*(uvbar(i-1,j,0) + uvbar(i,j,0));
-        rhs_uv[i][j].v = scaling * 0.5*(uvbar(i,j-1,1) + uvbar(i,j,1));
+        rhs_uv[i][j].u = scaling * 0.5 * vel_bar(i,j).u;
+        rhs_uv[i][j].v = scaling * 0.5 * vel_bar(i,j).v;
       } else {	// usual case: use already computed driving stress
         rhs_uv[i][j].u = taudx[i][j];
         rhs_uv[i][j].v = taudy[i][j];
@@ -450,7 +450,7 @@ PetscErrorCode assembleSSARhs(
   }
   ierr = DAVecRestoreArray(SSADA,rhs,&rhs_uv); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = uvbar.end_access(); CHKERRQ(ierr);
+  ierr = vel_bar.end_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
 
@@ -466,7 +466,7 @@ PetscErrorCode velocitySSA(
     IceModelVec2S &vtauc, 
     IceModelVec2S &vh, IceModelVec2S &vH,
     IceModelVec2S &vbed, IceModelVec2Mask &vMask,
-    IceModelVec2Stag &uvbar, IceModelVec2S *vWork2d,
+    IceModelVec2V &vel_bar, IceModelVec2S *vWork2d,
     IceModelVec2S vNuH[2], IceModelVec2V &vel_ssa_old,
     DA &SSADA, Vec &SSAX, Vec &SSARHS, Mat &A, KSP &SSAKSP, 
     IceModelVec2V &vel_ssa, PetscInt *numiter) {
@@ -491,7 +491,7 @@ PetscErrorCode velocitySSA(
 
   // computation of RHS only needs to be done once; does not depend on solution;
   //   but matrix changes under nonlinear iteration (loop over k below)
-  ierr = assembleSSARhs(grid, config, ice->exponent(), ice->rho, SSADA, vWork2d, uvbar,
+  ierr = assembleSSARhs(grid, config, ice->exponent(), ice->rho, SSADA, vWork2d, vel_bar,
                         vh, vH, vbed, vMask, SSARHS); CHKERRQ(ierr);
 
   for (PetscInt l=0; ; ++l) { // iterate with increasing regularization parameter
@@ -677,8 +677,7 @@ int main(int argc, char *argv[]) {
 
     IceModelVec2S vh, vH, vbed, vtauc;
     IceModelVec2Mask vMask;
-    IceModelVec2V vel_ssa, vel_ssa_old;
-    IceModelVec2Stag uvbar;
+    IceModelVec2V vel_bar, vel_ssa, vel_ssa_old;
     const PetscInt WIDE_STENCIL = 2;
 
     // ice upper surface elevation
@@ -732,15 +731,16 @@ int main(int argc, char *argv[]) {
       "internal", "latest SSA velocities for rapid re-solve of SSA equations", "","");
       CHKERRQ(ierr);
 
-    ierr = uvbar.create(grid, "uvbar", true); CHKERRQ(ierr);
-    ierr = uvbar.set_attrs("internal", 
-			 "vertically averaged ice velocity, on staggered grid offset in X direction,"
-			 " from SIA, in the X direction",
-			 "m s-1", "", 0); CHKERRQ(ierr);
-    ierr = uvbar.set_attrs("internal", 
-			 "vertically averaged ice velocity, on staggered grid offset in Y direction,"
-			 " from SIA, in the Y direction",
-			 "m s-1", "", 1); CHKERRQ(ierr);
+    ierr = vel_bar.create(grid, "bar", false); CHKERRQ(ierr); // components are ubar and vbar
+    ierr = vel_bar.set_attrs("diagnostic", 
+                             "vertical mean of horizontal ice velocity in the X direction",
+                             "m s-1", "land_ice_vertical_mean_x_velocity", 0); CHKERRQ(ierr);
+    ierr = vel_bar.set_attrs("diagnostic", 
+                             "vertical mean of horizontal ice velocity in the Y direction",
+                             "m s-1", "land_ice_vertical_mean_y_velocity", 1); CHKERRQ(ierr);
+    ierr = vel_bar.set_glaciological_units("m year-1");
+    vel_bar.write_in_glaciological_units = true;
+
 
     // 2d work vectors
     const int nWork2d = 4;
@@ -785,7 +785,7 @@ int main(int argc, char *argv[]) {
     IceModelVec2S vNuDefault[2] = {vWork2d[0], vWork2d[1]};
     PetscInt numiter = -999;
     ierr = velocitySSA(grid, config, ice, ssaStrengthExtend, basal,
-                       vtauc, vh, vH, vbed, vMask, uvbar, vWork2d,
+                       vtauc, vh, vH, vbed, vMask, vel_bar, vWork2d,
                        vNuDefault, vel_ssa_old,
                        SSADA, SSAX, SSARHS, SSAStiffnessMatrix, SSAKSP,
                        vel_ssa, &numiter); CHKERRQ(ierr); 

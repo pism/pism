@@ -460,8 +460,14 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         if (is_floating) {
           Tbtop = shelfbtemp(i,j);
         } else {
-          // FIXME: doesn't this just give us artm(i,j) over again?
-          ierr = EC->getAbsTemp(Enth_ks, p_ks, Tbtop); CHKERRQ(ierr);
+          if (vH(i,j) < 0.1) {
+            // no ice: the bedrock is exposed to the air
+            Tbtop = artm(i,j);
+          } else {
+            // ks == 0, so we don't have enough ice to do an ice column solve
+            // on the current grid, but the bedrock is covered by ice
+            ierr = EC->getAbsTemp(Enth_ks, p_ks, Tbtop); CHKERRQ(ierr);
+          }
         }
         if (bedrock_is_present) { // bedrock layer if present
           ierr = bosys.setIndicesAndClearThisColumn(i,j,-1); CHKERRQ(ierr);  

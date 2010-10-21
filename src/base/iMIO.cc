@@ -636,12 +636,16 @@ PetscErrorCode IceModel::init_backups() {
 //! Write a backup (i.e. an intermediate result of a run).
 PetscErrorCode IceModel::write_backup() {
   PetscErrorCode ierr;
-  PetscLogDouble current_time;
-  PetscReal wall_clock_hours;
+  double wall_clock_hours;
   PISMIO nc(&grid);
 
-  ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
-  wall_clock_hours = (current_time - start_time) / 3600.0;
+  if (grid.rank == 0) {
+    PetscLogDouble current_time;
+    ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
+    wall_clock_hours = (current_time - start_time) / 3600.0;
+  }
+
+  MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
 
   if (wall_clock_hours - last_backup_time < backup_interval)
     return 0;

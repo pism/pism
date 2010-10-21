@@ -402,7 +402,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
         if (vMask.is_floating(i,j)) {
 	  vHnew(i,j) -= shelfbmassflux(i,j) * dt;
         } else {
-           vHnew(i,j) -= bmr_gnded[i][j] * dt;
+          vHnew(i,j) -= bmr_gnded[i][j] * dt;
         }
       }
 

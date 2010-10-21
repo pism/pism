@@ -541,13 +541,13 @@ PetscErrorCode IceModel::assembleSSARhs(Vec rhs) {
   ierr = vWork2d[0].get_array(taudx); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(taudy); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = uvbar.begin_access(); CHKERRQ(ierr);
+  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
   ierr = DAVecGetArray(SSADA,rhs,&rhs_uv); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (vMask.value(i,j) == MASK_SHEET) {
-        rhs_uv[i][j].u = scaling * 0.5*(uvbar(i-1,j,0) + uvbar(i,j,0));
-        rhs_uv[i][j].v = scaling * 0.5*(uvbar(i,j-1,1) + uvbar(i,j,1));
+        rhs_uv[i][j].u = scaling * vel_bar(i,j).u;
+        rhs_uv[i][j].v = scaling * vel_bar(i,j).v;
       } else {	// usual case: use already computed driving stress
         rhs_uv[i][j].u = taudx[i][j];
         rhs_uv[i][j].v = taudy[i][j];
@@ -556,7 +556,7 @@ PetscErrorCode IceModel::assembleSSARhs(Vec rhs) {
   }
   ierr = DAVecRestoreArray(SSADA,rhs,&rhs_uv); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = uvbar.end_access(); CHKERRQ(ierr);
+  ierr = vel_bar.end_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
 
@@ -786,7 +786,6 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
 
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = uvbar.begin_access(); CHKERRQ(ierr);
 
   const PetscScalar inC_fofv = 1.0e-4 * PetscSqr(secpera),
                     outC_fofv = 2.0 / pi;
@@ -823,8 +822,8 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
         
         // also update ubar,vbar by adding SIA contribution, interpolated from 
         //   staggered grid
-        const PetscScalar ubarSIA = 0.5*(uvbar(i-1,j,0) + uvbar(i,j,0)),
-                          vbarSIA = 0.5*(uvbar(i,j-1,1) + uvbar(i,j,1));
+        const PetscScalar ubarSIA = vel_bar(i,j).u,
+          vbarSIA = vel_bar(i,j).v;
         vel_bar(i,j).u = (addVels) ? fv * ubarSIA + omfv * uvssa[i][j].u : uvssa[i][j].u;
         vel_bar(i,j).v = (addVels) ? fv * vbarSIA + omfv * uvssa[i][j].v : uvssa[i][j].v;
 
@@ -838,7 +837,6 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
   ierr = vel_basal.end_access(); CHKERRQ(ierr);
   ierr = u3.end_access(); CHKERRQ(ierr);
   ierr = v3.end_access(); CHKERRQ(ierr);
-  ierr = uvbar.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

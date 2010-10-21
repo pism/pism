@@ -117,10 +117,23 @@ PetscLogEventBegin(siaEVENT,0,0,0,0);
     }
     prof->end(event_sia_3d);
   } else { // if computeSIAVelocities == PETSC_FALSE
-    // do NOT zero out uvbar; they are used to communicate boundary
-    // conditions to SSA calculation
-    ierr = vel_bar.set(0.0); CHKERRQ(ierr);
     ierr = vel_basal.set(0.0); CHKERRQ(ierr);
+
+    // this is a hack; we need to seperate vel_bar, which is a result of the
+    // SIA computation, from SSA boundary conditions
+
+    // the following keeps values set as BCs and zeros the rest:
+    ierr = vMask.begin_access(); CHKERRQ(ierr);
+    ierr = vel_bar.begin_access(); CHKERRQ(ierr);
+    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+        if (vMask.value(i,j) != MASK_SHEET)
+          vel_bar(i,j).u = 0.0;
+          vel_bar(i,j).v = 0.0;
+      }
+    }
+    ierr = vel_bar.end_access(); CHKERRQ(ierr);
+    ierr = vMask.end_access(); CHKERRQ(ierr);
 
     ierr = vRb.set(0.0); CHKERRQ(ierr);
     if (updateVelocityAtDepth) {

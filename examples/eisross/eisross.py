@@ -22,47 +22,46 @@ VERBOSE = 0
 
 # function which will print ignored lines if VERBOSE > 0
 def vprint(s):
-  if VERBOSE > 0:
-    print s
+    if VERBOSE > 0:
+        print s
 
 # function to read a 2d variable from EISMINT-ROSS data file
 # allows choice of _FillValue, shifting, and scaling
 def read2dROSSfloat(mygrid,myarray,xs,xm,My,mymissing,myshift,myscale):
-  vprint(mygrid.readline()) # ignore two lines
-  vprint(mygrid.readline())
-  Mx = xs + xm
-  for i in range(xs):
-    for j in range(My):
-      myarray[i,j] = mymissing
-  for i in range(xm):
-    j = 0
-    for num in mygrid.readline().split():
-      myarray[i+xs,j] = (float(num) + myshift) * myscale
-      j = j + 1
+    vprint(mygrid.readline()) # ignore two lines
+    vprint(mygrid.readline())
+    Mx = xs + xm
+    for i in range(xs):
+        for j in range(My):
+            myarray[i,j] = mymissing
+    for i in range(xm):
+        j = 0
+        for num in mygrid.readline().split():
+            myarray[i+xs,j] = (float(num) + myshift) * myscale
+            j = j + 1
 
 # function convert velocities from (azimuth,magnitude), with magnitude to (u,v)
 def uvGet(mag,azi):
-  uv = zeros((2,),float32)
-  uv[1] = mag * cos((pi/180.0) * azi)
-  uv[0] = mag * sin((pi/180.0) * azi)
-  return uv
+    u = mag * sin((pi/180.0) * azi)
+    v = mag * cos((pi/180.0) * azi)
+    return (u,v)
 
 ##### command line arguments #####
 try:
-  opts, args = getopt.getopt(sys.argv[1:], "p:o:v:", ["prefix=", "out=", "verbose="])
-  for opt, arg in opts:
-    if opt in ("-p", "--prefix"):
-      GRID_FILE = arg + GRID_FILE
-      KBC_FILE = arg + KBC_FILE
-      INLETS_FILE = arg + INLETS_FILE
-    if opt in ("-o", "--out"):
-      WRIT_FILE = arg
-    if opt in ("-v", "--verbose"):
-      verbose = float(arg)
+    opts, args = getopt.getopt(sys.argv[1:], "p:o:v:", ["prefix=", "out=", "verbose="])
+    for opt, arg in opts:
+        if opt in ("-p", "--prefix"):
+            GRID_FILE = arg + GRID_FILE
+            KBC_FILE = arg + KBC_FILE
+            INLETS_FILE = arg + INLETS_FILE
+        if opt in ("-o", "--out"):
+            WRIT_FILE = arg
+        if opt in ("-v", "--verbose"):
+            verbose = float(arg)
 except getopt.GetoptError:
-  print 'Incorrect command line arguments'
-  sys.exit(2)
-  
+    print 'Incorrect command line arguments'
+    sys.exit(2)
+
 
 ##### read 111by147Grid.dat #####
 print "reading grid data from ",GRID_FILE
@@ -72,7 +71,7 @@ vprint(grid.readline()) # ignore first line
 # second line gives dimensions; read and allocate accordingly
 dim=[]
 for num in grid.readline().split():
-   dim.append(num)
+    dim.append(num)
 xmROSS = int(dim[0])
 MyROSS = int(dim[1])
 xsROSS = MyROSS - xmROSS
@@ -83,9 +82,9 @@ lon = zeros((MxROSS, MyROSS), float32)
 dlat = (-5.42445 - (-12.3325)) / 110.0
 dlon = (3.72207 - (-5.26168)) / 146.0
 for i in range(MxROSS):
-  for j in range(MyROSS):
-    lat[i,j] = -12.3325 - dlat * 46.0 + i * dlat
-    lon[i,j] = -5.26168 + j * dlon
+    for j in range(MyROSS):
+        lat[i,j] = -12.3325 - dlat * 46.0 + i * dlat
+        lon[i,j] = -5.26168 + j * dlon
 #these are to be filled from 111by147.dat:
 eislat = zeros((MxROSS, MyROSS), float32) # actually ignored
 eislon = zeros((MxROSS, MyROSS), float32) # actually ignored
@@ -103,67 +102,67 @@ vprint(grid.readline()) # ignore two more lines
 vprint(grid.readline())
 j=0;
 for line in range(xsROSS):
-   for i in range(MyROSS):
-      eislat[j,i] = 9999.;
-   j = j + 1
+    for i in range(MyROSS):
+        eislat[j,i] = 9999.;
+    j = j + 1
 for line in range(xmROSS):
-   latvalue = float(grid.readline())
-   for i in range(MyROSS):
-      eislat[j,i] = latvalue
-   j = j + 1
+    latvalue = float(grid.readline())
+    for i in range(MyROSS):
+        eislat[j,i] = latvalue
+    j = j + 1
 vprint(grid.readline()) # read extra value
 # note there are actually 148 "columns position" values in 111by147Grid.dat file
 vprint(grid.readline()) # ignore two lines
 vprint(grid.readline())
 i=0;
 for line in range(MyROSS):
-   lonvalue = float(grid.readline())
-   for j in range(MxROSS):
-      eislon[j,i] = lonvalue
-   i = i + 1
+    lonvalue = float(grid.readline())
+    for j in range(MxROSS):
+        eislon[j,i] = lonvalue
+    i = i + 1
 vprint(grid.readline()) # read extra value
 vprint(grid.readline()) # ignore two lines
 vprint(grid.readline())
 for i in [0, 1]:
-  for j in range(MyROSS):
-    mask[i,j] = MASK_SHEET
+    for j in range(MyROSS):
+        mask[i,j] = MASK_SHEET
 for i in range(xsROSS-2):
-  for j in range(MyROSS):
-    mask[i+2,j] = MASK_FLOATING
+    for j in range(MyROSS):
+        mask[i+2,j] = MASK_FLOATING
 for i in range(xmROSS):
-  j = 0
-  for num in grid.readline().split():
-    if int(num) == 1:
-       mask[i+xsROSS,j] = MASK_FLOATING
-    else:
-       mask[i+xsROSS,j] = MASK_SHEET
-    j = j + 1
+    j = 0
+    for num in grid.readline().split():
+        if int(num) == 1:
+            mask[i+xsROSS,j] = MASK_FLOATING
+        else:
+            mask[i+xsROSS,j] = MASK_SHEET
+        j = j + 1
 read2dROSSfloat(grid,azi,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0)
 read2dROSSfloat(grid,mag,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0 / SECPERA)
 read2dROSSfloat(grid,thk,xsROSS,xmROSS,MyROSS,1.0,0.0,1.0)
 vprint(grid.readline()) # ignore two lines
 vprint(grid.readline())
 for i in range(xsROSS):
-  for j in range(MyROSS):
-    accur[i,j] = -1
+    for j in range(MyROSS):
+        accur[i,j] = -1
 for i in range(xmROSS):
-  j = 0
-  for num in grid.readline().split():
-    if float(num) == 1.0:
-       accur[i+xsROSS,j] = 1
-    else:
-       accur[i+xsROSS,j] = 0
-    j = j + 1
+    j = 0
+    for num in grid.readline().split():
+        if float(num) == 1.0:
+            accur[i+xsROSS,j] = 1
+        else:
+            accur[i+xsROSS,j] = 0
+        j = j + 1
 read2dROSSfloat(grid,bed,xsROSS,xmROSS,MyROSS,-600.0,0.0,-1.0)
 # set thickness to 1.0 m according to this info
 vprint(grid.readline()) # ignore two lines
 vprint(grid.readline())
 for i in range(xmROSS):
-  j = 0
-  for num in grid.readline().split():
-    if (float(num) == 1.0):
-      thk[i,j] = 1.0
-    j = j + 1
+    j = 0
+    for num in grid.readline().split():
+        if (float(num) == 1.0):
+            thk[i,j] = 1.0
+        j = j + 1
 read2dROSSfloat(grid,accum,xsROSS,xmROSS,MyROSS,0.2/SECPERA,0.0,1.0/(SECPERA * 1000.0))
 read2dROSSfloat(grid,barB,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0)
 read2dROSSfloat(grid,Ts,xsROSS,xmROSS,MyROSS,248.0,273.15,1.0)
@@ -175,32 +174,32 @@ ubarOBS = zeros((MxROSS, MyROSS), float32)
 vbarOBS = zeros((MxROSS, MyROSS), float32)
 bcflag = zeros((MxROSS, MyROSS), int16)
 for i in range(MxROSS):
-  for j in range(MxROSS):
-    ubarOBS[i,j] = 1.0 / SECPERA
-    vbarOBS[i,j] = 1.0 / SECPERA
-    bcflag[i,j] = 0
+    for j in range(MxROSS):
+        ubarOBS[i,j] = 1.0 / SECPERA
+        vbarOBS[i,j] = 1.0 / SECPERA
+        bcflag[i,j] = 0
 # also fill in zeros along sides; better for Laplace solution
 for i in range(MxROSS):
-  ubarOBS[i,0] = 0.0
-  vbarOBS[i,0] = 0.0
-  ubarOBS[i,MyROSS-1] = 0.0
-  vbarOBS[i,MyROSS-1] = 0.0
+    ubarOBS[i,0] = 0.0
+    vbarOBS[i,0] = 0.0
+    ubarOBS[i,MyROSS-1] = 0.0
+    vbarOBS[i,MyROSS-1] = 0.0
 for j in range(MyROSS):
-  ubarOBS[0,j] = 0.0
-  vbarOBS[0,j] = 0.0
-  ubarOBS[MxROSS-1,j] = 0.0
-  vbarOBS[MxROSS-1,j] = 0.0
-  
+    ubarOBS[0,j] = 0.0
+    vbarOBS[0,j] = 0.0
+    ubarOBS[MxROSS-1,j] = 0.0
+    vbarOBS[MxROSS-1,j] = 0.0
+
 ##### read kbc.dat #####
 print "reading boundary condition locations from ",KBC_FILE
 kbc=open(KBC_FILE, 'r')
 for count in range(77):
-  coords = kbc.readline().split()
-  i = int(coords[0]) + xsROSS
-  j = int(coords[1])
-  mask[i,j] = MASK_SHEET
-  bcflag[i,j] = 1
-  [ubarOBS[i,j], vbarOBS[i,j]] = uvGet(mag[i,j],azi[i,j])
+    coords = kbc.readline().split()
+    i = int(coords[0]) + xsROSS
+    j = int(coords[1])
+    mask[i,j] = MASK_SHEET
+    bcflag[i,j] = 1
+    [ubarOBS[i,j], vbarOBS[i,j]] = uvGet(mag[i,j],azi[i,j])
 kbc.close()
 
 ##### read inlets.dat #####
@@ -208,35 +207,122 @@ print "reading additional boundary condition locations and data"
 print "   from ",INLETS_FILE
 inlets=open(INLETS_FILE, 'r')
 for count in range(22):
-  data = inlets.readline().split()
-  i = int(data[0]) + xsROSS
-  j = int(data[1])
-  mask[i,j] = MASK_SHEET
-  bcflag[i,j] = 1
-  [ubarOBS[i,j], vbarOBS[i,j]]  = uvGet(float(data[3]) / SECPERA,float(data[2]))
+    data = inlets.readline().split()
+    i = int(data[0]) + xsROSS
+    j = int(data[1])
+    mask[i,j] = MASK_SHEET
+    bcflag[i,j] = 1
+    [ubarOBS[i,j], vbarOBS[i,j]]  = uvGet(float(data[3]) / SECPERA,float(data[2]))
 inlets.close()
 
+##### compute coordinates #####
+x = zeros(MxROSS)
+y = zeros(MyROSS)
+for i in range(MxROSS):
+    x[i] = dxROSS * float(i - (MxROSS - 1)/2)
+for j in range(MyROSS):
+    y[j] = dxROSS * float(j - (MyROSS - 1)/2)
 
-##### create and define dimensions and variables in NetCDF file #####
+##### define dimensions in NetCDF file #####
 ncfile = NC(WRIT_FILE, 'w',format='NETCDF3_CLASSIC')
-xdim = ncfile.createDimension('y', MxROSS)
-ydim = ncfile.createDimension('x', MyROSS)
-xvar = ncfile.createVariable('y', 'f8', ('y',))
-yvar = ncfile.createVariable('x', 'f8', ('x',))
-latvar = ncfile.createVariable('lat', 'f4', ('y','x'))
-lonvar = ncfile.createVariable('lon', 'f4', ('y','x'))
-maskvar = ncfile.createVariable('mask', 'i4', ('y','x'))
-azivar = ncfile.createVariable('azi_obs', 'f4', ('y','x'))
-magvar = ncfile.createVariable('mag_obs', 'f4', ('y','x'))
-thkvar = ncfile.createVariable('thk', 'f4', ('y','x'))
-accurvar = ncfile.createVariable('accur', 'i4', ('y','x'))
-bedvar = ncfile.createVariable('topg', 'f4', ('y','x'))
-accumvar = ncfile.createVariable('acab', 'f4', ('y','x'))
-barBvar = ncfile.createVariable('barB', 'f4', ('y','x'))
-Tsvar = ncfile.createVariable('artm', 'f4', ('y','x'))
-ubarvar = ncfile.createVariable('ubar', 'f4', ('y','x'))
-vbarvar = ncfile.createVariable('vbar', 'f4', ('y','x'))
-bcflagvar = ncfile.createVariable('bcflag', 'i4', ('y','x'))
+xdim = ncfile.createDimension('y', MyROSS)
+ydim = ncfile.createDimension('x', MxROSS)
+
+##### define variables, set attributes, write data #####
+# format: ['units', 'long_name', 'standard_name', '_FillValue', array]
+vars = {'y': ['m',
+              'x-coordinate in Cartesian system',
+              'projection_x_coordinate',
+              None,
+              x],
+        'x': ['m',
+              'y-coordinate in Cartesian system',
+              'projection_y_coordinate',
+              None,
+              y],
+        'lat': ['degrees_north',
+                'RIGGS grid south latitude',
+                'latitude',
+                None,
+                lat],
+        'lon': ['degrees_east',
+                'RIGGS grid west longitude',
+                'longitude',
+                None,
+                lon],
+        'mask': [None,
+                 'grounded or floating integer mask',
+                 None,
+                 None,
+                 mask],
+        'azi_obs': ['degrees_east',
+                    'EISMINT ROSS observed ice velocity azimuth',
+                    None,
+                    9999.0,
+                    azi],
+        'mag_obs': ['m s-1',
+                    'EISMINT ROSS observed ice velocity magnitude',
+                    None,
+                    9999.0,
+                    mag],
+        'thk': ['m',
+                'floating ice shelf thickness',
+                'land_ice_thickness',
+                1.0,
+                thk],
+        'accur': [None,
+                  'EISMINT ROSS flag for accurate observed velocity',
+                  None,
+                  -1,
+                  accur],
+        'topg': ['m',
+                 'bedrock surface elevation',
+                 'bedrock_altitude',
+                 -600.0,
+                 bed],
+        'acab': ['m s-1',
+                 'mean annual net ice equivalent accumulation rate',
+                 'land_ice_surface_specific_mass_balance',
+                 0.2/SECPERA,
+                 accum],
+        'barB': ['Pa^(1/3)',
+                 'vertically-averaged ice hardness coefficient',
+                 None,
+                 9999.0,
+                 barB],
+        'artm': ['K',
+                 'annual mean air temperature at ice surface',
+                 'surface_temperature',
+                 248.0,
+                 Ts],
+        'ubar': ['m s-1',
+                 'vertical average of horizontal velocity of ice in projection_x_coordinate direction',
+                 'land_ice_vertical_mean_x_velocity',
+                 1/SECPERA,
+                 ubarOBS],
+        'vbar': ['m s-1',
+                 'vertical average of horizontal velocity of ice in projection_y_coordinate direction',
+                 'land_ice_vertical_mean_y_velocity',
+                 1/SECPERA,
+                 vbarOBS],
+        'bcflag': [None,
+                   'location of Dirichlet boundary condition for velocity',
+                   None,
+                   None,
+                   bcflag],}
+
+for name in vars.keys():
+    [_, _, _, fill_value, data] = vars[name]
+    if name in ['x', 'y']:
+        var = ncfile.createVariable(name, 'f4', (name,))
+    else:
+        var = ncfile.createVariable(name, 'f4', ('y', 'x'), fill_value = fill_value)
+
+    for each in zip(['units', 'long_name', 'standard_name'], vars[name]):
+        if each[1]:
+            setattr(var, each[0], each[1])
+
+    var[:] = data
 
 ##### attributes in NetCDF file #####
 # set global attributes
@@ -244,95 +330,6 @@ historysep = ' '
 historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(ncfile, 'history', historystr)
 setattr(ncfile, 'Conventions', 'CF-1.4') # only global attribute
-# attributes on variables
-setattr(xvar, 'axis', 'X')
-setattr(xvar, 'long_name', 'x-coordinate in Cartesian system')
-setattr(xvar, 'standard_name', 'projection_x_coordinate')
-setattr(xvar, 'units', 'm')
-
-setattr(yvar, 'axis', 'Y')
-setattr(yvar, 'long_name', 'y-coordinate in Cartesian system')
-setattr(yvar, 'standard_name', 'projection_y_coordinate')
-setattr(yvar, 'units', 'm')
-
-setattr(latvar, 'long_name', 'RIGGS grid south latitude')
-latvar.units = 'degrees_north'
-latvar.standard_name = 'latitude'
-
-setattr(lonvar, 'long_name', 'RIGGS grid west longitude')
-lonvar.units = 'degrees_east'
-lonvar.standard_name = 'longitude'
-
-setattr(maskvar, 'long_name', 'grounded or floating integer mask')
-
-setattr(azivar, 'long_name', 'EISMINT ROSS observed ice velocity azimuth')
-setattr(azivar, 'units', 'degrees_east')
-setattr(azivar, '_FillValue', 9999.)
-
-setattr(magvar, 'long_name', 'EISMINT ROSS observed ice velocity magnitude')
-setattr(magvar, 'units', 'm s-1')
-setattr(magvar, '_FillValue', 9999.)
-
-setattr(thkvar, 'long_name', 'floating ice shelf thickness')
-setattr(thkvar, 'units', 'm')
-setattr(thkvar, '_FillValue', 1.)
-thkvar.standard_name = 'land_ice_thickness'
-
-setattr(accurvar, 'long_name', 'EISMINT ROSS flag for accurate observed velocity')
-setattr(accurvar, '_FillValue', -1)
-
-setattr(bedvar, 'long_name', 'bedrock surface elevation')
-setattr(bedvar, 'standard_name', 'bedrock_altitude')
-setattr(bedvar, 'units', 'm')
-setattr(bedvar, '_FillValue', -600.0)
-
-setattr(accumvar, 'long_name', 'mean annual net ice equivalent accumulation rate')
-setattr(accumvar, 'standard_name', 'land_ice_surface_specific_mass_balance')
-setattr(accumvar, 'units', 'm s-1')
-setattr(accumvar, '_FillValue', 0.2 / SECPERA)
-
-setattr(barBvar, 'long_name', 'vertically-averaged ice hardness coefficient')
-setattr(barBvar, 'units', 'Pa^(1/3)')
-setattr(barBvar, '_FillValue', 9999.)
-
-setattr(Tsvar, 'long_name', 'annual mean air temperature at ice surface')
-setattr(Tsvar, 'standard_name', 'surface_temperature')
-setattr(Tsvar, 'units', 'K')
-setattr(Tsvar, '_FillValue', 248.0)
-
-setattr(ubarvar, 'long_name', 
-        'vertical average of horizontal velocity of ice in projection_x_coordinate direction')
-setattr(ubarvar, 'units', 'm s-1')
-setattr(ubarvar, '_FillValue', 1.0 / SECPERA)
-ubarvar.standard_name = 'land_ice_vertical_mean_x_velocity'
-
-setattr(vbarvar, 'long_name', 
-        'vertical average of horizontal velocity of ice in projection_y_coordinate direction')
-setattr(vbarvar, 'units', 'm s-1')
-setattr(vbarvar, '_FillValue', 1.0 / SECPERA)
-vbarvar.standard_name = 'land_ice_vertical_mean_y_velocity'
-
-setattr(bcflagvar, 'long_name', 'location of Dirichlet boundary condition for velocity')
-
-##### write data into NetCDF file #####
-for i in range(MxROSS):
-	xvar[i] = dxROSS * float(i - (MxROSS - 1)/2)
-for j in range(MyROSS):
-	yvar[j] = dxROSS * float(j - (MyROSS - 1)/2)
-latvar[:] = lat
-lonvar[:] = lon
-maskvar[:] = mask
-azivar[:] = azi
-magvar[:] = mag
-thkvar[:] = thk
-accurvar[:] = accur
-bedvar[:] = bed
-accumvar[:] = accum
-barBvar[:] = barB
-Tsvar[:] = Ts
-ubarvar[:] = ubarOBS
-vbarvar[:] = vbarOBS
-bcflagvar[:] = bcflag
 
 # finish up
 ncfile.close()

@@ -25,7 +25,7 @@
 #include "../base/Timeseries.hh"
 
 IceROSSModel::IceROSSModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
-  : IceModel(g, conf, conf_overrides) {  // do nothing; note derived classes must have constructors
+  : IceModel(g, conf, conf_overrides) {
 
   computeSIAVelocities = PETSC_FALSE;
 
@@ -83,10 +83,6 @@ PetscErrorCode IceROSSModel::model_state_setup() {
      CHKERRQ(ierr);
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
   ierr = vh.scale(1.0 - ice->rho / ocean_rho ); CHKERRQ(ierr);
-
-  // in preparation for SSA b.c. read; zero out uvbar; SIA velocities will not
-  //    be computed so this will stay
-  ierr = uvbar.set(0.0); CHKERRQ(ierr);
 
   // read SSA b.c. from file
   bool   ssaBCset;

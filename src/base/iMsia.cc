@@ -232,6 +232,28 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
   return 0;
 }
 
+// PetscErrorCode IceModel::surface_gradient_eta() {
+//   PetscErrorCode ierr;
+//   PetscInt GHOSTS = 1;
+
+//   ierr = vWork2d[0].begin_access(); CHKERRQ(ierr);
+//   ierr = vWork2d[1].begin_access(); CHKERRQ(ierr);
+//   ierr = vWork2d[2].begin_access(); CHKERRQ(ierr);
+//   ierr = vWork2d[3].begin_access(); CHKERRQ(ierr);
+
+//   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+//     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+      
+//     }
+//   }
+
+//   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+//   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
+//   ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
+//   ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
+
+//   return 0;
+// }
 
 //!  Compute the vertically-averaged horizontal velocity according to the non-sliding SIA.
 /*!
@@ -372,9 +394,10 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
           I[0] = 0;
           PetscScalar  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
           for (PetscInt k=0; k<=ks; ++k) {
+            PetscReal depth = thickness - grid.zlevels[k];
             // pressure added by the ice (i.e. pressure difference between the
             // current level and the top of the column)
-            const PetscScalar   pressure = ice->rho * standard_gravity * (thickness - grid.zlevels[k]);
+            const PetscScalar   pressure = ice->rho * standard_gravity * depth;
             PetscScalar flow, grainsize = constant_grain_size;
             if (usetau3 && usesGrainSize && realAgeForGrainSize) {
               grainsize = grainSizeVostok(0.5 * (ageij[k] + ageoffset[k]));
@@ -392,8 +415,7 @@ PetscErrorCode IceModel::velocitySIAStaggered() {
             if (k>0) { // trapezoid rule for I[k] and K[k]
               const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
               I[k] = I[k-1] + 0.5 * dz * (delta[k-1] + delta[k]);
-              Dfoffset += 0.5 * dz * ((thickness - grid.zlevels[k-1]) * delta[k-1]
-                                          + (thickness - grid.zlevels[k]) * delta[k]);
+              Dfoffset += 0.5 * dz * ((depth + dz) * delta[k-1] + depth * delta[k]);
             }
           }
           // finish off D with (1/2) dz (0 + (H-z[ks])*delta[ks]), but dz=H-z[ks]:

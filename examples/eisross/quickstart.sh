@@ -25,8 +25,8 @@ echo "-----    (requires python modules numpy and netCDF3 or netCDF4):"
 
 echo "-----  Running 'pross' with $NN processes to compute velocity in"
 echo "-----    Ross ice shelf, including comparison to RIGGS data:"
-mpiexec -n $NN pross -boot_file ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1e3 -ssaBC ross.nc \
-        -riggs riggs.nc -o rossComputed.nc
+mpiexec -n $NN pross -boot_file ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1.5e3 -ssaBC ross.nc \
+        -riggs riggs.nc -o rossComputed.nc -o_size big
 
 echo "----- Generating figure comparing model vs observed velocity (requires"
 echo "-----   python modules numpy, netCDF3/4, pylab, and scikits.delaunay):"

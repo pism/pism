@@ -183,12 +183,16 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
     PetscEnd();
   }
   ierr = vbcflag.create(grid, "bcflag", false); CHKERRQ(ierr);
+  ierr = vbcflag.set_attrs("velocity_bc", 
+			   "locations of Dirichlet boundary conditions for the SSA",
+			   "", ""); CHKERRQ(ierr);
 
   ierr = vel_bc.create(grid, "vel_bc", false); CHKERRQ(ierr);
-  ierr = vel_bc.set_attrs("diagnostic", 
+  // components are uvel_bc and vvel_bc
+  ierr = vel_bc.set_attrs("velocity_bc", 
 			   "vertical mean of horizontal ice velocity in the X direction",
 			   "m s-1", "land_ice_vertical_mean_x_velocity", 0); CHKERRQ(ierr);
-  ierr = vel_bc.set_attrs("diagnostic", 
+  ierr = vel_bc.set_attrs("velocity_bc", 
 			   "vertical mean of horizontal ice velocity in the Y direction",
 			   "m s-1", "land_ice_vertical_mean_y_velocity", 1); CHKERRQ(ierr);
   ierr = vel_bc.set_glaciological_units("m year-1");
@@ -223,37 +227,29 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   ierr = vbcflag.regrid(filename, lic, true); CHKERRQ(ierr);
 
   // now use values in vel_bc, not equal to missing_value, to set boundary conditions by
-  // setting corresponding locations to MASK_SHEET and setting uvbar appropriately;
+  // setting corresponding locations to MASK_SHEET and setting vel_bar appropriately;
   // set boundary condition which will apply to finite difference system:
   //    staggered grid velocities at MASK_SHEET points which neighbor MASK_FLOATING points
-  ierr = uvbar.set(0.0); CHKERRQ(ierr);
   PetscScalar **mask, **bc;
   ierr = vbcflag.get_array(bc); CHKERRQ(ierr);    
   ierr = vMask.get_array(mask); CHKERRQ(ierr);
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
-  ierr = uvbar.begin_access(); CHKERRQ(ierr);
+  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (PetscAbs(bc[i][j] - 1.0) < 0.1) {
         // assume it is really a boundary condition location
-        uvbar(i-1,j,0) = vel_bc(i,j).u;
-        uvbar(i,j,0) = vel_bc(i,j).u;
-        uvbar(i,j-1,1) = vel_bc(i,j).v;
-        uvbar(i,j,1) = vel_bc(i,j).v;
+        vel_bar(i,j).u = vel_bc(i,j).u;
+        vel_bar(i,j).v = vel_bc(i,j).v;
         mask[i][j] = MASK_SHEET;  // assure that shelf/stream equations not active at this point
-      } else {
-        uvbar(i-1,j,0) = 0.0;
-        uvbar(i,j,0) = 0.0;
-        uvbar(i,j-1,1) = 0.0;
-        uvbar(i,j,1) = 0.0;        
       }
     }
   }
   ierr =   vbcflag.end_access(); CHKERRQ(ierr);    
   ierr =     vMask.end_access(); CHKERRQ(ierr);
   ierr =   vel_bc.end_access(); CHKERRQ(ierr);
-  ierr = uvbar.end_access(); CHKERRQ(ierr);
+  ierr = vel_bar.end_access(); CHKERRQ(ierr);
 
   // update viewers
   ierr = update_viewers(); CHKERRQ(ierr);

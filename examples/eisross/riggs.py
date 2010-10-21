@@ -64,6 +64,7 @@ riggsin.close()
 ##### create and define dimensions and variables in NetCDF file #####
 ncfile = NC(OUT_FILE, 'w',format='NETCDF3_CLASSIC')
 xdim = ncfile.createDimension('count', count)
+
 xvar = ncfile.createVariable('count', 'f4', dimensions=('count',))
 truelatvar = ncfile.createVariable('truelat', 'f4', dimensions=('count',))
 truelonvar = ncfile.createVariable('truelon', 'f4', dimensions=('count',))

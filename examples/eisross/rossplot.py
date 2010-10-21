@@ -20,7 +20,7 @@
 # CK 27may08, ..., 12jan10
 
 from numpy import ma, loadtxt, squeeze, linspace, tile, repeat, sin, pi, cos, sqrt
-from pylab import figure, clf, hold, pcolor, colorbar, plot, quiver, axis, xlabel, ylabel, savefig, show
+from pylab import figure, clf, hold, pcolor, colorbar, plot, quiver, axis, xlabel, ylabel, savefig, show, title
 from getopt import getopt, GetoptError
 from sys import argv, exit
 
@@ -84,8 +84,8 @@ except Exception:
 H = squeeze(infile.variables["thk"][:])
 mask = squeeze(infile.variables["mask"][:])
 cbar = squeeze(infile.variables["cbar"][:])
-ubar = squeeze(infile.variables["uvelsurf"][:])
-vbar = squeeze(infile.variables["vvelsurf"][:])
+ubar = squeeze(infile.variables["ubar"][:])
+vbar = squeeze(infile.variables["vbar"][:])
 print "done."
 
 # need accur flag to determine location of calving front
@@ -110,8 +110,9 @@ tri = Triangulation(glon, glat)
 # and filter out RIGGS points that are outside the model domain,
 # and use location of calving front from accur flag
 cbar_masked = ma.array(cbar,
-    mask = (mask == 1) + (H < 20.0)
-            + ((accur == 0) & (rosslat < -11.0) & (rosslon < 1.0))
+    mask = (mask != 3) + (H < 20.0)
+            + ((accur == 0) & (rosslat < -11.0) & (rosslon < 1.0)
+               )
     )
 
 # show computed speed as color
@@ -142,10 +143,10 @@ quiver(riglon, riglat, rigu, rigv, color='black')
 uATrig = tri.nn_interpolator(ubar.flat)(riglon, riglat)
 vATrig = tri.nn_interpolator(vbar.flat)(riglon, riglat)
 quiver(riglon, riglat, uATrig, vATrig, color='red')
-axis([-5.26168, 3.72207, -13, -5.42445])
+axis([-5.26168, 3.72207, -12.75, -5.42445])
 xlabel('RIGGS grid longitude (deg E)'); ylabel('RIGGS grid latitude (deg N)')
-#title("""Color is speed in m/a.\n Arrows are observed (black) and computed 
-#(red) velocities at RIGGS points.""")
+title("""Color is speed in m/a.\n Arrows are observed (black) and computed 
+(red) velocities at RIGGS points.""")
 
 # to report results comparable to Table 1 in (MacAyeal et al 1996)
 #ChiSqrActual = sum( ((uATrig - rigu)**2 + (vATrig - rigv)**2) / (30**2) )

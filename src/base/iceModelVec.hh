@@ -66,6 +66,7 @@ public:
   virtual bool            is_valid(PetscScalar a, int component = 0);
   virtual PetscErrorCode  write(const char filename[]);
   virtual PetscErrorCode  write(const char filename[], nc_type nctype);
+  virtual PetscErrorCode  dump(const char filename[]);
   virtual PetscErrorCode  read(const char filename[], unsigned int time);
   virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic,
                                  bool critical);

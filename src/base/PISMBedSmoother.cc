@@ -351,6 +351,10 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(
       } else if (maxtl(i,j) >= thk(i,j)) {
         thks[i][j] = thk(i,j);
       } else {
+        // FIXME: the following is true if the ice at the current location is
+        // grounded; we need to apply the floatation criterion using thk and
+        // topgsmooth if the ice is floating.
+        // This means that PISMBedSmoother needs to know the current sea level.
         const PetscScalar thks_try = usurf(i,j) - topgsmooth(i,j);
         thks[i][j] = (thks_try > 0.0) ? thks_try : 0.0;
       }

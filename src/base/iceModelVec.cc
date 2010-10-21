@@ -18,7 +18,7 @@
 
 #include "pism_const.hh"
 #include "iceModelVec.hh"
-
+#include "PISMIO.hh"
 
 IceModelVec::IceModelVec() {
 
@@ -515,6 +515,21 @@ PetscErrorCode IceModelVec::write(const char filename[], nc_type nctype) {
   } else {
     ierr = vars[0].write(filename, nctype, write_in_glaciological_units, v); CHKERRQ(ierr);
   }
+
+  return 0;
+}
+
+//! Dumps a variable to a file, overwriting this file's contents (for debugging).
+PetscErrorCode IceModelVec::dump(const char filename[]) {
+  PetscErrorCode ierr;
+  PISMIO nc(grid);
+
+  // append = false, check_dimensions = true
+  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
+  ierr = nc.append_time(grid->year); CHKERRQ(ierr); 
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  ierr = write(filename); CHKERRQ(ierr); 
 
   return 0;
 }

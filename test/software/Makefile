@@ -1,2 +1,2 @@
 all:
-	./run_tests.sh pism
+	./run_all_tests.sh pism

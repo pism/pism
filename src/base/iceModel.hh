@@ -359,6 +359,11 @@ protected:
 
   // see iMsia.cc
   virtual PetscErrorCode surfaceGradientSIA();
+
+  // virtual PetscErrorCode surface_gradient_eta();
+  // virtual PetscErrorCode surface_gradient_haseloff();
+  // virtual PetscErrorCode surface_gradient_mahaffy();
+
   virtual PetscErrorCode velocitySIAStaggered();
   virtual PetscErrorCode basalSlidingHeatingSIA();
   virtual PetscErrorCode velocities2DSIAToRegular();

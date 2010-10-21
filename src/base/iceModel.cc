@@ -825,6 +825,7 @@ PetscErrorCode IceModel::init() {
   //!
   //! \dotfile initialization-sequence.dot "IceModel initialization sequence"
 
+  ierr = MPI_Barrier(grid.com); CHKERRQ(ierr);
   ierr = PetscGetTime(&start_time); CHKERRQ(ierr);
 
   return 0; 
