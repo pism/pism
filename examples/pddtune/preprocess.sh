@@ -2,10 +2,7 @@
 
 # Copyright (C) 2010 Ed Bueler
 
-# Uses a SeaRISE-Greenland data set to illustrate the use of regional
-# climate model (RCM) output to find PDD parameters.  The goal is for the
-# surface mass balance from PISM's PDD model to closely fit the corresponding
-# RACMO/GR regional climate model output, from Ettema et al.
+# see README for role of this script
 
 # This script uses NCO (http://nco.sourceforge.net/).
 

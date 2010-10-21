@@ -4,8 +4,8 @@ regional climate model output available in a publicly-available data set.
 The data set we use is the v1.1 version of the SeaRISE-Greenland data:
   http://websrv.cs.umt.edu/isis/images/a/a5/Greenland_5km_v1.1.nc
   
-The field "smb" in this data set is the RACMO/GR generated surface mass balance
-described in this paper:
+The fields "presprcp", "runoff", and "smb" (surface mass balance) in this data
+set are from the RACMO/GR model.  They are described in this paper:
   Ettema J., et al. (2009), "Higher surface mass balance of the Greenland ice
   sheet revealed by high-resolution climate modeling", Geophys. Res. Lett.,
   36, L12501, doi:10.1029/2009GL038110

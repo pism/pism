@@ -34,7 +34,7 @@ RUN=1.0  # do one year; essentially no ice dynamics but very slightly
          #   smoothed surface results
 echo
 echo "$SCRIPTNAME  bootstrapping on $GRIDNAME km grid, for very short run (${RUN}a)"
-$MPIDO $NN $PISMR -boot_file $PISMDATA $GRID $COUPLER -y $RUN -o $OUT
+$MPIDO $NN $PISMR -boot_file $PISMDATA $GRID $COUPLER -y $RUN -o $OUTFILE
 
 echo
 
