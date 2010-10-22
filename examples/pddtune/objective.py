@@ -23,13 +23,15 @@ def usagefailure(message):
 
 if __name__ == "__main__":
     try:
-      opts, args = getopt(argv[1:], "v:", ["help","usage"])
+      opts, args = getopt(argv[1:], "v:H:", ["help","usage"])
     except GetoptError:
       usagefailure('ERROR: INCORRECT COMMAND LINE ARGUMENTS FOR objective.py')
     dovars = []
     for (opt, optarg) in opts:
         if opt == "-v":
             dovars = optarg.split(",")
+        if opt == "-H":
+            thkfile = optarg
         if opt in ("--help", "--usage"):
             print usage
             exit(0)
@@ -46,9 +48,15 @@ if __name__ == "__main__":
       from netCDF3 import Dataset as NC
 
     try:
+      nc_thk = NC(thkfile, 'r')
+    except:
+      usagefailure("ERROR: FILE '%s' CANNOT BE OPENED FOR READING" % thkfile)
+
+    try:
       nc_pism = NC(args[0], 'r')
     except:
       usagefailure("ERROR: FILE '%s' CANNOT BE OPENED FOR READING" % args[0])
+
     try:
       nc_reference = NC(args[1], 'r')
     except:
@@ -62,25 +70,29 @@ if __name__ == "__main__":
     pism_var = squeeze(nc_pism.variables[dovars[0]])
     ref_var = squeeze(nc_reference.variables[dovars[1]])
     Mx, My = shape(pism_var)
-    valid_min = nc_pism.variables[dovars[0]].valid_min
     
+    thk_var = squeeze(nc_thk.variables["thk"])
+
     sumdiff = 0.0
     sumL2 = 0.0
     countvalid = 0
+    print thk_var[0,0]
     for i in range(Mx):
       for j in range(My):
-        if pism_var[i,j] >= valid_min:
+        if (thk_var[i,j] > 1.0):
           countvalid += 1
           diff_vars = pism_var[i,j] - ref_var[i,j]
           sumdiff += diff_vars
           sumL2 += diff_vars * diff_vars
+
     avdiff = sumdiff / double(countvalid)
     avL2 = sumL2 / double(countvalid)
     
+    nc_thk.close()
     nc_pism.close()
     nc_reference.close()
 
-    print "  %d locations for valid comparison:" % countvalid
+    print "  %d locations for valid (thk>0) comparison:" % countvalid
     print "    average of signed differences is  %14.5f" % avdiff
     print "    average of squared differences is %14.5f" % avL2
 

@@ -19,14 +19,13 @@ The tuning procedure is to adjust these PDD parameters; [X] is default value:
 The top-level script is dotune.sh.  It calls:
 
   1.  preprocess.sh to download and clean-up metadata in the SeaRISE-Greenland
-      file, in preparation for next steps; also runs ncgen on .cdl version of
-      configuration file
+      file, in preparation for next steps; also runs ncgen on the base .cdl version of
+      the configuration file; this file has 'smb' in the right units
 
   2.  boot.sh to create a PISM-output file of the type pclimate can read
   
   3.  it runs over ranges of parameters, generating cases and calling for each one:
-         a) runcase.sh to call pclimate and generate PISM's smb
-         b) climmask.py to mask out ocean areas AND ETC
-         c) FOO.py TO COMPUTE OBJECTIVE FUNCTION
-         d) AND IT WRITES RESULTS INTO A FILE, MAYBE
+         a) runcase.sh to call pclimate and generate PISM's 'acab'
+         b) objective.py to compute differences and norms between 'smb' and 'acab'
+         c) AND IT WRITES RESULTS INTO A TEXT FILE
 

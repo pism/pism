@@ -22,11 +22,7 @@ DIFFSFILE=diffs.txt
 
 ./preprocess.sh # generates pism_Greenland_5km_v1.1.nc and base_config.nc
 
-./boot.sh  # creates start.nc
-
-# now put thickness map in tempthk.nc, w/o degenerate t axis:
-ncecat -O -v thk start.nc tempthk.nc
-ncwa -O -a t -v thk start.nc tempthk.nc
+./boot.sh  # creates start.nc, which contains 'thk' used in masking in objective.py
 
 for THRESHOLD in 268 270 273
 do
@@ -44,28 +40,15 @@ do
       ncatted -O -a pdd_factor_snow,pism_overrides,m,d,$DDFSNOW $CONFIG
       ncatted -O -a pdd_refreeze,pism_overrides,m,d,$REFREEZE $CONFIG
 
-      CLIMATE0=out_$NAMEROOT.nc
-      ./runcase.sh $CONFIG start.nc $CLIMATE0
-      rm -rf $CONFIG  # don't need this file any more BECAUSE pism_overrides are
-                      #   carried forward into $CLIMATE0
-
       CLIMATE=clim_$NAMEROOT.nc
-      echo "  removing some fields from $CLIMATE0 and adding in thk in prep for masking;"
-      echo "  generating $CLIMATE ..."
-      rm -rf $CLIMATE
-      ncks -O $CLIMATE0 $CLIMATE
-      ncks -O -x -v shelfbasetemp,shelfbasemassflux $CLIMATE $CLIMATE
-      ncks -A -v thk tempthk.nc $CLIMATE  # put the thk variable in $CLIMATE
-      rm -rf $CLIMATE0  # don't need this file any more
-
-      echo
-      echo "  masking $CLIMATE using climmask.py to remove ice-free areas from consideration"
-      ./climmask.py -v acab,smelt,srunoff,saccum $CLIMATE
+      ./runcase.sh $CONFIG start.nc $CLIMATE
+      rm -rf $CONFIG  # don't need this file any more BECAUSE pism_overrides are
+                      #   carried forward into $CLIMATE
       
       echo
       echo "  computing objective function by comparing 'acab' in $CLIMATE"
       echo "    to 'smb' in $PISMDATA and putting objective value in $DIFFSFILE"
-      ./objective.py -v acab,smb $CLIMATE $PISMDATA $DIFFSFILE
+      ./objective.py -v acab,smb -H start.nc $CLIMATE $PISMDATA $DIFFSFILE
       echo
     done
   done
