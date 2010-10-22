@@ -1757,7 +1757,7 @@ PetscErrorCode IceModel::compute_ice_area_floating(PetscScalar &result) {
 Units of the specific enthalpy field \f$E=\f$(IceModelVec3::Enth3) are J kg-1.  We integrate
 \f$E(t,x,y,z)\f$ over the entire ice fluid region \f$\Omega(t)\f$, multiplying
 by the density to get units of energy:
-   \f[ E_{\text{total}}(t) = \int_\Omega(t) E(t,x,y,z) \rho_i \,dx\,dy\,dz. \f]
+   \f[ E_{\text{total}}(t) = \int_{\Omega(t)} E(t,x,y,z) \rho_i \,dx\,dy\,dz. \f]
  */
 PetscErrorCode IceModel::compute_ice_enthalpy(PetscScalar &result) {
   PetscErrorCode ierr;
