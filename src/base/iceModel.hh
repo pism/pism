@@ -328,6 +328,7 @@ protected:
   virtual PetscErrorCode compute_temp_pa(IceModelVec3 &result);
   virtual PetscErrorCode compute_tempbase(IceModelVec2S &result);
   virtual PetscErrorCode compute_tempicethk(IceModelVec2S &result);
+  virtual PetscErrorCode compute_tempicethk_new(IceModelVec2S &result);
   virtual PetscErrorCode compute_temppabase(IceModelVec3 &hasPATemp,
                                             IceModelVec2S &result);
   virtual PetscErrorCode compute_tempsurf(IceModelVec2S &result);

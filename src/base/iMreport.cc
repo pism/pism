@@ -996,6 +996,82 @@ PetscErrorCode IceModel::compute_vvelbase(IceModelVec2S &result) {
   return 0;
 }
 
+//! Computes the thickness of the basal layer of the temperate ice.
+PetscErrorCode IceModel::compute_tempicethk_new(IceModelVec2S& result) {
+  PetscErrorCode ierr;
+  PetscScalar *Enth, fill_value = -0.01;
+
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+
+      // if we have no ice, go on to the next grid point
+      if (vH(i,j) < 0.1)
+        continue;
+
+      ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
+      PetscReal pressure;
+      PetscInt ks = grid.kBelowHeight(vH(i,j)), k;
+      for (k = 0; k <= ks; ++k) {
+        pressure = EC->getPressureFromDepth(vH(i,j) - grid.zlevels[k]);
+        if (!EC->isTemperate(Enth[k],pressure))
+          break;
+      }
+      // after this loop 'pressure' is equal to the pressure at the first level
+      // that is cold
+
+      // no temperate ice at all; go to the next grid point
+      if (k == 0) {
+        result(i,j) = 0;
+        continue;
+      }
+      
+      // the whole column is temperate (except, possibly, some ice between
+      // zlevels[ks] and the total thickness)
+      if ((k == ks) && EC->isTemperate(Enth[k],pressure)) {
+        result(i,j) = grid.zlevels[k];
+        continue;
+      }
+
+      PetscReal 
+        pressure_0 = EC->getPressureFromDepth(vH(i,j) - grid.zlevels[k-1]),
+        dz = grid.zlevels[k] - grid.zlevels[k-1],
+        slope1 = (Enth[k] - Enth[k-1]) / dz,
+        slope2 = (EC->getEnthalpyCTS(pressure) - EC->getEnthalpyCTS(pressure_0)) / dz;
+      
+      if (slope1 != slope2) {
+        PetscReal thk = grid.zlevels[k-1] +
+          (EC->getEnthalpyCTS(pressure_0) - Enth[k-1]) / (slope1 - slope2);
+
+        // this takes care of the case when the Enthalpy in the column
+        // increases with z: if the thickness computed is outside (z[k-1],
+        // z[k]) we just use zlevels[k] as an approximation
+        if (thk < grid.zlevels[k-1])
+          result(i,j) = grid.zlevels[k-1];
+        else
+          result(i,j) = thk;
+
+      } else {
+        SETERRQ(1, "This should never happen: slope1 == slope2");
+      }
+    }
+  }
+  ierr = Enth3.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_name("tempicethk_new"); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", "thickness of the basal layer of temperate ice",
+			  "m", ""); CHKERRQ(ierr);
+
+  ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
+  ierr = result.set_attr("_FillValue", fill_value); CHKERRQ(ierr);
+
+  return 0;
+}
+
 //! Computes thickness of the temperate ice layer (if there is any).
 PetscErrorCode IceModel::compute_tempicethk(IceModelVec2S &result) {
   PetscErrorCode ierr;
@@ -1010,14 +1086,19 @@ PetscErrorCode IceModel::compute_tempicethk(IceModelVec2S &result) {
 	ierr = Enth3.getInternalColumn(i,j,&Enth); CHKERRQ(ierr);
 	PetscScalar tithk = 0.;
 	const PetscInt ks = grid.kBelowHeight(vH(i,j));
+        
 	for (PetscInt k=0; k<ks; ++k) {
-	  if (EC->isTemperate(Enth[k],EC->getPressureFromDepth(vH(i,j)))) {
+          PetscReal pressure = EC->getPressureFromDepth(vH(i,j) - grid.zlevels[k]);
+
+	  if (EC->isTemperate(Enth[k], pressure)) {
 	    tithk += grid.zlevels[k+1] - grid.zlevels[k];
 	  }
 	}
-	if (EC->isTemperate(Enth[ks],EC->getPressureFromDepth(vH(i,j)))) {
+
+	if (EC->isTemperate(Enth[ks],EC->getPressureFromDepth(vH(i,j) - grid.zlevels[ks]))) {
 	  tithk += vH(i,j) - grid.zlevels[ks];
 	}
+
 	result(i,j) = tithk;
       }
     }
@@ -1381,6 +1462,12 @@ PetscErrorCode IceModel::compute_by_name(string name, IceModelVec* &result) {
 
   if (name == "tempicethk") {
     ierr = compute_tempicethk(vWork2d[0]); CHKERRQ(ierr);
+    result = &vWork2d[0];
+    return 0;
+  }
+
+  if (name == "tempicethk_new") {
+    ierr = compute_tempicethk_new(vWork2d[0]); CHKERRQ(ierr);
     result = &vWork2d[0];
     return 0;
   }
