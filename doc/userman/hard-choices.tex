@@ -2,9 +2,11 @@
 \section{Making \emph{HARD} Modeling Choices}
 \label{sec:hard-choices}
 
-Most uses of an ice sheet model depend on very careful modeling choices in situation where there are considerable uncertainties \emph{and} the model results depend strongly on those choices.  In other cases there may be, at the present state of knowledge, \emph{no clear default values} that a good ice sheet model can provide.
+Most uses of an ice sheet model depend on very careful modeling choices in situation where there are considerable uncertainties \emph{and} the model results depend strongly on those choices.  In these and other cases there may be, at the present state of knowledge, \emph{no clear default values} that a good ice sheet model can provide.
 
-The current section collects modeling choices which have this ``hard'' flavor.  It describes the options related to these choices which control the possibilities which are already built into PISM.  But these options are known to be \emph{not} enough.  These are modeling choices for which \emph{we know} the user may have to do a great deal more hard work than just choose among PISM runtime options.  The boxed examples give real cases where the user may have to:
+The current section collects modeling choices which have this ``hard'' flavor.  The options related to these choices are known to be \emph{not} sufficient for all users.  These are modeling choices for which \emph{we know} the user may have to do a great deal more hard work than just choose among PISM runtime options.
+
+Here are real example cases where user have worked hard:
 \begin{itemize}
 \item carefully make use of available data, in order to choose parameters for existing PISM models; these parameters will then override PISM defaults; 
 \begin{center} % our UAF current situation with Greenland
@@ -25,19 +27,21 @@ The current section collects modeling choices which have this ``hard'' flavor.  
 \end{minipage} }
 \end{center}
 \end{itemize}
-Obviously there is no actual clear distinction between the ``hard'' choices in this section and the ``easy'' ones in the previous section.  The subsections here cover choices for which PISM users, at UAF and elsewhere, are known to have worked hard, and for which the PISM developers are known to have a hard time supplying easy answers.
+Obviously there is no actual clear distinction between the ``hard'' choices in this section and the ``easy'' ones in the previous section, but the subsections here cover issues for which the PISM developers will have a hard time supplying easy answers.
 
 \subsection{Setting up PISM boundary (atmosphere, surface and ocean) models}
 \label{sec:boundary-models}
 
-Setting up PISM's boundary models requires selecting one model of each kind and zero or more ``model modifiers''.  The selected models and modifiers are chained as in Figure~\ref{fig:climate-input-data-flow}. Command-line options \texttt{-atmosphere}, \texttt{-surface} and \texttt{-ocean} take a comma-separated list of keywords as an argument; the first keyword \emph{has} to correspond to a model, the rest can be modifiers. Any of these options can be omitted to use the default atmosphere, surface or ocean model, although using a modifier requires specifying a model.
+Setting up PISM's boundary models requires selecting one model of each kind and zero or more ``model modifiers''.  The selected models and modifiers are chained as in Figure~\ref{fig:climate-input-data-flow} on page \pageref{fig:climate-input-data-flow}.
+
+Command-line options \texttt{-atmosphere}, \texttt{-surface} and \texttt{-ocean} each take a comma-separated list of keywords as an argument; the first keyword \emph{has} to correspond to a model, the rest can be modifiers. Any of these options can be omitted to use the default atmosphere, surface or ocean model, although using a modifier requires specifying a model.
 
 For example,
 \begin{verbatim}
 $ pismr -i foo.nc -atmosphere searise_greenland,forcing \
         -dTforcing delta_T.nc -surface pdd
 \end{verbatim}%$
-chooses a combination of SeaRISE-Greenland atmosphere model (see below),  ice-core derived temperature forcing, a positive degree-day (PDD) local surface mass balance model, and a default (constant) ocean model.
+chooses a combination of the SeaRISE-Greenland atmosphere model (see below), modified by an ice-core-derived paleo-temperature forcing (shift), and a positive degree-day (PDD) local surface mass balance model.  Because it is not mentioned, the ocean model is the default one (\verb|-ocean constant|).
 
 Each of PISM boundary model types currently has one ``modifier'' available; the corresponding keyword is \texttt{forcing}. Please see below for details.
 

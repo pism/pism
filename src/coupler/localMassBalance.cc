@@ -38,7 +38,8 @@ returned number of times N to be odd.
  */
 PetscErrorCode PDDMassBalance::getNForTemperatureSeries(
                    PetscScalar /* t */, PetscScalar dt, PetscInt &N) {
-  PetscInt    NperYear = config.get("pdd_max_temperature_evals_per_year");
+  PetscInt    NperYear = static_cast<PetscInt>( 
+                           config.get("pdd_max_temperature_evals_per_year") );
   PetscScalar dt_years = dt / secpera;
   N = (int) ceil((NperYear - 1) * (dt_years) + 1);
   if (N < 3) N = 3;

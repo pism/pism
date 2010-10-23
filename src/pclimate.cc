@@ -294,6 +294,11 @@ int main(int argc, char *argv[]) {
 
     ierr = verbosityLevelFromOptions(); CHKERRQ(ierr);
 
+    ierr = verbPrintf(2,com,
+      "PCLIMATE %s (surface and shelf-base boundary-models-only mode)\n",
+      PISM_Revision); CHKERRQ(ierr);
+    ierr = stop_on_version_option(); CHKERRQ(ierr);
+
     // check required options
     vector<string> required;
     required.push_back("-i");
@@ -310,13 +315,9 @@ int main(int argc, char *argv[]) {
       "  -ye            end time B (= float), B > A, in years\n"
       "  -dt            time step C (= positive float) in years\n"
       "and set up the models:\n"
-      "  -atmosphere    Chooses an atmosphere model (one of [constant, eismint_greenland, searise_greenland, temp_lapse_rate])\n"
-      "  -surface       Chooses a surface model (one of [constant, simple, pdd]) \n"
+      "  -atmosphere    Chooses an atmosphere model; see User's Manual\n"
+      "  -surface       Chooses a surface model; see User's Manual\n"
       ); CHKERRQ(ierr);
-
-    ierr = verbPrintf(2,
-      com,"PCLIMATE %s (surface and shelf-base boundary models, without IceModel)\n",
-      PISM_Revision); CHKERRQ(ierr);
 
     // read the config option database:
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
@@ -412,7 +413,8 @@ int main(int argc, char *argv[]) {
         "writing boundary model states to NetCDF file '%s' ...\n",
         outname.c_str()); CHKERRQ(ierr);
 
-    ierr = writePCCStateAtTimes(variables, surface, ocean, outname.c_str(), &grid, argc, argv,
+    ierr = writePCCStateAtTimes(variables, surface, ocean,
+                                outname.c_str(), &grid, argc, argv,
 				ys, ye, dt_years,
                                 mapping); CHKERRQ(ierr);
 
