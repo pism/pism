@@ -2,17 +2,22 @@
 from sys import argv, exit
 from getopt import getopt, GetoptError
 
-## @package objective
-## Compares variables by computing an objective function.
-##
-## FIXME:  need help file
-## 
-## Run with --help to get a "usage" message.
+usage = """
+OBJECTIVE.PY  Computes sum and L^2 sums (whole sheet and below 2000 m)
+of differences of identified variables.  Puts result in text file.  Specifically,
+to evaluate closeness of 'acab' in foo.nc compared to 'smb' in bar.nc, and
+put the result as a line in diffs.txt:
 
-usage="""OBJECTIVE.PY  Computes weighted L^2 norm of difference of variables.
+  objective.py -v acab,smb -H start.nc foo.nc bar.nc diffs.txt
 
-usage: to evaluate closeness of 'acab' in foo.nc compared to 'smb' in bar.nc:
-  objective.py -v acab,smb foo.nc bar.nc
+Here start.nc must contain variable 'thk' to use as ice sheet thickness.
+The differences are only computed at locations where thk>1.0, and a separate
+sum of squares is computed for the areas with thk<2000.0.
+
+The results are appended to the third argument (file) diffs.txt.  If there is 
+no third argument, the results are written to stdout.
+
+Run with --help or --usage to get a this usage message.
 """
 
 def usagefailure(message):
@@ -36,8 +41,8 @@ if __name__ == "__main__":
             print usage
             exit(0)
 
-    if len(args) != 3:
-      usagefailure('ERROR: objective.py requires exactly three file names')
+    if (len(args) < 2) | (len(args) > 3):
+      usagefailure('ERROR: objective.py requires two or three file names')
 
     if len(dovars) != 2:
       usagefailure('ERROR: -v option for objective.py requires exactly two variable names')
@@ -75,8 +80,9 @@ if __name__ == "__main__":
 
     sumdiff = 0.0
     sumL2 = 0.0
+    sum2kL2 = 0.0
     countvalid = 0
-    print thk_var[0,0]
+    count2k = 0
     for i in range(Mx):
       for j in range(My):
         if (thk_var[i,j] > 1.0):
@@ -84,21 +90,27 @@ if __name__ == "__main__":
           diff_vars = pism_var[i,j] - ref_var[i,j]
           sumdiff += diff_vars
           sumL2 += diff_vars * diff_vars
+          if (thk_var[i,j] < 2000.0):
+            count2k += 1
+            sum2kL2 += diff_vars * diff_vars
 
     avdiff = sumdiff / double(countvalid)
     avL2 = sumL2 / double(countvalid)
+    av2kL2 = sum2kL2 / double(count2k)
     
     nc_thk.close()
     nc_pism.close()
     nc_reference.close()
 
     print "  %d locations for valid (thk>0) comparison:" % countvalid
-    print "    average of signed differences is  %14.5f" % avdiff
-    print "    average of squared differences is %14.5f" % avL2
+    print "    average of signed differences (whole sheet) is  %12.7f" % avdiff
+    print "    average of squared differences (whole sheet) is %12.7f" % avL2
+    print "    average of squared differences (H < 2000) is    %12.7f" % av2kL2
 
-    print "  writing these values to text file %s ..." % args[2]
-    diffs = file(args[2],'a')
-    diffs.write("%s %14.5f %14.5f\n" % (args[0], avdiff, avL2))
-    diffs.close()
-
+    # write results to file if a file name was given
+    if len(args) >= 3:
+      print "  writing these values to text file %s ..." % args[2]
+      diffs = file(args[2],'a')
+      diffs.write("%s %12.7f %12.7f %12.7f\n" % (args[0], avdiff, avL2, av2kL2))
+      diffs.close()
 

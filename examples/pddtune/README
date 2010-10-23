@@ -13,19 +13,49 @@ set are from the RACMO/GR model.  They are described in this paper:
 The tuning procedure is to adjust these PDD parameters; [X] is default value:
   pdd_positive_threshold_temp [273.15 K]
   pdd_factor_snow             [0.003 m K-1 day-1]
+  pdd_factor_ice              [0.008 m K-1 day-1]
   pdd_refreeze                [0.6]
-(See base_config.cdl for other PDD parameters which might be worth exploring.)
+  pdd_std_dev                 [2.53 K]
 
-The top-level script is dotune.sh.  It calls:
+The top-level script is dotune.sh.  It does this for each case:
+  -- calls runcase.sh
+  -- calls objective.py to compute differences and norms between 'smb' and 'acab'
 
-  1.  preprocess.sh to download and clean-up metadata in the SeaRISE-Greenland
+Additional actions are needed before and after using dotune.sh.  Do this:
+
+  1.  download and clean-up metadata in the SeaRISE-Greenland
       file, in preparation for next steps; also runs ncgen on the base .cdl version of
-      the configuration file; this file has 'smb' in the right units
+      the configuration file; this file has 'smb' in the right units:
+        $ ./preprocess.sh
 
-  2.  boot.sh to create a PISM-output file of the type pclimate can read
+  2.  create a PISM-output file of the type pclimate can read:
+        $ ./boot.sh
   
-  3.  it runs over ranges of parameters, generating cases and calling for each one:
-         a) runcase.sh to call pclimate and generate PISM's 'acab'
-         b) objective.py to compute differences and norms between 'smb' and 'acab'
-         c) AND IT WRITES RESULTS INTO A TEXT FILE
+  3.  run pclimate over ranges of parameters, generating cases and evaluating
+      the difference relative to Ettema's surface mass balance; generates
+      textfile "diffs.txt" but deletes pclimate output:
+        $ ./dotune.sh >> out.dotune &
+
+      WAIT until it is finished; monitor diffs.txt:
+        $ less diffs.txt
+
+  4.  add a column with a weighted objective, to get "Wdiffs.txt":
+        $ ./weights.py -2 10.0 -3 1.0 -4 3.0 diffs.txt Wdiffs.txt 
+
+  5.  find the cases with the lowest values of the weighted objective:
+        $ ./below.py -c 5 -l 5.0 Wdiffs.txt | wc -l  # counts cases
+        $ ./below.py -c 5 -l 2.0 Wdiffs.txt          # shows cases
+
+  6.  once you have a case you like from the above, say
+        clim_268_0.001_0.002_0.4_1.0.nc
+      now regenerate this pclimate output, and make it nicer to look at by
+      masking:
+        $ ./runcase.sh 268 0.001 0.002 0.4 1.0
+        $ ./thkmask -H start.sh -v acab,smelt,srunoff,saccum clim_268_0.001_0.002_0.4_1.0.nc
+
+  7.  view it, comparing to target field 'smb' in same units in data file:
+        $ ncview clim_268_0.001_0.002_0.4_1.0.nc &
+        $ ncview pism_Greenland_5km_v1.1.nc &
+      note that, besides in the file names, the PDD parameter choices are
+      attributes of variable 'pism_overrides' in the NetCDF files from pclimate
 

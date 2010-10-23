@@ -8,9 +8,7 @@
 
 set -e  # exit on error
 
-echo
-echo "# PDDTUNE example: preprocessing"
-echo
+echo "  preprocessing in preparation for tuning PDD parameters ..."
 
 # get file; see page http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
 DATANAME=Greenland_5km_v1.1.nc
@@ -53,7 +51,6 @@ echo "  PISM-readable (-boot_file) file $PISMDATA created from $DATANAME"
 
 # form NetCDF version of basic config file
 CONFIG=base_config
-echo
 echo "  generating parameter-override (-config_override) $CONFIG.nc file from $CONFIG.cdl"
 rm -rf $CONFIG.nc   # remove old if present
 ncgen -o $CONFIG.nc $CONFIG.cdl

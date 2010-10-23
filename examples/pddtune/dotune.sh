@@ -7,53 +7,53 @@
 # surface mass balance from PISM's PDD model to closely fit the corresponding
 # RACMO/GR regional climate model output, from Ettema et al.
 
-# This is the top-level script.  See also README.
-
+# This is the top-level script, but see README!
 # Suggested way to run:  $ ./dotune.sh >& out.dotune &
-
-# This script uses NCO (http://nco.sourceforge.net/).
 
 set -e  # exit on error
 
-DATANAME=Greenland_5km_v1.1.nc
-PISMDATA=pism_$DATANAME
+# do these first to generate data:
+#./preprocess.sh # generates pism_Greenland_5km_v1.1.nc and base_config.nc
+#./boot.sh  # creates start.nc, which contains 'thk' used in masking in objective.py
 
-DIFFSFILE=diffs.txt
+# harder: 5^5 = 3125 cases
+THRESHOLDRANGE="268 269 270 271 273"           # default 273.15
+DDFSNOWRANGE="0.001 0.002 0.003 0.005 0.009"   # default 0.003
+DDFICERANGE="0.002 0.005 0.008 0.012 0.024"    # default 0.008
+REFREEZERANGE="0.4 0.5 0.6 0.7 0.8"            # default 0.6
+STDDEVRANGE="1.0 1.5 2.5 4.0 6.0"              # default 2.53
 
-./preprocess.sh # generates pism_Greenland_5km_v1.1.nc and base_config.nc
+# simpler: 3^5 = 243 cases
+THRESHOLDRANGE="268 270 273"       # default 273.15
+DDFSNOWRANGE="0.001 0.003 0.009"   # default 0.003
+DDFICERANGE="0.002 0.008 0.024"    # default 0.008
+REFREEZERANGE="0.4 0.6 0.8"        # default 0.6
+STDDEVRANGE="1.0 2.5  6.0"         # default 2.53
 
-./boot.sh  # creates start.nc, which contains 'thk' used in masking in objective.py
+export DELETECLIMATE=1    # causes .nc produced by pclimate to be deleted
 
-for THRESHOLD in 268 270 273
+for THRESHOLD in $THRESHOLDRANGE
 do
-  for DDFSNOW in 0.001 0.003 0.009
+  for DDFSNOW in $DDFSNOWRANGE
   do
-    for REFREEZE in 0.2 0.6 1.0
+    for DDFICE in $DDFICERANGE
     do
-      NAMEROOT=${THRESHOLD}_${DDFSNOW}_${REFREEZE}
-      CONFIG=config_${THRESHOLD}_${DDFSNOW}_${REFREEZE}.nc
-      echo "case ${NAMEROOT}:"
-      echo "  creating -config_override file $CONFIG ..."
-      rm -rf $CONFIG
-      ncks -O base_config.nc $CONFIG      
-      ncatted -O -a pdd_positive_threshold_temp,pism_overrides,m,d,$THRESHOLD $CONFIG
-      ncatted -O -a pdd_factor_snow,pism_overrides,m,d,$DDFSNOW $CONFIG
-      ncatted -O -a pdd_refreeze,pism_overrides,m,d,$REFREEZE $CONFIG
+      for REFREEZE in $REFREEZERANGE
+      do
+        for STDDEV in $STDDEVRANGE
+        do
 
-      CLIMATE=clim_$NAMEROOT.nc
-      ./runcase.sh $CONFIG start.nc $CLIMATE
-      rm -rf $CONFIG  # don't need this file any more BECAUSE pism_overrides are
-                      #   carried forward into $CLIMATE
-      
-      echo
-      echo "  computing objective function by comparing 'acab' in $CLIMATE"
-      echo "    to 'smb' in $PISMDATA and putting objective value in $DIFFSFILE"
-      ./objective.py -v acab,smb -H start.nc $CLIMATE $PISMDATA $DIFFSFILE
-      echo
+          ## if not deleted, output of runcase.sh is 
+          ##   clim_${THRESHOLD}_${DDFSNOW}_${DDFICE}_${REFREEZE}_${STDDEV}.nc
+
+          # run case adds case to diffs.txt:
+          ./runcase.sh $THRESHOLD $DDFSNOW $DDFICE $REFREEZE $STDDEV diffs.txt
+
+        done
+      done
     done
   done
 done
 
-rm -f tempthk.nc
-
+export DELETECLIMATE=
 
