@@ -72,11 +72,11 @@ if __name__ == "__main__":
     print "  comparing variable '%s' in %s to '%s' in %s ..." % \
         (dovars[0], args[0], dovars[1], args[1])
 
-    pism_var = squeeze(nc_pism.variables[dovars[0]])
-    ref_var = squeeze(nc_reference.variables[dovars[1]])
+    pism_var = squeeze(nc_pism.variables[dovars[0]][:])
+    ref_var = squeeze(nc_reference.variables[dovars[1]][:])
     Mx, My = shape(pism_var)
     
-    thk_var = squeeze(nc_thk.variables["thk"])
+    thk_var = squeeze(nc_thk.variables["thk"][:])
 
     sumdiff = 0.0
     sumL2 = 0.0
