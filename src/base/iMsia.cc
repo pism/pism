@@ -67,163 +67,58 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
     PetscEnd();
   }
 
-  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
-  const PetscScalar Hicefree = 0.0;  // standard for ice-free, in Haseloff
+  if (method == "eta") {
 
-  PetscScalar **h_x[2], **h_y[2];
+    ierr = surface_gradient_eta(); CHKERRQ(ierr); 
+
+  } else if (method == "haseloff") {
+
+    ierr = surface_gradient_haseloff(); CHKERRQ(ierr);
+
+  } else if (method == "mahaffy") {
+
+    ierr = surface_gradient_mahaffy(); CHKERRQ(ierr);
+
+  } else {
+    SETERRQ(1, "can't happen");
+  }
+
+  return 0;
+}
+/*!
+ * Mary Anne Mahaffy method; see [\ref Mahaffy].
+ */
+PetscErrorCode IceModel::surface_gradient_mahaffy() {
+  PetscErrorCode ierr;
+
+  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
+
+  PetscScalar **h_x[2], **h_y[2], **h;
   ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
   ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
   ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
   ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
+  ierr = vh.get_array(h); CHKERRQ(ierr);
 
-  if (method == "eta") {
-    PetscScalar **eta;
-    const PetscScalar n = ice->exponent(), // presumably 3.0
-                      etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
-                      invpow  = 1.0 / etapow,
-                      dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
-    // compute eta = H^{8/3}, which is more regular, on reg grid
-    ierr = vWork2d[4].get_array(eta); CHKERRQ(ierr);
-    ierr = vH.begin_access(); CHKERRQ(ierr);
-
-    PetscInt GHOSTS = 2;
+  for (PetscInt o=0; o<2; o++) {
+    PetscInt GHOSTS = 1;
     for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
       for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        eta[i][j] = pow(vH(i,j), etapow);
-      }
-    }
-    ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
-    ierr = vH.end_access(); CHKERRQ(ierr);
-
-    // now use Mahaffy on eta to get grad h on staggered;
-    // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
-    ierr = vbed.begin_access(); CHKERRQ(ierr);
-    ierr = vWork2d[4].get_array(eta); CHKERRQ(ierr);
-    for (PetscInt o=0; o<2; o++) {
-
-      GHOSTS = 1;
-      for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-        for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-          if (o==0) {     // If I-offset
-            const PetscScalar mean_eta = 0.5 * (eta[i+1][j] + eta[i][j]);
-            if (mean_eta > 0.0) {
-              const PetscScalar factor = invpow * pow(mean_eta, dinvpow);
-              h_x[o][i][j] = factor * (eta[i+1][j] - eta[i][j]) / dx;
-              h_y[o][i][j] = factor * (+ eta[i+1][j+1] + eta[i][j+1]
-                                     - eta[i+1][j-1] - eta[i][j-1]) / (4.0*dy);
-            } else {
-              h_x[o][i][j] = 0.0;
-              h_y[o][i][j] = 0.0;
-            }
-            // now add bed slope to get actual h_x,h_y
-            h_x[o][i][j] += vbed.diff_x_stagE(i,j);
-            h_y[o][i][j] += vbed.diff_y_stagE(i,j);
-          } else {        // J-offset
-            const PetscScalar mean_eta = 0.5 * (eta[i][j+1] + eta[i][j]);
-            if (mean_eta > 0.0) {
-              const PetscScalar factor = invpow * pow(mean_eta, dinvpow);
-              h_y[o][i][j] = factor * (eta[i][j+1] - eta[i][j]) / dy;
-              h_x[o][i][j] = factor * (+ eta[i+1][j+1] + eta[i+1][j]
-                                     - eta[i-1][j+1] - eta[i-1][j]) / (4.0*dx);
-            } else {
-              h_y[o][i][j] = 0.0;
-              h_x[o][i][j] = 0.0;
-            }
-            // now add bed slope to get actual h_x,h_y
-            h_y[o][i][j] += vbed.diff_y_stagN(i,j);
-            h_x[o][i][j] += vbed.diff_x_stagN(i,j);
-          }
+        if (o==0) {     // If I-offset
+          h_x[o][i][j] = (h[i+1][j] - h[i][j]) / dx;
+          h_y[o][i][j] = (+ h[i+1][j+1] + h[i][j+1]
+                          - h[i+1][j-1] - h[i][j-1]) / (4.0*dy);
+        } else {        // J-offset
+          h_y[o][i][j] = (h[i][j+1] - h[i][j]) / dy;
+          h_x[o][i][j] = (+ h[i+1][j+1] + h[i+1][j]
+                          - h[i-1][j+1] - h[i-1][j]) / (4.0*dx);
         }
       }
     }
-    ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
-    ierr = vbed.end_access(); CHKERRQ(ierr);
-  } else {  // not eta, so method is Mahaffy or Haseloff
-    const bool haseloff = (method == "haseloff");
-    PetscScalar **h, **b, **H;
-    ierr = vbed.get_array(b); CHKERRQ(ierr);
-    ierr = vH.get_array(H); CHKERRQ(ierr);
-    ierr = vh.get_array(h); CHKERRQ(ierr);
-    for (PetscInt o=0; o<2; o++) {
+  }
 
-      PetscInt GHOSTS = 1;
-      for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-        for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-          if (haseloff) { // Marianne Haseloff method: deals correctly with 
-	                        //   adjacent ice-free points with bed elevations which
-	                        //   are above the surface of the ice
-            if (o==0) {     // If I-offset
-              const bool icefreeP  = (H[i][j]     <= Hicefree),
-                         icefreeE  = (H[i+1][j]   <= Hicefree),
-                         icefreeN  = (H[i][j+1]   <= Hicefree),
-                         icefreeS  = (H[i][j-1]   <= Hicefree),
-                         icefreeNE = (H[i+1][j+1] <= Hicefree),
-                         icefreeSE = (H[i+1][j-1] <= Hicefree);
+  ierr = vh.end_access(); CHKERRQ(ierr);
 
-              PetscScalar hhE = h[i+1][j];  // east pseudo-surface elevation
-              if (icefreeE  && (b[i+1][j]   > h[i][j]    ))  hhE  = h[i][j];
-              if (icefreeP  && (b[i][j]     > h[i+1][j]  ))  hhE  = h[i][j];
-              h_x[o][i][j] = (hhE - h[i][j]) / dx;
-
-              PetscScalar hhN  = h[i][j+1];  // north pseudo-surface elevation
-              if (icefreeN  && (b[i][j+1]   > h[i][j]    ))  hhN  = h[i][j];
-              if (icefreeP  && (b[i][j]     > h[i][j+1]  ))  hhN  = h[i][j];
-              PetscScalar hhS  = h[i][j-1];  // south pseudo-surface elevation
-              if (icefreeS  && (b[i][j-1]   > h[i][j]    ))  hhS  = h[i][j];
-              if (icefreeP  && (b[i][j]     > h[i][j-1]  ))  hhS  = h[i][j];
-              PetscScalar hhNE = h[i+1][j+1];// northeast pseudo-surface elevation
-              if (icefreeNE && (b[i+1][j+1] > h[i+1][j]  ))  hhNE = h[i+1][j];
-              if (icefreeE  && (b[i+1][j]   > h[i+1][j+1]))  hhNE = h[i+1][j];
-              PetscScalar hhSE = h[i+1][j-1];// southeast pseudo-surface elevation
-              if (icefreeSE && (b[i+1][j-1] > h[i+1][j]  ))  hhSE = h[i+1][j];
-              if (icefreeE  && (b[i+1][j]   > h[i+1][j-1]))  hhSE = h[i+1][j];
-              h_y[o][i][j] = (hhNE + hhN - hhSE - hhS) / (4.0 * dy);
-            } else {        // J-offset
-              const bool icefreeP  = (H[i][j]     <= Hicefree),
-                         icefreeN  = (H[i][j+1]   <= Hicefree),
-                         icefreeE  = (H[i+1][j]   <= Hicefree),
-                         icefreeW  = (H[i-1][j]   <= Hicefree),
-                         icefreeNE = (H[i+1][j+1] <= Hicefree),
-                         icefreeNW = (H[i-1][j+1] <= Hicefree);
-
-              PetscScalar hhN  = h[i][j+1];  // north pseudo-surface elevation
-              if (icefreeN  && (b[i][j+1]   > h[i][j]    ))  hhN  = h[i][j];
-              if (icefreeP  && (b[i][j]     > h[i][j+1]  ))  hhN  = h[i][j];
-              h_y[o][i][j] = (hhN - h[i][j]) / dy;
-
-              PetscScalar hhE  = h[i+1][j];  // east pseudo-surface elevation
-              if (icefreeE  && (b[i+1][j]   > h[i][j]    ))  hhE  = h[i][j];
-              if (icefreeP  && (b[i][j]     > h[i+1][j]  ))  hhE  = h[i][j];
-              PetscScalar hhW  = h[i-1][j];  // west pseudo-surface elevation
-              if (icefreeW  && (b[i-1][j]   > h[i][j]    ))  hhW  = h[i][j];
-              if (icefreeP  && (b[i][j]     > h[i-1][j]  ))  hhW  = h[i][j];
-              PetscScalar hhNE = h[i+1][j+1];// northeast pseudo-surface elevation
-              if (icefreeNE && (b[i+1][j+1] > h[i][j+1]  ))  hhNE = h[i][j+1];
-              if (icefreeN  && (b[i][j+1]   > h[i+1][j+1]))  hhNE = h[i][j+1];
-              PetscScalar hhNW = h[i-1][j+1];// northwest pseudo-surface elevation
-              if (icefreeNW && (b[i-1][j+1] > h[i][j+1]  ))  hhNW = h[i][j+1];
-              if (icefreeN  && (b[i][j+1]   > h[i-1][j+1]))  hhNW = h[i][j+1];
-              h_x[o][i][j] = (hhNE + hhE - hhNW - hhW) / (4.0 * dx);
-            }
-          } else { // Mary Anne Mahaffy method: see Mahaffy (1976)
-            if (o==0) {     // If I-offset
-              h_x[o][i][j] = (h[i+1][j] - h[i][j]) / dx;
-              h_y[o][i][j] = (+ h[i+1][j+1] + h[i][j+1]
-                              - h[i+1][j-1] - h[i][j-1]) / (4.0*dy);
-            } else {        // J-offset
-              h_y[o][i][j] = (h[i][j+1] - h[i][j]) / dy;
-              h_x[o][i][j] = (+ h[i+1][j+1] + h[i+1][j]
-                              - h[i-1][j+1] - h[i-1][j]) / (4.0*dx);
-            }
-          }
-        }
-      }
-    }
-    ierr = vH.end_access(); CHKERRQ(ierr);
-    ierr = vbed.end_access(); CHKERRQ(ierr);
-    ierr = vh.end_access(); CHKERRQ(ierr);
-  } // end if (use_eta)
-  
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
   ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
@@ -232,25 +127,186 @@ PetscErrorCode IceModel::surfaceGradientSIA() {
   return 0;
 }
 
-// PetscErrorCode IceModel::surface_gradient_eta() {
+/*!
+ * Marianne Haseloff method: deals correctly with adjacent ice-free points with
+ * bed elevations which are above the surface of the ice
+ */
+PetscErrorCode IceModel::surface_gradient_haseloff() {
+  PetscErrorCode ierr;
+
+  const PetscScalar Hicefree = 0.0;  // standard for ice-free, in Haseloff
+  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
+
+  PetscScalar **h_x[2], **h_y[2];
+  ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
+  ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
+  ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
+  ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
+
+  PetscScalar **h, **b, **H;
+  ierr = vbed.get_array(b); CHKERRQ(ierr);
+  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vh.get_array(h); CHKERRQ(ierr);
+  for (PetscInt o=0; o<2; o++) {
+
+    PetscInt GHOSTS = 1;
+    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+        if (o==0) {     // If I-offset
+          const bool icefreeP  = (H[i][j]     <= Hicefree),
+            icefreeE  = (H[i+1][j]   <= Hicefree),
+            icefreeN  = (H[i][j+1]   <= Hicefree),
+            icefreeS  = (H[i][j-1]   <= Hicefree),
+            icefreeNE = (H[i+1][j+1] <= Hicefree),
+            icefreeSE = (H[i+1][j-1] <= Hicefree);
+
+          PetscScalar hhE = h[i+1][j];  // east pseudo-surface elevation
+          if (icefreeE  && (b[i+1][j]   > h[i][j]    ))  hhE  = h[i][j];
+          if (icefreeP  && (b[i][j]     > h[i+1][j]  ))  hhE  = h[i][j];
+          h_x[o][i][j] = (hhE - h[i][j]) / dx;
+
+          PetscScalar hhN  = h[i][j+1];  // north pseudo-surface elevation
+          if (icefreeN  && (b[i][j+1]   > h[i][j]    ))  hhN  = h[i][j];
+          if (icefreeP  && (b[i][j]     > h[i][j+1]  ))  hhN  = h[i][j];
+          PetscScalar hhS  = h[i][j-1];  // south pseudo-surface elevation
+          if (icefreeS  && (b[i][j-1]   > h[i][j]    ))  hhS  = h[i][j];
+          if (icefreeP  && (b[i][j]     > h[i][j-1]  ))  hhS  = h[i][j];
+          PetscScalar hhNE = h[i+1][j+1];// northeast pseudo-surface elevation
+          if (icefreeNE && (b[i+1][j+1] > h[i+1][j]  ))  hhNE = h[i+1][j];
+          if (icefreeE  && (b[i+1][j]   > h[i+1][j+1]))  hhNE = h[i+1][j];
+          PetscScalar hhSE = h[i+1][j-1];// southeast pseudo-surface elevation
+          if (icefreeSE && (b[i+1][j-1] > h[i+1][j]  ))  hhSE = h[i+1][j];
+          if (icefreeE  && (b[i+1][j]   > h[i+1][j-1]))  hhSE = h[i+1][j];
+          h_y[o][i][j] = (hhNE + hhN - hhSE - hhS) / (4.0 * dy);
+        } else {        // J-offset
+          const bool icefreeP  = (H[i][j]     <= Hicefree),
+            icefreeN  = (H[i][j+1]   <= Hicefree),
+            icefreeE  = (H[i+1][j]   <= Hicefree),
+            icefreeW  = (H[i-1][j]   <= Hicefree),
+            icefreeNE = (H[i+1][j+1] <= Hicefree),
+            icefreeNW = (H[i-1][j+1] <= Hicefree);
+
+          PetscScalar hhN  = h[i][j+1];  // north pseudo-surface elevation
+          if (icefreeN  && (b[i][j+1]   > h[i][j]    ))  hhN  = h[i][j];
+          if (icefreeP  && (b[i][j]     > h[i][j+1]  ))  hhN  = h[i][j];
+          h_y[o][i][j] = (hhN - h[i][j]) / dy;
+
+          PetscScalar hhE  = h[i+1][j];  // east pseudo-surface elevation
+          if (icefreeE  && (b[i+1][j]   > h[i][j]    ))  hhE  = h[i][j];
+          if (icefreeP  && (b[i][j]     > h[i+1][j]  ))  hhE  = h[i][j];
+          PetscScalar hhW  = h[i-1][j];  // west pseudo-surface elevation
+          if (icefreeW  && (b[i-1][j]   > h[i][j]    ))  hhW  = h[i][j];
+          if (icefreeP  && (b[i][j]     > h[i-1][j]  ))  hhW  = h[i][j];
+          PetscScalar hhNE = h[i+1][j+1];// northeast pseudo-surface elevation
+          if (icefreeNE && (b[i+1][j+1] > h[i][j+1]  ))  hhNE = h[i][j+1];
+          if (icefreeN  && (b[i][j+1]   > h[i+1][j+1]))  hhNE = h[i][j+1];
+          PetscScalar hhNW = h[i-1][j+1];// northwest pseudo-surface elevation
+          if (icefreeNW && (b[i-1][j+1] > h[i][j+1]  ))  hhNW = h[i][j+1];
+          if (icefreeN  && (b[i][j+1]   > h[i-1][j+1]))  hhNW = h[i][j+1];
+          h_x[o][i][j] = (hhNE + hhE - hhNW - hhW) / (4.0 * dx);
+        }
+
+      } // j
+    }   // i
+  }     // o
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
+  ierr = vh.end_access(); CHKERRQ(ierr);
+
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief Compute the surface gradient on the staggered grid using the eta
+//! transformation.
+PetscErrorCode IceModel::surface_gradient_eta() {
+  PetscErrorCode ierr;
+
+  PetscScalar **h_x[2], **h_y[2];
+  ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
+  ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
+  ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
+  ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
+
+  PetscScalar **eta;
+  const PetscScalar n = ice->exponent(), // presumably 3.0
+    etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
+    invpow  = 1.0 / etapow,
+    dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
+  const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
+
+  // compute eta = H^{8/3}, which is more regular, on reg grid
+  ierr = vWork2d[4].get_array(eta); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+
+  PetscInt GHOSTS = 2;
+  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+      eta[i][j] = pow(vH(i,j), etapow);
+    }
+  }
+  ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  // now use Mahaffy on eta to get grad h on staggered;
+  // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
+  ierr = vWork2d[4].get_array(eta); CHKERRQ(ierr);
+  for (PetscInt o=0; o<2; o++) {
+
+    GHOSTS = 1;
+    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+        if (o==0) {     // If I-offset
+          const PetscScalar mean_eta = 0.5 * (eta[i+1][j] + eta[i][j]);
+          if (mean_eta > 0.0) {
+            const PetscScalar factor = invpow * pow(mean_eta, dinvpow);
+            h_x[o][i][j] = factor * (eta[i+1][j] - eta[i][j]) / dx;
+            h_y[o][i][j] = factor * (+ eta[i+1][j+1] + eta[i][j+1]
+                                     - eta[i+1][j-1] - eta[i][j-1]) / (4.0*dy);
+          } else {
+            h_x[o][i][j] = 0.0;
+            h_y[o][i][j] = 0.0;
+          }
+          // now add bed slope to get actual h_x,h_y
+          h_x[o][i][j] += vbed.diff_x_stagE(i,j);
+          h_y[o][i][j] += vbed.diff_y_stagE(i,j);
+        } else {        // J-offset
+          const PetscScalar mean_eta = 0.5 * (eta[i][j+1] + eta[i][j]);
+          if (mean_eta > 0.0) {
+            const PetscScalar factor = invpow * pow(mean_eta, dinvpow);
+            h_y[o][i][j] = factor * (eta[i][j+1] - eta[i][j]) / dy;
+            h_x[o][i][j] = factor * (+ eta[i+1][j+1] + eta[i+1][j]
+                                     - eta[i-1][j+1] - eta[i-1][j]) / (4.0*dx);
+          } else {
+            h_y[o][i][j] = 0.0;
+            h_x[o][i][j] = 0.0;
+          }
+          // now add bed slope to get actual h_x,h_y
+          h_y[o][i][j] += vbed.diff_y_stagN(i,j);
+          h_x[o][i][j] += vbed.diff_x_stagN(i,j);
+        }
+      }
+    }
+  }
+  ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
+
+  ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
+  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief This method pre-computes delta, the quantity used later in SIA computations. 
+// PetscErrorCode IceModel::compute_delta() {
 //   PetscErrorCode ierr;
-//   PetscInt GHOSTS = 1;
-
-//   ierr = vWork2d[0].begin_access(); CHKERRQ(ierr);
-//   ierr = vWork2d[1].begin_access(); CHKERRQ(ierr);
-//   ierr = vWork2d[2].begin_access(); CHKERRQ(ierr);
-//   ierr = vWork2d[3].begin_access(); CHKERRQ(ierr);
-
-//   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-//     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      
-//     }
-//   }
-
-//   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-//   ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
-//   ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
-//   ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
 
 //   return 0;
 // }

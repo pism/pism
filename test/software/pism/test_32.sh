@@ -5,7 +5,7 @@ source ../functions.sh
 # Test name:
 test="Test #32: EISMINT-Ross experiment regression"
 # The list of files to delete when done.
-files="ross.nc riggs.nc rossComputed.nc ross.txt chi.txt diff.txt"
+files="ross.nc riggs.nc rossComputed.nc ross.txt"
 dir=`pwd`
 
 run_test ()
@@ -20,11 +20,26 @@ run_test ()
     $MPIDO -n 2 pross -boot_file ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1.5e3 -ssaBC ross.nc \
         -riggs riggs.nc -o rossComputed.nc > ross.txt
 
-    cat ross.txt | grep "Chi^2" > chi.txt
+    python <<EOF
+from numpy import double, abs
+from sys import exit
+chi_squared = 1e6
+good_chi_squared = 5379.366
 
-    # compare results
-    diff chi.txt - > diff.txt <<EOF
-Chi^2 statistic for computed results compared to RIGGS is   5384.665
+f = open("ross.txt")
+for line in f:
+  words = line.split(' ')
+  if words[0] == "Chi^2":
+    chi_squared = double(words[-1])
+    break
+
+rel_difference = abs(chi_squared - good_chi_squared) / good_chi_squared
+if rel_difference < 0.01:
+#  print "Chi^2 compared: %f and %f. Difference: %f%%" % (chi_squared, good_chi_squared, rel_difference*100)
+  exit(0)
+else:
+  print "Chi^2 = %f, should be near %f" % (chi_squared, good_chi_squared)
+  exit(1)
 EOF
 
     if [ $? != 0 ];

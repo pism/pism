@@ -656,8 +656,8 @@ PetscErrorCode IceModel::write_backup() {
   string date_str = pism_timestamp();
   char tmp[TEMPORARY_STRING_LENGTH];
   snprintf(tmp, TEMPORARY_STRING_LENGTH,
-	   "%s: %s automatic backup at %10.5f a, %3.3f hours after the beginning of the run\n",
-	   date_str.c_str(), executable_short_name.c_str(), grid.year, wall_clock_hours);
+	   "%s automatic backup at %10.5f a, %3.3f hours after the beginning of the run\n",
+	   executable_short_name.c_str(), grid.year, wall_clock_hours);
 
   ierr = verbPrintf(2, grid.com, 
                     "  Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
@@ -674,8 +674,21 @@ PetscErrorCode IceModel::write_backup() {
   ierr = global_attributes.write(backup_filename.c_str()); CHKERRQ(ierr);
   ierr = mapping.write(backup_filename.c_str()); CHKERRQ(ierr);
 
-  // write the model state
-  ierr = write_model_state(backup_filename.c_str()); CHKERRQ(ierr);
+  // write the model state (this saves only the fields necessary for restarting
+  // and *does not* respect -o_size)
+  set<IceModelVec*> vars = variables.get_variables();
+
+  set<IceModelVec*>::iterator i = vars.begin();
+  while (i != vars.end()) {
+
+    string intent = (*i)->string_attr("pism_intent");
+    if ((intent == "model_state") || (intent == "mapping") ||
+	(intent == "climate_steady")) {
+      ierr = (*i)->write(backup_filename.c_str()); CHKERRQ(ierr);
+    }
+
+    ++i;
+  }
 
   if (surface != PETSC_NULL) {
     ierr = surface->write_model_state(grid.year, dt / secpera, backup_filename); CHKERRQ(ierr);

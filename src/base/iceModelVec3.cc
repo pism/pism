@@ -183,18 +183,11 @@ PetscErrorCode  IceModelVec3::isLegalLevel(PetscScalar z) {
 }
 
 
-//! Set values of an ice scalar quantity by linear <i>interpolation</i> from given values in a given column.
+//! Set values of an ice scalar quantity in a column by linear <i>interpolation</i>.
 /*!
-Input arrays \c levelsIN and \c valsIN must be allocated arrays of \c nlevels scalars
-(\c PetscScalar).  Upon completion, internal storage will hold values derived from 
-linearly interpolating the input values.
-
-\c levelsIN must be strictly increasing.
-
-Piecewise linear interpolation is used and the input values must span a sufficient range
-of \f$z\f$ values so that all stored values, at heights in \c zlevels, can be determined 
-by interpolation; extrapolation is not allowed.  Therefore <tt>(levelsIN[0] <= 0.0)</tt> 
-and <tt>(levelsIN[nlevels-1] >= Lz)</tt> must both be true.
+  Input array \c source and \c must contain \c grid.Mz_fine scalars
+  (\c PetscScalar).  Upon completion, internal storage will hold values derived from 
+  linearly interpolating the input values.
  */
 PetscErrorCode  IceModelVec3::setValColumnPL(PetscInt i, PetscInt j, PetscScalar *source) {
 #ifdef PISM_DEBUG

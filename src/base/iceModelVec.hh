@@ -328,5 +328,14 @@ protected:
   Vec sounding_buffer;
 };
 
+class IceModelVec3Stag : public IceModelVec {
+public:
+  IceModelVec3Stag();
+  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[],
+				 bool local, int stencil_width = 1);
+  PetscErrorCode getInternalColumn(PetscInt i, PetscInt j, PetscInt offset);
+  virtual ~IceModelVec3Stag();
+};
+
 #endif /* __IceModelVec_hh */
 
