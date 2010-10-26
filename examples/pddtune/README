@@ -51,7 +51,7 @@ Additional actions are needed before and after using dotune.sh.  Do this:
       now regenerate this pclimate output, and make it nicer to look at by
       masking:
         $ ./runcase.sh 268 0.001 0.002 0.4 1.0
-        $ ./thkmask -H start.sh -v acab,smelt,srunoff,saccum clim_268_0.001_0.002_0.4_1.0.nc
+        $ ./thkmask.py -H start.nc -v acab,smelt,srunoff,saccum clim_268_0.001_0.002_0.4_1.0.nc
 
   7.  view it, comparing to target field 'smb' in same units in data file:
         $ ncview clim_268_0.001_0.002_0.4_1.0.nc &
