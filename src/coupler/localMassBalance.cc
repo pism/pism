@@ -135,7 +135,7 @@ PetscScalar PDDMassBalance::getSnowFromPrecipAndTemperatureTimeSeries(
 }
 
 
-//! /brief Compute the surface mass balance at a location from the number of positive
+//! \brief Compute the surface mass balance at a location from the number of positive
 //! degree days and the amount of snow which fell in a time interval.
 /*!
 Several mass fluxes, including the final surface mass balance, are computed 
@@ -143,21 +143,23 @@ as ice-equivalent meters per second from the number of positive degree days
 and an amount of snow in the time interval.
 
 This is a PDD scheme.  The input parameter \c ddf.snow is a rate of melting per
-positive degree day for snow.  A fraction of the melted snow refreezes,
-controlled by parameter \c ddf.refreezeFrac.  If the number of PDDs, which
-describes an energy available for melt, exceeds those needed to melt all of the
-snow then the excess number of PDDs is used to melt both the ice that came from
-refreeze and (perhaps) ice which is already present.  In either case, \e ice
-melts at a constant rate per positive degree day, controlled by parameter
-\c ddf.ice.
+positive degree day for snow.  If the number of PDDs, which describes an energy
+available for melt, exceeds those needed to melt all of the snow (using
+\c ddf.snow) then:
+  \li a fraction of the melted snow refreezes, conceptualized as superimposed
+      ice, and this is controlled by parameter \c ddf.refreezeFrac, and
+  \li the excess number of PDDs is used to melt both the ice that came from
+      refreeze and then any ice which is already present.
+    
+In either case, \e ice melts at a constant rate per positive degree day,
+controlled by parameter \c ddf.ice.
 
 In the weird case where the amount of snow is negative, it is interpreted
 as an (ice-equivalent) direct ablation rate.  Snow amounts are generally
 positive everywhere on ice sheets, however.
 
 The scheme here came from EISMINT-Greenland [\ref RitzEISMINT], but is influenced
-by [\ref Faustoetal2009], [\ref Greve2005geothermal] and R. Hock (personal
-communication).
+by R. Hock (personal communication).
 
 The input argument \c dt is in seconds.  The input argument \c pddsum is in K day.
 These strange units work because the degree day factors in \c ddf have their
@@ -176,7 +178,9 @@ rain rate is <tt>rain_rate = precip_rate - accum_rate</tt>.  Again, "runoff" is
 meltwater runoff and does not include rain.
 
 In normal areas where \c snow > 0, the output quantities satisfy
-  \li <tt>smb_rate = accumulation_rate - runoff_rate</tt>.
+  \li <tt>smb_rate = accumulation_rate - runoff_rate</tt>
+
+in all cases.
  */
 PetscErrorCode PDDMassBalance::getMassFluxesFromPDDs(const DegreeDayFactors &ddf,
                                                      PetscScalar dt, PetscScalar pddsum,
@@ -208,10 +212,11 @@ PetscErrorCode PDDMassBalance::getMassFluxesFromPDDs(const DegreeDayFactors &ddf
   if (snow_max_melted <= snow) {
     // some of the snow melted and some is left; in any case, all of the energy
     //   available for melt, namely all of the positive degree days (PDDs) were
-    //   used-up in melting snow
+    //   used-up in melting snow; but because the snow does not completely melt,
+    //   we generate 0 modeled runoff, and the surface balance is the accumulation
     melt_rate   = snow_max_melted / dt;
-    runoff_rate = melt_rate * (1 - ddf.refreezeFrac);
-    smb_rate    = accumulation_rate - runoff_rate;
+    runoff_rate = 0.0;
+    smb_rate    = accumulation_rate; // = accumulation_rate - runoff_rate
     return 0;
   }
 
