@@ -60,7 +60,7 @@ public:
   virtual PetscErrorCode set_grid_defaults();
   virtual PetscErrorCode model_state_setup();
   virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode report_grid_parameters();
+  virtual PetscErrorCode report_grid_parameters(); // should be moved into a method of IceGrid
   virtual PetscErrorCode allocate_internal_objects();
   virtual PetscErrorCode misc_setup();
 
@@ -79,7 +79,8 @@ public:
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode bootstrapFromFile(const char *fname);
-  virtual PetscErrorCode readShelfStreamBCFromFile(const char *fname);
+  virtual PetscErrorCode readShelfStreamBCFromFile(const char *fname); // should be moved into the SSA 
+  // stress balance module
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
@@ -91,7 +92,7 @@ public:
   virtual void attach_ocean_model(PISMOceanModel *ocean);
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
-  virtual PetscErrorCode compute_cell_areas();
+  virtual PetscErrorCode compute_cell_areas(); // is an initialization step; should go there
 
   // see iMIO.cc
   virtual PetscErrorCode initFromFile(const char *);
@@ -99,7 +100,7 @@ public:
   virtual PetscErrorCode write_model_state(const char *filename);
   virtual PetscErrorCode write_variables(const char* filename, set<string> vars,
 					 nc_type nctype);
-  virtual PetscErrorCode write_extra_fields(const char *filename);
+  virtual PetscErrorCode write_extra_fields(const char *filename); // should be deprecated
 
 protected:
 
@@ -117,7 +118,7 @@ protected:
 
   EnthalpyConverter *EC;
  
-  PISMBedSmoother   *sia_bed_smoother;
+  PISMBedSmoother   *sia_bed_smoother; // should probably go inside the SIA stress balance module
 
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;
@@ -151,7 +152,7 @@ protected:
   IceModelVec2Stag uvbar, //!< ubar and vbar on staggered grid; ubar at i+1/2, vbar at j+1/2
                    vWork2dStag; //!< used for diffusivity and averaged ice hardness on the staggered grid
  
-  IceModelVec2V vel_basal,	//!< basal velocities on standard grid; ghosted
+  IceModelVec2V vel_basal,	//!< basal sliding velocities on standard grid; ghosted
     vel_bar; //!< vertically-averaged horizontal velocity on standard grid; ghosted
 
   IceModelVec2Mask vMask; //!< mask for flow type with values SHEET, DRAGGING, FLOATING
@@ -194,12 +195,12 @@ protected:
   bool leaveNuHAloneSSA;
   PetscTruth  updateHmelt,
               holdTillYieldStress,
-              useConstantTillPhi,
+              useConstantTillPhi, // should be deprecated
               shelvesDragToo,
               doAdaptTimeStep, 
-              realAgeForGrainSize,
+              realAgeForGrainSize, // is always equal to PETSC_FALSE; should we let it go?
               ssaSystemToASCIIMatlab,
-              reportPATemps,
+              reportPATemps,    // is never used
               allowAboveMelting,
               computeSIAVelocities;
   char        adaptReasonFlag;
@@ -213,7 +214,7 @@ protected:
   // see iceModel.cc
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode deallocate_internal_objects();
-  virtual void setConstantNuHForSSA(PetscScalar);
+  virtual void setConstantNuHForSSA(PetscScalar); // move into the SSA module
 
   // see iMadaptive.cc
   virtual PetscErrorCode computeMax3DVelocities();
@@ -345,6 +346,7 @@ protected:
   // profiling, etc:
   virtual PetscErrorCode compute_rank(IceModelVec2S &result);
   virtual PetscErrorCode compute_proc_ice_area(IceModelVec2S &result);
+  virtual PetscErrorCode compute_bueler_brown_f(IceModelVec2S &result);
   // scalar:
   virtual PetscErrorCode ice_mass_bookkeeping();
   virtual PetscErrorCode compute_ice_volume(PetscScalar &result);
@@ -365,6 +367,13 @@ protected:
   virtual PetscErrorCode surface_gradient_haseloff();
   virtual PetscErrorCode surface_gradient_mahaffy();
 
+  virtual PetscErrorCode compute_delta();
+  virtual PetscErrorCode compute_diffusivity_staggered();
+  virtual PetscErrorCode compute_sigma();
+  virtual PetscErrorCode compute_I_staggered();
+  virtual PetscErrorCode velocity_SIA_2D();
+  virtual PetscErrorCode velocity_SIA_3D();
+
   virtual PetscErrorCode velocitySIAStaggered();
   virtual PetscErrorCode basalSlidingHeatingSIA();
   virtual PetscErrorCode velocities2DSIAToRegular();
@@ -375,6 +384,7 @@ protected:
                              PetscScalar alpha, PetscScalar mu, PetscScalar min_T) const;
 
   // see iMssa.cc
+  virtual PetscScalar    bueler_brown_f(PetscScalar v_squared);
   virtual PetscErrorCode allocateSSAobjects();
   virtual PetscErrorCode destroySSAobjects();
   virtual PetscErrorCode initSSA();
@@ -414,14 +424,13 @@ protected:
   virtual PetscErrorCode velocity(bool updateSIAVelocityAtDepth);    
   virtual PetscErrorCode vertVelocityFromIncompressibility();
 
-
 protected:
   // working space (a convenience)
   static const PetscInt nWork2d=6;
   IceModelVec2S vWork2d[nWork2d];
   // 3D working space (with specific purposes)
   IceModelVec3 vWork3d;
-  IceModelVec3 Sigmastag3[2], Istag3[2];
+  IceModelVec3 Sigmastag3[2], Istag3[2], DeltaStag3[2];
 
   // for saving SSA velocities for restart
   bool have_ssa_velocities;	//!< use ubar_ssa and vbar_ssa from a previous

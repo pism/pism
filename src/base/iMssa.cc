@@ -752,6 +752,13 @@ PetscErrorCode IceModel::velocitySSA(IceModelVec2S vNuH[2], PetscInt *numiter) {
   return 0;
 }
 
+//! \brief Computes f(|v|) as described in [\ref BBssasliding] (page 7, equation 22). 
+PetscScalar IceModel::bueler_brown_f(PetscScalar v_squared) {
+    const PetscScalar inC_fofv = 1.0e-4 * PetscSqr(secpera),
+                    outC_fofv = 2.0 / pi;
+
+    return 1.0 - outC_fofv * atan(inC_fofv * v_squared);
+}
 
 //! At all SSA points, update the velocity field.
 /*!
@@ -801,9 +808,8 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
                                            // speed is infinity; i.e. when !addVels
                                            // we just pass through the SSA velocity
         if (addVels) {
-          const PetscScalar c2 = PetscSqr(uvssa[i][j].u) + PetscSqr(uvssa[i][j].v);
-          omfv = outC_fofv * atan(inC_fofv * c2);
-          fv = 1.0 - omfv;
+          fv = bueler_brown_f(uvssa[i][j].magnitude_squared());
+          omfv = 1 - fv;
         }
 
         // update 3D velocity; u,v were from SIA
@@ -923,10 +929,8 @@ PetscErrorCode IceModel::correctSigma() {
                                            // speed is infinity; i.e. when !addVels
                                            // we just pass through the SSA velocity
         if (addVels) {
-          const PetscScalar c2peryear = PetscSqr(uvssa[i][j].u*secpera)
-                                           + PetscSqr(uvssa[i][j].v*secpera);
-          omfv = (2.0/pi) * atan(1.0e-4 * c2peryear);
-          fv = 1.0 - omfv;
+          fv = bueler_brown_f(uvssa[i][j].magnitude_squared());
+          omfv = 1 - fv;
         }
         const PetscScalar 
                 u_x   = (uvssa[i+1][j].u - uvssa[i-1][j].u)/(2*dx),

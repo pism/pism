@@ -183,15 +183,14 @@ PetscErrorCode NCSpatialVariable::write(const char filename[], nc_type nctype,
 
   if (!exists) {
     ierr = define(nc.get_ncid(), nctype, varid); CHKERRQ(ierr);
+    // write the attributes
+    ierr = write_attributes(nc, varid, nctype, write_in_glaciological_units);
+    CHKERRQ(ierr);
   }
 
   if (write_in_glaciological_units) {
     ierr = change_units(v, &units, &glaciological_units); CHKERRQ(ierr);
   }
-
-  // write the attributes
-  ierr = write_attributes(nc, varid, nctype, write_in_glaciological_units);
-  CHKERRQ(ierr);
 
   // Actually write data:
   ierr = nc.put_var(varid, v, dims); CHKERRQ(ierr);  

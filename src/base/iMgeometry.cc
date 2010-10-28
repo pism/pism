@@ -356,16 +356,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
       PetscScalar He, Hw, Hn, Hs;
       if ( do_superpose && (vMask.value(i,j) == MASK_DRAGGING_SHEET) ) {
         const PetscScalar
-          fv  = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(vel_ssa(i,  j).u) + PetscSqr(vel_ssa(i,  j).v) ) ),
-          fve = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(vel_ssa(i+1,j).u) + PetscSqr(vel_ssa(i+1,j).v) ) ),
-          fvw = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(vel_ssa(i-1,j).u) + PetscSqr(vel_ssa(i-1,j).v) ) ),
-          fvn = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(vel_ssa(i,j+1).u) + PetscSqr(vel_ssa(i,j+1).v) ) ),
-          fvs = 1.0 - outC_fofv * atan( inC_fofv *
-                      ( PetscSqr(vel_ssa(i,j-1).u) + PetscSqr(vel_ssa(i,j-1).v) ) );
+          fv  = bueler_brown_f( vel_ssa(i,  j).magnitude_squared() ),
+          fve = bueler_brown_f( vel_ssa(i+1,j).magnitude_squared() ),
+          fvw = bueler_brown_f( vel_ssa(i-1,j).magnitude_squared() ),
+          fvn = bueler_brown_f( vel_ssa(i,j+1).magnitude_squared() ),
+          fvs = bueler_brown_f( vel_ssa(i,j-1).magnitude_squared() );
         const PetscScalar fvH = fv * vH(i,j);
         He = 0.5 * (fvH + fve * vH(i+1,j));
         Hw = 0.5 * (fvw * vH(i-1,j) + fvH);
@@ -490,7 +485,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
   prof->end(event_thk_com);
 
-  // Check if the ice thickness is exceeded the height of the computational box
+  // Check if the ice thickness exceeded the height of the computational box
   // and extend the grid if necessary:
   ierr = check_maximum_thickness(); CHKERRQ(ierr);
 

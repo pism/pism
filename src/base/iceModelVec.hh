@@ -174,25 +174,6 @@ public:
   virtual PetscErrorCode has_nan();
 };
 
-//! \brief A class for storing and accessing internal staggered-grid 2D fields.
-//! Uses dof=2 storage. Does \b not support input and output. This class is
-//! identical to IceModelVec2V, except that components are not called \c u and
-//! \c v (to avoid confusion).
-class IceModelVec2Stag : public IceModelVec2 {
-public:
-  IceModelVec2Stag() { dof = 2; vars.resize(dof); }
-  IceModelVec2Stag(const IceModelVec2S &other) : IceModelVec2(other) {}
-  using IceModelVec2::create;
-  virtual PetscErrorCode create(IceGrid &my_grid, const char my_name[], bool local, int width = 1);
-  virtual PetscErrorCode get_array(PetscScalar*** &a);
-  virtual PetscErrorCode begin_access();
-  virtual PetscErrorCode end_access();
-  virtual PetscScalar& operator() (int i, int j, int k);
-  // component-wise access:
-  virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
-  virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
-  virtual PetscErrorCode staggered_to_regular(IceModelVec2S &result);
-};
 
 //! \brief A simple class "hiding" the fact that the mask is stored as
 //! floating-point scalars (instead of integers).
@@ -209,9 +190,18 @@ public:
   virtual PetscErrorCode fill_where_floating(IceModelVec2S &v, const PetscScalar fillval);
 };
 
-/// IceModeVec2V
-struct PISMVector2 {
+//! \brief A class representing a horizontal velocity at a certain grid point.
+class PISMVector2 {
+public:
   PetscScalar u, v;
+  //! Magnitude squared.
+  PetscScalar magnitude_squared() const {
+    return u*u + v*v;
+  }
+  //! Magnitude.
+  PetscScalar magnitude() const {
+    return sqrt(magnitude_squared());
+  }
 };
 
 //! Class for storing and accessing 2D vector fields used in IceModel.
@@ -243,6 +233,27 @@ public:
 protected:
   DA component_da;		//!< same as \c da, but for one component only
   PetscErrorCode destroy();	
+};
+
+//! \brief A class for storing and accessing internal staggered-grid 2D fields.
+//! Uses dof=2 storage. Does \b not support input and output. This class is
+//! identical to IceModelVec2V, except that components are not called \c u and
+//! \c v (to avoid confusion).
+class IceModelVec2Stag : public IceModelVec2 {
+public:
+  IceModelVec2Stag() { dof = 2; vars.resize(dof); }
+  IceModelVec2Stag(const IceModelVec2S &other) : IceModelVec2(other) {}
+  using IceModelVec2::create;
+  virtual PetscErrorCode create(IceGrid &my_grid, const char my_name[], bool local, int width = 1);
+  virtual PetscErrorCode get_array(PetscScalar*** &a);
+  virtual PetscErrorCode begin_access();
+  virtual PetscErrorCode end_access();
+  virtual PetscScalar& operator() (int i, int j, int k);
+  // component-wise access:
+  virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
+  virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
+  virtual PetscErrorCode staggered_to_regular(IceModelVec2S &result);
+  virtual PetscErrorCode staggered_to_regular(IceModelVec2V &result);
 };
 
 //! Class for a 3d DA-based Vec for bedrock (lithosphere) scalar quantities in IceModel.
@@ -328,14 +339,24 @@ protected:
   Vec sounding_buffer;
 };
 
+/*
+// FIXME: We need this and a IceModelVec3V (3D-distributed horizontal velocity)
+// class.
+
+//! This class is for storing 3D scalar quantities on the grid staggered in
+//! horizontal directions.
 class IceModelVec3Stag : public IceModelVec {
 public:
   IceModelVec3Stag();
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[],
 				 bool local, int stencil_width = 1);
-  PetscErrorCode getInternalColumn(PetscInt i, PetscInt j, PetscInt offset);
+  virtual PetscErrorCode  begin_access();
+  virtual PetscErrorCode  end_access();
+  virtual PetscErrorCode  getInternalColumn(PetscInt i, PetscInt j,
+                                            PetscScalar** &column);
   virtual ~IceModelVec3Stag();
 };
+*/
 
 #endif /* __IceModelVec_hh */
 

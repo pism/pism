@@ -702,5 +702,8 @@ PetscErrorCode IceModel::write_backup() {
     SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
   }
   
+  // Also flush time-series:
+  ierr = flush_timeseries(); CHKERRQ(ierr);
+
   return 0;
 }
