@@ -345,6 +345,12 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
 
+  IceModelVec2S thk_smooth = vWork2d[5];
+  const PetscInt WIDE_GHOSTS = 2;
+  ierr = sia_bed_smoother->get_smoothed_thk(vh, vH, WIDE_GHOSTS,
+                                            &thk_smooth); CHKERRQ(ierr);
+  ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
+  
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -353,6 +359,13 @@ PetscErrorCode IceModel::massContExplicitStep() {
       //    in  -ssa -super case; note f(v) is on regular grid;
       //    compare broadcastSSAVelocity(); note uvbar[o] is SIA result:
       //    uvbar[0] H = - D h_x
+
+      // CK, Thu Oct 28 15:51:39 2010: In fact, the following is computes
+      // thicknesses *times* f(|v|) on the staggered grid, so that the first
+      // line with "divQ =" below uses the SIA flux with the approproate weight
+      // if -ssa_sliding is chosen.
+      // (I.e. in that case uvbar(i,j,0) * He = \tilde D \frac{\partial h}{\partial x},
+      // see equations 28 and 29 in BBssasliding).
       PetscScalar He, Hw, Hn, Hs;
       if ( do_superpose && (vMask.value(i,j) == MASK_DRAGGING_SHEET) ) {
         const PetscScalar
@@ -361,20 +374,22 @@ PetscErrorCode IceModel::massContExplicitStep() {
           fvw = bueler_brown_f( vel_ssa(i-1,j).magnitude_squared() ),
           fvn = bueler_brown_f( vel_ssa(i,j+1).magnitude_squared() ),
           fvs = bueler_brown_f( vel_ssa(i,j-1).magnitude_squared() );
-        const PetscScalar fvH = fv * vH(i,j);
-        He = 0.5 * (fvH + fve * vH(i+1,j));
-        Hw = 0.5 * (fvw * vH(i-1,j) + fvH);
-        Hn = 0.5 * (fvH + fvn * vH(i,j+1));
-        Hs = 0.5 * (fvs * vH(i,j-1) + fvH);
+        const PetscScalar fvH = fv * thk_smooth(i,j);
+        He = 0.5 * (fvH + fve * thk_smooth(i+1,j));
+        Hw = 0.5 * (fvw * thk_smooth(i-1,j) + fvH);
+        Hn = 0.5 * (fvH + fvn * thk_smooth(i,j+1));
+        Hs = 0.5 * (fvs * thk_smooth(i,j-1) + fvH);
       } else {
-        He = 0.5 * (vH(i,j) + vH(i+1,j));
-        Hw = 0.5 * (vH(i-1,j) + vH(i,j));
-        Hn = 0.5 * (vH(i,j) + vH(i,j+1));
-        Hs = 0.5 * (vH(i,j-1) + vH(i,j));
+        He = 0.5 * (thk_smooth(i,j) + thk_smooth(i+1,j));
+        Hw = 0.5 * (thk_smooth(i-1,j) + thk_smooth(i,j));
+        Hn = 0.5 * (thk_smooth(i,j) + thk_smooth(i,j+1));
+        Hs = 0.5 * (thk_smooth(i,j-1) + thk_smooth(i,j));
       }
 
       // staggered grid Div(Q) for SIA (non-sliding) deformation part;
       //    Q = - D grad h = Ubar H    in non-sliding case
+
+      // recover the components if the ice flux from uvbar:
       PetscScalar divQ = 0.0;
       if (computeSIAVelocities == PETSC_TRUE) {
         divQ =  (uvbar(i,j,0) * He - uvbar(i-1,j,0) * Hw) / dx
@@ -427,6 +442,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
     } // end of the inner for loop
   } // end of the outer for loop
 
+  ierr = thk_smooth.end_access(); CHKERRQ(ierr);
   ierr = vbmr.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = uvbar.end_access(); CHKERRQ(ierr);
