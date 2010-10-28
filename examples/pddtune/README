@@ -13,9 +13,10 @@ set are from the RACMO/GR model.  They are described in this paper:
 The tuning procedure is to adjust these PDD parameters; [X] is default value:
   pdd_positive_threshold_temp [273.15 K]
   pdd_factor_snow             [0.003 m K-1 day-1]
-  pdd_factor_ice              [0.008 m K-1 day-1]
   pdd_refreeze                [0.6]
   pdd_std_dev                 [2.53 K]
+
+The degree-day factor for ice (pdd_factor_ice) is set to exactly double that for snow; see Hock (2005) for example.
 
 The top-level script is dotune.sh.  It does this for each case:
   -- calls runcase.sh
@@ -47,14 +48,14 @@ Additional actions are needed before and after using dotune.sh.  Do this:
         $ ./below.py -c 5 -l 2.0 Wdiffs.txt          # shows cases
 
   6.  once you have a case you like from the above, say
-        clim_268_0.001_0.002_0.4_1.0.nc
+        clim_268_0.001_0.4_1.0.nc
       now regenerate this pclimate output, and make it nicer to look at by
       masking:
-        $ ./runcase.sh 268 0.001 0.002 0.4 1.0
-        $ ./thkmask.py -H start.nc -v acab,smelt,srunoff,saccum clim_268_0.001_0.002_0.4_1.0.nc
+        $ ./runcase.sh 268 0.001 0.4 1.0
+        $ ./thkmask.py -H start.nc -v acab,smelt,srunoff,saccum clim_268_0.001_0.4_1.0.nc
 
   7.  view it, comparing to target field 'smb' in same units in data file:
-        $ ncview clim_268_0.001_0.002_0.4_1.0.nc &
+        $ ncview clim_268_0.001_0.4_1.0.nc &
         $ ncview pism_Greenland_5km_v1.1.nc &
       note that, besides in the file names, the PDD parameter choices are
       attributes of variable 'pism_overrides' in the NetCDF files from pclimate
