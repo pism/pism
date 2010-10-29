@@ -33,28 +33,25 @@ Additional actions are needed before and after using dotune.sh.  Do this:
         $ ./boot.sh
   
   3.  run pclimate over ranges of parameters, generating cases and evaluating
-      the difference relative to Ettema's surface mass balance; generates
-      textfile "diffs.txt" but deletes pclimate output:
+      the difference relative to Ettema's surface mass balance; calls linesearch.py;
+      generates textfile "diffs.txt" but deletes pclimate outputs and config files:
         $ ./dotune.sh >> out.dotune &
 
       WAIT until it is finished; monitor diffs.txt:
         $ less diffs.txt
 
-  4.  add a column with a weighted objective, to get "Wdiffs.txt":
-        $ ./weights.py -2 10.0 -3 1.0 -4 3.0 diffs.txt Wdiffs.txt 
+  4.  find the cases with the lowest values of the weighted objective:
+        $ ./below.py -c 5 -l 5.0 diffs.txt | wc -l  # counts cases
+        $ ./below.py -c 5 -l 2.0 diffs.txt          # shows cases
 
-  5.  find the cases with the lowest values of the weighted objective:
-        $ ./below.py -c 5 -l 5.0 Wdiffs.txt | wc -l  # counts cases
-        $ ./below.py -c 5 -l 2.0 Wdiffs.txt          # shows cases
-
-  6.  once you have a case you like from the above, say
+  5.  once you have a case you like from the above, say
         clim_268_0.001_0.4_1.0.nc
       now regenerate this pclimate output, and make it nicer to look at by
       masking:
-        $ ./runcase.sh 268 0.001 0.4 1.0
+        $ ./linesearch.py --thresh=268 --snow=0.001 --refreeze=0.4 --stddev=1.0
         $ ./thkmask.py -H start.nc -v acab,smelt,srunoff,saccum clim_268_0.001_0.4_1.0.nc
 
-  7.  view it, comparing to target field 'smb' in same units in data file:
+  6.  view it, comparing to target field 'smb' in same units in data file:
         $ ncview clim_268_0.001_0.4_1.0.nc &
         $ ncview pism_Greenland_5km_v1.1.nc &
       note that, besides in the file names, the PDD parameter choices are

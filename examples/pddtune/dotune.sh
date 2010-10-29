@@ -28,12 +28,6 @@ DDFSNOWRANGE="0.001 0.002 0.003 0.005 0.009"   # default 0.003
 REFREEZERANGE="0.4 0.6 0.8"        # default 0.6
 STDDEVRANGE="1.0 2.5 6.0"          # default 2.53
 
-# harder: 5^3 * 10 = 1250 cases
-THRESHOLDRANGE="268 269 270 271 273"           # default 273.15
-DDFSNOWRANGE="0.001 0.002 0.003 0.005 0.009"   # default 0.003
-REFREEZERANGE="0.4 0.5 0.6 0.7 0.8"            # default 0.6
-STDDEVRANGE="0.5 1.0 1.25 1.5 1.75 2.5 3.0 4.0 5.0 6.0"              # default 2.53
-
 export DELETECLIMATE=1    # causes .nc produced by pclimate to be deleted
 
 for THRESHOLD in $THRESHOLDRANGE
@@ -42,14 +36,16 @@ do
   do
     for REFREEZE in $REFREEZERANGE
     do
-      for STDDEV in $STDDEVRANGE
+      for STDDEV in $STDDEVRANGE  # FIXME:  remove; hand linesearch the limits
       do
 
-        ## if not deleted, output of runcase.sh is 
+        ## if not deleted, output of linesearch.py are several files (?? FIXME ?) 
         ##   clim_${THRESHOLD}_${DDFSNOW}_${REFREEZE}_${STDDEV}.nc
 
-        # run case adds case to diffs.txt:
-        ./runcase.sh $THRESHOLD $DDFSNOW $REFREEZE $STDDEV diffs.txt
+        ./linesearch.py --thresh=$THRESHOLD --snow=$DDFSNOW \
+                        --refreeze=$REFREEZE --stddev=$STDDEV \
+                        --diffsfile=diffs.txt --startfile=start.nc \
+                        --deletenc
 
       done
     done
