@@ -39,6 +39,7 @@ const PetscScalar secpera    = 3.15569259747e7; // The constant used in UDUNITS
 const PetscScalar pi         = M_PI;		// defined in gsl/gsl_math.h
 
 enum PismMask {
+  MASK_BC               = -2,
   MASK_UNKNOWN          = -1,
   MASK_ICE_FREE_BEDROCK = 0,
   MASK_SHEET            = 1,

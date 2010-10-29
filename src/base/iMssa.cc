@@ -83,16 +83,18 @@ PetscErrorCode IceModel::initSSA() {
 PetscErrorCode IceModel::trivialMoveSSAXtoIMV2V() {
   PetscErrorCode  ierr;
   PISMVector2 **Xuv;
-  ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
-  ierr = DAVecGetArray(SSADA,SSAX,&Xuv); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      vel_ssa(i,j).u = Xuv[i][j].u;
-      vel_ssa(i,j).v = Xuv[i][j].v;
-    }
-  }
-  ierr = DAVecRestoreArray(SSADA,SSAX,&Xuv); CHKERRQ(ierr);
-  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
+
+  ierr = vel_ssa.copy_from(SSAX); CHKERRQ(ierr); 
+  // ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
+  // ierr = DAVecGetArray(SSADA,SSAX,&Xuv); CHKERRQ(ierr);
+  // for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+  //   for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  //     vel_ssa(i,j).u = Xuv[i][j].u;
+  //     vel_ssa(i,j).v = Xuv[i][j].v;
+  //   }
+  // }
+  // ierr = DAVecRestoreArray(SSADA,SSAX,&Xuv); CHKERRQ(ierr);
+  // ierr = vel_ssa.end_access(); CHKERRQ(ierr);
   return 0;
 }
 

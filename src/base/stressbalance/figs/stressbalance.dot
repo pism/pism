@@ -1,0 +1,51 @@
+digraph velocity
+{
+    // Global graph parameters
+    node [fontname=Arial fontsize=8 shape=box width=1.3 fixedsize=true];
+    edge [fontname=Arial fontsize=8];
+    graph [fontname=Arial fontsize=8 ranksep=0.5 nodesep=0.3];
+
+subgraph cluster_full_stokes {
+    label="Stokes"
+    labeljust=r
+    style=dotted
+    node [style=invis width=0.2 label=""];
+    foo -> bar -> baz [weight=10 style=invis];
+}
+subgraph cluster_pism {
+    label="PISM Stress Balance"
+    labeljust=r
+
+subgraph cluster_stressbalance {
+    label="Stress Balance objects"
+    labeljust=r
+    {rank=same
+        higher_order [label="Higher order" style=dotted];
+        noop1 [label="Set 2D velocity\nto zero"];
+        ssa [label="SSA"];
+    }
+}
+subgraph cluster_mod {
+    label="Modifiers"
+    labeljust=r
+    {rank=same
+        sia [label="SIA" color="brown"];
+        noop2 [label="Distribute\n2D velocity vertically"];
+        noop3 [label="Do nothing at all"];
+    }
+    sia -> noop2 [style=invis];
+}
+inc [label="Incompressibility"];
+noop1 -> noop2 [label="" style=invis weight=10];
+ssa -> sia [label="" style=invis weight=10];
+sia -> inc [label="" style=invis weight=10];
+
+}
+
+ssa -> sia -> inc [style=solid weight=0 color="green"];
+noop1 -> sia -> inc [style=dashed weight=0 color="blue"];
+ssa -> noop2 -> inc [style=dotted weight=0 color="red"];
+higher_order -> noop3 -> inc [style=dotted weight=0 color="black"];
+
+}
+

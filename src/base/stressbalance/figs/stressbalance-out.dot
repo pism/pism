@@ -1,0 +1,51 @@
+digraph out {
+    node [fontname=Arial fontsize=8 shape=box width=1.3 fixedsize=true];
+    edge [fontname=Arial fontsize=8];
+    graph [fontname=Arial fontsize=8 ranksep=0.5 nodesep=0.3];
+
+subgraph cluster_out {
+    // Global graph parameters
+
+    label="Outputs and their use"
+    labeljust=r
+
+    {rank=same
+        vel_2d [label="2D velocity"];   
+        frictional_heating [label="Frictional\nheating"];
+        max_uv [label="Maximum\n2D velocity"];
+    }
+    {rank=same
+        sia_flux [label="SIA flux"];
+        D_max [label="Maximum\ndiffusivity"];
+        vel_3d [label="3D horizontal\nvelocity" color="brown"];
+    }
+    vel_2d -> vel_3d [label="" style=invis weight=10];
+    frictional_heating -> sia_flux [style=invis weight=10];
+    {rank=same
+        vel_3d_full [label="Full 3D\nvelocity"];
+        max_uvw [label="Maximum\n3D velocity"];
+    }
+    vel_3d -> vel_3d_full [label="" style=invis weight=10];
+    D_max -> max_uvw [label="" style=invis weight=10];
+}
+
+{rank=same
+    adapt_dt_mass [label="Adaptive dt\n(mass continuity)"];
+    adapt_dt_energy [label="Adaptive dt\n(energy/age)"];
+    sigma [label="Strain heating"];
+}
+
+{rank=same
+    mass [label="Mass continuity\ntime step" color="brown"];
+    energy [label="Energy time step"];
+    age [label="Age time step"];
+}
+
+vel_3d_full -> sigma [style=dashed];
+{D_max max_uv} -> adapt_dt_mass [label="" style=dotted weight=0];
+{max_uvw} -> adapt_dt_energy [label="" style=dotted weight=0];
+{vel_2d adapt_dt_mass sia_flux} -> mass [style=dashed];
+{sigma vel_3d_full adapt_dt_energy frictional_heating} -> energy [style=dashed];
+{vel_3d_full adapt_dt_energy} -> age [style=dashed];
+
+}
