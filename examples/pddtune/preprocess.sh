@@ -49,9 +49,3 @@ ncks -O -x -v airtemp2m,surftemp $PISMDATA $PISMDATA  # we will use Fausto param
 ncatted -a standard_name,bheatflx,d,, $PISMDATA
 echo "  PISM-readable (-boot_file) file $PISMDATA created from $DATANAME"
 
-# form NetCDF version of basic config file
-CONFIG=base_config
-echo "  generating parameter-override (-config_override) $CONFIG.nc file from $CONFIG.cdl"
-rm -rf $CONFIG.nc   # remove old if present
-ncgen -o $CONFIG.nc $CONFIG.cdl
-

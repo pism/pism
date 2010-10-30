@@ -340,13 +340,18 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   ierr = runoff_rate.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   runoff_rate.write_in_glaciological_units = true;
 
+  if ((config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
+    lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
+    if (!lat) SETERRQ(1, "ERROR: 'latitude' is not available or is of wrong type in vars dictionary");
+  } else
+    lat = NULL;
+
+
   if (fausto_params) {
     ierr = verbPrintf(2, grid.com, 
        "  Setting PDD parameters using formulas (6) and (7) in [Faustoetal2009]...\n");
        CHKERRQ(ierr);
 
-    lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-    if (!lat) SETERRQ(1, "ERROR: 'latitude' is not available or is of wrong type in vars dictionary");
     lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
     if (!lon) SETERRQ(1, "ERROR: 'longitude' is not available or is of wrong type in vars dictionary");
     usurf = dynamic_cast<IceModelVec2S*>(vars.get("usurf"));
@@ -356,7 +361,6 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   } else {
     // generally, this is the case in which degree day factors do not depend
     //   on location; we use base_ddf
-    lat = NULL;
     lon = NULL;
     usurf = NULL;
   }
@@ -395,14 +399,23 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal t_years, PetscReal dt_years)
   for (PetscInt k = 0; k < Nseries; ++k)
     ts[k] = t_years + k * dt_years / Nseries;
 
+  if (lat != NULL) {
+    ierr = lat->begin_access(); CHKERRQ(ierr);
+  }
+
   if (faustogreve != NULL) {
     if (lat == NULL) { SETERRQ(1,"faustogreve object is allocated BUT lat==NULL"); }
     if (lon == NULL) { SETERRQ(2,"faustogreve object is allocated BUT lon==NULL"); }
     if (usurf == NULL) { SETERRQ(3,"faustogreve object is allocated BUT usurf==NULL"); }
-    ierr = lat->begin_access(); CHKERRQ(ierr)
-    ierr = lon->begin_access(); CHKERRQ(ierr)
-    ierr = usurf->begin_access(); CHKERRQ(ierr)
+    ierr = lon->begin_access(); CHKERRQ(ierr);
+    ierr = usurf->begin_access(); CHKERRQ(ierr);
     ierr = faustogreve->update_temp_mj(usurf, lat, lon); CHKERRQ(ierr);
+  }
+
+  const PetscScalar sigmalapserate = config.get("pdd_std_dev_lapse_lat_rate"),
+                    sigmabaselat   = config.get("pdd_std_dev_lapse_lat_base");
+  if (sigmalapserate != 0.0) {
+    if (lat == NULL) { SETERRQ(4,"pdd_std_dev_lapse_lat_rate is nonzero BUT lat==NULL"); }
   }
 
   DegreeDayFactors  ddf = base_ddf;
@@ -427,9 +440,15 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal t_years, PetscReal dt_years)
 	           CHKERRQ(ierr);
       }
 
-      // use the temperature time series to get the number of positive degree days (PDDs)
+      // use the temperature time series, the "positive" threshhold, and the 
+      //   standard deviation of the daily variability to get the number of
+      //   positive degree days (PDDs)
+      PetscScalar sigma = base_pddStdDev;
+      if (sigmalapserate != 0.0) {
+        sigma += sigmalapserate * ((*lat)(i,j) - sigmabaselat);
+      }
       PetscScalar pddsum = mbscheme->getPDDSumFromTemperatureTimeSeries(
-                                  base_pddStdDev, base_pddThresholdTemp,
+                                  sigma, base_pddThresholdTemp,
                                   tseries, dtseries, &T[0], Nseries);
 
       // use the temperature time series to remove the rainfall from the precipitation
@@ -456,8 +475,11 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal t_years, PetscReal dt_years)
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = atmosphere->end_pointwise_access(); CHKERRQ(ierr);
 
+  if (lat != NULL) {
+    ierr = lat->end_access(); CHKERRQ(ierr);
+  }
+
   if (faustogreve != NULL) {
-    ierr = lat->end_access(); CHKERRQ(ierr)
     ierr = lon->end_access(); CHKERRQ(ierr)
     ierr = usurf->end_access(); CHKERRQ(ierr)
   }

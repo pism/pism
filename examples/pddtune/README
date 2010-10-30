@@ -14,19 +14,22 @@ The tuning procedure is to adjust these PDD parameters; [X] is default value:
   pdd_positive_threshold_temp [273.15 K]
   pdd_factor_snow             [0.003 m K-1 day-1]
   pdd_refreeze                [0.6]
-  pdd_std_dev                 [2.53 K]
+  pdd_std_dev_lapse_lat_rate  [0.0 K degree_north-1]
 
 The degree-day factor for ice (pdd_factor_ice) is set to exactly double that for snow; see Hock (2005) for example.
 
+A line search is done over this variable, to get the total surface mass balance 
+from PISM to exactly equal that from RACMO/GR:
+  pdd_std_dev                 [2.53 K]
+
 The top-level script is dotune.sh.  It does this for each case:
-  -- calls runcase.sh
+  -- calls linesearch.py
   -- calls objective.py to compute differences and norms between 'smb' and 'acab'
 
 Additional actions are needed before and after using dotune.sh.  Do this:
 
   1.  download and clean-up metadata in the SeaRISE-Greenland
-      file, in preparation for next steps; also runs ncgen on the base .cdl version of
-      the configuration file; this file has 'smb' in the right units:
+      file, in preparation for next steps; this file has 'smb' in the right units:
         $ ./preprocess.sh
 
   2.  create a PISM-output file of the type pclimate can read:
@@ -45,14 +48,15 @@ Additional actions are needed before and after using dotune.sh.  Do this:
         $ ./below.py -c 5 -l 2.0 diffs.txt          # shows cases
 
   5.  once you have a case you like from the above, say
-        clim_268_0.001_0.4_1.0.nc
+        clim_268_0.001_0.4_0.300_1.0.nc
       now regenerate this pclimate output, and make it nicer to look at by
       masking:
-        $ ./linesearch.py --thresh=268 --snow=0.001 --refreeze=0.4 --stddev=1.0
-        $ ./thkmask.py -H start.nc -v acab,smelt,srunoff,saccum clim_268_0.001_0.4_1.0.nc
+        $ ./linesearch.py --thresh=268 --snow=0.001 --refreeze=0.4 --lapse=0.3 \
+              --sd=1.0 --diffsfile=diffs.txt --startfile=start.nc
+        $ ./thkmask.py -H start.nc -v acab,smelt,srunoff,saccum clim_268_0.001_0.4_0.300_1.0.nc
 
   6.  view it, comparing to target field 'smb' in same units in data file:
-        $ ncview clim_268_0.001_0.4_1.0.nc &
+        $ ncview clim_268_0.001_0.4_0.300_1.0.nc &
         $ ncview pism_Greenland_5km_v1.1.nc &
       note that, besides in the file names, the PDD parameter choices are
       attributes of variable 'pism_overrides' in the NetCDF files from pclimate

@@ -16,17 +16,17 @@ set -e  # exit on error
 #./preprocess.sh # generates pism_Greenland_5km_v1.1.nc and base_config.nc
 #./boot.sh  # creates start.nc, which contains 'thk' used in masking in objective.py
 
-# harder: 5^3 * 10 = 1250 cases
+# harder: 5^4 = 625 cases
 THRESHOLDRANGE="268 269 270 271 273"           # default 273.15
 DDFSNOWRANGE="0.001 0.002 0.003 0.005 0.009"   # default 0.003
 REFREEZERANGE="0.4 0.5 0.6 0.7 0.8"            # default 0.6
-STDDEVRANGE="0.5 1.0 1.25 1.5 1.75 2.5 3.0 4.0 5.0 6.0"              # default 2.53
+STDDEVLAPSERANGE="-0.3 -0.1 0.0 0.1 0.3"       # default 0.0
 
 # simpler: 3^3 * 5 = 135 cases
-THRESHOLDRANGE="268 270 273"       # default 273.15
+THRESHOLDRANGE="268 270 273"                   # default 273.15
 DDFSNOWRANGE="0.001 0.002 0.003 0.005 0.009"   # default 0.003
-REFREEZERANGE="0.4 0.6 0.8"        # default 0.6
-STDDEVRANGE="1.0 2.5 6.0"          # default 2.53
+REFREEZERANGE="0.4 0.6 0.8"                    # default 0.6
+STDDEVLAPSERANGE="-0.3 -0.1 0.0 0.1 0.3"       # default 0.0
 
 export DELETECLIMATE=1    # causes .nc produced by pclimate to be deleted
 
@@ -36,17 +36,14 @@ do
   do
     for REFREEZE in $REFREEZERANGE
     do
-      for STDDEV in $STDDEVRANGE  # FIXME:  remove; hand linesearch the limits
+      for STDDEVLAPSE in $STDDEVLAPSERANGE
       do
-
-        ## if not deleted, output of linesearch.py are several files (?? FIXME ?) 
-        ##   clim_${THRESHOLD}_${DDFSNOW}_${REFREEZE}_${STDDEV}.nc
-
-        ./linesearch.py --thresh=$THRESHOLD --snow=$DDFSNOW \
-                        --refreeze=$REFREEZE --stddev=$STDDEV \
-                        --diffsfile=diffs.txt --startfile=start.nc \
-                        --deletenc
-
+        ./linesearch.py --thresh=$THRESHOLD \
+                        --snow=$DDFSNOW \
+                        --refreeze=$REFREEZE \
+                        --sdlapse=$STDDEVLAPSE \
+                        --tol=0.0001 \
+                        --diffsfile=diffs.txt --startfile=start.nc --deletenc
       done
     done
   done

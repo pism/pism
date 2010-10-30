@@ -209,7 +209,13 @@ netcdf pism_config {
     pism_config:pdd_refreeze_doc = "pure fraction; EISMINT-Greenland value [\\ref RitzEISMINT] ";
 
     pism_config:pdd_std_dev = 2.53;
-    pism_config:pdd_std_dev_doc = "Kelvin; std dev of daily temp variation; value from [\\ref Faustoetal2009]; compare EISMINT-Greenland value of 5.0 [\\ref RitzEISMINT] ";
+    pism_config:pdd_std_dev_doc = "K; std dev of daily temp variation; value from [\\ref Faustoetal2009]; compare EISMINT-Greenland value of 5.0 [\\ref RitzEISMINT] ";
+
+    pism_config:pdd_std_dev_lapse_lat_base = 72.0;
+    pism_config:pdd_std_dev_lapse_lat_base_doc = "degrees_north; std_dev is a function of latitude, with value pdd_std_dev at this latitude; this value only active if pdd_std_dev_lapse_lat_rate is nonzero ";
+
+    pism_config:pdd_std_dev_lapse_lat_rate = 0.0;
+    pism_config:pdd_std_dev_lapse_lat_rate_doc = "K degrees_north-1; std_dev is a function of latitude, with rate of change with respect to latitude given by this constant ";
 
     pism_config:pdd_fausto_latitude_beta_w = 72.0;
     pism_config:pdd_fausto_latitude_beta_w_doc = "degrees N; latitude below which to use warm case, in formula (6) in [\\ref Faustoetal2009] ";
