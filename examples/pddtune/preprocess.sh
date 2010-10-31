@@ -42,10 +42,8 @@ ncatted -O -a units,smb,m,c,"m a-1" $PISMDATA
 ncatted -O -a long_name,smb,m,c,"ice-equivalent surface mass balance rate" $PISMDATA
 ncatted -a standard_name,smb,d,, $PISMDATA
 
-# delete some more fields which we will not use, to avoid confusion
-ncks -O -x -v airtemp2m,surftemp $PISMDATA $PISMDATA  # we will use Fausto parameterization
-
 # delete incorrect standard_name attribute from bheatflx; there is no known standard_name
 ncatted -a standard_name,bheatflx,d,, $PISMDATA
+
 echo "  PISM-readable (-boot_file) file $PISMDATA created from $DATANAME"
 

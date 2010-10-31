@@ -33,7 +33,7 @@ Additional actions are needed before and after using dotune.sh.  Do this:
         $ ./preprocess.sh
 
   2.  create a PISM-output file of the type pclimate can read:
-        $ ./boot.sh
+        $ ./boot.sh >> log.boot
   
   3.  run pclimate over ranges of parameters, generating cases and evaluating
       the difference relative to Ettema's surface mass balance; calls linesearch.py;
@@ -43,16 +43,18 @@ Additional actions are needed before and after using dotune.sh.  Do this:
       WAIT until it is finished; monitor diffs.txt:
         $ less diffs.txt
 
-  4.  find the cases with the lowest values of the weighted objective:
-        $ ./below.py -c 5 -l 5.0 diffs.txt | wc -l  # counts cases
-        $ ./below.py -c 5 -l 2.0 diffs.txt          # shows cases
+  4.  find the cases which have small smb difference, or with the lowest values
+      of the weighted objective:
+        $ ./below.py -a -c 2 -l 0.0001 diffs.txt | wc -l  # counts cases with smb difference
+                                                          #   under TOL=0.0001
+        $ ./below.py -c 5 -l 5.0 diffs.txt | wc -l  # counts cases with weighted < 5.0
+        $ ./below.py -c 5 -l 5.0 diffs.txt          # shows same cases
 
-  5.  once you have a case you like from the above, say
+  5.  once you have a case you like from the above, with a name like this:
         clim_268_0.001_0.4_0.300_1.0.nc
-      now regenerate this pclimate output, and make it nicer to look at by
-      masking:
-        $ ./linesearch.py --thresh=268 --snow=0.001 --refreeze=0.4 --lapse=0.3 \
-              --sd=1.0 --diffsfile=diffs.txt --startfile=start.nc
+      now regenerate this pclimate output, and the corresponding config file:
+        $ ./linesearch.py --reproduce=clim_268_0.001_0.4_0.300_1.0.nc --startfile=start.nc
+      here is a way to make it nicer to look at by masking with (thk>0):
         $ ./thkmask.py -H start.nc -v acab,smelt,srunoff,saccum clim_268_0.001_0.4_0.300_1.0.nc
 
   6.  view it, comparing to target field 'smb' in same units in data file:

@@ -13,20 +13,26 @@ from numpy import array, double, int
 from getopt import getopt, GetoptError
 from sys import argv, exit
 
-# FIXME : need to actually implement a line search!  for now this is just
-#   "runcase.sh" re-written into python, with weights.py incorporated
-
 usage="""
-LINESEARCH.PY  Do bisection search on stddev parameter of PDD.  Abort search
-if stddev=0 and stddev=10 do not cause mean smb error to bracket zero.
+LINESEARCH.PY  Do line search (bisection and false position) on stddev parameter
+of the PDD model for surface mass balance.  Abort search if stddev=0.5 and
+stddev=10.0 do not make pclimate output total smb bracket the target smb.
 
 Imports computeobjective() method from stand-alone objective.py.
 
 Examples:
-  ./linesearch.py --thresh=268 --snow=0.001 --refreeze=0.4 --stddev=1.0 \
-      --diffsfile=foo.txt --startfile=start.nc
+
+1) do a linesearch:
+  ./linesearch.py --thresh=268 --snow=0.001 --refreeze=0.4 --lapse=0.3 \
+      --diffsfile=diffs.txt --startfile=start.nc
+
+2) reproduce a file from its name:
+  ./linesearch.py --reproduce=clim_268_0.001_0.4_0.300_1.0.nc --startfile=start.nc
   
-  ./linesearch.py --help   # print this message
+3) get help; print this message:
+  ./linesearch.py --help
+
+See:  dotune.sh, boot.sh, objective.py, README.
 """
 
 def usagefailure(message):
@@ -36,9 +42,12 @@ def usagefailure(message):
     exit(2)
 
 class Case:
-    """Holds parameters for one pclimate case, and some functionality"""
+    """Holds parameters for one pclimate case.  Has functionality related to
+naming scheme for pclimate configuration and output NetCDF files, e.g.
+'clim_268.0_0.002_0.80_0.001_1.688.nc' and similar.  For this name, the
+'nameroot' is '268.0_0.002_0.80_0.001_1.688'."""
     def __init__(self):
-      self.threshold = 273.15
+      self.threshhold = 273.15
       self.ddfsnow = 0.003
       self.ddfice = 2.0 * self.ddfsnow
       self.refreeze = 0.6
@@ -46,10 +55,21 @@ class Case:
       self.stddev = 2.53
     def update_ddfice(self):
       self.ddfice = 2.0 * self.ddfsnow
-    def nameroot(self):
+    def get_nameroot(self):
       self.update_ddfice()
-      return "%.1f_%.3f_%.2f_%.3f_%.3f" \
+      return "%.1f_%.3f_%.2f_%.3f_%.4f" \
          % (self.threshhold, self.ddfsnow, self.refreeze, self.stddev_lapse, self.stddev)
+    def put_nameroot(self,namerootIN):
+      p = namerootIN.split('_')
+      if len(p) < 5:
+        print "ERROR: nameroot provided to Case.put_nameroot has too few params"
+        exit(1)
+      self.threshhold = float(p[0])
+      self.ddfsnow = float(p[1])
+      self.refreeze = float(p[2])
+      self.stddev_lapse = float(p[3])
+      self.stddev = float(p[4])
+      self.update_ddfice()      
     def put_pism_overrides(self,nc):
       """input nc is an open NetCDF file"""
       self.update_ddfice()
@@ -65,15 +85,19 @@ class Case:
 
 class Files:
     def __init__(self):
-      self.targetfile = "HUH.nc"
-      self.startfile = "JOE.nc"
-      self.diffsfile = "BAZ.txt"
+      # it might be good to have this controllable at command line:
+      # name of PISM file with Greenland geometry and precip,smb from Ettema et al.
+      #   and other needed info to run pclimate:
+      DATANAME = "Greenland_5km_v1.1.nc"
+      self.targetfile = "pism_" + DATANAME
+      self.startfile = "start.nc"  # effectively allow user to forget --startfile=
+      self.diffsfile = ""  # if user forgets --diffsfile=foo.txt then writes to stdout
     def configfile(self,cp):
       "this is output of pclimate, which will be evaluated against PISMDATA"
-      return "config_" + cp.nameroot() + ".nc"
+      return "config_" + cp.get_nameroot() + ".nc"
     def climatefile(self,cp):
       "this is the configuration file for the -config_override mechanism"
-      return "clim_" + cp.nameroot() + ".nc"
+      return "clim_" + cp.get_nameroot() + ".nc"
     def printme(self, cp):
       print self.targetfile
       print self.startfile
@@ -95,7 +119,7 @@ def evalcase(stddev, cp, fn, deletencfiles):
 
     from objective import computeobjective
 
-    configopt = " -config_override  " + fn.configfile(cp)
+    configopt = " -config_override " + fn.configfile(cp)
     print "  creating -config_override file %s ..." % fn.configfile(cp)
     try:
       nc_config = NC(fn.configfile(cp), 'w')
@@ -176,23 +200,35 @@ def evalcase(stddev, cp, fn, deletencfiles):
     print ""
     return avdiff
 
+def reproduce(climfilename, fn):
+    """parses a pclimate output file name, and runs evalcase() to reproduce that run"""
+    # input fn is of type Filenames()
+    if not(climfilename.endswith('.nc')):
+      print "ERROR: filename needs to be a NetCDF file"
+      exit(1)
+    if not(climfilename.startswith('clim_')):
+      print "WARNING: filename was expected to start with 'clim_'"
+      print "         (in any case, filename will be stripped through first '_' to"
+      print "         generate the nameroot)"
+    nr = climfilename[climfilename.find('_')+1:-3]
+    cp = Case()
+    cp.put_nameroot(nr)
+    result = evalcase(cp.stddev, cp, fn, False)
+    print "************ result at stddev=%.5f is %.5f ***********" \
+          % (cp.stddev, result)
+    
 
 if __name__ == "__main__":
 
     cp = Case()
     fn = Files()
 
-    # FIXME:  make this controllable at command line
-    # name of PISM file with Greenland geometry and precip,smb from Ettema et al.
-    #   and other needed info to run pclimate:
-    DATANAME = "Greenland_5km_v1.1.nc"
-    fn.targetfile = "pism_" + DATANAME
-
     try:
       opts, args = getopt(argv[1:], "", 
                           ["thresh=", "snow=", "refreeze=", "lapse=",
                            "sd=",  # <-- if this is an option then don't do linesearch
                            "tol=",
+                           "reproduce=",
                            "diffsfile=", "startfile=", "deletenc", "help","usage"])
     except GetoptError:
       usagefailure('ERROR: INCORRECT COMMAND LINE ARGUMENTS FOR linesearch.py')
@@ -219,6 +255,11 @@ if __name__ == "__main__":
             fn.startfile = optarg
         if opt in ("--deletenc"):
             deletencfiles = True
+        if opt in ("--reproduce"):
+            if deletencfiles:
+              print "WARNING: option --deletenc is ignored; output files will remain"
+            reproduce(optarg, fn)
+            exit(0)
         if opt in ("--help", "--usage"):
             print usage
             exit(0)
@@ -226,11 +267,6 @@ if __name__ == "__main__":
     print "LINESEARCH.PY CASE  (threshhold=%.2f, ddfsnow=%.4f, refreeze=%.2f, sdlapse=%.3f)" \
               % (cp.threshhold, cp.ddfsnow, cp.refreeze, cp.stddev_lapse)
     print ""
-
-    try:
-      from netCDF4 import Dataset as NC
-    except:
-      from netCDF3 import Dataset as NC
 
     if not(dolinesearch):
       result = evalcase(cp.stddev, cp, fn, False)
