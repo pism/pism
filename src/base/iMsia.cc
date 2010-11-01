@@ -313,7 +313,7 @@ PetscErrorCode IceModel::compute_delta() {
 
   PetscScalar *delta;
 
-  const double enhancement_factor = config.get("enhancement_factor"),
+  double enhancement_factor = config.get("enhancement_factor"),
                constant_grain_size = config.get("constant_grain_size");
 
   // put "theta" from Schoof (2003) bed smoothness calculation in vWork2d[4]
@@ -359,6 +359,7 @@ PetscErrorCode IceModel::compute_delta() {
   }
 
   // enthalpy:
+  bool e_age_coupling = config.get_flag("do_e_age_coupling");
   PetscScalar *Enthij, *Enthoffset;
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
 
@@ -402,6 +403,15 @@ PetscErrorCode IceModel::compute_delta() {
             if (usetau3 && usesGrainSize && realAgeForGrainSize) {
               grainsize = grainSizeVostok(0.5 * (ageij[k] + ageoffset[k]));
             }
+          
+            if (e_age_coupling) {
+              PetscReal age = 0.5 * (ageij[k] + ageoffset[k]) / secpera; // age in years
+              if (age < 11000) {
+                enhancement_factor = 1;
+              } else {
+                enhancement_factor = 3; 
+              }
+            } 
             // If the flow law does not use grain size, it will just ignore it, no harm there
 
             PetscScalar E = 0.5 * (Enthij[k] + Enthoffset[k]);

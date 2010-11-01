@@ -99,7 +99,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 			 my_nuH, my_useConstantNuH); CHKERRQ(ierr);
   // user gives nu*H in MPa yr m (e.g. Ritz et al 2001 value is 30.0 * 1.0)
   if (my_useConstantNuH) {
-    setConstantNuHForSSA(my_nuH  * 1.0e6 * secpera); // convert to Pa s m
+    setConstantNuHForSSA(my_nuH  * 1.0e6 * secpera); // convert to Pa s 
   }
 
 // "-csurf_to_till" read in invertVelocitiesFromNetCDF() in iMinverse.cc
@@ -157,6 +157,21 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.flag_from_option("mass", "do_mass_conserve"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("temp", "do_temp"); CHKERRQ(ierr);
+
+  // implements an option e.g. described in \ref Greve that is the
+  // enhancement factor is coupled to the age of the ice with
+  // e = 1 (A < 11'000 years), e = 3 otherwise
+  ierr = PISMOptionsIsSet("-e_age_coupling", flag); CHKERRQ(ierr);
+  if (flag) {
+    config.set_flag("do_age", true);
+    config.set_flag("do_e_age_coupling", true);
+    ierr = verbPrintf(2, grid.com,
+		      "  setting age-dependent enhancement factor: "
+                      "e=1 if A<11'000 years, e=3 otherwise\n"); CHKERRQ(ierr);
+
+  } else {
+    config.set_flag("do_e_age_coupling", false);
+  }
 
 // note "-o" is in use for output file name; see iMIO.cc
 
