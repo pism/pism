@@ -14,35 +14,21 @@ from www.pism-docs.org.
 
 Intallation high points:  PETSc (http://www-unix.mcs.anl.gov/petsc/) must be
 installed and functioning before PISM can be built.  In fact we assume now that
-PETSC_DIR and PETSC_ARCH are set properly.  If FFTW is not available do 
-"export WITH_FFTW=0".
+PETSC_DIR and PETSC_ARCH are set properly.
 
-Now do this to check for updates and build and install:
+To install PISM locally (in the PISM source tree), do
 
-  $ make update install # puts PISM binaries in /usr/local/bin/ and
-                        #   /usr/local/lib/, which may require root permission
-  
-If you want to specify a directory where PISM executables should be put, for
-example into ~/usr/local/, it looks like this:
+  $ cd pism-dev
+  $ make
+  $ export PATH=${PWD}/bin:${PATH}
 
-  $ PISM_INSTALL_PREFIX=~/usr/local cmake ..
-  $ make update install
-  $ PATH=~/usr/local/bin/:$PATH     # PATH sees the PISM executables
-
-You may want to add lines
-
-  export PISM_INSTALL_PREFIX=~/usr/local
-  export PATH=~/usr/local/bin/:$PATH
-
-to your .bashrc or similar.
-
-You can check that the PISM executables can be found by something like:
+You can check that PISM executables can be found by running:
 
   $ which pismr
 
 and this should tell you a directory in which executable "pismr" is found.
 
-Now run a simplified geometry experiment with 2 processes
+Now run a simplified geometry experiment on 1 processor:
 
   $ pisms
 
@@ -55,9 +41,14 @@ With 2 processes:
 
 To get source code updates including bug fixes, and build and install them, do
 
-  $ make update install
+  $ svn up
+  $ make
 
+(This will install an updated version of PISM in the source tree. Please see
+the Installation Manual if you want to build and install out-of-source.)
 
 We have written a PISM User's Manual (PDF) which will explain most of what
 you want to know.  We hope.  Find it at www.pism-docs.org.
 
+If you have quiestions about PISM, its installation or use, do not hesitate to
+e-mail us at <help@pism-docs.org>.

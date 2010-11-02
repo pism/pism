@@ -21,37 +21,53 @@
 
 #include "iceModelVec.hh"
 
-//! Shallow stress balance modifier (such as the SIA).
+//! Shallow stress balance modifier (such as the non-sliding SIA).
 class SSB_Modifier
 {
 public:
-  SSB_Modifier(IceGrid &g,
-               const NCConfigVariable &config);
-  virtual ~SSB_Modifier();
+  SSB_Modifier(IceGrid &g, const NCConfigVariable &config)
+  { D_max = 0.0; }
+  virtual ~SSB_Modifier() {}
 
-  PetscErrorCode init();
-  PetscErrorCode update(IceModelVec2V *input, bool fast);
+  virtual PetscErrorCode init(PISMvars &vars);
+
+  virtual PetscErrorCode update(IceModelVec2V &vel_input,
+                                IceModelVec2S &D2_input,
+                                bool fast) = 0;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result) = 0;
+  virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result)
+  { result = &diffusive_flux; return 0; }
+
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  PetscErrorCode get_max_diffusivity(PetscReal &D) = 0;
-  PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u, IceModelVec3* &v) = 0;
+  virtual PetscErrorCode get_max_diffusivity(PetscReal &D)
+  { D = D_max; return 0; }
+
+  virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result);
+  { u_result = &u; v_result = &v; return 0; }
+
+  virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &result)
+  { result = &Sigma; return 0; }
 protected:
+  virtual PetscErrorCode compute_sigma(IceModelVec3 &Sigma) = 0;
+
   IceGrid &grid;
   const NCConfigVariable &config;
+  PetscReal D_max;
 
-  IceModelVec3 u, v;
+  IceModelVec2Stag diffusive_flux;
+  IceModelVec3 u, v, Sigma;
 };
 
-//! PISM's SIA implementation.
-class SIA
+
+//! The trivial Shallow Stress Balance modifier.
+class SSB_Trivial : public SSB_Modifier
 {
 public:
-  SIA(IceGrid &g,
-      const NCConfigVariable &config);
-  virtual ~SIA();
+  SSB_Trivial(IceGrid &g, const NCConfigVariable &config);
+  virtual ~SSB_Trivial();
+  virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
 protected:
+  virtual PetscErrorCode compute_sigma(IceModelVec3 &Sigma);
 };
-
 #endif /* _SSB_MODIFIER_H_ */

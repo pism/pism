@@ -18,18 +18,43 @@
 
 #include "SSB_Modifier.hh"
 
-//! \brief Perform the SIA computation.
-PetscErrorCode SIA::update(bool fast) {
+//! \brief Distribute the input velocity throughout the column.
+PetscErrorCode SSB_Trivial::update(IceModelVec2V &vel_input, bool fast) {
   PetscErrorCode ierr;
 
-  ierr = compute_surface_gradient(); CHKERRQ(ierr);
-
-  ierr = compute_sia_flux(fast); CHKERRQ(ierr);
-
-  if (!fast) {
-    ierr = compute_horizontal_3d_velocity(); CHKERRQ(ierr);
+  ierr = u.begin_access(); CHKERRQ(ierr);
+  ierr = v.begin_access(); CHKERRQ(ierr);
+  ierr = vel_input.begin_access(); CHKERRQ(ierr);
+  
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      ierr = u.setColumn(i,j, vel_input(i,j).u); CHKERRQ(ierr);
+      ierr = v.setColumn(i,j, vel_input(i,j).v); CHKERRQ(ierr);
+    }
   }
+
+  ierr = vel_input.end_access(); CHKERRQ(ierr);
+  ierr = v.end_access(); CHKERRQ(ierr);
+  ierr = u.end_access(); CHKERRQ(ierr);  
 
   return 0;
 }
 
+
+//! \brief Compute the volumetric strain heating.
+/*!
+ * Uses 
+ * - delta on the staggered grid, which should be initialized by the update(true) call.
+ * - enthalpy
+ * - surface gradient on the staggered grid
+ * - ice thickness relative to the smoothed bed
+ */
+PetscErrorCode SSB_Modifier::compute_sigma(IceModelVec2S &D2_input, IceModelVec3 &result) {
+  PetscErrorCode ierr;
+
+  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
+  
+  ierr = enthalpy->end_access(); CHKERRQ(ierr);
+
+  return 0;
+}

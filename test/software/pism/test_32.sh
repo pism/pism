@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #32: EISMINT-Ross experiment regression"
+test="Test #32: EISMINT-Ross experiment regression."
 # The list of files to delete when done.
 files="ross.nc riggs.nc rossComputed.nc ross.txt"
 dir=`pwd`
@@ -25,6 +25,7 @@ from numpy import double, abs
 from sys import exit
 chi_squared = 1e6
 good_chi_squared = 5379.366
+rel_tolerance = 0.01
 
 f = open("ross.txt")
 for line in f:
@@ -34,7 +35,7 @@ for line in f:
     break
 
 rel_difference = abs(chi_squared - good_chi_squared) / good_chi_squared
-if rel_difference < 0.01:
+if rel_difference < rel_tolerance:
 #  print "Chi^2 compared: %f and %f. Difference: %f%%" % (chi_squared, good_chi_squared, rel_difference*100)
   exit(0)
 else:

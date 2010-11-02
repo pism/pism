@@ -27,41 +27,44 @@
 class PISMStressBalance
 {
 public:
-  PISMStressBalance(IceGrid &g,
+  PISMStressBalance(IceGrid &g, IceFlowLaw &ice,
                     const NCConfigVariable &config);
   virtual ~PISMStressBalance();
 
-  PetscErrorCode init();
+  virtual PetscErrorCode init();
 
-  PetscErrorCode set_boundary_conditions(IceModelVec2S &locations,
-                                         IceModelVec2V &velocities);
+  virtual PetscErrorCode set_boundary_conditions(IceModelVec2S &locations,
+                                                 IceModelVec2V &velocities);
 
   //! \brief Update all the fields if fast == false, only update diffusive flux
   //! and max. diffusivity otherwise.
-  PetscErrorCode update(bool fast);
+  virtual PetscErrorCode update(bool fast);
 
   //! \brief Get the advective (SSA) 2D velocity.
-  PetscErrorCode get_advective_2d_velocity(IceModelVec2V* &result);
+  virtual PetscErrorCode get_advective_2d_velocity(IceModelVec2V* &result);
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result);
+  virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result);
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  PetscErrorCode get_max_diffusivity(PetscReal &D);
+  virtual PetscErrorCode get_max_diffusivity(PetscReal &D);
   //! \brief Get the max advective velocity (for the adaptive time-stepping).
-  PetscErrorCode get_max_2d_velocity(PetscReal &result);
+  virtual PetscErrorCode get_max_2d_velocity(PetscReal &result);
 
   // for the energy/age time step:
 
   //! \brief Get the 3D velocity (for the energy/age time-stepping).
-  PetscErrorCode get_3d_velocity(IceModelVec3* &u, IceModelVec3* &v, IceModelVec3* &w);
+  virtual PetscErrorCode get_3d_velocity(IceModelVec3* &u, IceModelVec3* &v, IceModelVec3* &w);
   //! \brief Get the max 3D velocity (for the adaptive time-stepping).
-  PetscErrorCode get_max_3d_velocity(PetscReal &u, PetscReal &v, PetscReal &w);
+  virtual PetscErrorCode get_max_3d_velocity(PetscReal &u, PetscReal &v, PetscReal &w);
   //! \brief Get the basal frictional heating (for the energy time-stepping).
-  PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &result);
+  virtual PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &result);
 
   // diagnostic fields:
-  PetscErrorCode get_2d_velocity(IceModelVec2V &result);
+  virtual PetscErrorCode get_2d_velocity(IceModelVec2V &result);
+
+  //! \brief Extends the computational grid (vertically).
+  virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
 protected:
-  PetscErrorCode compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v);
+  virtual PetscErrorCode compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v);
   IceGrid &grid;
   const NCConfigVariable &config;
 

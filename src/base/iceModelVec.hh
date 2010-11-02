@@ -249,6 +249,7 @@ public:
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();
   virtual PetscScalar& operator() (int i, int j, int k);
+  virtual PetscErrorCode norm_all(NormType n, PetscReal &result0, PetscReal &result1);
   // component-wise access:
   virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
   virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
@@ -339,22 +340,23 @@ protected:
   Vec sounding_buffer;
 };
 
+
 /*
-// FIXME: We need this and a IceModelVec3V (3D-distributed horizontal velocity)
-// class.
+// FIXME: We need a IceModelVec3V (3D-distributed horizontal velocity) class.
 
 //! This class is for storing 3D scalar quantities on the grid staggered in
 //! horizontal directions.
 class IceModelVec3Stag : public IceModelVec {
 public:
   IceModelVec3Stag();
+  virtual ~IceModelVec3Stag();
+
   virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[],
 				 bool local, int stencil_width = 1);
   virtual PetscErrorCode  begin_access();
   virtual PetscErrorCode  end_access();
   virtual PetscErrorCode  getInternalColumn(PetscInt i, PetscInt j,
                                             PetscScalar** &column);
-  virtual ~IceModelVec3Stag();
 };
 */
 

@@ -463,6 +463,12 @@ PetscErrorCode IceModelVec2S::min(PetscScalar &result) {
 
 // IceModelVec2
 
+/*!
+ * This could be implemented using VecStrideGather, but our code is more
+ * flexible: \c source and the current IceModelVec2 need not be both local or
+ * global.
+ */
+
 PetscErrorCode IceModelVec2::get_component(int N, Vec result) {
   PetscErrorCode ierr;
   void *tmp_res = NULL, *tmp_v;
@@ -487,6 +493,11 @@ PetscErrorCode IceModelVec2::get_component(int N, Vec result) {
   return 0;
 }
 
+/*!
+ * This could be implemented using VecStrideScatter, but our code is more
+ * flexible: \c source and the current IceModelVec2 need not be both local or
+ * global.
+ */
 PetscErrorCode IceModelVec2::set_component(int N, Vec source) {
   PetscErrorCode ierr;
   void *tmp_src = NULL, *tmp_v;
@@ -663,5 +674,19 @@ PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2V &result) {
   ierr = end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
 
+  return 0;
+}
+
+//! \brief Computes the norm of both components.
+PetscErrorCode IceModelVec2Stag::norm_all(NormType n, PetscReal &result0, PetscReal &result1) {
+  PetscErrorCode ierr;
+  PetscReal norm[2];
+
+  ierr = VecStrideNormAll(v, n, norm); CHKERRQ(ierr);
+
+  result0 = norm[0];
+  result1 = norm[1];
+  // FIXME: do we need to call Allreduce? I don't think so, but this would mean
+  // that VecStrideNormAll and VecNorm are different in this respect...
   return 0;
 }

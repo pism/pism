@@ -157,6 +157,12 @@ PetscErrorCode IceModelVec::norm(NormType n, PetscReal &out) {
   PetscReal my_norm, gnorm;
   ierr = checkAllocated(); CHKERRQ(ierr);
 
+  if (dof != 1) {
+      SETERRQ1(1, 
+         "IceModelVec::norm(...): dof > 1 is not supported (called as %s.norm(...))\n",
+         name.c_str());
+  }
+
   ierr = VecNorm(v, n, &my_norm); CHKERRQ(ierr);
 
   if (localp) {

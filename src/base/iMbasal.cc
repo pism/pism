@@ -308,6 +308,10 @@ till is computed by these lines, which are recommended for this purpose:
 
   p_eff  = p_over - getBasalWaterPressure(thk, bwat, bmr, frac, hmelt_max);
 </code>
+
+FIXME: this is called at \b every grid point, so config.get(...) calls should
+be moved out of here (they are slow). This can be done by creating an object
+representing a model of the basal water pressure, for example.
  */
 PetscScalar IceModel::getBasalWaterPressure(PetscScalar thk, PetscScalar bwat,
 				            PetscScalar bmr, PetscScalar frac,
@@ -451,7 +455,7 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
 
 //! Apply explicit time step for pure diffusion to basal layer of melt water.
 /*!
-See preprint \ref BBssasliding .
+See \ref BBssasliding .
 
 Uses vWork2d[0] to temporarily store new values for Hmelt.
  */

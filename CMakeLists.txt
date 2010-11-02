@@ -12,7 +12,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 string (LENGTH "$ENV{PISM_INSTALL_PREFIX}" INSTALL_PREFIX_LENGTH)
 if (INSTALL_PREFIX_LENGTH)
   set (CMAKE_INSTALL_PREFIX $ENV{PISM_INSTALL_PREFIX} CACHE PATH "PISM install prefix" FORCE)
-  message ("-- Setting PISM install prefix to ${CMAKE_INSTALL_PREFIX}.")
+  message (STATUS "Setting PISM install prefix to ${CMAKE_INSTALL_PREFIX}.")
 endif()
 
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
@@ -30,6 +30,20 @@ set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to d
 #option (Pism_BUILD_TESTS       "Build tests"                                           ON)
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
+option (Pism_LOCAL_INSTALL     "Install PISM locally (not in /usr/local/ or similar). This affects installation paths." ON)
+
+# This installs PISM in ${CMAKE_INSTALL_PREFIX}/{bin,lib,doc} if installed
+# locally; otherwise in ${CMAKE_INSTALL_PREFIX}/bin/pism, .../lib/pism and
+# .../share/doc/pism.
+if (Pism_LOCAL_INSTALL)
+  set (Pism_BIN_DIR "bin")
+  set (Pism_LIB_DIR "lib")
+  set (Pism_DOC_DIR "doc")
+else ()
+  set (Pism_BIN_DIR "bin/pism")
+  set (Pism_LIB_DIR "lib/pism")
+  set (Pism_DOC_DIR "share/doc/pism")
+endif ()
 
 # Deal with build types
 set (Pism_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel.")
@@ -73,7 +87,7 @@ set (Pism_REVISION_TAG "${Pism_BRANCH} ${Pism_VERSION_MAJOR}.${Pism_VERSION_MINO
 
 # set Pism_DEFAULT_CONFIG_FILE
 if (NOT Pism_DEFAULT_CONFIG_FILE)
-  set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/lib/pism/pism_config.nc")
+  set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}/pism_config.nc")
 endif ()
 
 # We could set this here, but it forces a full recompile if the version
@@ -113,18 +127,18 @@ add_custom_target (etags
 ## Use full RPATH, with this setting Pism libraries cannot be moved after installation
 ## but the correct libraries will always be found regardless of LD_LIBRARY_PATH
 ## in use, i.e. don't skip the full RPATH for the build tree
-set (CMAKE_SKIP_BUILD_RPATH  FALSE)
+set (CMAKE_SKIP_BUILD_RPATH FALSE)
 # when building, don't use the install RPATH already
 # (but later on when installing)
 set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
 # the RPATH to be used when installing
-set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/pism")
+set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
 # add the automatically determined parts of the RPATH
 # which point to directories outside the build tree to the install RPATH
 set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # Mac OS X install_name fix:
-set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib/pism")
+set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
 
 add_subdirectory (src)
 add_subdirectory (doc)
@@ -138,7 +152,7 @@ install (PROGRAMS
   util/nc2mat.py
   util/nccmp.py
   util/pism_config_editor.py
-  DESTINATION bin/)
+  DESTINATION ${Pism_BIN_DIR})
 
 # Packaging:
 if (APPLE)

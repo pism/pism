@@ -21,7 +21,7 @@ if (PDFLATEX_COMPILER AND Pism_BUILD_DOCS)
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     install (FILES "${CMAKE_CURRENT_BINARY_DIR}/${NAME}.pdf"
-      DESTINATION share/doc/pism)
+      DESTINATION ${Pism_DOC_DIR})
   endforeach ()
 
   # User's Manual:
@@ -58,7 +58,7 @@ if (PDFLATEX_COMPILER AND Pism_BUILD_DOCS)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   install (FILES "${CMAKE_CURRENT_BINARY_DIR}/manual.pdf"
-    DESTINATION share/doc/pism)
+    DESTINATION ${Pism_DOC_DIR})
 
   # A global target that gets built with "make all". Ensures that PISM
   # documentation is built for "make install"
@@ -121,7 +121,7 @@ if (PDFLATEX_COMPILER AND Pism_BUILD_DOCS)
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser)
 
     install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser/html
-      DESTINATION share/doc/pism)
+      DESTINATION ${Pism_DOC_DIR})
 
   endif()
 endif ()
