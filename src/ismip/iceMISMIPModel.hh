@@ -111,8 +111,7 @@ public:
 private:
   PetscInt    exper, gridmode, stepindex, modelnum;
   char        sliding;
-  PetscScalar initialthickness, runtimeyears, dHdtnorm_atol;
-  PetscTruth  steadyOrGoalAchieved;
+  PetscScalar initialthickness, runtimeyears, dHdtnorm_atol, dxgdt_atol;
   bool writeExtras, tryCalving;
   char        initials[PETSC_MAX_PATH_LEN],  // initials of user, for MISMIP reporting
               mprefix[PETSC_MAX_PATH_LEN];

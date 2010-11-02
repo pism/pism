@@ -276,27 +276,23 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
 
   ierr = verbPrintf(2, grid.com,
-    "* Initializing the default temperature-index, PDD-based surface (snow) processes\n"
+    "* Initializing the default temperature-index, PDD-based surface processes\n"
     "  scheme.  Precipitation and 2m air temperature provided by atmosphere above\n"
-    "  (PISMAtmosphere) are inputs.  Surface mass balance and ice fluid upper surface\n"
-    "  temperature are outputs.  See PISM User's Manual for control of PDD parameters\n"
-    "  (degree-day factors).\n");
+    "  are inputs.  Surface mass balance and ice upper surface temperature are\n"
+    "  outputs.  See PISM User's Manual for control of degree-day factors.\n");
     CHKERRQ(ierr);
 
+  ierr = verbPrintf(2, grid.com,
+    "  Computing number of positive degree-days by: "); CHKERRQ(ierr);
   if (pdd_rand_repeatable) {
-    ierr = verbPrintf(2, grid.com,
-      "  Using a PDD implementation based on simulating a random process.\n");
-      CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, "simulation of a random process.\n"); CHKERRQ(ierr);
     mbscheme = new PDDrandMassBalance(config, true);
   } else if (pdd_rand) {
-    ierr = verbPrintf(2, grid.com,
-      "  Using a PDD implementation based on simulating a repeatable random process.\n\n");
+    ierr = verbPrintf(2, grid.com, "repeatable simulation of a random process.\n");
       CHKERRQ(ierr);
     mbscheme = new PDDrandMassBalance(config, false);
   } else {
-    ierr = verbPrintf(2, grid.com,
-      "  Using a PDD implementation based on an expectation integral.\n");
-      CHKERRQ(ierr);
+    ierr = verbPrintf(2, grid.com, "an expectation integral.\n"); CHKERRQ(ierr);
     mbscheme = new PDDMassBalance(config);
   }
 
@@ -342,7 +338,8 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
   if ((config.get("pdd_std_dev_lapse_lat_rate") != 0.0) || fausto_params) {
     lat = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-    if (!lat) SETERRQ(1, "ERROR: 'latitude' is not available or is of wrong type in vars dictionary");
+    if (!lat)
+      SETERRQ(10, "ERROR: 'latitude' is not available or is wrong type in dictionary");
   } else
     lat = NULL;
 
@@ -353,9 +350,11 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
        CHKERRQ(ierr);
 
     lon = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
-    if (!lon) SETERRQ(1, "ERROR: 'longitude' is not available or is of wrong type in vars dictionary");
+    if (!lon)
+      SETERRQ(11, "ERROR: 'longitude' is not available or is wrong type in dictionary");
     usurf = dynamic_cast<IceModelVec2S*>(vars.get("usurf"));
-    if (!usurf) SETERRQ(1, "ERROR: 'usurf' is not available or is of wrong type in vars dictionary");
+    if (!usurf)
+      SETERRQ(12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
    
     faustogreve = new FaustoGrevePDDObject(grid, config);
   } else {
@@ -367,6 +366,7 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
   return 0;
 }
+
 
 PetscErrorCode PSTemperatureIndex::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr;

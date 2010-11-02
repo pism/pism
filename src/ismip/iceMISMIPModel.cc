@@ -52,11 +52,11 @@ IceMISMIPModel::IceMISMIPModel(IceGrid &g, NCConfigVariable &conf, NCConfigVaria
   strcpy(initials,"ABC");
   tryCalving = false;
   writeExtras = false;
-  steadyOrGoalAchieved = PETSC_FALSE;
   m_MISMIP = 1.0/3.0; // power
   C_MISMIP = 7.624e6; // Pa m^(−1/3) s^(1/3)
   regularize_MISMIP = 0.01 / secpera; // 0.01 m/a
-  dHdtnorm_atol = 1.0e-4;  // m/a
+  dHdtnorm_atol = 1.0e-1;  // m/a;  FIXME:  1000 times bigger than MISMIP spec 1.0e-4
+  dxgdt_atol = 100.0;  // m/a  FIXME:  1000 times bigger than MISMIP spec 0.1
   rstats.xg = -1.0;  // deliberately invalid
   tviewfile = PETSC_NULL;
 }
@@ -151,14 +151,6 @@ PetscErrorCode IceMISMIPModel::set_grid_from_options() {
   const PetscScalar   Ly_desired = (grid.dx * grid.My) / 2.0;
   grid.Ly = Ly_desired;
   ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-
-  // determine gridmode from Mx
-  if (grid.Mx == 151) 
-    gridmode = 1;
-  else if (grid.Mx == 1501) 
-    gridmode = 2;
-  else
-    gridmode = 3;
 
   return 0;
 }
@@ -309,6 +301,13 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 
   ierr = IceModel::setFromOptions(); CHKERRQ(ierr);
 
+  // determine gridmode from Mx
+  if (grid.Mx == 151) 
+    gridmode = 1;
+  else if (grid.Mx == 1501) 
+    gridmode = 2;
+  else
+    gridmode = 3;
 
   // models 1 vs 2
   if (modelnum == 1) {
@@ -354,7 +353,7 @@ PetscErrorCode IceMISMIPModel::set_time_from_options() {
       "  from user option -y (or -ys and -ye)\n"); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com,
-      "IceMISMIPModel: setting run length to %5.2f years (from MISMIP specs)\n",
+      "IceMISMIPModel: setting max run length to %5.2f years (from MISMIP specs)\n",
       runtimeyears); CHKERRQ(ierr);
     if (ysSet == PETSC_FALSE) {
       grid.year = 0.0;
@@ -562,8 +561,6 @@ PetscErrorCode IceMISMIPModel::misc_setup() {
 
   ierr = printBasalAndIceInfo(); CHKERRQ(ierr);
   
-  // view parallel layout:  DAView(grid.da2,PETSC_VIEWER_STDOUT_WORLD);
-
   // create ABC1_..._t file for every 50 year results
   strcpy(tfilename,mprefix);
   strcat(tfilename,"_t");
@@ -616,7 +613,6 @@ PetscErrorCode IceMISMIPModel::setMask() {
   PetscErrorCode ierr;
 
   const PetscScalar calving_front = 1600.0e3;
-//  const PetscScalar calving_front = 10000.0e3;  // NOW NOTHING MARKED AS FLOATING_OCEAN0
 
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -628,7 +624,8 @@ PetscErrorCode IceMISMIPModel::setMask() {
       if (PetscAbs(x) >= calving_front) {
         vMask(i,j) = MASK_OCEAN_AT_TIME_0;
       } else {
-        // note updateSurfaceElevationAndMask() will mark DRAGGING as FLOATING if it is floating
+        // note updateSurfaceElevationAndMask() will re-mark DRAGGING
+        //   as FLOATING if it is floating
         vMask(i,j) = MASK_DRAGGING_SHEET;
       }
 
@@ -696,27 +693,6 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
   // this is called at the end of each pass through time-stepping loop IceModel::run()
   PetscErrorCode  ierr;
 
-  PetscScalar     infnormdHdt = 0.0;
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vdHdt.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (vH(i,j) > 0.0) {
-	infnormdHdt = PetscMax(infnormdHdt, vdHdt(i,j));
-      }
-    }
-  }
-  ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vdHdt.end_access(); CHKERRQ(ierr);
-
-  ierr = PetscGlobalMax(&infnormdHdt, &rstats.dHdtnorm, grid.com); CHKERRQ(ierr);
-
-  if (rstats.dHdtnorm * secpera < dHdtnorm_atol) {  // if all points have dHdt < 10^-4 m/yr
-    steadyOrGoalAchieved = PETSC_TRUE;
-    // set the IceModel goal of end_year to the current year; causes immediate stop
-    grid.end_year = grid.year;  
-  }
-
   // apply an ad hoc calving criterion only under user option -try_calving
   if (tryCalving == PETSC_TRUE) {
     ierr = calving(); CHKERRQ(ierr);
@@ -728,25 +704,35 @@ PetscErrorCode IceMISMIPModel::additionalAtEndTimestep() {
 PetscErrorCode IceMISMIPModel::writeMISMIPFinalFiles() {
   PetscErrorCode ierr;
 
-  if (steadyOrGoalAchieved == PETSC_TRUE) {
-    ierr = verbPrintf(2, grid.com, 
-      "\nIceMISMIPModel:  steady state achieved or specified run time completed.\n"
-      ); CHKERRQ(ierr);
-    // report stopping to standard out
-    ierr = verbPrintf(2,grid.com,
-        "\nIceMISMIPModel: MISMIP steady state criterion (max|dH/dt| < %.2e m/yr) satisfied;\n"
-        "                stopping at year=%.3f\n",dHdtnorm_atol,grid.year); CHKERRQ(ierr);
-    // leave stopping stamp in output NetCDF file
-    char str[TEMPORARY_STRING_LENGTH];
+  // report on why we stopped, both stdout and stamp in output NetCDF file
+  char str[TEMPORARY_STRING_LENGTH];
+  if (rstats.dHdtnorm * secpera < dHdtnorm_atol) {
     snprintf(str, sizeof(str), 
-       "MISMIP steady state criterion (max|dHdt| < %.2e m/yr) satisfied.\n"
-       "Stopping.  Completed timestep year=%.3f.",dHdtnorm_atol,grid.year);
+       "MISMIP steady state thickness criterion (max|dHdt| < %.2e m/yr) satisfied.\n",
+       dHdtnorm_atol);
+    ierr = verbPrintf(2,grid.com, "\nIceMISMIPModel: %s", str); CHKERRQ(ierr);
     stampHistory(str); 
-  } else {
-    ierr = verbPrintf(2, grid.com,
-      "\nIceMISMIPModel WARNING:  steady state NOT achieved or specified run time NOT completed.\n"
-      ); CHKERRQ(ierr);
   }
+  if (PetscAbs(mstats.dxgdt) * secpera < dxgdt_atol) {
+    snprintf(str, sizeof(str), 
+       "MISMIP steady state grounding line movement criterion (|dxgdt| < %.2e m/yr) satisfied.\n",
+       dxgdt_atol);
+    ierr = verbPrintf(2,grid.com, "\nIceMISMIPModel: %s", str); CHKERRQ(ierr);
+    stampHistory(str); 
+  }
+  if (   (rstats.dHdtnorm * secpera >= dHdtnorm_atol)
+      || (PetscAbs(mstats.dxgdt) * secpera >= dxgdt_atol) ) {
+    snprintf(str, sizeof(str),
+       "WARNING: MISMIP steady state criteria NOT achieved.\n");
+    ierr = verbPrintf(2,grid.com, "\nIceMISMIPModel: %s", str); CHKERRQ(ierr);
+    stampHistory(str); 
+  }
+
+  snprintf(str, sizeof(str), 
+       "Stopping.  Completed timestep year=%.3f.  Writing MIMIP files.\n",
+       grid.year);
+  ierr = verbPrintf(2,grid.com, "\nIceMISMIPModel: %s", str); CHKERRQ(ierr);
+  stampHistory(str);
 
   // get stats in preparation for writing final files
   ierr = getRoutineStats(); CHKERRQ(ierr);
@@ -963,7 +949,19 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
   else                        gavubarfloating = 0.0;  // degenerate case
   rstats.avubarF = gavubarfloating;
 
-  // rstats.dHdtnorm already calculated in additionalAtEndTimestep()
+  PetscScalar     infnormdHdt = 0.0;
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vdHdt.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if (vH(i,j) > 0.0) {
+	infnormdHdt = PetscMax(infnormdHdt, vdHdt(i,j));
+      }
+    }
+  }
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vdHdt.end_access(); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&infnormdHdt, &rstats.dHdtnorm, grid.com); CHKERRQ(ierr);
   return 0;
 }
 
@@ -1059,6 +1057,12 @@ is computed as in MISMIP description, and finite differences.
         "   d(xg)/dt = %10.2f m/yr by MISMIP computation ]\n",
         mstats.dxgdt * secpera); CHKERRQ(ierr);
       
+      // now check if MISMIP steady state criteria are achieved:
+      if ((rstats.dHdtnorm * secpera < dHdtnorm_atol) && (PetscAbs(mstats.dxgdt) * secpera < dxgdt_atol)) {
+        // set the IceModel goal of end_year to the current year;
+        //   causes immediate stop
+        grid.end_year = grid.year;  
+      }
     }
   }
   return 0;
