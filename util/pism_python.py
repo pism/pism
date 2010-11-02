@@ -6,6 +6,19 @@
 #		University of Alaska Fairbanks
 #		andy.aschwanden@arsc.edu
 
+## @package pism_python
+# \author Andy Aschwanden, University of Alaska Fairbanks, USA
+# \brief Creates "from scratch" a very boring dataset with the right format
+# to use as a PISM bootstrapping file.
+# \details Illustration use of Python for this purpose.
+#
+# Usage, including the minimal kind of PISM call needed to bootstrap from
+# this file:
+#
+# \verbatim $ pism_python.py  # creates foo.nc \endverbatim
+# \verbatim $ pismr -boot_file foo.nc -Mx 101 -My 201 -surface constant \
+#                   -Mz 11 -Lz 4000 -Mbz 3 -Lbz 2000 -y 1  \endverbatim
+
 import sys
 import time
 import numpy as np
@@ -15,8 +28,6 @@ try:
     from netCDF4 import Dataset as CDF
 except:
     from netCDF3 import Dataset as CDF
-
-# creates a very boring dataset; an illustration of using Python to create a PISM bootstrapping file.
 
 # set up the grid:
 Lx = 1e6;

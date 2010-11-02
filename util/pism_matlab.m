@@ -1,5 +1,14 @@
 function pism_matlab()
-% creates a very boring dataset; an illustration of using MATLAB to create a PISM bootstrapping file.
+% PISM_MATLAB  Creates "from scratch" a very boring dataset with the right format
+% to use as a PISM bootstrapping file.  Illustrates how to use Matlab for this
+% purpose.
+%
+% Usage, including the minimal kind of PISM call needed to bootstrap from
+% this file:
+%    $ pism_python.py  # creates foo.nc \endverbatim
+%    $ pismr -boot_file foo.nc -Mx 101 -My 201 -surface constant \
+%            -Mz 11 -Lz 4000 -Mbz 3 -Lbz 2000 -y 1
+
 % tested in MATLAB Version 7.7.0.471 (R2008b)
 
 % set up the grid:
@@ -16,7 +25,6 @@ topg = (xx + yy) / max(Lx, Ly);
 acab = zeros(My,Mx);
 artm = zeros(My,Mx) + 10.0; % 10 degrees Celsius
 thk  = zeros(My,Mx) + 1.0; % 1 km thick
-
 
 % create a file; NC_CLOBBER means "overwrite if exists"
 ncid = netcdf.create('foo.nc', 'NC_CLOBBER');

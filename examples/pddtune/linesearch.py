@@ -92,6 +92,12 @@ class Files:
       self.targetfile = "pism_" + DATANAME
       self.startfile = "start.nc"  # effectively allow user to forget --startfile=
       self.diffsfile = ""  # if user forgets --diffsfile=foo.txt then writes to stdout
+    def copy(self):
+      cpfn = Files()
+      cpfn.targetfile = self.targetfile
+      cpfn.startfile = self.startfile
+      cpfn.diffsfile = self.diffsfile
+      return cpfn
     def configfile(self,cp):
       "this is output of pclimate, which will be evaluated against PISMDATA"
       return "config_" + cp.get_nameroot() + ".nc"
@@ -99,11 +105,13 @@ class Files:
       "this is the configuration file for the -config_override mechanism"
       return "clim_" + cp.get_nameroot() + ".nc"
     def printme(self, cp):
-      print self.targetfile
-      print self.startfile
-      print self.diffsfile
-      print self.configfile(cp)
-      print self.climatefile(cp)
+      print "**PRINTING Files OBJECT:**"
+      print "  targetfile      = " + self.targetfile
+      print "  startfile       = " + self.startfile
+      print "  diffsfile       = " + self.diffsfile
+      print "  configfile(cp)  = " + self.configfile(cp)
+      print "  climatefile(cp) = " + self.climatefile(cp)
+      print "**END**"
 
 def evalcase(stddev, cp, fn, deletencfiles):
     """evaluates one pclimate run against smb target in a file"""
@@ -203,6 +211,7 @@ def evalcase(stddev, cp, fn, deletencfiles):
 def reproduce(climfilename, fn):
     """parses a pclimate output file name, and runs evalcase() to reproduce that run"""
     # input fn is of type Filenames()
+    
     if not(climfilename.endswith('.nc')):
       print "ERROR: filename needs to be a NetCDF file"
       exit(1)
@@ -213,6 +222,7 @@ def reproduce(climfilename, fn):
     nr = climfilename[climfilename.find('_')+1:-3]
     cp = Case()
     cp.put_nameroot(nr)
+    # fn.printme(cp)
     result = evalcase(cp.stddev, cp, fn, False)
     print "************ result at stddev=%.5f is %.5f ***********" \
           % (cp.stddev, result)
@@ -235,6 +245,8 @@ if __name__ == "__main__":
     dolinesearch = True
     deletencfiles = False
     avdifftol = 0.001
+    merely_reproduce = False
+    reproname = ""
     for (opt, optarg) in opts:
         if opt in ("--thresh"):
             cp.threshhold = float(optarg)
@@ -256,13 +268,17 @@ if __name__ == "__main__":
         if opt in ("--deletenc"):
             deletencfiles = True
         if opt in ("--reproduce"):
-            if deletencfiles:
-              print "WARNING: option --deletenc is ignored; output files will remain"
-            reproduce(optarg, fn)
-            exit(0)
+            merely_reproduce = True
+            reproname = optarg
         if opt in ("--help", "--usage"):
             print usage
             exit(0)
+
+    if merely_reproduce:
+      if deletencfiles:
+        print "WARNING: option --deletenc is ignored; output files will remain"
+      reproduce(reproname, fn.copy())
+      exit(0)
     
     print "LINESEARCH.PY CASE  (threshhold=%.2f, ddfsnow=%.4f, refreeze=%.2f, sdlapse=%.3f)" \
               % (cp.threshhold, cp.ddfsnow, cp.refreeze, cp.stddev_lapse)
