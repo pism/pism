@@ -6,18 +6,20 @@ digraph out {
 subgraph cluster_out {
     // Global graph parameters
 
-    label="Outputs and their use"
+    label="Stress balance object outputs and their use"
     labeljust=r
 
     {rank=same
         vel_2d [label="2D velocity"];   
         frictional_heating [label="Frictional\nheating"];
         max_uv [label="Maximum\n2D velocity"];
+        D2_ssa [label="D^2 (SSA)"];
     }
     {rank=same
         sia_flux [label="SIA flux"];
         D_max [label="Maximum\ndiffusivity"];
         vel_3d [label="3D horizontal\nvelocity" color="brown"];
+        Sigma [label="Strain heating"];
     }
     vel_2d -> vel_3d [label="" style=invis weight=10];
     frictional_heating -> sia_flux [style=invis weight=10];
@@ -32,7 +34,6 @@ subgraph cluster_out {
 {rank=same
     adapt_dt_mass [label="Adaptive dt\n(mass continuity)"];
     adapt_dt_energy [label="Adaptive dt\n(energy/age)"];
-    sigma [label="Strain heating"];
 }
 
 {rank=same
@@ -41,11 +42,11 @@ subgraph cluster_out {
     age [label="Age time step"];
 }
 
-vel_3d_full -> sigma [style=dashed];
-{D_max max_uv} -> adapt_dt_mass [label="" style=dotted weight=0];
-{max_uvw} -> adapt_dt_energy [label="" style=dotted weight=0];
-{vel_2d adapt_dt_mass sia_flux} -> mass [style=dashed];
-{sigma vel_3d_full adapt_dt_energy frictional_heating} -> energy [style=dashed];
+{D_max max_uv} -> adapt_dt_mass [style=dotted weight=0];
+{max_uvw} -> adapt_dt_energy [label="" style=dotted weight=10];
+{vel_2d adapt_dt_mass} -> mass [style=dashed];
+sia_flux -> mass [style=dashed weight=10];
+{Sigma vel_3d_full adapt_dt_energy frictional_heating} -> energy [style=dashed];
 {vel_3d_full adapt_dt_energy} -> age [style=dashed];
 
 }

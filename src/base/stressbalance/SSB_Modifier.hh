@@ -25,8 +25,8 @@
 class SSB_Modifier
 {
 public:
-  SSB_Modifier(IceGrid &g, const NCConfigVariable &config)
-  { D_max = 0.0; }
+  SSB_Modifier(IceGrid &g, IceFlowLaw &i, const NCConfigVariable &c)
+  { grid = g; ice = i; config = c; D_max = 0.0; }
   virtual ~SSB_Modifier() {}
 
   virtual PetscErrorCode init(PISMvars &vars);
@@ -46,14 +46,21 @@ public:
   virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result);
   { u_result = &u; v_result = &v; return 0; }
 
+  virtual PetscErrorCode get_max_horizontal_velocity(PetscReal &max_u, PetscReal &max_v)
+  { max_u = u_max; max_v = v_max; return 0; }
+
   virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &result)
   { result = &Sigma; return 0; }
+
+  //! \brief Extends the computational grid (vertically).
+  virtual PetscErrorCode extend_the_grid(PetscInt old_Mz) = 0;
 protected:
   virtual PetscErrorCode compute_sigma(IceModelVec3 &Sigma) = 0;
 
   IceGrid &grid;
+  IceFlowLaw &ice;
   const NCConfigVariable &config;
-  PetscReal D_max;
+  PetscReal D_max, u_max, v_max;
 
   IceModelVec2Stag diffusive_flux;
   IceModelVec3 u, v, Sigma;
@@ -61,12 +68,14 @@ protected:
 
 
 //! The trivial Shallow Stress Balance modifier.
-class SSB_Trivial : public SSB_Modifier
+class SSBM_Trivial : public SSB_Modifier
 {
 public:
-  SSB_Trivial(IceGrid &g, const NCConfigVariable &config);
-  virtual ~SSB_Trivial();
-  virtual PetscErrorCode update(IceModelVec2V *vel_input, bool fast);
+  SSBM_Trivial(IceGrid &g, IceFlowLaw &i, const NCConfigVariable &config)
+    :SSB_Modifier(g, i, config) {}
+  virtual ~SSBM_Trivial();
+  virtual PetscErrorCode update(IceModelVec2V *vel_input, IceModelVec2S &D2_input,
+                                bool fast);
 protected:
   virtual PetscErrorCode compute_sigma(IceModelVec3 &Sigma);
 };
