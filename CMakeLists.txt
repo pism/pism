@@ -34,7 +34,7 @@ option (Pism_LOCAL_INSTALL     "Install PISM locally (not in /usr/local/ or simi
 
 # This installs PISM in ${CMAKE_INSTALL_PREFIX}/{bin,lib,doc} if installed
 # locally; otherwise in ${CMAKE_INSTALL_PREFIX}/bin/pism, .../lib/pism and
-# .../share/doc/pism.
+# .../share/doc/pism to avoid cluttering system directories.
 if (Pism_LOCAL_INSTALL)
   set (Pism_BIN_DIR "bin")
   set (Pism_LIB_DIR "lib")

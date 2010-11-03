@@ -18,4 +18,3 @@
 
 #include "SIAFD.hh"
 
-// empty...

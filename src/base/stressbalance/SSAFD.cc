@@ -447,3 +447,10 @@ PetscErrorCode SSAFD::compute_driving_stress(IceModelVec2S &taudx,
 
   return 0;
 }
+
+PetscErrorCode SSAFD::solve() {
+  PetscErrorCode ierr;
+
+  return 0;
+}
+

@@ -116,10 +116,11 @@ PetscErrorCode IceModel::initBasalTillModel() {
 
   ierr = vtauc.set(config.get("default_tauc")); CHKERRQ(ierr);
 
-  bool topgphiSet,svphiSet;
+  bool topgphiSet,svphiSet, plastic_phi_set;
   string filename;
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling the basal till model", ""); CHKERRQ(ierr);
   {
+    ierr = PISMOptionsIsSet("-plastic_phi", plastic_phi_set); CHKERRQ(ierr);
     // initialize till friction angle (vtillphi) from options
     ierr = PISMOptionsIsSet("-topg_to_phi", 
       "Use the till friction angle parameterization", topgphiSet); CHKERRQ(ierr);
@@ -147,6 +148,15 @@ PetscErrorCode IceModel::initBasalTillModel() {
     }
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  if (topgphiSet && plastic_phi_set) {
+    PetscPrintf(grid.com, "ERROR: only one of -plastic_phi and -topg_to_phi is allowed.\n");
+    PetscEnd();
+  }
+
+  if (plastic_phi_set) {
+    ierr = vtillphi.set(config.get("default_till_phi")); CHKERRQ(ierr);
+  }
 
   if (svphiSet) {
     SETERRQ(1,"options -surf_vel_to_phi is not available ... ENDING ...\n");

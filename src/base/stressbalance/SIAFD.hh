@@ -26,6 +26,29 @@ class SIAFD : public SSB_Modifier
 public:
   SIAFD();
   virtual ~SIAFD();
+
+  virtual PetscErrorCode init(PISMvars &vars);
+
+  virtual PetscErrorCode update(IceModelVec2V &vel_input,
+                                IceModelVec2S &D2_input,
+                                bool fast);
+
+  //! \brief Extends the computational grid (vertically).
+  virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
+protected:
+  virtual PetscErrorCode compute_sigma(IceModelVec3 &Sigma);
+
+  virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+
+  virtual PetscErrorCode surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual PetscErrorCode surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+  virtual PetscErrorCode surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+
+  virtual PetscErrorCode compute_diffusive_flux(IceModelVec2Stag &result);
+
+  virtual PetscErrorCode compute_3d_horizontal_velocity(IceModelVec3 &u_out, IceModelVec3 &v_out);
+
+  IceModelVec3 delta_staggered[2]; I_staggered[2];  
 };
 
 
