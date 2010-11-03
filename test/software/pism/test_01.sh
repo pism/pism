@@ -15,7 +15,7 @@ test_01 ()
     set -e
 
     # generate an interesting file
-    run -n 1 pismv -Mx 3 -My 3 -Mz 5 -test G -y 0 -o verify.nc
+    run -n 1 pisms -Mx 3 -My 3 -Mz 5 -no_cold -y 0 -o verify.nc
 
     # run for ten years, fixed time step
     run -n 1 pismr -i verify.nc $OPTS -y 10 -o foo.nc

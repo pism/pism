@@ -19,10 +19,10 @@ run_test ()
     run -n 2 pisms -eisII A -y 1000 -Mz 33 -Mmax 0.925 -Lz 960 -z_spacing equal -o bar.nc 
 
     # regrid from the extended grid onto the one in bar.nc:
-    run -n 2 pismr -i bar.nc -surface constant -regrid_file foo.nc -regrid_vars enthalpy -y 0 -o baz.nc
+    run -n 2 pismr -i bar.nc -surface constant -cold -regrid_file foo.nc -regrid_vars temp -y 0 -o baz.nc
 
     # compare results
-    run nccmp.py -v enthalpy bar.nc baz.nc
+    run nccmp.py -v temp bar.nc baz.nc
 
     if [ $? != 0 ];
     then

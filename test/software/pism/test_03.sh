@@ -15,7 +15,7 @@ test_03 ()
     set -e
 
     # Create a file to start from:
-    run -n 2 pismv -test G -Mx 61 -My 61 -Mz 61 -y 10 -verbose 1 -o foo.nc
+    run -n 2 pisms -Mx 61 -My 61 -Mz 61 -y 10 -no_cold -verbose 1 -o foo.nc
 
     # Run for a year using pismr (so that all the parameters, including
     # rheology, are the same):

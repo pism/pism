@@ -549,9 +549,12 @@ intended volume.
 \image html ivol_force_to_thk.png "\b Volume results from the -force_to_thk mechanism."
 \anchor ivol_force_to_thk
  */
-PetscErrorCode PSForceThickness::ice_surface_mass_flux(PetscReal t_years, PetscReal /*dt_years*/,
+PetscErrorCode PSForceThickness::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
 						       IceModelVec2S &result) {
   PetscErrorCode ierr;
+
+  // get the surface mass balance result from the next level up
+  ierr = input_model->ice_surface_mass_flux(t_years, dt_years, result); CHKERRQ(ierr);
 
   ierr = verbPrintf(5, grid.com,
 		    "    updating vsurfmassflux from -force_to_thk mechanism ..."); CHKERRQ(ierr);
@@ -562,7 +565,7 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(PetscReal t_years, PetscR
 		    " (t_years = %.3f a, start_year = %.3f a, end_year = %.3f a, alpha = %.5f, lambda = %.3f)\n",
 		    t_years, grid.start_year , grid.end_year, alpha, lambda); CHKERRQ(ierr);
   if ((lambda < 0.0) || (lambda > 1.0)) {
-    SETERRQ(4,"computed lambda (for -force_to_thk) out of range; in updateSurfMassFluxAndProvide()");
+    SETERRQ(4,"computed lambda (for -force_to_thk) out of range; in PSForceThickness:ice_surface_mass_flux()");
   }
 
   PetscScalar **H;

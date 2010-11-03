@@ -128,6 +128,15 @@ set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib/pism")
 
 add_subdirectory (src)
 
+install (PROGRAMS
+  util/check_stationarity.py
+  util/fill_missing.py
+  util/nc2cdo.py
+  util/nc2mat.py
+  util/nccmp.py
+  util/pism_config_editor.py
+  DESTINATION bin)
+
 # Packaging:
 if (APPLE)
   set (CPACK_GENERATOR "TGZ")   # just so that we can test it (it's quite useless)

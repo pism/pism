@@ -16,9 +16,9 @@ run_test ()
     set -e
 
     # Create a file to regrid from:
-    run -n 1 pismv -test G -Mx 11 -My 11 -Mz 11 -y 0 -o coarse1.nc
+    run -n 1 pisms -Mx 11 -My 11 -Mz 11 -y 0 -no_cold -o coarse1.nc
     # Create another file with a finer grid:
-    run -n 1 pismv -test G -Mx 11 -My 11 -Mz 21 -y 0 -o fine1.nc
+    run -n 1 pisms -Mx 11 -My 11 -Mz 21 -y 0 -no_cold -o fine1.nc
 
     # Coarse -> fine:
     run -n 1 pismr -i fine1.nc -regrid_file coarse1.nc -regrid_vars enthalpy $OPTS -o fine2.nc
