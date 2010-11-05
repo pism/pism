@@ -150,7 +150,7 @@ be the slope of the nontrivial part.  Then
 The exception is if the point is marked as floating, in which case the till friction angle
 is set to the value $\phi_{\mathrm{ocean}}$.
 
-Actually the ``yield stress'' $\tau_c$ can be part of a power law model.  In fact, the basal resistance is normally determined by a user-configurable ``pseudo-plastic'' power law.  Specifically, stress is a generally a power law function of basal sliding velocity $\mathbf{u}$:
+Actually the ``yield stress'' $\tau_c$ can be part of a power law model.  In fact, the basal resistance is normally determined by a user-configurable ``pseudo-plastic'' power law.  Specifically, stress is generally a power law function of basal sliding velocity $\mathbf{u}$:
    $$\tau_b = \tau_c \frac{|\mathbf{u}|^{q-1}}{u_{\text{threshold}}^q}\, \mathbf{u}.$$
 Here $\tau_c$ corresponds to the variable \texttt{tauc} in PISM input and output files, $q$ is the power controlled by \texttt{-pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \texttt{-pseudo_plastic_uthreshold}.  The purely plastic case is $q=0$---see \cite{SchoofStream} for precise interpretation---and the linear case is $q=1$, in which case the coefficient of velocity, $\tau_c/u_{\text{threshold}}$, is more commonly called $\beta$ or $\beta^2$ \cite{MacAyeal}.
 
@@ -171,12 +171,12 @@ A final note on basal sliding is in order.  There can be sliding in the SIA stre
     \textbf{Option} & \textbf{Description}
     \\\midrule
     \txtopt{topg_to_phi}{\emph{list of 5 numbers}} & Compute $\phi$ using \eqref{eq:1} and \eqref{eq:2}.\\
-    \txtopt{plastic_pwfrac}{pure number} & Set what fraction of overburden pressure is assumed as the till pore water pressure.  Only relevant at basal points where there is a positive amount of basal water.\\
+    \txtopt{plastic_pwfrac}{\emph{pure number}} & Set what fraction of overburden pressure is assumed as the till pore water pressure.  Only relevant at basal points where there is a positive amount of basal water.\\
     \intextoption{plastic_c0} & Set the value of the till cohesion ($c_{0}$) in the plastic till model.  The value is a pressure, given in kPa.\\
     \txtopt{plastic_reg}{(m/a)} & Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}. The default is $0.01$.\\
     \txtopt{plastic_phi}{(degrees)} & Use a constant till friction angle. The default is $30^{\circ}$.\\
     \intextoption{pseudo_plastic_q} & Set the exponent $q$.\\
-    \intextoption{pseudo_plastic_uthreshold} & Set $u_{\text{threshold}}$.\\
+    \txtopt{pseudo_plastic_uthreshold}{(m/a)} & Set $u_{\text{threshold}}$. The default is $100$ m/a.\\
     \intextoption{hold_tauc} &   Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-ssa_sliding} is also set.
    \\\bottomrule
   \end{tabular}

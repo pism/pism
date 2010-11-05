@@ -288,7 +288,6 @@ PetscErrorCode IcePSTexModel::init_physics() {
     config.set_flag("use_ssa_velocity", true);
     config.set_flag("do_superpose", true);
     config.set_flag("use_ssa_when_grounded", true);
-    useConstantTillPhi = PETSC_FALSE;
   }  
 
   // typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream

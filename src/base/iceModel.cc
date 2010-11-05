@@ -723,7 +723,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   total_basal_ice_flux = 0;
   total_sub_shelf_ice_flux = 0;
   gmaxu = gmaxv = gmaxw = -1;
-  ierr = summary(do_temp,reportPATemps); CHKERRQ(ierr);  // report starting state
+  ierr = summary(do_temp); CHKERRQ(ierr);  // report starting state
 
   // main loop for time evolution
   for (PetscScalar year = grid.start_year; year < grid.end_year; year += dt/secpera) {
@@ -742,7 +742,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
     bool tempAgeStep = ( updateAtDepth && ((do_temp) || (do_age)) );
 
     const bool show_step = tempAgeStep || (adaptReasonFlag == 'e');
-    ierr = summary(show_step,reportPATemps); CHKERRQ(ierr);
+    ierr = summary(show_step); CHKERRQ(ierr);
 
     // writing these fields here ensures that we do it after the last time-step
     ierr = write_snapshot(); CHKERRQ(ierr);

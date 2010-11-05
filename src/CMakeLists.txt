@@ -188,3 +188,5 @@ if (Pism_BUILD_EXTRA_EXECS)
     LIBRARY DESTINATION ${Pism_LIB_DIR}
     ARCHIVE DESTINATION ${Pism_LIB_DIR})
 endif (Pism_BUILD_EXTRA_EXECS)
+
+add_subdirectory (base/stressbalance)

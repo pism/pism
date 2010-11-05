@@ -54,7 +54,7 @@ protected:
         PetscScalar &volerr, PetscScalar &areaerr,
         PetscScalar &gmaxHerr, PetscScalar &gavHerr, PetscScalar &gmaxetaerr,
         PetscScalar &centerHerr);
-  virtual PetscErrorCode summary(bool tempAndAge, bool useHomoTemp);
+  virtual PetscErrorCode summary(bool tempAndAge);
 
   // related to tests A B C D E H
   PetscErrorCode initTestABCDEH();

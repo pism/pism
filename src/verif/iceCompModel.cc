@@ -169,14 +169,11 @@ PetscErrorCode IceCompModel::setFromOptions() {
   }
 
   // special considerations for K wrt thermal bedrock and pressure-melting
-  // (flag thermalBedrock was removed by CK around r783, because it was not used)
   if (testname == 'K') {
     allowAboveMelting = PETSC_FALSE;
-    reportPATemps = PETSC_TRUE;
   } else {
     // note temps are generally allowed to go above pressure melting in verify
     allowAboveMelting = PETSC_TRUE;
-    reportPATemps = PETSC_FALSE;
   }
 
   ierr = IceModel::setFromOptions();CHKERRQ(ierr);
@@ -911,9 +908,9 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
 }
 
 
-PetscErrorCode IceCompModel::summary(bool /* tempAndAge */, bool useHomoTemp) {
+PetscErrorCode IceCompModel::summary(bool /* tempAndAge */) {
   //   we always show a summary at every step
-  return IceModel::summary(true,useHomoTemp);
+  return IceModel::summary(true);
 }
 
 

@@ -20,15 +20,18 @@
 #define _SHALLOWSTRESSBALANCE_H_
 
 #include "iceModelVec.hh"
+#include "PISMVars.hh"
+#include "flowlaws.hh"
+#include "materials.hh"
 
 //! Shallow stress balance (such as the SSA).
 class ShallowStressBalance
 {
 public:
   ShallowStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i,
-                       const NCConfigVariable &config)
-  { grid = g; basal = b; ice = i; set_bc = false; max_u = max_v = 0.0; }
-  virtual ~ShallowStressBalance();
+                       const NCConfigVariable &conf) : grid(g), basal(b), ice(i), config(conf)
+  { vel_bc = NULL; bc_locations = NULL; max_u = max_v = 0.0; }
+  virtual ~ShallowStressBalance() {}
 
   //  initialization and I/O:
 
@@ -48,13 +51,13 @@ public:
 
   virtual PetscErrorCode set_boundary_conditions(IceModelVec2Mask &locations,
                                                  IceModelVec2V &velocities)
-  { set_bc = true; vel_bc = &velocities; bc_locations = &locations; return 0; }
+  { vel_bc = &velocities; bc_locations = &locations; return 0; }
 
   // the "main" routine:
 
   virtual PetscErrorCode update(bool fast) = 0;
 
-  // interface:
+  // interface to the data provided by the stress balance object:
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
   virtual PetscErrorCode get_advective_2d_velocity(IceModelVec2V* &result)
@@ -80,12 +83,12 @@ protected:
   IceGrid &grid;
   IceBasalResistancePlasticLaw &basal;
   IceFlowLaw &ice;
+  const NCConfigVariable &config;
 
   IceModelVec2V velocity, *vel_bc;
   IceModelVec2Mask *bc_locations;
   IceModelVec2S basal_frictional_heating, D2;
   PetscReal max_u, max_v;
-  bool set_bc;
 };
 
 class SSB_Trivial : public ShallowStressBalance

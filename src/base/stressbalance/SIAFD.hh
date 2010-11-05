@@ -20,6 +20,7 @@
 #define _SIAFD_H_
 
 #include "SSB_Modifier.hh"
+#include "PISMBedSmoother.hh"
 
 class SIAFD : public SSB_Modifier
 {
@@ -27,7 +28,7 @@ public:
   SIAFD();
   virtual ~SIAFD();
 
-  virtual PetscErrorCode init(PISMvars &vars);
+  virtual PetscErrorCode init(PISMVars &vars);
 
   virtual PetscErrorCode update(IceModelVec2V &vel_input,
                                 IceModelVec2S &D2_input,
@@ -44,11 +45,17 @@ protected:
   virtual PetscErrorCode surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
   virtual PetscErrorCode surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
-  virtual PetscErrorCode compute_diffusive_flux(IceModelVec2Stag &result);
+  virtual PetscErrorCode compute_diffusive_flux(IceModelVec2Stag &result, bool fast);
 
   virtual PetscErrorCode compute_3d_horizontal_velocity(IceModelVec3 &u_out, IceModelVec3 &v_out);
 
-  IceModelVec3 delta_staggered[2]; I_staggered[2];  
+  PetscScalar grainSizeVostok(PetscScalar age) const;
+
+  IceModelVec2S *bed, *thickness, *surface, tmp1, tmp2;
+  IceModelVec2Stag tmp3, tmp4;
+  IceModelVec3 delta_staggered[2], I_staggered[2], *age, *enthalpy;  
+
+  PISMBedSmoother *sia_bed_smoother;
 };
 
 

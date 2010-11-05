@@ -154,8 +154,8 @@ center of the ice sheet.
 
 Communication occurs here.
  */
-PetscErrorCode IceModel::energyStats(PetscScalar iarea, bool /*useHomoTemp*/, 
-                                     PetscScalar &gmeltfrac, PetscScalar &gtemp0) {
+PetscErrorCode IceModel::energyStats(PetscScalar iarea, PetscScalar &gmeltfrac,
+                                     PetscScalar &gtemp0) {
   PetscErrorCode    ierr;
   PetscScalar       meltarea = 0.0, temp0 = 0.0;
   const PetscScalar a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
@@ -245,7 +245,7 @@ PetscErrorCode IceModel::ageStats(PetscScalar ivol, PetscScalar &gorigfrac) {
 }
 
 
-PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
+PetscErrorCode IceModel::summary(bool tempAndAge) {
   PetscErrorCode  ierr;
   PetscScalar     **H;
   PetscScalar     divideH;
@@ -270,7 +270,7 @@ PetscErrorCode IceModel::summary(bool tempAndAge, bool useHomoTemp) {
   ierr = PetscGlobalMax(&divideH, &gdivideH, grid.com); CHKERRQ(ierr);
 
   if (tempAndAge || (getVerbosityLevel() >= 3)) {
-    ierr = energyStats(garea, useHomoTemp, meltfrac, gdivideT); CHKERRQ(ierr);
+    ierr = energyStats(garea, meltfrac, gdivideT); CHKERRQ(ierr);
   }
 
   if ((tempAndAge || (getVerbosityLevel() >= 3)) && (config.get_flag("do_age"))) {

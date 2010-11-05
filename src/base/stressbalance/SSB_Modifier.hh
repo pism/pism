@@ -20,16 +20,19 @@
 #define _SSB_MODIFIER_H_
 
 #include "iceModelVec.hh"
+#include "PISMVars.hh"
+#include "flowlaws.hh"
 
 //! Shallow stress balance modifier (such as the non-sliding SIA).
 class SSB_Modifier
 {
 public:
   SSB_Modifier(IceGrid &g, IceFlowLaw &i, const NCConfigVariable &c)
-  { grid = g; ice = i; config = c; D_max = u_max = v_max = 0.0;}
+    : grid(g), ice(i), config(c)
+  { D_max = u_max = v_max = 0.0; }
   virtual ~SSB_Modifier() {}
 
-  virtual PetscErrorCode init(PISMvars &vars); // done
+  virtual PetscErrorCode init(PISMVars &vars); // done 
 
   virtual PetscErrorCode update(IceModelVec2V *vel_input,
                                 IceModelVec2S *D2_input,
@@ -43,7 +46,7 @@ public:
   virtual PetscErrorCode get_max_diffusivity(PetscReal &result) // done
   { result = D_max; return 0; }
 
-  virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result); // done
+  virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result) // done
   { u_result = &u; v_result = &v; return 0; }
 
   virtual PetscErrorCode get_max_horizontal_velocity(PetscReal &max_u, PetscReal &max_v) // done
@@ -62,7 +65,6 @@ protected:
   IceFlowLaw &ice;
   const NCConfigVariable &config;
   PetscReal D_max, u_max, v_max;
-
   IceModelVec2Stag diffusive_flux;
   IceModelVec3 u, v, Sigma;
 };
@@ -80,5 +82,7 @@ public:
 protected:
   virtual PetscErrorCode compute_sigma(IceModelVec2S *D2_input,
                                        IceModelVec3 &Sigma);
+  IceModelVec3 *enthalpy;
+  IceModelVec2S *thickness;
 };
 #endif /* _SSB_MODIFIER_H_ */

@@ -18,7 +18,7 @@
 
 #include "SSB_Modifier.hh"
 
-PetscErrorCode SSB_Modifier::init(PISMvars &vars) {
+PetscErrorCode SSB_Modifier::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   ierr =     u.create(grid, "uvel", true); CHKERRQ(ierr);
@@ -60,23 +60,49 @@ PetscErrorCode SSB_Modifier::extend_the_grid(PetscInt old_Mz) {
 
 
 //! \brief Distribute the input velocity throughout the column.
-PetscErrorCode SSBM_Trivial::update(IceModelVec2V &vel_input, bool fast) {
+/*!
+ * Things to update:
+ * - 3D-distributed horizontal velocity
+ * - maximum horizontal velocity
+ * - diffusive ice flux
+ * - maximum diffusivity
+ * - strain heating (Sigma)
+ */
+PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
+                                    IceModelVec2S *D2_input,
+                                    bool fast) {
   PetscErrorCode ierr;
 
+  if (fast)
+    return 0;
+
+  // horizontal velocity and its maximum:
   ierr = u.begin_access(); CHKERRQ(ierr);
   ierr = v.begin_access(); CHKERRQ(ierr);
-  ierr = vel_input.begin_access(); CHKERRQ(ierr);
-  
+  ierr = vel_input->begin_access(); CHKERRQ(ierr);
+  PetscReal my_u_max = 0, my_v_max = 0;
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      ierr = u.setColumn(i,j, vel_input(i,j).u); CHKERRQ(ierr);
-      ierr = v.setColumn(i,j, vel_input(i,j).v); CHKERRQ(ierr);
+      ierr = u.setColumn(i,j, (*vel_input)(i,j).u); CHKERRQ(ierr);
+      ierr = v.setColumn(i,j, (*vel_input)(i,j).v); CHKERRQ(ierr);
+
+      my_u_max = PetscMax(my_u_max, PetscAbs((*vel_input)(i,j).u));
+      my_v_max = PetscMax(my_v_max, PetscAbs((*vel_input)(i,j).u));
     }
   }
-
-  ierr = vel_input.end_access(); CHKERRQ(ierr);
+  ierr = vel_input->end_access(); CHKERRQ(ierr);
   ierr = v.end_access(); CHKERRQ(ierr);
   ierr = u.end_access(); CHKERRQ(ierr);  
+
+  ierr = PetscGlobalMax(&my_u_max, &u_max, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&my_v_max, &v_max, grid.com); CHKERRQ(ierr);
+
+  // diffusive flux and maximum diffusivity
+  ierr = diffusive_flux.set(0.0); CHKERRQ(ierr);
+  D_max = 0.0;
+
+  // strain heating
+  ierr = compute_sigma(D2_input, Sigma); CHKERRQ(ierr);
 
   return 0;
 }
@@ -92,9 +118,49 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V &vel_input, bool fast) {
  */
 PetscErrorCode SSBM_Trivial::compute_sigma(IceModelVec2S *D2_input, IceModelVec3 &result) {
   PetscErrorCode ierr;
+  PetscScalar *E, *sigma;
+  const PetscReal dx = grid.dx, 
+    dy = grid.dy,
+    n_glen  = ice.exponent(),
+    Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
+    enhancement_factor = config.get("enhancement_factor"),
+    standard_gravity = config.get("standard_gravity");
 
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  ierr = D2_input->begin_access(); CHKERRQ(ierr);
   
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      ierr = enthalpy->getInternalColumn(i,j,&E); CHKERRQ(ierr);
+      ierr = result.getInternalColumn(i,j,&sigma); CHKERRQ(ierr);
+
+      PetscReal thk = (*thickness)(i,j);
+      // in the ice:
+      PetscInt ks = grid.kBelowHeight(thk);
+        for (PetscInt k=0; k<ks; ++k) {
+          // Use hydrostatic pressure; presumably this is not quite right in context
+          //   of shelves and streams; here we hard-wire the Glen law
+          PetscReal depth = thk - grid.zlevels[k],
+            pressure = ice.rho * standard_gravity * depth,
+          // Account for the enhancement factor.
+          //   Note, enhancement factor is not used in SSA anyway.
+          //   Should we get rid of it completely?  If not, what is most consistent here?
+            BofT    = ice.hardnessParameter_from_enth(E[k], pressure) * pow(enhancement_factor,-1/n_glen);
+          sigma[k] = 2.0 * BofT * pow((*D2_input)(i,j), Sig_pow);
+        }
+
+        // above the ice:
+        for (PetscInt k=ks+1; k<grid.Mz; ++k) {
+          sigma[k] = 0.0;
+        }
+    }
+  }
+
+  ierr = D2_input->end_access(); CHKERRQ(ierr);
+  ierr = thickness->end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);  
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
 
   return 0;

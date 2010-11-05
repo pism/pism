@@ -57,15 +57,12 @@ PetscErrorCode IceModel::setDefaults() {
   strcpy(ssaMatlabFilePrefix, "pism_SSA");
 
   holdTillYieldStress       = PETSC_FALSE;
-  useConstantTillPhi        = PETSC_FALSE;
   
   shelvesDragToo = PETSC_FALSE;
   
   // set maximum |u|,|v|,|w| in ice to an (obviously) invalid number
   gmaxu = gmaxv = gmaxw = -1.0;
 
-  reportPATemps = PETSC_TRUE;
-  
   updateHmelt = PETSC_TRUE;
   realAgeForGrainSize = PETSC_FALSE;
 

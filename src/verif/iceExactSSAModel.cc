@@ -730,7 +730,7 @@ PetscErrorCode IceExactSSAModel::run() {
 
   // report on result of computation (i.e. to standard out and to viewers)
   ierr = computeMax3DVelocities(); CHKERRQ(ierr); 
-  ierr = summary(true,true); CHKERRQ(ierr);
+  ierr = summary(true); CHKERRQ(ierr);
   ierr = update_viewers(); CHKERRQ(ierr);
 
   return 0;

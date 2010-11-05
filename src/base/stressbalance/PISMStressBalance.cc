@@ -19,14 +19,12 @@
 #include "PISMStressBalance.hh"
 
 PISMStressBalance::PISMStressBalance(IceGrid &g, IceFlowLaw &i,
-                                     const NCConfigVariable &conf) {
-  grid = g;
-  ice = i;
-  config = conf;
+                                     const NCConfigVariable &conf)
+  : grid(g), ice(i), config(conf) {
 
-  bmr = NULL;
-  stress_balance = NULL;
-  modifier = NULL;
+  basal_melt_rate = NULL;
+  stress_balance  = NULL;
+  modifier        = NULL;
 }
 
 PISMStressBalance::~PISMStressBalance() {
@@ -57,7 +55,7 @@ PetscErrorCode PISMStressBalance::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::set_initial_guess(IceModelVec2S &guess) {
+PetscErrorCode PISMStressBalance::set_initial_guess(IceModelVec2V &guess) {
   PetscErrorCode ierr;
   ierr = stress_balance->set_initial_guess(guess); CHKERRQ(ierr);
   return 0;
@@ -69,13 +67,13 @@ PetscErrorCode PISMStressBalance::read_initial_guess(string filename) {
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::write_initial_guess(string filename) {
+PetscErrorCode PISMStressBalance::save_initial_guess(string filename) {
   PetscErrorCode ierr;
-  ierr = stress_balance->write_initial_guess(filename); CHKERRQ(ierr);
+  ierr = stress_balance->save_initial_guess(filename); CHKERRQ(ierr);
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::set_boundary_conditions(IceModelVec2S &locations,
+PetscErrorCode PISMStressBalance::set_boundary_conditions(IceModelVec2Mask &locations,
                                                           IceModelVec2V &velocities) {
   PetscErrorCode ierr;
   ierr = stress_balance->set_boundary_conditions(locations, velocities); CHKERRQ(ierr);
@@ -84,14 +82,15 @@ PetscErrorCode PISMStressBalance::set_boundary_conditions(IceModelVec2S &locatio
 
 //! \brief Set the basal melt rate.
 PetscErrorCode PISMStressBalance::set_basal_melt_rate(IceModelVec2S &bmr_input) {
-  bmr = &bmr_input;
+  basal_melt_rate = &bmr_input;
   return 0;
 }
 
 //! \brief Performs the shallow stress balance computation.
 PetscErrorCode PISMStressBalance::update(bool fast) {
   PetscErrorCode ierr;
-  IceModelVec2V *velocity_2d, *D2;
+  IceModelVec2V *velocity_2d;
+  IceModelVec2S *D2;
   IceModelVec3  *u, *v;
 
   ierr = stress_balance->update(fast); CHKERRQ(ierr);
@@ -104,7 +103,7 @@ PetscErrorCode PISMStressBalance::update(bool fast) {
   if (!fast) {
     ierr = modifier->get_horizontal_3d_velocity(u, v); CHKERRQ(ierr);
 
-    ierr = compute_vertical_velocity(u, v); CHKERRQ(ierr); 
+    ierr = compute_vertical_velocity(u, v, basal_melt_rate, w); CHKERRQ(ierr); 
   }
 
   return 0;
@@ -185,7 +184,7 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = w.getInternalColumn(i,j,&w); CHKERRQ(ierr);
+      ierr = result.getInternalColumn(i,j,&w); CHKERRQ(ierr);
 
       ierr = u->getInternalColumn(i-1,j,&u_im1); CHKERRQ(ierr);
       ierr = u->getInternalColumn(i+1,j,&u_ip1); CHKERRQ(ierr);

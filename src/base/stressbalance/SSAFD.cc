@@ -31,23 +31,6 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
   return 0;
 }
 
-
-//! \brief Solves the SSA if fast == false.
-PetscErrorCode SSAFD::update(bool fast) {
-  PetscErrorCode ierr;
-
-  if (fast)
-    return 0;
-
-  ierr = compute_hardav_staggered(); CHKERRQ(ierr);
-  
-  ierr = assemble_rhs(); CHKERRQ(ierr);
-
-  ierr = solve(); CHKERRQ(ierr);
-
-  return 0;
-}
-
 //! \brief Allocate objects specific to the SSAFD object.
 PetscErrorCode SSAFD::allocate() {
   PetscErrorCode ierr;
@@ -96,6 +79,10 @@ PetscErrorCode SSAFD::update(bool fast) {
   if (fast)
     return 0;
 
+  ierr = compute_hardav_staggered(hardness); CHKERRQ(ierr);
+  
+  ierr = assemble_rhs(SSARHS); CHKERRQ(ierr);
+
   ierr = solve(); CHKERRQ(ierr); 
 
   ierr = compute_basal_frictional_heating(basal_frictional_heating); CHKERRQ(ierr);
@@ -108,10 +95,11 @@ PetscErrorCode SSAFD::update(bool fast) {
 //! \brief Compute the D2 term (for the strain heating computation).
 PetscErrorCode SSAFD::compute_D2(IceModelVec2S &result) {
   PetscErrorCode ierr;
+  PetscReal dx = grid.dx, dy = grid.dy;
 
   ierr = velocity.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = mask.begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
   
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
@@ -131,7 +119,7 @@ PetscErrorCode SSAFD::compute_D2(IceModelVec2S &result) {
     }
   }
 
-  ierr = mask.end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = velocity.end_access(); CHKERRQ(ierr);
 
@@ -153,10 +141,10 @@ PetscErrorCode SSAFD::compute_basal_frictional_heating(IceModelVec2S &result) {
         result(i,j) = 0.0;
       } else {
         const PetscScalar 
-          C = basal->drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v),
+          C = basal.drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v),
 	  basal_stress_x = - C * velocity(i,j).u,
 	  basal_stress_y = - C * velocity(i,j).v;
-        result = basal_stress_x * velocity(i,j).u - basal_stress_y * velocity(i,j).v;
+        result(i,j) = basal_stress_x * velocity(i,j).u - basal_stress_y * velocity(i,j).v;
       }
     }
   }
@@ -199,8 +187,8 @@ PetscErrorCode SSAFD::compute_hardav_staggered(IceModelVec2Stag &result) {
           E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
         
-        result(i,j,o) = ice->averagedHardness_from_enth(H, grid.kBelowHeight(H),
-                                                        grid.zlevels, E); CHKERRQ(ierr); 
+        result(i,j,o) = ice.averagedHardness_from_enth(H, grid.kBelowHeight(H),
+                                                       grid.zlevels, E); CHKERRQ(ierr); 
       } // o
     }   // j
   }     // i
@@ -227,38 +215,36 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
   // get driving stress components
-  ierr = compute_driving_stress(vWork2d[0],vWork2d[1]); CHKERRQ(ierr);
+  ierr = compute_driving_stress(taud); CHKERRQ(ierr);
 
-  ierr = vWork2d[0].get_array(taudx); CHKERRQ(ierr);
-  ierr = vWork2d[1].get_array(taudy); CHKERRQ(ierr);
-  ierr = bc_locations->begin_access(); CHKERRQ(ierr);
+  ierr = taud.begin_access(); CHKERRQ(ierr);
   ierr = DAVecGetArray(SSADA,rhs,&rhs_uv); CHKERRQ(ierr);
 
-  if (set_bc) {
+  if (vel_bc && bc_locations) {
     ierr = vel_bc->begin_access(); CHKERRQ(ierr);
+    ierr = bc_locations->begin_access(); CHKERRQ(ierr);
   }
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (set_bc && (bc_locations->value(i,j) == MASK_BC)) {
-        rhs_uv[i][j].u = scaling * vel_bc(i,j).u;
-        rhs_uv[i][j].v = scaling * vel_bc(i,j).v;
+      if (vel_bc && (bc_locations->value(i,j) == MASK_BC)) {
+        rhs_uv[i][j].u = scaling * (*vel_bc)(i,j).u;
+        rhs_uv[i][j].v = scaling * (*vel_bc)(i,j).v;
       } else {
 	// usual case: use already computed driving stress
-        rhs_uv[i][j].u = taudx[i][j];
-        rhs_uv[i][j].v = taudy[i][j];
+        rhs_uv[i][j].u = taud(i,j).u;
+        rhs_uv[i][j].v = taud(i,j).v;
       }
     }
   }
 
-  if (set_bc) {
+  if (vel_bc) {
+    ierr = bc_locations->end_access(); CHKERRQ(ierr);
     ierr = vel_bc->end_access(); CHKERRQ(ierr);
   }
-
+  
+  ierr = taud.end_access(); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(SSADA,rhs,&rhs_uv); CHKERRQ(ierr);
-  ierr = bc_locations->end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
 
   ierr = VecAssemblyBegin(rhs); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(rhs); CHKERRQ(ierr);
@@ -268,10 +254,10 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
 //! \brief Assemble the SSA matrix.
 PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
-  PetscErrorCode ierr;
-  
-  return 0;
+  return 0; 
 }
+
+
 
 //! \brief Compute the norm of nuH and the change in nuH.
 PetscErrorCode SSAFD::compute_nuH_norm(IceModelVec2Stag nuH,
@@ -296,15 +282,14 @@ PetscErrorCode SSAFD::compute_nuH_norm(IceModelVec2Stag nuH,
   nuNorm[0] *= area;
   nuNorm[1] *= area;
 
-  normChange = sqrt(PetscSqr(nuChange[0]) + PetscSqr(nuChange[1]));
+  norm_change = sqrt(PetscSqr(nuChange[0]) + PetscSqr(nuChange[1]));
   norm = sqrt(PetscSqr(nuNorm[0]) + PetscSqr(nuNorm[1]));
   
   return 0;
 }
 
 //! \brief Compute the product of ice thickness and effective viscosity.
-PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &hardness,
-                                            IceModelVec2Stag &result,
+PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
                                             PetscReal epsilon) {
   PetscErrorCode ierr;
   PISMVector2 **uv;
@@ -343,7 +328,7 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &hardness,
           }
 
           const PetscScalar hardav = hardness(i,j,o);
-          result(i,j,o) = H * ice->effectiveViscosity(hardav, u_x, u_y, v_x, v_y);
+          result(i,j,o) = H * ice.effectiveViscosity(hardav, u_x, u_y, v_x, v_y);
 
           if (! finite(result(i,j,o)) || false) {
             ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, result(i,j,o));
@@ -377,11 +362,10 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &hardness,
  * FIXME: this method should use the surface gradient computed "the right way"
  * instead of doing its own thing here.
  */
-PetscErrorCode SSAFD::compute_driving_stress(IceModelVec2S &taudx,
-                                             IceModelVec2S &taudy) {
+PetscErrorCode SSAFD::compute_driving_stress(IceModelVec2V &result) {
   PetscErrorCode ierr;
   
-  const PetscScalar n       = ice->exponent(), // frequently n = 3
+  const PetscScalar n       = ice.exponent(), // frequently n = 3
                     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
                     invpow  = 1.0 / etapow,  // = 3/8
                     dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
@@ -389,6 +373,7 @@ PetscErrorCode SSAFD::compute_driving_stress(IceModelVec2S &taudx,
   const PetscScalar dx=grid.dx, dy=grid.dy;
 
   bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
+  PetscReal standard_gravity = config.get("standard_gravity");
   bool use_eta = (config.get_string("surface_gradient_method") == "eta");
 
   ierr =   surface->begin_access();    CHKERRQ(ierr);
@@ -396,20 +381,19 @@ PetscErrorCode SSAFD::compute_driving_stress(IceModelVec2S &taudx,
   ierr =       bed->begin_access();  CHKERRQ(ierr);
   ierr =      mask->begin_access();  CHKERRQ(ierr);
 
-  ierr = taudx.begin_access(); CHKERRQ(ierr);
-  ierr = taudy.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscReal thk = (*thickness)(i,j);
-      const PetscScalar pressure = ice->rho * standard_gravity * thk;
+      const PetscScalar pressure = ice.rho * standard_gravity * thk;
       if (pressure <= 0.0) {
-        vtaudx(i,j) = 0.0;
-        vtaudy(i,j) = 0.0;
+        result(i,j).u = 0.0;
+        result(i,j).v = 0.0;
       } else {
         PetscScalar h_x = 0.0, h_y = 0.0;
         // FIXME: we need to handle grid periodicity correctly.
-        if (vMask.is_grounded(i,j) && (use_eta == true)) {
+        if (mask->is_grounded(i,j) && (use_eta == true)) {
 	        // in grounded case, differentiate eta = H^{8/3} by chain rule
           if (thk > 0.0) {
             const PetscScalar myH = (thk < minThickEtaTransform) ?
@@ -432,8 +416,8 @@ PetscErrorCode SSAFD::compute_driving_stress(IceModelVec2S &taudx,
           }
         }
 
-        taudx(i,j) = - pressure * h_x;
-        taudy(i,j) = - pressure * h_y;
+        result(i,j).u = - pressure * h_x;
+        result(i,j).v = - pressure * h_y;
       }
     }
   }
@@ -442,8 +426,7 @@ PetscErrorCode SSAFD::compute_driving_stress(IceModelVec2S &taudx,
   ierr =   surface->end_access(); CHKERRQ(ierr);
   ierr = thickness->end_access(); CHKERRQ(ierr);
   ierr =      mask->end_access(); CHKERRQ(ierr);
-  ierr =      taudx.end_access(); CHKERRQ(ierr);
-  ierr =      taudy.end_access(); CHKERRQ(ierr);
+  ierr =     result.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

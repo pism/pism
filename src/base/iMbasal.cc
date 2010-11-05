@@ -414,7 +414,6 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
   if (holdTillYieldStress == PETSC_FALSE) { // usual case: use Hmelt to determine tauc
     PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
       till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
-      till_mu = tan((pi/180.0)*config.get("default_till_phi")),
       hmelt_max = config.get("hmelt_max");
 
     ierr =    vMask.begin_access(); CHKERRQ(ierr);
@@ -435,11 +434,8 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
             p_w    = getBasalWaterPressure(vH(i,j), vHmelt(i,j),
                        vbmr(i,j), till_pw_fraction, hmelt_max),
             N      = p_over - p_w;  // effective pressure on till
-          if (useConstantTillPhi == PETSC_TRUE) {
-            vtauc(i,j) = till_c_0 + N * till_mu;
-          } else {
-            vtauc(i,j) = till_c_0 + N * tan((pi/180.0) * vtillphi(i,j));
-          }
+
+          vtauc(i,j) = till_c_0 + N * tan((pi/180.0) * vtillphi(i,j));
         }
       }
     }

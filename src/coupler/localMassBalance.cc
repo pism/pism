@@ -136,15 +136,15 @@ PetscScalar PDDMassBalance::getSnowFromPrecipAndTemperatureTimeSeries(
 
 
 //! \brief Compute the surface mass balance at a location from the number of positive
-//! degree days and the amount of snow which fell in a time interval.
+//! degree days and the accumulation amount in a time interval.
 /*!
 Several mass fluxes, including the final surface mass balance, are computed 
 as ice-equivalent meters per second from the number of positive degree days
-and an amount of snow in the time interval.
+and an accumulation amount in the time interval.
 
 This is a PDD scheme.  The input parameter \c ddf.snow is a rate of melting per
 positive degree day for snow.  If the number of PDDs, which describes an energy
-available for melt, exceeds those needed to melt all of the snow (using
+available for melt, exceeds those needed to melt all of the accumulation (snow, using
 \c ddf.snow) then:
   \li a fraction of the melted snow refreezes, conceptualized as superimposed
       ice, and this is controlled by parameter \c ddf.refreezeFrac, and
@@ -154,8 +154,8 @@ available for melt, exceeds those needed to melt all of the snow (using
 In either case, \e ice melts at a constant rate per positive degree day,
 controlled by parameter \c ddf.ice.
 
-In the weird case where the amount of snow is negative, it is interpreted
-as an (ice-equivalent) direct ablation rate.  Snow amounts are generally
+In the weird case where the accumulation amount is negative, it is interpreted
+as an (ice-equivalent) direct ablation rate.  Accumulation amounts are generally
 positive everywhere on ice sheets, however.
 
 The scheme here came from EISMINT-Greenland [\ref RitzEISMINT], but is influenced
@@ -177,28 +177,28 @@ is the part of precipitation which is not rain, so, if needed, the modeled
 rain rate is <tt>rain_rate = precip_rate - accum_rate</tt>.  Again, "runoff" is 
 meltwater runoff and does not include rain.
 
-In normal areas where \c snow > 0, the output quantities satisfy
+In normal areas where \c accumulation > 0, the output quantities satisfy
   \li <tt>smb_rate = accumulation_rate - runoff_rate</tt>
 
 in all cases.
  */
 PetscErrorCode PDDMassBalance::getMassFluxesFromPDDs(const DegreeDayFactors &ddf,
                                                      PetscScalar dt, PetscScalar pddsum,
-                                                     PetscScalar snow,
+                                                     PetscScalar accumulation,
                                                      PetscScalar &accumulation_rate,
                                                      PetscScalar &melt_rate,
                                                      PetscScalar &runoff_rate,
                                                      PetscScalar &smb_rate) {
 
-  if (snow < 0.0) {           // weird, but allowed, case
+  if (accumulation < 0.0) {           // weird, but allowed, case
     accumulation_rate = 0.0;
-    melt_rate         = snow / dt;
+    melt_rate         = accumulation / dt;
     runoff_rate       = melt_rate;
     smb_rate          = melt_rate;
     return 0;
   }
 
-  accumulation_rate = snow / dt;
+  accumulation_rate = accumulation / dt;
   
   // no melt case: we're done
   if (pddsum <= 0.0) {
@@ -209,7 +209,7 @@ PetscErrorCode PDDMassBalance::getMassFluxesFromPDDs(const DegreeDayFactors &ddf
   }
 
   const PetscScalar snow_max_melted = pddsum * ddf.snow;  // units: m (ice-equivalent)
-  if (snow_max_melted <= snow) {
+  if (snow_max_melted <= accumulation) {
     // some of the snow melted and some is left; in any case, all of the energy
     //   available for melt, namely all of the positive degree days (PDDs) were
     //   used-up in melting snow; but because the snow does not completely melt,
@@ -223,18 +223,18 @@ PetscErrorCode PDDMassBalance::getMassFluxesFromPDDs(const DegreeDayFactors &ddf
   // at this point: all of the snow melted; some of melt mass is kept as 
   //   refrozen ice; excess PDDs remove some of this ice and perhaps more of the
   //   underlying ice
-  const PetscScalar  ice_created_by_refreeze = snow * ddf.refreezeFrac;  // units: m (ice-equivalent)
+  const PetscScalar  ice_created_by_refreeze = accumulation * ddf.refreezeFrac;  // units: m (ice-equivalent)
 
   const PetscScalar
-      excess_pddsum = pddsum - (snow / ddf.snow), // units: K day
+      excess_pddsum = pddsum - (accumulation / ddf.snow), // units: K day
       ice_melted    = excess_pddsum * ddf.ice; // units: m (ice-equivalent)
 
   // all of the snow, plus some of the ice, was melted
-  melt_rate   = (snow + ice_melted) / dt;
+  melt_rate   = (accumulation + ice_melted) / dt;
   // all of the snow which melted but which did not refreeze, plus all of the
   //   ice which melted (ice includes refrozen snow!), combine to give meltwater
   //   runoff rate 
-  runoff_rate = (snow - ice_created_by_refreeze + ice_melted) / dt;
+  runoff_rate = (accumulation - ice_created_by_refreeze + ice_melted) / dt;
   smb_rate    = accumulation_rate - runoff_rate;
   return 0;
 }

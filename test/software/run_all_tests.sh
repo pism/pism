@@ -10,7 +10,8 @@ rm -f $SUMMARY
 # Load some functions
 source functions.sh
 
-PREFIX=`echo $PWD | sed -e "s/\/test\/software//"`
+EXEC=`which pismr`
+PREFIX=`dirname $EXEC`
 
 # Modify the PATH variable so that we always use the right version of PISM:
 PATH=$PREFIX/bin:$PREFIX/util:$PATH

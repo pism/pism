@@ -10,7 +10,7 @@ The data are freely available at
   \url{http://homepages.vub.ac.be/~phuybrec/eismint/greenland.html}
 \end{center}
 
-\noindent The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  In the ``forced climate'' CCL3 run, described below, the modeled ice sheet is sees changes in surface temperature from the GRIP core \cite{Dansgaardetal1993} and sea level changes from SPECMAP \cite{Imbrieetal1984}.
+\noindent The snow-fall accumulation map, ablation parameterization, surface temperature formula, surface elevation, and bedrock elevation maps are essentially as in the 1991 papers \cite{Letreguillyetal1991,OhmuraReeh}.  In the ``forced climate'' CCL3 run, described below, the modeled ice sheet sees changes in surface temperature from the GRIP core \cite{Dansgaardetal1993} and sea level changes from SPECMAP \cite{Imbrieetal1984}.
 
 Substantial developments have occurred in modeling the Greenland ice sheet since the EISMINT-Greenland intercomparison.  For example, the relation between a Greenland ice sheet flow model, Earth deformation under ice sheet loads, and the reconstruction of global ice loading is analyzed in \cite{TarasovPeltier}.  A parameter-sensitivity study of a EISMINT-Greenland-type ice sheet model is described in \cite{RitzFabreLetreguilly}.  The response of Greenland ice sheet models to climate warming is addressed in \cite{HuybrechtsdeWolde,Huybrechts02, Greve00}, among other references.
 
@@ -201,7 +201,7 @@ As suggested a few paragraphs back, it is helpful to do a better job of filling 
 \begin{verbatim}
 $ mpiexec -n 2 pgrn -i green20km_y1.nc -no_mass -y 25000 -o green20km_Tsteady.nc
 \end{verbatim}%$
-\noindent This last run takes less than half of a processor-hour.  Parallel processing is effective here, up to perhaps a peak real time speed with 40 processors for this coarse 83$\times$141 grid.  (Finer grid computations, for instance on a 5km grid for a Greenland-sized ice sheet, are \emph{easier} to parallelize in the sense that greater a maximum speedup over one processor is attainable \cite{BBssasliding}.)
+\noindent This last run takes less than half of a processor-hour.  Parallel processing is effective here, up to perhaps a peak real time speed with 40 processors for this coarse 83$\times$141 grid.  (Finer grid computations, for instance on a 5km grid for a Greenland-sized ice sheet, are \emph{easier} to parallelize in the sense that greater maximum speedup over one processor is attainable \cite{BBssasliding}.)
 
 The EISMINT-Greenland experiments \cite{RitzEISMINT} specify a positive degree day (PDD) model which is automatically turned on when using the \texttt{pgrn} executable.  (The base executable \texttt{pismr} requires option \texttt{-surface pdd} to turn on the PDD model.)  The PDD model is, by default, implemented by the deterministic scheme described in \cite{CalovGreve05}, but the user can add option \texttt{-pdd_rand} to use a stochastic PDD implementation.  The temperature parameterization and positive degree day factors are from \cite{RitzEISMINT} instead of the default for \texttt{pismr}, which uses \cite{Faustoetal2009}.
 
@@ -219,13 +219,13 @@ $ mpiexec -n 8 pgrn -ssl2 -i green_SSL2_10k.nc -y 10000 \
 \end{verbatim}%$
 \noindent And so on.
 
-The script \texttt{ssh2.sh} uses options \texttt{ts_file} and \texttt{save_file} to do the run with ``snapshots'' saved every 10000 model years, and the volume saved every 100 model years.  So out discussion will now assume that the user \emph{actually} did this to completion:
+The script \texttt{ssh2.sh} uses options \texttt{ts_file} and \texttt{save_file} to do the run with ``snapshots'' saved every 10000 model years, and the volume saved every 100 model years.  So our discussion will now assume that the user \emph{actually} did this to completion:
 
 \begin{verbatim}
 ./ssh2.sh 2 >> out.ssl2 &
 \end{verbatim}
 
-\noindent This puts the run in the background and generates a text file logging the whole run.  The whole SSL2 run should take something like ?? processor hours.  Three files appear, \texttt{vol_ssl2.nc}, \texttt{snaps_ssl2.nc}, and, at the end of the run, \texttt{green_ssl2_110ka.nc}.
+\noindent This puts the run in the background and generates a text file logging the whole run.  The whole SSL2 run should take something like FIXME processor hours.  Three files appear, \texttt{vol_ssl2.nc}, \texttt{snaps_ssl2.nc}, and, at the end of the run, \texttt{green_ssl2_110ka.nc}.
 
 The SSL2 simulation is intended to go until the model reaches a ``steady state'', a phrase which \cite{RitzEISMINT} defines as a small volume change rate, namely less than a .01\% change in volume in 10,000 years.  One can look at the standard output text file by a minimal method like ``\texttt{less out.ssl2}''.  The user can more clearly see the behavior over time of the volume, area, basal melt fraction, and a couple of other default quantities, by viewing the NetCDF file \texttt{vol_ssl2.nc}.  We leave it as an exercise to find the first 10000 model year period in which the volume changes by less that 0.01\%.
 

@@ -192,15 +192,13 @@ protected:
   // SHOULD NOT be hard-wired.
 
   // flags
-  bool leaveNuHAloneSSA;
+  bool leaveNuHAloneSSA;        // should be removed
   PetscTruth  updateHmelt,
               holdTillYieldStress,
-              useConstantTillPhi, // should be deprecated
               shelvesDragToo,
               doAdaptTimeStep, 
               realAgeForGrainSize, // is always equal to PETSC_FALSE; should we let it go?
               ssaSystemToASCIIMatlab,
-              reportPATemps,    // is never used
               allowAboveMelting,
               computeSIAVelocities;
   char        adaptReasonFlag;
@@ -262,7 +260,7 @@ protected:
 					      PetscInt ks,	 //!< index of the level just below the surface
 					      const PetscScalar *Enth, //!< Enthalpy
 					      const PetscScalar *w,    //!< vert. velocity
-					      PetscScalar *lambda,     //!< labmda
+					      PetscScalar *lambda,     //!< lambda
 					      PetscScalar **Enth_s//!< enthalpy for the pr.-melting temp.
                                               );   
   virtual PetscErrorCode enthalpyAndDrainageStep(
@@ -298,10 +296,10 @@ protected:
                        PetscScalar& gvolSIA, PetscScalar& gvolstream, 
                        PetscScalar& gvolshelf);
   virtual PetscErrorCode energyStats(
-                       PetscScalar iarea, bool useHomoTemp, 
+                       PetscScalar iarea,
                        PetscScalar &gmeltfrac, PetscScalar &gtemp0);
   virtual PetscErrorCode ageStats(PetscScalar ivol, PetscScalar &gorigfrac);
-  virtual PetscErrorCode summary(bool tempAndAge, bool useHomoTemp);
+  virtual PetscErrorCode summary(bool tempAndAge);
   virtual PetscErrorCode summaryPrintLine(
               PetscTruth printPrototype, bool tempAndAge,
               PetscScalar year, PetscScalar delta_t, 

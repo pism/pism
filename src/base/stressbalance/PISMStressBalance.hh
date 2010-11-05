@@ -47,7 +47,7 @@ public:
   /*!
    * Does not affect the SIA computation.
    */
-  virtual PetscErrorCode set_boundary_conditions(IceModelVec2S &locations,
+  virtual PetscErrorCode set_boundary_conditions(IceModelVec2Mask &locations,
                                                  IceModelVec2V &velocities); // done
 
   virtual PetscErrorCode set_basal_melt_rate(IceModelVec2S &bmr); // done
@@ -83,6 +83,7 @@ protected:
   virtual PetscErrorCode compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
                                                    IceModelVec2S *bmr, IceModelVec3 &result); // done
   IceGrid &grid;
+  IceFlowLaw &ice;
   const NCConfigVariable &config;
 
   IceModelVec3 w;

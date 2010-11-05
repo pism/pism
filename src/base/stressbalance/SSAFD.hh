@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,19 +21,61 @@
 
 #include "ShallowStressBalance.hh"
 
+// //! Where ice thickness is zero the SSA is no longer "elliptic".  This class provides an extension coefficient to maintain well-posedness/ellipticity.
+// /*!
+// More specifically, the SSA equations are
+// \latexonly
+// \def\ddt#1{\ensuremath{\frac{\partial #1}{\partial t}}}
+// \def\ddx#1{\ensuremath{\frac{\partial #1}{\partial x}}}
+// \def\ddy#1{\ensuremath{\frac{\partial #1}{\partial y}}}
+// \begin{equation*}
+//   - 2 \ddx{}\left[\nu H \left(2 \ddx{u} + \ddy{v}\right)\right]
+//         - \ddy{}\left[\nu H \left(\ddy{u} + \ddx{v}\right)\right]
+//         + \tau_{(b)x}  =  - \rho g H \ddx{h},
+// \end{equation*}
+// \endlatexonly
+// and another similar equation.  Schoof \ref SchoofStream shows that these PDEs
+// are the variational equations for a functional.
+
+// The quantity \f$\nu H\f$ is the nonlinear coefficient in this (roughly-speaking)
+// elliptic pair of PDEs.  Conceptually it is a membrane strength.  Well-posedness of the SSA problem 
+// requires either a precisely-defined boundary and an appropriate boundary condition
+// \e or a nonzero value of \f$\nu H\f$ at all points.  This class provides that nonzero value.
+//  */
+// class SSAStrengthExtension {
+// public:
+//   SSAStrengthExtension();
+//   //! Set strength with units (viscosity times thickness).
+//   PetscErrorCode set_notional_strength(PetscReal my_nuH);
+//   //! Set minimum thickness to trigger use of extension.
+//   PetscErrorCode set_min_thickness(PetscReal my_min_thickness);
+//   //! Returns strength with units (viscosity times thickness).
+//   PetscReal      get_notional_strength() const { return nuH; }
+//   //! Returns minimum thickness to trigger use of extension.
+//   PetscReal      get_min_thickness() const { return min_thickness; }
+// private:
+//   PetscReal  min_thickness, nuH;
+// };
+
+
 //! PISM's SSA solver implementation
 class SSAFD : public ShallowStressBalance
 {
 public:
-  SSAFD(IceGrid &g, const NCConfigVariable &config);
-  virtual ~SSAFD();
-protected:
+  SSAFD(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i,
+        const NCConfigVariable &config)
+    : ShallowStressBalance(g, b, i, config) {}
 
+  virtual ~SSAFD() { deallocate(); }
+
+  SSAStrengthExtension ssaStrengthExtend;
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode allocate();
-  virtual PetscErrorCode deallocate();
-
   virtual PetscErrorCode update(bool fast);
+
+protected:
+  virtual PetscErrorCode allocate();
+
+  virtual PetscErrorCode deallocate();
 
   virtual PetscErrorCode solve();
 
@@ -42,17 +84,15 @@ protected:
 
   virtual PetscErrorCode compute_nuH_norm(IceModelVec2Stag nuH,
                                           IceModelVec2Stag nuH_old,
-                                          PetscReal *norm,
-                                          PetscReal *norm_change); // done
+                                          PetscReal &norm,
+                                          PetscReal &norm_change); // done
 
-  virtual PetscErrorCode assemble_matrix(bool include_basal_shear,
-                                         IceModelVec2Stag nuH, Mat A);
+  virtual PetscErrorCode assemble_matrix(bool include_basal_shear, Mat A);
 
   virtual PetscErrorCode assemble_rhs(Vec rhs); // done
 
-protected:
-  virtual PetscErrorCode compute_driving_stress(IceModelVec2S &taudx,
-                                                IceModelVec2S &taudy); // done
+  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
+
   virtual PetscErrorCode compute_hardav_staggered(IceModelVec2Stag &result); // done
 
   virtual PetscErrorCode compute_basal_frictional_heating(IceModelVec2S &result); // done
@@ -60,8 +100,16 @@ protected:
   virtual PetscErrorCode compute_D2(IceModelVec2S &result); // done
 
   IceModelVec2Mask *mask;
-  IceModelVec2S *thickness;
+  IceModelVec2S *thickness, *tauc, *surface, *bed;
+  IceModelVec2Stag hardness, nuH, nuH_old;
+  IceModelVec2V taud;
   IceModelVec3 *enthalpy;
+
+  // objects used by the SSA solver (internally)
+  KSP SSAKSP;
+  Mat SSAStiffnessMatrix;
+  Vec SSAX, SSARHS;  // Global vectors for solution of the linear system and the RHS.
+  DA  SSADA;
 };
 
 
