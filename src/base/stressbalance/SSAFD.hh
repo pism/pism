@@ -20,6 +20,7 @@
 #define _SSAFD_H_
 
 #include "ShallowStressBalance.hh"
+#include <petscksp.h>
 
 // //! Where ice thickness is zero the SSA is no longer "elliptic".  This class provides an extension coefficient to maintain well-posedness/ellipticity.
 // /*!
