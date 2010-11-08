@@ -210,11 +210,13 @@ PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) {
   return 0;
 }
 
+
 //! Provides access (both read and write) to the internal PetscScalar array.
 /*!
   Note that i corresponds to the x direction and j to the y.
  */
 PetscScalar& IceModelVec2S::operator() (int i, int j) {
+  check_array_indices(i, j);
   return static_cast<PetscScalar**>(array)[i][j];
 }
 
@@ -283,6 +285,7 @@ PismMask IceModelVec2Mask::value(int i, int j) {
 }
 
 PetscScalar& IceModelVec2Mask::operator() (int i, int j) {
+  check_array_indices(i, j);
   return static_cast<PetscScalar**>(array)[i][j];
 }
 
@@ -537,6 +540,8 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
   grid = &my_grid;
   dims = GRID_2D;
 
+  da_stencil_width = stencil_width;
+
   ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, my_sten,
 		    grid->My, grid->Mx,
 		    grid->Ny, grid->Nx,
@@ -614,6 +619,7 @@ PetscErrorCode  IceModelVec2Stag::end_access() {
 }
 
 PetscScalar& IceModelVec2Stag::operator() (int i, int j, int k) {
+  check_array_indices(i, j);
   return static_cast<PetscScalar***>(array)[i][j][k];
 }
 
@@ -680,13 +686,18 @@ PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2V &result) {
 //! \brief Computes the norm of both components.
 PetscErrorCode IceModelVec2Stag::norm_all(NormType n, PetscReal &result0, PetscReal &result1) {
   PetscErrorCode ierr;
-  PetscReal norm[2];
+  PetscReal *norm_result;
 
-  ierr = VecStrideNormAll(v, n, norm); CHKERRQ(ierr);
+  norm_result = new PetscReal[dof];
 
-  result0 = norm[0];
-  result1 = norm[1];
+  ierr = VecStrideNormAll(v, n, norm_result); CHKERRQ(ierr);
+
+  result0 = norm_result[0];
+  result1 = norm_result[1];
   // FIXME: do we need to call Allreduce? I don't think so, but this would mean
   // that VecStrideNormAll and VecNorm are different in this respect...
+
+  delete [] norm_result;
+
   return 0;
 }

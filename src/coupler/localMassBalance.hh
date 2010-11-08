@@ -67,7 +67,7 @@ public:
   LocalMassBalance(const NCConfigVariable &myconfig)
     : config(myconfig) {}
   virtual ~LocalMassBalance() {}
-  virtual PetscErrorCode init() {};
+  virtual PetscErrorCode init() { return 0; };
 
   /*! Call before getMassFluxFromTemperatureTimeSeries() so that mass balance method can
       decide how to cut up the time interval.  Most implementations will ignore

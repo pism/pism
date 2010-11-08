@@ -26,13 +26,55 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
 
   ierr = velocity.set(0.0); CHKERRQ(ierr);
 
-  ierr = allocate(); CHKERRQ(ierr); 
+  mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
+  if (mask == NULL) SETERRQ(1, "mask is not available");
+
+  thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
+  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+
+  tauc = dynamic_cast<IceModelVec2S*>(vars.get("tauc"));
+  if (tauc == NULL) SETERRQ(1, "tauc is not available");
+
+  surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
+  if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
+
+  bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
+  if (bed == NULL) SETERRQ(1, "bedrock_altitude is not available");
+
+  enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
+  if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
+
+  ierr = allocate_internals(); CHKERRQ(ierr); 
+
+  const PetscScalar power = 1.0 / ice.exponent();
+  char unitstr[TEMPORARY_STRING_LENGTH];
+  snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
+  ierr = hardness.create(grid, "hardness", false); CHKERRQ(ierr);
+  ierr = hardness.set_attrs("diagnostic",
+                            "vertically-averaged ice hardness",
+                            unitstr, ""); CHKERRQ(ierr);
+
+  ierr = nuH.create(grid, "nuH", false); CHKERRQ(ierr);
+  ierr = nuH.set_attrs("internal",
+                       "ice thickness times effective viscosity",
+                       "Pa s m", ""); CHKERRQ(ierr);
+
+  ierr = nuH_old.create(grid, "nuH_old", false); CHKERRQ(ierr);
+  ierr = nuH_old.set_attrs("internal",
+                           "ice thickness times effective viscosity (before an update)",
+                           "Pa s m", ""); CHKERRQ(ierr);
+
+  ierr = taud.create(grid, "taud", false); CHKERRQ(ierr);
+  ierr = taud.set_attrs("diagnostic",
+                        "driving shear stress at the base of ice",
+                        "Pa", ""); CHKERRQ(ierr);
+
 
   return 0;
 }
 
 //! \brief Allocate objects specific to the SSAFD object.
-PetscErrorCode SSAFD::allocate() {
+PetscErrorCode SSAFD::allocate_internals() {
   PetscErrorCode ierr;
 
   // mimic IceGrid::createDA() with TRANSPOSE :
@@ -206,7 +248,6 @@ PetscErrorCode SSAFD::compute_hardav_staggered(IceModelVec2Stag &result) {
 //! \brief Assemble the right-hand-side vector.
 PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   PetscErrorCode ierr;
-  PetscScalar     **taudx, **taudy;
   PISMVector2     **rhs_uv;
 
   // next constant not too sensitive, but must match value in assembleSSAMatrix():
@@ -260,10 +301,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
 
 //! \brief Compute the norm of nuH and the change in nuH.
-PetscErrorCode SSAFD::compute_nuH_norm(IceModelVec2Stag nuH,
-                                       IceModelVec2Stag nuH_old,
-                                       PetscReal &norm,
-                                       PetscReal &norm_change) {
+PetscErrorCode SSAFD::compute_nuH_norm(PetscReal &norm, PetscReal &norm_change) {
   PetscErrorCode ierr;
 
   PetscReal nuNorm[2], nuChange[2];
@@ -288,9 +326,9 @@ PetscErrorCode SSAFD::compute_nuH_norm(IceModelVec2Stag nuH,
   return 0;
 }
 
-//! \brief Compute the product of ice thickness and effective viscosity.
-PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
-                                            PetscReal epsilon) {
+//! \brief Compute the product of ice thickness and effective viscosity (on the
+//! staggered grid).
+PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal epsilon) {
   PetscErrorCode ierr;
   PISMVector2 **uv;
 
@@ -308,39 +346,40 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
 
         const PetscScalar H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
 
-        if (H < ssaStrengthExtend.min_thickness_for_extension()) {
+        if (H < strength_extension.min_thickness_for_extension()) {
           // Extends strength of SSA (i.e. nuH coeff) into the ice free region.
           //  Does not add or subtract ice mass.
-          result(i,j,o) = ssaStrengthExtend.notional_strength();
+          result(i,j,o) = strength_extension.notional_strength();
+          continue;
+        }
+
+        PetscScalar u_x, u_y, v_x, v_y;
+        // Check the offset to determine how to differentiate velocity
+        if (o == 0) {
+          u_x = (uv[i+1][j].u - uv[i][j].u) / dx;
+          u_y = (uv[i][j+1].u + uv[i+1][j+1].u - uv[i][j-1].u - uv[i+1][j-1].u) / (4*dy);
+          v_x = (uv[i+1][j].v - uv[i][j].v) / dx;
+          v_y = (uv[i][j+1].v + uv[i+1][j+1].v - uv[i][j-1].v - uv[i+1][j-1].v) / (4*dy);
         } else {
-          PetscScalar u_x, u_y, v_x, v_y;
-          // Check the offset to determine how to differentiate velocity
-          if (o == 0) {
-            u_x = (uv[i+1][j].u - uv[i][j].u) / dx;
-            u_y = (uv[i][j+1].u + uv[i+1][j+1].u - uv[i][j-1].u - uv[i+1][j-1].u) / (4*dy);
-            v_x = (uv[i+1][j].v - uv[i][j].v) / dx;
-            v_y = (uv[i][j+1].v + uv[i+1][j+1].v - uv[i][j-1].v - uv[i+1][j-1].v) / (4*dy);
-          } else {
-            u_x = (uv[i+1][j].u + uv[i+1][j+1].u - uv[i-1][j].u - uv[i-1][j+1].u) / (4*dx);
-            u_y = (uv[i][j+1].u - uv[i][j].u) / dy;
-            v_x = (uv[i+1][j].v + uv[i+1][j+1].v - uv[i-1][j].v - uv[i-1][j+1].v) / (4*dx);
-            v_y = (uv[i][j+1].v - uv[i][j].v) / dy;
-          }
+          u_x = (uv[i+1][j].u + uv[i+1][j+1].u - uv[i-1][j].u - uv[i-1][j+1].u) / (4*dx);
+          u_y = (uv[i][j+1].u - uv[i][j].u) / dy;
+          v_x = (uv[i+1][j].v + uv[i+1][j+1].v - uv[i-1][j].v - uv[i-1][j+1].v) / (4*dx);
+          v_y = (uv[i][j+1].v - uv[i][j].v) / dy;
+        }
 
-          const PetscScalar hardav = hardness(i,j,o);
-          result(i,j,o) = H * ice.effectiveViscosity(hardav, u_x, u_y, v_x, v_y);
+        result(i,j,o) = H * ice.effectiveViscosity(hardness(i,j,o), u_x, u_y, v_x, v_y);
 
-          if (! finite(result(i,j,o)) || false) {
-            ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, result(i,j,o));
-              CHKERRQ(ierr); 
-            ierr = PetscPrintf(grid.com, "  u_x, u_y, v_x, v_y = %e, %e, %e, %e\n", 
-                               u_x, u_y, v_x, v_y);
-              CHKERRQ(ierr);
-          }
+        if (! finite(result(i,j,o)) || false) {
+          ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, result(i,j,o));
+          CHKERRQ(ierr); 
+          ierr = PetscPrintf(grid.com, "  u_x, u_y, v_x, v_y = %e, %e, %e, %e\n", 
+                             u_x, u_y, v_x, v_y);
+          CHKERRQ(ierr);
+        }
           
-          // We ensure that nuH is bounded below by a positive constant.
-          result(i,j,o) += epsilon;
-        } // end of if (H < ssaStrengthExtend.min_thickness_for_extension()) { ... } else {
+        // We ensure that nuH is bounded below by a positive constant.
+        result(i,j,o) += epsilon;
+
       } // j
     } // i
   } // o
@@ -364,7 +403,9 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result,
  */
 PetscErrorCode SSAFD::compute_driving_stress(IceModelVec2V &result) {
   PetscErrorCode ierr;
-  
+
+  IceModelVec2S &thk = *thickness; // to improve readability (below)
+
   const PetscScalar n       = ice.exponent(), // frequently n = 3
                     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
                     invpow  = 1.0 / etapow,  // = 3/8
@@ -377,16 +418,15 @@ PetscErrorCode SSAFD::compute_driving_stress(IceModelVec2V &result) {
   bool use_eta = (config.get_string("surface_gradient_method") == "eta");
 
   ierr =   surface->begin_access();    CHKERRQ(ierr);
-  ierr = thickness->begin_access();  CHKERRQ(ierr);
   ierr =       bed->begin_access();  CHKERRQ(ierr);
   ierr =      mask->begin_access();  CHKERRQ(ierr);
+  ierr =        thk.begin_access();  CHKERRQ(ierr);
 
   ierr = result.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscReal thk = (*thickness)(i,j);
-      const PetscScalar pressure = ice.rho * standard_gravity * thk;
+      const PetscScalar pressure = ice.rho * standard_gravity * thk(i,j);
       if (pressure <= 0.0) {
         result(i,j).u = 0.0;
         result(i,j).v = 0.0;
@@ -395,12 +435,12 @@ PetscErrorCode SSAFD::compute_driving_stress(IceModelVec2V &result) {
         // FIXME: we need to handle grid periodicity correctly.
         if (mask->is_grounded(i,j) && (use_eta == true)) {
 	        // in grounded case, differentiate eta = H^{8/3} by chain rule
-          if (thk > 0.0) {
-            const PetscScalar myH = (thk < minThickEtaTransform) ?
-	                                  minThickEtaTransform : thk;
+          if (thk(i,j) > 0.0) {
+            const PetscScalar myH = (thk(i,j) < minThickEtaTransform ?
+                                     minThickEtaTransform : thk(i,j));
             const PetscScalar eta = pow(myH, etapow), factor = invpow * pow(eta, dinvpow);
-            h_x = factor * (pow((*thickness)(i+1,j),etapow) - pow((*thickness)(i-1,j),etapow)) / (2*dx);
-            h_y = factor * (pow((*thickness)(i,j+1),etapow) - pow((*thickness)(i,j-1),etapow)) / (2*dy);
+            h_x = factor * (pow(thk(i+1,j),etapow) - pow(thk(i-1,j),etapow)) / (2*dx);
+            h_y = factor * (pow(thk(i,j+1),etapow) - pow(thk(i,j-1),etapow)) / (2*dy);
           }
           // now add bed slope to get actual h_x,h_y
           // FIXME: there is no reason to assume user's bed is periodized
@@ -422,9 +462,9 @@ PetscErrorCode SSAFD::compute_driving_stress(IceModelVec2V &result) {
     }
   }
 
+  ierr =        thk.end_access(); CHKERRQ(ierr);
   ierr =       bed->end_access(); CHKERRQ(ierr);
   ierr =   surface->end_access(); CHKERRQ(ierr);
-  ierr = thickness->end_access(); CHKERRQ(ierr);
   ierr =      mask->end_access(); CHKERRQ(ierr);
   ierr =     result.end_access(); CHKERRQ(ierr);
 

@@ -25,37 +25,52 @@
 class SIAFD : public SSB_Modifier
 {
 public:
-  SIAFD();
-  virtual ~SIAFD();
+  SIAFD(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
+    : SSB_Modifier(g, i, e, c), WIDE_STENCIL(2) {}
+
+  virtual ~SIAFD() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
-  virtual PetscErrorCode update(IceModelVec2V &vel_input,
-                                IceModelVec2S &D2_input,
+  virtual PetscErrorCode update(IceModelVec2V *vel_input,
+                                IceModelVec2S *D2_input,
                                 bool fast);
 
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
 protected:
-  virtual PetscErrorCode compute_sigma(IceModelVec3 &Sigma);
-
   virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
   virtual PetscErrorCode surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
   virtual PetscErrorCode surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
   virtual PetscErrorCode surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
-  virtual PetscErrorCode compute_diffusive_flux(IceModelVec2Stag &result, bool fast);
+  virtual PetscErrorCode compute_diffusive_flux(IceModelVec2Stag h_x, IceModelVec2Stag h_y,
+                                                IceModelVec2Stag &result, bool fast);
 
-  virtual PetscErrorCode compute_3d_horizontal_velocity(IceModelVec3 &u_out, IceModelVec3 &v_out);
+  virtual PetscErrorCode compute_3d_horizontal_velocity(IceModelVec2Stag h_x, IceModelVec2Stag h_y,
+                                                        IceModelVec2V *vel_input,
+                                                        IceModelVec3 &u_out, IceModelVec3 &v_out);
+
+  virtual PetscErrorCode compute_I();
+  virtual PetscErrorCode compute_sigma(IceModelVec2S *D2_input, IceModelVec2Stag &h_x,
+                                       IceModelVec2Stag &h_y);
 
   PetscScalar grainSizeVostok(PetscScalar age) const;
 
-  IceModelVec2S *bed, *thickness, *surface, tmp1, tmp2;
-  IceModelVec2Stag tmp3, tmp4;
-  IceModelVec3 delta_staggered[2], I_staggered[2], *age, *enthalpy;  
+  // pointers to input fields:
+  IceModelVec2S *bed, *thickness, *surface;
+  IceModelVec2Mask *mask;
+  IceModelVec3 *age, *enthalpy;
 
-  PISMBedSmoother *sia_bed_smoother;
+  // temporary storage:
+  IceModelVec2S work_2d[2];         // for eta, theta and the smoothed thickness
+  IceModelVec2Stag work_2d_stag[2]; // for the surface gradient
+  IceModelVec3 work_3d[4];      // replaces old Sigmastag3 and Istag3; used to
+                                // store delta, I and Sigma on the staggered grid
+
+  PISMBedSmoother *bed_smoother;
+  const PetscInt WIDE_STENCIL;
 };
 
 

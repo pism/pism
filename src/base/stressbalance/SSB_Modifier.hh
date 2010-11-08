@@ -22,13 +22,14 @@
 #include "iceModelVec.hh"
 #include "PISMVars.hh"
 #include "flowlaws.hh"
+#include "enthalpyConverter.hh"
 
 //! Shallow stress balance modifier (such as the non-sliding SIA).
 class SSB_Modifier
 {
 public:
-  SSB_Modifier(IceGrid &g, IceFlowLaw &i, const NCConfigVariable &c)
-    : grid(g), ice(i), config(c)
+  SSB_Modifier(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
+    : grid(g), ice(i), EC(e), config(c)
   { D_max = u_max = v_max = 0.0; }
   virtual ~SSB_Modifier() {}
 
@@ -58,11 +59,9 @@ public:
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz); // done
 protected:
-  virtual PetscErrorCode compute_sigma(IceModelVec2S *D2_input,
-                                       IceModelVec3 &Sigma) = 0;
-
   IceGrid &grid;
   IceFlowLaw &ice;
+  EnthalpyConverter &EC;
   const NCConfigVariable &config;
   PetscReal D_max, u_max, v_max;
   IceModelVec2Stag diffusive_flux;
@@ -74,14 +73,13 @@ protected:
 class SSBM_Trivial : public SSB_Modifier
 {
 public:
-  SSBM_Trivial(IceGrid &g, IceFlowLaw &i, const NCConfigVariable &config)
-    :SSB_Modifier(g, i, config) {}
+  SSBM_Trivial(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
+    : SSB_Modifier(g, i, e, c) {}
   virtual ~SSBM_Trivial();
   virtual PetscErrorCode update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
                                 bool fast);
 protected:
-  virtual PetscErrorCode compute_sigma(IceModelVec2S *D2_input,
-                                       IceModelVec3 &Sigma);
+  PetscErrorCode compute_sigma(IceModelVec2S *D2_input, IceModelVec3 &result);
   IceModelVec3 *enthalpy;
   IceModelVec2S *thickness;
 };

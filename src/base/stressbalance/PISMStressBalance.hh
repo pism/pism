@@ -22,12 +22,13 @@
 #include "iceModelVec.hh"
 #include "ShallowStressBalance.hh"
 #include "SSB_Modifier.hh"
+#include "enthalpyConverter.hh"
 
 //! The class defining PISM's interface to the shallow stress balance code.
 class PISMStressBalance
 {
 public:
-  PISMStressBalance(IceGrid &g, IceFlowLaw &ice,
+  PISMStressBalance(IceGrid &g, IceFlowLaw &ice, EnthalpyConverter &e,
                     const NCConfigVariable &config); // done
   virtual ~PISMStressBalance();                      // done
 
@@ -84,6 +85,7 @@ protected:
                                                    IceModelVec2S *bmr, IceModelVec3 &result); // done
   IceGrid &grid;
   IceFlowLaw &ice;
+  EnthalpyConverter &EC;
   const NCConfigVariable &config;
 
   IceModelVec3 w;

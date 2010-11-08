@@ -31,8 +31,8 @@ static char help[] =
 
 class IceRegionalModel : public IceModel {
 public:
-  IceRegionalModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides)
-     : IceModel(g,config,overrides) {};
+  IceRegionalModel(IceGrid &g, NCConfigVariable &c, NCConfigVariable &o)
+     : IceModel(g,c,o) {};
 
 protected:
   virtual PetscErrorCode set_vars_from_options();

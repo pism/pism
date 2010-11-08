@@ -97,7 +97,7 @@ protected:
 
   IceGrid      *grid;
   GridType     dims;
-  int          dof, s_width;
+  int          dof, da_stencil_width;
   DA           da;
   bool         localp;
   //! it is a map, because a temporary IceModelVec can be used to view
@@ -113,6 +113,7 @@ protected:
   virtual PetscErrorCode checkAllocated();
   virtual PetscErrorCode checkHaveArray();
   virtual PetscErrorCode checkCompatibility(const char*, IceModelVec &other);
+  virtual void check_array_indices(int i, int j);
   virtual PetscErrorCode reset_attrs();
   virtual PetscErrorCode create_viewer(PetscInt viewer_size, string title, PetscViewer &viewer);
   virtual PetscErrorCode compute_viewer_size(int target, int &x, int &y);

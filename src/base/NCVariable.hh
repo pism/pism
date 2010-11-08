@@ -99,7 +99,7 @@ protected:
 class NCConfigVariable : public NCVariable {
 public:
   virtual PetscErrorCode print(PetscInt verbosity_threshhold) const;
-  virtual PetscErrorCode print() const { print(4); };
+  virtual PetscErrorCode print() const { print(4); return 0; };
   virtual PetscErrorCode read(const char filename[]);
   virtual PetscErrorCode write(const char filename[]) const;
   virtual string get_config_filename() const;

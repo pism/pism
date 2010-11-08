@@ -1044,7 +1044,7 @@ PetscErrorCode NCConfigVariable::print(PetscInt vt) const {
 
 string NCConfigVariable::get_config_filename() const {
   return config_filename;
-};
+}
 
 
 //! Imports values from the other config variable, silently overwriting present values.

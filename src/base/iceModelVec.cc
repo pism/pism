@@ -32,7 +32,7 @@ IceModelVec::IceModelVec() {
 
   dims = GRID_2D;		// default
   dof = 1;			// default
-  s_width = 1;
+  da_stencil_width = 1;
 
   access_counter = 0;
 
@@ -64,6 +64,7 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
   array = other.array;
   access_counter = other.access_counter;
   localp = other.localp;
+  da_stencil_width = other.da_stencil_width;
 
   map_viewers = other.map_viewers;
 
@@ -151,17 +152,13 @@ PetscErrorCode IceModelVec::range(PetscReal &min, PetscReal &max) {
 /*! 
 See comment for range(); because local Vecs are VECSEQ, needs a reduce operation.
 See src/trypetsc/localVecMax.c.
+
+\note This method works for all IceModelVecs, including ones with dof > 1. You might want to use norm_all() for IceModelVec2Stag, though.
  */
 PetscErrorCode IceModelVec::norm(NormType n, PetscReal &out) {
   PetscErrorCode ierr;
   PetscReal my_norm, gnorm;
   ierr = checkAllocated(); CHKERRQ(ierr);
-
-  if (dof != 1) {
-      SETERRQ1(1, 
-         "IceModelVec::norm(...): dof > 1 is not supported (called as %s.norm(...))\n",
-         name.c_str());
-  }
 
   ierr = VecNorm(v, n, &my_norm); CHKERRQ(ierr);
 
@@ -542,15 +539,18 @@ PetscErrorCode IceModelVec::dump(const char filename[]) {
 
 //! Checks if an IceModelVec is allocated.  Terminates if not.
 PetscErrorCode  IceModelVec::checkAllocated() {
+#ifdef PISM_DEBUG
   if (v == PETSC_NULL) {
     SETERRQ1(1,"IceModelVec ERROR: IceModelVec with name='%s' WAS NOT allocated\n",
              name.c_str());
   }
+#endif
   return 0;
 }
 
 //! Checks if the access to the array is available.
 PetscErrorCode  IceModelVec::checkHaveArray() {
+#ifdef PISM_DEBUG
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
   if (array == PETSC_NULL) {
@@ -558,6 +558,7 @@ PetscErrorCode  IceModelVec::checkHaveArray() {
                "  (REMEMBER TO RUN begin_access() before access and end_access() after access)\n",
                name.c_str());
   }
+#endif
   return 0;
 }
 
@@ -826,6 +827,22 @@ PetscErrorCode IceModelVec::has_nan() {
   }
 
   return 0;
+}
+
+//! \brief Check the array indices and warn if they are out of range.
+void IceModelVec::check_array_indices(int i, int j) {
+#ifdef PISM_DEBUG
+  PetscReal ghost_width = 0;
+  if (localp) ghost_width = da_stencil_width;
+  if ((i < grid->xs - ghost_width) ||
+      (i > grid->xs + grid->xm + ghost_width) ||
+      (j < grid->ys - ghost_width) ||
+      (j > grid->ys + grid->ym + ghost_width)) {
+    PetscPrintf(grid->com, "ERROR: indices out of range accessing array '%s'. "
+                "It will probably segfault.\n", name.c_str());
+  }
+#endif // PISM_DEBUG
+  i = j;                        // to avoid a compiler warning; does nothing
 }
 
 /********* IceModelVec3 and IceModelVec3Bedrock: SEE SEPARATE FILE  iceModelVec3.cc    **********/

@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -63,18 +63,18 @@
 class SSAFD : public ShallowStressBalance
 {
 public:
-  SSAFD(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i,
-        const NCConfigVariable &config)
-    : ShallowStressBalance(g, b, i, config) {}
+  SSAFD(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
+        const NCConfigVariable &c)
+    : ShallowStressBalance(g, b, i, e, c) {}
 
   virtual ~SSAFD() { deallocate(); }
 
-  SSAStrengthExtension ssaStrengthExtend;
+  SSAStrengthExtension strength_extension;
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(bool fast);
 
 protected:
-  virtual PetscErrorCode allocate();
+  virtual PetscErrorCode allocate_internals();
 
   virtual PetscErrorCode deallocate();
 
@@ -83,9 +83,7 @@ protected:
   virtual PetscErrorCode compute_nuH_staggered(IceModelVec2Stag &result,
                                                PetscReal epsilon); // done
 
-  virtual PetscErrorCode compute_nuH_norm(IceModelVec2Stag nuH,
-                                          IceModelVec2Stag nuH_old,
-                                          PetscReal &norm,
+  virtual PetscErrorCode compute_nuH_norm(PetscReal &norm,
                                           PetscReal &norm_change); // done
 
   virtual PetscErrorCode assemble_matrix(bool include_basal_shear, Mat A);

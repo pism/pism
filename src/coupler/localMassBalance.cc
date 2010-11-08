@@ -109,7 +109,7 @@ rain (see, e.g. \ref Hock2005b).
  */
 PetscScalar PDDMassBalance::getSnowFromPrecipAndTemperatureTimeSeries(
                  PetscScalar precip_rate,
-                 PetscScalar t, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
+                 PetscScalar /*t*/, PetscScalar dt_series, PetscScalar *T, PetscInt N) {
 
   PetscScalar snow = 0.0;
   if (precip_as_snow) {

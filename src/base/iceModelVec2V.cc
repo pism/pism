@@ -73,7 +73,8 @@ PetscErrorCode IceModelVec2V::get_array(PISMVector2** &a) {
 }
 
 PISMVector2& IceModelVec2V::operator()(int i, int j) {
-    return static_cast<PISMVector2**>(array)[i][j];
+  check_array_indices(i, j);
+  return static_cast<PISMVector2**>(array)[i][j];
 }
 
 

@@ -241,7 +241,6 @@ PSTemperatureIndex::~PSTemperatureIndex() {
 PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
   PetscErrorCode ierr;
   bool           pdd_rand, pdd_rand_repeatable, fausto_params, pSet;
-  PetscScalar    factor;
 
   ierr = PISMSurfaceModel::init(vars); CHKERRQ(ierr);
 
@@ -370,7 +369,6 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
 PetscErrorCode PSTemperatureIndex::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr;
-  PetscScalar **lat_degN;
 
   if ((fabs(t_years - t) < 1e-12) &&
       (fabs(dt_years - dt) < 1e-12))

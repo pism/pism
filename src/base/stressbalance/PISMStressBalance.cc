@@ -18,9 +18,9 @@
 
 #include "PISMStressBalance.hh"
 
-PISMStressBalance::PISMStressBalance(IceGrid &g, IceFlowLaw &i,
+PISMStressBalance::PISMStressBalance(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e,
                                      const NCConfigVariable &conf)
-  : grid(g), ice(i), config(conf) {
+  : grid(g), ice(i), EC(e), config(conf) {
 
   basal_melt_rate = NULL;
   stress_balance  = NULL;
@@ -180,11 +180,11 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
     ierr = bmr->begin_access(); CHKERRQ(ierr);
   }
 
-  PetscScalar *w, *u_im1, *u_ip1, *v_jm1, *v_jp1;
+  PetscScalar *w_column, *u_im1, *u_ip1, *v_jm1, *v_jp1;
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = result.getInternalColumn(i,j,&w); CHKERRQ(ierr);
+      ierr = result.getInternalColumn(i,j,&w_column); CHKERRQ(ierr);
 
       ierr = u->getInternalColumn(i-1,j,&u_im1); CHKERRQ(ierr);
       ierr = u->getInternalColumn(i+1,j,&u_ip1); CHKERRQ(ierr);
@@ -193,9 +193,9 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
       ierr = v->getInternalColumn(i,j+1,&v_jp1); CHKERRQ(ierr);
 
       if (bmr) {
-        w[0] = - (*bmr)(i,j);
+        w_column[0] = - (*bmr)(i,j);
       } else {
-        w[0] = 0.0;
+        w_column[0] = 0.0;
       }
 
       PetscScalar OLDintegrand
@@ -204,7 +204,7 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
         const PetscScalar NEWintegrand
              = (u_ip1[k] - u_im1[k]) / (2.0*dx) + (v_jp1[k] - v_jm1[k]) / (2.0*dy);
         const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
-        w[k] = w[k-1] - 0.5 * (NEWintegrand + OLDintegrand) * dz;
+        w_column[k] = w_column[k-1] - 0.5 * (NEWintegrand + OLDintegrand) * dz;
         OLDintegrand = NEWintegrand;
       }
     }

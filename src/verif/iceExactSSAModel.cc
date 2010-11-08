@@ -226,7 +226,7 @@ PetscErrorCode IceExactSSAModel::taucSetI() {
 
 PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVelsI() {
   PetscErrorCode ierr;
-  PetscScalar    **mask, **h, **bed;
+  PetscScalar    **h, **bed;
   
   ierr = vMask.set(MASK_DRAGGING_SHEET); CHKERRQ(ierr);
   ierr = vH.set(H0_schoof); CHKERRQ(ierr);

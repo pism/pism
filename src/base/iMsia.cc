@@ -371,7 +371,6 @@ PetscErrorCode IceModel::compute_delta() {
         // staggered point: o=0 is i+1/2, o=1 is j+1/2,
         //   (i,j) and (i+oi,j+oj) are regular grid neighbors of staggered pt:
         const PetscInt     oi = 1-o, oj=o;  
-        const PetscScalar  slope = (o==0) ? h_x[o][i][j] : h_y[o][i][j];
 
         const PetscScalar
           thickness = 0.5 * ( thk_smoothed[i][j] + thk_smoothed[i+oi][j+oj] );
@@ -736,7 +735,6 @@ PetscErrorCode IceModel::velocity_SIA_2D() {
 
 //! \brief Computes horizontal components of the SIA velocity within the ice.
 PetscErrorCode IceModel::velocity_SIA_3D() {
-  PetscErrorCode ierr;
   
   return 0;
 }

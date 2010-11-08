@@ -23,13 +23,14 @@
 #include "PISMVars.hh"
 #include "flowlaws.hh"
 #include "materials.hh"
+#include "enthalpyConverter.hh"
 
 //! Shallow stress balance (such as the SSA).
 class ShallowStressBalance
 {
 public:
-  ShallowStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i,
-                       const NCConfigVariable &conf) : grid(g), basal(b), ice(i), config(conf)
+  ShallowStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
+                       const NCConfigVariable &conf) : grid(g), basal(b), ice(i), EC(e), config(conf)
   { vel_bc = NULL; bc_locations = NULL; max_u = max_v = 0.0; }
   virtual ~ShallowStressBalance() {}
 
@@ -38,15 +39,15 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
 
   //! \brief Set the initial guess of the vertically-averaged ice velocity.
-  virtual PetscErrorCode set_initial_guess(IceModelVec2V &guess)
+  virtual PetscErrorCode set_initial_guess(IceModelVec2V &/*guess*/)
   { return 0; }
 
   //! Read the initial guess from file.
-  virtual PetscErrorCode read_initial_guess(string filename)
+  virtual PetscErrorCode read_initial_guess(string /*filename*/)
   { return 0; }
 
   //! \brief Save the initial guess (for restarting).
-  virtual PetscErrorCode save_initial_guess(string filename)
+  virtual PetscErrorCode save_initial_guess(string /*filename*/)
   { return 0; }
 
   virtual PetscErrorCode set_boundary_conditions(IceModelVec2Mask &locations,
@@ -77,12 +78,13 @@ public:
   // helpers:
 
   //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(PetscInt old_Mz)
+  virtual PetscErrorCode extend_the_grid(PetscInt /*old_Mz*/)
   { return 0; }
 protected:
   IceGrid &grid;
   IceBasalResistancePlasticLaw &basal;
   IceFlowLaw &ice;
+  EnthalpyConverter &EC;
   const NCConfigVariable &config;
 
   IceModelVec2V velocity, *vel_bc;
@@ -94,9 +96,9 @@ protected:
 class SSB_Trivial : public ShallowStressBalance
 {
 public:
-  SSB_Trivial(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i,
-              const NCConfigVariable &config)
-    : ShallowStressBalance(g, b, i, config) {}
+  SSB_Trivial(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
+              const NCConfigVariable &conf)
+    : ShallowStressBalance(g, b, i, e, conf) {}
   virtual ~SSB_Trivial() {}
   virtual PetscErrorCode update(bool fast);
 };

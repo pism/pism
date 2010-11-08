@@ -18,6 +18,77 @@
 
 #include "SIAFD.hh"
 
+//! \brief Initialize the SIA module.
+PetscErrorCode SIAFD::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
+  if (mask == NULL) SETERRQ(1, "mask is not available");
+
+  thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
+  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+
+  surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
+  if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
+
+  bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
+  if (bed == NULL) SETERRQ(1, "bedrock_altitude is not available");
+
+  enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
+  if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
+
+  age = dynamic_cast<IceModelVec3*>(vars.get("age"));
+  if (age == NULL) SETERRQ(1, "age is not available");
+
+  // 2D temporary storage:
+  for (int i = 0; i < 2; ++i) {
+    char namestr[30];
+
+    ierr = work_2d[i].create(grid, "work_vector", true, WIDE_STENCIL); CHKERRQ(ierr);
+    ierr = work_2d_stag[i].create(grid, "work_vector", true); CHKERRQ(ierr);
+
+    snprintf(namestr, sizeof(namestr), "work_vector_2d_%d", i);
+    ierr = work_2d[i].set_name(namestr); CHKERRQ(ierr);
+
+    snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d", i);
+    ierr = work_2d_stag[i].set_name(namestr); CHKERRQ(ierr);
+  }
+
+  // 3D temporary storage:
+  for (int i = 0; i < 4; ++i) {
+    char namestr[30];
+
+    ierr = work_3d[i].create(grid, "work_vector", true); CHKERRQ(ierr);
+    snprintf(namestr, sizeof(namestr), "work_vector_3d_%d", i);
+    ierr = work_3d[i].set_name(namestr); CHKERRQ(ierr);
+  }
+
+  bed_smoother = new PISMBedSmoother(grid, config, WIDE_STENCIL);
+
+  return 0;
+}
+
+//! \brief Do the update; if fast == true, skip the update of 3D velocities and
+//! strain heating.
+PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
+                             bool fast) {
+  PetscErrorCode ierr;
+  IceModelVec2Stag h_x = work_2d_stag[0], h_y = work_2d_stag[1];
+
+  ierr = compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
+
+  ierr = compute_diffusive_flux(h_x, h_y, diffusive_flux, fast); CHKERRQ(ierr);
+
+  if (!fast) {
+    ierr = compute_sigma(D2_input, h_x, h_y); CHKERRQ(ierr);
+
+    ierr = compute_3d_horizontal_velocity(h_x, h_y, vel_input, u, v); CHKERRQ(ierr);
+  }
+
+  return 0; 
+}
+
+
 //! \brief Compute the ice surface gradient for the SIA.
 /*! 
   There are three methods for computing the surface gradient. Which method is
@@ -81,7 +152,6 @@ PetscErrorCode SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVe
   return 0;
 }
 
-
 //! \brief Compute the ice surface gradient using the eta-transformation.
 PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode ierr;
@@ -91,7 +161,7 @@ PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2St
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
   const PetscScalar dx = grid.dx, dy = grid.dy;  // convenience
-  IceModelVec2S eta = tmp1;
+  IceModelVec2S eta = work_2d[0];
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
   ierr = thickness->begin_access(); CHKERRQ(ierr);
@@ -284,44 +354,23 @@ PetscErrorCode SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVe
 }
 
 //! \brief Compute the SIA flux. If fast == false, also store delta on the staggered grid.
-PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &result, bool fast) {
+PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag h_x, IceModelVec2Stag h_y,
+                                             IceModelVec2Stag &result, bool fast) {
   PetscErrorCode  ierr;
-  IceModelVec2S thk_smooth = tmp1,
-    theta = tmp2;
-  IceModelVec2Stag h_x = tmp3, h_y = tmp4;
+  IceModelVec2S thk_smooth = work_2d[0],
+    theta = work_2d[1];
+  IceModelVec3 delta[2] = {work_3d[0], work_3d[1]};
 
-  PetscScalar *delta;
+  bool full_update = !fast;
 
-  delta = new PetscScalar[grid.Mz];
-
-  if (!fast) {
-    ierr = delta_staggered[0].begin_access(); CHKERRQ(ierr);
-    ierr = delta_staggered[1].begin_access(); CHKERRQ(ierr);
-  }
+  PetscScalar *delta_ij;
+  delta_ij = new PetscScalar[grid.Mz];
 
   const double enhancement_factor = config.get("enhancement_factor"),
     constant_grain_size = config.get("constant_grain_size"),
     standard_gravity = config.get("standard_gravity");
 
   bool compute_grain_size_using_age = config.get_flag("compute_grain_size_using_age");
-
-  const bool use_age = (IceFlowLawUsesGrainSize(&ice) &&
-                        compute_grain_size_using_age &&
-                        config.get_flag("do_age"));
-
-  // get "theta" from Schoof (2003) bed smoothness calculation and the
-  //   thickness relative to the smoothed bed; each IceModelVec2S involved must
-  //   have stencil width WIDE_GHOSTS for this too work
-  const PetscInt WIDE_GHOSTS = 2;
-  ierr = sia_bed_smoother->get_theta(*surface, config.get("Glen_exponent"),
-                                     WIDE_GHOSTS, &theta); CHKERRQ(ierr);
-
-  ierr = sia_bed_smoother->get_smoothed_thk(*surface, *thickness, WIDE_GHOSTS,
-                                            &thk_smooth); CHKERRQ(ierr);
-
-  ierr = theta.begin_access(); CHKERRQ(ierr);
-  ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
-  ierr = diffusive_flux.begin_access(); CHKERRQ(ierr);
 
   // some flow laws use grainsize, and even need age to update grainsize
   if (compute_grain_size_using_age && (!config.get_flag("do_age"))) {
@@ -331,17 +380,38 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &result, bool fast
     PetscEnd();
   }
 
-  PetscScalar *ageij, *ageoffset;
+  const bool use_age = (IceFlowLawUsesGrainSize(&ice) &&
+                        compute_grain_size_using_age &&
+                        config.get_flag("do_age"));
+
+  // get "theta" from Schoof (2003) bed smoothness calculation and the
+  //   thickness relative to the smoothed bed; each IceModelVec2S involved must
+  //   have stencil width WIDE_GHOSTS for this too work
+  ierr = bed_smoother->get_theta(*surface, config.get("Glen_exponent"),
+                                 WIDE_STENCIL, &theta); CHKERRQ(ierr);
+
+  ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, WIDE_STENCIL,
+                                        &thk_smooth); CHKERRQ(ierr);
+
+  ierr = theta.begin_access(); CHKERRQ(ierr);
+  ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+
+  PetscScalar *age_ij, *age_offset;
   if (use_age) {
     ierr = age->begin_access(); CHKERRQ(ierr);
   }
 
+  if (full_update) {
+    ierr = delta[0].begin_access(); CHKERRQ(ierr);
+    ierr = delta[1].begin_access(); CHKERRQ(ierr);
+  }
+
   // some flow laws use enthalpy while some ("cold ice methods") use temperature
-  PetscScalar *Enthij, *Enthoffset;
+  PetscScalar *E_ij, *E_offset;
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
 
   PetscScalar my_D_max = 0.0;
-  // staggered grid computation of: diffusive_flux, I, Sigma
   for (PetscInt o=0; o<2; o++) {
     PetscInt GHOSTS = 1;
     for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
@@ -351,78 +421,78 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &result, bool fast
         const PetscInt oi = 1 - o, oj = o;  
 
         const PetscScalar
-          thickness = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
+          thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
 
         // zero thickness case:
-        if (thickness == 0.0) {
-          diffusive_flux(i,j,o) = 0.0;
-          if (!fast) {
-            ierr = delta_staggered[o].setColumn(i, j, 0.0); CHKERRQ(ierr);
+        if (thk == 0.0) {
+          result(i,j,o) = 0.0;
+          if (full_update) {
+            ierr = delta[o].setColumn(i, j, 0.0); CHKERRQ(ierr);
           }
           continue;
         }
 
         if (use_age) {
-          ierr = age->getInternalColumn(i, j, &ageij); CHKERRQ(ierr);
-          ierr = age->getInternalColumn(i+oi, j+oj, &ageoffset); CHKERRQ(ierr);
+          ierr = age->getInternalColumn(i, j, &age_ij); CHKERRQ(ierr);
+          ierr = age->getInternalColumn(i+oi, j+oj, &age_offset); CHKERRQ(ierr);
         }
 	  
-        ierr = enthalpy->getInternalColumn(i, j, &Enthij); CHKERRQ(ierr);
-        ierr = enthalpy->getInternalColumn(i+oi, j+oj, &Enthoffset); CHKERRQ(ierr);
+        ierr = enthalpy->getInternalColumn(i, j, &E_ij); CHKERRQ(ierr);
+        ierr = enthalpy->getInternalColumn(i+oi, j+oj, &E_offset); CHKERRQ(ierr);
 
         const PetscScalar slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
-        const PetscInt      ks = grid.kBelowHeight(thickness);  
+        const PetscInt      ks = grid.kBelowHeight(thk);  
         const PetscScalar   alpha =
           sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
         const PetscReal theta_local = 0.5 * ( theta(i,j) + theta(i+oi,j+oj) );
 
         PetscScalar  Dfoffset = 0.0;  // diffusivity for deformational SIA flow
         for (PetscInt k = 0; k <= ks; ++k) {
-          PetscReal depth = thickness - grid.zlevels[k];
+          PetscReal depth = thk - grid.zlevels[k];
           // pressure added by the ice (i.e. pressure difference between the
           // current level and the top of the column)
-          const PetscScalar   pressure = ice.rho * standard_gravity * depth;
+          const PetscScalar pressure = ice.rho * standard_gravity * depth;
 
           PetscScalar flow, grainsize = constant_grain_size;
           if (use_age) {
-            grainsize = grainSizeVostok(0.5 * (ageij[k] + ageoffset[k]));
+            grainsize = grainSizeVostok(0.5 * (age_ij[k] + age_offset[k]));
           }
           // If the flow law does not use grain size, it will just ignore it,
           // no harm there
-          PetscScalar E = 0.5 * (Enthij[k] + Enthoffset[k]);
+          PetscScalar E = 0.5 * (E_ij[k] + E_offset[k]);
           flow = ice.flow_from_enth(alpha * pressure, E, pressure, grainsize);
 
-          delta[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
+          delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
 
           if (k > 0) { // trapezoid rule for I[k] and K[k]
             const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
-            Dfoffset += 0.5 * dz * ((depth + dz) * delta[k-1] + depth * delta[k]);
+            Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
           }
         }
-        // finish off D with (1/2) dz (0 + (H-z[ks])*delta[ks]), but dz=H-z[ks]:
-        const PetscScalar dz = thickness - grid.zlevels[ks];
-        Dfoffset += 0.5 * dz * dz * delta[ks];
+        // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
+        const PetscScalar dz = thk - grid.zlevels[ks];
+        Dfoffset += 0.5 * dz * dz * delta_ij[ks];
 
         my_D_max = PetscMax(my_D_max, Dfoffset);
 
         // vertically-averaged SIA-only flux, sans sliding; note
-        //   diffusive_flux(i,j,0) is  u  at E (east)  staggered point (i+1/2,j)
-        //   diffusive_flux(i,j,1) is  v  at N (north) staggered point (i,j+1/2)
-        diffusive_flux(i,j,o) = - Dfoffset * slope;
+        //   result(i,j,0) is  u  at E (east)  staggered point (i+1/2,j)
+        //   result(i,j,1) is  v  at N (north) staggered point (i,j+1/2)
+        result(i,j,o) = - Dfoffset * slope;
 
         // if doing the full update, fill the delta column above the ice and
         // store it:
-        if (!fast) {
-          for (PetscInt k = ks + 1; k < grid.Mz; ++k) { // above the ice
-            delta[k] = 0.0;
+        if (full_update) {
+          for (PetscInt k = ks + 1; k < grid.Mz; ++k) {
+            delta_ij[k] = 0.0;
           }  
-          ierr = delta_staggered[o].setInternalColumn(i,j,delta); CHKERRQ(ierr);
+          ierr = delta[o].setInternalColumn(i,j,delta_ij); CHKERRQ(ierr);
         }
       } // o
     } // j
   } // i
 
-  ierr = diffusive_flux.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
   ierr = theta.end_access(); CHKERRQ(ierr);
   ierr = thk_smooth.end_access(); CHKERRQ(ierr);
 
@@ -432,11 +502,11 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &result, bool fast
 
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
 
-  delete [] delta;
+  delete [] delta_ij;
 
-  if (!fast) {
-    ierr = delta_staggered[1].end_access(); CHKERRQ(ierr);
-    ierr = delta_staggered[0].end_access(); CHKERRQ(ierr);
+  if (full_update) {
+    ierr = delta[1].end_access(); CHKERRQ(ierr);
+    ierr = delta[0].end_access(); CHKERRQ(ierr);
   }
 
   ierr = PetscGlobalMax(&my_D_max, &D_max, grid.com); CHKERRQ(ierr);
@@ -444,22 +514,280 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &result, bool fast
   return 0;
 }
 
-//! Use the Vostok core as a source of a relationship between the age of the ice and the grain size.
-/*! 
-A data set is interpolated here.  The intention is that the softness of the ice has
-nontrivial dependence on its age, through its grainsize, because of variable dustiness
-of the global climate.  The grainsize is partly determined by at which point in 
-the glacial cycle the given ice fell as snow.
 
-The data is from \ref DeLaChapelleEtAl98 and 
-\ref LipenkovEtAl89 .  In particular, Figure A2 in the former reference was
-hand-sampled with an attempt to include the ``wiggles'' in that figure.  Ages of
-the oldest ice (>= 300 ka) were estimated in a necessarily ad hoc way.  The 
-age value of 10000 ka was added simply to give interpolation for very old ice;
-ages beyond that get constant extrapolation.  Linear interpolation is done between
-the samples.
+PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
+  PetscErrorCode ierr;
+
+  ierr = SSB_Modifier::extend_the_grid(old_Mz); CHKERRQ(ierr);
+
+  ierr = work_3d[0].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr); 
+  ierr = work_3d[1].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr); 
+
+  return 0; 
+}
+
+//! \brief Compute the volumetric strain heating.
+/*!
+ * See section 2.8 of [\ref BBssasliding].
  */
-PetscScalar SIAFD::grainSizeVostok(PetscScalar age) const {
+
+PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
+                                    IceModelVec2Stag &h_x,
+                                    IceModelVec2Stag &h_y) {
+  PetscErrorCode ierr;
+  PetscScalar *sigma_ij, *delta_ij, *E;
+
+  // aliases
+  IceModelVec2S thk_smooth = work_2d[0];
+  IceModelVec3 delta[2] = {work_3d[0], work_3d[1]},
+    sigma[2] = {work_3d[2], work_3d[3]};
+
+  ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, WIDE_STENCIL,
+                                        &thk_smooth); CHKERRQ(ierr);
+
+  ierr = delta[0].begin_access(); CHKERRQ(ierr);
+  ierr = delta[1].begin_access(); CHKERRQ(ierr);
+  ierr = sigma[2].begin_access(); CHKERRQ(ierr);
+  ierr = sigma[3].begin_access(); CHKERRQ(ierr);
+  ierr = enthalpy->begin_access(); CHKERRQ(ierr);
+  
+  ierr = h_x.begin_access(); CHKERRQ(ierr);
+  ierr = h_y.begin_access(); CHKERRQ(ierr);
+  ierr = D2_input->begin_access(); CHKERRQ(ierr);
+  ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+  
+  double enhancement_factor = config.get("enhancement_factor"),
+    n_glen  = ice.exponent(),
+    Sig_pow = (1.0 + n_glen) / (2.0 * n_glen);
+
+  for (PetscInt o = 0; o < 2; ++o) {
+    PetscInt GHOSTS = 1;
+    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+        const PetscInt oi = 1-o, oj=o;  
+
+        ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
+        ierr = sigma[o].getInternalColumn(i,j,&sigma_ij); CHKERRQ(ierr);
+        ierr = enthalpy->getInternalColumn(i,j,&E); CHKERRQ(ierr);
+
+        const PetscScalar
+          thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
+
+        const PetscInt ks = grid.kBelowHeight(thk);  
+
+        const PetscScalar alpha_squared =
+          PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o));
+
+        PismMask M = mask->value(i,j);
+
+        // in the ice:
+        for (PetscInt k=0; k<=ks; ++k) {
+          PetscReal depth = thk - grid.zlevels[k];
+          PetscReal pressure = EC.getPressureFromDepth(depth);
+
+          PetscReal sigma_sia = delta_ij[k] * alpha_squared * pressure;
+
+          if (M == MASK_SHEET) {
+            // use the SIA contribution only
+            sigma_ij[k] = sigma_sia;
+          } else {
+            PetscReal 
+              BofT = ice.hardnessParameter_from_enth(E[k], pressure) * pow(enhancement_factor,-1/n_glen),
+              D2_ssa = (*D2_input)(i,j);
+
+            if (M == MASK_DRAGGING_SHEET) {
+              // combine SIA and SSA contributions
+              PetscReal D2_sia = pow(sigma_sia / (2 * BofT), 1.0 / Sig_pow);
+              sigma_ij[k] = 2.0 * BofT * pow(D2_sia + D2_ssa, Sig_pow);
+            } else {
+              // must be floating or ice-free, use the SSA contribution only
+              sigma_ij[k] = 2.0 * BofT * pow(D2_ssa, Sig_pow);
+            }
+          }
+        }
+
+        // above the ice:
+        for (PetscInt k=ks+1; k<grid.Mz; ++k) {
+          sigma_ij[k] = 0.0;
+        }  
+      } // j
+    }   // i
+  }     // o
+
+  ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = thk_smooth.end_access(); CHKERRQ(ierr);
+  ierr = D2_input->end_access(); CHKERRQ(ierr);
+  ierr = h_y.end_access(); CHKERRQ(ierr);
+  ierr = h_x.end_access(); CHKERRQ(ierr);
+
+  ierr = delta[1].end_access(); CHKERRQ(ierr);
+  ierr = delta[0].end_access(); CHKERRQ(ierr);
+  ierr = enthalpy->end_access(); CHKERRQ(ierr);
+
+  // Now transfer Sigma from the staggered onto the regular grid.
+  PetscScalar *Sigmareg, *SigmaEAST, *SigmaWEST, *SigmaNORTH, *SigmaSOUTH;
+  ierr = Sigma.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      PetscReal thk = thk_smooth(i,j);
+      if (thk > 0.0) {
+        // horizontally average Sigma onto regular grid
+        const PetscInt ks = grid.kBelowHeight(thk);
+        ierr = Sigma.getInternalColumn(i,j,&Sigmareg); CHKERRQ(ierr);
+        ierr = sigma[0].getInternalColumn(i,j,&SigmaEAST); CHKERRQ(ierr);
+        ierr = sigma[0].getInternalColumn(i-1,j,&SigmaWEST); CHKERRQ(ierr);
+        ierr = sigma[1].getInternalColumn(i,j,&SigmaNORTH); CHKERRQ(ierr);
+        ierr = sigma[1].getInternalColumn(i,j-1,&SigmaSOUTH); CHKERRQ(ierr);
+        for (PetscInt k = 0; k <= ks; ++k) {
+          Sigmareg[k] = 0.25 * (SigmaEAST[k] + SigmaWEST[k] + SigmaNORTH[k] + SigmaSOUTH[k]);
+        }
+        for (PetscInt k = ks+1; k < grid.Mz; ++k) {
+          Sigmareg[k] = 0.0;
+        }
+      } else { // zero thickness case
+        ierr = Sigma.setColumn(i,j,0.0); CHKERRQ(ierr);
+      }
+    }
+  }
+  ierr = Sigma.end_access(); CHKERRQ(ierr);
+
+  ierr = sigma[1].end_access(); CHKERRQ(ierr);
+  ierr = sigma[0].end_access(); CHKERRQ(ierr);
+
+  return 0; 
+}
+
+//! \brief Compute I.
+/*!
+ * Uses delta_staggered. The result (I) is used to compute the 3D-distributed
+ * horizontal ice velocity.
+ */
+PetscErrorCode SIAFD::compute_I() {
+  PetscErrorCode ierr;
+  PetscScalar *I_ij, *delta_ij;
+
+  IceModelVec2S thk_smooth = work_2d[0];
+  IceModelVec3 delta[2] = {work_3d[0], work_3d[1]},
+    I[2] = {work_3d[2], work_3d[3]};
+
+  ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, WIDE_STENCIL,
+                                        &thk_smooth); CHKERRQ(ierr);
+
+  ierr = delta[0].begin_access(); CHKERRQ(ierr);
+  ierr = delta[1].begin_access(); CHKERRQ(ierr);
+  ierr = I[0].begin_access(); CHKERRQ(ierr);
+  ierr = I[1].begin_access(); CHKERRQ(ierr);
+  ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
+
+  for (PetscInt o = 0; o < 2; ++o) {
+    PetscInt GHOSTS = 1;
+    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+        const PetscInt oi = 1-o, oj=o;  
+        const PetscReal
+          thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
+
+        ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
+        ierr = I[o].getInternalColumn(i,j,&I_ij); CHKERRQ(ierr);
+
+        const PetscInt ks = grid.kBelowHeight(thk);  
+
+        // within the ice:
+        I_ij[0] = 0.0;
+        for (int k = 1; k < ks; ++k) {
+          const PetscReal dz = grid.zlevels[k] - grid.zlevels[k-1];
+          I_ij[k] = I_ij[k-1] + 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
+        }
+        // above the ice:
+        for (PetscInt k=ks + 1; k < grid.Mz; ++k) {
+          I_ij[k] = I_ij[ks];
+        }  
+      }
+    }
+  }
+
+  ierr = thk_smooth.end_access(); CHKERRQ(ierr);
+  ierr = I[1].end_access(); CHKERRQ(ierr);
+  ierr = I[0].end_access(); CHKERRQ(ierr);
+  ierr = delta[1].end_access(); CHKERRQ(ierr);
+  ierr = delta[0].end_access(); CHKERRQ(ierr);
+
+  return 0; 
+}
+
+//! \brief Compute horizontal components of the SIA velocity (in 3D).
+PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag h_x, IceModelVec2Stag h_y,
+                                                     IceModelVec2V *vel_input,
+                                                     IceModelVec3 &u_out, IceModelVec3 &v_out) {
+  PetscErrorCode ierr;
+
+  ierr = compute_I(); CHKERRQ(ierr);
+  // after the compute_I() call work_3d[2,3] contains I on the staggered grid
+  IceModelVec3 I[2] = {work_3d[2], work_3d[3]};
+
+  PetscScalar *u_ij, *v_ij, *IEAST, *IWEST, *INORTH, *ISOUTH;
+
+  ierr = u_out.begin_access(); CHKERRQ(ierr);
+  ierr = v_out.begin_access(); CHKERRQ(ierr);
+
+  ierr = h_x.begin_access(); CHKERRQ(ierr);
+  ierr = h_y.begin_access(); CHKERRQ(ierr);
+  ierr = vel_input->begin_access(); CHKERRQ(ierr);
+
+  ierr = I[0].begin_access(); CHKERRQ(ierr);
+  ierr = I[1].begin_access(); CHKERRQ(ierr);
+  
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = I[0].getInternalColumn(i,j,&IEAST); CHKERRQ(ierr);
+      ierr = I[0].getInternalColumn(i-1,j,&IWEST); CHKERRQ(ierr);
+      ierr = I[1].getInternalColumn(i,j,&INORTH); CHKERRQ(ierr);
+      ierr = I[1].getInternalColumn(i,j-1,&ISOUTH); CHKERRQ(ierr);
+
+      ierr = u_out.getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
+      ierr = v_out.getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
+
+      for (PetscInt k = 0; k < grid.Mz; ++k) {
+        u_ij[k] = - 0.25 * ( IEAST[k] * h_x(i,j,0) + IWEST[k] * h_x(i-1,j,0) +
+                                 INORTH[k] * h_x(i,j,1) + ISOUTH[k] * h_x(i,j-1,1) );
+        v_ij[k] = - 0.25 * ( IEAST[k] * h_y(i,j,0) + IWEST[k] * h_y(i-1,j,0) +
+                                 INORTH[k] * h_y(i,j,1) + ISOUTH[k] * h_y(i,j-1,1) );
+
+        // Add the SSA velocity:
+        u_ij[k] += (*vel_input)(i,j).u;
+        v_ij[k] += (*vel_input)(i,j).v;
+      }
+    }
+  }
+
+  ierr = I[1].end_access(); CHKERRQ(ierr);
+  ierr = I[0].end_access(); CHKERRQ(ierr);
+
+  ierr = vel_input->end_access(); CHKERRQ(ierr);
+  ierr = h_y.end_access(); CHKERRQ(ierr);
+  ierr = h_x.end_access(); CHKERRQ(ierr);
+  
+  ierr = u_out.end_access(); CHKERRQ(ierr);
+  ierr = v_out.end_access(); CHKERRQ(ierr);
+
+  return 0; 
+}
+
+//! Use the Vostok core as a source of a relationship between the age of the ice and the grain size.
+/*! A data set is interpolated here. The intention is that the softness of the
+  ice has nontrivial dependence on its age, through its grainsize, because of
+  variable dustiness of the global climate. The grainsize is partly determined
+  by at which point in the glacial cycle the given ice fell as snow.
+
+  The data is from [\ref DeLaChapelleEtAl98] and [\ref LipenkovEtAl89]. In
+  particular, Figure A2 in the former reference was hand-sampled with an
+  attempt to include the ``wiggles'' in that figure. Ages of the oldest ice (>=
+  300 ka) were estimated in a necessarily ad hoc way. The age value of 10000 ka
+  was added simply to give interpolation for very old ice; ages beyond that get
+  constant extrapolation. Linear interpolation is done between the samples.
+ */
+PetscScalar SIAFD::grainSizeVostok(PetscScalar age_seconds) const {
   const PetscInt numPoints = 22;
   const PetscScalar ageAt[numPoints] = {  // ages in ka
     0.0000e+00, 5.0000e+01, 1.0000e+02, 1.2500e+02, 1.5000e+02,
@@ -473,7 +801,7 @@ PetscScalar SIAFD::grainSizeVostok(PetscScalar age) const {
     5.9000e-03, 6.2000e-03, 5.4000e-03, 6.8000e-03, 3.5000e-03,
     6.0000e-03, 8.0000e-03, 8.3000e-03, 3.6000e-03, 3.8000e-03,
     9.5000e-03, 1.0000e-02 };
-  const PetscScalar a = age * 1.0e-3 / secpera; // Age in ka
+  const PetscScalar a = age_seconds * 1.0e-3 / secpera; // Age in ka
   PetscInt l = 0;               // Left end of the binary search
   PetscInt r = numPoints - 1;   // Right end
 

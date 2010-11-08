@@ -19,7 +19,7 @@
 #include "ShallowStressBalance.hh"
 
 //! \brief Initialize a shallow stress balance object.
-PetscErrorCode ShallowStressBalance::init(PISMVars &vars) {
+PetscErrorCode ShallowStressBalance::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
 
   ierr = velocity.create(grid, "bar", true); CHKERRQ(ierr); // components are ubar and vbar

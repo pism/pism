@@ -18,7 +18,7 @@
 
 #include "SSB_Modifier.hh"
 
-PetscErrorCode SSB_Modifier::init(PISMVars &vars) {
+PetscErrorCode SSB_Modifier::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
 
   ierr =     u.create(grid, "uvel", true); CHKERRQ(ierr);
@@ -119,8 +119,7 @@ PetscErrorCode SSBM_Trivial::update(IceModelVec2V *vel_input,
 PetscErrorCode SSBM_Trivial::compute_sigma(IceModelVec2S *D2_input, IceModelVec3 &result) {
   PetscErrorCode ierr;
   PetscScalar *E, *sigma;
-  const PetscReal dx = grid.dx, 
-    dy = grid.dy,
+  const PetscReal
     n_glen  = ice.exponent(),
     Sig_pow = (1.0 + n_glen) / (2.0 * n_glen),
     enhancement_factor = config.get("enhancement_factor"),

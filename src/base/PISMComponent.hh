@@ -67,7 +67,7 @@ public:
   /*!
     Keyword can be one of "small", "medium" or "big".
    */
-  virtual void add_vars_to_output(string keyword, set<string> &result) {}
+  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/) {}
 protected:
   virtual PetscErrorCode find_pism_input(string &filename, LocalInterpCtx* &lic,
 					 bool &regrid, int &start);

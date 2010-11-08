@@ -56,7 +56,7 @@ PetscErrorCode IceModelVec3::create_da(DA &result, PetscInt Mz) {
   ierr = DACreate3d(grid->com, DA_YZPERIODIC, DA_STENCIL_BOX,
 		    Mz, grid->My, grid->Mx, // P, N, M
 		    1,  grid->Ny, grid->Nx, // p, n, m
-		    1, s_width,	// dof, stencil_width
+		    1, da_stencil_width,	// dof, stencil_width
                     PETSC_NULL, grid->procs_y, grid->procs_x, // lz, ly, lx
 		    &result); CHKERRQ(ierr);
 
@@ -77,7 +77,7 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[],
   
   grid = &my_grid;
   dims = GRID_3D;
-  s_width = stencil_width;
+  da_stencil_width = stencil_width;
 
   ierr = create_da(da, grid->Mz); CHKERRQ(ierr);
 
@@ -193,7 +193,7 @@ PetscErrorCode  IceModelVec3::setValColumnPL(PetscInt i, PetscInt j, PetscScalar
 #ifdef PISM_DEBUG
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
-  // check if in ownership ?
+  check_array_indices(i, j);
 #endif
 
   const PetscScalar *levels = grid->zlevels;
@@ -216,7 +216,7 @@ PetscErrorCode  IceModelVec3::setValColumnPL(PetscInt i, PetscInt j, PetscScalar
 PetscErrorCode  IceModelVec3::setColumn(PetscInt i, PetscInt j, PetscScalar c) {
 #ifdef PISM_DEBUG
   PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
-  // check if in ownership ?
+  check_array_indices(i, j);
 #endif
   PetscScalar ***arr = (PetscScalar***) array;
   for (PetscInt k=0; k < grid->Mz; k++) {
@@ -228,6 +228,8 @@ PetscErrorCode  IceModelVec3::setColumn(PetscInt i, PetscInt j, PetscScalar c) {
 
 //! Return value of scalar quantity at level z (m) above base of ice (by linear interpolation).
 PetscScalar IceModelVec3::getValZ(PetscInt i, PetscInt j, PetscScalar z) {
+#ifdef PISM_DEBUG
+  check_array_indices(i, j);
 
   if (checkHaveArray() != 0) {
     PetscPrintf(PETSC_COMM_SELF, 
@@ -241,6 +243,8 @@ PetscScalar IceModelVec3::getValZ(PetscInt i, PetscInt j, PetscScalar z) {
        "  not legal; name = %s\n", z, name.c_str());
     PetscEnd();
   }
+#endif
+
   PetscScalar ***arr = (PetscScalar***) array;
   if (z >= grid->Lz)
     return arr[i][j][grid->Mz - 1];
@@ -270,6 +274,7 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(PetscInt i, PetscInt j, PetscScalar
     SETERRQ1(1,"IceModelVec3 ERROR: IceModelVec3 with name='%s' is GLOBAL\n"
                "  and cannot do getPlaneStarZ()\n", name.c_str());
   }
+  check_array_indices(i, j);
 #endif
 
   PetscInt     kbz;
@@ -311,6 +316,8 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(PetscInt i, PetscInt j, PetscScalar
 //! Gets a map-plane star stencil directly from the storage grid.
 PetscErrorCode IceModelVec3::getPlaneStar(PetscInt i, PetscInt j, PetscInt k,
 						  planeStar *star) {
+  check_array_indices(i, j);
+
   PetscScalar ***arr = (PetscScalar***) array;
 
   star->ij  = arr[i][j][k];
@@ -325,6 +332,8 @@ PetscErrorCode IceModelVec3::getPlaneStar(PetscInt i, PetscInt j, PetscInt k,
 //! Gets a map-plane star stencil on the fine vertical grid.
 PetscErrorCode IceModelVec3::getPlaneStar_fine(PetscInt i, PetscInt j, PetscInt k,
 					       planeStar *star) {
+  check_array_indices(i, j);
+
   PetscInt kbz = grid->ice_storage2fine[k];
 
   if (kbz < grid->Mz - 1) {
@@ -363,7 +372,7 @@ PetscErrorCode IceModelVec3::getValColumnPL(PetscInt i, PetscInt j, PetscInt ks,
   
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
-  // check if in ownership ?
+  check_array_indices(i, j);
 
   PetscScalar *levels = grid->zlevels;
   PetscScalar *levels_fine = grid->zlevels_fine;
@@ -399,7 +408,8 @@ Return array \c valsOUT must be an allocated array of \c grid.Mz_fine scalars
  */
 PetscErrorCode  IceModelVec3::getValColumnQUAD(PetscInt i, PetscInt j, PetscInt ks,
 					       PetscScalar *result) {
-  
+  check_array_indices(i, j);
+
   const PetscScalar *levels = grid->zlevels;
   const PetscScalar *levels_fine = grid->zlevels_fine;
   const PetscScalar ***arr = (const PetscScalar***) array;
@@ -540,7 +550,7 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2S &gsurf, PetscScalar
 
 
 PetscErrorCode  IceModelVec3::getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsPTR) {
-  
+  check_array_indices(i, j);
   PetscScalar ***arr = (PetscScalar***) array;
   *valsPTR = arr[i][j];
   return 0;
@@ -548,7 +558,7 @@ PetscErrorCode  IceModelVec3::getInternalColumn(PetscInt i, PetscInt j, PetscSca
 
 
 PetscErrorCode  IceModelVec3::setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN) {
-  
+  check_array_indices(i, j);
   PetscScalar ***arr = (PetscScalar***) array;
   PetscErrorCode ierr = PetscMemcpy(arr[i][j], valsIN, grid->Mz*sizeof(PetscScalar));
   CHKERRQ(ierr);
@@ -643,7 +653,8 @@ PetscErrorCode IceModelVec3Bedrock::destroy() {
 Array \c valsIN must be an allocated array of \c grid->Mbz \c PetscScalar s.
  */
 PetscErrorCode  IceModelVec3Bedrock::setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN) {
-  
+  check_array_indices(i, j);
+
   PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
   PetscScalar ***arr = (PetscScalar***) array;
   for (PetscInt k = 0; k < grid->Mbz; k++) {
@@ -655,6 +666,7 @@ PetscErrorCode  IceModelVec3Bedrock::setInternalColumn(PetscInt i, PetscInt j, P
 
 //! Set values of bedrock scalar quantity: set all values in a column to the same value.
 PetscErrorCode  IceModelVec3Bedrock::setColumn(PetscInt i, PetscInt j, PetscScalar c) {
+  check_array_indices(i, j);
 
   PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
   PetscScalar ***arr = (PetscScalar***) array;
@@ -671,7 +683,8 @@ Return array \c valsOUT is an allocated array of \c grid->Mbz \c PetscScalar s.
  */
 PetscErrorCode  IceModelVec3Bedrock::getInternalColumn(PetscInt i, PetscInt j, 
                                                        PetscScalar **valsOUT) {
-  
+  check_array_indices(i, j);
+
   PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
   PetscScalar ***arr = (PetscScalar***) array;
   *valsOUT = arr[i][j];
@@ -696,7 +709,7 @@ PetscErrorCode  IceModelVec3Bedrock::setValColumnPL(PetscInt i, PetscInt j,
 						    PetscScalar *source) {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
-  // check if in ownership ?
+  check_array_indices(i, j);
 
   PetscScalar *levels = grid->zblevels;
   PetscScalar *levels_fine = grid->zblevels_fine;
@@ -745,7 +758,7 @@ PetscErrorCode  IceModelVec3Bedrock::getValColumnPL(PetscInt i, PetscInt j, Pets
   
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
-  // check if in ownership ?
+  check_array_indices(i, j);
 
   PetscScalar *levels = grid->zblevels;
   PetscScalar *levels_fine = grid->zblevels_fine;
@@ -921,6 +934,8 @@ PetscErrorCode IceModelVec3::view_sounding(int i, int j, PetscInt viewer_size) {
   PetscScalar *ivals;
   PetscInt my_Mz = grid->Mz;
 
+  check_array_indices(i, j);
+
   // memory allocation:
   if (sounding_buffer == PETSC_NULL) {
     ierr = VecCreateMPI(grid->com, PETSC_DECIDE, my_Mz, &sounding_buffer); CHKERRQ(ierr);
@@ -960,6 +975,8 @@ PetscErrorCode IceModelVec3Bedrock::view_sounding(int i, int j, PetscInt viewer_
   PetscErrorCode ierr;
   PetscScalar *ivals = NULL;
   PetscInt my_Mz = grid->Mbz;
+
+  check_array_indices(i, j);
 
   // memory allocation:
   if (sounding_buffer == PETSC_NULL) {

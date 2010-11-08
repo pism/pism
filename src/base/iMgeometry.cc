@@ -326,9 +326,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
     ierr = ocean->shelf_base_mass_flux(grid.year, dt / secpera, shelfbmassflux); CHKERRQ(ierr);
   } else { SETERRQ(2,"PISM ERROR: ocean == NULL"); }
 
-  const PetscScalar inC_fofv = 1.0e-4 * PetscSqr(secpera),
-                    outC_fofv = 2.0 / pi;
-
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
 

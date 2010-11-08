@@ -82,7 +82,7 @@ PetscErrorCode IceModel::initSSA() {
 
 PetscErrorCode IceModel::trivialMoveSSAXtoIMV2V() {
   PetscErrorCode  ierr;
-  PISMVector2 **Xuv;
+  //  PISMVector2 **Xuv;
 
   ierr = vel_ssa.copy_from(SSAX); CHKERRQ(ierr); 
   // ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
@@ -795,9 +795,6 @@ PetscErrorCode IceModel::broadcastSSAVelocity(bool updateVelocityAtDepth) {
 
   ierr = u3.begin_access(); CHKERRQ(ierr);
   ierr = v3.begin_access(); CHKERRQ(ierr);
-
-  const PetscScalar inC_fofv = 1.0e-4 * PetscSqr(secpera),
-                    outC_fofv = 2.0 / pi;
 
   bool do_superpose = config.get_flag("do_superpose");
 

@@ -31,6 +31,7 @@ set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to d
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
 option (Pism_LOCAL_INSTALL     "Install PISM locally (not in /usr/local/ or similar). This affects installation paths." ON)
+option (Pism_ADD_FPIC          "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS)." OFF)
 
 # This installs PISM in ${CMAKE_INSTALL_PREFIX}/{bin,lib,doc} if installed
 # locally; otherwise in ${CMAKE_INSTALL_PREFIX}/bin/pism, .../lib/pism and
@@ -51,8 +52,19 @@ set (Pism_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are
 set (CMAKE_BUILD_TYPE ${Pism_BUILD_TYPE} CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
 mark_as_advanced (CMAKE_BUILD_TYPE) # hide the default entry
 if (Pism_BUILD_TYPE MATCHES "Debug")
-  option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings" OFF)
+  option (Pism_DEBUG              "Enables extra checks in the code." OFF)
+  option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings"    OFF)
 endif (Pism_BUILD_TYPE MATCHES "Debug")
+
+# Enable extra checks in the code:
+if (Pism_DEBUG)
+  add_definitions (-DPISM_DEBUG=1)
+endif ()
+
+# Add -fPIC to CXX flags; note that this will not show up in CMakeCache.txt
+if (Pism_ADD_FPIC)
+  list (APPEND CMAKE_CXX_FLAGS "-fPIC")
+endif ()
 
 # Set Pism_REVISION
 # Git
