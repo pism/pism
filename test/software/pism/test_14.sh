@@ -12,7 +12,7 @@ run_test ()
 {
     cleanup
     # run pisms
-    run -n 2 pisms -y 8e3 -Lz 4100 -o_size big -no_cold
+    run -n 2 pisms -y 10e3 -Lz 4100 -Mx 26 -My 26 -o_size big -no_cold
 
     python <<EOF
 try:
@@ -24,7 +24,7 @@ from sys import exit
 
 nc = NC("simp_exper.nc", 'r')
 var = nc.variables['enthalpy']
-n = 61; m = 61; tol = 1e-3
+n = 26; m = 26; tol = 1e-3
 
 for k in [0, 1, 2]:
     v = var[0,k,:,:]	# time,z,y,x
