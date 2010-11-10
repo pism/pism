@@ -1,0 +1,24 @@
+The classes here abstract both the SIA and SSA stress balances.
+Here are some intended benefits:
+
+1. make this part of PISM more "library-like", and reduced the Jed-named
+   "large common block with inheritance" property of IceModel
+
+2. clarify and complete the semantics of setting boundary conditions to the SSA
+   (task #6567)
+
+3. make it easier to improve the SSA calculation by appropriate use of
+   SNES (task #4104)
+   
+4. make it easier to use the SSA in inverse mode, and allow the implementation 
+   of David's and Marijke's tools for such
+
+5. make it easier to implement the Pollard-deConto (task #6946) and Goldberg
+   hybrids
+
+6. make it easier to build a Blatter stress balance solver
+
+
+Note:  a reasonable early software/verification test is to run test J "offline"
+from IceModel.
+

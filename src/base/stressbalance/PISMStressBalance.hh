@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khrushchev and Ed Below
+// Copyright (C) 2010 Constantine Khrazy and Ed Bucus
 //
 // This file is part of PISM.
 //
