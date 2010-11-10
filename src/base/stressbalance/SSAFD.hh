@@ -67,42 +67,59 @@ public:
         const NCConfigVariable &c)
     : ShallowStressBalance(g, b, i, e, c) {}
 
-  virtual ~SSAFD() { deallocate(); }
+  virtual ~SSAFD() { deallocate_internals(); }
 
   SSAStrengthExtension strength_extension;
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(bool fast);
 
+  virtual PetscErrorCode set_initial_guess(IceModelVec2V &/*guess*/);
+
+  virtual PetscErrorCode read_initial_guess(string /*filename*/);
+
+  //! \brief Save the initial guess (for restarting).
+  virtual PetscErrorCode save_initial_guess(string /*filename*/);
+
 protected:
   virtual PetscErrorCode allocate_internals();
 
-  virtual PetscErrorCode deallocate();
+  virtual PetscErrorCode deallocate_internals();
 
   virtual PetscErrorCode solve();
 
   virtual PetscErrorCode compute_nuH_staggered(IceModelVec2Stag &result,
-                                               PetscReal epsilon); // done
+                                               PetscReal epsilon);
 
   virtual PetscErrorCode compute_nuH_norm(PetscReal &norm,
-                                          PetscReal &norm_change); // done
+                                          PetscReal &norm_change);
 
   virtual PetscErrorCode assemble_matrix(bool include_basal_shear, Mat A);
 
-  virtual PetscErrorCode assemble_rhs(Vec rhs); // done
+  virtual PetscErrorCode assemble_rhs(Vec rhs);
 
   virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
 
-  virtual PetscErrorCode compute_hardav_staggered(IceModelVec2Stag &result); // done
+  virtual PetscErrorCode compute_hardav_staggered(IceModelVec2Stag &result);
 
-  virtual PetscErrorCode compute_basal_frictional_heating(IceModelVec2S &result); // done
+  virtual PetscErrorCode compute_basal_frictional_heating(IceModelVec2S &result);
 
-  virtual PetscErrorCode compute_D2(IceModelVec2S &result); // done
+  virtual PetscErrorCode compute_D2(IceModelVec2S &result);
+
+  virtual PetscErrorCode compute_maximum_velocity();
+
+  virtual PetscErrorCode writeSSAsystemMatlab();
+
+  virtual PetscErrorCode update_nuH_viewers();
+
+  virtual PetscErrorCode stdout_report(string &result);
 
   IceModelVec2Mask *mask;
   IceModelVec2S *thickness, *tauc, *surface, *bed;
   IceModelVec2Stag hardness, nuH, nuH_old;
-  IceModelVec2V taud;
+  IceModelVec2V taud, velocity_old;
   IceModelVec3 *enthalpy;
+
+  string stdout_ssa;
 
   // objects used by the SSA solver (internally)
   KSP SSAKSP;

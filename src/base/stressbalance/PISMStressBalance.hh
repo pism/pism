@@ -78,6 +78,9 @@ public:
   //! \brief Get the basal frictional heating (for the energy time-stepping).
   virtual PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &result); // done
 
+  //! \brief Produce a report string for the standard output.
+  virtual PetscErrorCode stdout_report(string &result);
+
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz); // done
 protected:

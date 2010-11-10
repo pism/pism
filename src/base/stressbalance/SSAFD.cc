@@ -69,6 +69,19 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
                         "driving shear stress at the base of ice",
                         "Pa", ""); CHKERRQ(ierr);
 
+  ierr = velocity_old.create(grid, "velocity_old", true); CHKERRQ(ierr);
+  ierr = velocity_old.set_attrs("internal",
+                                "old SSA velocity field; used for re-trying with a different epsilon",
+                                "m s-1", ""); CHKERRQ(ierr);
+
+  // override velocity metadata
+  ierr = velocity.set_name("bar_ssa"); CHKERRQ(ierr);
+  ierr = velocity.set_attrs("internal_restart", "SSA model ice velocity in the X direction",
+                            "m s-1", "", 0); CHKERRQ(ierr);
+  ierr = velocity.set_attrs("internal_restart", "SSA model ice velocity in the Y direction",
+                            "m s-1", "", 1); CHKERRQ(ierr);
+  ierr = velocity.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  velocity.write_in_glaciological_units = true;
 
   return 0;
 }
@@ -102,7 +115,7 @@ PetscErrorCode SSAFD::allocate_internals() {
   return 0;
 }
 
-PetscErrorCode SSAFD::deallocate() {
+PetscErrorCode SSAFD::deallocate_internals() {
   PetscErrorCode ierr;
 
   ierr = KSPDestroy(SSAKSP); CHKERRQ(ierr);
@@ -127,9 +140,12 @@ PetscErrorCode SSAFD::update(bool fast) {
 
   ierr = solve(); CHKERRQ(ierr); 
 
-  ierr = compute_basal_frictional_heating(basal_frictional_heating); CHKERRQ(ierr);
+  if (!fast) {
+    ierr = compute_basal_frictional_heating(basal_frictional_heating); CHKERRQ(ierr);
+    ierr = compute_D2(D2); CHKERRQ(ierr);
+  }
 
-  ierr = compute_D2(D2); CHKERRQ(ierr);
+  ierr = compute_maximum_velocity(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -295,6 +311,155 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
 //! \brief Assemble the SSA matrix.
 PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
+  PetscErrorCode  ierr;
+
+  const PetscScalar   dx=grid.dx, dy=grid.dy;
+  // next constant not too sensitive, but must match value in assembleSSARhs():
+  const PetscScalar   scaling = 1.0e9;  // comparable to typical beta for an ice stream
+  IceModelVec2V vel = velocity;         // a shortcut
+
+  ierr = MatZeroEntries(A); CHKERRQ(ierr);
+
+  PetscReal beta_shelves_drag_too = config.get("beta_shelves_drag_too");
+  bool shelvesDragToo = config.get_flag("shelves_drag_too");
+
+  /* matrix assembly loop */
+
+  ierr = nuH.begin_access(); CHKERRQ(ierr);
+  ierr = tauc->begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+  ierr = vel.begin_access(); CHKERRQ(ierr);
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PismMask mask_value = mask->value(i,j);
+      if (mask_value == MASK_SHEET) {
+        // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
+        //   this is where boundary value to SSA is set
+        MatStencil  row, col;
+        row.j = i; row.i = j; row.c = 0;
+        col.j = i; col.i = j; col.c = 0;
+        ierr = MatSetValuesStencil(A,1,&row,1,&col,&scaling,INSERT_VALUES); CHKERRQ(ierr);
+        row.c = 1;
+        col.c = 1;
+        ierr = MatSetValuesStencil(A,1,&row,1,&col,&scaling,INSERT_VALUES); CHKERRQ(ierr);
+      } else {
+        const PetscScalar dx2 = dx*dx, d4 = dx*dy*4, dy2 = dy*dy;
+        /* Provide shorthand for the following staggered coefficients  nu H:
+        *      c11
+        *  c00     c01
+        *      c10
+        * Note that the positive i (x) direction is right and the positive j (y)
+        * direction is up. */
+        const PetscScalar c00 = nuH(i-1,j,0);
+        const PetscScalar c01 = nuH(i,j,0);
+        const PetscScalar c10 = nuH(i,j-1,1);
+        const PetscScalar c11 = nuH(i,j,1);
+
+        const PetscInt sten = 13;
+        MatStencil  row, col[sten];
+
+        /* start with the values at the points */
+        PetscScalar valU[] = {
+          /*               */ -c11/dy2,
+          (2*c00+c11)/d4,     2*(c00-c01)/d4,                 -(2*c01+c11)/d4,
+          -4*c00/dx2,         4*(c01+c00)/dx2+(c11+c10)/dy2,  -4*c01/dx2,
+          (c11-c10)/d4,                                       (c10-c11)/d4,
+          /*               */ -c10/dy2,
+          -(2*c00+c10)/d4,    2*(c01-c00)/d4,                 (2*c01+c10)/d4 };
+        PetscScalar valV[] = {
+          (2*c11+c00)/d4,     (c00-c01)/d4,                   -(2*c11+c01)/d4,
+          /*               */ -4*c11/dy2,
+          2*(c11-c10)/d4,                                     2*(c10-c11)/d4,
+          -c00/dx2,           4*(c11+c10)/dy2+(c01+c00)/dx2,  -c01/dx2,
+          -(2*c10+c00)/d4,    (c01-c00)/d4,                   (2*c10+c01)/d4,
+          /*               */ -4*c10/dy2 };
+
+        /* Dragging ice experiences friction at the bed determined by the
+         *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
+         *    or linear friction law according to basal->drag(), which gets called
+         *    by basalDragx(),basalDragy().  */
+        if (include_basal_shear && (mask_value == MASK_DRAGGING_SHEET)) {
+          // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
+          valU[5] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+          valV[7] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+        }
+
+        // make shelf drag a little bit if desired
+        if (shelvesDragToo && (mask_value == MASK_FLOATING)) {
+          //ierr = verbPrintf(1,grid.com,"... SHELF IS DRAGGING ..."); CHKERRQ(ierr);
+          valU[5] += beta_shelves_drag_too;
+          valV[7] += beta_shelves_drag_too;
+        }
+
+        // build "u" equation: NOTE TRANSPOSE
+        row.j = i; row.i = j; row.c = 0;
+        const PetscInt UI[] = {
+          /*       */ i,
+          i-1,        i,          i+1,
+          i-1,        i,          i+1,
+          i-1,                    i+1,
+          /*       */ i,
+          i-1,        i,          i+1};
+        const PetscInt UJ[] = {
+          /*       */ j+1,
+          j+1,        j+1,        j+1,
+          j,          j,          j,
+          j,                      j,
+          /*       */ j-1,
+          j-1,        j-1,        j-1};
+        const PetscInt UC[] = {
+          /*       */ 0,
+          1,          1,          1,
+          0,          0,          0,
+          1,                      1,
+          /*       */ 0,
+          1,          1,          1};
+        for (PetscInt m=0; m<sten; m++) {
+          col[m].j = UI[m]; col[m].i = UJ[m], col[m].c = UC[m];
+        }
+        ierr = MatSetValuesStencil(A,1,&row,sten,col,valU,INSERT_VALUES); CHKERRQ(ierr);
+
+        // build "v" equation: NOTE TRANSPOSE
+        row.j = i; row.i = j; row.c = 1;
+        const PetscInt VI[] = {
+          i-1,        i,          i+1,
+          /*       */ i,
+          i-1,                    i+1,
+          i-1,        i,          i+1,
+          i-1,        i,          i+1,
+          /*       */ i};
+        const PetscInt VJ[] = {
+          j+1,        j+1,        j+1,
+          /*       */ j+1,
+          j,                      j,
+          j,          j,          j,
+          j-1,        j-1,        j-1,
+          /*       */ j-1};
+        const PetscInt VC[] = {
+          0,          0,          0,
+          /*       */ 1,
+          0,                      0,
+          1,          1,          1,
+          0,          0,          0,
+          /*       */ 1};
+        for (PetscInt m=0; m<sten; m++) {
+          col[m].j = VI[m]; col[m].i = VJ[m], col[m].c = VC[m];
+        }
+        ierr = MatSetValuesStencil(A,1,&row,sten,col,valV,INSERT_VALUES); CHKERRQ(ierr);
+
+      }
+    }
+  }
+
+  ierr = vel.end_access(); CHKERRQ(ierr);  
+  ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = tauc->end_access(); CHKERRQ(ierr);  
+  ierr = nuH.end_access(); CHKERRQ(ierr);
+
+  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
   return 0; 
 }
 
@@ -379,7 +544,6 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
           
         // We ensure that nuH is bounded below by a positive constant.
         result(i,j,o) += epsilon;
-
       } // j
     } // i
   } // o
@@ -397,10 +561,6 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
 }
 
 //! \brief Compute the driving stress.
-/*!
- * FIXME: this method should use the surface gradient computed "the right way"
- * instead of doing its own thing here.
- */
 PetscErrorCode SSAFD::compute_driving_stress(IceModelVec2V &result) {
   PetscErrorCode ierr;
 
@@ -473,7 +633,306 @@ PetscErrorCode SSAFD::compute_driving_stress(IceModelVec2V &result) {
 
 PetscErrorCode SSAFD::solve() {
   PetscErrorCode ierr;
+  Mat A = SSAStiffnessMatrix; // solve  A SSAX = SSARHS
+  PetscReal   norm, normChange;
+  PetscInt    ksp_iterations, outer_iterations;
+  KSPConvergedReason  reason;
 
+  stdout_ssa = "";
+
+  bool write_ssa_system_to_matlab = config.get_flag("write_ssa_system_to_matlab");
+  PetscReal ssaRelativeTolerance = config.get("ssa_relative_convergence"),
+            epsilon              = config.get("epsilon_ssa");
+
+  PetscInt ssaMaxIterations = static_cast<PetscInt>(config.get("max_iterations_ssa"));
+  
+  ierr = velocity.copy_to(velocity_old); CHKERRQ(ierr);
+
+  // computation of RHS only needs to be done once; does not depend on solution;
+  //   but matrix changes under nonlinear iteration (loop over k below)
+  ierr = assemble_rhs(SSARHS); CHKERRQ(ierr);
+
+  ierr = compute_hardav_staggered(hardness); CHKERRQ(ierr);
+
+  for (PetscInt l=0; ; ++l) { // iterate with increasing regularization parameter
+    ierr = compute_nuH_staggered(nuH, epsilon); CHKERRQ(ierr);
+    ierr = update_nuH_viewers(); CHKERRQ(ierr);
+    // iterate on effective viscosity: "outer nonlinear iteration":
+    for (PetscInt k = 0; k < ssaMaxIterations; ++k) { 
+      if (getVerbosityLevel() > 2) {
+        char tempstr[50] = "";  snprintf(tempstr,50, "  %d,%2d:", l, k);
+        stdout_ssa += tempstr;
+      }
+
+      // in preparation of measuring change of effective viscosity:
+      ierr = nuH.copy_to(nuH_old); CHKERRQ(ierr);
+
+      // assemble (or re-assemble) matrix, which depends on updated viscosity
+      ierr = assemble_matrix(true, A); CHKERRQ(ierr);
+      if (getVerbosityLevel() > 2)
+        stdout_ssa += "A:";
+
+      // call PETSc to solve linear system by iterative method; "inner linear iteration"
+      ierr = KSPSetOperators(SSAKSP, A, A, DIFFERENT_NONZERO_PATTERN); CHKERRQ(ierr);
+      ierr = KSPSolve(SSAKSP, SSARHS, SSAX); CHKERRQ(ierr); // SOLVE
+
+      // report to standard out about iteration
+      ierr = KSPGetConvergedReason(SSAKSP, &reason); CHKERRQ(ierr);
+      if (reason < 0) {
+        ierr = verbPrintf(1,grid.com, 
+            "\n\n\nPISM ERROR:  KSPSolve() reports 'diverged'; reason = %d = '%s';\n"
+                  "  see PETSc man page for KSPGetConvergedReason();   ENDING ...\n\n",
+            reason,KSPConvergedReasons[reason]); CHKERRQ(ierr);
+        PetscEnd();
+      }
+      ierr = KSPGetIterationNumber(SSAKSP, &ksp_iterations); CHKERRQ(ierr);
+      if (getVerbosityLevel() > 2) {
+        char tempstr[50] = "";  snprintf(tempstr,50, "S:%d,%d: ", ksp_iterations, reason);
+        stdout_ssa += tempstr;
+      }
+
+      // Communicate so that we have stencil width for evaluation of effective
+      //   viscosity on next "outer" iteration (and geometry etc. if done):
+      ierr = velocity.copy_from(SSAX); CHKERRQ(ierr); 
+
+      ierr = velocity.beginGhostComm(); CHKERRQ(ierr);
+      ierr = velocity.endGhostComm(); CHKERRQ(ierr);
+
+      // update viscosity and check for viscosity convergence
+      ierr = compute_nuH_staggered(nuH, epsilon); CHKERRQ(ierr);
+      ierr = update_nuH_viewers(); CHKERRQ(ierr);
+      ierr = compute_nuH_norm(norm, normChange); CHKERRQ(ierr);
+      if (getVerbosityLevel() > 2) {
+        char tempstr[100] = "";
+        snprintf(tempstr,100, "|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n", 
+                         norm, normChange/norm);
+        stdout_ssa += tempstr;
+      }
+
+      outer_iterations = k + 1;
+      if (norm == 0 || normChange / norm < ssaRelativeTolerance) goto done;
+
+    } // end of the "outer loop" (index: k)
+
+    if (epsilon > 0.0) {
+       // this has no units; epsilon goes up by this ratio when previous value failed
+       const PetscScalar DEFAULT_EPSILON_MULTIPLIER_SSA = 4.0;
+       ierr = verbPrintf(1,grid.com,
+			 "WARNING: Effective viscosity not converged after %d iterations\n"
+			 "\twith epsilon=%8.2e. Retrying with epsilon * %8.2e.\n",
+			 ssaMaxIterations, epsilon, DEFAULT_EPSILON_MULTIPLIER_SSA);
+       CHKERRQ(ierr);
+
+       ierr = velocity.copy_from(velocity_old); CHKERRQ(ierr);
+       epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
+    } else {
+       SETERRQ1(1, 
+         "Effective viscosity not converged after %d iterations; epsilon=0.0.\n"
+         "  Stopping.                \n", 
+         ssaMaxIterations);
+    }
+
+  } // end of the "outer outer loop" (index: l)
+
+  done:
+
+  if (getVerbosityLevel() > 2) {
+    char tempstr[50] = "";
+    snprintf(tempstr,50, "... =%5d outer iterations", outer_iterations);
+    stdout_ssa += tempstr;
+  } else if (getVerbosityLevel() == 2) {
+    // at default verbosity, just record last normchange and iterations
+    char tempstr[50] = "";
+    snprintf(tempstr,50, "%5d outer iterations", outer_iterations);
+    stdout_ssa += tempstr;
+  }
+  if (getVerbosityLevel() >= 2)
+    stdout_ssa = "  SSA: " + stdout_ssa;
+  if (write_ssa_system_to_matlab) {
+    ierr = writeSSAsystemMatlab(); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+//! \brief Compute maximum ice velocity; uses the mask to ignore values
+//! produced in ice-free areas.
+PetscErrorCode SSAFD::compute_maximum_velocity() {
+  PetscErrorCode ierr;
+  PetscReal my_max_u = 0.0,
+    my_max_v = 0.0;
+
+  bool do_ocean_kill = config.get_flag("ocean_kill"),
+    floating_ice_killed = config.get_flag("floating_ice_killed");
+
+  ierr = velocity.begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+  
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      // the following conditionals, both -ocean_kill and -float_kill, are also applied in 
+      //   IceModel::massContExplicitStep() when zeroing thickness
+      const bool ignorableOcean = ( do_ocean_kill && (mask->value(i,j) == MASK_OCEAN_AT_TIME_0) )
+	|| ( floating_ice_killed && mask->is_floating(i,j) );
+  
+      if (!ignorableOcean) {
+        my_max_u = PetscMax(my_max_u, PetscAbs(velocity(i,j).u));
+        my_max_v = PetscMax(my_max_v, PetscAbs(velocity(i,j).v));
+      }
+    }
+  }
+
+  ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = velocity.end_access(); CHKERRQ(ierr);
+
+  ierr = PetscGlobalMax(&my_max_u, &max_u, grid.com); CHKERRQ(ierr); 
+  ierr = PetscGlobalMax(&my_max_v, &max_v, grid.com); CHKERRQ(ierr); 
+
+  return 0;
+}
+
+PetscErrorCode SSAFD::writeSSAsystemMatlab() {
+  PetscErrorCode ierr;
+  PetscViewer    viewer;
+  char           file_name[PETSC_MAX_PATH_LEN], yearappend[PETSC_MAX_PATH_LEN];
+
+  IceModelVec2S component;
+  ierr = component.create(grid, "temp_storage", false); CHKERRQ(ierr);
+
+  // FIXME: the file name prefix should be an option
+  strcpy(file_name,"pism_SSA");
+  snprintf(yearappend, PETSC_MAX_PATH_LEN, "_y%.0f.m", grid.year);
+  strcat(file_name,yearappend);
+  ierr = verbPrintf(2, grid.com, 
+             "writing Matlab-readable file for SSA system A xsoln = rhs to file `%s' ...\n",
+             file_name); CHKERRQ(ierr);
+  ierr = PetscViewerCreate(grid.com, &viewer);CHKERRQ(ierr);
+  ierr = PetscViewerSetType(viewer, PETSC_VIEWER_ASCII);CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
+  ierr = PetscViewerFileSetName(viewer, file_name);CHKERRQ(ierr);
+
+  // get the command which started the run  [ FIXME: code duplication from
+  // IceModel::stampHistoryCommand() ]
+  PetscInt argc;
+  char **argv;
+  ierr = PetscGetArgs(&argc, &argv); CHKERRQ(ierr);
+  string cmdstr;  // a string with space-separated command-line arguments:
+  for (int j = 0; j < argc; j++)
+    cmdstr += string(" ") + argv[j];
+  
+  // save linear system; gives system A xsoln = rhs at last (nonlinear) iteration of SSA
+  ierr = PetscViewerASCIIPrintf(viewer,
+    "%% A PISM linear system report for the SSA stress balance from this run:\n"
+    "%%   '%s'\n"
+    "%% Writes matrix A (sparse), and vectors uv and rhs, for the linear\n"
+    "%% system which was solved at the last step of the nonlinear iteration:\n"
+    "%%    A * uv = rhs.\n"
+    "%% Also writes the year, the coordinates x,y, their gridded versions\n"
+    "%% xx,yy, and the thickness (thk) and surface elevation (usurf).\n"
+    "%% Also writes i-offsetvalues of vertically-integrated viscosity\n"
+    "%% (nuH_0 = nu * H), and j-offset version of same thing (nuH_1 = nu * H);\n"
+    "%% these are on the staggered grid.\n",
+    cmdstr.c_str());  CHKERRQ(ierr);
+
+  ierr = PetscViewerASCIIPrintf(viewer,"\n\necho off\n");  CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) SSAStiffnessMatrix,"A"); CHKERRQ(ierr);
+  ierr = MatView(SSAStiffnessMatrix, viewer);CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"clear zzz\n\n");  CHKERRQ(ierr);
+
+  ierr = PetscObjectSetName((PetscObject) SSARHS,"rhs"); CHKERRQ(ierr);
+  ierr = VecView(SSARHS, viewer);CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) SSAX,"uv"); CHKERRQ(ierr);
+  ierr = VecView(SSAX, viewer);CHKERRQ(ierr);
+
+  // save coordinates (for viewing, primarily)
+  ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",grid.year);  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+            "x=%12.3f + (0:%d)*%12.3f;\n"
+            "y=%12.3f + (0:%d)*%12.3f;\n",
+            -grid.Lx,grid.Mx-1,grid.dx,-grid.Ly,grid.My-1,grid.dy); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n");  CHKERRQ(ierr);
+
+  // also save thickness and effective viscosity
+  ierr = thickness->view_matlab(viewer); CHKERRQ(ierr);
+  ierr = surface->view_matlab(viewer); CHKERRQ(ierr);
+
+  ierr = nuH.get_component(0, component); CHKERRQ(ierr); 
+  ierr = component.set_name("nuH_0"); CHKERRQ(ierr);
+  ierr = component.set_attr("long_name", 
+    "effective viscosity times thickness (i offset) at current time step"); CHKERRQ(ierr);
+  ierr = component.view_matlab(viewer); CHKERRQ(ierr);
+
+  ierr = nuH.get_component(0, component); CHKERRQ(ierr); 
+  ierr = component.set_name("nuH_1"); CHKERRQ(ierr);
+  ierr = component.set_attr("long_name",
+    "effective viscosity times thickness (j offset) at current time step"); CHKERRQ(ierr);
+  ierr = component.view_matlab(viewer); CHKERRQ(ierr);
+
+  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief Update the nuH viewer.
+/*!
+ * FIXME: this should allow choosing a regular (non-log10) viewer.
+ */
+PetscErrorCode SSAFD::update_nuH_viewers() {
+  PetscErrorCode ierr;
+  IceModelVec2S tmp;
+  ierr = tmp.create(grid, "nuH", false); CHKERRQ(ierr);
+
+  ierr = nuH.begin_access(); CHKERRQ(ierr);
+  ierr = tmp.begin_access(); CHKERRQ(ierr);
+  
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      PetscReal avg_nuH = 0.5 * (nuH(i,j,0) + nuH(i,j,1));
+        if (avg_nuH > 1.0e14) {
+          tmp(i,j) = log10(avg_nuH);
+        } else {
+          tmp(i,j) = 14.0;
+        }
+    }
+  }
+
+  ierr = tmp.end_access(); CHKERRQ(ierr);
+  ierr = nuH.end_access(); CHKERRQ(ierr);
+
+  ierr = tmp.view(300); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode SSAFD::stdout_report(string &result) {
+  result = stdout_ssa;
+  return 0;
+}
+
+PetscErrorCode SSAFD::set_initial_guess(IceModelVec2V &guess) {
+  PetscErrorCode ierr;
+  ierr = velocity.copy_from(guess); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode SSAFD::read_initial_guess(string filename) {
+  PetscErrorCode ierr;
+  NCTool nc(grid.com, grid.rank);
+  int start = 0;
+
+  ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
+  ierr = nc.get_dim_length("t", &start); CHKERRQ(ierr); 
+  start = start - 1;
+
+  ierr = velocity.read(filename.c_str(), start); CHKERRQ(ierr); 
+
+  return 0;
+}
+
+PetscErrorCode SSAFD::save_initial_guess(string filename) {
+  PetscErrorCode ierr;
+  ierr = velocity.write(filename.c_str()); CHKERRQ(ierr);
   return 0;
 }
 

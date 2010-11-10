@@ -166,6 +166,8 @@ PetscErrorCode PISMStressBalance::extend_the_grid(PetscInt old_Mz) {
   return 0;
 }
 
+//! \brief Computes vertical ice velocity relative to the bed directly below a
+//! point using incompressibility of ice and the maximum of its magnitude.
 PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
                                                             IceModelVec2S *bmr,
                                                             IceModelVec3 &result) {
@@ -180,11 +182,12 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
     ierr = bmr->begin_access(); CHKERRQ(ierr);
   }
 
-  PetscScalar *w_column, *u_im1, *u_ip1, *v_jm1, *v_jp1;
+  PetscScalar *w_ij, *u_im1, *u_ip1, *v_jm1, *v_jp1;
 
+  PetscReal my_w_max = 0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = result.getInternalColumn(i,j,&w_column); CHKERRQ(ierr);
+      ierr = result.getInternalColumn(i,j,&w_ij); CHKERRQ(ierr);
 
       ierr = u->getInternalColumn(i-1,j,&u_im1); CHKERRQ(ierr);
       ierr = u->getInternalColumn(i+1,j,&u_ip1); CHKERRQ(ierr);
@@ -192,20 +195,25 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
       ierr = v->getInternalColumn(i,j-1,&v_jm1); CHKERRQ(ierr);
       ierr = v->getInternalColumn(i,j+1,&v_jp1); CHKERRQ(ierr);
 
+      // at the base:
       if (bmr) {
-        w_column[0] = - (*bmr)(i,j);
+        w_ij[0] = - (*bmr)(i,j);
       } else {
-        w_column[0] = 0.0;
+        w_ij[0] = 0.0;
       }
-
+      my_w_max = PetscMax(my_w_max, PetscAbs(w_ij[0]));
+      
+      // within the ice and above:
       PetscScalar OLDintegrand
              = (u_ip1[0] - u_im1[0]) / (2.0*dx) + (v_jp1[0] - v_jm1[0]) / (2.0*dy);
       for (PetscInt k = 1; k < grid.Mz; ++k) {
         const PetscScalar NEWintegrand
              = (u_ip1[k] - u_im1[k]) / (2.0*dx) + (v_jp1[k] - v_jm1[k]) / (2.0*dy);
         const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
-        w_column[k] = w_column[k-1] - 0.5 * (NEWintegrand + OLDintegrand) * dz;
+        w_ij[k] = w_ij[k-1] - 0.5 * (NEWintegrand + OLDintegrand) * dz;
         OLDintegrand = NEWintegrand;
+
+        my_w_max = PetscMax(my_w_max, PetscAbs(w_ij[k]));
       }
     }
   }
@@ -217,6 +225,22 @@ PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, Ice
   ierr = u->end_access(); CHKERRQ(ierr);
   ierr = v->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
+
+  ierr = PetscGlobalMax(&my_w_max, &w_max, grid.com); CHKERRQ(ierr);
   
   return 0;
 }
+
+PetscErrorCode PISMStressBalance::stdout_report(string &result) {
+  PetscErrorCode ierr;
+  string tmp1, tmp2;
+  
+  ierr = stress_balance->stdout_report(tmp1); CHKERRQ(ierr);
+
+  ierr = modifier->stdout_report(tmp2); CHKERRQ(ierr);
+
+  result = tmp1 + tmp2;
+
+  return 0;
+}
+

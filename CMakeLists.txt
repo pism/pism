@@ -58,11 +58,13 @@ endif (Pism_BUILD_TYPE MATCHES "Debug")
 
 # Enable extra checks in the code:
 if (Pism_DEBUG)
+  message (STATUS "Adding -DPISM_DEBUG to compiler flags.")
   add_definitions (-DPISM_DEBUG=1)
 endif ()
 
 # Add -fPIC to CXX flags; note that this will not show up in CMakeCache.txt
 if (Pism_ADD_FPIC)
+  message (STATUS "Adding -fPIC to C++ compiler flags.")
   list (APPEND CMAKE_CXX_FLAGS "-fPIC")
 endif ()
 

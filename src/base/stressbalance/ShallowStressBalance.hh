@@ -80,6 +80,10 @@ public:
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt /*old_Mz*/)
   { return 0; }
+  //! \brief Produce a report string for the standard output.
+  virtual PetscErrorCode stdout_report(string &result)
+  { result = ""; return 0; }
+
 protected:
   IceGrid &grid;
   IceBasalResistancePlasticLaw &basal;

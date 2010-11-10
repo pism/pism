@@ -33,31 +33,34 @@ public:
   { D_max = u_max = v_max = 0.0; }
   virtual ~SSB_Modifier() {}
 
-  virtual PetscErrorCode init(PISMVars &vars); // done 
+  virtual PetscErrorCode init(PISMVars &vars);
 
   virtual PetscErrorCode update(IceModelVec2V *vel_input,
                                 IceModelVec2S *D2_input,
                                 bool fast) = 0;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result) // done
+  virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result)
   { result = &diffusive_flux; return 0; }
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  virtual PetscErrorCode get_max_diffusivity(PetscReal &result) // done
+  virtual PetscErrorCode get_max_diffusivity(PetscReal &result)
   { result = D_max; return 0; }
 
-  virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result) // done
+  virtual PetscErrorCode get_horizontal_3d_velocity(IceModelVec3* &u_result, IceModelVec3* &v_result)
   { u_result = &u; v_result = &v; return 0; }
 
-  virtual PetscErrorCode get_max_horizontal_velocity(PetscReal &max_u, PetscReal &max_v) // done
+  virtual PetscErrorCode get_max_horizontal_velocity(PetscReal &max_u, PetscReal &max_v)
   { max_u = u_max; max_v = v_max; return 0; }
 
-  virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &result) // done
+  virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &result)
   { result = &Sigma; return 0; }
 
   //! \brief Extends the computational grid (vertically).
-  virtual PetscErrorCode extend_the_grid(PetscInt old_Mz); // done
+  virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
+
+  virtual PetscErrorCode stdout_report(string &result)
+  { result = ""; return 0; }
 protected:
   IceGrid &grid;
   IceFlowLaw &ice;
