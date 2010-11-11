@@ -23,7 +23,8 @@ IceModelVec2V::IceModelVec2V() : IceModelVec2() {
   dof = 2;
   vars.resize(dof);
 
-  reset_attrs();
+  reset_attrs(0);
+  reset_attrs(1);
   component_da = PETSC_NULL;
 }
 
@@ -220,6 +221,19 @@ PetscErrorCode IceModelVec2V::set_component(int n, IceModelVec2S &source) {
   PetscErrorCode ierr;
 
   ierr = IceModelVec2::set_component(n, source.v); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModelVec2V::set_name(const char new_name[], int /*component = 0*/) {
+  string tmp = new_name;
+  reset_attrs(0);
+  reset_attrs(1);
+  
+  name = "vel" + tmp;
+
+  vars[0].short_name = "u" + tmp;
+  vars[1].short_name = "v" + tmp;
 
   return 0;
 }

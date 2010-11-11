@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Ed Bueler
+// Copyright (C) 2010 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -77,6 +77,84 @@ PetscErrorCode trivialMove(IceGrid &grid, DA &SSADA, Vec &SSAX,
   return 0;
 }
 
+PetscErrorCode writeSSAsystemMatlab(IceGrid &grid, Mat SSAStiffnessMatrix, Vec SSARHS, Vec SSAX,
+                                    IceModelVec2S &vH,
+                                    IceModelVec2S &vh,
+                                    IceModelVec2S vNu[2]) {
+  PetscErrorCode ierr;
+  PetscViewer    viewer;
+  char           file_name[PETSC_MAX_PATH_LEN], yearappend[PETSC_MAX_PATH_LEN];
+
+  strcpy(file_name,"pism_SSA_old");
+  snprintf(yearappend, PETSC_MAX_PATH_LEN, "_y%.0f.m", grid.year);
+  strcat(file_name,yearappend);
+  ierr = verbPrintf(2, grid.com, 
+             "writing Matlab-readable file for SSA system A xsoln = rhs to file `%s' ...\n",
+             file_name); CHKERRQ(ierr);
+  ierr = PetscViewerCreate(grid.com, &viewer);CHKERRQ(ierr);
+  ierr = PetscViewerSetType(viewer, PETSC_VIEWER_ASCII);CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
+  ierr = PetscViewerFileSetName(viewer, file_name);CHKERRQ(ierr);
+
+  // get the command which started the run  [ FIXME: code duplication from
+  // IceModel::stampHistoryCommand() ]
+  PetscInt argc;
+  char **argv;
+  ierr = PetscGetArgs(&argc, &argv); CHKERRQ(ierr);
+  string cmdstr;  // a string with space-separated command-line arguments:
+  for (int j = 0; j < argc; j++)
+    cmdstr += string(" ") + argv[j];
+  
+  // save linear system; gives system A xsoln = rhs at last (nonlinear) iteration of SSA
+  ierr = PetscViewerASCIIPrintf(viewer,
+    "%% A PISM linear system report for the SSA stress balance from this run:\n"
+    "%%   '%s'\n"
+    "%% Writes matrix A (sparse), and vectors uv and rhs, for the linear\n"
+    "%% system which was solved at the last step of the nonlinear iteration:\n"
+    "%%    A * uv = rhs.\n"
+    "%% Also writes the year, the coordinates x,y, their gridded versions\n"
+    "%% xx,yy, and the thickness (thk) and surface elevation (usurf).\n"
+    "%% Also writes i-offsetvalues of vertically-integrated viscosity\n"
+    "%% (nuH_0 = nu * H), and j-offset version of same thing (nuH_1 = nu * H);\n"
+    "%% these are on the staggered grid.\n",
+    cmdstr.c_str());  CHKERRQ(ierr);
+
+  ierr = PetscViewerASCIIPrintf(viewer,"\n\necho off\n");  CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) SSAStiffnessMatrix,"A"); CHKERRQ(ierr);
+  ierr = MatView(SSAStiffnessMatrix, viewer);CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"clear zzz\n\n");  CHKERRQ(ierr);
+
+  ierr = PetscObjectSetName((PetscObject) SSARHS,"rhs"); CHKERRQ(ierr);
+  ierr = VecView(SSARHS, viewer);CHKERRQ(ierr);
+  ierr = PetscObjectSetName((PetscObject) SSAX,"uv"); CHKERRQ(ierr);
+  ierr = VecView(SSAX, viewer);CHKERRQ(ierr);
+
+  // save coordinates (for viewing, primarily)
+  ierr = PetscViewerASCIIPrintf(viewer,"\nyear=%10.6f;\n",grid.year);  CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+            "x=%12.3f + (0:%d)*%12.3f;\n"
+            "y=%12.3f + (0:%d)*%12.3f;\n",
+            -grid.Lx,grid.Mx-1,grid.dx,-grid.Ly,grid.My-1,grid.dy); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,"[xx,yy]=meshgrid(x,y);\n");  CHKERRQ(ierr);
+
+  // also save thickness and effective viscosity
+  ierr = vH.view_matlab(viewer); CHKERRQ(ierr);
+  ierr = vh.view_matlab(viewer); CHKERRQ(ierr);
+
+  ierr = vNu[0].set_name("nuH_0"); CHKERRQ(ierr);
+  ierr = vNu[0].set_attr("long_name", 
+    "effective viscosity times thickness (i offset) at current time step"); CHKERRQ(ierr);
+  ierr = vNu[0].view_matlab(viewer); CHKERRQ(ierr);
+
+  ierr = vNu[1].set_name("nuH_1"); CHKERRQ(ierr);
+  ierr = vNu[1].set_attr("long_name",
+    "effective viscosity times thickness (j offset) at current time step"); CHKERRQ(ierr);
+  ierr = vNu[1].view_matlab(viewer); CHKERRQ(ierr);
+
+  ierr = PetscViewerASCIIPrintf(viewer,"echo on\n");  CHKERRQ(ierr);
+  ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
+  return 0;
+}
 
 
 PetscErrorCode computeEffectiveViscosity(
@@ -215,7 +293,7 @@ PetscErrorCode assembleSSAMatrix(IceGrid &grid, NCConfigVariable &/*config*/,
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PismMask mask_value = vMask.value(i,j);
-      if (mask_value == MASK_SHEET) {
+      if (mask_value == MASK_BC) {
         // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
         //   this is where boundary value to SSA is set
         MatStencil  row, col;
@@ -439,7 +517,7 @@ PetscErrorCode assembleSSARhs(
   ierr = DAVecGetArray(SSADA,rhs,&rhs_uv); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (vMask.value(i,j) == MASK_SHEET) {
+      if (vMask.value(i,j) == MASK_BC) {
         rhs_uv[i][j].u = scaling * 0.5 * vel_bar(i,j).u;
         rhs_uv[i][j].v = scaling * 0.5 * vel_bar(i,j).v;
       } else {	// usual case: use already computed driving stress
@@ -498,6 +576,7 @@ PetscErrorCode velocitySSA(
     ierr = computeEffectiveViscosity(
                 grid, config, ice, ssaStrengthExtend,
                 vH, vel_ssa, hardness, epsilon, vNuH); CHKERRQ(ierr);
+    
     //ierr = update_nu_viewers(vNuH); CHKERRQ(ierr);
     // iterate on effective viscosity: "outer nonlinear iteration":
     for (PetscInt k=0; k<ssaMaxIterations; ++k) { 
@@ -724,6 +803,7 @@ int main(int argc, char *argv[]) {
        "internal_restart", "SSA model ice velocity in the Y direction",
        "m s-1", "", 1); CHKERRQ(ierr);
     ierr = vel_ssa.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+    vel_ssa.write_in_glaciological_units = true;
     ierr = vel_ssa.set(0.0); CHKERRQ(ierr);
 
     ierr = vel_ssa_old.create(grid, "bar_ssa_old", true, WIDE_STENCIL); CHKERRQ(ierr);
@@ -773,11 +853,11 @@ int main(int argc, char *argv[]) {
     bool show = true;
     const PetscInt  window = 400;
     if (show) {
-      //ierr = vh.view(window);  CHKERRQ(ierr);
+      ierr = vh.view(window);  CHKERRQ(ierr);
       ierr = vH.view(window);  CHKERRQ(ierr);
-      //ierr = vbed.view(window);  CHKERRQ(ierr);
-      ierr = vtauc.view(window);  CHKERRQ(ierr);
-      //ierr = vMask.view(window);  CHKERRQ(ierr);
+      ierr = vbed.view(window);  CHKERRQ(ierr);
+      //ierr = vtauc.view(window);  CHKERRQ(ierr);
+      ierr = vMask.view(window);  CHKERRQ(ierr);
       PetscPrintf(grid.com,"  before SSA: showing fields in X windows for 5 seconds ...\n");
       ierr = PetscSleep(5); CHKERRQ(ierr);
     }
@@ -794,6 +874,10 @@ int main(int argc, char *argv[]) {
     if (show) {
       ierr = vel_ssa.view(window);  CHKERRQ(ierr);
       PetscPrintf(grid.com,"[after SSA: showing components of velocity solution in X windows for 5 seconds ...]\n");
+
+      ierr = vel_ssa.dump("vel_ssa_old.nc"); CHKERRQ(ierr);
+      // ierr = writeSSAsystemMatlab(grid, SSAStiffnessMatrix, SSARHS, SSAX,
+      //                             vH, vh, vNuDefault); CHKERRQ(ierr); 
       ierr = PetscSleep(5); CHKERRQ(ierr);
     }
 

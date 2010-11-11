@@ -73,12 +73,11 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(bool fast);
 
-  virtual PetscErrorCode set_initial_guess(IceModelVec2V &/*guess*/);
+  virtual PetscErrorCode set_initial_guess(IceModelVec2V &guess);
 
-  virtual PetscErrorCode read_initial_guess(string /*filename*/);
+  virtual PetscErrorCode read_initial_guess(string filename);
 
-  //! \brief Save the initial guess (for restarting).
-  virtual PetscErrorCode save_initial_guess(string /*filename*/);
+  virtual PetscErrorCode save_initial_guess(string filename);
 
 protected:
   virtual PetscErrorCode allocate_internals();

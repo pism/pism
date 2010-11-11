@@ -167,7 +167,7 @@ PetscErrorCode PISMStressBalance::extend_the_grid(PetscInt old_Mz) {
 }
 
 //! \brief Computes vertical ice velocity relative to the bed directly below a
-//! point using incompressibility of ice and the maximum of its magnitude.
+//! point (using incompressibility of ice) and the maximum of its magnitude.
 PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
                                                             IceModelVec2S *bmr,
                                                             IceModelVec3 &result) {

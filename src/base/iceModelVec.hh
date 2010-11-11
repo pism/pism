@@ -114,7 +114,7 @@ protected:
   virtual PetscErrorCode checkHaveArray();
   virtual PetscErrorCode checkCompatibility(const char*, IceModelVec &other);
   virtual void check_array_indices(int i, int j);
-  virtual PetscErrorCode reset_attrs();
+  virtual PetscErrorCode reset_attrs(int N);
   virtual PetscErrorCode create_viewer(PetscInt viewer_size, string title, PetscViewer &viewer);
   virtual PetscErrorCode compute_viewer_size(int target, int &x, int &y);
   // FIXME: consider adding 
@@ -231,6 +231,7 @@ public:
   // Metadata, etc:
   using IceModelVec2::is_valid;
   virtual bool           is_valid(PetscScalar u, PetscScalar v); 
+  virtual PetscErrorCode set_name(const char name[], int component = 0);
 protected:
   DA component_da;		//!< same as \c da, but for one component only
   PetscErrorCode destroy();	

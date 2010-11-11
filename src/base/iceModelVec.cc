@@ -41,7 +41,7 @@ IceModelVec::IceModelVec() {
   vars.resize(dof);
 
   map_viewers = new map<string,PetscViewer>;
-  reset_attrs();
+  reset_attrs(0);
 }
 
 
@@ -65,11 +65,12 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
   access_counter = other.access_counter;
   localp = other.localp;
   da_stencil_width = other.da_stencil_width;
-
+  
   map_viewers = other.map_viewers;
 
   use_interpolation_mask = other.use_interpolation_mask;
   interpolation_mask = other.interpolation_mask;
+  output_data_type = other.output_data_type;
 
   name = other.name;
 
@@ -319,7 +320,7 @@ PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
 
 //! Sets the variable name to \c name.
 PetscErrorCode  IceModelVec::set_name(const char new_name[], int N) {
-  reset_attrs();
+  reset_attrs(N);
   
   if (N == 0)
     name = new_name;
@@ -347,18 +348,13 @@ PetscErrorCode  IceModelVec::set_glaciological_units(string my_units) {
 }
 
 //! Resets most IceModelVec attributes.
-PetscErrorCode IceModelVec::reset_attrs() {
+PetscErrorCode IceModelVec::reset_attrs(int N) {
 
   time_independent = false;
   write_in_glaciological_units = false;
   output_data_type = NC_DOUBLE;
 
-  for (int j = 0; j < dof; ++j) {
-    vars[j].reset();
-    // _FillValue should be a number and should depend on the quantity in
-    //     question. It should also be outside the valid range.
-    //     vars[j].set("_FillValue", GSL_NAN);
-  }
+  vars[N].reset();
 
   return 0;
 }

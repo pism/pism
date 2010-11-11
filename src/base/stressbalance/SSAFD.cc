@@ -54,20 +54,23 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
                             "vertically-averaged ice hardness",
                             unitstr, ""); CHKERRQ(ierr);
 
-  ierr = nuH.create(grid, "nuH", false); CHKERRQ(ierr);
+  ierr = nuH.create(grid, "nuH", true); CHKERRQ(ierr);
   ierr = nuH.set_attrs("internal",
                        "ice thickness times effective viscosity",
                        "Pa s m", ""); CHKERRQ(ierr);
 
-  ierr = nuH_old.create(grid, "nuH_old", false); CHKERRQ(ierr);
+  ierr = nuH_old.create(grid, "nuH_old", true); CHKERRQ(ierr);
   ierr = nuH_old.set_attrs("internal",
                            "ice thickness times effective viscosity (before an update)",
                            "Pa s m", ""); CHKERRQ(ierr);
 
   ierr = taud.create(grid, "taud", false); CHKERRQ(ierr);
   ierr = taud.set_attrs("diagnostic",
-                        "driving shear stress at the base of ice",
-                        "Pa", ""); CHKERRQ(ierr);
+                        "X-component of the driving shear stress at the base of ice",
+                        "Pa", "", 0); CHKERRQ(ierr);
+  ierr = taud.set_attrs("diagnostic",
+                        "Y-component of the driving shear stress at the base of ice",
+                        "Pa", "", 1); CHKERRQ(ierr);
 
   ierr = velocity_old.create(grid, "velocity_old", true); CHKERRQ(ierr);
   ierr = velocity_old.set_attrs("internal",
@@ -78,10 +81,14 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
   ierr = velocity.set_name("bar_ssa"); CHKERRQ(ierr);
   ierr = velocity.set_attrs("internal_restart", "SSA model ice velocity in the X direction",
                             "m s-1", "", 0); CHKERRQ(ierr);
+
   ierr = velocity.set_attrs("internal_restart", "SSA model ice velocity in the Y direction",
                             "m s-1", "", 1); CHKERRQ(ierr);
+
   ierr = velocity.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   velocity.write_in_glaciological_units = true;
+
+  ierr = velocity.set(0.0); CHKERRQ(ierr); // default initial guess
 
   return 0;
 }
@@ -134,16 +141,10 @@ PetscErrorCode SSAFD::update(bool fast) {
   if (fast)
     return 0;
 
-  ierr = compute_hardav_staggered(hardness); CHKERRQ(ierr);
-  
-  ierr = assemble_rhs(SSARHS); CHKERRQ(ierr);
-
   ierr = solve(); CHKERRQ(ierr); 
 
-  if (!fast) {
-    ierr = compute_basal_frictional_heating(basal_frictional_heating); CHKERRQ(ierr);
-    ierr = compute_D2(D2); CHKERRQ(ierr);
-  }
+  ierr = compute_basal_frictional_heating(basal_frictional_heating); CHKERRQ(ierr);
+  ierr = compute_D2(D2); CHKERRQ(ierr);
 
   ierr = compute_maximum_velocity(); CHKERRQ(ierr);
 
@@ -284,7 +285,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (vel_bc && (bc_locations->value(i,j) == MASK_BC)) {
+      if (vel_bc && (bc_locations->value(i,j) == MASK_SHEET)) { // FIXME: change to MASK_BC
         rhs_uv[i][j].u = scaling * (*vel_bc)(i,j).u;
         rhs_uv[i][j].v = scaling * (*vel_bc)(i,j).v;
       } else {
@@ -653,9 +654,12 @@ PetscErrorCode SSAFD::solve() {
   ierr = assemble_rhs(SSARHS); CHKERRQ(ierr);
 
   ierr = compute_hardav_staggered(hardness); CHKERRQ(ierr);
+  // FIXME: the following line is just to compare to ssa_test
+  ierr = hardness.set(1.9e8); CHKERRQ(ierr);
 
   for (PetscInt l=0; ; ++l) { // iterate with increasing regularization parameter
     ierr = compute_nuH_staggered(nuH, epsilon); CHKERRQ(ierr);
+
     ierr = update_nuH_viewers(); CHKERRQ(ierr);
     // iterate on effective viscosity: "outer nonlinear iteration":
     for (PetscInt k = 0; k < ssaMaxIterations; ++k) { 
@@ -881,6 +885,9 @@ PetscErrorCode SSAFD::writeSSAsystemMatlab() {
 PetscErrorCode SSAFD::update_nuH_viewers() {
   PetscErrorCode ierr;
   IceModelVec2S tmp;
+
+  return 0;
+
   ierr = tmp.create(grid, "nuH", false); CHKERRQ(ierr);
 
   ierr = nuH.begin_access(); CHKERRQ(ierr);
@@ -923,7 +930,8 @@ PetscErrorCode SSAFD::read_initial_guess(string filename) {
 
   ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
   ierr = nc.get_dim_length("t", &start); CHKERRQ(ierr); 
-  start = start - 1;
+  ierr = nc.close(); CHKERRQ(ierr);
+  start -= 1;
 
   ierr = velocity.read(filename.c_str(), start); CHKERRQ(ierr); 
 
