@@ -7,5 +7,7 @@ add_library (pismstressbalance
 )
 target_link_libraries (pismstressbalance pismmisc)
 
-add_executable (ssafd_test ssafd_test.cc)
+add_executable (ssafd_test ssafd_test.cc ../../verif/tests/exactTestsIJ.c)
 target_link_libraries (ssafd_test pismstressbalance)
+
+include_directories (../../verif/tests/)

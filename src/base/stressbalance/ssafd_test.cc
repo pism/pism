@@ -16,44 +16,183 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-// TO DO:  make std out from velocitySSA() immediate by using PetscPrintf
-// (and then run on greenland example again)
-
-/*
-
-Example uses, from a PISM directory:
-
-$ pismv -test I -My 25 -Mx 3 -o testI.nc
-$ ssa_test -i testI.nc
-
-$ pismv -test J -Mx 40 -My 40 -o testJ.nc
-$ ssa_test -i testJ.nc
-
-$ cd example/pst/
-$ ./pst.sh 8 >> out.pst &  # takes a while; produces P1.nc; can be shortened
-$ ssa_test -i P1.nc
-
-
-*/
-
 static char help[] =
-  "\nSSA_TEST\n"
+  "\nSSAFD_TEST\n"
   "  Testing program for SSA, time-independent calculations separate from\n"
-  "  IceModel.  Also may be used in a PISM software (regression) test.\n\n";
+  "  IceModel. Uses verification test J. Also may be used in a PISM software"
+  "(regression) test.\n\n";
 
-#include <cmath>
-#include <cstdio>
-#include <string>
-#include <petscksp.h>
 #include "pism_const.hh"
-#include "grid.hh"
 #include "iceModelVec.hh"
-#include "flowlaw_factory.hh" // IceFlowLawFactory, IceFlowLaw
+#include "flowlaws.hh" // IceFlowLaw
 #include "materials.hh" // SSAStrengthExtension, IceBasalResistancePlasticLaw
-#include "nc_util.hh"
 #include "PISMIO.hh"
 #include "NCVariable.hh"
 #include "SSAFD.hh"
+#include "exactTestsIJ.h"
+
+//! \brief Compute map-plane coordinates of a grid point.
+void mapcoords(IceGrid &grid, PetscInt i, PetscInt j,
+               PetscScalar &x, PetscScalar &y, PetscScalar &r) {
+  // compute x,y,r on grid from i,j
+  PetscScalar ifrom0, jfrom0;
+
+  ifrom0=static_cast<PetscScalar>(i)-static_cast<PetscScalar>(grid.Mx - 1)/2.0;
+  jfrom0=static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
+  x=grid.dx*ifrom0;
+  y=grid.dy*jfrom0;
+  r = sqrt(PetscSqr(x) + PetscSqr(y));
+}
+
+//! \brief Report errors relative to the test J exact solution.
+PetscErrorCode reportErrors(IceGrid &grid, NCConfigVariable &config,
+                            IceModelVec2V &vel_ssa) {
+  PetscErrorCode  ierr;
+  PetscScalar exactmaxu, maxvecerr = 0.0, avvecerr = 0.0, 
+    avuerr = 0.0, avverr = 0.0, maxuerr = 0.0, maxverr = 0.0;
+  PetscScalar gmaxvecerr = 0.0, gavvecerr = 0.0, gavuerr = 0.0, gavverr = 0.0,
+    gmaxuerr = 0.0, gmaxverr = 0.0;
+
+  if (config.get_flag("do_pseudo_plastic_till")) {
+    ierr = verbPrintf(1,grid.com, 
+                      "WARNING: numerical errors not valid for pseudo-plastic till\n"); CHKERRQ(ierr);
+  }
+  ierr = verbPrintf(1,grid.com, 
+                    "NUMERICAL ERRORS in velocity relative to exact solution:\n"); CHKERRQ(ierr);
+
+  ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+      PetscScalar junk1, junk2, uexact, vexact;
+      PetscScalar myr,myx,myy;
+      mapcoords(grid,i,j,myx,myy,myr);
+      // eval exact solution
+      const PetscInt ifrom0 = i - (grid.Mx)/2,
+        jfrom0 = j - (grid.My)/2;
+      myx = grid.dx * ifrom0;
+      myy = grid.dy * jfrom0;
+      exactJ(myx, myy, &junk1, &junk2, &uexact, &vexact);
+
+      // compute maximum errors
+      const PetscScalar uerr = PetscAbsReal(vel_ssa(i,j).u - uexact);
+      const PetscScalar verr = PetscAbsReal(vel_ssa(i,j).v - vexact);
+      avuerr = avuerr + uerr;      
+      avverr = avverr + verr;      
+      maxuerr = PetscMax(maxuerr,uerr);
+      maxverr = PetscMax(maxverr,verr);
+      const PetscScalar vecerr = sqrt(uerr * uerr + verr * verr);
+      maxvecerr = PetscMax(maxvecerr,vecerr);
+      avvecerr = avvecerr + vecerr;
+    }
+  }
+  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
+   
+  ierr = PetscGlobalMax(&maxuerr, &gmaxuerr, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&maxverr, &gmaxverr, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&avuerr, &gavuerr, grid.com); CHKERRQ(ierr);
+  gavuerr = gavuerr/(grid.Mx*grid.My);
+  ierr = PetscGlobalSum(&avverr, &gavverr, grid.com); CHKERRQ(ierr);
+  gavverr = gavverr/(grid.Mx*grid.My);
+  ierr = PetscGlobalMax(&maxvecerr, &gmaxvecerr, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
+  gavvecerr = gavvecerr/(grid.Mx*grid.My);
+
+  // following from "pismv -test J -Mx 601 -My 601 -Mz 3 -verbose -eo"
+  exactmaxu = 181.366 / secpera;
+
+  ierr = verbPrintf(1,grid.com, 
+                    "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
+  CHKERRQ(ierr);
+  ierr = verbPrintf(1,grid.com, 
+                    "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n", 
+                    gmaxvecerr*secpera, (gavvecerr/exactmaxu)*100.0,
+                    gmaxuerr*secpera, gmaxverr*secpera, gavuerr*secpera, 
+                    gavverr*secpera); CHKERRQ(ierr);
+
+  ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief Set the test J initial state.
+PetscErrorCode setInitStateJ(NCConfigVariable &config,
+                             IceGrid &grid,
+                             SSAFD &ssa,
+                             IceFlowLaw &ice,
+                             IceModelVec2S *bed,
+                             IceModelVec2Mask *mask,
+                             IceModelVec2S *surface,
+                             IceModelVec2S *thickness,
+                             IceModelVec2V *vel_bc,
+                             IceModelVec2S *tauc,
+                             IceModelVec3 *enthalpy) {
+  PetscErrorCode ierr;
+
+
+  ierr = tauc->set(0.0); CHKERRQ(ierr);    // irrelevant for test J
+  ierr = bed->set(-5000.0); CHKERRQ(ierr); // assures shelf is floating
+  ierr = mask->set(MASK_FLOATING); CHKERRQ(ierr);
+
+  ierr = enthalpy->set(528668.35); CHKERRQ(ierr); // arbitrary; corresponds to
+                                                  // 263.15 Kelvin at depth=0.
+
+  double ocean_rho = config.get("sea_water_density");
+
+  /* use Ritz et al (2001) value of 30 MPa yr for typical vertically-averaged viscosity */
+  const PetscScalar nu0 = 30.0 * 1.0e6 * secpera; /* = 9.45e14 Pa s */
+  const PetscScalar H0 = 500.0;       /* 500 m typical thickness */
+
+  // Use the same nuH factor everywhere (maximum ice thickness is 770 m).
+  ssa.strength_extension.set_notional_strength(nu0 * H0);
+  ssa.strength_extension.set_min_thickness(800);
+
+  ierr = thickness->begin_access(); CHKERRQ(ierr);
+  ierr = surface->begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+  ierr = vel_bc->begin_access(); CHKERRQ(ierr);
+
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      PetscScalar junk1, myu, myv, H;
+      const PetscInt ifrom0 = i - (grid.Mx)/2,
+                     jfrom0 = j - (grid.My)/2;
+      const PetscScalar myx = grid.dx * ifrom0,
+        myy = grid.dy * jfrom0;
+
+      // set H,h on regular grid
+      ierr = exactJ(myx, myy, &H, &junk1, &myu, &myv); CHKERRQ(ierr);
+
+      (*thickness)(i,j) = H;
+      (*surface)(i,j) = (1.0 - ice.rho / ocean_rho) * H;
+
+      // special case at center point: here we set vel_bc at (i,j) by marking
+      // this grid point as SHEET and setting vel_bc approriately
+      if ( (i == (grid.Mx)/2) && (j == (grid.My)/2) ) {
+        (*mask)(i,j) = MASK_SHEET; // FIXME: replace with MASK_BC
+        (*vel_bc)(i,j).u = myu;
+        (*vel_bc)(i,j).v = myv;
+      }
+    }
+  }  
+
+  ierr = surface->end_access(); CHKERRQ(ierr);    
+  ierr = thickness->end_access(); CHKERRQ(ierr);
+  ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = vel_bc->end_access(); CHKERRQ(ierr);
+
+  // communicate what we have set
+  ierr = surface->beginGhostComm(); CHKERRQ(ierr);
+  ierr = surface->endGhostComm(); CHKERRQ(ierr);
+
+  ierr = thickness->beginGhostComm(); CHKERRQ(ierr);
+  ierr = thickness->endGhostComm(); CHKERRQ(ierr);
+
+  ierr = mask->beginGhostComm(); CHKERRQ(ierr);
+  ierr = mask->endGhostComm(); CHKERRQ(ierr);
+
+  return 0;
+}
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -71,35 +210,41 @@ int main(int argc, char *argv[]) {
   {  
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
-    //    config.set_flag("write_ssa_system_to_matlab", true);
 
-    PetscTruth i_set, usage_set, help_set;
+    PetscTruth usage_set, help_set;
     ierr = PetscOptionsHasName(PETSC_NULL, "-usage", &usage_set); CHKERRQ(ierr);
     ierr = PetscOptionsHasName(PETSC_NULL, "-help", &help_set); CHKERRQ(ierr);
     if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
       PetscPrintf(com,
-        "\nusage of SSA_TEST:\n"
-          "  1) create a PISM output file foo.nc with variables thk, usurf, bed, tauc\n"
-          "  2) do 'ssa_test -i foo.nc' or\n"
-          "  3) or do 'mpiexec -n 2 ssa_test -i foo.nc -display :0'\n\n");
-    }
-    
-    // get input file name and open
-    char filename[PETSC_MAX_PATH_LEN];
-    ierr = PetscOptionsGetString(PETSC_NULL, "-i", filename, 
-                                 PETSC_MAX_PATH_LEN, &i_set); CHKERRQ(ierr);
-    if (i_set==PETSC_FALSE) {
-      PetscPrintf(com,
-        "\nSSAFD_TEST ERROR:  requires PISM-written NetCDF file as input ... ending!\n\n");
-      PetscEnd();
+                  "\n"
+                  "usage of SSA_TEST:\n"
+                  "  run ssafd_test -Mx <number> -My <number>\n"
+                  "\n");
     }
 
     IceGrid grid(com, rank, size, config);
-    ierr = PetscPrintf(grid.com, 
-        "SSAFD_TEST\n  initializing from NetCDF file '%s'...\n", filename); CHKERRQ(ierr);
-    PISMIO pio(&grid);
-    ierr = pio.get_grid(filename); CHKERRQ(ierr); // fails if filename not present
-    grid.start_year = grid.year;
+
+    PetscReal LforJ = 300.0e3; // 300 km half-width
+
+    grid.Lx = grid.Ly = LforJ;
+    // grid is truly periodic both in x and in y directions
+    grid.periodicity = XY_PERIODIC;
+    grid.start_year = grid.year = 0.0;
+    grid.Mx = grid.My = 61;
+    grid.Mz = 3;
+    
+    string output_file = "ssafd_test_J.nc";
+    ierr = PetscOptionsBegin(grid.com, "", "SSAFD_TEST options", ""); CHKERRQ(ierr);
+    {
+      bool flag;
+      ierr = PISMOptionsInt("-Mx", "Number of grid points in the X direction",
+                            grid.Mx, flag); CHKERRQ(ierr);
+      ierr = PISMOptionsInt("-My", "Number of grid points in the X direction",
+                            grid.My, flag); CHKERRQ(ierr);
+      ierr = PISMOptionsString("-o", "Set the output file name",
+                               output_file, flag); CHKERRQ(ierr);
+    }
+    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     grid.compute_nprocs();
     grid.compute_ownership_ranges();
@@ -110,26 +255,21 @@ int main(int argc, char *argv[]) {
     ierr = grid.printInfo(1); CHKERRQ(ierr);
     //ierr = grid.printVertLevels(1); CHKERRQ(ierr); 
 
-    IceFlowLaw *ice = NULL;
-    IceFlowLawFactory ice_factory(com, NULL, config);
-    string ice_type = ICE_GPBLD;
-    ice_factory.setType(ICE_GPBLD); // set the default type
-    ierr = ice_factory.setFromOptions(); CHKERRQ(ierr);
-    ice_factory.create(&ice);
-    //ierr = ice->printInfo(1); CHKERRQ(ierr);
+    CustomGlenIce ice(grid.com, "", config);
 
     IceBasalResistancePlasticLaw basal(
            config.get("plastic_regularization") / secpera, 
            config.get_flag("do_pseudo_plastic_till"),
            config.get("pseudo_plastic_q"),
            config.get("pseudo_plastic_uthreshold") / secpera);
-    //ierr = basal.printInfo(1,grid.com); CHKERRQ(ierr);
+    ierr = basal.printInfo(1,grid.com); CHKERRQ(ierr);
 
     EnthalpyConverter EC(config);
 
     IceModelVec2S vh, vH, vbed, vtauc;
     IceModelVec2Mask vMask;
     IceModelVec3 enthalpy;
+    IceModelVec2V vel_bc;
     const PetscInt WIDE_STENCIL = 2;
 
     PISMVars vars;
@@ -183,53 +323,55 @@ int main(int argc, char *argv[]) {
 		  CHKERRQ(ierr);
     vMask.output_data_type = NC_BYTE;
     ierr = vars.add(vMask); CHKERRQ(ierr);
-  
-    // read fields
-    NCTool nc(grid.com, grid.rank);
-    ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-    int last_record;
-    ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
-    ierr = nc.close(); CHKERRQ(ierr);
 
-    last_record -= 1;
-    ierr = vh.read(filename, last_record); CHKERRQ(ierr);
-    ierr = vH.read(filename, last_record); CHKERRQ(ierr);
-    ierr = vbed.read(filename, last_record); CHKERRQ(ierr);
-    ierr = vMask.read(filename, last_record); CHKERRQ(ierr);
-    ierr = vtauc.read(filename, last_record); CHKERRQ(ierr);
-    ierr = enthalpy.read(filename, last_record); CHKERRQ(ierr);
+    ierr = vel_bc.create(grid, "_bc", false); CHKERRQ(ierr); // u_bc and v_bc
+    ierr = vel_bc.set_attrs("intent",
+                            "X-component of the SSA velocity boundary conditions",
+                            "m s-1", "", 0); CHKERRQ(ierr);
+    ierr = vel_bc.set_attrs("intent",
+                            "Y-component of the SSA velocity boundary conditions",
+                            "m s-1", "", 1); CHKERRQ(ierr);
+    ierr = vel_bc.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+    vel_bc.write_in_glaciological_units = true;
 
-    bool show = true;
-    const PetscInt  window = 400;
-    if (show) {
-      ierr = vh.view(window);  CHKERRQ(ierr);
-      ierr = vH.view(window);  CHKERRQ(ierr);
-      ierr = vbed.view(window);  CHKERRQ(ierr);
-      // the following breaks for an unknown reason:
-      //      ierr = vtauc.view(window);  CHKERRQ(ierr);
-      ierr = vMask.view(window);  CHKERRQ(ierr);
-      PetscPrintf(grid.com,"  before SSA: showing fields in X windows for 5 seconds ...\n");
-      ierr = PetscSleep(5); CHKERRQ(ierr);
-    }
+    // Create the SSA solver object:
+    SSAFD ssa(grid, basal, ice, EC, config);
 
-    SSAFD ssa(grid, basal, *ice, EC, config);
+    // fill the fields:
+    ierr = setInitStateJ(config, grid, ssa, ice,
+                         &vbed, &vMask, &vh, &vH,
+                         &vel_bc, &vtauc, &enthalpy); CHKERRQ(ierr);
 
-    ierr = ssa.init(vars); CHKERRQ(ierr); 
-    
-    ierr = ssa.update(false); CHKERRQ(ierr); 
+    // Allocate the SSA solver:
+    ierr = ssa.init(vars); CHKERRQ(ierr);
 
+    ierr = ssa.set_boundary_conditions(vMask, vel_bc); CHKERRQ(ierr); 
+
+    // Solve (fast==true means "no update"):
+    bool fast = false;
+    ierr = ssa.update(fast); CHKERRQ(ierr); 
+
+    // Report errors relative to the exact solution:
     IceModelVec2V *vel_ssa;
     ierr = ssa.get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr); 
 
-    if (show) {
-      ierr = vel_ssa->view(window);  CHKERRQ(ierr);
-      PetscPrintf(grid.com,"[after SSA: showing components of velocity solution in X windows for 5 seconds ...]\n");
-      ierr = PetscSleep(5); CHKERRQ(ierr);
-    }
+    ierr = reportErrors(grid, config, *vel_ssa); CHKERRQ(ierr);
 
-    ierr = vel_ssa->dump("vel_ssa_new.nc"); CHKERRQ(ierr); 
+    // Write results to an output file:
+    PISMIO pio(&grid);
 
-    if (ice != NULL)  delete ice;
+    ierr = pio.open_for_writing(output_file, false, true); CHKERRQ(ierr);
+    ierr = pio.append_time(0.0);
+    ierr = pio.close(); CHKERRQ(ierr); 
+
+    ierr = vh.write(output_file.c_str()); CHKERRQ(ierr);
+    ierr = vH.write(output_file.c_str()); CHKERRQ(ierr);
+    ierr = vMask.write(output_file.c_str()); CHKERRQ(ierr);
+    ierr = vtauc.write(output_file.c_str()); CHKERRQ(ierr);
+    ierr = vbed.write(output_file.c_str()); CHKERRQ(ierr);
+    ierr = enthalpy.write(output_file.c_str()); CHKERRQ(ierr);
+    ierr = vel_bc.write(output_file.c_str()); CHKERRQ(ierr);
+    ierr = vel_ssa->write(output_file.c_str()); CHKERRQ(ierr);
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;

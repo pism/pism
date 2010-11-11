@@ -59,9 +59,11 @@ PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const char my_short_name
                     grid->procs_y, grid->procs_x,
 		    &component_da); CHKERRQ(ierr);
 
-  string s_name = name;
+  string s_name = my_short_name;
   vars[0].init("u" + s_name, my_grid, GRID_2D);
   vars[1].init("v" + s_name, my_grid, GRID_2D);
+
+  name = "vel" + string(my_short_name);
 
   return 0;
 }

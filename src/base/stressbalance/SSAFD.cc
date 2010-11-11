@@ -649,13 +649,11 @@ PetscErrorCode SSAFD::solve() {
   
   ierr = velocity.copy_to(velocity_old); CHKERRQ(ierr);
 
-  // computation of RHS only needs to be done once; does not depend on solution;
-  //   but matrix changes under nonlinear iteration (loop over k below)
+  // computation of RHS only needs to be done once; does not depend on
+  // solution; but matrix changes under nonlinear iteration (loop over k below)
   ierr = assemble_rhs(SSARHS); CHKERRQ(ierr);
 
   ierr = compute_hardav_staggered(hardness); CHKERRQ(ierr);
-  // FIXME: the following line is just to compare to ssa_test
-  ierr = hardness.set(1.9e8); CHKERRQ(ierr);
 
   for (PetscInt l=0; ; ++l) { // iterate with increasing regularization parameter
     ierr = compute_nuH_staggered(nuH, epsilon); CHKERRQ(ierr);
