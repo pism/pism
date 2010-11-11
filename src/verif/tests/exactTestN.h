@@ -27,31 +27,64 @@ extern "C"
 #endif
 
 /*
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! exactTestN is a C implementation of a manufactured exact solution
-! to the prognostic SSA flow problem, including the mass continuity equation.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! exactTestN is a C implementation of the parabolic solution in 
+! Bodvardsson (1955), treated here as a manufactured exact solution to
+! a steady-state SSA flow problem, including the mass continuity equation.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-int exactN(double t, double x,
-           double *u, double *ux, double *h, double *b, double *hx,
-           double *taud, double *taub, double *tau11,
-           double *C);
-   /* input    : t                   (s; t >= 0)
-                 x                   (m; -400e3 <= x <= 400e3)
+int geometry_exactN(double *H0, double *L0, double *xc);
+   /* output:  H0 = dome thickness (m)
+               L0 = full flow-line length from dome to margin where H->0 (m)
+               xc = in Bueler interpretation, the location of the calving front (m) */
 
-      output   : u = u(x)            (m s^-1; ice horizontal velocity)
-                 ux = u_x(x)         (s^-1; longitudinal strain rate)
-                 h = h(t,x)          (m; surface elevation)
-                 b = b(x)            (m; bed elevation)
-                 hx = h_x(t,x)       (; surface slope)
-                 taud = taud(t,x)    (Pa; driving stress)
-                 taub = taub(t,x)    (Pa; basal shear stress)
-                 tau11 = tau11(t,x)  (Pa; longitudinal stress)
-                 C = C(t,x)          (Pa s m-1; COMPENSATORY sliding coefficient
-                                      to balance SSA)
+int exactN(double x, double *h, double *hx, double *u, double *M, double *A);
+   /* input    : x                   (m; 0.0 <= x <= L0)
 
-      return value = 0 if successful
+      output   : h = h(x)            (m; surface elevation)
+                 hx = h_x(x)         (; surface slope)
+                 u = u(x)            (m s-1; ice horizontal velocity)
+                 M = M(x)            (m s-1; surface mass balance)
+                 A = A(x)            (Pa-3 s-1; ice softness)
+
+      Assumes n = 3.
+      
+      In Bueler interpretation, M(x) and A(x) are constructed so that the
+      solution in Bodvardsson (1955) can be thought of as solving mass continuity
+      and SSA stress balance simultaneously:
+
+         M(x) - (u H)_x = 0
+
+         ( 2 H A(x)^(-1/n) |u_x|^((1/n)-1) u_x )_x - beta(x) u = rho g H h_x
+         
+      Here H = H(x) is ice thickness and u = u(x) is ice velocity.  Also
+      h(x) = H(x) because the bed is flat and, following Bodvardsson,
+         
+         M(x) = a (h(x) - Hela),   Hela = H0 / 1.5
+      
+         beta(x) = k rho g H(x).
+      
+      The boundary conditions are
+      
+         H(0) = H0
+
+      and
+      
+         T(xc) = 0.5 (1 - rho/rhow) rho g H(xc)^2
+
+      where T(x) is the vertically-integrated viscous stress,
+      
+         T(x) = 2 H(x) A(x)^(-1/n) |u_x|^((1/n)-1) u_x.
+
+      The boundary condition at x = xc implies that the calving front is
+      exactly at the location where the ice sheet reaches flotation.
+
+      return value =
+         0 if successful
+         1 if x < 0
+         2 if x > L0
+      
    */
 
 #ifdef __cplusplus

@@ -21,69 +21,52 @@
 #include <math.h>
 #include "exactTestN.h"
 
-#define MAX(a, b) (a > b ? a : b)
-#define MIN(a, b) (a > b ? b : a)
-
-#define pi       3.1415926535897931
 #define secpera  31556926.0    /* seconds per year; 365.2422 days */
 #define g        9.81
 #define rho      910.0         /* ice density; kg/m^3 */
 #define n        3.0           /* Glen power */
-#define barB     1.9e8         /* vertical average hardness; Pa s^(1/3);
-                                  from MacAyeal et al 1996 */
 
-#define L        300.0e3       /* m */
-#define b0       1000.0        /* m */
-#define h0       3500.0        /* m */
-#define umax     800.0/secpera /* m s-1 */
+int geometry_exactN(double *H0, double *L0, double *xc) {
+  *H0 = 3000.0;
+  *L0 = 500.0e3;
+  *xc = 0.9 * (*L0);
+  return 0;
+}
 
+#define Hela     (H0 / 1.5)                   /* m;  H0 = 1.5 Hela  exactly */
+#define hxx      (- 2.0 * H0 / (L0 * L0))     /* constant concavity of h(x) */
+#define q        ((1.0 / n) - 1.0)            /* a useful power */
 
-int exactN(double t, double x,
-           double *u, double *ux, double *h, double *b, double *hx,
-           double *taud, double *taub, double *tau11,
-           double *C) {
+#define a        (0.001 / secpera)            /* s-1; mass balance gradient with elevation */
+#define k        (9.0 * Hela / (a * L0 * L0)) /* s m-1; choose k so that eqn (24) gives our L0 */
+#define ux       (- hxx / k)                  /* constant strain rate */
 
-  double H, ulow;
-  double AA, BB, aaa, bbb;  /* factors in h and in hx */
-  double tau11x; /* longitudinal stress gradient */
-  const double s = x / L;
+/* grounded calving front boundary condition, imposed at xc = .9 L0, determines
+   constant vertically-integrated longitudinal stress T; see (2.12) in Schoof (2006);
+   treats Hc = H(xc) as exactly at flotation */
+#define rhow     1028.0
 
-  if (t < 0.0) { return 1; }
-  if (fabs(x) > 400.0e3) { return 2; }
+#define Hc       (H0 * (1.0 - (xc / L0) * (xc / L0)))
+#define Ttau     (0.5 * (1.0 - rho / rhow) * rho * g * Hc * Hc)
 
-  *u = umax * pow(fabs(s), 5.0) * s;
+int exactN(double x, double *h, double *hx, double *u, double *M, double *A) {
 
-  *b = b0 * cos(0.6 * pi * x / L);
+  double H0, L0, xc;
   
-  AA = h0 + 10.0 * sin(pi * fabs(s)) * (t / secpera);
-  BB = pow(1.0 - 0.99 * fabs(s),0.5);
-  *h = AA * BB;
+  geometry_exactN(&H0, &L0, &xc);
 
-  H = (*h) - (*b);
-  *ux = (umax / L) * pow(fabs(s), 5.0);
-  *tau11 = 2.0 * barB * H * pow(fabs(*ux),(1.0/n)-1.0) * (*ux);
+  if (x < 0.0) { return 1; }
+  if (x > L0) { return 2; }
 
-  aaa = (10.0 * pi / L) * cos(pi * fabs(s)) * (t / secpera);
-  bbb = 0.5 * pow(1.0 - 0.99 * fabs(s),-0.5) * (- 0.99 / L);
-  *hx = aaa * BB + AA * bbb;
-  if (x < 0.0) {
-    *hx = - (*hx);
-  } else if (fabs(x) < 1.0) {
-    *hx = 0.0;
-  }
+  *h = H0 * (1.0 - (x / L0) * (x / L0));  /* eqn (23) in Bodvardsson */
 
-  *taud = rho * g * H * (*hx);
-
-/* FIXME */
-  tau11x = 0.0;
+  *hx = hxx * x;
   
-  ulow = 0.001 / secpera;
-  if (fabs(*u) > ulow) {
-    *C = ( tau11x - *taud ) / (*u);
-  } else {
-    *C = ( tau11x - *taud ) / ulow;
-  }
-  *taub = - (*C) * (*u);
+  *u = - (*hx) / k;                       /* eqn (10) in Bodvardson, once SIA is dropped */
+  
+  *M = a * ((*h) - Hela);                 /* page 6 in Bodvardsson, just before eqn (23) */
+
+  *A = pow(2.0 * (*h) * pow(fabs(ux),q) * ux / Ttau, n); /* Bueler interpretation */
 
   return 0;
 }
