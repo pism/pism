@@ -37,7 +37,7 @@ int geometry_exactN(double *H0, double *L0, double *xc) {
 #define hxx      (- 2.0 * H0 / (L0 * L0))     /* constant concavity of h(x) */
 #define q        ((1.0 / n) - 1.0)            /* a useful power */
 
-#define a        (0.001 / secpera)            /* s-1; mass balance gradient with elevation */
+#define a        (0.003 / secpera)            /* s-1; mass balance gradient with elevation */
 #define k        (9.0 * Hela / (a * L0 * L0)) /* s m-1; choose k so that eqn (24) gives our L0 */
 #define ux       (- hxx / k)                  /* constant strain rate */
 
@@ -47,9 +47,9 @@ int geometry_exactN(double *H0, double *L0, double *xc) {
 #define rhow     1028.0
 
 #define Hc       (H0 * (1.0 - (xc / L0) * (xc / L0)))
-#define Ttau     (0.5 * (1.0 - rho / rhow) * rho * g * Hc * Hc)
+#define T0       (0.5 * (1.0 - rho / rhow) * rho * g * Hc * Hc)
 
-int exactN(double x, double *h, double *hx, double *u, double *M, double *A) {
+int exactN(double x, double *H, double *hx, double *u, double *M, double *B) {
 
   double H0, L0, xc;
   
@@ -58,15 +58,15 @@ int exactN(double x, double *h, double *hx, double *u, double *M, double *A) {
   if (x < 0.0) { return 1; }
   if (x > L0) { return 2; }
 
-  *h = H0 * (1.0 - (x / L0) * (x / L0));  /* eqn (23) in Bodvardsson */
+  *H = H0 * (1.0 - (x / L0) * (x / L0));  /* eqn (23) in Bodvardsson */
 
   *hx = hxx * x;
   
   *u = - (*hx) / k;                       /* eqn (10) in Bodvardson, once SIA is dropped */
   
-  *M = a * ((*h) - Hela);                 /* page 6 in Bodvardsson, just before eqn (23) */
+  *M = a * ((*H) - Hela);                 /* page 6 in Bodvardsson, just before eqn (23) */
 
-  *A = pow(2.0 * (*h) * pow(fabs(ux),q) * ux / Ttau, n); /* Bueler interpretation */
+  *B = T0 / ( 2.0 * (*H) * pow(fabs(ux),q) * ux ); /* Bueler interpretation */
 
   return 0;
 }

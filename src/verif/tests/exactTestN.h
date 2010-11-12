@@ -39,14 +39,14 @@ int geometry_exactN(double *H0, double *L0, double *xc);
                L0 = full flow-line length from dome to margin where H->0 (m)
                xc = in Bueler interpretation, the location of the calving front (m) */
 
-int exactN(double x, double *h, double *hx, double *u, double *M, double *A);
+int exactN(double x, double *H, double *hx, double *u, double *M, double *B);
    /* input    : x                   (m; 0.0 <= x <= L0)
 
-      output   : h = h(x)            (m; surface elevation)
+      output   : H = H(x)            (m; ice thickness)
                  hx = h_x(x)         (; surface slope)
                  u = u(x)            (m s-1; ice horizontal velocity)
                  M = M(x)            (m s-1; surface mass balance)
-                 A = A(x)            (Pa-3 s-1; ice softness)
+                 B = B(x)            (Pa s^(1/3); ice hardness)
 
       Assumes n = 3.
       
@@ -56,14 +56,16 @@ int exactN(double x, double *h, double *hx, double *u, double *M, double *A);
 
          M(x) - (u H)_x = 0
 
-         ( 2 H A(x)^(-1/n) |u_x|^((1/n)-1) u_x )_x - beta(x) u = rho g H h_x
+         ( 2 H B(x) |u_x|^((1/n)-1) u_x )_x - beta(x) u = rho g H h_x
          
       Here H = H(x) is ice thickness and u = u(x) is ice velocity.  Also
-      h(x) = H(x) because the bed is flat and, following Bodvardsson,
+      h(x) = H(x), up to a constant the user may choose, because the bed is flat.
+      Following Bodvardsson, here is the equilibrium line altitude, surface
+      mass balance, and the sliding coefficient:
          
-         M(x) = a (h(x) - Hela),   Hela = H0 / 1.5
-      
-         beta(x) = k rho g H(x).
+         Hela = H0 / 1.5
+         M(x) = a (h(x) - Hela)
+         beta(x) = k rho g H(x)
       
       The boundary conditions are
       
@@ -75,7 +77,9 @@ int exactN(double x, double *h, double *hx, double *u, double *M, double *A);
 
       where T(x) is the vertically-integrated viscous stress,
       
-         T(x) = 2 H(x) A(x)^(-1/n) |u_x|^((1/n)-1) u_x.
+         T(x) = 2 H(x) B(x) |u_x|^((1/n)-1) u_x.
+
+      But B(x) is chosen so that this quantity is constant:  T(x) = T0.
 
       The boundary condition at x = xc implies that the calving front is
       exactly at the location where the ice sheet reaches flotation.
