@@ -71,9 +71,9 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
   use_interpolation_mask = other.use_interpolation_mask;
   interpolation_mask = other.interpolation_mask;
   output_data_type = other.output_data_type;
+  write_in_glaciological_units = other.write_in_glaciological_units;
 
   name = other.name;
-
   vars = other.vars;
 }
 

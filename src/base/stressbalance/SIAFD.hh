@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2010 Jed Brown, Ed bueler and Constantine Khroulev
+// Copyright (C) 2004--2010 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -45,10 +45,10 @@ protected:
   virtual PetscErrorCode surface_gradient_haseloff(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
   virtual PetscErrorCode surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
-  virtual PetscErrorCode compute_diffusive_flux(IceModelVec2Stag h_x, IceModelVec2Stag h_y,
+  virtual PetscErrorCode compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                                                 IceModelVec2Stag &result, bool fast);
 
-  virtual PetscErrorCode compute_3d_horizontal_velocity(IceModelVec2Stag h_x, IceModelVec2Stag h_y,
+  virtual PetscErrorCode compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                                                         IceModelVec2V *vel_input,
                                                         IceModelVec3 &u_out, IceModelVec3 &v_out);
 

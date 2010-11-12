@@ -248,6 +248,7 @@ int main(int argc, char *argv[]) {
 
     grid.compute_nprocs();
     grid.compute_ownership_ranges();
+    ierr = grid.compute_vertical_levels(); CHKERRQ(ierr); 
     ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
 
@@ -332,7 +333,14 @@ int main(int argc, char *argv[]) {
                             "Y-component of the SSA velocity boundary conditions",
                             "m s-1", "", 1); CHKERRQ(ierr);
     ierr = vel_bc.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+    ierr = vel_bc.set_attr("valid_min", -1e6/secpera, 0); CHKERRQ(ierr); 
+    ierr = vel_bc.set_attr("valid_max",  1e6/secpera, 0); CHKERRQ(ierr); 
+    ierr = vel_bc.set_attr("valid_min", -1e6/secpera, 1); CHKERRQ(ierr); 
+    ierr = vel_bc.set_attr("valid_max",  1e6/secpera, 1); CHKERRQ(ierr); 
+    ierr = vel_bc.set_attr("_FillValue", 2e6/secpera, 0); CHKERRQ(ierr); 
+    ierr = vel_bc.set_attr("_FillValue", 2e6/secpera, 1); CHKERRQ(ierr); 
     vel_bc.write_in_glaciological_units = true;
+    ierr = vel_bc.set(2e6/secpera); CHKERRQ(ierr); 
 
     // Create the SSA solver object:
     SSAFD ssa(grid, basal, ice, EC, config);

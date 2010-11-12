@@ -19,8 +19,9 @@
 #include "PISMStressBalance.hh"
 
 PISMStressBalance::PISMStressBalance(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e,
+                                     IceBasalResistancePlasticLaw &b,
                                      const NCConfigVariable &conf)
-  : grid(g), ice(i), EC(e), config(conf) {
+  : grid(g), ice(i), EC(e), config(conf), basal(b) {
 
   basal_melt_rate = NULL;
   stress_balance  = NULL;
@@ -152,6 +153,13 @@ PetscErrorCode PISMStressBalance::get_basal_frictional_heating(IceModelVec2S* &r
   ierr = stress_balance->get_basal_frictional_heating(result); CHKERRQ(ierr); 
   return 0;
 }
+
+PetscErrorCode PISMStressBalance::get_volumetric_strain_heating(IceModelVec3* &result) {
+  PetscErrorCode ierr;
+  ierr = modifier->get_volumetric_strain_heating(result); CHKERRQ(ierr);
+  return 0;
+}
+
 
 //! \brief Extend the grid vertically.
 PetscErrorCode PISMStressBalance::extend_the_grid(PetscInt old_Mz) {

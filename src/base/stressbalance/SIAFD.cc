@@ -22,6 +22,8 @@
 PetscErrorCode SIAFD::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
+  ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
+
   mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(1, "mask is not available");
 
@@ -354,7 +356,7 @@ PetscErrorCode SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVe
 }
 
 //! \brief Compute the SIA flux. If fast == false, also store delta on the staggered grid.
-PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag h_x, IceModelVec2Stag h_y,
+PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                                              IceModelVec2Stag &result, bool fast) {
   PetscErrorCode  ierr;
   IceModelVec2S thk_smooth = work_2d[0],
@@ -362,6 +364,8 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag h_x, IceModelVec2S
   IceModelVec3 delta[2] = {work_3d[0], work_3d[1]};
 
   bool full_update = !fast;
+
+  ierr = result.set(0.0); CHKERRQ(ierr);
 
   PetscScalar *delta_ij;
   delta_ij = new PetscScalar[grid.Mz];
@@ -385,8 +389,8 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag h_x, IceModelVec2S
                         config.get_flag("do_age"));
 
   // get "theta" from Schoof (2003) bed smoothness calculation and the
-  //   thickness relative to the smoothed bed; each IceModelVec2S involved must
-  //   have stencil width WIDE_GHOSTS for this too work
+  // thickness relative to the smoothed bed; each IceModelVec2S involved must
+  // have stencil width WIDE_GHOSTS for this too work
   ierr = bed_smoother->get_theta(*surface, config.get("Glen_exponent"),
                                  WIDE_STENCIL, &theta); CHKERRQ(ierr);
 
@@ -397,6 +401,9 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag h_x, IceModelVec2S
   ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
 
+  ierr = h_x.begin_access(); CHKERRQ(ierr);
+  ierr = h_y.begin_access(); CHKERRQ(ierr);
+  
   PetscScalar *age_ij, *age_offset;
   if (use_age) {
     ierr = age->begin_access(); CHKERRQ(ierr);
@@ -492,6 +499,9 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag h_x, IceModelVec2S
     } // j
   } // i
 
+  ierr = h_y.end_access(); CHKERRQ(ierr);
+  ierr = h_x.end_access(); CHKERRQ(ierr);
+
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = theta.end_access(); CHKERRQ(ierr);
   ierr = thk_smooth.end_access(); CHKERRQ(ierr);
@@ -502,14 +512,14 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag h_x, IceModelVec2S
 
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
 
-  delete [] delta_ij;
-
   if (full_update) {
     ierr = delta[1].end_access(); CHKERRQ(ierr);
     ierr = delta[0].end_access(); CHKERRQ(ierr);
   }
 
   ierr = PetscGlobalMax(&my_D_max, &D_max, grid.com); CHKERRQ(ierr);
+
+  delete [] delta_ij;
   
   return 0;
 }
@@ -547,8 +557,8 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
 
   ierr = delta[0].begin_access(); CHKERRQ(ierr);
   ierr = delta[1].begin_access(); CHKERRQ(ierr);
-  ierr = sigma[2].begin_access(); CHKERRQ(ierr);
-  ierr = sigma[3].begin_access(); CHKERRQ(ierr);
+  ierr = sigma[0].begin_access(); CHKERRQ(ierr);
+  ierr = sigma[1].begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
   
   ierr = h_x.begin_access(); CHKERRQ(ierr);
@@ -616,7 +626,6 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
   }     // o
 
   ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = thk_smooth.end_access(); CHKERRQ(ierr);
   ierr = D2_input->end_access(); CHKERRQ(ierr);
   ierr = h_y.end_access(); CHKERRQ(ierr);
   ierr = h_x.end_access(); CHKERRQ(ierr);
@@ -652,6 +661,7 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
   }
   ierr = Sigma.end_access(); CHKERRQ(ierr);
 
+  ierr = thk_smooth.end_access(); CHKERRQ(ierr);
   ierr = sigma[1].end_access(); CHKERRQ(ierr);
   ierr = sigma[0].end_access(); CHKERRQ(ierr);
 
@@ -695,12 +705,12 @@ PetscErrorCode SIAFD::compute_I() {
 
         // within the ice:
         I_ij[0] = 0.0;
-        for (int k = 1; k < ks; ++k) {
+        for (int k = 1; k <= ks; ++k) {
           const PetscReal dz = grid.zlevels[k] - grid.zlevels[k-1];
           I_ij[k] = I_ij[k-1] + 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
         }
         // above the ice:
-        for (PetscInt k=ks + 1; k < grid.Mz; ++k) {
+        for (PetscInt k = ks + 1; k < grid.Mz; ++k) {
           I_ij[k] = I_ij[ks];
         }  
       }
@@ -717,7 +727,7 @@ PetscErrorCode SIAFD::compute_I() {
 }
 
 //! \brief Compute horizontal components of the SIA velocity (in 3D).
-PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag h_x, IceModelVec2Stag h_y,
+PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                                                      IceModelVec2V *vel_input,
                                                      IceModelVec3 &u_out, IceModelVec3 &v_out) {
   PetscErrorCode ierr;
@@ -750,9 +760,9 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag h_x, IceMo
 
       for (PetscInt k = 0; k < grid.Mz; ++k) {
         u_ij[k] = - 0.25 * ( IEAST[k] * h_x(i,j,0) + IWEST[k] * h_x(i-1,j,0) +
-                                 INORTH[k] * h_x(i,j,1) + ISOUTH[k] * h_x(i,j-1,1) );
+                             INORTH[k] * h_x(i,j,1) + ISOUTH[k] * h_x(i,j-1,1) );
         v_ij[k] = - 0.25 * ( IEAST[k] * h_y(i,j,0) + IWEST[k] * h_y(i-1,j,0) +
-                                 INORTH[k] * h_y(i,j,1) + ISOUTH[k] * h_y(i,j-1,1) );
+                             INORTH[k] * h_y(i,j,1) + ISOUTH[k] * h_y(i,j-1,1) );
 
         // Add the SSA velocity:
         u_ij[k] += (*vel_input)(i,j).u;

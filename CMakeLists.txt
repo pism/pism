@@ -31,7 +31,7 @@ set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to d
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
 option (Pism_LOCAL_INSTALL     "Install PISM locally (not in /usr/local/ or similar). This affects installation paths." ON)
-option (Pism_ADD_FPIC          "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS)." OFF)
+option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
 
 # This installs PISM in ${CMAKE_INSTALL_PREFIX}/{bin,lib,doc} if installed
 # locally; otherwise in ${CMAKE_INSTALL_PREFIX}/bin/pism, .../lib/pism and
