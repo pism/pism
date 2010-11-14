@@ -1,6 +1,22 @@
 static const char help[] = 
-"Solve Bodvardsson equations (Bueler interpretation) using SNES and\n"
-"a dof=2 Vec and finite differences.\n\n";
+"Solve Bodvardsson equations (Bueler interpretation) using SNES, a dof=2 Vec\n"
+"holding both thickness H and velocity u, and finite differences to approximate\n"
+"the mass continuity and SSA stress balance PDEs.\n\n"
+"This run certainly looks like success:\n"
+"  ./bodvardsson -snes_mf -da_grid_x 100 -snes_monitor -snes_monitor_solution -draw_pause 1\n"
+"and for N=75,150,300,600 I get convergence in H and in u:\n"
+"  ./bodvardsson -snes_fd -da_grid_x N\n"
+"But note wiggles in:\n"
+"  ./bodvardsson -snes_fd -da_grid_x 30 -snes_monitor -snes_monitor_solution -draw_pause 1\n"
+"Pushing it:\n"
+"  ./bodvardsson -snes_fd -da_grid_x 800 -pc_type lu -snes_max_funcs 100000 -snes_ls basic\n"
+"See also:\n"
+"  ./bodvardsson -snes_mf -da_grid_x 10 -dump\n\n"
+"TO DO:  * add Picard or Jacobian\n"
+"        * clean up scaling\n"
+"        * reasonable initial guesses\n"
+"        * try other transport schemes\n"
+"        * higher order Mx-1 case for dHdx in driving stress\n";
 
 #include "petscda.h"
 #include "petscsnes.h"
@@ -11,21 +27,17 @@ typedef struct {
   PetscScalar H, u;
 } Node;
 
-
 /* User-defined application context.  Used esp. by FormFunctionLocal().  */
 typedef struct {
   DA          da;       /* 1d,dof=2 distributed array for soln and residual */
   DA          scalarda; /* 1d,dof=1 distributed array for parameters depending on x */
-  PetscReal   secpera;
-  PetscReal   n;
-  PetscReal   rho;
-  PetscReal   rhow;
-  PetscReal   g;
+  PetscInt    Mx, xs, xm;
+  PetscReal   secpera, n, rho, rhow, g;
   PetscReal   H0;      /* thickness at x=0, for Dirichlet condition on mass cont */
   PetscReal   xc;      /* location at which stress (Neumann) condition applied to SSA eqn */
   PetscReal   Txc;     /* vertically-integrated longitudinal stress at xc, for Neumann cond:
                             T = 2 H B |u_x|^{(1/n)-1} u_x  */
-  PetscReal   epsilon;
+  PetscReal   epsilon; /* regularization of viscosity, a strain rate */
   Vec         Huexact; /* exact thickness (Huexact[i][0]) and exact velocity
                           (Huexact[i][1]) on regular grid */
   Vec         M;       /* surface mass balance on regular grid */
@@ -40,26 +52,20 @@ typedef struct {
 static PetscErrorCode FillExactSoln(AppCtx *user)
 {
   PetscErrorCode ierr;
-  PetscInt       i,Mx,xs,xm;
+  PetscInt       i,Mx=user->Mx;
   PetscScalar    dx, x, dum1, dum2, dum3, dum4;
   Node           *Hu;
 
   PetscFunctionBegin;
-  ierr = DAGetInfo(user->da,PETSC_IGNORE,&Mx,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,
-                   PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE);
-  ierr = DAGetCorners(user->da,&xs,PETSC_NULL,PETSC_NULL,&xm,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
-
   dx = user->xc / (PetscReal)(Mx-1);
-
   /* Compute regular grid exact soln and staggered-grid thickness over the
      locally-owned part of the grid */
   ierr = DAVecGetArray(user->da,user->Huexact,&Hu);CHKERRQ(ierr);
-  for (i=xs; i<xs+xm; i++) {
+  for (i = user->xs; i < user->xs + user->xm; i++) {
     x = dx * (PetscReal)i;  /* = x_i = distance from dome */
     ierr = exactN(x, &(Hu[i].H), &dum1, &(Hu[i].u), &dum2, &dum3, &dum4); CHKERRQ(ierr);
   }
   ierr = DAVecRestoreArray(user->da,user->Huexact,&Hu);CHKERRQ(ierr);
-
   PetscFunctionReturn(0);
 }
 
@@ -70,22 +76,17 @@ static PetscErrorCode FillExactSoln(AppCtx *user)
 static PetscErrorCode FillDistributedParams(AppCtx *user)
 {
   PetscErrorCode ierr;
-  PetscInt       i,Mx,xs,xm;
+  PetscInt       i,Mx=user->Mx;
   PetscScalar    dx, x, dum1, dum2, dum3, dum4, dum5, *M, *Bstag, *beta;
 
   PetscFunctionBegin;
-  ierr = DAGetInfo(user->scalarda,PETSC_IGNORE,&Mx,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,
-                   PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE);
-  ierr = DAGetCorners(user->scalarda,&xs,PETSC_NULL,PETSC_NULL,&xm,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
-
   dx = user->xc / (PetscReal)(Mx-1);
-
   /* Compute regular grid exact soln and staggered-grid thickness over the
      locally-owned part of the grid */
   ierr = DAVecGetArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
   ierr = DAVecGetArray(user->scalarda,user->B_stag,&Bstag);CHKERRQ(ierr);
   ierr = DAVecGetArray(user->scalarda,user->beta,&beta);CHKERRQ(ierr);
-  for (i=xs; i<xs+xm; i++) {
+  for (i = user->xs; i < user->xs + user->xm; i++) {
     x = dx * (PetscReal)i;  /* = x_i = distance from dome; regular grid point */
     ierr = exactN(x, &dum1, &dum2, &dum3, &(M[i]), &dum4, &(beta[i])); CHKERRQ(ierr);
     x = x + (dx/2.0);       /* = x_{i+1/2}; staggered grid point */
@@ -98,7 +99,50 @@ static PetscErrorCode FillDistributedParams(AppCtx *user)
   ierr = DAVecRestoreArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
   ierr = DAVecRestoreArray(user->scalarda,user->B_stag,&Bstag);CHKERRQ(ierr);
   ierr = DAVecRestoreArray(user->scalarda,user->beta,&beta);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 
+
+#undef __FUNCT__
+#define __FUNCT__ "ScaleVelocity"
+static PetscErrorCode ScaleVelocity(AppCtx *user, Vec vHu)
+{
+  PetscErrorCode ierr;
+  PetscInt       i;
+  Node           *Hu;
+
+  PetscFunctionBegin;
+  ierr = DAVecGetArray(user->da,vHu,&Hu);CHKERRQ(ierr);
+  for (i = user->xs; i < user->xs + user->xm; i++) {
+    Hu[i].u *= user->secpera;
+  }
+  ierr = DAVecRestoreArray(user->da,vHu,&Hu);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+
+#undef __FUNCT__
+#define __FUNCT__ "MaxErrorNorms"
+static PetscErrorCode MaxErrorNorms(AppCtx *user, Vec firstHu, Vec secondHu,
+                                    PetscReal *normH, PetscReal *normu)
+{
+  PetscErrorCode ierr;
+  PetscInt       i;
+  PetscReal      lnormH, lnormu;  /* norms of local portions */
+  Node           *Hu1, *Hu2;
+
+  PetscFunctionBegin;
+  lnormH = -1.0;  lnormu = -1.0;
+  ierr = DAVecGetArray(user->da,firstHu,&Hu1);CHKERRQ(ierr);
+  ierr = DAVecGetArray(user->da,secondHu,&Hu2);CHKERRQ(ierr);
+  for (i = user->xs; i < user->xs + user->xm; i++) {
+    lnormH = PetscMax(lnormH, PetscAbsScalar(Hu1[i].H-Hu2[i].H));
+    lnormu = PetscMax(lnormu, PetscAbsScalar(Hu1[i].u-Hu2[i].u));
+  }
+  ierr = DAVecRestoreArray(user->da,firstHu,&Hu1);CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(user->da,secondHu,&Hu2);CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&lnormH,normH,PETSC_COMM_WORLD);CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&lnormu,normu,PETSC_COMM_WORLD);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -119,9 +163,10 @@ static inline PetscScalar GetFSR(PetscScalar dx, PetscScalar eps, PetscScalar n,
 static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, AppCtx *user)
 {
   PetscErrorCode ierr;
-  PetscReal      dx, rg;
+  PetscReal      dx, rg, spa;
   PetscScalar    *M, *Bstag, *beta,
-                 duHl, ul, u, ur, dHdx, Fl, Fr, Tl, Tr;
+                 duHl, ul, u, ur, dHdx, Fl, Fr, Tl, Tr,
+                 scH, scu, scuH, scstress;   /* ad hoc scaling coeffs */
   PetscInt       i, Mx = info->mx;
   Vec            locBstag;
 
@@ -134,38 +179,47 @@ static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, App
 
   dx = user->xc / ((PetscReal)Mx - 1.0);
   rg = user->rho * user->g;
+  spa = user->secpera;
+
+  scH = 1.0 / user->H0;
+  scu = spa / 100.0;
+  scuH = spa / user->H0;
+  scstress = 1.0 / (rg * user->H0 * dx * 0.001);
 
   /* note:  we use Dirichlet conditions as values for neighbor, which tends to
             symmetrize FD- or MF-computed Jacobian */
   ierr = DAVecGetArray(user->scalarda,locBstag,&Bstag);CHKERRQ(ierr);
   ierr = DAVecGetArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
   ierr = DAVecGetArray(user->scalarda,user->beta,&beta);CHKERRQ(ierr);
-  for (i=info->xs; i<info->xs+info->xm; i++) {
+  for (i = info->xs; i < info->xs + info->xm; i++) {
   
     /* MASS CONT */
     if (i == 0) {
       /* residual at left-most point is Dirichlet cond. */
       f[0].H = Hu[0].H - user->H0;
+      f[0].H *= scH;
     } else {
-      duHl = Hu[i].u * Hu[i].H - ( (i == 1) ? 0.0 : Hu[i-1].u * Hu[i-1].H );
+      duHl = (Hu[i].u/spa) * Hu[i].H - ( (i == 1) ? 0.0 : (Hu[i-1].u/spa) * Hu[i-1].H );
       f[i].H = dx * M[i] - duHl;  /* upwind; difference  (uH)  only to left */
+      f[i].H *= scuH;
     }
 
     /* SSA */
     if (i == 0) {
       /* residual at left-most point is Dirichlet cond. */
-      f[0].u = Hu[0].u - 0.0;
+      f[0].u = (Hu[0].u/spa) - 0.0;
+      f[0].u *= scu;
     } else {
       /* residual: SSA eqn */
       /* consecutive values of u */
-      ul = (i == 1) ? 0.0 : Hu[i-1].u;
-      u  = Hu[i].u;
-      ur = (i == Mx-1) ? -1.1e30 : Hu[i+1].u;
+      ul = (i == 1) ? 0.0 : (Hu[i-1].u/spa);
+      u  = (Hu[i].u/spa);
+      ur = (i == Mx-1) ? -1.1e30 : (Hu[i+1].u/spa);
       /* surface slope */
       if (i == 1) { 
         dHdx  = (Hu[i+1].H - user->H0) / (2.0 * dx);
       } else if (i == Mx-1) {
-        dHdx  = (Hu[i].H - Hu[i-1].H) / dx;
+        dHdx  = (Hu[i].H - Hu[i-1].H) / dx; /* IMPROVABLE */
       } else { /* generic case */
         dHdx  = (Hu[i+1].H - Hu[i-1].H) / (2.0 * dx);
       }
@@ -180,7 +234,8 @@ static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, App
         Tr = (Hu[i].H + Hu[i+1].H) * Bstag[i] * Fr;        
       }
 
-      f[i].u = (Fr - Fl) - dx * beta[i] * u - dx * rg * Hu[i].H * dHdx;
+      f[i].u = (Tr - Tl) - dx * beta[i] * u - dx * rg * Hu[i].H * dHdx;
+      f[i].u *= scstress;
 
     }
   }
@@ -208,10 +263,10 @@ int main(int argc,char **argv)
   Vec                    Hu,r;                 /* solution, residual vectors */
   Mat                    J;                    /* Jacobian matrix */
   AppCtx                 user;                 /* user-defined work context */
-  PetscInt               its,Mx;               /* iteration count, num of pts */
-  PetscReal              errinf,               /* max norm of numerical error */
+  PetscInt               its;                  /* iteration count, num of pts */
+  PetscReal              errHinf, erruinf,     /* max norm of numerical error */
                          tmp1, tmp2, tmp3, tmp4, tmp5;
-  PetscTruth             eps_set = PETSC_FALSE;
+  PetscTruth             eps_set = PETSC_FALSE, dump = PETSC_FALSE;
   SNESConvergedReason    reason;               /* Check convergence */
 
   PetscInitialize(&argc,&argv,(char *)0,help);
@@ -233,27 +288,21 @@ int main(int argc,char **argv)
   user.epsilon = (1.0 / user.secpera) / user.xc; /* regularize using strain rate
                                                     of 1/xc = ?.?e-6 per year */
 
+  ierr = PetscPrintf(PETSC_COMM_WORLD,
+      "  geometry: H0 = %.2f m, xc = %.2f km, Txc = %.5e Pa m\n",
+      user.H0, user.xc/1000.0, user.Txc);CHKERRQ(ierr);
+
   ierr = PetscOptionsBegin(PETSC_COMM_WORLD,NULL,
-      "SSA solve options for bodvardsson",__FILE__);CHKERRQ(ierr);
+      "bodvardsson program options",__FILE__);CHKERRQ(ierr);
   {
-    ierr = PetscOptionsReal("-ssa_glen","Glen flow law exponent for SSA","",
-                            user.n,&user.n,NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-ssa_rho","ice density (kg m^-3) for SSA","",
-                            user.rho,&user.rho,NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-ssa_rhow","sea water density (kg m^-3) for SSA","",
-                            user.rhow,&user.rhow,NULL);CHKERRQ(ierr);
-    ierr = PetscOptionsReal("-ssa_epsilon","regularization (a strain rate in units of 1/a)","",
+    ierr = PetscOptionsTruth("-bod_dump",
+      "dump out exact and approximate solution and residual, as asci","",
+      dump,&dump,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-bod_epsilon","regularization (a strain rate in units of 1/a)","",
                             user.epsilon * user.secpera,&user.epsilon,&eps_set);CHKERRQ(ierr);
     if (eps_set) {  user.epsilon *= 1.0 / user.secpera;  }
   }
   ierr = PetscOptionsEnd();CHKERRQ(ierr);
-
-  /* check some user parameters for reasonableness ... there could be more ... */
-  if (user.n < 1.0) {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,
-      "SSA solve options WARNING: glen exponent n=%g is out of range (require n>= 1)\n",
-      user.n);CHKERRQ(ierr);
-  }
 
   /* Create machinery for parallel grid management (DA), nonlinear solver (SNES), 
      and Vecs for fields (solution, RHS).  Note default Mx=20 is 
@@ -262,6 +311,12 @@ int main(int argc,char **argv)
   ierr = DACreate1d(PETSC_COMM_WORLD,DA_NONPERIODIC,-20,2,1,PETSC_NULL,&user.da);CHKERRQ(ierr);
   ierr = DASetUniformCoordinates(user.da,0.0,user.xc,
                                  PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
+  ierr = DASetFieldName(user.da,0,"ice thickness (m)"); CHKERRQ(ierr);
+  ierr = DASetFieldName(user.da,1,"ice velocity (m a-1)"); CHKERRQ(ierr);
+  ierr = DAGetInfo(user.da,PETSC_IGNORE,&user.Mx,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,
+                   PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE);
+  ierr = DAGetCorners(user.da,&user.xs,PETSC_NULL,PETSC_NULL,&user.xm,PETSC_NULL,PETSC_NULL);
+                   CHKERRQ(ierr);
 
   /* another DA for scalar parameters */
   ierr = DACreate1d(PETSC_COMM_WORLD,DA_NONPERIODIC,-20,1,1,PETSC_NULL,&user.scalarda);CHKERRQ(ierr);
@@ -295,7 +350,8 @@ int main(int argc,char **argv)
   ierr = PetscPrintf(PETSC_COMM_WORLD,"  using exact solution as initial guess\n");
              CHKERRQ(ierr);
   /* the exact thickness and exact ice velocity (user.uHexact) are known from Bodvardsson (1955) */
-  ierr = FillExactSoln(&user);CHKERRQ(ierr);
+  ierr = FillExactSoln(&user); CHKERRQ(ierr);
+  ierr = ScaleVelocity(&user,user.Huexact); CHKERRQ(ierr);
   ierr = VecCopy(user.Huexact,Hu); CHKERRQ(ierr);
   
   /************ SOLVE NONLINEAR SYSTEM  ************/
@@ -308,15 +364,26 @@ int main(int argc,char **argv)
            "  %s Number of Newton iterations = %D\n",
            SNESConvergedReasons[reason],its);CHKERRQ(ierr);
 
+  if (dump) {
+    ierr = PetscPrintf(PETSC_COMM_WORLD,
+           "  viewing combined result Hu\n");CHKERRQ(ierr);
+    ierr = VecView(Hu,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,
+           "  viewing combined exact result Huexact\n");CHKERRQ(ierr);
+    ierr = VecView(user.Huexact,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,
+           "  viewing final combined residual at Hu\n");CHKERRQ(ierr);
+    ierr = VecView(r,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  }
+
   /* evaluate error relative to exact solution */
-  ierr = VecAXPY(Hu,-1.0,user.Huexact);CHKERRQ(ierr); /* "y:=ax+y"  so   u := u - uexact */
-  ierr = VecNorm(Hu,NORM_INFINITY,&errinf);CHKERRQ(ierr);
-  ierr = DAGetInfo(user.da,PETSC_IGNORE,&Mx,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,
-                   PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE);
+  ierr = MaxErrorNorms(&user,Hu,user.Huexact,&errHinf,&erruinf);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,
-           "  numerical errors in COMBINED: %.4e [UNITS??] maximum\n",
-           errinf);CHKERRQ(ierr);
-  
+           "  max norm errors:\n"
+           "     |H - Hexact|_inf = %.4e m\n"
+           "     |u - uexact|_inf = %.4e m a-1\n",
+           errHinf,erruinf);CHKERRQ(ierr);
+
   ierr = VecDestroy(Hu);CHKERRQ(ierr);
   ierr = VecDestroy(r);CHKERRQ(ierr);
   ierr = VecDestroy(user.Huexact);CHKERRQ(ierr);
@@ -334,5 +401,4 @@ int main(int argc,char **argv)
   ierr = PetscFinalize();CHKERRQ(ierr);
   return 0;
 }
-
 
