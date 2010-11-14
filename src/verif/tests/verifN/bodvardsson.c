@@ -24,7 +24,7 @@ static const char help[] =
 #include "../exactTestN.h"
 
 typedef struct {
-  PetscScalar H, u;
+  PetscReal H, u;
 } Node;
 
 /* User-defined application context.  Used esp. by FormFunctionLocal().  */
@@ -32,7 +32,7 @@ typedef struct {
   DA          da;       /* 1d,dof=2 distributed array for soln and residual */
   DA          scalarda; /* 1d,dof=1 distributed array for parameters depending on x */
   PetscInt    Mx, xs, xm;
-  PetscReal   secpera, n, rho, rhow, g;
+  PetscReal   dx, secpera, n, rho, rhow, g;
   PetscReal   H0;      /* thickness at x=0, for Dirichlet condition on mass cont */
   PetscReal   xc;      /* location at which stress (Neumann) condition applied to SSA eqn */
   PetscReal   Txc;     /* vertically-integrated longitudinal stress at xc, for Neumann cond:
@@ -52,17 +52,16 @@ typedef struct {
 static PetscErrorCode FillExactSoln(AppCtx *user)
 {
   PetscErrorCode ierr;
-  PetscInt       i,Mx=user->Mx;
-  PetscScalar    dx, x, dum1, dum2, dum3, dum4;
+  PetscInt       i;
+  PetscScalar    x, dum1, dum2, dum3, dum4;
   Node           *Hu;
 
   PetscFunctionBegin;
-  dx = user->xc / (PetscReal)(Mx-1);
   /* Compute regular grid exact soln and staggered-grid thickness over the
      locally-owned part of the grid */
   ierr = DAVecGetArray(user->da,user->Huexact,&Hu);CHKERRQ(ierr);
   for (i = user->xs; i < user->xs + user->xm; i++) {
-    x = dx * (PetscReal)i;  /* = x_i = distance from dome */
+    x = user->dx * (PetscReal)i;  /* = x_i = distance from dome */
     ierr = exactN(x, &(Hu[i].H), &dum1, &(Hu[i].u), &dum2, &dum3, &dum4); CHKERRQ(ierr);
   }
   ierr = DAVecRestoreArray(user->da,user->Huexact,&Hu);CHKERRQ(ierr);
@@ -77,19 +76,18 @@ static PetscErrorCode FillDistributedParams(AppCtx *user)
 {
   PetscErrorCode ierr;
   PetscInt       i,Mx=user->Mx;
-  PetscScalar    dx, x, dum1, dum2, dum3, dum4, dum5, *M, *Bstag, *beta;
+  PetscScalar    x, dum1, dum2, dum3, dum4, dum5, *M, *Bstag, *beta;
 
   PetscFunctionBegin;
-  dx = user->xc / (PetscReal)(Mx-1);
   /* Compute regular grid exact soln and staggered-grid thickness over the
      locally-owned part of the grid */
   ierr = DAVecGetArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
   ierr = DAVecGetArray(user->scalarda,user->B_stag,&Bstag);CHKERRQ(ierr);
   ierr = DAVecGetArray(user->scalarda,user->beta,&beta);CHKERRQ(ierr);
   for (i = user->xs; i < user->xs + user->xm; i++) {
-    x = dx * (PetscReal)i;  /* = x_i = distance from dome; regular grid point */
+    x = user->dx * (PetscReal)i;  /* = x_i = distance from dome; regular grid point */
     ierr = exactN(x, &dum1, &dum2, &dum3, &(M[i]), &dum4, &(beta[i])); CHKERRQ(ierr);
-    x = x + (dx/2.0);       /* = x_{i+1/2}; staggered grid point */
+    x = x + (user->dx/2.0);       /* = x_{i+1/2}; staggered grid point */
     if (i < Mx-1) {
       ierr = exactN(x, &dum1, &dum2, &dum3, &dum4, &(Bstag[i]), &dum5); CHKERRQ(ierr);
     } else {
@@ -266,7 +264,8 @@ int main(int argc,char **argv)
   PetscInt               its;                  /* iteration count, num of pts */
   PetscReal              errHinf, erruinf,     /* max norm of numerical error */
                          tmp1, tmp2, tmp3, tmp4, tmp5;
-  PetscTruth             eps_set = PETSC_FALSE, dump = PETSC_FALSE;
+  PetscTruth             eps_set = PETSC_FALSE, dump = PETSC_FALSE,
+                         snes_mf_set, snes_fd_set;
   SNESConvergedReason    reason;               /* Check convergence */
 
   PetscInitialize(&argc,&argv,(char *)0,help);
@@ -288,9 +287,14 @@ int main(int argc,char **argv)
   user.epsilon = (1.0 / user.secpera) / user.xc; /* regularize using strain rate
                                                     of 1/xc = ?.?e-6 per year */
 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,
-      "  geometry: H0 = %.2f m, xc = %.2f km, Txc = %.5e Pa m\n",
-      user.H0, user.xc/1000.0, user.Txc);CHKERRQ(ierr);
+  ierr = PetscOptionsTruth("-snes_mf","","",PETSC_FALSE,&snes_mf_set,NULL);CHKERRQ(ierr);
+  ierr = PetscOptionsTruth("-snes_fd","","",PETSC_FALSE,&snes_fd_set,NULL);CHKERRQ(ierr);
+  if (!snes_mf_set && !snes_fd_set) { 
+    ierr = PetscPrintf(PETSC_COMM_WORLD,
+       "\n***ERROR: bodvardsson currently needs -snes_mf or -snes_fd***\n\n"
+       "USAGE BELOW:\n\n%s",help);CHKERRQ(ierr);
+    PetscEnd();
+  }
 
   ierr = PetscOptionsBegin(PETSC_COMM_WORLD,NULL,
       "bodvardsson program options",__FILE__);CHKERRQ(ierr);
@@ -308,7 +312,7 @@ int main(int argc,char **argv)
      and Vecs for fields (solution, RHS).  Note default Mx=20 is 
      number of grid points.  Also degrees of freedom = 2 (thickness and velocity
      at each point) and stencil radius = ghost width = 1.                                    */
-  ierr = DACreate1d(PETSC_COMM_WORLD,DA_NONPERIODIC,-20,2,1,PETSC_NULL,&user.da);CHKERRQ(ierr);
+  ierr = DACreate1d(PETSC_COMM_WORLD,DA_NONPERIODIC,-46,2,1,PETSC_NULL,&user.da);CHKERRQ(ierr);
   ierr = DASetUniformCoordinates(user.da,0.0,user.xc,
                                  PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
   ierr = DASetFieldName(user.da,0,"ice thickness (m)"); CHKERRQ(ierr);
@@ -317,11 +321,16 @@ int main(int argc,char **argv)
                    PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE);
   ierr = DAGetCorners(user.da,&user.xs,PETSC_NULL,PETSC_NULL,&user.xm,PETSC_NULL,PETSC_NULL);
                    CHKERRQ(ierr);
+  user.dx = user.xc / (PetscReal)(user.Mx-1);
 
   /* another DA for scalar parameters */
-  ierr = DACreate1d(PETSC_COMM_WORLD,DA_NONPERIODIC,-20,1,1,PETSC_NULL,&user.scalarda);CHKERRQ(ierr);
+  ierr = DACreate1d(PETSC_COMM_WORLD,DA_NONPERIODIC,-46,1,1,PETSC_NULL,&user.scalarda);CHKERRQ(ierr);
   ierr = DASetUniformCoordinates(user.scalarda,0.0,user.xc,
                                  PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
+
+  ierr = PetscPrintf(PETSC_COMM_WORLD,
+      "  Mx = %D points, dx = %.3f m, H0 = %.2f m, xc = %.2f km, Txc = %.5e Pa m\n",
+      user.Mx, user.dx, user.H0, user.xc/1000.0, user.Txc);CHKERRQ(ierr);
 
   /* Extract/allocate global vectors from DAs and duplicate for remaining same types */
   ierr = DACreateGlobalVector(user.da,&Hu);CHKERRQ(ierr);
@@ -379,10 +388,8 @@ int main(int argc,char **argv)
   /* evaluate error relative to exact solution */
   ierr = MaxErrorNorms(&user,Hu,user.Huexact,&errHinf,&erruinf);CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,
-           "  max norm errors:\n"
-           "     |H - Hexact|_inf = %.4e m\n"
-           "     |u - uexact|_inf = %.4e m a-1\n",
-           errHinf,erruinf);CHKERRQ(ierr);
+           "(dx,errHinf,erruinf) %.3f %.4e %.4e\n",
+           user.dx,errHinf,erruinf);CHKERRQ(ierr);
 
   ierr = VecDestroy(Hu);CHKERRQ(ierr);
   ierr = VecDestroy(r);CHKERRQ(ierr);
