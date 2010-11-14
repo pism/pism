@@ -34,12 +34,19 @@ extern "C"
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-int geometry_exactN(double *H0, double *L0, double *xc);
-   /* output:  H0 = dome thickness (m)
-               L0 = full flow-line length from dome to margin where H->0 (m)
-               xc = in Bueler interpretation, the location of the calving front (m) */
+int params_exactN(double *H0, double *L0, double *xc,
+                  double *a, double *Hela, double *k,
+                  double *H_xc, double *T_xc);
+   /* outputs: H0   = dome thickness (m)
+               L0   = full flow-line length from dome to margin where H->0 (m)
+               xc   = in Bueler interpretation, the location of the calving front (m)
+               a    = surface mass balance lapse rate, with elevation (s-1)
+               Hela = elevation of equilibrium line (m)
+               k    = coefficient for sliding
+               H_xc = thickness at calving front
+               T_xc = vertically-integrated longitudinal stress at calving front */
 
-int exactN(double x, double *H, double *hx, double *u, double *M, double *B);
+int exactN(double x, double *H, double *hx, double *u, double *M, double *B, double *beta);
    /* input    : x                   (m; 0.0 <= x <= L0)
 
       output   : H = H(x)            (m; ice thickness)
@@ -47,6 +54,7 @@ int exactN(double x, double *H, double *hx, double *u, double *M, double *B);
                  u = u(x)            (m s-1; ice horizontal velocity)
                  M = M(x)            (m s-1; surface mass balance)
                  B = B(x)            (Pa s^(1/3); ice hardness)
+                 beta = beta(x)      (Pa s m-1; linear sliding coefficient)
 
       Assumes n = 3.
       

@@ -23,11 +23,12 @@
 $ ./simpleN 
 Enter  x  (in km; 0.0 <= x <= 500.0):   300.0
 Results from Test N:
-     H   = ice thickness        =   1920.00000 (m)
-     h_x = surface slope        = -7.20000e-03
-     u   = ice velocity         =    300.00000 (m a-1)
-     M   = surface mass balance =    -24.00000 (cm a-1)
-     B   = ice hardness         =  1.36989e+08 (Pa s^(1/3))
+     H    = ice thickness        =   1920.00000 (m)
+     h_x  = surface slope        = -7.20000e-03
+     u    = ice velocity         =    300.00000 (m a-1)
+     M    = surface mass balance =    -24.00000 (cm a-1)
+     B    = ice hardness         =  1.36989e+08 (Pa s^(1/3))
+     beta = ice hardness         =  1.29813e+10 (Pa s m-1)
 */
 
 
@@ -36,12 +37,12 @@ Results from Test N:
 
 int main() {
 
-  double       H0, L0, xc, x, 
-               u, h, hx, M, B;
+  double       H0, L0, xc, a, Hela, k, Hc, Tc, x, 
+               H, hx, u, M, B, beta;
   const double secpera=31556926.0;  /* seconds per year; 365.2422 days */
   int          scanret, retvalN;
   
-  geometry_exactN(&H0, &L0, &xc);
+  params_exactN(&H0, &L0, &xc, &a, &Hela, &k, &Hc, &Tc);
 
   printf("Enter  x  (in km; 0.0 <= x <= %5.1f):   ", L0 / 1000.0);
   scanret = scanf("%lf",&x);
@@ -52,7 +53,7 @@ int main() {
 
   x = x * 1000.0;
 
-  retvalN = exactN(x,  &h, &hx, &u, &M, &B);
+  retvalN = exactN(x, &H, &hx, &u, &M, &B, &beta);
 
   if (retvalN) {
     printf("SIMPLEN ERROR:  x  out of allowed domain  0.0 <= x <= %5.1f km\n"
@@ -66,12 +67,13 @@ int main() {
 
   printf("Results from Test N:\n");
   printf(
-    "     H   = ice thickness        = %12.5f (m)\n"
-    "     h_x = surface slope        = %12.5e\n"
-    "     u   = ice velocity         = %12.5f (m a-1)\n"
-    "     M   = surface mass balance = %12.5f (cm a-1)\n"
-    "     B   = ice hardness         = %12.5e (Pa s^(1/3))\n",
-    h, hx, u * secpera, M * secpera * 100.0, B);
+    "     H    = ice thickness        = %12.5f (m)\n"
+    "     h_x  = surface slope        = %12.5e\n"
+    "     u    = ice velocity         = %12.5f (m a-1)\n"
+    "     M    = surface mass balance = %12.5f (cm a-1)\n"
+    "     B    = ice hardness         = %12.5e (Pa s^(1/3))\n"
+    "     beta = ice hardness         = %12.5e (Pa s m-1)\n",
+    H, hx, u * secpera, M * secpera * 100.0, B, beta);
   return 0;
 }
 
