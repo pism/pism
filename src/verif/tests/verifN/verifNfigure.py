@@ -5,6 +5,7 @@
 # for some values of N, copy the results into an asci file "conv.txt", and run
 # this script to get pyplot figs:
 #   ./verifNfigure.py conv.txt
+# e.g. N=46,91,181,361,721
 
 from sys import stderr, exit, argv
 from pylab import *
