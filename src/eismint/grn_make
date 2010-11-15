@@ -1,9 +1,0 @@
-VPATH += :../src/eismint/
-
-exec_default += ../bin/pgrn
-
-other_sources += pgrn.cc pgrn_atmosphere.cc
-
-../bin/pgrn : pgrn.o pgrn_atmosphere.o ${LIBPISMNAME}
-	${CXXLINKER} pgrn.o pgrn_atmosphere.o ${ICE_LIB_FLAGS} -o $@
-

@@ -356,6 +356,9 @@ PetscErrorCode SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVe
 }
 
 //! \brief Compute the SIA flux. If fast == false, also store delta on the staggered grid.
+/*!
+ * FIXME: document this
+ */
 PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                                              IceModelVec2Stag &result, bool fast) {
   PetscErrorCode  ierr;
@@ -524,7 +527,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
   return 0;
 }
 
-
+//! \brief Extend the grid vertically.
 PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
   PetscErrorCode ierr;
 
@@ -539,8 +542,9 @@ PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
 //! \brief Compute the volumetric strain heating.
 /*!
  * See section 2.8 of [\ref BBssasliding].
- */
 
+ * \note This is one of the places where "hybridization" is done.
+ */
 PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
                                     IceModelVec2Stag &h_x,
                                     IceModelVec2Stag &h_y) {
@@ -670,8 +674,8 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
 
 //! \brief Compute I.
 /*!
- * Uses delta_staggered. The result (I) is used to compute the 3D-distributed
- * horizontal ice velocity.
+ * Uses delta[2]. The result (I) is used to compute the 3D-distributed
+ * horizontal (SIA) ice velocity.
  */
 PetscErrorCode SIAFD::compute_I() {
   PetscErrorCode ierr;
@@ -727,6 +731,11 @@ PetscErrorCode SIAFD::compute_I() {
 }
 
 //! \brief Compute horizontal components of the SIA velocity (in 3D).
+/*!
+ * FIXME: document this
+ *
+ * \note This is one of the places where "hybridization" is done.
+ */
 PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                                                      IceModelVec2V *vel_input,
                                                      IceModelVec3 &u_out, IceModelVec3 &v_out) {
@@ -764,7 +773,7 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
         v_ij[k] = - 0.25 * ( IEAST[k] * h_y(i,j,0) + IWEST[k] * h_y(i-1,j,0) +
                              INORTH[k] * h_y(i,j,1) + ISOUTH[k] * h_y(i,j-1,1) );
 
-        // Add the SSA velocity:
+        // Add the "SSA" velocity:
         u_ij[k] += (*vel_input)(i,j).u;
         v_ij[k] += (*vel_input)(i,j).v;
       }

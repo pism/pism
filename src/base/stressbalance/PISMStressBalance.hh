@@ -136,4 +136,17 @@ public:
   virtual ~SSB_Hybrid() {}
 };
 
+//! \brief SSA-only stress balance module.
+class SSA_Only : public PISMStressBalance
+{
+public:
+  SSA_Only(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, IceBasalResistancePlasticLaw &b,
+           const NCConfigVariable &conf) 
+    : PISMStressBalance(g, i, e, b, conf) {
+    stress_balance = new SSAFD(grid, basal, ice, EC, config);
+    modifier = new SSBM_Trivial(grid, ice, EC, config);
+  }
+  virtual ~SSA_Only() {}
+};
+
 #endif /* _PISMSTRESSBALANCE_H_ */

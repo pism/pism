@@ -1,7 +1,7 @@
 The classes here abstract both the SIA and SSA stress balances.
 Here are some intended benefits:
 
-1. make this part of PISM more "library-like", and reduced the Jed-named
+1. make this part of PISM more "library-like", and reduce the Jed-named
    "large common block with inheritance" property of IceModel
 
 2. clarify and complete the semantics of setting boundary conditions to the SSA
@@ -18,7 +18,4 @@ Here are some intended benefits:
 
 6. make it easier to build a Blatter stress balance solver
 
-
-Note:  a reasonable early software/verification test is to run test J "offline"
-from IceModel.
 

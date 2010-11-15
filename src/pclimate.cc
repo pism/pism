@@ -139,32 +139,26 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 static PetscErrorCode readIceInfoFromFile(const char *filename, int start,
                                           PISMVars &variables) {
   PetscErrorCode ierr;
+  set<IceModelVec*> vars = variables.get_variables();
 
-  ierr = variables.get("lat")->read(filename, start); CHKERRQ(ierr);
-  ierr = variables.get("lon")->read(filename, start); CHKERRQ(ierr);
-  ierr = variables.get("mask")->read(filename, start); CHKERRQ(ierr);
-  ierr = variables.get("thk")->read(filename, start); CHKERRQ(ierr);
-  ierr = variables.get("usurf")->read(filename, start); CHKERRQ(ierr);
-  ierr = variables.get("topg")->read(filename, start); CHKERRQ(ierr);
+  set<IceModelVec*>::iterator j = vars.begin();
+  while (j != vars.end()) {
+    ierr = (*j)->read(filename, start); CHKERRQ(ierr);
+    j++;
+  }
 
   return 0;
 }
 
 
 static PetscErrorCode doneWithIceInfo(PISMVars &variables) {
+  set<IceModelVec*> vars = variables.get_variables();
 
-  delete variables.get("lat");
-  delete variables.get("lon");
-  delete variables.get("mask");
-  delete variables.get("thk");
-  delete variables.get("usurf");
-  delete variables.get("topg");
-
-  delete variables.get("artm");
-  delete variables.get("acab");
-
-  delete variables.get("shelfbasetemp");
-  delete variables.get("shelfbasemassflux");
+  set<IceModelVec*>::iterator j = vars.begin();
+  while (j != vars.end()) {
+    delete (*j);
+    j++;
+  }
 
   return 0;
 }

@@ -365,13 +365,6 @@ protected:
   virtual PetscErrorCode surface_gradient_haseloff();
   virtual PetscErrorCode surface_gradient_mahaffy();
 
-  virtual PetscErrorCode compute_delta();
-  virtual PetscErrorCode compute_diffusivity_staggered();
-  virtual PetscErrorCode compute_sigma();
-  virtual PetscErrorCode compute_I_staggered();
-  virtual PetscErrorCode velocity_SIA_2D();
-  virtual PetscErrorCode velocity_SIA_3D();
-
   virtual PetscErrorCode velocitySIAStaggered();
   virtual PetscErrorCode basalSlidingHeatingSIA();
   virtual PetscErrorCode velocities2DSIAToRegular();
