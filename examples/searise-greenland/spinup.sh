@@ -158,7 +158,9 @@ echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km)"
 # cat prefix and exec together
 #uncomment to add profiling: PISM_PROF=" -prof"
 PISM_PROF=
-PISM="${PISM_PREFIX}${PISM_EXEC}${PISM_PROF} -ocean_kill -e 3"
+TUNEDCLIMATE=
+#TUNEDCLIMATE="-config_override config_269.0_0.001_0.80_-0.500_9.7440.nc"
+PISM="${PISM_PREFIX}${PISM_EXEC}${PISM_PROF} -ocean_kill -e 3 ${TUNEDCLIMATE}"
 
 # coupler settings for pre-spinup
 COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd"
@@ -194,7 +196,7 @@ CLIMSTARTTIME=-500
 PRE0CLIMATE=g${CS}km_climate${CLIMSTARTTIME}a.nc
 echo
 echo "$SCRIPTNAME  running pclimate to show climate in modern period [${CLIMSTARTTIME} a,0 a], using current geometry and 10 year subintervals"
-cmd="$PISM_MPIDO $NN ${PISM_PREFIX}pclimate -i $PRE0NAME $COUPLER_FORCING \
+cmd="$PISM_MPIDO $NN ${PISM_PREFIX}pclimate ${TUNEDCLIMATE} -i $PRE0NAME $COUPLER_FORCING \
   -ys $CLIMSTARTTIME -ye 0 -dt 10.0 -o $PRE0CLIMATE"
 $PISM_DO $cmd
 

@@ -514,6 +514,8 @@ PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
   if (use_override_config) {
     ierr = overrides.read(override_config.c_str()); CHKERRQ(ierr);
     config.import_from(overrides);
+    ierr = verbPrintf(2, com, "CONFIG OVERRIDES read from file '%s'.\n",
+		      override_config.c_str()); CHKERRQ(ierr);
   }
   config.print();
 

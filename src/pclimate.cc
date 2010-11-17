@@ -65,6 +65,9 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
   thk      = new IceModelVec2S;
   surfelev = new IceModelVec2S;
   topg     = new IceModelVec2S;
+  
+  // the following are allocated by the pclimate code, but may or may not
+  //   actually be read by PISMAtmosphereModel *atmosphere and PISMOceanModel *ocean
   acab     = new IceModelVec2S;
   artm     = new IceModelVec2S;
   shelfbasetemp     = new IceModelVec2S;
@@ -143,7 +146,15 @@ static PetscErrorCode readIceInfoFromFile(const char *filename, int start,
 
   set<IceModelVec*>::iterator j = vars.begin();
   while (j != vars.end()) {
-    ierr = (*j)->read(filename, start); CHKERRQ(ierr);
+    // we don't read *here* the vars that PISMAtmosphereModel and PISMOceanModel
+    //   might read
+    string vname = (*j)->string_attr("name");
+    bool notreadhere = ( (vname == "artm") || (vname == "acab")
+                         || (vname == "shelfbasetemp")
+                         || (vname == "shelfbasemassflux") );
+    if (!notreadhere) {
+      ierr = (*j)->read(filename, start); CHKERRQ(ierr);
+    }
     j++;
   }
 
@@ -315,15 +326,6 @@ int main(int argc, char *argv[]) {
 
     // read the config option database:
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
-
-    bool override_used;
-    ierr = PISMOptionsIsSet("-config_override", override_used); CHKERRQ(ierr);
-    if (override_used) {
-      ierr = verbPrintf(2, com,
-         "  option -config_override seen; configuration parameter overrides read from '%s'\n",
-         overrides.get_config_filename().c_str()); CHKERRQ(ierr);
-      overrides.print(3);
-    }
 
     // set an un-documented (!) flag to limit time-steps to 1 year.
     config.set_flag("pdd_limit_timestep", true);
