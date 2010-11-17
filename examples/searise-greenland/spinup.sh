@@ -71,7 +71,7 @@ echo
 if [ -n "${PISM_DATANAME:+1}" ] ; then  # check if env var is already set
   echo "$SCRIPTNAME   PISM_DATANAME = $PISM_DATANAME  (already set)"
 else
-  PISM_DATAVERSION=0.93
+  PISM_DATAVERSION=1.1
   PISM_DATANAME=pism_Greenland_5km_v$PISM_DATAVERSION.nc
 fi
 if [ -n "${PISM_TEMPSERIES:+1}" ] ; then

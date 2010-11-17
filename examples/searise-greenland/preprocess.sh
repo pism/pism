@@ -19,11 +19,13 @@ echo
 
 
 # get file; see page http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
-DATAVERSION=0.93
+DATAVERSION=1.1
+DATAURL=http://websrv.cs.umt.edu/isis/images/a/a5/
 DATANAME=Greenland_5km_v$DATAVERSION.nc
-PISMVERSION=pism_$DATANAME
-wget -nc http://websrv.cs.umt.edu/isis/images/8/86/$DATANAME
 
+wget -nc ${DATAURL}${DATANAME}
+
+PISMVERSION=pism_$DATANAME
 ncks -O $DATANAME $PISMVERSION  # just copies over, but preserves history and global attrs
 
 # adjust metadata; uses NCO (http://nco.sourceforge.net/)
