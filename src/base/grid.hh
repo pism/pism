@@ -21,6 +21,7 @@
 
 #include <petscda.h>
 #include "NCVariable.hh"
+#include "PISMProf.hh"
 
 typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
 typedef enum {NONE = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
@@ -100,6 +101,7 @@ public:
     start_year,		  //!< the year this run started from
     end_year;		  //!< time to stop at
   
+  PISMProf *profiler;
 protected:
   PetscScalar lambda;	 // vertical spacing parameter
 private:

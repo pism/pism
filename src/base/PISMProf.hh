@@ -25,8 +25,12 @@
 
 #include <string>
 #include <vector>
-#include "grid.hh"
-#include "PISMIO.hh"
+#include <petsc.h>
+#include "nc_util.hh"
+
+/// @cond NAMESPACE_BROWSER
+using namespace std;
+/// @endcond
 
 //! A class storing and writing PISM profiling event data.
 class PISMEvent {
@@ -62,7 +66,8 @@ public:
  */
 class PISMProf {
 public:
-  PISMProf(IceGrid *g);
+  PISMProf(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
+           int M, int Ng);
   ~PISMProf() {}
   int create(string name, string description);
   void begin(int index);

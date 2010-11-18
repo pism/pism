@@ -28,12 +28,13 @@ PISMEvent::PISMEvent() {
 }
 
 /// PISMProf
-PISMProf::PISMProf(IceGrid *g) {
-  com = g->com;
-  rank = g->rank;
-  size = g->size;
-  Nx = g->Nx;
-  Ny = g->Ny;
+PISMProf::PISMProf(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
+                   int my_Nx, int my_Ny) {
+  com = c;
+  rank = r;
+  size = s;
+  Nx = my_Nx;
+  Ny = my_Ny;
   current_event = -1;
 }
 
@@ -176,17 +177,17 @@ PetscErrorCode PISMProf::define_variable(int ncid, string name, int &varid) {
   PetscErrorCode ierr;
   int dimids[2];
 
-  if (rank == 0) {
-    ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  if (rank != 0) return 0;
 
-    ierr = nc_inq_dimid(ncid, "y", &dimids[0]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-    ierr = nc_inq_dimid(ncid, "x", &dimids[1]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+  ierr = nc_inq_dimid(ncid, "y", &dimids[0]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc_inq_dimid(ncid, "x", &dimids[1]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   
-    ierr = nc_def_var(ncid, name.c_str(), NC_DOUBLE, 2, dimids, &varid);
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc_def_var(ncid, name.c_str(), NC_DOUBLE, 2, dimids, &varid);
+  CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
-    ierr = nc_enddef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-  }
+  ierr = nc_enddef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
   return 0;
 }

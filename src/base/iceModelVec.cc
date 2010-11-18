@@ -28,7 +28,6 @@ IceModelVec::IceModelVec() {
   grid = PETSC_NULL;
   array = PETSC_NULL;
   localp = true;
-  use_interpolation_mask = false;
 
   dims = GRID_2D;		// default
   dof = 1;			// default
@@ -68,8 +67,6 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
   
   map_viewers = other.map_viewers;
 
-  use_interpolation_mask = other.use_interpolation_mask;
-  interpolation_mask = other.interpolation_mask;
   output_data_type = other.output_data_type;
   write_in_glaciological_units = other.write_in_glaciological_units;
 
@@ -399,25 +396,22 @@ PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
 PetscErrorCode IceModelVec::regrid(const char filename[], LocalInterpCtx &lic, 
                                    bool critical) {
   PetscErrorCode ierr;
-  MaskInterp *m = NULL;
   Vec g;
 
   if (dof != 1)
     SETERRQ(1, "This method only supports IceModelVecs with dof == 1.");
 
-  if (use_interpolation_mask) m = &interpolation_mask;
-
   if (localp) {
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
 
-    ierr = vars[0].regrid(filename, lic, critical, false, 0.0, m, g); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, lic, critical, false, 0.0, g); CHKERRQ(ierr);
 
     ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
     ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
 
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = vars[0].regrid(filename, lic, critical, false, 0.0, m, v); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, lic, critical, false, 0.0, v); CHKERRQ(ierr);
   }
 
   return 0;
@@ -429,25 +423,22 @@ PetscErrorCode IceModelVec::regrid(const char filename[], LocalInterpCtx &lic,
 PetscErrorCode IceModelVec::regrid(const char filename[], 
                                    LocalInterpCtx &lic, PetscScalar default_value) {
   PetscErrorCode ierr;
-  MaskInterp *m = NULL;
   Vec g;
 
   if (dof != 1)
     SETERRQ(1, "This method only supports IceModelVecs with dof == 1.");
 
-  if (use_interpolation_mask) m = &interpolation_mask;
-
   if (localp) {
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
 
-    ierr = vars[0].regrid(filename, lic, false, true, default_value, m, g); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, lic, false, true, default_value, g); CHKERRQ(ierr);
 
     ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
     ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
 
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = vars[0].regrid(filename, lic, false, true, default_value, m, v); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, lic, false, true, default_value, v); CHKERRQ(ierr);
   }
 
   return 0;

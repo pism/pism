@@ -208,10 +208,6 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   LocalInterpCtx lic(g, NULL, NULL, grid); // 2D only
 
   if (maskExists) {
-    vMask.interpolation_mask.number_allowed = 2;
-    vMask.interpolation_mask.allowed_levels[0] = MASK_SHEET;
-    vMask.interpolation_mask.allowed_levels[1] = MASK_FLOATING;
-    vMask.use_interpolation_mask = true;
     ierr = vMask.regrid(filename, lic, true); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(3, grid.com, "  mask not found; leaving current values alone ...\n");
@@ -220,10 +216,6 @@ PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
   ierr = vel_bc.regrid(filename, lic, true); CHKERRQ(ierr);
 
   // we have already checked if "bcflag" exists, so just read it
-  vbcflag.interpolation_mask.number_allowed = 2;
-  vbcflag.interpolation_mask.allowed_levels[0] = 0;
-  vbcflag.interpolation_mask.allowed_levels[1] = 1;
-  vbcflag.use_interpolation_mask = true;
   ierr = vbcflag.regrid(filename, lic, true); CHKERRQ(ierr);
 
   // now use values in vel_bc, not equal to missing_value, to set boundary conditions by

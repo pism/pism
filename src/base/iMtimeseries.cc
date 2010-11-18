@@ -537,21 +537,24 @@ PetscErrorCode IceModel::init_extras() {
     ierr = verbPrintf(2, grid.com, "PISM WARNING: -extra_vars was not set."
                       " Writing model_state, mapping and climate_steady variables...\n"); CHKERRQ(ierr);
 
-    set<IceModelVec*> vars_set = variables.get_variables();
-    set<IceModelVec*>::iterator i = vars_set.begin();
-    while (i != vars_set.end()) {
-      
-      string intent = (*i)->string_attr("pism_intent");
-      if ( (intent == "model_state") || (intent == "mapping") ||
-	   (intent == "climate_steady") )
-	extra_vars.insert((*i)->string_attr("name"));
+    set<string> vars_set = variables.keys();
 
-      ++i;
+    set<string>::iterator i = vars_set.begin();
+    while (i != vars_set.end()) {
+      IceModelVec *var = variables.get(*i);
+      
+      string intent = var->string_attr("pism_intent");
+      if ((intent == "model_state") ||
+          (intent == "mapping") ||
+          (intent == "climate_steady")) {
+	extra_vars.insert(*i);
+      }
+      i++;
     }
 
     // add {u,v}barSSA if SSA is "on":
     if (config.get_flag("use_ssa_velocity")) {
-      extra_vars.insert("uvbar_ssa");
+      extra_vars.insert("velbar_ssa");
     }
 
   }

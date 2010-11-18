@@ -26,7 +26,7 @@ PetscErrorCode PISMVars::add(IceModelVec &v, string name) {
 }
 //!Add an IceModelVec to the dictionary.
 /*!
-  Adds both short_name and standard_name (if present); should be called \b after setting the metadata.
+  Adds standard_name if present, otherwise uses short_name.
 
   This code will only work for IceModelVecs with dof == 1.
  */
@@ -34,23 +34,29 @@ PetscErrorCode PISMVars::add(IceModelVec &v) {
 
   string short_name = v.string_attr("name");
 
-  // an IceModelVec always has a short_name:
-  if (variables[short_name] == NULL)
-    variables[short_name] = &v;
+  if (v.has_attr("standard_name")) {
+
+    string standard_name = v.string_attr("standard_name");
+    if (variables[standard_name] == NULL)
+      variables[standard_name] = &v;
+    else
+      SETERRQ1(1, "PISMVars::add(): an IceModelVec with the standard_name '%s' was added already.",
+               standard_name.c_str());
+
+  } else {
+
+    if (variables[short_name] == NULL)
+      variables[short_name] = &v;
+    else
+      SETERRQ1(1, "PISMVars::add(): an IceModelVec with the short_name '%s' was added already.",
+               short_name.c_str());
+  }
+
+  if (variables_short[short_name] == NULL)
+    variables_short[short_name] = &v;
   else
     SETERRQ1(1, "PISMVars::add(): an IceModelVec with the short_name '%s' was added already.",
-	     short_name.c_str());
-
-  // if it doesn't have a standard name, we're done
-  if (!v.has_attr("standard_name"))
-    return 0;
-
-  string standard_name = v.string_attr("standard_name");
-  if (variables[standard_name] == NULL)
-    variables[standard_name] = &v;
-  else
-    SETERRQ1(1, "PISMVars::add(): an IceModelVec with the standard_name '%s' was added already.",
-	     standard_name.c_str());
+             short_name.c_str());
 
   return 0;
 }
@@ -61,27 +67,41 @@ PetscErrorCode PISMVars::add(IceModelVec &v) {
  */
 void PISMVars::remove(string name) {
   variables.erase(name);
+  variables_short.erase(name);
 }
 
 //! \brief Returns a pointer to an IceModelVec containing variable \c name or
 //! NULL if that variable was not found.
+/*!
+ * Checks standard_name first, then short name
+ */
 IceModelVec* PISMVars::get(string name) const {
   map<string, IceModelVec* >::const_iterator j = variables.find(name);
   if (j != variables.end())
     return (j->second);
-  else
-    return NULL;
+
+  j = variables_short.find(name);
+  if (j != variables_short.end())
+    return (j->second);
+
+  return NULL;
 }
 
-//! Returns a set of pointers to all the variables in the dictionary.
-set<IceModelVec*> PISMVars::get_variables() const {
-  set <IceModelVec*> result;
+//! \brief Returns the set of keys (variable names) in the dictionary.
+/*!
+ * Provides one name per variable (the standard_name if it was set, otherwise
+ * the short name).
+ *
+ * This means that one can safely iterate over these keys, reading, writing,
+ * displaying or de-allocating variables (without worrying that a variable will
+ * get written or de-allocated twice).
+ */
+set<string> PISMVars::keys() const {
+  set<string> result;
 
   map<string,IceModelVec*>::iterator i = variables.begin();
-  while (i != variables.end()) {
-    result.insert((*i).second);
-    ++i;
-  }
+  while (i != variables.end())
+    result.insert((*i++).first);
 
   return result;
 }
@@ -89,13 +109,13 @@ set<IceModelVec*> PISMVars::get_variables() const {
 //! Debugging: checks if IceModelVecs in the dictionary have NANs.
 PetscErrorCode PISMVars::check_for_nan() const {
   PetscErrorCode ierr;
-  set<IceModelVec*> vars = get_variables();
+  set<string> names = keys();
 
-  set<IceModelVec*>::iterator j = vars.begin();
-  while (j != vars.end()) {
-    ierr = (*j)->has_nan(); CHKERRQ(ierr);
-
-    j++;
+  set<string>::iterator i = names.begin();
+  while (i != names.end()) {
+    IceModelVec *var = get(*i);
+    ierr = var->has_nan(); CHKERRQ(ierr); 
+    i++;
   }
 
   return 0;

@@ -142,20 +142,21 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 static PetscErrorCode readIceInfoFromFile(const char *filename, int start,
                                           PISMVars &variables) {
   PetscErrorCode ierr;
-  set<IceModelVec*> vars = variables.get_variables();
+  // Get the names of all the variables allocated earlier:
+  set<string> vars = variables.keys();
 
-  set<IceModelVec*>::iterator j = vars.begin();
-  while (j != vars.end()) {
-    // we don't read *here* the vars that PISMAtmosphereModel and PISMOceanModel
-    //   might read
-    string vname = (*j)->string_attr("name");
-    bool notreadhere = ( (vname == "artm") || (vname == "acab")
-                         || (vname == "shelfbasetemp")
-                         || (vname == "shelfbasemassflux") );
-    if (!notreadhere) {
-      ierr = (*j)->read(filename, start); CHKERRQ(ierr);
-    }
-    j++;
+  // Remove artm, acab, shelfbasemassflux and shelfbasetemp: they are filled by
+  // surface and ocean models and aren't necessarily read from files.
+  vars.erase("artm");
+  vars.erase("acab");
+  vars.erase("shelfbasemassflux");
+  vars.erase("shelfbasetemp");
+
+  set<string>::iterator i = vars.begin();
+  while (i != vars.end()) {
+    IceModelVec *var = variables.get(*i);
+    ierr = var->read(filename, start); CHKERRQ(ierr);
+    i++;
   }
 
   return 0;
@@ -163,12 +164,14 @@ static PetscErrorCode readIceInfoFromFile(const char *filename, int start,
 
 
 static PetscErrorCode doneWithIceInfo(PISMVars &variables) {
-  set<IceModelVec*> vars = variables.get_variables();
+  // Get the names of all the variables allocated earlier:
+  set<string> vars = variables.keys();
 
-  set<IceModelVec*>::iterator j = vars.begin();
-  while (j != vars.end()) {
-    delete (*j);
-    j++;
+  set<string>::iterator i = vars.begin();
+  while (i != vars.end()) {
+    IceModelVec *var = variables.get(*i);
+    delete var;
+    i++;
   }
 
   return 0;
@@ -189,7 +192,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   NCGlobalAttributes global_attrs;
   IceModelVec2S *usurf, *artm, *acab, *shelfbasetemp, *shelfbasemassflux;
 
-  usurf = dynamic_cast<IceModelVec2S*>(variables.get("usurf"));
+  usurf = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
   if (usurf == NULL) { SETERRQ(1, "usurf is not available"); }
 
   artm = dynamic_cast<IceModelVec2S*>(variables.get("artm"));
@@ -417,6 +420,9 @@ int main(int argc, char *argv[]) {
 				ys, ye, dt_years,
                                 mapping); CHKERRQ(ierr);
 
+    bool override_used;
+    ierr = PISMOptionsIsSet("-config_override", "Specifies a config override file name",
+                            override_used); CHKERRQ(ierr);
     if (override_used) {
       ierr = verbPrintf(3, com,
         "  recording config overrides in NetCDF file '%s' ...\n",

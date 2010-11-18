@@ -33,11 +33,16 @@ public:
   PetscErrorCode add(IceModelVec &, string name);
   void remove(string);
   IceModelVec* get(string) const;
-  set<IceModelVec*> get_variables() const;
+  set<string> keys() const;
   PetscErrorCode check_for_nan() const;
 
 protected:
-  mutable map<string, IceModelVec*> variables;
+  mutable map<string, IceModelVec*> variables,
+    variables_short;            //!< stores short names of variables that do
+                                //! not have standard names, allowing looking
+                                //! them up using either and preserving the
+                                //! one-to-one map from keys to pointers
+                                //! (represented by "variables").
 };
 
 #endif // __PISMVars_hh

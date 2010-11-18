@@ -22,17 +22,13 @@ public:
   PetscErrorCode get_var(int varid, Vec g, GridType dims, int t) const;
   PetscErrorCode put_var(int varid, Vec g, GridType dims) const;
 
-  PetscErrorCode regrid_var(int varid, GridType dim_flag, LocalInterpCtx &lic, Vec g,
-			    bool useMaskInterp) const;
-  PetscErrorCode set_MaskInterp(MaskInterp *mi_in);
-
+  PetscErrorCode regrid_var(int varid, GridType dim_flag, LocalInterpCtx &lic, Vec g) const;
 private:
   int compute_block_size(GridType dims, int* count) const;
   PetscErrorCode compute_start_and_count(int varid, int *pism_start, int *pism_count, GridType dims,
 					 size_t* &nc_start, size_t* &nc_count, ptrdiff_t* &imap) const;
   bool check_dimensions() const;
   IceGrid* grid;
-  MaskInterp  *myMaskInterp;
 };
 
 #endif	// __PISMIO

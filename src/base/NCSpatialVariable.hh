@@ -16,7 +16,7 @@ public:
 			       bool write_in_glaciological_units, Vec v);
   virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic,
 				bool critical, bool set_default_value,
-				PetscScalar default_value, MaskInterp *, Vec v);
+				PetscScalar default_value, Vec v);
   virtual PetscErrorCode to_glaciological_units(Vec v);
   bool time_independent;
 protected:

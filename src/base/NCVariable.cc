@@ -212,7 +212,6 @@ PetscErrorCode NCSpatialVariable::write(const char filename[], nc_type nctype,
 PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &lic,
 					 bool critical, bool set_default_value,
 					 PetscScalar default_value,
-					 MaskInterp * interpolation_mask,
 					 Vec v) {
   int varid;
   bool exists;
@@ -265,13 +264,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
       CHKERRQ(ierr);
     }
   } else {			// the variable was found successfully
-    // Check if it is discrete
-    bool use_interpolation_mask = (interpolation_mask != NULL);
-    if (use_interpolation_mask)
-      nc.set_MaskInterp(interpolation_mask);
-
-    ierr = nc.regrid_var(varid, dims, lic, v,
-			 use_interpolation_mask); CHKERRQ(ierr);
+    ierr = nc.regrid_var(varid, dims, lic, v); CHKERRQ(ierr);
 
     // Now we need to get the units string from the file and convert the units,
     // because check_range and report_range expect the data to be in PISM (SI)

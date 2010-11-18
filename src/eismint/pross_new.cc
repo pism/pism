@@ -371,11 +371,11 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
 
   //! \brief Clean up.
 PetscErrorCode deallocate_vars(PISMVars &variables) {
-  set<IceModelVec*> vars = variables.get_variables();
+  set<string> vars = variables.keys();
 
-  set<IceModelVec*>::iterator j = vars.begin();
+  set<string>::iterator j = vars.begin();
   while (j != vars.end())
-    delete *j++;
+    delete variables.get(*j++);
 
   return 0;
 }
@@ -447,7 +447,7 @@ PetscErrorCode set_surface_elevation(PISMVars &vars, const NCConfigVariable &con
   //! \brief Read input data (by regridding).
 PetscErrorCode read_input_data(IceGrid &grid, PISMVars &variables, const NCConfigVariable &config) {
   PetscErrorCode ierr;
-  set<IceModelVec*> vars = variables.get_variables();
+  set<string> vars = variables.keys();
   PISMIO pio(&grid);
   grid_info g;
   string filename;
@@ -468,14 +468,13 @@ PetscErrorCode read_input_data(IceGrid &grid, PISMVars &variables, const NCConfi
   LocalInterpCtx lic(g, NULL, NULL, grid);
 
   // Read in everything except enthalpy, usurf and tauc:
-  set<IceModelVec*>::iterator j = vars.begin();
+  vars.erase("enthalpy");
+  vars.erase("usurf");
+  vars.erase("tauc");
+  set<string>::iterator j = vars.begin();
   while (j != vars.end()) {
-    string name = (*j)->string_attr("name");
-    if ((name != "enthalpy") &&
-        (name != "usurf") &&
-        (name != "tauc")) {
-      ierr = (*j)->regrid(filename.c_str(), lic, true); CHKERRQ(ierr);
-    }
+    IceModelVec *var = variables.get(*j);
+    ierr = var->regrid(filename.c_str(), lic, true); CHKERRQ(ierr);
     j++;
   }
 
@@ -494,7 +493,7 @@ PetscErrorCode read_input_data(IceGrid &grid, PISMVars &variables, const NCConfi
 
 PetscErrorCode write_results(IceGrid &grid, PISMVars &variables, IceModelVec2V &vel_ssa) {
   PetscErrorCode ierr;
-  set<IceModelVec*> vars = variables.get_variables();
+  set<string> vars = variables.keys();
   string filename = "ross_new_output.nc";
   bool flag;
 
@@ -507,9 +506,11 @@ PetscErrorCode write_results(IceGrid &grid, PISMVars &variables, IceModelVec2V &
   ierr = pio.append_time(0.0);
   ierr = pio.close(); CHKERRQ(ierr); 
 
-  set<IceModelVec*>::iterator j = vars.begin();
+  set<string>::iterator j = vars.begin();
   while (j != vars.end()) {
-    ierr = (*j++)->write(filename.c_str()); CHKERRQ(ierr);
+    IceModelVec *var = variables.get(*j);
+    ierr = var->write(filename.c_str()); CHKERRQ(ierr);
+    j++;
   }
   
   ierr = vel_ssa.write(filename.c_str()); CHKERRQ(ierr);

@@ -4,7 +4,6 @@
 PISMIO::PISMIO(IceGrid *my_grid)
   : NCTool(my_grid->com, my_grid->rank) {
   grid = my_grid;
-  myMaskInterp = NULL;
 }
 
 //! Read the first and last values, and the lengths, of the x,y,z,zb dimensions from a NetCDF file.  Read the last t.
@@ -256,7 +255,7 @@ Then we just do the two variable interpolation as before, finding \f$a_{m}\f$ an
 computing \f$F(x,y,z)\f$.
  */
 PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx &lic,
-				  Vec g, bool useMaskInterp) const {
+				  Vec g) const {
   PetscErrorCode ierr;
   const int N = 5, X = 1, Y = 2, Z = 3, ZB = 4; // indices, just for clarity
   const int start_tag = 1; // MPI tag for the start array
@@ -490,30 +489,6 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
 
         // index into the new array and interpolate in x direction
         vec_a[index] = a_m * (1.0 - ii) + a_p * ii;
-        if (useMaskInterp) {
-          if (myMaskInterp == PETSC_NULL) {
-            SETERRQ(3,"PISMIO::myMaskInterp needed, but not initialized correctly");
-          }
-          double val = vec_a[index];
-          if (   (myMaskInterp->number_allowed == 1)
-              || (val <= (double)(myMaskInterp->allowed_levels[0])) ) {
-            val = (double)(myMaskInterp->allowed_levels[0]);
-          } else {
-            int kk;
-            for (kk=1; kk < myMaskInterp->number_allowed; kk++) {
-             const double mid = (  (double)(myMaskInterp->allowed_levels[kk-1])
-                                 + (double)(myMaskInterp->allowed_levels[kk])   ) / 2.0;
-              if (val < mid) {
-                val = (double)(myMaskInterp->allowed_levels[k-1]);
-                break;
-              }
-              kk++;
-            }
-            if (kk >= myMaskInterp->number_allowed) {
-              val = (double)(myMaskInterp->allowed_levels[kk-1]);
-            }
-          }
-        }
         // done with the point at (x,y,z)
       }
     }
@@ -765,14 +740,6 @@ PetscErrorCode PISMIO::open_for_writing(string filename, bool append,
 
   return 0;
 }
-
-
-//! Call this before calling regrid_local_var() or regrid_global_var() with argument useMaskInterp = true.
-PetscErrorCode PISMIO::set_MaskInterp(MaskInterp *mi_in) {
-  myMaskInterp = mi_in;
-  return 0;
-}
-
 
 //! Always returns true on processors other than zero.
 bool PISMIO::check_dimensions() const {

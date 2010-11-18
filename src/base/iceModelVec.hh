@@ -82,8 +82,7 @@ public:
 
   virtual PetscErrorCode  set(PetscScalar c);
  
-  MaskInterp interpolation_mask;
-  bool   use_interpolation_mask, write_in_glaciological_units, time_independent;
+  bool   write_in_glaciological_units, time_independent;
   nc_type output_data_type;
 protected:
 

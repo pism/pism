@@ -326,16 +326,18 @@ PetscErrorCode IceModel::set_output_size(string option,
   result.clear();
 
   // Add all the model-state variables:
-  set<IceModelVec*> vars = variables.get_variables();
-  set<IceModelVec*>::iterator i = vars.begin();
+  set<string> vars = variables.keys();
+
+  set<string>::iterator i = vars.begin();
   while (i != vars.end()) {
+    IceModelVec *var = variables.get(*i);
 
-    string intent = (*i)->string_attr("pism_intent");
-    if ( (intent == "model_state") || (intent == "mapping") ||
-	 (intent == "climate_steady") )
-      result.insert((*i)->string_attr("name"));
-
-    ++i;
+    string intent = var->string_attr("pism_intent");
+    if ((intent == "model_state") || (intent == "mapping") ||
+	(intent == "climate_steady")) {
+      result.insert(*i);
+    }
+    i++;
   }
 
   // add {u,v}bar_ssa if SSA is "on":

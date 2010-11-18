@@ -249,18 +249,17 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
   last_record -= 1;
 
   // Read the model state, mapping and climate_steady variables:
-  set<IceModelVec*> vars = variables.get_variables();
+  set<string> vars = variables.keys();
 
-  set<IceModelVec*>::iterator i = vars.begin();
+  set<string>::iterator i = vars.begin();
   while (i != vars.end()) {
+    IceModelVec *var = variables.get(*i++);
 
-    string intent = (*i)->string_attr("pism_intent");
+    string intent = var->string_attr("pism_intent");
     if ((intent == "model_state") || (intent == "mapping") ||
 	(intent == "climate_steady")) {
-      ierr = (*i)->read(filename, last_record); CHKERRQ(ierr);
+      ierr = var->read(filename, last_record); CHKERRQ(ierr);
     }
-
-    ++i;
   }
 
   ierr = verbPrintf(3,grid.com,"Setting enthalpy from temperature...\n"); CHKERRQ(ierr);
@@ -676,18 +675,17 @@ PetscErrorCode IceModel::write_backup() {
 
   // write the model state (this saves only the fields necessary for restarting
   // and *does not* respect -o_size)
-  set<IceModelVec*> vars = variables.get_variables();
+  set<string> vars = variables.keys();
 
-  set<IceModelVec*>::iterator i = vars.begin();
+  set<string>::iterator i = vars.begin();
   while (i != vars.end()) {
+    IceModelVec *var = variables.get(*i++);
 
-    string intent = (*i)->string_attr("pism_intent");
+    string intent = var->string_attr("pism_intent");
     if ((intent == "model_state") || (intent == "mapping") ||
 	(intent == "climate_steady")) {
-      ierr = (*i)->write(backup_filename.c_str()); CHKERRQ(ierr);
+      ierr = var->write(backup_filename.c_str()); CHKERRQ(ierr);
     }
-
-    ++i;
   }
 
   if (surface != PETSC_NULL) {

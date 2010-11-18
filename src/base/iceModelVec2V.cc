@@ -154,16 +154,13 @@ PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) {
 
 PetscErrorCode IceModelVec2V::regrid(const char filename[], LocalInterpCtx &lic, bool critical) {
   PetscErrorCode ierr;
-  MaskInterp *m = NULL;
 
   Vec tmp;			// a temporary one-component vector,
 				// distributed across processors the same way v is
   ierr = DACreateGlobalVector(component_da, &tmp); CHKERRQ(ierr);
 
-  if (use_interpolation_mask) m = &interpolation_mask;
-
   for (int j = 0; j < dof; ++j) {
-    ierr = vars[j].regrid(filename, lic, critical, false, 0.0, m, tmp); CHKERRQ(ierr);
+    ierr = vars[j].regrid(filename, lic, critical, false, 0.0, tmp); CHKERRQ(ierr);
     ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
   }
 
@@ -181,16 +178,13 @@ PetscErrorCode IceModelVec2V::regrid(const char filename[], LocalInterpCtx &lic,
 
 PetscErrorCode IceModelVec2V::regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value) {
   PetscErrorCode ierr;
-  MaskInterp *m = NULL;
 
   Vec tmp;			// a temporary one-component vector,
 				// distributed across processors the same way v is
   ierr = DACreateGlobalVector(component_da, &tmp); CHKERRQ(ierr);
 
-  if (use_interpolation_mask) m = &interpolation_mask;
-
   for (int j = 0; j < dof; ++j) {
-    ierr = vars[j].regrid(filename, lic, false, true, default_value, m, tmp); CHKERRQ(ierr);
+    ierr = vars[j].regrid(filename, lic, false, true, default_value, tmp); CHKERRQ(ierr);
     ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
   }
 
