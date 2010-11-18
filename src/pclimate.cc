@@ -327,6 +327,9 @@ int main(int argc, char *argv[]) {
     // read the config option database:
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
+    bool override_used;
+    ierr = PISMOptionsIsSet("-config_override", override_used); CHKERRQ(ierr);
+
     // set an un-documented (!) flag to limit time-steps to 1 year.
     config.set_flag("pdd_limit_timestep", true);
 
