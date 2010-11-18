@@ -34,6 +34,8 @@ where E_{i}^{n} is the value at time n and coordinate i."
 parser.add_option("-p", "--pnorm",dest="pnorm",type='float',
                   help="use P norm (default p = 2)",
                   metavar="P",default=PNORM)
+parser.add_option("-s", "--stride",dest="stride",type="int",
+                  help="stride, plot only every stride value",default=1)
 parser.add_option("-t", "--threshold",dest="threshold",
                   help="draws a line horizontal line at THRESHOLD",
                   metavar="THRESHOLD",default=THRESHOLD)
@@ -49,6 +51,8 @@ threshold = options.threshold
 varname = options.varname
 ## Assign norm
 p = options.pnorm
+## Assign stride value
+stride = options.stride
 
 if len(args) == 1:
     ## Retrieve command line argument (name of input file)
@@ -83,25 +87,25 @@ def open_ncfile(infile):
 def getRateOfChange(t,X,p,varname):
 
     # differenetiate time along time axis
-    dt = np.diff(t[:],axis=0)
+    dt = np.diff(t[::stride],axis=0)
 
     Xdim = X.ndim
     Xunits = X.units
     
     if Xdim == 1:
-        X = X[:]
+        X = X[::stride]
         dXp = np.diff(X)
-        dXpdt = dX/dt
+        dXpdt = dXp/dt
     elif Xdim == 3:
         if 'mask' in nc.variables.keys():
-            mask     = np.array(nc.variables['mask'][:]) # (t,y,x)
+            mask     = np.array(nc.variables['mask'][::stride,:,:]) # (t,y,x)
             k        = np.nonzero((mask==1) ^ (mask==2) ^ (mask==3))
             mask2    = np.ones_like(mask)
             mask2[k] = 0
             # use masked values (i.e. ignore ocean and ice-free land)
-            X = np.ma.array(data=X[:],mask=mask2)
+            X = np.ma.array(data=X[::stride,:,:],mask=mask2)
         else:
-            X = np.array(X[:])
+            X = np.array(X[::stride,:,:])
 
         dX = np.diff(X,axis=0)
         nt,ny,nx = dX.shape
@@ -130,11 +134,10 @@ if __name__ == "__main__":
     ## Calculate rate of change from time t, variable var, norm p and variable name varname 
     dVpdt = getRateOfChange(t,var,p,varname)
 
-
     ## Make plot with log-scale y-axis
     plt.figure()
     plt.hold(True)
-    plt.semilogy(t[1:],dVpdt, 'b', lw = 2)
+    plt.semilogy(t[1::stride],dVpdt, 'b', lw = 2)
     plt.plot([t[1:][0], t[1:][-1]],[threshold, threshold], 'r',lw = 1)
     plt.xlabel(('time [%s]' % t.units))
     plt.ylabel(('d %s / dt [%s/a]' % (varname,var.units)))
