@@ -692,10 +692,35 @@ PetscErrorCode IceModelVec2Stag::norm_all(NormType n, PetscReal &result0, PetscR
 
   ierr = VecStrideNormAll(v, n, norm_result); CHKERRQ(ierr);
 
-  result0 = norm_result[0];
-  result1 = norm_result[1];
-  // FIXME: do we need to call Allreduce? I don't think so, but this would mean
-  // that VecStrideNormAll and VecNorm are different in this respect...
+  if (localp) {
+    // needs a reduce operation; use PetscGlobalMax if NORM_INFINITY,
+    //   otherwise PetscGlobalSum; carefully in NORM_2 case
+    if (n == NORM_1_AND_2) {
+      SETERRQ1(1, 
+         "IceModelVec2Stag::norm(...): NORM_1_AND_2 not implemented (called as %s.norm(...))\n",
+         name.c_str());
+    } else if (n == NORM_1) {
+      ierr = PetscGlobalSum(&norm_result[0], &result0, grid->com); CHKERRQ(ierr);
+      ierr = PetscGlobalSum(&norm_result[1], &result1, grid->com); CHKERRQ(ierr);
+    } else if (n == NORM_2) {
+      norm_result[0] = PetscSqr(norm_result[0]);  // undo sqrt in VecNorm before sum
+      ierr = PetscGlobalSum(&norm_result[0], &result0, grid->com); CHKERRQ(ierr);
+      result0 = sqrt(result0);
+
+      norm_result[1] = PetscSqr(norm_result[1]);  // undo sqrt in VecNorm before sum
+      ierr = PetscGlobalSum(&norm_result[1], &result1, grid->com); CHKERRQ(ierr);
+      result1 = sqrt(result1);
+    } else if (n == NORM_INFINITY) {
+      ierr = PetscGlobalMax(&norm_result[0], &result0, grid->com); CHKERRQ(ierr);
+      ierr = PetscGlobalMax(&norm_result[1], &result1, grid->com); CHKERRQ(ierr);
+    } else {
+      SETERRQ1(2, "IceModelVec::norm(...): unknown NormType (called as %s.norm(...))\n",
+         name.c_str());
+    }
+  } else {
+    result0 = norm_result[0];
+    result1 = norm_result[1];
+  }
 
   delete [] norm_result;
 

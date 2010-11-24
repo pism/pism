@@ -18,13 +18,26 @@
 
 #include "SSAFD.hh"
 
+SSAFD::SSAFD(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
+             const NCConfigVariable &c)
+  : ShallowStressBalance(g, b, i, e, c)
+{
+  mask = NULL;
+  thickness = NULL;
+  tauc = NULL;
+  surface = NULL;
+  bed = NULL;
+  enthalpy = NULL;
+
+  allocate();
+}
+
+
 //! \brief Initialize the SSA solver.
 PetscErrorCode SSAFD::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
-
-  ierr = velocity.set(0.0); CHKERRQ(ierr);
 
   mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(1, "mask is not available");
@@ -44,7 +57,14 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
   enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
   if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
 
-  ierr = allocate_internals(); CHKERRQ(ierr); 
+  ierr = velocity.set(0.0); CHKERRQ(ierr); // default initial guess
+
+  return 0;
+}
+
+//! \brief Allocate objects specific to the SSAFD object.
+PetscErrorCode SSAFD::allocate() {
+  PetscErrorCode ierr;
 
   const PetscScalar power = 1.0 / ice.exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
@@ -88,15 +108,6 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
   ierr = velocity.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   velocity.write_in_glaciological_units = true;
 
-  ierr = velocity.set(0.0); CHKERRQ(ierr); // default initial guess
-
-  return 0;
-}
-
-//! \brief Allocate objects specific to the SSAFD object.
-PetscErrorCode SSAFD::allocate_internals() {
-  PetscErrorCode ierr;
-
   // mimic IceGrid::createDA() with TRANSPOSE :
   PetscInt dof=2, stencil_width=1;
   ierr = DACreate2d(grid.com, DA_XYPERIODIC, DA_STENCIL_BOX,
@@ -122,14 +133,28 @@ PetscErrorCode SSAFD::allocate_internals() {
   return 0;
 }
 
-PetscErrorCode SSAFD::deallocate_internals() {
+PetscErrorCode SSAFD::deallocate() {
   PetscErrorCode ierr;
 
-  ierr = KSPDestroy(SSAKSP); CHKERRQ(ierr);
-  ierr = MatDestroy(SSAStiffnessMatrix); CHKERRQ(ierr);
-  ierr = VecDestroy(SSAX); CHKERRQ(ierr);
-  ierr = VecDestroy(SSARHS); CHKERRQ(ierr);
-  ierr = DADestroy(SSADA);CHKERRQ(ierr);
+  if (SSAKSP != PETSC_NULL) {
+    ierr = KSPDestroy(SSAKSP); CHKERRQ(ierr);
+  }
+
+  if (SSAStiffnessMatrix != PETSC_NULL) {
+    ierr = MatDestroy(SSAStiffnessMatrix); CHKERRQ(ierr);
+  }
+
+  if (SSAX != PETSC_NULL) {
+    ierr = VecDestroy(SSAX); CHKERRQ(ierr);
+  }
+
+  if (SSARHS != PETSC_NULL) {
+    ierr = VecDestroy(SSARHS); CHKERRQ(ierr);
+  }
+
+  if (SSADA != PETSC_NULL) {
+    ierr = DADestroy(SSADA);CHKERRQ(ierr);
+  }
   
   return 0;
 }
@@ -309,7 +334,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (vel_bc && (bc_locations->value(i,j) == MASK_SHEET)) { // FIXME: change to MASK_BC
+      if (vel_bc && (bc_locations->value(i,j) == MASK_SHEET)) { // FIXME: replace with MASK_BC
         rhs_uv[i][j].u = scaling * (*vel_bc)(i,j).u;
         rhs_uv[i][j].v = scaling * (*vel_bc)(i,j).v;
       } else {
@@ -432,7 +457,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PismMask mask_value = mask->value(i,j);
-      if (mask_value == MASK_SHEET) {
+      if (mask_value == MASK_SHEET) { // FIXME: replace with MASK_BC
         // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
         //   this is where boundary value to SSA is set
         MatStencil  row, col;
@@ -665,10 +690,10 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
 
         const PetscScalar H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
 
-        if (H < strength_extension.min_thickness_for_extension()) {
+        if (H < strength_extension.get_min_thickness()) {
           // Extends strength of SSA (i.e. nuH coeff) into the ice free region.
           //  Does not add or subtract ice mass.
-          result(i,j,o) = strength_extension.notional_strength();
+          result(i,j,o) = strength_extension.get_notional_strength();
           continue;
         }
 
@@ -715,6 +740,23 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
 }
 
 //! \brief Compute the driving stress.
+/*!
+Computes the driving stress at the base of the ice:
+   \f[ \tau_d = - \rho g H \nabla h \f]
+
+If configuration parameter \c surface_gradient_method = \c eta then the surface gradient
+\f$\nabla h\f$ is computed by the gradient of the
+transformed variable  \f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$).
+Because this quantity is more regular at ice sheet margins, we get a 
+better surface gradient.  When the thickness at a grid point is very small
+(below \c minThickEtaTransform in the procedure), the formula is slightly 
+modified to give a lower driving stress.
+
+In floating parts the surface gradient is always computed by the \c mahaffy formula.
+ 
+Saves it in user supplied Vecs \c vtaudx and \c vtaudy, which are treated 
+as global.  (I.e. we do not communicate ghosts.)
+ */
 PetscErrorCode SSAFD::compute_driving_stress(IceModelVec2V &result) {
   PetscErrorCode ierr;
 
@@ -932,7 +974,7 @@ PetscErrorCode SSAFD::solve() {
     } else {
        SETERRQ1(1, 
          "Effective viscosity not converged after %d iterations; epsilon=0.0.\n"
-         "  Stopping.                \n", 
+         "  Stopping.\n", 
          ssaMaxIterations);
     }
 

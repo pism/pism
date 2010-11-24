@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Ed Bueler and Daniella DellaGiustina
+// Copyright (C) 2010 Ed Bueler, Daniella DellaGiustina and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,13 +21,115 @@ static char help[] =
   "from data.\n";
 
 #include <petsc.h>
-#include "base/grid.hh"
-#include "base/iceModel.hh"
+#include "grid.hh"
+#include "iceModel.hh"
 
-#include "coupler/PCFactory.hh"
-#include "coupler/PISMAtmosphere.hh"
-#include "coupler/PISMSurface.hh"
-#include "coupler/PISMOcean.hh"
+#include "PCFactory.hh"
+#include "PISMAtmosphere.hh"
+#include "PISMSurface.hh"
+#include "PISMOcean.hh"
+#include "PISMStressBalance.hh"
+#include "SIAFD.hh"
+#include "SSAFD.hh"
+
+//! \brief A version of the SIA stress balance with tweaks for outlet glacier
+//! simulations.
+class SIAFD_Regional : public SIAFD
+{
+public:
+  SIAFD_Regional(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
+    : SIAFD(g, i, e, c) {}
+  virtual ~SIAFD_Regional() {}
+  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
+protected:
+  IceModelVec2S *no_model_mask;    
+};
+
+PetscErrorCode SIAFD_Regional::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  ierr = SIAFD::init(vars); CHKERRQ(ierr);
+
+  no_model_mask = dynamic_cast<IceModelVec2S*>(vars.get("no_model_mask"));
+  if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
+
+  return 0;
+}
+
+PetscErrorCode SIAFD_Regional::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+  PetscErrorCode ierr;
+
+  ierr = SIAFD::compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
+
+  ierr = h_x.begin_access(); CHKERRQ(ierr);
+  ierr = h_y.begin_access(); CHKERRQ(ierr);
+  ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
+  PetscInt GHOSTS = 1;
+  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
+      if ( ((*no_model_mask)(i,j) > 0.5) && ((*no_model_mask)(i+1,j) > 0.5) ) {
+        h_x(i,j,0) = 0.0;
+        h_y(i,j,0) = 0.0;
+      }
+      if ( ((*no_model_mask)(i,j) > 0.5) && ((*no_model_mask)(i,j+1) > 0.5) ) {
+        h_x(i,j,1) = 0.0;
+        h_y(i,j,1) = 0.0;
+      }
+    }
+  }
+  ierr = no_model_mask->end_access(); CHKERRQ(ierr);
+  ierr = h_y.end_access(); CHKERRQ(ierr);
+  ierr = h_x.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief A version of the SSA stress balance with tweaks for outlet glacier
+//! simulations.
+class SSAFD_Regional : public SSAFD
+{
+public:
+  SSAFD_Regional(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
+                 const NCConfigVariable &c)
+    : SSAFD(g, b, i, e, c) {}
+  virtual ~SSAFD_Regional() {}
+  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
+protected:
+  IceModelVec2S *no_model_mask;    
+};
+
+PetscErrorCode SSAFD_Regional::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+  ierr = SSAFD::init(vars); CHKERRQ(ierr);
+
+  no_model_mask = dynamic_cast<IceModelVec2S*>(vars.get("no_model_mask"));
+  if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
+  
+  return 0;
+}
+
+PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
+  PetscErrorCode ierr;
+
+  ierr = SSAFD::compute_driving_stress(result); CHKERRQ(ierr);
+
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      if ((*no_model_mask)(i,j) > 0.5) {
+        result(i,j).u = 0.0;
+        result(i,j).v = 0.0;
+      }
+    }
+  }
+  ierr = no_model_mask->end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}
 
 class IceRegionalModel : public IceModel {
 public:
@@ -37,15 +139,10 @@ public:
 protected:
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode initFromFile(const char *filename);
-  virtual PetscErrorCode write_extra_fields(const char* filename);
   virtual PetscErrorCode createVecs();
-  virtual PetscErrorCode computeDrivingStress(IceModelVec2S &vtaudx, IceModelVec2S &vtaudy);
-  virtual PetscErrorCode surfaceGradientSIA();
-
 private:
-    IceModelVec2S   no_model_mask;    
+  IceModelVec2S   no_model_mask;    
 };
-
 
 PetscErrorCode IceRegionalModel::createVecs() {
   PetscErrorCode ierr;
@@ -54,7 +151,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
 
   // stencil width of 2 needed for surfaceGradientSIA() action
   ierr = no_model_mask.create(grid, "no_model_mask", true, 2); CHKERRQ(ierr);
-  ierr = no_model_mask.set_attrs("internal",
+  ierr = no_model_mask.set_attrs("model_state", // ensures that it gets written at the end of the run
                             "mask specifying whether to model the ice sheet (=0), or hold to boundary values already set by input file [or externally in future] (=1)",
                             "", ""); CHKERRQ(ierr); // no units and no standard name
   ierr = no_model_mask.set(0.0); CHKERRQ(ierr);    // set to no such strip of boundary values
@@ -147,79 +244,6 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
 }
-
-
-PetscErrorCode IceRegionalModel::write_extra_fields(const char* filename) {
-  PetscErrorCode ierr;
-  ierr = IceModel::write_extra_fields(filename); CHKERRQ(ierr);
-
-  ierr = no_model_mask.write(filename); CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscErrorCode IceRegionalModel::computeDrivingStress(
-                    IceModelVec2S &vtaudx, IceModelVec2S &vtaudy) {
-  PetscErrorCode ierr;
-
-  // note that base class does not use GHOSTS>0;  why not?
-  ierr = IceModel::computeDrivingStress(vtaudx, vtaudy); CHKERRQ(ierr);
-
-  ierr = vtaudx.begin_access(); CHKERRQ(ierr);
-  ierr = vtaudy.begin_access(); CHKERRQ(ierr);
-  ierr = no_model_mask.begin_access();  CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (no_model_mask(i,j) > 0.5) {
-        vtaudx(i,j) = 0.0;
-        vtaudy(i,j) = 0.0;
-      }
-    }
-  }
-  ierr = no_model_mask.end_access(); CHKERRQ(ierr);
-  ierr = vtaudx.end_access(); CHKERRQ(ierr);
-  ierr = vtaudy.end_access(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
-PetscErrorCode IceRegionalModel::surfaceGradientSIA() {
-  PetscErrorCode  ierr;
-
-  ierr = IceModel::surfaceGradientSIA(); CHKERRQ(ierr);
-
-  PetscScalar **h_x[2], **h_y[2];
-  ierr = vWork2d[0].get_array(h_x[0]); CHKERRQ(ierr);
-  ierr = vWork2d[1].get_array(h_x[1]); CHKERRQ(ierr);
-  ierr = vWork2d[2].get_array(h_y[0]); CHKERRQ(ierr);
-  ierr = vWork2d[3].get_array(h_y[1]); CHKERRQ(ierr);
-  ierr = no_model_mask.begin_access();  CHKERRQ(ierr);
-
-  PetscInt  GHOSTS = 1;
-  for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
-    for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-      if ( (no_model_mask(i,j) > 0.5) && (no_model_mask(i+1,j) > 0.5) ) {
-        h_x[0][i][j] = 0.0;
-        h_y[0][i][j] = 0.0;
-      }
-      if ( (no_model_mask(i,j) > 0.5) && (no_model_mask(i,j+1) > 0.5) ) {
-        h_x[1][i][j] = 0.0;
-        h_y[1][i][j] = 0.0;
-      }
-    }
-  }
-
-  ierr = no_model_mask.end_access();  CHKERRQ(ierr);
-  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[1].end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[2].end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[3].end_access(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;

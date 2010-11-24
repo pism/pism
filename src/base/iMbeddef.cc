@@ -49,17 +49,12 @@ PetscErrorCode IceModel::bed_def_setup() {
     return 0;
   }
 
-  if (model == "lc") {
 #if (PISM_HAVE_FFTW==1)
+  if (model == "lc") {
     beddef = new PBLingleClark(grid, config);
     return 0;
-#else
-    ierr = PetscPrintf(grid.com,
-		       "PISM ERROR: PISM was compiled without FFTW;\n"
-		       "  the Lingle-Clark bed deformation model (lc) is not available.\n"); CHKERRQ(ierr);
-    PetscEnd();
-#endif
   }
+#endif
 
   return 0;
 }
@@ -83,10 +78,14 @@ PetscErrorCode IceModel::bed_def_step(bool &bed_changed) {
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
     last_bed_def_update = grid.year;
+    // Mark bed topography as "modified":
+    vbed.inc_state_counter();
+    // SIAFD::update() uses this to decide if we need to re-compute the
+    // smoothed bed.
     bed_changed = true;
-  } else {
+  } else
     bed_changed = false;
-  }
+
   return 0;
 }
 

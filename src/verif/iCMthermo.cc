@@ -35,9 +35,12 @@ PetscErrorCode IceCompModel::temperatureStep(
   PetscErrorCode  ierr;
 
   if ((testname == 'F') || (testname == 'G')) {
-    ierr = Sigma3.add(1.0, SigmaComp3); CHKERRQ(ierr);	// Sigma = Sigma + Sigma_c
+    IceModelVec3 *Sigma3;
+    ierr = stress_balance->get_volumetric_strain_heating(Sigma3); CHKERRQ(ierr);
+
+    ierr = Sigma3->add(1.0, SigmaComp3); CHKERRQ(ierr);	// Sigma = Sigma + Sigma_c
     ierr = IceModel::temperatureStep(vertSacrCount,bulgeCount); CHKERRQ(ierr);
-    ierr = Sigma3.add(-1.0, SigmaComp3); CHKERRQ(ierr); // Sigma = Sigma - Sigma_c
+    ierr = Sigma3->add(-1.0, SigmaComp3); CHKERRQ(ierr); // Sigma = Sigma - Sigma_c
   } else {
     ierr = IceModel::temperatureStep(vertSacrCount,bulgeCount); CHKERRQ(ierr);
   }
@@ -74,7 +77,7 @@ PetscErrorCode IceCompModel::initTestFG() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy;
-      mapcoords(i,j,xx,yy,r);
+      grid.mapcoords(i,j,xx,yy,r);
       Ts[i][j] = Tmin + ST * r;
       if (r > LforFG - 1.0) { // if (essentially) outside of sheet
         H[i][j] = 0.0;
@@ -141,7 +144,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy;
-      mapcoords(i,j,xx,yy,r);
+      grid.mapcoords(i,j,xx,yy,r);
       if (r > LforFG - 1.0) {  // outside of sheet
         accum[i][j] = -ablationRateOutside/secpera;
         ierr = SigmaComp3.setColumn(i,j,0.0); CHKERRQ(ierr);
@@ -177,6 +180,10 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
   PetscScalar     **H, **accum;
   PetscScalar     Ts, *Uradial;
 
+  IceModelVec3 *u3, *v3, *w3, *Sigma3;
+  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  ierr = stress_balance->get_volumetric_strain_heating(Sigma3); CHKERRQ(ierr);
+
   Uradial = new PetscScalar[Mz];
 
   PetscScalar *T, *u, *v, *w, *Sigma, *SigmaC;
@@ -191,25 +198,26 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
   ierr = acab.get_array(accum); CHKERRQ(ierr);
   
   ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = w3.begin_access(); CHKERRQ(ierr);
-  ierr = Sigma3.begin_access(); CHKERRQ(ierr);
+
+  ierr = u3->begin_access(); CHKERRQ(ierr);
+  ierr = v3->begin_access(); CHKERRQ(ierr);
+  ierr = w3->begin_access(); CHKERRQ(ierr);
+  ierr = Sigma3->begin_access(); CHKERRQ(ierr);
   ierr = SigmaComp3.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy;
-      mapcoords(i,j,xx,yy,r);
+      grid.mapcoords(i,j,xx,yy,r);
       if (r > LforFG - 1.0) {  // outside of sheet
         accum[i][j] = -ablationRateOutside/secpera;
         H[i][j] = 0.0;
         Ts = Tmin + ST * r;
         ierr = T3.setColumn(i,j,Ts); CHKERRQ(ierr);
-        ierr = u3.setColumn(i,j,0.0); CHKERRQ(ierr);
-        ierr = v3.setColumn(i,j,0.0); CHKERRQ(ierr);
-        ierr = w3.setColumn(i,j,0.0); CHKERRQ(ierr);
-        ierr = Sigma3.setColumn(i,j,0.0); CHKERRQ(ierr);
+        ierr = u3->setColumn(i,j,0.0); CHKERRQ(ierr);
+        ierr = v3->setColumn(i,j,0.0); CHKERRQ(ierr);
+        ierr = w3->setColumn(i,j,0.0); CHKERRQ(ierr);
+        ierr = Sigma3->setColumn(i,j,0.0); CHKERRQ(ierr);
         ierr = SigmaComp3.setColumn(i,j,0.0); CHKERRQ(ierr);
       } else {  // inside the sheet
         r = PetscMax(r,1.0); // avoid singularity at origin
@@ -227,20 +235,20 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
           SigmaC[k] = SigmaC[k] * ice->rho * ice->c_p; // scale SigmaC to J/(s m^3)
         }
         ierr = T3.setInternalColumn(i,j,T); CHKERRQ(ierr);
-        ierr = u3.setInternalColumn(i,j,u); CHKERRQ(ierr);
-        ierr = v3.setInternalColumn(i,j,v); CHKERRQ(ierr);
-        ierr = w3.setInternalColumn(i,j,w); CHKERRQ(ierr);
-        ierr = Sigma3.setInternalColumn(i,j,Sigma); CHKERRQ(ierr);
+        ierr = u3->setInternalColumn(i,j,u); CHKERRQ(ierr);
+        ierr = v3->setInternalColumn(i,j,v); CHKERRQ(ierr);
+        ierr = w3->setInternalColumn(i,j,w); CHKERRQ(ierr);
+        ierr = Sigma3->setInternalColumn(i,j,Sigma); CHKERRQ(ierr);
         ierr = SigmaComp3.setInternalColumn(i,j,SigmaC); CHKERRQ(ierr);
       }      
     }
   }
 
   ierr = T3.end_access(); CHKERRQ(ierr);
-  ierr = u3.end_access(); CHKERRQ(ierr);
-  ierr = v3.end_access(); CHKERRQ(ierr);
-  ierr = w3.end_access(); CHKERRQ(ierr);
-  ierr = Sigma3.end_access(); CHKERRQ(ierr);
+  ierr = u3->end_access(); CHKERRQ(ierr);
+  ierr = v3->end_access(); CHKERRQ(ierr);
+  ierr = w3->end_access(); CHKERRQ(ierr);
+  ierr = Sigma3->end_access(); CHKERRQ(ierr);
   ierr = SigmaComp3.end_access(); CHKERRQ(ierr);
   
   ierr = vH.end_access(); CHKERRQ(ierr);
@@ -256,12 +264,12 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
 
   ierr = T3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = u3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = v3.beginGhostComm(); CHKERRQ(ierr);
+  ierr = u3->beginGhostComm(); CHKERRQ(ierr);
+  ierr = v3->beginGhostComm(); CHKERRQ(ierr);
 
   ierr = T3.endGhostComm(); CHKERRQ(ierr);
-  ierr = u3.endGhostComm(); CHKERRQ(ierr);
-  ierr = v3.endGhostComm(); CHKERRQ(ierr);
+  ierr = u3->endGhostComm(); CHKERRQ(ierr);
+  ierr = v3->endGhostComm(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -288,7 +296,7 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar r,xx,yy;
-      mapcoords(i,j,xx,yy,r);
+      grid.mapcoords(i,j,xx,yy,r);
       ierr = T3.getInternalColumn(i,j,&T); CHKERRQ(ierr);
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
                                                 // and not at central singularity
@@ -410,7 +418,7 @@ PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy;
-      mapcoords(i,j,xx,yy,r);
+      grid.mapcoords(i,j,xx,yy,r);
       switch (testname) {
         case 'F':
           if (r > LforFG - 1.0) {  // outside of sheet
@@ -477,13 +485,15 @@ PetscErrorCode IceCompModel::computeSigmaErrors(
   dummy3 = new PetscScalar[Mz];  dummy4 = new PetscScalar[Mz];
 
   PetscScalar *Sig;
+  IceModelVec3 *Sigma3;
+  ierr = stress_balance->get_volumetric_strain_heating(Sigma3); CHKERRQ(ierr);
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = Sigma3.begin_access(); CHKERRQ(ierr);
+  ierr = Sigma3->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar r,xx,yy;
-      mapcoords(i,j,xx,yy,r);
+      grid.mapcoords(i,j,xx,yy,r);
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
                                                 // and not at central singularity
         switch (testname) {
@@ -501,7 +511,7 @@ PetscErrorCode IceCompModel::computeSigmaErrors(
         for (PetscInt k = 0; k < Mz; k++)
           Sigex[k] = Sigex[k] * ice->rho * ice->c_p; // scale exact Sigma to J/(s m^3)
         const PetscInt ks = grid.kBelowHeight(H[i][j]);
-        ierr = Sigma3.getInternalColumn(i,j,&Sig); CHKERRQ(ierr);
+        ierr = Sigma3->getInternalColumn(i,j,&Sig); CHKERRQ(ierr);
         for (PetscInt k = 0; k < ks; k++) {  // only eval error if below num surface
           const PetscScalar Sigerr = PetscAbs(Sig[k] - Sigex[k]);
           maxSigerr = PetscMax(maxSigerr,Sigerr);
@@ -512,7 +522,7 @@ PetscErrorCode IceCompModel::computeSigmaErrors(
     }
   }
   ierr =     vH.end_access(); CHKERRQ(ierr);
-  ierr = Sigma3.end_access(); CHKERRQ(ierr);
+  ierr = Sigma3->end_access(); CHKERRQ(ierr);
 
   delete [] Sigex;
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
@@ -534,14 +544,17 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(
   PetscScalar    maxUerr = 0.0, maxWerr = 0.0, avUerr = 0.0, avWerr = 0.0;
   PetscScalar    **H;
 
+  IceModelVec3 *u3, *v3, *w3;
+  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = w3.begin_access(); CHKERRQ(ierr);
+  ierr = u3->begin_access(); CHKERRQ(ierr);
+  ierr = v3->begin_access(); CHKERRQ(ierr);
+  ierr = w3->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar r,xx,yy;
-      mapcoords(i,j,xx,yy,r);
+      grid.mapcoords(i,j,xx,yy,r);
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
                                                 // and not at central singularity
         PetscScalar radialUex,wex;
@@ -561,20 +574,20 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(
         const PetscScalar vex = (yy/r) * radialUex;
         // note that because getValZ does linear interpolation and H[i][j] is not exactly at
         // a grid point, this causes nonzero errors even with option -eo
-        const PetscScalar Uerr = sqrt(PetscSqr(u3.getValZ(i,j,H[i][j]) - uex)
-                                      + PetscSqr(v3.getValZ(i,j,H[i][j]) - vex));
+        const PetscScalar Uerr = sqrt(PetscSqr(u3->getValZ(i,j,H[i][j]) - uex)
+                                      + PetscSqr(v3->getValZ(i,j,H[i][j]) - vex));
         maxUerr = PetscMax(maxUerr,Uerr);
         avUerr += Uerr;
-        const PetscScalar Werr = PetscAbs(w3.getValZ(i,j,H[i][j]) - wex);
+        const PetscScalar Werr = PetscAbs(w3->getValZ(i,j,H[i][j]) - wex);
         maxWerr = PetscMax(maxWerr,Werr);
         avWerr += Werr;
       }
     }
   }
   ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = u3.end_access(); CHKERRQ(ierr);
-  ierr = v3.end_access(); CHKERRQ(ierr);
-  ierr = w3.end_access(); CHKERRQ(ierr);
+  ierr = u3->end_access(); CHKERRQ(ierr);
+  ierr = v3->end_access(); CHKERRQ(ierr);
+  ierr = w3->end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMax(&maxUerr, &gmaxUerr, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&maxWerr, &gmaxWerr, grid.com); CHKERRQ(ierr);

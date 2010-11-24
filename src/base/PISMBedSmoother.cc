@@ -27,6 +27,13 @@ PISMBedSmoother::PISMBedSmoother(
     PetscPrintf(grid.com, "PISMBedSmoother constructor: allocate() failed\n");
     PetscEnd();
   }
+
+  if (config.get("bed_smoother_range") > 0.0) {
+    verbPrintf(2, grid.com, 
+               "* Initializing bed smoother object with %.3f km half-width ...\n",
+               config.get("bed_smoother_range") / 1000.0);
+  }
+
 }
 
 

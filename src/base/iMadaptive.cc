@@ -36,19 +36,23 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   PetscScalar **H, *u, *v, *w;
   PetscScalar locCFLmaxdt = config.get("maximum_time_step_years") * secpera;
 
+  IceModelVec3 *u3, *v3, *w3;
+
+  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = w3.begin_access(); CHKERRQ(ierr);
+  ierr = u3->begin_access(); CHKERRQ(ierr);
+  ierr = v3->begin_access(); CHKERRQ(ierr);
+  ierr = w3->begin_access(); CHKERRQ(ierr);
 
   // update global max of abs of velocities for CFL; only velocities under surface
   PetscReal   maxu=0.0, maxv=0.0, maxw=0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscInt      ks = grid.kBelowHeight(H[i][j]);
-      ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
-      ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
-      ierr = w3.getInternalColumn(i,j,&w); CHKERRQ(ierr);
+      ierr = u3->getInternalColumn(i,j,&u); CHKERRQ(ierr);
+      ierr = v3->getInternalColumn(i,j,&v); CHKERRQ(ierr);
+      ierr = w3->getInternalColumn(i,j,&w); CHKERRQ(ierr);
       for (PetscInt k=0; k<ks; ++k) {
         const PetscScalar absu = PetscAbs(u[k]),
                           absv = PetscAbs(v[k]);
@@ -63,9 +67,9 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
     }
   }
 
-  ierr = u3.end_access(); CHKERRQ(ierr);
-  ierr = v3.end_access(); CHKERRQ(ierr);
-  ierr = w3.end_access(); CHKERRQ(ierr);
+  ierr = u3->end_access(); CHKERRQ(ierr);
+  ierr = v3->end_access(); CHKERRQ(ierr);
+  ierr = w3->end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMax(&maxu, &gmaxu, grid.com); CHKERRQ(ierr);
@@ -87,13 +91,16 @@ sliding case we have a CFL condition.
  */
 PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   PetscErrorCode ierr;
-  PISMVector2 **v_basal;
+  PISMVector2 **vel;
   PetscScalar locCFLmaxdt2D = config.get("maximum_time_step_years") * secpera;
 
   bool do_ocean_kill = config.get_flag("ocean_kill"),
     floating_ice_killed = config.get_flag("floating_ice_killed");
 
-  ierr = vel_basal.get_array(v_basal); CHKERRQ(ierr);
+  IceModelVec2V *vel_advective;
+  ierr = stress_balance->get_advective_2d_velocity(vel_advective); CHKERRQ(ierr); 
+
+  ierr = vel_advective->get_array(vel); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -102,13 +109,13 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
       const bool ignorableOcean = ( do_ocean_kill && (vMask.value(i,j) == MASK_OCEAN_AT_TIME_0) )
 	|| ( floating_ice_killed && vMask.is_floating(i,j) );
       if (!ignorableOcean) {
-        PetscScalar denom = PetscAbs(v_basal[i][j].u)/grid.dx + PetscAbs(v_basal[i][j].v)/grid.dy;
+        PetscScalar denom = PetscAbs(vel[i][j].u)/grid.dx + PetscAbs(vel[i][j].v)/grid.dy;
         denom += (0.01/secpera)/(grid.dx + grid.dy);  // make sure it's pos.
         locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);
       }
     }
   }
-  ierr = vel_basal.end_access(); CHKERRQ(ierr);
+  ierr = vel_advective->end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
   ierr = PetscGlobalMin(&locCFLmaxdt2D, &CFLmaxdt2D, grid.com); CHKERRQ(ierr);
@@ -117,14 +124,13 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
 
 
 //! Compute the maximum time step allowed by the diffusive SIA.
-/*!
-Note velocitySIAStaggered() must be called before this to set \c gDmax.  Note
-adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so dt <= adapt_ratio * dx^2/maxD
-(if dx=dy)
+/*! Note adapt_ratio * 2 is multiplied by dx^2/(2*maxD) so dt <= adapt_ratio *
+dx^2/maxD (if dx=dy)
 
 Reference: [\ref MortonMayers] pp 62--63.
  */
 PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
+  PetscErrorCode ierr;
 
   bool do_skip = config.get_flag("do_skip");
   
@@ -133,6 +139,9 @@ PetscErrorCode IceModel::adaptTimeStepDiffusivity() {
   const PetscInt skip_max = static_cast<PetscInt>(config.get("skip_max"));
 
   const PetscScalar DEFAULT_ADDED_TO_GDMAX_ADAPT = 1.0e-2;
+
+  ierr = stress_balance->get_max_diffusivity(gDmax); CHKERRQ(ierr); 
+
   const PetscScalar  
           gridfactor = 1.0/(grid.dx*grid.dx) + 1.0/(grid.dy*grid.dy);
   dt_from_diffus = adaptTimeStepRatio
@@ -179,27 +188,27 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
     bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
 
     adaptReasonFlag = 'm';
-    if (doAdaptTimeStep == PETSC_TRUE) {
-      if ((do_temp == PETSC_TRUE) && (doTemperatureCFL == PETSC_TRUE)) {
-        // CFLmaxdt is set by computeMax3DVelocities() in call to velocity() iMvelocity.cc
-        dt_from_cfl = CFLmaxdt;
-        if (dt_from_cfl < dt) {
-          dt = dt_from_cfl;
-          adaptReasonFlag = 'c';
-        }
-      }
-      if (do_mass_conserve && use_ssa_velocity) {
-        // CFLmaxdt2D is set by broadcastSSAVelocity()
-        if (CFLmaxdt2D < dt) {
-          dt = CFLmaxdt2D;
-          adaptReasonFlag = 'u';
-        }
-      }
-      if (do_mass_conserve && (computeSIAVelocities == PETSC_TRUE)) {
-        // note: if do_skip then skipCountDown = floor(dt_from_cfl/dt_from_diffus)
-        ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
+
+    if ((do_temp == PETSC_TRUE) && (doTemperatureCFL == PETSC_TRUE)) {
+      // CFLmaxdt is set by computeMax3DVelocities() in call to velocity() iMvelocity.cc
+      dt_from_cfl = CFLmaxdt;
+      if (dt_from_cfl < dt) {
+        dt = dt_from_cfl;
+        adaptReasonFlag = 'c';
       }
     }
+    if (do_mass_conserve && use_ssa_velocity) {
+      // CFLmaxdt2D is set by broadcastSSAVelocity()
+      if (CFLmaxdt2D < dt) {
+        dt = CFLmaxdt2D;
+        adaptReasonFlag = 'u';
+      }
+    }
+    if (do_mass_conserve) {
+      // note: if do_skip then skipCountDown = floor(dt_from_cfl/dt_from_diffus)
+      ierr = adaptTimeStepDiffusivity(); CHKERRQ(ierr); // might set adaptReasonFlag = 'd'
+    }
+
     if ((maxdt_temporary > 0.0) && (maxdt_temporary < dt)) {
       dt = maxdt_temporary;
       adaptReasonFlag = 't';
@@ -233,17 +242,19 @@ PetscErrorCode IceModel::countCFLViolations(PetscScalar* CFLviol) {
                     cfly = grid.dy / dtTempAge;
 
   PetscScalar *u, *v;
+  IceModelVec3 *u3, *v3, *dummy;
+  ierr = stress_balance->get_3d_velocity(u3, v3, dummy); CHKERRQ(ierr);
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.begin_access(); CHKERRQ(ierr);
+  ierr = u3->begin_access(); CHKERRQ(ierr);
+  ierr = v3->begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscInt  fks = grid.kBelowHeight(vH(i,j));
 
-      ierr = u3.getInternalColumn(i,j,&u); CHKERRQ(ierr);
-      ierr = v3.getInternalColumn(i,j,&v); CHKERRQ(ierr);
+      ierr = u3->getInternalColumn(i,j,&u); CHKERRQ(ierr);
+      ierr = v3->getInternalColumn(i,j,&v); CHKERRQ(ierr);
 
       // check horizontal CFL conditions at each point
       for (PetscInt k=0; k<=fks; k++) {
@@ -254,8 +265,8 @@ PetscErrorCode IceModel::countCFLViolations(PetscScalar* CFLviol) {
   }
 
   ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = u3.end_access();  CHKERRQ(ierr);
-  ierr = v3.end_access();  CHKERRQ(ierr);
+  ierr = u3->end_access();  CHKERRQ(ierr);
+  ierr = v3->end_access();  CHKERRQ(ierr);
 
   return 0;
 }

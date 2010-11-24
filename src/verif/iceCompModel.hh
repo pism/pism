@@ -19,11 +19,7 @@
 #ifndef __iceCompModel_hh
 #define __iceCompModel_hh
 
-#include <petscda.h>
-#include "../base/grid.hh"
-#include "../base/materials.hh"
-#include "../base/iceModel.hh"
-#include "../base/iceModelVec.hh"
+#include "iceModel.hh"
 
 class IceCompModel : public IceModel {
 
@@ -45,8 +41,6 @@ protected:
   ThermoGlenArrIce *tgaIce;
   PetscTruth   exactOnly;
   int          testname;
-  void         mapcoords(const PetscInt i, const PetscInt j,
-                  PetscScalar &x, PetscScalar &y, PetscScalar &r);
   virtual PetscErrorCode additionalAtStartTimestep();
   virtual PetscErrorCode additionalAtEndTimestep();
   PetscErrorCode computeGeometryErrors(    // all tests except K
@@ -67,9 +61,6 @@ protected:
         PetscScalar &exactmaxspeed,
         PetscScalar &gmaxvecerr, PetscScalar &gavvecerr,
         PetscScalar &gmaxuberr, PetscScalar &gmaxvberr);
-  virtual PetscScalar basalVelocitySIA( // not recommended, generally
-                             PetscScalar x, PetscScalar y, PetscScalar H, PetscScalar T,
-                             PetscScalar alpha, PetscScalar mu, PetscScalar min_T) const;
 
   // related to test L
   IceModelVec2S   vHexactL;

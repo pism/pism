@@ -28,21 +28,9 @@ static char help[] =
 #include "PISMIO.hh"
 #include "NCVariable.hh"
 #include "PISMStressBalance.hh"
+#include "SIAFD.hh"
 #include "exactTestsFG.h"
 #include "materials.hh"
-
-//! \brief Compute map-plane coordinates of a grid point.
-void mapcoords(IceGrid &grid, PetscInt i, PetscInt j,
-               PetscScalar &x, PetscScalar &y, PetscScalar &r) {
-  // compute x,y,r on grid from i,j
-  PetscScalar ifrom0, jfrom0;
-
-  ifrom0=static_cast<PetscScalar>(i)-static_cast<PetscScalar>(grid.Mx - 1)/2.0;
-  jfrom0=static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
-  x=grid.dx*ifrom0;
-  y=grid.dy*jfrom0;
-  r = sqrt(PetscSqr(x) + PetscSqr(y));
-}
 
 PetscErrorCode computeSigmaErrors(IceModelVec3 &Sigma,
                                   IceModelVec2S &thickness,
@@ -72,7 +60,7 @@ PetscErrorCode computeSigmaErrors(IceModelVec3 &Sigma,
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar r,xx,yy;
-      mapcoords(grid, i,j,xx,yy,r);
+      grid.mapcoords(i,j,xx,yy,r);
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
                                                 // and not at central singularity
         bothexact(0.0,r,grid.zlevels,Mz,0.0,
@@ -129,7 +117,7 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar r,xx,yy;
-      mapcoords(grid, i,j,xx,yy,r);
+      grid.mapcoords(i,j,xx,yy,r);
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
                                                 // and not at central singularity
         PetscScalar radialUex,wex;
@@ -236,7 +224,7 @@ PetscErrorCode setInitStateF(IceGrid &grid,
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar r,xx,yy, Ts;
-      mapcoords(grid, i,j,xx,yy,r);
+      grid.mapcoords(i,j,xx,yy,r);
       Ts = Tmin + ST * r;
       if (r > LforFG - 1.0) { // if (essentially) outside of sheet
         H[i][j] = 0.0;
@@ -441,7 +429,16 @@ int main(int argc, char *argv[]) {
            config.get("pseudo_plastic_uthreshold") / secpera);
 
     // Create the SIA solver object:
-    SIA_Nonsliding sia(grid, ice, EC, basal, config);
+
+    // We use SIA_Nonsliding and not SIAFD here because we need the z-component
+    // of the ice velocity, which is computed using incompressibility of ice in
+    // PISMStressBalance::compute_vertical_velocity().
+    SIAFD *sia = new SIAFD(grid, ice, EC, config);
+    SSB_Trivial *trivial_stress_balance = new SSB_Trivial(grid, basal, ice, EC, config);
+
+    PISMStressBalance stress_balance(grid,
+                                     trivial_stress_balance, sia,
+                                     config);
 
     // fill the fields:
     ierr = setInitStateF(grid, EC,
@@ -449,17 +446,17 @@ int main(int argc, char *argv[]) {
                          &enthalpy); CHKERRQ(ierr);
 
     // Allocate the SIA solver:
-    ierr = sia.init(vars); CHKERRQ(ierr);
+    ierr = stress_balance.init(vars); CHKERRQ(ierr);
 
     // Solve (fast==true means "no 3D update and no strain heating computation"):
     bool fast = false;
-    ierr = sia.update(fast); CHKERRQ(ierr); 
+    ierr = stress_balance.update(fast); CHKERRQ(ierr); 
 
     // Report errors relative to the exact solution:
     IceModelVec3 *u_sia, *v_sia, *w_sia, *sigma;
-    ierr = sia.get_3d_velocity(u_sia, v_sia, w_sia); CHKERRQ(ierr); 
+    ierr = stress_balance.get_3d_velocity(u_sia, v_sia, w_sia); CHKERRQ(ierr); 
 
-    ierr = sia.get_volumetric_strain_heating(sigma); CHKERRQ(ierr); 
+    ierr = stress_balance.get_volumetric_strain_heating(sigma); CHKERRQ(ierr); 
 
     ierr = reportErrors(grid, ice,
                         &vH, u_sia, v_sia, w_sia, sigma); CHKERRQ(ierr);

@@ -241,18 +241,10 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   ierr = artm.end_access(); CHKERRQ(ierr);
 
   // Model state 3D vectors:
-  ierr =     u3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
-  ierr =     v3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
-  ierr =     w3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
-  ierr = Sigma3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   ierr =  Enth3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
 
   // Work 3D vectors:
   ierr =       vWork3d.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
-  ierr = Sigmastag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
-  ierr = Sigmastag3[1].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
-  ierr =     Istag3[0].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
-  ierr =     Istag3[1].extend_vertically(old_Mz, 0); CHKERRQ(ierr);
 
   if (config.get_flag("do_cold_ice_methods")) {
     ierr =    T3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);
@@ -262,6 +254,9 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   if (config.get_flag("do_age")) {
     ierr = tau3.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
   }
+
+  // Ask the stress balance module to extend its 3D fields:
+  ierr = stress_balance->extend_the_grid(old_Mz); CHKERRQ(ierr); 
   
   ierr = check_maximum_thickness_hook(old_Mz); CHKERRQ(ierr);
 
@@ -286,77 +281,6 @@ PetscErrorCode IceModel::check_maximum_thickness() {
 PetscErrorCode IceModel::check_maximum_thickness_hook(const int /*old_Mz*/) {
   return 0;
 }
-
-
-PetscErrorCode IceModel::report_grid_parameters() {
-  PetscErrorCode ierr;
-
-  ierr = verbPrintf(2,grid.com, "computational domain and grid:\n"); CHKERRQ(ierr);
-  // report on computational box
-  ierr = verbPrintf(2,grid.com, 
-           "           spatial domain   %.2f km x %.2f km",
-           2*grid.Lx/1000.0,2*grid.Ly/1000.0); CHKERRQ(ierr);
-  if (grid.Mbz > 1) {
-    ierr = verbPrintf(2,grid.com," x (%.2f m + %.2f m bedrock)\n"
-         ,grid.Lz,grid.Lbz); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2,grid.com," x %.2f m\n",grid.Lz); CHKERRQ(ierr);
-  }
-
-  ierr = verbPrintf(2, grid.com,
-           "            time interval   [ %.2f a, %.2f a ]; run length = %.4f a\n",
-		    grid.start_year, grid.end_year, grid.end_year - grid.start_year);
-  
-  // report on grid cell dims
-  ierr = verbPrintf(2,grid.com, 
-           "     horizontal grid cell   %.2f km x %.2f km\n",
-                    grid.dx/1000.0,grid.dy/1000.0); CHKERRQ(ierr);
-  if (grid.ice_vertical_spacing == EQUAL) {
-    ierr = verbPrintf(2,grid.com, 
-           "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
-                    grid.dzMIN); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2,grid.com, 
-           "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
-		    grid.Mz, grid.dzMIN, grid.dzMAX); CHKERRQ(ierr);
-  }
-
-  if (grid.Mbz > 1) {
-    if (grid.bed_vertical_spacing == EQUAL) {
-      ierr = verbPrintf(2,grid.com, 
-           "  vert spacing in bedrock   dz = %.3f m (equal spacing)\n",
-			grid.zblevels[1]-grid.zblevels[0]); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2,grid.com, 
-			"  vert spacing in bedrock   uneven, %d levels, %.3f m < dz < %.3f m\n",
-			grid.Mbz, grid.dzbMIN, grid.dzbMAX); CHKERRQ(ierr);
-    }
-    ierr = verbPrintf(3,grid.com, 
-           "  fine spacing in conservation of energy and age:\n"
-           "                            fMz = %d, fdz = %.3f m, fMbz = %d m\n",
-           grid.Mz_fine, grid.dz_fine, grid.Mbz_fine); CHKERRQ(ierr);
-  } else { // no bedrock case
-    ierr = verbPrintf(3,grid.com, 
-           "   fine spacing used in energy/age   fMz = %d, fdz = %.3f m\n",
-           grid.Mz_fine, grid.dz_fine); CHKERRQ(ierr);
-  }
-  if (grid.Mz_fine > 1000) {
-    ierr = verbPrintf(2,grid.com,
-      "\n\nWARNING: Using more than 1000 ice vertical levels internally in energy/age computation!\n\n");
-      CHKERRQ(ierr);
-  }
-
-  // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
-  ierr = grid.printInfo(3); CHKERRQ(ierr);
-
-  // if -verbose 5 then more stuff
-  ierr = verbPrintf(5,grid.com,
-       "  REALLY verbose output on IceGrid:\n"); CHKERRQ(ierr);
-  ierr = grid.printVertLevels(5); CHKERRQ(ierr);
-  
-  return 0;
-}
-
 
 bool IceModel::issounding(const PetscInt i, const PetscInt j){ 
   return ((i == id) && (j == jd));
@@ -422,10 +346,10 @@ static PetscReal geo_z(PetscReal a, PetscReal b,
 }
 
 /*!
-    Allocate and compute corrected cell areas. Uses linear interpolation to
-    find latitudes and longitudes of grid corners, WGS84 parameters to compute
-    cartesian coordinates of grid corners and vector products to compute areas
-    of resulting triangles.
+    Compute corrected cell areas. Uses linear interpolation to find latitudes
+    and longitudes of grid corners, WGS84 parameters to compute cartesian
+    coordinates of grid corners and vector products to compute areas of
+    resulting triangles.
    
     \note Latitude and longitude fields are \b not periodic, so computing
     corrected areas for cells at the grid boundary is not feasible. This should

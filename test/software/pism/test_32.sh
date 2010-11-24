@@ -17,14 +17,14 @@ run_test ()
     gunzip ross.nc.gz
     gunzip riggs.nc.gz
 
-    $MPIDO -n 2 pross -boot_file ross.nc -Mx 147 -My 147 -Mz 3 -Lz 1.5e3 -ssaBC ross.nc \
+    $MPIDO -n 2 pross_new -boot_file ross.nc -Mx 147 -My 147 \
         -riggs riggs.nc -o rossComputed.nc > ross.txt
 
     python <<EOF
 from numpy import double, abs
 from sys import exit
 chi_squared = 1e6
-good_chi_squared = 5379.366
+good_chi_squared = 3649.427
 rel_tolerance = 0.01
 
 f = open("ross.txt")

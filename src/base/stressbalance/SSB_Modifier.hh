@@ -30,10 +30,21 @@ class SSB_Modifier
 public:
   SSB_Modifier(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
     : grid(g), ice(i), EC(e), config(c)
-  { D_max = u_max = v_max = 0.0; }
+  { D_max = u_max = v_max = 0.0; allocate(); }
   virtual ~SSB_Modifier() {}
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(PISMVars &/*vars*/) { return 0; }
+
+  //! \brief Adds more variable names to result (to respect -o_size and
+  //! -save_size).
+  /*!
+    Keyword can be one of "small", "medium" or "big".
+   */
+  virtual void add_to_output(string /*keyword*/, set<string> &/*result*/) {}
+
+  //! Writes requested fields to a file.
+  virtual PetscErrorCode write_fields(set<string> /*vars*/, string /*filename*/)
+  { return 0; }
 
   virtual PetscErrorCode update(IceModelVec2V *vel_input,
                                 IceModelVec2S *D2_input,
@@ -62,6 +73,8 @@ public:
   virtual PetscErrorCode stdout_report(string &result)
   { result = ""; return 0; }
 protected:
+  virtual PetscErrorCode allocate();
+
   IceGrid &grid;
   IceFlowLaw &ice;
   EnthalpyConverter &EC;
@@ -78,7 +91,10 @@ class SSBM_Trivial : public SSB_Modifier
 public:
   SSBM_Trivial(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
     : SSB_Modifier(g, i, e, c) {}
-  virtual ~SSBM_Trivial();
+  virtual ~SSBM_Trivial() {}
+
+  virtual PetscErrorCode init(PISMVars &vars);
+
   virtual PetscErrorCode update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
                                 bool fast);
 protected:

@@ -17,12 +17,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cstring>
-#include <cstdlib>
-#include <petscda.h>
-#include "nc_util.hh"
 #include "iceModel.hh"
-
 #include "PISMIO.hh"
 
 //! Read file and use heuristics to initialize PISM from typical 2d data available through remote sensing.
@@ -40,8 +35,8 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   ierr = verbPrintf(2, grid.com, 
 		    "bootstrapping by PISM default method from file %s\n",filename); CHKERRQ(ierr);
 
-  // report on resulting computational box, rescale grid, actually create local
-  // interpolation context
+  // report on resulting computational box, rescale grid, actually create a
+  // local interpolation context
   ierr = verbPrintf(2, grid.com, 
          "  rescaling computational box for ice from -boot_file file and\n"
          "    user options to dimensions:\n"
@@ -144,110 +139,6 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 
   return 0;
 }
-
-
-//! Read certain boundary conditions from a NetCDF file, for diagnostic SSA calculations.
-/*!
-This is not really a bootstrap procedure, but it has to go somewhere.
-
-For now it is \e only called using "pross".
- */
-PetscErrorCode IceModel::readShelfStreamBCFromFile(const char *filename) {
-  PetscErrorCode  ierr;
-  IceModelVec2S vbcflag;
-  IceModelVec2V vel_bc;
-  PISMIO nc(&grid);
-
-  // determine if variables exist in file
-  int maskid, ubarid, vbarid, bcflagid;
-
-  bool maskExists=false, ubarExists=false, vbarExists=false, bcflagExists=false; 
-
-  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-
-  ierr = nc.find_variable("mask",   &maskid,   maskExists);   CHKERRQ(ierr);
-  ierr = nc.find_variable("ubar",   &ubarid,   ubarExists);   CHKERRQ(ierr);
-  ierr = nc.find_variable("vbar",   &vbarid,   vbarExists);   CHKERRQ(ierr);
-  ierr = nc.find_variable("bcflag", &bcflagid, bcflagExists); CHKERRQ(ierr);
-  
-  if ( (!ubarExists) || (!vbarExists)) {
-    ierr = PetscPrintf(grid.com,"-ssaBC set but (ubar,vbar) not found in file %s\n",filename);
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
-  if (!bcflagExists) {
-    ierr = PetscPrintf(grid.com,
-		       "-ssaBC set but bcflag (location of Dirichlet b.c.) not found in file %s\n",
-		       filename);
-    CHKERRQ(ierr);
-    PetscEnd();
-  }
-  ierr = vbcflag.create(grid, "bcflag", false); CHKERRQ(ierr);
-  ierr = vbcflag.set_attrs("velocity_bc", 
-			   "locations of Dirichlet boundary conditions for the SSA",
-			   "", ""); CHKERRQ(ierr);
-
-  ierr = vel_bc.create(grid, "vel_bc", false); CHKERRQ(ierr);
-  // components are uvel_bc and vvel_bc
-  ierr = vel_bc.set_attrs("velocity_bc", 
-			   "vertical mean of horizontal ice velocity in the X direction",
-			   "m s-1", "land_ice_vertical_mean_x_velocity", 0); CHKERRQ(ierr);
-  ierr = vel_bc.set_attrs("velocity_bc", 
-			   "vertical mean of horizontal ice velocity in the Y direction",
-			   "m s-1", "land_ice_vertical_mean_y_velocity", 1); CHKERRQ(ierr);
-  ierr = vel_bc.set_glaciological_units("m year-1");
-  vel_bc.write_in_glaciological_units = true;
-
-
-  // create "local interpolation context" from dimensions, limits, and lengths extracted from
-  //    file and from information about the part of the grid owned by this processor
-  grid_info g;
-  ierr = nc.get_grid_info_2d(g); CHKERRQ(ierr);  // see nc_util.cc
-  ierr = nc.close(); CHKERRQ(ierr);
-  // destructor is called at exit from readShelfStreamBCFromFile():
-  LocalInterpCtx lic(g, NULL, NULL, grid); // 2D only
-
-  if (maskExists) {
-    ierr = vMask.regrid(filename, lic, true); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(3, grid.com, "  mask not found; leaving current values alone ...\n");
-               CHKERRQ(ierr);
-  }
-  ierr = vel_bc.regrid(filename, lic, true); CHKERRQ(ierr);
-
-  // we have already checked if "bcflag" exists, so just read it
-  ierr = vbcflag.regrid(filename, lic, true); CHKERRQ(ierr);
-
-  // now use values in vel_bc, not equal to missing_value, to set boundary conditions by
-  // setting corresponding locations to MASK_SHEET and setting vel_bar appropriately;
-  // set boundary condition which will apply to finite difference system:
-  //    staggered grid velocities at MASK_SHEET points which neighbor MASK_FLOATING points
-  PetscScalar **mask, **bc;
-  ierr = vbcflag.get_array(bc); CHKERRQ(ierr);    
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
-  ierr = vel_bc.begin_access(); CHKERRQ(ierr);
-  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
-
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (PetscAbs(bc[i][j] - 1.0) < 0.1) {
-        // assume it is really a boundary condition location
-        vel_bar(i,j).u = vel_bc(i,j).u;
-        vel_bar(i,j).v = vel_bc(i,j).v;
-        mask[i][j] = MASK_SHEET;  // assure that shelf/stream equations not active at this point
-      }
-    }
-  }
-  ierr =   vbcflag.end_access(); CHKERRQ(ierr);    
-  ierr =     vMask.end_access(); CHKERRQ(ierr);
-  ierr =   vel_bc.end_access(); CHKERRQ(ierr);
-  ierr = vel_bar.end_access(); CHKERRQ(ierr);
-
-  // update viewers
-  ierr = update_viewers(); CHKERRQ(ierr);
-  return 0;
-}
-
 
 //! Determine surface and mask according to information in bootstrap file and options.
 /*!

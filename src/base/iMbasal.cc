@@ -26,20 +26,6 @@ areas.  IceModel::basalVelocitySIA() is in iMsia.cc (and is not recommended,
 generally).
 */
 
-/*** for ice stream regions (MASK_DRAGGING): ***/
-PetscScalar IceModel::basalDragx(PetscScalar **tauc,
-                                 PISMVector2 **uv,
-                                 PetscInt i, PetscInt j) const {
-  return basal->drag(tauc[i][j], uv[i][j].u, uv[i][j].v);
-}
-
-PetscScalar IceModel::basalDragy(PetscScalar **tauc,
-                                 PISMVector2 **uv,
-                                 PetscInt i, PetscInt j) const {
-  return basal->drag(tauc[i][j], uv[i][j].u, uv[i][j].v);
-}
-
-
 //! Initialize the pseudo-plastic till mechanical model.
 /*! 
 The pseudo-plastic till basal resistance model is governed by this power law
@@ -98,21 +84,7 @@ stresses.  (There is also no singular mathematical operation as \f$A^q = A^0 = 1
  */
 PetscErrorCode IceModel::initBasalTillModel() {
   PetscErrorCode ierr;
-
-  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
-    pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera,
-    plastic_regularization = config.get("plastic_regularization") / secpera;
-
-  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till"),
-    use_ssa_velocity = config.get_flag("use_ssa_velocity");
-
-  if (basal == NULL)
-    basal = new IceBasalResistancePlasticLaw(plastic_regularization, do_pseudo_plastic_till, 
-                                 pseudo_plastic_q, pseudo_plastic_uthreshold);
-  
-  if (use_ssa_velocity) {
-    ierr = basal->printInfo(3,grid.com); CHKERRQ(ierr);
-  }
+  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q");
 
   ierr = vtauc.set(config.get("default_tauc")); CHKERRQ(ierr);
 

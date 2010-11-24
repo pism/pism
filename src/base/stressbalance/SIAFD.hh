@@ -26,7 +26,7 @@ class SIAFD : public SSB_Modifier
 {
 public:
   SIAFD(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
-    : SSB_Modifier(g, i, e, c), WIDE_STENCIL(2) {}
+    : SSB_Modifier(g, i, e, c), WIDE_STENCIL(2) { allocate(); }
 
   virtual ~SIAFD() {}
 
@@ -39,6 +39,8 @@ public:
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
 protected:
+  virtual PetscErrorCode allocate();
+
   virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
   virtual PetscErrorCode surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
@@ -56,7 +58,9 @@ protected:
   virtual PetscErrorCode compute_sigma(IceModelVec2S *D2_input, IceModelVec2Stag &h_x,
                                        IceModelVec2Stag &h_y);
 
-  PetscScalar grainSizeVostok(PetscScalar age) const;
+  virtual PetscScalar grainSizeVostok(PetscScalar age) const;
+
+  virtual PetscErrorCode compute_diffusivity(IceModelVec2S &result);
 
   // pointers to input fields:
   IceModelVec2S *bed, *thickness, *surface;
@@ -71,6 +75,7 @@ protected:
 
   PISMBedSmoother *bed_smoother;
   const PetscInt WIDE_STENCIL;
+  int bed_state_counter;
 };
 
 

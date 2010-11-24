@@ -25,7 +25,7 @@
 #include <petsctime.h>		// PetscGetTime()
 
 #include "flowlaw_factory.hh"   // IceFlowLawFactory and friends
-#include "materials.hh"         // IceBasalResistancePlasticLaw, SSAStrengthExtension
+#include "materials.hh"         // IceBasalResistancePlasticLaw
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
 #include "grid.hh"
@@ -34,11 +34,11 @@
 #include "PISMBedSmoother.hh"
 #include "PISMVars.hh"
 #include "Timeseries.hh"
-#include "PISMProf.hh"
+#include "PISMStressBalance.hh"
 
-#include "../earth/PISMBedDef.hh"
-#include "../coupler/PISMOcean.hh"
-#include "../coupler/PISMSurface.hh"
+#include "PISMBedDef.hh"
+#include "PISMOcean.hh"
+#include "PISMSurface.hh"
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
@@ -60,7 +60,6 @@ public:
   virtual PetscErrorCode set_grid_defaults();
   virtual PetscErrorCode model_state_setup();
   virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode report_grid_parameters(); // should be moved into a method of IceGrid
   virtual PetscErrorCode allocate_internal_objects();
   virtual PetscErrorCode misc_setup();
 
@@ -79,8 +78,6 @@ public:
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode bootstrapFromFile(const char *fname);
-  virtual PetscErrorCode readShelfStreamBCFromFile(const char *fname); // should be moved into the SSA 
-  // stress balance module
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
@@ -114,11 +111,8 @@ protected:
   IceFlowLawFactory     iceFactory;
   IceFlowLaw            *ice;
   IceBasalResistancePlasticLaw *basal;
-  SSAStrengthExtension  ssaStrengthExtend;
 
   EnthalpyConverter *EC;
- 
-  PISMBedSmoother   *sia_bed_smoother; // should probably go inside the SIA stress balance module
 
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;
@@ -141,25 +135,16 @@ protected:
         vbed,		//!< bed topography; ghosted
         vuplift,	//!< bed uplift rate; ghosted to simplify the code computing it
         vGhf,		//!< geothermal flux; no ghosts
-        vRb,		//!< basal frictional heating on regular grid; no ghosts
         vtillphi,	//!< friction angle for till under grounded ice sheet; no ghosts
     acab,		//!< accumulation/ablation rate; no ghosts
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
     shelfbmassflux,	//!< ice mass flux into the ocean at the shelf base; no ghosts
     cell_area;		//!< cell areas (computed using the WGS84 datum)
-
-  IceModelVec2Stag uvbar, //!< ubar and vbar on staggered grid; ubar at i+1/2, vbar at j+1/2
-                   vWork2dStag; //!< used for diffusivity and averaged ice hardness on the staggered grid
  
-  IceModelVec2V vel_basal,	//!< basal sliding velocities on standard grid; ghosted
-    vel_bar; //!< vertically-averaged horizontal velocity on standard grid; ghosted
-
   IceModelVec2Mask vMask; //!< mask for flow type with values SHEET, DRAGGING, FLOATING
 
   IceModelVec3
-        u3, v3, w3,	//!< velocity of ice; m s-1 (ghosted)
-        Sigma3, 	//!< strain-heating term in conservation of energy model; J s-1 m-3 (no ghosts)
         T3,		//!< absolute temperature of ice; K (ghosted)
         Enth3,          //!< enthalpy; J / kg (ghosted)
         tau3;		//!< age of ice; s (ghosted because it is evaluated on the staggered-grid)
@@ -192,18 +177,9 @@ protected:
   // SHOULD NOT be hard-wired.
 
   // flags
-  bool leaveNuHAloneSSA;        // should be removed
-  PetscTruth  updateHmelt,
-              holdTillYieldStress,
-              shelvesDragToo,
-              doAdaptTimeStep, 
-              realAgeForGrainSize, // is always equal to PETSC_FALSE; should we let it go?
-              ssaSystemToASCIIMatlab,
-              allowAboveMelting,
-              computeSIAVelocities;
+  PetscTruth  updateHmelt, holdTillYieldStress, shelvesDragToo, allowAboveMelting;
   char        adaptReasonFlag;
 
-  char        ssaMatlabFilePrefix[PETSC_MAX_PATH_LEN];
   string      stdout_flags, stdout_ssa;
 
   string executable_short_name;
@@ -212,7 +188,6 @@ protected:
   // see iceModel.cc
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode deallocate_internal_objects();
-  virtual void setConstantNuHForSSA(PetscScalar); // move into the SSA module
 
   // see iMadaptive.cc
   virtual PetscErrorCode computeMax3DVelocities();
@@ -228,10 +203,6 @@ protected:
                            PetscScalar thk, PetscScalar bwat, PetscScalar bmr,
                            PetscScalar frac, PetscScalar hmelt_max) const;
   virtual PetscErrorCode updateYieldStressUsingBasalWater();
-  virtual PetscScalar    basalDragx(PetscScalar **tauc, PISMVector2 **uv,
-				    PetscInt i, PetscInt j) const;
-  virtual PetscScalar    basalDragy(PetscScalar **tauc, PISMVector2 **uv,
-				    PetscInt i, PetscInt j) const;
   virtual PetscErrorCode diffuseHmelt();
 
   // see iMbeddef.cc
@@ -268,29 +239,17 @@ protected:
                 PetscScalar* bulgeCount);
 
   // see iMgeometry.cc
-  virtual PetscErrorCode computeDrivingStress(IceModelVec2S &vtaudx, IceModelVec2S &vtaudy);
   virtual PetscErrorCode updateSurfaceElevationAndMask();
   virtual PetscErrorCode update_mask();
   virtual PetscErrorCode update_surface_elevation();
   virtual PetscErrorCode massContExplicitStep();
-
-  // see iMgrainsize.cc
-  virtual PetscScalar    grainSizeVostok(PetscScalar age) const;
 
   // see iMIO.cc
   virtual PetscErrorCode set_time_from_options();
   virtual PetscErrorCode dumpToFile(const char *filename);
   virtual PetscErrorCode regrid();
 
-  // see iMmatlab.cc
-  virtual PetscErrorCode writeSSAsystemMatlab(IceModelVec2S vNuH[2]);
-
   // see iMreport.cc
-  virtual PetscErrorCode computeFlowUbarStats(
-                       PetscScalar *gUbarmax, PetscScalar *gUbarSIAav,
-                       PetscScalar *gUbarstreamav, PetscScalar *gUbarshelfav,
-                       PetscScalar *gicegridfrac, PetscScalar *gSIAgridfrac,
-                       PetscScalar *gstreamgridfrac, PetscScalar *gshelfgridfrac);
   virtual PetscErrorCode volumeArea(
                        PetscScalar& gvolume,PetscScalar& garea,
                        PetscScalar& gvolSIA, PetscScalar& gvolstream, 
@@ -310,19 +269,20 @@ protected:
   // spatially-varying:
   virtual PetscErrorCode compute_by_name(string name, IceModelVec* &result);
   virtual PetscErrorCode compute_bwp(IceModelVec2S &result);
-  virtual PetscErrorCode compute_cbar(IceModelVec2S &result);
-  virtual PetscErrorCode compute_cbase(IceModelVec2S &result, IceModelVec2S &tmp);
-  virtual PetscErrorCode compute_cflx(IceModelVec2S &result, IceModelVec2S &cbar);
-  virtual PetscErrorCode compute_csurf(IceModelVec2S &result, IceModelVec2S &tmp);
+  virtual PetscErrorCode compute_velbar(IceModelVec2V &result); // should be moved
+  virtual PetscErrorCode compute_cbar(IceModelVec2S &result); // should be moved
+  virtual PetscErrorCode compute_cbase(IceModelVec2S &result, IceModelVec2S &tmp); // should be moved
+  virtual PetscErrorCode compute_cflx(IceModelVec2S &result, IceModelVec2S &cbar); // should be moved
+  virtual PetscErrorCode compute_csurf(IceModelVec2S &result, IceModelVec2S &tmp); // should be moved
   virtual PetscErrorCode compute_cts(IceModelVec3 &useForCTS);
   virtual PetscErrorCode compute_dhdt(IceModelVec2S &result);
-  virtual PetscErrorCode compute_diffusivity(IceModelVec2S &result);
+  virtual PetscErrorCode compute_diffusivity(IceModelVec2S &result); // should be moved
   virtual PetscErrorCode compute_enthalpybase(IceModelVec2S &result);
   virtual PetscErrorCode compute_enthalpysurf(IceModelVec2S &result);
-  virtual PetscErrorCode compute_hardav(IceModelVec2S &result);
+  virtual PetscErrorCode compute_hardav(IceModelVec2S &result); // should be moved
   virtual PetscErrorCode compute_liqfrac(IceModelVec3 &useForLiqfrac);
-  virtual PetscErrorCode compute_schoofs_theta(IceModelVec2S &result);
-  virtual PetscErrorCode compute_taud(IceModelVec2S &result, IceModelVec2S &tmp);
+  virtual PetscErrorCode compute_schoofs_theta(IceModelVec2S &result); // should be moved
+  virtual PetscErrorCode compute_taud(IceModelVec2S &result, IceModelVec2S &tmp); // should be moved
   virtual PetscErrorCode compute_temp(IceModelVec3 &result);
   virtual PetscErrorCode compute_temp_pa(IceModelVec3 &result);
   virtual PetscErrorCode compute_tempbase(IceModelVec2S &result);
@@ -331,15 +291,15 @@ protected:
   virtual PetscErrorCode compute_temppabase(IceModelVec3 &hasPATemp,
                                             IceModelVec2S &result);
   virtual PetscErrorCode compute_tempsurf(IceModelVec2S &result);
-  virtual PetscErrorCode compute_thksmooth(IceModelVec2S &result);
-  virtual PetscErrorCode compute_topgsmooth(IceModelVec2S &result);
-  virtual PetscErrorCode compute_uvelbase(IceModelVec2S &result);
-  virtual PetscErrorCode compute_uvelsurf(IceModelVec2S &result);
-  virtual PetscErrorCode compute_vvelbase(IceModelVec2S &result);
-  virtual PetscErrorCode compute_vvelsurf(IceModelVec2S &result);
-  virtual PetscErrorCode compute_wvel(IceModelVec3 &result);
-  virtual PetscErrorCode compute_wvelbase(IceModelVec3 &wvel, IceModelVec2S &result);
-  virtual PetscErrorCode compute_wvelsurf(IceModelVec3 &wvel, IceModelVec2S &result);
+  virtual PetscErrorCode compute_thksmooth(IceModelVec2S &result); // should be moved
+  virtual PetscErrorCode compute_topgsmooth(IceModelVec2S &result); // should be moved
+  virtual PetscErrorCode compute_uvelbase(IceModelVec2S &result); // should be moved
+  virtual PetscErrorCode compute_uvelsurf(IceModelVec2S &result); // should be moved
+  virtual PetscErrorCode compute_vvelbase(IceModelVec2S &result); // should be moved
+  virtual PetscErrorCode compute_vvelsurf(IceModelVec2S &result); // should be moved
+  virtual PetscErrorCode compute_wvel(IceModelVec3 &result); // should be moved
+  virtual PetscErrorCode compute_wvelbase(IceModelVec3 &wvel, IceModelVec2S &result); // should be moved
+  virtual PetscErrorCode compute_wvelsurf(IceModelVec3 &wvel, IceModelVec2S &result); // should be moved
 
   // profiling, etc:
   virtual PetscErrorCode compute_rank(IceModelVec2S &result);
@@ -357,40 +317,6 @@ protected:
   virtual PetscErrorCode compute_ice_area_floating(PetscScalar &result);
   virtual PetscErrorCode compute_ice_enthalpy(PetscScalar &result);
   virtual PetscErrorCode compute_by_name(string name, PetscScalar &result);
-
-  // see iMsia.cc
-  virtual PetscErrorCode surfaceGradientSIA();
-
-  virtual PetscErrorCode surface_gradient_eta();
-  virtual PetscErrorCode surface_gradient_haseloff();
-  virtual PetscErrorCode surface_gradient_mahaffy();
-
-  virtual PetscErrorCode velocitySIAStaggered();
-  virtual PetscErrorCode basalSlidingHeatingSIA();
-  virtual PetscErrorCode velocities2DSIAToRegular();
-  virtual PetscErrorCode SigmaSIAToRegular();
-  virtual PetscErrorCode horizontalVelocitySIARegular();
-  virtual PetscScalar    basalVelocitySIA( // not recommended, generally
-                             PetscScalar x, PetscScalar y, PetscScalar H, PetscScalar T,
-                             PetscScalar alpha, PetscScalar mu, PetscScalar min_T) const;
-
-  // see iMssa.cc
-  virtual PetscScalar    bueler_brown_f(PetscScalar v_squared);
-  virtual PetscErrorCode allocateSSAobjects();
-  virtual PetscErrorCode destroySSAobjects();
-  virtual PetscErrorCode initSSA();
-  virtual PetscErrorCode velocitySSA(PetscInt *numiter);
-  virtual PetscErrorCode velocitySSA(IceModelVec2S vNuH[2], PetscInt *numiter);
-  virtual PetscErrorCode computeEffectiveViscosity(IceModelVec2S vNuH[2], PetscReal epsilon);
-  virtual PetscErrorCode testConvergenceOfNu(IceModelVec2S vNuH[2], IceModelVec2S vNuHOld[2],
-                                             PetscReal *norm, PetscReal *normChange);
-  virtual PetscErrorCode assembleSSAMatrix(bool includeBasalShear, IceModelVec2S vNuH[2], Mat A);
-  virtual PetscErrorCode assembleSSARhs(Vec rhs);
-  virtual PetscErrorCode trivialMoveSSAXtoIMV2V();
-  virtual PetscErrorCode broadcastSSAVelocity(bool updateVelocityAtDepth);
-  virtual PetscErrorCode correctSigma();
-  virtual PetscErrorCode correctBasalFrictionalHeating();
-  virtual PetscErrorCode compute_hardav_staggered(IceModelVec2Stag &result);
   
   // see iMtemp.cc
   virtual PetscErrorCode energyStep();
@@ -411,29 +337,22 @@ protected:
   virtual PetscErrorCode check_maximum_thickness_hook(const int old_Mz);
   virtual bool           issounding(const PetscInt i, const PetscInt j);
 
-  // see iMvelocity.cc
-  virtual PetscErrorCode velocity(bool updateSIAVelocityAtDepth);    
-  virtual PetscErrorCode vertVelocityFromIncompressibility();
-
 protected:
   // working space (a convenience)
   static const PetscInt nWork2d=6;
   IceModelVec2S vWork2d[nWork2d];
-  // 3D working space (with specific purposes)
+  IceModelVec2Stag vWork2dStag;
+  IceModelVec2V vWork2dV;
+
+  // 3D working space
   IceModelVec3 vWork3d;
-  IceModelVec3 Sigmastag3[2], Istag3[2], DeltaStag3[2];
+
+  PISMStressBalance *stress_balance;
 
   // for saving SSA velocities for restart
   bool have_ssa_velocities;	//!< use ubar_ssa and vbar_ssa from a previous
 				//! run if true, otherwise set them to zero in
 				//! IceModel::initSSA()
-  IceModelVec2V vel_ssa, vel_ssa_old;
-
-  // SSA solve vars; note pieces of the SSA Velocity routine are defined in iMssa.cc
-  KSP SSAKSP;
-  Mat SSAStiffnessMatrix;
-  Vec SSAX, SSARHS;  // Global vectors for solution of the linear system
-  DA  SSADA;
 
   // Set of variables to put in the output file:
   set<string> output_vars;
@@ -490,7 +409,6 @@ private:
   int siaEVENT, ssaEVENT, velmiscEVENT, beddefEVENT, massbalEVENT, tempEVENT;
   PetscLogDouble start_time;
 
-  PISMProf *prof;
   int event_step,		//!< total time spent doing time-stepping
     event_velocity,		//!< total velocity computation
     event_vel_inc,		//!< vert. velocity from incompressibility

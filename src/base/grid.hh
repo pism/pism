@@ -45,6 +45,8 @@ public:
   IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s, const NCConfigVariable &config);
   ~IceGrid();
 
+  PetscErrorCode report_parameters(); // should be moved into a method of IceGrid
+
   PetscErrorCode createDA();  // destructor checks if DA was created, and destroys
   PetscErrorCode createDA(PetscInt procs_x, PetscInt procs_y,
 			  PetscInt* &lx, PetscInt* &ly);
@@ -59,7 +61,8 @@ public:
   PetscErrorCode printInfo(int verbosity); 
   PetscErrorCode printVertLevels(int verbosity); 
   PetscInt       kBelowHeight(PetscScalar height);
-
+  void mapcoords(PetscInt i, PetscInt j,
+                 PetscScalar &x, PetscScalar &y, PetscScalar &r);
 
   MPI_Comm    com;
   PetscMPIInt rank, size;
@@ -104,7 +107,6 @@ public:
   PISMProf *profiler;
 protected:
   PetscScalar lambda;	 // vertical spacing parameter
-private:
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
   PetscErrorCode compute_fine_vertical_grid();
   PetscErrorCode init_interpolation();

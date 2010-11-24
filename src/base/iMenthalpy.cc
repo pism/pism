@@ -16,10 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <petscda.h>
 #include "iceModel.hh"
-#include "iceModelVec.hh"
-#include "enthalpyConverter.hh"
 #include "bedrockOnlySystem.hh"
 #include "iceenthOnlySystem.hh"
 #include "combinedSystem.hh"
@@ -369,6 +366,13 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
     bulgeEnthMax  = config.get("enthalpy_cold_bulge_max"), // J kg-1
     hmelt_max = config.get("hmelt_max");                 // m
 
+  IceModelVec2S *Rb;            // basal frictional heating
+  ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
+
+  IceModelVec3 *u3, *v3, *w3, *Sigma3;
+  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
+  ierr = stress_balance->get_volumetric_strain_heating(Sigma3); CHKERRQ(ierr); 
+
   PetscScalar *Enthnew, *Tbnew;
   Enthnew = new PetscScalar[fMz];  // new enthalpy in column
   Tbnew   = new PetscScalar[fMbz]; // new bedrock temperature in column
@@ -420,15 +424,15 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vHmelt.begin_access(); CHKERRQ(ierr);
   ierr = vbmr.begin_access(); CHKERRQ(ierr);
-  ierr = vRb.begin_access(); CHKERRQ(ierr);
+  ierr = Rb->begin_access(); CHKERRQ(ierr);
   ierr = vGhf.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
 
   // these are accessed a column at a time
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = w3.begin_access(); CHKERRQ(ierr);
-  ierr = Sigma3.begin_access(); CHKERRQ(ierr);
+  ierr = u3->begin_access(); CHKERRQ(ierr);
+  ierr = v3->begin_access(); CHKERRQ(ierr);
+  ierr = w3->begin_access(); CHKERRQ(ierr);
+  ierr = Sigma3->begin_access(); CHKERRQ(ierr);
   ierr = Enth3.begin_access(); CHKERRQ(ierr);
   ierr = vWork3d.begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
@@ -505,7 +509,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       const PetscScalar p_basal = EC->getPressureFromDepth(vH(i,j));
 
       ierr = Enth3.getValColumn(i,j,ks,iosys.Enth); CHKERRQ(ierr);
-      ierr = w3.getValColumn(i,j,ks,iosys.w); CHKERRQ(ierr);
+      ierr = w3->getValColumn(i,j,ks,iosys.w); CHKERRQ(ierr);
 
       PetscScalar lambda;
       ierr = getEnthalpyCTSColumn(p_air, vH(i,j), ks, iosys.Enth, iosys.w,
@@ -523,15 +527,15 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
         ierr = copyColumn(iosys.Enth,cbsys.Enth,fMz); CHKERRQ(ierr);
         ierr = copyColumn(iosys.Enth_s,cbsys.Enth_s,fMz); CHKERRQ(ierr);
-        ierr = u3.getValColumn(i,j,ks,cbsys.u); CHKERRQ(ierr);
-        ierr = v3.getValColumn(i,j,ks,cbsys.v); CHKERRQ(ierr);
+        ierr = u3->getValColumn(i,j,ks,cbsys.u); CHKERRQ(ierr);
+        ierr = v3->getValColumn(i,j,ks,cbsys.v); CHKERRQ(ierr);
         ierr = copyColumn(iosys.w,cbsys.w,fMz); CHKERRQ(ierr);
-        ierr = Sigma3.getValColumn(i,j,ks,cbsys.Sigma); CHKERRQ(ierr);
+        ierr = Sigma3->getValColumn(i,j,ks,cbsys.Sigma); CHKERRQ(ierr);
         ierr = Tb3.getValColumnPL(i,j,cbsys.Tb); CHKERRQ(ierr);
 
         ierr = cbsys.setSchemeParamsThisColumn(isMarginal, lambda);
             CHKERRQ(ierr);
-        ierr = cbsys.setBoundaryValuesThisColumn(Enth_ks, vGhf(i,j), vRb(i,j));
+        ierr = cbsys.setBoundaryValuesThisColumn(Enth_ks, vGhf(i,j), (*Rb)(i,j));
             CHKERRQ(ierr);
 
         ierr = cbsys.solveThisColumn(&xcombined);
@@ -597,7 +601,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
             // this case occurs only if no bedrock thermal layer
             vbmr(i,j) = 0.0;  // zero melt rate if cold base
           } else {
-            vbmr(i,j) = ( hf_base + vRb(i,j) ) / (ice_rho * L);
+            vbmr(i,j) = ( hf_base + (*Rb)(i,j) ) / (ice_rho * L);
           }
         }
 
@@ -606,9 +610,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         //   iosys.Enth_s[] are already filled
         ierr = iosys.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
 
-        ierr = u3.getValColumn(i,j,ks,iosys.u); CHKERRQ(ierr);
-        ierr = v3.getValColumn(i,j,ks,iosys.v); CHKERRQ(ierr);
-        ierr = Sigma3.getValColumn(i,j,ks,iosys.Sigma); CHKERRQ(ierr);
+        ierr = u3->getValColumn(i,j,ks,iosys.u); CHKERRQ(ierr);
+        ierr = v3->getValColumn(i,j,ks,iosys.v); CHKERRQ(ierr);
+        ierr = Sigma3->getValColumn(i,j,ks,iosys.Sigma); CHKERRQ(ierr);
 
         ierr = iosys.setSchemeParamsThisColumn(isMarginal, lambda); CHKERRQ(ierr);
         ierr = iosys.setBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);
@@ -620,7 +624,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           // this case only if no bedrock thermal layer
           const PetscScalar C = ice_c * fdz / ice_k;
           ierr = iosys.setLevel0EqnThisColumn(
-                   1.0,-1.0,C * (hf_base + vRb(i,j))); CHKERRQ(ierr);
+                   1.0,-1.0,C * (hf_base + (*Rb)(i,j))); CHKERRQ(ierr);
         } else {
           // we are in the warm base case, so velocity at bottom of ice in the
           //   last time step determines type of boundary condition, either
@@ -658,7 +662,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
                             ? 1.0 - ((iosys.Enth[0] - iosys.Enth_s[0]) / warm_dE)
                             : 0.0;
           const PetscScalar C = ice_c * fdz / ice_k;
-          rhs = (1.0 - alpha) * rhs + alpha * ( C * (hf_base + vRb(i,j)) );
+          rhs = (1.0 - alpha) * rhs + alpha * ( C * (hf_base + (*Rb)(i,j)) );
           a0  = (1.0 - alpha) * a0  + alpha * 1.0,
           a1  = (1.0 - alpha) * a1  + alpha * (-1.0);
 
@@ -782,15 +786,15 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vHmelt.end_access(); CHKERRQ(ierr);
-  ierr = vRb.end_access(); CHKERRQ(ierr);
+  ierr = Rb->end_access(); CHKERRQ(ierr);
   ierr = vGhf.end_access(); CHKERRQ(ierr);
   ierr = vbmr.end_access(); CHKERRQ(ierr);
 
   ierr = Tb3.end_access(); CHKERRQ(ierr);
-  ierr = u3.end_access(); CHKERRQ(ierr);
-  ierr = v3.end_access(); CHKERRQ(ierr);
-  ierr = w3.end_access(); CHKERRQ(ierr);
-  ierr = Sigma3.end_access(); CHKERRQ(ierr);
+  ierr = u3->end_access(); CHKERRQ(ierr);
+  ierr = v3->end_access(); CHKERRQ(ierr);
+  ierr = w3->end_access(); CHKERRQ(ierr);
+  ierr = Sigma3->end_access(); CHKERRQ(ierr);
   ierr = Enth3.end_access(); CHKERRQ(ierr);
   ierr = vWork3d.end_access(); CHKERRQ(ierr);
 

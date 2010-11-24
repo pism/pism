@@ -554,7 +554,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
 
 //! Reads a text attribute from a NetCDF file.
 /*!
-  Missimg and empty attributes are treated the same.
+  Missing and empty attributes are treated the same.
  */
 PetscErrorCode NCTool::get_att_text(const int varid, const char name[], string &result) const {
   char *str = NULL;
@@ -577,8 +577,9 @@ PetscErrorCode NCTool::get_att_text(const int varid, const char name[], string &
     return 0;
   }
   str = new char[len + 1];
-  // Zealously clear the string, so that we don't risk moving unitialized bytes over MPI (because Valgrind can't tell
-  // the difference between these harmless bytes and potential memory errors)
+  // Zealously clear the string, so that we don't risk moving unitialized bytes
+  // over MPI (because Valgrind can't tell the difference between these
+  // harmless bytes and potential memory errors)
   ierr = PetscMemzero(str, len+1);CHKERRQ(ierr);
 
   // Now read the string and broadcast stat to see if we succeeded:

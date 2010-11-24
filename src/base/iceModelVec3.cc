@@ -463,6 +463,10 @@ PetscErrorCode  IceModelVec3::getValColumn(PetscInt i, PetscInt j, PetscInt ks,
 
 
 //! Copies a horizontal slice at level z of an IceModelVec3 into a Vec gslice.
+/*!
+ * FIXME: this method is misnamed: the slice is horizontal in the PISM
+ * coordinate system, not in reality.
+ */
 PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, PetscScalar z) {
   PetscErrorCode ierr;
   PetscScalar    **slice_val;
@@ -481,6 +485,10 @@ PetscErrorCode  IceModelVec3::getHorSlice(Vec &gslice, PetscScalar z) {
 }
 
 //! Copies a horizontal slice at level z of an IceModelVec3 into an IceModelVec2S gslice.
+/*!
+ * FIXME: this method is misnamed: the slice is horizontal in the PISM
+ * coordinate system, not in reality.
+ */
 PetscErrorCode  IceModelVec3::getHorSlice(IceModelVec2S &gslice, PetscScalar z) {
   PetscErrorCode ierr;
   PetscScalar    **slice_val;

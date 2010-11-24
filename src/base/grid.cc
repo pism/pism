@@ -21,8 +21,8 @@
 #include "pism_const.hh"
 
 IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
-		 const NCConfigVariable &config):
-  com(c), rank(r), size(s) { 
+		 const NCConfigVariable &config)
+  : com(c), rank(r), size(s) { 
 
   // The grid in symmetric with respect to zero by default.
   x0 = 0.0;
@@ -87,7 +87,6 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 
   initial_Mz = 0;		// will be set to a correct value in
 				// IceModel::check_maximum_thickness()
-
   da2 = PETSC_NULL;
   zlevels = NULL;
   zblevels = NULL;
@@ -413,7 +412,7 @@ void IceGrid::compute_nprocs() {
 //! Computes processor ownership ranges corresponding to equal area
 //! distribution among processors.
 /*!
-  Expects grid.Nx and grid.Ny to be valid.
+ * Expects grid.Nx and grid.Ny to be valid.
  */
 void IceGrid::compute_ownership_ranges() {
   delete [] procs_x;
@@ -788,5 +787,87 @@ PetscErrorCode IceGrid::compute_horizontal_coordinates(double* &x, double* &y) {
     y[i] = y_min + i * dy;
   y[My - 1] = y_max;
 
+  return 0;
+}
+
+//! \brief Compute coordinates of a grid point.
+void IceGrid::mapcoords(PetscInt i, PetscInt j,
+                        PetscScalar &x, PetscScalar &y, PetscScalar &r) {
+  // compute x,y,r on grid from i,j
+  PetscScalar ifrom0, jfrom0;
+
+  ifrom0=static_cast<PetscScalar>(i)-static_cast<PetscScalar>(Mx - 1)/2.0;
+  jfrom0=static_cast<PetscScalar>(j)-static_cast<PetscScalar>(My - 1)/2.0;
+  x=dx*ifrom0;
+  y=dy*jfrom0;
+  r = sqrt(PetscSqr(x) + PetscSqr(y));
+}
+
+PetscErrorCode IceGrid::report_parameters() {
+  PetscErrorCode ierr;
+
+  ierr = verbPrintf(2,com, "computational domain and grid:\n"); CHKERRQ(ierr);
+  // report on computational box
+  ierr = verbPrintf(2,com, 
+           "           spatial domain   %.2f km x %.2f km",
+           2*Lx/1000.0,2*Ly/1000.0); CHKERRQ(ierr);
+  if (Mbz > 1) {
+    ierr = verbPrintf(2,com," x (%.2f m + %.2f m bedrock)\n"
+         ,Lz,Lbz); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2,com," x %.2f m\n",Lz); CHKERRQ(ierr);
+  }
+
+  ierr = verbPrintf(2, com,
+           "            time interval   [ %.2f a, %.2f a ]; run length = %.4f a\n",
+		    start_year, end_year, end_year - start_year);
+  
+  // report on grid cell dims
+  ierr = verbPrintf(2,com, 
+           "     horizontal grid cell   %.2f km x %.2f km\n",
+                    dx/1000.0,dy/1000.0); CHKERRQ(ierr);
+  if (ice_vertical_spacing == EQUAL) {
+    ierr = verbPrintf(2,com, 
+           "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
+                    dzMIN); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2,com, 
+           "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
+		    Mz, dzMIN, dzMAX); CHKERRQ(ierr);
+  }
+
+  if (Mbz > 1) {
+    if (bed_vertical_spacing == EQUAL) {
+      ierr = verbPrintf(2,com, 
+           "  vert spacing in bedrock   dz = %.3f m (equal spacing)\n",
+			zblevels[1]-zblevels[0]); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2,com, 
+			"  vert spacing in bedrock   uneven, %d levels, %.3f m < dz < %.3f m\n",
+			Mbz, dzbMIN, dzbMAX); CHKERRQ(ierr);
+    }
+    ierr = verbPrintf(3,com, 
+           "  fine spacing in conservation of energy and age:\n"
+           "                            fMz = %d, fdz = %.3f m, fMbz = %d m\n",
+           Mz_fine, dz_fine, Mbz_fine); CHKERRQ(ierr);
+  } else { // no bedrock case
+    ierr = verbPrintf(3,com, 
+           "   fine spacing used in energy/age   fMz = %d, fdz = %.3f m\n",
+           Mz_fine, dz_fine); CHKERRQ(ierr);
+  }
+  if (Mz_fine > 1000) {
+    ierr = verbPrintf(2,com,
+      "\n\nWARNING: Using more than 1000 ice vertical levels internally in energy/age computation!\n\n");
+      CHKERRQ(ierr);
+  }
+
+  // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
+  ierr = printInfo(3); CHKERRQ(ierr);
+
+  // if -verbose 5 then more stuff
+  ierr = verbPrintf(5,com,
+       "  REALLY verbose output on IceGrid:\n"); CHKERRQ(ierr);
+  ierr = printVertLevels(5); CHKERRQ(ierr);
+  
   return 0;
 }

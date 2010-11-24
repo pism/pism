@@ -25,24 +25,11 @@ static char help[] =
 #include "pism_const.hh"
 #include "iceModelVec.hh"
 #include "flowlaws.hh" // IceFlowLaw
-#include "materials.hh" // SSAStrengthExtension, IceBasalResistancePlasticLaw
+#include "materials.hh" // IceBasalResistancePlasticLaw
 #include "PISMIO.hh"
 #include "NCVariable.hh"
 #include "SSAFD.hh"
 #include "exactTestsIJ.h"
-
-//! \brief Compute map-plane coordinates of a grid point.
-void mapcoords(IceGrid &grid, PetscInt i, PetscInt j,
-               PetscScalar &x, PetscScalar &y, PetscScalar &r) {
-  // compute x,y,r on grid from i,j
-  PetscScalar ifrom0, jfrom0;
-
-  ifrom0=static_cast<PetscScalar>(i)-static_cast<PetscScalar>(grid.Mx - 1)/2.0;
-  jfrom0=static_cast<PetscScalar>(j)-static_cast<PetscScalar>(grid.My - 1)/2.0;
-  x=grid.dx*ifrom0;
-  y=grid.dy*jfrom0;
-  r = sqrt(PetscSqr(x) + PetscSqr(y));
-}
 
 //! \brief Report errors relative to the test J exact solution.
 PetscErrorCode reportErrors(IceGrid &grid, NCConfigVariable &config,
@@ -66,7 +53,7 @@ PetscErrorCode reportErrors(IceGrid &grid, NCConfigVariable &config,
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar junk1, junk2, uexact, vexact;
       PetscScalar myr,myx,myy;
-      mapcoords(grid,i,j,myx,myy,myr);
+      grid.mapcoords(i,j,myx,myy,myr);
       // eval exact solution
       const PetscInt ifrom0 = i - (grid.Mx)/2,
         jfrom0 = j - (grid.My)/2;
@@ -345,13 +332,13 @@ int main(int argc, char *argv[]) {
     // Create the SSA solver object:
     SSAFD ssa(grid, basal, ice, EC, config);
 
+    // Allocate the SSA solver:
+    ierr = ssa.init(vars); CHKERRQ(ierr);
+
     // fill the fields:
     ierr = setInitStateJ(config, grid, ssa, ice,
                          &vbed, &vMask, &vh, &vH,
                          &vel_bc, &vtauc, &enthalpy); CHKERRQ(ierr);
-
-    // Allocate the SSA solver:
-    ierr = ssa.init(vars); CHKERRQ(ierr);
 
     ierr = ssa.set_boundary_conditions(vMask, vel_bc); CHKERRQ(ierr); 
 

@@ -22,13 +22,12 @@
 #include "iceModelVec.hh"
 #include "ShallowStressBalance.hh"
 #include "SSB_Modifier.hh"
-#include "enthalpyConverter.hh"
 
 //! The class defining PISM's interface to the shallow stress balance code.
 class PISMStressBalance
 {
 public:
-  PISMStressBalance(IceGrid &g, IceFlowLaw &ice, EnthalpyConverter &e, IceBasalResistancePlasticLaw &b,
+  PISMStressBalance(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod,
                     const NCConfigVariable &config);
   virtual ~PISMStressBalance();
 
@@ -43,6 +42,16 @@ public:
 
   //! \brief Save the initial guess (for restarting).
   virtual PetscErrorCode save_initial_guess(string filename);
+
+  //! \brief Adds more variable names to result (to respect -o_size and
+  //! -save_size).
+  /*!
+    Keyword can be one of "small", "medium" or "big".
+   */
+  virtual void add_to_output(string keyword, set<string> &result);
+
+  //! Writes requested fields to a file.
+  virtual PetscErrorCode write_fields(set<string> vars, string filename);
 
   //! \brief Set the vertically-averaged ice velocity boundary condition.
   /*!
@@ -85,14 +94,21 @@ public:
 
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
+
+  // Reporting methods:
+  // virtual PetscErrorCode compute_velbar(IceModelVec2V &result);
+  // virtual PetscErrorCode compute_cbar(IceModelVec2S &result);
+  // virtual PetscErrorCode compute_cbase(IceModelVec2S &result, IceModelVec2S &tmp);
+  // virtual PetscErrorCode compute_cflx(IceModelVec2S &result, IceModelVec2S &cbar);
+  // virtual PetscErrorCode compute_csurf(IceModelVec2S &result, IceModelVec2S &tmp);
+
 protected:
+  virtual PetscErrorCode allocate();
   virtual PetscErrorCode compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
                                                    IceModelVec2S *bmr, IceModelVec3 &result);
   IceGrid &grid;
-  IceFlowLaw &ice;
-  EnthalpyConverter &EC;
   const NCConfigVariable &config;
-  IceBasalResistancePlasticLaw &basal;
+  PISMVars *variables;
 
   IceModelVec3 w;
   PetscReal w_max;
@@ -100,53 +116,6 @@ protected:
 
   ShallowStressBalance *stress_balance;
   SSB_Modifier *modifier;
-};
-
-#include "SIAFD.hh"
-
-//! \brief The non-sliding SIA.
-/*!
- * The non-sliding SIA is a combination of the trivial shallow stress balance
- * and the SIAFD "modifier".
- */
-class SIA_Nonsliding : public PISMStressBalance
-{
-public:
-  SIA_Nonsliding(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, IceBasalResistancePlasticLaw &b,
-                const NCConfigVariable &conf) 
-    : PISMStressBalance(g, i, e, b, conf) {
-    stress_balance = new SSB_Trivial(grid, basal, ice, EC, config);
-    modifier = new SIAFD(grid, ice, EC, config);
-  }
-  virtual ~SIA_Nonsliding() {}
-};
-
-#include "SSAFD.hh"
-
-//! \brief The hybrid shallow stress balance (SSA + SIA).
-class SSB_Hybrid : public PISMStressBalance
-{
-public:
-  SSB_Hybrid(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, IceBasalResistancePlasticLaw &b,
-                const NCConfigVariable &conf) 
-    : PISMStressBalance(g, i, e, b, conf) {
-    stress_balance = new SSAFD(grid, basal, ice, EC, config);
-    modifier = new SIAFD(grid, ice, EC, config);
-  }
-  virtual ~SSB_Hybrid() {}
-};
-
-//! \brief SSA-only stress balance module.
-class SSA_Only : public PISMStressBalance
-{
-public:
-  SSA_Only(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, IceBasalResistancePlasticLaw &b,
-           const NCConfigVariable &conf) 
-    : PISMStressBalance(g, i, e, b, conf) {
-    stress_balance = new SSAFD(grid, basal, ice, EC, config);
-    modifier = new SSBM_Trivial(grid, ice, EC, config);
-  }
-  virtual ~SSA_Only() {}
 };
 
 #endif /* _PISMSTRESSBALANCE_H_ */

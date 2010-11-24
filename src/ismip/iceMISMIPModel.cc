@@ -23,6 +23,31 @@
 #include "../base/iceModel.hh"
 #include "iceMISMIPModel.hh"
 
+PetscErrorCode MISMIPBasalResistanceLaw::printInfo(int verbthresh, MPI_Comm com) {
+  PetscErrorCode ierr;
+  if (m_MISMIP == 1.0) {
+    ierr = verbPrintf(verbthresh, com, 
+      "Using MISMIP sliding w  tau_b = - C u,  C=%5.4e.\n", C_MISMIP); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(verbthresh, com, 
+      "Using MISMIP sliding w  tau_b = - C (|u|^2 + eps^2)^{(m-1)/2} u,\n"
+      "   m=%5.4f, C=%5.4e, and eps = %5.4f m/a.\n",
+      m_MISMIP, C_MISMIP, regularize_MISMIP * secpera); CHKERRQ(ierr);
+  }
+  return 0;
+}
+
+PetscScalar MISMIPBasalResistanceLaw::drag(PetscScalar /*tauc*/,
+                                           PetscScalar vx, PetscScalar vy) {
+  PetscScalar myC = C_MISMIP;
+  if (m_MISMIP == 1.0) {
+    return myC;
+  } else {
+    const PetscScalar magsliding = PetscSqr(vx) + PetscSqr(vy)
+                                   + PetscSqr(regularize_MISMIP);
+    return myC * pow(magsliding, (m_MISMIP - 1.0) / 2.0);
+  }
+}
 
 /* 
 This derived class illustrates the bug-creation problem, task #6216.
@@ -61,61 +86,11 @@ IceMISMIPModel::IceMISMIPModel(IceGrid &g, NCConfigVariable &conf, NCConfigVaria
   tviewfile = PETSC_NULL;
 }
 
-
 IceMISMIPModel::~IceMISMIPModel() {
   // this destructor gets called even if user does *not* choose -mismip
   if (tviewfile != PETSC_NULL)
     PetscViewerDestroy(tviewfile);
 }
-
-
-PetscErrorCode IceMISMIPModel::printBasalAndIceInfo() {
-  PetscErrorCode ierr;
-  if (m_MISMIP == 1.0) {
-    ierr = verbPrintf(2, grid.com, 
-      "Using MISMIP sliding w  tau_b = - C u,  C=%5.4e.\n", C_MISMIP); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2, grid.com, 
-      "Using MISMIP sliding w  tau_b = - C (|u|^2 + eps^2)^{(m-1)/2} u,\n"
-      "   m=%5.4f, C=%5.4e, and eps = %5.4f m/a.\n",
-      m_MISMIP, C_MISMIP, regularize_MISMIP * secpera); CHKERRQ(ierr);
-  }
-  // ierr = ice->printInfo(2); CHKERRQ(ierr);
-  return 0;
-}
-
-
-PetscScalar IceMISMIPModel::basalDragx(PetscScalar **/*tauc*/,
-                                       PISMVector2 **uv,
-                                       PetscInt i, PetscInt j) const {
-  // MAKE SURE THIS IS REALLY BEING USED!!:
-  //PetscPrintf(PETSC_COMM_SELF,"IceMISMIPModel::basalDragx()\n");
-  return basalIsotropicDrag(uv[i][j].u, uv[i][j].v);
-}
-
-
-PetscScalar IceMISMIPModel::basalDragy(PetscScalar **/*tauc*/,
-                                       PISMVector2 **uv,
-                                       PetscInt i, PetscInt j) const {
-  // MAKE SURE THIS IS REALLY BEING USED!!:
-  //PetscPrintf(PETSC_COMM_SELF,"IceMISMIPModel::basalDragy()\n");
-  return basalIsotropicDrag(uv[i][j].u, uv[i][j].v);
-}
-
-
-PetscScalar IceMISMIPModel::basalIsotropicDrag(
-            PetscScalar u, PetscScalar v) const {
-
-  PetscScalar       myC = C_MISMIP;
-  if (m_MISMIP == 1.0) {
-    return myC;
-  } else {
-    const PetscScalar magsliding = PetscSqr(u) + PetscSqr(v)
-                                   + PetscSqr(regularize_MISMIP);
-    return myC * pow(magsliding, (m_MISMIP - 1.0) / 2.0);
-  }
-}
-
 
 PetscErrorCode IceMISMIPModel::set_grid_defaults() {
   grid.My = 3;
@@ -311,10 +286,10 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 
   // models 1 vs 2
   if (modelnum == 1) {
-    computeSIAVelocities = PETSC_FALSE;
+    // computeSIAVelocities = PETSC_FALSE;
     config.set_flag("do_superpose", false);
   } else if (modelnum == 2) {
-    computeSIAVelocities = PETSC_TRUE;
+    // computeSIAVelocities = PETSC_TRUE;
     config.set_flag("do_superpose", true);
   } else {
     SETERRQ(98, "how did I get here?");    
@@ -334,6 +309,17 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   
   return 0;
 }
+
+PetscErrorCode IceMISMIPModel::initBasalTillModel() {
+  PetscErrorCode ierr;
+  ierr = IceModel::initBasalTillModel(); CHKERRQ(ierr);
+
+  delete basal;
+  basal = new MISMIPBasalResistanceLaw(m_MISMIP, C_MISMIP, regularize_MISMIP);
+
+  return 0;
+}
+
 
 
 PetscErrorCode IceMISMIPModel::set_time_from_options() {
@@ -429,15 +415,17 @@ PetscErrorCode IceMISMIPModel::init_physics() {
     // ierr = ice->printInfo(2);CHKERRQ(ierr);
   }
 
-  ssaStrengthExtend.set_min_thickness(5.0); // m
-  const PetscReal
-    DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8,  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
-    DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3),  // typical strain rate is 100 m/yr per 
-    DEFAULT_nuH = ssaStrengthExtend.min_thickness_for_extension() * DEFAULT_CONSTANT_HARDNESS_FOR_SSA
-                       / (2.0 * pow(DEFAULT_TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
-          // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
-          //          30 MPa yr for \bar\nu
-  ssaStrengthExtend.set_notional_strength(DEFAULT_nuH);
+
+  PetscReal FIX_ssa_strength_extension;
+  // ssaStrengthExtend.set_min_thickness(5.0); // m
+  // const PetscReal
+  //   DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8,  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
+  //   DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3),  // typical strain rate is 100 m/yr per 
+  //   DEFAULT_nuH = ssaStrengthExtend.min_thickness_for_extension() * DEFAULT_CONSTANT_HARDNESS_FOR_SSA
+  //                      / (2.0 * pow(DEFAULT_TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
+  //         // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
+  //         //          30 MPa yr for \bar\nu
+  // ssaStrengthExtend.set_notional_strength(DEFAULT_nuH);
 
   return 0;
 }
@@ -557,9 +545,6 @@ PetscErrorCode IceMISMIPModel::misc_setup() {
        "  and files %s_ss, %s_f at end of run if\n"
        "  steady state achieved.\n",
        mprefix,oname,mprefix,mprefix); CHKERRQ(ierr);
-
-
-  ierr = printBasalAndIceInfo(); CHKERRQ(ierr);
   
   // create ABC1_..._t file for every 50 year results
   strcpy(tfilename,mprefix);
@@ -813,7 +798,10 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
   PetscErrorCode  ierr;
   IceModelVec2S q = vWork2d[0];	// give it a shorter name
 
+  IceModelVec2V vel_bar = vWork2dV;
+  ierr = compute_velbar(vel_bar); CHKERRQ(ierr);
   ierr = vel_bar.get_component(0, q); CHKERRQ(ierr);
+
   ierr = q.multiply_by(vH); CHKERRQ(ierr);
   // q is signed flux in x direction, in units of m^2/s
 
@@ -883,6 +871,9 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
   PetscScalar     maxubar = 0.0, avubargrounded = 0.0, avubarfloating = 0.0, ig = 0.0,
                   Ngrounded = 0.0, Nfloating = 0.0;
   PetscScalar     gavubargrounded, gavubarfloating, gig;
+
+  IceModelVec2V vel_bar = vWork2dV;
+  ierr = compute_velbar(vel_bar); CHKERRQ(ierr);
 
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);

@@ -81,6 +81,9 @@ public:
   virtual PetscErrorCode  endGhostComm(IceModelVec &destination);
 
   virtual PetscErrorCode  set(PetscScalar c);
+
+  virtual int get_state_counter() const;
+  virtual void inc_state_counter();
  
   bool   write_in_glaciological_units, time_independent;
   nc_type output_data_type;
@@ -107,6 +110,7 @@ protected:
   void         *array;  // will be PetscScalar** or PetscScalar*** in derived classes
 
   int access_counter;		// used in begin_access() and end_access()
+  int state_counter;
 
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode checkAllocated();
@@ -208,6 +212,8 @@ public:
 class IceModelVec2V : public IceModelVec2 {
 public:
   IceModelVec2V();
+  IceModelVec2V(const IceModelVec2V &other) : IceModelVec2(other)
+  { component_da = other.component_da; }
   //IceModelVec2V(const IceModelVec2V &original);
   ~IceModelVec2V();
   using IceModelVec2::create;

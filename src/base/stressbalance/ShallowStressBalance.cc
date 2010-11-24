@@ -18,8 +18,8 @@
 
 #include "ShallowStressBalance.hh"
 
-//! \brief Initialize a shallow stress balance object.
-PetscErrorCode ShallowStressBalance::init(PISMVars &/*vars*/) {
+//! \brief Allocate a shallow stress balance object.
+PetscErrorCode ShallowStressBalance::allocate() {
   PetscErrorCode ierr;
 
   ierr = velocity.create(grid, "bar", true); CHKERRQ(ierr); // components are ubar and vbar
@@ -35,7 +35,7 @@ PetscErrorCode ShallowStressBalance::init(PISMVars &/*vars*/) {
   ierr = basal_frictional_heating.set_glaciological_units("mW m-2"); CHKERRQ(ierr);
   basal_frictional_heating.write_in_glaciological_units = true;
 
-  ierr = D2.create(grid, "D2", false); CHKERRQ(ierr);
+  ierr = D2.create(grid, "D2", true); CHKERRQ(ierr);
   ierr = D2.set_attrs("internal",
                       "(partial) square of the Frobenius norm of D_{ij}, the combined strain rates",
                       "", ""); CHKERRQ(ierr);
@@ -49,6 +49,7 @@ PetscErrorCode SSB_Trivial::update(bool fast) {
   if (fast) return 0;
 
   ierr = velocity.set(0.0); CHKERRQ(ierr);
+
   max_u = max_v = 0.0;
 
   ierr = basal_frictional_heating.set(0.0); CHKERRQ(ierr);

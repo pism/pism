@@ -143,7 +143,7 @@ PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) {
 
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      mag[i][j] = sqrt(PetscSqr(a[i][j].u) + PetscSqr(a[i][j].v));
+      mag[i][j] = a[i][j].magnitude();
     }
   }
 

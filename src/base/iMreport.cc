@@ -23,88 +23,51 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-PetscErrorCode IceModel::computeFlowUbarStats
-                      (PetscScalar *gUbarmax, PetscScalar *gUbarSIAav,
-                       PetscScalar *gUbarstreamav, PetscScalar *gUbarshelfav,
-                       PetscScalar *gicegridfrac, PetscScalar *gSIAgridfrac,
-                       PetscScalar *gstreamgridfrac, PetscScalar *gshelfgridfrac) {
-  // NOTE:  Assumes IceModel::vel_bar, vu, vv holds correct 
-  // and up-to-date values of velocities
-
+//! \brief Computes the vertically-averaged ice velocity, combining (SIA and SSA) velocities.
+PetscErrorCode IceModel::compute_velbar(IceModelVec2V &result) {
   PetscErrorCode ierr;
+  IceModelVec2Stag *Q;
+  IceModelVec2V *vel_advective;
 
-  PetscScalar **H;
-  PetscScalar Ubarmax = 0.0, UbarSIAsum = 0.0, Ubarstreamsum = 0.0,
-              Ubarshelfsum = 0.0, icecount = 0.0, SIAcount = 0.0, shelfcount = 0.0;
+  ierr = stress_balance->get_diffusive_flux(Q); CHKERRQ(ierr);
+  ierr = stress_balance->get_advective_2d_velocity(vel_advective); CHKERRQ(ierr);
 
-  ierr =    vH.get_array(H);    CHKERRQ(ierr);
-  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (H[i][j] > 0.0) {
-        icecount += 1.0;
-        const PetscScalar Ubarmag 
-                           = sqrt(PetscSqr(vel_bar(i,j).u) + PetscSqr(vel_bar(i,j).v));
-        Ubarmax = PetscMax(Ubarmax, Ubarmag);
-        if (vMask.value(i,j) == MASK_SHEET) {
-          SIAcount += 1.0;
-          UbarSIAsum += Ubarmag;
-        } else if (vMask.is_floating(i,j)) {
-          shelfcount += 1.0;
-          Ubarshelfsum += Ubarmag;
-        } else if (vMask.value(i,j) == MASK_DRAGGING_SHEET) {
-          // streamcount = icecount - SIAcount - shelfcount
-          Ubarstreamsum += Ubarmag;
-        } else {
-          SETERRQ(1,"should not reach here!");
-        }
+  ierr = Q->staggered_to_regular(result); CHKERRQ(ierr);
+
+  ierr = Q->begin_access(); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = vel_advective->begin_access(); CHKERRQ(ierr);
+  
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if (vH(i,j) > 0.0) {
+        result(i,j).u = result(i,j).u / vH(i,j) + (*vel_advective)(i,j).u; // hybrid
+        result(i,j).v = result(i,j).v / vH(i,j) + (*vel_advective)(i,j).v; // hybrid
+      } else {
+        result(i,j).u = 0.0;
+        result(i,j).v = 0.0;
       }
     }
   }
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr =    vH.end_access(); CHKERRQ(ierr);
-  ierr = vel_bar.end_access(); CHKERRQ(ierr);
 
-  ierr = PetscGlobalMax(&Ubarmax, gUbarmax, grid.com); CHKERRQ(ierr);
-  
-  // get global sums
-  PetscScalar gicecount, gSIAcount, gshelfcount, gstreamcount;
-  ierr = PetscGlobalSum(&icecount, &gicecount, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&SIAcount, &gSIAcount, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&shelfcount, &gshelfcount, grid.com); CHKERRQ(ierr);
-  gstreamcount = gicecount - gSIAcount - gshelfcount;
+  ierr = vel_advective->end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = Q->end_access(); CHKERRQ(ierr);
 
-  // really getting sums here (not yet averages)
-  ierr = PetscGlobalSum(&UbarSIAsum, gUbarSIAav, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&Ubarshelfsum, gUbarshelfav, grid.com); CHKERRQ(ierr);
-  ierr = PetscGlobalSum(&Ubarstreamsum, gUbarstreamav, grid.com); CHKERRQ(ierr);
+  ierr = result.set_name("bar"); CHKERRQ(ierr); // components are ubar and vbar
+  ierr = result.set_attrs("diagnostic", 
+                          "vertical mean of horizontal ice velocity in the X direction",
+                          "m s-1", "land_ice_vertical_mean_x_velocity", 0); CHKERRQ(ierr);
+  ierr = result.set_attrs("diagnostic", 
+                          "vertical mean of horizontal ice velocity in the Y direction",
+                          "m s-1", "land_ice_vertical_mean_y_velocity", 1); CHKERRQ(ierr);
+  ierr = result.set_glaciological_units("m year-1");
+  result.write_in_glaciological_units = true;
 
-  if (gSIAcount > 0.0) {
-    *gUbarSIAav = *gUbarSIAav / gSIAcount;
-  } else  *gUbarSIAav = 0.0;
-  if (gshelfcount > 0.0) {
-    *gUbarshelfav = *gUbarshelfav / gshelfcount;
-  } else  *gUbarshelfav = 0.0;
-  if (gstreamcount > 0.0) {
-    *gUbarstreamav = *gUbarstreamav / gstreamcount;
-  } else  *gUbarstreamav = 0.0;
-
-  // finally make these actual fractions
-  if (gicecount > 0.0) {
-    *gSIAgridfrac = gSIAcount / gicecount;
-    *gshelfgridfrac = gshelfcount / gicecount;
-    *gstreamgridfrac = gstreamcount / gicecount;
-  } else {
-    *gSIAgridfrac = 0.0;
-    *gshelfgridfrac = 0.0;
-    *gstreamgridfrac = 0.0;
-  }
- 
-  *gicegridfrac = gicecount / ((PetscScalar) (grid.Mx * grid.My));
   return 0;
 }
-
 
 //!  Computes volume and area of ice sheet, for reporting purposes.
 /*!
@@ -124,6 +87,7 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
   
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
+  // FIXME: we should use cell_area instead
   const PetscScalar   a = grid.dx * grid.dy; // area unit (m^2)
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -296,55 +260,6 @@ PetscErrorCode IceModel::summary(bool tempAndAge) {
   ierr = summaryPrintLine(PETSC_FALSE,(PetscTruth)tempAndAge,grid.year,dt,
                           gvolume,garea,meltfrac,gdivideH,gdivideT); CHKERRQ(ierr);
 
-  // extra verbose report  
-  const PetscScalar EXTRAS_VERB_LEVEL = 4;
-  if (getVerbosityLevel() >= EXTRAS_VERB_LEVEL) {
-    PetscScalar Ubarmax, UbarSIAav, Ubarstreamav, Ubarshelfav, icegridfrac,
-         SIAgridfrac, streamgridfrac, shelfgridfrac;
-    ierr = computeFlowUbarStats(&Ubarmax,
-              &UbarSIAav, &Ubarstreamav, &Ubarshelfav, &icegridfrac,
-              &SIAgridfrac, &streamgridfrac, &shelfgridfrac); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, 
-           "    (volume of ice which is SIA, stream, shelf:  %8.3f,  %8.3f,  %8.3f)\n",
-           gvolSIA/(1.0e6*1.0e9), gvolstream/(1.0e6*1.0e9), gvolshelf/(1.0e6*1.0e9));
-           CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, 
-           "  d(volume)/dt of ice (km^3/a):    %11.2f\n",
-                         dvoldt*secpera*1.0e-9); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, 
-           "  average value of dH/dt (m/a):    %11.5f\n",
-                         gdHdtav*secpera); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, 
-           "  area percent covered by ice:       %9.4f\n",
-                         icegridfrac*100.0); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, 
-           "    (area percent ice SIA, stream, shelf:        %8.4f,  %8.4f,  %8.4f)\n",
-                         SIAgridfrac*100.0, streamgridfrac*100.0, shelfgridfrac*100.0);
-                         CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, 
-           "  max diffusivity D on SIA (m^2/s):  %9.3f\n",
-                         gDmax); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, 
-           "  max |bar U| in all ice (m/a):     %10.3f\n", Ubarmax*secpera); CHKERRQ(ierr);
-    ierr = PetscPrintf(grid.com, 
-           "    (av |bar U| in SIA, stream, shelf (m/a):    %9.3f, %9.3f, %9.3f)\n",
-           UbarSIAav*secpera, Ubarstreamav*secpera, Ubarshelfav*secpera); CHKERRQ(ierr);
-    if (tempAndAge) {
-      ierr = PetscPrintf(grid.com, 
-           "  maximum |u|,|v|,|w| in ice (m/a): "); CHKERRQ(ierr);
-      if ((gmaxu < 0.0) || (gmaxv < 0.0) || (gmaxw < 0.0)) {
-        ierr = PetscPrintf(grid.com,            "     <N/A>\n"); CHKERRQ(ierr);
-      } else {
-        ierr = PetscPrintf(grid.com,            "%10.3f,%10.3f, %9.3f\n",
-        gmaxu*secpera, gmaxv*secpera, gmaxw*secpera); CHKERRQ(ierr);
-      }
-      if (config.get_flag("do_age")) {
-        ierr = PetscPrintf(grid.com, 
-           "  fraction of ice which is original: %9.3f\n",
-                         origfrac); CHKERRQ(ierr);
-      }
-    }
-  }
   return 0;
 }
 
@@ -464,14 +379,15 @@ PetscErrorCode IceModel::summaryPrintLine(
   return 0;
 }
 
-
 //! \brief Computes cbar, the magnitude of vertically-integrated horizontal
 //! velocity of ice and masks out ice-free areas.
 PetscErrorCode IceModel::compute_cbar(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PetscScalar fill_value = -0.01/secpera;
 
-  ierr = vel_bar.magnitude(result); CHKERRQ(ierr);
+  ierr = compute_velbar(vWork2dV); CHKERRQ(ierr);
+
+  ierr = vWork2dV.magnitude(result); CHKERRQ(ierr);
   ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr); // mask out ice-free areas
 
   ierr = result.set_name("cbar"); CHKERRQ(ierr);
@@ -515,9 +431,12 @@ PetscErrorCode IceModel::compute_cflx(IceModelVec2S &result, IceModelVec2S &cbar
 PetscErrorCode IceModel::compute_cbase(IceModelVec2S &result, IceModelVec2S &tmp) {
   PetscErrorCode ierr;
   PetscScalar fill_value = -0.01/secpera;
+  IceModelVec3 *u3, *v3, *w3;
 
-  ierr = u3.getHorSlice(result, 0.0); CHKERRQ(ierr); // result = u_{z=0}
-  ierr = v3.getHorSlice(tmp, 0.0); CHKERRQ(ierr);    // tmp = v_{z=0}
+  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr); 
+
+  ierr = u3->getHorSlice(result, 0.0); CHKERRQ(ierr); // result = u_{z=0}
+  ierr = v3->getHorSlice(tmp, 0.0); CHKERRQ(ierr);    // tmp = v_{z=0}
 
   ierr = result.set_to_magnitude(result,tmp); CHKERRQ(ierr);
 
@@ -541,13 +460,12 @@ PetscErrorCode IceModel::compute_cbase(IceModelVec2S &result, IceModelVec2S &tmp
 PetscErrorCode IceModel::compute_csurf(IceModelVec2S &result, IceModelVec2S &tmp) {
   PetscErrorCode ierr;
   PetscScalar fill_value = -0.01/secpera;
+  IceModelVec3 *u3, *v3, *w3;
 
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = u3.getSurfaceValues(result, vH); CHKERRQ(ierr);
-  ierr = v3.getSurfaceValues(tmp,    vH); CHKERRQ(ierr);
-  ierr = u3.end_access(); CHKERRQ(ierr);
-  ierr = v3.end_access(); CHKERRQ(ierr);
+  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr); 
+
+  ierr = u3->getSurfaceValues(result, vH); CHKERRQ(ierr);
+  ierr = v3->getSurfaceValues(tmp,    vH); CHKERRQ(ierr);
 
   ierr = result.set_to_magnitude(result, tmp); CHKERRQ(ierr);
 
@@ -568,10 +486,11 @@ PetscErrorCode IceModel::compute_csurf(IceModelVec2S &result, IceModelVec2S &tmp
 //! Computes uvelsurf, the x component of velocity of ice at ice surface.
 PetscErrorCode IceModel::compute_uvelsurf(IceModelVec2S &result) {
   PetscErrorCode ierr;
+  IceModelVec3 *u3, *v3, *w3;
 
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = u3.getSurfaceValues(result, vH); CHKERRQ(ierr);
-  ierr = u3.end_access(); CHKERRQ(ierr);
+  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr); 
+
+  ierr = u3->getSurfaceValues(result, vH); CHKERRQ(ierr);
 
   ierr = result.set_name("uvelsurf"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "x component of velocity of ice at ice surface",
@@ -591,10 +510,11 @@ PetscErrorCode IceModel::compute_uvelsurf(IceModelVec2S &result) {
 //! Computes vvelsurf, the y component of velocity of ice at ice surface.
 PetscErrorCode IceModel::compute_vvelsurf(IceModelVec2S &result) {
   PetscErrorCode ierr;
+  IceModelVec3 *u3, *v3, *w3;
 
-  ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.getSurfaceValues(result, vH); CHKERRQ(ierr);
-  ierr = v3.end_access(); CHKERRQ(ierr);
+  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr); 
+
+  ierr = v3->getSurfaceValues(result, vH); CHKERRQ(ierr);
 
   ierr = result.set_name("vvelsurf"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "y component of velocity of ice at ice surface",
@@ -620,19 +540,22 @@ PetscErrorCode IceModel::compute_vvelsurf(IceModelVec2S &result) {
 PetscErrorCode IceModel::compute_wvel(IceModelVec3 &result) {
   PetscErrorCode ierr;
   PetscScalar *res, *w, *u, *v;
-  
+  IceModelVec3 *u3, *v3, *w3;
+
+  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr); 
+
   ierr = vbed.begin_access(); CHKERRQ(ierr);
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = w3.begin_access(); CHKERRQ(ierr);
+  ierr = u3->begin_access(); CHKERRQ(ierr);
+  ierr = v3->begin_access(); CHKERRQ(ierr);
+  ierr = w3->begin_access(); CHKERRQ(ierr);
   ierr = vuplift.begin_access(); CHKERRQ(ierr); 
   ierr = result.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = u3.getInternalColumn(i, j, &u); CHKERRQ(ierr);
-      ierr = v3.getInternalColumn(i, j, &v); CHKERRQ(ierr);
-      ierr = w3.getInternalColumn(i, j, &w); CHKERRQ(ierr);
+      ierr = u3->getInternalColumn(i, j, &u); CHKERRQ(ierr);
+      ierr = v3->getInternalColumn(i, j, &v); CHKERRQ(ierr);
+      ierr = w3->getInternalColumn(i, j, &w); CHKERRQ(ierr);
       ierr = result.getInternalColumn(i, j, &res); CHKERRQ(ierr);
 
       for (PetscInt k = 0; k < grid.Mz; ++k)
@@ -642,9 +565,9 @@ PetscErrorCode IceModel::compute_wvel(IceModelVec3 &result) {
 
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = vuplift.end_access(); CHKERRQ(ierr);
-  ierr = w3.end_access(); CHKERRQ(ierr);
-  ierr = v3.end_access(); CHKERRQ(ierr);
-  ierr = u3.end_access(); CHKERRQ(ierr);
+  ierr = w3->end_access(); CHKERRQ(ierr);
+  ierr = v3->end_access(); CHKERRQ(ierr);
+  ierr = u3->end_access(); CHKERRQ(ierr);
   ierr = vbed.end_access(); CHKERRQ(ierr); 
 
   ierr = result.set_name("wvel"); CHKERRQ(ierr);
@@ -662,9 +585,7 @@ PetscErrorCode IceModel::compute_wvel(IceModelVec3 &result) {
 //! Computes vertical velocity at the base of ice.
 PetscErrorCode IceModel::compute_wvelbase(IceModelVec3 &wvel, IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = wvel.begin_access(); CHKERRQ(ierr);
   ierr = wvel.getHorSlice(result, 0.0); CHKERRQ(ierr);
-  ierr = wvel.end_access(); CHKERRQ(ierr);
 
   ierr = result.set_name("wvelbase"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "vertical velocity of ice at the base of ice, relative to the geoid",
@@ -687,9 +608,7 @@ PetscErrorCode IceModel::compute_wvelbase(IceModelVec3 &wvel, IceModelVec2S &res
  */
 PetscErrorCode IceModel::compute_wvelsurf(IceModelVec3 &wvel, IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = wvel.begin_access(); CHKERRQ(ierr);
   ierr = wvel.getSurfaceValues(result, vH); CHKERRQ(ierr);
-  ierr = wvel.end_access(); CHKERRQ(ierr);
 
   ierr = result.set_name("wvelsurf"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "vertical velocity of ice at ice surface, relative to the geoid",
@@ -711,7 +630,7 @@ PetscErrorCode IceModel::compute_wvelsurf(IceModelVec3 &wvel, IceModelVec2S &res
 PetscErrorCode IceModel::compute_taud(IceModelVec2S &result, IceModelVec2S &tmp) {
   PetscErrorCode ierr;
 
-  ierr = computeDrivingStress(result, tmp); CHKERRQ(ierr);
+  verbPrintf(2, grid.com, "WARNING (FIXME): taud output is not implemented\n");
 
   ierr = result.set_to_magnitude(result, tmp); CHKERRQ(ierr);
   ierr = result.set_name("taud"); CHKERRQ(ierr);
@@ -770,22 +689,34 @@ PetscErrorCode IceModel::compute_proc_ice_area(IceModelVec2S &result) {
   return 0;
 }
 
+
+//! \brief Computes f(|v|) as described in [\ref BBssasliding] (page 7, equation 22). 
+static PetscScalar bueler_brown_f(PetscScalar v_squared) {
+  const PetscScalar inC_fofv = 1.0e-4 * PetscSqr(secpera),
+    outC_fofv = 2.0 / pi;
+  
+  return 1.0 - outC_fofv * atan(inC_fofv * v_squared);
+}
+
 //! \brief Computes the map of f(|v|) (see [\ref BBssasliding], equation 22)
 PetscErrorCode IceModel::compute_bueler_brown_f(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PetscReal fill_value = -0.01;
+  IceModelVec2V *vel_ssa;
 
-  ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
+  ierr = stress_balance->get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr);
+
+  ierr = vel_ssa->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      result(i,j) = bueler_brown_f(vel_ssa(i,j).magnitude_squared());
+      result(i,j) = bueler_brown_f((*vel_ssa)(i,j).magnitude_squared());
     }
   }
 
   ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa->end_access(); CHKERRQ(ierr);
 
   ierr = result.mask_by(vH, fill_value); CHKERRQ(ierr);
 
@@ -981,10 +912,11 @@ PetscErrorCode IceModel::compute_dhdt(IceModelVec2S &result) {
 
 PetscErrorCode IceModel::compute_uvelbase(IceModelVec2S &result) {
   PetscErrorCode ierr;
+  IceModelVec3 *u3, *v3, *w3;
 
-  ierr = u3.begin_access(); CHKERRQ(ierr);
-  ierr = u3.getHorSlice(result, 0.0); CHKERRQ(ierr);
-  ierr = u3.end_access(); CHKERRQ(ierr);
+  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr); 
+
+  ierr = u3->getHorSlice(result, 0.0); CHKERRQ(ierr);
 
   ierr = result.set_name("uvelbase"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "x component of ice velocity at the base of ice",
@@ -1003,9 +935,11 @@ PetscErrorCode IceModel::compute_uvelbase(IceModelVec2S &result) {
 
 PetscErrorCode IceModel::compute_vvelbase(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = v3.begin_access(); CHKERRQ(ierr);
-  ierr = v3.getHorSlice(result, 0.0); CHKERRQ(ierr);
-  ierr = v3.end_access(); CHKERRQ(ierr);
+  IceModelVec3 *u3, *v3, *w3;
+
+  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr); 
+
+  ierr = v3->getHorSlice(result, 0.0); CHKERRQ(ierr);
 
   ierr = result.set_name("vvelbase"); CHKERRQ(ierr);
   ierr = result.set_attrs("diagnostic", "y component of ice velocity at the base of ice",
@@ -1291,15 +1225,7 @@ See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
 PetscErrorCode IceModel::compute_schoofs_theta(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  if (sia_bed_smoother==NULL) {
-    SETERRQ(1,"PISM ERROR: sia_bed_smoother==NULL in compute_schoofs_theta()");
-  }
-  
-  ierr = sia_bed_smoother->preprocess_bed(vbed,
-               config.get("Glen_exponent"), config.get("bed_smoother_range") );
-               CHKERRQ(ierr);
-  ierr = sia_bed_smoother->get_theta(
-               vh, config.get("Glen_exponent"), 0, &result); CHKERRQ(ierr);
+  verbPrintf(2, grid.com, "WARNING (FIXME): schoofs_theta output is not implemented\n");
 
   ierr = result.set_name("schoofs_theta"); CHKERRQ(ierr);
   ierr = result.set_attrs(
@@ -1324,14 +1250,7 @@ See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
 PetscErrorCode IceModel::compute_topgsmooth(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  if (sia_bed_smoother==NULL) {
-    SETERRQ(1,"PISM ERROR: sia_bed_smoother==NULL in compute_topgsmooth()");
-  }
-  
-  ierr = sia_bed_smoother->preprocess_bed(vbed,
-               config.get("Glen_exponent"), config.get("bed_smoother_range") );
-               CHKERRQ(ierr);
-  ierr = result.copy_from(sia_bed_smoother->topgsmooth); CHKERRQ(ierr);
+  verbPrintf(2, grid.com, "WARNING (FIXME): topgsmooth output is not implemented\n");
 
   ierr = result.set_name("topgsmooth"); CHKERRQ(ierr);
   ierr = result.set_attrs(
@@ -1350,14 +1269,7 @@ See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
 PetscErrorCode IceModel::compute_thksmooth(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  if (sia_bed_smoother==NULL) {
-    SETERRQ(1,"PISM ERROR: sia_bed_smoother==NULL in compute_thksmooth()");
-  }
-  
-  ierr = sia_bed_smoother->preprocess_bed(vbed,
-               config.get("Glen_exponent"), config.get("bed_smoother_range") );
-               CHKERRQ(ierr);
-  ierr = sia_bed_smoother->get_smoothed_thk(vh, vH, 0, &result); CHKERRQ(ierr);
+  verbPrintf(2, grid.com, "WARNING (FIXME): thksmooth output is not implemented\n");
 
   ierr = result.set_name("thksmooth"); CHKERRQ(ierr);
   ierr = result.set_attrs(
@@ -1839,11 +1751,7 @@ Uses  vWork2d[0,1,2,3,4,5] indirectly, in the above calls.
 PetscErrorCode IceModel::compute_diffusivity(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  // compare to calls in IceModel::velocity()
-  ierr = surfaceGradientSIA(); CHKERRQ(ierr);
-  ierr = velocitySIAStaggered(); CHKERRQ(ierr); // ends with staggered
-                                                //   diffusivity in vWork2dStag
-  ierr = vWork2dStag.staggered_to_regular(result); CHKERRQ(ierr); 
+  verbPrintf(2, grid.com, "WARNING (FIXME): diffusivity output is not implemented\n");
 
   ierr = result.set_name("diffusivity"); CHKERRQ(ierr);
   ierr = result.set_attrs(

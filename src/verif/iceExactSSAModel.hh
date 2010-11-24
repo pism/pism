@@ -20,9 +20,10 @@
 #define __iceExactSSAModel_hh
 
 #include <petscda.h>
-#include "../base/grid.hh"
-#include "../base/materials.hh"
-#include "../base/iceModel.hh"
+#include "grid.hh"
+#include "materials.hh"
+#include "iceModel.hh"
+#include "SSAFD.hh"
 
 class IceExactSSAModel : public IceModel {
 public:
@@ -32,9 +33,7 @@ public:
   virtual PetscErrorCode misc_setup();
   virtual PetscErrorCode set_grid_defaults();
   virtual PetscErrorCode set_vars_from_options();
-  virtual PetscErrorCode createVecs();
   virtual PetscErrorCode init_physics();
-
 
   virtual PetscErrorCode run();
   PetscErrorCode         reportErrors();
@@ -42,16 +41,12 @@ public:
 protected:
     char            test;       // only 'I', 'J', 'M' supported
     PetscTruth      exactOnly;
-    IceModelVec2S    vNuForJ[2];
-          
+  
     PetscErrorCode  fillFromExactSolution();
     PetscErrorCode  taucSetI();
     PetscErrorCode  setInitStateAndBoundaryVelsI();
     PetscErrorCode  setInitStateJ();
     PetscErrorCode  setInitStateM();
-
-    void            mapcoords(PetscInt i, PetscInt j,
-                              PetscScalar &x, PetscScalar &y, PetscScalar &r);
 
 private:
     // constants for I; "static" o.k. because also const
@@ -59,6 +54,10 @@ private:
                                B_schoof, p_schoof, DEFAULT_PLASTIC_REGULARIZE;
     // constants for J, M
     static const PetscScalar   LforJ, LforM;
+
+  // we need a pointer to the SSA solver to adjust strength extension parameters
+  SSAFD *ssa;
+  SSBM_Trivial *modifier;
 };
 
 #endif /* __iceExactSSAModel_hh */

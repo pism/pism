@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2010 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,29 +18,8 @@
 
 #include "SIAFD.hh"
 
-//! \brief Initialize the SIA module.
-PetscErrorCode SIAFD::init(PISMVars &vars) {
+PetscErrorCode SIAFD::allocate() {
   PetscErrorCode ierr;
-
-  ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
-
-  mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(1, "mask is not available");
-
-  thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
-
-  surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
-
-  bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (bed == NULL) SETERRQ(1, "bedrock_altitude is not available");
-
-  enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
-
-  age = dynamic_cast<IceModelVec3*>(vars.get("age"));
-  if (age == NULL) SETERRQ(1, "age is not available");
 
   // 2D temporary storage:
   for (int i = 0; i < 2; ++i) {
@@ -65,8 +44,43 @@ PetscErrorCode SIAFD::init(PISMVars &vars) {
     ierr = work_3d[i].set_name(namestr); CHKERRQ(ierr);
   }
 
+  // bed smoother
   bed_smoother = new PISMBedSmoother(grid, config, WIDE_STENCIL);
 
+  return 0;
+}
+
+//! \brief Initialize the SIA module.
+PetscErrorCode SIAFD::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
+
+  mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
+  if (mask == NULL) SETERRQ(1, "mask is not available");
+
+  thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
+  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+
+  surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
+  if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
+
+  bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
+  if (bed == NULL) SETERRQ(1, "bedrock_altitude is not available");
+
+  enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
+  if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
+
+  if (config.get_flag("do_age")) {
+    age = dynamic_cast<IceModelVec3*>(vars.get("age"));
+    if (age == NULL) SETERRQ(1, "age is not available");
+  } else {
+    age = NULL;
+  }
+
+  // set bed_state_counter to -1 so that the smoothed bed is computed the first
+  // time update() is called.
+  bed_state_counter = -1;
   return 0;
 }
 
@@ -77,13 +91,23 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
   PetscErrorCode ierr;
   IceModelVec2Stag h_x = work_2d_stag[0], h_y = work_2d_stag[1];
 
+  // Check if the smoothed bed computed by PISMBedSmoother is out of date and
+  // recompute if necessary.
+  if (bed->get_state_counter() > bed_state_counter) {
+    ierr = bed_smoother->preprocess_bed(*bed,
+                                        config.get("Glen_exponent"),
+                                        config.get("bed_smoother_range"));
+    CHKERRQ(ierr);
+    bed_state_counter = bed->get_state_counter();
+  }
+
   ierr = compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
 
   ierr = compute_diffusive_flux(h_x, h_y, diffusive_flux, fast); CHKERRQ(ierr);
 
   if (!fast) {
     ierr = compute_sigma(D2_input, h_x, h_y); CHKERRQ(ierr);
-
+    
     ierr = compute_3d_horizontal_velocity(h_x, h_y, vel_input, u, v); CHKERRQ(ierr);
   }
 
@@ -98,7 +122,7 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
   have values \c haseloff, \c mahaffy, or \c eta.
 
   The most traditional method is to directly differentiate the surface
-  elevation \f$h\f$ by the Mahaffy method \ref Mahaffy. The \c haseloff method,
+  elevation \f$h\f$ by the Mahaffy method [\ref Mahaffy]. The \c haseloff method,
   suggested by Marianne Haseloff, modifies the Mahaffy method only where
   ice-free adjacent bedrock points are above the ice surface, and in those
   cases the returned gradient component is zero.
@@ -106,7 +130,7 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
   The alternative method, when \c surface_gradient_method = \c eta, transforms
   the thickness to something more regular and differentiates that. We get back
   to the gradient of the surface by applying the chain rule. In particular, as
-  shown in \ref CDDSV for the flat bed and \f$n=3\f$ case, if we define
+  shown in [\ref CDDSV] for the flat bed and \f$n=3\f$ case, if we define
 
   \f[\eta = H^{(2n+2)/n}\f]
 
@@ -474,7 +498,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
 
           delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
 
-          if (k > 0) { // trapezoid rule for I[k] and K[k]
+          if (k > 0) { // trapezoid rule
             const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
             Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
           }
@@ -527,6 +551,72 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
   return 0;
 }
 
+PetscErrorCode SIAFD::compute_diffusivity(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+  // delta on the staggered grid:
+  IceModelVec3 delta[2] = {work_3d[0], work_3d[1]};
+  IceModelVec2Stag D_stag = work_2d_stag[0];
+  PetscScalar *delta_ij;
+  IceModelVec2S thk_smooth = work_2d[0];
+
+  ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, WIDE_STENCIL,
+                                        &thk_smooth); CHKERRQ(ierr);
+
+  ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
+  ierr = delta[0].begin_access(); CHKERRQ(ierr);
+  ierr = delta[1].begin_access(); CHKERRQ(ierr);
+  ierr = D_stag.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      for (int o = 0; o < 2; ++o) {
+        const PetscInt oi = 1 - o, oj = o;  
+
+        ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
+
+        const PetscScalar
+          thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
+
+        if (thk == 0) {
+          D_stag(i,j,o) = 0.0;
+          continue;
+        }
+
+        const PetscInt ks = grid.kBelowHeight(thk);  
+        PetscScalar Dfoffset = 0.0;
+
+        for (PetscInt k = 1; k <= ks; ++k) {
+          PetscReal depth = thk - grid.zlevels[k];
+          
+          const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
+          Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
+        }
+
+        // finish off D with (1/2) dz (0 + (H-z[ks])*delta_ij[ks]), but dz=H-z[ks]:
+        const PetscScalar dz = thk - grid.zlevels[ks];
+        Dfoffset += 0.5 * dz * dz * delta_ij[ks];
+
+        D_stag(i,j,o) = Dfoffset;
+      }
+    }
+  }
+  ierr = D_stag.end_access(); CHKERRQ(ierr);
+  ierr = delta[1].end_access(); CHKERRQ(ierr);
+  ierr = delta[0].end_access(); CHKERRQ(ierr);
+  ierr = thk_smooth.end_access(); CHKERRQ(ierr);
+
+  ierr = D_stag.staggered_to_regular(result); CHKERRQ(ierr);
+
+  ierr = result.set_name("diffusivity"); CHKERRQ(ierr);
+  ierr = result.set_attrs(
+        "diagnostic", 
+        "diffusivity of SIA mass continuity equation",
+        "m2 s-1", ""); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
+
 //! \brief Extend the grid vertically.
 PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
   PetscErrorCode ierr;
@@ -535,6 +625,8 @@ PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
 
   ierr = work_3d[0].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr); 
   ierr = work_3d[1].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr); 
+  ierr = work_3d[2].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr); 
+  ierr = work_3d[3].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr); 
 
   return 0; 
 }
@@ -789,6 +881,12 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
   
   ierr = u_out.end_access(); CHKERRQ(ierr);
   ierr = v_out.end_access(); CHKERRQ(ierr);
+
+  // Communicate to get ghosts:
+  ierr = u_out.beginGhostComm(); CHKERRQ(ierr);
+  ierr = v_out.beginGhostComm(); CHKERRQ(ierr);
+  ierr = u_out.endGhostComm(); CHKERRQ(ierr);
+  ierr = v_out.endGhostComm(); CHKERRQ(ierr);
 
   return 0; 
 }

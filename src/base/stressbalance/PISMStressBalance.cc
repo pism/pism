@@ -18,14 +18,16 @@
 
 #include "PISMStressBalance.hh"
 
-PISMStressBalance::PISMStressBalance(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e,
-                                     IceBasalResistancePlasticLaw &b,
+PISMStressBalance::PISMStressBalance(IceGrid &g,
+                                     ShallowStressBalance *sb,
+                                     SSB_Modifier *ssb_mod,
                                      const NCConfigVariable &conf)
-  : grid(g), ice(i), EC(e), config(conf), basal(b) {
+  : grid(g), config(conf), stress_balance(sb), modifier(ssb_mod) {
 
   basal_melt_rate = NULL;
-  stress_balance  = NULL;
-  modifier        = NULL;
+  variables = NULL;
+
+  allocate();
 }
 
 PISMStressBalance::~PISMStressBalance() {
@@ -33,12 +35,10 @@ PISMStressBalance::~PISMStressBalance() {
   delete modifier;
 }
 
-//! \brief Initialize the PISMStressBalance object.
-PetscErrorCode PISMStressBalance::init(PISMVars &vars) {
+PetscErrorCode PISMStressBalance::allocate() {
   PetscErrorCode ierr;
 
   // allocate the vertical velocity field:
-
   ierr = w.create(grid, "wvel_rel", false); CHKERRQ(ierr);
   ierr = w.set_attrs("diagnostic",
                      "vertical velocity of ice, relative to base of ice directly below",
@@ -47,8 +47,14 @@ PetscErrorCode PISMStressBalance::init(PISMVars &vars) {
   ierr = w.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   w.write_in_glaciological_units = true;
 
-  if (!stress_balance) SETERRQ(1, "stress_balance == NULL");
-  if (!modifier)       SETERRQ(1, "modifier == NULL");
+  return 0;
+}
+
+//! \brief Initialize the PISMStressBalance object.
+PetscErrorCode PISMStressBalance::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  variables = &vars;
 
   ierr = stress_balance->init(vars); CHKERRQ(ierr);   
   ierr = modifier->init(vars); CHKERRQ(ierr); 
@@ -174,8 +180,36 @@ PetscErrorCode PISMStressBalance::extend_the_grid(PetscInt old_Mz) {
   return 0;
 }
 
-//! \brief Computes vertical ice velocity relative to the bed directly below a
-//! point (using incompressibility of ice) and the maximum of its magnitude.
+//! Compute vertical velocity using incompressibility of the ice.
+/*!
+The vertical velocity \f$w(x,y,z,t)\f$ is the velocity <i>relative to the
+location of the base of the ice column</i>.  That is, the vertical velocity
+computed here is identified as \f$\tilde w(x,y,s,t)\f$ in the page
+\ref vertchange.
+
+Thus \f$w<0\f$ here means that that
+that part of the ice is getting closer to the base of the ice, and so on.
+The slope of the bed (i.e. relative to the geoid) and/or the motion of the
+bed (i.e. from bed deformation) do not affect the vertical velocity.
+
+In fact the following statement is exactly true if the basal melt rate is zero:
+the vertical velocity at a point in the ice is positive (negative) if and only
+if the average horizontal divergence of the horizontal velocity, in the portion
+of the ice column below that point, is negative (positive).
+In particular, because \f$z=0\f$ is the location of the base of the ice
+always, the only way to have \f$w(x,y,0,t) \ne 0\f$ is to have a basal melt
+rate.
+
+Incompressibility itself says
+   \f[ \nabla\cdot\mathbf{U} + \frac{\partial w}{\partial z} = 0. \f]
+This is immediately equivalent to the integral
+   \f[ w(x,y,z,t) = - \int_{b(x,y,t)}^{z} \nabla\cdot\mathbf{U}\,d\zeta
+                           + w_b(x,y,t). \f]
+Here the value \f$w_b(x,y,t)\f$ is either zero or the negative of the basal melt rate
+according to the value of the flag \c include_bmr_in_continuity.
+
+The vertical integral is computed by the trapezoid rule.
+ */
 PetscErrorCode PISMStressBalance::compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
                                                             IceModelVec2S *bmr,
                                                             IceModelVec3 &result) {
@@ -250,5 +284,19 @@ PetscErrorCode PISMStressBalance::stdout_report(string &result) {
   result = tmp1 + tmp2;
 
   return 0;
+}
+
+PetscErrorCode PISMStressBalance::write_fields(set<string> vars, string filename) {
+  PetscErrorCode ierr;
+
+  ierr = stress_balance->write_fields(vars, filename); CHKERRQ(ierr);
+  ierr = modifier->write_fields(vars, filename); CHKERRQ(ierr);
+
+  return 0;
+}
+
+void PISMStressBalance::add_to_output(string keyword, set<string> &result) {
+  stress_balance->add_to_output(keyword, result);
+  modifier->add_to_output(keyword, result);
 }
 

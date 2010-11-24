@@ -48,11 +48,10 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   bool flag;
 
-  bool  my_useConstantNuH, 
+  bool
     myssaSystemToASCIIMatlab,
     myholdTillYieldStress, realageSet,
     doShelvesDragToo;
-  PetscReal my_nuH = 0;
 
   ierr = verbPrintf(3, grid.com,
 		    "Processing physics-related command-line options...\n"); CHKERRQ(ierr);
@@ -88,21 +87,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.flag_from_option("bmr_in_cont", "include_bmr_in_continuity"); CHKERRQ(ierr);
 
-// "-cbar_to_till" read in invertVelocitiesFromNetCDF() in iMinverse.cc
-
   // if set, use old IceModel::temperatureStep(), and set enthalpy as though
   //   ice is cold
   ierr = config.flag_from_option("cold", "do_cold_ice_methods"); CHKERRQ(ierr);
-
-  ierr = PISMOptionsReal("-constant_nuH",
-			 "Sets a constant value for the product of viscosity and thickness used in the SSA velocity computation",
-			 my_nuH, my_useConstantNuH); CHKERRQ(ierr);
-  // user gives nu*H in MPa yr m (e.g. Ritz et al 2001 value is 30.0 * 1.0)
-  if (my_useConstantNuH) {
-    setConstantNuHForSSA(my_nuH  * 1.0e6 * secpera); // convert to Pa s 
-  }
-
-// "-csurf_to_till" read in invertVelocitiesFromNetCDF() in iMinverse.cc
 
   ierr = config.scalar_from_option("e", "enhancement_factor"); CHKERRQ(ierr);
 
@@ -138,7 +125,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   // note "-gk_age" is also used for specifying Goldsby-Kohlstedt ice;
   ierr = PISMOptionsIsSet("-gk_age", flag); CHKERRQ(ierr);
   if (flag) {
-    realAgeForGrainSize = PETSC_TRUE;
+    config.set_flag("compute_grain_size_using_age", true);
     ierr = iceFactory.setType(ICE_HYBRID);CHKERRQ(ierr);
   }
 
@@ -273,15 +260,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   string tempPrefix;
   ierr = PISMOptionsString("-ssa_matlab", "Save linear system in Matlab-readable ASCII format",
 			   tempPrefix, myssaSystemToASCIIMatlab); CHKERRQ(ierr);
-  if (myssaSystemToASCIIMatlab == PETSC_TRUE)   ssaSystemToASCIIMatlab = PETSC_TRUE;
-  if (ssaSystemToASCIIMatlab == PETSC_TRUE) {  // now get the prefix if it was given by user
-    if (tempPrefix.size() > 0) {
-      strcpy(ssaMatlabFilePrefix, tempPrefix.c_str());
-    } // otherwise keep default prefix, whatever it was
-  }
-
-// -ssaBC used in IceROSSModel
-  
+  if (myssaSystemToASCIIMatlab == PETSC_TRUE)
+    config.set_flag("write_ssa_system_to_matlab", true);
   
   /* This allows more than one mass continuity step per temperature/age and SSA
      computation */
@@ -333,8 +313,7 @@ PetscErrorCode IceModel::set_output_size(string option,
     IceModelVec *var = variables.get(*i);
 
     string intent = var->string_attr("pism_intent");
-    if ((intent == "model_state") || (intent == "mapping") ||
-	(intent == "climate_steady")) {
+    if ((intent == "model_state") || (intent == "mapping") || (intent == "climate_steady")) {
       result.insert(*i);
     }
     i++;
@@ -342,7 +321,7 @@ PetscErrorCode IceModel::set_output_size(string option,
 
   // add {u,v}bar_ssa if SSA is "on":
   if (config.get_flag("use_ssa_velocity")) {
-    result.insert("uvbar_ssa");	// will write both ubar_ssa and vbar_ssa
+    result.insert("velbar_ssa");	// will write both ubar_ssa and vbar_ssa
   }
 
   if (config.get_flag("do_age"))

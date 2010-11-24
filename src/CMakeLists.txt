@@ -58,7 +58,7 @@ set_source_files_properties (udunits/utlib.c
   PROPERTIES COMPILE_FLAGS
   "-DUT_INSTALL_PATH='\"${CMAKE_INSTALL_PREFIX}${Pism_LIB_DIR}/pismudunits.dat\"' -DUT_SOURCE_PATH='\"${CMAKE_SOURCE_DIR}/src/udunits/pismudunits.dat\"'")
 
-include_directories (base udunits)
+include_directories (base earth udunits base/stressbalance coupler)
 
 add_library (pismbase
   base/materials.cc
@@ -74,24 +74,20 @@ add_library (pismbase
   base/iMdefaults.cc
   base/iMenthalpy.cc
   base/iMgeometry.cc
-  base/iMgrainsize.cc
   base/iMinit.cc
-  base/iMmatlab.cc
   base/iMoptions.cc
   base/iMreport.cc
-  base/iMsia.cc
-  base/iMssa.cc
   base/iMtemp.cc
   base/iMtimeseries.cc
   base/iMutil.cc
-  base/iMvelocity.cc
   base/iMviewers.cc
   base/iceModel.cc
 )
-target_link_libraries (pismbase pismearth pismboundary pismmisc)
+target_link_libraries (pismbase pismearth pismboundary pismmisc pismstressbalance)
 
 
 add_library (pismverif
+  verif/SIA_Sliding.cc
   verif/iCMthermo.cc
   verif/iceCompModel.cc
   verif/iceExactSSAModel.cc
@@ -103,7 +99,7 @@ add_library (pismverif
   verif/tests/exactTestsFG.c
   verif/tests/exactTestsIJ.c
 )
-target_link_libraries (pismverif pismbase)
+target_link_libraries (pismverif pismbase pismstressbalance)
 
 add_library (pismudunits
   udunits/udalloc.c
@@ -115,7 +111,7 @@ add_library (pismudunits
 # Main executables:
 add_executable (pismr pismr.cc)
 
-add_executable (pismo pismo.cc)
+add_executable (pismo regional/pismo.cc)
 
 add_executable (pisms pisms.cc 
   eismint/iceEISModel.cc
@@ -124,10 +120,11 @@ add_executable (pisms pisms.cc
 
 add_executable (pgrn eismint/pgrn.cc eismint/pgrn_atmosphere.cc)
 
-add_executable (pross eismint/pross.cc eismint/iceROSSModel.cc)
+# FIXME: pross is broken; fix up pross_new instead of fixing pross.
+# add_executable (pross eismint/pross.cc eismint/iceROSSModel.cc)
 
 # All of the following are linked against pismbase
-foreach (EXEC pismr pismo pisms pgrn pross)
+foreach (EXEC pismr pismo pisms pgrn)
   target_link_libraries (${EXEC} pismbase)
 endforeach (EXEC)
 
@@ -147,7 +144,7 @@ add_custom_command (OUTPUT pism_config.nc
 add_custom_target (pism_config DEPENDS pism_config.nc)
 
 install (TARGETS
-  pismr pismo pisms pismv pgrn pross pclimate ## executables
+  pismr pismo pisms pismv pgrn pclimate ## executables
   pismmisc pismboundary pismverif pismbase pismearth pismudunits # libraries
   RUNTIME DESTINATION ${Pism_BIN_DIR}
   LIBRARY DESTINATION ${Pism_LIB_DIR}
@@ -159,7 +156,7 @@ install (FILES
   DESTINATION ${Pism_LIB_DIR})
 
 # miscellaneous executables needed by software tests
-set (UNIT_EXECS bedrough_test ssa_test flowlaw_test)
+set (UNIT_EXECS bedrough_test flowlaw_test)
 foreach (EXEC ${UNIT_EXECS})
   add_executable (${EXEC} software_tests/${EXEC}.cc)
   target_link_libraries (${EXEC} pismmisc)

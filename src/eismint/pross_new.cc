@@ -470,6 +470,7 @@ PetscErrorCode read_input_data(IceGrid &grid, PISMVars &variables, const NCConfi
   // Read in everything except enthalpy, usurf and tauc:
   vars.erase("enthalpy");
   vars.erase("usurf");
+  vars.erase("surface_altitude");
   vars.erase("tauc");
   set<string>::iterator j = vars.begin();
   while (j != vars.end()) {

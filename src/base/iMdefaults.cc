@@ -49,13 +49,6 @@ PetscErrorCode IceModel::setDefaults() {
 
   executable_short_name = "pism"; // drivers typically override this
 
-  computeSIAVelocities = PETSC_TRUE;
-
-  ssaSystemToASCIIMatlab   = PETSC_FALSE;
-  leaveNuHAloneSSA         = false;
-
-  strcpy(ssaMatlabFilePrefix, "pism_SSA");
-
   holdTillYieldStress       = PETSC_FALSE;
   
   shelvesDragToo = PETSC_FALSE;
@@ -64,7 +57,6 @@ PetscErrorCode IceModel::setDefaults() {
   gmaxu = gmaxv = gmaxw = -1.0;
 
   updateHmelt = PETSC_TRUE;
-  realAgeForGrainSize = PETSC_FALSE;
 
   // set default locations of soundings and slices
   id = (grid.Mx - 1)/2;

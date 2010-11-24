@@ -22,6 +22,8 @@
 #include <petscda.h>
 #include "iceModel.hh"
 #include "PISMIO.hh"
+#include "SIAFD.hh"
+#include "SSAFD.hh"
 
 //! Set default values of grid parameters.
 /*!
@@ -512,39 +514,33 @@ PetscErrorCode IceModel::set_vars_from_options() {
 PetscErrorCode IceModel::init_physics() {
   PetscErrorCode ierr;
 
-  ierr = verbPrintf(3, grid.com,
-		    "initializing IceFlowLaw and EnthalpyConverter ...\n"); CHKERRQ(ierr);
-
-  if (EC == NULL)
-    EC = new EnthalpyConverter(config);
-
-  ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
-
   // Initialize the IceFlowLaw object:
   if (!config.get_flag("do_cold_ice_methods")) {
     ierr = verbPrintf(2, grid.com,
-      "  setting flow law to polythermal type ...\n"); CHKERRQ(ierr);
+                      "  setting flow law to polythermal type ...\n"); CHKERRQ(ierr);
     ierr = verbPrintf(3, grid.com,
-      "      (= Glen-Paterson-Budd-Lliboutry-Duval type)\n"); CHKERRQ(ierr);
+                      "      (= Glen-Paterson-Budd-Lliboutry-Duval type)\n"); CHKERRQ(ierr);
     if (ice != NULL)  delete ice;  // kill choice already made
-    iceFactory.setType(ICE_GPBLD); // new flowlaw which has dependence on enthalpy
-                                   //   not temperature
+    iceFactory.setType(ICE_GPBLD); // new flowlaw which has dependence on
+                                   // enthalpy, not temperature
     iceFactory.create(&ice);
     GPBLDIce *gpbldi = dynamic_cast<GPBLDIce*>(ice);
     if (gpbldi == NULL) {
       ThermoGlenIce *tgi = dynamic_cast<ThermoGlenIce*>(ice);
       if (tgi) {
         ierr = verbPrintf(2, grid.com,
-          "    [flow law was actually set to ThermoGlenIce]\n");
-          CHKERRQ(ierr);
+                          "    [flow law was actually set to ThermoGlenIce]\n");
+        CHKERRQ(ierr);
       } else {
         ierr = verbPrintf(1, grid.com,
-          "PISM WARNING: flow law unclear ...\n"); CHKERRQ(ierr);
+                          "PISM WARNING: flow law unclear ...\n"); CHKERRQ(ierr);
       }
     }
   } else {
     ierr = verbPrintf(2, grid.com,
-      "  doing cold ice methods ...\n"); CHKERRQ(ierr);
+                      "  doing cold ice methods ...\n"); CHKERRQ(ierr);
+
+    ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
 
     // FIXME:  the semantics of IceFlowLaw should be cleared up; lots of PISM
     //   (e.g. verification and EISMINT II and EISMINT-Greenland) are cold,
@@ -557,6 +553,47 @@ PetscErrorCode IceModel::init_physics() {
 
   // set options specific to this particular ice type:
   ierr = ice->setFromOptions(); CHKERRQ(ierr);
+
+  // Create the stress balance object:
+  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
+    pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera,
+    plastic_regularization = config.get("plastic_regularization") / secpera;
+
+  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till"),
+    use_ssa_velocity = config.get_flag("use_ssa_velocity");
+  
+  if (basal == NULL)
+    basal = new IceBasalResistancePlasticLaw(plastic_regularization, do_pseudo_plastic_till, 
+                                             pseudo_plastic_q, pseudo_plastic_uthreshold);
+
+  if (EC == NULL)
+    EC = new EnthalpyConverter(config);
+
+  // We always have SIA "on", but SSA is "on" only if use_ssa_velocity is set.
+  // In that case SIA and SSA velocities are always added up (there is no
+  // switch saying "do the hybrid").
+  ShallowStressBalance *my_stress_balance;
+  SSB_Modifier *modifier = new SIAFD(grid, *ice, *EC, config);
+
+  if (use_ssa_velocity) {
+    my_stress_balance = new SSAFD(grid, *basal, *ice, *EC, config);
+  } else {
+    my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
+  }
+  
+  // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
+  stress_balance = new PISMStressBalance(grid, my_stress_balance,
+                                         modifier, config);
+
+  // Note that in PISM stress balance computations are diagnostic, i.e. do not
+  // have a state that changes in time. This means that this call can be here
+  // and not in model_state_setup() and we don't need to re-initialize after
+  // the "diagnostic time step".
+  ierr = stress_balance->init(variables); CHKERRQ(ierr);
+
+  if (config.get_flag("include_bmr_in_continuity")) {
+    ierr = stress_balance->set_basal_melt_rate(vbmr); CHKERRQ(ierr);
+  }
 
   ierr = bed_def_setup(); CHKERRQ(ierr);
 
@@ -584,16 +621,10 @@ PetscErrorCode IceModel::init_couplers() {
 }
 
 
-//! Allocates work vectors (and calls more).
+//! Allocates work vectors.
 PetscErrorCode IceModel::allocate_internal_objects() {
   PetscErrorCode ierr;
   PetscInt WIDE_STENCIL = 2;
-
-  // since SSA tools are part of IceModel, allocate them here
-  ierr = allocateSSAobjects(); CHKERRQ(ierr);
-
-  // SIA needs a Schoof (2003)-type smoother, allocate it here
-  sia_bed_smoother = new PISMBedSmoother(grid, config, WIDE_STENCIL);
 
   // various internal quantities
   // 2d work vectors
@@ -603,39 +634,15 @@ PetscErrorCode IceModel::allocate_internal_objects() {
     ierr = vWork2d[j].create(grid, namestr, true, WIDE_STENCIL); CHKERRQ(ierr);
   }
 
-  // 2dStag and 3d work vectors
-//CHANGE r1206:  ierr = vWork2dStag.create(grid, "work_vector_2dStag", false); CHKERRQ(ierr);
-  ierr = vWork2dStag.create(grid, "work_vector_2dStag", true, 1); CHKERRQ(ierr);
-  ierr = vWork2dStag.set_attrs(
-           "internal", 
-           "e.g. diffusivity or vertically-averaged ice hardness on staggered grid",
-           "", ""); CHKERRQ(ierr);
+  ierr = vWork2dV.create(grid, "vWork2dV", true); CHKERRQ(ierr);
+  ierr = vWork2dV.set_attrs("internal", "velocity work vector", "", ""); CHKERRQ(ierr);
+
+  // 3d work vectors
   ierr = vWork3d.create(grid,"work_vector_3d",false); CHKERRQ(ierr);
   ierr = vWork3d.set_attrs(
            "internal", 
            "e.g. new values of temperature or age or enthalpy during time step",
            "", ""); CHKERRQ(ierr);
-
-  // working space dedicated to SIA staggered grid purposes
-  ierr = Sigmastag3[0].create(grid,"Sigma_stagx",true); CHKERRQ(ierr);
-  ierr = Sigmastag3[0].set_attrs("internal",
-             "rate of strain heating; on staggered grid offset in X direction",
-	     "J s-1 m-3", ""); CHKERRQ(ierr);
-  ierr = Sigmastag3[1].create(grid,"Sigma_stagy",true); CHKERRQ(ierr);
-  ierr = Sigmastag3[1].set_attrs("internal",
-             "rate of strain heating; on staggered grid offset in Y direction",
-	     "J s-1 m-3", ""); CHKERRQ(ierr);
-  ierr = Istag3[0].create(grid,"I_stagx",true); CHKERRQ(ierr);
-  ierr = Istag3[0].set_attrs("internal","","",""); CHKERRQ(ierr);
-  ierr = Istag3[1].create(grid,"I_stagy",true); CHKERRQ(ierr);
-  ierr = Istag3[1].set_attrs("internal","","",""); CHKERRQ(ierr);
-
-  // components of this SSA working space are ubar_ssa_old and vbar_ssa_old:
-  ierr = vel_ssa_old.create(grid, "bar_ssa_old", true, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = vel_ssa_old.set_attrs(
-           "internal",
-           "latest SSA velocities for rapid re-solve of SSA equations",
-           "",""); CHKERRQ(ierr);
 
   return 0;
 }
@@ -660,45 +667,8 @@ PetscErrorCode IceModel::misc_setup() {
   global_attributes.set_flag("pism_ssa_velocities_are_valid",
 			     config.get_flag("use_ssa_velocity"));
 
-  // set info in bed smoother based on initial bed
-  if (config.get("bed_smoother_range") > 0.0) {
-    ierr = verbPrintf(2, grid.com, 
-      "* Initializing bed smoother object with %.3f km half-width ...\n",
-      config.get("bed_smoother_range") / 1000.0); CHKERRQ(ierr);
-  }
-  ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vbed.endGhostComm(); CHKERRQ(ierr);
-  ierr = sia_bed_smoother->preprocess_bed(vbed,
-               config.get("Glen_exponent"), config.get("bed_smoother_range") );
-               CHKERRQ(ierr);
-  if (config.get("bed_smoother_range") > 0.0) {
-    PetscInt pbs_Nx,pbs_Ny;
-    ierr = sia_bed_smoother->get_smoothing_domain(pbs_Nx,pbs_Ny); CHKERRQ(ierr);
-    ierr = verbPrintf(2, grid.com, 
-      "    (object reports effective lam_x = %.3f km, lam_y = %.3f km)\n",
-      pbs_Nx * grid.dx / 1000.0, pbs_Ny * grid.dy / 1000.0); CHKERRQ(ierr);
-  }
-
   // compute (possibly corrected) cell areas:
   ierr = compute_cell_areas(); CHKERRQ(ierr);
-
-  prof = new PISMProf(grid.com, grid.rank, grid.size, grid.Nx, grid.Ny);
-
-  event_step     = prof->create("step",     "time stepping (total)");
-  event_velocity = prof->create("velocity", "velocity computation");
-  event_vel_inc  = prof->create("vel_inc",  "vert. velocity using incompressibility");
-  event_sia      = prof->create("vel_sia",  "SIA velocity computation");
-  event_sia_2d   = prof->create("vel_sia_2d",  "SIA (2D)");
-  event_sia_3d   = prof->create("vel_sia_3d",  "SIA (3D)");
-  event_ssa      = prof->create("vel_ssa",  "SSA velocity computation");
-  event_ssa_3d   = prof->create("vel_ssa_3d",  "SSA (3D)");
-  event_energy   = prof->create("energy",   "energy balance computation");
-  event_vel_com  = prof->create("vel_com",  "velocity ghost points communication");
-  event_thk_com  = prof->create("thk_com",  "ice thickness ghost points communication");
-  event_mass     = prof->create("mass",     "mass conservation computation");
-  event_age      = prof->create("age",      "age computation");
-  event_beddef   = prof->create("beddef",   "bed deformation computation");
-  event_output   = prof->create("output",   "writing the output file");
 
   return 0;
 }

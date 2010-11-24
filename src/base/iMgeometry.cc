@@ -21,95 +21,6 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
-
-//! Compute vector driving stress at base of ice on the regular grid.
-/*!
-Computes the driving stress at the base of the ice:
-   \f[ \tau_d = - \rho g H \nabla h \f]
-
-If configuration parameter \c surface_gradient_method = \c eta then the surface gradient
-\f$\nabla h\f$ is computed by the gradient of the
-transformed variable  \f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$).
-Because this quantity is more regular at ice sheet margins, we get a 
-better surface gradient.  When the thickness at a grid point is very small
-(below \c minThickEtaTransform in the procedure), the formula is slightly 
-modified to give a lower driving stress.
-
-In floating parts the surface gradient is always computed by the \c mahaffy formula.
- 
-Saves it in user supplied Vecs \c vtaudx and \c vtaudy, which are treated 
-as global.  (I.e. we do not communicate ghosts.)
- */
-PetscErrorCode IceModel::computeDrivingStress(IceModelVec2S &vtaudx, IceModelVec2S &vtaudy) {
-  PetscErrorCode ierr;
-
-  const PetscScalar n       = ice->exponent(), // frequently n = 3
-                    etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
-                    invpow  = 1.0 / etapow,  // = 3/8
-                    dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
-  const PetscScalar minThickEtaTransform = 5.0; // m
-  const PetscScalar dx=grid.dx, dy=grid.dy;
-
-  bool compute_surf_grad_inward_ssa = config.get_flag("compute_surf_grad_inward_ssa");
-  bool use_eta = (config.get_string("surface_gradient_method") == "eta");
-
-  ierr =    vh.begin_access();    CHKERRQ(ierr);
-  ierr =    vH.begin_access();  CHKERRQ(ierr);
-  ierr =  vbed.begin_access();  CHKERRQ(ierr);
-  ierr = vMask.begin_access();  CHKERRQ(ierr);
-
-  ierr = vtaudx.begin_access(); CHKERRQ(ierr);
-  ierr = vtaudy.begin_access(); CHKERRQ(ierr);
-
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar pressure = ice->rho * standard_gravity * vH(i,j);
-      if (pressure <= 0.0) {
-        vtaudx(i,j) = 0.0;
-        vtaudy(i,j) = 0.0;
-      } else {
-        PetscScalar h_x = 0.0, h_y = 0.0;
-        // FIXME: we need to handle grid periodicity correctly.
-        if (vMask.is_grounded(i,j) && (use_eta == true)) {
-	        // in grounded case, differentiate eta = H^{8/3} by chain rule
-          if (vH(i,j) > 0.0) {
-            const PetscScalar myH = (vH(i,j) < minThickEtaTransform) ?
-	                                  minThickEtaTransform : vH(i,j);
-            const PetscScalar eta = pow(myH, etapow), factor = invpow * pow(eta, dinvpow);
-            h_x = factor * (pow(vH(i+1,j),etapow) - pow(vH(i-1,j),etapow)) / (2*dx);
-            h_y = factor * (pow(vH(i,j+1),etapow) - pow(vH(i,j-1),etapow)) / (2*dy);
-          }
-          // now add bed slope to get actual h_x,h_y
-          // FIXME: there is no reason to assume user's bed is periodized
-          h_x += vbed.diff_x(i,j);
-          h_y += vbed.diff_y(i,j);
-        } else {  // floating or eta transformation is not used
-          if (compute_surf_grad_inward_ssa) {
-            h_x = vh.diff_x_p(i,j);
-            h_y = vh.diff_y_p(i,j);
-          } else {
-            h_x = vh.diff_x(i,j);
-            h_y = vh.diff_y(i,j);
-          }
-        }
-
-        vtaudx(i,j) = - pressure * h_x;
-        vtaudy(i,j) = - pressure * h_y;
-      }
-    }
-  }
-
-  ierr =   vbed.end_access(); CHKERRQ(ierr);
-  ierr =     vh.end_access(); CHKERRQ(ierr);
-  ierr =     vH.end_access(); CHKERRQ(ierr);
-  ierr =  vMask.end_access(); CHKERRQ(ierr);
-  ierr = vtaudx.end_access(); CHKERRQ(ierr);
-  ierr = vtaudy.end_access(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
 //! Update the surface elevation and the flow-type mask when the geometry has changed.
 /*!
 This procedure should be called whenever necessary to maintain consistency of geometry.
@@ -315,8 +226,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   const PetscScalar   dx = grid.dx, dy = grid.dy;
   bool do_ocean_kill = config.get_flag("ocean_kill"),
     floating_ice_killed = config.get_flag("floating_ice_killed"),
-    include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity"),
-    do_superpose = config.get_flag("do_superpose");
+    include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity");
 
   if (surface != NULL) {
     ierr = surface->ice_surface_mass_flux(grid.year, dt / secpera, acab); CHKERRQ(ierr);
@@ -330,78 +240,38 @@ PetscErrorCode IceModel::massContExplicitStep() {
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
 
   PetscScalar **bmr_gnded;
+  IceModelVec2Stag *Q;
+  ierr = stress_balance->get_diffusive_flux(Q); CHKERRQ(ierr);
+
+  IceModelVec2V *vel_advective;
+  ierr = stress_balance->get_advective_2d_velocity(vel_advective); CHKERRQ(ierr);
+  IceModelVec2V vel = *vel_advective; // just an alias
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vbmr.get_array(bmr_gnded); CHKERRQ(ierr);
-  ierr = uvbar.begin_access(); CHKERRQ(ierr);
-  ierr = vel_basal.begin_access(); CHKERRQ(ierr);
+  ierr = Q->begin_access(); CHKERRQ(ierr);
+  ierr = vel.begin_access(); CHKERRQ(ierr);
   ierr = acab.begin_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access();  CHKERRQ(ierr);
   ierr = vHnew.begin_access(); CHKERRQ(ierr);
-
-  ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
-
-  IceModelVec2S thk_smooth = vWork2d[5];
-  const PetscInt WIDE_GHOSTS = 2;
-  ierr = sia_bed_smoother->get_smoothed_thk(vh, vH, WIDE_GHOSTS,
-                                            &thk_smooth); CHKERRQ(ierr);
-  ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
   
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-      // get thickness averaged onto staggered grid;
-      //    note Div Q = Div (- f(v) D grad h + (1-f(v)) U_b H) 
-      //    in  -ssa -super case; note f(v) is on regular grid;
-      //    compare broadcastSSAVelocity(); note uvbar[o] is SIA result:
-      //    uvbar[0] H = - D h_x
-
-      // CK, Thu Oct 28 15:51:39 2010: In fact, the following is computes
-      // thicknesses *times* f(|v|) on the staggered grid, so that the first
-      // line with "divQ =" below uses the SIA flux with the approproate weight
-      // if -ssa_sliding is chosen.
-      // (I.e. in that case uvbar(i,j,0) * He = \tilde D \frac{\partial h}{\partial x},
-      // see equations 28 and 29 in BBssasliding).
-      PetscScalar He, Hw, Hn, Hs;
-      if ( do_superpose && (vMask.value(i,j) == MASK_DRAGGING_SHEET) ) {
-        const PetscScalar
-          fv  = bueler_brown_f( vel_ssa(i,  j).magnitude_squared() ),
-          fve = bueler_brown_f( vel_ssa(i+1,j).magnitude_squared() ),
-          fvw = bueler_brown_f( vel_ssa(i-1,j).magnitude_squared() ),
-          fvn = bueler_brown_f( vel_ssa(i,j+1).magnitude_squared() ),
-          fvs = bueler_brown_f( vel_ssa(i,j-1).magnitude_squared() );
-        const PetscScalar fvH = fv * thk_smooth(i,j);
-        He = 0.5 * (fvH + fve * thk_smooth(i+1,j));
-        Hw = 0.5 * (fvw * thk_smooth(i-1,j) + fvH);
-        Hn = 0.5 * (fvH + fvn * thk_smooth(i,j+1));
-        Hs = 0.5 * (fvs * thk_smooth(i,j-1) + fvH);
-      } else {
-        He = 0.5 * (thk_smooth(i,j) + thk_smooth(i+1,j));
-        Hw = 0.5 * (thk_smooth(i-1,j) + thk_smooth(i,j));
-        Hn = 0.5 * (thk_smooth(i,j) + thk_smooth(i,j+1));
-        Hs = 0.5 * (thk_smooth(i,j-1) + thk_smooth(i,j));
-      }
-
       // staggered grid Div(Q) for SIA (non-sliding) deformation part;
       //    Q = - D grad h = Ubar H    in non-sliding case
 
-      // recover the components if the ice flux from uvbar:
       PetscScalar divQ = 0.0;
-      if (computeSIAVelocities == PETSC_TRUE) {
-        divQ =  (uvbar(i,j,0) * He - uvbar(i-1,j,0) * Hw) / dx
-              + (uvbar(i,j,1) * Hn - uvbar(i,j-1,1) * Hs) / dy;
-      }
+      divQ =  ((*Q)(i,j,0) - (*Q)(i-1,j,0)) / dx + ((*Q)(i,j,1) - (*Q)(i,j-1,1)) / dy;
 
       // basal sliding part: split  Div(v H)  by product rule into  v . grad H
       //    and  (Div v) H; use upwinding on first and centered on second
-      divQ +=  vel_basal(i,j).u * ( vel_basal(i,j).u < 0 ? vH(i+1,j)-vH(i,j)
-				 : vH(i,j)-vH(i-1,j) ) / dx
-	     + vel_basal(i,j).v * ( vel_basal(i,j).v < 0 ? vH(i,j+1)-vH(i,j)
-				 : vH(i,j)-vH(i,j-1) ) / dy;
+      divQ +=  vel(i,j).u * ( vel(i,j).u < 0 ? vH(i+1,j)-vH(i,j) : vH(i,j)-vH(i-1,j) ) / dx
+             + vel(i,j).v * ( vel(i,j).v < 0 ? vH(i,j+1)-vH(i,j) : vH(i,j)-vH(i,j-1) ) / dy;
 
-      divQ += vH(i,j) * ( (vel_basal(i+1,j).u - vel_basal(i-1,j).u) / (2.0*dx)
-                          + (vel_basal(i,j+1).v - vel_basal(i,j-1).v) / (2.0*dy) );
+      divQ += vH(i,j) * ( (vel(i+1,j).u - vel(i-1,j).u) / (2.0*dx)
+                          + (vel(i,j+1).v - vel(i,j-1).v) / (2.0*dy) );
 
       vHnew(i,j) += (acab(i,j) - divQ) * dt; // include M
 
@@ -439,12 +309,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
     } // end of the inner for loop
   } // end of the outer for loop
 
-  ierr = thk_smooth.end_access(); CHKERRQ(ierr);
   ierr = vbmr.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = uvbar.end_access(); CHKERRQ(ierr);
-  ierr = vel_basal.end_access(); CHKERRQ(ierr);
-  ierr = vel_ssa.end_access(); CHKERRQ(ierr);
+  ierr = Q->end_access(); CHKERRQ(ierr);
+  ierr = vel.end_access(); CHKERRQ(ierr);
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
@@ -492,11 +360,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
   gdHdtav = gdHdtav / ice_area; // m/s
 
 
-  prof->begin(event_thk_com);
+  
   // finally copy vHnew into vH and communicate ghosted values
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
-  prof->end(event_thk_com);
+  
 
   // Check if the ice thickness exceeded the height of the computational box
   // and extend the grid if necessary:

@@ -296,7 +296,9 @@ PetscErrorCode IcePSTexModel::init_physics() {
   const PetscScalar constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
   const PetscScalar PSTconstantNuHForSSA = H_SSA_EXTENSION * constantHardnessForSSA
                       / (2.0 * pow(TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
-  ssaStrengthExtend.set_notional_strength(PSTconstantNuHForSSA);
+
+  // FIXME: looks like we need to expose SIA and SSA solvers...
+  //  ssaStrengthExtend.set_notional_strength(PSTconstantNuHForSSA);
 
   return 0;
 }
@@ -547,12 +549,15 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
   PetscScalar     x_loc, y_loc;
   const PetscScalar darea = grid.dx * grid.dy;
   
+  IceModelVec2V vel_bar = vWork2dV;
+  ierr = compute_velbar(vel_bar); CHKERRQ(ierr);
+
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vel_bar.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (vH(i,j) > 0) {
-        const PetscScalar cbar = sqrt( PetscSqr(vel_bar(i,j).u) + PetscSqr(vel_bar(i,j).v) );
+        const PetscScalar cbar = vel_bar(i,j).magnitude();
         const PetscScalar x = -grid.Ly + grid.dy * j, // note reversal (FIXME!
 						      // do we need this now?)
                           y = -grid.Lx + grid.dx * i,

@@ -87,7 +87,7 @@ public:
   virtual PetscErrorCode initFromFile(const char *);
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode misc_setup();
-  
+  virtual PetscErrorCode initBasalTillModel();
 
   PetscErrorCode         additionalAtStartTimestep();
   PetscErrorCode         additionalAtEndTimestep();
@@ -96,16 +96,7 @@ public:
                  PetscScalar year,  PetscScalar dt, 
                  PetscScalar volume,  PetscScalar area,
                  PetscScalar meltfrac,  PetscScalar H0,  PetscScalar T0);
-  using IceModel::basalDragx;
-  virtual PetscScalar    basalDragx(PetscScalar **/*tauc*/,
-                                    PISMVector2 **uv,
-                                    PetscInt i, PetscInt j) const;
-  using IceModel::basalDragy;
-  virtual PetscScalar    basalDragy(PetscScalar **/*tauc*/,
-                                    PISMVector2 **uv,
-                                    PetscInt i, PetscInt j) const;
 
-  PetscErrorCode         printBasalAndIceInfo();
   PetscErrorCode         writeMISMIPFinalFiles();
 
 private:
@@ -126,12 +117,27 @@ private:
   PetscErrorCode  getMISMIPStats();
   PetscErrorCode  getRoutineStats();
 
-  PetscScalar m_MISMIP, C_MISMIP;
-  PetscScalar regularize_MISMIP;
+  PetscReal m_MISMIP, C_MISMIP, regularize_MISMIP;
 
   PetscErrorCode calving();
-  PetscScalar    basalIsotropicDrag(PetscScalar u, PetscScalar v) const;
   PetscErrorCode writeMISMIPasciiFile(const char mismiptype, char* filename);
+};
+
+class MISMIPBasalResistanceLaw : public IceBasalResistancePlasticLaw
+{
+public:
+  MISMIPBasalResistanceLaw(PetscReal m, PetscReal c, PetscReal r)
+    : IceBasalResistancePlasticLaw(1, false, 1, 0)
+  {
+    m_MISMIP = m; // power
+    C_MISMIP = c; // Pa m^(−1/3) s^(1/3)
+    regularize_MISMIP = r;
+  }
+  virtual ~MISMIPBasalResistanceLaw() {}
+  virtual PetscErrorCode printInfo(int verbthresh, MPI_Comm com);
+  virtual PetscScalar drag(PetscScalar tauc,
+                           PetscScalar vx, PetscScalar vy);
+  PetscReal m_MISMIP, C_MISMIP, regularize_MISMIP;
 };
 
 #endif  // __iceMISMIPModel_hh

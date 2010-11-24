@@ -55,9 +55,9 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename) {
 
   ierr = verbPrintf(2, grid.com, "Writing model state to file `%s'\n", filename.c_str()); CHKERRQ(ierr);
 
-  prof->begin(event_output);
+  
   ierr = dumpToFile(filename.c_str()); CHKERRQ(ierr);
-  prof->end(event_output);
+  
 
   // save the config file 
   if (dump_config) {
@@ -75,7 +75,7 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename) {
 		      prof_output_name.c_str());
     CHKERRQ(ierr);
 
-    ierr = prof->save_report(prof_output_name); CHKERRQ(ierr);
+    // FIXME: put back profiler and its reporting
   }
 #endif
 
@@ -283,7 +283,7 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
   if (have_ssa_velocities && (!dontreadSSAvels)) {
     ierr = verbPrintf(3,grid.com,"Reading vel_ssa...\n"); CHKERRQ(ierr);
 
-    ierr = vel_ssa.read(filename, last_record); CHKERRQ(ierr);
+    ierr = stress_balance->read_initial_guess(filename); CHKERRQ(ierr);
   }
 
   if (config.get_flag("do_age")) {

@@ -28,6 +28,7 @@ IceModelVec::IceModelVec() {
   grid = PETSC_NULL;
   array = PETSC_NULL;
   localp = true;
+  state_counter = 0;
 
   dims = GRID_2D;		// default
   dof = 1;			// default
@@ -43,13 +44,37 @@ IceModelVec::IceModelVec() {
   reset_attrs(0);
 }
 
+//! \brief Get the object state counter.
+/*!
+ * This method returns the "revision number" of an IceModelVec.
+ * 
+ * It can be used to determine it a field was updated and if a certain
+ * computation needs to be re-done. One example is computing the smoothed bed
+ * for the SIA computation, which is only necessary if the bed deformation code
+ * fired.
+ *
+ * See also inc_state_counter().
+ */
+int IceModelVec::get_state_counter() const {
+  return state_counter;
+}
+
+//! \brief Increment the object state counter.
+/*!
+ * See the documentation of get_state_counter(). This method is the \b only way
+ * to increment the state counter. It is \b not modified or automatically
+ * updated.
+ */
+void IceModelVec::inc_state_counter() {
+  state_counter++;
+}
 
 //! Creates a shallow copy of an \c IceModelVec.
 /*!
   No data is copied to the new IceModelVec.
 
-  The difference is that such a copy will not free the memory when deleted (or
-  goes out of scope).
+  The difference is that such a copy will not free the memory when de-allocated
+  (by "delete" or of it goes out of scope).
  */
 IceModelVec::IceModelVec(const IceModelVec &other) {
   // This IceModelVec is a shallow copy!
@@ -62,6 +87,8 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
   grid = other.grid;
   array = other.array;
   access_counter = other.access_counter;
+  state_counter = other.state_counter;
+
   localp = other.localp;
   da_stencil_width = other.da_stencil_width;
   

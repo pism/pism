@@ -31,12 +31,13 @@ class ShallowStressBalance
 public:
   ShallowStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
                        const NCConfigVariable &conf) : grid(g), basal(b), ice(i), EC(e), config(conf)
-  { vel_bc = NULL; bc_locations = NULL; max_u = max_v = 0.0; }
+  { vel_bc = NULL; bc_locations = NULL; max_u = max_v = 0.0; allocate(); }
   virtual ~ShallowStressBalance() {}
 
   //  initialization and I/O:
 
-  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode init(PISMVars &/*vars*/)
+  { return 0; }
 
   //! \brief Set the initial guess of the vertically-averaged ice velocity.
   virtual PetscErrorCode set_initial_guess(IceModelVec2V &/*guess*/)
@@ -52,7 +53,20 @@ public:
 
   virtual PetscErrorCode set_boundary_conditions(IceModelVec2Mask &locations,
                                                  IceModelVec2V &velocities)
-  { vel_bc = &velocities; bc_locations = &locations; return 0; }
+  { vel_bc = &velocities;
+    bc_locations = &locations;
+    return 0; }
+
+  //! \brief Adds more variable names to result (to respect -o_size and
+  //! -save_size).
+  /*!
+    Keyword can be one of "small", "medium" or "big".
+   */
+  virtual void add_to_output(string /*keyword*/, set<string> &/*result*/) {}
+
+  //! Writes requested fields to a file.
+  virtual PetscErrorCode write_fields(set<string> /*vars*/, string /*filename*/)
+  { return 0; }
 
   // the "main" routine:
 
@@ -85,6 +99,8 @@ public:
   { result = ""; return 0; }
 
 protected:
+  virtual PetscErrorCode allocate();
+
   IceGrid &grid;
   IceBasalResistancePlasticLaw &basal;
   IceFlowLaw &ice;

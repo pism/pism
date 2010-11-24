@@ -420,9 +420,6 @@ int main(int argc, char *argv[]) {
 				ys, ye, dt_years,
                                 mapping); CHKERRQ(ierr);
 
-    bool override_used;
-    ierr = PISMOptionsIsSet("-config_override", "Specifies a config override file name",
-                            override_used); CHKERRQ(ierr);
     if (override_used) {
       ierr = verbPrintf(3, com,
         "  recording config overrides in NetCDF file '%s' ...\n",

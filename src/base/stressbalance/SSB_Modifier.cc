@@ -18,7 +18,7 @@
 
 #include "SSB_Modifier.hh"
 
-PetscErrorCode SSB_Modifier::init(PISMVars &/*vars*/) {
+PetscErrorCode SSB_Modifier::allocate() {
   PetscErrorCode ierr;
 
   ierr =     u.create(grid, "uvel", true); CHKERRQ(ierr);
@@ -44,7 +44,7 @@ PetscErrorCode SSB_Modifier::init(PISMVars &/*vars*/) {
                                   "diffusive (SIA) flux components on the staggered grid",
                                   "", ""); CHKERRQ(ierr);
 
-  return 0; 
+  return 0;
 }
 
 PetscErrorCode SSB_Modifier::extend_the_grid(PetscInt old_Mz) {
@@ -57,6 +57,19 @@ PetscErrorCode SSB_Modifier::extend_the_grid(PetscInt old_Mz) {
   return 0;
 }
 
+PetscErrorCode SSBM_Trivial::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+
+  ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
+
+  enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
+  if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
+
+  thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
+  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+
+  return 0;
+}
 
 
 //! \brief Distribute the input velocity throughout the column.
