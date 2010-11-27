@@ -1,20 +1,17 @@
 static const char help[] = 
 "Solve Bodvardsson equations (Bueler interpretation) using SNES, a dof=2 Vec\n"
-"holding both thickness H and velocity u, and finite differences to approximate\n"
-"the mass continuity and SSA stress balance PDEs.\n\n"
-"This run certainly looks like success:\n"
-"  ./bodvardsson -snes_mf -da_grid_x 100 -snes_monitor -snes_monitor_solution -draw_pause 1\n"
-"and for N=75,150,300,600 I get convergence in H and in u:\n"
-"  ./bodvardsson -snes_fd -da_grid_x N\n"
+"holding both thickness H and velocity u, and a 2nd-order finite difference\n"
+"scheme to approximate the coupled mass continuity and SSA stress balance PDEs.\n\n"
+"These runs show success with both matrix-free and finite-difference-Jacobian:\n"
+"  ./bodvardsson -snes_mf -da_grid_x 181 -snes_monitor\n"
+"  ./bodvardsson -snes_fd -da_grid_x 181 -snes_monitor\n"
+"Visualization and low resolution:\n"
+"  ./bodvardsson -snes_mf -da_grid_x 16 -snes_monitor -snes_monitor_solution -draw_pause 1\n"
+"See conv.sh for convergence graph.  Add option -upwind1 to see first-order upwinding.\n"
 "But note wiggles in:\n"
 "  ./bodvardsson -snes_fd -da_grid_x 30 -snes_monitor -snes_monitor_solution -draw_pause 1\n"
-"Pushing it:\n"
-"  ./bodvardsson -snes_fd -da_grid_x 800 -pc_type lu -snes_max_funcs 100000 -snes_ls basic\n"
-"See also:\n"
-"  ./bodvardsson -snes_mf -da_grid_x 10 -dump\n\n"
 "TO DO:  * add Picard or Jacobian\n"
 "        * reasonable initial guesses\n"
-"        * try other transport schemes\n"
 "        * higher order Mx-1 case for dHdx in driving stress\n";
 
 #include "petscda.h"
@@ -31,9 +28,10 @@ typedef struct {
 
 /* User-defined application context.  Used esp. by FormFunctionLocal().  */
 typedef struct {
-  DA          da;       /* 1d,dof=2 distributed array for soln and residual */
-  DA          scalarda; /* 1d,dof=1 distributed array for parameters depending on x */
+  DA          da;      /* 1d,dof=2 distributed array for soln and residual */
+  DA          scalarda;/* 1d,dof=1 distributed array for parameters depending on x */
   PetscInt    Mx, xs, xm;
+  PetscTruth  upwind1; /* if true, used low-order upwinding */
   PetscReal   dx, secpera, n, rho, rhow, g;
   PetscReal   H0;      /* thickness at x=0, for Dirichlet condition on mass cont */
   PetscReal   xc;      /* location at which stress (Neumann) condition applied to SSA eqn */
@@ -122,7 +120,7 @@ static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, App
   PetscErrorCode ierr;
   PetscReal      rg = user->rho * user->g, dx = user->dx;
   PetscScalar    *M, *Bstag, *beta,
-                 duHl, ul, u, ur, dHdx, Fl, Fr, Tl, Tr;
+                 duH, ul, u, ur, dHdx, Fl, Fr, Tl, Tr;
   PetscInt       i, Mx = info->mx;
   Vec            locBstag;
 
@@ -143,8 +141,27 @@ static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, App
       /* residual at left-most point is Dirichlet cond. */
       f[0].H = Hu[0].H - user->H0;
     } else {
-      duHl = Hu[i].u * Hu[i].H - ( (i == 1) ? 0.0 : Hu[i-1].u * Hu[i-1].H );
-      f[i].H = dx * M[i] - duHl;  /* upwind; difference  (uH)  only to left */
+      /* centered difference IS UNSTABLE:
+        duH = Hu[i+1].u * Hu[i+1].H - ( (i == 1) ? 0.0 : Hu[i-1].u * Hu[i-1].H );
+        duH *= 0.5; */
+
+      if (user->upwind1) {
+        /* 1st-order upwind; leftward difference because u > 0 (because dH/dx < 0) */
+        duH = Hu[i].u * Hu[i].H - ( (i == 1) ? 0.0 : Hu[i-1].u * Hu[i-1].H );
+      } else {
+        /* 2nd-order upwind; see Beam-Warming discussion in R. LeVeque, "Finite Volume ..." */
+        if (i > 1) {
+          duH = 3.0 * Hu[i].u * Hu[i].H - 4.0 * Hu[i-1].u * Hu[i-1].H; 
+          if (i >= 3) {
+            duH += Hu[i-2].u * Hu[i-2].H;
+          } /* if i == 2 then u=0 so uH = 0 */
+          duH *= 0.5;
+        } else { /* i == 1: use PDE  M - (uH)_x = 0 to get quadratic poly, then diff that */
+          duH = - dx * M[0] + 2.0 * Hu[1].u * Hu[1].H;
+        }
+      }
+
+      f[i].H = dx * M[i] - duH;
     }
 
     /* SSA */
@@ -161,7 +178,9 @@ static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, App
       if (i == 1) { 
         dHdx  = (Hu[i+1].H - user->H0) / (2.0 * dx);
       } else if (i == Mx-1) {
-        dHdx  = (Hu[i].H - Hu[i-1].H) / dx; /* IMPROVABLE */
+        /* nearly 2nd-order global convergence seems to occur even with this:
+             dHdx  = (Hu[i].H - Hu[i-1].H) / dx; */
+        dHdx  = (3.0*Hu[i].H - 4.0*Hu[i-1].H + Hu[i-2].H) / (2.0 * dx);
       } else { /* generic case */
         dHdx  = (Hu[i+1].H - Hu[i-1].H) / (2.0 * dx);
       }
@@ -265,6 +284,8 @@ int main(int argc,char **argv)
   /* tools for non-dimensionalizing to improve equation scaling */
   user.scaleNode[0] = 1000.0;  user.scaleNode[1] = 100.0 / user.secpera;
   for (i = 0; i < 2; i++)  user.descaleNode[i] = 1.0 / user.scaleNode[i];
+
+  ierr = PetscOptionsTruth("-upwind1","","",PETSC_FALSE,&user.upwind1,NULL);CHKERRQ(ierr);
   
   ierr = PetscOptionsTruth("-snes_mf","","",PETSC_FALSE,&snes_mf_set,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsTruth("-snes_fd","","",PETSC_FALSE,&snes_fd_set,NULL);CHKERRQ(ierr);
@@ -297,8 +318,8 @@ int main(int argc,char **argv)
   /* Create machinery for parallel grid management (DA), nonlinear solver (SNES), 
      and Vecs for fields (solution, RHS).  Note default Mx=46 grid points means
      dx=10 km.  Also degrees of freedom = 2 (thickness and velocity
-     at each point) and stencil radius = ghost width = 1.                                    */
-  ierr = DACreate1d(PETSC_COMM_WORLD,DA_NONPERIODIC,-46,2,1,PETSC_NULL,&user.da);CHKERRQ(ierr);
+     at each point) and stencil radius = ghost width = 2 for 2nd-order upwinding.  */
+  ierr = DACreate1d(PETSC_COMM_WORLD,DA_NONPERIODIC,-46,2,2,PETSC_NULL,&user.da);CHKERRQ(ierr);
   ierr = DASetUniformCoordinates(user.da,0.0,user.xc,
                                  PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
   ierr = DASetFieldName(user.da,0,"ice thickness (m)"); CHKERRQ(ierr);

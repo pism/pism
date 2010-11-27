@@ -22,7 +22,10 @@
 #include "Timeseries.hh"
 
 static char help[] =
-  "Driver for EISMINT-Ross diagnostic velocity computation in ice shelf.\n";
+  "Driver for EISMINT-Ross diagnostic velocity computation in ice shelf.\n"
+  "Illustrates use of SSA stress balance plus I/O plus time series,\n"
+  "without the time-stepping mass continuity and conservation of energy\n"
+  "components of PISM.\n\n";
 
 PetscErrorCode read_riggs_and_compare(IceGrid &grid, PISMVars &vars, IceModelVec2V &vel_ssa) {
   PetscErrorCode  ierr;
