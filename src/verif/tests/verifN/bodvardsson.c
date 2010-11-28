@@ -11,8 +11,7 @@ static const char help[] =
 "But note wiggles in:\n"
 "  ./bodvardsson -snes_fd -da_grid_x 30 -snes_monitor -snes_monitor_solution -draw_pause 1\n"
 "TO DO:  * add Picard or Jacobian\n"
-"        * reasonable initial guesses\n"
-"        * higher order Mx-1 case for dHdx in driving stress\n";
+"        * reasonable initial guesses\n";
 
 #include "petscda.h"
 #include "petscsnes.h"
@@ -66,6 +65,26 @@ static PetscErrorCode FillExactSoln(AppCtx *user)
     ierr = exactN(x, &(Hu[i].H), &dum1, &(Hu[i].u), &dum2, &dum3, &dum4); CHKERRQ(ierr);
   }
   ierr = DAVecRestoreArray(user->da,user->Huexact,&Hu);CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+
+#undef __FUNCT__
+#define __FUNCT__ "FillInitial"
+/*  Put a not-unreasonable initial guess in Hu. */
+static PetscErrorCode FillInitial(AppCtx *user, Vec *vHu)
+{
+  PetscErrorCode ierr;
+  PetscInt       i;
+  Node           *Hu;
+
+  PetscFunctionBegin;
+  ierr = DAVecGetArray(user->da,*vHu,&Hu);CHKERRQ(ierr);
+  for (i = user->xs; i < user->xs + user->xm; i++) {
+    Hu[i].H = 1000.0;
+    Hu[i].u = 100.0 / user->secpera;
+  }
+  ierr = DAVecRestoreArray(user->da,*vHu,&Hu);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -188,7 +207,8 @@ static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, App
       Fl = GetFSR(dx,user->epsilon,user->n, ul,u);
       if (i == Mx-1) {
         Tl = 2.0 * (Hu[i-1].H + Hu[i].H) * Bstag[i-1] * Fl;
-        Tr = 2.0 * user->Txc;
+        Tr = (1.0 - user->rho / user->rhow) * user->rho * user->g * Hu[i].H * Hu[i].H;
+        /* exact value: Tr = 2.0 * user->Txc; */
       } else {
         Fr = GetFSR(dx,user->epsilon,user->n, u,ur);
         Tl = (Hu[i-1].H + Hu[i].H) * Bstag[i-1] * Fl;
@@ -258,7 +278,7 @@ int main(int argc,char **argv)
   PetscInt               its, i;               /* iteration count, index */
   PetscReal              tmp1, tmp2, tmp3, tmp4, tmp5,
                          errnorms[2];
-  PetscTruth             eps_set = PETSC_FALSE, dump = PETSC_FALSE,
+  PetscTruth             eps_set = PETSC_FALSE, dump = PETSC_FALSE, exactinitial = PETSC_FALSE,
                          snes_mf_set, snes_fd_set;
   MatFDColoring          matfdcoloring = 0;
   ISColoring             iscoloring;
@@ -284,8 +304,6 @@ int main(int argc,char **argv)
   /* tools for non-dimensionalizing to improve equation scaling */
   user.scaleNode[0] = 1000.0;  user.scaleNode[1] = 100.0 / user.secpera;
   for (i = 0; i < 2; i++)  user.descaleNode[i] = 1.0 / user.scaleNode[i];
-
-  ierr = PetscOptionsTruth("-upwind1","","",PETSC_FALSE,&user.upwind1,NULL);CHKERRQ(ierr);
   
   ierr = PetscOptionsTruth("-snes_mf","","",PETSC_FALSE,&snes_mf_set,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsTruth("-snes_fd","","",PETSC_FALSE,&snes_fd_set,NULL);CHKERRQ(ierr);
@@ -306,6 +324,8 @@ int main(int argc,char **argv)
   ierr = PetscOptionsBegin(PETSC_COMM_WORLD,NULL,
       "bodvardsson program options",__FILE__);CHKERRQ(ierr);
   {
+    ierr = PetscOptionsTruth("-bod_up_one","","",PETSC_FALSE,&user.upwind1,NULL);CHKERRQ(ierr);
+    ierr = PetscOptionsTruth("-bod_exact_init","","",PETSC_FALSE,&exactinitial,NULL);CHKERRQ(ierr);
     ierr = PetscOptionsTruth("-bod_dump",
       "dump out exact and approximate solution and residual, as asci","",
       dump,&dump,NULL);CHKERRQ(ierr);
@@ -372,13 +392,17 @@ int main(int argc,char **argv)
   /* the the Bodvardsson (1955) exact solution allows setting M(x), B(x), beta(x), T(xc) */
   ierr = FillDistributedParams(&user);CHKERRQ(ierr);
 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"  using exact solution as initial guess\n");
-             CHKERRQ(ierr);
   /* the exact thickness and exact ice velocity (user.uHexact) are known from Bodvardsson (1955) */
   ierr = FillExactSoln(&user); CHKERRQ(ierr);
-  
-  /* the initial guess is the exact continuum solution */
-  ierr = VecCopy(user.Huexact,Hu); CHKERRQ(ierr);
+
+  if (exactinitial) {
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"  using exact solution as initial guess\n");
+             CHKERRQ(ierr);
+    /* the initial guess is the exact continuum solution */
+    ierr = VecCopy(user.Huexact,Hu); CHKERRQ(ierr);
+  } else {
+    ierr = FillInitial(&user, &Hu); CHKERRQ(ierr);
+  }
   
   /************ SOLVE NONLINEAR SYSTEM  ************/
   /* recall that RHS  r  is used internally by KSP, and is set by the SNES */
