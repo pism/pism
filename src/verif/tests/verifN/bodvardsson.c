@@ -125,12 +125,32 @@ static PetscErrorCode FillDistributedParams(AppCtx *user)
 
 #undef __FUNCT__
 #define __FUNCT__ "GetFSR"
-/* define a power of the strain rate:   F  \approx  |u_x|^q u_x   */
+/* define a power of the strain rate:   F  \approx  |u_x|^q u_x
+   note  F(ul,ur) = - F(ur,ul) */
 static inline PetscScalar GetFSR(PetscScalar dx, PetscScalar eps, PetscScalar n, 
                                  PetscScalar ul, PetscScalar ur) {
   PetscScalar dudx = (ur - ul) / dx, 
               q    = (1.0 / n) - 1.0;
   return PetscPowScalar(dudx * dudx + eps * eps, q / 2.0) * dudx;
+}
+
+
+#undef __FUNCT__
+#define __FUNCT__ "dFSRdleft"
+static inline PetscScalar dFSRdleft(PetscScalar dx, PetscScalar eps, PetscScalar n, 
+                                    PetscScalar ul, PetscScalar ur) {
+  PetscScalar dudx = (ur - ul) / dx, 
+              q    = (1.0 / n) - 1.0,
+              D2   = dudx * dudx + eps * eps;
+  return - (1.0 / dx) * PetscPowScalar(D2, (q / 2.0) - 1) * ( q * dudx * dudx + D2 );
+}
+
+
+#undef __FUNCT__
+#define __FUNCT__ "dFSRdright"
+static inline PetscScalar dFSRdright(PetscScalar dx, PetscScalar eps, PetscScalar n, 
+                                    PetscScalar ul, PetscScalar ur) {
+  return - dFSRdleft(dx,eps,n,ul,ur);
 }
 
 
@@ -231,8 +251,9 @@ static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, App
 
 
 #undef __FUNCT__
-#define __FUNCT__ "FunctionLocalScaleShell"
-static PetscErrorCode FunctionLocalScaleShell(DALocalInfo *info, Node *Hu, Node *f, AppCtx *user)
+#define __FUNCT__ "scshell"
+/* Apply scalings to variables and equations to improve. */
+static PetscErrorCode scshell(DALocalInfo *info, Node *Hu, Node *f, AppCtx *user)
 {
   PetscErrorCode ierr;
   PetscInt i,
@@ -266,39 +287,94 @@ static PetscErrorCode FunctionLocalScaleShell(DALocalInfo *info, Node *Hu, Node 
 
 
 #undef __FUNCT__
+#define __FUNCT__ "scentry"
+/* Apply same scalings to matrix (Jacobian) entries, as applied by scshell(). */
+static PetscScalar scentry(AppCtx *user, MatStencil row, MatStencil col, PetscScalar v)
+{
+  /* residual scaling coeffs:
+  PetscReal rscH      = 1.0 / user->H0,
+            rscu      = user->secpera / 100.0,
+            rscuH     = user->secpera / user->H0,
+            rscstress = 1.0 / (user->rho * user->g * user->H0 * user->dx * 0.001);
+  */
+  /* Hu[i].H *= (user->scaleNode)[0];  Hu[i].u *= (user->scaleNode)[1]; */
+
+  if (row.c == 0) {
+    /* MASS CONT EQNS */
+    return v;  /* FIXME:  implement! */
+  } else { /* row.c == 1 */
+    /* SSA EQNS */
+    return v;  /* FIXME:  implement! */    
+  }
+}
+
+
+#undef __FUNCT__
 #define __FUNCT__ "BodJacobianMatrixLocal"
-/* BodJacobianMatrixLocal - Evaluates analytical Jacobian matrix. */
+/* Evaluate analytical Jacobian matrix. */
 static PetscErrorCode BodJacobianMatrixLocal(DALocalInfo *info, Node *Hu, Mat jac, AppCtx *user)
 {
   PetscErrorCode ierr;
   PetscInt       i;
+  PetscScalar    v[6];
   MatStencil     row,col[6];
-  PetscScalar    entries[6];
 
   PetscFunctionBegin;
-
-/* FIXME: may compile but it does not work! needs scaling etc. */
-
   for (i=info->xs; i<info->xs+info->xm; i++) {
   
     /* MASS CONT */
+    row.i = i; row.c = 0;
     if (i == 0) {
-      row.i = i; row.c = 0;
-      col[0].i = i; col[0].c = 0;
-      entries[0] = 1.0;
-      ierr = MatSetValuesStencil(jac,1,&row,1,col,entries,INSERT_VALUES);CHKERRQ(ierr);
-/*    } else {*/
-    }
-    
-    /* general: ierr = MatSetValuesStencil(jac,1,&row,6,col,entries,INSERT_VALUES); CHKERRQ(ierr); */
+      col[0].i = i; col[0].c = 0;   v[0] = scentry(user,row,col[0],1.0);
+      ierr = MatSetValuesStencil(jac,1,&row,1,col,v,INSERT_VALUES);CHKERRQ(ierr);
+    } else {
+      if (user->upwind1) {
+        /* 1st-order upwind */
+        col[0].i = i; col[0].c = 0;   v[0] = scentry(user,row,col[0], - Hu[i].u);
+        col[1].i = i; col[1].c = 1;   v[1] = scentry(user,row,col[1], - Hu[i].H);
+        if (i == 1) {
+          ierr = MatSetValuesStencil(jac,1,&row,2,col,v,INSERT_VALUES);CHKERRQ(ierr);      
+        } else {
+          col[2].i = i-1; col[2].c = 0;   v[2] = scentry(user,row,col[2], + Hu[i-1].u);
+          col[3].i = i-1; col[3].c = 1;   v[3] = scentry(user,row,col[3], + Hu[i-1].H);
+          ierr = MatSetValuesStencil(jac,1,&row,4,col,v,INSERT_VALUES);CHKERRQ(ierr);      
+        }
+      } else {
+        /* 2nd-order upwind */
+        if (i == 1) {
+          col[0].i = i; col[0].c = 0;   v[0] = scentry(user,row,col[0], - 2.0 * Hu[i].u);
+          col[1].i = i; col[1].c = 1;   v[1] = scentry(user,row,col[1], - 2.0 * Hu[i].H);
+          ierr = MatSetValuesStencil(jac,1,&row,2,col,v,INSERT_VALUES);CHKERRQ(ierr);      
+        } else {
+          col[0].i = i;   col[0].c = 0;   v[0] = scentry(user,row,col[0], - 1.5 * Hu[i].u);
+          col[1].i = i;   col[1].c = 1;   v[1] = scentry(user,row,col[1], - 1.5 * Hu[i].H);
+          col[2].i = i-1; col[2].c = 0;   v[2] = scentry(user,row,col[2], + 2.0 * Hu[i-1].u);
+          col[3].i = i-1; col[3].c = 1;   v[3] = scentry(user,row,col[3], + 2.0 * Hu[i-1].H);
+          if (i == 2) {
+            ierr = MatSetValuesStencil(jac,1,&row,4,col,v,INSERT_VALUES);CHKERRQ(ierr);
+          } else {
+            col[4].i = i-2; col[4].c = 0;   v[4] = scentry(user,row,col[4], - 0.5 * Hu[i-2].u);
+            col[5].i = i-2; col[5].c = 1;   v[5] = scentry(user,row,col[5], - 0.5 * Hu[i-2].H);
+            ierr = MatSetValuesStencil(jac,1,&row,6,col,v,INSERT_VALUES);CHKERRQ(ierr);
+          }
+        }
+      }
+    }  /* done with MASS CONT */
     
     /* SSA */
+    row.i = i; row.c = 1;
+    if (i == 0) {
+      col[0].i = i; col[0].c = 1;   v[0] = scentry(user,row,col[0],1.0);
+      ierr = MatSetValuesStencil(jac,1,&row,1,col,v,INSERT_VALUES);CHKERRQ(ierr);
+    } else {
+      /* FIXME implement */
+    }
   }
 
-  /* Assemble matrix, using the 2-step process */
+  /* assemble matrix, using the 2-step process */
   ierr = MatAssemblyBegin(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  /* Tell matrix we will never add a new nonzero location; if we do then gives error.  */
+  /* tell matrix we will never add a new nonzero location; if we do then gives error  */
   ierr = MatSetOption(jac,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
@@ -357,7 +433,7 @@ int main(int argc,char **argv)
 
   if (snes_fd_set) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,
-       "  using approximate Jacobian; matrix formed by finite-differencing using coloring\n");
+       "  using approximate Jacobian; finite-differencing using coloring\n");
        CHKERRQ(ierr);
   } else if (snes_mf_set) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,
@@ -426,8 +502,7 @@ int main(int argc,char **argv)
   ierr = VecDuplicate(user.M,&user.Bstag);CHKERRQ(ierr);
   ierr = VecDuplicate(user.M,&user.beta);CHKERRQ(ierr);
 
-  ierr = DASetLocalFunction(user.da,(DALocalFunction1)FunctionLocalScaleShell);CHKERRQ(ierr);
-  /* FIXME:  next call should used "JacobianLocalScaleShell" */
+  ierr = DASetLocalFunction(user.da,(DALocalFunction1)scshell);CHKERRQ(ierr);
   ierr = DASetLocalJacobian(user.da,(DALocalFunction1)BodJacobianMatrixLocal);CHKERRQ(ierr);
 
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes);CHKERRQ(ierr);
