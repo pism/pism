@@ -2,14 +2,13 @@ static const char help[] =
 "Solve Bodvardsson equations (Bueler interpretation) using SNES, a dof=2 Vec\n"
 "holding both thickness H and velocity u, and a 2nd-order finite difference\n"
 "scheme to approximate the coupled mass continuity and SSA stress balance PDEs.\n\n"
-"These runs show success with both matrix-free and finite-difference-Jacobian:\n"
-"  ./bodvardsson -snes_mf -da_grid_x 181 -snes_monitor\n"
+"This run shows success with finite-difference-Jacobian:\n"
 "  ./bodvardsson -snes_fd -da_grid_x 181 -snes_monitor\n"
+"This runs show success with matrix-free, no preconditioner:\n"
+"  ./bodvardsson -snes_mf -da_grid_x 181 -snes_monitor -bod_exact_init\n"
 "Visualization and low resolution:\n"
 "  ./bodvardsson -snes_mf -da_grid_x 16 -snes_monitor -snes_monitor_solution -draw_pause 1\n"
 "See conv.sh for convergence graph.  Add option -upwind1 to see first-order upwinding.\n"
-"But note wiggles in:\n"
-"  ./bodvardsson -snes_fd -da_grid_x 30 -snes_monitor -snes_monitor_solution -draw_pause 1\n"
 "TO DO:  * add Picard or Jacobian\n"
 "        * reasonable initial guesses\n";
 
@@ -25,11 +24,14 @@ typedef struct {
 } Node;
 
 
-/* User-defined application context.  Used esp. by FormFunctionLocal().  */
+/* User-defined application context.  Used especially by FormFunctionLocal().
+   The DA for the solution and RHS must be listed first, because of how
+   SNESDAFormFunction works.  */
 typedef struct {
   DA          da;      /* 1d,dof=2 distributed array for soln and residual */
   DA          scalarda;/* 1d,dof=1 distributed array for parameters depending on x */
-  PetscInt    Mx, xs, xm;
+  PetscMPIInt rank;
+  PetscInt    Mx, xs, xm, solnghostwidth;
   PetscTruth  upwind1; /* if true, used low-order upwinding */
   PetscReal   dx, secpera, n, rho, rhow, g;
   PetscReal   H0;      /* thickness at x=0, for Dirichlet condition on mass cont */
@@ -37,12 +39,12 @@ typedef struct {
   PetscReal   Txc;     /* vertically-integrated longitudinal stress at xc, for Neumann cond:
                             T = 2 H B |u_x|^{(1/n)-1} u_x  */
   PetscReal   epsilon; /* regularization of viscosity, a strain rate */
-  PetscReal   scaleNode[2], descaleNode[2]; /* scaling "inside" SNES */
+  PetscReal   scaleNode[2]; /* scaling seen "inside" SNES is not what our function sees */
   Vec         Huexact; /* exact thickness (Huexact[i][0]) and exact velocity
                           (Huexact[i][1]) on regular grid */
   Vec         M;       /* surface mass balance on regular grid */
   Vec         beta;    /* sliding coefficient on regular grid */
-  Vec         B_stag;  /* ice hardness on staggered grid*/
+  Vec         Bstag;   /* ice hardness on staggered grid*/
 } AppCtx;
 
 
@@ -102,7 +104,7 @@ static PetscErrorCode FillDistributedParams(AppCtx *user)
   /* Compute regular grid exact soln and staggered-grid thickness over the
      locally-owned part of the grid */
   ierr = DAVecGetArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
-  ierr = DAVecGetArray(user->scalarda,user->B_stag,&Bstag);CHKERRQ(ierr);
+  ierr = DAVecGetArray(user->scalarda,user->Bstag,&Bstag);CHKERRQ(ierr);
   ierr = DAVecGetArray(user->scalarda,user->beta,&beta);CHKERRQ(ierr);
   for (i = user->xs; i < user->xs + user->xm; i++) {
     x = user->dx * (PetscReal)i;  /* = x_i = distance from dome; regular grid point */
@@ -111,11 +113,11 @@ static PetscErrorCode FillDistributedParams(AppCtx *user)
     if (i < Mx-1) {
       ierr = exactN(x, &dum1, &dum2, &dum3, &dum4, &(Bstag[i]), &dum5); CHKERRQ(ierr);
     } else {
-      Bstag[i] = -9999.9999;
+      Bstag[i] = -9999.9999;  /* never accessed, and we don't have the value anyway */
     }
   }
   ierr = DAVecRestoreArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(user->scalarda,user->B_stag,&Bstag);CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(user->scalarda,user->Bstag,&Bstag);CHKERRQ(ierr);
   ierr = DAVecRestoreArray(user->scalarda,user->beta,&beta);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -147,8 +149,8 @@ static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, App
 
   /* we need stencil width on Bstag (but not for M, beta) */
   ierr = DAGetLocalVector(user->scalarda,&locBstag);CHKERRQ(ierr);  /* do NOT destroy it */
-  ierr = DAGlobalToLocalBegin(user->scalarda,user->B_stag,INSERT_VALUES,locBstag); CHKERRQ(ierr);
-  ierr = DAGlobalToLocalEnd(user->scalarda,user->B_stag,INSERT_VALUES,locBstag); CHKERRQ(ierr);
+  ierr = DAGlobalToLocalBegin(user->scalarda,user->Bstag,INSERT_VALUES,locBstag); CHKERRQ(ierr);
+  ierr = DAGlobalToLocalEnd(user->scalarda,user->Bstag,INSERT_VALUES,locBstag); CHKERRQ(ierr);
 
   ierr = DAVecGetArray(user->scalarda,locBstag,&Bstag);CHKERRQ(ierr);
   ierr = DAVecGetArray(user->scalarda,user->M,&M);CHKERRQ(ierr);
@@ -169,14 +171,13 @@ static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, App
         duH = Hu[i].u * Hu[i].H - ( (i == 1) ? 0.0 : Hu[i-1].u * Hu[i-1].H );
       } else {
         /* 2nd-order upwind; see Beam-Warming discussion in R. LeVeque, "Finite Volume ..." */
-        if (i > 1) {
-          duH = 3.0 * Hu[i].u * Hu[i].H - 4.0 * Hu[i-1].u * Hu[i-1].H; 
-          if (i >= 3) {
-            duH += Hu[i-2].u * Hu[i-2].H;
-          } /* if i == 2 then u=0 so uH = 0 */
-          duH *= 0.5;
-        } else { /* i == 1: use PDE  M - (uH)_x = 0 to get quadratic poly, then diff that */
+        if (i == 1) { /* use PDE  M - (uH)_x = 0 to get quadratic poly, then diff that */
           duH = - dx * M[0] + 2.0 * Hu[1].u * Hu[1].H;
+        } else {
+          duH = 3.0 * Hu[i].u * Hu[i].H - 4.0 * Hu[i-1].u * Hu[i-1].H;
+          /* if i == 2 then u=0 so uH = 0 */
+          if (i >= 3)  duH += Hu[i-2].u * Hu[i-2].H;
+          duH *= 0.5;
         }
       }
 
@@ -234,14 +235,17 @@ static PetscErrorCode BodFunctionLocal(DALocalInfo *info, Node *Hu, Node *f, App
 static PetscErrorCode FunctionLocalScaleShell(DALocalInfo *info, Node *Hu, Node *f, AppCtx *user)
 {
   PetscErrorCode ierr;
-  PetscInt       i;
+  PetscInt i,
+           start = PetscMax(info->xs - user->solnghostwidth,            0),
+           end   = PetscMin(info->xs + info->xm + user->solnghostwidth, user->Mx);
+
   /* residual scaling coeffs */
   PetscReal rscH      = 1.0 / user->H0,
             rscu      = user->secpera / 100.0,
             rscuH     = user->secpera / user->H0,
             rscstress = 1.0 / (user->rho * user->g * user->H0 * user->dx * 0.001);
-  /* dimensionalize unknowns (put in "real" scale) */
-  for (i = info->xs; i < info->xs + info->xm; i++) {
+  /* dimensionalize unknowns (put in "real" scale), including the ghost values */
+  for (i = start; i < end; i++) {
     Hu[i].H *= (user->scaleNode)[0];  Hu[i].u *= (user->scaleNode)[1];
   }
   /* compute residual in dimensional units */
@@ -254,15 +258,52 @@ static PetscErrorCode FunctionLocalScaleShell(DALocalInfo *info, Node *Hu, Node 
       f[i].H *= rscuH;  f[i].u *= rscstress; }
   }
   /* de-dimensionalize unknowns */
-  for (i = info->xs; i < info->xs + info->xm; i++) {
-    Hu[i].H *= (user->descaleNode)[0];  Hu[i].u *= (user->descaleNode)[1];
+  for (i = start; i < end; i++) {
+    Hu[i].H /= (user->scaleNode)[0];  Hu[i].u /= (user->scaleNode)[1];
   }
   return 0;
 }
 
 
-/* TODO:
-static PetscErrorCode BodJacobianMatrixLocal(DALocalInfo*,Node*,Mat,AppCtx*); */
+#undef __FUNCT__
+#define __FUNCT__ "BodJacobianMatrixLocal"
+/* BodJacobianMatrixLocal - Evaluates analytical Jacobian matrix. */
+static PetscErrorCode BodJacobianMatrixLocal(DALocalInfo *info, Node *Hu, Mat jac, AppCtx *user)
+{
+  PetscErrorCode ierr;
+  PetscInt       i;
+  MatStencil     row,col[6];
+  PetscScalar    entries[6];
+
+  PetscFunctionBegin;
+
+/* FIXME: may compile but it does not work! needs scaling etc. */
+
+  for (i=info->xs; i<info->xs+info->xm; i++) {
+  
+    /* MASS CONT */
+    if (i == 0) {
+      row.i = i; row.c = 0;
+      col[0].i = i; col[0].c = 0;
+      entries[0] = 1.0;
+      ierr = MatSetValuesStencil(jac,1,&row,1,col,entries,INSERT_VALUES);CHKERRQ(ierr);
+/*    } else {*/
+    }
+    
+    /* general: ierr = MatSetValuesStencil(jac,1,&row,6,col,entries,INSERT_VALUES); CHKERRQ(ierr); */
+    
+    /* SSA */
+  }
+
+  /* Assemble matrix, using the 2-step process */
+  ierr = MatAssemblyBegin(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  /* Tell matrix we will never add a new nonzero location; if we do then gives error.  */
+  ierr = MatSetOption(jac,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
 
 
 #undef __FUNCT__
@@ -275,9 +316,9 @@ int main(int argc,char **argv)
   Vec                    Hu,r;                 /* solution, residual vectors */
   Mat                    J;                    /* Jacobian matrix */
   AppCtx                 user;                 /* user-defined work context */
-  PetscInt               its, i;               /* iteration count, index */
+  PetscInt               its, i, tmpxs, tmpxm; /* iteration count, index, etc. */
   PetscReal              tmp1, tmp2, tmp3, tmp4, tmp5,
-                         errnorms[2];
+                         errnorms[2], descaleNode[2];
   PetscTruth             eps_set = PETSC_FALSE, dump = PETSC_FALSE, exactinitial = PETSC_FALSE,
                          snes_mf_set, snes_fd_set;
   MatFDColoring          matfdcoloring = 0;
@@ -285,6 +326,7 @@ int main(int argc,char **argv)
   SNESConvergedReason    reason;               /* Check convergence */
   
   PetscInitialize(&argc,&argv,(char *)0,help);
+  ierr = MPI_Comm_rank(PETSC_COMM_WORLD, &user.rank); CHKERRQ(ierr);
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,
     "BODVARDSSON solves for thickness and velocity in 1D, steady ice stream\n"
@@ -303,22 +345,26 @@ int main(int argc,char **argv)
   user.epsilon = (1.0 / user.secpera) / user.xc;
   /* tools for non-dimensionalizing to improve equation scaling */
   user.scaleNode[0] = 1000.0;  user.scaleNode[1] = 100.0 / user.secpera;
-  for (i = 0; i < 2; i++)  user.descaleNode[i] = 1.0 / user.scaleNode[i];
   
   ierr = PetscOptionsTruth("-snes_mf","","",PETSC_FALSE,&snes_mf_set,NULL);CHKERRQ(ierr);
   ierr = PetscOptionsTruth("-snes_fd","","",PETSC_FALSE,&snes_fd_set,NULL);CHKERRQ(ierr);
   if (!snes_mf_set && !snes_fd_set) { 
-    ierr = PetscPrintf(PETSC_COMM_WORLD,
-       "\n***ERROR: bodvardsson currently needs -snes_mf or -snes_fd***\n\n"
-       "USAGE BELOW:\n\n%s",help);CHKERRQ(ierr);
+    PetscPrintf(PETSC_COMM_WORLD,
+       "\n***ERROR: bodvardsson needs one or zero of '-snes_mf', '-snes_fd'***\n\n"
+       "USAGE FOLLOWS ...\n\n%s",help);
     PetscEnd();
   }
+
   if (snes_fd_set) {
     ierr = PetscPrintf(PETSC_COMM_WORLD,
-             "  Jacobian: approximated as matrix by finite-differencing using coloring\n"); CHKERRQ(ierr);
+       "  using approximate Jacobian; matrix formed by finite-differencing using coloring\n");
+       CHKERRQ(ierr);
+  } else if (snes_mf_set) {
+    ierr = PetscPrintf(PETSC_COMM_WORLD,
+       "  matrix free; no preconditioner\n"); CHKERRQ(ierr);
   } else {
     ierr = PetscPrintf(PETSC_COMM_WORLD,
-             "  matrix free: no precondition\n"); CHKERRQ(ierr);
+       "  true Jacobian\n"); CHKERRQ(ierr);
   }
 
   ierr = PetscOptionsBegin(PETSC_COMM_WORLD,NULL,
@@ -339,11 +385,13 @@ int main(int argc,char **argv)
      and Vecs for fields (solution, RHS).  Note default Mx=46 grid points means
      dx=10 km.  Also degrees of freedom = 2 (thickness and velocity
      at each point) and stencil radius = ghost width = 2 for 2nd-order upwinding.  */
-  ierr = DACreate1d(PETSC_COMM_WORLD,DA_NONPERIODIC,-46,2,2,PETSC_NULL,&user.da);CHKERRQ(ierr);
+  user.solnghostwidth = 2;
+  ierr = DACreate1d(PETSC_COMM_WORLD,DA_NONPERIODIC,-46,2,user.solnghostwidth,PETSC_NULL,&user.da);
+            CHKERRQ(ierr);
   ierr = DASetUniformCoordinates(user.da,0.0,user.xc,
                                  PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
-  ierr = DASetFieldName(user.da,0,"ice thickness (m)"); CHKERRQ(ierr);
-  ierr = DASetFieldName(user.da,1,"ice velocity (m a-1)"); CHKERRQ(ierr);
+  ierr = DASetFieldName(user.da,0,"ice thickness [non-dimensional]"); CHKERRQ(ierr);
+  ierr = DASetFieldName(user.da,1,"ice velocity [non-dimensional]"); CHKERRQ(ierr);
   ierr = DAGetInfo(user.da,PETSC_IGNORE,&user.Mx,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,
                    PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE,PETSC_IGNORE);
   ierr = DAGetCorners(user.da,&user.xs,PETSC_NULL,PETSC_NULL,&user.xm,PETSC_NULL,PETSC_NULL);
@@ -354,6 +402,15 @@ int main(int argc,char **argv)
   ierr = DACreate1d(PETSC_COMM_WORLD,DA_NONPERIODIC,user.Mx,1,1,PETSC_NULL,&user.scalarda);CHKERRQ(ierr);
   ierr = DASetUniformCoordinates(user.scalarda,0.0,user.xc,
                                  PETSC_NULL,PETSC_NULL,PETSC_NULL,PETSC_NULL);CHKERRQ(ierr);
+  /* check that parallel layout of scalar DA is same as dof=2 DA */
+  ierr = DAGetCorners(user.scalarda,&tmpxs,PETSC_NULL,PETSC_NULL,&tmpxm,PETSC_NULL,PETSC_NULL);
+                   CHKERRQ(ierr);
+  if ((tmpxs != user.xs) || (tmpxm != user.xm)) {
+    PetscPrintf(PETSC_COMM_SELF,
+       "\n***ERROR: rank %d gets different ownership range for the two DAs!  ENDING ...***\n\n",
+       user.rank);
+    PetscEnd();
+  }
 
   ierr = PetscPrintf(PETSC_COMM_WORLD,
       "  Mx = %D points, dx = %.3f m\n  H0 = %.2f m, xc = %.2f km, Txc = %.5e Pa m\n",
@@ -366,10 +423,12 @@ int main(int argc,char **argv)
   ierr = VecDuplicate(Hu,&user.Huexact);CHKERRQ(ierr); /* ditto */
 
   ierr = DACreateGlobalVector(user.scalarda,&user.M);CHKERRQ(ierr);
-  ierr = VecDuplicate(user.M,&user.B_stag);CHKERRQ(ierr);
+  ierr = VecDuplicate(user.M,&user.Bstag);CHKERRQ(ierr);
   ierr = VecDuplicate(user.M,&user.beta);CHKERRQ(ierr);
 
   ierr = DASetLocalFunction(user.da,(DALocalFunction1)FunctionLocalScaleShell);CHKERRQ(ierr);
+  /* FIXME:  next call should used "JacobianLocalScaleShell" */
+  ierr = DASetLocalJacobian(user.da,(DALocalFunction1)BodJacobianMatrixLocal);CHKERRQ(ierr);
 
   ierr = SNESCreate(PETSC_COMM_WORLD,&snes);CHKERRQ(ierr);
 
@@ -378,14 +437,18 @@ int main(int argc,char **argv)
   /* setting up a matrix is only actually needed for -snes_fd case */
   ierr = DAGetMatrix(user.da,MATAIJ,&J);CHKERRQ(ierr);
 
-  /* tools needed so DA can use sparse matrix for its F.D. Jacobian approx */
-  ierr = DAGetColoring(user.da,IS_COLORING_GLOBAL,MATAIJ,&iscoloring);CHKERRQ(ierr);
-  ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
-  ierr = ISColoringDestroy(iscoloring);CHKERRQ(ierr);
-  ierr = MatFDColoringSetFunction(matfdcoloring,
+  if (snes_fd_set) {
+    /* tools needed so DA can use sparse matrix for its F.D. Jacobian approx */
+    ierr = DAGetColoring(user.da,IS_COLORING_GLOBAL,MATAIJ,&iscoloring);CHKERRQ(ierr);
+    ierr = MatFDColoringCreate(J,iscoloring,&matfdcoloring);CHKERRQ(ierr);
+    ierr = ISColoringDestroy(iscoloring);CHKERRQ(ierr);
+    ierr = MatFDColoringSetFunction(matfdcoloring,
                (PetscErrorCode (*)(void))SNESDAFormFunction,&user);CHKERRQ(ierr);
-  ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes,J,J,SNESDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);
+    ierr = MatFDColoringSetFromOptions(matfdcoloring);CHKERRQ(ierr);
+    ierr = SNESSetJacobian(snes,J,J,SNESDefaultComputeJacobianColor,matfdcoloring);CHKERRQ(ierr);
+  } else {
+    ierr = SNESSetJacobian(snes,J,J,SNESDAComputeJacobian,&user);CHKERRQ(ierr);
+  }
 
   ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
 
@@ -406,7 +469,8 @@ int main(int argc,char **argv)
   
   /************ SOLVE NONLINEAR SYSTEM  ************/
   /* recall that RHS  r  is used internally by KSP, and is set by the SNES */
-  ierr = VecStrideScaleAll(Hu,user.descaleNode); CHKERRQ(ierr); /* de-dimensionalize initial guess */
+  for (i = 0; i < 2; i++)  descaleNode[i] = 1.0 / user.scaleNode[i];
+  ierr = VecStrideScaleAll(Hu,descaleNode); CHKERRQ(ierr); /* de-dimensionalize initial guess */
   ierr = SNESSolve(snes,PETSC_NULL,Hu);CHKERRQ(ierr);
   ierr = VecStrideScaleAll(Hu,user.scaleNode); CHKERRQ(ierr); /* put back in "real" scale */
 
@@ -439,7 +503,7 @@ int main(int argc,char **argv)
   ierr = VecDestroy(r);CHKERRQ(ierr);
   ierr = VecDestroy(user.Huexact);CHKERRQ(ierr);
   ierr = VecDestroy(user.M);CHKERRQ(ierr);
-  ierr = VecDestroy(user.B_stag);CHKERRQ(ierr);
+  ierr = VecDestroy(user.Bstag);CHKERRQ(ierr);
   ierr = VecDestroy(user.beta);CHKERRQ(ierr);
 
   ierr = MatDestroy(J); CHKERRQ(ierr);
