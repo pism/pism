@@ -39,6 +39,7 @@ int check_err(const int stat, const int line, const char *file) {
 NCTool::NCTool(MPI_Comm c, PetscMPIInt r)
   : com(c), rank(r) {
   ncid = -1;
+  def_mode = false;
 
   // Initialize UDUNITS if needed
   if (utIsInit() == 0) {
@@ -216,6 +217,8 @@ PetscErrorCode NCTool::get_vertical_dims(double* &z_levels, double* &zb_levels) 
       PetscEnd();
     }
 
+    stat = data_mode(); CHKERRQ(stat); 
+
     stat = nc_get_vara_double(ncid, z_id, &zero, &nc_z_len, z_levels);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_get_vara_double(ncid, zb_id, &zero, &nc_zb_len, zb_levels);
@@ -251,8 +254,11 @@ PetscErrorCode NCTool::put_dimension_regular(int varid, int len, double start, d
   // errors). If that happens, we need to fix v[len - 1] by setting it equal to
   // end.
   if (v[len - 1] > end) v[len - 1] = end;
+
+  ierr = data_mode(); CHKERRQ(ierr);
   
   stat = nc_put_var_double(ncid, varid, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
   ierr = PetscFree(v); CHKERRQ(ierr);
 
   return 0;
@@ -269,6 +275,9 @@ PetscErrorCode NCTool::put_dimension(int varid, int len, PetscScalar *vals) cons
   for (int i = 0; i < len; i++) {
     v[i] = (double)vals[i];
   }
+
+  ierr = data_mode(); CHKERRQ(ierr); 
+
   stat = nc_put_var_double(ncid, varid, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   ierr = PetscFree(v); CHKERRQ(ierr);
   return 0;
@@ -293,13 +302,11 @@ PetscErrorCode NCTool::write_history(const char history[], bool overwrite) const
 
   // Write it:
   if (rank == 0) {
-    stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = define_mode(); CHKERRQ(stat); 
     
     stat = nc_put_att_text(ncid, NC_GLOBAL, "history",
 			   new_history.size(), new_history.c_str());
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
-      
-    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
   return 0;
@@ -348,6 +355,8 @@ PetscErrorCode NCTool::append_time(PetscReal time) const {
     stat = nc_inq_dimlen(ncid, t_id, &t_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
     stat = nc_inq_varid(ncid, "t", &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+    stat = data_mode(); CHKERRQ(stat); 
 
     stat = nc_put_var1_double(ncid, t_id, &t_len, &time); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
@@ -417,13 +426,12 @@ PetscErrorCode NCTool::open_for_writing(const char filename[]) {
       stat = nc_set_fill(ncid, NC_NOFILL, NULL); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     } else {
       stat = nc_create(filename, NC_CLOBBER|NC_64BIT_OFFSET, &ncid); 
-
+      def_mode = true;
       // use this to create NetCDF-4 files:
       // stat = nc_create(filename, NC_CLOBBER|NC_NETCDF4, &ncid); 
 
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
       stat = nc_set_fill(ncid, NC_NOFILL, NULL); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-      stat = nc__enddef(ncid,50000,4,0,4); CHKERRQ(check_err(stat,__LINE__,__FILE__))
 
       // I should check if this is faster... (CK)
       // stat = nc__enddef(ncid, 1024*1024, 4, 0, 4); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -480,6 +488,8 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
       CHKERRQ(ierr);
       PetscEnd();
     }
+
+    ierr = data_mode(); CHKERRQ(ierr); 
 
     if (rank == 0) {
       double *data;
@@ -803,3 +813,32 @@ PetscErrorCode NCTool::move_if_exists(const char filename[]) {
 
   return 0;
 }
+
+PetscErrorCode NCTool::define_mode() const {
+  PetscErrorCode ierr;
+
+  if (rank != 0) return 0;
+
+  if (def_mode) return 0;
+  
+  ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+  def_mode = true;
+
+  return 0;
+}
+
+PetscErrorCode NCTool::data_mode() const {
+  PetscErrorCode ierr;
+
+  if (rank != 0) return 0;
+
+  if (!def_mode) return 0;
+
+  ierr = nc__enddef(ncid,50000,4,0,4); CHKERRQ(check_err(ierr,__LINE__,__FILE__))
+
+  def_mode = false;
+
+  return 0;
+}
+

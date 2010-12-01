@@ -21,9 +21,14 @@
 
 #include "SSB_Modifier.hh"
 #include "PISMBedSmoother.hh"
+#include "PISMDiagnostic.hh"
 
 class SIAFD : public SSB_Modifier
 {
+  friend class SIAFD_schoofs_theta;
+  friend class SIAFD_topgsmooth;
+  friend class SIAFD_thksmooth;
+  friend class SIAFD_diffusivity;
 public:
   SIAFD(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
     : SSB_Modifier(g, i, e, c), WIDE_STENCIL(2) { allocate(); }
@@ -32,12 +37,17 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
+  using PISMComponent_Diag::update;
   virtual PetscErrorCode update(IceModelVec2V *vel_input,
                                 IceModelVec2S *D2_input,
                                 bool fast);
 
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
+
+  //! Add pointers to diagnostic quantities to a dictionary.
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
+
 protected:
   virtual PetscErrorCode allocate();
 
@@ -78,5 +88,48 @@ protected:
   int bed_state_counter;
 };
 
+//! \brief Computes the multiplier \f$\theta\f$ in Schoof's (2003) theory of the
+//! effect of bed roughness on the diffusivity of the SIA.
+/*!
+  See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
+ */
+class SIAFD_schoofs_theta : public PISMDiag<SIAFD>
+{
+public:
+  SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes the smoothed bed elevation from Schoof's (2003) theory of the
+//! effect of bed roughness on the SIA.
+/*!
+See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
+ */
+class SIAFD_topgsmooth : public PISMDiag<SIAFD>
+{
+public:
+  SIAFD_topgsmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes the thickness relative to the smoothed bed elevation in
+//! Schoof's (2003) theory of the effect of bed roughness on the SIA.
+/*!
+See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
+ */
+class SIAFD_thksmooth : public PISMDiag<SIAFD>
+{
+public:
+  SIAFD_thksmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Compute diffusivity of the SIA flow.
+class SIAFD_diffusivity : public PISMDiag<SIAFD>
+{
+public:
+  SIAFD_diffusivity(SIAFD *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
 
 #endif /* _SIAFD_H_ */

@@ -23,29 +23,20 @@
 #include "PISMVars.hh"
 #include "flowlaws.hh"
 #include "enthalpyConverter.hh"
+#include "PISMComponent.hh"
 
 //! Shallow stress balance modifier (such as the non-sliding SIA).
-class SSB_Modifier
+class SSB_Modifier : public PISMComponent_Diag
 {
 public:
   SSB_Modifier(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
-    : grid(g), ice(i), EC(e), config(c)
-  { D_max = u_max = v_max = 0.0; allocate(); }
+    : PISMComponent_Diag(g, c), ice(i), EC(e)
+  { D_max = u_max = v_max = 0.0; variables = NULL; allocate(); }
   virtual ~SSB_Modifier() {}
 
-  virtual PetscErrorCode init(PISMVars &/*vars*/) { return 0; }
+  virtual PetscErrorCode init(PISMVars &vars) { variables = &vars; return 0; }
 
-  //! \brief Adds more variable names to result (to respect -o_size and
-  //! -save_size).
-  /*!
-    Keyword can be one of "small", "medium" or "big".
-   */
-  virtual void add_to_output(string /*keyword*/, set<string> &/*result*/) {}
-
-  //! Writes requested fields to a file.
-  virtual PetscErrorCode write_fields(set<string> /*vars*/, string /*filename*/)
-  { return 0; }
-
+  using PISMComponent_Diag::update;
   virtual PetscErrorCode update(IceModelVec2V *vel_input,
                                 IceModelVec2S *D2_input,
                                 bool fast) = 0;
@@ -75,13 +66,13 @@ public:
 protected:
   virtual PetscErrorCode allocate();
 
-  IceGrid &grid;
   IceFlowLaw &ice;
   EnthalpyConverter &EC;
-  const NCConfigVariable &config;
   PetscReal D_max, u_max, v_max;
   IceModelVec2Stag diffusive_flux;
   IceModelVec3 u, v, Sigma;
+
+  PISMVars *variables;
 };
 
 
@@ -95,6 +86,7 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars);
 
+  using PISMComponent_Diag::update;
   virtual PetscErrorCode update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
                                 bool fast);
 protected:

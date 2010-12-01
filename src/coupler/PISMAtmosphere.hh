@@ -20,9 +20,9 @@
 #ifndef __PISMAtmosphere_hh
 #define __PISMAtmosphere_hh
 
-#include "../base/PISMComponent.hh"
-#include "../base/iceModelVec.hh"
-#include "../base/Timeseries.hh"
+#include "PISMComponent.hh"
+#include "iceModelVec.hh"
+#include "Timeseries.hh"
 #include "iceModelVec2T.hh"
 
 
@@ -30,10 +30,10 @@
 /////                      to the PISMSurfaceModel below
 
 //! A purely virtual class defining the interface of a PISM Atmosphere Model.
-class PISMAtmosphereModel : public PISMComponent {
+class PISMAtmosphereModel : public PISMComponent_TS {
 public:
   PISMAtmosphereModel(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent(g, conf) {};
+    : PISMComponent_TS(g, conf) {};
 
   //! \brief Sets result to the mean precipitation over the time interval
   //! (t_years, t_years + dt_years), in m/s ice equivalent.

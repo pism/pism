@@ -647,6 +647,9 @@ PetscErrorCode IceModelVec2Stag::set_component(int n, IceModelVec2S &source) {
 }
 
 //! Averages staggered grid values of a scalar field and puts them on a regular grid.
+/*!
+ * The current IceModelVec needs to have ghosts.
+ */
 PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
@@ -666,6 +669,9 @@ PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2S &result) {
 
 //! \brief Averages staggered grid values of a 2D vector field (u on the
 //! i-offset, v on the j-offset) and puts them on a regular grid.
+/*!
+ * The current IceModelVec needs to have ghosts.
+ */
 PetscErrorCode IceModelVec2Stag::staggered_to_regular(IceModelVec2V &result) {
   PetscErrorCode ierr;
 

@@ -86,10 +86,13 @@ public:
   virtual PetscErrorCode get_units(int varid, bool &has_units, utUnit &units) const;
 
   virtual int get_ncid() const;
+  virtual PetscErrorCode define_mode() const;
+  virtual PetscErrorCode data_mode() const;
 protected:
   int ncid;
   MPI_Comm com;
   PetscMPIInt rank;
+  mutable bool def_mode;             // note: only processor 0 should use this
 };
 
 #endif // __nc_util_hh

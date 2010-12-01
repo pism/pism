@@ -63,7 +63,9 @@ public:
   virtual vector<double>  array_attr(string name, int component = 0);
   virtual PetscErrorCode  set_attrs(string my_pism_intent, string my_long_name,
 				    string my_units, string my_standard_name, int component = 0);
+  virtual PetscErrorCode  set_metadata(NCSpatialVariable &var, int N);
   virtual bool            is_valid(PetscScalar a, int component = 0);
+  virtual PetscErrorCode  define(const NCTool &nc, nc_type output_datatype);
   virtual PetscErrorCode  write(const char filename[]);
   virtual PetscErrorCode  write(const char filename[], nc_type nctype);
   virtual PetscErrorCode  dump(const char filename[]);
@@ -120,9 +122,6 @@ protected:
   virtual PetscErrorCode reset_attrs(int N);
   virtual PetscErrorCode create_viewer(PetscInt viewer_size, string title, PetscViewer &viewer);
   virtual PetscErrorCode compute_viewer_size(int target, int &x, int &y);
-  // FIXME: consider adding 
-  //   virtual PetscErrorCode  checkSelfOwnsIt(const PetscInt i, const PetscInt j);
-  //   virtual PetscErrorCode  checkSelfOwnsItGhosted(const PetscInt i, const PetscInt j);
 };
 
 

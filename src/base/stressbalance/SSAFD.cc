@@ -57,7 +57,38 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
   enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
   if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
 
-  ierr = velocity.set(0.0); CHKERRQ(ierr); // default initial guess
+
+  // Check if PISM is being initialized from an output file from a previous run
+  // and read the initial guess (unless asked not to).
+  bool i_set;
+  string filename;
+  ierr = PISMOptionsString("-i", "PISM input file",
+                           filename, i_set); CHKERRQ(ierr);
+
+  if (i_set) {
+    bool dont_read_initial_guess, ubar_ssa_found, vbar_ssa_found;
+    int start;
+    NCTool nc(grid.com, grid.rank);
+
+    ierr = PISMOptionsIsSet("-dontreadSSAvels", dont_read_initial_guess); CHKERRQ(ierr);
+
+    ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
+    ierr = nc.find_variable("ubar_ssa", NULL, ubar_ssa_found); CHKERRQ(ierr); 
+    ierr = nc.find_variable("vbar_ssa", NULL, vbar_ssa_found); CHKERRQ(ierr); 
+    ierr = nc.get_dim_length("t", &start); CHKERRQ(ierr);
+    ierr = nc.close(); CHKERRQ(ierr); 
+    start -= 1;
+
+    if (ubar_ssa_found && vbar_ssa_found &&
+        (! dont_read_initial_guess)) {
+      ierr = verbPrintf(3,grid.com,"Reading ubar_ssa and vbar_ssa...\n"); CHKERRQ(ierr);
+
+      ierr = velocity.read(filename.c_str(), start); CHKERRQ(ierr); 
+    }
+    
+  } else {
+    ierr = velocity.set(0.0); CHKERRQ(ierr); // default initial guess
+  }
 
   return 0;
 }
@@ -1164,30 +1195,6 @@ PetscErrorCode SSAFD::stdout_report(string &result) {
 PetscErrorCode SSAFD::set_initial_guess(IceModelVec2V &guess) {
   PetscErrorCode ierr;
   ierr = velocity.copy_from(guess); CHKERRQ(ierr);
-  return 0;
-}
-
-//! \brief Read the initial guess of the SSA velocity from a file (assuming
-//! that it was written by save_initial_guess()).
-PetscErrorCode SSAFD::read_initial_guess(string filename) {
-  PetscErrorCode ierr;
-  NCTool nc(grid.com, grid.rank);
-  int start = 0;
-
-  ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-  ierr = nc.get_dim_length("t", &start); CHKERRQ(ierr); 
-  ierr = nc.close(); CHKERRQ(ierr);
-  start -= 1;
-
-  ierr = velocity.read(filename.c_str(), start); CHKERRQ(ierr); 
-
-  return 0;
-}
-
-//! \brief Save the SSA solution to use as the initial guess after re-statring.
-PetscErrorCode SSAFD::save_initial_guess(string filename) {
-  PetscErrorCode ierr;
-  ierr = velocity.write(filename.c_str()); CHKERRQ(ierr);
   return 0;
 }
 

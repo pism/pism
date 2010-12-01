@@ -19,12 +19,14 @@
 #ifndef _PISMSTRESSBALANCE_H_
 #define _PISMSTRESSBALANCE_H_
 
+#include "PISMComponent.hh"
 #include "iceModelVec.hh"
 #include "ShallowStressBalance.hh"
 #include "SSB_Modifier.hh"
+#include "PISMDiagnostic.hh"
 
 //! The class defining PISM's interface to the shallow stress balance code.
-class PISMStressBalance
+class PISMStressBalance : public PISMComponent_Diag
 {
 public:
   PISMStressBalance(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod,
@@ -34,21 +36,12 @@ public:
   //! \brief Initialize the PISMStressBalance object.
   virtual PetscErrorCode init(PISMVars &vars);
 
-  //! \brief Set the initial guess of the vertically-averaged ice velocity.
-  virtual PetscErrorCode set_initial_guess(IceModelVec2V &guess);
-
-  //! Read the initial guess from file.
-  virtual PetscErrorCode read_initial_guess(string filename);
-
-  //! \brief Save the initial guess (for restarting).
-  virtual PetscErrorCode save_initial_guess(string filename);
-
   //! \brief Adds more variable names to result (to respect -o_size and
   //! -save_size).
   /*!
     Keyword can be one of "small", "medium" or "big".
    */
-  virtual void add_to_output(string keyword, set<string> &result);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
 
   //! Writes requested fields to a file.
   virtual PetscErrorCode write_fields(set<string> vars, string filename);
@@ -60,7 +53,7 @@ public:
   virtual PetscErrorCode set_boundary_conditions(IceModelVec2Mask &locations,
                                                  IceModelVec2V &velocities);
 
-  virtual PetscErrorCode set_basal_melt_rate(IceModelVec2S &bmr);
+  virtual PetscErrorCode set_basal_melt_rate(IceModelVec2S *bmr);
 
   //! \brief Update all the fields if fast == false, only update diffusive flux
   //! and max. diffusivity otherwise.
@@ -95,19 +88,12 @@ public:
   //! \brief Extends the computational grid (vertically).
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
 
-  // Reporting methods:
-  // virtual PetscErrorCode compute_velbar(IceModelVec2V &result);
-  // virtual PetscErrorCode compute_cbar(IceModelVec2S &result);
-  // virtual PetscErrorCode compute_cbase(IceModelVec2S &result, IceModelVec2S &tmp);
-  // virtual PetscErrorCode compute_cflx(IceModelVec2S &result, IceModelVec2S &cbar);
-  // virtual PetscErrorCode compute_csurf(IceModelVec2S &result, IceModelVec2S &tmp);
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/);
 
 protected:
   virtual PetscErrorCode allocate();
   virtual PetscErrorCode compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
                                                    IceModelVec2S *bmr, IceModelVec3 &result);
-  IceGrid &grid;
-  const NCConfigVariable &config;
   PISMVars *variables;
 
   IceModelVec3 w;
@@ -116,6 +102,96 @@ protected:
 
   ShallowStressBalance *stress_balance;
   SSB_Modifier *modifier;
+};
+
+
+//! \brief Computes the vertically-averaged ice velocity.
+class PSB_velbar : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_velbar(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes cbar, the magnitude of vertically-integrated horizontal
+//! velocity of ice and masks out ice-free areas.
+class PSB_cbar : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_cbar(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes cflx, the magnitude of vertically-integrated horizontal
+//! flux of ice.
+class PSB_cflx : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_cflx(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes cbase, the magnitude of horizontal velocity of ice at base
+//! of ice and masks out ice-free areas.
+class PSB_cbase : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_cbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes csurf, the magnitude of horizontal ice velocity at the
+//! surface.
+class PSB_csurf : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_csurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes velsurf, the horizontal velocity of ice at ice surface.
+class PSB_velsurf : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_velsurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! Computes vertical ice velocity (relative to the geoid).
+/*!
+  \f[
+  w(s) = \tilde w(s) + \frac{\partial b}{\partial t} + U(s) \cdot \nabla b
+  \f]
+ */
+class PSB_wvel : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_wvel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! Computes wvelsurf, the vertical velocity of ice at ice surface.
+class PSB_wvelsurf : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_wvelsurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! Computes wvelbase, the vertical velocity of ice at the base of ice.
+class PSB_wvelbase : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_wvelbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes horizontal ice velocity at the base of ice.
+class PSB_velbase : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_velbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
 #endif /* _PISMSTRESSBALANCE_H_ */

@@ -24,7 +24,7 @@
 /*!
  * This class implements an SIA sliding law.
  *
- * It is used by pismv test E \b only, hence the code dumplication (the surface
+ * It is used by pismv test E \b only, hence the code duplication (the surface
  * gradient code is from SIAFD).
  */
 class SIA_Sliding : public ShallowStressBalance
@@ -32,7 +32,11 @@ class SIA_Sliding : public ShallowStressBalance
 public:
   SIA_Sliding(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
               const NCConfigVariable &conf)
-    : ShallowStressBalance(g, b, i, e, conf) {}
+    : ShallowStressBalance(g, b, i, e, conf)
+  {
+    verification_mode = false;
+    allocate();
+  }
   virtual ~SIA_Sliding() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
@@ -40,6 +44,8 @@ public:
   virtual PetscErrorCode update(bool fast);
 
 protected:
+  virtual PetscErrorCode allocate();
+
   virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 
   virtual PetscErrorCode surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
@@ -55,6 +61,8 @@ protected:
   IceModelVec3 *enthalpy;
   IceModelVec2Stag work_2d_stag[2]; // for the surface gradient
   double standard_gravity;
+  
+  bool verification_mode;
 };
 
 #endif /* _SIA_SLIDING_H_ */

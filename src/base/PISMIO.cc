@@ -1,3 +1,21 @@
+// Copyright (C) 2006--2010 Jed Brown, Ed Bueler and Constantine Khroulev
+//
+// This file is part of PISM.
+//
+// PISM is free software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the Free Software
+// Foundation; either version 2 of the License, or (at your option) any later
+// version.
+//
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License
+// along with PISM; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
 #include "PISMIO.hh"
 #include "pism_const.hh"
 
@@ -52,7 +70,7 @@ PetscErrorCode PISMIO::get_var(const int varid, Vec g, GridType dims, int t) con
   int stat;
   double *a_double = NULL;
 
-  if (grid == NULL) SETERRQ(1, "PISMIO::get_global_var(...): grid == NULL");
+  ierr = data_mode(); CHKERRQ(ierr); 
 
   int start[N] = {t, grid->xs, grid->ys, 0,        0};
   int count[N] = {1, grid->xm, grid->ym, grid->Mz, grid->Mbz};
@@ -133,7 +151,7 @@ PetscErrorCode PISMIO::put_var(const int varid, Vec g, GridType dims) const {
   int stat;
   double *a_double = NULL;
 
-  if (grid == NULL) SETERRQ(1, "PISMIO::put_global_var(...): grid == NULL");
+  ierr = data_mode(); CHKERRQ(ierr); 
 
   // Fill start and count arrays:
   int t;
@@ -264,7 +282,7 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
   MPI_Status mpi_stat;
   int stat, start[N], count[N];	// enough space for t, x, y, z, zb
 
-  if (grid == NULL) SETERRQ(1, "PISMIO::regrid_global_var(...): grid == NULL");
+  ierr = data_mode(); CHKERRQ(ierr);
 
   // make local copies of lic.start and lic.count
   for (int i = 0; i < N; i++) {
@@ -766,7 +784,7 @@ PetscErrorCode PISMIO::create_dimensions() const {
 
   if (rank == 0) {
     // define dimensions and coordinate variables:
-    stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = define_mode(); CHKERRQ(stat);
     // t
     stat = nc_def_dim(ncid, "t", NC_UNLIMITED, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     stat = nc_def_var(ncid, "t", NC_DOUBLE, 1, &dimid, &t); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -804,7 +822,8 @@ PetscErrorCode PISMIO::create_dimensions() const {
     stat = nc_put_att_text(ncid, zb, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
     stat = nc_put_att_text(ncid, zb, "positive", 2, "up"); check_err(stat,__LINE__,__FILE__);
     // 
-    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+    stat = data_mode(); CHKERRQ(stat); 
 
     // set values:
     // Note that the 't' dimension is not modified: it is handled by the append_time method.

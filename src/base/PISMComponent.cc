@@ -19,12 +19,6 @@
 #include "PISMComponent.hh"
 #include "PISMIO.hh"
 
-PISMComponent::PISMComponent(IceGrid &g, const NCConfigVariable &conf)
-    : grid(g), config(conf)
-{
-  t = dt = GSL_NAN;
-}
-
 //! Finds PISM's input (-i or -boot_file) file using command-line options.
 /*! This might be useful since coupling fields are usually in the file
   IceModel uses to initialize from.
@@ -80,4 +74,3 @@ PetscErrorCode PISMComponent::find_pism_input(string &filename, //!< name of the
 
   return 0;
 }
-

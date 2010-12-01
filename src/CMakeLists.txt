@@ -82,6 +82,7 @@ add_library (pismbase
   base/iMutil.cc
   base/iMviewers.cc
   base/iceModel.cc
+  base/iceModel_diagnostics.cc
 )
 target_link_libraries (pismbase pismearth pismboundary pismmisc pismstressbalance)
 
@@ -119,9 +120,6 @@ add_executable (pisms pisms.cc
   ismip/iceMISMIPModel.cc)
 
 add_executable (pgrn eismint/pgrn.cc eismint/pgrn_atmosphere.cc)
-
-# FIXME: pross is broken; fix up pross_new instead of fixing pross.
-# add_executable (pross eismint/pross.cc eismint/iceROSSModel.cc)
 
 # All of the following are linked against pismbase
 foreach (EXEC pismr pismo pisms pgrn)

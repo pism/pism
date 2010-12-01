@@ -25,8 +25,7 @@
 
 //! Update the runtime graphical viewers.
 /*!
-Most viewers are updated by this routine, but some other are updated elsewhere:
-  \li see update_nu_viewers() for nuH and log_nuH viewers.
+Most viewers are updated by this routine, but some other are updated elsewhere.
  */
 PetscErrorCode IceModel::update_viewers() {
   PetscErrorCode ierr;
@@ -157,12 +156,7 @@ PetscErrorCode IceModel::init_viewers() {
     istringstream arg(tmp);
 
     while (getline(arg, var_name, ',')) {
-      if (var_name == "log_nuH")
-	view_log_nuH = true;
-      else if (var_name == "nuH")
-	view_nuH = true;
-      else
-	map_viewers.insert(var_name);
+      map_viewers.insert(var_name);
     }
   }
 
@@ -212,42 +206,4 @@ PetscErrorCode IceModel::init_viewers() {
   return 0;
 }
 
-
-//! Update nuH viewers.
-PetscErrorCode IceModel::update_nu_viewers(IceModelVec2S vNu[2]) {
-  // this one is called when solving an SSA system
-
-  PetscErrorCode ierr;
-  if (view_log_nuH) {
-    PetscScalar  **nui, **nuj, **gg;  
-    ierr = vWork2d[4].get_array(gg); CHKERRQ(ierr);
-    ierr = vNu[0].get_array(nui); CHKERRQ(ierr);
-    ierr = vNu[1].get_array(nuj); CHKERRQ(ierr);
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        const PetscReal avnu = 0.5 * (nui[i][j] + nuj[i][j]);
-        if (avnu > 1.0e14) {
-          gg[i][j] = log10(avnu);
-        } else {
-          gg[i][j] = 14.0;
-        }
-      }
-    }
-    ierr = vNu[0].end_access(); CHKERRQ(ierr);
-    ierr = vNu[1].end_access(); CHKERRQ(ierr);
-    ierr = vWork2d[4].end_access(); CHKERRQ(ierr);
-
-    ierr = vWork2d[4].set_name("log10(nuH) (log of Pa s m)"); CHKERRQ(ierr);
-    ierr = vWork2d[4].view(300); CHKERRQ(ierr);
-  }
-
-  if (view_nuH) {
-    ierr = vNu[0].set_name("nuH[0] (Pa s m)"); CHKERRQ(ierr);
-    ierr = vNu[0].view(300); CHKERRQ(ierr);
-    ierr = vNu[1].set_name("nuH[1] (Pa s m)"); CHKERRQ(ierr);
-    ierr = vNu[1].view(300); CHKERRQ(ierr);
-  }
-
-  return 0;
-}
 

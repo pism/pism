@@ -82,6 +82,8 @@ public:
    */
   map<string, vector<double> > doubles;
 
+  virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype,
+                                bool write_in_glaciological_units = true) const = 0;
 protected:
   virtual PetscErrorCode write_attributes(const NCTool &nc, int varid, nc_type nctype,
 					  bool write_in_glaciological_units) const;
@@ -111,11 +113,12 @@ public:
   virtual PetscErrorCode scalar_from_option(string, string);
   virtual void import_from(const NCConfigVariable &other);
   virtual void update_from(const NCConfigVariable &other);
+
+  virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype, bool) const;
 protected:
   string config_filename;
   virtual PetscErrorCode write_attributes(const NCTool &nc, int varid, nc_type nctype,
 					  bool write_in_glaciological_units) const;
-  virtual PetscErrorCode define(int ncid, int &varid) const;
 };
 
 //! A class for reading and writing NetCDF global attributes.
@@ -141,9 +144,8 @@ public:
   virtual PetscErrorCode write(const char filename[], size_t start, double data, nc_type nctype = NC_DOUBLE);
   virtual PetscErrorCode change_units(vector<double> &data, utUnit *from, utUnit *to);
   virtual PetscErrorCode report_range(vector<double> &data);
-protected:
-  virtual PetscErrorCode define(int ncid, int dimid, int &varid, nc_type nctype);
-  PetscErrorCode define_dimension(int ncid, int &dimid);
+
+  virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype, bool) const;
 };
 
 #endif

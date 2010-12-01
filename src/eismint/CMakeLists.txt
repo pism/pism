@@ -1,7 +1,7 @@
 include_directories (../base/stressbalance/)
 
-add_executable (pross_new pross_new.cc)
-target_link_libraries(pross_new pismstressbalance)
+add_executable (pross pross.cc)
+target_link_libraries(pross pismstressbalance)
 
-install (TARGETS pross_new
+install (TARGETS pross
   DESTINATION ${Pism_BIN_DIR})

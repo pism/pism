@@ -17,7 +17,7 @@ run_test ()
     gunzip ross.nc.gz
     gunzip riggs.nc.gz
 
-    $MPIDO -n 2 pross_new -boot_file ross.nc -Mx 147 -My 147 \
+    $MPIDO -n 2 pross -boot_file ross.nc -Mx 147 -My 147 \
         -riggs riggs.nc -o rossComputed.nc > ross.txt
 
     python <<EOF

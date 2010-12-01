@@ -19,6 +19,7 @@
 #ifndef _SHALLOWSTRESSBALANCE_H_
 #define _SHALLOWSTRESSBALANCE_H_
 
+#include "PISMComponent.hh"
 #include "iceModelVec.hh"
 #include "PISMVars.hh"
 #include "flowlaws.hh"
@@ -26,51 +27,26 @@
 #include "enthalpyConverter.hh"
 
 //! Shallow stress balance (such as the SSA).
-class ShallowStressBalance
+class ShallowStressBalance : public PISMComponent_Diag
 {
 public:
   ShallowStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
-                       const NCConfigVariable &conf) : grid(g), basal(b), ice(i), EC(e), config(conf)
-  { vel_bc = NULL; bc_locations = NULL; max_u = max_v = 0.0; allocate(); }
+                       const NCConfigVariable &conf)
+    : PISMComponent_Diag(g, conf), basal(b), ice(i), EC(e)
+  { vel_bc = NULL; bc_locations = NULL; variables = NULL; max_u = max_v = 0.0; allocate(); }
   virtual ~ShallowStressBalance() {}
 
   //  initialization and I/O:
 
-  virtual PetscErrorCode init(PISMVars &/*vars*/)
-  { return 0; }
-
-  //! \brief Set the initial guess of the vertically-averaged ice velocity.
-  virtual PetscErrorCode set_initial_guess(IceModelVec2V &/*guess*/)
-  { return 0; }
-
-  //! Read the initial guess from file.
-  virtual PetscErrorCode read_initial_guess(string /*filename*/)
-  { return 0; }
-
-  //! \brief Save the initial guess (for restarting).
-  virtual PetscErrorCode save_initial_guess(string /*filename*/)
-  { return 0; }
+  virtual PetscErrorCode init(PISMVars &vars)
+  { variables = &vars; return 0; }
 
   virtual PetscErrorCode set_boundary_conditions(IceModelVec2Mask &locations,
                                                  IceModelVec2V &velocities)
   { vel_bc = &velocities;
     bc_locations = &locations;
-    return 0; }
-
-  //! \brief Adds more variable names to result (to respect -o_size and
-  //! -save_size).
-  /*!
-    Keyword can be one of "small", "medium" or "big".
-   */
-  virtual void add_to_output(string /*keyword*/, set<string> &/*result*/) {}
-
-  //! Writes requested fields to a file.
-  virtual PetscErrorCode write_fields(set<string> /*vars*/, string /*filename*/)
-  { return 0; }
-
-  // the "main" routine:
-
-  virtual PetscErrorCode update(bool fast) = 0;
+    return 0;
+  }
 
   // interface to the data provided by the stress balance object:
 
@@ -101,11 +77,10 @@ public:
 protected:
   virtual PetscErrorCode allocate();
 
-  IceGrid &grid;
+  PISMVars *variables;
   IceBasalResistancePlasticLaw &basal;
   IceFlowLaw &ice;
   EnthalpyConverter &EC;
-  const NCConfigVariable &config;
 
   IceModelVec2V velocity, *vel_bc;
   IceModelVec2Mask *bc_locations;

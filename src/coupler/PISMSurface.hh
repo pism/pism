@@ -20,15 +20,15 @@
 #ifndef __PISMSurfaceModel_hh
 #define __PISMSurfaceModel_hh
 
-#include "../base/PISMComponent.hh"
-#include "../base/iceModelVec.hh"
+#include "PISMComponent.hh"
+#include "iceModelVec.hh"
 #include "PISMAtmosphere.hh"
 #include "localMassBalance.hh"
 
-class PISMSurfaceModel : public PISMComponent {
+class PISMSurfaceModel : public PISMComponent_TS {
 public:
   PISMSurfaceModel(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent(g, conf)
+    : PISMComponent_TS(g, conf)
   { atmosphere = NULL; };
 
   virtual ~PISMSurfaceModel()

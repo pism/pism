@@ -18,13 +18,31 @@
 
 #include "SIA_Sliding.hh"
 
-PetscErrorCode SIA_Sliding::init(PISMVars &vars) {
+PetscErrorCode SIA_Sliding::allocate() {
   PetscErrorCode ierr;
   PetscInt WIDE_STENCIL = 2;
+
+  for (int i = 0; i < 2; ++i) {
+    char namestr[30];
+
+    ierr = work_2d_stag[i].create(grid, "work_vector", true); CHKERRQ(ierr);
+    snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d", i);
+    ierr = work_2d_stag[i].set_name(namestr); CHKERRQ(ierr);
+
+  }
+
+  ierr = work_2d.create(grid, "work_vector_2d", true, WIDE_STENCIL); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode SIA_Sliding::init(PISMVars &vars) {
+  PetscErrorCode ierr;
 
   ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
 
   standard_gravity = config.get("standard_gravity");
+  verification_mode = config.get_flag("verification_mode");
 
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
@@ -40,17 +58,6 @@ PetscErrorCode SIA_Sliding::init(PISMVars &vars) {
 
   enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
   if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
-
-  for (int i = 0; i < 2; ++i) {
-    char namestr[30];
-
-    ierr = work_2d_stag[i].create(grid, "work_vector", true); CHKERRQ(ierr);
-    snprintf(namestr, sizeof(namestr), "work_vector_2d_stag_%d", i);
-    ierr = work_2d_stag[i].set_name(namestr); CHKERRQ(ierr);
-
-  }
-
-  ierr = work_2d.create(grid, "work_vector", true, WIDE_STENCIL); CHKERRQ(ierr);
 
   return 0;
 }
@@ -172,9 +179,7 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
                                           PetscScalar /*alpha*/, PetscScalar mu,
                                           PetscScalar min_T) const {
 
-  // Note that calling config.get() here is a bad idea (it is slow), but this
-  // code need not be fast anyway...
-  if (config.get_flag("verification_mode")) {
+  if (verification_mode) {
     // test 'E' mode
     const PetscScalar r1 = 200e3, r2 = 700e3,   /* define region of sliding */
                       theta1 = 10 * (pi/180), theta2 = 40 * (pi/180);
@@ -206,8 +211,6 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
     return 0;
   }
 }
-
-
 
 PetscErrorCode SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode  ierr;

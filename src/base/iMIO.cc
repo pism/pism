@@ -267,24 +267,6 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
   }
 
-  // Read vel_ssa if SSA is on, if not asked to ignore them and
-  // if they are present in the input file.
-  have_ssa_velocities = false;
-  if (config.get_flag("use_ssa_velocity")) {
-    string word;
-    ierr = nc.get_att_text(NC_GLOBAL, "pism_ssa_velocities_are_valid", word); CHKERRQ(ierr);
-
-    have_ssa_velocities = (word == "true") || (word == "yes") || (word == "on");
-  }
-
-  bool dontreadSSAvels = false;
-  ierr = PISMOptionsIsSet("-dontreadSSAvels", dontreadSSAvels); CHKERRQ(ierr);
-  
-  if (have_ssa_velocities && (!dontreadSSAvels)) {
-    ierr = verbPrintf(3,grid.com,"Reading vel_ssa...\n"); CHKERRQ(ierr);
-
-    ierr = stress_balance->read_initial_guess(filename); CHKERRQ(ierr);
-  }
 
   if (config.get_flag("do_age")) {
     bool age_exists;

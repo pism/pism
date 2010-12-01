@@ -19,7 +19,7 @@
 #include "PISMBedDef.hh"
 
 PISMBedDef::PISMBedDef(IceGrid &g, const NCConfigVariable &conf)
-  : PISMComponent(g, conf) {
+  : PISMComponent_TS(g, conf) {
 
   thk    = NULL;
   topg   = NULL;

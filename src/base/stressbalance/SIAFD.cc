@@ -606,12 +606,6 @@ PetscErrorCode SIAFD::compute_diffusivity(IceModelVec2S &result) {
 
   ierr = D_stag.staggered_to_regular(result); CHKERRQ(ierr);
 
-  ierr = result.set_name("diffusivity"); CHKERRQ(ierr);
-  ierr = result.set_attrs(
-        "diagnostic", 
-        "diffusivity of SIA mass continuity equation",
-        "m2 s-1", ""); CHKERRQ(ierr);
-
   return 0;
 }
 

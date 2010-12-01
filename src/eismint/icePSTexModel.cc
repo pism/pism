@@ -550,7 +550,9 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
   const PetscScalar darea = grid.dx * grid.dy;
   
   IceModelVec2V vel_bar = vWork2dV;
-  ierr = compute_velbar(vel_bar); CHKERRQ(ierr);
+
+  int FIXME_PST_needs_velbar;
+  // ierr = compute_velbar(vel_bar); CHKERRQ(ierr);
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vel_bar.begin_access(); CHKERRQ(ierr);

@@ -19,15 +19,15 @@
 #ifndef __PISMBedDef_hh
 #define __PISMBedDef_hh
 
-#include "../base/PISMComponent.hh"
-#include "../base/iceModelVec.hh"
+#include "PISMComponent.hh"
+#include "iceModelVec.hh"
 #include "deformation.hh"
 
 //! PISM bed deformation model (base class).
-/*! Unlike other PISMComponent derived classes, the update() method of
+/*! Unlike other PISMComponent_TS derived classes, the update() method of
   PISMBedDef has side-effects (modifies IceModel data memebers).
  */
-class PISMBedDef : public PISMComponent {
+class PISMBedDef : public PISMComponent_TS {
 public:
   PISMBedDef(IceGrid &g, const NCConfigVariable &conf);
   virtual ~PISMBedDef() {}

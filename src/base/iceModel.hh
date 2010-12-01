@@ -47,6 +47,7 @@ using namespace std;
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
+  friend class IceModel_hardav;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
   IceModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
@@ -62,6 +63,7 @@ public:
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode allocate_internal_objects();
   virtual PetscErrorCode misc_setup();
+  virtual PetscErrorCode init_diagnostics();
 
 
   // see iceModel.cc
@@ -269,20 +271,11 @@ protected:
   // spatially-varying:
   virtual PetscErrorCode compute_by_name(string name, IceModelVec* &result);
   virtual PetscErrorCode compute_bwp(IceModelVec2S &result);
-  virtual PetscErrorCode compute_velbar(IceModelVec2V &result); // should be moved
-  virtual PetscErrorCode compute_cbar(IceModelVec2S &result); // should be moved
-  virtual PetscErrorCode compute_cbase(IceModelVec2S &result, IceModelVec2S &tmp); // should be moved
-  virtual PetscErrorCode compute_cflx(IceModelVec2S &result, IceModelVec2S &cbar); // should be moved
-  virtual PetscErrorCode compute_csurf(IceModelVec2S &result, IceModelVec2S &tmp); // should be moved
   virtual PetscErrorCode compute_cts(IceModelVec3 &useForCTS);
   virtual PetscErrorCode compute_dhdt(IceModelVec2S &result);
-  virtual PetscErrorCode compute_diffusivity(IceModelVec2S &result); // should be moved
   virtual PetscErrorCode compute_enthalpybase(IceModelVec2S &result);
   virtual PetscErrorCode compute_enthalpysurf(IceModelVec2S &result);
-  virtual PetscErrorCode compute_hardav(IceModelVec2S &result); // should be moved
   virtual PetscErrorCode compute_liqfrac(IceModelVec3 &useForLiqfrac);
-  virtual PetscErrorCode compute_schoofs_theta(IceModelVec2S &result); // should be moved
-  virtual PetscErrorCode compute_taud(IceModelVec2S &result, IceModelVec2S &tmp); // should be moved
   virtual PetscErrorCode compute_temp(IceModelVec3 &result);
   virtual PetscErrorCode compute_temp_pa(IceModelVec3 &result);
   virtual PetscErrorCode compute_tempbase(IceModelVec2S &result);
@@ -291,18 +284,8 @@ protected:
   virtual PetscErrorCode compute_temppabase(IceModelVec3 &hasPATemp,
                                             IceModelVec2S &result);
   virtual PetscErrorCode compute_tempsurf(IceModelVec2S &result);
-  virtual PetscErrorCode compute_thksmooth(IceModelVec2S &result); // should be moved
-  virtual PetscErrorCode compute_topgsmooth(IceModelVec2S &result); // should be moved
-  virtual PetscErrorCode compute_uvelbase(IceModelVec2S &result); // should be moved
-  virtual PetscErrorCode compute_uvelsurf(IceModelVec2S &result); // should be moved
-  virtual PetscErrorCode compute_vvelbase(IceModelVec2S &result); // should be moved
-  virtual PetscErrorCode compute_vvelsurf(IceModelVec2S &result); // should be moved
-  virtual PetscErrorCode compute_wvel(IceModelVec3 &result); // should be moved
-  virtual PetscErrorCode compute_wvelbase(IceModelVec3 &wvel, IceModelVec2S &result); // should be moved
-  virtual PetscErrorCode compute_wvelsurf(IceModelVec3 &wvel, IceModelVec2S &result); // should be moved
 
   // profiling, etc:
-  virtual PetscErrorCode compute_rank(IceModelVec2S &result);
   virtual PetscErrorCode compute_proc_ice_area(IceModelVec2S &result);
   virtual PetscErrorCode compute_bueler_brown_f(IceModelVec2S &result);
   // scalar:
@@ -349,10 +332,7 @@ protected:
 
   PISMStressBalance *stress_balance;
 
-  // for saving SSA velocities for restart
-  bool have_ssa_velocities;	//!< use ubar_ssa and vbar_ssa from a previous
-				//! run if true, otherwise set them to zero in
-				//! IceModel::initSSA()
+  map<string,PISMDiagnostic*> diagnostics;
 
   // Set of variables to put in the output file:
   set<string> output_vars;
@@ -399,10 +379,8 @@ protected:
   // diagnostic viewers; see iMviewers.cc
   virtual PetscErrorCode init_viewers();
   virtual PetscErrorCode update_viewers();
-  virtual PetscErrorCode update_nu_viewers(IceModelVec2S vNu[2]);
   set<string> map_viewers, slice_viewers, sounding_viewers;
   PetscInt     id, jd;	     // sounding indices
-  bool view_diffusivity, view_log_nuH, view_nuH;
 
 private:
   // for event logging (profiling); see run() and velocity()
@@ -425,6 +403,24 @@ private:
     event_beddef,		//!< bed deformation step
     event_output;		//!< time spent writing the output file
 };
+
+//! \brief Computes vertically-averaged ice hardness.
+class IceModel_hardav : public PISMDiag<IceModel>
+{
+public:
+  IceModel_hardav(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes a diagnostic field filled with processor rank values.
+class IceModel_rank : public PISMDiag<IceModel>
+{
+public:
+  IceModel_rank(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+
 
 #endif /* __iceModel_hh */
 

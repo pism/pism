@@ -249,7 +249,9 @@ PetscErrorCode IceModel::grid_setup() {
   bool i_set;
   string filename;
 
-  ierr = PetscOptionsBegin(grid.com, "", "Options controlling input and computational grid parameters", ""); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(grid.com, "",
+                           "Options controlling input and computational grid parameters",
+                           ""); CHKERRQ(ierr);
 
   ierr = verbPrintf(3, grid.com,
 		    "Setting up the computational grid...\n"); CHKERRQ(ierr);
@@ -592,7 +594,7 @@ PetscErrorCode IceModel::init_physics() {
   ierr = stress_balance->init(variables); CHKERRQ(ierr);
 
   if (config.get_flag("include_bmr_in_continuity")) {
-    ierr = stress_balance->set_basal_melt_rate(vbmr); CHKERRQ(ierr);
+    ierr = stress_balance->set_basal_melt_rate(&vbmr); CHKERRQ(ierr);
   }
 
   ierr = bed_def_setup(); CHKERRQ(ierr);
@@ -657,6 +659,7 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = set_output_size("-o_size", "Sets the 'size' of an output file.",
 			 "medium", output_vars); CHKERRQ(ierr);
 
+  ierr = init_diagnostics(); CHKERRQ(ierr); 
   ierr = init_snapshots(); CHKERRQ(ierr);
   ierr = init_backups(); CHKERRQ(ierr);
   ierr = init_timeseries(); CHKERRQ(ierr);

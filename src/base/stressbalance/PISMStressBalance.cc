@@ -22,7 +22,7 @@ PISMStressBalance::PISMStressBalance(IceGrid &g,
                                      ShallowStressBalance *sb,
                                      SSB_Modifier *ssb_mod,
                                      const NCConfigVariable &conf)
-  : grid(g), config(conf), stress_balance(sb), modifier(ssb_mod) {
+  : PISMComponent_Diag(g, conf), stress_balance(sb), modifier(ssb_mod) {
 
   basal_melt_rate = NULL;
   variables = NULL;
@@ -62,24 +62,6 @@ PetscErrorCode PISMStressBalance::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::set_initial_guess(IceModelVec2V &guess) {
-  PetscErrorCode ierr;
-  ierr = stress_balance->set_initial_guess(guess); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode PISMStressBalance::read_initial_guess(string filename) {
-  PetscErrorCode ierr;
-  ierr = stress_balance->read_initial_guess(filename); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode PISMStressBalance::save_initial_guess(string filename) {
-  PetscErrorCode ierr;
-  ierr = stress_balance->save_initial_guess(filename); CHKERRQ(ierr);
-  return 0;
-}
-
 PetscErrorCode PISMStressBalance::set_boundary_conditions(IceModelVec2Mask &locations,
                                                           IceModelVec2V &velocities) {
   PetscErrorCode ierr;
@@ -87,9 +69,10 @@ PetscErrorCode PISMStressBalance::set_boundary_conditions(IceModelVec2Mask &loca
   return 0;
 }
 
-//! \brief Set the basal melt rate.
-PetscErrorCode PISMStressBalance::set_basal_melt_rate(IceModelVec2S &bmr_input) {
-  basal_melt_rate = &bmr_input;
+//! \brief Set the basal melt rate. (If not NULL, it will be included in the
+//! computation of the vertical valocity).
+PetscErrorCode PISMStressBalance::set_basal_melt_rate(IceModelVec2S *bmr_input) {
+  basal_melt_rate = bmr_input;
   return 0;
 }
 
@@ -295,8 +278,8 @@ PetscErrorCode PISMStressBalance::write_fields(set<string> vars, string filename
   return 0;
 }
 
-void PISMStressBalance::add_to_output(string keyword, set<string> &result) {
-  stress_balance->add_to_output(keyword, result);
-  modifier->add_to_output(keyword, result);
+void PISMStressBalance::add_vars_to_output(string keyword, set<string> &result) {
+  stress_balance->add_vars_to_output(keyword, result);
+  modifier->add_vars_to_output(keyword, result);
 }
 

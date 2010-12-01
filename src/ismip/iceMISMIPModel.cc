@@ -799,7 +799,8 @@ PetscErrorCode IceMISMIPModel::getMISMIPStats() {
   IceModelVec2S q = vWork2d[0];	// give it a shorter name
 
   IceModelVec2V vel_bar = vWork2dV;
-  ierr = compute_velbar(vel_bar); CHKERRQ(ierr);
+  int FIXME_MISMIP_needs_velbar;
+  // ierr = compute_velbar(vel_bar); CHKERRQ(ierr);
   ierr = vel_bar.get_component(0, q); CHKERRQ(ierr);
 
   ierr = q.multiply_by(vH); CHKERRQ(ierr);
@@ -873,7 +874,8 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
   PetscScalar     gavubargrounded, gavubarfloating, gig;
 
   IceModelVec2V vel_bar = vWork2dV;
-  ierr = compute_velbar(vel_bar); CHKERRQ(ierr);
+  int FIXME_MISMIP_needs_velbar;
+  // ierr = compute_velbar(vel_bar); CHKERRQ(ierr);
 
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);

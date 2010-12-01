@@ -2,10 +2,13 @@ include_directories (../../verif/tests/)
 
 add_library (pismstressbalance
   PISMStressBalance.cc
+  PISMStressBalance_diagnostics.cc
   ShallowStressBalance.cc
   SSB_Modifier.cc
   SIAFD.cc
+  SIAFD_diagnostics.cc
   SSAFD.cc
+  SSAFD_diagnostics.cc
 )
 target_link_libraries (pismstressbalance pismmisc)
 

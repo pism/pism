@@ -171,9 +171,6 @@ PetscErrorCode NCSpatialVariable::write(const char filename[], nc_type nctype,
   PISMIO nc(grid);
   int varid;
 
-  if (grid == NULL)
-    SETERRQ(1, "NCVariable::write: grid is NULL.");
-
   ierr = nc.open_for_writing(filename, true, true); CHKERRQ(ierr);
   // append == true and check_dims == true
 
@@ -182,10 +179,7 @@ PetscErrorCode NCSpatialVariable::write(const char filename[], nc_type nctype,
 			  &varid, exists); CHKERRQ(ierr);
 
   if (!exists) {
-    ierr = define(nc.get_ncid(), nctype, varid); CHKERRQ(ierr);
-    // write the attributes
-    ierr = write_attributes(nc, varid, nctype, write_in_glaciological_units);
-    CHKERRQ(ierr);
+    ierr = define(nc, varid, nctype, write_in_glaciological_units); CHKERRQ(ierr);
   }
 
   if (write_in_glaciological_units) {
@@ -423,7 +417,7 @@ PetscErrorCode NCVariable::write_attributes(const NCTool &nc, int varid, nc_type
 
   int ncid = nc.get_ncid();
 
-  ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc.define_mode(); CHKERRQ(ierr);
 
   // units, valid_min, valid_max and valid_range need special treatment:
   if (has("units")) {
@@ -504,8 +498,6 @@ PetscErrorCode NCVariable::write_attributes(const NCTool &nc, int varid, nc_type
     ierr = nc_put_att_double(ncid, varid, name.c_str(), nctype, values.size(), &values[0]);
     CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
-
-  ierr = nc_enddef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
   return 0;
 }
@@ -596,19 +588,17 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
 }
 
 //! Define a NetCDF variable corresponding to a NCVariable object.
-PetscErrorCode NCSpatialVariable::define(int ncid, nc_type nctype, int &varid) {
-  int stat;
-
-  if (grid == NULL)
-    SETERRQ(1, "NCSpatialVariable::define: grid is NULL.");
+PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type nctype,
+                                         bool write_in_glaciological_units) const {
+  int stat, i = 0, ndims, dimids[4],
+    ncid = nc.get_ncid();
 
   if (rank != 0) {
     varid = 0;
     return 0;
   }
 
-  int i = 0, ndims, dimids[4];
-  stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc.define_mode(); CHKERRQ(stat); 
 
   if (!time_independent) {
     stat = nc_inq_dimid(ncid, "t", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -639,7 +629,7 @@ PetscErrorCode NCSpatialVariable::define(int ncid, nc_type nctype, int &varid) {
   // stat = nc_def_var_deflate(ncid, varid, 0, 1, 9);
   // CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-  stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = write_attributes(nc, varid, nctype, write_in_glaciological_units); CHKERRQ(stat);
 
   return 0;
 }
@@ -790,10 +780,8 @@ PetscErrorCode NCConfigVariable::write(const char filename[]) const {
   ierr = nc.find_variable(short_name, &varid, variable_exists); CHKERRQ(ierr);
 
   if (!variable_exists) {
-    ierr = define(nc.get_ncid(), varid); CHKERRQ(ierr);
+    ierr = define(nc, varid, NC_BYTE, false); CHKERRQ(ierr);
   }
-
-  ierr = write_attributes(nc, varid, NC_DOUBLE, false);
 
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -801,21 +789,23 @@ PetscErrorCode NCConfigVariable::write(const char filename[]) const {
 }
 
 //! Define a configuration NetCDF variable.
-PetscErrorCode NCConfigVariable::define(int ncid, int &varid) const {
-  int stat, var_id;
+PetscErrorCode NCConfigVariable::define(const NCTool &nc, int &varid, nc_type type,
+                                        bool) const {
+  int stat, var_id,
+    ncid = nc.get_ncid();
 
   if (rank == 0) {
-    stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc.define_mode(); CHKERRQ(stat); 
 
-    stat = nc_def_var(ncid, short_name.c_str(), NC_BYTE, 0, NULL, &var_id);
+    stat = nc_def_var(ncid, short_name.c_str(), type, 0, NULL, &var_id);
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
   stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, com); CHKERRQ(stat);
 
   varid = var_id;
+
+  stat = write_attributes(nc, varid, NC_DOUBLE, false); CHKERRQ(stat); 
 
   return 0;
 }
@@ -902,7 +892,7 @@ PetscErrorCode NCConfigVariable::write_attributes(const NCTool &nc, int varid, n
 
   ncid = nc.get_ncid();
 
-  ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc.define_mode(); CHKERRQ(ierr); 
 
   // Write text attributes:
   map<string, string>::const_iterator i;
@@ -927,8 +917,6 @@ PetscErrorCode NCConfigVariable::write_attributes(const NCTool &nc, int varid, n
     ierr = nc_put_att_double(ncid, varid, name.c_str(), nctype, values.size(), &values[0]);
     CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
-
-  ierr = nc_enddef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
   return 0;
 }
@@ -1125,6 +1113,8 @@ PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
 
   data.resize(length);		// memory allocation happens here
 
+  ierr = nc.data_mode(); CHKERRQ(ierr);
+
   if (rank == 0) {
     ierr = nc_get_var_double(ncid, varid, &data[0]); 
     CHKERRQ(check_err(ierr,__LINE__,__FILE__));
@@ -1178,35 +1168,27 @@ PetscErrorCode NCTimeseries::report_range(vector<double> &data) {
   return 0;
 }
 
-PetscErrorCode NCTimeseries::define_dimension(int ncid, int &dimid) {
-  PetscErrorCode ierr;
-
-  if (rank == 0) {
-    ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-
-    ierr = nc_def_dim(ncid, dimension_name.c_str(), NC_UNLIMITED, &dimid);
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-
-    ierr = nc_enddef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-  }
-  ierr = MPI_Bcast(&dimid, 1, MPI_INT, 0, com); CHKERRQ(ierr);
-
-  return 0;
-}
-
 //! Define a NetCDF variable corresponding to a time-series.
-PetscErrorCode NCTimeseries::define(int ncid, int dimid, int &varid, nc_type nctype) {
+PetscErrorCode NCTimeseries::define(const NCTool &nc, int &varid, nc_type nctype,
+                                    bool) const {
   PetscErrorCode ierr;
+  int dimid, ncid = nc.get_ncid();
 
   if (rank == 0) {
-    ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    ierr = nc.define_mode(); CHKERRQ(ierr);
+
+    ierr = nc_inq_dimid(ncid, dimension_name.c_str(), &dimid);
+    if (ierr != NC_NOERR) {
+      ierr = nc_def_dim(ncid, dimension_name.c_str(), NC_UNLIMITED, &dimid);
+      CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    }
 
     ierr = nc_def_var(ncid, short_name.c_str(), nctype, 1, &dimid, &varid);
     CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-
-    ierr = nc_enddef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
   ierr = MPI_Bcast(&varid, 1, MPI_INT, 0, com); CHKERRQ(ierr);
+
+  ierr = write_attributes(nc, varid, NC_FLOAT, true);
 
   return 0;
 }
@@ -1216,30 +1198,26 @@ PetscErrorCode NCTimeseries::write(const char filename[], size_t start,
 
   PetscErrorCode ierr;
   NCTool nc(com, rank);
-  bool dimension_exists = false, variable_exists = false;
-  int dimid = -1, varid = -1;
+  bool variable_exists = false;
+  int varid = -1;
  
   ierr = nc.open_for_writing(filename); CHKERRQ(ierr);
 
-  ierr = nc.find_dimension(dimension_name.c_str(), &dimid, dimension_exists); CHKERRQ(ierr);
-  if (!dimension_exists) {
-    ierr = define_dimension(nc.get_ncid(), dimid); CHKERRQ(ierr);
-  }
-
   ierr = nc.find_variable(short_name.c_str(), &varid, variable_exists); CHKERRQ(ierr);
   if (!variable_exists) {
-    ierr = define(nc.get_ncid(), dimid, varid, nctype); CHKERRQ(ierr);
+    ierr = define(nc, varid, nctype, true); CHKERRQ(ierr);
   }
 
   // convert to glaciological units:
   ierr = change_units(data, &units, &glaciological_units); CHKERRQ(ierr);
+
+  ierr = nc.data_mode(); CHKERRQ(ierr);
 
   size_t count = static_cast<size_t>(data.size());
   if (rank == 0) {
     ierr = nc_put_vara_double(nc.get_ncid(), varid, &start, &count, &data[0]);
   }
 
-  ierr = write_attributes(nc, varid, NC_FLOAT, true);
 
   ierr = nc.close(); CHKERRQ(ierr);
 
@@ -1362,7 +1340,7 @@ PetscErrorCode NCGlobalAttributes::write_attributes(const NCTool &nc, int, nc_ty
 
   ncid = nc.get_ncid();
 
-  ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc.define_mode(); CHKERRQ(ierr); 
 
   // Write text attributes:
   map<string, string>::const_iterator i;
@@ -1392,8 +1370,6 @@ PetscErrorCode NCGlobalAttributes::write_attributes(const NCTool &nc, int, nc_ty
     ierr = nc_put_att_double(ncid, NC_GLOBAL, name.c_str(), NC_DOUBLE, values.size(), &values[0]);
     CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
-
-  ierr = nc_enddef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
   return 0;
 }

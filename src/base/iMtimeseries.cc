@@ -180,7 +180,7 @@ PetscErrorCode IceModel::create_timeseries() {
   if (find(ts_vars.begin(), ts_vars.end(), "ienthalpy") != ts_vars.end()) {
     DiagnosticTimeseries *ienthalpy = new DiagnosticTimeseries(&grid, "ienthalpy", "t");
 
-    ienthalpy->set_units("J kg-1", "");
+    ienthalpy->set_units("J", "");
     ienthalpy->set_dimension_units("years", "");
     ienthalpy->output_filename = ts_filename;
 

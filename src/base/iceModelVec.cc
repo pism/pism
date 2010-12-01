@@ -499,6 +499,32 @@ PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time)
   return 0;
 }
 
+//! \brief Define variables corresponding to an IceModelVec in a file opened using \c nc.
+PetscErrorCode IceModelVec::define(const NCTool &nc, nc_type output_datatype) {
+  PetscErrorCode ierr;
+  int dummy;
+
+  for (int j = 0; j < dof; ++j) {
+    ierr = vars[j].define(nc, dummy, output_datatype, write_in_glaciological_units); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+//! \brief Copies metadata from a variable var into the N-th component of this
+//! IceModelVec.
+PetscErrorCode IceModelVec::set_metadata(NCSpatialVariable &var, int N) {
+
+  if (N >= dof)
+    SETERRQ(1, "invalid N (>= dof)");
+
+  vars[N] = var;
+
+  return 0;
+}
+
+
+
 //! Writes an IceModelVec to a NetCDF file using the default output data type.
 PetscErrorCode IceModelVec::write(const char filename[]) {
   PetscErrorCode ierr;

@@ -20,15 +20,15 @@
 #ifndef __PISMOceanModel_hh
 #define __PISMOceanModel_hh
 
-#include "../base/PISMComponent.hh"
-#include "../base/iceModelVec.hh"
-#include "../base/Timeseries.hh"
+#include "PISMComponent.hh"
+#include "iceModelVec.hh"
+#include "Timeseries.hh"
 
 //! A very rudimentary PISM ocean model.
-class PISMOceanModel : public PISMComponent {
+class PISMOceanModel : public PISMComponent_TS {
 public:
   PISMOceanModel(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent(g, conf)
+    : PISMComponent_TS(g, conf)
   {
     sea_level = 0;
   }

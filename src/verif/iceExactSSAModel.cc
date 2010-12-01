@@ -47,7 +47,6 @@ IceExactSSAModel::IceExactSSAModel(IceGrid &g, NCConfigVariable &conf, NCConfigV
   config.set_flag("use_ssa_velocity",         true);
   config.set_flag("use_constant_nuh_for_ssa", false);
   config.set_flag("use_ssa_when_grounded",    true); // correct for I, irrelevant for J and M
-  config.set_flag("do_superpose",             false);
 }
 
 PetscErrorCode IceExactSSAModel::setFromOptions() {
@@ -112,15 +111,12 @@ PetscErrorCode IceExactSSAModel::misc_setup() {
     ierr = setInitStateAndBoundaryVelsI(); CHKERRQ(ierr);
     // set flag so periodic grid works although h(-Lx,y) != h(Lx,y):
     config.set_flag("compute_surf_grad_inward_ssa", true);
-    have_ssa_velocities = false;
     config.set("epsilon_ssa", 0.0);  // don't use this lower bound
     break;
   case 'J':
     ierr = setInitStateJ(); CHKERRQ(ierr);
     config.set_flag("is_dry_simulation", false);
-    // FIXME: set strength extension parameters
     config.set_flag("compute_surf_grad_inward_ssa", false);
-    have_ssa_velocities = false;
     config.set("epsilon_ssa", 0.0);  // don't use this lower bound
     // ensure that the strength extension's nu*H is used throughout:
     ierr = ssa->strength_extension.set_min_thickness(1000); CHKERRQ(ierr);
@@ -129,7 +125,6 @@ PetscErrorCode IceExactSSAModel::misc_setup() {
     ierr = setInitStateM(); CHKERRQ(ierr);
     config.set_flag("is_dry_simulation", false);
     config.set_flag("compute_surf_grad_inward_ssa", false);
-    have_ssa_velocities = false;
 
     // ierr = ice->printInfo(3);CHKERRQ(ierr);
     // EXPERIMENT WITH STRENGTH BEYOND CALVING FRONT:  correct value is unknown!!
@@ -365,9 +360,7 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
         H[i][j] = H0;
         h[i][j] = hicepresent;
         bed[i][j] = bedgrounded;
-        mask[i][j] = MASK_SHEET;
-        // see IceModel::broadcastSSAVelocity() to see how velocity will be set
-        //   for floating portion; do that for grounded now
+        mask[i][j] = MASK_SHEET; // replace with MASK_BC
         vel_bc(i,j).u = myu; 
         vel_bc(i,j).v = myv;
       } else if (r <= Rc) {
@@ -423,7 +416,9 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
   ierr = verbPrintf(1,grid.com, 
           "NUMERICAL ERRORS in velocity relative to exact solution:\n"); CHKERRQ(ierr);
   IceModelVec2V vel_bar = vWork2dV;
-  ierr = compute_velbar(vel_bar); CHKERRQ(ierr);
+
+  int FIXME_IceExactSSAModel_needs_velbar;
+  // ierr = compute_velbar(vel_bar); CHKERRQ(ierr);
 
   ierr = vel_bar.begin_access(); CHKERRQ(ierr);
 

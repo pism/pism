@@ -57,11 +57,6 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
     PetscEnd();
   }
 
-  // Special diagnostic viewers are off by default:
-  view_diffusivity = false;
-  view_nuH = false;
-  view_log_nuH = false;
-
   // Do not save snapshots by default:
   save_snapshots = false;
   // Do not save time-series by default:
@@ -73,14 +68,11 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   total_basal_ice_flux = 0;
   total_sub_shelf_ice_flux = 0;
 
-  have_ssa_velocities = false;	// no SSA velocities at the start of the run
-
   allowAboveMelting = PETSC_FALSE;  // only IceCompModel ever sets it to true
 
   // Default ice type:
   iceFactory.setType(ICE_PB);
 }
-
 
 IceModel::~IceModel() {
 
@@ -89,6 +81,9 @@ IceModel::~IceModel() {
   // write (and deallocate) time-series
   vector<DiagnosticTimeseries*>::iterator i = timeseries.begin();
   while(i != timeseries.end()) delete (*i++);
+
+  map<string,PISMDiagnostic*>::iterator j = diagnostics.begin();
+  while (j != diagnostics.end()) delete (j++)->second;
 
   delete stress_balance;
 
@@ -526,7 +521,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 #ifdef PISM_DEBUG
   ierr = variables.check_for_nan(); CHKERRQ(ierr);
 #endif
-
+ 
   return 0;
 }
 

@@ -145,7 +145,7 @@ PetscErrorCode PISMProf::save_report(int index, int ncid, int varid) {
       start[0] = proc % (Ny);
       start[1] = proc / (Ny);
 
-      ierr = nc_put_var1_double(ncid, varid,     start, &data[0]);
+      ierr = nc_put_var1_double(ncid, varid, start, &data[0]);
       CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
     }

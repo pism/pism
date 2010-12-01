@@ -21,6 +21,7 @@
 
 #include "ShallowStressBalance.hh"
 #include <petscksp.h>
+#include "PISMDiagnostic.hh"
 
 //! Where ice thickness is zero the SSA is no longer "elliptic".  This class provides an extension coefficient to maintain well-posedness/ellipticity.
 /*!
@@ -80,6 +81,7 @@ private:
 //! PISM's SSA solver implementation
 class SSAFD : public ShallowStressBalance
 {
+  friend class SSAFD_taud;
 public:
   SSAFD(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
         const NCConfigVariable &c);
@@ -94,9 +96,8 @@ public:
 
   virtual PetscErrorCode set_initial_guess(IceModelVec2V &guess);
 
-  virtual PetscErrorCode read_initial_guess(string filename);
-
-  virtual PetscErrorCode save_initial_guess(string filename);
+  //! Add pointers to diagnostic quantities to a dictionary.
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
 
 protected:
   virtual PetscErrorCode allocate();
@@ -146,5 +147,12 @@ protected:
   DA  SSADA;
 };
 
+//! \brief Computes the driving stress (taud).
+class SSAFD_taud : public PISMDiag<SSAFD>
+{
+public:
+  SSAFD_taud(SSAFD *m, IceGrid &g, PISMVars &my_vars);
+  PetscErrorCode compute(IceModelVec* &result);
+};
 
 #endif /* _SSAFD_H_ */
