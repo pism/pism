@@ -191,6 +191,13 @@ PetscErrorCode IceCompModel::setFromOptions() {
 PetscErrorCode IceCompModel::init_physics() {
   PetscErrorCode ierr;
 
+  // allocate the "special" enthalpy converter; IceModel::init_physics() will see
+  // that EC != NULL and will not override this. (Also, the stress balance code
+  // will see the correct EC.)
+  delete EC;
+  EC = new ICMEnthalpyConverter(config);
+  // The call above *has* to happen before IceModel::init_physics().
+
   // Let the base class version read the options (possibly overriding the
   // default set above) and create the IceFlowLaw object.
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
@@ -208,8 +215,6 @@ PetscErrorCode IceCompModel::init_physics() {
 
   // Replace the default enthalpy converter with a custom version that avoids
   // clipping temperatures at pressure-melting
-  delete EC;
-  EC = new ICMEnthalpyConverter(config);
 
   if (testname == 'E') {
     // undo the stress balance choice made by IceModel:
