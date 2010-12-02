@@ -549,17 +549,17 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
   PetscScalar     x_loc, y_loc;
   const PetscScalar darea = grid.dx * grid.dy;
   
-  IceModelVec2V vel_bar = vWork2dV;
-
-  int FIXME_PST_needs_velbar;
-  // ierr = compute_velbar(vel_bar); CHKERRQ(ierr);
+  IceModelVec *tmp;
+  ierr = diagnostics["velbar"]->compute(tmp); CHKERRQ(ierr);
+  IceModelVec2V *vel_bar = dynamic_cast<IceModelVec2V*>(tmp);
+  if (!vel_bar) SETERRQ(1, "dynamic_cast failure");
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
+  ierr = vel_bar->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (vH(i,j) > 0) {
-        const PetscScalar cbar = vel_bar(i,j).magnitude();
+        const PetscScalar cbar = (*vel_bar)(i,j).magnitude();
         const PetscScalar x = -grid.Ly + grid.dy * j, // note reversal (FIXME!
 						      // do we need this now?)
                           y = -grid.Lx + grid.dx * i,
@@ -596,7 +596,9 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
     }
   }
   ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vel_bar.end_access(); CHKERRQ(ierr);
+  ierr = vel_bar->end_access(); CHKERRQ(ierr);
+
+  delete tmp;
 
   // globalize and actually compute averages
   ierr = PetscGlobalMax(&maxcbarALL, &gmaxcbarALL, grid.com); CHKERRQ(ierr);

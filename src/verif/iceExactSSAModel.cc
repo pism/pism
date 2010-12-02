@@ -415,12 +415,11 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
   }
   ierr = verbPrintf(1,grid.com, 
           "NUMERICAL ERRORS in velocity relative to exact solution:\n"); CHKERRQ(ierr);
-  IceModelVec2V vel_bar = vWork2dV;
 
-  int FIXME_IceExactSSAModel_needs_velbar;
-  // ierr = compute_velbar(vel_bar); CHKERRQ(ierr);
+  IceModelVec2V *vel_ssa;
+  ierr = stress_balance->get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr);
 
-  ierr = vel_bar.begin_access(); CHKERRQ(ierr);
+  ierr = vel_ssa->begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
@@ -454,8 +453,8 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
         SETERRQ(1,"only tests I,J,M have computable errors");
       }
       // compute maximum errors
-      const PetscScalar uerr = PetscAbsReal(vel_bar(i,j).u - uexact);
-      const PetscScalar verr = PetscAbsReal(vel_bar(i,j).v - vexact);
+      const PetscScalar uerr = PetscAbsReal((*vel_ssa)(i,j).u - uexact);
+      const PetscScalar verr = PetscAbsReal((*vel_ssa)(i,j).v - vexact);
       avuerr = avuerr + uerr;      
       avverr = avverr + verr;      
       maxuerr = PetscMax(maxuerr,uerr);
@@ -465,7 +464,7 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
       avvecerr = avvecerr + vecerr;
     }
   }
-  ierr = vel_bar.end_access(); CHKERRQ(ierr);
+  ierr = vel_ssa->end_access(); CHKERRQ(ierr);
    
   ierr = PetscGlobalMax(&maxuerr, &gmaxuerr, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&maxverr, &gmaxverr, grid.com); CHKERRQ(ierr);

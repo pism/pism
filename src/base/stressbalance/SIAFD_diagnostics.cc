@@ -18,6 +18,13 @@
 
 #include "SIAFD.hh"
 
+void SIAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  dict["diffusivity"] = new SIAFD_diffusivity(this, grid, *variables);
+  dict["schoofs_theta"] = new SIAFD_schoofs_theta(this, grid, *variables);
+  dict["thksmooth"] = new SIAFD_thksmooth(this, grid, *variables);
+  dict["topgsmooth"] = new SIAFD_topgsmooth(this, grid, *variables);
+}
+
 SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<SIAFD>(m, g, my_vars) {
   
@@ -78,7 +85,7 @@ SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<SIAFD>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("name", grid, GRID_2D);
+  vars[0].init("thksmooth", grid, GRID_2D);
   set_attrs("thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
             "", "m", "m", 0);
 }
@@ -130,11 +137,3 @@ PetscErrorCode SIAFD_diffusivity::compute(IceModelVec* &output) {
   output = result;
   return 0;
 }
-
-void SIAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
-  dict["diffusivity"] = new SIAFD_diffusivity(this, grid, *variables);
-  dict["schoofs_theta"] = new SIAFD_schoofs_theta(this, grid, *variables);
-  dict["thksmooth"] = new SIAFD_thksmooth(this, grid, *variables);
-  dict["topgsmooth"] = new SIAFD_topgsmooth(this, grid, *variables);
-}
-

@@ -18,6 +18,10 @@
 
 #include "SSAFD.hh"
 
+void SSAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  dict["taud"] = new SSAFD_taud(this, grid, *variables);
+}
+
 SSAFD_taud::SSAFD_taud(SSAFD *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<SSAFD>(m, g, my_vars) {
   
@@ -46,8 +50,3 @@ PetscErrorCode SSAFD_taud::compute(IceModelVec* &output) {
   output = taud;
   return 0;
 }
-
-void SSAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
-  dict["taud"] = new SSAFD_taud(this, grid, *variables);
-}
-

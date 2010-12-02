@@ -551,6 +551,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
   return 0;
 }
 
+//! \brief Compute diffusivity (diagnostically).
 PetscErrorCode SIAFD::compute_diffusivity(IceModelVec2S &result) {
   PetscErrorCode ierr;
   // delta on the staggered grid:
@@ -603,6 +604,9 @@ PetscErrorCode SIAFD::compute_diffusivity(IceModelVec2S &result) {
   ierr = delta[1].end_access(); CHKERRQ(ierr);
   ierr = delta[0].end_access(); CHKERRQ(ierr);
   ierr = thk_smooth.end_access(); CHKERRQ(ierr);
+
+  ierr = D_stag.beginGhostComm(); CHKERRQ(ierr);
+  ierr = D_stag.endGhostComm(); CHKERRQ(ierr);
 
   ierr = D_stag.staggered_to_regular(result); CHKERRQ(ierr);
 

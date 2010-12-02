@@ -31,7 +31,8 @@ PetscErrorCode ShallowStressBalance::allocate() {
   velocity.write_in_glaciological_units = true;
 
   ierr = basal_frictional_heating.create(grid, "bfrict", false); CHKERRQ(ierr);
-  ierr = basal_frictional_heating.set_attrs("diagnostic", "", "W m-2", ""); CHKERRQ(ierr);
+  ierr = basal_frictional_heating.set_attrs("diagnostic",
+                                            "basal frictional heating", "W m-2", ""); CHKERRQ(ierr);
   ierr = basal_frictional_heating.set_glaciological_units("mW m-2"); CHKERRQ(ierr);
   basal_frictional_heating.write_in_glaciological_units = true;
 

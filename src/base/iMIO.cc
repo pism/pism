@@ -147,28 +147,37 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
     }
   }
 
-  // All the remaining names in vars must be of diagnostic quantities or filds
+  // All the remaining names in vars must be of diagnostic quantities or fields
   // written by other PISM components.
   i = vars.begin();
   while (i != vars.end()) {
-    ierr = compute_by_name(*i, v); CHKERRQ(ierr);
+    PISMDiagnostic *diag = diagnostics[*i];
 
-    if (v == NULL)
+    if (diag == NULL)
       ++i;
     else {
+      v = NULL;
+
+      ierr = diag->compute(v); CHKERRQ(ierr);
+
+      v->write_in_glaciological_units = true;
       ierr = v->write(filename, NC_FLOAT); CHKERRQ(ierr); // diagnostic quantities are always written in float
+
+      delete v;
+
       vars.erase(i++);
     }
   }
 
   // check if we have any variables we didn't write
   if (!vars.empty()) {
-    ierr = verbPrintf(3, grid.com,
+    int threshold = 2;
+    ierr = verbPrintf(threshold, grid.com,
 		      "PISM WARNING: the following variables were *not* written by the PISM core: "); CHKERRQ(ierr);
     for (i = vars.begin(); i != vars.end(); ++i) {
-      ierr = verbPrintf(3, grid.com, "%s, ", (*i).c_str()); CHKERRQ(ierr);
+      ierr = verbPrintf(threshold, grid.com, "%s, ", (*i).c_str()); CHKERRQ(ierr);
     }
-    ierr = verbPrintf(3, grid.com, "\b\b\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(threshold, grid.com, "\b\b\n"); CHKERRQ(ierr);
   }
 
   // Ask boundary models to write their variables:

@@ -194,4 +194,23 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
+//! \brief Computes f(|v|) as described in [\ref BBssasliding] (page 7, equation 22).
+class PSB_bueler_brown_f : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_bueler_brown_f(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes basal frictional heating.
+class PSB_bfrict : public PISMDiag<PISMStressBalance>
+{
+public:
+  PSB_bfrict(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+
+
+
 #endif /* _PISMSTRESSBALANCE_H_ */

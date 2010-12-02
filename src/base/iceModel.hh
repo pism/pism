@@ -47,7 +47,21 @@ using namespace std;
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
+  // The following classes implement various diagnostic computations.
   friend class IceModel_hardav;
+  friend class IceModel_bwp;
+  friend class IceModel_cts;
+  friend class IceModel_dhdt;
+  friend class IceModel_temp;
+  friend class IceModel_temp_pa;
+  friend class IceModel_temppabase;
+  friend class IceModel_enthalpybase;
+  friend class IceModel_enthalpysurf;
+  friend class IceModel_tempbase;
+  friend class IceModel_tempsurf;
+  friend class IceModel_liqfrac;
+  friend class IceModel_tempicethk;
+  friend class IceModel_tempicethk_basal;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
   IceModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);
@@ -270,24 +284,7 @@ protected:
   // see iMreport.cc;  methods for computing diagnostic quantities:
   // spatially-varying:
   virtual PetscErrorCode compute_by_name(string name, IceModelVec* &result);
-  virtual PetscErrorCode compute_bwp(IceModelVec2S &result);
-  virtual PetscErrorCode compute_cts(IceModelVec3 &useForCTS);
-  virtual PetscErrorCode compute_dhdt(IceModelVec2S &result);
-  virtual PetscErrorCode compute_enthalpybase(IceModelVec2S &result);
-  virtual PetscErrorCode compute_enthalpysurf(IceModelVec2S &result);
-  virtual PetscErrorCode compute_liqfrac(IceModelVec3 &useForLiqfrac);
-  virtual PetscErrorCode compute_temp(IceModelVec3 &result);
-  virtual PetscErrorCode compute_temp_pa(IceModelVec3 &result);
-  virtual PetscErrorCode compute_tempbase(IceModelVec2S &result);
-  virtual PetscErrorCode compute_tempicethk(IceModelVec2S &result);
-  virtual PetscErrorCode compute_tempicethk_basal(IceModelVec2S &result);
-  virtual PetscErrorCode compute_temppabase(IceModelVec3 &hasPATemp,
-                                            IceModelVec2S &result);
-  virtual PetscErrorCode compute_tempsurf(IceModelVec2S &result);
 
-  // profiling, etc:
-  virtual PetscErrorCode compute_proc_ice_area(IceModelVec2S &result);
-  virtual PetscErrorCode compute_bueler_brown_f(IceModelVec2S &result);
   // scalar:
   virtual PetscErrorCode ice_mass_bookkeeping();
   virtual PetscErrorCode compute_ice_volume(PetscScalar &result);
@@ -322,9 +319,8 @@ protected:
 
 protected:
   // working space (a convenience)
-  static const PetscInt nWork2d=6;
+  static const PetscInt nWork2d=2;
   IceModelVec2S vWork2d[nWork2d];
-  IceModelVec2Stag vWork2dStag;
   IceModelVec2V vWork2dV;
 
   // 3D working space
@@ -403,24 +399,6 @@ private:
     event_beddef,		//!< bed deformation step
     event_output;		//!< time spent writing the output file
 };
-
-//! \brief Computes vertically-averaged ice hardness.
-class IceModel_hardav : public PISMDiag<IceModel>
-{
-public:
-  IceModel_hardav(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-//! \brief Computes a diagnostic field filled with processor rank values.
-class IceModel_rank : public PISMDiag<IceModel>
-{
-public:
-  IceModel_rank(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
-
 
 #endif /* __iceModel_hh */
 

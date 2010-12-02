@@ -102,47 +102,6 @@ PetscErrorCode IceModel::setEnth3FromT3AndLiqfrac3(
   return 0;
 }
 
-
-//! Compute the ice temperature corresponding to Enth3, and put in a given IceModelVec3.
-/*!
-  Computes ice temperature from enthalpy (as a diagnostic quantity).
- */
-PetscErrorCode IceModel::compute_temp(IceModelVec3 &result) {
-  PetscErrorCode ierr;
-
-  PetscScalar *Tij, *Enthij; // columns of these values
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = result.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
-      ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-      for (PetscInt k=0; k<grid.Mz; ++k) {
-        const PetscScalar depth = vH(i,j) - grid.zlevels[k];
-        ierr = EC->getAbsTemp(Enthij[k],EC->getPressureFromDepth(depth), Tij[k]); 
-        if (ierr) {
-          PetscPrintf(grid.com,
-            "\n\nEnthalpyConverter.getAbsTemp() error at i=%d,j=%d,k=%d\n\n",
-            i,j,k);
-        }
-        CHKERRQ(ierr);
-      }
-    }
-  }
-  ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
-
-  ierr = result.set_name("temp"); CHKERRQ(ierr);
-  ierr = result.set_attrs("diagnostic","ice temperature",
-			  "K", "land_ice_temperature"); CHKERRQ(ierr);
-  ierr = result.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
 //! Compute the liquid fraction corresponding to Enth3, and put in a global IceModelVec3 provided by user.
 /*!
 Does not communicate ghosts for IceModelVec3 useForLiquidFrac.
