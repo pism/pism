@@ -37,10 +37,18 @@ PetscErrorCode IceModel::update_viewers() {
   // map-plane viewers
   for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {
     IceModelVec *v = variables.get(*i);
+    bool de_allocate = false;
 
     // if not found, try to compute:
     if (v == NULL) {
-      ierr = compute_by_name(*i, v); CHKERRQ(ierr);
+      de_allocate = true;
+      PISMDiagnostic *diag = diagnostics[*i];
+
+      if (diag) {
+        ierr = diag->compute(v); CHKERRQ(ierr);
+      } else {
+        v = NULL;
+      }
     }
 
     // if still not found, ignore
@@ -72,6 +80,8 @@ PetscErrorCode IceModel::update_viewers() {
 	PetscEnd();
       }
     }
+    
+    if (de_allocate) delete v;
   }
 
   // slice viewers:

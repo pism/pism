@@ -141,6 +141,7 @@ public:
   virtual PetscErrorCode create(IceGrid &my_grid, const char my_short_name[], bool local,
 			 DAStencilType my_sten, int stencil_width, int dof);
   virtual PetscErrorCode view(PetscInt viewer_size);
+  // virtual PetscErrorCode view(PetscInt viewer_size, PetscViewer v);
 protected:
   PetscErrorCode get_component(int n, Vec result);
   PetscErrorCode set_component(int n, Vec source);

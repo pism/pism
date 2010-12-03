@@ -43,23 +43,26 @@ PetscErrorCode IceModel::init_diagnostics() {
   // Get diagnostics supported by the stress balance object:
   stress_balance->get_diagnostics(diagnostics);
 
+  int threshold = 5;
+
+  verbPrintf(threshold, grid.com, " *** Available diagnostic quantities:\n");
+
   map<string, PISMDiagnostic*>::iterator j = diagnostics.begin();
   while (j != diagnostics.end()) {
     string name = j->first;
     PISMDiagnostic *diag = j->second;
 
     int N = diag->get_nvars();
-    verbPrintf(2, grid.com, " ** %s [%d variable(s)]\n", name.c_str(), N);
+    verbPrintf(threshold, grid.com, " ** %s\n", name.c_str());
 
     for (int k = 0; k < N; ++k) {
       NCSpatialVariable *var = diag->get_metadata(k);
 
       string long_name = var->get_string("long_name");
 
-      verbPrintf(2, grid.com, " * %s\n", long_name.c_str());
-
-      ++j;
+      verbPrintf(threshold, grid.com, " * %s\n", long_name.c_str());
     }
+    ++j;
   }
 
   return 0;
