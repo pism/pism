@@ -44,25 +44,26 @@ PetscErrorCode IceModel::init_diagnostics() {
   stress_balance->get_diagnostics(diagnostics);
 
   int threshold = 5;
+  if (getVerbosityLevel() >= threshold) {
+    verbPrintf(threshold, grid.com, " *** Available diagnostic quantities:\n");
 
-  verbPrintf(threshold, grid.com, " *** Available diagnostic quantities:\n");
+    map<string, PISMDiagnostic*>::iterator j = diagnostics.begin();
+    while (j != diagnostics.end()) {
+      string name = j->first;
+      PISMDiagnostic *diag = j->second;
 
-  map<string, PISMDiagnostic*>::iterator j = diagnostics.begin();
-  while (j != diagnostics.end()) {
-    string name = j->first;
-    PISMDiagnostic *diag = j->second;
+      int N = diag->get_nvars();
+      verbPrintf(threshold, grid.com, " ** %s\n", name.c_str());
 
-    int N = diag->get_nvars();
-    verbPrintf(threshold, grid.com, " ** %s\n", name.c_str());
+      for (int k = 0; k < N; ++k) {
+        NCSpatialVariable *var = diag->get_metadata(k);
 
-    for (int k = 0; k < N; ++k) {
-      NCSpatialVariable *var = diag->get_metadata(k);
+        string long_name = var->get_string("long_name");
 
-      string long_name = var->get_string("long_name");
-
-      verbPrintf(threshold, grid.com, " * %s\n", long_name.c_str());
+        verbPrintf(threshold, grid.com, " * %s\n", long_name.c_str());
+      }
+      ++j;
     }
-    ++j;
   }
 
   return 0;

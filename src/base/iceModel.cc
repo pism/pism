@@ -82,8 +82,18 @@ IceModel::~IceModel() {
   vector<DiagnosticTimeseries*>::iterator i = timeseries.begin();
   while(i != timeseries.end()) delete (*i++);
 
+  // de-allocate diagnostics
   map<string,PISMDiagnostic*>::iterator j = diagnostics.begin();
   while (j != diagnostics.end()) delete (j++)->second;
+
+  // de-allocate viewers
+  map<string,PetscViewer>::iterator k = viewers.begin();
+  while (k != viewers.end()) {
+    if ((*k).second != PETSC_NULL) {
+      PetscViewerDestroy((*k).second);
+      ++k;
+    }
+  }
 
   delete stress_balance;
 
@@ -298,7 +308,8 @@ PetscErrorCode IceModel::createVecs() {
   ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   acab.write_in_glaciological_units = true;
   acab.set_attr("comment", "positive values correspond to ice gain");
-  ierr = variables.add(acab); CHKERRQ(ierr);
+  // do not add; boundary models are in charge here
+  // ierr = variables.add(acab); CHKERRQ(ierr);
 
   // annual mean air temperature at "ice surface", at level below all firn
   //   processes (e.g. "10 m" or ice temperatures)
@@ -309,7 +320,8 @@ PetscErrorCode IceModel::createVecs() {
             "K", 
             "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
             CHKERRQ(ierr);
-  ierr = variables.add(artm); CHKERRQ(ierr);
+  // do not add; boundary models are in charge here
+  // ierr = variables.add(artm); CHKERRQ(ierr);
 
   // ice mass balance rate at the base of the ice shelf; sign convention for
   //   vshelfbasemass matches standard sign convention for basal melt rate of

@@ -37,6 +37,7 @@ IceModelVec3::IceModelVec3() : IceModelVec() {
 
 IceModelVec3::~IceModelVec3() {
   if (!shallow_copy) {
+    destroy();
     delete slice_viewers;
     delete sounding_viewers;
   }
@@ -582,6 +583,7 @@ IceModelVec3Bedrock::IceModelVec3Bedrock() : IceModelVec() {
 
 IceModelVec3Bedrock::~IceModelVec3Bedrock() {
   if (!shallow_copy) {
+    destroy();
     delete sounding_viewers;
   }
 }
@@ -888,72 +890,40 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   return 0;
 }
 
-PetscErrorCode IceModelVec3::view_surface(IceModelVec2S &thickness, PetscInt viewer_size) {
-  PetscErrorCode ierr;
-  Vec g2;
-
-  ierr = DACreateGlobalVector(grid->da2, &g2); CHKERRQ(ierr);
-
-  if ((*map_viewers)[name] == PETSC_NULL) {
-    string title = string_attr("long_name") + " at the ice surface (" +
-      string_attr("glaciological_units") + ")";
-
-    ierr = create_viewer(viewer_size, title, (*map_viewers)[name]); CHKERRQ(ierr);
-  }
-
-  ierr = getSurfaceValues(g2, thickness); CHKERRQ(ierr);
-
-  ierr = vars[0].to_glaciological_units(g2); CHKERRQ(ierr);
-
-  ierr = VecView(g2, (*map_viewers)[name]); CHKERRQ(ierr);
-
-  ierr = VecDestroy(g2); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode IceModelVec3::view_horizontal_slice(PetscScalar level, PetscInt viewer_size) {
-  PetscErrorCode ierr;
-  Vec g2;
-
-  ierr = DACreateGlobalVector(grid->da2, &g2); CHKERRQ(ierr);
-
-  if ((*slice_viewers)[name] == PETSC_NULL) {
-    ostringstream title;
-    title << string_attr("long_name") << " at " << level << " m above the base of ice, (" << 
-      string_attr("glaciological_units") << ")";
-
-    ierr = create_viewer(viewer_size, title.str(), (*slice_viewers)[name]); CHKERRQ(ierr);
-  }
-
-  ierr = getHorSlice(g2, level); CHKERRQ(ierr);
-
-  ierr = vars[0].to_glaciological_units(g2); CHKERRQ(ierr);
-
-  ierr = VecView(g2, (*slice_viewers)[name]); CHKERRQ(ierr);
-
-  ierr = VecDestroy(g2); CHKERRQ(ierr);
-
-  return 0;
-}
-
 PetscErrorCode IceModelVec3::view_sounding(int i, int j, PetscInt viewer_size) {
+  PetscErrorCode ierr;
+
+  // create the title:
+  if ((*sounding_viewers)[name] == PETSC_NULL) {
+    string title = string_attr("long_name") + " sounding (" + string_attr("glaciological_units") + ")";
+
+    ierr = grid->create_viewer(viewer_size, title, (*sounding_viewers)[name]); CHKERRQ(ierr);
+  }
+
+  ierr = view_sounding(i, j, (*sounding_viewers)[name]); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief View a sounding using an existing PETSc viewer.
+PetscErrorCode IceModelVec3::view_sounding(int i, int j, PetscViewer my_viewer) {
   PetscErrorCode ierr;
   PetscScalar *ivals;
   PetscInt my_Mz = grid->Mz;
 
   check_array_indices(i, j);
 
+  const string tname = string_attr("long_name"),
+    tunits = " (" + string_attr("glaciological_units") + ")",
+    title = tname + tunits;
+
+  PetscDraw draw;
+  ierr = PetscViewerDrawGetDraw(my_viewer, 0, &draw); CHKERRQ(ierr);
+  ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
+
   // memory allocation:
   if (sounding_buffer == PETSC_NULL) {
     ierr = VecCreateMPI(grid->com, PETSC_DECIDE, my_Mz, &sounding_buffer); CHKERRQ(ierr);
-  }
-
-  // create the title:
-  if ((*sounding_viewers)[name] == PETSC_NULL) {
-    string title = string_attr("long_name") + " sounding (" + string_attr("glaciological_units") + ")";
-
-    ierr = create_viewer(viewer_size, title, (*sounding_viewers)[name]); CHKERRQ(ierr);
   }
 
   // get the sounding:
@@ -974,28 +944,45 @@ PetscErrorCode IceModelVec3::view_sounding(int i, int j, PetscInt viewer_size) {
   // change units:
   ierr = vars[0].to_glaciological_units(sounding_buffer); CHKERRQ(ierr);
 
-  ierr = VecView(sounding_buffer, (*sounding_viewers)[name]); CHKERRQ(ierr);
+  ierr = VecView(sounding_buffer, my_viewer); CHKERRQ(ierr);
+  
+  return 0;
+}
+
+
+PetscErrorCode IceModelVec3Bedrock::view_sounding(int i, int j, PetscInt viewer_size) {
+  PetscErrorCode ierr;
+
+  // create the title:
+  if ((*sounding_viewers)[name] == PETSC_NULL) {
+    string title = string_attr("long_name") + " sounding (" + string_attr("glaciological_units") + ")";
+
+    ierr = grid->create_viewer(viewer_size, title, (*sounding_viewers)[name]); CHKERRQ(ierr);
+  }
+
+  ierr = view_sounding(i, j, (*sounding_viewers)[name]); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode IceModelVec3Bedrock::view_sounding(int i, int j, PetscInt viewer_size) {
+PetscErrorCode IceModelVec3Bedrock::view_sounding(int i, int j, PetscViewer my_viewer) {
   PetscErrorCode ierr;
-  PetscScalar *ivals = NULL;
+  PetscScalar *ivals;
   PetscInt my_Mz = grid->Mbz;
 
   check_array_indices(i, j);
 
+  const string tname = string_attr("long_name"),
+    tunits = " (" + string_attr("glaciological_units") + ")",
+    title = tname + tunits;
+
+  PetscDraw draw;
+  ierr = PetscViewerDrawGetDraw(my_viewer, 0, &draw); CHKERRQ(ierr);
+  ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
+
   // memory allocation:
   if (sounding_buffer == PETSC_NULL) {
     ierr = VecCreateMPI(grid->com, PETSC_DECIDE, my_Mz, &sounding_buffer); CHKERRQ(ierr);
-  }
-
-  // create the title:
-  if ((*sounding_viewers)[name] == PETSC_NULL) {
-    string title = string_attr("long_name") + " sounding (" + string_attr("glaciological_units") + ")";
-
-    ierr = create_viewer(viewer_size, title, (*sounding_viewers)[name]); CHKERRQ(ierr);
   }
 
   // get the sounding:
@@ -1016,8 +1003,8 @@ PetscErrorCode IceModelVec3Bedrock::view_sounding(int i, int j, PetscInt viewer_
   // change units:
   ierr = vars[0].to_glaciological_units(sounding_buffer); CHKERRQ(ierr);
 
-  ierr = VecView(sounding_buffer, (*sounding_viewers)[name]); CHKERRQ(ierr);
-
+  ierr = VecView(sounding_buffer, my_viewer); CHKERRQ(ierr);
+  
   return 0;
 }
 

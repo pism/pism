@@ -142,27 +142,32 @@ PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, PetscScalar fill) {
 
 //! \brief View a 2D field. Allocates and de-allocates g2, the temporary global
 //! vector; performance should not matter here.
-PetscErrorCode IceModelVec2::view(PetscInt viewer_size) {
+PetscErrorCode IceModelVec2S::view(PetscInt viewer_size) {
+  PetscErrorCode ierr;
+  
+  const string tname = string_attr("long_name"),
+    tunits = " (" + string_attr("glaciological_units") + ")",
+    title = tname + tunits;
+
+  if ((*map_viewers)[name] == PETSC_NULL) {
+    ierr = grid->create_viewer(viewer_size, title, (*map_viewers)[name]); CHKERRQ(ierr);
+  } else {
+  }
+
+  ierr = view((*map_viewers)[name]); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief View a scalar 2D field using an existing PETSc viewer.
+PetscErrorCode IceModelVec2S::view(PetscViewer my_viewer) {
   PetscErrorCode ierr;
   Vec g2;
-
-  if (dof != 1)
-    SETERRQ(1, "This method only supports IceModelVecs with dof == 1.");
+  const string tname = string_attr("long_name"),
+    tunits = " (" + string_attr("glaciological_units") + ")",
+    title = tname + tunits;
 
   ierr = DACreateGlobalVector(grid->da2, &g2); CHKERRQ(ierr);
-  
-  const string tname = (string_attr("long_name").length() > 0)
-                        ? string_attr("long_name") : vars[0].short_name,
-               tunits = (string_attr("glaciological_units").length() > 0)
-                        ? " (" + string_attr("glaciological_units") + ")" : "",
-               title = tname + tunits;
-  if ((*map_viewers)[name] == PETSC_NULL) {
-    ierr = create_viewer(viewer_size, title, (*map_viewers)[name]); CHKERRQ(ierr);
-  } else {
-    PetscDraw draw;
-    ierr = PetscViewerDrawGetDraw((*map_viewers)[name], 0, &draw); CHKERRQ(ierr);
-    ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
-  }
 
   if (localp) {
     ierr = copy_to(g2); CHKERRQ(ierr);
@@ -170,14 +175,19 @@ PetscErrorCode IceModelVec2::view(PetscInt viewer_size) {
     ierr = VecCopy(v, g2); CHKERRQ(ierr);
   }
 
+  PetscDraw draw;
+  ierr = PetscViewerDrawGetDraw(my_viewer, 0, &draw); CHKERRQ(ierr);
+  ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
+
   ierr = vars[0].to_glaciological_units(g2); CHKERRQ(ierr);
 
-  ierr = VecView(g2, (*map_viewers)[name]); CHKERRQ(ierr);
+  ierr = VecView(g2, my_viewer); CHKERRQ(ierr);
 
   ierr = VecDestroy(g2); CHKERRQ(ierr);
 
   return 0;
 }
+
 
 PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) {
   PetscErrorCode ierr;
@@ -258,35 +268,11 @@ PetscErrorCode IceModelVec2S::has_nan() {
 
 // IceModelVec2Mask
 
-PetscErrorCode  IceModelVec2Mask::create(IceGrid &my_grid, const char my_name[], bool local, int width) {
-  if (!utIsInit()) {
-    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
-  }
-
-  if (v != PETSC_NULL) {
-    SETERRQ1(2,"IceModelVec2Mask with name='%s' already allocated\n", my_name);
-  }
-  PetscErrorCode ierr = IceModelVec2::create(my_grid, my_name, local, DA_STENCIL_BOX, width, dof); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode IceModelVec2Mask::get_array(PetscScalar** &a) {
-  PetscErrorCode ierr;
-  ierr = begin_access(); CHKERRQ(ierr);
-  a = (PetscScalar**) array;
-  return 0;
-}
-
 //! Returns the mask value; does not check ownership.
 PismMask IceModelVec2Mask::value(int i, int j) {
   const PetscScalar **a = (const PetscScalar**) array;
   const PetscInt ival = static_cast<int>(floor(a[i][j] + 0.5));
   return static_cast<PismMask>(ival);
-}
-
-PetscScalar& IceModelVec2Mask::operator() (int i, int j) {
-  check_array_indices(i, j);
-  return static_cast<PetscScalar**>(array)[i][j];
 }
 
 bool IceModelVec2Mask::is_grounded(int i, int j) {

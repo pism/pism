@@ -626,7 +626,7 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type n
   CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
   // this is all we need to turn on compression:
-  // stat = nc_def_var_deflate(ncid, varid, 0, 1, 9);
+  // stat = nc_def_var_deflate(ncid, varid, 0, 1, 5);
   // CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
   stat = write_attributes(nc, varid, nctype, write_in_glaciological_units); CHKERRQ(stat);
@@ -688,11 +688,18 @@ double NCVariable::get(string name) const {
 
 //! Set a string attribute.
 void NCVariable::set_string(string name, string value) {
+  if (name == "short_name") {
+    short_name = name;
+    return;
+  }
+
   strings[name] = value;
 }
 
 //! Get a string attribute.
 string NCVariable::get_string(string name) const {
+  if (name == "short_name") return short_name;
+
   map<string,string>::const_iterator j = strings.find(name);
   if (j != strings.end())
     return j->second;

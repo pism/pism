@@ -37,6 +37,7 @@ public:
 
   virtual bool            was_created();
   virtual GridType        grid_type();
+  virtual int             get_dof() { return dof; }
 
   virtual PetscErrorCode  range(PetscReal &min, PetscReal &max);
   virtual PetscErrorCode  norm(NormType n, PetscReal &out);
@@ -120,8 +121,6 @@ protected:
   virtual PetscErrorCode checkCompatibility(const char*, IceModelVec &other);
   virtual void check_array_indices(int i, int j);
   virtual PetscErrorCode reset_attrs(int N);
-  virtual PetscErrorCode create_viewer(PetscInt viewer_size, string title, PetscViewer &viewer);
-  virtual PetscErrorCode compute_viewer_size(int target, int &x, int &y);
 };
 
 
@@ -140,8 +139,6 @@ public:
   IceModelVec2(const IceModelVec2 &other) : IceModelVec(other) {};
   virtual PetscErrorCode create(IceGrid &my_grid, const char my_short_name[], bool local,
 			 DAStencilType my_sten, int stencil_width, int dof);
-  virtual PetscErrorCode view(PetscInt viewer_size);
-  // virtual PetscErrorCode view(PetscInt viewer_size, PetscViewer v);
 protected:
   PetscErrorCode get_component(int n, Vec result);
   PetscErrorCode set_component(int n, Vec source);
@@ -173,6 +170,8 @@ public:
   virtual PetscScalar diff_y_stagN(int i, int j);
   virtual PetscScalar diff_x_p(int i, int j);
   virtual PetscScalar diff_y_p(int i, int j);
+  virtual PetscErrorCode view(PetscInt viewer_size);
+  virtual PetscErrorCode view(PetscViewer v);
   virtual PetscErrorCode view_matlab(PetscViewer my_viewer);
   virtual PetscScalar& operator() (int i, int j);
   virtual PetscErrorCode has_nan();
@@ -181,12 +180,8 @@ public:
 
 //! \brief A simple class "hiding" the fact that the mask is stored as
 //! floating-point scalars (instead of integers).
-class IceModelVec2Mask : public IceModelVec2 {
+class IceModelVec2Mask : public IceModelVec2S {
 public:
-  using IceModelVec2::create;
-  virtual PetscErrorCode create(IceGrid &my_grid, const char my_name[], bool local, int width = 1);
-  PetscErrorCode  get_array(PetscScalar** &a); // provides access to the storage (PetscScalar) array
-  virtual PetscScalar& operator() (int i, int j);
   virtual PismMask value(int i, int j);	  // returns the mask value
   virtual bool is_grounded(int i, int j); // checks for MASK_SHEET || MASK_DRAGGING
   virtual bool is_floating(int i, int j); // checks for MASK_FLOATING || MASK_FLOATING_OCEAN0
@@ -230,6 +225,7 @@ public:
   virtual PetscErrorCode magnitude(IceModelVec2S &result); 
   virtual PISMVector2&   operator()(int i, int j);
   virtual PetscErrorCode view(PetscInt viewer_size);
+  virtual PetscErrorCode view(PetscViewer v1, PetscViewer v2);
   // component-wise access:
   virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
   virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
@@ -278,6 +274,7 @@ public:
   PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsIN);
   PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsOUT);
   PetscErrorCode  view_sounding(int i, int j, PetscInt viewer_size);
+  PetscErrorCode  view_sounding(int i, int j, PetscViewer v);
 
 protected:  
   map<string,PetscViewer> *sounding_viewers;
@@ -300,7 +297,8 @@ public:
   virtual PetscErrorCode beginGhostCommTransfer(IceModelVec3 &imv3_source);
   virtual PetscErrorCode endGhostCommTransfer(IceModelVec3 &imv3_source);
 
-  // need call begin_access() before set...() or get...() *and* need call end_access() afterward
+  // need to call begin_access() before set...(i,j,...) or get...(i,j,...) *and* need call
+  // end_access() afterward
   PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsIN);
   PetscErrorCode  setColumn(PetscInt i, PetscInt j, PetscScalar c);
   PetscErrorCode  setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN);
@@ -313,12 +311,6 @@ public:
 				    planeStar *star);
   PetscErrorCode  getPlaneStar(PetscInt i, PetscInt j, PetscInt k,
 			       planeStar *star);
-
-//Idea; see IceModel::horizontalVelocitySIARegular(), for example; would only work for 4 neighbors
-//   if used with two IceModelVec3:
-//  PetscErrorCode  averageStagNeighCol(PetscInt i, PetscInt j, 
-//                                      PetscInt nlevels, PetscScalar *levelsIN, 
-//                                      PetscScalar *avOUT);
 
   PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
   PetscErrorCode  getValColumnQUAD(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
@@ -333,9 +325,8 @@ public:
   PetscErrorCode  extend_vertically(int old_Mz, PetscScalar fill_value);
   PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2S &fill_values);
 
-  PetscErrorCode view_surface(IceModelVec2S &thickness, PetscInt viewer_size);
-  PetscErrorCode view_horizontal_slice(PetscScalar level, PetscInt viewer_size);
-  PetscErrorCode view_sounding(int i, int j, PetscInt viewer_size);
+  PetscErrorCode  view_sounding(int i, int j, PetscInt viewer_size);
+  PetscErrorCode  view_sounding(int i, int j, PetscViewer v);
   virtual PetscErrorCode  has_nan();
 
 protected:  
@@ -349,7 +340,7 @@ protected:
 
 
 /*
-// FIXME: We need a IceModelVec3V (3D-distributed horizontal velocity) class.
+// FIXME: We might need a IceModelVec3V (3D-distributed horizontal velocity) class.
 
 //! This class is for storing 3D scalar quantities on the grid staggered in
 //! horizontal directions.

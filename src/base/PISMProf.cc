@@ -90,15 +90,14 @@ void PISMProf::end(int /*index*/) {
 //! Save a profiling report to a file.
 PetscErrorCode PISMProf::save_report(string filename) {
   PetscErrorCode ierr;
-  int ncid, varid;
+  int varid;
   NCTool nc(com, rank);
 
   ierr = nc.move_if_exists(filename.c_str()); CHKERRQ(ierr);
 
   ierr = nc.open_for_writing(filename.c_str()); CHKERRQ(ierr);
-  ncid = nc.get_ncid();
 
-  ierr = create_dimensions(ncid); CHKERRQ(ierr); 
+  ierr = create_dimensions(nc); CHKERRQ(ierr); 
 
   for (unsigned int j = 0; j < events.size(); ++j) {
     string &name = events[j].name;
@@ -107,7 +106,7 @@ PetscErrorCode PISMProf::save_report(string filename) {
 
     ierr = find_variables(nc, name, varid); CHKERRQ(ierr);
 
-    ierr = save_report(j, ncid, varid); CHKERRQ(ierr);
+    ierr = save_report(j, nc, varid); CHKERRQ(ierr);
 
     int parent_index = events[j].parent;
     string parent;
@@ -117,9 +116,9 @@ PetscErrorCode PISMProf::save_report(string filename) {
       parent = events[parent_index].name;
     string descr = events[j].description;
 
-    ierr = put_att_text(ncid, varid, "units", "seconds"); CHKERRQ(ierr); 
-    ierr = put_att_text(ncid, varid, "parent", parent); CHKERRQ(ierr); 
-    ierr = put_att_text(ncid, varid, "long_name", descr); CHKERRQ(ierr);
+    ierr = put_att_text(nc, varid, "units", "seconds"); CHKERRQ(ierr); 
+    ierr = put_att_text(nc, varid, "parent", parent); CHKERRQ(ierr); 
+    ierr = put_att_text(nc, varid, "long_name", descr); CHKERRQ(ierr);
   }
 
   ierr = nc.close();
@@ -127,7 +126,7 @@ PetscErrorCode PISMProf::save_report(string filename) {
 }
 
 //! Save the report corresponding to an event events[index].
-PetscErrorCode PISMProf::save_report(int index, int ncid, int varid) {
+PetscErrorCode PISMProf::save_report(int index, const NCTool &nc, int varid) {
   PetscErrorCode ierr;
   const int data_tag = 1;
   MPI_Status mpi_stat;
@@ -135,6 +134,8 @@ PetscErrorCode PISMProf::save_report(int index, int ncid, int varid) {
   size_t start[2];
 
   data[0] = events[index].total_time;
+
+  ierr = nc.data_mode(); CHKERRQ(ierr);
 
   if (rank == 0) { // on processor 0: receive messages from every other
     for (int proc = 0; proc < size; proc++) {
@@ -145,7 +146,7 @@ PetscErrorCode PISMProf::save_report(int index, int ncid, int varid) {
       start[0] = proc % (Ny);
       start[1] = proc / (Ny);
 
-      ierr = nc_put_var1_double(ncid, varid, start, &data[0]);
+      ierr = nc_put_var1_double(nc.get_ncid(), varid, start, &data[0]);
       CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
     }
@@ -160,52 +161,45 @@ PetscErrorCode PISMProf::save_report(int index, int ncid, int varid) {
 PetscErrorCode PISMProf::find_variables(NCTool &nc, string name, int &varid) {
   PetscErrorCode ierr;
   bool exists;
-  int ncid;
-
-  ncid = nc.get_ncid();
 
   ierr = nc.find_variable(name, &varid, exists); CHKERRQ(ierr); 
   if (!exists) {
-    ierr = define_variable(ncid, name, varid); CHKERRQ(ierr); 
+    ierr = define_variable(nc, name, varid); CHKERRQ(ierr); 
   }
 
   return 0;
 }
 
 //! Define a NetCDF variable to store a profiling report in.
-PetscErrorCode PISMProf::define_variable(int ncid, string name, int &varid) {
+PetscErrorCode PISMProf::define_variable(const NCTool &nc, string name, int &varid) {
   PetscErrorCode ierr;
   int dimids[2];
 
   if (rank != 0) return 0;
 
-  ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc.define_mode(); CHKERRQ(ierr);
 
-  ierr = nc_inq_dimid(ncid, "y", &dimids[0]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-  ierr = nc_inq_dimid(ncid, "x", &dimids[1]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc_inq_dimid(nc.get_ncid(), "y", &dimids[0]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc_inq_dimid(nc.get_ncid(), "x", &dimids[1]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   
-  ierr = nc_def_var(ncid, name.c_str(), NC_DOUBLE, 2, dimids, &varid);
+  ierr = nc_def_var(nc.get_ncid(), name.c_str(), NC_DOUBLE, 2, dimids, &varid);
   CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-
-  ierr = nc_enddef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
   return 0;
 }
 
 //! Put a text attribute.
-PetscErrorCode PISMProf::put_att_text(int ncid, int varid,
+PetscErrorCode PISMProf::put_att_text(const NCTool &nc, int varid,
 				      string name, string text) {
   PetscErrorCode ierr;
 
   if (rank != 0) return 0;
 
-  ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-  {
-    ierr = nc_put_att_text(ncid, varid,
-			   name.c_str(), text.size(), text.c_str());
-    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
-  }
-  ierr = nc_enddef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc.define_mode(); CHKERRQ(ierr); 
+
+  ierr = nc_put_att_text(nc.get_ncid(), varid,
+                         name.c_str(), text.size(), text.c_str());
+  CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
   return 0;
 }
@@ -222,16 +216,15 @@ PetscErrorCode PISMProf::barrier() {
 }
 
 //! Creates x and y dimensions.
-PetscErrorCode PISMProf::create_dimensions(int ncid) {
+PetscErrorCode PISMProf::create_dimensions(const NCTool &nc) {
 
   int stat, dimid;
   if (rank == 0) {
-    stat = nc_redef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    // 
-    stat = nc_def_dim(ncid, "x", Nx, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_def_dim(ncid, "y", Ny, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    // 
-    stat = nc_enddef(ncid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+    stat = nc.define_mode(); CHKERRQ(stat); 
+
+    stat = nc_def_dim(nc.get_ncid(), "x", Nx, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_def_dim(nc.get_ncid(), "y", Ny, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
   return 0;

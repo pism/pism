@@ -377,6 +377,7 @@ protected:
   virtual PetscErrorCode update_viewers();
   set<string> map_viewers, slice_viewers, sounding_viewers;
   PetscInt     id, jd;	     // sounding indices
+  map<string,PetscViewer> viewers;
 
 private:
   // for event logging (profiling); see run() and velocity()

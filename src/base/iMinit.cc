@@ -673,6 +673,8 @@ PetscErrorCode IceModel::misc_setup() {
   // compute (possibly corrected) cell areas:
   ierr = compute_cell_areas(); CHKERRQ(ierr);
 
+  event_output = grid.profiler->create("output", "time spent writing an output file");
+
   return 0;
 }
 

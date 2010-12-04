@@ -80,11 +80,11 @@ protected:
   PetscMPIInt rank, size;
   MPI_Comm com;
 
-  PetscErrorCode save_report(int index, int ncid, int varid);
+  PetscErrorCode save_report(int index, const NCTool &nc, int varid);
   PetscErrorCode find_variables(NCTool &nc, string name, int &varid);
-  PetscErrorCode define_variable(int ncid, string name, int &varid);
-  PetscErrorCode put_att_text(int ncid, int varid, string name, string text);
-  PetscErrorCode create_dimensions(int ncid);
+  PetscErrorCode define_variable(const NCTool &nc, string name, int &varid);
+  PetscErrorCode put_att_text(const NCTool &nc, int varid, string name, string text);
+  PetscErrorCode create_dimensions(const NCTool &nc);
 };
 
 #endif // __PISMProf_hh

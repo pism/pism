@@ -57,59 +57,50 @@ PetscErrorCode IceModel::update_viewers() {
 
     GridType dims = v->grid_type();
 
-    switch(dims) {
-    case GRID_2D:
-      {
-	IceModelVec2 *v2d = dynamic_cast<IceModelVec2*>(v);
-	if (v2d == NULL) SETERRQ(1,"grid_type() returns GRID_2D but dynamic_cast gives a NULL");
-	ierr = v2d->view(viewer_size); CHKERRQ(ierr);
-	break;
+    if (dims != GRID_2D) {
+      ierr = PetscPrintf(grid.com,
+                         "PISM ERROR: map-plane views of 3D quantities are not supported.\n");
+      CHKERRQ(ierr);
+      PetscEnd();
+    }
+
+    if (v->get_dof() == 1) {    // scalar fields
+      string name = v->string_attr("short_name");
+      PetscViewer viewer = viewers[name];
+
+      if (viewer == PETSC_NULL) {
+        ierr = grid.create_viewer(viewer_size, name, viewer); CHKERRQ(ierr);
+        viewers[name] = viewer;
       }
-    case GRID_3D:
-      {
-	IceModelVec3 *v3d = dynamic_cast<IceModelVec3*>(v);
-	if (v3d == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
-	ierr = v3d->view_surface(vH, viewer_size); CHKERRQ(ierr);
-	break;
+
+      IceModelVec2S *v2d = dynamic_cast<IceModelVec2S*>(v);
+      if (v2d == NULL) SETERRQ(1,"grid_type() returns GRID_2D but dynamic_cast gives a NULL");
+
+      ierr = v2d->view(viewer); CHKERRQ(ierr);
+
+    } else if (v->get_dof() == 2) { // vector fields
+      string name_1 = v->string_attr("short_name", 0),
+        name_2 = v->string_attr("short_name", 1);
+      PetscViewer v1 = viewers[name_1],
+        v2 = viewers[name_2];
+
+      if (v1 == PETSC_NULL) {
+        ierr = grid.create_viewer(viewer_size, name_1, v1); CHKERRQ(ierr);
+        viewers[name_1] = v1;
       }
-    case GRID_3D_BEDROCK:
-      {
-	ierr = PetscPrintf(grid.com,
-			   "PISM ERROR: map-plane views of bedrock quantities are not supported.\n");
-	CHKERRQ(ierr);
-	PetscEnd();
+
+      if (v2 == PETSC_NULL) {
+        ierr = grid.create_viewer(viewer_size, name_2, v2); CHKERRQ(ierr);
+        viewers[name_2] = v2;
       }
+
+      IceModelVec2V *v2d = dynamic_cast<IceModelVec2V*>(v);
+      if (v2d == NULL) SETERRQ(1,"grid_type() returns GRID_2D but dynamic_cast gives a NULL");
+
+      ierr = v2d->view(v1, v2); CHKERRQ(ierr);
     }
     
     if (de_allocate) delete v;
-  }
-
-  // slice viewers:
-  for (i = slice_viewers.begin(); i != slice_viewers.end(); ++i) {
-    IceModelVec *v = variables.get(*i);
-
-    // if not found, try to compute:
-    if (v == NULL) {
-      ierr = compute_by_name(*i, v); CHKERRQ(ierr);
-    }
-
-    // if still not found, ignore
-    if (v == NULL)
-      continue;
-
-    GridType dims = v->grid_type();
-
-    // warn about 2D variables and ignore them:
-    if (dims == GRID_2D) {
-      ierr = verbPrintf(2, grid.com, "PISM WARNING: Please use -view instead of -view_slice to view 2D fields.\n");
-      continue;
-    }
-
-    if (dims == GRID_3D) {
-	IceModelVec3 *v3d = dynamic_cast<IceModelVec3*>(v);
-	if (v3d == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
-	ierr = v3d->view_horizontal_slice(slice_level, viewer_size); CHKERRQ(ierr);
-    }
   }
 
   // sounding viewers:
@@ -133,16 +124,24 @@ PetscErrorCode IceModel::update_viewers() {
       PetscEnd();
     }
 
+    string name = v->string_attr("short_name");
+    PetscViewer viewer = viewers[name];
+
+    if (viewer == PETSC_NULL) {
+      ierr = grid.create_viewer(viewer_size, name, viewers[name]); CHKERRQ(ierr);
+      viewer = viewers[name];
+    }
+
     if (dims == GRID_3D) {
 	IceModelVec3 *v3d = dynamic_cast<IceModelVec3*>(v);
 	if (v3d == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
-	ierr = v3d->view_sounding(id, jd, viewer_size); CHKERRQ(ierr);
+	ierr = v3d->view_sounding(id, jd, viewer); CHKERRQ(ierr);
     }
 
     if (dims == GRID_3D_BEDROCK) {
 	IceModelVec3Bedrock *v3d = dynamic_cast<IceModelVec3Bedrock*>(v);
 	if (v3d == NULL) SETERRQ(1,"grid_type() returns GRID_3D_BEDROCK but dynamic_cast gives a NULL");
-	ierr = v3d->view_sounding(id, jd, viewer_size); CHKERRQ(ierr);
+	ierr = v3d->view_sounding(id, jd, viewer); CHKERRQ(ierr);
     }
   }
   return 0;
@@ -158,6 +157,13 @@ PetscErrorCode IceModel::init_viewers() {
 			   "Options controlling run-time diagnostic viewers",
 			   PETSC_NULL); CHKERRQ(ierr);
 
+  PetscInt viewer_size = (PetscInt)config.get("viewer_size");
+  ierr = PetscOptionsInt("-view_size", "specifies desired viewer size",
+			 "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
+
+  if (flag)
+    config.set("viewer_size", viewer_size); 
+
   // map-plane (and surface) viewers:
   ierr = PetscOptionsString("-view_map", "specifies the comma-separated list of map-plane viewers", "", "empty",
 			    tmp, TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
@@ -170,16 +176,6 @@ PetscErrorCode IceModel::init_viewers() {
     }
   }
 
-  // horizontal slice viewers:
-  ierr = PetscOptionsString("-view_slice", "specifies the comma-separated list of horizontal-slice viewers", "", "empty",
-			    tmp, TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
-  if (flag) {
-    istringstream arg(tmp);
-
-    while (getline(arg, var_name, ','))
-      slice_viewers.insert(var_name);
-  }
-
   // sounding viewers:
   ierr = PetscOptionsString("-view_sounding", "specifies the comma-separated list of sounding viewers", "", "empty",
 			    tmp, TEMPORARY_STRING_LENGTH, &flag); CHKERRQ(ierr);
@@ -188,26 +184,6 @@ PetscErrorCode IceModel::init_viewers() {
 
     while (getline(arg, var_name, ','))
       sounding_viewers.insert(var_name);
-  }
-
-  PetscInt viewer_size = (PetscInt)config.get("viewer_size");
-  ierr = PetscOptionsInt("-view_size", "specifies desired viewer size",
-			 "", viewer_size, &viewer_size, &flag); CHKERRQ(ierr);
-
-  if (flag)
-    config.set("viewer_size", viewer_size); 
-
-  PetscScalar slice_level = config.get("slice_level");
-  ierr = PetscOptionsReal("-view_slice_level", "sets the level (in meters above the base of ice) for slice viewers", "",
-			  slice_level, &slice_level, PETSC_NULL); CHKERRQ(ierr);
-  if ( (slice_level > grid.Lz) || (slice_level < 0) ) {
-    ierr = verbPrintf(2, grid.com,
-		      "PISM WARNING: Slice level has to be positive and less than Lz (%3.3f).\n"
-		      "              Disabling slice viewers...\n",
-		      grid.Lz);
-    slice_viewers.clear();
-  } else {
-    config.set("slice_level", slice_level);
   }
 
   // Done with the options.

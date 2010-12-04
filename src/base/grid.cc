@@ -871,3 +871,51 @@ PetscErrorCode IceGrid::report_parameters() {
   
   return 0;
 }
+
+//! Computes the size of a diagnostic viewer window.
+PetscErrorCode IceGrid::compute_viewer_size(int target_size, int &x, int &y) {
+
+  // aim for smaller dimension equal to target, larger dimension larger by Ly/Lx or Lx/Ly proportion
+  const double  yTOx = Ly / Lx;
+  if (Ly > Lx) {
+    x = target_size; 
+    y = (PetscInt) ((double)target_size * yTOx); 
+  } else {
+    y = target_size; 
+    x = (PetscInt) ((double)target_size / yTOx);
+  }
+  
+  // if either dimension is larger than twice the target, shrink appropriately
+  if (x > 2 * target_size) {
+    y = (PetscInt) ( (double)(y) * (2.0 * (double)target_size / (double)(x)) );
+    x = 2 * target_size;
+  } else if (y > 2 * target_size) {
+    x = (PetscInt) ( (double)(x) * (2.0 * (double)target_size / (double)(y)) );
+    y = 2 * target_size;
+  }
+  
+  // make sure minimum dimension is sufficient to see
+  if (x < 20)   x = 20;
+  if (y < 20)   y = 20;
+  return 0;
+}
+
+//! Creates a run-time diagnostic viewer.
+PetscErrorCode IceGrid::create_viewer(PetscInt viewer_size, string title, PetscViewer &viewer) {
+  PetscErrorCode ierr;
+  int x, y;
+
+  ierr = compute_viewer_size(viewer_size, x, y); CHKERRQ(ierr);
+
+  // note we reverse x <-> y; see IceGrid::createDA() for original reversal
+  ierr = PetscViewerDrawOpen(com, PETSC_NULL, title.c_str(),
+			     PETSC_DECIDE, PETSC_DECIDE, y, x, &viewer);  CHKERRQ(ierr);
+
+  // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
+  // there is a no titles bug
+  PetscDraw draw;
+  ierr = PetscViewerDrawGetDraw(viewer, 0, &draw); CHKERRQ(ierr);
+  ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
+
+  return 0;
+}

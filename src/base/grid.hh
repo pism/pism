@@ -58,11 +58,13 @@ public:
   PetscErrorCode compute_horizontal_coordinates(double* &x, double* &y);
   void compute_nprocs();
   void compute_ownership_ranges();
+  PetscErrorCode compute_viewer_size(int target, int &x, int &y);
   PetscErrorCode printInfo(int verbosity); 
   PetscErrorCode printVertLevels(int verbosity); 
   PetscInt       kBelowHeight(PetscScalar height);
   void mapcoords(PetscInt i, PetscInt j,
                  PetscScalar &x, PetscScalar &y, PetscScalar &r);
+  PetscErrorCode create_viewer(PetscInt viewer_size, string title, PetscViewer &viewer);
 
   MPI_Comm    com;
   PetscMPIInt rank, size;
