@@ -396,6 +396,7 @@ PetscErrorCode NCTool::close() {
     ierr = nc_close(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
   ncid = -1;			// make it invalid
+  def_mode = false;
   return 0;
 }
 

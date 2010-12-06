@@ -666,10 +666,6 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = init_extras(); CHKERRQ(ierr);
   ierr = init_viewers(); CHKERRQ(ierr);
 
-  // by now we already know if SSA velocities in the output will be valid:
-  global_attributes.set_flag("pism_ssa_velocities_are_valid",
-			     config.get_flag("use_ssa_velocity"));
-
   // compute (possibly corrected) cell areas:
   ierr = compute_cell_areas(); CHKERRQ(ierr);
 

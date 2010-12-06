@@ -137,7 +137,6 @@ PetscErrorCode SSAFD::allocate() {
                             "m s-1", "", 1); CHKERRQ(ierr);
 
   ierr = velocity.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  velocity.write_in_glaciological_units = true;
 
   // mimic IceGrid::createDA() with TRANSPOSE :
   PetscInt dof=2, stencil_width=1;
