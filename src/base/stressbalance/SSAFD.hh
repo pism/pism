@@ -96,6 +96,8 @@ public:
 
   virtual PetscErrorCode set_initial_guess(IceModelVec2V &guess);
 
+  virtual PetscErrorCode write_model_state(string filename);
+
   //! Add pointers to diagnostic quantities to a dictionary.
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
 

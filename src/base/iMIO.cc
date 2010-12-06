@@ -109,6 +109,12 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
     ierr = overrides.write(filename); CHKERRQ(ierr);
   }
 
+  if (stress_balance != NULL) {
+    ierr = stress_balance->write_model_state(filename); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: stress_balance == NULL");
+  }
+
   if (surface != PETSC_NULL) {
     ierr = surface->write_model_state(grid.year, dt / secpera, filename); CHKERRQ(ierr);
   } else {
@@ -660,75 +666,81 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
   }
 
   //! Write a backup (i.e. an intermediate result of a run).
-  PetscErrorCode IceModel::write_backup() {
-    PetscErrorCode ierr;
-    double wall_clock_hours;
-    PISMIO nc(&grid);
+PetscErrorCode IceModel::write_backup() {
+  PetscErrorCode ierr;
+  double wall_clock_hours;
+  PISMIO nc(&grid);
 
-    if (grid.rank == 0) {
-      PetscLogDouble current_time;
-      ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
-      wall_clock_hours = (current_time - start_time) / 3600.0;
-    }
-
-    MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
-
-    if (wall_clock_hours - last_backup_time < backup_interval)
-      return 0;
-
-    last_backup_time = wall_clock_hours;
-
-    // create a history string:
-    string date_str = pism_timestamp();
-    char tmp[TEMPORARY_STRING_LENGTH];
-    snprintf(tmp, TEMPORARY_STRING_LENGTH,
-             "%s automatic backup at %10.5f a, %3.3f hours after the beginning of the run\n",
-             executable_short_name.c_str(), grid.year, wall_clock_hours);
-
-    ierr = verbPrintf(2, grid.com,
-                      "  Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
-                      backup_filename.c_str(), wall_clock_hours); CHKERRQ(ierr);
-
-    stampHistory(tmp);
-
-    // write metadata:
-    ierr = nc.open_for_writing(backup_filename.c_str(), false, true); CHKERRQ(ierr);
-    // append == false, check_dims == true
-    ierr = nc.append_time(grid.year); CHKERRQ(ierr);
-    ierr = nc.close(); CHKERRQ(ierr);
-
-    ierr = global_attributes.write(backup_filename.c_str()); CHKERRQ(ierr);
-    ierr = mapping.write(backup_filename.c_str()); CHKERRQ(ierr);
-
-    // write the model state (this saves only the fields necessary for restarting
-    // and *does not* respect -o_size)
-    set<string> vars = variables.keys();
-
-    set<string>::iterator i = vars.begin();
-    while (i != vars.end()) {
-      IceModelVec *var = variables.get(*i++);
-
-      string intent = var->string_attr("pism_intent");
-      if ((intent == "model_state") || (intent == "mapping") ||
-          (intent == "climate_steady")) {
-        ierr = var->write(backup_filename.c_str()); CHKERRQ(ierr);
-      }
-    }
-
-    if (surface != PETSC_NULL) {
-      ierr = surface->write_model_state(grid.year, dt / secpera, backup_filename); CHKERRQ(ierr);
-    } else {
-      SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
-    }
-
-    if (ocean != PETSC_NULL) {
-      ierr = ocean->write_model_state(grid.year, dt / secpera, backup_filename); CHKERRQ(ierr);
-    } else {
-      SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
-    }
-
-    // Also flush time-series:
-    ierr = flush_timeseries(); CHKERRQ(ierr);
-
-    return 0;
+  if (grid.rank == 0) {
+    PetscLogDouble current_time;
+    ierr = PetscGetTime(&current_time); CHKERRQ(ierr);
+    wall_clock_hours = (current_time - start_time) / 3600.0;
   }
+
+  MPI_Bcast(&wall_clock_hours, 1, MPI_DOUBLE, 0, grid.com);
+
+  if (wall_clock_hours - last_backup_time < backup_interval)
+    return 0;
+
+  last_backup_time = wall_clock_hours;
+
+  // create a history string:
+  string date_str = pism_timestamp();
+  char tmp[TEMPORARY_STRING_LENGTH];
+  snprintf(tmp, TEMPORARY_STRING_LENGTH,
+           "%s automatic backup at %10.5f a, %3.3f hours after the beginning of the run\n",
+           executable_short_name.c_str(), grid.year, wall_clock_hours);
+
+  ierr = verbPrintf(2, grid.com,
+                    "  Saving an automatic backup to '%s' (%1.3f hours after the beginning of the run)\n",
+                    backup_filename.c_str(), wall_clock_hours); CHKERRQ(ierr);
+
+  stampHistory(tmp);
+
+  // write metadata:
+  ierr = nc.open_for_writing(backup_filename.c_str(), false, true); CHKERRQ(ierr);
+  // append == false, check_dims == true
+  ierr = nc.append_time(grid.year); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  ierr = global_attributes.write(backup_filename.c_str()); CHKERRQ(ierr);
+  ierr = mapping.write(backup_filename.c_str()); CHKERRQ(ierr);
+
+  // write the model state (this saves only the fields necessary for restarting
+  // and *does not* respect -o_size)
+  set<string> vars = variables.keys();
+
+  set<string>::iterator i = vars.begin();
+  while (i != vars.end()) {
+    IceModelVec *var = variables.get(*i++);
+
+    string intent = var->string_attr("pism_intent");
+    if ((intent == "model_state") || (intent == "mapping") ||
+        (intent == "climate_steady")) {
+      ierr = var->write(backup_filename.c_str()); CHKERRQ(ierr);
+    }
+  }
+
+  if (stress_balance != NULL) {
+    ierr = stress_balance->write_model_state(backup_filename); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: stress_balance == NULL");
+  }
+
+  if (surface != PETSC_NULL) {
+    ierr = surface->write_model_state(grid.year, dt / secpera, backup_filename); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
+  }
+
+  if (ocean != PETSC_NULL) {
+    ierr = ocean->write_model_state(grid.year, dt / secpera, backup_filename); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
+  }
+
+  // Also flush time-series:
+  ierr = flush_timeseries(); CHKERRQ(ierr);
+
+  return 0;
+}

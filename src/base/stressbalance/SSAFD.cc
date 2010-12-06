@@ -1198,3 +1198,11 @@ PetscErrorCode SSAFD::set_initial_guess(IceModelVec2V &guess) {
   return 0;
 }
 
+PetscErrorCode SSAFD::write_model_state(string filename) {
+  PetscErrorCode ierr;
+
+  ierr = velocity.write(filename.c_str()); CHKERRQ(ierr);
+
+  return 0;
+}
+

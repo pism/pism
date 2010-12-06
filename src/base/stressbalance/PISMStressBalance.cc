@@ -279,7 +279,18 @@ PetscErrorCode PISMStressBalance::write_fields(set<string> vars, string filename
 }
 
 void PISMStressBalance::add_vars_to_output(string keyword, set<string> &result) {
+
   stress_balance->add_vars_to_output(keyword, result);
   modifier->add_vars_to_output(keyword, result);
+
+}
+
+PetscErrorCode PISMStressBalance::write_model_state(string filename) {
+  PetscErrorCode ierr;
+
+  ierr = stress_balance->write_model_state(filename); CHKERRQ(ierr);
+  ierr = modifier->write_model_state(filename); CHKERRQ(ierr);
+
+  return 0;
 }
 
