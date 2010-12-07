@@ -240,6 +240,10 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
   PetscScalar use_dt_years = dt_years;
 
+  set<string> vars_to_write;
+  surface->add_vars_to_output("big", vars_to_write);
+  ocean->add_vars_to_output("big", vars_to_write);
+
   // write the states
   for (PetscInt k=0; k < NN; k++) {
     // use original dt_years to get correct subinterval starts:
@@ -261,13 +265,12 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 
     ierr = usurf->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
+    // write surface and ocean models' outputs:
     ierr = surface->ice_surface_mass_flux(pccyear, dt_update_years, *acab); CHKERRQ(ierr);
     ierr = acab->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
     ierr = surface->ice_surface_temperature(pccyear, dt_update_years, *artm); CHKERRQ(ierr);
     ierr = artm->write(filename, NC_FLOAT); CHKERRQ(ierr);
-
-    ierr = surface->write_diagnostic_fields(pccyear, dt_update_years, filename); CHKERRQ(ierr);
 
     ierr = ocean->shelf_base_temperature(pccyear, dt_update_years, *shelfbasetemp); CHKERRQ(ierr);
     ierr = shelfbasetemp->write(filename, NC_FLOAT); CHKERRQ(ierr);
@@ -275,7 +278,9 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = ocean->shelf_base_mass_flux(pccyear, dt_update_years, *shelfbasemassflux); CHKERRQ(ierr);
     ierr = shelfbasemassflux->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
-    ierr = ocean->write_diagnostic_fields(pccyear, dt_update_years, filename); CHKERRQ(ierr);
+    // ask ocean and surface models to write more:
+    ierr = surface->write_variables(vars_to_write, filename); CHKERRQ(ierr);
+    ierr = ocean->write_variables(vars_to_write, filename); CHKERRQ(ierr);
   }
   ierr = verbPrintf(2,com,"\n"); CHKERRQ(ierr);
 

@@ -51,23 +51,11 @@ PetscErrorCode PISMSurfaceModel::write_model_state(PetscReal t_years, PetscReal 
   return 0;
 }
 
-PetscErrorCode PISMSurfaceModel::write_fields(set<string> vars, PetscReal t_years,
-					      PetscReal dt_years, string filename) {
+PetscErrorCode PISMSurfaceModel::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
   if (atmosphere != NULL) {
-    ierr = atmosphere->write_fields(vars, t_years, dt_years, filename); CHKERRQ(ierr);
-  }
-
-  return 0;
-}
-
-PetscErrorCode PISMSurfaceModel::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-							 string filename) {
-  PetscErrorCode ierr;
-
-  if (atmosphere != NULL) {
-    ierr = atmosphere->write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
+    ierr = atmosphere->write_variables(vars, filename); CHKERRQ(ierr);
   }
 
   return 0;
@@ -87,8 +75,7 @@ PetscErrorCode PSSimple::init(PISMVars &vars) {
      "* Initializing the simplest PISM surface (snow) processes model PSSimple.\n"
      "  It passes atmospheric state directly to upper ice fluid surface:\n"
      "    surface mass balance          := precipitation,\n"
-     "    ice upper surface temperature := 2m air temperature.\n"
-     "  Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n");
+     "    ice upper surface temperature := 2m air temperature.\n");
      CHKERRQ(ierr);
   return 0;
 }
@@ -117,6 +104,10 @@ PetscErrorCode PSSimple::ice_surface_temperature(PetscReal t_years, PetscReal dt
   return 0;
 }
 
+void PSSimple::add_vars_to_output(string keyword, set<string> &result) {
+  atmosphere->add_vars_to_output(keyword, result);
+}
+
 ///// Constant-in-time surface model.
 
 PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
@@ -128,7 +119,8 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
   ierr = verbPrintf(2, grid.com, 
      "* Initializing the constant-in-time surface processes model PSConstant.\n"
      "  It reads surface mass balance and ice upper-surface temperature\n"
-     "  directly from the file and holds them constant.\n"); CHKERRQ(ierr);
+     "  directly from the file and holds them constant.\n"
+     "  Any choice of atmosphere coupler (option '-atmosphere') is ignored.\n"); CHKERRQ(ierr);
 
   // allocate IceModelVecs for storing temperature and surface mass balance fields
 
@@ -201,12 +193,22 @@ PetscErrorCode PSConstant::write_model_state(PetscReal /*t_years*/, PetscReal /*
   return 0;
 }
 
-//! Does not ask the atmosphere model because it does not use one.
-PetscErrorCode PSConstant::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-						   string filename) {
+void PSConstant::add_vars_to_output(string keyword, set<string> &result) {
+  result.insert("acab");
+  result.insert("artm");
+  // does not call atmosphere->add_vars_to_output().
+}
+
+PetscErrorCode PSConstant::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  ierr = write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
+  if (set_contains(vars, "artm")) {
+    ierr = artm.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "acab")) {
+    ierr = acab.write(filename.c_str()); CHKERRQ(ierr);
+  }
 
   return 0;
 }
@@ -516,39 +518,48 @@ PetscErrorCode PSTemperatureIndex::ice_surface_temperature(PetscReal t_years, Pe
   return 0;
 }
 
-PetscErrorCode PSTemperatureIndex::write_fields(set<string> vars, PetscReal t_years,
-					      PetscReal dt_years, string filename) {
+void PSTemperatureIndex::add_vars_to_output(string keyword, set<string> &result) {
+  if (keyword == "big") {
+    result.insert("saccum");
+    result.insert("smelt");
+    result.insert("srunoff");
+  }
+
+  atmosphere->add_vars_to_output(keyword, result);
+}
+
+PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  ierr = PISMSurfaceModel::write_fields(vars, t_years, dt_years, filename); CHKERRQ(ierr);
+  ierr = PISMSurfaceModel::write_variables(vars, filename); CHKERRQ(ierr);
 
-  if (vars.find("saccum") != vars.end()) {
+  if (set_contains(vars, "saccum")) {
     ierr = accumulation_rate.write(filename.c_str()); CHKERRQ(ierr);
   }  
 
-  if (vars.find("smelt") != vars.end()) {
+  if (set_contains(vars, "smelt")) {
     ierr = melt_rate.write(filename.c_str()); CHKERRQ(ierr);
   }  
 
-  if (vars.find("srunoff") != vars.end()) {
+  if (set_contains(vars, "srunoff")) {
     ierr = runoff_rate.write(filename.c_str()); CHKERRQ(ierr); 
   }  
 
   return 0;
 }
 
-PetscErrorCode PSTemperatureIndex::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-                                                           string filename) {
-  PetscErrorCode ierr;
+// PetscErrorCode PSTemperatureIndex::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
+//                                                            string filename) {
+//   PetscErrorCode ierr;
 
-  ierr = PISMSurfaceModel::write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
+//   ierr = PISMSurfaceModel::write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
 
-  ierr = accumulation_rate.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = melt_rate.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = runoff_rate.write(filename.c_str()); CHKERRQ(ierr); 
+//   ierr = accumulation_rate.write(filename.c_str()); CHKERRQ(ierr);
+//   ierr = melt_rate.write(filename.c_str()); CHKERRQ(ierr);
+//   ierr = runoff_rate.write(filename.c_str()); CHKERRQ(ierr); 
 
-  return 0;
-}
+//   return 0;
+// }
 
 
 ///// "Force-to-thickness" mechanism
@@ -841,17 +852,16 @@ void PSForceThickness::add_vars_to_output(string key, set<string> &result) {
     result.insert("ftt_modified_acab");
 }
 
-PetscErrorCode PSForceThickness::write_fields(set<string> vars, PetscReal t_years,
-					      PetscReal dt_years, string filename) {
+PetscErrorCode PSForceThickness::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  ierr = input_model->write_fields(vars, t_years, dt_years, filename); CHKERRQ(ierr);
+  ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
 
-  if (vars.find("ftt_modified_acab") != vars.end()) {
+  if (set_contains(vars, "ftt_modified_acab")) {
     ierr = ftt_modified_acab.write(filename.c_str()); CHKERRQ(ierr); 
   }  
 
-  if (vars.find("ftt_mask") != vars.end()) {
+  if (set_contains(vars, "ftt_mask")) {
     ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr); 
   }  
 
@@ -859,17 +869,17 @@ PetscErrorCode PSForceThickness::write_fields(set<string> vars, PetscReal t_year
 }
 
 
-PetscErrorCode PSForceThickness::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-							 string filename) {
-  PetscErrorCode ierr;
+// PetscErrorCode PSForceThickness::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
+// 							 string filename) {
+//   PetscErrorCode ierr;
 
-  ierr = input_model->write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
+//   ierr = input_model->write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
 
-  if (write_ftt_mask) {
-    ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr);
-  }
+//   if (write_ftt_mask) {
+//     ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr);
+//   }
 
-  ierr = ftt_modified_acab.write(filename.c_str()); CHKERRQ(ierr);
+//   ierr = ftt_modified_acab.write(filename.c_str()); CHKERRQ(ierr);
 
-  return 0;
-}
+//   return 0;
+// }

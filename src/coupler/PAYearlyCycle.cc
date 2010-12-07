@@ -82,39 +82,20 @@ PetscErrorCode PAYearlyCycle::write_model_state(PetscReal /*t_years*/, PetscReal
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-								     string filename) {
-  PetscErrorCode ierr;
+void PAYearlyCycle::add_vars_to_output(string keyword, set<string> &result) {
+  result.insert("precip");
 
-  ierr = write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
-
-  ierr = update(t_years, dt_years); CHKERRQ(ierr);
-
-  ierr = temp_ma.write(filename.c_str(), NC_FLOAT); CHKERRQ(ierr);
-  ierr = temp_mj.write(filename.c_str(), NC_FLOAT); CHKERRQ(ierr);
-
-  // Compute a snapshot of the instantaneous air temperature for this time-step
-  // using the standard yearly cycle and write that too:
-  IceModelVec2S tmp;		// will be de-allocated at the end of scope
-
-  ierr = tmp.create(grid, "airtemp", false); CHKERRQ(ierr);
-  ierr = tmp.set_attrs("diagnostic", 
-                       "near-surface air temperature snapshot (including sub-year time-dependence)",
-		       "K", ""); CHKERRQ(ierr);
-
-  ierr = temp_snapshot(t_years, dt_years, tmp); CHKERRQ(ierr);
-  ierr = tmp.write(filename.c_str(), NC_FLOAT); CHKERRQ(ierr);
-
-  return 0;
+  if (keyword == "big") {
+    result.insert("airtemp_ma");
+    result.insert("airtemp_mj");
+    result.insert("airtemp");
+  }
 }
 
-PetscErrorCode PAYearlyCycle::write_fields(set<string> vars, PetscReal t_years,
-					   PetscReal /*dt_years*/, string filename) {
+PetscErrorCode PAYearlyCycle::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  ierr = update(t_years, 0); CHKERRQ(ierr);
-
-  if (vars.find("airtemp") != vars.end()) {
+  if (set_contains(vars, "airtemp")) {
     IceModelVec2S airtemp;
     ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
     ierr = airtemp.set_attrs("diagnostic",
@@ -122,20 +103,20 @@ PetscErrorCode PAYearlyCycle::write_fields(set<string> vars, PetscReal t_years,
 			     "K",
 			     ""); CHKERRQ(ierr);
 
-    ierr = temp_snapshot(t_years, 0, airtemp); CHKERRQ(ierr);
+    ierr = temp_snapshot(t, dt, airtemp); CHKERRQ(ierr);
 
     ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (vars.find("airtemp_ma") != vars.end()) {
+  if (set_contains(vars, "airtemp_ma")) {
     ierr = temp_ma.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (vars.find("airtemp_mj") != vars.end()) {
+  if (set_contains(vars, "airtemp_mj")) {
     ierr = temp_mj.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (vars.find("precip") != vars.end()) {
+  if (set_contains(vars, "precip")) {
     ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
   }
 

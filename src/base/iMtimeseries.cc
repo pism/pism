@@ -552,10 +552,8 @@ PetscErrorCode IceModel::init_extras() {
       i++;
     }
 
-    // add {u,v}barSSA if SSA is "on":
-    if (config.get_flag("use_ssa_velocity")) {
-      extra_vars.insert("velbar_ssa");
-    }
+    if (stress_balance)
+      stress_balance->add_vars_to_output("small", extra_vars);
 
   }
   if (extra_vars.size() == 0) {

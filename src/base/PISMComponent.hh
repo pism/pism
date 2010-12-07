@@ -35,14 +35,24 @@ public:
 
   virtual PetscErrorCode init(PISMVars &vars) = 0;
 
-  //! \brief Adds more variable names to result (to let boundary models write
-  //! more if -o_size or -save_size is given).
+  //! \brief Adds more variable names to result (to let sub-models respect
+  //! -o_size or -save_size).
   /*!
     Keyword can be one of "small", "medium" or "big".
    */
   virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/) {}
 
-  //! Add pointers to diagnostic quantities to a dictionary.
+  //! Defines requested couplings fields to file and/or asks an attached
+  //! model to do so.
+  virtual PetscErrorCode define_variables(set<string> /*vars*/, const NCTool &/*nc*/)
+  { return 0; }
+
+  //! Writes requested couplings fields to file and/or asks an attached
+  //! model to do so.
+  virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/)
+  { return 0; }
+
+  //! Add pointers to available diagnostic quantities to a dictionary.
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}
 
   // //! Add pointers to scalar diagnostic quantities to a dictionary.
@@ -69,10 +79,6 @@ public:
   virtual PetscErrorCode write_model_state(string /*filename*/)
   { return 0; }
 
-  //! Writes requested couplings fields to file and/or asks an attached
-  //! model to do so.
-  virtual PetscErrorCode write_fields(set<string> /*vars*/, string /*filename*/)
-  { return 0; }
 };
 
 //! \brief An abstract class for time-stepping PISM components. Created to
@@ -99,18 +105,6 @@ public:
   //! for restarting.
   virtual PetscErrorCode write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
 					   string /*filename*/)
-  { return 0; }
-
-  //! \brief Updates the model and writes all the internal fields (for testing
-  //! and debugging).
-  virtual PetscErrorCode write_diagnostic_fields(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						 string /*filename*/)
-  { return 0; }
-
-  //! Writes requested couplings fields to file and/or asks an attached
-  //! model to do so.
-  virtual PetscErrorCode write_fields(set<string> /*vars*/, PetscReal /*t_years*/,
-				      PetscReal /*dt_years*/, string /*filename*/)
   { return 0; }
 
 protected:

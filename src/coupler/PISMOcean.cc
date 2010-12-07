@@ -160,17 +160,17 @@ PetscErrorCode POForcing::shelf_base_mass_flux(PetscReal t_years, PetscReal dt_y
   return 0;
 }
 
-PetscErrorCode POForcing::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-						  string filename) {
-  PetscErrorCode ierr;
-  double T = t_years + 0.5 * dt_years;
+// PetscErrorCode POForcing::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
+// 						  string filename) {
+//   PetscErrorCode ierr;
+//   double T = t_years + 0.5 * dt_years;
 
-  if (dSLforcing != NULL) {
-    delta_sea_level->output_filename = filename;
-    ierr = delta_sea_level->append(T, (*dSLforcing)(T)); CHKERRQ(ierr);
-    ierr = delta_sea_level->interp(T); CHKERRQ(ierr);
-    ierr = delta_sea_level->flush(); CHKERRQ(ierr);
-  }
+//   if (dSLforcing != NULL) {
+//     delta_sea_level->output_filename = filename;
+//     ierr = delta_sea_level->append(T, (*dSLforcing)(T)); CHKERRQ(ierr);
+//     ierr = delta_sea_level->interp(T); CHKERRQ(ierr);
+//     ierr = delta_sea_level->flush(); CHKERRQ(ierr);
+//   }
 
-  return 0;
-}
+//   return 0;
+// }

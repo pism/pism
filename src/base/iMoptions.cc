@@ -319,16 +319,15 @@ PetscErrorCode IceModel::set_output_size(string option,
     i++;
   }
 
-  // add {u,v}bar_ssa if SSA is "on":
-  if (config.get_flag("use_ssa_velocity")) {
-    result.insert("velbar_ssa");	// will write both ubar_ssa and vbar_ssa
-  }
-
   if (config.get_flag("do_age"))
     result.insert("age");
 
   if (config.get_flag("force_full_diagnostics"))
     keyword = "big";
+
+  // Ask the stress balance module to add more variables:
+  if (stress_balance)
+    stress_balance->add_vars_to_output(keyword, result);
 
   // Ask ocean and surface models to add more variables to the list:
   if (ocean != NULL)

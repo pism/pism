@@ -173,57 +173,41 @@ PetscErrorCode PAForcing::write_model_state(PetscReal t_years, PetscReal dt_year
   return 0;
 }
 
-PetscErrorCode PAForcing::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-						  string filename) {
-  PetscErrorCode ierr;
-  double T = t_years + 0.5 * dt_years;
+void PAForcing::add_vars_to_output(string keyword, set<string> &result) {
+  if (keyword == "big") {
+    result.insert("airtemp_plus_forcing");
 
-  ierr = input_model->write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
+    if (temp_anomaly != NULL)
+      result.insert("temp_anomaly");
 
-  // also write temperature and precipitation offsets (if used)
-  if (temp_anomaly != NULL) {
-    ierr = temp_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
-    ierr = temp_anomaly->interp(T); CHKERRQ(ierr);
-    ierr = temp_anomaly->write(filename.c_str()); CHKERRQ(ierr);
-  }
-  if (precip_anomaly != NULL) {
-    ierr = precip_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
-    ierr = precip_anomaly->interp(T); CHKERRQ(ierr);
-    ierr = precip_anomaly->write(filename.c_str()); CHKERRQ(ierr);
-  }
-  if (dTforcing != NULL) {
-    delta_T->output_filename = filename;
-    ierr = delta_T->append(T, (*dTforcing)(T)); CHKERRQ(ierr);
-    ierr = delta_T->interp(T); CHKERRQ(ierr);
-    ierr = delta_T->flush(); CHKERRQ(ierr);
+    if (precip_anomaly != NULL)
+      result.insert("precip_anomaly");
   }
 
-  return 0;
+  input_model->add_vars_to_output(keyword, result);
 }
 
-
-PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
-				       PetscReal dt_years, string filename) {
+PetscErrorCode PAForcing::write_variables(set<string> vars,  string filename) {
   PetscErrorCode ierr;
-  double T = t_years + 0.5 * dt_years;
+  double T = t + 0.5 * dt;
 
-  if (vars.find("airtemp") != vars.end()) {
+  if (set_contains(vars, "airtemp_plus_forcing")) {
     IceModelVec2S airtemp;
-    ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
+    ierr = airtemp.create(grid, "airtemp_plus_forcing", false); CHKERRQ(ierr);
     ierr = airtemp.set_attrs("diagnostic",
                              "near-surface air temperature snapshot (including sub-year time-dependence and forcing)",
 			     "K",
 			     ""); CHKERRQ(ierr);
 
-    ierr = temp_snapshot(t_years, dt_years, airtemp); CHKERRQ(ierr);
+    ierr = temp_snapshot(T, 0, airtemp); CHKERRQ(ierr);
 
     ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
-    vars.erase("airtemp");
+    vars.erase("airtemp_plus_forcing");
   }
 
   if (temp_anomaly != NULL) {
-    if (vars.find("temp_anomaly") != vars.end()) {
-      ierr = temp_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
+    if (set_contains(vars, "temp_anomaly")) {
+      ierr = temp_anomaly->update(T, 0); CHKERRQ(ierr);
       ierr = temp_anomaly->interp(T); CHKERRQ(ierr);
       ierr = temp_anomaly->write(filename.c_str()); CHKERRQ(ierr);
       vars.erase("temp_anomaly");
@@ -231,8 +215,8 @@ PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
   }
 
   if (precip_anomaly != NULL) {
-    if (vars.find("precip_anomaly") != vars.end()) {
-      ierr = precip_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
+    if (set_contains(vars, "precip_anomaly")) {
+      ierr = precip_anomaly->update(T, 0); CHKERRQ(ierr);
       ierr = precip_anomaly->interp(T); CHKERRQ(ierr);
       ierr = precip_anomaly->write(filename.c_str()); CHKERRQ(ierr);
       vars.erase("precip_anomaly");
@@ -240,17 +224,7 @@ PetscErrorCode PAForcing::write_fields(set<string> vars, PetscReal t_years,
 
   }
 
-  if (dTforcing != NULL) {
-    if (vars.find("delta_T") != vars.end()) {
-      delta_T->output_filename = filename;
-      ierr = delta_T->append(T, (*dTforcing)(T)); CHKERRQ(ierr);
-      ierr = delta_T->interp(T); CHKERRQ(ierr);
-      ierr = delta_T->flush(); CHKERRQ(ierr);
-      vars.erase("delta_T");
-    }
-  }
-
-  ierr = input_model->write_fields(vars, t_years, dt_years, filename); CHKERRQ(ierr);
+  ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
 
   return 0;
 }

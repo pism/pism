@@ -269,11 +269,11 @@ PetscErrorCode PISMStressBalance::stdout_report(string &result) {
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::write_fields(set<string> vars, string filename) {
+PetscErrorCode PISMStressBalance::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  ierr = stress_balance->write_fields(vars, filename); CHKERRQ(ierr);
-  ierr = modifier->write_fields(vars, filename); CHKERRQ(ierr);
+  ierr = stress_balance->write_variables(vars, filename); CHKERRQ(ierr);
+  ierr = modifier->write_variables(vars, filename); CHKERRQ(ierr);
 
   return 0;
 }

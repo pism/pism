@@ -113,8 +113,6 @@ public:
   virtual PetscErrorCode write_model_state(const char *filename);
   virtual PetscErrorCode write_variables(const char* filename, set<string> vars,
 					 nc_type nctype);
-  virtual PetscErrorCode write_extra_fields(const char *filename); // should be deprecated
-
 protected:
 
   IceGrid               &grid;

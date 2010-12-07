@@ -44,7 +44,7 @@ public:
   virtual void add_vars_to_output(string keyword, set<string> &result);
 
   //! Writes requested fields to a file.
-  virtual PetscErrorCode write_fields(set<string> vars, string filename);
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
 
   virtual PetscErrorCode write_model_state(string filename);
 

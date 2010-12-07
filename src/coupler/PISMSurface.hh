@@ -42,10 +42,7 @@ public:
 						 IceModelVec2S &result) = 0;
   virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
-  virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-						 string filename);
-  virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
-				      PetscReal dt_years, string filename);
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
   PISMAtmosphereModel *atmosphere;
 };
@@ -74,9 +71,8 @@ public:
   { return 0; }
   virtual PetscErrorCode write_model_state(PetscReal, PetscReal, string)
   { return 0; }
-  virtual PetscErrorCode write_diagnostic_fields(PetscReal, PetscReal, string)
-  { return 0; }
-  virtual PetscErrorCode write_fields(set<string>, PetscReal, PetscReal, string)
+  virtual void add_vars_to_output(string keyword, set<string> &result) {}
+  virtual PetscErrorCode write_variables(set<string>, PetscReal, PetscReal, string)
   { return 0; }
 };
 
@@ -103,6 +99,7 @@ public:
 					       IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
 						 IceModelVec2S &result);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
 };
 
 
@@ -145,8 +142,8 @@ public:
 						 IceModelVec2S &result);
   virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
-  virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-						 string filename);
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
 protected:
   string input_file;
   IceModelVec2S acab, artm;
@@ -183,10 +180,8 @@ public:
 					       IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
 						 IceModelVec2S &result);
-  virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
-				      PetscReal dt_years, string filename);
-  virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-                                                 string filename);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
   LocalMassBalance *mbscheme;	      //!< mass balance scheme to use
 
@@ -257,11 +252,8 @@ public:
   virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
   virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					   string filename);
-  virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
-                                      PetscReal dt_years, string filename);
-  virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-						 string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
   string input_file;
   PetscReal alpha;

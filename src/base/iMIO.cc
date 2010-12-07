@@ -129,8 +129,6 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
 
   ierr = write_model_state(filename);  CHKERRQ(ierr);
 
-  ierr = write_extra_fields(filename); CHKERRQ(ierr); // chance for derived classes to do more
-
   return 0;
 }
 
@@ -145,12 +143,12 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
 
   // Ask boundary models to write their variables:
   if (surface != NULL) {
-    ierr = surface->write_fields(vars, grid.year, dt / secpera, filename); CHKERRQ(ierr);
+    ierr = surface->write_variables(vars, filename); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: surface == NULL");
   }
   if (ocean != NULL) {
-    ierr = ocean->write_fields(vars, grid.year, dt / secpera, filename); CHKERRQ(ierr);
+    ierr = ocean->write_variables(vars, filename); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: ocean == NULL");
   }
@@ -238,45 +236,39 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
 }
 
 
-  PetscErrorCode IceModel::write_model_state(const char* filename) {
-    PetscErrorCode ierr;
+PetscErrorCode IceModel::write_model_state(const char* filename) {
+  PetscErrorCode ierr;
 
-    bool write_temp_pa;
-    ierr = PISMOptionsIsSet("-temp_pa", write_temp_pa); CHKERRQ(ierr);
-    if (write_temp_pa || (!config.get_flag("do_cold_ice_methods"))) {
-      // write temp_pa = pressure-adjusted temp in Celcius
-      ierr = verbPrintf(4, grid.com,
-                        "  writing pressure-adjusted ice temperature (deg C) 'temp_pa' ...\n"); CHKERRQ(ierr);
-      output_vars.insert("temp_pa");
-    }
-
-    bool write_liqfrac;
-    ierr = PISMOptionsIsSet("-liqfrac", write_liqfrac); CHKERRQ(ierr);
-    if (write_liqfrac || (!config.get_flag("do_cold_ice_methods"))) {
-      ierr = verbPrintf(4, grid.com,
-                        "  writing liquid water fraction 'liqfrac' ...\n"); CHKERRQ(ierr);
-      output_vars.insert("liqfrac");
-    }
-
-    bool userWantsCTS;
-    ierr = PISMOptionsIsSet("-cts", userWantsCTS); CHKERRQ(ierr);
-    if (userWantsCTS) {
-      ierr = verbPrintf(4, grid.com,
-                        "  writing CTS (= E/Es) scalar field 'cts' ...\n"); CHKERRQ(ierr);
-      output_vars.insert("cts");
-    }
-
-    ierr = write_variables(filename, output_vars, NC_DOUBLE);
-
-    return 0;
+  bool write_temp_pa;
+  ierr = PISMOptionsIsSet("-temp_pa", write_temp_pa); CHKERRQ(ierr);
+  if (write_temp_pa || (!config.get_flag("do_cold_ice_methods"))) {
+    // write temp_pa = pressure-adjusted temp in Celcius
+    ierr = verbPrintf(4, grid.com,
+                      "  writing pressure-adjusted ice temperature (deg C) 'temp_pa' ...\n"); CHKERRQ(ierr);
+    output_vars.insert("temp_pa");
   }
 
-
-  //! Writes extra fields to the output file \c filename. Does nothing in the base class.
-  PetscErrorCode IceModel::write_extra_fields(const char* /*filename*/) {
-    // Do nothing.
-    return 0;
+  bool write_liqfrac;
+  ierr = PISMOptionsIsSet("-liqfrac", write_liqfrac); CHKERRQ(ierr);
+  if (write_liqfrac || (!config.get_flag("do_cold_ice_methods"))) {
+    ierr = verbPrintf(4, grid.com,
+                      "  writing liquid water fraction 'liqfrac' ...\n"); CHKERRQ(ierr);
+    output_vars.insert("liqfrac");
   }
+
+  bool userWantsCTS;
+  ierr = PISMOptionsIsSet("-cts", userWantsCTS); CHKERRQ(ierr);
+  if (userWantsCTS) {
+    ierr = verbPrintf(4, grid.com,
+                      "  writing CTS (= E/Es) scalar field 'cts' ...\n"); CHKERRQ(ierr);
+    output_vars.insert("cts");
+  }
+
+  ierr = write_variables(filename, output_vars, NC_DOUBLE);
+
+  return 0;
+}
+
 
 
   //! Read a saved PISM model state in NetCDF format, for complete initialization of an evolution or diagnostic run.
@@ -634,8 +626,6 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
     }
 
     ierr = write_variables(filename, snapshot_vars, NC_DOUBLE);
-
-    ierr = write_extra_fields(filename); CHKERRQ(ierr);
 
     return 0;
   }

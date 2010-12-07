@@ -140,6 +140,7 @@ protected:
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode initFromFile(const char *filename);
   virtual PetscErrorCode createVecs();
+  virtual PetscErrorCode init_physics();
 private:
   IceModelVec2S   no_model_mask;    
 };
@@ -159,6 +160,46 @@ PetscErrorCode IceRegionalModel::createVecs() {
 
   return 0;
 }
+
+PetscErrorCode IceRegionalModel::init_physics() {
+  PetscErrorCode ierr;
+
+  ierr = IceModel::init_physics(); CHKERRQ(ierr);
+
+  delete stress_balance;
+
+  // Re-create the stress balance object:
+  bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
+  
+  // We always have SIA "on", but SSA is "on" only if use_ssa_velocity is set.
+  // In that case SIA and SSA velocities are always added up (there is no
+  // switch saying "do the hybrid").
+  ShallowStressBalance *my_stress_balance;
+  SSB_Modifier *modifier = new SIAFD_Regional(grid, *ice, *EC, config);
+
+  if (use_ssa_velocity) {
+    my_stress_balance = new SSAFD_Regional(grid, *basal, *ice, *EC, config);
+  } else {
+    my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
+  }
+  
+  // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
+  stress_balance = new PISMStressBalance(grid, my_stress_balance,
+                                         modifier, config);
+
+  // Note that in PISM stress balance computations are diagnostic, i.e. do not
+  // have a state that changes in time. This means that this call can be here
+  // and not in model_state_setup() and we don't need to re-initialize after
+  // the "diagnostic time step".
+  ierr = stress_balance->init(variables); CHKERRQ(ierr);
+
+  if (config.get_flag("include_bmr_in_continuity")) {
+    ierr = stress_balance->set_basal_melt_rate(&vbmr); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
 
 
 PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {

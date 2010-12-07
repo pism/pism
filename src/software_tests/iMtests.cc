@@ -354,31 +354,31 @@ PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   PetscErrorCode ierr;
 
   PISMIO nc(&grid);
-  IceModelVec2V uvbar_ssa;
+  IceModelVec2V velocity;
 
-  ierr = uvbar_ssa.create(grid, "bar_ssa", true); CHKERRQ(ierr);
+  ierr = velocity.create(grid, "bar", true); CHKERRQ(ierr);
 
-  ierr = uvbar_ssa.set_attrs("internal",
-			      "x component of the SSA horizontal ice velocity",
+  ierr = velocity.set_attrs("internal",
+			      "x component of the horizontal ice velocity",
 			     "m s-1", "", 0); CHKERRQ(ierr);
-  ierr = uvbar_ssa.set_attrs("internal",
-			      "y component of the SSA horizontal ice velocity",
+  ierr = velocity.set_attrs("internal",
+			      "y component of the horizontal ice velocity",
 			     "m s-1", "", 1); CHKERRQ(ierr);
-  ierr = uvbar_ssa.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  uvbar_ssa.write_in_glaciological_units = true;
+  ierr = velocity.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  velocity.write_in_glaciological_units = true;
 
-  ierr = uvbar_ssa.begin_access(); CHKERRQ(ierr);
+  ierr = velocity.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      uvbar_ssa(i,j).u = 3.0/secpera;
-      uvbar_ssa(i,j).v = 4.0/secpera;
+      velocity(i,j).u = 3.0/secpera;
+      velocity(i,j).v = 4.0/secpera;
     }
   }
-  ierr = uvbar_ssa.end_access(); CHKERRQ(ierr);
+  ierr = velocity.end_access(); CHKERRQ(ierr);
 
   // get and view components:
-  ierr = uvbar_ssa.get_component(0, vWork2d[0]); CHKERRQ(ierr);
-  ierr = uvbar_ssa.get_component(1, vWork2d[1]); CHKERRQ(ierr);
+  ierr = velocity.get_component(0, vWork2d[0]); CHKERRQ(ierr);
+  ierr = velocity.get_component(1, vWork2d[1]); CHKERRQ(ierr);
   ierr = vWork2d[0].view(300); CHKERRQ(ierr);
   ierr = vWork2d[1].view(300); CHKERRQ(ierr);
   PetscSleep(5);
@@ -395,17 +395,17 @@ PetscErrorCode IceUnitModel::test_IceModelVec2V() {
   ierr = nc.append_time(0.0); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = uvbar_ssa.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = velocity.write(filename, NC_DOUBLE); CHKERRQ(ierr);
 
   // reset:
-  ierr = uvbar_ssa.set(0.0); CHKERRQ(ierr);
+  ierr = velocity.set(0.0); CHKERRQ(ierr);
 
   // read in:
-  ierr = uvbar_ssa.read(filename, 0); CHKERRQ(ierr);
+  ierr = velocity.read(filename, 0); CHKERRQ(ierr);
   // write out:
-  ierr = uvbar_ssa.write(filename, NC_DOUBLE); CHKERRQ(ierr);
+  ierr = velocity.write(filename, NC_DOUBLE); CHKERRQ(ierr);
 
-  ierr = uvbar_ssa.magnitude(vWork2d[0]); CHKERRQ(ierr);
+  ierr = velocity.magnitude(vWork2d[0]); CHKERRQ(ierr);
   ierr = vWork2d[0].set_name("cbar"); CHKERRQ(ierr);
   ierr = vWork2d[0].set_attrs("diagnostic", 
 			  "magnitude of vertically-integrated horizontal velocity of ice",
@@ -496,38 +496,38 @@ PetscErrorCode IceUnitModel::test_dof1comm() {
 PetscErrorCode IceUnitModel::test_dof2comm() {
   PetscErrorCode ierr;
 
-  IceModelVec2V uvbar_ssa;
+  IceModelVec2V velocity;
 
-  ierr = uvbar_ssa.create(grid, "bar_ssa", true); CHKERRQ(ierr);
+  ierr = velocity.create(grid, "bar", true); CHKERRQ(ierr);
 
-  ierr = uvbar_ssa.begin_access(); CHKERRQ(ierr);
+  ierr = velocity.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      uvbar_ssa(i,j).u = 0.0;
-      uvbar_ssa(i,j).v = 100.0;
+      velocity(i,j).u = 0.0;
+      velocity(i,j).v = 100.0;
     }
   }
-  ierr = uvbar_ssa.end_access(); CHKERRQ(ierr);
+  ierr = velocity.end_access(); CHKERRQ(ierr);
 
   for (int k = 0; k < 100; ++k) {
 
     BlastCache();
 
     // set:
-    ierr = uvbar_ssa.begin_access(); CHKERRQ(ierr);
+    ierr = velocity.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-	uvbar_ssa(i,j).u = 0.25 * (uvbar_ssa(i-1,j).v + uvbar_ssa(i+1,j).v + uvbar_ssa(i,j-1).v + uvbar_ssa(i,j+1).v);
-	uvbar_ssa(i,j).v = 0.25 * (uvbar_ssa(i-1,j).u + uvbar_ssa(i+1,j).u + uvbar_ssa(i,j-1).u + uvbar_ssa(i,j+1).u);
+	velocity(i,j).u = 0.25 * (velocity(i-1,j).v + velocity(i+1,j).v + velocity(i,j-1).v + velocity(i,j+1).v);
+	velocity(i,j).v = 0.25 * (velocity(i-1,j).u + velocity(i+1,j).u + velocity(i,j-1).u + velocity(i,j+1).u);
       }
     }
-    ierr = uvbar_ssa.end_access(); CHKERRQ(ierr);
+    ierr = velocity.end_access(); CHKERRQ(ierr);
 
     BlastCache();
 
     // communicate:
-    ierr = uvbar_ssa.beginGhostComm(); CHKERRQ(ierr);
-    ierr = uvbar_ssa.endGhostComm(); CHKERRQ(ierr);
+    ierr = velocity.beginGhostComm(); CHKERRQ(ierr);
+    ierr = velocity.endGhostComm(); CHKERRQ(ierr);
   }
   return 0;
 }

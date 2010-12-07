@@ -130,21 +130,19 @@ PetscErrorCode PAConstant::write_model_state(PetscReal /*t_years*/, PetscReal /*
   return 0;
 }
 
-PetscErrorCode PAConstant::write_diagnostic_fields(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						   string filename) {
-  PetscErrorCode ierr;
-
-  ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = temperature.write(filename.c_str()); CHKERRQ(ierr);
-
-  return 0;
+void PAConstant::add_vars_to_output(string keyword, set<string> &result) {
+  result.insert("precip");
+  result.insert("temp_ma");
+  
+  if (keyword == "big") {
+    result.insert("airtemp");
+  }
 }
 
-PetscErrorCode PAConstant::write_fields(set<string> vars, PetscReal t_years,
-					PetscReal dt_years, string filename) {
+PetscErrorCode PAConstant::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  if (vars.find("airtemp") != vars.end()) {
+  if (set_contains(vars, "airtemp")) {
     IceModelVec2S airtemp;
     ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
     ierr = airtemp.set_attrs("diagnostic",
@@ -152,13 +150,17 @@ PetscErrorCode PAConstant::write_fields(set<string> vars, PetscReal t_years,
 			     "K",
 			     ""); CHKERRQ(ierr);
 
-    ierr = temp_snapshot(t_years, dt_years, airtemp); CHKERRQ(ierr);
+    ierr = temp_snapshot(grid.year, 0, airtemp); CHKERRQ(ierr);
 
     ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
-  if (vars.find("precip") != vars.end()) {
+  if (set_contains(vars, "precip")) {
     ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "temp_ma")) {
+    ierr = temperature.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   return 0;

@@ -67,6 +67,10 @@ string pism_username_prefix();
 
 bool ends_with(string str, string suffix);
 
+inline bool set_contains(set<string> S, string name) {
+  return (S.find(name) != S.end());
+}
+
 string pism_filename_add_suffix(string filename, string separator, string suffix);
 
 // handy functions for processing options:

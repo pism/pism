@@ -78,10 +78,8 @@ public:
 					  PetscReal *ts, PetscReal *values);
   virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
-  virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-						 string filename);
-  virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
-				      PetscReal dt_years, string filename);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual PetscErrorCode temp_snapshot(PetscReal t_years, PetscReal dt_years,
 				       IceModelVec2S &result);
 protected:
@@ -102,10 +100,8 @@ public:
   virtual PetscErrorCode write_model_state(PetscReal /*t_years*/,
 					    PetscReal /*dt_years*/,
 					    string filename);
-  virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-						 string filename);
-  virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
-				      PetscReal dt_years, string filename);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
   //! This method implements the parameterization.
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years) = 0;
   virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
@@ -241,10 +237,8 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
-  virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-						 string filename);
-  virtual PetscErrorCode write_fields(set<string> vars, PetscReal t_years,
-				      PetscReal dt_years, string filename);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
   virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
 				     IceModelVec2S &result);

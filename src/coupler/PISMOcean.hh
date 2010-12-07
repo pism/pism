@@ -104,8 +104,6 @@ public:
 						IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(PetscReal t_years, PetscReal dt_years,
 					      IceModelVec2S &result);
-  virtual PetscErrorCode write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-						 string filename);
 protected:
   string forcing_file;
   Timeseries *dSLforcing;	//!< sea level forcing time-series
