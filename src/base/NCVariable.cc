@@ -1190,7 +1190,7 @@ PetscErrorCode NCTimeseries::define(const NCTool &nc, int &varid, nc_type nctype
   int dimid, ncid = nc.get_ncid();
 
   bool exists;
-  stat = nc.find_variable(short_name, &varid, exists); CHKERRQ(stat); 
+  ierr = nc.find_variable(short_name, &varid, exists); CHKERRQ(ierr); 
   if (exists) return 0;
 
   if (rank == 0) {
