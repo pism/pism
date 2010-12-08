@@ -92,6 +92,13 @@ void PAYearlyCycle::add_vars_to_output(string keyword, set<string> &result) {
   }
 }
 
+PetscErrorCode PAYearlyCycle::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+  PetscErrorCode ierr;
+  int FIXME;
+  return 0;
+}
+
+
 PetscErrorCode PAYearlyCycle::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 

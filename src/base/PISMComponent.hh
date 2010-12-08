@@ -44,7 +44,8 @@ public:
 
   //! Defines requested couplings fields to file and/or asks an attached
   //! model to do so.
-  virtual PetscErrorCode define_variables(set<string> /*vars*/, const NCTool &/*nc*/)
+  virtual PetscErrorCode define_variables(set<string> /*vars*/, const NCTool &/*nc*/,
+                                          nc_type /*nctype*/)
   { return 0; }
 
   //! Writes requested couplings fields to file and/or asks an attached

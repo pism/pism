@@ -264,7 +264,7 @@ PetscErrorCode SSAFD::compute_basal_frictional_heating(IceModelVec2S &result) {
           C = basal.drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v),
 	  basal_stress_x = - C * velocity(i,j).u,
 	  basal_stress_y = - C * velocity(i,j).v;
-        result(i,j) = basal_stress_x * velocity(i,j).u - basal_stress_y * velocity(i,j).v;
+        result(i,j) = - basal_stress_x * velocity(i,j).u - basal_stress_y * velocity(i,j).v;
       }
     }
   }

@@ -79,12 +79,14 @@ public:
   virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual PetscErrorCode temp_snapshot(PetscReal t_years, PetscReal dt_years,
 				       IceModelVec2S &result);
 protected:
   string input_file;
   IceModelVec2S precip, temperature;
+  NCSpatialVariable airtemp_var;
 };
 
 
@@ -101,6 +103,7 @@ public:
 					    PetscReal /*dt_years*/,
 					    string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   //! This method implements the parameterization.
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years) = 0;
@@ -238,6 +241,7 @@ public:
   virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
   virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
@@ -254,6 +258,7 @@ protected:
   Timeseries *dTforcing;
   DiagnosticTimeseries *delta_T; //!< for diagnostic time series output (-ts_vars?)
   IceModelVec2T *temp_anomaly, *precip_anomaly;
+  NCSpatialVariable airtemp_var;
 };
 
 

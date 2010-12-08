@@ -131,6 +131,12 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
              CHKERRQ(ierr);
   }
 
+  airtemp_var.init("airtemp", grid, GRID_2D);
+  airtemp_var.set_string("pism_intent", "diagnostic");
+  airtemp_var.set_string("long_name",
+                         "snapshot of the near-surface air temperature (including ");
+  ierr = airtemp_var.set_units("K"); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -186,6 +192,32 @@ void PAForcing::add_vars_to_output(string keyword, set<string> &result) {
 
   input_model->add_vars_to_output(keyword, result);
 }
+
+PetscErrorCode PAForcing::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+  PetscErrorCode ierr;
+  int varid;
+
+  ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+
+  if (set_contains(vars, "airtemp_plus_forcing")) {
+    ierr = airtemp_var.define(nc, varid, nctype, false); CHKERRQ(ierr);
+  }
+
+  if (temp_anomaly != NULL) {
+    if (set_contains(vars, "temp_anomaly")) {
+      ierr = temp_anomaly->define(nc, nctype); CHKERRQ(ierr);
+    }
+  }
+
+  if (precip_anomaly != NULL) {
+    if (set_contains(vars, "precip_anomaly")) {
+      ierr = precip_anomaly->define(nc, nctype); CHKERRQ(ierr);
+    }
+  }
+
+  return 0;
+}
+
 
 PetscErrorCode PAForcing::write_variables(set<string> vars,  string filename) {
   PetscErrorCode ierr;
