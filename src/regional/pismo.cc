@@ -236,6 +236,16 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
     PetscEnd();
   } 
 
+  bool no_model_strip_set;
+  ierr = PISMOptionsIsSet("-no_model_strip", no_model_strip_set); CHKERRQ(ierr);
+  if (!no_model_strip_set) {
+    ierr = PetscPrintf(grid.com,
+       "\nPISMO minor WARNING: option '-no_model_strip X' seen.  Value X ignored\n"
+         "because no_model_mask variable read from input file.  Proceeding ...\n\n");
+         CHKERRQ(ierr);
+    PetscEnd();
+  }
+
   ierr = nc.close(); CHKERRQ(ierr);
   return 0;
 }
