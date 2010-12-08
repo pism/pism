@@ -205,7 +205,6 @@ PetscErrorCode IceRegionalModel::init_physics() {
 }
 
 
-
 PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
   PetscErrorCode  ierr;
 
@@ -230,9 +229,11 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
     ierr = no_model_mask.read(filename, last_record); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2,grid.com,
-	"IceRegionalModel WARNING: input file %s does not contain 'no_model_mask'\n"
-	"  variable.  Keeping its value as identically zero (= everywhere modeled).\n",
+	"IceRegionalModel/pismo ERROR: Option '-i' was used but input file %s does not\n"
+	"  contain 'no_model_mask' variable.  Executable pismo has no well-defined\n"
+	"  semantics without it!  Ending!!\n",
 	filename); CHKERRQ(ierr);
+    PetscEnd();
   } 
 
   ierr = nc.close(); CHKERRQ(ierr);
@@ -249,6 +250,16 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
   ierr = PetscOptionsBegin(grid.com, "", "IceRegionalModel", ""); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com, 
      "* Initializing IceRegionalModel variables ...\n"); CHKERRQ(ierr);
+
+  bool no_model_strip_set;
+  ierr = PISMOptionsIsSet("-no_model_strip", no_model_strip_set); CHKERRQ(ierr);
+  if (!no_model_strip_set) {
+    ierr = PetscPrintf(grid.com,
+       "\nPISMO ERROR: option '-no_model_strip X' is REQUIRED if '-i' is not used.\n"
+         "   Executable pismo has no well-defined semantics without it!  Ending!!\n\n");
+         CHKERRQ(ierr);
+    PetscEnd();
+  }
 
   PetscReal stripkm;
   PetscTruth  nmstripSet;
@@ -309,8 +320,6 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com, "PISMO %s (regional outlet-glacier run mode)\n",
 		      PISM_Revision); CHKERRQ(ierr);
     ierr = stop_on_version_option(); CHKERRQ(ierr);
-
-    ierr = check_old_option_and_stop(com, "-boot_from", "-boot_file"); CHKERRQ(ierr); 
 
     bool iset, bfset;
     ierr = PISMOptionsIsSet("-i", iset); CHKERRQ(ierr);

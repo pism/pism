@@ -56,7 +56,7 @@ public:
     // force balance, but the geometry itself is not affected by this value
     const PetscReal
       DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8,  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
-      DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);  // typical strain rate is 100 m/yr per 
+      DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);  // typical strain rate is 100 m/yr per 100 km
     nuH = min_thickness * DEFAULT_CONSTANT_HARDNESS_FOR_SSA
       / (2.0 * pow(DEFAULT_TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
     // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
