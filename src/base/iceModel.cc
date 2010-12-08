@@ -253,8 +253,8 @@ PetscErrorCode IceModel::createVecs() {
   // basal melt rate
   ierr = vbmr.create(grid, "bmelt", false); CHKERRQ(ierr);
   ierr = vbmr.set_attrs("model_state",
-                                  "ice basal melt rate in ice thickness per time",
-				  "m s-1", "land_ice_basal_melt_rate"); CHKERRQ(ierr);
+                        "ice basal melt rate in ice thickness per time",
+                        "m s-1", "land_ice_basal_melt_rate"); CHKERRQ(ierr);
   ierr = vbmr.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   vbmr.write_in_glaciological_units = true;
   vbmr.set_attr("comment", "positive basal melt rate corresponds to ice loss");

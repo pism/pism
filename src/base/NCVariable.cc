@@ -593,6 +593,10 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type n
   int stat, i = 0, ndims, dimids[4],
     ncid = nc.get_ncid();
 
+  bool exists;
+  stat = nc.find_variable(short_name, &varid, exists); CHKERRQ(stat); 
+  if (exists) return 0;
+
   if (rank != 0) {
     varid = 0;
     return 0;
@@ -800,6 +804,10 @@ PetscErrorCode NCConfigVariable::define(const NCTool &nc, int &varid, nc_type ty
                                         bool) const {
   int stat, var_id,
     ncid = nc.get_ncid();
+
+  bool exists;
+  stat = nc.find_variable(short_name, &varid, exists); CHKERRQ(stat); 
+  if (exists) return 0;
 
   if (rank == 0) {
     stat = nc.define_mode(); CHKERRQ(stat); 
@@ -1180,6 +1188,10 @@ PetscErrorCode NCTimeseries::define(const NCTool &nc, int &varid, nc_type nctype
                                     bool) const {
   PetscErrorCode ierr;
   int dimid, ncid = nc.get_ncid();
+
+  bool exists;
+  stat = nc.find_variable(short_name, &varid, exists); CHKERRQ(stat); 
+  if (exists) return 0;
 
   if (rank == 0) {
     ierr = nc.define_mode(); CHKERRQ(ierr);
