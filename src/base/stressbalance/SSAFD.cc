@@ -1199,6 +1199,27 @@ PetscErrorCode SSAFD::set_initial_guess(IceModelVec2V &guess) {
   return 0;
 }
 
+PetscErrorCode SSAFD::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+  PetscErrorCode ierr;
+
+  if (set_contains(vars, "velbar_ssa")) {
+    ierr = velocity.define(nc, nctype); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode SSAFD::write_variables(set<string> vars, string filename) {
+  PetscErrorCode ierr;
+
+  if (set_contains(vars, "velbar_ssa")) {
+    ierr = velocity.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+
 PetscErrorCode SSAFD::write_model_state(string filename) {
   PetscErrorCode ierr;
 

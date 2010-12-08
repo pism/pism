@@ -121,6 +121,7 @@ protected:
   PetscScalar snow_temp_july_day;
   string reference, precip_filename;
   IceModelVec2S temp_ma, temp_mj, precip;
+  NCSpatialVariable airtemp_var;
 };
 
 

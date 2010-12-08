@@ -70,6 +70,7 @@ public:
            int M, int Ng);
   ~PISMProf() {}
   int create(string name, string description);
+  int get(string name);
   void begin(int index);
   void end(int index);
   PetscErrorCode barrier();

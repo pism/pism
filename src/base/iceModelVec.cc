@@ -505,6 +505,7 @@ PetscErrorCode IceModelVec::define(const NCTool &nc, nc_type output_datatype) {
   int dummy;
 
   for (int j = 0; j < dof; ++j) {
+    vars[j].time_independent = time_independent;
     ierr = vars[j].define(nc, dummy, output_datatype, write_in_glaciological_units); CHKERRQ(ierr);
   }
 

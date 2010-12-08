@@ -39,14 +39,35 @@ PISMProf::PISMProf(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 }
 
 //! Create a profiling event.
+/*!
+ * Checks if an event with this name already exists.
+ */
 int PISMProf::create(string name, string description) {
   PISMEvent tmp;
+  int index = get(name);
+  
+  if (index != -1)
+    return index;
+
   tmp.name = name;
   tmp.description = description;
 
   events.push_back(tmp);
 
   return events.size() - 1;
+}
+
+//! \brief Get an integer (index) corresponding to an event.
+/*!
+ * Returns -1 if an event was not found.
+ */
+int PISMProf::get(string name) {
+  
+  for (int i = 0; i < events.size(); ++i)
+    if (events[i].name == name)
+      return i;
+  
+  return -1;
 }
 
 // This ensures that begin() and end() code is optimized away if

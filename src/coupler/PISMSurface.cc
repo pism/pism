@@ -51,6 +51,16 @@ PetscErrorCode PISMSurfaceModel::write_model_state(PetscReal t_years, PetscReal 
   return 0;
 }
 
+PetscErrorCode PISMSurfaceModel::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+  PetscErrorCode ierr;
+
+  if (atmosphere != NULL) {
+    ierr = atmosphere->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
 PetscErrorCode PISMSurfaceModel::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
@@ -197,6 +207,22 @@ void PSConstant::add_vars_to_output(string keyword, set<string> &result) {
   result.insert("acab");
   result.insert("artm");
   // does not call atmosphere->add_vars_to_output().
+}
+
+PetscErrorCode PSConstant::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+  PetscErrorCode ierr;
+
+  ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+
+  if (set_contains(vars, "artm")) {
+    ierr = artm.define(nc, nctype); CHKERRQ(ierr); 
+  }
+
+  if (set_contains(vars, "acab")) {
+    ierr = acab.define(nc, nctype); CHKERRQ(ierr); 
+  }
+
+  return 0;
 }
 
 PetscErrorCode PSConstant::write_variables(set<string> vars, string filename) {
@@ -528,6 +554,26 @@ void PSTemperatureIndex::add_vars_to_output(string keyword, set<string> &result)
   atmosphere->add_vars_to_output(keyword, result);
 }
 
+PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+  PetscErrorCode ierr;
+
+  ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+
+  if (set_contains(vars, "saccum")) {
+    ierr = accumulation_rate.define(nc, nctype); CHKERRQ(ierr); 
+  }  
+
+  if (set_contains(vars, "smelt")) {
+    ierr = melt_rate.define(nc, nctype); CHKERRQ(ierr); 
+  }  
+
+  if (set_contains(vars, "srunoff")) {
+    ierr = runoff_rate.define(nc, nctype); CHKERRQ(ierr); 
+  }  
+  
+  return 0;
+}
+
 PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
@@ -852,6 +898,22 @@ void PSForceThickness::add_vars_to_output(string key, set<string> &result) {
     result.insert("ftt_modified_acab");
     result.insert("fft_mask");
   }
+}
+
+PetscErrorCode PSForceThickness::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
+  PetscErrorCode ierr;
+
+  ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+
+  if (set_contains(vars, "ftt_modified_acab")) {
+    ierr = ftt_modified_acab.define(nc, nctype); CHKERRQ(ierr); 
+  }  
+
+  if (set_contains(vars, "ftt_mask")) {
+    ierr = ftt_mask.define(nc, nctype); CHKERRQ(ierr);
+  }  
+
+  return 0;
 }
 
 PetscErrorCode PSForceThickness::write_variables(set<string> vars, string filename) {

@@ -367,6 +367,7 @@ protected:
   double backup_interval;
   string backup_filename;
   PetscReal last_backup_time;
+  set<string> backup_vars;
   PetscErrorCode init_backups();
   PetscErrorCode write_backup();
 
@@ -396,7 +397,9 @@ private:
     event_mass,			//!< mass balance computation
     event_age,			//!< age computation
     event_beddef,		//!< bed deformation step
-    event_output;		//!< time spent writing the output file
+    event_output,		//!< time spent writing the output file
+    event_snapshots,            //!< time spent writing snapshots
+    event_backups;              //!< time spent writing backups files
 };
 
 #endif /* __iceModel_hh */

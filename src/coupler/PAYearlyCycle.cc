@@ -70,6 +70,12 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &/*vars*/) {
 
   delete lic;
 
+  airtemp_var.init("airtemp", grid, GRID_2D);
+  airtemp_var.set_string("pism_intent", "diagnostic");
+  airtemp_var.set_string("long_name",
+                         "snapshot of the near-surface air temperature");
+  ierr = airtemp_var.set_units("K"); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -94,7 +100,24 @@ void PAYearlyCycle::add_vars_to_output(string keyword, set<string> &result) {
 
 PetscErrorCode PAYearlyCycle::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
   PetscErrorCode ierr;
-  int FIXME;
+  int varid;
+
+  if (set_contains(vars, "airtemp")) {
+    ierr = airtemp_var.define(nc, varid, nctype, false); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "airtemp_ma")) {
+    ierr = temp_ma.define(nc, nctype); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "airtemp_mj")) {
+    ierr = temp_mj.define(nc, nctype); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "precip")) {
+    ierr = precip.define(nc, nctype); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -105,10 +128,7 @@ PetscErrorCode PAYearlyCycle::write_variables(set<string> vars, string filename)
   if (set_contains(vars, "airtemp")) {
     IceModelVec2S airtemp;
     ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
-    ierr = airtemp.set_attrs("diagnostic",
-                             "near-surface air temperature snapshot (including sub-year time-dependence)",
-			     "K",
-			     ""); CHKERRQ(ierr);
+    ierr = airtemp.set_metadata(airtemp_var, 0); CHKERRQ(ierr);
 
     ierr = temp_snapshot(t, dt, airtemp); CHKERRQ(ierr);
 

@@ -669,7 +669,9 @@ PetscErrorCode IceModel::misc_setup() {
   // compute (possibly corrected) cell areas:
   ierr = compute_cell_areas(); CHKERRQ(ierr);
 
-  event_output = grid.profiler->create("output", "time spent writing an output file");
+  event_output    = grid.profiler->create("output", "time spent writing an output file");
+  event_snapshots = grid.profiler->create("snapshots", "time spent writing snapshots");
+  event_backups   = grid.profiler->create("backups", "time spent writing backups");
 
   return 0;
 }

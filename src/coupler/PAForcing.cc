@@ -131,10 +131,10 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
              CHKERRQ(ierr);
   }
 
-  airtemp_var.init("airtemp", grid, GRID_2D);
+  airtemp_var.init("airtemp_plus_forcing", grid, GRID_2D);
   airtemp_var.set_string("pism_intent", "diagnostic");
   airtemp_var.set_string("long_name",
-                         "snapshot of the near-surface air temperature (including ");
+                         "snapshot of the near-surface air temperature (including forcing)");
   ierr = airtemp_var.set_units("K"); CHKERRQ(ierr);
 
   return 0;
@@ -226,10 +226,7 @@ PetscErrorCode PAForcing::write_variables(set<string> vars,  string filename) {
   if (set_contains(vars, "airtemp_plus_forcing")) {
     IceModelVec2S airtemp;
     ierr = airtemp.create(grid, "airtemp_plus_forcing", false); CHKERRQ(ierr);
-    ierr = airtemp.set_attrs("diagnostic",
-                             "near-surface air temperature snapshot (including sub-year time-dependence and forcing)",
-			     "K",
-			     ""); CHKERRQ(ierr);
+    ierr = airtemp.set_metadata(airtemp_var, 0); CHKERRQ(ierr);
 
     ierr = temp_snapshot(T, 0, airtemp); CHKERRQ(ierr);
 

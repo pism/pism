@@ -326,7 +326,7 @@ PetscErrorCode IceModel::set_output_size(string option,
     keyword = "big";
 
   // Ask the stress balance module to add more variables:
-  if (stress_balance)
+  if (stress_balance != NULL)
     stress_balance->add_vars_to_output(keyword, result);
 
   // Ask ocean and surface models to add more variables to the list:

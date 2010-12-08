@@ -34,6 +34,7 @@ public:
                        const NCConfigVariable &conf)
     : PISMComponent_Diag(g, conf), basal(b), ice(i), EC(e)
   { vel_bc = NULL; bc_locations = NULL; variables = NULL; max_u = max_v = 0.0; allocate(); }
+
   virtual ~ShallowStressBalance() {}
 
   //  initialization and I/O:
@@ -43,7 +44,8 @@ public:
 
   virtual PetscErrorCode set_boundary_conditions(IceModelVec2Mask &locations,
                                                  IceModelVec2V &velocities)
-  { vel_bc = &velocities;
+  { 
+    vel_bc = &velocities;
     bc_locations = &locations;
     return 0;
   }

@@ -42,6 +42,7 @@ public:
 						 IceModelVec2S &result) = 0;
   virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
   PISMAtmosphereModel *atmosphere;
@@ -72,6 +73,8 @@ public:
   virtual PetscErrorCode write_model_state(PetscReal, PetscReal, string)
   { return 0; }
   virtual void add_vars_to_output(string keyword, set<string> &result) {}
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype)
+  { return 0; }
   virtual PetscErrorCode write_variables(set<string>, PetscReal, PetscReal, string)
   { return 0; }
 };
@@ -142,6 +145,7 @@ public:
 						 IceModelVec2S &result);
   virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					    string filename);
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
 protected:
@@ -181,6 +185,7 @@ public:
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
 						 IceModelVec2S &result);
   virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);  
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
   LocalMassBalance *mbscheme;	      //!< mass balance scheme to use
@@ -253,6 +258,7 @@ public:
   virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
 					   string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
   string input_file;

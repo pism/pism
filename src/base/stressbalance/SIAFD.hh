@@ -33,10 +33,7 @@ public:
   SIAFD(IceGrid &g, IceFlowLaw &i, EnthalpyConverter &e, const NCConfigVariable &c)
     : SSB_Modifier(g, i, e, c), WIDE_STENCIL(2) { allocate(); }
 
-  virtual ~SIAFD()
-  {
-    delete bed_smoother;
-  }
+  virtual ~SIAFD() { delete bed_smoother; }
 
   virtual PetscErrorCode init(PISMVars &vars);
 
