@@ -96,6 +96,7 @@ public:
 
   virtual PetscErrorCode set_initial_guess(IceModelVec2V &guess);
 
+  virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual PetscErrorCode write_model_state(string filename);
@@ -149,6 +150,9 @@ protected:
   Mat SSAStiffnessMatrix;
   Vec SSAX, SSARHS;  // Global vectors for solution of the linear system and the RHS.
   DA  SSADA;
+
+  // profiling
+  int event_ssa;
 };
 
 //! \brief Computes the driving stress (taud).

@@ -92,6 +92,8 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
     ierr = velocity.set(0.0); CHKERRQ(ierr); // default initial guess
   }
 
+  event_ssa = grid.profiler->create("ssafd_update", "time spent solving the SSA");
+
   return 0;
 }
 
@@ -198,12 +200,16 @@ PetscErrorCode SSAFD::update(bool fast) {
   if (fast)
     return 0;
 
+  grid.profiler->begin(event_ssa);
+
   ierr = solve(); CHKERRQ(ierr); 
 
   ierr = compute_basal_frictional_heating(basal_frictional_heating); CHKERRQ(ierr);
   ierr = compute_D2(D2); CHKERRQ(ierr);
 
   ierr = compute_maximum_velocity(); CHKERRQ(ierr);
+
+  grid.profiler->end(event_ssa);
 
   return 0;
 }
@@ -1197,6 +1203,10 @@ PetscErrorCode SSAFD::set_initial_guess(IceModelVec2V &guess) {
   PetscErrorCode ierr;
   ierr = velocity.copy_from(guess); CHKERRQ(ierr);
   return 0;
+}
+
+void SSAFD::add_vars_to_output(string keyword, set<string> &result) {
+  result.insert("velbar_ssa");
 }
 
 PetscErrorCode SSAFD::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
