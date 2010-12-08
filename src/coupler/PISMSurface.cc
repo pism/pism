@@ -848,8 +848,10 @@ void PSForceThickness::add_vars_to_output(string key, set<string> &result) {
   if (input_model != NULL)
     input_model->add_vars_to_output(key, result);
 
-  if (key == "big")
+  if (key == "big") {
     result.insert("ftt_modified_acab");
+    result.insert("fft_mask");
+  }
 }
 
 PetscErrorCode PSForceThickness::write_variables(set<string> vars, string filename) {
@@ -867,19 +869,3 @@ PetscErrorCode PSForceThickness::write_variables(set<string> vars, string filena
 
   return 0;
 }
-
-
-// PetscErrorCode PSForceThickness::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-// 							 string filename) {
-//   PetscErrorCode ierr;
-
-//   ierr = input_model->write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
-
-//   if (write_ftt_mask) {
-//     ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr);
-//   }
-
-//   ierr = ftt_modified_acab.write(filename.c_str()); CHKERRQ(ierr);
-
-//   return 0;
-// }

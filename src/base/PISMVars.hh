@@ -38,11 +38,12 @@ public:
 
 protected:
   mutable map<string, IceModelVec*> variables,
-    variables_short;            //!< stores short names of variables that do
-                                //! not have standard names, allowing looking
-                                //! them up using either and preserving the
-                                //! one-to-one map from keys to pointers
-                                //! (represented by "variables").
+    standard_names;             //!< stores standard names of variables that
+                                //! have standard names, allowing looking them
+                                //! up using either short or standard names and
+                                //! preserving the one-to-one map from keys
+                                //! (strings) to pointers (represented by
+                                //! "variables").
 };
 
 #endif // __PISMVars_hh

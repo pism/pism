@@ -37,23 +37,16 @@ PetscErrorCode PISMVars::add(IceModelVec &v) {
   if (v.has_attr("standard_name")) {
 
     string standard_name = v.string_attr("standard_name");
-    if (variables[standard_name] == NULL)
-      variables[standard_name] = &v;
+    if (standard_names[standard_name] == NULL)
+      standard_names[standard_name] = &v;
     else
       SETERRQ1(1, "PISMVars::add(): an IceModelVec with the standard_name '%s' was added already.",
                standard_name.c_str());
 
-  } else {
-
-    if (variables[short_name] == NULL)
-      variables[short_name] = &v;
-    else
-      SETERRQ1(1, "PISMVars::add(): an IceModelVec with the short_name '%s' was added already.",
-               short_name.c_str());
   }
 
-  if (variables_short[short_name] == NULL)
-    variables_short[short_name] = &v;
+  if (variables[short_name] == NULL)
+    variables[short_name] = &v;
   else
     SETERRQ1(1, "PISMVars::add(): an IceModelVec with the short_name '%s' was added already.",
              short_name.c_str());
@@ -66,8 +59,26 @@ PetscErrorCode PISMVars::add(IceModelVec &v) {
   remove_variable("foo") will not remove the entry corresponding to "bar".
  */
 void PISMVars::remove(string name) {
-  variables.erase(name);
-  variables_short.erase(name);
+  IceModelVec *v = variables[name];
+
+  if (v != NULL) {              // the argument is a "short" name
+    if (v->has_attr("standard_name")) {
+      string std_name = v->string_attr("standard_name");
+      
+      variables.erase(name);
+      standard_names.erase(std_name);
+    }
+  } else {          
+    v = standard_names[name];
+
+    if (v != NULL) {            // the argument is a standard_name
+      string short_name = v->string_attr("name");
+
+      variables.erase(short_name);
+      standard_names.erase(name);
+    }
+  }
+
 }
 
 //! \brief Returns a pointer to an IceModelVec containing variable \c name or
@@ -76,12 +87,12 @@ void PISMVars::remove(string name) {
  * Checks standard_name first, then short name
  */
 IceModelVec* PISMVars::get(string name) const {
-  map<string, IceModelVec* >::const_iterator j = variables.find(name);
-  if (j != variables.end())
+  map<string, IceModelVec* >::const_iterator j = standard_names.find(name);
+  if (j != standard_names.end())
     return (j->second);
 
-  j = variables_short.find(name);
-  if (j != variables_short.end())
+  j = variables.find(name);
+  if (j != variables.end())
     return (j->second);
 
   return NULL;

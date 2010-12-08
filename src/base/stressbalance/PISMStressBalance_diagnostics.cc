@@ -39,6 +39,8 @@ void PISMStressBalance::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
   dict["wvelbase"] = new PSB_wvelbase(this, grid, *variables);
   dict["wvelsurf"] = new PSB_wvelsurf(this, grid, *variables);
   dict["wvel_rel"] = new PSB_wvel_rel(this, grid, *variables);
+  dict["taud_mag"] = new PSB_taud_mag(this, grid, *variables);
+
 
   stress_balance->get_diagnostics(dict);
   modifier->get_diagnostics(dict);
@@ -768,6 +770,106 @@ PetscErrorCode PSB_wvel_rel::compute(IceModelVec* &output) {
   ierr = thickness->end_access(); CHKERRQ(ierr);  
   ierr = result->end_access(); CHKERRQ(ierr);
   ierr = w3->end_access(); CHKERRQ(ierr);
+  
+  output = result;
+  return 0;
+}
+
+PSB_taud_mag::PSB_taud_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
+  
+  // set metadata:
+  vars[0].init("taud_mag", grid, GRID_2D);
+  
+  set_attrs("magnitude of the driving shear stress at the base of ice", "",
+            "Pa", "Pa", 0);
+}
+
+PetscErrorCode PSB_taud_mag::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+
+  // Allocate memory:
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "taud_mag", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  IceModelVec2S *thickness, *surface, *bed;
+  IceModelVec2Mask *mask;
+
+  thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
+  if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+
+  surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
+  if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
+
+  bed = dynamic_cast<IceModelVec2S*>(variables.get("bedrock_altitude"));
+  if (bed == NULL) SETERRQ(1, "bedrock_altitude is not available");
+
+  mask = dynamic_cast<IceModelVec2Mask*>(variables.get("mask"));
+  if (mask == NULL) SETERRQ(1, "mask is not available");
+
+  IceModelVec2S &thk = *thickness; // to improve readability (below)
+
+  const PetscScalar n       = model->config.get("Glen_exponent"), // frequently n = 3
+                    etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
+                    invpow  = 1.0 / etapow,  // = 3/8
+                    dinvpow = (- n - 2.0) / (2.0 * n + 2.0); // = -5/8
+  const PetscScalar minThickEtaTransform = 5.0; // m
+  const PetscScalar dx=grid.dx, dy=grid.dy;
+
+  PetscReal standard_gravity = model->config.get("standard_gravity"),
+    ice_density = model->config.get("ice_density");
+  bool use_eta = (model->config.get_string("surface_gradient_method") == "eta");
+
+  ierr =   surface->begin_access();    CHKERRQ(ierr);
+  ierr =       bed->begin_access();  CHKERRQ(ierr);
+  ierr =      mask->begin_access();  CHKERRQ(ierr);
+  ierr =        thk.begin_access();  CHKERRQ(ierr);
+
+  ierr = result->begin_access(); CHKERRQ(ierr);
+
+  PetscReal result_ij_u, result_ij_v;
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      const PetscScalar pressure = ice_density * standard_gravity * thk(i,j);
+      if (pressure <= 0.0) {
+        result_ij_u = 0.0;
+        result_ij_v = 0.0;
+      } else {
+        PetscScalar h_x = 0.0, h_y = 0.0;
+        // FIXME: we need to handle grid periodicity correctly.
+        if (mask->is_grounded(i,j) && (use_eta == true)) {
+	        // in grounded case, differentiate eta = H^{8/3} by chain rule
+          if (thk(i,j) > 0.0) {
+            const PetscScalar myH = (thk(i,j) < minThickEtaTransform ?
+                                     minThickEtaTransform : thk(i,j));
+            const PetscScalar eta = pow(myH, etapow), factor = invpow * pow(eta, dinvpow);
+            h_x = factor * (pow(thk(i+1,j),etapow) - pow(thk(i-1,j),etapow)) / (2*dx);
+            h_y = factor * (pow(thk(i,j+1),etapow) - pow(thk(i,j-1),etapow)) / (2*dy);
+          }
+          // now add bed slope to get actual h_x,h_y
+          // FIXME: there is no reason to assume user's bed is periodized
+          h_x += bed->diff_x(i,j);
+          h_y += bed->diff_y(i,j);
+        } else {  // floating or eta transformation is not used
+            h_x = surface->diff_x(i,j);
+            h_y = surface->diff_y(i,j);
+        }
+
+        result_ij_u = - pressure * h_x;
+        result_ij_v = - pressure * h_y;
+      }
+
+      (*result)(i,j) = sqrt(PetscSqr(result_ij_u) + PetscSqr(result_ij_v));
+    }
+  }
+
+  ierr =        thk.end_access(); CHKERRQ(ierr);
+  ierr =       bed->end_access(); CHKERRQ(ierr);
+  ierr =   surface->end_access(); CHKERRQ(ierr);
+  ierr =      mask->end_access(); CHKERRQ(ierr);
+  ierr =     result->end_access(); CHKERRQ(ierr);
   
   output = result;
   return 0;

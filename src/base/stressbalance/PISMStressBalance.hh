@@ -28,6 +28,7 @@
 //! The class defining PISM's interface to the shallow stress balance code.
 class PISMStressBalance : public PISMComponent_Diag
 {
+  friend class PSB_taud_mag;
 public:
   PISMStressBalance(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod,
                     const NCConfigVariable &config);
