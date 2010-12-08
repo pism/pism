@@ -93,8 +93,8 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
         thk = (*thickness)(i,j);
       PetscInt ks = grid.kBelowHeight(thk);
 
-      // an ice-free cell:
-      if (thk == 0) {
+      // an "ice-free" cell:
+      if (thk < 0.1) {
         (*result)(i,j).u = 0;
         (*result)(i,j).v = 0;
         continue;

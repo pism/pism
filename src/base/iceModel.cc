@@ -372,6 +372,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 			      bool use_ssa_when_grounded) {
   PetscErrorCode ierr;
 
+  grid.profiler->begin(event_step);
+
   //! \li call additionalAtStartTimestep() to let derived classes do more
   ierr = additionalAtStartTimestep(); CHKERRQ(ierr);  // might set dt_force,maxdt_temporary
 
@@ -410,6 +412,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   PetscLogEventBegin(beddefEVENT,0,0,0,0);
 
+  grid.profiler->begin(event_beddef);
+
   //! \li compute the bed deformation, which only depends on current thickness
   //! and bed elevation
   if (beddef) {
@@ -419,6 +423,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
       stdout_flags += "b";
     } else stdout_flags += "$";
   } else stdout_flags += " ";
+  
+  grid.profiler->end(event_beddef);
 
   PetscLogEventEnd(beddefEVENT,0,0,0,0);
 
@@ -440,8 +446,13 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   
 
   bool updateAtDepth = (skipCountDown == 0);
+  
+  grid.profiler->begin(event_velocity);
 
   ierr = stress_balance->update(updateAtDepth == false); CHKERRQ(ierr); 
+
+  grid.profiler->end(event_velocity);
+
   string sb_stdout;
   ierr = stress_balance->stdout_report(sb_stdout); CHKERRQ(ierr);
 
@@ -470,6 +481,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   PetscLogEventBegin(tempEVENT,0,0,0,0);
 
+  grid.profiler->begin(event_age);
   
   //! \li update the age of the ice (if appropriate)
   if (do_age) {
@@ -478,9 +490,11 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   } else {
     stdout_flags += "$";
   }
-  
 
+  grid.profiler->end(event_age);
   
+  
+  grid.profiler->begin(event_energy);
 
   //! \li update the enthalpy (or temperature) field according to the conservation of
   //!  energy model based (especially) on the new velocity field; see
@@ -496,8 +510,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   }
 
   dtTempAge = 0.0;
-
   
+  grid.profiler->end(event_energy);
 
   PetscLogEventEnd(tempEVENT,0,0,0,0);
 
@@ -508,7 +522,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   PetscLogEventBegin(massbalEVENT,0,0,0,0);
 
-  
+  grid.profiler->begin(event_mass);
+
   //! \li update the thickness of the ice according to the mass conservation
   //!  model; see massContExplicitStep()
   if (do_mass_continuity) {
@@ -524,6 +539,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
     ierr = vdHdt.set(0.0); CHKERRQ(ierr);
   }
   
+  grid.profiler->end(event_mass);
 
   PetscLogEventEnd(massbalEVENT,0,0,0,0);
 
@@ -537,7 +553,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 #ifdef PISM_DEBUG
   ierr = variables.check_for_nan(); CHKERRQ(ierr);
 #endif
- 
+
+  grid.profiler->end(event_step);
+
   return 0;
 }
 

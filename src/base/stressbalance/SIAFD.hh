@@ -86,6 +86,9 @@ protected:
   PISMBedSmoother *bed_smoother;
   const PetscInt WIDE_STENCIL;
   int bed_state_counter;
+
+  // profiling
+  int event_sia;
 };
 
 //! \brief Computes the multiplier \f$\theta\f$ in Schoof's (2003) theory of the

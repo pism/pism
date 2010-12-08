@@ -80,6 +80,8 @@ PetscErrorCode SIAFD::init(PISMVars &vars) {
     age = NULL;
   }
 
+  event_sia = grid.profiler->create("siafd_update", "time spent inside SIAFD update");
+
   // set bed_state_counter to -1 so that the smoothed bed is computed the first
   // time update() is called.
   bed_state_counter = -1;
@@ -92,6 +94,8 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
                              bool fast) {
   PetscErrorCode ierr;
   IceModelVec2Stag h_x = work_2d_stag[0], h_y = work_2d_stag[1];
+
+  grid.profiler->begin(event_sia);
 
   // Check if the smoothed bed computed by PISMBedSmoother is out of date and
   // recompute if necessary.
@@ -112,6 +116,8 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
     
     ierr = compute_3d_horizontal_velocity(h_x, h_y, vel_input, u, v); CHKERRQ(ierr);
   }
+
+  grid.profiler->end(event_sia);
 
   return 0; 
 }

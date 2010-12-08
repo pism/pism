@@ -76,6 +76,7 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.flag_from_option("age", "do_age"); CHKERRQ(ierr);
 
+  ierr = config.flag_from_option("sia", "do_sia"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("bed_smoother_range", "bed_smoother_range"); CHKERRQ(ierr);
 

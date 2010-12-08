@@ -20,6 +20,9 @@ netcdf pism_config {
     pism_config:do_age = "no";
     pism_config:do_age_doc = "Solve age equation (advection equation for ice age).";
 
+    pism_config:do_sia = "yes";
+    pism_config:do_sia_doc = "Use the SIA stress balance (possibly as a part of a hybrid).";
+
     pism_config:do_skip = "no";
     pism_config:do_skip_doc = "Use the temperature, age, and SSA stress balance computation skipping mechanism.";
 

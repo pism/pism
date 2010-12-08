@@ -562,7 +562,8 @@ PetscErrorCode IceModel::init_physics() {
     plastic_regularization = config.get("plastic_regularization") / secpera;
 
   bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till"),
-    use_ssa_velocity = config.get_flag("use_ssa_velocity");
+    use_ssa_velocity = config.get_flag("use_ssa_velocity"),
+    do_sia = config.get_flag("do_sia");
   
   if (basal == NULL)
     basal = new IceBasalResistancePlasticLaw(plastic_regularization, do_pseudo_plastic_till, 
@@ -571,11 +572,17 @@ PetscErrorCode IceModel::init_physics() {
   if (EC == NULL)
     EC = new EnthalpyConverter(config);
 
-  // We always have SIA "on", but SSA is "on" only if use_ssa_velocity is set.
-  // In that case SIA and SSA velocities are always added up (there is no
-  // switch saying "do the hybrid").
+  // If both SIA and SSA are "on", the SIA and SSA velocities are always added
+  // up (there is no switch saying "do the hybrid").
+
   ShallowStressBalance *my_stress_balance;
-  SSB_Modifier *modifier = new SIAFD(grid, *ice, *EC, config);
+
+  SSB_Modifier *modifier;
+  if (do_sia) {
+    modifier = new SIAFD(grid, *ice, *EC, config);
+  } else {
+    modifier = new SSBM_Trivial(grid, *ice, *EC, config);
+  }
 
   if (use_ssa_velocity) {
     my_stress_balance = new SSAFD(grid, *basal, *ice, *EC, config);
@@ -668,6 +675,15 @@ PetscErrorCode IceModel::misc_setup() {
 
   // compute (possibly corrected) cell areas:
   ierr = compute_cell_areas(); CHKERRQ(ierr);
+
+  event_step      = grid.profiler->create("step",     "time spent doing time-stepping");
+  event_velocity  = grid.profiler->create("velocity", "time spent updating ice velocity");
+
+  event_energy  = grid.profiler->create("energy",   "time spent inside energy time-stepping");
+  event_age     = grid.profiler->create("age",      "time spent inside age time-stepping");
+  event_mass    = grid.profiler->create("masscont", "time spent inside mass continuity time-stepping");
+
+  event_beddef  = grid.profiler->create("bed_def",  "time spent updating the bed deformation model");
 
   event_output    = grid.profiler->create("output", "time spent writing an output file");
   event_snapshots = grid.profiler->create("snapshots", "time spent writing snapshots");

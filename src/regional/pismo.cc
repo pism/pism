@@ -173,13 +173,19 @@ PetscErrorCode IceRegionalModel::init_physics() {
   delete stress_balance;
 
   // Re-create the stress balance object:
-  bool use_ssa_velocity = config.get_flag("use_ssa_velocity");
+  bool use_ssa_velocity = config.get_flag("use_ssa_velocity"),
+    do_sia = config.get_flag("do_sia");
   
   // We always have SIA "on", but SSA is "on" only if use_ssa_velocity is set.
   // In that case SIA and SSA velocities are always added up (there is no
   // switch saying "do the hybrid").
   ShallowStressBalance *my_stress_balance;
-  SSB_Modifier *modifier = new SIAFD_Regional(grid, *ice, *EC, config);
+  SSB_Modifier *modifier;
+  if (do_sia) {
+    modifier = new SIAFD_Regional(grid, *ice, *EC, config);
+  } else {
+    modifier = new SSBM_Trivial(grid, *ice, *EC, config);
+  }
 
   if (use_ssa_velocity) {
     my_stress_balance = new SSAFD_Regional(grid, *basal, *ice, *EC, config);
