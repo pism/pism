@@ -51,6 +51,8 @@ PetscErrorCode SIAFD_Regional::init(PISMVars &vars) {
 
   ierr = SIAFD::init(vars); CHKERRQ(ierr);
 
+  ierr = verbPrintf(2,grid.com,"  Using the regional version of the SIA solver...\n"); CHKERRQ(ierr);
+
   no_model_mask = dynamic_cast<IceModelVec2S*>(vars.get("no_model_mask"));
   if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
 
@@ -103,6 +105,8 @@ protected:
 PetscErrorCode SSAFD_Regional::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = SSAFD::init(vars); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2,grid.com,"  Using the regional version of the SSA solver...\n"); CHKERRQ(ierr);
 
   no_model_mask = dynamic_cast<IceModelVec2S*>(vars.get("no_model_mask"));
   if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");

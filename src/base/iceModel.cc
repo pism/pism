@@ -442,6 +442,10 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   bool updateAtDepth = (skipCountDown == 0);
 
   ierr = stress_balance->update(updateAtDepth == false); CHKERRQ(ierr); 
+  string sb_stdout;
+  ierr = stress_balance->stdout_report(sb_stdout); CHKERRQ(ierr);
+
+  stdout_flags += sb_stdout;
 
   stdout_flags += (updateAtDepth ? "v" : "V");
    

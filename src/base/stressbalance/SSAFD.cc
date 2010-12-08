@@ -39,6 +39,8 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
 
   ierr = ShallowStressBalance::init(vars); CHKERRQ(ierr);
 
+  ierr = verbPrintf(2,grid.com,"* Initializing the SSA stress balance...\n"); CHKERRQ(ierr);
+
   mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(1, "mask is not available");
 
@@ -1014,12 +1016,12 @@ PetscErrorCode SSAFD::solve() {
 
   if (getVerbosityLevel() > 2) {
     char tempstr[50] = "";
-    snprintf(tempstr,50, "... =%5d outer iterations", outer_iterations);
+    snprintf(tempstr,50, "... =%5d outer iterations\n", outer_iterations);
     stdout_ssa += tempstr;
   } else if (getVerbosityLevel() == 2) {
     // at default verbosity, just record last normchange and iterations
     char tempstr[50] = "";
-    snprintf(tempstr,50, "%5d outer iterations", outer_iterations);
+    snprintf(tempstr,50, "%5d outer iterations\n", outer_iterations);
     stdout_ssa += tempstr;
   }
   if (getVerbosityLevel() >= 2)

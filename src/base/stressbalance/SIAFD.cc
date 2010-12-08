@@ -56,6 +56,8 @@ PetscErrorCode SIAFD::init(PISMVars &vars) {
 
   ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
 
+  ierr = verbPrintf(2,grid.com,"* Initializing the SIA stress balance modifier...\n"); CHKERRQ(ierr);
+
   mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(1, "mask is not available");
 
