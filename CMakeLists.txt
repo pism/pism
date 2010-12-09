@@ -33,6 +33,8 @@ option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                    
 option (Pism_LOCAL_INSTALL     "Install PISM locally (not in /usr/local/ or similar). This affects installation paths." ON)
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
 
+set (Pism_FAST_WRITE "1" CACHE STRING "Variable order options: 1,2,3 (fastest to slowest).")
+
 # This installs PISM in ${CMAKE_INSTALL_PREFIX}/{bin,lib,doc} if installed
 # locally; otherwise in ${CMAKE_INSTALL_PREFIX}/bin/pism, .../lib/pism and
 # .../share/doc/pism to avoid cluttering system directories.

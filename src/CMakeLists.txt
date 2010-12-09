@@ -50,6 +50,24 @@ add_library (pismearth
 )
 target_link_libraries (pismearth pismmisc)
 
+if (Pism_FAST_WRITE STREQUAL "1")
+  message (STATUS "Using the t,x,y,z variable order.")
+  set_source_files_properties (base/NCVariable.cc
+    PROPERTIES COMPILE_FLAGS -DPISM_FAST_WRITE=1)
+endif ()
+
+if (Pism_FAST_WRITE STREQUAL "2")
+  message (STATUS "Using the t,y,x,z variable order.")
+  set_source_files_properties (base/NCVariable.cc
+    PROPERTIES COMPILE_FLAGS -DPISM_FAST_WRITE=2)
+endif ()
+
+if (Pism_FAST_WRITE STREQUAL "3")
+  message (STATUS "Using the t,z,y,x variable order.")
+  set_source_files_properties (base/NCVariable.cc
+    PROPERTIES COMPILE_FLAGS -DPISM_FAST_WRITE=3)
+endif ()
+
 set_source_files_properties (base/pism_revision.cc
   PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
 set_source_files_properties (base/pism_default_config.cc

@@ -608,6 +608,18 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type n
     stat = nc_inq_dimid(ncid, "t", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
+  // Use t,x,y,z(zb) variable order: it is weird, but matches in-memory storage
+  // order and is *a lot* faster.
+#if (PISM_FAST_WRITE == 1)
+  stat = nc_inq_dimid(ncid, "x", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_inq_dimid(ncid, "y", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+#endif
+
+#if  (PISM_FAST_WRITE == 2)
+  stat = nc_inq_dimid(ncid, "y", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_inq_dimid(ncid, "x", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+#endif
+
   switch (dims) {
   case GRID_3D:
     stat = nc_inq_dimid(ncid, "z", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
@@ -623,8 +635,12 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type n
     break;
   }
 
+  // Use the t,z(zb),y,x variables order: more natural for plotting and post-processing,
+  // but requires transposing data while writing and is *a lot* slower.
+#if (PISM_FAST_WRITE == 3)
   stat = nc_inq_dimid(ncid, "y", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   stat = nc_inq_dimid(ncid, "x", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+#endif
     
   stat = nc_def_var(ncid, short_name.c_str(), nctype, ndims, dimids, &varid);
   CHKERRQ(check_err(stat,__LINE__,__FILE__));
