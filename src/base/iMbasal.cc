@@ -299,9 +299,10 @@ PetscScalar IceModel::getBasalWaterPressure(PetscScalar thk, PetscScalar bwat,
 				            PetscScalar bmr, PetscScalar frac,
 				            PetscScalar hmelt_max) const {
 
-  if (bwat > hmelt_max) {
+  if (bwat > hmelt_max + 1.0e-6) {
     PetscPrintf(grid.com,
-      "PISM ERROR:  bwat exceeds hmelt_max in IceModel::getBasalWaterPressure()\n");
+      "PISM ERROR:  bwat = %12.8f exceeds hmelt_max = %12.8f\n"
+      "  in IceModel::getBasalWaterPressure()\n",bwat,hmelt_max);
     PetscEnd();
   }
 

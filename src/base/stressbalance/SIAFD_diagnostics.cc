@@ -32,7 +32,7 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, PISMVars &my_vars
   vars[0].init("schoofs_theta", grid, GRID_2D);
   
   set_attrs("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA", "",
-            "", "", 0);
+            "1", "", 0);
   vars[0].set("valid_min", 0);
   vars[0].set("valid_max", 1);
 }

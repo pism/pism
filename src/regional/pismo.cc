@@ -158,7 +158,7 @@ PetscErrorCode IceRegionalModel::createVecs() {
   ierr = no_model_mask.create(grid, "no_model_mask", true, 2); CHKERRQ(ierr);
   ierr = no_model_mask.set_attrs("model_state", // ensures that it gets written at the end of the run
                             "mask specifying whether to model the ice sheet (=0), or hold to boundary values already set by input file [or externally in future] (=1)",
-                            "", ""); CHKERRQ(ierr); // no units and no standard name
+                            "1", ""); CHKERRQ(ierr); // pure units and no standard name
   ierr = no_model_mask.set(0.0); CHKERRQ(ierr);    // set to no such strip of boundary values
   ierr = variables.add(no_model_mask); CHKERRQ(ierr);
 

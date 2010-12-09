@@ -149,8 +149,8 @@ netcdf pism_config {
     pism_config:bmr_enhance_basal_water_pressure = "no";
     pism_config:bmr_enhance_basal_water_pressure_doc = "if 'yes' then add basal melt rate enhancement to determination of basal water pressure, which normally only depends on effective thickness of basal water (=bwat)";
 
-    pism_config:bmr_enhance_scale = 3.16887646154128e-9;
-    pism_config:bmr_enhance_scale_doc = "m s-1; = 0.10 m a-1; level at which basal melt rate starts making major difference in water pressure";
+    pism_config:bmr_enhance_scale = 3.16887646154128e-7;
+    pism_config:bmr_enhance_scale_doc = "m s-1; = 10.0 m a-1; level at which basal melt rate starts making major difference in water pressure";
 
     pism_config:thk_eff_basal_water_pressure = "no";
     pism_config:thk_eff_basal_water_pressure_doc = "if 'yes' then modeled basal water pressure experiences decreases at locations where thickness is smaller than thk_eff_H_high (typically near margin; thickness is surrogate for distance to margin)";
