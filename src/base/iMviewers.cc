@@ -32,7 +32,6 @@ PetscErrorCode IceModel::update_viewers() {
   set<string>::iterator i;
 
   PetscInt viewer_size = (PetscInt)config.get("viewer_size");
-  PetscScalar slice_level = config.get("slice_level");
 
   // map-plane viewers
   for (i = map_viewers.begin(); i != map_viewers.end(); ++i) {

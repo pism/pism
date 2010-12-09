@@ -63,7 +63,7 @@ int PISMProf::create(string name, string description) {
  */
 int PISMProf::get(string name) {
   
-  for (int i = 0; i < events.size(); ++i)
+  for (unsigned int i = 0; i < events.size(); ++i)
     if (events[i].name == name)
       return i;
   

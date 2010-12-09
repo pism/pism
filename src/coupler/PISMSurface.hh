@@ -72,10 +72,10 @@ public:
   { return 0; }
   virtual PetscErrorCode write_model_state(PetscReal, PetscReal, string)
   { return 0; }
-  virtual void add_vars_to_output(string keyword, set<string> &result) {}
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype)
+  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/) {}
+  virtual PetscErrorCode define_variables(set<string> /*vars*/, const NCTool &/*nc*/, nc_type /*nctype*/)
   { return 0; }
-  virtual PetscErrorCode write_variables(set<string>, PetscReal, PetscReal, string)
+  virtual PetscErrorCode write_variables(set<string>, string)
   { return 0; }
 };
 

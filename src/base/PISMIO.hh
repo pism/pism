@@ -47,6 +47,10 @@ private:
 					 size_t* &nc_start, size_t* &nc_count, ptrdiff_t* &imap) const;
   bool check_dimensions() const;
   IceGrid* grid;
+
+  int event_write,
+    event_write_proc0,
+    event_write_send_and_receive;
 };
 
 #endif	// __PISMIO

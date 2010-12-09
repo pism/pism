@@ -1205,7 +1205,7 @@ PetscErrorCode SSAFD::set_initial_guess(IceModelVec2V &guess) {
   return 0;
 }
 
-void SSAFD::add_vars_to_output(string keyword, set<string> &result) {
+void SSAFD::add_vars_to_output(string /*keyword*/, set<string> &result) {
   result.insert("velbar_ssa");
 }
 

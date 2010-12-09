@@ -203,7 +203,7 @@ PetscErrorCode PSConstant::write_model_state(PetscReal /*t_years*/, PetscReal /*
   return 0;
 }
 
-void PSConstant::add_vars_to_output(string keyword, set<string> &result) {
+void PSConstant::add_vars_to_output(string /*keyword*/, set<string> &result) {
   result.insert("acab");
   result.insert("artm");
   // does not call atmosphere->add_vars_to_output().

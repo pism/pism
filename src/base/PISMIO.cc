@@ -22,6 +22,12 @@
 PISMIO::PISMIO(IceGrid *my_grid)
   : NCTool(my_grid->com, my_grid->rank) {
   grid = my_grid;
+
+  event_write       = grid->profiler->create("pismio_write", "time spent in PISMIO::put_var()");
+  event_write_proc0 = grid->profiler->create("pismio_write_proc0",
+                                             "time spent writing data on processor 0");
+  event_write_send_and_receive = grid->profiler->create("pismio_write_send_and_receive",
+                                                        "time spent sending data to processor 0");
 }
 
 //! Read the first and last values, and the lengths, of the x,y,z,zb dimensions from a NetCDF file.  Read the last t.
@@ -153,6 +159,8 @@ PetscErrorCode PISMIO::put_var(const int varid, Vec g, GridType dims) const {
 
   ierr = data_mode(); CHKERRQ(ierr); 
 
+  grid->profiler->begin(event_write);
+
   // Fill start and count arrays:
   int t;
   ierr = get_dim_length("t", &t); CHKERRQ(ierr);
@@ -181,30 +189,41 @@ PetscErrorCode PISMIO::put_var(const int varid, Vec g, GridType dims) const {
                          //    processor, then write it out to the NC file
     for (int proc = 0; proc < grid->size; proc++) { // root will write itself last
       if (proc != 0) {
+        grid->profiler->begin(event_write_send_and_receive);
         MPI_Recv(start, N, MPI_INT, proc, start_tag, com, &mpi_stat);
         MPI_Recv(count, N, MPI_INT, proc, count_tag, com, &mpi_stat);
 	MPI_Recv(a_double, buffer_size, MPI_DOUBLE, proc, data_tag, com, &mpi_stat);
+        grid->profiler->end(event_write_send_and_receive);
       }
       
       size_t *nc_start, *nc_count;
       ptrdiff_t* imap;
       ierr = compute_start_and_count(varid, start, count, dims, nc_start, nc_count, imap); CHKERRQ(ierr);
 
+      grid->profiler->begin(event_write_proc0);
+
       stat = nc_put_varm_double(ncid, varid, nc_start, nc_count, NULL, imap, a_double);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+      grid->profiler->end(event_write_proc0);
 
       delete[] nc_start;
       delete[] nc_count;
       delete[] imap;
     }
   } else {  // all other processors send to rank 0 processor
+    grid->profiler->begin(event_write_send_and_receive);
     MPI_Send(start, N, MPI_INT, 0, start_tag, com);
     MPI_Send(count, N, MPI_INT, 0, count_tag, com);
     MPI_Send(a_double, buffer_size, MPI_DOUBLE, 0, data_tag, com);
+    grid->profiler->end(event_write_send_and_receive);
   }
 
   // Cleanup:
   ierr = PetscFree(a_double); CHKERRQ(ierr);
+
+  grid->profiler->end(event_write);
+  
   return 0;
 }
 
