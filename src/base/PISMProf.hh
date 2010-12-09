@@ -66,8 +66,7 @@ public:
  */
 class PISMProf {
 public:
-  PISMProf(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
-           int M, int Ng);
+  PISMProf(MPI_Comm c, PetscMPIInt r, PetscMPIInt s);
   ~PISMProf() {}
   int create(string name, string description);
   int get(string name);
@@ -75,9 +74,10 @@ public:
   void end(int index);
   PetscErrorCode barrier();
   PetscErrorCode save_report(string filename);
+  int Nx, Ny;
 protected:
   vector<PISMEvent> events;
-  int current_event, Nx, Ny;
+  int current_event;
   PetscMPIInt rank, size;
   MPI_Comm com;
 

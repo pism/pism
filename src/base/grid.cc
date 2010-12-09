@@ -103,7 +103,7 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
   compute_vertical_levels();
   compute_horizontal_spacing();
 
-  profiler = NULL;
+  profiler = new PISMProf(com, rank, size);
 }
 
 
@@ -498,10 +498,8 @@ PetscErrorCode IceGrid::createDA() {
   xs = info.ys; xm = info.ym;
   ys = info.xs; ym = info.xm;
 
-  if (profiler != NULL)
-    delete profiler;
-
-  profiler = new PISMProf(com, rank, size, Nx, Ny);
+  profiler->Nx = Nx;
+  profiler->Ny = Ny;
 
   return 0;
 }
@@ -537,6 +535,9 @@ PetscErrorCode IceGrid::createDA(PetscInt my_procs_x, PetscInt my_procs_y,
   // this continues the fundamental transpose
   xs = info.ys; xm = info.ym;
   ys = info.xs; ym = info.xm;
+
+  profiler->Nx = Nx;
+  profiler->Ny = Ny;
 
   return 0;
 }

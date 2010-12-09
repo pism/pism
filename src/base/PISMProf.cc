@@ -28,13 +28,12 @@ PISMEvent::PISMEvent() {
 }
 
 /// PISMProf
-PISMProf::PISMProf(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
-                   int my_Nx, int my_Ny) {
+PISMProf::PISMProf(MPI_Comm c, PetscMPIInt r, PetscMPIInt s) {
   com = c;
   rank = r;
   size = s;
-  Nx = my_Nx;
-  Ny = my_Ny;
+  Nx = s;
+  Ny = 1;
   current_event = -1;
 }
 
