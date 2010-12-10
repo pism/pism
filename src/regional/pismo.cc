@@ -51,7 +51,7 @@ PetscErrorCode SIAFD_Regional::init(PISMVars &vars) {
 
   ierr = SIAFD::init(vars); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com,"  Using the regional version of the SIA solver...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,"  using the regional version of the SIA solver...\n"); CHKERRQ(ierr);
 
   no_model_mask = dynamic_cast<IceModelVec2S*>(vars.get("no_model_mask"));
   if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
@@ -106,7 +106,7 @@ PetscErrorCode SSAFD_Regional::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = SSAFD::init(vars); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com,"  Using the regional version of the SSA solver...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,"  using the regional version of the SSA solver...\n"); CHKERRQ(ierr);
 
   no_model_mask = dynamic_cast<IceModelVec2S*>(vars.get("no_model_mask"));
   if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
@@ -157,10 +157,22 @@ PetscErrorCode IceRegionalModel::createVecs() {
   // stencil width of 2 needed for surfaceGradientSIA() action
   ierr = no_model_mask.create(grid, "no_model_mask", true, 2); CHKERRQ(ierr);
   ierr = no_model_mask.set_attrs("model_state", // ensures that it gets written at the end of the run
-                            "mask specifying whether to model the ice sheet (=0), or hold to boundary values already set by input file [or externally in future] (=1)",
-                            "1", ""); CHKERRQ(ierr); // pure units and no standard name
-  ierr = no_model_mask.set(0.0); CHKERRQ(ierr);    // set to no such strip of boundary values
+                            "mask specifying whether to compute driving stress and surface gradient normally or replace these by zero",
+                            "", ""); CHKERRQ(ierr); // no units and no standard name
+
+  double NMMASK_NORMAL   = 0.0,
+         NMMASK_ZERO_OUT = 1.0;
+  vector<double> mask_values(2);
+  mask_values[0] = NMMASK_NORMAL;
+  mask_values[1] = NMMASK_ZERO_OUT;
+  ierr = no_model_mask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
+  ierr = no_model_mask.set_attr("flag_meanings",
+			"normal zero_out_driving_stress_and_surface_gradient");
+			CHKERRQ(ierr);
+  no_model_mask.output_data_type = NC_BYTE;
+  ierr = no_model_mask.set(NMMASK_NORMAL); CHKERRQ(ierr);
   ierr = variables.add(no_model_mask); CHKERRQ(ierr);
+
 
   return 0;
 }
@@ -170,7 +182,8 @@ PetscErrorCode IceRegionalModel::init_physics() {
 
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
-  delete stress_balance;
+  delete stress_balance; // because we delete the old one, at run time we expect
+                         //   a second initialization message, from code below 
 
   // Re-create the stress balance object:
   bool use_ssa_velocity = config.get_flag("use_ssa_velocity"),
@@ -179,6 +192,10 @@ PetscErrorCode IceRegionalModel::init_physics() {
   // We always have SIA "on", but SSA is "on" only if use_ssa_velocity is set.
   // In that case SIA and SSA velocities are always added up (there is no
   // switch saying "do the hybrid").
+  ierr = verbPrintf(2,grid.com,
+    "  old stress balance and modifier deleted; replacing with versions having no_model_mask semantics ...\n");
+    CHKERRQ(ierr);
+
   ShallowStressBalance *my_stress_balance;
   SSB_Modifier *modifier;
   if (do_sia) {
