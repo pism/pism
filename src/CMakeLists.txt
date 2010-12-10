@@ -36,6 +36,7 @@ add_library (pismboundary
   coupler/iceModelVec2T.cc
   coupler/localMassBalance.cc
   coupler/PSExternal.cc
+  coupler/PSDirectForcing.cc
   )
 target_link_libraries (pismboundary pismmisc)
 

@@ -72,11 +72,19 @@ public:
     if (N >= dof) SETERRQ(1, "invalid N (>= dof)");
 
     vars[N].set_string("pism_intent", "diagnostic");
-    vars[N].set_string("long_name", my_long_name);
-    vars[N].set_string("standard_name", my_standard_name);
+    if (my_long_name != "") 
+      vars[N].set_string("long_name", my_long_name);
+
+    if (my_standard_name != "")
+      vars[N].set_string("standard_name", my_standard_name);
     
-    ierr = vars[N].set_units(my_units); CHKERRQ(ierr);
-    ierr = vars[N].set_glaciological_units(my_glaciological_units); CHKERRQ(ierr);
+    if (my_units != "") {
+      ierr = vars[N].set_units(my_units); CHKERRQ(ierr);
+    }
+
+    if (my_glaciological_units != "") {
+      ierr = vars[N].set_glaciological_units(my_glaciological_units); CHKERRQ(ierr);
+    }
 
     return 0; 
   }
