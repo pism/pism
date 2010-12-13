@@ -321,16 +321,16 @@ PetscErrorCode PSLocalMassBalance::update(PetscReal t_years, PetscReal dt_years)
     ts[k] = t_years + k * dt_years / Nseries;
 
   if (use_fausto_pdd_parameters) {
-    // this is a nasty hack: time T is computed so that the call to
+    // this is a nasty hack: 'time' is computed so that the call to
     // temp_snapshot produces a July temperature field. This is bad, because
     // this snapshot might have temperature offsets/anomalies applied to it
     // (and this time is the wrong one).
     const PetscReal
       sperd = 8.64e4, // exact number of seconds per day
       julydaysec = sperd * config.get("snow_temp_july_day"),
-      T = floor(t_years) + julydaysec / secpera;
+      time = floor(t_years) + julydaysec / secpera;
 
-    ierr = atmosphere->temp_snapshot(T, 0.0, temp_mj); CHKERRQ(ierr);
+    ierr = atmosphere->temp_snapshot(time, 0.0, temp_mj); CHKERRQ(ierr);
     ierr = temp_mj.begin_access(); CHKERRQ(ierr);
     ierr = lat->get_array(lat_degN); CHKERRQ(ierr);
   }

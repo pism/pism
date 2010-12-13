@@ -209,8 +209,8 @@ PetscErrorCode IceModelVec2V::regrid(const char filename[], LocalInterpCtx &lic,
   return 0;
 }
 
-bool IceModelVec2V::is_valid(PetscScalar u, PetscScalar v) {
-  return vars[0].is_valid(u) && vars[1].is_valid(v);
+bool IceModelVec2V::is_valid(PetscScalar U, PetscScalar V) {
+  return vars[0].is_valid(U) && vars[1].is_valid(V);
 }
 
 

@@ -154,7 +154,7 @@ center of the ice sheet.
 
 Communication occurs here.
  */
-PetscErrorCode IceModel::energyStats(PetscScalar iarea, bool useHomoTemp, 
+PetscErrorCode IceModel::energyStats(PetscScalar iarea, bool /*useHomoTemp*/, 
                                      PetscScalar &gmeltfrac, PetscScalar &gtemp0) {
   PetscErrorCode    ierr;
   PetscScalar       meltarea = 0.0, temp0 = 0.0;
@@ -1560,7 +1560,7 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
 
     ierr = cell_area.end_access(); CHKERRQ(ierr);
   } else {
-    PetscScalar cell_area = grid.dx * grid.dy;
+    PetscScalar c_area = grid.dx * grid.dy; // avoiding the name clash...
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 	// ignore ice-free cells:
@@ -1581,9 +1581,9 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
 
       }	// j
     } // i
-    my_total_surface_ice_flux     *= cell_area;
-    my_total_sub_shelf_ice_flux   *= cell_area;
-    my_total_basal_ice_flux       *= cell_area;
+    my_total_surface_ice_flux     *= c_area;
+    my_total_sub_shelf_ice_flux   *= c_area;
+    my_total_basal_ice_flux       *= c_area;
   }
 
   ierr = acab.end_access(); CHKERRQ(ierr);

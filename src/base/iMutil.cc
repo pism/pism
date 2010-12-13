@@ -420,7 +420,7 @@ static PetscReal geo_y(PetscReal a, PetscReal b,
 //! Computes geocentric z-coordinate of a point using reference ellipsoid parameters.
 //! (see http://en.wikipedia.org/wiki/Reference_ellipsoid)
 static PetscReal geo_z(PetscReal a, PetscReal b,
-		       PetscReal lon, PetscReal lat) {
+		       PetscReal /*lon*/, PetscReal lat) {
   const PetscReal oe = acos(b/a),
     N = a/sqrt( 1 - PetscSqr( sin(oe)*sin_degrees(lat) ) );
 

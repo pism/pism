@@ -317,16 +317,16 @@ double IceModelVec2T::max_timestep(double t_years) {
  */
 PetscErrorCode IceModelVec2T::interp(double t_years) {
   PetscErrorCode ierr;
-  vector<double>::iterator end = T.end(), j;
+  vector<double>::iterator end = T.end(), k;
   
-  j = upper_bound(T.begin(), end, t_years); // binary search
+  k = upper_bound(T.begin(), end, t_years); // binary search
 
-  if (j == end) {
+  if (k == end) {
     ierr = get_record(T.size() - 1); CHKERRQ(ierr);
     return 0;
   }
     
-  int index = j - T.begin() - 1;
+  int index = k - T.begin() - 1;
 
   if (index < 0) {
     ierr = get_record(0); CHKERRQ(ierr);

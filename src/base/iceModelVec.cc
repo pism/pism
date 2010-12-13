@@ -707,25 +707,25 @@ PetscErrorCode IceModelVec::set_attr(string attr, string value, int N) {
 }
 
 //! Sets a single-valued double attribute.
-PetscErrorCode IceModelVec::set_attr(string name, double value, int N) {
-  vars[N].set(name, value);
+PetscErrorCode IceModelVec::set_attr(string my_name, double value, int N) {
+  vars[N].set(my_name, value);
   return 0;
 }
 
 //! Sets an array attribute.
-PetscErrorCode IceModelVec::set_attr(string name, vector<double> values,
+PetscErrorCode IceModelVec::set_attr(string my_name, vector<double> values,
 				     int N) {
-  vars[N].doubles[name] = values;
+  vars[N].doubles[my_name] = values;
   return 0;
 }
 
-bool IceModelVec::has_attr(string name, int N) {
-  return vars[N].has(name);
+bool IceModelVec::has_attr(string my_name, int N) {
+  return vars[N].has(my_name);
 }
 
 //! Returns a single-valued double attribute.
-double IceModelVec::double_attr(string name, int N) {
-  return vars[N].get(name);
+double IceModelVec::double_attr(string my_name, int N) {
+  return vars[N].get(my_name);
 }
 
 //! Returns a string attribute.
@@ -738,8 +738,8 @@ string IceModelVec::string_attr(string n, int N) {
 }
 
 //! Returns an array attribute.
-vector<double> IceModelVec::array_attr(string name, int N) {
-  return vars[N].doubles[name];
+vector<double> IceModelVec::array_attr(string my_name, int N) {
+  return vars[N].doubles[my_name];
 }
 
 //! Creates a run-time diagnostic viewer.

@@ -123,10 +123,10 @@ PetscScalar columnSystemCtx::ddratio(const PetscInt n) const {
   if ( (fabs(D[0]) / scale) < 1.0e-12)  return -1.0;
   PetscScalar z = fabs(U[0]) / fabs(D[0]);
 
-  for (PetscInt j = 1; j < n-1; j++) {  // j is row index (zero-based)
-    if ( (fabs(D[j]) / scale) < 1.0e-12)  return -1.0;
-    const PetscScalar s = fabs(L[j]) + fabs(U[j]);
-    z = PetscMax(z, s / fabs(D[j]) );
+  for (PetscInt k = 1; k < n-1; k++) {  // k is row index (zero-based)
+    if ( (fabs(D[k]) / scale) < 1.0e-12)  return -1.0;
+    const PetscScalar s = fabs(L[k]) + fabs(U[k]);
+    z = PetscMax(z, s / fabs(D[k]) );
   } 
 
   if ( (fabs(D[n-1]) / scale) < 1.0e-12)  return -1.0;
@@ -237,19 +237,19 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
     for (PetscInt k=0; k<nmax; k++) {    // k+1 is row  (while j+1 is column)
       if (k == 0) {              // viewing first row
         ierr = PetscViewerASCIIPrintf(viewer,"%10.7f %10.7f ",D[k],U[k]); CHKERRQ(ierr);
-        for (PetscInt j=2; j<nmax; j++) {
+        for (PetscInt m=2; m<nmax; m++) {
           ierr = PetscViewerASCIIPrintf(viewer,"%10.7f ",0.0); CHKERRQ(ierr);
         }
       } else if (k < nmax-1) {   // viewing generic row
-        for (PetscInt j=0; j<k-1; j++) {
+        for (PetscInt m=0; m<k-1; m++) {
           ierr = PetscViewerASCIIPrintf(viewer,"%10.7f ",0.0); CHKERRQ(ierr);
         }
         ierr = PetscViewerASCIIPrintf(viewer,"%10.7f %10.7f %10.7f ",L[k],D[k],U[k]); CHKERRQ(ierr);
-        for (PetscInt j=k+2; j<nmax; j++) {
+        for (PetscInt m=k+2; m<nmax; m++) {
           ierr = PetscViewerASCIIPrintf(viewer,"%10.7f ",0.0); CHKERRQ(ierr);
         }
       } else {                   // viewing last row
-        for (PetscInt j=0; j<k-1; j++) {
+        for (PetscInt m=0; m<k-1; m++) {
           ierr = PetscViewerASCIIPrintf(viewer,"%10.7f ",0.0); CHKERRQ(ierr);
         }
         ierr = PetscViewerASCIIPrintf(viewer,"%10.7f %10.7f ",L[k],D[k]); CHKERRQ(ierr);
@@ -303,14 +303,14 @@ PetscErrorCode columnSystemCtx::solveTridiagonalSystem(
   b = D[0];
   if (b == 0.0) { return 1; }
   (*x)[0] = rhs[0]/b;
-  for (int i=1; i<n; ++i) {
-    work[i] = U[i-1]/b;
-    b = D[i] - L[i] * work[i];
-    if (b == 0.0) { return i+1; }
-    (*x)[i] = (rhs[i] - L[i] * (*x)[i-1]) / b;
+  for (int m=1; m<n; ++m) {
+    work[m] = U[m-1]/b;
+    b = D[m] - L[m] * work[m];
+    if (b == 0.0) { return m+1; }
+    (*x)[m] = (rhs[m] - L[m] * (*x)[m-1]) / b;
   }
-  for (int i=n-2; i>=0; --i) {
-    (*x)[i] -= work[i+1] * (*x)[i+1];
+  for (int m=n-2; m>=0; --m) {
+    (*x)[m] -= work[m+1] * (*x)[m+1];
   }
 
   indicesValid = false;

@@ -298,7 +298,6 @@ PetscErrorCode IceModel::write_timeseries() {
   while ((current_ts < ts_times.size()) &&
          (ts_times[current_ts] <= grid.year)) {
     
-    vector<DiagnosticTimeseries*>::iterator i;
     for (i = timeseries.begin(); i < timeseries.end(); ++i) {
       ierr = (*i)->interp(ts_times[current_ts]); CHKERRQ(ierr);
     }
@@ -394,9 +393,9 @@ PetscErrorCode IceModel::init_extras() {
   } else {
     ierr = verbPrintf(2, grid.com, "PISM WARNING: -extra_vars was not set. Writing model_state, mapping and climate_steady variables...\n"); CHKERRQ(ierr);
 
-    set<IceModelVec*> vars = variables.get_variables();
-    set<IceModelVec*>::iterator i = vars.begin();
-    while (i != vars.end()) {
+    set<IceModelVec*> icemodel_vars = variables.get_variables();
+    set<IceModelVec*>::iterator i = icemodel_vars.begin();
+    while (i != icemodel_vars.end()) {
       
       string intent = (*i)->string_attr("pism_intent");
       if ( (intent == "model_state") || (intent == "mapping") ||

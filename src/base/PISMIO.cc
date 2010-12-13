@@ -98,7 +98,6 @@ PetscErrorCode PISMIO::get_var(const int varid, Vec g, GridType dims, int t) con
       delete[] imap;
 
       if (proc != 0) {
-        int block_size;
 	block_size = compute_block_size(dims, count);
 	MPI_Send(a_double, block_size, MPI_DOUBLE, proc, data_tag, com);
       }
