@@ -26,6 +26,7 @@ add_library (pismmisc
   coupler/PISMSurface.cc
   coupler/iceModelVec2T.cc
   coupler/localMassBalance.cc
+  coupler/PSDirectForcing.cc
 )
 target_link_libraries (pismmisc pismudunits ${Pism_EXTERNAL_LIBS})
 add_dependencies(pismmisc pism_config)

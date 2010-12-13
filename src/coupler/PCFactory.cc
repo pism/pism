@@ -1,5 +1,6 @@
 #include "PCFactory.hh"
 #include "../base/pism_const.hh"
+#include "PSDirectForcing.hh"
 
 // Atmosphere
 static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
@@ -57,6 +58,11 @@ static void create_ps_constant(IceGrid& g, const NCConfigVariable& conf, PISMSur
   result = new PSConstant(g, conf);
 }
 
+
+static void create_ps_given(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
+  result = new PSDirectForcing(g, conf);
+}
+
 static void create_ps_forcing(IceGrid& g, const NCConfigVariable& conf, PSModifier* &result) {
   result = new PSForceThickness(g, conf);
 }
@@ -65,6 +71,7 @@ void PSFactory::add_standard_types() {
   add_model("constant",     &create_ps_constant);
   add_model("simple",       &create_ps_simple);
   add_model("pdd",          &create_ps_localmassbalance); 
+  add_model("given",        &create_ps_given); 
   set_default("simple");
 
   add_modifier("forcing",   &create_ps_forcing);

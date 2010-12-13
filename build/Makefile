@@ -97,7 +97,8 @@ ice_sources := grid.cc LocalInterpCtx.cc materials.cc nc_util.cc PISMIO.cc	\
 	enthalpyConverter.cc combinedSystem.cc bedrockOnlySystem.cc		\
 	iceenthOnlySystem.cc iceModelVec2T.cc iceModelVec2V.cc PISMComponent.cc	\
 	PAConstant.cc PAYearlyCycle.cc PAForcing.cc PISMSurface.cc PISMOcean.cc	\
-	PCFactory.cc PALapseRates.cc PISMBedDef.cc PBPointwiseIsostasy.cc
+	PCFactory.cc PALapseRates.cc PISMBedDef.cc PBPointwiseIsostasy.cc	\
+	PSDirectForcing.cc
 
 ifeq (${PISM_HAVE_FFTW},1)
 ice_sources += PBLingleClark.cc deformation.cc 

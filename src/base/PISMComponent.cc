@@ -23,7 +23,7 @@ PISMComponent::PISMComponent(IceGrid &g, const NCConfigVariable &conf)
     : grid(g), config(conf)
 {
   t = dt = GSL_NAN;
-};
+}
 
 //! Finds PISM's input (-i or -boot_from) file using command-line options.
 /*! This might be useful since coupling fields are usually in the file
