@@ -25,8 +25,10 @@
 class PSDirectForcing : public PISMSurfaceModel
 {
 public:
-  PSDirectForcing(IceGrid &g, const NCConfigVariable &conf);
-  virtual ~PSDirectForcing();
+  PSDirectForcing(IceGrid &g, const NCConfigVariable &conf)
+    : PISMSurfaceModel(g, conf) {}
+
+  virtual ~PSDirectForcing() {}
 
   virtual PetscErrorCode init(PISMVars &vars);
 
@@ -51,7 +53,8 @@ public:
 protected:
   IceModelVec2T temperature, mass_flux;
   PetscReal bc_period;
-  NCSpatialVariable temp_var, smb_var;
+
+  PetscReal my_mod(PetscReal input);
 };
 
 #endif /* _PSDIRECTFORCING_H_ */

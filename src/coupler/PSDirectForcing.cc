@@ -18,7 +18,14 @@
 
 #include "PSDirectForcing.hh"
 
-PetscErrorCode PSDirectForcing::init(PISMVars &vars) {
+PetscReal PSDirectForcing::my_mod(PetscReal input) {
+  if (bc_period < 0.01) return input;
+
+  return input - floor(input / bc_period) * bc_period;
+}
+
+
+PetscErrorCode PSDirectForcing::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
   string filename;
   bool bc_file_set, bc_period_set;
@@ -57,7 +64,7 @@ PetscErrorCode PSDirectForcing::init(PISMVars &vars) {
   ierr = temperature.init(filename); CHKERRQ(ierr);
 
   mass_flux.set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
-  ierr = mass_flux.create(grid, "artm", false); CHKERRQ(ierr);
+  ierr = mass_flux.create(grid, "acab", false); CHKERRQ(ierr);
   ierr = mass_flux.set_attrs("climate_forcing",
                              "ice-equivalent surface mass balance (accumulation/ablation) rate",
                              "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
@@ -69,6 +76,9 @@ PetscErrorCode PSDirectForcing::init(PISMVars &vars) {
 
 PetscErrorCode PSDirectForcing::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr;
+
+  // "Periodize" the climate:
+  t_years = my_mod(t_years);
 
   if ((fabs(t_years - t) < 1e-12) &&
       (fabs(dt_years - dt) < 1e-12))
@@ -84,8 +94,10 @@ PetscErrorCode PSDirectForcing::update(PetscReal t_years, PetscReal dt_years) {
 }
 
 PetscErrorCode PSDirectForcing::max_timestep(PetscReal t_years, PetscReal &dt_years) {
-  PetscErrorCode ierr;
   PetscReal max_dt = -1;
+
+  // "Periodize" the climate:
+  t_years = my_mod(t_years);
 
   max_dt = temperature.max_timestep(t_years);
 
@@ -151,6 +163,9 @@ PetscErrorCode PSDirectForcing::ice_surface_mass_flux(PetscReal t_years, PetscRe
                                                       IceModelVec2S &result) {
   PetscErrorCode ierr;
 
+  // "Periodize" the climate:
+  t_years = my_mod(t_years);
+
   ierr = update(t_years, dt_years); CHKERRQ(ierr); 
 
   ierr = mass_flux.interp(t_years + 0.5*dt_years); CHKERRQ(ierr);
@@ -164,6 +179,9 @@ PetscErrorCode PSDirectForcing::ice_surface_mass_flux(PetscReal t_years, PetscRe
 PetscErrorCode PSDirectForcing::ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
                                                         IceModelVec2S &result) {
   PetscErrorCode ierr;
+
+  // "Periodize" the climate:
+  t_years = my_mod(t_years);
 
   ierr = update(t_years, dt_years); CHKERRQ(ierr); 
 
