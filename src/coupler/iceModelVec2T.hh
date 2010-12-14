@@ -124,6 +124,7 @@ public:
   virtual PetscErrorCode interp(double t_years);
   virtual PetscErrorCode interp(int i, int j, int N,
 				PetscScalar *times, PetscScalar *results);
+  virtual PetscErrorCode average(double t_years, double dt_years);
   virtual PetscErrorCode average(int i, int j, double t_years, double dt_years,
 				 double &result);
   virtual PetscErrorCode begin_access();

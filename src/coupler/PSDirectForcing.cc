@@ -146,12 +146,12 @@ PetscErrorCode PSDirectForcing::write_variables(set<string> vars, string filenam
   PetscErrorCode ierr;
 
   if (set_contains(vars, "artm")) {
-    ierr = temperature.interp(t + 0.5*dt); CHKERRQ(ierr); 
+    ierr = temperature.average(t, dt); CHKERRQ(ierr); 
     ierr = temperature.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "acab")) {
-    ierr = mass_flux.interp(t + 0.5*dt); CHKERRQ(ierr); 
+    ierr = mass_flux.average(t, dt); CHKERRQ(ierr); 
     ierr = mass_flux.write(filename.c_str()); CHKERRQ(ierr);
   }
 
@@ -168,7 +168,7 @@ PetscErrorCode PSDirectForcing::ice_surface_mass_flux(PetscReal t_years, PetscRe
 
   ierr = update(t_years, dt_years); CHKERRQ(ierr); 
 
-  ierr = mass_flux.interp(t_years + 0.5*dt_years); CHKERRQ(ierr);
+  ierr = mass_flux.average(t_years, dt_years); CHKERRQ(ierr);
 
   ierr = mass_flux.copy_to(result); CHKERRQ(ierr); 
 
@@ -185,7 +185,7 @@ PetscErrorCode PSDirectForcing::ice_surface_temperature(PetscReal t_years, Petsc
 
   ierr = update(t_years, dt_years); CHKERRQ(ierr); 
 
-  ierr = temperature.interp(t_years + 0.5*dt_years); CHKERRQ(ierr);
+  ierr = temperature.average(t_years, dt_years); CHKERRQ(ierr);
 
   ierr = temperature.copy_to(result); CHKERRQ(ierr); 
 
