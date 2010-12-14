@@ -409,3 +409,20 @@ PetscErrorCode IceModelVec2T::average(int i, int j, double t_years, double dt_ye
 
   return 0;
 }
+
+PetscErrorCode IceModelVec2T::average(double t_years, double dt_years) {
+  PetscErrorCode ierr;
+  PetscScalar **a2;
+
+  ierr = begin_access(); CHKERRQ(ierr);
+  ierr = get_array(a2);
+  for (PetscInt   i = grid->xs; i < grid->xs+grid->xm; ++i) {
+    for (PetscInt j = grid->ys; j < grid->ys+grid->ym; ++j) {
+      ierr = average(i, j, t_years, dt_years, a2[i][j]); CHKERRQ(ierr);
+    }
+  }
+
+  ierr = end_access(); CHKERRQ(ierr);
+  return 0;
+}
+

@@ -131,12 +131,12 @@ PetscErrorCode PSDirectForcing::write_fields(set<string> vars,
   t_years = my_mod(t_years);
 
   if (set_contains(vars, "artm")) {
-    ierr = temperature.interp(t_years + 0.5*dt_years); CHKERRQ(ierr); 
+    ierr = temperature.average(t_years, dt_years); CHKERRQ(ierr);
     ierr = temperature.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "acab")) {
-    ierr = mass_flux.interp(t_years + 0.5*dt_years); CHKERRQ(ierr); 
+    ierr = mass_flux.average(t_years, dt_years); CHKERRQ(ierr);
     ierr = mass_flux.write(filename.c_str()); CHKERRQ(ierr);
   }
 
@@ -150,10 +150,10 @@ PetscErrorCode PSDirectForcing::write_diagnostic_fields(PetscReal t_years, Petsc
   // "Periodize" the climate:
   t_years = my_mod(t_years);
 
-  ierr = temperature.interp(t_years + 0.5*dt_years); CHKERRQ(ierr); 
+  ierr = temperature.average(t_years, dt_years); CHKERRQ(ierr); 
   ierr = temperature.write(filename.c_str()); CHKERRQ(ierr);
 
-  ierr = mass_flux.interp(t_years + 0.5*dt_years); CHKERRQ(ierr); 
+  ierr = mass_flux.average(t_years, dt_years); CHKERRQ(ierr); 
   ierr = mass_flux.write(filename.c_str()); CHKERRQ(ierr);
 
   return 0;
@@ -170,7 +170,7 @@ PetscErrorCode PSDirectForcing::ice_surface_mass_flux(PetscReal t_years, PetscRe
 
   ierr = update(t_years, dt_years); CHKERRQ(ierr); 
 
-  ierr = mass_flux.interp(t_years + 0.5*dt_years); CHKERRQ(ierr);
+  ierr = mass_flux.average(t_years, dt_years); CHKERRQ(ierr);
 
   ierr = mass_flux.copy_to(result); CHKERRQ(ierr); 
 
@@ -187,7 +187,7 @@ PetscErrorCode PSDirectForcing::ice_surface_temperature(PetscReal t_years, Petsc
 
   ierr = update(t_years, dt_years); CHKERRQ(ierr); 
 
-  ierr = temperature.interp(t_years + 0.5*dt_years); CHKERRQ(ierr);
+  ierr = temperature.average(t_years, dt_years); CHKERRQ(ierr);
 
   ierr = temperature.copy_to(result); CHKERRQ(ierr); 
 
