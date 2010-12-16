@@ -622,8 +622,8 @@ PetscErrorCode IceModel::write_extras() {
     ierr = nc.open_for_writing(filename, (append==PETSC_TRUE), true); CHKERRQ(ierr); // check_dims == true
     ierr = nc.close(); CHKERRQ(ierr);
 
-    ierr = global_attributes.write(filename); CHKERRQ(ierr);
-    ierr = mapping.write(filename); CHKERRQ(ierr);
+    ierr = write_metadata(filename); CHKERRQ(ierr); 
+
     extra_file_is_ready = true;
   }
     

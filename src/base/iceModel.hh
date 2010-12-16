@@ -111,6 +111,7 @@ public:
   virtual PetscErrorCode initFromFile(const char *);
   virtual PetscErrorCode writeFiles(const char* default_filename);
   virtual PetscErrorCode write_model_state(const char *filename);
+  virtual PetscErrorCode write_metadata(const char *filename);
   virtual PetscErrorCode write_variables(const char* filename, set<string> vars,
 					 nc_type nctype);
 protected:

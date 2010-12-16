@@ -86,6 +86,23 @@ PetscErrorCode  IceModel::writeFiles(const char* default_filename) {
   return 0;
 }
 
+//! \brief Write metadata (global attributes, overrides and mapping parameters) to a file.
+PetscErrorCode IceModel::write_metadata(const char *filename) {
+  PetscErrorCode ierr;
+
+  ierr = mapping.write(filename); CHKERRQ(ierr);
+  ierr = global_attributes.write(filename); CHKERRQ(ierr);
+
+  bool override_used;
+  ierr = PISMOptionsIsSet("-config_override", override_used); CHKERRQ(ierr);
+  if (override_used) {
+    overrides.update_from(config);
+    ierr = overrides.write(filename); CHKERRQ(ierr);
+  }
+  
+  return 0;
+}
+
 
 PetscErrorCode IceModel::dumpToFile(const char *filename) {
   PetscErrorCode ierr;
@@ -99,17 +116,7 @@ PetscErrorCode IceModel::dumpToFile(const char *filename) {
 
   // Write metadata *before* variables:
 
-  ierr = mapping.write(filename); CHKERRQ(ierr);
-  ierr = global_attributes.write(filename); CHKERRQ(ierr);
-
-  bool override_used;
-  ierr = PISMOptionsIsSet("-config_override", override_used); CHKERRQ(ierr);
-  if (override_used) {
-    overrides.update_from(config);
-    ierr = overrides.write(filename); CHKERRQ(ierr);
-  }
-
-  // Done writing metadata.
+  ierr = write_metadata(filename); CHKERRQ(ierr);
 
   ierr = write_model_state(filename);  CHKERRQ(ierr);
 
@@ -611,8 +618,8 @@ PetscErrorCode IceModel::write_model_state(const char* filename) {
       // append == false, check_dims == true
       ierr = nc.close(); CHKERRQ(ierr);
 
-      ierr = global_attributes.write(filename); CHKERRQ(ierr);
-      ierr = mapping.write(filename); CHKERRQ(ierr);
+      ierr = write_metadata(filename); CHKERRQ(ierr);
+
       snapshots_file_is_ready = true;
     }
 
@@ -697,10 +704,9 @@ PetscErrorCode IceModel::write_backup() {
   ierr = nc.append_time(grid.year); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = global_attributes.write(backup_filename.c_str()); CHKERRQ(ierr);
-  ierr = mapping.write(backup_filename.c_str()); CHKERRQ(ierr);
+  // Write metadata *before* variables:
+  ierr = write_metadata(backup_filename.c_str()); CHKERRQ(ierr);
 
-  // done with metadata; write variables:
   ierr = write_variables(backup_filename.c_str(), backup_vars, NC_DOUBLE); CHKERRQ(ierr);
 
   // Also flush time-series:

@@ -54,8 +54,9 @@ set (Pism_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are
 set (CMAKE_BUILD_TYPE ${Pism_BUILD_TYPE} CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
 mark_as_advanced (CMAKE_BUILD_TYPE) # hide the default entry
 if (Pism_BUILD_TYPE MATCHES "Debug")
-  option (Pism_DEBUG              "Enables extra checks in the code." OFF)
-  option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings"    OFF)
+  option (Pism_DEBUG              "Enables extra checks in the code."          OFF)
+  option (Pism_PEDANTIC_WARNINGS  "Compile with pedantic warnings."            OFF)
+  option (Pism_GPROF_FLAGS        "Add flags necessary to profile with gprof." OFF)
 endif (Pism_BUILD_TYPE MATCHES "Debug")
 
 # Enable extra checks in the code:
@@ -67,7 +68,7 @@ endif ()
 # Add -fPIC to CXX flags; note that this will not show up in CMakeCache.txt
 if (Pism_ADD_FPIC)
   message (STATUS "Adding -fPIC to C++ compiler flags.")
-  list (APPEND CMAKE_CXX_FLAGS "-fPIC")
+  set (CMAKE_CXX_FLAGS "-fPIC ${CMAKE_CXX_FLAGS}")
 endif ()
 
 # Set Pism_REVISION
@@ -120,6 +121,11 @@ if (Pism_PEDANTIC_WARNINGS)
   set (CMAKE_C_FLAGS_DEBUG "-g ${PEDANTIC_CFLAGS}")
   set (CMAKE_CXX_FLAGS_DEBUG "-g ${PEDANTIC_CXXFLAGS}")
 endif (Pism_PEDANTIC_WARNINGS)
+
+if (Pism_GPROF_FLAGS)
+  set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -pg -fno-omit-frame-pointer -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
+  set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pg -fno-omit-frame-pointer -fno-inline-functions -fno-inline-functions-called-once -fno-optimize-sibling-calls")
+endif ()
 
 include_directories (${PETSC_INCLUDES} ${GSL_INCLUDES} ${NETCDF_INCLUDES} ${MPI_INCLUDE_PATH})
 set (Pism_EXTERNAL_LIBS ${PETSC_LIBRARIES} ${GSL_LIBRARIES} ${NETCDF_LIBRARIES} ${MPI_LIBRARIES})
