@@ -326,6 +326,9 @@ PetscErrorCode IceModel::set_output_size(string option,
   if (config.get_flag("force_full_diagnostics"))
     keyword = "big";
 
+  if (beddef != NULL)
+    beddef->add_vars_to_output(keyword, result);
+
   // Ask the stress balance module to add more variables:
   if (stress_balance != NULL)
     stress_balance->add_vars_to_output(keyword, result);

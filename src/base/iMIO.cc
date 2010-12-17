@@ -159,6 +159,10 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
       ++i;
     }
 
+    if (beddef != NULL) {
+      ierr = beddef->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    }
+
     if (stress_balance != NULL) {
       ierr = stress_balance->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     } else {
@@ -192,6 +196,11 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
       vars.erase(i++);		// note that it only erases variables that were
                                 // found (and saved)
     }
+  }
+
+  // Write bed-deformation-related variables:
+  if (beddef != NULL) {
+    ierr = beddef->write_variables(vars, filename); CHKERRQ(ierr);
   }
 
   // Write stress balance-related variables:

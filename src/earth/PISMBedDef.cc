@@ -38,6 +38,10 @@ PetscErrorCode PISMBedDef::pismbeddef_allocate() {
   PetscErrorCode ierr;
   PetscInt WIDE_STENCIL = 2;
 
+  ierr = topg_initial.create(grid, "topg_initial", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = topg_initial.set_attrs("model_state", "bedrock surface elevation (at the beginning of the run)",
+                                "m", ""); CHKERRQ(ierr);
+
   ierr = topg_last.create(grid, "topg", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_last.set_attrs("model_state", "bedrock surface elevation",
 			     "m", "bedrock_altitude"); CHKERRQ(ierr);
@@ -45,7 +49,43 @@ PetscErrorCode PISMBedDef::pismbeddef_allocate() {
   return 0;
 }
 
+void PISMBedDef::add_vars_to_output(string /*keyword*/, set<string> &result) {
+  result.insert("topg_initial");
+}
+
+PetscErrorCode PISMBedDef::define_variables(set<string> vars, const NCTool &nc,
+                                            nc_type nctype) {
+  PetscErrorCode ierr;
+
+  if (set_contains(vars, "topg_initial")) {
+    ierr = topg_initial.define(nc, nctype); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode PISMBedDef::write_variables(set<string> vars, string filename) {
+  PetscErrorCode ierr;
+
+  if (set_contains(vars, "topg_initial")) {
+    ierr = topg_initial.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode PISMBedDef::write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
+                                             string filename) {
+  PetscErrorCode ierr;
+  
+  ierr = topg_initial.write(filename.c_str()); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
 PetscErrorCode PISMBedDef::init(PISMVars &vars) {
+  PetscErrorCode ierr;
 
   t_beddef_last = grid.year;
 
@@ -57,6 +97,9 @@ PetscErrorCode PISMBedDef::init(PISMVars &vars) {
 
   uplift = dynamic_cast<IceModelVec2S*>(vars.get("tendency_of_bedrock_altitude"));
   if (!uplift) SETERRQ(1, "ERROR: uplift is not available");
+
+  // Save the bed elevation at the beginning of the run:
+  ierr = topg_initial.copy_from(*topg); CHKERRQ(ierr);
   
   return 0;
 }

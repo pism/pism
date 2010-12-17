@@ -33,11 +33,18 @@ public:
   virtual ~PISMBedDef() {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years) = 0;
+  virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/);
+  virtual PetscErrorCode define_variables(set<string> /*vars*/, const NCTool &/*nc*/,
+                                          nc_type /*nctype*/);
+  virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/);
+  virtual PetscErrorCode write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
+					   string /*filename*/);
 protected:
   PetscErrorCode pismbeddef_allocate(); // packaged to simplify error checking
   PetscErrorCode compute_uplift(PetscScalar dt_beddef);
   PetscReal t_beddef_last;		//!< last bed deformation update year
 
+  IceModelVec2S topg_initial;
   IceModelVec2S topg_last;	//!< last bed elevation
   IceModelVec2S *thk,		//!< pointer to the current ice thickness
     *topg,			//!< pointer to the current bed elevation
@@ -68,6 +75,7 @@ public:
   PetscErrorCode init(PISMVars &vars);
   PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
 protected:
+  PetscErrorCode correct_topg();
   PetscErrorCode allocate();
   PetscErrorCode deallocate();
   PetscErrorCode transfer_to_proc0(IceModelVec2S *source, Vec result);
