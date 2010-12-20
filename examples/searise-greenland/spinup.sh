@@ -106,9 +106,13 @@ NOMASSSIARUNLENGTH=50000
 PALEOSTARTYEAR=-125000
 
 # grids
-TWENTYKMGRID="-Mx 76 -My 141 -Lz 4000 -Lbz 2000 -Mz 41 -Mbz 16"
-TENKMGRID="-Mx 151 -My 281 -Lz 4000 -Lbz 2000 -Mz 101 -Mbz 31"
-FIVEKMGRID="-Mx 301 -My 561 -Lz 4000 -Lbz 2000 -Mz 101 -Mbz 31"
+VDIMS="-Lz 4000 -Lbz 2000"
+COARSEVGRID="${VDIMS} -Mz 101 -Mbz 51 -z_spacing equal -zb_spacing equal"
+FINEVGRID="${VDIMS} -Mz 201 -Mbz 101 -z_spacing equal -zb_spacing equal"
+FINESTVGRID="${VDIMS} -Mz 301 -Mbz 151 -z_spacing equal -zb_spacing equal"
+TWENTYKMGRID="-Mx 76 -My 141 ${COARSEVGRID}"
+TENKMGRID="-Mx 151 -My 281 ${FINEVGRID}"
+FIVEKMGRID="-Mx 301 -My 561 ${FINESTVGRID}"
 
 # skips
 SKIPTWENTYKM=5
@@ -123,7 +127,7 @@ FINESKIP=$SKIPTWENTYKM
 CS=20 # km
 FS=20 # km
 
-COARSEENDTIME=-40000 # BP
+COARSEENDTIME=-20000 # BP
 
 echo ""
 if [ $# -gt 1 ] ; then
@@ -156,16 +160,13 @@ echo "$SCRIPTNAME     coarse grid = '$COARSEGRID' (= $CS km)"
 echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km)"
 
 # cat prefix and exec together
-#uncomment to add profiling: PISM_PROF=" -prof"
-PISM_PROF=
-TUNEDCLIMATE=
-#TUNEDCLIMATE="-config_override config_269.0_0.001_0.80_-0.500_9.7440.nc"
-PISM="${PISM_PREFIX}${PISM_EXEC}${PISM_PROF} -ocean_kill -e 3 ${TUNEDCLIMATE}"
+PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -e 3"
 
 # coupler settings for pre-spinup
-COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd"
+TUNEDCLIMATE="-config_override config_269.0_0.001_0.80_-0.500_9.7440.nc"
+COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd ${TUNEDCLIMATE}"
 # coupler settings for spin-up (i.e. with forcing)
-COUPLER_FORCING="-atmosphere searise_greenland,forcing -surface pdd -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,forcing -dSLforcing $PISM_SLSERIES"
+COUPLER_FORCING="-atmosphere searise_greenland,forcing -surface pdd ${TUNEDCLIMATE} -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,forcing -dSLforcing $PISM_SLSERIES"
 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
@@ -173,10 +174,9 @@ TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
 # use "control run" parameters from Bueler et al. submitted
 PARAMS="-pseudo_plastic_q 0.25 -plastic_pwfrac 0.98"
 
-FULLPHYS="-ssa_sliding -thk_eff ${PARAMS}"
+FULLPHYS="-ssa_sliding -thk_eff ${PARAMS} ${TILLPHI}"
 
 echo "$SCRIPTNAME      executable = '$PISM'"
-echo "$SCRIPTNAME         tillphi = '$TILLPHI'"
 echo "$SCRIPTNAME    full physics = '$FULLPHYS'"
 echo "$SCRIPTNAME  simple coupler = '$COUPLER_SIMPLE'"
 echo "$SCRIPTNAME forcing coupler = '$COUPLER_FORCING'"
@@ -191,12 +191,13 @@ cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -boot_file $INNAME $COARSEGRID \
 $PISM_DO $cmd
 
 
-# quick look at climate in a century period; see delta_T in pism_dT.nc
+# quick look at climate in several century period; see also delta_T in pism_dT.nc
 CLIMSTARTTIME=-500
 PRE0CLIMATE=g${CS}km_climate${CLIMSTARTTIME}a.nc
+PCLIM="${PISM_PREFIX}pclimate"
 echo
 echo "$SCRIPTNAME  running pclimate to show climate in modern period [${CLIMSTARTTIME} a,0 a], using current geometry and 10 year subintervals"
-cmd="$PISM_MPIDO $NN ${PISM_PREFIX}pclimate ${TUNEDCLIMATE} -i $PRE0NAME $COUPLER_FORCING \
+cmd="$PISM_MPIDO $NN $PCLIM -i $PRE0NAME $COUPLER_FORCING \
   -ys $CLIMSTARTTIME -ye 0 -dt 10.0 -o $PRE0CLIMATE"
 $PISM_DO $cmd
 
@@ -205,7 +206,7 @@ $PISM_DO $cmd
 PRE1NAME=g${CS}km_steady.nc
 EX1NAME=ex_${PRE1NAME}
 EXTIMES=0:500:${NOMASSSIARUNLENGTH}
-EXVARS="diffusivity,enthalpybase,temppabase,bmelt,bwat,csurf,hardav,mask" # check_stationarity.py can be applied to ex_${PRE1NAME}
+EXVARS="diffusivity,temppabase,bmelt,csurf,hardav,mask" # check_stationarity.py can be applied to ex_${PRE1NAME}
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA run to achieve approximate temperature equilibrium, for ${NOMASSSIARUNLENGTH}a"
 cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE0NAME $COUPLER_SIMPLE \
@@ -222,92 +223,39 @@ $PISM_DO $cmd
 
 
 
-# pre-spinup done; ready to use paleoclimate forcing ...
-# spinup is split into 5 substages
+# pre-spinup done; ready to use paleoclimate forcing for real spinup ...
 
-# start back at 125ka BPE, use GRIP and SPECMAP forcing, run till SPLIT1TIME
 ENDTIME=$COARSEENDTIME
-OUTNAME=g${CS}km_m40ka.nc
-SNAPSNAME=snaps_g${CS}km_m40ka.nc
-TSNAME=ts_g${CS}km_m40ka.nc
+OUTNAME=g${CS}km_m20ka.nc
+TSNAME=ts_g${CS}km_m20ka.nc
+EXNAME=ex_g${CS}km_m20ka.nc
+EXVARS="diffusivity,temppabase,bmelt,csurf,hardav,mask,dHdt,cbase,tauc"
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      except bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
-cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE2NAME $TILLPHI $FULLPHYS $COUPLER_FORCING \
+cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE2NAME $FULLPHYS $COUPLER_FORCING \
      -ts_file $TSNAME -ts_times $PALEOSTARTYEAR:1:$ENDTIME \
-     -save_file $SNAPSNAME -save_times -120000:5000:-45000 \
+     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $PALEOSTARTYEAR:500:$ENDTIME \
      -ys $PALEOSTARTYEAR -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
-# uncomment to stop here:
-#exit
-
-STARTTIME=$ENDTIME
-ENDTIME=-30000 # BP
-STARTNAME=$OUTNAME
-OUTNAME=g${FS}km_m30ka.nc
-SNAPSNAME=g${FS}km_m35ka.nc
-SNAPSTIME=-35000
-TSNAME=ts_g${FS}km_m30ka.nc
-echo
-echo "$SCRIPTNAME  regrid and do paleo-climate forcing run with full physics,"
-echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
-cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_file $INNAME $FINEGRID $TILLPHI $FULLPHYS \
-     -bed_def lc $COUPLER_FORCING\
-     -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat  \
-     -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
-      -save_file $SNAPSNAME -save_size medium -save_times $SNAPSTIME \
-     -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
-$PISM_DO $cmd
-
-# to stop here:
-#exit
-
-pism5kmopts="$PISM_MPIDO $NN $PISM -skip $FINESKIP $FULLPHYS -bed_def lc $COUPLER_FORCING"
-
-STARTTIME=$ENDTIME
-ENDTIME=-20000 # BP
-STARTNAME=$OUTNAME
-OUTNAME=g${FS}km_m20ka.nc
-SNAPSNAME=g${FS}km_m25ka.nc
-SNAPSTIME=-25000
-TSNAME=ts_g${FS}km_m20ka.nc
-echo
-echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
-echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
-cmd="$pism5kmopts -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
-     -save_file $SNAPSNAME -save_size medium -save_times $SNAPSTIME \
-     -i $STARTNAME -ye $ENDTIME -o $OUTNAME"
-$PISM_DO $cmd
-
-STARTTIME=$ENDTIME
-ENDTIME=-10000 # BP
-STARTNAME=$OUTNAME
-OUTNAME=g${FS}km_m10ka.nc
-SNAPSNAME=g${FS}km_m15ka.nc
-SNAPSTIME=-15000
-TSNAME=ts_g${FS}km_m10ka.nc
-echo
-echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
-echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
-cmd="$pism5kmopts -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
-     -save_file $SNAPSNAME -save_size medium -save_times $SNAPSTIME \
-     -i $STARTNAME -ye $ENDTIME -o $OUTNAME"
-$PISM_DO $cmd
+# exit    # uncomment to stop here
 
 STARTTIME=$ENDTIME
 ENDTIME=0 # BP
 STARTNAME=$OUTNAME
 OUTNAME=g${FS}km_0.nc
-SNAPSNAME=g${FS}km_m5ka.nc
-SNAPSTIME=-5000
 TSNAME=ts_g${FS}km_0.nc
+EXNAME=ex_g${FS}km_0.nc
 echo
-echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
-echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE (present)"
-cmd="$pism5kmopts -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
-     -save_file $SNAPSNAME -save_size medium -save_times $SNAPSTIME \
-     -i $STARTNAME -ye $ENDTIME -o $OUTNAME"
+echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
+echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
+cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
+     -bed_def lc $COUPLER_FORCING\
+     -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat  \
+     -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
+     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $STARTTIME:500:$ENDTIME \
+     -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
 
