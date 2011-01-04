@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 #include <petscda.h>
 #include <petscmat.h>
-#include "../base/iceModelVec.hh"
+#include "iceModelVec.hh"
 #include "iceExactSSAModel.hh"
 
 class IceCalvBCModel : public IceExactSSAModel {

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Ed Bueler and Nathan Shemonski and Constantine Khroulev
+// Copyright (C) 2007-2011 Ed Bueler and Nathan Shemonski and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef __PA_EISMINT_Greenland
 #define __PA_EISMINT_Greenland
 
-#include "../coupler/PISMAtmosphere.hh"
+#include "PISMAtmosphere.hh"
 
 class PA_EISMINT_Greenland : public PAYearlyCycle {
 public:

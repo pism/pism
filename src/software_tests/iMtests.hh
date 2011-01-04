@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petscda.h>
-#include "../base/iceModel.hh"
+#include "iceModel.hh"
 
 #ifndef __iceUnitModel_hh
 #define __iceUnitModel_hh

@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -41,9 +41,9 @@ static char help[] =
 #include <cstdio>
 #include <petscvec.h>
 #include <petscda.h>
-#include "../base/pism_const.hh"
-#include "../base/NCVariable.hh"
-#include "../earth/deformation.hh"
+#include "pism_const.hh"
+#include "NCVariable.hh"
+#include "deformation.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;

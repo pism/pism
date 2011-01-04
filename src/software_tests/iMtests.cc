@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,9 +19,9 @@
 #include <vector>
 #include <petscda.h>
 #include "iMtests.hh"
-#include "../coupler/iceModelVec2T.hh"
-#include "../base/PISMIO.hh"
-#include "../base/PISMProf.hh"
+#include "iceModelVec2T.hh"
+#include "PISMIO.hh"
+#include "PISMProf.hh"
 
 //! Set grid defaults for a particular unit test.
 PetscErrorCode IceUnitModel::set_grid_defaults() {

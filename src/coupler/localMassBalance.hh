@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,8 +21,8 @@
 
 #include <petsc.h>
 #include <gsl/gsl_rng.h>
-#include "../base/NCVariable.hh"
-#include "../base/iceModelVec.hh"  // only needed for FaustoGrevePDDObject
+#include "NCVariable.hh"
+#include "iceModelVec.hh"  // only needed for FaustoGrevePDDObject
 
 
 //! A struct which holds degree day factors.

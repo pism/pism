@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,11 +19,11 @@
 static char help[] = "Driver for PISM software unit tests.\n";
 
 #include <petsc.h>
-#include "../base/grid.hh"
+#include "grid.hh"
 #include "iMtests.hh"
 
-#include "../coupler/PISMSurface.hh"
-#include "../coupler/PISMOcean.hh"
+#include "PISMSurface.hh"
+#include "PISMOcean.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;

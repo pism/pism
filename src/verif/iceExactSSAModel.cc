@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cmath>
-#include "../base/grid.hh"
-#include "../base/iceModel.hh"
+#include "grid.hh"
+#include "iceModel.hh"
 #include "tests/exactTestsIJ.h"
 #include "tests/exactTestM.h"
 #include "iceExactSSAModel.hh"

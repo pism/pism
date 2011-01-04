@@ -1,90 +1,47 @@
-add_library (pismmisc
-  base/LocalInterpCtx.cc
-  base/NCVariable.cc
-  base/PISMBedSmoother.cc
-  base/PISMComponent.cc
-  base/PISMIO.cc
-  base/PISMProf.cc
-  base/PISMVars.cc
-  base/Timeseries.cc
+include_directories (base earth coupler udunits base/stressbalance base/util base/energy base/rheology)
+
+# Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
+# utility functions and classes plus the "enthalpy converter" (which is used
+# all over the place).
+add_library (pismutil
+  base/util/LocalInterpCtx.cc
+  base/util/NCVariable.cc
+  base/util/PISMComponent.cc
+  base/util/PISMIO.cc
+  base/util/PISMProf.cc
+  base/util/PISMVars.cc
+  base/util/Timeseries.cc
+  base/util/grid.cc
+  base/util/iceModelVec.cc
+  base/util/iceModelVec2.cc
+  base/util/iceModelVec2V.cc
+  base/util/iceModelVec3.cc
+  base/util/nc_util.cc
+  base/util/pism_const.cc
+  base/util/pism_default_config.cc
   base/enthalpyConverter.cc
-  base/flowlaw_factory.cc
-  base/flowlaws.cc
-  base/grid.cc
-  base/iceModelVec.cc
-  base/iceModelVec2.cc
-  base/iceModelVec2V.cc
-  base/iceModelVec3.cc
-  base/materials.cc
-  base/nc_util.cc
-  base/pism_const.cc
-  base/pism_default_config.cc
   base/pism_revision.cc
-  base/pism_signal.c
   )
-target_link_libraries (pismmisc pismudunits ${Pism_EXTERNAL_LIBS})
-add_dependencies(pismmisc pism_config)
+target_link_libraries (pismutil pismudunits ${Pism_EXTERNAL_LIBS})
+add_dependencies (pismutil pism_config)
 
-add_library (pismboundary
-  coupler/PAConstant.cc
-  coupler/PAForcing.cc
-  coupler/PALapseRates.cc
-  coupler/PAYearlyCycle.cc
-  coupler/PCFactory.cc
-  coupler/PISMOcean.cc
-  coupler/PISMSurface.cc
-  coupler/iceModelVec2T.cc
-  coupler/localMassBalance.cc
-  coupler/PSExternal.cc
-  coupler/PSDirectForcing.cc
-  )
-target_link_libraries (pismboundary pismmisc)
-
-add_library (pismearth
-  earth/PBLingleClark.cc
-  earth/PBPointwiseIsostasy.cc
-  earth/PISMBedDef.cc
-  earth/cubature.c
-  earth/deformation.cc
-  earth/greens.cc
-  earth/matlablike.cc
+# Flow laws.
+add_library (pismflowlaws
+  base/rheology/flowlaw_factory.cc
+  base/rheology/flowlaws.cc
 )
-target_link_libraries (pismearth pismmisc)
+target_link_libraries (pismflowlaws pismutil pismudunits ${Pism_EXTERNAL_LIBS})
 
-if (Pism_FAST_WRITE STREQUAL "1")
-  message (STATUS "Using the t,x,y,z variable order.")
-  set_source_files_properties (base/NCVariable.cc
-    PROPERTIES COMPILE_FLAGS -DPISM_FAST_WRITE=1)
-endif ()
-
-if (Pism_FAST_WRITE STREQUAL "2")
-  message (STATUS "Using the t,y,x,z variable order.")
-  set_source_files_properties (base/NCVariable.cc
-    PROPERTIES COMPILE_FLAGS -DPISM_FAST_WRITE=2)
-endif ()
-
-if (Pism_FAST_WRITE STREQUAL "3")
-  message (STATUS "Using the t,z,y,x variable order.")
-  set_source_files_properties (base/NCVariable.cc
-    PROPERTIES COMPILE_FLAGS -DPISM_FAST_WRITE=3)
-endif ()
-
-set_source_files_properties (base/pism_revision.cc
-  PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
-set_source_files_properties (base/pism_default_config.cc
-  PROPERTIES COMPILE_FLAGS -DPISM_DEFAULT_CONFIG_FILE='\"${Pism_DEFAULT_CONFIG_FILE}\"')
-set_source_files_properties (udunits/utlib.c
-  PROPERTIES COMPILE_FLAGS
-  "-DUT_INSTALL_PATH='\"${CMAKE_INSTALL_PREFIX}${Pism_LIB_DIR}/pismudunits.dat\"' -DUT_SOURCE_PATH='\"${CMAKE_SOURCE_DIR}/src/udunits/pismudunits.dat\"'")
-
-include_directories (base earth udunits base/stressbalance coupler)
-
+# This library contains PISM code implementing the ice-sheet model itself
+# (using other PISM libraries and a good deal of non-trivial code).
 add_library (pismbase
+  base/pism_signal.c
   base/materials.cc
-  base/bedrockOnlySystem.cc
-  base/columnSystem.cc
-  base/combinedSystem.cc
-  base/iceenthOnlySystem.cc
+  base/materials.cc
+  base/energy/bedrockOnlySystem.cc
+  base/energy/columnSystem.cc
+  base/energy/combinedSystem.cc
+  base/energy/iceenthOnlySystem.cc
   base/iMIO.cc
   base/iMadaptive.cc
   base/iMbasal.cc
@@ -103,9 +60,65 @@ add_library (pismbase
   base/iceModel.cc
   base/iceModel_diagnostics.cc
 )
-target_link_libraries (pismbase pismearth pismboundary pismmisc pismstressbalance)
+target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance)
+
+# Boundary models (surface, atmosphere, ocean).
+add_library (pismboundary
+  coupler/PAConstant.cc
+  coupler/PAForcing.cc
+  coupler/PALapseRates.cc
+  coupler/PAYearlyCycle.cc
+  coupler/PCFactory.cc
+  coupler/PISMOcean.cc
+  coupler/PISMSurface.cc
+  coupler/iceModelVec2T.cc
+  coupler/localMassBalance.cc
+  coupler/PSExternal.cc
+  coupler/PSDirectForcing.cc
+  )
+target_link_libraries (pismboundary pismutil)
+
+# Bed deformation models.
+add_library (pismearth
+  earth/PBLingleClark.cc
+  earth/PBPointwiseIsostasy.cc
+  earth/PISMBedDef.cc
+  earth/cubature.c
+  earth/deformation.cc
+  earth/greens.cc
+  earth/matlablike.cc
+)
+target_link_libraries (pismearth pismutil)
+
+# Set variable storage order in PISM output files.
+if (Pism_FAST_WRITE STREQUAL "1")
+  message (STATUS "Using the t,x,y,z variable order (fastest).")
+  set_source_files_properties (base/util/NCVariable.cc
+    PROPERTIES COMPILE_FLAGS -DPISM_FAST_WRITE=1)
+endif ()
+
+if (Pism_FAST_WRITE STREQUAL "2")
+  message (STATUS "Using the t,y,x,z variable order.")
+  set_source_files_properties (base/util/NCVariable.cc
+    PROPERTIES COMPILE_FLAGS -DPISM_FAST_WRITE=2)
+endif ()
+
+if (Pism_FAST_WRITE STREQUAL "3")
+  message (STATUS "Using the t,z,y,x variable order (slowest).")
+  set_source_files_properties (base/util/NCVariable.cc
+    PROPERTIES COMPILE_FLAGS -DPISM_FAST_WRITE=3)
+endif ()
+
+set_source_files_properties (base/pism_revision.cc
+  PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
+set_source_files_properties (base/util/pism_default_config.cc
+  PROPERTIES COMPILE_FLAGS -DPISM_DEFAULT_CONFIG_FILE='\"${Pism_DEFAULT_CONFIG_FILE}\"')
+set_source_files_properties (udunits/utlib.c
+  PROPERTIES COMPILE_FLAGS
+  "-DUT_INSTALL_PATH='\"${CMAKE_INSTALL_PREFIX}${Pism_LIB_DIR}/pismudunits.dat\"' -DUT_SOURCE_PATH='\"${CMAKE_SOURCE_DIR}/src/udunits/pismudunits.dat\"'")
 
 
+# Verification tests.
 add_library (pismverif
   verif/SIA_Sliding.cc
   verif/iCMthermo.cc
@@ -121,6 +134,7 @@ add_library (pismverif
 )
 target_link_libraries (pismverif pismbase pismstressbalance)
 
+# A custom version of UDUNITS (version 1).
 add_library (pismudunits
   udunits/udalloc.c
   udunits/utlib.c
@@ -131,13 +145,16 @@ add_library (pismudunits
 # Main executables:
 add_executable (pismr pismr.cc)
 
+# Outlet glacier 
 add_executable (pismo regional/pismo.cc)
 
+# Simplified geometry
 add_executable (pisms pisms.cc 
   eismint/iceEISModel.cc
   eismint/icePSTexModel.cc
   ismip/iceMISMIPModel.cc)
 
+# EISMINT-Greenland
 add_executable (pgrn eismint/pgrn.cc eismint/pgrn_atmosphere.cc)
 
 # All of the following are linked against pismbase
@@ -145,12 +162,14 @@ foreach (EXEC pismr pismo pisms pgrn)
   target_link_libraries (${EXEC} pismbase)
 endforeach (EXEC)
 
+# Verification mode "driver".
 add_executable (pismv pismv.cc
   verif/iceCompModel.cc
   verif/iCMthermo.cc
   verif/iceExactSSAModel.cc)
 target_link_libraries (pismv pismverif pismbase)
 
+# Testing boundary models without ice dynamics.
 add_executable (pclimate pclimate.cc eismint/pgrn_atmosphere.cc)
 target_link_libraries (pclimate pismboundary)
 
@@ -162,7 +181,7 @@ add_custom_target (pism_config DEPENDS pism_config.nc)
 
 install (TARGETS
   pismr pismo pisms pismv pgrn pclimate ## executables
-  pismmisc pismboundary pismverif pismbase pismearth pismudunits # libraries
+  pismutil pismboundary pismverif pismbase pismflowlaws pismearth pismudunits # libraries
   RUNTIME DESTINATION ${Pism_BIN_DIR}
   LIBRARY DESTINATION ${Pism_LIB_DIR}
   ARCHIVE DESTINATION ${Pism_LIB_DIR})
@@ -173,12 +192,16 @@ install (FILES
   DESTINATION ${Pism_LIB_DIR})
 
 # miscellaneous executables needed by software tests
-set (UNIT_EXECS bedrough_test flowlaw_test)
-foreach (EXEC ${UNIT_EXECS})
-  add_executable (${EXEC} software_tests/${EXEC}.cc)
-  target_link_libraries (${EXEC} pismmisc)
-  install (TARGETS ${EXEC} RUNTIME DESTINATION ${Pism_BIN_DIR})
-endforeach (EXEC)
+add_executable (flowlaw_test
+  software_tests/flowlaw_test.cc)
+target_link_libraries (flowlaw_test pismutil pismflowlaws)
+install (TARGETS flowlaw_test RUNTIME DESTINATION ${Pism_BIN_DIR})
+
+add_executable (bedrough_test
+  software_tests/bedrough_test.cc
+  base/stressbalance/PISMBedSmoother.cc)
+target_link_libraries (bedrough_test pismutil)
+install (TARGETS bedrough_test RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 if (Pism_BUILD_EXTRA_EXECS)
   set (SIMPLE_EXECS simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleL)
@@ -193,8 +216,8 @@ if (Pism_BUILD_EXTRA_EXECS)
   add_executable (pismtests software_tests/pismtests.cc software_tests/iMtests.cc)
   target_link_libraries (pismtests pismbase)
 
-  add_executable (flowTable software_tests/flowTable.cc)
-  target_link_libraries (flowTable pismmisc)
+  add_executable (flowTable software_tests/flowTable.cc base/rheology/flowlaws.cc)
+  target_link_libraries (flowTable pismutil)
 
   install (TARGETS
     ${SIMPLE_EXECS} tryLCbd pismtests flowTable

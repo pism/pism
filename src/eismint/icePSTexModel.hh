@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,8 +20,8 @@
 #define __icePSTexModel_hh
 
 #include <petsc.h>
-#include "../base/grid.hh"
-#include "../base/materials.hh"
+#include "grid.hh"
+#include "materials.hh"
 #include "iceEISModel.hh"
 
 //! Derived class for Plastic till ice Stream with Thermocoupling (PST) experiments.

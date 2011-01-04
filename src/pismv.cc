@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@ static char help[] =
 #include <string>
 #include <algorithm>		// std::transform()
 #include <petscda.h>
-#include "base/grid.hh"
+#include "grid.hh"
 #include "verif/iceCompModel.hh"
 #include "verif/iceExactSSAModel.hh"
 

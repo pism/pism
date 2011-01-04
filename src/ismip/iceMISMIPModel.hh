@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,9 +20,9 @@
 #define __iceMISMIPModel_hh
 
 #include <petscvec.h>
-#include "../base/grid.hh"
-#include "../base/materials.hh"
-#include "../base/iceModel.hh"
+#include "grid.hh"
+#include "materials.hh"
+#include "iceModel.hh"
 
 
 struct routineStatsType {

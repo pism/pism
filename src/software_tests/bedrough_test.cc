@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Ed Bueler
+// Copyright (C) 2010, 2011 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -27,11 +27,11 @@ static char help[] =
 #include <cstdio>
 #include <petscvec.h>
 #include <petscda.h>
-#include "../base/pism_const.hh"
-#include "../base/grid.hh"
-#include "../base/iceModelVec.hh"
-#include "../base/NCVariable.hh"
-#include "../base/PISMBedSmoother.hh"
+#include "pism_const.hh"
+#include "grid.hh"
+#include "iceModelVec.hh"
+#include "NCVariable.hh"
+#include "PISMBedSmoother.hh"
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;

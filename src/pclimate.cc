@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,11 +25,11 @@ static char help[] =
 #include <sstream>
 #include <vector>
 #include <petscda.h>
-#include "base/pism_const.hh"
-#include "base/grid.hh"
-#include "base/LocalInterpCtx.hh"
-#include "base/PISMIO.hh"
-#include "base/NCVariable.hh"
+#include "pism_const.hh"
+#include "grid.hh"
+#include "LocalInterpCtx.hh"
+#include "PISMIO.hh"
+#include "NCVariable.hh"
 
 #include "coupler/PCFactory.hh"
 #include "coupler/PISMAtmosphere.hh"

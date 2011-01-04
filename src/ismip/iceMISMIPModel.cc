@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,9 +18,9 @@
 
 #include <cstring>
 #include <petscda.h>
-#include "../base/pism_const.hh"
-#include "../base/grid.hh"
-#include "../base/iceModel.hh"
+#include "pism_const.hh"
+#include "grid.hh"
+#include "iceModel.hh"
 #include "iceMISMIPModel.hh"
 
 PetscErrorCode MISMIPBasalResistanceLaw::printInfo(int verbthresh, MPI_Comm com) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007, 2010 Jed Brown and Ed Bueler
+// Copyright (C) 2004-2007, 2010, 2011 Jed Brown and Ed Bueler
 //
 // This file is part of Pism.
 //
@@ -17,9 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petsc.h>
-#include "../base/pism_const.hh"
-#include "../base/flowlaws.hh"
-#include "../base/NCVariable.hh"
+#include "pism_const.hh"
+#include "flowlaws.hh"
+#include "NCVariable.hh"
 
 static char help[] =
   "Show a table of flow results from the Goldsby-Kohlstedt law (HYBRIDICE),\n"

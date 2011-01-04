@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,8 +19,8 @@
 #include <petsc.h>
 #include <algorithm>
 #include "iceModelVec2T.hh"
-#include "../base/PISMIO.hh"
-#include "../base/pism_const.hh"
+#include "PISMIO.hh"
+#include "pism_const.hh"
 
 IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
   localp = false;

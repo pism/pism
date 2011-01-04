@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Ed Bueler and Nathan Shemonski and Constantine Khroulev
+// Copyright (C) 2007-2011 Ed Bueler and Nathan Shemonski and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,14 +34,14 @@ static char help[] =
   "Driver for PISM runs of EISMINT-Greenland intercomparison.\n";
 
 #include <petsc.h>
-#include "../base/grid.hh"
-#include "../base/iceModel.hh"
+#include "grid.hh"
+#include "iceModel.hh"
 #include "pgrn_atmosphere.hh"
 
-#include "../coupler/PCFactory.hh"
-#include "../coupler/PISMAtmosphere.hh"
-#include "../coupler/PISMSurface.hh"
-#include "../coupler/PISMOcean.hh"
+#include "PCFactory.hh"
+#include "PISMAtmosphere.hh"
+#include "PISMSurface.hh"
+#include "PISMOcean.hh"
 
 typedef enum {SSL2, SSL3, CCL3, GWL3} EISGREENrun;
 

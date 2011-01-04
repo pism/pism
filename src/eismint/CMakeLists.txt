@@ -1,6 +1,4 @@
-include_directories (../base/stressbalance/)
-
-add_executable (pross pross.cc)
+add_executable (pross pross.cc ../base/materials.cc)
 target_link_libraries(pross pismstressbalance)
 
 install (TARGETS pross

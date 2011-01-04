@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -21,8 +21,8 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_sf.h>       // for erfc() in CalovGreveIntegrand()
-#include "../base/pism_const.hh"
-#include "../base/NCVariable.hh"
+#include "pism_const.hh"
+#include "NCVariable.hh"
 #include "localMassBalance.hh"
 
 PDDMassBalance::PDDMassBalance(const NCConfigVariable& myconfig) : LocalMassBalance(myconfig) {

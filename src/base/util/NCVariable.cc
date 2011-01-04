@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009, 2010, 2011 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -615,6 +615,8 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type n
   stat = nc_inq_dimid(ncid, "y", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 #endif
 
+  // Use the t,y,x,z variable order: also weird, somewhat slower, but 2D fields
+  // are stored in the "natural" order.
 #if  (PISM_FAST_WRITE == 2)
   stat = nc_inq_dimid(ncid, "y", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   stat = nc_inq_dimid(ncid, "x", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));

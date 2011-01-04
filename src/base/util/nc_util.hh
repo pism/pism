@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -28,7 +28,7 @@
 #endif
 #include <netcdf.h>		// nc_type
 
-#include "../udunits/udunits.h"	// utUnit
+#include "udunits.h"	// utUnit
 #include <string>
 #include <vector>
 

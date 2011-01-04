@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,8 +20,8 @@
 #define __iceEISModel_hh
 
 #include <petscda.h>
-#include "../base/grid.hh"
-#include "../base/iceModel.hh"
+#include "grid.hh"
+#include "iceModel.hh"
 
 
 //! Derived class for doing EISMINT II simplified geometry experiments.  

@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include <vector>
 #include <string>
 #include <petscda.h>
-#include "../udunits/udunits.h"
+#include "udunits.h"
 #include "nc_util.hh"
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser

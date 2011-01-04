@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include <cstring>
 #include <petsc.h>
 #include "icePSTexModel.hh"
-#include "../base/Timeseries.hh"
+#include "Timeseries.hh"
 
 const PetscScalar 
   DEFAULT_PHI_STRONG = 15.0,  // till friction angle outside of stream

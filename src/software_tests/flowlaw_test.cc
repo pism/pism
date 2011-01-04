@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010, 2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2010, 2010, 2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -17,9 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petsc.h>
-#include "../base/pism_const.hh"
-#include "../base/flowlaw_factory.hh"
-#include "../base/NCVariable.hh"
+#include "pism_const.hh"
+#include "flowlaw_factory.hh"
+#include "NCVariable.hh"
 
 static char help[] =
   "Calls IceFlowLaw::flow...() with various values of arguments and prints results (for software tests).\n";

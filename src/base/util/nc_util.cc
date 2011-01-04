@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
-#include "../udunits/udunits.h"
+#include "udunits.h"
 #include "pism_const.hh"
 #include "nc_util.hh"
 

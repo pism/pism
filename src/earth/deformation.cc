@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2009 Ed Bueler
+// Copyright (C) 2004-2009, 2011 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,7 @@
 
 #include <cmath>
 #include <petscvec.h>
-#include "../base/pism_const.hh"
+#include "pism_const.hh"
 #include "matlablike.hh"
 #include "greens.hh"
 

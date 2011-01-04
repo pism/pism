@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -22,8 +22,8 @@ static char help[] =
 
 #include <cstring>
 #include <petsc.h>
-#include "base/grid.hh"
-#include "base/iceModel.hh"
+#include "grid.hh"
+#include "iceModel.hh"
 #include "eismint/iceEISModel.hh"
 #include "eismint/icePSTexModel.hh"
 #include "ismip/iceMISMIPModel.hh"
