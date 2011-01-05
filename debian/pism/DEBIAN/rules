@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+
+clean:
+	rm -rf tmp
+
+# FIXME: replace ../../.. with ${Pism_SOURCE_DIR} and use configure_file
+build:
+	mkdir -p tmp
+	cd tmp && cmake -DCMAKE_INSTALL_PREFIX=/usr/ -DPism_BUILD_TYPE=Release -DPism_LOCAL_INSTALL=OFF -DPism_BUILD_DOCS=ON ../../..
+	cd tmp && $(MAKE)
+
+binary: binary-indep binary-arch
+
+binary-indep: build
+
+binary-arch: build
+	cd tmp && $(MAKE) DESTDIR=.. install
+#	dpkg-shlibdeps usr/bin/pism/*
+#	dpkg-gencontrol
+#	dpkg-deb

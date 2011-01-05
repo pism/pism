@@ -162,6 +162,7 @@ set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 # Mac OS X install_name fix:
 set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
 
+add_subdirectory (debian)
 add_subdirectory (src)
 add_subdirectory (doc)
 
