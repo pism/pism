@@ -4,10 +4,9 @@
 \li \ref adding_variables "Create and use (read, write...) additional variables"
 \li \ref reading_scalar_forcing "Read scalar forcing data"
 \li \ref reading_2d_forcing "Read 2D forcing fields"
-\li \ref get_variables "Use fields managed by IceModel in a surface (atmosphere,
-ocean) model to implement a parameterization."
+\li \ref get_variables "Use fields managed by IceModel in a surface (atmosphere, ocean) model to implement a parameterization."
 
-\section adding_parameters Creating  and using configuration flags and parameters
+\section adding_parameters Creating and using configuration flags and parameters
 
 \li Edit 'src/pism_config.cdl'. Each flag or parameter is stored as a NetCDF attribute and should have a corresponding "_doc" attribute describing its meaning.
 
@@ -51,7 +50,9 @@ corresponds to 2 NetCDF variables)
 \li IceModelVec3 -- scalar 3D fields (within the ice)
 \li IceModelVec3Bedrock -- scalar 3D fields within the bedrock thermal layer
 
-Please see the documentation of these classes for more info.
+Please see the documentation of these classes for more info.  The base class
+IceModelVec is a virtual class, so code should use the above derived classes.
+Only the derived classes have create() methods, in particular.
 
 To create a scalar field, for example, one needs to create an instance of one
 of the classes listed above and then call "create" to allocate it.
@@ -68,21 +69,24 @@ Here \c grid is an IceGrid instance, "thk" is the name of the NetCDF variable,
 "true" corresponds to "has ghosts" and "2" is the number of ghosts (in other
 words: needed stencil width).
 
-You don't need to de-allocate variables unless you dynamically created the
-IceModelVec2S object using the C++ "new" operator.
-
 The IceModelVec destructor takes care of undoing all that's done by the
-create() call.
+create() call.  Therefore you don't need to explicitly de-allocate variables
+unless you dynamically created the IceModelVec (or derived) instance using the
+C++ "new" operator.  (In which case "delete" should be used.)
 
-The next call sets variable metadata you will see in an output file
+The set_attrs() call sets variable metadata you will see in an output file
 \li \b pism_intent  -- the only important case is "model_state", see below
 \li \b long_name -- the (descriptive) long name used for plotting, etc
 \li \b units -- units used \e in \e the \e code. Does not have to match units
 in a file
 \li \b standard_name -- CF standard name.
 
-If you want PISM to automatically convert data from the units used in an input file to the
-units used internally, you need to add
+The third call above using set_attr() allows any named attribute to be added to
+the variable.  The CF convention covers some attribute semantics, including
+"valid_min" in this example.
+
+If you want PISM to automatically convert data from the units used in an input
+file to the units used internally, you need to add
 
 \code
   ierr = vH.set_glaciological_units("km"); CHKERRQ(ierr);
@@ -103,7 +107,7 @@ There are two cases of "reading data from a file":
 grid.
 
 This snippet from PAYearlyCycle::init() covers both cases (at least for
-surface, atmosphere and ocean models; i.e. for all the classes derived from PISMComponent)
+surface, atmosphere and ocean models; %i.e. for all the classes derived from PISMComponent)
 \code
   ierr = find_pism_input(precip_filename, lic, regrid, start); CHKERRQ(ierr);
 
@@ -135,32 +139,32 @@ interpolation context" and compute the "start" index.
 
 \subsubsection writing_more Writing data to a file.
 
-To write a field stored in an IceModelVec to a file, just call
+To write a field stored in an IceModelVec to an already "prepared" file, just call
 
 \code 
     ierr = precip.write(filename); CHKERRQ(ierr);
 \endcode
 
 The file referred to by "filename" here has to have "t", "x", "y", "z", "zb"
-dimensions created. You don't need to do this to be able to write to an output
-("-o") file, a snapshot file or the like; IceModel takes care of it.
+dimensions created, that is, it must be prepared.  No action is needed to be
+able to write to an output ("-o") file, a snapshot file or the like; IceModel
+has already prepared it.
 
-If you do need to "prepare" a file, call
+If you do need to "prepare" a file, do:
 \code
   PISMIO nc(&grid);
 
   ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
-  // append == false, check_dims == true
   ierr = nc.append_time(grid.year); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 \endcode
 
-Here,
+Regarding the second and third arguments to nc.open_for_writing():
 \li append == false means that if a file exists already, it will be moved
 aside
 \li check_dims == true means tells PISM to create dimensions. 
 
-A newly created file is "empty" and contains no records. The nc.append_time()
+A newly-created file is "empty" and contains no records. The nc.append_time()
 call creates a record corresponding to a particular model year.
 
 \subsection inside_icemodel Creating IceModelVec instances that are data members of IceModel or a derived class.
