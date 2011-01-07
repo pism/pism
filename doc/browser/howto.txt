@@ -5,6 +5,7 @@
 \li \ref reading_scalar_forcing "Read scalar forcing data"
 \li \ref reading_2d_forcing "Read 2D forcing fields"
 \li \ref get_variables "Use fields managed by IceModel in a surface (atmosphere, ocean) model to implement a parameterization."
+\li \ref component_output "Write to an output file from a PISMComponent derived class (such as a surface model)"
 
 \section adding_parameters Creating and using configuration flags and parameters
 
@@ -229,5 +230,32 @@ IceModelVec2T object and reading data from a file.
 \section get_variables Using fields managed by IceModel in a surface model to implement a parameterization.
 
 Please see PA_EISMINT_Greenland::init() and PA_EISMINT_Greenland::update() for an example.
+
+\section component_output Managing I/O in a PISMComponent derived class
+
+A PISM component needs to implement the following I/O methods:
+
+\li init(). It is not an I/O method per se, but most PISM components read their
+input fields there; see PA_EISMINT_Greenland::init().
+\li add_vars_to_output(), which adds variable names to the list of fields that need
+to be written. See PSTemperatureIndex::add_vars_to_output() for an example.
+\li define_variables(), which defines variables. (See PSTemperatureIndex::define_variables().)
+\li write_variables(), which writes data; see PSTemperatureIndex::write_variables().
+
+Why are all these methods needed? In PISM we separate defining and writing NetCDF variables because defining all
+the NetCDF variables before writing data is a lot faster than defining a
+variable, writing it, defining the second variable, etc. (See <a
+href="http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Parts-of-a-NetCDF-Classic-File.html#Parts-of-a-NetCDF-Classic-Filel">The
+NetCDF Users' Guide</a> for a technical explanation.)
+
+Within IceModel the following steps are done to write 2D and 3D fields to an
+output file:
+
+\li Assemble the list of variables to be written (see
+IceModel::set_output_size()); calls add_vars_to_output()
+\li Create a NetCDF file
+\li Define all the variables in the file (see IceModel::write_variables());
+calls define_variables()
+\li Write all the variables to the file (same method); calls write_variables().
 
 */
