@@ -1,0 +1,21 @@
+Source: pism-toolkit
+Section: misc
+Priority: extra
+Maintainer: Constantine Khroulev <ckhroulev@alaska.edu>
+Build-Depends: debhelper (>= 7)
+Standards-Version: 3.8.3
+Homepage: http://www.pismdocs.org
+
+Package: pism-toolkit
+Architecture: all
+Depends: g++,petsc-dev,netcdf-bin,libnetcdf-dev,ncview,nco,subversion,libgsl0-dev,libfftw3-dev,python-dev,python-numpy,python-matplotlib,texlive-latex-base,doxygen,graphviz
+Description: A metapackage installing tools necessary or useful for building PISM
+ This metapackage installs packages commonly used by PISM developers. 
+ It can be used to prepare a computer for building a development version of PISM
+ from sources or extending PISM.
+
+ You might also need to install Python modules not available as Debian
+ packages. This includes
+
+ http://code.google.com/p/netcdf4-python/
+ http://svn.scipy.org/svn/scikits/trunk/delaunay

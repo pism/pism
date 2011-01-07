@@ -1,0 +1,15 @@
+pism-toolkit
+
+Copyright 2010 Constantine Khroulev <ckhroulev@alaska.edu>
+
+The home page of PISM is at: 
+
+http://www.pismdocs.org
+
+The entire code base may be distributed under the terms of the GNU
+General Public License (GPL).  Alternatively, all of the source code
+as any code derived from that code may instead be distributed under
+the GNU Lesser General Public License (LGPL), at the choice of the
+distributor.
+
+See `/usr/share/common-licenses/GPL-3'.

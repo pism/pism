@@ -37,7 +37,6 @@ target_link_libraries (pismflowlaws pismutil pismudunits ${Pism_EXTERNAL_LIBS})
 add_library (pismbase
   base/pism_signal.c
   base/materials.cc
-  base/materials.cc
   base/energy/bedrockOnlySystem.cc
   base/energy/columnSystem.cc
   base/energy/combinedSystem.cc
