@@ -79,6 +79,7 @@ if (PDFLATEX_COMPILER AND Pism_BUILD_DOCS)
       browser/pages.txt
       browser/std_names.txt
       browser/vertchange.txt
+      browser/howto.txt
       )
 
     configure_file (ice_bib.bib browser/ice_bib.bib COPYONLY)

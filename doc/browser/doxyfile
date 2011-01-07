@@ -585,6 +585,7 @@ INPUT                  = pism_config.txt \
                          vertchange.txt \
                          bedrough.txt \
                          references.txt \
+                         howto.txt \
                          ${PROJECT_SOURCE_DIR}/src/ \
                          ${PROJECT_SOURCE_DIR}/src/base/ \
                          ${PROJECT_SOURCE_DIR}/src/software_tests/ \

@@ -1,0 +1,229 @@
+/*! \page howto How do I...?
+
+\li \ref adding_parameters "Create and use configuration flags and parameters"
+\li \ref adding_variables "Create and use (read, write...) additional variables"
+\li \ref reading_scalar_forcing "Read scalar forcing data"
+\li \ref reading_2d_forcing "Read 2D forcing fields"
+\li \ref get_variables "Use fields managed by IceModel in a surface (atmosphere,
+ocean) model to implement a parameterization."
+
+\section adding_parameters Creating  and using configuration flags and parameters
+
+\li Edit 'src/pism_config.cdl'. Each flag or parameter is stored as a NetCDF attribute and should have a corresponding "_doc" attribute describing its meaning.
+
+\verbatim
+    pism_config:standard_gravity = 9.81;
+    pism_config:standard_gravity_doc = "m s-2; acceleration due to gravity on Earth geoid";
+\endverbatim
+
+\li One can access these parameters using the NCConfigVariable class. IceModel
+has an instance of this class as a data member 'config', so no additional code is
+necessary to initialize the configuration database.
+
+To use a parameter, do
+\code
+double g = config.get("standard_gravity");
+\endcode
+
+To use a flag, do
+\code
+bool compute_age = config.get_flag("do_age");
+\endcode
+
+
+\note
+\li It is a good idea to avoid calling config.get() and config.get_flag()
+from within loops: looking up a parameter by its name is slow.
+\li Please see \ref config "this page" for a list of flags and parameters
+currently used in PISM.
+
+\section adding_variables Creating and using additional variables.
+
+\subsection standalone_code Creating IceModelVec instances.
+
+PISM uses the following classes to manage 2D and 3D fields, their I/O and
+metadata:
+
+\li IceModelVec2S -- scalar 2D fields
+\li IceModelVec2V -- vector 2D fields (such as horizontal velocities;
+corresponds to 2 NetCDF variables)
+\li IceModelVec2Mask -- 2D masks, such as the grounded/floating mask
+\li IceModelVec3 -- scalar 3D fields (within the ice)
+\li IceModelVec3Bedrock -- scalar 3D fields within the bedrock thermal layer
+
+Please see the documentation of these classes for more info.
+
+To create a scalar field, for example, one needs to create an instance of one
+of the classes listed above and then call "create" to allocate it.
+
+\code
+  // land ice thickness
+  ierr = vH.create(grid, "thk", true, 2); CHKERRQ(ierr);
+  ierr = vH.set_attrs("model_state", "land ice thickness",
+		      "m", "land_ice_thickness"); CHKERRQ(ierr);
+  ierr = vH.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+\endcode
+
+Here \c grid is an IceGrid instance, "thk" is the name of the NetCDF variable,
+"true" corresponds to "has ghosts" and "2" is the number of ghosts (in other
+words: needed stencil width).
+
+You don't need to de-allocate variables unless you dynamically created the
+IceModelVec2S object using the C++ "new" operator.
+
+The IceModelVec destructor takes care of undoing all that's done by the
+create() call.
+
+The next call sets variable metadata you will see in an output file
+\li \b pism_intent  -- the only important case is "model_state", see below
+\li \b long_name -- the (descriptive) long name used for plotting, etc
+\li \b units -- units used \e in \e the \e code. Does not have to match units
+in a file
+\li \b standard_name -- CF standard name.
+
+If you want PISM to automatically convert data from the units used in an input file to the
+units used internally, you need to add
+
+\code
+  ierr = vH.set_glaciological_units("km"); CHKERRQ(ierr);
+\endcode
+
+If, in addition to this, you want PISM to \e write data using "glaciological"
+units, add
+\code
+vH.write_in_glaciological_units = true;
+\endcode
+
+\subsubsection reading_more Reading data from a file.
+
+There are two cases of "reading data from a file":
+\li reading a field stored on a grid matching the one used by the current run
+(restarting a run is one example) and
+\li reading a field stored on a different grid, interpolating onto the current
+grid.
+
+This snippet from PAYearlyCycle::init() covers both cases (at least for
+surface, atmosphere and ocean models; i.e. for all the classes derived from PISMComponent)
+\code
+  ierr = find_pism_input(precip_filename, lic, regrid, start); CHKERRQ(ierr);
+
+  // read precipitation rate from file
+  ierr = verbPrintf(2, grid.com, 
+		    "    reading mean annual ice-equivalent precipitation rate 'precip'\n"
+		    "      from %s ... \n",
+		    precip_filename.c_str()); CHKERRQ(ierr); 
+  if (regrid) {
+    ierr = precip.regrid(precip_filename.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
+  } else {
+    ierr = precip.read(precip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
+  }
+  string precip_history = "read from " + precip_filename + "\n";
+
+  ierr = precip.set_attr("history", precip_history); CHKERRQ(ierr);
+
+  delete lic;
+\endcode
+
+Here
+\li "lic" stands for LocalInterpCtx, a "local interpolation context"
+containing information needed to interpolate from the grid in "precip_filename".
+\li "start" is an index of a record \e within \e a \e file that we need to
+read. PISM almost always reads the last record.
+
+Please see PISMComponent::find_pism_input() to see how to create a "local
+interpolation context" and compute the "start" index.
+
+\subsubsection writing_more Writing data to a file.
+
+To write a field stored in an IceModelVec to a file, just call
+
+\code 
+    ierr = precip.write(filename); CHKERRQ(ierr);
+\endcode
+
+The file referred to by "filename" here has to have "t", "x", "y", "z", "zb"
+dimensions created. You don't need to do this to be able to write to an output
+("-o") file, a snapshot file or the like; IceModel takes care of it.
+
+If you do need to "prepare" a file, call
+\code
+  PISMIO nc(&grid);
+
+  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
+  // append == false, check_dims == true
+  ierr = nc.append_time(grid.year); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+\endcode
+
+Here,
+\li append == false means that if a file exists already, it will be moved
+aside
+\li check_dims == true means tells PISM to create dimensions. 
+
+A newly created file is "empty" and contains no records. The nc.append_time()
+call creates a record corresponding to a particular model year.
+
+\subsection inside_icemodel Creating IceModelVec instances that are data members of IceModel or a derived class.
+
+To add a new variable to IceModel, allocate it in the createVecs() method.
+
+If "pism_intent" is set to "model_state" and a variable is added to the
+"variables" dictionary (see PISMVars), IceModel will automatically read this
+variable from a file it is re-starting from and will always write it to an
+output, snapshot and backup files.
+
+\code
+  ierr = variables.add(vH); CHKERRQ(ierr);
+\endcode
+
+\section reading_scalar_forcing Reading scalar forcing data
+
+PISM uses instances of the Timeseries class to read scalar forcing data; please
+see PAForcing or PA_SeaRISE_Greenland for an example.
+
+The following snippet from PAForcing::init() illustrates creating a Timeseries
+object and reading data from a file.
+
+\code
+    dTforcing = new Timeseries(grid.com, grid.rank, "delta_T", "t");
+    ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);
+    ierr = dTforcing->set_dimension_units("years", ""); CHKERRQ(ierr);
+    ierr = dTforcing->set_attr("long_name", "near-surface air temperature offsets");
+             CHKERRQ(ierr);
+
+    ierr = verbPrintf(2, grid.com, 
+		      "  reading delta T data from forcing file %s...\n", dT_file);
+		      CHKERRQ(ierr);
+	 
+    ierr = dTforcing->read(dT_file); CHKERRQ(ierr);
+\endcode
+
+Call
+\code
+double offset = (*dTforcing)(time);
+\endcode
+to get the value corresponding to the time "time", in this case in years. The
+value returned will be computed using linear interpolation.
+
+\section reading_2d_forcing Reading 2D forcing fields
+
+PISM uses instances of the IceModelVec2T class to read 2D forcing fields;
+please see PSDirectForcing for an example.
+
+The following snippet from PSDirectForcing::init() illustrates creating an
+IceModelVec2T object and reading data from a file.
+
+\code
+  temperature.set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
+  ierr = temperature.create(grid, "artm", false); CHKERRQ(ierr);
+  ierr = temperature.set_attrs("climate_forcing",
+                               "temperature of the ice at the ice surface but below firn processes",
+                               "Kelvin", ""); CHKERRQ(ierr);
+  ierr = temperature.init(filename); CHKERRQ(ierr);
+\endcode
+
+\section get_variables Using fields managed by IceModel in a surface model to implement a parameterization.
+
+Please see PA_EISMINT_Greenland::init() and PA_EISMINT_Greenland::update() for an example.
+
+*/
