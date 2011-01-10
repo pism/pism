@@ -1,20 +1,19 @@
 #!/usr/bin/make -f
+# -*- makefile -*-
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
 
-clean:
-	rm -rf tmp
+# This has to be exported to make some magic below work.
+export DH_OPTIONS
 
-# FIXME: replace ../../.. with ${Pism_SOURCE_DIR} and use configure_file
-build:
-	mkdir -p tmp
-	cd tmp && cmake -DCMAKE_INSTALL_PREFIX=/usr/ -DPism_BUILD_TYPE=Release -DPism_LOCAL_INSTALL=OFF -DPism_BUILD_DOCS=ON ../../..
-	cd tmp && $(MAKE)
+configure:
+	mkdir -p debian/tmp
+	cd debian/tmp && cmake -DCMAKE_INSTALL_PREFIX=/usr/ -DPism_BUILD_TYPE=Release -DPism_LOCAL_INSTALL=OFF -DPism_BUILD_DOCS=OFF -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=FALSE ../..
 
-binary: binary-indep binary-arch
+build: configure
+	dh_auto_build -Bdebian/tmp --parallel
 
-binary-indep: build
+%:
+	dh -Bdebian/tmp --parallel $@
 
-binary-arch: build
-	cd tmp && $(MAKE) DESTDIR=.. install
-#	dpkg-shlibdeps usr/bin/pism/*
-#	dpkg-gencontrol
-#	dpkg-deb
+.PHONY: build

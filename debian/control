@@ -1,10 +1,17 @@
-Package: pism
+Source: pism
 Version: 0.3
 Section: misc
-Priority: optional
-Homepage: http://www.pismdocs.org
+Priority: extra
 Maintainer: Constantine Khroulev <ckhroulev@alaska.edu>
-Depends: ${shlibs:Depends}, netcdf-bin
+Build-Depends: debhelper (>= 7), cmake
+Standards-Version: 3.8.3
+Homepage: http://www.pismdocs.org
+
+Package: pism
+Section: misc
+Priority: extra
+Architecture: i386
+Depends: ${shlibs:Depends}, netcdf-bin, ${python:Depends}
 Recommends: ncview, nco
 Description: PISM, a Parallel Ice Sheet Model
  The Parallel Ice Sheet Model project provides an open source, fully-parallel,
