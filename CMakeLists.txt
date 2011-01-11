@@ -69,14 +69,14 @@ endif ()
 set (Pism_FAST_WRITE "1" CACHE STRING "Variable order options: 1,2,3 (fastest to slowest).")
 
 # This installs PISM in ${CMAKE_INSTALL_PREFIX}/{bin,lib,doc} if installed
-# locally; otherwise in ${CMAKE_INSTALL_PREFIX}/bin/pism, .../lib/pism and
+# locally; otherwise in ${CMAKE_INSTALL_PREFIX}/bin/, .../lib/pism and
 # .../share/doc/pism to avoid cluttering system directories.
 if (Pism_LOCAL_INSTALL)
   set (Pism_BIN_DIR "bin")
   set (Pism_LIB_DIR "lib")
   set (Pism_DOC_DIR "doc")
 else ()
-  set (Pism_BIN_DIR "bin/pism")
+  set (Pism_BIN_DIR "bin")
   set (Pism_LIB_DIR "lib/pism")
   set (Pism_DOC_DIR "share/doc/pism")
 endif ()
