@@ -13,9 +13,10 @@ Description: A metapackage installing tools necessary or useful for building PIS
  This metapackage installs packages commonly used by PISM developers. 
  It can be used to prepare a computer for building a development version of PISM
  from sources or extending PISM.
-
+ .
  You might also need to install Python modules not available as Debian
  packages. This includes
-
+ .
  http://code.google.com/p/netcdf4-python/
+ .
  http://svn.scipy.org/svn/scikits/trunk/delaunay

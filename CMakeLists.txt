@@ -179,8 +179,6 @@ add_custom_target (etags
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
 )
 
-
-add_subdirectory (pism-toolkit)
 add_subdirectory (src)
 add_subdirectory (doc)
 

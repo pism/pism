@@ -2,7 +2,7 @@ Source: pism
 Section: misc
 Priority: extra
 Maintainer: Constantine Khroulev <ckhroulev@alaska.edu>
-Build-Depends: debhelper (>= 7), cmake
+Build-Depends: debhelper (>= 7), cmake, netcdf-bin
 Standards-Version: 3.8.3
 Homepage: http://www.pismdocs.org
 
@@ -10,8 +10,8 @@ Package: pism
 Section: misc
 Priority: extra
 Architecture: any
-Depends: ${shlibs:Depends}, netcdf-bin, ${python:Depends}
-Recommends: ncview, nco, python-dev
+Depends: ${shlibs:Depends}, python-numpy, ${python:Depends}
+Recommends: ncview, nco, python-dev, python-scipy, python-matplotlib
 Description: The Parallel Ice Sheet Model binary package
  The Parallel Ice Sheet Model project provides an open source, fully-parallel,
  high-resolution ice sheet model. It has these features:
@@ -22,4 +22,5 @@ Description: The Parallel Ice Sheet Model binary package
   * a polythermal, enthalpy-based conservation of energy scheme
   * extensible coupling to atmospheric and ocean models
   * complete documentation for users and developers
-
+ .
+ Certain Python modules used by PISM scripts are not available as Debian packages. You might need to install netcdf4-python and scikits.delaunay by hand.
