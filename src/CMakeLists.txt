@@ -114,7 +114,7 @@ set_source_files_properties (base/util/pism_default_config.cc
   PROPERTIES COMPILE_FLAGS -DPISM_DEFAULT_CONFIG_FILE='\"${Pism_DEFAULT_CONFIG_FILE}\"')
 set_source_files_properties (udunits/utlib.c
   PROPERTIES COMPILE_FLAGS
-  "-DUT_INSTALL_PATH='\"${CMAKE_INSTALL_PREFIX}${Pism_LIB_DIR}/pismudunits.dat\"' -DUT_SOURCE_PATH='\"${CMAKE_SOURCE_DIR}/src/udunits/pismudunits.dat\"'")
+  "-DUT_INSTALL_PATH='\"${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}/pismudunits.dat\"' -DUT_SOURCE_PATH='\"${CMAKE_SOURCE_DIR}/src/udunits/pismudunits.dat\"'")
 
 
 # Verification tests.

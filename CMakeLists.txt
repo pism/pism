@@ -39,7 +39,7 @@ if (Pism_BUILD_DEBIAN_PACKAGE)
   set (Pism_LOCAL_INSTALL OFF CACHE BOOL "Install PISM locally" FORCE)
   set (Pism_BUILD_TYPE "Release" CACHE STRING "PISM build type" FORCE)
   set (CMAKE_INSTALL_PREFIX "/usr" CACHE STRING "Install prefix" FORCE)
-  set (Pism_BUILD_DOCS OFF CACHE BOOL "Build PISM documentation" FORCE)
+  set (Pism_BUILD_DOCS ON CACHE BOOL "Build PISM documentation" FORCE)
   set (Pism_BUILD_EXTRA_EXECS OFF CACHE BOOL "Build extra executables (mostly testing/verification)" FORCE)
 
   # RPATH handling

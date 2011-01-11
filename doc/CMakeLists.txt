@@ -67,9 +67,10 @@ if (PDFLATEX_COMPILER AND Pism_BUILD_DOCS)
   
 
   # PISM Source Code Browser
+  option (Pism_BUILD_BROWSER "Build the source code browser if doxygen and dot are installed" OFF)
 
   # Only build if both doxygen and dot are found
-  if (DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
+  if (DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE AND Pism_BUILD_BROWSER)
     set (browser_helpers
       browser/config_doc.py
       browser/doxybib.bst
