@@ -190,17 +190,19 @@ install (FILES
   "${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc"
   DESTINATION ${Pism_LIB_DIR})
 
-# miscellaneous executables needed by software tests
-add_executable (flowlaw_test
-  software_tests/flowlaw_test.cc)
-target_link_libraries (flowlaw_test pismutil pismflowlaws)
-install (TARGETS flowlaw_test RUNTIME DESTINATION ${Pism_BIN_DIR})
-
-add_executable (bedrough_test
-  software_tests/bedrough_test.cc
-  base/stressbalance/PISMBedSmoother.cc)
-target_link_libraries (bedrough_test pismutil)
-install (TARGETS bedrough_test RUNTIME DESTINATION ${Pism_BIN_DIR})
+if (NOT Pism_BUILD_DEBIAN_PACKAGE)
+  # miscellaneous executables needed by software tests
+  add_executable (flowlaw_test
+    software_tests/flowlaw_test.cc)
+  target_link_libraries (flowlaw_test pismutil pismflowlaws)
+  install (TARGETS flowlaw_test RUNTIME DESTINATION ${Pism_BIN_DIR})
+  
+  add_executable (bedrough_test
+    software_tests/bedrough_test.cc
+    base/stressbalance/PISMBedSmoother.cc)
+  target_link_libraries (bedrough_test pismutil)
+  install (TARGETS bedrough_test RUNTIME DESTINATION ${Pism_BIN_DIR})
+endif ()
 
 if (Pism_BUILD_EXTRA_EXECS)
   set (SIMPLE_EXECS simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleL)

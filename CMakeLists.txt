@@ -33,6 +33,39 @@ option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                    
 option (Pism_LOCAL_INSTALL     "Install PISM locally (not in /usr/local/ or similar). This affects installation paths." ON)
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
 
+option (Pism_BUILD_DEBIAN_PACKAGE "Use settings appropriate for building a .deb package" OFF)
+
+if (Pism_BUILD_DEBIAN_PACKAGE)
+  set (Pism_LOCAL_INSTALL OFF CACHE BOOL "Install PISM locally" FORCE)
+  set (Pism_BUILD_TYPE "Release" CACHE STRING "PISM build type" FORCE)
+  set (CMAKE_INSTALL_PREFIX "/usr" CACHE STRING "Install prefix" FORCE)
+  set (Pism_BUILD_DOCS OFF CACHE BOOL "Build PISM documentation" FORCE)
+  set (Pism_BUILD_EXTRA_EXECS OFF CACHE BOOL "Build extra executables (mostly testing/verification)" FORCE)
+
+  # RPATH handling
+  set (CMAKE_SKIP_BUILD_RPATH TRUE)
+  set (CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
+  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
+  set (CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+else ()
+  ## Use full RPATH, with this setting Pism libraries cannot be moved after installation
+  ## but the correct libraries will always be found regardless of LD_LIBRARY_PATH
+  ## in use, i.e. don't skip the full RPATH for the build tree
+  set (CMAKE_SKIP_BUILD_RPATH FALSE)
+  # when building, don't use the install RPATH already
+  # (but later on when installing)
+  set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+  # the RPATH to be used when installing
+  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
+  # add the automatically determined parts of the RPATH
+  # which point to directories outside the build tree to the install RPATH
+  set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+  # Mac OS X install_name fix:
+  set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
+endif ()
+
+
 set (Pism_FAST_WRITE "1" CACHE STRING "Variable order options: 1,2,3 (fastest to slowest).")
 
 # This installs PISM in ${CMAKE_INSTALL_PREFIX}/{bin,lib,doc} if installed
@@ -146,21 +179,6 @@ add_custom_target (etags
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
 )
 
-## Use full RPATH, with this setting Pism libraries cannot be moved after installation
-## but the correct libraries will always be found regardless of LD_LIBRARY_PATH
-## in use, i.e. don't skip the full RPATH for the build tree
-set (CMAKE_SKIP_BUILD_RPATH FALSE)
-# when building, don't use the install RPATH already
-# (but later on when installing)
-set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
-# the RPATH to be used when installing
-set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
-# add the automatically determined parts of the RPATH
-# which point to directories outside the build tree to the install RPATH
-set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-# Mac OS X install_name fix:
-set (CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
 
 add_subdirectory (pism-toolkit)
 add_subdirectory (src)
@@ -177,39 +195,3 @@ install (PROGRAMS
   util/pism_config_editor.py
   DESTINATION ${Pism_BIN_DIR})
 
-# Packaging:
-if (APPLE)
-  set (CPACK_GENERATOR "TGZ")   # just so that we can test it (it's quite useless in our case)
-else()
-  set (CPACK_GENERATOR "DEB")
-endif()
-
-#set (CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${CMAKE_CURRENT_SOURCE_DIR}/debian/control_extra")
-set (CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libfftw3-3, libpetsc3.0.0, libnetcdf4, libgsl0ldbl")
-set (CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
-set (CPACK_DEBIAN_PACKAGE_RECOMMENDS "ncview, python-numpy")
-set (CPACK_DEBIAN_PACKAGE_SECTION "science")
-set (CPACK_DEBIAN_PACKAGE_SUGGESTS "nco")
-
-set (CPACK_PACKAGE_CONTACT "Constantine Khroulev <ckhroulev@alaska.edu>")
-
-set (CPACK_PACKAGE_DESCRIPTION_SUMMARY "PISM, A Parallel Ice Sheet Model (${Pism_BRANCH} version)")
-
-set (CPACK_PACKAGE_DESCRIPTION "The Parallel Ice Sheet Model project provides an open source, fully-parallel, high-resolution ice sheet model. It has these features:
-* a hierarchy of available stress balances, including shallow ice and shelf approximations and a hybrid of these
-* verification and validation tools
-* a polythermal, enthalpy-based conservation of energy scheme
-* extensible coupling to atmospheric and ocean models
-* complete documentation for users and developers
-
-Please see http://www.pismdocs.org/ for more information.")
-set (CPACK_PACKAGE_NAME "pism-${Pism_BRANCH}")
-set (CPACK_PACKAGE_VENDOR "PISM Developers")
-set (CPACK_PACKAGE_VERSION_MAJOR "${Pism_VERSION_MAJOR}")
-set (CPACK_PACKAGE_VERSION_MINOR "${Pism_VERSION_MINOR}")
-set (CPACK_PACKAGE_VERSION_PATCH "${Pism_REVISION}")
-
-set (CPACK_SET_DESTDIR ON)
-set (CPACK_STRIP_FILES ON)
-
-include(CPack)
