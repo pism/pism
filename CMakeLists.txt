@@ -45,7 +45,7 @@ if (Pism_BUILD_DEBIAN_PACKAGE)
   # RPATH handling
   set (CMAKE_SKIP_BUILD_RPATH TRUE)
   set (CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
-  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
+  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/pism")
   set (CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 else ()
   ## Use full RPATH, with this setting Pism libraries cannot be moved after installation

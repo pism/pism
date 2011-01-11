@@ -6,14 +6,10 @@
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
 
-configure:
-	mkdir -p debian/tmp
-	cd debian/tmp && cmake -DCMAKE_INSTALL_PREFIX=/usr/ -DPism_BUILD_TYPE=Release -DPism_LOCAL_INSTALL=OFF -DPism_BUILD_DOCS=OFF -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=FALSE ../..
-
-build: configure
-	dh_auto_build -Bdebian/tmp --parallel
+override_dh_auto_configure:
+	mkdir -p debian/builddir
+	cd debian/builddir && cmake ../.. -DPism_BUILD_DEBIAN_PACKAGE:BOOL=ON
 
 %:
-	dh -Bdebian/tmp --parallel $@
+	+dh --builddirectory=debian/builddir $@
 
-.PHONY: build
