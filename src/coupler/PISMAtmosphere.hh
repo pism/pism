@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2010 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -217,6 +217,9 @@ public:
   virtual void add_vars_to_output(string key, set<string> &result) {
     if (input_model != NULL)  input_model->add_vars_to_output(key, result);
   }
+
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict)
+  { input_model->get_diagnostics(dict); }
 
 protected:
   PISMAtmosphereModel *input_model;

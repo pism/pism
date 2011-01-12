@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2010 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -33,6 +33,9 @@ public:
 
   virtual ~PISMSurfaceModel()
   { delete atmosphere; };
+
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict)
+  { atmosphere->get_diagnostics(dict); }
 
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
@@ -77,6 +80,9 @@ public:
   { return 0; }
   virtual PetscErrorCode write_variables(set<string>, string)
   { return 0; }
+
+  // Does not have an atmosphere model.
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}
 };
 
 
@@ -138,6 +144,9 @@ public:
   //! This surface model does not use an atmosphere model.
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input)
   { delete input; }
+
+  // Does not have an atmosphere model.
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}
 
   virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
 					       IceModelVec2S &result);
@@ -224,6 +233,9 @@ public:
 
   virtual ~PSModifier()
   { delete input_model; }
+
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict)
+  { input_model->get_diagnostics(dict); }
 
   virtual void attach_input(PISMSurfaceModel *input);
   virtual void add_vars_to_output(string key, set<string> &result) {

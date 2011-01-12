@@ -6,6 +6,7 @@
 \li \ref reading_2d_forcing "Read 2D forcing fields"
 \li \ref get_variables "Use fields managed by IceModel in a surface (atmosphere, ocean) model to implement a parameterization."
 \li \ref component_output "Write to an output file from a PISMComponent derived class (such as a surface model)"
+\li \ref diag "Add a new diagnostic quantity"
 
 \section adding_parameters Creating and using configuration flags and parameters
 
@@ -101,13 +102,15 @@ vH.write_in_glaciological_units = true;
 
 \subsubsection reading_more Reading data from a file.
 
-There are two cases of "reading data from a file":
-\li reading a field stored on a grid matching the one used by the current run
-(restarting a run is one example) and
-\li reading a field stored on a different grid, interpolating onto the current
-grid.
+There are at least three cases of "reading data from a file":
+\li reading a field stored in an input file on a grid matching the one used by the current run
+(restarting a run) and
+\li reading a field stored in an input file on a different grid, interpolating onto the current
+grid (bootstrapping).
+\li reading a field stored in a file \b other than the input file using
+interpolation (assuming that grids are compatible but not identical)
 
-This snippet from PAYearlyCycle::init() covers both cases (at least for
+This snippet from PAYearlyCycle::init() covers the first two cases (at least for
 surface, atmosphere and ocean models; %i.e. for all the classes derived from PISMComponent)
 \code
   ierr = find_pism_input(precip_filename, lic, regrid, start); CHKERRQ(ierr);
@@ -137,6 +140,23 @@ read. PISM almost always reads the last record.
 
 Please see PISMComponent::find_pism_input() to see how to create a "local
 interpolation context" and compute the "start" index.
+
+The snippet below is an example of case 3 (for 2D fields, reading the last record).
+\code
+  PISMIO nc(&grid);
+  int last_record;
+  grid_info gi;
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+  ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
+  ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
+  last_record -= 1;
+  ierr = nc.close(); CHKERRQ(ierr);
+  LocalInterpCtx lic(gi, NULL, NULL, grid); // 2D only
+    
+  ierr = variable.regrid(filename, lic, true); CHKERRQ(ierr); // fails if not found!
+\endcode
+
+\note The LocalInterpCtx "lic" will be de-allocated at the end of scope.
 
 \subsubsection writing_more Writing data to a file.
 
@@ -212,8 +232,9 @@ value returned will be computed using linear interpolation.
 
 \section reading_2d_forcing Reading 2D forcing fields
 
-PISM uses instances of the IceModelVec2T class to read 2D forcing fields;
-please see PSDirectForcing for an example.
+PISM uses instances of the IceModelVec2T class to read 2D forcing fields that
+vary in time; please see PSDirectForcing for an example. See the section \ref
+adding_variables if you need to read and store \b one record of a 2D field.
 
 The following snippet from PSDirectForcing::init() illustrates creating an
 IceModelVec2T object and reading data from a file.
@@ -258,4 +279,93 @@ IceModel::set_output_size()); calls add_vars_to_output()
 calls define_variables()
 \li Write all the variables to the file (same method); calls write_variables().
 
+\section diag Adding a new "diagnostic" quantity to an atmosphere model.
+
+To add a new "diagnostic" quantity (i.e. a 2D or 3D field that needs to be
+saved to an output file but is not permanently stored in memory and is computed
+on demand), do the following.
+
+\subsection create_diag_class Create the class implementing the diagnostic
+
+Assuming that PA_foo is the atmosphere model we're working with and "bar" is
+the name of the new quantity, we need to add this code
+
+\code
+class PA_foo_bar : public PISMDiag<PA_foo>
+{
+public:
+  PA_foo_bar(PA_foo *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+\endcode
+to a header (.hh) file and implement it in a .cc file.
+
+See IceModel_diagnostics.cc for examples. Generally speaking, in every class
+implementing a "diagnostic" quantity
+\li the constructor sets metadata
+\li you have access to a data member "var" of an atmosphere model as
+"model->var"; you might need to add
+\code
+friend class PA_foo_bar;
+\endcode
+to the definition of PA_foo if you need to access a private data member (see
+the definition of IceModel for one example).
+\li when working with atmosphere models and other classes derived from
+PISMComponent, you can access the config database as "model->config".
+\li the compute() method allocates memory and performs the computation.
+\li to use a field managed by IceModel, use "variables":
+\code
+  IceModelVec2S *surface;
+  surface = dynamic_cast<IceModelVec2S*>(variables.get("surface_altitude"));
+  if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
+\endcode
+\li the \b caller of the compute() method has to de-allocate the field
+allocated by compute()
+
+Note that in almost every (current) implementation of ...::compute() you see
+\code
+PetscErrorCode ...::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  const PetscScalar fillval = -0.01;
+
+  <...>
+
+  // 1
+  IceModelVec2S *result = new IceModelVec2S;
+  ierr = result->create(grid, "hardav", false); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+
+  <...>
+
+  // 2
+  output = result;
+  return 0;
+}
+\endcode
+
+The block marked "1" allocates a 2D field and copies metadata stored in
+vars[0], while the block marked "2" casts a pointer to a 2D field to a pointer
+to a "generic" field.
+
+This allows us to have the same interface for both 2D and 3D diagnostics.
+
+\subsection add_diag_to_the_list "Register" the new diagnostic.
+
+To make the new diagnostic field available (i.e. to be able to use the new
+PA_foo_bar class), implement PA_foo::get_diagnostics().
+
+\code
+void PA_foo::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  dict["bar"] = new PA_foo_bar(this, grid, *variables);
+}
+\endcode
+
+Note that if you are implementing this method in a "modifier" of a surface
+model, you need to remember to call
+\code
+  input_model->get_diagnostics(dict);
+\endcode
+
+\note PISM's handling of scalar diagnostic quantities is different and should
+be improved.
 */

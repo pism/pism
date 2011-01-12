@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -42,6 +42,15 @@ PetscErrorCode IceModel::init_diagnostics() {
 
   // Get diagnostics supported by the stress balance object:
   stress_balance->get_diagnostics(diagnostics);
+
+  // Get diagnostics supported by the surface model:
+  surface->get_diagnostics(diagnostics);
+
+  // Get diagnostics supported by the ocean model:
+  ocean->get_diagnostics(diagnostics);
+
+  // Get diagnostics supported by the bed deformation model:
+  beddef->get_diagnostics(diagnostics);
 
   int threshold = 5;
   if (getVerbosityLevel() >= threshold) {

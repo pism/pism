@@ -41,13 +41,20 @@ if (Pism_BUILD_DEBIAN_PACKAGE)
   set (CMAKE_INSTALL_PREFIX "/usr" CACHE STRING "Install prefix" FORCE)
   set (Pism_BUILD_DOCS ON CACHE BOOL "Build PISM documentation" FORCE)
   set (Pism_BUILD_EXTRA_EXECS OFF CACHE BOOL "Build extra executables (mostly testing/verification)" FORCE)
+  set (Pism_BIN_DIR "bin")
+  set (Pism_LIB_DIR "lib/pism")
+  set (Pism_DOC_DIR "share/doc/pism")
 
   # RPATH handling
   set (CMAKE_SKIP_BUILD_RPATH TRUE)
   set (CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
-  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib/pism")
+  set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
   set (CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 else ()
+  set (Pism_BIN_DIR "bin")
+  set (Pism_LIB_DIR "lib")
+  set (Pism_DOC_DIR "doc")
+
   ## Use full RPATH, with this setting Pism libraries cannot be moved after installation
   ## but the correct libraries will always be found regardless of LD_LIBRARY_PATH
   ## in use, i.e. don't skip the full RPATH for the build tree
