@@ -50,7 +50,9 @@ PetscErrorCode IceModel::init_diagnostics() {
   ocean->get_diagnostics(diagnostics);
 
   // Get diagnostics supported by the bed deformation model:
-  beddef->get_diagnostics(diagnostics);
+  if (beddef) {
+    beddef->get_diagnostics(diagnostics);
+  }
 
   int threshold = 5;
   if (getVerbosityLevel() >= threshold) {
