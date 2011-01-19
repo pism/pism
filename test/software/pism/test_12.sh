@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #12: mass conservation within rounding error for nonsliding SIA moving margin."
+test="Test #12: mass conservation within rounding error (SIA moving margin)."
 # The list of files to delete when done.
 files="verify.nc ivol.nc"
 dir=`pwd`

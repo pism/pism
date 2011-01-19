@@ -61,14 +61,15 @@ run () {
 
 # print a message and count a success
 pass () {
-    print "PASS: $test"
+    print "PASS  $test"
     PASSCOUNT=$(( $PASSCOUNT + 1 ))
     cleanup
 }
 
 # print a message and count a failure
 fail () {
-    print "FAIL: $test (Reason: $1)"
+    print "FAIL  $test"
+    print "  (REASON: $1)"
     FAILCOUNT=$(( $FAILCOUNT + 1 ))
     files=""			# so that the next test script does not delete them
 }

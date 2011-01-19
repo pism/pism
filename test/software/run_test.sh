@@ -33,5 +33,5 @@ do
 done
 
 print "Summary:"
-print "PASSED: $PASSCOUNT out of $(( $PASSCOUNT + $FAILCOUNT ))."
-print "FAILED: $FAILCOUNT out of $(( $PASSCOUNT + $FAILCOUNT ))."
+print "PASSED  $PASSCOUNT out of $(( $PASSCOUNT + $FAILCOUNT ))."
+print "FAILED  $FAILCOUNT out of $(( $PASSCOUNT + $FAILCOUNT ))."

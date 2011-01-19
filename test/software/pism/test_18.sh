@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #18: verification test G regression: thermo SIA w. time-dependent mass balance."
+test="Test #18: verif test G regression: thermo SIA w. time-dependent SMB."
 # The list of files to delete when done.
 files="test_18-G-out.txt verify.nc"
 dir=`pwd`

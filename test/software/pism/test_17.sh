@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #17: verification test L regression: isothermal SIA with non-flat bed."
+test="Test #17: verif test L regression: isothermal SIA with non-flat bed."
 # The list of files to delete when done.
 files="test_17-L-out.txt verify.nc"
 dir=`pwd`

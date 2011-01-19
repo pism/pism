@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #19: verification test I regression: nonlinear SSA with plastic bed."
+test="Test #19: verif test I regression: nonlinear SSA with plastic bed."
 # The list of files to delete when done.
 files="test-I-out.txt verify.nc"
 dir=`pwd`

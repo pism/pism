@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test # 8: regridding: coarse -> fine -> coarse (in the vertical direction)."
+test="Test # 8: regridding: coarse -> fine -> coarse (vertical direction)."
 # The list of files to delete when done.
 files="coarse1.nc coarse2.nc fine1.nc fine2.nc"
 dir=`pwd`

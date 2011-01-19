@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #21: verification test K regression: temperature, cold ice, bedrock thermal layer."
+test="Test #21: verif test K regression: cold ice method, bedrock thermal layer."
 # The list of files to delete when done.
 files="test-K-out.txt verify.nc"
 dir=`pwd`

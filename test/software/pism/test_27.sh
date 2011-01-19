@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #27: comparing restarting with \"-i\" to \"-boot_file ... -regrid_file ...\""
+test="Test #27: comparing restart: \"-i\" vs \"-boot_file\" & \"-regrid_file\"."
 # The list of files to delete when done.
 files="foo.nc bar.nc"
 dir=`pwd`

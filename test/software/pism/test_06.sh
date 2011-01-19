@@ -2,7 +2,7 @@
 
 source ../functions.sh
 
-test="Test # 6: bootstrapping from symmetric and non-symmetric x- and y-variable ranges."
+test="Test # 6: bootstrapping from symmetric and non-symmetric x- and y-vars."
 files="foo.nc bar.nc baz.nc"
 dir=`pwd`
 
