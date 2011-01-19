@@ -20,11 +20,13 @@
 #include "PISMAtmosphere.hh"
 
 //! Allocates memory and reads in the precipitaion data.
-PetscErrorCode PAYearlyCycle::init(PISMVars &/*vars*/) {
+PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
   PetscErrorCode ierr;
   LocalInterpCtx *lic = NULL;
   bool regrid = false;
   int start = -1;
+
+  variables = &vars;
 
   snow_temp_july_day = config.get("snow_temp_july_day");
 
