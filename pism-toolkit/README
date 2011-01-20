@@ -1,4 +1,4 @@
 This directory contains files necessary to create a Debian metapackage
 installing most of the tools commonly used by PISM developers.
 
-Please see the 'control' file for more info. 
+Run "fakeroot debian/rules binary" to create the package.

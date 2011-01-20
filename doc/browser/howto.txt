@@ -144,13 +144,10 @@ interpolation context" and compute the "start" index.
 The snippet below is an example of case 3 (for 2D fields, reading the last record).
 \code
   PISMIO nc(&grid);
-  int last_record;
-  grid_info gi;
+ grid_info gi;
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
   ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
-  ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
-  last_record -= 1;
-  ierr = nc.close(); CHKERRQ(ierr);
+ ierr = nc.close(); CHKERRQ(ierr);
   LocalInterpCtx lic(gi, NULL, NULL, grid); // 2D only
     
   ierr = variable.regrid(filename, lic, true); CHKERRQ(ierr); // fails if not found!

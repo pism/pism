@@ -156,8 +156,10 @@ add_executable (pisms pisms.cc
 # EISMINT-Greenland
 add_executable (pgrn eismint/pgrn.cc eismint/pgrn_atmosphere.cc)
 
+add_executable (pismebm coupler/ebm_driver.cc pismebm.cc)
+
 # All of the following are linked against pismbase
-foreach (EXEC pismr pismo pisms pgrn)
+foreach (EXEC pismr pismo pisms pgrn pismebm)
   target_link_libraries (${EXEC} pismbase)
 endforeach (EXEC)
 

@@ -594,20 +594,6 @@ PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, string file
   return 0;
 }
 
-// PetscErrorCode PSTemperatureIndex::write_diagnostic_fields(PetscReal t_years, PetscReal dt_years,
-//                                                            string filename) {
-//   PetscErrorCode ierr;
-
-//   ierr = PISMSurfaceModel::write_diagnostic_fields(t_years, dt_years, filename); CHKERRQ(ierr);
-
-//   ierr = accumulation_rate.write(filename.c_str()); CHKERRQ(ierr);
-//   ierr = melt_rate.write(filename.c_str()); CHKERRQ(ierr);
-//   ierr = runoff_rate.write(filename.c_str()); CHKERRQ(ierr); 
-
-//   return 0;
-// }
-
-
 ///// "Force-to-thickness" mechanism
 
 void PSForceThickness::attach_atmosphere_model(PISMAtmosphereModel *input) {

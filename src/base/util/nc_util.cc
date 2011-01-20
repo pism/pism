@@ -383,7 +383,7 @@ PetscErrorCode NCTool::open_for_reading(const char filename[]) {
   if (stat != NC_NOERR) {
     ierr = PetscPrintf(com, "ERROR: Can't open file '%s'!\n",
 		       filename); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
   
   return 0;

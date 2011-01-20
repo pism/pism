@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -94,6 +94,8 @@ PetscErrorCode PISMOptionsRealArray(string option, string text,
 
 PetscErrorCode PISMOptionsIsSet(string option, bool &result);
 PetscErrorCode PISMOptionsIsSet(string option, string descr, bool &result);
+
+void PISMEnd();
 
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]);
 PetscErrorCode check_old_option_and_stop(

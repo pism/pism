@@ -63,10 +63,6 @@ static void create_ps_forcing(IceGrid& g, const NCConfigVariable& conf, PSModifi
   result = new PSForceThickness(g, conf);
 }
 
-static void create_ps_external(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
-  result = new PSExternal(g, conf);
-}
-
 static void create_ps_given(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
   result = new PSDirectForcing(g, conf);
 }
@@ -75,7 +71,6 @@ void PSFactory::add_standard_types() {
   add_model("constant",     &create_ps_constant);
   add_model("simple",       &create_ps_simple);
   add_model("pdd",          &create_ps_temperatureindex); 
-  add_model("external",     &create_ps_external); 
   add_model("given",        &create_ps_given); 
   set_default("simple");
 

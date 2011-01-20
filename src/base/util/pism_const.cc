@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -787,4 +787,15 @@ string pism_filename_add_suffix(string filename, string separator, string suffix
     result += ".nc";
 
   return result;
+}
+
+void PISMEnd() {
+  int flag;
+  PetscFinalize();
+
+  MPI_Finalized(&flag);
+  if ( ! flag )
+    MPI_Finalize();
+
+  exit(0);
 }
