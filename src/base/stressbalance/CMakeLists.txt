@@ -8,8 +8,9 @@ add_library (pismstressbalance
   PISMBedSmoother.cc
   SIAFD.cc
   SIAFD_diagnostics.cc
+  SSA.cc
+  SSA_diagnostics.cc
   SSAFD.cc
-  SSAFD_diagnostics.cc
 )
 target_link_libraries (pismstressbalance pismutil pismflowlaws)
 

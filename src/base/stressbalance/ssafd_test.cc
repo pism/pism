@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010--2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,9 +18,10 @@
 
 static char help[] =
   "\nSSAFD_TEST\n"
-  "  Testing program for SSA, time-independent calculations separate from\n"
-  "  IceModel. Uses verification test J. Also may be used in a PISM software"
-  "(regression) test.\n\n";
+  "  Testing program for the finite difference implementation of the SSA.\n"
+  "  Does a time-independent calculation.  Does not run IceModel or a derived\n"
+  "  class thereof. Uses verification test J. Also may be used in a PISM\n"
+  "  software (regression) test.\n\n";
 
 #include "pism_const.hh"
 #include "iceModelVec.hh"

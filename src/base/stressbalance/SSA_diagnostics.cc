@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010--2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,14 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "SSAFD.hh"
+#include "SSA.hh"
 
-void SSAFD::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
-  dict["taud"] = new SSAFD_taud(this, grid, *variables);
+void SSA::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+  dict["taud"] = new SSA_taud(this, grid, *variables);
 }
 
-SSAFD_taud::SSAFD_taud(SSAFD *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<SSAFD>(m, g, my_vars) {
+SSA_taud::SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<SSA>(m, g, my_vars) {
   
   dof = 2;
   vars.resize(dof);
@@ -37,7 +37,7 @@ SSAFD_taud::SSAFD_taud(SSAFD *m, IceGrid &g, PISMVars &my_vars)
             "Pa", "Pa", 1);
 }
 
-PetscErrorCode SSAFD_taud::compute(IceModelVec* &output) {
+PetscErrorCode SSA_taud::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   IceModelVec2V *taud = new IceModelVec2V;
@@ -50,3 +50,4 @@ PetscErrorCode SSAFD_taud::compute(IceModelVec* &output) {
   output = taud;
   return 0;
 }
+
