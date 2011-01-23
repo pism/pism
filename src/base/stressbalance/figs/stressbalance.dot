@@ -1,53 +1,68 @@
 digraph velocity
 {
     // Global graph parameters
-    node [fontname=Arial fontsize=8 shape=box width=1.3 fixedsize=true];
-    edge [fontname=Arial fontsize=8];
-    graph [fontname=Arial fontsize=8 ranksep=0.5 nodesep=0.3];
+    node [fontname=FreeSans fontsize=8 shape=box width=1.3 fixedsize=true];
+    edge [fontname=FreeSans fontsize=8];
+    graph [fontname=FreeSans fontsize=8 ranksep=0.5 nodesep=0.3];
 
-subgraph cluster_full_stokes {
-    label="Stokes"
+subgraph cluster_pism {
+    label="class PISMStressBalance"
     labeljust=r
+
+    subgraph cluster_higher_order {
+        label="higher order\n(planned)"
+        style=dotted;
+        node [style=invis width=0.2 label=""];
+        a -> b [style=invis];
+    }
+    subgraph cluster_hybrid {
+      style=invis
+      subgraph cluster_stressbalance {
+          style=solid
+          label="membrane stress balance\n(class ShallowStressBalance)"
+          labeljust=r
+          {rank=same
+              noop1 [label="set basal velocity\nto zero"];
+              ssa [label="SSA"];
+          }
+          ssa -> noop1 [style=invis];
+      }
+      subgraph cluster_mod {
+          style=solid
+          label="add shear in a column\n(class SSB_Modifier)"
+          labeljust=r
+          {rank=same
+              sia [label="SIA"];
+              noop2 [label="no shear"];
+          }
+          sia -> noop2 [style=invis];
+      }
+      inc [label="incompressibility"];
+      noop1 -> noop2 [label="" style=invis weight=10];
+      ssa -> sia [label="" style=invis weight=10];
+      {sia noop2} -> inc [label="" style=invis weight=10];
+    }
+
+    ssa -> sia [style=solid weight=0 color="green" 
+                label="hybrid" fontcolor="green"];
+    sia -> inc [style=solid weight=0 color="green"];
+
+    noop1 -> sia [style=dashed weight=0 color="blue"
+                  label="nonsliding SIA" fontcolor="blue"];
+    sia -> inc [style=dashed weight=0 color="blue"];
+
+    ssa -> noop2 [style=dotted weight=0 color="red"
+                  label="SSA only" fontcolor="red"];
+    noop2 -> inc [style=dotted weight=0 color="red"];
+
+    b -> inc [style=dotted weight=0];
+}
+subgraph cluster_stokes {
+    label="Stokes\n(not planned)"
+    labeljust=c
     style=dotted
     node [style=invis width=0.2 label=""];
-    foo -> bar -> baz [weight=10 style=invis];
+    foo -> bar -> baz [style=invis];
 }
-subgraph cluster_pism {
-    label="PISM Stress Balance"
-    labeljust=r
-
-subgraph cluster_stressbalance {
-    label="Stress Balance objects"
-    labeljust=r
-    {rank=same
-        noop1 [label="Set 2D velocity\nto zero"];
-        ssa [label="SSA"];
-    }
-}
-subgraph cluster_higher_order {
-    label="Higher order"
-    style=dotted;
-    node [style=invis width=0.2 label=""];
-    a -> b [style=invis];
-}
-subgraph cluster_mod {
-    label="Modifiers"
-    labeljust=r
-    {rank=same
-        sia [label="SIA"];
-        noop2 [label="Distribute\n2D velocity vertically"];
-    }
-    sia -> noop2 [style=invis];
-}
-inc [label="Incompressibility"];
-noop1 -> noop2 [label="" style=invis weight=10];
-ssa -> sia [label="" style=invis weight=10];
-{sia noop2} -> inc [label="" style=invis weight=10];
-
-}
-
-ssa -> sia -> inc [style=solid weight=0 color="green"];
-noop1 -> sia -> inc [style=dashed weight=0 color="blue"];
-ssa -> noop2 -> inc [style=dotted weight=0 color="red"];
 }
 

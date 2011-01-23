@@ -30,10 +30,15 @@
 class ShallowStressBalance : public PISMComponent_Diag
 {
 public:
-  ShallowStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
+  ShallowStressBalance(IceGrid &g, IceBasalResistancePlasticLaw &b, 
+                       IceFlowLaw &i, EnthalpyConverter &e,
                        const NCConfigVariable &conf)
     : PISMComponent_Diag(g, conf), basal(b), ice(i), EC(e)
-  { vel_bc = NULL; bc_locations = NULL; variables = NULL; max_u = max_v = 0.0; allocate(); }
+  {
+    vel_bc = NULL; bc_locations = NULL; variables = NULL;
+    max_u = max_v = 0.0;
+    allocate();
+  }
 
   virtual ~ShallowStressBalance() {}
 
@@ -90,10 +95,18 @@ protected:
   PetscReal max_u, max_v;
 };
 
+
+//! Returns zero velocity field, zero friction heating, and zero for D^2.
+/*!
+This derived class might be used in the non-sliding SIA approximation.
+This implementation ignors any basal resistance fields (e.g. yield stress from
+the IceModel or other user of this class).
+ */
 class SSB_Trivial : public ShallowStressBalance
 {
 public:
-  SSB_Trivial(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
+  SSB_Trivial(IceGrid &g, IceBasalResistancePlasticLaw &b,
+              IceFlowLaw &i, EnthalpyConverter &e,
               const NCConfigVariable &conf)
     : ShallowStressBalance(g, b, i, e, conf) {}
   virtual ~SSB_Trivial() {}
@@ -101,3 +114,4 @@ public:
 };
 
 #endif /* _SHALLOWSTRESSBALANCE_H_ */
+

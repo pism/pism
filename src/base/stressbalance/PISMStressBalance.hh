@@ -95,8 +95,10 @@ public:
 
 protected:
   virtual PetscErrorCode allocate();
-  virtual PetscErrorCode compute_vertical_velocity(IceModelVec3 *u, IceModelVec3 *v,
-                                                   IceModelVec2S *bmr, IceModelVec3 &result);
+  virtual PetscErrorCode compute_vertical_velocity(
+                IceModelVec3 *u, IceModelVec3 *v, IceModelVec2S *bmr,
+                IceModelVec3 &result);
+
   PISMVars *variables;
 
   IceModelVec3 w;
@@ -108,3 +110,4 @@ protected:
 };
 
 #endif /* _PISMSTRESSBALANCE_H_ */
+

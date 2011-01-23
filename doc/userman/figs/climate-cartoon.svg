@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
+
 <svg
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:cc="http://creativecommons.org/ns#"
@@ -13,8 +14,8 @@
    height="267.67328"
    id="svg2470"
    sodipodi:version="0.32"
-   inkscape:version="0.46"
-   sodipodi:docname="climate_cartoon_new.svg"
+   inkscape:version="0.47 r22583"
+   sodipodi:docname="climate-cartoon.svg"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
    version="1.0">
   <defs
@@ -57,7 +58,12 @@
      inkscape:current-layer="layer1"
      showgrid="false"
      showguides="false"
-     inkscape:guide-bbox="true">
+     inkscape:guide-bbox="true"
+     inkscape:window-width="1034"
+     inkscape:window-height="684"
+     inkscape:window-x="3"
+     inkscape:window-y="49"
+     inkscape:window-maximized="0">
     <inkscape:grid
        type="xygrid"
        id="grid2480"
@@ -238,7 +244,7 @@
        d="M 687.65221,434.33036 L 687.44831,452.67171 C 687.44831,452.67171 596.81061,451.45928 575.47321,458.69779 C 554.13571,465.9363 552.61671,468.358 548.66787,476.36167 C 544.71897,484.36535 545.64332,481.3271 545.34313,496.79221 C 563.56391,507.49918 624.31748,540.13297 624.31748,540.13297"
        style="fill:none;fill-rule:evenodd;stroke:#0000dc;stroke-width:3;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:6, 6;stroke-dashoffset:0;stroke-opacity:1" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#006a00;stroke-width:3;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:6, 6;stroke-dashoffset:0;stroke-opacity:1"
+       style="fill:none;fill-rule:evenodd;stroke:#006a00;stroke-width:4;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:16,4;stroke-dashoffset:0;stroke-opacity:1"
        d="M 63.798328,185.35139 C 63.798328,185.35139 84.795191,160.86013 96.544372,154.01681 C 101.89251,150.90178 116.30492,148.08865 116.30492,148.08865 C 116.30492,148.08865 118.21684,129.88163 121.10391,122.68223 C 125.50165,111.71573 135.26192,98.947349 142.55821,89.653894 C 148.66262,81.878574 157.15648,71.486115 165.14169,65.658948 C 173.40342,59.629988 186.25804,54.357831 195.91168,50.979686 C 205.10248,47.763502 217.92837,45.268308 227.52855,43.640056 C 237.60665,41.930746 251.1835,40.159467 261.40377,39.97024 C 275.74963,39.704628 294.90081,41.3743 309.11137,43.357762 C 321.79425,45.127996 338.71639,48.137332 350.8908,52.10886 C 361.84521,55.682401 375.79963,62.36311 385.89519,67.917295 C 395.7529,73.340625 408.47147,81.462208 417.22977,88.52472 C 421.93819,92.321491 427.59299,98.132329 431.62674,102.63939 C 434.28182,105.60601 437.61444,109.76529 439.81325,113.08425 C 445.31932,121.39531 450.66442,133.67889 455.90398,142.16048 C 460.54592,149.67466 466.64988,159.87347 472.55929,166.43772 C 475.09138,169.2504 478.74638,172.98459 482.15727,174.62423 C 490.24075,178.51001 502.61819,179.14119 511.5158,180.2701 C 523.6375,181.80807 539.95314,182.42946 552.16606,182.81074 C 572.98917,183.46083 621.61025,182.81074 621.61025,182.81074"
        id="path3350"
        transform="translate(64.275958,251.88544)"
