@@ -11,6 +11,7 @@ add_library (pismstressbalance
   SSA.cc
   SSA_diagnostics.cc
   SSAFD.cc
+  # SSAFEM.cc  # uncomment to compile
 )
 target_link_libraries (pismstressbalance pismutil pismflowlaws)
 
