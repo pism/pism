@@ -77,6 +77,10 @@ int main(int argc, char *argv[]) {
   }
 
   if (pism_side) {
+    // int i = 1;
+    // while (i == 1)
+    //   sleep(1);
+
     // Initialize PETSC
     PETSC_COMM_WORLD = intra_comm;
     ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);

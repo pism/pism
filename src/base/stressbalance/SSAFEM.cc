@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Jed Brown and Ed Bueler
+// Copyright (C) 2009--2011 Jed Brown and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -175,6 +175,10 @@ static inline void QuadMatMultTransposeVel(const PetscReal *A,const SSANode *x,S
   }
 }
 
+static inline int PismIntMask(PetscScalar maskvalue) {
+  return static_cast<int>(floor(maskvalue + 0.5));
+}
+
 #undef __FUNCT__
 #define __FUNCT__ "QuadEvaluateVel"
 static PetscErrorCode QuadEvaluateVel(const SSANode *x,PetscInt q,
@@ -231,7 +235,7 @@ static PetscErrorCode QuadGetStencils(DALocalInfo *info,PetscInt i,PetscInt j,
 // determined by whether that node is floating and the state of some options (-ssa_boundary_*).  The default is to apply
 // a calving front to floating ice and ice that is grounded below sea level and to apply a stress-free condition at
 // margins that are grounded above sea level since this probably indicates that it's not intended to be a margin at all.
-static PetscErrorCode ApplyBoundaryStress(
+PetscErrorCode ApplyBoundaryStress(
               FECTX *fe, PetscReal jacDiag[],
               const IceFlowLaw *ice, PetscReal ocean_rho,
               PetscReal **H,PetscReal **b,const MatStencil col[],PetscInt edge,
@@ -287,7 +291,7 @@ static PetscErrorCode ApplyBoundaryStress(
 // stresses, everything is fully dimensional
 #undef __FUNCT__
 #define __FUNCT__ "SSAFESetUp"
-static PetscErrorCode SSAFESetUp(FECTX *fe)
+PetscErrorCode SSAFESetUp(FECTX *fe)
 {
   SSAFEM          *ssa = fe->ssa;
   DALocalInfo      info_struct,
@@ -296,8 +300,8 @@ static PetscErrorCode SSAFESetUp(FECTX *fe)
                  **H,
                  **bed,
                  **tauc,
-                  *Te[4],
-                  *Tq[4];
+                  *Enth_e[4],
+                  *Enth_q[4];
   PetscReal        jinvDiag[2];
   IceGrid         *grid = fe->grid;
   PetscInt         i,j,k,q,p,
@@ -309,16 +313,16 @@ static PetscErrorCode SSAFESetUp(FECTX *fe)
   jinvDiag[0] = 2/grid->dx;
   jinvDiag[1] = 2/grid->dy;
 
-  ierr = PetscMalloc4(Mz,PetscReal,&Tq[0],
-                      Mz,PetscReal,&Tq[1],
-                      Mz,PetscReal,&Tq[2],
-                      Mz,PetscReal,&Tq[3]);CHKERRQ(ierr);
-  ierr = ssa->T->begin_access();CHKERRQ(ierr);
-  ierr = ssa->h->get_array(h);CHKERRQ(ierr);
-  ierr = ssa->H->get_array(H);CHKERRQ(ierr);
+  ierr = PetscMalloc4(Mz,PetscReal,&Enth_q[0],
+                      Mz,PetscReal,&Enth_q[1],
+                      Mz,PetscReal,&Enth_q[2],
+                      Mz,PetscReal,&Enth_q[3]);CHKERRQ(ierr);
+  ierr = ssa->enthalpy->begin_access();CHKERRQ(ierr);
+  ierr = ssa->surface->get_array(h);CHKERRQ(ierr);
+  ierr = ssa->thickness->get_array(H);CHKERRQ(ierr);
   ierr = ssa->bed->get_array(bed);CHKERRQ(ierr);
   ierr = ssa->tauc->get_array(tauc);CHKERRQ(ierr);
-  ierr = DAGetLocalInfo(ssa->da,info);CHKERRQ(ierr);
+  ierr = DAGetLocalInfo(fe->da,info);CHKERRQ(ierr);
   // See SSAFEFunction for discussion of communication
   for (i=info->gys; i<info->gys+info->gym-1; i++) { // Include ghost cells on either end
     for (j=info->gxs; j<info->gxs+info->gxm-1; j++) {
@@ -349,40 +353,40 @@ static PetscErrorCode SSAFESetUp(FECTX *fe)
       }
 
       // Surface and thickness information is stored, now do the thermal stuff
-      ierr = ssa->T->getInternalColumn(i,j,&Te[0]);CHKERRQ(ierr);
-      ierr = ssa->T->getInternalColumn(i+1,j,&Te[1]);CHKERRQ(ierr);
-      ierr = ssa->T->getInternalColumn(i+1,j+1,&Te[2]);CHKERRQ(ierr);
-      ierr = ssa->T->getInternalColumn(i,j+1,&Te[3]);CHKERRQ(ierr);
+      ierr = ssa->enthalpy->getInternalColumn(i,j,&Enth_e[0]);CHKERRQ(ierr);
+      ierr = ssa->enthalpy->getInternalColumn(i+1,j,&Enth_e[1]);CHKERRQ(ierr);
+      ierr = ssa->enthalpy->getInternalColumn(i+1,j+1,&Enth_e[2]);CHKERRQ(ierr);
+      ierr = ssa->enthalpy->getInternalColumn(i,j+1,&Enth_e[3]);CHKERRQ(ierr);
       // Interpolate to quadrature points at every vertical level
       for (k=0; k<Mz; k++) { // This loop could be cut short at the surface.
-        Tq[0][k] = Tq[1][k] = Tq[2][k] = Tq[3][k] = 0;
+        Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
         for (q=0; q<4; q++) {
           for (p=0; p<4; p++) {
-            Tq[q][k] += interp[q*4+p] * Te[p][k];
+            Enth_q[q][k] += interp[q*4+p] * Enth_e[p][k];
           }
         }
       }
       for (q=0; q<4; q++) {
         // Evaluate column integrals in flow law at every quadrature point's column
         PetscReal *iS = &fe->integratedStore[fe->sbs*(ij*4+q)]; // Location to put the stored data
-        fe->ice->integratedStore(
-               feS[q].H,grid->kBelowHeight(feS[q].H),grid->zlevels,Tq[q],iS);
+        *iS = fe->ice->averagedHardness_from_enth(feS[q].H, grid->kBelowHeight(feS[q].H),
+                                                  grid->zlevels, Enth_q[q]) * feS[q].H * 0.5;
       }
     }
   }
-  ierr = ssa->h->end_access();CHKERRQ(ierr);
-  ierr = ssa->H->end_access();CHKERRQ(ierr);
+  ierr = ssa->surface->end_access();CHKERRQ(ierr);
+  ierr = ssa->thickness->end_access();CHKERRQ(ierr);
   ierr = ssa->bed->end_access();CHKERRQ(ierr);
   ierr = ssa->tauc->end_access();CHKERRQ(ierr);
-  ierr = ssa->T->end_access();CHKERRQ(ierr);
-  ierr = PetscFree4(Tq[0],Tq[1],Tq[2],Tq[3]);CHKERRQ(ierr);
+  ierr = ssa->enthalpy->end_access();CHKERRQ(ierr);
+  ierr = PetscFree4(Enth_q[0],Enth_q[1],Enth_q[2],Enth_q[3]);CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 // The stores are dimensional, everything after \a u (inclusive) is nondimensional
 #undef __FUNCT__
 #define __FUNCT__ "PointwiseNuHAndBeta"
-static inline PetscErrorCode PointwiseNuHAndBeta(
+inline PetscErrorCode PointwiseNuHAndBeta(
        FECTX *fe,const FEStoreNode *feS,const PetscReal *iS,
        const SSANode *u,const PetscReal Du[],
        PetscReal *nuH,PetscReal *dNuH,PetscReal *beta,PetscReal *dbeta)
@@ -390,8 +394,8 @@ static inline PetscErrorCode PointwiseNuHAndBeta(
 
   PetscFunctionBegin;
   SSAFEM   *ssa = fe->ssa;
-  if (feS->H < ssa->shelfExtension->thickness()) {
-    *nuH = ssa->shelfExtension->viscosity();
+  if (feS->H < ssa->strength_extension.get_min_thickness()) {
+    *nuH = ssa->strength_extension.get_notional_strength();
     if (dNuH) *dNuH = 0;
     //SETERRQ(1,"Shold not happen for test I");
   } else {
@@ -407,13 +411,13 @@ static inline PetscErrorCode PointwiseNuHAndBeta(
     if (dbeta) *dbeta = 0;
     SETERRQ(1,"Not tested yet");
   } else {
-    ssa->basal->dragWithDerivative(feS->tauc,
-                                   u->x*fe->ref.Velocity(),u->y*fe->ref.Velocity(),
-                                   beta,dbeta);
+    ssa->basal.dragWithDerivative(feS->tauc,
+                                  u->x*fe->ref.Velocity(),u->y*fe->ref.Velocity(),
+                                  beta,dbeta);
     if (1) {
       PetscReal good_beta;
-      good_beta = ssa->basal->drag(feS->tauc,
-                                   u->x*fe->ref.Velocity(),u->y*fe->ref.Velocity());
+      good_beta = ssa->basal.drag(feS->tauc,
+                                  u->x*fe->ref.Velocity(),u->y*fe->ref.Velocity());
       if (PetscAbs(*beta - good_beta)/(*beta + good_beta) > 0) { // Use tolerance to not test associativity
         SETERRQ2(1,"`dragWithDerivative' producing different answers from `drag' %e != %e",
                  *beta,good_beta);
@@ -452,9 +456,9 @@ static void FixDirichletValues(FECTX *fe,PetscReal lmask[],SSANode **siaVel,
 
 #undef __FUNCT__
 #define __FUNCT__ "SSAFEFunction"
-static PetscErrorCode SSAFEFunction(DALocalInfo *info,
-                                    const SSANode **xg, SSANode **yg,
-                                    FECTX *fe)
+PetscErrorCode SSAFEFunction(DALocalInfo *info,
+                             const SSANode **xg, SSANode **yg,
+                             FECTX *fe)
 {
   SSAFEM          *ssa = fe->ssa;
   IceGrid         *grid = fe->grid;
@@ -513,7 +517,7 @@ static PetscErrorCode SSAFEFunction(DALocalInfo *info,
   //
   // Note that PETSc uses the opposite meaning of x,y directions in the DA
   ierr = ssa->mask->get_array(mask);CHKERRQ(ierr);
-  ierr = ssa->H->get_array(H);CHKERRQ(ierr);
+  ierr = ssa->thickness->get_array(H);CHKERRQ(ierr);
   ierr = ssa->bed->get_array(bed);CHKERRQ(ierr);
   ierr = DAVecGetArray(fe->da,ssa->siaVelLocal,&siaVel);CHKERRQ(ierr);
   for (i=info->gys; i<info->gys+info->gym-1; i++) { // Include ghost cells on either end
@@ -583,7 +587,7 @@ static PetscErrorCode SSAFEFunction(DALocalInfo *info,
       QuadInsertVel(row,y,yg);
     }
   }
-  ierr = ssa->H->end_access();CHKERRQ(ierr);
+  ierr = ssa->thickness->end_access();CHKERRQ(ierr);
   ierr = ssa->bed->end_access();CHKERRQ(ierr);
 
   // Enforce Dirichlet conditions strongly
@@ -620,9 +624,9 @@ static PetscErrorCode SSAFEFunction(DALocalInfo *info,
 // As in function evaluation, velocity is nondimensional
 #undef __FUNCT__
 #define __FUNCT__ "SSAFEJacobian"
-static PetscErrorCode SSAFEJacobian(DALocalInfo *info,
-                                    const SSANode **xg, Mat J,
-                                    FECTX *fe)
+PetscErrorCode SSAFEJacobian(DALocalInfo *info,
+                             const SSANode **xg, Mat J,
+                             FECTX *fe)
 {
   SSAFEM          *ssa  = fe->ssa;
   IceGrid         *grid = fe->grid;
@@ -814,7 +818,7 @@ static PetscErrorCode SSASetFromOptions_FE(FECTX *fe)
 
 #undef __FUNCT__
 #define __FUNCT__ "SSASetUp_FE"
-static PetscErrorCode SSASetUp_FE(FECTX *fe)
+PetscErrorCode SSASetUp_FE(FECTX *fe)
 {
   PetscErrorCode  ierr;
   SSAFEM         *ssa = fe->ssa;
@@ -838,7 +842,7 @@ static PetscErrorCode SSASetUp_FE(FECTX *fe)
     // We have a struct for the feStore at each quadrature point
     ierr = PetscMalloc(4*nElements*sizeof(fe->feStore[0]),&fe->feStore);CHKERRQ(ierr);
     // We don't have a struct for each block of the integrated store but we can get its block size
-    fe->sbs = fe->ice->integratedStoreSize();
+    fe->sbs = 1;                // FIXME! (used to call ice->integratedStoreSize, which always returned 1).
     ierr = PetscMalloc(4*nElements*fe->sbs*sizeof(PetscReal),&fe->integratedStore);CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);

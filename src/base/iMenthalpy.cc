@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2010 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -403,6 +403,15 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
       // for fine grid; this should *not* be replaced by call to grid.kBelowHeight()
       const PetscInt ks = static_cast<PetscInt>(floor(vH(i,j)/fdz));
+
+      // check if ks computed is valid
+      if ((ks < 0) || (ks >= grid.Mz_fine)) {
+        PetscPrintf(grid.com,
+                    "ERROR: ks = %d computed at i = %d, j = %d is invalid,"
+                    " possibly because of invalid ice thickness.\n",
+                    ks, i, j);
+        SETERRQ(1, "invalid ks");
+      }
 
       const bool ice_free_column = (ks == 0);
 

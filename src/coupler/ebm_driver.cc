@@ -30,16 +30,14 @@ int EBM_driver::run() {
   int ierr;
   bool ready;
   int done = 0,
-    wait_counter = 0;
+    wait_counter = 0,
+    wait_message_counter = 1;
 
   // Initialization: get the command.
   {
     char tmp[PETSC_MAX_PATH_LEN];
     MPI_Recv(tmp, PETSC_MAX_PATH_LEN, MPI_CHAR, 0, TAG_EBM_COMMAND, inter_comm, NULL);
     command = tmp;
-
-    fprintf(stderr, "EBM driver: Got a command from PISM: %s...\n",
-            tmp);
   }
 
   while ( !done ) {
@@ -51,8 +49,12 @@ int EBM_driver::run() {
 
     if ( !flag ) {
       // no message
-      int sleep_interval = 1,
-        threshold = 10;
+      double sleep_interval = 0.01,
+        threshold = 60,
+        message_interval = 5;  // print a message every 5 seconds
+      struct timespec rq;
+      rq.tv_sec = 0;
+      rq.tv_nsec = (long)(sleep_interval*1e9); // convert to nanoseconds
 
       if (wait_counter * sleep_interval > threshold) {
         fprintf(stderr, "ERROR: spent %1.1f minutes waiting for PISM... Giving up...\n",
@@ -63,25 +65,21 @@ int EBM_driver::run() {
       }
 
       // waiting...
-      fprintf(stderr, "EBM driver: Waiting for a message from PISM...\n");
-      sleep(sleep_interval);
+      if (sleep_interval * wait_counter / message_interval  > wait_message_counter) { // 
+        fprintf(stderr, "EBM driver: Waiting for a message from PISM... (%1.1f seconds so far)\n",
+                message_interval * wait_message_counter);
+        wait_message_counter++;
+      }
+      nanosleep(&rq, 0);
       wait_counter++;
       continue;
     }
 
-    // we got a message; reset the counter
-    fprintf(stderr, "EBM driver: Got a message from PISM (TAG = %d)...\n",
-            status.MPI_TAG);
+    // we got a message; reset counters
     wait_counter = 0;
+    wait_message_counter = 1;
 
     switch (status.MPI_TAG) {
-    case TAG_EBM_COMMAND:
-      {
-        char tmp[PETSC_MAX_PATH_LEN];
-        MPI_Recv(tmp, PETSC_MAX_PATH_LEN, MPI_CHAR, 0, TAG_EBM_COMMAND, inter_comm, NULL);
-        command = tmp;
-        break;
-      }
     case TAG_EBM_RUN:
       {
         int tmp, ebm_status;
@@ -123,13 +121,15 @@ int EBM_driver::run() {
 int EBM_driver::run_ebm() {
   int ierr;
 
-  fprintf(stderr, "Running EBM: '%s'\n", command.c_str());
+  fprintf(stderr, "EBM driver: running '%s'...\n", command.c_str());
 
   ierr = system(command.c_str());
 
   if (ierr != 0) {
-    fprintf(stderr, "Error running EBM: return code %d\n", ierr);
+    fprintf(stderr, "EBM driver: command exited with the return code %d\n", ierr);
     return ierr;
+  } else {
+    fprintf(stderr, "EBM driver: command executed succesfully.\n", ierr);
   }
 
   return 0; 

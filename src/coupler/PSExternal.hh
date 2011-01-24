@@ -49,7 +49,7 @@ public:
   {
     gamma = 0;                  // essentially disables the lapse rate correction
     update_interval = 1;        // years
-    min_lag = update_interval * 0.5;
+    last_update = GSL_NAN;
 
     inter_comm = my_inter_comm;
   }
@@ -66,14 +66,17 @@ public:
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
 						 IceModelVec2S &result);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
 protected:
-  double gamma, update_interval, min_lag;
+  double gamma, update_interval, last_update;
   IceModelVec2S acab, artm, artm_0, *usurf, *topg;
   MPI_Comm inter_comm;
-  string ebm_input, ebm_output;
+  string ebm_command, ebm_input, ebm_output;
 
   virtual PetscErrorCode update_artm();
   virtual PetscErrorCode update_acab();
+  virtual PetscErrorCode run();
+  virtual PetscErrorCode wait();
   virtual PetscErrorCode write_coupling_fields();
 };
 

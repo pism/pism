@@ -24,6 +24,14 @@
 
 struct FECTX;  // the context we will pass to PETSc is defined below, but we
                // need to refer to it in the SSAFEM class
+struct FEStoreNode;
+struct SSANode;
+struct SSABoundaryOptions {
+  PetscTruth floating_stress_free,
+             grounded_as_floating,
+             submarine_stress_free,
+             calving_above_sea_level;
+};
 
 //! PISM's SSA solver: the finite element method implementation written by Jed
 /*!
@@ -34,12 +42,24 @@ functionality of SSAFD.
  */
 class SSAFEM : public SSA
 {
+  friend PetscErrorCode SSAFESetUp(FECTX *);
+  friend PetscErrorCode PointwiseNuHAndBeta(FECTX *,const FEStoreNode *,const PetscReal *,
+                                            const SSANode *,const PetscReal[],
+                                            PetscReal *,PetscReal *,PetscReal *,PetscReal *);
+  friend PetscErrorCode SSAFEFunction(DALocalInfo *, const SSANode **, SSANode **, FECTX *);
+  friend PetscErrorCode SSAFEJacobian(DALocalInfo *, const SSANode **, Mat, FECTX *);
+  friend PetscErrorCode ApplyBoundaryStress(FECTX *, PetscReal [], const IceFlowLaw *,
+                                            PetscReal, PetscReal **, PetscReal **,
+                                            const MatStencil [], PetscInt, SSANode []);
+  friend PetscErrorCode SSASetUp_FE(FECTX*);
 public:
   SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
-        const NCConfigVariable &c) :
+         const NCConfigVariable &c) :
     SSA(g,b,i,e,c)
   {
     allocate_fem();  // can't be done by allocate() since constructor is not virtual
+    wrap = DA_XYPERIODIC;       // FIXME: DA is always XYPERIODIC; "wrap"
+                                // should be removed
   }
 
   virtual ~SSAFEM()
@@ -51,7 +71,26 @@ public:
     PetscErrorCode ierr;
     ierr = SSA::init(vars); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com,
-      "  [using the finite element method implementation by Jed Brown]\n"); CHKERRQ(ierr);
+                      "  [using the finite element method implementation by Jed Brown]\n"); CHKERRQ(ierr);
+
+    mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
+    if (mask == NULL) SETERRQ(1, "mask is not available");
+
+    thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
+    if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+
+    tauc = dynamic_cast<IceModelVec2S*>(vars.get("tauc"));
+    if (tauc == NULL) SETERRQ(1, "tauc is not available");
+
+    surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
+    if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
+
+    bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
+    if (bed == NULL) SETERRQ(1, "bedrock_altitude is not available");
+
+    enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
+    if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
+
     return 0;
   }
 
@@ -64,15 +103,18 @@ protected:
 
   // objects used internally
   FECTX *ctx;
+  SSABoundaryOptions boundary;  // FIXME: needs to be initialized somewhere
+  DAPeriodicType wrap;          // FIXME: should be removed
+  Mat J;                        // FIXME!
+  Vec r;                        // FIXME!
 };
-
 
 struct SSANode {
   PetscScalar x,y;
 };
 
 struct FEStoreNode {
-  PetscScalar h,H,tauc,hx,hy,b; // These values are fully dimensional
+  PetscReal h,H,tauc,hx,hy,b; // These values are fully dimensional
 };
 
 // Manage nondimensionalization [FIXME:  I've forced a degenerate dimensional version]
@@ -103,14 +145,6 @@ private:
   PetscReal length,height,time,pressure;
 };
 
-/*
-struct SSABoundaryOptions {
-  PetscTruth floating_stress_free,
-             grounded_as_floating,
-             submarine_stress_free,
-             calving_above_sea_level;
-};
-*/
 
 /*
 enum PismSetupState { SETUP_GREEN, SETUP_STALE, SETUP_CURRENT };
@@ -127,6 +161,7 @@ struct FECTX {
   DA           da;
   SNES         snes;
   FEStoreNode *feStore;
+  PetscScalar *integratedStore; // Storage for constitutive relation
   PetscInt     sbs;             // Store block size (number of values per quadrature point)
                                 // FIXME:  how to initialize correctly?
   PetscReal    dirichletScale;
