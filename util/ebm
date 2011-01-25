@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+
+from time import sleep
+from sys import exit
+from optparse import OptionParser
+from numpy import zeros_like, double
+
+try:
+    from netCDF4 import Dataset as NC
+except:
+    from netCDF3 import Dataset as NC
+
+def read_data(name):
+
+    nc = NC(name, 'r')
+
+    x = nc.variables['x'][:]
+    y = nc.variables['y'][:]
+    t = nc.variables['t'][:]
+
+    usurf = nc.variables['usurf'][:]
+    topg  = nc.variables['topg'][:]
+
+    return (x, y, t, usurf, topg)
+
+def write_data(data, name):
+
+    (x, y, t, acab) = data
+
+    # create the file if it does not exist
+    nc = NC(name, 'w')
+
+    # try to create variables; if it fails (i.e. if they exist already), do nothing
+    try:
+        t_dim = nc.createDimension('t', None)
+        x_dim = nc.createDimension('x', len(x))
+        y_dim = nc.createDimension('y', len(y))
+        t_var = nc.createVariable('t', 'f8', ('t',))
+        x_var = nc.createVariable('x', 'f8', ('x',))
+        y_var = nc.createVariable('y', 'f8', ('y',))
+        acab_var = nc.createVariable('acab', 'f8', ('t', 'y','x'))
+        acab_var.long_name     = "ice-equivalent surface mass balance (accumulation/ablation) rate"
+        acab_var.standard_name = "land_ice_surface_specific_mass_balance"
+        acab_var.units         = "m year-1"
+    except:
+        pass
+
+    nc.variables['t'][0] = t
+    nc.variables['x'][:] = x
+    nc.variables['y'][:] = y
+    nc.variables['acab'][:] = acab
+
+    nc.close()
+
+def compute_acab(usurf, topg, t):
+    return zeros_like(usurf) + t / 1000.0
+    
+parser = OptionParser()
+
+parser.usage = "%prog [options]"
+
+parser.description = "Pretends to be a surface model; use with 'pismebm'."
+parser.add_option("-i", "--input", dest="input",
+                  help="The file to read usurf and topg from")
+parser.add_option("-o", "--output", dest="output",
+                  help="The file to write acab to")
+
+(options, args) = parser.parse_args()
+
+if not options.input:
+    print "Please specify the -i file"
+    exit(1)
+
+if not options.output:
+    print "Please specify the -o file"
+    exit(1)
+
+# read data, do stuff, write data...
+
+print "Reading data from %s..." % options.input
+x,y,t,usurf,topg = read_data(options.input)
+
+acab = compute_acab(usurf, topg, t)
+
+print "Writing data to %s..." % options.output
+write_data((x,y,t,acab), options.output)
+
+exit(0)

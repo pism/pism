@@ -25,7 +25,6 @@
 struct FECTX;  // the context we will pass to PETSc is defined below, but we
                // need to refer to it in the SSAFEM class
 struct FEStoreNode;
-struct SSANode;
 struct SSABoundaryOptions {
   PetscTruth floating_stress_free,
              grounded_as_floating,
@@ -44,13 +43,10 @@ class SSAFEM : public SSA
 {
   friend PetscErrorCode SSAFESetUp(FECTX *);
   friend PetscErrorCode PointwiseNuHAndBeta(FECTX *,const FEStoreNode *,const PetscReal *,
-                                            const SSANode *,const PetscReal[],
+                                            const PISMVector2 *,const PetscReal[],
                                             PetscReal *,PetscReal *,PetscReal *,PetscReal *);
-  friend PetscErrorCode SSAFEFunction(DALocalInfo *, const SSANode **, SSANode **, FECTX *);
-  friend PetscErrorCode SSAFEJacobian(DALocalInfo *, const SSANode **, Mat, FECTX *);
-  friend PetscErrorCode ApplyBoundaryStress(FECTX *, PetscReal [], const IceFlowLaw *,
-                                            PetscReal, PetscReal **, PetscReal **,
-                                            const MatStencil [], PetscInt, SSANode []);
+  friend PetscErrorCode SSAFEFunction(DALocalInfo *, const PISMVector2 **, PISMVector2 **, FECTX *);
+  friend PetscErrorCode SSAFEJacobian(DALocalInfo *, const PISMVector2 **, Mat, FECTX *);
   friend PetscErrorCode SSASetUp_FE(FECTX*);
 public:
   SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
@@ -67,32 +63,7 @@ public:
     deallocate_fem();
   }
 
-  virtual PetscErrorCode init(PISMVars &vars) {
-    PetscErrorCode ierr;
-    ierr = SSA::init(vars); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com,
-                      "  [using the finite element method implementation by Jed Brown]\n"); CHKERRQ(ierr);
-
-    mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
-    if (mask == NULL) SETERRQ(1, "mask is not available");
-
-    thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-    if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
-
-    tauc = dynamic_cast<IceModelVec2S*>(vars.get("tauc"));
-    if (tauc == NULL) SETERRQ(1, "tauc is not available");
-
-    surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-    if (surface == NULL) SETERRQ(1, "surface_altitude is not available");
-
-    bed = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-    if (bed == NULL) SETERRQ(1, "bedrock_altitude is not available");
-
-    enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-    if (enthalpy == NULL) SETERRQ(1, "enthalpy is not available");
-
-    return 0;
-  }
+  virtual PetscErrorCode init(PISMVars &vars);
 
 protected:
   virtual PetscErrorCode allocate_fem();
@@ -100,17 +71,16 @@ protected:
   virtual PetscErrorCode deallocate_fem();
 
   virtual PetscErrorCode solve();
+  
+  virtual PetscErrorCode compute_hardav(IceModelVec2S &result);
 
   // objects used internally
+  IceModelVec2S hardav;         // vertically-averaged ice hardness
   FECTX *ctx;
   SSABoundaryOptions boundary;  // FIXME: needs to be initialized somewhere
   DAPeriodicType wrap;          // FIXME: should be removed
   Mat J;                        // FIXME!
   Vec r;                        // FIXME!
-};
-
-struct SSANode {
-  PetscScalar x,y;
 };
 
 struct FEStoreNode {

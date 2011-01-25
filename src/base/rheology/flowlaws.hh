@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -62,6 +62,10 @@ public:
   virtual PetscReal effectiveViscosity(PetscReal hardness,
                                        PetscReal u_x, PetscReal u_y,
                                        PetscReal v_x, PetscReal v_y) const;
+
+  virtual void effectiveViscosity_with_derivative(PetscReal hardness, const PetscReal Du[],
+                                                  PetscReal *nu, PetscReal *dnu) const;
+
   virtual PetscReal averagedHardness_from_enth(PetscReal thickness,
                                                PetscInt kbelowH,
                                                const PetscReal *zlevels,

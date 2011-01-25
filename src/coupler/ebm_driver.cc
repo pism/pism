@@ -50,7 +50,7 @@ int EBM_driver::run() {
     if ( !flag ) {
       // no message
       double sleep_interval = 0.01,
-        threshold = 60,
+        threshold = 3600,
         message_interval = 5;  // print a message every 5 seconds
       struct timespec rq;
       rq.tv_sec = 0;

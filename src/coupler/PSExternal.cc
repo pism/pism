@@ -255,15 +255,17 @@ PetscErrorCode PSExternal::write_coupling_fields() {
   PISMIO nc(&grid);
 
   ierr = nc.open_for_writing(ebm_input.c_str(),
-                             true, true); CHKERRQ(ierr);
-  // "append" (i.e. do not move the file aside) and check dimensions.
+                             true, false); CHKERRQ(ierr);
+  // "append" (i.e. do not move the file aside) and do not check dimensions.
 
-  // Determine if the file is empty; if it is, append to the time dimension,
-  // otherwise overwrite the time stored in the time variable.
+  // Determine if the file is empty; if it is, create dimenstions and
+  // dimensional variables, otherwise overwrite the time stored in the time
+  // variable.
   int t_len;
   ierr = nc.get_dim_length("t", &t_len); CHKERRQ(ierr);
 
   if (t_len == 0) {
+    ierr = nc.create_dimensions(); CHKERRQ(ierr);
     ierr = nc.append_time(grid.year); CHKERRQ(ierr);
   } else {
     int t_varid;

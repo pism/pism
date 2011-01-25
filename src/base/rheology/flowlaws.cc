@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -129,6 +129,20 @@ PetscReal IceFlowLaw::effectiveViscosity(PetscReal hardness,
                                          PetscReal v_x, PetscReal v_y) const {
   const PetscReal alpha = secondInvariant(u_x, u_y, v_x, v_y);
   return 0.5 * hardness * pow(schoofReg + alpha, (1-n)/(2*n));
+}
+
+//! \brief Computes effective viscosity and its derivative with respect to the
+//! second invariant.
+void IceFlowLaw::effectiveViscosity_with_derivative(PetscReal hardness, const PetscReal Du[],
+                                                    PetscReal *nu, PetscReal *dnu) const {
+
+  const PetscReal alpha = secondInvariantDu(Du),
+    power = (1-n)/(2*n),
+    my_nu = 0.5 * hardness * pow(schoofReg + alpha, power),
+    my_dnu = power * my_nu / (schoofReg + alpha);
+    
+  if (nu)   *nu = my_nu;
+  if (dnu) *dnu = my_dnu;
 }
 
 //! Return the softness parameter A(T) for a given temperature T.
