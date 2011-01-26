@@ -108,20 +108,9 @@ protected:
 
   virtual PetscErrorCode deallocate();
 
-  virtual PetscErrorCode solve() {
-    verbPrintf(1,grid.com,"not implemented\n");
-    return 1;
-  }
-
-  virtual PetscErrorCode compute_nuH_staggered(IceModelVec2Stag &result,
-                                               PetscReal epsilon);
-
-  virtual PetscErrorCode compute_nuH_norm(PetscReal &norm,
-                                          PetscReal &norm_change);
+  virtual PetscErrorCode solve()  = 0;
 
   virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
-
-  virtual PetscErrorCode compute_hardav_staggered(IceModelVec2Stag &result);
 
   virtual PetscErrorCode compute_basal_frictional_heating(IceModelVec2S &result);
 
@@ -129,20 +118,17 @@ protected:
 
   virtual PetscErrorCode compute_maximum_velocity();
 
-  virtual PetscErrorCode update_nuH_viewers();
-
   virtual PetscErrorCode stdout_report(string &result);
 
   IceModelVec2Mask *mask;
   IceModelVec2S *thickness, *tauc, *surface, *bed;
-  IceModelVec2Stag hardness, nuH, nuH_old;
   IceModelVec2V taud, velocity_old;
   IceModelVec3 *enthalpy;
 
   string stdout_ssa;
 
   // objects used by the SSA solver (internally)
-  DA  SSADA;
+  DA  SSADA;                    // dof=2 DA (grid.da2 has dof=1)
   Vec SSAX;  // global vector for solution
 
   // profiling

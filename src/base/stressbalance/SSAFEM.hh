@@ -22,67 +22,7 @@
 #include "SSA.hh"
 #include <petscsnes.h>
 
-struct FECTX;  // the context we will pass to PETSc is defined below, but we
-               // need to refer to it in the SSAFEM class
-struct FEStoreNode;
-struct SSABoundaryOptions {
-  PetscTruth floating_stress_free,
-             grounded_as_floating,
-             submarine_stress_free,
-             calving_above_sea_level;
-};
-
-//! PISM's SSA solver: the finite element method implementation written by Jed
-/*!
-Jed's code is in rev 831:
-  src/base/ssaJed/*
-The following is a wrapper around Jed's code.  The wrapper duplicates the
-functionality of SSAFD.
- */
-class SSAFEM : public SSA
-{
-  friend PetscErrorCode SSAFESetUp(FECTX *);
-  friend PetscErrorCode PointwiseNuHAndBeta(FECTX *,const FEStoreNode *,const PetscReal *,
-                                            const PISMVector2 *,const PetscReal[],
-                                            PetscReal *,PetscReal *,PetscReal *,PetscReal *);
-  friend PetscErrorCode SSAFEFunction(DALocalInfo *, const PISMVector2 **, PISMVector2 **, FECTX *);
-  friend PetscErrorCode SSAFEJacobian(DALocalInfo *, const PISMVector2 **, Mat, FECTX *);
-  friend PetscErrorCode SSASetUp_FE(FECTX*);
-public:
-  SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
-         const NCConfigVariable &c) :
-    SSA(g,b,i,e,c)
-  {
-    allocate_fem();  // can't be done by allocate() since constructor is not virtual
-    wrap = DA_XYPERIODIC;       // FIXME: DA is always XYPERIODIC; "wrap"
-                                // should be removed
-  }
-
-  virtual ~SSAFEM()
-  {
-    deallocate_fem();
-  }
-
-  virtual PetscErrorCode init(PISMVars &vars);
-
-protected:
-  virtual PetscErrorCode allocate_fem();
-
-  virtual PetscErrorCode deallocate_fem();
-
-  virtual PetscErrorCode solve();
-  
-  virtual PetscErrorCode compute_hardav(IceModelVec2S &result);
-
-  // objects used internally
-  IceModelVec2S hardav;         // vertically-averaged ice hardness
-  FECTX *ctx;
-  SSABoundaryOptions boundary;  // FIXME: needs to be initialized somewhere
-  DAPeriodicType wrap;          // FIXME: should be removed
-  Mat J;                        // FIXME!
-  Vec r;                        // FIXME!
-};
-
+struct FECTX;
 struct FEStoreNode {
   PetscReal h,H,tauc,hx,hy,b; // These values are fully dimensional
 };
@@ -90,8 +30,7 @@ struct FEStoreNode {
 // Manage nondimensionalization [FIXME:  I've forced a degenerate dimensional version]
 class PismRef {
 public:
-  PismRef() { SetUp(); }
-  void SetUp() {
+  PismRef() {
     length = 1;
     height = 1;
     time = 1;
@@ -115,34 +54,84 @@ private:
   PetscReal length,height,time,pressure;
 };
 
+PetscErrorCode SSAFEFunction(DALocalInfo *, const PISMVector2 **, PISMVector2 **, FECTX *);
+PetscErrorCode SSAFEJacobian(DALocalInfo *, const PISMVector2 **, Mat, FECTX *);
 
-/*
-enum PismSetupState { SETUP_GREEN, SETUP_STALE, SETUP_CURRENT };
-*/
-
-
-
-//! Context for Jed's FEM implementation of SSA.
+//! PISM's SSA solver: the finite element method implementation written by Jed
 /*!
-The first element of this struct *must* be a DA, because of how SNESSetFunction
-and SNESSetJacobian use their last arguments.  (See SSASetUp_FE().)
+Jed's code is in rev 831:
+  src/base/ssaJed/*
+The following is a wrapper around Jed's code.  The wrapper duplicates the
+functionality of SSAFD.
  */
-struct FECTX {
-  DA           da;
+class SSAFEM : public SSA
+{
+  friend PetscErrorCode SSAFEFunction(DALocalInfo *, const PISMVector2 **, PISMVector2 **, FECTX *);
+  friend PetscErrorCode SSAFEJacobian(DALocalInfo *, const PISMVector2 **, Mat, FECTX *);
+public:
+  SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
+         const NCConfigVariable &c) :
+    SSA(g,b,i,e,c)
+  {
+    allocate_fem();  // can't be done by allocate() since constructor is not virtual
+  }
+
+  virtual ~SSAFEM()
+  {
+    deallocate_fem();
+  }
+
+  virtual PetscErrorCode init(PISMVars &vars);
+
+protected:
+  PetscErrorCode setup();
+
+  virtual PetscErrorCode PointwiseNuHAndBeta(const FEStoreNode *,const PetscReal *,
+                                             const PISMVector2 *,const PetscReal[],
+                                             PetscReal *,PetscReal *,PetscReal *,PetscReal *);
+
+  virtual void FixDirichletValues(PetscReal lmask[],PISMVector2 **BC_vel,
+                                  MatStencil row[],MatStencil col[],PISMVector2 x[]);
+
+  virtual PetscErrorCode allocate_fem();
+
+  virtual PetscErrorCode deallocate_fem();
+
+  virtual PetscErrorCode solve();
+  
+  virtual PetscErrorCode compute_hardav(IceModelVec2S &result);
+
+  virtual PetscErrorCode view(PetscViewer viewer);
+
+  virtual PetscErrorCode setFromOptions();
+
+  // objects used internally
+  IceModelVec2S hardav;         // vertically-averaged ice hardness
+  FECTX *ctx;
+  Mat J;
+  Vec r;
+
   SNES         snes;
   FEStoreNode *feStore;
   PetscScalar *integratedStore; // Storage for constitutive relation
   PetscInt     sbs;             // Store block size (number of values per quadrature point)
                                 // FIXME:  how to initialize correctly?
   PetscReal    dirichletScale;
-  IceFlowLaw  *ice;             // constitutive relation; FIXME: initialize!
   PetscReal    ocean_rho;
   PetscReal    earth_grav;
   PismRef      ref;
-  IceGrid     *grid;
+
+};
+
+//! Context for Jed's FEM implementation of SSA.
+/*!
+The first element of this struct *must* be a DA, because of how SNESSetFunction
+and SNESSetJacobian use their last arguments.
+ */
+struct FECTX {
+  DA           da;
   SSAFEM      *ssa;
 };
-  
 
 #endif /* _SSAFEM_H_ */
 
