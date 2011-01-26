@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from time import sleep
-from sys import exit
+from sys import exit, stderr
 from optparse import OptionParser
 from numpy import zeros_like, double
 
@@ -53,6 +53,7 @@ def write_data(data, name):
     nc.close()
 
 def compute_acab(usurf, topg, t):
+    sleep(5)
     return zeros_like(usurf) + t / 1000.0
     
 parser = OptionParser()
@@ -77,12 +78,13 @@ if not options.output:
 
 # read data, do stuff, write data...
 
-print "Reading data from %s..." % options.input
+stderr.write("EBM: Reading data from %s...\n" % options.input)
 x,y,t,usurf,topg = read_data(options.input)
+stderr.write("EBM: Done reading data from %s for year = %1.1f...\n" % (options.input, t))
 
-acab = compute_acab(usurf, topg, t)
+acab = compute_acab(usurf, topg,t)
 
-print "Writing data to %s..." % options.output
+stderr.write("EBM: year = %1.1f. Writing data to %s...\n" % (t, options.output))
 write_data((x,y,t,acab), options.output)
 
 exit(0)

@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
                               0,          // local leader (rank)
                               MPI_COMM_WORLD, // peer communicator
                               rank == 0 ? 1 : 0, // remote leader (rank in MPI_COMM_WORLD)
-                              123,        // tag
+                              123, // tag, has to be a "unique" integer
                               &inter_comm); CHKERRQ(ierr); 
 
   // Now this inter_comm can be used to send data from the processor running

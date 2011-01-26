@@ -82,10 +82,11 @@ int EBM_driver::run() {
     switch (status.MPI_TAG) {
     case TAG_EBM_RUN:
       {
-        int tmp, ebm_status;
-        MPI_Recv(&tmp, 1, MPI_INT, 0, TAG_EBM_RUN, inter_comm, NULL);
+        double year;
+        int ebm_status;
+        MPI_Recv(&year, 1, MPI_DOUBLE, 0, TAG_EBM_RUN, inter_comm, NULL);
         
-        ierr = run_ebm();
+        ierr = run_ebm(year);       // no CHKERRQ(ierr) here
 
         if (ierr != 0) {
           // the run failed
@@ -118,10 +119,10 @@ int EBM_driver::run() {
   return 0;
 }
 
-int EBM_driver::run_ebm() {
+int EBM_driver::run_ebm(double year) {
   int ierr;
 
-  fprintf(stderr, "EBM driver: running '%s'...\n", command.c_str());
+  fprintf(stderr, "EBM driver: year = %1.1f running '%s'...\n", year, command.c_str());
 
   ierr = system(command.c_str());
 

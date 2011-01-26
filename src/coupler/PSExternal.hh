@@ -34,7 +34,7 @@ public:
 protected:
   MPI_Comm inter_comm;          // communicator used to send messages to PISM
   string command;               // EBM command
-  int run_ebm();
+  int run_ebm(double year);
 };
 
 //! \brief A derived class created to couple PISM to an energy balance model (through
@@ -49,7 +49,10 @@ public:
   {
     gamma = 0;                  // essentially disables the lapse rate correction
     update_interval = 1;        // years
-    last_update = GSL_NAN;
+    ebm_update_interval = 0.5 * update_interval;
+    last_ebm_update_year = GSL_NAN;
+    last_bc_update_year = GSL_NAN;
+    ebm_is_running = false;
 
     inter_comm = my_inter_comm;
   }
@@ -68,14 +71,15 @@ public:
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
   virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
 protected:
-  double gamma, update_interval, last_update;
+  double gamma, update_interval, ebm_update_interval, last_ebm_update_year, last_bc_update_year;
   IceModelVec2S acab, artm, artm_0, *usurf, *topg;
   MPI_Comm inter_comm;
   string ebm_command, ebm_input, ebm_output;
+  bool ebm_is_running;
 
   virtual PetscErrorCode update_artm();
   virtual PetscErrorCode update_acab();
-  virtual PetscErrorCode run();
+  virtual PetscErrorCode run(double t_years);
   virtual PetscErrorCode wait();
   virtual PetscErrorCode write_coupling_fields();
 };

@@ -105,6 +105,7 @@ PetscErrorCode PSExternal::init(PISMVars &vars) {
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   
+  ebm_update_interval = 0.5 * update_interval;
 
   gamma = gamma / 1000;         // convert to K/meter
 
@@ -174,40 +175,48 @@ PetscErrorCode PSExternal::max_timestep(PetscReal t_years, PetscReal &dt_years) 
 //! by an EBM. Also, write ice surface elevation and bed topography for an EBM to read.
 PetscErrorCode PSExternal::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr;
-  double delta = 0.5 * update_interval;
 
   if ((fabs(t_years - t) < 1e-12) &&
       (fabs(dt_years - dt) < 1e-12))
     return 0;
 
-  if (t_years + dt_years < t + delta) {
-    // the first half of the update interval
-    return 0;
-  }
-
-  // we're either in the second half of the current interval or past the end of
-  // it, so we need to write coupling fields and run an external model
-  ierr = run(); CHKERRQ(ierr);
-  last_update = t;
-
-  if (t_years + dt_years < t + update_interval) {
-    // still in the current update interval; we're done
-    return 0;
-  }
-
-  // we're past the end of the current interval; we need to wait for an external model to 
-  // finish computing the boundary conditions and then read them
-
-  ierr = wait(); CHKERRQ(ierr);
-
-  t  = t_years;
+  t = t_years;
   dt = dt_years;
 
-  // The actual update:
+  // This convoluted comparison is here to make it update the B.C. at the
+  // beginning of a run, when last_bc_update_year is NAN, plus later on when
+  // necessary (any comparison with a NAN evaluates to "false").
+  if (! (t_years + dt_years <= last_bc_update_year + update_interval) ) {
 
-  // update PISM's b.c.:
-  ierr = update_artm(); CHKERRQ(ierr);
-  ierr = update_acab(); CHKERRQ(ierr);
+    if (ebm_is_running) {
+      // EBM is running (pre-computing B.C.)
+      ierr = wait(); CHKERRQ(ierr);
+    } else {
+      // EBM is not running (probably at the beginning of a run)
+      ierr = run(t_years); CHKERRQ(ierr);
+      ierr = wait(); CHKERRQ(ierr);
+    }
+
+    ierr = update_acab(); CHKERRQ(ierr);
+    ierr = update_artm(); CHKERRQ(ierr);
+    last_bc_update_year = t_years;
+  } else if (t_years + dt_years > last_ebm_update_year + ebm_update_interval) {
+    if (ebm_is_running) {
+      ierr = wait(); CHKERRQ(ierr);
+    }
+
+    // we're at the end of a run, so no pre-computing is necessary.
+    if (PetscAbs(t_years + dt_years - grid.end_year) < 1e-12)
+      return 0;
+
+    // time to run EBM to pre-compute B.C.
+    ierr = run(t_years); CHKERRQ(ierr);
+
+    // EBM always runs at the beginning of a PISM run, then after 1/2 of an
+    // update interval. After than it runs once per update interval, in the
+    // middle of it.
+    ebm_update_interval = update_interval;
+  }
 
   return 0;
 }
@@ -216,8 +225,8 @@ PetscErrorCode PSExternal::update_acab() {
   PetscErrorCode ierr;
   PISMIO nc(&grid);
 
-  ierr = verbPrintf(2, grid.com, "Reading the accumulation/ablation rate from %s...\n",
-                    ebm_output.c_str()); 
+  ierr = verbPrintf(2, grid.com, "Reading the accumulation/ablation rate from %s for year = %1.1f...\n",
+                    ebm_output.c_str(), t); 
 
   grid_info gi;
   ierr = nc.open_for_reading(ebm_output.c_str()); CHKERRQ(ierr);
@@ -284,17 +293,18 @@ PetscErrorCode PSExternal::write_coupling_fields() {
 }
 
 //! \brief Run an external model.
-PetscErrorCode PSExternal::run() {
+PetscErrorCode PSExternal::run(double t_years) {
   PetscErrorCode ierr;
-  int tmp = 1;
+  double year = (double)t_years;
 
   ierr = write_coupling_fields(); CHKERRQ(ierr);
 
   if (grid.rank == 0) {
-    MPI_Send(&tmp, 1, MPI_INT, 0, TAG_EBM_RUN, inter_comm);
+    MPI_Send(&year, 1, MPI_DOUBLE, 0, TAG_EBM_RUN, inter_comm);
   }
 
-  MPI_Barrier(grid.com);
+  last_ebm_update_year = t_years;
+  ebm_is_running = true;
 
   return 0;
 }
@@ -343,6 +353,10 @@ PetscErrorCode PSExternal::wait() {
     // receive the EBM status
     MPI_Recv(&ebm_status, 1, MPI_INT,
              0, TAG_EBM_STATUS, inter_comm, NULL);
+
+    MPI_Barrier(grid.com);
+  } else {
+    MPI_Barrier(grid.com);
   }
 
   // Broadcast status:
@@ -352,6 +366,8 @@ PetscErrorCode PSExternal::wait() {
     PetscPrintf(grid.com, "PISM ERROR: EBM run failed. Exiting...\n");
     PISMEnd();
   }
+
+  ebm_is_running = false;
 
   return 0;
 }
