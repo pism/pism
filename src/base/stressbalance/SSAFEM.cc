@@ -30,13 +30,16 @@ PetscErrorCode SSAFEM::allocate_fem() {
   earth_grav = config.get("standard_gravity");
   ctx->ssa = this;
 
+  ierr = DACreateGlobalVector(SSADA, &r);CHKERRQ(ierr);
+  ierr = DAGetMatrix(SSADA, "baij", &J); CHKERRQ(ierr);
+
   ierr = SNESCreate(((PetscObject)this)->comm,&snes);CHKERRQ(ierr);
   ierr = SNESSetOptionsPrefix(snes,((PetscObject)this)->prefix);CHKERRQ(ierr);
 
   ierr = DASetLocalFunction(ctx->da,(DALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
   ierr = DASetLocalJacobian(ctx->da,(DALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
 
-  ierr = SNESSetFunction(snes, r, SNESDAFormFunction,ctx);CHKERRQ(ierr);
+  ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   ctx);CHKERRQ(ierr);
   ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,ctx);CHKERRQ(ierr);
   ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
 
@@ -44,17 +47,24 @@ PetscErrorCode SSAFEM::allocate_fem() {
     DALocalInfo info;
     PetscInt    nElements;
     ierr = DAGetLocalInfo(ctx->da,&info);CHKERRQ(ierr);
+
+    // gxm and gym refer to the number of grid points in the x and y directions
+    // in the local patch, including ghost points
     nElements = (info.gxm-1)*(info.gym-1); // Includes overlap elements
+    // So nElements is the number of quadrilateral elements in the local patch,
+    // including ones having ghost points as their corners.
+
     // We have a struct for the feStore at each quadrature point
     ierr = PetscMalloc(4*nElements*sizeof(feStore[0]),&feStore);CHKERRQ(ierr);
-    // We don't have a struct for each block of the integrated store but we can get its block size
-    sbs = 1;                // FIXME! (used to call ice->integratedStoreSize, which always returned 1).
+
+    // sbs probably refers to "store block size". In the current code it is
+    // equal to 1, i.e. one value of vertically-averaged ice hardness per
+    // corner (or quadrature point?).
+    sbs = 1;
     ierr = PetscMalloc(4*nElements*sbs*sizeof(PetscReal),&integratedStore);CHKERRQ(ierr);
   }
 
-  ierr = DACreateGlobalVector(grid.da2,&r);CHKERRQ(ierr);
-  ierr = DAGetMatrix(grid.da2, "baij", &J); CHKERRQ(ierr);
-
+  // hardav IceModelVec2S is not used (so far).
   const PetscScalar power = 1.0 / ice.exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
   snprintf(unitstr, sizeof(unitstr), "Pa s%f", power);
@@ -70,6 +80,8 @@ PetscErrorCode SSAFEM::deallocate_fem() {
   ierr = SNESDestroy(snes);CHKERRQ(ierr);
   ierr = PetscFree(integratedStore);CHKERRQ(ierr);
   ierr = PetscFree(feStore);CHKERRQ(ierr);
+  ierr = VecDestroy(r); CHKERRQ(ierr);
+  ierr = MatDestroy(J); CHKERRQ(ierr);
 
   delete ctx;
 
@@ -84,6 +96,14 @@ PetscErrorCode SSAFEM::init(PISMVars &vars) {
                     "  [using the finite element method implementation by Jed Brown]\n"); CHKERRQ(ierr);
 
   ierr = setFromOptions(); CHKERRQ(ierr);
+
+  // On restart, SSA::init() reads the SSA velocity from a PISM output file
+  // into IceModelVec2V "velocity". We use that field as an initial guess:
+
+  ierr = velocity.copy_to(SSAX); CHKERRQ(ierr);
+
+  // If we are not restarting from a PISM file, "velocity" is identically zero,
+  // and the call above clears SSAX.
 
   return 0;
 }
@@ -127,14 +147,20 @@ PetscErrorCode SSAFEM::solve()
     ierr = VecView(SSAX,viewer);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
   }
-  //ierr = PetscLogEventBegin(LOG_SSA_Solve,ssa,0,0,0);CHKERRQ(ierr);
   
+  // Set up the system to solve:
   ierr = setup(); CHKERRQ(ierr);
+
+  // Solve:
   ierr = SNESSolve(snes,NULL,SSAX);CHKERRQ(ierr);
 
   ierr = velocity.copy_from(SSAX); CHKERRQ(ierr);
 
-  //ierr = PetscLogEventBegin(LOG_SSA_Solve,ssa,0,0,0);CHKERRQ(ierr);
+  // communicate so that the ghost values are updated (for the geometry update,
+  // etc)
+  ierr = velocity.beginGhostComm(); CHKERRQ(ierr);
+  ierr = velocity.endGhostComm(); CHKERRQ(ierr);
+
   ierr = PetscOptionsHasName(NULL,"-ssa_view_solution",&flg);CHKERRQ(ierr);
   if (flg) {
     ierr = PetscViewerASCIIOpen(grid.com,filename,&viewer);CHKERRQ(ierr);
@@ -146,16 +172,11 @@ PetscErrorCode SSAFEM::solve()
   PetscFunctionReturn(0);
 }
 
-// This is called when surface and/or temperature have changed.
+// This is called when surface and/or temperature have changed and sets up the
+// system solved using SNES.
 //
 // Since this interfaces with the rest of PISM and doesn't touch velocity or
 // stresses, everything is fully dimensional
-/*!
- * FIXME: we need to set the initial guess.
- *
- * FIXME: we can store the field of vertically-averaged ice hardness in an
- * IceModelVec2S instead of a special flat array.
- */
 #undef __FUNCT__
 #define __FUNCT__ "setup"
 PetscErrorCode SSAFEM::setup()
@@ -192,6 +213,11 @@ PetscErrorCode SSAFEM::setup()
   for (i=info->gys; i<info->gys+info->gym-1; i++) { // Include ghost cells on either end
     for (j=info->gxs; j<info->gxs+info->gxm-1; j++) {
       const PetscInt ij = (i-info->gys)*(info->gxm-1)+(j-info->gxs);  // Index for stored arrays
+      // feStore is interpreted as an array of FE elements using C-style
+      // ordering, with 4 quadrature points per element.
+      // 
+      // Therefore 4*ij is the index of the first (0-th) point corresponding to
+      // the element i,j, 4*ij + 1 is the index of the second point, etc
       PetscReal he[4],He[4],be[4],hq[4],Hq[4],bq[4],taue[4],tauq[4],hxq[4],hyq[4];
       FEStoreNode *feS;
 
@@ -267,9 +293,11 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,const P
     *dNuH *= feS->H;
   }
   if (Floating(ice,ocean_rho,feS->H,feS->b)) {
-    // The ice is floating here so there is no friction.  Note that the purpose of checking flotation this way is to get
-    // subgrid resolution of stress in the vicinity of the grounding line.  According to Goldberg et. al. 2009 (probably
-    // will be published in 2009...) this is important to loosen the resolution requirements near the grounding line.
+    // The ice is floating here so there is no friction. Note that the purpose
+    // of checking flotation this way is to get subgrid resolution of stress in
+    // the vicinity of the grounding line. According to Goldberg et. al. 2009
+    // (probably will be published in 2009...) this is important to loosen the
+    // resolution requirements near the grounding line.
     *beta = 0;
     if (dbeta) *dbeta = 0;
     SETERRQ(1,"Not tested yet");
@@ -329,7 +357,7 @@ PetscErrorCode SSAFEFunction(DALocalInfo *info,
   IceGrid         *grid = &ssa->grid;
   PetscInt         i,j,k,q;
   PetscReal        jacDiag[2],jinvDiag[2],jdet;
-  PetscReal      **mask,**H,**bed;
+  PetscReal      **mask, **H, **bed;
   PISMVector2        **BC_vel;
   PetscTruth       flg;
   PetscErrorCode   ierr;
@@ -355,8 +383,8 @@ PetscErrorCode SSAFEFunction(DALocalInfo *info,
   ierr = PetscOptionsHasName(NULL,"-ssa_monitor_solution",&flg);CHKERRQ(ierr);
   if (flg) {
     ierr = PetscPrintf(grid->com,
-        "SSA Pointwise solution values (evaluating function at this value)\n");
-        CHKERRQ(ierr);
+                       "SSA Pointwise solution values (evaluating function at this value)\n");
+    CHKERRQ(ierr);
     for (i=grid->xs; i<grid->xs+grid->xm; i++) {
       for (j=grid->ys; j<grid->ys+grid->ym; j++) {
         ierr = PetscPrintf(grid->com,"[%2d,%2d] (%g,%g)\n",i,j,
@@ -368,40 +396,49 @@ PetscErrorCode SSAFEFunction(DALocalInfo *info,
   // Owning rank:     A   |   B   |   C
   // Node index :   0 1 2 | 3 4 5 | 6 7 8
   //
-  // Rank B has up-to-date values of the current iterate for [2,3,4,5,6] but we only set function values for the owned
-  // portion [3,4,5].  In the finite element context, rank B will evaluate weak forms on elements
-  // [(2,3),(3,4),(4,5),(5,6)] but will only insert values for the owned nodes.  This is consistent with the
-  // communication pattern natural to finite difference methods for which the DA object is designed.
+  // Rank B has up-to-date values of the current iterate for [2,3,4,5,6] but we
+  // only set function values for the owned portion [3,4,5]. In the finite
+  // element context, rank B will evaluate weak forms on elements
+  // [(2,3),(3,4),(4,5),(5,6)] but will only insert values for the owned nodes.
+  // This is consistent with the communication pattern natural to finite
+  // difference methods for which the DA object is designed.
   //
-  // In the finite element context, the usual communication pattern is to have the numbers (0..8) above refer to
-  // elements and decide on ownership of interface degrees of freedom.  Then each rank evaluates weak forms over the
-  // locally owned elements and performs communication to sum into the global vectors and matrices.  With FD
-  // communication, a rank only inserts into locally owned portions of the residual vector and rows of the global matrix
-  // while with FE communication each rank adds values into locally owned plus remotely owned interface parts of the
-  // residual vector and rows of the global matrix.
+  // In the finite element context, the usual communication pattern is to have
+  // the numbers (0..8) above refer to elements and decide on ownership of
+  // interface degrees of freedom. Then each rank evaluates weak forms over the
+  // locally owned elements and performs communication to sum into the global
+  // vectors and matrices. With FD communication, a rank only inserts into
+  // locally owned portions of the residual vector and rows of the global
+  // matrix while with FE communication each rank adds values into locally
+  // owned plus remotely owned interface parts of the residual vector and rows
+  // of the global matrix.
   //
   // Note that PETSc uses the opposite meaning of x,y directions in the DA
   ierr = ssa->thickness->get_array(H);CHKERRQ(ierr);
   ierr = ssa->bed->get_array(bed);CHKERRQ(ierr);
 
-  // FIXME: check if ssa->bc_locations and ssa->vel_bc are non-NULL
-  ierr = ssa->bc_locations->get_array(mask);CHKERRQ(ierr);
-  ierr = ssa->vel_bc->get_array(BC_vel); CHKERRQ(ierr);
+  if (ssa->bc_locations && ssa->vel_bc) {
+    ierr = ssa->bc_locations->get_array(mask);CHKERRQ(ierr);
+    ierr = ssa->vel_bc->get_array(BC_vel); CHKERRQ(ierr);
+  }
 
   for (i=info->gys; i<info->gys+info->gym-1; i++) { // Include ghost cells on either end
     for (j=info->gxs; j<info->gxs+info->gxm-1; j++) {
       const PetscInt ij = (i-info->gys)*(info->gxm-1)+(j-info->gxs); // Index for stored arrays
       PISMVector2     x[4],y[4];
-      PetscReal lmask[4];
       MatStencil row[4],col[4];
 
       QuadExtractVel(i,j,xg,x);
-      QuadExtractScalar(i,j,mask,lmask);
       ierr = QuadGetStencils(info,i,j,row,col);CHKERRQ(ierr);
       QuadZeroVel(y);
 
-      ssa->FixDirichletValues(lmask,BC_vel,row,col,x);
-      // \a x now contains correct velocities at Dirichlet nodes and \a col has indices for those nodes set to -1
+      if (ssa->bc_locations && ssa->vel_bc) {
+        PetscReal lmask[4];
+        QuadExtractScalar(i,j,mask,lmask);
+        ssa->FixDirichletValues(lmask,BC_vel,row,col,x);
+      }
+      // \a x now contains correct velocities at Dirichlet nodes and \a col has
+      // indices for those nodes set to -1
 
       for (q=0; q<numQuadPoints; q++) {     // loop over quadrature points
         const FEStoreNode *feS = &ssa->feStore[ij*4+q];
@@ -417,9 +454,9 @@ PetscErrorCode SSAFEFunction(DALocalInfo *info,
         //if (fe->debug.zero_beta) {beta = 0;}
         // Coefficients of test function (v) in weak form.
         v.u = beta*u.u + ssa->ice.rho * ssa->earth_grav * feS->H * feS->hx
-                           / ssa->ref.DrivingStress();
+          / ssa->ref.DrivingStress();
         v.v = beta*u.v + ssa->ice.rho * ssa->earth_grav * feS->H * feS->hy
-                           / ssa->ref.DrivingStress();
+          / ssa->ref.DrivingStress();
         Dv[0] = nuH * Du[0];
         Dv[1] = nuH * Du[1];
         Dv[2] = nuH * Du[2];
@@ -438,27 +475,29 @@ PetscErrorCode SSAFEFunction(DALocalInfo *info,
         }
       }
       QuadInsertVel(row,y,yg);
-    }
-  }
+    } // j-loop
+  } // i-loop
   ierr = ssa->thickness->end_access();CHKERRQ(ierr);
   ierr = ssa->bed->end_access();CHKERRQ(ierr);
 
-  // Enforce Dirichlet conditions strongly
-  for (i=grid->xs; i<grid->xs+grid->xm; i++) {
-    for (j=grid->ys; j<grid->ys+grid->ym; j++) {
-      //PismValidStress2(yg[i][j]);
-      if (ssa->bc_locations->value(i,j) == MASK_SHEET) {
-        // Enforce zero sliding strongly
-        yg[i][j].u = ssa->dirichletScale * (xg[i][j].u - BC_vel[i][j].u)
-                        / ssa->ref.Velocity();
-        yg[i][j].v = ssa->dirichletScale * (xg[i][j].v - BC_vel[i][j].v)
-                        / ssa->ref.Velocity();
+  if (ssa->bc_locations && ssa->vel_bc) {
+    // Enforce Dirichlet conditions strongly
+    for (i=grid->xs; i<grid->xs+grid->xm; i++) {
+      for (j=grid->ys; j<grid->ys+grid->ym; j++) {
+        //PismValidStress2(yg[i][j]);
+        if (ssa->bc_locations->value(i,j) == MASK_SHEET) {
+          // Enforce zero sliding strongly
+          yg[i][j].u = ssa->dirichletScale * (xg[i][j].u - BC_vel[i][j].u)
+            / ssa->ref.Velocity();
+          yg[i][j].v = ssa->dirichletScale * (xg[i][j].v - BC_vel[i][j].v)
+            / ssa->ref.Velocity();
+        }
       }
     }
-  }
-  ierr = ssa->bc_locations->end_access();CHKERRQ(ierr);
 
-  ierr = ssa->vel_bc->end_access(); CHKERRQ(ierr);
+    ierr = ssa->bc_locations->end_access();CHKERRQ(ierr);
+    ierr = ssa->vel_bc->end_access(); CHKERRQ(ierr);
+  }
 
   ierr = PetscOptionsHasName(NULL,"-ssa_monitor_function",&flg);CHKERRQ(ierr);
   if (flg) {
@@ -466,8 +505,8 @@ PetscErrorCode SSAFEFunction(DALocalInfo *info,
     for (i=grid->xs; i<grid->xs+grid->xm; i++) {
       for (j=grid->ys; j<grid->ys+grid->ym; j++) {
         ierr = PetscSynchronizedPrintf(grid->com,
-                 "[%2d,%2d] u=(%12.4e,%12.4e)  f=(%12.4e,%12.4e)\n",
-                 i,j,xg[i][j].u,xg[i][j].v,yg[i][j].u,yg[i][j].v);CHKERRQ(ierr);
+                                       "[%2d,%2d] u=(%12.4e,%12.4e)  f=(%12.4e,%12.4e)\n",
+                                       i,j,xg[i][j].u,xg[i][j].v,yg[i][j].u,yg[i][j].v);CHKERRQ(ierr);
       }
     }
     ierr = PetscSynchronizedFlush(grid->com);CHKERRQ(ierr);
