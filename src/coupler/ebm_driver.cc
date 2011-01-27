@@ -122,7 +122,7 @@ int EBM_driver::run() {
 int EBM_driver::run_ebm(double year) {
   int ierr;
 
-  fprintf(stderr, "EBM driver: year = %1.1f running '%s'...\n", year, command.c_str());
+  fprintf(stderr, "EBM driver: year = %1.1f. Running '%s'...\n", year, command.c_str());
 
   ierr = system(command.c_str());
 

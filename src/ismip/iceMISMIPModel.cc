@@ -158,13 +158,13 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
     ierr = PetscPrintf(grid.com,
 		       "IceMISMIPModel ERROR:  '-mismip' must be followed by two char argument;\n"
 		       "  i.e. '-mismip Xx' where Xx=1a,1b,2a,2b,3a,3b\n"); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   } else {
     if ((Ee[0] < '1') || (Ee[0] > '3')) {
       ierr = PetscPrintf(grid.com,
 			 "IceMISMIPModel ERROR:  first character of string 'Xx' in"
 			 " '-mismip Xx' must be 1, 2, or 3\n"); CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
     exper = (int) Ee[0] - (int) '0';
     if ((Ee[1] == 'a') || (Ee[1] == 'b')) {
@@ -173,7 +173,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
       ierr = PetscPrintf(grid.com,
 			 "IceMISMIPModel ERROR:  second character of string 'Xx' in"
 			 " '-mismip Xx' must be a or b\n"); CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
   }
 
@@ -199,7 +199,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
     PetscPrintf(grid.com,
 		"IceMISMIPModel ERROR:  modelnum must be 1 or 2; '-model 1' or '-model 2'\n");
     CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   // read option    -no_shelf_drag
@@ -222,7 +222,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
     ierr = PetscPrintf(grid.com,
 		       "IceMISMIPModel ERROR:  run index N in '-run N' must be at least 1\n");
     CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   if ((exper == 1) || (exper == 2)) {
@@ -231,7 +231,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 			 "IceMISMIPModel ERROR:  run index N in '-run N' must be"
 			 " <= 9 in experiments 1 or 2\n");
       CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
     runtimeyears = 3.0e4;
   } else if (exper == 3) {
@@ -241,7 +241,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 			   "IceMISMIPModel ERROR:  run index N in '-run N' must be"
 			   " <= 13 in experiment 3a\n");
 	CHKERRQ(ierr);
-	PetscEnd();
+	PISMEnd();
       }
       runtimeyears = timeexper3a[stepindex];
     } else if (sliding == 'b') {
@@ -250,7 +250,7 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 			   "IceMISMIPModel ERROR:  run index N in '-run N' must be"
 			   " <= 15 in experiment 3b\n");
 	CHKERRQ(ierr);
-	PetscEnd();
+	PISMEnd();
       }
       runtimeyears = timeexper3b[stepindex];
     } else {

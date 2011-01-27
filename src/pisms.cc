@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
       ierr = PetscPrintf(com,
          "PISM ERROR: pisms called with more than one simplified geometry experiment chosen\n");
          CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
 
     // actually construct the IceModel

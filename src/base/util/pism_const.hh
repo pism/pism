@@ -119,4 +119,5 @@ PetscErrorCode init_config(MPI_Comm com, PetscMPIInt rank,
 
 // debugging:
 PetscErrorCode pism_wait_for_gdb(MPI_Comm com, PetscMPIInt rank);
+
 #endif

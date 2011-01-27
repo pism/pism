@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Ed Bueler
+// Copyright (C) 2010, 2011 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@ PISMBedSmoother::PISMBedSmoother(
 
   if (allocate() != 0) {
     PetscPrintf(grid.com, "PISMBedSmoother constructor: allocate() failed\n");
-    PetscEnd();
+    PISMEnd();
   }
 
   if (config.get("bed_smoother_range") > 0.0) {
@@ -41,7 +41,7 @@ PISMBedSmoother::~PISMBedSmoother() {
 
   if (deallocate() != 0) {
     PetscPrintf(grid.com, "PISMBedSmoother destructor: deallocate() failed\n");
-    PetscEnd();
+    PISMEnd();
   }
 }
 

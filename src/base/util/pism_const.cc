@@ -196,7 +196,7 @@ PetscErrorCode check_old_option_and_stop(MPI_Comm com, const char old_name[], co
   if (option_is_set) {
     ierr = PetscPrintf(com, "PISM ERROR: command-line option '%s' is deprecated. Please use '%s' instead.\n",
 		       old_name, new_name); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   return 0;
@@ -213,7 +213,7 @@ PetscErrorCode stop_if_set(MPI_Comm com, const char name[]) {
   if (option_is_set) {
     ierr = PetscPrintf(com, "PISM ERROR: command-line option '%s' is not allowed.\n",
 		       name); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   return 0;
@@ -336,7 +336,7 @@ PetscErrorCode stop_on_version_option() {
   if ((vSet == false) && (pvSet == false))
     return 0;
 
-  PetscEnd();
+  PISMEnd();
   return 0;
 }
 
@@ -371,7 +371,7 @@ PetscErrorCode show_usage_and_quit(
   ierr = stop_on_version_option(); CHKERRQ(ierr);
 
   ierr = just_show_usage(com, execname, usage); CHKERRQ(ierr);
-  PetscEnd();
+  PISMEnd();
   return 0;
 }
 
@@ -574,7 +574,7 @@ PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set
   } else {
     ierr = PetscPrintf(com, "ERROR: invalid %s argument: \"%s\". Please choose one of %s.\n",
 		       opt.c_str(), tmp, list.c_str()); CHKERRQ(ierr);
-    ierr = PetscEnd(); CHKERRQ(ierr);
+    PISMEnd();
   }
 
   return 0;
@@ -596,7 +596,7 @@ PetscErrorCode PISMOptionsString(string option, string text,
     ierr = PetscPrintf(PETSC_COMM_WORLD,
                        "ERROR: command line option '%s' requires an argument.\n",
                        option.c_str()); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   if (is_set)
@@ -627,7 +627,7 @@ PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_va
       ierr = PetscPrintf(PETSC_COMM_WORLD,
                          "ERROR: command line option '%s' requires an argument.\n",
                          opt.c_str()); CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
 
     flag = true;

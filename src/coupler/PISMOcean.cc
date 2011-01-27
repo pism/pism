@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2010 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -122,7 +122,7 @@ PetscErrorCode POForcing::init(PISMVars &vars) {
     ierr = delta_sea_level->set_attr("long_name", "sea level elevation offsets"); CHKERRQ(ierr);
   } else {
     ierr = verbPrintf(2, grid.com, "NOTE: -dSLforcing option is not set. Forcing is inactive...\n"); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   return 0;

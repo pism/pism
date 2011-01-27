@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -45,7 +45,7 @@ PetscErrorCode PSDirectForcing::init(PISMVars &/*vars*/) {
 
   if (bc_file_set == false) {
     PetscPrintf(grid.com, "PISM ERROR: option -bc_file is required.\n");
-    PetscEnd();
+    PISMEnd();
   }
 
   if (bc_period_set == false) {

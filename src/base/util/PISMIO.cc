@@ -1,4 +1,4 @@
-// Copyright (C) 2006--2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2006--2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -746,7 +746,7 @@ PetscErrorCode PISMIO::open_for_writing(string filename, bool append,
 	if (stat != 0) {
 	  stat = verbPrintf(1, com, "PISM ERROR: can't move '%s' to '%s'.\n",
 			    filename.c_str(), tmp.c_str());
-	  PetscEnd();
+	  PISMEnd();
 	}
 	stat = verbPrintf(2, com, 
 			  "PISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",
@@ -768,7 +768,7 @@ PetscErrorCode PISMIO::open_for_writing(string filename, bool append,
       stat = PetscPrintf(com,
 			 "PISM ERROR: file '%s' has dimensions incompatible with the current grid. Exiting...\n",
 			 filename.c_str()); CHKERRQ(stat);
-      PetscEnd();
+      PISMEnd();
     }
   } else {
     // the file we just opened is empty, so we need to create dimensions
@@ -800,64 +800,64 @@ PetscErrorCode PISMIO::create_dimensions() const {
   int stat, t, x, y, z, zb, dimid;
 
   if (grid == NULL) SETERRQ(1, "PISMIO::create_dimensions(...): grid == NULL");
+  
+  if (grid->rank != 0) return 0;
 
-  if (rank == 0) {
-    // define dimensions and coordinate variables:
-    stat = define_mode(); CHKERRQ(stat);
-    // t
-    stat = nc_def_dim(ncid, "t", NC_UNLIMITED, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_def_var(ncid, "t", NC_DOUBLE, 1, &dimid, &t); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_put_att_text(ncid, t, "long_name", 4, "time"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, t, "units", 17, "years since 1-1-1"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, t, "calendar", 7, "365_day"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, t, "axis", 1, "T"); check_err(stat,__LINE__,__FILE__);
-    // x
-    stat = nc_def_dim(ncid, "x", grid->Mx, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_def_var(ncid, "x", NC_DOUBLE, 1, &dimid, &x); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_put_att_text(ncid, x, "axis", 1, "X"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, x, "long_name", 32, "X-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, x, "standard_name", 23, "projection_x_coordinate"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, x, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
-    // y
-    stat = nc_def_dim(ncid, "y", grid->My, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_def_var(ncid, "y", NC_DOUBLE, 1, &dimid, &y); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_put_att_text(ncid, y, "axis", 1, "Y"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, y, "long_name", 32, "Y-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, y, "standard_name", 23, "projection_y_coordinate"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, y, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
-    // z
-    stat = nc_def_dim(ncid, "z", grid->Mz, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_def_var(ncid, "z", NC_DOUBLE, 1, &dimid, &z); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_put_att_text(ncid, z, "axis", 1, "Z"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, z, "long_name", 32, "z-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
-    // PROPOSED standard_name = projection_z_coordinate
-    stat = nc_put_att_text(ncid, z, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, z, "positive", 2, "up"); check_err(stat,__LINE__,__FILE__);
-    // zb
-    stat = nc_def_dim(ncid, "zb", grid->Mbz, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_def_var(ncid, "zb", NC_DOUBLE, 1, &dimid, &zb); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_put_att_text(ncid, zb, "long_name", 23, "z-coordinate in bedrock"); check_err(stat,__LINE__,__FILE__);
-    // PROPOSED standard_name = projection_z_coordinate_in_lithosphere
-    stat = nc_put_att_text(ncid, zb, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
-    stat = nc_put_att_text(ncid, zb, "positive", 2, "up"); check_err(stat,__LINE__,__FILE__);
-    // 
+  // define dimensions and coordinate variables:
+  stat = define_mode(); CHKERRQ(stat);
+  // t
+  stat = nc_def_dim(ncid, "t", NC_UNLIMITED, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_def_var(ncid, "t", NC_DOUBLE, 1, &dimid, &t); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_put_att_text(ncid, t, "long_name", 4, "time"); check_err(stat,__LINE__,__FILE__);
+  stat = nc_put_att_text(ncid, t, "units", 17, "years since 1-1-1"); check_err(stat,__LINE__,__FILE__);
+  stat = nc_put_att_text(ncid, t, "calendar", 7, "365_day"); check_err(stat,__LINE__,__FILE__);
+  stat = nc_put_att_text(ncid, t, "axis", 1, "T"); check_err(stat,__LINE__,__FILE__);
+  // x
+  stat = nc_def_dim(ncid, "x", grid->Mx, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_def_var(ncid, "x", NC_DOUBLE, 1, &dimid, &x); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_put_att_text(ncid, x, "axis", 1, "X"); check_err(stat,__LINE__,__FILE__);
+  stat = nc_put_att_text(ncid, x, "long_name", 32, "X-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
+  stat = nc_put_att_text(ncid, x, "standard_name", 23, "projection_x_coordinate"); check_err(stat,__LINE__,__FILE__);
+  stat = nc_put_att_text(ncid, x, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
+  // y
+  stat = nc_def_dim(ncid, "y", grid->My, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_def_var(ncid, "y", NC_DOUBLE, 1, &dimid, &y); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_put_att_text(ncid, y, "axis", 1, "Y"); check_err(stat,__LINE__,__FILE__);
+  stat = nc_put_att_text(ncid, y, "long_name", 32, "Y-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
+  stat = nc_put_att_text(ncid, y, "standard_name", 23, "projection_y_coordinate"); check_err(stat,__LINE__,__FILE__);
+  stat = nc_put_att_text(ncid, y, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
+  // z
+  stat = nc_def_dim(ncid, "z", grid->Mz, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_def_var(ncid, "z", NC_DOUBLE, 1, &dimid, &z); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_put_att_text(ncid, z, "axis", 1, "Z"); check_err(stat,__LINE__,__FILE__);
+  stat = nc_put_att_text(ncid, z, "long_name", 32, "z-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
+  // PROPOSED standard_name = projection_z_coordinate
+  stat = nc_put_att_text(ncid, z, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
+  stat = nc_put_att_text(ncid, z, "positive", 2, "up"); check_err(stat,__LINE__,__FILE__);
+  // zb
+  stat = nc_def_dim(ncid, "zb", grid->Mbz, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_def_var(ncid, "zb", NC_DOUBLE, 1, &dimid, &zb); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_put_att_text(ncid, zb, "long_name", 23, "z-coordinate in bedrock"); check_err(stat,__LINE__,__FILE__);
+  // PROPOSED standard_name = projection_z_coordinate_in_lithosphere
+  stat = nc_put_att_text(ncid, zb, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
+  stat = nc_put_att_text(ncid, zb, "positive", 2, "up"); check_err(stat,__LINE__,__FILE__);
+  // 
 
-    stat = data_mode(); CHKERRQ(stat); 
+  stat = data_mode(); CHKERRQ(stat); 
 
-    // set values:
-    // Note that the 't' dimension is not modified: it is handled by the append_time method.
+  // set values:
+  // Note that the 't' dimension is not modified: it is handled by the append_time method.
     
-    double *x_coords, *y_coords;
-    stat = grid->compute_horizontal_coordinates(x_coords, y_coords); CHKERRQ(stat);
+  double *x_coords, *y_coords;
+  stat = grid->compute_horizontal_coordinates(x_coords, y_coords); CHKERRQ(stat);
 
-    stat = put_dimension(y, grid->My, y_coords); CHKERRQ(stat);
-    stat = put_dimension(x, grid->Mx, x_coords); CHKERRQ(stat);
-    stat = put_dimension(z, grid->Mz, grid->zlevels); CHKERRQ(stat);
-    stat = put_dimension(zb, grid->Mbz, grid->zblevels); CHKERRQ(stat);
+  stat = put_dimension(y, grid->My, y_coords); CHKERRQ(stat);
+  stat = put_dimension(x, grid->Mx, x_coords); CHKERRQ(stat);
+  stat = put_dimension(z, grid->Mz, grid->zlevels); CHKERRQ(stat);
+  stat = put_dimension(zb, grid->Mbz, grid->zblevels); CHKERRQ(stat);
 
-    delete[] x_coords;
-    delete[] y_coords;
-  }
+  delete[] x_coords;
+  delete[] y_coords;
 
   return 0;
 }

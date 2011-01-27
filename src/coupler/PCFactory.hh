@@ -58,7 +58,7 @@ public:
     if (choices.empty()) {
       if (flag) {
 	PetscPrintf(grid.com, "ERROR: option -%s requires an argument.\n", option.c_str());
-	PetscEnd();
+	PISMEnd();
       }
       choices.push_back(default_type);
     }
@@ -75,7 +75,7 @@ public:
 		  "  Available modifiers: %s\n",
 		  option.c_str(), j->c_str(),
 		  model_list.c_str(), modifier_list.c_str());
-      PetscEnd();
+      PISMEnd();
     }
 
     (*F)(grid, config, result);
@@ -93,7 +93,7 @@ public:
 		    "ERROR: %s modifier \"%s\" is not available.\n"
 		    "  Available modifiers: %s\n",
 		    option.c_str(), j->c_str(), modifier_list.c_str());
-	PetscEnd();
+	PISMEnd();
       }
 
       (*M)(grid, config, mod);

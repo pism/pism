@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2010 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -280,7 +280,7 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
 			      dT_file, PETSC_MAX_PATH_LEN, &dTforcing_set); CHKERRQ(ierr);
     if (!dTforcing_set) {
       ierr = PetscPrintf(grid.com, "ERROR: option -paleo_precip requires -dTforcing.\n"); CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
     dTforcing = new Timeseries(grid.com, grid.rank, "delta_T", "t");
     ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);

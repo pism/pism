@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -469,7 +469,7 @@ PetscErrorCode IceModel::write_model_state(const char* filename) {
       if (v == NULL) {
         ierr = PetscPrintf(grid.com, "PISM ERROR: unknown variable name: %s\n",
                            (*i).c_str()); CHKERRQ(ierr);
-        PetscEnd();
+        PISMEnd();
       }
 
       string pism_intent = v->string_attr("pism_intent");
@@ -523,7 +523,7 @@ PetscErrorCode IceModel::write_model_state(const char* filename) {
       ierr = PetscPrintf(grid.com,
                          "PISM ERROR: you need to specify both -save_file and -save_times to save snapshots.\n");
       CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
 
     if (!save_to_set && !save_at_set) {
@@ -534,12 +534,12 @@ PetscErrorCode IceModel::write_model_state(const char* filename) {
     ierr = parse_times(grid.com, tmp, snapshot_times);
     if (ierr != 0) {
       ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -save_times argument failed.\n"); CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
 
     if (snapshot_times.size() == 0) {
       PetscPrintf(grid.com, "PISM ERROR: no argument for -save_times option.\n");
-      PetscEnd();
+      PISMEnd();
     }
 
     save_snapshots = true;

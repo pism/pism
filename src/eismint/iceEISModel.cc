@@ -74,7 +74,7 @@ PetscErrorCode IceEISModel::set_expername_from_options() {
       ierr = PetscPrintf(grid.com,
         "option -eisII must have value A, B, C, D, E, F, G, H, I, J, K, or L\n");
         CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
   }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "flowlaw_factory.hh"
+#include "pism_const.hh"
 
 #undef ALEN
 #define ALEN(a) (sizeof(a)/sizeof(a)[0])
@@ -30,11 +31,11 @@ IceFlowLawFactory::IceFlowLawFactory(MPI_Comm c,const char pre[], const NCConfig
   }
   if (registerAll()) {
     PetscPrintf(comm,"IceFlowLawFactory::registerAll returned an error but we're in a constructor\n");
-    PetscEnd();
+    PISMEnd();
   }
   if (setType(ICE_PB)) {       // Set's a default type
     PetscPrintf(comm,"IceFlowLawFactory::setType(\"%s\") returned an error, but we're in a constructor\n",ICE_PB);
-    PetscEnd();
+    PISMEnd();
   }
 }
 
@@ -109,7 +110,7 @@ PetscErrorCode IceFlowLawFactory::setType(const char type[])
   ierr = PetscFListFind(type_list,comm,type,(void(**)(void))&r);CHKERRQ(ierr);
   if (!r) {
     ierr = PetscPrintf(comm, "PISM ERROR: Selected ice type \"%s\" is not available.\n",type); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
   ierr = PetscStrncpy(type_name,type,sizeof(type_name));CHKERRQ(ierr);
   PetscFunctionReturn(0);

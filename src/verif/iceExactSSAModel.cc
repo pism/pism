@@ -168,7 +168,7 @@ PetscErrorCode IceExactSSAModel::set_grid_defaults() {
   default:
     ierr = PetscPrintf(grid.com, "Only tests I, J, M currently supported in IceExactSSAModel.");
     CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   return 0;

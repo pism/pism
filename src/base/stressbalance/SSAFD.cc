@@ -481,7 +481,7 @@ PetscErrorCode SSAFD::solve() {
             "\n\n\nPISM ERROR:  KSPSolve() reports 'diverged'; reason = %d = '%s';\n"
                   "  see PETSc man page for KSPGetConvergedReason();   ENDING ...\n\n",
             reason,KSPConvergedReasons[reason]); CHKERRQ(ierr);
-        PetscEnd();
+        PISMEnd();
       }
       ierr = KSPGetIterationNumber(SSAKSP, &ksp_iterations); CHKERRQ(ierr);
       if (getVerbosityLevel() > 2) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -74,7 +74,7 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
               dy0 = grid.y0 - g.y0;
   if (sqrt(dx0*dx0 + dy0*dy0) > 1e-6) {
     PetscPrintf(com, "PISM ERROR: Grid centers do not match!\n");
-    PetscEnd();
+    PISMEnd();
   }
 
   if (g.Lx*slop < Lx) {
@@ -85,7 +85,7 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
 		"    need  Lx < g.Lx,  but Lx = %5.4f km while g.Lx = %5.4f km\n"
 		"    ENDING ...\n",
 		Lx, g.Lx);
-    PetscEnd();
+    PISMEnd();
   }
   if (g.Ly*slop < Ly) {
     PetscPrintf(com,
@@ -95,7 +95,7 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
 		"    need  Ly < g.Ly,  but Ly = %5.4f km while g.Ly = %5.4f km\n"
 		"    ENDING ...\n",
 		Ly, g.Ly);
-   PetscEnd();
+   PISMEnd();
   }
   
   if (no_regrid_ice == false) {
@@ -303,14 +303,14 @@ int LocalInterpCtx::kBelowHeight(const double height) {
     PetscPrintf(com, 
        "LocalInterpCtx kBelowHeight(): height = %5.4f is below base of ice (height must be nonnegative)\n",
        height);
-    PetscEnd();
+    PISMEnd();
   }
   const double Lz = zlevs[nz-1];
   if (height > Lz + 1.0e-6) {
     PetscPrintf(com, 
        "LocalInterpCtx kBelowHeight(): height = %5.4f is above top of computational grid Lz = %5.4f\n",
        height,Lz);
-    PetscEnd();
+    PISMEnd();
   }
   PetscInt mcurr = 0;
   while (zlevs[mcurr+1] < height) {
@@ -326,13 +326,13 @@ int LocalInterpCtx::kbBelowHeight(const double elevation) {
     PetscPrintf(com, 
        "LocalInterpCtx kbBelowHeight(): elevation = %5.4f is below base of bedrock -Lbz = %5.4f\n",
        elevation, zblevs[0]);
-    PetscEnd();
+    PISMEnd();
   }
   if (elevation > 0.0 + 1.0e-6) {
     PetscPrintf(com, 
        "LocalInterpCtx kbBelowHeight(): elevation = %5.4f is above top of bedrock at z=0\n",
        elevation);
-    PetscEnd();
+    PISMEnd();
   }
   double myelevation = PetscMin(0.0,elevation);
   PetscInt mcurr = 0;

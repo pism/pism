@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -41,7 +41,7 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
     PetscPrintf(com, 
 		"ERROR: grid periodicity type '%s' is invalid.\n",
 		word.c_str());
-    PetscEnd();
+    PISMEnd();
   }
 
   word = config.get_string("grid_ice_vertical_spacing");
@@ -53,7 +53,7 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
     PetscPrintf(com, 
 		"ERROR: ice vertical spacing type '%s' is invalid.\n",
 		word.c_str());
-    PetscEnd();
+    PISMEnd();
   }
 
   word = config.get_string("grid_bed_vertical_spacing");
@@ -65,7 +65,7 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
     PetscPrintf(com, 
 		"ERROR: bedrock vertical spacing type '%s' is invalid.\n",
 		word.c_str());
-    PetscEnd();
+    PISMEnd();
   }
 
   Lx  = config.get("grid_Lx");
@@ -323,13 +323,13 @@ PetscInt IceGrid::kBelowHeight(PetscScalar height) {
     PetscPrintf(com, 
        "IceGrid kBelowHeight(): height = %5.4f is below base of ice (height must be non-negative)\n",
        height);
-    PetscEnd();
+    PISMEnd();
   }
   if (height > Lz + 1.0e-6) {
     PetscPrintf(com, 
        "IceGrid kBelowHeight(): height = %5.4f is above top of computational grid Lz = %5.4f\n",
        height,Lz);
-    PetscEnd();
+    PISMEnd();
   }
   PetscInt mcurr = 0;
 //  while ((zlevels[mcurr+1] <= height) && (mcurr+1 < Mz)) {
@@ -398,13 +398,13 @@ void IceGrid::compute_nprocs() {
   if ((Mx / Nx) < 2) {		// note: integer division
     PetscPrintf(com, "PISM ERROR: Can't distribute a %d x %d grid across %d processors!\n",
 		Mx, My, size);
-    PetscEnd();
+    PISMEnd();
   }
 
   if ((My / Ny) < 2) {		// note: integer division
     PetscPrintf(com, "PISM ERROR: Can't distribute a %d x %d grid across %d processors!\n",
 		Mx, My, size);
-    PetscEnd();
+    PISMEnd();
   }
 
 }
@@ -489,7 +489,7 @@ PetscErrorCode IceGrid::createDA() {
 		       "PISM ERROR: can't distribute the %d x %d grid across %d processors...\n"
 		       "Exiting...\n", Mx, My, ierr);
     CHKERRQ(ierr2);
-    PetscEnd();
+    PISMEnd();
   }
 
   DALocalInfo info;
@@ -525,7 +525,7 @@ PetscErrorCode IceGrid::createDA(PetscInt my_procs_x, PetscInt my_procs_y,
 		       "PISM ERROR: can't distribute the %d x %d grid across %d processors...\n"
 		       "Exiting...\n", Mx, My, size);
     CHKERRQ(ierr2);
-    PetscEnd();
+    PISMEnd();
   }
   
  CHKERRQ(ierr);

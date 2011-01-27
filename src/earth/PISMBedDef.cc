@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ PISMBedDef::PISMBedDef(IceGrid &g, const NCConfigVariable &conf)
   PetscErrorCode ierr = pismbeddef_allocate();
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISMBedDef::PISMBedDef(...): pismbeddef_allocate() failed\n");
-    PetscEnd();
+    PISMEnd();
   }
 }
 

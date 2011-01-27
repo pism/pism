@@ -619,7 +619,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   if (!opt_set) {
     ierr = PetscPrintf(grid.com,
       "ERROR: surface model forcing requires the -force_to_thk option.\n"); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
     
   ierr = PetscOptionsReal("-force_to_thk_alpha",

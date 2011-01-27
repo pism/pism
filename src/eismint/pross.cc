@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -396,7 +396,7 @@ PetscErrorCode grid_setup(IceGrid &grid) {
                              filename, flag); CHKERRQ(ierr);
     if (!flag) {
       PetscPrintf(grid.com, "ERROR: -boot_file is required\n");
-      PetscEnd();
+      PISMEnd();
     }
 
     ierr = pio.open_for_reading(filename.c_str()); CHKERRQ(ierr);

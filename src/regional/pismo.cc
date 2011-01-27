@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Ed Bueler, Daniella DellaGiustina and Constantine Khroulev
+// Copyright (C) 2010, 2011 Ed Bueler, Daniella DellaGiustina and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -257,7 +257,7 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
 	"  contain 'no_model_mask' variable.  Executable pismo has no well-defined\n"
 	"  semantics without it!  Ending!!\n",
 	filename); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   } 
 
   bool no_model_strip_set;
@@ -267,7 +267,7 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
        "\nPISMO minor WARNING: option '-no_model_strip X' seen.  Value X ignored\n"
          "because no_model_mask variable read from input file.  Proceeding ...\n\n");
          CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
@@ -292,7 +292,7 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
        "\nPISMO ERROR: option '-no_model_strip X' is REQUIRED if '-i' is not used.\n"
          "   Executable pismo has no well-defined semantics without it!  Ending!!\n\n");
          CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   PetscReal stripkm;

@@ -131,7 +131,7 @@ PetscErrorCode NCSpatialVariable::read(const char filename[], unsigned int time,
 		       short_name.c_str(),
 		       strings["standard_name"].c_str(), filename);
     CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   ierr = nc.get_var(varid, v, dims, time); CHKERRQ(ierr);  
@@ -234,7 +234,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
 			"PISM ERROR: Can't find '%s' in the regridding file '%s'.\n",
 			 short_name.c_str(), filename);
       CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
 
     if (set_default_value) {	// if it's not and we have a default value, set it
@@ -378,7 +378,7 @@ PetscErrorCode NCSpatialVariable::change_units(Vec v, utUnit *from, utUnit *to) 
       ierr = PetscPrintf(com,
 			 "PISM ERROR: IceModelVec '%s': attempted to convert data from '%s' to '%s'.\n",
 			 short_name.c_str(), from_name.c_str(), to_name.c_str());
-      PetscEnd();
+      PISMEnd();
     } else {			// some other error
       return 2;
     }
@@ -768,7 +768,7 @@ PetscErrorCode NCConfigVariable::read(const char filename[]) {
 		       "PISM ERROR: configuration variable %s was not found in %s.\n"
 		       "            Exiting...\n",
 		       short_name.c_str(), filename); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   ierr = nc.inq_nattrs(varid, nattrs); CHKERRQ(ierr);
@@ -852,7 +852,7 @@ double NCConfigVariable::get(string name) const {
   } else {
     PetscPrintf(com, "PISM ERROR: parameter '%s' is unset. (Parameters read from '%s'.)\n",
 		name.c_str(), config_filename.c_str());
-    PetscEnd();
+    PISMEnd();
   }
 
   return 0;			// can't happen
@@ -884,13 +884,13 @@ bool NCConfigVariable::get_flag(string name) const {
 		"PISM ERROR: Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
 		"            Please make sure that it is equal to one of 'true', 'yes', 'on', 'false', 'no', 'off'.\n",
 		name.c_str(), value.c_str());
-    PetscEnd();
+    PISMEnd();
   }
 
   PetscPrintf(com,
 	      "PISM ERROR: Parameter '%s' was not set. (Read from '%s'.)\n",
 	      name.c_str(), config_filename.c_str());
-  PetscEnd();
+  PISMEnd();
 
   return true;			// will never happen
 }
@@ -904,7 +904,7 @@ string NCConfigVariable::get_string(string name) const {
     PetscPrintf(com,
 		"PISM ERROR: Parameter '%s' was not set. (Read from '%s'.)\n",
 		name.c_str(), config_filename.c_str());
-    PetscEnd();
+    PISMEnd();
   }
 
   return string();		// will never happen
@@ -978,7 +978,7 @@ PetscErrorCode NCConfigVariable::flag_from_option(string name, string flag) {
   if (foo && no_foo) {
     PetscPrintf(com, "PISM ERROR: Inconsistent command-line options: both -%s and -no_%s are set.\n",
 		name.c_str(), name.c_str());
-    PetscEnd();
+    PISMEnd();
   }
 
   if (foo)
@@ -1118,7 +1118,7 @@ PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
 		       short_name.c_str(),
 		       strings["standard_name"].c_str(), filename);
     CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   vector<int> dimids;
@@ -1129,7 +1129,7 @@ PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
 		       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
 		       "            but a time-series variable can only depend on 1 dimension.\n",
 		       short_name.c_str(), filename, dimids.size()); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   ierr = nc.inq_dimname(dimids[0], dimension_name); CHKERRQ(ierr);
@@ -1141,7 +1141,7 @@ PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
     ierr = PetscPrintf(com,
 		       "PISM ERROR: Dimension %s has zero (or negative) length!\n",
 		       dimension_name.c_str()); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   data.resize(length);		// memory allocation happens here
@@ -1292,7 +1292,7 @@ PetscErrorCode NCTimeseries::change_units(vector<double> &data, utUnit *from, ut
       ierr = PetscPrintf(com,
 			 "PISM ERROR: variable '%s': attempted to convert data from '%s' to '%s'.\n",
 			 short_name.c_str(), from_name.c_str(), to_name.c_str());
-      PetscEnd();
+      PISMEnd();
     } else {			// some other error
       return 2;
     }

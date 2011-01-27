@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -45,7 +45,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
     ierr = PetscPrintf(grid.com,
 		       "PISM ERROR: Please specify an input file using -i or -boot_file.\n");
     CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   // Use a bootstrapping file to set some grid parameters (they can be
@@ -75,13 +75,13 @@ PetscErrorCode IceModel::set_grid_defaults() {
     ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'x'\n",
 		       filename.c_str());
     CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
   if (!y_dim_exists) {
     ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'y'\n",
 		       filename.c_str());
     CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   // Set the grid center and horizontal extent:
@@ -117,7 +117,7 @@ PetscErrorCode IceModel::set_grid_defaults() {
     ierr = PetscPrintf(grid.com,
 		       "PISM ERROR: All of -boot_file, -Mx, -My, -Mz are required for bootstrapping.\n");
     CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
@@ -193,7 +193,7 @@ PetscErrorCode IceModel::set_grid_from_options() {
     if ((grid.Mbz > 1) && !Lbz_set) {
       ierr = PetscPrintf(grid.com,
 			 "PISM ERROR: Please specify bedrock layer thickness using -Lbz.\n"); CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
   }
 
@@ -323,7 +323,7 @@ PetscErrorCode IceModel::grid_setup() {
     ierr = PetscPrintf(grid.com,
 		       "PISM ERROR: Please set both -Nx and -Ny.\n");
     CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   if ((!Nx_set) && (!Ny_set)) {
@@ -336,7 +336,7 @@ PetscErrorCode IceModel::grid_setup() {
 			 "PISM ERROR: Can't split %d grid points between %d processors.\n",
 			 grid.Mx, grid.Nx);
       CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
 
     if ((grid.My / grid.Ny) < 2) {
@@ -344,7 +344,7 @@ PetscErrorCode IceModel::grid_setup() {
 			 "PISM ERROR: Can't split %d grid points between %d processors.\n",
 			 grid.My, grid.Ny);
       CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
 
     if (grid.Nx * grid.Ny != grid.size) {
@@ -352,7 +352,7 @@ PetscErrorCode IceModel::grid_setup() {
 			 "PISM ERROR: Nx * Ny has to be equal to %d.\n",
 			 grid.size);
       CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
 
     bool procs_x_set, procs_y_set;
@@ -366,7 +366,7 @@ PetscErrorCode IceModel::grid_setup() {
       ierr = PetscPrintf(grid.com,
 			 "PISM ERROR: Please set both -procs_x and -procs_y.\n");
       CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
 
     if (procs_x_set && procs_y_set) {
@@ -374,14 +374,14 @@ PetscErrorCode IceModel::grid_setup() {
 	ierr = PetscPrintf(grid.com,
 			   "PISM ERROR: -Nx has to be equal to the -procs_x size.\n");
 	CHKERRQ(ierr);
-	PetscEnd();
+	PISMEnd();
       }
 
       if (tmp_y.size() != (unsigned int)grid.Ny) {
 	ierr = PetscPrintf(grid.com,
 			   "PISM ERROR: -Ny has to be equal to the -procs_y size.\n");
 	CHKERRQ(ierr);
-	PetscEnd();
+	PISMEnd();
       }
 
       delete [] grid.procs_x;
@@ -492,7 +492,7 @@ PetscErrorCode IceModel::set_vars_from_options() {
     ierr = bootstrapFromFile(filename.c_str()); CHKERRQ(ierr);
   } else {
     ierr = PetscPrintf(grid.com, "PISM ERROR: No input file specified.\n"); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
   
   return 0;
@@ -715,11 +715,11 @@ PetscErrorCode  IceModel::set_time_from_options() {
   if (ysSet && yeSet && ySet) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: all of -y, -ys, -ye are set. Exiting...\n");
     CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
   if (ySet && yeSet) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: using -y and -ye together is not allowed. Exiting...\n"); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   // Set the start year if -ys is set, use the default (stored in
@@ -737,7 +737,7 @@ PetscErrorCode  IceModel::set_time_from_options() {
 			"PISM ERROR: -ye (%3.3f) is less than -ys (%3.3f) (or input file year or default).\n"
 			"PISM cannot run backward in time.\n",
 			 usrEndYear, grid.start_year); CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
     grid.end_year = usrEndYear;
   } else if (ySet == PETSC_TRUE) {

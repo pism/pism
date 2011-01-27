@@ -241,7 +241,7 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
         ierr = PetscPrintf(grid.com,
           "IcePSTexModel ERROR:  Only one experiment name option allowed.\n");
           CHKERRQ(ierr);
-	PetscEnd();
+	PISMEnd();
       } else {
         exper_chosen = j;
         strcpy(exper_chosen_name,e[j].name);
@@ -253,7 +253,7 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
       "IcePSTexModel ERROR:  Unrecognized experiment name.\n"
       "  An experiment name option like '-P2' must be chosen.\n");
       CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
   
   ierr = verbPrintf(2,grid.com, 

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -41,7 +41,7 @@ PetscErrorCode PISMComponent::find_pism_input(string &filename, //!< name of the
     if (boot_file_set) {
       ierr = PetscPrintf(grid.com,
 	"PISMClimateCoupler ERROR: both '-i' and '-boot_file' are used. Exiting...\n"); CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
     filename = i_file;
   }

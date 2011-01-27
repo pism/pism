@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -236,13 +236,13 @@ PetscScalar IceModelVec3::getValZ(PetscInt i, PetscInt j, PetscScalar z) {
     PetscPrintf(PETSC_COMM_SELF, 
        "IceModelVec3 getValZ(): array was not allocated (so says\n"
        "  IceModelVec::checkHaveArray()); name = %s\n", name.c_str());
-    PetscEnd();
+    PISMEnd();
   }
   if (isLegalLevel(z) != 0) {
     PetscPrintf(PETSC_COMM_SELF, 
        "IceModelVec3 getValZ(): isLegalLevel() says level %f was\n"
        "  not legal; name = %s\n", z, name.c_str());
-    PetscEnd();
+    PISMEnd();
   }
 #endif
 

@@ -45,7 +45,7 @@ NCTool::NCTool(MPI_Comm c, PetscMPIInt r)
   if (utIsInit() == 0) {
     if (utInit(NULL) != 0) {
       PetscPrintf(com, "PISM ERROR: UDUNITS initialization failed.\n");
-      PetscEnd();
+      PISMEnd();
     }
   }
 }
@@ -53,7 +53,7 @@ NCTool::NCTool(MPI_Comm c, PetscMPIInt r)
 NCTool::~NCTool() {
   if (ncid >= 0) {
     PetscPrintf(com, "NCTool::~NCTool() ncid >= 0.\n");
-    PetscEnd();
+    PISMEnd();
   }
 }
 
@@ -134,7 +134,7 @@ PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
 			     "Variables #%d and #%d have the same standard_name ('%s').\n",
 			     my_varid, j, attribute.c_str());
 	  CHKERRQ(ierr);
-	  PetscEnd();
+	  PISMEnd();
 	}
       }
     } // end of for (int j = 0; j < nvars; j++)
@@ -208,13 +208,13 @@ PetscErrorCode NCTool::get_vertical_dims(double* &z_levels, double* &zb_levels) 
     stat = nc_inq_varid(ncid, "z", &z_id);
     if (stat != NC_NOERR) {
       stat = PetscPrintf(com, "PISM ERROR: Can't find the 'z' coordinate variable.\n"); CHKERRQ(stat);
-      PetscEnd();
+      PISMEnd();
     }
     
     stat = nc_inq_varid(ncid, "zb", &zb_id);
     if (stat != NC_NOERR) {
       stat = PetscPrintf(com, "PISM ERROR: Can't find the 'zb' coordinate variable.\n"); CHKERRQ(stat);
-      PetscEnd();
+      PISMEnd();
     }
 
     stat = data_mode(); CHKERRQ(stat); 
@@ -239,6 +239,8 @@ PetscErrorCode NCTool::put_dimension_regular(int varid, int len, double start, d
   PetscErrorCode ierr;
   int stat;
   double *v, delta;
+
+  if (rank != 0) return 0;
 
   if (end <= start)
     SETERRQ2(1, "Can't write dimension: start = %f, end = %f",
@@ -270,6 +272,8 @@ PetscErrorCode NCTool::put_dimension(int varid, int len, PetscScalar *vals) cons
   PetscErrorCode ierr;
   int stat;
   double *v;
+
+  if (rank != 0) return 0;
 
   ierr = PetscMalloc(len * sizeof(double), &v); CHKERRQ(ierr);
   for (int i = 0; i < len; i++) {
@@ -422,7 +426,7 @@ PetscErrorCode NCTool::open_for_writing(const char filename[]) {
       if (stat != NC_NOERR) {
 	stat = PetscPrintf(com, "PISM ERROR: Can't open file '%s'. NetCDF error: %s\n",
 			   filename, nc_strerror(stat)); CHKERRQ(stat);
-	PetscEnd();
+	PISMEnd();
       }
       stat = nc_set_fill(ncid, NC_NOFILL, NULL); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     } else {
@@ -484,7 +488,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
       ierr = PetscPrintf(com, "PISM ERROR: coordinate variable '%s' does not exist.\n",
 			 name);
       CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
 
     ierr = data_mode(); CHKERRQ(ierr); 
@@ -539,7 +543,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
 	ierr = PetscPrintf(com,
 			   "PISM ERROR: dimensional variable '%s' has the units that are not compatible with '%s'.\n",
 			   name, internal_units); CHKERRQ(ierr);
-	PetscEnd();
+	PISMEnd();
       }
       SETERRQ1(1, "UDUNITS failure: error code = %d", ierr);
     }
@@ -677,7 +681,7 @@ PetscErrorCode NCTool::get_units(int varid, bool &has_units, utUnit &units) cons
   if (ierr != 0) {
     ierr = PetscPrintf(com, "PISM ERROR: units specification '%s' is unknown or invalid.\n",
 		       units_string.c_str());
-    PetscEnd();
+    PISMEnd();
   }
   
   has_units = true;
@@ -803,7 +807,7 @@ PetscErrorCode NCTool::move_if_exists(const char filename[]) {
   if (ierr != 0) {
     ierr = verbPrintf(1, com, "PISM ERROR: can't move '%s' to '%s'.\n",
                       filename, tmp.c_str());
-    PetscEnd();
+    PISMEnd();
   }
   ierr = verbPrintf(2, com, 
                     "PISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",

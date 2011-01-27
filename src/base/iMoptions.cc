@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -209,7 +209,7 @@ PetscErrorCode  IceModel::setFromOptions() {
     ierr = PetscPrintf(grid.com,
 		       "PISM ERROR: -real_age_grainsize (sets realAgeForGrainSize) not implemented\n");
     CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   // check -ssa_floating_only

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -176,7 +176,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
 		       "PISM ERROR: Max ice thickness (%7.4f m) is greater than the height of the computational box (%7.4f m)"
 		       " AND the grid has twice the initial number of vertical levels (%d) already. Exiting...\n",
 		       H_max, grid.Lz, grid.initial_Mz); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   // So, we need to extend the grid. We find dz at the top of the grid,

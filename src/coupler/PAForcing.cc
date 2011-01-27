@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2010 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -78,7 +78,7 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
     // stop if -dTforcing is set:
     if (dTforcing_set) {
       ierr = PetscPrintf(grid.com, "PISM ERROR: option -anomaly_temp is incompatible with -dTforcing.\n");
-      PetscEnd();
+      PISMEnd();
     }
 
     ierr = verbPrintf(2,grid.com,

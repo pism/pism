@@ -33,10 +33,6 @@ PSExternal::~PSExternal() {
 //! Initialize the PSExternal model.
 PetscErrorCode PSExternal::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  string pism_input;
-  LocalInterpCtx *lic;
-  bool regrid;
-  int start;
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the PISM surface model running an external program\n"
@@ -69,49 +65,26 @@ PetscErrorCode PSExternal::init(PISMVars &vars) {
             "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
   CHKERRQ(ierr);
 
-  // artm_0 is the initial condition; artm_0 = artm(t_0) + gamma*usurf(t_0)
-  ierr = artm_0.create(grid, "usurf", false); CHKERRQ(ierr);
-  ierr = artm_0.set_attrs("internal", "ice upper surface elevation",
-                           "m", "surface_altitude"); CHKERRQ(ierr);
-
-  ierr = find_pism_input(pism_input, lic, regrid, start); CHKERRQ(ierr); 
-
-  if (regrid) {
-    ierr = artm_0.regrid(pism_input.c_str(), *lic, true); CHKERRQ(ierr);
-    ierr =   artm.regrid(pism_input.c_str(), *lic, true); CHKERRQ(ierr);
-  } else {
-    ierr = artm_0.read(pism_input.c_str(), start); CHKERRQ(ierr);
-    ierr =   artm.read(pism_input.c_str(), start); CHKERRQ(ierr);
-  }
-
-  delete lic;
-
   bool ebm_input_set, ebm_output_set, ebm_command_set;
   ierr = PetscOptionsBegin(grid.com, "", "PSExternal model options", ""); CHKERRQ(ierr);
   {
     bool flag;
-    ierr = PISMOptionsReal("-lapse_rate", "Air temperature lapse rate, degrees K per kilometer",
-			   gamma, flag); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-update_interval", "Energy balance model update interval, years",
 			   update_interval, flag); CHKERRQ(ierr);
 
     ierr = PISMOptionsString("-ebm_input_file", "Name of the file an external boundary model will read data",
                              ebm_input, ebm_input_set); CHKERRQ(ierr);
+
     ierr = PISMOptionsString("-ebm_output_file",
                              "Name of the file into which an external boundary model will write B.C.",
                              ebm_output, ebm_output_set); CHKERRQ(ierr);
+
     ierr = PISMOptionsString("-ebm_command", "The command (with options) running an external boundary model",
                              ebm_command, ebm_command_set); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   
   ebm_update_interval = 0.5 * update_interval;
-
-  gamma = gamma / 1000;         // convert to K/meter
-
-  // Use gamma to compute the initial condition:
-  ierr = artm_0.scale(gamma); CHKERRQ(ierr);
-  ierr = artm_0.add(1.0, artm); CHKERRQ(ierr);
 
   // Initialize the EBM driver:
   if (grid.rank == 0) {
@@ -163,7 +136,7 @@ PetscErrorCode PSExternal::max_timestep(PetscReal t_years, PetscReal &dt_years) 
   double delta = 0.5 * update_interval;
   double next_update = ceil(t_years / delta) * delta;
 
-  if (PetscAbs(next_update - t_years) < 1e6)
+  if (PetscAbs(next_update - t_years) < 1e-6)
     next_update = t_years + delta;
   
   dt_years = next_update - t_years;
@@ -221,6 +194,24 @@ PetscErrorCode PSExternal::update(PetscReal t_years, PetscReal dt_years) {
   return 0;
 }
 
+PetscErrorCode PSExternal::update_artm() {
+  PetscErrorCode ierr;
+  PISMIO nc(&grid);
+
+  ierr = verbPrintf(2, grid.com, "Reading the temperature at the top of the ice from %s for year = %1.1f...\n",
+                    ebm_output.c_str(), t); 
+
+  grid_info gi;
+  ierr = nc.open_for_reading(ebm_output.c_str()); CHKERRQ(ierr);
+  ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+  LocalInterpCtx lic(gi, NULL, NULL, grid); // 2D only
+
+  ierr = artm.regrid(ebm_output.c_str(), lic, true); CHKERRQ(ierr);
+
+  return 0;
+}
+
 PetscErrorCode PSExternal::update_acab() {
   PetscErrorCode ierr;
   PISMIO nc(&grid);
@@ -235,25 +226,6 @@ PetscErrorCode PSExternal::update_acab() {
   LocalInterpCtx lic(gi, NULL, NULL, grid); // 2D only
 
   ierr = acab.regrid(ebm_output.c_str(), lic, true); CHKERRQ(ierr);
-
-  return 0;
-}
-
-//! Update artm using an atmospheric lapse rate.
-PetscErrorCode PSExternal::update_artm() {
-  PetscErrorCode ierr;
-
-  ierr = usurf->begin_access(); CHKERRQ(ierr);
-  ierr = artm.begin_access(); CHKERRQ(ierr);
-  ierr = artm_0.begin_access(); CHKERRQ(ierr); 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      artm(i,j) = artm_0(i,j) - gamma * (*usurf)(i,j);
-    }
-  }
-  ierr = usurf->end_access(); CHKERRQ(ierr);
-  ierr = artm.end_access(); CHKERRQ(ierr);
-  ierr = artm_0.end_access(); CHKERRQ(ierr); 
 
   return 0;
 }
@@ -280,7 +252,7 @@ PetscErrorCode PSExternal::write_coupling_fields() {
     int t_varid;
     bool t_exists;
     ierr = nc.find_variable("t", &t_varid, t_exists); CHKERRQ(ierr);
-
+    
     ierr = nc.put_dimension(t_varid, 1, &grid.year); CHKERRQ(ierr);
   }
   ierr = nc.close(); CHKERRQ(ierr);
@@ -373,3 +345,117 @@ PetscErrorCode PSExternal::wait() {
 }
 
 
+void PSExternal::add_vars_to_output(string keyword, set<string> &result) {
+  if (keyword == "big") {
+    result.insert("acab");
+    result.insert("artm");
+  }
+}
+
+PetscErrorCode PSExternal::define_variables(set<string> vars, const NCTool &nc,
+                                            nc_type nctype) {
+  PetscErrorCode ierr;
+
+  ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+
+  if (set_contains(vars, "artm")) {
+    ierr = artm.define(nc, nctype); CHKERRQ(ierr); 
+  }
+
+  if (set_contains(vars, "acab")) {
+    ierr = acab.define(nc, nctype); CHKERRQ(ierr); 
+  }
+
+  return 0;
+}
+
+PetscErrorCode PSExternal::write_variables(set<string> vars, string filename) {
+  PetscErrorCode ierr;
+
+  if (set_contains(vars, "artm")) {
+    ierr = artm.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "acab")) {
+    ierr = acab.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+/// The ALR variation
+
+PetscErrorCode PSExternal_ALR::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+  string pism_input;
+  LocalInterpCtx *lic;
+  bool regrid;
+  int start;
+
+  ierr = PSExternal::init(vars); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com,
+                    "  [ using an atmospheric lapse rate correction for the temperature at the top of the ice ]\n");
+  CHKERRQ(ierr);
+
+  // artm_0 is the initial condition; artm_0 = artm(t_0) + gamma*usurf(t_0)
+  ierr = artm_0.create(grid, "usurf", false); CHKERRQ(ierr);
+  ierr = artm_0.set_attrs("internal", "ice upper surface elevation",
+                           "m", "surface_altitude"); CHKERRQ(ierr);
+
+  ierr = find_pism_input(pism_input, lic, regrid, start); CHKERRQ(ierr); 
+
+  if (regrid) {
+    ierr = artm_0.regrid(pism_input.c_str(), *lic, true); CHKERRQ(ierr);
+    ierr =   artm.regrid(pism_input.c_str(), *lic, true); CHKERRQ(ierr);
+  } else {
+    ierr = artm_0.read(pism_input.c_str(), start); CHKERRQ(ierr);
+    ierr =   artm.read(pism_input.c_str(), start); CHKERRQ(ierr);
+  }
+
+  delete lic;
+
+  ierr = PetscOptionsBegin(grid.com, "", "PSExternal_ALR options", ""); CHKERRQ(ierr);
+  {
+    bool flag;
+    ierr = PISMOptionsReal("-artm_lapse_rate", "Top of the ice temperature lapse rate, degrees K per kilometer",
+			   gamma, flag); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  gamma = gamma / 1000;         // convert to K/meter
+
+  // Use gamma to compute the initial condition:
+  ierr = artm_0.scale(gamma); CHKERRQ(ierr);
+  ierr = artm_0.add(1.0, artm); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! Always add artm (it is needed for re-starting the lapse rate correction).
+void PSExternal_ALR::add_vars_to_output(string keyword, set<string> &result) {
+  result.insert("artm");
+
+  if (keyword == "big") {
+    result.insert("acab");
+  }
+}
+
+//! Update artm using an atmospheric lapse rate.
+PetscErrorCode PSExternal_ALR::update_artm() {
+  PetscErrorCode ierr;
+
+  ierr = usurf->begin_access(); CHKERRQ(ierr);
+  ierr = artm.begin_access(); CHKERRQ(ierr);
+  ierr = artm_0.begin_access(); CHKERRQ(ierr); 
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      artm(i,j) = artm_0(i,j) - gamma * (*usurf)(i,j);
+    }
+  }
+  ierr = usurf->end_access(); CHKERRQ(ierr);
+  ierr = artm.end_access(); CHKERRQ(ierr);
+  ierr = artm_0.end_access(); CHKERRQ(ierr); 
+
+  return 0;
+}

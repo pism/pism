@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -123,7 +123,7 @@ PetscErrorCode IceModel::initBasalTillModel() {
 
   if (topgphiSet && plastic_phi_set) {
     PetscPrintf(grid.com, "ERROR: only one of -plastic_phi and -topg_to_phi is allowed.\n");
-    PetscEnd();
+    PISMEnd();
   }
 
   if (plastic_phi_set) {
@@ -190,7 +190,7 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
       "PISM ERROR: option -topg_to_phi provided with more than 5 or fewer than 4\n"
       "            arguments ... ENDING ...\n");
       CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
   PetscReal   phi_min = inarray[0],
               phi_max = inarray[1],
@@ -303,7 +303,7 @@ PetscScalar IceModel::getBasalWaterPressure(PetscScalar thk, PetscScalar bwat,
     PetscPrintf(grid.com,
       "PISM ERROR:  bwat = %12.8f exceeds hmelt_max = %12.8f\n"
       "  in IceModel::getBasalWaterPressure()\n",bwat,hmelt_max);
-    PetscEnd();
+    PISMEnd();
   }
 
   static const bool

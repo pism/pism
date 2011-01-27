@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -60,7 +60,7 @@ PetscErrorCode IceModel::update_viewers() {
       ierr = PetscPrintf(grid.com,
                          "PISM ERROR: map-plane views of 3D quantities are not supported.\n");
       CHKERRQ(ierr);
-      PetscEnd();
+      PISMEnd();
     }
 
     if (v->get_dof() == 1) {    // scalar fields
@@ -120,7 +120,7 @@ PetscErrorCode IceModel::update_viewers() {
     // if it's a 2D variable, stop
     if (dims == GRID_2D) {
       ierr = PetscPrintf(grid.com, "PISM ERROR: soundings of 2D quantities are not supported.\n");
-      PetscEnd();
+      PISMEnd();
     }
 
     string name = v->string_attr("short_name");

@@ -77,10 +77,6 @@ int main(int argc, char *argv[]) {
   }
 
   if (pism_side) {
-    // int i = 1;
-    // while (i == 1)
-    //   sleep(1);
-
     // Initialize PETSC
     PETSC_COMM_WORLD = intra_comm;
     ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
@@ -127,8 +123,18 @@ int main(int argc, char *argv[]) {
 
       // Initialize boundary models:
 
-      // The special surface model (does *not* use an atmosphere model)
-      PSExternal *surface = new PSExternal(g, config, inter_comm);
+      PISMSurfaceModel *surface;
+      bool flag;
+      ierr = PISMOptionsIsSet("-artm_lapse_rate",
+                              "Atmospheric lapse rate for the temperature at the top of the ice",
+                              flag); CHKERRQ(ierr);
+      if (flag) {
+        surface = new PSExternal_ALR(g, config, inter_comm);
+      } else {
+        // The special surface model (does *not* use an atmosphere model)
+        surface = new PSExternal(g, config, inter_comm);
+      }
+      
 
       // An ocean model
       POFactory po(g, config);

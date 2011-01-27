@@ -68,7 +68,7 @@ static PetscErrorCode set_eismint_greenland_params(MPI_Comm com,
     ierr = PetscPrintf(com,
        "experiment SSL3 (-ssl3) is not implemented ... ENDING\n"
        "  (choose parameters yourself, by runtime options)\n"); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   ierr = verbPrintf(2, com, 
@@ -95,7 +95,7 @@ static PetscErrorCode set_eismint_greenland_params(MPI_Comm com,
   if ((exper != GWL3) && gwl3_start_set) {
     ierr = PetscPrintf(com,
 		       "PISM ERROR: option -gwl3_start_year is only allowed if -gwl3 is set.\n"); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   // degree-day factors in \ref RitzEISMINT are water-equivalent thickness

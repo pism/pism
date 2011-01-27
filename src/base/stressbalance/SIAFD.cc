@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2010 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2011 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -164,7 +164,7 @@ PetscErrorCode SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVe
   if ((method != "eta") && (method != "mahaffy") && (method != "haseloff")) {
     verbPrintf(1, grid.com,
       "PISM ERROR: value of surface_gradient_method, option -gradient, not valid ... ending\n");
-    PetscEnd();
+    PISMEnd();
   }
 
   if (method == "eta") {
@@ -416,7 +416,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
     PetscPrintf(grid.com,
                 "PISM ERROR in IceModel::velocitySIAStaggered(): do_age not set but\n"
                 "age is needed for grain-size-based flow law ...  ENDING! ...\n\n");
-    PetscEnd();
+    PISMEnd();
   }
 
   const bool use_age = (IceFlowLawUsesGrainSize(&ice) &&

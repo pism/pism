@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Constantine Khroulev
+// Copyright (C) 2009--2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,7 @@
 
 #include "Timeseries.hh"
 #include <algorithm>
+#include "pism_const.hh"
 
 Timeseries::Timeseries(IceGrid *g, string name, string dimension_name) {
   com = g->com;
@@ -53,7 +54,7 @@ PetscErrorCode Timeseries::read(const char filename[]) {
   if (!is_increasing) {
     ierr = PetscPrintf(com, "PISM ERROR: dimension '%s' has to be strictly increasing (read from '%s').\n",
 		       dimension.short_name.c_str(), filename);
-    PetscEnd();
+    PISMEnd();
   }
 
   ierr = var.read(filename, values); CHKERRQ(ierr);
@@ -63,7 +64,7 @@ PetscErrorCode Timeseries::read(const char filename[]) {
 		       dimension.short_name.c_str(),
 		       var.short_name.c_str(),
 		       filename); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   ierr = var.report_range(values); CHKERRQ(ierr);
@@ -116,7 +117,7 @@ double Timeseries::operator[](unsigned int j) const {
   if (j >= values.size()) {
     PetscPrintf(com, "ERROR: Timeseries %s: operator[]: invalid argument: size=%d, index=%d\n",
 		var.short_name.c_str(), values.size(), j);
-    PetscEnd();
+    PISMEnd();
   }
 
   return values[j];

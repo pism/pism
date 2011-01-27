@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   if (utIsInit() == 0) {
     if (utInit(NULL) != 0) {
       PetscPrintf(grid.com, "PISM ERROR: UDUNITS initialization failed.\n");
-      PetscEnd();
+      PISMEnd();
     }
   }
 
@@ -54,7 +54,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   ierr = setDefaults();  // lots of parameters and flags set here, including by reading from a config file
   if (ierr != 0) {
     verbPrintf(1,grid.com, "Error setting defaults.\n");
-    PetscEnd();
+    PISMEnd();
   }
 
   // Do not save snapshots by default:
@@ -473,7 +473,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   ierr = determineTimeStep(do_energy); CHKERRQ(ierr);
 
   dtTempAge += dt;
-  grid.year += dt / secpera;  // adopt it
   // IceModel::dt,dtTempAge,grid.year are now set correctly according to
   //    mass-continuity-eqn-diffusivity criteria, horizontal CFL criteria, and
   //    other criteria from derived class additionalAtStartTimestep(), and from
@@ -545,6 +544,8 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   //! \li call additionalAtEndTimestep() to let derived classes do more
   ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
+
+  grid.year += dt / secpera;  // adopt the new time
 
   // end the flag line
   char tempstr[5];  snprintf(tempstr,5," %c", adaptReasonFlag);

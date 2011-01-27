@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -306,7 +306,7 @@ PetscErrorCode IceModel::velocitySSA_SNES(IceModelVec2S vNuH[2], PetscInt *its) 
 #define sqr PetscSqr
 static PetscScalar nu_eff(bool useConstantNu, PetscScalar schoofReg, PetscScalar barB, 
                    PetscScalar u_x, PetscScalar u_y, PetscScalar v_x, PetscScalar v_y) {
-  //PetscPrintf(PETSC_COMM_WORLD, "nu_eff() turned off\n"); PetscEnd();
+  //PetscPrintf(PETSC_COMM_WORLD, "nu_eff() turned off\n"); PISMEnd();
   if (useConstantNu == PETSC_TRUE) {
     //return 30.0 * 1e6 * secpera; // 30 MPa a^-1 = 9.45e14 Pa s^-1
     const PetscScalar strainrate = (100.0 / secpera) / 100.0e3;  // = 1e-3 s^-1; typical strain rate
@@ -324,7 +324,7 @@ static PetscScalar nu_eff(bool useConstantNu, PetscScalar schoofReg, PetscScalar
 PetscErrorCode basalstress(bool useIceBasalResistancePlasticLaw, IceBasalResistancePlasticLaw *basal,
                            PetscScalar u, PetscScalar v, PetscScalar tauc,
                            PetscScalar &taubx, PetscScalar &tauby) {
-//  PetscPrintf(PETSC_COMM_WORLD, "basalstress() turned off\n"); PetscEnd();
+//  PetscPrintf(PETSC_COMM_WORLD, "basalstress() turned off\n"); PISMEnd();
   if (useIceBasalResistancePlasticLaw == PETSC_TRUE) {
     taubx = - basal->drag(tauc, u, v) * u;
     tauby = - basal->drag(tauc, u, v) * v;

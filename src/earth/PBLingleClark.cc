@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ PBLingleClark::PBLingleClark(IceGrid &g, const NCConfigVariable &conf)
   ierr = allocate();
   if (ierr != 0) {
     PetscPrintf(grid.com, "PBLingleClark::PBLingleClark(...): allocate() failed\n");
-    PetscEnd();
+    PISMEnd();
   }
   
 }
@@ -39,7 +39,7 @@ PBLingleClark::~PBLingleClark() {
   ierr = deallocate();
   if (ierr != 0) {
     PetscPrintf(grid.com, "PBLingleClark::~PBLingleClark(...): deallocate() failed\n");
-    PetscEnd();
+    PISMEnd();
   }
 
 }

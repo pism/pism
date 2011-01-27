@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,12 +43,12 @@ columnSystemCtx::columnSystemCtx(PetscInt my_nmax) : nmax(my_nmax) {
   if (nmax < 1) {
     PetscPrintf(PETSC_COMM_WORLD,
       "columnSystem ERROR: nmax of system too small\n");
-    PetscEnd();
+    PISMEnd();
   }
   if (nmax > 1000000) {
     PetscPrintf(PETSC_COMM_WORLD,
       "columnSystem ERROR: nmax of system unreasonable (> 10^6)\n");
-    PetscEnd();
+    PISMEnd();
   }
   Lp   = new PetscScalar[nmax-1];
   L    = Lp-1; // ptr arith.; note L[0]=Lp[-1] not allocated
@@ -88,7 +88,7 @@ PetscErrorCode columnSystemCtx::resetColumn() {
 PetscScalar columnSystemCtx::norm1(const PetscInt n) const {
   if (n > nmax) {
     PetscPrintf(PETSC_COMM_WORLD,"PISM ERROR:  n > nmax in columnSystemCtx::norm1()\n");
-    PetscEnd();
+    PISMEnd();
   }
   if (n == 1)  return fabs(D[0]);   // only 1x1 case is special
   PetscScalar z = fabs(D[0]) + fabs(L[1]);
@@ -116,7 +116,7 @@ We return -1.0 if the absolute value of any diagonal element is less than
 PetscScalar columnSystemCtx::ddratio(const PetscInt n) const {
   if (n > nmax) {
     PetscPrintf(PETSC_COMM_WORLD,"PISM ERROR:  n > nmax in columnSystemCtx::ddratio()\n");
-    PetscEnd();
+    PISMEnd();
   }
   const PetscScalar scale = norm1(n);
 

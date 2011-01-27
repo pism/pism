@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@ PBPointwiseIsostasy::PBPointwiseIsostasy(IceGrid &g, const NCConfigVariable &con
   ierr = allocate();
   if (ierr != 0) {
     PetscPrintf(grid.com, "PBPointwiseIsostasy::PBPointwiseIsostasy(...): allocate() failed\n");
-    PetscEnd();
+    PISMEnd();
   }
 
 }

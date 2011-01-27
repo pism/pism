@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -317,7 +317,7 @@ This method should be kept because it is worth having alternative physics, and
                         "   1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n"
                         "   ENDING! ...\n",
                         i, j, ierr, system.norm1(k0+ks+1), system.ddratio(k0+ks+1));
-            PetscEnd();
+            PISMEnd();
           } else { CHKERRQ(ierr); }
 
           // diagnostic/DEBUG; added for comparison to IceEnthalpyModel
@@ -628,7 +628,7 @@ PetscErrorCode IceModel::ageStep() {
             "  1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n"
             "  ENDING! ...\n\n",
             i, j, ierr, system.norm1(fks+1), system.ddratio(fks+1));
-          PetscEnd();
+          PISMEnd();
         } else { CHKERRQ(ierr); }
 
         // x[k] contains age for k=0,...,ks, but set age of ice above (and at) surface to zero years

@@ -141,7 +141,7 @@ PetscErrorCode IceModelVec2T::init(string fname) {
   if (!is_increasing) {
     ierr = PetscPrintf(grid->com, "PISM ERROR: times \"t\" have to be strictly increasing (read from '%s').\n",
 		       filename.c_str());
-    PetscEnd();
+    PISMEnd();
   }
 
   ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);

@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2010 Constantine Khroulev
+// Copyright (C) 2009-2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -50,7 +50,7 @@ PetscErrorCode IceModel::init_timeseries() {
       "PISM ERROR: you need to specity both -ts_file and -ts_times to save"
       "diagnostic time-series.\n");
     CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   // If neither -ts_filename nor -ts_times is set, we're done.
@@ -64,12 +64,12 @@ PetscErrorCode IceModel::init_timeseries() {
   ierr = parse_times(grid.com, times, ts_times);
   if (ierr != 0) {
     ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -ts_times argument failed.\n"); CHKERRQ(ierr);
-    PetscEnd();
+    PISMEnd();
   }
 
   if (ts_times.size() == 0) {
     PetscPrintf(grid.com, "PISM ERROR: no argument for -ts_times option.\n");
-    PetscEnd();
+    PISMEnd();
   }
 
   ierr = verbPrintf(2, grid.com, "saving scalar time-series to '%s'; ",
@@ -478,7 +478,7 @@ PetscErrorCode IceModel::init_extras() {
   if (file_set ^ times_set) {
     PetscPrintf(grid.com,
       "PISM ERROR: you need to specify both -extra_file and -extra_times to save spatial time-series.\n");
-    PetscEnd();
+    PISMEnd();
   }
 
   if (!file_set && !times_set) {
@@ -489,11 +489,11 @@ PetscErrorCode IceModel::init_extras() {
   ierr = parse_times(grid.com, times, extra_times);
   if (ierr != 0) {
     PetscPrintf(grid.com, "PISM ERROR: parsing the -extra_times argument failed.\n");
-    PetscEnd();
+    PISMEnd();
   }
   if (extra_times.size() == 0) {
     PetscPrintf(grid.com, "PISM ERROR: no argument for -extra_times option.\n");
-    PetscEnd();
+    PISMEnd();
   }
 
   save_extra = true;
