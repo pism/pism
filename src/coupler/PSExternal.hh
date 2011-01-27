@@ -79,10 +79,11 @@ public:
   virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
 protected:
   double gamma, update_interval, ebm_update_interval, last_ebm_update_year, last_bc_update_year;
-  IceModelVec2S acab, artm, *usurf, *topg;
+  IceModelVec2S acab, artm;
   MPI_Comm inter_comm;
   string ebm_command, ebm_input, ebm_output;
   bool ebm_is_running;
+  vector<IceModelVec*> ebm_vars;
 
   virtual PetscErrorCode update_artm();
   virtual PetscErrorCode update_acab();
@@ -111,7 +112,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void add_vars_to_output(string keyword, set<string> &result);
 protected:
-  IceModelVec2S artm_0;
+  IceModelVec2S artm_0, *usurf;
   PetscReal gamma;
 
   virtual PetscErrorCode update_artm();

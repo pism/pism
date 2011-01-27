@@ -38,12 +38,6 @@ PetscErrorCode PSExternal::init(PISMVars &vars) {
                     "* Initializing the PISM surface model running an external program\n"
                     "  to compute top-surface boundary conditions...\n"); CHKERRQ(ierr); 
 
-  usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-  if (!usurf) { SETERRQ(1, "ERROR: Surface elevation is not available"); }
-
-  topg = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (!topg) { SETERRQ(1, "ERROR: Bed elevation is not available"); }
-
   ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
   ierr = acab.set_attrs(
             "climate_from_PISMSurfaceModel",  // FIXME: can we do better?
@@ -65,6 +59,7 @@ PetscErrorCode PSExternal::init(PISMVars &vars) {
             "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
   CHKERRQ(ierr);
 
+  vector<string> ebm_var_names;
   bool ebm_input_set, ebm_output_set, ebm_command_set;
   ierr = PetscOptionsBegin(grid.com, "", "PSExternal model options", ""); CHKERRQ(ierr);
   {
@@ -79,11 +74,27 @@ PetscErrorCode PSExternal::init(PISMVars &vars) {
                              "Name of the file into which an external boundary model will write B.C.",
                              ebm_output, ebm_output_set); CHKERRQ(ierr);
 
-    ierr = PISMOptionsString("-ebm_command", "The command (with options) running an external boundary model",
+    ierr = PISMOptionsString("-ebm_command",
+                             "Command (with options) running an external boundary model",
                              ebm_command, ebm_command_set); CHKERRQ(ierr);
+
+    ierr = PISMOptionsStringArray("-ebm_vars",
+                                  "Comma-separated list of variables an EBM needs to compute B.C.s",
+                                  "usurf,topg", ebm_var_names, flag); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-  
+
+  for (int i = 0; i < ebm_var_names.size(); ++i) {
+    IceModelVec *var = vars.get(ebm_var_names[i]);
+
+    if (var) {
+      ebm_vars.push_back(var);
+    } else {
+      ierr = verbPrintf(2, grid.com,
+                        "WARNING: variable %s is not available\n", ebm_var_names[i].c_str());
+    }
+  }
+
   ebm_update_interval = 0.5 * update_interval;
 
   // Initialize the EBM driver:
@@ -230,7 +241,7 @@ PetscErrorCode PSExternal::update_acab() {
   return 0;
 }
 
-//! Write fields that a model PISM is coupled to needs. Currently: usurf and topg.
+//! Write fields that a model PISM is coupled to needs. Default: usurf and topg.
 PetscErrorCode PSExternal::write_coupling_fields() {
   PetscErrorCode ierr;
   PISMIO nc(&grid);
@@ -255,11 +266,20 @@ PetscErrorCode PSExternal::write_coupling_fields() {
     
     ierr = nc.put_dimension(t_varid, 1, &grid.year); CHKERRQ(ierr);
   }
+
+  // define
+  for (int i = 0; i < ebm_vars.size(); ++i) {
+    IceModelVec *var = ebm_vars[i];
+    ierr = var->define(nc, NC_DOUBLE); CHKERRQ(ierr);
+  }
+
   ierr = nc.close(); CHKERRQ(ierr);
 
-  // write the fields an EBM needs:
-  ierr = usurf->write(ebm_input.c_str()); CHKERRQ(ierr);
-  ierr = topg->write(ebm_input.c_str()); CHKERRQ(ierr);
+  // write
+  for (int i = 0; i < ebm_vars.size(); ++i) {
+    IceModelVec *var = ebm_vars[i];
+    ierr = var->write(ebm_input.c_str()); CHKERRQ(ierr);
+  }
 
   return 0;
 }
@@ -397,6 +417,9 @@ PetscErrorCode PSExternal_ALR::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com,
                     "  [ using an atmospheric lapse rate correction for the temperature at the top of the ice ]\n");
   CHKERRQ(ierr);
+
+  usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
+  if (usurf == NULL) SETERRQ(1, "surface_altitude is not available");
 
   // artm_0 is the initial condition; artm_0 = artm(t_0) + gamma*usurf(t_0)
   ierr = artm_0.create(grid, "usurf", false); CHKERRQ(ierr);
