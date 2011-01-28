@@ -306,17 +306,16 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
     ierr = verbPrintf(2, grid.com,
        "    option -no_model_strip read ... setting boundary strip width to %.2f km\n",
        stripkm); CHKERRQ(ierr);
-    double *x_coords, *y_coords, strip = 1000.0*stripkm;
-    ierr = grid.compute_horizontal_coordinates(x_coords, y_coords); CHKERRQ(ierr);
+    double strip = 1000.0*stripkm;
 
     ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
     for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
       for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        if ((x_coords[i] <= x_coords[0]+strip)
-            || (x_coords[i] >= x_coords[grid.Mx-1]-strip)) {
+        if ((grid.x[i] <= grid.x[0]+strip)
+            || (grid.x[i] >= grid.x[grid.Mx-1]-strip)) {
           no_model_mask(i, j) = 1; CHKERRQ(ierr);
-        } else if ((y_coords[j] <= y_coords[0]+strip)
-                   || (y_coords[j] >= y_coords[grid.My-1]-strip)) {
+        } else if ((grid.y[j] <= grid.y[0]+strip)
+                   || (grid.y[j] >= grid.y[grid.My-1]-strip)) {
           no_model_mask(i, j) = 1; CHKERRQ(ierr);
         } else {
           no_model_mask(i, j) = 0; CHKERRQ(ierr);
@@ -324,8 +323,6 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
       }
     }
     ierr = no_model_mask.end_access(); CHKERRQ(ierr);
-
-    delete[] x_coords;  delete[] y_coords;
 
     ierr = no_model_mask.beginGhostComm(); CHKERRQ(ierr);
     ierr = no_model_mask.endGhostComm(); CHKERRQ(ierr);

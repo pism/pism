@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -55,7 +55,10 @@ public:
   PetscErrorCode compute_ice_vertical_levels();
   PetscErrorCode compute_bed_vertical_levels();
   PetscErrorCode compute_horizontal_spacing();
-  PetscErrorCode compute_horizontal_coordinates(double* &x, double* &y);
+  void compute_point_neighbors(PetscReal x, PetscReal y,
+                               PetscInt &i, PetscInt &j);
+  vector<PetscReal> compute_interp_weights(PetscReal x, PetscReal y);
+
   void compute_nprocs();
   void compute_ownership_ranges();
   PetscErrorCode compute_viewer_size(int target, int &x, int &y);
@@ -69,12 +72,13 @@ public:
   MPI_Comm    com;
   PetscMPIInt rank, size;
   DA          da2;		// whether this is PETSC_NULL is important;
-				// functions such as IceModelVec::read_from_netcdf() use it
-				// to determine if values in this DA can be trusted
+				// some functions use it to determine if values
+				// in this IceGrid instance can be trusted
   PetscInt    xs, xm, ys, ym;
 
   PetscScalar *zlevels, *zblevels; // z levels, in ice & bedrock; the storage grid for fields 
                                    // which are represented in 3d Vecs
+  vector<PetscReal> x, y;          // grid coordinates
 
   // Fine vertical grid and the interpolation setup:
   PetscScalar *zlevels_fine, *zblevels_fine, dz_fine;
@@ -110,6 +114,7 @@ public:
 protected:
   PetscScalar lambda;	 // vertical spacing parameter
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
+  PetscErrorCode compute_horizontal_coordinates();
   PetscErrorCode compute_fine_vertical_grid();
   PetscErrorCode init_interpolation();
 };

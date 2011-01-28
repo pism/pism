@@ -355,7 +355,7 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
       }
 
       // Assemble nc_start and nc_count that are used below in the call to
-      // nc_get_vara_double(...)
+      // nc_get_varm_double(...)
       size_t *nc_start, *nc_count;
       ptrdiff_t *imap;
       ierr = compute_start_and_count(varid, start, count, dims, nc_start, nc_count, imap); CHKERRQ(ierr);
@@ -370,7 +370,7 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
       // Find out how big the buffer actually is.  Remember that node 0 has a
       // buffer that will only be filled by if the process it is serving has a
       // maximal sized local domain.
-      // Also note that at least one of count[Z] and count[ZB] is 1.
+      // Also note that at least one of count[Z] and count[ZB] is equal to 1.
       int a_len = count[X] * count[Y] * count[Z] * count[ZB];
 
       // send the filled buffer
@@ -448,13 +448,17 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
 
         double a_mm, a_mp, a_pm, a_pp;  // filled differently in 2d and 3d cases
 
+        const int Im = floor(ic), Ip = ceil(ic),
+          Jm = floor(jc), Jp = ceil(jc);
+
         if (dims == GRID_3D || dims == GRID_3D_BEDROCK) {
           // get the index into the source grid, for just below the level z
           const int kc = (dims == GRID_3D) ? lic.kBelowHeight(z)
                                                : lic.kbBelowHeight(z);
 
-          // We pretend that there are always 8 neighbors.  And compute the
-          // indices into the buffer for those neighbors.  
+          // We pretend that there are always 8 neighbors (4 in the map plane,
+          // 2 vertical levels). And compute the indices into the buffer for
+          // those neighbors.
           // Note that floor(ic) + 1 = ceil(ic) does not hold when ic is an
           // integer.  Computation of the domain (in constructor of LocalInterpCtx; note
           // that lic.count uses ceil) must be done in a compatible way,
@@ -469,14 +473,14 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
           // to not handle all the cases explicitly.
           // 
           // (These comments do not apply to the z case.)
-          const int mmm = ((int)floor(ic) * count[Y] + (int)floor(jc)) * zcount + kc;
-          const int mmp = ((int)floor(ic) * count[Y] + (int)floor(jc)) * zcount + kc + 1;
-          const int mpm = ((int)floor(ic) * count[Y] + (int)ceil(jc)) * zcount + kc;
-          const int mpp = ((int)floor(ic) * count[Y] + (int)ceil(jc)) * zcount + kc + 1;
-          const int pmm = ((int)ceil(ic) * count[Y] + (int)floor(jc)) * zcount + kc;
-          const int pmp = ((int)ceil(ic) * count[Y] + (int)floor(jc)) * zcount + kc + 1;
-          const int ppm = ((int)ceil(ic) * count[Y] + (int)ceil(jc)) * zcount + kc;
-          const int ppp = ((int)ceil(ic) * count[Y] + (int)ceil(jc)) * zcount + kc + 1;
+          const int mmm = (Im * count[Y] + Jm) * zcount + kc;
+          const int mmp = (Im * count[Y] + Jm) * zcount + kc + 1;
+          const int mpm = (Im * count[Y] + Jp) * zcount + kc;
+          const int mpp = (Im * count[Y] + Jp) * zcount + kc + 1;
+          const int pmm = (Ip * count[Y] + Jm) * zcount + kc;
+          const int pmp = (Ip * count[Y] + Jm) * zcount + kc + 1;
+          const int ppm = (Ip * count[Y] + Jp) * zcount + kc;
+          const int ppp = (Ip * count[Y] + Jp) * zcount + kc + 1;
 
           // We know how to index the neighbors, but we don't yet know where the
           // point lies within this box.  This is represented by kk in [0,1].
@@ -503,16 +507,16 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
           const double kk = (z - zkc) / dz;
 
           // linear interpolation in the z-direction
-          a_mm = (double)(lic.a[mmm]) * (1.0 - kk) + (double)(lic.a[mmp]) * kk;
-          a_mp = (double)(lic.a[mpm]) * (1.0 - kk) + (double)(lic.a[mpp]) * kk;
-          a_pm = (double)(lic.a[pmm]) * (1.0 - kk) + (double)(lic.a[pmp]) * kk;
-          a_pp = (double)(lic.a[ppm]) * (1.0 - kk) + (double)(lic.a[ppp]) * kk;
+          a_mm = lic.a[mmm] * (1.0 - kk) + lic.a[mmp] * kk;
+          a_mp = lic.a[mpm] * (1.0 - kk) + lic.a[mpp] * kk;
+          a_pm = lic.a[pmm] * (1.0 - kk) + lic.a[pmp] * kk;
+          a_pp = lic.a[ppm] * (1.0 - kk) + lic.a[ppp] * kk;
         } else {
           // we don't need to interpolate vertically for the 2-D case
-          a_mm = (double)(lic.a[(int)floor(ic) * count[Y] + (int)floor(jc)]);
-          a_mp = (double)(lic.a[(int)floor(ic) * count[Y] + (int)ceil(jc)]);
-          a_pm = (double)(lic.a[(int)ceil(ic) * count[Y] + (int)floor(jc)]);
-          a_pp = (double)(lic.a[(int)ceil(ic) * count[Y] + (int)ceil(jc)]);
+          a_mm = lic.a[Im * count[Y] + Jm];
+          a_mp = lic.a[Im * count[Y] + Jp];
+          a_pm = lic.a[Ip * count[Y] + Jm];
+          a_pp = lic.a[Ip * count[Y] + Jp];
         }
 
         const double jj = jc - floor(jc);
@@ -848,16 +852,10 @@ PetscErrorCode PISMIO::create_dimensions() const {
   // set values:
   // Note that the 't' dimension is not modified: it is handled by the append_time method.
     
-  double *x_coords, *y_coords;
-  stat = grid->compute_horizontal_coordinates(x_coords, y_coords); CHKERRQ(stat);
-
-  stat = put_dimension(y, grid->My, y_coords); CHKERRQ(stat);
-  stat = put_dimension(x, grid->Mx, x_coords); CHKERRQ(stat);
+  stat = put_dimension(y, grid->My, &(grid->y[0])); CHKERRQ(stat);
+  stat = put_dimension(x, grid->Mx, &(grid->x[0])); CHKERRQ(stat);
   stat = put_dimension(z, grid->Mz, grid->zlevels); CHKERRQ(stat);
   stat = put_dimension(zb, grid->Mbz, grid->zblevels); CHKERRQ(stat);
-
-  delete[] x_coords;
-  delete[] y_coords;
 
   return 0;
 }

@@ -83,17 +83,14 @@ int main(int argc, char *argv[]) {
     // put in bed elevations, a la this Matlab:
     //    topg0 = 400 * sin(2 * pi * xx / 600e3) + ...
     //            100 * sin(2 * pi * (xx + 1.5 * yy) / 40e3);
-    double *x, *y;
-    ierr = grid.compute_horizontal_coordinates(x, y); CHKERRQ(ierr);
     ierr = topg.begin_access(); CHKERRQ(ierr);
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        topg(i,j) = 400.0 * sin(2.0 * pi * x[i] / 600.0e3) +
-                    100.0 * sin(2.0 * pi * (x[i] + 1.5 * y[j]) / 40.0e3);
+        topg(i,j) = 400.0 * sin(2.0 * pi * grid.x[i] / 600.0e3) +
+                    100.0 * sin(2.0 * pi * (grid.x[i] + 1.5 * grid.y[j]) / 40.0e3);
       }
     }
     ierr = topg.end_access(); CHKERRQ(ierr);
-    delete [] x; delete [] y;
 
     ierr = usurf.set(1000.0); CHKERRQ(ierr);  // compute theta for this constant thk
 

@@ -616,6 +616,8 @@ PetscErrorCode IceGrid::compute_horizontal_spacing() {
     dy = 2.0 * Ly / (My - 1);
   }
 
+  compute_horizontal_coordinates();
+
   return 0;
 }
 
@@ -758,14 +760,11 @@ PetscErrorCode IceGrid::init_interpolation() {
 /*! This method allocates arrays \c x and \c y, and they have to be freed
   (using delete[]) by the caller.
  */
-PetscErrorCode IceGrid::compute_horizontal_coordinates(double* &x, double* &y) {
+PetscErrorCode IceGrid::compute_horizontal_coordinates() {
   PetscErrorCode ierr;
 
-  // make sure that dx and dy are set correctly:
-  ierr = compute_horizontal_spacing(); CHKERRQ(ierr);
-
-  x = new double[Mx];
-  y = new double[My];
+  x.resize(Mx);
+  y.resize(My);
 
   double x_min = -Lx + x0,
     x_max = Lx + x0,
@@ -920,3 +919,53 @@ PetscErrorCode IceGrid::create_viewer(PetscInt viewer_size, string title, PetscV
 
   return 0;
 }
+
+// \brief Computes indices of a grid point to the lower left of the point (x,y).
+/*!
+ * 3       2
+ * *-------*
+ * |       |
+ * |    +  |
+ * *-------*
+ * 0       1
+ *
+ * If "+" is the point (X,Y), this method returns indices of the grid point
+ * "0".
+ *
+ * Does not if the resulting i and j are valid or in the current processor's
+ * domain.
+ */
+void IceGrid::compute_point_neighbors(PetscReal X, PetscReal Y,
+                                      PetscInt &i, PetscInt &j) {
+  i = floor((X - x[0])/dx);
+  j = floor((Y - y[0])/dy);
+}
+
+// \brief Compute 4 interpolation weights necessary for linear interpolation
+// from the current grid. See compute_point_neighbors for the ordering of
+// neighbors.
+vector<PetscReal> IceGrid::compute_interp_weights(PetscReal X, PetscReal Y) {
+  vector<PetscReal> result;
+  int i,j;
+  double alpha, beta;
+
+  compute_point_neighbors(X, Y, i, j);
+
+  result.resize(4);
+
+  if ((i >= 0) && (i < Mx))
+    alpha = (X - x[i]) / dx;
+  else alpha = 0;
+
+  if ((i >= 0) && (j < My))
+    beta  = (Y - x[j]) / dy;
+  else beta = 0;
+
+  result[0] = alpha * beta;
+  result[1] = (1 - alpha) * beta;
+  result[2] = (1 - alpha) * (1 - beta);
+  result[3] = alpha * (1 - beta);
+
+  return result;
+}
+

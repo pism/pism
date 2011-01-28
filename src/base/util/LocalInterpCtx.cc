@@ -55,7 +55,7 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
                Lbz = grid.Lbz,
                dx = grid.dx,
                dy = grid.dy,
-               slop = 1.000001; // allowed slop; grids must subsets within this factor
+               slop = 1.000001; // allowed slop; grids must be subsets within this factor
   com = grid.com;
   rank = grid.rank;
   no_regrid_ice = false;
