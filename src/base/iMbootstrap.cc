@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Nathan Shemonski, Ed Bueler and
+// Copyright (C) 2004-2011 Jed Brown, Nathan Shemonski, Ed Bueler and
 // Constantine Khroulev
 //
 // This file is part of PISM.
@@ -145,60 +145,59 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   grid.year has to be valid at the time of this call.
  */
 PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
-    PetscErrorCode ierr;
-  PetscScalar **h, **bed, **H, **mask;
+  PetscErrorCode ierr;
 
   bool do_ocean_kill = config.get_flag("ocean_kill");
 
   double ocean_rho = config.get("sea_water_density");
 
   ierr = verbPrintf(2, grid.com, 
-    "  determining surface elevation by  usurf = topg + thk           (grounded ice)\n"
-    "        and by flotation criterion  usurf = (1-rho_i/rho_w) thk  (floating ice)\n");
-    CHKERRQ(ierr);
+                    "  determining surface elevation by  usurf = topg + thk           (grounded ice)\n"
+                    "        and by flotation criterion  usurf = (1-rho_i/rho_w) thk  (floating ice)\n");
+  CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
-           "  preliminary determination of mask for grounded/floating and sheet/dragging\n"); CHKERRQ(ierr);
+                    "  preliminary determination of mask for grounded/floating and sheet/dragging\n"); CHKERRQ(ierr);
   if (do_ocean_kill) {
     ierr = verbPrintf(2, grid.com,
-           "    option -ocean_kill seen: floating ice mask=3; ice free ocean mask=7\n"); CHKERRQ(ierr);
+                      "    option -ocean_kill seen: floating ice mask=3; ice free ocean mask=7\n"); CHKERRQ(ierr);
   }
 
   if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal currentSeaLevel;
   ierr = ocean->sea_level_elevation(grid.year, 0, currentSeaLevel); CHKERRQ(ierr);
            
-  ierr = vh.get_array(h); CHKERRQ(ierr);
-  ierr = vH.get_array(H); CHKERRQ(ierr);
-  ierr = vbed.get_array(bed); CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr = vh.begin_access(); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // take this opportunity to check that H[i][j] >= 0
-      if (H[i][j] < 0.0) {
-        SETERRQ3(2,"Thickness H=%5.4f is negative at point i=%d, j=%d",H[i][j],i,j);
+      // take this opportunity to check that vH(i,j) >= 0
+      if (vH(i,j) < 0.0) {
+        SETERRQ3(2,"Thickness H=%5.4f is negative at point i=%d, j=%d",vH(i,j),i,j);
       }
       
-      if (H[i][j] < 0.001) {  // if no ice
-        if (bed[i][j] < 0.0) {
-          h[i][j] = 0.0;
-          mask[i][j] = do_ocean_kill ? MASK_OCEAN_AT_TIME_0 : MASK_FLOATING;
+      if (vH(i,j) < 0.001) {  // if no ice
+        if (vbed(i,j) < 0.0) {
+          vh(i,j) = 0.0;
+          vMask(i,j) = do_ocean_kill ? MASK_OCEAN_AT_TIME_0 : MASK_FLOATING;
         } else {
-          h[i][j] = bed[i][j];
-          mask[i][j] = MASK_SHEET;
+          vh(i,j) = vbed(i,j);
+          vMask(i,j) = MASK_SHEET;
         } 
       } else { // if positive ice thickness then check flotation criterion
         const PetscScalar 
-           hgrounded = bed[i][j] + H[i][j],
-           hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * H[i][j];
+          hgrounded = vbed(i,j) + vH(i,j),
+          hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * vH(i,j); // FIXME task #7297
         // check whether you are actually floating or grounded
         if (hgrounded > hfloating) {
-          h[i][j] = hgrounded; // actually grounded so set h
-          mask[i][j] = MASK_SHEET;
+          vh(i,j) = hgrounded; // actually grounded so set h
+          vMask(i,j) = MASK_SHEET;
         } else {
-          h[i][j] = hfloating; // actually floating so update h
-          mask[i][j] = MASK_FLOATING;
+          vh(i,j) = hfloating; // actually floating so update h
+          vMask(i,j) = MASK_FLOATING;
         }
       }
     }
@@ -250,7 +249,6 @@ Note that \f$z\f$ here is negative, so the temperature increases as one goes dow
  */
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
-  PetscScalar     **H, **bed, **Ghf;
 
   PetscScalar *T = new PetscScalar[grid.Mz];
 
@@ -271,19 +269,19 @@ PetscErrorCode IceModel::putTempAtDepth() {
     result = &Enth3;
 
   ierr = artm.begin_access(); CHKERRQ(ierr);
-  ierr =   vH.get_array(H);   CHKERRQ(ierr);
-  ierr = vbed.get_array(bed);   CHKERRQ(ierr);
-  ierr = vGhf.get_array(Ghf); CHKERRQ(ierr);
+  ierr =   vH.begin_access();   CHKERRQ(ierr);
+  ierr = vbed.begin_access();   CHKERRQ(ierr);
+  ierr = vGhf.begin_access(); CHKERRQ(ierr);
 
   ierr = result->begin_access(); CHKERRQ(ierr);
   ierr = Tb3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar HH = H[i][j];
+      const PetscScalar HH = vH(i,j);
       const PetscInt    ks = grid.kBelowHeight(HH);
       
       // within ice
-      const PetscScalar g = Ghf[i][j];
+      const PetscScalar g = vGhf(i,j);
       const PetscScalar beta = (4.0/21.0) * (g / (2.0 * ice->k * HH * HH * HH));
       const PetscScalar alpha = (g / (2.0 * HH * ice->k)) - 2.0 * HH * HH * beta;
       for (PetscInt k = 0; k < ks; k++) {
@@ -299,10 +297,10 @@ PetscErrorCode IceModel::putTempAtDepth() {
 
       // set temp within bedrock; if floating then top of bedrock sees ocean,
       //   otherwise it sees the temperature of the base of the ice
-      const PetscScalar floating_base = - (ice->rho/ocean_rho) * H[i][j];
-      const PetscScalar T_top_bed = (bed[i][j] < floating_base)
-                                         ? ice->meltingTemp : T[0];
-      ierr = bootstrapSetBedrockColumnTemp(i,j,T_top_bed,Ghf[i][j],bed_thermal_k); CHKERRQ(ierr);
+      const PetscScalar floating_base = - (ice->rho/ocean_rho) * vH(i,j); // FIXME task #7297
+      const PetscScalar T_top_bed = (vbed(i,j) < floating_base)
+        ? ice->meltingTemp : T[0];
+      ierr = bootstrapSetBedrockColumnTemp(i,j,T_top_bed,vGhf(i,j),bed_thermal_k); CHKERRQ(ierr);
       
       if (!do_cold) {
 	for (PetscInt k = 0; k < grid.Mz; ++k) {

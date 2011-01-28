@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,14 +33,14 @@ The maximum vertical velocity is computed but it does not affect
  */
 PetscErrorCode IceModel::computeMax3DVelocities() {
   PetscErrorCode ierr;
-  PetscScalar **H, *u, *v, *w;
+  PetscScalar *u, *v, *w;
   PetscScalar locCFLmaxdt = config.get("maximum_time_step_years") * secpera;
 
   IceModelVec3 *u3, *v3, *w3;
 
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
 
-  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = u3->begin_access(); CHKERRQ(ierr);
   ierr = v3->begin_access(); CHKERRQ(ierr);
   ierr = w3->begin_access(); CHKERRQ(ierr);
@@ -49,7 +49,7 @@ PetscErrorCode IceModel::computeMax3DVelocities() {
   PetscReal   maxu=0.0, maxv=0.0, maxw=0.0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscInt      ks = grid.kBelowHeight(H[i][j]);
+      const PetscInt      ks = grid.kBelowHeight(vH(i,j));
       ierr = u3->getInternalColumn(i,j,&u); CHKERRQ(ierr);
       ierr = v3->getInternalColumn(i,j,&v); CHKERRQ(ierr);
       ierr = w3->getInternalColumn(i,j,&w); CHKERRQ(ierr);

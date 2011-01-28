@@ -290,7 +290,7 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar pressure = ice.rho * standard_gravity * thk(i,j);
+      const PetscScalar pressure = ice.rho * standard_gravity * thk(i,j); // FIXME task #7297
       if (pressure <= 0.0) {
         result(i,j).u = 0.0;
         result(i,j).v = 0.0;

@@ -353,7 +353,7 @@ This method should be kept because it is worth having alternative physics, and
             Tnew[k] = x[k0 + k];
           } else {
             const PetscScalar 
-              Tpmp = ice->meltingTemp - ice->beta_CC_grad * (vH(i,j) - fzlev[k]);
+              Tpmp = ice->meltingTemp - ice->beta_CC_grad * (vH(i,j) - fzlev[k]); // FIXME task #7297
             if (x[k0 + k] > Tpmp) {
               Tnew[k] = Tpmp;
               PetscScalar Texcess = x[k0 + k] - Tpmp; // always positive
@@ -379,7 +379,7 @@ This method should be kept because it is worth having alternative physics, and
           if (allowAboveMelting == PETSC_TRUE) { // ice/rock interface
             Tnew[0] = x[k0];
           } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
-            const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * vH(i,j);
+            const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * vH(i,j); // FIXME task #7297
             PetscScalar Texcess = x[k0] - Tpmp; // positive or negative
             if (vMask.is_floating(i,j)) {
               // when floating, only half a segment has had its temperature raised
@@ -592,12 +592,10 @@ PetscErrorCode IceModel::ageStep() {
   // this checks that all needed constants and pointers got set
   ierr = system.initAllColumns(); CHKERRQ(ierr);
 
-  PetscScalar **H;
-
   IceModelVec3 *u3, *v3, *w3;
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr); 
 
-  ierr = vH.get_array(H); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = tau3.begin_access(); CHKERRQ(ierr);
   ierr = u3->begin_access(); CHKERRQ(ierr);
   ierr = v3->begin_access(); CHKERRQ(ierr);
@@ -607,7 +605,7 @@ PetscErrorCode IceModel::ageStep() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // this should *not* be replaced by a call to grid.kBelowHeight()
-      const PetscInt  fks = static_cast<PetscInt>(floor(H[i][j]/fdz));
+      const PetscInt  fks = static_cast<PetscInt>(floor(vH(i,j)/fdz));
 
       if (fks == 0) { // if no ice, set the entire column to zero age
         ierr = vWork3d.setColumn(i,j,0.0); CHKERRQ(ierr);

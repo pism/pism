@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -46,7 +46,6 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 
 PetscErrorCode IceModel::update_mask() {
   PetscErrorCode ierr;
-  PetscScalar **bed, **H, **mask;
 
   if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal currentSeaLevel;
@@ -57,15 +56,15 @@ PetscErrorCode IceModel::update_mask() {
 
   double ocean_rho = config.get("sea_water_density");
 
-  ierr =    vH.get_array(H);    CHKERRQ(ierr);
-  ierr =  vbed.get_array(bed);  CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr =    vH.begin_access();    CHKERRQ(ierr);
+  ierr =  vbed.begin_access();  CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
 
   PetscInt GHOSTS = 2;
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
 
-      const PetscScalar hgrounded = bed[i][j] + vH(i,j),
+      const PetscScalar hgrounded = vbed(i,j) + vH(i,j), // FIXME task #7297
 	hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * vH(i,j);
 
       // points marked as "ocean at time zero" are not updated
@@ -77,13 +76,13 @@ PetscErrorCode IceModel::update_mask() {
 	if (hgrounded > hfloating+1.0) { // flotation criterion says it is grounded
 	  if (use_ssa_velocity) {
 	    if (use_ssa_when_grounded) {
-	      mask[i][j] = MASK_DRAGGING_SHEET;
+	      vMask(i,j) = MASK_DRAGGING_SHEET;
 	    } else {
-	      mask[i][j] = MASK_SHEET;
+	      vMask(i,j) = MASK_SHEET;
 	    }
 	  } else {
 	    // we do not have any ice handled by SSA, so it must be SHEET
-	    mask[i][j] = MASK_SHEET;
+	    vMask(i,j) = MASK_SHEET;
 	  }
 	}
 
@@ -94,10 +93,10 @@ PetscErrorCode IceModel::update_mask() {
 
 	  // we are using SSA-as-a-sliding-law, so grounded points become DRAGGING
 	  if (use_ssa_velocity && use_ssa_when_grounded)
-	    mask[i][j] = MASK_DRAGGING_SHEET;
+	    vMask(i,j) = MASK_DRAGGING_SHEET;
 
 	} else {
-	  mask[i][j] = MASK_FLOATING;
+	  vMask(i,j) = MASK_FLOATING;
 	}
 
       }
@@ -113,7 +112,6 @@ PetscErrorCode IceModel::update_mask() {
 
 PetscErrorCode IceModel::update_surface_elevation() {
   PetscErrorCode ierr;
-  PetscScalar **h, **bed, **H, **mask;
 
   if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal currentSeaLevel;
@@ -123,10 +121,10 @@ PetscErrorCode IceModel::update_surface_elevation() {
 
   double ocean_rho = config.get("sea_water_density");
 
-  ierr =    vh.get_array(h);    CHKERRQ(ierr);
-  ierr =    vH.get_array(H);    CHKERRQ(ierr);
-  ierr =  vbed.get_array(bed);  CHKERRQ(ierr);
-  ierr = vMask.get_array(mask); CHKERRQ(ierr);
+  ierr =    vh.begin_access();    CHKERRQ(ierr);
+  ierr =    vH.begin_access();    CHKERRQ(ierr);
+  ierr =  vbed.begin_access();  CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
 
   PetscInt GHOSTS = 2;
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
@@ -136,13 +134,13 @@ PetscErrorCode IceModel::update_surface_elevation() {
         SETERRQ2(1,"Thickness negative at point i=%d, j=%d",i,j);
       }
 
-      const PetscScalar hgrounded = bed[i][j] + vH(i,j),
+      const PetscScalar hgrounded = vbed(i,j) + vH(i,j), // FIXME task #7297
 	hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * vH(i,j);
 
       if (is_dry_simulation) {
         // Don't update mask; potentially one would want to do SSA dragging ice
         //   shelf in dry case and/or ignore mean sea level elevation.
-        h[i][j] = hgrounded;
+        vh(i,j) = hgrounded;
 	continue;		// go to the next grid point
       }
 
@@ -152,15 +150,15 @@ PetscErrorCode IceModel::update_surface_elevation() {
         //   then never want ice on Ellesmere.
         // If mask says OCEAN0 then don't change the mask and also don't change
         // the thickness; massContExplicitStep() is in charge of that.
-        // Almost always the next line is equivalent to h[i][j] = 0.
-        h[i][j] = hfloating;  // ignore bed and treat it like deep ocean
+        // Almost always the next line is equivalent to vh(i,j) = 0.
+        vh(i,j) = hfloating;  // ignore bed and treat it like deep ocean
 	continue;	      // go to the next grid point
       }
 
       if (vMask.is_floating(i,j)) {
-	h[i][j] = hfloating; // actually floating so update h
+	vh(i,j) = hfloating; // actually floating so update h
       } else { 
-	h[i][j] = hgrounded; // actually grounded so update h
+	vh(i,j) = hgrounded; // actually grounded so update h
       }
     }
         

@@ -317,7 +317,7 @@ PetscScalar IceModel::getBasalWaterPressure(PetscScalar thk, PetscScalar bwat,
 
   // the model; note  0 <= p_pw <= frac * p_overburden
   //   because  0 <= bwat <= hmelt_max
-  const PetscScalar p_overburden = ice->rho * standard_gravity * thk;
+  const PetscScalar p_overburden = ice->rho * standard_gravity * thk; // FIXME task #7297
   PetscScalar  p_pw = frac * (bwat / hmelt_max) * p_overburden;
 
   if (usebmr) {
@@ -403,8 +403,8 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
           vtauc(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice
         } else { // grounded and there is some ice
           const PetscScalar
-            p_over = ice->rho * standard_gravity * vH(i,j),
-            p_w    = getBasalWaterPressure(vH(i,j), vHmelt(i,j),
+            p_over = ice->rho * standard_gravity * vH(i,j), // FIXME task #7297
+            p_w    = getBasalWaterPressure(vH(i,j), vHmelt(i,j), // FIXME task #7297
                        vbmr(i,j), till_pw_fraction, hmelt_max),
             N      = p_over - p_w;  // effective pressure on till
 

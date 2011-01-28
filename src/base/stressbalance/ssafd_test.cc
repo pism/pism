@@ -152,7 +152,7 @@ PetscErrorCode setInitStateJ(NCConfigVariable &config,
       ierr = exactJ(myx, myy, &H, &junk1, &myu, &myv); CHKERRQ(ierr);
 
       (*thickness)(i,j) = H;
-      (*surface)(i,j) = (1.0 - ice.rho / ocean_rho) * H;
+      (*surface)(i,j) = (1.0 - ice.rho / ocean_rho) * H; // FIXME task #7297
 
       // special case at center point: here we set vel_bc at (i,j) by marking
       // this grid point as SHEET and setting vel_bc approriately

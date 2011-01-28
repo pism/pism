@@ -40,6 +40,37 @@ PetscErrorCode PISMSurfaceModel::init(PISMVars &vars) {
   return 0;
 }
 
+//! \brief Returns mass held in the surface layer.
+/*!
+ * Basic surface models currently implemented in PISM do not model the mass of
+ * the surface layer.
+ */
+PetscErrorCode PISMSurfaceModel::mass_held_in_surface_layer(PetscReal t_years, PetscReal dt_years, 
+                                                            IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  ierr = result.set(0.0); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief Returns thickness of the surface layer. Used to compute surface
+//! elevation as a sum of elevation of the top surface of the ice and surface
+//! layer (firn, etc) thickness.
+/*!
+ * Basic surface models currently implemented in PISM do not model surface
+ * layer thickness.
+ */
+PetscErrorCode PISMSurfaceModel::surface_layer_thickness(PetscReal t_years, PetscReal dt_years, 
+                                                         IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  ierr = result.set(0.0); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
 PetscErrorCode PISMSurfaceModel::write_model_state(PetscReal t_years, PetscReal dt_years,
 						    string filename) {
   PetscErrorCode ierr;

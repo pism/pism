@@ -48,7 +48,7 @@ PetscErrorCode IceModel::setEnth3FromT3_ColdIce() {
       ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
       ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
-        const PetscScalar depth = vH(i,j) - grid.zlevels[k];
+        const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME task #7297
         ierr = EC->getEnthPermissive(Tij[k],0.0,EC->getPressureFromDepth(depth),
                                     Enthij[k]); CHKERRQ(ierr);
       }
@@ -85,7 +85,7 @@ PetscErrorCode IceModel::setEnth3FromT3AndLiqfrac3(
       ierr = Liqfrac3.getInternalColumn(i,j,&Liqfracij); CHKERRQ(ierr);
       ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
-        const PetscScalar depth = vH(i,j) - grid.zlevels[k];
+        const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME task #7297
         ierr = EC->getEnthPermissive(Tij[k],Liqfracij[k],
                       EC->getPressureFromDepth(depth), Enthij[k]); CHKERRQ(ierr);
       }
@@ -124,7 +124,7 @@ PetscErrorCode IceModel::setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFra
       ierr = useForLiquidFrac.getInternalColumn(i,j,&omegaij); CHKERRQ(ierr);
       ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
-        const PetscScalar depth = vH(i,j) - grid.zlevels[k];
+        const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME task #7297
         ierr = EC->getWaterFraction(Enthij[k],EC->getPressureFromDepth(depth),
                                    omegaij[k]); CHKERRQ(ierr);
       }
@@ -160,7 +160,7 @@ PetscErrorCode IceModel::setCTSFromEnthalpy(IceModelVec3 &useForCTS) {
       ierr = useForCTS.getInternalColumn(i,j,&CTSij); CHKERRQ(ierr);
       ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
-        const PetscScalar depth = vH(i,j) - grid.zlevels[k];
+        const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME task #7297
         CTSij[k] = EC->getCTS(Enthij[k], EC->getPressureFromDepth(depth));
       }
     }
@@ -416,7 +416,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       const bool ice_free_column = (ks == 0);
 
       // enthalpy and pressures at top of ice
-      const PetscScalar p_ks = EC->getPressureFromDepth(vH(i,j) - fzlev[ks]);
+      const PetscScalar p_ks = EC->getPressureFromDepth(vH(i,j) - fzlev[ks]); // FIXME task #7297
       PetscScalar Enth_ks;
       // in theory we could have a water fraction at k=ks level, but for
       //   now there is no case where we have that:
@@ -474,13 +474,13 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       const bool isMarginal = checkThinNeigh(
                                  vH(i+1,j),vH(i+1,j+1),vH(i,j+1),vH(i-1,j+1),
                                  vH(i-1,j),vH(i-1,j-1),vH(i,j-1),vH(i+1,j-1)  );
-      const PetscScalar p_basal = EC->getPressureFromDepth(vH(i,j));
+      const PetscScalar p_basal = EC->getPressureFromDepth(vH(i,j)); // FIXME task #7297
 
       ierr = Enth3.getValColumn(i,j,ks,iosys.Enth); CHKERRQ(ierr);
       ierr = w3->getValColumn(i,j,ks,iosys.w); CHKERRQ(ierr);
 
       PetscScalar lambda;
-      ierr = getEnthalpyCTSColumn(p_air, vH(i,j), ks, iosys.Enth, iosys.w,
+      ierr = getEnthalpyCTSColumn(p_air, vH(i,j), ks, iosys.Enth, iosys.w, // FIXME task #7297
                                   &lambda, &iosys.Enth_s); CHKERRQ(ierr);
 
       bool base_is_cold = iosys.Enth[0] < iosys.Enth_s[0];
@@ -658,13 +658,13 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       //   omega_max liquid
       PetscScalar Hdrainedtotal = 0.0;
       for (PetscInt k=0; k < ks; k++) {
-        if (EC->isLiquified(Enthnew[k],EC->getPressureFromDepth(vH(i,j) - fzlev[k]))) {
+        if (EC->isLiquified(Enthnew[k],EC->getPressureFromDepth(vH(i,j) - fzlev[k]))) { // FIXME task #7297
           liquifiedCount++;
         }
 
         // if there is liquid water already, thus temperate, consider whether there
         //   is enough to cause drainage;  UNACCOUNTED ENERGY LOSS IF E>E_l
-        const PetscScalar p     = EC->getPressureFromDepth(vH(i,j) - fzlev[k]),
+        const PetscScalar p     = EC->getPressureFromDepth(vH(i,j) - fzlev[k]), // FIXME task #7297
                           omega = EC->getWaterFractionLimited(Enthnew[k], p);
         PetscScalar dHdrained;
         if (omega > omega_max) {
