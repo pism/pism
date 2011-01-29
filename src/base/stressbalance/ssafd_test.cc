@@ -132,8 +132,8 @@ PetscErrorCode setInitStateJ(NCConfigVariable &config,
   const PetscScalar H0 = 500.0;       /* 500 m typical thickness */
 
   // Use the same nuH factor everywhere (maximum ice thickness is 770 m).
-  ssa.strength_extension.set_notional_strength(nu0 * H0);
-  ssa.strength_extension.set_min_thickness(800);
+  ssa.strength_extension->set_notional_strength(nu0 * H0);
+  ssa.strength_extension->set_min_thickness(800);
 
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = surface->begin_access(); CHKERRQ(ierr);

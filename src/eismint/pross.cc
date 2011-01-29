@@ -594,8 +594,8 @@ int main(int argc, char *argv[]) {
     // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
     //          30 MPa yr for \bar\nu
 
-    ssa.strength_extension.set_min_thickness(DEFAULT_MIN_THICKNESS);
-    ssa.strength_extension.set_notional_strength(DEFAULT_nuH);
+    ssa.strength_extension->set_min_thickness(DEFAULT_MIN_THICKNESS);
+    ssa.strength_extension->set_notional_strength(DEFAULT_nuH);
     ice.setHardness(DEFAULT_CONSTANT_HARDNESS_FOR_SSA);
 
     ierr = ssa.init(vars); CHKERRQ(ierr);

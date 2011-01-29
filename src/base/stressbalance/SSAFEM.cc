@@ -280,8 +280,8 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,const P
                                                   PetscReal *nuH, PetscReal *dNuH,
                                                   PetscReal *beta, PetscReal *dbeta)
 {
-  if (feS->H < strength_extension.get_min_thickness()) {
-    *nuH = strength_extension.get_notional_strength();
+  if (feS->H < strength_extension->get_min_thickness()) {
+    *nuH = strength_extension->get_notional_strength();
     if (dNuH) *dNuH = 0;
     //SETERRQ(1,"Shold not happen for test I");
   } else {

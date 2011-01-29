@@ -782,10 +782,10 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
 
         const PetscScalar H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
 
-        if (H < strength_extension.get_min_thickness()) {
+        if (H < strength_extension->get_min_thickness()) {
           // Extends strength of SSA (i.e. nuH coeff) into the ice free region.
           //  Does not add or subtract ice mass.
-          result(i,j,o) = strength_extension.get_notional_strength();
+          result(i,j,o) = strength_extension->get_notional_strength();
           continue;
         }
 

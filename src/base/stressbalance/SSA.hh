@@ -22,58 +22,70 @@
 #include "ShallowStressBalance.hh"
 #include "PISMDiagnostic.hh"
 
-//! Where ice thickness is zero the SSA is no longer "elliptic".  This class provides an extension coefficient to maintain well-posedness/ellipticity.
+//! Gives an extension coefficient to maintain ellipticity of SSA where ice is thin.
 /*!
+The SSA is basically a nonlinear elliptic, but vector-valued, equation which
+determines the ice velocity field from the driving stress, the basal shear
+stress, the ice hardness, and some boundary conditions.  The problem loses
+ellipticity (coercivity) if the thickness actually goes to zero.  This class
+provides an extension coefficient to maintain ellipticity.
+
 More specifically, the SSA equations are
-\latexonly
-\def\ddt#1{\ensuremath{\frac{\partial #1}{\partial t}}}
+\f[
 \def\ddx#1{\ensuremath{\frac{\partial #1}{\partial x}}}
 \def\ddy#1{\ensuremath{\frac{\partial #1}{\partial y}}}
-\begin{equation*}
   - 2 \ddx{}\left[\nu H \left(2 \ddx{u} + \ddy{v}\right)\right]
         - \ddy{}\left[\nu H \left(\ddy{u} + \ddx{v}\right)\right]
         + \tau_{(b)x}  =  - \rho g H \ddx{h},
-\end{equation*}
-\endlatexonly
-and another similar equation.  Schoof \ref SchoofStream shows that these PDEs
-are the variational equations for a functional.
+\f]
+and another similar equation for the \f$y\f$-component.  Schoof
+\ref SchoofStream shows that these PDEs are the variational equations for a
+coercive functional, thus (morally) elliptic.
 
-The quantity \f$\nu H\f$ is the nonlinear coefficient in this (roughly-speaking)
-elliptic pair of PDEs.  Conceptually it is a membrane strength.  Well-posedness of the SSA problem 
-requires either a precisely-defined boundary and an appropriate boundary condition
-\e or a nonzero value of \f$\nu H\f$ at all points.  This class provides that nonzero value.
+The quantity \f$\nu H\f$ is the nonlinear coefficient, and conceptually it is a
+membrane strength.  This class extends \f$\nu H\f$ to have a minimum value
+at all points.  It is a class, and not just a configuration constant, because 
+setting both the thickness \f$H\f$ and the value \f$\nu H\f$ are allowed, and
+setting each of these does not affect the value of the other.
  */
 class SSAStrengthExtension {
 public:
-  SSAStrengthExtension() {
-    // FIXME: use the config database.
-
-    min_thickness = 50.0;   // m
-    // minimum thickness (for SSA velocity computation) at which 
-    // NuH switches from vertical integral to constant value
-    // this value strongly related to calving front
-    // force balance, but the geometry itself is not affected by this value
-    const PetscReal
-      DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8,  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
-      DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);  // typical strain rate is 100 m/yr per 100 km
-    nuH = min_thickness * DEFAULT_CONSTANT_HARDNESS_FOR_SSA
-      / (2.0 * pow(DEFAULT_TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
-    // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
-    //          30 MPa yr for \bar\nu
+  SSAStrengthExtension(const NCConfigVariable &c) : config(c) {
+    min_thickness = config.get("min_thickness_strength_extension_ssa");
+    constant_nu = config.get("constant_nu_strength_extension_ssa");
   }
+
   virtual ~SSAStrengthExtension() {}
-  //! Set strength with units (viscosity times thickness).
-  virtual PetscErrorCode set_notional_strength(PetscReal my_nuH)
-  { nuH = my_nuH; return 0; }
+
+  //! Set strength = (viscosity times thickness).
+  /*! Determines nu by input strength and current min_thickness. */
+  virtual PetscErrorCode set_notional_strength(PetscReal my_nuH) {
+     if (my_nuH <= 0.0) SETERRQ(1,"nuH must be positive");
+     constant_nu = my_nuH / min_thickness;
+     return 0;
+  }
+
   //! Set minimum thickness to trigger use of extension.
-  virtual PetscErrorCode set_min_thickness(PetscReal my_min_thickness)
-  { min_thickness = my_min_thickness; return 0; }
-  //! Returns strength with units (viscosity times thickness).
-  virtual PetscReal      get_notional_strength() const { return nuH; }
+  /*! Preserves strength (nuH) by also updating using current nu.  */
+  virtual PetscErrorCode set_min_thickness(PetscReal my_min_thickness) {
+     if (my_min_thickness <= 0.0) SETERRQ(1,"min_thickness must be positive");
+     PetscReal nuH = constant_nu * min_thickness;
+     min_thickness = my_min_thickness;
+     constant_nu = nuH / min_thickness;
+     return 0;
+  }
+
+  //! Returns strength = (viscosity times thickness).
+  virtual PetscReal get_notional_strength() const {
+    return constant_nu * min_thickness;
+  }
+
   //! Returns minimum thickness to trigger use of extension.
-  virtual PetscReal      get_min_thickness() const { return min_thickness; }
+  virtual PetscReal get_min_thickness() const { return min_thickness; }
+
 private:
-  PetscReal  min_thickness, nuH;
+  const NCConfigVariable &config;
+  PetscReal  min_thickness, constant_nu;
 };
 
 
@@ -85,9 +97,12 @@ public:
   SSA(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
         const NCConfigVariable &c);
 
-  virtual ~SSA() { deallocate(); }
+  SSAStrengthExtension *strength_extension;
 
-  SSAStrengthExtension strength_extension;
+  virtual ~SSA() { 
+    deallocate();
+    delete strength_extension;
+  }
 
   virtual PetscErrorCode init(PISMVars &vars);
 

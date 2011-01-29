@@ -119,7 +119,7 @@ PetscErrorCode IceExactSSAModel::misc_setup() {
     config.set_flag("compute_surf_grad_inward_ssa", false);
     config.set("epsilon_ssa", 0.0);  // don't use this lower bound
     // ensure that the strength extension's nu*H is used throughout:
-    ierr = ssa->strength_extension.set_min_thickness(1000); CHKERRQ(ierr);
+    ierr = ssa->strength_extension->set_min_thickness(1000); CHKERRQ(ierr);
     break;
   case 'M':
     ierr = setInitStateM(); CHKERRQ(ierr);
@@ -128,7 +128,7 @@ PetscErrorCode IceExactSSAModel::misc_setup() {
 
     // ierr = ice->printInfo(3);CHKERRQ(ierr);
     // EXPERIMENT WITH STRENGTH BEYOND CALVING FRONT:  correct value is unknown!!
-    ierr = ssa->strength_extension.set_notional_strength(1.0e+15);CHKERRQ(ierr);
+    ierr = ssa->strength_extension->set_notional_strength(1.0e+15);CHKERRQ(ierr);
     ierr = verbPrintf(3,grid.com,
 		      "IceExactSSAModel::misc_setup, for test M:\n"
 		      "  use_constant_nuh_for_ssa=%d\n",
@@ -274,7 +274,7 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
   const PetscScalar nu0 = 30.0 * 1.0e6 * secpera; /* = 9.45e14 Pa s */
   const PetscScalar H0 = 500.0;       /* 500 m typical thickness */
 
-  ierr = ssa->strength_extension.set_notional_strength(nu0 * H0); CHKERRQ(ierr);
+  ierr = ssa->strength_extension->set_notional_strength(nu0 * H0); CHKERRQ(ierr);
 
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vh.begin_access(); CHKERRQ(ierr);

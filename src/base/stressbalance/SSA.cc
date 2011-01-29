@@ -30,6 +30,7 @@ SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
   bed = NULL;
   enthalpy = NULL;
 
+  strength_extension = new SSAStrengthExtension(config);
   allocate();
 }
 
