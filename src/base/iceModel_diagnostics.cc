@@ -394,7 +394,7 @@ IceModel_temp_pa::IceModel_temp_pa(IceModel *m, IceGrid &g, PISMVars &my_vars)
 PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   bool cold_mode = model->config.get_flag("do_cold_ice_methods");
-  PetscReal water_melting_temp = model->config.get("water_melting_temperature");
+  PetscReal triple_point_temp = model->config.get("water_triple_point_temperature");
 
   IceModelVec3 *result = new IceModelVec3;
   ierr = result->create(grid, "temp_pa", false); CHKERRQ(ierr);
@@ -428,9 +428,10 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
         }
         CHKERRQ(ierr);
 
-        if (cold_mode) {
+        if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
+                         // is 273.15
           if ( model->EC->isTemperate(Enthij[k],p) && ((*thickness)(i,j) > 0)) {
-            Tij[k] = water_melting_temp;
+            Tij[k] = triple_point_temp;
           }
         }
 
@@ -441,7 +442,7 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
   ierr = result->end_access(); CHKERRQ(ierr);
   ierr = thickness->end_access(); CHKERRQ(ierr);
 
-  ierr = result->shift(-water_melting_temp); CHKERRQ(ierr); 
+  ierr = result->shift(-triple_point_temp); CHKERRQ(ierr); 
 
   output = result;
   return 0;
@@ -461,7 +462,7 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
   bool cold_mode = model->config.get_flag("do_cold_ice_methods");
-  PetscReal water_melting_temp = model->config.get("water_melting_temperature");
+  PetscReal triple_point_temp = model->config.get("water_triple_point_temperature");
   
   IceModelVec2S *result = new IceModelVec2S;
   ierr = result->create(grid, "temp_pa_base", false); CHKERRQ(ierr);
@@ -495,9 +496,10 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
       }
       CHKERRQ(ierr);
 
-      if (cold_mode) {
+      if (cold_mode) { // if ice is temperate then its pressure-adjusted temp
+                       // is 273.15
         if ( model->EC->isTemperate(Enthij[0],p) && ((*thickness)(i,j) > 0)) {
-          (*result)(i,j) = water_melting_temp;
+          (*result)(i,j) = triple_point_temp;
         }
       }
     }
@@ -506,7 +508,7 @@ PetscErrorCode IceModel_temppabase::compute(IceModelVec* &output) {
   ierr = result->end_access(); CHKERRQ(ierr);
   ierr = thickness->end_access(); CHKERRQ(ierr);
 
-  ierr = result->shift(-water_melting_temp); CHKERRQ(ierr); 
+  ierr = result->shift(-triple_point_temp); CHKERRQ(ierr); 
   
   output = result;
   return 0;

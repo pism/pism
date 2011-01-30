@@ -57,7 +57,7 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &conf
   k            = config.get("ice_thermal_conductivity");
   c_p          = config.get("ice_specific_heat_capacity");
   latentHeat   = config.get("water_latent_heat_fusion");
-  meltingTemp  = config.get("water_melting_temperature");
+  triple_point_temp = config.get("water_triple_point_temperature");
   n            = config.get("Glen_exponent");
 
   A_cold = config.get("Paterson-Budd_A_cold");
@@ -199,14 +199,13 @@ PetscReal IceFlowLaw::averagedHardness_from_enth(PetscReal thickness, PetscInt k
 }
 
 
-
 /*!
 This constructor just sets flow law factor for nonzero water content, from
 \ref AschwandenBlatter and \ref LliboutryDuval1985.
  */
 GPBLDIce::GPBLDIce(MPI_Comm c,const char pre[],
                    const NCConfigVariable &config) : IceFlowLaw(c,pre,config) {
-  T_0  = config.get("water_melting_temperature");    // K
+  T_0  = config.get("water_triple_point_temperature");    // K
   water_frac_coeff = config.get("gpbld_water_frac_coeff");                
 }
 
@@ -237,19 +236,14 @@ The pressure-melting temperature \f$T_{pa}(E,p)\f$ is computed by getPATemp().
 PetscReal GPBLDIce::softnessParameter_from_enth(
                 PetscReal enthalpy, PetscReal pressure) const {
   PetscErrorCode ierr;
-#ifdef PISM_DEBUG
-  if (enthalpy < 0) {
-    SETERRQ(1, "Negative enthalpy in GPBLDIce::softnessParameter_from_enth() ... this should never happen");
-  }
-#endif
 
   if (EC == NULL) {
-    PetscErrorPrintf("EC is NULL in GPBLDIce::flow_from_enth()\n");
+    PetscErrorPrintf("EC is NULL in GPBLDIce::softnessParameter_from_enth()\n");
     endPrintRank();
   }
   PetscReal E_s, E_l;
   EC->getEnthalpyInterval(pressure, E_s, E_l);
-  if (enthalpy <= E_s) {       // cold ice
+  if (enthalpy < E_s) {       // cold ice
     PetscReal T_pa;
     ierr = EC->getPATemp(enthalpy,pressure,T_pa);
     if (ierr) {
@@ -258,21 +252,28 @@ PetscReal GPBLDIce::softnessParameter_from_enth(
       endPrintRank();
     }
     return softnessParameter_paterson_budd( T_pa );
-  } else if (enthalpy < E_l) { // temperate ice
+  } else { // temperate ice
     PetscReal omega;
     ierr = EC->getWaterFraction(enthalpy,pressure,omega);
+#if 0
     if (ierr) {
       PetscErrorPrintf(
         "getWaterFraction() returned ierr>0 in GPBLDIce::softnessParameter_from_enth()\n");
       endPrintRank();
     }
+#endif
     // next line implements eqn (23) in \ref AschwandenBlatter2009
     return softnessParameter_paterson_budd(T_0) * (1.0 + water_frac_coeff * omega);
+  }
+#if 0
   } else { // liquid water not allowed
-    PetscErrorPrintf("ERROR in PolyThermalGlenPBLDIce::flow_from_temp(): liquid water not allowed\n\n");
+    PetscErrorPrintf("ERROR in GPBLDIce::softnessParameter_from_enth(): liquid water not allowed\n\n");
+    PetscErrorPrintf("values:  E=%.2f, p=%.2f, E_s=%.2f, E_l=%.2f",
+                     enthalpy,pressure,E_s,E_l);
     endPrintRank();
     return 0.0;
   }
+#endif
 }
 
 // ThermoGlenIce

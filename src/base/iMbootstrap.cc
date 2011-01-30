@@ -286,7 +286,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
       const PetscScalar alpha = (g / (2.0 * HH * ice->k)) - 2.0 * HH * HH * beta;
       for (PetscInt k = 0; k < ks; k++) {
         const PetscScalar depth = HH - grid.zlevels[k];
-        const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * depth;
+        const PetscScalar Tpmp = ice->triple_point_temp - ice->beta_CC_grad * depth;
         const PetscScalar d2 = depth * depth;
 
         T[k] = PetscMin(Tpmp,artm(i,j) + alpha * d2 + beta * d2 * d2);
@@ -299,7 +299,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
       //   otherwise it sees the temperature of the base of the ice
       const PetscScalar floating_base = - (ice->rho/ocean_rho) * vH(i,j); // FIXME task #7297
       const PetscScalar T_top_bed = (vbed(i,j) < floating_base)
-        ? ice->meltingTemp : T[0];
+        ? ice->triple_point_temp : T[0]; // FIXME: when floating (first case), should see sea-water pressure-melting temperature
       ierr = bootstrapSetBedrockColumnTemp(i,j,T_top_bed,vGhf(i,j),bed_thermal_k); CHKERRQ(ierr);
       
       if (!do_cold) {

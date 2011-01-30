@@ -29,8 +29,8 @@ EnthalpyConverter::EnthalpyConverter(const NCConfigVariable &config) {
   L     = config.get("water_latent_heat_fusion");                // J kg-1
   p_air = config.get("surface_pressure");                        // Pa
   rho_i = config.get("ice_density");                             // kg m-3
-  T_0   = config.get("water_melting_temperature");               // K  
-  T_tol  = config.get("cold_mode_is_temperate_ice_tolerance");   // K 
+  T_triple = config.get("water_triple_point_temperature");       // K  
+  T_tol = config.get("cold_mode_is_temperate_ice_tolerance");    // K 
 }
 
 
@@ -60,7 +60,7 @@ PetscErrorCode EnthalpyConverter::viewConstants(PetscViewer viewer) const {
   ierr = PetscViewerASCIIPrintf(viewer,
       "   rho_i = %12.5f (kg m-3)\n",    rho_i); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-      "   T_0   = %12.5f (K)\n",         T_0); CHKERRQ(ierr);
+      "   T_triple = %12.5f (K)\n",      T_triple); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
       ">\n"); CHKERRQ(ierr);
   return 0;
@@ -85,10 +85,10 @@ double EnthalpyConverter::getPressureFromDepth(double depth) const {
 
 //! Get melting temperature from pressure p.
 /*!
-     \f[ T_m(p) = T_0 - \beta p. \f]
+     \f[ T_m(p) = T_{triple} - \beta p. \f]
  */ 
 double EnthalpyConverter::getMeltingTemp(double p) const {
-  return T_0 - beta * p;
+  return T_triple - beta * p;
 }
 
 
@@ -195,14 +195,14 @@ Calls getAbsTemp(), which computes \f$T(E,p)\f$, and getMeltingTemp(), which
 computes \f$T_m(p)\f$.
 
 We define the pressure-adjusted temperature to be:
-     \f[ T_{pa} = T_{pa}(E,p) = T(E,p) - T_m(p) + T_0. \f]
+     \f[ T_{pa} = T_{pa}(E,p) = T(E,p) - T_m(p) + T_{triple}. \f]
  */
 PetscErrorCode EnthalpyConverter::getPATemp(double E, double p, double &T_pa) const {
   PetscErrorCode ierr;
   const double T_m = getMeltingTemp(p);
   double T = 0;			// initialized to avoid a compiler warning
   ierr = getAbsTemp(E,p,T); CHKERRQ(ierr);
-  T_pa = T - T_m + T_0;
+  T_pa = T - T_m + T_triple;
   return 0;
 }
 
@@ -388,3 +388,4 @@ PetscErrorCode ICMEnthalpyConverter::getEnthPermissive(double T, double /*omega*
  E = T * c_i;
  return 0;
 }
+

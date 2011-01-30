@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2010 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,10 +21,8 @@
 
 #include "NCVariable.hh"
 
-//! Converts ice specific enthalpy to-and-from temperature and water content.
+//! Converts between specific enthalpy and temperature or liquid content.
 /*!
-ONCE THIS CLASS IS CONFIRMED TO BE CORRECT, IT *CAN* GO IN src/base/pism_const.{hh|cc}
-
 Use this way, for example within IceModel with NCConfigVariable config member:
 \code
   #include "enthalpyConverter.hh"
@@ -51,7 +49,7 @@ return value of 1 under the same condition, but puts the maximum-liquid-content
 into its computed value for omega.
 
 The three methods that get the enthalpy from temperatures and liquid fractions, 
-namely getEnth, getEnthPermissive, getEnthAtWaterFraction, are more strict about
+namely getEnth(), getEnthPermissive(), getEnthAtWaterFraction(), are more strict about
 error checking.  They call SETERRQ() if there arguments are invalid.
 */
 class EnthalpyConverter {
@@ -81,10 +79,17 @@ public:
   virtual PetscErrorCode getEnthAtWaterFraction(double omega, double p, double &E) const;
 
 protected:
-  double T_0, L, c_i, rho_i, g, p_air, beta, T_tol;
+  double T_triple, L, c_i, rho_i, g, p_air, beta, T_tol;
   bool do_cold_ice_methods;
 };
 
+
+//! An EnthalpyConverter for use in verification tests.  Treats ice at any temperature as cold (zero liquid fraction).
+/*!
+Note that IceFlowLaw uses either the base EnthalpyConverter or this 
+verification_mode version.  Regardless of the actual values, this version treats
+enthalpy and temperature as if always cold:  \f$E = c_i (T - 0)\f$.
+ */
 class ICMEnthalpyConverter : public EnthalpyConverter {
 public:
   ICMEnthalpyConverter(const NCConfigVariable &config) : EnthalpyConverter(config) {}

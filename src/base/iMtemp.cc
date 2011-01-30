@@ -353,7 +353,7 @@ This method should be kept because it is worth having alternative physics, and
             Tnew[k] = x[k0 + k];
           } else {
             const PetscScalar 
-              Tpmp = ice->meltingTemp - ice->beta_CC_grad * (vH(i,j) - fzlev[k]); // FIXME task #7297
+              Tpmp = ice->triple_point_temp - ice->beta_CC_grad * (vH(i,j) - fzlev[k]); // FIXME task #7297
             if (x[k0 + k] > Tpmp) {
               Tnew[k] = Tpmp;
               PetscScalar Texcess = x[k0 + k] - Tpmp; // always positive
@@ -379,7 +379,7 @@ This method should be kept because it is worth having alternative physics, and
           if (allowAboveMelting == PETSC_TRUE) { // ice/rock interface
             Tnew[0] = x[k0];
           } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
-            const PetscScalar Tpmp = ice->meltingTemp - ice->beta_CC_grad * vH(i,j); // FIXME task #7297
+            const PetscScalar Tpmp = ice->triple_point_temp - ice->beta_CC_grad * vH(i,j); // FIXME task #7297
             PetscScalar Texcess = x[k0] - Tpmp; // positive or negative
             if (vMask.is_floating(i,j)) {
               // when floating, only half a segment has had its temperature raised

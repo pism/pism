@@ -84,7 +84,7 @@ public:
     k,            //!< thermal conductivity
     c_p,          //!< specific heat capacity
     latentHeat,   //!< latent heat capacity
-    meltingTemp;  //!< melting temperature
+    triple_point_temp;  //!< for water, 273.15 K
 protected:
   PetscReal softnessParameter_paterson_budd(PetscReal T_pa) const;
 

@@ -138,7 +138,7 @@ netcdf pism_config {
     pism_config:hmelt_diffusion_time_doc = "years; diffusion time for melt water thickness; see equation (11) in [\\ref BBssasliding]";
 
     pism_config:minimum_temperature_for_sliding = 273.0;
-    pism_config:minimum_temperature_for_sliding_doc = "Kelvin; Note less than ice.meltingTemp; if above this value then decide to slide";
+    pism_config:minimum_temperature_for_sliding_doc = "K; This is less than water_triple_point_temperature.  If ice base is above this value then decide to do SIA sliding, if that mechanism is active at all.";
 
     pism_config:skip_max = 10;
     pism_config:skip_max_doc = "Number of mass-balance steps, including SIA diﬀusivity updates, to perform before a the temperature, age, and SSA stress balance computations are done";
@@ -313,9 +313,9 @@ netcdf pism_config {
     pism_config:surface_pressure = 0.0;
     pism_config:surface_pressure_doc = "Pa; atmospheric pressure; = pressure at ice surface";
 
-    pism_config:water_melting_temperature = 273.15;
-    pism_config:water_melting_temperature_doc = "Kelvin; triple point of pure water";
-
+    pism_config:water_triple_point_temperature = 273.15;
+    pism_config:water_triple_point_temperature_doc = "K; triple point of pure water";
+ 
     pism_config:water_latent_heat_fusion = 3.34e5;
     pism_config:water_latent_heat_fusion_doc = "J kg-1; latent heat of fusion for water [\\ref AschwandenBlatter]";
 
