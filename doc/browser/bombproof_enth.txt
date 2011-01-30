@@ -2,60 +2,23 @@
 
 \section intro Introduction
 
-One of the essential goals for any thermomechanically-coupled numerical ice sheet model is a completely bombproof numerical scheme for the advection-conduction-reaction problem for the conservation of energy within the ice and the bedrock.  "Bombproof" means being, roughly, as stable as possible in as many realistic modeling contexts as possible.  PISM's scheme is observed to be highly robust in practice, but it is also provably stable in a significant range of circumstances.  The scheme is special to shallow ice sheets because it makes specific tradeoff choices with respect to vertical velocity, though it is generic (and low order) with respect to horizontal velocity.  In this page we will state the scheme, prove its stability properties, and specify the nontrivial modifications needed at the ice-bedrock transition.
+One of the essential goals for any thermomechanically-coupled numerical ice sheet model is a completely bombproof numerical scheme for the advection-conduction-reaction problem for the conservation of energy within the ice and the bedrock.  "Bombproof" means being, roughly, as stable as possible in as many realistic modeling contexts as possible.  PISM's scheme is observed to be highly robust in practice, but it is also provably stable in a significant range of circumstances.  The scheme is special to shallow ice sheets because it makes specific tradeoff choices with respect to vertical velocity.  It is generic and low order in how it treats horizontal velocity.  In this page we state the scheme, prove its stability properties, and specify the nontrivial choices made in addressing the ice-bedrock transition.
 
-Accuracy is necessarily a second goal.  It is partly achieved 
-here because our scheme has truncation error \f$O(\Delta z^2)\f$
-in many circumstances, though it reverts to lower order when it "detects trouble"
-in the form of large vertical velocities.  More completely stated, the scheme has 
-order \f$O(\Delta t,\Delta x,\Delta y, \Delta z^2)\f$ in circumstances where the vertical
-ice flow velocity is small enough, relative to conductivity, and otherwise reverts to 
-order \f$O(\Delta t,\Delta x,\Delta y, \Delta z^1)\f$.
+Accuracy is necessarily a second goal.  Our shallow scheme has truncation error \f$O(\Delta z^2)\f$ in many circumstances, though it reverts to lower order in \f$\Delta z\f$ when it "detects trouble" in the form of large vertical velocities.  Overall the scheme has  order \f$O(\Delta t,\Delta x,\Delta y, \Delta z^2)\f$ in circumstances where the vertical ice flow velocity is small enough, relative to conductivity, and otherwise reverts to order \f$O(\Delta t,\Delta x,\Delta y, \Delta z^1)\f$.
 
-The conservation of energy problem here is described in terms of the enthalpy
-field for the ice and in terms of temperature for the bedrock.  The finite
-difference scheme here supercedes the PISM scheme for the 
-temperature equation described in the appendices of [\ref BBL].  That scheme 
-is robust but it has a CFL condition on \e vertical advection, an avoidable time step 
-restriction.  The CFL condition on \e horizontal advection
-remains in the new scheme, however.  The scheme here is conditionally stable 
-as an adaptive time-stepping technique for the 3D conservation of energy equation.
-The length of the time step is limited only by the maximum magnitude of the 
-horizontal velocities within the ice.
+Out conservation of energy problem is described in terms of an enthalpy field within the ice and in terms of temperature in the bedrock.  The current finite difference scheme supercedes the PISM scheme for the temperature equation described in the appendices of [\ref BBL].  (That scheme is robust but it has a CFL condition on \e vertical advection, an avoidable time step restriction.  The CFL condition on \e horizontal advection remains in the new scheme, however.)  Our numerical scheme for the 3D conservation of energy equation is conditionally-stable, and in fact the length of the time step is limited only by the maximum magnitude of the horizontal velocities within the ice, %i.e. horizontal CFL.  This condition for stability is included in the PISM adaptive time-stepping technique.
 
-The ice %region in which the energy equation needs to be solved, at least within 
-the ice sheet and attached ice shelves, generally changes over time.  This is an 
-essential complicating factor in ice sheet modeling.  According to user options, 
-there may also be a model for the energy within a layer of bedrock 
-below the ice sheet.  The implementation must accommodate these possibilities.
-Equally essential is the fact that the velocity field has a
-complicated provenance.  It comes from a variety of stress
-balance equations.  These stress balances, especially where there is a transition 
-in flow type, for instance at grounding lines, are incompletely understood
-when thermomechanically coupled.  The stress balance could be the SIA, the
-SSA, a mix of these in different parts of the ice sheet/shelf system, or
-other stress balances in future PISM versions.
+The %region in which the conservation of energy equation needs to be solved changes over time, an essential, but complicating, factor in ice sheet modeling.  According to user options, there may also be a bedrock thermal layer below the ice sheet, and our implementation must accommodate this.  Also relevant is that the velocity field has a complicated provenance as it comes from some stress balance equations chosen at runtime.  These stress balances, especially with transitions in flow type, for instance at grounding lines, are incompletely understood when thermomechanically-coupled.  The stress balance could be the SIA, the SSA, a hybrid of these, and even a mix of these in different parts of the ice sheet/shelf system (or other stress balances in future PISM versions).  Thus we need to \e not make, and we will not make in proving stability, assumptions about the regularity, other than boundedness, of the velocity field in space or time.
 
-We need to \e not make, and we will not make in proving stability, assumptions
-about the regularity of the velocity field in space or time.  Beyond boundedness,
-that is.  Nor do we want the numerical scheme for advection to need any
-information about the velocity except its value at the beginning of the time
-step.  Thus we would not accept a scheme which required the Jacobian
-of the velocity field with respect to changes in energy, for example.
-At very least we cannot implement a fully-implicit scheme without some 
-blind iteration (%e.g. with no guarantee of convergence of the iteration).
-The scheme we propose involves no such iteration.
+Nor do we want the numerical scheme for advection to need any information about the velocity except its value at the beginning of the time step, and indeed the conservation of energy timestep is assumed to be split from the mass continuity time step.  Thus we have not considered implementing a scheme which requires the Jacobian of the velocity field with respect to changes in enthalpy, for example.  At very least we cannot implement a fully-implicit scheme without some blind iteration (%e.g. with no guarantee of convergence of the iteration).  The scheme we propose involves no such iteration.
 
 
 \section iceequations Conservation of energy in a shallow ice sheet
 
-In terms of the ice specific enthalpy field \f$E(x,y,z,t)\f$, which has units of 
-\f$\text{J}\,\text{kg}^{-1}\f$ in SI, the energy equation is
+In our enthalpy formulation [\ref AschwandenBuelerBlatter], the ice sheet is regarded as a mixture of two phases, so that both cold ice (pure solid) and temperate ice (some liquid within the solid ice matrix) can be modeled.  The ice mixture specific enthalpy field \f$E(x,y,z,t)\f$ has units \f$\text{J}\,\text{kg}^{-1}\f$; note that within the PISM documentation the symbol \f$H\f$ is used for ice thickness so we use \f$E\f$ for enthalpy here and in the PISM source code.  The conservation of energy equation is
 \anchor basicEnergy
   \f[ \rho \frac{dE}{dt} = -\nabla \cdot \mathbf{q} + Q,\tag{basicEnergy} \f]
-where \f$\rho\f$ is the material density.  The units of equation
-(\ref basicEnergy), and of the quantity \f$Q\f$ described below, are
-\f$J\,\text{s}^{-1}\,\text{m}^{-3}\f$ in SI.
+where \f$\rho\f$ is the mixture density.  (The mixture density is assumed to be the same as ice density even if there is a nonzero liquid fraction, and the mixture is assumed to be incompressible [\ref AschwandenBuelerBlatter].)  The left and right sides of equation (\ref basicEnergy), and also the quantity \f$Q\f$, have units \f$J\,\text{s}^{-1}\,\text{m}^{-3}\f$.
 
 The heat flux in cold ice and temperate ice is [\ref AschwandenBlatter]
 \anchor heatflux
