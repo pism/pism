@@ -62,7 +62,6 @@ PetscErrorCode IceExactSSAModel::setFromOptions() {
 
   // can not be overridden 
   config.set_flag("do_cold_ice_methods", true);
-  allocateT3 = true;
 
   return 0;
 }
@@ -184,7 +183,7 @@ PetscErrorCode IceExactSSAModel::set_vars_from_options() {
   ierr =   T3.set(T0); CHKERRQ(ierr);
   ierr =  Tb3.set(T0); CHKERRQ(ierr);
 
-  ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+  ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
 
   return 0;
 }

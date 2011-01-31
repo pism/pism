@@ -59,10 +59,10 @@ PetscErrorCode IceModel::energyStep() {
     ierr = T3.beginGhostCommTransfer(vWork3d); CHKERRQ(ierr);
     ierr = T3.endGhostCommTransfer(vWork3d); CHKERRQ(ierr);
 
-    // setEnth3FromT3_ColdIce() updates ghosts of Enth3 using a
+    // compute_enthalpy_cold() updates ghosts of Enth3 using a
     // begin/endGhostComm pair. Is not optimized because this
     // (do_cold_ice_methods) is a rare case.
-    ierr = setEnth3FromT3_ColdIce();  CHKERRQ(ierr);
+    ierr = compute_enthalpy_cold(T3, Enth3);  CHKERRQ(ierr);
 
   } else {
     // new enthalpy values go in vWork3d; also updates (and communicates) Hmelt

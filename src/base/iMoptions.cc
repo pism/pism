@@ -138,7 +138,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   bool initfromT, initfromTandOm;
   ierr = PISMOptionsIsSet("-init_from_temp", initfromT); CHKERRQ(ierr);
   ierr = PISMOptionsIsSet("-init_from_temp_and_liqfrac", initfromTandOm); CHKERRQ(ierr);
-  allocateT3 = (config.get_flag("do_cold_ice_methods") || initfromT || initfromTandOm);
 
   ierr = PISMOptionsInt("-jd", "Specifies the sounding column", jd, flag); CHKERRQ(ierr);
 

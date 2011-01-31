@@ -492,7 +492,7 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   ierr = setBed(); CHKERRQ(ierr);
   ierr = setMask(); CHKERRQ(ierr);
 
-  ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+  ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
 
   return 0;
 }

@@ -29,7 +29,7 @@
 /*!
 Optionally allows saving of full velocity field.
 
-Calls dumpToFile() and writeMatlabVars() to do the actual work.
+Calls dumpToFile() to do the actual work.
  */
 PetscErrorCode  IceModel::writeFiles(const char* default_filename) {
   PetscErrorCode ierr;
@@ -301,87 +301,121 @@ PetscErrorCode IceModel::write_model_state(const char* filename) {
     grid points (Mx,My,Mz,Mbz) and the dimensions (Lx,Ly,Lz) of the computational
     box from the same input file.
   */
-  PetscErrorCode IceModel::initFromFile(const char *filename) {
-    PetscErrorCode  ierr;
-    NCTool nc(grid.com, grid.rank);
+PetscErrorCode IceModel::initFromFile(const char *filename) {
+  PetscErrorCode  ierr;
+  NCTool nc(grid.com, grid.rank);
 
-    ierr = verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
-                      filename); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "initializing from NetCDF file '%s'...\n",
+                    filename); CHKERRQ(ierr);
 
-    ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+  // options for initializing enthalpy
+  bool initfromT, initfromTandOm;
+  string enthalpy_pism_intent;
+  ierr = PISMOptionsIsSet("-init_from_temp", initfromT); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-init_from_temp_and_liqfrac", initfromTandOm); CHKERRQ(ierr);
+  if (initfromT && initfromTandOm) {
+    PetscPrintf(grid.com,
+                "PISM ERROR: both options -init_from_temp and -init_from_temp_and_liqfrac seen; must choose one or none");
+    PISMEnd();
+  }
 
-    // Find the index of the last record in the file:
-    int last_record;
-    ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
-    last_record -= 1;
+  // if initializing enthalpy from temperature or temperature and liquid water
+  // fraction, temporarily set pism_intent of Enth3 to "diagnostic" so that
+  // PISM does not even try to read the "enthalpy" variable
+  if (initfromT || initfromTandOm) {
+    enthalpy_pism_intent = Enth3.string_attr("pism_intent");
+    ierr = Enth3.set_attr("pism_intent", "diagnostic"); CHKERRQ(ierr);
+  }
 
-    // Read the model state, mapping and climate_steady variables:
-    set<string> vars = variables.keys();
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
 
-    set<string>::iterator i = vars.begin();
-    while (i != vars.end()) {
-      IceModelVec *var = variables.get(*i++);
+  // Find the index of the last record in the file:
+  int last_record;
+  ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
+  last_record -= 1;
 
-      string intent = var->string_attr("pism_intent");
-      if ((intent == "model_state") || (intent == "mapping") ||
-          (intent == "climate_steady")) {
-        ierr = var->read(filename, last_record); CHKERRQ(ierr);
-      }
+  // Read the model state, mapping and climate_steady variables:
+  set<string> vars = variables.keys();
+
+  set<string>::iterator i = vars.begin();
+  while (i != vars.end()) {
+    IceModelVec *var = variables.get(*i++);
+
+    string intent = var->string_attr("pism_intent");
+    if ((intent == "model_state") || (intent == "mapping") ||
+        (intent == "climate_steady")) {
+      ierr = var->read(filename, last_record); CHKERRQ(ierr);
     }
+  }
 
-    if (config.get_flag("do_cold_ice_methods")) {
-      ierr = verbPrintf(3,grid.com,"  setting enthalpy from temperature...\n");
-                    CHKERRQ(ierr);
-      ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+  if (config.get_flag("do_cold_ice_methods")) {
+    ierr = verbPrintf(3,grid.com,"  setting enthalpy from temperature...\n");
+    CHKERRQ(ierr);
+    ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
+  }
+
+
+  if (config.get_flag("do_age")) {
+    bool age_exists;
+    ierr = nc.find_variable("age", NULL, age_exists); CHKERRQ(ierr);
+
+    if (age_exists) {
+      ierr = tau3.read(filename, last_record); CHKERRQ(ierr);
+    } else {
+      ierr = verbPrintf(2,grid.com,
+                        "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
+                        "  Setting it to zero...\n",
+                        filename); CHKERRQ(ierr);
+      ierr = tau3.set(0.0); CHKERRQ(ierr);
     }
+  }
 
 
-    if (config.get_flag("do_age")) {
-      bool age_exists;
-      ierr = nc.find_variable("age", NULL, age_exists); CHKERRQ(ierr);
+  if (initfromT || initfromTandOm) {
+    IceModelVec3 temperature;
 
-      if (age_exists) {
-        ierr = tau3.read(filename, last_record); CHKERRQ(ierr);
-      } else {
-        ierr = verbPrintf(2,grid.com,
-                          "PISM WARNING: input file '%s' does not have the 'age' variable.\n"
-                          "  Setting it to zero...\n",
-                          filename); CHKERRQ(ierr);
-        ierr = tau3.set(0.0); CHKERRQ(ierr);
-      }
-    }
+    ierr = temperature.create(grid, "temp", false); CHKERRQ(ierr);
+    ierr = temperature.set_attrs("internal", "ice temperature; temporary storage during initialization",
+                                 "K", "land_ice_temperature"); CHKERRQ(ierr);
+    ierr = temperature.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+    
+    ierr = temperature.read(filename, last_record); CHKERRQ(ierr);
 
-    // options for initializing enthalpy
-    bool initfromT, initfromTandOm;
-    ierr = PISMOptionsIsSet("-init_from_temp", initfromT); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-init_from_temp_and_liqfrac", initfromTandOm); CHKERRQ(ierr);
-    if (initfromT && initfromTandOm) {
-      SETERRQ(1,"PISM ERROR: both options -init_from_temp and -init_from_temp_and_liqfrac seen; must choose one or none");
-    }
     if (initfromT) {
       ierr = verbPrintf(2, grid.com,
-                        "  option -init_from_temp seen; computing enthalpy from ice temperature and thickness ...\n"); CHKERRQ(ierr);
-      ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
-    } else if (initfromTandOm) {
+                        "  option -init_from_temp seen; computing enthalpy from ice temperature and thickness ...\n");
+      CHKERRQ(ierr);
+
+      ierr = compute_enthalpy_cold(temperature, Enth3); CHKERRQ(ierr);
+
+    } else {
       ierr = verbPrintf(2, grid.com,
-                        "  option -init_from_temp_and_liqfrac seen; computing enthalpy from ice temperature, liquid water fraction and thickness ...\n"); CHKERRQ(ierr);
+                        "  option -init_from_temp_and_liqfrac seen; computing enthalpy from ice temperature,"
+                        " liquid water fraction and thickness ...\n"); CHKERRQ(ierr);
+
       // use vWork3d as already-allocated space
       ierr = vWork3d.set_name("liqfrac"); CHKERRQ(ierr);
-      ierr = vWork3d.set_attrs(
-                               "internal", "liqfrac; temporary use during initialization",
+      ierr = vWork3d.set_attrs("internal", "liqfrac; temporary use during initialization",
                                "", ""); CHKERRQ(ierr);
-      ierr = vWork3d.read(filename,last_record); CHKERRQ(ierr);
-      ierr = setEnth3FromT3AndLiqfrac3(vWork3d); CHKERRQ(ierr);
+      ierr = vWork3d.read(filename, last_record); CHKERRQ(ierr);
+
+      ierr = compute_enthalpy(temperature, vWork3d, Enth3); CHKERRQ(ierr);
     }
 
-    string history;
-    ierr = nc.get_att_text(NC_GLOBAL, "history", history); CHKERRQ(ierr);
-    global_attributes.prepend_history(history);
-
-    ierr = nc.close(); CHKERRQ(ierr);
-
-    return 0;
+    // restore the original value of pism_intent (currently: either
+    // "model_state" or "diagnostic" depending on the "do_cold_ice_methods"
+    // config parameter).
+    ierr = Enth3.set_attr("pism_intent", enthalpy_pism_intent); CHKERRQ(ierr);
   }
+
+  string history;
+  ierr = nc.get_att_text(NC_GLOBAL, "history", history); CHKERRQ(ierr);
+  global_attributes.prepend_history(history);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  return 0;
+}
 
   //! Manage regridding based on user options.  Call IceModelVec::regrid() to do each selected variable.
   /*!

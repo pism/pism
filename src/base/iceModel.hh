@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -193,7 +193,6 @@ protected:
 
   // flags
   PetscTruth  updateHmelt, holdTillYieldStress, shelvesDragToo, allowAboveMelting;
-  bool        allocateT3;
   char        adaptReasonFlag;
 
   string      stdout_flags, stdout_ssa;
@@ -238,10 +237,13 @@ protected:
   PetscErrorCode setDefaults();
 
   // see iMenthalpy.cc
-  virtual PetscErrorCode setEnth3FromT3_ColdIce();
-  virtual PetscErrorCode setEnth3FromT3AndLiqfrac3(IceModelVec3 &Liqfrac3);
-  virtual PetscErrorCode setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac);
+  virtual PetscErrorCode compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &result);
+  virtual PetscErrorCode compute_enthalpy(IceModelVec3 &temperature, IceModelVec3 &liquid_water_fraction,
+                                          IceModelVec3 &result);
+  virtual PetscErrorCode compute_liquid_water_fraction(IceModelVec3 &enthalpy, IceModelVec3 &result);
+
   virtual PetscErrorCode setCTSFromEnthalpy(IceModelVec3 &useForCTS);
+
   virtual PetscErrorCode getEnthalpyCTSColumn(PetscScalar p_air, //!< atmospheric pressure
 					      PetscScalar thk,	 //!< ice thickness
 					      PetscInt ks,	 //!< index of the level just below the surface

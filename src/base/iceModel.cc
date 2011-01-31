@@ -70,9 +70,6 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
 
   allowAboveMelting = PETSC_FALSE;  // only IceCompModel ever sets it to true
 
-  allocateT3 = false; // this is set if initialization options call for
-                      //   createVecs() to allocate IceModelVec3 T3
-
   // Default ice type:
   iceFactory.setType(ICE_PB);
 }
@@ -141,17 +138,14 @@ PetscErrorCode IceModel::createVecs() {
      "J kg-1", ""); CHKERRQ(ierr);
   ierr = variables.add(Enth3); CHKERRQ(ierr);
 
-  if (allocateT3) {
+  if (config.get_flag("do_cold_ice_methods")) {
     // ice temperature
     ierr = T3.create(grid, "temp", true); CHKERRQ(ierr);
-    ierr = T3.set_attrs(
-       (config.get_flag("do_cold_ice_methods")) ? "model_state" : "diagnostic",
-       "ice temperature", "K", "land_ice_temperature"); CHKERRQ(ierr);
+    ierr = T3.set_attrs("model_state", "ice temperature", "K", "land_ice_temperature"); CHKERRQ(ierr);
     ierr = T3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
     ierr = variables.add(T3); CHKERRQ(ierr);
-    if (config.get_flag("do_cold_ice_methods")) {
-      ierr = Enth3.set_attr("pism_intent", "diagnostic"); CHKERRQ(ierr); 
-    }
+
+    ierr = Enth3.set_attr("pism_intent", "diagnostic"); CHKERRQ(ierr); 
   }
 
   // age of ice but only if age will be computed

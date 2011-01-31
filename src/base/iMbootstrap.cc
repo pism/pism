@@ -246,6 +246,8 @@ Note that the above heuristic rule for ice determines \f$T(0)\f$.  Within the be
 the rate of change with depth is exactly the geothermal flux:
    \f[T(z) = T(0) - \frac{g}{k_r} z.\f]
 Note that \f$z\f$ here is negative, so the temperature increases as one goes down into the bed.
+
+FIXME task #7297
  */
 PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
@@ -329,7 +331,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr = result->endGhostComm(); CHKERRQ(ierr);
 
   if (do_cold) {
-    ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+    ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
   }
 
   return 0;

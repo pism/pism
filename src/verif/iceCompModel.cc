@@ -308,7 +308,7 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
   default:  SETERRQ(1,"Desired test not implemented by IceCompModel.\n");
   }
 
-  ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
+  ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
 
   return 0;
 }

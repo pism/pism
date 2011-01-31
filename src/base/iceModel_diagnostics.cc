@@ -719,7 +719,7 @@ PetscErrorCode IceModel_liqfrac::compute(IceModelVec* &output) {
   if (cold_mode) {
     ierr = result->set(0.0); CHKERRQ(ierr);
   } else {
-    ierr = model->setLiquidFracFromEnthalpy(*result); CHKERRQ(ierr);
+    ierr = model->compute_liquid_water_fraction(model->Enth3, *result); CHKERRQ(ierr);
   }
 
   output = result;

@@ -35,18 +35,18 @@ done this way for regularity (i.e. dEnth/dz computations).
 
 Because Enth3 gets set, does ghost communication to finish.
  */
-PetscErrorCode IceModel::setEnth3FromT3_ColdIce() {
+PetscErrorCode IceModel::compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &result) {
   PetscErrorCode ierr;
   
-  ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  ierr = temperature.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
 
   PetscScalar *Tij, *Enthij; // columns of these values
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
-      ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+      ierr = temperature.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+      ierr = result.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
         const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME task #7297
         ierr = EC->getEnthPermissive(Tij[k],0.0,EC->getPressureFromDepth(depth),
@@ -55,12 +55,12 @@ PetscErrorCode IceModel::setEnth3FromT3_ColdIce() {
     }
   }
 
-  ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = T3.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = temperature.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = Enth3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = Enth3.endGhostComm(); CHKERRQ(ierr);
+  ierr = result.beginGhostComm(); CHKERRQ(ierr);
+  ierr = result.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -69,21 +69,22 @@ PetscErrorCode IceModel::setEnth3FromT3_ColdIce() {
 /*!
 Because Enth3 gets set, does ghost communication to finish.
  */
-PetscErrorCode IceModel::setEnth3FromT3AndLiqfrac3(
-                                          IceModelVec3 &Liqfrac3) {
+PetscErrorCode IceModel::compute_enthalpy(IceModelVec3 &temperature,
+                                          IceModelVec3 &liquid_water_fraction,
+                                          IceModelVec3 &result) {
   PetscErrorCode ierr;
   
-  ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = Liqfrac3.begin_access(); CHKERRQ(ierr);
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  ierr = temperature.begin_access(); CHKERRQ(ierr);
+  ierr = liquid_water_fraction.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
 
   PetscScalar *Tij, *Liqfracij, *Enthij; // columns of these values
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = T3.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
-      ierr = Liqfrac3.getInternalColumn(i,j,&Liqfracij); CHKERRQ(ierr);
-      ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+      ierr = temperature.getInternalColumn(i,j,&Tij); CHKERRQ(ierr);
+      ierr = liquid_water_fraction.getInternalColumn(i,j,&Liqfracij); CHKERRQ(ierr);
+      ierr = result.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
         const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME task #7297
         ierr = EC->getEnthPermissive(Tij[k],Liqfracij[k],
@@ -92,13 +93,13 @@ PetscErrorCode IceModel::setEnth3FromT3AndLiqfrac3(
     }
   }
 
-  ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = T3.end_access(); CHKERRQ(ierr);
-  ierr = Liqfrac3.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = temperature.end_access(); CHKERRQ(ierr);
+  ierr = liquid_water_fraction.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
 
-  ierr = Enth3.beginGhostComm(); CHKERRQ(ierr);
-  ierr = Enth3.endGhostComm(); CHKERRQ(ierr);
+  ierr = result.beginGhostComm(); CHKERRQ(ierr);
+  ierr = result.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -106,23 +107,24 @@ PetscErrorCode IceModel::setEnth3FromT3AndLiqfrac3(
 /*!
 Does not communicate ghosts for IceModelVec3 useForLiquidFrac.
  */
-PetscErrorCode IceModel::setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFrac) {
+PetscErrorCode IceModel::compute_liquid_water_fraction(IceModelVec3 &enthalpy,
+                                                       IceModelVec3 &result) {
   PetscErrorCode ierr;
 
-  ierr = useForLiquidFrac.set_name("liqfrac"); CHKERRQ(ierr);
-  ierr = useForLiquidFrac.set_attrs(
+  ierr = result.set_name("liqfrac"); CHKERRQ(ierr);
+  ierr = result.set_attrs(
      "diagnostic",
      "liquid water fraction in ice (between 0 and 1)",
      "", ""); CHKERRQ(ierr);
 
   PetscScalar *omegaij, *Enthij; // columns of these values
-  ierr = useForLiquidFrac.begin_access(); CHKERRQ(ierr);
-  ierr = Enth3.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = enthalpy.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = useForLiquidFrac.getInternalColumn(i,j,&omegaij); CHKERRQ(ierr);
-      ierr = Enth3.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+      ierr = result.getInternalColumn(i,j,&omegaij); CHKERRQ(ierr);
+      ierr = enthalpy.getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
       for (PetscInt k=0; k<grid.Mz; ++k) {
         const PetscScalar depth = vH(i,j) - grid.zlevels[k]; // FIXME task #7297
         ierr = EC->getWaterFraction(Enthij[k],EC->getPressureFromDepth(depth),
@@ -130,8 +132,8 @@ PetscErrorCode IceModel::setLiquidFracFromEnthalpy(IceModelVec3 &useForLiquidFra
       }
     }
   }
-  ierr = Enth3.end_access(); CHKERRQ(ierr);
-  ierr = useForLiquidFrac.end_access(); CHKERRQ(ierr);
+  ierr = enthalpy.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   return 0;
 }
