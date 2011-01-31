@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010, 2010, 2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -22,7 +22,13 @@
 #include "NCVariable.hh"
 
 static char help[] =
-  "Calls IceFlowLaw::flow...() with various values of arguments and prints results (for software tests).\n";
+  "Calls IceFlowLaw with various values of arguments and prints results.\n"
+  "Used for software tests.  Tests the flow_from_enth() method but prints\n"
+  "temperature and liquid fraction as inputs and flow coefficient as output.\n"
+  "Thus also tests methods getPressureFromDepth(), getMeltingTemp(), and\n"
+  "getEnth() methods of EnthalpyConverter.  Nonetheless a change to the\n"
+  "enthalpy normalization only should not affect the outcome.  Only physically-\n"
+  "meaningful inputs and output appear at stdout.\n";
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -53,21 +59,37 @@ int main(int argc, char *argv[]) {
     ice_factory.create(&ice);
 
     bool dummy;
-    ierr = PISMOptionsString("-ice_type", "Selects the flow law", ice_type, dummy); CHKERRQ(ierr);
+    ierr = PISMOptionsString("-ice_type", "Selects the flow law", 
+                             ice_type, dummy); CHKERRQ(ierr);
 
-    double     E0=560000, dE=10000, p=2e7, T = 0, gs = 1e-3;
-    double     sigma[] = {1e4, 5e4, 1e5, 1.5e5};
+    double     TpaC[]  = {-30.0, -5.0, 0.0, 0.0},  // pressure-adjusted, deg C
+               depth   = 2000.0,
+               gs      = 1.0e-3, // some laws use grain size; fixed
+               omega0  = 0.005,  // some laws use liquid fraction; used w TpaC[3]
+               sigma[] = {1e4, 5e4, 1e5, 1.5e5};
+
+    double     p       = EC.getPressureFromDepth(depth),
+               Tm      = EC.getMeltingTemp(p);
 
     printf("flow law:   \"%s\"\n", ice_type.c_str());
-    printf("flowtable:  [pressure = %10.2e throughout]\n",p);
-    printf("  (stress)   (enthalpy)    (temp)     =   (flow)\n");
+    printf("pressure = %9.3e Pa = (hydrostatic at depth %7.2f m)\n",
+           p,depth);
+    printf("flowtable:\n");
+    printf("  (dev stress)   (abs temp) (liq frac) =   (flow)\n");
 
     for (int i=0; i<4; ++i) {
-      for (int j=0; j<5; ++j) {
-        double E = E0 - j*dE;
-        EC.getAbsTemp(E, p, T);
-        printf("%10.2e   %10.3f    %10.6f = %10.6e\n",
-               sigma[i], E, T, ice->flow_from_enth(sigma[i], E, p, gs));
+      for (int j=0; j<4; ++j) {
+
+        double T     = Tm + TpaC[j],
+               omega = (j == 3) ? omega0 : 0.0;
+
+        double E, flowcoeff;
+        EC.getEnth(T, omega, p, E);  // first arg is 
+        flowcoeff = ice->flow_from_enth(sigma[i], E, p, gs);
+
+        printf("    %10.2e   %10.3f  %9.3f = %10.6e\n",
+               sigma[i], T, omega, flowcoeff);
+
       }
     }
 

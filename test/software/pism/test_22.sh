@@ -3,7 +3,7 @@
 source ../functions.sh
 
 # Test name:
-test="Test #32: EISMINT-Ross experiment regression."
+test="Test #22: EISMINT-Ross experiment regression."
 # The list of files to delete when done.
 files="ross.nc riggs.nc rossComputed.nc ross.txt"
 dir=`pwd`
