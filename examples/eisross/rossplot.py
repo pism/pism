@@ -84,8 +84,8 @@ except Exception:
 H = squeeze(infile.variables["thk"][:])
 mask = squeeze(infile.variables["mask"][:])
 cbar = squeeze(infile.variables["cbar"][:])
-ubar = squeeze(infile.variables["ubar"][:])
-vbar = squeeze(infile.variables["vbar"][:])
+ubar = squeeze(infile.variables["ubar_ssa"][:])
+vbar = squeeze(infile.variables["vbar_ssa"][:])
 print "done."
 
 # need accur flag to determine location of calving front

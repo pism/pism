@@ -268,6 +268,7 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
   ierr = obsMagnitude->set_attrs("", "observed ice velocity magnitude",
                                  "m s-1", ""); CHKERRQ(ierr);
   ierr = obsMagnitude->set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  obsMagnitude->write_in_glaciological_units = true;
   ierr = vars.add(*obsMagnitude); CHKERRQ(ierr);
 
   ierr = obsAccurate->create(grid, "accur", true); CHKERRQ(ierr);
@@ -495,7 +496,8 @@ PetscErrorCode read_input_data(IceGrid &grid, PISMVars &variables, const NCConfi
   return 0;
 }
 
-PetscErrorCode write_results(IceGrid &grid, PISMVars &variables, IceModelVec2V &vel_ssa) {
+PetscErrorCode write_results(ShallowStressBalance &ssa,
+                             IceGrid &grid, PISMVars &variables) {
   PetscErrorCode ierr;
   set<string> vars = variables.keys();
   string filename = "ross_new_output.nc";
@@ -516,8 +518,25 @@ PetscErrorCode write_results(IceGrid &grid, PISMVars &variables, IceModelVec2V &
     ierr = var->write(filename.c_str()); CHKERRQ(ierr);
     j++;
   }
-  
-  ierr = vel_ssa.write(filename.c_str()); CHKERRQ(ierr);
+
+  IceModelVec2V *vel_ssa;
+
+  ierr = ssa.get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr);
+  vel_ssa->write_in_glaciological_units = true;
+  ierr = vel_ssa->write(filename.c_str()); CHKERRQ(ierr);
+
+  IceModelVec2S cbar;
+
+  ierr = cbar.create(grid, "cbar", false); CHKERRQ(ierr);
+  ierr = cbar.set_attrs("diagnostic",
+                        "magnitude of vertically-integrated horizontal velocity of ice",
+                        "m s-1", ""); CHKERRQ(ierr);
+  ierr = cbar.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+  cbar.write_in_glaciological_units = true;
+
+  ierr = vel_ssa->magnitude(cbar); CHKERRQ(ierr);
+
+  ierr = cbar.write(filename.c_str()); CHKERRQ(ierr);
   
   return 0;
 }
@@ -584,7 +603,7 @@ int main(int argc, char *argv[]) {
 
     // Create the SSA solver object:
     SSAFD ssa(g, basal, ice, EC, config);
-    
+
     const PetscReal
       DEFAULT_MIN_THICKNESS = 5.0, // meters
       DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8,  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
@@ -619,7 +638,7 @@ int main(int argc, char *argv[]) {
 
     ierr = compute_errors(g, vars, *vel_ssa); CHKERRQ(ierr); 
 
-    ierr = write_results(g, vars, *vel_ssa); CHKERRQ(ierr); 
+    ierr = write_results(ssa, g, vars); CHKERRQ(ierr); 
     
     ierr = deallocate_vars(vars); CHKERRQ(ierr); 
   }
