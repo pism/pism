@@ -134,6 +134,12 @@ PetscErrorCode  IceModel::setFromOptions() {
   if (myholdTillYieldStress == PETSC_TRUE)    holdTillYieldStress = PETSC_TRUE;
 
   ierr = PISMOptionsInt("-id", "Specifies the sounding row", id, flag); CHKERRQ(ierr);
+
+  bool initfromT, initfromTandOm;
+  ierr = PISMOptionsIsSet("-init_from_temp", initfromT); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-init_from_temp_and_liqfrac", initfromTandOm); CHKERRQ(ierr);
+  allocateT3 = (config.get_flag("do_cold_ice_methods") || initfromT || initfromTandOm);
+
   ierr = PISMOptionsInt("-jd", "Specifies the sounding column", jd, flag); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("low_temp", "global_min_allowed_temp"); CHKERRQ(ierr);

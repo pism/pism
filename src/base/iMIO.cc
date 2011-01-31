@@ -329,8 +329,9 @@ PetscErrorCode IceModel::write_model_state(const char* filename) {
       }
     }
 
-    ierr = verbPrintf(3,grid.com,"Setting enthalpy from temperature...\n"); CHKERRQ(ierr);
     if (config.get_flag("do_cold_ice_methods")) {
+      ierr = verbPrintf(3,grid.com,"  setting enthalpy from temperature...\n");
+                    CHKERRQ(ierr);
       ierr = setEnth3FromT3_ColdIce(); CHKERRQ(ierr);
     }
 

@@ -193,6 +193,7 @@ protected:
 
   // flags
   PetscTruth  updateHmelt, holdTillYieldStress, shelvesDragToo, allowAboveMelting;
+  bool        allocateT3;
   char        adaptReasonFlag;
 
   string      stdout_flags, stdout_ssa;

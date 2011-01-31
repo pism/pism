@@ -9,7 +9,8 @@ files="foo.nc bar.nc"
 dir=`pwd`
 
 bedrock="-Mbz 11 -Lbz 1000"
-opts="-y 0 -surface constant -Mx 61 -My 61 -Mz 31 -Lz 4000 $bedrock -o_size small"
+opts="-Mx 21 -My 21 -Mz 31 -Lz 4000 $bedrock -o_size small"
+
 run_test ()
 {
     cleanup
@@ -17,10 +18,10 @@ run_test ()
     set -e
 
     # create foo.nc (at about 6500 years we get some basal melting...)
-    run -n 2 pisms -no_cold -y 6500 $bedrock -o_size small -o foo.nc
+    run -n 2 pisms -no_cold -y 6500 $opts -o foo.nc
 
     # bootstrap from it, re-gridding all the variables we can
-    run pismr -boot_file foo.nc -regrid_file foo.nc $opts -o bar.nc -no_temp
+    run pismr -boot_file foo.nc -regrid_file foo.nc -y 0 -surface constant -no_temp $opts -o bar.nc
 
     set +e
 

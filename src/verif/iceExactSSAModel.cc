@@ -62,6 +62,7 @@ PetscErrorCode IceExactSSAModel::setFromOptions() {
 
   // can not be overridden 
   config.set_flag("do_cold_ice_methods", true);
+  allocateT3 = true;
 
   return 0;
 }
