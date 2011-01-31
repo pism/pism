@@ -418,6 +418,13 @@ PetscErrorCode PAForcing::temp_snapshot(PetscReal t_years, PetscReal dt_years,
     ierr = result.add(1.0, *temp_anomaly); CHKERRQ(ierr);
 
     ierr = result.set_attr("history", history); CHKERRQ(ierr);
+  } else if (dTforcing != NULL) {
+    string history = "added scalar temperature forcing at midpoint of time-step\n"
+                     + result.string_attr("history");
+
+    ierr = result.shift( (*dTforcing)(T) ); CHKERRQ(ierr);
+    
+    ierr = result.set_attr("history", history); CHKERRQ(ierr);
   }
 
   return 0;

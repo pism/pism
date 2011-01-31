@@ -194,6 +194,7 @@ public:
   virtual ~PSTemperatureIndex();
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
   virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
   virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
 					       IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
@@ -202,6 +203,7 @@ public:
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);  
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
+  virtual PetscErrorCode update_internal(PetscReal t_years, PetscReal dt_years);
   LocalMassBalance *mbscheme;	      //!< mass balance scheme to use
 
   FaustoGrevePDDObject *faustogreve;  //!< if not NULL then user wanted fausto PDD stuff
@@ -212,10 +214,16 @@ protected:
   IceModelVec2S
     acab,		//!< cached surface mass balance rate
     accumulation_rate,  //!< diagnostic output accumulation rate (snow - rain)
-    melt_rate,          //!< diagnostic output melt rate (rate at which snow and ice is melted, but some snow melt refreezes)
+    melt_rate,          //!< diagnostic output melt rate (rate at which snow
+                        //! and ice is melted, but some snow melt refreezes)
     runoff_rate;        //!< diagnostic output meltwater runoff rate
 
-  IceModelVec2S *lat, *lon, *usurf;  //!< PSTemperatureIndex must hold these pointers in order to use object which needs 3D location to determine degree day factors.
+  IceModelVec2S *lat, *lon, *usurf;  //!< PSTemperatureIndex must hold these
+                                     //!pointers in order to use object which
+                                     //!needs 3D location to determine degree
+                                     //!day factors.
+  bool pdd_annualize;
+  PetscReal next_pdd_update_year;
 };
 
 

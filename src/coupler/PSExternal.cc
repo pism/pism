@@ -95,6 +95,9 @@ PetscErrorCode PSExternal::init(PISMVars &vars) {
     }
   }
 
+  // The first time an EBM is run to pre-compute B.C. it is done after a half
+  // of the interval, i.e. in the middle. Then this variable is reset to
+  // update_interval.
   ebm_update_interval = 0.5 * update_interval;
 
   // Initialize the EBM driver:

@@ -290,6 +290,8 @@ PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const NCConfigVariable &conf)
   base_ddf.refreezeFrac = config.get("pdd_refreeze");
   base_pddStdDev = config.get("pdd_std_dev");
   base_pddThresholdTemp = config.get("pdd_positive_threshold_temp");
+
+  pdd_annualize = false;
 }
 
 PSTemperatureIndex::~PSTemperatureIndex() {
@@ -316,6 +318,9 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
     ierr = PISMOptionsIsSet("-pdd_fausto",
                             "Set PDD parameters using formulas (6) and (7) in [Faustoetal2009]",
 			    fausto_params); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-pdd_annualize",
+                            "Compute annual mass balance, removing yearly variations",
+                            pdd_annualize); CHKERRQ(ierr);
 
     ierr = PISMOptionsReal("-pdd_factor_snow", "PDD snow factor",
                            base_ddf.snow, pSet); CHKERRQ(ierr);
@@ -422,9 +427,33 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
     usurf = NULL;
   }
 
+  // if -pdd_annualize is set, update mass balance immediately (at the
+  // beginning of the run)
+  next_pdd_update_year = grid.year;
+
   return 0;
 }
 
+PetscErrorCode PSTemperatureIndex::max_timestep(PetscReal t_years, PetscReal &dt_years) {
+  PetscErrorCode ierr;
+
+  if (pdd_annualize) {
+    if (PetscAbs(t_years - next_pdd_update_year) < 1e-12)
+      dt_years = 1.0;
+    else
+      dt_years = next_pdd_update_year - t_years;
+  } else {
+    dt_years = -1;
+  }
+
+  PetscReal dt_atmosphere;
+  ierr = atmosphere->max_timestep(t_years, dt_atmosphere); CHKERRQ(ierr);
+
+  if (dt_atmosphere > 0)
+    dt_years = PetscMin(dt_years, dt_atmosphere);
+
+  return 0;
+}
 
 PetscErrorCode PSTemperatureIndex::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr;
@@ -435,6 +464,24 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal t_years, PetscReal dt_years)
 
   t  = t_years;
   dt = dt_years;
+
+  if (pdd_annualize) {
+    if (t_years + dt_years > next_pdd_update_year) {
+      ierr = verbPrintf(3, grid.com, 
+                        "  Updating mass balance for one year starting at %1.1f years...\n",
+                        t_years);
+      ierr = update_internal(t_years, 1.0); CHKERRQ(ierr);
+      next_pdd_update_year = t_years + 1.0;
+    }
+  } else {
+    ierr = update_internal(t_years, dt_years); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode PSTemperatureIndex::update_internal(PetscReal t_years, PetscReal dt_years) {
+  PetscErrorCode ierr;
 
   // to ensure that temperature time series are correct:
   ierr = atmosphere->update(t_years, dt_years); CHKERRQ(ierr);
@@ -590,6 +637,10 @@ PetscErrorCode PSTemperatureIndex::define_variables(set<string> vars, const NCTo
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
+  if (set_contains(vars, "acab")) {
+    ierr = acab.define(nc, nctype); CHKERRQ(ierr); 
+  }
+
   if (set_contains(vars, "saccum")) {
     ierr = accumulation_rate.define(nc, nctype); CHKERRQ(ierr); 
   }  
@@ -610,6 +661,10 @@ PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, string file
 
   ierr = PISMSurfaceModel::write_variables(vars, filename); CHKERRQ(ierr);
 
+  if (set_contains(vars, "acab")) {
+    ierr = acab.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
   if (set_contains(vars, "saccum")) {
     ierr = accumulation_rate.write(filename.c_str()); CHKERRQ(ierr);
   }  
@@ -624,6 +679,8 @@ PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, string file
 
   return 0;
 }
+
+
 
 ///// "Force-to-thickness" mechanism
 
