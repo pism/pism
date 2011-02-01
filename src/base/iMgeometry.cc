@@ -257,11 +257,13 @@ PetscErrorCode IceModel::massContExplicitStep() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-      // staggered grid Div(Q) for SIA (non-sliding) deformation part;
-      //    Q = - D grad h = Ubar H    in non-sliding case
-
       PetscScalar divQ = 0.0;
-      divQ =  ((*Q)(i,j,0) - (*Q)(i-1,j,0)) / dx + ((*Q)(i,j,1) - (*Q)(i,j-1,1)) / dy;
+
+      if (!vMask.is_floating(i,j)) {
+        // staggered grid Div(Q) for non-sliding SIA deformation part if grounded:
+        //    Q = - D grad h = Ubar H    in non-sliding case
+        divQ =  ((*Q)(i,j,0) - (*Q)(i-1,j,0)) / dx + ((*Q)(i,j,1) - (*Q)(i,j-1,1)) / dy;
+      }
 
       // basal sliding part: split  Div(v H)  by product rule into  v . grad H
       //    and  (Div v) H; use upwinding on first and centered on second
