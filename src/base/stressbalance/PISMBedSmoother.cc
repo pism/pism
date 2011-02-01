@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011 Ed Bueler
+// Copyright (C) 2010, 2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -329,9 +329,11 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-PetscErrorCode PISMBedSmoother::get_smoothed_thk(
-    IceModelVec2S usurf, IceModelVec2S thk, 
-    PetscInt GHOSTS, IceModelVec2S *thksmooth) { 
+PetscErrorCode PISMBedSmoother::get_smoothed_thk(IceModelVec2S usurf,
+                                                 IceModelVec2S thk,
+                                                 IceModelVec2Mask mask,
+                                                 PetscInt GHOSTS,
+                                                 IceModelVec2S *thksmooth) { 
   PetscErrorCode ierr;  
   
   if (GHOSTS > maxGHOSTS) {
@@ -342,6 +344,7 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(
   }
 
   PetscScalar **thks;  
+  ierr = mask.begin_access(); CHKERRQ(ierr);
   ierr = topgsmooth.begin_access(); CHKERRQ(ierr);
   ierr = maxtl.begin_access(); CHKERRQ(ierr);
   ierr = usurf.begin_access(); CHKERRQ(ierr);
@@ -358,12 +361,16 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(
       } else if (maxtl(i,j) >= thk(i,j)) {
         thks[i][j] = thk(i,j);
       } else {
-        // FIXME: the following is true if the ice at the current location is
-        // grounded; we need to apply the floatation criterion using thk and
-        // topgsmooth if the ice is floating.
-        // This means that PISMBedSmoother needs to know the current sea level.
-        const PetscScalar thks_try = usurf(i,j) - topgsmooth(i,j);
-        thks[i][j] = (thks_try > 0.0) ? thks_try : 0.0;
+        if (mask.is_grounded(i,j)) {
+          // if grounded, compute smoothed thickness as the difference of ice
+          // surface elevation and smoothed bed elevation
+          const PetscScalar thks_try = usurf(i,j) - topgsmooth(i,j);
+          thks[i][j] = (thks_try > 0.0) ? thks_try : 0.0;
+        } else {
+          // if floating, use original thickness (note: surface elevation was
+          // computed using this thickness and the sea level elevation)
+          thks[i][j] = thk(i,j);
+        }
       }
     }
   }
@@ -372,6 +379,7 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(
   ierr = usurf.end_access(); CHKERRQ(ierr);
   ierr = thk.end_access(); CHKERRQ(ierr);
   ierr = thksmooth->end_access(); CHKERRQ(ierr);
+  ierr = mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

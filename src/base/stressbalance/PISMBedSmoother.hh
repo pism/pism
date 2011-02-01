@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Ed Bueler
+// Copyright (C) 2010, 2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -82,7 +82,7 @@ public:
   virtual PetscErrorCode get_smoothing_domain(PetscInt &Nx_out, PetscInt &Ny_out);
   virtual PetscInt       get_max_ghosts() { return maxGHOSTS; }
 
-  virtual PetscErrorCode get_smoothed_thk(IceModelVec2S usurf, IceModelVec2S thk,
+  virtual PetscErrorCode get_smoothed_thk(IceModelVec2S usurf, IceModelVec2S thk, IceModelVec2Mask mask,
                                           PetscInt GHOSTS, IceModelVec2S *thksmooth);
   virtual PetscErrorCode get_theta(IceModelVec2S usurf, PetscReal n,
                                    PetscInt GHOSTS, IceModelVec2S *theta);
@@ -94,8 +94,12 @@ protected:
   const NCConfigVariable &config;
   IceModelVec2S maxtl,C2,C3,C4;
 
-  PetscInt Nx,Ny;  //!< number of grid points to smooth over; e.g. i=-Nx,-Nx+1,...,-1,0,1,...,Nx-1,Nx; note Nx>=1 and Ny>=1 always, unless lambda<=0
-  PetscInt maxGHOSTS; //!< topg will be read, and topgsmooth will be created, with this ghosting width; thksmooth and theta can be filled at this ghosting level or less
+  PetscInt Nx,Ny;  //!< number of grid points to smooth over; e.g.
+                   //!i=-Nx,-Nx+1,...,-1,0,1,...,Nx-1,Nx; note Nx>=1 and Ny>=1
+                   //!always, unless lambda<=0
+  PetscInt maxGHOSTS; //!< topg will be read, and topgsmooth will be created,
+                      //!with this ghosting width; thksmooth and theta can be
+                      //!filled at this ghosting level or less
 
   PetscErrorCode allocate();
   PetscErrorCode deallocate();

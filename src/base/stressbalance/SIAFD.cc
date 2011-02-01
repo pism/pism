@@ -429,7 +429,8 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
   ierr = bed_smoother->get_theta(*surface, config.get("Glen_exponent"),
                                  WIDE_STENCIL, &theta); CHKERRQ(ierr);
 
-  ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, WIDE_STENCIL,
+  ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
+                                        WIDE_STENCIL,
                                         &thk_smooth); CHKERRQ(ierr);
 
   ierr = theta.begin_access(); CHKERRQ(ierr);
@@ -568,7 +569,8 @@ PetscErrorCode SIAFD::compute_diffusivity(IceModelVec2S &result) {
   PetscScalar *delta_ij;
   IceModelVec2S thk_smooth = work_2d[0];
 
-  ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, WIDE_STENCIL,
+  ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
+                                        WIDE_STENCIL,
                                         &thk_smooth); CHKERRQ(ierr);
 
   ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
@@ -651,10 +653,10 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
 
   // aliases
   IceModelVec2S thk_smooth = work_2d[0];
-  IceModelVec3 delta[2] = {work_3d[0], work_3d[1]},
-    sigma[2] = {work_3d[2], work_3d[3]};
-
-  ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, WIDE_STENCIL,
+  IceModelVec3 delta[2] = {work_3d[0], work_3d[1]}, sigma[2] = {work_3d[2], work_3d[3]};
+    
+  ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
+                                        WIDE_STENCIL,
                                         &thk_smooth); CHKERRQ(ierr);
 
   ierr = delta[0].begin_access(); CHKERRQ(ierr);
@@ -780,10 +782,10 @@ PetscErrorCode SIAFD::compute_I() {
   PetscScalar *I_ij, *delta_ij;
 
   IceModelVec2S thk_smooth = work_2d[0];
-  IceModelVec3 delta[2] = {work_3d[0], work_3d[1]},
-    I[2] = {work_3d[2], work_3d[3]};
+  IceModelVec3 delta[2] = {work_3d[0], work_3d[1]}, I[2] = {work_3d[2], work_3d[3]};
 
-  ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, WIDE_STENCIL,
+  ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
+                                        WIDE_STENCIL,
                                         &thk_smooth); CHKERRQ(ierr);
 
   ierr = delta[0].begin_access(); CHKERRQ(ierr);
