@@ -72,6 +72,7 @@ public:
   virtual PetscErrorCode get_dim_length(const char name[], int *len) const;
   virtual PetscErrorCode get_dim_limits(const char name[], double *min, double *max) const;
 
+  virtual PetscErrorCode get_dimension(const char name[], vector<double> &result) const;
   virtual PetscErrorCode put_dimension(int varid, int len, PetscScalar *vals) const;
   virtual PetscErrorCode put_dimension_regular(int varid, int len, double start, double delta) const;
 

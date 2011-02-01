@@ -34,6 +34,13 @@ option (Pism_LOCAL_INSTALL     "Install PISM locally (not in /usr/local/ or simi
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
 
 option (Pism_BUILD_DEBIAN_PACKAGE "Use settings appropriate for building a .deb package" OFF)
+option (Pism_NETCDF4_OUTPUT        "Turn this on to make PISM produce NetCDF-4 files" OFF)
+option (Pism_NETCDF4_COMPRESS     "Tirn this on to make PISM produce compressed NetCDF-4 files" OFF)
+
+if (Pism_NETCDF4_COMPRESS AND (NOT Pism_NETCDF4_OUTPUT))
+  set (Pism_NETCDF4_OUTPUT ON CACHE BOOL "Write NetCDF-4-format PISM output files" FORCE)
+  message (STATUS "Turning 'on' Pism_WRITE_NETCDF4 to enable writing compressed NetCDF-4 files.")
+endif ()
 
 if (Pism_BUILD_DEBIAN_PACKAGE)
   set (Pism_LOCAL_INSTALL OFF CACHE BOOL "Install PISM locally" FORCE)

@@ -648,8 +648,11 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type n
   CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
   // this is all we need to turn on compression:
-  // stat = nc_def_var_deflate(ncid, varid, 0, 1, 5);
-  // CHKERRQ(check_err(stat,__LINE__,__FILE__));
+
+#if (PISM_WRITE_COMPRESSED_NETCDF4 == 1)
+  stat = nc_def_var_deflate(ncid, varid, 0, 1, 9);
+  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+#endif
 
   stat = write_attributes(nc, varid, nctype, write_in_glaciological_units); CHKERRQ(stat);
 

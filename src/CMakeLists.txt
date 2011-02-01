@@ -25,6 +25,35 @@ add_library (pismutil
 target_link_libraries (pismutil pismudunits ${Pism_EXTERNAL_LIBS})
 add_dependencies (pismutil pism_config)
 
+# Add a preprocessor flag if NetCDF-4 output was requested.
+if (Pism_NETCDF4_OUTPUT)
+  message (STATUS "PISM will write NetCDF-4 files.")
+  set_source_files_properties (base/util/nc_util.cc
+    PROPERTIES COMPILE_FLAGS -DPISM_WRITE_NETCDF4=1)
+endif ()
+
+if (Pism_NETCDF4_COMPRESS)
+  message (STATUS "PISM will use NetCDF-4 variable compression.")
+  set (NCVariable_flags "-DPISM_WRITE_COMPRESSED_NETCDF4=1")
+endif ()
+
+# Set variable storage order in PISM output files.
+if     (Pism_FAST_WRITE STREQUAL "1")
+  message (STATUS "Using the t,x,y,z variable order (fastest).")
+elseif (Pism_FAST_WRITE STREQUAL "2")
+  message (STATUS "Using the t,y,x,z variable order.")
+elseif (Pism_FAST_WRITE STREQUAL "3")
+  message (STATUS "Using the t,z,y,x variable order (slowest).")
+else ()
+  message (FATAL_ERROR "Pism_FAST_WRITE has to be set to one of 1,2,3.")
+endif ()
+
+set (NCVariable_flags "${NCVariable_flags} -DPISM_FAST_WRITE=${Pism_FAST_WRITE}")
+
+set_source_files_properties (base/util/NCVariable.cc
+  PROPERTIES COMPILE_FLAGS ${NCVariable_flags})
+
+
 # Flow laws.
 add_library (pismflowlaws
   base/rheology/flowlaw_factory.cc
@@ -89,24 +118,6 @@ add_library (pismearth
 )
 target_link_libraries (pismearth pismutil)
 
-# Set variable storage order in PISM output files.
-if (Pism_FAST_WRITE STREQUAL "1")
-  message (STATUS "Using the t,x,y,z variable order (fastest).")
-  set_source_files_properties (base/util/NCVariable.cc
-    PROPERTIES COMPILE_FLAGS -DPISM_FAST_WRITE=1)
-endif ()
-
-if (Pism_FAST_WRITE STREQUAL "2")
-  message (STATUS "Using the t,y,x,z variable order.")
-  set_source_files_properties (base/util/NCVariable.cc
-    PROPERTIES COMPILE_FLAGS -DPISM_FAST_WRITE=2)
-endif ()
-
-if (Pism_FAST_WRITE STREQUAL "3")
-  message (STATUS "Using the t,z,y,x variable order (slowest).")
-  set_source_files_properties (base/util/NCVariable.cc
-    PROPERTIES COMPILE_FLAGS -DPISM_FAST_WRITE=3)
-endif ()
 
 set_source_files_properties (base/pism_revision.cc
   PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')

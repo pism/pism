@@ -430,11 +430,14 @@ PetscErrorCode NCTool::open_for_writing(const char filename[]) {
       }
       stat = nc_set_fill(ncid, NC_NOFILL, NULL); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     } else {
-      stat = nc_create(filename, NC_CLOBBER|NC_64BIT_OFFSET, &ncid); 
-      def_mode = true;
-      // use this to create NetCDF-4 files:
-      // stat = nc_create(filename, NC_CLOBBER|NC_NETCDF4, &ncid); 
 
+#if (PISM_WRITE_NETCDF4 == 1)
+      stat = nc_create(filename, NC_CLOBBER|NC_NETCDF4, &ncid); 
+#else
+      stat = nc_create(filename, NC_CLOBBER|NC_64BIT_OFFSET, &ncid); 
+#endif
+
+      def_mode = true;
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
       stat = nc_set_fill(ncid, NC_NOFILL, NULL); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     }
@@ -560,6 +563,86 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
 
   if (min != NULL) *min = 0.0;
   if (max != NULL) *max = 0.0;
+
+  return 0;
+}
+
+PetscErrorCode NCTool::get_dimension(const char name[], vector<double> &result) const {
+  PetscErrorCode ierr;
+  int len = 0, varid = -1;
+  bool variable_exists = false;
+  size_t start = 0, count;
+
+  ierr = get_dim_length(name, &len); CHKERRQ(ierr);
+
+  if (len != 0) {
+    ierr = find_variable(name, &varid, variable_exists);
+    if (!variable_exists) {
+      ierr = PetscPrintf(com, "PISM ERROR: coordinate variable '%s' does not exist.\n",
+			 name);
+      CHKERRQ(ierr);
+      PISMEnd();
+    }
+
+    ierr = data_mode(); CHKERRQ(ierr); 
+
+    double *data = new double[len];
+
+    if (rank == 0) {
+      count = static_cast<size_t>(len);
+      ierr = nc_get_vara_double(ncid, varid, &start, &count, data); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+    }
+
+    ierr = MPI_Bcast(data, len, MPI_DOUBLE, 0, com); CHKERRQ(ierr);
+
+    char internal_units[TEMPORARY_STRING_LENGTH];
+    utUnit input, internal;
+    bool input_has_units;
+
+    if (strcmp(name, "t") == 0) {
+      // Note that this units specification does *not* have a reference date.
+      strcpy(internal_units, "seconds");
+    } else {
+      strcpy(internal_units, "meters");
+    }
+
+    if (utScan(internal_units, &internal) != 0) {
+      SETERRQ(1, "UDUNITS failed trying to scan internal units.");
+    }
+
+    // Get the units information:
+    ierr = get_units(varid, input_has_units, input); CHKERRQ(ierr);
+    if (!input_has_units) {
+      ierr = verbPrintf(3, com,
+			"PISM WARNING: dimensional variable '%s' does not have the units attribute.\n"
+			"     Assuming that it is in '%s'.\n",
+			name, internal_units); CHKERRQ(ierr);
+      utCopy(&internal, &input);
+    }
+
+    // Find the conversion coefficients:
+    double slope, intercept;
+    ierr = utConvert(&input, &internal, &slope, &intercept);
+    if (ierr != 0) {
+      if (ierr == UT_ECONVERT) {
+	ierr = PetscPrintf(com,
+			   "PISM ERROR: dimensional variable '%s' has the units that are not compatible with '%s'.\n",
+			   name, internal_units); CHKERRQ(ierr);
+	PISMEnd();
+      }
+      SETERRQ1(1, "UDUNITS failure: error code = %d", ierr);
+    }
+
+    result.resize(len);
+    for (int i = 0; i < len; ++i)
+      result[i] = intercept + data[i]*slope;
+
+    delete [] data;
+    
+    return 0;
+  } // if (len != 0)
+
+  result.resize(0);
 
   return 0;
 }
