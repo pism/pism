@@ -318,9 +318,15 @@ PetscErrorCode IceModel::createVecs() {
             "annual average ice surface temperature, below firn processes",
             "K", 
             "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
-            CHKERRQ(ierr);
+  CHKERRQ(ierr);
   // do not add; boundary models are in charge here
   // ierr = variables.add(artm); CHKERRQ(ierr);
+
+  ierr = liqfrac_surface.create(grid, "liqfrac_surface", false); CHKERRQ(ierr);
+  ierr = liqfrac_surface.set_attrs("climate_from_PISMSurfaceModel",
+                                   "liquid water fraction at the top surface of the ice",
+                                   "1", ""); CHKERRQ(ierr);
+  // ierr = variables.add(liqfrac_surface); CHKERRQ(ierr);
 
   // ice mass balance rate at the base of the ice shelf; sign convention for
   //   vshelfbasemass matches standard sign convention for basal melt rate of

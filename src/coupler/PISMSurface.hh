@@ -43,6 +43,8 @@ public:
 					       IceModelVec2S &result) = 0;
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
 						 IceModelVec2S &result) = 0;
+  virtual PetscErrorCode ice_surface_liquid_water_fraction(PetscReal t_years, PetscReal dt_years,
+                                                           IceModelVec2S &result);
   virtual PetscErrorCode mass_held_in_surface_layer(PetscReal t_years, PetscReal dt_years, 
                                                     IceModelVec2S &result);
   virtual PetscErrorCode surface_layer_thickness(PetscReal t_years, PetscReal dt_years, 

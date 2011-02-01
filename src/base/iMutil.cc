@@ -222,29 +222,33 @@ PetscErrorCode IceModel::check_maximum_thickness() {
 
   if (surface != PETSC_NULL) {
     ierr = surface->ice_surface_temperature(grid.year, 0.0, artm); CHKERRQ(ierr);
+    ierr = surface->ice_surface_liquid_water_fraction(grid.year, 0.0, liqfrac_surface); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }
 
   // for extending the variables Enth3 and vWork3d vertically, put into
   //   vWork2d[0] the enthalpy of the air
+  PetscReal p_air = EC->getPressureFromDepth(0.0);
+  ierr = liqfrac_surface.begin_access(); CHKERRQ(ierr);
   ierr = vWork2d[0].begin_access(); CHKERRQ(ierr);
   ierr = artm.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      ierr = EC->getEnthPermissive(
-         artm(i,j),0.0,EC->getPressureFromDepth(0.0),vWork2d[0](i,j));
+      ierr = EC->getEnthPermissive(artm(i,j), liqfrac_surface(i,j), p_air,
+                                   vWork2d[0](i,j));
          CHKERRQ(ierr);
     }
   }
   ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
   ierr = artm.end_access(); CHKERRQ(ierr);
+  ierr = liqfrac_surface.end_access(); CHKERRQ(ierr);
 
   // Model state 3D vectors:
   ierr =  Enth3.extend_vertically(old_Mz, vWork2d[0]); CHKERRQ(ierr);
 
   // Work 3D vectors:
-  ierr =       vWork3d.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
+  ierr = vWork3d.extend_vertically(old_Mz, 0); CHKERRQ(ierr);
 
   if (config.get_flag("do_cold_ice_methods")) {
     ierr =    T3.extend_vertically(old_Mz, artm); CHKERRQ(ierr);

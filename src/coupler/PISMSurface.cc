@@ -70,6 +70,20 @@ PetscErrorCode PISMSurfaceModel::surface_layer_thickness(PetscReal t_years, Pets
   return 0;
 }
 
+//! \brief Returns the liquid water fraction of the ice at the top ice surface.
+/*!
+ * Most PISM surface models return 0.
+ */
+PetscErrorCode PISMSurfaceModel::ice_surface_liquid_water_fraction(PetscReal t_years, PetscReal dt_years,
+                                                                   IceModelVec2S &result) {
+  PetscErrorCode ierr;
+
+  ierr = result.set(0.0); CHKERRQ(ierr);
+
+  return 0;
+}
+
+
 
 PetscErrorCode PISMSurfaceModel::write_model_state(PetscReal t_years, PetscReal dt_years,
 						    string filename) {

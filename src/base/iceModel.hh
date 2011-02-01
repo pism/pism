@@ -153,6 +153,7 @@ protected:
         vtillphi,	//!< friction angle for till under grounded ice sheet; no ghosts
     acab,		//!< accumulation/ablation rate; no ghosts
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
+    liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
     shelfbmassflux,	//!< ice mass flux into the ocean at the shelf base; no ghosts
     cell_area;		//!< cell areas (computed using the WGS84 datum)

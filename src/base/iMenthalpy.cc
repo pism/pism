@@ -365,7 +365,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   //    mass balance lower boundary under shelves
   if (surface != PETSC_NULL) {
     ierr = surface->ice_surface_temperature(grid.year, dtTempAge / secpera, artm);
-        CHKERRQ(ierr);
+    ierr = surface->ice_surface_liquid_water_fraction(grid.year, dtTempAge / secpera,
+                                                      liqfrac_surface); CHKERRQ(ierr);
+    CHKERRQ(ierr);
   } else {
     SETERRQ(4,"PISM ERROR: surface == PETSC_NULL");
   }
@@ -382,6 +384,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
 
   // get other map-plane fields
+  ierr = liqfrac_surface.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vHmelt.begin_access(); CHKERRQ(ierr);
   ierr = vbmr.begin_access(); CHKERRQ(ierr);
@@ -420,9 +423,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       // enthalpy and pressures at top of ice
       const PetscScalar p_ks = EC->getPressureFromDepth(vH(i,j) - fzlev[ks]); // FIXME task #7297
       PetscScalar Enth_ks;
-      // in theory we could have a water fraction at k=ks level, but for
-      //   now there is no case where we have that:
-      ierr = EC->getEnthPermissive(artm(i,j), 0.0, p_ks,  Enth_ks); CHKERRQ(ierr);
+
+      ierr = EC->getEnthPermissive(artm(i,j), liqfrac_surface(i,j), p_ks,  Enth_ks); CHKERRQ(ierr);
 
       const bool is_floating = vMask.is_floating(i,j),
         is_grounded = !is_floating;
@@ -759,6 +761,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   ierr = Rb->end_access(); CHKERRQ(ierr);
   ierr = vGhf.end_access(); CHKERRQ(ierr);
   ierr = vbmr.end_access(); CHKERRQ(ierr);
+  ierr = liqfrac_surface.end_access(); CHKERRQ(ierr);
 
   ierr = Tb3.end_access(); CHKERRQ(ierr);
   ierr = u3->end_access(); CHKERRQ(ierr);

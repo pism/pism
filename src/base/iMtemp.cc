@@ -160,8 +160,7 @@ This method should be kept because it is worth having alternative physics, and
   the column minus the bulge maximum (15 K) if it is below that level.  The number of 
   times this occurs is reported as a "BPbulge" percentage.
   */
-  PetscErrorCode IceModel::temperatureStep(
-                                           PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {
+  PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {
     PetscErrorCode  ierr;
 
     // set up fine grid in ice and bedrock
