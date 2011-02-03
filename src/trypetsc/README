@@ -1,55 +1,34 @@
-This directory contains example PETSc source codes, some 
-copied straight from PETSc (like the Bratu example, in different PETSc
-versions).  Others are by the PISM authors but are close
-to PETSc example codes anyway.  All of these examples relate to "PETSc-
-technicalities" of relevance to PISM.
+This directory contains example PETSc-using source codes by the PISM authors.
+Some are close to PETSc example codes anyway.  All of these examples relate to
+"PETSc-technicalities" of relevance to PISM.
 
-The makefile documents where the various codes came from.
-
-Compiling and running these allows a user to test whether PETSc
-itself is installed properly, as a way of testing
-PETSc before building PISM.
-
-The following usage examples should work if PETSc 2.3.3 or 3.0.? or 3.1.?
-is installed properly, even if other libraries needed by PISM are not yet
+Among other uses, compiling and running these allows a user to test whether
+PETSc itself is installed properly.  This is a way of testing
+PETSc before building PISM.  These examples should work in PETSc 3.1 if it is
+installed properly, even if other libraries needed by PISM are not yet
 installed (e.g. NetCDF, FFTW).
-
-
------------------------
-REGARDING PETSC VERSIONS
------------------------
-
-The makefile in this directory demostrates how we determine which make
-system to use.  There is at least one significant difference between the
-make system in PETSc 2.3.3 and 3.0.0.  Also incompatibilities in the API.
-If using 3.0.0 try:
-
-$ make ex5_petsc3
-$ ./ex5_petsc3
-Number of Newton iterations = 4
-
-Note poisson.c has a precompiler directive to work under either 2.3.3 
-or 3.0.0.  localVecMax.c works unmodified under either.
-
-Here is an example only for 2.3.3 or earlier:
-
-$ make ex5_petsc2  # Bratu DA/SNES example from PETSc
-$ ./ex5_petsc2
-Number of Newton iterations = 4
 
 
 -----------------------
 BUILD ERRORS
 -----------------------
-If there is an error 
-   "makefile: ... /bmake/common/base: No such file or directory"
-or similar then
+If there is an error similar to
+  """
+    makefile:3: SOMEDIR/conf/variables: No such file or directory
+    makefile:4: SOMEDIR/conf/rules: No such file or directory
+    make: *** No rule to make target `SOMEDIR/conf/rules'.  Stop.
+  """
+then
    ***  PETSC_DIR is not set properly  ***
    ***  see PISM Installation Manual  ***
 
-If there is an error
-   "..../bmake/FOO/petscconf: No such file or directory"
+If there is an error similar to
+  """
+/home/bueler/petsc-3.1//conf/variables:119: /home/bueler/petsc-3.1//foobar/conf/petscvariables: No such file or directory
+/home/bueler/petsc-3.1//conf/rules:1006: /home/bueler/petsc-3.1//foobar/conf/petscrules: No such file or directory
+make: *** No rule to make target `/home/bueler/petsc-3.1//foobar/conf/petscrules'.  Stop.
+  """
 or similar then
-   ***  PETSC_ARCH is not set properly (as it is set to FOO)  ***
+   ***  PETSC_ARCH is not set properly (as it is set to "foobar")  ***
    ***  see PISM Installation Manual  ***
 

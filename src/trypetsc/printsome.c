@@ -1,5 +1,5 @@
 
-/* Program usage:  mpiexec ex2 [-help] [all PETSc options] */
+/* Program usage:  mpiexec -n NN ./printsome [-help] [all PETSc options] */
 
 static char help[] = "Synchronized printing.\n"
                      "Modification by Bueler, of src/sys/examples/tutorials/ex2.c,\n"
