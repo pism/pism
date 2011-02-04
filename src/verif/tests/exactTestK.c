@@ -37,7 +37,7 @@
 
 #define H0             3000.0       /* m */
 #define B0             1000.0       /* m */
-#define Ts             223.15       /* m */
+#define Ts             223.15       /* K */
 #define G              0.042        /* W/(m^2) */
 #define phi            0.0125       /* K/m */
 

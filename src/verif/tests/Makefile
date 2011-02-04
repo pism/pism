@@ -1,3 +1,7 @@
+# makefile merely for the local task of building the simple programs that 
+# evaluate the exact solution codes themselves; no verification of a numerical
+# scheme, much less PISM runs, here!
+
 .PHONY : all
 all : simpleABCD simpleE simpleFG simpleH simpleI simpleJ simpleK simpleL simpleM simpleN
 
@@ -36,6 +40,9 @@ simpleM : simpleM.o exactTestM.o
 
 simpleN : simpleN.o exactTestN.o
 	$(CC) -lm $^ -o $@
+
+simpleO : simpleO.o exactTestO.o
+	$(CC) $^ -o $@
 
 .PHONY: clean
 clean:
