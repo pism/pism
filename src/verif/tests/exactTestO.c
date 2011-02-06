@@ -100,18 +100,12 @@ int exactO(const double z, double *TT, double *Tm, double *qice, double *qbed, d
 
   if (z > H0) {
     *TT = Ts;                       /* K; in air above ice */
-    return 1;
   } else if (z >= 0.0) {
     *TT = *Tm + (Ts - *Tm) * (z / H0); /* in ice */
-    return 0;
-  } else {                             /* in bedrock */
-    *TT = *Tm - (G / k_BEDROCK) * z;
-     if (z >= -B0)
-       return 0;                       /* within modeled layer */
-     else
-       return 1;                       /* below modeled layer */
+  } else {
+    *TT = *Tm - (G / k_BEDROCK) * z;   /* in bedrock */
   }
-
+  return 0;
 }
 
 

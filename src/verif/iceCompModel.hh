@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -84,12 +84,16 @@ protected:
   
   IceModelVec3   SigmaComp3;
 
-  // related to test K; see iCMthermo.cc
-  PetscErrorCode initTestK();
-  PetscErrorCode fillSolnTestK();  // only used with exactOnly == PETSC_TRUE
-  PetscErrorCode computeIceBedrockTemperatureErrors( // test K only
+  // related to tests K and O; see iCMthermo.cc
+  PetscErrorCode initTestsKO();
+  PetscErrorCode fillTemperatureSolnTestsKO();  // used in initialzation
+                                                //   and with exactOnly == PETSC_TRUE
+  PetscErrorCode fillBasalMeltRateSolnTestO();  // used only with exactOnly == PETSC_TRUE
+  PetscErrorCode computeIceBedrockTemperatureErrors( // tests K and O only
                    PetscScalar &gmaxTerr, PetscScalar &gavTerr,
                    PetscScalar &gmaxTberr, PetscScalar &gavTberr);
+  PetscErrorCode computeBasalMeltRateErrors( // test O only
+                   PetscScalar &gmaxbmelterr, PetscScalar &gminbmelterr);
 
 
 private:

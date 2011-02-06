@@ -155,6 +155,14 @@ def plot_tests(nc, list_of_tests):
                                    "maximum_bedrock_temperature", "average_bedrock_temperature"],
                         'K', "temperature errors")
 
+        # test O temperature and basal melt rate errors:
+        if (test_name == 'O'):
+            plot_errors(nc, 'dz', ["maximum_temperature", "average_temperature",
+                                   "maximum_bedrock_temperature", "average_bedrock_temperature"],
+                        'K', "temperature errors")
+            plot_errors(nc, 'dz', ["maximum_basal_melt_rate"],
+                        'O', "basal melt rate errors")
+
 def print_help():
     print """Usage:
 -i            specifies an input file, a result of running pismv (or vfnow.py)
@@ -205,3 +213,4 @@ except getopt.GetoptError:
     print "Processing command-line options failed."
     print_help()
     sys.exit(1)
+

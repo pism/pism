@@ -5,15 +5,15 @@
 ## \brief A script for verification of numerical schemes in PISM.
 ## \details It specifies a refinement path for each of Tests ABCDEFGIJKL and runs
 ## pismv accordingly.
-## Copyright (C) 2007--2010 Ed Bueler and Constantine Khroulev
+## Copyright (C) 2007--2011 Ed Bueler and Constantine Khroulev
 ##
 ## Organizes the process of verifying PISM.  It specifies standard refinement paths for each of the tests described in the user manual.  It runs the tests, times them, and summarizes the numerical errors reported at the end.
 ##
 ## Examples:
 ##    - \verbatim vfnow.py \endverbatim use one processor and do three levels of refinement; this command is equivalent to \verbatim vfnow.py -n 2 -l 2 -t CGIJ \endverbatim,
 ##    - \verbatim vfnow.py -n 8 -l 5 -t J --prefix=bin/ --mpido='aprun -n' \endverbatim will use \verbatim aprun -n 8 bin/pismv \endverbatim as the command and do five levels (the maximum) of refinement only on test J,
-##    - \verbatim vfnow.py -n 2 -l 3 -t CEIJGKL \endverbatim uses two processers (cores) and runs in about an hour,
-##    - \verbatim vfnow.py -n 40 -l 5 -t ABCDEFGIJKL \endverbatim will use forty processors to do all possible verification as managed by \c vfnow.py; don't run this unless you have a big computer and you are prepared to wait.
+##    - \verbatim vfnow.py -n 2 -l 3 -t CEIJGKLO \endverbatim uses two processers (cores) and runs in about an hour,
+##    - \verbatim vfnow.py -n 40 -l 5 -t ABCDEFGIJKLO \endverbatim will use forty processors to do all possible verification as managed by \c vfnow.py; don't run this unless you have a big computer and you are prepared to wait.
 ## For a list of options do \verbatim test/vfnow.py --help \endverbatim.
 ## Timing information is given in the \c vfnow.py output so performance, including parallel performance, can be assessed along with accuracy. 
 
@@ -210,7 +210,8 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     K.My   = K.Mx
     K.Mz   = array([41, 81, 161, 321, 641])
     K.Mbz  = (K.Mz - 1) / 4 + 1
-    K.opts = "-y 130000.0 -Lbz 1000"
+    K.opts = "-y 130000.0 -Lbz 1000" # FIXME  adding "-z_spacing equal -zb_spacing equal"
+                                     #        changes results far too much!
     tests['K'] = K
     # L
     L = PISMVerificationTest()
@@ -231,6 +232,17 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     M.Mz   = [11] * 5
     M.opts = "-ssa_rtol %1.e -ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
     tests['M'] = M
+    # O
+    O = PISMVerificationTest()
+    O.name = "O"
+    O.test = "basal melt rate from conduction problem in ice and bedrock"
+    O.path = "(refine dz=100,50,25,12.5,6.25,m, Mz=41,81,161,321,641)"
+    O.Mx   = [8] * 5
+    O.My   = O.Mx
+    O.Mz   = array([41, 81, 161, 321, 641])
+    O.Mbz  = (O.Mz - 1) / 4 + 1
+    O.opts = "-z_spacing equal -zb_spacing equal -Lbz 1000 -y 1000 -no_mass"
+    tests['O'] = O
 
     # test K (for a figure in the User's Manual)
     K = PISMVerificationTest()
@@ -327,7 +339,7 @@ try:
   -n,--nproc=   specify number of processors to MPI
   -p,--prefix=  path prefix to pismv executable
   -r,--report_file=  name of the NetCDF error report file
-  -t,--tests=   verification tests to use: A,B,C,D,E,F,G,H,I,J,K,L,M
+  -t,--tests=   verification tests to use: A,B,C,D,E,F,G,H,I,J,K,L,M,O
   -u            use unequal spaced (quadratic) vertical spacing
   --userman     run tests necessary to produce figures in the User's Manual
   --debug       do not run PISM, just print commands

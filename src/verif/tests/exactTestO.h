@@ -38,9 +38,6 @@ Also fills these z-independent quantities:
      qice  = upward heat flux (J m-2 s-1) within the ice, 0 <= z < H0
      qbed  = upward heat flux (J m-2 s-1) within the bedrock, -B0 < z < 0
      bmelt = exact solution for melt rate (ice-equivalent m s-1) at base (z=0)
-
-Returns 1 if  z < - B0 = -1000.0 m  or  z > H0 = 3000.0 m,  otherwise returns
-zero (success).
  */
 
 int exactO(const double z, double *TT, double *Tm, double *qice, double *qbed, 

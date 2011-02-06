@@ -20,6 +20,7 @@
 #include <petscda.h>
 #include "tests/exactTestsFG.h" 
 #include "tests/exactTestK.h" 
+#include "tests/exactTestO.h" 
 #include "iceCompModel.hh"
 
 // boundary conditions for tests F, G (same as EISMINT II Experiment F)
@@ -341,26 +342,40 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
                                 PetscScalar &gmaxTberr, PetscScalar &gavTberr) {
   PetscErrorCode ierr;
 
-  if (testname != 'K')
-    SETERRQ(1,"ice and bedrock temperature errors only computable for test K\n");
+  if ((testname != 'K') && (testname != 'O'))
+    SETERRQ(1,"ice and bedrock temperature errors only computable for tests K and O\n");
 
   PetscScalar    maxTerr = 0.0, avTerr = 0.0, avcount = 0.0;
   PetscScalar    maxTberr = 0.0, avTberr = 0.0, avbcount = 0.0;
   const PetscInt    Mz = grid.Mz, Mbz = grid.Mbz;
  
-  PetscScalar    *Tex, *Tbex, *T;
+  PetscScalar    *Tex, *Tbex, *T, *Tb;
   Tex = new PetscScalar[Mz];  
   Tbex = new PetscScalar[Mbz];
 
-  PetscScalar *Tb;
-
-  for (PetscInt k = 0; k < Mz; k++) {
-    ierr = exactK(grid.year * secpera, grid.zlevels[k], &Tex[k],(bedrock_is_ice_forK==PETSC_TRUE));
+  switch (testname) {
+    case 'K':
+      for (PetscInt k = 0; k < Mz; k++) {
+        ierr = exactK(grid.year * secpera, grid.zlevels[k], &Tex[k],
+                      (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
+      }
+      for (PetscInt k = 0; k < Mbz; k++) {
+        ierr = exactK(grid.year * secpera, grid.zblevels[k], &Tbex[k],
+                      (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
+      }
+      break;
+    case 'O':
+      PetscScalar dum1, dum2, dum3, dum4;
+      for (PetscInt k = 0; k < Mz; k++) {
+        ierr = exactO(grid.zlevels[k], &Tex[k], &dum1, &dum2, &dum3, &dum4);
              CHKERRQ(ierr);
-  }
-  for (PetscInt k = 0; k < Mbz; k++) {
-    ierr = exactK(grid.year * secpera, grid.zblevels[k], &Tbex[k],(bedrock_is_ice_forK==PETSC_TRUE));
+      }
+      for (PetscInt k = 0; k < Mbz; k++) {
+        ierr = exactO(grid.zblevels[k], &Tbex[k], &dum1, &dum2, &dum3, &dum4);
              CHKERRQ(ierr);
+      }
+      break;
+    default: SETERRQ(2,"again: ice and bedrock temperature errors only for tests K and O\n");
   }
     
   ierr = T3.begin_access(); CHKERRQ(ierr);
@@ -599,23 +614,67 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(
 }
 
 
-PetscErrorCode IceCompModel::fillSolnTestK() {
+PetscErrorCode IceCompModel::computeBasalMeltRateErrors(
+                   PetscScalar &gmaxbmelterr, PetscScalar &gminbmelterr) {
+  PetscErrorCode ierr;
+  PetscScalar    maxbmelterr = -9.99e40, minbmelterr = 9.99e40, err;
+  PetscScalar    bmelt,dum1,dum2,dum3,dum4;
+
+  if (testname != 'O')
+    SETERRQ(1,"basal melt rate errors are only computable for test O\n");
+
+  // we just need one constant from exact solution:
+  ierr = exactO(0.0, &dum1, &dum2, &dum3, &dum4, &bmelt); CHKERRQ(ierr);
+
+  ierr = vbmr.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+      err = PetscAbs(vbmr(i,j) - bmelt);
+      maxbmelterr = PetscMax(maxbmelterr, err);
+      minbmelterr = PetscMin(minbmelterr, err);
+    }
+  }
+  ierr = vbmr.end_access(); CHKERRQ(ierr);
+
+  ierr = PetscGlobalMax(&maxbmelterr, &gmaxbmelterr, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMin(&minbmelterr, &gminbmelterr, grid.com); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::fillTemperatureSolnTestsKO() {
   PetscErrorCode    ierr;
   const PetscInt    Mz = grid.Mz, 
-                    Mbz = grid.Mbz; 
+                    Mbz = grid.Mbz;
 
   PetscScalar       *Tcol, *Tbcol;
+  PetscScalar       dum1, dum2, dum3, dum4;
   Tcol = new PetscScalar[Mz];
   Tbcol = new PetscScalar[Mbz];
 
   // evaluate exact solution in a column; all columns are the same
-  for (PetscInt k=0; k<Mz; k++) {
-    ierr = exactK(grid.year * secpera, grid.zlevels[k], &Tcol[k],(bedrock_is_ice_forK==PETSC_TRUE));
-             CHKERRQ(ierr);
-  }
-  for (PetscInt k=0; k<Mbz; k++) {
-    if (exactK(grid.year * secpera, grid.zblevels[k], &Tbcol[k],(bedrock_is_ice_forK==PETSC_TRUE)) != 0)
-      SETERRQ1(1,"exactK() reports that level %9.7f is below B0 = -1000.0 m\n", grid.zblevels[k]);
+  switch (testname) {
+    case 'K':
+      for (PetscInt k=0; k<Mz; k++) {
+        ierr = exactK(grid.year * secpera, grid.zlevels[k], &Tcol[k],
+                      (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
+      }
+      for (PetscInt k=0; k<Mbz; k++) {
+        if (exactK(grid.year * secpera, grid.zblevels[k], &Tbcol[k],
+                   (bedrock_is_ice_forK==PETSC_TRUE)))
+          SETERRQ1(1,"exactK() reports that level %9.7f is below B0 = -1000.0 m\n",
+                   grid.zblevels[k]);
+      }
+      break;
+    case 'O':
+      for (PetscInt k=0; k<Mz; k++) {
+        ierr = exactO(grid.zlevels[k], &Tcol[k], &dum1, &dum2, &dum3, &dum4); CHKERRQ(ierr);
+      }
+      for (PetscInt k=0; k<Mbz; k++) {
+        ierr = exactO(grid.zblevels[k], &Tbcol[k], &dum1, &dum2, &dum3, &dum4); CHKERRQ(ierr);
+      }
+      break;
+    default:  SETERRQ(2,"only fills temperature solutions for tests K and O\n");
   }
 
   // copy column values into 3D arrays
@@ -639,7 +698,20 @@ PetscErrorCode IceCompModel::fillSolnTestK() {
 }
 
 
-PetscErrorCode IceCompModel::initTestK() {
+PetscErrorCode IceCompModel::fillBasalMeltRateSolnTestO() {
+  PetscErrorCode    ierr;
+  PetscScalar       bmelt, dum1, dum2, dum3, dum4;
+  if (testname != 'O') { SETERRQ(1,"only fills basal melt rate soln for test O\n"); }
+
+  // we just need one constant from exact solution:
+  ierr = exactO(0.0, &dum1, &dum2, &dum3, &dum4, &bmelt); CHKERRQ(ierr);
+
+  ierr = vbmr.set(bmelt); CHKERRQ(ierr);
+  return 0;
+}
+
+
+PetscErrorCode IceCompModel::initTestsKO() {
   PetscErrorCode    ierr;
   
   ierr = acab.set(0.0); CHKERRQ(ierr);
@@ -652,7 +724,7 @@ PetscErrorCode IceCompModel::initTestK() {
   ierr = vHmelt.set(0.0); CHKERRQ(ierr);
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
 
-  ierr = fillSolnTestK(); CHKERRQ(ierr);
+  ierr = fillTemperatureSolnTestsKO(); CHKERRQ(ierr);
   return 0;
 }
 

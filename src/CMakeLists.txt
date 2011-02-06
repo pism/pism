@@ -136,6 +136,7 @@ add_library (pismverif
   verif/iceExactSSAModel.cc
   verif/tests/exactTestH.c
   verif/tests/exactTestK.c
+  verif/tests/exactTestO.c
   verif/tests/exactTestL.c
   verif/tests/exactTestM.c
   verif/tests/exactTestsABCDE.c

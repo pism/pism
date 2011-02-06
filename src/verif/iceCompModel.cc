@@ -114,6 +114,7 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
     grid.Lz = 4000;
     break;
   case 'K':
+  case 'O':
     // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
     grid.Mbz = 2;
     grid.Lx = grid.Ly = 1000e3;
@@ -156,7 +157,7 @@ PetscErrorCode IceCompModel::setFromOptions() {
   } else
     config.set_string("bed_deformation_model", "none");
 
-  if ((testname == 'F') || (testname == 'G') || (testname == 'K')) {
+  if ((testname == 'F') || (testname == 'G') || (testname == 'K') || (testname == 'O')) {
     config.set_flag("do_temp", true);
     // essentially turn off run-time reporting of extremely low computed
     // temperatures; *they will be reported as errors* anyway
@@ -173,8 +174,8 @@ PetscErrorCode IceCompModel::setFromOptions() {
     config.set_flag("ocean_kill", false);
   }
 
-  // special considerations for K wrt thermal bedrock and pressure-melting
-  if (testname == 'K') {
+  // special considerations for K and O wrt thermal bedrock and pressure-melting
+  if ((testname == 'K') || (testname == 'O')) {
     allowAboveMelting = PETSC_FALSE; // test K
   } else {
     // note temps are generally allowed to go above pressure melting in verify
@@ -269,6 +270,7 @@ PetscErrorCode IceCompModel::init_physics() {
   return 0;
 }
 
+
 PetscErrorCode IceCompModel::set_vars_from_options() {
   PetscErrorCode ierr;
 
@@ -280,10 +282,13 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
 
   ierr = verbPrintf(3,grid.com, "initializing Test %c from formulas ...\n",testname);  CHKERRQ(ierr);
 
-  // all have no uplift or Hmelt (or basal melt)
+  // all have no uplift
   ierr = vuplift.set(0.0); CHKERRQ(ierr);
-  ierr = vHmelt.set(0.0); CHKERRQ(ierr);
-  ierr = vbmr.set(0.0); CHKERRQ(ierr);
+
+  ierr = vbmr.set(0.0); CHKERRQ(ierr); // this is the correct initialization for
+                                       // Test O (and every other Test; they
+                                       // all generate zero basal melt rate)
+  ierr = vHmelt.set(0.0); CHKERRQ(ierr); // ditto
 
   // Test-specific initialization:
   switch (testname) {
@@ -300,7 +305,8 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
     ierr = initTestFG(); CHKERRQ(ierr);  // see iCMthermo.cc
     break;
   case 'K':
-    ierr = initTestK(); CHKERRQ(ierr);  // see iCMthermo.cc
+  case 'O':
+    ierr = initTestsKO(); CHKERRQ(ierr);  // see iCMthermo.cc
     break;
   case 'L':
     ierr = initTestL(); CHKERRQ(ierr);
@@ -700,12 +706,13 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
           exactH(f,grid.year*secpera,r,&Hexact,&dummy);
           break;
         case 'K':
+        case 'O':
           Hexact = 3000.0;
           break;
         case 'L':
           Hexact = HexactL[i][j];
           break;
-        default:  SETERRQ(1,"test must be A, B, C, D, E, F, G, H, K, or L");
+        default:  SETERRQ(1,"test must be A, B, C, D, E, F, G, H, K, L, or O");
       }
 
       if (Hexact > 0) {
@@ -818,7 +825,7 @@ PetscErrorCode IceCompModel::additionalAtStartTimestep() {
     dt_force = config.get("maximum_time_step_years") * secpera;
 
   // these have no changing boundary conditions or comp sources:
-  if (strchr("ABEKL",testname) != NULL) 
+  if (strchr("ABEKLO",testname) != NULL) 
     return 0;
 
   switch (testname) {
@@ -865,20 +872,24 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
     case 'C':
     case 'D':
     case 'H':
-      ierr = fillSolnTestABCDH();
+      ierr = fillSolnTestABCDH(); CHKERRQ(ierr);
       break;
     case 'E':
-      ierr = fillSolnTestE();
+      ierr = fillSolnTestE(); CHKERRQ(ierr);
       break;
     case 'F':
     case 'G':
-      ierr = fillSolnTestFG();  // see iCMthermo.cc
+      ierr = fillSolnTestFG(); CHKERRQ(ierr); // see iCMthermo.cc
       break;
     case 'K':
-      ierr = fillSolnTestK();  // see iCMthermo.cc
+      ierr = fillTemperatureSolnTestsKO(); CHKERRQ(ierr); // see iCMthermo.cc
+      break;
+    case 'O':
+      ierr = fillTemperatureSolnTestsKO(); CHKERRQ(ierr); // see iCMthermo.cc
+      ierr = fillBasalMeltRateSolnTestO(); CHKERRQ(ierr); // see iCMthermo.cc
       break;
     case 'L':
-      ierr = fillSolnTestL();
+      ierr = fillSolnTestL(); CHKERRQ(ierr);
       break;
     default:  SETERRQ(1,"unknown testname in IceCompModel");
   }
@@ -894,21 +905,26 @@ PetscErrorCode IceCompModel::summary(bool /* tempAndAge */) {
 
 
 PetscErrorCode IceCompModel::reportErrors() {
-  // geometry errors to report (for all tests): 
+  // geometry errors to report (for all tests except K and O): 
   //    -- max thickness error
   //    -- average (at each grid point on whole grid) thickness error
   //    -- max (thickness)^(2n+2)/n error
   //    -- volume error
   //    -- area error
-  // and temperature errors (for tests F & G):
+  // and temperature errors (for tests F & G & K & O):
   //    -- max T error over 3D domain of ice
   //    -- av T error over 3D domain of ice
   // and basal temperature errors (for tests F & G):
   //    -- max basal temp error
   //    -- average (at each grid point on whole grid) basal temp error
+  // and bedrock temperature errors (for tests K & O):
+  //    -- max Tb error over 3D domain of bedrock
+  //    -- av Tb error over 3D domain of bedrock
   // and strain-heating (Sigma) errors (for tests F & G):
   //    -- max Sigma error over 3D domain of ice (in 10^-3 K a^-1)
   //    -- av Sigma error over 3D domain of ice (in 10^-3 K a^-1)
+  // and basal melt rate error (for test O):
+  //    -- max bmelt error over base of ice
   // and surface velocity errors (for tests F & G):
   //    -- max |<us,vs> - <usex,vsex>| error
   //    -- av |<us,vs> - <usex,vsex>| error
@@ -965,8 +981,9 @@ PetscErrorCode IceCompModel::reportErrors() {
     err.short_name = "test";
     ierr = err.write(filename, (size_t)start, (double)testname, NC_BYTE); CHKERRQ(ierr);
   }
+
   // geometry (thickness, vol) errors if appropriate; reported in m except for relmaxETA
-  if (testname != 'K') {
+  if ((testname != 'K') && (testname != 'O')) {
     PetscScalar volexact, areaexact, domeHexact, volerr, areaerr, maxHerr, avHerr,
                 maxetaerr, centerHerr;
     ierr = computeGeometryErrors(volexact,areaexact,domeHexact,
@@ -1004,7 +1021,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     }
   }
 
-  // temperature errors if appropriate; reported in K
+  // temperature errors for F and G
   if ((testname == 'F') || (testname == 'G')) {
     PetscScalar maxTerr, avTerr, basemaxTerr, baseavTerr, basecenterTerr;
     ierr = computeTemperatureErrors(maxTerr, avTerr); CHKERRQ(ierr);
@@ -1035,7 +1052,7 @@ PetscErrorCode IceCompModel::reportErrors() {
       ierr = err.write(filename, (size_t)start, baseavTerr); CHKERRQ(ierr);
     }
 
-  } else if (testname == 'K') {
+  } else if ((testname == 'K') || (testname == 'O')) {
     PetscScalar maxTerr, avTerr, maxTberr, avTberr;
     ierr = computeIceBedrockTemperatureErrors(maxTerr, avTerr, maxTberr, avTberr);
        CHKERRQ(ierr);
@@ -1150,6 +1167,29 @@ PetscErrorCode IceCompModel::reportErrors() {
       err.short_name = "relative_basal_velocity";
       ierr = err.set_units("percent"); CHKERRQ(ierr);
       ierr = err.write(filename, (size_t)start, (avvecerr/exactmaxspeed)*100); CHKERRQ(ierr);
+    }
+  }
+
+  // basal melt rate errors if appropriate; reported in m/a
+  if (testname == 'O') {
+    PetscScalar maxbmelterr, minbmelterr;
+    ierr = computeBasalMeltRateErrors(maxbmelterr, minbmelterr); CHKERRQ(ierr);
+    if (maxbmelterr != minbmelterr) {
+       ierr = verbPrintf(1,grid.com, 
+          "IceCompModel WARNING: unexpected Test O situation: max and min of bmelt error\n"
+          "  are different: maxbmelterr = %f, minbmelterr = %f\n", 
+          maxbmelterr * secpera, minbmelterr * secpera); CHKERRQ(ierr);
+    }
+    ierr = verbPrintf(1,grid.com, 
+       "basal melt:  max\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, "           %11.5f\n", maxbmelterr*secpera); CHKERRQ(ierr);
+
+    if (netcdf_report) {
+      err.reset();
+      err.short_name = "maximum_basal_melt_rate";
+      ierr = err.set_units("m/s"); CHKERRQ(ierr);
+      ierr = err.set_glaciological_units("meters/year"); CHKERRQ(ierr);
+      ierr = err.write(filename, (size_t)start, maxbmelterr); CHKERRQ(ierr);
     }
   }
 
