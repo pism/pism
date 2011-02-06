@@ -234,7 +234,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vdHdt); CHKERRQ(ierr);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
-  ierr = vtauc.create(grid, "tauc", false); CHKERRQ(ierr);
+  ierr = vtauc.create(grid, "tauc", true, WIDE_STENCIL); CHKERRQ(ierr);
   // PROPOSED standard_name = land_ice_basal_material_yield_stress
   ierr = vtauc.set_attrs("diagnostic", 
              "yield stress for basal till (plastic or pseudo-plastic model)",
