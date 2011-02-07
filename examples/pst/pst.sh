@@ -49,9 +49,8 @@ set -e  # exit on error
 # function to run "pisms -pst" on NN processors
 mpst()
 {
-    # run pisms from the bin directory for the current PISM;
-    #   (change the next line if using "mpirun" or a different pisms or etc.)
-    cmd="mpiexec -n $1 ../../bin/pisms -prof -pst $2"
+    # run pisms (change if using "mpirun" or a different pisms or etc.)
+    cmd="mpiexec -n $1 pisms -prof -pst $2"
     
     echo "date = '`date`' on host '`uname -n`':"
     echo "trying '$cmd'"

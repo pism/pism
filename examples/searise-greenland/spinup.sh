@@ -164,9 +164,9 @@ PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -e 3"
 
 # coupler settings for pre-spinup
 TUNEDCLIMATE="-config_override config_269.0_0.001_0.80_-0.500_9.7440.nc"
-COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd ${TUNEDCLIMATE}"
+COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -pdd_annualize ${TUNEDCLIMATE}"
 # coupler settings for spin-up (i.e. with forcing)
-COUPLER_FORCING="-atmosphere searise_greenland,forcing -surface pdd ${TUNEDCLIMATE} -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,forcing -dSLforcing $PISM_SLSERIES"
+COUPLER_FORCING="-atmosphere searise_greenland,forcing -surface pdd -pdd_annualize ${TUNEDCLIMATE} -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,forcing -dSLforcing $PISM_SLSERIES"
 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
@@ -191,7 +191,7 @@ cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -boot_file $INNAME $COARSEGRID \
 $PISM_DO $cmd
 
 
-# quick look at climate in several century period; see also delta_T in pism_dT.nc
+# quick look at climate in 500 a recent period; see also delta_T in pism_dT.nc
 CLIMSTARTTIME=-500
 PRE0CLIMATE=g${CS}km_climate${CLIMSTARTTIME}a.nc
 PCLIM="${PISM_PREFIX}pclimate"
@@ -199,6 +199,15 @@ echo
 echo "$SCRIPTNAME  running pclimate to show climate in modern period [${CLIMSTARTTIME} a,0 a], using current geometry and 10 year subintervals"
 cmd="$PISM_MPIDO $NN $PCLIM -i $PRE0NAME $COUPLER_FORCING \
   -ys $CLIMSTARTTIME -ye 0 -dt 10.0 -o $PRE0CLIMATE"
+$PISM_DO $cmd
+
+
+# quick look at climate in 5 a recent period
+PRE1CLIMATE=g${CS}km_climate-5a.nc
+echo
+echo "$SCRIPTNAME  running pclimate to show yearly cycle in climate; in five years [-5 a,0 a]; using current geometry and 0.1 year subintervals"
+cmd="$PISM_MPIDO $NN $PCLIM -i $PRE0NAME $COUPLER_FORCING \
+  -ys -5 -ye 0 -dt 0.1 -o $PRE1CLIMATE"
 $PISM_DO $cmd
 
 
