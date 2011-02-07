@@ -243,7 +243,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
       tmp = intercept + slope*default_value;
       
       ierr = verbPrintf(2, com, 
-			"  absent %-10s/ %-60s\n   %-16s\\ not found; using default constant %7.2f (%s)\n",
+			"  absent %-10s/ %-10s\n   %-16s\\ not found; using default constant %7.2f (%s)\n",
 			short_name.c_str(),
 			strings["long_name"].c_str(),
 			"", tmp,
@@ -252,7 +252,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
       ierr = VecSet(v, default_value); CHKERRQ(ierr);
     } else {			// otherwise leave it alone
       ierr = verbPrintf(2, com, 
-			"  absent %-10s/ %-60s\n   %-16s\\ not found; continuing without setting it\n",
+			"  absent %-10s/ %-10s\n   %-16s\\ not found; continuing without setting it\n",
 			short_name.c_str(),
 			strings["long_name"].c_str(), "");
       CHKERRQ(ierr);
@@ -523,7 +523,7 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
 
     if (found_by_standard_name) {
       ierr = verbPrintf(2, com, 
-			" %-10s/ standard_name=%-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+			" %-10s/ standard_name=%-10s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
 			short_name.c_str(),
 			strings["standard_name"].c_str(), "", min, max,
 			strings["glaciological_units"].c_str()); CHKERRQ(ierr);
@@ -538,7 +538,7 @@ PetscErrorCode NCSpatialVariable::report_range(Vec v, bool found_by_standard_nam
   } else {
 
     ierr = verbPrintf(2, com, 
-		      " %-10s/ %-60s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
+		      " %-10s/ %-10s\n   %-16s\\ min,max = %9.3f,%9.3f (%s)\n",
 		      short_name.c_str(),
 		      strings["long_name"].c_str(), "", min, max,
 		      strings["glaciological_units"].c_str()); CHKERRQ(ierr);

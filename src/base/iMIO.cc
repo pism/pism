@@ -249,11 +249,11 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
   if (!vars.empty()) {
     int threshold = 3;
     ierr = verbPrintf(threshold, grid.com,
-                      "PISM WARNING: the following variables were *not* written by the PISM core: "); CHKERRQ(ierr);
+                      "PISM WARNING: the following variables were *not* written by PISM core (IceModel): "); CHKERRQ(ierr);
     for (i = vars.begin(); i != vars.end(); ++i) {
-      ierr = verbPrintf(threshold, grid.com, "%s, ", (*i).c_str()); CHKERRQ(ierr);
+      ierr = verbPrintf(threshold, grid.com, "%s ", (*i).c_str()); CHKERRQ(ierr);
     }
-    ierr = verbPrintf(threshold, grid.com, "\b\b\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(threshold, grid.com, "\n"); CHKERRQ(ierr);
   }
 
   return 0;
