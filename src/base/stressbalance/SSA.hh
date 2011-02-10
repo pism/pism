@@ -110,6 +110,8 @@ public:
 
   virtual PetscErrorCode set_initial_guess(IceModelVec2V &guess);
 
+  virtual PetscErrorCode stdout_report(string &result);
+
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
@@ -132,8 +134,6 @@ protected:
   virtual PetscErrorCode compute_D2(IceModelVec2S &result);
 
   virtual PetscErrorCode compute_maximum_velocity();
-
-  virtual PetscErrorCode stdout_report(string &result);
 
   IceModelVec2Mask *mask;
   IceModelVec2S *thickness, *tauc, *surface, *bed;

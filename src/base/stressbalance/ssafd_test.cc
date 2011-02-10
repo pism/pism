@@ -343,9 +343,15 @@ int main(int argc, char *argv[]) {
 
     ierr = ssa.set_boundary_conditions(vMask, vel_bc); CHKERRQ(ierr); 
 
+    ierr = verbPrintf(2,com,"* Solving the SSA stress balance ...\n"); CHKERRQ(ierr);
+
     // Solve (fast==true means "no update"):
     bool fast = false;
     ierr = ssa.update(fast); CHKERRQ(ierr); 
+
+    string ssa_stdout;
+    ierr = ssa.stdout_report(ssa_stdout); CHKERRQ(ierr);
+    ierr = verbPrintf(3,com,ssa_stdout.c_str()); CHKERRQ(ierr);
 
     // Report errors relative to the exact solution:
     IceModelVec2V *vel_ssa;
