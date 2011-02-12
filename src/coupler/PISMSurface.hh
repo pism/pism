@@ -35,7 +35,7 @@ public:
   { delete atmosphere; };
 
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict)
-  { atmosphere->get_diagnostics(dict); }
+  { if (atmosphere)  atmosphere->get_diagnostics(dict); }
 
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);

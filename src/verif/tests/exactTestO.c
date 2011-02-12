@@ -38,12 +38,12 @@
 
 //! Implements an exact solution for basal melt rate.  Utterly straightforward arithmetic.
 /*!
-Assumes a steady-state temperature profile in ice and bedrock.  For this steady
-profile there is an imbalance between the geothermal flux from the crust, namely
-\c G which is equal (by construction) to the upward heat flux everywhere in the
-bedrock thermal layer, and the heat flux upward in the ice, which is also a
-constant everywhere in the ice.  This imbalance is balanced by the basal melt
-rate \c bmelt (see equation below).
+Assumes a steady-state temperature profile in ice and bedrock.  This steady
+profile is driven by geothermal flux \c G from the crust below the bedrock
+thermal layer.  The heat flux is everywhere upward in the bedrock thermal layer,
+and it is equal by construction to \c G.  The heat flux upward in the ice is
+also a constant everywhere in the ice, but its value is smaller than \c G.  This
+imbalance is balanced by the basal melt rate \c bmelt.
 
 Geometry and dynamics context:  The top of the ice is flat so the ice
 does not flow; the ice thickness has constant value \c H0.  The ice surface has
@@ -51,21 +51,22 @@ temperature \c Ts which is below the melting point.  The basal melt rate
 \c bmelt does not contribute to the vertical velocity in the ice.  The ice
 pressure is hydrostatic: \f$p = \rho_i g (h-z)\f$.
 
-The basic equation relating the fluxes at the ice base and the basal melt rate
-is from [\ref AschwandenBuelerBlatter],
+The basic equation relates the fluxes in the basal ice, and in the top of the
+bedrock layer, with the basal melt rate \c bmelt \f$= - M_b / \rho_i \f$.  The
+eqution is from [\ref AschwandenBuelerBlatter],
   \f[ M_b H + (\mathbf{q} - \mathbf{q_{lith}}) \cdot \mathbf{n} = F_b + Q_b. \f]
-Here \f$-M_b\f$ is the mass per area per time basal melt rate, so \c bmelt
-\f$= - M_b / \rho_i \f$.  In the above equation the basal friction heating
-\f$F_b\f$ is zero and the subglacial aquifer enthalpy flux \f$Q_b\f$ (namely the
-heat delivered by the subglacial water to the base of the ice) includes no
-horizontal velocity.  Also we assume the subglacial water is at the ice
-overburden pressure \f$p_0=\rho_i g H_0\f$.  Finally, the temperate layer at the
-base of the ice has zero thickness, so \f$\omega = 0\f$.  Thus
+Here \f$-M_b\f$ is the basal melt rate in units of mass per area per time.
+In the above equation the basal friction heating
+\f$F_b\f$ is zero and the subglacial aquifer enthalpy flux \f$Q_b\f$ includes no
+horizontal velocity.  (Note that \f$Q_b\f$ is the heat delivered by subglacial
+water to the base of the ice.)  We assume the subglacial water is at the ice
+overburden pressure \f$p_0=\rho_i g H_0\f$, and we assume that the temperate
+layer at the base of the ice has zero thickness, so \f$\omega = 0\f$.  Thus
   \f[ H_l(p_b) = H_l(p_0) = H_s(p_0) + L, \f]
   \f[ H = H_s(p_0) + \omega L = H_s(p_0), \f]
   \f[ Q_b = H_l(p_0) M_b. \f]
 
-The original equation for basal melt rate therefore reduces to
+The basic equation therefore reduces to
   \f[ \mathbf{q} \cdot \mathbf{n} - G = M_b L \f]
 or
   \f[ \text{\texttt{bmelt}} = -\frac{M_b}{\rho_i}
@@ -75,10 +76,15 @@ the upward flux is constant and the (absolute) temperature is a linear function
 of the elevation \f$z\f$, so
   \f[ \mathbf{q} \cdot \mathbf{n} = - k_i \frac{T_s - T_m(p)}{H_0}.\f]
 
-This method implements these formulas, with both the goal of setting-up a
-verification test (%e.g. by setting temperature at different elevations within
-the ice and bedrock) and doing the verification itself (%e.g. checking against
-the exact bmelt value).
+The temperature in the ice (\f$0 \le z \le H_0\f$) is this linear function,
+  \f[ T(z) = T_m(p) + \frac{T_s - T_m(p)}{H_0} z \f]
+and in the bedrock (\f$z \le 0\f$) is also linear,
+  \f[ T_b(z) = T_m(p) - \frac{G}{k_b} z. \f]
+
+This method implements these formulas.  It should be called both when setting-up
+a verification test by setting temperature at different elevations within
+the ice and bedrock, and when doing the verification itself by checking against
+the exact \c bmelt value.
  */
 int exactO(const double z, double *TT, double *Tm, double *qice, double *qbed, double *bmelt) {
 
