@@ -19,47 +19,79 @@
 #include "SSAFEM.hh"
 #include "SSAFEM_util.hh"
 
+
+IceGridElementIndexer::IceGridElementIndexer(const IceGrid &g)
+{
+  // Start by assuming ghost elements exist in all directions.
+  // If there are 'mx' by 'my' points in the grid and no 
+  // ghosts, there are (mx-1) by (my-1) elements.  In the presence
+  // of ghosts there are then (mx+1) by (my+1) elements.
+  xs= g.xs-1; xm = g.xm+1;
+  ys= g.ys-1; ym = g.ym+1;
+
+  // Now correct if needed. The only way there will not be ghosts is if the 
+  // grid is not periodic and we are up against the grid boundary.
+  
+  if( !(g.periodicity & X_PERIODIC) )
+  {
+    // First element has x-index 0.
+    if(xs < 0){
+      xs = 0;
+    }
+    // Total number of elements is Mx-1, so xs+xm should be no larger.
+    if(xs+xm > g.Mx-1) {
+      xm = g.Mx-1-xs;
+    }
+  }
+
+  if( !(g.periodicity & Y_PERIODIC) )
+  {
+    if(ys < 0){
+      ys = 0;
+    }
+    if(ys+ym > g.My-1) {
+      ym = g.My-1-ys;
+    }
+  }
+}
+
 //! \brief Allocating SSAFEM-specific objects; called by the constructor.
 PetscErrorCode SSAFEM::allocate_fem() {
   PetscErrorCode ierr;
 
-  ctx = new FECTX;
-  ctx->da = SSADA;              // allocated by SSA (parent of SSAFEM), has dof=2
   dirichletScale = 1.0;
   ocean_rho = config.get("sea_water_density");
   earth_grav = config.get("standard_gravity");
-  ctx->ssa = this;
 
   ierr = DACreateGlobalVector(SSADA, &r);CHKERRQ(ierr);
   ierr = DAGetMatrix(SSADA, "baij", &J); CHKERRQ(ierr);
 
-  ierr = SNESCreate(((PetscObject)this)->comm,&snes);CHKERRQ(ierr);
-  ierr = SNESSetOptionsPrefix(snes,((PetscObject)this)->prefix);CHKERRQ(ierr);
+  ierr = SNESCreate(grid.com,&snes);CHKERRQ(ierr);
+  // ierr = SNESSetOptionsPrefix(snes,((PetscObject)this)->prefix);CHKERRQ(ierr);
 
-  ierr = DASetLocalFunction(ctx->da,(DALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
-  ierr = DASetLocalJacobian(ctx->da,(DALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
+  ierr = DASetLocalFunction(SSADA,(DALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
+  ierr = DASetLocalJacobian(SSADA,(DALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
+  
+  ctx.da = SSADA;
+  ctx.ssa = this;
+  ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &ctx);CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&ctx);CHKERRQ(ierr);
 
-  ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   ctx);CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,ctx);CHKERRQ(ierr);
+
   ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
-
   {
     DALocalInfo info;
     PetscInt    nElements;
-    ierr = DAGetLocalInfo(ctx->da,&info);CHKERRQ(ierr);
+    ierr = DAGetLocalInfo(SSADA,&info);CHKERRQ(ierr);
 
-    // gxm and gym refer to the number of grid points in the x and y directions
-    // in the local patch, including ghost points
-    nElements = (info.gxm-1)*(info.gym-1); // Includes overlap elements
-    // So nElements is the number of quadrilateral elements in the local patch,
-    // including ones having ghost points as their corners.
+    nElements = element_index.element_count();
 
     // We have a struct for the feStore at each quadrature point
     ierr = PetscMalloc(4*nElements*sizeof(feStore[0]),&feStore);CHKERRQ(ierr);
 
-    // sbs probably refers to "store block size". In the current code it is
-    // equal to 1, i.e. one value of vertically-averaged ice hardness per
-    // corner (or quadrature point?).
+    // // sbs probably refers to "store block size". In the current code it is
+    // // equal to 1, i.e. one value of vertically-averaged ice hardness per
+    // // corner (or quadrature point?).
     sbs = 1;
     ierr = PetscMalloc(4*nElements*sbs*sizeof(PetscReal),&integratedStore);CHKERRQ(ierr);
   }
@@ -82,8 +114,6 @@ PetscErrorCode SSAFEM::deallocate_fem() {
   ierr = PetscFree(feStore);CHKERRQ(ierr);
   ierr = VecDestroy(r); CHKERRQ(ierr);
   ierr = MatDestroy(J); CHKERRQ(ierr);
-
-  delete ctx;
 
   return 0;
 }
@@ -142,7 +172,7 @@ PetscErrorCode SSAFEM::solve()
     ierr = PetscViewerASCIIPrintf(viewer,"SNES before SSASolve_FE\n");
              CHKERRQ(ierr);
     ierr = SNESView(snes,viewer);CHKERRQ(ierr);
-    ierr = PetscViewerASCIIPrintf(viewer,"solutin vector before SSASolve_FE\n");
+    ierr = PetscViewerASCIIPrintf(viewer,"solution vector before SSASolve_FE\n");
              CHKERRQ(ierr);
     ierr = VecView(SSAX,viewer);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
@@ -210,9 +240,12 @@ PetscErrorCode SSAFEM::setup()
   ierr = tauc->get_array(tauc_array);CHKERRQ(ierr);
   ierr = DAGetLocalInfo(SSADA,info);CHKERRQ(ierr);
   // See SSAFEFunction for discussion of communication
-  for (i=info->gys; i<info->gys+info->gym-1; i++) { // Include ghost cells on either end
-    for (j=info->gxs; j<info->gxs+info->gxm-1; j++) {
-      const PetscInt ij = (i-info->gys)*(info->gxm-1)+(j-info->gxs);  // Index for stored arrays
+
+  PetscInt xs = element_index.xs, xm = element_index.xm,
+           ys = element_index.ys, ym = element_index.ym;  
+  for (i=xs; i<xs+xm; i++) {
+    for (j=ys;j<ys+ym; j++) {
+      const PetscInt ij = element_index.flatten(i,j);
       // feStore is interpreted as an array of FE elements using C-style
       // ordering, with 4 quadrature points per element.
       // 
@@ -290,7 +323,7 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,const P
     ice.effectiveViscosity_with_derivative(*iS, dimDu, nuH, dNuH);
     // FIXME: check if the following two lines are needed
     *nuH  *= feS->H;
-    *dNuH *= feS->H;
+    if (dNuH) *dNuH *= feS->H;
   }
   if (Floating(ice,ocean_rho,feS->H,feS->b)) {
     // The ice is floating here so there is no friction. Note that the purpose
@@ -300,7 +333,7 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,const P
     // resolution requirements near the grounding line.
     *beta = 0;
     if (dbeta) *dbeta = 0;
-    SETERRQ(1,"Not tested yet");
+    // SETERRQ(1,"Not tested yet");
   } else {
     basal.dragWithDerivative(feS->tauc,
                              u->u*ref.Velocity(),u->v*ref.Velocity(),
@@ -327,54 +360,55 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,const P
 
 //! \brief Sets Dirichlet boundary conditions. Called from SSAFEFunction and
 //! SSAFEJacobian.
+/*! The arrays lmask, row, col, and x are all of length N, the number of
+nodes in an element.  If for some node lmask indicates that it is a 
+Dirichlet node, the values of x from the node is set from the Dirichlet
+data BC_vel, and the row and column stencils are made invalid.  Calls
+to functions such as MatSetStencilBlock will then ignore Dirichlet rows
+and columns.
+*/
 void SSAFEM::FixDirichletValues(PetscReal lmask[],PISMVector2 **BC_vel,
                                MatStencil row[],MatStencil col[],PISMVector2 x[])
 {
   for (PetscInt k=0; k<4; k++) {
     if (PismIntMask(lmask[k]) == MASK_SHEET) {
-      // This operation makes the column of the Jacobian corresponding to the
-      // Dirichlet dof look like the identity. Overwriting the output vector
-      // (loop near the end of this function) is equivalent to making the row
-      // look like the identity.
-      //
-      // Note that \a row might have some entries already eliminated so we must
-      // use \a col (which is more natural anyway).
       x[k].u = BC_vel[col[k].j][col[k].i].u / ref.Velocity();
       x[k].v = BC_vel[col[k].j][col[k].i].v / ref.Velocity();
-      row[k].j = row[k].i = -1;
-      col[k].j = col[k].i = -1;
+      // FIXME (DAM 2/11/11): Find the right negative number to use to indicate an invalid row/column.  
+      row[k].j = row[k].i = PETSC_MIN_INT/10;
+      col[k].j = col[k].i = PETSC_MIN_INT/10;
     }
   }
 }
 
-#undef __FUNCT__
-#define __FUNCT__ "SSAFEFunction"
-PetscErrorCode SSAFEFunction(DALocalInfo *info,
-                             const PISMVector2 **xg, PISMVector2 **yg,
-                             FECTX *fe)
+
+PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVector2 **xg, PISMVector2 **yg)
 {
-  SSAFEM          *ssa = fe->ssa;
-  IceGrid         *grid = &ssa->grid;
   PetscInt         i,j,k,q;
   PetscReal        jacDiag[2],jinvDiag[2],jdet;
-  PetscReal      **mask, **H, **bed;
+  PetscReal      **mask, **H, **topg;
   PISMVector2        **BC_vel;
   PetscTruth       flg;
   PetscErrorCode   ierr;
 
+  PetscInt rank;
+  ierr = MPI_Comm_rank(PETSC_COMM_WORLD, &rank);CHKERRQ(ierr);
+
   PetscFunctionBegin;
   if (!finite(xg[info->ys][info->xs].u)) SETERRQ(1,__FUNCT__ " called with non-finite value");
-  ierr = verbPrintf(5,grid->com,"In %s\n",__FUNCT__);CHKERRQ(ierr);
+  // ierr = verbPrintf(5,grid.com,"In %s\n",__FUNCT__);CHKERRQ(ierr);
 
-  for (i=grid->xs; i<grid->xs+grid->xm; i++) {
-    for (j=grid->ys; j<grid->ys+grid->ym; j++) {
+  for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (j=grid.ys; j<grid.ys+grid.ym; j++) {
       yg[i][j].u = yg[i][j].v = 0;
     }
   }
+  
+  
   // Since we use uniform cartesian coordinates, the Jacobian is constant and diagonal on every element.
   // Note that the reference element is \f$ [-1,1]^2 \f$ hence the extra factor of 2.
-  jacDiag[0] = 0.5*grid->dx/ssa->ref.Length();
-  jacDiag[1] = 0.5*grid->dy/ssa->ref.Length();
+  jacDiag[0] = 0.5*grid.dx/ref.Length();
+  jacDiag[1] = 0.5*grid.dy/ref.Length();
   //if (fe->debug.rescale) jacDiag[0] = jacDiag[1] = 1;
   jinvDiag[0] = 1/jacDiag[0];
   jinvDiag[1] = 1/jacDiag[1];
@@ -382,12 +416,12 @@ PetscErrorCode SSAFEFunction(DALocalInfo *info,
 
   ierr = PetscOptionsHasName(NULL,"-ssa_monitor_solution",&flg);CHKERRQ(ierr);
   if (flg) {
-    ierr = PetscPrintf(grid->com,
+    ierr = PetscPrintf(grid.com,
                        "SSA Pointwise solution values (evaluating function at this value)\n");
     CHKERRQ(ierr);
-    for (i=grid->xs; i<grid->xs+grid->xm; i++) {
-      for (j=grid->ys; j<grid->ys+grid->ym; j++) {
-        ierr = PetscPrintf(grid->com,"[%2d,%2d] (%g,%g)\n",i,j,
+    for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+        ierr = PetscPrintf(grid.com,"[%2d,%2d] (%g,%g)\n",i,j,
                            xg[i][j].u,xg[i][j].v);CHKERRQ(ierr);
       }
     }
@@ -414,17 +448,19 @@ PetscErrorCode SSAFEFunction(DALocalInfo *info,
   // of the global matrix.
   //
   // Note that PETSc uses the opposite meaning of x,y directions in the DA
-  ierr = ssa->thickness->get_array(H);CHKERRQ(ierr);
-  ierr = ssa->bed->get_array(bed);CHKERRQ(ierr);
+  ierr = thickness->get_array(H);CHKERRQ(ierr);
+  ierr = bed->get_array(topg);CHKERRQ(ierr);
 
-  if (ssa->bc_locations && ssa->vel_bc) {
-    ierr = ssa->bc_locations->get_array(mask);CHKERRQ(ierr);
-    ierr = ssa->vel_bc->get_array(BC_vel); CHKERRQ(ierr);
+  if (bc_locations && vel_bc) {
+    ierr = bc_locations->get_array(mask);CHKERRQ(ierr);
+    ierr = vel_bc->get_array(BC_vel); CHKERRQ(ierr);
   }
 
-  for (i=info->gys; i<info->gys+info->gym-1; i++) { // Include ghost cells on either end
-    for (j=info->gxs; j<info->gxs+info->gxm-1; j++) {
-      const PetscInt ij = (i-info->gys)*(info->gxm-1)+(j-info->gxs); // Index for stored arrays
+  PetscInt xs = element_index.xs, xm = element_index.xm,
+           ys = element_index.ys, ym = element_index.ym;
+  for (i=xs; i<xs+xm; i++) {
+    for (j=ys; j<ys+ym; j++) {
+      const PetscInt ij = element_index.flatten(i,j);
       PISMVector2     x[4],y[4];
       MatStencil row[4],col[4];
 
@@ -432,36 +468,32 @@ PetscErrorCode SSAFEFunction(DALocalInfo *info,
       ierr = QuadGetStencils(info,i,j,row,col);CHKERRQ(ierr);
       QuadZeroVel(y);
 
-      if (ssa->bc_locations && ssa->vel_bc) {
+      if (bc_locations && vel_bc) {
         PetscReal lmask[4];
         QuadExtractScalar(i,j,mask,lmask);
-        ssa->FixDirichletValues(lmask,BC_vel,row,col,x);
+        FixDirichletValues(lmask,BC_vel,row,col,x);
       }
-      // \a x now contains correct velocities at Dirichlet nodes and \a col has
-      // indices for those nodes set to -1
+      // \a x now contains correct velocities at Dirichlet nodes and \a row and
+      // \a col indices for those nodes are set to -1
+
 
       for (q=0; q<numQuadPoints; q++) {     // loop over quadrature points
-        const FEStoreNode *feS = &ssa->feStore[ij*4+q];
-        const PetscReal *iS  = &ssa->integratedStore[(ij*4+q)*ssa->sbs];
+        const FEStoreNode *feS = &feStore[ij*4+q];
+        const PetscReal *iS  = &integratedStore[(ij*4+q)*sbs];
         const PetscReal    jw  = jdet * quadWeights[q];
         PISMVector2 u,v;
         PetscReal nuH,beta,Du[3],Dv[3];
         ierr = QuadEvaluateVel(x,q,jinvDiag,&u,Du);CHKERRQ(ierr);
-        ierr = ssa->PointwiseNuHAndBeta(feS,iS,&u,Du,&nuH,NULL,&beta,NULL);CHKERRQ(ierr);
-        //if (fe->debug.const_nuH) {nuH = 1;}    // nondimensional
-        //if (fe->debug.zero_nuH) {nuH = 0;}
-        //if (fe->debug.const_beta) {beta = 1;}  // nondimensional
-        //if (fe->debug.zero_beta) {beta = 0;}
+        ierr = PointwiseNuHAndBeta(feS,iS,&u,Du,&nuH,NULL,&beta,NULL);CHKERRQ(ierr);
+
         // Coefficients of test function (v) in weak form.
-        v.u = beta*u.u + ssa->ice.rho * ssa->earth_grav * feS->H * feS->hx
-          / ssa->ref.DrivingStress();
-        v.v = beta*u.v + ssa->ice.rho * ssa->earth_grav * feS->H * feS->hy
-          / ssa->ref.DrivingStress();
+        v.u = beta*u.u + ice.rho * earth_grav * feS->H * feS->hx
+          / ref.DrivingStress();
+        v.v = beta*u.v + ice.rho * earth_grav * feS->H * feS->hy
+          / ref.DrivingStress();
         Dv[0] = nuH * Du[0];
         Dv[1] = nuH * Du[1];
         Dv[2] = nuH * Du[2];
-
-        //if (fe->debug.cross) {Dv[2] = 0;}
 
         // Sum residuals over test functions
         for (k=0; k<4; k++) {   // Loop over test functions
@@ -477,65 +509,59 @@ PetscErrorCode SSAFEFunction(DALocalInfo *info,
       QuadInsertVel(row,y,yg);
     } // j-loop
   } // i-loop
-  ierr = ssa->thickness->end_access();CHKERRQ(ierr);
-  ierr = ssa->bed->end_access();CHKERRQ(ierr);
+  ierr = thickness->end_access();CHKERRQ(ierr);
+  ierr = bed->end_access();CHKERRQ(ierr);
 
-  if (ssa->bc_locations && ssa->vel_bc) {
+  if (bc_locations && vel_bc) {
     // Enforce Dirichlet conditions strongly
-    for (i=grid->xs; i<grid->xs+grid->xm; i++) {
-      for (j=grid->ys; j<grid->ys+grid->ym; j++) {
-        //PismValidStress2(yg[i][j]);
-        if (ssa->bc_locations->value(i,j) == MASK_SHEET) {
+    for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+        if (bc_locations->value(i,j) == MASK_SHEET) {
           // Enforce zero sliding strongly
-          yg[i][j].u = ssa->dirichletScale * (xg[i][j].u - BC_vel[i][j].u)
-            / ssa->ref.Velocity();
-          yg[i][j].v = ssa->dirichletScale * (xg[i][j].v - BC_vel[i][j].v)
-            / ssa->ref.Velocity();
+          yg[i][j].u = dirichletScale * (xg[i][j].u - BC_vel[i][j].u)
+            / ref.Velocity();
+          yg[i][j].v = dirichletScale * (xg[i][j].v - BC_vel[i][j].v)
+            / ref.Velocity();
         }
       }
     }
 
-    ierr = ssa->bc_locations->end_access();CHKERRQ(ierr);
-    ierr = ssa->vel_bc->end_access(); CHKERRQ(ierr);
+    ierr = bc_locations->end_access();CHKERRQ(ierr);
+    ierr = vel_bc->end_access(); CHKERRQ(ierr);
   }
 
   ierr = PetscOptionsHasName(NULL,"-ssa_monitor_function",&flg);CHKERRQ(ierr);
   if (flg) {
-    ierr = PetscPrintf(grid->com,"SSA Solution and Function values (pointwise residuals)\n");CHKERRQ(ierr);
-    for (i=grid->xs; i<grid->xs+grid->xm; i++) {
-      for (j=grid->ys; j<grid->ys+grid->ym; j++) {
-        ierr = PetscSynchronizedPrintf(grid->com,
+    ierr = PetscPrintf(grid.com,"SSA Solution and Function values (pointwise residuals)\n");CHKERRQ(ierr);
+    for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+        ierr = PetscSynchronizedPrintf(grid.com,
                                        "[%2d,%2d] u=(%12.4e,%12.4e)  f=(%12.4e,%12.4e)\n",
                                        i,j,xg[i][j].u,xg[i][j].v,yg[i][j].u,yg[i][j].v);CHKERRQ(ierr);
       }
     }
-    ierr = PetscSynchronizedFlush(grid->com);CHKERRQ(ierr);
+    ierr = PetscSynchronizedFlush(grid.com);CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
 
-// As in function evaluation, velocity is nondimensional
-#undef __FUNCT__
-#define __FUNCT__ "SSAFEJacobian"
-PetscErrorCode SSAFEJacobian(DALocalInfo *info,
-                             const PISMVector2 **xg, Mat J,
-                             FECTX *fe)
+PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVector2 **xg, Mat J )
 {
-  SSAFEM          *ssa  = fe->ssa;
-  IceGrid         *grid = &ssa->grid;
   PetscReal        jacDiag[2],jinvDiag[2],jdet;
   PetscReal      **mask;
   PISMVector2    **BC_vel;
   PetscInt         i,j;
   PetscErrorCode   ierr;
+  PetscTruth     flg;
 
-  PetscFunctionBegin;
-  ierr = verbPrintf(5,grid->com,"In %s\n",__FUNCT__);CHKERRQ(ierr);
+  PetscInt rank;
+  ierr = MPI_Comm_rank(PETSC_COMM_WORLD, &rank);CHKERRQ(ierr);
 
   // Since we use uniform cartesian coordinates, the Jacobian is constant and diagonal on every element.
   // Note that the reference element is \f$ [-1,1]^2 \f$ hence the extra factor of 2.
-  jacDiag[0] = 0.5*grid->dx / ssa->ref.Length();
-  jacDiag[1] = 0.5*grid->dy / ssa->ref.Length();
+
+  jacDiag[0] = 0.5*grid.dx / ref.Length();
+  jacDiag[1] = 0.5*grid.dy / ref.Length();
   //if (fe->debug.rescale) jacDiag[0] = jacDiag[1] = 1;
   jinvDiag[0] = 1/jacDiag[0];
   jinvDiag[1] = 1/jacDiag[1];
@@ -543,48 +569,98 @@ PetscErrorCode SSAFEJacobian(DALocalInfo *info,
 
   ierr = MatZeroEntries(J);CHKERRQ(ierr);
 
-  ierr = ssa->bc_locations->get_array(mask);CHKERRQ(ierr);
-  ierr = ssa->vel_bc->get_array(BC_vel); CHKERRQ(ierr); 
+  if (bc_locations && vel_bc) {
+    ierr = bc_locations->get_array(mask);CHKERRQ(ierr);
+    ierr = vel_bc->get_array(BC_vel); CHKERRQ(ierr); 
+  }
   
-  for (i=info->gys; i<info->gys+info->gym-1; i++) { // Include ghost cells on either end
-    for (j=info->gxs; j<info->gxs+info->gxm-1; j++) {
-      const PetscInt ij = (i-info->gys)*(info->gxm-1)+(j-info->gxs); // Index for stored arrays
+
+  PetscInt xs = element_index.xs, xm = element_index.xm,
+           ys = element_index.ys, ym = element_index.ym;
+  for (i=xs; i<xs+xm; i++) { // Include ghost cells on either end
+    for (j=ys; j<ys+ym; j++) {
+      const PetscInt ij = element_index.flatten(i,j);
       MatStencil     row[4],col[4];
       PISMVector2        x[4];
-      PetscReal      K[4*4*4],lmask[4];
+      PetscReal      K[8*8],lmask[4];
 
       QuadExtractVel(i,j,xg,x);
-      QuadExtractScalar(i,j,mask,lmask);
       ierr = QuadGetStencils(info,i,j,row,col);CHKERRQ(ierr);
-      ssa->FixDirichletValues(lmask,BC_vel,row,col,x);
+      if (bc_locations && vel_bc) {
+        QuadExtractScalar(i,j,mask,lmask);
+        FixDirichletValues(lmask,BC_vel,row,col,x);
+      }
       ierr = PetscMemzero(K,sizeof(K));CHKERRQ(ierr);
+
       for (PetscInt q=0; q<numQuadPoints; q++) {
-        const FEStoreNode *feS = &ssa->feStore[ij*4+q];
-        const PetscReal   *iS  = &ssa->integratedStore[(ij*4+q)*ssa->sbs];
+        const FEStoreNode *feS = &feStore[ij*4+q];
+        const PetscReal   *iS  = &integratedStore[(ij*4+q)*sbs];
         const PetscReal    jw  = jdet*quadWeights[q];
         PISMVector2 w;
         PetscReal nuH,dNuH,beta,dbeta,Dw[3];
         ierr = QuadEvaluateVel(x,q,jinvDiag,&w,Dw);CHKERRQ(ierr);
-        ierr = ssa->PointwiseNuHAndBeta(feS,iS,&w,Dw,&nuH,&dNuH,&beta,&dbeta);CHKERRQ(ierr);
-        //if (fe->debug.const_nuH) {nuH = 1;dNuH = 0;}    // nondimensional
-        //if (fe->debug.zero_nuH) {nuH = dNuH = 0;}
-        //if (fe->debug.const_beta) {beta = 1;dbeta = 0;} // nondimensional
-        //if (fe->debug.zero_beta) {beta = dbeta = 0;}
+        ierr = PointwiseNuHAndBeta(feS,iS,&w,Dw,&nuH,&dNuH,&beta,&dbeta);CHKERRQ(ierr);
+
+        // J[k][l] = \partial r_k / \partial c_l
 
         for (PetscInt k=0; k<4; k++) {   // Test functions
           for (PetscInt l=0; l<4; l++) { // Trial functions
             const PetscInt qk = q*4+k,ql = q*4+l; // transpose and regular
+
+            // // Value of test functions kx and ky at quad point q
+            // const PetscReal ukx = interp[qk], vkx = 0;
+            // const PetscReal uky = 0, vky = interp[qk];
+            // 
+            // // Values of trial functions lx and ly at quad point q
+            // const PetscReal ulx = interp[ql], vlx = 0;
+            // const PetscReal uly = 0, vly = interp[ql];
+            // 
+            // // Derivatives of test function kx at quad point q            
+            // const PetscReal dudxkx = derivx[qk]*jinvDiag[1], dudykx = derivy[qk]*jinvDiag[1];
+            // const PetscReal dvdxkx = 0, dvdykx = 0;
+            // 
+            // // Derivatives of test function ky at quad point q            
+            // const PetscReal dudxky = 0, dudyky = 0;
+            // const PetscReal dvdxky = derivx[qk]*jinvDiag[1], dvdyky = derivy[qk]*jinvDiag[1];
+            // 
+            // // Derivatives of trial function lx at quad point q            
+            // const PetscReal dudxlx = derivx[ql]*jinvDiag[1], dudylx = derivy[ql]*jinvDiag[1];
+            // const PetscReal dvdxlx = 0, dvdylx = 0;
+            // 
+            // // Derivatives of trial function ly at quad point q            
+            // const PetscReal dudxly = 0, dudyly = 0;
+            // const PetscReal dvdxly = derivx[ql]*jinvDiag[1], dvdyly = derivy[ql]*jinvDiag[1];
+            // 
+            // 
+            // // kx-lx
+            // K[2*k*8+2*l]   += 0.5*nuH*( 2*(2*dudxlx+dvdylx)*dudxkx + (dudylx+dvdxlx)*dudykx  +
+            //                           (dudylx+dvdxlx)*dvdxkx +2*(2*dvdylx+dudxlx)*dvdykx )*jw;
+            // 
+            // // kx-ly
+            // K[2*k*8+2*l+1]   += 0.5*nuH*( 2*(2*dudxly+dvdyly)*dudxkx + (dudyly+dvdxly)*dudykx +
+            //                           (dudyly+dvdxly)*dvdxkx +2*(2*dvdyly+dudxly)*dvdykx )*jw;
+            // 
+            // // ky-lx
+            // K[(2*k+1)*8+2*l]   += 0.5*nuH*( 2*(2*dudxlx+dvdylx)*dudxky + (dudylx+dvdxlx)*dudyky +
+            //                           (dudylx+dvdxlx)*dvdxky +2*(2*dvdylx+dudxlx)*dvdyky )*jw;
+            // 
+            // // ky-ly
+            // K[(2*k+1)*8+2*l+1]   += 0.5*nuH*( 2*(2*dudxly+dvdyly)*dudxky + (dudyly+dvdxly)*dudyky +
+            //                           (dudyly+dvdxly)*dvdxky +2*(2*dvdyly+dudxly)*dvdyky )*jw;
+
             const PetscReal ht = interp[qk],h = interp[ql],
-              dxt = derivx[qk]*jinvDiag[0],dyt = derivy[qk]*jinvDiag[1],
-              dx = jinvDiag[0]*derivx[ql], dy = jinvDiag[1]*derivy[ql],
-              // Cross terms appearing with beta'
-              bvx = ht*w.u,bvy = ht*w.v,bux = w.u*h,buy = w.v*h,
-              // Cross terms appearing with nuH'
-              cvx = dxt*(2*Dw[0]+Dw[1]) + dyt*Dw[2],
-              cvy = dyt*(2*Dw[1]+Dw[0]) + dxt*Dw[2],
-              cux = (2*Dw[0]+Dw[1])*dx + Dw[2]*dy,
-              cuy = (2*Dw[1]+Dw[0])*dy + Dw[2]*dx;
+            dxt = derivx[qk]*jinvDiag[0],dyt = derivy[qk]*jinvDiag[1],
+            dx = jinvDiag[0]*derivx[ql], dy = jinvDiag[1]*derivy[ql],
+            // Cross terms appearing with beta'
+            bvx = ht*w.u,bvy = ht*w.v,bux = w.u*h,buy = w.v*h,
+            // Cross terms appearing with nuH'
+            cvx = dxt*(2*Dw[0]+Dw[1]) + dyt*Dw[2],
+            cvy = dyt*(2*Dw[1]+Dw[0]) + dxt*Dw[2],
+            cux = (2*Dw[0]+Dw[1])*dx + Dw[2]*dy,
+            cuy = (2*Dw[1]+Dw[0])*dy + Dw[2]*dx;
+
             // u-u coupling
+            
             K[k*16+l*2]     += jw*(beta*ht*h + dbeta*bvx*bux + nuH*(2*dxt*dx + dyt*0.5*dy) + dNuH*cvx*cux);
             // u-v coupling
             K[k*16+l*2+1]   += jw*(dbeta*bvx*buy + nuH*(0.5*dyt*dx + dxt*dy) + dNuH*cvx*cuy);
@@ -595,25 +671,44 @@ PetscErrorCode SSAFEJacobian(DALocalInfo *info,
           }
         }
       }
+      int l,m;
       ierr = MatSetValuesBlockedStencil(J,4,row,4,col,K,ADD_VALUES);CHKERRQ(ierr);
     }
   }
-  for (i=info->ys; i<info->ys+info->ym; i++) { // Include ghost cells on either end
-    for (j=info->xs; j<info->xs+info->xm; j++) {
-      if (ssa->bc_locations->value(i,j) == MASK_SHEET) {
-        const PetscReal ident[4] = {ssa->dirichletScale,0,0,ssa->dirichletScale};
-        MatStencil row;
-        row.j = i; row.i = j;
-        ierr = MatSetValuesBlockedStencil(J,1,&row,1,&row,ident,ADD_VALUES);CHKERRQ(ierr);
+  if (bc_locations && vel_bc) {
+    for (i=grid.xs; i<grid.xs+grid.xm; i++) {
+      for (j=grid.ys; j<grid.ys+grid.ym; j++) {
+        if (bc_locations->value(i,j) == MASK_SHEET) {
+          const PetscReal ident[4] = {dirichletScale,0,0,dirichletScale};
+          MatStencil row;
+          // FIXME: Transpose shows up here!
+          row.j = i; row.i = j;
+          ierr = MatSetValuesBlockedStencil(J,1,&row,1,&row,ident,ADD_VALUES);CHKERRQ(ierr);
+        }
       }
     }
   }
-  ierr = ssa->bc_locations->end_access();CHKERRQ(ierr);
-  ierr = ssa->vel_bc->end_access(); CHKERRQ(ierr);
 
+  if(bc_locations) {
+    ierr = bc_locations->end_access();CHKERRQ(ierr);
+  }
+  if(vel_bc) {
+    ierr = vel_bc->end_access(); CHKERRQ(ierr);
+  }
+  
   ierr = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+
+  ierr = PetscOptionsHasName(NULL,"-ssa_monitor_jacobian",&flg);CHKERRQ(ierr);
+  if (flg) {
+    ierr = PetscPrintf(grid.com,
+                       "SSA Jacobian\n");
+    CHKERRQ(ierr);
+    ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);
+  }
+
   ierr = MatSetOption(J,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -666,4 +761,22 @@ PetscErrorCode SSAFEM::compute_hardav(IceModelVec2S &result) {
   return 0;
 }
 
+
+#undef __FUNCT__
+#define __FUNCT__ "SSAFEFunction"
+PetscErrorCode SSAFEFunction(DALocalInfo *info,
+                             const PISMVector2 **xg, PISMVector2 **yg,
+                             FECTX *fe)
+{
+  return fe->ssa->compute_local_function(info,xg,yg);
+}
+
+#undef __FUNCT__
+#define __FUNCT__ "SSAFEJacobian"
+PetscErrorCode SSAFEJacobian(DALocalInfo *info,
+                             const PISMVector2 **xg, Mat J,
+                             FECTX *fe)
+{
+  return fe->ssa->compute_local_jacobian(info,xg,J);
+}
 

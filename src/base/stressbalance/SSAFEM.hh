@@ -27,6 +27,8 @@ struct FEStoreNode {
   PetscReal h,H,tauc,hx,hy,b; // These values are fully dimensional
 };
 
+
+
 // Manage nondimensionalization [FIXME:  I've forced a degenerate dimensional version]
 class PismRef {
 public:
@@ -54,8 +56,41 @@ private:
   PetscReal length,height,time,pressure;
 };
 
-PetscErrorCode SSAFEFunction(DALocalInfo *, const PISMVector2 **, PISMVector2 **, FECTX *);
+
+//! The callbacks from SNES are mediated via SNESDAFormFunction, which has the
+//! convention that its context argument is a pointer to a struct argument 
+//! having a DA as its first entry.  The FECTX fulfills this requirement, and
+//! allows for passing the callback on to an honest SSAFEM object.
+class SSAFEM;
+struct FECTX {
+  DA           da;
+  SSAFEM      *ssa;
+};
+
+//! SNES callbacks.  These simply forward the call on to an SSAFEM.
+PetscErrorCode SSAFEFunction(DALocalInfo *, const PISMVector2 **, 
+                                                      PISMVector2 **, FECTX *);
 PetscErrorCode SSAFEJacobian(DALocalInfo *, const PISMVector2 **, Mat, FECTX *);
+
+
+class IceGridElementIndexer 
+{
+public:
+  IceGridElementIndexer(const IceGrid &g);
+  
+  PetscInt element_count()
+  {
+    return (xm-xs)*(ym-ys);
+  }
+  
+  PetscInt flatten(PetscInt i, PetscInt j)
+  {
+    return (i-xs)*ym+(j-ys);
+  }
+  
+  PetscInt xs, xm, ys, ym;
+  
+};
 
 //! PISM's SSA solver: the finite element method implementation written by Jed
 /*!
@@ -71,7 +106,7 @@ class SSAFEM : public SSA
 public:
   SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
          const NCConfigVariable &c) :
-    SSA(g,b,i,e,c)
+    SSA(g,b,i,e,c), element_index(g)
   {
     allocate_fem();  // can't be done by allocate() since constructor is not virtual
   }
@@ -97,6 +132,10 @@ protected:
 
   virtual PetscErrorCode deallocate_fem();
 
+  virtual PetscErrorCode compute_local_function(DALocalInfo *info, const PISMVector2 **xg, PISMVector2 **yg);
+
+  virtual PetscErrorCode compute_local_jacobian(DALocalInfo *info, const PISMVector2 **xg, Mat J);
+
   virtual PetscErrorCode solve();
   
   virtual PetscErrorCode compute_hardav(IceModelVec2S &result);
@@ -107,7 +146,7 @@ protected:
 
   // objects used internally
   IceModelVec2S hardav;         // vertically-averaged ice hardness
-  FECTX *ctx;
+  FECTX ctx;
   Mat J;
   Vec r;
 
@@ -121,17 +160,10 @@ protected:
   PetscReal    earth_grav;
   PismRef      ref;
 
+  IceGridElementIndexer element_index;
+
 };
 
-//! Context for Jed's FEM implementation of SSA.
-/*!
-The first element of this struct *must* be a DA, because of how SNESSetFunction
-and SNESSetJacobian use their last arguments.
- */
-struct FECTX {
-  DA           da;
-  SSAFEM      *ssa;
-};
 
 #endif /* _SSAFEM_H_ */
 

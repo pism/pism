@@ -125,6 +125,29 @@ int PismIntMask(PetscScalar maskvalue) {
   return static_cast<int>(floor(maskvalue + 0.5));
 }
 
+//  Integrations with integrands involving derivatives of finite element functions need a little extra work.  Let $f$ be a 
+//  finite-element function (f=\sum_{ij} c_{ij} \psi_{ij}).  Consider a point p in physical element E, so p=F(q) where 
+//  q is a point in the reference element and F is the map from reference to physical element.  Let g=f\circ F, so
+//  
+//       g = \sum_{n=1}^4 d_n \phi_n 
+//
+//  Then f(p) = f(F(q)) = g(q) = g(F^{-1}(p)) = \sum_{n=1}^4 d_n \phi_n(F^{-1}(p)).  The derivative of f with respect to $X$ or $Y$
+//  can then be written in terms of derivatives of reference basis elements \phi_n and the Jacobian matrix of F^{-1} using the 
+//  chain rule.  In particular, the derivative of f with respect to X at the point F(q_i) is
+//
+//     d f                            d\phi_n      d F^{-1}
+//     --- (F(q_i))= \sum_{n=1}^4 d_n -----(q_i)  --------
+//     d X                              dx           dX
+//
+//  ( we have used the fact that dF^{-1}/dY = 0, otherwise there would be an extra term). 
+//
+//  Similarly, 
+//     d f                            d\phi_n      d F^{-1}
+//     --- (F(q_i))= \sum_{n=1}^4 d_n -----(q_i)  --------
+//     d Y                              dy           dY
+//
+//  In the code, the numbers dF^{-1}/dX and dF^{-1}/dY are referred to as the array jinvDiag.
+
 #undef __FUNCT__
 #define __FUNCT__ "QuadEvaluateVel"
 PetscErrorCode QuadEvaluateVel(const PISMVector2 *x,PetscInt q,
@@ -142,8 +165,9 @@ PetscErrorCode QuadEvaluateVel(const PISMVector2 *x,PetscInt q,
     Du[1] += jinvDiag[1]*derivy[qk] * x[k].v;                 // v_y
     Du[2] += 0.5*(jinvDiag[1]*derivy[qk] * x[k].u + jinvDiag[0]*derivx[qk] * x[k].v); // (u_y + v_x)/2
   }
-  PismValidVelocity(*u);
-  PismValidStrainRate(Du);
+  // FIXME: Turn these back on?
+  // PismValidVelocity(*u);
+  // PismValidStrainRate(Du);
   PetscFunctionReturn(0);
 }
 
@@ -164,7 +188,8 @@ PetscErrorCode QuadGetStencils(DALocalInfo *info,PetscInt i,PetscInt j,
   for (k=0; k<4; k++) {         // We do not sum into rows that are not owned by us
     if (   row[k].i < info->xs || info->xs+info->xm-1 < row[k].i
         || row[k].j < info->ys || info->ys+info->ym-1 < row[k].j) {
-      row[k].j = row[k].i = -1;
+          // FIXME (DAM 2/11/11): Find the right negative number to use to indicate an invalid row/column.  
+          row[k].j = row[k].i = PETSC_MIN_INT/10;
     }
   }
   PetscFunctionReturn(0);
