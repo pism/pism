@@ -196,8 +196,7 @@ PetscErrorCode IceExactSSAModel::taucSetI() {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscInt jfrom0 = j - (grid.My - 1)/2;
-      const PetscScalar y = grid.dy * jfrom0;
+      const PetscScalar y = grid.y[j];
       const PetscScalar theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
       const PetscScalar f = ice->rho * standard_gravity * H0_schoof * tan(theta);
       tauc[i][j] = f * pow(PetscAbs(y / L_schoof), m_schoof);
@@ -226,10 +225,8 @@ PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVelsI() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar junk, myu, myv;
-      const PetscInt ifrom0 = i - (grid.Mx - 1)/2,
-                     jfrom0 = j - (grid.My - 1)/2;
-      const PetscScalar myx = grid.dx * ifrom0,
-        myy = grid.dy * jfrom0;
+      const PetscScalar myx = grid.x[i],
+        myy = grid.y[j];
       // eval exact solution; will only use exact vels if at edge
       exactI(m_schoof, myx, myy, &(bed[i][j]), &junk, &myu, &myv); 
       h[i][j] = bed[i][j] + H0_schoof;
@@ -283,10 +280,8 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar junk1, myu, myv;
-      const PetscInt ifrom0 = i - (grid.Mx)/2,
-                     jfrom0 = j - (grid.My)/2;
-      const PetscScalar myx = grid.dx * ifrom0,
-        myy = grid.dy * jfrom0;
+      const PetscScalar myx = grid.x[i],
+        myy = grid.y[j];
       // set H,h on regular grid
       ierr = exactJ(myx, myy, &vH(i,j), &junk1, &myu, &myv); CHKERRQ(ierr);
       vh(i,j) = (1.0 - ice->rho / ocean_rho) * vH(i,j);
@@ -430,10 +425,8 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
       if (test == 'I') {
         exactI(m_schoof, myx, myy, &junk1, &junk2, &uexact, &vexact); 
       } else if (test == 'J') {
-        const PetscInt ifrom0 = i - (grid.Mx)/2,
-                       jfrom0 = j - (grid.My)/2;
-        myx = grid.dx * ifrom0;
-        myy = grid.dy * jfrom0;
+        myx = grid.x[i];
+        myy = grid.y[j];
         exactJ(myx, myy, &junk1, &junk2, &uexact, &vexact);
       } else if (test == 'M') {
         PetscScalar alpha;
@@ -618,10 +611,8 @@ PetscErrorCode IceExactSSAModel::fillFromExactSolution() {
       if (test == 'I') {
         exactI(m_schoof, myx, myy, &junk1, &junk2, &(*vel_2d)(i,j).u, &(*vel_2d)(i,j).v); 
       } else if (test == 'J') {
-        const PetscInt ifrom0 = i - (grid.Mx)/2,
-                       jfrom0 = j - (grid.My)/2;
-        myx = grid.dx * ifrom0;
-        myy = grid.dy * jfrom0;
+        myx = grid.x[i];
+        myy = grid.y[j];
         ierr = exactJ(myx, myy, &junk1, &junk2, &(*vel_2d)(i,j).u, &(*vel_2d)(i,j).v); CHKERRQ(ierr);
       } else if (test == 'M') {
         PetscScalar alpha;
