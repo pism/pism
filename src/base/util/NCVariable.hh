@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011 Constantine Khroulev
+// Copyright (C) 2009--2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,8 +34,8 @@ using namespace std;
 
 //! \brief A class for handling variable metadata, reading, writing and converting
 //! from input units and to output units.
-/*! A NetCDF variable can have any number of attributes, but some of them are
-  treated differently:
+/*! A NetCDF variable can have any number of attributes, but some of them get
+    special treatment:
 
   \li units: specifies internal units. When read, a variable is converted to
   these units. When written, it is converted from these to glaciological_units
@@ -148,4 +148,4 @@ public:
   virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype, bool) const;
 };
 
-#endif
+#endif  // __NCVariable_hh

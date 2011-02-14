@@ -82,6 +82,7 @@ PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
   return 0;
 }
 
+//! \brief Resets metadata.
 PetscErrorCode NCSpatialVariable::reset() {
   NCVariable::reset();
 
@@ -648,11 +649,19 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type n
   CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
   // this is all we need to turn on compression:
-
 #if (PISM_WRITE_COMPRESSED_NETCDF4 == 1)
   stat = nc_def_var_deflate(ncid, varid, 0, 1, 9);
   CHKERRQ(check_err(stat,__LINE__,__FILE__));
 #endif
+  // Caveat: uncompressed data is sent to processor 0, which compresses and
+  // writes it. This means that for very big files processor 0 might have to
+  // compress many gigabytes of data, which can be *very* slow...
+  // 
+  // This, in turn, can cancel out all the benefits of using NetCDF-4 with
+  // compression.
+  // 
+  // Unfortunately NetCDF-4 does not support parallel I/O with compression, so
+  // I don't see any way around this.
 
   stat = write_attributes(nc, varid, nctype, write_in_glaciological_units); CHKERRQ(stat);
 
@@ -695,20 +704,18 @@ bool NCVariable::has(string name) const {
   return false;
 }
 
-//! Set a scalar attribute to a single value.
+//! Set a scalar attribute to a single (scalar) value.
 void NCVariable::set(string name, double value) {
   doubles[name] = vector<double>(1, value);
 }
 
 //! Get a single-valued scalar attribute.
-/*! Returns 0 if an attribute is not present, so that has() works correctly.
- */
 double NCVariable::get(string name) const {
   map<string,vector<double> >::const_iterator j = doubles.find(name);
   if (j != doubles.end())
     return (j->second)[0];
   else
-    return 0;
+    return GSL_NAN;
 }
 
 //! Set a string attribute.
@@ -722,6 +729,9 @@ void NCVariable::set_string(string name, string value) {
 }
 
 //! Get a string attribute.
+/*!
+ * Returns an empty string if an attribute is not set.
+ */
 string NCVariable::get_string(string name) const {
   if (name == "short_name") return short_name;
 
@@ -732,7 +742,8 @@ string NCVariable::get_string(string name) const {
     return string();
 }
 
-//! Check if a value \c a is in the valid range defined by \c valid_min and \c valid_min attributes.
+//! \brief Check if a value \c a is in the valid range defined by \c valid_min
+//! and \c valid_max attributes.
 bool NCVariable::is_valid(PetscScalar a) const {
   
   if (has("valid_min") && has("valid_max"))
@@ -813,6 +824,8 @@ PetscErrorCode NCConfigVariable::write(const char filename[]) const {
 
   if (!variable_exists) {
     ierr = define(nc, varid, NC_BYTE, false); CHKERRQ(ierr);
+  } else {
+    ierr = write_attributes(nc, varid, NC_DOUBLE, false); CHKERRQ(ierr); 
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
@@ -845,7 +858,6 @@ PetscErrorCode NCConfigVariable::define(const NCTool &nc, int &varid, nc_type ty
 
   return 0;
 }
-
 
 //! Returns a \c double parameter. Stops if it was not found.
 double NCConfigVariable::get(string name) const {
@@ -885,7 +897,7 @@ bool NCConfigVariable::get_flag(string name) const {
 
     PetscPrintf(com,
 		"PISM ERROR: Parameter '%s' (%s) cannot be interpreted as a boolean.\n"
-		"            Please make sure that it is equal to one of 'true', 'yes', 'on', 'false', 'no', 'off'.\n",
+		"            Please make sure that it is set to one of 'true', 'yes', 'on', 'false', 'no', 'off'.\n",
 		name.c_str(), value.c_str());
     PISMEnd();
   }
@@ -898,6 +910,7 @@ bool NCConfigVariable::get_flag(string name) const {
   return true;			// will never happen
 }
 
+//! \brief Get a string attribute by name.
 string NCConfigVariable::get_string(string name) const {
 
   map<string,string>::const_iterator j = strings.find(name);
@@ -1058,11 +1071,10 @@ PetscErrorCode NCConfigVariable::print(PetscInt vt) const {
   return 0;
 }
 
-
+//! \brief Returns the name of the file used to initialize the database.
 string NCConfigVariable::get_config_filename() const {
   return config_filename;
 }
-
 
 //! Imports values from the other config variable, silently overwriting present values.
 void NCConfigVariable::import_from(const NCConfigVariable &other) {
@@ -1094,11 +1106,11 @@ void NCConfigVariable::update_from(const NCConfigVariable &other) {
   }
 }
 
+//! \brief Initialize the time-series object.
 void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
   NCVariable::init(n, c, r);
   dimension_name = dim_name;
 }
-
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
 PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
@@ -1181,6 +1193,7 @@ PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
   return 0;
 }
 
+//! \brief Report the range of a time-series stored in \c data.
 PetscErrorCode NCTimeseries::report_range(vector<double> &data) {
   double slope, intercept;
   PetscErrorCode ierr;
@@ -1233,6 +1246,7 @@ PetscErrorCode NCTimeseries::define(const NCTool &nc, int &varid, nc_type nctype
   return 0;
 }
 
+//! \brief Write a time-series \c data to a file.
 PetscErrorCode NCTimeseries::write(const char filename[], size_t start,
 				   vector<double> &data, nc_type nctype) {
 
@@ -1266,6 +1280,7 @@ PetscErrorCode NCTimeseries::write(const char filename[], size_t start,
   return 0;
 }
 
+//! \brief Write a single value of a time-series to a file.
 PetscErrorCode NCTimeseries::write(const char filename[], size_t start,
 				   double data, nc_type nctype) {
   vector<double> tmp(1);
@@ -1317,6 +1332,7 @@ PetscErrorCode NCTimeseries::change_units(vector<double> &data, utUnit *from, ut
   return 0;
 }
 
+//! \brief Read global attributes from a file.
 PetscErrorCode NCGlobalAttributes::read(const char filename[]) {
   PetscErrorCode ierr;
   int nattrs;

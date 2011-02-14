@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
     IceModelVec2Mask vMask;
     IceModelVec3 enthalpy;
     IceModelVec2V vel_bc;
-    const PetscInt WIDE_STENCIL = 2;
+    const PetscInt WIDE_STENCIL = grid.max_stencil_width;
 
     PISMVars vars;
 

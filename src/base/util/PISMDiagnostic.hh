@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,28 @@
 #include "iceModelVec.hh"
 #include "PISMVars.hh"
 
+//! \brief Class representing diagnostic computations in PISM.
+/*!
+ * The main goal of this abstraction is to allow accessing metadata
+ * corresponding to a diagnostic quantity \e before it is computed.
+ *
+ * Another goal is to create an interface for computing diagnostics \e without
+ * knowing which PISM module is responsible for the computation.
+ *
+ * Technical note: to compute some diagnostic quantities we need access to
+ * protected members of classes. C++ forbids obtaining pointers to non-static
+ * methods of a class, but it is possible to define a (friend) function
+ *
+ * \code
+ * PetscErrorCode compute_bar(Foo* model, ..., IceModelVec* &result);
+ * \endcode
+ *
+ * which is the same as creating a method Foo::compute_bar(), but you \e can
+ * get a pointer to it.
+ *
+ * PISMDiagnostic creates a common interface for all these compute_bar
+ * functions.
+ */
 class PISMDiagnostic
 {
 public:

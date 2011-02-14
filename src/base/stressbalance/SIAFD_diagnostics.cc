@@ -40,7 +40,7 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, PISMVars &my_vars
 PetscErrorCode SIAFD_schoofs_theta::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result, *surface;
-  PetscInt WIDE_STENCIL = 2;
+  PetscInt WIDE_STENCIL = grid.max_stencil_width;
 
   result = new IceModelVec2S;
   ierr = result->create(grid, "schoofs_theta", true, WIDE_STENCIL); CHKERRQ(ierr);
@@ -69,7 +69,7 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars)
 PetscErrorCode SIAFD_topgsmooth::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   IceModelVec2S *result;
-  PetscInt WIDE_STENCIL = 2;
+  PetscInt WIDE_STENCIL = grid.max_stencil_width;
 
   result = new IceModelVec2S;
   ierr = result->create(grid, "topgsmooth", true, WIDE_STENCIL); CHKERRQ(ierr);
@@ -92,7 +92,7 @@ SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars)
 
 PetscErrorCode SIAFD_thksmooth::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = 2;
+  PetscInt WIDE_STENCIL = grid.max_stencil_width;
   IceModelVec2S *result, *surface, *thickness;
   IceModelVec2Mask *mask;
 

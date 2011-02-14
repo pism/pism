@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -21,6 +21,7 @@
 
 #include "grid.hh"
 
+//! \brief Contains parameters of an input file grid.
 class grid_info {
 public:
   // dimension lengths

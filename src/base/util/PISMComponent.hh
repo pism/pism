@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -67,6 +67,10 @@ protected:
 
 //! \brief An abstract class for "diagnostic" components (such as stress
 //! balance modules).
+/*!
+ * Here "diagnostic" means "one that performs a computation which does not
+ * involve time-stepping".
+ */
 class PISMComponent_Diag : public PISMComponent
 {
 public:
@@ -79,7 +83,6 @@ public:
 
   virtual PetscErrorCode write_model_state(string /*filename*/)
   { return 0; }
-
 };
 
 //! \brief An abstract class for time-stepping PISM components. Created to

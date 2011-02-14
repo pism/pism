@@ -234,7 +234,7 @@ PetscErrorCode compute_errors(IceGrid &grid, PISMVars &vars, IceModelVec2V &vel_
 //! \brief Allocate necessary variables.
 PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
   PetscErrorCode ierr;
-  const PetscInt WIDE_STENCIL = 2;
+  const PetscInt WIDE_STENCIL = grid.max_stencil_width;
 
   IceModelVec2S *obsAzimuth, *obsMagnitude, *obsAccurate,
     *thickness, *surface, *bed, *tauc, *longitude, *latitude;

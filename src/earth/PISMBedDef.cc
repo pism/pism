@@ -36,7 +36,7 @@ PISMBedDef::PISMBedDef(IceGrid &g, const NCConfigVariable &conf)
 
 PetscErrorCode PISMBedDef::pismbeddef_allocate() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = 2;
+  PetscInt WIDE_STENCIL = grid.max_stencil_width;
 
   ierr = topg_initial.create(grid, "topg_initial", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_initial.set_attrs("model_state", "bedrock surface elevation (at the beginning of the run)",

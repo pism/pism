@@ -90,7 +90,7 @@ digraph pism_init {
   }  
 
 
-  report [label = "IceModel::report_grid_parameters()" URL="\ref IceModel::report_grid_parameters()"];
+  report [label = "IceGrid::report_grid_parameters()" URL="\ref IceGrid::report_grid_parameters()"];
   regrid -> report;
 
   allocate_internal_objects [label = "Allocate memory for additional internals\nIceModel::allocate_internal_objects()" URL="\ref IceModel::allocate_internal_objects()"];

@@ -164,6 +164,7 @@ PetscErrorCode  NCTool::find_variable(string short_name, string standard_name,
   return 0;
 }
 
+//! \brief Find a variable and discard the found_by_standard_name flag.
 PetscErrorCode NCTool::find_variable(string short_name, string standard_name,
 				     int *varidp, bool &exists) const {
   bool dummy;
@@ -172,7 +173,7 @@ PetscErrorCode NCTool::find_variable(string short_name, string standard_name,
   return 0;
 }
 				     
-
+//! \brief Find a variable without specifying its standard name.
 PetscErrorCode NCTool::find_variable(string short_name, int *varid, bool &exists) const {
   return find_variable(short_name, "", varid, exists);
 }
@@ -229,43 +230,6 @@ PetscErrorCode NCTool::get_vertical_dims(double* &z_levels, double* &zb_levels) 
   MPI_Bcast(zb_levels, zb_len, MPI_DOUBLE, 0, com);
   return 0;
 }
-
-
-//! Put the variable for a dimension in a NetCDF file.
-/*! Uses starting and ending values and a grid length for regularly-spaced
-values.
- */
-PetscErrorCode NCTool::put_dimension_regular(int varid, int len, double start, double end) const {
-  PetscErrorCode ierr;
-  int stat;
-  double *v, delta;
-
-  if (rank != 0) return 0;
-
-  if (end <= start)
-    SETERRQ2(1, "Can't write dimension: start = %f, end = %f",
-	     start, end);
-
-  delta = (end - start) / (len - 1);
-
-  ierr = PetscMalloc(len * sizeof(double), &v); CHKERRQ(ierr);
-  for (int i = 0; i < len; i++)
-    v[i] = start + i * delta;
-
-  // Sometimes v[len - 1] turns out to be greater than end (because of rounding
-  // errors). If that happens, we need to fix v[len - 1] by setting it equal to
-  // end.
-  if (v[len - 1] > end) v[len - 1] = end;
-
-  ierr = data_mode(); CHKERRQ(ierr);
-  
-  stat = nc_put_var_double(ncid, varid, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-  ierr = PetscFree(v); CHKERRQ(ierr);
-
-  return 0;
-}
-
 
 //! Put the variable for a dimension in a NetCDF file.  Makes no assumption about spacing.
 PetscErrorCode NCTool::put_dimension(int varid, int len, PetscScalar *vals) const {
@@ -349,21 +313,23 @@ bool NCTool::check_dimension(const char name[], const int len) const {
 
 
 //! Appends \c time to the t dimension.
+/*!
+ * Does nothing on processors other than 0.
+ */
 PetscErrorCode NCTool::append_time(PetscReal time) const {
   int stat, t_id;
 
+  if (rank != 0) return 0;
 
-  if (rank == 0) {
-    size_t t_len;
-    stat = nc_inq_dimid(ncid, "t", &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_inq_dimlen(ncid, t_id, &t_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  size_t t_len;
+  stat = nc_inq_dimid(ncid, "t", &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_inq_dimlen(ncid, t_id, &t_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-    stat = nc_inq_varid(ncid, "t", &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_inq_varid(ncid, "t", &t_id); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-    stat = data_mode(); CHKERRQ(stat); 
+  stat = data_mode(); CHKERRQ(stat); 
 
-    stat = nc_put_var1_double(ncid, t_id, &t_len, &time); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
+  stat = nc_put_var1_double(ncid, t_id, &t_len, &time); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
   return 0;
 }
@@ -475,6 +441,8 @@ PetscErrorCode NCTool::get_dim_length(const char name[], int *len) const {
   Sets min = 0 and max = 0 if the dimension \c name has length 0.
 
   Set \c min or \c max to NULL to omit the corresponding value.
+
+  Converts time and distance units to 'seconds' and 'meters', correspondingly.
  */
 PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *max) const {
   PetscErrorCode ierr;
@@ -567,6 +535,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
   return 0;
 }
 
+//! \brief Reads a coordinate variable.
 PetscErrorCode NCTool::get_dimension(const char name[], vector<double> &result) const {
   PetscErrorCode ierr;
   int len = 0, varid = -1;
@@ -735,8 +704,8 @@ PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
 }
 
 //! Get variable's units information from a NetCDF file.
-/*!
-  Note that this function intentionally ignores the reference date.
+/*! Note that this function intentionally ignores the reference date ('years
+  since 1-1-1', 'years since 2000-1-1' and 'years' produce the same result).
  */
 PetscErrorCode NCTool::get_units(int varid, bool &has_units, utUnit &units) const {
   PetscErrorCode ierr;
@@ -814,7 +783,7 @@ PetscErrorCode NCTool::inq_att_name(int varid, int n, string &name) const {
   return 0;
 }
 
-//! Gets the list of dimensions a variable depends on.
+//! Gets the list of dimension ids for dimensions a variable depends on.
 /*!
   The length of the result (\c dimids) is the number of dimensions.
  */
@@ -899,6 +868,8 @@ PetscErrorCode NCTool::move_if_exists(const char filename[]) {
   return 0;
 }
 
+//! \brief Puts a NetCDF file in define mode if it is not in define mode
+//! already.
 PetscErrorCode NCTool::define_mode() const {
   PetscErrorCode ierr;
 
@@ -913,6 +884,7 @@ PetscErrorCode NCTool::define_mode() const {
   return 0;
 }
 
+//! \brief Puts a NetCDF file in data mode if it is not in data mode already.
 PetscErrorCode NCTool::data_mode() const {
   PetscErrorCode ierr;
 
@@ -920,6 +892,8 @@ PetscErrorCode NCTool::data_mode() const {
 
   if (!def_mode) return 0;
 
+  // 50000 below means that we allocate 50Kb for metadata in NetCDF files
+  // created by PISM.
   ierr = nc__enddef(ncid,50000,4,0,4); CHKERRQ(check_err(ierr,__LINE__,__FILE__))
 
   def_mode = false;

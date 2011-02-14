@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
     IceModelVec2Mask vMask;
     IceModelVec3 enthalpy,
       age;                      // is not used (and need not be allocated)
-    const PetscInt WIDE_STENCIL = 2;
+    const PetscInt WIDE_STENCIL = grid.max_stencil_width;
 
     PISMVars vars;
 

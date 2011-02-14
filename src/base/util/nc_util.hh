@@ -28,6 +28,8 @@
 #endif
 #include <netcdf.h>		// nc_type
 
+// Note: as far as I (CK) can tell, MPI_INCLUDED is a MPICH invention.
+
 #include "udunits.h"	// utUnit
 #include <string>
 #include <vector>
@@ -37,17 +39,19 @@
 using namespace std;
 /// @endcond
 
-struct MaskInterp {
-  int number_allowed;
-  int allowed_levels[50]; // must be strictly increasing
-};
-
 typedef enum {GRID_2D = 2, GRID_3D, GRID_3D_BEDROCK} GridType;
 
 int nc_check(int stat);
 int check_err(const int stat, const int line, const char *file);
 
-//! Collects together parallel NetCDF methods used by IceModel and IceModelVec.
+//! A fairly low-level NetCDF wrapper used in various PISM classes.
+/*!
+ * This class does not contain any grid-specific code to make it possible to
+ * use it to access NetCDF files that do not contain gridded data.
+ * 
+ * All the work is done on processor 0. Other processors get results matching
+ * ones on processor zero, unless stated otherwise.
+ */
 class NCTool {
 public:
   NCTool(MPI_Comm c, PetscMPIInt r);
@@ -74,7 +78,6 @@ public:
 
   virtual PetscErrorCode get_dimension(const char name[], vector<double> &result) const;
   virtual PetscErrorCode put_dimension(int varid, int len, PetscScalar *vals) const;
-  virtual PetscErrorCode put_dimension_regular(int varid, int len, double start, double delta) const;
 
   virtual PetscErrorCode inq_unlimdim(int &unlimdimid) const;
   virtual PetscErrorCode inq_dimname(int dimid, string &name) const;

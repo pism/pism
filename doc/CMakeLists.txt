@@ -109,22 +109,42 @@ if (PDFLATEX_COMPILER AND Pism_BUILD_DOCS)
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser)
 
     # Generate the browser
-    add_custom_command (OUTPUT browser/html/index.html
+    add_custom_command (OUTPUT browser/base/html/index.html
       COMMAND ${DOXYGEN_EXECUTABLE} doxyfile
       DEPENDS browser/pism_config.txt browser/references.txt browser/doxyfile
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser)
 
-    add_custom_target (browser ALL
-      DEPENDS browser/html/index.html)
+    add_custom_target (browser_base ALL
+      DEPENDS browser/base/html/index.html)
 
-    add_custom_target (browser.tgz
-      DEPENDS browser/html/index.html
-      COMMAND tar -czf browser.tgz html
+    add_custom_target (browser_base.tgz
+      DEPENDS browser/base/html/index.html
+      COMMAND tar -czf browser_base.tgz html
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser/base)
+
+    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser/base/html
+      DESTINATION ${Pism_DOC_DIR}/base)
+
+    ### Util browser
+    configure_file(browser/doxyfile_util browser/doxyfile_util)
+    configure_file (browser/util_main.txt browser/util_main.txt)
+
+    # Generate the browser
+    add_custom_command (OUTPUT browser/util/html/index.html
+      COMMAND ${DOXYGEN_EXECUTABLE} doxyfile_util
+      DEPENDS browser/doxyfile_util
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser)
 
-    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser/html
-      DESTINATION ${Pism_DOC_DIR})
+    add_custom_target (browser_util ALL
+      DEPENDS browser/util/html/index.html)
 
+    add_custom_target (browser_util.tgz
+      DEPENDS browser/util/html/index.html
+      COMMAND tar -czf browser_util.tgz html
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser/util)
+
+    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser/util/html
+      DESTINATION ${Pism_DOC_DIR}/util)
   endif()
 endif ()
 

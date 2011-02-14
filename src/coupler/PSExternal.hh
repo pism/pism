@@ -42,9 +42,6 @@ protected:
 
 //! \brief A derived class created to couple PISM to an energy balance model (through
 //! files).
-/*!
-  Uses an atmospheric lapse rate to correct temperatures at the ice surface.
- */ 
 class PSExternal : public PISMSurfaceModel {
 public:
   PSExternal(IceGrid &g, const NCConfigVariable &conf, MPI_Comm my_inter_comm)

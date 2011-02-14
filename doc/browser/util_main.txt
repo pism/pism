@@ -1,0 +1,65 @@
+// -*- mode: c++ -*-
+
+/*! \mainpage PISM utility classes (grid, I/O, etc)
+
+This source code browser documents PISM classes that create the infrastructure
+for PISM's code implementing physical models. These classes are not
+ice-sheet-modeling specific and can be used as a separated library.
+
+Click on "Classes" above to see the full list of classes in this library; for a
+list of key classes, see below.
+
+- IceGrid
+- IceModelVec2S, IceModelVec2V, IceModelVec3 and IceModelVec3Bedrock
+- PISMComponent, PISMComponent_Diag and PISMComponent_TS
+- Timeseries
+- NCTool
+- PISMIO
+
+The following pages describe some important classes and their intended uses.
+
+- \subpage spatial_fields "IceModelVec and friends: storing, reading, writing, accessing 2D and 3D fields"
+- \subpage pism_components "PISM's model components and their interface (PISMComponent)"
+- \subpage scalar_timeseries "Reading scalar time-series (Timeseries)"
+- \subpage netcdf_wrapper "Low-level NetCDF access (NCTool)"
+- \subpage netcdf_io "Grid-dependent NetCDF access (PISMIO)"
+
+Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev and Andy Aschwanden
+
+This source code browser is part of PISM.
+
+PISM is free software; you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
+
+PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+You should have received a copy of the GNU General Public License
+along with PISM; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+*/
+
+/*! \page spatial_fields IceModelVec and friends: storing, reading, writing, accessing 2D and 3D fields
+
+ */
+
+/*! \page pism_components PISM's model components and their interface (PISMComponent)
+
+ */
+
+/*! \page scalar_timeseries Reading scalar time-series (Timeseries)
+
+ */
+
+/*! \page netcdf_wrapper Low-level NetCDF access (NCTool)
+
+ */
+
+/*! \page netcdf_io Grid-dependent NetCDF access (PISMIO)
+
+ */

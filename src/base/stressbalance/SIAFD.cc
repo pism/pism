@@ -18,6 +18,7 @@
 
 #include "SIAFD.hh"
 
+//! \brief Allocate the SIAFD module.
 PetscErrorCode SIAFD::allocate() {
   PetscErrorCode ierr;
 
@@ -35,14 +36,12 @@ PetscErrorCode SIAFD::allocate() {
     ierr = work_2d_stag[i].set_name(namestr); CHKERRQ(ierr);
   }
 
-  // 3D temporary storage:
-  for (int i = 0; i < 4; ++i) {
-    char namestr[30];
+  ierr = delta[0].create(grid, "delta_0", true); CHKERRQ(ierr);
+  ierr = delta[1].create(grid, "delta_1", true); CHKERRQ(ierr);
 
-    ierr = work_3d[i].create(grid, "work_vector", true); CHKERRQ(ierr);
-    snprintf(namestr, sizeof(namestr), "work_vector_3d_%d", i);
-    ierr = work_3d[i].set_name(namestr); CHKERRQ(ierr);
-  }
+  // 3D temporary storage:
+  ierr = work_3d[0].create(grid, "work_3d_0", true); CHKERRQ(ierr);
+  ierr = work_3d[1].create(grid, "work_3d_1", true); CHKERRQ(ierr);
 
   // bed smoother
   bed_smoother = new PISMBedSmoother(grid, config, WIDE_STENCIL);
@@ -56,7 +55,8 @@ PetscErrorCode SIAFD::init(PISMVars &vars) {
 
   ierr = SSB_Modifier::init(vars); CHKERRQ(ierr);
 
-  ierr = verbPrintf(2,grid.com,"* Initializing the SIA stress balance modifier...\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com,
+                    "* Initializing the SIA stress balance modifier...\n"); CHKERRQ(ierr);
 
   mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(1, "mask is not available");
@@ -113,18 +113,18 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
 
   if (!fast) {
     ierr = compute_sigma(D2_input, h_x, h_y); CHKERRQ(ierr);
-    
+
     ierr = compute_3d_horizontal_velocity(h_x, h_y, vel_input, u, v); CHKERRQ(ierr);
   }
 
   grid.profiler->end(event_sia);
 
-  return 0; 
+  return 0;
 }
 
 
 //! \brief Compute the ice surface gradient for the SIA.
-/*! 
+/*!
   There are three methods for computing the surface gradient. Which method is
   controlled by configuration parameter \c surface_gradient_method which can
   have values \c haseloff, \c mahaffy, or \c eta.
@@ -155,6 +155,9 @@ PetscErrorCode SIAFD::update(IceModelVec2V *vel_input, IceModelVec2S *D2_input,
   using (roughly) the same method for \f$\eta\f$ and \f$b\f$ that applies
   directly to the surface elevation \f$h\f$ in the \c mahaffy and \c haseloff
   methods.
+
+  \param[out] h_x the X-component of the surface gradient, on the staggered grid
+  \param[out] h_y the Y-component of the surface gradient, on the staggered grid
 */
 PetscErrorCode SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   PetscErrorCode  ierr;
@@ -169,7 +172,7 @@ PetscErrorCode SIAFD::compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVe
 
   if (method == "eta") {
 
-    ierr = surface_gradient_eta(h_x, h_y); CHKERRQ(ierr); 
+    ierr = surface_gradient_eta(h_x, h_y); CHKERRQ(ierr);
 
   } else if (method == "haseloff") {
 
@@ -211,7 +214,7 @@ PetscErrorCode SIAFD::surface_gradient_eta(IceModelVec2Stag &h_x, IceModelVec2St
 
   ierr = h_x.begin_access(); CHKERRQ(ierr);
   ierr = h_y.begin_access(); CHKERRQ(ierr);
-  
+
   // now use Mahaffy on eta to get grad h on staggered;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
   ierr = bed->begin_access(); CHKERRQ(ierr);
@@ -389,14 +392,50 @@ PetscErrorCode SIAFD::surface_gradient_mahaffy(IceModelVec2Stag &h_x, IceModelVe
 
 //! \brief Compute the SIA flux. If fast == false, also store delta on the staggered grid.
 /*!
- * FIXME: document this
+ * Recall that \f$ Q = -D \nabla h \f$ is the diffusive flux in the mass-continuity equation
+ *
+ * \f[ \frac{\partial H}{\partial t} = M - S - \nabla \cdot (Q + \mathbf{U}_b H),\f]
+ *
+ * where \f$h\f$ is the ice surface elevation, \f$M\f$ is the top surface
+ * accumulation/ablation rate, \f$S\f$ is the basal mass balance and
+ * \f$\mathbf{U}_b\f$ is the thickness-advective (in PISM: usually SSA) ice
+ * velocity.
+ *
+ * Recall also that at any particular point in the map-plane (i.e. if \f$x\f$
+ * and \f$y\f$ are fixed)
+ *
+ * \f[ D = 2\int_b^h F(z)P(z)(h-z)dz, \f]
+ *
+ * where \f$F(z)\f$ is a constitutive function and \f$P(z)\f$ is the pressure
+ * at a level \f$z\f$.
+ *
+ * By defining
+ *
+ * \f[ \delta(z) = 2F(z)P(z) \f]
+ *
+ * one can write
+ *
+ * \f[D = \int_b^h\delta(z)(h-z)dz. \f]
+ *
+ * The advantage is that it is then possible to avoid re-evaluating \f$F(z)\f$
+ * (which is computationally expensive) in strain heating (see compute_sigma())
+ * and horizontal ice velocity (see compute_3d_horizontal_velocity())
+ * computations.
+ *
+ * This method computes \f$Q\f$ and stores \f$\delta\f$ in delta[0,1] is fast == false.
+ *
+ * The trapezoidal rule is used to approximate the integral.
+ *
+ * \param[in]  h_x x-component of the surface gradient, on the staggered grid
+ * \param[in]  h_y y-component of the surface gradient, on the staggered grid
+ * \param[out] result diffusive ice flux
+ * \param[in]  fast the boolean flag specitying if we're doing a "fast" update.
  */
 PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                                              IceModelVec2Stag &result, bool fast) {
   PetscErrorCode  ierr;
   IceModelVec2S thk_smooth = work_2d[0],
     theta = work_2d[1];
-  IceModelVec3 delta[2] = {work_3d[0], work_3d[1]};
 
   bool full_update = !fast;
 
@@ -439,7 +478,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
 
   ierr = h_x.begin_access(); CHKERRQ(ierr);
   ierr = h_y.begin_access(); CHKERRQ(ierr);
-  
+
   PetscScalar *age_ij, *age_offset;
   if (use_age) {
     ierr = age->begin_access(); CHKERRQ(ierr);
@@ -461,7 +500,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
       for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         // staggered point: o=0 is i+1/2, o=1 is j+1/2, (i,j) and (i+oi,j+oj)
         //   are regular grid neighbors of a staggered point:
-        const PetscInt oi = 1 - o, oj = o;  
+        const PetscInt oi = 1 - o, oj = o;
 
         const PetscScalar
           thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
@@ -479,12 +518,12 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
           ierr = age->getInternalColumn(i, j, &age_ij); CHKERRQ(ierr);
           ierr = age->getInternalColumn(i+oi, j+oj, &age_offset); CHKERRQ(ierr);
         }
-	  
+
         ierr = enthalpy->getInternalColumn(i, j, &E_ij); CHKERRQ(ierr);
         ierr = enthalpy->getInternalColumn(i+oi, j+oj, &E_offset); CHKERRQ(ierr);
 
         const PetscScalar slope = (o==0) ? h_x(i,j,o) : h_y(i,j,o);
-        const PetscInt      ks = grid.kBelowHeight(thk);  
+        const PetscInt      ks = grid.kBelowHeight(thk);
         const PetscScalar   alpha =
           sqrt(PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o)));
         const PetscReal theta_local = 0.5 * ( theta(i,j) + theta(i+oi,j+oj) );
@@ -507,7 +546,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
 
           delta_ij[k] = enhancement_factor * theta_local * 2.0 * pressure * flow;
 
-          if (k > 0) { // trapezoid rule
+          if (k > 0) { // trapezoidal rule
             const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
             Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
           }
@@ -528,7 +567,7 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
         if (full_update) {
           for (PetscInt k = ks + 1; k < grid.Mz; ++k) {
             delta_ij[k] = 0.0;
-          }  
+          }
           ierr = delta[o].setInternalColumn(i,j,delta_ij); CHKERRQ(ierr);
         }
       } // o
@@ -556,15 +595,25 @@ PetscErrorCode SIAFD::compute_diffusive_flux(IceModelVec2Stag &h_x, IceModelVec2
   ierr = PetscGlobalMax(&my_D_max, &D_max, grid.com); CHKERRQ(ierr);
 
   delete [] delta_ij;
-  
+
   return 0;
 }
 
 //! \brief Compute diffusivity (diagnostically).
+/*!
+ * Computes \f$D\f$ as
+ *
+ * \f[D = \int_b^h\delta(z)(h-z)dz. \f]
+ *
+ * Uses the trapezoidal rule to approximate the integral.
+ *
+ * See compute_diffusive_flux() for the rationale and the definition of
+ * \f$\delta\f$.
+ * \param[out] result The diffusivity of the SIA flow.
+ */
 PetscErrorCode SIAFD::compute_diffusivity(IceModelVec2S &result) {
   PetscErrorCode ierr;
   // delta on the staggered grid:
-  IceModelVec3 delta[2] = {work_3d[0], work_3d[1]};
   IceModelVec2Stag D_stag = work_2d_stag[0];
   PetscScalar *delta_ij;
   IceModelVec2S thk_smooth = work_2d[0];
@@ -580,7 +629,7 @@ PetscErrorCode SIAFD::compute_diffusivity(IceModelVec2S &result) {
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       for (int o = 0; o < 2; ++o) {
-        const PetscInt oi = 1 - o, oj = o;  
+        const PetscInt oi = 1 - o, oj = o;
 
         ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
 
@@ -592,13 +641,14 @@ PetscErrorCode SIAFD::compute_diffusivity(IceModelVec2S &result) {
           continue;
         }
 
-        const PetscInt ks = grid.kBelowHeight(thk);  
+        const PetscInt ks = grid.kBelowHeight(thk);
         PetscScalar Dfoffset = 0.0;
 
         for (PetscInt k = 1; k <= ks; ++k) {
           PetscReal depth = thk - grid.zlevels[k];
-          
+
           const PetscScalar dz = grid.zlevels[k] - grid.zlevels[k-1];
+          // trapezoidal rule
           Dfoffset += 0.5 * dz * ((depth + dz) * delta_ij[k-1] + depth * delta_ij[k]);
         }
 
@@ -623,27 +673,43 @@ PetscErrorCode SIAFD::compute_diffusivity(IceModelVec2S &result) {
   return 0;
 }
 
-
-
 //! \brief Extend the grid vertically.
 PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
   PetscErrorCode ierr;
 
   ierr = SSB_Modifier::extend_the_grid(old_Mz); CHKERRQ(ierr);
 
-  ierr = work_3d[0].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr); 
-  ierr = work_3d[1].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr); 
-  ierr = work_3d[2].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr); 
-  ierr = work_3d[3].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr); 
+  ierr = delta[0].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
+  ierr = delta[1].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
 
-  return 0; 
+  ierr = work_3d[0].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
+  ierr = work_3d[1].extend_vertically(old_Mz, 0.0); CHKERRQ(ierr);
+
+  return 0;
 }
 
 //! \brief Compute the volumetric strain heating.
 /*!
  * See section 2.8 of [\ref BBssasliding].
-
+ *
+ * Computes the volumetric strain heating Sigma by combining the contribution
+ * from the underlying stress balance (usually the SSA) in the form of the
+ * (partial) square of the Frobenius norm of \f$D_{ij}\f$, the combined strain
+ * rates with the SIA contribution.
+ *
+ * Uses the fact that in the combined strain rate tensor SIA and SSA have
+ * disjoint sets of non-zero elements, making it possible to \e literally add
+ * SSA and SIA contributions when computing \f$D^2\f$.
+ *
  * \note This is one of the places where "hybridization" is done.
+ *
+ * \param[in] D2_input the "SSA" contribution to the strain heating
+ * \param[in] h_x the X-component of the surface gradient, on the staggered grid
+ * \param[in] h_y the Y-component of the surface gradient, on the staggered grid
+ *
+ * FIXME: this should be optimized: we don't need to update Sigma above the ice
+ * (especially Sigma on the staggered grid, which is used temporarily, in this
+ * method only, to compute Sigma on the regular grid).
  */
 PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
                                     IceModelVec2Stag &h_x,
@@ -653,8 +719,8 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
 
   // aliases
   IceModelVec2S thk_smooth = work_2d[0];
-  IceModelVec3 delta[2] = {work_3d[0], work_3d[1]}, sigma[2] = {work_3d[2], work_3d[3]};
-    
+  IceModelVec3 sigma[2] = {work_3d[0], work_3d[1]};
+
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
                                         WIDE_STENCIL,
                                         &thk_smooth); CHKERRQ(ierr);
@@ -664,13 +730,13 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
   ierr = sigma[0].begin_access(); CHKERRQ(ierr);
   ierr = sigma[1].begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
-  
+
   ierr = h_x.begin_access(); CHKERRQ(ierr);
   ierr = h_y.begin_access(); CHKERRQ(ierr);
   ierr = D2_input->begin_access(); CHKERRQ(ierr);
   ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
-  
+
   double enhancement_factor = config.get("enhancement_factor"),
     n_glen  = ice.exponent(),
     Sig_pow = (1.0 + n_glen) / (2.0 * n_glen);
@@ -679,7 +745,7 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
     PetscInt GHOSTS = 1;
     for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
       for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        const PetscInt oi = 1-o, oj=o;  
+        const PetscInt oi = 1-o, oj=o;
 
         ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
         ierr = sigma[o].getInternalColumn(i,j,&sigma_ij); CHKERRQ(ierr);
@@ -688,8 +754,9 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
         const PetscScalar
           thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
 
-        const PetscInt ks = grid.kBelowHeight(thk);  
+        const PetscInt ks = grid.kBelowHeight(thk);
 
+        // alpha_squared is the square of the magnitude of the surface gradient
         const PetscScalar alpha_squared =
           PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o));
 
@@ -706,7 +773,7 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
             // use the SIA contribution only
             sigma_ij[k] = sigma_sia;
           } else {
-            PetscReal 
+            PetscReal
               BofT = ice.hardnessParameter_from_enth(E[k], pressure) * pow(enhancement_factor,-1/n_glen),
               D2_ssa = (*D2_input)(i,j);
 
@@ -724,7 +791,7 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
         // above the ice:
         for (PetscInt k=ks+1; k<grid.Mz; ++k) {
           sigma_ij[k] = 0.0;
-        }  
+        }
       } // j
     }   // i
   }     // o
@@ -769,20 +836,27 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
   ierr = sigma[1].end_access(); CHKERRQ(ierr);
   ierr = sigma[0].end_access(); CHKERRQ(ierr);
 
-  return 0; 
+  return 0;
 }
 
 //! \brief Compute I.
 /*!
- * Uses delta[2]. The result (I) is used to compute the 3D-distributed
- * horizontal (SIA) ice velocity.
+ * This computes
+ * \f[ I(z) = \int_b^z\delta(s)ds.\f]
+ *
+ * Uses the trapezoidal rule to approximate the integral.
+ *
+ * See compute_diffusive_flux() for the definition of \f$\delta\f$.
+ *
+ * The result is stored in work_3[0,1] and is used to compute the SIA component
+ * of the 3D-distributed horizontal ice velocity.
  */
 PetscErrorCode SIAFD::compute_I() {
   PetscErrorCode ierr;
   PetscScalar *I_ij, *delta_ij;
 
   IceModelVec2S thk_smooth = work_2d[0];
-  IceModelVec3 delta[2] = {work_3d[0], work_3d[1]}, I[2] = {work_3d[2], work_3d[3]};
+  IceModelVec3 I[2] = {work_3d[0], work_3d[1]};
 
   ierr = bed_smoother->get_smoothed_thk(*surface, *thickness, *mask,
                                         WIDE_STENCIL,
@@ -798,25 +872,26 @@ PetscErrorCode SIAFD::compute_I() {
     PetscInt GHOSTS = 1;
     for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
       for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        const PetscInt oi = 1-o, oj=o;  
+        const PetscInt oi = 1-o, oj=o;
         const PetscReal
           thk = 0.5 * ( thk_smooth(i,j) + thk_smooth(i+oi,j+oj) );
 
         ierr = delta[o].getInternalColumn(i,j,&delta_ij); CHKERRQ(ierr);
         ierr = I[o].getInternalColumn(i,j,&I_ij); CHKERRQ(ierr);
 
-        const PetscInt ks = grid.kBelowHeight(thk);  
+        const PetscInt ks = grid.kBelowHeight(thk);
 
         // within the ice:
         I_ij[0] = 0.0;
         for (int k = 1; k <= ks; ++k) {
           const PetscReal dz = grid.zlevels[k] - grid.zlevels[k-1];
+          // trapezoidal rule
           I_ij[k] = I_ij[k-1] + 0.5 * dz * (delta_ij[k-1] + delta_ij[k]);
         }
         // above the ice:
         for (PetscInt k = ks + 1; k < grid.Mz; ++k) {
           I_ij[k] = I_ij[ks];
-        }  
+        }
       }
     }
   }
@@ -827,14 +902,26 @@ PetscErrorCode SIAFD::compute_I() {
   ierr = delta[1].end_access(); CHKERRQ(ierr);
   ierr = delta[0].end_access(); CHKERRQ(ierr);
 
-  return 0; 
+  return 0;
 }
 
 //! \brief Compute horizontal components of the SIA velocity (in 3D).
 /*!
- * FIXME: document this
+ * Recall that
+ *
+ * \f[ \mathbf{U}(z) = -2 \nabla h \int_b^z F(s)P(s)ds + \mathbf{U}_b,\f]
+ *
+ * which can be written in terms of \f$I(z)\f$ defined in compute_I():
+ *
+ * \f[ \mathbf{U}(z) = -I(z) \nabla h + \mathbf{U}_b. \f]
  *
  * \note This is one of the places where "hybridization" is done.
+ *
+ * \param[in] h_x the X-component of the surface gradient, on the staggered grid
+ * \param[in] h_y the Y-component of the surface gradient, on the staggered grid
+ * \param[in] vel_input the thickness-advective velocity from the underlying stress balance module
+ * \param[out] u_out the X-component of the resulting horizontal velocity field
+ * \param[out] v_out the Y-component of the resulting horizontal velocity field
  */
 PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y,
                                                      IceModelVec2V *vel_input,
@@ -842,8 +929,8 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
   PetscErrorCode ierr;
 
   ierr = compute_I(); CHKERRQ(ierr);
-  // after the compute_I() call work_3d[2,3] contains I on the staggered grid
-  IceModelVec3 I[2] = {work_3d[2], work_3d[3]};
+  // after the compute_I() call work_3d[0,1] contains I on the staggered grid
+  IceModelVec3 I[2] = {work_3d[0], work_3d[1]};
 
   PetscScalar *u_ij, *v_ij, *IEAST, *IWEST, *INORTH, *ISOUTH;
 
@@ -856,7 +943,7 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
 
   ierr = I[0].begin_access(); CHKERRQ(ierr);
   ierr = I[1].begin_access(); CHKERRQ(ierr);
-  
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = I[0].getInternalColumn(i,j,&IEAST); CHKERRQ(ierr);
@@ -886,7 +973,7 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
   ierr = vel_input->end_access(); CHKERRQ(ierr);
   ierr = h_y.end_access(); CHKERRQ(ierr);
   ierr = h_x.end_access(); CHKERRQ(ierr);
-  
+
   ierr = u_out.end_access(); CHKERRQ(ierr);
   ierr = v_out.end_access(); CHKERRQ(ierr);
 
@@ -896,7 +983,7 @@ PetscErrorCode SIAFD::compute_3d_horizontal_velocity(IceModelVec2Stag &h_x, IceM
   ierr = u_out.endGhostComm(); CHKERRQ(ierr);
   ierr = v_out.endGhostComm(); CHKERRQ(ierr);
 
-  return 0; 
+  return 0;
 }
 
 //! Use the Vostok core as a source of a relationship between the age of the ice and the grain size.

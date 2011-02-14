@@ -87,6 +87,8 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
 
   initial_Mz = 0;		// will be set to a correct value in
 				// IceModel::check_maximum_thickness()
+
+  max_stencil_width = 2;
   da2 = PETSC_NULL;
   zlevels = NULL;
   zblevels = NULL;
@@ -381,6 +383,7 @@ PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
   return 0;
 }
 
+//! \brief Computes the number of processors in the X- and Y-directions.
 void IceGrid::compute_nprocs() {
 
   Nx = (PetscInt)(0.5 + sqrt(((double)Mx)*((double)size)/((double)My)));
@@ -472,7 +475,6 @@ PetscErrorCode IceGrid::createDA() {
     SETERRQ(3, "IceGrid::set_horizontal_dims(): Ly has to be positive.");
   }
 
-  PetscInt WIDE_STENCIL = 2;
   if (da2 != PETSC_NULL)
     SETERRQ(1, "IceGrid::createDA(): da2 != PETSC_NULL");
 
@@ -480,7 +482,7 @@ PetscErrorCode IceGrid::createDA() {
   ierr = DACreate2d(com, DA_XYPERIODIC, DA_STENCIL_BOX,
                     My, Mx,
 		    Ny, Nx,
-		    1, WIDE_STENCIL, // dof, stencil width
+		    1, max_stencil_width, // dof, stencil width
                     procs_y, procs_x,
 		    &da2);
   if (ierr != 0) {
@@ -507,7 +509,6 @@ PetscErrorCode IceGrid::createDA() {
 PetscErrorCode IceGrid::createDA(PetscInt my_procs_x, PetscInt my_procs_y,
 				 PetscInt* &lx, PetscInt* &ly) {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = 2;
 
   if (da2 != PETSC_NULL) {
     ierr = DADestroy(da2); CHKERRQ(ierr);
@@ -517,7 +518,7 @@ PetscErrorCode IceGrid::createDA(PetscInt my_procs_x, PetscInt my_procs_y,
   ierr = DACreate2d(com, DA_XYPERIODIC, DA_STENCIL_BOX,
                     My, Mx,
 		    my_procs_y, my_procs_x,
-		    1, WIDE_STENCIL,
+		    1, max_stencil_width, // dof, stencil width
                     ly, lx, &da2);
   if (ierr != 0) {
     PetscErrorCode ierr2;
@@ -757,9 +758,6 @@ PetscErrorCode IceGrid::init_interpolation() {
 
 //! \brief Computes values of x and y corresponding to the computational grid,
 //! with accounting for periodicity.
-/*! This method allocates arrays \c x and \c y, and they have to be freed
-  (using delete[]) by the caller.
- */
 PetscErrorCode IceGrid::compute_horizontal_coordinates() {
   PetscErrorCode ierr;
 
@@ -791,6 +789,9 @@ PetscErrorCode IceGrid::compute_horizontal_coordinates() {
 }
 
 //! \brief Compute coordinates of a grid point.
+/*!
+ * This method is \b DEPRECATED.
+ */
 void IceGrid::mapcoords(PetscInt i, PetscInt j,
                         PetscScalar &x, PetscScalar &y, PetscScalar &r) {
   // compute x,y,r on grid from i,j
@@ -803,6 +804,7 @@ void IceGrid::mapcoords(PetscInt i, PetscInt j,
   r = sqrt(PetscSqr(x) + PetscSqr(y));
 }
 
+//! \brief Report grid parameters.
 PetscErrorCode IceGrid::report_parameters() {
   PetscErrorCode ierr;
 

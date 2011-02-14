@@ -120,7 +120,7 @@ IceModel::~IceModel() {
 */
 PetscErrorCode IceModel::createVecs() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = 2;
+  PetscInt WIDE_STENCIL = grid.max_stencil_width;
 
   ierr = verbPrintf(3, grid.com,
 		    "Allocating memory...\n"); CHKERRQ(ierr);

@@ -16,6 +16,59 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/*! \page computational_grid Organization of PISM's computational grid
+
+  PISM uses the class IceGrid to manage computational grids and their
+  parameters.
+
+  Computational grids PISM can use are
+  - rectangular,
+  - equally spaced in the horizintal (X and Y) directions,
+  - distributed across processors in horizontal dimensions only (every column
+    is stored on one processor only),
+  - are periodic in both X and Y directions (in the topological sence).
+
+  Each processor "owns" a rectangular patch of xm times ym grid points with
+  indices starting at xs and ys in the X and Y directions respectively.
+
+  The typical code performing a point-wise computation will look like
+
+  \code
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+    // compute something at i,j
+    }
+  }
+  \endcode
+
+  For finite difference (and some other) computations we often need to know
+  values at map-plane neighbors of a grid point. 
+
+  We say that a patch owned by a processor is surrounded by a strip of "ghost"
+  grid points belonging to patches next to the one in question. This lets us to
+  access (read) values at all the eight neighbors of a grid point for \e all
+  the grid points, including ones at an edge of a processor patch \e and at an
+  edge of a computational domain.
+
+  All the values \e written to ghost points will be lost next time ghost values
+  are updated.
+
+  Sometimes it is beneficial to update ghost values locally (for instance when
+  a computation A uses finite differences to compute derivatives of a quantity
+  produced using a purely local (point-wise) computation B). In this case the
+  double loop above can be modified to look like
+
+  \code
+  int GHOSTS = 1;
+  for (PetscInt i=grid.xs - GHOSTS; i<grid.xs+grid.xm + GHOSTS; ++i) {
+    for (PetscInt j=grid.ys - GHOSTS; j<grid.ys+grid.ym + GHOSTS; ++j) {
+    // compute something at i,j
+    }
+  }
+  \endcode
+
+*/
+
 #ifndef __grid_hh
 #define __grid_hh
 
@@ -45,7 +98,7 @@ public:
   IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s, const NCConfigVariable &config);
   ~IceGrid();
 
-  PetscErrorCode report_parameters(); // should be moved into a method of IceGrid
+  PetscErrorCode report_parameters();
 
   PetscErrorCode createDA();  // destructor checks if DA was created, and destroys
   PetscErrorCode createDA(PetscInt procs_x, PetscInt procs_y,
@@ -105,6 +158,8 @@ public:
   PetscScalar Lz, Lbz; // extent of the ice, bedrock in z-direction (m)
   PetscInt    Mz, Mbz; // number of grid points in z-direction, ice and bedrock.
   PetscInt initial_Mz; // initial number of grid levels; used by the grid extension code
+  PetscInt max_stencil_width;   // maximum stancil width supported by the DA in
+                                // this IceGrid object
 
   PetscScalar year,       //!< current time (years)
     start_year,		  //!< the year this run started from

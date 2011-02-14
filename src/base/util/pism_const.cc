@@ -326,7 +326,7 @@ PetscErrorCode parse_times(MPI_Comm com, string str, vector<double> &result) {
   return 0;
 }
 
-
+//! \brief Stop if at least one of -version and -pismversion is set.
 PetscErrorCode stop_on_version_option() {
   PetscErrorCode ierr;
 
@@ -340,7 +340,7 @@ PetscErrorCode stop_on_version_option() {
   return 0;
 }
 
-
+//! \brief Print a usage message.
 PetscErrorCode just_show_usage(
     MPI_Comm com, const char execname[], const char usage[]) {
   PetscErrorCode ierr;
@@ -580,6 +580,7 @@ PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set
   return 0;
 }
 
+//! \brief Process a command-line option taking a string as an argument.
 PetscErrorCode PISMOptionsString(string option, string text,
 				 string &result, bool &is_set) {
   PetscErrorCode ierr;
@@ -642,6 +643,7 @@ PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_va
   return 0;
 }
 
+//! \brief Process a command-line option taking an integer as an argument.
 PetscErrorCode PISMOptionsInt(string option, string text,
 			      PetscInt &result, bool &is_set) {
   PetscErrorCode ierr;
@@ -656,6 +658,7 @@ PetscErrorCode PISMOptionsInt(string option, string text,
   return 0;
 }
 
+//! \brief Process a command-line option taking a real number as an argument.
 PetscErrorCode PISMOptionsReal(string option, string text,
 			       PetscReal &result, bool &is_set) {
   PetscErrorCode ierr;
@@ -669,7 +672,8 @@ PetscErrorCode PISMOptionsReal(string option, string text,
 
   return 0;
 }
-
+//! \brief Process a command-line option taking a comma-separated list of reals
+//! as an argument.
 PetscErrorCode PISMOptionsRealArray(string option, string text,
 				    vector<PetscReal> &result, bool &is_set) {
   PetscErrorCode ierr;
@@ -706,6 +710,8 @@ PetscErrorCode PISMOptionsRealArray(string option, string text,
   return 0;
 }
 
+//! \brief Process a command-line option taking a comma-separated list of
+//! integers as an argument.
 PetscErrorCode PISMOptionsIntArray(string option, string text,
 				    vector<PetscInt> &result, bool &is_set) {
   PetscErrorCode ierr;
@@ -789,6 +795,14 @@ string pism_filename_add_suffix(string filename, string separator, string suffix
   return result;
 }
 
+//! \brief Finalizes PETSc and MPI. Replaces PetscEnd().
+/*!
+ * The main reason for having this is pismebm, an executable running 2 MPI
+ * communicators, only one of which runs PETSc. Using PetscEnd() in this case
+ * leaves the process in the communicator \b not running PETsc hanging waiting
+ * for a MPI_Finalize() call. (PetscFinalize() only calls MPI_Finalize() if
+ * PetscInitialize() called MPI_Init().)
+ */
 void PISMEnd() {
   int flag;
   PetscFinalize();

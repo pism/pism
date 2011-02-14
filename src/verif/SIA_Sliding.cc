@@ -20,7 +20,7 @@
 
 PetscErrorCode SIA_Sliding::allocate() {
   PetscErrorCode ierr;
-  PetscInt WIDE_STENCIL = 2;
+  PetscInt WIDE_STENCIL = grid.max_stencil_width;
 
   for (int i = 0; i < 2; ++i) {
     char namestr[30];

@@ -144,8 +144,6 @@ PetscErrorCode PISMIO::get_var(const int varid, Vec g, GridType dims, int t) con
   return 0;
 }
 
-
-
 //! Put a \c DA -managed global \c Vec \c g into a variable in a NetCDF file.  \e In \e parallel.
 PetscErrorCode PISMIO::put_var(const int varid, Vec g, GridType dims) const {
   const int start_tag = 1;
@@ -226,7 +224,6 @@ PetscErrorCode PISMIO::put_var(const int varid, Vec g, GridType dims) const {
   
   return 0;
 }
-
 
 //! Find a 2D or 3D variable in a NetCDF file and regrid it onto the current grid.  \e In \e parallel.
 /*!
@@ -540,8 +537,6 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
   return 0;
 }
 
-
-
 //! Computes the size of the local block.
 int PISMIO::compute_block_size(GridType dims, int* count) const {
   const int X = 1, Y = 2, Z = 3, ZB = 4;
@@ -555,7 +550,6 @@ int PISMIO::compute_block_size(GridType dims, int* count) const {
   }
   return 0;
 }
-
 
 //! Assembles start, count and imap arrays for a particular variable.
 /*!

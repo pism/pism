@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Constantine Khroulev
+// Copyright (C) 2009--2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,12 +18,14 @@
 
 #include "PISMVars.hh"
 
+//! \brief Add an IceModelVec v using the name \c name.
 PetscErrorCode PISMVars::add(IceModelVec &v, string name) {
 
   variables[name] = &v;
 
   return 0;
 }
+
 //!Add an IceModelVec to the dictionary.
 /*!
   Adds standard_name if present, otherwise uses short_name.
@@ -55,9 +57,6 @@ PetscErrorCode PISMVars::add(IceModelVec &v) {
 }
 
 //! Removes a variable with the key \c name from the dictionary.
-/*! If an IceModelVec has short_name "foo" and the standard_name "bar",
-  remove_variable("foo") will not remove the entry corresponding to "bar".
- */
 void PISMVars::remove(string name) {
   IceModelVec *v = variables[name];
 
@@ -100,8 +99,7 @@ IceModelVec* PISMVars::get(string name) const {
 
 //! \brief Returns the set of keys (variable names) in the dictionary.
 /*!
- * Provides one name per variable (the standard_name if it was set, otherwise
- * the short name).
+ * Provides one (short) name per variable.
  *
  * This means that one can safely iterate over these keys, reading, writing,
  * displaying or de-allocating variables (without worrying that a variable will

@@ -40,13 +40,13 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
   
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  // FIXME: we should use cell_area instead
-  const PetscScalar   a = grid.dx * grid.dy; // area unit (m^2)
+  ierr = cell_area.begin_access(); CHKERRQ(ierr);
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (vH(i,j) > 0) {
-        area += a;
-        const PetscScalar dv = a * vH(i,j);
+        area += cell_area(i,j);
+        const PetscScalar dv = cell_area(i,j) * vH(i,j);
         volume += dv;
         if (vMask.value(i,j) == MASK_SHEET)   volSIA += dv;
         else if (vMask.value(i,j) == MASK_DRAGGING_SHEET)   volstream += dv;
@@ -54,8 +54,11 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
       }
     }
   }  
+
+  ierr = cell_area.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
+
   ierr = PetscGlobalSum(&volume, &gvolume, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&area, &garea, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&volSIA, &gvolSIA, grid.com); CHKERRQ(ierr);

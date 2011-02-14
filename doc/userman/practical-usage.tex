@@ -287,6 +287,14 @@ Also note that the second snapshot will probably be \emph{around} $1500$ years a
 
 Another possible use of snapshots is for restarting runs on a batch system which kills jobs which go over their allotted time.  Running PISM with options \texttt{-y 1500} \texttt{-save_times 1000:100:1400} would mean that if the job is killed before completing the whole 1500 year run, we can restart from near the last multiple of $100$ years.  Restarting with option \texttt{-ye} would finish the run on the desired year.
 
+When running PISM on such a batch system it is also possible to save
+re-startable snapshots at equal wall-clock time (as opposed to model time)
+intervals by adding the '\txtopt{backup_interval}{hours}' option.
+
+\textbf{A note of caution:} if the wall-clock limit is equal to $N$ times backup
+interval for a whole number $N$ PISM will likely get killed while writing the
+last backup.
+
 It is also possible to save snapshots to separate files using the
 \texttt{-save_split} option.  For example, the run above can be changed to
 \begin{verbatim}
@@ -326,7 +334,7 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
 \optsection{Run-time diagnostic viewers}
 Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.
 All the quantities listed in table \ref{tab:extra-vars} are available.
-
+%FIXME: this is out of date
 Note that (for performance and implementation reasons) map and slice viewers
 are transposed.
 
@@ -777,4 +785,4 @@ Actually the KSP uses preconditioning.  This aspect of the solve is critical for
 %%% TeX-master: "manual"
 %%% End: 
 
-% LocalWords:  NetCDF Regridding emacs ncview pclimate
+% LocalWords:  NetCDF Regridding emacs ncview pclimate startable

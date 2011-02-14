@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -117,6 +117,7 @@ GridType IceModelVec::grid_type() {
   return dims;
 }
 
+//! \brief De-allocates an IceModelVec object.
 PetscErrorCode  IceModelVec::destroy() {
   PetscErrorCode ierr;
 
@@ -307,6 +308,8 @@ PetscErrorCode  IceModelVec::copy_to(Vec destination) {
   return 0;
 }
 
+//! \brief Copies data from a Vec \c source to this IceModelVec. Updates ghost
+//! points if necessary.
 PetscErrorCode IceModelVec::copy_from(Vec source) {
   PetscErrorCode ierr;
   ierr = checkAllocated(); CHKERRQ(ierr);
@@ -318,7 +321,6 @@ PetscErrorCode IceModelVec::copy_from(Vec source) {
   }
   return 0;
 }
-
 
 //! Result: destination <- v.  Leaves metadata alone but copies values in Vec.  Uses VecCopy.
 PetscErrorCode  IceModelVec::copy_to(IceModelVec &destination) {
@@ -342,7 +344,7 @@ PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
   return 0;
 }
 
-//! Sets the variable name to \c name.
+//! Sets the variable name to \c name and resets metadata.
 PetscErrorCode  IceModelVec::set_name(const char new_name[], int N) {
   reset_attrs(N);
   
@@ -384,7 +386,7 @@ PetscErrorCode IceModelVec::reset_attrs(int N) {
 }
 
 //! Sets NetCDF attributes of an IceModelVec object.
-/*! Call set_attrs("new long name", "new units", "new pism_intent", "") if a
+/*! Call set_attrs("new pism_intent", "new long name", "new units", "") if a
   variable does not have a standard name. Similarly, by putting "" in an
   appropriate spot, it is possible tp leave long_name, units or pism_intent
   unmodified.
@@ -523,8 +525,6 @@ PetscErrorCode IceModelVec::set_metadata(NCSpatialVariable &var, int N) {
 
   return 0;
 }
-
-
 
 //! Writes an IceModelVec to a NetCDF file using the default output data type.
 PetscErrorCode IceModelVec::write(const char filename[]) {
@@ -782,6 +782,7 @@ PetscErrorCode IceModelVec::set_attr(string my_name, vector<double> values,
   return 0;
 }
 
+//! \brief Returns true if component N has attribute my_name.
 bool IceModelVec::has_attr(string my_name, int N) {
   return vars[N].has(my_name);
 }

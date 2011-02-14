@@ -37,6 +37,7 @@ public:
 
   virtual bool            was_created();
   virtual GridType        grid_type();
+  //! \brief Returns the number of degrees of freedom per grid point.
   virtual int             get_dof() { return dof; }
 
   virtual PetscErrorCode  range(PetscReal &min, PetscReal &max);
@@ -88,24 +89,30 @@ public:
   virtual int get_state_counter() const;
   virtual void inc_state_counter();
  
-  bool   write_in_glaciological_units, time_independent;
-  nc_type output_data_type;
+  bool   write_in_glaciological_units, //!< \brief If true, data is written to
+                                       //!< a file in "human-friendly" units.
+    time_independent;                  //!< \brief If true, corresponding
+                                       //!< NetCDF variables do not depend on
+                                       //!< the 't' dimension.
+  nc_type output_data_type;            //!< Corresponding NetCDF data type.
 protected:
 
-  bool shallow_copy;
-  Vec  v;
+  bool shallow_copy;            //!< True if this IceModelVec is a shallow copy.
+  Vec  v;                       //!< Internal storage
   string name;
 
-  //! NetCDF variable(s) corresponding to this IceModelVec; dof == 1 vectors
-  //! only have vars[0].
+  //! \brief NetCDF variable(s) corresponding to this IceModelVec; dof == 1
+  //! vectors only have vars[0].
   vector<NCSpatialVariable> vars;
 
   IceGrid      *grid;
-  GridType     dims;
+  GridType     dims;            //!< \brief Determines whether this field is
+                                //!< 2D, 3D (ice) or 3D (bedrock).
   int          dof, da_stencil_width;
   DA           da;
-  bool         localp;
-  //! it is a map, because a temporary IceModelVec can be used to view
+  bool         localp;          //!< localp == true means "has ghosts"
+
+  //! It is a map, because a temporary IceModelVec can be used to view
   //! different quantities, and a pointer because "shallow copies" should have
   //! the acces to the original map
   map<string,PetscViewer> *map_viewers;
@@ -113,7 +120,7 @@ protected:
   void         *array;  // will be PetscScalar** or PetscScalar*** in derived classes
 
   int access_counter;		// used in begin_access() and end_access()
-  int state_counter;
+  int state_counter;            //!< Internal IceModelVec "revision number"
 
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode checkAllocated();
@@ -124,10 +131,12 @@ protected:
 };
 
 
+//! \brief Star stencil points (in the map-plane).
 struct planeStar {
   PetscScalar ij, ip1, im1, jp1, jm1;
 };
 
+//! \brief Box stencil points (in the map-plane).
 struct planeBox {
   PetscScalar ij, ip1, im1, jp1, jm1, ip1jp1, im1jp1, ip1jm1, im1jm1;
 };

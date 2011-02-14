@@ -25,7 +25,7 @@ DOXYFILE_ENCODING      = UTF-8
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded
 # by quotes) that should identify the project.
 
-PROJECT_NAME           = "PISM, A Parallel Ice Sheet Model"
+PROJECT_NAME           = "PISM Utility classes and functions"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number.
 # This could be handy for archiving the generated documentation or
@@ -38,7 +38,7 @@ PROJECT_NUMBER         = "For PISM ${Pism_REVISION_TAG}"
 # If a relative path is entered, it will be relative to the location
 # where doxygen was started. If left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = ./base/
+OUTPUT_DIRECTORY       = ./util/
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create
 # 4096 sub-directories (in 2 levels) under the output directory of each output
@@ -578,28 +578,8 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = pism_config.txt \
-                         std_names.txt \
-                         pages.txt \
-                         bombproof_enth.txt \
-                         vertchange.txt \
-                         bedrough.txt \
-                         references.txt \
-                         howto.txt \
-                         ${PROJECT_SOURCE_DIR}/src/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/ \
-                         ${PROJECT_SOURCE_DIR}/src/software_tests/ \
-                         ${PROJECT_SOURCE_DIR}/src/coupler/ \
-                         ${PROJECT_SOURCE_DIR}/src/earth/ \
-                         ${PROJECT_SOURCE_DIR}/src/verif/ \
-                         ${PROJECT_SOURCE_DIR}/src/eismint/ \
-                         ${PROJECT_SOURCE_DIR}/src/ismip/ \
-			 ${PROJECT_SOURCE_DIR}/test/ \
-                         ${PROJECT_SOURCE_DIR}/src/base/util/PISMComponent.cc \
-                         ${PROJECT_SOURCE_DIR}/src/base/util/PISMComponent.hh
-
-# The last two files belong in the other (util) browser, but are crucial for
-# understanding PISMSurfaceModel and similar classes.
+INPUT                  = util_main.txt \
+                         ${PROJECT_SOURCE_DIR}/src/base/util/
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -669,9 +649,7 @@ RECURSIVE              = NO
 # excluded from the INPUT source files. This way you can easily exclude a
 # subdirectory from a directory tree whose root is specified with the INPUT tag.
 
-EXCLUDE                = ${PROJECT_SOURCE_DIR}/src/earth/cubature.h \
-                         ${PROJECT_SOURCE_DIR}/src/earth/cubature.c \
-                         ${PROJECT_SOURCE_DIR}/src/verif/tests/exactM.py
+#EXCLUDE                = 
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or
 # directories that are symbolic links (a Unix filesystem feature) are excluded

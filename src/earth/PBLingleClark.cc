@@ -218,7 +218,7 @@ PetscErrorCode PBLingleClark::correct_topg() {
                     boot_filename.c_str(), regrid_filename.c_str()); CHKERRQ(ierr); 
   
   IceModelVec2S topg_tmp;       // will be de-allocated at 'return 0' below.
-  int WIDE_STENCIL = 2;
+  int WIDE_STENCIL = grid.max_stencil_width;
   ierr = topg_tmp.create(grid, "topg", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_tmp.set_attrs("model_state", "bedrock surface elevation (at the end of the previous run)",
                             "m", "bedrock_altitude"); CHKERRQ(ierr);
