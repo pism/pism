@@ -16,7 +16,31 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-/*! \page computational_grid Organization of PISM's computational grid
+#ifndef __grid_hh
+#define __grid_hh
+
+#include <petscda.h>
+#include "NCVariable.hh"
+#include "PISMProf.hh"
+
+typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
+typedef enum {NONE = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
+
+//! Describes the PISM grid and the distribution of data across processors.
+/*!
+  This class holds parameters describing the grid, including the vertical
+  spacing and which part of the horizontal grid is owned by the processor. It
+  contains the dimensions of the PISM (4-dimensional, x*y*z*time) computational
+  box. The vertical spacing can be quite arbitrary.
+
+  It creates and destroys a two dimensional \c PETSc \c DA (distributed array).
+  The creation of this \c DA is the point at which PISM gets distributed across
+  multiple processors.
+
+  It computes grid parameters for the fine and equally-spaced vertical grid
+  used in the conservation of energy and age equations.
+
+  \section computational_grid Organization of PISM's computational grid
 
   PISM uses the class IceGrid to manage computational grids and their
   parameters.
@@ -67,31 +91,6 @@
   }
   \endcode
 
-*/
-
-#ifndef __grid_hh
-#define __grid_hh
-
-#include <petscda.h>
-#include "NCVariable.hh"
-#include "PISMProf.hh"
-
-typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} SpacingType;
-typedef enum {NONE = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
-
-//! Describes the PISM grid and the distribution of data across processors.
-/*!
-  This class holds parameters describing the grid, including the vertical
-  spacing and which part of the horizontal grid is owned by the processor. It
-  contains the dimensions of the PISM (4-dimensional, x*y*z*time) computational
-  box. The vertical spacing can be quite arbitrary.
-
-  It creates and destroys a two dimensional \c PETSc \c DA (distributed array).
-  The creation of this \c DA is the point at which PISM gets distributed across
-  multiple processors.
-
-  It computes grid parameters for the fine and equally-spaced vertical grid
-  used in the conservation of energy and age equations.
  */
 class IceGrid {
 public:

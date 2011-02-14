@@ -21,7 +21,7 @@ run_test ()
     diff test-J-out.txt - > /dev/null <<END-OF-OUTPUT
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.2412      0.08327    0.2311    0.0696    0.1430    0.0384
+                0.2526      0.08339    0.2421    0.0725    0.1432    0.0385
 NUM ERRORS DONE
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
