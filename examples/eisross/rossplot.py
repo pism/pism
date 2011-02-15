@@ -18,8 +18,9 @@
 #    $ cd delaunay; sudo python setup.py install
 #
 # CK 27may08, ..., 12jan10
+# ELB 15feb11
 
-from numpy import ma, loadtxt, squeeze, linspace, tile, repeat, sin, pi, cos, sqrt
+from numpy import ma, loadtxt, squeeze, shape, reshape, linspace, tile, repeat, sin, pi, cos, sqrt
 from pylab import figure, clf, hold, pcolor, colorbar, plot, quiver, axis, xlabel, ylabel, savefig, show, title
 from getopt import getopt, GetoptError
 from sys import argv, exit
@@ -40,24 +41,20 @@ seconds_per_year = 3.1556926e7
 
 # process command line arguments
 try:
-    opts, args = getopt(argv[1:], "", ["pism-output=", "riggs=", "ross="])
+    opts, args = getopt(argv[1:], "", ["pism-output=", "riggs="])
     # defaults:
     pism_output = "rossComputed.nc"
     riggs_file = "riggs_clean.dat"
-    ross_file = "ross.nc"
     for opt, arg in opts:
         if opt in ("--pism-output"):
             pism_output = arg
         if opt in ("--riggs"):
             riggs_file = arg
-        if opt in ("--ross"):
-            ross_file = arg
 except GetoptError:
     print """
 Options:
    --pism-output=<PISM output .nc file>:  specifies the NetCDF file with PISM output
    --riggs=<RIGGS data file>: specifies the data file with RIGGS points
-   --ross=<eismint ross .nc file>: specifies the NetCDF file which includes 'accur'
 """
     exit(-1)
 
@@ -86,34 +83,29 @@ mask = squeeze(infile.variables["mask"][:])
 cbar = squeeze(infile.variables["cbar"][:])
 ubar = squeeze(infile.variables["ubar_ssa"][:])
 vbar = squeeze(infile.variables["vbar_ssa"][:])
+pismaccur = squeeze(infile.variables["accur"][:])
 print "done."
 
-# need accur flag to determine location of calving front
-print "Loading EISMINT data from 'ross.nc'..."
-rossfile = NC("ross.nc", 'r')
-accur = squeeze(rossfile.variables["accur"][:])
-rosslat = squeeze(rossfile.variables["lat"][:])
-rosslon = squeeze(rossfile.variables["lon"][:])
-print "done."
-
+# this may not work if axis order is flipped; works r1443 with Pism_FAST_WRITE=2
+(Mx,My) = shape(cbar)
 
 # see 111by147.dat for these ranges
-dlat = (-5.42445 - (-12.3325))/110;
-gridlatext = linspace(-12.3325 - dlat * 46,-5.42445,147);
-gridlon = linspace(-5.26168,3.72207,147);
+dlat = (-5.42445 - (-12.3325))/110
+gridlatext = linspace(-12.3325 - dlat * 46,-5.42445,Mx)
+gridlon = linspace(-5.26168,3.72207,My)
 
-# triangulate data
-glon = tile(gridlon, 147); glat = repeat(gridlatext, 147)
-tri = Triangulation(glon, glat)
+# need RIGGS lat,lon in different forms
+glat = repeat(gridlatext, My)
+glon = tile(gridlon, Mx)
+reglat = reshape(glat,(Mx,My))
+reglon = reshape(glon,(Mx,My))
 
-# This is needed to only plot areas where H >= 20 and mask == 0
+# Plot areas where thickness and PISM mask are appropriate,
 # and filter out RIGGS points that are outside the model domain,
-# and use location of calving front from accur flag
-cbar_masked = ma.array(cbar,
-    mask = (mask != 3) + (H < 20.0)
-            + ((accur == 0) & (rosslat < -11.0) & (rosslon < 1.0)
-               )
-    )
+# and use location of calving front from pismaccur flag, which is
+# interpolated by PISM from original ross.nc file "accur" flag.
+cbar_masked = ma.array(cbar, mask = (mask != 3) + (H < 20.0)
+             + ((pismaccur < 0.01) & (reglat < -11.0) & (reglon < 1.0) ) )
 
 # show computed speed as color
 figure(1, figsize=(9,8));clf();hold(True)
@@ -125,9 +117,10 @@ RIGGSlon = RIGGS[:,6] + RIGGS[:,7]/60 + RIGGS[:,8]/(60*60)
 RIGGSlon = - RIGGSlon * RIGGS[:,9];  # RIGGS[:,9] is +1 if W, -1 if E
 
 # throw out the ones which are not in model domain; 132 (131?) remain
-
 cbar_masked = cbar_masked.filled(-20)
 
+# triangulate data
+tri = Triangulation(glon, glat)
 cRIGGS = tri.nn_interpolator(cbar_masked.flat)(RIGGSlon, RIGGSlat)
 rig = RIGGS[cRIGGS > 0]
 riglon = RIGGSlon[cRIGGS > 0]
