@@ -29,44 +29,40 @@
 // methods for base class IceModelVec and derived class IceModelVec2S
 // are in "iceModelVec.cc"
 
-IceModelVec3::IceModelVec3() : IceModelVec() {
+IceModelVec3D::IceModelVec3D() : IceModelVec() {
   sounding_buffer = PETSC_NULL;
-  slice_viewers = new map<string, PetscViewer>;
   sounding_viewers = new map<string, PetscViewer>;
 }
 
-IceModelVec3::~IceModelVec3() {
+IceModelVec3D::~IceModelVec3D() {
   if (!shallow_copy) {
     destroy();
-    delete slice_viewers;
-    delete sounding_viewers;
   }
 }
 
-IceModelVec3::IceModelVec3(const IceModelVec3 &other)
+IceModelVec3D::IceModelVec3D(const IceModelVec3D &other)
   : IceModelVec(other) {
-  slice_viewers = other.slice_viewers;
   sounding_buffer = other.sounding_buffer;
   sounding_viewers = other.sounding_viewers;
   shallow_copy = true;
 }
 
-PetscErrorCode IceModelVec3::create_da(DA &result, PetscInt Mz) {
+PetscErrorCode IceModelVec3D::create_da(DA &result, PetscInt Mz) {
   PetscErrorCode ierr;
 
-  ierr = DACreate3d(grid->com, DA_YZPERIODIC, DA_STENCIL_BOX,
-		    Mz, grid->My, grid->Mx, // P, N, M
-		    1,  grid->Ny, grid->Nx, // p, n, m
-		    1, da_stencil_width,	// dof, stencil_width
-                    PETSC_NULL, grid->procs_y, grid->procs_x, // lz, ly, lx
+  ierr = DACreate2d(grid->com, DA_XYPERIODIC, DA_STENCIL_BOX,
+		    grid->My, grid->Mx, // N, M
+		    grid->Ny, grid->Nx, // n, m
+		    Mz, da_stencil_width,	// dof, stencil_width
+                    grid->procs_y, grid->procs_x, // ly, lx
 		    &result); CHKERRQ(ierr);
 
   return 0;
 }
 
 //! Allocate a DA and a Vec from information in IceGrid.
-PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[],
-				     bool local, int stencil_width) {
+PetscErrorCode  IceModelVec3D::create(IceGrid &my_grid, const char my_name[],
+                                      bool local, GridType my_dims, int stencil_width) {
   PetscErrorCode ierr;
   if (!utIsInit()) {
     SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
@@ -77,10 +73,22 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[],
   }
   
   grid = &my_grid;
-  dims = GRID_3D;
   da_stencil_width = stencil_width;
 
-  ierr = create_da(da, grid->Mz); CHKERRQ(ierr);
+  switch (my_dims) {
+  case GRID_3D:
+    dims = GRID_3D;
+    n_levels = grid->Mz;
+    break;
+  case GRID_3D_BEDROCK:
+    dims = GRID_3D_BEDROCK;
+    n_levels = grid->Mbz;
+    break;
+  default:
+    SETERRQ(1, "only 3D and 3D bedrock grids are supported");
+  }
+
+  ierr = create_da(da, n_levels); CHKERRQ(ierr);
 
   if (local) {
     ierr = DACreateLocalVector(da, &v); CHKERRQ(ierr);
@@ -98,11 +106,9 @@ PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[],
   return 0;
 }
 
-PetscErrorCode IceModelVec3::destroy() {
+PetscErrorCode IceModelVec3D::destroy() {
   PetscErrorCode ierr;
   map<string,PetscViewer>::iterator i;
-
-  ierr = IceModelVec::destroy(); CHKERRQ(ierr);
 
   // soundings:
   if (sounding_viewers != NULL) {
@@ -120,21 +126,47 @@ PetscErrorCode IceModelVec3::destroy() {
     sounding_buffer = PETSC_NULL;
   }
 
-  // slices:
-  if (slice_viewers != NULL) {
-    for (i = (*slice_viewers).begin(); i != (*slice_viewers).end(); ++i) {
-      if ((*i).second != PETSC_NULL) {
-	ierr = PetscViewerDestroy((*i).second); CHKERRQ(ierr);
-      }
-    }
-    delete slice_viewers;
-    slice_viewers = NULL;
+  return 0;
+}
+
+PetscErrorCode  IceModelVec3D::begin_access() {
+  PetscErrorCode ierr;
+#ifdef PISM_DEBUG
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
+  if (access_counter < 0)
+    SETERRQ(1, "IceModelVec3D::begin_access(): access_counter < 0");
+#endif
+
+  if (access_counter == 0) {
+    ierr = DAVecGetArrayDOF(da, v, &array); CHKERRQ(ierr);
+  }
+
+  access_counter++;
+
+  return 0;
+}
+
+PetscErrorCode  IceModelVec3D::end_access() {
+  PetscErrorCode ierr;
+  access_counter--;
+
+#ifdef PISM_DEBUG
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
+  if (access_counter < 0)
+    SETERRQ(1, "IceModelVec3D::end_access(): access_counter < 0");
+#endif
+
+  if (access_counter == 0) {
+    ierr = DAVecRestoreArrayDOF(da, v, &array); CHKERRQ(ierr);
+    array = NULL;
   }
 
   return 0;
 }
 
-PetscErrorCode  IceModelVec3::beginGhostCommTransfer(IceModelVec3 &imv3_source) {
+PetscErrorCode  IceModelVec3D::beginGhostCommTransfer(IceModelVec3D &imv3_source) {
   PetscErrorCode ierr;
   if (!localp) {
     SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3!\n"
@@ -151,7 +183,7 @@ PetscErrorCode  IceModelVec3::beginGhostCommTransfer(IceModelVec3 &imv3_source) 
 }
 
 
-PetscErrorCode  IceModelVec3::endGhostCommTransfer(IceModelVec3 &imv3_source) {
+PetscErrorCode  IceModelVec3D::endGhostCommTransfer(IceModelVec3D &imv3_source) {
   PetscErrorCode ierr;
   if (!localp) {
     SETERRQ1(1,"makes no sense to communicate ghosts for GLOBAL IceModelVec3!\n"
@@ -214,13 +246,13 @@ PetscErrorCode  IceModelVec3::setValColumnPL(PetscInt i, PetscInt j, PetscScalar
 
 
 //! Set all values of scalar quantity to given a single value in a particular column.
-PetscErrorCode  IceModelVec3::setColumn(PetscInt i, PetscInt j, PetscScalar c) {
+PetscErrorCode IceModelVec3D::setColumn(PetscInt i, PetscInt j, PetscScalar c) {
 #ifdef PISM_DEBUG
   PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
   check_array_indices(i, j);
 #endif
   PetscScalar ***arr = (PetscScalar***) array;
-  for (PetscInt k=0; k < grid->Mz; k++) {
+  for (PetscInt k=0; k < n_levels; k++) {
     arr[i][j][k] = c;
   }
   return 0;
@@ -558,7 +590,7 @@ PetscErrorCode  IceModelVec3::getSurfaceValues(IceModelVec2S &gsurf, PetscScalar
 }
 
 
-PetscErrorCode  IceModelVec3::getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsPTR) {
+PetscErrorCode  IceModelVec3D::getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsPTR) {
   check_array_indices(i, j);
   PetscScalar ***arr = (PetscScalar***) array;
   *valsPTR = arr[i][j];
@@ -566,141 +598,25 @@ PetscErrorCode  IceModelVec3::getInternalColumn(PetscInt i, PetscInt j, PetscSca
 }
 
 
-PetscErrorCode  IceModelVec3::setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN) {
+PetscErrorCode  IceModelVec3D::setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN) {
   check_array_indices(i, j);
   PetscScalar ***arr = (PetscScalar***) array;
-  PetscErrorCode ierr = PetscMemcpy(arr[i][j], valsIN, grid->Mz*sizeof(PetscScalar));
+  PetscErrorCode ierr = PetscMemcpy(arr[i][j], valsIN, n_levels*sizeof(PetscScalar));
   CHKERRQ(ierr);
   return 0;
 }
 
 /********* IceModelVec3Bedrock **********/
 
-IceModelVec3Bedrock::IceModelVec3Bedrock() : IceModelVec() {
-  sounding_buffer = PETSC_NULL;
-  sounding_viewers = new map<string, PetscViewer>;
-}
-
-IceModelVec3Bedrock::~IceModelVec3Bedrock() {
-  if (!shallow_copy) {
-    destroy();
-    delete sounding_viewers;
-  }
-}
-
-IceModelVec3Bedrock::IceModelVec3Bedrock(const IceModelVec3Bedrock &other) : IceModelVec() {
-  sounding_buffer = other.sounding_buffer;
-  sounding_viewers = other.sounding_viewers;
-  shallow_copy = true;
-}
-
-
 //! Allocate a DA and a Vec from information in IceGrid.
-PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid, 
-                               const char my_name[], bool local) {
-  if (!utIsInit()) {
-    SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
-  }
-  if (v != PETSC_NULL) {
-    SETERRQ1(1,"IceModelVec3Bedrock with name='%s' already allocated\n",name.c_str());
-  }
-  if (local) {
-    SETERRQ1(2,"IceModelVec3Bedrock must be GLOBAL (name='%s')\n",name.c_str());
-  }
+PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid, const char my_name[],
+                                            bool local, int stencil_width) {
 
-  name = my_name;
-
-  grid = &my_grid;
-  dims = GRID_3D_BEDROCK;
-  
-  PetscErrorCode ierr;
-
-  ierr = DACreate3d(grid->com, DA_YZPERIODIC, DA_STENCIL_STAR,
-		    grid->Mbz, grid->My, grid->Mx, // P, N, M
-		    1, grid->Ny, grid->Nx,	   // p, n, m
-		    1, 1,		// dof, stencil width
-                    PETSC_NULL, grid->procs_y, grid->procs_x, // lz, ly, lx
-		    &da); CHKERRQ(ierr);
-
-  ierr = DACreateGlobalVector(da, &v); CHKERRQ(ierr);
-
-  localp = false;
-
-  vars[0].init(name, my_grid, dims);
-
-  //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
+  PetscErrorCode ierr = IceModelVec3D::create(my_grid, my_name, local,
+                                              GRID_3D_BEDROCK, stencil_width); CHKERRQ(ierr);
 
   return 0;
 }
-
-PetscErrorCode IceModelVec3Bedrock::destroy() {
-  PetscErrorCode ierr;
-
-  ierr = IceModelVec::destroy(); CHKERRQ(ierr);
-
-  // soundings:
-  if (sounding_viewers != NULL) {
-    map<string,PetscViewer>::iterator i;
-    for (i = (*sounding_viewers).begin(); i != (*sounding_viewers).end(); ++i) {
-      if ((*i).second != PETSC_NULL) {
-	ierr = PetscViewerDestroy((*i).second); CHKERRQ(ierr);
-      }
-    }
-    delete sounding_viewers;
-    sounding_viewers = NULL;
-  }
-
-  if (sounding_buffer != PETSC_NULL) {
-    ierr = VecDestroy(sounding_buffer); CHKERRQ(ierr);
-    sounding_buffer = PETSC_NULL;
-  }
-
-  return 0;
-}
-
-//! Set values of bedrock scalar quantity at internal levels determined by IceGrid.
-/*!
-Array \c valsIN must be an allocated array of \c grid->Mbz \c PetscScalar s.
- */
-PetscErrorCode  IceModelVec3Bedrock::setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN) {
-  check_array_indices(i, j);
-
-  PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
-  PetscScalar ***arr = (PetscScalar***) array;
-  for (PetscInt k = 0; k < grid->Mbz; k++) {
-    arr[i][j][k] = valsIN[k];
-  }
-  return 0;
-}
-
-
-//! Set values of bedrock scalar quantity: set all values in a column to the same value.
-PetscErrorCode  IceModelVec3Bedrock::setColumn(PetscInt i, PetscInt j, PetscScalar c) {
-  check_array_indices(i, j);
-
-  PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
-  PetscScalar ***arr = (PetscScalar***) array;
-  for (PetscInt k = 0; k < grid->Mbz; k++) {
-    arr[i][j][k] = c;
-  }
-  return 0;
-}
-
-
-//! Return values of bedrock scalar quantity at internal levels determined by IceGrid.
-/*!
-Return array \c valsOUT is an allocated array of \c grid->Mbz \c PetscScalar s.
- */
-PetscErrorCode  IceModelVec3Bedrock::getInternalColumn(PetscInt i, PetscInt j, 
-                                                       PetscScalar **valsOUT) {
-  check_array_indices(i, j);
-
-  PetscErrorCode ierr = checkHaveArray();  CHKERRQ(ierr);
-  PetscScalar ***arr = (PetscScalar***) array;
-  *valsOUT = arr[i][j];
-  return 0;
-}
-
 
 //! From given values, set a bedrock scalar quantity in a given column by piecewise linear interpolation.
 /*!
@@ -790,6 +706,14 @@ PetscErrorCode  IceModelVec3Bedrock::getValColumnPL(PetscInt i, PetscInt j, Pets
   return 0;
 }
 
+PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[], bool local,
+                                     int stencil_width) {
+
+  PetscErrorCode ierr = IceModelVec3D::create(my_grid, my_name, local,
+                                              GRID_3D, stencil_width); CHKERRQ(ierr);
+
+  return 0;
+}
 
 //! Extends an IceModelVec3 and fills all the new grid points with \c fill_value.
 PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, PetscScalar fill_value) {
@@ -800,14 +724,14 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, PetscScalar fill_valu
 
   // Fill the new layer:
   PetscScalar ***a;
-  ierr = DAVecGetArray(da, v, &a); CHKERRQ(ierr);
+  ierr = DAVecGetArrayDOF(da, v, &a); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
       for (PetscInt k = old_Mz; k < grid->Mz; k++)
 	a[i][j][k] = fill_value;
     }
   }
-  ierr = DAVecRestoreArray(da, v, &a); CHKERRQ(ierr);
+  ierr = DAVecRestoreArrayDOF(da, v, &a); CHKERRQ(ierr);
 
   // This communicates the ghosts just to update the new levels. Since this
   // only happens when the grid is extended it should not matter.
@@ -829,7 +753,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_v
 
   // Fill the new layer:
   PetscScalar ***a, **filler;
-  ierr = DAVecGetArray(da, v, &a); CHKERRQ(ierr);
+  ierr = DAVecGetArrayDOF(da, v, &a); CHKERRQ(ierr);
   ierr = fill_values.get_array(filler); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
@@ -837,7 +761,7 @@ PetscErrorCode IceModelVec3::extend_vertically(int old_Mz, IceModelVec2S &fill_v
 	a[i][j][k] = filler[i][j];
     }
   }
-  ierr = DAVecRestoreArray(da, v, &a); CHKERRQ(ierr);
+  ierr = DAVecRestoreArrayDOF(da, v, &a); CHKERRQ(ierr);
   ierr = fill_values.end_access(); CHKERRQ(ierr);
 
   // This communicates the ghosts just to update the new levels. Since this
@@ -869,16 +793,16 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   // Copy all the values from the old Vec to the new one:
   PetscScalar ***a_new;
   PetscScalar ***a_old;
-  ierr = DAVecGetArray(da, v, &a_old); CHKERRQ(ierr);
-  ierr = DAVecGetArray(da_new, v_new, &a_new); CHKERRQ(ierr);
+  ierr = DAVecGetArrayDOF(da, v, &a_old); CHKERRQ(ierr);
+  ierr = DAVecGetArrayDOF(da_new, v_new, &a_new); CHKERRQ(ierr);
   for (PetscInt i=grid->xs; i<grid->xs+grid->xm; i++) {
     for (PetscInt j=grid->ys; j<grid->ys+grid->ym; j++) {
       for (PetscInt k=0; k < old_Mz; k++)
 	a_new[i][j][k] = a_old[i][j][k];
     }
   }
-  ierr = DAVecRestoreArray(da, v, &a_old); CHKERRQ(ierr);
-  ierr = DAVecRestoreArray(da_new, v_new, &a_new); CHKERRQ(ierr);
+  ierr = DAVecRestoreArrayDOF(da, v, &a_old); CHKERRQ(ierr);
+  ierr = DAVecRestoreArrayDOF(da_new, v_new, &a_new); CHKERRQ(ierr);
 
   // Deallocate old DA and Vec:
   ierr = VecDestroy(v); CHKERRQ(ierr);
@@ -886,11 +810,12 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
 
   ierr = DADestroy(da); CHKERRQ(ierr);
   da = da_new;
+  n_levels = grid->Mz;
 
   return 0;
 }
 
-PetscErrorCode IceModelVec3::view_sounding(int i, int j, PetscInt viewer_size) {
+PetscErrorCode IceModelVec3D::view_sounding(int i, int j, PetscInt viewer_size) {
   PetscErrorCode ierr;
 
   // create the title:
@@ -906,10 +831,9 @@ PetscErrorCode IceModelVec3::view_sounding(int i, int j, PetscInt viewer_size) {
 }
 
 //! \brief View a sounding using an existing PETSc viewer.
-PetscErrorCode IceModelVec3::view_sounding(int i, int j, PetscViewer my_viewer) {
+PetscErrorCode IceModelVec3D::view_sounding(int i, int j, PetscViewer my_viewer) {
   PetscErrorCode ierr;
   PetscScalar *ivals;
-  PetscInt my_Mz = grid->Mz;
 
   check_array_indices(i, j);
 
@@ -923,76 +847,17 @@ PetscErrorCode IceModelVec3::view_sounding(int i, int j, PetscViewer my_viewer) 
 
   // memory allocation:
   if (sounding_buffer == PETSC_NULL) {
-    ierr = VecCreateMPI(grid->com, PETSC_DECIDE, my_Mz, &sounding_buffer); CHKERRQ(ierr);
+    ierr = VecCreateMPI(grid->com, PETSC_DECIDE, n_levels, &sounding_buffer); CHKERRQ(ierr);
   }
 
   // get the sounding:
   if ((i >= grid->xs) && (i < grid->xs + grid->xm) && (j >= grid->ys) && (j < grid->ys + grid->ym)) {
-    PetscInt *row = new PetscInt[my_Mz];
-    for (PetscInt k = 0; k < my_Mz; k++) row[k] = k;
+    PetscInt *row = new PetscInt[n_levels];
+    for (PetscInt k = 0; k < n_levels; k++) row[k] = k;
 
     ierr = begin_access(); CHKERRQ(ierr);
     ierr = getInternalColumn(i, j, &ivals); CHKERRQ(ierr);
-    ierr = VecSetValues(sounding_buffer, my_Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
-    ierr = end_access(); CHKERRQ(ierr);
-
-    delete[] row;
-  }
-  ierr = VecAssemblyBegin(sounding_buffer); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(sounding_buffer); CHKERRQ(ierr);
-
-  // change units:
-  ierr = vars[0].to_glaciological_units(sounding_buffer); CHKERRQ(ierr);
-
-  ierr = VecView(sounding_buffer, my_viewer); CHKERRQ(ierr);
-  
-  return 0;
-}
-
-
-PetscErrorCode IceModelVec3Bedrock::view_sounding(int i, int j, PetscInt viewer_size) {
-  PetscErrorCode ierr;
-
-  // create the title:
-  if ((*sounding_viewers)[name] == PETSC_NULL) {
-    string title = string_attr("long_name") + " sounding (" + string_attr("glaciological_units") + ")";
-
-    ierr = grid->create_viewer(viewer_size, title, (*sounding_viewers)[name]); CHKERRQ(ierr);
-  }
-
-  ierr = view_sounding(i, j, (*sounding_viewers)[name]); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode IceModelVec3Bedrock::view_sounding(int i, int j, PetscViewer my_viewer) {
-  PetscErrorCode ierr;
-  PetscScalar *ivals;
-  PetscInt my_Mz = grid->Mbz;
-
-  check_array_indices(i, j);
-
-  const string tname = string_attr("long_name"),
-    tunits = " (" + string_attr("glaciological_units") + ")",
-    title = tname + tunits;
-
-  PetscDraw draw;
-  ierr = PetscViewerDrawGetDraw(my_viewer, 0, &draw); CHKERRQ(ierr);
-  ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
-
-  // memory allocation:
-  if (sounding_buffer == PETSC_NULL) {
-    ierr = VecCreateMPI(grid->com, PETSC_DECIDE, my_Mz, &sounding_buffer); CHKERRQ(ierr);
-  }
-
-  // get the sounding:
-  if ((i >= grid->xs) && (i < grid->xs + grid->xm) && (j >= grid->ys) && (j < grid->ys + grid->ym)) {
-    PetscInt *row = new PetscInt[my_Mz];
-    for (PetscInt k = 0; k < my_Mz; k++) row[k] = k;
-
-    ierr = begin_access(); CHKERRQ(ierr);
-    ierr = getInternalColumn(i, j, &ivals); CHKERRQ(ierr);
-    ierr = VecSetValues(sounding_buffer, my_Mz, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
+    ierr = VecSetValues(sounding_buffer, n_levels, row, ivals, INSERT_VALUES); CHKERRQ(ierr);
     ierr = end_access(); CHKERRQ(ierr);
 
     delete[] row;
@@ -1011,11 +876,9 @@ PetscErrorCode IceModelVec3Bedrock::view_sounding(int i, int j, PetscViewer my_v
 //! Checks if the current IceModelVec3 has NANs and reports if it does.
 /*! Up to a fixed number of messages are printed at stdout.  Returns the full
  count of NANs (which is a nonzero) on this rank. */
-PetscErrorCode  IceModelVec3::has_nan() {
+PetscErrorCode  IceModelVec3D::has_nan() {
   PetscErrorCode ierr;
-  vector<PetscReal> V;
-  V.resize(grid->Mz);
-  PetscReal *tmp = &V[0];
+  PetscScalar *tmp;
   PetscInt retval=0;
   const PetscInt max_print_this_rank=10;
 
@@ -1024,7 +887,7 @@ PetscErrorCode  IceModelVec3::has_nan() {
   for (i=grid->xs; i<grid->xs+grid->xm; ++i) {
     for (j=grid->ys; j<grid->ys+grid->ym; ++j) {
       ierr = getInternalColumn(i, j, &tmp); CHKERRQ(ierr);
-      for (k = 0; k < grid->Mz; k++) {
+      for (k = 0; k < n_levels; k++) {
 	if (gsl_isnan(tmp[k])) {
 	  retval++;
           if (retval <= max_print_this_rank) {

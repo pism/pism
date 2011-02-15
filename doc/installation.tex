@@ -95,7 +95,7 @@ Based on PISM revision \PISMREV\quad and PETSC release \PETSCREL.}
 \section*{Introduction}
 
 \large
-This \emph{Installation Manual} describes how to download the PISM source code and install PISM and the libraries it needs.  Information about PISM, including a \emph{User's Manual}, is online at
+This \emph{Installation Manual} describes how to download the PISM source code and install PISM and the libraries it needs.  Information about PISM, including a \emph{User's Manual}, is on-line at
 \bigskip
 \begin{center}
   \href{http://www.pism-docs.org}{\t{www.pism-docs.org}}
@@ -138,7 +138,7 @@ This \emph{Installation Manual} describes how to download the PISM source code a
 
 \bigskip
 \normalspacing
-The following table lists the \emph{required} dependencies for PISM, arranged alphabetically.  (Before installing these ``by hand'', check the debian and macosx sections below for specific how-to.)
+The following table lists the \emph{required} dependencies for PISM, arranged alphabetically.  (Before installing these ``by hand'', check the Debian and Mac OS X sections below for specific how-to.)
 \bigskip
 \newcommand{\fattablespacing}{\renewcommand{\baselinestretch}{1.5}\tiny\normalsize}
 
@@ -174,7 +174,7 @@ One library is only used for the earth deformation (``isostatic rebound'') model
 \begin{tabular*}{1.0\linewidth}{ll}\toprule
   \textbf{Recommended Library} & \textbf{Comment} \\
   \midrule
-  \pairstack{FFTW}{\href{http://www.fftw.org/}{\t{www.fftw.org}}}\hspace{1.9in} & if not present set \texttt{PISM_HAVE_FFTW=0}\\
+  \pairstack{FFTW}{\href{http://www.fftw.org/}{\t{www.fftw.org}}}\hspace{1.9in} & \\
   \bottomrule
 \end{tabular*}
 \end{center}
@@ -186,7 +186,7 @@ One library is only used for the earth deformation (``isostatic rebound'') model
 \bigskip
 
 
-In addition, Python (\url{http://python.org/}) is needed both in the PETSc installation process and in scripts related to PISM pre- and post-processing, while Subversion (\url{http://subversion.tigris.org/}) is usually needed to download the PISM code.  Both should be included in any Linux/Unix distribution.  Additionally, the following Python packages are needed to do all the examples in the \emph{User's Manual} (which run python scripts).
+In addition, Python (\url{http://python.org/}) is needed both in the PETSc installation process and in scripts related to PISM pre- and post-processing, while Subversion (\url{http://subversion.apache.org/http://subversion.tigris.org/}) is usually needed to download the PISM code.  Both should be included in any Linux/Unix distribution.  Additionally, the following Python packages are needed to do all the examples in the \emph{User's Manual} (which run python scripts).
 \bigskip
 
 \fattablespacing
@@ -208,10 +208,46 @@ In addition, Python (\url{http://python.org/}) is needed both in the PETSc insta
 \section{Installation Cookbook}\label{sec:cookbook}
 
 \subsection{Installing PISM on a Debian-based Linux system} \label{subsec:debian}
-Of all operating systems it is probably quickest to install all the PISM prerequisites on a Debian-based Linux system using a package manager.
 
-\begin{enumerate}
-\item Find and install (using \texttt{apt-get} or \texttt{synaptic}, for example) the following packages:
+\subsubsection{Installing PISM using a binary package}
+\label{sec:deb-pism-binary}
+
+If you are not planning on using a development version of PISM and don't need to extend PISM by writing new code, you might be
+able to install it with just a few clicks.
+
+Download a binary package from \url{http://www.pism-docs.org} and either run
+\begin{verbatim}
+$ sudo dpkg -i pism-xxx-FIXME.deb
+\end{verbatim}%$
+or double-click on the file and click ``Install'' (will require administrative privileges). This will install PISM, making sure that
+all the libraries it needs are in place and downloading them if necessary.
+
+This route is the fastest and easiest if you want to learn about or use a stable PISM version. If you do need features only
+present in development versions, you will need to compile PISM using its source code.
+
+\subsubsection{Installing PISM's prerequisites using a meta-package and building PISM from source}
+\label{sec:deb-pism-toolkit}
+
+If you are using a Debian-based system such as Ubuntu but need to compile PISM from source, you can download and install the
+``pism toolkit'' meta-package.
+
+This package does \emph{not} install PISM; it tells the package manager to install all the libraries and tools needed to compile
+PISM from sources.
+
+To use this route of installing PISM's prerequisites, download \texttt{pism-toolkit-FIXME.deb} from \url{http://www.pism-docs.org} and run
+\begin{verbatim}
+$ sudo dpkg -i pism-toolkit-FIXME.deb
+\end{verbatim}%$
+or double-click on the file and click ``Install''. Once this is done, see section \ref{sec:install-cmake} for configuration and
+compilation instructions.
+
+\subsubsection{Installing PISM's prerequisites if a meta-package does not work}
+\label{sec:deb-libraries-by-hand}
+
+If you need to compile PISM from sources and you can not use the meta-package described in the previous section, you can use your
+package manager to manually select packages PISM requires.
+
+Find and install (using \texttt{apt-get} or \texttt{synaptic}, for example) the following packages:
   \begin{center}
     \begin{tabular*}{0.9\linewidth}{p{0.2\linewidth}p{0.7\linewidth}}
       \toprule
@@ -232,30 +268,9 @@ Of all operating systems it is probably quickest to install all the PISM prerequ
       \bottomrule
     \end{tabular*}
   \end{center}
-\item Get the PISM development version:
-\begin{verbatim}
-$  svn co http://svn.gna.org/svn/pism/tags/stable0.3 pism0.3
-\end{verbatim}
-\item Based on the locations of installed files, add the lines \emph{similar} to
-\begin{verbatim}
-export PETSC_DIR=/usr/lib/petscdir/3.x.x/
-export PETSC_ARCH=linux-gnu-c-opt
-export PISM_USE_GNU_FLAGS=1
-export PATH=/home/user/pism0.3/bin/:/home/user/pism0.3/util/:$PATH
-\end{verbatim}
-to your \texttt{.bashrc} equivalent.  (See ``Installed files'' reported for \texttt{libpetsc3.x.x-dev} using \texttt{synaptic}, for example.)
-\item Next, build PISM:
-\begin{verbatim}
-$  cd pism0.3
-$  make
-\end{verbatim}
-\item Try it:
-\begin{verbatim}
-$  mpiexec -n 2 pisms
-\end{verbatim}
-If you see ``\texttt{Writing model state to file}\dots'' at the end then the run completed.
-\item See the \emph{Getting Started} section \emph{User's Manual} to continue.
-\end{enumerate}
+
+See section \ref{sec:install-cmake} for configuration and compilation instructions and refer to the \emph{Getting Started} section
+of the \emph{User's Manual} once you are done.
 
 \vspace{0.3in}
 
@@ -270,7 +285,7 @@ lower performance.
 --------------------------------------------------------------------------
 . . .
 \end{verbatim}
-According to this comment found online at \url{http://lists.alioth.debian.org/pipermail/pkg-openmpi-commits/2007-August/000044.html},
+According to this comment found on-line at \url{http://lists.alioth.debian.org/pipermail/pkg-openmpi-commits/2007-August/000044.html},
 \begin{quote}
    To get rid of the warning, you can either disable the use of the ``\texttt{openib}'' btl
    in \texttt{/etc/openmpi/openmpi-mca-params.conf} or pass ``\texttt{--mca btl \^{}openib}'' to \texttt{mpirun}
@@ -295,10 +310,10 @@ $  ./configure --x-libraries=/usr/lib
 \newpage
 \subsection{Generic PISM installation, using PETSc source code}\label{subsec:generic}
 
-\subsubsection{Installing prerequisities}
+\subsubsection{Installing prerequisites}
 \renewcommand{\labelenumi}{\textbf{\arabic{enumi}.}~}
 \begin{enumerate}
-\item You will need a UNIX system with internet access. A GNU/Linux environment will be easiest but other UNIX versions have been
+\item You will need a UNIX system with Internet access. A GNU/Linux environment will be easiest but other UNIX versions have been
   used successfully. Package management systems are useful for installing many of the tools listed in section
   \ref{sec:prerequisites}, \emph{but} an up-to-date PETSc distribution may not be available in your system's package
   repositories. You will need \href{http://www.python.org/}{Python} and \href{http://subversion.tigris.org/}{Subversion}
@@ -311,18 +326,17 @@ $  ./configure --x-libraries=/usr/lib
   repositories like Debian.
 
 \item PISM uses \href{http://www.unidata.ucar.edu/software/netcdf/}{NetCDF (= \emph{network Common Data Form})}\index{NetCDF} for
-  an input and output file format. If it is not already present, install it using the instructions at the webpage or using a
+  an input and output file format. If it is not already present, install it using the instructions at the web-page or using a
   package management system.
 
 \item PISM uses the \href{http://www.gnu.org/software/gsl/}{GSL (= \emph{GNU Scientific Library})}\index{GSL (\emph{GNU Scientific
       Library})} for certain numerical calculations and special functions. If it is not already present, install it using the
-  instructions at the webpage or using a package management system.
+  instructions at the web-page or using a package management system.
 
 \item PISM optionally uses the \href{http://www.fftw.org/}{``FFTW'' library (FFTW = \emph{Fastest Fourier Transform in the
       West})}\index{FFTW (\emph{Fastest Fourier Transform in the West})} in one approximation of the deformation of the solid earth (bed) under
   ice loads.\footnote{Bueler and others (2007). \emph{Fast computation of a viscoelastic deformable Earth model for ice sheet simulation}, Ann.~Glaciol.~46, pp.~97–-105.}  If you want the functionality of this bed deformation model, which is coupled to the ice flow and which we
-  recommend, install FFTW or check that it is installed already.  If FFTW is \emph{not installed}, however, turn off PISM's attempt
-  to build with it by setting the environment variable \texttt{PISM_HAVE_FFTW=0}.  If this library is absent, all of PISM will work
+  recommend, install FFTW or check that it is installed already. If this library is absent, all of PISM will work
   \emph{except} for this bed deformation model.
 
 \item You will need a version of \href{http://www-unix.mcs.anl.gov/mpi/}{MPI (= \emph{Message Passing Interface})}.\index{MPI
@@ -352,7 +366,7 @@ no need to retype it each time you use MPI.
 \begin{center}
     \href{http://www-unix.mcs.anl.gov/petsc/}{\t{www-unix.mcs.anl.gov/petsc/}}
 \end{center}
-PISM requires a version of PETSc which is \texttt{\PETSCREL} or later.  The ``lite'' form of PETSc is fine if you are willing to depend on an internet connection for accessing the PETSc documentation.
+PISM requires a version of PETSc which is \texttt{\PETSCREL} or later.  The ``lite'' form of PETSc is fine if you are willing to depend on an Internet connection for accessing the PETSc documentation.
 
 You should configure and build PETSc \emph{essentially} as described on the PETSc installation page, but it might be best to read the following comments on the PETSc configure and build process first:
 
@@ -372,7 +386,7 @@ Using shared and dynamic libraries may be unwise on certain clusters, etc.; chec
 
 Note that there is no PISM use of Fortran, and that it is sometimes convenient to have PETSc grab a local copy of BLAS\index{BLAS (\emph{Basic Linear Algebra Subsystem})} and LAPACK\index{LAPACK (\emph{Linear Algebra PACKage})} rather than using the system-wide version.  So one may add ``\texttt{--with-fortran=0} \texttt{--download-c-blas-lapack=1}'' to the other configure options.
 
-\item If there is an existing MPI\index{MPI (\emph{Message Passing Interface})} installation, for example at \texttt{/home/user/mympi/}, one can point PETSc to it by adding the option \texttt{--with-mpi-dir=/home/user/mympi/}.  The path used in this option must have MPI executables \texttt{mpicxx} and \texttt{mpicc}, and either \texttt{mpiexec} or \texttt{mpirun}, in subdirectory \texttt{bin/} and MPI library files in subdirectory \texttt{lib/}.
+\item If there is an existing MPI\index{MPI (\emph{Message Passing Interface})} installation, for example at \texttt{/home/user/mympi/}, one can point PETSc to it by adding the option \texttt{--with-mpi-dir=/home/user/mympi/}.  The path used in this option must have MPI executables \texttt{mpicxx} and \texttt{mpicc}, and either \texttt{mpiexec} or \texttt{mpirun}, in sub-directory \texttt{bin/} and MPI library files in sub-directory \texttt{lib/}.
 
 \item On the other hand, it seems common that one needs to tell PETSc to download MPI\index{MPI (\emph{Message Passing Interface})} into a place it understands, even if there is an existing MPI.  If you get messages suggesting that PETSc cannot configure using your existing MPI, you might try \texttt{configure.py} with option \texttt{--download-mpich=1}.
 
@@ -404,62 +418,50 @@ At this point you have configured the environment which PISM needs.  You are rea
 \item \label{getPISMstep} Check the website \url{http://www.pism-docs.org/} for the latest version of PISM.
 \item Do
 \begin{verbatim}
-$  svn co http://svn.gna.org/svn/pism/tags/stable0.3 pism0.3
+$  svn co http://svn.gna.org/svn/pism/tags/stable0.4 pism0.4
 \end{verbatim}
-\item A directory called ``\texttt{pism0.3/}'' will be created.  Note that in the future when you enter that directory, \texttt{svn update} will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make all} to recompile and relink PISM. Alternatively, you can \t{make update}, which will run \t{svn update} and then rebuild PISM if necessary.}
+\item A directory called ``\texttt{pism0.4/}'' will be created.  Note that in the future when you enter that directory,
+  \texttt{svn update} will update to the latest revision of PISM.\footnote{Of course, after \t{svn update} you will \t{make -C
+      build install} to recompile and re-install PISM.}
 \end{enumerate}
+
+\item Make sure that \texttt{PETSC_ARCH} and \texttt{PETSC_DIR} variables are set.
 
 \item Build PISM:\footnote{Please report any problems you meet at this build stage by sending us the output: \href{mailto:help@pism-docs.org}{help@pism-docs.org}.}
 \begin{verbatim}
-$  cd pism0.3
-$  make
-\end{verbatim}
+$  mkdir pism0.4/build
+$  cd pism0.4/build
+$  PISM_INSTALL_PREFIX=~/pism cmake ..
+$  make install
+\end{verbatim}%$
 
-If your operating system does not support shared libraries, then do \texttt{export PISM_STATIC=1} before building.  This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.
+This will configure PISM to be installed in \texttt{~/pism/bin}, \texttt{~/pism/lib} and \texttt{~/pism/doc}, compile and install
+all its executables and scripts.
 
-Note that the ``\texttt{make}'' puts executables, including \texttt{pross},\index{pross} \texttt{pismr},\index{pismr} \texttt{pismv},\index{pismv} and \texttt{pisms},\index{pisms} in the \texttt{pism0.3/bin/} subdirectory.  Object files created during the build process (located in the \texttt{build} subdirectory) are not deleted, so do ``\texttt{make clean}'' to delete these if space is an issue.
-
-\item PISM executables can be run most easily by adding the directories \texttt{pism0.3/bin/} and \texttt{pism0.3/util/} to your \texttt{PATH}.  The former directory contains the major PISM executables while the latter contains several useful scripts.  For instance, this command can be done in the \texttt{bash} shell or in your \texttt{.bashrc} file:\index{setting the \$PATH to find PISM executables}
+If your operating system does not support shared libraries\footnote{This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.}, then set \texttt{BUILD_SHARED_LIBS} to ``OFF''. This can be done by
+either running
 \begin{verbatim}
-export PATH=/home/user/pism0.3/bin:/home/user/pism0.3/util:$PATH
+$  cmake -DBUILD_SHARED_LIBS:BOOL=OFF ..
+\end{verbatim}%$
+or by using \texttt{ccmake}: run
+\begin{verbatim}
+$  ccmake ..
+\end{verbatim}%$
+and then change \texttt{BUILD_SHARED_LIBS} (press 'c' (configure), then 'g' (generate makefiles))
+before \texttt{make install}.
+
+Object files created during the build process (located in the \texttt{build} sub-directory) are not deleted after installing PISM,
+so do ``\texttt{make clean}'' to delete these if space is an issue. You can also delete the build directory if you are not
+planning on re-compiling PISM.
+
+\item PISM executables can be run most easily by adding the \texttt{bin/} sub-directory in your selected install path
+  (\texttt{\textasciitilde/pism/bin} in the example above) to your \texttt{PATH}.  For instance, this command can be done in the \texttt{bash} shell or in your \texttt{.bashrc} file:\index{setting the \$PATH to find PISM executables}
+\begin{verbatim}
+export PATH=~/pism/bin:$PATH
 \end{verbatim}
 
 \item See the \emph{Getting Started} section \emph{User's Manual} to continue.
 \end{enumerate}
-
-\subsubsection{Installing PISM using the CMake build system}
-\label{sec:install-cmake}
-
-It is also possible to build and install PISM using CMake.
-
-To use this route, get PISM sources as described above.
-\begin{verbatim}
-$  svn co http://svn.gna.org/svn/pism/tags/stable0.3 pism0.3
-$  cd pism0.3
-\end{verbatim}
-
-Then create a directory to build in (CMake allows and recomends out-of-source builds) and make sure that \texttt{PETSC_ARCH} and
-\texttt{PETSC_DIR} variables are set.
-\begin{verbatim}
-$  mkdir cmake-build
-$  cd cmake-build
-\end{verbatim}
-
-Now, run the following commands to configure, build and install PISM.
-\begin{verbatim}
-$  cmake ..
-$  make install
-\end{verbatim}%$
-
-The default install prefix is \texttt{/usr/local}. To install executables in \texttt{/home/user/bin}, libraries in
-\texttt{/home/user/lib}, etc do
-\begin{verbatim}
-$  PISM_INSTALL_PREFIX=/home/user cmake ..
-$  make install
-\end{verbatim}%$
-
-Running \texttt{ccmake} instead of \texttt{cmake} displays a GUI allowing changing the installation directory and other build
-parameters.
 
 \clearpage
 \subsection{Installing PISM on Mac OS X}  \label{subsec:macosx}
@@ -473,7 +475,7 @@ instructions. This section describes an adaptation of the same process to the Ma
   \href{http://developer.apple.com/tools/xcode/}{Apple Developer Connection} or using the Mac OS X installation DVD.
 \item The use of \href{http://www.macports.org/}{MacPorts} or \href{http://www.finkproject.org/}{Fink} is recommended, as it significantly simplifies installing many
   open-source libraries. Download a package from the \href{http://www.macports.org/install.php}{MacPorts homepage} (or
-  (\href{http://www.finkproject.org/download/index.php}{Fink homepage}, install set the environment:
+  (\href{http://www.finkproject.org/download/index.php}{Fink homepage}, install and set the environment:
 
 \begin{verbatim}
 export PATH=/opt/local/bin:/opt/local/sbin:$PATH
@@ -508,7 +510,7 @@ $  fink install netcdf gsl fftw3
 \end{verbatim}
 
 \item At this point, all the PISM prerequisites except PETSc are installed. Download the latest PETSc tarball from the
-  \href{http://www.mcs.anl.gov/petsc/petsc-as/}{PETSc website}\footnote{Version 3 is recommended; 2.3.3 will work, but building it on Mac OS X is tricky.}. Untar, then change to the directory just created.
+  \href{http://www.mcs.anl.gov/petsc/petsc-as/}{PETSc website}\footnote{Version 3 or 3.1 is recommended; 2.3.3 will work, but building it on Mac OS X is tricky.}. Untar, then change to the directory just created.
 The next three commands completed the PETSc installation:
 \begin{verbatim}
 $  export PETSC_DIR=$PWD; export PETSC_ARCH=macosx;
@@ -516,14 +518,7 @@ $  ./config/configure.py --with-shared --with-dynamic --with-debugging=no \
         --with-fortran=0 --with-blas-lapack-dir=/usr/ --with-mpi-dir=/usr/
 $  make all test
 \end{verbatim}
-\item Finally, to build PISM, you should use CMake. Run
-\begin{verbatim}
-$  mkdir cmake-build
-$  cmake ..
-$  DESTDIR=/some/path make install
-\end{verbatim}
-
-Please refer to \ref{sec:pism-itself} for details.
+\item Finally, to build PISM, see section \ref{sec:pism-itself}.
 
 \item See the \emph{Getting Started} section \emph{User's Manual} to continue.
 \end{enumerate}
@@ -532,10 +527,28 @@ Please refer to \ref{sec:pism-itself} for details.
 \subsection{If it still does not work}
 \label{subsec:config}
 
-On some platforms it is necessary to use compiler or linker flags different from ones used on
-Linux, the default.
+We recommend using \texttt{ccmake}, the text-based CMake interface to adjust PISM's build parameters. One can also set CMake cache
+variables using the \texttt{-D} command-line option (\texttt{cmake -Dvariable=value}) or by editing \texttt{CMakeCache.txt} in the
+build directory.
 
-FIXME: describe modifying compiler and linker flags with CMake.
+Here are some issues we know about.
+\begin{itemize}
+\item Sometimes it is necessary to set \texttt{GSL_CBLAS_LIB} using \texttt{cmake -Dvariable=value} mechanism if installation
+  fails at the linking stage.
+\item Sometimes if a system has more than one MPI installation CMake finds the wrong one. To tell it which one to use, set
+  \texttt{MPI_LIBRARY} and related variables by using \texttt{ccmake} or editing \texttt{CMakeCache.txt} in the build directory.
+
+  It is also possible to guide CMake's configuration mechanism by setting \texttt{MPI_COMPILER} to the compiler (such as
+  \texttt{mpicc}) corresponding to the MPI installation you want to use, setting \texttt{MPI_LIBRARY} to
+  \texttt{MPI_LIBRARY-NOTFOUND} and re-running CMake.
+\item If you are compiling PISM on a system using a cross-compiler, you will need to disable CMake's tests trying to determine if
+  PETSc is installed properly. To do this, set \texttt{PETSC_EXECUTABLE_RUNS} to ``yes''.
+
+  To tell CMake where to look for libraries for the target system, see \url{http://www.cmake.org/Wiki/CMake_Cross_Compiling} and
+  the paragraph about \texttt{CMAKE_FIND_ROOT_PATH} in particular.
+\end{itemize}
+
+
 
 \clearpage
 \section{Quick tests of the installation}
@@ -573,7 +586,7 @@ $ (cd test/software && make)
 \noindent Feel free to email us about failed tests, etc.: \href{mailto:help@pism-docs.org}{help@pism-docs.org}.
 \end{enumerate}
 
-\subsubsection*{Next steps}  Start with the \emph{User's Manual}, which has a ``Getting started'' section.  A copy is online at the PISM homepage and documentation page \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}}, along with a source code \emph{Browser} (HTML).  Completely up-to-date documenation can be built from \LaTeX~source in the \texttt{doc/} subdirectory, as described in the last section.
+\subsubsection*{Next steps}  Start with the \emph{User's Manual}, which has a ``Getting started'' section.  A copy is on-line at the PISM homepage and documentation page \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}}, along with a source code \emph{Browser} (HTML).  Completely up-to-date documentation can be built from \LaTeX~source in the \texttt{doc/} sub-directory, as described in the last section.
 
 A final reminder with respect to installation:  Let's assume you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above.  You can update your copy of PISM to the latest version by \texttt{make update} in the PISM directory.
 
@@ -646,7 +659,7 @@ You might want to rebuild the documentation from source, as PISM and its documen
     \texttt{make cheatsheet} & to build the 2-page PISM Cheat-Sheet summarizing its command-line options\\
   \end{tabular}
 \end{center}
-The default \texttt{make} targets in the \texttt{doc/} subdirectory include all of these.
+The default \texttt{make} targets in the \texttt{doc/} sub-directory include all of these.
 
 
 \end{document}

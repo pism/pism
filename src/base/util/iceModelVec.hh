@@ -146,9 +146,9 @@ class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2() : IceModelVec() {}
   IceModelVec2(const IceModelVec2 &other) : IceModelVec(other) {};
+protected:
   virtual PetscErrorCode create(IceGrid &my_grid, const char my_short_name[], bool local,
 			 DAStencilType my_sten, int stencil_width, int dof);
-protected:
   PetscErrorCode get_component(int n, Vec result);
   PetscErrorCode set_component(int n, Vec source);
 };
@@ -269,48 +269,61 @@ public:
   virtual PetscErrorCode staggered_to_regular(IceModelVec2V &result);
 };
 
-//! Class for a 3d DA-based Vec for bedrock (lithosphere) scalar quantities in IceModel.
-class IceModelVec3Bedrock : public IceModelVec {
+//! \brief A virtual class collecting methods common to ice and bedrock 3D
+//! fields.
+class IceModelVec3D : public IceModelVec
+{
 public:
-  IceModelVec3Bedrock();
-  IceModelVec3Bedrock(const IceModelVec3Bedrock &other);
-  virtual ~IceModelVec3Bedrock();
-  virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local);
+  IceModelVec3D();
+  IceModelVec3D(const IceModelVec3D &other);
+  virtual ~IceModelVec3D();
+public:
+  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[],
+				 bool local, int stencil_width = 1) = 0;
 
-  PetscErrorCode  setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN);
+  virtual PetscErrorCode  begin_access();
+  virtual PetscErrorCode  end_access();
+
   PetscErrorCode  setColumn(PetscInt i, PetscInt j, PetscScalar c);
+  PetscErrorCode  setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN);
   PetscErrorCode  getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsOUT);
-  PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsIN);
-  PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsOUT);
+
   PetscErrorCode  view_sounding(int i, int j, PetscInt viewer_size);
   PetscErrorCode  view_sounding(int i, int j, PetscViewer v);
 
-protected:  
-  map<string,PetscViewer> *sounding_viewers;
-  Vec sounding_buffer;
-  PetscErrorCode  isLegalLevel(PetscScalar z);
+  // note the IceModelVec3 with this method must be *local* while imv3_source must be *global*
+  virtual PetscErrorCode beginGhostCommTransfer(IceModelVec3D &imv3_source);
+  virtual PetscErrorCode endGhostCommTransfer(IceModelVec3D &imv3_source);
+protected:
+  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[],
+				 bool local, GridType my_dims, int stencil_width = 1);
+  virtual PetscErrorCode create_da(DA &result, PetscInt Mz);
   virtual PetscErrorCode destroy();
+  virtual PetscErrorCode  has_nan();
+
+  Vec sounding_buffer;
+  map<string,PetscViewer> *sounding_viewers;
+  int n_levels;                 // grid.Mz or grid.Mbz
 };
 
 
-//! Class for a 3d DA-based Vec for ice scalar quantities in IceModel.
-class IceModelVec3 : public IceModelVec {
+//! Class for a 3d DA-based Vec for ice scalar quantities.
+class IceModelVec3 : public IceModelVec3D {
 public:
-  IceModelVec3();
-  IceModelVec3(const IceModelVec3 &other);
-  virtual ~IceModelVec3();
-  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[],
-				 bool local, int stencil_width = 1);
+  IceModelVec3() {}
+  IceModelVec3(const IceModelVec3 &other) : IceModelVec3D(other) {}
+  virtual ~IceModelVec3() {}
 
-  // note the IceModelVec3 with this method must be *local* while imv3_source must be *global*
-  virtual PetscErrorCode beginGhostCommTransfer(IceModelVec3 &imv3_source);
-  virtual PetscErrorCode endGhostCommTransfer(IceModelVec3 &imv3_source);
+  virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[],
+                                bool local, int stencil_width = 1);
 
   // need to call begin_access() before set...(i,j,...) or get...(i,j,...) *and* need call
   // end_access() afterward
+  PetscErrorCode  getValColumn(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
+  PetscErrorCode  getValColumnQUAD(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
+  PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
+
   PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsIN);
-  PetscErrorCode  setColumn(PetscInt i, PetscInt j, PetscScalar c);
-  PetscErrorCode  setInternalColumn(PetscInt i, PetscInt j, PetscScalar *valsIN);
 
   PetscScalar     getValZ(PetscInt i, PetscInt j, PetscScalar z);
 
@@ -321,11 +334,6 @@ public:
   PetscErrorCode  getPlaneStar(PetscInt i, PetscInt j, PetscInt k,
 			       planeStar *star);
 
-  PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
-  PetscErrorCode  getValColumnQUAD(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
-  PetscErrorCode  getValColumn(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
-  PetscErrorCode  getInternalColumn(PetscInt i, PetscInt j, PetscScalar **valsPTR);
-
   PetscErrorCode  getHorSlice(Vec &gslice, PetscScalar z); // used in iMmatlab.cc
   PetscErrorCode  getHorSlice(IceModelVec2S &gslice, PetscScalar z);
   PetscErrorCode  getSurfaceValues(Vec &gsurf, IceModelVec2S &myH); // used in iMviewers.cc
@@ -333,20 +341,26 @@ public:
   PetscErrorCode  getSurfaceValues(IceModelVec2S &gsurf, PetscScalar **H);
   PetscErrorCode  extend_vertically(int old_Mz, PetscScalar fill_value);
   PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2S &fill_values);
-
-  PetscErrorCode  view_sounding(int i, int j, PetscInt viewer_size);
-  PetscErrorCode  view_sounding(int i, int j, PetscViewer v);
-  virtual PetscErrorCode  has_nan();
-
 protected:  
-  virtual PetscErrorCode  destroy();
   PetscErrorCode  isLegalLevel(PetscScalar z);
   virtual PetscErrorCode  extend_vertically_private(int old_Mz);
-  virtual PetscErrorCode  create_da(DA &result, PetscInt Mz);
-  map<string,PetscViewer> *slice_viewers, *sounding_viewers;
-  Vec sounding_buffer;
 };
 
+//! Class for a 3d DA-based Vec for bedrock (lithosphere) scalar quantities in IceModel.
+class IceModelVec3Bedrock : public IceModelVec3D {
+public:
+  IceModelVec3Bedrock() {}
+
+  virtual ~IceModelVec3Bedrock() {}
+
+  virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local,
+                                int stencil_width = 1);
+  PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsIN);
+  PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsOUT);
+  PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
+protected:
+  PetscErrorCode  isLegalLevel(PetscScalar z);
+};
 
 /*
 // FIXME: We might need a IceModelVec3V (3D-distributed horizontal velocity) class.
