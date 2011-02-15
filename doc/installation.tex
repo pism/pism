@@ -5,7 +5,7 @@
 \usepackage{booktabs}           % better rules in tables
 
 \newcommand{\PISMREV}{\input{revision.tex}}
-\newcommand{\PETSCREL}{2.3.3 or 3.0.0 or 3.1.0}
+\newcommand{\PETSCREL}{3.1}
 
 \addtolength\topmargin{+.3in}
 \addtolength\textheight{-0.2in}
@@ -101,19 +101,22 @@ This \emph{Installation Manual} describes how to download the PISM source code a
   \href{http://www.pism-docs.org}{\t{www.pism-docs.org}}
 \end{center}
 \bigskip
-\noindent The fastest path to a fully functional PISM installation is to use a Linux system with a Debian-based package system (e.g.~Ubuntu)---see subsection \ref{subsec:debian} about the Debian route---and then install Python packages following section \ref{sec:python}.
+\noindent The fastest path to a fully functional PISM installation is to use a Linux system with a Debian-based package system (e.g.~Ubuntu) and then install Python packages following section \ref{sec:python}.  See subsection \ref{subsec:debian} about the Debian installation route.
 \vfill
 
 \large
 \begin{center}
-\framebox{\parbox{5.0in}{ \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and is generally not mature.  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.  Also, please don't expect all your questions to be answered here.  Write to us with questions at \href{mailto:help@pism-docs.org}{\texttt{help@pism-docs.org}}.} }
+\parbox{5.5in}{ \emph{WARNING}:\index{PISM!warning}  PISM is an ongoing project.  Ice sheet modeling is complicated and is generally not mature.  Please don't trust the results of PISM or any other ice sheet model without a fair amount of exploration.
+
+\bigskip
+Also, please don't expect all your questions to be answered here.  Write to us with questions at \href{mailto:help@pism-docs.org}{\texttt{help@pism-docs.org}}.}
 \normalsize
 \end{center}
 \normalsize
 \vfill
 
 \begin{quote}
-\textsl{Copyright (C) 2004--2010 Ed Bueler and Constantine Khroulev and Andy Aschwanden}
+\textsl{Copyright (C) 2004--2011 Ed Bueler and Constantine Khroulev and Andy Aschwanden}
 \medskip
 
 \noindent \textsl{This file is part of PISM.}
@@ -138,7 +141,7 @@ This \emph{Installation Manual} describes how to download the PISM source code a
 
 \bigskip
 \normalspacing
-The following table lists the \emph{required} dependencies for PISM, arranged alphabetically.  (Before installing these ``by hand'', check the Debian and Mac OS X sections below for specific how-to.)
+This table lists required dependencies for PISM alphabetically.
 \bigskip
 \newcommand{\fattablespacing}{\renewcommand{\baselinestretch}{1.5}\tiny\normalsize}
 
@@ -157,16 +160,11 @@ The following table lists the \emph{required} dependencies for PISM, arranged al
 \end{center}
 
 \normalspacing
+\bigskip
 
-\vspace{0.2in}
+Before installing these ``by hand'', check the Debian and Mac OS X sections below for specific how-to.  In particular, if multiple MPI implementations (e.g.~MPICH and OPEN-MPI) are installed then PETSc can under some situations ``get confused'' and throw MPI-related errors.  Even package systems have been known to allow this confusion.
 
-\begin{quote}
-\emph{WARNING}: If multiple MPI implementations (e.g.~MPICH and OPEN-MPI) are installed then PETSc can under some situations ``get confused'' and throw MPI-related errors.  Even package systems have been known to allow this confusion.  We have seen several variations on this theme.
-\end{quote}
-
-\vspace{0.2in}
-
-One library is only used for the earth deformation (``isostatic rebound'') model:
+One library is only used for the earth deformation (``isostatic rebound'') model, and is thus only recommended:
 \bigskip
 
 \fattablespacing
