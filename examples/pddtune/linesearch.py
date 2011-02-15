@@ -53,6 +53,7 @@ naming scheme for pclimate configuration and output NetCDF files, e.g.
       self.refreeze = 0.6
       self.stddev_lapse = 0.0
       self.stddev = 2.53
+      self.annualizepdd = False
     def update_ddfice(self):
       self.ddfice = 2.0 * self.ddfsnow
     def get_nameroot(self):
@@ -142,6 +143,8 @@ def evalcase(stddev, cp, fn, deletencfiles):
     # coupler settings: Fausto 2m air temp parameterization, but default PDD
     #   (w/o Greve/Fausto settings of PDD parameters)
     coupleropts = " -atmosphere searise_greenland -surface pdd"
+    if cp.annualizepdd:
+      coupleropts += " -pdd_annualize"
     timeopts = " -ys 1990 -ye 1991 -dt 1.0"
     #dt = 0.0833333333 # monthly = (1/12) of year
 
@@ -239,10 +242,12 @@ if __name__ == "__main__":
                            "sd=",  # <-- if this is an option then don't do linesearch
                            "tol=",
                            "reproduce=",
-                           "diffsfile=", "startfile=", "deletenc", "help","usage"])
+                           "diffsfile=", "startfile=",
+                           "annualize", "deletenc", "help","usage"])
     except GetoptError:
       usagefailure('ERROR: INCORRECT COMMAND LINE ARGUMENTS FOR linesearch.py')
     dolinesearch = True
+    cp.annualizepdd = False
     deletencfiles = False
     avdifftol = 0.001
     merely_reproduce = False
@@ -259,6 +264,8 @@ if __name__ == "__main__":
         if opt in ("--sd"):
             dolinesearch = False
             cp.stddev = float(optarg)
+        if opt in ("--annualize"):
+            cp.annualizepdd = True
         if opt in ("--tol"):
             avdifftol = float(optarg)
         if opt in ("--diffsfile"):

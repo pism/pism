@@ -16,7 +16,8 @@ The tuning procedure is to adjust these PDD parameters; [X] is default value:
   pdd_refreeze                [0.6]
   pdd_std_dev_lapse_lat_rate  [0.0 K degree_north-1]
 
-The degree-day factor for ice (pdd_factor_ice) is set to exactly double that for snow; see Hock (2005) for example.
+The degree-day factor for ice (pdd_factor_ice) is set to exactly double that for
+snow; see Hock (2005) for example.
 
 A line search is done over this variable, to get the total surface mass balance 
 from PISM to exactly equal that from RACMO/GR:
@@ -24,42 +25,43 @@ from PISM to exactly equal that from RACMO/GR:
 
 The top-level script is dotune.sh.  It does this for each case:
   -- calls linesearch.py
-  -- calls objective.py to compute differences and norms between 'smb' and 'acab'
+  -- calls objective.py to compute differences between 'smb' and 'acab'
+Additional actions are needed before and after using dotune.sh.
 
-Additional actions are needed before and after using dotune.sh.  Do this:
+Recipe:
 
-  1.  download and clean-up metadata in the SeaRISE-Greenland
-      file, in preparation for next steps; this file has 'smb' in the right units:
-        $ ./preprocess.sh
+1.  download and clean-up metadata in the SeaRISE-Greenland file, in preparation
+for next steps; correct units on 'smb':
+  $ ./preprocess.sh
 
-  2.  create a PISM-output file of the type pclimate can read:
-        $ ./boot.sh >> log.boot
-  
-  3.  run pclimate over ranges of parameters, generating cases and evaluating
-      the difference relative to Ettema's surface mass balance; calls linesearch.py;
-      generates textfile "diffs.txt" but deletes pclimate outputs and config files:
-        $ ./dotune.sh >> out.dotune &
+2.  create a PISM-output file of the type pclimate can read:
+  $ ./boot.sh >> log.boot
 
-      WAIT until it is finished; monitor diffs.txt:
-        $ less diffs.txt
+3.  run pclimate over ranges of parameters, generating cases and evaluating the
+difference relative to Ettema's surface mass balance; calls linesearch.py;
+generates textfile "diffs.txt" but deletes pclimate outputs and config files:
+  $ ./dotune.sh >> out.dotune &
+WAIT until it is finished; monitor diffs.txt (e.g. using "less")
 
-  4.  find the cases which have small smb difference, or with the lowest values
-      of the weighted objective:
-        $ ./below.py -a -c 2 -l 0.0001 diffs.txt | wc -l  # counts cases with smb difference
-                                                          #   under TOL=0.0001
-        $ ./below.py -c 5 -l 5.0 diffs.txt | wc -l  # counts cases with weighted < 5.0
-        $ ./below.py -c 5 -l 5.0 diffs.txt          # shows same cases
+4.  find the cases which have small smb difference, or with the lowest values of
+the weighted objective:
+  $ ./below.py -a -c 2 -l 0.0001 diffs.txt | wc -l  # counts cases with smb diff
+                                                    #   under TOL=0.0001
+  $ ./below.py -c 5 -l 5.0 diffs.txt | wc -l  # counts cases with weighted < 5.0
+  $ ./below.py -c 5 -l 5.0 diffs.txt          # shows same cases
 
-  5.  once you have a case you like from the above, with a name like this:
-        clim_268_0.001_0.4_0.300_1.0.nc
-      now regenerate this pclimate output, and the corresponding config file:
-        $ ./linesearch.py --reproduce=clim_268_0.001_0.4_0.300_1.0.nc --startfile=start.nc
-      here is a way to make it nicer to look at by masking with (thk>0):
-        $ ./thkmask.py -H start.nc -v acab,smelt,srunoff,saccum clim_268_0.001_0.4_0.300_1.0.nc
+5.  once you have a case you like from the above, with a name like this,
+        clim_268_0.001_0.4_0.300_1.0.nc,
+regenerate the pclimate output, and the corresponding config file:
+  $ ./linesearch.py --reproduce=clim_268_0.001_0.4_0.300_1.0.nc \
+       --startfile=start.nc
+here is a way to make it nicer to look at by masking with (thk>0):
+  $ ./thkmask.py -H start.nc -v acab,smelt,srunoff,saccum \
+       clim_268_0.001_0.4_0.300_1.0.nc
 
-  6.  view it, comparing to target field 'smb' in same units in data file:
-        $ ncview clim_268_0.001_0.4_0.300_1.0.nc &
-        $ ncview pism_Greenland_5km_v1.1.nc &
-      note that, besides in the file names, the PDD parameter choices are
-      attributes of variable 'pism_overrides' in the NetCDF files from pclimate
+6.  view it, comparing to target field 'smb' in same units in data file:
+  $ ncview clim_268_0.001_0.4_0.300_1.0.nc &
+  $ ncview pism_Greenland_5km_v1.1.nc &
+note that, besides in the file names, the PDD parameter choices are attributes
+of variable 'pism_overrides' in the NetCDF files from pclimate
 

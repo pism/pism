@@ -32,8 +32,7 @@ PISMR="pismr -ocean_kill -e 3"
 COUPLER="-atmosphere searise_greenland -surface pdd"
 
 # bootstrap and do very short smoothing run
-RUN=1.0  # do one year; essentially no ice dynamics but very slightly
-         #   smoothed surface results
+RUN=1.0  # do one year; essentially no ice dynamics but slightly the smooths surface
 echo
 echo "$SCRIPTNAME  bootstrapping on $GRIDNAME km grid, for very short run (${RUN}a)"
 $MPIDO $NN $PISMR -boot_file $PISMDATA $GRID $COUPLER -y $RUN -o $OUTFILE
