@@ -778,7 +778,94 @@ Actually the KSP uses preconditioning.  This aspect of the solve is critical for
   \label{tab:scripts-overview}
 \end{table}
 
+\subsection{Experimental: coupling PISM to an external surface model}
+\label{sec:surface-external}
+\optsection{\texttt{pismebm}}
 
+PISM's surface and atmosphere models described in section
+\ref{sec:boundary-models} are admittedly simplified. (Moreover, PISM developers
+do not claim to be experts in atmosphere, energy (or mass) balance modeling. We
+are delighted to work with people who are, though.
+
+There are at least two ways of making PISM benefit from other modelers'
+expertise: incorporating their code into PISM and running PISM and a
+stand-alone surface model side by side, making them exchange information every
+so often.
+
+One possible approach is to run PISM for 1 year, save results. Run a surface
+model using PISM's modeling results to produce new mass balance and
+surface-temperature fields. Start PISM using these new fields, run for 1
+year...
+
+This method is very flexible and is known to work, but has several drawbacks:
+\begin{itemize}
+\item PISM has to wait for a surface model to produce new boundary data,
+\item stopping and re-starting PISM can be computationally expensive,
+  especially on fine grids,
+\item if a surface model is not written to work in parallel, this method wastes
+  many processor hours when used on a batch system with a large number of
+  requested cores.
+\end{itemize}
+
+PISM has an executable \texttt{pismebm}\footnote{``EBM'' can be interpreted as
+  an ``external boundary model'' or ``energy balance model'' or...} created to
+optimize coupling PISM to \emph{serial} models perform diagnostic computations
+(i.e. computations that do not involve time-stepping).
+
+The \texttt{pismebm} executable is equivalent to \texttt{pismr} in every respect related
+to ice-dynamics, but ignores \texttt{-surface}, \texttt{-atmosphere} and all
+related options.
+
+It can run on 2 and more processors (use \texttt{mpiexec -n XX} with
+\texttt{XX} $> 2$) and takes the following extra options:
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{lp{0.6\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \txtopt{ebm_command}{``command''} & specifies a command that runs an EBM, enclosed in double quotes,\\
+    \fileopt{ebm_input_file} & the file an EBM will read from\\
+    \fileopt{ebm_output_file} & the file an EBM will produce and PISM will read \texttt{acab} and \texttt{artm} from\\
+    \listopt{ebm_vars} & list of variables PISM has to write to \intextoption{ebm_input_file}, defaults to \texttt{topg,usurf}\\
+    \txtopt{update_interval}{years} & EBM update interval \\
+    \txtopt{artm_lapse_rate}{$\gamma$} & the lapse rate for the \texttt{artm} variable, in degrees
+    Kelvin per kilometer. Disables the code reading artm from the
+    \intextoption{ebm_output_file} and uses PISM code for the lapse-rate correction. 
+   \\\bottomrule
+ \end{tabular}
+  \caption{\texttt{pismebm} options}
+  \label{tab:pismebm-options}
+\end{table}
+
+So, if "\texttt{ebm -i ebm_in.nc -o ebm_out.nc}" is the command running an EBM,
+run something similar to
+\begin{verbatim}
+$ mpiexec -n NN pismebm -ebm_command "ebm -i ebm_in.nc -o ebm_out.nc" \
+  -ebm_input_file ebm_in.nc -ebm_output_file ebm_out.nc \
+  -update_interval 10 [other PISM options]
+\end{verbatim}%$
+to use this code.
+
+The command above will use \texttt{NN}$-1$ processors to run the ice-sheet
+model and the remaining (one) processor to periodically run an EBM.
+
+In this particular case, an EBM will run at the beginning of the model
+run (PISM will wait), then at year=5 (in parallel with PISM). At
+year=10, PISM will read acab and artm produced by an EBM using data
+corresponding to year=5 (waiting for an EBM to finish the computation
+if necessary). At year=15 an EBM will run to compute B.C. that will be
+read by PISM at year=20, etc.
+
+So, as long as an EBM takes less time per computation than PISM takes to step
+through $0.5*\mathtt{update_interval}$ years, PISM waits for an EBM exactly
+once, at the beginning of the run.
+
+Note that an EBM command executed by PISM can be a shell, Python, or any
+other kind of script your system supports. You can find an example
+"fake EBM" Python script in the "\texttt{util}" directory of the PISM source
+tree, \texttt{util/ebm}.
 
 %%% Local Variables: 
 %%% mode: latex

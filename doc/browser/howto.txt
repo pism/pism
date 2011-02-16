@@ -113,7 +113,7 @@ interpolation (assuming that grids are compatible but not identical)
 This snippet from PAYearlyCycle::init() covers the first two cases (at least for
 surface, atmosphere and ocean models; %i.e. for all the classes derived from PISMComponent)
 \code
-  ierr = find_pism_input(precip_filename, lic, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(precip_filename, regrid, start); CHKERRQ(ierr);
 
   // read precipitation rate from file
   ierr = verbPrintf(2, grid.com, 
@@ -121,7 +121,7 @@ surface, atmosphere and ocean models; %i.e. for all the classes derived from PIS
 		    "      from %s ... \n",
 		    precip_filename.c_str()); CHKERRQ(ierr); 
   if (regrid) {
-    ierr = precip.regrid(precip_filename.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
+    ierr = precip.regrid(precip_filename.c_str(), true); CHKERRQ(ierr); // fails if not found!
   } else {
     ierr = precip.read(precip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
@@ -133,27 +133,16 @@ surface, atmosphere and ocean models; %i.e. for all the classes derived from PIS
 \endcode
 
 Here
-\li "lic" stands for LocalInterpCtx, a "local interpolation context"
-containing information needed to interpolate from the grid in "precip_filename".
 \li "start" is an index of a record \e within \e a \e file that we need to
 read. PISM almost always reads the last record.
 
-Please see PISMComponent::find_pism_input() to see how to create a "local
-interpolation context" and compute the "start" index.
+Please see PISMComponent::find_pism_input() to see how to compute the "start"
+index "by hand".
 
 The snippet below is an example of case 3 (for 2D fields, reading the last record).
 \code
-  PISMIO nc(&grid);
- grid_info gi;
-  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-  ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
- ierr = nc.close(); CHKERRQ(ierr);
-  LocalInterpCtx lic(gi, NULL, NULL, grid); // 2D only
-    
-  ierr = variable.regrid(filename, lic, true); CHKERRQ(ierr); // fails if not found!
+ ierr = variable.regrid(filename, true); CHKERRQ(ierr); // fails if not found!
 \endcode
-
-\note The LocalInterpCtx "lic" will be de-allocated at the end of scope.
 
 \subsubsection writing_more Writing data to a file.
 

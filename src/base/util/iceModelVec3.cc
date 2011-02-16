@@ -61,8 +61,8 @@ PetscErrorCode IceModelVec3D::create_da(DA &result, PetscInt Mz) {
 }
 
 //! Allocate a DA and a Vec from information in IceGrid.
-PetscErrorCode  IceModelVec3D::create(IceGrid &my_grid, const char my_name[],
-                                      bool local, GridType my_dims, int stencil_width) {
+PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, const char my_name[],
+                                        bool local, GridType my_dims, int stencil_width) {
   PetscErrorCode ierr;
   if (!utIsInit()) {
     SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
@@ -612,8 +612,8 @@ PetscErrorCode  IceModelVec3D::setInternalColumn(PetscInt i, PetscInt j, PetscSc
 PetscErrorCode  IceModelVec3Bedrock::create(IceGrid &my_grid, const char my_name[],
                                             bool local, int stencil_width) {
 
-  PetscErrorCode ierr = IceModelVec3D::create(my_grid, my_name, local,
-                                              GRID_3D_BEDROCK, stencil_width); CHKERRQ(ierr);
+  PetscErrorCode ierr = IceModelVec3D::allocate(my_grid, my_name, local,
+                                                GRID_3D_BEDROCK, stencil_width); CHKERRQ(ierr);
 
   return 0;
 }
@@ -709,8 +709,8 @@ PetscErrorCode  IceModelVec3Bedrock::getValColumnPL(PetscInt i, PetscInt j, Pets
 PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[], bool local,
                                      int stencil_width) {
 
-  PetscErrorCode ierr = IceModelVec3D::create(my_grid, my_name, local,
-                                              GRID_3D, stencil_width); CHKERRQ(ierr);
+  PetscErrorCode ierr = IceModelVec3D::allocate(my_grid, my_name, local,
+                                                GRID_3D, stencil_width); CHKERRQ(ierr);
 
   return 0;
 }
@@ -780,7 +780,7 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   Vec v_new;
   DA da_new;
 
-  // This code should match what is being done in IceModelVec3::create():
+  // This code should match what is being done in IceModelVec3D::allocate():
 
   ierr = create_da(da_new, grid->Mz); CHKERRQ(ierr);
   

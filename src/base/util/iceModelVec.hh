@@ -28,7 +28,127 @@
 #include "pism_const.hh"
 #include "LocalInterpCtx.hh"
 
-//! Abstract class for reading, writing, allocating, and accessing a DA-based PETSc Vec from within IceModel.
+//! \brief Abstract class for reading, writing, allocating, and accessing a
+//! DA-based PETSc Vec from within IceModel.
+/*!
+ This class represents 2D and 3D fields in PISM. Its methods common to all
+ the derived classes can be split (roughly) into six kinds:
+
+ \li memory allocation (create)
+ \li point-wise access (begin_access, get_array, end_access)
+ \li arithmetic (range, norm, add, shift, scale, multiply_by, set)
+ \li setting or reading metadata (set_attrs, set_units, etc)
+ \li file input/output (read, write, regrid)
+ \li tracking whether a field was updated (get_state_counter, inc_state_counter)
+
+ \section imv_allocation Memory allocation
+
+ Creating an IceModelVec... object does not allocate memory for storing it
+ (some IceModelVecs serve as "references" and don't have their own storage).
+ To complete IceModelVec... creation, use the "create()" method:
+
+ \code
+ IceModelVec2S var;
+ bool has_ghosts = true;
+ ierr = var.create(grid, "var_name", has_ghosts); CHKERRQ(ierr);
+ // var is ready to use
+ \endcode
+
+ ("Has ghosts" means "can be used in computations using map-plane neighbors
+ or grid points.)
+
+ It is usually a good idea to set variable metadata right after creating it.
+ The method set_attrs() is used throughout PISM to set commonly used
+ attributes.
+
+ \section imv_pointwise Pointwise access
+
+ PETSc performs some pointer arithmetic magic to allow convenient indexing of
+ grid point values. Because of this one needs to surround the code using row,
+ column or level indexes with begin_access() and end_access() calls:
+
+ \code
+ double foo;
+ int i = 0, j = 0;
+ IceModelVec2S var;
+ // assume that var was allocated
+ ierr = var.begin_access(); CHKERRQ(ierr);
+ foo = var(i,j) * 2;
+ ierr = var.end_access(); CHKERRQ(ierr);
+ \endcode
+
+ Please see \ref computational_grid "this page" for a discussion of the
+ organization of PISM's computational grid and examples of for-loops you will
+ probably put between begin_access() and end_access().
+
+ To ensure that ghost values are up to date add the following two lines
+ before the code using ghosts:
+
+ \code
+ ierr = var.beginGhostComm(); CHKERRQ(ierr);
+ ierr = var.endGhostComm(); CHKERRQ(ierr);
+ \endcode
+
+ \section imv_io Reading and writing variables
+
+ PISM can read variables either from files with data on a grid matching the
+ current grid (read()) or, using bilinear interpolation, from files
+ containing data on a different (but compatible) grid (regrid()).
+
+ To write a field to a prepared NetCDF file, use write(). (A file is prepared
+ if it contains all the necessary dimensions, coordinate variables and global
+ metadata.)
+
+ If you need to "prepare" a file, do:
+ \code
+ PISMIO nc(&grid);
+
+ ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
+ ierr = nc.append_time(grid.year); CHKERRQ(ierr);
+ ierr = nc.close(); CHKERRQ(ierr);
+ \endcode
+
+ A note about NetCDF write performance: due to limitations of the NetCDF
+ (classic, version 3) format, it is significantly faster to
+ \code
+ for (all variables)
+   var.define(...);
+
+ for (all variables)
+   var.write(...);
+ \endcode
+
+ as opposed to
+
+ \code
+ for (all variables) {
+  var.define(...);
+  var.write(...);
+ }
+ \endcode
+
+ IceModelVec::define() is here so that we can use the first approach.
+
+ \section imv_rev_counter Tracking if a field changed
+
+ It is possible to track if a certain field changed with the help of
+ get_state_counter() and inc_state_counter() methods.
+
+ For example, PISM's SIA code re-computes the smoothed bed only if the bed
+ deformation code updated it:
+
+ \code
+ if (bed->get_state_counter() > bed_state_counter) {
+   ierr = bed_smoother->preprocess_bed(...); CHKERRQ(ierr);
+   bed_state_counter = bed->get_state_counter();
+ }
+ \endcode
+
+ The state counter is \b not updated automatically. For the code snippet above
+ to work, a bed deformation model has to call inc_state_counter() after an
+ update.
+
+ */
 class IceModelVec {
 public:
   IceModelVec();
@@ -86,7 +206,7 @@ public:
 
   virtual int get_state_counter() const;
   virtual void inc_state_counter();
- 
+
   bool   report_range;                 //!< If true, report range when regridding.
   bool   write_in_glaciological_units, //!< \brief If true, data is written to
                                        //!< a file in "human-friendly" units.
@@ -222,16 +342,16 @@ public:
   ~IceModelVec2V();
   using IceModelVec2::create;
   virtual PetscErrorCode create(IceGrid &my_grid, const char my_short_name[],
-				bool local, int stencil_width = 1); 
+				bool local, int stencil_width = 1);
 
   // I/O:
   using IceModelVec2::write;
-  virtual PetscErrorCode write(const char filename[], nc_type nctype); 
-  virtual PetscErrorCode read(const char filename[], const unsigned int time); 
-  virtual PetscErrorCode regrid(const char filename[], bool critical, int start = 0); 
-  virtual PetscErrorCode regrid(const char filename[], PetscScalar default_value); 
-  virtual PetscErrorCode get_array(PISMVector2 ** &a); 
-  virtual PetscErrorCode magnitude(IceModelVec2S &result); 
+  virtual PetscErrorCode write(const char filename[], nc_type nctype);
+  virtual PetscErrorCode read(const char filename[], const unsigned int time);
+  virtual PetscErrorCode regrid(const char filename[], bool critical, int start = 0);
+  virtual PetscErrorCode regrid(const char filename[], PetscScalar default_value);
+  virtual PetscErrorCode get_array(PISMVector2 ** &a);
+  virtual PetscErrorCode magnitude(IceModelVec2S &result);
   virtual PISMVector2&   operator()(int i, int j);
   virtual PetscErrorCode view(PetscInt viewer_size);
   virtual PetscErrorCode view(PetscViewer v1, PetscViewer v2);
@@ -240,11 +360,11 @@ public:
   virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
   // Metadata, etc:
   using IceModelVec2::is_valid;
-  virtual bool           is_valid(PetscScalar u, PetscScalar v); 
+  virtual bool           is_valid(PetscScalar u, PetscScalar v);
   virtual PetscErrorCode set_name(const char name[], int component = 0);
 protected:
   DA component_da;		//!< same as \c da, but for one component only
-  PetscErrorCode destroy();	
+  PetscErrorCode destroy();
 };
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.
@@ -295,8 +415,8 @@ public:
   virtual PetscErrorCode beginGhostCommTransfer(IceModelVec3D &imv3_source);
   virtual PetscErrorCode endGhostCommTransfer(IceModelVec3D &imv3_source);
 protected:
-  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[],
-				 bool local, GridType my_dims, int stencil_width = 1);
+  virtual PetscErrorCode  allocate(IceGrid &mygrid, const char my_short_name[],
+                                   bool local, GridType my_dims, int stencil_width = 1);
   virtual PetscErrorCode create_da(DA &result, PetscInt Mz);
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode  has_nan();
@@ -341,7 +461,7 @@ public:
   PetscErrorCode  getSurfaceValues(IceModelVec2S &gsurf, PetscScalar **H);
   PetscErrorCode  extend_vertically(int old_Mz, PetscScalar fill_value);
   PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2S &fill_values);
-protected:  
+protected:
   PetscErrorCode  isLegalLevel(PetscScalar z);
   virtual PetscErrorCode  extend_vertically_private(int old_Mz);
 };

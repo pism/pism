@@ -395,7 +395,6 @@ PetscErrorCode PSExternal::write_variables(set<string> vars, string filename) {
 PetscErrorCode PSExternal_ALR::init(PISMVars &vars) {
   PetscErrorCode ierr;
   string pism_input;
-  LocalInterpCtx *lic;
   bool regrid;
   int start;
 

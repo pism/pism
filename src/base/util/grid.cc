@@ -512,7 +512,7 @@ PetscErrorCode IceGrid::createDA() {
  * \param my_procs_x Number of processors in the X-direction
  * \param my_procs_y Number of processors in the Y-direction
  * \param lx The array containing numbers of grid points per processor in the X-direction
- * \param lx The array containing numbers of grid points per processor in the Y-direction
+ * \param ly The array containing numbers of grid points per processor in the Y-direction
  *
  * \note my_procs_x times my_procs_y has to be equal to size
  * \note lx has to add up to Mx.
