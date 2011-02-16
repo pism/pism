@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2010 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2008-2011 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 
 PetscErrorCode PALapseRates::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  LocalInterpCtx *lic = NULL;
   bool regrid = false;
   int start = -1;
 
@@ -45,14 +44,14 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
 
   // find (again) the PISM input file to read data from:
 
-  ierr = find_pism_input(input_file, lic, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
 
   // read precipitation rate and temperatures from file
   ierr = verbPrintf(2, grid.com, 
 		    "    reading surface elevation 'usurf' from %s...\n",
 		    input_file.c_str()); CHKERRQ(ierr); 
   if (regrid) {
-    ierr = f.regrid(input_file.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
+    ierr = f.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
   } else {
     ierr = f.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
@@ -60,8 +59,6 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
   ierr = f.set_name("f"); CHKERRQ(ierr);
   ierr = f.set_attrs("internal", "initial condition for the lapse rate equation",
 		     "K", ""); CHKERRQ(ierr);
-
-  delete lic;
 
   ierr = f.scale(gamma); CHKERRQ(ierr);
   ierr = f.add(1.0, temperature); CHKERRQ(ierr);

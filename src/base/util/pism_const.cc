@@ -26,8 +26,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+//! \brief PISM verbosity level; determines how much gets printed to the
+//! standard out.
 static PetscInt verbosityLevel;
 
+//! \brief Set the PISM verbosity level.
 PetscErrorCode setVerbosityLevel(PetscInt level) {
   if ((level < 0) || (level > 5)) {
      SETERRQ(1,"verbosity level invalid");
@@ -36,6 +39,7 @@ PetscErrorCode setVerbosityLevel(PetscInt level) {
   return 0;  
 }
 
+//! \brief Get the verbosity level.
 PetscInt getVerbosityLevel() {
   return verbosityLevel;
 }
@@ -766,10 +770,13 @@ PetscErrorCode PISMOptionsIsSet(string option, string text,
   return 0;
 }
 
-//! Adds a suffix to a filename. Returns filename + separator + suffix + .nc if
-//! the original filename had the .nc suffix, otherwise filename + separator.
-//! If the old filename had the form "name + separator + more stuff + .nc",
-//! then removes the string after the separator.
+//! \brief Adds a suffix to a filename.
+/*!
+ * Returns filename + separator + suffix + .nc if the original filename had the
+ * .nc suffix, otherwise filename + separator. If the old filename had the form
+ * "name + separator + more stuff + .nc", then removes the string after the
+ * separator.
+ */
 string pism_filename_add_suffix(string filename, string separator, string suffix) {
   string basename = filename, result;
 

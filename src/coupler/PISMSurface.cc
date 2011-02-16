@@ -45,7 +45,7 @@ PetscErrorCode PISMSurfaceModel::init(PISMVars &vars) {
  * Basic surface models currently implemented in PISM do not model the mass of
  * the surface layer.
  */
-PetscErrorCode PISMSurfaceModel::mass_held_in_surface_layer(PetscReal t_years, PetscReal dt_years, 
+PetscErrorCode PISMSurfaceModel::mass_held_in_surface_layer(PetscReal /*t_years*/, PetscReal /*dt_years*/, 
                                                             IceModelVec2S &result) {
   PetscErrorCode ierr;
 
@@ -61,7 +61,7 @@ PetscErrorCode PISMSurfaceModel::mass_held_in_surface_layer(PetscReal t_years, P
  * Basic surface models currently implemented in PISM do not model surface
  * layer thickness.
  */
-PetscErrorCode PISMSurfaceModel::surface_layer_thickness(PetscReal t_years, PetscReal dt_years, 
+PetscErrorCode PISMSurfaceModel::surface_layer_thickness(PetscReal /*t_years*/, PetscReal /*dt_years*/, 
                                                          IceModelVec2S &result) {
   PetscErrorCode ierr;
 
@@ -74,7 +74,8 @@ PetscErrorCode PISMSurfaceModel::surface_layer_thickness(PetscReal t_years, Pets
 /*!
  * Most PISM surface models return 0.
  */
-PetscErrorCode PISMSurfaceModel::ice_surface_liquid_water_fraction(PetscReal t_years, PetscReal dt_years,
+PetscErrorCode PISMSurfaceModel::ice_surface_liquid_water_fraction(PetscReal /*t_years*/,
+                                                                   PetscReal /*dt_years*/,
                                                                    IceModelVec2S &result) {
   PetscErrorCode ierr;
 
@@ -167,7 +168,6 @@ void PSSimple::add_vars_to_output(string keyword, set<string> &result) {
 
 PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
-  LocalInterpCtx *lic = NULL;
   bool regrid = false;
   int start = -1;
 
@@ -196,7 +196,7 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
 			""); CHKERRQ(ierr);
   
   // find PISM input file to read data from:
-  ierr = find_pism_input(input_file, lic, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
 
   // read snow precipitation rate and temperatures from file
   ierr = verbPrintf(2, grid.com, 
@@ -204,14 +204,13 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
     "    and ice surface temperature  'artm' from %s ... \n",
     input_file.c_str()); CHKERRQ(ierr); 
   if (regrid) {
-    ierr = acab.regrid(input_file.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
-    ierr = artm.regrid(input_file.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
+    ierr = acab.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
+    ierr = artm.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
   } else {
     ierr = acab.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
     ierr = artm.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
 
-  delete lic;
   return 0;
 }
 
@@ -778,32 +777,25 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   // fttfile now contains name of -force_to_thk file; now check
-  // it is really there; if so, read the dimensions of computational grid so
-  // that we can set up a LocalInterpCtx for actual reading of target thickness
+  // it is really there; and regrid the target thickness
   PISMIO nc(&grid);
-  grid_info gi;
   bool mask_exists = false;
   ierr = nc.open_for_reading(fttfile); CHKERRQ(ierr);
-  ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
   ierr = nc.find_variable("ftt_mask", NULL, mask_exists); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  LocalInterpCtx* lic;
-  lic = new LocalInterpCtx(gi, NULL, NULL, grid); // 2D only
   ierr = verbPrintf(2, grid.com, 
 		    "    reading target thickness 'thk' from %s ...\n", fttfile); CHKERRQ(ierr); 
-  ierr = target_thickness.regrid(fttfile, *lic, true); CHKERRQ(ierr);
+  ierr = target_thickness.regrid(fttfile, true); CHKERRQ(ierr);
 
   if (mask_exists) {
     ierr = verbPrintf(2, grid.com, 
                       "    reading force-to-thickness mask 'ftt_mask' from %s ...\n", fttfile); CHKERRQ(ierr); 
-    ierr = ftt_mask.regrid(fttfile, *lic, true); CHKERRQ(ierr);
+    ierr = ftt_mask.regrid(fttfile, true); CHKERRQ(ierr);
     write_ftt_mask = true;
   }
 
-  delete lic;
-
-  // reset name to avoid confusion; attributes again because lost by set_name()?
+  // reset name to avoid confusion; attributes again because lost by set_name().
   ierr = target_thickness.set_name("target_thickness"); CHKERRQ(ierr);
   ierr = target_thickness.set_attrs(
     "",  // pism_intent unknown

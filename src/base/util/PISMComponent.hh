@@ -24,9 +24,9 @@
 #include "NCVariable.hh"
 #include "PISMVars.hh"
 #include "grid.hh"
-#include "LocalInterpCtx.hh"
 #include "PISMDiagnostic.hh"
 
+//! \brief A class defining a common interface for most PISM sub-models.
 class PISMComponent {
 public:
   PISMComponent(IceGrid &g, const NCConfigVariable &conf)
@@ -59,8 +59,7 @@ public:
   // //! Add pointers to scalar diagnostic quantities to a dictionary.
   // virtual void get_scalar_diagnostics(map<string, PISMDiagnostic_Scalar*> &/*dict*/) {}
 protected:
-  virtual PetscErrorCode find_pism_input(string &filename, LocalInterpCtx* &lic,
-					 bool &regrid, int &start);
+  virtual PetscErrorCode find_pism_input(string &filename, bool &regrid, int &start);
   IceGrid &grid;
   const NCConfigVariable &config;
 };

@@ -472,10 +472,6 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
         vars.insert("enthalpy");
     }
 
-    // create "local interpolation context" from dimensions, limits, and lengths
-    //   extracted from regridFile, and from information about the part of the
-    //   grid owned by this processor
-
     ierr = nc.open_for_reading(filename.c_str());
 
     grid_info g;
@@ -495,8 +491,6 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     }
     ierr = nc.close(); CHKERRQ(ierr);
 
-    LocalInterpCtx lic(g, zlevs, zblevs, grid); // will be de-allocated at 'return 0' below.
-
     set<string>::iterator i;
     for (i = vars.begin(); i != vars.end(); ++i) {
       IceModelVec *v = variables.get(*i);
@@ -514,15 +508,7 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
         continue;
       }
 
-      if ( ((v->grid_type() == GRID_3D) && lic.no_regrid_ice) ||
-           ((v->grid_type() == GRID_3D_BEDROCK) && lic.no_regrid_bedrock) )
-        {
-          ierr = verbPrintf(2, grid.com, "  WARNING: skipping '%s'...\n",
-                            (*i).c_str()); CHKERRQ(ierr);
-          continue;
-        }
-
-      ierr = v->regrid(filename.c_str(), lic, true); CHKERRQ(ierr);
+      ierr = v->regrid(filename.c_str(), true); CHKERRQ(ierr);
 
     }
 

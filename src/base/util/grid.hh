@@ -123,18 +123,26 @@ public:
 
   MPI_Comm    com;
   PetscMPIInt rank, size;
-  DA          da2;		// whether this is PETSC_NULL is important;
-				// some functions use it to determine if values
-				// in this IceGrid instance can be trusted
-  PetscInt    xs, xm, ys, ym;
+  DA          da2;
 
-  PetscScalar *zlevels, *zblevels; // z levels, in ice & bedrock; the storage grid for fields 
-                                   // which are represented in 3d Vecs
-  vector<PetscReal> x, y;          // grid coordinates
+  PetscInt    xs,               //!< starting x-index of a processor sub-domain
+    xm,                         //!< number of grid points (in the x-direction) in a processor sub-domain
+    ys,                         //!< starting y-index of a processor sub-domain
+    ym; //!< number of grid points (in the y-direction) in a processor sub-domain
+
+  PetscScalar *zlevels,         //!< vertical grid levels in the ice; correspond to the storage grid
+    *zblevels;                  //!< vertical grid levels in the bedrock; correspond to the storage grid
+
+  vector<PetscReal> x,             //!< x-coordinates of grid points
+    y;          //!< y-coordinates of grid points
 
   // Fine vertical grid and the interpolation setup:
-  PetscScalar *zlevels_fine, *zblevels_fine, dz_fine;
-  PetscInt    Mz_fine, Mbz_fine;
+  PetscScalar *zlevels_fine,   //!< levels of the fine vertical grid in the ice
+    *zblevels_fine,             //!< levels of the fine vertical grid in the bedrock
+    dz_fine;                    //!< spacing of the fine vertical grid
+  PetscInt    Mz_fine,          //!< number of levels of the fine vertical grid in the ice
+    Mbz_fine;                   //!< number of levels of the fine vertical grid in the bedrock
+
   // Array ice_storage2fine contains indices of the ice storage vertical grid
   // that are just below a level of the fine grid. I.e. ice_storage2fine[k] is
   // the storage grid level just below fine-grid level k (zlevels_fine[k]).
@@ -144,29 +152,47 @@ public:
 
   SpacingType ice_vertical_spacing, bed_vertical_spacing;
   Periodicity periodicity;
-  PetscScalar dzMIN, dzMAX;
-  PetscScalar dzbMIN, dzbMAX;
+  PetscScalar dzMIN,            //!< minimal vertical spacing of the storage grid in the ice
+    dzMAX;                      //!< maximal vertical spacing of the storage grid in the ice
+  PetscScalar dzbMIN,           //!< minimal vertical spacing of the storage grid in the bedrock
+    dzbMAX;                     //!< maximal vertical spacing of the storage grid in the bedrock
 
-  PetscScalar x0, y0;	   // grid center (from an input or bootstrapping file)
-  PetscScalar Lx, Ly; // half width of the ice model grid in x-direction, y-direction (m)
-  PetscInt    Mx, My; // number of grid points in the x-direction, y-direction
-  PetscInt    Nx, Ny; // number of processors in the x-direcion, y-direction
-  PetscInt    *procs_x, *procs_y;
-  PetscScalar dx, dy; // horizontal grid spacing
+  PetscScalar x0,               //!< x-coordinate of the grid center
+    y0;	   //!< y-coordinate of the grid center
 
-  PetscScalar Lz, Lbz; // extent of the ice, bedrock in z-direction (m)
-  PetscInt    Mz, Mbz; // number of grid points in z-direction, ice and bedrock.
-  PetscInt initial_Mz; // initial number of grid levels; used by the grid extension code
-  PetscInt max_stencil_width;   // maximum stancil width supported by the DA in
-                                // this IceGrid object
+  PetscScalar Lx, //!< half width of the ice model grid in x-direction (m)
+    Ly; //!< half width of the ice model grid in y-direction (m)
+
+  PetscInt    Mx, //!< number of grid points in the x-direction
+    My; //!< number of grid points in the y-direction
+
+  PetscInt    Nx, //!< number of processors in the x-direction
+    Ny; //!< number of processors in the y-direction
+
+  PetscInt    *procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
+    *procs_y;//!< \brief array containing lenghts (in the y-direction) of processor sub-domains
+
+  PetscScalar dx,               //!< horizontal grid spacing
+    dy;                         //!< horizontal grid spacing
+
+  PetscScalar Lz,      //!< extent of the ice in z-direction (m)
+    Lbz;               //!< extent of the bedrock in z-direction (m)
+
+  PetscInt    Mz, //!< number of grid points in z-direction in the ice
+    Mbz; //!< number of grid points in z-direction in the bedrock
+
+  PetscInt initial_Mz; //!< initial number of vertical grid levels; used by the grid extension code
+
+  PetscInt max_stencil_width;   //!< \brief maximum stencil width supported by
+                                //!< the DA in this IceGrid object
 
   PetscScalar year,       //!< current time (years)
     start_year,		  //!< the year this run started from
     end_year;		  //!< time to stop at
   
-  PISMProf *profiler;
+  PISMProf *profiler;           //!< PISM profiler object; allows tracking how long a computation takes
 protected:
-  PetscScalar lambda;	 // vertical spacing parameter
+  PetscScalar lambda;	 //!< quadratic vertical spacing parameter
   PetscErrorCode get_dzMIN_dzMAX_spacingtype();
   PetscErrorCode compute_horizontal_coordinates();
   PetscErrorCode compute_fine_vertical_grid();

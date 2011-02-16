@@ -47,15 +47,6 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   bool hExists=false, maskExists=false;
   ierr = nc.find_variable("usurf", "surface_altitude", NULL,  hExists); CHKERRQ(ierr);
   ierr = nc.find_variable("mask", NULL, maskExists); CHKERRQ(ierr);
- 
-  // our goal is to create a "local interpolation context" from dimensions,
-  // limits, and lengths extracted from bootstrap file and from information
-  // about the part of the grid owned by this processor
-  grid_info g;
-  ierr = nc.get_grid_info(g); CHKERRQ(ierr); // g.z_max is set to 0 if z does
-					     // not exist
-  LocalInterpCtx *lic = new LocalInterpCtx(g, NULL, NULL, grid);
-
   ierr = nc.close(); CHKERRQ(ierr);
 
   // now work through all the 2d variables, regridding if present and otherwise
@@ -75,22 +66,22 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   ierr = verbPrintf(2, grid.com, 
 		    "  reading 2D model state variables by regridding ...\n"); CHKERRQ(ierr);
 
-  ierr = vLongitude.regrid(filename, *lic, false); CHKERRQ(ierr);
-  ierr =  vLatitude.regrid(filename, *lic, false); CHKERRQ(ierr);
-  ierr =         vH.regrid(filename, *lic,
+  ierr = vLongitude.regrid(filename, false); CHKERRQ(ierr);
+  ierr =  vLatitude.regrid(filename, false); CHKERRQ(ierr);
+  ierr =         vH.regrid(filename, 
                            config.get("bootstrapping_H_value_no_var")); CHKERRQ(ierr);
-  ierr =       vbed.regrid(filename, *lic, 
+  ierr =       vbed.regrid(filename,  
                            config.get("bootstrapping_bed_value_no_var")); CHKERRQ(ierr);
-  ierr =     vHmelt.regrid(filename, *lic, 
+  ierr =     vHmelt.regrid(filename,  
                            config.get("bootstrapping_Hmelt_value_no_var")); CHKERRQ(ierr);
-  ierr =       vbmr.regrid(filename, *lic, 
+  ierr =       vbmr.regrid(filename,  
                            config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
-  ierr =   vtillphi.regrid(filename, *lic, 
+  ierr =   vtillphi.regrid(filename,  
                            config.get("bootstrapping_tillphi_value_no_var")); CHKERRQ(ierr);
-  ierr =       vGhf.regrid(filename, *lic, 
+  ierr =       vGhf.regrid(filename,  
                            config.get("bootstrapping_geothermal_flux_value_no_var"));
-                           CHKERRQ(ierr);
-  ierr =    vuplift.regrid(filename, *lic, 
+  CHKERRQ(ierr);
+  ierr =    vuplift.regrid(filename,  
                            config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
 
   bool Lz_set;
@@ -134,8 +125,6 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   }
 
   ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);
-
-  delete lic;
 
   return 0;
 }

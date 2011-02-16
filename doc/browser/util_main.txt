@@ -18,6 +18,7 @@ list of key classes, see below.
 
 The following pages describe some important classes and their intended uses.
 
+- \ref computational_grid "Organization of PISM's computational grid"
 - \subpage spatial_fields "IceModelVec and friends: storing, reading, writing, accessing 2D and 3D fields"
 - \subpage pism_components "PISM's model components and their interface (PISMComponent)"
 - \subpage scalar_timeseries "Reading scalar time-series (Timeseries)"

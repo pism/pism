@@ -412,7 +412,7 @@ void IceGrid::compute_nprocs() {
 
 }
 
-//! Computes processor ownership ranges corresponding to equal area
+//! \brief Computes processor ownership ranges corresponding to equal area
 //! distribution among processors.
 /*!
  * Expects grid.Nx and grid.Ny to be valid.
@@ -433,7 +433,8 @@ void IceGrid::compute_ownership_ranges() {
   }
 }
 
-//! Create the PETSc DA \c da2 for the horizontal grid.  Determine how the horizontal grid is divided among processors.
+//! \brief Create the PETSc DA \c da2 for the horizontal grid. Determine how
+//! the horizontal grid is divided among processors.
 /*!
   This procedure should only be called after the parameters describing the
   horizontal computational box (Lx,Ly) and the parameters for the horizontal
@@ -506,6 +507,17 @@ PetscErrorCode IceGrid::createDA() {
   return 0;
 }
 
+//! \brief A version allowing to specify the grid distribution across processors.
+/*!
+ * \param my_procs_x Number of processors in the X-direction
+ * \param my_procs_y Number of processors in the Y-direction
+ * \param lx The array containing numbers of grid points per processor in the X-direction
+ * \param lx The array containing numbers of grid points per processor in the Y-direction
+ *
+ * \note my_procs_x times my_procs_y has to be equal to size
+ * \note lx has to add up to Mx.
+ * \note ly has to add up to My.
+ */
 PetscErrorCode IceGrid::createDA(PetscInt my_procs_x, PetscInt my_procs_y,
 				 PetscInt* &lx, PetscInt* &ly) {
   PetscErrorCode ierr;
@@ -759,7 +771,6 @@ PetscErrorCode IceGrid::init_interpolation() {
 //! \brief Computes values of x and y corresponding to the computational grid,
 //! with accounting for periodicity.
 PetscErrorCode IceGrid::compute_horizontal_coordinates() {
-  PetscErrorCode ierr;
 
   x.resize(Mx);
   y.resize(My);
@@ -793,15 +804,15 @@ PetscErrorCode IceGrid::compute_horizontal_coordinates() {
  * This method is \b DEPRECATED.
  */
 void IceGrid::mapcoords(PetscInt i, PetscInt j,
-                        PetscScalar &x, PetscScalar &y, PetscScalar &r) {
+                        PetscScalar &my_x, PetscScalar &my_y, PetscScalar &r) {
   // compute x,y,r on grid from i,j
   PetscScalar ifrom0, jfrom0;
 
   ifrom0=static_cast<PetscScalar>(i)-static_cast<PetscScalar>(Mx - 1)/2.0;
   jfrom0=static_cast<PetscScalar>(j)-static_cast<PetscScalar>(My - 1)/2.0;
-  x=dx*ifrom0;
-  y=dy*jfrom0;
-  r = sqrt(PetscSqr(x) + PetscSqr(y));
+  my_x=dx*ifrom0;
+  my_y=dy*jfrom0;
+  r = sqrt(PetscSqr(my_x) + PetscSqr(my_y));
 }
 
 //! \brief Report grid parameters.
@@ -875,43 +886,43 @@ PetscErrorCode IceGrid::report_parameters() {
 }
 
 //! Computes the size of a diagnostic viewer window.
-PetscErrorCode IceGrid::compute_viewer_size(int target_size, int &x, int &y) {
+PetscErrorCode IceGrid::compute_viewer_size(int target_size, int &X, int &Y) {
 
   // aim for smaller dimension equal to target, larger dimension larger by Ly/Lx or Lx/Ly proportion
   const double  yTOx = Ly / Lx;
   if (Ly > Lx) {
-    x = target_size; 
-    y = (PetscInt) ((double)target_size * yTOx); 
+    X = target_size; 
+    Y = (PetscInt) ((double)target_size * yTOx); 
   } else {
-    y = target_size; 
-    x = (PetscInt) ((double)target_size / yTOx);
+    Y = target_size; 
+    X = (PetscInt) ((double)target_size / yTOx);
   }
   
   // if either dimension is larger than twice the target, shrink appropriately
-  if (x > 2 * target_size) {
-    y = (PetscInt) ( (double)(y) * (2.0 * (double)target_size / (double)(x)) );
-    x = 2 * target_size;
-  } else if (y > 2 * target_size) {
-    x = (PetscInt) ( (double)(x) * (2.0 * (double)target_size / (double)(y)) );
-    y = 2 * target_size;
+  if (X > 2 * target_size) {
+    Y = (PetscInt) ( (double)(Y) * (2.0 * (double)target_size / (double)(X)) );
+    X = 2 * target_size;
+  } else if (Y > 2 * target_size) {
+    X = (PetscInt) ( (double)(X) * (2.0 * (double)target_size / (double)(Y)) );
+    Y = 2 * target_size;
   }
   
   // make sure minimum dimension is sufficient to see
-  if (x < 20)   x = 20;
-  if (y < 20)   y = 20;
+  if (X < 20)   X = 20;
+  if (Y < 20)   Y = 20;
   return 0;
 }
 
 //! Creates a run-time diagnostic viewer.
 PetscErrorCode IceGrid::create_viewer(PetscInt viewer_size, string title, PetscViewer &viewer) {
   PetscErrorCode ierr;
-  int x, y;
+  int X, Y;
 
-  ierr = compute_viewer_size(viewer_size, x, y); CHKERRQ(ierr);
+  ierr = compute_viewer_size(viewer_size, X, Y); CHKERRQ(ierr);
 
   // note we reverse x <-> y; see IceGrid::createDA() for original reversal
   ierr = PetscViewerDrawOpen(com, PETSC_NULL, title.c_str(),
-			     PETSC_DECIDE, PETSC_DECIDE, y, x, &viewer);  CHKERRQ(ierr);
+			     PETSC_DECIDE, PETSC_DECIDE, Y, X, &viewer);  CHKERRQ(ierr);
 
   // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
   // there is a no titles bug
@@ -922,14 +933,16 @@ PetscErrorCode IceGrid::create_viewer(PetscInt viewer_size, string title, PetscV
   return 0;
 }
 
-// \brief Computes indices of a grid point to the lower left of the point (x,y).
+//! \brief Computes indices of a grid point to the lower left of the point (x,y).
 /*!
+ * \code
  * 3       2
- * *-------*
+ * o-------o
  * |       |
  * |    +  |
- * *-------*
+ * o-------o
  * 0       1
+ * \endcode
  *
  * If "+" is the point (X,Y), this method returns indices of the grid point
  * "0".
@@ -939,13 +952,13 @@ PetscErrorCode IceGrid::create_viewer(PetscInt viewer_size, string title, PetscV
  */
 void IceGrid::compute_point_neighbors(PetscReal X, PetscReal Y,
                                       PetscInt &i, PetscInt &j) {
-  i = floor((X - x[0])/dx);
-  j = floor((Y - y[0])/dy);
+  i = (int)floor((X - x[0])/dx);
+  j = (int)floor((Y - y[0])/dy);
 }
 
-// \brief Compute 4 interpolation weights necessary for linear interpolation
-// from the current grid. See compute_point_neighbors for the ordering of
-// neighbors.
+//! \brief Compute 4 interpolation weights necessary for linear interpolation
+//! from the current grid. See compute_point_neighbors for the ordering of
+//! neighbors.
 vector<PetscReal> IceGrid::compute_interp_weights(PetscReal X, PetscReal Y) {
   vector<PetscReal> result;
   int i,j;

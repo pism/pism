@@ -84,7 +84,7 @@ PetscErrorCode PSExternal::init(PISMVars &vars) {
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  for (int i = 0; i < ebm_var_names.size(); ++i) {
+  for (unsigned int i = 0; i < ebm_var_names.size(); ++i) {
     IceModelVec *var = vars.get(ebm_var_names[i]);
 
     if (var) {
@@ -146,7 +146,6 @@ PetscErrorCode PSExternal::ice_surface_temperature(PetscReal t_years, PetscReal 
 }
 
 PetscErrorCode PSExternal::max_timestep(PetscReal t_years, PetscReal &dt_years) {
-  PetscErrorCode ierr;
   double delta = 0.5 * update_interval;
   double next_update = ceil(t_years / delta) * delta;
 
@@ -210,36 +209,22 @@ PetscErrorCode PSExternal::update(PetscReal t_years, PetscReal dt_years) {
 
 PetscErrorCode PSExternal::update_artm() {
   PetscErrorCode ierr;
-  PISMIO nc(&grid);
 
   ierr = verbPrintf(2, grid.com, "Reading the temperature at the top of the ice from %s for year = %1.1f...\n",
                     ebm_output.c_str(), t); 
 
-  grid_info gi;
-  ierr = nc.open_for_reading(ebm_output.c_str()); CHKERRQ(ierr);
-  ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
-  LocalInterpCtx lic(gi, NULL, NULL, grid); // 2D only
-
-  ierr = artm.regrid(ebm_output.c_str(), lic, true); CHKERRQ(ierr);
+  ierr = artm.regrid(ebm_output.c_str(), true); CHKERRQ(ierr);
 
   return 0;
 }
 
 PetscErrorCode PSExternal::update_acab() {
   PetscErrorCode ierr;
-  PISMIO nc(&grid);
 
   ierr = verbPrintf(2, grid.com, "Reading the accumulation/ablation rate from %s for year = %1.1f...\n",
                     ebm_output.c_str(), t); 
 
-  grid_info gi;
-  ierr = nc.open_for_reading(ebm_output.c_str()); CHKERRQ(ierr);
-  ierr = nc.get_grid_info_2d(gi); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
-  LocalInterpCtx lic(gi, NULL, NULL, grid); // 2D only
-
-  ierr = acab.regrid(ebm_output.c_str(), lic, true); CHKERRQ(ierr);
+  ierr = acab.regrid(ebm_output.c_str(), true); CHKERRQ(ierr);
 
   return 0;
 }
@@ -271,7 +256,7 @@ PetscErrorCode PSExternal::write_coupling_fields() {
   }
 
   // define
-  for (int i = 0; i < ebm_vars.size(); ++i) {
+  for (unsigned int i = 0; i < ebm_vars.size(); ++i) {
     IceModelVec *var = ebm_vars[i];
     ierr = var->define(nc, NC_DOUBLE); CHKERRQ(ierr);
   }
@@ -279,7 +264,7 @@ PetscErrorCode PSExternal::write_coupling_fields() {
   ierr = nc.close(); CHKERRQ(ierr);
 
   // write
-  for (int i = 0; i < ebm_vars.size(); ++i) {
+  for (unsigned int i = 0; i < ebm_vars.size(); ++i) {
     IceModelVec *var = ebm_vars[i];
     ierr = var->write(ebm_input.c_str()); CHKERRQ(ierr);
   }
@@ -306,7 +291,6 @@ PetscErrorCode PSExternal::run(double t_years) {
 
 //! \brief Wait for an external model to create a file to read data from.
 PetscErrorCode PSExternal::wait() {
-  PetscErrorCode ierr;
   int ebm_status;
 
   if (grid.rank == 0) {
@@ -429,17 +413,15 @@ PetscErrorCode PSExternal_ALR::init(PISMVars &vars) {
   ierr = artm_0.set_attrs("internal", "ice upper surface elevation",
                            "m", "surface_altitude"); CHKERRQ(ierr);
 
-  ierr = find_pism_input(pism_input, lic, regrid, start); CHKERRQ(ierr); 
+  ierr = find_pism_input(pism_input, regrid, start); CHKERRQ(ierr); 
 
   if (regrid) {
-    ierr = artm_0.regrid(pism_input.c_str(), *lic, true); CHKERRQ(ierr);
-    ierr =   artm.regrid(pism_input.c_str(), *lic, true); CHKERRQ(ierr);
+    ierr = artm_0.regrid(pism_input.c_str(), true); CHKERRQ(ierr);
+    ierr =   artm.regrid(pism_input.c_str(), true); CHKERRQ(ierr);
   } else {
     ierr = artm_0.read(pism_input.c_str(), start); CHKERRQ(ierr);
     ierr =   artm.read(pism_input.c_str(), start); CHKERRQ(ierr);
   }
-
-  delete lic;
 
   ierr = PetscOptionsBegin(grid.com, "", "PSExternal_ALR options", ""); CHKERRQ(ierr);
   {

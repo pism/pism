@@ -30,11 +30,16 @@ if (Pism_NETCDF4_OUTPUT)
   message (STATUS "PISM will write NetCDF-4 files.")
   set_source_files_properties (base/util/nc_util.cc
     PROPERTIES COMPILE_FLAGS -DPISM_WRITE_NETCDF4=1)
+else ()
+  set_source_files_properties (base/util/nc_util.cc
+    PROPERTIES COMPILE_FLAGS -DPISM_WRITE_NETCDF4=0)
 endif ()
 
 if (Pism_NETCDF4_COMPRESS)
   message (STATUS "PISM will use NetCDF-4 variable compression.")
   set (NCVariable_flags "-DPISM_WRITE_COMPRESSED_NETCDF4=1")
+else ()
+  set (NCVariable_flags "-DPISM_WRITE_COMPRESSED_NETCDF4=0")
 endif ()
 
 # Set variable storage order in PISM output files.

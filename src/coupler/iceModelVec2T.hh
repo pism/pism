@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Constantine Khroulev
+// Copyright (C) 2009--2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -133,8 +133,6 @@ protected:
   vector<double> times,		//!< all the times available in filename
     T;				//!< times stored in memory
   string filename;		//!< file to read (regrid) from
-  LocalInterpCtx *lic;		//!< We store the context because we might need
-				//!< to regrid many times
   DA da3;
   Vec v3;			//!< a 3D Vec used to store records
   void ***array3;

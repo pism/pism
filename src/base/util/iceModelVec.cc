@@ -96,6 +96,7 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
 
   output_data_type = other.output_data_type;
   write_in_glaciological_units = other.write_in_glaciological_units;
+  report_range = other.report_range;
 
   name = other.name;
   vars = other.vars;
@@ -378,6 +379,7 @@ PetscErrorCode IceModelVec::reset_attrs(int N) {
 
   time_independent = false;
   write_in_glaciological_units = false;
+  report_range = true;
   output_data_type = NC_DOUBLE;
 
   vars[N].reset();
@@ -419,13 +421,42 @@ PetscErrorCode IceModelVec::set_attrs(string my_pism_intent,
   return 0;
 }
 
+//! \brief Get the interpolation context (grid information) for an input file.
+PetscErrorCode IceModelVec::get_interp_context(string filename, LocalInterpCtx* &lic) {
+  PetscErrorCode ierr;
+
+  PISMIO nc(grid);
+  double *zlevs = NULL, *zblevs = NULL; // NULLs correspond to 2D-only regridding
+  grid_info gi;
+  ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
+  ierr = nc.get_grid_info(gi); CHKERRQ(ierr);
+
+  if ((gi.z_len != 0) && (gi.zb_len != 0)) {
+    ierr = nc.get_vertical_dims(zlevs, zblevs); CHKERRQ(ierr);
+  }
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  //! the *caller* is in charge of destroying lic
+  lic = new LocalInterpCtx(gi, zlevs, zblevs, *grid);
+
+  delete [] zlevs;  delete [] zblevs;
+
+  return 0;
+}
+
+
 //! Gets an IceModelVec from a file \c filename, interpolating onto the current grid.
 /*! Stops if the variable was not found and \c critical == true.
  */
-PetscErrorCode IceModelVec::regrid(const char filename[], LocalInterpCtx &lic, 
-                                   bool critical) {
+PetscErrorCode IceModelVec::regrid(const char filename[], bool critical, int start) {
   PetscErrorCode ierr;
   Vec g;
+  LocalInterpCtx *lic = NULL;
+  
+  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
+  lic->start[0] = start;
+  lic->report_range = report_range;
 
   if (dof != 1)
     SETERRQ(1, "This method only supports IceModelVecs with dof == 1.");
@@ -433,15 +464,17 @@ PetscErrorCode IceModelVec::regrid(const char filename[], LocalInterpCtx &lic,
   if (localp) {
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
 
-    ierr = vars[0].regrid(filename, lic, critical, false, 0.0, g); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, *lic, critical, false, 0.0, g); CHKERRQ(ierr);
 
     ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
     ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
 
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = vars[0].regrid(filename, lic, critical, false, 0.0, v); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, *lic, critical, false, 0.0, v); CHKERRQ(ierr);
   }
+
+  delete lic;
 
   return 0;
 }
@@ -449,10 +482,13 @@ PetscErrorCode IceModelVec::regrid(const char filename[], LocalInterpCtx &lic,
 //! Gets an IceModelVec from a file \c filename, interpolating onto the current grid.
 /*! Sets all the values to \c default_value if the variable was not found.
  */
-PetscErrorCode IceModelVec::regrid(const char filename[], 
-                                   LocalInterpCtx &lic, PetscScalar default_value) {
+PetscErrorCode IceModelVec::regrid(const char filename[], PetscScalar default_value) {
   PetscErrorCode ierr;
   Vec g;
+  LocalInterpCtx *lic = NULL;
+  
+  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
+  lic->report_range = report_range;
 
   if (dof != 1)
     SETERRQ(1, "This method only supports IceModelVecs with dof == 1.");
@@ -460,15 +496,17 @@ PetscErrorCode IceModelVec::regrid(const char filename[],
   if (localp) {
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
 
-    ierr = vars[0].regrid(filename, lic, false, true, default_value, g); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, *lic, false, true, default_value, g); CHKERRQ(ierr);
 
     ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
     ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
 
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = vars[0].regrid(filename, lic, false, true, default_value, v); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, *lic, false, true, default_value, v); CHKERRQ(ierr);
   }
+
+  delete lic;
 
   return 0;
 }

@@ -28,7 +28,6 @@ EBM_driver::EBM_driver(MPI_Comm my_com) {
 
 int EBM_driver::run() {
   int ierr;
-  bool ready;
   int done = 0,
     wait_counter = 0,
     wait_message_counter = 1;
@@ -41,8 +40,6 @@ int EBM_driver::run() {
   }
 
   while ( !done ) {
-    char filename[PETSC_MAX_PATH_LEN];
-
     MPI_Status status;
     int flag;
     MPI_Iprobe(0, MPI_ANY_TAG, inter_comm, &flag, &status);
@@ -130,7 +127,7 @@ int EBM_driver::run_ebm(double year) {
     fprintf(stderr, "EBM driver: command exited with the return code %d\n", ierr);
     return ierr;
   } else {
-    fprintf(stderr, "EBM driver: command executed succesfully.\n", ierr);
+    fprintf(stderr, "EBM driver: command executed succesfully.\n");
   }
 
   return 0; 

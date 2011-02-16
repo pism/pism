@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -32,7 +32,7 @@
 using namespace std;
 /// @endcond
 
-//! A class storing and writing PISM profiling event data.
+//! \brief A class storing and writing PISM profiling event data.
 class PISMEvent {
 public:
   PISMEvent();

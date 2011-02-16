@@ -72,10 +72,8 @@ public:
   virtual PetscErrorCode  write(const char filename[], nc_type nctype);
   virtual PetscErrorCode  dump(const char filename[]);
   virtual PetscErrorCode  read(const char filename[], unsigned int time);
-  virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic,
-                                 bool critical);
-  virtual PetscErrorCode  regrid(const char filename[], LocalInterpCtx &lic, 
-                                 PetscScalar default_value);
+  virtual PetscErrorCode  regrid(const char filename[], bool critical, int start = 0);
+  virtual PetscErrorCode  regrid(const char filename[], PetscScalar default_value);
 
   virtual PetscErrorCode  begin_access();
   virtual PetscErrorCode  end_access();
@@ -89,6 +87,7 @@ public:
   virtual int get_state_counter() const;
   virtual void inc_state_counter();
  
+  bool   report_range;                 //!< If true, report range when regridding.
   bool   write_in_glaciological_units, //!< \brief If true, data is written to
                                        //!< a file in "human-friendly" units.
     time_independent;                  //!< \brief If true, corresponding
@@ -128,6 +127,7 @@ protected:
   virtual PetscErrorCode checkCompatibility(const char*, IceModelVec &other);
   virtual void check_array_indices(int i, int j);
   virtual PetscErrorCode reset_attrs(int N);
+  virtual PetscErrorCode get_interp_context(string filename, LocalInterpCtx* &lic);
 };
 
 
@@ -228,8 +228,8 @@ public:
   using IceModelVec2::write;
   virtual PetscErrorCode write(const char filename[], nc_type nctype); 
   virtual PetscErrorCode read(const char filename[], const unsigned int time); 
-  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, bool critical); 
-  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value); 
+  virtual PetscErrorCode regrid(const char filename[], bool critical, int start = 0); 
+  virtual PetscErrorCode regrid(const char filename[], PetscScalar default_value); 
   virtual PetscErrorCode get_array(PISMVector2 ** &a); 
   virtual PetscErrorCode magnitude(IceModelVec2S &result); 
   virtual PISMVector2&   operator()(int i, int j);

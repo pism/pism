@@ -435,7 +435,7 @@ PetscErrorCode NCTool::get_dim_length(const char name[], int *len) const {
   return 0;
 }
 
-//! Gets dimension limits.
+//! \brief Gets dimension limits.
 /*! Gets dimension limits (%i.e. min and max values of the coordinate variable).
 
   Sets min = 0 and max = 0 if the dimension \c name has length 0.
@@ -721,11 +721,12 @@ PetscErrorCode NCTool::get_units(int varid, bool &has_units, utUnit &units) cons
     return 0;
   }
 
-  // This finds the string "since" in the units_string and terminates
-  // it on the first 's' of "since", if this sub-string was found. This
-  // is done to ignore the reference date in the time units string (the
-  // reference date specification always starts with this word).
-
+  /*!
+    \note This method finds the string "since" in the units_string and
+    terminates it on the first 's' of "since", if this sub-string was found.
+    This is done to ignore the reference date in the time units string (the
+    reference date specification always starts with this word).
+  */
   int n = units_string.find("since");
   if (n != -1) units_string.resize(n);
 
@@ -892,8 +893,8 @@ PetscErrorCode NCTool::data_mode() const {
 
   if (!def_mode) return 0;
 
-  // 50000 below means that we allocate 50Kb for metadata in NetCDF files
-  // created by PISM.
+  //! 50000 (below) means that we allocate 50Kb for metadata in NetCDF files
+  //! created by PISM.
   ierr = nc__enddef(ncid,50000,4,0,4); CHKERRQ(check_err(ierr,__LINE__,__FILE__))
 
   def_mode = false;

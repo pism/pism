@@ -1,4 +1,4 @@
-// Copyright (C) 2009 Constantine Khroulev
+// Copyright (C) 2009, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ using namespace std;
 /// @endcond
 
 
-//! A general class for reading and accessing time-series.
+//! \brief A general class for reading and accessing time-series.
 /*!
   Provides random access to time-series values.
 

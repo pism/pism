@@ -464,13 +464,6 @@ PetscErrorCode read_input_data(IceGrid &grid, PISMVars &variables, const NCConfi
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-
-  ierr = pio.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-  ierr = pio.get_grid_info(g); CHKERRQ(ierr);
-  ierr = pio.close(); CHKERRQ(ierr);
-
-  LocalInterpCtx lic(g, NULL, NULL, grid);
-
   // Read in everything except enthalpy, usurf and tauc:
   vars.erase("enthalpy");
   vars.erase("usurf");
@@ -479,7 +472,7 @@ PetscErrorCode read_input_data(IceGrid &grid, PISMVars &variables, const NCConfi
   set<string>::iterator j = vars.begin();
   while (j != vars.end()) {
     IceModelVec *var = variables.get(*j);
-    ierr = var->regrid(filename.c_str(), lic, true); CHKERRQ(ierr);
+    ierr = var->regrid(filename.c_str(), true); CHKERRQ(ierr);
     j++;
   }
 

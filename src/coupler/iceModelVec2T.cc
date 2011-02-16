@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011 Constantine Khroulev
+// Copyright (C) 2009--2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,10 +27,10 @@ IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
   da3 = PETSC_NULL;
   v3 = PETSC_NULL;
   array3 = NULL;
-  lic = NULL;
   first = -1;
   n_records = 50;		// just a default
   T.resize(1);			// so that T[0] is always available
+  report_range = false;
 }
 
 IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec2S(other) {
@@ -40,7 +40,6 @@ IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec2S(other) 
   times = other.times;
   T = other.T;
   filename = other.filename;
-  lic = other.lic;
   da3 = other.da3;
   v3 = other.v3;
   array3 = other.array3;
@@ -89,8 +88,6 @@ PetscErrorCode IceModelVec2T::destroy() {
     ierr = DADestroy(da3); CHKERRQ(ierr);
     da3 = PETSC_NULL;
   }
-
-  delete lic;
 
   return 0;
 }
@@ -147,9 +144,6 @@ PetscErrorCode IceModelVec2T::init(string fname) {
   ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
   ierr = nc.get_grid_info(gi); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
-
-  lic = new LocalInterpCtx(gi, NULL, NULL, *grid);
-  lic->report_range = false;
 
   return 0;
 }
@@ -215,8 +209,7 @@ PetscErrorCode IceModelVec2T::update(int start) {
 		    times[start], times[start + missing - 1]);
 
   for (int j = 0; j < missing; ++j) {
-    lic->start[0] = start + j;
-    ierr = regrid(filename.c_str(), *lic, true); CHKERRQ(ierr);
+    ierr = regrid(filename.c_str(), true, start + j); CHKERRQ(ierr);
     ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %f...\n",
 		      name.c_str(), start + j, times[start + j]);
     ierr = set_record(kept + j); CHKERRQ(ierr);

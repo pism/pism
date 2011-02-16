@@ -95,7 +95,7 @@ public:
 //! PISM's SSA solver: the finite element method implementation written by Jed
 /*!
 Jed's code is in rev 831:
-  src/base/ssaJed/*
+  src/base/ssaJed/...
 The following is a wrapper around Jed's code.  The wrapper duplicates the
 functionality of SSAFD.
  */

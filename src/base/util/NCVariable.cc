@@ -97,6 +97,7 @@ NCSpatialVariable::NCSpatialVariable() {
   reset();
 }
 
+//! \brief Initialize a NCSpatialVariable instance.
 void NCSpatialVariable::init(string name, IceGrid &g, GridType d) {
   NCVariable::init(name, g.com, g.rank);
   short_name = name;
@@ -161,7 +162,7 @@ PetscErrorCode NCSpatialVariable::read(const char filename[], unsigned int time,
   return 0;
 }
 
-//! Write a \b global Vec \c v to a variable.
+//! \brief Write a \b global Vec \c v to a variable.
 /*!
   Defines a variable and converts the units if needed.
  */
@@ -198,7 +199,7 @@ PetscErrorCode NCSpatialVariable::write(const char filename[], nc_type nctype,
   return 0;
 }
 
-//! Regrid from a NetCDF file into a \b global Vec \c v.
+//! \brief Regrid from a NetCDF file into a \b global Vec \c v.
 /*!
   \li stops if critical == true and the variable was not found
   \li sets \c v to \c default_value if \c set_default_value == true and the variable was not found
@@ -653,16 +654,18 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type n
   stat = nc_def_var_deflate(ncid, varid, 0, 1, 9);
   CHKERRQ(check_err(stat,__LINE__,__FILE__));
 #endif
-  // Caveat: uncompressed data is sent to processor 0, which compresses and
-  // writes it. This means that for very big files processor 0 might have to
-  // compress many gigabytes of data, which can be *very* slow...
-  // 
-  // This, in turn, can cancel out all the benefits of using NetCDF-4 with
-  // compression.
-  // 
-  // Unfortunately NetCDF-4 does not support parallel I/O with compression, so
-  // I don't see any way around this.
-
+  /*! 
+    \note If NetCDF-4 compression is "on", uncompressed data is sent to
+    processor 0, which compresses and writes it. This means that for very big
+    files processor 0 might have to compress many gigabytes of data, which can
+    be *very* slow...
+  
+    This, in turn, can cancel out all the benefits of using NetCDF-4 with
+    compression.
+  
+    Unfortunately NetCDF-4 does not support parallel I/O with compression, so
+    I don't see any way around this. (CK)
+  */
   stat = write_attributes(nc, varid, nctype, write_in_glaciological_units); CHKERRQ(stat);
 
   return 0;

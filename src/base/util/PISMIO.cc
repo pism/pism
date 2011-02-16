@@ -445,8 +445,8 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
 
         double a_mm, a_mp, a_pm, a_pp;  // filled differently in 2d and 3d cases
 
-        const int Im = floor(ic), Ip = ceil(ic),
-          Jm = floor(jc), Jp = ceil(jc);
+        const int Im = (int)floor(ic), Ip = (int)ceil(ic),
+          Jm = (int)floor(jc), Jp = (int)ceil(jc);
 
         if (dims == GRID_3D || dims == GRID_3D_BEDROCK) {
           // get the index into the source grid, for just below the level z

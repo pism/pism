@@ -80,7 +80,7 @@ public:
     \li units
     \li glaciological_units
    */
-  map<string, vector<double> > doubles;
+  map<string, vector<double> > doubles; //!< scalar and array attributes
 
   virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype,
                                 bool write_in_glaciological_units = true) const = 0;
@@ -90,11 +90,11 @@ protected:
   virtual PetscErrorCode read_valid_range(const NCTool &nc, int varid);
   MPI_Comm com;
   PetscMPIInt rank;
-  map<string, string> strings;
+  map<string, string> strings;  //!< string and boolean attributes
   utUnit units,		      //!< internal (PISM) units
          glaciological_units; //!< \brief for diagnostic variables: units to
-			      //!use when writing to a NetCDF file and for
-			      //!standard out reports
+			      //!< use when writing to a NetCDF file and for
+			      //!< standard out reports
 };
 
 //! A class for reading, writing and accessing PISM configuration flags and parameters.
@@ -116,12 +116,13 @@ public:
 
   virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype, bool) const;
 protected:
-  string config_filename;
+  string config_filename;       //!< \brief the name of the file this config database
+                                //!< was initialized from 
   virtual PetscErrorCode write_attributes(const NCTool &nc, int varid, nc_type nctype,
 					  bool write_in_glaciological_units) const;
 };
 
-//! A class for reading and writing NetCDF global attributes.
+//! \brief A class for reading and writing NetCDF global attributes.
 /*! This is not a variable, because it has no value, but it is similar to
   NCConfigVariable, because uses of these attributes are similar.
 */
@@ -137,7 +138,7 @@ protected:
 //! An internal class for reading, writing and converting time-series.
 class NCTimeseries : public NCVariable {
 public:
-  string dimension_name;
+  string dimension_name;        //!< the name of the NetCDF dimension this timeseries depends on
   void    init(string name, string dim_name, MPI_Comm c, PetscMPIInt r);
   virtual PetscErrorCode read(const char filename[], vector<double> &data);
   virtual PetscErrorCode write(const char filename[], size_t start, vector<double> &data, nc_type nctype = NC_DOUBLE);

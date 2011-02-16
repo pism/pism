@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2010 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -21,7 +21,6 @@
 
 PetscErrorCode PAConstant::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
-  LocalInterpCtx *lic = NULL;
   bool regrid = false;
   int start = -1;
 
@@ -50,7 +49,7 @@ PetscErrorCode PAConstant::init(PISMVars &/*vars*/) {
   
   // find PISM input file to read data from:
 
-  ierr = find_pism_input(input_file, lic, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(input_file, regrid, start); CHKERRQ(ierr);
 
   // read snow precipitation rate and temperatures from file
   ierr = verbPrintf(2, grid.com, 
@@ -58,14 +57,12 @@ PetscErrorCode PAConstant::init(PISMVars &/*vars*/) {
 		    "    and mean annual near-surface air temperature 'temp_ma' from %s ... \n",
 		    input_file.c_str()); CHKERRQ(ierr); 
   if (regrid) {
-    ierr = precip.regrid(input_file.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
-    ierr = temperature.regrid(input_file.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
+    ierr = precip.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
+    ierr = temperature.regrid(input_file.c_str(), true); CHKERRQ(ierr); // fails if not found!
   } else {
     ierr = precip.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
     ierr = temperature.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
-
-  delete lic;
 
   airtemp_var.init("airtemp", grid, GRID_2D);
   airtemp_var.set_string("pism_intent", "diagnostic");

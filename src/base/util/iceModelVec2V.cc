@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -152,15 +152,20 @@ PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2V::regrid(const char filename[], LocalInterpCtx &lic, bool critical) {
+PetscErrorCode IceModelVec2V::regrid(const char filename[], bool critical, int start) {
   PetscErrorCode ierr;
+  LocalInterpCtx *lic = NULL;
+  
+  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
+  lic->start[0] = start;
+  lic->report_range = report_range;
 
   Vec tmp;			// a temporary one-component vector,
 				// distributed across processors the same way v is
   ierr = DACreateGlobalVector(component_da, &tmp); CHKERRQ(ierr);
 
   for (int j = 0; j < dof; ++j) {
-    ierr = vars[j].regrid(filename, lic, critical, false, 0.0, tmp); CHKERRQ(ierr);
+    ierr = vars[j].regrid(filename, *lic, critical, false, 0.0, tmp); CHKERRQ(ierr);
     ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
   }
 
@@ -173,18 +178,23 @@ PetscErrorCode IceModelVec2V::regrid(const char filename[], LocalInterpCtx &lic,
 
   // Clean up:
   ierr = VecDestroy(tmp);
+  delete lic;
   return 0;
 }
 
-PetscErrorCode IceModelVec2V::regrid(const char filename[], LocalInterpCtx &lic, PetscScalar default_value) {
+PetscErrorCode IceModelVec2V::regrid(const char filename[], PetscScalar default_value) {
   PetscErrorCode ierr;
+  LocalInterpCtx *lic = NULL;
+  
+  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
+  lic->report_range = report_range;
 
   Vec tmp;			// a temporary one-component vector,
 				// distributed across processors the same way v is
   ierr = DACreateGlobalVector(component_da, &tmp); CHKERRQ(ierr);
 
   for (int j = 0; j < dof; ++j) {
-    ierr = vars[j].regrid(filename, lic, false, true, default_value, tmp); CHKERRQ(ierr);
+    ierr = vars[j].regrid(filename, *lic, false, true, default_value, tmp); CHKERRQ(ierr);
     ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
   }
 
@@ -197,6 +207,7 @@ PetscErrorCode IceModelVec2V::regrid(const char filename[], LocalInterpCtx &lic,
 
   // Clean up:
   ierr = VecDestroy(tmp);
+  delete lic;
   return 0;
 }
 

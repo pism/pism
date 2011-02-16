@@ -22,7 +22,6 @@
 //! Allocates memory and reads in the precipitaion data.
 PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
   PetscErrorCode ierr;
-  LocalInterpCtx *lic = NULL;
   bool regrid = false;
   int start = -1;
 
@@ -54,7 +53,7 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
   precip.write_in_glaciological_units = true;
   precip.time_independent = true;
 
-  ierr = find_pism_input(precip_filename, lic, regrid, start); CHKERRQ(ierr);
+  ierr = find_pism_input(precip_filename, regrid, start); CHKERRQ(ierr);
 
   // read precipitation rate from file
   ierr = verbPrintf(2, grid.com, 
@@ -62,15 +61,13 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
 		    "      from %s ... \n",
 		    precip_filename.c_str()); CHKERRQ(ierr); 
   if (regrid) {
-    ierr = precip.regrid(precip_filename.c_str(), *lic, true); CHKERRQ(ierr); // fails if not found!
+    ierr = precip.regrid(precip_filename.c_str(), true); CHKERRQ(ierr); // fails if not found!
   } else {
     ierr = precip.read(precip_filename.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
   string precip_history = "read from " + precip_filename + "\n";
 
   ierr = precip.set_attr("history", precip_history); CHKERRQ(ierr);
-
-  delete lic;
 
   airtemp_var.init("airtemp", grid, GRID_2D);
   airtemp_var.set_string("pism_intent", "diagnostic");
