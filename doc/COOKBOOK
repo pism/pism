@@ -25,7 +25,6 @@ Ed's cookbook for maintaining PISM:
 
   These files:
    
-   doc/
      manual.pdf
      installation.pdf
      cheatsheet.pdf
@@ -34,7 +33,7 @@ Ed's cookbook for maintaining PISM:
 
   Build it, tar it, send to dogbert, then get on dogbert and unzip it in the right place:
   
-   $ cd doc && make browser
+   $ [BUILD THE FULL BROWSER ... SEE FIXME? INSTRUCTIONS]
    $ tar -cvzf browser_recent.tar.gz doxy/html/
    $ scp browser_recent.tar.gz bueler@dogbert.gi.alaska.edu:~bueler/pismdocs/
    $ ssh -XY bueler@dogbert.gi.alaska.edu                   # ALIASED TO "dogbert"
@@ -52,7 +51,9 @@ Ed's cookbook for maintaining PISM:
            eismint/*.hh eismint/*.cc earth/*.hh earth/*.cc trypetsc/l*.c \
            verif/*.hh verif/*.cc verif/tests/*.h verif/tests/*.c \
            ../examples/*/*.py ../examples/*/*.sh ../test/*/*/*.sh
-   
+  
+  FIXME:  BUT THIS MISSES LOTS ... OF COURSE WHO CARES EXCEPT FOR HISTORICAL ...
+
   In r1254 this gives 44,586 lines.  Another way to count is to use  wc -c  on
   the same files.  In r1254 this gives 1575926 characters or about 19,700 lines
   if a line is 80 characters.

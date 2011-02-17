@@ -2,11 +2,11 @@ O.k.  So a gzipped tarball is kind of comforting to you.  Here is one
 last effort to suggest Subversion (svn).   If you checkout the stable
 release with svn, a la
   
-  svn co http://svn.gna.org/svn/pism/tags/stable0.2 pism
+  svn co http://svn.gna.org/svn/pism/tags/stable0.3 pism0.3
 
-then you can get bug fixes by just doing
+or similar then you can get bug fixes by just doing
 
-  make update
+  svn up
 
 If you use the .tar.gz then you have to create a new directory 
 and think about all the clutter you have already created, and
