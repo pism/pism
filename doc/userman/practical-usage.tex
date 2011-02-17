@@ -785,7 +785,7 @@ Actually the KSP uses preconditioning.  This aspect of the solve is critical for
 PISM's surface and atmosphere models described in section
 \ref{sec:boundary-models} are admittedly simplified. (Moreover, PISM developers
 do not claim to be experts in atmosphere, energy (or mass) balance modeling. We
-are delighted to work with people who are, though.
+are delighted to work with people who are, though.)
 
 There are at least two ways of making PISM benefit from other modelers'
 expertise: incorporating their code into PISM and running PISM and a
@@ -853,7 +853,7 @@ model and the remaining (one) processor to periodically run an EBM.
 
 In this particular case, an EBM will run at the beginning of the model
 run (PISM will wait), then at year=5 (in parallel with PISM). At
-year=10, PISM will read acab and artm produced by an EBM using data
+year=10, PISM will read \texttt{acab} and \texttt{artm} produced by an EBM using data
 corresponding to year=5 (waiting for an EBM to finish the computation
 if necessary). At year=15 an EBM will run to compute B.C. that will be
 read by PISM at year=20, etc.
@@ -863,9 +863,13 @@ through $0.5*\mathtt{update_interval}$ years, PISM waits for an EBM exactly
 once, at the beginning of the run.
 
 Note that an EBM command executed by PISM can be a shell, Python, or any
-other kind of script your system supports. You can find an example
-"fake EBM" Python script in the "\texttt{util}" directory of the PISM source
-tree, \texttt{util/ebm}.
+other kind of script your system supports. This makes it possible to include
+pre- and post-processing tasks in this script, avoiding source code
+modifications that would otherwise be necessary to make PISM output files ready
+to use with a particular model and vice versa.
+
+You can find an example "fake EBM" Python script in the "\texttt{util}"
+directory of the PISM source tree, \texttt{util/ebm}.
 
 %%% Local Variables: 
 %%% mode: latex

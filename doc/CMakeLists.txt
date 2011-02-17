@@ -2,17 +2,14 @@
 find_package(LATEX)
 find_package(Doxygen)
 
-# Only offer to build docs if LaTeX is found.
 if (PDFLATEX_COMPILER)
-  option (Pism_BUILD_DOCS "Build PISM documentation" OFF)
-endif()
+  # Only offer to build docs if LaTeX is found.
+  option (Pism_BUILD_DOCS "Build PISM PDF documentation" OFF)
 
-if (PDFLATEX_COMPILER AND Pism_BUILD_DOCS)
   file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/revision.tex "${Pism_REVISION_TAG}")
 
   # Installation manual and the cheatsheet:
   foreach (NAME installation cheatsheet)
-
     configure_file (${NAME}.tex ${NAME}.tex COPYONLY)
 
     add_custom_command (OUTPUT ${NAME}.pdf
@@ -20,131 +17,25 @@ if (PDFLATEX_COMPILER AND Pism_BUILD_DOCS)
       COMMAND ${PDFLATEX_COMPILER} ${NAME}.tex
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-    install (FILES "${CMAKE_CURRENT_BINARY_DIR}/${NAME}.pdf"
-      DESTINATION ${Pism_DOC_DIR})
+    # A custom target to be able to build PDFs by "make installation", etc
+    add_custom_target(${NAME}
+      DEPENDS ${NAME}.pdf)
   endforeach ()
 
-  # User's Manual:
+  add_subdirectory(userman)
 
-  # Copy the bibliography file (note the change in the file name)
-  configure_file (ice_bib.bib ice-bib.bib COPYONLY)
-
-  # Find all the .tex files in userman and copy them to the build directory
-  file (GLOB parts
-    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/userman
-    userman/*.tex)
-  foreach (filename ${parts})
-    configure_file(userman/${filename} ${filename} COPYONLY)
-  endforeach()
-
-  # Find all the figures and copy them to the build directory
-  foreach (format jpg png pdf)
-    file (GLOB ${format}
-      RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/userman/figs
-      userman/figs/*.${format})
-  endforeach()
-  foreach (filename ${jpg} ${png} ${pdf})
-    configure_file(userman/figs/${filename} figs/${filename} COPYONLY)
-  endforeach()
-
-  # Commands to build the manual:
-  add_custom_command (OUTPUT manual.pdf
-    COMMAND ${PDFLATEX_COMPILER} manual.tex
-    COMMAND ${BIBTEX_COMPILER} manual
-    COMMAND ${MAKEINDEX_COMPILER} -l manual
-    COMMAND ${MAKEINDEX_COMPILER} -l -o manual.ond manual.odx
-    COMMAND ${PDFLATEX_COMPILER} manual.tex
-    COMMAND ${PDFLATEX_COMPILER} manual.tex
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-
-  install (FILES "${CMAKE_CURRENT_BINARY_DIR}/manual.pdf"
-    DESTINATION ${Pism_DOC_DIR})
-
-  # A global target that gets built with "make all". Ensures that PISM
+  # A global target that gets built with "make all" if Pism_BUILD_DOCS is set. Ensures that PISM
   # documentation is built for "make install"
-  add_custom_target(docs ALL
-    DEPENDS installation.pdf cheatsheet.pdf manual.pdf)
-  
+  if (Pism_BUILD_DOCS)
+    add_custom_target(pdfs ALL
+      DEPENDS installation.pdf cheatsheet.pdf userman/manual.pdf)
 
-  # PISM Source Code Browser
-  option (Pism_BUILD_BROWSER "Build the source code browser if doxygen and dot are installed" OFF)
+    install (FILES
+      "${CMAKE_CURRENT_BINARY_DIR}/userman/manual.pdf"
+      "${CMAKE_CURRENT_BINARY_DIR}/installation.pdf"
+      "${CMAKE_CURRENT_BINARY_DIR}/cheatsheet.pdf"
+      DESTINATION ${Pism_DOC_DIR})
 
-  # Only build if both doxygen and dot are found
-  if (DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE AND Pism_BUILD_BROWSER)
-    set (browser_helpers
-      browser/config_doc.py
-      browser/doxybib.bst
-      browser/doxybib.py
-      browser/bedrough.txt
-      browser/bombproof_enth.txt
-      browser/pages.txt
-      browser/std_names.txt
-      browser/vertchange.txt
-      browser/howto.txt
-      )
-
-    configure_file (ice_bib.bib browser/ice_bib.bib COPYONLY)
-
-    # copy all the files needed to generate browser sources
-    foreach (filename ${browser_helpers})
-      configure_file(${filename} ${filename} COPYONLY)
-    endforeach()
-
-    # copy doxyfile, changing some things along the way:
-    configure_file(browser/doxyfile browser/doxyfile)
-    
-    # Generate the list of references
-    add_custom_command (OUTPUT browser/references.txt
-      COMMAND ./doxybib.py
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser)
-
-    # Generate the config file
-    add_custom_command (OUTPUT browser/pism_config.nc
-      COMMAND ncgen -o ${CMAKE_CURRENT_BINARY_DIR}/browser/pism_config.nc ${PROJECT_SOURCE_DIR}/src/pism_config.cdl)
-
-    # Generate the config documentation
-    add_custom_command (OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/browser/pism_config.txt
-      COMMAND ./config_doc.py > pism_config.txt
-      DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/browser/pism_config.nc
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser)
-
-    # Generate the browser
-    add_custom_command (OUTPUT browser/base/html/index.html
-      COMMAND ${DOXYGEN_EXECUTABLE} doxyfile
-      DEPENDS browser/pism_config.txt browser/references.txt browser/doxyfile
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser)
-
-    add_custom_target (browser_base ALL
-      DEPENDS browser/base/html/index.html)
-
-    add_custom_target (browser_base.tgz
-      DEPENDS browser/base/html/index.html
-      COMMAND tar -czf browser_base.tgz html
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser/base)
-
-    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser/base/html
-      DESTINATION ${Pism_DOC_DIR}/base)
-
-    ### Util browser
-    configure_file(browser/doxyfile_util browser/doxyfile_util)
-    configure_file (browser/util_main.txt browser/util_main.txt)
-
-    # Generate the browser
-    add_custom_command (OUTPUT browser/util/html/index.html
-      COMMAND ${DOXYGEN_EXECUTABLE} doxyfile_util
-      DEPENDS browser/doxyfile_util
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser)
-
-    add_custom_target (browser_util ALL
-      DEPENDS browser/util/html/index.html)
-
-    add_custom_target (browser_util.tgz
-      DEPENDS browser/util/html/index.html
-      COMMAND tar -czf browser_util.tgz html
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser/util)
-
-    install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/browser/util/html
-      DESTINATION ${Pism_DOC_DIR}/util)
-  endif()
-endif ()
+  endif ()                      # if Pism_BUILD_DOCS
+endif ()                        # if PDFLATEX_COMPILER
 

@@ -60,3 +60,12 @@ Ed's cookbook for maintaining PISM:
   
   The biggest files in r1254 are base/iMreport.cc and base/NCVariable.cc.
 
+  Update (circa r1447):
+
+  Another way to count is
+
+  $ find -E src -regex ".*\.(cc|hh|c|h|py|sh)" | xargs wc -lc
+
+  This gives 63270 lines and 2204839 characters, amounting to 27560 80-character lines.
+
+  A big part of that is license messages and doxygen comments.

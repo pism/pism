@@ -1,6 +1,0 @@
-# This sed script replaces CMake variables in doxyfile to make the old build system work too.
-s/${CMAKE_CURRENT_SOURCE_DIR}\/browser\/pism/..\/..\/pism/g
-s/${CMAKE_CURRENT_SOURCE_DIR}/../g
-s/${DOXYGEN_DOT_EXECUTABLE}/dot/g
-s/${Pism_REVISION_TAG}/[Unknown revision]/g
-s/${PROJECT_SOURCE_DIR}/..\/../g

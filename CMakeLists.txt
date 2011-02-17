@@ -47,6 +47,7 @@ if (Pism_BUILD_DEBIAN_PACKAGE)
   set (Pism_BUILD_TYPE "Release" CACHE STRING "PISM build type" FORCE)
   set (CMAKE_INSTALL_PREFIX "/usr" CACHE STRING "Install prefix" FORCE)
   set (Pism_BUILD_DOCS ON CACHE BOOL "Build PISM documentation" FORCE)
+  set (Pism_BUILD_BROWSER ON CACHE BOOL "Build PISM source code browsers" FORCE)
   set (Pism_BUILD_EXTRA_EXECS OFF CACHE BOOL "Build extra executables (mostly testing/verification)" FORCE)
   set (Pism_BIN_DIR "bin")
   set (Pism_LIB_DIR "lib/pism")
@@ -194,7 +195,6 @@ add_custom_target (etags
 )
 
 add_subdirectory (src)
-add_subdirectory (doc)
 
 # Install helper scripts residing in util/
 install (PROGRAMS
@@ -207,3 +207,14 @@ install (PROGRAMS
   util/pism_config_editor.py
   DESTINATION ${Pism_BIN_DIR})
 
+if (Pism_BUILD_DOCS)
+  add_subdirectory (doc)
+else ()
+  add_subdirectory (doc EXCLUDE_FROM_ALL)
+endif()
+
+if (Pism_BUILD_BROWSER)
+  add_subdirectory (doc/browser)
+else ()
+  add_subdirectory (doc/browser EXCLUDE_FROM_ALL)
+endif()
