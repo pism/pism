@@ -34,5 +34,5 @@ add_custom_command (OUTPUT manual.pdf
   COMMAND ${PDFLATEX_COMPILER} manual.tex
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-add_custom_target(manual
+add_custom_target(manual ALL
   DEPENDS manual.pdf)

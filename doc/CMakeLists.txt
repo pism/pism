@@ -18,7 +18,7 @@ if (PDFLATEX_COMPILER)
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     # A custom target to be able to build PDFs by "make installation", etc
-    add_custom_target(${NAME}
+    add_custom_target(${NAME} ALL
       DEPENDS ${NAME}.pdf)
   endforeach ()
 
@@ -27,9 +27,6 @@ if (PDFLATEX_COMPILER)
   # A global target that gets built with "make all" if Pism_BUILD_DOCS is set. Ensures that PISM
   # documentation is built for "make install"
   if (Pism_BUILD_DOCS)
-    add_custom_target(pdfs ALL
-      DEPENDS installation.pdf cheatsheet.pdf userman/manual.pdf)
-
     install (FILES
       "${CMAKE_CURRENT_BINARY_DIR}/userman/manual.pdf"
       "${CMAKE_CURRENT_BINARY_DIR}/installation.pdf"
