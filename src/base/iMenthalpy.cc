@@ -275,6 +275,12 @@ PetscErrorCode copyColumn(PetscScalar *src, PetscScalar *dest, const PetscInt n)
 }
 
 
+// do this define to turn on messages
+#define DEBUG_SHOW_BMELT 0
+
+// do this to turn on code changes
+#define CHANGE_BASAL_MELT 0
+
 //! Update enthalpy field based on conservation of energy in ice and bedrock.
 /*!
 This method is documented by the page \ref bombproofenth.
@@ -418,18 +424,16 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         SETERRQ(1, "invalid ks");
       }
 
-      const bool ice_free_column = (ks == 0);
+      const bool ice_free_column = (ks == 0),
+                 is_floating     = vMask.is_floating(i,j),
+                 is_grounded     = !is_floating;
 
       // enthalpy and pressures at top of ice
       const PetscScalar p_ks = EC->getPressureFromDepth(vH(i,j) - fzlev[ks]); // FIXME task #7297
       PetscScalar Enth_ks;
-
       ierr = EC->getEnthPermissive(artm(i,j), liqfrac_surface(i,j), p_ks,  Enth_ks); CHKERRQ(ierr);
 
-      const bool is_floating = vMask.is_floating(i,j),
-        is_grounded = !is_floating;
-
-      // deal completely with columns with no ice; note bedrock does need actions
+      // deal completely with columns with no ice; note bedrock needs actions
       if (ice_free_column) {
         ierr = vWork3d.setColumn(i,j,Enth_ks); CHKERRQ(ierr);
         PetscScalar Tbtop;
@@ -461,8 +465,22 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           ierr = Tb3.setColumn(i,j,Tbtop); CHKERRQ(ierr);
         }
         if (is_floating) {
+#if CHANGE_BASAL_MELT == 0
           vHmelt(i,j) = hmelt_max;
           vbmr(i,j) = shelfbmassflux(i,j);
+#else
+// FIXME: need these new cases
+          if (vH(i,j) < 0.1) {
+            // no ice: the ocean is exposed to the air
+            vHmelt(i,j) = 0.0;
+            vbmr(i,j) = 0.0;
+          } else {
+            // ks == 0, so we have ice but not enough to do an ice column solve
+            vHmelt(i,j) = hmelt_max; // FIXME: this setting because if becomes grounded then
+                                     //        want to avoid "shock"
+            vbmr(i,j) = shelfbmassflux(i,j);
+          }
+#endif
         } else {
           vHmelt(i,j) = 0.0;  // no stored water on ice free land
           vbmr(i,j) = 0.0;    // no basal melt rate; melting is a surface process
@@ -487,14 +505,20 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       ierr = getEnthalpyCTSColumn(p_air, vH(i,j), ks, iosys.Enth, iosys.w, // FIXME task #7297
                                   &lambda, &iosys.Enth_s); CHKERRQ(ierr);
 
-      bool base_is_cold = iosys.Enth[0] < iosys.Enth_s[0];
+      bool base_is_cold = (iosys.Enth[0] < iosys.Enth_s[0]);
+#if 0
+      // DEBUG: report base type
+      char typestring[5] = "warm";
+      if (base_is_cold) strcpy(typestring,"cold");
+      verbPrintf(3,grid.com," [i,j=%d,%d:  %d = %s base]",i,j,int(base_is_cold),typestring);
+#endif
 
       if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
 
-      // major decision: is cold base and grounded and has bedrock layer?:
-      if ( base_is_cold && bedrock_is_present && is_grounded ) {
+      if ( bedrock_is_present && base_is_cold && is_grounded ) {
 
-        // ***** COLD BASE, GROUNDED CASE WITH BEDROCK *****
+        // ***** W BEDROCK THERMAL LAYER, COLD BASE, GROUNDED *****
+        // (so use combinedSystemCtx)
         ierr = cbsys.setIndicesAndClearThisColumn(i,j,ks); CHKERRQ(ierr);
 
         ierr = copyColumn(iosys.Enth,cbsys.Enth,fMz); CHKERRQ(ierr);
@@ -536,8 +560,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         vbmr(i,j) = 0.0;  // zero melt rate if cold base
 
       } else {
-
-        // ***** ALL OTHER CASES *****
+        // ***** ALL OTHER CASES; EITHER:  NO BEDROCK THERMAL LAYER, OR
+        //                                 WARM BASE, OR
+        //                                 FLOATING
 
         // ***** BEDROCK ONLY SOLVE *****
         PetscScalar hf_base;
@@ -565,7 +590,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           hf_base = vGhf(i,j);
         }
 
-        // can determine melt now from heat flux out of base, etc.
+        // can now determine melt explicitly, but only preliminarily, from heat
+        //   flux out of bedrock, heat flux into ice, and frictional heating;
+        //   effect of drainage function is not included yet
         if (is_floating) {
           vbmr(i,j) = shelfbmassflux(i,j);
         } else {
@@ -573,7 +600,26 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
             // this case occurs only if no bedrock thermal layer
             vbmr(i,j) = 0.0;  // zero melt rate if cold base
           } else {
+#if CHANGE_BASAL_MELT == 0
             vbmr(i,j) = ( hf_base + (*Rb)(i,j) ) / (ice_rho * L);
+#else
+// FIXME: this code computes the correct basal melt rate, using correct upward flux calculation
+            // compute heat flux assuming ice at z = fdz (k=1) level is cold 
+            PetscScalar hf_up = - (ice_k / ice_c) * (iosys.Enth[1] - iosys.Enth[0]) / fdz;
+            const PetscScalar p1 = EC->getPressureFromDepth(vH(i,j) - fdz);
+            const bool k1_istemperate = EC->isTemperate(iosys.Enth[1], p1);
+            if (k1_istemperate) {
+              // if k=1 level is temperate ice then recompute
+              hf_up = - ice_k * (EC->getMeltingTemp(p1) - EC->getMeltingTemp(p_basal)) / fdz;
+            }
+            vbmr(i,j) = ( hf_base - hf_up + (*Rb)(i,j) ) / (ice_rho * L);
+#endif
+#if DEBUG_SHOW_BMELT == 1
+            verbPrintf(3,grid.com,
+               "\n [stage 1; i,j=%d,%d has warm base, is grounded;\n"
+               "             k1_istemperate=%d, hf_base=%.4f, hf_up=%.4f, Rb=%.4f, vbmr=%.6f(m/a)]",
+               i,j,k1_istemperate,hf_base,hf_up,(*Rb)(i,j),vbmr(i,j)*secpera);
+#endif
           }
         }
 
@@ -638,8 +684,11 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           a0  = (1.0 - alpha) * a0  + alpha * 1.0,
           a1  = (1.0 - alpha) * a1  + alpha * (-1.0);
 
+#if CHANGE_BASAL_MELT == 0
+// FIXME:  we should not use this "alpha" mechanism at all, essentially, and 
+//         in any case it should not contribute to basal melt rate
           if (is_grounded)    vbmr(i,j) *= 1.0 - alpha;
-
+#endif
           ierr = iosys.setLevel0EqnThisColumn(a0,a1,rhs); CHKERRQ(ierr);
         }
 
@@ -665,9 +714,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         if (EC->isLiquified(Enthnew[k],EC->getPressureFromDepth(vH(i,j) - fzlev[k]))) { // FIXME task #7297
           liquifiedCount++;
         }
-
         // if there is liquid water already, thus temperate, consider whether there
-        //   is enough to cause drainage;  UNACCOUNTED ENERGY LOSS IF E>E_l
+        //   is enough to cause drainage;  FIXME: UNACCOUNTED ENERGY LOSS IF E>E_l
         const PetscScalar p     = EC->getPressureFromDepth(vH(i,j) - fzlev[k]), // FIXME task #7297
                           omega = EC->getWaterFractionLimited(Enthnew[k], p);
         PetscScalar dHdrained;
@@ -678,15 +726,20 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           ierr = EC->getEnthAtWaterFraction(omega_max, p, Enthnew[k]); CHKERRQ(ierr);
         } else {
           dHdrained = 0.0;
-        }
-                                       
+        }                                       
         Hdrainedtotal += dHdrained;  // always a positive contribution
       }
+
       // in grounded case, add to both basal melt rate and Hmelt; if floating,
       // Hdrainedtotal is discarded because ocean determines basal melt rate
       if (is_grounded) {
         vbmr(i,j) += Hdrainedtotal / dtTempAge;
         Hmeltnew += Hdrainedtotal;
+#if DEBUG_SHOW_BMELT == 1
+        verbPrintf(3,grid.com,
+               "\n [stage 2; i,j=%d,%d has vbmr=%.6f(m/a) from drainage]",
+               i,j,vbmr(i,j)*secpera);
+#endif
       }
 
       // Enthnew[] is finalized!:  apply bulge limiter and transfer column
@@ -717,7 +770,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       // finalize Hmelt value
       if (updateHmelt == PETSC_TRUE) {
         if (is_floating) {
-          // if floating assume maximally saturated "till"
+          // FIXME: if floating assume maximally saturated "till" so no "shock" if becomes grounded
           // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
           vHmelt(i,j) = hmelt_max;
         } else if (ice_free_column) {
@@ -726,7 +779,10 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           // limit Hmelt to be in [0.0, hmelt_max]
           // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO INFINITY AND BEYOND)!!
           vHmelt(i,j) = PetscMax(0.0, PetscMin(hmelt_max, Hmeltnew) );
-
+#if CHANGE_BASAL_MELT == 0
+//FIXME:  we want the correct basal melt rate, including possible
+//  refreeze, to be already finalized by this point, so the change is to
+//  turn this refreeze block OFF
           // refreeze case: if grounded base has become cold then put back ice at
           //   externally-set maximum rate; basal enthalpy not altered
           if ( (Enthnew[0] < iosys.Enth_s[0]) && (vHmelt(i,j) > 0.0) ) {
@@ -739,9 +795,15 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
               vHmelt(i,j) = 0.0;
             }
           }
-
+#endif
         }
       }
+
+#if DEBUG_SHOW_BMELT == 1
+        verbPrintf(3,grid.com,
+               "\n [stage 3; i,j=%d,%d has vbmr=%.6f(m/a) from drainage]",
+               i,j,vbmr(i,j)*secpera);
+#endif
 
       } // end explicit scoping
       
