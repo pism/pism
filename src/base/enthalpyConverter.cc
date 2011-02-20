@@ -31,6 +31,7 @@ EnthalpyConverter::EnthalpyConverter(const NCConfigVariable &config) {
   rho_i = config.get("ice_density");                             // kg m-3
   T_triple = config.get("water_triple_point_temperature");       // K  
   T_tol = config.get("cold_mode_is_temperate_ice_tolerance");    // K 
+  T_0   = config.get("enthalpy_converter_reference_temperature");// K  
 }
 
 
@@ -370,22 +371,5 @@ PetscErrorCode EnthalpyConverter::getEnthAtWaterFraction(
   const PetscScalar E_s = getEnthalpyCTS(p);
   E = E_s + omega * L;
   return 0;
-}
-
-// IceCompModel EnthalpyConverter:
-
-PetscErrorCode ICMEnthalpyConverter::getAbsTemp(double E, double /*p*/, double &T) const {
-  T = E / c_i;
-  return 0;
-}
-
-PetscErrorCode ICMEnthalpyConverter::getEnth(double T, double /*omega*/, double /*p*/, double &E) const {
- E = T * c_i;
- return 0;
-}
-
-PetscErrorCode ICMEnthalpyConverter::getEnthPermissive(double T, double /*omega*/, double /*p*/, double &E) const {
- E = T * c_i;
- return 0;
 }
 

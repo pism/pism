@@ -316,6 +316,9 @@ netcdf pism_config {
     pism_config:water_triple_point_temperature = 273.15;
     pism_config:water_triple_point_temperature_doc = "K; triple point of pure water";
  
+    pism_config:enthalpy_converter_reference_temperature = 223.15;
+    pism_config:enthalpy_converter_reference_temperature_doc = "K; = T_0 in enthalpy formulas in [\\ref AschwandenBuelerBlatter]";
+
     pism_config:water_latent_heat_fusion = 3.34e5;
     pism_config:water_latent_heat_fusion_doc = "J kg-1; latent heat of fusion for water [\\ref AschwandenBlatter]";
 

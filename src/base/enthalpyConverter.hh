@@ -80,23 +80,54 @@ public:
 
 protected:
   double T_triple, L, c_i, rho_i, g, p_air, beta, T_tol;
-  bool do_cold_ice_methods;
+  double T_0;
+  bool   do_cold_ice_methods;
 };
 
 
-//! An EnthalpyConverter for use in verification tests.  Treats ice at any temperature as cold (zero liquid fraction).
+//! An EnthalpyConverter for use in verification tests.
 /*!
-Note that IceFlowLaw uses either the base EnthalpyConverter or this 
-verification_mode version.  Regardless of the actual values, this version treats
-enthalpy and temperature as if always cold:  \f$E = c_i (T - 0)\f$.
+Treats ice at any temperature as cold (= zero liquid fraction).  Makes absolute
+temperature (in K) and enthalpy strictly proportional.  The reference
+temperature is \f$T_0=0\f$:  \f$E = c_i T\f$.  The pressure-melting temperature,
+and the enthalpy of the CTS (\f$E_s(p)\f$) is never reached because it is set
+very, very high.
+
+Note: Any instance of IceFlowLaw uses an EnthalpyConverter, and it is this
+one when in verification mode.
  */
 class ICMEnthalpyConverter : public EnthalpyConverter {
 public:
-  ICMEnthalpyConverter(const NCConfigVariable &config) : EnthalpyConverter(config) {}
+  ICMEnthalpyConverter(const NCConfigVariable &config) : EnthalpyConverter(config) {
+    T_0 = 0.0;
+    T_triple = 1.0e30;  // unreachable
+    do_cold_ice_methods = true;
+    // FIXME:  it *might* be nice to set these as overrides (?), but we have a "const"
+    //   reference for config, and IceFlowLaw creates an EnthalpyConverter and
+    //   *it* has a const reference ... so not for now
+    //config.set("enthalpy_converter_reference_temperature",T_0);
+    //config.set("water_triple_point_temperature",T_triple);
+    //config.set_flag("do_cold_ice_methods",true);
+  }
   virtual ~ICMEnthalpyConverter() {}
-  virtual PetscErrorCode getAbsTemp(double E, double p, double &T) const;
-  virtual PetscErrorCode getEnth(double T, double omega, double p, double &E) const;
-  virtual PetscErrorCode getEnthPermissive(double T, double omega, double p, double &E) const;
+  virtual double getMeltingTemp(double p) const { return T_triple; }
+  virtual PetscErrorCode getAbsTemp(double E, double p,
+                                    double &T) const {
+    T = E / c_i; return 0; }
+  virtual PetscErrorCode getWaterFraction(double E, double p,
+                                          double &omega) const {
+    omega = 0.0; return 0; }
+  virtual double getWaterFractionLimited(double E, double p) const { return 0.0; }
+  virtual PetscErrorCode getEnth(double T, double omega, double p, 
+                                 double &E) const {
+    E = c_i * T; return 0; }
+  virtual PetscErrorCode getEnthPermissive(double T, double omega, double p,
+                                           double &E) const {
+    E = c_i * T; return 0; }
+  virtual PetscErrorCode getEnthAtWaterFraction(double omega, double p,
+                                                double &E) const {
+    E = getEnthalpyCTS(p); return 0; }
+  virtual bool isTemperate(double E, double p) const { return false; }
 };
 
 
