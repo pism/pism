@@ -352,10 +352,10 @@ PetscErrorCode PSTemperatureIndex::init(PISMVars &vars) {
 
 
   ierr = verbPrintf(2, grid.com,
-    "* Initializing the default temperature-index, PDD-based surface processes\n"
-    "  scheme.  Precipitation and 2m air temperature provided by atmosphere above\n"
-    "  are inputs.  Surface mass balance and ice upper surface temperature are\n"
-    "  outputs.  See PISM User's Manual for control of degree-day factors.\n");
+    "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
+    "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
+    "  Surface mass balance and ice upper surface temperature are outputs.\n"
+    "  See PISM User's Manual for control of degree-day factors.\n");
     CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
