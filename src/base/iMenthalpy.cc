@@ -716,8 +716,10 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         }
         // if there is liquid water already, thus temperate, consider whether there
         //   is enough to cause drainage;  FIXME: UNACCOUNTED ENERGY LOSS IF E>E_l
-        const PetscScalar p     = EC->getPressureFromDepth(vH(i,j) - fzlev[k]), // FIXME task #7297
-                          omega = EC->getWaterFractionLimited(Enthnew[k], p);
+        const PetscScalar p     = EC->getPressureFromDepth(vH(i,j) - fzlev[k]); // FIXME task #7297
+        PetscScalar omega;
+        EC->getWaterFraction(Enthnew[k], p, omega);  // return code not checked;
+                                                     // we ignor E>E_l situation here
         PetscScalar dHdrained;
         if (omega > omega_max) {
           // drain water:

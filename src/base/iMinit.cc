@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -509,9 +509,6 @@ PetscErrorCode IceModel::set_vars_from_options() {
   This method is called after memory allocation but before filling any of
   IceModelVecs because all the physical parameters should be initialized before
   setting up the coupling or filling model-state variables.
-
-  In the base class IceModel we just initialize the IceFlowLaw and the
-  EnthalpyConverter.
  */
 PetscErrorCode IceModel::init_physics() {
   PetscErrorCode ierr;
@@ -569,8 +566,14 @@ PetscErrorCode IceModel::init_physics() {
     basal = new IceBasalResistancePlasticLaw(plastic_regularization, do_pseudo_plastic_till, 
                                              pseudo_plastic_q, pseudo_plastic_uthreshold);
 
-  if (EC == NULL)
+  if (EC == NULL) {
     EC = new EnthalpyConverter(config);
+    if (getVerbosityLevel() > 3) {
+      PetscViewer viewer;
+      ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
+      ierr = EC->viewConstants(viewer); CHKERRQ(ierr);
+    }
+  }
 
   // If both SIA and SSA are "on", the SIA and SSA velocities are always added
   // up (there is no switch saying "do the hybrid").
