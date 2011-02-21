@@ -69,11 +69,11 @@ PetscErrorCode SSAFEM::allocate_fem() {
   ierr = SNESCreate(grid.com,&snes);CHKERRQ(ierr);
   // ierr = SNESSetOptionsPrefix(snes,((PetscObject)this)->prefix);CHKERRQ(ierr);
 
+  // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
+  // methods via SSAFEFunction and SSAFEJ
   ierr = DASetLocalFunction(SSADA,(DALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
   ierr = DASetLocalJacobian(SSADA,(DALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
-  
-  ctx.da = SSADA;
-  ctx.ssa = this;
+  ctx.da = SSADA;  ctx.ssa = this;
   ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &ctx);CHKERRQ(ierr);
   ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&ctx);CHKERRQ(ierr);
 
@@ -177,12 +177,30 @@ PetscErrorCode SSAFEM::solve()
     ierr = VecView(SSAX,viewer);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
   }
+
+  stdout_ssa = "";
   
   // Set up the system to solve:
   ierr = setup(); CHKERRQ(ierr);
 
   // Solve:
   ierr = SNESSolve(snes,NULL,SSAX);CHKERRQ(ierr);
+  SNESConvergedReason reason;
+  ierr = SNESGetConvergedReason( snes, &reason); CHKERRQ(ierr);
+  if(reason < 0)
+  {
+    SETERRQ1(1, 
+      "SSAFEM solve failed to converge (SNES reason %s)\n\n", SNESConvergedReasons[reason]);
+  }
+  else if(getVerbosityLevel() > 2)
+  {
+    stdout_ssa += "SSAFEM converged (SNES reason ";
+    stdout_ssa += SNESConvergedReasons[reason];
+    stdout_ssa += ")\n";
+  }
+
+  if (getVerbosityLevel() >= 2) 
+    stdout_ssa = "  SSA: " + stdout_ssa;
 
   ierr = velocity.copy_from(SSAX); CHKERRQ(ierr);
 
@@ -271,7 +289,7 @@ PetscErrorCode SSAFEM::setup()
         feS[q].b  = bq[q];
         feS[q].tauc = tauq[q];
         feS[q].hx = jinvDiag[0] * hxq[q];
-        feS[q].hy = jinvDiag[0] * hyq[q];
+        feS[q].hy = jinvDiag[1] * hyq[q];
       }
 
       // Surface and thickness information is stored, now do the thermal stuff
@@ -292,7 +310,7 @@ PetscErrorCode SSAFEM::setup()
         // Evaluate column integrals in flow law at every quadrature point's column
         PetscReal *iS = &integratedStore[sbs*(ij*4+q)]; // Location to put the stored data
         *iS = ice.averagedHardness_from_enth(feS[q].H, grid.kBelowHeight(feS[q].H),
-                                             grid.zlevels, Enth_q[q]) * feS[q].H * 0.5;
+          grid.zlevels, Enth_q[q]);
       }
     }
   }
@@ -316,12 +334,10 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,const P
   if (feS->H < strength_extension->get_min_thickness()) {
     *nuH = strength_extension->get_notional_strength();
     if (dNuH) *dNuH = 0;
-    //SETERRQ(1,"Shold not happen for test I");
   } else {
     PetscReal dimDu[3];
     for (int i=0; i<3; i++) dimDu[i] = ref.StrainRate() * Du[i];
     ice.effectiveViscosity_with_derivative(*iS, dimDu, nuH, dNuH);
-    // FIXME: check if the following two lines are needed
     *nuH  *= feS->H;
     if (dNuH) *dNuH *= feS->H;
   }
@@ -338,15 +354,6 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,const P
     basal.dragWithDerivative(feS->tauc,
                              u->u*ref.Velocity(),u->v*ref.Velocity(),
                              beta,dbeta);
-    if (1) {
-      PetscReal good_beta;
-      good_beta = basal.drag(feS->tauc,
-                                  u->u*ref.Velocity(),u->v*ref.Velocity());
-      if (PetscAbs(*beta - good_beta)/(*beta + good_beta) > 0) { // Use tolerance to not test associativity
-        SETERRQ2(1,"`dragWithDerivative' producing different answers from `drag' %e != %e",
-                 *beta,good_beta);
-      }
-    }
   }
   // Return nondimensional values, the factor of 2 comes from a different
   //   definition of integrated viscosity
@@ -403,7 +410,6 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
       yg[i][j].u = yg[i][j].v = 0;
     }
   }
-  
   
   // Since we use uniform cartesian coordinates, the Jacobian is constant and diagonal on every element.
   // Note that the reference element is \f$ [-1,1]^2 \f$ hence the extra factor of 2.
@@ -485,12 +491,15 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
         PetscReal nuH,beta,Du[3],Dv[3];
         ierr = QuadEvaluateVel(x,q,jinvDiag,&u,Du);CHKERRQ(ierr);
         ierr = PointwiseNuHAndBeta(feS,iS,&u,Du,&nuH,NULL,&beta,NULL);CHKERRQ(ierr);
-
-        // Coefficients of test function (v) in weak form.
+        
+          // Coefficients of test function (v) in weak form.
         v.u = beta*u.u + ice.rho * earth_grav * feS->H * feS->hx
           / ref.DrivingStress();
         v.v = beta*u.v + ice.rho * earth_grav * feS->H * feS->hy
           / ref.DrivingStress();
+        // printf("draging %g driving %g\n",beta*u.v,ice.rho * earth_grav * feS->H * feS->hy
+        //   / ref.DrivingStress());
+
         Dv[0] = nuH * Du[0];
         Dv[1] = nuH * Du[1];
         Dv[2] = nuH * Du[2];
@@ -507,6 +516,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
         }
       }
       QuadInsertVel(row,y,yg);
+
     } // j-loop
   } // i-loop
   ierr = thickness->end_access();CHKERRQ(ierr);
@@ -574,17 +584,32 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
     ierr = vel_bc->get_array(BC_vel); CHKERRQ(ierr); 
   }
   
+  
 
   PetscInt xs = element_index.xs, xm = element_index.xm,
            ys = element_index.ys, ym = element_index.ym;
+
+         // for(i=xs;i<xs+xm;i++)
+         // {
+         //   for(j=ys;j<ys+ym;j++)
+         //   {
+         //     PISMVector2 pv = xg[i][j];
+         //     printf("xg[%d,%d] %g %g\n",i,j,pv.u,pv.v);
+         //   }
+         // }
+
+
   for (i=xs; i<xs+xm; i++) { // Include ghost cells on either end
     for (j=ys; j<ys+ym; j++) {
       const PetscInt ij = element_index.flatten(i,j);
       MatStencil     row[4],col[4];
-      PISMVector2        x[4];
+      PISMVector2        x[4],xh[4];
       PetscReal      K[8*8],lmask[4];
+      const PetscScalar dh = 1.e-10;
+      
 
       QuadExtractVel(i,j,xg,x);
+
       ierr = QuadGetStencils(info,i,j,row,col);CHKERRQ(ierr);
       if (bc_locations && vel_bc) {
         QuadExtractScalar(i,j,mask,lmask);
@@ -605,48 +630,40 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
 
         for (PetscInt k=0; k<4; k++) {   // Test functions
           for (PetscInt l=0; l<4; l++) { // Trial functions
+
             const PetscInt qk = q*4+k,ql = q*4+l; // transpose and regular
 
-            // // Value of test functions kx and ky at quad point q
-            // const PetscReal ukx = interp[qk], vkx = 0;
-            // const PetscReal uky = 0, vky = interp[qk];
-            // 
-            // // Values of trial functions lx and ly at quad point q
-            // const PetscReal ulx = interp[ql], vlx = 0;
-            // const PetscReal uly = 0, vly = interp[ql];
-            // 
-            // // Derivatives of test function kx at quad point q            
-            // const PetscReal dudxkx = derivx[qk]*jinvDiag[1], dudykx = derivy[qk]*jinvDiag[1];
-            // const PetscReal dvdxkx = 0, dvdykx = 0;
-            // 
-            // // Derivatives of test function ky at quad point q            
-            // const PetscReal dudxky = 0, dudyky = 0;
-            // const PetscReal dvdxky = derivx[qk]*jinvDiag[1], dvdyky = derivy[qk]*jinvDiag[1];
-            // 
-            // // Derivatives of trial function lx at quad point q            
-            // const PetscReal dudxlx = derivx[ql]*jinvDiag[1], dudylx = derivy[ql]*jinvDiag[1];
-            // const PetscReal dvdxlx = 0, dvdylx = 0;
-            // 
-            // // Derivatives of trial function ly at quad point q            
-            // const PetscReal dudxly = 0, dudyly = 0;
-            // const PetscReal dvdxly = derivx[ql]*jinvDiag[1], dvdyly = derivy[ql]*jinvDiag[1];
-            // 
-            // 
-            // // kx-lx
-            // K[2*k*8+2*l]   += 0.5*nuH*( 2*(2*dudxlx+dvdylx)*dudxkx + (dudylx+dvdxlx)*dudykx  +
-            //                           (dudylx+dvdxlx)*dvdxkx +2*(2*dvdylx+dudxlx)*dvdykx )*jw;
-            // 
-            // // kx-ly
-            // K[2*k*8+2*l+1]   += 0.5*nuH*( 2*(2*dudxly+dvdyly)*dudxkx + (dudyly+dvdxly)*dudykx +
-            //                           (dudyly+dvdxly)*dvdxkx +2*(2*dvdyly+dudxly)*dvdykx )*jw;
-            // 
-            // // ky-lx
-            // K[(2*k+1)*8+2*l]   += 0.5*nuH*( 2*(2*dudxlx+dvdylx)*dudxky + (dudylx+dvdxlx)*dudyky +
-            //                           (dudylx+dvdxlx)*dvdxky +2*(2*dvdylx+dudxlx)*dvdyky )*jw;
-            // 
-            // // ky-ly
-            // K[(2*k+1)*8+2*l+1]   += 0.5*nuH*( 2*(2*dudxly+dvdyly)*dudxky + (dudyly+dvdxly)*dudyky +
-            //                           (dudyly+dvdxly)*dvdxky +2*(2*dvdyly+dudxly)*dvdyky )*jw;
+            for(PetscInt ell=0;ell<4;ell++)
+            {
+              xh[ell]=x[ell];
+            }
+            PISMVector2 wh;
+            PetscReal nuHh,dNuHh,betah,dbetah,Dwh[3];
+
+            PetscReal Fu =   nuH*jw*(derivx[qk] * jinvDiag[0]  * (2*Dw[0]+Dw[1]) + derivy[qk] * jinvDiag[1] *  Dw[2] );
+            PetscReal Fv =   nuH*jw*(derivy[qk] * jinvDiag[1] * (2*Dw[1]+Dw[0]) + derivx[qk] * jinvDiag[0] * Dw[2]);
+
+            // Derivatives w.r.t u dof
+            xh[l].u = x[l].u+dh; xh[l].v = x[l].v;
+            ierr = QuadEvaluateVel(xh,q,jinvDiag,&wh,Dwh);CHKERRQ(ierr);
+            ierr = PointwiseNuHAndBeta(feS,iS,&wh,Dwh,&nuHh,&dNuHh,&betah,&dbetah);CHKERRQ(ierr);
+            PetscReal Fuhu = nuHh*jw*(derivx[qk] * jinvDiag[0]  * (2*Dwh[0]+Dwh[1]) + derivy[qk] * jinvDiag[1] *  Dwh[2] );
+            PetscReal Fvhu = nuHh*jw*(derivy[qk] * jinvDiag[1] * (2*Dwh[1]+Dwh[0]) + derivx[qk] * jinvDiag[0] * Dwh[2]);
+
+            // Derivatives w.r.t v dof
+            xh[l].v = x[l].v+dh; xh[l].u = x[l].u;
+            ierr = QuadEvaluateVel(xh,q,jinvDiag,&wh,Dwh);CHKERRQ(ierr);
+            ierr = PointwiseNuHAndBeta(feS,iS,&wh,Dwh,&nuHh,&dNuHh,&betah,&dbetah);CHKERRQ(ierr);
+            PetscReal Fuhv = nuHh*jw*(derivx[qk] * jinvDiag[0]  * (2*Dwh[0]+Dwh[1]) + derivy[qk] * jinvDiag[1] *  Dwh[2] );
+            PetscReal Fvhv = nuHh*jw*(derivy[qk] * jinvDiag[1] * (2*Dwh[1]+Dwh[0]) + derivx[qk] * jinvDiag[0] * Dwh[2]);
+
+            // Compute all finite differences.
+            PetscReal dJFD[4];
+            dJFD[0] = (Fuhu-Fu)/dh;
+            dJFD[1] = (Fuhv-Fu)/dh;
+            dJFD[2] = (Fvhu-Fv)/dh;
+            dJFD[3] = (Fvhv-Fv)/dh;
+
 
             const PetscReal ht = interp[qk],h = interp[ql],
             dxt = derivx[qk]*jinvDiag[0],dyt = derivy[qk]*jinvDiag[1],
@@ -658,9 +675,8 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
             cvy = dyt*(2*Dw[1]+Dw[0]) + dxt*Dw[2],
             cux = (2*Dw[0]+Dw[1])*dx + Dw[2]*dy,
             cuy = (2*Dw[1]+Dw[0])*dy + Dw[2]*dx;
-
-            // u-u coupling
             
+            // u-u coupling
             K[k*16+l*2]     += jw*(beta*ht*h + dbeta*bvx*bux + nuH*(2*dxt*dx + dyt*0.5*dy) + dNuH*cvx*cux);
             // u-v coupling
             K[k*16+l*2+1]   += jw*(dbeta*bvx*buy + nuH*(0.5*dyt*dx + dxt*dy) + dNuH*cvx*cuy);
@@ -668,10 +684,37 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
             K[k*16+8+l*2]   += jw*(dbeta*bvy*bux + nuH*(0.5*dxt*dy + dyt*dx) + dNuH*cvy*cux);
             // v-v coupling
             K[k*16+8+l*2+1] += jw*(beta*ht*h + dbeta*bvy*buy + nuH*(2*dyt*dy + dxt*0.5*dx) + dNuH*cvy*cuy);
+
+
+            // // u-u coupling
+            // PetscReal dJ[4];
+            // dJ[0] = jw*(nuH*(2*dxt*dx + dyt*0.5*dy)+ dNuH*cvx*cux);
+            // dJ[1] = jw*(nuH*(0.5*dyt*dx + dxt*dy) + dNuH*cvx*cuy);
+            // dJ[2] = jw*(nuH*(0.5*dxt*dy + dyt*dx) + dNuH*cvy*cux);
+            // dJ[3] = jw*(nuH*(2*dyt*dy + dxt*0.5*dx) + dNuH*cvy*cuy);
+            // K[k*16+l*2]     +=  dJ[0];
+            //   // u-v coupling
+            // K[k*16+l*2+1]   +=  dJ[1];
+            //   // v-u coupling
+            // K[k*16+8+l*2]   += dJ[2];
+            //   // v-v coupling
+            // K[k*16+8+l*2+1] += dJ[3];
+            // 
+            // 
+            // PetscScalar Jx = jw*nuH*(derivx[qk] * jinvDiag[0] * (2*Dw[0]+Dw[1]) + derivy[qk] * jinvDiag[1] * Dw[2]);
+            // PetscScalar Jxh = jw*nuHh*(derivx[qk] * jinvDiag[0] * (2*Dwh[0]+Dwh[1]) + derivy[qk] * jinvDiag[1] * Dwh[2]);
+            // PetscScalar dJcode = jw*(nuH*(2*dxt*dx + dyt*0.5*dy)+ dNuH*cvx*cux);
+            // 
+            // // printf("x[0] %g %g x[1] %g %g x[2] %g %g x[3] %g %g\n",x[0].u,x[0].v,x[1].u,x[1].v,x[2].u,x[2].v,x[3].u,x[3].v );
+            // if(i<=1 && j<=1)
+            // {
+            //   // printf("Element (%d,%d) test %d trial %d\nuu: %g fd %g\nuv: %g fd %g\nvu: %g fd %g\nvv: %g fd %g\n",i,j,k,l,
+            //   //   dJ[0],dJFD[0],dJ[1],dJFD[1],dJ[2],dJFD[2],dJ[3],dJFD[3]);
+            // }
+            // // printf("xh %g %g %g %g Dwh: %g Dj: %g code: %g\n",xh[0].u,xh[1].u,xh[2].u,xh[3].u,Dw[2],(Jxh-Jx)/dh,dJcode);
           }
         }
       }
-      int l,m;
       ierr = MatSetValuesBlockedStencil(J,4,row,4,col,K,ADD_VALUES);CHKERRQ(ierr);
     }
   }

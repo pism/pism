@@ -122,6 +122,12 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
 PetscErrorCode SSATestCase::init(PetscInt Mx, PetscInt My, SSAFactory ssafactory)
 {
   PetscErrorCode ierr;
+
+  // Set options from command line.  
+  // FIXME (DAM 2/17/11):  These are currently only looked at by the finite difference solver.
+  ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssa"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssa"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("ssa_rtol", "ssa_relative_convergence"); CHKERRQ(ierr);
   
   // Subclass builds grid.
   ierr = initializeGrid(Mx,My);
@@ -181,12 +187,15 @@ PetscErrorCode SSATestCase::report()
   ierr = ssa->get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr);
   ierr = vel_ssa->begin_access(); CHKERRQ(ierr);
 
+  PetscScalar exactvelmax = 0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar junk1, junk2, uexact, vexact;
-      PetscScalar myr,myx,myy;
-      grid.mapcoords(i,j,myx,myy,myr);
+      PetscScalar myx=grid.x[i],myy=grid.y[j];
       exactSolution(i,j,myx,myy,&uexact,&vexact);
+
+      PetscScalar exactnormsq=sqrt(uexact*uexact+vexact*vexact);
+      exactvelmax = PetscMax(exactnormsq,exactvelmax);
 
       // compute maximum errors
       const PetscScalar uerr = PetscAbsReal((*vel_ssa)(i,j).u - uexact);
@@ -212,17 +221,15 @@ PetscErrorCode SSATestCase::report()
   ierr = PetscGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
   gavvecerr = gavvecerr/(grid.Mx*grid.My);
 
-  // following from "pismv -test J -Mx 601 -My 601 -Mz 3 -verbose -eo"
-  exactmaxu = 181.366 / secpera;
-
+  printf("velocity max: %g\n",exactvelmax*report_velocity_scale);
   ierr = verbPrintf(1,grid.com, 
                     "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
   CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com, 
                     "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n", 
-                    gmaxvecerr*secpera, (gavvecerr/exactmaxu)*100.0,
-                    gmaxuerr*secpera, gmaxverr*secpera, gavuerr*secpera, 
-                    gavverr*secpera); CHKERRQ(ierr);
+                    gmaxvecerr*report_velocity_scale, (gavvecerr/exactvelmax)*100.0,
+                    gmaxuerr*report_velocity_scale, gmaxverr*report_velocity_scale, gavuerr*report_velocity_scale, 
+                    gavverr*report_velocity_scale); CHKERRQ(ierr);
 
   ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
 
@@ -258,20 +265,42 @@ PetscErrorCode SSATestCase::write(const string &filename)
   ierr = ssa->get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr);
   ierr = vel_ssa->write(filename.c_str()); CHKERRQ(ierr);
 
+  IceModelVec2V exact;
+  ierr = exact.create(grid, "_exact", false); CHKERRQ(ierr);
+  ierr = exact.set_attrs("diagnostic", 
+            "X-component of the SSA exact solution", 
+            "m s-1", "", 0); CHKERRQ(ierr);
+  ierr = exact.set_attrs("diagnostic", 
+            "Y-component of the SSA exact solution", 
+            "m s-1", "", 1); CHKERRQ(ierr);
+  ierr = exact.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+
+  ierr = exact.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+      PetscScalar junk1, junk2;
+      PetscScalar myr,myx,myy;
+      grid.mapcoords(i,j,myx,myy,myr);
+      exactSolution(i,j,myx,myy,&(exact(i,j).u),&(exact(i,j).v));
+    }
+  }
+  ierr = exact.end_access(); CHKERRQ(ierr);
+  ierr = exact.write(filename.c_str()); CHKERRQ(ierr);
+
   return 0;
 }
 
 
 /*! Initialize a uniform, shallow (3 z-levels), doubly periodic grid with 
 half-widths (Lx,Ly) and Mx by My nodes for time-independent computations.*/
-PetscErrorCode init_shallow_periodic_grid(IceGrid &grid, PetscReal Lx, 
-                                      PetscReal Ly, PetscInt Mx, PetscInt My)
+PetscErrorCode init_shallow_grid(IceGrid &grid, PetscReal Lx, 
+                                      PetscReal Ly, PetscInt Mx, PetscInt My, Periodicity p)
 {
   PetscErrorCode ierr;
   
   grid.Lx = Lx;
   grid.Ly = Ly;
-  grid.periodicity = XY_PERIODIC;
+  grid.periodicity = p;
   grid.start_year = grid.year = 0.0;
   grid.Mx = Mx; grid.My=My; grid.Mz = 3;
   

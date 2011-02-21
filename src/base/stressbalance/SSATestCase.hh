@@ -24,7 +24,7 @@
 
 //! Callback for constructing a new SSA subclass.  The caller is
 //! responsible for deleting the newly constructed SSA.
-/* The algorithm for solving the SSA in a test case can be selected
+/*! The algorithm for solving the SSA in a test case can be selected
 at runtime via the ssafactory argument of SSATestCase::init.  The
 factory is a function pointer that takes all the arguments of an SSA
 constructor and returns a newly constructed instance.  By using this
@@ -41,18 +41,19 @@ SSA * SSAFEMFactory(IceGrid &, IceBasalResistancePlasticLaw &,
 SSA * SSAFDFactory(IceGrid &, IceBasalResistancePlasticLaw &, 
                   IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
 
-//! Helper function for initializing a grid with the given dimensions.
-//! The grid is shallow (3 z-layers) and is periodic in the x and y directions.
-PetscErrorCode init_shallow_periodic_grid(IceGrid &grid, 
-                                            PetscReal Lx, PetscReal Ly, 
-                                                  PetscInt Mx, PetscInt My);
+//! Helper function for initializing a grid with the given dimensions and periodicity.
+//! The grid is shallow (3 z-layers).
+PetscErrorCode init_shallow_grid(IceGrid &grid, 
+                                      PetscReal Lx, PetscReal Ly, 
+                                             PetscInt Mx, PetscInt My, Periodicity p);
+
 
 
 /*! An SSATestCase manages running an SSA instance against a particular
 test.  Subclasses must implement the following abstract methods to define
 the input to an SSA for a test case:
 
-1) initializeGrid (to build a grid of the specified size appropraite for the test)
+1) initializeGrid (to build a grid of the specified size appropriate for the test)
 2) initializeSSAModel (to specify the laws used by the model, e.g. ice flow and basal sliding laws)
 3) initializeSSACoefficients (to initialize the ssa coefficients, e.g. ice thickness)
 
@@ -60,7 +61,7 @@ The SSA itself is constructed between steps 2) and 3).
 
 Additionally, a subclass can implement \c report to handle
 printing statistics after a run.  The default report method relies
-on subclasses implementing of the exactSolution method for comparision.
+on subclasses implementing the exactSolution method for comparision.
 
 A driver uses an SSATestCase by calling 1-3 below and 4,5 as desired:
 
@@ -76,7 +77,8 @@ public:
   SSATestCase( MPI_Comm com, PetscMPIInt rank, 
                PetscMPIInt size, NCConfigVariable &config ): 
                   config(config), grid(com,rank,size,config), 
-                  basal(0), ice(0), enthalpyconverter(0), ssa(0)
+                  basal(0), ice(0), enthalpyconverter(0), ssa(0),
+                  report_velocity_scale(secpera)
   {  };
 
   virtual ~SSATestCase()
@@ -130,6 +132,10 @@ protected:
   IceModelVec2Mask mask;
 
   SSA *ssa;
+
+  // Scale for converting velocities from their units during computation to human friendly units.
+  
+  PetscScalar report_velocity_scale;
 
 };
 

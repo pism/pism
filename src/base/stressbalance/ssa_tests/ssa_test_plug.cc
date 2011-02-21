@@ -16,12 +16,16 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+/* This file implements a test case for the ssa:  plug flow.  The geometry consists of a constant
+   surface slope in the positive x-direction, and the ice is pinned on the y-boundaries.  There is
+   no basal shear stress, and hence the the only nonzero terms in the SSA are the "p-laplacian" 
+   and the driving stress. */
+
 static char help[] =
-  "\nSSAFD_TEST\n"
+  "\nSSA_TEST_PLUG\n"
   "  Testing program for the finite element implementation of the SSA.\n"
   "  Does a time-independent calculation.  Does not run IceModel or a derived\n"
-  "  class thereof. Uses verification test J. Also may be used in a PISM\n"
-  "  software (regression) test.\n\n";
+  "  class thereof.\n\n";
 
 #include "pism_const.hh"
 #include "iceModelVec.hh"
@@ -33,14 +37,21 @@ static char help[] =
 #include "SSAFD.hh"
 #include "exactTestsIJ.h"
 #include "SSATestCase.hh"
-
-class SSATestCaseI: public SSATestCase
+#include <math.h>
+class SSATestCasePlug: public SSATestCase
 {
 public:
-  SSATestCaseI( MPI_Comm com, PetscMPIInt rank, 
+  SSATestCasePlug( MPI_Comm com, PetscMPIInt rank, 
                  PetscMPIInt size, NCConfigVariable &config ): 
                  SSATestCase(com,rank,size,config)
-  { };
+  { 
+    H0 = 2000.; //m
+    L=50.e3; // 50km half-width
+    dhdx = 0.001; // pure number, slope of surface & bed
+    tauc0 = 0.; // No basal shear stress
+    B0 = 3.7e8; // Pa s^{1/3}; hardness 
+               // given on p. 239 of Schoof; why so big?      
+  }
   
 protected:
   virtual PetscErrorCode initializeGrid(PetscInt Mx,PetscInt My);
@@ -52,146 +63,115 @@ protected:
   virtual PetscErrorCode exactSolution(PetscInt i, PetscInt j, 
     PetscReal x, PetscReal y, PetscReal *u, PetscReal *v );
 
+
+  PetscScalar H0; // Thickness
+  PetscScalar L;  // Half-width
+  PetscScalar dhdx; // surface slope
+  PetscScalar tauc0; // zero basal shear stress
+  PetscScalar B0;  // hardness
+
+  bool dimensionless;
+  
 };
 
-const PetscScalar m_schoof = 10; // (pure number)
-const PetscScalar L_schoof = 40e3; // meters
-const PetscScalar aspect_schoof = 0.05; // (pure)
-const PetscScalar H0_schoof = aspect_schoof * L_schoof; 
-                                       // = 2000 m THICKNESS
-const PetscScalar B_schoof = 3.7e8; // Pa s^{1/3}; hardness 
-                                     // given on p. 239 of Schoof; why so big?
-const PetscScalar p_schoof = 4.0/3.0; // = 1 + 1/n
 
-
-PetscErrorCode SSATestCaseI::initializeGrid(PetscInt Mx,PetscInt My)
+PetscErrorCode SSATestCasePlug::initializeGrid(PetscInt Mx,PetscInt My)
 {
-  PetscReal Ly = 3*L_schoof;  // 300.0 km half-width (L=40.0km in Schoof's choice of variables)
-  PetscReal Lx = PetscMax(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)) );
-
-
-  PetscErrorCode ierr;
-  
-  grid.Lx = Lx;
-  grid.Ly = Ly;
-  grid.periodicity = NONE;
-  grid.start_year = grid.year = 0.0;
-  grid.Mx = Mx; grid.My=My; grid.Mz = 3;
-  
-  grid.compute_nprocs();
-  grid.compute_ownership_ranges();
-  ierr = grid.compute_vertical_levels(); CHKERRQ(ierr); 
-  ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-  ierr = grid.createDA(); CHKERRQ(ierr);
-
-  return 0;
-
-
-  // // Fixme: make only y-periodic
-  // init_shallow_periodic_grid(grid,Lx,Ly,Mx,My);
+  PetscReal Lx=L, Ly = L; 
+  init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
 }
 
 
-PetscErrorCode SSATestCaseI::initializeSSAModel()
+PetscErrorCode SSATestCasePlug::initializeSSAModel()
 {
-  PetscReal nearPlasticQ = 0.05;
+  // The following is irrelevant because tauc=0
+  PetscScalar linear_q = 1.;
   basal = new IceBasalResistancePlasticLaw(
          config.get("plastic_regularization") / secpera,
-         config.get_flag("do_pseudo_plastic_till"),
-         nearPlasticQ,
+         true, // do not force a pure-plastic law
+         linear_q,
          config.get("pseudo_plastic_uthreshold") / secpera);
 
-  ice = new CustomGlenIce(grid.com, "", config);
+  // Use constant hardness
+  CustomGlenIce *glenIce = new CustomGlenIce(grid.com, "", config);
+  glenIce->setHardness(B0);
+  ice=glenIce;
+
+  // Enthalpy converter is irrelevant for this test.
   enthalpyconverter = new EnthalpyConverter(config);
   return 0;
 }
 
-PetscErrorCode SSATestCaseI::initializeSSACoefficients()
+PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
   PetscScalar    **ph, **pbed;
   
-  ierr = mask.set(MASK_DRAGGING_SHEET); CHKERRQ(ierr);
-  ierr = thickness.set(H0_schoof); CHKERRQ(ierr);
-
-  // set h, bed everywhere
-  // on edges y = +- 3 L_schoof, set velocity and make mask=SHEET
-  // ierr = vMask.begin_access(); CHKERRQ(ierr);
-  // Test J has a viscosity that is independent of velocity.  So we force a 
-  // constant viscosity by settting the strength_extension
-  // thickness larger than the given ice thickness. (max = 770m).
-  const PetscScalar nu0 = 30.0 * 1.0e6 * secpera; /* = 9.45e14 Pa s */
-  const PetscScalar H0 = 500.0;       /* 500 m typical thickness */
-  ssa->strength_extension->set_notional_strength(nu0 * H0);
-  ssa->strength_extension->set_min_thickness(4000);
-
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
   config.set_flag("compute_surf_grad_inward_ssa", true);
-  config.set("epsilon_ssa", 0.0);  // don't use this lower bound
+  config.set("epsilon_ssa", 0.);
 
-  // The finite difference version 
+  // Ensure we never use the strength extension.
+  ssa->strength_extension->set_min_thickness(H0/2);
 
-  PetscScalar **ptauc;
+  // Set constant coefficients.
+  ierr = thickness.set(H0); CHKERRQ(ierr);
+  ierr = tauc.set(tauc0); CHKERRQ(ierr);
+  
 
-  ierr = tauc.get_array(ptauc); CHKERRQ(ierr);
-
-  PetscScalar standard_gravity = config.get("standard_gravity");
-
+  // Set boundary conditions (Dirichlet all the way around).
+  ierr = mask.set(MASK_DRAGGING_SHEET); CHKERRQ(ierr);
+  ierr = vel_bc.begin_access(); CHKERRQ(ierr);
+  ierr = mask.begin_access(); CHKERRQ(ierr);
+  ierr = bed.begin_access(); CHKERRQ(ierr);
+  ierr = surface.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscInt jfrom0 = j - (grid.My - 1)/2;
-      const PetscScalar y = grid.dy * jfrom0;
-      const PetscScalar theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
-      const PetscScalar f = ice->rho * standard_gravity * H0_schoof * tan(theta);
-      ptauc[i][j] = f * pow(PetscAbs(y / L_schoof), m_schoof);
-    }
-  }
-  ierr = tauc.end_access(); CHKERRQ(ierr);
-  ierr = tauc.beginGhostComm(); CHKERRQ(ierr);
-  ierr = tauc.endGhostComm(); CHKERRQ(ierr);
+      PetscScalar junk, myu, myv;
+      const PetscScalar myx = grid.x[i], myy=grid.y[j];
 
-
-  ierr = surface.get_array(ph); CHKERRQ(ierr);    
-  ierr = bed.get_array(pbed); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar junk, myu, myv, bedval;
-      const PetscInt ifrom0 = i - (grid.Mx - 1)/2,
-                     jfrom0 = j - (grid.My - 1)/2;
-      const PetscScalar myx = grid.dx * ifrom0,
-        myy = grid.dy * jfrom0;
-      // eval exact solution; will only use exact vels if at edge
-      exactI(m_schoof, myx, myy, &(pbed[i][j]), &junk, &myu, &myv); 
-      ph[i][j] = pbed[i][j] + H0_schoof;
+      bed(i,j) = -myx*(dhdx);
+      surface(i,j) = bed(i,j) + H0;
+      
+      bool edge = ( (j == 0) || (j == grid.My - 1) ) || ( (i==0) || (i==grid.Mx-1) );
+      if (edge) {
+        mask(i,j) = MASK_SHEET; // replace with MASK_BC
+        exactSolution(i,j,myx,myy,&myu,&myv);
+        vel_bc(i,j).u = myu;
+        vel_bc(i,j).v = myv;
+      }
     }
-  }  
+  } 
   ierr = vel_bc.end_access(); CHKERRQ(ierr);
-  ierr = surface.end_access(); CHKERRQ(ierr);    
+  ierr = mask.end_access(); CHKERRQ(ierr);
   ierr = bed.end_access(); CHKERRQ(ierr);
-
-  // communicate what we have set
-  ierr = surface.beginGhostComm(); CHKERRQ(ierr);
-  ierr = surface.endGhostComm(); CHKERRQ(ierr);
+  ierr = surface.end_access(); CHKERRQ(ierr);
+  
+  
+  ierr = vel_bc.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vel_bc.endGhostComm(); CHKERRQ(ierr);
+  ierr = mask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = mask.endGhostComm(); CHKERRQ(ierr);
   ierr = bed.beginGhostComm(); CHKERRQ(ierr);
-  ierr = bed.endGhostComm(); CHKERRQ(ierr);
+  ierr = bed.endGhostComm(); CHKERRQ(ierr);  
+  ierr = surface.beginGhostComm(); CHKERRQ(ierr);
+  ierr = surface.endGhostComm(); CHKERRQ(ierr);  
 
-  // ierr = ssa->set_boundary_conditions(mask, &NONE); CHKERRQ(ierr); 
+  ierr = ssa->set_boundary_conditions(mask, vel_bc); CHKERRQ(ierr); 
 
   return 0;
 }
 
-
-PetscErrorCode SSATestCaseI::exactSolution(PetscInt i, PetscInt j, 
+PetscErrorCode SSATestCasePlug::exactSolution(PetscInt i, PetscInt j, 
  PetscReal x, PetscReal y, PetscReal *u, PetscReal *v)
 {
-  PetscReal junk1, junk2;
-  const PetscInt ifrom0 = i - (grid.Mx)/2, jfrom0 = j - (grid.My)/2;
-  PetscReal myx = grid.dx * ifrom0;
-  PetscReal myy = grid.dy * jfrom0;
-
-  exactI(m_schoof, myx,myy, &junk1, &junk2,u,v); 
+  PetscScalar earth_grav = config.get("standard_gravity");
+  PetscScalar f = ice->rho * earth_grav * H0* dhdx;
+  PetscScalar ynd = y/L;
+  
+  *u = 0.5*pow(f,3)*pow(L,4)/pow(B0*H0,3)*(1-pow(ynd,4));
+  *v = 0;
 }
-
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
@@ -224,10 +204,11 @@ int main(int argc, char *argv[]) {
     }
 
     // Parameters that can be overridden by command line options
-    PetscInt Mx=61;
+    PetscInt Mx=11;
     PetscInt My=61;
-    string output_file = "ssa_testi.nc";
+    string output_file = "ssa_test_plug.nc";
     string driver = "fem";
+    PetscScalar H0dim = 1.;
 
     ierr = PetscOptionsBegin(com, "", "SSAFD_TEST options", ""); CHKERRQ(ierr);
     {
@@ -249,11 +230,11 @@ int main(int argc, char *argv[]) {
     else if(driver.compare("fd") == 0) ssafactory = SSAFDFactory;
     else SETERRQ(1,"SSA algorithm argument should be one of -ssa fe or -ssa fem");
 
-    SSATestCaseI testcase(com,rank,size,config);
+    SSATestCasePlug testcase(com,rank,size,config);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
     ierr = testcase.report(); CHKERRQ(ierr);
-    ierr = testcase.write(output_file);
+    ierr = testcase.write(output_file); CHKERRQ(ierr);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
