@@ -20,6 +20,10 @@
 // is less cluttered.  They should be replaced with empty macros when in
 // optimized mode.
 
+#ifndef _SSAFEM_UTIL_H_
+#define _SSAFEM_UTIL_H_
+
+
 #include <petscmat.h>
 #include "iceModelVec.hh"
 #include "flowlaws.hh"
@@ -93,14 +97,15 @@ static const PetscReal derivx[4*4] = {M*H,P*H,P*L,M*L,  M*H,P*H,P*L,M*L,  M*L,P*
 // derivy[4*q + n] gives the derivative in the \a y direction of basis function \a n at quad point \a q
 static const PetscReal derivy[4*4] = {H*M,L*M,L*P,H*P,  L*M,H*M,H*P,L*P,  L*M,H*M,H*P,L*P,  H*M,L*M,L*P,H*P};
 
-// UNUSED:
-// static const PetscReal interp1[4]  = {H,L,L,H};
-// static const PetscReal deriv1[4]   = {M,P,M,P};
 
 #undef H
 #undef L
 #undef M
 #undef P
+
+
+// Computes the closest integer to maskvalue, with integers of the form n/2 rounded up.
+int PismIntMask(PetscScalar maskvalue);
 
 
 // The global rectangular domain \Omega is decomposed into a grid of rectangular physical elements indexed by indices (i,j):
@@ -170,76 +175,122 @@ static const PetscReal derivy[4*4] = {H*M,L*M,L*P,H*P,  L*M,H*M,H*P,L*P,  L*M,H*
 //  is a little tedious, and is best not done explicitly.  See QuadEvaluateVel.
 //
 
-// Zeros out an array of element-local basis function weights (i.e. an array of four reals, one for each node). 
-void QuadZeroScalar(PetscReal x[]);
 
 
-// Zeros out an array element-local basis function weights (i.e. an array of four vectors, one for each node)
-void QuadZeroVel(PISMVector2 x[]);
-
-
-// Given a global array of basis function weights \a xg, extracts the element-local basis function weights
-// for element (i,j) into \a x; x and xg are scalars.
-void QuadExtractScalar(PetscInt i,PetscInt j,PetscReal **xg,PetscReal x[]);
-
-
-// Given an element-local array of basis function weights \a x for element (i,j), adds the weights
-// into the global array of basis function weights \a xg. (x and xg are scalars)
-void QuadInsertScalar(PetscInt i,PetscInt j,PetscReal x[],PetscReal **xg);
-
-
-// Given a global array of basis function weights \a xg, extracts the element-local basis function weights
-// for element (i,j) into \a x. (x and xg are vectors)
-void QuadExtractVel(PetscInt i,PetscInt j,const PISMVector2 **xg,PISMVector2 x[]);
-
-
-// Given an element-local array of basis function weights \a x for element (i,j), adds the weights
-// into the global array of basis function weights \a xg. (x and xg are vectors)
-void QuadInsertVel(const MatStencil row[],const PISMVector2 x[],PISMVector2 **xg);
-
-
-// Computes the value of y = A x where x is an array of four reals and
-// A is a 4x4 matrix expressed as an array in row-major ordering:
-// (A_{00},A_{01},A_{02},A_{03},A_{10},etc)
-void QuadMatMultScalar(const PetscReal *A,const PetscReal *x,PetscReal *y);
-
-
-// Computes the 'matrix multiplication' y = [ A x.u, A x.y ].  That is,
-// y is an array of vectors, with the \a u coordinates  of these vectors
-// corresponding to the application of A to the \a u coordinates of x, 
-// and with its \a v coordinates corresponding to the application of A to 
-// the \a v coordinate of x.  All other conventions are the same as for 
-// QuadMatMultScalar
-void QuadMatMultVel(const PetscReal *A,const PISMVector2 *x,PISMVector2 *y);
-
-
-// Same as QuadMatMultScalar, except computes y = A^T x
-void QuadMatMultTransposeScalar(const PetscReal *A,const PetscReal *x,PetscReal *y);
-
-
-// Same as QuadMatMultVector, except computes y = [A^T x.u, A^T x.v]
-void QuadMatMultTransposeVel(const PetscReal *A,const PISMVector2 *x,PISMVector2 *y);
-
-// Computes the closest integer to maskvalue, with integers of the form n/2 rounded up.
-int PismIntMask(PetscScalar maskvalue);
-
-
-// Computes the value and the symmetric part of the derivative of a vector-valued finite-element function 
-// with element-local degrees of freedom \a x at a physical quadrature point.  (i.e. computes U(F(q)) and DU(F(q))
-// where F is the reference to physical element map, q is the reference quadrature point, U=(u,v), and
+// // Given an element-local array of basis function weights \a x for element (i,j), adds the weights
+// // into the global array of basis function weights \a xg. (x and xg are vectors)
+// void QuadInsertVel(const MatStencil row[],const PISMVector2 x[],PISMVector2 **xg);
 // 
-//  DU = [ du/dx,  1/2*(du/dy+dv/dx); 1/2*(du/dy+dv/dx), dv/dy ]
-//
-// The value of the function is returned in \a u and DU is returned in Du as [ DU[0,0], DU[1,1], DU[0,1]], noting
-// that DU[1,0]=DU[0,1].
-PetscErrorCode QuadEvaluateVel(const PISMVector2 *x,PetscInt q,
-                               const PetscReal jinvDiag[],
-                               PISMVector2 *u,PetscReal Du[]);
+// 
+// 
+// // Computes the closest integer to maskvalue, with integers of the form n/2 rounded up.
+// int PismIntMask(PetscScalar maskvalue);
+// 
+// 
+// PetscErrorCode QuadGetStencils(DALocalInfo *info,PetscInt i,PetscInt j,
+//                                MatStencil row[],MatStencil col[]);
 
 
+static const PetscInt kIOffset[4] = { 0, 1, 1, 0 };
+static const PetscInt kJOffset[4] = { 0, 0, 1, 1 };
 
-PetscErrorCode QuadGetStencils(DALocalInfo *info,PetscInt i,PetscInt j,
-                               MatStencil row[],MatStencil col[]);
+class DOFMap
+{
+public:
+  DOFMap() {};
+  virtual void extractLocalDOFs(PetscInt i, PetscInt j, PetscReal const*const*xg, PetscReal *x) const;
+  virtual void extractLocalDOFs(PetscInt i, PetscInt j, PISMVector2 const*const*xg, PISMVector2 *x) const;
+
+  virtual void extractLocalDOFs(PetscReal const*const*xg, PetscReal *x) const;
+  virtual void extractLocalDOFs(PISMVector2 const*const*xg, PISMVector2 *x) const;
+
+  virtual void reset(PetscInt i, PetscInt j, const IceGrid &g);
+  
+  virtual void markRowInvalid(PetscInt k);
+  virtual void markColInvalid(PetscInt k);
+
+  void localToGlobal(PetscInt k, PetscInt *i, PetscInt *j);
+
+  virtual void addGlobalDOFs(const PISMVector2 *y, PISMVector2 **yg);
+  virtual PetscErrorCode addInteractionMatrix(const PetscReal *K, Mat J);
+  virtual PetscErrorCode setDiag(PetscInt i, PetscInt j, const PetscReal *K, Mat J);
+  
+protected:
+  static const PetscInt Nk = 4;
+  static const PetscInt kDofInvalid = PETSC_MIN_INT / 8;
+
+  PetscInt m_i, m_j;
+  MatStencil m_row[Nk];
+  MatStencil m_col[Nk];
+};
+
+
+class IceGridElementIndexer 
+{
+public:
+  IceGridElementIndexer(const IceGrid &g);
+  
+  PetscInt element_count()
+  {
+    return (xm-xs)*(ym-ys);
+  }
+  
+  PetscInt flatten(PetscInt i, PetscInt j)
+  {
+    return (i-xs)*ym+(j-ys);
+  }
+  
+  PetscInt xs, xm, ys, ym;
+  
+};
+
+struct FEFunctionGerm
+{
+  PetscReal val, dx, dy;
+};
+
+
+class Quadrature
+{
+public:
+
+  static const PetscInt Nq = 4;  // Number of quadrature points.
+  static const PetscInt Nk = 4;  // Number of test functions on the element.
+  
+  Quadrature();
+
+  void init(const IceGrid &g); // FIXME Allow a length scale to be specified.
+
+  const FEFunctionGerm (*testFunctionValues())[4];  
+  const FEFunctionGerm *testFunctionValues(PetscInt q);
+  const FEFunctionGerm *testFunctionValues(PetscInt q,PetscInt k);
+  
+  
+  void computeTrialFunctionValues( const PetscReal *x, PetscReal *vals);
+  void computeTrialFunctionValues( const PetscReal *x, PetscReal *vals, PetscReal *dx, PetscReal *dy);
+
+  void computeTrialFunctionValues( PetscInt i, PetscInt j, const DOFMap &dof, PetscReal const*const*xg, PetscReal *vals);
+  void computeTrialFunctionValues( PetscInt i, PetscInt j, const DOFMap &dof, PetscReal const*const*xg, 
+                                   PetscReal *vals, PetscReal *dx, PetscReal *dy);
+
+  void computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals, PetscReal (*Dv)[3]);
+  void computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals);
+
+  void computeTrialFunctionValues( PetscInt i, PetscInt j, const DOFMap &dof, PISMVector2 const*const*xg,  
+                                   PISMVector2 *vals, PetscReal (*Dv)[3]);
+
+  void computeTrialFunctionValues( PetscInt i, PetscInt j, const DOFMap &dof, PISMVector2 const*const*xg,  
+                                   PISMVector2 *vals);
+
+  void getWeightedJacobian(PetscReal *jxw);
+
+protected:
+  PetscReal m_jacobianDet;
+  FEFunctionGerm m_germs[Nq][Nk];
+  PetscReal   m_tmpScalar[Nk];
+  PISMVector2 m_tmpVector[Nk];
+};
+
 
 
 // Returns true if bed<0 and the mass of a column of ice of height H  is less than the mass of
@@ -247,31 +298,4 @@ PetscErrorCode QuadGetStencils(DALocalInfo *info,PetscInt i,PetscInt j,
 PetscTruth Floating(const IceFlowLaw &ice, PetscScalar ocean_rho,
                           PetscReal H, PetscReal bed);
 
-
-#define PismValidVelocity(U) do {                               \
-    if (!(-   1e+5 < (U).u && (U).u < 1e+5                      \
-          && -1e+5 < (U).v && (U).v < 1e+5))                    \
-      SETERRQ3(1,"Invalid velocity (%g,%g) not within %g",      \
-               (U).u,(U).v,1e+5);                               \
-  } while (0)
-
-#define PismValidStrainRate(Du) do {                                    \
-    if (!(-   1e+5 < (Du)[0] && (Du)[0] < 1e+5                          \
-          && -1e+5 < (Du)[1] && (Du)[1] < 1e+5                          \
-          && -1e+5 < (Du)[2] && (Du)[2] < 1e+5))                        \
-      SETERRQ4(1,"Invalid Strain Rate (%g,%g,%g) not within %g",        \
-               (Du)[0],(Du)[1],(Du)[2],1e+5);                           \
-  } while (0)
-
-#define PismValidStress2(f) do {                                        \
-    if (!(-   1e4 < (f).u && (f).u < 1e4                                \
-          && -1e4 < (f).v && (f).v < 1e4))                              \
-      SETERRQ3(1,"Invalid Stress residual (%g,%g) not within %g",       \
-               (f).u,(f).v,1e4);                                        \
-  } while (0)
-
-#define PismValidFriction(b) do {                                       \
-    if (!(0 <= (b) && (b) < 1e25))                                      \
-      SETERRQ2(1,"Invalid friction %g not within [0,%g]",(b),1e25);     \
-  } while (0)
-
+#endif/* _SSAFEM_UTIL_H_*/

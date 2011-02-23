@@ -20,11 +20,12 @@
 #define _SSAFEM_H_
 
 #include "SSA.hh"
+#include "SSAFEM_util.hh"
 #include <petscsnes.h>
 
 struct FECTX;
 struct FEStoreNode {
-  PetscReal h,H,tauc,hx,hy,b; // These values are fully dimensional
+  PetscReal h,H,tauc,hx,hy,b,B; // These values are fully dimensional
 };
 
 
@@ -73,25 +74,6 @@ PetscErrorCode SSAFEFunction(DALocalInfo *, const PISMVector2 **,
 PetscErrorCode SSAFEJacobian(DALocalInfo *, const PISMVector2 **, Mat, FECTX *);
 
 
-class IceGridElementIndexer 
-{
-public:
-  IceGridElementIndexer(const IceGrid &g);
-  
-  PetscInt element_count()
-  {
-    return (xm-xs)*(ym-ys);
-  }
-  
-  PetscInt flatten(PetscInt i, PetscInt j)
-  {
-    return (i-xs)*ym+(j-ys);
-  }
-  
-  PetscInt xs, xm, ys, ym;
-  
-};
-
 //! PISM's SSA solver: the finite element method implementation written by Jed
 /*!
 Jed's code is in rev 831:
@@ -108,6 +90,7 @@ public:
          const NCConfigVariable &c) :
     SSA(g,b,i,e,c), element_index(g)
   {
+    quadrature.init(grid);
     allocate_fem();  // can't be done by allocate() since constructor is not virtual
   }
 
@@ -121,12 +104,12 @@ public:
 protected:
   PetscErrorCode setup();
 
-  virtual PetscErrorCode PointwiseNuHAndBeta(const FEStoreNode *,const PetscReal *,
+  virtual PetscErrorCode PointwiseNuHAndBeta(const FEStoreNode *,
                                              const PISMVector2 *,const PetscReal[],
                                              PetscReal *,PetscReal *,PetscReal *,PetscReal *);
 
   virtual void FixDirichletValues(PetscReal lmask[],PISMVector2 **BC_vel,
-                                  MatStencil row[],MatStencil col[],PISMVector2 x[]);
+                                                      PISMVector2 x[], DOFMap &dofmap);
 
   virtual PetscErrorCode allocate_fem();
 
@@ -138,8 +121,6 @@ protected:
 
   virtual PetscErrorCode solve();
   
-  virtual PetscErrorCode compute_hardav(IceModelVec2S &result);
-
   virtual PetscErrorCode view(PetscViewer viewer);
 
   virtual PetscErrorCode setFromOptions();
@@ -152,16 +133,14 @@ protected:
 
   SNES         snes;
   FEStoreNode *feStore;
-  PetscScalar *integratedStore; // Storage for constitutive relation
-  PetscInt     sbs;             // Store block size (number of values per quadrature point)
-                                // FIXME:  how to initialize correctly?
   PetscReal    dirichletScale;
   PetscReal    ocean_rho;
   PetscReal    earth_grav;
   PismRef      ref;
 
   IceGridElementIndexer element_index;
-
+  Quadrature quadrature;
+  DOFMap dofmap;
 };
 
 
