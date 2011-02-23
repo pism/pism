@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011 Jed Brown and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2011 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -123,7 +123,8 @@ PetscErrorCode SSAFEM::init(PISMVars &vars) {
 
   ierr = SSA::init(vars); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
-                    "  [using the finite element method implementation by Jed Brown]\n"); CHKERRQ(ierr);
+           "  [using the SNES-based finite element method implementation]\n");
+           CHKERRQ(ierr);
 
   ierr = setFromOptions(); CHKERRQ(ierr);
 

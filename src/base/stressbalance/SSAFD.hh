@@ -42,7 +42,7 @@ public:
     PetscErrorCode ierr;
     ierr = SSA::init(vars); CHKERRQ(ierr);
     ierr = verbPrintf(2,grid.com,
-      "  [using the finite difference implementation]\n"); CHKERRQ(ierr);
+      "  [using the KSP-based finite difference implementation]\n"); CHKERRQ(ierr);
     return 0;
   }
 
