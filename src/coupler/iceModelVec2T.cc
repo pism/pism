@@ -151,14 +151,14 @@ PetscErrorCode IceModelVec2T::init(string fname) {
 //! Read some data to make sure that the interval (t_years, t_years + dt_years) is covered.
 PetscErrorCode IceModelVec2T::update(double t_years, double dt_years) {
   PetscErrorCode ierr;
-  int j, start, N = times.size();
+  int j, start, N = (int)times.size();
   vector<double>::iterator begin = times.begin();
 
   // just return if we have all the data we need:
   if ((t_years >= T[0]) && (t_years + dt_years <= T.back()))
     return 0;
 
-  j = upper_bound(begin, times.end(), t_years) - begin - 1;
+  j = (int)(upper_bound(begin, times.end(), t_years) - begin - 1);
 
   if ((n_records >= N) || (j < 0)) {
     start = 0;
@@ -178,7 +178,7 @@ PetscErrorCode IceModelVec2T::update(double t_years, double dt_years) {
 //! Update by reading at most n_records records from the file.
 PetscErrorCode IceModelVec2T::update(int start) {
   PetscErrorCode ierr;
-  int N = times.size();
+  int N = (int)times.size();
 
   if ((start < 0) || (start >= N))
     SETERRQ1(1, "IceModelVec2T::update(int start): start = %d is invalid", start);
@@ -187,7 +187,7 @@ PetscErrorCode IceModelVec2T::update(int start) {
   
   int kept = 0;
   if (first >= 0) {
-    int last = first + T.size() - 1;
+    int last = first + (int)T.size() - 1;
     if ((start >= first) && (start <= last)) {
       int discarded = start - first; 
       kept = last - start + 1;
@@ -223,7 +223,7 @@ PetscErrorCode IceModelVec2T::update(int start) {
 PetscErrorCode IceModelVec2T::discard(int N) {
   PetscErrorCode ierr;
   PetscScalar **a2, ***a3;
-  PetscInt M = T.size() - N;
+  PetscInt M = (int)T.size() - N;
 
   for (PetscInt k = 0; k < M; ++k)
     T[k] = T[k + N];
@@ -276,7 +276,7 @@ PetscErrorCode IceModelVec2T::get_record(int n) {
   Returns -1 if any time step is OK at t_years.
  */
 double IceModelVec2T::max_timestep(double t_years) {
-  int j, k, N = times.size();
+  int j, k, N = (int)times.size();
   vector<double>::iterator begin = times.begin();
 
   // no restriction if all the records are in memory:
@@ -294,7 +294,7 @@ double IceModelVec2T::max_timestep(double t_years) {
     return times[n_records - 2] - t_years;
   }
 
-  j = upper_bound(begin, times.end(), t_years) - begin - 1;
+  j = (int)(upper_bound(begin, times.end(), t_years) - begin - 1);
   k = j + n_records;
 
   if (k < N) {
@@ -315,11 +315,11 @@ PetscErrorCode IceModelVec2T::interp(double t_years) {
   k = upper_bound(T.begin(), end, t_years); // binary search
 
   if (k == end) {
-    ierr = get_record(T.size() - 1); CHKERRQ(ierr);
+    ierr = get_record((int)T.size() - 1); CHKERRQ(ierr);
     return 0;
   }
     
-  int index = k - T.begin() - 1;
+  int index = (int)(k - T.begin() - 1);
 
   if (index < 0) {
     ierr = get_record(0); CHKERRQ(ierr);

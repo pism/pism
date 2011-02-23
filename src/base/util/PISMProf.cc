@@ -53,7 +53,7 @@ int PISMProf::create(string name, string description) {
 
   events.push_back(tmp);
 
-  return events.size() - 1;
+  return (int)events.size() - 1;
 }
 
 //! \brief Get an integer (index) corresponding to an event.

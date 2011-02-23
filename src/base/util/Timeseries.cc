@@ -96,7 +96,7 @@ double Timeseries::operator()(double t) {
   if (j == end)
     return values.back(); // out of range (on the right)
 
-  int i = j - time.begin();
+  int i = (int)(j - time.begin());
 
   if (i == 0) {
     return values[0];	// out of range (on the left)
@@ -165,7 +165,7 @@ PetscErrorCode Timeseries::set_attr(string name, double value) {
   This length is changed by read() and append().
  */
 int Timeseries::length() {
-  return values.size();
+  return (int)values.size();
 }
 
 

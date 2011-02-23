@@ -727,7 +727,7 @@ PetscErrorCode NCTool::get_units(int varid, bool &has_units, utUnit &units) cons
     This is done to ignore the reference date in the time units string (the
     reference date specification always starts with this word).
   */
-  int n = units_string.find("since");
+  int n = (int)units_string.find("since");
   if (n != -1) units_string.resize(n);
 
   ierr = utScan(units_string.c_str(), &units);

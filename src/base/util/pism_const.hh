@@ -95,7 +95,7 @@ PetscErrorCode PISMOptionsRealArray(string option, string text,
 PetscErrorCode PISMOptionsIsSet(string option, bool &result);
 PetscErrorCode PISMOptionsIsSet(string option, string descr, bool &result);
 
-void PISMEnd();
+void PISMEnd()  __attribute__((noreturn));
 
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]);
 PetscErrorCode check_old_option_and_stop(
