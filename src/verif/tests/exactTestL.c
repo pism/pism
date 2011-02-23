@@ -72,15 +72,22 @@ int getU(double *r, int N, double *u,
          const double EPS_ABS, const double EPS_REL, const int ode_method) {
    /* solves ODE for u(r)=H(r)^{8/3}, 0 <= r <= L, for test L
       r and u must be allocated vectors of length N; r[] must be decreasing */
+   int i, k, count;
+   const gsl_odeiv_step_type* T;
+   int status = TESTL_NOT_DONE;
+   double rr, step;
+
+   gsl_odeiv_step*    s;
+   gsl_odeiv_control* c;
+   gsl_odeiv_evolve*  e;
+   gsl_odeiv_system   sys = {funcL, NULL, 1, NULL};  /* Jac-free method and no params */
 
    /* check first: we have a list, and r is decreasing */
    if (N < 1) return TESTL_NO_LIST;
-   int i;
    for (i = 1; i<N; i++) {  if (r[i] > r[i-1]) return TESTL_NOT_DECREASING;  }
 
    /* setup for GSL ODE solver; following step choices don't need Jacobian,
       but should we chose one that does?  */
-   const gsl_odeiv_step_type* T;
    switch (ode_method) {
      case 1:
        T = gsl_odeiv_step_rkck;
@@ -98,15 +105,14 @@ int getU(double *r, int N, double *u,
        printf("INVALID ode_method in getU(): must be 1,2,3,4\n");
        return TESTL_INVALID_METHOD;
    }
-   gsl_odeiv_step* s = gsl_odeiv_step_alloc(T, (size_t)1);     /* one scalar ode */
-   gsl_odeiv_control* c = gsl_odeiv_control_y_new(EPS_ABS,EPS_REL);
-   gsl_odeiv_evolve* e = gsl_odeiv_evolve_alloc((size_t)1);    /* one scalar ode */
-   gsl_odeiv_system sys = {funcL, NULL, 1, NULL};  /* Jac-free method and no params */
 
-   int status = TESTL_NOT_DONE;
+   s = gsl_odeiv_step_alloc(T, (size_t)1);     /* one scalar ode */
+   c = gsl_odeiv_control_y_new(EPS_ABS,EPS_REL);
+   e = gsl_odeiv_evolve_alloc((size_t)1);    /* one scalar ode */
+
 
    /* outside of ice cap, u = 0 */
-   int k = 0;
+   k = 0;
    while (r[k] >= L) {
      u[k] = 0.0;
      k++;
@@ -114,8 +120,7 @@ int getU(double *r, int N, double *u,
    }
    
    /* initial conditions: (r,u) = (L,0);  r decreases from L */
-   double rr = L, step;
-   int count;
+   rr = L;
    for (count = k; count < N; count++) {
      /* generally use value at end of last interval as initial guess */
      u[count] = (count == 0) ? 0.0 : u[count-1];
@@ -137,11 +142,12 @@ int exactL(double r, double *H, double *b, double *a,
            const double EPS_ABS, const double EPS_REL, const int ode_method) {
 
   double u[1] = { 0.0 };
+  const double Lsqr = L * L;
+  const double a0 = 0.3 / SperA;   /* m/s;  i.e. 0.3 m/a */
+
   getU(&r,1,u,EPS_ABS,EPS_REL,ode_method);
   *H = pow(u[0],3.0/8.0);
   *b = - b0 * cos(z0 * pi * r / L);
-  const double Lsqr = L * L;
-  const double a0 = 0.3 / SperA;   /* m/s;  i.e. 0.3 m/a */
   *a = a0 * (1.0 - (2.0 * r * r / Lsqr));
   return 0;
 }
@@ -154,16 +160,17 @@ int exactL_list(double *r, int N, double *H, double *b, double *a) {
   const double Lsqr = L * L;
   const double a0 = 0.3 / SperA;   /* m/s;  i.e. 0.3 m/a */
   double *u;
-  u = (double *) malloc(N * sizeof(double)); /* temporary arrays */
+  int stat, i;
+
+  u = (double *) malloc((size_t)N * sizeof(double)); /* temporary arrays */
   
   /* combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
      believed to be predictable and accurate */
-  int stat = getU(r,N,u,1.0e-12,0.0,1); 
+  stat = getU(r,N,u,1.0e-12,0.0,1); 
   if (stat != GSL_SUCCESS) {
     return stat;
   }
   
-  int i;
   for (i = 0; i < N; i++) {
     H[i] = pow(u[i],3.0/8.0);
     b[i] = - b0 * cos(z0 * pi * r[i] / L);

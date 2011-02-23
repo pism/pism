@@ -35,6 +35,9 @@ int main() {
   double       r, H, b, a;
   int          scanret;
   const double secpera=31556926.0;  /* seconds per year; 365.2422 days */
+
+  double EPS_ABS[] = { 1.0e-12, 1.0e-9, 1.0e-7 };
+  double EPS_REL[] = { 0.0, 1.0e-14, 1.0e-11 }; 
   
   printf("Enter  r  (in km; e.g. 0.0):   ");
   scanret = scanf("%lf",&r);
@@ -43,8 +46,6 @@ int main() {
     return 1;
   }
 
-  double EPS_ABS[] = { 1.0e-12, 1.0e-9, 1.0e-7 };
-  double EPS_REL[] = { 0.0, 1.0e-14, 1.0e-11 }; 
   exactL(r*1000.0,&H,&b,&a,EPS_ABS[0],EPS_REL[0],1);
 
   printf("Results from Test L:\n");

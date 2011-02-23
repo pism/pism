@@ -59,14 +59,13 @@ double dF_M(double x, double alpha, double r, double Q) {
 }
 
 
-int funcM_ode_G(double r, const double alpha[], double f[], void *params) {
+int funcM_ode_G(double r, const double alpha[], double f[], void* params) {
   /*   RHS G for differential equation:
           alpha' = G(alpha,r)      
      but where we solve this equation to find alpha':
           F(alpha',alpha,r) = 0 
      heuristic: guess is about 1/7 th of solution to a nearby problem;
      no range checking on r, so use away from zero */
-  if (params == NULL) {} /* quash warning "unused parameters" */
   
   const double Q = (1.0 - rho / rhow) * rho * g * Rc * H0 / (2.0 * barB),
                guess = 0.15 * (  pow(Q/r,n) - alpha[0]/r  );
@@ -98,6 +97,13 @@ int exactM(double r,
            const double EPS_ABS, const double EPS_REL, const int ode_method) {
 
    double ug = 100.0 / SperA;  /* velocity across grounding line is 100 m/a */
+   double DrrRg, xx, xA, nu, aa, rr, myalf, step;
+   const gsl_odeiv_step_type* T;
+   int status = NOT_DONE;
+   gsl_odeiv_step*    s;
+   gsl_odeiv_control* c;
+   gsl_odeiv_evolve*  e;
+   gsl_odeiv_system   sys = {funcM_ode_G, NULL, 1, NULL};  /* Jac-free method and no params */
 
    if (r < 0) {
      return NEGATIVE_R;  /* only nonnegative radial coord allowed */
@@ -108,13 +114,12 @@ int exactM(double r,
    } else if (r <= Rg) {
      /* power law from alpha=0 to alpha=ug in   Rg/4 < r <= Rg;
         f(r) w: f(Rg/4)=f'(Rg/4)=0 and f(Rg)=ug and f(Rg) = DrrRg         */
-     double DrrRg;
      funcM_ode_G(Rg, &ug, &DrrRg, NULL);  /* first get Drr = alpha' at Rg where alpha=ug */
      /* printf("DrrRg=%e (1/a)\n",DrrRg*SperA); */
-     const double xx = r - 0.25 * Rg,
-                  xA = 0.75 * Rg,
-                  nu = DrrRg * xA / ug,
-                  aa = ug / pow(xA, nu);
+     xx = r - 0.25 * Rg;
+     xA = 0.75 * Rg;
+     nu = DrrRg * xA / ug;
+     aa = ug / pow(xA, nu);
      /* printf("power nu=%e\n",nu); */
      *alpha = aa * pow(xx, nu);
      *Drr = aa * nu * pow(xx, nu - 1);
@@ -126,7 +131,6 @@ int exactM(double r,
    }
    
    /* need to solve ODE to find alpha, so setup for GSL ODE solver  */
-   const gsl_odeiv_step_type* T;
    switch (ode_method) {
      case 1:
        T = gsl_odeiv_step_rkck; /* RK Cash-Karp */
@@ -144,18 +148,15 @@ int exactM(double r,
        printf("INVALID ode_method in exactM(): must be 1,2,3,4\n");
        return INVALID_METHOD;
    }
-   gsl_odeiv_step* s = gsl_odeiv_step_alloc(T, (size_t)1);     /* one scalar ode */
-   gsl_odeiv_control* c = gsl_odeiv_control_y_new(EPS_ABS,EPS_REL);
-   gsl_odeiv_evolve* e = gsl_odeiv_evolve_alloc((size_t)1);    /* one scalar ode */
-   gsl_odeiv_system sys = {funcM_ode_G, NULL, 1, NULL};  /* Jac-free method and no params */
+   s = gsl_odeiv_step_alloc(T, (size_t)1);     /* one scalar ode */
+   c = gsl_odeiv_control_y_new(EPS_ABS,EPS_REL);
+   e = gsl_odeiv_evolve_alloc((size_t)1);    /* one scalar ode */
 
    /* initial conditions: (r,alf) = (Rg,ug);  r increases */
-   double rr = Rg; 
-   double myalf = ug;
+   rr = Rg; 
+   myalf = ug;
    /* printf (" r (km)        alpha (m/a)\n");
       printf (" %11.5e   %11.5e\n", rr/1000.0, myalf * SperA); */
-   double step;
-   int status = NOT_DONE;
    while (rr < r) {
      /* step = r - rr;  try to get to solution in one step; trust stepping algorithm */
      step = MIN(r-rr,20.0e3);

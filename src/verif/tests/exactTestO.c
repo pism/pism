@@ -36,7 +36,7 @@
 #define G              0.042        /* W/(m^2) = J m-2 s-1 */
 
 
-//! Implements an exact solution for basal melt rate.  Utterly straightforward arithmetic.
+/*! \brief Implements an exact solution for basal melt rate.  Utterly straightforward arithmetic. */
 /*!
 Assumes a steady-state temperature profile in ice and bedrock.  This steady
 profile is driven by geothermal flux \c G from the crust below the bedrock

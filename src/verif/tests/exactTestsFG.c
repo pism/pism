@@ -74,10 +74,10 @@ int bothexact(double t, double r, double *z, int Mz, double Cp,
   int i;
   double *I3;
 
-  I3 = (double *) malloc(Mz * sizeof(double)); /* need temporary arrays */
-  U = (double *) malloc(Mz * sizeof(double));
-  w = (double *) malloc(Mz * sizeof(double));
-  Sig = (double *) malloc(Mz * sizeof(double));
+  I3 = (double *) malloc((size_t)Mz * sizeof(double)); /* need temporary arrays */
+  U = (double *) malloc((size_t)Mz * sizeof(double));
+  w = (double *) malloc((size_t)Mz * sizeof(double));
+  Sig = (double *) malloc((size_t)Mz * sizeof(double));
   if ((I3 == NULL) || (U == NULL) || (w == NULL) || (Sig == NULL)) { 
     fprintf(stderr, "\nERROR bothexact(): couldn't allocate memory!\n\n");
     return -9999;

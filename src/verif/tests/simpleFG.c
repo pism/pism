@@ -91,16 +91,16 @@ int main() {
   } while (z[j-1]>=0.0);
   Mz=j-1;
 
-  TF = (double *) malloc(Mz * sizeof(double));
-  UF = (double *) malloc(Mz * sizeof(double));
-  wF = (double *) malloc(Mz * sizeof(double));
-  SigF = (double *) malloc(Mz * sizeof(double));
-  SigcF = (double *) malloc(Mz * sizeof(double));
-  TG = (double *) malloc(Mz * sizeof(double));
-  UG = (double *) malloc(Mz * sizeof(double));
-  wG = (double *) malloc(Mz * sizeof(double));
-  SigG = (double *) malloc(Mz * sizeof(double));
-  SigcG = (double *) malloc(Mz * sizeof(double));
+  TF = (double *) malloc((size_t)Mz * sizeof(double));
+  UF = (double *) malloc((size_t)Mz * sizeof(double));
+  wF = (double *) malloc((size_t)Mz * sizeof(double));
+  SigF = (double *) malloc((size_t)Mz * sizeof(double));
+  SigcF = (double *) malloc((size_t)Mz * sizeof(double));
+  TG = (double *) malloc((size_t)Mz * sizeof(double));
+  UG = (double *) malloc((size_t)Mz * sizeof(double));
+  wG = (double *) malloc((size_t)Mz * sizeof(double));
+  SigG = (double *) malloc((size_t)Mz * sizeof(double));
+  SigcG = (double *) malloc((size_t)Mz * sizeof(double));
   if ((TF == NULL) || (UF == NULL) || (wF == NULL) || (SigF == NULL)
       || (SigcF == NULL) || (TG == NULL) || (UG == NULL) || (wG == NULL)
       || (SigG == NULL) || (SigcG == NULL)) { 

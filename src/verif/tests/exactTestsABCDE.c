@@ -124,6 +124,8 @@ int exactD(const double t, const double rin, double *H, double *M) {
                                    /* (EISMINT value) flow law parameter */
 
   double       r=rin;
+  double       Gamma, power, s, lamhat, f, Hs, temp, C, Ms, df, ddf, chi, dchi,
+               ddchi, c1, dHs, ddHs, dH, ddH, divterms, Mc;
  
   if (r < 0.0) r=-r;
  
@@ -134,27 +136,24 @@ int exactD(const double t, const double rin, double *H, double *M) {
           if (r < 0.01) r = 0.01;  /* avoid r=0 singularity in formulas */
           
 	  /* important derived quantities */
-	  double Gamma = 2 * pow(rho * g,n) * A / (n+2);
-	  double power = n / (2*n+2);
-	  double s = r/L;
+	  Gamma = 2 * pow(rho * g,n) * A / (n+2);
+	  power = n / (2*n+2);
+	  s = r/L;
 
 	  /* compute H from analytical steady state Hs plus perturbation */
-	  double lamhat = (1+1/n)*s - (1/n) + pow(1-s,1+1/n) - pow(s,1+1/n);
-	  double f;
+	  lamhat = (1+1/n)*s - (1/n) + pow(1-s,1+1/n) - pow(s,1+1/n);
 	  if ((r>0.3*L) && (r<0.9*L))    f = pow( cos(pi*(r-0.6*L)/(0.6*L)) ,2.0);
 	  else                           f = 0.0;
-	  double Hs = (H0 / pow(1-1/n,power)) * pow(lamhat,power);
+	  Hs = (H0 / pow(1-1/n,power)) * pow(lamhat,power);
 	  *H = Hs + Cp * sin(2.0*pi*t/Tp) * f;
 
 	  /* compute steady part of accumulation */
-	  double temp = pow(s,1/n) + pow(1-s,1/n) - 1;
-	  double C = Gamma * pow(H0,2*n+2) / pow(2.0 * L * (1-1/n),n);
-	  double Ms = (C/r) * pow(temp,n-1)
+	  temp = pow(s,1/n) + pow(1-s,1/n) - 1;
+	  C = Gamma * pow(H0,2*n+2) / pow(2.0 * L * (1-1/n),n);
+	  Ms = (C/r) * pow(temp,n-1)
 	                *  ( 2*pow(s,1/n) + pow(1-s,(1/n)-1) * (1 - 2*s) - 1 );
 
 	  /* derivs of H */
-	  double df, ddf, chi, dchi, ddchi, c1, dHs, ddHs, dH, ddH, 
-	         divterms, Mc;
 	  if ((r>0.3*L) && (r<0.9*L)) {
 	    df = -(pi/(0.6*L)) * sin(pi*(r-0.6*L)/(0.3*L));
 	    ddf = -(pi*pi/(0.18*L*L)) * cos(pi*(r-0.6*L)/(0.3*L));
@@ -256,3 +255,4 @@ int exactE(const double xIN, const double yIN,
   }
   return 0;
 }
+
