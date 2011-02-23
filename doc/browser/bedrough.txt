@@ -40,10 +40,10 @@ Consider also the "local bed topography"
 As a function of the local coordinates \f$\xi_1,\xi_2\f$, the local bed topography \f$\tilde b\f$ is the amount by which the bed deviates from the "local average" \f$b_s(x_1,x_2)\f$.  Generally we will use \f$-\lambda_1 \le \xi_1 \le \lambda_1\f$, \f$-\lambda_2 \le \xi_2 \le \lambda_2\f$ as the smoothing domain, but these specific ranges are not required by the formulas above.  Note that the average of the local bed topgraphy is zero by definition:
   \f[ \fint \tilde b(x_1,x_2,\xi_1,\xi_2)\,d\xi_1\,d\xi_2 = 0. \f]
 
-The result of Schoof's scaling arguments [\ref Schoofbasaltopg2003, equation (49)] is to modify the diffusivity by multiplying by a factor \f$0 \le \theta \le 1\f$:
+The result of Schoof's scaling arguments ([\ref Schoofbasaltopg2003], equation (49)] is to modify the diffusivity by multiplying by a factor \f$0 \le \theta \le 1\f$:
   \f[ D = \theta(h(x_1,x_2),x_1,x_2) \, D_{SIA}. \f]
 where \f$D_{SIA}\f$ is defined by (\ref siadiffusivity) earlier, and
-  \f[ \theta(h,x_1,x_2) = \left[ \fint \left(1 - \frac{\tilde b(x_1,x_2,\xi_1,\xi_2)}{H}\right)^{-(n+2)/n}\,d\xi_1\,d\xi_2 \right]^{-n} \tag{theta} \f]
+  \f[ \theta(h,x_1,x_2) = \left[ \fint \left(1 - \frac{\tilde b(x_1,x_2,\xi_1,\xi_2)}{H}\right)^{-(n+2)/n}\,d\xi_1\,d\xi_2 \right]^{-n} \tag{thetadefn} \f]
 Here the ice thickness and ice surface elevation are related to the \e smoothed bed topography, so that in PISM notation
   \f[ H(t,x_1,x_2) = h(t,x_1,x_2) - b_s(x_1,x_2). \f]
 This can be treated as the \e definition of the ice thickness \f$H\f$ in the above formula for \f$\theta\f$.
@@ -55,7 +55,7 @@ The very important fact that \f$0 \le \theta \le 1\f$ is proven in appendix A of
 
 \section application Practical application, and Taylor approximation
 
-The above formulas already reflect the recommendations Schoof gives on how to apply his formulas [\ref Schoofbasaltopg2003, subsection 4.2].  The rest of this page is devoted to how the class PISMBedSmoother implements a practical version of this theory, based on these recommendations plus some additional approximation.
+The above formulas already reflect the recommendations Schoof gives on how to apply his formulas ([\ref Schoofbasaltopg2003], subsection 4.2).  The rest of this page is devoted to how the class PISMBedSmoother implements a practical version of this theory, based on these recommendations plus some additional approximation.
 
 The averages appearing in his scaling arguments are over an infinite domain, %e.g.
   \f[ f_s(x) = \lim_{R\to\infty} \frac{1}{2R} \int_{-R}^R f(\xi,x)\,d\xi. \f]
@@ -64,11 +64,11 @@ For practical modeling use, Schoof specifically recommends averaging over some f
 
 It is, of course, possible to have bed roughness of significant magnitude at essentially any wavelength.  We make no claim that PISM results are good models of ice flow over \e arbitrary geometry; clearly the current models cannot come close to the non-shallow solution (Stokes) in such cases.  Rather, the goal right now is to improve on the existing shallow models, the diffusive SIA specifically, while maintaining or increasing high-resolution performance and comprehensive model quality, which necessarily includes many other modeled physical processes like ice thermal state, basal lubrication, and so on.  The desirable properties of the Schoof scheme are accepted not because the resulting model is perfect, but because we gain both a physical modeling improvement \e and a computational performance improvement from its use.
 
-How do we actually compute expression (\ref theta) quickly?  Schoof has this suggestion, which we follow: ""To find \f$\theta\f$ for values of [surface elevation for which \f$\theta\f$ has not already been computed], some interpolation scheme should then be used.  \f$\theta\f$ is then represented at each grid point by some locally-defined interpolating function [of the surface elevation].""  
+How do we actually compute expression (\ref thetadefn) quickly?  Schoof has this suggestion, which we follow: ""To find \f$\theta\f$ for values of [surface elevation for which \f$\theta\f$ has not already been computed], some interpolation scheme should then be used.  \f$\theta\f$ is then represented at each grid point by some locally-defined interpolating function [of the surface elevation].""  
 
 We need a "locally-defined interpolating function".  As with any approximation scheme, higher accuracy is achieved by doing "more work", which here is an increase in memory used for storing spatially-dependent coefficients.  Pade rational approximations, for example, were considered but are excluded because of the appearance of uncontrolled poles in the domain of approximation.  The 4th degree Taylor polynomial is chosen here because it shares the same convexity as the rational function it approximates; this is proven below.
 
-Use of Taylor polynomial \f$P_4(x)\f$ only requires the storage of three fields (below), but it has been demonstrated to be reasonably accurate by trying beds of various roughnesses in Matlab/Octave scripts.  The derivation of the Taylor polynomial is most easily understood by starting with an abstract rational function like the one which appears in (\ref theta), as follows.
+Use of Taylor polynomial \f$P_4(x)\f$ only requires the storage of three fields (below), but it has been demonstrated to be reasonably accurate by trying beds of various roughnesses in Matlab/Octave scripts.  The derivation of the Taylor polynomial is most easily understood by starting with an abstract rational function like the one which appears in (\ref thetadefn), as follows.
 
 The fourth-order Taylor polynomial of the function \f$F(s)=(1-s)^{-k}\f$ around \f$s=0\f$ is
     \f[ P_4(s) = 1 + k s + \frac{k(k+1)}{2} s^2 + \dots + \frac{k(k+1)(k+2)(k+3)}{4!} s^4, \f]

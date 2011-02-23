@@ -17,6 +17,7 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
     std_names.txt
     vertchange.txt
     howto.txt
+    pism.sty
     )
 
   configure_file (../ice_bib.bib ice_bib.bib COPYONLY)
@@ -87,3 +88,4 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
   endif ()
 
 endif ()
+

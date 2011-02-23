@@ -1071,7 +1071,7 @@ PAPER_TYPE             = letter
 
 EXTRA_PACKAGES         = amsmath \
                          txfonts \
-                         ${CMAKE_CURRENT_SOURCE_DIR}/browser/pism
+                         ${CMAKE_CURRENT_SOURCE_DIR}/pism
 
 # The LATEX_HEADER tag can be used to specify a personal LaTeX header for
 # the generated latex document. The header should contain everything until

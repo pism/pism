@@ -588,10 +588,14 @@ INPUT                  = pism_config.txt \
                          howto.txt \
                          ${PROJECT_SOURCE_DIR}/src/ \
                          ${PROJECT_SOURCE_DIR}/src/base/ \
+                         ${PROJECT_SOURCE_DIR}/src/base/energy/ \
+                         ${PROJECT_SOURCE_DIR}/src/base/rheology/ \
+                         ${PROJECT_SOURCE_DIR}/src/base/stressbalance/ \
                          ${PROJECT_SOURCE_DIR}/src/software_tests/ \
                          ${PROJECT_SOURCE_DIR}/src/coupler/ \
                          ${PROJECT_SOURCE_DIR}/src/earth/ \
                          ${PROJECT_SOURCE_DIR}/src/verif/ \
+                         ${PROJECT_SOURCE_DIR}/src/verif/tests/ \
                          ${PROJECT_SOURCE_DIR}/src/eismint/ \
                          ${PROJECT_SOURCE_DIR}/src/ismip/ \
 			 ${PROJECT_SOURCE_DIR}/test/ \
@@ -1093,7 +1097,7 @@ PAPER_TYPE             = letter
 
 EXTRA_PACKAGES         = amsmath \
                          txfonts \
-                         ${CMAKE_CURRENT_SOURCE_DIR}/browser/pism
+                         ${CMAKE_CURRENT_SOURCE_DIR}/pism
 
 # The LATEX_HEADER tag can be used to specify a personal LaTeX header for
 # the generated latex document. The header should contain everything until
