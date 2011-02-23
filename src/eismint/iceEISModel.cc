@@ -60,14 +60,13 @@ PetscErrorCode IceEISModel::set_expername_from_options() {
   PetscErrorCode      ierr;
 
   string                eisIIexpername = "A";
-  int                 temp;
+  char               temp;
   bool          EISIIchosen;
   ierr = PISMOptionsString("-eisII", "EISMINT II experiment name",
 			   eisIIexpername, EISIIchosen);
             CHKERRQ(ierr);
   if (EISIIchosen == PETSC_TRUE) {
-    temp = eisIIexpername[0];
-    if ((temp >= 'a') && (temp <= 'z'))   temp += 'A'-'a';  // capitalize if lower
+    temp = (char)toupper(eisIIexpername.c_str()[0]);
     if ((temp >= 'A') && (temp <= 'L')) {
       expername = temp;
     } else {

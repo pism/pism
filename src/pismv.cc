@@ -36,7 +36,7 @@ static char help[] =
 // a wrapper that seems to be necessary to make std::transform below work
 static inline char pism_toupper(char c)
 {
-    return std::toupper(c);
+    return (char)std::toupper(c);
 }
 
 int main(int argc, char *argv[]) {

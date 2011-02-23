@@ -345,14 +345,14 @@ PetscScalar IceModelVec2S::diff_x_stagE(int i, int j) {
 }
 
 //! \brief Returns the y-derivative at East staggered point i+1/2,j approximated 
-//! using centered [\ref Mahaffy] finite differences.
+//! using centered finite differences.
 PetscScalar IceModelVec2S::diff_y_stagE(int i, int j) {
   return (   (*this)(i+1,j+1) + (*this)(i,j+1)
            - (*this)(i+1,j-1) - (*this)(i,j-1) ) / ( 4* grid->dy);
 }
 
 //! \brief Returns the x-derivative at North staggered point i,j+1/2 approximated 
-//! using centered [\ref Mahaffy] finite differences.
+//! using centered finite differences.
 PetscScalar IceModelVec2S::diff_x_stagN(int i, int j) {
   return (   (*this)(i+1,j+1) + (*this)(i+1,j)
            - (*this)(i-1,j+1) - (*this)(i-1,j) ) / ( 4* grid->dx);

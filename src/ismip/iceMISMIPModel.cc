@@ -415,8 +415,8 @@ PetscErrorCode IceMISMIPModel::init_physics() {
     // ierr = ice->printInfo(2);CHKERRQ(ierr);
   }
 
-
-  PetscReal FIX_ssa_strength_extension;
+//FIXME:
+  //PetscReal FIX_ssa_strength_extension;
   // ssaStrengthExtend.set_min_thickness(5.0); // m
   // const PetscReal
   //   DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8,  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996

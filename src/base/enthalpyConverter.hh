@@ -108,24 +108,38 @@ public:
     //config.set("water_triple_point_temperature",T_triple);
     //config.set_flag("do_cold_ice_methods",true);
   }
+
   virtual ~ICMEnthalpyConverter() {}
-  virtual double getMeltingTemp(double p) const { return T_triple; }
-  virtual PetscErrorCode getAbsTemp(double E, double p,
+
+  /*! */
+  virtual double getMeltingTemp(double /*p*/) const { return T_triple; }
+
+  /*! */
+  virtual PetscErrorCode getAbsTemp(double E, double /*p*/,
                                     double &T) const {
     T = E / c_i; return 0; }
-  virtual PetscErrorCode getWaterFraction(double E, double p,
+
+  /*! */
+  virtual PetscErrorCode getWaterFraction(double /*E*/, double /*p*/,
                                           double &omega) const {
     omega = 0.0; return 0; }
-  virtual PetscErrorCode getEnth(double T, double omega, double p, 
+
+  /*! */
+  virtual PetscErrorCode getEnth(double T, double /*omega*/, double /*p*/, 
                                  double &E) const {
     E = c_i * T; return 0; }
-  virtual PetscErrorCode getEnthPermissive(double T, double omega, double p,
+
+  /*! */
+  virtual PetscErrorCode getEnthPermissive(double T, double /*omega*/, double /*p*/,
                                            double &E) const {
     E = c_i * T; return 0; }
-  virtual PetscErrorCode getEnthAtWaterFraction(double omega, double p,
+
+  /*! */
+  virtual PetscErrorCode getEnthAtWaterFraction(double /*omega*/, double p,
                                                 double &E) const {
     E = getEnthalpyCTS(p); return 0; }
-  virtual bool isTemperate(double E, double p) const { return false; }
+
+  virtual bool isTemperate(double /*E*/, double /*p*/) const { return false; }
 };
 
 

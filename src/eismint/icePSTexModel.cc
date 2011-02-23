@@ -290,12 +290,13 @@ PetscErrorCode IcePSTexModel::init_physics() {
     config.set_flag("use_ssa_when_grounded", true);
   }  
 
+  //FIXME:
   // typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
-  const PetscScalar TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);
-  const PetscScalar H_SSA_EXTENSION = 50.0; // m; thickness of ice shelf extension
-  const PetscScalar constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
-  const PetscScalar PSTconstantNuHForSSA = H_SSA_EXTENSION * constantHardnessForSSA
-                      / (2.0 * pow(TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
+  //const PetscScalar TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);
+  //const PetscScalar H_SSA_EXTENSION = 50.0; // m; thickness of ice shelf extension
+  //const PetscScalar constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
+  //const PetscScalar PSTconstantNuHForSSA = H_SSA_EXTENSION * constantHardnessForSSA
+  //                    / (2.0 * pow(TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
 
   // FIXME: looks like we need to expose SIA and SSA solvers...
   //  ssaStrengthExtend.set_notional_strength(PSTconstantNuHForSSA);
