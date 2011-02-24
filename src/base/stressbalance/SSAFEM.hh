@@ -58,11 +58,12 @@ private:
 };
 
 
+class SSAFEM;
+
 //! The callbacks from SNES are mediated via SNESDAFormFunction, which has the
 //! convention that its context argument is a pointer to a struct argument 
 //! having a DA as its first entry.  The FECTX fulfills this requirement, and
 //! allows for passing the callback on to an honest SSAFEM object.
-class SSAFEM;
 struct FECTX {
   DA           da;
   SSAFEM      *ssa;
@@ -109,7 +110,7 @@ protected:
                                              PetscReal *,PetscReal *,PetscReal *,PetscReal *);
 
   virtual void FixDirichletValues(PetscReal lmask[],PISMVector2 **BC_vel,
-                                                      PISMVector2 x[], DOFMap &dofmap);
+                                                      PISMVector2 x[], FEDOFMap &dofmap);
 
   virtual PetscErrorCode allocate_fem();
 
@@ -138,9 +139,9 @@ protected:
   PetscReal    earth_grav;
   PismRef      ref;
 
-  IceGridElementIndexer element_index;
-  Quadrature quadrature;
-  DOFMap dofmap;
+  FEElementMap element_index;
+  FEQuadrature quadrature;
+  FEDOFMap dofmap;
 };
 
 
