@@ -65,6 +65,7 @@ PetscErrorCode SSAFD::allocate_fd() {
   return 0;
 }
 
+//! \brief De-allocate SIAFD internal objects.
 PetscErrorCode SSAFD::deallocate_fd() {
   PetscErrorCode ierr;
 

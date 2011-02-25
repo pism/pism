@@ -60,6 +60,35 @@ what is printed to the standard output.  This includes the \texttt{-help} and \t
 
 The following sections describe more input and output options, especially related to saving quantities during a run, or adding to the ``diagnostic'' outputs of PISM.
 
+\subsubsection{PISM file I/O performance}
+\label{sec:pism-io-performance}
+
+When working with fine grids\footnote{Resolutions of 2km and higher on the
+  whole-Greenland scale is an example.}, the time PISM spends writing output,
+spatial time-series or backup files can become significant.
+
+It turns out that it is a lot faster to read and write files using the
+\texttt{t,x,y,z} storage order, as opposed to the more convenient
+\texttt{t,z,y,x} order.
+
+The reason is that PISM uses the \texttt{x,y,z} order internally\footnote{This
+  is not likely to change.} and transposing an array stored in memory is an
+inherently computationally expensive operation, because it involves
+simultaneously accessing memory locations that are ``far away'' from each
+other.
+
+To transpose dimensions in an existing file, use the \texttt{ncpdq} (``permute
+dimensions quickly'') tool from the NCO (\emph{NetCDF Operators}) suite.
+
+Run
+\begin{verbatim}
+$ ncpdq -a t,z,zb,y,x bad.nc good.nc
+\end{verbatim}%$
+to turn \texttt{bad.nc} (with an unspecified inconvenient storage order) into
+\texttt{good.nc} using the \texttt{t,z,y,x} order.
+
+You can also re-compile PISM to change the default storage order of PISM output
+files: look for the \texttt{Pism_FAST_WRITE} CMake flag.
 
 \subsection{Saving time series of scalar diagnostic quantities}\index{time-series}\index{PISM!saving time-series}
 \label{sec:saving-time-series}
@@ -334,7 +363,7 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
 \optsection{Run-time diagnostic viewers}
 Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.
 All the quantities listed in table \ref{tab:extra-vars} are available.
-%FIXME: this is out of date
+
 Note that (for performance and implementation reasons) map and slice viewers
 are transposed.
 
@@ -346,9 +375,7 @@ are transposed.
     \textbf{Option} & \textbf{Description}\\
     \midrule
     \listopt{view_map} & Turns on map-plane views of one or several variables, see tables \ref{tab:extra-vars}  \\
-    \listopt{view_slice} & Turns on viewers showing a slice of a 3D field at a certain level above the base of ice\\
-    \txtopt{view_slice_level}{(meters)}& Specifies the level for the previous option\\
-    \intextoption{viewer_size} number & desired viewer size, in pixels\\
+    \txtopt{viewer_size}{number} & desired viewer size, in pixels\\
     \listopt{view_sounding} &Turns on sounding viewers showing values in a column\\
     \txtopt{id}{row} & Sounding row-index\\
     \txtopt{jd}{column} & Sounding column-index\\
@@ -361,17 +388,12 @@ are transposed.
   \end{tabular}
  \label{tab:diag-viewers}
 \end{table}
-The option \texttt{-view_map} shows map-plane views of 2D fields and surface views of 3D fields; for example:
+The option \texttt{-view_map} shows map-plane views of 2D fields and surface
+and basal views of 3D fields (see table \ref{tab:extra-vars}); for example:
 \begin{verbatim}
-$ pismr -i input.nc -y 1000 -o output.nc -view_map thk,temp 
+$ pismr -i input.nc -y 1000 -o output.nc -view_map thk,tempsurf
 \end{verbatim}
 shows ice thickness and ice temperature at the surface.
-
-It is possible to view 3D fields \emph{at a certain level above the base of the ice}:
-\begin{verbatim}
-$ pismr -i input.nc -y 1000 -o output.nc -view_slice temp -slice_level 1000
-\end{verbatim}
-shows the view of the ice temperature at 1000 meters above the base. (This will show air temperature in areas where ice thickness is less than 1000 meters.)
 
 The option \texttt{-view_sounding} allows viewing a \emph{sounding} of a variable at a given grid point:
 \begin{verbatim}
@@ -817,7 +839,7 @@ to ice-dynamics, but ignores \texttt{-surface}, \texttt{-atmosphere} and all
 related options.
 
 It can run on 2 and more processors (use \texttt{mpiexec -n XX} with
-\texttt{XX} $> 2$) and takes the following extra options:
+\texttt{XX} $> 2$) and takes the following additional options:
 
 \begin{table}[h]
   \centering
@@ -828,11 +850,11 @@ It can run on 2 and more processors (use \texttt{mpiexec -n XX} with
     \txtopt{ebm_command}{``command''} & specifies a command that runs an EBM, enclosed in double quotes,\\
     \fileopt{ebm_input_file} & the file an EBM will read from\\
     \fileopt{ebm_output_file} & the file an EBM will produce and PISM will read \texttt{acab} and \texttt{artm} from\\
-    \listopt{ebm_vars} & list of variables PISM has to write to \intextoption{ebm_input_file}, defaults to \texttt{topg,usurf}\\
+    \listopt{ebm_vars} & list of variables PISM has to write to \texttt{-ebm_input_file}, defaults to \texttt{topg,usurf}\\
     \txtopt{update_interval}{years} & EBM update interval \\
     \txtopt{artm_lapse_rate}{$\gamma$} & the lapse rate for the \texttt{artm} variable, in degrees
     Kelvin per kilometer. Disables the code reading artm from the
-    \intextoption{ebm_output_file} and uses PISM code for the lapse-rate correction. 
+    \texttt{-ebm_output_file} and uses PISM code for the lapse-rate correction. 
    \\\bottomrule
  \end{tabular}
   \caption{\texttt{pismebm} options}
@@ -842,13 +864,13 @@ It can run on 2 and more processors (use \texttt{mpiexec -n XX} with
 So, if "\texttt{ebm -i ebm_in.nc -o ebm_out.nc}" is the command running an EBM,
 run something similar to
 \begin{verbatim}
-$ mpiexec -n NN pismebm -ebm_command "ebm -i ebm_in.nc -o ebm_out.nc" \
+$ mpiexec -n 5 pismebm -ebm_command "ebm -i ebm_in.nc -o ebm_out.nc" \
   -ebm_input_file ebm_in.nc -ebm_output_file ebm_out.nc \
   -update_interval 10 [other PISM options]
 \end{verbatim}%$
 to use this code.
 
-The command above will use \texttt{NN}$-1$ processors to run the ice-sheet
+The command above will use $5-1=4$ processors to run the ice-sheet
 model and the remaining (one) processor to periodically run an EBM.
 
 In this particular case, an EBM will run at the beginning of the model
@@ -870,6 +892,93 @@ to use with a particular model and vice versa.
 
 You can find an example "fake EBM" Python script in the "\texttt{util}"
 directory of the PISM source tree, \texttt{util/ebm}.
+
+\subsection{Using PISM for flow-line modeling}
+\label{sec:flowline-modeling}
+\optsection{Flow-line modeling}
+
+As described in sections \ref{subsect:coords} and \ref{subsect:grid}, PISM is a
+three-dimensional model. Moreover, parameters
+\texttt{Mx} and \texttt{My} have to be greater than or equal to three, so it is
+not possible to turn PISM into a 2D (flow-line) model by setting \texttt{Mx} or
+\texttt{My} to 1.
+
+There is a way around this, though: by using the \intextoption{periodicity}
+option to tell PISM to make the computational grid $y$-periodic and providing
+initial and boundary conditions that are functions of $x$ only one can ensure
+that there is no flow in the $y$-direction. (Option \intextoption{periodicity}
+takes an argument specifying the direction: \texttt{none}, \texttt{x},
+\texttt{y} and \texttt{xy}--- for ``periodic in both X- and Y-directions''.)
+
+In this case \texttt{Mx} can be any number; we want to avoid unnecessary
+computations, though, so ``\texttt{-Mx 3}'' is the obvious choice.
+
+One remaining problem is that PISM still expects input files to contain both
+\texttt{x} and \texttt{y} dimensions. To help with this, PISM comes with a
+Python script \texttt{flowline.py} that turns NetCDF files with $N$ grid points
+along a flow line into files with 2D fields containing $N\times3$ grid
+points.\footnote{This script requires \texttt{numpy}, \texttt{netCDF3} or
+  \texttt{netCDF4} Python modules. Please run \texttt{flowline.py --help} for a
+  full list of options.}
+
+Here's an example. The script below creates a minimal (and obviously
+unphysical) dataset. It describes ice geometry (variables \texttt{thk} and
+\texttt{topg}) and the boundary conditions required by the \texttt{constant}
+surface model (variables \texttt{acab} and \texttt{artm}; see section
+\ref{sec:boundary-models}). \footnote{We recommend creating more metadata-rich
+  datasets; this script contains the bare minimum to make it shorter.}
+\begin{verbatim}
+#!/usr/bin/env python
+from numpy import linspace, minimum, maximum, abs
+import netCDF4
+
+Lx         = 1000e3                     # 1000 km
+Mx         = 501
+topg_slope = -1e-4
+thk_0      = 1e3                        # meters
+acab_0     = 0                          # m / year
+artm_0     = -10                        # Celsius
+
+nc = netCDF4.Dataset("slab.nc", 'w')
+nc.createDimension('x', Mx)
+
+x    = nc.createVariable('x',    'f4', ('x',))
+topg = nc.createVariable('topg', 'f4', ('x',))
+thk  = nc.createVariable('thk',  'f4', ('x',))
+acab = nc.createVariable('acab', 'f4', ('x',))
+artm = nc.createVariable('artm', 'f4', ('x',))
+
+x[:]    = linspace(-Lx, Lx, Mx);    x.units = "m"
+topg[:] = topg_slope * (x[:] - Lx); topg.units = "m"
+
+thk[:] =  maximum(minimum(5e3 - abs(x[:])*0.01, thk_0),0)
+thk.units = "m"
+
+acab[:] = acab_0; acab.units = "m / year"
+artm[:] = artm_0; artm.units = "Celsius"
+
+nc.close()
+\end{verbatim}
+
+The file \texttt{slab.nc}, created by this script, is not ready to use with
+PISM. However, running
+\begin{verbatim}
+$ flowline.py -o slab-in.nc --expand -d y slab.nc
+\end{verbatim} %$
+produces  a PISM-ready \texttt{slab-in.nc}--- by telling \texttt{flowline.py} to
+``expand'' its input file in the ``y''-direction.
+
+Now we can ``bootstrap'' from \texttt{slab-in.nc}:
+\begin{verbatim}
+$ mpiexec -n 2 pismr -surface constant -boot_file slab-in.nc \
+    -Mx 201 -My 3 -Lx 1000 -Ly 4 -Lz 2000 -Mz 11 -periodicity y \
+    -y 10000 -o pism-out.nc
+\end{verbatim}%$
+
+To make it easier to visualize data in the file created by PISM, ``collapse'' it:
+\begin{verbatim}
+$ flowline.py -o slab-out.nc --collapse -d y pism-out.nc
+\end{verbatim}%$
 
 %%% Local Variables: 
 %%% mode: latex

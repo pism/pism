@@ -47,13 +47,13 @@ The PISM grid\index{PISM!grid} covering the computational box is equally spaced 
 
 The grid is described by four numbers, namely the number of grid points \texttt{Mx} in the $x$ direction, the number \texttt{My} in the $y$ direction, the number \texttt{Mz} in the $z$ direction within the ice, and the number \texttt{Mbz} in the $z$ direction within the bedrock thermal layer.  These are specified by options \intextoption{Mx}, \intextoption{My}, \intextoption{Mz}, and \intextoption{Mbz}, respectively. The defaults are 61, 61, 31, and 1, respectively.
 
-Note that \texttt{Mx}, \texttt{My}, \texttt{Mz}, and \texttt{Mbz} all indicate the number of grid \emph{points}.  The number of grid \emph{spaces} are one less, thus 60, 60, 30, and 0 in the default case.  The lowest grid point in a column of ice, at $z=0$, coincides with the highest grid point in the bedrock, so \texttt{Mbz} must always be at least one and \texttt{Mbz}$>1$ is required to use the bedrock thermal model.  Note that this option is unrelated to the bed deformation model (glacial isostasy model); see option \texttt{-bed_def} for that.
+Note that \texttt{Mx}, \texttt{My}, \texttt{Mz}, and \texttt{Mbz} all indicate the number of grid \emph{points}.  The numbers of grid \emph{spaces} are one less, thus 60, 60, 30, and 0 in the default case.  The lowest grid point in a column of ice, at $z=0$, coincides with the highest grid point in the bedrock, so \texttt{Mbz} must always be at least one and \texttt{Mbz}$>1$ is required to use the bedrock thermal model.  Note that this option is unrelated to the bed deformation model (glacial isostasy model); see option \texttt{-bed_def} (section \ref{subsect:beddef}) for that.
 
 In the quadratic case, the spacing near the ice/bedrock interface is about four times finer than it would be with equal spacing for the same value of \texttt{Mz} (or \texttt{Mbz}), while the spacing near the top (or bottom) is correspondingly coarser. For a detailed description of the spacing of the grid, see the documentation on \texttt{IceGrid::compute_vertical_levels()} in the PISM class browser.
 
 When a thermal bedrock layer is used, the distance \texttt{Lbz} is controlled by the \texttt{-Lbz} option.
 
-If one initializes PISM from a saved model state using \t{i} then the input model state controls the parameters \t{Mx}, \t{My}, \t{Mz}, and \t{Mbz}.  For instance, the command
+If one initializes PISM from a saved model state using \t{-i} then the input model state controls all computational grid parameters.  For instance, the command
 
 \begin{verbatim}
 $  pismr -i foo.nc -y 100
@@ -89,8 +89,10 @@ The following command-line options control PISM time.
 The default value for the end year is the start year (\texttt{-ys} or initialized model time from file) plus the default or given (\texttt{-y}) run length.  If both \texttt{-ys} and \texttt{-ye} are used then the run length is set to the difference.  Using all three of \texttt{-ys}, \texttt{-y} and \texttt{-ys} is not allowed.
 
 
-\subsection{Diagnostic computations}  As a diagnostic example, consider the second of these two runs:
+\subsection{Diagnostic computations}
+\label{sec:diagnostic-computations}
 
+ As a diagnostic example, consider the second of these two runs:
 \begin{verbatim}
 pisms -y 6000 -o foo.nc
 pismr -i foo.nc -y 0 -o bar.nc -o_size big
@@ -98,9 +100,11 @@ pismr -i foo.nc -y 0 -o bar.nc -o_size big
 
 \noindent The result of this zero-length, ``\texttt{-y 0}'', run is a NetCDF file \texttt{bar.nc} which contains the full three-dimensional velocity field in the scalar NetCDF variables \texttt{uvel}, \texttt{vvel}, and \texttt{wvel}, as well as many other variables.  The file \texttt{foo.nc} does not contain many of these fields because it was written with the default output size of \texttt{medium}.  The ``\texttt{-y 0}'' run has diagnostically ``filled-in'' the fields which PISM can model at a time step, but the model state has not evolved.
 
+In fact, during such a run PISM performs one short time-step to compute ``rates of change'' of ice thickness, surface elevation and other fields, but the model state \emph{is reset} after this step, so re-starting from \texttt{foo.nc} above would give the same result as re-starting from \texttt{bar.nc}.
+
 This diagnostic mode is most frequently associated to the modeling of ice shelves and ice streams.  Subsection \ref{sect:ross} describes using \texttt{pross} to model the Ross ice shelf \cite{MacAyealetal}.  Verification tests I and J, section \ref{sect:verif}, are diagnostic calculations using the SSA.
 
-Note that the NetCDF model state saved by PISM at the end of an \emph{evolution} run does not, by default, contain the three-dimensional velocity field.  Instead, it contains just a bit more than the variables which are needed to restart the run (default output size of \texttt{medium}).  One can  force PISM to save all the supported diagnostic quantities at the end of a time-stepping run using the option \texttt{-o_size big}.  Or one can go back and do a ``\texttt{-y 0}'' diagnostic run.
+Note that the NetCDF model state saved by PISM at the end of an \emph{evolution} run does not, by default, contain the three-dimensional velocity field.  Instead, it contains just a bit more than the variables which are needed to restart the run.  One can  force PISM to save all the supported diagnostic quantities at the end of a time-stepping run using the option \texttt{-o_size big}.  Or one can go back and do a ``\texttt{-y 0}'' diagnostic run.
 
 
 \subsection{Computing ice age} \label{subsect:age}
@@ -140,7 +144,7 @@ In the polythermal (default) mode of PISM there is only one choice of the flow l
 
 Note that a ``flow law'' here means the function $F(\sigma,T,P,d)$ in the relation
 	$$\dot \eps_{ij} = F(\sigma,T,\omega,P,d)\, \sigma_{ij}'$$
-where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\omega$ is the liquid water fraction in the ice, $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$ so $\sigma$ is the second invariant of the stress deviator tensor, $P$ is the pressure, and $d$ is the grain size.  That is, we are addressing isotropic flow laws only.  In PISM one can choose the scalar function $F$ reasonably arbitrarily by modifying source code,\footnote{See source files \texttt{materials.hh}, \texttt{materials.cc} in \texttt{src/base/}.} or use the single polythermal law (above), or choose among a number of ``cold ice'' laws listed in table \ref{tab:flowlaw}.
+where $\dot \eps_{ij}$ is the strain rate tensor, $\sigma_{ij}'$ is the stress deviator tensor, $T$ is the ice temperature, $\omega$ is the liquid water fraction in the ice, $\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F$ so $\sigma$ is the second invariant of the stress deviator tensor, $P$ is the pressure, and $d$ is the grain size.  That is, we are addressing isotropic flow laws only.  In PISM one can choose the scalar function $F$ reasonably arbitrarily by modifying source code,\footnote{See source files \texttt{flowlaws.hh}, \texttt{flowlaws.cc} in \texttt{src/base/rheology/}.} or use the single polythermal law (above), or choose among a number of ``cold ice'' laws listed in table \ref{tab:flowlaw}.
 
 Note that the inverse form of such a flow law in needed for ice shelves and ice streams:
 	$$\sigma_{ij}' = 2 \nu(\dot\eps,T,P,d)\,\dot \eps_{ij} $$
@@ -183,7 +187,7 @@ In the case of \texttt{pross}, which performs the EISMINT Ross ice shelf interco
 \subsection{Choosing the stress balance}  \label{subsect:ssacontrol}
 \optsection{SSA as a sliding law}
 
-The shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} stress balance is used in PISM to describe the sliding of grounded ice and the formation of ice streams \cite{BBssasliding}, as well as being used as the only stress balance for floating ice.  For the SSA with ``plastic'' or ``Coulomb'' till the locations of ice streams is determined as part of a free boundary problem identified by Schoof \cite{SchoofStream}.  We believe that this mathematical description of ice streams should be regarded as the best existing ``sliding law'' for the SIA \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding laws}
+The shallow shelf approximation (SSA)\index{SSA (shallow shelf approximation)} stress balance is used in PISM to describe the sliding of grounded ice and the formation of ice streams \cite{BBssasliding}, as well as being used as the only stress balance for floating ice.  For the SSA with ``plastic'' or ``Coulomb'' till locations of ice streams are determined as part of a free boundary problem identified by Schoof \cite{SchoofStream}.  We believe that this mathematical description of ice streams should be regarded as the best existing ``sliding law'' for the SIA \cite{BBssasliding}.\index{SIA (shallow ice approximation)!sliding laws}
 
 Schoof's model \cite{SchoofStream} describes emergent ice streams within a larger ice sheet and ice shelf system.  It explains the existence of ice streams by a combination of the plastic failure of the till and the SSA approximation of the balance of momentum.  
 
@@ -223,7 +227,11 @@ in order to end the iteration with $\nu = \nu^{(k)}$.  See also \texttt{-ksp_rto
 \end{table}
 
 
-\subsection{Surface gradient method} \label{subsect:gradient}  PISM computes surface gradients to determine the ``driving stress''
+\subsection{Surface gradient method}
+\label{subsect:gradient}
+\optsection{Driving stress computation}
+
+PISM computes surface gradients to determine the ``driving stress''
 	$$(\tau_{d,x},\tau_{d,y}) = - \rho g H \grad h,$$
 where $H$ is the ice thickness, and $h = H+b$ is the ice surface elevation.  The driving stress enters into both the SIA and SSA stress balances, but in the former the driving stress is needed on a staggered grid, while in the latter the driving stress is needed on the regular grid.
 
@@ -241,7 +249,7 @@ Here $b$ is the bed elevation and $h$ is the surface elevation.  This transforma
 \subsection{Schoof's parameterization of bed roughness in the SIA} \label{subsect:bedsmooth} \index{Schoof's parameterization of bed roughness}
 \optsection{Schoof's parameterization of bed roughness}
 
-Christian Schoof's article \emph{The effect of basal topography on ice sheet dynamics} from 2003 \cite{Schoofbasaltopg2003} describes how to alter the SIA model to more-effectively preproduce ice flow in the vicinity of significant subglacial bedrock topgraphy.  This theory explains that one should use a smoothed (spatially-averaged) bed, but then lower the SIA diffusivity in a precise way in those regions where the significant topography was smoothed-away.  As a practical matter for PISM, this theory improves the SIA model's ability to handle bed roughness because it parameterizes the effects of "higher-order" stresses which act on the ice as it flows over bed topography.   But it also provides s double performance boost, because smoothed beds give longer time steps through the adaptive time-stepping mechanism, \emph{and} because the reduction of diffusivity, which is the parameterized effect of the local bed roughness, gives even longer time-steps.  For a technical description of PISM's implementation of this theory, see the \emph{Browser} page ``Using Schoof's (2003) parameterized bed roughness technique in PISM''.
+Christian Schoof's article \emph{The effect of basal topography on ice sheet dynamics} from 2003 \cite{Schoofbasaltopg2003} describes how to alter the SIA model to more-effectively reproduce ice flow in the vicinity of significant subglacial bedrock topgraphy.  This theory explains that one should use a smoothed (spatially-averaged) bed, but then lower the SIA diffusivity in a precise way in those regions where the significant topography was smoothed-away.  As a practical matter for PISM, this theory improves the SIA model's ability to handle bed roughness because it parameterizes the effects of "higher-order" stresses which act on the ice as it flows over bed topography.   But it also provides a double performance boost, because smoothed beds give longer time steps through the adaptive time-stepping mechanism, \emph{and} because the reduction of diffusivity, which is the parameterized effect of the local bed roughness, gives even longer time-steps.  For a technical description of PISM's implementation of this theory, see the \emph{Browser} page ``Using Schoof's (2003) parameterized bed roughness technique in PISM''.
 
 There is one option which controls this mechanism: \intextoption{bed_smoother_range} gives the half-width of the square smoothing domain in meters.  If zero is given, \texttt{-bed_smoother_range 0} then the mechanism is turned off.  The mechanism is on by default using executable \texttt{pismr}, with the half-width set to 5 km (\texttt{-bed_smoother_range 5.0e3}), giving the recommended smoothing size of 10 km \cite{Schoofbasaltopg2003}.  This mechanism is turned off by default in executables \texttt{pisms} and \texttt{pismv}.
 
@@ -255,7 +263,7 @@ The option \txtopt{bed_def}{[none, iso, lc]} turns on bed deformation models.
 
 The first model \verb|-bed_def iso|, is instantaneous pointwise isostasy.  This model assumes that the bed at the starting time is in equilibrium with the load.  Then, as the ice geometry evolves, the bed elevation is equal to the starting bed elevation minus a multiple of the increase in ice thickness from the starting time: $b(t,x,y) = b(0,x,y) - f [H(t,x,y) - H(0,x,y)]$.  Here $f$ is the density of ice divided by the density of the mantle, so its value is determined by setting the values of \verb|lithosphere_density| and \verb|ice_density| in the configuration file; see subsection \ref{sec:pism-defaults}.  For an example and verification, see Test H in Verification section. 
 
-The second model \verb|-bed_def lc| is much more effective.  It is based on papers by Lingle and Clark \cite{LingleClark}\index{People!Lingle, Craig} \index{People!Clark, J.} and Bueler and others \cite{BLKfastearth}.  It generalizes and improves the most widely-used earth deformation model in ice sheet modeling, the flat earth Elastic Lithosphere Relaxing Asthenosphere (ELRA) model \cite{Greve2001}.  It is imposes  essentially no computational burden because the Fast Fourier Transform to solve the linear differential equation \cite{BLKfastearth}.  When using this model in PISM, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  In fact, if gridded ``observed'' uplift data is available, for instance from a combination of actual point observations and/or paleo ice load modeling, and it that uplift field is put in a NetCDF variable with standard name \verb|tendency_of_bedrock_altitude| in the  \texttt{-boot_file} file, then this model will initialize so that it starts with the given uplift rate.
+The second model \verb|-bed_def lc| is much more effective.  It is based on papers by Lingle and Clark \cite{LingleClark}\index{People!Lingle, Craig} \index{People!Clark, J.} and Bueler and others \cite{BLKfastearth}.  It generalizes and improves the most widely-used earth deformation model in ice sheet modeling, the flat earth Elastic Lithosphere Relaxing Asthenosphere (ELRA) model \cite{Greve2001}.  It imposes  essentially no computational burden because the Fast Fourier Transform is used to solve the linear differential equation \cite{BLKfastearth}.  When using this model in PISM, the rate of bed movement (uplift) is stored in the PISM output file and then is used to initialize the next part of the run.  In fact, if gridded ``observed'' uplift data is available, for instance from a combination of actual point observations and/or paleo ice load modeling, and it that uplift field is put in a NetCDF variable with standard name \verb|tendency_of_bedrock_altitude| in the  \texttt{-boot_file} file, then this model will initialize so that it starts with the given uplift rate.
 
 Minimal example runs to compare these models:
 \begin{verbatim}

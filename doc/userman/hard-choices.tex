@@ -4,7 +4,7 @@
 
 Most uses of an ice sheet model depend on very careful modeling choices in situations where there are considerable uncertainties \emph{and} the model results depend strongly on those choices.  In these and other cases there may be, at the present state of knowledge, \emph{no clear default values} that a good ice sheet model can provide.
 
-The current section collects modeling choices which have this ``hard'' flavor.  The options related to these choices are known to be \emph{not} sufficient for all users.  These are modeling choices for which \emph{we know} the user may have to do a great deal more hard work than just choose among PISM runtime options.
+The current section collects some of the modeling choices which have this ``hard'' flavor.  The options related to these choices are known to be \emph{not} sufficient for all users.  These are modeling choices for which \emph{we know} the user may have to do a great deal more hard work than just choose among PISM runtime options.
 
 Here are real example cases where user have worked hard:
 \begin{itemize}
@@ -45,9 +45,10 @@ chooses a combination of the SeaRISE-Greenland atmosphere model (see below), mod
 
 Each of PISM boundary model types currently has one ``modifier'' available; the corresponding keyword is \texttt{forcing}. Please see below for details.
 
-\begin{enumerate}
+\subsubsection{PISM atmosphere models}
+\label{sec:pism-atmosphere}
 \optsection{Climate (boundary) models!\texttt{-atmosphere} [searise_greenland, constant, temp_lapse_rate, forcing]}
-\item \textbf{PISM atmosphere models.}
+
 \begin{itemize}
   \item \emph{SeaRISE-Greenland} (\texttt{searise_greenland}, the default)
 
@@ -77,8 +78,9 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
   Note that only one air temperature forcing mechanism can be used at any time.  %FIXME:  why?  esp. under r1281, should we allow "-dTforcing foo.nc -anomaly_temp bar.nc"?
 
+\subsubsection{PISM surface (snow) process models}
+\label{sec:pism-surface-snow}
 \optsection{Climate (boundary) models!\texttt{-surface} [simple, constant, given, pdd, forcing]}
-\item \textbf{PISM surface (snow) process models}
 
 \begin{itemize}
   \item \emph{The ``invisible'' model} (\texttt{simple}, the default)
@@ -116,7 +118,14 @@ To force PISM using monthly records with longer periods, just add more records t
   read and store in memory at most \texttt{climate_forcing_buffer_size} records
   at any given time (default: 60, or 5 years' worth of monthly fields).
 \item this surface model \emph{ignores} the atmosphere model selection made
-  using the \texttt{-atmosphere} option.
+  using the \texttt{-atmosphere} option,
+\item when preparing a file for use with this model, it is best to use the \texttt{t,x,y} variable storage order: files using this order can be read in faster than ones using the \texttt{t,y,x} order, for reasons explained in section \ref{sec:pism-io-performance}.
+
+To change the storage order in a NetCDF file, use \texttt{ncpdq}:
+\begin{verbatim}
+$ ncpdq -a t,x,y input.nc output.nc
+\end{verbatim}%$
+will copy data from \texttt{input.nc} into \texttt{output.nc}, changing the storage order to \texttt{t,x,y} at the same time.
 \end{itemize}
 
  \item \emph{Temperature-index (positive degree-day) scheme} (\texttt{pdd}) \index{temperature-index surface processes model} \index{positive degree day surface processes model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model} 
@@ -134,8 +143,10 @@ In addition to this, one can use latitude- and July-air-temperature-dependent Gr
 
 The \texttt{forcing} modifier implements a surface mass balance adjustment mechanism forcing ice thickness to a target distribution at the end of the run; option \fileopt{force_to_thk} selects a file containing the target ice thickness field. Option \intextoption{force_to_thk_alpha} sets the $\alpha$ parameter. See the documentation  of \texttt{PSForceThickness::ice_surface_mass_flux()} for details.
 
+\subsubsection{PISM ocean models}
+\label{sec:pism-ocean-models}
 \optsection{Climate (boundary) models!\texttt{-ocean} [constant, forcing]}
-\item \textbf{PISM ocean models}
+
 PISM includes one simple ocean model: \texttt{constant}, providing constant (both in time and space) mass flux into the ocean and sea level elevation to PISM's ice flow core. The mass flux is controlled by the\\ \texttt{ocean_sub_shelf_heat_flux_into_ice} configuration parameter and the assumption that the mass flux is proportional to heat flux into ice.
 
   The ocean \texttt{forcing} modifier implements sea level forcing. The command-line option \fileopt{dSLforcing} is used to specify the file containing sea level offsets:
@@ -143,9 +154,6 @@ PISM includes one simple ocean model: \texttt{constant}, providing constant (bot
 $ pismr -i in.nc -ocean constant,forcing -dSLforcing delta_SL.nc
 \end{verbatim}%$
 uses \texttt{delta_SL.nc}
-\end{enumerate}
-
-  
 
 \subsection{Controlling basal strength}  \label{subsect:basestrength}
 \optsection{Basal strength and sliding}
