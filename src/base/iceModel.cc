@@ -352,7 +352,8 @@ PetscErrorCode IceModel::createVecs() {
   // rescales from m/s to m/a when writing to NetCDF and std out:
   shelfbmassflux.write_in_glaciological_units = true;
   ierr = shelfbmassflux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  ierr = variables.add(shelfbmassflux); CHKERRQ(ierr);
+  // do not add; boundary models are in charge here
+  // ierr = variables.add(shelfbmassflux); CHKERRQ(ierr);
 
   // ice boundary tempature at the base of the ice shelf
   ierr = shelfbtemp.create(grid, "shelfbtemp", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!
@@ -360,7 +361,8 @@ PetscErrorCode IceModel::createVecs() {
            "climate_state", "absolute temperature at ice shelf base",
 	   "K", ""); CHKERRQ(ierr);
   // PROPOSED standard name = ice_shelf_basal_temperature
-  ierr = variables.add(shelfbtemp); CHKERRQ(ierr);
+  // do not add; boundary models are in charge here
+  // ierr = variables.add(shelfbtemp); CHKERRQ(ierr);
 
   return 0;
 }

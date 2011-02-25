@@ -31,21 +31,30 @@ IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
   n_records = 50;		// just a default
   T.resize(1);			// so that T[0] is always available
   report_range = false;
+  lic = NULL;
 }
 
 IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec2S(other) {
   shallow_copy = true;
-  localp = false;
 
-  times = other.times;
   T = other.T;
-  filename = other.filename;
-  da3 = other.da3;
-  v3 = other.v3;
   array3 = other.array3;
-  n_records = other.n_records;
+  da3 = other.da3;
+  filename = other.filename;
   first = other.first;
+  lic = other.lic;
+  localp = other.localp;
+  n_records = other.n_records;
+  times = other.times;
+  v3 = other.v3;
 }
+
+IceModelVec2T::~IceModelVec2T() {
+  if (!shallow_copy) {
+    delete lic;
+  }
+}
+
 
 //! Sets the number of records to store in memory. Call it before calling create().
 void IceModelVec2T::set_n_records(unsigned int N) {
@@ -119,8 +128,6 @@ PetscErrorCode IceModelVec2T::end_access() {
 PetscErrorCode IceModelVec2T::init(string fname) {
   PetscErrorCode ierr;
   NCTimeseries time_dimension;
-  PISMIO nc(grid);
-  grid_info gi;
 
   filename = fname;
   
@@ -141,9 +148,7 @@ PetscErrorCode IceModelVec2T::init(string fname) {
     PISMEnd();
   }
 
-  ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-  ierr = nc.get_grid_info(gi); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
+  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
 
   return 0;
 }
@@ -209,7 +214,13 @@ PetscErrorCode IceModelVec2T::update(int start) {
 		    times[start], times[start + missing - 1]);
 
   for (int j = 0; j < missing; ++j) {
-    ierr = regrid(filename.c_str(), true, start + j); CHKERRQ(ierr);
+    lic->start[0] = start + j;
+    lic->report_range = false;
+
+    ierr = vars[0].regrid(filename.c_str(), *lic, true, false, 0.0, v); CHKERRQ(ierr);
+
+    // ierr = vars[0].read(filename.c_str(), start + j, v); CHKERRQ(ierr);
+
     ierr = verbPrintf(5, grid->com, " %s: reading entry #%02d, year %f...\n",
 		      name.c_str(), start + j, times[start + j]);
     ierr = set_record(kept + j); CHKERRQ(ierr);

@@ -18,6 +18,7 @@
 
 #include "PSDirectForcing.hh"
 
+//! \brief Computes year modulo bc_period if bc_period is active.
 PetscReal PSDirectForcing::my_mod(PetscReal input) {
   if (bc_period < 0.01) return input;
 
@@ -99,13 +100,7 @@ PetscErrorCode PSDirectForcing::max_timestep(PetscReal t_years, PetscReal &dt_ye
   // "Periodize" the climate:
   t_years = my_mod(t_years);
 
-  max_dt = temperature.max_timestep(t_years);
-
-  if (dt_years > 0) {
-    if (max_dt > 0)
-      dt_years = PetscMin(max_dt, dt_years);
-  }
-  else dt_years = max_dt;
+  dt_years = temperature.max_timestep(t_years);
 
   max_dt = mass_flux.max_timestep(t_years);
 
@@ -114,6 +109,12 @@ PetscErrorCode PSDirectForcing::max_timestep(PetscReal t_years, PetscReal &dt_ye
       dt_years = PetscMin(max_dt, dt_years);
   }
   else dt_years = max_dt;
+
+  // If the user asked for periodized climate, limit time-steps so that PISM
+  // never tries to average data over an interval that begins in one period and
+  // ends in the next one.
+  if (bc_period > 1e-6)
+    dt_years = PetscMin(dt_years, bc_period - t_years);
 
   return 0;
 }

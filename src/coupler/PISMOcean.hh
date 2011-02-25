@@ -48,8 +48,7 @@ protected:
 //! sub-shelf heat flux.
 class POConstant : public PISMOceanModel {
 public:
-  POConstant(IceGrid &g, const NCConfigVariable &conf)
-    : PISMOceanModel(g, conf) {}
+  POConstant(IceGrid &g, const NCConfigVariable &conf);
   virtual ~POConstant() {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode sea_level_elevation(PetscReal t_years, PetscReal dt_years,
@@ -58,8 +57,14 @@ public:
 						IceModelVec2S &result);
   virtual PetscErrorCode shelf_base_mass_flux(PetscReal t_years, PetscReal dt_years,
 					      IceModelVec2S &result);
+
+  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc,
+                                          nc_type nctype);
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
   IceModelVec2S *ice_thickness;	// is not owned by this class
+  NCSpatialVariable shelfbmassflux, shelfbtemp;
 };
 
 //! A class defining the interface of a PISM ocean model modifier.
@@ -78,8 +83,27 @@ public:
       input_model->add_vars_to_output(key, result);
   }
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict)
-  { input_model->get_diagnostics(dict); }
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc,
+                                          nc_type nctype) {
+    PetscErrorCode ierr;
+    if (input_model != NULL) {
+      ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    }
+    return 0;
+  }
+
+  virtual PetscErrorCode write_variables(set<string> vars, string filename) {
+    PetscErrorCode ierr;
+    if (input_model != NULL) {
+      ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
+    }
+    return 0;
+  }
+
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict) {
+    if (input_model)
+      input_model->get_diagnostics(dict);
+  }
 
 protected:
   PISMOceanModel *input_model;

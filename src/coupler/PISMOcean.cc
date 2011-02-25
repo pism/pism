@@ -18,6 +18,22 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMOcean.hh"
+POConstant::POConstant(IceGrid &g, const NCConfigVariable &conf)
+  : PISMOceanModel(g, conf) {
+
+  shelfbmassflux.init("shelfbmassflux", g, GRID_2D);
+  shelfbmassflux.set_string("pism_intent", "climate_state");
+  shelfbmassflux.set_string("long_name",
+                            "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
+  shelfbmassflux.set_units("m s-1");
+  shelfbmassflux.set_glaciological_units("m year-1");
+
+  shelfbtemp.init("shelfbtemp", g, GRID_2D);
+  shelfbtemp.set_string("pism_intent", "climate_state");
+  shelfbtemp.set_string("long_name",
+                        "absolute temperature at ice shelf base");
+  shelfbtemp.set_units("Kelvin");
+}
 
 PetscErrorCode POConstant::init(PISMVars &vars) {
   PetscErrorCode ierr;
@@ -76,6 +92,57 @@ PetscErrorCode POConstant::shelf_base_mass_flux(PetscReal /*t_years*/, PetscReal
 
   return 0;
 }
+
+void POConstant::add_vars_to_output(string keyword, set<string> &result) {
+  if (keyword != "small") {
+    result.insert("shelfbtemp");
+    result.insert("shelfbmassflux");
+  }
+}
+
+PetscErrorCode POConstant::define_variables(set<string> vars, const NCTool &nc,
+                                            nc_type nctype) {
+  PetscErrorCode ierr;
+  int varid;
+
+  if (set_contains(vars, "shelfbtemp")) {
+    ierr = shelfbtemp.define(nc, varid, nctype, true); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "shelfbmassflux")) {
+    ierr = shelfbmassflux.define(nc, varid, nctype, true); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+PetscErrorCode POConstant::write_variables(set<string> vars, string filename) {
+  PetscErrorCode ierr;
+  IceModelVec2S tmp;
+
+  if (set_contains(vars, "shelfbtemp")) {
+    if (!tmp.was_created()) {
+      ierr = tmp.create(grid, "tmp", false); CHKERRQ(ierr);
+    }
+
+    ierr = tmp.set_metadata(shelfbtemp, 0); CHKERRQ(ierr);
+    ierr = shelf_base_temperature(0, 0, tmp); CHKERRQ(ierr);
+    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
+  if (set_contains(vars, "shelfbmassflux")) {
+    if (!tmp.was_created()) {
+      ierr = tmp.create(grid, "tmp", false); CHKERRQ(ierr);
+    }
+
+    ierr = tmp.set_metadata(shelfbmassflux, 0); CHKERRQ(ierr);
+    ierr = shelf_base_mass_flux(0, 0, tmp); CHKERRQ(ierr);
+    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
 
 ///// POModifier
 

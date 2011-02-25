@@ -107,6 +107,8 @@ class IceModelVec2T : public IceModelVec2S {
 public:
   IceModelVec2T();
   IceModelVec2T(const IceModelVec2T &other);
+  virtual ~IceModelVec2T();
+
   virtual void set_n_records(unsigned int N);
 // FIXME:  adding the next "using" declaration causes a compiler ERROR because then
 //         an ambiguity gets recognized; see famous "you're going to die"
@@ -138,7 +140,8 @@ protected:
   void ***array3;
   int n_records,		//!< maximum number of records to store in memory
     first;			//!< in-file index of the first record stored in memory
-  
+  LocalInterpCtx *lic;
+
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode get_array3(PetscScalar*** &a3);
   virtual PetscErrorCode update(int start);
