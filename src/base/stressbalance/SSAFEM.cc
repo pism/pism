@@ -307,7 +307,7 @@ void SSAFEM::FixDirichletValues(PetscReal lmask[],PISMVector2 **BC_vel,
                                 PISMVector2 x[], FEDOFMap &dofmap)
 {
   for (PetscInt k=0; k<4; k++) {
-    if (PismIntMask(lmask[k]) == MASK_SHEET) {
+    if (PismIntMask(lmask[k]) == MASK_BC) {
       PetscInt ii, jj;
       dofmap.localToGlobal(k,&ii,&jj);
       x[k].u = BC_vel[ii][jj].u;
@@ -392,7 +392,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
     // Enforce Dirichlet conditions strongly
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (bc_locations->value(i,j) == MASK_SHEET) {
+        if (bc_locations->value(i,j) == MASK_BC) {
           // Enforce zero sliding strongly
           yg[i][j].u = dirichletScale * (xg[i][j].u - BC_vel[i][j].u);
           yg[i][j].v = dirichletScale * (xg[i][j].v - BC_vel[i][j].v);
@@ -523,7 +523,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
   if (bc_locations && vel_bc) {
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (bc_locations->value(i,j) == MASK_SHEET) {
+        if (bc_locations->value(i,j) == MASK_BC) {
           const PetscReal ident[4] = {dirichletScale,0,0,dirichletScale};
           MatStencil row;
           // FIXME: Transpose shows up here!
@@ -557,25 +557,6 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
 
   PetscFunctionReturn(0);
 }
-
-#undef __FUNCT__
-#define __FUNCT__ "SSAFEM::view"
-PetscErrorCode SSAFEM::view(PetscViewer viewer)
-{
-  PetscErrorCode ierr;
-  PetscTruth iascii;
-
-  PetscFunctionBegin;
-  ierr = PetscTypeCompare((PetscObject)viewer,PETSC_VIEWER_ASCII,&iascii);
-           CHKERRQ(ierr);
-  if (!iascii) {
-    SETERRQ1(PETSC_ERR_SUP,"Viewer type %s not supported for SSA FE",
-             ((PetscObject)viewer)->type_name);
-  }
-  ierr = SNESView(snes,viewer);CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
 
 PetscErrorCode SSAFEFunction(DALocalInfo *info,
                              const PISMVector2 **xg, PISMVector2 **yg,

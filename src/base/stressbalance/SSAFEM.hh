@@ -122,8 +122,6 @@ protected:
 
   virtual PetscErrorCode solve();
   
-  virtual PetscErrorCode view(PetscViewer viewer);
-
   virtual PetscErrorCode setFromOptions();
 
   // objects used internally

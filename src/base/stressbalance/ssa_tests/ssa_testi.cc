@@ -135,7 +135,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
       
       bool edge = ( (j == 0) || (j == grid.My - 1) ) || ( (i==0) || (i==grid.Mx-1) );
       if (edge) {
-        mask(i,j) = MASK_SHEET; // replace with MASK_BC
+        mask(i,j) = MASK_BC;
         vel_bc(i,j).u = myu;
         vel_bc(i,j).v = myv;
       }

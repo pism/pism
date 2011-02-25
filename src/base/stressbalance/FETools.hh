@@ -55,6 +55,7 @@ map \f$F_{ij}\f$ from the reference element \f$R\f$ to \f$E_{ij}\f$.
 In this implementation, the rectangles in the domain are all congruent, and the maps F_{ij} are all the same up 
 to a translation.
 
+\anchor Blat
 On the reference element, vertices are ordered as follows:
 
 \verbatim
@@ -98,9 +99,8 @@ The unknown \f$w_h\f$ is represented by an IceVec, \f$w_h=\sum_{ij} c_{ij} \psi_
 \f$c_{ij}\f$ are the coefficients of the vector.  The solution of the finite element problem
 requires the following computations:
 
-1) Evaluation of the residuals \f$r_{ij} = G_h(w_h,\psi_{ij})\f$
-
-2) Evaluation of the Jacobian matrix
+-# Evaluation of the residuals \f$r_{ij} = G_h(w_h,\psi_{ij})\f$
+-# Evaluation of the Jacobian matrix
 \f[
 J_{(ij)\;(kl)}=\frac{d}{dc_{kl}}  G_h(w_h,\psi_{ij}).
 \f]
@@ -114,17 +114,17 @@ function \f$\hat w_h\f$ (with 4 degrees of freedom in the scalar case)  and
 The contribution to the integrals proceeds as follows (for concreteness
 in the case of computing the residual):
 
-\li Extract from the global degrees of freedom \f$c\f$ defining \f$w_h\f$
+- Extract from the global degrees of freedom \f$c\f$ defining \f$w_h\f$
 the local degrees of freedom \f$d\f$ defining \f$\hat w_h\f$. (FEDOFMap)
-\li Evaluate the local trial function \f$w_h\f$ (values and derivatives as needed)
+- Evaluate the local trial function \f$w_h\f$ (values and derivatives as needed)
 at the quadrature points \f$x_q\f$ (FEQuadrature)
-\li Evaluate the local test functions (again values and derivatives)
+- Evaluate the local test functions (again values and derivatives)
 at the quadrature points. (FEQuadrature)
-\li Obtain the quadrature weights $j_q$ for the element (FEQuadrature)
-\liCompute the values of the integrand \f$g(\hat w_h,\psi_k)\f$
+- Obtain the quadrature weights $j_q$ for the element (FEQuadrature)
+- Compute the values of the integrand \f$g(\hat w_h,\psi_k)\f$
   at each quadrature point (call these \f$g_{qk}\f$) and
   form the weighted sums \f$y_k=\sum_{q} j_q g_{qk}\f$.
-\li Each sum \f$y_k\f$ is the contribution of the current element to
+- Each sum \f$y_k\f$ is the contribution of the current element to
 a residual entry \f$r_{ij}\f$, where local degree of freedom \f$k\f$
 corresponds with global degree of freedom \f$(i,j)\f$. The
 local contibutions now need to be added to the global residual vector (FEDOFMap).
@@ -137,9 +137,9 @@ All of the above is a simplified description of what happens in practice.
 The complications below treated by the following classes, and discussed
 in their documentation:
 
-\li Ghost elements (as well as periodic boundary conditions): FEElementMap
-\li Dirichlet data: FEDOFMap
-\li Vector valued functions: (FEDOFMap, FEQuadrature)
+- Ghost elements (as well as periodic boundary conditions): FEElementMap
+- Dirichlet data: FEDOFMap
+- Vector valued functions: (FEDOFMap, FEQuadrature)
 
 It should be mentioned that the classes in this module are not intended
 to be a fancy finite element package.
