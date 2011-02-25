@@ -12,7 +12,7 @@ add_library (pismstressbalance
   SSA_diagnostics.cc
   SSAFD.cc
   SSAFEM.cc  # uncomment to compile
-  SSAFEM_util.cc
+  FETools.cc
   SSATestCase.cc
 )
 target_link_libraries (pismstressbalance pismutil pismflowlaws)

@@ -20,7 +20,7 @@
 #define _SSAFEM_H_
 
 #include "SSA.hh"
-#include "SSAFEM_util.hh"
+#include "FETools.hh"
 #include <petscsnes.h>
 
 struct FECTX;

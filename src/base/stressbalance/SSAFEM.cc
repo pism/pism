@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SSAFEM.hh"
-#include "SSAFEM_util.hh"
+#include "FETools.hh"
 
 
 //! \brief Allocating SSAFEM-specific objects; called by the constructor.

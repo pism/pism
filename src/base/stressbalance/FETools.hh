@@ -20,8 +20,8 @@
 // is less cluttered.  They should be replaced with empty macros when in
 // optimized mode.
 
-#ifndef _SSAFEM_UTIL_H_
-#define _SSAFEM_UTIL_H_
+#ifndef _FETOOLS_H_
+#define _FETOOLS_H_
 
 
 #include <petscmat.h>
@@ -148,78 +148,70 @@ residuals and Jacobians in SSAFEM, and to isolate and consolodate
 the hard steps so that they are not scattered about the code.
 */
 
-//*****************************************************************************************************
-//
-//  The reference element R is the square [-1,1]x[-1,1].  On a given element, nodes (o) and quadrature points (*) 
-//  are ordered as follows:
-//
-//
-//          3 o------------------o  2
-//            |  3             2 |
-//            |    *        *    |
-//            |                  |
-// R ->       |                  |
-//            |    *        *    |
-//            |  0            1  |
-//         0  o------------------o  1
-//
-// The indices of the nodes are also used for the local index of the basis functions that are supported on the element.  
+//! Struct for gathering the value and derivative of a function at a point.
+/*! Germ in meant in the mathematical sense, sort of. */
+struct FEFunctionGerm
+{
+  PetscReal val,  //!< Function value.
+             dx,  //!< Function deriviative with respect to x.
+             dy;  //!< Function derivative with respect to y.
+};
 
+//! Computation of Q1 shape function values.
+/*! The Q1 shape functions are bilinear functions.  On a rectangular
+element, there are four (FEShapeQ1::Nk) basis functions, each equal
+to 1 at one vertex and equal to zero at the remainder.
 
-// Integration of a function over the reference element \a R is performed approximately using Gaussian integration:
-//
-// \int_R f \approx \sum_{i=1}^n w_i f(p_q)
-//
-// where the w_i are weights and the p_q are quadrature points.  In this implementation we have four quad points per
-// element. The quadrature points occur at x,y=\pm \sqrt{3}.  This corresponds to the tensor product
-// of Gaussian integration on an interval [-1,1] with quad points x=\pm\sqrt{3}, which is exact for cubic functions on the interval.
+The FEShapeQ1 class consolodates the computation of the values and
+derivatives of these basis functions. */
+class FEShapeQ1 {
+public: 
+  //! Compute values and derivatives of the shape function supported at node 0
+  static void shape0(PetscReal x, PetscReal y, FEFunctionGerm *value)
+  {
+    value->val = (1-x)*(1-y)/4.;
+    value->dx = -(1-y)/4.;
+    value->dy = -(1-x)/4;
+  }
+  //! Compute values and derivatives of the shape function supported at node 1
+  static void shape1(PetscReal x, PetscReal y, FEFunctionGerm *value)
+  {
+    value->val = (1+x)*(1-y)/4.;
+    value->dx =  (1-y)/4.;
+    value->dy = -(1+x)/4;
+  }
+  //! Compute values and derivatives of the shape function supported at node 2
+  static void shape2(PetscReal x, PetscReal y, FEFunctionGerm *value)
+  {
+    value->val = (1+x)*(1+y)/4.;
+    value->dx =  (1+y)/4.;
+    value->dy =  (1+x)/4;
+  }
+  //! Compute values and derivatives of the shape function supported at node 3
+  static void shape3(PetscReal x, PetscReal y, FEFunctionGerm *value)
+  {
+    value->val = (1-x)*(1+y)/4.;
+    value->dx =  -(1+y)/4.;
+    value->dy =   (1-x)/4;
+  }
 
-static const PetscReal quadPoints[4][2] = {{ -0.57735026918962573, -0.57735026918962573 },
-                                           {  0.57735026918962573, -0.57735026918962573 },
-                                           {  0.57735026918962573,  0.57735026918962573 },
-                                           { -0.57735026918962573,  0.57735026918962573 }};
+  //! The number of basis shape functions.
+  static const PetscInt Nk = 4;
 
-// The weights w_i for gaussian quadrature on the reference element with these quadrature points
-static const PetscReal quadWeights[4]  = {1,1,1,1};
-
-
-// There are four reference basis functions $\phi_i$ per element; function $i$ is equal to 1 at node $i$ and equals zero at the other nodes.
-// In order to perform integration involving functions of the form \sum_{k=0}^3 c_i \phi_i we need the values and derivatives
-// of the reference basis functions at the quadrature points.  These are tabulated below.
-
-#undef H
-#undef L
-#undef M
-#undef P
-// A linear function equal to 1 at x=-1 and equal to 0 at x=1 is 'H' at -1/\sqrt{3} and 'L' at 1/\sqrt{3}
-#define H 0.78867513459481287
-#define L 0.21132486540518708
-// A linear function equal to 1 at x=-1 and equal to 0 at x=1 has derivative M;
-// A linear function equal to 0 at x=-1 and equal to 1 at x=1 has derivative P.
-#define M (-0.5)
-#define P (0.5)
-
-// interp[4*q + n] gives the value of basis function \a n at quadrature point \a q
-static const PetscReal interp[4*4] = {H*H,H*L,L*L,L*H,  L*H,H*H,H*L,L*L,  L*L,H*L,H*H,L*H,  H*L,L*L,L*H,H*H};
-
-// derivx[4*q + n] gives the derivative in the \a x direction of basis function \a n at quad point \a q
-static const PetscReal derivx[4*4] = {M*H,P*H,P*L,M*L,  M*H,P*H,P*L,M*L,  M*L,P*L,P*H,M*H,  M*L,P*L,P*H,M*H};
-
-// derivy[4*q + n] gives the derivative in the \a y direction of basis function \a n at quad point \a q
-static const PetscReal derivy[4*4] = {H*M,L*M,L*P,H*P,  L*M,H*M,H*P,L*P,  L*M,H*M,H*P,L*P,  H*M,L*M,L*P,H*P};
-
-#undef H
-#undef L
-#undef M
-#undef P
+  //! A table of function pointers, one for each shape function.
+  typedef void (*ShapeFunctionSpec)(PetscReal,PetscReal,FEFunctionGerm*);
+  static const ShapeFunctionSpec shapeFunction[Nk];
+  
+  //! Evaluate shape function \a k at (\a x,\a y) with values returned in \a germ.
+  virtual void eval(PetscInt k, PetscReal x, PetscReal y,FEFunctionGerm*germ){
+    shapeFunction[k](x,y,germ);
+  }
+};
 
 
 // Computes the closest integer to maskvalue, with integers of the form n/2 rounded up.
 int PismIntMask(PetscScalar maskvalue);
 
-
-static const PetscInt kIOffset[4] = { 0, 1, 1, 0 };
-static const PetscInt kJOffset[4] = { 0, 0, 1, 1 };
 
 //! The mapping from global to local degrees of freedom.
 /*! Computations of residual and Jacobian entries in the finite element method are
@@ -229,16 +221,16 @@ element-local degrees of freedom for the purposes of local computation,
 (and the results added back again to the global residual and Jacobian arrays).
 
 An FEDOFMap mediates the transfer between element-local and global degrees of freedom.
-
-The FEDOFMap works equally well for vector and scalar valued finite element functions; the
-degrees of freedom for a vector-value function are stored as PISMVector2's rather than
-as PetscReal's.
+In this very concrete implementation, the global degrees of freedom are either
+scalars (PetscReal's) or vectors (PISMVector2's), one per node in the IceGrid, 
+and the local degrees of freedom on the element are FEDOFMap::Nk (%i.e. four) scalars or vectors, one 
+for each vertex of the element.
 
 The FEDOFMap is also (perhaps awkwardly) overloaded to also mediate transfering locally
 computed contributions to residual and Jacobian matricies to their global
 counterparts.
 
-See also: \link SSAFEM_util.hh finite element tools background.\endlink.
+See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
 */
 class FEDOFMap
 {
@@ -265,47 +257,110 @@ public:
   static const PetscInt Nk = 4; //<! The number of test functions defined on an element.
   
 protected:
-  static const PetscInt kDofInvalid = PETSC_MIN_INT / 8; //<! Constant for marking invalid row/columns.
+  static const PetscInt kDofInvalid = PETSC_MIN_INT / 8; //!< Constant for marking invalid row/columns.
+  static const PetscInt kIOffset[Nk];
+  static const PetscInt kJOffset[Nk];
 
-  PetscInt m_i, m_j; //<! index of the current element.
-  MatStencil m_row[Nk], m_col[Nk]; //<! row and column indices for the global degrees of freedom for this element.
+  //! Indices of the current element (for updating residual/Jacobian).
+  PetscInt m_i, m_j;
+
+  //! Stencils for updating entries of the Jacobian matrix.
+  MatStencil m_row[Nk], m_col[Nk]; 
 };
 
+//! Manages iterating over element indices.
+/*! When computing residuals and Jacobians, there is a loop over all the elements
+in the IceGrid, and computations are done on each element.  The IceGrid
+has an underlying Petsc DA, and our processor does not own all of the nodes in the grid.
+Therefore we should not perform computation on all of the elements.  In general,
+an element will have ghost (o) and real (*) vertices:
+\verbatim     
+      o---*---*---*---o
+      |   |   |   |   |
+      o---*---*---*---o
+      |   |   |   |   |
+      o---o---o---o---o
+\endverbatim     
+The strategy is to do computations on this processor on every element that has
+a vertex that is owned by this processor.  But we only update entries in the
+global residual and Jacobian matrices if the corresponding row corresponds to a 
+vertex that we own.  In the worst case, where each vertex of an element is owned by
+a different processor, the computations for that element will be repeated four times, 
+once for each processor.
 
+This same strategy also correctly deals with periodic boundary conditions. The way Petsc deals
+with periodic boundaries can be thought of as using a kind of ghost.  So the rule still works:
+compute on all elements containg a real vertex, but only update rows corresponding to that real vertex.
+
+The calculation of what elements to index over needs to account for ghosts and the
+presence or absense of periodic boundary conditions in the IceGrid.  The FEElementMap performs
+that computation for you (see FEElementMap::xs and friends).
+
+See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
+*/
 class FEElementMap
 {
 public:
   FEElementMap(const IceGrid &g);
   
+  /*!\brief The total number of elements to be iterated over.  Useful for creating per-element storage.*/
   PetscInt element_count()
   {
     return (xm-xs)*(ym-ys);
   }
   
+  /*!\brief Convert an element index (\a i,\a j) into a flattened (1-d) array index, with the first
+      element (\a i, \a j) to be iterated over corresponding to flattened index 0. */
   PetscInt flatten(PetscInt i, PetscInt j)
   {
     return (i-xs)*ym+(j-ys);
   }
   
-  PetscInt xs, //<! Start o
-           xm, 
-           ys, 
-           ym;
-  
+  PetscInt xs, //!< x-coordinate of the first element to loop over.
+           xm, //!< total number of elements to loop over in the x-direction.
+           ys, //!< y-coordinate of the first element to loop over.
+           ym; //!< total number of elements to loop over in the y-direction.  
 };
 
-struct FEFunctionGerm
-{
-  PetscReal val, dx, dy;
-};
+//! Numerical integration of finite element functions.
+/*! The core of the finite element method is the computation of integrals over elements.
+For nonlinear problems, or problems with non-constant coefficients (%i.e. any real problem)
+the integration has to be done approximately:
+\f[
+\int_E f(x)\; dx \approx \sum_q f(x_q) w_q
+\f]
+for certain quadrature points \f$x_q\f$ and weights \f$w_q\f$.  An FEQuadrature is used
+to evaluate finite element functions at quadrature points, and to compute weights \f$w_q\f$
+for a given element.
 
+In this concrete implementation, the reference element \f$R\f$ is the square 
+\f$[-1,1]\times[-1,1]\f$.  On a given element, nodes (o) and quadrature points (*) 
+are ordered as follows:
+\verbatim
+         3 o------------------o  2
+           |  3             2 |
+           |    *        *    |
+           |                  |
+           |                  |
+           |    *        *    |
+           |  0            1  |
+        0  o------------------o  1
+\endverbatim
+So there are four quad points per element, which occur at \f$x,y=\pm \sqrt{3}\f$.  This corresponds to the tensor product
+of Gaussian integration on an interval that is exact for cubic functions on the interval.
 
+Integration on a physical element can be thought of as being done by change of variables.  The quadrature weights need
+to be modified, and the FEQuadrature takes care of this for you.  Because all elements in an IceGrid are congruent, the
+quadrature weights are the same for each element, and are computed upon initialization with an IceGrid.
+
+See also: \link FETools.hh FiniteElement/IceGrid background material\endlink.
+*/
 class FEQuadrature
 {
 public:
 
-  static const PetscInt Nq = 4;  // Number of quadrature points.
-  static const PetscInt Nk = 4;  // Number of test functions on the element.
+  static const PetscInt Nq = 4;  //!< Number of quadrature points.
+  static const PetscInt Nk = 4;  //!< Number of test functions on the element.
   
   FEQuadrature();
 
@@ -334,8 +389,16 @@ public:
 
   void getWeightedJacobian(PetscReal *jxw);
 
+  //! The coordinates of the quadrature points on the reference element.
+  static const PetscReal quadPoints[Nq][2];
+  //! The weights for quadrature on the reference element.
+  static const PetscReal quadWeights[Nq];
+
 protected:
+
+  //!< The Jacobian determinant of the map from the reference element to the physical element.
   PetscReal m_jacobianDet;
+  //!< Shape function values (for each of \a Nq quadrature points, and each of \a Nk shape function )
   FEFunctionGerm m_germs[Nq][Nk];
   PetscReal   m_tmpScalar[Nk];
   PISMVector2 m_tmpVector[Nk];
@@ -348,4 +411,4 @@ protected:
 PetscTruth Floating(const IceFlowLaw &ice, PetscScalar ocean_rho,
                           PetscReal H, PetscReal bed);
 
-#endif/* _SSAFEM_UTIL_H_*/
+#endif/* _FETOOLS_H_*/

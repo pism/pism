@@ -18,31 +18,10 @@
 
 // Utility functions used by the SSAFEM code.
 
-#include "SSAFEM_util.hh"
+#include "FETools.hh"
 
-
-//  Integrations with integrands involving derivatives of finite element functions need a little extra work.  Let $f$ be a 
-//  finite-element function (f=\sum_{ij} c_{ij} \psi_{ij}).  Consider a point p in physical element E, so p=F(q) where 
-//  q is a point in the reference element and F is the map from reference to physical element.  Let g=f\circ F, so
-//  
-//       g = \sum_{n=1}^4 d_n \phi_n 
-//
-//  Then f(p) = f(F(q)) = g(q) = g(F^{-1}(p)) = \sum_{n=1}^4 d_n \phi_n(F^{-1}(p)).  The derivative of f with respect to $X$ or $Y$
-//  can then be written in terms of derivatives of reference basis elements \phi_n and the Jacobian matrix of F^{-1} using the 
-//  chain rule.  In particular, the derivative of f with respect to X at the point F(q_i) is
-//
-//     d f                            d\phi_n      d F^{-1}
-//     --- (F(q_i))= \sum_{n=1}^4 d_n -----(q_i)  --------
-//     d X                              dx           dX
-//
-//  ( we have used the fact that dF^{-1}/dY = 0, otherwise there would be an extra term). 
-//
-//  Similarly, 
-//     d f                            d\phi_n      d F^{-1}
-//     --- (F(q_i))= \sum_{n=1}^4 d_n -----(q_i)  --------
-//     d Y                              dy           dY
-//
-//  In the code, the numbers dF^{-1}/dX and dF^{-1}/dY are referred to as the array jinvDiag.
+const FEShapeQ1::ShapeFunctionSpec FEShapeQ1::shapeFunction[FEShapeQ1::Nk] = 
+{FEShapeQ1::shape0, FEShapeQ1::shape1, FEShapeQ1::shape2, FEShapeQ1::shape3};
 
 
 FEElementMap::FEElementMap(const IceGrid &g)
@@ -81,53 +60,29 @@ FEElementMap::FEElementMap(const IceGrid &g)
 }
 
 
-
-//  Integrations with integrands involving derivatives of finite element functions need a little extra work.  Let $f$ be a 
-//  finite-element function (f=\sum_{ij} c_{ij} \psi_{ij}).  Consider a point p in physical element E, so p=F(q) where 
-//  q is a point in the reference element and F is the map from reference to physical element.  Let g=f\circ F, so
-//  
-//       g = \sum_{n=1}^4 d_n \phi_n 
-//
-//  Then f(p) = f(F(q)) = g(q) = g(F^{-1}(p)) = \sum_{n=1}^4 d_n \phi_n(F^{-1}(p)).  The derivative of f with respect to $X$ or $Y$
-//  can then be written in terms of derivatives of reference basis elements \phi_n and the Jacobian matrix of F^{-1} using the 
-//  chain rule.  In particular, the derivative of f with respect to X at the point F(q_i) is
-//
-//     d f                            d\phi_n      d F^{-1}
-//     --- (F(q_i))= \sum_{n=1}^4 d_n -----(q_i)  --------
-//     d X                              dx           dX
-//
-//  ( we have used the fact that dF^{-1}/dY = 0, otherwise there would be an extra term). 
-//
-//  Similarly, 
-//     d f                            d\phi_n      d F^{-1}
-//     --- (F(q_i))= \sum_{n=1}^4 d_n -----(q_i)  --------
-//     d Y                              dy           dY
-//
-//  In the code, the numbers dF^{-1}/dX and dF^{-1}/dY are referred to as the array jinvDiag.
-
-
-
-/*! Extract local degrees of freedom for element (\a i,\a j) from global vector \a xg to
+/*! \brief Extract local degrees of freedom for element (\a i,\a j) from global vector \a xg to
   local vector \a x (scalar-valued DOF version). */
 void FEDOFMap::extractLocalDOFs(PetscInt i,PetscInt j, PetscReal const*const*xg,PetscReal *x) const
 {
   x[0] = xg[i][j]; x[1] = xg[i+1][j]; x[2] = xg[i+1][j+1]; x[3] = xg[i][j+1];  
 }
-/*! Extract local degrees of freedom for element (\a i,\a j) from global vector \a xg to
+
+/*! \brief Extract local degrees of freedom for element (\a i,\a j) from global vector \a xg to
 local vector \a x (vector-valued DOF version).
 */
 void FEDOFMap::extractLocalDOFs(PetscInt i,PetscInt j, PISMVector2 const*const*xg,PISMVector2 *x) const
 {
   x[0] = xg[i][j]; x[1] = xg[i+1][j]; x[2] = xg[i+1][j+1]; x[3] = xg[i][j+1];    
 }
-/*! Extract local degrees of freedom corresponding to the element set previously with \a reset. 
-(scalar version)
-*/
+
+
+//! Extract scalar degrees of freedom for the element specified previously with FEDOFMap::reset
 void FEDOFMap::extractLocalDOFs(PetscReal const*const*xg,PetscReal *x) const
 {
   extractLocalDOFs(m_i,m_j,xg,x);
 }
-//! Extract local degrees of freedom for the element set previously with \a reset. (vector version)
+
+//! Extract vector degrees of freedom for the element specified previously with FEDOFMap::reset
 void FEDOFMap::extractLocalDOFs(PISMVector2 const*const*xg,PISMVector2 *x) const
 {
   extractLocalDOFs(m_i,m_j,xg,x);
@@ -140,7 +95,7 @@ void FEDOFMap::localToGlobal(PetscInt k, PetscInt *i, PetscInt *j)
   *j = m_j + kJOffset[k];  
 }
 
-/*! Initialize the FEDOFMap to element (\a i, \a j) for the purposes of inserting into
+/*!\brief Initialize the FEDOFMap to element (\a i, \a j) for the purposes of inserting into
 global residual and Jacobian arrays. */
 void FEDOFMap::reset(PetscInt i, PetscInt j, const IceGrid &grid)
 {
@@ -165,22 +120,23 @@ void FEDOFMap::reset(PetscInt i, PetscInt j, const IceGrid &grid)
   }
 }
 
-/*! Mark that the row corresponding to local degree of freedom \a k should not be updated
+/*!\brief Mark that the row corresponding to local degree of freedom \a k should not be updated
 when inserting into the global residual or Jacobian arrays. */
 void FEDOFMap::markRowInvalid(PetscInt k)
 {
   m_row[k].i=m_row[k].j = kDofInvalid;
 }
 
-/*! Mark that the column corresponding to local degree of freedom \a k should not be updated
+/*!\brief Mark that the column corresponding to local degree of freedom \a k should not be updated
 when inserting into the global Jacobian arrays. */
 void FEDOFMap::markColInvalid(PetscInt k)
 {
   m_col[k].i=m_col[k].j = kDofInvalid;
 }
 
-/*! Add the values of element-local residual contributions \a y to the global residual
+/*!\brief Add the values of element-local residual contributions \a y to the global residual
  vector \a yg. */
+/*! The element-local residual should be an array of Nk values.*/
 void FEDOFMap::addLocalResidualBlock(const PISMVector2 *y, PISMVector2 **yg)
 {
   for (int k=0; k<Nk; k++) {
@@ -190,8 +146,8 @@ void FEDOFMap::addLocalResidualBlock(const PISMVector2 *y, PISMVector2 **yg)
   }
 }
 
-//! Add the contributions of an element-local jaobian to the global Jacobian vector.
-/*! The element-local Jacobian should be an array of Nk*Nk values in the
+//! Add the contributions of an element-local Jacobian to the global Jacobian vector.
+/*! The element-local Jacobian should be givnen as a row-major array of Nk*Nk values in the
 scalar case or (2Nk)*(2Nk) values in the vector valued case. */
 PetscErrorCode FEDOFMap::addLocalJacobianBlock(const PetscReal *K, Mat J)
 {
@@ -200,7 +156,7 @@ PetscErrorCode FEDOFMap::addLocalJacobianBlock(const PetscReal *K, Mat J)
 }
 
 //! Set a diagonal entry for global degree of freedom (\a i ,\a j ) in a Jacobian matrix
-/* This is an unhappy hack for supporting Dirichlet constrained degrees of freedom.
+/*! This is an unhappy hack for supporting Dirichlet constrained degrees of freedom.
 In the scalar valued case, \a K should point to a single value, and in the vector case,
 it should point to 4 (=2x2) values for the (2x2) block correspoinding to to u-u, u-v, v-u, and v-v
 interactions at grid point (\a i, \aj).  Sheesh.*/
@@ -212,11 +168,15 @@ PetscErrorCode FEDOFMap::setJacobianDiag(PetscInt i, PetscInt j, const PetscReal
   return 0;
 }
 
+const PetscInt FEDOFMap::kIOffset[4] = {0,1,1,0};
+const PetscInt FEDOFMap::kJOffset[4] = {0,0,1,1};
+
 
 FEQuadrature::FEQuadrature()
 {  
 }
 
+//! Obtain the weights \f$w_q\f$ for quadrature.
 void FEQuadrature::getWeightedJacobian(PetscReal *jxw)
 {
   for(int q=0;q<Nq;q++)
@@ -225,6 +185,7 @@ void FEQuadrature::getWeightedJacobian(PetscReal *jxw)
   } 
 }
 
+//! Obtain the weights \f$w_q\f$ for quadrature.
 void FEQuadrature::init(const IceGrid &grid)
 {
   // Since we use uniform cartesian coordinates, the Jacobian is constant and diagonal on every element.
@@ -233,31 +194,41 @@ void FEQuadrature::init(const IceGrid &grid)
   PetscReal jacobian_y = 0.5*grid.dy;///ref.Length();
   m_jacobianDet = jacobian_x*jacobian_y;
 
+  FEShapeQ1 shape;
   for(int q=0; q<Nq; q++){
     for(int k=0; k<Nk; k++){
       PetscInt qk = q*Nk+k;
-      m_germs[q][k].val = interp[qk];
-      m_germs[q][k].dx = derivx[qk]/jacobian_x;
-      m_germs[q][k].dy = derivy[qk]/jacobian_y;
+      shape.eval(k,quadPoints[q][0],quadPoints[q][1],&m_germs[q][k]);
+      m_germs[q][k].dx /= jacobian_x;
+      m_germs[q][k].dy /= jacobian_y;
     }
   }
 }
 
-const FEFunctionGerm (*FEQuadrature::testFunctionValues())[4]
+//! Return the values at all quadrature points of all shape functions.
+//* The return value is an Nq by Nk array of FEFunctionGerms. */
+const FEFunctionGerm (*FEQuadrature::testFunctionValues())[FEQuadrature::Nq]
 {
   return m_germs;
 }
 
+//! Return the values of all shape functions at quadrature point \a q
+//* The return value is an array of Nk FEFunctionGerms. */
 const FEFunctionGerm *FEQuadrature::testFunctionValues(PetscInt q)
 {
   return m_germs[q];
 }
 
+//! Return the values at quadrature point \a q of shape function \a k.
 const FEFunctionGerm *FEQuadrature::testFunctionValues(PetscInt q, PetscInt k)
 {
   return m_germs[q] + k;
 }
 
+//! Compute the values of a scalar-valued finite-element function at all quadrature points.
+/* The element-local degrees of freedom of the function are specified in \a x.
+The values (\a vals) and derivatives (\a dx and \a dy) are returned.  There should
+be room for Nq values in each of these output arrays.*/
 void FEQuadrature::computeTrialFunctionValues(const PetscReal *x, PetscReal *vals, PetscReal *dx, PetscReal *dy)
 {
   for (int q=0; q<Nq; q++) {
@@ -270,6 +241,12 @@ void FEQuadrature::computeTrialFunctionValues(const PetscReal *x, PetscReal *val
     }
   }
 }
+
+
+//! Compute the values of a scalar-valued finite-element function on element (\a i, \aj).
+/* The global degrees of freedom of the function are specified in \a xg.
+The values (\a vals) and derivatives (\a dx and \a dy) are returned.  There should
+be room for Nq values in each of these output arrays.*/
 void FEQuadrature::computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, PetscReal const*const*xg, 
                                  PetscReal *vals, PetscReal *dx, PetscReal *dy)
 {
@@ -277,7 +254,8 @@ void FEQuadrature::computeTrialFunctionValues( PetscInt i, PetscInt j, const FED
   computeTrialFunctionValues(m_tmpScalar,vals,dx,dy);  
 }
 
-
+/*! \brief Compute the values (and no derivatives) of a scalar-valued 
+finite-element function with element local  degrees of freedom \a x.*/
 void FEQuadrature::computeTrialFunctionValues(const PetscReal *x, PetscReal *vals)
 {
   for (int q=0; q<Nq; q++) {
@@ -288,13 +266,16 @@ void FEQuadrature::computeTrialFunctionValues(const PetscReal *x, PetscReal *val
     }
   }
 }
+
+
+/*!\brief Compute the values (and no derivatives) of a scalar-valued finite-element function 
+on element (\a i,\a j) with global degrees of freedom \a xg.*/
 void FEQuadrature::computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, 
                                              PetscReal const*const*xg, PetscReal *vals)
 {
   dof.extractLocalDOFs(i,j,xg,m_tmpScalar);
   computeTrialFunctionValues(m_tmpScalar,vals);
 }
-
 
 void FEQuadrature::computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals, PetscReal (*Dv)[3] )
 {
@@ -312,6 +293,8 @@ void FEQuadrature::computeTrialFunctionValues( const PISMVector2 *x,  PISMVector
     }
   }  
 }
+
+
 void FEQuadrature::computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof,                                              
                                              PISMVector2 const*const*xg, PISMVector2 *vals, PetscReal (*Dv)[3] )
 {
@@ -337,6 +320,17 @@ void FEQuadrature::computeTrialFunctionValues( PetscInt i, PetscInt j, const FED
   dof.extractLocalDOFs(i,j,xg,m_tmpVector);
   computeTrialFunctionValues(m_tmpVector,vals);
 }
+
+//! The quadrature points on the reference square \f$x,y=\pm 1/\sqrt{3}\f$.
+const PetscReal FEQuadrature::quadPoints[FEQuadrature::Nq][2] = 
+                                          {{ -0.57735026918962573, -0.57735026918962573 },
+                                           {  0.57735026918962573, -0.57735026918962573 },
+                                           {  0.57735026918962573,  0.57735026918962573 },
+                                           { -0.57735026918962573,  0.57735026918962573 }};
+
+//! The weights w_i for gaussian quadrature on the reference element with these quadrature points
+const PetscReal FEQuadrature::quadWeights[FEQuadrature::Nq]  = {1,1,1,1};
+
 
 
 //! Legacy code that needs to vanish. \todo Make it go away.
