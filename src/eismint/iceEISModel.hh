@@ -45,11 +45,6 @@ protected:
     virtual PetscErrorCode set_expername_from_options();
 
     PetscScalar M_max, R_el, T_min, T_max, S_b, S_T;
- 
-    // for experiments G,H; uses generally not-recommended SIA-sliding rubric
-    virtual PetscScalar basalVelocitySIA(
-        PetscScalar x, PetscScalar y, PetscScalar H, PetscScalar T,
-        PetscScalar alpha, PetscScalar mu, PetscScalar min_T) const;
 
     virtual PetscErrorCode generateTroughTopography();  // for experiments I,J
     virtual PetscErrorCode generateMoundTopography();   // for experiments K,L

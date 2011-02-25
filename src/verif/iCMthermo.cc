@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -77,8 +77,7 @@ PetscErrorCode IceCompModel::initTestFG() {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar r = grid.radius(i,j);
       Ts[i][j] = Tmin + ST * r;
       if (r > LforFG - 1.0) { // if (essentially) outside of sheet
         H[i][j] = 0.0;
@@ -144,8 +143,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
   ierr = SigmaComp3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar r = grid.radius(i,j);
       if (r > LforFG - 1.0) {  // outside of sheet
         accum[i][j] = -ablationRateOutside/secpera;
         ierr = SigmaComp3.setColumn(i,j,0.0); CHKERRQ(ierr);
@@ -208,8 +206,7 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar xx = grid.x[i], yy = grid.y[j], r = grid.radius(i,j);
       if (r > LforFG - 1.0) {  // outside of sheet
         accum[i][j] = -ablationRateOutside/secpera;
         H[i][j] = 0.0;
@@ -296,8 +293,7 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(
   ierr = T3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar r = grid.radius(i,j);
       ierr = T3.getInternalColumn(i,j,&T); CHKERRQ(ierr);
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
                                                 // and not at central singularity
@@ -432,8 +428,7 @@ PetscErrorCode IceCompModel::computeBasalTemperatureErrors(
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar r = grid.radius(i,j);
       switch (testname) {
         case 'F':
           if (r > LforFG - 1.0) {  // outside of sheet
@@ -507,8 +502,7 @@ PetscErrorCode IceCompModel::computeSigmaErrors(
   ierr = Sigma3->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar r = grid.radius(i,j);
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
                                                 // and not at central singularity
         switch (testname) {
@@ -568,8 +562,7 @@ PetscErrorCode IceCompModel::computeSurfaceVelocityErrors(
   ierr = w3->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar xx = grid.x[i], yy = grid.y[j], r = grid.radius(i,j);
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
                                                 // and not at central singularity
         PetscScalar radialUex,wex;

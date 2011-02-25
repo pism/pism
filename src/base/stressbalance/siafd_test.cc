@@ -59,8 +59,8 @@ PetscErrorCode computeSigmaErrors(IceModelVec3 &Sigma,
   ierr = Sigma.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar xx = grid.x[i], yy = grid.y[j],
+        r = sqrt(PetscSqr(xx) + PetscSqr(yy));
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
                                                 // and not at central singularity
         bothexact(0.0,r,grid.zlevels,Mz,0.0,
@@ -116,8 +116,8 @@ PetscErrorCode computeSurfaceVelocityErrors(IceGrid &grid,
   ierr = w3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar xx = grid.x[i], yy = grid.y[j],
+        r = sqrt(PetscSqr(xx) + PetscSqr(yy));
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet 
                                                 // and not at central singularity
         PetscScalar radialUex,wex;
@@ -223,9 +223,8 @@ PetscErrorCode setInitStateF(IceGrid &grid,
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar r,xx,yy, Ts;
-      grid.mapcoords(i,j,xx,yy,r);
-      Ts = Tmin + ST * r;
+      PetscScalar xx = grid.x[i], yy = grid.y[j], r = grid.radius(i,j),
+        Ts = Tmin + ST * r;
       if (r > LforFG - 1.0) { // if (essentially) outside of sheet
         H[i][j] = 0.0;
         for (PetscInt k = 0; k < Mz; k++)

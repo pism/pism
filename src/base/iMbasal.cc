@@ -22,8 +22,7 @@
 
 /*
 This file collects procedures related to SSA-as-sliding law in grounded
-areas.  IceModel::basalVelocitySIA() is in iMsia.cc (and is not recommended,
-generally).
+areas.
 */
 
 //! Initialize the pseudo-plastic till mechanical model.

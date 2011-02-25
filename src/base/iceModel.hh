@@ -91,6 +91,7 @@ public:
   virtual PetscErrorCode setExecName(const char *my_executable_short_name);
   virtual IceFlowLawFactory &getIceFlowLawFactory() { return iceFactory; }
   virtual IceFlowLaw *getIceFlowLaw() {return ice;}
+  virtual void reset_counters();
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode bootstrapFromFile(const char *fname);
@@ -285,9 +286,6 @@ protected:
               PetscScalar meltfrac, PetscScalar H0, PetscScalar T0);
 
   // see iMreport.cc;  methods for computing diagnostic quantities:
-  // spatially-varying:
-  virtual PetscErrorCode compute_by_name(string name, IceModelVec* &result);
-
   // scalar:
   virtual PetscErrorCode ice_mass_bookkeeping();
   virtual PetscErrorCode compute_ice_volume(PetscScalar &result);

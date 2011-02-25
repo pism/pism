@@ -117,9 +117,8 @@ public:
   PetscErrorCode printInfo(int verbosity); 
   PetscErrorCode printVertLevels(int verbosity); 
   PetscInt       kBelowHeight(PetscScalar height);
-  void mapcoords(PetscInt i, PetscInt j,
-                 PetscScalar &x, PetscScalar &y, PetscScalar &r);
   PetscErrorCode create_viewer(PetscInt viewer_size, string title, PetscViewer &viewer);
+  PetscReal      radius(PetscInt i, PetscInt j);
 
   MPI_Comm    com;
   PetscMPIInt rank, size;

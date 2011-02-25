@@ -799,20 +799,9 @@ PetscErrorCode IceGrid::compute_horizontal_coordinates() {
   return 0;
 }
 
-//! \brief Compute coordinates of a grid point.
-/*!
- * This method is \b DEPRECATED.
- */
-void IceGrid::mapcoords(PetscInt i, PetscInt j,
-                        PetscScalar &my_x, PetscScalar &my_y, PetscScalar &r) {
-  // compute x,y,r on grid from i,j
-  PetscScalar ifrom0, jfrom0;
-
-  ifrom0=static_cast<PetscScalar>(i)-static_cast<PetscScalar>(Mx - 1)/2.0;
-  jfrom0=static_cast<PetscScalar>(j)-static_cast<PetscScalar>(My - 1)/2.0;
-  my_x=dx*ifrom0;
-  my_y=dy*jfrom0;
-  r = sqrt(PetscSqr(my_x) + PetscSqr(my_y));
+//! \brief Returns the distance from the point (i,j) to the origin.
+PetscReal IceGrid::radius(PetscInt i, PetscInt j) {
+  return sqrt(PetscSqr(x[i]) + PetscSqr(y[j]));
 }
 
 //! \brief Report grid parameters.

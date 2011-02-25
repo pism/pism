@@ -463,6 +463,21 @@ string pism_username_prefix() {
   return message.str();
 }
 
+//! \brief Uses argc and argv to create the string with current PISM
+//! command-line arguments.
+string pism_args_string() {
+  PetscInt argc;
+  char **argv;
+  PetscGetArgs(&argc, &argv);
+
+  string cmdstr;
+  for (int j = 0; j < argc; j++)
+    cmdstr += string(" ") + argv[j];
+  cmdstr += "\n";
+
+  return cmdstr;
+}
+
 //! Makes the process on rank \c rank_to_stop wait for the debugger to be attached.
 /*
   Once the debugger is attached, giving it the "set var i = 1" (for gdb)

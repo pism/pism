@@ -334,17 +334,6 @@ PetscErrorCode IceModel::summaryPrintLine(
   return 0;
 }
 
-/*! 
-  FIXME: this methods needs to go.
- */
-PetscErrorCode IceModel::compute_by_name(string /*name*/, IceModelVec* &result) {
-
-  result = NULL;
-
-  return 0;
-}
-
-
 //! Computes the ice volume, in m^3.
 PetscErrorCode IceModel::compute_ice_volume(PetscScalar &result) {
   PetscErrorCode ierr;

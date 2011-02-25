@@ -407,7 +407,7 @@ export PATH=$PETSC_DIR/externalpackages/mpich2-1.0.4p1/$PETSC_ARCH/bin/:$PATH
 those mentioned so far.
 
 \subsubsection{Installing PISM itself}
-\label{sec:pism-itself}
+\label{sec:install-cmake}
 At this point you have configured the environment which PISM needs.  You are ready to build PISM itself, which is a much quicker procedure!
 
 \begin{enumerate}\setcounter{enumi}{7}
@@ -516,7 +516,7 @@ $  ./config/configure.py --with-shared --with-dynamic --with-debugging=no \
         --with-fortran=0 --with-blas-lapack-dir=/usr/ --with-mpi-dir=/usr/
 $  make all test
 \end{verbatim}
-\item Finally, to build PISM, see section \ref{sec:pism-itself}.
+\item Finally, to build PISM, see section \ref{sec:install-cmake}.
 
 \item See the \emph{Getting Started} section \emph{User's Manual} to continue.
 \end{enumerate}

@@ -706,10 +706,6 @@ PetscErrorCode SIAFD::extend_the_grid(PetscInt old_Mz) {
  * \param[in] D2_input the "SSA" contribution to the strain heating
  * \param[in] h_x the X-component of the surface gradient, on the staggered grid
  * \param[in] h_y the Y-component of the surface gradient, on the staggered grid
- *
- * FIXME: this should be optimized: we don't need to update Sigma above the ice
- * (especially Sigma on the staggered grid, which is used temporarily, in this
- * method only, to compute Sigma on the regular grid).
  */
 PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
                                     IceModelVec2Stag &h_x,

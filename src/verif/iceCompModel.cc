@@ -334,11 +334,6 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
   
   ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
-  if (testname == 'E') { // value is not used by IceCompModel::basalVelocitySIA(),
-    config.set("mu_sliding", 1.0); //    but this acts as flag to allow sliding
-  } else {
-    config.set("mu_sliding", 0.0);
-  }
 
   ierr = acab.get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
@@ -347,8 +342,8 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   }
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar xx = grid.x[i], yy = grid.y[j],
+        r = grid.radius(i,j);
       switch (testname) {
         case 'A':
           exactA(r,&H[i][j],&accum[i][j]);
@@ -429,7 +424,6 @@ PetscErrorCode IceCompModel::initTestL() {
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
   
   ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
-  config.set("mu_sliding", 0.0);  // note reimplementation of basalVelocitySIA() in IceCompModel
 
   // setup to evaluate test L; requires solving an ODE numerically using sorted list
   //   of radii, sorted in decreasing radius order
@@ -440,8 +434,7 @@ PetscErrorCode IceCompModel::initTestL() {
     for (PetscInt j = 0; j < grid.ym; j++) {
       const PetscInt  k = i * grid.ym + j;
       rrv[k].i = i + grid.xs;  rrv[k].j = j + grid.ys;
-      PetscScalar  junkx, junky;
-      grid.mapcoords(rrv[k].i, rrv[k].j, junkx, junky, rrv[k].r);
+      rrv[k].r = grid.radius(i,j);
     }
   }
   std::sort(rrv.begin(), rrv.end(), rgridReverseSort()); // so rrv[k].r > rrv[k+1].r
@@ -513,8 +506,7 @@ PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
   ierr = acab.get_array(accum); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar r = grid.radius(i,j);
       switch (testname) {
         case 'C':
           exactC(grid.year*secpera,r,&dummy,&accum[i][j]);
@@ -542,8 +534,7 @@ PetscErrorCode IceCompModel::fillSolnTestABCDH() {
   ierr = vH.get_array(H); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar r = grid.radius(i,j);
       switch (testname) {
         case 'A':
           exactA(r,&H[i][j],&accum[i][j]);
@@ -599,8 +590,7 @@ PetscErrorCode IceCompModel::fillSolnTestE() {
   ierr = vel_adv->get_array(bvel); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar xx = grid.x[i], yy = grid.y[j];
       exactE(xx,yy,&H[i][j],&accum[i][j],&dummy,&bvel[i][j].u,&bvel[i][j].v);
     }
   }
@@ -664,8 +654,8 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
         area += a;
         vol += a * H[i][j] * 1e-3;
       }
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar xx = grid.x[i], yy = grid.y[j],
+        r = grid.radius(i,j);
       switch (testname) {
         case 'A':
           exactA(r,&Hexact,&dummy);
@@ -782,8 +772,7 @@ PetscErrorCode IceCompModel::computeBasalVelocityErrors(
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       if (H[i][j] > 0.0) {
-        PetscScalar r,xx,yy;
-        grid.mapcoords(i,j,xx,yy,r);
+        PetscScalar xx = grid.x[i], yy = grid.y[j];
         exactE(xx,yy,&dummy1,&dummy2,&dummy3,&ubexact,&vbexact); 
         // compute maximum errors
         const PetscScalar uberr = PetscAbsReal(bvel[i][j].u - ubexact);

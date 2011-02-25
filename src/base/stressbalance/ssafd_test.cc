@@ -53,13 +53,8 @@ PetscErrorCode reportErrors(IceGrid &grid, NCConfigVariable &config,
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar junk1, junk2, uexact, vexact;
-      PetscScalar myr,myx,myy;
-      grid.mapcoords(i,j,myx,myy,myr);
+      PetscScalar myx = grid.x[i], myy = grid.y[j];
       // eval exact solution
-      const PetscInt ifrom0 = i - (grid.Mx)/2,
-        jfrom0 = j - (grid.My)/2;
-      myx = grid.dx * ifrom0;
-      myy = grid.dy * jfrom0;
       exactJ(myx, myy, &junk1, &junk2, &uexact, &vexact);
 
       // compute maximum errors
@@ -143,10 +138,7 @@ PetscErrorCode setInitStateJ(NCConfigVariable &config,
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar junk1, myu, myv, H;
-      const PetscInt ifrom0 = i - (grid.Mx)/2,
-                     jfrom0 = j - (grid.My)/2;
-      const PetscScalar myx = grid.dx * ifrom0,
-        myy = grid.dy * jfrom0;
+      PetscScalar myx = grid.x[i], myy = grid.y[j];
 
       // set H,h on regular grid
       ierr = exactJ(myx, myy, &H, &junk1, &myu, &myv); CHKERRQ(ierr);
@@ -157,7 +149,7 @@ PetscErrorCode setInitStateJ(NCConfigVariable &config,
       // special case at center point: here we set vel_bc at (i,j) by marking
       // this grid point as SHEET and setting vel_bc approriately
       if ( (i == (grid.Mx)/2) && (j == (grid.My)/2) ) {
-        (*mask)(i,j) = MASK_SHEET; // FIXME: replace with MASK_BC
+        (*mask)(i,j) = MASK_BC;
         (*vel_bc)(i,j).u = myu;
         (*vel_bc)(i,j).v = myv;
       }

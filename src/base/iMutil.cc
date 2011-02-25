@@ -33,7 +33,7 @@ PetscErrorCode IceModel::additionalAtEndTimestep() {
   return 0;
 }
 
-//! Catch signals -USR1 and -TERM; in the former case save and continue; in the latter, save and stop.
+//! Catch signals -USR1, -USR2 and -TERM.
 /*!
 Signal \c SIGTERM makes PISM end, saving state under original \c -o name 
 (or default name).  We also add an indication to the history attribute 
@@ -91,10 +91,6 @@ int IceModel::endOfTimeStepHook() {
 //! Build a history string from the command which invoked PISM.
 PetscErrorCode  IceModel::stampHistoryCommand() {
   PetscErrorCode ierr;
-  PetscInt argc;
-  char **argv;
-  
-  ierr = PetscGetArgs(&argc, &argv); CHKERRQ(ierr);
   
   char startstr[TEMPORARY_STRING_LENGTH];
 
@@ -103,10 +99,7 @@ PetscErrorCode  IceModel::stampHistoryCommand() {
   ierr = stampHistory(string(startstr)); CHKERRQ(ierr);
 
   // Create a string with space-separated command-line arguments:
-  string cmdstr;
-  for (int j = 0; j < argc; j++)
-    cmdstr += string(" ") + argv[j];
-  cmdstr += "\n";
+  string cmdstr = pism_args_string();
 
   global_attributes.prepend_history(cmdstr);
 
@@ -352,8 +345,8 @@ static PetscReal geo_z(PetscReal a, PetscReal b,
 /*!
     Compute corrected cell areas. Uses linear interpolation to find latitudes
     and longitudes of grid corners, WGS84 parameters to compute cartesian
-    coordinates of grid corners and vector products to compute areas of
-    resulting triangles.
+    (geocentric) coordinates of grid corners and vector products to compute
+    areas of resulting triangles.
    
     \note Latitude and longitude fields are \b not periodic, so computing
     corrected areas for cells at the grid boundary is not feasible. This should

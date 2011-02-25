@@ -43,7 +43,6 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   signal(SIGUSR2, pism_signal_handler);
 
   basal = NULL;
-  CFLviolcount = 0;
 
   surface = NULL;
   ocean   = NULL;
@@ -63,16 +62,29 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   save_ts = false;
   save_extra = false;
 
-  dvoldt = gdHdtav = 0;
-  total_surface_ice_flux = 0;
-  total_basal_ice_flux = 0;
-  total_sub_shelf_ice_flux = 0;
+  reset_counters();
 
   allowAboveMelting = PETSC_FALSE;  // only IceCompModel ever sets it to true
 
   // Default ice type:
   iceFactory.setType(ICE_PB);
 }
+
+void IceModel::reset_counters() {
+  CFLmaxdt = CFLmaxdt2D = 0.0;
+  CFLviolcount = 0;
+  dtTempAge = 0.0;
+  dt_from_diffus = dt_from_cfl = 0.0;
+  dvoldt = gdHdtav = 0;
+  gDmax = dvoldt = gdHdtav = 0;
+  gmaxu = gmaxv = gmaxw = -1;
+  maxdt_temporary = dt = dt_force = 0.0;
+  skipCountDown = 0;
+  total_basal_ice_flux = 0;
+  total_sub_shelf_ice_flux = 0;
+  total_surface_ice_flux = 0;
+}
+
 
 IceModel::~IceModel() {
 
@@ -444,12 +456,10 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //! field is updated and in some cases just the vertically-averaged
   //! horizontal velocity is updated; see velocity()
 
-  // always do SIA velocity calculation; only update SSA and 
-  //   only update velocities at depth if suggested by temp and age
-  //   stability criterion; note *lots* of communication is avoided by 
-  //   skipping SSA (and temp/age)
-
-  
+  // always do SIA velocity calculation (unless -no_sia is given); only update
+  // SSA and only update velocities at depth if suggested by temp and age
+  // stability criterion; note *lots* of communication is avoided by skipping
+  // SSA (and temp/age)
 
   bool updateAtDepth = (skipCountDown == 0);
   
@@ -648,16 +658,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   stdout_flags.erase(); // clear it out
   ierr = summaryPrintLine(PETSC_TRUE,do_temp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
-  skipCountDown = 0;
-  dtTempAge = 0.0;
-  maxdt_temporary = dt = dt_force = 0.0;
-  dt_from_diffus = dt_from_cfl = 0.0;
-  CFLmaxdt = CFLmaxdt2D = 0.0;
-  gDmax = dvoldt = gdHdtav = 0;
-  total_surface_ice_flux = 0;
-  total_basal_ice_flux = 0;
-  total_sub_shelf_ice_flux = 0;
-  gmaxu = gmaxv = gmaxw = -1;
+  reset_counters();
   ierr = summary(do_temp); CHKERRQ(ierr);  // report starting state
 
   // main loop for time evolution

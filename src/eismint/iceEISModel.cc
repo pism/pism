@@ -316,28 +316,3 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
   return 0;
 }
 
-
-//! Reimplement IceModel::basalVelocitySIA().
-/*!
-Applies in SIA regions (mask = SHEET).  Generally not a recommended mechanism,
-but called-for in EISMINT II.
- */
-PetscScalar IceEISModel::basalVelocitySIA(
-    PetscScalar /*x*/, PetscScalar /*y*/, PetscScalar H, PetscScalar T,
-    PetscScalar /*alpha*/, PetscScalar /*mu*/, PetscScalar /*min_T*/) const {
-
-  const PetscScalar  Bfactor = 1e-3 / secpera; // m s^-1 Pa^-1
-  const PetscScalar  eismintII_temp_sliding = 273.15;  // slide if basal ice this temp
-  
-  if (expername == 'G') {
-      return Bfactor * ice->rho * standard_gravity * H; 
-  } else if (expername == 'H') {
-      if (T + ice->beta_CC_grad * H > eismintII_temp_sliding) {
-        return Bfactor * ice->rho * standard_gravity * H; // ditto case G
-      } else {
-        return 0.0;
-      }
-  }  
-  return 0.0;  // zero sliding for other tests
-}
-

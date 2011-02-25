@@ -105,10 +105,18 @@ PetscErrorCode IceModel::update_viewers() {
   // sounding viewers:
   for (i = sounding_viewers.begin(); i != sounding_viewers.end(); ++i) {
     IceModelVec *v = variables.get(*i);
+    bool de_allocate = false;
 
     // if not found, try to compute:
     if (v == NULL) {
-      ierr = compute_by_name(*i, v); CHKERRQ(ierr);
+      de_allocate = true;
+      PISMDiagnostic *diag = diagnostics[*i];
+
+      if (diag) {
+        ierr = diag->compute(v); CHKERRQ(ierr);
+      } else {
+        v = NULL;
+      }
     }
 
     // if still not found, ignore
@@ -142,7 +150,9 @@ PetscErrorCode IceModel::update_viewers() {
 	if (v3d == NULL) SETERRQ(1,"grid_type() returns GRID_3D_BEDROCK but dynamic_cast gives a NULL");
 	ierr = v3d->view_sounding(id, jd, viewer); CHKERRQ(ierr);
     }
-  }
+
+    if (de_allocate) delete v;
+  } // sounding viewers
   return 0;
 }
 

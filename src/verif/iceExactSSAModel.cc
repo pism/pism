@@ -225,8 +225,7 @@ PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVelsI() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar junk, myu, myv;
-      const PetscScalar myx = grid.x[i],
-        myy = grid.y[j];
+      const PetscScalar myx = grid.x[i], myy = grid.y[j];
       // eval exact solution; will only use exact vels if at edge
       exactI(m_schoof, myx, myy, &(bed[i][j]), &junk, &myu, &myv); 
       h[i][j] = bed[i][j] + H0_schoof;
@@ -234,7 +233,7 @@ PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVelsI() {
       if (edge) {
         // set boundary condition which will apply to finite difference system:
         // staggered grid velocities at MASK_SHEET points at edges of grid
-        vMask(i,j) = MASK_SHEET; // replace with MASK_BC
+        vMask(i,j) = MASK_BC;
         vel_bc(i,j).u = myu;
         vel_bc(i,j).v = myv;
       }
@@ -280,15 +279,14 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar junk1, myu, myv;
-      const PetscScalar myx = grid.x[i],
-        myy = grid.y[j];
+      const PetscScalar myx = grid.x[i], myy = grid.y[j];
       // set H,h on regular grid
       ierr = exactJ(myx, myy, &vH(i,j), &junk1, &myu, &myv); CHKERRQ(ierr);
       vh(i,j) = (1.0 - ice->rho / ocean_rho) * vH(i,j);
       // special case at center point: here we set vel_bc at (i,j) by marking
       // this grid point as SHEET and setting ubar,vbar approriately
       if ( (i == (grid.Mx)/2) && (j == (grid.My)/2) ) {
-        vMask(i,j) = MASK_SHEET; // replace with MASK_BC
+        vMask(i,j) = MASK_BC;
         vel_bc(i,j).u = myu;
         vel_bc(i,j).v = myv;
       }
@@ -335,8 +333,7 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar alpha, Drr, myu, myv;
-      PetscScalar r,xx,yy;
-      grid.mapcoords(i,j,xx,yy,r);
+      PetscScalar xx = grid.x[i], yy = grid.y[j], r = grid.radius(i,j);
       // evaluate exact solution (though velocity info discarded for shelf)
       ierr = exactM(r, &alpha, &Drr, 1.0e-12, 0.0, 1); // CHKERRQ(ierr);
       if (ierr != 0) {
@@ -355,7 +352,7 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
         H[i][j] = H0;
         h[i][j] = hicepresent;
         bed[i][j] = bedgrounded;
-        mask[i][j] = MASK_SHEET; // replace with MASK_BC
+        mask[i][j] = MASK_BC;
         vel_bc(i,j).u = myu; 
         vel_bc(i,j).v = myv;
       } else if (r <= Rc) {
@@ -419,14 +416,11 @@ PetscErrorCode IceExactSSAModel::reportErrors() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar junk1, junk2, uexact, vexact;
-      PetscScalar myr,myx,myy;
-      grid.mapcoords(i,j,myx,myy,myr);
+      PetscScalar myx = grid.x[i], myy = grid.y[j], myr = grid.radius(i,j);
       // eval exact solution
       if (test == 'I') {
         exactI(m_schoof, myx, myy, &junk1, &junk2, &uexact, &vexact); 
       } else if (test == 'J') {
-        myx = grid.x[i];
-        myy = grid.y[j];
         exactJ(myx, myy, &junk1, &junk2, &uexact, &vexact);
       } else if (test == 'M') {
         PetscScalar alpha;
@@ -606,13 +600,11 @@ PetscErrorCode IceExactSSAModel::fillFromExactSolution() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar junk1, junk2;
-      PetscScalar myr,myx,myy;
-      grid.mapcoords(i,j,myx,myy,myr);
+      PetscScalar myx = grid.x[i], myy = grid.y[j],
+        myr = grid.radius(i,j);
       if (test == 'I') {
         exactI(m_schoof, myx, myy, &junk1, &junk2, &(*vel_2d)(i,j).u, &(*vel_2d)(i,j).v); 
       } else if (test == 'J') {
-        myx = grid.x[i];
-        myy = grid.y[j];
         ierr = exactJ(myx, myy, &junk1, &junk2, &(*vel_2d)(i,j).u, &(*vel_2d)(i,j).v); CHKERRQ(ierr);
       } else if (test == 'M') {
         PetscScalar alpha;

@@ -30,7 +30,6 @@ set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to d
 #option (Pism_BUILD_TESTS       "Build tests"                                           ON)
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
-option (Pism_LOCAL_INSTALL     "Install PISM locally (not in /usr/local/ or similar). This affects installation paths." ON)
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
 
 option (Pism_BUILD_DEBIAN_PACKAGE "Use settings appropriate for building a .deb package" OFF)
@@ -42,16 +41,16 @@ if (Pism_NETCDF4_COMPRESS AND (NOT Pism_NETCDF4_OUTPUT))
   message (STATUS "Turning 'on' Pism_WRITE_NETCDF4 to enable writing compressed NetCDF-4 files.")
 endif ()
 
+set (Pism_BIN_DIR "bin")
+set (Pism_LIB_DIR "lib/pism")
+set (Pism_DOC_DIR "share/doc/pism")
+
 if (Pism_BUILD_DEBIAN_PACKAGE)
-  set (Pism_LOCAL_INSTALL OFF CACHE BOOL "Install PISM locally" FORCE)
   set (Pism_BUILD_TYPE "Release" CACHE STRING "PISM build type" FORCE)
   set (CMAKE_INSTALL_PREFIX "/usr" CACHE STRING "Install prefix" FORCE)
   set (Pism_BUILD_DOCS ON CACHE BOOL "Build PISM documentation" FORCE)
   set (Pism_BUILD_BROWSER ON CACHE BOOL "Build PISM source code browsers" FORCE)
   set (Pism_BUILD_EXTRA_EXECS OFF CACHE BOOL "Build extra executables (mostly testing/verification)" FORCE)
-  set (Pism_BIN_DIR "bin")
-  set (Pism_LIB_DIR "lib/pism")
-  set (Pism_DOC_DIR "share/doc/pism")
 
   # RPATH handling
   set (CMAKE_SKIP_BUILD_RPATH TRUE)
@@ -59,9 +58,6 @@ if (Pism_BUILD_DEBIAN_PACKAGE)
   set (CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}")
   set (CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 else ()
-  set (Pism_BIN_DIR "bin")
-  set (Pism_LIB_DIR "lib")
-  set (Pism_DOC_DIR "doc")
 
   ## Use full RPATH, with this setting Pism libraries cannot be moved after installation
   ## but the correct libraries will always be found regardless of LD_LIBRARY_PATH
@@ -83,18 +79,6 @@ endif ()
 
 set (Pism_FAST_WRITE "1" CACHE STRING "Variable order options: 1,2,3 (fastest to slowest).")
 
-# This installs PISM in ${CMAKE_INSTALL_PREFIX}/{bin,lib,doc} if installed
-# locally; otherwise in ${CMAKE_INSTALL_PREFIX}/bin/, .../lib/pism and
-# .../share/doc/pism to avoid cluttering system directories.
-if (Pism_LOCAL_INSTALL)
-  set (Pism_BIN_DIR "bin")
-  set (Pism_LIB_DIR "lib")
-  set (Pism_DOC_DIR "doc")
-else ()
-  set (Pism_BIN_DIR "bin")
-  set (Pism_LIB_DIR "lib/pism")
-  set (Pism_DOC_DIR "share/doc/pism")
-endif ()
 
 # Deal with build types
 set (Pism_BUILD_TYPE "Debug" CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel.")

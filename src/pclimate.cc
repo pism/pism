@@ -182,7 +182,6 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
 					   PISMSurfaceModel *surface,
 					   PISMOceanModel* ocean,
 					   const char *filename, IceGrid* grid,
-					   int argc, char *argv[],
 					   PetscReal ys, PetscReal ye, PetscReal dt_years,
 					   NCConfigVariable &mapping) {
 
@@ -212,12 +211,7 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
   global_attrs.set_string("source", string("pclimate ") + PISM_Revision);
 
   // Create a string with space-separated command-line arguments:
-  string cmdstr;
-  for (int j = 0; j < argc; j++)
-    cmdstr += string(" ") + argv[j];
-  cmdstr += "\n";
-
-  string history = pism_username_prefix() + cmdstr;
+  string history = pism_username_prefix() + pism_args_string();
 
   global_attrs.prepend_history(history);
 
@@ -421,7 +415,7 @@ int main(int argc, char *argv[]) {
         outname.c_str()); CHKERRQ(ierr);
 
     ierr = writePCCStateAtTimes(variables, surface, ocean,
-                                outname.c_str(), &grid, argc, argv,
+                                outname.c_str(), &grid,
 				ys, ye, dt_years,
                                 mapping); CHKERRQ(ierr);
 
