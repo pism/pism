@@ -279,9 +279,7 @@ PetscErrorCode SSATestCase::write(const string &filename)
   ierr = exact.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      PetscScalar junk1, junk2;
-      PetscScalar myr,myx,myy;
-      grid.mapcoords(i,j,myx,myy,myr);
+      PetscScalar myx = grid.x[i], myy = grid.y[j];
       exactSolution(i,j,myx,myy,&(exact(i,j).u),&(exact(i,j).v));
     }
   }
