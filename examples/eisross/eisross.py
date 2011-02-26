@@ -16,8 +16,7 @@ KBC_FILE = 'kbc.dat'
 INLETS_FILE = 'inlets.dat'
 WRIT_FILE = 'ross.nc'
 dxROSS = 6822.0 # meters
-MASK_BC    = -2
-MASK_SHEET =  1
+MASK_SHEET = 1
 MASK_FLOATING = 3
 VERBOSE = 0
 
@@ -126,7 +125,7 @@ vprint(grid.readline()) # ignore two lines
 vprint(grid.readline())
 for i in [0, 1]:
     for j in range(MyROSS):
-        mask[i,j] = MASK_BC
+        mask[i,j] = MASK_SHEET
 for i in range(xsROSS-2):
     for j in range(MyROSS):
         mask[i+2,j] = MASK_FLOATING
@@ -136,7 +135,7 @@ for i in range(xmROSS):
         if int(num) == 1:
             mask[i+xsROSS,j] = MASK_FLOATING
         else:
-            mask[i+xsROSS,j] = MASK_BC
+            mask[i+xsROSS,j] = MASK_SHEET
         j = j + 1
 read2dROSSfloat(grid,azi,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0)
 read2dROSSfloat(grid,mag,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0 / SECPERA)
@@ -173,6 +172,23 @@ grid.close()
 ##### create arrays for observed ubar, vbar and fill with _FillValue #####
 ubarOBS = zeros((MxROSS, MyROSS), float32)
 vbarOBS = zeros((MxROSS, MyROSS), float32)
+bcflag = zeros((MxROSS, MyROSS), int16)
+for i in range(MxROSS):
+    for j in range(MxROSS):
+        ubarOBS[i,j] = 1.0 / SECPERA
+        vbarOBS[i,j] = 1.0 / SECPERA
+        bcflag[i,j] = 0
+# also fill in zeros along sides; better for Laplace solution
+for i in range(MxROSS):
+    ubarOBS[i,0] = 0.0
+    vbarOBS[i,0] = 0.0
+    ubarOBS[i,MyROSS-1] = 0.0
+    vbarOBS[i,MyROSS-1] = 0.0
+for j in range(MyROSS):
+    ubarOBS[0,j] = 0.0
+    vbarOBS[0,j] = 0.0
+    ubarOBS[MxROSS-1,j] = 0.0
+    vbarOBS[MxROSS-1,j] = 0.0
 
 ##### read kbc.dat #####
 print "reading boundary condition locations from ",KBC_FILE
@@ -181,7 +197,8 @@ for count in range(77):
     coords = kbc.readline().split()
     i = int(coords[0]) + xsROSS
     j = int(coords[1])
-    mask[i,j] = MASK_BC
+    mask[i,j] = MASK_SHEET
+    bcflag[i,j] = 1
     [ubarOBS[i,j], vbarOBS[i,j]] = uvGet(mag[i,j],azi[i,j])
 kbc.close()
 
@@ -193,7 +210,8 @@ for count in range(22):
     data = inlets.readline().split()
     i = int(data[0]) + xsROSS
     j = int(data[1])
-    mask[i,j] = MASK_BC
+    mask[i,j] = MASK_SHEET
+    bcflag[i,j] = 1
     [ubarOBS[i,j], vbarOBS[i,j]]  = uvGet(float(data[3]) / SECPERA,float(data[2]))
 inlets.close()
 
@@ -286,7 +304,12 @@ vars = {'y': ['m',
                  'vertical average of horizontal velocity of ice in projection_y_coordinate direction',
                  'land_ice_vertical_mean_y_velocity',
                  1/SECPERA,
-                 vbarOBS],}
+                 vbarOBS],
+        'bcflag': [None,
+                   'location of Dirichlet boundary condition for velocity',
+                   None,
+                   None,
+                   bcflag],}
 
 for name in vars.keys():
     [_, _, _, fill_value, data] = vars[name]

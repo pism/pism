@@ -238,7 +238,7 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
 
   IceModelVec2S *obsAzimuth, *obsMagnitude, *obsAccurate,
     *thickness, *surface, *bed, *tauc, *longitude, *latitude;
-  IceModelVec2Mask *mask;
+  IceModelVec2Mask *mask, *bc_mask;
   IceModelVec2V *vel_bc;
   IceModelVec3 *enthalpy;
 
@@ -253,6 +253,7 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
   latitude = new IceModelVec2S;
 
   mask = new IceModelVec2Mask;
+  bc_mask = new IceModelVec2Mask;
 
   vel_bc = new IceModelVec2V;
 
@@ -324,6 +325,17 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
   CHKERRQ(ierr);
   mask->output_data_type = NC_BYTE;
   ierr = vars.add(*mask); CHKERRQ(ierr);
+
+  ierr = bc_mask->create(grid, "bcflag", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = bc_mask->set_attrs("model_state", "boundary condition locations",
+                            "", ""); CHKERRQ(ierr);
+  vector<double> bc_mask_values(2);
+  bc_mask_values[0] = MASK_ICE_FREE_BEDROCK;
+  bc_mask_values[1] = MASK_SHEET;
+  ierr = bc_mask->set_attr("flag_values", bc_mask_values); CHKERRQ(ierr);
+  ierr = bc_mask->set_attr("flag_meanings", "no_data bc_condition"); CHKERRQ(ierr);
+  bc_mask->output_data_type = NC_BYTE;
+  ierr = vars.add(*bc_mask); CHKERRQ(ierr);
 
   ierr = vel_bc->create(grid, "bar", false); CHKERRQ(ierr); // ubar and vbar
   ierr = vel_bc->set_attrs("intent",
@@ -426,11 +438,11 @@ PetscErrorCode set_surface_elevation(PISMVars &vars, const NCConfigVariable &con
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
 
-  PetscReal rho_ice = config.get("ice_density"),
-    rho_ocean = config.get("sea_water_density");
+  PetscReal ice_rho = config.get("ice_density"),
+    ocean_rho = config.get("sea_water_density");
 
   ierr = thickness->copy_to(*surface); CHKERRQ(ierr);
-  ierr = surface->scale(1.0 - rho_ice / rho_ocean); CHKERRQ(ierr); 
+  ierr = surface->scale(1.0 - ice_rho / ocean_rho); CHKERRQ(ierr); 
 
   return 0;
 }
@@ -563,7 +575,11 @@ int main(int argc, char *argv[]) {
 
     ierr = PetscOptionsBegin(com, "", "PROSS options", ""); CHKERRQ(ierr);
     {
-      ierr = config.scalar_from_option("ssa_rtol", "ssa_relative_convergence"); CHKERRQ(ierr);
+      bool flag;
+      double rtol = config.get("ssa_relative_convergence");
+      ierr = PISMOptionsReal("-ssa_rtol", "set configuration constant ssa_relative_convergence",
+                             rtol, flag); CHKERRQ(ierr);
+      if (flag) config.set("ssa_relative_convergence",rtol);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -608,8 +624,8 @@ int main(int argc, char *argv[]) {
 
     IceModelVec2Mask *bc_mask;
     IceModelVec2V *bc_vel;
-    bc_mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
-    if (bc_mask == NULL) SETERRQ(1, "mask is not available");
+    bc_mask = dynamic_cast<IceModelVec2Mask*>(vars.get("bcflag"));
+    if (bc_mask == NULL) SETERRQ(1, "bcflag is not available");
 
     bc_vel = dynamic_cast<IceModelVec2V*>(vars.get("velbar"));
     if (bc_vel == NULL) SETERRQ(1, "velbar is not available");

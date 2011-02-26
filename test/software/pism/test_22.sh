@@ -24,7 +24,7 @@ run_test ()
 from numpy import double, abs
 from sys import exit
 chi_squared = 1e6
-good_chi_squared = 3680.748
+good_chi_squared = 3649.427
 rel_tolerance = 0.01
 
 f = open("ross.txt")

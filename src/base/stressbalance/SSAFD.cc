@@ -126,7 +126,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (vel_bc && (bc_locations->value(i,j) == MASK_BC)) {
+      if (vel_bc && (bc_locations->value(i,j) == MASK_SHEET)) { // FIXME: replace with MASK_BC
         rhs_uv[i][j].u = scaling * (*vel_bc)(i,j).u;
         rhs_uv[i][j].v = scaling * (*vel_bc)(i,j).v;
       } else {
@@ -243,20 +243,13 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
   ierr = nuH.begin_access(); CHKERRQ(ierr);
   ierr = tauc->begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = vel.begin_access(); CHKERRQ(ierr);
-
-  if (bc_locations) {
-    ierr = bc_locations->begin_access(); CHKERRQ(ierr);
-  }
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PismMask mask_value = MASK_UNKNOWN;
-
-      if (bc_locations)
-        mask_value = bc_locations->value(i,j);
-
-      if (mask_value == MASK_BC) {
+      const PismMask mask_value = mask->value(i,j);
+      if (mask_value == MASK_SHEET) { // FIXME: replace with MASK_BC
         // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
         //   this is where boundary value to SSA is set
         MatStencil  row, col;
@@ -375,11 +368,8 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     }
   }
 
-  if (bc_locations) {
-    ierr = bc_locations->end_access(); CHKERRQ(ierr);
-  }
-
   ierr = vel.end_access(); CHKERRQ(ierr);  
+  ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = tauc->end_access(); CHKERRQ(ierr);  
   ierr = nuH.end_access(); CHKERRQ(ierr);
 

@@ -233,7 +233,7 @@ PetscErrorCode IceExactSSAModel::setInitStateAndBoundaryVelsI() {
       if (edge) {
         // set boundary condition which will apply to finite difference system:
         // staggered grid velocities at MASK_SHEET points at edges of grid
-        vMask(i,j) = MASK_BC;
+        vMask(i,j) = MASK_SHEET;
         vel_bc(i,j).u = myu;
         vel_bc(i,j).v = myv;
       }
@@ -286,7 +286,7 @@ PetscErrorCode IceExactSSAModel::setInitStateJ() {
       // special case at center point: here we set vel_bc at (i,j) by marking
       // this grid point as SHEET and setting ubar,vbar approriately
       if ( (i == (grid.Mx)/2) && (j == (grid.My)/2) ) {
-        vMask(i,j) = MASK_BC;
+        vMask(i,j) = MASK_SHEET;
         vel_bc(i,j).u = myu;
         vel_bc(i,j).v = myv;
       }
@@ -352,7 +352,7 @@ PetscErrorCode IceExactSSAModel::setInitStateM() {
         H[i][j] = H0;
         h[i][j] = hicepresent;
         bed[i][j] = bedgrounded;
-        mask[i][j] = MASK_BC;
+        mask[i][j] = MASK_SHEET;
         vel_bc(i,j).u = myu; 
         vel_bc(i,j).v = myv;
       } else if (r <= Rc) {

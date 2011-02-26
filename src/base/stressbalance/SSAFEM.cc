@@ -307,7 +307,7 @@ void SSAFEM::FixDirichletValues(PetscReal lmask[],PISMVector2 **BC_vel,
                                 PISMVector2 x[], FEDOFMap &dofmap)
 {
   for (PetscInt k=0; k<4; k++) {
-    if (PismIntMask(lmask[k]) == MASK_BC) {
+    if (PismIntMask(lmask[k]) == MASK_SHEET) {
       PetscInt ii, jj;
       dofmap.localToGlobal(k,&ii,&jj);
       x[k].u = BC_vel[ii][jj].u;
@@ -392,7 +392,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
     // Enforce Dirichlet conditions strongly
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (bc_locations->value(i,j) == MASK_BC) {
+        if (bc_locations->value(i,j) == MASK_SHEET) {
           // Enforce zero sliding strongly
           yg[i][j].u = dirichletScale * (xg[i][j].u - BC_vel[i][j].u);
           yg[i][j].v = dirichletScale * (xg[i][j].v - BC_vel[i][j].v);
@@ -523,7 +523,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
   if (bc_locations && vel_bc) {
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (bc_locations->value(i,j) == MASK_BC) {
+        if (bc_locations->value(i,j) == MASK_SHEET) {
           const PetscReal ident[4] = {dirichletScale,0,0,dirichletScale};
           MatStencil row;
           // FIXME: Transpose shows up here!
