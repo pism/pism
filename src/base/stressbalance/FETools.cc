@@ -225,10 +225,26 @@ const FEFunctionGerm *FEQuadrature::testFunctionValues(PetscInt q, PetscInt k)
   return m_germs[q] + k;
 }
 
-//! Compute the values of a scalar-valued finite-element function at all quadrature points.
-/* The element-local degrees of freedom of the function are specified in \a x.
-The values (\a vals) and derivatives (\a dx and \a dy) are returned.  There should
-be room for Nq values in each of these output arrays.*/
+
+/*! \brief Compute the values at the quadrature ponits of a scalar-valued 
+finite-element function with element-local  degrees of freedom \a x.*/
+/*! There should be room for FEQuadrature::Nq values in the output vector \a vals. */
+void FEQuadrature::computeTrialFunctionValues(const PetscReal *x, PetscReal *vals)
+{
+  for (int q=0; q<Nq; q++) {
+    const FEFunctionGerm *test = m_germs[q];
+    vals[q] = 0;
+    for (int k=0; k<Nk; k++) {
+      vals[q] += test[k].val * x[k];
+    }
+  }
+}
+
+/*! \brief Compute the values and first derivatives at the quadrature 
+points of a scalar-valued finite-element function with element-local  
+degrees of freedom \a x.*/
+/*! There should be room for FEQuadrature::Nq values in the output vectors \a vals, \a dx, 
+and \a dy. */
 void FEQuadrature::computeTrialFunctionValues(const PetscReal *x, PetscReal *vals, PetscReal *dx, PetscReal *dy)
 {
   for (int q=0; q<Nq; q++) {
@@ -242,37 +258,9 @@ void FEQuadrature::computeTrialFunctionValues(const PetscReal *x, PetscReal *val
   }
 }
 
-
-/*!\brief Compute the values of a scalar-valued finite-element function on element (\a i, \aj)
-at the quadrature points.*/
-/* The global degrees of freedom of the function are specified in \a xg.
-The values (\a vals) and derivatives (\a dx and \a dy) are returned.  There should
-be room for Nq values in each of these output arrays.*/
-void FEQuadrature::computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, PetscReal const*const*xg, 
-                                 PetscReal *vals, PetscReal *dx, PetscReal *dy)
-{
-  dof.extractLocalDOFs(i,j,xg,m_tmpScalar);
-  computeTrialFunctionValues(m_tmpScalar,vals,dx,dy);  
-}
-
-/*! \brief Compute the values (and no derivatives) of a scalar-valued 
-finite-element function with element-local  degrees of freedom \a x.*/
-/*! There should be room for Nq values in the ouput vector \a vals. */
-void FEQuadrature::computeTrialFunctionValues(const PetscReal *x, PetscReal *vals)
-{
-  for (int q=0; q<Nq; q++) {
-    const FEFunctionGerm *test = m_germs[q];
-    vals[q] = 0;
-    for (int k=0; k<Nk; k++) {
-      vals[q] += test[k].val * x[k];
-    }
-  }
-}
-
-
-/*!\brief Compute the values (and no derivatives) of a scalar-valued finite-element function 
-on element (\a i,\a j) with global degrees of freedom \a xg.*/
-/*! There should be room for Nq values in the output vector \a vals. */
+/*! \brief Compute the values at the quadrature points on element (\a i,\a j) 
+of a scalar-valued finite-element function with global degrees of freedom \a x.*/
+/*! There should be room for FEQuadrature::Nq values in the output vector \a vals. */
 void FEQuadrature::computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, 
                                              PetscReal const*const*xg, PetscReal *vals)
 {
@@ -280,10 +268,37 @@ void FEQuadrature::computeTrialFunctionValues( PetscInt i, PetscInt j, const FED
   computeTrialFunctionValues(m_tmpScalar,vals);
 }
 
+/*! \brief Compute the values and first derivatives at the quadrature points 
+on element (\a i,\a j)  of a scalar-valued finite-element function with global degrees of freedom \a x.*/
+/*! There should be room for FEQuadrature::Nq values in the output vectors \a vals, \a dx, and \a dy. */
+void FEQuadrature::computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, PetscReal const*const*xg, 
+                                 PetscReal *vals, PetscReal *dx, PetscReal *dy)
+{
+  dof.extractLocalDOFs(i,j,xg,m_tmpScalar);
+  computeTrialFunctionValues(m_tmpScalar,vals,dx,dy);  
+}
 
-/*!\brief Compute the values (and no derivatives) of a vector-valued finite-element function 
-on element (\a i,\a j) with global degrees of freedom \a xg.*/
-/*! 
+/*! \brief Compute the values at the quadrature points of a vector-valued 
+finite-element function with element-local degrees of freedom \a x.*/
+/*! There should be room for FEQuadrature::Nq values in the output vector \a vals. */
+void FEQuadrature::computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals)
+{
+  for (int q=0; q<Nq; q++) {
+    vals[q].u = 0; vals[q].v = 0;
+    const FEFunctionGerm *test = m_germs[q];
+    for (int k=0; k<Nk; k++) {
+      vals[q].u += test[k].val * x[k].u;
+      vals[q].v += test[k].val * x[k].v;
+    }
+  }  
+
+}
+
+/*! \brief Compute the values and symmetric gradient at the quadrature points of a vector-valued 
+finite-element function with element-local degrees of freedom \a x.*/
+/*! There should be room for FEQuadrature::Nq values in the output vectors \a vals and \a Dv. 
+Each entry of \a Dv is an array of three numbers: 
+\f[\left[\frac{du}{dx},\frac{dv}{dy},\frac{1}{2}\left(\frac{du}{dy}+\frac{dv}{dx}\right)\right]\f].
 */
 void FEQuadrature::computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals, PetscReal (*Dv)[3] )
 {
@@ -302,31 +317,27 @@ void FEQuadrature::computeTrialFunctionValues( const PISMVector2 *x,  PISMVector
   }  
 }
 
-
-void FEQuadrature::computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof,                                              
-                                             PISMVector2 const*const*xg, PISMVector2 *vals, PetscReal (*Dv)[3] )
-{
-  dof.extractLocalDOFs(i,j,xg,m_tmpVector);
-  computeTrialFunctionValues(m_tmpVector,vals,Dv);
-}
-
-
-void FEQuadrature::computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals)
-{
-  for (int q=0; q<Nq; q++) {
-    vals[q].u = 0; vals[q].v = 0;
-    const FEFunctionGerm *test = m_germs[q];
-    for (int k=0; k<Nk; k++) {
-      vals[q].u += test[k].val * x[k].u;
-      vals[q].v += test[k].val * x[k].v;
-    }
-  }  
-}
+/*! \brief Compute the values at the quadrature points of a vector-valued 
+finite-element function on element (\a i,\a j) with global degrees of freedom \a xg.*/
+/*! There should be room for FEQuadrature::Nq values in the output vectors \a vals. */
 void FEQuadrature::computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof,                                              
                                              PISMVector2 const*const*xg, PISMVector2 *vals )
 {
   dof.extractLocalDOFs(i,j,xg,m_tmpVector);
   computeTrialFunctionValues(m_tmpVector,vals);
+}
+
+/*! \brief Compute the values and symmetric gradient at the quadrature points of a vector-valued 
+finite-element function on element (\a i,\a j) with global degrees of freedom \a xg.*/
+/*! There should be room for FEQuadrature::Nq values in the output vectors \a vals and \a Dv. 
+Each entry of \a Dv is an array of three numbers: 
+\f[\left[\frac{du}{dx},\frac{dv}{dy},\frac{1}{2}\left(\frac{du}{dy}+\frac{dv}{dx}\right)\right]\f].
+*/
+void FEQuadrature::computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof,                                              
+                                             PISMVector2 const*const*xg, PISMVector2 *vals, PetscReal (*Dv)[3] )
+{
+  dof.extractLocalDOFs(i,j,xg,m_tmpVector);
+  computeTrialFunctionValues(m_tmpVector,vals,Dv);
 }
 
 //! The quadrature points on the reference square \f$x,y=\pm 1/\sqrt{3}\f$.

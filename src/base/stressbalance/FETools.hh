@@ -157,6 +157,16 @@ struct FEFunctionGerm
              dy;  //!< Function derivative with respect to y.
 };
 
+//! Struct for gathering the value and derivative of a vector valued function at a point.
+/*! Germ in meant in the mathematical sense, sort of. */
+struct FEVector2Germ
+{
+  PISMVector2  val,  //!< Function value.
+                dx,  //!< Function deriviative with respect to x.
+                dy;  //!< Function derivative with respect to y.
+};
+
+
 //! Computation of Q1 shape function values.
 /*! The Q1 shape functions are bilinear functions.  On a rectangular
 element, there are four (FEShapeQ1::Nk) basis functions, each equal
@@ -366,26 +376,23 @@ public:
 
   void init(const IceGrid &g); // FIXME Allow a length scale to be specified.
 
-  const FEFunctionGerm (*testFunctionValues())[4];  
+  const FEFunctionGerm (*testFunctionValues())[Nq];  
   const FEFunctionGerm *testFunctionValues(PetscInt q);
   const FEFunctionGerm *testFunctionValues(PetscInt q,PetscInt k);
   
-  
+
   void computeTrialFunctionValues( const PetscReal *x, PetscReal *vals);
   void computeTrialFunctionValues( const PetscReal *x, PetscReal *vals, PetscReal *dx, PetscReal *dy);
-
   void computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, PetscReal const*const*xg, PetscReal *vals);
   void computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, PetscReal const*const*xg, 
                                    PetscReal *vals, PetscReal *dx, PetscReal *dy);
 
-  void computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals, PetscReal (*Dv)[3]);
   void computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals);
-
-  void computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, PISMVector2 const*const*xg,  
-                                   PISMVector2 *vals, PetscReal (*Dv)[3]);
-
+  void computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals, PetscReal (*Dv)[3]);  
   void computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, PISMVector2 const*const*xg,  
                                    PISMVector2 *vals);
+  void computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, PISMVector2 const*const*xg,  
+                                   PISMVector2 *vals, PetscReal (*Dv)[3]);
 
   void getWeightedJacobian(PetscReal *jxw);
 
@@ -396,10 +403,11 @@ public:
 
 protected:
 
-  //!< The Jacobian determinant of the map from the reference element to the physical element.
+  //! The Jacobian determinant of the map from the reference element to the physical element.
   PetscReal m_jacobianDet;
-  //!< Shape function values (for each of \a Nq quadrature points, and each of \a Nk shape function )
+  //! Shape function values (for each of \a Nq quadrature points, and each of \a Nk shape function )
   FEFunctionGerm m_germs[Nq][Nk];
+
   PetscReal   m_tmpScalar[Nk];
   PISMVector2 m_tmpVector[Nk];
 };

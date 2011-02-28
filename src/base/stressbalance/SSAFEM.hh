@@ -23,14 +23,15 @@
 #include "FETools.hh"
 #include <petscsnes.h>
 
-struct FECTX;
+
+//! Storage for SSA coefficients at a quadrature point.
 struct FEStoreNode {
-  PetscReal h,H,tauc,hx,hy,b,B; // These values are fully dimensional
+  PetscReal h,H,tauc,hx,hy,b,B;
 };
 
 
 
-// Manage nondimensionalization [FIXME:  I've forced a degenerate dimensional version]
+//! Currently unused class that may be used to implement nondimensionalization in SSAFEM.
 class PismRef {
 public:
   PismRef() {
@@ -60,32 +61,33 @@ private:
 
 class SSAFEM;
 
-//! The callbacks from SNES are mediated via SNESDAFormFunction, which has the
-//! convention that its context argument is a pointer to a struct argument 
-//! having a DA as its first entry.  The FECTX fulfills this requirement, and
-//! allows for passing the callback on to an honest SSAFEM object.
-struct FECTX {
+//! Adaptor for gluing SNESDAFormFunction callbacks to an SSAFEM.
+/* The callbacks from SNES are mediated via SNESDAFormFunction, which has the
+ convention that its context argument is a pointer to a struct 
+ having a DA as its first entry.  The SSAFEM_SNESCallbackData fulfills 
+ this requirement, and allows for passing the callback on to an honest 
+ SSAFEM object. */
+struct SSAFEM_SNESCallbackData {
   DA           da;
   SSAFEM      *ssa;
 };
 
-//! SNES callbacks.  These simply forward the call on to an SSAFEM.
+//! SNES callbacks.  
+/*! These simply forward the call on to the SSAFEM memeber of the SSAFEM_SNESCallbackData */
 PetscErrorCode SSAFEFunction(DALocalInfo *, const PISMVector2 **, 
-                                                      PISMVector2 **, FECTX *);
-PetscErrorCode SSAFEJacobian(DALocalInfo *, const PISMVector2 **, Mat, FECTX *);
+                                                      PISMVector2 **, SSAFEM_SNESCallbackData *);
+PetscErrorCode SSAFEJacobian(DALocalInfo *, const PISMVector2 **, Mat, SSAFEM_SNESCallbackData *);
 
 
-//! PISM's SSA solver: the finite element method implementation written by Jed
+//! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!
-Jed's code is in rev 831:
-  src/base/ssaJed/...
-The following is a wrapper around Jed's code.  The wrapper duplicates the
-functionality of SSAFD.
- */
+Jed's original code is in rev 831: src/base/ssaJed/...
+The SSAFEM duplicates the functionality of SSAFD, using the finite element method.
+*/
 class SSAFEM : public SSA
 {
-  friend PetscErrorCode SSAFEFunction(DALocalInfo *, const PISMVector2 **, PISMVector2 **, FECTX *);
-  friend PetscErrorCode SSAFEJacobian(DALocalInfo *, const PISMVector2 **, Mat, FECTX *);
+  friend PetscErrorCode SSAFEFunction(DALocalInfo *, const PISMVector2 **, PISMVector2 **, SSAFEM_SNESCallbackData *);
+  friend PetscErrorCode SSAFEJacobian(DALocalInfo *, const PISMVector2 **, Mat, SSAFEM_SNESCallbackData *);
 public:
   SSAFEM(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
          const NCConfigVariable &c) :
@@ -126,7 +128,7 @@ protected:
 
   // objects used internally
   IceModelVec2S hardav;         // vertically-averaged ice hardness
-  FECTX ctx;
+  SSAFEM_SNESCallbackData callback_data;
   Mat J;
   Vec r;
 
