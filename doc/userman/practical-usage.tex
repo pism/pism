@@ -160,9 +160,11 @@ more accurately.
 \end{table}
 
 
-\subsection{Saving time series of spatially-varying diagnostic quantities}\index{PISM!saving diagnostic quantities regularly}
+\subsection{Saving time series of spatially-varying diagnostic quantities}
 \label{sec:saving-spat-vari}
 \optsection{Saving 2D and 3D time-series}
+\index{PISM!saving diagnostic quantities regularly}
+\index{PISM!diagnostic quantities}
 
 Sometimes it is useful to have PISM save a handful of diagnostic quantities every 10 years (or even every year).  One can use snapshots (section \ref{sec:snapshots}), but doing so can easily fill your hard-drive because snapshots are complete (re-startable) model states.  Sometimes you want a \emph{subset} of model variables saved reasonably-frequently in an output file.
 
@@ -227,7 +229,11 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \texttt{cell_area} & km$^{2}$ & corrected cell areas, computed using WGS84
     reference ellipsoid\\
     \texttt{cflx} & m$^{2}$/year & magnitude of vertically-integrated horizontal flux of ice \\
-    \texttt{csurf} & m/year & magnitude of horizontal velocity of ice at ice surface \\
+    \texttt{csurf} & m/year & magnitude of horizontal velocity of ice at ice
+    surface \\
+    \texttt{diffusivity} & m$^{2}$ / s & diffusivity coefficient $D$ in
+    map-plane continuity equation; only makes sense in regions of shallow ice
+    flow \\
     \texttt{dHdt} & m/year & rate of change of ice thickness \\
     \texttt{dbdt} & m/year& bedrock uplift rate \\
     \texttt{dhdt} & m/year& rate of change of surface elevation \\
@@ -410,9 +416,9 @@ The handful of diagnostic quantities which are \emph{only} available as run-time
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \small
     \textbf{Variable name or an option} & \textbf{Description}\\\midrule
-    \texttt{diffusivity} & diffusivity coefficient D in map-plane mass-continuity equation in $m^{2}/s$. Meaningful only in regions of shallow ice flow.\\
-    \texttt{nuH} & two viewers: vertically-averaged effective viscosity times thickness; on $i$ and $j$ offset grids. Only meaningful in ice streams and shelves.\\
-    \texttt{log_nuH} & log base ten of \texttt{nuH} \\
+  \intextoption{ssa_view_nuh} & log base ten of \texttt{nuH}, only available
+    if the finite-difference SSA solver is active. You can adjust the viewer
+    size with \txtopt{ssa_nuh_viewer_size}{\emph{number}}. \\
     \intextoption{ksp_monitor_draw} & Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Residual norm versus iteration number.\\\bottomrule
     \normalsize
   \end{tabular}

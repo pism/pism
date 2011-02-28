@@ -227,7 +227,8 @@ protected:
   IceGrid      *grid;
   GridType     dims;            //!< \brief Determines whether this field is
                                 //!< 2D, 3D (ice) or 3D (bedrock).
-  int          dof, da_stencil_width;
+  int          dof,             //!< number of "degrees of freedom" per grid point
+    da_stencil_width;           //!< stencil width supported by the DA
   DA           da;
   bool         localp;          //!< localp == true means "has ghosts"
 
@@ -241,6 +242,7 @@ protected:
   int access_counter;		// used in begin_access() and end_access()
   int state_counter;            //!< Internal IceModelVec "revision number"
 
+  virtual PetscErrorCode create_2d_da(DA &result, PetscInt da_dof, PetscInt stencil_width);
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode checkAllocated();
   virtual PetscErrorCode checkHaveArray();
@@ -261,11 +263,21 @@ struct planeBox {
   PetscScalar ij, ip1, im1, jp1, jm1, ip1jp1, im1jp1, ip1jm1, im1jm1;
 };
 
-//! Class for a 2d DA-based Vec for scalar quantities in IceModel.
+//! Class for a 2d DA-based Vec.
 class IceModelVec2 : public IceModelVec {
 public:
   IceModelVec2() : IceModelVec() {}
   IceModelVec2(const IceModelVec2 &other) : IceModelVec(other) {};
+  virtual PetscErrorCode view(PetscInt viewer_size);
+  virtual PetscErrorCode view(PetscViewer v1, PetscViewer v2);
+  using IceModelVec::write;
+  virtual PetscErrorCode write(const char filename[], nc_type nctype);
+  virtual PetscErrorCode read(const char filename[], const unsigned int time);
+  virtual PetscErrorCode regrid(const char filename[], bool critical, int start = 0);
+  virtual PetscErrorCode regrid(const char filename[], PetscScalar default_value);
+  // component-wise access:
+  virtual PetscErrorCode get_component(int n, IceModelVec2 &result);
+  virtual PetscErrorCode set_component(int n, IceModelVec2 &source);
 protected:
   virtual PetscErrorCode create(IceGrid &my_grid, const char my_short_name[], bool local,
 			 DAStencilType my_sten, int stencil_width, int dof);
@@ -299,8 +311,6 @@ public:
   virtual PetscScalar diff_y_stagN(int i, int j);
   virtual PetscScalar diff_x_p(int i, int j);
   virtual PetscScalar diff_y_p(int i, int j);
-  virtual PetscErrorCode view(PetscInt viewer_size);
-  virtual PetscErrorCode view(PetscViewer v);
   virtual PetscErrorCode view_matlab(PetscViewer my_viewer);
   virtual PetscScalar& operator() (int i, int j);
   virtual PetscErrorCode has_nan();
@@ -336,35 +346,23 @@ public:
 class IceModelVec2V : public IceModelVec2 {
 public:
   IceModelVec2V();
-  IceModelVec2V(const IceModelVec2V &other) : IceModelVec2(other)
-  { component_da = other.component_da; }
-  //IceModelVec2V(const IceModelVec2V &original);
-  ~IceModelVec2V();
+  IceModelVec2V(const IceModelVec2V &other) : IceModelVec2(other) {}
+
+  ~IceModelVec2V() {}
+
   using IceModelVec2::create;
   virtual PetscErrorCode create(IceGrid &my_grid, const char my_short_name[],
 				bool local, int stencil_width = 1);
 
   // I/O:
   using IceModelVec2::write;
-  virtual PetscErrorCode write(const char filename[], nc_type nctype);
-  virtual PetscErrorCode read(const char filename[], const unsigned int time);
-  virtual PetscErrorCode regrid(const char filename[], bool critical, int start = 0);
-  virtual PetscErrorCode regrid(const char filename[], PetscScalar default_value);
   virtual PetscErrorCode get_array(PISMVector2 ** &a);
   virtual PetscErrorCode magnitude(IceModelVec2S &result);
   virtual PISMVector2&   operator()(int i, int j);
-  virtual PetscErrorCode view(PetscInt viewer_size);
-  virtual PetscErrorCode view(PetscViewer v1, PetscViewer v2);
-  // component-wise access:
-  virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
-  virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
   // Metadata, etc:
   using IceModelVec2::is_valid;
   virtual bool           is_valid(PetscScalar u, PetscScalar v);
   virtual PetscErrorCode set_name(const char name[], int component = 0);
-protected:
-  DA component_da;		//!< same as \c da, but for one component only
-  PetscErrorCode destroy();
 };
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.
@@ -382,9 +380,6 @@ public:
   virtual PetscErrorCode end_access();
   virtual PetscScalar& operator() (int i, int j, int k);
   virtual PetscErrorCode norm_all(NormType n, PetscReal &result0, PetscReal &result1);
-  // component-wise access:
-  virtual PetscErrorCode get_component(int n, IceModelVec2S &result);
-  virtual PetscErrorCode set_component(int n, IceModelVec2S &source);
   virtual PetscErrorCode staggered_to_regular(IceModelVec2S &result);
   virtual PetscErrorCode staggered_to_regular(IceModelVec2V &result);
 };
@@ -417,9 +412,8 @@ public:
 protected:
   virtual PetscErrorCode  allocate(IceGrid &mygrid, const char my_short_name[],
                                    bool local, GridType my_dims, int stencil_width = 1);
-  virtual PetscErrorCode create_da(DA &result, PetscInt Mz);
   virtual PetscErrorCode destroy();
-  virtual PetscErrorCode  has_nan();
+  virtual PetscErrorCode has_nan();
 
   Vec sounding_buffer;
   map<string,PetscViewer> *sounding_viewers;

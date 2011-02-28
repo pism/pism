@@ -47,19 +47,6 @@ IceModelVec3D::IceModelVec3D(const IceModelVec3D &other)
   shallow_copy = true;
 }
 
-PetscErrorCode IceModelVec3D::create_da(DA &result, PetscInt Mz) {
-  PetscErrorCode ierr;
-
-  ierr = DACreate2d(grid->com, DA_XYPERIODIC, DA_STENCIL_BOX,
-		    grid->My, grid->Mx, // N, M
-		    grid->Ny, grid->Nx, // n, m
-		    Mz, da_stencil_width,	// dof, stencil_width
-                    grid->procs_y, grid->procs_x, // ly, lx
-		    &result); CHKERRQ(ierr);
-
-  return 0;
-}
-
 //! Allocate a DA and a Vec from information in IceGrid.
 PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, const char my_name[],
                                         bool local, GridType my_dims, int stencil_width) {
@@ -73,7 +60,6 @@ PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, const char my_name[],
   }
   
   grid = &my_grid;
-  da_stencil_width = stencil_width;
 
   switch (my_dims) {
   case GRID_3D:
@@ -88,7 +74,8 @@ PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, const char my_name[],
     SETERRQ(1, "only 3D and 3D bedrock grids are supported");
   }
 
-  ierr = create_da(da, n_levels); CHKERRQ(ierr);
+  da_stencil_width = stencil_width;
+  ierr = create_2d_da(da, n_levels, da_stencil_width); CHKERRQ(ierr);
 
   if (local) {
     ierr = DACreateLocalVector(da, &v); CHKERRQ(ierr);
@@ -782,7 +769,7 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
 
   // This code should match what is being done in IceModelVec3D::allocate():
 
-  ierr = create_da(da_new, grid->Mz); CHKERRQ(ierr);
+  ierr = create_2d_da(da_new, grid->Mz, da_stencil_width); CHKERRQ(ierr);
   
   if (localp) {
     ierr = DACreateLocalVector(da_new, &v_new); CHKERRQ(ierr);

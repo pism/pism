@@ -38,13 +38,7 @@ public:
     deallocate_fd();
   }
 
-  virtual PetscErrorCode init(PISMVars &vars) {
-    PetscErrorCode ierr;
-    ierr = SSA::init(vars); CHKERRQ(ierr);
-    ierr = verbPrintf(2,grid.com,
-      "  [using the KSP-based finite difference implementation]\n"); CHKERRQ(ierr);
-    return 0;
-  }
+  virtual PetscErrorCode init(PISMVars &vars);
 
 protected:
   virtual PetscErrorCode allocate_fd();
@@ -74,6 +68,10 @@ protected:
   KSP SSAKSP;
   Mat SSAStiffnessMatrix;
   Vec SSARHS;
+
+  bool view_nuh;
+  PetscViewer nuh_viewer;
+  PetscInt nuh_viewer_size;
 };
 
 #endif /* _SSAFD_H_ */

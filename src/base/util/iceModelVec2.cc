@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -139,55 +139,190 @@ PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, PetscScalar fill) {
   return 0;
 }
 
-
-//! \brief View a 2D field. Allocates and de-allocates g2, the temporary global
-//! vector; performance should not matter here.
-PetscErrorCode IceModelVec2S::view(PetscInt viewer_size) {
+PetscErrorCode IceModelVec2::write(const char filename[], nc_type nctype) {
   PetscErrorCode ierr;
-  
-  const string tname = string_attr("long_name"),
-    tunits = " (" + string_attr("glaciological_units") + ")",
-    title = tname + tunits;
 
-  if ((*map_viewers)[name] == PETSC_NULL) {
-    ierr = grid->create_viewer(viewer_size, title, (*map_viewers)[name]); CHKERRQ(ierr);
-  } else {
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
+  Vec tmp;			// a temporary one-component vector,
+				// distributed across processors the same way v is
+
+  // The simplest case:
+  if ((dof == 1) && (localp == false)) {
+    ierr = IceModelVec::write(filename, nctype); CHKERRQ(ierr);
+    return 0;
   }
 
-  ierr = view((*map_viewers)[name]); CHKERRQ(ierr);
+  ierr = DACreateGlobalVector(grid->da2, &tmp); CHKERRQ(ierr);
+
+  for (int j = 0; j < dof; ++j) {
+    vars[j].time_independent = time_independent;
+    ierr = IceModelVec2::get_component(j, tmp); CHKERRQ(ierr);
+    ierr = vars[j].write(filename, nctype,
+			 write_in_glaciological_units, tmp);
+  }
+
+  // Clean up:
+  ierr = VecDestroy(tmp);
+  return 0;
+}
+
+PetscErrorCode IceModelVec2::read(const char filename[], const unsigned int time) {
+  PetscErrorCode ierr;
+
+  if ((dof == 1) && (localp == false)) {
+    ierr = IceModelVec::read(filename, time); CHKERRQ(ierr);
+    return 0;
+  }
+
+  ierr = checkAllocated(); CHKERRQ(ierr);
+
+  Vec tmp;			// a temporary one-component vector,
+				// distributed across processors the same way v is
+  ierr = DACreateGlobalVector(grid->da2, &tmp); CHKERRQ(ierr);
+
+  for (int j = 0; j < dof; ++j) {
+    ierr = vars[j].read(filename, time, tmp); CHKERRQ(ierr);
+    ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
+  }
+  
+  // The calls above only set the values owned by a processor, so we need to
+  // communicate if localp == true:
+  if (localp) {
+    ierr = beginGhostComm(); CHKERRQ(ierr);
+    ierr = endGhostComm(); CHKERRQ(ierr);
+  }
+
+  // Clean up:
+  ierr = VecDestroy(tmp); CHKERRQ(ierr);
+  return 0;  
+}
+
+PetscErrorCode IceModelVec2::regrid(const char filename[], bool critical, int start) {
+  PetscErrorCode ierr;
+  LocalInterpCtx *lic = NULL;
+
+  if ((dof == 1) && (localp == false)) {
+    ierr = IceModelVec::regrid(filename, critical, start); CHKERRQ(ierr);
+    return 0;
+  }
+  
+  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
+  lic->start[0] = start;
+  lic->report_range = report_range;
+
+  Vec tmp;			// a temporary one-component vector,
+				// distributed across processors the same way v is
+  ierr = DACreateGlobalVector(grid->da2, &tmp); CHKERRQ(ierr);
+
+  for (int j = 0; j < dof; ++j) {
+    ierr = vars[j].regrid(filename, *lic, critical, false, 0.0, tmp); CHKERRQ(ierr);
+    ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
+  }
+
+  // The calls above only set the values owned by a processor, so we need to
+  // communicate if localp == true:
+  if (localp) {
+    ierr = beginGhostComm(); CHKERRQ(ierr);
+    ierr = endGhostComm(); CHKERRQ(ierr);
+  }
+
+  // Clean up:
+  ierr = VecDestroy(tmp);
+  delete lic;
+  return 0;
+}
+
+PetscErrorCode IceModelVec2::regrid(const char filename[], PetscScalar default_value) {
+  PetscErrorCode ierr;
+  LocalInterpCtx *lic = NULL;
+
+  if ((dof == 1) && (localp == false)) {
+    ierr = IceModelVec::regrid(filename, default_value); CHKERRQ(ierr);
+    return 0;
+  }
+  
+  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
+  lic->report_range = report_range;
+
+  Vec tmp;			// a temporary one-component vector,
+				// distributed across processors the same way v is
+  ierr = DACreateGlobalVector(grid->da2, &tmp); CHKERRQ(ierr);
+
+  for (int j = 0; j < dof; ++j) {
+    ierr = vars[j].regrid(filename, *lic, false, true, default_value, tmp); CHKERRQ(ierr);
+    ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
+  }
+
+  // The calls above only set the values owned by a processor, so we need to
+  // communicate if localp == true:
+  if (localp) {
+    ierr = beginGhostComm(); CHKERRQ(ierr);
+    ierr = endGhostComm(); CHKERRQ(ierr);
+  }
+
+  // Clean up:
+  ierr = VecDestroy(tmp);
+  delete lic;
+  return 0;
+}
+
+//! \brief View a 2D field.
+PetscErrorCode IceModelVec2::view(PetscInt viewer_size) {
+  PetscErrorCode ierr;
+  PetscViewer viewers[2] = {PETSC_NULL, PETSC_NULL};
+
+  if (dof > 2) SETERRQ(1, "dof > 2 is not supported");
+
+  for (int j = 0; j < dof; ++j) {
+    string c_name = vars[j].short_name,
+      long_name = vars[j].get_string("long_name"),
+      units = vars[j].get_string("glaciological_units"),
+      title = long_name + " (" + units + ")";
+
+    if ((*map_viewers)[c_name] == PETSC_NULL) {
+      ierr = grid->create_viewer(viewer_size, title, (*map_viewers)[c_name]); CHKERRQ(ierr);
+    }
+
+    viewers[j] = (*map_viewers)[c_name];
+  }
+
+  ierr = view(viewers[0], viewers[1]); CHKERRQ(ierr); 
 
   return 0;
 }
 
-//! \brief View a scalar 2D field using an existing PETSc viewer.
-PetscErrorCode IceModelVec2S::view(PetscViewer my_viewer) {
+//! \brief View a 2D vector field using existing PETSc viewers.
+//! Allocates and de-allocates g2, the temporary global vector; performance
+//! should not matter here.
+PetscErrorCode IceModelVec2::view(PetscViewer v1, PetscViewer v2) {
   PetscErrorCode ierr;
   Vec g2;
-  const string tname = string_attr("long_name"),
-    tunits = " (" + string_attr("glaciological_units") + ")",
-    title = tname + tunits;
 
   ierr = DACreateGlobalVector(grid->da2, &g2); CHKERRQ(ierr);
 
-  if (localp) {
-    ierr = copy_to(g2); CHKERRQ(ierr);
-  } else {
-    ierr = VecCopy(v, g2); CHKERRQ(ierr);
+  PetscViewer viewers[2] = {v1, v2};
+
+  for (int i = 0; i < dof; ++i) {
+    string long_name = vars[i].get_string("long_name"),
+      units = vars[i].get_string("glaciological_units"),
+      title = long_name + " (" + units + ")";
+
+    PetscDraw draw;
+    ierr = PetscViewerDrawGetDraw(viewers[i], 0, &draw); CHKERRQ(ierr);
+    ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
+
+    ierr = IceModelVec2::get_component(i, g2); CHKERRQ(ierr);
+
+    ierr = vars[i].to_glaciological_units(g2); CHKERRQ(ierr);
+
+    ierr = VecView(g2, viewers[i]); CHKERRQ(ierr);
   }
-
-  PetscDraw draw;
-  ierr = PetscViewerDrawGetDraw(my_viewer, 0, &draw); CHKERRQ(ierr);
-  ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
-
-  ierr = vars[0].to_glaciological_units(g2); CHKERRQ(ierr);
-
-  ierr = VecView(g2, my_viewer); CHKERRQ(ierr);
 
   ierr = VecDestroy(g2); CHKERRQ(ierr);
 
   return 0;
 }
-
 
 PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) {
   PetscErrorCode ierr;
@@ -510,6 +645,21 @@ PetscErrorCode IceModelVec2::set_component(int N, Vec source) {
   return 0;
 }
 
+PetscErrorCode IceModelVec2::get_component(int n, IceModelVec2 &result) {
+  PetscErrorCode ierr;
+
+  ierr = IceModelVec2::get_component(n, result.v); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModelVec2::set_component(int n, IceModelVec2 &source) {
+  PetscErrorCode ierr;
+
+  ierr = IceModelVec2::set_component(n, source.v); CHKERRQ(ierr);
+
+  return 0;
+}
 
 PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], bool local,
                                      DAStencilType my_sten, int stencil_width, int my_dof) {
@@ -526,13 +676,14 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
   grid = &my_grid;
   dims = GRID_2D;
 
-  da_stencil_width = stencil_width;
 
-  ierr = DACreate2d(my_grid.com, DA_XYPERIODIC, my_sten,
-		    grid->My, grid->Mx,
-		    grid->Ny, grid->Nx,
-		    dof, stencil_width,
-                    grid->procs_y, grid->procs_x, &da); CHKERRQ(ierr);
+  if ((dof != 1) || (stencil_width > grid->max_stencil_width)) {
+    da_stencil_width = stencil_width;
+    ierr = create_2d_da(da, dof, da_stencil_width); CHKERRQ(ierr);
+  } else {
+    da_stencil_width = grid->max_stencil_width;
+    da = grid->da2;
+  }
 
   if (local) {
     ierr = DACreateLocalVector(da, &v); CHKERRQ(ierr);
@@ -613,22 +764,6 @@ PetscErrorCode IceModelVec2Stag::get_array(PetscScalar*** &a) {
   PetscErrorCode ierr;
   ierr = begin_access(); CHKERRQ(ierr);
   a = static_cast<PetscScalar***>(array);
-  return 0;
-}
-
-PetscErrorCode IceModelVec2Stag::get_component(int n, IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  ierr = IceModelVec2::get_component(n, result.v); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode IceModelVec2Stag::set_component(int n, IceModelVec2S &source) {
-  PetscErrorCode ierr;
-
-  ierr = IceModelVec2::set_component(n, source.v); CHKERRQ(ierr);
-
   return 0;
 }
 

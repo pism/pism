@@ -75,7 +75,7 @@ PetscErrorCode IceModel::update_viewers() {
       IceModelVec2S *v2d = dynamic_cast<IceModelVec2S*>(v);
       if (v2d == NULL) SETERRQ(1,"grid_type() returns GRID_2D but dynamic_cast gives a NULL");
 
-      ierr = v2d->view(viewer); CHKERRQ(ierr);
+      ierr = v2d->view(viewer, PETSC_NULL); CHKERRQ(ierr);
 
     } else if (v->get_dof() == 2) { // vector fields
       string name_1 = v->string_attr("short_name", 0),

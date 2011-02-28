@@ -25,24 +25,6 @@ IceModelVec2V::IceModelVec2V() : IceModelVec2() {
 
   reset_attrs(0);
   reset_attrs(1);
-  component_da = PETSC_NULL;
-}
-
-IceModelVec2V::~IceModelVec2V() {
-  if (!shallow_copy) {
-    destroy();
-  }
-}
-
-PetscErrorCode IceModelVec2V::destroy() {
-  PetscErrorCode ierr;
-
-  ierr = IceModelVec::destroy(); CHKERRQ(ierr);
-
-  if (component_da != PETSC_NULL) {
-    ierr = DADestroy(component_da); CHKERRQ(ierr);
-  }
-  return 0;
 }
 
 PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const char my_short_name[], bool local,
@@ -50,14 +32,6 @@ PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const char my_short_name
 
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, local, DA_STENCIL_BOX,
 					     stencil_width, dof); CHKERRQ(ierr);
-
-  // component DA:
-  ierr = DACreate2d(grid->com, DA_XYPERIODIC, DA_STENCIL_BOX,
-		    grid->My, grid->Mx,
-		    grid->Ny, grid->Nx,
-		    1, stencil_width, // "1" is the dof of a component
-                    grid->procs_y, grid->procs_x,
-		    &component_da); CHKERRQ(ierr);
 
   string s_name = my_short_name;
   vars[0].init("u" + s_name, my_grid, GRID_2D);
@@ -80,59 +54,6 @@ PISMVector2& IceModelVec2V::operator()(int i, int j) {
   return static_cast<PISMVector2**>(array)[i][j];
 }
 
-
-PetscErrorCode IceModelVec2V::read(const char filename[], const unsigned int time) {
-  PetscErrorCode ierr;
-
-  ierr = checkAllocated(); CHKERRQ(ierr);
-  if (grid->da2 == PETSC_NULL)
-    SETERRQ(1, "IceModelVec::read_from_netcdf: grid.da2 is NULL.");
-
-  Vec tmp;			// a temporary one-component vector,
-				// distributed across processors the same way v is
-  ierr = DACreateGlobalVector(component_da, &tmp); CHKERRQ(ierr);
-
-  for (int j = 0; j < dof; ++j) {
-    // read the first component:
-    ierr = vars[j].read(filename, time, tmp); CHKERRQ(ierr);
-    ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
-  }
-  
-  // The calls above only set the values owned by a processor, so we need to
-  // communicate if localp == true:
-  if (localp) {
-    ierr = beginGhostComm(); CHKERRQ(ierr);
-    ierr = endGhostComm(); CHKERRQ(ierr);
-  }
-
-  // Clean up:
-  ierr = VecDestroy(tmp); CHKERRQ(ierr);
-  return 0;  
-}
-
-PetscErrorCode IceModelVec2V::write(const char filename[], nc_type nctype) {
-  PetscErrorCode ierr;
-
-  ierr = checkAllocated(); CHKERRQ(ierr);
-  if (grid->da2 == PETSC_NULL)
-    SETERRQ(1, "IceModelVec::read_from_netcdf: grid.da2 is NULL.");
-
-  Vec tmp;			// a temporary one-component vector,
-				// distributed across processors the same way v is
-  ierr = DACreateGlobalVector(component_da, &tmp); CHKERRQ(ierr);
-
-  for (int j = 0; j < dof; ++j) {
-    vars[j].time_independent = time_independent;
-    ierr = IceModelVec2::get_component(j, tmp); CHKERRQ(ierr);
-    ierr = vars[j].write(filename, nctype,
-			 write_in_glaciological_units, tmp);
-  }
-
-  // Clean up:
-  ierr = VecDestroy(tmp);
-  return 0;
-}
-
 PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PISMVector2** a;
@@ -152,84 +73,8 @@ PetscErrorCode IceModelVec2V::magnitude(IceModelVec2S &result) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2V::regrid(const char filename[], bool critical, int start) {
-  PetscErrorCode ierr;
-  LocalInterpCtx *lic = NULL;
-  
-  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
-  lic->start[0] = start;
-  lic->report_range = report_range;
-
-  Vec tmp;			// a temporary one-component vector,
-				// distributed across processors the same way v is
-  ierr = DACreateGlobalVector(component_da, &tmp); CHKERRQ(ierr);
-
-  for (int j = 0; j < dof; ++j) {
-    ierr = vars[j].regrid(filename, *lic, critical, false, 0.0, tmp); CHKERRQ(ierr);
-    ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
-  }
-
-  // The calls above only set the values owned by a processor, so we need to
-  // communicate if localp == true:
-  if (localp) {
-    ierr = beginGhostComm(); CHKERRQ(ierr);
-    ierr = endGhostComm(); CHKERRQ(ierr);
-  }
-
-  // Clean up:
-  ierr = VecDestroy(tmp);
-  delete lic;
-  return 0;
-}
-
-PetscErrorCode IceModelVec2V::regrid(const char filename[], PetscScalar default_value) {
-  PetscErrorCode ierr;
-  LocalInterpCtx *lic = NULL;
-  
-  ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
-  lic->report_range = report_range;
-
-  Vec tmp;			// a temporary one-component vector,
-				// distributed across processors the same way v is
-  ierr = DACreateGlobalVector(component_da, &tmp); CHKERRQ(ierr);
-
-  for (int j = 0; j < dof; ++j) {
-    ierr = vars[j].regrid(filename, *lic, false, true, default_value, tmp); CHKERRQ(ierr);
-    ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
-  }
-
-  // The calls above only set the values owned by a processor, so we need to
-  // communicate if localp == true:
-  if (localp) {
-    ierr = beginGhostComm(); CHKERRQ(ierr);
-    ierr = endGhostComm(); CHKERRQ(ierr);
-  }
-
-  // Clean up:
-  ierr = VecDestroy(tmp);
-  delete lic;
-  return 0;
-}
-
 bool IceModelVec2V::is_valid(PetscScalar U, PetscScalar V) {
   return vars[0].is_valid(U) && vars[1].is_valid(V);
-}
-
-
-PetscErrorCode IceModelVec2V::get_component(int n, IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  ierr = IceModelVec2::get_component(n, result.v); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode IceModelVec2V::set_component(int n, IceModelVec2S &source) {
-  PetscErrorCode ierr;
-
-  ierr = IceModelVec2::set_component(n, source.v); CHKERRQ(ierr);
-
-  return 0;
 }
 
 PetscErrorCode IceModelVec2V::set_name(const char new_name[], int /*component = 0*/) {
@@ -245,56 +90,3 @@ PetscErrorCode IceModelVec2V::set_name(const char new_name[], int /*component = 
   return 0;
 }
 
-//! \brief View a 2D vector field. Allocates and de-allocates g2, the temporary global
-//! vector; performance should not matter here.
-PetscErrorCode IceModelVec2V::view(PetscInt viewer_size) {
-  PetscErrorCode ierr;
-  PetscViewer viewers[2];
-
-  for (int j = 0; j < 2; ++j) {
-    string c_name = vars[j].short_name,
-      long_name = vars[j].get_string("long_name"),
-      units = vars[j].get_string("glaciological_units"),
-      title = long_name + " (" + units + ")";
-
-    if ((*map_viewers)[c_name] == PETSC_NULL) {
-      ierr = grid->create_viewer(viewer_size, title, (*map_viewers)[c_name]); CHKERRQ(ierr);
-    }
-
-    viewers[j] = (*map_viewers)[c_name];
-  }
-
-  ierr = view(viewers[0], viewers[1]); CHKERRQ(ierr); 
-
-  return 0;
-}
-
-//! \brief View a 2D vector field using existing PETSc viewers.
-PetscErrorCode IceModelVec2V::view(PetscViewer v1, PetscViewer v2) {
-  PetscErrorCode ierr;
-  Vec g2;
-
-  ierr = DACreateGlobalVector(grid->da2, &g2); CHKERRQ(ierr);
-
-  PetscViewer viewers[2] = {v1, v2};
-
-  for (int i = 0; i < 2; ++i) {
-    string long_name = vars[i].get_string("long_name"),
-      units = vars[i].get_string("glaciological_units"),
-      title = long_name + " (" + units + ")";
-
-    PetscDraw draw;
-    ierr = PetscViewerDrawGetDraw(viewers[i], 0, &draw); CHKERRQ(ierr);
-    ierr = PetscDrawSetTitle(draw, title.c_str()); CHKERRQ(ierr);
-
-    ierr = IceModelVec2::get_component(i, g2); CHKERRQ(ierr);
-
-    ierr = vars[i].to_glaciological_units(g2); CHKERRQ(ierr);
-
-    ierr = VecView(g2, viewers[i]); CHKERRQ(ierr);
-  }
-
-  ierr = VecDestroy(g2); CHKERRQ(ierr);
-
-  return 0;
-}

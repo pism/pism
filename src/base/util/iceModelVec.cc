@@ -102,6 +102,18 @@ IceModelVec::IceModelVec(const IceModelVec &other) {
   vars = other.vars;
 }
 
+PetscErrorCode IceModelVec::create_2d_da(DA &result, PetscInt da_dof, PetscInt stencil_width) {
+  PetscErrorCode ierr;
+
+  ierr = DACreate2d(grid->com, DA_XYPERIODIC, DA_STENCIL_BOX,
+		    grid->My, grid->Mx, // N, M
+		    grid->Ny, grid->Nx, // n, m
+		    da_dof, stencil_width,
+                    grid->procs_y, grid->procs_x, // ly, lx
+		    &result); CHKERRQ(ierr);
+
+  return 0;
+}
 
 IceModelVec::~IceModelVec() {
   // Only destroy the IceModelVec if it is not a shallow copy:
@@ -126,7 +138,7 @@ PetscErrorCode  IceModelVec::destroy() {
     ierr = VecDestroy(v); CHKERRQ(ierr);
     v = PETSC_NULL;
   }
-  if (da != PETSC_NULL) {
+  if ((da != PETSC_NULL) && (dof > 1)) {
     ierr = DADestroy(da); CHKERRQ(ierr);
     da = PETSC_NULL;
   }
@@ -583,7 +595,7 @@ PetscErrorCode IceModelVec::write(const char filename[], nc_type nctype) {
   Vec g;
 
   if (dof != 1)
-    SETERRQ(1, "This method only supports IceModelVecs with dof == 1.");
+    SETERRQ(1, "This method only supports IceModelVecs with dof == 1");
 
   vars[0].time_independent = time_independent;
 
@@ -611,7 +623,7 @@ PetscErrorCode IceModelVec::dump(const char filename[]) {
   ierr = nc.append_time(grid->year); CHKERRQ(ierr); 
   ierr = nc.close(); CHKERRQ(ierr);
 
-  ierr = write(filename); CHKERRQ(ierr); 
+  ierr = write(filename, NC_DOUBLE); CHKERRQ(ierr); 
 
   return 0;
 }

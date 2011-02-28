@@ -62,6 +62,10 @@ PetscErrorCode SSAFD::allocate_fd() {
                            "ice thickness times effective viscosity (before an update)",
                            "Pa s m", ""); CHKERRQ(ierr);
 
+  // The nuH viewer:
+  view_nuh = false;
+  nuh_viewer_size = 300;
+  nuh_viewer = PETSC_NULL;
   return 0;
 }
 
@@ -84,6 +88,24 @@ PetscErrorCode SSAFD::deallocate_fd() {
   return 0;
 }
 
+PetscErrorCode SSAFD::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+  ierr = SSA::init(vars); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,
+                    "  [using the KSP-based finite difference implementation]\n"); CHKERRQ(ierr);
+
+  ierr = PetscOptionsBegin(grid.com, "", "SSAFD options", ""); CHKERRQ(ierr);
+  {
+    bool flag;
+    ierr = PISMOptionsInt("-ssa_nuh_viewer_size", "nuH viewer size",
+                          nuh_viewer_size, flag); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer",
+                            view_nuh); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  return 0;
+}
 
 //! \brief Computes the right-hand side ("rhs") of the linear problem for the
 //! finite-difference implementation of the SSA equations.
@@ -827,15 +849,18 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
 
 //! \brief Update the nuH viewer.
 /*!
- * FIXME FIXME FIXME 
+ * Updates the run-time viewer of log10(nuH).
  */
 PetscErrorCode SSAFD::update_nuH_viewers() {
   PetscErrorCode ierr;
   IceModelVec2S tmp;
 
-  return 0;
+  if (!view_nuh) return 0;
 
   ierr = tmp.create(grid, "nuH", false); CHKERRQ(ierr);
+  ierr = tmp.set_attrs("temporary",
+                       "log10 of (viscosity * thickness)",
+                       "Pa s m", ""); CHKERRQ(ierr);
 
   ierr = nuH.begin_access(); CHKERRQ(ierr);
   ierr = tmp.begin_access(); CHKERRQ(ierr);
@@ -854,7 +879,11 @@ PetscErrorCode SSAFD::update_nuH_viewers() {
   ierr = tmp.end_access(); CHKERRQ(ierr);
   ierr = nuH.end_access(); CHKERRQ(ierr);
 
-  ierr = tmp.view(300); CHKERRQ(ierr);
+  if (nuh_viewer == PETSC_NULL) {
+    ierr = grid.create_viewer(nuh_viewer_size, "nuH", nuh_viewer); CHKERRQ(ierr);
+  }
+
+  ierr = tmp.view(nuh_viewer, PETSC_NULL); CHKERRQ(ierr);
 
   return 0;
 }
