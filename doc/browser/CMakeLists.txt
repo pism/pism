@@ -46,14 +46,14 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Generate the browser
-  add_custom_command (OUTPUT base/html/index.html
+  add_custom_target (browser_base
     COMMAND ${DOXYGEN_EXECUTABLE} doxyfile
     DEPENDS pism_config.txt references.txt doxyfile
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Create a compressed "base" browser
   add_custom_target (browser_base.tgz
-    DEPENDS base/html/index.html
+    DEPENDS browser_base
     COMMAND tar -czf browser_base.tgz html
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/base)
 
@@ -61,26 +61,23 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
   configure_file(doxyfile_util doxyfile_util)
   configure_file (util_main.txt util_main.txt)
 
-  # Generate the browser
-  add_custom_command (OUTPUT util/html/index.html
+  # Generate the util browser
+  add_custom_target (browser_util
     COMMAND ${DOXYGEN_EXECUTABLE} doxyfile_util
     DEPENDS doxyfile_util
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Create a compressed Util browser
   add_custom_target (browser_util.tgz
-    DEPENDS util/html/index.html
+    DEPENDS browser_util
     COMMAND tar -czf browser_util.tgz html
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/util)
 
-  # Add custom targets so that "make browser_base" works.
-  add_custom_target (browser_base ALL
-    DEPENDS base/html/index.html)
-  add_custom_target (browser_util ALL
-    DEPENDS util/html/index.html)
-
   # Install if Pism_BUILD_BROWSER is set
   if (Pism_BUILD_BROWSER)
+    add_custom_target (browsers ALL)
+    add_dependencies (browsers browser_base browser_util)
+
     install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/base/html
       DESTINATION ${Pism_DOC_DIR}/base)
     install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/util/html
