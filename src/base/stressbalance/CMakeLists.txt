@@ -14,6 +14,7 @@ add_library (pismstressbalance
   SSAFEM.cc  # uncomment to compile
   FETools.cc
   SSATestCase.cc
+  SIA_Sliding.cc
 )
 target_link_libraries (pismstressbalance pismutil pismflowlaws)
 

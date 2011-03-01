@@ -513,45 +513,34 @@ PetscErrorCode IceModel::set_vars_from_options() {
 PetscErrorCode IceModel::init_physics() {
   PetscErrorCode ierr;
 
-  // Initialize the IceFlowLaw object:
-  if (!config.get_flag("do_cold_ice_methods")) {
-    ierr = verbPrintf(2, grid.com,
-                      "  setting flow law to polythermal type ...\n"); CHKERRQ(ierr);
-    ierr = verbPrintf(3, grid.com,
-                      "      (= Glen-Paterson-Budd-Lliboutry-Duval type)\n"); CHKERRQ(ierr);
-    if (ice != NULL)  delete ice;  // kill choice already made
-    iceFactory.setType(ICE_GPBLD); // new flowlaw which has dependence on
-                                   // enthalpy, not temperature
-    iceFactory.create(&ice);
-    GPBLDIce *gpbldi = dynamic_cast<GPBLDIce*>(ice);
-    if (gpbldi == NULL) {
-      ThermoGlenIce *tgi = dynamic_cast<ThermoGlenIce*>(ice);
-      if (tgi) {
-        ierr = verbPrintf(2, grid.com,
-                          "    [flow law was actually set to ThermoGlenIce]\n");
-        CHKERRQ(ierr);
-      } else {
-        ierr = verbPrintf(1, grid.com,
-                          "PISM WARNING: flow law unclear ...\n"); CHKERRQ(ierr);
+  if (ice == NULL) {
+    // Initialize the IceFlowLaw object:
+    if (!config.get_flag("do_cold_ice_methods")) {
+      ierr = verbPrintf(2, grid.com,
+                        "  setting flow law to polythermal type ...\n"); CHKERRQ(ierr);
+      ierr = verbPrintf(3, grid.com,
+                        "      (= Glen-Paterson-Budd-Lliboutry-Duval type)\n"); CHKERRQ(ierr);
+
+      // new flowlaw which has dependence on enthalpy, not temperature
+      ice = new GPBLDIce(grid.com, "", config);
+    } else {
+      ierr = verbPrintf(2, grid.com,
+                        "  doing cold ice methods ...\n"); CHKERRQ(ierr);
+
+      ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
+
+      // FIXME:  the semantics of IceFlowLaw should be cleared up; lots of PISM
+      //   (e.g. verification and EISMINT II and EISMINT-Greenland) are cold,
+      //   but the really important cases (e.g. SeaRISE-Greenland) are polythermal
+      // in cold case we may have various IceFlowLaw s, e.g. set by derived classes
+      if (ice == PETSC_NULL) {
+        ierr = iceFactory.create(&ice); CHKERRQ(ierr);
       }
     }
-  } else {
-    ierr = verbPrintf(2, grid.com,
-                      "  doing cold ice methods ...\n"); CHKERRQ(ierr);
 
-    ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
-
-    // FIXME:  the semantics of IceFlowLaw should be cleared up; lots of PISM
-    //   (e.g. verification and EISMINT II and EISMINT-Greenland) are cold,
-    //   but the really important cases (e.g. SeaRISE-Greenland) are polythermal
-    // in cold case we may have various IceFlowLaw s, e.g. set by derived classes
-    if (ice == PETSC_NULL) {
-      ierr = iceFactory.create(&ice); CHKERRQ(ierr);
-    }
+    // set options specific to this particular ice type:
+    ierr = ice->setFromOptions(); CHKERRQ(ierr);
   }
-
-  // set options specific to this particular ice type:
-  ierr = ice->setFromOptions(); CHKERRQ(ierr);
 
   // Create the stress balance object:
   PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
@@ -577,34 +566,35 @@ PetscErrorCode IceModel::init_physics() {
 
   // If both SIA and SSA are "on", the SIA and SSA velocities are always added
   // up (there is no switch saying "do the hybrid").
+  if (stress_balance == NULL) {
+    ShallowStressBalance *my_stress_balance;
 
-  ShallowStressBalance *my_stress_balance;
+    SSB_Modifier *modifier;
+    if (do_sia) {
+      modifier = new SIAFD(grid, *ice, *EC, config);
+    } else {
+      modifier = new SSBM_Trivial(grid, *ice, *EC, config);
+    }
 
-  SSB_Modifier *modifier;
-  if (do_sia) {
-    modifier = new SIAFD(grid, *ice, *EC, config);
-  } else {
-    modifier = new SSBM_Trivial(grid, *ice, *EC, config);
-  }
-
-  if (use_ssa_velocity) {
-    my_stress_balance = new SSAFD(grid, *basal, *ice, *EC, config);
-  } else {
-    my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
-  }
+    if (use_ssa_velocity) {
+      my_stress_balance = new SSAFD(grid, *basal, *ice, *EC, config);
+    } else {
+      my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
+    }
   
-  // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
-  stress_balance = new PISMStressBalance(grid, my_stress_balance,
-                                         modifier, config);
+    // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
+    stress_balance = new PISMStressBalance(grid, my_stress_balance,
+                                           modifier, config);
 
-  // Note that in PISM stress balance computations are diagnostic, i.e. do not
-  // have a state that changes in time. This means that this call can be here
-  // and not in model_state_setup() and we don't need to re-initialize after
-  // the "diagnostic time step".
-  ierr = stress_balance->init(variables); CHKERRQ(ierr);
+    // Note that in PISM stress balance computations are diagnostic, i.e. do not
+    // have a state that changes in time. This means that this call can be here
+    // and not in model_state_setup() and we don't need to re-initialize after
+    // the "diagnostic time step".
+    ierr = stress_balance->init(variables); CHKERRQ(ierr);
 
-  if (config.get_flag("include_bmr_in_continuity")) {
-    ierr = stress_balance->set_basal_melt_rate(&vbmr); CHKERRQ(ierr);
+    if (config.get_flag("include_bmr_in_continuity")) {
+      ierr = stress_balance->set_basal_melt_rate(&vbmr); CHKERRQ(ierr);
+    }
   }
 
   ierr = bed_def_setup(); CHKERRQ(ierr);

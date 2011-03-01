@@ -68,25 +68,36 @@ PetscErrorCode IceExactSSAModel::setFromOptions() {
 
 PetscErrorCode IceExactSSAModel::init_physics() {
   PetscErrorCode ierr;
+  
 
-  iceFactory.setType(ICE_CUSTOM);
+  CustomGlenIce *custom_ice = new CustomGlenIce(grid.com, "", config);
 
-  ierr = IceModel::init_physics(); CHKERRQ(ierr);
+  // Use Schoof's parameter
+  custom_ice->setHardness(B_schoof);
 
-  // If the user left things alone, we'll have a CustomGlenIce
-  CustomGlenIce *cust = dynamic_cast<CustomGlenIce*>(ice);
-  if (!cust) {
-    ierr = verbPrintf(2,grid.com,"Warning, custom ice not in use, reported errors will not be correct\n",test); CHKERRQ(ierr);
-  } else {
-    // Use Schoof's parameter
-    cust->setHardness(B_schoof);
-  }
+  ice = custom_ice;
 
   // If the user changes settings with -ice_custom_XXX, they asked for it.  If you don't want to allow this, disable the
   // line below.
   ierr = ice->setFromOptions();CHKERRQ(ierr);
 
-  delete stress_balance;
+  // Create the stress balance object:
+  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
+    pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera,
+    plastic_regularization = config.get("plastic_regularization") / secpera;
+
+  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till"),
+    use_ssa_velocity = config.get_flag("use_ssa_velocity"),
+    do_sia = config.get_flag("do_sia");
+  
+  if (basal == NULL)
+    basal = new IceBasalResistancePlasticLaw(plastic_regularization, do_pseudo_plastic_till, 
+                                             pseudo_plastic_q, pseudo_plastic_uthreshold);
+
+  if (EC == NULL) {
+    EC = new EnthalpyConverter(config);
+  }
+
   // the destructor os PISMStressBalance will take care of these:
   ssa = new SSAFD(grid, *basal, *ice, *EC, config);
   modifier = new SSBM_Trivial(grid, *ice, *EC, config);
@@ -94,6 +105,8 @@ PetscErrorCode IceExactSSAModel::init_physics() {
   stress_balance = new PISMStressBalance(grid, ssa, modifier, config);
 
   ierr = stress_balance->init(variables); CHKERRQ(ierr);
+
+  ierr = bed_def_setup(); CHKERRQ(ierr);
 
   return 0;
 }

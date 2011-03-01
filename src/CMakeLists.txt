@@ -135,7 +135,6 @@ set_source_files_properties (udunits/utlib.c
 
 # Verification tests.
 add_library (pismverif
-  verif/SIA_Sliding.cc
   verif/iCMthermo.cc
   verif/iceCompModel.cc
   verif/iceExactSSAModel.cc

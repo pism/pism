@@ -44,6 +44,9 @@ PetscErrorCode SIA_Sliding::init(PISMVars &vars) {
   standard_gravity = config.get("standard_gravity");
   verification_mode = config.get_flag("verification_mode");
 
+  if (config.has("EISMINT_II_experiment"))
+    eisII_experiment = config.get_string("EISMINT_II_experiment");
+
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
 
@@ -97,7 +100,7 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
 
   ierr = velocity.get_array(bvel); CHKERRQ(ierr);
-  ierr = basal_frictional_heating.get_array(Rb); CHKERRQ(ierr);  
+  ierr = basal_frictional_heating.get_array(Rb); CHKERRQ(ierr);
   for (PetscInt o=0; o<2; o++) {
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
@@ -108,7 +111,7 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
         } else {
           // basal velocity from SIA-type sliding law: not recommended!
           const PetscScalar
-            myx = -grid.Lx + grid.dx * i, 
+            myx = -grid.Lx + grid.dx * i,
             myy = -grid.Ly + grid.dy * j,
             myhx = 0.25 * (  h_x(i,j,0) + h_x(i-1,j,0)
                              + h_x(i,j,1) + h_x(i,j-1,1)),
@@ -123,7 +126,7 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
           ierr = EC.getAbsTemp(enthalpy->getValZ(i,j,0.0),
                                 EC.getPressureFromDepth(H), T); CHKERRQ(ierr);
 
-          basalC = basalVelocitySIA(myx, myy, H, T, 
+          basalC = basalVelocitySIA(myx, myy, H, T,
 				    alpha, mu_sliding,
 				    minimum_temperature_for_sliding);
           bvel[i][j].u = - basalC * myhx;
@@ -140,10 +143,10 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
 
   ierr = velocity.end_access(); CHKERRQ(ierr);
   ierr = basal_frictional_heating.end_access(); CHKERRQ(ierr);
-  
+
   ierr = h_y.end_access(); CHKERRQ(ierr);
   ierr = h_x.end_access(); CHKERRQ(ierr);
-  
+
   ierr = surface->end_access(); CHKERRQ(ierr);
   ierr = bed->end_access(); CHKERRQ(ierr);
   ierr = mask->end_access(); CHKERRQ(ierr);
@@ -156,22 +159,22 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
 //! velocity as a function of driving stress in SIA regions.
 /*!
   THIS KIND OF SIA SLIDING LAW IS A BAD IDEA IN A THERMOMECHANICALLY-COUPLED
-  MODEL.  THAT'S WHY \f$\mu\f$ IS SET TO ZERO BY DEFAULT.                
-  
+  MODEL.  THAT'S WHY \f$\mu\f$ IS SET TO ZERO BY DEFAULT.
+
   In SIA regions (= MASK_SHEET) a basal sliding law of the form
-  \f[ \mathbf{U}_b = (u_b,v_b) = - C \nabla h \f] 
+  \f[ \mathbf{U}_b = (u_b,v_b) = - C \nabla h \f]
   is allowed.  Here \f$\mathbf{U}_b\f$ is the horizontal velocity of the base of
   the ice (the "sliding velocity") and \f$h\f$ is the elevation of the ice
   surface.  This procedure returns the \em positive \em coefficient \f$C\f$ in
   this relationship.  This coefficient can depend of the thickness, the basal
   temperature, and the horizontal location.
-  
-  The default version for IceModel here is location-independent 
+
+  The default version for IceModel here is location-independent
   pressure-melting-temperature-activated linear sliding.  See Appendix B of
   [\ref BBssasliding] for the dangers in this mechanism.
-  
+
   Parameter \f$\mu\f$ can be set by option \c -mu_sliding.
-  
+
   The returned coefficient is used in update() (above).
 */
 PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
@@ -182,7 +185,7 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
   if (verification_mode) {
     // test 'E' mode
     const PetscScalar r1 = 200e3, r2 = 700e3,   /* define region of sliding */
-                      theta1 = 10 * (pi/180), theta2 = 40 * (pi/180);
+      theta1 = 10 * (pi/180), theta2 = 40 * (pi/180);
     const PetscScalar x = fabs(xIN), y = fabs(yIN);
     const PetscScalar r = sqrt(x * x + y * y);
     PetscScalar       theta;
@@ -190,17 +193,34 @@ PetscScalar SIA_Sliding::basalVelocitySIA(PetscScalar xIN, PetscScalar yIN,
       theta = pi / 2.0;
     else
       theta = atan(y / x);
-  
+
     if ((r > r1) && (r < r2) && (theta > theta1) && (theta < theta2)) {
       // now INSIDE sliding region
       const PetscScalar rbot = (r2 - r1) * (r2 - r1),
-                        thetabot = (theta2 - theta1) * (theta2 - theta1);
+        thetabot = (theta2 - theta1) * (theta2 - theta1);
       const PetscScalar mu_max = 2.5e-11; /* Pa^-1 m s^-1; max sliding coeff */
-      PetscScalar muE = mu_max * (4.0 * (r - r1) * (r2 - r) / rbot) 
-                               * (4.0 * (theta - theta1) * (theta2 - theta) / thetabot);
+      PetscScalar muE = mu_max * (4.0 * (r - r1) * (r2 - r) / rbot)
+        * (4.0 * (theta - theta1) * (theta2 - theta) / thetabot);
       return muE * ice.rho * standard_gravity * H;
     } else
       return 0.0;
+  }
+
+  if ((eisII_experiment == "G") || (eisII_experiment == "H")) {
+    const PetscScalar  Bfactor = 1e-3 / secpera; // m s^-1 Pa^-1
+    PetscReal pressure = EC.getPressureFromDepth(H), E;
+    EC.getEnthPermissive(T, 0.0, pressure, E);
+
+    if (eisII_experiment == "G") {
+      return Bfactor * ice.rho * standard_gravity * H;
+    } else if (eisII_experiment == "H") {
+      if (EC.isTemperate(E, pressure)) {
+        return Bfactor * ice.rho * standard_gravity * H; // ditto case G
+      } else {
+        return 0.0;
+      }
+    }
+    return 0.0;  // zero sliding for other tests
   }
 
   // the "usual" case:
@@ -225,7 +245,7 @@ PetscErrorCode SIA_Sliding::compute_surface_gradient(IceModelVec2Stag &h_x, IceM
 
   if (method == "eta") {
 
-    ierr = surface_gradient_eta(h_x, h_y); CHKERRQ(ierr); 
+    ierr = surface_gradient_eta(h_x, h_y); CHKERRQ(ierr);
 
   } else if (method == "haseloff") {
 
@@ -267,7 +287,7 @@ PetscErrorCode SIA_Sliding::surface_gradient_eta(IceModelVec2Stag &h_x, IceModel
 
   ierr = h_x.begin_access(); CHKERRQ(ierr);
   ierr = h_y.begin_access(); CHKERRQ(ierr);
-  
+
   // now use Mahaffy on eta to get grad h on staggered;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
   ierr = bed->begin_access(); CHKERRQ(ierr);

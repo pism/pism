@@ -44,6 +44,8 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
 
   basal = NULL;
 
+  stress_balance = NULL;
+
   surface = NULL;
   ocean   = NULL;
   beddef  = NULL;

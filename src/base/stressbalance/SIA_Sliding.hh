@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,6 +35,7 @@ public:
     : ShallowStressBalance(g, b, i, e, conf)
   {
     verification_mode = false;
+    eisII_experiment = "";
     allocate();
   }
   virtual ~SIA_Sliding() {}
@@ -63,6 +64,7 @@ protected:
   double standard_gravity;
   
   bool verification_mode;
+  string eisII_experiment;
 };
 
 #endif /* _SIA_SLIDING_H_ */

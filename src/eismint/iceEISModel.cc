@@ -19,7 +19,8 @@
 #include "grid.hh"
 #include "iceModel.hh"
 #include "iceEISModel.hh"
-
+#include "SIAFD.hh"
+#include "SIA_Sliding.hh"
 
 IceEISModel::IceEISModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : IceModel(g, conf, conf_overrides) {
@@ -76,6 +77,11 @@ PetscErrorCode IceEISModel::set_expername_from_options() {
       PISMEnd();
     }
   }
+
+  char tempstr[TEMPORARY_STRING_LENGTH];
+  snprintf(tempstr, TEMPORARY_STRING_LENGTH, "%c", temp);
+
+  config.set_string("EISMINT_II_experiment", tempstr);
 
   return 0;
 }
@@ -169,11 +175,82 @@ PetscErrorCode IceEISModel::init_physics() {
 
   iceFactory.setType(ICE_PB);  // Paterson-Budd; can be overridden by options
 
+  if (ice == NULL) {
+    // Initialize the IceFlowLaw object:
+    if (config.get_flag("do_cold_ice_methods") == false) {
+      ierr = verbPrintf(2, grid.com,
+                        "  setting flow law to polythermal type ...\n"); CHKERRQ(ierr);
+      ierr = verbPrintf(3, grid.com,
+                        "      (= Glen-Paterson-Budd-Lliboutry-Duval type)\n"); CHKERRQ(ierr);
+
+      // new flowlaw which has dependence on enthalpy, not temperature
+      ice = new GPBLDIce(grid.com, "", config);
+
+    } else {
+      ierr = verbPrintf(2, grid.com,
+                        "  doing cold ice methods ...\n"); CHKERRQ(ierr);
+
+      ierr = iceFactory.setFromOptions(); CHKERRQ(ierr);
+      ierr = iceFactory.create(&ice); CHKERRQ(ierr);
+    }
+
+    // set options specific to this particular ice type:
+    ierr = ice->setFromOptions(); CHKERRQ(ierr);
+  }
+
+  // Create the stress balance object:
+  PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
+    pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera,
+    plastic_regularization = config.get("plastic_regularization") / secpera;
+
+  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till"),
+    use_ssa_velocity = config.get_flag("use_ssa_velocity"),
+    do_sia = config.get_flag("do_sia");
+  
+  if (basal == NULL)
+    basal = new IceBasalResistancePlasticLaw(plastic_regularization, do_pseudo_plastic_till, 
+                                             pseudo_plastic_q, pseudo_plastic_uthreshold);
+
+  if (EC == NULL) {
+    EC = new EnthalpyConverter(config);
+    if (getVerbosityLevel() > 3) {
+      PetscViewer viewer;
+      ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
+      ierr = EC->viewConstants(viewer); CHKERRQ(ierr);
+    }
+  }
+
+  // If both SIA and SSA are "on", the SIA and SSA velocities are always added
+  // up (there is no switch saying "do the hybrid").
+  if (stress_balance == NULL) {
+    ShallowStressBalance *my_stress_balance;
+
+    SSB_Modifier *modifier = new SIAFD(grid, *ice, *EC, config);
+
+    if (expername == 'G' || expername == 'H') {
+      my_stress_balance = new SIA_Sliding(grid, *basal, *ice, *EC, config);
+    } else {
+      my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
+    }
+  
+    // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
+    stress_balance = new PISMStressBalance(grid, my_stress_balance,
+                                           modifier, config);
+
+    // Note that in PISM stress balance computations are diagnostic, i.e. do not
+    // have a state that changes in time. This means that this call can be here
+    // and not in model_state_setup() and we don't need to re-initialize after
+    // the "diagnostic time step".
+    ierr = stress_balance->init(variables); CHKERRQ(ierr);
+
+    if (config.get_flag("include_bmr_in_continuity")) {
+      ierr = stress_balance->set_basal_melt_rate(&vbmr); CHKERRQ(ierr);
+    }
+  }
+
   // see EISMINT II description; choose no ocean interaction, purely SIA, and E=1
   config.set_flag("is_dry_simulation", true);
   config.set_flag("use_ssa_velocity", false);
-
-  ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
   // Make bedrock thermal material properties into ice properties.  Note that
   // zero thickness bedrock layer is the default, but we want the ice/rock
@@ -184,6 +261,8 @@ PetscErrorCode IceEISModel::init_physics() {
   config.set("bedrock_thermal_density", ice->rho);
   config.set("bedrock_thermal_conductivity", ice->k);
   config.set("bedrock_thermal_specific_heat_capacity", ice->c_p);
+
+  ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
   return 0;
 }

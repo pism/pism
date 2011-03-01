@@ -216,9 +216,6 @@ PetscErrorCode IceCompModel::init_physics() {
     CHKERRQ(ierr);
   }
 
-  // Replace the default enthalpy converter with a custom version that avoids
-  // clipping temperatures at pressure-melting
-
   if (testname == 'E') {
     // undo the stress balance choice made by IceModel:
     delete stress_balance;

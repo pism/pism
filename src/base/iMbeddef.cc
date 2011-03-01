@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -44,13 +44,13 @@ PetscErrorCode IceModel::bed_def_setup() {
   if (model == "none")
     return 0;
 
-  if (model == "iso") {
+  if ((model == "iso") && (beddef == NULL)) {
     beddef = new PBPointwiseIsostasy(grid, config);
     return 0;
   }
 
 #if (PISM_HAVE_FFTW==1)
-  if (model == "lc") {
+  if ((model == "lc") && (beddef == NULL)) {
     beddef = new PBLingleClark(grid, config);
     return 0;
   }
