@@ -27,6 +27,69 @@
 #include "PISMDiagnostic.hh"
 
 //! \brief A class defining a common interface for most PISM sub-models.
+/*!
+  \section pism_components PISM's model components and their interface
+
+  We've found that many sub-models in PISM share some tasks: they need to be
+  "initialized", "updated", asked for diagnostic quantities, asked to write the
+  model state...
+
+  PISMComponent and its derived classes were created to have a common interface
+  for PISM sub-models, such as surface, atmosphere, ocean and bed deformation
+  models.
+
+  There are two kinds of PISM's components:
+
+  \li diagnostic components (PISMComponent_Diag) and
+  \li time-stepping components (PISMComponent_TS).
+
+  The main difference is that diagnostic components do not need to know the
+  model time to perform an update, while time-stepping ones need to know the
+  time-step to update for (usually given as the t_years, dt_years pair defining
+  the (t_years, t_years + dt_years) interval) and may impose restrictions on a
+  time-step that is possible at a given time during a run.
+
+  \subsection pismcomponent_init Initialization
+
+  PISMComponent::init() should contain all the initialization code, preferably
+  including memory-allocation. This makes it possible to separate the PISM
+  initialization stage at which the choice of a sub-model is made from its own
+  initialization, so we can avoid initializing a sub-model just to throw it away.
+
+  Many PISM sub-models read data from the same file the rest of PISM reads
+  from. PISMComponent::find_pism_input() checks -i and -boot_file command-line
+  options and simplifies finding this file.
+
+  \subsection pismcomponent_output Writing to an output file
+
+  A PISM component needs to implement the following I/O methods:
+
+  \li add_vars_to_output(), which adds variable names to the list of fields that need
+  to be written.
+  \li define_variables(), which defines variables to be written and writes variable metadata.
+  \li write_variables(), which writes data itself.
+  
+  Why are all these methods needed? In PISM we separate defining and writing
+  NetCDF variables because defining all the NetCDF variables before writing
+  data is a lot faster than defining a variable, writing it, defining the
+  second variable, etc. (See <a
+  href="http://www.unidata.ucar.edu/software/netcdf/docs/netcdf/Parts-of-a-NetCDF-Classic-File.html#Parts-of-a-NetCDF-Classic-Filel">The
+  NetCDF Users' Guide</a> for a technical explanation.)
+
+  Within IceModel the following steps are done to write 2D and 3D fields to an
+  output file:
+
+  \li Assemble the list of variables to be written (see
+  IceModel::set_output_size()); calls add_vars_to_output()
+  \li Create a NetCDF file
+  \li Define all the variables in the file (see IceModel::write_variables());
+  calls define_variables()
+  \li Write all the variables to the file (same method); calls write_variables().
+
+  \subsection pismcomponent_timestep Restricting time-steps
+
+  Implement PISMComponent_TS::max_timestep() to affect PISM's adaptive time-stepping mechanism.
+ */
 class PISMComponent {
 public:
   PISMComponent(IceGrid &g, const NCConfigVariable &conf)

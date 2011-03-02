@@ -20,10 +20,10 @@ The following pages describe some important classes and their intended uses.
 
 - \ref computational_grid "Organization of PISM's computational grid"
 - \ref imv_allocation "IceModelVec and friends: storing, reading, writing, accessing 2D and 3D fields"
-- \subpage pism_components "PISM's model components and their interface (PISMComponent)"
-- \subpage scalar_timeseries "Reading scalar time-series (Timeseries)"
-- \subpage netcdf_wrapper "Low-level NetCDF access (NCTool)"
-- \subpage netcdf_io "Grid-dependent NetCDF access (PISMIO)"
+- \ref pism_components "PISM's model components and their interface"
+- \ref timeseries_overview "Reading scalar time-series (Timeseries)"
+- \ref nctool_overview "Low-level NetCDF access (NCTool)"
+- \ref pismio_overview "Reading and writing gridded data (PISMIO)"
 
 Copyright (C) 2008-2011 Ed Bueler, Constantine Khroulev and Andy Aschwanden
 
@@ -44,18 +44,6 @@ along with PISM; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 */
-
-/*! \page pism_components PISM's model components and their interface (PISMComponent)
-
- */
-
-/*! \page scalar_timeseries Reading scalar time-series (Timeseries)
-
- */
-
-/*! \page netcdf_wrapper Low-level NetCDF access (NCTool)
-
- */
 
 /*! \page netcdf_io Grid-dependent NetCDF access (PISMIO)
 

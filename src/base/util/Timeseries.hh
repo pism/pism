@@ -32,12 +32,47 @@ using namespace std;
 
 //! \brief A general class for reading and accessing time-series.
 /*!
-  Provides random access to time-series values.
+  \section timeseries_overview Scalar time-series
+
+  This class provides random access to time-series values. It is used to
+  implement forcing with scalar time-dependent parameters (such as
+  paleo-climate forcing).
 
   Note that every processor stores the whole time-series and calling append()
   repeatedly will use a lot of memory.
 
   Please use DiagnosticTimeseries to output long time-series.
+
+  \subsection timeseries_example An example
+
+  The following snippet from PAForcing::init() illustrates creating a Timeseries
+  object and reading data from a file.
+
+  \code
+  dTforcing = new Timeseries(grid.com, grid.rank, "delta_T", "t");
+  ierr = dTforcing->set_units("Celsius", ""); CHKERRQ(ierr);
+  ierr = dTforcing->set_dimension_units("years", ""); CHKERRQ(ierr);
+  ierr = dTforcing->set_attr("long_name", "near-surface air temperature offsets");
+  CHKERRQ(ierr);
+  
+  ierr = verbPrintf(2, grid.com, 
+                    "  reading delta T data from forcing file %s...\n", dT_file);
+                    CHKERRQ(ierr);
+	 
+  ierr = dTforcing->read(dT_file); CHKERRQ(ierr);
+  \endcode
+
+  Call
+  \code
+  double offset = (*dTforcing)(time);
+  \endcode
+  to get the value corresponding to the time "time", in this case in years. The
+  value returned will be computed using linear interpolation.
+
+  It is also possible to get an n-th value from a time-series: just use square brackets:
+  \code
+  double offset = (*dTforcing)[10];
+  \endcode
  */
 class Timeseries {
 public:

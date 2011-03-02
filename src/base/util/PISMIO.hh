@@ -1,4 +1,4 @@
-// Copyright (C) 2006--2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2006--2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,25 @@
 #include "LocalInterpCtx.hh"
 
 //! A class containing IO functions used to read and write spatial variables.
+/*!
+  \section pismio_overview Reading and writing gridded data (PISMIO)
+
+  PISMIO is used to read gridded data from NetCDF files. Most uses of PISMIO
+  are hidden inside NCSpatialVariable::read(), NCSpatialVariable::write() and
+  NCSpatialVariable::regrid(), which are, in turn, used by IceModelVec.
+
+  You need to use this class to "prepare" a NetCDF file for writing:
+  \code
+  PISMIO nc(&grid);
+
+  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
+  ierr = nc.append_time(grid.year); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+  \endcode
+
+  No action is needed to be able to write to an output ("-o") file, a snapshot
+  file or the like, though; IceModel has already prepared it.
+ */
 class PISMIO : public NCTool {
 public:
   PISMIO(IceGrid *my_grid);

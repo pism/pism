@@ -46,11 +46,22 @@ int check_err(const int stat, const int line, const char *file);
 
 //! A fairly low-level NetCDF wrapper used in various PISM classes.
 /*!
- * This class does not contain any grid-specific code to make it possible to
- * use it to access NetCDF files that do not contain gridded data.
- * 
- * All the work is done on processor 0. Other processors get results matching
- * ones on processor zero, unless stated otherwise.
+  \section nctool_overview PISM's NetCDF wrapper
+
+  This class does not contain any grid-specific code to make it possible to
+  use it to access NetCDF files that do not contain gridded data.
+
+  All the work is done on processor 0. Other processors get results matching
+  ones on processor zero, unless stated otherwise.
+
+  Most direct uses of this class are related to determining grid parameters if
+  an input file. In the majority of other cases one can use higher-level
+  classes, such as IceModelVec.
+
+  Note: "non-const" methods of this this class are the only ones that can make
+  a particular instance NCTool refer to a different file. In other words,
+  passing "const NCTool &" as an argument ensures that after a call the file is
+  still open.
  */
 class NCTool {
 public:
