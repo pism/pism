@@ -86,9 +86,7 @@ PetscErrorCode IceExactSSAModel::init_physics() {
     pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera,
     plastic_regularization = config.get("plastic_regularization") / secpera;
 
-  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till"),
-    use_ssa_velocity = config.get_flag("use_ssa_velocity"),
-    do_sia = config.get_flag("do_sia");
+  bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till");
   
   if (basal == NULL)
     basal = new IceBasalResistancePlasticLaw(plastic_regularization, do_pseudo_plastic_till, 

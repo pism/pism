@@ -35,7 +35,7 @@ PetscErrorCode  IceModelVec2S::create(IceGrid &my_grid, const char my_name[], bo
   if (v != PETSC_NULL) {
     SETERRQ1(2,"IceModelVec2S with name='%s' already allocated\n", my_name);
   }
-  PetscErrorCode ierr = IceModelVec2::create(my_grid, my_name, local, DA_STENCIL_BOX, width, dof); CHKERRQ(ierr);
+  PetscErrorCode ierr = IceModelVec2::create(my_grid, my_name, local, width, dof); CHKERRQ(ierr);
   return 0;
 }
 
@@ -662,7 +662,7 @@ PetscErrorCode IceModelVec2::set_component(int n, IceModelVec2 &source) {
 }
 
 PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], bool local,
-                                     DAStencilType my_sten, int stencil_width, int my_dof) {
+                                     int stencil_width, int my_dof) {
   PetscErrorCode ierr;
 
   if (!utIsInit()) {
@@ -708,7 +708,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
 PetscErrorCode  IceModelVec2Stag::create(IceGrid &my_grid, const char my_short_name[], bool local,
 					 int stencil_width) {
 
-  PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, local, DA_STENCIL_BOX,
+  PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, local,
 					     stencil_width, dof); CHKERRQ(ierr);
   string s_name = name;
   vars[0].init(s_name + "[0]", my_grid, GRID_2D);

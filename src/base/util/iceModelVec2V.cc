@@ -30,7 +30,7 @@ IceModelVec2V::IceModelVec2V() : IceModelVec2() {
 PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const char my_short_name[], bool local,
 				      int stencil_width) {
 
-  PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, local, DA_STENCIL_BOX,
+  PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, local,
 					     stencil_width, dof); CHKERRQ(ierr);
 
   string s_name = my_short_name;

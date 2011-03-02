@@ -123,6 +123,9 @@ add_library (pismearth
 )
 target_link_libraries (pismearth pismutil)
 
+# Disable compiler warnings for cubature.c
+set_source_files_properties (earth/cubature.c
+  PROPERTIES COMPILE_FLAGS "-w")
 
 set_source_files_properties (base/pism_revision.cc
   PROPERTIES COMPILE_FLAGS -DPISM_REVISION='\"${Pism_REVISION_TAG}\"')
@@ -156,6 +159,10 @@ add_library (pismudunits
   udunits/utparse.c
   udunits/utscan.c
 )
+
+# Disable compiler warnings for UDUNITS:
+set_target_properties(pismudunits
+  PROPERTIES COMPILE_FLAGS "-w")
 
 # Main executables:
 add_executable (pismr pismr.cc)

@@ -280,7 +280,7 @@ public:
   virtual PetscErrorCode set_component(int n, IceModelVec2 &source);
 protected:
   virtual PetscErrorCode create(IceGrid &my_grid, const char my_short_name[], bool local,
-			 DAStencilType my_sten, int stencil_width, int dof);
+                                int stencil_width, int dof);
   PetscErrorCode get_component(int n, Vec result);
   PetscErrorCode set_component(int n, Vec source);
 };
