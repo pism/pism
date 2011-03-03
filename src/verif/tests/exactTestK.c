@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007 Ed Bueler
+   Copyright (C) 2007, 2011 Ed Bueler
   
    This file is part of PISM.
   
@@ -48,7 +48,7 @@
 int exactK(const double t, const double z, double *TT, const int bedrockIsIce_p) {
   int k;
   int belowB0;
-  double ZZ, P, alpha, lambda, beta, gamma, XkSQR, Xk, theta, Ck, I1, I2, aH, bB, mI, mR;
+  double ZZ, P, alpha, lambda, beta, my_gamma, XkSQR, Xk, theta, Ck, I1, I2, aH, bB, mI, mR;
   double c_p_BR, rho_BR, k_BR;
   /* following constants were produced by calling print_alpha_k(30) (below) */
   double alf[Nsum] = {3.350087528822397e-04, 1.114576827617396e-03, 1.953590840303518e-03,
@@ -89,10 +89,10 @@ int exactK(const double t, const double z, double *TT, const int bedrockIsIce_p)
        normalized eigenfunction */ 
     alpha = alf[k];
     beta = ZZ * alpha;
-    gamma = sin(alpha * H0) / cos(beta * B0);
-    XkSQR = (rho_BR * c_p_BR * gamma * gamma * B0 + rho_ICE * c_p_ICE * H0) / 2.0;
+    my_gamma = sin(alpha * H0) / cos(beta * B0);
+    XkSQR = (rho_BR * c_p_BR * my_gamma * my_gamma * B0 + rho_ICE * c_p_ICE * H0) / 2.0;
     Xk = sqrt(XkSQR);
-    theta = ( (z >= 0) ? sin(alpha * (H0 - z)) : gamma * cos(beta * (B0 + z)) ) / Xk;
+    theta = ( (z >= 0) ? sin(alpha * (H0 - z)) : my_gamma * cos(beta * (B0 + z)) ) / Xk;
     lambda = (k_ICE * alpha * alpha) / (rho_ICE * c_p_ICE);
     /* DEBUG: printf("k = %3d:  alpha = %10e, Xk = %10e, theta = %10e, lambda = %10e,\n",
            k,alpha,Xk,theta,lambda); */
@@ -101,7 +101,7 @@ int exactK(const double t, const double z, double *TT, const int bedrockIsIce_p)
     I1 = - mI * (sin(aH) - aH * cos(aH)) / (alpha * alpha);
     I2 = mR * (cos(bB) - 1.0 + bB * sin(bB)) / (beta * beta)
          - (B0 * mR + H0 * mI) * sin(bB) / beta;
-    Ck = (rho_ICE * c_p_ICE * I1 + rho_BR * c_p_BR * gamma * I2) / Xk;
+    Ck = (rho_ICE * c_p_ICE * I1 + rho_BR * c_p_BR * my_gamma * I2) / Xk;
     /* add the term to the expansion */
     *TT += Ck * exp(- lambda * t) * theta;
     /* DEBUG: printf("          I1 = %10e, I2 = %10e, Ck = %10e, term = %10f\n",

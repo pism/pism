@@ -16,8 +16,8 @@
 // along with Pism; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __nc_util_hh
-#define __nc_util_hh
+#ifndef __NCTool_hh
+#define __NCTool_hh
 
 #include <petsc.h>
 
@@ -110,5 +110,5 @@ protected:
   mutable bool def_mode;             // note: only processor 0 should use this
 };
 
-#endif // __nc_util_hh
+#endif // __NCTool_hh
 

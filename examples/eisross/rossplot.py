@@ -20,7 +20,7 @@
 # CK 27may08, ..., 12jan10
 # ELB 15feb11
 
-from numpy import ma, loadtxt, squeeze, shape, reshape, linspace, tile, repeat, sin, pi, cos, sqrt
+from numpy import ma, loadtxt, squeeze, shape, reshape, linspace, tile, repeat, sin, pi, cos, sqrt, maximum
 from pylab import figure, clf, hold, pcolor, colorbar, plot, quiver, axis, xlabel, ylabel, savefig, show, title
 from getopt import getopt, GetoptError
 from sys import argv, exit
@@ -148,8 +148,13 @@ title("""Color is speed in m/a.\n Arrows are observed (black) and computed
 
 # show observed versus computed scatter plot as in Figure 2 in (MacAyeal et al 1996)
 figure(2);clf();hold(True)
-plot(sqrt(uATrig**2 + vATrig**2), sqrt(rigu**2 + rigv**2), '.k')
-plot([0, 1000],[0, 1000], 'k')
+pism_result = sqrt(uATrig**2 + vATrig**2)
+riggs_data = sqrt(rigu**2 + rigv**2)
+max_speed = maximum(pism_result.max(), riggs_data.max())
+
+plot(pism_result, riggs_data, '.k')
+plot([0, max_speed],[0, max_speed], 'k')
+axis(xmax=max_speed, ymax=max_speed)
 xlabel('PISM computed speed (m/a)'); ylabel('RIGGS observed speed (m/a)')
 
 print "pausing to show figures ..."

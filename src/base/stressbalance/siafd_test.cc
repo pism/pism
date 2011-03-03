@@ -223,7 +223,7 @@ PetscErrorCode setInitStateF(IceGrid &grid,
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar xx = grid.x[i], yy = grid.y[j], r = grid.radius(i,j),
+      PetscScalar r = grid.radius(i,j),
         Ts = Tmin + ST * r;
       if (r > LforFG - 1.0) { // if (essentially) outside of sheet
         H[i][j] = 0.0;

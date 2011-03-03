@@ -24,7 +24,7 @@
 #include <string>
 #include <petscda.h>
 #include "udunits.h"
-#include "nc_util.hh"
+#include "NCTool.hh"
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER

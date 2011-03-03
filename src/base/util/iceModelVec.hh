@@ -23,7 +23,7 @@
 #include <cstdlib>
 #include <petscda.h>
 #include "udunits.h"
-#include "nc_util.hh"
+#include "NCTool.hh"
 #include "NCSpatialVariable.hh"
 #include "pism_const.hh"
 #include "LocalInterpCtx.hh"

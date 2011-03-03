@@ -20,7 +20,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <petscda.h>
-#include "nc_util.hh"
+#include "NCTool.hh"
 
 #include "iceModelVec.hh"
 

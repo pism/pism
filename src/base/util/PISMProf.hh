@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 #include <petsc.h>
-#include "nc_util.hh"
+#include "NCTool.hh"
 
 /// @cond NAMESPACE_BROWSER
 using namespace std;

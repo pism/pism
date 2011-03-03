@@ -170,7 +170,7 @@ PetscErrorCode SSATestCase::report()
   ierr = ssa->stdout_report(ssa_stdout); CHKERRQ(ierr);
   ierr = verbPrintf(3,grid.com,ssa_stdout.c_str()); CHKERRQ(ierr);
   
-  PetscScalar exactmaxu, maxvecerr = 0.0, avvecerr = 0.0, 
+  PetscScalar maxvecerr = 0.0, avvecerr = 0.0, 
     avuerr = 0.0, avverr = 0.0, maxuerr = 0.0, maxverr = 0.0;
   PetscScalar gmaxvecerr = 0.0, gavvecerr = 0.0, gavuerr = 0.0, gavverr = 0.0,
     gmaxuerr = 0.0, gmaxverr = 0.0;
@@ -190,7 +190,7 @@ PetscErrorCode SSATestCase::report()
   PetscScalar exactvelmax = 0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      PetscScalar junk1, junk2, uexact, vexact;
+      PetscScalar uexact, vexact;
       PetscScalar myx = grid.x[i], myy = grid.y[j];
 
       exactSolution(i,j,myx,myy,&uexact,&vexact);
@@ -237,10 +237,12 @@ PetscErrorCode SSATestCase::report()
   return 0;
 }
 
-PetscErrorCode SSATestCase::exactSolution(PetscInt i, PetscInt j, 
-  PetscReal x, PetscReal y, PetscReal *u, PetscReal *v )
+PetscErrorCode SSATestCase::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
+                                          PetscReal /*x*/, PetscReal /*y*/,
+                                          PetscReal *u, PetscReal *v )
 {
   *u=0; *v=0;
+  return 0;
 }
 
 //! Save the computation and data to a file.

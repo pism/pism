@@ -75,8 +75,8 @@ class SSATestCase
 {
 public:
   SSATestCase( MPI_Comm com, PetscMPIInt rank, 
-               PetscMPIInt size, NCConfigVariable &config ): 
-                  config(config), grid(com,rank,size,config), 
+               PetscMPIInt size, NCConfigVariable &c ): 
+                  config(c), grid(com,rank,size,config), 
                   basal(0), ice(0), enthalpyconverter(0), ssa(0),
                   report_velocity_scale(secpera)
   {  };

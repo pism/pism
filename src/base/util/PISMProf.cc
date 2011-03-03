@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMProf.hh"
-#include "nc_util.hh"
+#include "NCTool.hh"
 
 /// PISMEvent
 PISMEvent::PISMEvent() {

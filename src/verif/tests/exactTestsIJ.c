@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2008 Ed Bueler
+   Copyright (C) 2007-2008, 2011 Ed Bueler
   
    This file is part of PISM.
   
@@ -90,7 +90,7 @@ int exactJ(const double x, const double y,
   const double rho_sw = 1028.0;  /* kg/m^3 */
   const double g = 9.81;         /* m/s^2  */
   const double C = rho_ice * g * (1.0 - rho_ice/rho_sw) * H0 / (2.0 * nu0);
-  const double gamma[3][3] = {{1.0854, 0.108, 0.0027},
+  const double my_gamma[3][3] = {{1.0854, 0.108, 0.0027},
                               {0.402 , 0.04 , 0.001 },
                               {0.0402, 0.004, 0.0001}};
   const double A = L / (4.0 * pi);
@@ -106,7 +106,7 @@ int exactJ(const double x, const double y,
         kx = (double)(k) * pi * x / L;
         ly = (double)(l) * pi * y / L;
         trig = cos(kx) * sin(ly) + sin(kx) * cos(ly);
-        B = (A / denom) * (C * gamma[abs(k)][abs(l)]) * trig;
+        B = (A / denom) * (C * my_gamma[abs(k)][abs(l)]) * trig;
         uu += B * (double)(k);
         vv += B * (double)(l);
       }

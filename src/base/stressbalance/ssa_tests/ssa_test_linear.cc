@@ -45,8 +45,8 @@ class SSATestCaseExp: public SSATestCase
 {
 public:
   SSATestCaseExp( MPI_Comm com, PetscMPIInt rank, 
-                 PetscMPIInt size, NCConfigVariable &config): 
-                 SSATestCase(com,rank,size,config)
+                 PetscMPIInt size, NCConfigVariable &c): 
+                 SSATestCase(com,rank,size,c)
   { };
   
 protected:
@@ -72,6 +72,7 @@ PetscErrorCode SSATestCaseExp::initializeGrid(PetscInt Mx,PetscInt My)
 {
   PetscReal Lx=L, Ly = L; 
   init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
+  return 0;
 }
 
 
@@ -96,7 +97,6 @@ PetscErrorCode SSATestCaseExp::initializeSSAModel()
 PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
-  PetscScalar    **ph, **pbed;
   
   // Force linear rheology
   ssa->strength_extension->set_notional_strength(nu0 * H0);
@@ -121,7 +121,7 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
   ierr = mask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar junk, myu, myv;
+      PetscScalar myu, myv;
       const PetscScalar myx = grid.x[i], myy=grid.y[j];
       
       bool edge = ( (j == 0) || (j == grid.My - 1) ) || ( (i==0) || (i==grid.Mx-1) );
@@ -148,16 +148,17 @@ PetscErrorCode SSATestCaseExp::initializeSSACoefficients()
 }
 
 
-PetscErrorCode SSATestCaseExp::exactSolution(PetscInt i, PetscInt j, 
- PetscReal x, PetscReal y, PetscReal *u, PetscReal *v)
+PetscErrorCode SSATestCaseExp::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
+                                             PetscReal x, PetscReal /*y*/,
+                                             PetscReal *u, PetscReal *v)
 {
-  PetscScalar earth_grav = config.get("standard_gravity");
   PetscScalar tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold") / secpera;
   PetscScalar v0 = 100./secpera ; // 100 m/s.
   // PetscScalar alpha=log(2.)/(2*L);
   PetscScalar alpha = sqrt( (tauc0/tauc_threshold_velocity) / (4*nu0*H0) );
   *u = v0*exp( -alpha*(x-L));
   *v = 0;
+  return 0;
 }
 
 

@@ -30,7 +30,7 @@ struct FEStoreNode {
 };
 
 
-
+/*
 //! Currently unused class that may be used to implement nondimensionalization in SSAFEM.
 class PismRef {
 public:
@@ -57,7 +57,7 @@ public:
 private:
   PetscReal length,height,time,pressure;
 };
-
+*/
 
 class SSAFEM;
 
@@ -112,7 +112,7 @@ protected:
                                              PetscReal *,PetscReal *,PetscReal *,PetscReal *);
 
   virtual void FixDirichletValues(PetscReal lmask[],PISMVector2 **BC_vel,
-                                                      PISMVector2 x[], FEDOFMap &dofmap);
+                                  PISMVector2 x[], FEDOFMap &dofmap);
 
   virtual PetscErrorCode allocate_fem();
 
@@ -137,7 +137,7 @@ protected:
   PetscReal    dirichletScale;
   PetscReal    ocean_rho;
   PetscReal    earth_grav;
-  PismRef      ref;
+  // PismRef      ref;
 
   FEElementMap element_index;
   FEQuadrature quadrature;

@@ -329,16 +329,16 @@ corresponding to a Dirichlet unknown are not set in the main loops of
 SSAFEM::compute_local_function and SSSAFEM:compute_local_jacobian.
 */
 void SSAFEM::FixDirichletValues(PetscReal lmask[],PISMVector2 **BC_vel,
-                                PISMVector2 x[], FEDOFMap &dofmap)
+                                PISMVector2 x[], FEDOFMap &my_dofmap)
 {
   for (PetscInt k=0; k<4; k++) {
     if (PismIntMask(lmask[k]) == MASK_SHEET) {
       PetscInt ii, jj;
-      dofmap.localToGlobal(k,&ii,&jj);
+      my_dofmap.localToGlobal(k,&ii,&jj);
       x[k].u = BC_vel[ii][jj].u;
       x[k].v = BC_vel[ii][jj].v;
-      dofmap.markRowInvalid(k);
-      dofmap.markColInvalid(k);
+      my_dofmap.markRowInvalid(k);
+      my_dofmap.markColInvalid(k);
     }
   }
 }
@@ -346,10 +346,10 @@ void SSAFEM::FixDirichletValues(PetscReal lmask[],PISMVector2 **BC_vel,
 //! Implements the callback for computing the SNES local function.
 /*! Compute the residual \f[r_{ij}= G(x,\psi_{ij}) \f] where \f$G\f$ is the weak form of the SSA, \f$x\f$
 is the current approximate solution, and the \f$\psi_{ij}\f$ are test functions. */
-PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVector2 **xg, PISMVector2 **yg)
+PetscErrorCode SSAFEM::compute_local_function(DALocalInfo */*info*/, const PISMVector2 **xg, PISMVector2 **yg)
 {
   PetscInt         i,j,k,q;
-  PetscReal        **mask;
+  PetscReal        **bc_mask;
   PISMVector2        **BC_vel;
   PetscErrorCode   ierr;
 
@@ -362,7 +362,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
   
   // Start access of Dirichlet data, if present.
   if (bc_locations && vel_bc) {
-    ierr = bc_locations->get_array(mask);CHKERRQ(ierr);
+    ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
     ierr = vel_bc->get_array(BC_vel); CHKERRQ(ierr);
   }
 
@@ -401,7 +401,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
       // for rows or columns corresponding to Dirichlet data in the main loop.
       if (bc_locations && vel_bc) {
         PetscReal lmask[4];
-        dofmap.extractLocalDOFs(i,j,mask,lmask);
+        dofmap.extractLocalDOFs(i,j,bc_mask,lmask);
         FixDirichletValues(lmask,BC_vel,x,dofmap);
       }
 
@@ -477,19 +477,19 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
 /*! Compute the Jacobian \f[J_{ij}{kl} \frac{d r_{ij}}{d x_{kl}}= G(x,\psi_{ij}) \f] 
 where \f$G\f$ is the weak form of the SSA, \f$x\f$ is the current approximate solution, and 
 the \f$\psi_{ij}\f$ are test functions. */
-PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVector2 **xg, Mat J )
+PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo */*info*/, const PISMVector2 **xg, Mat Jac )
 {
-  PetscReal      **mask;
+  PetscReal      **bc_mask;
   PISMVector2    **BC_vel;
   PetscInt         i,j;
   PetscErrorCode   ierr;
 
   // Zero out the Jacobian in preparation for updating it.
-  ierr = MatZeroEntries(J);CHKERRQ(ierr);
+  ierr = MatZeroEntries(Jac);CHKERRQ(ierr);
 
   // Start access to Dirichlet data if present.
   if (bc_locations && vel_bc) {
-    ierr = bc_locations->get_array(mask);CHKERRQ(ierr);
+    ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
     ierr = vel_bc->get_array(BC_vel); CHKERRQ(ierr); 
   }
 
@@ -532,7 +532,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
       // for rows or columns corresponding to Dirichlet data in the main loop.
       if (bc_locations && vel_bc) {
         PetscReal lmask[4];
-        dofmap.extractLocalDOFs(i,j,mask,lmask);
+        dofmap.extractLocalDOFs(i,j,bc_mask,lmask);
         FixDirichletValues(lmask,BC_vel,x,dofmap);
       }
 
@@ -584,7 +584,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
           } // l
         } // k
       } // q
-      ierr = dofmap.addLocalJacobianBlock(K,J);
+      ierr = dofmap.addLocalJacobianBlock(K,Jac);
     } // j
   } // i
   
@@ -600,7 +600,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
           MatStencil row;
           // FIXME: Transpose shows up here!
           row.j = i; row.i = j;
-          ierr = MatSetValuesBlockedStencil(J,1,&row,1,&row,ident,ADD_VALUES);CHKERRQ(ierr);
+          ierr = MatSetValuesBlockedStencil(Jac,1,&row,1,&row,ident,ADD_VALUES);CHKERRQ(ierr);
         }
       }
     }
@@ -613,8 +613,8 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
     ierr = vel_bc->end_access(); CHKERRQ(ierr);
   }
   
-  ierr = MatAssemblyBegin(J,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(J,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyBegin(Jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(Jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
 
   PetscTruth monitor_jacobian;
   ierr = PetscOptionsHasName(NULL,"-ssa_monitor_jacobian",&monitor_jacobian);CHKERRQ(ierr);
@@ -622,10 +622,10 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
     ierr = PetscPrintf(grid.com,
                        "SSA Jacobian\n");
     CHKERRQ(ierr);
-    ierr = MatView(J,PETSC_VIEWER_STDOUT_WORLD);
+    ierr = MatView(Jac,PETSC_VIEWER_STDOUT_WORLD);
   }
 
-  ierr = MatSetOption(J,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
+  ierr = MatSetOption(Jac,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }

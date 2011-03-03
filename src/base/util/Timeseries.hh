@@ -21,7 +21,7 @@
 
 #include "NCVariable.hh"
 #include "grid.hh"
-#include "nc_util.hh"
+#include "NCTool.hh"
 #include <deque>
 
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser

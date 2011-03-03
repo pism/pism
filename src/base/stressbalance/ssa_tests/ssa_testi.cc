@@ -38,8 +38,8 @@ class SSATestCaseI: public SSATestCase
 {
 public:
   SSATestCaseI( MPI_Comm com, PetscMPIInt rank, 
-                 PetscMPIInt size, NCConfigVariable &config ): 
-                 SSATestCase(com,rank,size,config)
+                 PetscMPIInt size, NCConfigVariable &c ): 
+                 SSATestCase(com,rank,size,c)
   { };
   
 protected:
@@ -69,6 +69,7 @@ PetscErrorCode SSATestCaseI::initializeGrid(PetscInt Mx,PetscInt My)
   PetscReal Ly = 3*L_schoof;  // 300.0 km half-width (L=40.0km in Schoof's choice of variables)
   PetscReal Lx = PetscMax(60.0e3, ((Mx - 1) / 2) * (2.0 * Ly / (My - 1)) );
   init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
+  return 0;
 }
 
 
@@ -127,7 +128,7 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
   ierr = bed.get_array(pbed); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar junk, myu, myv, bedval;
+      PetscScalar junk, myu, myv;
       const PetscScalar myx = grid.x[i], myy=grid.y[j];
       // eval exact solution; will only use exact vels if at edge
       exactI(m_schoof, myx, myy, &(pbed[i][j]), &junk, &myu, &myv); 
@@ -162,11 +163,13 @@ PetscErrorCode SSATestCaseI::initializeSSACoefficients()
 }
 
 
-PetscErrorCode SSATestCaseI::exactSolution(PetscInt i, PetscInt j, 
- PetscReal x, PetscReal y, PetscReal *u, PetscReal *v)
+PetscErrorCode SSATestCaseI::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
+                                           PetscReal x, PetscReal y,
+                                           PetscReal *u, PetscReal *v)
 {
   PetscReal junk1, junk2;
   exactI(m_schoof, x,y, &junk1, &junk2,u,v); 
+  return 0;
 }
 
 

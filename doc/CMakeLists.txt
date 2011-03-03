@@ -15,6 +15,7 @@ if (PDFLATEX_COMPILER)
     add_custom_command (OUTPUT ${NAME}.pdf
       COMMAND ${PDFLATEX_COMPILER} ${NAME}.tex
       COMMAND ${PDFLATEX_COMPILER} ${NAME}.tex
+      COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.pdf ${PROJECT_BINARY_DIR}/
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     # A custom target to be able to build PDFs by "make installation", etc
@@ -24,8 +25,6 @@ if (PDFLATEX_COMPILER)
 
   add_subdirectory(userman)
 
-  # A global target that gets built with "make all" if Pism_BUILD_DOCS is set. Ensures that PISM
-  # documentation is built for "make install"
   if (Pism_BUILD_DOCS)
     install (FILES
       "${CMAKE_CURRENT_BINARY_DIR}/userman/manual.pdf"

@@ -32,8 +32,9 @@ add_custom_command (OUTPUT manual.pdf
   COMMAND ${MAKEINDEX_COMPILER} -l -o manual.ond manual.odx
   COMMAND ${PDFLATEX_COMPILER} manual.tex
   COMMAND ${PDFLATEX_COMPILER} manual.tex
+  COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/manual.pdf ${PROJECT_BINARY_DIR}/
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${parts})
 
-add_custom_target(manual ALL
+add_custom_target(userman ALL
   DEPENDS manual.pdf)

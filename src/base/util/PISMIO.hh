@@ -19,7 +19,7 @@
 #ifndef __PISMIO
 #define __PISMIO
 
-#include "nc_util.hh"
+#include "NCTool.hh"
 #include "LocalInterpCtx.hh"
 
 //! A class containing IO functions used to read and write spatial variables.

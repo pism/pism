@@ -38,8 +38,8 @@ class SSATestCaseJ: public SSATestCase
 {
 public:
   SSATestCaseJ( MPI_Comm com, PetscMPIInt rank, 
-                 PetscMPIInt size, NCConfigVariable &config ): 
-                 SSATestCase(com,rank,size,config)
+                 PetscMPIInt size, NCConfigVariable &c ): 
+                 SSATestCase(com,rank,size,c)
   { };
   
 protected:
@@ -60,6 +60,7 @@ PetscErrorCode SSATestCaseJ::initializeGrid(PetscInt Mx,PetscInt My)
   PetscReal halfWidth = 300.0e3;  // 300.0 km half-width
   PetscReal Lx = halfWidth, Ly = halfWidth;
   init_shallow_grid(grid,Lx,Ly,Mx,My,XY_PERIODIC);
+  return 0;
 }
 
 PetscErrorCode SSATestCaseJ::initializeSSAModel()
@@ -145,11 +146,13 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   return 0;    
 }
 
-PetscErrorCode SSATestCaseJ::exactSolution(PetscInt i, PetscInt j, 
- PetscReal x, PetscReal y, PetscReal *u, PetscReal *v)
+PetscErrorCode SSATestCaseJ::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
+                                           PetscReal x, PetscReal y,
+                                           PetscReal *u, PetscReal *v)
 {
   PetscReal junk1, junk2;
   exactJ(x, y, &junk1, &junk2, u, v);
+  return 0;
 }
 
 

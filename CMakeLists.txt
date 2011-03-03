@@ -171,11 +171,9 @@ else (FFTW_FOUND)
 endif (FFTW_FOUND)
 
 add_custom_target (etags
-  COMMAND etags `find src -name *.c`
-  COMMAND etags -a `find src -name *.cc`
-  COMMAND etags -a `find src -name *.h`
-  COMMAND etags -a `find src -name *.hh`
+  COMMAND find -E src -regex ".*\\.(c|cc|h|hh)" | xargs etags
   WORKING_DIRECTORY ${Pism_SOURCE_DIR}
+  VERBATIM
 )
 
 add_subdirectory (src)

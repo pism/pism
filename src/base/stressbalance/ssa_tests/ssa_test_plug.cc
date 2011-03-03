@@ -42,8 +42,8 @@ class SSATestCasePlug: public SSATestCase
 {
 public:
   SSATestCasePlug( MPI_Comm com, PetscMPIInt rank, 
-                 PetscMPIInt size, NCConfigVariable &config ): 
-                 SSATestCase(com,rank,size,config)
+                 PetscMPIInt size, NCConfigVariable &c ): 
+                 SSATestCase(com,rank,size,c)
   { 
     H0 = 2000.; //m
     L=50.e3; // 50km half-width
@@ -79,6 +79,7 @@ PetscErrorCode SSATestCasePlug::initializeGrid(PetscInt Mx,PetscInt My)
 {
   PetscReal Lx=L, Ly = L; 
   init_shallow_grid(grid,Lx,Ly,Mx,My,NONE);
+  return 0;
 }
 
 
@@ -105,7 +106,6 @@ PetscErrorCode SSATestCasePlug::initializeSSAModel()
 PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
 {
   PetscErrorCode ierr;
-  PetscScalar    **ph, **pbed;
   
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
   config.set_flag("compute_surf_grad_inward_ssa", true);
@@ -127,7 +127,7 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
   ierr = surface.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar junk, myu, myv;
+      PetscScalar myu, myv;
       const PetscScalar myx = grid.x[i], myy=grid.y[j];
 
       bed(i,j) = -myx*(dhdx);
@@ -162,8 +162,9 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
   return 0;
 }
 
-PetscErrorCode SSATestCasePlug::exactSolution(PetscInt i, PetscInt j, 
- PetscReal x, PetscReal y, PetscReal *u, PetscReal *v)
+PetscErrorCode SSATestCasePlug::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
+                                              PetscReal /*x*/, PetscReal y,
+                                              PetscReal *u, PetscReal *v)
 {
   PetscScalar earth_grav = config.get("standard_gravity");
   PetscScalar f = ice->rho * earth_grav * H0* dhdx;
@@ -171,6 +172,7 @@ PetscErrorCode SSATestCasePlug::exactSolution(PetscInt i, PetscInt j,
   
   *u = 0.5*pow(f,3)*pow(L,4)/pow(B0*H0,3)*(1-pow(ynd,4));
   *v = 0;
+  return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -208,7 +210,7 @@ int main(int argc, char *argv[]) {
     PetscInt My=61;
     string output_file = "ssa_test_plug.nc";
     string driver = "fem";
-    PetscScalar H0dim = 1.;
+    // PetscScalar H0dim = 1.;
 
     ierr = PetscOptionsBegin(com, "", "SSAFD_TEST options", ""); CHKERRQ(ierr);
     {

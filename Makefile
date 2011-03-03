@@ -13,9 +13,6 @@ endif
 	$(MAKE) -C $(BUILD_DIR) install
 .PHONY: install
 
-userman browser installation:
-	@cd doc && $(MAKE) $@
-
 update:
 	@svn up
 	$(MAKE) install
@@ -23,7 +20,6 @@ update:
 
 clean:
 	@$(MAKE) -C $(BUILD_DIR) clean
-	@$(MAKE) -C doc clean
 
 .DEFAULT:
 	$(MAKE) -C $(BUILD_DIR) $@

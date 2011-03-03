@@ -19,7 +19,7 @@
 #include <cstring>
 #include "udunits.h"
 #include "pism_const.hh"
-#include "nc_util.hh"
+#include "NCTool.hh"
 
 int nc_check(int stat) {
   if (stat)
