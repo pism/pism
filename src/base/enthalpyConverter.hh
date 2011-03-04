@@ -99,7 +99,7 @@ class ICMEnthalpyConverter : public EnthalpyConverter {
 public:
   ICMEnthalpyConverter(const NCConfigVariable &config) : EnthalpyConverter(config) {
     T_0 = 0.0;
-    T_triple = 1.0e30;  // unreachable
+    // T_triple = 1.0e30;  // unreachable
     do_cold_ice_methods = true;
     // FIXME:  it *might* be nice to set these as overrides (?), but we have a "const"
     //   reference for config, and IceFlowLaw creates an EnthalpyConverter and

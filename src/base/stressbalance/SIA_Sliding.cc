@@ -81,8 +81,6 @@ PetscErrorCode SIA_Sliding::init(PISMVars &vars) {
 PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
   PetscErrorCode ierr;
   IceModelVec2Stag h_x = work_2d_stag[0], h_y = work_2d_stag[1];
-  PetscScalar **Rb;
-  PISMVector2 **bvel;
 
   ierr = compute_surface_gradient(h_x, h_y); CHKERRQ(ierr);
 
@@ -99,44 +97,42 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
   ierr = bed->begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
 
-  ierr = velocity.get_array(bvel); CHKERRQ(ierr);
-  ierr = basal_frictional_heating.get_array(Rb); CHKERRQ(ierr);
-  for (PetscInt o=0; o<2; o++) {
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (mask->is_floating(i,j)) {
-          bvel[i][j].u = 0.0;
-          bvel[i][j].v = 0.0;
-          Rb[i][j] = 0.0;
-        } else {
-          // basal velocity from SIA-type sliding law: not recommended!
-          const PetscScalar
-            myx = -grid.Lx + grid.dx * i,
-            myy = -grid.Ly + grid.dy * j,
-            myhx = 0.25 * (  h_x(i,j,0) + h_x(i-1,j,0)
-                             + h_x(i,j,1) + h_x(i,j-1,1)),
-            myhy = 0.25 * (  h_y(i,j,0) + h_y(i-1,j,0)
-                             + h_y(i,j,1) + h_y(i,j-1,1)),
-            alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
-          PetscScalar T, basalC;
+  ierr = velocity.begin_access(); CHKERRQ(ierr);
+  ierr = basal_frictional_heating.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
+      if (mask->is_floating(i,j)) {
+        velocity(i,j).u = 0.0;
+        velocity(i,j).v = 0.0;
+        basal_frictional_heating(i,j) = 0.0;
+      } else {
+        // basal velocity from SIA-type sliding law: not recommended!
+        const PetscScalar
+          myx = grid.x[i],
+          myy = grid.y[j],
+          myhx = 0.25 * (  h_x(i,j,0) + h_x(i-1,j,0)
+                           + h_x(i,j,1) + h_x(i,j-1,1)),
+          myhy = 0.25 * (  h_y(i,j,0) + h_y(i-1,j,0)
+                           + h_y(i,j,1) + h_y(i,j-1,1)),
+          alpha = sqrt(PetscSqr(myhx) + PetscSqr(myhy));
+        PetscScalar T, basalC;
 
-          // change r1200: new meaning of H
-          const PetscScalar H = (*surface)(i,j) - (*bed)(i,j);
+        // change r1200: new meaning of H
+        const PetscScalar H = (*surface)(i,j) - (*bed)(i,j);
 
-          ierr = EC.getAbsTemp(enthalpy->getValZ(i,j,0.0),
-                                EC.getPressureFromDepth(H), T); CHKERRQ(ierr);
+        ierr = EC.getAbsTemp(enthalpy->getValZ(i,j,0.0),
+                             EC.getPressureFromDepth(H), T); CHKERRQ(ierr);
 
-          basalC = basalVelocitySIA(myx, myy, H, T,
-				    alpha, mu_sliding,
-				    minimum_temperature_for_sliding);
-          bvel[i][j].u = - basalC * myhx;
-          bvel[i][j].v = - basalC * myhy;
-          // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
-          // in ice streams this result will be *overwritten* by
-          //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
-          const PetscScalar P = ice.rho * standard_gravity * H;
-          Rb[i][j] = - (P * myhx) * bvel[i][j].u - (P * myhy) * bvel[i][j].v;
-        }
+        basalC = basalVelocitySIA(myx, myy, H, T,
+                                  alpha, mu_sliding,
+                                  minimum_temperature_for_sliding);
+        velocity(i,j).u = - basalC * myhx;
+        velocity(i,j).v = - basalC * myhy;
+        // basal frictional heating; note P * dh/dx is x comp. of basal shear stress
+        // in ice streams this result will be *overwritten* by
+        //   correctBasalFrictionalHeating() if useSSAVelocities==TRUE
+        const PetscScalar P = ice.rho * standard_gravity * H;
+        basal_frictional_heating(i,j) = - (P * myhx) * velocity(i,j).u - (P * myhy) * velocity(i,j).v;
       }
     }
   }
@@ -151,6 +147,9 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
   ierr = bed->end_access(); CHKERRQ(ierr);
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = enthalpy->end_access(); CHKERRQ(ierr);
+
+  ierr = velocity.beginGhostComm(); CHKERRQ(ierr);
+  ierr = velocity.endGhostComm(); CHKERRQ(ierr);
 
   return 0;
 }
