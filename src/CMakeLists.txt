@@ -198,7 +198,7 @@ add_executable (pclimate pclimate.cc eismint/pgrn_atmosphere.cc)
 target_link_libraries (pclimate pismboundary)
 
 add_custom_command (OUTPUT pism_config.nc
-  COMMAND ncgen -o ${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_SOURCE_DIR}/pism_config.cdl
+  COMMAND ncgen -o ${PROJECT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_SOURCE_DIR}/pism_config.cdl
   DEPENDS pism_config.cdl
 )
 add_custom_target (pism_config DEPENDS pism_config.nc)
@@ -212,7 +212,7 @@ install (TARGETS
 
 install (FILES
   "udunits/pismudunits.dat"
-  "${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc"
+  "${PROJECT_BINARY_DIR}/pism_config.nc"
   DESTINATION ${Pism_LIB_DIR})
 
 if (NOT Pism_BUILD_DEBIAN_PACKAGE)

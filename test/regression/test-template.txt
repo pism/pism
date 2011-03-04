@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Describe the test here.
+
+PISM_PATH=$1
+MPIEXEC=$2
+PISM_SOURCE_DIR=$3
+
+# List of files to remove when done:
+files="foo.nc"
+
+rm -f $files
+
+set -e
+
+# do stuff
+$MPIEXEC -n 2 $PISM_PATH/pismr ...
+
+set +e
+
+# Check results:
+$PISM_PATH/nccmp.py ...
+if [ $? != 0 ];
+then
+    exit 1
+fi
+
+rm -f $files; exit 0

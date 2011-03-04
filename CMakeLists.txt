@@ -200,3 +200,7 @@ if (Pism_BUILD_BROWSER)
 else ()
   add_subdirectory (doc/browser EXCLUDE_FROM_ALL)
 endif()
+
+# PISM regression testing
+ENABLE_TESTING()
+add_subdirectory (test/regression)
