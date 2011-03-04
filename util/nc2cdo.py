@@ -139,7 +139,6 @@ if __name__ == "__main__":
     
     ## If it does not yet exist, create dimension 'grid_corners'    
     if 'grid_corners' not in nc.dimensions.keys():
-
         for corner in range(0,grid_corners):
             ## grid_corners in x-direction
             gc_easting[:,corner] = easting + de_vec[corner]
@@ -148,7 +147,7 @@ if __name__ == "__main__":
             ## meshgrid of grid corners in x-y space
             gc_ee,gc_nn = np.meshgrid(gc_easting[:,corner],gc_northing[:,corner])
             ## project grid corners from x-y to lat-lon space
-            gc_lon[:,:,corner],gc_lat[:,:,corner] = proj(gc_ee[corner],gc_nn[corner],inverse=True)
+            gc_lon[:,:,corner],gc_lat[:,:,corner] = proj(gc_ee,gc_nn,inverse=True)
 
         nc.createDimension("grid_corners",size=grid_corners)
     
