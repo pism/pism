@@ -265,6 +265,8 @@ PetscErrorCode IceModel::massContExplicitStep() {
         divQ =  ((*Q)(i,j,0) - (*Q)(i-1,j,0)) / dx + ((*Q)(i,j,1) - (*Q)(i,j-1,1)) / dy;
       }
 
+//start OLD (PISM0.3)
+#if 1
       // basal sliding part: split  Div(v H)  by product rule into  v . grad H
       //    and  (Div v) H; use upwinding on first and centered on second
       divQ +=  vel(i,j).u * ( vel(i,j).u < 0 ? vH(i+1,j)-vH(i,j) : vH(i,j)-vH(i-1,j) ) / dx
@@ -272,6 +274,23 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
       divQ += vH(i,j) * ( (vel(i+1,j).u - vel(i-1,j).u) / (2.0*dx)
                           + (vel(i,j+1).v - vel(i,j-1).v) / (2.0*dy) );
+#endif
+//end OLD
+//start NEW (PIK)
+#if 0
+      // membrane stress (and/or basal sliding) part: upwind by staggered grid PIK method
+      // this is the    "Div(v H)" = \nabla \cdot [(u,v) H]   part of the hybrid
+      const PetscScalar // compute (i,j)-centered "face" velocity components by average
+          velE = 0.5 * (vel(i,j).u + vel(i+1,j).u),
+          velW = 0.5 * (vel(i-1,j).u + vel(i,j).u),
+          velN = 0.5 * (vel(i,j).v + vel(i,j+1).v),
+          velS = 0.5 * (vel(i,j-1).v + vel(i,j).v);
+      divQ += (  velE * (velE > 0 ? vH(i,j) : vH(i+1,j))
+               - velW * (velW > 0 ? vH(i-1,j) : vH(i,j)) ) / dx;
+      divQ += (  velN * (velN > 0 ? vH(i,j) : vH(i,j+1))
+               - velS * (velS > 0 ? vH(i,j-1) : vH(i,j)) ) / dy;
+#endif
+//end NEW
 
       vHnew(i,j) += (acab(i,j) - divQ) * dt; // include M
 
