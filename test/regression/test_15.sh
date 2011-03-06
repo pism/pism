@@ -19,15 +19,15 @@ $PISM_PATH/pismv -Mx 41 -My 41 -Mz 41 $OPTS >> test_15-E-out.txt
 diff test_15-E-out.txt - > /dev/null <<END-OF-OUTPUT
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
-               6.571588  747.089432   89.407623    0.109291
+               6.589296  747.331102   89.665903    0.109347
 base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
-                5.9483    0.29471     0.58051    5.9475    2.7752
+                6.0136    0.30921     0.60906    6.0130    2.8310
 NUM ERRORS DONE
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
-               3.609672  720.379860   51.405684    0.058540
+               3.627740  720.374602   51.662995    0.058539
 base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
-                1.8179    0.14171     0.27914    1.6160    1.2159
+                1.9234    0.15022     0.29589    1.6931    1.1956
 NUM ERRORS DONE
 END-OF-OUTPUT
 

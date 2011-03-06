@@ -172,49 +172,67 @@ PetscErrorCode IceModel::update_surface_elevation() {
   return 0;
 }
 
-//! Update the thickness from the horizontal velocity and the surface and basal mass balance.
+//! Update the thickness from the diffusive flux, also additional horizontal velocity, and the surface and basal mass balance rates.
 /*! 
-The partial differential equation describing the conservation of mass in the map-plane
-(parallel to the geoid) is
+The partial differential equation describing the conservation of mass in the
+map-plane (parallel to the geoid) is
   \f[ \frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q} \f]
 where 
   \f[ \mathbf{q} = \bar{\mathbf{U}} H. \f]
 In these equations \f$H\f$ is the ice thickness, 
-\f$M\f$ is the surface mass balance (accumulation or ablation), \f$S\f$ is the basal 
-mass balance (e.g. basal melt or freeze-on), and \f$\bar{\mathbf{U}}\f$ is the vertically-averaged
-horizontal velocity of the ice.  This procedure uses conservation of mass to update the ice thickness.
+\f$M\f$ is the surface mass balance (accumulation or ablation), \f$S\f$ is the
+basal mass balance (e.g. basal melt or freeze-on), and \f$\bar{\mathbf{U}}\f$ is
+the vertically-averaged horizontal velocity of the ice.  This procedure uses
+conservation of mass to update the ice thickness.
 
-The PISMSurfaceModel pointed to by IceModel::surface provides \f$M\f$.  The PISMOceanModel
-pointed to by IceModel::ocean provides \f$S\f$ at locations below floating ice (ice shelves).
+The PISMSurfaceModel pointed to by IceModel::surface provides \f$M\f$.  The
+PISMOceanModel pointed to by IceModel::ocean provides \f$S\f$ at locations below
+floating ice (ice shelves).
 
-The map-plane flux of the ice \f$\mathbf{q}\f$ is defined by the above formula.  Nonetheless
-the mass flux is split into the parts caused by non-sliding SIA-type deformation and 
-caused by a nonzero basal sliding velocity:
+Even if we regard the map-plane flux as defined by the formula
+\f$\mathbf{q} = \bar{\mathbf{U}} H\f$, the flow of ice is at least somewhat
+diffusive in almost all cases, and in simplified models (%e.g.~the SIA model) it
+is exactly true that \f$\mathbf{q} = - D \nabla h\f$.  In the current method the
+flux is split into the part from the diffusive non-sliding SIA model
+and a part which is a less-diffusive, possibly membrane-stress-dominated
+2D advective velocity.  That is, the flux is split
+this way, which is common in the literature:
   \f[ \mathbf{q} = - D \nabla h + \mathbf{U}_b H.\f]
-Here \f$D\f$ is the (positive, scalar) effective diffusivity of the SIA and 
-\f$\mathbf{U}_b\f$ is the basal sliding velocity.
+Here \f$D\f$ is the (positive, scalar) effective diffusivity of the non-sliding
+SIA and \f$\mathbf{U}_b\f$ is the less-diffusive velocity from the membrane
+stress balance.  We may interpret \f$\mathbf{U}_b\f$ as a basal sliding velocity
+in the hybrid or in classical SIA sliding schemes (though the latter are not
+recommended).  
 
-The methods used are first-order explicit in time.  The derivatives in 
-\f$\nabla \cdot \mathbf{q}\f$ are computed by centered finite difference methods.  In the case 
-of the SIA contribution, the value of \f$D \nabla h\f$ is already stored in 
-\c IceModelVec2Stag \c uvbar on the staggered grid by velocitySIAStaggered().  It is differenced in 
-the standard centered manner (with averaging of the thickness onto the staggered grid).  The time-stepping for the explicit scheme is controlled by equation (25) in
-[\ref BBL], so that \f$\Delta t \sim \frac{\Delta x^2}{\max D}\f$; see also
-[\ref MortonMayers].
+The main ice-dynamical inputs to this method are identified in these lines,
+which get outputs from PISMStressBalance *stress_balance:
+\code
+  IceModelVec2Stag *Qdiff;
+  stress_balance->get_diffusive_flux(Qdiff);
+  IceModelVec2V *vel_advective;
+  stress_balance->get_advective_2d_velocity(vel_advective);
+\endcode
+The diffusive flux \f$-D\nabla h\f$ is thus stored in \c IceModelVec2Stag
+\c *Qdiff while the less-diffusive velocity \f$\mathbf{U}_b\f$ is stored in
+\c IceModelVec2V \c *vel_advective.
 
-Basal sliding may come from SSA or from a sliding law in SIA (the latter is usually inferior as a
-physical model).  The divergence of \f$\mathbf{U}_b H\f$ is computed by upwinding after expanding
-  \f[ \nabla\cdot (\mathbf{U}_b H) = \mathbf{U}_B \cdot \nabla H + (\nabla \cdot \mathbf{U}_B) H.\f]
-That is, in the case of pure basal sliding the mass conservation equation is regarded as an 
-advection equation with source term,
-  \f[ \frac{\partial H}{\partial t} + \mathbf{U}_b \cdot \nabla H 
-                             = M - S - (\nabla \cdot \mathbf{U}_b) H.\f]
-The product of velocity and the gradient of thickness on the left is computed by first-order
-upwinding.  Note that the CFL condition for this advection scheme is checked; see 
+The methods used here are first-order and explicit in time.  The derivatives in 
+\f$\nabla \cdot (D \nabla h)\f$ are computed by centered finite difference
+methods.  The diffusive flux \c Qdiff is already stored on the staggered grid.
+The time-stepping for this part of the explicit scheme is controlled by equation
+(25) in [\ref BBL], so that \f$\Delta t \sim \Delta x^2 / \max D\f$; see
+also [\ref MortonMayers].
+
+The divergence of the flux from the less-diffusive velocity is computed by
+the PIK upwinding technique [\ref Albrechtetal2011, \ref Winkelmannetal2010TCD].
+The CFL condition for this advection scheme is checked; see 
 computeMax2DSlidingSpeed() and determineTimeStep().
 
-Note that if the point is flagged as \c FLOATING_OCEAN0 then the thickness is set to
-zero.  Note that the rate of thickness change \f$\partial H/\partial t\f$ is computed and saved,
+Checks are made which can generate zero thickness according to minimal calving
+relations, specifically the mechanisms turned-on by options \c -ocean_kill and
+\c -float_kill.
+
+The rate of thickness change \f$\partial H/\partial t\f$ is computed and saved,
 as is the rate of volume loss or gain.
  */
 PetscErrorCode IceModel::massContExplicitStep() {
@@ -237,17 +255,17 @@ PetscErrorCode IceModel::massContExplicitStep() {
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
 
-  PetscScalar **bmr_gnded;
-  IceModelVec2Stag *Q;
-  ierr = stress_balance->get_diffusive_flux(Q); CHKERRQ(ierr);
+  IceModelVec2Stag *Qdiff;
+  ierr = stress_balance->get_diffusive_flux(Qdiff); CHKERRQ(ierr);
 
   IceModelVec2V *vel_advective;
   ierr = stress_balance->get_advective_2d_velocity(vel_advective); CHKERRQ(ierr);
   IceModelVec2V vel = *vel_advective; // just an alias
 
+  PetscScalar **bmr_gnded;
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vbmr.get_array(bmr_gnded); CHKERRQ(ierr);
-  ierr = Q->begin_access(); CHKERRQ(ierr);
+  ierr = Qdiff->begin_access(); CHKERRQ(ierr);
   ierr = vel.begin_access(); CHKERRQ(ierr);
   ierr = acab.begin_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.begin_access(); CHKERRQ(ierr);
@@ -260,26 +278,14 @@ PetscErrorCode IceModel::massContExplicitStep() {
       PetscScalar divQ = 0.0;
 
       if (!vMask.is_floating(i,j)) {
-        // staggered grid Div(Q) for non-sliding SIA deformation part if grounded:
-        //    Q = - D grad h = Ubar H    in non-sliding case
-        divQ =  ((*Q)(i,j,0) - (*Q)(i-1,j,0)) / dx + ((*Q)(i,j,1) - (*Q)(i,j-1,1)) / dy;
+        // staggered grid Div(Q) for diffusive non-sliding SIA deformation part:
+        //    Qdiff = - D grad h
+        divQ =   ((*Qdiff)(i,j,0) - (*Qdiff)(i-1,j,0)) / dx
+               + ((*Qdiff)(i,j,1) - (*Qdiff)(i,j-1,1)) / dy;
       }
 
-//start OLD (PISM0.3)
-#if 1
-      // basal sliding part: split  Div(v H)  by product rule into  v . grad H
-      //    and  (Div v) H; use upwinding on first and centered on second
-      divQ +=  vel(i,j).u * ( vel(i,j).u < 0 ? vH(i+1,j)-vH(i,j) : vH(i,j)-vH(i-1,j) ) / dx
-             + vel(i,j).v * ( vel(i,j).v < 0 ? vH(i,j+1)-vH(i,j) : vH(i,j)-vH(i,j-1) ) / dy;
-
-      divQ += vH(i,j) * ( (vel(i+1,j).u - vel(i-1,j).u) / (2.0*dx)
-                          + (vel(i,j+1).v - vel(i,j-1).v) / (2.0*dy) );
-#endif
-//end OLD
-//start NEW (PIK)
-#if 0
-      // membrane stress (and/or basal sliding) part: upwind by staggered grid PIK method
-      // this is the    "Div(v H)" = \nabla \cdot [(u,v) H]   part of the hybrid
+      // membrane stress (and/or basal sliding) part: upwind by staggered grid
+      // PIK method;  this is   \nabla \cdot [(u,v) H]
       const PetscScalar // compute (i,j)-centered "face" velocity components by average
           velE = 0.5 * (vel(i,j).u + vel(i+1,j).u),
           velW = 0.5 * (vel(i-1,j).u + vel(i,j).u),
@@ -289,8 +295,6 @@ PetscErrorCode IceModel::massContExplicitStep() {
                - velW * (velW > 0 ? vH(i-1,j) : vH(i,j)) ) / dx;
       divQ += (  velN * (velN > 0 ? vH(i,j) : vH(i,j+1))
                - velS * (velS > 0 ? vH(i,j-1) : vH(i,j)) ) / dy;
-#endif
-//end NEW
 
       vHnew(i,j) += (acab(i,j) - divQ) * dt; // include M
 
@@ -330,7 +334,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   ierr = vbmr.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = Q->end_access(); CHKERRQ(ierr);
+  ierr = Qdiff->end_access(); CHKERRQ(ierr);
   ierr = vel.end_access(); CHKERRQ(ierr);
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = shelfbmassflux.end_access(); CHKERRQ(ierr);
@@ -377,13 +381,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
   ierr = vdHdt.sum(gdHdtav); CHKERRQ(ierr);
   gdHdtav = gdHdtav / ice_area; // m/s
-
-
   
   // finally copy vHnew into vH and communicate ghosted values
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
-  
 
   // Check if the ice thickness exceeded the height of the computational box
   // and extend the grid if necessary:
