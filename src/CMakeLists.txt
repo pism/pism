@@ -123,7 +123,7 @@ add_library (pismearth
 )
 target_link_libraries (pismearth pismutil)
 
-# Disable compiler warnings for cubature.c
+# Disable compiler warnings for cubature.c (source file not by PISM authors)
 set_source_files_properties (earth/cubature.c
   PROPERTIES COMPILE_FLAGS "-w")
 
@@ -160,7 +160,7 @@ add_library (pismudunits
   udunits/utscan.c
 )
 
-# Disable compiler warnings for UDUNITS:
+# Disable compiler warnings for UDUNITS (sources are not by PISM authors)
 set_target_properties(pismudunits
   PROPERTIES COMPILE_FLAGS "-w")
 
@@ -245,8 +245,11 @@ if (Pism_BUILD_EXTRA_EXECS)
   add_executable (flowTable software_tests/flowTable.cc base/rheology/flowlaws.cc)
   target_link_libraries (flowTable pismutil)
 
+  add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc)
+  target_link_libraries (btutest pismutil)
+
   install (TARGETS
-    ${SIMPLE_EXECS} tryLCbd pismtests flowTable
+    ${SIMPLE_EXECS} tryLCbd pismtests flowTable btutest
     RUNTIME DESTINATION ${Pism_BIN_DIR}
     LIBRARY DESTINATION ${Pism_LIB_DIR}
     ARCHIVE DESTINATION ${Pism_LIB_DIR})
@@ -254,3 +257,4 @@ endif (Pism_BUILD_EXTRA_EXECS)
 
 add_subdirectory (base/stressbalance)
 add_subdirectory (eismint)
+
