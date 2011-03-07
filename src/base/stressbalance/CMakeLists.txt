@@ -11,6 +11,7 @@ add_library (pismstressbalance
   SSA.cc
   SSA_diagnostics.cc
   SSAFD.cc
+  SSAFD_PIK.cc
   SSAFEM.cc  # uncomment to compile
   FETools.cc
   SSATestCase.cc
