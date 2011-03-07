@@ -20,6 +20,7 @@
 #include <petsc.h>
 #include "icePSTexModel.hh"
 #include "Timeseries.hh"
+#include "SSA.hh"
 
 const PetscScalar 
   DEFAULT_PHI_STRONG = 15.0,  // till friction angle outside of stream
@@ -273,33 +274,33 @@ PetscErrorCode IcePSTexModel::setFromOptions() {
 PetscErrorCode IcePSTexModel::init_physics() {
   PetscErrorCode ierr;
 
-  ierr = IceEISModel::init_physics(); CHKERRQ(ierr);
-
   updateHmelt = PETSC_TRUE;
   config.set_flag("include_bmr_in_continuity", true);
   config.set_flag("use_eta_transformation", true);
 
   if (exper_chosen <= 1) { // P0A and P0I are nonsliding SIA
     config.set_flag("use_ssa_velocity", false);
-    config.set_flag("do_superpose", false);
     config.set_flag("use_ssa_when_grounded", false);
   } else {
     // these options equiv to "-ssa -super -plastic"
     config.set_flag("use_ssa_velocity", true);
-    config.set_flag("do_superpose", true);
     config.set_flag("use_ssa_when_grounded", true);
   }  
 
-  //FIXME:
-  // typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
-  //const PetscScalar TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);
-  //const PetscScalar H_SSA_EXTENSION = 50.0; // m; thickness of ice shelf extension
-  //const PetscScalar constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
-  //const PetscScalar PSTconstantNuHForSSA = H_SSA_EXTENSION * constantHardnessForSSA
-  //                    / (2.0 * pow(TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
+  ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
-  // FIXME: looks like we need to expose SIA and SSA solvers...
-  //  ssaStrengthExtend.set_notional_strength(PSTconstantNuHForSSA);
+  // typical strain rate is 100 m/yr per 100km in an ice shelf or fast ice stream
+  const PetscScalar TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3);
+  const PetscScalar H_SSA_EXTENSION = 50.0; // m; thickness of ice shelf extension
+  const PetscScalar constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
+  const PetscScalar PSTconstantNuHForSSA = H_SSA_EXTENSION * constantHardnessForSSA
+                     / (2.0 * pow(TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
+  
+  ShallowStressBalance *sb = stress_balance->get_stressbalance();
+  SSA *ssa = dynamic_cast<SSA*>(sb);
+  if (ssa == NULL) { SETERRQ(1, "ssa == NULL"); }
+
+  ssa->strength_extension->set_notional_strength(PSTconstantNuHForSSA);
 
   return 0;
 }
