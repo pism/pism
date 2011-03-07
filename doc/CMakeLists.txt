@@ -16,7 +16,8 @@ if (PDFLATEX_COMPILER)
       COMMAND ${PDFLATEX_COMPILER} ${NAME}.tex
       COMMAND ${PDFLATEX_COMPILER} ${NAME}.tex
       COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.pdf ${PROJECT_BINARY_DIR}/
-      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      DEPENDS ${NAME}.tex)
 
     # A custom target to be able to build PDFs by "make installation", etc
     add_custom_target(${NAME} ALL

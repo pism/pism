@@ -575,11 +575,12 @@ $ pisms -y 5000 -view_map thk,temppabase,csurf
 $ mpiexec -n 2 pisms -y 5000 -view_map thk,temppabase,csurf -display :0
 \end{verbatim}
 
-\item Run a basic suite of software tests: \footnote{Note that these tests use NCO and depend on Python packages \texttt{numpy} and
-  \texttt{netcdf4-python}}
+\item Run a basic suite of software tests: \footnote{Note that these tests use NCO and depend on Python packages \texttt{numpy}
+    and \texttt{netcdf4-python}}
 \begin{verbatim}
-$ (cd test/software && make)
+$ make test
 \end{verbatim}
+(You need to be in PISM's build directory.)
 
 \noindent Feel free to email us about failed tests, etc.: \href{mailto:help@pism-docs.org}{help@pism-docs.org}.
 \end{enumerate}
@@ -648,17 +649,18 @@ You might want to rebuild the documentation from source, as PISM and its documen
   \end{tabular*}
 \end{center}
 \bigskip
-\noindent To rebuild PISM documentation, change to the PISM root directory and do
+\noindent To rebuild PISM documentation, change to the PISM build directory and do
 \begin{center}
-  \begin{tabular}{p{0.25\linewidth}p{0.7\linewidth}}
-    \texttt{make userman} & to build the \emph{User's Manual}, \texttt{doc/manual.pdf}\\
-    \texttt{make installation} & to build this document, the \emph{Installation Manual}, \texttt{doc/installation.pdf}\\
-    \texttt{make browser} & to build the \emph{Browser}, \texttt{doc/doxy/index.html}\\
+  \begin{tabular}{p{0.22\linewidth}p{0.75\linewidth}}
+    \texttt{make userman} & to build the \emph{User's Manual}, \texttt{manual.pdf}\\
+    \texttt{make installation} & to build this document, the \emph{Installation Manual}, \texttt{installation.pdf}\\
+    \texttt{make browser_base} & to build the \emph{PISM Source Code Browser},\\
+    &\texttt{doc/browser/base/html/index.html}\\
+    \texttt{make browser_util} & to build the \emph{PISM Utility Class Browser},\\
+    &\texttt{doc/browser/util/html/index.html}\\
     \texttt{make cheatsheet} & to build the 2-page PISM Cheat-Sheet summarizing its command-line options\\
   \end{tabular}
 \end{center}
-The default \texttt{make} targets in the \texttt{doc/} sub-directory include all of these.
-
 
 \end{document}
 

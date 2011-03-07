@@ -138,6 +138,7 @@ set (Pism_REVISION_TAG "${Pism_BRANCH} ${Pism_VERSION_MAJOR}.${Pism_VERSION_MINO
 if (NOT Pism_DEFAULT_CONFIG_FILE)
   set (Pism_DEFAULT_CONFIG_FILE "${CMAKE_INSTALL_PREFIX}/${Pism_LIB_DIR}/pism_config.nc")
 endif ()
+file (WRITE ${PROJECT_BINARY_DIR}/.petscrc "-config ${PROJECT_BINARY_DIR}/pism_config.nc")
 
 # We could set this here, but it forces a full recompile if the version
 # changes, hence we'll define PISM_REVISION only for src/base/iMutil.cc
