@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -93,6 +93,13 @@ public:
 
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/);
 
+  //! \brief Returns a pointer to a stress balance solver implementation.
+  virtual ShallowStressBalance* get_stressbalance()
+  { return stress_balance; }
+
+  //! \brief Returns a pointer to a stress balance modifier implementation.
+  virtual SSB_Modifier* get_ssb_modifier()
+  { return modifier; }
 protected:
   virtual PetscErrorCode allocate();
   virtual PetscErrorCode compute_vertical_velocity(

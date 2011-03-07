@@ -87,7 +87,6 @@ public:
   virtual PetscErrorCode initFromFile(const char *);
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode misc_setup();
-  virtual PetscErrorCode initBasalTillModel();
 
   PetscErrorCode         additionalAtStartTimestep();
   PetscErrorCode         additionalAtEndTimestep();
@@ -104,8 +103,8 @@ private:
   char        sliding;
   PetscScalar initialthickness, runtimeyears, dHdtnorm_atol, dxgdt_atol;
   bool writeExtras, tryCalving;
-  char        initials[PETSC_MAX_PATH_LEN],  // initials of user, for MISMIP reporting
-              mprefix[PETSC_MAX_PATH_LEN];
+  string      initials;  // initials of user, for MISMIP reporting
+  char        mprefix[PETSC_MAX_PATH_LEN];
   PetscViewer tviewfile;
   char        tfilename[PETSC_MAX_PATH_LEN];
 

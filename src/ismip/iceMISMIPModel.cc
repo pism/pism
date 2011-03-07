@@ -22,6 +22,7 @@
 #include "grid.hh"
 #include "iceModel.hh"
 #include "iceMISMIPModel.hh"
+#include "SSA.hh"
 
 PetscErrorCode MISMIPBasalResistanceLaw::printInfo(int verbthresh, MPI_Comm com) {
   PetscErrorCode ierr;
@@ -49,17 +50,12 @@ PetscScalar MISMIPBasalResistanceLaw::drag(PetscScalar /*tauc*/,
   }
 }
 
-/* 
-This derived class illustrates the bug-creation problem, task #6216.
-A temporary solution is indicated by the print commands with "MAKE SURE
-THIS IS REALLY BEING USED!!" below.
- */
-
 IceMISMIPModel::IceMISMIPModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides) : 
   IceModel(g, conf, conf_overrides) {
 
   // following flag must be here in constructor because IceModel::createVecs()
-  //   uses it; can't wait till init_physics()
+  // uses it; can't wait till init_physics()
+
   // non-polythermal methods; can be overridden by the command-line option -no_cold:
   config.set_flag("do_cold_ice_methods", true);
 
@@ -74,7 +70,7 @@ IceMISMIPModel::IceMISMIPModel(IceGrid &g, NCConfigVariable &conf, NCConfigVaria
   stepindex = 1;
   initialthickness = 10.0; // m
   runtimeyears = 3.0e4; // a
-  strcpy(initials,"ABC");
+  initials = "ABC";
   tryCalving = false;
   writeExtras = false;
   m_MISMIP = 1.0/3.0; // power
@@ -182,9 +178,10 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   ierr = PISMOptionsIsSet("-extras", writeExtras); CHKERRQ(ierr);
 
   // read option    -initials     [ABC]
-  ierr = PetscOptionsGetString(PETSC_NULL, "-initials", initials, 
-            PETSC_MAX_PATH_LEN, PETSC_NULL);  CHKERRQ(ierr);
-  if (strlen(initials) != 3) {
+  bool flag;
+  ierr = PISMOptionsString("-initials", "User's initials, for MISMIP reporting",
+                           initials, flag); CHKERRQ(ierr);
+  if (initials.size() != 3) {
     ierr = verbPrintf(1,grid.com,"IceMISMIPModel WARNING:  Initials string"
                       " should usually be three chars long."); CHKERRQ(ierr);
   }
@@ -206,10 +203,11 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   bool noShelfDrag;
   ierr = PISMOptionsIsSet("-no_shelf_drag", noShelfDrag); CHKERRQ(ierr);
   if (noShelfDrag == PETSC_TRUE) {
-    shelvesDragToo = PETSC_FALSE;
+    config.set_flag("shelves_drag_too", false); 
   } else {
     // usually in MISMIP we need the shelves to drag a tiny bit to stabilize them
-    shelvesDragToo = PETSC_TRUE; // with beta = (1.8e9 / 10000) Pa s m-1; see iMdefaults.cc
+    config.set_flag("shelves_drag_too", true); 
+    // with beta = (1.8e9 / 10000) Pa s m-1; see iMdefaults.cc
   }
 
   // read option    -steady_atol  [1.0e-4]
@@ -286,11 +284,9 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
 
   // models 1 vs 2
   if (modelnum == 1) {
-    // computeSIAVelocities = PETSC_FALSE;
-    config.set_flag("do_superpose", false);
+    config.set_flag("do_sia", false); 
   } else if (modelnum == 2) {
-    // computeSIAVelocities = PETSC_TRUE;
-    config.set_flag("do_superpose", true);
+    config.set_flag("do_sia", true);
   } else {
     SETERRQ(98, "how did I get here?");    
   }
@@ -309,18 +305,6 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
   
   return 0;
 }
-
-PetscErrorCode IceMISMIPModel::initBasalTillModel() {
-  PetscErrorCode ierr;
-  ierr = IceModel::initBasalTillModel(); CHKERRQ(ierr);
-
-  delete basal;
-  basal = new MISMIPBasalResistanceLaw(m_MISMIP, C_MISMIP, regularize_MISMIP);
-
-  return 0;
-}
-
-
 
 PetscErrorCode IceMISMIPModel::set_time_from_options() {
   PetscErrorCode ierr;
@@ -377,6 +361,11 @@ PetscErrorCode IceMISMIPModel::init_physics() {
                         6.0e-25, 8.0e-25, 1.0e-24,
                         1.2e-24, 1.4e-24, 1.6e-24};   //  15th VALUE LABELED AS 16 IN Table 6 !?
 
+  // IceModel::init_physics() will check if (basal == NULL) and will *not*
+  // override this.
+  delete basal;
+  basal = new MISMIPBasalResistanceLaw(m_MISMIP, C_MISMIP, regularize_MISMIP);
+
   // let the base class create the ice and process its options:
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
@@ -415,17 +404,20 @@ PetscErrorCode IceMISMIPModel::init_physics() {
     // ierr = ice->printInfo(2);CHKERRQ(ierr);
   }
 
-//FIXME:
-  //PetscReal FIX_ssa_strength_extension;
-  // ssaStrengthExtend.set_min_thickness(5.0); // m
-  // const PetscReal
-  //   DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8,  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
-  //   DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3),  // typical strain rate is 100 m/yr per 
-  //   DEFAULT_nuH = ssaStrengthExtend.min_thickness_for_extension() * DEFAULT_CONSTANT_HARDNESS_FOR_SSA
-  //                      / (2.0 * pow(DEFAULT_TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
-  //         // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
-  //         //          30 MPa yr for \bar\nu
-  // ssaStrengthExtend.set_notional_strength(DEFAULT_nuH);
+  ShallowStressBalance *sb = stress_balance->get_stressbalance();
+  SSA *ssa = dynamic_cast<SSA*>(sb);
+  if (ssa == NULL) { SETERRQ(1, "ssa == NULL"); }
+
+  const PetscReal
+    MIN_THICKNESS = 5.0,                       // meters
+    DEFAULT_CONSTANT_HARDNESS_FOR_SSA = 1.9e8,  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
+    DEFAULT_TYPICAL_STRAIN_RATE = (100.0 / secpera) / (100.0 * 1.0e3),  // typical strain rate is 100 m/yr per 
+    DEFAULT_nuH = MIN_THICKNESS * DEFAULT_CONSTANT_HARDNESS_FOR_SSA
+                       / (2.0 * pow(DEFAULT_TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
+  // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
+  //          30 MPa yr for \bar\nu
+  ssa->strength_extension->set_min_thickness(MIN_THICKNESS); // m
+  ssa->strength_extension->set_notional_strength(DEFAULT_nuH);
 
   return 0;
 }
@@ -525,7 +517,7 @@ PetscErrorCode IceMISMIPModel::misc_setup() {
   // create prefix (e.g.) "EBU1_2b_M1_A3" for output files with names (e.g.)
   //   EBU1_2b_M1_A3.nc, EBU1_2b_M1_A3_t, EBU1_2b_M1_A3_ss, and EBU1_2b_M1_A3_f
   snprintf(mprefix, sizeof(mprefix), "%s%d_%d%c_M%d_A%d",
-           initials, modelnum, exper, sliding, gridmode, stepindex);
+           initials.c_str(), modelnum, exper, sliding, gridmode, stepindex);
 
   // if user says "-o foo.nc"
   PetscTruth  oused;
