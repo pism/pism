@@ -295,12 +295,12 @@ PetscErrorCode IcePSTexModel::init_physics() {
   const PetscScalar constantHardnessForSSA = 1.9e8;  // Pa s^{1/3}; see p. 49 of MacAyeal et al 1996
   const PetscScalar PSTconstantNuHForSSA = H_SSA_EXTENSION * constantHardnessForSSA
                      / (2.0 * pow(TYPICAL_STRAIN_RATE,2./3.)); // Pa s m
-  
-  ShallowStressBalance *sb = stress_balance->get_stressbalance();
-  SSA *ssa = dynamic_cast<SSA*>(sb);
-  if (ssa == NULL) { SETERRQ(1, "ssa == NULL"); }
 
-  ssa->strength_extension->set_notional_strength(PSTconstantNuHForSSA);
+  // ssa == NULL means that the user chose non-sliding SIA
+  SSA *ssa = dynamic_cast<SSA*>(stress_balance->get_stressbalance());
+  if (ssa != NULL)
+    ssa->strength_extension->set_notional_strength(PSTconstantNuHForSSA);
+
 
   return 0;
 }
