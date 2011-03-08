@@ -4,7 +4,7 @@
 
 set -e  # exit on error
 
-NN=1  # default number of processes
+NN=2  # default number of processes
 if [ $# -gt 0 ] ; then  # if user says "./quickstart.sh 8" then NN = 8
   NN="$1"
 fi
@@ -36,13 +36,13 @@ echo "-----    (requires python modules numpy and netCDF3 or netCDF4):"
 echo "-----  Running 'pross' with $NN processes to compute velocity in"
 echo "-----    Ross ice shelf, including comparison to RIGGS data:"
 set -x
-mpiexec -n $NN /Users/albrechtpik/Documents/pism/pism03/pism-dev2/cmake-build/pross -boot_file ross.nc -Mx $MMxx -My $MMyy \
+mpiexec -n $NN pross -boot_file ross.nc -Mx $MMxx -My $MMyy \
         -riggs riggs.nc -o rossComputed.nc
 set +x
 
 echo "----- Generating figure comparing model vs observed velocity (requires"
 echo "-----   python modules numpy, netCDF3/4, pylab, and scikits.delaunay):"
-python2.6 rossplot.py --pism-output rossComputed.nc --riggs riggs_clean.dat
+./rossplot.py --pism-output rossComputed.nc --riggs riggs_clean.dat
 
 echo "-----  Done."
 
