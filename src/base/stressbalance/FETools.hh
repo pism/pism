@@ -55,7 +55,6 @@ map \f$F_{ij}\f$ from the reference element \f$R\f$ to \f$E_{ij}\f$.
 In this implementation, the rectangles in the domain are all congruent, and the maps F_{ij} are all the same up 
 to a translation.
 
-\anchor Blat
 On the reference element, vertices are ordered as follows:
 
 \verbatim
@@ -316,7 +315,7 @@ public:
   /*!\brief The total number of elements to be iterated over.  Useful for creating per-element storage.*/
   PetscInt element_count()
   {
-    return (xm-xs)*(ym-ys);
+    return (xm+1)*(ym+1);
   }
   
   /*!\brief Convert an element index (\a i,\a j) into a flattened (1-d) array index, with the first
@@ -356,7 +355,7 @@ are ordered as follows:
            |  0            1  |
         0  o------------------o  1
 \endverbatim
-So there are four quad points per element, which occur at \f$x,y=\pm \sqrt{3}\f$.  This corresponds to the tensor product
+So there are four quad points per element, which occur at \f$x,y=\pm 1/\sqrt{3}\f$.  This corresponds to the tensor product
 of Gaussian integration on an interval that is exact for cubic functions on the interval.
 
 Integration on a physical element can be thought of as being done by change of variables.  The quadrature weights need

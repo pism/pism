@@ -197,7 +197,6 @@ void FEQuadrature::init(const IceGrid &grid)
   FEShapeQ1 shape;
   for(int q=0; q<Nq; q++){
     for(int k=0; k<Nk; k++){
-      // PetscInt qk = q*Nk+k;
       shape.eval(k,quadPoints[q][0],quadPoints[q][1],&m_germs[q][k]);
       m_germs[q][k].dx /= jacobian_x;
       m_germs[q][k].dy /= jacobian_y;

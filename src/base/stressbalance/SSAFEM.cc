@@ -346,7 +346,7 @@ void SSAFEM::FixDirichletValues(PetscReal lmask[],PISMVector2 **BC_vel,
 //! Implements the callback for computing the SNES local function.
 /*! Compute the residual \f[r_{ij}= G(x,\psi_{ij}) \f] where \f$G\f$ is the weak form of the SSA, \f$x\f$
 is the current approximate solution, and the \f$\psi_{ij}\f$ are test functions. */
-PetscErrorCode SSAFEM::compute_local_function(DALocalInfo */*info*/, const PISMVector2 **xg, PISMVector2 **yg)
+PetscErrorCode SSAFEM::compute_local_function(DALocalInfo * /*info*/, const PISMVector2 **xg, PISMVector2 **yg)
 {
   PetscInt         i,j,k,q;
   PetscReal        **bc_mask;
@@ -390,6 +390,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo */*info*/, const PISMV
       
       // Initialize the map from global to local degrees of freedom for this element.
       dofmap.extractLocalDOFs(i,j,xg,x);
+      // printf("(%d,%d) x=[%g,%g,%g,%g]\n",i,j,x[0].u,x[1].u,x[2].u,x[3].u);
 
 
       // Obtain the value of the solution at the adjacent nodes to the element.
@@ -404,6 +405,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo */*info*/, const PISMV
         dofmap.extractLocalDOFs(i,j,bc_mask,lmask);
         FixDirichletValues(lmask,BC_vel,x,dofmap);
       }
+      // printf("(%d,%d) x post=[%g,%g,%g,%g]\n",i,j,x[0].u,x[1].u,x[2].u,x[3].u);
 
       // Zero out the element-local residual in prep for updating it.
       for(k=0;k<FEQuadrature::Nk;k++){ 
@@ -413,30 +415,62 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo */*info*/, const PISMV
       // Compute the solution values and symmetric gradient at the quadrature points.
       quadrature.computeTrialFunctionValues(x,u,Du);
 
+      // printf("(%d,%d) u=[%g,%g,%g,%g]\n",i,j,u[0].u,u[1].u,u[2].u,u[3].u);
+      // printf("(%d,%d) v=[%g,%g,%g,%g]\n",i,j,u[0].v,u[1].v,u[2].v,u[3].v);
+      // printf("Element (%d,%d)\n",i,j);
       for (q=0; q<FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.
         // Symmetric gradient at the quadrature point.
         PetscScalar *Duq = Du[q];
-
+        // printf("u %g du/dx=%g du/dy=%g\n",u[q].u,Duq[0],2.*Duq[2]);
         // Coefficients and weights for this quadrature point.
         const FEStoreNode *feS = &feStore[ij*4+q];
         const PetscReal    jw  = JxW[q];
         PetscReal nuH, beta;
         ierr = PointwiseNuHAndBeta(feS,u+q,Duq,&nuH,NULL,&beta,NULL);CHKERRQ(ierr);
-
+        // printf("i %d j %d q %d NuH: %g B %g 2nd inv %g\n",i,j,q,nuH,feS->B,secondInvariantDu(Duq));
 
         // The next few lines compute the actual residual for the element.
         PISMVector2 f;
         f.u = beta*u[q].u + ice.rho*earth_grav*feS->H*feS->hx;
         f.v = beta*u[q].v + ice.rho*earth_grav*feS->H*feS->hy;
-        
+
+        // printf("tauc %g H %g B %g\n",feS->tauc,feS->H,feS->B);
+        // printf("nuH %g beta %g\n",nuH,beta);
+        // printf("f: [%g,%g] %g %g\n",f.u,f.v,beta*u[q].u,ice.rho*earth_grav*feS->H*feS->hx);
+
+        // printf("beta terms (%d,%d,%d) tauc=%g beta=%g %g (%g) %g (%g)\n",i,j,q,feS->tauc,beta,beta*u[q].u,u[q].u,beta*u[q].v,u[q].v);
+        // printf("f: %g %g\n",f.u,f.v);
         for(k=0; k<4;k++) {  // loop over the test functions.
           const FEFunctionGerm &testqk = test[q][k];
+          // printf("adding a1 parts:\njw %g nuh %g\ntval %g, tdx %g tdy %g\nDu %g %g %g\n",jw,nuH,testqk.val,testqk.dx,testqk.dy,Duq[0],Duq[1],Duq[2]);
+          // printf("a1 %g %g\n",jw*(nuH*(testqk.dx*(2*Duq[0]+Duq[1]) + testqk.dy*Duq[2]) + testqk.val*f.u),jw*testqk.val*f.u);
+          // printf("a2 %g %g\n", jw*(nuH*(testqk.dy*(2*Duq[1]+Duq[0]) + testqk.dx*Duq[2]) + testqk.val*f.v),jw*testqk.val*f.v);
           y[k].u += jw*(nuH*(testqk.dx*(2*Duq[0]+Duq[1]) + testqk.dy*Duq[2]) + testqk.val*f.u);
           y[k].v += jw*(nuH*(testqk.dy*(2*Duq[1]+Duq[0]) + testqk.dx*Duq[2]) + testqk.val*f.v);
         }
-
+        // printf("y(inter): [ %g %g %g %g]\n",y[0].u,y[1].u,y[2].u,y[3].u);
+        // for(k=0; k<4;k++)
+        // {
+        //   printf("[%g %g]\n",y[k].u,y[k].v);
+        // }
+        // printf("]\n");
+        
       } // q
+      // printf("y: [");
+      // for(k=0; k<4;k++)
+      // {
+      //   printf("[%g %g]\n",y[k].u,y[k].v);
+      // }
+      // printf("]\n");
       dofmap.addLocalResidualBlock(y,yg);
+      // for (int ii=grid.xs; ii<grid.xs+grid.xm; ii++) {
+      //   for (int jj=grid.ys; jj<grid.ys+grid.ym; jj++) {
+      //     ierr = PetscSynchronizedPrintf(grid.com,
+      //                                    "[%2d,%2d] f=(%12.4e,%12.4e)\n",
+      //                                    ii,jj,yg[ii][jj].u,yg[ii][jj].v);CHKERRQ(ierr);
+      //   }
+      // }
+      
     } // j-loop
   } // i-loop
 
@@ -464,7 +498,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo */*info*/, const PISMV
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
         ierr = PetscSynchronizedPrintf(grid.com,
-                                       "[%2d,%2d] u=(%12.4e,%12.4e)  f=(%12.4e,%12.4e)\n",
+                                       "[%2d,%2d] u=(%12.10e,%12.10e)  f=(%12.4e,%12.4e)\n",
                                        i,j,xg[i][j].u,xg[i][j].v,yg[i][j].u,yg[i][j].v);CHKERRQ(ierr);
       }
     }
@@ -477,7 +511,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo */*info*/, const PISMV
 /*! Compute the Jacobian \f[J_{ij}{kl} \frac{d r_{ij}}{d x_{kl}}= G(x,\psi_{ij}) \f] 
 where \f$G\f$ is the weak form of the SSA, \f$x\f$ is the current approximate solution, and 
 the \f$\psi_{ij}\f$ are test functions. */
-PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo */*info*/, const PISMVector2 **xg, Mat Jac )
+PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo * /*info*/, const PISMVector2 **xg, Mat Jac )
 {
   PetscReal      **bc_mask;
   PISMVector2    **BC_vel;
@@ -552,7 +586,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo */*info*/, const PISMV
         const PetscReal    jw  = JxW[q];
         PetscReal nuH,dNuH,beta,dbeta;
         ierr = PointwiseNuHAndBeta(feS,&wq,Dwq,&nuH,&dNuH,&beta,&dbeta);CHKERRQ(ierr);
-
+        // printf("%d %d %d nu %g dnu %g beta %g dbeta %g\n",i,j,q,nuH,dNuH,beta,dbeta);
 
         for (PetscInt k=0; k<4; k++) {   // Test functions
           for (PetscInt l=0; l<4; l++) { // Trial functions
@@ -581,10 +615,23 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo */*info*/, const PISMV
             K[k*16+8+l*2]   += jw*(dbeta*bvy*bux + nuH*(0.5*dxt*dy + dyt*dx) + dNuH*cvy*cux);
             // v-v coupling
             K[k*16+8+l*2+1] += jw*(beta*ht*h + dbeta*bvy*buy + nuH*(2*dyt*dy + dxt*0.5*dx) + dNuH*cvy*cuy);
+            // printf("%d %d %d %d %d add KBlock %g %g %g %g\n",i,j,q,k,l,jw*(beta*ht*h + dbeta*bvx*bux + nuH*(2*dxt*dx + dyt*0.5*dy) + dNuH*cvx*cux),
+            //  jw*(dbeta*bvx*buy + nuH*(0.5*dyt*dx + dxt*dy) + dNuH*cvx*cuy),jw*(dbeta*bvy*bux + nuH*(0.5*dxt*dy + dyt*dx) + dNuH*cvy*cux),
+            //  jw*(beta*ht*h + dbeta*bvy*buy + nuH*(2*dyt*dy + dxt*0.5*dx) + dNuH*cvy*cuy));
+
           } // l
         } // k
       } // q
       ierr = dofmap.addLocalJacobianBlock(K,Jac);
+      // printf("K=[");
+      // for(int kk = 0; kk< 8; kk++){
+      //   printf("[ ");
+      //   for(int ll=0;ll<8;ll++){
+      //     printf("%g ",K[kk*8+ll]);
+      //   }
+      //   printf("]\n");
+      // }
+      // printf("]");      
     } // j
   } // i
   

@@ -42,7 +42,7 @@ class SSATestCasePlug: public SSATestCase
 {
 public:
   SSATestCasePlug( MPI_Comm com, PetscMPIInt rank, 
-                 PetscMPIInt size, NCConfigVariable &c ): 
+                 PetscMPIInt size, NCConfigVariable &c, PetscScalar glen_n ): 
                  SSATestCase(com,rank,size,c)
   { 
     H0 = 2000.; //m
@@ -50,7 +50,8 @@ public:
     dhdx = 0.001; // pure number, slope of surface & bed
     tauc0 = 0.; // No basal shear stress
     B0 = 3.7e8; // Pa s^{1/3}; hardness 
-               // given on p. 239 of Schoof; why so big?      
+               // given on p. 239 of Schoof; why so big?
+    this->glen_n = glen_n;      
   }
   
 protected:
@@ -69,6 +70,7 @@ protected:
   PetscScalar dhdx; // surface slope
   PetscScalar tauc0; // zero basal shear stress
   PetscScalar B0;  // hardness
+  PetscScalar glen_n;
 
   bool dimensionless;
   
@@ -96,7 +98,11 @@ PetscErrorCode SSATestCasePlug::initializeSSAModel()
   // Use constant hardness
   CustomGlenIce *glenIce = new CustomGlenIce(grid.com, "", config);
   glenIce->setHardness(B0);
-  ice=glenIce;
+  glenIce->setExponent(glen_n);
+  // PetscReal velpera = 1000; // m/a
+  // PetscReal length = 1000; // m
+  // glenIce->setSchoofRegularization( velpera, length );
+  ice = glenIce;
 
   // Enthalpy converter is irrelevant for this test.
   enthalpyconverter = new EnthalpyConverter(config);
@@ -109,7 +115,7 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
   
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
   config.set_flag("compute_surf_grad_inward_ssa", true);
-  config.set("epsilon_ssa", 0.);
+  config.set("epsilon_ssa", 0.0);
 
   // Ensure we never use the strength extension.
   ssa->strength_extension->set_min_thickness(H0/2);
@@ -211,6 +217,7 @@ int main(int argc, char *argv[]) {
     string output_file = "ssa_test_plug.nc";
     string driver = "fem";
     // PetscScalar H0dim = 1.;
+    PetscScalar glen_n = 3.;
 
     ierr = PetscOptionsBegin(com, "", "SSAFD_TEST options", ""); CHKERRQ(ierr);
     {
@@ -223,6 +230,7 @@ int main(int argc, char *argv[]) {
                                                   driver, flag); CHKERRQ(ierr);                                                      
       ierr = PISMOptionsString("-o", "Set the output file name", 
                                               output_file, flag); CHKERRQ(ierr);
+      ierr = PISMOptionsReal("-ssa_glen_n", "", glen_n, flag ); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -232,7 +240,7 @@ int main(int argc, char *argv[]) {
     else if(driver.compare("fd") == 0) ssafactory = SSAFDFactory;
     else SETERRQ(1,"SSA algorithm argument should be one of -ssa fe or -ssa fem");
 
-    SSATestCasePlug testcase(com,rank,size,config);
+    SSATestCasePlug testcase(com,rank,size,config,glen_n);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);
     ierr = testcase.run(); CHKERRQ(ierr);
     ierr = testcase.report(); CHKERRQ(ierr);

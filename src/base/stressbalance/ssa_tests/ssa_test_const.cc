@@ -83,7 +83,7 @@ PetscErrorCode SSATestCaseConst::initializeSSAModel()
   // Use a pseudo-plastic law with a constant q determined at run time
   basal = new IceBasalResistancePlasticLaw(
          config.get("plastic_regularization") / secpera,
-         false, // do not force a pure-plastic law
+         true, // do not force a pure-plastic law
          basal_q,
          config.get("pseudo_plastic_uthreshold") / secpera);
 
@@ -101,7 +101,7 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
   
   // Force linear rheology
   ssa->strength_extension->set_notional_strength(nu0 * H0);
-  ssa->strength_extension->set_min_thickness(4000*10);
+  ssa->strength_extension->set_min_thickness(0.5*H0);
 
   // The finite difference code uses the following flag to treat the non-periodic grid correctly.
   config.set_flag("compute_surf_grad_inward_ssa", true);
@@ -156,8 +156,7 @@ PetscErrorCode SSATestCaseConst::initializeSSACoefficients()
 
 
 PetscErrorCode SSATestCaseConst::exactSolution(PetscInt /*i*/, PetscInt /*j*/, 
-                                               PetscReal /*x*/, PetscReal /*y*/,
-                                               PetscReal *u, PetscReal *v)
+ PetscReal /*x*/, PetscReal /*y*/, PetscReal *u, PetscReal *v)
 {
   PetscScalar earth_grav = config.get("standard_gravity");
   PetscScalar tauc_threshold_velocity = config.get("pseudo_plastic_uthreshold") / secpera;
@@ -214,8 +213,8 @@ int main(int argc, char *argv[]) {
                                                       My, flag); CHKERRQ(ierr);
       ierr = PISMOptionsString("-ssa_method", "Algorithm for computing the SSA solution",
                                                   driver, flag); CHKERRQ(ierr);                                                      
-      ierr = PISMOptionsString("-ssa_basal_q", "Exponent q in the pseudo-plastic flow law",
-                                                  driver, flag); CHKERRQ(ierr);                                                      
+      ierr = PISMOptionsReal("-ssa_basal_q", "Exponent q in the pseudo-plastic flow law",
+                                                  basal_q, flag); CHKERRQ(ierr);                                                      
       ierr = PISMOptionsString("-o", "Set the output file name", 
                                               output_file, flag); CHKERRQ(ierr);
     }
