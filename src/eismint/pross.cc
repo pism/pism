@@ -606,6 +606,7 @@ int main(int argc, char *argv[]) {
 
     // Create the SSA solver object:
     SSAFD ssa(g, basal, ice, EC, config);
+    //SSAFD_PIK ssa(g, basal, ice, EC, config); //testing SSA Neumann boundary condition at ice front
 
     const PetscReal
       DEFAULT_MIN_THICKNESS = 5.0, // meters
