@@ -50,7 +50,8 @@ set -e  # exit on error
 mpst()
 {
     # run pisms (change if using "mpirun" or a different pisms or etc.)
-    cmd="mpiexec -n $1 pisms -prof -pst $2"
+    cmd="mpiexec -n $1 pisms -pst $2"
+    #if used for profiling:  cmd="mpiexec -n $1 pisms -prof -pst $2"
     
     echo "date = '`date`' on host '`uname -n`':"
     echo "trying '$cmd'"
@@ -64,11 +65,11 @@ mpst()
 mpst_vg()
 {
     if [ "$2" = "e" ] ; then  # equal spaced default vertical grid
-        vg="-Lz 5000 -Mz 251 -Lbz 515 -Mbz 51 -z_spacing equal $3"
-    elif [ "$2" = "u" ] ; then # un-equal spaced default vertical grid
-        vg="-Lz 5000 -Mz 51 -Lbz 515 -Mbz 11 $3"
-    elif [ "$2" = "t" ] ; then # un-equal spaced default vertical grid, *t*wice finer
-        vg="-Lz 5000 -Mz 101 -Lbz 515 -Mbz 21 $3"
+        vg="-Lz 5000 -Mz 251 -Lbz 500 -Mbz 26 -z_spacing equal -zb_spacing equal $3"
+    elif [ "$2" = "u" ] ; then # un-equal spaced vertical grid
+        vg="-Lz 5000 -Mz 51 -Lbz 500 -Mbz 11 $3"
+    elif [ "$2" = "t" ] ; then # equal spaced vertical grid, *t*wice finer
+        vg="-Lz 5000 -Mz 501 -Lbz 500 -Mbz 51 -z_spacing equal -zb_spacing equal $3"
     else
         return 1
     fi
@@ -84,11 +85,11 @@ mpst_vg()
 regridv="-regrid_vars bwat,enthalpy,temp,litho_temp,thk"  # actually will only use temp in ice, by default
 
 # P0A: run without trough on refining grid for total of 200k years:
-mpst_vg $NN u "-P0A -Mx 61 -My 61 -y 1e5 -skip 20 -o P0A_100k.nc"
+mpst_vg $NN e "-P0A -Mx 61 -My 61 -y 1e5 -skip 20 -o P0A_100k.nc"
 mpst $NN "-P0A -i P0A_100k.nc -y 50000 -skip 20 -o P0A_150k.nc"
-mpst_vg $NN u "-P0A -Mx 121 -My 121 -y 40000 -ys 150000 \
+mpst_vg $NN e "-P0A -Mx 121 -My 121 -y 40000 -ys 150000 \
  -skip 20 -regrid_file P0A_150k.nc $regridv -o P0A_190k.nc"
-mpst_vg $NN u "-P0A -Mx 151 -My 151 -y 10000 -ys 190000 \
+mpst_vg $NN e "-P0A -Mx 151 -My 151 -y 10000 -ys 190000 \
  -skip 20 -regrid_file P0A_190k.nc $regridv -o P0A.nc"
 
 # P1: flat with variable width but grid-aligned ice streams
@@ -105,9 +106,9 @@ mpst $NN "-P4 -i P0A.nc -ys 0 -y 5000 -skip 5 -o P4.nc"
 
 # P0I: run with troughs on refining grid for total of 200k years:
 mpst $NN "-P0I -i P0A_100k.nc -y 50000 -skip 20 -o P0I_150k.nc"
-mpst_vg $NN u "-P0I -Mx 121 -My 121 -y 40000 -ys 150000 \
+mpst_vg $NN e "-P0I -Mx 121 -My 121 -y 40000 -ys 150000 \
  -skip 20 -regrid_file P0I_150k.nc $regridv -o P0I_190k.nc"
-mpst_vg $NN u "-P0I -Mx 151 -My 151 -y 10000 -ys 190000 \
+mpst_vg $NN e "-P0I -Mx 151 -My 151 -y 10000 -ys 190000 \
  -skip 20 -regrid_file P0I_190k.nc $regridv -o P0I.nc"
 
 # P3: troughs, with variable width but grid-aligned ice streams
@@ -117,32 +118,32 @@ mpst $NN "-P3 -i P0I.nc -ys 0 -y 5000 -skip 5 -o P3.nc"
 #  grid coarsening & refinement experiments:
 
 # COARSE: as above but on 15km grid
-mpst_vg $NN u "-P1 -Mx 101 -My 101 -y 5000 -skip 5 \
+mpst_vg $NN e "-P1 -Mx 101 -My 101 -y 5000 -skip 5 \
  -regrid_file P0A.nc $regridv -o P1coarse.nc"
 
-mpst_vg $NN u "-P2 -Mx 101 -My 101 -y 5000 -skip 5 \
+mpst_vg $NN e "-P2 -Mx 101 -My 101 -y 5000 -skip 5 \
  -regrid_file P0A.nc $regridv -o P2coarse.nc"
 
-mpst_vg $NN u "-P3 -Mx 101 -My 101 -y 5000 -skip 5 \
+mpst_vg $NN e "-P3 -Mx 101 -My 101 -y 5000 -skip 5 \
  -regrid_file P0I.nc $regridv -o P3coarse.nc"  # initial state has troughs
 
-mpst_vg $NN u "-P4 -Mx 101 -My 101 -y 5000 -skip 5 \
+mpst_vg $NN e "-P4 -Mx 101 -My 101 -y 5000 -skip 5 \
  -regrid_file P0A.nc $regridv -o P4coarse.nc"
 
 # FINE: as above but on 7.5km grid
-mpst_vg $NN u "-P1 -Mx 201 -My 201 -y 5000 -skip 10 \
+mpst_vg $NN e "-P1 -Mx 201 -My 201 -y 5000 -skip 10 \
  -regrid_file P0A.nc $regridv -o P1fine.nc"
 
-mpst_vg $NN u "-P2 -Mx 201 -My 201 -y 5000 -skip 10 \
+mpst_vg $NN e "-P2 -Mx 201 -My 201 -y 5000 -skip 10 \
  -regrid_file P0A.nc $regridv -o P2fine.nc"
 
-mpst_vg $NN u "-P3 -Mx 201 -My 201 -y 5000 -skip 10 \
+mpst_vg $NN e "-P3 -Mx 201 -My 201 -y 5000 -skip 10 \
  -regrid_file P0I.nc $regridv -o P3fine.nc"  # initial state has troughs
 
-mpst_vg $NN u "-P4 -Mx 201 -My 201 -y 5000 -skip 10 \
+mpst_vg $NN e "-P4 -Mx 201 -My 201 -y 5000 -skip 10 \
  -regrid_file P0A.nc $regridv -o P4fine.nc"
 
-exit
+exit # deliberate exit to avoid expensive
 
 # VERTFINE: as 10km case but with finer vertical grid (x2 points)
 mpst_vg $NN t "-P1 -Mx 151 -My 151 -y 5000 -skip 5 \
@@ -158,7 +159,7 @@ mpst_vg $NN t "-P4 -Mx 151 -My 151 -y 5000 -skip 5 \
  -regrid_file P0A.nc $regridv -o P4vertfine.nc"
 
 
-# expensive stuff follows:
+# most expensive stuff follows:
 #    *  100k year run of P1 on 10km grid
 #    *  5km (finest) grid
 
@@ -167,16 +168,16 @@ mpst $NN "-P1 -i P1.nc -y 95000 -skip 5 \
  -save_to snaps_P1_long.nc -save_at 2e4:2e4:8e4 -o P1_100k.nc"
 
 # FINEST: as P1, but on 5km grid; slow!
-mpst_vg $NN u "-P1 -Mx 301 -My 301 -skip 20 -y 5000 \
+mpst_vg $NN e "-P1 -Mx 301 -My 301 -skip 20 -y 5000 \
  -regrid_file P0A.nc $regridv -o P1finest.nc"
 
-mpst_vg $NN u "-P2 -Mx 301 -My 301 -skip 20 -y 5000 \
+mpst_vg $NN e "-P2 -Mx 301 -My 301 -skip 20 -y 5000 \
  -regrid_file P0A.nc $regridv -o P2finest.nc"
 
-mpst_vg $NN u "-P3 -Mx 301 -My 301 -skip 20 -y 5000 \
+mpst_vg $NN e "-P3 -Mx 301 -My 301 -skip 20 -y 5000 \
  -regrid_file P0I.nc $regridv -o P3finest.nc"  # initial state has troughs
 
-mpst_vg $NN u "-P4 -Mx 301 -My 301 -skip 20 -y 5000 \
+mpst_vg $NN e "-P4 -Mx 301 -My 301 -skip 20 -y 5000 \
  -regrid_file P0A.nc $regridv -o P4finest.nc"
 
 #fi
