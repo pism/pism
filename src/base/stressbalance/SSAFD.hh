@@ -83,6 +83,8 @@ public:
     : SSAFD(g, b, i, e, c) {}
   virtual ~SSAFD_PIK() {}
 
+  virtual PetscErrorCode init(PISMVars &vars);
+
   virtual PetscErrorCode assemble_matrix(bool include_basal_shear, Mat A);
   virtual PetscErrorCode assemble_rhs(Vec rhs);
 };

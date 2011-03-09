@@ -499,6 +499,9 @@ PetscErrorCode write_results(ShallowStressBalance &ssa,
   ierr = PISMOptionsString("-o", "Specifies an output file",
                            filename, flag); CHKERRQ(ierr);
 
+  ierr = verbPrintf(2,grid.com,"writing pross results to file '%s' ...\n",
+                    filename.c_str()); CHKERRQ(ierr);
+
   PISMIO pio(&grid);
 
   ierr = pio.open_for_writing(filename, false, true); CHKERRQ(ierr);

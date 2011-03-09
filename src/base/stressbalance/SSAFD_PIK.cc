@@ -18,8 +18,17 @@
 
 #include "SSAFD.hh"
 
+PetscErrorCode SSAFD_PIK::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+  ierr = SSAFD::init(vars); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,
+                    "  [... including PIK CFBC implementation]\n"); CHKERRQ(ierr);  
+}
+
 PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
   PetscErrorCode ierr;
+
+  ierr = verbPrintf(3,grid.com, "SSAFD_PIK:assemble_matrix is called\n"); CHKERRQ(ierr);
 
   // put the new matrix assembly here
 

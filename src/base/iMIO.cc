@@ -461,6 +461,7 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
       while (getline(list, var_name, ','))
         vars.insert(var_name);
     } else {
+      // defaults if user gives no regrid_vars list
       vars.insert("litho_temp");
 
       if (config.get_flag("do_age"))

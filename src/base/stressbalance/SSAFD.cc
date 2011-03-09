@@ -530,6 +530,12 @@ PetscErrorCode SSAFD::solve() {
         stdout_ssa += tempstr;
       }
 
+      if (getVerbosityLevel() > 2) { // assume that high verbosity shows interest
+                                     //   in immediate feedback about SSA iterations
+        ierr = verbPrintf(2,grid.com, stdout_ssa.c_str()); CHKERRQ(ierr);
+        stdout_ssa = "";
+      }
+
       outer_iterations = k + 1;
       if (norm == 0 || normChange / norm < ssaRelativeTolerance) goto done;
 
@@ -569,6 +575,7 @@ PetscErrorCode SSAFD::solve() {
   }
   if (getVerbosityLevel() >= 2)
     stdout_ssa = "  SSA: " + stdout_ssa;
+
   if (write_ssa_system_to_matlab) {
     ierr = writeSSAsystemMatlab(); CHKERRQ(ierr);
   }
