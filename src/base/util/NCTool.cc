@@ -178,14 +178,6 @@ PetscErrorCode NCTool::find_variable(string short_name, int *varid, bool &exists
   return find_variable(short_name, "", varid, exists);
 }
 
-//! Read the last value of the time variable t from a NetCDF file.
-PetscErrorCode NCTool::get_last_time(double *time) const {
-  PetscErrorCode ierr;
-  ierr = get_dim_limits("t", NULL, time); CHKERRQ(ierr);
-  return 0;
-}
-
-
 //! Read in the variables \c z and \c zb from the NetCDF file; <i>do not</i> assume they are equally-spaced.
 /*!
   This function allocates arrays z_levels and zb_levels, and they have to be
@@ -435,6 +427,29 @@ PetscErrorCode NCTool::get_dim_length(const char name[], int *len) const {
   return 0;
 }
 
+//! \brief Get the number of records in a file.
+PetscErrorCode NCTool::get_nrecords(int &nrecords) const {
+  PetscErrorCode stat;
+
+  int dimid;
+
+  if (rank == 0) {
+    size_t dim_len;
+    stat = nc_inq_unlimdim(ncid, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    if (dimid == -1) {
+      nrecords = 1;
+    } else {
+      stat = nc_inq_dimlen(ncid, dimid, &dim_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+      nrecords = static_cast<int>(dim_len);
+    }
+  }
+
+  stat = MPI_Bcast(&nrecords, 1, MPI_INT, 0, com); CHKERRQ(stat);
+
+  return 0;
+}
+
+
 //! \brief Gets dimension limits.
 /*! Gets dimension limits (%i.e. min and max values of the coordinate variable).
 
@@ -485,7 +500,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
     utUnit input, internal;
     bool input_has_units;
 
-    if (strcmp(name, "t") == 0) {
+    if ((strcmp(name, "t") == 0) || (strcmp(name, "time") == 0)){
       // Note that this units specification does *not* have a reference date.
       strcpy(internal_units, "seconds");
     } else {
@@ -568,7 +583,7 @@ PetscErrorCode NCTool::get_dimension(const char name[], vector<double> &result) 
     utUnit input, internal;
     bool input_has_units;
 
-    if (strcmp(name, "t") == 0) {
+    if ((strcmp(name, "t") == 0) || (strcmp(name, "time") == 0)) {
       // Note that this units specification does *not* have a reference date.
       strcpy(internal_units, "seconds");
     } else {

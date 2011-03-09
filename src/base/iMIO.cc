@@ -331,7 +331,7 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
 
   // Find the index of the last record in the file:
   int last_record;
-  ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
+  ierr = nc.get_nrecords(last_record); CHKERRQ(ierr); 
   last_record -= 1;
 
   // Read the model state, mapping and climate_steady variables:

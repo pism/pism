@@ -51,7 +51,7 @@ PetscErrorCode PISMComponent::find_pism_input(string &filename, //!< name of the
   PISMIO nc(&grid);
   int last_record;
   ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-  ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
+  ierr = nc.get_nrecords(last_record); CHKERRQ(ierr);
   last_record -= 1;
   ierr = nc.close(); CHKERRQ(ierr);
 

@@ -79,7 +79,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
     ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
     ierr = nc.find_variable("ubar_ssa", NULL, ubar_ssa_found); CHKERRQ(ierr); 
     ierr = nc.find_variable("vbar_ssa", NULL, vbar_ssa_found); CHKERRQ(ierr); 
-    ierr = nc.get_dim_length("t", &start); CHKERRQ(ierr);
+    ierr = nc.get_nrecords(start); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr); 
     start -= 1;
 

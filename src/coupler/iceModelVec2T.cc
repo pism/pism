@@ -131,8 +131,21 @@ PetscErrorCode IceModelVec2T::init(string fname) {
   NCTimeseries time_dimension;
 
   filename = fname;
-  
-  time_dimension.init("t", "t", grid->com, grid->rank);
+
+  NCTool nc(grid->com, grid->rank);
+  bool t_exists, time_exists;
+
+  ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
+  ierr = nc.find_variable("t", NULL, t_exists); CHKERRQ(ierr);
+  ierr = nc.find_variable("time", NULL, time_exists); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  if (t_exists) {
+    time_dimension.init("t", "t", grid->com, grid->rank);
+  } else if (time_exists) {
+    time_dimension.init("time", "time", grid->com, grid->rank);
+  }
+
   ierr = time_dimension.set_units("years"); CHKERRQ(ierr);
   ierr = time_dimension.read(filename.c_str(), times); CHKERRQ(ierr);
   
@@ -144,7 +157,7 @@ PetscErrorCode IceModelVec2T::init(string fname) {
     }
   }
   if (!is_increasing) {
-    ierr = PetscPrintf(grid->com, "PISM ERROR: times \"t\" have to be strictly increasing (read from '%s').\n",
+    ierr = PetscPrintf(grid->com, "PISM ERROR: times have to be strictly increasing (read from '%s').\n",
 		       filename.c_str());
     PISMEnd();
   }

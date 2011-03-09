@@ -160,9 +160,9 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
   THIS KIND OF SIA SLIDING LAW IS A BAD IDEA IN A THERMOMECHANICALLY-COUPLED
   MODEL.  THAT'S WHY \f$\mu\f$ IS SET TO ZERO BY DEFAULT.
 
-  In SIA regions (= MASK_SHEET) a basal sliding law of the form
-  \f[ \mathbf{U}_b = (u_b,v_b) = - C \nabla h \f]
-  is allowed.  Here \f$\mathbf{U}_b\f$ is the horizontal velocity of the base of
+  We allow the SIA sliding law of the form
+  \f[ \mathbf{U}_b = (u_b,v_b) = - C \nabla h. \f]
+  Here \f$\mathbf{U}_b\f$ is the horizontal velocity of the base of
   the ice (the "sliding velocity") and \f$h\f$ is the elevation of the ice
   surface.  This procedure returns the \em positive \em coefficient \f$C\f$ in
   this relationship.  This coefficient can depend of the thickness, the basal

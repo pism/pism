@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
     NCTool nc(grid.com, grid.rank);
     int last_record;
     ierr = nc.open_for_reading(inname.c_str()); CHKERRQ(ierr);
-    ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
+    ierr = nc.get_nrecords(last_record); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
     last_record -= 1;
 

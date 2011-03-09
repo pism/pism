@@ -48,11 +48,21 @@ PetscErrorCode PISMIO::get_grid_info(grid_info &g) const {
 PetscErrorCode PISMIO::get_grid_info_2d(grid_info &g) const {
   PetscErrorCode ierr;
 
-  ierr = get_dim_length("t",  &g.t_len); CHKERRQ(ierr);
+  bool t_exists, time_exists;
+  ierr = find_variable("t", NULL, t_exists); CHKERRQ(ierr);
+  ierr = find_variable("time", NULL, time_exists); CHKERRQ(ierr);
+
+  if (t_exists) {
+    ierr = get_dim_length("t",  &g.t_len); CHKERRQ(ierr);
+    ierr = get_dim_limits("t", NULL, &g.time); CHKERRQ(ierr);
+  } else if (time_exists) {
+    ierr = get_dim_length("time",  &g.t_len); CHKERRQ(ierr);
+    ierr = get_dim_limits("time", NULL, &g.time); CHKERRQ(ierr);
+  }
+
   ierr = get_dim_length("x",  &g.x_len); CHKERRQ(ierr);
   ierr = get_dim_length("y",  &g.y_len); CHKERRQ(ierr);
 
-  ierr = get_dim_limits("t", NULL, &g.time); CHKERRQ(ierr);
   ierr = get_dim_limits("x", &g.x_min, &g.x_max); CHKERRQ(ierr);
   ierr = get_dim_limits("y", &g.y_min, &g.y_max); CHKERRQ(ierr);
 
@@ -604,18 +614,29 @@ PetscErrorCode PISMIO::compute_start_and_count(const int varid, int *start, int 
   dimids   = new int[ndims];
 
   // Find all the dimensions we care about:
+
   // t
   stat = nc_inq_dimid(ncid, "t", &t_id);
   if (stat != NC_NOERR) t_id = -1;
+
+  // time
+  if (t_id == -1) {
+    stat = nc_inq_dimid(ncid, "time", &t_id);
+    if (stat != NC_NOERR) t_id = -1;
+  }
+
   // x
   stat = nc_inq_dimid(ncid, "x", &x_id);
   if (stat != NC_NOERR) x_id = -1;
+
   // y
   stat = nc_inq_dimid(ncid, "y", &y_id);
   if (stat != NC_NOERR) y_id = -1;
+
   // z
   stat = nc_inq_dimid(ncid, "z", &z_id);
   if (stat != NC_NOERR) z_id = -1;
+
   // zb
   stat = nc_inq_dimid(ncid, "zb", &zb_id);
   if (stat != NC_NOERR) zb_id = -1;

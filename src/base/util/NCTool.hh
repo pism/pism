@@ -80,7 +80,6 @@ public:
   virtual PetscErrorCode find_dimension(const char short_name[], int *dimid, bool &exists) const;
   virtual PetscErrorCode append_time(PetscReal time) const;
   virtual PetscErrorCode write_history(const char history[], bool overwrite = false) const;
-  virtual PetscErrorCode get_last_time(double *time) const;
   virtual PetscErrorCode get_vertical_dims(double* &z_levels, double* &zb_levels) const;
   virtual bool check_dimension(const char dim[], int len) const;
 
@@ -99,6 +98,7 @@ public:
   virtual PetscErrorCode get_att_text(int varid, const char name[], string &result) const;
   virtual PetscErrorCode get_att_double(int varid, const char name[], vector<double> &result) const;
   virtual PetscErrorCode get_units(int varid, bool &has_units, utUnit &units) const;
+  virtual PetscErrorCode get_nrecords(int &nrecords) const;
 
   virtual int get_ncid() const;
   virtual PetscErrorCode define_mode() const;

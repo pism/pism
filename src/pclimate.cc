@@ -368,7 +368,7 @@ int main(int argc, char *argv[]) {
     bool mapping_exists;
     ierr = nc.open_for_reading(inname.c_str()); CHKERRQ(ierr);
     ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
-    ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
+    ierr = nc.get_nrecords(last_record); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
     if (mapping_exists) {
       ierr = mapping.read(inname.c_str()); CHKERRQ(ierr);

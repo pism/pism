@@ -240,7 +240,7 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
   NCTool nc(grid.com, grid.rank);
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
   int last_record;  // find index of the last record in the file
-  ierr = nc.get_dim_length("t", &last_record); CHKERRQ(ierr);
+  ierr = nc.get_nrecords(last_record); CHKERRQ(ierr);
   last_record -= 1;
   bool nmm_exists;
   ierr = nc.find_variable("no_model_mask", NULL, nmm_exists); CHKERRQ(ierr);
