@@ -111,12 +111,14 @@ PetscErrorCode IceModel::init_timeseries() {
 //! \brief Creates DiagnosticTimeseries objects used to store and report scalar
 //! diagnostic quantities.
 PetscErrorCode IceModel::create_timeseries() {
+
+  string time_units = "years since " + config.get_string("reference_date");
   
   if (find(ts_vars.begin(), ts_vars.end(), "ivol") != ts_vars.end()) {
     DiagnosticTimeseries *ivol = new DiagnosticTimeseries(&grid, "ivol", "t");
 
     ivol->set_units("m3", "");
-    ivol->set_dimension_units("years", "");
+    ivol->set_dimension_units(time_units, "");
     ivol->output_filename = ts_filename;
 
     ivol->set_attr("long_name", "total ice volume");
@@ -129,7 +131,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *ivoltemp = new DiagnosticTimeseries(&grid, "ivoltemp", "t");
 
     ivoltemp->set_units("m3", "");
-    ivoltemp->set_dimension_units("years", "");
+    ivoltemp->set_dimension_units(time_units, "");
     ivoltemp->output_filename = ts_filename;
 
     ivoltemp->set_attr("long_name", "temperate ice volume");
@@ -142,7 +144,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *ivoltempf = new DiagnosticTimeseries(&grid, "ivoltempf", "t");
 
     ivoltempf->set_units("1", "");
-    ivoltempf->set_dimension_units("years", "");
+    ivoltempf->set_dimension_units(time_units, "");
     ivoltempf->output_filename = ts_filename;
 
     ivoltempf->set_attr("long_name", "temperate ice volume fraction");
@@ -155,7 +157,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *ivolcold = new DiagnosticTimeseries(&grid, "ivolcold", "t");
 
     ivolcold->set_units("m3", "");
-    ivolcold->set_dimension_units("years", "");
+    ivolcold->set_dimension_units(time_units, "");
     ivolcold->output_filename = ts_filename;
 
     ivolcold->set_attr("long_name", "cold ice volume");
@@ -168,7 +170,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *ivolcoldf = new DiagnosticTimeseries(&grid, "ivolcoldf", "t");
 
     ivolcoldf->set_units("1", "");
-    ivolcoldf->set_dimension_units("years", "");
+    ivolcoldf->set_dimension_units(time_units, "");
     ivolcoldf->output_filename = ts_filename;
 
     ivolcoldf->set_attr("long_name", "cold ice volume fraction");
@@ -181,7 +183,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *ienthalpy = new DiagnosticTimeseries(&grid, "ienthalpy", "t");
 
     ienthalpy->set_units("J", "");
-    ienthalpy->set_dimension_units("years", "");
+    ienthalpy->set_dimension_units(time_units, "");
     ienthalpy->output_filename = ts_filename;
 
     ienthalpy->set_attr("long_name", "total ice enthalpy");
@@ -194,7 +196,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *imass = new DiagnosticTimeseries(&grid, "imass", "t");
 
     imass->set_units("kg", "");
-    imass->set_dimension_units("years", "");
+    imass->set_dimension_units(time_units, "");
     imass->output_filename = ts_filename;
 
     imass->set_attr("long_name", "total ice mass");
@@ -207,7 +209,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *iarea = new DiagnosticTimeseries(&grid, "iarea", "t");
 
     iarea->set_units("m2", "");
-    iarea->set_dimension_units("years", "");
+    iarea->set_dimension_units(time_units, "");
     iarea->output_filename = ts_filename;
 
     iarea->set_attr("long_name", "ice area");
@@ -220,7 +222,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *iareatemp = new DiagnosticTimeseries(&grid, "iareatemp", "t");
 
     iareatemp->set_units("m2", "");
-    iareatemp->set_dimension_units("years", "");
+    iareatemp->set_dimension_units(time_units, "");
     iareatemp->output_filename = ts_filename;
 
     iareatemp->set_attr("long_name", "ice area temperate");
@@ -233,7 +235,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *iareatempf = new DiagnosticTimeseries(&grid, "iareatempf", "t");
 
     iareatempf->set_units("1", "");
-    iareatempf->set_dimension_units("years", "");
+    iareatempf->set_dimension_units(time_units, "");
     iareatempf->output_filename = ts_filename;
 
     iareatempf->set_attr("long_name", "ice area temperate fraction");
@@ -246,7 +248,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *iareacold = new DiagnosticTimeseries(&grid, "iareacold", "t");
 
     iareacold->set_units("m2", "");
-    iareacold->set_dimension_units("years", "");
+    iareacold->set_dimension_units(time_units, "");
     iareacold->output_filename = ts_filename;
 
     iareacold->set_attr("long_name", "ice area cold");
@@ -259,7 +261,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *iareacoldf = new DiagnosticTimeseries(&grid, "iareacoldf", "t");
 
     iareacoldf->set_units("1", "");
-    iareacoldf->set_dimension_units("years", "");
+    iareacoldf->set_dimension_units(time_units, "");
     iareacoldf->output_filename = ts_filename;
 
     iareacoldf->set_attr("long_name", "ice area cold fraction");
@@ -272,7 +274,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *iareag = new DiagnosticTimeseries(&grid, "iareag", "t");
 
     iareag->set_units("m2", "");
-    iareag->set_dimension_units("years", "");
+    iareag->set_dimension_units(time_units, "");
     iareag->output_filename = ts_filename;
 
     iareag->set_attr("long_name", "grounded ice area");
@@ -285,7 +287,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *iareaf = new DiagnosticTimeseries(&grid, "iareaf", "t");
 
     iareaf->set_units("m2", "");
-    iareaf->set_dimension_units("years", "");
+    iareaf->set_dimension_units(time_units, "");
     iareaf->output_filename = ts_filename;
 
     iareaf->set_attr("long_name", "floating ice area");
@@ -298,7 +300,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *delta_t = new DiagnosticTimeseries(&grid, "dt", "t");
 
     delta_t->set_units("s", "years");
-    delta_t->set_dimension_units("years", "");
+    delta_t->set_dimension_units(time_units, "");
     delta_t->output_filename = ts_filename;
 
     delta_t->set_attr("long_name", "mass continuity time-step");
@@ -311,7 +313,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *divoldt = new DiagnosticTimeseries(&grid, "divoldt", "t");
 
     divoldt->set_units("m3 s-1", "");
-    divoldt->set_dimension_units("years", "");
+    divoldt->set_dimension_units(time_units, "");
     divoldt->output_filename = ts_filename;
 
     divoldt->set_attr("long_name", "total ice volume rate of change");
@@ -323,7 +325,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *dimassdt = new DiagnosticTimeseries(&grid, "dimassdt", "t");
 
     dimassdt->set_units("kg s-1", "");
-    dimassdt->set_dimension_units("years", "");
+    dimassdt->set_dimension_units(time_units, "");
     dimassdt->output_filename = ts_filename;
 
     dimassdt->set_attr("long_name", "total ice mass rate of change");
@@ -335,7 +337,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *tsif = new DiagnosticTimeseries(&grid, "surface_ice_flux", "t");
 
     tsif->set_units("kg s-1", "");
-    tsif->set_dimension_units("years", "");
+    tsif->set_dimension_units(time_units, "");
     tsif->output_filename = ts_filename;
 
     tsif->set_attr("long_name", "total over domain of top surface ice mass flux");
@@ -348,7 +350,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *tbif = new DiagnosticTimeseries(&grid, "basal_ice_flux", "t");
 
     tbif->set_units("kg s-1", "");
-    tbif->set_dimension_units("years", "");
+    tbif->set_dimension_units(time_units, "");
     tbif->output_filename = ts_filename;
 
     tbif->set_attr("long_name", "total over domain of basal surface ice mass flux");
@@ -361,7 +363,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *tssif = new DiagnosticTimeseries(&grid, "sub_shelf_ice_flux", "t");
 
     tssif->set_units("kg s-1", "");
-    tssif->set_dimension_units("years", "");
+    tssif->set_dimension_units(time_units, "");
     tssif->output_filename = ts_filename;
 
     tssif->set_attr("long_name", "total over domain of sub-ice-shelf ice mass flux");
@@ -374,7 +376,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "nonneg_rule_flux", "t");
 
     ts->set_units("kg s-1", "");
-    ts->set_dimension_units("years", "");
+    ts->set_dimension_units(time_units, "");
     ts->output_filename = ts_filename;
 
     ts->set_attr("long_name", "total over domain of ice mass gain by application of non-negative thickness rule");
@@ -387,7 +389,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "ocean_kill_flux", "t");
 
     ts->set_units("kg s-1", "");
-    ts->set_dimension_units("years", "");
+    ts->set_dimension_units(time_units, "");
     ts->output_filename = ts_filename;
 
     ts->set_attr("long_name", "total over domain of ice mass gain by calving by application of -ocean_kill mechanism");
@@ -400,7 +402,7 @@ PetscErrorCode IceModel::create_timeseries() {
     DiagnosticTimeseries *ts = new DiagnosticTimeseries(&grid, "float_kill_flux", "t");
 
     ts->set_units("kg s-1", "");
-    ts->set_dimension_units("years", "");
+    ts->set_dimension_units(time_units, "");
     ts->output_filename = ts_filename;
 
     ts->set_attr("long_name", "total over domain of ice mass gain by calving by application of -float_kill mechanism");

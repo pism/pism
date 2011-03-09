@@ -40,6 +40,22 @@ void NCVariable::init(string name, MPI_Comm c, PetscMPIInt r) {
  */
 PetscErrorCode NCVariable::set_units(string new_units) {
   strings["units"] = new_units;
+  strings["glaciological_units"] = new_units;
+
+  /*!
+    \note This method finds the string "since" in the units_string and
+    terminates it on the first 's' of "since", if this sub-string was found.
+    This is done to ignore the reference date in the time units string (the
+    reference date specification always starts with this word).
+  */
+  int n = (int)new_units.find("since");
+  if (n != -1) {
+    new_units.resize(n);
+
+    strings["long_name"] = "time";
+    strings["calendar"] = "365_day";
+    strings["axis"] = "T";
+  }
 
   if (utScan(new_units.c_str(), &units) != 0) {
     SETERRQ2(1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
@@ -48,7 +64,6 @@ PetscErrorCode NCVariable::set_units(string new_units) {
 
   // Set the glaciological units too:
   utCopy(&units, &glaciological_units);
-  strings["glaciological_units"] = new_units;
 
   return 0;
 }
@@ -65,6 +80,26 @@ PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
   double a, b;			// dummy variables
   string &units_string = strings["units"];
 
+  // Save the human-friendly version of the string; this is to avoid getting
+  // things like '3.16887646408185e-08 meter second-1' instead of 'm year-1'
+  // (and thus violating the CF conventions).
+  strings["glaciological_units"] = new_units;
+
+  /*!
+    \note This method finds the string "since" in the units_string and
+    terminates it on the first 's' of "since", if this sub-string was found.
+    This is done to ignore the reference date in the time units string (the
+    reference date specification always starts with this word).
+  */
+  int n = (int)new_units.find("since");
+  if (n != -1) {
+    new_units.resize(n);
+
+    strings["long_name"] = "time";
+    strings["calendar"] = "365_day";
+    strings["axis"] = "T";
+  }
+
   if (utScan(new_units.c_str(), &glaciological_units) != 0) {
     SETERRQ2(1, "PISM ERROR: NCVariable '%s': unknown or invalid units specification '%s'.",
 	     short_name.c_str(), new_units.c_str());
@@ -75,10 +110,6 @@ PetscErrorCode NCVariable::set_glaciological_units(string new_units) {
 	     short_name.c_str(), new_units.c_str(), units_string.c_str());
   }
 
-  // Save the human-friendly version of the string; this is to avoid getting
-  // things like '3.16887646408185e-08 meter second-1' instead of 'm year-1'
-  // (and thus violating the CF conventions).
-  strings["glaciological_units"] = new_units;
   return 0;
 }
 
@@ -424,6 +455,7 @@ PetscErrorCode NCVariable::write_attributes(const NCTool &nc, int varid, nc_type
   // units, valid_min, valid_max and valid_range need special treatment:
   if (has("units")) {
     string output_units = get_string("units");
+
     if (write_in_glaciological_units)
       output_units = get_string("glaciological_units");
     ierr = nc_put_att_text(ncid, varid,
