@@ -446,6 +446,10 @@ netcdf pism_config {
     pism_config:slice_level_doc = "meters; level (in meters above the base of ice) used in slice viewers";
 
 // Strings:
+
+   pism_config:reference_date = "1-1-1";
+   pism_config:reference_date_doc = "year-month-day; reference date used in PISM output files";
+
    pism_config:surface_gradient_method = "haseloff";
    pism_config:surface_gradient_method_doc = "method used for surface gradient calculation at staggered grid points; possible values are 'mahaffy', 'eta', 'haseloff' (lowercase)";
 

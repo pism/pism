@@ -21,8 +21,8 @@
 #include "pism_const.hh"
 
 IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
-		 const NCConfigVariable &config)
-  : com(c), rank(r), size(s) { 
+		 const NCConfigVariable &conf)
+  : config(conf), com(c), rank(r), size(s){ 
 
   // The grid in symmetric with respect to zero by default.
   x0 = 0.0;

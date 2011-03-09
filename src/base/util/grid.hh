@@ -120,6 +120,7 @@ public:
   PetscErrorCode create_viewer(PetscInt viewer_size, string title, PetscViewer &viewer);
   PetscReal      radius(PetscInt i, PetscInt j);
 
+  const NCConfigVariable &config;
   MPI_Comm    com;
   PetscMPIInt rank, size;
   DA          da2;

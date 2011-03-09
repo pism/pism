@@ -22,14 +22,20 @@
 PetscReal PSDirectForcing::my_mod(PetscReal input) {
   if (bc_period < 0.01) return input;
 
-  return input - floor(input / bc_period) * bc_period;
+  // compute time since the reference year:
+  PetscReal delta = input - bc_reference_year;
+
+  // compute delta mod bc_period:
+  return delta - floor(delta / bc_period) * bc_period;
 }
 
 
 PetscErrorCode PSDirectForcing::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
   string filename;
-  bool bc_file_set, bc_period_set;
+  bool bc_file_set, bc_period_set, bc_ref_year_set;
+
+  enable_time_averaging = false;
 
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the surface model reading temperature at the top of the ice\n"
@@ -41,6 +47,10 @@ PetscErrorCode PSDirectForcing::init(PISMVars &/*vars*/) {
                              filename, bc_file_set); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-bc_period", "Specifies the length of the climate data period",
                            bc_period, bc_period_set); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-bc_reference_year", "Boundary condition reference year",
+                           bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
+    ierr = PISMOptionsIsSet("-bc_time_average", "Enable time-averaging of boundary condition data",
+                            enable_time_averaging); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -51,6 +61,10 @@ PetscErrorCode PSDirectForcing::init(PISMVars &/*vars*/) {
 
   if (bc_period_set == false) {
     bc_period = 0;
+  }
+
+  if (bc_ref_year_set == false) {
+    bc_reference_year = 0;
   }
 
   ierr = verbPrintf(2,grid.com,
@@ -64,12 +78,16 @@ PetscErrorCode PSDirectForcing::init(PISMVars &/*vars*/) {
                                "Kelvin", ""); CHKERRQ(ierr);
   ierr = temperature.init(filename); CHKERRQ(ierr);
 
+  temperature.strict_timestep_limit = ! enable_time_averaging;
+
   mass_flux.set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
   ierr = mass_flux.create(grid, "acab", false); CHKERRQ(ierr);
   ierr = mass_flux.set_attrs("climate_forcing",
                              "ice-equivalent surface mass balance (accumulation/ablation) rate",
                              "m s-1", "land_ice_surface_specific_mass_balance"); CHKERRQ(ierr);
   ierr = mass_flux.init(filename); CHKERRQ(ierr);
+
+  mass_flux.strict_timestep_limit = ! enable_time_averaging;
 
   return 0;
 }
@@ -147,12 +165,20 @@ PetscErrorCode PSDirectForcing::write_variables(set<string> vars, string filenam
   PetscErrorCode ierr;
 
   if (set_contains(vars, "artm")) {
-    ierr = temperature.average(t, dt); CHKERRQ(ierr); 
+    if (enable_time_averaging) {
+      ierr = temperature.average(t, dt); CHKERRQ(ierr); 
+    } else {
+      ierr = temperature.get_record_years(t); CHKERRQ(ierr);
+    }
     ierr = temperature.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "acab")) {
-    ierr = mass_flux.average(t, dt); CHKERRQ(ierr); 
+    if (enable_time_averaging) {
+      ierr = mass_flux.average(t, dt); CHKERRQ(ierr); 
+    } else {
+      ierr = mass_flux.get_record_years(t); CHKERRQ(ierr);
+    }
     ierr = mass_flux.write(filename.c_str()); CHKERRQ(ierr);
   }
 
@@ -164,12 +190,16 @@ PetscErrorCode PSDirectForcing::ice_surface_mass_flux(PetscReal t_years, PetscRe
                                                       IceModelVec2S &result) {
   PetscErrorCode ierr;
 
+  ierr = update(t_years, dt_years); CHKERRQ(ierr); 
+
   // "Periodize" the climate:
   t_years = my_mod(t_years);
 
-  ierr = update(t_years, dt_years); CHKERRQ(ierr); 
-
-  ierr = mass_flux.average(t_years, dt_years); CHKERRQ(ierr);
+  if (enable_time_averaging) {
+    ierr = mass_flux.average(t_years, dt_years); CHKERRQ(ierr);
+  } else {
+    ierr = mass_flux.get_record_years(t_years); CHKERRQ(ierr);
+  }
 
   ierr = mass_flux.copy_to(result); CHKERRQ(ierr); 
 
@@ -181,12 +211,16 @@ PetscErrorCode PSDirectForcing::ice_surface_temperature(PetscReal t_years, Petsc
                                                         IceModelVec2S &result) {
   PetscErrorCode ierr;
 
+  ierr = update(t_years, dt_years); CHKERRQ(ierr); 
+
   // "Periodize" the climate:
   t_years = my_mod(t_years);
 
-  ierr = update(t_years, dt_years); CHKERRQ(ierr); 
-
-  ierr = temperature.average(t_years, dt_years); CHKERRQ(ierr);
+  if (enable_time_averaging) {
+    ierr = temperature.average(t_years, dt_years); CHKERRQ(ierr);
+  } else {
+    ierr = temperature.get_record_years(t_years); CHKERRQ(ierr);
+  }
 
   ierr = temperature.copy_to(result); CHKERRQ(ierr); 
 

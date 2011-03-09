@@ -123,6 +123,9 @@ public:
   virtual PetscErrorCode set_record(int n);
   virtual PetscErrorCode get_record(int n);
   virtual double         max_timestep(double t_years);
+
+  virtual PetscErrorCode get_record_years(double t_years);
+
   virtual PetscErrorCode interp(double t_years);
   virtual PetscErrorCode interp(int i, int j, int N,
 				PetscScalar *times, PetscScalar *results);
@@ -131,6 +134,8 @@ public:
 				 double &result);
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();
+
+  bool strict_timestep_limit;
 protected:
   vector<double> times,		//!< all the times available in filename
     T;				//!< times stored in memory

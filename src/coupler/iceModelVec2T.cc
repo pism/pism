@@ -32,6 +32,7 @@ IceModelVec2T::IceModelVec2T() : IceModelVec2S() {
   T.resize(1);			// so that T[0] is always available
   report_range = false;
   lic = NULL;
+  strict_timestep_limit = false;
 }
 
 IceModelVec2T::IceModelVec2T(const IceModelVec2T &other) : IceModelVec2S(other) {
@@ -290,6 +291,23 @@ double IceModelVec2T::max_timestep(double t_years) {
   int j, k, N = (int)times.size();
   vector<double>::iterator begin = times.begin();
 
+  // only allow going to till the next record if strict time-step restriction
+  // is requested
+  if (strict_timestep_limit) {
+    vector<double>::iterator l = upper_bound(begin, times.end(), t_years);
+    if (l != times.end()) {
+      PetscReal tmp = *l - t_years;
+
+      if (tmp > 1e-8)
+        return tmp;
+      else if (l + 1 != times.end())
+        return *(l + 1) - *l;
+      else
+        return -1;
+    } else
+      return -1;
+  }
+
   // no restriction if all the records are in memory:
   if (n_records >= N) {
     return -1;
@@ -314,6 +332,32 @@ double IceModelVec2T::max_timestep(double t_years) {
 
   return -1;
 }
+
+//! \brief Get the record that is just before t_years.
+PetscErrorCode IceModelVec2T::get_record_years(double t_years) {
+  PetscErrorCode ierr;
+
+  vector<double>::iterator end = T.end(), k;
+  
+  k = upper_bound(T.begin(), end, t_years); // binary search
+
+  if (k == end) {
+    ierr = get_record((int)T.size() - 1); CHKERRQ(ierr);
+    return 0;
+  }
+    
+  int index = (int)(k - T.begin() - 1);
+
+  if (index < 0) {
+    ierr = get_record(0); CHKERRQ(ierr);
+    return 0;
+  }
+
+  ierr = get_record(index); CHKERRQ(ierr);
+
+  return 0;
+}
+
 
 //! Extract data corresponding to t_years using linear interpolation.
 /*!

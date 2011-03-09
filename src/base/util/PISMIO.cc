@@ -801,13 +801,15 @@ PetscErrorCode PISMIO::create_dimensions() const {
   
   if (grid->rank != 0) return 0;
 
+  string time_units = "years since " + grid->config.get_string("reference_date");
+
   // define dimensions and coordinate variables:
   stat = define_mode(); CHKERRQ(stat);
   // t
   stat = nc_def_dim(ncid, "t", NC_UNLIMITED, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   stat = nc_def_var(ncid, "t", NC_DOUBLE, 1, &dimid, &t); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   stat = nc_put_att_text(ncid, t, "long_name", 4, "time"); check_err(stat,__LINE__,__FILE__);
-  stat = nc_put_att_text(ncid, t, "units", 17, "years since 1-1-1"); check_err(stat,__LINE__,__FILE__);
+  stat = nc_put_att_text(ncid, t, "units", time_units.size(), time_units.c_str()); check_err(stat,__LINE__,__FILE__);
   stat = nc_put_att_text(ncid, t, "calendar", 7, "365_day"); check_err(stat,__LINE__,__FILE__);
   stat = nc_put_att_text(ncid, t, "axis", 1, "T"); check_err(stat,__LINE__,__FILE__);
   // x

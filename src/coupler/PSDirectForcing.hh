@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -52,7 +52,8 @@ public:
   { delete input; }
 protected:
   IceModelVec2T temperature, mass_flux;
-  PetscReal bc_period;
+  PetscReal bc_period, bc_reference_year;
+  bool enable_time_averaging;
 
   PetscReal my_mod(PetscReal input);
 };

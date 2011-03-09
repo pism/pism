@@ -42,7 +42,7 @@ class SSATestCasePlug: public SSATestCase
 {
 public:
   SSATestCasePlug( MPI_Comm com, PetscMPIInt rank, 
-                 PetscMPIInt size, NCConfigVariable &c, PetscScalar glen_n ): 
+                 PetscMPIInt size, NCConfigVariable &c, PetscScalar n): 
                  SSATestCase(com,rank,size,c)
   { 
     H0 = 2000.; //m
@@ -51,7 +51,7 @@ public:
     tauc0 = 0.; // No basal shear stress
     B0 = 3.7e8; // Pa s^{1/3}; hardness 
                // given on p. 239 of Schoof; why so big?
-    this->glen_n = glen_n;      
+    this->glen_n = n;      
   }
   
 protected:

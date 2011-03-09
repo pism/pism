@@ -23,6 +23,8 @@ PetscErrorCode SSAFD_PIK::init(PISMVars &vars) {
   ierr = SSAFD::init(vars); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
                     "  [... including PIK CFBC implementation]\n"); CHKERRQ(ierr);  
+
+  return 0;
 }
 
 PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
