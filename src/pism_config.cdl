@@ -202,12 +202,6 @@ netcdf pism_config {
     pism_config:ssa_relative_convergence = 1.0e-4;
     pism_config:ssa_relative_convergence_doc = "Relative change tolerance for the effective viscosity";
 
-    pism_config:shelves_drag_too = "no";
-    pism_config:shelves_drag_too_doc = "Specifies whether ice shelves drag";
-
-    pism_config:beta_shelves_drag_too = 180000.0;
-    pism_config:beta_shelves_drag_too_doc = "Pa s m^{-1}; (1/10000) of value stated in [\\ref HulbeMacAyeal] for ice stream E";
-
 
    // PISMAtmosphereModel and PISMSurfaceModel and PSModifier and LocalMassBalance constants
 

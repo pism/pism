@@ -272,26 +272,6 @@ of the \emph{User's Manual} once you are done.
 
 \vspace{0.3in}
 
-\subsubsection*{OpenIB WEIRDNESS} Running PISM might produce a warning message like the following:
-\begin{verbatim}
-$ mpiexec -n 2 pisms
-libibverbs: Fatal: couldn't read uverbs ABI version.
---------------------------------------------------------------------------
-[0,1,0]: OpenIB on host user-laptop was unable to find any HCAs.
-Another transport will be used instead, although this may result in 
-lower performance.
---------------------------------------------------------------------------
-. . .
-\end{verbatim}
-According to this comment found on-line at \url{http://lists.alioth.debian.org/pipermail/pkg-openmpi-commits/2007-August/000044.html},
-\begin{quote}
-   To get rid of the warning, you can either disable the use of the ``\texttt{openib}'' btl
-   in \texttt{/etc/openmpi/openmpi-mca-params.conf} or pass ``\texttt{--mca btl \^{}openib}'' to \texttt{mpirun}
-   or \texttt{mpiexec}.  The configuration file contains a line to disable InfiniBand, you
-   just have to comment it out.
-\end{quote}
-\bigskip
-
 \subsubsection*{NCVIEW}  Depending on the age of your Debian-based Linux, there may not be a \texttt{ncview} Debian package.  The following sequence has worked with minimal pain for installation from the \texttt{ncview} homepage:
 
 Grab latest source from

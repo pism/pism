@@ -46,12 +46,7 @@ instances, including -pdd... and -d?forcing options.
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
 
-  bool flag;
-
-  bool
-    myssaSystemToASCIIMatlab,
-    myholdTillYieldStress, realageSet,
-    doShelvesDragToo;
+  bool flag, myssaSystemToASCIIMatlab, myholdTillYieldStress, realageSet;
 
   ierr = verbPrintf(3, grid.com,
 		    "Processing physics-related command-line options...\n"); CHKERRQ(ierr);
@@ -249,10 +244,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = check_old_option_and_stop(grid.com, "-ssa",
 				   "-ssa_sliding' or '-ssa_floating_only"); CHKERRQ(ierr);
   ierr = check_old_option_and_stop(grid.com, "-plastic", "-ssa_sliding"); CHKERRQ(ierr);
-
-  // see assembleSSAMatrix(); used in MISMIP
-  ierr = PISMOptionsIsSet("-shelves_drag_too", doShelvesDragToo); CHKERRQ(ierr);
-  if (doShelvesDragToo == PETSC_TRUE)   shelvesDragToo = PETSC_TRUE;
 
   ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssa"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssa"); CHKERRQ(ierr);

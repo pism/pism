@@ -113,13 +113,11 @@ There are many runs for a complete MISMIP intercomparison submission.  There are
 \intextoption{initialthk} & 10.0 & initial thickness (m) at start of run \\
 \intextoption{mismip} & \texttt{1a} & experiment number followed by sliding flag; allowed values are \texttt{1a,1b,2a,2b,3a,3b} \\
 \intextoption{model} & 1 & model 1 is SSA only and model 2 combines SIA and SSA velocities; see text \\
-\intextoption{no_shelf_drag} &  & flag to turn off small drag on shelves \\
 \intextoption{steady_atol} & \texttt{1.0e-4} & m/a; tolerance for steady state; criterion is  $\|dH/dt\|_\infty <$(\texttt{steady_atol} value) \\
 \intextoption{step} & 1 & allowed values are $\{1,\dots,9\}$ for experiments 1 and 2, $\{1,\dots,13\}$ for  exper.~3a, and $\{1,\dots,15\}$ for exper.~3b; note typo in table 6 in \texttt{mismip_4.pdf}: ``step 15'' skipped \\
 \intextoption{try_calving} &  & flag to turn on experimental calving law which keeps  calving front thickness in range $[100\text{ m},200\text{ m}]$ \\
 \midrule
 \intextoption{Mx} &  & this option gets additional interpretation: \texttt{-Mx 151} makes grid  mode 1 so output files have ``\texttt{_M1_}''; \texttt{-Mx 1501} is grid mode 2  (``\texttt{_M2_}''); any other value is grid mode 3 (``\texttt{_M3_}'') \\
-\intextoption{shelves_drag_too} &  & using this option has no effect because shelf drag is on by default in MISMIP; see \intextoption{no_shelf_drag} to turn off\\
 \bottomrule\normalsize
 \end{tabular}
 \end{table}

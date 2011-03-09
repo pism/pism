@@ -199,17 +199,6 @@ PetscErrorCode IceMISMIPModel::setFromOptions() {
     PISMEnd();
   }
 
-  // read option    -no_shelf_drag
-  bool noShelfDrag;
-  ierr = PISMOptionsIsSet("-no_shelf_drag", noShelfDrag); CHKERRQ(ierr);
-  if (noShelfDrag == PETSC_TRUE) {
-    config.set_flag("shelves_drag_too", false); 
-  } else {
-    // usually in MISMIP we need the shelves to drag a tiny bit to stabilize them
-    config.set_flag("shelves_drag_too", true); 
-    // with beta = (1.8e9 / 10000) Pa s m-1; see iMdefaults.cc
-  }
-
   // read option    -steady_atol  [1.0e-4]
   ierr = PetscOptionsGetScalar(PETSC_NULL, "-steady_atol", &dHdtnorm_atol, PETSC_NULL);
           CHKERRQ(ierr);

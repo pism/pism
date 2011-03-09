@@ -258,9 +258,6 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
-  PetscReal beta_shelves_drag_too = config.get("beta_shelves_drag_too");
-  bool shelvesDragToo = config.get_flag("shelves_drag_too");
-
   /* matrix assembly loop */
 
   ierr = nuH.begin_access(); CHKERRQ(ierr);
@@ -321,13 +318,6 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
           // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
           valU[5] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
           valV[7] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
-        }
-
-        // make shelf drag a little bit if desired
-        if (shelvesDragToo && (mask_value == MASK_FLOATING)) {
-          //ierr = verbPrintf(1,grid.com,"... SHELF IS DRAGGING ..."); CHKERRQ(ierr);
-          valU[5] += beta_shelves_drag_too;
-          valV[7] += beta_shelves_drag_too;
         }
 
         // build "u" equation: NOTE TRANSPOSE
