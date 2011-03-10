@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-static char help[] = 
+static char help[] =
   "Driver for testing PISMBedThermalUnit (without IceModel).\n";
 
 #include "pism_const.hh"
@@ -33,19 +33,19 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
   ierr = nc.get_grid(filename.c_str()); CHKERRQ(ierr);
   grid.compute_nprocs();
   grid.compute_ownership_ranges();
-  ierr = grid.createDA(); CHKERRQ(ierr);  
+  ierr = grid.createDA(); CHKERRQ(ierr);
   return 0;
 }
 
 
 static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
-  
+
   PetscErrorCode ierr;
   IceModelVec2S *mask = new IceModelVec2S,
                 *thk = new IceModelVec2S,
                 *ghf_result = new IceModelVec2S;
   IceModelVec3  *enthalpy = new IceModelVec3;
-  
+
   ierr = mask->create(grid, "mask", true); CHKERRQ(ierr);
   ierr = mask->set_attrs("", "grounded_dragging_floating integer mask",
 			      "", ""); CHKERRQ(ierr);
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
     ierr = PISMOptionsIsSet("-config_override", override_used); CHKERRQ(ierr);
 
     IceGrid grid(com, rank, size, config);
-    
+
     bool flag;
     PetscReal dt_years = 0.0;
     string inname, outname;
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // initialize the computational grid:
-    ierr = verbPrintf(2,com, 
+    ierr = verbPrintf(2,com,
 	"  initializing grid from NetCDF file %s...\n", inname.c_str()); CHKERRQ(ierr);
     ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
     grid.end_year = grid.start_year + dt_years;
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
     ierr = nc.get_nrecords(last_record); CHKERRQ(ierr);
     ierr = nc.close(); CHKERRQ(ierr);
     last_record -= 1;
-    ierr = verbPrintf(2,com, 
+    ierr = verbPrintf(2,com,
         "  reading fields mask,thk,enthalpy from NetCDF file %s ...\n",
 	inname.c_str()); CHKERRQ(ierr);
     ierr = readIceInfoFromFile(inname.c_str(), last_record, variables); CHKERRQ(ierr);
@@ -222,19 +222,31 @@ int main(int argc, char *argv[]) {
     // Initialize BTU object:
     PISMBedThermalUnit btu(grid, EC, config);
 
-    ierr = verbPrintf(2,com, 
+    ierr = verbPrintf(2,com,
         "  user set timestep of %.4f years ...\n",
 	dt_years); CHKERRQ(ierr);
     PetscReal max_dt_years;
     ierr = btu.max_timestep(0.0, max_dt_years); CHKERRQ(ierr);
-    ierr = verbPrintf(2,com, 
+    ierr = verbPrintf(2,com,
         "  PISMBedThermalUnit reports max timestep of %.4f years ...\n",
 	max_dt_years); CHKERRQ(ierr);
 
     // FIXME:  use btu.get_upward_geothermal_flux(); requires actually having the
     //         IceModelVec2S for the result; use variables.get("???") ?
-    
+
     ierr = writeState(variables, outname.c_str(), &grid); CHKERRQ(ierr);
+
+    set<string> vars;
+    btu.add_vars_to_output("big", vars); // "write everything you can"
+
+    PISMIO pio(&grid);
+
+    ierr = pio.open_for_writing(outname, false, true); CHKERRQ(ierr);
+    ierr = pio.append_time(grid.end_year); CHKERRQ(ierr);
+    ierr = btu.define_variables(vars, pio, NC_DOUBLE); CHKERRQ(ierr);
+    ierr = pio.close(); CHKERRQ(ierr);
+
+    ierr = btu.write_variables(vars, outname); CHKERRQ(ierr);
 
     if (override_used) {
       ierr = verbPrintf(3, com,
@@ -246,7 +258,7 @@ int main(int argc, char *argv[]) {
 
     ierr = doneWithIceInfo(variables); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done.\n"); CHKERRQ(ierr);
-    
+
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
