@@ -297,13 +297,13 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
   ierr = vars.add(*bed); CHKERRQ(ierr);
 
   // yield stress for basal till (plastic or pseudo-plastic model)
-  ierr = tauc->create(grid, "tauc", false); CHKERRQ(ierr);
+  ierr = tauc->create(grid, "tauc", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = tauc->set_attrs("diagnostic", 
                          "yield stress for basal till (plastic or pseudo-plastic model)",
                          "Pa", ""); CHKERRQ(ierr);
   ierr = vars.add(*tauc); CHKERRQ(ierr);
 
-  ierr = enthalpy->create(grid, "enthalpy", true); CHKERRQ(ierr);
+  ierr = enthalpy->create(grid, "enthalpy", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = enthalpy->set_attrs("model_state",
                              "ice enthalpy (includes sensible heat, latent heat, pressure)",
                              "J kg-1", ""); CHKERRQ(ierr);
@@ -338,7 +338,7 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
   bc_mask->output_data_type = NC_BYTE;
   ierr = vars.add(*bc_mask); CHKERRQ(ierr);
 
-  ierr = vel_bc->create(grid, "bar", false); CHKERRQ(ierr); // ubar and vbar
+  ierr = vel_bc->create(grid, "bar", true, WIDE_STENCIL); CHKERRQ(ierr); // ubar and vbar
   ierr = vel_bc->set_attrs("intent",
                            "X-component of the SSA velocity boundary conditions",
                            "m s-1", "", 0); CHKERRQ(ierr);

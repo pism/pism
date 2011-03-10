@@ -355,12 +355,14 @@ void SSAFEM::FixDirichletValues(PetscReal local_treatment_mask[], PetscReal loca
 //! Implements the callback for computing the SNES local function.
 /*! Compute the residual \f[r_{ij}= G(x,\psi_{ij}) \f] where \f$G\f$ is the weak form of the SSA, \f$x\f$
 is the current approximate solution, and the \f$\psi_{ij}\f$ are test functions. */
-PetscErrorCode SSAFEM::compute_local_function(DALocalInfo * /*info*/, const PISMVector2 **xg, PISMVector2 **yg)
+PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVector2 **xg, PISMVector2 **yg)
 {
   PetscInt         i,j,k,q;
   PetscReal        **bc_mask, **ice_treatment_mask;
   PISMVector2        **BC_vel;
   PetscErrorCode   ierr;
+
+  (void) info; // Avoid compiler warning.
 
   // Zero out the portion of the function we are responsible for computing.
   for (i=grid.xs; i<grid.xs+grid.xm; i++) {
@@ -512,12 +514,14 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo * /*info*/, const PISM
 /*! Compute the Jacobian \f[J_{ij}{kl} \frac{d r_{ij}}{d x_{kl}}= G(x,\psi_{ij}) \f] 
 where \f$G\f$ is the weak form of the SSA, \f$x\f$ is the current approximate solution, and 
 the \f$\psi_{ij}\f$ are test functions. */
-PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo * /*info*/, const PISMVector2 **xg, Mat Jac )
+PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVector2 **xg, Mat Jac )
 {
   PetscReal      **bc_mask, **ice_treatment_mask;
   PISMVector2    **BC_vel;
   PetscInt         i,j;
   PetscErrorCode   ierr;
+
+  (void) info; // Avoid compiler warning.
 
   // Zero out the Jacobian in preparation for updating it.
   ierr = MatZeroEntries(Jac);CHKERRQ(ierr);

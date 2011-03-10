@@ -174,7 +174,7 @@ PetscErrorCode SSATestCase::report()
   ierr = ssa->get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr);
   ierr = vel_ssa->begin_access(); CHKERRQ(ierr);
 
-  PetscScalar exactvelmax = 0;
+  PetscScalar exactvelmax = 0, gexactvelmax = 0;
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
       PetscScalar uexact, vexact;
@@ -198,7 +198,9 @@ PetscErrorCode SSATestCase::report()
     }
   }
   ierr = vel_ssa->end_access(); CHKERRQ(ierr);
-   
+
+
+  ierr = PetscGlobalMax(&exactvelmax, &gexactvelmax,grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&maxuerr, &gmaxuerr, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalMax(&maxverr, &gmaxverr, grid.com); CHKERRQ(ierr);
   ierr = PetscGlobalSum(&avuerr, &gavuerr, grid.com); CHKERRQ(ierr);
@@ -209,13 +211,12 @@ PetscErrorCode SSATestCase::report()
   ierr = PetscGlobalSum(&avvecerr, &gavvecerr, grid.com); CHKERRQ(ierr);
   gavvecerr = gavvecerr/(grid.Mx*grid.My);
 
-  printf("velocity max: %g\n",exactvelmax*report_velocity_scale);
   ierr = verbPrintf(1,grid.com, 
                     "velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv\n");
   CHKERRQ(ierr);
   ierr = verbPrintf(1,grid.com, 
                     "           %11.4f%13.5f%10.4f%10.4f%10.4f%10.4f\n", 
-                    gmaxvecerr*report_velocity_scale, (gavvecerr/exactvelmax)*100.0,
+                    gmaxvecerr*report_velocity_scale, (gavvecerr/gexactvelmax)*100.0,
                     gmaxuerr*report_velocity_scale, gmaxverr*report_velocity_scale, gavuerr*report_velocity_scale, 
                     gavverr*report_velocity_scale); CHKERRQ(ierr);
 

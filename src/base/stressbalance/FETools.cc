@@ -27,36 +27,46 @@ const FEShapeQ1::ShapeFunctionSpec FEShapeQ1::shapeFunction[FEShapeQ1::Nk] =
 FEElementMap::FEElementMap(const IceGrid &g)
 {
   // Start by assuming ghost elements exist in all directions.
-  // If there are 'mx' by 'my' points in the grid and no 
-  // ghosts, there are (mx-1) by (my-1) elements.  In the presence
-  // of ghosts there are then (mx+1) by (my+1) elements.
-  xs= g.xs-1; xm = g.xm+1;
-  ys= g.ys-1; ym = g.ym+1;
+  // Elements are indexed by their lower left vertex.  If there is a ghost
+  // element on the right, its i-index will be the same as the maximum
+  // i-index of a non-ghost vertex in the local grid.
+  xs= g.xs-1;                    // Start at ghost to the left. 
+  PetscInt xf = g.xs + g.xm - 1; // End at ghost to the right.
+  ys= g.ys-1;                    // Start at ghost at the bottom.
+  PetscInt yf = g.ys + g.ym - 1; // End at ghost at the top.
 
   // Now correct if needed. The only way there will not be ghosts is if the 
   // grid is not periodic and we are up against the grid boundary.
   
   if( !(g.periodicity & X_PERIODIC) )
   {
-    // First element has x-index 0.
+    // Leftmost element has x-index 0.
     if(xs < 0){
       xs = 0;
     }
-    // Total number of elements is Mx-1, so xs+xm should be no larger.
-    if(xs+xm > g.Mx-1) {
-      xm = g.Mx-1-xs;
+    // Rightmost vertex has index g.Mx-1, so the rightmost element has index g.Mx-2
+    if(xf > g.Mx-2)
+    {
+      xf = g.Mx-2;
     }
   }
 
   if( !(g.periodicity & Y_PERIODIC) )
   {
+    // Bottom element has y-index 0.
     if(ys < 0){
       ys = 0;
     }
-    if(ys+ym > g.My-1) {
-      ym = g.My-1-ys;
+    // Topmost vertex has index g.My-1, so the topmost element has index g.My-2
+    if(yf > g.My-2)
+    {
+      yf = g.My-2;
     }
   }
+  
+  // Tally up the number of elements in each direction
+  xm = xf-xs+1;
+  ym = yf-ys+1;
 }
 
 

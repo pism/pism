@@ -315,7 +315,7 @@ public:
   /*!\brief The total number of elements to be iterated over.  Useful for creating per-element storage.*/
   PetscInt element_count()
   {
-    return (xm+1)*(ym+1);
+    return xm*ym;
   }
   
   /*!\brief Convert an element index (\a i,\a j) into a flattened (1-d) array index, with the first
