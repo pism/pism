@@ -33,6 +33,9 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
   ierr = nc.get_grid(filename.c_str()); CHKERRQ(ierr);
   grid.compute_nprocs();
   grid.compute_ownership_ranges();
+  //grid.compute_vertical_levels();
+  grid.printInfo(1);
+  grid.printVertLevels(1);
   ierr = grid.createDA(); CHKERRQ(ierr);
   return 0;
 }
@@ -43,7 +46,7 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
   PetscErrorCode ierr;
   IceModelVec2S *mask = new IceModelVec2S,
                 *thk = new IceModelVec2S,
-                *ghf_result = new IceModelVec2S;
+                *ghf = new IceModelVec2S;
   IceModelVec3  *enthalpy = new IceModelVec3;
 
   ierr = mask->create(grid, "mask", true); CHKERRQ(ierr);
@@ -63,13 +66,12 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
      "J kg-1", ""); CHKERRQ(ierr);
   ierr = variables.add(*enthalpy); CHKERRQ(ierr);
 
-  ierr = ghf_result->create(grid, "bheatflx_at_ice_base", false); CHKERRQ(ierr);
-  // PROPOSED standard_name = lithosphere_upward_heat_flux ?
-  ierr = ghf_result->set_attrs("",
-                       "upward geothermal flux at bedrock surface, at ice base",
+  ierr = ghf->create(grid, "bheatflx", false); CHKERRQ(ierr);
+  ierr = ghf->set_attrs("",
+                       "upward geothermal flux at bedrock base",
 		       "W m-2", ""); CHKERRQ(ierr);
-  ierr = ghf_result->set_glaciological_units("mW m-2");
-  ierr = variables.add(*ghf_result); CHKERRQ(ierr);
+  ierr = ghf->set_glaciological_units("mW m-2");
+  ierr = variables.add(*ghf); CHKERRQ(ierr);
 
   return 0;
 }
@@ -87,46 +89,6 @@ static PetscErrorCode readIceInfoFromFile(const char *filename, int start,
     ierr = var->read(filename, start); CHKERRQ(ierr);
     i++;
   }
-
-  return 0;
-}
-
-
-static PetscErrorCode writeState(PISMVars &variables,
-                                 const char *filename, IceGrid* grid) {
-
-  PetscErrorCode ierr;
-
-  MPI_Comm com = grid->com;
-  NCGlobalAttributes global_attrs;
-  global_attrs.init("global_attributes", com, grid->rank);
-  global_attrs.set_string("Conventions", "CF-1.4");
-  global_attrs.set_string("source", string("btutest ") + PISM_Revision);
-  // Create a string with space-separated command-line arguments:
-  string history = pism_username_prefix() + pism_args_string();
-  global_attrs.prepend_history(history);
-
-  PISMIO nc(grid);
-  ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
-  // append == false, check_dims == true
-  ierr = nc.append_time(grid.end_year); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
-
-  ierr = global_attrs.write(filename); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2,com,"\n  writing result to %s ..", filename); CHKERRQ(ierr);
-
-  // Get the names of all the variables allocated earlier:
-  set<string> vars = variables.keys();
-
-  set<string>::iterator i = vars.begin();
-  while (i != vars.end()) {
-    IceModelVec *var = variables.get(*i);
-    ierr = var->write(filename, NC_FLOAT); CHKERRQ(ierr);
-    i++;
-  }
-
-  ierr = verbPrintf(2,com,"\n"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -234,8 +196,6 @@ int main(int argc, char *argv[]) {
 
     // FIXME:  use btu.get_upward_geothermal_flux(); requires actually having the
     //         IceModelVec2S for the result; use variables.get("???") ?
-
-    ierr = writeState(variables, outname.c_str(), &grid); CHKERRQ(ierr);
 
     set<string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"

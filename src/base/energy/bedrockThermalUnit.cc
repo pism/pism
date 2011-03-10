@@ -154,7 +154,7 @@ PetscErrorCode PISMBedThermalUnit::max_timestep(PetscReal /*t_years*/, PetscReal
 
   const PetscReal dzb = grid.dz_fine;
   dt_years = dzb * dzb / (2.0 * bed_D);
-  dt_years *= secpera;
+  dt_years /= secpera;
   return 0;
 }
 
