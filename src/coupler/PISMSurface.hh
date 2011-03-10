@@ -50,8 +50,6 @@ public:
   virtual PetscErrorCode surface_layer_thickness(PetscReal t_years, PetscReal dt_years, 
                                                  IceModelVec2S &result);
 
-  virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
-					    string filename);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 protected:
@@ -79,8 +77,6 @@ public:
   { return 0; }
 
   virtual PetscErrorCode ice_surface_temperature(PetscReal, PetscReal, IceModelVec2S &)
-  { return 0; }
-  virtual PetscErrorCode write_model_state(PetscReal, PetscReal, string)
   { return 0; }
   virtual void add_vars_to_output(string /*keyword*/, set<string> &/*result*/) {}
   virtual PetscErrorCode define_variables(set<string> /*vars*/, const NCTool &/*nc*/, nc_type /*nctype*/)
@@ -159,8 +155,6 @@ public:
 					       IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
 						 IceModelVec2S &result);
-  virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
-					    string filename);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
@@ -282,8 +276,6 @@ public:
   virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
 						 IceModelVec2S &result);
   virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
-  virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
-					   string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);

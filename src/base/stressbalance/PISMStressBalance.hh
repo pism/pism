@@ -47,8 +47,6 @@ public:
   //! Writes requested fields to a file.
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 
-  virtual PetscErrorCode write_model_state(string filename);
-
   //! \brief Set the vertically-averaged ice velocity boundary condition.
   /*!
    * Does not affect the SIA computation.

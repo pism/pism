@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -283,14 +283,5 @@ void PISMStressBalance::add_vars_to_output(string keyword, set<string> &result) 
   stress_balance->add_vars_to_output(keyword, result);
   modifier->add_vars_to_output(keyword, result);
 
-}
-
-PetscErrorCode PISMStressBalance::write_model_state(string filename) {
-  PetscErrorCode ierr;
-
-  ierr = stress_balance->write_model_state(filename); CHKERRQ(ierr);
-  ierr = modifier->write_model_state(filename); CHKERRQ(ierr);
-
-  return 0;
 }
 

@@ -84,19 +84,6 @@ PetscErrorCode PISMSurfaceModel::ice_surface_liquid_water_fraction(PetscReal /*t
   return 0;
 }
 
-
-
-PetscErrorCode PISMSurfaceModel::write_model_state(PetscReal t_years, PetscReal dt_years,
-						    string filename) {
-  PetscErrorCode ierr;
-
-  if (atmosphere != NULL) {
-    ierr = atmosphere->write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
-  }
-
-  return 0;
-}
-
 PetscErrorCode PISMSurfaceModel::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
   PetscErrorCode ierr;
 
@@ -232,17 +219,6 @@ PetscErrorCode PSConstant::ice_surface_temperature(PetscReal /*t_years*/, PetscR
 
   ierr = artm.copy_to(result); CHKERRQ(ierr);
   ierr = result.set_attr("history", history); CHKERRQ(ierr);
-
-  return 0;
-}
-
-//! Does not ask the atmosphere model because it does not use one.
-PetscErrorCode PSConstant::write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						    string filename) {
-  PetscErrorCode ierr;
-
-  ierr = artm.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = acab.write(filename.c_str()); CHKERRQ(ierr);
 
   return 0;
 }
@@ -952,19 +928,6 @@ PetscErrorCode PSForceThickness::max_timestep(PetscReal t_years, PetscReal &dt_y
       dt_years = PetscMin(max_dt, dt_years);
   }
   else dt_years = max_dt;
-
-  return 0;
-}
-
-PetscErrorCode PSForceThickness::write_model_state(PetscReal t_years, PetscReal dt_years,
-						    string filename) {
-  PetscErrorCode ierr;
-
-  ierr = input_model->write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
-
-  if (write_ftt_mask) {
-    ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr);
-  }  
 
   return 0;
 }

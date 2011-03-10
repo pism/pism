@@ -411,12 +411,3 @@ PetscErrorCode SSA::write_variables(set<string> vars, string filename) {
   return 0;
 }
 
-
-PetscErrorCode SSA::write_model_state(string filename) {
-  PetscErrorCode ierr;
-
-  ierr = velocity.write(filename.c_str()); CHKERRQ(ierr);
-
-  return 0;
-}
-

@@ -107,24 +107,3 @@ PetscErrorCode PALapseRates::temp_time_series(int i, int j, int N,
   return 0;
 }
 
-PetscErrorCode PALapseRates::write_model_state(PetscReal t_years, PetscReal dt_years,
-						string filename) {
-  PetscErrorCode ierr;
-
-  ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
-
-  IceModelVec2S temp_ma;
-  ierr = temp_ma.create(grid, "airtemp_ma", false); CHKERRQ(ierr); // FIXME! choose the right name
-  ierr = temp_ma.set_attrs(
-            "climate_state",
-            "mean annual near-surface air temperature",
-            "K",
-	    ""); CHKERRQ(ierr);
-
-  ierr = temp_snapshot(t_years, dt_years, temp_ma); CHKERRQ(ierr);
-
-  ierr = temp_ma.write(filename.c_str()); CHKERRQ(ierr);
-
-  return 0;
-}
-

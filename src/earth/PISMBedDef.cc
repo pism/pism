@@ -74,16 +74,6 @@ PetscErrorCode PISMBedDef::write_variables(set<string> vars, string filename) {
   return 0;
 }
 
-PetscErrorCode PISMBedDef::write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-                                             string filename) {
-  PetscErrorCode ierr;
-  
-  ierr = topg_initial.write(filename.c_str()); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
 PetscErrorCode PISMBedDef::init(PISMVars &vars) {
   PetscErrorCode ierr;
 

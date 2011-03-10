@@ -27,7 +27,6 @@ find_package (MPI REQUIRED)
 set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
 
 # The default options cache
-#option (Pism_BUILD_TESTS       "Build tests"                                           ON)
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
 option (BUILD_SHARED_LIBS      "Build shared Pism libraries"                           ON)
 option (Pism_ADD_FPIC "Add -fPIC to C++ compiler flags (CMAKE_CXX_FLAGS). Try turning it off if it does not work." ON)
@@ -36,7 +35,7 @@ option (Pism_BUILD_DEBIAN_PACKAGE "Use settings appropriate for building a .deb 
 option (Pism_NETCDF4_OUTPUT        "Turn this on to make PISM produce NetCDF-4 files" OFF)
 option (Pism_NETCDF4_COMPRESS     "Tirn this on to make PISM produce compressed NetCDF-4 files" OFF)
 
-if (Pism_NETCDF4_COMPRESS AND (NOT Pism_NETCDF4_OUTPUT))
+if (Pism_NETCDF4_COMPRESS AND NOT Pism_NETCDF4_OUTPUT)
   set (Pism_NETCDF4_OUTPUT ON CACHE BOOL "Write NetCDF-4-format PISM output files" FORCE)
   message (STATUS "Turning 'on' Pism_WRITE_NETCDF4 to enable writing compressed NetCDF-4 files.")
 endif ()
@@ -77,7 +76,7 @@ else ()
 endif ()
 
 
-set (Pism_FAST_WRITE "1" CACHE STRING "Variable order options: 1,2,3 (fastest to slowest).")
+set (Pism_VARIABLE_ORDER "xyz" CACHE STRING "Variable order in output files: 'xyz','yxz','zyx' (fastest to slowest).")
 
 
 # Deal with build types

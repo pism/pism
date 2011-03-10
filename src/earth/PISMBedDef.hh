@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -37,8 +37,6 @@ public:
   virtual PetscErrorCode define_variables(set<string> /*vars*/, const NCTool &/*nc*/,
                                           nc_type /*nctype*/);
   virtual PetscErrorCode write_variables(set<string> /*vars*/, string /*filename*/);
-  virtual PetscErrorCode write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-					   string /*filename*/);
 protected:
   PetscErrorCode pismbeddef_allocate(); // packaged to simplify error checking
   PetscErrorCode compute_uplift(PetscScalar dt_beddef);

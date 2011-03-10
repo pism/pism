@@ -78,15 +78,6 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-								string filename) {
-  PetscErrorCode ierr;
-
-  ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
-
-  return 0;
-}
-
 void PAYearlyCycle::add_vars_to_output(string keyword, set<string> &result) {
   result.insert("precip");
 

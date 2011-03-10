@@ -76,8 +76,6 @@ public:
   virtual PetscErrorCode end_pointwise_access();
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values);
-  virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
-					    string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
@@ -99,9 +97,6 @@ public:
   PAYearlyCycle(IceGrid &g, const NCConfigVariable &conf)
     : PISMAtmosphereModel(g, conf) {}
   virtual PetscErrorCode init(PISMVars &vars);	      // nb
-  virtual PetscErrorCode write_model_state(PetscReal /*t_years*/,
-					    PetscReal /*dt_years*/,
-					    string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
@@ -191,8 +186,6 @@ public:
   virtual PetscErrorCode end_pointwise_access();   
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values); 
-  virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
-					    string filename);
 protected:
   PetscReal gamma;
   IceModelVec2S f, *usurf;
@@ -243,8 +236,6 @@ public:
   virtual ~PAForcing();
   virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode write_model_state(PetscReal t_years, PetscReal dt_years,
-					    string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);

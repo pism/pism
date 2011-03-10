@@ -577,27 +577,27 @@ int main(int argc, char *argv[]) {
     config.set_flag("use_constant_nuh_for_ssa", false);
     config.set("epsilon_ssa", 0.0);  // don't use this lower bound on effective viscosity
 
+    set<string> ssa_choices;
+    ssa_choices.insert("fem");
+    ssa_choices.insert("fd");
+    ssa_choices.insert("fd_pik");
     string ssa_method = "fd";
+
     ierr = PetscOptionsBegin(com, "", "PROSS options", ""); CHKERRQ(ierr);
     {
       bool flag;
-      double rtol = config.get("ssa_relative_convergence");
-      ierr = PISMOptionsReal("-ssa_rtol", "set configuration constant ssa_relative_convergence",
-                             rtol, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsString("-ssa_method", "Algorithm for computing the SSA solution",
-                                                 ssa_method, flag); CHKERRQ(ierr);                                                      
-      
-      if (flag) config.set("ssa_relative_convergence",rtol);
+      ierr = config.scalar_from_option("ssa_rtol", "ssa_relative_convergence"); CHKERRQ(ierr);
+                
+      ierr = PISMOptionsList(com, "-ssa_method", "Algorithm for computing the SSA solution",
+                             ssa_choices, ssa_method, ssa_method, flag); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory;
-    if(ssa_method.compare("fem") == 0) ssafactory = SSAFEMFactory;
-    else if(ssa_method.compare("fd") == 0) ssafactory = SSAFDFactory;
-//    else if(ssa_method.compare("fd_pik") == 0) ssafactory = SSAFD_PIKFactory;
-    else SETERRQ(1,"SSA algorithm argument should be one of -ssa_method fe or -ssa_method fem");
-
+    if(ssa_method == "fem") ssafactory = SSAFEMFactory;
+    else if(ssa_method == "fd") ssafactory = SSAFDFactory;
+    else if(ssa_method == "fd_pik") ssafactory = SSAFD_PIKFactory;
 
     IceGrid g(com, rank, size, config);
 
@@ -622,7 +622,6 @@ int main(int argc, char *argv[]) {
 
     // Create the SSA solver object; we'll need to deallocate it later.
     SSA *ssa = ssafactory(g, basal, ice, EC, config);
-    //SSAFD_PIK ssa(g, basal, ice, EC, config); //testing SSA Neumann boundary condition at ice front
 
     const PetscReal
       DEFAULT_MIN_THICKNESS = 5.0, // meters

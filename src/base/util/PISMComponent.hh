@@ -142,9 +142,6 @@ public:
 
   virtual PetscErrorCode update(bool /*fast*/)
   { return 0; }
-
-  virtual PetscErrorCode write_model_state(string /*filename*/)
-  { return 0; }
 };
 
 //! \brief An abstract class for time-stepping PISM components. Created to
@@ -165,12 +162,6 @@ public:
 
   //! Update a model, if necessary.
   virtual PetscErrorCode update(PetscReal /*t_years*/, PetscReal /*dt_years*/)
-  { return 0; }
-
-  //! \brief Writes fields that were read from an input file and are necessary
-  //! for restarting.
-  virtual PetscErrorCode write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-					   string /*filename*/)
   { return 0; }
 
 protected:

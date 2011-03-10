@@ -170,15 +170,6 @@ PetscErrorCode PAForcing::max_timestep(PetscReal t_years,
   return 0;
 }
 
-PetscErrorCode PAForcing::write_model_state(PetscReal t_years, PetscReal dt_years,
-					     string filename) {
-  PetscErrorCode ierr;
-
-  ierr = input_model->write_model_state(t_years, dt_years, filename); CHKERRQ(ierr);
-
-  return 0;
-}
-
 void PAForcing::add_vars_to_output(string keyword, set<string> &result) {
   if (keyword == "big") {
     result.insert("airtemp_plus_forcing");
