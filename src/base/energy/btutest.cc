@@ -109,6 +109,7 @@ static PetscErrorCode writeState(PISMVars &variables,
   PISMIO nc(grid);
   ierr = nc.open_for_writing(filename, false, true); CHKERRQ(ierr);
   // append == false, check_dims == true
+  ierr = nc.append_time(grid.end_year); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = global_attrs.write(filename); CHKERRQ(ierr);
@@ -241,8 +242,8 @@ int main(int argc, char *argv[]) {
 
     PISMIO pio(&grid);
 
-    ierr = pio.open_for_writing(outname, false, true); CHKERRQ(ierr);
-    ierr = pio.append_time(grid.end_year); CHKERRQ(ierr);
+    ierr = pio.open_for_writing(outname, true, true); CHKERRQ(ierr);
+    // append == true and check_dims == true
     ierr = btu.define_variables(vars, pio, NC_DOUBLE); CHKERRQ(ierr);
     ierr = pio.close(); CHKERRQ(ierr);
 
