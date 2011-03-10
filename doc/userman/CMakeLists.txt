@@ -7,9 +7,19 @@ file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/revision.tex "${Pism_REVISION_TAG}")
 configure_file (../ice_bib.bib ice-bib.bib COPYONLY)
 
 # Find all the .tex files in userman and copy them to the build directory
-file (GLOB parts
-  RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-  *.tex)
+
+set (parts
+  eismint-greenland.tex
+  eismint-ross.tex
+  getting-started.tex
+  hard-choices.tex
+  manual.tex
+  modeling-choices.tex
+  practical-usage.tex
+  simplified-geometry.tex
+  verification.tex
+  )
+
 foreach (filename ${parts})
   configure_file(${filename} ${filename} COPYONLY)
 endforeach()

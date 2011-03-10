@@ -413,8 +413,8 @@ $  PISM_INSTALL_PREFIX=~/pism cmake ..
 $  make install
 \end{verbatim}%$
 
-This will configure PISM to be installed in \texttt{~/pism/bin}, \texttt{~/pism/lib} and \texttt{~/pism/doc}, compile and install
-all its executables and scripts.
+  This will configure PISM to be installed in \texttt{~/pism/bin}, \texttt{~/pism/lib/pism} and \texttt{~/pism/share/doc}, then
+  compile and install all its executables and scripts.
 
 If your operating system does not support shared libraries\footnote{This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.}, then set \texttt{BUILD_SHARED_LIBS} to ``OFF''. This can be done by
 either running
