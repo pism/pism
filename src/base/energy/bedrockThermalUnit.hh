@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _BEDROCKTHERMALUNIT_H_
-#define _BEDROCKTHERMALUNIT_H_
+#ifndef _PISMBEDTHERMALUNIT_H_
+#define _PISMBEDTHERMALUNIT_H_
 
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
@@ -28,36 +28,45 @@
 
 
 //! Given ice/bedrock interface temperature over a time-step, provides upward geothermal flux at the interface.
-class BedrockThermalUnit : public PISMComponent_TS {
+class PISMBedThermalUnit : public PISMComponent_TS {
 
 public:
-  BedrockThermalUnit(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &conf);
+  PISMBedThermalUnit(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &conf);
 
-  virtual ~BedrockThermalUnit() { }
+  virtual ~PISMBedThermalUnit() { }
 
   virtual PetscErrorCode init(PISMVars &vars);
 
+  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);  
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
+
   virtual PetscErrorCode max_timestep(PetscReal /*t_years*/, PetscReal &dt_years);
 
-  virtual PetscErrorCode update(PetscReal /*t_years*/, PetscReal /*dt_years*/);
+  virtual PetscErrorCode get_upward_geothermal_flux(PetscReal t_years, PetscReal dt_years,
+                                                    IceModelVec2S &result);
 
-  virtual PetscErrorCode write_model_state(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-					   string filename);
 
 protected:
   virtual PetscErrorCode allocate();
 
-  EnthalpyConverter &EC;
+  IceModelVec3Bedrock temp;     //!< storage for bedrock thermal layer temperature;
+                                //!    part of state; units K
 
-  IceModelVec2S     basal_temp;
+  IceModelVec2S     ghf,        //!< storage for geothermal heat flux at base of
+                                //!    bedrock thermal layer; part of state; units W m-2
+                    ice_base_temp;
 
-  PetscScalar       rho, c, k, D;
+  // parameters of the heat equation:  T_t = D T_xx  where D = k / (rho c)
+  PetscScalar       bed_rho, bed_c, bed_k, bed_D;
+
+  EnthalpyConverter &EC; //!< needed to extract base temperature from ice enthalpy
 
   // pointers into IceModel space, generally:
-  IceModelVec2Mask  *mask;
-  IceModelVec3      *enthalpy;
-  // FIXME: need thickness too, to compute basal temp from enthalpy and pressure
+  IceModelVec2Mask  *mask;     //!< is ice floating so BTU sees ocean temp?
+  IceModelVec2S     *thk;      //!< needed to get ice base pressure
+  IceModelVec3      *enthalpy; //!< needed to get ice base temperature
 };
 
-#endif /* _BEDROCKTHERMALUNIT_H_ */
+#endif /* _PISMBEDTHERMALUNIT_H_ */
 

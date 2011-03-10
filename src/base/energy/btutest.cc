@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] = 
-  "Driver for testing BedrockThermalUnit (without IceModel).\n";
+  "Driver for testing PISMBedThermalUnit (without IceModel).\n";
 
 #include "pism_const.hh"
 #include "grid.hh"
@@ -41,20 +41,23 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
 static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
   
   PetscErrorCode ierr;
-  IceModelVec2S *mask;
-  IceModelVec3  *enthalpy;
-
-  mask     = new IceModelVec2S;
-  enthalpy = new IceModelVec3;
+  IceModelVec2S *mask = new IceModelVec2S,
+                *thk = new IceModelVec2S;
+  IceModelVec3  *enthalpy = new IceModelVec3;
   
   ierr = mask->create(grid, "mask", true); CHKERRQ(ierr);
   ierr = mask->set_attrs("", "grounded_dragging_floating integer mask",
 			      "", ""); CHKERRQ(ierr);
   ierr = variables.add(*mask); CHKERRQ(ierr);
 
+  ierr = thk->create(grid, "thk", true); CHKERRQ(ierr);
+  ierr = thk->set_attrs("", "ice thickness",
+			      "m", "land_ice_thickness"); CHKERRQ(ierr);
+  ierr = variables.add(*thk); CHKERRQ(ierr);
+
   ierr = enthalpy->create(grid, "enthalpy", false); CHKERRQ(ierr);
   ierr = enthalpy->set_attrs(
-     "model_state",
+     "",
      "ice enthalpy (includes sensible heat, latent heat, pressure)",
      "J kg-1", ""); CHKERRQ(ierr);
   ierr = variables.add(*enthalpy); CHKERRQ(ierr);
@@ -119,8 +122,8 @@ int main(int argc, char *argv[]) {
     required.push_back("-o");
     required.push_back("-ys");
     required.push_back("-dt");
-    ierr = show_usage_check_req_opts(com, "pclimate", required,
-      "  btu_test -i IN.nc -o OUT.nc -ys A -dt B\n"
+    ierr = show_usage_check_req_opts(com, "btutest", required,
+      "  btutest -i IN.nc -o OUT.nc -ys A -dt B\n"
       "where:\n"
       "  -i             input file in NetCDF format\n"
       "  -o             output file in NetCDF format\n"
@@ -178,7 +181,7 @@ int main(int argc, char *argv[]) {
     ierr = readIceInfoFromFile(inname.c_str(), last_record, variables); CHKERRQ(ierr);
 
     // Initialize BTU object:
-    BedrockThermalUnit btu(grid, EC, config);
+    PISMBedThermalUnit btu(grid, EC, config);
 
     ierr = btu.update(ys, dt_years); CHKERRQ(ierr);
 
