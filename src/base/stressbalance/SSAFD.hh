@@ -89,5 +89,14 @@ public:
   virtual PetscErrorCode assemble_rhs(Vec rhs);
 };
 
+
+//! Constructs a new SSAFD
+SSA * SSAFDFactory(IceGrid &, IceBasalResistancePlasticLaw &, 
+                  IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
+
+// //! Constructs a new SSAFD_PIK
+// SSA * SSAFD_PIKFactory(IceGrid &, IceBasalResistancePlasticLaw &, 
+//                        IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
+
 #endif /* _SSAFD_H_ */
 

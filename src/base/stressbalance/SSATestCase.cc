@@ -22,19 +22,6 @@
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
 
-SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b, 
-                IceFlowLaw &i, EnthalpyConverter &ec, 
-                const NCConfigVariable &c)
-{
-  return new SSAFEM(g,b,i,ec,c);
-}
-
-SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b, 
-                IceFlowLaw &i, EnthalpyConverter &ec, 
-                const NCConfigVariable &c)
-{
-  return new SSAFD(g,b,i,ec,c);
-}
 
 //! Initialize the storage for the various coefficients used as input to the SSA
 //! (ice elevation, thickness, etc.)  

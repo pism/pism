@@ -18,6 +18,13 @@
 
 #include "SSAFD.hh"
 
+SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b, 
+                IceFlowLaw &i, EnthalpyConverter &ec, 
+                const NCConfigVariable &c)
+{
+  return new SSAFD(g,b,i,ec,c);
+}
+
 
 //! \brief Allocate objects specific to the SSAFD object.
 /*!

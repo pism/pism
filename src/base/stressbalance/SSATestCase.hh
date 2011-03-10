@@ -22,24 +22,7 @@
 #include "SSA.hh"
 
 
-//! Callback for constructing a new SSA subclass.  The caller is
-//! responsible for deleting the newly constructed SSA.
-/*! The algorithm for solving the SSA in a test case can be selected
-at runtime via the ssafactory argument of SSATestCase::init.  The
-factory is a function pointer that takes all the arguments of an SSA
-constructor and returns a newly constructed instance.  By using this
-mechanism, the member variables needed for construction of an SSA
-do not need to be exposed to the outside code making the choice of algorithm.
-*/
-typedef SSA * (*SSAFactory)(IceGrid &, IceBasalResistancePlasticLaw &, 
-              IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
 
-//! Constructs a new SSAFEM
-SSA * SSAFEMFactory(IceGrid &, IceBasalResistancePlasticLaw &, 
-                  IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
-//! Constructs a new SSAFD
-SSA * SSAFDFactory(IceGrid &, IceBasalResistancePlasticLaw &, 
-                  IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
 
 //! Helper function for initializing a grid with the given dimensions and periodicity.
 //! The grid is shallow (3 z-layers).

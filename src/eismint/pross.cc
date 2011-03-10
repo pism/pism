@@ -18,6 +18,7 @@
 
 #include <petsc.h>
 #include "SSAFD.hh"
+#include "SSAFEM.hh"
 #include "PISMIO.hh"
 #include "Timeseries.hh"
 
@@ -576,15 +577,27 @@ int main(int argc, char *argv[]) {
     config.set_flag("use_constant_nuh_for_ssa", false);
     config.set("epsilon_ssa", 0.0);  // don't use this lower bound on effective viscosity
 
+    string ssa_method = "fd";
     ierr = PetscOptionsBegin(com, "", "PROSS options", ""); CHKERRQ(ierr);
     {
       bool flag;
       double rtol = config.get("ssa_relative_convergence");
       ierr = PISMOptionsReal("-ssa_rtol", "set configuration constant ssa_relative_convergence",
                              rtol, flag); CHKERRQ(ierr);
+      ierr = PISMOptionsString("-ssa_method", "Algorithm for computing the SSA solution",
+                                                 ssa_method, flag); CHKERRQ(ierr);                                                      
+      
       if (flag) config.set("ssa_relative_convergence",rtol);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+    // Determine the kind of solver to use.
+    SSAFactory ssafactory;
+    if(ssa_method.compare("fem") == 0) ssafactory = SSAFEMFactory;
+    else if(ssa_method.compare("fd") == 0) ssafactory = SSAFDFactory;
+//    else if(ssa_method.compare("fd_pik") == 0) ssafactory = SSAFD_PIKFactory;
+    else SETERRQ(1,"SSA algorithm argument should be one of -ssa_method fe or -ssa_method fem");
+
 
     IceGrid g(com, rank, size, config);
 
@@ -607,8 +620,8 @@ int main(int argc, char *argv[]) {
 
     EnthalpyConverter EC(config);
 
-    // Create the SSA solver object:
-    SSAFD ssa(g, basal, ice, EC, config);
+    // Create the SSA solver object; we'll need to deallocate it later.
+    SSA *ssa = ssafactory(g, basal, ice, EC, config);
     //SSAFD_PIK ssa(g, basal, ice, EC, config); //testing SSA Neumann boundary condition at ice front
 
     const PetscReal
@@ -620,11 +633,11 @@ int main(int argc, char *argv[]) {
     // COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
     //          30 MPa yr for \bar\nu
 
-    ssa.strength_extension->set_min_thickness(DEFAULT_MIN_THICKNESS);
-    ssa.strength_extension->set_notional_strength(DEFAULT_nuH);
+    ssa->strength_extension->set_min_thickness(DEFAULT_MIN_THICKNESS);
+    ssa->strength_extension->set_notional_strength(DEFAULT_nuH);
     ice.setHardness(DEFAULT_CONSTANT_HARDNESS_FOR_SSA);
 
-    ierr = ssa.init(vars); CHKERRQ(ierr);
+    ierr = ssa->init(vars); CHKERRQ(ierr);
 
     IceModelVec2Mask *bc_mask;
     IceModelVec2V *bc_vel;
@@ -634,26 +647,28 @@ int main(int argc, char *argv[]) {
     bc_vel = dynamic_cast<IceModelVec2V*>(vars.get("velbar"));
     if (bc_vel == NULL) SETERRQ(1, "velbar is not available");
 
-    ierr = ssa.set_boundary_conditions(*bc_mask, *bc_vel); CHKERRQ(ierr);
+    ierr = ssa->set_boundary_conditions(*bc_mask, *bc_vel); CHKERRQ(ierr);
 
     ierr = verbPrintf(2,com,"* Solving the SSA stress balance ...\n"); CHKERRQ(ierr);
 
-    ierr = ssa.update(false); CHKERRQ(ierr);
+    ierr = ssa->update(false); CHKERRQ(ierr);
 
     string ssa_stdout;
-    ierr = ssa.stdout_report(ssa_stdout); CHKERRQ(ierr);
+    ierr = ssa->stdout_report(ssa_stdout); CHKERRQ(ierr);
     ierr = verbPrintf(3,com,ssa_stdout.c_str()); CHKERRQ(ierr);
     
     IceModelVec2V *vel_ssa;
-    ierr = ssa.get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr); 
+    ierr = ssa->get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr); 
 
     ierr = read_riggs_and_compare(g, vars, *vel_ssa); CHKERRQ(ierr);
 
     ierr = compute_errors(g, vars, *vel_ssa); CHKERRQ(ierr); 
 
-    ierr = write_results(ssa, g, vars); CHKERRQ(ierr); 
+    ierr = write_results(*ssa, g, vars); CHKERRQ(ierr); 
     
     ierr = deallocate_vars(vars); CHKERRQ(ierr); 
+
+    delete ssa;
   }
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;

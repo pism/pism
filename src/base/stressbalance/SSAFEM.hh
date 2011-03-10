@@ -78,6 +78,9 @@ PetscErrorCode SSAFEFunction(DALocalInfo *, const PISMVector2 **,
                                                       PISMVector2 **, SSAFEM_SNESCallbackData *);
 PetscErrorCode SSAFEJacobian(DALocalInfo *, const PISMVector2 **, Mat, SSAFEM_SNESCallbackData *);
 
+//! Factory function for constructing a new SSAFEM.
+SSA * SSAFEMFactory(IceGrid &, IceBasalResistancePlasticLaw &, 
+                  IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
 
 //! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!
@@ -111,8 +114,8 @@ protected:
                                              const PISMVector2 *,const PetscReal[],
                                              PetscReal *,PetscReal *,PetscReal *,PetscReal *);
 
-  virtual void FixDirichletValues(PetscReal lmask[],PISMVector2 **BC_vel,
-                                  PISMVector2 x[], FEDOFMap &dofmap);
+  void FixDirichletValues(PetscReal local_treatment_mask[], PetscReal local_bc_mask[],PISMVector2 **BC_vel,
+                          PISMVector2 x[], FEDOFMap &my_dofmap);
 
   virtual PetscErrorCode allocate_fem();
 

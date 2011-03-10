@@ -20,6 +20,13 @@
 #include "FETools.hh"
 
 
+SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b, 
+                IceFlowLaw &i, EnthalpyConverter &ec, 
+                const NCConfigVariable &c)
+{
+  return new SSAFEM(g,b,i,ec,c);
+}
+
 //! \brief Allocating SSAFEM-specific objects; called by the constructor.
 PetscErrorCode SSAFEM::allocate_fem() {
   PetscErrorCode ierr;
@@ -297,8 +304,8 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
     *nuH  *= feS->H;
     if (dNuH) *dNuH *= feS->H;
   }
-  *nuH  *=  2; // / ref.IntegratedViscosity();
-  if (dNuH) *dNuH *= 2; // * ref.StrainRate2() / ref.IntegratedViscosity(); // The derivative with respect to second invariant
+  *nuH  *=  2;
+  if (dNuH) *dNuH *= 2;
   
   if (Floating(ice,ocean_rho,feS->H,feS->b)) {
     // The ice is floating here so there is no friction. Note that the purpose
@@ -308,37 +315,39 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
     // resolution requirements near the grounding line.
     *beta = 0;
     if (dbeta) *dbeta = 0;
-    // SETERRQ(1,"Not tested yet");
   } else {
     basal.dragWithDerivative(feS->tauc,u->u,u->v,beta,dbeta);
   }
-  // *beta /= ref.Drag();
-  // if (dbeta) *dbeta *= ref.Velocity2() / ref.Drag();
  
   return 0;
 }
 
 //! \brief Sets Dirichlet boundary conditions. Called from SSAFEFunction and
 //! SSAFEJacobian.
-/*! The values of \a lmask determines if a Dirichlet condition has been set at
-a given vertex. If for some vertexlmask indicates that it is a 
-Dirichlet node, the values of x for that node is set from the Dirichlet
-data BC_vel, and the row and column in the \a dofmap are set as invalid.
+/*! The values of \a local_treatment_mask determine if a Dirichlet condition
+has been set at a given vertex, and \a local_bc_mask determines if that
+data has been set explicitly.  If for some vertex \a local_bc_mask indicates that it 
+is an explicit Dirichlet node, the values of x for that node is set from the Dirichlet
+data BC_vel. In all Dirichlet cases, the row and column in the \a dofmap are set as invalid.
 This last step ensures that the residual and Jacobian entries 
 corresponding to a Dirichlet unknown are not set in the main loops of
 SSAFEM::compute_local_function and SSSAFEM:compute_local_jacobian.
 */
-void SSAFEM::FixDirichletValues(PetscReal lmask[],PISMVector2 **BC_vel,
+void SSAFEM::FixDirichletValues(PetscReal local_treatment_mask[], PetscReal local_bc_mask[],PISMVector2 **BC_vel,
                                 PISMVector2 x[], FEDOFMap &my_dofmap)
 {
   for (PetscInt k=0; k<4; k++) {
-    if (PismIntMask(lmask[k]) == MASK_SHEET) {
-      PetscInt ii, jj;
-      my_dofmap.localToGlobal(k,&ii,&jj);
-      x[k].u = BC_vel[ii][jj].u;
-      x[k].v = BC_vel[ii][jj].v;
+    if( PismIntMask(local_treatment_mask[k]) == MASK_SHEET)  // Dirichlet node
+    {
+      if (PismIntMask(local_bc_mask[k]) == MASK_SHEET) { // Explicit Dirichlet node; set the explicit values
+        PetscInt ii, jj;
+        my_dofmap.localToGlobal(k,&ii,&jj);
+        x[k].u = BC_vel[ii][jj].u;
+        x[k].v = BC_vel[ii][jj].v;
+      }
+      // Mark any kind of Dirichlet node as not to be touched
       my_dofmap.markRowInvalid(k);
-      my_dofmap.markColInvalid(k);
+      my_dofmap.markColInvalid(k);      
     }
   }
 }
@@ -349,7 +358,7 @@ is the current approximate solution, and the \f$\psi_{ij}\f$ are test functions.
 PetscErrorCode SSAFEM::compute_local_function(DALocalInfo * /*info*/, const PISMVector2 **xg, PISMVector2 **yg)
 {
   PetscInt         i,j,k,q;
-  PetscReal        **bc_mask;
+  PetscReal        **bc_mask, **ice_treatment_mask;
   PISMVector2        **BC_vel;
   PetscErrorCode   ierr;
 
@@ -360,6 +369,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo * /*info*/, const PISM
     }
   }
   
+  ierr = mask->get_array(ice_treatment_mask); CHKERRQ(ierr);
   // Start access of Dirichlet data, if present.
   if (bc_locations && vel_bc) {
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
@@ -377,6 +387,14 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo * /*info*/, const PISM
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = quadrature.testFunctionValues();
 
+  // Flags for each vertex in an element that determine if explicit Dirichlet data has
+  // been set.
+  PetscReal local_bc_mask[FEQuadrature::Nk];
+  for(k=0;k<FEQuadrature::Nk;k++)
+  {
+    local_bc_mask[k] = MASK_DRAGGING_SHEET; // Default to no Dirichlet data
+  }
+
   // Iterate over the elements.
   PetscInt xs = element_index.xs, xm = element_index.xm,
            ys = element_index.ys, ym = element_index.ym;
@@ -387,25 +405,28 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo * /*info*/, const PISM
       // Index into coefficient storage in feStore
       const PetscInt ij = element_index.flatten(i,j);
 
-      
       // Initialize the map from global to local degrees of freedom for this element.
-      dofmap.extractLocalDOFs(i,j,xg,x);
-      // printf("(%d,%d) x=[%g,%g,%g,%g]\n",i,j,x[0].u,x[1].u,x[2].u,x[3].u);
-
-
-      // Obtain the value of the solution at the adjacent nodes to the element.
       dofmap.reset(i,j,grid);
 
+      // Obtain the value of the solution at the adjacent nodes to the element.
+      dofmap.extractLocalDOFs(i,j,xg,x);
 
-      // Adjust these values if needed based on Dirichlet data.
-      // The dofmap is passed to mark it so so that we do not update the Jacobian
-      // for rows or columns corresponding to Dirichlet data in the main loop.
-      if (bc_locations && vel_bc) {
-        PetscReal lmask[4];
-        dofmap.extractLocalDOFs(i,j,bc_mask,lmask);
-        FixDirichletValues(lmask,BC_vel,x,dofmap);
+      // These values now need to be adjusted if some nodes in the element have
+      // Dirichlet data.  There are two types: that explicitly flagged in this->BC_mask
+      // with values found in this->vel_bc, and implicit Dirichlet data from nodes
+      // where this->mask[i,j] == MASK_SHEET.  For implicit Dirichlet data, the
+      // values are exactly those that were passed in the initial guess and no updating
+      // of x is required.  But in both cases, we need to mark that we should not update
+      // the row of the residual for that degree of freedom in the loop below.  The following
+      // code block does all this.
+      PetscReal local_treatment_mask[4];
+      dofmap.extractLocalDOFs(i,j,ice_treatment_mask,local_treatment_mask);
+      // If there is explicit dirichlet data, extract the flags.  If none is present, the
+      // previously set values in local_bc_mask mark all nodes as not Dirichlet.
+      if(bc_locations && vel_bc) {
+        dofmap.extractLocalDOFs(i,j,bc_mask,local_bc_mask);
       }
-      // printf("(%d,%d) x post=[%g,%g,%g,%g]\n",i,j,x[0].u,x[1].u,x[2].u,x[3].u);
+      FixDirichletValues(local_treatment_mask,local_bc_mask,BC_vel,x,dofmap);
 
       // Zero out the element-local residual in prep for updating it.
       for(k=0;k<FEQuadrature::Nk;k++){ 
@@ -415,62 +436,30 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo * /*info*/, const PISM
       // Compute the solution values and symmetric gradient at the quadrature points.
       quadrature.computeTrialFunctionValues(x,u,Du);
 
-      // printf("(%d,%d) u=[%g,%g,%g,%g]\n",i,j,u[0].u,u[1].u,u[2].u,u[3].u);
-      // printf("(%d,%d) v=[%g,%g,%g,%g]\n",i,j,u[0].v,u[1].v,u[2].v,u[3].v);
-      // printf("Element (%d,%d)\n",i,j);
       for (q=0; q<FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.
+
         // Symmetric gradient at the quadrature point.
         PetscScalar *Duq = Du[q];
-        // printf("u %g du/dx=%g du/dy=%g\n",u[q].u,Duq[0],2.*Duq[2]);
+
         // Coefficients and weights for this quadrature point.
         const FEStoreNode *feS = &feStore[ij*4+q];
         const PetscReal    jw  = JxW[q];
         PetscReal nuH, beta;
         ierr = PointwiseNuHAndBeta(feS,u+q,Duq,&nuH,NULL,&beta,NULL);CHKERRQ(ierr);
-        // printf("i %d j %d q %d NuH: %g B %g 2nd inv %g\n",i,j,q,nuH,feS->B,secondInvariantDu(Duq));
 
         // The next few lines compute the actual residual for the element.
         PISMVector2 f;
         f.u = beta*u[q].u + ice.rho*earth_grav*feS->H*feS->hx;
         f.v = beta*u[q].v + ice.rho*earth_grav*feS->H*feS->hy;
 
-        // printf("tauc %g H %g B %g\n",feS->tauc,feS->H,feS->B);
-        // printf("nuH %g beta %g\n",nuH,beta);
-        // printf("f: [%g,%g] %g %g\n",f.u,f.v,beta*u[q].u,ice.rho*earth_grav*feS->H*feS->hx);
-
-        // printf("beta terms (%d,%d,%d) tauc=%g beta=%g %g (%g) %g (%g)\n",i,j,q,feS->tauc,beta,beta*u[q].u,u[q].u,beta*u[q].v,u[q].v);
-        // printf("f: %g %g\n",f.u,f.v);
         for(k=0; k<4;k++) {  // loop over the test functions.
           const FEFunctionGerm &testqk = test[q][k];
-          // printf("adding a1 parts:\njw %g nuh %g\ntval %g, tdx %g tdy %g\nDu %g %g %g\n",jw,nuH,testqk.val,testqk.dx,testqk.dy,Duq[0],Duq[1],Duq[2]);
-          // printf("a1 %g %g\n",jw*(nuH*(testqk.dx*(2*Duq[0]+Duq[1]) + testqk.dy*Duq[2]) + testqk.val*f.u),jw*testqk.val*f.u);
-          // printf("a2 %g %g\n", jw*(nuH*(testqk.dy*(2*Duq[1]+Duq[0]) + testqk.dx*Duq[2]) + testqk.val*f.v),jw*testqk.val*f.v);
           y[k].u += jw*(nuH*(testqk.dx*(2*Duq[0]+Duq[1]) + testqk.dy*Duq[2]) + testqk.val*f.u);
           y[k].v += jw*(nuH*(testqk.dy*(2*Duq[1]+Duq[0]) + testqk.dx*Duq[2]) + testqk.val*f.v);
         }
-        // printf("y(inter): [ %g %g %g %g]\n",y[0].u,y[1].u,y[2].u,y[3].u);
-        // for(k=0; k<4;k++)
-        // {
-        //   printf("[%g %g]\n",y[k].u,y[k].v);
-        // }
-        // printf("]\n");
-        
       } // q
-      // printf("y: [");
-      // for(k=0; k<4;k++)
-      // {
-      //   printf("[%g %g]\n",y[k].u,y[k].v);
-      // }
-      // printf("]\n");
+
       dofmap.addLocalResidualBlock(y,yg);
-      // for (int ii=grid.xs; ii<grid.xs+grid.xm; ii++) {
-      //   for (int jj=grid.ys; jj<grid.ys+grid.ym; jj++) {
-      //     ierr = PetscSynchronizedPrintf(grid.com,
-      //                                    "[%2d,%2d] f=(%12.4e,%12.4e)\n",
-      //                                    ii,jj,yg[ii][jj].u,yg[ii][jj].v);CHKERRQ(ierr);
-      //   }
-      // }
-      
     } // j-loop
   } // i-loop
 
@@ -480,10 +469,22 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo * /*info*/, const PISM
     // Enforce Dirichlet conditions strongly
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (bc_locations->value(i,j) == MASK_SHEET) {
-          // Enforce zero sliding strongly
-          yg[i][j].u = dirichletScale * (xg[i][j].u - BC_vel[i][j].u);
-          yg[i][j].v = dirichletScale * (xg[i][j].v - BC_vel[i][j].v);
+        if(mask->value(i,j) == MASK_SHEET) {
+          if (bc_locations->value(i,j) == MASK_SHEET) {
+            // Enforce explicit dirichlet data.
+            yg[i][j].u = dirichletScale * (xg[i][j].u - BC_vel[i][j].u);
+            yg[i][j].v = dirichletScale * (xg[i][j].v - BC_vel[i][j].v);
+          } else {
+            // The following is perhaps unhappy.  If a node is set to MASK_SHEET, but no explicit
+            // Dirichlet data have been given, then the effective Dirichlet data is the initial guess.
+            // To implement this properly, we would have to store the initial guess so as to mimic a computation
+            // as above.  To avoid this, we'll go ahead and assume that the initial guess is correctly preserved throughout the
+            // nonlinear iterations and hence the residual really is zero.  But this means that we are telling a lie
+            // later on in the Jacobian, since it should actually have zero rows for any data where we always set the
+            // residual equal to zero.  This would show up as a discrepancy if you compute a finite difference approximation 
+            // of the Jacobian, for example. 
+            yg[i][j].u = yg[i][j].v = 0;
+          }
         }
       }
     }
@@ -513,7 +514,7 @@ where \f$G\f$ is the weak form of the SSA, \f$x\f$ is the current approximate so
 the \f$\psi_{ij}\f$ are test functions. */
 PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo * /*info*/, const PISMVector2 **xg, Mat Jac )
 {
-  PetscReal      **bc_mask;
+  PetscReal      **bc_mask, **ice_treatment_mask;
   PISMVector2    **BC_vel;
   PetscInt         i,j;
   PetscErrorCode   ierr;
@@ -527,6 +528,8 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo * /*info*/, const PISM
     ierr = vel_bc->get_array(BC_vel); CHKERRQ(ierr); 
   }
 
+  ierr = mask->get_array(ice_treatment_mask); CHKERRQ(ierr);
+
   // Jacobian times weights for quadrature.
   PetscScalar JxW[FEQuadrature::Nq];
   quadrature.getWeightedJacobian(JxW);
@@ -538,6 +541,14 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo * /*info*/, const PISM
   // Values of the finite element test functions at the quadrature points.
   // This is an Nq by Nk array of function germs (Nq=#of quad pts, Nk=#of test functions).
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = quadrature.testFunctionValues();
+
+  // Flags for each vertex in an element that determine if explicit Dirichlet data has
+  // been set.
+  PetscReal local_bc_mask[FEQuadrature::Nk];
+  for(int k=0;k<FEQuadrature::Nk;k++)
+  {
+    local_bc_mask[k] = MASK_DRAGGING_SHEET; // Default to no Dirichlet data
+  }
 
   // Loop through all the elements.
   PetscInt xs = element_index.xs, xm = element_index.xm,
@@ -561,14 +572,22 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo * /*info*/, const PISM
       // Obtain the value of the solution at the adjacent nodes to the element.
       dofmap.extractLocalDOFs(i,j,xg,x);
 
-      // Adjust these values if needed based on Dirichlet data.
-      // The dofmap is passed to mark it so so that we do not update the Jacobian
-      // for rows or columns corresponding to Dirichlet data in the main loop.
-      if (bc_locations && vel_bc) {
-        PetscReal lmask[4];
-        dofmap.extractLocalDOFs(i,j,bc_mask,lmask);
-        FixDirichletValues(lmask,BC_vel,x,dofmap);
+      // These values now need to be adjusted if some nodes in the element have
+      // Dirichlet data.  There are two types: that explicitly flagged in this->BC_mask
+      // with values found in this->vel_bc, and implicit Dirichlet data from nodes
+      // where this->mask[i,j] == MASK_SHEET.  For implicit Dirichlet data, the
+      // values are exactly those that were passed in the initial guess and no updating
+      // of x is required.  But in both cases, we need to mark that we should not update
+      // the row of the residual for that degree of freedom in the loop below.  The following
+      // code block does all this.
+      PetscReal local_treatment_mask[4];
+      dofmap.extractLocalDOFs(i,j,ice_treatment_mask,local_treatment_mask);
+      // If there is explicit dirichlet data, extract the flags.  If none is present, the
+      // previously set values in local_bc_mask mark all nodes as not Dirichlet.
+      if(bc_locations && vel_bc) {
+        dofmap.extractLocalDOFs(i,j,bc_mask,local_bc_mask);
       }
+      FixDirichletValues(local_treatment_mask,local_bc_mask,BC_vel,x,dofmap);
 
       // Compute the values of the solution at the quadrature points.
       quadrature.computeTrialFunctionValues(x,w,Dw);
@@ -586,7 +605,6 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo * /*info*/, const PISM
         const PetscReal    jw  = JxW[q];
         PetscReal nuH,dNuH,beta,dbeta;
         ierr = PointwiseNuHAndBeta(feS,&wq,Dwq,&nuH,&dNuH,&beta,&dbeta);CHKERRQ(ierr);
-        // printf("%d %d %d nu %g dnu %g beta %g dbeta %g\n",i,j,q,nuH,dNuH,beta,dbeta);
 
         for (PetscInt k=0; k<4; k++) {   // Test functions
           for (PetscInt l=0; l<4; l++) { // Trial functions
@@ -615,23 +633,10 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo * /*info*/, const PISM
             K[k*16+8+l*2]   += jw*(dbeta*bvy*bux + nuH*(0.5*dxt*dy + dyt*dx) + dNuH*cvy*cux);
             // v-v coupling
             K[k*16+8+l*2+1] += jw*(beta*ht*h + dbeta*bvy*buy + nuH*(2*dyt*dy + dxt*0.5*dx) + dNuH*cvy*cuy);
-            // printf("%d %d %d %d %d add KBlock %g %g %g %g\n",i,j,q,k,l,jw*(beta*ht*h + dbeta*bvx*bux + nuH*(2*dxt*dx + dyt*0.5*dy) + dNuH*cvx*cux),
-            //  jw*(dbeta*bvx*buy + nuH*(0.5*dyt*dx + dxt*dy) + dNuH*cvx*cuy),jw*(dbeta*bvy*bux + nuH*(0.5*dxt*dy + dyt*dx) + dNuH*cvy*cux),
-            //  jw*(beta*ht*h + dbeta*bvy*buy + nuH*(2*dyt*dy + dxt*0.5*dx) + dNuH*cvy*cuy));
-
           } // l
         } // k
       } // q
       ierr = dofmap.addLocalJacobianBlock(K,Jac);
-      // printf("K=[");
-      // for(int kk = 0; kk< 8; kk++){
-      //   printf("[ ");
-      //   for(int ll=0;ll<8;ll++){
-      //     printf("%g ",K[kk*8+ll]);
-      //   }
-      //   printf("]\n");
-      // }
-      // printf("]");      
     } // j
   } // i
   
@@ -642,7 +647,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo * /*info*/, const PISM
   if (bc_locations && vel_bc) {
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (bc_locations->value(i,j) == MASK_SHEET) {
+        if (mask->value(i,j) == MASK_SHEET) {
           const PetscReal ident[4] = {dirichletScale,0,0,dirichletScale};
           MatStencil row;
           // FIXME: Transpose shows up here!

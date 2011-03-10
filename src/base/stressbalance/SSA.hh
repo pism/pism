@@ -88,6 +88,17 @@ private:
   PetscReal  min_thickness, constant_nu;
 };
 
+//! Callback for constructing a new SSA subclass.  The caller is
+//! responsible for deleting the newly constructed SSA.
+/*! The factory idiom gives a way to implement runtime polymorphism for the 
+choice of SSA algorithm.  The factory is a function pointer that takes 
+all the arguments of an SSA constructor and returns a newly constructed instance.
+Subclasses of SSA should provide an associated function pointer matching the
+SSAFactory typedef */
+class SSA;
+typedef SSA * (*SSAFactory)(IceGrid &, IceBasalResistancePlasticLaw &, 
+              IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
+
 
 //! PISM's SSA solver
 class SSA : public ShallowStressBalance
