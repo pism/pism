@@ -84,6 +84,14 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   ierr =    vuplift.regrid(filename,  
                            config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
 
+
+
+  if (config.get_flag("part_grid") == true) {
+   	ierr =    vHav.regrid(filename, 0.0); CHKERRQ(ierr);
+	ierr =    vHref.regrid(filename, 0.0); CHKERRQ(ierr);
+  }
+
+
   bool Lz_set;
   ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
   if ( !Lz_set ) {
@@ -171,7 +179,9 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
       if (vH(i,j) < 0.001) {  // if no ice
         if (vbed(i,j) < 0.0) {
           vh(i,j) = 0.0;
-          vMask(i,j) = do_ocean_kill ? MASK_OCEAN_AT_TIME_0 : MASK_FLOATING;
+          //vMask(i,j) = do_ocean_kill ? MASK_OCEAN_AT_TIME_0 : MASK_FLOATING;
+		  vMask(i,j) = do_ocean_kill ? MASK_OCEAN_AT_TIME_0 : MASK_ICE_FREE_OCEAN; // for clarity changed
+
         } else {
           vh(i,j) = vbed(i,j);
           vMask(i,j) = MASK_SHEET;

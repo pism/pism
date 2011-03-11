@@ -35,6 +35,12 @@ netcdf pism_config {
     pism_config:do_superpose = "yes";
     pism_config:do_superpose_doc = "Combine the velocity ﬁelds from the SIA and SSA models as in [\\ref BBssasliding]. Only effective if used with -ssa_sliding.";
 
+    pism_config:part_grid = "no";
+    pism_config:part_grid_doc = "apply partially filled grid cell scheme";
+
+    pism_config:part_redist = "no";
+    pism_config:part_redist_doc = "for partially filled grid cell scheme, redistribute residuals Hcut";
+
     pism_config:thermal_bedrock = "yes";
     pism_config:thermal_bedrock_doc = "Use the bedrock thermal model";
 

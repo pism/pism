@@ -89,6 +89,10 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.scalar_from_option("e", "enhancement_factor"); CHKERRQ(ierr);
 
+  ierr = config.flag_from_option("part_grid", "part_grid"); CHKERRQ(ierr);
+
+ ierr = config.flag_from_option("part_redist", "part_redist"); CHKERRQ(ierr);
+
   bool gradient_set;
   string keyword;
   set<string> choices;
@@ -276,6 +280,10 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.scalar_from_option("thk_eff_H_low","thk_eff_H_low");  CHKERRQ(ierr);
   // pure number :
   ierr = config.scalar_from_option("thk_eff_reduced","thk_eff_reduced");  CHKERRQ(ierr);
+
+
+  //  if set, using massContExlicitStepPartGrids instead of default one
+  //ierr = config.flag_from_option("part_grid", "part_grid"); CHKERRQ(ierr);
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 

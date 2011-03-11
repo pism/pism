@@ -152,12 +152,18 @@ protected:
         vuplift,	//!< bed uplift rate; ghosted to simplify the code computing it
         vGhf,		//!< geothermal flux; no ghosts
         vtillphi,	//!< friction angle for till under grounded ice sheet; no ghosts
+
+		vHav,		//!< average over the ice thickness of existing ice neighbors
+		vHref,		//!< accumulated mass advected to a partially filled grid cell
+
     acab,		//!< accumulation/ablation rate; no ghosts
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
     liqfrac_surface,    //!< ice liquid water fraction at the top surface of the ice
     shelfbtemp,		//!< ice temperature at the shelf base; no ghosts
     shelfbmassflux,	//!< ice mass flux into the ocean at the shelf base; no ghosts
-    cell_area;		//!< cell areas (computed using the WGS84 datum)
+	cell_area;		//!< cell areas (computed using the WGS84 datum)
+
+	
  
   IceModelVec2Mask vMask; //!< mask for flow type with values SHEET, DRAGGING, FLOATING
 
@@ -263,6 +269,7 @@ protected:
   virtual PetscErrorCode update_mask();
   virtual PetscErrorCode update_surface_elevation();
   virtual PetscErrorCode massContExplicitStep();
+  virtual PetscErrorCode massContExplicitStepPartGrids();
 
   // see iMIO.cc
   virtual PetscErrorCode set_time_from_options();

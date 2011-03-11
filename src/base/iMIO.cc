@@ -355,6 +355,7 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
   }
 
 
+
   if (config.get_flag("do_age")) {
     bool age_exists;
     ierr = nc.find_variable("age", NULL, age_exists); CHKERRQ(ierr);
