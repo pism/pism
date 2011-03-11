@@ -24,6 +24,7 @@
 #include "PISMIO.hh"
 #include "SIAFD.hh"
 #include "SSAFD.hh"
+#include "SSAFEM.hh"
 
 //! Set default values of grid parameters.
 /*!
@@ -578,7 +579,14 @@ PetscErrorCode IceModel::init_physics() {
     }
 
     if (use_ssa_velocity) {
-      my_stress_balance = new SSAFD(grid, *basal, *ice, *EC, config);
+      string ssa_method = config.get_string("ssa_method");
+      if( ssa_method.compare("fd") == 0 ) {
+        my_stress_balance = new SSAFD(grid, *basal, *ice, *EC, config);
+      } else if(ssa_method.compare("fem") == 0) {
+        my_stress_balance = new SSAFEM(grid, *basal, *ice, *EC, config);
+      } else{
+        SETERRQ(1,"SSA algorithm flag should be one of -ssa_method fe or -ssa_method fem");
+      }
     } else {
       my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
     }

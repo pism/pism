@@ -143,7 +143,7 @@ protected:
         vh,		//!< ice surface elevation; ghosted
         vH,		//!< ice thickness; ghosted
         vdHdt,		//!< \f$ \frac{dH}{dt} \f$; ghosted to simplify the code computing it
-        vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model); no ghosts
+        vtauc,		//!< yield stress for basal till (plastic or pseudo-plastic model); ghosted
         vHmelt,		//!< thickness of the basal meltwater; ghosted (because of the diffusion)
         vbmr,	    //!< rate of production of basal meltwater (ice-equivalent); no ghosts
         vLongitude,	//!< Longitude; ghosted to compute cell areas

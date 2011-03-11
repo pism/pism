@@ -223,6 +223,24 @@ PetscErrorCode  IceModel::setFromOptions() {
     config.set_flag("use_ssa_when_grounded", false);
   }
 
+  // Decide on the algorithm for solving the SSA
+  set<string> ssa_choices;
+  ssa_choices.insert("fem");
+  ssa_choices.insert("fd");
+  // ssa_choices.insert("fd_pik");
+  string ssa_method;
+  bool ssa_method_set;
+  ierr = PISMOptionsList(grid.com, "-ssa_method", "Algorithm for computing the SSA solution",
+                         ssa_choices, ssa_method, ssa_method, ssa_method_set); CHKERRQ(ierr);
+  if (ssa_method_set) {
+    config.set_string("ssa_method",ssa_method);
+  } else {
+    // FIXME (DAM 3/10/11) This is probably the wrong thing to do.
+    if(!config.has("ssa_method")) config.set_string("ssa_method","fd");
+  }
+
+
+
   // check -ssa_sliding
   ierr = PISMOptionsIsSet("-ssa_sliding", flag);  CHKERRQ(ierr);
   if (flag) {

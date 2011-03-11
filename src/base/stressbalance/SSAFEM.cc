@@ -257,7 +257,7 @@ PetscErrorCode SSAFEM::setup()
         Enth_q[0][k] = Enth_q[1][k] = Enth_q[2][k] = Enth_q[3][k] = 0;
         for (q=0; q<FEQuadrature::Nq; q++) {
           for (p=0; p<FEQuadrature::Nk; p++) {
-            Enth_q[q][k] += test[q][k].val * Enth_e[p][k];
+            Enth_q[q][k] += test[q][p].val * Enth_e[p][k];
           }
         }
       }
@@ -267,6 +267,11 @@ PetscErrorCode SSAFEM::setup()
         // Evaluate column integrals in flow law at every quadrature point's column
         feS[q].B = ice.averagedHardness_from_enth(feS[q].H, grid.kBelowHeight(feS[q].H),
                                                   grid.zlevels, Enth_q[q]);
+        if(isinf( feS[q].B ) )
+        {
+          SETERRQ(1,"hardness made a NaN!");
+        }
+
       }
     }
   }
