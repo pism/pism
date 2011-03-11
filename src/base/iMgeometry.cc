@@ -64,52 +64,63 @@ PetscErrorCode IceModel::update_mask() {
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
 
-     	const PetscScalar hgrounded = vbed(i,j) + vH(i,j), // FIXME task #7297
-		hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * vH(i,j);
+      const PetscScalar hgrounded = vbed(i,j) + vH(i,j), // FIXME task #7297
+        hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * vH(i,j);
 
-      	// points marked as "ocean at time zero" are not updated
-      	if (vMask.value(i,j) == MASK_OCEAN_AT_TIME_0)
-			continue;
+      // note that is_floating(i,j) == (! is_grounded(i,j))
+      bool was_grounded = vMask.is_grounded(i,j),
+        was_floating = vMask.is_floating(i,j),
+        is_grounded = hgrounded > hfloating + 1.0,
+        is_floating = ! is_grounded,
+        ice_free = vH(i,j) == 0.0;
+
+      // points marked as "ocean at time zero" are not updated
+      if (vMask.value(i,j) == MASK_OCEAN_AT_TIME_0)
+        continue;
+
+      if (was_floating) {
+
+        if (is_floating) {
+          if (ice_free) {
+            vMask(i,j) = MASK_ICE_FREE_OCEAN;
+            // added just for clarity, needs to be tested for interference in run
+          } else {					
+            vMask(i,j) = MASK_FLOATING; // to enable for floating front propagation
+          }
+        }
+
+        if (is_grounded) {
+
+          if (use_ssa_velocity && use_ssa_when_grounded)
+            vMask(i,j) = MASK_DRAGGING_SHEET;
+          else
+            vMask(i,j) = MASK_SHEET; // for historical reasons
+
+        }
 
 
-      	if (vMask.is_floating(i,j)) { // floating
+        continue;
+      } // end of "was floating"
 
-			if (hgrounded > hfloating+1.0) { // flotation criterion says it is grounded
-	  			if (use_ssa_velocity) {
-	    			if (use_ssa_when_grounded) {
-	      				vMask(i,j) = MASK_DRAGGING_SHEET;
-	    			} else {
-	      				vMask(i,j) = MASK_SHEET;
-	    			}
-	  			} else {
-	    			// we do not have any ice handled by SSA, so it must be SHEET
-	    			vMask(i,j) = MASK_SHEET; //for historical reasons
-	  			}
-			} else { //floating
-				if (vH(i,j)==0.0) {
-					vMask(i,j) = MASK_ICE_FREE_OCEAN; //just for calrity added, needs to be tested for interference in run
-				} else {					
-					//ierr = verbPrintf(3,grid.com, "icefree grid cell becomes flaoting at %d,%d\n",i,j); CHKERRQ(ierr);
-					vMask(i,j) = MASK_FLOATING; //to enable for flaoting front propagation
-				}
-			}
+      if (was_grounded) {
 
-      	} else {   // grounded
-			// apply the flotation criterion:
-			if (hgrounded > hfloating-1.0) { // flotation criterion says it is grounded
+        if (is_grounded) {
 
-	  			// we are using SSA-as-a-sliding-law, so grounded points become DRAGGING
-	  			if (use_ssa_velocity && use_ssa_when_grounded)
-	    				vMask(i,j) = MASK_DRAGGING_SHEET;
+          // we are using SSA-as-a-sliding-law, so grounded points become DRAGGING
+          if (use_ssa_velocity && use_ssa_when_grounded)
+            vMask(i,j) = MASK_DRAGGING_SHEET;
 
-			} else {
-				if (vH(i,j)==0.0) {
-	  				vMask(i,j) = MASK_FLOATING;
-				} else {
-					vMask(i,j) = MASK_ICE_FREE_OCEAN; //just for clarity added, needs to be tested for interference in run
-				}
-			}
-   		}
+        }
+
+        if (is_floating) {
+          if (ice_free) {
+            vMask(i,j) = MASK_ICE_FREE_OCEAN; // added just for clarity, needs to be tested for interference in run
+          } else {
+            vMask(i,j) = MASK_FLOATING;
+          }
+        }
+
+      } // end of "was grounded"
 
     } // inner for loop (j)
   } // outer for loop (i)
@@ -409,7 +420,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
 PetscErrorCode IceModel::massContExplicitStepPartGrids() {
   PetscErrorCode ierr;
 
- ierr = verbPrintf(3,grid.com, "massContExplicitStepPartGrids is called\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(3,grid.com, "massContExplicitStepPartGrids is called\n"); CHKERRQ(ierr);
 
   PetscScalar my_nonneg_rule_flux = 0, my_ocean_kill_flux = 0, my_float_kill_flux = 0;
 
@@ -459,157 +470,162 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-	 	PetscScalar   	Mo = vMask.value(i,j), //is .value really needed here?
-						Me = vMask.value(i+1,j),
-						Mw = vMask.value(i-1,j),
-						Mn = vMask.value(i,j+1),
-						Ms = vMask.value(i,j-1);
+      // mask values at the current cell and its four immediate neighbors
+      // (east, west, north, south)
+      PismMask Mo = vMask.value(i,j),
+        Me = vMask.value(i+1,j),
+        Mw = vMask.value(i-1,j),
+        Mn = vMask.value(i,j+1),
+        Ms = vMask.value(i,j-1);
 
-		PetscScalar		
-						velE = 0.0,
-		      			velW = 0.0,
-		      			velN = 0.0,
-		      			velS = 0.0;
+      // advective velocities at cell interfaces (sides)
+      PetscScalar		
+        velE = 0.0,
+        velW = 0.0,
+        velN = 0.0,
+        velS = 0.0;
 
-		//just to make sure, that no velocities on the ice free ocean are used
-		//case1: [i][j] in the middle of ice or bedrock: default scheme
-		if (Mo <= MASK_FLOATING && 
-			Me <= MASK_FLOATING &&
-			Mw <= MASK_FLOATING &&
-			Mn <= MASK_FLOATING &&
-			Ms <= MASK_FLOATING) {
+      //just to make sure, that no velocities on the ice free ocean are used
+      //case1: [i][j] in the middle of ice or bedrock: default scheme
+      if (Mo <= MASK_FLOATING && 
+          Me <= MASK_FLOATING &&
+          Mw <= MASK_FLOATING &&
+          Mn <= MASK_FLOATING &&
+          Ms <= MASK_FLOATING) {
 
-      			// compute (i,j)-centered "face" velocity components by average
-          		velE = 0.5 * (vel(i,j).u + vel(i+1,j).u),
-          		velW = 0.5 * (vel(i-1,j).u + vel(i,j).u),
-          		velN = 0.5 * (vel(i,j).v + vel(i,j+1).v),
-          		velS = 0.5 * (vel(i,j-1).v + vel(i,j).v);
+        // compute (i,j)-centered "face" velocity components by average
+        velE = 0.5 * (vel(i,j).u + vel(i+1,j).u);
+        velW = 0.5 * (vel(i-1,j).u + vel(i,j).u);
+        velN = 0.5 * (vel(i,j).v + vel(i,j+1).v);
+        velS = 0.5 * (vel(i,j-1).v + vel(i,j).v);
 
 
-		//case2: [i][j] on floating or grounded ice, but next to a ice-free ocean grid cell
-		} else if (Mo <= MASK_FLOATING && 
-				(Me > MASK_FLOATING ||
-				Mw > MASK_FLOATING ||
-				Mn > MASK_FLOATING ||
-				Ms > MASK_FLOATING)) {
+        //case2: [i][j] on floating or grounded ice, but next to a ice-free ocean grid cell
+      } else if (Mo <= MASK_FLOATING && 
+                 (Me > MASK_FLOATING ||
+                  Mw > MASK_FLOATING ||
+                  Mn > MASK_FLOATING ||
+                  Ms > MASK_FLOATING)) {
 
-      			// velocities on ice-free ocean may not be valid for averaging staggered velocity
-          		velE = (Me > MASK_FLOATING ? vel(i,j).u : 0.5 * (vel(i,j).u + vel(i+1,j).u)),
-          		velW = (Mw > MASK_FLOATING ? vel(i,j).u : 0.5 * (vel(i-1,j).u + vel(i,j).u)),
-          		velN = (Mn > MASK_FLOATING ? vel(i,j).v : 0.5 * (vel(i,j).v + vel(i,j+1).v)),
-          		velS = (Ms > MASK_FLOATING ? vel(i,j).v : 0.5 * (vel(i,j-1).v + vel(i,j).v));
+        // velocities on ice-free ocean may not be valid for averaging staggered velocity
+        velE = (Me > MASK_FLOATING ? vel(i,j).u : 0.5 * (vel(i,j).u + vel(i+1,j).u));
+        velW = (Mw > MASK_FLOATING ? vel(i,j).u : 0.5 * (vel(i-1,j).u + vel(i,j).u));
+        velN = (Mn > MASK_FLOATING ? vel(i,j).v : 0.5 * (vel(i,j).v + vel(i,j+1).v));
+        velS = (Ms > MASK_FLOATING ? vel(i,j).v : 0.5 * (vel(i,j-1).v + vel(i,j).v));
 
-		//case3: [i][j] on ice-free ocean (or partially filled), but next to ice grid cell
-		} else if (Mo > MASK_FLOATING && 
-				(Me <= MASK_FLOATING ||
-				Mw <= MASK_FLOATING ||
-				Mn <= MASK_FLOATING ||
-				Ms <= MASK_FLOATING)) {
+        //case3: [i][j] on ice-free ocean (or partially filled), but next to ice grid cell
+      } else if (Mo > MASK_FLOATING && 
+                 (Me <= MASK_FLOATING ||
+                  Mw <= MASK_FLOATING ||
+                  Mn <= MASK_FLOATING ||
+                  Ms <= MASK_FLOATING)) {
 
-      			// velocities on ice-free ocean may not be valid for averaging staggered velocity
-          		velE = (Me <= MASK_FLOATING ? vel(i+1,j).u : 0.0),
-          		velW = (Mw <= MASK_FLOATING ? vel(i-1,j).u : 0.0),
-          		velN = (Mn <= MASK_FLOATING ? vel(i,j+1).v : 0.0),
-          		velS = (Ms <= MASK_FLOATING ? vel(i,j-1).v : 0.0);
+        // velocities on ice-free ocean may not be valid for averaging staggered velocity
+        velE = (Me <= MASK_FLOATING ? vel(i+1,j).u : 0.0);
+        velW = (Mw <= MASK_FLOATING ? vel(i-1,j).u : 0.0);
+        velN = (Mn <= MASK_FLOATING ? vel(i,j+1).v : 0.0);
+        velS = (Ms <= MASK_FLOATING ? vel(i,j-1).v : 0.0);
 
-		//case4: [i][j] on ice-free ocean, and no ice neighbors, and else
-		} else {		
-				velE = 0.0,
-      			velW = 0.0,
-      			velN = 0.0,
-      			velS = 0.0;
-		}
+        //case4: [i][j] on ice-free ocean, and no ice neighbors, and else
+      } else {		
+        velE = 0.0;
+        velW = 0.0;
+        velN = 0.0;
+        velS = 0.0;
+      }
 	
-		// here divQ is calculated
-		PetscScalar divQ = 0.0;
-		// staggered grid Div(Q) for diffusive non-sliding SIA deformation part:
-        //    Qdiff = - D grad h
-		if (!vMask.is_floating(i,j)) {//check, what water terminating front contribution is?!
-	    	divQ =   ((*Qdiff)(i,j,0) - (*Qdiff)(i-1,j,0)) / dx
-	           		+ ((*Qdiff)(i,j,1) - (*Qdiff)(i,j-1,1)) / dy;
-			//ierr = verbPrintf(3,grid.com, "!!!!! SIA contribution in partially filled grid cell is %e at %d,%d\n",divQ,i,j); CHKERRQ(ierr);
-	    }
-	  	// membrane stress (and/or basal sliding) part: upwind by staggered grid
-      	// PIK method;  this is   \nabla \cdot [(u,v) H]
-		divQ += (  velE * (velE > 0 ? vH(i,j) : vH(i+1,j))
-       			- velW * (velW > 0 ? vH(i-1,j) : vH(i,j)) ) / dx;
-		divQ += (  velN * (velN > 0 ? vH(i,j) : vH(i,j+1))
-       			- velS * (velS > 0 ? vH(i,j-1) : vH(i,j)) ) / dy;
+      // here divQ is calculated
+      PetscScalar divQ = 0.0;
+      // staggered grid Div(Q) for diffusive non-sliding SIA deformation part:
+      //    Qdiff = - D grad h
+      if (vMask.is_grounded(i,j)) {
+        divQ = ((*Qdiff)(i,j,0) - (*Qdiff)(i-1,j,0)) / dx
+          + ((*Qdiff)(i,j,1) - (*Qdiff)(i,j-1,1)) / dy;
+      }
 
-			
-		// here Hnew is updated
-		
-		/*
-	  		if (vMask.value(i,j) != MASK_ICE_FREE_OCEAN) { //ice-free ocean: only advection!
-      			vHnew(i,j) += (acab(i,j) - divQ) * dt; // include M
+      // membrane stress (and/or basal sliding) part: upwind by staggered grid
+      // PIK method;  this is   \nabla \cdot [(u,v) H]
+      divQ += (  velE * (velE > 0 ? vH(i,j) : vH(i+1,j))
+                 - velW * (velW > 0 ? vH(i-1,j) : vH(i,j)) ) / dx;
+      divQ += (  velN * (velN > 0 ? vH(i,j) : vH(i,j+1))
+                 - velS * (velS > 0 ? vH(i,j-1) : vH(i,j)) ) / dy;
 
-      			if (include_bmr_in_continuity) { // include S
-        			if (vMask.is_floating(i,j)) {
-	  					vHnew(i,j) -= shelfbmassflux(i,j) * dt;
-        			} else {
-          				vHnew(i,j) -= bmr_gnded[i][j] * dt;
-        			}
-      			}
-	  		} else {
-				vHnew(i,j) -= divQ * dt; //ice-free ocean: only advection!	
-	  		}
-		*/
-		
-		
-		if (Mo > MASK_FLOATING && 
-			(Me == MASK_FLOATING ||
-			Mw == MASK_FLOATING ||
-			Mn == MASK_FLOATING ||
-			Ms == MASK_FLOATING)) { //does in this form not account for grounded tributaries: thin ice shelves may evolve from grounded tongue
+        // ice-free (or partially-filled) cells adjacent to "full" floating cells
+      if ((Mo > MASK_FLOATING) &&
+          (Me == MASK_FLOATING ||
+           Mw == MASK_FLOATING ||
+           Mn == MASK_FLOATING ||
+           Ms == MASK_FLOATING)) { //does in this form not account for grounded tributaries: thin ice shelves may evolve from grounded tongue
 
-		     PetscInt countIceNeighbors=0; // counting existing ice neighbors
-			 PetscInt exEast=0,exWest=0,exNorth=0,exSsouth=0;
-			 vHav(i,j) = 0.0;
+          PetscInt countIceNeighbors=0; // counting existing ice neighbors
+          PetscInt exEast=0,exWest=0,exNorth=0,exSsouth=0;
+          vHav(i,j) = 0.0;
 			
-			if (Me == MASK_FLOATING) { vHav(i,j)+=vH(i+1,j); countIceNeighbors+=1;exEast+=1;} 
-			if (Mw == MASK_FLOATING) { vHav(i,j)+=vH(i-1,j); countIceNeighbors+=1;exWest+=1;}
-			if (Mn == MASK_FLOATING) { vHav(i,j)+=vH(i,j+1); countIceNeighbors+=1;exNorth+=1;}
-			if (Ms == MASK_FLOATING) { vHav(i,j)+=vH(i,j-1); countIceNeighbors+=1;exSsouth+=1;}
+          if (Me == MASK_FLOATING) { vHav(i,j)+=vH(i+1,j); countIceNeighbors+=1;exEast+=1;} 
+          if (Mw == MASK_FLOATING) { vHav(i,j)+=vH(i-1,j); countIceNeighbors+=1;exWest+=1;}
+          if (Mn == MASK_FLOATING) { vHav(i,j)+=vH(i,j+1); countIceNeighbors+=1;exNorth+=1;}
+          if (Ms == MASK_FLOATING) { vHav(i,j)+=vH(i,j-1); countIceNeighbors+=1;exSsouth+=1;}
 			
-			if (countIceNeighbors>0){ 
-			  vHav(i,j)=vHav(i,j)/countIceNeighbors;
-			  //if (part_redist) {	
-			  //	const PetscReal  mslope = 2.4511e-18*grid.dx/(300*600/secpera);
-			  //    for declining front C/Q0 according to analytical flowline profile in vandeveen with v0=300m/yr and H0=600m	    
-			  //    vHav(i,j)-=0.8*mslope*pow(vHav(i,j),5); //reduces the guess at the front
-			  //}
-			} else {
-			  ierr = verbPrintf(1, grid.com,"PISMPIK_ERROR: countIceNeighbors=0\n"); CHKERRQ(ierr);}
+          if (countIceNeighbors>0){ 
+            vHav(i,j)=vHav(i,j)/countIceNeighbors;
+            //if (part_redist) {	
+            //	const PetscReal  mslope = 2.4511e-18*grid.dx/(300*600/secpera);
+            //    for declining front C/Q0 according to analytical flowline profile in vandeveen with v0=300m/yr and H0=600m	    
+            //    vHav(i,j)-=0.8*mslope*pow(vHav(i,j),5); //reduces the guess at the front
+            //}
+          } else {
+            ierr = verbPrintf(1, grid.com,"PISMPIK_ERROR: countIceNeighbors=0\n"); CHKERRQ(ierr);}
 			
-			vHref(i,j)  -= divQ * dt;	
-			//if (vbed(i,j)<(currentSeaLevel-(ice_rho/ocean_rho) * vHav(i,j))) { //partially filled cells scheme only when floating
-			vHnew(i,j) = 0.0;
+          vHref(i,j)  -= divQ * dt;	
+          //if (vbed(i,j)<(currentSeaLevel-(ice_rho/ocean_rho) * vHav(i,j))) { //partially filled cells scheme only when floating
+          vHnew(i,j) = 0.0;
 
-			// applying M and S also to partially filled cells	
-			// to calculate the S-M contribution with respect to the final coverage ratio		
-			PetscScalar MSroot = 0.25 * PetscSqr(vHref(i,j)) + dt * vHav(i,j) * (acab(i,j) - (include_bmr_in_continuity ? shelfbmassflux(i,j) : 0.0));
-			vHref(i,j) = 0.5 * vHref(i,j) + sqrt(MSroot);
+          // applying M and S also to partially filled cells	
+          // to calculate the S-M contribution with respect to the final coverage ratio		
+          PetscScalar MSroot = 0.25 * PetscSqr(vHref(i,j)) + 
+            dt * vHav(i,j) * (acab(i,j) - (include_bmr_in_continuity ? shelfbmassflux(i,j) : 0.0));
+          vHref(i,j) = 0.5 * vHref(i,j) + sqrt(MSroot);
 			
-			PetscScalar coverageRatio = vHref(i,j)/vHav(i,j);
+          PetscScalar coverageRatio = vHref(i,j)/vHav(i,j);
 
-			PetscScalar Hcut = 0.0;
+          PetscScalar Hcut = 0.0;
 			
-			if (coverageRatio>1.0) { // partially filled grid cell is considered to be full
-				Hcut=vHref(i,j)-vHav(i,j);
-				vHnew(i,j) = vHav(i,j) + acab(i,j) * dt; // include M
+          if (coverageRatio>1.0) { // partially filled grid cell is considered to be full
+            Hcut=vHref(i,j)-vHav(i,j);
+            vHnew(i,j) = vHav(i,j) + acab(i,j) * dt; // include M
 			
-				if (include_bmr_in_continuity) { // include S
-    				if (vMask.is_floating(i,j)) {
-  						vHnew(i,j) -= shelfbmassflux(i,j) * dt;
-    				} else {
-      					vHnew(i,j) -= bmr_gnded[i][j] * dt;
-    				}
-				}
-				vHref(i,j)=0.0;
-				vHav(i,j)=0.0;
- 			}
-		}
-		
+            if (include_bmr_in_continuity) { // include S
+              if (vMask.is_floating(i,j)) {
+                vHnew(i,j) -= shelfbmassflux(i,j) * dt;
+              } else {
+                vHnew(i,j) -= bmr_gnded[i][j] * dt;
+              }
+            }
+            vHref(i,j)=0.0;
+            vHav(i,j)=0.0;
+          }
+      }
+
+      if ((Mo < MASK_FLOATING) || // grounded case
+          ((Mo > MASK_FLOATING) &&
+           (Me < MASK_FLOATING ||
+            Mw < MASK_FLOATING ||
+            Mn < MASK_FLOATING ||
+            Ms < MASK_FLOATING))) { // ice-free, adjacent to a grounded cell
+        
+        vHnew(i,j) += (acab(i,j) - divQ) * dt; // include M
+
+        if (include_bmr_in_continuity) { // include S
+          if (vMask.is_floating(i,j)) {
+            vHnew(i,j) -= shelfbmassflux(i,j) * dt;
+          } else {
+            vHnew(i,j) -= bmr_gnded[i][j] * dt;
+          }
+        }
+      }
+
+      // FIXME: take care of ice-free cells adjacent to grounded ice
+
       // apply free boundary rule: negative thickness becomes zero
       if (vHnew(i,j) < 0) {
         my_nonneg_rule_flux += (-vHnew(i,j));

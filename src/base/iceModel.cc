@@ -298,20 +298,19 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vLatitude.set_attr("grid_mapping", ""); CHKERRQ(ierr);
   ierr = variables.add(vLatitude); CHKERRQ(ierr);
 
-if (config.get_flag("part_grid") == true) {
-  // Href
-  ierr = vHref.create(grid, "Href", true); CHKERRQ(ierr);
-  ierr = vHref.set_attrs("model_state", "temporary ice thickness at calving front boundary",
-		      "m", "temporary_boundary_ice_thickness"); CHKERRQ(ierr);
-  ierr = variables.add(vHref); CHKERRQ(ierr);
+  if (config.get_flag("part_grid") == true) {
+    // Href
+    ierr = vHref.create(grid, "Href", true); CHKERRQ(ierr);
+    ierr = vHref.set_attrs("model_state", "temporary ice thickness at calving front boundary",
+                           "m", ""); CHKERRQ(ierr);
+    ierr = variables.add(vHref); CHKERRQ(ierr);
 
-  // Hav
-  ierr = vHav.create(grid, "Hav", true); CHKERRQ(ierr);
-  ierr = vHav.set_attrs("model_state", "mean ice thickness at calving front boundary",
-		      "m", "mean_boundary_ice_thickness"); CHKERRQ(ierr);
-  ierr = variables.add(vHav); CHKERRQ(ierr);
-}
-
+    // Hav
+    ierr = vHav.create(grid, "Hav", true); CHKERRQ(ierr);
+    ierr = vHav.set_attrs("model_state", "mean ice thickness at calving front boundary",
+                          "m", ""); CHKERRQ(ierr);
+    ierr = variables.add(vHav); CHKERRQ(ierr);
+  }
 
   // cell areas
   ierr = cell_area.create(grid, "cell_area", false); CHKERRQ(ierr);
@@ -642,7 +641,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   PetscReal end_year = grid.end_year;
   
   // FIXME:  In the case of derived class diagnostic time series this fixed
-  //         step-length can be problematic.  The fix may  e to be in the derived class.
+  //         step-length can be problematic.  The fix may have to be in the derived class.
   //         The problem is that unless the derived class fully reinitializes its
   //         time series then there can be a request for an interpolation on [A,B]
   //         where A>B.  See IcePSTexModel.
