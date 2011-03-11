@@ -394,11 +394,10 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
     ierr =   vHmelt.begin_access(); CHKERRQ(ierr);
     ierr =     vbmr.begin_access(); CHKERRQ(ierr);
     ierr = vtillphi.begin_access(); CHKERRQ(ierr);
-    // FIXME: r1430 gives vtauc some stencil width for Jed's/David's SSA FEM
-    //        solver.  If we keep that then we should come back here and
-    //        compute the local ghosts redundantly (as with other fields in PISM)
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+
+    PetscInt GHOSTS = grid.max_stencil_width;
+    for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
+      for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
         if (vMask.is_floating(i,j)) {
           vtauc(i,j) = 0.0;  
         } else if (vH(i,j) == 0.0) {
@@ -414,6 +413,7 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
         }
       }
     }
+
     ierr =    vMask.end_access(); CHKERRQ(ierr);
     ierr =    vtauc.end_access(); CHKERRQ(ierr);
     ierr =       vH.end_access(); CHKERRQ(ierr);
