@@ -28,7 +28,6 @@ static char help[] =
 #include <petscda.h>
 #include "grid.hh"
 #include "verif/iceCompModel.hh"
-#include "verif/iceExactSSAModel.hh"
 
 #include "coupler/PISMSurface.hh"
 #include "coupler/PISMOcean.hh"
@@ -61,12 +60,12 @@ int main(int argc, char *argv[]) {
     vector<string> required;
     required.push_back("-test");
     ierr = show_usage_check_req_opts(com, "pismv", required,
-      "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n"
-      "where:\n"
-      "  -test x     verification test (x = A|B|...|L)\n"
-      "  -no_report  do not give error report at end of run\n"
-      "  -eo         do not do numerical run; exact solution only\n"
-      ); CHKERRQ(ierr);
+                                     "  pismv -test x [-no_report] [-eo] [OTHER PISM & PETSc OPTIONS]\n"
+                                     "where:\n"
+                                     "  -test x     verification test (x = A|B|...|L)\n"
+                                     "  -no_report  do not give error report at end of run\n"
+                                     "  -eo         do not do numerical run; exact solution only\n"
+                                     ); CHKERRQ(ierr);
 
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
@@ -96,52 +95,36 @@ int main(int argc, char *argv[]) {
     transform(testname.begin(), testname.end(), testname.begin(), pism_toupper);
 
     // actually construct and run one of the derived classes of IceModel
-    if ((testname == "I") || (testname == "J") || (testname == "M")) {
-      // run derived class for plastic till ice stream, or linearized ice shelf,
-      //   or annular ice shelf with calving front
-      IceExactSSAModel mSSA(g, config, overrides, testname[0]);
+    // run derived class for compensatory source SIA solutions
+    // (i.e. compensatory accumulation or compensatory heating)
+    IceCompModel mComp(g, config, overrides, testname[0]);
+    ierr = mComp.setExecName("pismv"); CHKERRQ(ierr);
+    mComp.attach_surface_model(surface);
+    mComp.attach_ocean_model(ocean);
 
-      ierr = mSSA.setExecName("pismv"); CHKERRQ(ierr);
-      mSSA.attach_surface_model(surface);
-      mSSA.attach_ocean_model(ocean);
+    ierr = mComp.init(); CHKERRQ(ierr);
 
-      ierr = mSSA.init(); CHKERRQ(ierr);
+    ierr = mComp.run(); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
 
-      ierr = mSSA.run(); CHKERRQ(ierr);
-      ierr = verbPrintf(2,com, "done with diagnostic run\n"); CHKERRQ(ierr);
-      if (dontReport == PETSC_FALSE) {
-        ierr = mSSA.reportErrors();  CHKERRQ(ierr);
+    ThermoGlenArrIce*   tgaice = dynamic_cast<ThermoGlenArrIce*>(mComp.getIceFlowLaw());
+    if (dontReport == PETSC_FALSE) {
+
+      if (!IceFlowLawIsPatersonBuddCold(tgaice, config) &&
+          ((testname == "F") || (testname == "G"))) {
+        ierr = verbPrintf(1,com, 
+                          "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type arr')\n"
+                          "   for reported errors in test %c to be meaningful!\n",
+                          testname.c_str()); CHKERRQ(ierr);
       }
-      ierr = mSSA.writeFiles("verify.nc"); CHKERRQ(ierr);
-    } else { // run derived class for compensatory source SIA solutions
-             // (i.e. compensatory accumulation or compensatory heating)
-      IceCompModel mComp(g, config, overrides, testname[0]);
-      ierr = mComp.setExecName("pismv"); CHKERRQ(ierr);
-      mComp.attach_surface_model(surface);
-      mComp.attach_ocean_model(ocean);
-
-      ierr = mComp.init(); CHKERRQ(ierr);
-
-      ierr = mComp.run(); CHKERRQ(ierr);
-      ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
-
-      ThermoGlenArrIce*   tgaice = dynamic_cast<ThermoGlenArrIce*>(mComp.getIceFlowLaw());
-      if (dontReport == PETSC_FALSE) {
-
-        if (!IceFlowLawIsPatersonBuddCold(tgaice, config) &&
-	    ((testname == "F") || (testname == "G"))) {
-	  ierr = verbPrintf(1,com, 
-            "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type arr')\n"
-            "   for reported errors in test %c to be meaningful!\n",
-            testname.c_str()); CHKERRQ(ierr);
-        }
-        ierr = mComp.reportErrors();  CHKERRQ(ierr);
-      }
-      ierr = mComp.writeFiles("verify.nc"); CHKERRQ(ierr);
+      ierr = mComp.reportErrors();  CHKERRQ(ierr);
     }
+    ierr = mComp.writeFiles("verify.nc"); CHKERRQ(ierr);
     
   }
+
   ierr = PetscFinalize(); CHKERRQ(ierr);
+
   return 0;
 }
 

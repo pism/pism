@@ -196,27 +196,37 @@ int main(int argc, char *argv[]) {
     PetscInt Mx=61;
     PetscInt My=61;
     string output_file = "ssa_test_linear.nc";
+
+    set<string> ssa_choices;
+    ssa_choices.insert("fem");
+    ssa_choices.insert("fd");
     string driver = "fem";
 
-    ierr = PetscOptionsBegin(com, "", "SSAFD_TEST options", ""); CHKERRQ(ierr);
+    ierr = PetscOptionsBegin(com, "", "SSA_TEST_LINEAR options", ""); CHKERRQ(ierr);
     {
       bool flag;
+      int my_verbosity_level;
       ierr = PISMOptionsInt("-Mx", "Number of grid points in the X direction", 
                                                       Mx, flag); CHKERRQ(ierr);
       ierr = PISMOptionsInt("-My", "Number of grid points in the Y direction", 
                                                       My, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsString("-ssa_method", "Algorithm for computing the SSA solution",
-                                                  driver, flag); CHKERRQ(ierr);                                                      
+      ierr = PISMOptionsList(com, "-ssa_method", "Algorithm for computing the SSA solution",
+                             ssa_choices, driver, driver, flag); CHKERRQ(ierr);
+             
       ierr = PISMOptionsString("-o", "Set the output file name", 
                                               output_file, flag); CHKERRQ(ierr);
+
+      ierr = PISMOptionsInt("-verbose", "Verbosity level",
+                            my_verbosity_level, flag); CHKERRQ(ierr);
+      if (flag) setVerbosityLevel(my_verbosity_level);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // Determine the kind of solver to use.
     SSAFactory ssafactory;
-    if(driver.compare("fem") == 0) ssafactory = SSAFEMFactory;
-    else if(driver.compare("fd") == 0) ssafactory = SSAFDFactory;
-    else SETERRQ(1,"SSA algorithm argument should be one of -ssa fe or -ssa fem");
+    if(driver == "fem") ssafactory = SSAFEMFactory;
+    else if(driver == "fd") ssafactory = SSAFDFactory;
+    else { /* can't happen */ }
 
     SSATestCaseExp testcase(com,rank,size,config);
     ierr = testcase.init(Mx,My,ssafactory); CHKERRQ(ierr);

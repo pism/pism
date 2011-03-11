@@ -70,8 +70,10 @@ PetscErrorCode IceModel::update_mask() {
       // note that is_floating(i,j) == (! is_grounded(i,j))
       bool was_grounded = vMask.is_grounded(i,j),
         was_floating = vMask.is_floating(i,j),
-        is_grounded = hgrounded > hfloating + 1.0,
-        is_floating = ! is_grounded,
+        is_floating = hfloating > hgrounded + 1.0,
+        // note: the following implies that ice-free cells with bed evelation
+        // exactly at sea level are considered grounded
+        is_grounded = ! is_floating,
         ice_free = vH(i,j) == 0.0;
 
       // points marked as "ocean at time zero" are not updated
@@ -109,6 +111,8 @@ PetscErrorCode IceModel::update_mask() {
           // we are using SSA-as-a-sliding-law, so grounded points become DRAGGING
           if (use_ssa_velocity && use_ssa_when_grounded)
             vMask(i,j) = MASK_DRAGGING_SHEET;
+          else
+            vMask(i,j) = MASK_SHEET;
 
         }
 

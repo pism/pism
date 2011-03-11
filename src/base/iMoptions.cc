@@ -234,12 +234,7 @@ PetscErrorCode  IceModel::setFromOptions() {
                          ssa_choices, ssa_method, ssa_method, ssa_method_set); CHKERRQ(ierr);
   if (ssa_method_set) {
     config.set_string("ssa_method",ssa_method);
-  } else {
-    // FIXME (DAM 3/10/11) This is probably the wrong thing to do.
-    if(!config.has("ssa_method")) config.set_string("ssa_method","fd");
   }
-
-
 
   // check -ssa_sliding
   ierr = PISMOptionsIsSet("-ssa_sliding", flag);  CHKERRQ(ierr);

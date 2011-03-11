@@ -143,12 +143,10 @@ set_source_files_properties (udunits/utlib.c
 add_library (pismverif
   verif/iCMthermo.cc
   verif/iceCompModel.cc
-  verif/iceExactSSAModel.cc
   verif/tests/exactTestH.c
   verif/tests/exactTestK.c
   verif/tests/exactTestO.c
   verif/tests/exactTestL.c
-  verif/tests/exactTestM.c
   verif/tests/exactTestsABCDE.c
   verif/tests/exactTestsFG.c
   verif/tests/exactTestsIJ.c
@@ -190,10 +188,7 @@ foreach (EXEC pismr pismo pisms pgrn pismebm)
 endforeach (EXEC)
 
 # Verification mode "driver".
-add_executable (pismv pismv.cc
-  verif/iceCompModel.cc
-  verif/iCMthermo.cc
-  verif/iceExactSSAModel.cc)
+add_executable (pismv pismv.cc)
 target_link_libraries (pismv pismverif pismbase)
 
 # Testing boundary models without ice dynamics.

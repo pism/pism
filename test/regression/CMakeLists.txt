@@ -54,15 +54,21 @@ pism_test (verif_test_L_regression:_isothermal_SIA_with_non-flat_bed test_17.sh)
 
 pism_test (verif_test_G_regression:_thermo_SIA_w._time-dependent_SMB test_18.sh)
 
-pism_test (verif_test_I_regression:_nonlinear_SSA_with_plastic_bed test_19.sh)
+pism_test (verif_test_I_SSAFD_regression:_nonlinear_SSA_with_plastic_bed ssa/ssa_testi_fd.sh)
 
-pism_test (verif_test_J_regression:_linearized_SSA,_floating test_20.sh)
+pism_test (verif_test_I_SSAFEM_regression:_nonlinear_SSA_with_plastic_bed ssa/ssa_testi_fem.sh)
+
+pism_test (verif_test_J_SSAFD_regression:_linearized_SSA,_floating ssa/ssa_testj_fd.sh)
+
+pism_test (verif_test_J_SSAFEM_regression:_linearized_SSA,_floating ssa/ssa_testj_fem.sh)
+
+pism_test (verif_SSAFEM_linear_flow_regression ssa/ssafem_test_linear.sh)
+
+pism_test (verif_SSAFEM_plug_flow_regression ssa/ssafem_test_plug.sh)
 
 pism_test (verif_test_K_regression:_cold_ice_method,_bedrock_thermal_layer test_21.sh)
 
 pism_test (EISMINT-Ross_experiment_regression test_22.sh)
-
-pism_test (PST_regression_P1:_SIA+SSA_hybrid,_flat_bed,_cold_ice test_23.sh)
 
 pism_test (GPBLD_flow_law_regression test_24.sh)
 

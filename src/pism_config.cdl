@@ -26,6 +26,9 @@ netcdf pism_config {
     pism_config:do_skip = "no";
     pism_config:do_skip_doc = "Use the temperature, age, and SSA stress balance computation skipping mechanism.";
 
+    pism_config:ssa_method = "fd";
+    pism_config:ssa_method_doc = "Algorithm for computing the SSA solution; choose from 'fd' and 'fem'.";
+
     pism_config:use_ssa_when_grounded = "no";
     pism_config:use_ssa_when_grounded_doc = "The SSA can be used as a sliding law for grounded ice [\\ref BBssasliding], and it is if this is yes.";
 

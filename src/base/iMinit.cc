@@ -580,9 +580,9 @@ PetscErrorCode IceModel::init_physics() {
 
     if (use_ssa_velocity) {
       string ssa_method = config.get_string("ssa_method");
-      if( ssa_method.compare("fd") == 0 ) {
+      if( ssa_method == "fd" ) {
         my_stress_balance = new SSAFD(grid, *basal, *ice, *EC, config);
-      } else if(ssa_method.compare("fem") == 0) {
+      } else if(ssa_method == "fem") {
         my_stress_balance = new SSAFEM(grid, *basal, *ice, *EC, config);
       } else{
         SETERRQ(1,"SSA algorithm flag should be one of -ssa_method fe or -ssa_method fem");
