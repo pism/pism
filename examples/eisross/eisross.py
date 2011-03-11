@@ -89,6 +89,7 @@ for i in range(MxROSS):
 eislat = zeros((MxROSS, MyROSS), float32) # actually ignored
 eislon = zeros((MxROSS, MyROSS), float32) # actually ignored
 mask = zeros((MxROSS,MyROSS), int16)
+bcflag = zeros((MxROSS, MyROSS), int16)
 azi = zeros((MxROSS, MyROSS), float32)
 mag = zeros((MxROSS, MyROSS), float32)
 thk = zeros((MxROSS, MyROSS), float32)
@@ -126,6 +127,8 @@ vprint(grid.readline())
 for i in [0, 1]:
     for j in range(MyROSS):
         mask[i,j] = MASK_SHEET
+        bcflag[i,j] = MASK_SHEET
+
 for i in range(xsROSS-2):
     for j in range(MyROSS):
         mask[i+2,j] = MASK_FLOATING
@@ -136,6 +139,7 @@ for i in range(xmROSS):
             mask[i+xsROSS,j] = MASK_FLOATING
         else:
             mask[i+xsROSS,j] = MASK_SHEET
+            bcflag[i+xsROSS,j] = MASK_SHEET
         j = j + 1
 read2dROSSfloat(grid,azi,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0)
 read2dROSSfloat(grid,mag,xsROSS,xmROSS,MyROSS,9999.,0.0,1.0 / SECPERA)
@@ -172,23 +176,6 @@ grid.close()
 ##### create arrays for observed ubar, vbar and fill with _FillValue #####
 ubarOBS = zeros((MxROSS, MyROSS), float32)
 vbarOBS = zeros((MxROSS, MyROSS), float32)
-bcflag = zeros((MxROSS, MyROSS), int16)
-for i in range(MxROSS):
-    for j in range(MxROSS):
-        ubarOBS[i,j] = 1.0 / SECPERA
-        vbarOBS[i,j] = 1.0 / SECPERA
-        bcflag[i,j] = 0
-# also fill in zeros along sides; better for Laplace solution
-for i in range(MxROSS):
-    ubarOBS[i,0] = 0.0
-    vbarOBS[i,0] = 0.0
-    ubarOBS[i,MyROSS-1] = 0.0
-    vbarOBS[i,MyROSS-1] = 0.0
-for j in range(MyROSS):
-    ubarOBS[0,j] = 0.0
-    vbarOBS[0,j] = 0.0
-    ubarOBS[MxROSS-1,j] = 0.0
-    vbarOBS[MxROSS-1,j] = 0.0
 
 ##### read kbc.dat #####
 print "reading boundary condition locations from ",KBC_FILE
