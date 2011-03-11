@@ -44,8 +44,8 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
 static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 
   PetscErrorCode ierr;
-  IceModelVec2S *mask = new IceModelVec2S,
-                *thk = new IceModelVec2S,
+  IceModelVec2Mask *mask = new IceModelVec2Mask;
+  IceModelVec2S *thk = new IceModelVec2S,
                 *ghf = new IceModelVec2S;
   IceModelVec3  *enthalpy = new IceModelVec3;
 
@@ -86,7 +86,11 @@ static PetscErrorCode readIceInfoFromFile(const char *filename, int start,
   set<string>::iterator i = vars.begin();
   while (i != vars.end()) {
     IceModelVec *var = variables.get(*i);
-    ierr = var->read(filename, start); CHKERRQ(ierr);
+
+    if (var->string_attr("short_name") != "bheatflx") {
+      ierr = var->read(filename, start); CHKERRQ(ierr);
+    }
+
     i++;
   }
 
@@ -185,6 +189,8 @@ int main(int argc, char *argv[]) {
     // Initialize BTU object:
     PISMBedThermalUnit btu(grid, EC, config);
 
+    ierr = btu.init(variables); CHKERRQ(ierr);
+
     ierr = verbPrintf(2,com,
         "  user set timestep of %.4f years ...\n",
 	dt_years); CHKERRQ(ierr);
@@ -197,17 +203,25 @@ int main(int argc, char *argv[]) {
     // FIXME:  use btu.get_upward_geothermal_flux(); requires actually having the
     //         IceModelVec2S for the result; use variables.get("???") ?
 
+    IceModelVec2S *ghf;
+    ghf = dynamic_cast<IceModelVec2S*>(variables.get("bheatflx"));
+    if (ghf == NULL) SETERRQ(1, "bheatflx is not available");
+
+    ierr = btu.get_upward_geothermal_flux(0.0, dt_years, *ghf); CHKERRQ(ierr);
+
     set<string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"
 
     PISMIO pio(&grid);
 
-    ierr = pio.open_for_writing(outname, true, true); CHKERRQ(ierr);
+    ierr = pio.open_for_writing(outname, false, true); CHKERRQ(ierr);
     // append == true and check_dims == true
+    ierr = pio.append_time(grid.end_year); CHKERRQ(ierr);
     ierr = btu.define_variables(vars, pio, NC_DOUBLE); CHKERRQ(ierr);
     ierr = pio.close(); CHKERRQ(ierr);
 
     ierr = btu.write_variables(vars, outname); CHKERRQ(ierr);
+    ierr = ghf->write(outname.c_str()); CHKERRQ(ierr);
 
     if (override_used) {
       ierr = verbPrintf(3, com,
