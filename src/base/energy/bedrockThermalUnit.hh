@@ -26,8 +26,52 @@
 #include "enthalpyConverter.hh"
 #include "PISMDiagnostic.hh"
 
+//! Class for a 3d DA-based Vec for PISMBedThermalUnit.
+class IceModelVec3BTU : public IceModelVec3D {
+public:
+  IceModelVec3BTU() { Mbz = -1; Lbz = -1.0; }
 
-//! Given ice/bedrock interface temperature over a time-step, provides upward geothermal flux at the interface.
+  virtual ~IceModelVec3BTU() {}
+
+  virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local,
+                                int stencil_width = 1);
+                                
+  virtual PetscErrorCode get_levels(PetscInt &levels);
+  virtual PetscErrorCode get_spacing(PetscReal &dzb);
+
+  PetscErrorCode  stopIfNotLegalLevel(PetscScalar z);
+
+private:
+  PetscInt  Mbz;
+  PetscReal Lbz;
+};
+
+
+//! Given the ice/bedrock interface temperature for the duration of one time-step, provides upward geothermal flux at that interface.
+/*!
+The geothermal flux actually applied to the base of an ice sheet is dependent, over time,
+on the temperature of the basal ice itself.  The purpose of a bedrock thermal layer
+in an ice sheet model is to implement this dependency by using a physical model
+for the temperature within that layer, the upper lithosphere.  Because the
+upper part of the lithosphere stores or releases energy into the ice,
+the typical lithosphere geothermal flux rate is not the same thing as the
+geothermal flux applied to the base of the ice.  We regard the lithosphere
+geothermal flux rate, which is used in this model as the base of the bedrock
+thermal layer, as a time-independent quantity, as it is in all published ice
+sheet models.
+
+Let \f$G\f$ be the lithosphere geothermal flux rate, namely
+the PISM input variable \c bheatflx; see Related Page \ref std_names .  Let
+\f$T_b(t,x,y,z)\f$ be the temperature of the bedrock layer, for elevations
+\f$-L_b \le z \le 0\f$; \f$z=0\f$ is the top of the bedrock, the ice/bedrock
+interface.  Let \f$k_b\f$ (= \c bedrock_thermal_conductivity in pism_config.cdl)
+be the thermal conductivity of the upper lithosphere.  In these terms the actual
+upward heat flux into the ice/bedrock interface is the quantity,
+  \f[G_0 = -k_b \frac{\partial T_b}{\partial z}.\f]
+This is the \e output of the current class, more precisely it is the output of
+the method .
+
+ */
 class PISMBedThermalUnit : public PISMComponent_TS {
 
 public:
@@ -43,22 +87,23 @@ public:
 
   virtual PetscErrorCode max_timestep(PetscReal /*t_years*/, PetscReal &dt_years);
 
-  virtual PetscErrorCode get_upward_geothermal_flux(PetscReal t_years, PetscReal dt_years,
-                                                    IceModelVec2S &result);
+  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+
+  virtual PetscErrorCode get_upward_geothermal_flux(IceModelVec2S &result);
 
 
 protected:
   virtual PetscErrorCode allocate();
 
-  IceModelVec3Bedrock temp;     //!< storage for bedrock thermal layer temperature;
-                                //!    part of state; units K
+  IceModelVec3BTU  temp;     //!< storage for bedrock thermal layer temperature;
+                             //!    part of state; units K; equally-spaced layers
 
-  IceModelVec2S     ghf,        //!< storage for geothermal heat flux at base of
-                                //!    bedrock thermal layer; part of state; units W m-2
-                    ice_base_temp;
+  IceModelVec2S  ghf,        //!< storage for geothermal heat flux G at base of
+                             //!    bedrock thermal layer; part of state; units W m-2
+                 ice_base_temp;  //!< storage for boundary value Tb(z=0)
 
   // parameters of the heat equation:  T_t = D T_xx  where D = k / (rho c)
-  PetscScalar       bed_rho, bed_c, bed_k, bed_D;
+  PetscScalar    bed_rho, bed_c, bed_k, bed_D;
 
   EnthalpyConverter &EC; //!< needed to extract base temperature from ice enthalpy
 

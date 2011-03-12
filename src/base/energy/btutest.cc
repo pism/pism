@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Ed Bueler
+// Copyright (C) 2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "Driver for testing PISMBedThermalUnit (without IceModel).\n";
+  "Driver for testing PISMBedThermalUnit, using Test K and without IceModel.\n"
+  "Requires an input file only to get 2D grid information, and otherwise ignors\n"
+  "3D and thermodynamic information in the file.\n";
 
 #include "pism_const.hh"
 #include "grid.hh"
@@ -77,27 +79,6 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 }
 
 
-static PetscErrorCode readIceInfoFromFile(const char *filename, int start,
-                                          PISMVars &variables) {
-  PetscErrorCode ierr;
-  // Get the names of all the variables allocated earlier:
-  set<string> vars = variables.keys();
-
-  set<string>::iterator i = vars.begin();
-  while (i != vars.end()) {
-    IceModelVec *var = variables.get(*i);
-
-    if (var->string_attr("short_name") != "bheatflx") {
-      ierr = var->read(filename, start); CHKERRQ(ierr);
-    }
-
-    i++;
-  }
-
-  return 0;
-}
-
-
 static PetscErrorCode doneWithIceInfo(PISMVars &variables) {
   // Get the names of all the variables allocated earlier:
   set<string> vars = variables.keys();
@@ -137,35 +118,35 @@ int main(int argc, char *argv[]) {
     required.push_back("-o");
     required.push_back("-dt");
     ierr = show_usage_check_req_opts(com, "btutest", required,
-      "  btutest -i IN.nc -o OUT.nc -ys A -dt B\n"
+      "  btutest -i IN.nc -o OUT.nc -ys A -dt B -Mbz NN\n"
       "where:\n"
       "  -i             input file in NetCDF format\n"
       "  -o             output file in NetCDF format\n"
+      "  -ys            start year in using Test K\n"
       "  -dt            time step B (= positive float) in years\n"
+      "  -Mbz           number of levels to use; note Lbz=1000.0 m in Test K\n"
       ); CHKERRQ(ierr);
 
     // read the config option database:
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
-    bool override_used;
-    ierr = PISMOptionsIsSet("-config_override", override_used); CHKERRQ(ierr);
-
     IceGrid grid(com, rank, size, config);
 
     bool flag;
-    PetscReal dt_years = 0.0;
+    PetscReal dt_years = 0.0, ys;
     string inname, outname;
     ierr = PetscOptionsBegin(grid.com, "", "BTU_TEST options", ""); CHKERRQ(ierr);
     {
       ierr = PISMOptionsString("-i", "Input file name", inname, flag); CHKERRQ(ierr);
       ierr = PISMOptionsString("-o", "Output file name", outname, flag); CHKERRQ(ierr);
+      ierr = PISMOptionsReal("-ys", "starting time in years", ys, flag); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-dt", "Time-step, in years", dt_years, flag); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // initialize the computational grid:
     ierr = verbPrintf(2,com,
-	"  initializing grid from NetCDF file %s...\n", inname.c_str()); CHKERRQ(ierr);
+	"  initializing grid (2D) from NetCDF file %s...\n", inname.c_str()); CHKERRQ(ierr);
     ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
     grid.end_year = grid.start_year + dt_years;
 
@@ -174,17 +155,7 @@ int main(int argc, char *argv[]) {
     PISMVars variables;
     ierr = createVecs(grid, variables); CHKERRQ(ierr);
 
-    // read data from a PISM input file
-    NCTool nc(grid.com, grid.rank);
-    int last_record;
-    ierr = nc.open_for_reading(inname.c_str()); CHKERRQ(ierr);
-    ierr = nc.get_nrecords(last_record); CHKERRQ(ierr);
-    ierr = nc.close(); CHKERRQ(ierr);
-    last_record -= 1;
-    ierr = verbPrintf(2,com,
-        "  reading fields mask,thk,enthalpy from NetCDF file %s ...\n",
-	inname.c_str()); CHKERRQ(ierr);
-    ierr = readIceInfoFromFile(inname.c_str(), last_record, variables); CHKERRQ(ierr);
+// FIXME  use exactTestK() results and EC to generate needed values in variables
 
     // Initialize BTU object:
     PISMBedThermalUnit btu(grid, EC, config);
@@ -200,14 +171,15 @@ int main(int argc, char *argv[]) {
         "  PISMBedThermalUnit reports max timestep of %.4f years ...\n",
 	max_dt_years); CHKERRQ(ierr);
 
-    // FIXME:  use btu.get_upward_geothermal_flux(); requires actually having the
-    //         IceModelVec2S for the result; use variables.get("???") ?
+    // actually ask btu to do its time-step
+    ierr = btu.update(0.0, dt_years); CHKERRQ(ierr);
 
     IceModelVec2S *ghf;
     ghf = dynamic_cast<IceModelVec2S*>(variables.get("bheatflx"));
     if (ghf == NULL) SETERRQ(1, "bheatflx is not available");
 
-    ierr = btu.get_upward_geothermal_flux(0.0, dt_years, *ghf); CHKERRQ(ierr);
+    // get the G_0 geothermal flux
+    ierr = btu.get_upward_geothermal_flux(*ghf); CHKERRQ(ierr);
 
     set<string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"
@@ -222,14 +194,6 @@ int main(int argc, char *argv[]) {
 
     ierr = btu.write_variables(vars, outname); CHKERRQ(ierr);
     ierr = ghf->write(outname.c_str()); CHKERRQ(ierr);
-
-    if (override_used) {
-      ierr = verbPrintf(3, com,
-        "  recording config overrides in NetCDF file '%s' ...\n",
-	outname.c_str()); CHKERRQ(ierr);
-      overrides.update_from(config);
-      ierr = overrides.write(outname.c_str()); CHKERRQ(ierr);
-    }
 
     ierr = doneWithIceInfo(variables); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done.\n"); CHKERRQ(ierr);
