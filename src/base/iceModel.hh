@@ -153,8 +153,9 @@ protected:
         vGhf,		//!< geothermal flux; no ghosts
         vtillphi,	//!< friction angle for till under grounded ice sheet; no ghosts
 
-		vHav,		//!< average over the ice thickness of existing ice neighbors
+		//vHav,		//!< average over the ice thickness of existing ice neighbors
 		vHref,		//!< accumulated mass advected to a partially filled grid cell
+		vHresidual,	//!< residual ice mass of a not any longer partially (fully) filled grid cell
 
     acab,		//!< accumulation/ablation rate; no ghosts
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
@@ -201,6 +202,7 @@ protected:
 
   // flags
   PetscTruth  updateHmelt, holdTillYieldStress, shelvesDragToo, allowAboveMelting;
+  PetscTruth  repeatRedist;
   char        adaptReasonFlag;
 
   string      stdout_flags, stdout_ssa;
@@ -270,6 +272,7 @@ protected:
   virtual PetscErrorCode update_surface_elevation();
   virtual PetscErrorCode massContExplicitStep();
   virtual PetscErrorCode massContExplicitStepPartGrids();
+  virtual PetscErrorCode calculateRedistResiduals();
 
   // see iMIO.cc
   virtual PetscErrorCode set_time_from_options();

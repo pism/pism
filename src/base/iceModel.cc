@@ -304,11 +304,13 @@ PetscErrorCode IceModel::createVecs() {
                            "m", ""); CHKERRQ(ierr);
     ierr = variables.add(vHref); CHKERRQ(ierr);
 
-    // Hav
-    ierr = vHav.create(grid, "Hav", true); CHKERRQ(ierr);
-    ierr = vHav.set_attrs("model_state", "mean ice thickness at calving front boundary",
+	if (config.get_flag("part_redist") == true){
+      // Hav
+      ierr = vHresidual.create(grid, "Hresidual", true); CHKERRQ(ierr);
+      ierr = vHresidual.set_attrs("model_state", "residual ice thickness in recently filled boundary grid cell",
                           "m", ""); CHKERRQ(ierr);
-    ierr = variables.add(vHav); CHKERRQ(ierr);
+      ierr = variables.add(vHresidual); CHKERRQ(ierr);
+	}
   }
 
   // cell areas
