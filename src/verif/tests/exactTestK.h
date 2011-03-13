@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2008 Ed Bueler
+   Copyright (C) 2007-2011 Ed Bueler
   
    This file is part of PISM.
   
@@ -40,8 +40,10 @@ extern "C"
 
 /* compute the exact solution TT = T(t,z); returns 0 for z >= -1000 m but returns
    1 for z < -1000 m because eigenfunction is not valid there;
-   normally use bedrockIsIce_p = 0 (false) */
-int exactK(const double t, const double z, double *TT, const int bedrockIsIce_p);
+   normally use bedrockIsIce_p = 0 (false); also returns heat flux
+     FF = - k \partial T / \partial z
+   where k = k_ice for z>0 and k=k_bed for z<=0; note the z=0 value is bedrock */
+int exactK(const double t, const double z, double *TT, double *FF, const int bedrockIsIce_p);
 
 /* find the alpha_k values for the eigenfunction expansion in the exact
    solution; these values are found by rigorous (bracketed) numerical 

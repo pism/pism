@@ -346,17 +346,18 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
   const PetscInt    Mz = grid.Mz, Mbz = grid.Mbz;
  
   PetscScalar    *Tex, *Tbex, *T, *Tb;
+  PetscScalar    FF;
   Tex = new PetscScalar[Mz];  
   Tbex = new PetscScalar[Mbz];
 
   switch (testname) {
     case 'K':
       for (PetscInt k = 0; k < Mz; k++) {
-        ierr = exactK(grid.year * secpera, grid.zlevels[k], &Tex[k],
+        ierr = exactK(grid.year * secpera, grid.zlevels[k], &Tex[k], &FF,
                       (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
       }
       for (PetscInt k = 0; k < Mbz; k++) {
-        ierr = exactK(grid.year * secpera, grid.zblevels[k], &Tbex[k],
+        ierr = exactK(grid.year * secpera, grid.zblevels[k], &Tbex[k], &FF,
                       (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
       }
       break;
@@ -642,6 +643,7 @@ PetscErrorCode IceCompModel::fillTemperatureSolnTestsKO() {
 
   PetscScalar       *Tcol, *Tbcol;
   PetscScalar       dum1, dum2, dum3, dum4;
+  PetscScalar    FF;
   Tcol = new PetscScalar[Mz];
   Tbcol = new PetscScalar[Mbz];
 
@@ -649,11 +651,11 @@ PetscErrorCode IceCompModel::fillTemperatureSolnTestsKO() {
   switch (testname) {
     case 'K':
       for (PetscInt k=0; k<Mz; k++) {
-        ierr = exactK(grid.year * secpera, grid.zlevels[k], &Tcol[k],
+        ierr = exactK(grid.year * secpera, grid.zlevels[k], &Tcol[k], &FF,
                       (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
       }
       for (PetscInt k=0; k<Mbz; k++) {
-        if (exactK(grid.year * secpera, grid.zblevels[k], &Tbcol[k],
+        if (exactK(grid.year * secpera, grid.zblevels[k], &Tbcol[k], &FF,
                    (bedrock_is_ice_forK==PETSC_TRUE)))
           SETERRQ1(1,"exactK() reports that level %9.7f is below B0 = -1000.0 m\n",
                    grid.zblevels[k]);

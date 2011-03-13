@@ -16,8 +16,8 @@ set -e
 OPTS="-verbose 1 -ssa_method fem -o foo.nc"
 
 # do stuff
-$PISM_PATH/ssa_test_plug -Mx 61 -My 61 $OPTS > test-out.txt
-$PISM_PATH/ssa_test_plug -Mx 121 -My 121 $OPTS >> test-out.txt
+$PISM_PATH/ssa_test_plug -Mx 22 -My 31 $OPTS > test-out.txt
+$PISM_PATH/ssa_test_plug -Mx 61 -My 61 $OPTS >> test-out.txt
 
 set +e
 
@@ -25,11 +25,11 @@ set +e
 diff test-out.txt - > /dev/null <<END-OF-OUTPUT
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.0510      0.00147    0.0510    0.0082    0.0201    0.0019
+                0.2024      0.00559    0.2024    0.0325    0.0765    0.0069
 NUM ERRORS DONE
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.0127      0.00037    0.0127    0.0019    0.0050    0.0004
+                0.0510      0.00147    0.0510    0.0082    0.0201    0.0019
 NUM ERRORS DONE
 END-OF-OUTPUT
 

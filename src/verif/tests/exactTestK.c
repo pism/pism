@@ -45,10 +45,12 @@
                                        solution is deliberately chosen to have finite expansion */
 
 
-int exactK(const double t, const double z, double *TT, const int bedrockIsIce_p) {
+int exactK(const double t, const double z, double *TT, double *FF, const int bedrockIsIce_p) {
   int k;
   int belowB0;
-  double ZZ, P, alpha, lambda, beta, my_gamma, XkSQR, Xk, theta, Ck, I1, I2, aH, bB, mI, mR;
+  double ZZ, alpha, lambda, beta, my_gamma, XkSQR, Xk,
+         theta, dthetakdz, P, dPdz,
+         Ck, I1, I2, aH, bB, mI, mR;
   double c_p_BR, rho_BR, k_BR;
   /* following constants were produced by calling print_alpha_k(30) (below) */
   double alf[Nsum] = {3.350087528822397e-04, 1.114576827617396e-03, 1.953590840303518e-03,
@@ -84,6 +86,7 @@ int exactK(const double t, const double z, double *TT, const int bedrockIsIce_p)
   mI = (G / k_ICE) - phi;     mR = (G / k_BR) - phi;
   /* DEBUG: printf("ZZ = %10e, mI = %10e, mR = %10e\n", ZZ,mI,mR); */
   *TT = 0.0;
+  *FF = 0.0;
   for (k = Nsum-1; k >= 0; k--) {
     /* constants only having to do with eigenfunctions; theta = theta_k(z) is the
        normalized eigenfunction */ 
@@ -92,10 +95,16 @@ int exactK(const double t, const double z, double *TT, const int bedrockIsIce_p)
     my_gamma = sin(alpha * H0) / cos(beta * B0);
     XkSQR = (rho_BR * c_p_BR * my_gamma * my_gamma * B0 + rho_ICE * c_p_ICE * H0) / 2.0;
     Xk = sqrt(XkSQR);
-    theta = ( (z >= 0) ? sin(alpha * (H0 - z)) : my_gamma * cos(beta * (B0 + z)) ) / Xk;
+    /* theta = ( (z > 0) ? sin(alpha * (H0 - z)) : my_gamma * cos(beta * (B0 + z)) ) / Xk; */
+    theta = (z > 0) ? sin(alpha * (H0 - z))
+                    : my_gamma * cos(beta * (B0 + z)); 
+    theta /= Xk;
+    dthetakdz = (z > 0) ? - alpha * cos(alpha * (H0 - z)) 
+                        : - beta * my_gamma * sin(beta * (B0 + z));
+    dthetakdz /= Xk;
     lambda = (k_ICE * alpha * alpha) / (rho_ICE * c_p_ICE);
-    /* DEBUG: printf("k = %3d:  alpha = %10e, Xk = %10e, theta = %10e, lambda = %10e,\n",
-           k,alpha,Xk,theta,lambda); */
+    /* DEBUG: printf("k = %3d:  alpha = %10e, Xk = %10e, theta = %10e, dthetakdz = %10e, lambda = %10e,\n",
+           k,alpha,Xk,theta,dthetakdz,lambda); */
     /* constants involved in computing the expansion coefficients */
     aH = alpha * H0;            bB = beta * B0;
     I1 = - mI * (sin(aH) - aH * cos(aH)) / (alpha * alpha);
@@ -104,11 +113,15 @@ int exactK(const double t, const double z, double *TT, const int bedrockIsIce_p)
     Ck = (rho_ICE * c_p_ICE * I1 + rho_BR * c_p_BR * my_gamma * I2) / Xk;
     /* add the term to the expansion */
     *TT += Ck * exp(- lambda * t) * theta;
+    *FF += - ((z > 0) ? k_ICE : k_BR) * Ck * exp(- lambda * t) * dthetakdz;
     /* DEBUG: printf("          I1 = %10e, I2 = %10e, Ck = %10e, term = %10f\n",
            I1,I2,Ck, Ck * exp(- lambda * t) * theta ); */
   }
-  P = (z >= 0) ? (z / k_ICE) - (H0 / k_ICE) : (z / k_BR) - (H0 / k_ICE);
+  /* P = (z >= 0) ? (z / k_ICE) - (H0 / k_ICE) : (z / k_BR) - (H0 / k_ICE); */
+  P = (z / ((z > 0) ? k_ICE : k_BR)) - (H0 / k_ICE);
+  dPdz = 1.0 / ((z > 0) ? k_ICE : k_BR);
   *TT += Ts - G * P;
+  *FF += ((z > 0) ? k_ICE : k_BR) * G * dPdz;
 
   return belowB0;
 

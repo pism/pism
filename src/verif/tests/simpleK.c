@@ -27,6 +27,7 @@ Enter z in m (0 < z < 3000 for ice and -1000 < z < 0 for bedrock):
 0
 Results from Test K:
      T =   260.70501 (K) =   -12.44499 (deg C)   [absolute temperature]
+     F =     0.03068 (W m-2)                     [upward heat flux]
 
 $ ./simpleK 
 Enter t in years:
@@ -35,6 +36,16 @@ Enter z in m (0 < z < 3000 for ice and -1000 < z < 0 for bedrock):
 0
 Results from Test K:
      T =   270.55200 (K) =    -2.59800 (deg C)   [absolute temperature]
+     F =     0.03637 (W m-2)                     [upward heat flux]
+
+$ ./simpleK 
+Enter t in years:
+1e9
+Enter z in m (0 < z < 3000 for ice and -1000 < z < 0 for bedrock):
+0
+Results from Test K:
+     T =   283.15000 (K) =    10.00000 (deg C)   [absolute temperature]
+     F =     0.04200 (W m-2)                     [upward heat flux]
 
 */
 
@@ -43,7 +54,7 @@ Results from Test K:
 
 int main() {
 
-  double       z, t, TT;
+  double       z, t, TT, FF;
   int          scanret;
   const double secpera=31556926.0;  /* seconds per year; 365.2422 days */
   const double H0 = 3000.0, B0 = -1000.0; 
@@ -66,14 +77,15 @@ int main() {
   }
 
   if (t >= 0) {
-    exactK(t * secpera, z, &TT, 0);    /* bedrock and ice have different material properties */
+    exactK(t * secpera, z, &TT, &FF, 0);    /* bedrock and ice have different material properties */
   } else {
-    exactK(- t * secpera, z, &TT, 1);  /* dumb trick to help test:  use negative t values to choose
+    exactK(- t * secpera, z, &TT, &FF, 1);  /* dumb trick to help test:  use negative t values to choose
                                           bedrock material constants equal to those of ice */
   }
 
   printf("Results from Test K:\n");
   printf("     T = %11.5f (K) = %11.5f (deg C)   [absolute temperature]\n",TT,TT - 273.15);
+  printf("     F = %11.5f (W m-2)                     [upward heat flux]\n",FF);
 
   return 0;
 }

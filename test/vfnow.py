@@ -210,8 +210,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     K.My   = K.Mx
     K.Mz   = array([41, 81, 161, 321, 641])
     K.Mbz  = (K.Mz - 1) / 4 + 1
-    K.opts = "-y 130000.0 -Lbz 1000" # FIXME  adding "-z_spacing equal -zb_spacing equal"
-                                     #        changes results far too much!
+    K.opts = "-y 130000.0 -Lbz 1000 -z_spacing equal -zb_spacing equal"  # FIXME: changes results far too much!
     tests['K'] = K
     # L
     L = PISMVerificationTest()
