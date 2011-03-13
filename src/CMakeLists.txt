@@ -243,7 +243,7 @@ if (Pism_BUILD_EXTRA_EXECS)
   add_executable (flowTable software_tests/flowTable.cc base/rheology/flowlaws.cc)
   target_link_libraries (flowTable pismutil)
 
-  add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc)
+  add_executable (btutest base/energy/btutest.cc base/energy/bedrockThermalUnit.cc verif/tests/exactTestK.c)
   target_link_libraries (btutest pismutil)
 
   install (TARGETS

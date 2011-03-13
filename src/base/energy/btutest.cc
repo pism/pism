@@ -27,6 +27,8 @@ static char help[] =
 #include "NCVariable.hh"
 #include "bedrockThermalUnit.hh"
 
+#include "../../verif/tests/exactTestK.h"
+
 
 static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
   PetscErrorCode ierr;
@@ -72,9 +74,9 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
      "J kg-1", ""); CHKERRQ(ierr);
   ierr = variables.add(*enthalpy); CHKERRQ(ierr);
 
-  ierr = ghf->create(grid, "bheatflx", false); CHKERRQ(ierr);
+  ierr = ghf->create(grid, "btu_bheatflx", false); CHKERRQ(ierr);
   ierr = ghf->set_attrs("",
-                       "upward geothermal flux at bedrock base",
+                       "upward geothermal flux at bedrock thermal layer base",
 		       "W m-2", ""); CHKERRQ(ierr);
   ierr = ghf->set_glaciological_units("mW m-2");
   ierr = variables.add(*ghf); CHKERRQ(ierr);
@@ -173,17 +175,28 @@ int main(int argc, char *argv[]) {
     PISMVars variables;
     ierr = createVecs(grid, variables); CHKERRQ(ierr);
 
-// FIXME  use exactTestK() results and EC to generate needed values in variables
-
+    // mask has constant value
     IceModelVec2Mask *mask;
     mask = dynamic_cast<IceModelVec2Mask*>(variables.get("mask"));
     if (mask == NULL) SETERRQ(2, "mask is not available");
     ierr = mask->set(MASK_SHEET); CHKERRQ(ierr);
 
+    // thickness has constant value
     IceModelVec2S *thk;
     thk = dynamic_cast<IceModelVec2S*>(variables.get("thk"));
-    if (thk == NULL) SETERRQ(2, "thk is not available");
+    if (thk == NULL) SETERRQ(3, "thk is not available");
     ierr = thk->set(3000.0); CHKERRQ(ierr);  // see Test K
+
+    // lithosphere (bottom of bedrock layer) heat flux has constant value
+    IceModelVec2S *ghf;
+    ghf = dynamic_cast<IceModelVec2S*>(variables.get("btu_bheatflx"));
+    if (ghf == NULL) SETERRQ(4, "btu_bheatflx is not available");
+    ierr = ghf->set(0.042); CHKERRQ(ierr);  // see Test K
+
+    // we will be filling enthalpy from temperature used in Test K
+    IceModelVec3 *enthalpy;
+    enthalpy = dynamic_cast<IceModelVec3*>(variables.get("enthalpy"));
+    if (enthalpy == NULL) SETERRQ(5, "enthalpy is not available");
 
     // Initialize BTU object:
     PISMBedThermalUnit btu(grid, EC, config);
@@ -206,19 +219,45 @@ int main(int argc, char *argv[]) {
 
     // actually ask btu to do its time-step
     for (PetscInt n = 0; n < N; n++) {
-      // FIXME:  exactTestK() should be queried for the top-of-bedrock temp
       const PetscReal y = ys + dt_years * (double)n;
+
+      // compute exact ice temperature, thus enthalpy, at time y
+      ierr = enthalpy->begin_access(); CHKERRQ(ierr);
+      PetscScalar *Enthij; // columns of these values
+      for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+        for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+          ierr = enthalpy->getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
+          for (PetscInt k=0; k<grid.Mz; ++k) {
+            const PetscReal z     = grid.zlevels[k],
+                            depth = 3000.0 - z; // FIXME task #7297
+            PetscReal TT, FF; // Test K:  use TT, ignor FF
+            ierr = exactK(y * secpera, z, &TT, &FF, 0); CHKERRQ(ierr);
+            ierr = EC.getEnthPermissive(TT,0.0,EC.getPressureFromDepth(depth),
+                                        Enthij[k]); CHKERRQ(ierr);
+          }
+        }
+      }
+      ierr = enthalpy->end_access(); CHKERRQ(ierr);
+      // NOTE: we are not communicating anything; FIXME?
+
+      // update the temperature inside the ttermal layer
       ierr = btu.update(y, dt_years); CHKERRQ(ierr);
     }
 
-    IceModelVec2S *ghf;
-    ghf = dynamic_cast<IceModelVec2S*>(variables.get("bheatflx"));
-    if (ghf == NULL) SETERRQ(1, "bheatflx is not available");
-
-    // get the final G_0 geothermal flux
+    // reuse ghf for final output heat flux G_0 at z=0
+    ierr = ghf->set_name("bheatflx0"); CHKERRQ(ierr);  // FIXME: does rename mean writing vars from dictionary will fail?
+    ierr = ghf->set_attrs("",
+                       "upward geothermal flux at ice/bedrock interface",
+		       "W m-2", ""); CHKERRQ(ierr);
     ierr = btu.get_upward_geothermal_flux(*ghf); CHKERRQ(ierr);
 
-// FIXME:  compare to the right answer from Test K
+    // compare to the right answer from Test K
+    PetscReal TT, FF; // Test K:  use FF, ignor TT
+    ierr = exactK(ye * secpera, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
+    ierr = verbPrintf(2,com,
+        "  exact Test K reports upward heat flux at z=0, at end year %.2f, as G_0 = %.5f W m-2;\n"
+        "  [compare this result to that in output file]\n",
+	ye,FF); CHKERRQ(ierr);
 
     set<string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"
