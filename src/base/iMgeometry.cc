@@ -332,6 +332,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
         }
       }
 
+
       // apply free boundary rule: negative thickness becomes zero
       if (vHnew(i,j) < 0) {
         my_nonneg_rule_flux += (-vHnew(i,j));
@@ -424,7 +425,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
 PetscErrorCode IceModel::massContExplicitStepPartGrids() {
   PetscErrorCode ierr;
 
-  ierr = verbPrintf(3,grid.com, "massContExplicitStepPartGrids() is called\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(4,grid.com, "massContExplicitStepPartGrids() is called\n"); CHKERRQ(ierr);
 
   PetscScalar my_nonneg_rule_flux = 0, my_ocean_kill_flux = 0, my_float_kill_flux = 0;
 
@@ -465,6 +466,7 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
 
    if (config.get_flag("part_redist") == true) {
 		ierr = vHresidual.begin_access(); CHKERRQ(ierr);
+		ierr = vHresidual.set(0.0); CHKERRQ(ierr); //mass loss if max_loopcount for redistribution was not sufficient
 	}
 
   
@@ -551,6 +553,7 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
       divQ += (  velN * (velN > 0 ? vH(i,j) : vH(i,j+1))
                  - velS * (velS > 0 ? vH(i,j-1) : vH(i,j)) ) / dy;
 
+
         // ice-free (or partially-filled) cells adjacent to "full" floating cells
       if ((Mo > MASK_FLOATING) &&
           (Me == MASK_FLOATING ||
@@ -558,63 +561,76 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
            Mn == MASK_FLOATING ||
            Ms == MASK_FLOATING)) { //does in this form not account for grounded tributaries: thin ice shelves may evolve from grounded tongue
 
-          PetscInt countIceNeighbors=0; // counting existing ice neighbors
           PetscScalar Hav = 0.0;
 			
+		  PetscInt countIceNeighbors=0; // counting existing ice neighbors
+		
+		  // mean ice thickness over adjacent floating ice shelf neighbors
           if (Me == MASK_FLOATING) { Hav+=vH(i+1,j); countIceNeighbors+=1;} 
           if (Mw == MASK_FLOATING) { Hav+=vH(i-1,j); countIceNeighbors+=1;}
           if (Mn == MASK_FLOATING) { Hav+=vH(i,j+1); countIceNeighbors+=1;}
           if (Ms == MASK_FLOATING) { Hav+=vH(i,j-1); countIceNeighbors+=1;}
+
+ 		  if (countIceNeighbors>0){ 
+	      Hav=Hav/countIceNeighbors;
+   	   	  //if (part_redist) {	
+   		  //	const PetscReal  mslope = 2.4511e-18*grid.dx/(300*600/secpera);
+   		  //    for declining front C/Q0 according to analytical flowline profile in vandeveen with v0=300m/yr and H0=600m	    
+   		  //    Hav-=0.8*mslope*pow(Hav,5); //reduces the guess at the front
+   		  //}
+ 		  } else {
+   		  ierr = verbPrintf(1, grid.com,"!!! PISM_WARNING: no ice shelf neighbors at %d,%d\n",i,j); CHKERRQ(ierr);}
+		
+		/*
+		  // alternative: flux-weighted average over floating ice-shelf neighbors
+		  if (Me == MASK_FLOATING && vel(i+1,j).u < 0.0) { Hav-= vel(i+1,j).u * vH(i+1,j);} 
+          if (Mw == MASK_FLOATING && vel(i-1,j).u > 0.0) { Hav+= vel(i-1,j).u * vH(i-1,j);}
+          if (Mn == MASK_FLOATING && vel(i,j+1).v < 0.0) { Hav-= vel(i,j+1).v * vH(i,j+1);}
+          if (Ms == MASK_FLOATING && vel(i,j-1).v > 0.0) { Hav+= vel(i,j-1).v * vH(i-1,j);}
 			
-          if (countIceNeighbors>0){ 
-            Hav=Hav/countIceNeighbors;
-            //if (part_redist) {	
-            //	const PetscReal  mslope = 2.4511e-18*grid.dx/(300*600/secpera);
-            //    for declining front C/Q0 according to analytical flowline profile in vandeveen with v0=300m/yr and H0=600m	    
-            //    Hav-=0.8*mslope*pow(Hav,5); //reduces the guess at the front
-            //}
-          } else {
-            ierr = verbPrintf(1, grid.com,"PISMPIK_ERROR: countIceNeighbors=0\n"); CHKERRQ(ierr);}
+		  PetscScalar velRoot = sqrt((vel(i+1,j).u < 0 ? PetscSqr(vel(i+1,j).u) : 0.0) + 
+									 (vel(i-1,j).u > 0 ? PetscSqr(vel(i-1,j).u) : 0.0) +
+									 (vel(i,j+1).v < 0 ? PetscSqr(vel(i,j+1).v) : 0.0) +
+									 (vel(i,j-1).v > 0 ? PetscSqr(vel(i,j-1).v) : 0.0));
 			
+		 PetscScalar minHav=50.0;	
+		 if (velRoot>0 && Hav>=minHav) { 
+            Hav=Hav/velRoot;
+          } else { //can occur when flux comes from grounded cell, but next to floating cell
+			Hav=minHav;
+			//ierr = verbPrintf(3, grid.com,"!!! PISM_WARNING: no flux into partially filled grid cell at %d,%d\n",i,j); CHKERRQ(ierr);
+		  }
+		*/
           vHref(i,j)  -= divQ * dt;	
-          vHnew(i,j) = 0.0;
+          vHnew(i,j) = 0.0; // redundant
 
           // applying M and S also to partially filled cells	
           // to calculate the S-M contribution with respect to the final coverage ratio, let's assume	
 		  // $ vHref_new = vHref_old + (acab-shelfbmassflux) * dt * coverageRatio $, which equals
 		  // $ vHref_new = vHref_old + (acab-shelfbmassflux) * dt * vHref_new / Hav $.
 		  // Hence we get $ vHref_new = vHref_old / (1.0 - (acab-shelfbmassflux) * dt * Hav))
-          PetscScalar denominator =  1.0 - dt / Hav * (acab(i,j) - (include_bmr_in_continuity ? shelfbmassflux(i,j) : 0.0));
+		
+		  PetscScalar denominator =  1.0 - dt / Hav * (acab(i,j) - (include_bmr_in_continuity ? shelfbmassflux(i,j) : 0.0));
           vHref(i,j) = vHref(i,j) / denominator;
 			
-			
+
           PetscScalar coverageRatio = vHref(i,j)/Hav;
-		  //PetscScalar minHRedist = 50.0; // to avoid thin ice shelf tongues from water terminating glacier
-		
           if (coverageRatio>1.0) { // partially filled grid cell is considered to be full
-			//if (Hav>minHRedist) {
-				if (config.get_flag("part_redist") == true) {
-					vHresidual(i,j)=vHref(i,j)-Hav; //residual ice thickness
-				}
-            	vHnew(i,j) = Hav; //gets a "real" ice thickness
-			//} else {
-			//	vHnew(i,j) = vHref(i,j);	
-			//}	
-			
+			if (config.get_flag("part_redist") == true) {
+				vHresidual(i,j)=vHref(i,j)-Hav; //residual ice thickness
+				//ierr = verbPrintf(3,grid.com,"!!! Hresidual=%.2f for Href=%.2f, Hav=%.2f and acab-melt-factor=%.3f at %d,%d \n",vHresidual(i,j),vHref(i,j),Hav,1/denominator,i,j); CHKERRQ(ierr);
+				//ierr = verbPrintf(3,grid.com,"!!! Hresidual=%.5f for Href=%.5f, Hav=%.5f, velRoot=%.5f and acab-melt-factor=%.5f at %d,%d \n",vHresidual(i,j),vHref(i,j),Hav,velRoot*secpera,1/denominator,i,j); CHKERRQ(ierr);
+			}
+            vHnew(i,j) = Hav; //gets a "real" ice thickness
             vHref(i,j)=0.0;
-            Hav=0.0;
-          } else {
-			
-		}
-      }
-
-
-     else if ((Mo <= MASK_FLOATING) || // grounded/floating case
+          }	
+		
+      } else if ((Mo <= MASK_FLOATING) || // grounded/floating default case
           ((Mo > MASK_FLOATING) &&
            (Me < MASK_FLOATING ||
             Mw < MASK_FLOATING ||
             Mn < MASK_FLOATING ||
-            Ms < MASK_FLOATING))) { // ice-free, adjacent to a grounded cell
+            Ms < MASK_FLOATING))) { // ice-free ocean, adjacent to a grounded cell: FIXME
         
         vHnew(i,j) += (acab(i,j) - divQ) * dt; // include M
 		
@@ -628,7 +644,7 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
       }
 
 	else { // basically ice-free, not adjacent to a "full" cell, no matter what kind of
-	vHnew(i,j)=0.0;
+		vHnew(i,j)=0.0;
 	}
 
       // FIXME: take care of ice-free cells adjacent to grounded ice
@@ -670,8 +686,8 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
   ierr = vHnew.end_access(); CHKERRQ(ierr);
   ierr = vHref.end_access(); CHKERRQ(ierr);
   if (config.get_flag("part_redist") == true) {
-		ierr = vHresidual.end_access(); CHKERRQ(ierr);
-	}
+	ierr = vHresidual.end_access(); CHKERRQ(ierr);
+  }
 
   {
     ierr = PetscGlobalSum(&my_nonneg_rule_flux, &nonneg_rule_flux, grid.com); CHKERRQ(ierr);
@@ -724,10 +740,13 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
 
 	if (config.get_flag("part_redist") == true) {
 		// distribute residual ice mass, FIXME: Reporting!
-		ierr = calculateRedistResiduals(); CHKERRQ(ierr);
-		if (repeatRedist==PETSC_TRUE) {ierr = calculateRedistResiduals(); CHKERRQ(ierr);}
-		if (repeatRedist==PETSC_TRUE) {ierr = calculateRedistResiduals(); CHKERRQ(ierr);}
-		if (repeatRedist==PETSC_TRUE) {ierr = calculateRedistResiduals(); CHKERRQ(ierr);}
+		ierr = calculateRedistResiduals(); CHKERRQ(ierr); //while loop?
+		PetscInt loopcount=0;
+		while (repeatRedist==PETSC_TRUE && loopcount<3) {
+			ierr = calculateRedistResiduals(); CHKERRQ(ierr);
+			loopcount+=1;
+			ierr = verbPrintf(3,grid.com, "distribution loopcount = %d\n",loopcount); CHKERRQ(ierr);
+		}
 	}
 
   // Check if the ice thickness exceeded the height of the computational box
@@ -740,7 +759,7 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
 // This routine takes care of redistributing carry over ice mass when using -redist option
 PetscErrorCode IceModel::calculateRedistResiduals() {
   	PetscErrorCode ierr;
-	ierr = verbPrintf(3,grid.com, "calculateRedistResiduals() is called\n"); CHKERRQ(ierr);
+	ierr = verbPrintf(4,grid.com, "calculateRedistResiduals() is called\n"); CHKERRQ(ierr);
 
   	IceModelVec2S vHnew = vWork2d[0];
   	ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
@@ -756,41 +775,41 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
 	ierr = vHresidualnew.begin_access(); CHKERRQ(ierr);
 
 	
-	//if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
+	if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
     PetscReal currentSeaLevel=0.0; //FIXME
-    //ierr = ocean->sea_level_elevation(grid.year, dt / secpera, currentSeaLevel); CHKERRQ(ierr);
+    ierr = ocean->sea_level_elevation(grid.year, dt / secpera, currentSeaLevel); CHKERRQ(ierr);
 	
+	PetscScalar minHRedist = 0.0; // to avoid the propagation of thin ice shelf tongues
 	
 	for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     	for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-
+			// first step: distributing residual ice masses
 			if (vHresidual(i,j)>0.0) {
 	
 	          PetscInt countEmptyNeighbors=0; // counting empty/partially filled neighbors
 	          PetscTruth exEast=PETSC_FALSE,exWest=PETSC_FALSE,exNorth=PETSC_FALSE,exSouth=PETSC_FALSE;
 
-			  // check for partially filled/empty grid cell neighbors 
+			  // check for partially filled/empty grid cell neighbors (mask not updated yet, but vH is)
 	          if (vH(i+1,j)==0.0 && vbed(i+1,j)<currentSeaLevel) {countEmptyNeighbors+=1; exEast=PETSC_TRUE;} 
 	          if (vH(i-1,j)==0.0 && vbed(i-1,j)<currentSeaLevel) {countEmptyNeighbors+=1; exWest=PETSC_TRUE;}
 	          if (vH(i,j+1)==0.0 && vbed(i,j+1)<currentSeaLevel) {countEmptyNeighbors+=1; exNorth=PETSC_TRUE;}
 	          if (vH(i,j-1)==0.0 && vbed(i,j-1)<currentSeaLevel) {countEmptyNeighbors+=1; exSouth=PETSC_TRUE;}
 	
-			  if (countEmptyNeighbors==0) {
-				//ierr = verbPrintf(3,grid.com,"!!! PISM WARNING: Hresidual has no partially filled neighbors at %d,%d \n",i,j ); CHKERRQ(ierr);
-				vHnew(i,j)+=vHresidualnew(i,j); // thick ice possible
-				//vHresidualnew(i,j)=0.0; //mass loss
-				
-			  } else { //countEmptyNeighbors>0
-			    //remainder ice mass will be redistributed equally to all adjacent imfrac boxes (is there a ore physical one?)
+			  if (countEmptyNeighbors>0 && vH(i,j)>minHRedist)  {
+			    //remainder ice mass will be redistributed equally to all adjacent imfrac boxes (is there a more physical way?)
 			    if (exEast) vHref(i+1,j)+=vHresidual(i,j)/countEmptyNeighbors;
 			    if (exWest) vHref(i-1,j)+=vHresidual(i,j)/countEmptyNeighbors;
 			    if (exNorth) vHref(i,j+1)+=vHresidual(i,j)/countEmptyNeighbors;
 			    if (exSouth) vHref(i,j-1)+=vHresidual(i,j)/countEmptyNeighbors;
 			
-				//ierr = verbPrintf(3,grid.com,"!!! Hresidual has been redistributed to neighbors at %d,%d \n",i,j ); CHKERRQ(ierr);
+				//ierr = verbPrintf(3,grid.com,"!!! Hresidual has been redistributed to %d neighbors around %d,%d \n",countEmptyNeighbors,i,j ); CHKERRQ(ierr);
 			    vHresidualnew(i,j)=0.0;
+			  } else {
+				vHnew(i,j)+=vHresidual(i,j); // mass conservation, but thick ice at one grid cell possible
+				vHresidualnew(i,j)=0.0;
+				ierr = verbPrintf(3,grid.com,"!!! PISM WARNING: Hresidual has %d partially filled neighbors, set ice thickness to vHnew=%.2e at %d,%d \n",countEmptyNeighbors,vHnew(i,j),i,j ); CHKERRQ(ierr);
 			  }
-		   }
+		    } 
 		}
 	}
 	ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
@@ -801,42 +820,35 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
 	double	ice_rho = config.get("ice_density");
 	PetscScalar	Hav;
 	PetscScalar	Hcut=0.0;
-	PetscScalar minHCount=0.0;
-	PetscScalar minHRedist = 50.0; // to avoid thin ice shelf tongues from water terminating glacier
 	for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     	for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 	
-	
+			// second step: if neigbors, which gained redistributed ice, also become full, this needs to be redistributed in a repeated loop
 			if (vHref(i,j)>0.0) {
 				Hav=0.0;
-	          	PetscInt countIceNeighbors=0; // counting current full floating ice neighbors (mask not yet updated)
+	          	PetscInt countIceNeighbors=0; // counting current full floating ice neighbors (mask not yet updated), and calculate new average Hav
 
-          	  	if (vH(i+1,j)>minHCount && (vbed(i+1,j) < (currentSeaLevel - ice_rho/ocean_rho*vH(i+1,j)))) { Hav+=vH(i+1,j); countIceNeighbors+=1;} 
-			  	if (vH(i-1,j)>minHCount && (vbed(i-1,j) < (currentSeaLevel - ice_rho/ocean_rho*vH(i-1,j)))) { Hav+=vH(i-1,j); countIceNeighbors+=1;} 
-			  	if (vH(i,j+1)>minHCount && (vbed(i,j+1) < (currentSeaLevel - ice_rho/ocean_rho*vH(i,j+1)))) { Hav+=vH(i,j+1); countIceNeighbors+=1;} 
-			  	if (vH(i,j-1)>minHCount && (vbed(i,j-1) < (currentSeaLevel - ice_rho/ocean_rho*vH(i,j-1)))) { Hav+=vH(i,j-1); countIceNeighbors+=1;} 
+          	  	if (vH(i+1,j)>0.0 && (vbed(i+1,j) < (currentSeaLevel - ice_rho/ocean_rho*vH(i+1,j)))) { Hav+=vH(i+1,j); countIceNeighbors+=1;} 
+			  	if (vH(i-1,j)>0.0 && (vbed(i-1,j) < (currentSeaLevel - ice_rho/ocean_rho*vH(i-1,j)))) { Hav+=vH(i-1,j); countIceNeighbors+=1;} 
+			  	if (vH(i,j+1)>0.0 && (vbed(i,j+1) < (currentSeaLevel - ice_rho/ocean_rho*vH(i,j+1)))) { Hav+=vH(i,j+1); countIceNeighbors+=1;} 
+			  	if (vH(i,j-1)>0.0 && (vbed(i,j-1) < (currentSeaLevel - ice_rho/ocean_rho*vH(i,j-1)))) { Hav+=vH(i,j-1); countIceNeighbors+=1;} 
 
-	          	if (countIceNeighbors>0){
+				if (countIceNeighbors>0){
 	            	Hav=Hav/countIceNeighbors;
 	
 	          		PetscScalar coverageRatio = vHref(i,j)/Hav;
 	          		if (coverageRatio>1.0) { // partially filled grid cell is considered to be full
-						if (Hav>minHRedist) {
-							vHresidualnew(i,j)+=vHref(i,j)-Hav;
-							Hcut+=vHresidualnew(i,j);// just for testing, if methods needs to be run once more
-							vHnew(i,j) += Hav;
-						} else {
-							vHnew(i,j) += vHref(i,j);
-							vHresidualnew(i,j)=0.0;
-						}	
+						vHresidualnew(i,j)=vHref(i,j)-Hav;
+						Hcut+=vHresidualnew(i,j); // summed up to decide, if methods needs to be run once more 
+						vHnew(i,j) += Hav;
 			    		vHref(i,j) = 0.0;
 						//ierr = verbPrintf(3,grid.com,"!!! Partially filled grid cell became full after redistribution at %d,%d \n",i,j ); CHKERRQ(ierr);
 					} 
-			  	} else {
-					vHnew(i,j) += vHref(i,j); // thick ice possible
+			  	} else { // no full floating ice neighbor 
+					vHnew(i,j) += vHref(i,j); // mass conservation, but thick ice at one grid cell possible
 					vHref(i,j) = 0.0;
 					vHresidualnew(i,j)=0.0;
-					//ierr = verbPrintf(3, grid.com,"!!! PISM_WARNING: RedistCountIceNeighbors=0 with vHnew=%f at %d,%d \n",vHnew(i,j),i,j); CHKERRQ(ierr);
+					ierr = verbPrintf(3, grid.com,"!!! PISM_WARNING: No floating ice neighbors to calculate Hav, set ice thickness to vHnew=%.2e at %d,%d \n",vHnew(i,j),i,j); CHKERRQ(ierr);
 			  	} 
 		   	}
 		}
@@ -844,23 +856,21 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
 
     PetscScalar gHcut; //check, if redistribution should be run once more
     ierr = PetscGlobalSum(&Hcut, &gHcut, grid.com); CHKERRQ(ierr);
-	if (gHcut>0.0){ repeatRedist=PETSC_TRUE;}
-    else{			repeatRedist=PETSC_FALSE;}
-	ierr = verbPrintf(3, grid.com,"!!! Hcut=%f \n",gHcut); CHKERRQ(ierr);
+	if (gHcut>0.0) { repeatRedist=PETSC_TRUE;}
+    else {			repeatRedist=PETSC_FALSE;}
+	//ierr = verbPrintf(3, grid.com,"!!! Hcut=%f \n",gHcut); CHKERRQ(ierr);
 
 	ierr = vH.end_access(); CHKERRQ(ierr);
   	ierr = vHnew.end_access(); CHKERRQ(ierr);
+  	// finally copy vHnew into vH and communicate ghosted values
+  	ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
+  	ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
 
   	ierr = vHref.end_access(); CHKERRQ(ierr); 
 	ierr = vbed.end_access(); CHKERRQ(ierr);
 	
 	ierr = vHresidual.end_access(); CHKERRQ(ierr);
 	ierr = vHresidualnew.end_access(); CHKERRQ(ierr);
-	
-  	// finally copy vHnew into vH and communicate ghosted values
-  	ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
-  	ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
-
   	ierr = vHresidualnew.beginGhostComm(vHresidual); CHKERRQ(ierr);
   	ierr = vHresidualnew.endGhostComm(vHresidual); CHKERRQ(ierr);
 

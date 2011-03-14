@@ -307,7 +307,7 @@ PetscErrorCode IceModel::createVecs() {
 	if (config.get_flag("part_redist") == true){
       // Hav
       ierr = vHresidual.create(grid, "Hresidual", true); CHKERRQ(ierr);
-      ierr = vHresidual.set_attrs("model_state", "residual ice thickness in recently filled boundary grid cell",
+      ierr = vHresidual.set_attrs("diagnostic", "residual ice thickness in recently filled boundary grid cell",
                           "m", ""); CHKERRQ(ierr);
       ierr = variables.add(vHresidual); CHKERRQ(ierr);
 	}
