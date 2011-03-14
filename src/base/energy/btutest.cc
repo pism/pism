@@ -17,9 +17,12 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "Driver for testing PISMBedThermalUnit using Test K.  Sans IceModel.\n"
+  "Tests PISMBedThermalUnit using Test K.  Sans IceModel.\n"
   "Requires an input file only to get 2D grid information, and otherwise ignors\n"
-  "3D and thermodynamic information in the file.\n";
+  "3D and thermodynamic information in the file.  Example with one time step:\n"
+  "    pisms -Mbz 11 -Lbz 1000 -zb_spacing equal -o foo.nc\n"
+  "    btutest -i foo.nc -o bar.nc -ys 0.0 -ye 1.0 -dt 1.0 -Mz 41 -Mbz 11 -Lbz 1000\n"
+  "    ncview bar.nc\n\n";
 
 #include "pism_const.hh"
 #include "grid.hh"
@@ -40,7 +43,7 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
   
   // these vertical grid settings are about *input file only* and will not
   //   affect the computation or the output file grid
-  grid.compute_vertical_levels();
+  //grid.compute_vertical_levels();
   grid.printInfo(1);
   grid.printVertLevels(1);
 
@@ -74,7 +77,7 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
      "J kg-1", ""); CHKERRQ(ierr);
   ierr = variables.add(*enthalpy); CHKERRQ(ierr);
 
-  ierr = ghf->create(grid, "btu_bheatflx", false); CHKERRQ(ierr);
+  ierr = ghf->create(grid, "bheatflx", false); CHKERRQ(ierr);
   ierr = ghf->set_attrs("",
                        "upward geothermal flux at bedrock thermal layer base",
 		       "W m-2", ""); CHKERRQ(ierr);
@@ -175,12 +178,6 @@ int main(int argc, char *argv[]) {
     PISMVars variables;
     ierr = createVecs(grid, variables); CHKERRQ(ierr);
 
-    // mask has constant value
-    IceModelVec2Mask *mask;
-    mask = dynamic_cast<IceModelVec2Mask*>(variables.get("mask"));
-    if (mask == NULL) SETERRQ(2, "mask is not available");
-    ierr = mask->set(MASK_SHEET); CHKERRQ(ierr);
-
     // thickness has constant value
     IceModelVec2S *thk;
     thk = dynamic_cast<IceModelVec2S*>(variables.get("thk"));
@@ -189,8 +186,8 @@ int main(int argc, char *argv[]) {
 
     // lithosphere (bottom of bedrock layer) heat flux has constant value
     IceModelVec2S *ghf;
-    ghf = dynamic_cast<IceModelVec2S*>(variables.get("btu_bheatflx"));
-    if (ghf == NULL) SETERRQ(4, "btu_bheatflx is not available");
+    ghf = dynamic_cast<IceModelVec2S*>(variables.get("bheatflx"));
+    if (ghf == NULL) SETERRQ(4, "bheatflx is not available");
     ierr = ghf->set(0.042); CHKERRQ(ierr);  // see Test K
 
     // we will be filling enthalpy from temperature used in Test K
@@ -201,7 +198,7 @@ int main(int argc, char *argv[]) {
     // Initialize BTU object:
     PISMBedThermalUnit btu(grid, EC, config);
 
-    ierr = btu.init(variables); CHKERRQ(ierr);
+    ierr = btu.init(variables); CHKERRQ(ierr);  // FIXME: this is bootstrapping, really
 
     // worry about time step
     int  N = (int)ceil((ye - ys) / dt_years);
@@ -216,6 +213,26 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(2,com,
         "  PISMBedThermalUnit reports max timestep of %.4f years ...\n",
 	max_dt_years); CHKERRQ(ierr);
+
+    // fill exact bedrock temperature from Test K at time ys
+    PetscReal dzb;
+    PetscInt  Mbz;
+    btu.temp.get_levels(Mbz);
+    btu.temp.get_spacing(dzb);
+    const PetscReal Lbz = dzb * ((double)Mbz - 1);
+    ierr = btu.temp.begin_access(); CHKERRQ(ierr);
+    PetscScalar *Tb; // columns of these values
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        ierr = btu.temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
+        for (PetscInt k=0; k < Mbz; k++) {
+          const PetscReal z = - Lbz + (double)k * dzb;
+          PetscReal FF; // Test K:  use Tb[k], ignor FF
+          ierr = exactK(ys * secpera, z, &Tb[k], &FF, 0); CHKERRQ(ierr);
+        }
+      }
+    }
+    ierr = btu.temp.end_access(); CHKERRQ(ierr);
 
     // actually ask btu to do its time-step
     for (PetscInt n = 0; n < N; n++) {
@@ -240,7 +257,7 @@ int main(int argc, char *argv[]) {
       ierr = enthalpy->end_access(); CHKERRQ(ierr);
       // NOTE: we are not communicating anything; FIXME?
 
-      // update the temperature inside the ttermal layer
+      // update the temperature inside the thermal layer
       ierr = btu.update(y, dt_years); CHKERRQ(ierr);
     }
 
@@ -281,5 +298,4 @@ int main(int argc, char *argv[]) {
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }
-
 
