@@ -20,9 +20,13 @@ static char help[] =
   "Tests PISMBedThermalUnit using Test K.  Sans IceModel.\n"
   "Requires an input file only to get 2D grid information, and otherwise ignors\n"
   "3D and thermodynamic information in the file.  Example with one time step:\n"
-  "    pisms -Mbz 11 -Lbz 1000 -zb_spacing equal -o foo.nc\n"
-  "    btutest -i foo.nc -o bar.nc -ys 0.0 -ye 1.0 -dt 1.0 -Mz 41 -Mbz 11 -Lbz 1000\n"
-  "    ncview bar.nc\n\n";
+  "    pisms -Mx 3 -My 3 -Mbz 11 -Lbz 1000 -zb_spacing equal -o foo.nc\n"
+  "    btutest -i foo.nc -o bar.nc -ys 0.0 -ye 1.0 -dt 1.0 -Mz 31 -Mbz 11 -Lbz 1000\n"
+  "And continuing on refinement path:\n"
+  "    pisms -Mx 3 -My 3 -Mbz 21 -Lbz 1000 -zb_spacing equal -o foo.nc\n"
+  "    btutest -i foo.nc -o bar.nc -ys 0.0 -ye 1.0 -dt 1.0 -Mz 31 -Mbz 21 -Lbz 1000\n"
+  "    pisms -Mx 3 -My 3 -Mbz 41 -Lbz 1000 -zb_spacing equal -o foo.nc\n"
+  "    btutest -i foo.nc -o bar.nc -ys 0.0 -ye 1.0 -dt 1.0 -Mz 31 -Mbz 41 -Lbz 1000\n\n";
 
 #include "pism_const.hh"
 #include "grid.hh"
@@ -40,13 +44,6 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
   ierr = nc.get_grid(filename.c_str()); CHKERRQ(ierr);
   grid.compute_nprocs();
   grid.compute_ownership_ranges();
-  
-  // these vertical grid settings are about *input file only* and will not
-  //   affect the computation or the output file grid
-  //grid.compute_vertical_levels();
-  grid.printInfo(1);
-  grid.printVertLevels(1);
-
   ierr = grid.createDA(); CHKERRQ(ierr);
   return 0;
 }
@@ -167,6 +164,9 @@ int main(int argc, char *argv[]) {
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // initialize the computational grid:
+    // FIXME:  in fact the axis dimension and variable zb is kept from the input file,
+    //         so in order for the output file to make sense the input file has to share
+    //         the vertical bedrock grid
     ierr = verbPrintf(2,com,
 	"  initializing grid (2D) from NetCDF file %s...\n", inname.c_str()); CHKERRQ(ierr);
     ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
@@ -215,11 +215,11 @@ int main(int argc, char *argv[]) {
 	max_dt_years); CHKERRQ(ierr);
 
     // fill exact bedrock temperature from Test K at time ys
-    PetscReal dzb;
+    PetscReal dzb, Lbz;
     PetscInt  Mbz;
     btu.temp.get_levels(Mbz);
     btu.temp.get_spacing(dzb);
-    const PetscReal Lbz = dzb * ((double)Mbz - 1);
+    btu.temp.get_layer_depth(Lbz);
     ierr = btu.temp.begin_access(); CHKERRQ(ierr);
     PetscScalar *Tb; // columns of these values
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -234,9 +234,10 @@ int main(int argc, char *argv[]) {
     }
     ierr = btu.temp.end_access(); CHKERRQ(ierr);
 
+    ierr = verbPrintf(2,com,"  running: "); CHKERRQ(ierr);
     // actually ask btu to do its time-step
     for (PetscInt n = 0; n < N; n++) {
-      const PetscReal y = ys + dt_years * (double)n;
+      const PetscReal y = ys + dt_years * (double)n;  // time at start of time-step
 
       // compute exact ice temperature, thus enthalpy, at time y
       ierr = enthalpy->begin_access(); CHKERRQ(ierr);
@@ -249,31 +250,42 @@ int main(int argc, char *argv[]) {
                             depth = 3000.0 - z; // FIXME task #7297
             PetscReal TT, FF; // Test K:  use TT, ignor FF
             ierr = exactK(y * secpera, z, &TT, &FF, 0); CHKERRQ(ierr);
-            ierr = EC.getEnthPermissive(TT,0.0,EC.getPressureFromDepth(depth),
-                                        Enthij[k]); CHKERRQ(ierr);
+            ierr = EC.getEnth(TT,0.0,EC.getPressureFromDepth(depth),Enthij[k]); CHKERRQ(ierr);
           }
         }
       }
       ierr = enthalpy->end_access(); CHKERRQ(ierr);
-      // NOTE: we are not communicating anything; FIXME?
+      // we are not communicating anything, which is fine
 
       // update the temperature inside the thermal layer
       ierr = btu.update(y, dt_years); CHKERRQ(ierr);
+      ierr = verbPrintf(2,com,"."); CHKERRQ(ierr);
     }
+    ierr = verbPrintf(2,com,"\n  done ...\n"); CHKERRQ(ierr);
 
     // reuse ghf for final output heat flux G_0 at z=0
-    ierr = ghf->set_name("bheatflx0"); CHKERRQ(ierr);  // FIXME: does rename mean writing vars from dictionary will fail?
+    ierr = ghf->set_name("bheatflx0"); CHKERRQ(ierr);
     ierr = ghf->set_attrs("",
                        "upward geothermal flux at ice/bedrock interface",
 		       "W m-2", ""); CHKERRQ(ierr);
     ierr = btu.get_upward_geothermal_flux(*ghf); CHKERRQ(ierr);
 
+    // report result to std out, at center of grid
+    ierr = ghf->begin_access(); CHKERRQ(ierr);
+    const PetscInt ci = grid.Mx/2, cj = grid.My/2;
+    if ((ci >= grid.xs) && (ci < grid.xs+grid.xm) && (cj >= grid.ys) && (cj < grid.ys+grid.ym)) {
+      ierr = verbPrintf(2,com,
+        "  numerical upward heat flux at z=0, at end year %.2f, at center of grid is\n"
+        "    G_0 = %.7f W m-2;\n",
+	ye,(*ghf)(ci,cj)); CHKERRQ(ierr);
+    }
+    ierr = ghf->end_access(); CHKERRQ(ierr);
+
     // compare to the right answer from Test K
     PetscReal TT, FF; // Test K:  use FF, ignor TT
     ierr = exactK(ye * secpera, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
-        "  exact Test K reports upward heat flux at z=0, at end year %.2f, as G_0 = %.5f W m-2;\n"
-        "  [compare this result to that in output file]\n",
+        "  exact Test K reports upward heat flux at z=0, at end year %.2f, as G_0 = %.7f W m-2;\n",
 	ye,FF); CHKERRQ(ierr);
 
     set<string> vars;

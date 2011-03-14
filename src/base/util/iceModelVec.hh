@@ -393,8 +393,6 @@ public:
   IceModelVec3D(const IceModelVec3D &other);
   virtual ~IceModelVec3D();
 public:
-  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[],
-				 bool local, int stencil_width = 1) = 0;
 
   virtual PetscErrorCode  begin_access();
   virtual PetscErrorCode  end_access();
