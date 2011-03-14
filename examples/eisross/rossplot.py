@@ -78,12 +78,24 @@ except Exception:
     See ross_plot.py --help and User's Manual.  Exiting..."""
     exit(-1)
 
-H = squeeze(infile.variables["thk"][:])
-mask = squeeze(infile.variables["mask"][:])
-cbar = squeeze(infile.variables["cbar"][:])
-ubar = squeeze(infile.variables["ubar_ssa"][:])
-vbar = squeeze(infile.variables["vbar_ssa"][:])
-pismaccur = squeeze(infile.variables["accur"][:])
+def get_var(nc, name):
+    """Get a 2D field from a NetCDF file, transposing if necessary. The
+    returned array will always have the (y,x) variable order."""
+
+    var = nc.variables[name]
+    dims = var.dimensions
+    if dims.index('x') < dims.index('y'):
+        # transpose
+        return squeeze(var[:]).T
+    else:
+        return squeeze(var[:])
+
+H         = get_var(infile, "thk")
+mask      = get_var(infile, "mask")
+cbar      = get_var(infile, "cbar")
+ubar      = get_var(infile, "ubar_ssa")
+vbar      = get_var(infile, "vbar_ssa")
+pismaccur = get_var(infile, "accur")
 print "done."
 
 # this may not work if axis order is flipped; works r1443 with Pism_FAST_WRITE=2
