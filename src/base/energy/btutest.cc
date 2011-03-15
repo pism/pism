@@ -17,16 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "Tests PISMBedThermalUnit using Test K.  Sans IceModel.\n"
-  "Requires an input file only to get 2D grid information, and otherwise ignors\n"
-  "3D and thermodynamic information in the file.  Example with one time step:\n"
-  "    pisms -Mx 3 -My 3 -Mbz 11 -Lbz 1000 -zb_spacing equal -o foo.nc\n"
-  "    btutest -i foo.nc -o bar.nc -ys 0.0 -ye 1.0 -dt 1.0 -Mz 31 -Mbz 11 -Lbz 1000\n"
-  "And continuing on refinement path:\n"
-  "    pisms -Mx 3 -My 3 -Mbz 21 -Lbz 1000 -zb_spacing equal -o foo.nc\n"
-  "    btutest -i foo.nc -o bar.nc -ys 0.0 -ye 1.0 -dt 1.0 -Mz 31 -Mbz 21 -Lbz 1000\n"
-  "    pisms -Mx 3 -My 3 -Mbz 41 -Lbz 1000 -zb_spacing equal -o foo.nc\n"
-  "    btutest -i foo.nc -o bar.nc -ys 0.0 -ye 1.0 -dt 1.0 -Mz 31 -Mbz 41 -Lbz 1000\n\n";
+  "Tests PISMBedThermalUnit using Test K.  Sans IceModel.\n\n";
 
 #include "pism_const.hh"
 #include "grid.hh"
@@ -35,18 +26,6 @@ static char help[] =
 #include "bedrockThermalUnit.hh"
 
 #include "../../verif/tests/exactTestK.h"
-
-
-static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
-  PetscErrorCode ierr;
-
-  PISMIO nc(&grid);
-  ierr = nc.get_grid(filename.c_str()); CHKERRQ(ierr);
-  grid.compute_nprocs();
-  grid.compute_ownership_ranges();
-  ierr = grid.createDA(); CHKERRQ(ierr);
-  return 0;
-}
 
 
 static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
@@ -88,14 +67,12 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 static PetscErrorCode doneWithIceInfo(PISMVars &variables) {
   // Get the names of all the variables allocated earlier:
   set<string> vars = variables.keys();
-
   set<string>::iterator i = vars.begin();
   while (i != vars.end()) {
     IceModelVec *var = variables.get(*i);
     delete var;
     i++;
   }
-
   return 0;
 }
 
@@ -105,9 +82,7 @@ int main(int argc, char *argv[]) {
 
   MPI_Comm    com;
   PetscMPIInt rank, size;
-
   ierr = PetscInitialize(&argc, &argv, PETSC_NULL, help); CHKERRQ(ierr);
-
   com = PETSC_COMM_WORLD;
   ierr = MPI_Comm_rank(com, &rank); CHKERRQ(ierr);
   ierr = MPI_Comm_size(com, &size); CHKERRQ(ierr);
@@ -120,58 +95,72 @@ int main(int argc, char *argv[]) {
 
     // check required options
     vector<string> required;
-    required.push_back("-i");
-    required.push_back("-o");
-    required.push_back("-ys");
-    required.push_back("-ye");
-    required.push_back("-dt");
-    required.push_back("-Mz");
     required.push_back("-Mbz");
     required.push_back("-Lbz");
     ierr = show_usage_check_req_opts(com, "btutest", required,
-      "  btutest -i IN.nc -o OUT.nc -ys A -ye B -dt C -Mz MM -Mbz NN -Lbz 1000.0\n"
-      "where:\n"
-      "  -i             input file in NetCDF format\n"
-      "  -o             output file in NetCDF format\n"
+      "  btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
+      "where these are required because they are used in PISMBedThermalUnit:\n"
+      "  -Mbz           number of bedrock thermal layer levels to use\n"
+      "  -Lbz 1000.0    depth of bedrock thermal layer (required; Lbz=1000.0 m in Test K)\n"
+      "and these are allowed:\n"
+      "  -o             output file name; NetCDF format\n"
       "  -ys            start year in using Test K\n"
       "  -ye            end year in using Test K\n"
       "  -dt            time step B (= positive float) in years\n"
-      "  -Mz            number of ice levels to use; note -Lz option not needed here\n"
-      "  -Mbz           number of bedrock thermal layer levels to use\n"
-      "  -Lbz 1000.0    depth of bedrock thermal layer (required; Lbz=1000.0 m in Test K)\n"
+      "  -Mz            number of ice levels to use\n"
+      "  -Lz            height of ice/atmospher box\n"
       ); CHKERRQ(ierr);
+
+    ierr = verbPrintf(2,com,
+        "btutest tests PISMBedThermalUnit and IceModelVec3BTU\n"); CHKERRQ(ierr);
 
     // read the config option database:
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
-    IceGrid grid(com, rank, size, config);
+    // when IceGrid constructor is called, these settings are used
+    config.set_string("grid_ice_vertical_spacing","equal");
+    config.set_string("grid_bed_vertical_spacing","equal");
 
+    // create grid and set defaults
+    IceGrid grid(com, rank, size, config);
+    grid.Mbz = 11;
+    grid.Lbz = 1000.0;
+    grid.Mz = 41;
+    grid.Lz = 4000.0;
+    grid.Mx = 3;
+    grid.My = 3;
+    grid.Lx = 1500e3;
+    grid.Ly = grid.Lx;
+    grid.start_year = 0.0;
+    grid.end_year = 1.0;
+
+    ierr = verbPrintf(2,com,
+	"  initializing IceGrid from options ...\n"); CHKERRQ(ierr);
     bool flag;
-    PetscReal dt_years = 0.0, ys, ye;
-    PetscInt  Mz;
-    string inname, outname;
+    PetscReal dt_years = 1.0;
+    string outname="unnamed_btutest.nc";
     ierr = PetscOptionsBegin(grid.com, "", "BTU_TEST options", ""); CHKERRQ(ierr);
     {
-      ierr = PISMOptionsString("-i", "Input file name", inname, flag); CHKERRQ(ierr);
       ierr = PISMOptionsString("-o", "Output file name", outname, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsReal("-ys", "starting time in years", ys, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsReal("-ye", "starting time in years", ye, flag); CHKERRQ(ierr);
+      ierr = PISMOptionsReal("-ys", "starting time in years", grid.start_year, flag); CHKERRQ(ierr);
+      ierr = PISMOptionsReal("-ye", "starting time in years", grid.end_year, flag); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-dt", "Time-step, in years", dt_years, flag); CHKERRQ(ierr);
-      ierr = PISMOptionsInt("-Mz", "number of ice layers", Mz, flag); CHKERRQ(ierr);
-      // -Mbz is checked by IceModelVec3BTU (FIXME)
-      // -Lbz is checked by IceModelVec3BTU (FIXME)
+      ierr = PISMOptionsInt("-Mz", "number of vertical layers in ice", grid.Mz, flag); CHKERRQ(ierr);
+      ierr = PISMOptionsReal("-Lz", "height of ice/atmosphere boxr", grid.Lz, flag); CHKERRQ(ierr);
+      // -Mbz is ALSO checked by IceModelVec3BTU
+      ierr = PISMOptionsInt("-Mbz", "number of vertical layers in bedrock thermal layer", grid.Mbz, flag); CHKERRQ(ierr);
+      // -Lbz is ALSO checked by IceModelVec3BTU
+      ierr = PISMOptionsReal("-Lbz", "thickness of bedrock thermal layer", grid.Lbz, flag); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-    // initialize the computational grid:
-    // FIXME:  in fact the axis dimension and variable zb is kept from the input file,
-    //         so in order for the output file to make sense the input file has to share
-    //         the vertical bedrock grid
-    ierr = verbPrintf(2,com,
-	"  initializing grid (2D) from NetCDF file %s...\n", inname.c_str()); CHKERRQ(ierr);
-    ierr = setupIceGridFromFile(inname,grid); CHKERRQ(ierr);
-    grid.start_year = ys;
-    grid.end_year   = ye;
+    // complete grid initialization based on user options
+    grid.compute_nprocs();
+    grid.compute_ownership_ranges();
+    ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
+    if (grid.Mbz < 1) grid.Mbz = 1;  // FIXME: just to protect current IceGrid init requirement; removable ...
+    ierr = grid.compute_vertical_levels(); CHKERRQ(ierr);
+    ierr = grid.createDA(); CHKERRQ(ierr);
 
     // allocate tools and IceModelVecs
     EnthalpyConverter EC(config);
@@ -195,15 +184,15 @@ int main(int argc, char *argv[]) {
     enthalpy = dynamic_cast<IceModelVec3*>(variables.get("enthalpy"));
     if (enthalpy == NULL) SETERRQ(5, "enthalpy is not available");
 
-    // Initialize BTU object:
+    // initialize BTU object:
     PISMBedThermalUnit btu(grid, EC, config);
 
     ierr = btu.init(variables); CHKERRQ(ierr);  // FIXME: this is bootstrapping, really
 
     // worry about time step
-    int  N = (int)ceil((ye - ys) / dt_years);
+    int  N = (int)ceil((grid.end_year - grid.start_year) / dt_years);
     PetscReal old_dt_years = dt_years;
-    dt_years = (ye - ys) / (double)N;
+    dt_years = (grid.end_year - grid.start_year) / (double)N;
     ierr = verbPrintf(2,com,
         "  user set timestep of %.4f years ...\n"
         "  reset to %.4f years to get integer number of steps ... \n",
@@ -215,29 +204,31 @@ int main(int argc, char *argv[]) {
 	max_dt_years); CHKERRQ(ierr);
 
     // fill exact bedrock temperature from Test K at time ys
-    PetscReal dzb, Lbz;
-    PetscInt  Mbz;
-    btu.temp.get_levels(Mbz);
-    btu.temp.get_spacing(dzb);
-    btu.temp.get_layer_depth(Lbz);
-    ierr = btu.temp.begin_access(); CHKERRQ(ierr);
-    PetscScalar *Tb; // columns of these values
-    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-        ierr = btu.temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
-        for (PetscInt k=0; k < Mbz; k++) {
-          const PetscReal z = - Lbz + (double)k * dzb;
-          PetscReal FF; // Test K:  use Tb[k], ignor FF
-          ierr = exactK(ys * secpera, z, &Tb[k], &FF, 0); CHKERRQ(ierr);
+    if (btu.temp.was_created()) {
+      PetscReal dzb, Lbz;
+      PetscInt  Mbz;
+      btu.temp.get_levels(Mbz);
+      btu.temp.get_spacing(dzb);
+      btu.temp.get_layer_depth(Lbz);
+      ierr = btu.temp.begin_access(); CHKERRQ(ierr);
+      PetscScalar *Tb; // columns of these values
+      for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+        for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+          ierr = btu.temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
+          for (PetscInt k=0; k < Mbz; k++) {
+            const PetscReal z = - Lbz + (double)k * dzb;
+            PetscReal FF; // Test K:  use Tb[k], ignor FF
+            ierr = exactK(grid.start_year * secpera, z, &Tb[k], &FF, 0); CHKERRQ(ierr);
+          }
         }
       }
+      ierr = btu.temp.end_access(); CHKERRQ(ierr);
     }
-    ierr = btu.temp.end_access(); CHKERRQ(ierr);
 
-    ierr = verbPrintf(2,com,"  running: "); CHKERRQ(ierr);
-    // actually ask btu to do its time-step
+    // actually do the time-stepping
+    ierr = verbPrintf(2,com,"  running ...\n  "); CHKERRQ(ierr);
     for (PetscInt n = 0; n < N; n++) {
-      const PetscReal y = ys + dt_years * (double)n;  // time at start of time-step
+      const PetscReal y = grid.start_year + dt_years * (double)n;  // time at start of time-step
 
       // compute exact ice temperature, thus enthalpy, at time y
       ierr = enthalpy->begin_access(); CHKERRQ(ierr);
@@ -261,32 +252,41 @@ int main(int argc, char *argv[]) {
       ierr = btu.update(y, dt_years); CHKERRQ(ierr);
       ierr = verbPrintf(2,com,"."); CHKERRQ(ierr);
     }
+
     ierr = verbPrintf(2,com,"\n  done ...\n"); CHKERRQ(ierr);
 
-    // reuse ghf for final output heat flux G_0 at z=0
+    // compute final output heat flux G_0 at z=0; reuse ghf for this purpose
     ierr = ghf->set_name("bheatflx0"); CHKERRQ(ierr);
     ierr = ghf->set_attrs("",
                        "upward geothermal flux at ice/bedrock interface",
 		       "W m-2", ""); CHKERRQ(ierr);
     ierr = btu.get_upward_geothermal_flux(*ghf); CHKERRQ(ierr);
 
-    // report result to std out, at center of grid
-    ierr = ghf->begin_access(); CHKERRQ(ierr);
-    const PetscInt ci = grid.Mx/2, cj = grid.My/2;
-    if ((ci >= grid.xs) && (ci < grid.xs+grid.xm) && (cj >= grid.ys) && (cj < grid.ys+grid.ym)) {
-      ierr = verbPrintf(2,com,
-        "  numerical upward heat flux at z=0, at end year %.2f, at center of grid is\n"
-        "    G_0 = %.7f W m-2;\n",
-	ye,(*ghf)(ci,cj)); CHKERRQ(ierr);
-    }
-    ierr = ghf->end_access(); CHKERRQ(ierr);
-
-    // compare to the right answer from Test K
+    // get, and tell stdout, the correct answer from Test K
     PetscReal TT, FF; // Test K:  use FF, ignor TT
-    ierr = exactK(ye * secpera, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
+    ierr = exactK(grid.end_year * secpera, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
         "  exact Test K reports upward heat flux at z=0, at end year %.2f, as G_0 = %.7f W m-2;\n",
-	ye,FF); CHKERRQ(ierr);
+	grid.end_year,FF); CHKERRQ(ierr);
+
+    // compute numerical error
+    PetscReal maxghferr, avghferr;
+    ierr = ghf->shift(-FF); CHKERRQ(ierr);
+    ierr = ghf->norm(NORM_INFINITY,maxghferr); CHKERRQ(ierr);
+    ierr = ghf->norm(NORM_1,avghferr); CHKERRQ(ierr);
+    ierr = ghf->shift(+FF); CHKERRQ(ierr); // shift it back for writing
+    avghferr /= (grid.Mx * grid.My);
+    ierr = verbPrintf(2,grid.com, 
+                      "case Mbz = %d, dt = %.5f:\n", grid.Mbz, dt_years); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, 
+                      "NUMERICAL ERRORS in upward heat flux at z=0 relative to exact solution:\n");
+                      CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, 
+                      "bheatflx0  :       max    prcntmax          av\n"); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, 
+                      "           %11.7f  %11.7f  %11.7f\n", 
+                      maxghferr,100.0*maxghferr/FF,avghferr); CHKERRQ(ierr);
+    ierr = verbPrintf(1,grid.com, "NUM ERRORS DONE\n");  CHKERRQ(ierr);
 
     set<string> vars;
     btu.add_vars_to_output("big", vars); // "write everything you can"
@@ -304,7 +304,6 @@ int main(int argc, char *argv[]) {
 
     ierr = doneWithIceInfo(variables); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done.\n"); CHKERRQ(ierr);
-
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

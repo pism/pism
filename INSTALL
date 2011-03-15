@@ -44,11 +44,11 @@ To get source code updates including bug fixes, and build and install them, do
   $ svn up
   $ make
 
-(This will install an updated version of PISM in the source tree. Please see
-the Installation Manual if you want to build and install out-of-source.)
+Please see the Installation Manual for more information on the build process.
 
-We have written a PISM User's Manual (PDF) which will explain most of what
-you want to know.  We hope.  Find it at www.pism-docs.org.
+The PISM User's Manual will explain most of what you want to know to do ice
+sheet modeling.  Find it at www.pism-docs.org.
 
-If you have quiestions about PISM, its installation or use, do not hesitate to
+If you have questions about PISM usage, installation, or creating new models,
 e-mail us at <help@pism-docs.org>.
+

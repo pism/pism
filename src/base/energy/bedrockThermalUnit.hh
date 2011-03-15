@@ -24,7 +24,6 @@
 #include "PISMVars.hh"
 #include "materials.hh"
 #include "enthalpyConverter.hh"
-#include "PISMDiagnostic.hh"
 
 //! Class for a 3d DA-based Vec for PISMBedThermalUnit.
 class IceModelVec3BTU : public IceModelVec3D {
@@ -47,7 +46,7 @@ private:
 };
 
 
-//! Given the ice/bedrock interface temperature for the duration of one time-step, provides upward geothermal flux at that interface.
+//! Given the ice/bedrock interface temperature for the duration of one time-step, provides upward geothermal flux at that interface at the end of the time-step.
 /*!
 The geothermal flux actually applied to the base of an ice sheet is dependent, over time,
 on the temperature of the basal ice itself.  The purpose of a bedrock thermal layer
@@ -79,6 +78,19 @@ update() method, is the standard 1D heat equation
     \f[\rho_b c_b \frac{\partial T_b}{\partial t} = k_b \frac{\partial^2 T_b}{\partial z^2}\f]
 where \f$\rho_b\f$ = \c bedrock_thermal_density and \f$c_b\f$ =
 \c bedrock_thermal_specific_heat_capacity in pism_config.cdl.
+
+If \c n_levels>=3 then everything is the general case.  The lithospheric temperature
+in \c temp is saved in files as \c litho_temp.  The get_upward_geothermal_flux()
+method uses second-order differencing to compute the values of \f$G_0\f$.
+
+If \c n_levels<=1 then this object becomes very simplified: there is no internal
+state in IceModelVec3BTU temp.  The update() and allocate() methods are null,
+and the get_upward_geothermal_flux() method does nothing other than to copy the
+field \f$G\$ = \c bheatflx into \c result.
+
+If \c n_levels==2 then everything is the general case except that 
+get_upward_geothermal_flux() method uses first-order differencing to compute the
+values of \f$G_0\f$.
  */
 class PISMBedThermalUnit : public PISMComponent_TS {
 
@@ -101,12 +113,16 @@ public:
 
   IceModelVec3BTU  temp;     //!< storage for bedrock thermal layer temperature;
                              //!    part of state; units K; equally-spaced layers;
+                             //!    This IceModelVec is only created if Mbz > 1.
                              //!    FIXME: do we want it public?
 
 protected:
   virtual PetscErrorCode allocate();
 
-  IceModelVec2S  ice_base_temp;  //!< temporary storage for boundary value Tb(z=0); FIXME: rename to bedrock_top_temp
+  // FIXME: rename this to bedrock_top_temp and have a pointer to it; thus IceModel
+  // will fill it and take care of its semantics; this will mean we *do not* need
+  // pointers 'enthalpy' and 'thk'
+  IceModelVec2S  ice_base_temp;  //!< temporary storage for boundary value Tb(z=0);
 
   // parameters of the heat equation:  T_t = D T_xx  where D = k / (rho c)
   PetscScalar    bed_rho, bed_c, bed_k, bed_D;

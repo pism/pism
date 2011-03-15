@@ -20,12 +20,12 @@
 
 
 bool IceModelVec3BTU::good_init() {
-  return ((n_levels >= 3) && (Lbz > 0.0) && (v != PETSC_NULL));
+  return ((n_levels >= 2) && (Lbz > 0.0) && (v != PETSC_NULL));
 }
 
 
-PetscErrorCode  IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name[], bool local,
-                                        int myMbz, PetscReal myLbz, int stencil_width) {
+PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name[], bool local,
+                                      int myMbz, PetscReal myLbz, int stencil_width) {
   PetscErrorCode ierr;
   if (!utIsInit()) {
     SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
@@ -38,7 +38,7 @@ PetscErrorCode  IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_nam
   grid = &mygrid;
   name = my_short_name;
 
-  dims = GRID_3D_BEDROCK;  // FIXME:  not sure what this means ...
+  dims = GRID_3D_BEDROCK;
   n_levels = myMbz;
   Lbz = myLbz;
 
@@ -56,8 +56,7 @@ PetscErrorCode  IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_nam
 
   if (!good_init()) {
     SETERRQ1(1,"create() says IceModelVec3BTU with name %s was not properly created\n",
-             name.c_str());
-  }
+             name.c_str());  }
   return 0;
 }
 
@@ -95,13 +94,13 @@ PetscErrorCode IceModelVec3BTU::get_spacing(PetscReal &dzb) {
 PetscErrorCode IceModelVec3BTU::stopIfNotLegalLevel(PetscScalar z) {
   if (z < -Lbz) {
     SETERRQ3(1,
-       "level z = %10.8f is below bottom of bedrock thermal layer at -Lbz = %10.8f;\n"
-       "IceModelVec3BTU has name='%s'; ENDING!\n",
+       "level z = %10.8f is below bottom of bedrock thermal layer at -Lbz = %10.8f ...\n"
+       "... in IceModelVec3BTU named '%s' ... ENDING!\n",
        z,-Lbz,name.c_str());
   }
   if (z > 0.0) {
-    SETERRQ2(2,"level z = %10.8f is above top of bedrock at z=0;\n"
-               " IceModelVec3BTU has name='%s'; ENDING!\n",
+    SETERRQ2(2,"level z = %10.8f is above top of bedrock at z=0 ...\n"
+               "... in IceModelVec3BTU named '%s' ... ENDING!\n",
                z,name.c_str());
   }
   return 0;
@@ -125,42 +124,39 @@ PISMBedThermalUnit::PISMBedThermalUnit(IceGrid &g, EnthalpyConverter &e,
 PetscErrorCode PISMBedThermalUnit::allocate() {
   PetscErrorCode ierr;
 
-  // FIXME: this "raw" way of getting the size should be reevaluated
+  // FIXME: this "raw" way of getting the size from user options must be reevaluated,
+  //        especially when initializing from a file
   bool flag;
-  PetscInt Mbz;
+  PetscInt Mbz = 0;
   ierr = PISMOptionsInt("-Mbz", "number of levels in bedrock thermal layer", Mbz, flag); CHKERRQ(ierr);
-  if (!flag) {
-     SETERRQ(1,"option -Mbz was not set so PISMBedThermalUnit cannot be allocated\n"); }
-  if (Mbz < 3) {
-     SETERRQ(2,"Mbz < 3, but PISMBedThermalUnit creation requires at least 3 levels\n"); }
 
-  PetscReal Lbz;
+  PetscReal Lbz = 0.0;
   ierr = PISMOptionsReal("-Lbz", "depth (thickness) of bedrock thermal layer", Lbz, flag); CHKERRQ(ierr);
-  if (!flag) {
-     SETERRQ(3,"option -Lbz was not set so PISMBedThermalUnit cannot be allocated\n"); }
-  if (Lbz <= 0.0) {
-     SETERRQ(4,"PISMBedThermalUnit can not be created with negative or zero Lbz value\n"); }
+  if ((Lbz <= 0.0) && (Mbz > 1)) {
+     SETERRQ(1,"PISMBedThermalUnit can not be created with negative or zero Lbz value\n"
+               " and more than one layers\n"); }
 
-  ierr = temp.create(grid, "litho_temp", false, Mbz, Lbz); CHKERRQ(ierr);
-  ierr = temp.set_attrs("model_state",
-                        "lithosphere (bedrock) temperature, in PISMBedThermalUnit",
-		        "K", ""); CHKERRQ(ierr);
-  ierr = temp.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  if (Mbz > 1) {
+    ierr = temp.create(grid, "litho_temp", false, Mbz, Lbz); CHKERRQ(ierr);
+    ierr = temp.set_attrs("model_state",
+                          "lithosphere (bedrock) temperature, in PISMBedThermalUnit",
+                          "K", ""); CHKERRQ(ierr);
+    ierr = temp.set_attr("valid_min", 0.0); CHKERRQ(ierr);
 
-  ierr = ice_base_temp.create(grid, "btu_ice_base_temp", false); CHKERRQ(ierr);
-  ierr = ice_base_temp.set_attrs("internal",
-    "temperature at base of ice for duration of timestep, in PISMBedThermalUnit",
-    "K", ""); CHKERRQ(ierr);
-  ierr = ice_base_temp.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  
+    ierr = ice_base_temp.create(grid, "btu_ice_base_temp", false); CHKERRQ(ierr);
+    ierr = ice_base_temp.set_attrs("internal",
+        "temperature at base of ice for duration of timestep, in PISMBedThermalUnit",
+        "K", ""); CHKERRQ(ierr);
+    ierr = ice_base_temp.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  }
   return 0;
 }
 
 
-/*! this init method is really a bootstrap method.
+/*! This initialization method is really a bootstrap method.
 
 Note \c variables.get("enthalpy") and  \c variables.get("thk") and 
-\c variables.get("bheatflx") must return valid pointers.
+\c variables.get("bheatflx") must return valid pointers for this to work.
  */
 PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   PetscErrorCode ierr;
@@ -174,49 +170,58 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   bed_k   = config.get("bedrock_thermal_conductivity");
   bed_D   = bed_k / (bed_rho * bed_c);
 
-  ierr = verbPrintf(2,grid.com,
-      "  bootstrapping using z=0 enthalpy values and linear function from geothermal flux ...\n");
-      CHKERRQ(ierr);
-
-  enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-  if (enthalpy == NULL) SETERRQ(2, "enthalpy is not available");
-  thk = dynamic_cast<IceModelVec2S*>(vars.get("thk"));
-  if (thk == NULL) SETERRQ(3, "thk is not available");
   ghf = dynamic_cast<IceModelVec2S*>(vars.get("bheatflx"));
   if (ghf == NULL) SETERRQ(4, "btu_bheatflx is not available");
 
-  // first job: fill ice_base_temp; FIXME: is correct in floating case? ice-free case?; FIXME we need mask
-  ierr = enthalpy->getHorSlice(ice_base_temp, 0.0); CHKERRQ(ierr);
+  if (!temp.was_created()) {
+    ierr = verbPrintf(2,grid.com,
+      "  minimal model for lithosphere: stored geothermal flux applied to ice base ...\n");
+      CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2,grid.com,
+      "  bootstrapping to fill lithosphere temperatures in bedrock thermal layers,\n"
+      "    using z=0 enthalpy values and linear function from geothermal flux ...\n");
+      CHKERRQ(ierr);
 
-  PetscScalar* Tb;
-  PetscReal dzb;
-  PetscInt  Mbz;
-  temp.get_levels(Mbz);
-  temp.get_spacing(dzb);
-  const PetscInt k0 = Mbz-1; // Tb[k0] = ice/bedrock interface temp
+    enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
+    if (enthalpy == NULL) SETERRQ(2, "enthalpy is not available");
+    thk = dynamic_cast<IceModelVec2S*>(vars.get("thk"));
+    if (thk == NULL) SETERRQ(3, "thk is not available");
 
-  ierr = thk->begin_access(); CHKERRQ(ierr);
-  ierr = ghf->begin_access(); CHKERRQ(ierr);
-  ierr = ice_base_temp.begin_access(); CHKERRQ(ierr);
-  ierr = temp.begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      const PetscReal pressure = EC.getPressureFromDepth((*thk)(i,j));
-      PetscReal base_temp;
-      ierr = EC.getAbsTemp(ice_base_temp(i,j), pressure, base_temp); CHKERRQ(ierr);
-      ice_base_temp(i,j) = base_temp;
-      ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr); // Tb points into temp memory
-      Tb[k0] = ice_base_temp(i,j);
-      for (PetscInt k = k0-1; k >= 0; k--) {
-        Tb[k] = Tb[k+1] + dzb * (*ghf)(i,j) / bed_k;
+    // first job: fill ice_base_temp; FIXME: is correct in floating case? ice-free case?;
+    // FIXME we need mask? ... probably not: we need bedrock_top_temp to be properly set
+    // by caller
+    ierr = enthalpy->getHorSlice(ice_base_temp, 0.0); CHKERRQ(ierr);
+
+    PetscScalar* Tb;
+    PetscReal dzb;
+    PetscInt  Mbz;
+    temp.get_levels(Mbz);
+    temp.get_spacing(dzb);
+    const PetscInt k0 = Mbz-1; // Tb[k0] = ice/bedrock interface temp
+
+    ierr = thk->begin_access(); CHKERRQ(ierr);
+    ierr = ghf->begin_access(); CHKERRQ(ierr);
+    ierr = ice_base_temp.begin_access(); CHKERRQ(ierr);
+    ierr = temp.begin_access(); CHKERRQ(ierr);
+    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+        const PetscReal pressure = EC.getPressureFromDepth((*thk)(i,j));
+        PetscReal base_temp;
+        ierr = EC.getAbsTemp(ice_base_temp(i,j), pressure, base_temp); CHKERRQ(ierr);
+        ice_base_temp(i,j) = base_temp;
+        ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr); // Tb points into temp memory
+        Tb[k0] = ice_base_temp(i,j);
+        for (PetscInt k = k0-1; k >= 0; k--) {
+          Tb[k] = Tb[k+1] + dzb * (*ghf)(i,j) / bed_k;
+        }
       }
     }
-  }
-  ierr = thk->end_access(); CHKERRQ(ierr);
-  ierr = ghf->end_access(); CHKERRQ(ierr);
-  ierr = ice_base_temp.end_access(); CHKERRQ(ierr);
-  ierr = temp.end_access(); CHKERRQ(ierr);
-
+    ierr = thk->end_access(); CHKERRQ(ierr);
+    ierr = ghf->end_access(); CHKERRQ(ierr);
+    ierr = ice_base_temp.end_access(); CHKERRQ(ierr);
+    ierr = temp.end_access(); CHKERRQ(ierr);
+  } // end if (temp.was_created())
   return 0;
 }
 
@@ -225,34 +230,40 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
 
 
 void PISMBedThermalUnit::add_vars_to_output(string keyword, set<string> &result) {
-  result.insert(temp.string_attr("short_name"));
-  if (keyword == "big") {
-    result.insert(ice_base_temp.string_attr("short_name"));
+  if (temp.was_created()) {
+    result.insert(temp.string_attr("short_name"));
+    if (keyword == "big") {
+      result.insert(ice_base_temp.string_attr("short_name"));
+    }
   }
 }
 
 
 PetscErrorCode PISMBedThermalUnit::define_variables(
                          set<string> vars, const NCTool &nc, nc_type nctype) {
-  PetscErrorCode ierr;
-  if (set_contains(vars, temp.string_attr("short_name"))) {
-    ierr = temp.define(nc, nctype); CHKERRQ(ierr); 
-  }  
-  if (set_contains(vars, ice_base_temp.string_attr("short_name"))) {
-    ierr = ice_base_temp.define(nc, nctype); CHKERRQ(ierr); 
-  }  
+  if (temp.was_created()) {
+    PetscErrorCode ierr;
+    if (set_contains(vars, temp.string_attr("short_name"))) {
+      ierr = temp.define(nc, nctype); CHKERRQ(ierr); 
+    }
+    if (set_contains(vars, ice_base_temp.string_attr("short_name"))) {
+      ierr = ice_base_temp.define(nc, nctype); CHKERRQ(ierr); 
+    }
+  }
   return 0;
 }
 
 
 PetscErrorCode PISMBedThermalUnit::write_variables(set<string> vars, string filename) {
-  PetscErrorCode ierr;
-  if (set_contains(vars, temp.string_attr("short_name"))) {
-    ierr = temp.write(filename.c_str()); CHKERRQ(ierr); 
-  }  
-  if (set_contains(vars, ice_base_temp.string_attr("short_name"))) {
-    ierr = ice_base_temp.write(filename.c_str()); CHKERRQ(ierr); 
-  }  
+  if (temp.was_created()) {
+    PetscErrorCode ierr;
+    if (set_contains(vars, temp.string_attr("short_name"))) {
+      ierr = temp.write(filename.c_str()); CHKERRQ(ierr); 
+    }
+    if (set_contains(vars, ice_base_temp.string_attr("short_name"))) {
+      ierr = ice_base_temp.write(filename.c_str()); CHKERRQ(ierr); 
+    }
+  }
   return 0;
 }
 
@@ -269,19 +280,28 @@ The stability condition is that the coefficients of temperatures on the right ar
 all nonnegative, equivalently \f$1-2R\ge 0\f$ or \f$R\le 1/2\f$ or
         \f[\Delta t \le \frac{\Delta z^2}{2 D}.\f]
 This is a formula for the maximum stable timestep.  For more, see [\ref MortonMayers].
+
+The above describes the general case where Mbz > 1.  If not, this method returns
+5e9 years for the maximum time step ... the age of the earth.
  */
 PetscErrorCode PISMBedThermalUnit::max_timestep(PetscReal /*t_years*/, PetscReal &dt_years) {
 
-  PetscReal dzb;
-  temp.get_spacing(dzb);
-  dt_years = dzb * dzb / (2.0 * bed_D);  // max dt from stability; in seconds
-  dt_years /= secpera;
+  if (temp.was_created()) {
+    PetscReal dzb;
+    temp.get_spacing(dzb);
+    dt_years = dzb * dzb / (2.0 * bed_D);  // max dt from stability; in seconds
+    dt_years /= secpera;
+  } else {
+    dt_years = 5.0e9; // a long time for ice sheet modeling
+  }
   return 0;
 }
 
 
 PetscErrorCode PISMBedThermalUnit::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr;
+
+  if (!temp.was_created())  return 0;  // in this case we are up to date
 
   // as a derived class of PISMComponent_TS, has t,dt members which keep track
   // of last update time-interval; so we do some checks ...
@@ -381,11 +401,19 @@ ice/bedrock interface:
   \f[G_0 = -k_b \frac{\partial T_b}{\partial z}\big|_{z=0}.\f]
 Uses the second-order finite difference expression
   \f[\frac{\partial T_b}{\partial z}\big|_{z=0} \approx \frac{3 T_b(0) - 4 T_b(-\Delta z) + T_b(-2\Delta z)}{2 \Delta z}\f]
-where \f$\Delta z\f$ is the equal spacing in the bedrock.  This expression
-explains why \c n_levels >= 3 is required.
+where \f$\Delta z\f$ is the equal spacing in the bedrock.
+
+The above expression only makes sense when \c Mbz = \c temp.n_levels >= 3.
+When \c Mbz = 2 we use first-order differencing.  When temp was not created,
+the \c Mbz <= 1 cases, we return the stored geothermal flux.
  */
 PetscErrorCode PISMBedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
+
+  if (!temp.was_created()) {
+    result.copy_from(*ghf);
+    return 0;
+  }
 
   PetscReal dzb;
   PetscInt  Mbz;
@@ -399,7 +427,11 @@ PetscErrorCode PISMBedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &res
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
-      result(i,j) = - bed_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dzb);  
+      if (Mbz >= 3) {
+        result(i,j) = - bed_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dzb);
+      } else {
+        result(i,j) = - bed_k * (Tb[k0] - Tb[k0-1]) / dzb;
+      }
     }
   }
   ierr = temp.end_access(); CHKERRQ(ierr);
@@ -407,8 +439,4 @@ PetscErrorCode PISMBedThermalUnit::get_upward_geothermal_flux(IceModelVec2S &res
 
   return 0;
 }
-
-// FIXME: a derived class version of PISMBedThermalUnit::get_upward_geothermal_flux()
-//        will be simpler: it will just report the values of the stored geothermal flux;
-// FIXME: for such a derived class, update() will be null and always succeed
 
