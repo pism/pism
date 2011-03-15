@@ -328,6 +328,11 @@ public:
   virtual PetscErrorCode fill_where_floating(IceModelVec2S &v, const PetscScalar fillval);
 };
 
+class IceModelVec2IcebergMask : public IceModelVec2S {
+public:
+  virtual PismIcebergMask value(int i, int j);	  // returns the mask value
+};
+
 //! \brief A class representing a horizontal velocity at a certain grid point.
 class PISMVector2 {
 public:

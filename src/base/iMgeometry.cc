@@ -41,6 +41,11 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   ierr = update_mask(); CHKERRQ(ierr);
   ierr = update_surface_elevation(); CHKERRQ(ierr);
 
+  if (config.get_flag("kill_icebergs") == true) {
+    ierr = FindIceBergCandidates(); CHKERRQ(ierr);
+	ierr = IdentifyNotAnIceBerg(); CHKERRQ(ierr);
+	ierr = killIceBergs(); CHKERRQ(ierr);	
+  }
   return 0;
 }
 
@@ -562,7 +567,7 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
            Ms == MASK_FLOATING)) { //does in this form not account for grounded tributaries: thin ice shelves may evolve from grounded tongue
 
           PetscScalar Hav = 0.0;
-			
+		///*	
 		  PetscInt countIceNeighbors=0; // counting existing ice neighbors
 		
 		  // mean ice thickness over adjacent floating ice shelf neighbors
@@ -580,18 +585,24 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
    		  //}
  		  } else {
    		  ierr = verbPrintf(1, grid.com,"!!! PISM_WARNING: no ice shelf neighbors at %d,%d\n",i,j); CHKERRQ(ierr);}
-		
+		//*/
 		/*
 		  // alternative: flux-weighted average over floating ice-shelf neighbors
 		  if (Me == MASK_FLOATING && vel(i+1,j).u < 0.0) { Hav-= vel(i+1,j).u * vH(i+1,j);} 
           if (Mw == MASK_FLOATING && vel(i-1,j).u > 0.0) { Hav+= vel(i-1,j).u * vH(i-1,j);}
           if (Mn == MASK_FLOATING && vel(i,j+1).v < 0.0) { Hav-= vel(i,j+1).v * vH(i,j+1);}
           if (Ms == MASK_FLOATING && vel(i,j-1).v > 0.0) { Hav+= vel(i,j-1).v * vH(i-1,j);}
-			
-		  PetscScalar velRoot = sqrt((vel(i+1,j).u < 0 ? PetscSqr(vel(i+1,j).u) : 0.0) + 
-									 (vel(i-1,j).u > 0 ? PetscSqr(vel(i-1,j).u) : 0.0) +
-									 (vel(i,j+1).v < 0 ? PetscSqr(vel(i,j+1).v) : 0.0) +
-									 (vel(i,j-1).v > 0 ? PetscSqr(vel(i,j-1).v) : 0.0));
+		
+		  // velocity magnitude
+		  //PetscScalar velRoot = sqrt((vel(i+1,j).u < 0 ? PetscSqr(vel(i+1,j).u) : 0.0) + 
+		  //						 (vel(i-1,j).u > 0 ? PetscSqr(vel(i-1,j).u) : 0.0) +
+	      //						 (vel(i,j+1).v < 0 ? PetscSqr(vel(i,j+1).v) : 0.0) +
+		  //						 (vel(i,j-1).v > 0 ? PetscSqr(vel(i,j-1).v) : 0.0));
+		  // or just the sum:							
+		  PetscScalar velRoot =     ((vel(i+1,j).u < 0 ? vel(i+1,j).u : 0.0) + 
+									( vel(i-1,j).u > 0 ? vel(i-1,j).u : 0.0) +
+									( vel(i,j+1).v < 0 ? vel(i,j+1).v : 0.0) +
+									( vel(i,j-1).v > 0 ? vel(i,j-1).v : 0.0));
 			
 		 PetscScalar minHav=50.0;	
 		 if (velRoot>0 && Hav>=minHav) { 

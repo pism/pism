@@ -95,6 +95,7 @@ add_library (pismbase
   base/iMviewers.cc
   base/iceModel.cc
   base/iceModel_diagnostics.cc
+  base/iMicebergs.cc
 )
 target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance)
 

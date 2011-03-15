@@ -401,6 +401,16 @@ PetscErrorCode IceModelVec2S::has_nan() {
 }
 
 
+// IceModelVec2IcebergMask
+
+//! Returns the iceberg mask value; does not check ownership.
+PismIcebergMask IceModelVec2IcebergMask::value(int i, int j) {
+  const PetscScalar **a = (const PetscScalar**) array;
+  const PetscInt ival = static_cast<int>(floor(a[i][j] + 0.5));
+  return static_cast<PismIcebergMask>(ival);
+}
+
+
 // IceModelVec2Mask
 
 //! Returns the mask value; does not check ownership.

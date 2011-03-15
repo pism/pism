@@ -167,6 +167,7 @@ protected:
 	
  
   IceModelVec2Mask vMask; //!< mask for flow type with values SHEET, DRAGGING, FLOATING
+  IceModelVec2IcebergMask vIcebergMask; //!< mask for iceberg identification
 
   IceModelVec3
         T3,		//!< absolute temperature of ice; K (ghosted)
@@ -327,6 +328,12 @@ protected:
   virtual PetscErrorCode check_maximum_thickness();
   virtual PetscErrorCode check_maximum_thickness_hook(const int old_Mz);
   virtual bool           issounding(const PetscInt i, const PetscInt j);
+
+
+  // see iMicebergs.cc
+  virtual PetscErrorCode FindIceBergCandidates();
+  virtual PetscErrorCode IdentifyNotAnIceBerg();
+  virtual PetscErrorCode killIceBergs();
 
 protected:
   // working space (a convenience)

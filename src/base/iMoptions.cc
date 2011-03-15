@@ -93,6 +93,8 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.flag_from_option("part_redist", "part_redist"); CHKERRQ(ierr);
 
+  ierr = config.flag_from_option("kill_icebergs", "kill_icebergs"); CHKERRQ(ierr);
+
   bool gradient_set;
   string keyword;
   set<string> choices;

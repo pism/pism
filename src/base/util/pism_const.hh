@@ -51,6 +51,17 @@ enum PismMask {
   MASK_OCEAN_AT_TIME_0  = 7
 };
 
+
+enum PismIcebergMask {
+  ICEBERGMASK_NO_ICEBERG = -3,
+  ICEBERGMASK_NOT_SET = 0,
+  ICEBERGMASK_ICEBERG_CAND = 2,
+  ICEBERGMASK_STOP_OCEAN = 3,
+  ICEBERGMASK_STOP_ATTACHED = 4,
+
+};
+
+
 const PetscInt TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 
 bool is_increasing(int len, double *a);

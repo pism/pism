@@ -94,6 +94,11 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 	if (config.get_flag("part_grid") == true) ierr = vHresidual.set(0.0); CHKERRQ(ierr);
   }
 
+  if (config.get_flag("kill_icebergs")) {
+    // will be updated in updateSurfaceElevationAndMask()
+    ierr = vIcebergMask.set(ICEBERGMASK_NOT_SET); CHKERRQ(ierr);
+  }
+
 
   bool Lz_set;
   ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);

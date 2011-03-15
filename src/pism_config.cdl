@@ -42,7 +42,10 @@ netcdf pism_config {
     pism_config:part_grid_doc = "apply partially filled grid cell scheme";
 
     pism_config:part_redist = "no";
-    pism_config:part_redist_doc = "for partially filled grid cell scheme, redistribute residuals Hcut";
+    pism_config:part_redist_doc = "for partially filled grid cell scheme, redistribute residuals Hresidual";
+
+    pism_config:kill_icebergs = "no";
+    pism_config:kill_icebergs_doc = "identify and kill detached ice-shelf areas";
 
     pism_config:thermal_bedrock = "yes";
     pism_config:thermal_bedrock_doc = "Use the bedrock thermal model";
