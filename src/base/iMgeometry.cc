@@ -29,11 +29,6 @@ For instance, it should be called when either ice thickness or bed elevation cha
 In particular we always want \f$h = H + b\f$ to apply at grounded points, and, on the
 other hand, we want the mask to reflect that the ice is floating if the flotation 
 criterion applies at a point.
-
-There is one difficult case.  When a point was floating and becomes grounded we generally
-do not know whether to mark it as \c MASK_SHEET so that the SIA applies or \c MASK_DRAGGING
-so that the SSA applies.  For now there is a vote-by-neighbors scheme (among the grounded 
-neighbors).  When the \c MASK_DRAGGING points have plastic till bases this is not an issue.
  */
 PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   PetscErrorCode ierr;
@@ -72,64 +67,35 @@ PetscErrorCode IceModel::update_mask() {
       const PetscScalar hgrounded = vbed(i,j) + vH(i,j), // FIXME task #7297
         hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * vH(i,j);
 
-      // note that is_floating(i,j) == (! is_grounded(i,j))
-      bool was_grounded = vMask.is_grounded(i,j),
-        was_floating = vMask.is_floating(i,j),
-        is_floating = hfloating > hgrounded + 1.0,
+      bool is_floating = hfloating > hgrounded + 1.0,
         // note: the following implies that ice-free cells with bed evelation
         // exactly at sea level are considered grounded
         is_grounded = ! is_floating,
-        ice_free = vH(i,j) == 0.0;
+        ice_free = vH(i,j) < 0.01;
 
       // points marked as "ocean at time zero" are not updated
       if (vMask.value(i,j) == MASK_OCEAN_AT_TIME_0)
         continue;
 
-      if (was_floating) {
-
-        if (is_floating) {
-          if (ice_free) {
-            vMask(i,j) = MASK_ICE_FREE_OCEAN;
-            // added just for clarity, needs to be tested for interference in run
-          } else {					
-            vMask(i,j) = MASK_FLOATING; // to enable for floating front propagation
-          }
+      if (is_floating) {
+        if (ice_free) {
+          vMask(i,j) = MASK_ICE_FREE_OCEAN;
+          // added just for clarity, needs to be tested for interference in run
+        } else {					
+          vMask(i,j) = MASK_FLOATING; // to enable for floating front propagation
         }
+      }
 
-        if (is_grounded) {
+      if (is_grounded) {
 
-          if (use_ssa_velocity && use_ssa_when_grounded)
-            vMask(i,j) = MASK_DRAGGING_SHEET;
-          else
-            vMask(i,j) = MASK_SHEET; // for historical reasons
+        if (ice_free) {
+          vMask(i,j) = MASK_ICE_FREE_BEDROCK;
+        } else if (use_ssa_velocity && use_ssa_when_grounded)
+          vMask(i,j) = MASK_GROUNDED;
+        else
+          vMask(i,j) = MASK_GROUNDED; // for historical reasons
 
-        }
-
-
-        continue;
-      } // end of "was floating"
-
-      if (was_grounded) {
-
-        if (is_grounded) {
-
-          // we are using SSA-as-a-sliding-law, so grounded points become DRAGGING
-          if (use_ssa_velocity && use_ssa_when_grounded)
-            vMask(i,j) = MASK_DRAGGING_SHEET;
-          else
-            vMask(i,j) = MASK_SHEET;
-
-        }
-
-        if (is_floating) {
-          if (ice_free) {
-            vMask(i,j) = MASK_ICE_FREE_OCEAN; // added just for clarity, needs to be tested for interference in run
-          } else {
-            vMask(i,j) = MASK_FLOATING;
-          }
-        }
-
-      } // end of "was grounded"
+      }
 
     } // inner for loop (j)
   } // outer for loop (i)
@@ -480,7 +446,7 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
 
       // mask values at the current cell and its four immediate neighbors
       // (east, west, north, south)
-      PismMask Mo = vMask.value(i,j),
+      int Mo = vMask.value(i,j),
         Me = vMask.value(i+1,j),
         Mw = vMask.value(i-1,j),
         Mn = vMask.value(i,j+1),

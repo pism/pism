@@ -126,7 +126,7 @@ of the SSA equations, see comments for assembleSSAMatrix().
 The values of the driving stress on the i,j grid come from a call to
 computeDrivingStress().
 
-Grid points with mask value MASK_SHEET correspond to the trivial equations
+Grid points with mask value 1 correspond to the trivial equations
    \f[ \bar u_{ij} = \frac{uvbar(i-1,j,0) + uvbar(i,j,0)}{2}, \f]
 and similarly for \f$\bar v_{ij}\f$.  That is, the vertically-averaged
 horizontal velocity is already known for these points because it was either 
@@ -155,7 +155,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (vel_bc && (bc_locations->value(i,j) == MASK_SHEET)) { // FIXME: replace with MASK_BC
+      if (vel_bc && (bc_locations->value(i,j) == 1)) {
         rhs_uv[i][j].u = scaling * (*vel_bc)(i,j).u;
         rhs_uv[i][j].v = scaling * (*vel_bc)(i,j).v;
       } else {
@@ -166,7 +166,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
     }
   }
 
-  if (vel_bc) {
+  if (vel_bc && bc_locations) {
     ierr = bc_locations->end_access(); CHKERRQ(ierr);
     ierr = vel_bc->end_access(); CHKERRQ(ierr);
   }
@@ -254,7 +254,7 @@ the second equation we also have 13 nonzeros per row.
 
 FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 
- */
+*/
 PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   PetscErrorCode  ierr;
 
@@ -269,13 +269,17 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
   ierr = nuH.begin_access(); CHKERRQ(ierr);
   ierr = tauc->begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = vel.begin_access(); CHKERRQ(ierr);
+  ierr = mask->begin_access(); CHKERRQ(ierr);
+
+  if (vel_bc && bc_locations) {
+    ierr = bc_locations->begin_access(); CHKERRQ(ierr);
+  }
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PismMask mask_value = mask->value(i,j);
-      if (mask_value == MASK_SHEET) { // FIXME: replace with MASK_BC
+
+      if (vel_bc && bc_locations && bc_locations->value(i,j) == 1) {
         // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
         //   this is where boundary value to SSA is set
         MatStencil  row, col;
@@ -285,110 +289,116 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
         row.c = 1;
         col.c = 1;
         ierr = MatSetValuesStencil(A,1,&row,1,&col,&scaling,INSERT_VALUES); CHKERRQ(ierr);
-      } else {
-        const PetscScalar dx2 = dx*dx, d4 = dx*dy*4, dy2 = dy*dy;
-        /* Provide shorthand for the following staggered coefficients  nu H:
-        *      c11
-        *  c00     c01
-        *      c10
-        * Note that the positive i (x) direction is right and the positive j (y)
-        * direction is up. */
-        const PetscScalar c00 = nuH(i-1,j,0);
-        const PetscScalar c01 = nuH(i,j,0);
-        const PetscScalar c10 = nuH(i,j-1,1);
-        const PetscScalar c11 = nuH(i,j,1);
 
-        const PetscInt sten = 13;
-        MatStencil  row, col[sten];
-
-        /* start with the values at the points */
-        PetscScalar valU[] = {
-          /*               */ -c11/dy2,
-          (2*c00+c11)/d4,     2*(c00-c01)/d4,                 -(2*c01+c11)/d4,
-          -4*c00/dx2,         4*(c01+c00)/dx2+(c11+c10)/dy2,  -4*c01/dx2,
-          (c11-c10)/d4,                                       (c10-c11)/d4,
-          /*               */ -c10/dy2,
-          -(2*c00+c10)/d4,    2*(c01-c00)/d4,                 (2*c01+c10)/d4 };
-        PetscScalar valV[] = {
-          (2*c11+c00)/d4,     (c00-c01)/d4,                   -(2*c11+c01)/d4,
-          /*               */ -4*c11/dy2,
-          2*(c11-c10)/d4,                                     2*(c10-c11)/d4,
-          -c00/dx2,           4*(c11+c10)/dy2+(c01+c00)/dx2,  -c01/dx2,
-          -(2*c10+c00)/d4,    (c01-c00)/d4,                   (2*c10+c01)/d4,
-          /*               */ -4*c10/dy2 };
-
-        /* Dragging ice experiences friction at the bed determined by the
-         *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
-         *    or linear friction law according to basal->drag(), which gets called
-         *    by basalDragx(),basalDragy().  */
-        if (include_basal_shear && (mask_value == MASK_DRAGGING_SHEET)) {
-          // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
-          valU[5] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
-          valV[7] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
-        }
-
-        // build "u" equation: NOTE TRANSPOSE
-        row.j = i; row.i = j; row.c = 0;
-        const PetscInt UI[] = {
-          /*       */ i,
-          i-1,        i,          i+1,
-          i-1,        i,          i+1,
-          i-1,                    i+1,
-          /*       */ i,
-          i-1,        i,          i+1};
-        const PetscInt UJ[] = {
-          /*       */ j+1,
-          j+1,        j+1,        j+1,
-          j,          j,          j,
-          j,                      j,
-          /*       */ j-1,
-          j-1,        j-1,        j-1};
-        const PetscInt UC[] = {
-          /*       */ 0,
-          1,          1,          1,
-          0,          0,          0,
-          1,                      1,
-          /*       */ 0,
-          1,          1,          1};
-        for (PetscInt m=0; m<sten; m++) {
-          col[m].j = UI[m]; col[m].i = UJ[m], col[m].c = UC[m];
-        }
-        ierr = MatSetValuesStencil(A,1,&row,sten,col,valU,INSERT_VALUES); CHKERRQ(ierr);
-
-        // build "v" equation: NOTE TRANSPOSE
-        row.j = i; row.i = j; row.c = 1;
-        const PetscInt VI[] = {
-          i-1,        i,          i+1,
-          /*       */ i,
-          i-1,                    i+1,
-          i-1,        i,          i+1,
-          i-1,        i,          i+1,
-          /*       */ i};
-        const PetscInt VJ[] = {
-          j+1,        j+1,        j+1,
-          /*       */ j+1,
-          j,                      j,
-          j,          j,          j,
-          j-1,        j-1,        j-1,
-          /*       */ j-1};
-        const PetscInt VC[] = {
-          0,          0,          0,
-          /*       */ 1,
-          0,                      0,
-          1,          1,          1,
-          0,          0,          0,
-          /*       */ 1};
-        for (PetscInt m=0; m<sten; m++) {
-          col[m].j = VI[m]; col[m].i = VJ[m], col[m].c = VC[m];
-        }
-        ierr = MatSetValuesStencil(A,1,&row,sten,col,valV,INSERT_VALUES); CHKERRQ(ierr);
-
+        continue;
       }
+
+      const PetscScalar dx2 = dx*dx, d4 = dx*dy*4, dy2 = dy*dy;
+      /* Provide shorthand for the following staggered coefficients  nu H:
+       *      c11
+       *  c00     c01
+       *      c10
+       * Note that the positive i (x) direction is right and the positive j (y)
+       * direction is up. */
+      const PetscScalar c00 = nuH(i-1,j,0);
+      const PetscScalar c01 = nuH(i,j,0);
+      const PetscScalar c10 = nuH(i,j-1,1);
+      const PetscScalar c11 = nuH(i,j,1);
+
+      const PetscInt sten = 13;
+      MatStencil  row, col[sten];
+
+      /* start with the values at the points */
+      PetscScalar valU[] = {
+        /*               */ -c11/dy2,
+        (2*c00+c11)/d4,     2*(c00-c01)/d4,                 -(2*c01+c11)/d4,
+        -4*c00/dx2,         4*(c01+c00)/dx2+(c11+c10)/dy2,  -4*c01/dx2,
+        (c11-c10)/d4,                                       (c10-c11)/d4,
+        /*               */ -c10/dy2,
+        -(2*c00+c10)/d4,    2*(c01-c00)/d4,                 (2*c01+c10)/d4 };
+      PetscScalar valV[] = {
+        (2*c11+c00)/d4,     (c00-c01)/d4,                   -(2*c11+c01)/d4,
+        /*               */ -4*c11/dy2,
+        2*(c11-c10)/d4,                                     2*(c10-c11)/d4,
+        -c00/dx2,           4*(c11+c10)/dy2+(c01+c00)/dx2,  -c01/dx2,
+        -(2*c10+c00)/d4,    (c01-c00)/d4,                   (2*c10+c01)/d4,
+        /*               */ -4*c10/dy2 };
+
+      /* Dragging ice experiences friction at the bed determined by the
+       *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
+       *    or linear friction law according to basal->drag(), which gets called
+       *    by basalDragx(),basalDragy().  */
+      if (include_basal_shear && (mask->value(i,j) == MASK_GROUNDED)) {
+        // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
+        valU[5] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+        valV[7] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+      }
+
+      // build "u" equation: NOTE TRANSPOSE
+      row.j = i; row.i = j; row.c = 0;
+      const PetscInt UI[] = {
+        /*       */ i,
+        i-1,        i,          i+1,
+        i-1,        i,          i+1,
+        i-1,                    i+1,
+        /*       */ i,
+        i-1,        i,          i+1};
+      const PetscInt UJ[] = {
+        /*       */ j+1,
+        j+1,        j+1,        j+1,
+        j,          j,          j,
+        j,                      j,
+        /*       */ j-1,
+        j-1,        j-1,        j-1};
+      const PetscInt UC[] = {
+        /*       */ 0,
+        1,          1,          1,
+        0,          0,          0,
+        1,                      1,
+        /*       */ 0,
+        1,          1,          1};
+      for (PetscInt m=0; m<sten; m++) {
+        col[m].j = UI[m]; col[m].i = UJ[m], col[m].c = UC[m];
+      }
+      ierr = MatSetValuesStencil(A,1,&row,sten,col,valU,INSERT_VALUES); CHKERRQ(ierr);
+
+      // build "v" equation: NOTE TRANSPOSE
+      row.j = i; row.i = j; row.c = 1;
+      const PetscInt VI[] = {
+        i-1,        i,          i+1,
+        /*       */ i,
+        i-1,                    i+1,
+        i-1,        i,          i+1,
+        i-1,        i,          i+1,
+        /*       */ i};
+      const PetscInt VJ[] = {
+        j+1,        j+1,        j+1,
+        /*       */ j+1,
+        j,                      j,
+        j,          j,          j,
+        j-1,        j-1,        j-1,
+        /*       */ j-1};
+      const PetscInt VC[] = {
+        0,          0,          0,
+        /*       */ 1,
+        0,                      0,
+        1,          1,          1,
+        0,          0,          0,
+        /*       */ 1};
+      for (PetscInt m=0; m<sten; m++) {
+        col[m].j = VI[m]; col[m].i = VJ[m], col[m].c = VC[m];
+      }
+      ierr = MatSetValuesStencil(A,1,&row,sten,col,valV,INSERT_VALUES); CHKERRQ(ierr);
+
     }
   }
 
-  ierr = vel.end_access(); CHKERRQ(ierr);  
+  if (vel_bc && bc_locations) {
+    ierr = bc_locations->end_access(); CHKERRQ(ierr);
+  }
+
   ierr = mask->end_access(); CHKERRQ(ierr);
+  ierr = vel.end_access(); CHKERRQ(ierr);  
   ierr = tauc->end_access(); CHKERRQ(ierr);  
   ierr = nuH.end_access(); CHKERRQ(ierr);
 
@@ -396,7 +406,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
   return 0; 
-}
+  }
 
 
 //! \brief Compute the vertically-averaged horizontal velocity from the shallow

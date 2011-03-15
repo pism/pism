@@ -187,12 +187,11 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
       if (vH(i,j) < 0.001) {  // if no ice
         if (vbed(i,j) < 0.0) {
           vh(i,j) = 0.0;
-          //vMask(i,j) = do_ocean_kill ? MASK_OCEAN_AT_TIME_0 : MASK_FLOATING;
-		  vMask(i,j) = do_ocean_kill ? MASK_OCEAN_AT_TIME_0 : MASK_ICE_FREE_OCEAN; // for clarity changed
+          vMask(i,j) = do_ocean_kill ? MASK_OCEAN_AT_TIME_0 : MASK_ICE_FREE_OCEAN; // changed for clarity
 
         } else {
           vh(i,j) = vbed(i,j);
-          vMask(i,j) = MASK_SHEET;
+          vMask(i,j) = MASK_GROUNDED;
         } 
       } else { // if positive ice thickness then check flotation criterion
         const PetscScalar 
@@ -201,7 +200,7 @@ PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
         // check whether you are actually floating or grounded
         if (hgrounded > hfloating) {
           vh(i,j) = hgrounded; // actually grounded so set h
-          vMask(i,j) = MASK_SHEET;
+          vMask(i,j) = MASK_GROUNDED;
         } else {
           vh(i,j) = hfloating; // actually floating so update h
           vMask(i,j) = MASK_FLOATING;

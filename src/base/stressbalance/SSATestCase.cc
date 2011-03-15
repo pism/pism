@@ -84,22 +84,36 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   ierr = vel_bc.set(2e6/secpera); CHKERRQ(ierr); 
   
   // grounded_dragging_floating integer mask
-  ierr = mask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = mask.set_attrs("model_state", 
+  ierr = ice_mask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = ice_mask.set_attrs("model_state", 
           "grounded_dragging_floating integer mask", "", ""); CHKERRQ(ierr);
-  vector<double> mask_values(6);
+  vector<double> mask_values(5);
   mask_values[0] = MASK_ICE_FREE_BEDROCK;
-  mask_values[1] = MASK_SHEET;
-  mask_values[2] = MASK_DRAGGING_SHEET;
-  mask_values[3] = MASK_FLOATING;
-  mask_values[4] = MASK_ICE_FREE_OCEAN;
-  mask_values[5] = MASK_OCEAN_AT_TIME_0;
-  ierr = mask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
-  ierr = mask.set_attr("flag_meanings",
-    "ice_free_bedrock sheet dragging_sheet floating ice_free_ocean ocean_at_time_zero");
+  mask_values[1] = MASK_GROUNDED;
+  mask_values[2] = MASK_FLOATING;
+  mask_values[3] = MASK_ICE_FREE_OCEAN;
+  mask_values[4] = MASK_OCEAN_AT_TIME_0;
+  ierr = ice_mask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
+  ierr = ice_mask.set_attr("flag_meanings",
+    "ice_free_bedrock dragging_sheet floating ice_free_ocean ocean_at_time_zero");
              CHKERRQ(ierr);
-  mask.output_data_type = NC_BYTE;
-  ierr = vars.add(mask); CHKERRQ(ierr);  
+  ice_mask.output_data_type = NC_BYTE;
+  ierr = vars.add(ice_mask); CHKERRQ(ierr);  
+
+  ierr = ice_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
+
+  // Dirichlet B.C. mask
+  ierr = bc_mask.create(grid, "bc_mask", true, WIDE_STENCIL); CHKERRQ(ierr);
+  ierr = bc_mask.set_attrs("model_state", 
+          "grounded_dragging_floating integer mask", "", ""); CHKERRQ(ierr);
+  mask_values.resize(2);
+  mask_values[0] = 0;
+  mask_values[1] = 1;
+  ierr = bc_mask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
+  ierr = bc_mask.set_attr("flag_meanings",
+                          "no_data dirichlet_bc_location"); CHKERRQ(ierr);
+  bc_mask.output_data_type = NC_BYTE;
+  ierr = vars.add(bc_mask); CHKERRQ(ierr);  
   
   return 0;
 }
@@ -246,7 +260,7 @@ PetscErrorCode SSATestCase::write(const string &filename)
 
   ierr = surface.write(filename.c_str()); CHKERRQ(ierr);
   ierr = thickness.write(filename.c_str()); CHKERRQ(ierr);
-  ierr = mask.write(filename.c_str()); CHKERRQ(ierr);
+  ierr = bc_mask.write(filename.c_str()); CHKERRQ(ierr);
   ierr = tauc.write(filename.c_str()); CHKERRQ(ierr);
   ierr = bed.write(filename.c_str()); CHKERRQ(ierr);
   ierr = enthalpy.write(filename.c_str()); CHKERRQ(ierr);

@@ -153,9 +153,9 @@ protected:
         vGhf,		//!< geothermal flux; no ghosts
         vtillphi,	//!< friction angle for till under grounded ice sheet; no ghosts
 
-		//vHav,		//!< average over the ice thickness of existing ice neighbors
-		vHref,		//!< accumulated mass advected to a partially filled grid cell
-		vHresidual,	//!< residual ice mass of a not any longer partially (fully) filled grid cell
+  //vHav,		//!< average over the ice thickness of existing ice neighbors
+    vHref,		//!< accumulated mass advected to a partially filled grid cell
+    vHresidual,	//!< residual ice mass of a not any longer partially (fully) filled grid cell
 
     acab,		//!< accumulation/ablation rate; no ghosts
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
@@ -166,8 +166,8 @@ protected:
 
 	
  
-  IceModelVec2Mask vMask; //!< mask for flow type with values SHEET, DRAGGING, FLOATING
-  IceModelVec2IcebergMask vIcebergMask; //!< mask for iceberg identification
+  IceModelVec2Mask vMask, //!< mask for flow type with values SHEET, DRAGGING, FLOATING
+    vIcebergMask; //!< mask for iceberg identification
 
   IceModelVec3
         T3,		//!< absolute temperature of ice; K (ghosted)

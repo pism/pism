@@ -48,9 +48,8 @@ PetscErrorCode IceModel::volumeArea(PetscScalar& gvolume, PetscScalar& garea,
         area += cell_area(i,j);
         const PetscScalar dv = cell_area(i,j) * vH(i,j);
         volume += dv;
-        if (vMask.value(i,j) == MASK_SHEET)   volSIA += dv;
-        else if (vMask.value(i,j) == MASK_DRAGGING_SHEET)   volstream += dv;
-        else if (vMask.is_floating(i,j))   volshelf += dv;
+
+        if (vMask.is_floating(i,j))   volshelf += dv;
       }
     }
   }  

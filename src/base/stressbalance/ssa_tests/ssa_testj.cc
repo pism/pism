@@ -81,7 +81,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   PetscErrorCode ierr;
   ierr = tauc.set(0.0); CHKERRQ(ierr);    // irrelevant for test J
   ierr = bed.set(0.0); CHKERRQ(ierr); // assures shelf is floating
-  ierr = mask.set(MASK_FLOATING); CHKERRQ(ierr);
+  ierr = bc_mask.set(MASK_FLOATING); CHKERRQ(ierr);
   ierr = enthalpy.set(528668.35); 
         CHKERRQ(ierr); // arbitrary; corresponds to 263.15 Kelvin at depth=0.
 
@@ -98,7 +98,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
 
   ierr = thickness.begin_access(); CHKERRQ(ierr);
   ierr = surface.begin_access(); CHKERRQ(ierr);
-  ierr = mask.begin_access(); CHKERRQ(ierr);
+  ierr = bc_mask.begin_access(); CHKERRQ(ierr);
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -115,7 +115,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
       // special case at center point: here we set vel_bc at (i,j) by marking
       // this grid point as SHEET and setting vel_bc approriately
       if ( (i == (grid.Mx)/2) && (j == (grid.My)/2) ) {
-        mask(i,j) = MASK_SHEET;
+        bc_mask(i,j) = 1;
         vel_bc(i,j).u = myu;
         vel_bc(i,j).v = myv;
       }
@@ -124,7 +124,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
 
   ierr = surface.end_access(); CHKERRQ(ierr);    
   ierr = thickness.end_access(); CHKERRQ(ierr);
-  ierr = mask.end_access(); CHKERRQ(ierr);
+  ierr = bc_mask.end_access(); CHKERRQ(ierr);
   ierr = vel_bc.end_access(); CHKERRQ(ierr);
 
   // communicate what we have set
@@ -134,14 +134,13 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   ierr = thickness.beginGhostComm(); CHKERRQ(ierr);
   ierr = thickness.endGhostComm(); CHKERRQ(ierr);
 
-  ierr = mask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = mask.endGhostComm(); CHKERRQ(ierr);
+  ierr = bc_mask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = bc_mask.endGhostComm(); CHKERRQ(ierr);
 
   ierr = vel_bc.beginGhostComm(); CHKERRQ(ierr);
   ierr = vel_bc.endGhostComm(); CHKERRQ(ierr);
 
-  ierr = ssa->set_boundary_conditions(mask, vel_bc); 
-      CHKERRQ(ierr); 
+  ierr = ssa->set_boundary_conditions(bc_mask, vel_bc); CHKERRQ(ierr); 
 
   return 0;    
 }
@@ -194,6 +193,7 @@ int main(int argc, char *argv[]) {
     set<string> ssa_choices;
     ssa_choices.insert("fem");
     ssa_choices.insert("fd");
+    ssa_choices.insert("fd_pik");
     string driver = "fem";
 
     ierr = PetscOptionsBegin(com, "", "SSA_TESTJ options", ""); CHKERRQ(ierr);
@@ -219,6 +219,7 @@ int main(int argc, char *argv[]) {
     SSAFactory ssafactory;
     if(driver == "fem") ssafactory = SSAFEMFactory;
     else if(driver == "fd") ssafactory = SSAFDFactory;
+    else if(driver == "fd_pik") ssafactory = SSAFD_PIKFactory;
     else { /* can't happen */ }
 
     SSATestCaseJ testcase(com,rank,size,config);

@@ -377,7 +377,7 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
   ierr = vbmr.set(0.0); CHKERRQ(ierr);
   ierr = vGhf.set(0.042); CHKERRQ(ierr);  // EISMINT II value; J m-2 s-1
 
-  ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
+  ierr = vMask.set(MASK_GROUNDED); CHKERRQ(ierr);
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
 
   ierr = vtillphi.set(config.get("default_till_phi")); CHKERRQ(ierr);

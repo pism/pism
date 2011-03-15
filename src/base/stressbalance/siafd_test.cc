@@ -213,7 +213,7 @@ PetscErrorCode setInitStateF(IceGrid &grid,
   dummy5=new PetscScalar[Mz];
 
   ierr = bed->set(0); CHKERRQ(ierr);
-  ierr = mask->set(MASK_SHEET); CHKERRQ(ierr);
+  ierr = mask->set(MASK_GROUNDED); CHKERRQ(ierr);
 
   PetscScalar *T;
   T = new PetscScalar[grid.Mz];
@@ -405,16 +405,15 @@ int main(int argc, char *argv[]) {
     ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
     ierr = vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
 			 "", ""); CHKERRQ(ierr);
-    vector<double> mask_values(6);
+    vector<double> mask_values(5);
     mask_values[0] = MASK_ICE_FREE_BEDROCK;
-    mask_values[1] = MASK_SHEET;
-    mask_values[2] = MASK_DRAGGING_SHEET;
-    mask_values[3] = MASK_FLOATING;
-    mask_values[4] = MASK_ICE_FREE_OCEAN;
-    mask_values[5] = MASK_OCEAN_AT_TIME_0;
+    mask_values[1] = MASK_GROUNDED;
+    mask_values[2] = MASK_FLOATING;
+    mask_values[3] = MASK_ICE_FREE_OCEAN;
+    mask_values[4] = MASK_OCEAN_AT_TIME_0;
     ierr = vMask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
     ierr = vMask.set_attr("flag_meanings",
-			"ice_free_bedrock sheet dragging_sheet floating ice_free_ocean ocean_at_time_zero");
+			"ice_free_bedrock dragging_sheet floating ice_free_ocean ocean_at_time_zero");
 		  CHKERRQ(ierr);
     vMask.output_data_type = NC_BYTE;
     ierr = vars.add(vMask); CHKERRQ(ierr);

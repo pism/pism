@@ -311,11 +311,11 @@ PetscErrorCode IcePSTexModel::init_mask_phi() {
   
   // completely override EISMINT II version of mask
   if (exper_chosen <= 1) { // P0A and P0I are nonsliding SIA
-    ierr = vMask.set(MASK_SHEET);
+    ierr = vMask.set(MASK_GROUNDED);
     ierr = verbPrintf(2,grid.com,
     "  mask set to SHEET for PST exper '%s' ...\n", exper_chosen_name); CHKERRQ(ierr);
   } else {                 // P1, P2, P3, P4 use SSA-as-sliding
-    ierr = vMask.set(MASK_DRAGGING_SHEET);
+    ierr = vMask.set(MASK_GROUNDED);
     ierr = verbPrintf(2,grid.com,
     "  mask set to DRAGGING for PST exper '%s' ...\n", exper_chosen_name); CHKERRQ(ierr);
   }

@@ -300,7 +300,8 @@ This method should be kept because it is worth having alternative physics, and
           //   and strain heating if isMarginal
           const bool isMarginal = checkThinNeigh(vH(i+1,j),vH(i+1,j+1),vH(i,j+1),vH(i-1,j+1),
                                                  vH(i-1,j),vH(i-1,j-1),vH(i,j-1),vH(i+1,j-1));
-          ierr = system.setSchemeParamsThisColumn(vMask.value(i,j), isMarginal, lambda);
+          PismMask mask_value = static_cast<PismMask>(vMask.value(i,j));
+          ierr = system.setSchemeParamsThisColumn(mask_value, isMarginal, lambda);
           CHKERRQ(ierr);  
 
           // set boundary values for tridiagonal system

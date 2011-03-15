@@ -59,7 +59,7 @@ PetscErrorCode IceCompModel::initTestFG() {
   dummy3=new PetscScalar[Mz];  dummy4=new PetscScalar[Mz];
 
   ierr = vbed.set(0); CHKERRQ(ierr);
-  ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
+  ierr = vMask.set(MASK_GROUNDED); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
 
   PetscScalar *T, *Tb;
@@ -713,7 +713,7 @@ PetscErrorCode IceCompModel::initTestsKO() {
   ierr = artm.set(223.15); CHKERRQ(ierr);
 
   ierr = vbed.set(0.0); CHKERRQ(ierr);
-  ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
+  ierr = vMask.set(MASK_GROUNDED); CHKERRQ(ierr);
   ierr = vGhf.set(0.042); CHKERRQ(ierr);
   ierr = vH.set(3000.0); CHKERRQ(ierr);
   ierr = vHmelt.set(0.0); CHKERRQ(ierr);

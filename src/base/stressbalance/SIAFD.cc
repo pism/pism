@@ -756,31 +756,24 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
         const PetscScalar alpha_squared =
           PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o));
 
-        PismMask M = mask->value(i,j);
+        int M = mask->value(i,j);
 
         // in the ice:
         for (PetscInt k=0; k<=ks; ++k) {
           PetscReal depth = thk - grid.zlevels[k];
           PetscReal pressure = EC.getPressureFromDepth(depth);
 
-          PetscReal sigma_sia = delta_ij[k] * alpha_squared * pressure;
+          PetscReal sigma_sia = delta_ij[k] * alpha_squared * pressure,
+            BofT = ice.hardnessParameter_from_enth(E[k], pressure) * pow(enhancement_factor,-1/n_glen),
+            D2_ssa = (*D2_input)(i,j);
 
-          if (M == MASK_SHEET) {
-            // use the SIA contribution only
-            sigma_ij[k] = sigma_sia;
+          if (M == MASK_GROUNDED) {
+            // combine SIA and SSA contributions
+            PetscReal D2_sia = pow(sigma_sia / (2 * BofT), 1.0 / Sig_pow);
+            sigma_ij[k] = 2.0 * BofT * pow(D2_sia + D2_ssa, Sig_pow);
           } else {
-            PetscReal
-              BofT = ice.hardnessParameter_from_enth(E[k], pressure) * pow(enhancement_factor,-1/n_glen),
-              D2_ssa = (*D2_input)(i,j);
-
-            if (M == MASK_DRAGGING_SHEET) {
-              // combine SIA and SSA contributions
-              PetscReal D2_sia = pow(sigma_sia / (2 * BofT), 1.0 / Sig_pow);
-              sigma_ij[k] = 2.0 * BofT * pow(D2_sia + D2_ssa, Sig_pow);
-            } else {
-              // must be floating or ice-free, use the SSA contribution only
-              sigma_ij[k] = 2.0 * BofT * pow(D2_ssa, Sig_pow);
-            }
+            // must be floating or ice-free, use the SSA contribution only
+            sigma_ij[k] = 2.0 * BofT * pow(D2_ssa, Sig_pow);
           }
         }
 

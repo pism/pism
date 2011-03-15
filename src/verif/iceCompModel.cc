@@ -330,7 +330,7 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   ierr =  Tb3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
   
-  ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
+  ierr = vMask.set(MASK_GROUNDED); CHKERRQ(ierr);
 
   ierr = acab.get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
@@ -420,7 +420,7 @@ PetscErrorCode IceCompModel::initTestL() {
   ierr =  Tb3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
   
-  ierr = vMask.set(MASK_SHEET); CHKERRQ(ierr);
+  ierr = vMask.set(MASK_GROUNDED); CHKERRQ(ierr);
 
   // setup to evaluate test L; requires solving an ODE numerically using sorted list
   //   of radii, sorted in decreasing radius order

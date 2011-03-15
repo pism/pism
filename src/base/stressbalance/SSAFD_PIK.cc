@@ -55,13 +55,16 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = vel.begin_access(); CHKERRQ(ierr);
 
+  if (vel_bc && bc_locations) {
+    ierr = bc_locations->begin_access(); CHKERRQ(ierr);
+  }
+
   //IceModelVec2S &thk = *thickness; 
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   //ierr = bed->begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PismMask mask_value = mask->value(i,j);
 
       PetscScalar   Ho = (*thickness)(i,j),
         He = (*thickness)(i+1,j),
@@ -79,7 +82,9 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
         atBoundary=PETSC_TRUE;
       }
 
-      if (onIcefreeOcean) { // vanish ice velocities on the ice free ocean
+      if (vel_bc && bc_locations && bc_locations->value(i,j) == 1) {
+        // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
+        //   this is where boundary value to SSA is set
         MatStencil  row, col;
         row.j = i; row.i = j; row.c = 0;
         col.j = i; col.i = j; col.c = 0;
@@ -88,9 +93,10 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
         col.c = 1;
         ierr = MatSetValuesStencil(A,1,&row,1,&col,&scaling,INSERT_VALUES); CHKERRQ(ierr);
 
-      } else if (mask_value == MASK_SHEET) { // FIXME: replace with MASK_BC
-        // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
-        //   this is where boundary value to SSA is set
+        continue;
+      }
+
+      if (onIcefreeOcean) { // vanish ice velocities on the ice free ocean
         MatStencil  row, col;
         row.j = i; row.i = j; row.c = 0;
         col.j = i; col.i = j; col.c = 0;
@@ -167,7 +173,7 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
 
 
 
-    	if (include_basal_shear && (mask_value == MASK_DRAGGING_SHEET)) {
+    	if (include_basal_shear && (mask->value(i,j) == MASK_GROUNDED)) {
           // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
           valU[5] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
           valV[8] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);// without bc it would be the 7th point of the stencil
@@ -267,7 +273,7 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
          *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
          *    or linear friction law according to basal->drag(), which gets called
          *    by basalDragx(),basalDragy().  */
-        if (include_basal_shear && (mask_value == MASK_DRAGGING_SHEET)) {
+        if (include_basal_shear && (mask->value(i,j) == MASK_GROUNDED)) {
           // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
           valU[5] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
           valV[7] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
@@ -332,6 +338,10 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
     }
   }
 
+  if (vel_bc && bc_locations) {
+    ierr = bc_locations->end_access(); CHKERRQ(ierr);
+  }
+
   ierr = vel.end_access(); CHKERRQ(ierr);  
   ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = tauc->end_access(); CHKERRQ(ierr);  
@@ -391,15 +401,17 @@ PetscErrorCode SSAFD_PIK::assemble_rhs(Vec rhs) {
       if (Ho>100.0 && (He<=1.0 || Hw<=1.0 || Hs<=1.0 || Hn<=1.0)) {  
         atBoundary=PETSC_TRUE;
       }
-	
+
+      if (vel_bc && (bc_locations->value(i,j) == 1)) {
+        rhs_uv[i][j].u = scaling * (*vel_bc)(i,j).u;
+        rhs_uv[i][j].v = scaling * (*vel_bc)(i,j).v;
+        
+        continue;
+      }	
 	
       if (onIcefreeOcean) {
         rhs_uv[i][j].u = 0.0;
         rhs_uv[i][j].v = 0.0;
-
-      } else if (vel_bc && (bc_locations->value(i,j) == MASK_SHEET)) { // FIXME: replace with MASK_BC
-        rhs_uv[i][j].u = scaling * (*vel_bc)(i,j).u;
-        rhs_uv[i][j].v = scaling * (*vel_bc)(i,j).v;
       } else if (atBoundary) {
         PetscInt aMM=1, aPP=1, bMM=1,bPP=1;
         //direct adjacent neighbors

@@ -16,7 +16,7 @@ $PISM_PATH/pismv -Mx 31 -My 31 $OPTS  > test_16-C-out.txt
 $PISM_PATH/pismv -Mx 41 -My 41 $OPTS >> test_16-C-out.txt
 
 # compare results
-diff test_16-C-out.txt - > /dev/null <<END-OF-OUTPUT
+diff test_16-C-out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
               80.824124  503.131175    3.114691    0.820828

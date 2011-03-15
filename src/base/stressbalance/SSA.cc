@@ -192,7 +192,7 @@ PetscErrorCode SSA::compute_D2(IceModelVec2S &result) {
   
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (mask->value(i,j) == MASK_DRAGGING_SHEET) {
+      if (mask->value(i,j) == MASK_GROUNDED) {
         const PetscScalar 
           u_x   = (velocity(i+1,j).u - velocity(i-1,j).u)/(2*dx),
           u_y   = (velocity(i,j+1).u - velocity(i,j-1).u)/(2*dy),

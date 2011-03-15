@@ -48,6 +48,8 @@ find_path (PETSC_DIR include/petsc.h
   $ENV{HOME}/petsc
   DOC "PETSc Directory")
 
+find_program (MAKE_EXECUTABLE NAMES make gmake)
+
 if (PETSC_DIR AND NOT PETSC_ARCH)
   set (_petsc_arches
     $ENV{PETSC_ARCH}                   # If set, use environment variable first
@@ -108,7 +110,7 @@ show :
 
   macro (PETSC_GET_VARIABLE name var)
     set (${var} "NOTFOUND" CACHE INTERNAL "Cleared" FORCE)
-    execute_process (COMMAND ${CMAKE_MAKE_PROGRAM} --no-print-directory -f ${petsc_config_makefile} show VARIABLE=${name}
+    execute_process (COMMAND ${MAKE_EXECUTABLE} --no-print-directory -f ${petsc_config_makefile} show VARIABLE=${name}
       OUTPUT_VARIABLE ${var}
       RESULT_VARIABLE petsc_return)
   endmacro (PETSC_GET_VARIABLE)
@@ -229,7 +231,7 @@ int main(int argc,char *argv[]) {
   if (${PETSC_VERSION} VERSION_LESS 3.1)
     set (PETSC_DEFINITIONS "-D__SDIR__=\"\"" CACHE STRING "PETSc definitions" FORCE)
   else ()
-    set (PETSC_DEFINITIONS "-D__INSDIR__" CACHE STRING "PETSc definitions" FORCE)
+    set (PETSC_DEFINITIONS "-D__INSDIR__=" CACHE STRING "PETSc definitions" FORCE)
   endif ()
   # Sometimes this can be used to assist FindMPI.cmake
   set (PETSC_MPIEXEC ${petsc_mpiexec} CACHE FILEPATH "Executable for running PETSc MPI programs" FORCE)

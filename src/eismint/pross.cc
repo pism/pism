@@ -313,13 +313,12 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
   ierr = mask->create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = mask->set_attrs("model_state", "grounded_dragging_floating integer mask",
                          "", ""); CHKERRQ(ierr);
-  vector<double> mask_values(6);
+  vector<double> mask_values(5);
   mask_values[0] = MASK_ICE_FREE_BEDROCK;
-  mask_values[1] = MASK_SHEET;
-  mask_values[2] = MASK_DRAGGING_SHEET;
-  mask_values[3] = MASK_FLOATING;
-  mask_values[4] = MASK_ICE_FREE_OCEAN;
-  mask_values[5] = MASK_OCEAN_AT_TIME_0;
+  mask_values[1] = MASK_GROUNDED;
+  mask_values[2] = MASK_FLOATING;
+  mask_values[3] = MASK_ICE_FREE_OCEAN;
+  mask_values[4] = MASK_OCEAN_AT_TIME_0;
   ierr = mask->set_attr("flag_values", mask_values); CHKERRQ(ierr);
   ierr = mask->set_attr("flag_meanings",
                         "ice_free_bedrock sheet dragging_sheet floating ice_free_ocean ocean_at_time_zero");
@@ -331,8 +330,8 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
   ierr = bc_mask->set_attrs("model_state", "boundary condition locations",
                             "", ""); CHKERRQ(ierr);
   vector<double> bc_mask_values(2);
-  bc_mask_values[0] = MASK_ICE_FREE_BEDROCK;
-  bc_mask_values[1] = MASK_SHEET;
+  bc_mask_values[0] = 0;
+  bc_mask_values[1] = 1;
   ierr = bc_mask->set_attr("flag_values", bc_mask_values); CHKERRQ(ierr);
   ierr = bc_mask->set_attr("flag_meanings", "no_data bc_condition"); CHKERRQ(ierr);
   bc_mask->output_data_type = NC_BYTE;
@@ -467,8 +466,7 @@ PetscErrorCode read_input_data(IceGrid &grid, PISMVars &variables, const NCConfi
 
   // Read in everything except enthalpy, usurf and tauc:
   vars.erase("enthalpy");
-  vars.erase("usurf");
-  vars.erase("surface_altitude");
+  vars.erase("usurf"); vars.erase("surface_altitude");
   vars.erase("tauc");
   set<string>::iterator j = vars.begin();
   while (j != vars.end()) {
@@ -598,6 +596,7 @@ int main(int argc, char *argv[]) {
     if(ssa_method == "fem") ssafactory = SSAFEMFactory;
     else if(ssa_method == "fd") ssafactory = SSAFDFactory;
     else if(ssa_method == "fd_pik") ssafactory = SSAFD_PIKFactory;
+    else { /* can't happen */ }
 
     IceGrid g(com, rank, size, config);
 

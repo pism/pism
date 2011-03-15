@@ -22,7 +22,7 @@ $PISM_PATH/ssa_testi -My 121 $OPTS >> test-I-out.txt
 set +e
 
 # Check results:
-diff test-I-out.txt - > /dev/null <<END-OF-OUTPUT
+diff test-I-out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
                16.2024      0.14888   16.2024    0.7544    1.1522    0.0513

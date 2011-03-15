@@ -592,7 +592,7 @@ PetscErrorCode IceMISMIPModel::setMask() {
       } else {
         // note updateSurfaceElevationAndMask() will re-mark DRAGGING
         //   as FLOATING if it is floating
-        vMask(i,j) = MASK_DRAGGING_SHEET;
+        vMask(i,j) = MASK_GROUNDED;
       }
 
     }

@@ -39,11 +39,9 @@ const PetscScalar secpera    = 3.15569259747e7; // The constant used in UDUNITS
 const PetscScalar pi         = M_PI;		// defined in gsl/gsl_math.h
 
 enum PismMask {
-  MASK_BC               = -2,
   MASK_UNKNOWN          = -1,
   MASK_ICE_FREE_BEDROCK = 0,
-  MASK_SHEET            = 1,
-  MASK_DRAGGING_SHEET   = 2,
+  MASK_GROUNDED   = 2,
   // all the floating mask values are strictly greater than the grounded ones;
   // the criterion for floating is "mask >= MASK_FLOATING"
   MASK_FLOATING         = 3,

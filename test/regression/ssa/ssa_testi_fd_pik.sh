@@ -1,35 +1,35 @@
 #!/bin/bash
 
-# SSAFD verification test J regression test
+# SSAFD_PIK verification test I regression test
 
 PISM_PATH=$1
 MPIEXEC=$2
 PISM_SOURCE_DIR=$3
 
 # List of files to remove when done:
-files="foo.nc foo.nc~ test-J-out.txt"
+files="foo.nc foo.nc~ test-I-out.txt"
 
 rm -f $files
 
 set -e
 
-OPTS="-verbose 1 -ssa_method fd -o foo.nc"
+OPTS="-verbose 1 -ssa_method fd_pik -o foo.nc -ssa_rtol 5e-07 -ksp_rtol 1e-12 -Mx 5"
 
 # do stuff
-$PISM_PATH/ssa_testj -Mx 61 -My 61 $OPTS > test-J-out.txt
-$PISM_PATH/ssa_testj -Mx 121 -My 121 $OPTS >> test-J-out.txt
+$PISM_PATH/ssa_testi -My 61 $OPTS > test-I-out.txt
+$PISM_PATH/ssa_testi -My 121 $OPTS >> test-I-out.txt
 
 set +e
 
 # Check results:
-diff test-J-out.txt -  <<END-OF-OUTPUT
+diff test-I-out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.1825      0.05477    0.1750    0.0615    0.0931    0.0265
+                4.7417      0.05219    4.7417    0.1976    0.4041    0.0087
 NUM ERRORS DONE
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.1331      0.04919    0.1314    0.0397    0.0850    0.0245
+                1.3907      0.01351    1.3907    0.0385    0.1050    0.0018
 NUM ERRORS DONE
 END-OF-OUTPUT
 

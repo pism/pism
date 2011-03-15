@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# SSAFD verification test J regression test
+# SSAFD_PIK verification test J regression test
 
 PISM_PATH=$1
 MPIEXEC=$2
@@ -13,7 +13,7 @@ rm -f $files
 
 set -e
 
-OPTS="-verbose 1 -ssa_method fd -o foo.nc"
+OPTS="-verbose 1 -ssa_method fd_pik -o foo.nc"
 
 # do stuff
 $PISM_PATH/ssa_testj -Mx 61 -My 61 $OPTS > test-J-out.txt

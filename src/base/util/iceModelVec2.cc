@@ -400,35 +400,23 @@ PetscErrorCode IceModelVec2S::has_nan() {
   return retval;
 }
 
-
-// IceModelVec2IcebergMask
-
-//! Returns the iceberg mask value; does not check ownership.
-PismIcebergMask IceModelVec2IcebergMask::value(int i, int j) {
-  const PetscScalar **a = (const PetscScalar**) array;
-  const PetscInt ival = static_cast<int>(floor(a[i][j] + 0.5));
-  return static_cast<PismIcebergMask>(ival);
-}
-
-
 // IceModelVec2Mask
 
 //! Returns the mask value; does not check ownership.
-PismMask IceModelVec2Mask::value(int i, int j) {
+int IceModelVec2Mask::value(int i, int j) {
   const PetscScalar **a = (const PetscScalar**) array;
-  const PetscInt ival = static_cast<int>(floor(a[i][j] + 0.5));
-  return static_cast<PismMask>(ival);
+  return static_cast<int>(floor(a[i][j] + 0.5));
 }
 
 bool IceModelVec2Mask::is_grounded(int i, int j) {
-  const PismMask m = value(i, j);
+  const int m = value(i, j);
 
-  return (m == MASK_SHEET) || (m == MASK_DRAGGING_SHEET) || (m == MASK_ICE_FREE_BEDROCK);
+  return (m == MASK_GROUNDED) || (m == MASK_ICE_FREE_BEDROCK);
 }
 
 
 bool IceModelVec2Mask::is_floating(int i, int j) {
-  const PismMask m = value(i, j);
+  const int m = value(i, j);
 
   return (m == MASK_FLOATING) || (m == MASK_ICE_FREE_OCEAN) || (m == MASK_OCEAN_AT_TIME_0);
 }

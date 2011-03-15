@@ -16,7 +16,7 @@ $PISM_PATH/pismv -Mz 41 -Mbz 11 $OPTS  > test-K-out.txt
 $PISM_PATH/pismv -Mz 81 -Mbz 21 $OPTS >> test-K-out.txt
 
 # compare results
-diff test-K-out.txt - > /dev/null <<END-OF-OUTPUT
+diff test-K-out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 temp      :        maxT         avT       maxTb        avTb
                0.436647    0.165911    0.878458    0.633755

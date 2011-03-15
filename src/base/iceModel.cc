@@ -205,16 +205,15 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
 			 "", ""); CHKERRQ(ierr);
-  vector<double> mask_values(6);
+  vector<double> mask_values(5);
   mask_values[0] = MASK_ICE_FREE_BEDROCK;
-  mask_values[1] = MASK_SHEET;
-  mask_values[2] = MASK_DRAGGING_SHEET;
-  mask_values[3] = MASK_FLOATING;
-  mask_values[4] = MASK_ICE_FREE_OCEAN;
-  mask_values[5] = MASK_OCEAN_AT_TIME_0;
+  mask_values[1] = MASK_GROUNDED;
+  mask_values[2] = MASK_FLOATING;
+  mask_values[3] = MASK_ICE_FREE_OCEAN;
+  mask_values[4] = MASK_OCEAN_AT_TIME_0;
   ierr = vMask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
   ierr = vMask.set_attr("flag_meanings",
-			"ice_free_bedrock sheet dragging_sheet floating ice_free_ocean ocean_at_time_zero"); CHKERRQ(ierr);
+			"ice_free_bedrock dragging_sheet floating ice_free_ocean ocean_at_time_zero"); CHKERRQ(ierr);
   vMask.output_data_type = NC_BYTE;
   ierr = variables.add(vMask); CHKERRQ(ierr);
 
@@ -783,16 +782,16 @@ PetscErrorCode IceModel::init() {
   //! 5) Initialize atmosphere and ocean couplers:
   ierr = init_couplers(); CHKERRQ(ierr);
 
-  //! 6) Fill the model state variables (from a PISM output file, from a
+  //! 6) Allocate work vectors:
+  ierr = allocate_internal_objects(); CHKERRQ(ierr);
+
+  //! 7) Fill the model state variables (from a PISM output file, from a
   //! bootstrapping file using some modeling choices or using formulas). Calls
   //! IceModel::regrid()
   ierr = model_state_setup(); CHKERRQ(ierr);
 
-  //! 7) Report grid parameters:
+  //! 8) Report grid parameters:
   ierr = grid.report_parameters(); CHKERRQ(ierr);
-
-  //! 8) Allocate SSA tools and work vectors:
-  ierr = allocate_internal_objects(); CHKERRQ(ierr);
 
   //! 9) Miscellaneous stuff: set up the bed deformation model, initialize the
   //! basal till model, initialize snapshots. This has to happen *after*

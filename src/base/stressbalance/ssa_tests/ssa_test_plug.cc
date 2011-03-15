@@ -16,10 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-/* This file implements a test case for the ssa:  plug flow.  The geometry consists of a constant
-   surface slope in the positive x-direction, and the ice is pinned on the y-boundaries.  There is
-   no basal shear stress, and hence the the only nonzero terms in the SSA are the "p-laplacian" 
-   and the driving stress. */
+/* This file implements a test case for the ssa: plug flow. The geometry
+   consists of a constant surface slope in the positive x-direction, and the
+   ice is pinned on the y-boundaries. There is no basal shear stress, and hence
+   the the only nonzero terms in the SSA are the "p-laplacian" and the driving
+   stress.
+*/
 
 static char help[] =
   "\nSSA_TEST_PLUG\n"
@@ -126,9 +128,9 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
   
 
   // Set boundary conditions (Dirichlet all the way around).
-  ierr = mask.set(MASK_DRAGGING_SHEET); CHKERRQ(ierr);
+  ierr = bc_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
-  ierr = mask.begin_access(); CHKERRQ(ierr);
+  ierr = bc_mask.begin_access(); CHKERRQ(ierr);
   ierr = bed.begin_access(); CHKERRQ(ierr);
   ierr = surface.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -141,7 +143,7 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
       
       bool edge = ( (j == 0) || (j == grid.My - 1) ) || ( (i==0) || (i==grid.Mx-1) );
       if (edge) {
-        mask(i,j) = MASK_SHEET;
+        bc_mask(i,j) = 1;
         exactSolution(i,j,myx,myy,&myu,&myv);
         vel_bc(i,j).u = myu;
         vel_bc(i,j).v = myv;
@@ -149,21 +151,21 @@ PetscErrorCode SSATestCasePlug::initializeSSACoefficients()
     }
   } 
   ierr = vel_bc.end_access(); CHKERRQ(ierr);
-  ierr = mask.end_access(); CHKERRQ(ierr);
+  ierr = bc_mask.end_access(); CHKERRQ(ierr);
   ierr = bed.end_access(); CHKERRQ(ierr);
   ierr = surface.end_access(); CHKERRQ(ierr);
   
   
   ierr = vel_bc.beginGhostComm(); CHKERRQ(ierr);
   ierr = vel_bc.endGhostComm(); CHKERRQ(ierr);
-  ierr = mask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = mask.endGhostComm(); CHKERRQ(ierr);
+  ierr = bc_mask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = bc_mask.endGhostComm(); CHKERRQ(ierr);
   ierr = bed.beginGhostComm(); CHKERRQ(ierr);
   ierr = bed.endGhostComm(); CHKERRQ(ierr);  
   ierr = surface.beginGhostComm(); CHKERRQ(ierr);
   ierr = surface.endGhostComm(); CHKERRQ(ierr);  
 
-  ierr = ssa->set_boundary_conditions(mask, vel_bc); CHKERRQ(ierr); 
+  ierr = ssa->set_boundary_conditions(bc_mask, vel_bc); CHKERRQ(ierr); 
 
   return 0;
 }
@@ -219,6 +221,7 @@ int main(int argc, char *argv[]) {
     set<string> ssa_choices;
     ssa_choices.insert("fem");
     ssa_choices.insert("fd");
+    ssa_choices.insert("fd_pik");
     string driver = "fem";
 
     // PetscScalar H0dim = 1.;
@@ -249,6 +252,7 @@ int main(int argc, char *argv[]) {
     SSAFactory ssafactory;
     if(driver == "fem") ssafactory = SSAFEMFactory;
     else if(driver == "fd") ssafactory = SSAFDFactory;
+    else if(driver == "fd_pik") ssafactory = SSAFD_PIKFactory;
     else { /* can't happen */ }
 
     SSATestCasePlug testcase(com,rank,size,config,glen_n);

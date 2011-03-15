@@ -321,16 +321,11 @@ public:
 //! floating-point scalars (instead of integers).
 class IceModelVec2Mask : public IceModelVec2S {
 public:
-  virtual PismMask value(int i, int j);	  // returns the mask value
-  virtual bool is_grounded(int i, int j); // checks for MASK_SHEET || MASK_DRAGGING
+  virtual int value(int i, int j);	  // returns the mask value (as an integer)
+  virtual bool is_grounded(int i, int j); // checks for MASK_GROUNDED or MASK_ICE_FREE_BEDROCK
   virtual bool is_floating(int i, int j); // checks for MASK_FLOATING || MASK_FLOATING_OCEAN0
   virtual PetscErrorCode fill_where_grounded(IceModelVec2S &v, const PetscScalar fillval);
   virtual PetscErrorCode fill_where_floating(IceModelVec2S &v, const PetscScalar fillval);
-};
-
-class IceModelVec2IcebergMask : public IceModelVec2S {
-public:
-  virtual PismIcebergMask value(int i, int j);	  // returns the mask value
 };
 
 //! \brief A class representing a horizontal velocity at a certain grid point.

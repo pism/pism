@@ -196,8 +196,9 @@ target_link_libraries (pismv pismverif pismbase)
 add_executable (pclimate pclimate.cc eismint/pgrn_atmosphere.cc)
 target_link_libraries (pclimate pismboundary)
 
+find_program (NCGEN_PROGRAM "ncgen")
 add_custom_command (OUTPUT pism_config.nc
-  COMMAND ncgen -o ${PROJECT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_SOURCE_DIR}/pism_config.cdl
+  COMMAND ${NCGEN_PROGRAM} -o ${PROJECT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_SOURCE_DIR}/pism_config.cdl
   DEPENDS pism_config.cdl
 )
 add_custom_target (pism_config DEPENDS pism_config.nc)

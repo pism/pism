@@ -27,8 +27,8 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
     configure_file(${filename} ${filename} COPYONLY)
   endforeach()
 
-  # copy doxyfile, changing some things along the way:
-  configure_file(doxyfile doxyfile)
+  # copy doxyfile_base, changing some things along the way:
+  configure_file(doxyfile_base doxyfile_base)
   
   # Generate the list of references
   add_custom_command (OUTPUT references.txt
@@ -47,8 +47,8 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
 
   # Generate the browser
   add_custom_target (browser_base
-    COMMAND ${DOXYGEN_EXECUTABLE} doxyfile
-    DEPENDS pism_config.txt references.txt doxyfile
+    COMMAND ${DOXYGEN_EXECUTABLE} doxyfile_base
+    DEPENDS pism_config.txt references.txt doxyfile_base
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Create a compressed "base" browser

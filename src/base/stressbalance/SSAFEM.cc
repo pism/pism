@@ -342,14 +342,11 @@ void SSAFEM::FixDirichletValues(PetscReal local_treatment_mask[], PetscReal loca
                                 PISMVector2 x[], FEDOFMap &my_dofmap)
 {
   for (PetscInt k=0; k<4; k++) {
-    if( PismIntMask(local_treatment_mask[k]) == MASK_SHEET)  // Dirichlet node
-    {
-      if (PismIntMask(local_bc_mask[k]) == MASK_SHEET) { // Explicit Dirichlet node; set the explicit values
-        PetscInt ii, jj;
-        my_dofmap.localToGlobal(k,&ii,&jj);
-        x[k].u = BC_vel[ii][jj].u;
-        x[k].v = BC_vel[ii][jj].v;
-      }
+    if (PismIntMask(local_bc_mask[k]) == 1) { // Explicit Dirichlet node; set the explicit values
+      PetscInt ii, jj;
+      my_dofmap.localToGlobal(k,&ii,&jj);
+      x[k].u = BC_vel[ii][jj].u;
+      x[k].v = BC_vel[ii][jj].v;
       // Mark any kind of Dirichlet node as not to be touched
       my_dofmap.markRowInvalid(k);
       my_dofmap.markColInvalid(k);      
@@ -399,7 +396,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
   PetscReal local_bc_mask[FEQuadrature::Nk];
   for(k=0;k<FEQuadrature::Nk;k++)
   {
-    local_bc_mask[k] = MASK_DRAGGING_SHEET; // Default to no Dirichlet data
+    local_bc_mask[k] = MASK_GROUNDED; // Default to no Dirichlet data
   }
 
   // Iterate over the elements.
@@ -419,13 +416,9 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
       dofmap.extractLocalDOFs(i,j,xg,x);
 
       // These values now need to be adjusted if some nodes in the element have
-      // Dirichlet data.  There are two types: that explicitly flagged in this->BC_mask
-      // with values found in this->vel_bc, and implicit Dirichlet data from nodes
-      // where this->mask[i,j] == MASK_SHEET.  For implicit Dirichlet data, the
-      // values are exactly those that were passed in the initial guess and no updating
-      // of x is required.  But in both cases, we need to mark that we should not update
-      // the row of the residual for that degree of freedom in the loop below.  The following
-      // code block does all this.
+      // Dirichlet data. Note that we need to mark that we should not update
+      // the row of the residual for that degree of freedom in the loop below.
+      // The following code block does all this.
       PetscReal local_treatment_mask[4];
       dofmap.extractLocalDOFs(i,j,ice_treatment_mask,local_treatment_mask);
       // If there is explicit dirichlet data, extract the flags.  If none is present, the
@@ -476,22 +469,10 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
     // Enforce Dirichlet conditions strongly
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if(mask->value(i,j) == MASK_SHEET) {
-          if (bc_locations->value(i,j) == MASK_SHEET) {
-            // Enforce explicit dirichlet data.
-            yg[i][j].u = dirichletScale * (xg[i][j].u - BC_vel[i][j].u);
-            yg[i][j].v = dirichletScale * (xg[i][j].v - BC_vel[i][j].v);
-          } else {
-            // The following is perhaps unhappy.  If a node is set to MASK_SHEET, but no explicit
-            // Dirichlet data have been given, then the effective Dirichlet data is the initial guess.
-            // To implement this properly, we would have to store the initial guess so as to mimic a computation
-            // as above.  To avoid this, we'll go ahead and assume that the initial guess is correctly preserved throughout the
-            // nonlinear iterations and hence the residual really is zero.  But this means that we are telling a lie
-            // later on in the Jacobian, since it should actually have zero rows for any data where we always set the
-            // residual equal to zero.  This would show up as a discrepancy if you compute a finite difference approximation 
-            // of the Jacobian, for example. 
-            yg[i][j].u = yg[i][j].v = 0;
-          }
+        if (bc_locations->value(i,j) == 1) {
+          // Enforce explicit dirichlet data.
+          yg[i][j].u = dirichletScale * (xg[i][j].u - BC_vel[i][j].u);
+          yg[i][j].v = dirichletScale * (xg[i][j].v - BC_vel[i][j].v);
         }
       }
     }
@@ -556,7 +537,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
   PetscReal local_bc_mask[FEQuadrature::Nk];
   for(int k=0;k<FEQuadrature::Nk;k++)
   {
-    local_bc_mask[k] = MASK_DRAGGING_SHEET; // Default to no Dirichlet data
+    local_bc_mask[k] = MASK_GROUNDED; // Default to no Dirichlet data
   }
 
   // Loop through all the elements.
@@ -582,13 +563,9 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
       dofmap.extractLocalDOFs(i,j,xg,x);
 
       // These values now need to be adjusted if some nodes in the element have
-      // Dirichlet data.  There are two types: that explicitly flagged in this->BC_mask
-      // with values found in this->vel_bc, and implicit Dirichlet data from nodes
-      // where this->mask[i,j] == MASK_SHEET.  For implicit Dirichlet data, the
-      // values are exactly those that were passed in the initial guess and no updating
-      // of x is required.  But in both cases, we need to mark that we should not update
-      // the row of the residual for that degree of freedom in the loop below.  The following
-      // code block does all this.
+      // Dirichlet data. Note that we need to mark that we should not update
+      // the row of the residual for that degree of freedom in the loop below.
+      // The following code block does all this.
       PetscReal local_treatment_mask[4];
       dofmap.extractLocalDOFs(i,j,ice_treatment_mask,local_treatment_mask);
       // If there is explicit dirichlet data, extract the flags.  If none is present, the
@@ -656,7 +633,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
   if (bc_locations && vel_bc) {
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (mask->value(i,j) == MASK_SHEET) {
+        if (bc_locations->value(i,j) == 1) {
           const PetscReal ident[4] = {dirichletScale,0,0,dirichletScale};
           MatStencil row;
           // FIXME: Transpose shows up here!

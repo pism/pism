@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2011 Torsten Albrecht, Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -31,96 +31,96 @@
 
 
 PetscErrorCode IceModel::FindIceBergCandidates() {
-	PetscErrorCode ierr;
+  PetscErrorCode ierr;
 
-	ierr = verbPrintf(4,grid.com,"######### FindIceBergCandidates is called \n");    CHKERRQ(ierr);
+  ierr = verbPrintf(4,grid.com,"######### FindIceBergCandidates is called \n");    CHKERRQ(ierr);
 
-	const PetscInt Mx = grid.Mx, My = grid.My;
-	ierr = vH.begin_access(); CHKERRQ(ierr);
-	ierr = vMask.begin_access(); CHKERRQ(ierr);
-	ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
+  const PetscInt Mx = grid.Mx, My = grid.My;
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
 
-	//const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
+  //const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
 	
-	for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-	    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-	      //cut of border of computational domain
-	      if(i <= 0 || i >= Mx-1 || j <= 0 || j >= My-1) {
-	        vH(i,j) = 0.0;
-			vIcebergMask(i,j) = ICEBERGMASK_STOP_OCEAN;
-			vMask(i,j) = MASK_ICE_FREE_OCEAN;
-	      }else{
-			vIcebergMask(i,j) = ICEBERGMASK_NOT_SET;
-		  }
-	    }
-	  }
+      //cut of border of computational domain
+      if(i <= 0 || i >= Mx-1 || j <= 0 || j >= My-1) {
+        vH(i,j) = 0.0;
+        vIcebergMask(i,j) = ICEBERGMASK_STOP_OCEAN;
+        vMask(i,j) = MASK_ICE_FREE_OCEAN;
+      }else{
+        vIcebergMask(i,j) = ICEBERGMASK_NOT_SET;
+      }
+    }
+  }
 
-	  ierr =  vH.end_access(); CHKERRQ(ierr);
-	  ierr =  vMask.end_access(); CHKERRQ(ierr); 
-	  ierr =  vIcebergMask.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr); 
+  ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
 
-	  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
-	  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
-	  ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
-	  ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
 
-	  //////////////////////////////////////////////////////////////////////////////////
-	  // set all floating points to ICEBERGMASK_ICEBERG_CAND
+  //////////////////////////////////////////////////////////////////////////////////
+  // set all floating points to ICEBERGMASK_ICEBERG_CAND
 	
-	  ierr = vMask.begin_access(); CHKERRQ(ierr);
-	  ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
 
-	  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-	    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-	      if (vIcebergMask(i,j) == ICEBERGMASK_NOT_SET) {
-			if (vMask(i,j) == MASK_FLOATING){
-		  		vIcebergMask(i,j) = ICEBERGMASK_ICEBERG_CAND;
-			}
+      if (vIcebergMask(i,j) == ICEBERGMASK_NOT_SET) {
+        if (vMask(i,j) == MASK_FLOATING){
+          vIcebergMask(i,j) = ICEBERGMASK_ICEBERG_CAND;
+        }
 
-	      }
-	    }
-	  }
-	  ierr =  vMask.end_access(); CHKERRQ(ierr); 
-	  ierr =  vIcebergMask.end_access(); CHKERRQ(ierr);
+      }
+    }
+  }
+  ierr = vMask.end_access(); CHKERRQ(ierr); 
+  ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
 
-	  //////////////////////////////////////////////////////////////////////////////////
-	  // set borders of shelves/icebergs to ICEBERGMASK_STOP_ATTACHED or ICEBERGMASK_STOP_OCEAN respectively.
-	  ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
-	  ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
+  //////////////////////////////////////////////////////////////////////////////////
+  // set borders of shelves/icebergs to ICEBERGMASK_STOP_ATTACHED or ICEBERGMASK_STOP_OCEAN respectively.
+  ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
 
-	  ierr = vMask.begin_access(); CHKERRQ(ierr);
-	  ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
 
-	  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-	    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
-	      if (vIcebergMask(i,j) == ICEBERGMASK_NOT_SET) {
+      if (vIcebergMask(i,j) == ICEBERGMASK_NOT_SET) {
 		
-			bool neighbor_is_candidate = (	vIcebergMask(i+1,j)== ICEBERGMASK_ICEBERG_CAND ||
-											vIcebergMask(i+1,j+1)== ICEBERGMASK_ICEBERG_CAND ||
-											vIcebergMask(i+1,j-1)== ICEBERGMASK_ICEBERG_CAND ||
-											vIcebergMask(i,j+1)== ICEBERGMASK_ICEBERG_CAND ||
-											vIcebergMask(i,j-1)== ICEBERGMASK_ICEBERG_CAND ||
-											vIcebergMask(i-1,j+1)== ICEBERGMASK_ICEBERG_CAND ||
-											vIcebergMask(i-1,j)== ICEBERGMASK_ICEBERG_CAND ||
-											vIcebergMask(i-1,j-1)== ICEBERGMASK_ICEBERG_CAND);
+        bool neighbor_is_candidate = (	vIcebergMask(i+1,j)== ICEBERGMASK_ICEBERG_CAND ||
+                                        vIcebergMask(i+1,j+1)== ICEBERGMASK_ICEBERG_CAND ||
+                                        vIcebergMask(i+1,j-1)== ICEBERGMASK_ICEBERG_CAND ||
+                                        vIcebergMask(i,j+1)== ICEBERGMASK_ICEBERG_CAND ||
+                                        vIcebergMask(i,j-1)== ICEBERGMASK_ICEBERG_CAND ||
+                                        vIcebergMask(i-1,j+1)== ICEBERGMASK_ICEBERG_CAND ||
+                                        vIcebergMask(i-1,j)== ICEBERGMASK_ICEBERG_CAND ||
+                                        vIcebergMask(i-1,j-1)== ICEBERGMASK_ICEBERG_CAND);
 											
-			if (vMask(i,j)<MASK_FLOATING && neighbor_is_candidate) vIcebergMask(i,j) = ICEBERGMASK_STOP_ATTACHED;
-			else if (vMask(i,j)>MASK_FLOATING && neighbor_is_candidate) vIcebergMask(i,j) = ICEBERGMASK_STOP_OCEAN;		
+        if (vMask(i,j)<MASK_FLOATING && neighbor_is_candidate) vIcebergMask(i,j) = ICEBERGMASK_STOP_ATTACHED;
+        else if (vMask(i,j)>MASK_FLOATING && neighbor_is_candidate) vIcebergMask(i,j) = ICEBERGMASK_STOP_OCEAN;		
 
-	      }
-	    }
-	  }
+      }
+    }
+  }
 
-	  ierr =  vMask.end_access(); CHKERRQ(ierr); 
-	  ierr =  vIcebergMask.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr); 
+  ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
 
-	  ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
-	  ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
 
-	  return 0;
+  return 0;
 }
 
 
@@ -139,38 +139,38 @@ PetscErrorCode IceModel::IdentifyNotAnIceBerg() {
   PetscTruth checkingNoIceBergs=PETSC_TRUE;
   PetscInt loopcount = 0;
   while(checkingNoIceBergs==PETSC_TRUE){
-	ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
+    ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
     
     checkingNoIceBergs = PETSC_FALSE;
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 	
-		bool attached_to_grounded = (vIcebergMask(i,j+1) == ICEBERGMASK_STOP_ATTACHED ||
-									 vIcebergMask(i,j-1) == ICEBERGMASK_STOP_ATTACHED ||
-									 vIcebergMask(i+1,j) == ICEBERGMASK_STOP_ATTACHED ||
-									 vIcebergMask(i-1,j) == ICEBERGMASK_STOP_ATTACHED),
+        bool attached_to_grounded = (vIcebergMask(i,j+1) == ICEBERGMASK_STOP_ATTACHED ||
+                                     vIcebergMask(i,j-1) == ICEBERGMASK_STOP_ATTACHED ||
+                                     vIcebergMask(i+1,j) == ICEBERGMASK_STOP_ATTACHED ||
+                                     vIcebergMask(i-1,j) == ICEBERGMASK_STOP_ATTACHED),
 		
-			attached_to_no_iceberg = (vIcebergMask(i,j+1) == ICEBERGMASK_NO_ICEBERG ||
-									  vIcebergMask(i,j-1) == ICEBERGMASK_NO_ICEBERG ||
-								      vIcebergMask(i+1,j) == ICEBERGMASK_NO_ICEBERG ||
-								  	  vIcebergMask(i-1,j) == ICEBERGMASK_NO_ICEBERG);
+          attached_to_no_iceberg = (vIcebergMask(i,j+1) == ICEBERGMASK_NO_ICEBERG ||
+                                    vIcebergMask(i,j-1) == ICEBERGMASK_NO_ICEBERG ||
+                                    vIcebergMask(i+1,j) == ICEBERGMASK_NO_ICEBERG ||
+                                    vIcebergMask(i-1,j) == ICEBERGMASK_NO_ICEBERG);
 			
-		if (vIcebergMask(i,j) == ICEBERGMASK_ICEBERG_CAND && (attached_to_grounded || attached_to_no_iceberg)) {
+        if (vIcebergMask(i,j) == ICEBERGMASK_ICEBERG_CAND && (attached_to_grounded || attached_to_no_iceberg)) {
 	
-	  		vIcebergMask(i,j) = ICEBERGMASK_NO_ICEBERG;
-	  		checkingNoIceBergs = PETSC_TRUE;	  
-		}
+          vIcebergMask(i,j) = ICEBERGMASK_NO_ICEBERG;
+          checkingNoIceBergs = PETSC_TRUE;	  
+        }
 	
       }
     }
-    ierr =  vIcebergMask.end_access(); CHKERRQ(ierr);
+    ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
     /* xxxGhostComm() are collective operations. They must be invoked if anything changed on any processor.
      * Thus, collect here the checkingNoIceBergs flags from all processors and compute the global logical OR
      */
     MPI_Allreduce(MPI_IN_PLACE,&checkingNoIceBergs,1,MPI_INT,MPI_LOR,grid.com);
     ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
     ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
-	loopcount+=1;
+    loopcount+=1;
   }
   ierr = verbPrintf(4,grid.com,"!!! %d loop(s) were needed to identify whether there are icebergs \n",loopcount);    CHKERRQ(ierr);
 
@@ -187,11 +187,11 @@ PetscErrorCode IceModel::killIceBergs() {
   
   ierr = verbPrintf(3,grid.com,"######### killIceBergs is called \n");    CHKERRQ(ierr);
   
-  ierr = 	   	 vMask.begin_access(); CHKERRQ(ierr);
-  ierr =  vIcebergMask.begin_access(); CHKERRQ(ierr);
-  ierr = 		    vH.begin_access(); CHKERRQ(ierr);
-  ierr = 		    vh.begin_access(); CHKERRQ(ierr);
-  ierr =		  vbed.begin_access(); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vh.begin_access(); CHKERRQ(ierr);
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
 
   /* //still don't know why it was there...
   if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
@@ -232,11 +232,11 @@ PetscErrorCode IceModel::killIceBergs() {
     }
   }
 
-  ierr =  vMask.end_access(); CHKERRQ(ierr);
-  ierr =  vIcebergMask.end_access(); CHKERRQ(ierr);
-  ierr =  vH.end_access(); CHKERRQ(ierr);
-  ierr =  vh.end_access(); CHKERRQ(ierr);
-  ierr =  vbed.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = vh.end_access(); CHKERRQ(ierr);
+  ierr = vbed.end_access(); CHKERRQ(ierr);
   
   ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
   ierr = vMask.endGhostComm(); CHKERRQ(ierr);
@@ -247,9 +247,3 @@ PetscErrorCode IceModel::killIceBergs() {
   
   return 0;
 }
-
-
-
-
-
-

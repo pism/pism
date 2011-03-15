@@ -16,7 +16,7 @@ $PISM_PATH/pismv -Mx 21 -My 21 -Mz 21 $OPTS  > test_15-E-out.txt
 $PISM_PATH/pismv -Mx 41 -My 41 -Mz 41 $OPTS >> test_15-E-out.txt
 
 # compare results
-diff test_15-E-out.txt - > /dev/null <<END-OF-OUTPUT
+diff test_15-E-out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
                6.589296  747.331102   89.665903    0.109347

@@ -56,9 +56,13 @@ pism_test (verif_test_G_regression:_thermo_SIA_w._time-dependent_SMB test_18.sh)
 
 pism_test (verif_test_I_SSAFD_regression:_nonlinear_SSA_with_plastic_bed ssa/ssa_testi_fd.sh)
 
+pism_test (verif_test_I_SSAFD_PIK_regression:_nonlinear_SSA_with_plastic_bed ssa/ssa_testi_fd_pik.sh)
+
 pism_test (verif_test_I_SSAFEM_regression:_nonlinear_SSA_with_plastic_bed ssa/ssa_testi_fem.sh)
 
 pism_test (verif_test_J_SSAFD_regression:_linearized_SSA,_floating ssa/ssa_testj_fd.sh)
+
+pism_test (verif_test_J_SSAFD_PIK_regression:_linearized_SSA,_floating ssa/ssa_testj_fd_pik.sh)
 
 pism_test (verif_test_J_SSAFEM_regression:_linearized_SSA,_floating ssa/ssa_testj_fem.sh)
 
