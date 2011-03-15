@@ -283,7 +283,7 @@ PetscErrorCode SSAFEM::setup()
 
   for(q=0;q<4;q++)
   {
-    delete Enth_q[q];
+    delete [] Enth_q[q];
   }
   return 0;
 }

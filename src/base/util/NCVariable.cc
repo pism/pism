@@ -347,6 +347,9 @@ PetscErrorCode NCVariable::read_valid_range(const NCTool &nc, int varid) {
   if (has("valid_min") || has("valid_max"))
     return 0;
 
+  // Clear the input units.
+  utClear(&input_units);
+
   // Read the units: The following code ignores the units in the input file if
   // a) they are absent :-) b) they are invalid c) they are not compatible with
   // internal units.

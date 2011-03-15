@@ -89,7 +89,3 @@ pism_test (hybrid_[GK-PB]_flow_law_regression test_29.sh)
 pism_test (Cold_part_of_Paterson-Budd_flow_law_regression test_30.sh)
 
 pism_test (runtime_viewers test_31.sh)
-
-add_custom_target (test
-  COMMAND ${CMAKE_CTEST_COMMAND}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
