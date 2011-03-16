@@ -197,6 +197,15 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
         adaptReasonFlag = 'c';
       }
     }
+    if (btu) {
+      PetscReal btu_dt;
+      ierr = btu->max_timestep(grid.year, btu_dt); CHKERRQ(ierr); // returns years
+      btu_dt *= secpera;
+      if (btu_dt < dt) {
+        dt = btu_dt;
+        adaptReasonFlag = 'b';
+      }
+    }
     if (do_mass_conserve && use_ssa_velocity) {
       // CFLmaxdt2D is set by broadcastSSAVelocity()
       if (CFLmaxdt2D < dt) {

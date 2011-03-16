@@ -51,6 +51,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   beddef  = NULL;
 
   EC = NULL;
+  btu = NULL;
 
   ierr = setDefaults();  // lots of parameters and flags set here, including by reading from a config file
   if (ierr != 0) {
@@ -117,6 +118,7 @@ IceModel::~IceModel() {
 
   delete basal;
   delete EC;
+  delete btu;
   delete ice;
 
   utTerm(); // Clean up after UDUNITS

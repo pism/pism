@@ -35,6 +35,7 @@
 #include "PISMVars.hh"
 #include "Timeseries.hh"
 #include "PISMStressBalance.hh"
+#include "bedrockThermalUnit.hh"
 
 #include "PISMBedDef.hh"
 #include "PISMOcean.hh"
@@ -129,6 +130,7 @@ protected:
   IceBasalResistancePlasticLaw *basal;
 
   EnthalpyConverter *EC;
+  PISMBedThermalUnit *btu;
 
   PISMSurfaceModel *surface;
   PISMOceanModel   *ocean;
@@ -312,7 +314,8 @@ protected:
   
   // see iMtemp.cc
   virtual PetscErrorCode energyStep();
-  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
+  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);// FIXME: delete when _new version works
+  virtual PetscErrorCode temperatureStep_new(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);// FIXME: rename (- "_new") when works
   virtual PetscErrorCode ageStep();
   virtual bool checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
                       PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE);

@@ -137,7 +137,7 @@ PetscErrorCode PISMBedThermalUnit::allocate() {
                " and more than one layers\n"); }
 
   if (Mbz > 1) {
-    ierr = temp.create(grid, "litho_temp", false, Mbz, Lbz); CHKERRQ(ierr);
+    ierr = temp.create(grid, "btu_litho_temp", false, Mbz, Lbz); CHKERRQ(ierr);
     ierr = temp.set_attrs("model_state",
                           "lithosphere (bedrock) temperature, in PISMBedThermalUnit",
                           "K", ""); CHKERRQ(ierr);

@@ -461,6 +461,10 @@ PetscErrorCode IceModel::model_state_setup() {
     last_bed_def_update = grid.year;
   }
 
+  if (btu) {
+    ierr = btu->init(variables); CHKERRQ(ierr); // FIXME: this is bootstrapping, really
+  }
+
   // init basal till model, possibly inverting for phi, if desired;
   //   reads options "-topg_to_phi phi_min,phi_max,phi_ocean,topg_min,topg_max"
   //   or "-surf_vel_to_phi foo.nc";
@@ -564,6 +568,10 @@ PetscErrorCode IceModel::init_physics() {
       ierr = PetscViewerASCIIGetStdout(PETSC_COMM_WORLD,&viewer); CHKERRQ(ierr);
       ierr = EC->viewConstants(viewer); CHKERRQ(ierr);
     }
+  }
+
+  if (btu == NULL) {
+    btu = new PISMBedThermalUnit(grid, *EC, config);
   }
 
   // If both SIA and SSA are "on", the SIA and SSA velocities are always added

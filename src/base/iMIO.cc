@@ -163,6 +163,10 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
       ierr = beddef->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     }
 
+    if (btu != NULL) {
+      ierr = btu->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    }
+
     if (stress_balance != NULL) {
       ierr = stress_balance->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     } else {
@@ -201,6 +205,11 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
   // Write bed-deformation-related variables:
   if (beddef != NULL) {
     ierr = beddef->write_variables(vars, filename); CHKERRQ(ierr);
+  }
+
+  // Write PISMBedThermalUnit variables:
+  if (btu != NULL) {
+    ierr = btu->write_variables(vars, filename); CHKERRQ(ierr);
   }
 
   // Write stress balance-related variables:
@@ -354,8 +363,6 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
   }
 
-
-
   if (config.get_flag("do_age")) {
     bool age_exists;
     ierr = nc.find_variable("age", NULL, age_exists); CHKERRQ(ierr);
@@ -370,7 +377,6 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
       ierr = tau3.set(0.0); CHKERRQ(ierr);
     }
   }
-
 
   if (initfromT || initfromTandOm) {
     IceModelVec3 temperature;
@@ -748,3 +754,4 @@ PetscErrorCode IceModel::write_backup() {
 
   return 0;
 }
+
