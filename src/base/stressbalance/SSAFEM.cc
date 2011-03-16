@@ -329,20 +329,18 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
 
 //! \brief Sets Dirichlet boundary conditions. Called from SSAFEFunction and
 //! SSAFEJacobian.
-/*! The values of \a local_treatment_mask determine if a Dirichlet condition
-has been set at a given vertex, and \a local_bc_mask determines if that
-data has been set explicitly.  If for some vertex \a local_bc_mask indicates that it 
+/*! If for some vertex \a local_bc_mask indicates that it 
 is an explicit Dirichlet node, the values of x for that node is set from the Dirichlet
-data BC_vel. In all Dirichlet cases, the row and column in the \a dofmap are set as invalid.
+data BC_vel. The row and column in the \a dofmap are set as invalid.
 This last step ensures that the residual and Jacobian entries 
 corresponding to a Dirichlet unknown are not set in the main loops of
 SSAFEM::compute_local_function and SSSAFEM:compute_local_jacobian.
 */
-void SSAFEM::FixDirichletValues(PetscReal local_treatment_mask[], PetscReal local_bc_mask[],PISMVector2 **BC_vel,
+void SSAFEM::FixDirichletValues( PetscReal local_bc_mask[],PISMVector2 **BC_vel,
                                 PISMVector2 x[], FEDOFMap &my_dofmap)
 {
   for (PetscInt k=0; k<4; k++) {
-    if (PismIntMask(local_bc_mask[k]) == 1) { // Explicit Dirichlet node; set the explicit values
+    if (PismIntMask(local_bc_mask[k]) == 1) { // Dirichlet node
       PetscInt ii, jj;
       my_dofmap.localToGlobal(k,&ii,&jj);
       x[k].u = BC_vel[ii][jj].u;
@@ -360,7 +358,7 @@ is the current approximate solution, and the \f$\psi_{ij}\f$ are test functions.
 PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVector2 **xg, PISMVector2 **yg)
 {
   PetscInt         i,j,k,q;
-  PetscReal        **bc_mask, **ice_treatment_mask;
+  PetscReal        **bc_mask;
   PISMVector2        **BC_vel;
   PetscErrorCode   ierr;
 
@@ -373,7 +371,6 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
     }
   }
   
-  ierr = mask->get_array(ice_treatment_mask); CHKERRQ(ierr);
   // Start access of Dirichlet data, if present.
   if (bc_locations && vel_bc) {
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
@@ -394,10 +391,6 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
   // Flags for each vertex in an element that determine if explicit Dirichlet data has
   // been set.
   PetscReal local_bc_mask[FEQuadrature::Nk];
-  for(k=0;k<FEQuadrature::Nk;k++)
-  {
-    local_bc_mask[k] = MASK_GROUNDED; // Default to no Dirichlet data
-  }
 
   // Iterate over the elements.
   PetscInt xs = element_index.xs, xm = element_index.xm,
@@ -416,21 +409,15 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
       dofmap.extractLocalDOFs(i,j,xg,x);
 
       // These values now need to be adjusted if some nodes in the element have
-      // Dirichlet data. Note that we need to mark that we should not update
-      // the row of the residual for that degree of freedom in the loop below.
-      // The following code block does all this.
-      PetscReal local_treatment_mask[4];
-      dofmap.extractLocalDOFs(i,j,ice_treatment_mask,local_treatment_mask);
-      // If there is explicit dirichlet data, extract the flags.  If none is present, the
-      // previously set values in local_bc_mask mark all nodes as not Dirichlet.
+      // Dirichlet data.
       if(bc_locations && vel_bc) {
         dofmap.extractLocalDOFs(i,j,bc_mask,local_bc_mask);
+        FixDirichletValues(local_bc_mask,BC_vel,x,dofmap);
       }
-      FixDirichletValues(local_treatment_mask,local_bc_mask,BC_vel,x,dofmap);
 
       // Zero out the element-local residual in prep for updating it.
       for(k=0;k<FEQuadrature::Nk;k++){ 
-        y[k].u = 0; y[k].v=0;
+        y[k].u = 0; y[k].v = 0;
       }
 
       // Compute the solution values and symmetric gradient at the quadrature points.
@@ -502,7 +489,7 @@ where \f$G\f$ is the weak form of the SSA, \f$x\f$ is the current approximate so
 the \f$\psi_{ij}\f$ are test functions. */
 PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVector2 **xg, Mat Jac )
 {
-  PetscReal      **bc_mask, **ice_treatment_mask;
+  PetscReal      **bc_mask;
   PISMVector2    **BC_vel;
   PetscInt         i,j;
   PetscErrorCode   ierr;
@@ -517,8 +504,6 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
     ierr = vel_bc->get_array(BC_vel); CHKERRQ(ierr); 
   }
-
-  ierr = mask->get_array(ice_treatment_mask); CHKERRQ(ierr);
 
   // Jacobian times weights for quadrature.
   PetscScalar JxW[FEQuadrature::Nq];
@@ -535,10 +520,6 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
   // Flags for each vertex in an element that determine if explicit Dirichlet data has
   // been set.
   PetscReal local_bc_mask[FEQuadrature::Nk];
-  for(int k=0;k<FEQuadrature::Nk;k++)
-  {
-    local_bc_mask[k] = MASK_GROUNDED; // Default to no Dirichlet data
-  }
 
   // Loop through all the elements.
   PetscInt xs = element_index.xs, xm = element_index.xm,
@@ -563,17 +544,11 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
       dofmap.extractLocalDOFs(i,j,xg,x);
 
       // These values now need to be adjusted if some nodes in the element have
-      // Dirichlet data. Note that we need to mark that we should not update
-      // the row of the residual for that degree of freedom in the loop below.
-      // The following code block does all this.
-      PetscReal local_treatment_mask[4];
-      dofmap.extractLocalDOFs(i,j,ice_treatment_mask,local_treatment_mask);
-      // If there is explicit dirichlet data, extract the flags.  If none is present, the
-      // previously set values in local_bc_mask mark all nodes as not Dirichlet.
+      // Dirichlet data.
       if(bc_locations && vel_bc) {
         dofmap.extractLocalDOFs(i,j,bc_mask,local_bc_mask);
+        FixDirichletValues(local_bc_mask,BC_vel,x,dofmap);
       }
-      FixDirichletValues(local_treatment_mask,local_bc_mask,BC_vel,x,dofmap);
 
       // Compute the values of the solution at the quadrature points.
       quadrature.computeTrialFunctionValues(x,w,Dw);

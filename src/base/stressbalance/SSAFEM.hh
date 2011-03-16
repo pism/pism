@@ -114,7 +114,7 @@ protected:
                                              const PISMVector2 *,const PetscReal[],
                                              PetscReal *,PetscReal *,PetscReal *,PetscReal *);
 
-  void FixDirichletValues(PetscReal local_treatment_mask[], PetscReal local_bc_mask[],PISMVector2 **BC_vel,
+  void FixDirichletValues(PetscReal local_bc_mask[],PISMVector2 **BC_vel,
                           PISMVector2 x[], FEDOFMap &my_dofmap);
 
   virtual PetscErrorCode allocate_fem();
