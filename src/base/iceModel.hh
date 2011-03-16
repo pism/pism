@@ -153,7 +153,8 @@ protected:
         vbed,		//!< bed topography; ghosted
         vuplift,	//!< bed uplift rate; ghosted to simplify the code computing it
         vGhf,		//!< geothermal flux; no ghosts
-        vtillphi,	//!< friction angle for till under grounded ice sheet; no ghosts
+        vtillphi,	//!< friction angle for till under grounded ice sheet;
+                        //!< ghosted to be able to compute tauc "redundantly"
 
   //vHav,		//!< average over the ice thickness of existing ice neighbors
     vHref,		//!< accumulated mass advected to a partially filled grid cell

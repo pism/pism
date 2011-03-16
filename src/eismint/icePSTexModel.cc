@@ -526,6 +526,10 @@ PetscErrorCode IcePSTexModel::setTillPhi() {
 
   ierr = vtillphi.end_access(); CHKERRQ(ierr);
 
+  // communicate ghosts so that the tauc computation can be performed locally
+  // (including ghosts of tauc, that is)
+  ierr = vtillphi.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vtillphi.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 

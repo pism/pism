@@ -180,55 +180,54 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
   // read comma-separated array of zero to five values
   PetscTruth  topgphiSet;
   ierr = PetscOptionsGetRealArray(PETSC_NULL, "-topg_to_phi", inarray, &Nparam, &topgphiSet);
-     CHKERRQ(ierr);
+  CHKERRQ(ierr);
   if (topgphiSet != PETSC_TRUE) {
     SETERRQ(1,"HOW DID I GET HERE? ... ending...\n");
   }
   if ((Nparam > 5) || (Nparam < 4)) {
     ierr = verbPrintf(1, grid.com, 
-      "PISM ERROR: option -topg_to_phi provided with more than 5 or fewer than 4\n"
-      "            arguments ... ENDING ...\n");
-      CHKERRQ(ierr);
+                      "PISM ERROR: option -topg_to_phi provided with more than 5 or fewer than 4\n"
+                      "            arguments ... ENDING ...\n");
+    CHKERRQ(ierr);
     PISMEnd();
   }
   PetscReal   phi_min = inarray[0],
-              phi_max = inarray[1],
-              topg_min = inarray[2],
-              topg_max = inarray[3],
-              phi_ocean = inarray[4];
+    phi_max = inarray[1],
+    topg_min = inarray[2],
+    topg_max = inarray[3],
+    phi_ocean = inarray[4];
 
   ierr = verbPrintf(2, grid.com, 
-      "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
-      "            /  %5.2f                                 for   topg < %.f\n"
-      "      phi = |  %5.2f + (topg - %.f) * (%.2f / %.f)   for   %.f < topg < %.f\n"
-      "            \\  %5.2f                                 for   %.f < topg\n",
-      phi_min, topg_min,
-      phi_min, topg_min, phi_max-phi_min, topg_max - topg_min, topg_min, topg_max,
-      phi_max, topg_max);
-      CHKERRQ(ierr);
+                    "  till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
+                    "            /  %5.2f                                 for   topg < %.f\n"
+                    "      phi = |  %5.2f + (topg - %.f) * (%.2f / %.f)   for   %.f < topg < %.f\n"
+                    "            \\  %5.2f                                 for   %.f < topg\n",
+                    phi_min, topg_min,
+                    phi_min, topg_min, phi_max-phi_min, topg_max - topg_min, topg_min, topg_max,
+                    phi_max, topg_max);
+  CHKERRQ(ierr);
   if (Nparam == 5) {
     ierr = verbPrintf(2, grid.com, 
-      "      (also using phi = %5.2f in floating ice or ice free ocean)\n",
-      phi_ocean); CHKERRQ(ierr);
+                      "      (also using phi = %5.2f in floating ice or ice free ocean)\n",
+                      phi_ocean); CHKERRQ(ierr);
   }
 
   PetscReal slope = (phi_max - phi_min) / (topg_max - topg_min);
-  PetscScalar **tillphi, **bed;
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = vbed.get_array(bed); CHKERRQ(ierr);
-  ierr = vtillphi.get_array(tillphi); CHKERRQ(ierr);
+  ierr = vbed.begin_access(); CHKERRQ(ierr);
+  ierr = vtillphi.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if ((!vMask.is_floating(i,j)) || (Nparam < 5)) {
-        if (bed[i][j] <= topg_min) {
-          tillphi[i][j] = phi_min;
-        } else if (bed[i][j] >= topg_max) {
-          tillphi[i][j] = phi_max;
+        if (vbed(i,j) <= topg_min) {
+          vtillphi(i,j) = phi_min;
+        } else if (vbed(i,j) >= topg_max) {
+          vtillphi(i,j) = phi_max;
         } else {
-          tillphi[i][j] = phi_min + (bed[i][j] - topg_min) * slope;
+          vtillphi(i,j) = phi_min + (vbed(i,j) - topg_min) * slope;
         }
       } else {
-        tillphi[i][j] = phi_ocean;
+        vtillphi(i,j) = phi_ocean;
       }
     }
   }
@@ -236,6 +235,10 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
   ierr = vbed.end_access(); CHKERRQ(ierr);
   ierr = vtillphi.end_access(); CHKERRQ(ierr);
 
+  // communicate ghosts so that the tauc computation can be performed locally
+  // (including ghosts of tauc, that is)
+  ierr = vtillphi.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vtillphi.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 

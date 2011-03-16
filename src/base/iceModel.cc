@@ -297,7 +297,8 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vbmr); CHKERRQ(ierr);
 
   // friction angle for till under grounded ice sheet
-  ierr = vtillphi.create(grid, "tillphi", false); // never differentiated
+  ierr = vtillphi.create(grid, "tillphi", true, WIDE_STENCIL);
+  // ghosted to allow the "redundant" computation of tauc
   // PROPOSED standard_name = land_ice_basal_material_friction_angle
   ierr = vtillphi.set_attrs("climate_steady", "friction angle for till under grounded ice sheet",
 			    "degrees", ""); CHKERRQ(ierr);
