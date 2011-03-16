@@ -337,6 +337,7 @@ protected:
   virtual PetscErrorCode FindIceBergCandidates();
   virtual PetscErrorCode IdentifyNotAnIceBerg();
   virtual PetscErrorCode killIceBergs();
+  virtual PetscErrorCode killEasyIceBergs();
 
 protected:
   // working space (a convenience)

@@ -37,6 +37,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   ierr = update_surface_elevation(); CHKERRQ(ierr);
 
   if (config.get_flag("kill_icebergs") == true) {
+	//if (part_grids) {ierr = killEasyIceBergs(); CHKERRQ(ierr);} //might be usefull when apllying calving 
     ierr = FindIceBergCandidates(); CHKERRQ(ierr);
 	ierr = IdentifyNotAnIceBerg(); CHKERRQ(ierr);
 	ierr = killIceBergs(); CHKERRQ(ierr);	
