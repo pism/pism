@@ -95,6 +95,11 @@ PetscErrorCode IceModel::energyStep() {
     }
   }
 
+  // Both cases above update the basal melt rate field; here we update its
+  // ghosts, which are needed to copute tauc locally
+  ierr = vbmr.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vbmr.endGhostComm(); CHKERRQ(ierr);
+
   ierr = PetscGlobalSum(&myCFLviolcount, &CFLviolcount, grid.com); CHKERRQ(ierr);
 
   ierr = PetscGlobalSum(&myVertSacrCount, &gVertSacrCount, grid.com); CHKERRQ(ierr);

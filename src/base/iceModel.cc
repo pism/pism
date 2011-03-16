@@ -287,7 +287,8 @@ PetscErrorCode IceModel::createVecs() {
   ierr = variables.add(vuplift); CHKERRQ(ierr);
 
   // basal melt rate
-  ierr = vbmr.create(grid, "bmelt", false); CHKERRQ(ierr);
+  ierr = vbmr.create(grid, "bmelt", true, WIDE_STENCIL); CHKERRQ(ierr);
+  // ghosted to allow the "redundant" computation of tauc
   ierr = vbmr.set_attrs("model_state",
                         "ice basal melt rate in ice thickness per time",
                         "m s-1", "land_ice_basal_melt_rate"); CHKERRQ(ierr);
