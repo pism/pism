@@ -11,23 +11,23 @@ files="test_15-E-out.txt verify.nc verify.nc~"
 rm -f $files
 
 # run test E
-OPTS="-test E -y 1000 -o_size small -verbose 1 -Mbz 1"
-$PISM_PATH/pismv -Mx 21 -My 21 -Mz 21 $OPTS  > test_15-E-out.txt
-$PISM_PATH/pismv -Mx 41 -My 41 -Mz 41 $OPTS >> test_15-E-out.txt
+OPTS="-test E -y 100 -o_size small -verbose 1 -Mbz 1"
+$PISM_PATH/pismv -Mx 21 -My 21 -Mz 3 $OPTS  > test_15-E-out.txt
+$PISM_PATH/pismv -Mx 41 -My 41 -Mz 3 $OPTS >> test_15-E-out.txt
 
 # compare results
 diff test_15-E-out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
-               6.589296  747.331102   89.665903    0.109347
+               0.827276  368.801098   32.698040    0.040785
 base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
-                6.0136    0.30921     0.60906    6.0130    2.8310
+                4.2915    0.22484     0.44288    4.1961    2.2109
 NUM ERRORS DONE
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
-               3.627740  720.374602   51.662995    0.058539
+               0.329772  525.609347   26.226880    0.040169
 base vels :  maxvector   avvector  prcntavvec     maxub     maxvb
-                1.9234    0.15022     0.29589    1.6931    1.1956
+                1.3480    0.10223     0.20137    1.3375    1.0205
 NUM ERRORS DONE
 END-OF-OUTPUT
 

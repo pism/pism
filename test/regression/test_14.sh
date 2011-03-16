@@ -10,7 +10,7 @@ files="simp_exper.nc"
 
 rm -f $files
 # run pisms
-$MPIEXEC -n 2 $PISM_PATH/pisms -y 10e3 -Lz 4100 -Mx 26 -My 26 -o_size big -no_cold
+$MPIEXEC -n 2 $PISM_PATH/pisms -y 10e3 -Lz 4100 -Mx 12 -My 12 -o_size big -no_cold
 
 /usr/bin/env python <<EOF
 try:
@@ -22,7 +22,7 @@ from sys import exit
 
 nc = NC("simp_exper.nc", 'r')
 var = nc.variables['enthalpy']
-n = 26; m = 26; tol = 1e-3
+n = 12; m = 12; tol = 1e-3
 
 for k in [0, 1, 2]:
     v = var[0,k,:,:]	# time,z,y,x

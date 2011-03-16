@@ -65,47 +65,8 @@ private:
 };
 
 
-//! Tridiagonal linear system for vertical column of age (pure advection) problem.
-/*!
-Call sequence like this:
-\code
-  ageSystemCtx foo;
-  foo.dx = ...  // set public constants
-  foo.u = ...   // set public pointers
-  foo.initAllColumns();
-  for (i in ownership) {
-    for (j in ownership) {
-      ks = ...
-      foo.setIndicesThisColumn(i,j,ks);
-      foo.solveThisColumn(x);
-    }  
-  }
-\endcode
- */
-class ageSystemCtx : public columnSystemCtx {
-
-public:
-  ageSystemCtx(PetscInt my_Mz);
-  PetscErrorCode initAllColumns();
-  PetscErrorCode solveThisColumn(PetscScalar **x);  
-
-public:
-  // constants which should be set before calling initForAllColumns()
-  PetscScalar  dx,
-               dy,
-               dtAge,
-               dzEQ;
-  // pointers which should be set before calling initForAllColumns()
-  PetscScalar  *u,
-               *v,
-               *w;
-  IceModelVec3 *tau3;
-
-protected: // used internally
-  PetscScalar nuEQ;
-  bool        initAllDone;
-};
-
+// FIXME: the class below is deletable once the PISMBedThermalUnit-enabled version
+//        in energy/tempSystem.[hh|cc] is working properly
 
 //! Tridiagonal linear system for vertical column of temperature-based conservation of energy problem.
 /*!

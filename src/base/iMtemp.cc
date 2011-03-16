@@ -22,8 +22,8 @@
 #include "iceModel.hh"
 
 
-// it would be reasonable for code clarity to split this into three
-// small source files, "iMenergy.cc", "iMtemperature.cc", "iMage.cc"
+// FIXME:  it might be reasonable for code clarity to split this in two:
+//   "iMenergy.cc", "iMtemperature.cc"
 
 
 //! Manage the solution of the energy equation, and related parallel communication.
@@ -541,120 +541,6 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
   }
   return 0;
 }                           
-
-
-//! Take a semi-implicit time-step for the age equation.
-/*!
-The age equation is\f$d\tau/dt = 1\f$, that is,
-    \f[ \frac{\partial \tau}{\partial t} + u \frac{\partial \tau}{\partial x}
-        + v \frac{\partial \tau}{\partial y} + w \frac{\partial \tau}{\partial z} = 1\f]
-where \f$\tau(t,x,y,z)\f$ is the age of the ice and \f$(u,v,w)\f$  is the three dimensional
-velocity field.  This equation is purely advective.  And it is hyperbolic.
-
-The boundary condition is that when the ice falls as snow it has age zero.  
-That is, \f$\tau(t,x,y,h(t,x,y)) = 0\f$ in accumulation areas, while there is no 
-boundary condition elsewhere, as the characteristics go outward in the ablation zone.
-(Some more numerical-analytic attention to this is worthwhile.)
-
-If the velocity in the bottom cell of ice is upward (\code (w[i][j][0] > 0 \endcode)
-then we also apply an age = 0 boundary condition.  This is the case where ice freezes
-on at the base, either grounded basal ice freezing on stored water in till, or marine basal ice.
-
-The numerical method is first-order upwind but the vertical advection term is computed
-implicitly.  (Thus there is no CFL-type stability condition for that part.)
-
-We use a finely-spaced, equally-spaced vertical grid in the calculation.  Note that the IceModelVec3 
-methods getValColumn...() and setValColumn..() interpolate back and forth between the grid 
-on which calculation is done and the storage grid.  Thus the storage grid can be either 
-equally spaced or not.
- */
-PetscErrorCode IceModel::ageStep() {
-  PetscErrorCode  ierr;
-
-  // set up fine grid in ice
-  PetscInt    fMz = grid.Mz_fine;
-  PetscScalar fdz = grid.dz_fine;
-
-  PetscScalar *x;  
-  x = new PetscScalar[fMz]; // space for solution
-
-  ageSystemCtx system(fMz); // linear system to solve in each column
-  system.dx    = grid.dx;
-  system.dy    = grid.dy;
-  system.dtAge = dtTempAge;
-  system.dzEQ  = fdz;
-  // pointers to values in current column
-  system.u     = new PetscScalar[fMz];
-  system.v     = new PetscScalar[fMz];
-  system.w     = new PetscScalar[fMz];
-  // system needs access to tau3 for planeStar()
-  system.tau3  = &tau3;
-  // this checks that all needed constants and pointers got set
-  ierr = system.initAllColumns(); CHKERRQ(ierr);
-
-  IceModelVec3 *u3, *v3, *w3;
-  ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr); 
-
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = tau3.begin_access(); CHKERRQ(ierr);
-  ierr = u3->begin_access(); CHKERRQ(ierr);
-  ierr = v3->begin_access(); CHKERRQ(ierr);
-  ierr = w3->begin_access(); CHKERRQ(ierr);
-  ierr = vWork3d.begin_access(); CHKERRQ(ierr);
-
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // this should *not* be replaced by a call to grid.kBelowHeight()
-      const PetscInt  fks = static_cast<PetscInt>(floor(vH(i,j)/fdz));
-
-      if (fks == 0) { // if no ice, set the entire column to zero age
-        ierr = vWork3d.setColumn(i,j,0.0); CHKERRQ(ierr);
-      } else { // general case: solve advection PDE; start by getting 3D velocity ...
-
-	ierr = u3->getValColumn(i,j,fks,system.u); CHKERRQ(ierr);
-	ierr = v3->getValColumn(i,j,fks,system.v); CHKERRQ(ierr);
-	ierr = w3->getValColumn(i,j,fks,system.w); CHKERRQ(ierr);
-
-        ierr = system.setIndicesAndClearThisColumn(i,j,fks); CHKERRQ(ierr);
-
-        // solve the system for this column; call checks that params set
-        ierr = system.solveThisColumn(&x); // no "CHKERRQ(ierr)" because:
-        if (ierr > 0) {
-          PetscPrintf(grid.com,
-            "PISM ERROR in IceModel::ageStep():\n"
-            "  tridiagonal solve failed at (%d,%d) with zero pivot position %d\n"
-            "  1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n"
-            "  ENDING! ...\n\n",
-            i, j, ierr, system.norm1(fks+1), system.ddratio(fks+1));
-          PISMEnd();
-        } else { CHKERRQ(ierr); }
-
-        // x[k] contains age for k=0,...,ks, but set age of ice above (and at) surface to zero years
-        for (PetscInt k=fks+1; k<fMz; k++) {
-          x[k] = 0.0;
-        }
-        
-        // put solution in IceModelVec3
-        ierr = vWork3d.setValColumnPL(i,j,x); CHKERRQ(ierr);
-      }
-    }
-  }
-
-  ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = tau3.end_access();  CHKERRQ(ierr);
-  ierr = u3->end_access();  CHKERRQ(ierr);
-  ierr = v3->end_access();  CHKERRQ(ierr);
-  ierr = w3->end_access();  CHKERRQ(ierr);
-  ierr = vWork3d.end_access();  CHKERRQ(ierr);
-
-  delete [] x;  
-  delete [] system.u;  delete [] system.v;  delete [] system.w;
-
-  ierr = tau3.beginGhostCommTransfer(vWork3d); CHKERRQ(ierr);
-  ierr = tau3.endGhostCommTransfer(vWork3d); CHKERRQ(ierr);
-
-  return 0;
-}
 
 
 bool IceModel::checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 

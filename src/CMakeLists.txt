@@ -74,12 +74,15 @@ target_link_libraries (pismflowlaws pismutil pismudunits ${Pism_EXTERNAL_LIBS})
 add_library (pismbase
   base/pism_signal.c
   base/materials.cc
+  base/columnSystem.cc
   base/energy/bedrockOnlySystem.cc
-  base/energy/columnSystem.cc
   base/energy/combinedSystem.cc
   base/energy/iceenthOnlySystem.cc
+  base/energy/bedrockThermalUnit.cc
+  base/energy/tempSystem.cc
   base/iMIO.cc
   base/iMadaptive.cc
+  base/iMage.cc
   base/iMbasal.cc
   base/iMbeddef.cc
   base/iMbootstrap.cc

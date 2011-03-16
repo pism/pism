@@ -88,4 +88,7 @@ pism_test (hybrid_[GK-PB]_flow_law_regression test_29.sh)
 
 pism_test (Cold_part_of_Paterson-Budd_flow_law_regression test_30.sh)
 
+pism_test (verif_PISMBedThermalUnit_test_K_regression btu_regression.sh)
+
 pism_test (runtime_viewers test_31.sh)
+
