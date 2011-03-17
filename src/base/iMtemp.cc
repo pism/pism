@@ -16,11 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <petscda.h>
-#include "iceModelVec.hh"
-#include "columnSystem.hh"
-#include "tempSystem.hh"
 #include "iceModel.hh"
+#include "tempSystem.hh"
 
 
 // FIXME:  it might be reasonable for code clarity to split this in two:
@@ -34,7 +31,7 @@ do_cold_ice_methods == true.
 
 This method (energyStep()) \e must update these four fields:
   - IceModelVec3 Enth3
-  - IceModelVec3Bedrock Tb3
+  - IceModelVec3Bedrock Tb3  FIXME: not once PISMBedThermalUnit working
   - IceModelVec2 vbasalMeltRate
   - IceModelVec2 vHmelt
 That is, energyStep() is in charge of calling other methods that update, and
@@ -84,8 +81,13 @@ PetscErrorCode IceModel::energyStep() {
     // new enthalpy values go in vWork3d; also updates (and communicates) Hmelt
     PetscScalar myLiquifiedVol = 0.0, gLiquifiedVol;
 
+#if USEBTU
+    ierr = enthalpyAndDrainageStep_new(&myVertSacrCount,&myLiquifiedVol,&myBulgeCount);
+       CHKERRQ(ierr);
+#else
     ierr = enthalpyAndDrainageStep(&myVertSacrCount,&myLiquifiedVol,&myBulgeCount);
        CHKERRQ(ierr);
+#endif
 
     ierr = Enth3.beginGhostCommTransfer(vWork3d); CHKERRQ(ierr);
     ierr = Enth3.endGhostCommTransfer(vWork3d); CHKERRQ(ierr);

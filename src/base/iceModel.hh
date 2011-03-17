@@ -267,7 +267,10 @@ protected:
 					      PetscScalar *lambda,     //!< lambda
 					      PetscScalar **Enth_s//!< enthalpy for the pr.-melting temp.
                                               );   
-  virtual PetscErrorCode enthalpyAndDrainageStep(
+  virtual PetscErrorCode enthalpyAndDrainageStep( // FIXME: remove this old version once PISMBedThermalUnit works
+                PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
+                PetscScalar* bulgeCount);
+  virtual PetscErrorCode enthalpyAndDrainageStep_new(
                 PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
                 PetscScalar* bulgeCount);
 

@@ -416,8 +416,8 @@ PetscErrorCode IceModel::killEasyIceBergs() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       
 	  // instead of updating surface elevation, counting here floating or icefree neighbors
-      const PetscScalar hgrounded = vbed(i,j) + vH(i,j),
-	  hfloating = currentSeaLevel + (1.0 - ice_rho/ocean_rho) * vH(i,j);
+//FIXME: unused var:      const PetscScalar hgrounded = vbed(i,j) + vH(i,j),
+//FIXME: unused var:	  hfloating = currentSeaLevel + (1.0 - ice_rho/ocean_rho) * vH(i,j);
       
 	  bool all_4neighbors_iceless = (vH(i+1,j)==0.0 && vH(i-1,j)==0.0 && vH(i,j+1)==0.0 && vH(i,j-1)==0.0);
 	  // What about firstStepAfterInit?

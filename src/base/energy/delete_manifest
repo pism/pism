@@ -13,8 +13,10 @@ energy/iceenthOnlySystem.cc
 tempSystemCtx definition in columnSystem.hh
 tempSystemCtx implementation in columnSystem.cc
 IceModel::temperatureStep() in iMtemp.cc
+IceModel::enthalpyAndDrainageStep() in iMenthalpy.cc
 
 # RENAME:
 tempSystemCtx_new --> tempSystemCtx in energy/tempSystem.[hh|cc]
 IceModel::temperatureStep_new() --> IceModel::temperatureStep() in iMtemp.cc
+IceModel::enthalpyAndDrainageStep_new() --> IceModel::enthalpyAndDrainageStep() in iMenthalpy.cc
 

@@ -79,6 +79,7 @@ add_library (pismbase
   base/energy/combinedSystem.cc
   base/energy/iceenthOnlySystem.cc
   base/energy/bedrockThermalUnit.cc
+  base/energy/enthSystem.cc
   base/energy/tempSystem.cc
   base/iMIO.cc
   base/iMadaptive.cc
