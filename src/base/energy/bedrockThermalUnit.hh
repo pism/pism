@@ -87,7 +87,7 @@ method uses second-order differencing to compute the values of \f$G_0\f$.
 If \c n_levels<=1 then this object becomes very simplified: there is no internal
 state in IceModelVec3BTU temp.  The update() and allocate() methods are null,
 and the get_upward_geothermal_flux() method does nothing other than to copy the
-field \f$G\$ = \c bheatflx into \c result.
+field \f$G\f$ = \c bheatflx into \c result.
 
 If \c n_levels==2 then everything is the general case except that 
 get_upward_geothermal_flux() method uses first-order differencing to compute the
