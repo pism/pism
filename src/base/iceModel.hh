@@ -140,7 +140,7 @@ protected:
   //! from the IceModel core to other components (such as surface and ocean models)
   PISMVars variables;
 
-  // state variables
+  // state variables and some diagnostics/internals
   IceModelVec2S
         vh,		//!< ice surface elevation; ghosted
         vH,		//!< ice thickness; ghosted
@@ -153,6 +153,7 @@ protected:
         vbed,		//!< bed topography; ghosted
         vuplift,	//!< bed uplift rate; ghosted to simplify the code computing it
         vGhf,		//!< geothermal flux; no ghosts
+        bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
         vtillphi,	//!< friction angle for till under grounded ice sheet;
                         //!< ghosted to be able to compute tauc "redundantly"
 
@@ -315,6 +316,7 @@ protected:
   
   // see iMtemp.cc
   virtual PetscErrorCode energyStep();
+  virtual PetscErrorCode get_bed_top_temp(IceModelVec2S &result);
   virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);// FIXME: delete when _new version works
   virtual PetscErrorCode temperatureStep_new(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);// FIXME: rename (- "_new") when works
   virtual PetscErrorCode ageStep();

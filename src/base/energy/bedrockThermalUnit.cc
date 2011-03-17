@@ -16,6 +16,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
+// serial mode in an MPI program:
+//#ifndef MPI_INCLUDED
+//#define MPI_INCLUDED 1
+//#endif
+//#include <netcdf.h>
+
 #include "bedrockThermalUnit.hh"
 
 
@@ -107,13 +114,51 @@ PetscErrorCode IceModelVec3BTU::stopIfNotLegalLevel(PetscScalar z) {
 }
 
 
-PISMBedThermalUnit::PISMBedThermalUnit(IceGrid &g, EnthalpyConverter &e, 
-                                       const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), EC(e) {
+//! Create dimension and coordinate variable "zb" in a NetCDF file, open and identified by ncid.
+/*! assumes we are in NetCDF define mode */
+PetscErrorCode IceModelVec3BTU::create_zb_dimension(int ncid) {
+  PetscErrorCode ierr;
+  int stat, zb, dimid;
+  
+  if (grid->rank != 0) return 0;
 
-  enthalpy = NULL;
-  thk      = NULL;
-  ghf      = NULL;
+//  // replacing this call in NCTool:  stat = define_mode(); CHKERRQ(stat);
+//  ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+  // define dimension zb
+  stat = nc_def_dim(ncid, "btu_zb", grid->Mbz, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_def_var(ncid, "btu_zb", NC_DOUBLE, 1, &dimid, &zb); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_put_att_text(ncid, zb, "long_name", 23, "z-coordinate in bedrock"); check_err(stat,__LINE__,__FILE__);
+  // PROPOSED standard_name = projection_z_coordinate_in_lithosphere
+  stat = nc_put_att_text(ncid, zb, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
+  stat = nc_put_att_text(ncid, zb, "positive", 2, "up"); check_err(stat,__LINE__,__FILE__);
+
+  // replacing this call in NCTool:  stat = data_mode(); CHKERRQ(stat); 
+  ierr = nc__enddef(ncid,50000,4,0,4); CHKERRQ(check_err(ierr,__LINE__,__FILE__))
+
+  // put coordinate variable for dimension zb
+  // replacing this call in PISMIO:  stat = put_dimension(zb, grid->Mbz, grid->zblevels); CHKERRQ(stat);
+  double *vv, dzb;
+  ierr = PetscMalloc(n_levels * sizeof(double), &vv); CHKERRQ(ierr);
+  ierr = get_spacing(dzb); CHKERRQ(ierr);
+  for (int i = 0; i < n_levels; i++) {
+    vv[i] = -Lbz + dzb * (double)i; // equally-spaced
+  }
+  stat = nc_put_var_double(ncid, zb, vv); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  ierr = PetscFree(vv); CHKERRQ(ierr);
+
+  // replacing this call in NCTool:  stat = define_mode(); CHKERRQ(stat);
+  ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+  return 0;
+}
+
+
+PISMBedThermalUnit::PISMBedThermalUnit(IceGrid &g, const NCConfigVariable &conf)
+    : PISMComponent_TS(g, conf) {
+
+  bedtoptemp = NULL;
+  ghf        = NULL;
   if (allocate()) {
     verbPrintf(1,g.com, "PISMBedThermalUnit::allocate() returned nonzero\n");
     PISMEnd();
@@ -142,12 +187,6 @@ PetscErrorCode PISMBedThermalUnit::allocate() {
                           "lithosphere (bedrock) temperature, in PISMBedThermalUnit",
                           "K", ""); CHKERRQ(ierr);
     ierr = temp.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-
-    ierr = ice_base_temp.create(grid, "btu_ice_base_temp", false); CHKERRQ(ierr);
-    ierr = ice_base_temp.set_attrs("internal",
-        "temperature at base of ice for duration of timestep, in PISMBedThermalUnit",
-        "K", ""); CHKERRQ(ierr);
-    ierr = ice_base_temp.set_attr("valid_min", 0.0); CHKERRQ(ierr);
   }
   return 0;
 }
@@ -170,8 +209,10 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   bed_k   = config.get("bedrock_thermal_conductivity");
   bed_D   = bed_k / (bed_rho * bed_c);
 
+  bedtoptemp = dynamic_cast<IceModelVec2S*>(vars.get("bedtoptemp"));
+  if (bedtoptemp == NULL) SETERRQ(1, "bedtoptemp is not available");
   ghf = dynamic_cast<IceModelVec2S*>(vars.get("bheatflx"));
-  if (ghf == NULL) SETERRQ(4, "btu_bheatflx is not available");
+  if (ghf == NULL) SETERRQ(2, "bheatflx is not available");
 
   if (!temp.was_created()) {
     ierr = verbPrintf(2,grid.com,
@@ -180,18 +221,8 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   } else {
     ierr = verbPrintf(2,grid.com,
       "  bootstrapping to fill lithosphere temperatures in bedrock thermal layers,\n"
-      "    using z=0 enthalpy values and linear function from geothermal flux ...\n");
+      "    using provided bedtoptemp and a linear function from provided geothermal flux ...\n");
       CHKERRQ(ierr);
-
-    enthalpy = dynamic_cast<IceModelVec3*>(vars.get("enthalpy"));
-    if (enthalpy == NULL) SETERRQ(2, "enthalpy is not available");
-    thk = dynamic_cast<IceModelVec2S*>(vars.get("thk"));
-    if (thk == NULL) SETERRQ(3, "thk is not available");
-
-    // first job: fill ice_base_temp; FIXME: is correct in floating case? ice-free case?;
-    // FIXME we need mask? ... probably not: we need bedrock_top_temp to be properly set
-    // by caller
-    ierr = enthalpy->getHorSlice(ice_base_temp, 0.0); CHKERRQ(ierr);
 
     PetscScalar* Tb;
     PetscReal dzb;
@@ -200,26 +231,20 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
     temp.get_spacing(dzb);
     const PetscInt k0 = Mbz-1; // Tb[k0] = ice/bedrock interface temp
 
-    ierr = thk->begin_access(); CHKERRQ(ierr);
+    ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
     ierr = ghf->begin_access(); CHKERRQ(ierr);
-    ierr = ice_base_temp.begin_access(); CHKERRQ(ierr);
     ierr = temp.begin_access(); CHKERRQ(ierr);
     for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
       for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        const PetscReal pressure = EC.getPressureFromDepth((*thk)(i,j));
-        PetscReal base_temp;
-        ierr = EC.getAbsTemp(ice_base_temp(i,j), pressure, base_temp); CHKERRQ(ierr);
-        ice_base_temp(i,j) = base_temp;
         ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr); // Tb points into temp memory
-        Tb[k0] = ice_base_temp(i,j);
+        Tb[k0] = (*bedtoptemp)(i,j);
         for (PetscInt k = k0-1; k >= 0; k--) {
           Tb[k] = Tb[k+1] + dzb * (*ghf)(i,j) / bed_k;
         }
       }
     }
-    ierr = thk->end_access(); CHKERRQ(ierr);
+    ierr = bedtoptemp->end_access(); CHKERRQ(ierr);
     ierr = ghf->end_access(); CHKERRQ(ierr);
-    ierr = ice_base_temp.end_access(); CHKERRQ(ierr);
     ierr = temp.end_access(); CHKERRQ(ierr);
   } // end if (temp.was_created())
   return 0;
@@ -229,12 +254,10 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
 // FIXME:  init from file code is needed when running with IceModel, at least
 
 
-void PISMBedThermalUnit::add_vars_to_output(string keyword, set<string> &result) {
+void PISMBedThermalUnit::add_vars_to_output(string /*keyword*/, set<string> &result) {
   if (temp.was_created()) {
+    result.insert("btu_zb");
     result.insert(temp.string_attr("short_name"));
-    if (keyword == "big") {
-      result.insert(ice_base_temp.string_attr("short_name"));
-    }
   }
 }
 
@@ -244,10 +267,8 @@ PetscErrorCode PISMBedThermalUnit::define_variables(
   if (temp.was_created()) {
     PetscErrorCode ierr;
     if (set_contains(vars, temp.string_attr("short_name"))) {
-      ierr = temp.define(nc, nctype); CHKERRQ(ierr); 
-    }
-    if (set_contains(vars, ice_base_temp.string_attr("short_name"))) {
-      ierr = ice_base_temp.define(nc, nctype); CHKERRQ(ierr); 
+      ierr = temp.define(nc, nctype); CHKERRQ(ierr);
+      ierr = temp.create_zb_dimension(nc.get_ncid()); CHKERRQ(ierr);
     }
   }
   return 0;
@@ -259,9 +280,6 @@ PetscErrorCode PISMBedThermalUnit::write_variables(set<string> vars, string file
     PetscErrorCode ierr;
     if (set_contains(vars, temp.string_attr("short_name"))) {
       ierr = temp.write(filename.c_str()); CHKERRQ(ierr); 
-    }
-    if (set_contains(vars, ice_base_temp.string_attr("short_name"))) {
-      ierr = ice_base_temp.write(filename.c_str()); CHKERRQ(ierr); 
     }
   }
   return 0;
@@ -328,24 +346,8 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal t_years, PetscReal dt_years)
   t  = t_years;
   dt = dt_years;
 
-  if (enthalpy == NULL) SETERRQ(4, "enthalpy was never initialized");
-  if (thk == NULL)      SETERRQ(5, "thk was never initialized");
+  if (bedtoptemp == NULL)      SETERRQ(5, "bedtoptemp was never initialized");
   if (ghf == NULL)      SETERRQ(6, "bheatflx was never initialized");
-
-  // first job: fill ice_base_temp; FIXME: is correct in floating case? ice-free case?; FIXME we need mask
-  ierr = enthalpy->getHorSlice(ice_base_temp, 0.0); CHKERRQ(ierr);
-  ierr = ice_base_temp.begin_access(); CHKERRQ(ierr);
-  ierr = thk->begin_access(); CHKERRQ(ierr);
-  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      const PetscReal pressure = EC.getPressureFromDepth((*thk)(i,j));
-      ierr = EC.getAbsTemp(ice_base_temp(i,j), pressure, ice_base_temp(i,j));
-               CHKERRQ(ierr);
-    }
-  }
-  ierr = thk->end_access(); CHKERRQ(ierr);
-  ierr = ice_base_temp.end_access(); CHKERRQ(ierr);
-  // no need to communicate just-filled ice_base_temp
 
   PetscReal dzb;
   PetscInt  Mbz;
@@ -369,24 +371,24 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal t_years, PetscReal dt_years)
 
   ierr = temp.begin_access(); CHKERRQ(ierr);
   ierr = ghf->begin_access(); CHKERRQ(ierr);
-  ierr = ice_base_temp.begin_access(); CHKERRQ(ierr);
+  ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
 
       ierr = temp.getInternalColumn(i,j,&Tbold); CHKERRQ(ierr); // Tbold actually points into temp memory
-      Tbold[k0] = ice_base_temp(i,j);  // sets Dirichlet explicit-in-time b.c. at top of bedrock column
+      Tbold[k0] = (*bedtoptemp)(i,j);  // sets Dirichlet explicit-in-time b.c. at top of bedrock column
 
       const PetscReal Tbold_negone = Tbold[1] + 2 * (*ghf)(i,j) * dzb / bed_k;
       Tbnew[0] = Tbold[0] + bed_R * (Tbold_negone - 2 * Tbold[0] + Tbold[1]);
       for (PetscInt k = 1; k < k0; k++) { // working upward from base
         Tbnew[k] = Tbold[k] + bed_R * (Tbold[k-1] - 2 * Tbold[k] + Tbold[k+1]);
       }
-      Tbnew[k0] = ice_base_temp(i,j);
+      Tbnew[k0] = (*bedtoptemp)(i,j);
 
       ierr = temp.setInternalColumn(i,j,Tbnew); CHKERRQ(ierr); // copy from Tbnew into temp memory
     }
   }
-  ierr = ice_base_temp.end_access(); CHKERRQ(ierr);
+  ierr = bedtoptemp->end_access(); CHKERRQ(ierr);
   ierr = ghf->end_access(); CHKERRQ(ierr);
   ierr = temp.end_access(); CHKERRQ(ierr);
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -31,27 +31,8 @@ static char help[] =
 static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 
   PetscErrorCode ierr;
-  IceModelVec2Mask *mask = new IceModelVec2Mask;
-  IceModelVec2S *thk = new IceModelVec2S,
-                *ghf = new IceModelVec2S;
-  IceModelVec3  *enthalpy = new IceModelVec3;
-
-  ierr = mask->create(grid, "mask", true); CHKERRQ(ierr);
-  ierr = mask->set_attrs("", "grounded_dragging_floating integer mask",
-			      "", ""); CHKERRQ(ierr);
-  ierr = variables.add(*mask); CHKERRQ(ierr);
-
-  ierr = thk->create(grid, "thk", true); CHKERRQ(ierr);
-  ierr = thk->set_attrs("", "ice thickness",
-			      "m", "land_ice_thickness"); CHKERRQ(ierr);
-  ierr = variables.add(*thk); CHKERRQ(ierr);
-
-  ierr = enthalpy->create(grid, "enthalpy", false); CHKERRQ(ierr);
-  ierr = enthalpy->set_attrs(
-     "",
-     "ice enthalpy (includes sensible heat, latent heat, pressure)",
-     "J kg-1", ""); CHKERRQ(ierr);
-  ierr = variables.add(*enthalpy); CHKERRQ(ierr);
+  IceModelVec2S *bedtoptemp = new IceModelVec2S,
+                *ghf        = new IceModelVec2S;
 
   ierr = ghf->create(grid, "bheatflx", false); CHKERRQ(ierr);
   ierr = ghf->set_attrs("",
@@ -59,6 +40,12 @@ static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
 		       "W m-2", ""); CHKERRQ(ierr);
   ierr = ghf->set_glaciological_units("mW m-2");
   ierr = variables.add(*ghf); CHKERRQ(ierr);
+
+  ierr = bedtoptemp->create(grid, "bedtoptemp", false); CHKERRQ(ierr);
+  ierr = bedtoptemp->set_attrs("",
+                       "temperature at top of bedrock thermal layer",
+		       "K", ""); CHKERRQ(ierr);
+  ierr = variables.add(*bedtoptemp); CHKERRQ(ierr);
 
   return 0;
 }
@@ -163,29 +150,23 @@ int main(int argc, char *argv[]) {
     ierr = grid.createDA(); CHKERRQ(ierr);
 
     // allocate tools and IceModelVecs
-    EnthalpyConverter EC(config);
     PISMVars variables;
     ierr = createVecs(grid, variables); CHKERRQ(ierr);
 
-    // thickness has constant value
-    IceModelVec2S *thk;
-    thk = dynamic_cast<IceModelVec2S*>(variables.get("thk"));
-    if (thk == NULL) SETERRQ(3, "thk is not available");
-    ierr = thk->set(3000.0); CHKERRQ(ierr);  // see Test K
+    // these vars are owned by this driver, outside of PISMBedThermalUnit
+    IceModelVec2S *bedtoptemp, *ghf;
 
-    // lithosphere (bottom of bedrock layer) heat flux has constant value
-    IceModelVec2S *ghf;
+    // top of bedrock layer temperature; filled from Test K exact values
+    bedtoptemp = dynamic_cast<IceModelVec2S*>(variables.get("bedtoptemp"));
+    if (bedtoptemp == NULL) SETERRQ(1, "bedtoptemp is not available");
+
+    // lithosphere (bottom of bedrock layer) heat flux; has constant value
     ghf = dynamic_cast<IceModelVec2S*>(variables.get("bheatflx"));
-    if (ghf == NULL) SETERRQ(4, "bheatflx is not available");
+    if (ghf == NULL) SETERRQ(2, "bheatflx is not available");
     ierr = ghf->set(0.042); CHKERRQ(ierr);  // see Test K
 
-    // we will be filling enthalpy from temperature used in Test K
-    IceModelVec3 *enthalpy;
-    enthalpy = dynamic_cast<IceModelVec3*>(variables.get("enthalpy"));
-    if (enthalpy == NULL) SETERRQ(5, "enthalpy is not available");
-
     // initialize BTU object:
-    PISMBedThermalUnit btu(grid, EC, config);
+    PISMBedThermalUnit btu(grid, config);
 
     ierr = btu.init(variables); CHKERRQ(ierr);  // FIXME: this is bootstrapping, really
 
@@ -230,25 +211,19 @@ int main(int argc, char *argv[]) {
     for (PetscInt n = 0; n < N; n++) {
       const PetscReal y = grid.start_year + dt_years * (double)n;  // time at start of time-step
 
-      // compute exact ice temperature, thus enthalpy, at time y
-      ierr = enthalpy->begin_access(); CHKERRQ(ierr);
-      PetscScalar *Enthij; // columns of these values
+      // compute exact ice temperature at z=0 at time y
+      ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
       for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
         for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-          ierr = enthalpy->getInternalColumn(i,j,&Enthij); CHKERRQ(ierr);
-          for (PetscInt k=0; k<grid.Mz; ++k) {
-            const PetscReal z     = grid.zlevels[k],
-                            depth = 3000.0 - z; // FIXME task #7297
-            PetscReal TT, FF; // Test K:  use TT, ignor FF
-            ierr = exactK(y * secpera, z, &TT, &FF, 0); CHKERRQ(ierr);
-            ierr = EC.getEnth(TT,0.0,EC.getPressureFromDepth(depth),Enthij[k]); CHKERRQ(ierr);
-          }
+          PetscReal TT, FF; // Test K:  use TT, ignor FF
+          ierr = exactK(y * secpera, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
+          (*bedtoptemp)(i,j) = TT;
         }
       }
-      ierr = enthalpy->end_access(); CHKERRQ(ierr);
+      ierr = bedtoptemp->end_access(); CHKERRQ(ierr);
       // we are not communicating anything, which is fine
 
-      // update the temperature inside the thermal layer
+      // update the temperature inside the thermal layer using bedtoptemp
       ierr = btu.update(y, dt_years); CHKERRQ(ierr);
       ierr = verbPrintf(2,com,"."); CHKERRQ(ierr);
     }
@@ -300,6 +275,7 @@ int main(int argc, char *argv[]) {
     ierr = pio.close(); CHKERRQ(ierr);
 
     ierr = btu.write_variables(vars, outname); CHKERRQ(ierr);
+    ierr = bedtoptemp->write(outname.c_str()); CHKERRQ(ierr);
     ierr = ghf->write(outname.c_str()); CHKERRQ(ierr);
 
     ierr = doneWithIceInfo(variables); CHKERRQ(ierr);

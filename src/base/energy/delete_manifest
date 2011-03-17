@@ -1,0 +1,20 @@
+# list of files and code to delete once PISMBedThermalUnit is fully-attached
+# to IceModel; paths are relative to src/base/
+
+# DELETE FILES:
+energy/bedrockOnlySystem.hh
+energy/bedrockOnlySystem.cc
+energy/combinedSystem.hh
+energy/combinedSystem.cc
+energy/iceenthOnlySystem.hh
+energy/iceenthOnlySystem.cc
+
+# DELETE CODE BLOCKS:
+tempSystemCtx definition in columnSystem.hh
+tempSystemCtx implementation in columnSystem.cc
+IceModel::temperatureStep() in iMtemp.cc
+
+# RENAME:
+tempSystemCtx_new --> tempSystemCtx in energy/tempSystem.[hh|cc]
+IceModel::temperatureStep_new() --> IceModel::temperatureStep() in iMtemp.cc
+

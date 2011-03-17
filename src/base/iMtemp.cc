@@ -53,17 +53,20 @@ PetscErrorCode IceModel::energyStep() {
   // always count CFL violations for sanity check (but can occur only if -skip N with N>1)
   ierr = countCFLViolations(&myCFLviolcount); CHKERRQ(ierr);
 
-#if 0
+#define USEBTU 0
+
+#if USEBTU
   // operator-splitting occurs here (ice and bedrock energy updates are split):
   //   tell PISMBedThermalUnit* btu that we have an ice base temp; it will return
   //   the z=0 value of geothermal flux when called inside temperatureStep() or
   //   enthalpyAndDrainageStep()
-  ierr = btu->update(grid.year, dtTempAge / secpera); CHKERRQ(ierr);
+  ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
+  ierr = btu->update(grid.year, dtTempAge / secpera); CHKERRQ(ierr);  // has ptr to bedtoptemp
 #endif
 
   if (config.get_flag("do_cold_ice_methods")) {
     // new temperature values go in vTnew; also updates Hmelt:
-#if 0
+#if USEBTU
     ierr = temperatureStep_new(&myVertSacrCount,&myBulgeCount); CHKERRQ(ierr);  
 #else
     ierr = temperatureStep(&myVertSacrCount,&myBulgeCount); CHKERRQ(ierr);  
@@ -121,6 +124,53 @@ PetscErrorCode IceModel::energyStep() {
     snprintf(tempstr,50, " BULGE=%d ", static_cast<int>(ceil(gBulgeCount)) );
     stdout_flags = tempstr + stdout_flags;
   }
+
+  return 0;
+}
+
+
+PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
+  PetscErrorCode  ierr;
+
+  // will need coupler fields in ice-free land and 
+  if (surface != PETSC_NULL) {
+    ierr = surface->ice_surface_temperature(grid.year, dtTempAge / secpera, artm); CHKERRQ(ierr);
+  } else {
+    SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
+  }
+  if (ocean != PETSC_NULL) {
+    ierr = ocean->shelf_base_temperature(grid.year, dtTempAge / secpera, shelfbtemp); CHKERRQ(ierr);
+  } else {
+    SETERRQ(5,"PISM ERROR: ocean == PETSC_NULL");
+  }
+
+  // start by grabbing 2D basal enthalpy field at z=0; converted to temperature if needed, below
+  ierr = Enth3.getHorSlice(result, 0.0); CHKERRQ(ierr);
+
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  ierr = artm.begin_access(); CHKERRQ(ierr);
+  ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if (vMask.is_grounded(i,j)) {
+        if (vMask.value(i,j) == MASK_ICE_FREE_BEDROCK) { // no ice: sees air temp
+          result(i,j) = artm(i,j);
+        } else { // ice: sees temp of base of ice
+          const PetscReal pressure = EC->getPressureFromDepth(vH(i,j));
+          ierr = EC->getAbsTemp(result(i,j), pressure, result(i,j)); CHKERRQ(ierr);  
+        }
+      } else { // floating: apply shelf base temp as top of bedrock temp
+        result(i,j) = shelfbtemp(i,j);
+      }
+    }
+  }
+  ierr = vH.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = artm.end_access(); CHKERRQ(ierr);
+  ierr = shelfbtemp.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

@@ -250,6 +250,14 @@ PetscErrorCode IceModel::createVecs() {
   vGhf.time_independent = true;
   ierr = variables.add(vGhf); CHKERRQ(ierr);
 
+  // temperature seen by top of bedrock thermal layer
+  ierr = bedtoptemp.create(grid, "bedtoptemp", false); CHKERRQ(ierr); // never differentiated
+  ierr = bedtoptemp.set_attrs("internal",
+                        "temperature of top of bedrock thermal layer",
+			"K", ""); CHKERRQ(ierr);
+  ierr = bedtoptemp.set_glaciological_units("K");
+  ierr = variables.add(bedtoptemp); CHKERRQ(ierr);
+
   // effective thickness of subglacial melt water
   ierr = vHmelt.create(grid, "bwat", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = vHmelt.set_attrs("model_state", "effective thickness of subglacial melt water",

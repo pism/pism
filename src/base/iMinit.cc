@@ -571,7 +571,7 @@ PetscErrorCode IceModel::init_physics() {
   }
 
   if (btu == NULL) {
-    btu = new PISMBedThermalUnit(grid, *EC, config);
+    btu = new PISMBedThermalUnit(grid, config);
   }
 
   // If both SIA and SSA are "on", the SIA and SSA velocities are always added

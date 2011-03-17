@@ -23,7 +23,6 @@
 #include "iceModelVec.hh"
 #include "PISMVars.hh"
 #include "materials.hh"
-#include "enthalpyConverter.hh"
 
 //! Class for a 3d DA-based Vec for PISMBedThermalUnit.
 class IceModelVec3BTU : public IceModelVec3D {
@@ -38,7 +37,9 @@ public:
   virtual PetscErrorCode get_layer_depth(PetscReal &depth); //!< Return -Lbz value.
   virtual PetscErrorCode get_spacing(PetscReal &dzb);
 
-  PetscErrorCode  stopIfNotLegalLevel(PetscScalar z);
+  virtual PetscErrorCode stopIfNotLegalLevel(PetscScalar z);
+
+  virtual PetscErrorCode create_zb_dimension(int ncid);
 
 private:
   PetscReal Lbz;
@@ -46,7 +47,7 @@ private:
 };
 
 
-//! Given the ice/bedrock interface temperature for the duration of one time-step, provides upward geothermal flux at that interface at the end of the time-step.
+//! Given the temperature of the top of the bedrock, for the duration of one time-step, provides upward geothermal flux at that interface at the end of the time-step.
 /*!
 The geothermal flux actually applied to the base of an ice sheet is dependent, over time,
 on the temperature of the basal ice itself.  The purpose of a bedrock thermal layer
@@ -95,7 +96,7 @@ values of \f$G_0\f$.
 class PISMBedThermalUnit : public PISMComponent_TS {
 
 public:
-  PISMBedThermalUnit(IceGrid &g, EnthalpyConverter &e, const NCConfigVariable &conf);
+  PISMBedThermalUnit(IceGrid &g, const NCConfigVariable &conf);
 
   virtual ~PISMBedThermalUnit() { }
 
@@ -119,18 +120,11 @@ public:
 protected:
   virtual PetscErrorCode allocate();
 
-  // FIXME: rename this to bedrock_top_temp and have a pointer to it; thus IceModel
-  // will fill it and take care of its semantics; this will mean we *do not* need
-  // pointers 'enthalpy' and 'thk'
-  IceModelVec2S  ice_base_temp;  //!< temporary storage for boundary value Tb(z=0);
-
   // parameters of the heat equation:  T_t = D T_xx  where D = k / (rho c)
   PetscScalar    bed_rho, bed_c, bed_k, bed_D;
 
-  EnthalpyConverter &EC; //!< needed to extract base temperature from ice enthalpy
-
-  IceModelVec3   *enthalpy;
-  IceModelVec2S  *thk, *ghf;
+  IceModelVec2S *bedtoptemp, //!< upper boundary temp, owned by the model to which we are attached
+                *ghf; //!< lower boundary flux, owned by the model to which we are attached
 };
 
 #endif /* _PISMBEDTHERMALUNIT_H_ */
