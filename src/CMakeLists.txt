@@ -261,4 +261,4 @@ endif (Pism_BUILD_EXTRA_EXECS)
 
 add_subdirectory (base/stressbalance)
 add_subdirectory (eismint)
-
+add_subdirectory (pythonbindings)
