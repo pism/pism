@@ -114,7 +114,8 @@ public:
   virtual void import_from(const NCConfigVariable &other);
   virtual void update_from(const NCConfigVariable &other);
 
-  virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype, bool) const;
+  virtual PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype, bool 
+                                write_in_glaciological_units = true) const;
 protected:
   string config_filename;       //!< \brief the name of the file this config database
                                 //!< was initialized from 
