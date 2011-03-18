@@ -14,15 +14,15 @@ Try a 'make' and see if it builds.  There will be a flurry of warnings; go ahead
 
 After having done a 'make install', the python libraries will be found in something like
 
-${CMAKE_INSTALL_PREFIX}/lib/python2.6/site-packages/pism/...etc...
+${CMAKE_INSTALL_PREFIX}/lib/python2.6/site-packages/PISM/...etc...
 
 You will need to add this location to your PYTHONPATH, e.g.
 
 export PYTHONPATH=${PYTHONPATH}:/usr/local/lib/python2.6/site-packages
 
-NOTE: The path terminates with site-packages, not pism.
+NOTE: The path terminates with site-packages, not PISM.
 
-Now give it a shot.  Simply try "python -c 'import pism'" to see if you get an error message.
+Now give it a shot.  Simply try "python -c 'import PISM'" to see if you get an error message.
 
 If this works, this is very promising.  Now go to the examples/python directory.  Try
 

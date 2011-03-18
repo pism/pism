@@ -469,7 +469,7 @@ public:
                                 int stencil_width = 1);
   PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsIN);
   PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsOUT);
-  PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
+  // PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
 protected:
   PetscErrorCode  isLegalLevel(PetscScalar z);
 };
