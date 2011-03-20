@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 import PISM
-from PISM import IceModelVec2S, IceModelVec2V, PISMVars, secpera
+from PISM import IceModelVec2S, IceModelVec2V
 from petsc4py import PETSc
 import math
 
@@ -181,19 +181,16 @@ class SSASolver:
     self.ssa_init = False
 
   def setFromOptions(self):
-    #// FIXME (DAM 2/17/11):  These are currently only looked at by the finite difference solver.
-    self.config.scalar_from_option("ssa_eps",  "epsilon_ssa");
-    self.config.scalar_from_option("ssa_maxi", "max_iterations_ssa");
-    self.config.scalar_from_option("ssa_rtol", "ssa_relative_convergence");
 
-    optDB = PETSc.Options()
-    if optDB.hasName("-ssa_method"):
-      # I'd really like to call PISMOptionsList here.
-      ssa_method = optDB.getString("-ssa_method")
-      if SSAAlgorithms.has_key(ssa_method):
-        self.config.set_string("ssa_method",ssa_method)
-      else:
-        raise ValueError("-ssa_method should be one of %s, found %s" %(SSAAlgorithms.keys(),ssa_method))
+    for o in PISM.OptionsGroup(self.grid.com,"","SSA options"):
+      (ssa_method,wasSet) = PISM.optionsListWasSet(self.grid.com, "-ssa_method", 
+                                    "Algorithm for computing the SSA solution",
+                                    ["fem","fd"], "fd")
+      if wasSet: self.config.set_string("ssa_method",ssa_method);
+      #// FIXME (DAM 2/17/11):  These are currently only looked at by the finite difference solver.
+      self.config.scalar_from_option("ssa_eps",  "epsilon_ssa");
+      self.config.scalar_from_option("ssa_maxi", "max_iterations_ssa");
+      self.config.scalar_from_option("ssa_rtol", "ssa_relative_convergence");
 
   def allocateBCs(self,velname='_bc',maskname='bc_mask'):
     self.vel_bc     = standard2dVelocityVec( self.grid, name=velname, desc='SSA velocity boundary condition',intent='intent' )
@@ -220,6 +217,7 @@ class SSASolver:
         self.ssa.set_boundary_conditions(self.bc_mask,self.vel_bc)
       self.ssa_init = True
     
+    PISM.verbPrintf(2,self.grid.com,"* Solving the SSA stress balance ...\n");
     fast = False;
     self.ssa.update(fast);
     self.vel_ssa = self.ssa.get_advective_2d_velocity()
@@ -256,7 +254,6 @@ class SSATestCase:
 
   #//! Solve the SSA
   def solve(self):
-    PISM.verbPrintf(2,self.grid.com,"* Solving the SSA stress balance ...\n");
     self.solver.solve()
 
   def write(self,filename):
@@ -351,13 +348,38 @@ class SSAExactTestCase(SSATestCase):
         exact[i,j] = self.exactSolution(i,j,grid.x[i],grid.y[j])
     exact.end_access();
     exact.write(filename);
-  
+
+class Access:
+  def __init__(self,v):
+    self.v = v;
+    if isinstance(v,list) or isinstance(v,tuple):
+      for var in v:
+        var.begin_access()
+    else:
+      v.begin_access()
+  def __enter__(self):
+    pass
+  def __exit__(self,exc_type, exc_value, traceback):
+    v = self.v
+    if isinstance(v,list) or isinstance(v,tuple):
+      for var in v:
+        var.end_access()
+    else:
+      v.end_access()
+    self.v=None
 
 class Reporter:
   
   def __init__(self,com,verbosity=1):
     self.com = com
     self.verbosity=verbosity
+
+  def setverbosity(self,verbosity):
+    self.verbosity=verbosity
   
   def println(self,msg,*args):
     PISM.verbPrintf(self.verbosity,self.com,"%s\n" % (msg % args))
+
+  def printlnv(self,verbosity,msg,*args):
+    PISM.verbPrintf(verbosity,self.com,"%s\n" % (msg % args))
+

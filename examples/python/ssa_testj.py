@@ -1,3 +1,22 @@
+# Copyright (C) 2011 Ed Bueler and Constantine Khroulev and David Maxwell
+# 
+# This file is part of PISM.
+# 
+# PISM is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
+# 
+# PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with PISM; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+
 import sys, petsc4py
 petsc4py.init(sys.argv)
 from petsc4py import PETSc
@@ -82,23 +101,23 @@ class testj(ssa.SSAExactTestCase):
 
 # The main code for a run follows:
 
-comm = PETSc.COMM_WORLD
-rank = PETSc.Comm.getRank(comm)
-size = PETSc.Comm.getSize(comm)
+com  = PETSc.COMM_WORLD
+rank = PETSc.Comm.getRank(com)
+size = PETSc.Comm.getSize(com)
 
 config = PISM.NCConfigVariable(); overrides = PISM.NCConfigVariable();
 
 # Handle the input arguments.  I don't see a good way yet to call PetscOptionsBegin/End
 # and integrate better into the -help mechanism.
-optDB = PETSc.Options()
-Mx = optDB.getInt("-Mx",default=61)
-My = optDB.getInt("-My",default=61)
-output_file = optDB.getString("-o",default="testj.nc")
-verbosity = optDB.getString("-verbose",default=3)
+for o in PISM.OptionsGroup(com,"","Test J"):
+  Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
+  My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
+  output_file = PISM.optionsString("-o","output file",default="testj.nc")
+  verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
 
-PISM.init_config(comm, rank, config, overrides)
+PISM.init_config(com, rank, config, overrides)
 PISM.setVerbosityLevel(verbosity)
-tc = testj(comm,rank,size,config,Mx,My)
+tc = testj(com,rank,size,config,Mx,My)
 tc.solve()
 tc.report()
 tc.write(output_file)

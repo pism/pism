@@ -1,135 +1,20 @@
-# // Copyright (C) 2007--2011 Ed Bueler and Constantine Khroulev
-# //
-# // This file is part of PISM.
-# //
-# // PISM is free software; you can redistribute it and/or modify it under the
-# // terms of the GNU General Public License as published by the Free Software
-# // Foundation; either version 2 of the License, or (at your option) any later
-# // version.
-# //
-# // PISM is distributed in the hope that it will be useful, but WITHOUT ANY
-# // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-# // FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-# // details.
-# //
-# // You should have received a copy of the GNU General Public License
-# // along with PISM; if not, write to the Free Software
-# // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# Copyright (C) 2011 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
-# #include <petsc.h>
-# #include "SSAFD.hh"
-# #include "SSAFEM.hh"
-# #include "PISMIO.hh"
-# #include "Timeseries.hh"
+# This file is part of PISM.
 # 
-# static char help[] =
-#   "Driver for EISMINT-Ross diagnostic velocity computation in ice shelf.\n"
-#   "Illustrates use of SSA stress balance plus I/O plus time series,\n"
-#   "without the time-stepping mass continuity and conservation of energy\n"
-#   "components of PISM.\n\n";
+# PISM is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
 # 
-# PetscErrorCode read_riggs_and_compare(IceGrid &grid, PISMVars &vars, IceModelVec2V &vel_ssa) {
-#   PetscErrorCode  ierr;
-#   PetscTruth      riggsSet;
-#   char            riggsfile[PETSC_MAX_PATH_LEN];
+# PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
 # 
-#   ierr = PetscOptionsGetString(PETSC_NULL, "-riggs", riggsfile,
-#                                PETSC_MAX_PATH_LEN, &riggsSet); CHKERRQ(ierr);
-#   if (riggsSet == PETSC_FALSE)
-#     return 0;
-# 
-#   IceModelVec2S *longitude, *latitude;
-#   IceModelVec2Mask *mask;
-# 
-#   longitude = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
-#   if (longitude == NULL) SETERRQ(1, "longitude is not available");
-# 
-#   latitude = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
-#   if (latitude == NULL) SETERRQ(1, "latitude is not available");
-# 
-#   mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
-#   if (mask == NULL) SETERRQ(1, "mask is not available");
-# 
-#   ierr = verbPrintf(2,grid.com,"comparing to RIGGS data in %s ...\n",
-#                     riggsfile); CHKERRQ(ierr);
-# 
-#   Timeseries latdata(&grid, "riggslat", "count"),
-#     londata(&grid, "riggslon", "count"),
-#     magdata(&grid, "riggsmag", "count"),
-#     udata(&grid, "riggsu", "count"),
-#     vdata(&grid, "riggsv", "count");
-#   PetscInt    len;
-#   PetscScalar **clat, **clon;
-# 
-#   ierr = longitude->get_array(clon); CHKERRQ(ierr);
-#   ierr =  latitude->get_array(clat); CHKERRQ(ierr);
-#   ierr =    vel_ssa.begin_access(); CHKERRQ(ierr);
-#   ierr =      mask->begin_access();  CHKERRQ(ierr);
-# 
-#   ierr = magdata.set_units("m year-1", ""); CHKERRQ(ierr);
-#   ierr =   udata.set_units("m year-1", ""); CHKERRQ(ierr);
-#   ierr =   vdata.set_units("m year-1", ""); CHKERRQ(ierr);
-# 
-#   ierr = latdata.read(riggsfile); CHKERRQ(ierr);
-#   ierr = londata.read(riggsfile); CHKERRQ(ierr);
-#   ierr = magdata.read(riggsfile); CHKERRQ(ierr);
-#   ierr =   udata.read(riggsfile); CHKERRQ(ierr);
-#   ierr =   vdata.read(riggsfile); CHKERRQ(ierr);
-#       
-#   // same length for all vars here
-#   len = latdata.length();
-#   PetscScalar  goodptcount = 0.0, ChiSqr = 0.0;
-#   for (PetscInt k = 0; k<len; k++) {
-#     PetscScalar lat, lon, mag, u, v;
-#     lat = latdata[k];
-#     lon = londata[k];
-#     mag = magdata[k];
-#     u   = udata[k];
-#     v   = vdata[k];
-#     ierr = verbPrintf(4,grid.com,
-#                       " RIGGS[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
-#                       k,lat,lon,mag,u,v); CHKERRQ(ierr); 
-#     const PetscScalar origdlat = (-5.42445 - (-12.3325)) / 110.0;
-#     const PetscScalar lowlat = -12.3325 - origdlat * 46.0;
-#     const PetscScalar dlat = (-5.42445 - lowlat) / (float) (grid.My - 1);        
-#     const PetscScalar lowlon = -5.26168;
-#     const PetscScalar dlon = (3.72207 - lowlon) / (float) (grid.Mx - 1);
-#     const int         cj = (int) floor((lat - lowlat) / dlat);
-#     const int         ci = (int) floor((lon - lowlon) / dlon);
-#     if ((ci >= grid.xs) && (ci < grid.xs+grid.xm) && (cj >= grid.ys) && (cj < grid.ys+grid.ym)) {
-#       const PetscScalar cu = secpera * vel_ssa(ci,cj).u;
-#       const PetscScalar cv = secpera * vel_ssa(ci,cj).v;
-#       const PetscScalar cmag = sqrt(PetscSqr(cu)+PetscSqr(cv));
-#       ierr = verbPrintf(4,PETSC_COMM_SELF,
-#                         " PISM%d[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
-#                         grid.rank,k,clat[ci][cj],clon[ci][cj],cmag,cu,cv); CHKERRQ(ierr); 
-#       if (mask->value(ci,cj) == MASK_FLOATING) {
-#         goodptcount += 1.0;
-#         ChiSqr += PetscSqr(u-cu)+PetscSqr(v-cv);
-#       }
-#     }
-#   }
-#   ChiSqr = ChiSqr / PetscSqr(30.0); // see page 48 of MacAyeal et al
-#   PetscScalar g_goodptcount, g_ChiSqr;
-#   ierr = PetscGlobalSum(&goodptcount, &g_goodptcount, grid.com); CHKERRQ(ierr);
-#   ierr = PetscGlobalSum(&ChiSqr, &g_ChiSqr, grid.com); CHKERRQ(ierr);
-#   ierr = verbPrintf(4,grid.com,"number of RIGGS data points = %d\n"
-#                     "number of RIGGS points in computed ice shelf region = %8.2f\n",
-#                     len, g_goodptcount); CHKERRQ(ierr);
-#   ierr = verbPrintf(2,grid.com,"Chi^2 statistic for computed results compared to RIGGS is %10.3f\n",
-#                     g_ChiSqr * (156.0 / g_goodptcount)); CHKERRQ(ierr);
-# 
-#   ierr = longitude->end_access(); CHKERRQ(ierr);
-#   ierr =  latitude->end_access(); CHKERRQ(ierr);
-#   ierr =      mask->end_access(); CHKERRQ(ierr);
-#   ierr =    vel_ssa.end_access(); CHKERRQ(ierr);
-# 
-#   return 0;
-# }
-# 
-
-  
-
+# You should have received a copy of the GNU General Public License
+# along with PISM; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 import sys, petsc4py
@@ -219,34 +104,29 @@ class pross(ssa.SSATestCase):
     grid = self.grid
     area = grid.dx*grid.dy
   
-    mask = self.solver.ice_mask; mask.begin_access();
-    H = self.solver.thickness; H.begin_access();
-    azi=self.obsAzimuth; azi.begin_access();
-    mag = self.obsMagnitude; mag.begin_access();
-    acc = self.obsAccurate; acc.begin_access();
-    vel_ssa = self.solver.solution(); vel_ssa.begin_access()
+    mask = self.solver.ice_mask;
+    H = self.solver.thickness;
+    azi=self.obsAzimuth;
+    mag = self.obsMagnitude;
+    acc = self.obsAccurate;
+    vel_ssa = self.solver.solution();
     
-    for i in xrange(grid.xs,grid.xs+grid.xm):
-      for j in xrange(grid.ys,grid.ys+grid.ym):
-        if mask.is_floating(i,j) and H[i,j] > 1.0:
-          ccomputed = vel_ssa[i,j].magnitude()
-          maxcComputed = max(maxcComputed,ccomputed)
-          if( abs(acc[i,j]-1.0) < 0.1):
-            accN += 1.0
-            accArea += area
-            uobs = mag[i,j] * math.sin((math.pi/180.0) * azi[i,j]);
-            vobs = mag[i,j] * math.cos((math.pi/180.0) * azi[i,j]);
-            Dv = abs(vobs-vel_ssa[i,j].v)
-            Du = abs(uobs-vel_ssa[i,j].u)
-            verr += Dv; uerr += Du
-            relvecerr += (Dv*Dv+Du*Du) / (vobs*vobs+uobs*uobs)
-            vecErrAcc += (Dv*Dv+Du*Du) * area
-    mag.end_access()
-    azi.end_access()
-    acc.end_access()
-    vel_ssa.end_access()
-    mask.end_access()
-    H.end_access()
+    with ssa.Access([mask,H,azi,mag,acc,vel_ssa]):
+      for i in xrange(grid.xs,grid.xs+grid.xm):
+        for j in xrange(grid.ys,grid.ys+grid.ym):
+          if mask.is_floating(i,j) and H[i,j] > 1.0:
+            ccomputed = vel_ssa[i,j].magnitude()
+            maxcComputed = max(maxcComputed,ccomputed)
+            if( abs(acc[i,j]-1.0) < 0.1):
+              accN += 1.0
+              accArea += area
+              uobs = mag[i,j] * math.sin((math.pi/180.0) * azi[i,j]);
+              vobs = mag[i,j] * math.cos((math.pi/180.0) * azi[i,j]);
+              Dv = abs(vobs-vel_ssa[i,j].v)
+              Du = abs(uobs-vel_ssa[i,j].u)
+              verr += Dv; uerr += Du
+              relvecerr += (Dv*Dv+Du*Du) / (vobs*vobs+uobs*uobs)
+              vecErrAcc += (Dv*Dv+Du*Du) * area
 
     gmaxcComputed = PISM.globalMax(maxcComputed,grid.com)
     gaccN         = PISM.globalSum(accN, grid.com)
@@ -269,6 +149,65 @@ class pross(ssa.SSATestCase):
     gvecErrAcc = secpera * math.sqrt(gvecErrAcc) / math.sqrt(gaccArea);
     r.println("  rms average error in vector vel      = %9.3f (m/a)\n", gvecErrAcc);
     
+    if not self.riggs_file is None:
+      self.report_riggs()
+    
+  def report_riggs(self):
+    grid = self.grid
+    r=ssa.Reporter(grid.com,verbosity=2)
+    r.println("comparing to RIGGS data in %s ...\n",self.riggs_file); 
+
+    riggsvars = [ "riggslat", "riggslon", "riggsmag", "riggsu", "riggsv"]
+    (latdata,longdata,magdata,udata,vdata) = \
+         (PISM.Timeseries(grid,varname,"count") for varname in riggsvars)
+    riggsvars = [latdata, longdata, magdata, udata, vdata]
+
+    for v in [magdata, udata, vdata]:
+      v.set_units("m year-1", "")
+
+    for v in riggsvars:
+      v.read(self.riggs_file)
+
+    length = latdata.length();
+
+    vel_ssa = self.solver.solution();
+    clat = self.latitude; clon = self.longitude; mask = self.solver.ice_mask;
+
+    secpera=PISM.secpera
+    with ssa.Access([clat,clon,mask,vel_ssa]):
+      goodptcount = 0.0; ChiSqr = 0.0;    
+      for k in xrange(length):
+        (lat,lon,mag,u,v) = [v[k] for v in riggsvars]
+        r.printlnv(4," RIGGS[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f",
+                          k,lat,lon,mag,u,v)
+        origdlat = (-5.42445 - (-12.3325)) / 110.0;
+        lowlat = -12.3325 - origdlat * 46.0;
+        dlat = (-5.42445 - lowlat) / (float) (grid.My - 1);        
+        lowlon = -5.26168;
+        dlon = (3.72207 - lowlon) / (float) (grid.Mx - 1);
+        cj = int( math.floor((lat - lowlat) / dlat) )
+        ci = int( math.floor((lon - lowlon) / dlon) )
+      
+        if ((ci >= grid.xs) and (ci < grid.xs+grid.xm) and (cj >= grid.ys) and (cj < grid.ys+grid.ym)):
+          vel = vel_ssa[ci,cj]
+          cu = secpera * vel.u
+          cv = secpera * vel.v
+          cmag = math.sqrt(cu*cu + cv*cv)
+          PISM.verbPrintf(4,PETSc.COMM_SELF,"%s\n" % \
+                              (" PISM%d[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n" % \
+                              (grid.rank,k,clat[ci,cj],clon[ci,cj],cmag,cu,cv) ) )
+          if mask[ci,cj] == PISM.MASK_FLOATING:
+            goodptcount += 1.0;
+            ChiSqr += (u-cu)*(u-cu)+(v-cv)*(v-cv)
+    # end with
+
+    ChiSqr = ChiSqr / (30.0*30.0) # see page 48 of MacAyeal et al
+    g_goodptcount = PISM.globalSum(goodptcount,grid.com)
+    g_ChiSqr      = PISM.globalSum(ChiSqr, grid.com)
+    r.printlnv( 4, """number of RIGGS data points = %d
+number of RIGGS points in computed ice shelf region = %8.2f""", length , g_goodptcount);
+    r.println("Chi^2 statistic for computed results compared to RIGGS is %10.3f",
+                      g_ChiSqr * (156.0 / g_goodptcount))
 
   def write(self,filename):
     ssa.SSATestCase.write(self,filename)
@@ -318,18 +257,12 @@ config.set_flag("use_ssa_when_grounded", False)
 config.set_flag("use_constant_nuh_for_ssa", False)
 config.set("epsilon_ssa", 0.0)
 
-#config.scalar_from_option("ssa_rtol", "ssa_relative_convergence")
-
-# YUCK
-optDB = PETSc.Options()
-Mx = optDB.getInt("-Mx",default=0)
-if Mx == 0: Mx = None
-My = optDB.getInt("-My",default=0)
-if My == 0: My = None
-boot_file = optDB.getString("-boot_file")
-riggs_file = None
-
-output_file = optDB.getString("-o",default="ross_computed.nc")
+for o in PISM.OptionsGroup(com,"","PROSS"):
+  Mx = PISM.optionsInt("-Mx","Number of grid points in the X-direction",default=None)
+  My = PISM.optionsInt("-My","Number of grid points in the X-direction",default=None)
+  boot_file = PISM.optionsString("-boot_file","file to bootstrap from")
+  riggs_file = PISM.optionsString("-riggs","file with riggs measurements")
+  output_file = PISM.optionsString("-o","output file",default="ross_computed.nc")
 
 test_case = pross(com,rank,size,config,Mx,My,boot_file,riggs_file)
 test_case.solve()

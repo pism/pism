@@ -16,9 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "pism_python.h"
-#include "stdio.h"
-
+#include "pism_python.hh"
+#include "petsc.h"
+#include "petscsys.h"
 PetscErrorCode globalMax(PetscReal local_max, PetscReal *result, MPI_Comm comm)
 {
   return PetscGlobalMax(&local_max,result,comm);
@@ -30,4 +30,25 @@ PetscErrorCode globalMin(PetscReal local_min, PetscReal *result, MPI_Comm comm)
 PetscErrorCode globalSum(PetscReal local_sum, PetscReal *result, MPI_Comm comm)
 {
   return PetscGlobalSum(&local_sum,result,comm);  
+}
+
+PetscErrorCode optionsGroupBegin(MPI_Comm comm,const char *prefix,const char *mess,const char *sec)
+{
+  PetscOptionsPublishCount=(PetscOptionsPublish?-1:1);
+  return PetscOptionsBegin_Private(comm,prefix,mess,sec);
+}
+
+void optionsGroupNext()
+{
+  PetscOptionsPublishCount++;
+}
+
+bool optionsGroupContinue()
+{
+  return PetscOptionsPublishCount<2;
+}
+
+PetscErrorCode optionsGroupEnd()
+{
+  return PetscOptionsEnd_Private();
 }

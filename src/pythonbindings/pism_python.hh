@@ -21,17 +21,18 @@
 #define _PISM_PYTHON_
 #include "petsc.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 PetscErrorCode globalMax(PetscReal local_max, PetscReal *result, MPI_Comm comm);
 PetscErrorCode globalMin(PetscReal local_min, PetscReal *result, MPI_Comm comm);
 PetscErrorCode globalSum(PetscReal local_sum, PetscReal *result, MPI_Comm comm);
 
+PetscErrorCode optionsGroupBegin(MPI_Comm comm,const char *prefix,const char *mess,const char *sec);
+void optionsGroupNext();
+bool optionsGroupContinue();
+PetscErrorCode optionsGroupEnd();
 
-#ifdef __cplusplus
-}
-#endif
+
+// PetscErrorCode optionsBegin(MPI_Comm comm, const char *prefix, const char *title, const char *mansec);
+// PetscErrorCode optionsEnd();
+
 
 #endif

@@ -26,10 +26,11 @@
 // of PISM headers being wrapped.
 
 #include "PISMIO.hh"
+#include "Timeseries.hh"
 #include "exactTestsIJ.h"
 #include "stressbalance/SSAFEM.hh"
 #include "stressbalance/SSAFD.hh"
-#include "pism_python.h"
+#include "pism_python.hh"
 %}
 
 // SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it
@@ -40,13 +41,18 @@
 
 // Automatic conversions between std::string and python string arguments and return values
 %include std_string.i
-
 // Conversions between python lists and certain std::vector's
 %include std_vector.i
+// Conversions between python lists and certain std::vector's
+%include std_set.i
+
+
+
 namespace std {
    %template(IntVector) vector<int>;
    %template(DoubleVector) vector<double>;
    %template(StringVector) vector<string>;
+   %template(StringSet) set<string>;
 }
 // Tell SWIG that PetscReal and a double are the same thing so that we can reuse
 // the DoubleVector template declared above.  I don't know why SWIG doesn't figure this out.
@@ -58,10 +64,139 @@ namespace std {
 // So this needs to get fixed properly at some point.  Do I have access to the Petsc compiler flags?
 // If so, maybe just copy the code block from petscmath.h here for the PetscReal typedefs.
 typedef double PetscReal; // YUCK.
+typedef int PetscInt; // YUCK.
 
 
 // Why did I include this?
 %include "cstring.i"
+
+// Lots of Pism objects are returned by passing a reference to a pointer. Use 
+//
+// %Pism_pointer_reference_typemaps(MyType)
+// 
+// to declare typemaps so that an argument MyType *&OUTPUT should be treated
+// as  an output (so no input variable shows up on the Python side, and
+// the output shows up as an output variable).  To apply the typemap
+// to all arguments of this type, use 
+// %apply MyType *& OUTPUT { MyType *&}
+// or use %Pism_pointer_reference_is_always_ouput(MyType) in the first place
+%define %Pism_pointer_reference_typemaps(TYPE)
+%typemap(in, numinputs=0,noblock=1) TYPE *& OUTPUT (TYPE *temp) {
+    $1 = &temp;
+}
+%typemap(argout,noblock=1) TYPE *& OUTPUT
+{
+    %append_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, 0 | %newpointer_flags));
+};
+%enddef
+%define %Pism_pointer_reference_is_always_output(TYPE)
+%Pism_pointer_reference_typemaps(TYPE);
+%apply TYPE *& OUTPUT { TYPE *&}
+%enddef
+
+
+%define %Pism_reference_output_typemaps(TYPE)
+%typemap(in, numinputs=0,noblock=1) TYPE & OUTPUT (TYPE temp) {
+    $1 = &temp;
+}
+%typemap(argout,noblock=1) TYPE & OUTPUT
+{
+    %append_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, 0 | %newpointer_flags));
+};
+%enddef
+
+%define %Pism_reference_is_always_output(TYPE)
+%Pism_reference_output_typemaps(TYPE);
+%apply TYPE & OUTPUT { TYPE &}
+%enddef
+
+
+%typemap(in, numinputs=0,noblock=1) bool & OUTPUT (bool temp = false) {
+    $1 = &temp;
+}
+%typemap(argout,noblock=1) bool & OUTPUT
+{
+    %append_output(SWIG_From(bool)(*$1));
+};
+
+
+%typemap(in, numinputs=0,noblock=1) PETScInt & OUTPUT (PETScInt temp) {
+    $1 = &temp;
+}
+%typemap(argout,noblock=1) PETScInt & OUTPUT
+{
+    %append_output(SWIG_From(int)(*$1));
+};
+
+%typemap(in, numinputs=0,noblock=1) string& result (string temp) {
+    $1 = &temp;
+}
+
+%typemap(in, numinputs=0,noblock=1) std::string& OUTPUT (std::string temp) {
+    $1 = &temp;
+}
+%typemap(argout,noblock=1) std::string & OUTPUT
+{
+    %append_output(SWIG_FromCharPtr((*$1).c_str()));
+}
+%apply std::string &OUTPUT { std::string &result}
+
+%typemap(in, numinputs=0,noblock=1) vector<PetscInt> & OUTPUT (vector<PetscInt> temp) {
+    $1 = &temp;
+}
+%typemap(argout,noblock=1) vector<PetscInt> & OUTPUT
+{
+    int len;
+    len = $1->size();
+    $result = PyList_New(len);
+     int i;
+     for(i=0; i<len; i++)
+     {
+         PyList_SetItem($result, i, PyInt_FromLong((*$1)[i]));
+     }
+}
+
+%typemap(in, numinputs=0,noblock=1) vector<PetscReal> & OUTPUT (vector<PetscReal> temp) {
+    $1 = &temp;
+}
+%typemap(argout,noblock=1) vector<PetscReal> & OUTPUT
+{
+    int len;
+    len = $1->size();
+    $result = PyList_New(len);
+     int i;
+     for(i=0; i<len; i++)
+     {
+         PyList_SetItem($result, i, PyFloat_FromDouble((*$1)[i]));
+     }
+}
+
+
+%apply vector<PetscInt> & OUTPUT {vector<PetscInt> &result};
+%apply vector<PetscReal> & OUTPUT {vector<PetscReal> &result};
+ 
+%apply int &OUTPUT {int &result}
+
+%apply PetscInt & OUTPUT {PetscInt & result};
+%apply PetscReal & OUTPUT {PetscReal & result};
+%apply bool & OUTPUT {bool & is_set, bool & result, bool & flag};
+%apply vector<PetscInt> & OUTPUT {vector<PetscInt> & result};
+
+
+%Pism_pointer_reference_is_always_output(IceModelVec2S)
+%Pism_pointer_reference_is_always_output(IceModelVec2V)
+
+
+// These methods are called from PISM.options.
+%rename PISMOptionsInt _optionsInt;
+%rename PISMOptionsReal _optionsReal;
+%rename PISMOptionsString _optionsString;
+%rename PISMOptionsIntArray _optionsIntArray;
+%rename PISMOptionsRealArray _optionsRealArray;
+%rename PISMOptionsStringArray _optionsStringArray;
+%rename PISMOptionsList _optionsList;
+%rename PISMOptionsIsSet optionsIsSet;
+
 
 // Shenanigans to allow python indexing to get at IceModelVec entries.  I couldn't figure out a more
 // elegant solution.
@@ -122,6 +257,21 @@ typedef double PetscReal; // YUCK.
     }
 };
 
+%extend Timeseries
+{
+    %ignore operator[];
+    double getitem(unsigned int i)
+    {
+        return (*$self)[i];
+    }
+    
+    %pythoncode {
+    def __getitem__(self,*args):
+        return self.getitem(*args)
+    }
+};
+
+
 
 // FIXME: the the following code blocks there are explicit calls to Py????_Check.  There seems to 
 // be a more elegant solution using SWIG_From(int) and so forth that I'm not familiar with.  The
@@ -134,9 +284,8 @@ typedef double PetscReal; // YUCK.
  $1 = SWIG_CheckState(res);
 }
 // Apparently petsc4py doesn't make any typemaps for MPIInts, which PISM uses repeatedly.
-%typemap(in) PetscMPIInt {
-    SWIG_AsVal(int)($input,&$1);
-}
+%apply int {PetscMPIInt};
+
 // Support for nc_types (e.g. NC_BYTE, etc)
 %typemap(in) nc_type {
     SWIG_AsVal(int)($input,&$1);
@@ -164,46 +313,6 @@ typedef double PetscReal; // YUCK.
 #define	NC_STRING 	12	/* string */
 
 
-// Lots of Pism objects are returned by passing a reference to a pointer. Use 
-//
-// %Pism_pointer_reference_typemaps(MyType)
-// 
-// to declare typemaps so that an argument MyType *&OUTPUT should be treated
-// as  an output (so no input variable shows up on the Python side, and
-// the output shows up as an output variable).  To apply the typemap
-// to all arguments of this type, use 
-// %apply MyType *& OUTPUT { MyType *&}
-// or use %Pism_pointer_reference_is_always_ouput(MyType) in the first place
-%define %Pism_pointer_reference_typemaps(TYPE)
-%typemap(in, numinputs=0,noblock=1) TYPE *& OUTPUT (TYPE *temp) {
-    $1 = &temp;
-}
-%typemap(argout,noblock=1) TYPE *& OUTPUT
-{
-    %append_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, 0 | %newpointer_flags));
-};
-%enddef
-%define %Pism_pointer_reference_is_always_output(TYPE)
-%Pism_pointer_reference_typemaps(TYPE);
-%apply TYPE *& OUTPUT { TYPE *&}
-%enddef
-
-%Pism_pointer_reference_is_always_output(IceModelVec2S)
-%Pism_pointer_reference_is_always_output(IceModelVec2V)
-
-
-
-%typemap(in, numinputs=0,noblock=1) std::string& OUTPUT (std::string temp) {
-    $1 = &temp;
-}
-%typemap(argout,noblock=1) std::string & OUTPUT
-{
-    %append_output(SWIG_FromCharPtr((*$1).c_str()));
-}
-%apply std::string &OUTPUT { std::string &result}
-
-
-%apply int &OUTPUT {int &result}
 
 // Tell SWIG that the following variables are truly constant
 %immutable PISM_Revision;
@@ -231,6 +340,7 @@ typedef double PetscReal; // YUCK.
 %include "grid.hh"
 %include "NCVariable.hh"
 %include "pism_const.hh"
+%include "Timeseries.hh"
 %include "iceModelVec.hh"
 %include "PISMVars.hh"
 %include "NCTool.hh"
@@ -250,7 +360,7 @@ typedef double PetscReal; // YUCK.
 
 %include "stressbalance/SSAFEM.hh"
 %include "stressbalance/SSAFD.hh"
-%include "pism_python.h"
+%include "pism_python.hh"
 
 
 
