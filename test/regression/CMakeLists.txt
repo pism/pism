@@ -11,8 +11,7 @@ set(PISM_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 # A macro simplifying test creation:
 macro(pism_test name script)
-  add_test(NAME "${name}"
-    COMMAND ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR})
+  add_test("${name}" ${PISM_TEST_DIR}/${script} ${PROJECT_BINARY_DIR} ${MPIEXEC} ${PROJECT_SOURCE_DIR})
 endmacro()
 
 # Tests themselves:
