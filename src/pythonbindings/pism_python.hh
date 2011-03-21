@@ -30,9 +30,6 @@ void optionsGroupNext();
 bool optionsGroupContinue();
 PetscErrorCode optionsGroupEnd();
 
-
-// PetscErrorCode optionsBegin(MPI_Comm comm, const char *prefix, const char *title, const char *mansec);
-// PetscErrorCode optionsEnd();
-
+void set_abort_on_sigint(bool abort);
 
 #endif

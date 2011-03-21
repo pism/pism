@@ -39,6 +39,8 @@
 // Include petsc4py.i so that we get support for automatic handling of PetscErrorCode return values
 %include "petsc4py/petsc4py.i"
 
+%include "pism_exception.i"
+
 // Automatic conversions between std::string and python string arguments and return values
 %include std_string.i
 // Conversions between python lists and certain std::vector's

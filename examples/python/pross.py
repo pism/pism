@@ -233,9 +233,9 @@ com = PETSc.COMM_WORLD
 rank = PETSc.Comm.getRank(com)
 size = PETSc.Comm.getSize(com)
 
-
+PISM.set_abort_on_sigint(True)
 PISM.verbosityLevelFromOptions()
-PISM.verbPrintf(2,com,"PROSS %s (EISMINT-Ross diagnostic velocity computation mode)\n", PISM.PISM_Revision)
+PISM.verbPrintf(2,com,("PROSS %s (EISMINT-Ross diagnostic velocity computation mode)\n" % PISM.PISM_Revision) )
 PISM.stop_on_version_option()
 usage = \
 """  pross -boot_file IN.nc -Mx number -My number [-o file.nc] [-riggs file.nc]

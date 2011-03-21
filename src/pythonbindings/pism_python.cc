@@ -18,7 +18,7 @@
 
 #include "pism_python.hh"
 #include "petsc.h"
-#include "petscsys.h"
+#include "pism_python_signal.hh"
 PetscErrorCode globalMax(PetscReal local_max, PetscReal *result, MPI_Comm comm)
 {
   return PetscGlobalMax(&local_max,result,comm);
@@ -52,3 +52,10 @@ PetscErrorCode optionsGroupEnd()
 {
   return PetscOptionsEnd_Private();
 }
+
+
+void set_abort_on_sigint(bool abort)
+{
+  gSIGINT_is_fatal = abort;
+}
+
