@@ -23,8 +23,8 @@ find_package (NetCDF REQUIRED)
 find_package (FFTW)
 
 # use the PETSc compiler as a hint when looking for an MPI compiler
-find_package (MPI REQUIRED)
 set (MPI_COMPILER ${PETSC_COMPILER} CACHE FILEPATH "MPI compiler. Used only to detect MPI compilation flags.")
+find_package (MPI REQUIRED)
 
 # The default options cache
 option (Pism_BUILD_EXTRA_EXECS "Build extra executables (mostly testing/verification)" OFF)
