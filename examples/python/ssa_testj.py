@@ -23,13 +23,11 @@ from petsc4py import PETSc
 
 import PISM
 
-import ssa
-
-class testj(ssa.SSAExactTestCase):
+class testj(PISM.ssa.SSAExactTestCase):
   def initGrid(self,Mx,My):
     halfWidth = 300.0e3
     Lx = halfWidth; Ly = halfWidth
-    ssa.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.XY_PERIODIC);
+    PISM.util.init_shallow_grid(self.grid,Lx,Ly,Mx,My,PISM.XY_PERIODIC);
 
   def initPhysics(self):
     config = self.config
@@ -63,17 +61,16 @@ class testj(ssa.SSAExactTestCase):
     solver.vel_bc.begin_access();
 
     grid = self.grid
-    for i in xrange(grid.xs,grid.xs+grid.xm):
-      for j in xrange (grid.ys,grid.ys+grid.ym):
-        x = grid.x[i]; y = grid.y[j]
-        (H,junk,u,v) = PISM.exactJ(x,y);
-        solver.thickness[i,j] = H;
-        solver.surface[i,j] = (1.0 - self.ice.rho / ocean_rho) * H; #// FIXME task #7297
-    
-        # // special case at center point (Dirichlet BC)
-        if (i == (grid.Mx)/2) and (j == (grid.My)/2):
-          solver.bc_mask[i,j] = 1;
-          solver.vel_bc[i,j] = [u,v]
+    for (i,j) in grid.points():
+      x = grid.x[i]; y = grid.y[j]
+      (H,junk,u,v) = PISM.exactJ(x,y);
+      solver.thickness[i,j] = H;
+      solver.surface[i,j] = (1.0 - self.ice.rho / ocean_rho) * H; #// FIXME task #7297
+  
+      # // special case at center point (Dirichlet BC)
+      if (i == (grid.Mx)/2) and (j == (grid.My)/2):
+        solver.bc_mask[i,j] = 1;
+        solver.vel_bc[i,j] = [u,v]
 
     solver.surface.end_access();
     solver.thickness.end_access();
@@ -107,8 +104,6 @@ size = PETSc.Comm.getSize(com)
 
 config = PISM.NCConfigVariable(); overrides = PISM.NCConfigVariable();
 
-# Handle the input arguments.  I don't see a good way yet to call PetscOptionsBegin/End
-# and integrate better into the -help mechanism.
 for o in PISM.OptionsGroup(com,"","Test J"):
   Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
   My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)

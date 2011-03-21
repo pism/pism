@@ -21,7 +21,7 @@ import sys, petsc4py
 petsc4py.init(sys.argv)
 from petsc4py import PETSc
 
-import PISM, ssa, math
+import PISM, math
 
 
 DEFAULT_MIN_THICKNESS = 5.0 # meters
@@ -32,14 +32,14 @@ DEFAULT_nuH = DEFAULT_MIN_THICKNESS * DEFAULT_CONSTANT_HARDNESS_FOR_SSA / \
 # COMPARE: 30.0 * 1e6 * secpera = 9.45e14 is Ritz et al (2001) value of
 #          30 MPa yr for \bar\nu
 
-class pross(ssa.SSATestCase):
+class pross(PISM.ssa.SSATestCase):
   def __init__(self,comm,rank,size,config,Mx,My,boot_file,riggs_file):
     # Set the file names so that grid construction knows where to find
     # the boot_file
     self.boot_file = boot_file
     self.riggs_file = riggs_file
 
-    ssa.SSATestCase.__init__(self,comm,rank,size,config,Mx,My)
+    PISM.ssa.SSATestCase.__init__(self,comm,rank,size,config,Mx,My)
 
     # the superclass built us a grid.
     grid = self.grid
@@ -58,14 +58,14 @@ class pross(ssa.SSATestCase):
     self.obsAccurate.create(grid, "accur", True)
     self.obsAccurate.set_attrs("", "flag for accurate observed velocity","", "");
 
-    self.longitude = ssa.standardLongitudeVec(grid)
-    self.latitude  = ssa.standardLatitudeVec(grid)
+    self.longitude = PISM.util.standardLongitudeVec(grid)
+    self.latitude  = PISM.util.standardLatitudeVec(grid)
     vars = set([self.longitude, self.latitude,self.obsAzimuth,self.obsAccurate,self.obsMagnitude])
     for v in vars:
       v.regrid(boot_file,True)
 
   def initGrid(self,Mx,My):
-    ssa.grid2d_init_from_file(self.grid,self.boot_file,Mx,My)
+    PISM.util.init_grid2d_from_file(self.grid,self.boot_file,Mx,My)
     self.grid.printInfo(1)
 
   def initPhysics(self):
@@ -111,22 +111,21 @@ class pross(ssa.SSATestCase):
     acc = self.obsAccurate;
     vel_ssa = self.solver.solution();
     
-    with ssa.Access([mask,H,azi,mag,acc,vel_ssa]):
-      for i in xrange(grid.xs,grid.xs+grid.xm):
-        for j in xrange(grid.ys,grid.ys+grid.ym):
-          if mask.is_floating(i,j) and H[i,j] > 1.0:
-            ccomputed = vel_ssa[i,j].magnitude()
-            maxcComputed = max(maxcComputed,ccomputed)
-            if( abs(acc[i,j]-1.0) < 0.1):
-              accN += 1.0
-              accArea += area
-              uobs = mag[i,j] * math.sin((math.pi/180.0) * azi[i,j]);
-              vobs = mag[i,j] * math.cos((math.pi/180.0) * azi[i,j]);
-              Dv = abs(vobs-vel_ssa[i,j].v)
-              Du = abs(uobs-vel_ssa[i,j].u)
-              verr += Dv; uerr += Du
-              relvecerr += (Dv*Dv+Du*Du) / (vobs*vobs+uobs*uobs)
-              vecErrAcc += (Dv*Dv+Du*Du) * area
+    with PISM.util.Access([mask,H,azi,mag,acc,vel_ssa]):
+      for (i,j) in grid.points():
+        if mask.is_floating(i,j) and H[i,j] > 1.0:
+          ccomputed = vel_ssa[i,j].magnitude()
+          maxcComputed = max(maxcComputed,ccomputed)
+          if( abs(acc[i,j]-1.0) < 0.1):
+            accN += 1.0
+            accArea += area
+            uobs = mag[i,j] * math.sin((math.pi/180.0) * azi[i,j]);
+            vobs = mag[i,j] * math.cos((math.pi/180.0) * azi[i,j]);
+            Dv = abs(vobs-vel_ssa[i,j].v)
+            Du = abs(uobs-vel_ssa[i,j].u)
+            verr += Dv; uerr += Du
+            relvecerr += (Dv*Dv+Du*Du) / (vobs*vobs+uobs*uobs)
+            vecErrAcc += (Dv*Dv+Du*Du) * area
 
     gmaxcComputed = PISM.globalMax(maxcComputed,grid.com)
     gaccN         = PISM.globalSum(accN, grid.com)
@@ -137,7 +136,7 @@ class pross(ssa.SSATestCase):
     gvecErrAcc    = PISM.globalSum(vecErrAcc, grid.com)
 
     secpera = PISM.secpera
-    r=ssa.Reporter(self.grid.com,verbosity=2)
+    r=PISM.VerbPrintf(self.grid.com,verbosity=2)
     r.println("maximum computed speed in ice shelf is %10.3f (m/a)", gmaxcComputed * secpera);
     r.println("ERRORS relative to observations of Ross Ice Shelf:");
     r.println("  [number of grid points in 'accurate observed area' = %d]", int(gaccN))
@@ -154,7 +153,7 @@ class pross(ssa.SSATestCase):
     
   def report_riggs(self):
     grid = self.grid
-    r=ssa.Reporter(grid.com,verbosity=2)
+    r=PISM.VerbPrintf(grid.com,verbosity=2)
     r.println("comparing to RIGGS data in %s ...\n",self.riggs_file); 
 
     riggsvars = [ "riggslat", "riggslon", "riggsmag", "riggsu", "riggsv"]
@@ -174,7 +173,7 @@ class pross(ssa.SSATestCase):
     clat = self.latitude; clon = self.longitude; mask = self.solver.ice_mask;
 
     secpera=PISM.secpera
-    with ssa.Access([clat,clon,mask,vel_ssa]):
+    with PISM.util.Access([clat,clon,mask,vel_ssa]):
       goodptcount = 0.0; ChiSqr = 0.0;    
       for k in xrange(length):
         (lat,lon,mag,u,v) = [v[k] for v in riggsvars]
@@ -193,9 +192,9 @@ class pross(ssa.SSATestCase):
           cu = secpera * vel.u
           cv = secpera * vel.v
           cmag = math.sqrt(cu*cu + cv*cv)
-          PISM.verbPrintf(4,PETSc.COMM_SELF,"%s\n" % \
-                              (" PISM%d[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n" % \
-                              (grid.rank,k,clat[ci,cj],clon[ci,cj],cmag,cu,cv) ) )
+          PISM.verbPrintf(4,PETSc.COMM_SELF,
+                          " PISM%d[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
+                          grid.rank,k,clat[ci,cj],clon[ci,cj],cmag,cu,cv)
           if mask[ci,cj] == PISM.MASK_FLOATING:
             goodptcount += 1.0;
             ChiSqr += (u-cu)*(u-cu)+(v-cv)*(v-cv)
@@ -210,7 +209,7 @@ number of RIGGS points in computed ice shelf region = %8.2f""", length , g_goodp
                       g_ChiSqr * (156.0 / g_goodptcount))
 
   def write(self,filename):
-    ssa.SSATestCase.write(self,filename)
+    PISM.ssa.SSATestCase.write(self,filename)
 
     vars = set([self.longitude, self.latitude,self.obsAzimuth,self.obsAccurate,self.obsMagnitude])
     for v in vars:
@@ -235,7 +234,7 @@ size = PETSc.Comm.getSize(com)
 
 PISM.set_abort_on_sigint(True)
 PISM.verbosityLevelFromOptions()
-PISM.verbPrintf(2,com,("PROSS %s (EISMINT-Ross diagnostic velocity computation mode)\n" % PISM.PISM_Revision) )
+PISM.verbPrintf(2,com,"PROSS %s (EISMINT-Ross diagnostic velocity computation mode)\n", PISM.PISM_Revision) 
 PISM.stop_on_version_option()
 usage = \
 """  pross -boot_file IN.nc -Mx number -My number [-o file.nc] [-riggs file.nc]

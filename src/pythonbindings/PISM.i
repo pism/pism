@@ -199,6 +199,11 @@ typedef int PetscInt; // YUCK.
 %rename PISMOptionsList _optionsList;
 %rename PISMOptionsIsSet optionsIsSet;
 
+// The varargs to verbPrintf aren't making it through from python.  But that's ok: we'd like
+// to extend the printf features of verbPrintf to include python's formatting for objects.
+// So we rename verbPrintf here and call it (without any varargs) from a python verbPrintf.
+%rename verbPrintf _verbPrintf;
+
 
 // Shenanigans to allow python indexing to get at IceModelVec entries.  I couldn't figure out a more
 // elegant solution.
@@ -274,6 +279,15 @@ typedef int PetscInt; // YUCK.
 };
 
 
+%extend IceGrid
+{
+    %pythoncode {
+    def points(self):
+        for i in xrange(self.xs,self.xs+self.xm):
+            for j in xrange(self.ys,self.ys+self.ym):
+                yield (i,j)
+    }
+}
 
 // FIXME: the the following code blocks there are explicit calls to Py????_Check.  There seems to 
 // be a more elegant solution using SWIG_From(int) and so forth that I'm not familiar with.  The
