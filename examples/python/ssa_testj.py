@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+#
 # Copyright (C) 2011 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.
@@ -55,33 +57,26 @@ class testj(PISM.ssa.SSAExactTestCase):
     nu0 = 30.0 * 1.0e6 * PISM.secpera; # 9.45e14 Pa s 
     H0 = 500.0;                        # 500 m typical thickness
 
-    solver.thickness.begin_access();
-    solver.surface.begin_access();
-    solver.bc_mask.begin_access();
-    solver.vel_bc.begin_access();
-
-    grid = self.grid
-    for (i,j) in grid.points():
-      x = grid.x[i]; y = grid.y[j]
-      (H,junk,u,v) = PISM.exactJ(x,y);
-      solver.thickness[i,j] = H;
-      solver.surface[i,j] = (1.0 - self.ice.rho / ocean_rho) * H; #// FIXME task #7297
+    # The PISM.utils.Access object ensures that we call beginAccess for each
+    # variable in 'vars', and that endAccess is called for each one on exiting
+    # the 'with' block.
+    vars = [solver.thickness, solver.surface, solver.bc_mask, solver.vel_bc]
+    with PISM.util.Access(vars):
+      grid = self.grid
+      for (i,j) in grid.points():
+        x = grid.x[i]; y = grid.y[j]
+        (H,junk,u,v) = PISM.exactJ(x,y);
+        solver.thickness[i,j] = H;
+        solver.surface[i,j] = (1.0 - self.ice.rho / ocean_rho) * H; #// FIXME task #7297
   
-      # // special case at center point (Dirichlet BC)
-      if (i == (grid.Mx)/2) and (j == (grid.My)/2):
-        solver.bc_mask[i,j] = 1;
-        solver.vel_bc[i,j] = [u,v]
-
-    solver.surface.end_access();
-    solver.thickness.end_access();
-    solver.bc_mask.end_access();
-    solver.vel_bc.end_access();
+        # // special case at center point (Dirichlet BC)
+        if (i == (grid.Mx)/2) and (j == (grid.My)/2):
+          solver.bc_mask[i,j] = 1;
+          solver.vel_bc[i,j] = [u,v]
 
     # // communicate what we have set
-    solver.surface.beginGhostComm(); solver.surface.endGhostComm();
-    solver.thickness.beginGhostComm(); solver.thickness.endGhostComm();
-    solver.bc_mask.beginGhostComm(); solver.bc_mask.endGhostComm();
-    solver.vel_bc.beginGhostComm(); solver.vel_bc.endGhostComm();
+    for v in vars:
+      v.beginGhostComm(); v.endGhostComm();
 
     # Test J has a viscosity that is independent of velocity.  So we force a 
     # constant viscosity by settting the strength_extension

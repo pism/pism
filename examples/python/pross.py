@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+#
 # Copyright (C) 2011 Ed Bueler and Constantine Khroulev and David Maxwell
 # 
 # This file is part of PISM.

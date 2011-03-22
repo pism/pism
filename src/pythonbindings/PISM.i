@@ -302,15 +302,28 @@ typedef int PetscInt; // YUCK.
 // Apparently petsc4py doesn't make any typemaps for MPIInts, which PISM uses repeatedly.
 %apply int {PetscMPIInt};
 
-// Support for nc_types (e.g. NC_BYTE, etc)
-%typemap(in) nc_type {
-    SWIG_AsVal(int)($input,&$1);
+
+// Support for nc_types (e.g. NC_BYTE, etc).  In NetCDF3, an nc_type is an enum, and in 
+// NetCDF4 it is typedef'ed to be an int. The enums pose a small problem in C++ because
+// you can't assign an arbitrary integer to an enum without a cast, and you can't assume
+// even in C that an enum is an int, so you have to be careful about pointers to enums
+// versus pointers to ints.  Moreover, I don't know how to grab the definitions from
+// netcdf.h here without wrapping everything in the file.
+//
+// So: we assume that nc_type is an enum.  On input, we force the python input to be an int,
+// use pointers to the int variable where needed, and then do a static cast to shove the int
+// into an nc_type.  This procedure works correctly if nc_type is an int instead of an enum.
+// As for the allowed values, we copy the defines from (NetCDF4) netcdf.h.  No typechecking
+// is being done to ensure that a python int on input is a valid nc_type, which isn't good.
+// In particular, the allowed values are different in NetCDF4 vs. NetCDF3 (there are more of them.)
+// A constraint check to the minimal set of NetCDF3 types would be the right thing to do. (FIXME)
+%typemap(in) nc_type (int tmp){
+    SWIG_AsVal(int)($input,&tmp);
+    $1 = static_cast<nc_type>(tmp);
 }
 %typemap(typecheck) nc_type {
     $1 = PyInt_Check($input);
 }
-
-
 // Copied straight from netcdf.h  I wonder if there is a more elegant way to do this, without dragging in everything
 // else from netcdf.h
 #define	NC_NAT 	        0	/* NAT = 'Not A Type' (c.f. NaN) */
