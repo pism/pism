@@ -157,9 +157,15 @@ protected:
         vtillphi,	//!< friction angle for till under grounded ice sheet;
                         //!< ghosted to be able to compute tauc "redundantly"
 
-  //vHav,		//!< average over the ice thickness of existing ice neighbors
-    vHref,		//!< accumulated mass advected to a partially filled grid cell
-    vHresidual,	//!< residual ice mass of a not any longer partially (fully) filled grid cell
+  //vHav,			//!< average over the ice thickness of existing ice neighbors
+    vHref,			//!< accumulated mass advected to a partially filled grid cell
+    vHresidual,		//!< residual ice mass of a not any longer partially (fully) filled grid cell
+
+    vStrainxx,  	//!< longitudinal strain rate in x-direction
+    vStrainyy,		//!< longitudinal strain rate in y-direction
+    vStrainxy,		//!< horizontal shear rate with respect to x-y coordinate system
+    vPrinStrain1,	//!< major principal component of horizontal strain-rate tensor
+    vPrinStrain2,	//!< minor principal component of horizontal strain-rate tensor
 
     acab,		//!< accumulation/ablation rate; no ghosts
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
@@ -340,10 +346,15 @@ protected:
 
 
   // see iMicebergs.cc
-  virtual PetscErrorCode FindIceBergCandidates();
-  virtual PetscErrorCode IdentifyNotAnIceBerg();
+  virtual PetscErrorCode findIceBergCandidates();
+  virtual PetscErrorCode identifyNotAnIceBerg();
   virtual PetscErrorCode killIceBergs();
   virtual PetscErrorCode killEasyIceBergs();
+
+  // see iMcalving.cc
+  virtual PetscErrorCode calculateStrainrates();
+  virtual PetscErrorCode applyCalvingRate();
+  virtual PetscErrorCode calvingAtThickness();
 
 protected:
   // working space (a convenience)

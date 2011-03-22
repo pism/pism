@@ -36,12 +36,15 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   ierr = update_mask(); CHKERRQ(ierr);
   ierr = update_surface_elevation(); CHKERRQ(ierr);
 
+  //ierr = verbPrintf(4,grid.com,"######### updateSurfaceElevationAndMask \n");    CHKERRQ(ierr);
+
   if (config.get_flag("kill_icebergs") == true) {
 	//if (part_grids) {ierr = killEasyIceBergs(); CHKERRQ(ierr);} //might be usefull when apllying calving 
-    ierr = FindIceBergCandidates(); CHKERRQ(ierr);
-	ierr = IdentifyNotAnIceBerg(); CHKERRQ(ierr);
+    ierr = findIceBergCandidates(); CHKERRQ(ierr);
+	ierr = identifyNotAnIceBerg(); CHKERRQ(ierr);
 	ierr = killIceBergs(); CHKERRQ(ierr);	
   }
+
   return 0;
 }
 
@@ -389,6 +392,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   // and extend the grid if necessary:
   ierr = check_maximum_thickness(); CHKERRQ(ierr);
 
+
   return 0;
 }
 
@@ -551,7 +555,7 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
    		  //    Hav-=0.8*mslope*pow(Hav,5); //reduces the guess at the front
    		  //}
  		  } else {
-   		  ierr = verbPrintf(1, grid.com,"!!! PISM_WARNING: no ice shelf neighbors at %d,%d\n",i,j); CHKERRQ(ierr);}
+   		  ierr = verbPrintf(4, grid.com,"!!! PISM_WARNING: no ice shelf neighbors at %d,%d\n",i,j); CHKERRQ(ierr);}
 		//*/
 		/*
 		  // alternative: flux-weighted average over floating ice-shelf neighbors
@@ -716,6 +720,13 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
 
+  // Check if the ice thickness exceeded the height of the computational box
+  // and extend the grid if necessary:
+  ierr = check_maximum_thickness(); CHKERRQ(ierr);
+
+  // These are new routines adopted from PISM-PIK. The Place and order is not clear yet!
+  // There is no reporting of single ice fluxes yet in comparison to total ice thickness change.
+
 	if (config.get_flag("part_redist") == true) {
 		// distribute residual ice mass, FIXME: Reporting!
 		ierr = calculateRedistResiduals(); CHKERRQ(ierr); //while loop?
@@ -723,13 +734,19 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
 		while (repeatRedist==PETSC_TRUE && loopcount<3) {
 			ierr = calculateRedistResiduals(); CHKERRQ(ierr);
 			loopcount+=1;
-			ierr = verbPrintf(3,grid.com, "distribution loopcount = %d\n",loopcount); CHKERRQ(ierr);
+			ierr = verbPrintf(4,grid.com, "distribution loopcount = %d\n",loopcount); CHKERRQ(ierr);
 		}
 	}
 
-  // Check if the ice thickness exceeded the height of the computational box
-  // and extend the grid if necessary:
-  ierr = check_maximum_thickness(); CHKERRQ(ierr);
+	// maybe calving should be applied before the redistribution part?
+	if (config.get_flag("do_eigen_calving") == true) {
+		ierr = calculateStrainrates(); CHKERRQ(ierr);
+		ierr = applyCalvingRate(); CHKERRQ(ierr);
+	}
+
+	if (config.get_flag("do_thickness_calving") == true) {
+		ierr = calvingAtThickness(); CHKERRQ(ierr);
+	}
 
   return 0;
 }
@@ -785,7 +802,7 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
 			  } else {
 				vHnew(i,j)+=vHresidual(i,j); // mass conservation, but thick ice at one grid cell possible
 				vHresidualnew(i,j)=0.0;
-				ierr = verbPrintf(3,grid.com,"!!! PISM WARNING: Hresidual has %d partially filled neighbors, set ice thickness to vHnew=%.2e at %d,%d \n",countEmptyNeighbors,vHnew(i,j),i,j ); CHKERRQ(ierr);
+				ierr = verbPrintf(4,grid.com,"!!! PISM WARNING: Hresidual has %d partially filled neighbors, set ice thickness to vHnew=%.2e at %d,%d \n",countEmptyNeighbors,vHnew(i,j),i,j ); CHKERRQ(ierr);
 			  }
 		    } 
 		}
@@ -801,7 +818,7 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
 	for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     	for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 	
-			// second step: if neigbors, which gained redistributed ice, also become full, this needs to be redistributed in a repeated loop
+			// second step: if neighbors, which gained redistributed ice, also become full, this needs to be redistributed in a repeated loop
 			if (vHref(i,j)>0.0) {
 				Hav=0.0;
 	          	PetscInt countIceNeighbors=0; // counting current full floating ice neighbors (mask not yet updated), and calculate new average Hav
@@ -826,7 +843,7 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
 					vHnew(i,j) += vHref(i,j); // mass conservation, but thick ice at one grid cell possible
 					vHref(i,j) = 0.0;
 					vHresidualnew(i,j)=0.0;
-					ierr = verbPrintf(3, grid.com,"!!! PISM_WARNING: No floating ice neighbors to calculate Hav, set ice thickness to vHnew=%.2e at %d,%d \n",vHnew(i,j),i,j); CHKERRQ(ierr);
+					ierr = verbPrintf(4, grid.com,"!!! PISM_WARNING: No floating ice neighbors to calculate Hav, set ice thickness to vHnew=%.2e at %d,%d \n",vHnew(i,j),i,j); CHKERRQ(ierr);
 			  	} 
 		   	}
 		}

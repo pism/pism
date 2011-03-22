@@ -99,6 +99,15 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
     ierr = vIcebergMask.set(ICEBERGMASK_NOT_SET); CHKERRQ(ierr);
   }
 
+  if (config.get_flag("do_eigen_calving")) {
+    // will be updated in updateSurfaceElevationAndMask()
+    //ierr = vStrainxx.set(0.0); CHKERRQ(ierr);
+    //ierr = vStrainyy.set(0.0); CHKERRQ(ierr);
+    //ierr = vStrainxy.set(0.0); CHKERRQ(ierr);
+    ierr = vPrinStrain1.set(0.0); CHKERRQ(ierr);
+    ierr = vPrinStrain2.set(0.0); CHKERRQ(ierr);
+  }
+
 
   bool Lz_set;
   ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);

@@ -30,10 +30,10 @@
 */
 
 
-PetscErrorCode IceModel::FindIceBergCandidates() {
+PetscErrorCode IceModel::findIceBergCandidates() {
   PetscErrorCode ierr;
 
-  ierr = verbPrintf(4,grid.com,"######### FindIceBergCandidates is called \n");    CHKERRQ(ierr);
+  ierr = verbPrintf(4,grid.com,"######### findIceBergCandidates is called \n");    CHKERRQ(ierr);
 
   const PetscInt Mx = grid.Mx, My = grid.My;
   ierr = vH.begin_access(); CHKERRQ(ierr);
@@ -58,6 +58,7 @@ PetscErrorCode IceModel::FindIceBergCandidates() {
 	
       //cut of border of computational domain	
       if (hgrounded<hfloating &&  (i <= 0 || i >= Mx-1 || j <= 0 || j >= My-1)) {
+    	//if ((i <= 0 || i >= Mx-1 || j <= 0 || j >= My-1)) {
           vH(i,j) = 0.0;
           vIcebergMask(i,j) = ICEBERGMASK_STOP_OCEAN;
           vMask(i,j) = MASK_ICE_FREE_OCEAN;	
@@ -138,10 +139,10 @@ PetscErrorCode IceModel::FindIceBergCandidates() {
 
 
 
-PetscErrorCode IceModel::IdentifyNotAnIceBerg() {
+PetscErrorCode IceModel::identifyNotAnIceBerg() {
   PetscErrorCode ierr;
   
-  ierr = verbPrintf(4,grid.com,"######### IdentifyNotAnIceBerg is called \n");    CHKERRQ(ierr);
+  ierr = verbPrintf(4,grid.com,"######### identifyNotAnIceBerg is called \n");    CHKERRQ(ierr);
   
   // this communication of ghostvalues is done here to make sure that asking about neighbouring values in this routine 
   // doesn't lead to inconsistencies in parallel computation, if the neighbour belongs to another processor domain.
@@ -184,7 +185,7 @@ PetscErrorCode IceModel::IdentifyNotAnIceBerg() {
     ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
     loopcount+=1;
   }
-  ierr = verbPrintf(4,grid.com,"!!! %d loop(s) were needed to identify whether there are icebergs \n",loopcount);    CHKERRQ(ierr);
+  ierr = verbPrintf(5,grid.com,"!!! %d loop(s) were needed to identify whether there are icebergs \n",loopcount);    CHKERRQ(ierr);
 
   return 0;
 }

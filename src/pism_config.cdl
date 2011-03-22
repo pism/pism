@@ -46,7 +46,13 @@ netcdf pism_config {
 
     pism_config:kill_icebergs = "no";
     pism_config:kill_icebergs_doc = "identify and kill detached ice-shelf areas";
-
+    
+    pism_config:do_eigen_calving = "false";
+    pism_config:do_eigen_calving_doc = "calculate strain rates and related calving rate";
+    
+    pism_config:do_thickness_calving = "false";
+    pism_config:do_thickness_calving_doc = "ad hoc calving at certain thresholf for terminal ice thickness";
+    
     pism_config:thermal_bedrock = "yes";
     pism_config:thermal_bedrock_doc = "Use the bedrock thermal model";
 
@@ -199,6 +205,13 @@ netcdf pism_config {
 
     pism_config:max_low_temp_count = 10;
     pism_config:max_low_temp_count_doc = "Maximum number of grid points with ice temperature below global_min_allowed_temp.";
+
+    pism_config:eigen_calving = 0.0;
+    pism_config:eigen_calving_doc = "Set proportionality constant to determine calving rate from strain rates";
+
+    pism_config:calving_at_thickness = 50.0;
+    pism_config:calving_at_thickness_doc = "When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
+
 
     // for next constants, note (VELOCITY/LENGTH)^2  is very close to 10^-27; compare "\epsilon^2/L^2" which
     // appears in formula (4.1) in C. Schoof 2006 "A variational approach to ice streams" J Fluid Mech 556 pp 227--251

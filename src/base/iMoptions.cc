@@ -95,6 +95,21 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.flag_from_option("kill_icebergs", "kill_icebergs"); CHKERRQ(ierr);
 
+  ierr = config.scalar_from_option("eigen_calving", "eigen_calving"); CHKERRQ(ierr);
+
+  ierr = PISMOptionsIsSet("-eigen_calving", flag);  CHKERRQ(ierr);
+  if (flag)
+    config.set_flag("do_eigen_calving", true);
+
+
+  ierr = config.scalar_from_option("calv_at_thickness", "calving_at_thickness"); CHKERRQ(ierr);
+
+  ierr = PISMOptionsIsSet("-calving_at_thickness", flag);  CHKERRQ(ierr);
+  if (flag)
+    config.set_flag("do_thickness_calving", true);
+
+
+
   bool gradient_set;
   string keyword;
   set<string> choices;
