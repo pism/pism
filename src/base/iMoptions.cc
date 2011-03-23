@@ -89,6 +89,12 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.scalar_from_option("e", "enhancement_factor"); CHKERRQ(ierr);
 
+  ierr = config.scalar_from_option("e_ssa", "ssa_enhancement_factor"); CHKERRQ(ierr);
+
+  ierr = PISMOptionsIsSet("-e_ssa", flag);  CHKERRQ(ierr);
+  if (flag)
+    config.set_flag("do_ssa_enhancement", true);
+
   ierr = config.flag_from_option("part_grid", "part_grid"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("part_redist", "part_redist"); CHKERRQ(ierr);

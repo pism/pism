@@ -804,6 +804,14 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
+  bool do_ssa_enhancement = false;
+  PetscScalar ssa_enhancement_factor=1.0;
+
+  if (config.get_flag("do_ssa_enhancement")) {
+	ssa_enhancement_factor=config.get("ssa_enhancement_factor");
+	do_ssa_enhancement = true;
+  }
+
   const PetscScalar dx = grid.dx, dy = grid.dy;
 
   for (PetscInt o=0; o<2; ++o) {
@@ -846,6 +854,11 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
           
         // We ensure that nuH is bounded below by a positive constant.
         result(i,j,o) += epsilon;
+
+        //if (config.get_flag("e_ssa")) {
+        if (do_ssa_enhancement) {
+        	result(i,j,o) = result(i,j,o)/ssa_enhancement_factor;
+        }
       } // j
     } // i
   } // o
