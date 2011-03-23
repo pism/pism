@@ -250,7 +250,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   set<string> ssa_choices;
   ssa_choices.insert("fem");
   ssa_choices.insert("fd");
-  // ssa_choices.insert("fd_pik");
+  ssa_choices.insert("fd_pik");
   string ssa_method;
   bool ssa_method_set;
   ierr = PISMOptionsList(grid.com, "-ssa_method", "Algorithm for computing the SSA solution",

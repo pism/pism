@@ -592,7 +592,9 @@ PetscErrorCode IceModel::init_physics() {
         my_stress_balance = new SSAFD(grid, *basal, *ice, *EC, config);
       } else if(ssa_method == "fem") {
         my_stress_balance = new SSAFEM(grid, *basal, *ice, *EC, config);
-      } else{
+      } else if(ssa_method == "fd_pik") {
+	        my_stress_balance = new SSAFD_PIK(grid, *basal, *ice, *EC, config);
+	  }else{
         SETERRQ(1,"SSA algorithm flag should be one of -ssa_method fe or -ssa_method fem");
       }
     } else {

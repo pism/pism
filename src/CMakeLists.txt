@@ -117,6 +117,9 @@ add_library (pismboundary
   coupler/localMassBalance.cc
   coupler/PSExternal.cc
   coupler/PSDirectForcing.cc
+
+  coupler/PSConstantPIK.cc
+  coupler/POConstantPIK.cc
   )
 target_link_libraries (pismboundary pismutil)
 

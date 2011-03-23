@@ -437,7 +437,7 @@ PetscErrorCode IceModel::createVecs() {
   shelfbmassflux.write_in_glaciological_units = true;
   ierr = shelfbmassflux.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   // do not add; boundary models are in charge here
-  // ierr = variables.add(shelfbmassflux); CHKERRQ(ierr);
+  //ierr = variables.add(shelfbmassflux); CHKERRQ(ierr);
 
   // ice boundary tempature at the base of the ice shelf
   ierr = shelfbtemp.create(grid, "shelfbtemp", false); CHKERRQ(ierr); // no ghosts; NO HOR. DIFF.!

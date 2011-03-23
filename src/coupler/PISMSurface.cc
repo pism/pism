@@ -198,6 +198,7 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
     ierr = artm.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
 
+
   return 0;
 }
 

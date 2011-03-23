@@ -287,5 +287,39 @@ protected:
   IceModelVec2S target_thickness, ftt_mask, ftt_modified_acab;
 };
 
+//! \brief A class implementing a constant-in-time surface model for the surface mass balance. Reads data
+//! Reads data from a PISM input file.
+//! Ice surface temperature is parameterized as in PISM-PIK, dependent on latitude and surface elevation.
+
+class PSConstantPIK : public PISMSurfaceModel {
+public:
+  PSConstantPIK(IceGrid &g, const NCConfigVariable &conf)
+    : PISMSurfaceModel(g, conf)
+  {};
+
+  virtual PetscErrorCode init(PISMVars &vars);
+  //! This surface model does not use an atmosphere model.
+  virtual void attach_atmosphere_model(PISMAtmosphereModel *input)
+  { delete input; }
+
+  // Does not have an atmosphere model.
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}
+
+  virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
+					       IceModelVec2S &result);
+  virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
+						 IceModelVec2S &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
+  virtual void add_vars_to_output(string keyword, set<string> &result);
+protected:
+  string input_file;
+  IceModelVec2S acab, artm;
+  IceModelVec2S *lat, *usurf;
+
+};
+
+
+
 #endif	// __PISMSurfaceModel_hh
 

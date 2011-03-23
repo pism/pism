@@ -35,12 +35,17 @@ static void create_po_constant(IceGrid& g, const NCConfigVariable& conf, PISMOce
   result = new POConstant(g, conf);
 }
 
+static void create_po_pik(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel* &result) {
+  result = new POConstantPIK(g, conf);
+}
+
 static void create_po_forcing(IceGrid& g, const NCConfigVariable& conf, POModifier* &result) {
   result = new POForcing(g, conf);
 }
 
 void POFactory::add_standard_types() {
   add_model("constant",     &create_po_constant);
+  add_model("pik",     &create_po_pik);
   set_default("constant");
 
   add_modifier("forcing",   &create_po_forcing);
@@ -59,6 +64,10 @@ static void create_ps_constant(IceGrid& g, const NCConfigVariable& conf, PISMSur
   result = new PSConstant(g, conf);
 }
 
+static void create_ps_constant_pik(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
+  result = new PSConstantPIK(g, conf);
+}
+
 static void create_ps_forcing(IceGrid& g, const NCConfigVariable& conf, PSModifier* &result) {
   result = new PSForceThickness(g, conf);
 }
@@ -72,6 +81,7 @@ void PSFactory::add_standard_types() {
   add_model("simple",       &create_ps_simple);
   add_model("pdd",          &create_ps_temperatureindex); 
   add_model("given",        &create_ps_given); 
+  add_model("pik", &create_ps_constant_pik);
   set_default("simple");
 
   add_modifier("forcing",   &create_ps_forcing);

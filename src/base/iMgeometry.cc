@@ -39,10 +39,11 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   //ierr = verbPrintf(4,grid.com,"######### updateSurfaceElevationAndMask \n");    CHKERRQ(ierr);
 
   if (config.get_flag("kill_icebergs") == true) {
-	//if (part_grids) {ierr = killEasyIceBergs(); CHKERRQ(ierr);} //might be usefull when apllying calving 
+
     ierr = findIceBergCandidates(); CHKERRQ(ierr);
 	ierr = identifyNotAnIceBerg(); CHKERRQ(ierr);
 	ierr = killIceBergs(); CHKERRQ(ierr);	
+	if (config.get_flag("part_grid") ) {ierr = killEasyIceBergs(); CHKERRQ(ierr);} //might be usefull when apllying calving
   }
 
   return 0;

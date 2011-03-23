@@ -138,4 +138,32 @@ protected:
   DiagnosticTimeseries *delta_sea_level;
 };
 
+
+
+
+//! \brief A class implementing an ocean model.
+//! Parameterization of sub-shelf melting with respect to sub-shelf heat flux like in Beckmann_Goosse 2003
+class POConstantPIK : public PISMOceanModel {
+public:
+  POConstantPIK(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~POConstantPIK() {}
+  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode sea_level_elevation(PetscReal t_years, PetscReal dt_years,
+					     PetscReal &result);
+  virtual PetscErrorCode shelf_base_temperature(PetscReal t_years, PetscReal dt_years,
+						IceModelVec2S &result);
+  virtual PetscErrorCode shelf_base_mass_flux(PetscReal t_years, PetscReal dt_years,
+					      IceModelVec2S &result);
+
+  virtual void add_vars_to_output(string keyword, set<string> &result);
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc,
+                                          nc_type nctype);
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
+protected:
+  IceModelVec2S *ice_thickness;	// is not owned by this class
+  NCSpatialVariable shelfbmassflux, shelfbtemp;
+};
+
+
+
 #endif	// __PISMOceanModel_hh

@@ -855,7 +855,6 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
         // We ensure that nuH is bounded below by a positive constant.
         result(i,j,o) += epsilon;
 
-        //if (config.get_flag("e_ssa")) {
         if (do_ssa_enhancement) {
         	result(i,j,o) = result(i,j,o)/ssa_enhancement_factor;
         }
