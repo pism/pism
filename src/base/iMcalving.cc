@@ -230,7 +230,7 @@ PetscErrorCode IceModel::applyCalvingRate() {
         // apply calving rate at partially filled or empty grid cells
         if (calvrate>0.0) {
     	  //ierr = verbPrintf(5,grid.com,"!!! Calvrate=%f with Hav=%f at %d,%d \n",calvrate*secpera,Hav,i,j);
-          PetscScalar Href_old = vHref(i,j);
+          //PetscScalar Href_old = vHref(i,j);
 		  //vDiffCalvRate(i,j) = 0.0;
           vHref(i,j) -= calvrate * dt; // in m
           if(vHref(i,j)<0.0) { // i.e. partially filled grid cell has completely calved off

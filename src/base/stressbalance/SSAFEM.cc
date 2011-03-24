@@ -18,7 +18,7 @@
 
 #include "SSAFEM.hh"
 #include "FETools.hh"
-
+#include <cmath>
 
 SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b, 
                 IceFlowLaw &i, EnthalpyConverter &ec, 
@@ -267,7 +267,7 @@ PetscErrorCode SSAFEM::setup()
         // Evaluate column integrals in flow law at every quadrature point's column
         feS[q].B = ice.averagedHardness_from_enth(feS[q].H, grid.kBelowHeight(feS[q].H),
                                                   grid.zlevels, Enth_q[q]);
-        if(isinf( feS[q].B ) )
+        if( std::isinf( feS[q].B ) )  // why not use isnan() here?
         {
           SETERRQ(1,"hardness made a NaN!");
         }

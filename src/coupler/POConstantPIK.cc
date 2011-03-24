@@ -87,8 +87,8 @@ PetscErrorCode POConstantPIK::shelf_base_mass_flux(PetscReal /*t_years*/, PetscR
 
   PetscReal L = config.get("water_latent_heat_fusion"),
 		    rho_ocean = config.get("sea_water_density"),
-		    rho_ice = config.get("ice_density"),
-		    beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("standard_gravity");
+		    rho_ice = config.get("ice_density");
+		    //beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("standard_gravity");
 			// K/m      Clausius-Clapeyron gradient
   const PetscScalar c_p_ocean	  = 3974.0,   // J/(K*kg), specific heat capacity of ocean mixed layer
 				    gamma_T	  = 1e-4;     // m/s, thermal exchange velocity //FIXME gamma_T should be a function of the friction velocity, not a const
