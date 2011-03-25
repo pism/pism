@@ -54,9 +54,9 @@ PetscErrorCode IceModel::update_viewers() {
     if (v == NULL)
       continue;
 
-    GridType dims = v->grid_type();
+    int dims = v->grid_type();
 
-    if (dims != GRID_2D) {
+    if (dims != 2) {
       ierr = PetscPrintf(grid.com,
                          "PISM ERROR: map-plane views of 3D quantities are not supported.\n");
       CHKERRQ(ierr);
@@ -123,10 +123,10 @@ PetscErrorCode IceModel::update_viewers() {
     if (v == NULL)
       continue;
 
-    GridType dims = v->grid_type();
+    int dims = v->grid_type();
 
     // if it's a 2D variable, stop
-    if (dims == GRID_2D) {
+    if (dims == 2) {
       ierr = PetscPrintf(grid.com, "PISM ERROR: soundings of 2D quantities are not supported.\n");
       PISMEnd();
     }
@@ -139,15 +139,9 @@ PetscErrorCode IceModel::update_viewers() {
       viewer = viewers[name];
     }
 
-    if (dims == GRID_3D) {
-	IceModelVec3 *v3d = dynamic_cast<IceModelVec3*>(v);
+    if (dims == 3) {
+	IceModelVec3D *v3d = dynamic_cast<IceModelVec3D*>(v);
 	if (v3d == NULL) SETERRQ(1,"grid_type() returns GRID_3D but dynamic_cast gives a NULL");
-	ierr = v3d->view_sounding(id, jd, viewer); CHKERRQ(ierr);
-    }
-
-    if (dims == GRID_3D_BEDROCK) {
-	IceModelVec3Bedrock *v3d = dynamic_cast<IceModelVec3Bedrock*>(v);
-	if (v3d == NULL) SETERRQ(1,"grid_type() returns GRID_3D_BEDROCK but dynamic_cast gives a NULL");
 	ierr = v3d->view_sounding(id, jd, viewer); CHKERRQ(ierr);
     }
 

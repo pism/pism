@@ -4,7 +4,7 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-test="Test #28: Hooke flow law regression."
+echo "Test #28: Hooke flow law regression."
 # The list of files to delete when done.
 files="flowtable.txt diff.txt"
 

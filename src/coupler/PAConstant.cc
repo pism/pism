@@ -64,7 +64,7 @@ PetscErrorCode PAConstant::init(PISMVars &/*vars*/) {
     ierr = temperature.read(input_file.c_str(), start); CHKERRQ(ierr); // fails if not found!
   }
 
-  airtemp_var.init("airtemp", grid, GRID_2D);
+  airtemp_var.init_2d("airtemp", grid);
   airtemp_var.set_string("pism_intent", "diagnostic");
   airtemp_var.set_string("long_name",
                          "snapshot of the near-surface air temperature");

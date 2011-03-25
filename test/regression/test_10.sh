@@ -3,13 +3,13 @@
 PISM_PATH=$1
 MPIEXEC=$2
 
-test="Test #10: regridding with different number of processors."
+echo "Test #10: regridding with different number of processors."
 
 files="foo0.nc foo1.nc foo2.nc foo3.nc foo4.nc foo5.nc"
 
 rm -f $files
 
-set -e
+set -e -x
 
 NRANGE="1 2 3 4 5"
 

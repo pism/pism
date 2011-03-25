@@ -29,6 +29,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
       DESTINATION ${PISM_INSTALL_PYTHON_MODULE_DIR}
       USE_SOURCE_PERMISSIONS
       COMPONENT RuntimeLibraries
+      PATTERN ".svn" EXCLUDE
     )
     
     

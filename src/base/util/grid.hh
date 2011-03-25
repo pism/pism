@@ -102,7 +102,7 @@ public:
   PetscErrorCode createDA();  // destructor checks if DA was created, and destroys
   PetscErrorCode createDA(PetscInt procs_x, PetscInt procs_y,
 			  PetscInt* &lx, PetscInt* &ly);
-  PetscErrorCode set_vertical_levels(int Mz, int Mbz, double *z_levels, double *zb_levels);
+  PetscErrorCode set_vertical_levels(vector<double> z_levels, vector<double> zb_levels);
   PetscErrorCode compute_vertical_levels();
   PetscErrorCode compute_ice_vertical_levels();
   PetscErrorCode compute_bed_vertical_levels();
@@ -130,16 +130,16 @@ public:
     ys,                         //!< starting y-index of a processor sub-domain
     ym; //!< number of grid points (in the y-direction) in a processor sub-domain
 
-  PetscScalar *zlevels,         //!< vertical grid levels in the ice; correspond to the storage grid
-    *zblevels;                  //!< vertical grid levels in the bedrock; correspond to the storage grid
+  vector<double> zlevels, //!< vertical grid levels in the ice; correspond to the storage grid
+    zblevels; //!< vertical grid levels in the bedrock; correspond to the storage grid
 
-  vector<PetscReal> x,             //!< x-coordinates of grid points
+  vector<double> x,             //!< x-coordinates of grid points
     y;          //!< y-coordinates of grid points
 
   // Fine vertical grid and the interpolation setup:
-  PetscScalar *zlevels_fine,   //!< levels of the fine vertical grid in the ice
-    *zblevels_fine,             //!< levels of the fine vertical grid in the bedrock
-    dz_fine;                    //!< spacing of the fine vertical grid
+  vector<double> zlevels_fine,   //!< levels of the fine vertical grid in the ice
+    zblevels_fine;             //!< levels of the fine vertical grid in the bedrock
+  PetscReal   dz_fine;                    //!< spacing of the fine vertical grid
   PetscInt    Mz_fine,          //!< number of levels of the fine vertical grid in the ice
     Mbz_fine;                   //!< number of levels of the fine vertical grid in the bedrock
 
@@ -147,8 +147,8 @@ public:
   // that are just below a level of the fine grid. I.e. ice_storage2fine[k] is
   // the storage grid level just below fine-grid level k (zlevels_fine[k]).
   // Similarly for other arrays below.
-  PetscInt *ice_storage2fine, *ice_fine2storage,
-    *bed_storage2fine, *bed_fine2storage;
+  vector<int> ice_storage2fine, ice_fine2storage,
+    bed_storage2fine, bed_fine2storage;
 
   SpacingType ice_vertical_spacing, bed_vertical_spacing;
   Periodicity periodicity;
@@ -169,8 +169,8 @@ public:
   PetscInt    Nx, //!< number of processors in the x-direction
     Ny; //!< number of processors in the y-direction
 
-  PetscInt    *procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
-    *procs_y;//!< \brief array containing lenghts (in the y-direction) of processor sub-domains
+  vector<int> procs_x, //!< \brief array containing lenghts (in the x-direction) of processor sub-domains
+    procs_y; //!< \brief array containing lenghts (in the y-direction) of processor sub-domains
 
   PetscScalar dx,               //!< horizontal grid spacing
     dy;                         //!< horizontal grid spacing

@@ -4,7 +4,7 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-test="Test #14: enthalpy symmetry near the base (pisms -no_cold)."
+echo "Test #14: enthalpy symmetry near the base (pisms -no_cold)."
 # The list of files to delete when done.
 files="simp_exper.nc"
 

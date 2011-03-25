@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -53,8 +53,8 @@ PSB_velbar::PSB_velbar(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   vars.resize(dof);
 
   // set metadata:
-  vars[0].init("ubar", grid, GRID_2D);
-  vars[1].init("vbar", grid, GRID_2D);
+  vars[0].init_2d("ubar", grid);
+  vars[1].init_2d("vbar", grid);
 
   set_attrs("vertical mean of horizontal ice velocity in the X direction",
             "land_ice_vertical_mean_x_velocity",
@@ -131,7 +131,7 @@ PSB_cbar::PSB_cbar(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init("cbar", grid, GRID_2D);
+  vars[0].init_2d("cbar", grid);
 
   set_attrs("magnitude of vertically-integrated horizontal velocity of ice", "",
             "m s-1", "m year-1", 0);
@@ -175,7 +175,7 @@ PSB_cflx::PSB_cflx(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init("cflx", grid, GRID_2D);
+  vars[0].init_2d("cflx", grid);
 
   set_attrs("magnitude of vertically-integrated horizontal flux of ice", "",
             "m2 s-1", "m2 year-1", 0);
@@ -222,7 +222,7 @@ PSB_cbase::PSB_cbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
  : PISMDiag<PISMStressBalance>(m, g, my_vars) {
 
   // set metadata:
-  vars[0].init("cbase", grid, GRID_2D);
+  vars[0].init_2d("cbase", grid);
 
   set_attrs("magnitude of horizontal velocity of ice at base of ice", "",
             "m s-1", "m year-1", 0);
@@ -262,7 +262,7 @@ PSB_csurf::PSB_csurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
   PetscReal fill_value = -0.01/secpera;
   // set metadata:
-  vars[0].init("csurf", grid, GRID_2D);
+  vars[0].init_2d("csurf", grid);
   
   set_attrs("magnitude of horizontal velocity of ice at ice surface", "",
             "m s-1", "m year-1", 0);
@@ -307,8 +307,8 @@ PSB_velsurf::PSB_velsurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   dof = 2;
   vars.resize(dof);
   
-  vars[0].init("uvelsurf", grid, GRID_2D);
-  vars[1].init("vvelsurf", grid, GRID_2D);
+  vars[0].init_2d("uvelsurf", grid);
+  vars[1].init_2d("vvelsurf", grid);
   
   set_attrs("x-component of the horizontal velocity of ice at ice surface", "",
             "m s-1", "m year-1", 0);
@@ -354,7 +354,7 @@ PSB_wvel::PSB_wvel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("wvel", grid, GRID_3D);
+  vars[0].init_3d("wvel", grid, g.zlevels);
   
   set_attrs("vertical velocity of ice, relative to geoid", "",
             "m s-1", "m year-1", 0);
@@ -414,7 +414,7 @@ PSB_wvelsurf::PSB_wvelsurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("wvelsurf", grid, GRID_2D);
+  vars[0].init_2d("wvelsurf", grid);
   
   set_attrs("vertical velocity of ice at ice surface, relative to the geoid", "",
             "m s-1", "m year-1", 0);
@@ -453,7 +453,7 @@ PSB_wvelbase::PSB_wvelbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("wvelbase", grid, GRID_2D);
+  vars[0].init_2d("wvelbase", grid);
   
   set_attrs("vertical velocity of ice at the base of ice, relative to the geoid", "",
             "m s-1", "m year-1", 0);
@@ -492,8 +492,8 @@ PSB_velbase::PSB_velbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   dof = 2;
   vars.resize(dof);
   
-  vars[0].init("uvelbase", grid, GRID_2D);
-  vars[1].init("vvelbase", grid, GRID_2D);
+  vars[0].init_2d("uvelbase", grid);
+  vars[1].init_2d("vvelbase", grid);
   
   set_attrs("x-component of the horizontal velocity of ice at the base of ice", "",
             "m s-1", "m year-1", 0);
@@ -536,7 +536,7 @@ PSB_bueler_brown_f::PSB_bueler_brown_f(PISMStressBalance *m, IceGrid &g, PISMVar
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("bueler_brown_f", grid, GRID_2D);
+  vars[0].init_2d("bueler_brown_f", grid);
   set_attrs("f(|v|) in Bueler and Brown (2009), equation 22", "",
             "", "", 0);
   vars[0].set("valid_min", 0);
@@ -587,7 +587,7 @@ PSB_bfrict::PSB_bfrict(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("bfrict", grid, GRID_2D);
+  vars[0].init_2d("bfrict", grid);
   
   set_attrs("basal frictional heating", "",
             "W m-2", "W m-2", 0);
@@ -614,7 +614,7 @@ PSB_uvel::PSB_uvel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("uvel", grid, GRID_3D);
+  vars[0].init_3d("uvel", grid, g.zlevels);
   
   set_attrs("horizontal velocity of ice in the X direction", "land_ice_x_velocity",
             "m s-1", "m year-1", 0);
@@ -669,7 +669,7 @@ PSB_vvel::PSB_vvel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("vvel", grid, GRID_3D);
+  vars[0].init_3d("vvel", grid, g.zlevels);
   
   set_attrs("horizontal velocity of ice in the Y direction", "land_ice_y_velocity",
             "m s-1", "m year-1", 0);
@@ -724,7 +724,7 @@ PSB_wvel_rel::PSB_wvel_rel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("wvel_rel", grid, GRID_3D);
+  vars[0].init_3d("wvel_rel", grid, g.zlevels);
   
   set_attrs("vertical velocity of ice, relative to base of ice directly below", "",
             "m s-1", "m year-1", 0);
@@ -779,7 +779,7 @@ PSB_taud_mag::PSB_taud_mag(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("taud_mag", grid, GRID_2D);
+  vars[0].init_2d("taud_mag", grid);
   
   set_attrs("magnitude of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);

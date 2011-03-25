@@ -29,7 +29,7 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(SIAFD *m, IceGrid &g, PISMVars &my_vars
   : PISMDiag<SIAFD>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("schoofs_theta", grid, GRID_2D);
+  vars[0].init_2d("schoofs_theta", grid);
   
   set_attrs("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA", "",
             "1", "", 0);
@@ -61,7 +61,7 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<SIAFD>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("topgsmooth", grid, GRID_2D);
+  vars[0].init_2d("topgsmooth", grid);
   set_attrs("smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
             "", "m", "m", 0);
 }
@@ -85,7 +85,7 @@ SIAFD_thksmooth::SIAFD_thksmooth(SIAFD *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<SIAFD>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("thksmooth", grid, GRID_2D);
+  vars[0].init_2d("thksmooth", grid);
   set_attrs("thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
             "", "m", "m", 0);
 }
@@ -122,7 +122,7 @@ SIAFD_diffusivity::SIAFD_diffusivity(SIAFD *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<SIAFD>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("diffusivity", grid, GRID_2D);
+  vars[0].init_2d("diffusivity", grid);
   
   set_attrs("diffusivity of SIA mass continuity equation", "",
             "m2 s-1", "m2 s-1", 0);

@@ -4,7 +4,7 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-test="Test # 0: presence of tools and Python modules needed by other tests."
+echo "Test # 0: presence of tools and Python modules needed by other tests."
 # The list of files to delete when done.
 files="foo.txt"
 

@@ -76,7 +76,7 @@ enum PismIcebergMask {
 
 const PetscInt TEMPORARY_STRING_LENGTH = 32768; // 32KiB ought to be enough.
 
-bool is_increasing(int len, double *a);
+bool is_increasing(const vector<double> &a);
 
 PetscErrorCode setVerbosityLevel(PetscInt level);
 PetscInt       getVerbosityLevel();

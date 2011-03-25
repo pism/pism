@@ -315,8 +315,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   // get fine grid levels in ice and bedrock; guaranteed dz=dzb
   PetscInt    fMz = grid.Mz_fine,
     fMbz = grid.Mbz_fine;  
-  PetscScalar fdz = grid.dz_fine,
-    *fzlev = grid.zlevels_fine;
+  PetscScalar fdz = grid.dz_fine;
+  vector<double> &fzlev = grid.zlevels_fine;
 
   const bool bedrock_is_present = fMbz > 1;
 
@@ -860,8 +860,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep_new(
 
   // get fine grid levels in ice and bedrock; guaranteed dz=dzb
   PetscInt    fMz = grid.Mz_fine;  
-  PetscScalar fdz = grid.dz_fine,
-    *fzlev = grid.zlevels_fine;
+  PetscScalar fdz = grid.dz_fine;
+  vector<double> &fzlev = grid.zlevels_fine;
 
   const PetscScalar
     p_air     = config.get("surface_pressure"),

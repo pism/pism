@@ -21,27 +21,73 @@
 #include "PISMIO.hh"
 
 IceModelVec::IceModelVec() {
-
-  shallow_copy = false;
-  v = PETSC_NULL;
-  da = PETSC_NULL;
-  grid = PETSC_NULL;
-  array = PETSC_NULL;
-  localp = true;
-  state_counter = 0;
-
-  dims = GRID_2D;		// default
-  dof = 1;			// default
-  da_stencil_width = 1;
-
   access_counter = 0;
+  array = PETSC_NULL;
 
+  da = PETSC_NULL;
+  da_stencil_width = 1;
+  dof = 1;			// default
+
+  grid = PETSC_NULL;
+
+  localp = true;
+
+  map_viewers = new map<string,PetscViewer>;
+
+  n_levels = 1;
   name = "unintialized variable";
 
   vars.resize(dof);
-
-  map_viewers = new map<string,PetscViewer>;
   reset_attrs(0);
+
+  shallow_copy = false;
+  state_counter = 0;
+
+  v = PETSC_NULL;
+
+  zlevels.resize(1);
+  zlevels[0] = 0.0;
+}
+
+//! Creates a shallow copy of an \c IceModelVec.
+/*!
+  No data is copied to the new IceModelVec.
+
+  The difference is that such a copy will not free the memory when de-allocated
+  (by "delete" or of it goes out of scope).
+ */
+IceModelVec::IceModelVec(const IceModelVec &other) {
+  access_counter = other.access_counter;
+  array = other.array;
+
+  da = other.da;
+  da_stencil_width = other.da_stencil_width;
+  dof = other.dof;
+
+  grid = other.grid;
+
+  localp = other.localp;
+
+  map_viewers = other.map_viewers;
+
+  n_levels = other.n_levels;
+  name = other.name;
+
+  output_data_type = other.output_data_type;
+
+  report_range = other.report_range;
+
+  shallow_copy = true;
+  state_counter = other.state_counter;
+
+  time_independent = other.time_independent;
+
+  v = other.v;
+  vars = other.vars;
+
+  write_in_glaciological_units = other.write_in_glaciological_units;
+
+  zlevels = other.zlevels;
 }
 
 //! \brief Get the object state counter.
@@ -69,38 +115,6 @@ void IceModelVec::inc_state_counter() {
   state_counter++;
 }
 
-//! Creates a shallow copy of an \c IceModelVec.
-/*!
-  No data is copied to the new IceModelVec.
-
-  The difference is that such a copy will not free the memory when de-allocated
-  (by "delete" or of it goes out of scope).
- */
-IceModelVec::IceModelVec(const IceModelVec &other) {
-  // This IceModelVec is a shallow copy!
-  shallow_copy = true;
-
-  v = other.v;
-  da = other.da;
-  dims = other.dims;
-  dof = other.dof;
-  grid = other.grid;
-  array = other.array;
-  access_counter = other.access_counter;
-  state_counter = other.state_counter;
-
-  localp = other.localp;
-  da_stencil_width = other.da_stencil_width;
-  
-  map_viewers = other.map_viewers;
-
-  output_data_type = other.output_data_type;
-  write_in_glaciological_units = other.write_in_glaciological_units;
-  report_range = other.report_range;
-
-  name = other.name;
-  vars = other.vars;
-}
 
 PetscErrorCode IceModelVec::create_2d_da(DA &result, PetscInt da_dof, PetscInt stencil_width) {
   PetscErrorCode ierr;
@@ -109,7 +123,7 @@ PetscErrorCode IceModelVec::create_2d_da(DA &result, PetscInt da_dof, PetscInt s
 		    grid->My, grid->Mx, // N, M
 		    grid->Ny, grid->Nx, // n, m
 		    da_dof, stencil_width,
-                    grid->procs_y, grid->procs_x, // ly, lx
+                    grid->procs_y.data(), grid->procs_x.data(), // ly, lx
 		    &result); CHKERRQ(ierr);
 
   return 0;
@@ -126,8 +140,10 @@ bool IceModelVec::was_created() {
 }
 
 //! Returns the grid type of an IceModelVec. (This is the way to figure out if an IceModelVec is 2D or 3D).
-GridType IceModelVec::grid_type() {
-  return dims;
+int IceModelVec::grid_type() {
+  if (zlevels.size() > 1) return 3;
+
+  return 2;
 }
 
 //! \brief De-allocates an IceModelVec object.
@@ -438,21 +454,14 @@ PetscErrorCode IceModelVec::get_interp_context(string filename, LocalInterpCtx* 
   PetscErrorCode ierr;
 
   PISMIO nc(grid);
-  double *zlevs = NULL, *zblevs = NULL; // NULLs correspond to 2D-only regridding
+  vector<double> zlevs, zblevs;
   grid_info gi;
   ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-  ierr = nc.get_grid_info(gi); CHKERRQ(ierr);
-
-  if ((gi.z_len != 0) && (gi.zb_len != 0)) {
-    ierr = nc.get_vertical_dims(zlevs, zblevs); CHKERRQ(ierr);
-  }
-
+  ierr = nc.get_grid_info(vars[0].short_name, gi); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
   //! the *caller* is in charge of destroying lic
-  lic = new LocalInterpCtx(gi, zlevs, zblevs, *grid);
-
-  delete [] zlevs;  delete [] zblevs;
+  lic = new LocalInterpCtx(gi, *grid);
 
   return 0;
 }
@@ -663,11 +672,6 @@ PetscErrorCode IceModelVec::checkCompatibility(const char* func, IceModelVec &ot
 	     func);
   }
 
-  if (dims != other.dims) {
-    SETERRQ1(1, "IceModelVec::%s(...): operands have different numbers of dimensions",
-	     func);
-  }
-
   ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
   ierr = VecGetSize(other.v, &Y_size); CHKERRQ(ierr);
   if (X_size != Y_size)
@@ -753,10 +757,6 @@ PetscErrorCode  IceModelVec::beginGhostComm(IceModelVec &destination) {
     SETERRQ(1, "IceModelVec::beginGhostComm(): destination has to be local.");
   }
 
-  if (dims != destination.dims) {
-    SETERRQ(1, "IceModelVec::beginGhostComm(): operands have different numbers of dimensions.");
-  }
-
   ierr = checkAllocated(); CHKERRQ(ierr);
   ierr = DALocalToLocalBegin(da, v, INSERT_VALUES, destination.v);  CHKERRQ(ierr);
   return 0;
@@ -772,10 +772,6 @@ PetscErrorCode  IceModelVec::endGhostComm(IceModelVec &destination) {
 
   if (!destination.localp) {
     SETERRQ(1, "IceModelVec::beginGhostComm(): destination has to be local.");
-  }
-
-  if (dims != destination.dims) {
-    SETERRQ(1, "IceModelVec::beginGhostComm(): operands have different numbers of dimensions.");
   }
 
   ierr = checkAllocated(); CHKERRQ(ierr);

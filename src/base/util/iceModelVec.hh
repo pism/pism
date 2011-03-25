@@ -156,7 +156,7 @@ public:
   virtual ~IceModelVec();
 
   virtual bool            was_created();
-  virtual GridType        grid_type();
+  virtual int             grid_type();
   //! \brief Returns the number of degrees of freedom per grid point.
   virtual int             get_dof() { return dof; }
 
@@ -215,6 +215,8 @@ public:
                                        //!< the 't' dimension.
   nc_type output_data_type;            //!< Corresponding NetCDF data type.
 protected:
+  vector<double> zlevels;
+  int n_levels;                 // grid.Mz or grid.Mbz
 
   bool shallow_copy;            //!< True if this IceModelVec is a shallow copy.
   Vec  v;                       //!< Internal storage
@@ -225,8 +227,6 @@ protected:
   vector<NCSpatialVariable> vars;
 
   IceGrid      *grid;
-  GridType     dims;            //!< \brief Determines whether this field is
-                                //!< 2D, 3D (ice) or 3D (bedrock).
   int          dof,             //!< number of "degrees of freedom" per grid point
     da_stencil_width;           //!< stencil width supported by the DA
   DA           da;
@@ -407,15 +407,16 @@ public:
   // note the IceModelVec3 with this method must be *local* while imv3_source must be *global*
   virtual PetscErrorCode beginGhostCommTransfer(IceModelVec3D &imv3_source);
   virtual PetscErrorCode endGhostCommTransfer(IceModelVec3D &imv3_source);
+  virtual PetscScalar    getValZ(PetscInt i, PetscInt j, PetscScalar z);
 protected:
+  virtual PetscErrorCode  isLegalLevel(PetscScalar z);
   virtual PetscErrorCode  allocate(IceGrid &mygrid, const char my_short_name[],
-                                   bool local, GridType my_dims, int stencil_width = 1);
+                                   bool local, vector<double> levels, int stencil_width = 1);
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode has_nan();
 
   Vec sounding_buffer;
   map<string,PetscViewer> *sounding_viewers;
-  int n_levels;                 // grid.Mz or grid.Mbz
 };
 
 
@@ -437,8 +438,6 @@ public:
 
   PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsIN);
 
-  PetscScalar     getValZ(PetscInt i, PetscInt j, PetscScalar z);
-
   PetscErrorCode  getPlaneStarZ(PetscInt i, PetscInt j, PetscScalar z,
                                 planeStar *star);
   PetscErrorCode  getPlaneStar_fine(PetscInt i, PetscInt j, PetscInt k,
@@ -454,7 +453,6 @@ public:
   PetscErrorCode  extend_vertically(int old_Mz, PetscScalar fill_value);
   PetscErrorCode  extend_vertically(int old_Mz, IceModelVec2S &fill_values);
 protected:
-  PetscErrorCode  isLegalLevel(PetscScalar z);
   virtual PetscErrorCode  extend_vertically_private(int old_Mz);
 };
 
@@ -470,8 +468,6 @@ public:
   PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsIN);
   PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsOUT);
   // PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
-protected:
-  PetscErrorCode  isLegalLevel(PetscScalar z);
 };
 
 /*

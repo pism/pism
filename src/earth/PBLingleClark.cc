@@ -222,9 +222,6 @@ PetscErrorCode PBLingleClark::correct_topg() {
   ierr = topg_tmp.create(grid, "topg", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = topg_tmp.set_attrs("model_state", "bedrock surface elevation (at the end of the previous run)",
                             "m", "bedrock_altitude"); CHKERRQ(ierr);
-  grid_info g;
-  ierr = nc.get_grid_info_2d(g); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
 
   // Get topg and topg_initial from the regridding file.
   ierr = topg_initial.regrid(regrid_filename.c_str(), true); CHKERRQ(ierr);

@@ -45,29 +45,16 @@
   The \c IceGrid is used to determine what ranges of the target arrays (i.e. \c Vecs into which NetCDF
   information will be interpolated) are owned by each processor.
 */
-LocalInterpCtx::LocalInterpCtx(grid_info g,
-			       const double zlevsIN[], const double zblevsIN[], IceGrid &grid) {
-  const int T = 0, X = 1, Y = 2, Z = 3, ZB = 4; // indices, just for clarity
+LocalInterpCtx::LocalInterpCtx(grid_info g, IceGrid &grid) {
+  const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
   const double Lx = grid.Lx,
                Ly = grid.Ly,
-               Lz = grid.Lz,
-               Lbz = grid.Lbz,
-               dx = grid.dx,
-               dy = grid.dy,
                slop = 1.000001; // allowed slop; grids must be subsets within this factor
   com = grid.com;
   rank = grid.rank;
-  no_regrid_ice = false;
-  no_regrid_bedrock = false;
   report_range = true;
 
   g.print(com);
-
-  if (zlevsIN == NULL)
-    no_regrid_ice = true;
-
-  if (zblevsIN == NULL)
-    no_regrid_bedrock = true;
 
   PetscScalar dx0 = grid.x0 - g.x0,
               dy0 = grid.y0 - g.y0;
@@ -96,43 +83,14 @@ LocalInterpCtx::LocalInterpCtx(grid_info g,
 		Ly, g.Ly);
    PISMEnd();
   }
-  
-  if (no_regrid_ice == false) {
-    if (g.z_max*slop < Lz) {
-      verbPrintf(2,com,
-		 "  WARNING: vertical dimension of target computational domain\n"
-		 "    not a subset of source (in NetCDF file) computational domain;\n"
-		 "    g.z_max = %5.4f < Lz = %5.4f; DISABLING REGRIDDING OF 3D VARIABLES (IN THE ICE) ...\n",
-		 g.z_max, Lz);
-      no_regrid_ice = true;
-    }
-  }
-  
-  if (no_regrid_bedrock == false) {
-    if (-g.zb_min*slop < Lbz) {
-      verbPrintf(2,com,
-		 "  WARNING: vertical dimension of target BEDROCK computational domain\n"
-		 "    not a subset of source (in NetCDF file) BEDROCK computational domain;\n"
-		 "    -g.zb_min = %5.4f < Lbz = %5.4f; DISABLING BEDROCK REGRIDDING ...\n",
-		 -g.zb_min, Lbz);
-      no_regrid_bedrock = true;
-    }
 
-    // This disables regridding bedrock temperature if an input file has no bedrock
-    if (g.zb_len < 1) {
-      verbPrintf(2,com,
-		 "  NOTE: bootstrapping (or regridding) file has no bedrock.\n"
-		 "    DISABLING BEDROCK REGRIDDING ...\n");
-      no_regrid_bedrock = true;
-    }
-  }
-
-  verbPrintf(5, com, "LIC INFO: no_regrid_ice = %d, no_regrid_bedrock = %d\n",
-	     no_regrid_ice, no_regrid_bedrock);
+  // FIXME: put back vertical extent check
 
   // limits of the processor's part of the target computational domain
-  double xbdy_tgt[2] = {-Lx + dx * grid.xs, -Lx + dx * (grid.xs + grid.xm - 1)};
-  double ybdy_tgt[2] = {-Ly + dy * grid.ys, -Ly + dy * (grid.ys + grid.ym - 1)};
+  double xbdy_tgt[2] = {grid.x[grid.xs] - grid.x0,
+                        grid.x[grid.xs + grid.xm - 1] - grid.x0};
+  double ybdy_tgt[2] = {grid.y[grid.ys] - grid.y0,
+                        grid.y[grid.ys + grid.ym - 1] - grid.y0};
 
 /*
 To make this work with unequal spacing <i>in the horizontal dimension</i>, IF EVER NEEDED,
@@ -176,7 +134,6 @@ and \c delta entries in the struct will not be meaningful.
   if (start[Y] < 0) start[Y] = 0;
 
   start[Z] = 0;			// start at base of ice
-  start[ZB] = 0;		// start at lowest bedrock level
 
   fstart[T] = g.time;
   fstart[X] = -g.Lx + start[X] * delta[X];
@@ -191,45 +148,14 @@ and \c delta entries in the struct will not be meaningful.
   while (start[Y]+count[Y] > g.y_len)
     count[Y]--;
 
-  // This allows creating a local interpolation context for 2D regridding
-  // without specifying dummy z or zb-related information in the g argument.
-  if (no_regrid_ice) {
-    count[Z] = 1;
-  } else {
-    count[Z] = g.z_len;
-  }
+  count[Z] = PetscMax(g.z_len, 1); // read at least one level
 
-  if (no_regrid_bedrock) {
-    count[ZB] = 1;
-  } else {
-    count[ZB] = g.zb_len;
-  }
-
-  zlevs = new double[count[Z]];
-  zblevs = new double[count[ZB]];
-
-  if (no_regrid_ice) {
-    zlevs[0] = 0.0;
-  } else {
-    for (int k = 0; k < count[Z]; k++) {
-      zlevs[k] = zlevsIN[k];
-    }
-  }
-
-  if (no_regrid_bedrock) {
-    zblevs[0] = 0.0;
-  } else {
-    for (int k = 0; k < count[ZB]; k++) {
-      zblevs[k] = zblevsIN[k];
-    }
-  }
-
-  nz = count[Z]; nzb = count[ZB];
+  zlevels = g.zlevels;
 
   // We need a buffer for the local data, but node 0 needs to have as much
   // storage as the node with the largest block (which may be anywhere), hence
   // we perform a reduce so that node 0 has the maximum value.
-  a_len = count[X] * count[Y] * PetscMax(count[Z], count[ZB]);
+  a_len = count[X] * count[Y] * PetscMax(count[Z], 1);
   int my_a_len = a_len;
   MPI_Reduce(&my_a_len, &(a_len), 1, MPI_INT, MPI_MAX, 0, com);
   PetscMalloc(a_len * sizeof(double), &(a));
@@ -238,43 +164,8 @@ and \c delta entries in the struct will not be meaningful.
 
 //! Deallocate memory.
 LocalInterpCtx::~LocalInterpCtx() {
-  delete[] zlevs;
-  delete[] zblevs;
   PetscFreeVoid(a);
 }
-
-
-//! Print out the grid information stored in the local interpolation context.
-/*!
-Every processor in the communicator \c com must call this for it to work, I think.
- */
-PetscErrorCode LocalInterpCtx::printGrid() {
-  PetscErrorCode ierr;
-  const int T = 0, X = 1, Y = 2, Z = 3, ZB = 4; // indices, just for clarity
-
-  ierr = PetscSynchronizedPrintf(com,"\nLocalInterpCtx::printGrid():  rank = %d\n",
-                    rank); CHKERRQ(ierr);
-  ierr = PetscSynchronizedPrintf(com,"  delta[1,2] = %5.4f, %5.4f\n",
-                    delta[X],delta[Y]); CHKERRQ(ierr);
-  ierr = PetscSynchronizedPrintf(com,"  start[0,..,4] = %d, %d, %d, %d, %d\n",
-                    start[T],start[X],start[Y],start[Z],start[ZB]); CHKERRQ(ierr);
-  ierr = PetscSynchronizedPrintf(com,"  fstart[0,1,2] = %5.4f, %5.4f, %5.4f\n",
-                    fstart[T],fstart[X],fstart[Y]); CHKERRQ(ierr);
-  ierr = PetscSynchronizedPrintf(com,"  count[0,..,4] = %d, %d, %d, %d, %d\n",
-                    count[T],count[X],count[Y],count[Z],count[ZB]); CHKERRQ(ierr);
-  ierr = PetscSynchronizedPrintf(com,"  zlevs[] = "); CHKERRQ(ierr);
-  for (int k = 0; k < nz; k++) {
-    ierr = PetscSynchronizedPrintf(com," %5.4f,",zlevs[k]); CHKERRQ(ierr);
-  }
-  ierr = PetscSynchronizedPrintf(com,"\n  zblevs[] = "); CHKERRQ(ierr);
-  for (int k = 0; k < nzb; k++) {
-    ierr = PetscSynchronizedPrintf(com," %5.4f,",zblevs[k]); CHKERRQ(ierr);
-  }
-  ierr = PetscSynchronizedPrintf(com,"\n"); CHKERRQ(ierr);
-  ierr = PetscSynchronizedFlush(com); CHKERRQ(ierr);
-  return 0;
-}
-
 
 //! Print out the actual array information stored in the local interpolation context.
 /*!
@@ -290,55 +181,6 @@ PetscErrorCode LocalInterpCtx::printArray() {
   }
   ierr = PetscSynchronizedFlush(com); CHKERRQ(ierr);
   return 0;
-}
-
-
-//! Get the index for the source grid below a given vertical elevation within the ice.
-/*!
-This code duplicates that in IceGrid::kBelowHeight().
- */
-int LocalInterpCtx::kBelowHeight(const double height) {
-  if (height < 0.0 - 1.0e-6) {
-    PetscPrintf(com, 
-       "LocalInterpCtx kBelowHeight(): height = %5.4f is below base of ice (height must be nonnegative)\n",
-       height);
-    PISMEnd();
-  }
-  const double Lz = zlevs[nz-1];
-  if (height > Lz + 1.0e-6) {
-    PetscPrintf(com, 
-       "LocalInterpCtx kBelowHeight(): height = %5.4f is above top of computational grid Lz = %5.4f\n",
-       height,Lz);
-    PISMEnd();
-  }
-  PetscInt mcurr = 0;
-  while (zlevs[mcurr+1] < height) {
-    mcurr++;
-  }
-  return mcurr;
-}
-
-
-//! Get the index for the source grid below a given vertical elevation within the bedrock
-int LocalInterpCtx::kbBelowHeight(const double elevation) {
-  if (elevation < zblevs[0] - 1.0e-6) {
-    PetscPrintf(com, 
-       "LocalInterpCtx kbBelowHeight(): elevation = %5.4f is below base of bedrock -Lbz = %5.4f\n",
-       elevation, zblevs[0]);
-    PISMEnd();
-  }
-  if (elevation > 0.0 + 1.0e-6) {
-    PetscPrintf(com, 
-       "LocalInterpCtx kbBelowHeight(): elevation = %5.4f is above top of bedrock at z=0\n",
-       elevation);
-    PISMEnd();
-  }
-  double myelevation = PetscMin(0.0,elevation);
-  PetscInt mcurr = 0;
-  while (zblevs[mcurr+1] < myelevation) {
-    mcurr++;
-  }
-  return mcurr;
 }
 
 grid_info::grid_info() {

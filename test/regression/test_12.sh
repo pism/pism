@@ -4,7 +4,7 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-test="Test #12: mass conservation within rounding error (SIA moving margin)."
+echo "Test #12: mass conservation within rounding error (SIA moving margin)."
 # The list of files to delete when done.
 files="verify.nc ivol.nc"
 

@@ -21,14 +21,14 @@
 POConstant::POConstant(IceGrid &g, const NCConfigVariable &conf)
   : PISMOceanModel(g, conf) {
 
-  shelfbmassflux.init("shelfbmassflux", g, GRID_2D);
+  shelfbmassflux.init_2d("shelfbmassflux", g);
   shelfbmassflux.set_string("pism_intent", "climate_state");
   shelfbmassflux.set_string("long_name",
                             "ice mass flux from ice shelf base (positive flux is loss from ice shelf)");
   shelfbmassflux.set_units("m s-1");
   shelfbmassflux.set_glaciological_units("m year-1");
 
-  shelfbtemp.init("shelfbtemp", g, GRID_2D);
+  shelfbtemp.init_2d("shelfbtemp", g);
   shelfbtemp.set_string("pism_intent", "climate_state");
   shelfbtemp.set_string("long_name",
                         "absolute temperature at ice shelf base");

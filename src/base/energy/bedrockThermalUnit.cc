@@ -45,9 +45,13 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name
   grid = &mygrid;
   name = my_short_name;
 
-  dims = GRID_3D_BEDROCK;
   n_levels = myMbz;
   Lbz = myLbz;
+  zlevels.resize(n_levels);
+  double dz = Lbz / (myMbz - 1);
+  for (int i = 0; i < n_levels; ++i)
+    zlevels[i] = -Lbz * i * dz;
+  zlevels.back() = 0;
 
   da_stencil_width = stencil_width;
   ierr = create_2d_da(da, n_levels, da_stencil_width); CHKERRQ(ierr);
@@ -59,7 +63,7 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name
     ierr = DACreateGlobalVector(da, &v); CHKERRQ(ierr);
   }
 
-  vars[0].init(name, mygrid, dims);
+  vars[0].init_3d(name, mygrid, zlevels);
 
   if (!good_init()) {
     SETERRQ1(1,"create() says IceModelVec3BTU with name %s was not properly created\n",
@@ -138,14 +142,7 @@ PetscErrorCode IceModelVec3BTU::create_zb_dimension(int ncid) {
 
   // put coordinate variable for dimension zb
   // replacing this call in PISMIO:  stat = put_dimension(zb, grid->Mbz, grid->zblevels); CHKERRQ(stat);
-  double *vv, dzb;
-  ierr = PetscMalloc(n_levels * sizeof(double), &vv); CHKERRQ(ierr);
-  ierr = get_spacing(dzb); CHKERRQ(ierr);
-  for (int i = 0; i < n_levels; i++) {
-    vv[i] = -Lbz + dzb * (double)i; // equally-spaced
-  }
-  stat = nc_put_var_double(ncid, zb, vv); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  ierr = PetscFree(vv); CHKERRQ(ierr);
+  stat = nc_put_var_double(ncid, zb, zlevels.data()); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
   // replacing this call in NCTool:  stat = define_mode(); CHKERRQ(stat);
   ierr = nc_redef(ncid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));

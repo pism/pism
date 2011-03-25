@@ -237,8 +237,8 @@ This method should be kept because it is worth having alternative physics, and
     PetscInt    fMz = grid.Mz_fine,
       fMbz = grid.Mbz_fine;
     PetscScalar fdz = grid.dz_fine,
-      fdzb = fdz,
-      *fzlev = grid.zlevels_fine;
+      fdzb = fdz;
+    vector<double> &fzlev = grid.zlevels_fine;
 
     ierr = verbPrintf(5,grid.com,
                       "\n  [entering temperatureStep(); fMz = %d, fdz = %5.3f, fMbz = %d, fdzb = %5.3f]",
@@ -628,8 +628,8 @@ PetscErrorCode IceModel::temperatureStep_new(PetscScalar* vertSacrCount, PetscSc
 
     // set up fine grid in ice
     PetscInt    fMz    = grid.Mz_fine;
-    PetscScalar fdz    = grid.dz_fine,
-                *fzlev = grid.zlevels_fine;
+    PetscScalar fdz    = grid.dz_fine;
+    vector<double> &fzlev = grid.zlevels_fine;
 
     ierr = verbPrintf(5,grid.com,
                       "\n  [entering temperatureStep_new(); fMz = %d, fdz = %5.3f]",

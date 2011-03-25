@@ -737,7 +737,7 @@ PetscErrorCode SSAFD::compute_hardav_staggered(IceModelVec2Stag &result) {
         }
         
         result(i,j,o) = ice.averagedHardness_from_enth(H, grid.kBelowHeight(H),
-                                                       grid.zlevels, E); CHKERRQ(ierr); 
+                                                       grid.zlevels.data(), E); CHKERRQ(ierr); 
       } // o
     }   // j
   }     // i

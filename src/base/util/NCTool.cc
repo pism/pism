@@ -63,13 +63,13 @@ int NCTool::get_ncid() const {
 }
 
 //! Finds a NetCDF dimension by its name.
-PetscErrorCode  NCTool::find_dimension(const char short_name[], int *dimid, bool &exists) const {
+PetscErrorCode  NCTool::find_dimension(string short_name, int *dimid, bool &exists) const {
   PetscErrorCode ierr;
   int stat, found = 0, my_dimid;
   if (rank == 0) {
-      stat = nc_inq_dimid(ncid, short_name, &my_dimid);
-      if (stat == NC_NOERR)
-	found = 1;
+    stat = nc_inq_dimid(ncid, short_name.c_str(), &my_dimid);
+    if (stat == NC_NOERR)
+      found = 1;
   }
   ierr = MPI_Bcast(&found, 1, MPI_INT, 0, com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&my_dimid, 1, MPI_INT, 0, com); CHKERRQ(ierr);
@@ -183,7 +183,7 @@ PetscErrorCode NCTool::find_variable(string short_name, int *varid, bool &exists
   This function allocates arrays z_levels and zb_levels, and they have to be
   freed by the caller (using delete[]).
  */
-PetscErrorCode NCTool::get_vertical_dims(double* &z_levels, double* &zb_levels) const {
+PetscErrorCode NCTool::get_vertical_dims(vector<double> &z_levels, vector<double> &zb_levels) const {
   int stat;
   int z_id, zb_id, z_len, zb_len;
   size_t zero  = 0, nc_z_len, nc_zb_len;
@@ -191,8 +191,8 @@ PetscErrorCode NCTool::get_vertical_dims(double* &z_levels, double* &zb_levels) 
   stat = get_dim_length("z", &z_len); CHKERRQ(stat);
   stat = get_dim_length("zb", &zb_len); CHKERRQ(stat);
 
-  z_levels = new double[z_len];
-  zb_levels = new double[zb_len];
+  z_levels.resize(z_len);
+  zb_levels.resize(zb_len);
 
   nc_z_len  = (size_t) z_len;
   nc_zb_len = (size_t) zb_len;
@@ -212,34 +212,27 @@ PetscErrorCode NCTool::get_vertical_dims(double* &z_levels, double* &zb_levels) 
 
     stat = data_mode(); CHKERRQ(stat); 
 
-    stat = nc_get_vara_double(ncid, z_id, &zero, &nc_z_len, z_levels);
+    stat = nc_get_vara_double(ncid, z_id, &zero, &nc_z_len, z_levels.data());
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_get_vara_double(ncid, zb_id, &zero, &nc_zb_len, zb_levels);
+    stat = nc_get_vara_double(ncid, zb_id, &zero, &nc_zb_len, zb_levels.data());
     CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
-  MPI_Bcast(z_levels, z_len, MPI_DOUBLE, 0, com);
-  MPI_Bcast(zb_levels, zb_len, MPI_DOUBLE, 0, com);
+  MPI_Bcast(z_levels.data(), z_len, MPI_DOUBLE, 0, com);
+  MPI_Bcast(zb_levels.data(), zb_len, MPI_DOUBLE, 0, com);
   return 0;
 }
 
 //! Put the variable for a dimension in a NetCDF file.  Makes no assumption about spacing.
-PetscErrorCode NCTool::put_dimension(int varid, int len, PetscScalar *vals) const {
+PetscErrorCode NCTool::put_dimension(int varid, vector<double> &vals) const {
   PetscErrorCode ierr;
   int stat;
-  double *v;
 
   if (rank != 0) return 0;
 
-  ierr = PetscMalloc(len * sizeof(double), &v); CHKERRQ(ierr);
-  for (int i = 0; i < len; i++) {
-    v[i] = (double)vals[i];
-  }
-
   ierr = data_mode(); CHKERRQ(ierr); 
 
-  stat = nc_put_var_double(ncid, varid, v); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  ierr = PetscFree(v); CHKERRQ(ierr);
+  stat = nc_put_var_double(ncid, varid, vals.data()); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   return 0;
 }
 
@@ -247,7 +240,7 @@ PetscErrorCode NCTool::put_dimension(int varid, int len, PetscScalar *vals) cons
 /*!
   Appends if overwrite == false (default).
  */
-PetscErrorCode NCTool::write_history(const char history[], bool overwrite) const {
+PetscErrorCode NCTool::write_history(string history, bool overwrite) const {
   int stat;
   string old_history, new_history;
 
@@ -279,12 +272,12 @@ PetscErrorCode NCTool::write_history(const char history[], bool overwrite) const
     On processor 0 returns true if OK, false otherwise. Always returns true on
     processors other than 0.
  */
-bool NCTool::check_dimension(const char name[], const int len) const {
+bool NCTool::check_dimension(string name, const int len) const {
   int stat, dimid;
   size_t dimlen;
 
   if (rank == 0) {
-    stat = nc_inq_dimid(ncid, name, &dimid);
+    stat = nc_inq_dimid(ncid, name.c_str(), &dimid);
     if (stat == NC_NOERR) {
       if (len < 0)
 	return true;
@@ -330,21 +323,21 @@ PetscErrorCode NCTool::append_time(PetscReal time) const {
 /*!
   Stops if a file does not exist or could not be opened.
  */
-PetscErrorCode NCTool::open_for_reading(const char filename[]) {
+PetscErrorCode NCTool::open_for_reading(string filename) {
   PetscErrorCode ierr;
   int stat = 0;
 
   if (ncid >= 0) SETERRQ(1, "NCTool::open_for_reading(): ncid >= 0 at the beginning of the call");
 
   if (rank == 0) {
-    stat = nc_open(filename, NC_NOWRITE, &ncid);
+    stat = nc_open(filename.c_str(), NC_NOWRITE, &ncid);
   }
   ierr = MPI_Bcast(&stat, 1, MPI_INT, 0, com); CHKERRQ(ierr);
   ierr = MPI_Bcast(&ncid, 1, MPI_INT, 0, com); CHKERRQ(ierr);
 
   if (stat != NC_NOERR) {
     ierr = PetscPrintf(com, "ERROR: Can't open file '%s'!\n",
-		       filename); CHKERRQ(ierr);
+		       filename.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
   
@@ -363,7 +356,7 @@ PetscErrorCode NCTool::close() {
 }
 
 //! Opens a file for writing if it exists, creates if it does not.
-PetscErrorCode NCTool::open_for_writing(const char filename[]) {
+PetscErrorCode NCTool::open_for_writing(string filename) {
   int stat;
 
   if (ncid >= 0) SETERRQ(1, "NCTool::open_for_writing(): ncid >= 0 at the beginning of the call");
@@ -372,7 +365,7 @@ PetscErrorCode NCTool::open_for_writing(const char filename[]) {
     bool file_exists = false;
 
     // Check if the file exists:
-    if (FILE *f = fopen(filename, "r")) {
+    if (FILE *f = fopen(filename.c_str(), "r")) {
       file_exists = true;
       fclose(f);
     } else {
@@ -380,19 +373,19 @@ PetscErrorCode NCTool::open_for_writing(const char filename[]) {
     }
 
     if (file_exists) {
-      stat = nc_open(filename, NC_WRITE, &ncid);
+      stat = nc_open(filename.c_str(), NC_WRITE, &ncid);
       if (stat != NC_NOERR) {
 	stat = PetscPrintf(com, "PISM ERROR: Can't open file '%s'. NetCDF error: %s\n",
-			   filename, nc_strerror(stat)); CHKERRQ(stat);
+			   filename.c_str(), nc_strerror(stat)); CHKERRQ(stat);
 	PISMEnd();
       }
       stat = nc_set_fill(ncid, NC_NOFILL, NULL); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     } else {
 
 #if (PISM_WRITE_NETCDF4 == 1)
-      stat = nc_create(filename, NC_CLOBBER|NC_NETCDF4, &ncid); 
+      stat = nc_create(filename.c_str(), NC_CLOBBER|NC_NETCDF4, &ncid); 
 #else
-      stat = nc_create(filename, NC_CLOBBER|NC_64BIT_OFFSET, &ncid); 
+      stat = nc_create(filename.c_str(), NC_CLOBBER|NC_64BIT_OFFSET, &ncid); 
 #endif
 
       def_mode = true;
@@ -408,12 +401,12 @@ PetscErrorCode NCTool::open_for_writing(const char filename[]) {
 }
 
 //! Finds the length of a dimension. Returns 0 if failed.
-PetscErrorCode NCTool::get_dim_length(const char name[], int *len) const {
+PetscErrorCode NCTool::get_dim_length(string name, int *len) const {
   int stat, dim_id;
   
   if (rank == 0) {
     size_t dim_len;
-    stat = nc_inq_dimid(ncid, name, &dim_id);
+    stat = nc_inq_dimid(ncid, name.c_str(), &dim_id);
     if (stat == NC_NOERR) {
       stat = nc_inq_dimlen(ncid, dim_id, &dim_len); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     } else
@@ -459,7 +452,7 @@ PetscErrorCode NCTool::get_nrecords(int &nrecords) const {
 
   Converts time and distance units to 'seconds' and 'meters', correspondingly.
  */
-PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *max) const {
+PetscErrorCode NCTool::get_dim_limits(string name, double *min, double *max) const {
   PetscErrorCode ierr;
   int len = 0, varid = -1;
   bool variable_exists = false;
@@ -472,7 +465,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
     ierr = find_variable(name, &varid, variable_exists);
     if (!variable_exists) {
       ierr = PetscPrintf(com, "PISM ERROR: coordinate variable '%s' does not exist.\n",
-			 name);
+			 name.c_str());
       CHKERRQ(ierr);
       PISMEnd();
     }
@@ -500,10 +493,24 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
     utUnit input, internal;
     bool input_has_units;
 
-    if ((strcmp(name, "t") == 0) || (strcmp(name, "time") == 0)){
+    AxisType dimtype;
+    ierr = inq_dimtype(name, dimtype); CHKERRQ(ierr);
+
+    switch (dimtype) {
+    case T_AXIS:
       // Note that this units specification does *not* have a reference date.
       strcpy(internal_units, "seconds");
-    } else {
+      break;
+    case UNKNOWN_AXIS:
+      {
+        ierr = verbPrintf(3, com,
+                          "PISM WARNING: Can't determine which direction dimension '%s' corresponds to.\n"
+                          "     Assuming that it corresponds to a spatial (not temporal) coordinate.\n",
+                          name.c_str()); CHKERRQ(ierr);
+      }
+    case X_AXIS:
+    case Y_AXIS:
+    case Z_AXIS:
       strcpy(internal_units, "meters");
     }
 
@@ -517,7 +524,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
       ierr = verbPrintf(3, com,
 			"PISM WARNING: dimensional variable '%s' does not have the units attribute.\n"
 			"     Assuming that it is in '%s'.\n",
-			name, internal_units); CHKERRQ(ierr);
+			name.c_str(), internal_units); CHKERRQ(ierr);
       utCopy(&internal, &input);
     }
 
@@ -528,7 +535,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
       if (ierr == UT_ECONVERT) {
 	ierr = PetscPrintf(com,
 			   "PISM ERROR: dimensional variable '%s' has the units that are not compatible with '%s'.\n",
-			   name, internal_units); CHKERRQ(ierr);
+			   name.c_str(), internal_units); CHKERRQ(ierr);
 	PISMEnd();
       }
       SETERRQ1(1, "UDUNITS failure: error code = %d", ierr);
@@ -551,7 +558,7 @@ PetscErrorCode NCTool::get_dim_limits(const char name[], double *min, double *ma
 }
 
 //! \brief Reads a coordinate variable.
-PetscErrorCode NCTool::get_dimension(const char name[], vector<double> &result) const {
+PetscErrorCode NCTool::get_dimension(string name, vector<double> &result) const {
   PetscErrorCode ierr;
   int len = 0, varid = -1;
   bool variable_exists = false;
@@ -563,7 +570,7 @@ PetscErrorCode NCTool::get_dimension(const char name[], vector<double> &result) 
     ierr = find_variable(name, &varid, variable_exists);
     if (!variable_exists) {
       ierr = PetscPrintf(com, "PISM ERROR: coordinate variable '%s' does not exist.\n",
-			 name);
+			 name.c_str());
       CHKERRQ(ierr);
       PISMEnd();
     }
@@ -583,10 +590,24 @@ PetscErrorCode NCTool::get_dimension(const char name[], vector<double> &result) 
     utUnit input, internal;
     bool input_has_units;
 
-    if ((strcmp(name, "t") == 0) || (strcmp(name, "time") == 0)) {
+    AxisType dimtype;
+    ierr = inq_dimtype(name, dimtype); CHKERRQ(ierr);
+
+    switch (dimtype) {
+    case T_AXIS:
       // Note that this units specification does *not* have a reference date.
       strcpy(internal_units, "seconds");
-    } else {
+      break;
+    case UNKNOWN_AXIS:
+      {
+        ierr = verbPrintf(3, com,
+                          "PISM WARNING: Can't determine which direction dimension '%s' corresponds to.\n"
+                          "     Assuming that it corresponds to a spatial (not temporal) coordinate.\n",
+                          name.c_str()); CHKERRQ(ierr);
+      }
+    case X_AXIS:
+    case Y_AXIS:
+    case Z_AXIS:
       strcpy(internal_units, "meters");
     }
 
@@ -600,7 +621,7 @@ PetscErrorCode NCTool::get_dimension(const char name[], vector<double> &result) 
       ierr = verbPrintf(3, com,
 			"PISM WARNING: dimensional variable '%s' does not have the units attribute.\n"
 			"     Assuming that it is in '%s'.\n",
-			name, internal_units); CHKERRQ(ierr);
+			name.c_str(), internal_units); CHKERRQ(ierr);
       utCopy(&internal, &input);
     }
 
@@ -611,7 +632,7 @@ PetscErrorCode NCTool::get_dimension(const char name[], vector<double> &result) 
       if (ierr == UT_ECONVERT) {
 	ierr = PetscPrintf(com,
 			   "PISM ERROR: dimensional variable '%s' has the units that are not compatible with '%s'.\n",
-			   name, internal_units); CHKERRQ(ierr);
+			   name.c_str(), internal_units); CHKERRQ(ierr);
 	PISMEnd();
       }
       SETERRQ1(1, "UDUNITS failure: error code = %d", ierr);
@@ -635,14 +656,14 @@ PetscErrorCode NCTool::get_dimension(const char name[], vector<double> &result) 
 /*!
   Missing and empty attributes are treated the same.
  */
-PetscErrorCode NCTool::get_att_text(const int varid, const char name[], string &result) const {
+PetscErrorCode NCTool::get_att_text(const int varid, string name, string &result) const {
   char *str = NULL;
   int ierr, stat, len;
 
   // Read and broadcast the attribute length:
   if (rank == 0) {
     size_t attlen;
-    stat = nc_inq_attlen(ncid, varid, name, &attlen);
+    stat = nc_inq_attlen(ncid, varid, name.c_str(), &attlen);
     if (stat == NC_NOERR)
       len = static_cast<int>(attlen);
     else
@@ -663,7 +684,7 @@ PetscErrorCode NCTool::get_att_text(const int varid, const char name[], string &
 
   // Now read the string and broadcast stat to see if we succeeded:
   if (rank == 0) {
-    stat = nc_get_att_text(ncid, varid, name, str);
+    stat = nc_get_att_text(ncid, varid, name.c_str(), str);
   }
   ierr = MPI_Bcast(&stat, 1, MPI_INT, 0, com); CHKERRQ(ierr);
   
@@ -681,14 +702,14 @@ PetscErrorCode NCTool::get_att_text(const int varid, const char name[], string &
 }
 
 //! Reads a scalar attribute from a NetCDF file.
-PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
+PetscErrorCode NCTool::get_att_double(const int varid, string name,
 				      vector<double> &result) const {
   int ierr, stat, len;
 
   // Read and broadcast the attribute length:
   if (rank == 0) {
     size_t attlen;
-    stat = nc_inq_attlen(ncid, varid, name, &attlen);
+    stat = nc_inq_attlen(ncid, varid, name.c_str(), &attlen);
     if (stat == NC_NOERR)
       len = static_cast<int>(attlen);
     else
@@ -704,7 +725,7 @@ PetscErrorCode NCTool::get_att_double(const int varid, const char name[],
   result.resize(len);
   // Now read the data and broadcast stat to see if we succeeded:
   if (rank == 0) {
-    stat = nc_get_att_double(ncid, varid, name, &result[0]);
+    stat = nc_get_att_double(ncid, varid, name.c_str(), &result[0]);
   }
   ierr = MPI_Bcast(&stat, 1, MPI_INT, 0, com); CHKERRQ(ierr);
   
@@ -770,12 +791,12 @@ PetscErrorCode NCTool::inq_nattrs(int varid, int &N) const {
 }
 
 //! Get the attribute type.
-PetscErrorCode NCTool::inq_att_type(int varid, const char name[], nc_type &result) const {
+PetscErrorCode NCTool::inq_att_type(int varid, string name, nc_type &result) const {
   int stat, type;
   nc_type tmp;
 
   if (rank == 0) {
-    stat = nc_inq_atttype(ncid, varid, name, &tmp); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_inq_atttype(ncid, varid, name.c_str(), &tmp); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     type = static_cast<int>(tmp);
   } // end of if(rank == 0)
   stat = MPI_Bcast(&type, 1, MPI_INT, 0, com); CHKERRQ(stat);
@@ -855,14 +876,14 @@ PetscErrorCode NCTool::inq_unlimdim(int &unlimdimid) const {
 }
 
 //! Moves \c filename to \c filename~ if \c filename exists.
-PetscErrorCode NCTool::move_if_exists(const char filename[]) {
+PetscErrorCode NCTool::move_if_exists(string filename) {
   PetscErrorCode ierr;
 
   if (rank != 0)
     return 0;
 
   // Check if the file exists:
-  if (FILE *f = fopen(filename, "r")) {
+  if (FILE *f = fopen(filename.c_str(), "r")) {
     fclose(f);
   } else {
     return 0;
@@ -871,15 +892,15 @@ PetscErrorCode NCTool::move_if_exists(const char filename[]) {
   string tmp = filename;
   tmp = tmp + "~";
       
-  ierr = rename(filename, tmp.c_str());
+  ierr = rename(filename.c_str(), tmp.c_str());
   if (ierr != 0) {
     ierr = verbPrintf(1, com, "PISM ERROR: can't move '%s' to '%s'.\n",
-                      filename, tmp.c_str());
+                      filename.c_str(), tmp.c_str());
     PISMEnd();
   }
   ierr = verbPrintf(2, com, 
                     "PISM WARNING: output file '%s' already exists. Moving it to '%s'.\n",
-                    filename, tmp.c_str());
+                    filename.c_str(), tmp.c_str());
 
   return 0;
 }
@@ -914,6 +935,141 @@ PetscErrorCode NCTool::data_mode() const {
 
   def_mode = false;
 
+  return 0;
+}
+
+PetscErrorCode NCTool::set_attrs(int varid, map<string,string> attrs) const {
+  PetscErrorCode ierr;
+
+  if (rank != 0) return 0;
+
+  ierr = define_mode(); CHKERRQ(ierr);
+
+  map<string,string>::iterator j = attrs.begin();
+  while(j != attrs.end()) {
+    string name = j->first,
+      value = j->second;
+
+    ierr = nc_put_att_text(ncid, varid, name.c_str(), value.size(), value.c_str());
+    check_err(ierr,__LINE__,__FILE__);
+
+    ++j;
+  }
+
+  return 0;
+}
+
+//! \brief Creates a dimension and the corresponding coordinate variable; sets
+//! string sttributes.
+PetscErrorCode NCTool::create_dimension(string name, int length, map<string,string> attrs,
+                                        int &dimid, int &varid) const {
+  PetscErrorCode ierr;
+
+  if (rank != 0) return 0;
+
+  ierr = define_mode(); CHKERRQ(ierr);
+
+  ierr = nc_def_dim(ncid, name.c_str(), length, &dimid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc_def_var(ncid, name.c_str(), NC_DOUBLE, 1, &dimid, &varid); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+
+  ierr = set_attrs(varid, attrs); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief Determines what kind of dimension dimid refers to.
+/*!
+ * Checks units for compatibility with "seconds", then checks the
+ * "standard_name" attribute, then the "axis" attribute, then the variable
+ * name, which can be "x", "X" or starting with "x" or "X" (or "y", etc).
+ */
+PetscErrorCode NCTool::inq_dimtype(string name, AxisType &result) const {
+  PetscErrorCode ierr;
+  double slope, intercept;
+  string axis, standard_name, units;
+  utUnit tmp_units, ut_units;
+  int varid;
+  bool exists;
+
+  ierr = find_variable(name, &varid, exists); CHKERRQ(ierr);
+
+  if (!exists) {
+    PetscPrintf(com, "ERROR: coordinate variable '%s' is not present!\n", name.c_str());
+    PISMEnd();
+  }
+
+  ierr = get_att_text(varid, "axis", axis); CHKERRQ(ierr);
+  ierr = get_att_text(varid, "standard_name", standard_name); CHKERRQ(ierr);
+  ierr = get_att_text(varid, "units", units); CHKERRQ(ierr);
+
+  // check the units attribute:
+  bool has_time_units = false;
+
+  // check if it has units compatible with "seconds":
+  ierr = utScan(units.c_str(), &ut_units);
+  if (ierr != 0) {
+    ierr = PetscPrintf(com, "ERROR: units specification '%s' is unknown or invalid.\n",
+		       units.c_str());
+    PISMEnd();
+  }
+
+  utScan("seconds", &tmp_units);
+  ierr = utConvert(&ut_units, &tmp_units, &slope, &intercept);
+  if (ierr == 0) has_time_units = true;
+
+  if (has_time_units) {
+    result = T_AXIS;
+    return 0;
+  }
+
+  // check the standard_name attribute:
+  if (standard_name == "time") {
+    result = T_AXIS;
+    return 0;
+  } else if (standard_name == "projection_x_coordinate") {
+    result = X_AXIS;
+    return 0;
+  } else if (standard_name == "projection_y_coordinate") {
+    result = Y_AXIS;
+    return 0;
+  }
+
+  // check the axis attribute:
+  if (axis == "T" || axis == "t") {
+    result = T_AXIS;
+    return 0;
+  } else if (axis == "X" || axis == "x") {
+    result = X_AXIS;
+    return 0;
+  } else if (axis == "Y" || axis == "y") {
+    result = Y_AXIS;
+    return 0;
+  } else if (axis == "Z" || axis == "z") {
+    result = Z_AXIS;
+    return 0;
+  }
+
+  // check the variable name:
+  if (name == "x" || name == "X" ||
+      name.find("x") == 0 || name.find("X") == 0) {
+    result = X_AXIS;
+    return 0;
+  } else if (name == "y" || name == "Y" ||
+             name.find("y") == 0 || name.find("Y") == 0) {
+    result = Y_AXIS;
+    return 0;
+  } else if (name == "z" || name == "Z" ||
+             name.find("z") == 0 || name.find("Z") == 0) {
+    result = Z_AXIS;
+    return 0;
+  } else if (name == "t" || name == "T" ||
+             name.find("t") == 0 || name.find("T") == 0) {
+    result = T_AXIS;
+    return 0;
+  }
+
+  // we have no clue:
+  result = UNKNOWN_AXIS;
   return 0;
 }
 

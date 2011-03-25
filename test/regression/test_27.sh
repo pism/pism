@@ -4,7 +4,7 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-test="Test #27: comparing restart: \"-i\" vs \"-boot_file\" & \"-regrid_file\"."
+echo "Test #27: comparing restart: \"-i\" vs \"-boot_file\" & \"-regrid_file\"."
 # The list of files to delete when done.
 files="foo.nc bar.nc"
 
@@ -13,7 +13,7 @@ opts="-Mx 21 -My 21 -Mz 31 -Lz 4000 $bedrock -o_size small"
 
 rm -f $files
 
-set -e
+set -e -x
 
 # create foo.nc (at about 6500 years we get some basal melting...)
 $MPIEXEC -n 2 $PISM_PATH/pisms -no_cold -y 6500 $opts -o foo.nc

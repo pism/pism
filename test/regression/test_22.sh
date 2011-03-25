@@ -5,7 +5,7 @@ MPIEXEC=$2
 PISM_SOURCE_DIR=$3
 
 # Test name:
-test="Test #22: EISMINT-Ross experiment regression."
+echo "Test #22: EISMINT-Ross experiment regression."
 # The list of files to delete when done.
 files="ross.nc riggs.nc rossComputed.nc ross.txt"
 

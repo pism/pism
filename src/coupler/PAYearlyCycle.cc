@@ -69,7 +69,7 @@ PetscErrorCode PAYearlyCycle::init(PISMVars &vars) {
 
   ierr = precip.set_attr("history", precip_history); CHKERRQ(ierr);
 
-  airtemp_var.init("airtemp", grid, GRID_2D);
+  airtemp_var.init_2d("airtemp", grid);
   airtemp_var.set_string("pism_intent", "diagnostic");
   airtemp_var.set_string("long_name",
                          "snapshot of the near-surface air temperature");

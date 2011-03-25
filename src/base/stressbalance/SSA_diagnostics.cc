@@ -28,8 +28,8 @@ SSA_taud::SSA_taud(SSA *m, IceGrid &g, PISMVars &my_vars)
   dof = 2;
   vars.resize(dof);
   // set metadata:
-  vars[0].init("taud_x", grid, GRID_2D);
-  vars[1].init("taud_y", grid, GRID_2D);
+  vars[0].init_2d("taud_x", grid);
+  vars[1].init_2d("taud_y", grid);
   
   set_attrs("X-component of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);

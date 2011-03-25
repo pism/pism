@@ -83,24 +83,13 @@ IceGrid::IceGrid(MPI_Comm c, PetscMPIInt r, PetscMPIInt s,
   Mbz = static_cast<PetscInt>(config.get("grid_Mbz"));
 
   Nx = Ny = 0;			// will be set to a correct value in createDA()
-  procs_x = procs_y = NULL;
-
   initial_Mz = 0;		// will be set to a correct value in
 				// IceModel::check_maximum_thickness()
 
   max_stencil_width = 2;
   da2 = PETSC_NULL;
-  zlevels = NULL;
-  zblevels = NULL;
 
-  zlevels_fine = NULL;
-  zblevels_fine = NULL;
   Mz_fine = Mbz_fine = 0;
-
-  ice_storage2fine = NULL;
-  ice_fine2storage = NULL;
-  bed_storage2fine = NULL;
-  bed_fine2storage = NULL;
 
   compute_vertical_levels();
   compute_horizontal_spacing();
@@ -113,18 +102,6 @@ IceGrid::~IceGrid() {
   if (da2 != PETSC_NULL) {
     DADestroy(da2);
   }
-  delete [] zlevels;
-  delete [] zblevels;
-  delete [] zlevels_fine;
-  delete [] zblevels_fine;
-  
-  delete [] ice_storage2fine;
-  delete [] ice_fine2storage;
-  delete [] bed_storage2fine;
-  delete [] bed_fine2storage;
-
-  delete [] procs_x;
-  delete [] procs_y;
 
   delete profiler;
 }
@@ -176,8 +153,7 @@ PetscErrorCode  IceGrid::compute_ice_vertical_levels() {
   }
 
   // Fill the levels in the ice:
-  delete [] zlevels;
-  zlevels = new PetscScalar[Mz];
+  zlevels.resize(Mz);
 
   switch (ice_vertical_spacing) {
   case EQUAL: {
@@ -230,8 +206,7 @@ PetscErrorCode IceGrid::compute_bed_vertical_levels() {
   }
 
   // Fill the bedrock levels:
-  delete [] zblevels;
-  zblevels = new PetscScalar[Mbz];
+  zblevels.resize(Mbz);
 
   if (Mbz == 1) {		// we have no bedrock
     zblevels[0] = 0.0;
@@ -418,11 +393,9 @@ void IceGrid::compute_nprocs() {
  * Expects grid.Nx and grid.Ny to be valid.
  */
 void IceGrid::compute_ownership_ranges() {
-  delete [] procs_x;
-  delete [] procs_y;
 
-  procs_x = new PetscInt[Nx];
-  procs_y = new PetscInt[Ny];
+  procs_x.resize(Nx);
+  procs_y.resize(Ny);
   
   for (PetscInt i=0; i < Nx; i++) {
     procs_x[i] = Mx/Nx + ((Mx % Nx) > i);
@@ -484,7 +457,7 @@ PetscErrorCode IceGrid::createDA() {
                     My, Mx,
 		    Ny, Nx,
 		    1, max_stencil_width, // dof, stencil width
-                    procs_y, procs_x,
+                    procs_y.data(), procs_x.data(),
 		    &da2);
   if (ierr != 0) {
     PetscErrorCode ierr2;
@@ -556,42 +529,31 @@ PetscErrorCode IceGrid::createDA(PetscInt my_procs_x, PetscInt my_procs_y,
 }
 
 //! Sets grid vertical levels, Mz, Mbz, Lz and Lbz. Checks input for consistency.
-PetscErrorCode IceGrid::set_vertical_levels(int new_Mz, int new_Mbz, double *new_zlevels, double *new_zblevels) {
+PetscErrorCode IceGrid::set_vertical_levels(vector<double> new_zlevels, vector<double> new_zblevels) {
   PetscErrorCode ierr;
 
-  if (new_Mz < 2) {
+  if (new_zlevels.size() < 2) {
     SETERRQ(1, "IceGrid::set_vertical_levels(): Mz has to be at least 2.");
   }
-  if (new_Mbz < 1) {
+  if (new_zblevels.size() < 1) {
     SETERRQ(2, "IceGrid::set_vertical_levels(): Mbz has to be at least 1.");
   }
 
-  if ( (!is_increasing(new_Mz, new_zlevels)) || (PetscAbs(new_zlevels[0]) > 1.0e-10) ) {
+  if ( (!is_increasing(new_zlevels)) || (PetscAbs(new_zlevels[0]) > 1.0e-10) ) {
     SETERRQ(3, "IceGrid::set_vertical_levels(): invalid zlevels; must be strictly increasing and start with z=0.");
   }
 
-  if ( (!is_increasing(new_Mbz, new_zblevels)) || (PetscAbs(new_zblevels[new_Mbz-1]) > 1.0e-10) ) {
+  if ( (!is_increasing(new_zblevels)) || (PetscAbs(new_zblevels.back()) > 1.0e-10) ) {
     SETERRQ(3, "rescale: zblevels invalid; must be strictly increasing and end with z=0\n");
   }
 
-  Mz  =  new_Mz;
-  Mbz =  new_Mbz;
-  Lz  =  new_zlevels[Mz - 1];
-  Lbz = -new_zblevels[0];
+  Mz  =  new_zlevels.size();
+  Mbz =  new_zblevels.size();
+  Lz  =  new_zlevels.back();
+  Lbz = -new_zblevels.front();
 
-  // Fill the levels in the ice:
-  delete[] zlevels;
-  zlevels = new PetscScalar[Mz];
-  for (int j = 0; j < Mz; j++)
-    zlevels[j] = (PetscScalar) new_zlevels[j];
-  zlevels[0] = 0.0;		// make sure zlevels start with zero
-
-  // Fill the bedrock levels:
-  delete[] zblevels;
-  zblevels = new PetscScalar[Mbz];
-  for (int j = 0; j < Mbz; j++)
-    zblevels[j] = (PetscScalar) new_zblevels[j];
-  zblevels[Mbz-1] = 0.0;	// make sure zblevels end with zero
+  zlevels  = new_zlevels;
+  zblevels = new_zblevels;
 
   get_dzMIN_dzMAX_spacingtype();
   ierr = compute_fine_vertical_grid(); CHKERRQ(ierr);
@@ -652,9 +614,6 @@ PetscErrorCode IceGrid::compute_horizontal_spacing() {
 PetscErrorCode IceGrid::compute_fine_vertical_grid() {
   PetscErrorCode ierr;
 
-  delete [] zlevels_fine;
-  delete [] zblevels_fine;
-
   // the smallest of the spacings used in ice and bedrock:
   PetscScalar my_dz_fine = PetscMin(dzMIN, dzbMIN);
 
@@ -681,8 +640,8 @@ PetscErrorCode IceGrid::compute_fine_vertical_grid() {
   dz_fine = my_dz_fine;
 
   // allocate arrays:
-  zlevels_fine  = new PetscScalar[Mz_fine];
-  zblevels_fine = new PetscScalar[Mbz_fine];
+  zlevels_fine.resize(Mz_fine);
+  zblevels_fine.resize(Mbz_fine);
 
   // compute levels in the ice:
   for (PetscInt k = 0; k < Mz_fine; k++)
@@ -705,8 +664,7 @@ PetscErrorCode IceGrid::init_interpolation() {
   PetscInt m;
 
   // ice: storage -> fine
-  delete[] ice_storage2fine;
-  ice_storage2fine = new PetscInt[Mz_fine];
+  ice_storage2fine.resize(Mz_fine);
   m = 0;
   for (PetscInt k = 0; k < Mz_fine; k++) {
     if (zlevels_fine[k] >= Lz) {
@@ -722,8 +680,7 @@ PetscErrorCode IceGrid::init_interpolation() {
   }
   
   // ice: fine -> storage
-  delete[] ice_fine2storage;
-  ice_fine2storage = new PetscInt[Mz];
+  ice_fine2storage.resize(Mz);
   m = 0;
   for (PetscInt k = 0; k < Mz; k++) {
     while (zlevels_fine[m + 1] < zlevels[k]) {
@@ -734,8 +691,7 @@ PetscErrorCode IceGrid::init_interpolation() {
   }
 
   // bed: storage -> fine
-  delete[] bed_storage2fine;
-  bed_storage2fine = new PetscInt[Mbz_fine];
+  bed_storage2fine.resize(Mbz_fine);
   m = 0;
   if (Mbz > 1) {
     for (PetscInt k = 0; k < Mbz_fine; k++) {
@@ -750,8 +706,7 @@ PetscErrorCode IceGrid::init_interpolation() {
   }
 
   // bed: fine -> storage
-  delete[] bed_fine2storage;
-  bed_fine2storage = new PetscInt[Mbz];
+  bed_fine2storage.resize(Mbz);
   m = 0;
   if (Mbz_fine > 1) {
     for (PetscInt k = 0; k < Mbz; k++) {

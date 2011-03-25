@@ -25,7 +25,8 @@
 class grid_info {
 public:
   // dimension lengths
-  int t_len, x_len, y_len, z_len, zb_len;
+  int t_len, x_len, y_len, z_len,
+    zb_len;                 // DEPRECATED
   double time,			//!< current time (seconds)
     x0,				//!< x-coordinate of the grid center
     y0,				//!< y-coordinate of the grid center
@@ -35,8 +36,10 @@ public:
     x_max,			//!< [x_min, x_max] is the X extent of the grid
     y_min,			//!< [y_min, y_max] is the Y extent of the grid
     y_max,			//!< [y_min, y_max] is the Y extent of the grid
-    zb_min,			//!< minimal value of the zb dimension
+    zb_min,			//!< minimal value of the zb dimension # DEPRECATED
+    z_min,			//!< minimal value of the z dimension
     z_max;			//!< maximal value of the z dimension
+  vector<double> zlevels;       //!< vertical levels
   grid_info();
   PetscErrorCode print(MPI_Comm com, int threshold = 3);
 };
@@ -75,23 +78,17 @@ The arrays \c start and \c count have 5 integer entries, corresponding to the di
 class LocalInterpCtx {
 public:
   double fstart[3], delta[3];
-  int start[5], count[5];    // Indices in netCDF file.
+  int start[4], count[4];    // Indices in netCDF file.
   double *a;		     //!< temporary buffer
   int a_len;		     //!< the size of the buffer
-  int nz,		     //!< number of z-levels
-    nzb;		     //!< number of zb-levels 
-  double *zlevs, *zblevs;
-  bool no_regrid_ice, no_regrid_bedrock, report_range;
+  vector<double> zlevels;
+  bool report_range;
   MPI_Comm com;			//!< MPI Communicator (for printing, mostly)
   PetscMPIInt rank;		//!< MPI rank, to allocate a_raw on proc 0 only
 
 public:
-  LocalInterpCtx(grid_info g,
-                 const double zlevsIN[], const double zblevsIN[], IceGrid &grid);
+  LocalInterpCtx(grid_info g, IceGrid &grid);
   ~LocalInterpCtx();
-  int kBelowHeight(const double height);
-  int kbBelowHeight(const double elevation);
-  PetscErrorCode printGrid();
   PetscErrorCode printArray();
 protected:
 };

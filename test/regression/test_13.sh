@@ -4,7 +4,7 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-test="Test #13: temperature continuity at ice-bed interface (cold case)."
+echo "Test #13: temperature continuity at ice-bed interface (cold case)."
 # The list of files to delete when done.
 files="foo.nc temp.nc litho_temp.nc"
 

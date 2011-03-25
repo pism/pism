@@ -4,7 +4,7 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-test="Test #26: Schoof (2003) bed roughness SIA parameterization regression."
+echo "Test #26: Schoof (2003) bed roughness SIA parameterization regression."
 # The list of files to delete when done.
 files="brout.txt diff.txt"
 

@@ -401,7 +401,7 @@ PetscErrorCode grid_setup(IceGrid &grid) {
     }
 
     ierr = pio.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-    ierr = pio.get_grid_info_2d(g); CHKERRQ(ierr);
+    ierr = pio.get_grid_info("land_ice_thickness", g); CHKERRQ(ierr);
     ierr = pio.close(); CHKERRQ(ierr); 
     grid.Mx = g.x_len;
     grid.My = g.y_len;

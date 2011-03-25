@@ -132,7 +132,7 @@ PetscErrorCode SSA::allocate() {
                     grid.My, grid.Mx,
                     grid.Ny, grid.Nx,
                     dof, stencil_width,
-                    grid.procs_y, grid.procs_x,
+                    grid.procs_y.data(), grid.procs_x.data(),
                     &SSADA); CHKERRQ(ierr);
 
   ierr = DACreateGlobalVector(SSADA, &SSAX); CHKERRQ(ierr);

@@ -4,7 +4,7 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-test="Test #21: verif test K regression: cold ice method, bedrock thermal layer."
+echo "Test #21: verif test K regression: cold ice method, bedrock thermal layer."
 # The list of files to delete when done.
 files="test-K-out.txt verify.nc verify.nc~"
 

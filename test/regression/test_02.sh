@@ -3,17 +3,17 @@
 PISM_PATH=$1
 MPIEXEC=$2
 
-test="Test # 2: pismv exact processor independence (SIA only; test G)."
+echo "Test # 2: pismv exact processor independence (SIA only; test G)."
 files="foo1.nc foo2.nc foo3.nc foo4.nc foo6.nc"
 
-set -e
+set -e -x
 
 NRANGE="1 2 3 4 6"
 
 # Create the files:
 for NN in $NRANGE;
 do 
-    $MPIEXEC -n $NN $PISM_PATH/pismv -test G -Mx 61 -My 61 -Mz 61 -y 1 -verbose 1 -o foo$NN.nc 
+    $MPIEXEC -n $NN $PISM_PATH/pismv -test G -Mx 40 -My 50 -Mz 60 -y 1 -verbose 1 -o foo$NN.nc 
 done
 
 set +e

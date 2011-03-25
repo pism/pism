@@ -85,7 +85,7 @@ IceModel_hardav::IceModel_hardav(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("hardav", grid, GRID_2D);
+  vars[0].init_2d("hardav", grid);
 
   const PetscScalar power = 1.0 / model->ice->exponent();
   char unitstr[TEMPORARY_STRING_LENGTH];
@@ -117,7 +117,7 @@ PetscErrorCode IceModel_hardav::compute(IceModelVec* &output) {
       const PetscScalar H = model->vH(i,j);
       if (H > 0.0) {
         (*result)(i,j) = model->ice->averagedHardness_from_enth(H, grid.kBelowHeight(H),
-                                                             grid.zlevels, Eij);
+                                                                grid.zlevels.data(), Eij);
       } else { // put negative value below valid range
         (*result)(i,j) = fillval;
       }
@@ -136,7 +136,7 @@ IceModel_rank::IceModel_rank(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("rank", grid, GRID_2D);
+  vars[0].init_2d("rank", grid);
   
   set_attrs("processor rank", "", "", "", 0);
   vars[0].time_independent = true;
@@ -164,7 +164,7 @@ IceModel_bwp::IceModel_bwp(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("bwp", grid, GRID_2D);
+  vars[0].init_2d("bwp", grid);
   set_attrs("subglacial (pore) water pressure", "", "Pa", "Pa", 0);
   vars[0].set("_FillValue", -0.01);
   vars[0].set("valid_min", 0);
@@ -227,7 +227,7 @@ IceModel_cts::IceModel_cts(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("cts", grid, GRID_3D);
+  vars[0].init_3d("cts", grid, g.zlevels);
   
   set_attrs("cts = E/E_s(p), so cold-temperate transition surface is at cts = 1", "",
             "", "", 0);
@@ -251,7 +251,7 @@ IceModel_dhdt::IceModel_dhdt(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("dhdt", grid, GRID_2D);
+  vars[0].init_2d("dhdt", grid);
   
   set_attrs("rate of change of surface elevation", "",
             "m s-1", "m year-1", 0);
@@ -286,7 +286,7 @@ IceModel_proc_ice_area::IceModel_proc_ice_area(IceModel *m, IceGrid &g, PISMVars
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("proc_ice_area", grid, GRID_2D);
+  vars[0].init_2d("proc_ice_area", grid);
   
   set_attrs("number of cells containing ice in a processor's domain", "",
             "", "", 0);
@@ -329,7 +329,7 @@ IceModel_temp::IceModel_temp(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("temp", grid, GRID_3D);
+  vars[0].init_3d("temp", grid, g.zlevels);
   
   set_attrs("ice temperature", "land_ice_temperature", "K", "K", 0);
   vars[0].set("valid_min", 0);
@@ -386,7 +386,7 @@ IceModel_temp_pa::IceModel_temp_pa(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("temp_pa", grid, GRID_3D);
+  vars[0].init_3d("temp_pa", grid, g.zlevels);
   
   set_attrs("pressure-adjusted ice temperature (degrees above pressure-melting point)", "",
             "deg_C", "deg_C", 0);
@@ -453,7 +453,7 @@ IceModel_temppabase::IceModel_temppabase(IceModel *m, IceGrid &g, PISMVars &my_v
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("temppabase", grid, GRID_2D);
+  vars[0].init_2d("temppabase", grid);
   
   set_attrs("pressure-adjusted ice temperature at the base of ice", "",
             "degrees Celsius", "degrees Celsius", 0);
@@ -519,7 +519,7 @@ IceModel_enthalpysurf::IceModel_enthalpysurf(IceModel *m, IceGrid &g, PISMVars &
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("enthalpysurf", grid, GRID_2D);
+  vars[0].init_2d("enthalpysurf", grid);
   
   set_attrs("ice enthalpy at 1m below the ice surface", "",
             "J kg-1", "J kg-1", 0);
@@ -567,7 +567,7 @@ IceModel_enthalpybase::IceModel_enthalpybase(IceModel *m, IceGrid &g, PISMVars &
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("enthalpybase", grid, GRID_2D);
+  vars[0].init_2d("enthalpybase", grid);
   
   set_attrs("ice enthalpy at the base of ice", "",
             "J kg-1", "J kg-1", 0);
@@ -594,7 +594,7 @@ IceModel_tempbase::IceModel_tempbase(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("tempbase", grid, GRID_2D);
+  vars[0].init_2d("tempbase", grid);
   
   set_attrs("ice temperature at the base of ice", "",
             "K", "K", 0);
@@ -648,7 +648,7 @@ IceModel_tempsurf::IceModel_tempsurf(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("tempsurf", grid, GRID_2D);
+  vars[0].init_2d("tempsurf", grid);
   
   set_attrs("ice temperature at 1m below the ice surface", "",
             "K", "K", 0);
@@ -702,7 +702,7 @@ IceModel_liqfrac::IceModel_liqfrac(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("liqfrac", grid, GRID_3D);
+  vars[0].init_3d("liqfrac", grid, g.zlevels);
   
   set_attrs("liquid water fraction in ice (between 0 and 1)", "",
             "1", "1", 0);
@@ -732,7 +732,7 @@ IceModel_tempicethk::IceModel_tempicethk(IceModel *m, IceGrid &g, PISMVars &my_v
   PetscScalar fill_value = -0.01;
 
   // set metadata:
-  vars[0].init("tempicethk", grid, GRID_2D);
+  vars[0].init_2d("tempicethk", grid);
   
   set_attrs("temperate ice thickness (total column content)", "",
             "m", "m", 0);
@@ -791,7 +791,7 @@ IceModel_tempicethk_basal::IceModel_tempicethk_basal(IceModel *m, IceGrid &g, PI
   PetscScalar fill_value = -0.01;
   
   // set metadata:
-  vars[0].init("tempicethk_basal", grid, GRID_2D);
+  vars[0].init_2d("tempicethk_basal", grid);
   
   set_attrs("thickness of the basal layer of temperate ice", "",
             "m", "m", 0);
@@ -886,7 +886,7 @@ IceModel_new_mask::IceModel_new_mask(IceModel *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<IceModel>(m, g, my_vars) {
   
   // set metadata:
-  vars[0].init("new_mask", grid, GRID_2D);
+  vars[0].init_2d("new_mask", grid);
   
   vector<double> values(3);
   values[0] = 1;

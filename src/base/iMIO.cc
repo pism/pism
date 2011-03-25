@@ -480,25 +480,6 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
         vars.insert("enthalpy");
     }
 
-    ierr = nc.open_for_reading(filename.c_str());
-
-    grid_info g;
-    // Note that after this call g.z_len and g.zb_len are zero if the
-    // corresponding dimension does not exist.
-    ierr = nc.get_grid_info(g); CHKERRQ(ierr);
-
-    double *zlevs = NULL, *zblevs = NULL; // NULLs correspond to 2D-only regridding
-    if ((g.z_len != 0) && (g.zb_len != 0)) {
-      ierr = nc.get_vertical_dims(zlevs, zblevs); CHKERRQ(ierr);
-    } else {
-      ierr = verbPrintf(2, grid.com,
-                        "PISM WARNING: at least one of 'z' and 'zb' is absent in '%s'.\n"
-                        "              3D regridding is disabled.\n",
-                        filename.c_str());
-      CHKERRQ(ierr);
-    }
-    ierr = nc.close(); CHKERRQ(ierr);
-
     set<string>::iterator i;
     for (i = vars.begin(); i != vars.end(); ++i) {
       IceModelVec *v = variables.get(*i);
@@ -520,8 +501,6 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
 
     }
 
-    // Note that deleting a NULL pointer is safe.
-    delete [] zlevs;  delete [] zblevs;
     return 0;
   }
 

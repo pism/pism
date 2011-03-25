@@ -43,7 +43,7 @@ PetscErrorCode NCVariable::set_units(string new_units) {
   strings["glaciological_units"] = new_units;
 
   /*!
-    \note This method finds the string "since" in the units_string and
+    \note This code finds the string "since" in the units_string and
     terminates it on the first 's' of "since", if this sub-string was found.
     This is done to ignore the reference date in the time units string (the
     reference date specification always starts with this word).
@@ -120,6 +120,11 @@ PetscErrorCode NCSpatialVariable::reset() {
   time_independent = false;
   strings["coordinates"] = "lat lon";
   strings["grid_mapping"] = "mapping";
+
+  dimensions.clear();
+  dimensions["x"] = "x";
+  dimensions["y"] = "y";
+  dimensions["t"] = "t";
   return 0;
 }
 
@@ -128,13 +133,31 @@ NCSpatialVariable::NCSpatialVariable() {
   reset();
 }
 
+void NCSpatialVariable::init_2d(string name, IceGrid &g) {
+  vector<double> z(1);
+
+  init_3d(name, g, z);
+}
+
 //! \brief Initialize a NCSpatialVariable instance.
-void NCSpatialVariable::init(string name, IceGrid &g, GridType d) {
+void NCSpatialVariable::init_3d(string name, IceGrid &g, vector<double> &z_levels) {
   NCVariable::init(name, g.com, g.rank);
   short_name = name;
   grid = &g;
-  dims = d;
+
+  nlevels = PetscMax(z_levels.size(), 1); // to make sure we have at least one level
+
+  zlevels = z_levels;
+  
+  if (nlevels > 1)
+    dimensions["z"] = "z";      // default; can be overridder easily
 }
+
+void NCSpatialVariable::set_levels(const vector<double> &levels) {
+  zlevels = levels;
+  nlevels = zlevels.size();
+}
+
 
 //! Read a variable from a file into a \b global Vec v.
 /*! This also converts the data from input units to internal units if needed.
@@ -167,7 +190,7 @@ PetscErrorCode NCSpatialVariable::read(const char filename[], unsigned int time,
     PISMEnd();
   }
 
-  ierr = nc.get_var(varid, v, dims, time); CHKERRQ(ierr);  
+  ierr = nc.get_var(varid, v, nlevels, time); CHKERRQ(ierr);  
 
   bool input_has_units;
   utUnit input_units;
@@ -220,7 +243,7 @@ PetscErrorCode NCSpatialVariable::write(const char filename[], nc_type nctype,
   }
 
   // Actually write data:
-  ierr = nc.put_var(varid, v, dims); CHKERRQ(ierr);  
+  ierr = nc.put_var(varid, v, nlevels); CHKERRQ(ierr);  
   
   if (write_in_glaciological_units) {
     ierr = change_units(v, &glaciological_units, &units); CHKERRQ(ierr); // restore the units
@@ -291,7 +314,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
       CHKERRQ(ierr);
     }
   } else {			// the variable was found successfully
-    ierr = nc.regrid_var(varid, dims, lic, v); CHKERRQ(ierr);
+    ierr = nc.regrid_var(varid, zlevels, lic, v); CHKERRQ(ierr);
 
     // Now we need to get the units string from the file and convert the units,
     // because check_range and report_range expect the data to be in PISM (SI)
@@ -639,46 +662,43 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type n
     return 0;
   }
 
+  string x = dimensions["x"],
+    y = dimensions["y"],
+    z = dimensions["z"],
+    t = dimensions["t"];
+
   stat = nc.define_mode(); CHKERRQ(stat); 
 
   if (!time_independent) {
-    stat = nc_inq_dimid(ncid, "t", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    stat = nc_inq_dimid(ncid, t.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
   }
 
   // Use t,x,y,z(zb) variable order: it is weird, but matches in-memory storage
   // order and is *a lot* faster.
 #if (PISM_VARIABLE_ORDER == 1)
-  stat = nc_inq_dimid(ncid, "x", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_inq_dimid(ncid, "y", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 #endif
 
   // Use the t,y,x,z variable order: also weird, somewhat slower, but 2D fields
   // are stored in the "natural" order.
 #if  (PISM_VARIABLE_ORDER == 2)
-  stat = nc_inq_dimid(ncid, "y", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_inq_dimid(ncid, "x", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 #endif
 
-  switch (dims) {
-  case GRID_3D:
-    stat = nc_inq_dimid(ncid, "z", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  if (z != "") {
+    stat = nc_inq_dimid(ncid, z.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
     ndims = 4 - time_independent;
-    break;
-  case GRID_3D_BEDROCK:
-    stat = nc_inq_dimid(ncid, "zb", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    ndims = 4 - time_independent;
-    break;
-  case GRID_2D:
-  default:
+  } else {
     ndims = 3 - time_independent;
-    break;
   }
 
   // Use the t,z(zb),y,x variables order: more natural for plotting and post-processing,
   // but requires transposing data while writing and is *a lot* slower.
 #if (PISM_VARIABLE_ORDER == 3)
-  stat = nc_inq_dimid(ncid, "y", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_inq_dimid(ncid, "x", &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  stat = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
 #endif
     
   stat = nc_def_var(ncid, short_name.c_str(), nctype, ndims, dimids, &varid);

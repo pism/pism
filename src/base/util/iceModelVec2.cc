@@ -672,8 +672,6 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
 
   dof  = my_dof;
   grid = &my_grid;
-  dims = GRID_2D;
-
 
   if ((dof != 1) || (stencil_width > grid->max_stencil_width)) {
     da_stencil_width = stencil_width;
@@ -694,7 +692,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
 
   vars.resize(dof);
   for (int j = 0; j < dof; ++j)
-    vars[j].init(my_name, my_grid, GRID_2D);
+    vars[j].init_2d(my_name, my_grid);
 
   //  ierr = this->set(GSL_NAN); CHKERRQ(ierr);
 
@@ -709,8 +707,8 @@ PetscErrorCode  IceModelVec2Stag::create(IceGrid &my_grid, const char my_short_n
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, local,
 					     stencil_width, dof); CHKERRQ(ierr);
   string s_name = name;
-  vars[0].init(s_name + "[0]", my_grid, GRID_2D);
-  vars[1].init(s_name + "[1]", my_grid, GRID_2D);
+  vars[0].init_2d(s_name + "[0]", my_grid);
+  vars[1].init_2d(s_name + "[1]", my_grid);
 
   return 0;
 }

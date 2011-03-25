@@ -4,7 +4,7 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-test="Test #31: testing whether runtime viewers break or not."
+echo "Test #31: testing whether runtime viewers break or not."
 # The list of files to delete when done.
 files="simp_exper.nc"
 

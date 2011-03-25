@@ -131,7 +131,7 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
              CHKERRQ(ierr);
   }
 
-  airtemp_var.init("airtemp_plus_forcing", grid, GRID_2D);
+  airtemp_var.init_2d("airtemp_plus_forcing", grid);
   airtemp_var.set_string("pism_intent", "diagnostic");
   airtemp_var.set_string("long_name",
                          "snapshot of the near-surface air temperature (including forcing)");

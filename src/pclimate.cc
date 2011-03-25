@@ -47,7 +47,7 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
   PISMIO nc(&grid);
-  ierr = nc.get_grid(filename.c_str()); CHKERRQ(ierr);
+  ierr = nc.get_grid("land_ice_thickness", filename.c_str()); CHKERRQ(ierr);
   grid.compute_nprocs();
   grid.compute_ownership_ranges();
   ierr = grid.createDA(); CHKERRQ(ierr);  

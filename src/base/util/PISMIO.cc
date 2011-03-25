@@ -30,45 +30,71 @@ PISMIO::PISMIO(IceGrid *my_grid)
                                                         "time spent sending data to processor 0");
 }
 
-//! Read the first and last values, and the lengths, of the x,y,z,zb dimensions from a NetCDF file.  Read the last t.
-PetscErrorCode PISMIO::get_grid_info(grid_info &g) const {
+//! Read the first and last values, and the lengths, of the x,y,z dimensions from a NetCDF file. Read the last t.
+PetscErrorCode PISMIO::get_grid_info(string name, grid_info &g) const {
   PetscErrorCode ierr;
 
-  ierr = get_grid_info_2d(g); CHKERRQ(ierr);
+  vector<int> dimids;
+  int varid;
+  bool exists;
 
-  ierr = get_dim_length("z",  &g.z_len);  CHKERRQ(ierr);
-  ierr = get_dim_length("zb", &g.zb_len); CHKERRQ(ierr);
-  ierr = get_dim_limits("zb", &g.zb_min, NULL);     CHKERRQ(ierr);
-  ierr = get_dim_limits("z",  NULL,      &g.z_max); CHKERRQ(ierr);
-  
-  return 0;
-}
+  // try "name" as the standard_name first, then as the short name:
+  ierr = find_variable(name, name, &varid, exists); CHKERRQ(ierr);
 
-//! Read the first and last values, and the lengths, of the x,y dimensions from a NetCDF file.  Read the last t.
-PetscErrorCode PISMIO::get_grid_info_2d(grid_info &g) const {
-  PetscErrorCode ierr;
-
-  bool t_exists, time_exists;
-  ierr = find_variable("t", NULL, t_exists); CHKERRQ(ierr);
-  ierr = find_variable("time", NULL, time_exists); CHKERRQ(ierr);
-
-  if (t_exists) {
-    ierr = get_dim_length("t",  &g.t_len); CHKERRQ(ierr);
-    ierr = get_dim_limits("t", NULL, &g.time); CHKERRQ(ierr);
-  } else if (time_exists) {
-    ierr = get_dim_length("time",  &g.t_len); CHKERRQ(ierr);
-    ierr = get_dim_limits("time", NULL, &g.time); CHKERRQ(ierr);
+  if (!exists) {
+    return 1;
   }
 
-  ierr = get_dim_length("x",  &g.x_len); CHKERRQ(ierr);
-  ierr = get_dim_length("y",  &g.y_len); CHKERRQ(ierr);
+  ierr = inq_dimids(varid, dimids); CHKERRQ(ierr);
 
-  ierr = get_dim_limits("x", &g.x_min, &g.x_max); CHKERRQ(ierr);
-  ierr = get_dim_limits("y", &g.y_min, &g.y_max); CHKERRQ(ierr);
+  int ndims = dimids.size();
+  for (int i = 0; i < ndims; ++i) {
+    int dimid = dimids[i];
+
+    string dimname;
+    ierr = inq_dimname(dimid, dimname); CHKERRQ(ierr);
+
+    AxisType dimtype = UNKNOWN_AXIS;
+    ierr = inq_dimtype(dimname, dimtype); CHKERRQ(ierr);
+
+    switch (dimtype) {
+    case X_AXIS:
+      {
+        ierr = get_dim_length(dimname, &g.x_len); CHKERRQ(ierr);
+        ierr = get_dim_limits(dimname, &g.x_min, &g.x_max); CHKERRQ(ierr);
+        break;
+      }
+    case Y_AXIS:
+      {
+        ierr = get_dim_length(dimname, &g.y_len); CHKERRQ(ierr);
+        ierr = get_dim_limits(dimname, &g.y_min, &g.y_max); CHKERRQ(ierr);
+        break;
+      }
+    case Z_AXIS:
+      {
+        ierr = get_dim_length(dimname, &g.z_len); CHKERRQ(ierr);
+        ierr = get_dim_limits(dimname, &g.z_min, &g.z_max); CHKERRQ(ierr);
+        ierr = get_dimension(dimname, g.zlevels); CHKERRQ(ierr);
+        break;
+      }
+    case T_AXIS:
+      {
+        ierr = get_dim_length(dimname,  &g.t_len); CHKERRQ(ierr);
+        ierr = get_dim_limits(dimname, NULL, &g.time); CHKERRQ(ierr);
+        break;
+      }
+    default:
+      {
+        PetscPrintf(grid->com, "ERROR: Can't figure out which direction dimension '%s' corresponds to.",
+                    dimname.c_str());
+        PISMEnd();
+      }
+    } // switch
+  }   // for loop
 
   g.x0 = (g.x_max + g.x_min) / 2.0;
   g.y0 = (g.y_max + g.y_min) / 2.0;
-
+  
   g.Lx = (g.x_max - g.x_min) / 2.0;
   g.Ly = (g.y_max - g.y_min) / 2.0;
 
@@ -76,11 +102,11 @@ PetscErrorCode PISMIO::get_grid_info_2d(grid_info &g) const {
 }
 
 //! Read a variable in a NetCDF file into a \c DA -managed global \c Vec \c g.  \e In \e parallel.
-PetscErrorCode PISMIO::get_var(const int varid, Vec g, GridType dims, int t) const {
-  const int N = 5;
+PetscErrorCode PISMIO::get_var(const int varid, Vec g, int z_count, int t) const {
   const int start_tag = 1;
   const int count_tag = 2;
   const int data_tag =  3;
+  const int imap_tag =  4;
   PetscErrorCode ierr;
   MPI_Status mpi_stat;
   int stat;
@@ -88,12 +114,19 @@ PetscErrorCode PISMIO::get_var(const int varid, Vec g, GridType dims, int t) con
 
   ierr = data_mode(); CHKERRQ(ierr); 
 
-  int start[N] = {t, grid->xs, grid->ys, 0,        0};
-  int count[N] = {1, grid->xm, grid->ym, grid->Mz, grid->Mbz};
+  vector<int> start, count, imap;
+  ierr = compute_start_and_count(varid,
+                                     t,
+                                     grid->xs, grid->xm,
+                                     grid->ys, grid->ym,
+                                     0, z_count,
+                                     start, count, imap); CHKERRQ(ierr);
+
+  int N = start.size();
 
   // Find the local size:
   int block_size, buffer_size;
-  block_size = compute_block_size(dims, count);
+  block_size = compute_block_size(count);
   // And the maximum size of the data block:
   buffer_size = block_size;
   ierr = MPI_Reduce(&block_size, &buffer_size, 1, MPI_INT, MPI_MAX, 0, com); CHKERRQ(ierr);
@@ -102,46 +135,53 @@ PetscErrorCode PISMIO::get_var(const int varid, Vec g, GridType dims, int t) con
   ierr = PetscMalloc(buffer_size * sizeof(double), &a_double); CHKERRQ(ierr);
 
   if (rank == 0) {
-    int start0[N], count0[N];
+    vector<int> start0(N), count0(N), imap0(N);
     for (int j = 0; j < N; j++) {
       // root needs to save its range
       start0[j] = start[j];
       count0[j] = count[j];
+      imap0[j]  = imap[j];
     }
+    vector<size_t> nc_start(N), nc_count(N);
+    vector<ptrdiff_t> nc_imap(N);
+
     for (int proc = grid->size - 1; proc >= 0; proc--) { // root will read itself last
+
       if (proc == 0) {
         for (int j = 0; j < N; j++) {
 	  start[j] = start0[j];
 	  count[j] = count0[j];
+          imap[j]  = imap0[j];
 	}
       } else {
-        MPI_Recv(start, N, MPI_INT, proc, start_tag, com, &mpi_stat);
-        MPI_Recv(count, N, MPI_INT, proc, count_tag, com, &mpi_stat);
+        MPI_Recv(start.data(), N, MPI_INT, proc, start_tag, com, &mpi_stat);
+        MPI_Recv(count.data(), N, MPI_INT, proc, count_tag, com, &mpi_stat);
+        MPI_Recv(imap.data(),  N, MPI_INT, proc, imap_tag,  com, &mpi_stat);
       }
 
-      size_t *nc_start, *nc_count;
-      ptrdiff_t *imap;
-      ierr = compute_start_and_count(varid, start, count, dims, nc_start, nc_count, imap); CHKERRQ(ierr);
+      // Convert start, count and imap to types NetCDF requires:
+      for (int i = 0; i < N; ++i) {
+        nc_start[i] = start[i];
+        nc_count[i] = count[i];
+        nc_imap[i]  = imap[i];
+      }
 
-      stat = nc_get_varm_double(ncid, varid, nc_start, nc_count, NULL, imap, a_double);
+      stat = nc_get_varm_double(ncid, varid, nc_start.data(), nc_count.data(), NULL, nc_imap.data(), a_double);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
-      delete[] nc_start;
-      delete[] nc_count;
-      delete[] imap;
-
       if (proc != 0) {
-	block_size = compute_block_size(dims, count);
+	block_size = compute_block_size(count);
 	MPI_Send(a_double, block_size, MPI_DOUBLE, proc, data_tag, com);
       }
     }
   } else {                      // if (rank == 0)
-    MPI_Send(start, N, MPI_INT, 0, start_tag, com);
-    MPI_Send(count, N, MPI_INT, 0, count_tag, com);
+    MPI_Send(start.data(), N, MPI_INT, 0, start_tag, com);
+    MPI_Send(count.data(), N, MPI_INT, 0, count_tag, com);
+    MPI_Send(imap.data(),  N, MPI_INT, 0, imap_tag,  com);
     MPI_Recv(a_double, buffer_size, MPI_DOUBLE, 0, data_tag, com, &mpi_stat);
   }
 
-  block_size = compute_block_size(dims, count);
+  block_size = compute_block_size(count);
   PetscScalar *a_petsc;
   ierr = VecGetArray(g, &a_petsc); CHKERRQ(ierr);
   for (int i = 0; i < block_size; i++) {
@@ -155,11 +195,11 @@ PetscErrorCode PISMIO::get_var(const int varid, Vec g, GridType dims, int t) con
 }
 
 //! Put a \c DA -managed global \c Vec \c g into a variable in a NetCDF file.  \e In \e parallel.
-PetscErrorCode PISMIO::put_var(const int varid, Vec g, GridType dims) const {
+PetscErrorCode PISMIO::put_var(const int varid, Vec g, int z_count) const {
   const int start_tag = 1;
   const int count_tag = 2;
   const int data_tag =  3;
-  const int N = 5;
+  const int imap_tag =  4;
   PetscErrorCode ierr;
   MPI_Status mpi_stat;
   int stat;
@@ -172,12 +212,21 @@ PetscErrorCode PISMIO::put_var(const int varid, Vec g, GridType dims) const {
   // Fill start and count arrays:
   int t;
   ierr = get_dim_length("t", &t); CHKERRQ(ierr);
-  int start[N] = {t - 1, grid->xs, grid->ys, 0,        0};
-  int count[N] = {1,     grid->xm, grid->ym, grid->Mz, grid->Mbz};
+  t = t - 1;
+
+  vector<int> start, count, imap;
+  ierr = compute_start_and_count(varid,
+                                     t,
+                                     grid->xs, grid->xm,
+                                     grid->ys, grid->ym,
+                                     0, z_count,
+                                     start, count, imap); CHKERRQ(ierr);
+
+  int N = start.size();
 
   // Find the local size:
   int block_size, buffer_size;
-  block_size = compute_block_size(dims, count);
+  block_size = compute_block_size(count);
   // And the maximum size of the data block:
   buffer_size = block_size;
   ierr = MPI_Reduce(&block_size, &buffer_size, 1, MPI_INT, MPI_MAX, 0, com); CHKERRQ(ierr);
@@ -193,36 +242,41 @@ PetscErrorCode PISMIO::put_var(const int varid, Vec g, GridType dims) const {
   }
   ierr = VecRestoreArray(g, &a_petsc); CHKERRQ(ierr);
 
-  if (rank == 0) { // on rank 0 processor, receive messages from every other
-                         //    processor, then write it out to the NC file
+  if (rank == 0) {
+    // on rank 0 processor, receive messages from every other processor, then
+    // write it out to the NC file
+    vector<size_t> nc_start(N), nc_count(N);
+    vector<ptrdiff_t> nc_imap(N);
+
     for (int proc = 0; proc < grid->size; proc++) { // root will write itself last
       if (proc != 0) {
         grid->profiler->begin(event_write_send_and_receive);
-        MPI_Recv(start, N, MPI_INT, proc, start_tag, com, &mpi_stat);
-        MPI_Recv(count, N, MPI_INT, proc, count_tag, com, &mpi_stat);
+        MPI_Recv(start.data(), N, MPI_INT, proc, start_tag, com, &mpi_stat);
+        MPI_Recv(count.data(), N, MPI_INT, proc, count_tag, com, &mpi_stat);
+        MPI_Recv(imap.data(),  N, MPI_INT, proc, imap_tag,  com, &mpi_stat);
 	MPI_Recv(a_double, buffer_size, MPI_DOUBLE, proc, data_tag, com, &mpi_stat);
         grid->profiler->end(event_write_send_and_receive);
       }
       
-      size_t *nc_start, *nc_count;
-      ptrdiff_t* imap;
-      ierr = compute_start_and_count(varid, start, count, dims, nc_start, nc_count, imap); CHKERRQ(ierr);
-
       grid->profiler->begin(event_write_proc0);
 
-      stat = nc_put_varm_double(ncid, varid, nc_start, nc_count, NULL, imap, a_double);
+      // Convert start, count and imap to types NetCDF requires:
+      for (int i = 0; i < N; ++i) {
+        nc_start[i] = start[i];
+        nc_count[i] = count[i];
+        nc_imap[i]  = imap[i];
+      }
+
+      stat = nc_put_varm_double(ncid, varid, nc_start.data(), nc_count.data(), NULL, nc_imap.data(), a_double);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
 
       grid->profiler->end(event_write_proc0);
-
-      delete[] nc_start;
-      delete[] nc_count;
-      delete[] imap;
     }
   } else {  // all other processors send to rank 0 processor
     grid->profiler->begin(event_write_send_and_receive);
-    MPI_Send(start, N, MPI_INT, 0, start_tag, com);
-    MPI_Send(count, N, MPI_INT, 0, count_tag, com);
+    MPI_Send(start.data(), N, MPI_INT, 0, start_tag, com);
+    MPI_Send(count.data(), N, MPI_INT, 0, count_tag, com);
+    MPI_Send(imap.data(),  N, MPI_INT, 0, imap_tag,  com);
     MPI_Send(a_double, buffer_size, MPI_DOUBLE, 0, data_tag, com);
     grid->profiler->end(event_write_send_and_receive);
   }
@@ -298,133 +352,114 @@ levels on the source grid.  That is,
 Then we just do the two variable interpolation as before, finding \f$a_{m}\f$ and \f$a_p\f$ before
 computing \f$F(x,y,z)\f$.
  */
-PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx &lic,
+PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels_out, LocalInterpCtx &lic,
 				  Vec g) const {
   PetscErrorCode ierr;
-  const int N = 5, X = 1, Y = 2, Z = 3, ZB = 4; // indices, just for clarity
+  const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
   const int start_tag = 1; // MPI tag for the start array
   const int count_tag = 2; // MPI tag for the count array
   const int data_tag  = 3; // MPI tag for the data block
+  const int imap_tag  = 4;
   MPI_Status mpi_stat;
-  int stat, start[N], count[N];	// enough space for t, x, y, z, zb
+  int stat;
+  vector<int> start, count, imap;
 
   ierr = data_mode(); CHKERRQ(ierr);
 
-  // make local copies of lic.start and lic.count
-  for (int i = 0; i < N; i++) {
-    start[i] = lic.start[i];
-    count[i] = lic.count[i];
-  }
+  int t_start = lic.start[T],
+    x_start = lic.start[X],
+    y_start = lic.start[Y],
+    x_count = lic.count[X],
+    y_count = lic.count[Y],
+    z_start = lic.start[Z],
+    z_count = lic.count[Z];
 
-  // This ensures that we don't read too many values (i.e. if varid refers to a
-  // 3D variable and 2D-only regridding is requested) and that the size of the
-  // buffer (a_len) is calculated correctly.
-  switch (dims) {
-  case GRID_2D:
-    count[Z] = 1;
-    count[ZB] = 1;
-    break;
-  case GRID_3D:
-    if (lic.no_regrid_ice) {
-      SETERRQ(2, "no_regrid_ice is set, so dims == GRID_3D is not allowed");
-    }
-    count[ZB] = 1;
-    break;
-  case GRID_3D_BEDROCK:
-    if (lic.no_regrid_bedrock) {
-      SETERRQ(2, "no_regrid_bedrock is set, so dims == GRID_3D_BEDROCK is not allowed");
-    }
-    count[Z] = 1;
-    break;
-  }
+  // FIXME: this will need to go
+  vector<double> &zlevels_in = lic.zlevels;
+  double *buffer = lic.a;
+  int buffer_length = lic.a_len;
+
+  int nlevels = zlevels_out.size();
+
+  ierr = compute_start_and_count(varid, t_start,
+                                     x_start, x_count, y_start, y_count, z_start, z_count,
+                                     start, count, imap); CHKERRQ(ierr);
+
+  int N = start.size();
 
   if (rank == 0) {
 
     // Node 0 will service all the other nodes before itself.  We need to save
     // start[] and count[] so that it knows how to get its block at the end.
-    int start0[N];
-    int count0[N];
+    vector<int> start0(N), count0(N), imap0(N);
 
     for (int i = 0; i < N; i++) {
       start0[i] = start[i];
       count0[i] = count[i];
+      imap0[i]  = imap[i];
     }
+
+    vector<size_t> nc_start(N), nc_count(N);
+    vector<ptrdiff_t> nc_imap(N);
 
     for (int proc = grid->size - 1; proc >= 0; proc--) {
       if (proc == 0) {// Get the bounds.
 	for (int i = 0; i < N; i++) {
 	  start[i] = start0[i];
 	  count[i] = count0[i];
+          imap[i]  = imap0[i];
 	}
       } else {
-        MPI_Recv(start, N, MPI_INT, proc, start_tag, com, &mpi_stat);
-	MPI_Recv(count, N, MPI_INT, proc, count_tag, com, &mpi_stat);
+        MPI_Recv(start.data(), N, MPI_INT, proc, start_tag, com, &mpi_stat);
+	MPI_Recv(count.data(), N, MPI_INT, proc, count_tag, com, &mpi_stat);
+	MPI_Recv(imap.data(),  N, MPI_INT, proc, imap_tag,  com, &mpi_stat);
       }
 
-      // Assemble nc_start and nc_count that are used below in the call to
-      // nc_get_varm_double(...)
-      size_t *nc_start, *nc_count;
-      ptrdiff_t *imap;
-      ierr = compute_start_and_count(varid, start, count, dims, nc_start, nc_count, imap); CHKERRQ(ierr);
+      // Convert start, count and imap to types NetCDF requires and compute how
+      // much data we're going to read (for communication, below):
+      int a_len = 1;
+      for (int i = 0; i < N; ++i) {
+        nc_start[i] = start[i];
+        nc_count[i] = count[i];
+        nc_imap[i]  = imap[i];
+        a_len = a_len * count[i];
+      }
 
-      stat = nc_get_varm_double(ncid, varid, nc_start, nc_count, NULL, imap, lic.a);
+      stat = nc_get_varm_double(ncid, varid, nc_start.data(), nc_count.data(), NULL, nc_imap.data(), buffer);
       CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-      delete[] nc_start;
-      delete[] nc_count;
-      delete[] imap;
-
-      // Find out how big the buffer actually is.  Remember that node 0 has a
-      // buffer that will only be filled by if the process it is serving has a
-      // maximal sized local domain.
-      // Also note that at least one of count[Z] and count[ZB] is equal to 1.
-      int a_len = count[X] * count[Y] * count[Z] * count[ZB];
 
       // send the filled buffer
       if (proc != 0) {
-        MPI_Send(lic.a, a_len, MPI_DOUBLE, proc, data_tag, com);
+        MPI_Send(buffer, a_len, MPI_DOUBLE, proc, data_tag, com);
       }
     }
   } else { // not process 0:
-    MPI_Send(start, N, MPI_INT, 0, start_tag, com);  // send out my start
-    MPI_Send(count, N, MPI_INT, 0, count_tag, com);  // send out my count
-    MPI_Recv(lic.a, lic.a_len, MPI_DOUBLE, 0, data_tag, com, &mpi_stat); // get back filled buffer
+    MPI_Send(start.data(), N, MPI_INT, 0, start_tag, com);  // send out my start
+    MPI_Send(count.data(), N, MPI_INT, 0, count_tag, com);  // send out my count
+    MPI_Send(imap.data(),  N, MPI_INT, 0, imap_tag,  com);  // send out my imap
+    MPI_Recv(buffer, buffer_length, MPI_DOUBLE, 0, data_tag, com, &mpi_stat); // get back filled buffer
   }
 
-  // At this point, the buffer lic.a[] should contain lic.a_len doubles.  This is the 
+  // At this point, the buffer buffer[] should contain buffer_length doubles.  This is the 
   // local processor's part of the source variable.  
   // That is, it should be enough of the source variable so that \e interpolation
   // (not extrapolation) onto the local processor's part of the target grid is possible.
   //ierr = lic.printArray(grid.com); CHKERRQ(ierr);
   
-  // indexing parameters
-  int myMz = 1, zcount = 1; // indexing trick so that we don't have to duplicate code for the 2-D case.
-  switch (dims) {
-  case GRID_3D:
-    myMz = grid->Mz;
-    zcount = count[Z];
-    break;
-  case GRID_3D_BEDROCK:
-    myMz = grid->Mbz;
-    zcount = count[ZB];
-    break;
-  default:
-    break;
-  }
-
   // We'll work with the raw storage here so that the array we are filling is
-  // indexed the same way as the buffer we are pulling from (lic.a)
+  // indexed the same way as the buffer we are pulling from (buffer)
   PetscScalar *vec_a;
   ierr = VecGetArray(g, &vec_a); CHKERRQ(ierr);
 
   for (int i = grid->xs; i < grid->xs + grid->xm; i++) {
     for (int j = grid->ys; j < grid->ys + grid->ym; j++) {
 
-      for (int k = 0; k < myMz; k++) {
+      for (int k = 0; k < nlevels; k++) {
         // location (x,y,z) is in target computational domain
-        const double x = -grid->Lx + i * grid->dx,
-                     y = -grid->Ly + j * grid->dy,
-                     z = (dims == GRID_3D) ? grid->zlevels[k] : grid->zblevels[k];
+        const double
+          x = grid->x[i] - grid->x0,
+          y = grid->y[j] - grid->y0,
+          z = zlevels_out[k];
 
         // We need to know how the point (x,y,z) sits within the local block we
         // pulled from the netCDF file.  This part is special to a regular
@@ -442,13 +477,13 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
           jc = 0.0;
           //SETERRQ2(102,"(int)floor(jc) < 0      [%d < 0; jc = %16.15f]",(int)floor(jc),jc);
         }
-        if ((int)ceil(ic) > lic.count[X]-1) {
-          ic = (double)(lic.count[X]-1);
+        if ((int)ceil(ic) > x_count-1) {
+          ic = (double)(x_count-1);
           //SETERRQ3(103,"(int)ceil(ic) > lic.count[1]-1      [%d > %d; ic = %16.15f]",
           //     (int)ceil(ic), lic.count[1]-1, ic);
         }
-        if ((int)ceil(jc) > lic.count[Y]-1) {
-          jc = (double)(lic.count[Y]-1);
+        if ((int)ceil(jc) > y_count-1) {
+          jc = (double)(y_count-1);
           //SETERRQ3(104,"(int)ceil(jc) > lic.count[2]-1      [%d > %d; jc = %16.15f]",
           //     (int)ceil(jc), lic.count[2]-1, jc);
         }
@@ -458,10 +493,9 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
         const int Im = (int)floor(ic), Ip = (int)ceil(ic),
           Jm = (int)floor(jc), Jp = (int)ceil(jc);
 
-        if (dims == GRID_3D || dims == GRID_3D_BEDROCK) {
+        if (nlevels > 1) {
           // get the index into the source grid, for just below the level z
-          const int kc = (dims == GRID_3D) ? lic.kBelowHeight(z)
-                                               : lic.kbBelowHeight(z);
+          const int kc = k_below(z, zlevels_in);
 
           // We pretend that there are always 8 neighbors (4 in the map plane,
           // 2 vertical levels). And compute the indices into the buffer for
@@ -480,14 +514,14 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
           // to not handle all the cases explicitly.
           // 
           // (These comments do not apply to the z case.)
-          const int mmm = (Im * count[Y] + Jm) * zcount + kc;
-          const int mmp = (Im * count[Y] + Jm) * zcount + kc + 1;
-          const int mpm = (Im * count[Y] + Jp) * zcount + kc;
-          const int mpp = (Im * count[Y] + Jp) * zcount + kc + 1;
-          const int pmm = (Ip * count[Y] + Jm) * zcount + kc;
-          const int pmp = (Ip * count[Y] + Jm) * zcount + kc + 1;
-          const int ppm = (Ip * count[Y] + Jp) * zcount + kc;
-          const int ppp = (Ip * count[Y] + Jp) * zcount + kc + 1;
+          const int mmm = (Im * y_count + Jm) * z_count + kc;
+          const int mmp = (Im * y_count + Jm) * z_count + kc + 1;
+          const int mpm = (Im * y_count + Jp) * z_count + kc;
+          const int mpp = (Im * y_count + Jp) * z_count + kc + 1;
+          const int pmm = (Ip * y_count + Jm) * z_count + kc;
+          const int pmp = (Ip * y_count + Jm) * z_count + kc + 1;
+          const int ppm = (Ip * y_count + Jp) * z_count + kc;
+          const int ppp = (Ip * y_count + Jp) * z_count + kc + 1;
 
           // We know how to index the neighbors, but we don't yet know where the
           // point lies within this box.  This is represented by kk in [0,1].
@@ -496,34 +530,26 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
           //   kk = (km == kp) ? 0.0 : (z - Z(km)) / (Z(kp) - Z(km))
           // where Z(.) are the physical coordinates on the source grid.  Note
           // that any value in [0,1] would be okay when km == kp.
-          const double zkc = (dims == GRID_3D) ? lic.zlevs[kc] : lic.zblevs[kc];
+          const double zkc = zlevels_in[kc];
           double dz;
-          if (dims == GRID_3D) {
-            if (kc == zcount - 1) {
-              dz = lic.zlevs[kc] - lic.zlevs[kc-1];
-            } else {
-              dz = lic.zlevs[kc+1] - lic.zlevs[kc];
-            }
+          if (kc == z_count - 1) {
+            dz = zlevels_in[kc] - zlevels_in[kc-1];
           } else {
-            if (kc == zcount - 1) {
-              dz = lic.zblevs[kc] - lic.zblevs[kc-1];
-            } else {
-              dz = lic.zblevs[kc+1] - lic.zblevs[kc];
-            }
+            dz = zlevels_in[kc+1] - zlevels_in[kc];
           }
           const double kk = (z - zkc) / dz;
 
           // linear interpolation in the z-direction
-          a_mm = lic.a[mmm] * (1.0 - kk) + lic.a[mmp] * kk;
-          a_mp = lic.a[mpm] * (1.0 - kk) + lic.a[mpp] * kk;
-          a_pm = lic.a[pmm] * (1.0 - kk) + lic.a[pmp] * kk;
-          a_pp = lic.a[ppm] * (1.0 - kk) + lic.a[ppp] * kk;
+          a_mm = buffer[mmm] * (1.0 - kk) + buffer[mmp] * kk;
+          a_mp = buffer[mpm] * (1.0 - kk) + buffer[mpp] * kk;
+          a_pm = buffer[pmm] * (1.0 - kk) + buffer[pmp] * kk;
+          a_pp = buffer[ppm] * (1.0 - kk) + buffer[ppp] * kk;
         } else {
           // we don't need to interpolate vertically for the 2-D case
-          a_mm = lic.a[Im * count[Y] + Jm];
-          a_mp = lic.a[Im * count[Y] + Jp];
-          a_pm = lic.a[Ip * count[Y] + Jm];
-          a_pp = lic.a[Ip * count[Y] + Jp];
+          a_mm = buffer[Im * y_count + Jm];
+          a_mp = buffer[Im * y_count + Jp];
+          a_pm = buffer[Ip * y_count + Jm];
+          a_pp = buffer[Ip * y_count + Jp];
         }
 
         const double jj = jc - floor(jc);
@@ -533,7 +559,7 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
         const double a_p = a_pm * (1.0 - jj) + a_pp * jj;
 
         const double ii = ic - floor(ic);
-        int index = ((i - grid->xs) * grid->ym + (j - grid->ys)) * myMz + k;
+        int index = ((i - grid->xs) * grid->ym + (j - grid->ys)) * nlevels + k;
 
         // index into the new array and interpolate in x direction
         vec_a[index] = a_m * (1.0 - ii) + a_p * ii;
@@ -547,166 +573,47 @@ PetscErrorCode PISMIO::regrid_var(const int varid, GridType dims, LocalInterpCtx
   return 0;
 }
 
+int PISMIO::k_below(double z, const vector<double> &zlevels) const {
+  double z_min = zlevels.front(), z_max = zlevels.back();
+  PetscInt mcurr = 0;
+
+  if (z < z_min - 1.0e-6 || z > z_max + 1.0e-6) {
+    PetscPrintf(com, 
+                "PISMIO::k_below(): z = %5.4f is outside the allowed range.\n", z);
+    PISMEnd();
+  }
+
+  while (zlevels[mcurr+1] < z)
+    mcurr++;
+
+  return mcurr;
+}
+
+
 //! Computes the size of the local block.
-int PISMIO::compute_block_size(GridType dims, int* count) const {
-  const int X = 1, Y = 2, Z = 3, ZB = 4;
-  switch (dims) {
-  case GRID_2D:
-    return count[X] * count[Y];
-  case GRID_3D:
-    return count[X] * count[Y] * count[Z];
-  case GRID_3D_BEDROCK:
-    return count[X] * count[Y] * count[ZB];
-  }
-  return 0;
+int PISMIO::compute_block_size(vector<int> count) const {
+  int N = count.size(), result = 1;
+
+  for (int i = 0; i < N; ++i)
+    result = result * count[i];
+
+  return result;
 }
 
-//! Assembles start, count and imap arrays for a particular variable.
-/*!
-  Does nothing on processors other than zero.
-
-  Arrays \c start and \c count have to have length 5, to be able to hold
-  values for t,x,y,z,zb (in this order).
-
-  Arrays nc_start and nc_count will be allocated *by* this function and have to
-  be freed by the user.
-
-  Also note that here X and Y have PISM (internal) meaning.
-
-  Regarding imap: here's the description from section <a
-  href="http://www.unidata.ucar.edu/software/netcdf/docs/netcdf-c/nc_005fget_005fvarm_005f-type.html">6.27
-  Read a Mapped Array of Values</a> of the NetCDF C Interface Guide:
-
-  A vector of integers that speciﬁes the mapping between the dimensions of a
-  netCDF variable and the in-memory structure of the internal data array.
-  imap[0] gives the distance between elements of the internal array
-  corresponding to the most slowly varying dimension of the netCDF variable.
-  imap[n-1] (where n is the rank of the netCDF variable) gives the distance
-  between elements of the internal array corresponding to the most rapidly
-  varying dimension of the netCDF variable. Intervening imap elements
-  correspond to other dimensions of the netCDF variable in the obvious way.
-  Distances between elements are speciﬁed in type-independent units of elements
-
-  The default I/O code (sending data to/from processor 0) only calls this on
-  processor 0.
-*/
-PetscErrorCode PISMIO::compute_start_and_count(const int varid, int *start, int *count, GridType dims,
-					       size_t* &nc_start, size_t* &nc_count, ptrdiff_t* &imap) const {
-  int stat, ndims;
-  // Indices:
-  const int T = 0, X = 1, Y = 2, Z = 3, ZB = 4;
-  // IDs of interesting dimensions:
-  int t_id, x_id, y_id, z_id, zb_id;
-  // IDs of all the dimensions a variables depends on:
-  int *dimids;
-
-//   for (int j = 0; j < 5; j++)
-//     fprintf(stderr, "start[%d] = %d, count[%d] = %d\n", j, start[j], j, count[j]);
-
-  // Get the number of dimensions a variable depends on:
-  stat = nc_inq_varndims(ncid, varid, &ndims);
-  CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-  // Allocate all the arrays we need:
-  nc_start = new size_t[ndims];
-  nc_count = new size_t[ndims];
-  imap     = new ptrdiff_t[ndims];
-  dimids   = new int[ndims];
-
-  // Find all the dimensions we care about:
-
-  // t
-  stat = nc_inq_dimid(ncid, "t", &t_id);
-  if (stat != NC_NOERR) t_id = -1;
-
-  // time
-  if (t_id == -1) {
-    stat = nc_inq_dimid(ncid, "time", &t_id);
-    if (stat != NC_NOERR) t_id = -1;
-  }
-
-  // x
-  stat = nc_inq_dimid(ncid, "x", &x_id);
-  if (stat != NC_NOERR) x_id = -1;
-
-  // y
-  stat = nc_inq_dimid(ncid, "y", &y_id);
-  if (stat != NC_NOERR) y_id = -1;
-
-  // z
-  stat = nc_inq_dimid(ncid, "z", &z_id);
-  if (stat != NC_NOERR) z_id = -1;
-
-  // zb
-  stat = nc_inq_dimid(ncid, "zb", &zb_id);
-  if (stat != NC_NOERR) zb_id = -1;
-
-  // Get the list of dimensions a variable depends on:
-  stat = nc_inq_vardimid(ncid, varid, dimids);
-  CHKERRQ(check_err(stat,__LINE__,__FILE__));
-
-  size_t z_count;
-  switch (dims) {
-  case GRID_3D:
-    {
-      z_count = count[Z];
-      break;
-    }
-  case GRID_3D_BEDROCK:
-    {
-      z_count = count[ZB];
-      break;
-    }
-  default:
-    z_count = 1;
-  }
-
-  // Assemble nc_start, nc_count and imap:
-  for (int j = 0; j < ndims; j++) {
-    if (dimids[j] == t_id) {
-      nc_start[j] = start[T];
-      nc_count[j] = count[T];
-      imap[j]     = 1;		// this value does not matter because we never read more than 1 record
-    } else if (dimids[j] == y_id) {
-      nc_start[j] = start[Y];
-      nc_count[j] = count[Y];
-      imap[j]     = z_count;
-    } else if (dimids[j] == x_id) {
-      nc_start[j] = start[X];
-      nc_count[j] = count[X];
-      imap[j]     = count[Y] * z_count;
-    } else if (dimids[j] == z_id) {
-      nc_start[j] = start[Z];
-      nc_count[j] = count[Z];
-      imap[j]     = 1;
-    } else if (dimids[j] == zb_id) {
-      nc_start[j] = start[ZB];
-      nc_count[j] = count[ZB];
-      imap[j]     = 1;
-    } else {
-      nc_start[j] = 0;
-      nc_count[j] = 1;
-    }
-    //    fprintf(stderr, "nc_start[%d] = %ld, nc_count[%d] = %ld, imap[%d] = %d\n", j, nc_start[j], j, nc_count[j], j, imap[j]); 
-  }
-
-  delete[] dimids;
-  return 0;
-}
 
 
 
 //! Initializes the IceGrid object from a NetCDF file.
-PetscErrorCode PISMIO::get_grid(const char filename[]) {
+PetscErrorCode PISMIO::get_grid(string filename, string var_name) {
   PetscErrorCode ierr;
   grid_info gi;
-  double *z_levels, *zb_levels;
+  vector<double> z_levels, zb_levels;
 
   if (grid == NULL) SETERRQ(1, "PISMIO::get_grid(...): grid == NULL");
 
   ierr = open_for_reading(filename); CHKERRQ(ierr);
 
-  ierr = get_grid_info(gi); CHKERRQ(ierr);
+  ierr = get_grid_info(var_name, gi); CHKERRQ(ierr);
   ierr = get_vertical_dims(z_levels, zb_levels); CHKERRQ(ierr);
 
   grid->Mx = gi.x_len;
@@ -720,14 +627,12 @@ PetscErrorCode PISMIO::get_grid(const char filename[]) {
   grid->year = gi.time / secpera;
 
   ierr = grid->compute_horizontal_spacing(); CHKERRQ(ierr);
-  ierr = grid->set_vertical_levels(gi.z_len, gi.zb_len, z_levels, zb_levels); CHKERRQ(ierr);
+  ierr = grid->set_vertical_levels(z_levels, zb_levels); CHKERRQ(ierr); // FIXME
 
   // We're ready to call grid->createDA().
 
   // Cleanup:
   ierr = close(); CHKERRQ(ierr);
-  delete[] z_levels;
-  delete[] zb_levels;
   return 0;
 }
 
@@ -816,63 +721,149 @@ bool PISMIO::check_dimensions() const {
 //! Create dimensions and coordinate variables for storing spatial data.
 /*! Assumes that the dataset is in the data mode. */
 PetscErrorCode PISMIO::create_dimensions() const {
-  int stat, t, x, y, z, zb, dimid;
+  int ierr, t, x, y, z, zb, dimid;
+  map<string,string> attrs;
 
   if (grid == NULL) SETERRQ(1, "PISMIO::create_dimensions(...): grid == NULL");
   
   if (grid->rank != 0) return 0;
 
-  string time_units = "years since " + grid->config.get_string("reference_date");
-
   // define dimensions and coordinate variables:
-  stat = define_mode(); CHKERRQ(stat);
+
   // t
-  stat = nc_def_dim(ncid, "t", NC_UNLIMITED, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_def_var(ncid, "t", NC_DOUBLE, 1, &dimid, &t); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_put_att_text(ncid, t, "long_name", 4, "time"); check_err(stat,__LINE__,__FILE__);
-  stat = nc_put_att_text(ncid, t, "units", time_units.size(), time_units.c_str()); check_err(stat,__LINE__,__FILE__);
-  stat = nc_put_att_text(ncid, t, "calendar", 7, "365_day"); check_err(stat,__LINE__,__FILE__);
-  stat = nc_put_att_text(ncid, t, "axis", 1, "T"); check_err(stat,__LINE__,__FILE__);
+  attrs["long_name"] = "time";
+  attrs["calendar"]  = "365_day";
+  attrs["units"]     = "years since " + grid->config.get_string("reference_date");
+  attrs["axis"]      = "T";
+  ierr = create_dimension("t", NC_UNLIMITED, attrs, dimid, t); CHKERRQ(ierr);
+
   // x
-  stat = nc_def_dim(ncid, "x", grid->Mx, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_def_var(ncid, "x", NC_DOUBLE, 1, &dimid, &x); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_put_att_text(ncid, x, "axis", 1, "X"); check_err(stat,__LINE__,__FILE__);
-  stat = nc_put_att_text(ncid, x, "long_name", 32, "X-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
-  stat = nc_put_att_text(ncid, x, "standard_name", 23, "projection_x_coordinate"); check_err(stat,__LINE__,__FILE__);
-  stat = nc_put_att_text(ncid, x, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
+  attrs.clear();
+  attrs["axis"]          = "X";
+  attrs["long_name"]     = "X-coordinate in Cartesian system";
+  attrs["standard_name"] = "projection_x_coordinate";
+  attrs["units"]         = "m";
+  ierr = create_dimension("x", grid->Mx, attrs, dimid, x); CHKERRQ(ierr);
+
   // y
-  stat = nc_def_dim(ncid, "y", grid->My, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_def_var(ncid, "y", NC_DOUBLE, 1, &dimid, &y); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_put_att_text(ncid, y, "axis", 1, "Y"); check_err(stat,__LINE__,__FILE__);
-  stat = nc_put_att_text(ncid, y, "long_name", 32, "Y-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
-  stat = nc_put_att_text(ncid, y, "standard_name", 23, "projection_y_coordinate"); check_err(stat,__LINE__,__FILE__);
-  stat = nc_put_att_text(ncid, y, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
+  attrs.clear();
+  attrs["axis"]          = "Y";
+  attrs["long_name"]     = "Y-coordinate in Cartesian system";
+  attrs["standard_name"] = "projection_y_coordinate";
+  attrs["units"]         = "m";
+  ierr = create_dimension("y", grid->My, attrs, dimid, y); CHKERRQ(ierr);
+
   // z
-  stat = nc_def_dim(ncid, "z", grid->Mz, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_def_var(ncid, "z", NC_DOUBLE, 1, &dimid, &z); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_put_att_text(ncid, z, "axis", 1, "Z"); check_err(stat,__LINE__,__FILE__);
-  stat = nc_put_att_text(ncid, z, "long_name", 32, "z-coordinate in Cartesian system"); check_err(stat,__LINE__,__FILE__);
-  // PROPOSED standard_name = projection_z_coordinate
-  stat = nc_put_att_text(ncid, z, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
-  stat = nc_put_att_text(ncid, z, "positive", 2, "up"); check_err(stat,__LINE__,__FILE__);
+  attrs.clear();
+  attrs["axis"]          = "Z";
+  attrs["long_name"]     = "Z-coordinate in Cartesian system";
+  // PROPOSED: attrs["standard_name"] = "projection_z_coordinate";
+  attrs["units"]         = "m";
+  attrs["positive"]      = "up";
+  ierr = create_dimension("z", grid->Mz, attrs, dimid, z); CHKERRQ(ierr);
+
   // zb
-  stat = nc_def_dim(ncid, "zb", grid->Mbz, &dimid); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_def_var(ncid, "zb", NC_DOUBLE, 1, &dimid, &zb); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_put_att_text(ncid, zb, "long_name", 23, "z-coordinate in bedrock"); check_err(stat,__LINE__,__FILE__);
-  // PROPOSED standard_name = projection_z_coordinate_in_lithosphere
-  stat = nc_put_att_text(ncid, zb, "units", 1, "m"); check_err(stat,__LINE__,__FILE__);
-  stat = nc_put_att_text(ncid, zb, "positive", 2, "up"); check_err(stat,__LINE__,__FILE__);
+  attrs.clear();
+  attrs["axis"]          = "Z";
+  attrs["long_name"]     = "Z-coordinate in bedrock";
+  // PROPOSED: attrs["standard_name"] = "projection_z_coordinate_in_lithosphere";
+  attrs["units"]         = "m";
+  attrs["positive"]      = "up";
+  ierr = create_dimension("zb", grid->Mbz, attrs, dimid, zb); CHKERRQ(ierr);
+
   // 
 
-  stat = data_mode(); CHKERRQ(stat); 
+  ierr = data_mode(); CHKERRQ(ierr); 
 
   // set values:
   // Note that the 't' dimension is not modified: it is handled by the append_time method.
     
-  stat = put_dimension(y, grid->My, &(grid->y[0])); CHKERRQ(stat);
-  stat = put_dimension(x, grid->Mx, &(grid->x[0])); CHKERRQ(stat);
-  stat = put_dimension(z, grid->Mz, grid->zlevels); CHKERRQ(stat);
-  stat = put_dimension(zb, grid->Mbz, grid->zblevels); CHKERRQ(stat);
+  ierr = put_dimension(y, grid->y); CHKERRQ(ierr);
+  ierr = put_dimension(x, grid->x); CHKERRQ(ierr);
+  ierr = put_dimension(z, grid->zlevels); CHKERRQ(ierr);
+  ierr = put_dimension(zb, grid->zblevels); CHKERRQ(ierr);
 
   return 0;
 }
+
+//! Assembles start, count and imap arrays for a particular variable.
+/*!
+  Also note that here X and Y have PISM (internal) meaning.
+
+  Regarding imap: here's the description from section <a
+  href="http://www.unidata.ucar.edu/software/netcdf/docs/netcdf-c/nc_005fget_005fvarm_005f-type.html">6.27
+  Read a Mapped Array of Values</a> of the NetCDF C Interface Guide:
+
+  A vector of integers that speciﬁes the mapping between the dimensions of a
+  netCDF variable and the in-memory structure of the internal data array.
+  imap[0] gives the distance between elements of the internal array
+  corresponding to the most slowly varying dimension of the netCDF variable.
+  imap[n-1] (where n is the rank of the netCDF variable) gives the distance
+  between elements of the internal array corresponding to the most rapidly
+  varying dimension of the netCDF variable. Intervening imap elements
+  correspond to other dimensions of the netCDF variable in the obvious way.
+  Distances between elements are speciﬁed in type-independent units of elements
+
+  The default I/O code (sending data to/from processor 0) only calls this on
+  processor 0.
+*/
+PetscErrorCode PISMIO::compute_start_and_count(int varid,
+                                               int t_start,
+                                               int x_start, int x_count,
+                                               int y_start, int y_count,
+                                               int z_start, int z_count,
+                                               vector<int> &start,
+                                               vector<int> &count,
+                                               vector<int> &imap) const {
+  PetscErrorCode ierr;
+  vector<int> dimids;
+
+  ierr = inq_dimids(varid, dimids); CHKERRQ(ierr);
+  int ndims = dimids.size();
+
+  // Resize output vectors:
+  start.resize(ndims);
+  count.resize(ndims);
+  imap.resize(ndims);
+
+  // Assemble start, count and imap:
+  for (int j = 0; j < ndims; j++) {
+    string dimname;
+    ierr = inq_dimname(dimids[j], dimname); CHKERRQ(ierr);
+    
+    AxisType dimtype;
+    ierr = inq_dimtype(dimname, dimtype); CHKERRQ(ierr);
+
+    switch (dimtype) {
+    case T_AXIS:
+      start[j] = t_start;
+      count[j] = 1;             // t_count is always 1
+      imap[j]  = 1; // this value does not matter because we never read more than 1 record
+      break;
+    case X_AXIS:
+      start[j] = x_start;
+      count[j] = x_count;
+      imap[j]  = y_count * z_count;
+      break;
+    case Y_AXIS:
+      start[j] = y_start;
+      count[j] = y_count;
+      imap[j]  = z_count;
+      break;
+    case Z_AXIS:
+      start[j] = z_start;
+      count[j] = z_count;
+      imap[j]  = 1;
+      break;
+    default:
+      start[j] = 0;
+      count[j] = 1;
+      imap[j]  = 1;             // is this right?
+    }
+
+    //    fprintf(stderr, "start[%d] = %ld, count[%d] = %ld, imap[%d] = %d\n", j, start[j], j, count[j], j, imap[j]); 
+  }
+
+  return 0;
+}
+

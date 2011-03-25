@@ -4,7 +4,7 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-test="Test #15: verif test E regression: isothermal SIA with sliding."
+echo "Test #15: verif test E regression: isothermal SIA with sliding."
 # The list of files to delete when done.
 files="test_15-E-out.txt verify.nc verify.nc~"
 

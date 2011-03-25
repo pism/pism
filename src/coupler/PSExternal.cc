@@ -252,7 +252,9 @@ PetscErrorCode PSExternal::write_coupling_fields() {
     bool t_exists;
     ierr = nc.find_variable("t", &t_varid, t_exists); CHKERRQ(ierr);
     
-    ierr = nc.put_dimension(t_varid, 1, &grid.year); CHKERRQ(ierr);
+    vector<double> time(1);
+    time[0] = grid.year;
+    ierr = nc.put_dimension(t_varid, time); CHKERRQ(ierr);
   }
 
   // define

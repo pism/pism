@@ -61,7 +61,23 @@ PetscErrorCode IceModel::set_grid_defaults() {
   ierr = nc.find_dimension("y", NULL, y_dim_exists); CHKERRQ(ierr);
   ierr = nc.find_variable("t", NULL, t_exists); CHKERRQ(ierr);
   ierr = nc.find_variable("time", NULL, time_exists); CHKERRQ(ierr);
-  ierr = nc.get_grid_info(gi);
+
+  // Try to deduce grid information from present spatial fields. This is bad,
+  // because theoretically these fields may use different grids. We need a
+  // better way of specifying PISM's computational grid at bootstrapping.
+  vector<string> names;
+  names.push_back("land_ice_thickness");
+  names.push_back("bedrock_altitude");
+  for (unsigned int i = 0; i < names.size(); ++i) {
+    ierr = nc.get_grid_info(names[i], gi);
+    if (ierr == 0) break;
+  }
+
+  if (ierr != 0) {
+    PetscPrintf(grid.com, "ERROR: no geometry information found in '%s'.\n",
+                filename.c_str());
+    PISMEnd();
+  }
 
   bool mapping_exists;
   ierr = nc.find_variable("mapping", NULL, mapping_exists); CHKERRQ(ierr);
@@ -296,7 +312,7 @@ PetscErrorCode IceModel::grid_setup() {
 			filename.c_str()); CHKERRQ(ierr);
     }
 
-    ierr = nc.get_grid(filename.c_str());   CHKERRQ(ierr);
+    ierr = nc.get_grid(filename, "enthalpy");   CHKERRQ(ierr);
     grid.start_year = grid.year; // can be overridden using the -ys option
 
     // These options are ignored because we're getting *all* the grid
@@ -386,11 +402,8 @@ PetscErrorCode IceModel::grid_setup() {
 	PISMEnd();
       }
 
-      delete [] grid.procs_x;
-      delete [] grid.procs_y;
-
-      grid.procs_x = new PetscInt[grid.Nx];
-      grid.procs_y = new PetscInt[grid.Ny];
+      grid.procs_x.resize(grid.Nx);
+      grid.procs_y.resize(grid.Ny);
 
       for (PetscInt j=0; j < grid.Nx; j++)
 	grid.procs_x[j] = tmp_x[j];

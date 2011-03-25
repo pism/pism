@@ -218,13 +218,13 @@ ydim = ncfile.createDimension('x', MxROSS)
 ##### define variables, set attributes, write data #####
 # format: ['units', 'long_name', 'standard_name', '_FillValue', array]
 vars = {'y': ['m',
-              'x-coordinate in Cartesian system',
-              'projection_x_coordinate',
+              'y-coordinate in Cartesian system',
+              'projection_y_coordinate',
               None,
               x],
         'x': ['m',
-              'y-coordinate in Cartesian system',
-              'projection_y_coordinate',
+              'x-coordinate in Cartesian system',
+              'projection_x_coordinate',
               None,
               y],
         'lat': ['degrees_north',

@@ -34,8 +34,8 @@ PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const char my_short_name
 					     stencil_width, dof); CHKERRQ(ierr);
 
   string s_name = my_short_name;
-  vars[0].init("u" + s_name, my_grid, GRID_2D);
-  vars[1].init("v" + s_name, my_grid, GRID_2D);
+  vars[0].init_2d("u" + s_name, my_grid);
+  vars[1].init_2d("v" + s_name, my_grid);
 
   name = "vel" + string(my_short_name);
 

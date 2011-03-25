@@ -87,10 +87,10 @@ PetscErrorCode IceCompModel::initTestFG() {
       } else {
         r = PetscMax(r,1.0); // avoid singularity at origin
         if (testname == 'F') {
-           bothexact(0.0,r,grid.zlevels,Mz,0.0,
+          bothexact(0.0,r,grid.zlevels.data(),Mz,0.0,
                      &H[i][j],&accum[i][j],T,dummy1,dummy2,dummy3,dummy4);
         } else {
-           bothexact(grid.year*secpera,r,grid.zlevels,Mz,ApforG,
+          bothexact(grid.year*secpera,r,grid.zlevels.data(),Mz,ApforG,
                      &H[i][j],&accum[i][j],T,dummy1,dummy2,dummy3,dummy4);
         }
       }
@@ -150,10 +150,10 @@ PetscErrorCode IceCompModel::getCompSourcesTestFG() {
       } else {
         r = PetscMax(r,1.0); // avoid singularity at origin
         if (testname == 'F') {
-          bothexact(0.0,r,grid.zlevels,Mz,0.0,
+          bothexact(0.0,r,grid.zlevels.data(),Mz,0.0,
                     &dummy0,&accum[i][j],dummy1,dummy2,dummy3,dummy4,SigmaC);
         } else {
-          bothexact(grid.year*secpera,r,grid.zlevels,Mz,ApforG,
+          bothexact(grid.year*secpera,r,grid.zlevels.data(),Mz,ApforG,
                     &dummy0,&accum[i][j],dummy1,dummy2,dummy3,dummy4,SigmaC);
         }
         for (PetscInt k=0;  k<Mz;  k++) // scale Sigma to J/(s m^3)
@@ -220,10 +220,10 @@ PetscErrorCode IceCompModel::fillSolnTestFG() {
       } else {  // inside the sheet
         r = PetscMax(r,1.0); // avoid singularity at origin
         if (testname == 'F') {
-          bothexact(0.0,r,grid.zlevels,Mz,0.0,
+          bothexact(0.0,r,grid.zlevels.data(),Mz,0.0,
                     &H[i][j],&accum[i][j],T,Uradial,w, Sigma,SigmaC);
         } else {
-          bothexact(grid.year*secpera,r,grid.zlevels,Mz,ApforG,
+          bothexact(grid.year*secpera,r,grid.zlevels.data(),Mz,ApforG,
                     &H[i][j],&accum[i][j],T,Uradial,w, Sigma,SigmaC);
         }
         for (PetscInt k = 0; k < Mz; k++) {
@@ -299,11 +299,11 @@ PetscErrorCode IceCompModel::computeTemperatureErrors(
                                                 // and not at central singularity
         switch (testname) {
           case 'F':
-            bothexact(0.0,r,grid.zlevels,Mz,0.0,
+            bothexact(0.0,r,grid.zlevels.data(),Mz,0.0,
                       &junk0,&junk1,Tex,dummy1,dummy2,dummy3,dummy4);
             break;
           case 'G':
-            bothexact(grid.year*secpera,r,grid.zlevels,Mz,ApforG,
+            bothexact(grid.year*secpera,r,grid.zlevels.data(),Mz,ApforG,
                       &junk0,&junk1,Tex,dummy1,dummy2,dummy3,dummy4);
             break;
           default:  SETERRQ(1,"temperature errors only computable for tests F and G\n");
@@ -508,11 +508,11 @@ PetscErrorCode IceCompModel::computeSigmaErrors(
                                                 // and not at central singularity
         switch (testname) {
           case 'F':
-            bothexact(0.0,r,grid.zlevels,Mz,0.0,
+            bothexact(0.0,r,grid.zlevels.data(),Mz,0.0,
                       &junk0,&junk1,dummy1,dummy2,dummy3,Sigex,dummy4);
             break;
           case 'G':
-            bothexact(grid.year*secpera,r,grid.zlevels,Mz,ApforG,
+            bothexact(grid.year*secpera,r,grid.zlevels.data(),Mz,ApforG,
                       &junk0,&junk1,dummy1,dummy2,dummy3,Sigex,dummy4);
             break;
           default:

@@ -79,9 +79,11 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
     add_dependencies (browsers browser_base browser_util)
 
     install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/base/html
-      DESTINATION ${Pism_DOC_DIR}/base)
+      DESTINATION ${Pism_DOC_DIR}/base
+      PATTERN "*.md5" EXCLUDE)
     install (DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/util/html
-      DESTINATION ${Pism_DOC_DIR}/util)
+      DESTINATION ${Pism_DOC_DIR}/util
+      PATTERN "*.md5" EXCLUDE)
   endif ()
 
 endif ()

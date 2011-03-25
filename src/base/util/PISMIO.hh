@@ -50,21 +50,27 @@ public:
   using NCTool::open_for_writing;
   PetscErrorCode open_for_writing(string filename, bool append,
 				  bool check_dims = false);
-  PetscErrorCode get_grid(const char filename[]);
+  PetscErrorCode get_grid(string filename, string var_name);
   PetscErrorCode create_dimensions() const;
 
-  PetscErrorCode get_grid_info(grid_info &g) const;
-  PetscErrorCode get_grid_info_2d(grid_info &g) const;
+  PetscErrorCode get_grid_info(string name, grid_info &g) const;
 
-  PetscErrorCode get_var(int varid, Vec g, GridType dims, int t) const;
-  PetscErrorCode put_var(int varid, Vec g, GridType dims) const;
+  PetscErrorCode get_var(int varid, Vec g, int z_count, int t) const;
+  PetscErrorCode put_var(int varid, Vec g, int z_count) const;
 
-  PetscErrorCode regrid_var(int varid, GridType dim_flag, LocalInterpCtx &lic, Vec g) const;
+  PetscErrorCode regrid_var(int varid, const vector<double> &zlevels_out, LocalInterpCtx &lic, Vec g) const;
 private:
-  int compute_block_size(GridType dims, int* count) const;
-  PetscErrorCode compute_start_and_count(int varid, int *pism_start, int *pism_count, GridType dims,
-					 size_t* &nc_start, size_t* &nc_count, ptrdiff_t* &imap) const;
+  int compute_block_size(vector<int> count) const;
+  PetscErrorCode compute_start_and_count(int varid, int t_start,
+                                         int x_start, int x_count,
+                                         int y_start, int y_count,
+                                         int z_start, int z_count,
+                                         vector<int> &start,
+                                         vector<int> &count, 
+                                         vector<int> &imap) const;
+
   bool check_dimensions() const;
+  int k_below(double z, const vector<double> &zlevels) const;
   IceGrid* grid;
 
   int event_write,

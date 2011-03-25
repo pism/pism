@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2010 Constantine Khroulev
+// Copyright (C) 2009--2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,9 @@
 class NCSpatialVariable : public NCVariable {
 public:
   NCSpatialVariable();
-  virtual void init(string name, IceGrid &g, GridType d);
+  virtual void init_2d(string name, IceGrid &g);
+  virtual void init_3d(string name, IceGrid &g, vector<double> &zlevels);
+  virtual void set_levels(const vector<double> &levels);
   virtual PetscErrorCode read(const char filename[], unsigned int time, Vec v);
   virtual PetscErrorCode reset();
   virtual PetscErrorCode write(const char filename[], nc_type nctype,
@@ -39,10 +41,12 @@ public:
   PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype,
                         bool write_in_glaciological_units) const;
 
+  mutable map<string,string> dimensions;
   bool time_independent;        //!< a variable in a NetCDF file will not
                                 //! depend on 't' if this is true.
 protected:
-  GridType dims;
+  int nlevels;
+  vector<double> zlevels;
   IceGrid *grid;
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
   PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);

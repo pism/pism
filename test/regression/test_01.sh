@@ -1,13 +1,13 @@
 #!/bin/bash
 
-test="Test # 1: pismr exact restartability (SIA only)."
+echo "Test # 1: pismr exact restartability (SIA only)."
 PISM_PATH=$1
 MPIEXEC=$2
 
 files="foo.nc bar.nc baz.nc joe.nc"
 OPTS="-max_dt 1 -surface constant -o_size small"
 
-set -e
+set -e -x
 
 # generate an interesting file
 $PISM_PATH/pisms -no_cold -Mx 6 -My 6 -Mz 5 -y 5000 -max_dt 500.0 -o baz.nc

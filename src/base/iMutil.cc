@@ -154,7 +154,7 @@ PetscErrorCode  IceModel::stampHistory(string str) {
 PetscErrorCode IceModel::check_maximum_thickness() {
   PetscErrorCode  ierr;
   PetscReal H_min, H_max, dz_top;
-  double *new_zlevels, *new_zblevels;
+  vector<double> new_zlevels;
   const int old_Mz = grid.Mz;
   int N = 0; 			// the number of new levels
 
@@ -191,22 +191,13 @@ PetscErrorCode IceModel::check_maximum_thickness() {
 		    H_max, grid.Lz, N, dz_top); CHKERRQ(ierr);
 
   // Create new zlevels and zblevels:
-  new_zblevels = new double[grid.Mbz];
-  new_zlevels = new double[old_Mz + N];
-
-  for (int j = 0; j < grid.Mbz; j++)
-    new_zblevels[j] = grid.zblevels[j];
-  for (int j = 0; j < old_Mz; j++)
-    new_zlevels[j] = grid.zlevels[j];
+  new_zlevels = grid.zlevels;
 
   // Fill the new levels:
   for (int j = 0; j < N; j++)
-    new_zlevels[old_Mz + j] = grid.Lz + dz_top * (j + 1);
+    new_zlevels.push_back(grid.Lz + dz_top * (j + 1));
 
-  ierr = grid.set_vertical_levels(old_Mz + N, grid.Mbz,
-				  new_zlevels, new_zblevels); CHKERRQ(ierr);
-  delete[] new_zlevels;
-  delete[] new_zblevels;
+  ierr = grid.set_vertical_levels(new_zlevels, grid.zblevels); CHKERRQ(ierr);
 
   // Done with the grid. Now we need to extend IceModelVec3s.
 

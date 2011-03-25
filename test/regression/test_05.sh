@@ -3,12 +3,12 @@
 PISM_PATH=$1
 MPIEXEC=$2
 
-test="Test # 5: bootstrapping from files with different variable orders."
+echo "Test # 5: bootstrapping from files with different variable orders."
 files="foo.nc bar.nc baz.nc"
 
-OPTS="-boot_file foo.nc -Mx 61 -My 61 -Mz 21 -Lz 5000 -y 0 -surface constant -o_size small"
+OPTS="-boot_file foo.nc -Mx 41 -My 61 -Mz 21 -Lz 5000 -y 0 -surface constant -o_size small"
 
-set -e
+set -e -x
 
 # Create a file to bootstrap from (with a non-trivial bed topography):
 $PISM_PATH/pisms -eisII I -Mx 121 -My 61 -Mz 21 -y 0 -o foo.nc 
