@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -147,6 +147,14 @@ class IceModel_tempicethk_basal : public PISMDiag<IceModel>
 {
 public:
   IceModel_tempicethk_basal(IceModel *m, IceGrid &g, PISMVars &my_vars);
+  virtual PetscErrorCode compute(IceModelVec* &result);
+};
+
+//! \brief Computes the "new" mask.
+class IceModel_new_mask : public PISMDiag<IceModel>
+{
+public:
+  IceModel_new_mask(IceModel *m, IceGrid &g, PISMVars &my_vars);
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 

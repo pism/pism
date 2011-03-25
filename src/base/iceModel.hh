@@ -63,6 +63,7 @@ class IceModel {
   friend class IceModel_liqfrac;
   friend class IceModel_tempicethk;
   friend class IceModel_tempicethk_basal;
+  friend class IceModel_new_mask;
 public:
   // see iceModel.cc for implementation of constructor and destructor:
   IceModel(IceGrid &g, NCConfigVariable &config, NCConfigVariable &overrides);

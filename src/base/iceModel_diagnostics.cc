@@ -39,6 +39,7 @@ PetscErrorCode IceModel::init_diagnostics() {
   diagnostics["tempicethk_basal"] = new IceModel_tempicethk_basal(this, grid, variables);
   diagnostics["temppabase"]       = new IceModel_temppabase(this, grid, variables);
   diagnostics["tempsurf"]         = new IceModel_tempsurf(this, grid, variables);
+  diagnostics["new_mask"]         = new IceModel_new_mask(this, grid, variables);
 
   // Get diagnostics supported by the stress balance object:
   stress_balance->get_diagnostics(diagnostics);
@@ -876,6 +877,106 @@ PetscErrorCode IceModel_tempicethk_basal::compute(IceModelVec* &output) {
 
   ierr = result->mask_by(model->vH, fill_value); CHKERRQ(ierr);
   
+  output = result;
+  return 0;
+}
+
+
+IceModel_new_mask::IceModel_new_mask(IceModel *m, IceGrid &g, PISMVars &my_vars)
+  : PISMDiag<IceModel>(m, g, my_vars) {
+  
+  // set metadata:
+  vars[0].init("new_mask", grid, GRID_2D);
+  
+  vector<double> values(3);
+  values[0] = 1;
+  values[1] = 2;
+  values[2] = 4;
+
+  vars[0].doubles["flag_masks"] = values;
+  vars[0].set_string("flag_meanings", "ice_filled_cell interior_cell floating_or_ocean_cell");
+  vars[0].set_string("long_name", "new full/ice-free, grounded/ocean, interior/boundary binary mask");
+}
+
+PetscErrorCode IceModel_new_mask::compute(IceModelVec* &output) {
+  PetscErrorCode ierr;
+  
+  IceModelVec2Mask *result = new IceModelVec2Mask;
+  ierr = result->create(grid, "new_mask", true); CHKERRQ(ierr);
+  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
+  result->write_in_glaciological_units = true;
+
+  if (model->ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
+  PetscReal currentSeaLevel;
+  ierr = model->ocean->sea_level_elevation(grid.year, model->dt / secpera, currentSeaLevel); CHKERRQ(ierr);
+
+  double ocean_rho = model->config.get("sea_water_density");
+
+  ierr = result->begin_access(); CHKERRQ(ierr);
+
+  // clear the ghosts
+  ierr = result->set(0.0); CHKERRQ(ierr); 
+
+  ierr = model->vH.begin_access(); CHKERRQ(ierr);
+  ierr = model->vbed.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+
+      const PetscScalar hgrounded = model->vbed(i,j) + model->vH(i,j), // FIXME task #7297
+        hfloating = currentSeaLevel + (1.0 - model->ice->rho/ocean_rho) * model->vH(i,j);
+
+      bool is_floating = hfloating > hgrounded + 1.0,
+        // note: the following implies that ice-free cells with bed evelation
+        // exactly at sea level are considered grounded
+        has_ice = model->vH(i,j) > 0.01;
+
+      int mask_value = 0;
+      if (is_floating)
+        mask_value = mask_value | FLAG_IS_OCEAN;
+
+      if (has_ice)
+        mask_value = mask_value | FLAG_IS_FULL;
+
+      (*result)(i,j) = mask_value;
+    }
+  }
+  ierr = model->vbed.end_access(); CHKERRQ(ierr);
+  ierr = model->vH.end_access(); CHKERRQ(ierr);
+
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+
+      int mask_ij = result->value(i,j),
+        mask_e = result->value(i + 1, j),
+        mask_w = result->value(i - 1, j),
+        mask_n = result->value(i, j + 1),
+        mask_s = result->value(i, j - 1);
+
+      // check if a point is in the interior of a region covered with ice:
+      bool ice_filled_interior =
+        (mask_ij & FLAG_IS_FULL) &&
+        (mask_e  & FLAG_IS_FULL) &&
+        (mask_w  & FLAG_IS_FULL) &&
+        (mask_s  & FLAG_IS_FULL) &&
+        (mask_n  & FLAG_IS_FULL);
+
+      // check if a point is in the interior of an ice-free region:
+      bool ice_free_interior =
+        (! (mask_ij & FLAG_IS_FULL) ) &&
+        (! (mask_e  & FLAG_IS_FULL) ) &&
+        (! (mask_w  & FLAG_IS_FULL) ) &&
+        (! (mask_s  & FLAG_IS_FULL) ) &&
+        (! (mask_n  & FLAG_IS_FULL) );
+      
+      if (ice_filled_interior || ice_free_interior)
+        mask_ij = mask_ij | FLAG_IS_INTERIOR;
+
+      (*result)(i,j) = mask_ij;
+    }
+  }
+
+  ierr = result->end_access(); CHKERRQ(ierr);
+
   output = result;
   return 0;
 }
