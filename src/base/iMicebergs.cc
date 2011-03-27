@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Torsten Albrecht, Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2011 Torsten Albrecht
 //
 // This file is part of PISM.
 //

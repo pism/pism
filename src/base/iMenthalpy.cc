@@ -1077,7 +1077,16 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep_new(
 
         // ***** determine lowest-level equation at bottom of ice
         //       see page documenting BOMBPROOF
-        if (base_is_cold) {
+        if (is_floating) {
+          // floating base: dirichlet application of known temperature from ocean coupler
+          // FIXME: this is assuming base of ice shelf has zero liquid fraction
+          //        and is at cryostatic pressure; is this right?
+          PetscScalar Enth0;
+          ierr = EC->getEnthPermissive(shelfbtemp(i,j), 0.0, EC->getPressureFromDepth(vH(i,j)),
+                                       Enth0); CHKERRQ(ierr);
+          ierr = esys.setLevel0EqnThisColumn(
+                   1.0,0.0,Enth0); CHKERRQ(ierr);
+        } else if (base_is_cold) {
           // cold base case with fMbz==1: ice base equation says heat flux is known
           // this case only if no bedrock thermal layer
           const PetscScalar C = ice_c * fdz / ice_k;
@@ -1127,7 +1136,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep_new(
 #if CHANGE_BASAL_MELT == 0
 // FIXME:  we should not use this "alpha" mechanism at all, essentially, and 
 //         in any case it should not contribute to basal melt rate
-          if (is_grounded)    vbmr(i,j) *= 1.0 - alpha;
+          if (is_grounded)    vbmr(i,j) *= 1.0 - alpha;  // FIXME: is_grounded always true here
 #endif
           ierr = esys.setLevel0EqnThisColumn(a0,a1,rhs); CHKERRQ(ierr);
         }

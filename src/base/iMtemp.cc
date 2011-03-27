@@ -613,6 +613,13 @@ PetscErrorCode IceModel::excessToFromBasalMeltLayer(
 }                           
 
 
+//! \brief Is one of my neighbors below a critical thickness?
+/*!
+Used in ice energy methods, both enthalpy and temperature, to determine whether
+advection should be included right at edge of ice sheet.
+
+FIXME: silly hard-wired critical level, but we want to avoid config.get() in loops.
+ */
 bool IceModel::checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
                               PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE) {
   const PetscScalar THIN = 100.0;  // thin = (at most 100m thick)
