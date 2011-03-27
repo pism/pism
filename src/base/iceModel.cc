@@ -347,24 +347,6 @@ PetscErrorCode IceModel::createVecs() {
   }
 
   if (config.get_flag("do_eigen_calving") == true) {
-    // Strainxx
-    ierr = vStrainxx.create(grid, "edot_xx", true); CHKERRQ(ierr);
-    ierr = vStrainxx.set_attrs("diagnostic", "longitudinal strain rate in x-direction",
-                           "1/s", ""); CHKERRQ(ierr);
-    ierr = variables.add(vStrainxx); CHKERRQ(ierr);
-
-    // Strainyy
-    ierr = vStrainyy.create(grid, "edot_yy", true); CHKERRQ(ierr);
-    ierr = vStrainyy.set_attrs("diagnostic", "longitudinal strain rate in y-direction",
-                           "1/s", ""); CHKERRQ(ierr);
-    ierr = variables.add(vStrainyy); CHKERRQ(ierr);
-
-    // Strainxy
-    ierr = vStrainxy.create(grid, "edot_xy", true); CHKERRQ(ierr);
-    ierr = vStrainxy.set_attrs("diagnostic", "shear rate with respect to x-y-coordinate system",
-                           "1/s", ""); CHKERRQ(ierr);
-    ierr = variables.add(vStrainxy); CHKERRQ(ierr);
-
     // PrinStrain1
     ierr = vPrinStrain1.create(grid, "edot_1", true); CHKERRQ(ierr);
     ierr = vPrinStrain1.set_attrs("model_state", "major principal component of horizontal strain-rate",

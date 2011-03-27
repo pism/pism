@@ -130,6 +130,10 @@ public:
   //! Add pointers to diagnostic quantities to a dictionary.
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict);
 
+  using ShallowStressBalance::compute_principle_strain_rates;
+  virtual PetscErrorCode compute_principle_strain_rates(
+                IceModelVec2S &result_e1, IceModelVec2S &result_e2);
+
 protected:
   virtual PetscErrorCode allocate();
 

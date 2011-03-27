@@ -162,9 +162,6 @@ protected:
     vHref,			//!< accumulated mass advected to a partially filled grid cell
     vHresidual,		//!< residual ice mass of a not any longer partially (fully) filled grid cell
 
-    vStrainxx,  	//!< longitudinal strain rate in x-direction
-    vStrainyy,		//!< longitudinal strain rate in y-direction
-    vStrainxy,		//!< horizontal shear rate with respect to x-y coordinate system
     vPrinStrain1,	//!< major principal component of horizontal strain-rate tensor
     vPrinStrain2,	//!< minor principal component of horizontal strain-rate tensor
 
@@ -353,8 +350,7 @@ protected:
   virtual PetscErrorCode killEasyIceBergs();
 
   // see iMcalving.cc
-  virtual PetscErrorCode calculateStrainrates();
-  virtual PetscErrorCode applyCalvingRate();
+  virtual PetscErrorCode eigenCalving();
   virtual PetscErrorCode calvingAtThickness();
 
 protected:

@@ -72,6 +72,10 @@ public:
   virtual PetscErrorCode get_D2(IceModelVec2S* &result)
   { result = &D2; return 0; }
 
+  virtual PetscErrorCode compute_principle_strain_rates(
+                IceModelVec2S &/*result_e1*/, IceModelVec2S &/*result_e2*/)
+  { SETERRQ(1,"not implemented in base class"); return 0; }
+
   // helpers:
 
   //! \brief Extends the computational grid (vertically).

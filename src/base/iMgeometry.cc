@@ -741,8 +741,9 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
 
 	// maybe calving should be applied before the redistribution part?
 	if (config.get_flag("do_eigen_calving") == true) {
-		ierr = calculateStrainrates(); CHKERRQ(ierr);
-		ierr = applyCalvingRate(); CHKERRQ(ierr);
+		ierr = stress_balance->get_principle_strain_rates(
+		                         vPrinStrain1,vPrinStrain2); CHKERRQ(ierr);
+		ierr = eigenCalving(); CHKERRQ(ierr);
 	}
 
 	if (config.get_flag("do_thickness_calving") == true) {

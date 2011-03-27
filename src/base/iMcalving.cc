@@ -23,95 +23,12 @@
 #include "iceModel.hh"
 #include "pism_signal.h"
 
-//! This routine is new in iceModel
+
+//! \brief Uses principle strain rates to apply "eigencalving" with constant K.
 /*!
-It calculates the xx, yy and xy=yx components of the strain rate tensor (using SSA velocities only !!)
-and its eigenvalues, which can be used in a calving law.
+See equation (26) in [\ref Winkelmannetal2010TCD].
 */
-
-PetscErrorCode IceModel::calculateStrainrates() {
-  PetscErrorCode ierr;
-
-  const PetscScalar   dx = grid.dx, dy = grid.dy;
-  //const PetscInt Mx = grid.Mx, My = grid.My;
-
-  ierr = verbPrintf(4,grid.com,"######### calculateStrainrates is called \n");
-
-  // strain rates will be derived from SSA velocities. Is there ghost communication needed?
-  IceModelVec2V *vel_advective;
-  ierr = stress_balance->get_advective_2d_velocity(vel_advective); CHKERRQ(ierr);
-  IceModelVec2V vel = *vel_advective; // just an alias
-  ierr = vel.begin_access(); CHKERRQ(ierr);
-
-  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vH.endGhostComm(); CHKERRQ(ierr);
-
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  ierr = vStrainxx.begin_access(); CHKERRQ(ierr);
-  ierr = vStrainyy.begin_access(); CHKERRQ(ierr);
-  ierr = vStrainxy.begin_access(); CHKERRQ(ierr);
-  ierr = vPrinStrain1.begin_access(); CHKERRQ(ierr);
-  ierr = vPrinStrain2.begin_access(); CHKERRQ(ierr);
-
-
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      vStrainxx(i,j) = 0.0;
-      vStrainyy(i,j) = 0.0;
-      vStrainxy(i,j) = 0.0;
-      vPrinStrain1(i,j) = 0.0;
-      vPrinStrain2(i,j) = 0.0;
-
-
-      //////////////////////////////////////
-      ////////   calculate diagnostically strain rates (only use SSA velocities), shows field of time step before
-      /////////////////////////////////////
-
-      PetscScalar u_x, u_y, v_x, v_y;
-      //centered difference scheme
-      u_x = (vel(i+1,j).u - vel(i-1,j).u) / (2 * dx); //1/sec
-      u_y = (vel(i,j+1).u - vel(i,j-1).u) / (2 * dy); //1/sec
-      v_x = (vel(i+1,j).v - vel(i-1,j).v) / (2 * dx); //1/sec
-      v_y = (vel(i,j+1).v - vel(i,j-1).v) / (2 * dy); //1/sec
-
-      if ( vel(i,j).u != 0.0 && vel(i,j).v != 0.0) {
-    	  //inward scheme at the ice-shelf front
-    	  if (vH(i+1,j)==0.0){ u_x=(vel(i,j).u-vel(i-1,j).u)/dx; v_x=(vel(i,j).v-vel(i-1,j).v)/dx;}
-    	  if (vH(i-1,j)==0.0){ u_x=(vel(i+1,j).u-vel(i,j).u)/dx; v_x=(vel(i+1,j).v-vel(i,j).v)/dx;}
-    	  if (vH(i-1,j)==0.0){ u_y=(vel(i,j).u-vel(i,j-1).u)/dy; v_y=(vel(i,j).v-vel(i,j-1).v)/dy;}
-    	  if (vH(i-1,j)==0.0){ u_y=(vel(i,j+1).u-vel(i,j).u)/dy; v_y=(vel(i,j+1).v-vel(i,j).v)/dy;}
-    	  // ice nose
-    	  if (vH(i,j-1)==0.0 && vH(i,j+1)==0.0){ u_y = 0.0; v_y = 0.0;}
-    	  if (vH(i+1,j)==0.0 && vH(i-1,j)==0.0){ u_x = 0.0; v_x = 0.0;}
-
-    	  vStrainxx(i,j) = u_x ; //1/sec
-    	  vStrainyy(i,j) = v_y ; //1/sec
-    	  vStrainxy(i,j) = 0.5 * (v_x + u_y ); //1/sec
-
-    	  vPrinStrain1(i,j) =0.5*( vStrainxx(i,j)+vStrainyy(i,j))+sqrt(0.25*PetscSqr(vStrainxx(i,j)-vStrainyy(i,j))+PetscSqr(vStrainxy(i,j)));//1/sec
-    	  vPrinStrain2(i,j) =0.5*( vStrainxx(i,j)+vStrainyy(i,j))-sqrt(0.25*PetscSqr(vStrainxx(i,j)-vStrainyy(i,j))+PetscSqr(vStrainxy(i,j)));//1/sec
-      }
-    }
-  }
-
-  ierr = vel.end_access(); CHKERRQ(ierr);
-  ierr = vH.end_access(); CHKERRQ(ierr);
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-  ierr = vStrainxx.end_access(); CHKERRQ(ierr);
-  ierr = vStrainyy.end_access(); CHKERRQ(ierr);
-  ierr = vStrainxy.end_access(); CHKERRQ(ierr);
-  ierr = vPrinStrain1.end_access(); CHKERRQ(ierr);
-  ierr = vPrinStrain2.end_access(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
-/*!
-This routine applies calving rate derived from horizontal strain rate eigenvalues
-*/
-PetscErrorCode IceModel::applyCalvingRate() {
+PetscErrorCode IceModel::eigenCalving() {
   const PetscScalar   dx = grid.dx, dy = grid.dy;
   //const PetscInt Mx = grid.Mx, My = grid.My;
   PetscErrorCode ierr;
