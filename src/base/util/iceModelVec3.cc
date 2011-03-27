@@ -62,7 +62,7 @@ PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, const char my_name[],
   grid = &my_grid;
 
   zlevels = levels;
-  n_levels = zlevels.size();
+  n_levels = (int)zlevels.size();
 
   da_stencil_width = stencil_width;
   ierr = create_2d_da(da, n_levels, da_stencil_width); CHKERRQ(ierr);
@@ -736,7 +736,7 @@ PetscErrorCode IceModelVec3::extend_vertically_private(int old_Mz) {
   // This code should match what is being done in IceModelVec3D::allocate():
 
   zlevels = grid->zlevels;
-  n_levels = zlevels.size();
+  n_levels = (int)zlevels.size();
   for (int i = 0; i < dof; ++i)
     vars[0].set_levels(zlevels);
 

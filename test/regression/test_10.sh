@@ -14,12 +14,12 @@ set -e -x
 NRANGE="1 2 3 4 5"
 
 # Create a file to bootstrap from:
-$MPIEXEC -n 1 $PISM_PATH/pisms -eisII I -Mx 101 -My 201 -y 0 -o foo0.nc
+$MPIEXEC -n 1 $PISM_PATH/pisms -eisII I -Mx 51 -My 101 -y 0 -o foo0.nc
 
 # Bootstrap:
 for NN in $NRANGE;
 do 
-    $MPIEXEC -n $NN $PISM_PATH/pismr -boot_file foo0.nc -surface constant -Mx 101 -My 201 -Mz 11 -Lz 5000 -y 0 -o foo$NN.nc -o_size small
+    $MPIEXEC -n $NN $PISM_PATH/pismr -boot_file foo0.nc -surface constant -Mx 51 -My 101 -Mz 11 -Lz 5000 -y 0 -o foo$NN.nc -o_size small
 done
 
 set +e

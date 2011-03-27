@@ -547,8 +547,8 @@ PetscErrorCode IceGrid::set_vertical_levels(vector<double> new_zlevels, vector<d
     SETERRQ(3, "rescale: zblevels invalid; must be strictly increasing and end with z=0\n");
   }
 
-  Mz  =  new_zlevels.size();
-  Mbz =  new_zblevels.size();
+  Mz  =  (int)new_zlevels.size();
+  Mbz =  (int)new_zblevels.size();
   Lz  =  new_zlevels.back();
   Lbz = -new_zblevels.front();
 

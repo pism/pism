@@ -145,7 +145,7 @@ void NCSpatialVariable::init_3d(string name, IceGrid &g, vector<double> &z_level
   short_name = name;
   grid = &g;
 
-  nlevels = PetscMax(z_levels.size(), 1); // to make sure we have at least one level
+  nlevels = PetscMax((int)z_levels.size(), 1); // to make sure we have at least one level
 
   zlevels = z_levels;
   
@@ -155,7 +155,7 @@ void NCSpatialVariable::init_3d(string name, IceGrid &g, vector<double> &z_level
 
 void NCSpatialVariable::set_levels(const vector<double> &levels) {
   zlevels = levels;
-  nlevels = zlevels.size();
+  nlevels = (int)zlevels.size();
 }
 
 

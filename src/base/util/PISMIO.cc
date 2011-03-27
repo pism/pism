@@ -47,7 +47,7 @@ PetscErrorCode PISMIO::get_grid_info(string name, grid_info &g) const {
 
   ierr = inq_dimids(varid, dimids); CHKERRQ(ierr);
 
-  int ndims = dimids.size();
+  int ndims = (int)dimids.size();
   for (int i = 0; i < ndims; ++i) {
     int dimid = dimids[i];
 
@@ -122,7 +122,7 @@ PetscErrorCode PISMIO::get_var(const int varid, Vec g, int z_count, int t) const
                                      0, z_count,
                                      start, count, imap); CHKERRQ(ierr);
 
-  int N = start.size();
+  int N = (int)start.size();
 
   // Find the local size:
   int block_size, buffer_size;
@@ -222,7 +222,7 @@ PetscErrorCode PISMIO::put_var(const int varid, Vec g, int z_count) const {
                                      0, z_count,
                                      start, count, imap); CHKERRQ(ierr);
 
-  int N = start.size();
+  int N = (int)start.size();
 
   // Find the local size:
   int block_size, buffer_size;
@@ -379,13 +379,13 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
   double *buffer = lic.a;
   int buffer_length = lic.a_len;
 
-  int nlevels = zlevels_out.size();
+  int nlevels = (int)zlevels_out.size();
 
   ierr = compute_start_and_count(varid, t_start,
                                      x_start, x_count, y_start, y_count, z_start, z_count,
                                      start, count, imap); CHKERRQ(ierr);
 
-  int N = start.size();
+  int N = (int)start.size();
 
   if (rank == 0) {
 
@@ -592,7 +592,7 @@ int PISMIO::k_below(double z, const vector<double> &zlevels) const {
 
 //! Computes the size of the local block.
 int PISMIO::compute_block_size(vector<int> count) const {
-  int N = count.size(), result = 1;
+  int N = (int)count.size(), result = 1;
 
   for (int i = 0; i < N; ++i)
     result = result * count[i];
@@ -819,7 +819,7 @@ PetscErrorCode PISMIO::compute_start_and_count(int varid,
   vector<int> dimids;
 
   ierr = inq_dimids(varid, dimids); CHKERRQ(ierr);
-  int ndims = dimids.size();
+  int ndims = (int)dimids.size();
 
   // Resize output vectors:
   start.resize(ndims);

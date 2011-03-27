@@ -424,7 +424,7 @@ PetscErrorCode show_usage_check_req_opts(
 
 //! Checks if a vector of doubles is strictly increasing.
 bool is_increasing(const vector<double> &a) {
-  int len = a.size();
+  int len = (int)a.size();
   for (PetscInt k = 0; k < len-1; k++) {
     if (a[k] >= a[k+1])  return false;
   }

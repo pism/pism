@@ -17,7 +17,7 @@ endmacro()
 # Tests themselves:
 pism_test (pism_testing_tools test_00.sh)
 
-pism_test (pismr_exact_restartability_[SIA_only] test_01.sh)
+pism_test (pismr_exact_restartability_SIA_only test_01.sh)
 
 pism_test (pismv_processor_independence test_02.sh)
 
@@ -29,7 +29,7 @@ pism_test (pismr_bootstrap_variable_order test_05.sh)
 
 pism_test (pismr_bootstrap_variable_ranges test_06.sh)
 
-pism_test (regridding_via_-boot_file_and_-regrid_file test_07.sh)
+pism_test (regridding_via_boot_file_and_regrid_file test_07.sh)
 
 pism_test (regridding_in_vertical_direction test_08.sh)
 
@@ -41,53 +41,53 @@ pism_test (automatic_vertical_grid_extension test_11.sh)
 
 pism_test (SIA_mass_conservation test_12.sh)
 
-pism_test (temperature_continuity_at_ice-bed_interface_[cold_case] test_13.sh)
+pism_test (temperature_continuity_at_ice_bed_z=0_cold test_13.sh)
 
-pism_test (enthalpy_symmetry_near_the_base_[pisms_-no_cold] test_14.sh)
+pism_test (enthalpy_symmetry_near_the_base_pisms_no_cold test_14.sh)
 
-pism_test (verif_test_E_regression:_isothermal_SIA_with_sliding test_15.sh)
+pism_test (verif_test_E_regress_SIA_sliding test_15.sh)
 
-pism_test (verif_test_C_regression:_isothermal_SIA_w._time-dependent_SMB test_16.sh)
+pism_test (verif_test_C_regress_SIA_time_SMB test_16.sh)
 
-pism_test (verif_test_L_regression:_isothermal_SIA_with_non-flat_bed test_17.sh)
+pism_test (verif_test_L_regress_SIA_nonflat_bed test_17.sh)
 
-pism_test (verif_test_G_regression:_thermo_SIA_w._time-dependent_SMB test_18.sh)
+pism_test (verif_test_G_regress_thermo_SIA_time_SMB test_18.sh)
 
-pism_test (verif_test_I_SSAFD_regression:_nonlinear_SSA_with_plastic_bed ssa/ssa_testi_fd.sh)
+pism_test (verif_test_I_SSAFD_regress_SSA_plastic ssa/ssa_testi_fd.sh)
 
-pism_test (verif_test_I_SSAFD_PIK_regression:_nonlinear_SSA_with_plastic_bed ssa/ssa_testi_fd_pik.sh)
+pism_test (verif_test_I_SSAFD_PIK_regress_SSA_plastic ssa/ssa_testi_fd_pik.sh)
 
-pism_test (verif_test_I_SSAFEM_regression:_nonlinear_SSA_with_plastic_bed ssa/ssa_testi_fem.sh)
+pism_test (verif_test_I_SSAFEM_regress_SSA_plastic ssa/ssa_testi_fem.sh)
 
-pism_test (verif_test_J_SSAFD_regression:_linearized_SSA,_floating ssa/ssa_testj_fd.sh)
+pism_test (verif_test_J_SSAFD_regress_linear_SSA_floating ssa/ssa_testj_fd.sh)
 
-pism_test (verif_test_J_SSAFD_PIK_regression:_linearized_SSA,_floating ssa/ssa_testj_fd_pik.sh)
+pism_test (verif_test_J_SSAFD_PIK_regress_linear_SSA_floating ssa/ssa_testj_fd_pik.sh)
 
-pism_test (verif_test_J_SSAFEM_regression:_linearized_SSA,_floating ssa/ssa_testj_fem.sh)
+pism_test (verif_test_J_SSAFEM_regress_linear_SSA_floating ssa/ssa_testj_fem.sh)
 
-pism_test (verif_SSAFEM_linear_flow_regression ssa/ssafem_test_linear.sh)
+pism_test (verif_SSAFEM_regress_linear_flow ssa/ssafem_test_linear.sh)
 
-pism_test (verif_SSAFEM_plug_flow_regression ssa/ssafem_test_plug.sh)
+pism_test (verif_SSAFEM_regress_plug_flow ssa/ssafem_test_plug.sh)
 
-pism_test (verif_test_K_regression:_cold_ice_method,_bedrock_thermal_layer test_21.sh)
+pism_test (verif_test_K_regress_cold_ice_bedrock_thermal test_21.sh)
 
-pism_test (EISMINT-Ross_experiment_regression test_22.sh)
+pism_test (EISMINT-Ross_experiment_regress test_22.sh)
 
-pism_test (GPBLD_flow_law_regression test_24.sh)
+pism_test (GPBLD_flow_law_regress test_24.sh)
 
-pism_test (Paterson-Budd_flow_law_regression test_25.sh)
+pism_test (Paterson-Budd_flow_law_regress test_25.sh)
 
-pism_test (Schoof_[2003]_bed_roughness_SIA_parameterization_regression test_26.sh)
+pism_test (Schoof_2003_bed_roughness_SIA_regress test_26.sh)
 
-pism_test (comparing_restart:_-i_vs_-boot_file_and_-regrid_file test_27.sh)
+pism_test (comparing_restart_i_vs_boot_file_and_regrid_file test_27.sh)
 
-pism_test (Hooke_flow_law_regression test_28.sh)
+pism_test (Hooke_flow_law_regress test_28.sh)
 
-pism_test (hybrid_[GK-PB]_flow_law_regression test_29.sh)
+pism_test (hybrid_GK-PB_flow_law_regress test_29.sh)
 
-pism_test (Cold_part_of_Paterson-Budd_flow_law_regression test_30.sh)
+pism_test (cold_part_of_Paterson-Budd_flow_law_regress test_30.sh)
 
-pism_test (verif_PISMBedThermalUnit_test_K_regression btu_regression.sh)
+pism_test (verif_PISMBedThermalUnit_test_K_regress btu_regression.sh)
 
 pism_test (runtime_viewers test_31.sh)
 
