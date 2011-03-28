@@ -51,9 +51,10 @@ public:
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input)
   { delete input; }
 protected:
-  IceModelVec2T temperature, mass_flux;
-  PetscReal bc_period, bc_reference_year;
-  bool enable_time_averaging;
+  IceModelVec2S *surface, *vH;
+  IceModelVec2T temperature, mass_flux, bc_surface;
+  PetscReal bc_period, bc_reference_year, bc_lapse_rate;
+  bool enable_time_averaging, bc_lapse_rate_set;
 
   PetscReal my_mod(PetscReal input);
 };

@@ -30,7 +30,7 @@ PetscReal PSDirectForcing::my_mod(PetscReal input) {
 }
 
 
-PetscErrorCode PSDirectForcing::init(PISMVars &/*vars*/) {
+PetscErrorCode PSDirectForcing::init(PISMVars &vars) {
   PetscErrorCode ierr;
   string filename;
   bool bc_file_set, bc_period_set, bc_ref_year_set;
@@ -49,6 +49,8 @@ PetscErrorCode PSDirectForcing::init(PISMVars &/*vars*/) {
                            bc_period, bc_period_set); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-bc_reference_year", "Boundary condition reference year",
                            bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-bc_lapse_rate", "Boundary condition lapse rate in Kelvin per kilometer",
+                           bc_lapse_rate, bc_lapse_rate_set); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-bc_time_average", "Enable time-averaging of boundary condition data",
                             enable_time_averaging); CHKERRQ(ierr);
   }
@@ -89,6 +91,28 @@ PetscErrorCode PSDirectForcing::init(PISMVars &/*vars*/) {
 
   mass_flux.strict_timestep_limit = ! enable_time_averaging;
 
+  if (bc_lapse_rate_set) {
+    ierr = verbPrintf(2,grid.com,
+                      "    reading reference surface from %s ...\n",
+                      filename.c_str()); CHKERRQ(ierr);
+
+    bc_surface.set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
+    ierr = bc_surface.create(grid, "usurf", false); CHKERRQ(ierr);
+    ierr = bc_surface.set_attrs("climate_forcing",
+                               "reference surface for lapse rate",
+                               "m", "surface_altitude"); CHKERRQ(ierr);
+    ierr = bc_surface.init(filename); CHKERRQ(ierr);
+
+    bc_surface.strict_timestep_limit = ! enable_time_averaging;
+
+    surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));    
+    if (!surface) SETERRQ(1, "ERROR: 'usurf' is not available or is wrong type in dictionary");
+
+    vH = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));    
+    if (!vH) SETERRQ(1, "ERROR: 'ice thickness' is not available or is wrong type in dictionary");
+
+  }
+
   return 0;
 }
 
@@ -107,6 +131,7 @@ PetscErrorCode PSDirectForcing::update(PetscReal t_years, PetscReal dt_years) {
   dt = dt_years;
 
   ierr = temperature.update(t, dt); CHKERRQ(ierr);
+  ierr = bc_surface.update(t, dt); CHKERRQ(ierr);
   ierr = mass_flux.update(t, dt); CHKERRQ(ierr);
 
   return 0;
@@ -159,6 +184,7 @@ PetscErrorCode PSDirectForcing::define_variables(set<string> vars, const NCTool 
 
   return 0;
 }
+
 
 
 PetscErrorCode PSDirectForcing::write_variables(set<string> vars, string filename) {
@@ -218,12 +244,38 @@ PetscErrorCode PSDirectForcing::ice_surface_temperature(PetscReal t_years, Petsc
 
   if (enable_time_averaging) {
     ierr = temperature.average(t_years, dt_years); CHKERRQ(ierr);
+    ierr = bc_surface.average(t_years, dt_years); CHKERRQ(ierr);
   } else {
     ierr = temperature.get_record_years(t_years); CHKERRQ(ierr);
+    ierr = bc_surface.get_record_years(t_years); CHKERRQ(ierr);
   }
 
   ierr = temperature.copy_to(result); CHKERRQ(ierr); 
 
+  if (bc_lapse_rate_set) {
+
+    PetscReal delta_artm;
+    ierr = vH->begin_access(); CHKERRQ(ierr);
+    ierr = result.begin_access();   CHKERRQ(ierr);
+    ierr = surface->begin_access();   CHKERRQ(ierr);
+    ierr = bc_surface.begin_access();   CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	if ((*vH)(i,j) > 0) { // only correct artm if there is ice
+	  delta_artm = bc_lapse_rate/1000 * ((*surface)(i,j)-bc_surface(i,j))  ; 
+	  result(i,j) += delta_artm;
+	  ierr = verbPrintf(4, grid.com,"delta_artm=%f, bc_surf=%f, h=%f, artm=%f\n",delta_artm,bc_surface(i,j),(*surface)(i,j),result(i,j)); CHKERRQ(ierr);
+	}
+      }
+    }
+    ierr = bc_surface.end_access();   CHKERRQ(ierr);  
+    ierr = surface->end_access();   CHKERRQ(ierr);
+    ierr = result.end_access();   CHKERRQ(ierr);    
+    ierr = vH->begin_access(); CHKERRQ(ierr);
+  }
+
+
   return 0;
 }
+
 
