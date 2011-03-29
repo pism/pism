@@ -978,6 +978,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep_new(
 
       // deal completely with columns with no ice; note vHmelt and vbmr need setting
       if (ice_free_column) {
+        ierr = vWork3d.setColumn(i,j,Enth_ks); CHKERRQ(ierr);
         if (is_floating) {
 #if CHANGE_BASAL_MELT == 0
           vHmelt(i,j) = hmelt_max;
