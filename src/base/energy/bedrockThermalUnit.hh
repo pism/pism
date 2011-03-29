@@ -52,17 +52,28 @@ in an ice sheet model is to implement this dependency by using a physical model
 for the temperature within that layer, the upper lithosphere.  Because the
 upper part of the lithosphere stores or releases energy into the ice,
 the typical lithosphere geothermal flux rate is not the same thing as the
-geothermal flux applied to the base of the ice.
+geothermal flux applied to the base of the ice.  This issue has long been
+recognized by ice sheet modelers [%e.g. \ref RitzFabreLetreguilly].
+
+For instance, suppose the ice sheet is in a balanced state in which the geothermal
+flux deep in the crust is equal to the heat flux into the ice base.  If the
+near-surface ice cools from this state then, because the ice temperature gradient
+is now greater in magnitude, between the warm bedrock and the cooler ice, the ice
+will for some period receive more than the deep geothermal flux rate. Similarly,
+if the ice warms from the balanced state then the temperature difference with
+the bedrock has become smaller and the magnitude of the ice basal heat flux will
+be less than the deep geothermal rate.
 
 We regard the lithosphere geothermal flux rate, which is applied in this model
 to the base of the bedrock thermal layer, as a time-independent quantity.  This
 concept is the same as in all published ice sheet models, to our knowledge.
 
+Because the relevant layer of bedrock below an ice sheet is typically shallow,
+modeling the bedrock temperature is quite simple.
 Let \f$T_b(t,x,y,z)\f$ be the temperature of the bedrock layer, for elevations
 \f$-L_b \le z \le 0\f$.  In this routine, \f$z=0\f$ refers to the top of the
 bedrock, the ice/bedrock interface.  (Note \f$z=0\f$ is the base of the ice in
 IceModel, and thus a different location if ice is floating.)
-
 Let \f$G\f$ be the lithosphere geothermal flux rate, namely the PISM input
 variable \c bheatflx; see Related Page \ref std_names .  Let \f$k_b\f$
 (= \c bedrock_thermal_conductivity in pism_config.cdl) be the constant thermal

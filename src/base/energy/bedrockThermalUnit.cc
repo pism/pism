@@ -300,6 +300,19 @@ PetscErrorCode PISMBedThermalUnit::max_timestep(PetscReal /*t_years*/, PetscReal
 }
 
 
+/* FIXME:  the old scheme had better stability properties, as follows:
+
+Because there is no advection, the simplest centered implicit (backward Euler) scheme is easily "bombproof" without choosing \f$\lambda\f$, or other complications.  It has this scaled form,
+\anchor bedrockeqn
+\f[ -R_b T_{k-1}^{n+1} + \left(1 + 2 R_b\right) T_k^{n+1} - R_b T_{k+1}^{n+1}
+         = T_k^n, \tag{bedrockeqn} \f]
+where 
+  \f[ R_b = \frac{k_b \Delta t}{\rho_b c_b \Delta z^2}. \f]
+This is unconditionally stable for a pure bedrock problem, and has a maximum principle, without any further qualification [\ref MortonMayers].
+
+FIXME:  now a trapezoid rule could be used
+*/
+
 PetscErrorCode PISMBedThermalUnit::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr;
 

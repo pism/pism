@@ -294,7 +294,7 @@ This method uses instances of combinedSystemCtx, bedrockOnlySystemCtx, and
 iceenthOnlySystemCtx.
 
 This method modifies IceModelVec3 vWork3d, IceModelVec3Bedrock Tb3,
-IceModelVec2S vBasalMeltRate, and IceModelVec2S vHmelt.  No communication of
+IceModelVec2S vbmr, and IceModelVec2S vHmelt.  No communication of
 ghosts is done for any of these fields.
 
 Regarding drainage, we move the liquid water fraction which is in excess of
@@ -847,7 +847,18 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 }
 
 
-/*! FIXME: see docs for old version above and update this comment */
+//! Update enthalpy field based on conservation of energy in ice and bedrock.
+/*!
+This method is documented by the page \ref bombproofenth and by [\ref
+AschwandenBuelerBlatter].
+
+This method uses an instance of enthSystemCtx.
+
+This method updates IceModelVec3 vWork3d, IceModelVec2S vbmr, and 
+IceModelVec2S vHmelt.  No communication of ghosts is done for any of these fields.
+
+Regarding drainage, see [\ref AschwandenBuelerBlatter] and references therein.
+ */
 PetscErrorCode IceModel::enthalpyAndDrainageStep_new(
                       PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
                       PetscScalar* bulgeCount) {
