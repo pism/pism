@@ -43,6 +43,38 @@ Timeseries::Timeseries(MPI_Comm c, PetscMPIInt r, string name, string dimension_
 PetscErrorCode Timeseries::read(const char filename[]) {
   PetscErrorCode ierr;
 
+  NCTool nc(com, rank);
+  bool exists;
+  vector<int> dimids;
+  int varid;
+  string time_name, standard_name = var.get_string("standard_name");
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+  ierr = nc.find_variable(short_name, standard_name, &varid, exists); CHKERRQ(ierr);
+
+  if (!exists) {
+    ierr = PetscPrintf(com,
+		      "PISM ERROR: Can't find '%s' ('%s') in '%s'.\n",
+		       short_name.c_str(), standard_name.c_str(), filename);
+    CHKERRQ(ierr);
+    PISMEnd();
+  }
+
+  ierr = nc.inq_dimids(varid, dimids); CHKERRQ(ierr);
+
+  if (dimids.size() != 1) {
+    ierr = PetscPrintf(com,
+		       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
+		       "            but a time-series variable can only depend on 1 dimension.\n",
+		       short_name.c_str(), filename, dimids.size()); CHKERRQ(ierr);
+    PISMEnd();
+  }
+
+  ierr = nc.inq_dimname(dimids[0], time_name); CHKERRQ(ierr);
+
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  dimension.init(time_name, time_name, com, rank);
+
   ierr = dimension.read(filename, time); CHKERRQ(ierr);
   bool is_increasing = true;
   for (unsigned int j = 1; j < time.size(); ++j) {

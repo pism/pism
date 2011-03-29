@@ -47,7 +47,7 @@ static PetscErrorCode setupIceGridFromFile(string filename, IceGrid &grid) {
   PetscErrorCode ierr;
 
   PISMIO nc(&grid);
-  ierr = nc.get_grid("land_ice_thickness", filename.c_str()); CHKERRQ(ierr);
+  ierr = nc.get_grid(filename, "land_ice_thickness"); CHKERRQ(ierr);
   grid.compute_nprocs();
   grid.compute_ownership_ranges();
   ierr = grid.createDA(); CHKERRQ(ierr);  
@@ -267,6 +267,9 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = ocean->shelf_base_temperature(pccyear, dt_update_years, *shelfbasetemp); CHKERRQ(ierr);
 
     ierr = ocean->shelf_base_mass_flux(pccyear, dt_update_years, *shelfbasemassflux); CHKERRQ(ierr);
+
+    ierr = acab->write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = artm->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
     // ask ocean and surface models to write variables:
     ierr = surface->write_variables(vars_to_write, filename); CHKERRQ(ierr);

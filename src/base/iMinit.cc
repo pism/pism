@@ -88,20 +88,6 @@ PetscErrorCode IceModel::set_grid_defaults() {
 
   ierr = nc.close(); CHKERRQ(ierr);
 
-  // if the horizontal dimensions are absent then we can not proceed
-  if (!x_dim_exists) {
-    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'x'\n",
-		       filename.c_str());
-    CHKERRQ(ierr);
-    PISMEnd();
-  }
-  if (!y_dim_exists) {
-    ierr = PetscPrintf(grid.com,"bootstrapping file '%s' has no horizontal dimension 'y'\n",
-		       filename.c_str());
-    CHKERRQ(ierr);
-    PISMEnd();
-  }
-
   // Set the grid center and horizontal extent:
   grid.x0 = gi.x0;
   grid.y0 = gi.y0;

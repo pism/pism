@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2010 Ed Bueler and Andy Aschwanden
+# Copyright (C) 2009-2011 Ed Bueler and Andy Aschwanden
 
 # PISM SeaRISE Greenland
 #
@@ -29,15 +29,13 @@ PISMVERSION=pism_$DATANAME
 ncks -O $DATANAME $PISMVERSION  # just copies over, but preserves history and global attrs
 
 # adjust metadata; uses NCO (http://nco.sourceforge.net/)
-ncrename -O -v x1,x -v y1,y -d x1,x -d y1,y $PISMVERSION
-ncrename -O -v time,t -d time,t $PISMVERSION
 # convert from water equiv to ice thickness change rate; assumes ice density 910.0 kg m-3
 ncap -O -s "precip=presprcp*(1000.0/910.0)" $PISMVERSION $PISMVERSION
 ncatted -O -a units,precip,a,c,"m a-1" $PISMVERSION
 ncatted -O -a long_name,precip,a,c,"ice-equivalent mean annual precipitation rate" $PISMVERSION
 # delete incorrect standard_name attribute from bheatflx; there is no known standard_name
 ncatted -a standard_name,bheatflx,d,, $PISMVERSION
-ncks -O -v x,y,lat,lon,bheatflx,topg,thk,precip,mapping \
+ncks -O -v lat,lon,bheatflx,topg,thk,precip,mapping \
   $PISMVERSION $PISMVERSION
 echo "  PISM-readable file $PISMVERSION created from $DATANAME"
 echo "    (contains only fields used in bootstrapping ...)"

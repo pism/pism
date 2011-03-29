@@ -1208,7 +1208,7 @@ PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
   ierr = nc.inq_dimname(dimids[0], dimension_name); CHKERRQ(ierr);
 
   int length;
-  ierr = nc.get_dim_length(dimension_name.c_str(), &length); CHKERRQ(ierr);
+  ierr = nc.get_dim_length(dimension_name, &length); CHKERRQ(ierr);
 
   if (length <= 0) {
     ierr = PetscPrintf(com,

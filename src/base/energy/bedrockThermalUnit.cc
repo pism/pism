@@ -466,12 +466,12 @@ PetscErrorCode PISMBedThermalUnit::bootstrap() {
 
   if (flag == false) return 0;
 
+  if (Mbz < 2) return 0;
+
   ierr = verbPrintf(2,grid.com,
                     "  bootstrapping to fill lithosphere temperatures in bedrock thermal layers,\n"
                     "    using provided bedtoptemp and a linear function from provided geothermal flux ...\n");
   CHKERRQ(ierr);
-
-  if (Mbz < 2) return 0;
 
   PetscScalar* Tb;
   PetscReal dzb;
