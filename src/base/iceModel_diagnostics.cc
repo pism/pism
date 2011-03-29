@@ -236,6 +236,9 @@ IceModel_cts::IceModel_cts(IceModel *m, IceGrid &g, PISMVars &my_vars)
 PetscErrorCode IceModel_cts::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
 
+  // update vertical levels (in case the grid was extended
+  vars[0].set_levels(grid.zlevels);
+
   IceModelVec3 *result = new IceModelVec3;
   ierr = result->create(grid, "cts", false); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
@@ -337,6 +340,9 @@ IceModel_temp::IceModel_temp(IceModel *m, IceGrid &g, PISMVars &my_vars)
 
 PetscErrorCode IceModel_temp::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
+
+  // update vertical levels (in case the grid was extended
+  vars[0].set_levels(grid.zlevels);
   
   IceModelVec3 *result = new IceModelVec3;
   ierr = result->create(grid, "temp", false); CHKERRQ(ierr);
@@ -396,6 +402,9 @@ PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   bool cold_mode = model->config.get_flag("do_cold_ice_methods");
   PetscReal triple_point_temp = model->config.get("water_triple_point_temperature");
+
+  // update vertical levels (in case the grid was extended
+  vars[0].set_levels(grid.zlevels);
 
   IceModelVec3 *result = new IceModelVec3;
   ierr = result->create(grid, "temp_pa", false); CHKERRQ(ierr);
@@ -711,6 +720,9 @@ IceModel_liqfrac::IceModel_liqfrac(IceModel *m, IceGrid &g, PISMVars &my_vars)
 PetscErrorCode IceModel_liqfrac::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   
+  // update vertical levels (in case the grid was extended
+  vars[0].set_levels(grid.zlevels);
+
   IceModelVec3 *result = new IceModelVec3;
   ierr = result->create(grid, "liqfrac", false); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
