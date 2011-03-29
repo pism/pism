@@ -166,6 +166,26 @@ In the \t{-ssa_sliding} case of a SIA+SSA hybrid model, the determination of bas
 \end{equation*}
 Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of gravity, $p_w$ is the modeled pore water pressure, and $\phi$ is the till friction angle.  The difference $(\rho g H - p_w)$ is the modeled value of the effective pressure on the material till.  Note Schoof \cite{SchoofStream} formula (2.4) uses till cohesion $c_0 = 0$ and that is the default value in PISM.
 
+\begin{table}
+  \centering
+  \begin{tabular}{lp{0.6\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \txtopt{topg_to_phi}{\emph{list of 5 numbers}} & Compute $\phi$ using \eqref{eq:1} and \eqref{eq:2}.\\
+    \txtopt{plastic_pwfrac}{\emph{pure number}} & Set what fraction of overburden pressure is assumed as the till pore water pressure.  Only relevant at basal points where there is a positive amount of basal water.\\
+    \intextoption{plastic_c0} & Set the value of the till cohesion ($c_{0}$) in the plastic till model.  The value is a pressure, given in kPa.\\
+    \txtopt{plastic_reg}{(m/a)} & Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}. The default is $0.01$.\\
+    \txtopt{plastic_phi}{(degrees)} & Use a constant till friction angle. The default is $30^{\circ}$.\\
+    \intextoption{pseudo_plastic_q} & Set the exponent $q$.\\
+    \txtopt{pseudo_plastic_uthreshold}{(m/a)} & Set $u_{\text{threshold}}$. The default is $100$ m/a.\\
+    \intextoption{hold_tauc} &   Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-ssa_sliding} is also set.
+   \\\bottomrule
+  \end{tabular}
+  \caption{Basal strength command-line options}
+  \label{tab:basal-strength}
+\end{table}
+
 Option \texttt{-plastic_pwfrac} determines $\alpha$, the quantity controlling how $p_w$ is determined from the effective thickness of basal water, the quantity $w=$\texttt{bwat}.  The formula is $p_w = \alpha\, w \rho g H$.  See \cite{BKAJS}.
 
 We find that an effective, though heuristic, way to determine \texttt{tillphi} is to make it a function of bed elevation \cite{BKAJS}.  This heuristic is motivated by hypothesis that basal material with a marine history should be weak \cite{HuybrechtsdeWolde}.
@@ -203,26 +223,6 @@ Within PISM there is an implementation of SIA-based sliding for the verification
 
 Outside of PISM the SIA sliding mechanism appears in ISMIP-HEINO \cite{Calovetal2009HEINOfinal} and many other SIA-based modeling efforts.
 
-\begin{table}
-  \centering
-  \begin{tabular}{lp{0.6\linewidth}}
-    \\\toprule
-    \textbf{Option} & \textbf{Description}
-    \\\midrule
-    \txtopt{topg_to_phi}{\emph{list of 5 numbers}} & Compute $\phi$ using \eqref{eq:1} and \eqref{eq:2}.\\
-    \txtopt{plastic_pwfrac}{\emph{pure number}} & Set what fraction of overburden pressure is assumed as the till pore water pressure.  Only relevant at basal points where there is a positive amount of basal water.\\
-    \intextoption{plastic_c0} & Set the value of the till cohesion ($c_{0}$) in the plastic till model.  The value is a pressure, given in kPa.\\
-    \txtopt{plastic_reg}{(m/a)} & Set the value of $\eps$ regularization of plastic till; this is the second ``$\eps$'' in formula (4.1) in \cite{SchoofStream}. The default is $0.01$.\\
-    \txtopt{plastic_phi}{(degrees)} & Use a constant till friction angle. The default is $30^{\circ}$.\\
-    \intextoption{pseudo_plastic_q} & Set the exponent $q$.\\
-    \txtopt{pseudo_plastic_uthreshold}{(m/a)} & Set $u_{\text{threshold}}$. The default is $100$ m/a.\\
-    \intextoption{hold_tauc} &   Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-ssa_sliding} is also set.
-   \\\bottomrule
-  \end{tabular}
-  \caption{Basal strength command-line options}
-  \label{tab:basal-strength}
-\end{table}
-
 % undocumented options/config. parameters
 % base/iMoptions.cc:  "thk_eff" : "thk_eff_basal_water_pressure"
 % base/iMoptions.cc:  "thk_eff_H_high" : "thk_eff_H_high"
@@ -241,7 +241,7 @@ Outside of PISM the SIA sliding mechanism appears in ISMIP-HEINO \cite{Calovetal
 
 PISM includes two very basic calving mechanisms activated using options in Table \ref{tab:calving}.  Implementing other more physically-motivated calving laws (e.g.~\cite{Levermannetalsubmitted}) is planned for future versions of PISM.
 
-\begin{table}[ht]
+\begin{table}
   \centering
   \begin{tabular}{lp{0.7\linewidth}}
     \\\toprule

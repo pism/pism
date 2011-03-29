@@ -9,7 +9,7 @@
 \newcommand{\PISMDOWNLOADMSG}{Get development version of PISM source code: \quad\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev} \quad}
 
 %\addtolength\topmargin{-.1in}
-\addtolength\textheight{0.6in}
+\addtolength\textheight{0.75in}
 \addtolength{\oddsidemargin}{-.4in}
 \addtolength{\evensidemargin}{-.4in}
 \addtolength{\textwidth}{0.9in}
@@ -310,9 +310,9 @@ Sections \ref{sec:eismint-greenland} and \ref{sect:ross} are examples illustrati
 
 
 \subsection{Climate inputs, and their interface with ice dynamics}
-\label{sec:climate-inputs}  This section applies the seventh PISM organizing principle above (section \ref{sect:dynamics}): \emph{climate inputs affect ice dynamics by a well-defined interface}.
+\label{sec:climate-inputs}  
 
-Because PISM's job is to approximate ice flow, its world view is centered around ice dynamics.  Any discussion of boundary conditions, and of interfaces to other geophysical models, are necessarily ``ice-centric'' in our description here.  But there is no constraint on the nature of, or completeness of, climate models which could be coupled to PISM.
+Because PISM's job is to approximate ice flow, its ``world view'' is centered around ice dynamics.  The discussion of boundary conditions, in this \emph{Manual} is necessarily ``ice-centric'' in our description here, but there is no constraint on the nature of, or completeness of, climate models which could be coupled to PISM.  This section applies the PISM organizing principle above (section \ref{sect:dynamics}): \emph{climate inputs affect ice dynamics by a well-defined interface}.
 
 Figure~\ref{fig:climate-inputs} illustrates that any PISM ice sheet model has an interface (green) to a surface processes layer containing snow, firn, and liquid (or refrozen) runoff, and to the ocean (blue) if there is floating ice.  The surface processes layer might be very simple.  If it is ``owned'' by the PISM model then there is an additional interface (red) to the atmosphere above.  The interface to the surface layer is assumed in PISM to cover the whole surface of the ice, including ablation areas and even ice-free land.  Table \ref{tab:ice-dynamics-bc} lists fields which are needed as boundary conditions at the interfaces.
 
