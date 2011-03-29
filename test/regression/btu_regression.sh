@@ -11,12 +11,12 @@ files="foo.nc foo.nc~ btu_test_out.txt"
 
 rm -f $files
 
-set -e
+set -e -x
 
-OPTS="-verbose 1 -ys 0.0 -ye 1.0 -dt 0.1 -Lbz 1000 -o foo.nc"
+OPTS="-verbose 1 -ys 0.0 -ye 1.0 -dt 0.1 -o foo.nc"
 
 # do stuff: test with a litho_temp state variable, and without
-$PISM_PATH/btutest -Mbz 11 $OPTS > btu_test_out.txt
+$PISM_PATH/btutest -Mbz 11 -Lbz 1000 $OPTS > btu_test_out.txt
 $PISM_PATH/btutest -Mbz 1 $OPTS >> btu_test_out.txt
 
 set +e

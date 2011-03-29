@@ -208,15 +208,17 @@ PetscErrorCode IceModelVec2::regrid(const char filename[], bool critical, int st
   }
   
   ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
-  lic->start[0] = start;
-  lic->report_range = report_range;
+  if (lic != NULL) {
+    lic->start[0] = start;
+    lic->report_range = report_range;
+  }
 
   Vec tmp;			// a temporary one-component vector,
 				// distributed across processors the same way v is
   ierr = DACreateGlobalVector(grid->da2, &tmp); CHKERRQ(ierr);
 
   for (int j = 0; j < dof; ++j) {
-    ierr = vars[j].regrid(filename, *lic, critical, false, 0.0, tmp); CHKERRQ(ierr);
+    ierr = vars[j].regrid(filename, lic, critical, false, 0.0, tmp); CHKERRQ(ierr);
     ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
   }
 
@@ -243,14 +245,16 @@ PetscErrorCode IceModelVec2::regrid(const char filename[], PetscScalar default_v
   }
   
   ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
-  lic->report_range = report_range;
+  if (lic != NULL) {
+    lic->report_range = report_range;
+  }
 
   Vec tmp;			// a temporary one-component vector,
 				// distributed across processors the same way v is
   ierr = DACreateGlobalVector(grid->da2, &tmp); CHKERRQ(ierr);
 
   for (int j = 0; j < dof; ++j) {
-    ierr = vars[j].regrid(filename, *lic, false, true, default_value, tmp); CHKERRQ(ierr);
+    ierr = vars[j].regrid(filename, lic, false, true, default_value, tmp); CHKERRQ(ierr);
     ierr = IceModelVec2::set_component(j, tmp); CHKERRQ(ierr);
   }
 

@@ -457,11 +457,17 @@ PetscErrorCode IceModelVec::get_interp_context(string filename, LocalInterpCtx* 
   vector<double> zlevs, zblevs;
   grid_info gi;
   ierr = nc.open_for_reading(filename.c_str()); CHKERRQ(ierr);
-  ierr = nc.get_grid_info(vars[0].short_name, gi); CHKERRQ(ierr);
-  ierr = nc.close(); CHKERRQ(ierr);
+  ierr = nc.get_grid_info(vars[0].short_name, gi);
 
-  //! the *caller* is in charge of destroying lic
-  lic = new LocalInterpCtx(gi, *grid);
+  if (ierr == 1) {              // no such variable
+    lic = NULL;
+  } else {
+    CHKERRQ(ierr);              // catch other errors
+    //! the *caller* is in charge of destroying lic
+    lic = new LocalInterpCtx(gi, *grid);
+  }
+
+  ierr = nc.close(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -476,8 +482,11 @@ PetscErrorCode IceModelVec::regrid(const char filename[], bool critical, int sta
   LocalInterpCtx *lic = NULL;
   
   ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
-  lic->start[0] = start;
-  lic->report_range = report_range;
+
+  if (lic != NULL) {
+    lic->start[0] = start;
+    lic->report_range = report_range;
+  }
 
   if (dof != 1)
     SETERRQ(1, "This method only supports IceModelVecs with dof == 1.");
@@ -485,14 +494,14 @@ PetscErrorCode IceModelVec::regrid(const char filename[], bool critical, int sta
   if (localp) {
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
 
-    ierr = vars[0].regrid(filename, *lic, critical, false, 0.0, g); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, lic, critical, false, 0.0, g); CHKERRQ(ierr);
 
     ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
     ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
 
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = vars[0].regrid(filename, *lic, critical, false, 0.0, v); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, lic, critical, false, 0.0, v); CHKERRQ(ierr);
   }
 
   delete lic;
@@ -509,7 +518,10 @@ PetscErrorCode IceModelVec::regrid(const char filename[], PetscScalar default_va
   LocalInterpCtx *lic = NULL;
   
   ierr = get_interp_context(filename, lic); CHKERRQ(ierr);
-  lic->report_range = report_range;
+
+  if (lic != NULL) {
+    lic->report_range = report_range;
+  }
 
   if (dof != 1)
     SETERRQ(1, "This method only supports IceModelVecs with dof == 1.");
@@ -517,14 +529,14 @@ PetscErrorCode IceModelVec::regrid(const char filename[], PetscScalar default_va
   if (localp) {
     ierr = DACreateGlobalVector(da, &g); CHKERRQ(ierr);
 
-    ierr = vars[0].regrid(filename, *lic, false, true, default_value, g); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, lic, false, true, default_value, g); CHKERRQ(ierr);
 
     ierr = DAGlobalToLocalBegin(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
     ierr = DAGlobalToLocalEnd(da, g, INSERT_VALUES, v); CHKERRQ(ierr);
 
     ierr = VecDestroy(g); CHKERRQ(ierr);
   } else {
-    ierr = vars[0].regrid(filename, *lic, false, true, default_value, v); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename, lic, false, true, default_value, v); CHKERRQ(ierr);
   }
 
   delete lic;

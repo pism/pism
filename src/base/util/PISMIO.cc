@@ -352,7 +352,7 @@ levels on the source grid.  That is,
 Then we just do the two variable interpolation as before, finding \f$a_{m}\f$ and \f$a_p\f$ before
 computing \f$F(x,y,z)\f$.
  */
-PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels_out, LocalInterpCtx &lic,
+PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels_out, LocalInterpCtx *lic,
 				  Vec g) const {
   PetscErrorCode ierr;
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
@@ -366,18 +366,18 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
 
   ierr = data_mode(); CHKERRQ(ierr);
 
-  int t_start = lic.start[T],
-    x_start = lic.start[X],
-    y_start = lic.start[Y],
-    x_count = lic.count[X],
-    y_count = lic.count[Y],
-    z_start = lic.start[Z],
-    z_count = lic.count[Z];
+  int t_start = lic->start[T],
+    x_start = lic->start[X],
+    y_start = lic->start[Y],
+    x_count = lic->count[X],
+    y_count = lic->count[Y],
+    z_start = lic->start[Z],
+    z_count = lic->count[Z];
 
   // FIXME: this will need to go
-  vector<double> &zlevels_in = lic.zlevels;
-  double *buffer = lic.a;
-  int buffer_length = lic.a_len;
+  vector<double> &zlevels_in = lic->zlevels;
+  double *buffer = lic->a;
+  int buffer_length = lic->a_len;
 
   int nlevels = (int)zlevels_out.size();
 
@@ -444,7 +444,7 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
   // local processor's part of the source variable.  
   // That is, it should be enough of the source variable so that \e interpolation
   // (not extrapolation) onto the local processor's part of the target grid is possible.
-  //ierr = lic.printArray(grid.com); CHKERRQ(ierr);
+  //ierr = lic->printArray(grid.com); CHKERRQ(ierr);
   
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (buffer)
@@ -465,8 +465,8 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
         // pulled from the netCDF file.  This part is special to a regular
         // grid.  In particular floor(ic) is the index of the 'left neighbor'
         // and ceil(ic) is the index of the 'right neighbor'.
-        double ic = (x - lic.fstart[X]) / lic.delta[X];
-        double jc = (y - lic.fstart[Y]) / lic.delta[Y];
+        double ic = (x - lic->fstart[X]) / lic->delta[X];
+        double jc = (y - lic->fstart[Y]) / lic->delta[Y];
 
         // bounds checking on ic and jc; cases where this is essential *have* been observed
         if ((int)floor(ic) < 0) {
@@ -479,13 +479,13 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
         }
         if ((int)ceil(ic) > x_count-1) {
           ic = (double)(x_count-1);
-          //SETERRQ3(103,"(int)ceil(ic) > lic.count[1]-1      [%d > %d; ic = %16.15f]",
-          //     (int)ceil(ic), lic.count[1]-1, ic);
+          //SETERRQ3(103,"(int)ceil(ic) > lic->count[1]-1      [%d > %d; ic = %16.15f]",
+          //     (int)ceil(ic), lic->count[1]-1, ic);
         }
         if ((int)ceil(jc) > y_count-1) {
           jc = (double)(y_count-1);
-          //SETERRQ3(104,"(int)ceil(jc) > lic.count[2]-1      [%d > %d; jc = %16.15f]",
-          //     (int)ceil(jc), lic.count[2]-1, jc);
+          //SETERRQ3(104,"(int)ceil(jc) > lic->count[2]-1      [%d > %d; jc = %16.15f]",
+          //     (int)ceil(jc), lic->count[2]-1, jc);
         }
 
         double a_mm, a_mp, a_pm, a_pp;  // filled differently in 2d and 3d cases
@@ -502,7 +502,7 @@ PetscErrorCode PISMIO::regrid_var(const int varid, const vector<double> &zlevels
           // those neighbors.
           // Note that floor(ic) + 1 = ceil(ic) does not hold when ic is an
           // integer.  Computation of the domain (in constructor of LocalInterpCtx; note
-          // that lic.count uses ceil) must be done in a compatible way,
+          // that lic->count uses ceil) must be done in a compatible way,
           // otherwise we can index improperly here.  When it is in the
           // interior, it should not matter (since the coefficient of the
           // erroneous point will be 0), but if it occurs at the end of the
@@ -704,7 +704,7 @@ PetscErrorCode PISMIO::open_for_writing(string filename, bool append,
 
 //! Always returns true on processors other than zero.
 bool PISMIO::check_dimensions() const {
-  bool t, x, y, z, zb;
+  bool t, x, y, z;
 
   if (grid == NULL) SETERRQ(1, "PISMIO::check_dimensions(...): grid == NULL");
 
@@ -712,9 +712,8 @@ bool PISMIO::check_dimensions() const {
   x  = check_dimension("y", grid->My);
   y  = check_dimension("x", grid->Mx);
   z  = check_dimension("z", grid->Mz);
-  zb = check_dimension("zb", grid->Mbz);
   
-  return (t & x & y & z & zb);
+  return (t & x & y & z);
 }
 
 

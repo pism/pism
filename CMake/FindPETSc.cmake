@@ -49,6 +49,7 @@ find_path (PETSC_DIR include/petsc.h
   DOC "PETSc Directory")
 
 find_program (MAKE_EXECUTABLE NAMES make gmake)
+mark_as_advanced (MAKE_EXECUTABLE)
 
 if (PETSC_DIR AND NOT PETSC_ARCH)
   set (_petsc_arches

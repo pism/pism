@@ -108,6 +108,7 @@ endif ()
 # Git
 if (EXISTS ${Pism_SOURCE_DIR}/.git)
   find_program (GIT git DOC "Git executable")
+  mark_as_advanced(GIT)
   execute_process (COMMAND ${GIT} svn info
     WORKING_DIRECTORY ${Pism_SOURCE_DIR}
     OUTPUT_VARIABLE Pism_SVN_INFO)
@@ -166,6 +167,8 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   find_package(Python REQUIRED)
   find_package(PETSc4Py REQUIRED)
   find_package(SWIG REQUIRED)
+
+  mark_as_advanced (SWIG_DIR SWIG_EXECUTABLE SWIG_VERSION)
 
   execute_process(
         COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))"

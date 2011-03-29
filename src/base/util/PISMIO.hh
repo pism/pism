@@ -58,7 +58,7 @@ public:
   PetscErrorCode get_var(int varid, Vec g, int z_count, int t) const;
   PetscErrorCode put_var(int varid, Vec g, int z_count) const;
 
-  PetscErrorCode regrid_var(int varid, const vector<double> &zlevels_out, LocalInterpCtx &lic, Vec g) const;
+  PetscErrorCode regrid_var(int varid, const vector<double> &zlevels_out, LocalInterpCtx *lic, Vec g) const;
 private:
   int compute_block_size(vector<int> count) const;
   PetscErrorCode compute_start_and_count(int varid, int t_start,

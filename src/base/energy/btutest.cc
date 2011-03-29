@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Ed Bueler
+// Copyright (C) 2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,41 @@ static char help[] =
 #include "bedrockThermalUnit.hh"
 
 #include "../../verif/tests/exactTestK.h"
+
+class BTU_Test : public PISMBedThermalUnit
+{
+public:
+  BTU_Test(IceGrid &g, const NCConfigVariable &conf)
+    : PISMBedThermalUnit(g, conf) {}
+  virtual ~BTU_Test() {}
+protected:
+  virtual PetscErrorCode bootstrap();
+};
+
+PetscErrorCode BTU_Test::bootstrap() {
+  PetscErrorCode ierr;
+
+  // fill exact bedrock temperature from Test K at time ys
+  if (Mbz > 1) {
+    vector<double> zlevels = temp.get_levels();
+
+    ierr = temp.begin_access(); CHKERRQ(ierr);
+    PetscScalar *Tb; // columns of these values
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+        ierr = temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
+        for (PetscInt k=0; k < Mbz; k++) {
+          const PetscReal z = zlevels[k];
+          PetscReal FF; // Test K:  use Tb[k], ignore FF
+          ierr = exactK(grid.start_year * secpera, z, &Tb[k], &FF, 0); CHKERRQ(ierr);
+        }
+      }
+    }
+    ierr = temp.end_access(); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
 
 
 static PetscErrorCode createVecs(IceGrid &grid, PISMVars &variables) {
@@ -83,7 +118,6 @@ int main(int argc, char *argv[]) {
     // check required options
     vector<string> required;
     required.push_back("-Mbz");
-    required.push_back("-Lbz");
     ierr = show_usage_check_req_opts(com, "btutest", required,
       "  btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
       "where these are required because they are used in PISMBedThermalUnit:\n"
@@ -166,7 +200,7 @@ int main(int argc, char *argv[]) {
     ierr = ghf->set(0.042); CHKERRQ(ierr);  // see Test K
 
     // initialize BTU object:
-    PISMBedThermalUnit btu(grid, config);
+    BTU_Test btu(grid, config);
 
     ierr = btu.init(variables); CHKERRQ(ierr);  // FIXME: this is bootstrapping, really
 
@@ -184,27 +218,6 @@ int main(int argc, char *argv[]) {
         "  PISMBedThermalUnit reports max timestep of %.4f years ...\n",
 	max_dt_years); CHKERRQ(ierr);
 
-    // fill exact bedrock temperature from Test K at time ys
-    if (btu.temp.was_created()) {
-      PetscReal dzb, Lbz;
-      PetscInt  Mbz;
-      btu.temp.get_levels(Mbz);
-      btu.temp.get_spacing(dzb);
-      btu.temp.get_layer_depth(Lbz);
-      ierr = btu.temp.begin_access(); CHKERRQ(ierr);
-      PetscScalar *Tb; // columns of these values
-      for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-        for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-          ierr = btu.temp.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
-          for (PetscInt k=0; k < Mbz; k++) {
-            const PetscReal z = - Lbz + (double)k * dzb;
-            PetscReal FF; // Test K:  use Tb[k], ignor FF
-            ierr = exactK(grid.start_year * secpera, z, &Tb[k], &FF, 0); CHKERRQ(ierr);
-          }
-        }
-      }
-      ierr = btu.temp.end_access(); CHKERRQ(ierr);
-    }
 
     // actually do the time-stepping
     ierr = verbPrintf(2,com,"  running ...\n  "); CHKERRQ(ierr);

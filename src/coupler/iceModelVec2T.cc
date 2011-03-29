@@ -228,10 +228,12 @@ PetscErrorCode IceModelVec2T::update(int start) {
 		    times[start], times[start + missing - 1]);
 
   for (int j = 0; j < missing; ++j) {
-    lic->start[0] = start + j;
-    lic->report_range = false;
+    if (lic != NULL) {
+      lic->start[0] = start + j;
+      lic->report_range = false;
+    }
 
-    ierr = vars[0].regrid(filename.c_str(), *lic, true, false, 0.0, v); CHKERRQ(ierr);
+    ierr = vars[0].regrid(filename.c_str(), lic, true, false, 0.0, v); CHKERRQ(ierr);
 
     // ierr = vars[0].read(filename.c_str(), start + j, v); CHKERRQ(ierr);
 

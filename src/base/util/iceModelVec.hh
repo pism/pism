@@ -159,6 +159,8 @@ public:
   virtual int             grid_type();
   //! \brief Returns the number of degrees of freedom per grid point.
   virtual int             get_dof() { return dof; }
+  virtual int             get_n_levels() { return n_levels; }
+  virtual vector<double>  get_levels() { return zlevels; }
 
   virtual PetscErrorCode  range(PetscReal &min, PetscReal &max);
   virtual PetscErrorCode  norm(NormType n, PetscReal &out);
@@ -408,8 +410,8 @@ public:
   virtual PetscErrorCode beginGhostCommTransfer(IceModelVec3D &imv3_source);
   virtual PetscErrorCode endGhostCommTransfer(IceModelVec3D &imv3_source);
   virtual PetscScalar    getValZ(PetscInt i, PetscInt j, PetscScalar z);
-protected:
   virtual PetscErrorCode  isLegalLevel(PetscScalar z);
+protected:
   virtual PetscErrorCode  allocate(IceGrid &mygrid, const char my_short_name[],
                                    bool local, vector<double> levels, int stencil_width = 1);
   virtual PetscErrorCode destroy();

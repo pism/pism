@@ -33,7 +33,7 @@ public:
   virtual PetscErrorCode reset();
   virtual PetscErrorCode write(const char filename[], nc_type nctype,
 			       bool write_in_glaciological_units, Vec v);
-  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx &lic,
+  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx *lic,
 				bool critical, bool set_default_value,
 				PetscScalar default_value, Vec v);
   virtual PetscErrorCode to_glaciological_units(Vec v);

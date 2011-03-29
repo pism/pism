@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Ed Bueler
+// Copyright (C) 2011 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -33,13 +33,10 @@ public:
   virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local,
                                 int myMbz, PetscReal myLbz, int stencil_width = 1);
                                 
-  virtual PetscErrorCode get_levels(PetscInt &levels);      //!< Return -Mbz value.     
   virtual PetscErrorCode get_layer_depth(PetscReal &depth); //!< Return -Lbz value.
   virtual PetscErrorCode get_spacing(PetscReal &dzb);
 
-  virtual PetscErrorCode stopIfNotLegalLevel(PetscScalar z);
-
-  virtual PetscErrorCode create_zb_dimension(int ncid);
+  virtual PetscErrorCode define(const NCTool &nc, nc_type output_datatype);
 
 private:
   PetscReal Lbz;
@@ -112,16 +109,21 @@ public:
 
   virtual PetscErrorCode get_upward_geothermal_flux(IceModelVec2S &result);
 
+protected:
+  virtual PetscErrorCode allocate(int Mbz, double Lbz);
+
+  virtual PetscErrorCode bootstrap();
+  virtual PetscErrorCode regrid();
+
   IceModelVec3BTU  temp;     //!< storage for bedrock thermal layer temperature;
                              //!    part of state; units K; equally-spaced layers;
                              //!    This IceModelVec is only created if Mbz > 1.
-                             //!    FIXME: do we want it public?
-
-protected:
-  virtual PetscErrorCode allocate();
 
   // parameters of the heat equation:  T_t = D T_xx  where D = k / (rho c)
   PetscScalar    bed_rho, bed_c, bed_k, bed_D;
+  
+  PetscInt Mbz;
+  PetscReal Lbz;
 
   IceModelVec2S *bedtoptemp, //!< upper boundary temp, owned by the model to which we are attached
                 *ghf; //!< lower boundary flux, owned by the model to which we are attached

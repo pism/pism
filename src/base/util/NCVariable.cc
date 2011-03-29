@@ -259,7 +259,7 @@ PetscErrorCode NCSpatialVariable::write(const char filename[], nc_type nctype,
   \li sets \c v to \c default_value if \c set_default_value == true and the variable was not found
   \li interpolation mask can be NULL if it is not used.
  */
-PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &lic,
+PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx *lic,
 					 bool critical, bool set_default_value,
 					 PetscScalar default_value,
 					 Vec v) {
@@ -344,7 +344,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx &
     // Check the range and warn the user if needed:
     ierr = check_range(v); CHKERRQ(ierr);
 
-    if (lic.report_range) {
+    if (lic->report_range) {
       // We can report the success, and the range now:
       ierr = verbPrintf(2, com, "  FOUND ");
       ierr = report_range(v, found_by_standard_name); CHKERRQ(ierr);
