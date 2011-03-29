@@ -20,16 +20,32 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
-/// !!!!!! 
-/// Icebergs, i.e. floating regions that are not attached to at least one dragging box, cause unrealistically large velocities that numerically affect the ice velocities everywhere else, lead to extremely small time steps and can eventually cause a KSP-ERROR. The purpose of the following routines is to identify and eliminate these icebergs.
-/// !!!!!! 
+
+//! Identify and eliminate free-floating icebergs, which cause well-posedness problems for stress solvers.
+/*!
+Icebergs are, in this context, floating regions that are \e not attached, through a chain of positive thickness ice-filled cells, to at least one grounded cell.  They are observed to cause unrealistically large velocities that may (numerically) affect the ice velocities everywhere.  They cause the SSA operator to have a nontrivial null space, or, under approximation errors, they lead to extremely small time steps and can eventually cause a KSP-ERROR.
+
+This method calls the routines is which first identify and then eliminate these icebergs.
+
+FIXME:  a fundamental aspect of the semantics here is not clear to me, namely how many times the iceberg-eliminate "sweep" might occur, and what properties control that?  for now, should there be some (low-verbosity) indication that it is occurring, such as when more than one sweep happened?
+
+FIXME:  this package of methods may appropriately be a class, but in any case should have a regression
+*/
+PetscErrorCode IceModel::killIceBergs() {
+  PetscErrorCode ierr;
+
+  ierr = findIceBergCandidates(); CHKERRQ(ierr);
+  ierr = identifyNotAnIceBerg(); CHKERRQ(ierr);
+  ierr = killIdentifiedIceBergs(); CHKERRQ(ierr);
+  ierr = killEasyIceBergs(); CHKERRQ(ierr);  // FIXME:  should this happen here, after above?
+  return 0;
+}
+
 
 //! This routine comes from PISM-PIK.
 /*!
- The aim of this routine is to find floating regions that *might* be icebergs. If these regions actually *are* icebergs is checked in extIdentifyNotAnIceBerg.
+The aim of this routine is to find floating regions that *might* be icebergs. If these regions actually *are* icebergs is checked in identifyNotAnIceBerg().
 */
-
-
 PetscErrorCode IceModel::findIceBergCandidates() {
   PetscErrorCode ierr;
 
@@ -192,10 +208,9 @@ PetscErrorCode IceModel::identifyNotAnIceBerg() {
 
 
 /*!
- We have distinguished icebergs from attached floating regions in extIdentifyNotAnIceBerg. Now we actually eliminate the former (meaning we set the ice thickness to zero and mark the boxes as icefree-ocean) and leave the latter as they are.
+ We have distinguished icebergs from attached floating regions in identifyNotAnIceBerg(). Now we actually eliminate the former (meaning we set the ice thickness to zero and mark the boxes as icefree-ocean) and leave the latter as they are.
 */
-
-PetscErrorCode IceModel::killIceBergs() {
+PetscErrorCode IceModel::killIdentifiedIceBergs() {
   PetscErrorCode ierr;
   
   ierr = verbPrintf(4,grid.com,"######### killIceBergs is called \n");    CHKERRQ(ierr);
@@ -260,8 +275,6 @@ PetscErrorCode IceModel::killIceBergs() {
   
   return 0;
 }
-
-
 
 
 /*!

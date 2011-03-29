@@ -24,19 +24,14 @@
 
 //! Read runtime (command line) options and alter the corresponding parameters or flags as appropriate.
 /*!
-
 A critical principle of this procedure is that it will not alter IceModel parameters and flags
-\e unless the user sets an option to do so.  Thus this base class setFromOptions() can be
-called by a derived class after the derived class has set its own defaults for base class
-parameters and flags.
-
-Also, this procedure should not allocate memory or create new objects using the
-new operator.
+\e unless the user sets an option to do so.  This base class setFromOptions() can be
+called by an IceModel-derived class after the it has set its own defaults.
 
 In fact this procedure only reads the majority of the options.  Some are read in 
 initFromOptions(), writeFiles(), and setStartRunEndYearsFromOptions(), among other places.
 
-Note there are no options to directly set \c dx, \c dy, \c dz, \c Lbz, and \c year as the user 
+There are no options to directly set \c dx, \c dy, \c dz, \c Lbz, and \c year as the user 
 should not directly set these grid parameters.  There are, however, options for directly 
 setting \c Mx, \c My, \c Mz, \c Mbz and also \c Lx, \c Ly, \c Lz.
 
@@ -83,6 +78,10 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.flag_from_option("bmr_in_cont", "include_bmr_in_continuity"); CHKERRQ(ierr);
 
+  ierr = config.scalar_from_option("calving_at_thickness", "calving_at_thickness"); CHKERRQ(ierr);
+  ierr = PISMOptionsIsSet("-calving_at_thickness", flag);  CHKERRQ(ierr);
+  if (flag)  config.set_flag("do_thickness_calving", true);
+
   // if set, use old IceModel::temperatureStep(), and set enthalpy as though
   //   ice is cold
   ierr = config.flag_from_option("cold", "do_cold_ice_methods"); CHKERRQ(ierr);
@@ -90,30 +89,12 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.scalar_from_option("e", "enhancement_factor"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("e_ssa", "ssa_enhancement_factor"); CHKERRQ(ierr);
-
   ierr = PISMOptionsIsSet("-e_ssa", flag);  CHKERRQ(ierr);
-  if (flag)
-    config.set_flag("do_ssa_enhancement", true);
-
-  ierr = config.flag_from_option("part_grid", "part_grid"); CHKERRQ(ierr);
-
-  ierr = config.flag_from_option("part_redist", "part_redist"); CHKERRQ(ierr);
-
-  ierr = config.flag_from_option("kill_icebergs", "kill_icebergs"); CHKERRQ(ierr);
+  if (flag)  config.set_flag("do_ssa_enhancement", true);
 
   ierr = config.scalar_from_option("eigen_calving", "eigen_calving"); CHKERRQ(ierr);
-
   ierr = PISMOptionsIsSet("-eigen_calving", flag);  CHKERRQ(ierr);
-  if (flag)
-    config.set_flag("do_eigen_calving", true);
-
-
-  ierr = config.scalar_from_option("calv_at_thickness", "calving_at_thickness"); CHKERRQ(ierr);
-
-  ierr = PISMOptionsIsSet("-calving_at_thickness", flag);  CHKERRQ(ierr);
-  if (flag)
-    config.set_flag("do_thickness_calving", true);
-
+  if (flag)  config.set_flag("do_eigen_calving", true);
 
 
   bool gradient_set;
@@ -124,8 +105,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   choices.insert("mahaffy");
   ierr = PISMOptionsList(grid.com, "-gradient", "Surface gradient computation method.",
 			 choices, "haseloff", keyword, gradient_set); CHKERRQ(ierr);
-  if (gradient_set)
-    config.set_string("surface_gradient_method", keyword);
+  if (gradient_set)  config.set_string("surface_gradient_method", keyword);
 
   // related old options
   ierr = check_old_option_and_stop(grid.com, "-eta", "-gradient"); CHKERRQ(ierr);
@@ -163,6 +143,8 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = PISMOptionsInt("-jd", "Specifies the sounding column", jd, flag); CHKERRQ(ierr);
 
+  ierr = config.flag_from_option("kill_icebergs", "kill_icebergs"); CHKERRQ(ierr);
+
   ierr = config.scalar_from_option("low_temp", "global_min_allowed_temp"); CHKERRQ(ierr);
   ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count"); CHKERRQ(ierr);
 
@@ -170,8 +152,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.scalar_from_option("mu_sliding",    "mu_sliding");              CHKERRQ(ierr);
 
   ierr = config.flag_from_option("mass", "do_mass_conserve"); CHKERRQ(ierr);
-
-  ierr = config.flag_from_option("temp", "do_temp"); CHKERRQ(ierr);
 
   // implements an option e.g. described in \ref Greve that is the
   // enhancement factor is coupled to the age of the ice with
@@ -195,6 +175,9 @@ PetscErrorCode  IceModel::setFromOptions() {
   //   at bootstrapping (-boot_file), if original condition was ice-free ocean
   ierr = config.flag_from_option("ocean_kill", "ocean_kill"); CHKERRQ(ierr);
 
+  ierr = config.flag_from_option("part_grid", "part_grid"); CHKERRQ(ierr);
+
+  ierr = config.flag_from_option("part_redist", "part_redist"); CHKERRQ(ierr);
 
   // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
   // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
@@ -217,16 +200,13 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   // power in denominator on pseudo_plastic_uthreshold; typical is q=0.25; q=0 is pure plastic
   ierr = config.scalar_from_option("pseudo_plastic_q", "pseudo_plastic_q"); CHKERRQ(ierr);
-
   ierr = PISMOptionsIsSet("-pseudo_plastic_q", flag);  CHKERRQ(ierr);
-  if (flag)
-    config.set_flag("do_pseudo_plastic_till", true);
+  if (flag)  config.set_flag("do_pseudo_plastic_till", true);
 
   // threshold; at this velocity tau_c is basal shear stress
   ierr = config.scalar_from_option("pseudo_plastic_uthreshold", "pseudo_plastic_uthreshold"); CHKERRQ(ierr);
   ierr = PISMOptionsIsSet("-pseudo_plastic_uthreshold", flag);  CHKERRQ(ierr);
-  if (flag)
-    config.set_flag("do_pseudo_plastic_till", true);
+  if (flag)  config.set_flag("do_pseudo_plastic_till", true);
 
   // see updateGrainSizeNow(); option to choose modeled age vtau instead of pseudo age in
   // computing grainsize through Vostok core correlation
@@ -293,7 +273,6 @@ PetscErrorCode  IceModel::setFromOptions() {
   // numerical solution of SSA equations; can be given with or without filename prefix
   // (i.e. "-ssa_matlab " or "-ssa_matlab foo" are both legal; in former case get 
   // "pism_SSA_[year].m" if "pism_SSA" is default prefix, and in latter case get "foo_[year].m")
-
   string tempPrefix;
   ierr = PISMOptionsString("-ssa_matlab", "Save linear system in Matlab-readable ASCII format",
 			   tempPrefix, myssaSystemToASCIIMatlab); CHKERRQ(ierr);
@@ -307,6 +286,8 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.scalar_from_option("summary_volarea_scale_factor_log10",
                                    "summary_volarea_scale_factor_log10"); CHKERRQ(ierr);
+
+  ierr = config.flag_from_option("temp", "do_temp"); CHKERRQ(ierr);
 
   // if set, makes the thickness affect the pore_pressure; near margin there
   //   is a reduction in basal water pressure, a conceptual drainage mechanism
@@ -416,3 +397,4 @@ PetscErrorCode IceModel::set_output_size(string option,
 
   return 0;
 }
+

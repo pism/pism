@@ -81,7 +81,6 @@ public:
   virtual PetscErrorCode misc_setup();
   virtual PetscErrorCode init_diagnostics();
 
-
   // see iceModel.cc
   PetscErrorCode init();
   virtual PetscErrorCode run();
@@ -344,10 +343,11 @@ protected:
 
 
   // see iMicebergs.cc
+  virtual PetscErrorCode killIceBergs();           // call this one to do proper sequence
   virtual PetscErrorCode findIceBergCandidates();
   virtual PetscErrorCode identifyNotAnIceBerg();
-  virtual PetscErrorCode killIceBergs();
-  virtual PetscErrorCode killEasyIceBergs();
+  virtual PetscErrorCode killIdentifiedIceBergs();
+  virtual PetscErrorCode killEasyIceBergs();       // FIXME: do we want this one to happen even if eigencalving does not happen?  should we be calling this one before any time that principle values need to be computed?
 
   // see iMcalving.cc
   virtual PetscErrorCode eigenCalving();

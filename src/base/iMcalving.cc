@@ -42,6 +42,9 @@ PetscErrorCode IceModel::eigenCalving() {
   double 	ocean_rho = config.get("sea_water_density");
   double	ice_rho = config.get("ice_density");
 
+  const PetscScalar eigenCalvFactor=config.get("eigen_calving");
+  //const PetscScalar eigenCalvFactor=1.0e15; //will be set from option
+
   //bool include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity");
   PetscReal currentSeaLevel;
 
@@ -104,7 +107,6 @@ PetscErrorCode IceModel::eigenCalving() {
         	Hav=Hav/countDirectNeighbors;
         }
 
-
         if (vMask(i+fromedge,j) == MASK_FLOATING ){
 	      eigen1  = vPrinStrain1(i+fromedge,j); //Hav=vH(i+fromedge,j);
 	      eigen2  = vPrinStrain2(i+fromedge,j); countFromEdge+=1;
@@ -129,8 +131,6 @@ PetscErrorCode IceModel::eigenCalving() {
 
         PetscScalar calvrateHorizontal=0.0,
 			       eigenCalvOffset=0.0; // if it's not exactly the zero line of transition from compressive to extensive flow regime
-        const PetscScalar eigenCalvFactor=config.get("eigen_calving");
-        //const PetscScalar eigenCalvFactor=1.0e15; //will be set from option
 
         // calving law
         if ( eigen2 > eigenCalvOffset && eigen1 > 0.0) { // if spreading in all directions
@@ -160,12 +160,12 @@ PetscErrorCode IceModel::eigenCalving() {
       }
     }
   }
-
   ierr = vDiffCalvRate.end_access(); CHKERRQ(ierr);
+
   ierr = vDiffCalvRate.beginGhostComm(); CHKERRQ(ierr);
   ierr = vDiffCalvRate.endGhostComm(); CHKERRQ(ierr);
-  ierr = vDiffCalvRate.begin_access(); CHKERRQ(ierr);
 
+  ierr = vDiffCalvRate.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -189,9 +189,9 @@ PetscErrorCode IceModel::eigenCalving() {
        }
      }
   }
-
   ierr = vHnew.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
+
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
 
@@ -225,7 +225,8 @@ PetscErrorCode IceModel::calvingAtThickness() {
   //ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vbed.begin_access(); CHKERRQ(ierr);
 
-  double 	ocean_rho = config.get("sea_water_density"), ice_rho = config.get("ice_density");
+  double ocean_rho = config.get("sea_water_density"),
+         ice_rho   = config.get("ice_density");
 
   PetscReal currentSeaLevel;
   if (ocean != NULL) {
@@ -245,9 +246,9 @@ PetscErrorCode IceModel::calvingAtThickness() {
       }
     }
   }
-
   ierr = vHnew.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
+
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
 
@@ -256,5 +257,4 @@ PetscErrorCode IceModel::calvingAtThickness() {
 
   return 0;
 }
-
 

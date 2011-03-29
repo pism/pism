@@ -29,6 +29,9 @@ For instance, it should be called when either ice thickness or bed elevation cha
 In particular we always want \f$h = H + b\f$ to apply at grounded points, and, on the
 other hand, we want the mask to reflect that the ice is floating if the flotation 
 criterion applies at a point.
+
+Also calls the (PIK) routines which remove icebergs, to avoid stress balance
+solver problems associated to not-attached-to-grounded ice.
  */
 PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   PetscErrorCode ierr;
@@ -36,18 +39,16 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   ierr = update_mask(); CHKERRQ(ierr);
   ierr = update_surface_elevation(); CHKERRQ(ierr);
 
-  //ierr = verbPrintf(4,grid.com,"######### updateSurfaceElevationAndMask \n");    CHKERRQ(ierr);
-
   if (config.get_flag("kill_icebergs") == true) {
-
-    ierr = findIceBergCandidates(); CHKERRQ(ierr);
-	ierr = identifyNotAnIceBerg(); CHKERRQ(ierr);
-	ierr = killIceBergs(); CHKERRQ(ierr);	
-	if (config.get_flag("part_grid") ) {ierr = killEasyIceBergs(); CHKERRQ(ierr);} //might be usefull when apllying calving
+    ierr = killIceBergs(); CHKERRQ(ierr);	
+  } else if (config.get_flag("part_grid") ) {  // FIXME:  is this the right semantics?
+    ierr = killEasyIceBergs(); CHKERRQ(ierr);
   }
+
 
   return 0;
 }
+
 
 PetscErrorCode IceModel::update_mask() {
   PetscErrorCode ierr;
@@ -174,6 +175,7 @@ PetscErrorCode IceModel::update_surface_elevation() {
   return 0;
 }
 
+
 //! Update the thickness from the diffusive flux, also additional horizontal velocity, and the surface and basal mass balance rates.
 /*! 
 The partial differential equation describing the conservation of mass in the
@@ -220,15 +222,19 @@ The diffusive flux \f$-D\nabla h\f$ is thus stored in \c IceModelVec2Stag
 
 The methods used here are first-order and explicit in time.  The derivatives in 
 \f$\nabla \cdot (D \nabla h)\f$ are computed by centered finite difference
-methods.  The diffusive flux \c Qdiff is already stored on the staggered grid.
-The time-stepping for this part of the explicit scheme is controlled by equation
-(25) in [\ref BBL], so that \f$\Delta t \sim \Delta x^2 / \max D\f$; see
-also [\ref MortonMayers].
+methods.  The diffusive flux \c Qdiff is already stored on the staggered grid
+and it is differenced in a centered way here.  The time-stepping for this part
+of the explicit scheme is controlled by equation (25) in [\ref BBL], so that
+\f$\Delta t \sim \Delta x^2 / \max D\f$; see also [\ref MortonMayers].
 
-The divergence of the flux from the less-diffusive velocity is computed by
-the PIK upwinding technique [\ref Albrechtetal2011, \ref Winkelmannetal2010TCD].
-The CFL condition for this advection scheme is checked; see 
-computeMax2DSlidingSpeed() and determineTimeStep().
+The divergence of the flux from velocity \f$\mathbf{U}_b\f$ is computed by
+the PIK upwinding technique [equation (25) in \ref Winkelmannetal2010TCD; see
+also \ref Albrechtetal2011]. The CFL condition for this advection scheme is checked; see 
+computeMax2DSlidingSpeed() and determineTimeStep().  This method implements the
+direct-superposition (PIK) hybrid which adds the SSA velocity, as a basal
+sliding velocity, to the SIA velocity; [see equation (15) in \ref Winkelmannetal2010TCD].
+The hybrid described by equations (21) and (22) in \ref BBL is no longer used
+for this purpose.
 
 Checks are made which can generate zero thickness according to minimal calving
 relations, specifically the mechanisms turned-on by options \c -ocean_kill and
@@ -440,8 +446,8 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
   ierr = vHnew.begin_access(); CHKERRQ(ierr);
   ierr = vHref.begin_access(); CHKERRQ(ierr); 
 
-
-   if (config.get_flag("part_redist") == true) {
+  const bool do_redist = config.get_flag("part_redist");
+   if (do_redist) {
 		ierr = vHresidual.begin_access(); CHKERRQ(ierr);
 		ierr = vHresidual.set(0.0); CHKERRQ(ierr); //mass loss if max_loopcount for redistribution was not sufficient
 	}
@@ -599,7 +605,7 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
 
           PetscScalar coverageRatio = vHref(i,j)/Hav;
           if (coverageRatio>1.0) { // partially filled grid cell is considered to be full
-			if (config.get_flag("part_redist") == true) {
+			if (do_redist) {
 				vHresidual(i,j)=vHref(i,j)-Hav; //residual ice thickness
 				//ierr = verbPrintf(3,grid.com,"!!! Hresidual=%.2f for Href=%.2f, Hav=%.2f and acab-melt-factor=%.3f at %d,%d \n",vHresidual(i,j),vHref(i,j),Hav,1/denominator,i,j); CHKERRQ(ierr);
 				//ierr = verbPrintf(3,grid.com,"!!! Hresidual=%.5f for Href=%.5f, Hav=%.5f, velRoot=%.5f and acab-melt-factor=%.5f at %d,%d \n",vHresidual(i,j),vHref(i,j),Hav,velRoot*secpera,1/denominator,i,j); CHKERRQ(ierr);

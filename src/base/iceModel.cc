@@ -447,7 +447,7 @@ PetscErrorCode IceModel::setExecName(const char *my_executable_short_name) {
   return 0;
 }
 
-//! The contents of the time-step.
+//! Do the contents of the main PISM time-step.
 /*!
 During the time-step we perform the following actions:
  */
