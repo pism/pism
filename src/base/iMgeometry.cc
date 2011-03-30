@@ -40,9 +40,13 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   ierr = update_surface_elevation(); CHKERRQ(ierr);
 
   if (config.get_flag("kill_icebergs") == true) {
-    ierr = killIceBergs(); CHKERRQ(ierr);	
-  } else if (config.get_flag("part_grid") ) {  // FIXME:  is this the right semantics?
+
+    ierr = findIceBergCandidates(); CHKERRQ(ierr);
+	ierr = identifyNotAnIceBerg(); CHKERRQ(ierr);
+	ierr = killIceBergs(); CHKERRQ(ierr);	
+	if (config.get_flag("do_eigen_calving") || config.get_flag("do_thickness_calving") ) {
     ierr = killEasyIceBergs(); CHKERRQ(ierr);
+	}
   }
 
 
@@ -556,11 +560,11 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
 
  		  if (countIceNeighbors>0){ 
 	      Hav=Hav/countIceNeighbors;
-   	   	  //if (part_redist) {	
-   		  //	const PetscReal  mslope = 2.4511e-18*grid.dx/(300*600/secpera);
+   	   	  if (config.get_flag("part_redist") == true) {	
+   		   	const PetscReal  mslope = 2.4511e-18*grid.dx/(300*600/secpera);
    		  //    for declining front C/Q0 according to analytical flowline profile in vandeveen with v0=300m/yr and H0=600m	    
-   		  //    Hav-=0.8*mslope*pow(Hav,5); //reduces the guess at the front
-   		  //}
+   		    Hav-=0.8*mslope*pow(Hav,5); //reduces the guess at the front
+   		  }
  		  } else {
    		  ierr = verbPrintf(4, grid.com,"!!! PISM_WARNING: no ice shelf neighbors at %d,%d\n",i,j); CHKERRQ(ierr);}
 		//*/
@@ -745,6 +749,8 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
 		}
 	}
 
+
+
 	// maybe calving should be applied before the redistribution part?
 	if (config.get_flag("do_eigen_calving") == true) {
 		ierr = stress_balance->get_principle_strain_rates(
@@ -752,8 +758,12 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
 		ierr = eigenCalving(); CHKERRQ(ierr);
 	}
 
-	if (config.get_flag("do_thickness_calving") == true) {
-		ierr = calvingAtThickness(); CHKERRQ(ierr);
+	if (config.get_flag("do_thickness_calving")==true) { 
+		if (config.get_flag("part_grid")==true) { 
+			ierr = calvingAtThickness(); CHKERRQ(ierr);
+		} else {
+			ierr = verbPrintf(2,grid.com, "PISM-WARNING: calving at certian terminal ice thickness without application of partially filled grid cell scheme may lead to non-moving ice shef front!\n"); CHKERRQ(ierr);
+		}
 	}
 
   return 0;

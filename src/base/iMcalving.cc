@@ -234,12 +234,19 @@ PetscErrorCode IceModel::calvingAtThickness() {
   } else { SETERRQ(2,"PISM ERROR: ocean == NULL"); }
 
   const PetscScalar Hcalving=config.get("calving_at_thickness");
+  //ierr = verbPrintf(3,grid.com,"!!! Hcalving=%f \n",Hcalving);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
       bool hereFloating = (vH(i,j)>0.0 && (vbed(i,j) < (currentSeaLevel - ice_rho/ocean_rho * vH(i,j))));
-      if (hereFloating && vH(i,j)<= Hcalving) {
+      bool icefreeOceanNeighbor = ( (vH(i+1,j)==0.0 && vbed(i+1,j) < currentSeaLevel) ||
+									(vH(i-1,j)==0.0 && vbed(i-1,j) < currentSeaLevel) ||
+									(vH(i,j+1)==0.0 && vbed(i,j+1) < currentSeaLevel) ||
+									(vH(i,j-1)==0.0 && vbed(i,j-1) < currentSeaLevel));
+
+
+      if (hereFloating && vH(i,j)<= Hcalving && icefreeOceanNeighbor) {
     	  vHnew(i,j)=0.0;
     	  //ierr = verbPrintf(3,grid.com,"!!! H=%f has calved off at %d,%d \n",vH(i,j),i,j);
     	  //vMask(i,j)=MASK_ICE_FREE_OCEAN;

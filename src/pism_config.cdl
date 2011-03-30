@@ -51,7 +51,7 @@ netcdf pism_config {
     pism_config:do_eigen_calving_doc = "calculate strain rates and related calving rate";
     
     pism_config:do_thickness_calving = "false";
-    pism_config:do_thickness_calving_doc = "ad hoc calving at certain thresholf for terminal ice thickness";
+    pism_config:do_thickness_calving_doc = "ad hoc calving at certain threshold for terminal ice thickness";
     
     pism_config:thermal_bedrock = "yes";
     pism_config:thermal_bedrock_doc = "Use the bedrock thermal model";

@@ -91,7 +91,7 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
     // using linear interpolation.
     //ierr = vHav.set(0.0); CHKERRQ(ierr);
     ierr = vHref.set(0.0); CHKERRQ(ierr);
-	if (config.get_flag("part_grid") == true) ierr = vHresidual.set(0.0); CHKERRQ(ierr);
+	if (config.get_flag("part_redist") == true) ierr = vHresidual.set(0.0); CHKERRQ(ierr);
   }
 
   if (config.get_flag("kill_icebergs")) {
