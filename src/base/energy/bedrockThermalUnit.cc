@@ -57,7 +57,14 @@ PetscErrorCode IceModelVec3BTU::create(IceGrid &mygrid, const char my_short_name
   }
 
   vars[0].init_3d(name, mygrid, zlevels);
-  vars[0].dimensions["z"] = "btu_zb";
+  vars[0].dimensions["z"] = "zb";
+
+  map<string,string> &attrs = vars[0].z_attrs;
+  attrs["axis"]          = "Z";
+  attrs["long_name"]     = "Z-coordinate in bedrock";
+  // PROPOSED: attrs["standard_name"] = "projection_z_coordinate_in_lithosphere";
+  attrs["units"]         = "m";
+  attrs["positive"]      = "up";
 
   if (!good_init()) {
     SETERRQ1(1,"create() says IceModelVec3BTU with name %s was not properly created\n",
@@ -80,31 +87,6 @@ PetscErrorCode IceModelVec3BTU::get_spacing(PetscReal &dzb) {
              name.c_str());
   }
   dzb = Lbz / (n_levels - 1);
-  return 0;
-}
-
-PetscErrorCode IceModelVec3BTU::define(const NCTool &nc, nc_type output_datatype) {
-  PetscErrorCode ierr;
-
-  string z_name = vars[0].dimensions["z"];
-
-  bool exists;
-  ierr = nc.find_dimension(z_name, NULL, exists); CHKERRQ(ierr);
-  
-  if (!exists) {
-    map<string,string> attrs;
-    int dimid, varid;
-    attrs["axis"]          = "Z";
-    attrs["long_name"]     = "Z-coordinate in bedrock";
-    // PROPOSED: attrs["standard_name"] = "projection_z_coordinate_in_lithosphere";
-    attrs["units"]         = "m";
-    attrs["positive"]      = "up";
-    ierr = nc.create_dimension(z_name, n_levels, attrs, dimid, varid); CHKERRQ(ierr);
-    ierr = nc.put_dimension(varid, zlevels); CHKERRQ(ierr);
-  }
-
-  ierr = IceModelVec::define(nc, output_datatype); CHKERRQ(ierr);
-
   return 0;
 }
 
@@ -133,7 +115,7 @@ PetscErrorCode PISMBedThermalUnit::allocate(int my_Mbz, double my_Lbz) {
                " and more than one layers\n"); }
 
   if (Mbz > 1) {
-    ierr = temp.create(grid, "btu_litho_temp", false, Mbz, Lbz); CHKERRQ(ierr);
+    ierr = temp.create(grid, "litho_temp", false, Mbz, Lbz); CHKERRQ(ierr);
     ierr = temp.set_attrs("model_state",
                           "lithosphere (bedrock) temperature, in PISMBedThermalUnit",
                           "K", ""); CHKERRQ(ierr);
@@ -188,10 +170,10 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
     ierr = nc.open_for_reading(input_file); CHKERRQ(ierr);
     
     bool exists;
-    ierr = nc.find_variable("btu_litho_temp", NULL, exists); CHKERRQ(ierr);
+    ierr = nc.find_variable("litho_temp", NULL, exists); CHKERRQ(ierr);
 
     if (exists) {
-      ierr = nc.get_grid_info("btu_litho_temp", g); CHKERRQ(ierr);
+      ierr = nc.get_grid_info("litho_temp", g); CHKERRQ(ierr);
 
       Mbz = g.z_len;
       Lbz = - g.z_min;
@@ -467,17 +449,6 @@ PetscErrorCode PISMBedThermalUnit::regrid() {
 
 PetscErrorCode PISMBedThermalUnit::bootstrap() {
   PetscErrorCode ierr;
-  bool flag;
-  string boot_file;
-
-  ierr = PetscOptionsBegin(grid.com, "", "PISMBedThermalUnit bootstrapping options", ""); CHKERRQ(ierr);
-  {
-    ierr = PISMOptionsString("-boot_file", "bootstrapping file",
-                             boot_file, flag); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  if (flag == false) return 0;
 
   if (Mbz < 2) return 0;
 

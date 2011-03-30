@@ -41,7 +41,7 @@ pism_test (automatic_vertical_grid_extension test_11.sh)
 
 pism_test (SIA_mass_conservation test_12.sh)
 
-pism_test (temperature_continuity_at_ice_bed_z=0_cold test_13.sh)
+pism_test (temperature_continuity_at_ice_bed_z=0_cold temp_continuity.py)
 
 pism_test (enthalpy_symmetry_near_the_base_pisms_no_cold test_14.sh)
 

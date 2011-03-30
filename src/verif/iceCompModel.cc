@@ -85,7 +85,6 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
 
   // equal spacing is the default for all the tests except K
   grid.ice_vertical_spacing = EQUAL;
-  grid.bed_vertical_spacing = EQUAL;
 
   switch (testname) {
   case 'A':
@@ -116,13 +115,12 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
   case 'K':
   case 'O':
     // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
-    grid.Mbz = 2;
+    config.set("grid_Mbz", 2); 
+    config.set("grid_Lbz", 1000); 
     grid.Lx = grid.Ly = 1000e3;
     grid.Lz = 4000;
-    grid.Lbz = 1000;		// this is important
     grid.periodicity = XY_PERIODIC;
     grid.ice_vertical_spacing = QUADRATIC;
-    grid.bed_vertical_spacing = QUADRATIC;
     break;
   default:
     ierr = PetscPrintf(grid.com, "IceCompModel ERROR : desired test not implemented\n");
@@ -200,6 +198,9 @@ PetscErrorCode IceCompModel::init_physics() {
   delete EC;
   EC = new ICMEnthalpyConverter(config);
   // The call above *has* to happen before IceModel::init_physics().
+
+  if (btu == NULL)
+    btu = new BTU_Verification(grid, config, testname, bedrock_is_ice_forK);
 
   // Let the base class version read the options (possibly overriding the
   // default set above) and create the IceFlowLaw object.
@@ -327,7 +328,6 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   T0 = tgaIce->tempFromSoftness(A0);
   ierr = artm.set(T0); CHKERRQ(ierr);
   ierr =   T3.set(T0); CHKERRQ(ierr);
-  ierr =  Tb3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
   
   ierr = vMask.set(MASK_GROUNDED); CHKERRQ(ierr);
@@ -417,7 +417,6 @@ PetscErrorCode IceCompModel::initTestL() {
   T0 = tgaIce->tempFromSoftness(A0);
   ierr = artm.set(T0); CHKERRQ(ierr);
   ierr =   T3.set(T0); CHKERRQ(ierr);
-  ierr =  Tb3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
   
   ierr = vMask.set(MASK_GROUNDED); CHKERRQ(ierr);
@@ -959,8 +958,6 @@ PetscErrorCode IceCompModel::reportErrors() {
     ierr = err.write(filename, (size_t)start, grid.dy); CHKERRQ(ierr);
     err.short_name = "dz";
     ierr = err.write(filename, (size_t)start, grid.dzMAX); CHKERRQ(ierr);
-    err.short_name = "dzb";
-    ierr = err.write(filename, (size_t)start, grid.dzbMAX); CHKERRQ(ierr);
 
     // Always write the test name:
     err.reset();

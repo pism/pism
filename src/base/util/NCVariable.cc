@@ -125,6 +125,23 @@ PetscErrorCode NCSpatialVariable::reset() {
   dimensions["x"] = "x";
   dimensions["y"] = "y";
   dimensions["t"] = "t";
+
+  x_attrs["axis"]          = "X";
+  x_attrs["long_name"]     = "X-coordinate in Cartesian system";
+  x_attrs["standard_name"] = "projection_x_coordinate";
+  x_attrs["units"]         = "m";
+
+  y_attrs["axis"]          = "Y";
+  y_attrs["long_name"]     = "Y-coordinate in Cartesian system";
+  y_attrs["standard_name"] = "projection_y_coordinate";
+  y_attrs["units"]         = "m";
+
+  z_attrs["axis"]          = "Z";
+  z_attrs["long_name"]     = "Z-coordinate in Cartesian system";
+  // PROPOSED: z_attrs["standard_name"] = "projection_z_coordinate";
+  z_attrs["units"]         = "m";
+  z_attrs["positive"]      = "up";
+
   return 0;
 }
 
@@ -364,7 +381,7 @@ PetscErrorCode NCVariable::read_valid_range(const NCTool &nc, int varid) {
   utUnit input_units;
   vector<double> bounds;
   double slope, intercept;
-  int stat;
+  int ierr;
 
   // Never reset valid_min/max if any of them was set internally.
   if (has("valid_min") || has("valid_max"))
@@ -376,10 +393,10 @@ PetscErrorCode NCVariable::read_valid_range(const NCTool &nc, int varid) {
   // Read the units: The following code ignores the units in the input file if
   // a) they are absent :-) b) they are invalid c) they are not compatible with
   // internal units.
-  stat = nc.get_att_text(varid, "units", input_units_string); CHKERRQ(stat);
+  ierr = nc.get_att_text(varid, "units", input_units_string); CHKERRQ(ierr);
   if (input_units_string != "") {
-    stat = utScan(input_units_string.c_str(), &input_units);
-    if (stat != 0)
+    ierr = utScan(input_units_string.c_str(), &input_units);
+    if (ierr != 0)
       utCopy(&units, &input_units);
   }
 
@@ -388,17 +405,17 @@ PetscErrorCode NCVariable::read_valid_range(const NCTool &nc, int varid) {
     intercept = 0;
   }
 
-  stat = nc.get_att_double(varid, "valid_range", bounds); CHKERRQ(stat);
+  ierr = nc.get_att_double(varid, "valid_range", bounds); CHKERRQ(ierr);
   if (bounds.size() == 2) {		// valid_range is present
     set("valid_min", intercept + slope*bounds[0]);
     set("valid_max", intercept + slope*bounds[1]);
   } else {			// valid_range has the wrong length or is missing
-    stat = nc.get_att_double(varid, "valid_min", bounds); CHKERRQ(stat);
+    ierr = nc.get_att_double(varid, "valid_min", bounds); CHKERRQ(ierr);
     if (bounds.size() == 1) {		// valid_min is present
       set("valid_min", intercept + slope*bounds[0]);
     }
 
-    stat = nc.get_att_double(varid, "valid_max", bounds); CHKERRQ(stat);
+    ierr = nc.get_att_double(varid, "valid_max", bounds); CHKERRQ(ierr);
     if (bounds.size() == 1) {		// valid_max is present
       set("valid_max", intercept + slope*bounds[0]);
     }
@@ -647,15 +664,65 @@ PetscErrorCode NCSpatialVariable::check_range(Vec v) {
   return 0;
 }
 
+//! \brief Define dimensions a variable depends on.
+PetscErrorCode NCSpatialVariable::define_dimensions(const NCTool &nc) const {
+  PetscErrorCode ierr;
+  int x_id = -1, y_id = -1, z_id = -1, dimid;
+  string dimname;
+  bool exists;
+
+  // x
+  dimname = dimensions["x"];
+  ierr = nc.find_dimension(dimname, NULL, exists); CHKERRQ(ierr);
+  if (!exists) {
+    ierr = nc.create_dimension(dimname, grid->Mx, x_attrs, dimid, x_id); CHKERRQ(ierr); 
+  }
+
+  // y
+  dimname = dimensions["y"];
+
+  ierr = nc.find_dimension(dimname, NULL, exists); CHKERRQ(ierr);
+  if (!exists) {
+    ierr = nc.create_dimension(dimname, grid->My, y_attrs, dimid, y_id); CHKERRQ(ierr); 
+  }
+
+  // z
+  dimname = dimensions["z"];
+  if (dimname != "") {
+    ierr = nc.find_dimension(dimname, NULL, exists); CHKERRQ(ierr);
+    if (!exists) {
+      ierr = nc.create_dimension(dimname, nlevels, z_attrs, dimid, z_id); CHKERRQ(ierr); 
+    }
+  }
+
+  ierr = nc.data_mode(); CHKERRQ(ierr);
+
+  if (x_id != -1) {
+    ierr = nc.put_dimension(x_id, grid->x); CHKERRQ(ierr);
+  }
+
+  if (y_id != -1) {
+    ierr = nc.put_dimension(y_id, grid->y); CHKERRQ(ierr);
+  }
+
+  if (z_id != -1) {
+    ierr = nc.put_dimension(z_id, zlevels); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
 //! Define a NetCDF variable corresponding to a NCVariable object.
 PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type nctype,
                                          bool write_in_glaciological_units) const {
-  int stat, i = 0, ndims, dimids[4],
+  int ierr, i = 0, ndims, dimids[4],
     ncid = nc.get_ncid();
 
   bool exists;
-  stat = nc.find_variable(short_name, &varid, exists); CHKERRQ(stat); 
+  ierr = nc.find_variable(short_name, &varid, exists); CHKERRQ(ierr); 
   if (exists) return 0;
+
+  ierr = define_dimensions(nc); CHKERRQ(ierr);
 
   if (rank != 0) {
     varid = 0;
@@ -667,28 +734,28 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type n
     z = dimensions["z"],
     t = dimensions["t"];
 
-  stat = nc.define_mode(); CHKERRQ(stat); 
+  ierr = nc.define_mode(); CHKERRQ(ierr); 
 
   if (!time_independent) {
-    stat = nc_inq_dimid(ncid, t.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    ierr = nc_inq_dimid(ncid, t.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
 
   // Use t,x,y,z(zb) variable order: it is weird, but matches in-memory storage
   // order and is *a lot* faster.
 #if (PISM_VARIABLE_ORDER == 1)
-  stat = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  ierr = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 #endif
 
   // Use the t,y,x,z variable order: also weird, somewhat slower, but 2D fields
   // are stored in the "natural" order.
 #if  (PISM_VARIABLE_ORDER == 2)
-  stat = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  ierr = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 #endif
 
   if (z != "") {
-    stat = nc_inq_dimid(ncid, z.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    ierr = nc_inq_dimid(ncid, z.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
     ndims = 4 - time_independent;
   } else {
     ndims = 3 - time_independent;
@@ -697,17 +764,17 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type n
   // Use the t,z(zb),y,x variables order: more natural for plotting and post-processing,
   // but requires transposing data while writing and is *a lot* slower.
 #if (PISM_VARIABLE_ORDER == 3)
-  stat = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  stat = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  ierr = nc_inq_dimid(ncid, y.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
+  ierr = nc_inq_dimid(ncid, x.c_str(), &dimids[i++]); CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 #endif
     
-  stat = nc_def_var(ncid, short_name.c_str(), nctype, ndims, dimids, &varid);
-  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  ierr = nc_def_var(ncid, short_name.c_str(), nctype, ndims, dimids, &varid);
+  CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 
   // this is all we need to turn on compression:
 #if (PISM_WRITE_COMPRESSED_NETCDF4 == 1)
-  stat = nc_def_var_deflate(ncid, varid, 0, 1, 9);
-  CHKERRQ(check_err(stat,__LINE__,__FILE__));
+  ierr = nc_def_var_deflate(ncid, varid, 0, 1, 9);
+  CHKERRQ(check_err(ierr,__LINE__,__FILE__));
 #endif
   /*! 
     \note If NetCDF-4 compression is "on", uncompressed data is sent to
@@ -721,7 +788,7 @@ PetscErrorCode NCSpatialVariable::define(const NCTool &nc, int &varid, nc_type n
     Unfortunately NetCDF-4 does not support parallel I/O with compression, so
     I don't see any way around this. (CK)
   */
-  stat = write_attributes(nc, varid, nctype, write_in_glaciological_units); CHKERRQ(stat);
+  ierr = write_attributes(nc, varid, nctype, write_in_glaciological_units); CHKERRQ(ierr);
 
   return 0;
 }
@@ -894,25 +961,25 @@ PetscErrorCode NCConfigVariable::write(const char filename[]) const {
 //! Define a configuration NetCDF variable.
 PetscErrorCode NCConfigVariable::define(const NCTool &nc, int &varid, nc_type type,
                                         bool) const {
-  int stat, var_id,
+  int ierr, var_id,
     ncid = nc.get_ncid();
 
   bool exists;
-  stat = nc.find_variable(short_name, &varid, exists); CHKERRQ(stat); 
+  ierr = nc.find_variable(short_name, &varid, exists); CHKERRQ(ierr); 
   if (exists) return 0;
 
   if (rank == 0) {
-    stat = nc.define_mode(); CHKERRQ(stat); 
+    ierr = nc.define_mode(); CHKERRQ(ierr); 
 
-    stat = nc_def_var(ncid, short_name.c_str(), type, 0, NULL, &var_id);
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
+    ierr = nc_def_var(ncid, short_name.c_str(), type, 0, NULL, &var_id);
+    CHKERRQ(check_err(ierr,__LINE__,__FILE__));
   }
 
-  stat = MPI_Bcast(&var_id, 1, MPI_INT, 0, com); CHKERRQ(stat);
+  ierr = MPI_Bcast(&var_id, 1, MPI_INT, 0, com); CHKERRQ(ierr);
 
   varid = var_id;
 
-  stat = write_attributes(nc, varid, NC_DOUBLE, false); CHKERRQ(stat); 
+  ierr = write_attributes(nc, varid, NC_DOUBLE, false); CHKERRQ(ierr); 
 
   return 0;
 }

@@ -22,7 +22,7 @@
 #include "tempSystem.hh"
 
 
-tempSystemCtx_new::tempSystemCtx_new(PetscInt my_Mz)
+tempSystemCtx::tempSystemCtx(PetscInt my_Mz)
       : columnSystemCtx(my_Mz) {
   Mz = my_Mz;
   // set flags to indicate nothing yet set
@@ -47,21 +47,21 @@ tempSystemCtx_new::tempSystemCtx_new(PetscInt my_Mz)
 }
 
 
-PetscErrorCode tempSystemCtx_new::initAllColumns() {
+PetscErrorCode tempSystemCtx::initAllColumns() {
   // check whether each parameter & pointer got set
-  if (dx <= 0.0) { SETERRQ(2,"un-initialized dx in tempSystemCtx_new"); }
-  if (dy <= 0.0) { SETERRQ(3,"un-initialized dy in tempSystemCtx_new"); }
-  if (dtTemp <= 0.0) { SETERRQ(4,"un-initialized dtTemp in tempSystemCtx_new"); }
-  if (dzEQ <= 0.0) { SETERRQ(5,"un-initialized dzEQ in tempSystemCtx_new"); }
-  if (ice_rho <= 0.0) { SETERRQ(7,"un-initialized ice_rho in tempSystemCtx_new"); }
-  if (ice_c_p <= 0.0) { SETERRQ(8,"un-initialized ice_c_p in tempSystemCtx_new"); }
-  if (ice_k <= 0.0) { SETERRQ(9,"un-initialized ice_k in tempSystemCtx_new"); }
-  if (T == NULL) { SETERRQ(13,"un-initialized pointer T in tempSystemCtx_new"); }
-  if (u == NULL) { SETERRQ(15,"un-initialized pointer u in tempSystemCtx_new"); }
-  if (v == NULL) { SETERRQ(16,"un-initialized pointer v in tempSystemCtx_new"); }
-  if (w == NULL) { SETERRQ(17,"un-initialized pointer w in tempSystemCtx_new"); }
-  if (Sigma == NULL) { SETERRQ(18,"un-initialized pointer Sigma in tempSystemCtx_new"); }
-  if (T3 == NULL) { SETERRQ(19,"un-initialized pointer T3 in tempSystemCtx_new"); }
+  if (dx <= 0.0) { SETERRQ(2,"un-initialized dx in tempSystemCtx"); }
+  if (dy <= 0.0) { SETERRQ(3,"un-initialized dy in tempSystemCtx"); }
+  if (dtTemp <= 0.0) { SETERRQ(4,"un-initialized dtTemp in tempSystemCtx"); }
+  if (dzEQ <= 0.0) { SETERRQ(5,"un-initialized dzEQ in tempSystemCtx"); }
+  if (ice_rho <= 0.0) { SETERRQ(7,"un-initialized ice_rho in tempSystemCtx"); }
+  if (ice_c_p <= 0.0) { SETERRQ(8,"un-initialized ice_c_p in tempSystemCtx"); }
+  if (ice_k <= 0.0) { SETERRQ(9,"un-initialized ice_k in tempSystemCtx"); }
+  if (T == NULL) { SETERRQ(13,"un-initialized pointer T in tempSystemCtx"); }
+  if (u == NULL) { SETERRQ(15,"un-initialized pointer u in tempSystemCtx"); }
+  if (v == NULL) { SETERRQ(16,"un-initialized pointer v in tempSystemCtx"); }
+  if (w == NULL) { SETERRQ(17,"un-initialized pointer w in tempSystemCtx"); }
+  if (Sigma == NULL) { SETERRQ(18,"un-initialized pointer Sigma in tempSystemCtx"); }
+  if (T3 == NULL) { SETERRQ(19,"un-initialized pointer T3 in tempSystemCtx"); }
   // set derived constants
   nuEQ = dtTemp / dzEQ;
   rho_c_I = ice_rho * ice_c_p;
@@ -73,12 +73,12 @@ PetscErrorCode tempSystemCtx_new::initAllColumns() {
 }
 
 
-PetscErrorCode tempSystemCtx_new::setSchemeParamsThisColumn(
+PetscErrorCode tempSystemCtx::setSchemeParamsThisColumn(
                      PismMask my_mask, bool my_isMarginal, PetscScalar my_lambda) {
   if (!initAllDone) {  SETERRQ(2,
-     "setSchemeParamsThisColumn() should only be called after initAllColumns() in tempSystemCtx_new"); }
+     "setSchemeParamsThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
   if (schemeParamsValid) {  SETERRQ(3,
-     "setSchemeParamsThisColumn() called twice (?) in tempSystemCtx_new"); }
+     "setSchemeParamsThisColumn() called twice (?) in tempSystemCtx"); }
   mask = my_mask;
   isMarginal = my_isMarginal;
   lambda = my_lambda;
@@ -87,23 +87,23 @@ PetscErrorCode tempSystemCtx_new::setSchemeParamsThisColumn(
 }
 
 
-PetscErrorCode tempSystemCtx_new::setSurfaceBoundaryValuesThisColumn(PetscScalar my_Ts) {
+PetscErrorCode tempSystemCtx::setSurfaceBoundaryValuesThisColumn(PetscScalar my_Ts) {
   if (!initAllDone) {  SETERRQ(2,
-     "setSurfaceBoundaryValuesThisColumn() should only be called after initAllColumns() in tempSystemCtx_new"); }
+     "setSurfaceBoundaryValuesThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
   if (surfBCsValid) {  SETERRQ(3,
-     "setSurfaceBoundaryValuesThisColumn() called twice (?) in tempSystemCtx_new"); }
+     "setSurfaceBoundaryValuesThisColumn() called twice (?) in tempSystemCtx"); }
   Ts = my_Ts;
   surfBCsValid = true;
   return 0;
 }
 
 
-PetscErrorCode tempSystemCtx_new::setBasalBoundaryValuesThisColumn(
+PetscErrorCode tempSystemCtx::setBasalBoundaryValuesThisColumn(
                      PetscScalar my_G0, PetscScalar my_Tshelfbase, PetscScalar my_Rb) {
   if (!initAllDone) {  SETERRQ(2,
-     "setIndicesThisColumn() should only be called after initAllColumns() in tempSystemCtx_new"); }
+     "setIndicesThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
   if (basalBCsValid) {  SETERRQ(3,
-     "setBasalBoundaryValuesThisColumn() called twice (?) in tempSystemCtx_new"); }
+     "setBasalBoundaryValuesThisColumn() called twice (?) in tempSystemCtx"); }
   G0 = my_G0;
   Tshelfbase = my_Tshelfbase;
   Rb = my_Rb;
@@ -112,16 +112,16 @@ PetscErrorCode tempSystemCtx_new::setBasalBoundaryValuesThisColumn(
 }
 
 
-PetscErrorCode tempSystemCtx_new::solveThisColumn(PetscScalar **x) {
+PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x) {
   PetscErrorCode ierr;
   if (!initAllDone) {  SETERRQ(2,
-     "solveThisColumn() should only be called after initAllColumns() in tempSystemCtx_new"); }
+     "solveThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
   if (!schemeParamsValid) {  SETERRQ(3,
-     "solveThisColumn() should only be called after setSchemeParamsThisColumn() in tempSystemCtx_new"); }
+     "solveThisColumn() should only be called after setSchemeParamsThisColumn() in tempSystemCtx"); }
   if (!surfBCsValid) {  SETERRQ(3,
-     "solveThisColumn() should only be called after setSurfaceBoundaryValuesThisColumn() in tempSystemCtx_new"); }
+     "solveThisColumn() should only be called after setSurfaceBoundaryValuesThisColumn() in tempSystemCtx"); }
   if (!basalBCsValid) {  SETERRQ(3,
-     "solveThisColumn() should only be called after setBasalBoundaryValuesThisColumn() in tempSystemCtx_new"); }
+     "solveThisColumn() should only be called after setBasalBoundaryValuesThisColumn() in tempSystemCtx"); }
 
   // bottom of ice; k=0 eqn
   if (ks == 0) { // no ice; set T[0] to surface temp if grounded

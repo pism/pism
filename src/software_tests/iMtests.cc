@@ -26,8 +26,6 @@
 //! Set grid defaults for a particular unit test.
 PetscErrorCode IceUnitModel::set_grid_defaults() {
   grid.Mx  = grid.My = 3;
-  grid.Mbz = 11;
-  grid.Lbz = 1000.0;
   return 0;
 }
 
@@ -80,11 +78,6 @@ PetscErrorCode IceUnitModel::run() {
   ierr = PISMOptionsIsSet("-IceModelVec3", flag); CHKERRQ(ierr);
   if (flag) {
     ierr = test_IceModelVec3(); CHKERRQ(ierr);
-  }
-
-  ierr = PISMOptionsIsSet("-IceModelVec3Bedrock", flag); CHKERRQ(ierr);
-  if (flag) {
-    ierr = test_IceModelVec3Bedrock(); CHKERRQ(ierr);
   }
 
   ierr = PISMOptionsIsSet("-IceModelVec2T", flag); CHKERRQ(ierr);
@@ -179,74 +172,6 @@ PetscErrorCode IceUnitModel::test_IceModelVec3()    {
   delete[] values_in;
   delete[] values_out;
 
-  return 0;
-}
-
-
-// test IceModelVec3Bedrock: assuming this is called from pisms, try
-//   pisms -eisII A -y 1 -Mz 11 -Mbz 11  # no errors when grid coincides;
-//                                       #   significant otherwise
-//   pisms -eisII A -y 1 -Mz 101 -Mbz 101 # no errors because grid coincides
-//   pisms -eisII A -y 1 -Mz 102 -Mbz 102 # small errors (grid doesn't coincide)
-// same story here
-//   pisms -eisII A -y 1 -Mz 11 -Mbz 11
-//   pisms -eisII A -y 1 -Mz 101 -Mbz 101
-//   pisms -eisII A -y 1 -Mz 102 -Mbz 102
-PetscErrorCode IceUnitModel::test_IceModelVec3Bedrock()    {
-  PetscErrorCode ierr;
-
-  ierr = verbPrintf(1,grid.com,
-    "\nbedrock elevations are grid.zblevels[0,...,grid.Mbz-1]:\n"); CHKERRQ(ierr);
-  for (PetscInt k=0; k < grid.Mbz; k++) {
-    ierr = verbPrintf(1,grid.com," %.3f,",grid.zblevels[k]); CHKERRQ(ierr);
-  }
-    ierr = verbPrintf(1,grid.com,"\n\n"); CHKERRQ(ierr);
-
-  ierr = Tb3.begin_access(); CHKERRQ(ierr);
-  const PetscScalar  tv = 60402.70804;
-  ierr = verbPrintf(1,grid.com,
-             "\ntesting IceModelVec3Bedrock\n\nsetting to constant %f",
-             tv); CHKERRQ(ierr);
-  ierr = Tb3.setColumn(grid.xs,grid.ys,tv); CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com,"\n\ngetInternalColumn() says ... ");
-            CHKERRQ(ierr);
-  PetscScalar *valscOUT;
-  ierr = Tb3.getInternalColumn(grid.xs,grid.ys,&valscOUT); CHKERRQ(ierr);
-  PetscScalar maxdiff = 0.0;
-  for (PetscInt k=0; k < grid.Mbz; k++) {
-    maxdiff = PetscMax(maxdiff,PetscAbs(tv-valscOUT[k]));
-  }
-  ierr = Tb3.end_access(); CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com, "max error is %5.4e\n\n", maxdiff); CHKERRQ(ierr);
-
-  ierr = Tb3.begin_access(); CHKERRQ(ierr);
-  ierr = verbPrintf(1,grid.com,
-             "\ntesting setInternalColumn() and getInternalColumn ... "); CHKERRQ(ierr);
-  PetscScalar *values_in = new PetscScalar[grid.Mbz_fine],
-    *values_out = new PetscScalar[grid.Mbz_fine];
-
-  for (PetscInt k=0; k < grid.Mbz_fine; k++) {
-    values_in[k] = sin(grid.zblevels_fine[k]/1000.0);
-  }
-
-  ierr = Tb3.setValColumnPL(grid.xs, grid.ys, values_in); CHKERRQ(ierr);
-
-  ierr = verbPrintf(1,grid.com,
-    "\ntesting setValColumn() and getValColumnPL():\n"); CHKERRQ(ierr);
-
-  ierr = Tb3.getValColumnPL(grid.xs, grid.ys, values_out); CHKERRQ(ierr);
-  for (PetscInt k=0; k < grid.Mbz_fine; k++) {
-    ierr = verbPrintf(1,grid.com,
-        "   k=%d:   level=%10.2f   values_in=%7.4f   values_out=%7.4f   |diff|=%5.4e\n",
-        k,grid.zblevels_fine[k],values_in[k],values_out[k],PetscAbs(values_in[k]-values_out[k]) ); CHKERRQ(ierr);
-  }
-
-  ierr = verbPrintf(1,grid.com,"done\n\n\n"); CHKERRQ(ierr);
-
-  ierr = Tb3.end_access(); CHKERRQ(ierr);
-
-  delete[] values_in;
-  delete[] values_out;
   return 0;
 }
 

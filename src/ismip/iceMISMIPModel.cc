@@ -459,7 +459,6 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
 
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no bed deformation
   ierr =  T3.set(ice->triple_point_temp); CHKERRQ(ierr);
-  ierr = Tb3.set(ice->triple_point_temp); CHKERRQ(ierr);
 
   ierr = vH.set(initialthickness); CHKERRQ(ierr);
 

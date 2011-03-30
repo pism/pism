@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2010 Ed Bueler
+// Copyright (C) 2009-2011 Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -62,89 +62,6 @@ protected:
 private:
   bool        indicesValid;
   PetscErrorCode resetColumn();
-};
-
-
-// FIXME: the class below is deletable once the PISMBedThermalUnit-enabled version
-//        in energy/tempSystem.[hh|cc] is working properly
-
-//! Tridiagonal linear system for vertical column of temperature-based conservation of energy problem.
-/*!
-Call sequence like this:
-\code
-  tempSystemCtx foo;
-  foo.dx = ...  // set public constants
-  foo.u = ...   // set public pointers
-  foo.initAllColumns();
-  for (i in ownership) {
-    for (j in ownership) {
-      ks = ...
-      foo.setIndicesThisColumn(i,j,ks);
-      [COMPUTE OTHER PARAMS]
-      foo.setSchemeParamsThisColumn(mask,isMarginal,lambda);  
-      foo.setSurfaceBoundaryValuesThisColumn(Ts);
-      foo.setBasalBoundaryValuesThisColumn(Ghf,Tshelfbase,Rb);
-      foo.solveThisColumn(x);
-    }  
-  }
-\endcode
- */
-class tempSystemCtx : public columnSystemCtx {
-
-public:
-  tempSystemCtx(PetscInt my_Mz, PetscInt my_Mbz);
-  PetscErrorCode initAllColumns();
-  PetscErrorCode setSchemeParamsThisColumn(
-                     PismMask my_mask, bool my_isMarginal, PetscScalar my_lambda);  
-  PetscErrorCode setSurfaceBoundaryValuesThisColumn(PetscScalar my_Ts);
-  PetscErrorCode setBasalBoundaryValuesThisColumn(
-                     PetscScalar my_Ghf, PetscScalar my_Tshelfbase, PetscScalar my_Rb);
-  PetscErrorCode solveThisColumn(PetscScalar **x);  
-
-public:
-  // constants which should be set before calling initForAllColumns()
-  PetscScalar  dx,
-               dy,
-               dtTemp,
-               dzEQ,
-               dzbEQ,
-               ice_rho,
-               ice_c_p,
-               ice_k,
-               bed_thermal_rho,
-               bed_thermal_c_p,
-               bed_thermal_k;
-  // pointers which should be set before calling initForAllColumns()
-  PetscScalar  *T,
-               *Tb,
-               *u,
-               *v,
-               *w,
-               *Sigma;
-  IceModelVec3 *T3;
-
-protected: // used internally
-  PetscInt    Mz, Mbz, k0;
-  PetscScalar lambda, Ts, Ghf, Tshelfbase, Rb;
-  PismMask    mask;
-  bool        isMarginal;
-  PetscScalar nuEQ,
-              rho_c_I,
-              rho_c_br,
-              rho_c_av,
-              iceK,
-              iceR,
-              brK,
-              brR,
-              rho_c_ratio,
-              dzav,
-              iceReff,
-              brReff;
-  bool        initAllDone,
-              indicesValid,
-              schemeParamsValid,
-              surfBCsValid,
-              basalBCsValid;
 };
 
 #endif	/* __columnSystem_hh */

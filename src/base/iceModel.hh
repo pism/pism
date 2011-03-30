@@ -181,9 +181,6 @@ protected:
         Enth3,          //!< enthalpy; J / kg (ghosted)
         tau3;		//!< age of ice; s (ghosted because it is evaluated on the staggered-grid)
 
-  IceModelVec3Bedrock
-        Tb3;		//!< temperature of lithosphere (bedrock) under ice or ocean; K (no ghosts)
-
   // parameters
   PetscReal   dt,     //!< mass continuity time step, s
               dtTempAge,  //!< enthalpy/temperature and age time-steps in seconds
@@ -245,10 +242,6 @@ protected:
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode putTempAtDepth();
-  virtual PetscErrorCode bootstrapSetBedrockColumnTemp(PetscInt i, PetscInt j,
-						       PetscScalar Ttopbedrock,
-						       PetscScalar geothermflux,
-						       PetscScalar bed_thermal_k);
   virtual PetscErrorCode setMaskSurfaceElevation_bootstrap();
 
   // see iMdefaults.cc
@@ -270,10 +263,7 @@ protected:
 					      PetscScalar *lambda,     //!< lambda
 					      PetscScalar **Enth_s//!< enthalpy for the pr.-melting temp.
                                               );   
-  virtual PetscErrorCode enthalpyAndDrainageStep( // FIXME: remove this old version once PISMBedThermalUnit works
-                PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
-                PetscScalar* bulgeCount);
-  virtual PetscErrorCode enthalpyAndDrainageStep_new(
+  virtual PetscErrorCode enthalpyAndDrainageStep(
                 PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
                 PetscScalar* bulgeCount);
 
@@ -323,8 +313,7 @@ protected:
   // see iMtemp.cc
   virtual PetscErrorCode energyStep();
   virtual PetscErrorCode get_bed_top_temp(IceModelVec2S &result);
-  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);// FIXME: delete when _new version works
-  virtual PetscErrorCode temperatureStep_new(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);// FIXME: rename (- "_new") when works
+  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
   virtual PetscErrorCode ageStep();
   virtual bool checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
                       PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE);

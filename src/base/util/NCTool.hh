@@ -81,14 +81,13 @@ public:
   virtual PetscErrorCode find_dimension(string short_name, int *dimid, bool &exists) const;
   virtual PetscErrorCode append_time(PetscReal time) const;
   virtual PetscErrorCode write_history(string history, bool overwrite = false) const;
-  virtual PetscErrorCode get_vertical_dims(vector<double> &z_levels, vector<double> &zb_levels) const;
   virtual bool check_dimension(string dim, int len) const;
 
   virtual PetscErrorCode get_dim_length(string name, int *len) const;
   virtual PetscErrorCode get_dim_limits(string name, double *min, double *max) const;
 
   virtual PetscErrorCode get_dimension(string name, vector<double> &result) const;
-  virtual PetscErrorCode put_dimension(int varid, vector<double> &vals) const;
+  virtual PetscErrorCode put_dimension(int varid, const vector<double> &vals) const;
 
   virtual PetscErrorCode inq_unlimdim(int &unlimdimid) const;
   virtual PetscErrorCode inq_dimname(int dimid, string &name) const;

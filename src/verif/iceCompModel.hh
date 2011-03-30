@@ -21,6 +21,19 @@
 
 #include "iceModel.hh"
 
+class BTU_Verification : public PISMBedThermalUnit
+{
+public:
+  BTU_Verification(IceGrid &g, const NCConfigVariable &conf, int test, int bii)
+    : PISMBedThermalUnit(g, conf) { testname = test; bedrock_is_ice = bii; }
+  virtual ~BTU_Verification() {}
+
+  virtual PetscErrorCode get_temp(IceModelVec3BTU* &result);
+protected:
+  virtual PetscErrorCode bootstrap();
+  int testname, bedrock_is_ice;
+};
+
 class IceCompModel : public IceModel {
 
 public:

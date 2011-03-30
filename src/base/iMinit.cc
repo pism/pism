@@ -140,12 +140,11 @@ PetscErrorCode IceModel::set_grid_defaults() {
  */
 PetscErrorCode IceModel::set_grid_from_options() {
   PetscErrorCode ierr;
-  bool Mx_set, My_set, Mz_set, Mbz_set, Lx_set, Ly_set, Lz_set, Lbz_set,
-    z_spacing_set, zb_spacing_set, periodicity_set;
+  bool Mx_set, My_set, Mz_set, Lx_set, Ly_set, Lz_set,
+    z_spacing_set, periodicity_set;
   PetscReal x_scale = grid.Lx / 1000.0,
     y_scale = grid.Ly / 1000.0,
-    z_scale = grid.Lz,
-    zb_scale = grid.Lbz;
+    z_scale = grid.Lz;
 
   // Process the options:
 
@@ -157,8 +156,6 @@ PetscErrorCode IceModel::set_grid_from_options() {
   // Vertical extent (in the ice and bedrock, correspondingly):
   ierr = PISMOptionsReal("-Lz", "Grid extent in the Z (vertical) direction in the ice, in meters",
 			 z_scale,  Lz_set); CHKERRQ(ierr);
-  ierr = PISMOptionsReal("-Lbz", "Grid extent in the Z (vertical) direction in the bedrock, in meters",
-			 zb_scale, Lbz_set); CHKERRQ(ierr);
 
   // Read -Mx, -My, -Mz and -Mbz.
   ierr = PISMOptionsInt("-My", "Number of grid points in the X direction",
@@ -167,8 +164,6 @@ PetscErrorCode IceModel::set_grid_from_options() {
 			grid.Mx, Mx_set); CHKERRQ(ierr);
   ierr = PISMOptionsInt("-Mz", "Number of grid points in the Z (vertical) direction in the ice",
 			grid.Mz, Mz_set); CHKERRQ(ierr);
-  ierr = PISMOptionsInt("-Mbz", "Number of grid points in the Z (vertical) direction in the bedrock",
-			grid.Mbz, Mbz_set); CHKERRQ(ierr);
 
   string keyword;
   set<string> z_spacing_choices;
@@ -182,23 +177,6 @@ PetscErrorCode IceModel::set_grid_from_options() {
     grid.ice_vertical_spacing = QUADRATIC;
   } else {
     grid.ice_vertical_spacing = EQUAL;
-  }
-
-  // Determine the vertical grid spacing in the bedrock:
-  ierr = PISMOptionsList(grid.com, "-zb_spacing", "Vertical spacing in the bedrock thermal layer.",
-			 z_spacing_choices, "quadratic", keyword, zb_spacing_set); CHKERRQ(ierr);
-  if (keyword == "quadratic") {
-    grid.bed_vertical_spacing = QUADRATIC;
-  } else {
-    grid.bed_vertical_spacing = EQUAL;
-  }
-
-  if (Mbz_set) {
-    if ((grid.Mbz > 1) && !Lbz_set) {
-      ierr = PetscPrintf(grid.com,
-			 "PISM ERROR: Please specify bedrock layer thickness using -Lbz.\n"); CHKERRQ(ierr);
-      PISMEnd();
-    }
   }
 
   // Determine grid periodicity:
@@ -224,7 +202,6 @@ PetscErrorCode IceModel::set_grid_from_options() {
   if (Lx_set)    grid.Lx  = x_scale * 1000.0; // convert to meters
   if (Ly_set)    grid.Ly  = y_scale * 1000.0; // convert to meters
   if (Lz_set)    grid.Lz  = z_scale;	      // in meters already
-  if (Lbz_set)   grid.Lbz = zb_scale;	      // in meters already
 
   ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
   ierr = grid.compute_vertical_levels();    CHKERRQ(ierr);
@@ -461,7 +438,8 @@ PetscErrorCode IceModel::model_state_setup() {
   }
 
   if (btu) {
-    ierr = btu->init(variables); CHKERRQ(ierr); // FIXME: this is bootstrapping, really
+    ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
+    ierr = btu->init(variables); CHKERRQ(ierr);
   }
 
   // init basal till model, possibly inverting for phi, if desired;

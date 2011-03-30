@@ -10,6 +10,8 @@ files="simp_exper.nc"
 
 rm -f $files
 
+set -e -x
+
 $PISM_PATH/pisms -eisII A -y 1000 -view_sounding temp,litho_temp -view_map velsurf,thk -Mbz 11 -Lbz 1000 -o_size small
 
 if [ $? != 0 ];

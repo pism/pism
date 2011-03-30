@@ -614,7 +614,6 @@ PetscErrorCode PISMIO::get_grid(string filename, string var_name) {
   ierr = open_for_reading(filename); CHKERRQ(ierr);
 
   ierr = get_grid_info(var_name, gi); CHKERRQ(ierr);
-  ierr = get_vertical_dims(z_levels, zb_levels); CHKERRQ(ierr);
 
   grid->Mx = gi.x_len;
   grid->My = gi.y_len;
@@ -627,7 +626,7 @@ PetscErrorCode PISMIO::get_grid(string filename, string var_name) {
   grid->year = gi.time / secpera;
 
   ierr = grid->compute_horizontal_spacing(); CHKERRQ(ierr);
-  ierr = grid->set_vertical_levels(z_levels, zb_levels); CHKERRQ(ierr); // FIXME
+  ierr = grid->set_vertical_levels(gi.zlevels); CHKERRQ(ierr);
 
   // We're ready to call grid->createDA().
 
@@ -704,23 +703,17 @@ PetscErrorCode PISMIO::open_for_writing(string filename, bool append,
 
 //! Always returns true on processors other than zero.
 bool PISMIO::check_dimensions() const {
-  bool t, x, y, z;
 
   if (grid == NULL) SETERRQ(1, "PISMIO::check_dimensions(...): grid == NULL");
 
-  t  = check_dimension("t", -1); // length does not matter
-  x  = check_dimension("y", grid->My);
-  y  = check_dimension("x", grid->Mx);
-  z  = check_dimension("z", grid->Mz);
-  
-  return (t & x & y & z);
+  return check_dimension("t", -1); // length does not matter
 }
 
 
 //! Create dimensions and coordinate variables for storing spatial data.
 /*! Assumes that the dataset is in the data mode. */
 PetscErrorCode PISMIO::create_dimensions() const {
-  int ierr, t, x, y, z, zb, dimid;
+  int ierr, dimid, varid;
   map<string,string> attrs;
 
   if (grid == NULL) SETERRQ(1, "PISMIO::create_dimensions(...): grid == NULL");
@@ -734,53 +727,7 @@ PetscErrorCode PISMIO::create_dimensions() const {
   attrs["calendar"]  = "365_day";
   attrs["units"]     = "years since " + grid->config.get_string("reference_date");
   attrs["axis"]      = "T";
-  ierr = create_dimension("t", NC_UNLIMITED, attrs, dimid, t); CHKERRQ(ierr);
-
-  // x
-  attrs.clear();
-  attrs["axis"]          = "X";
-  attrs["long_name"]     = "X-coordinate in Cartesian system";
-  attrs["standard_name"] = "projection_x_coordinate";
-  attrs["units"]         = "m";
-  ierr = create_dimension("x", grid->Mx, attrs, dimid, x); CHKERRQ(ierr);
-
-  // y
-  attrs.clear();
-  attrs["axis"]          = "Y";
-  attrs["long_name"]     = "Y-coordinate in Cartesian system";
-  attrs["standard_name"] = "projection_y_coordinate";
-  attrs["units"]         = "m";
-  ierr = create_dimension("y", grid->My, attrs, dimid, y); CHKERRQ(ierr);
-
-  // z
-  attrs.clear();
-  attrs["axis"]          = "Z";
-  attrs["long_name"]     = "Z-coordinate in Cartesian system";
-  // PROPOSED: attrs["standard_name"] = "projection_z_coordinate";
-  attrs["units"]         = "m";
-  attrs["positive"]      = "up";
-  ierr = create_dimension("z", grid->Mz, attrs, dimid, z); CHKERRQ(ierr);
-
-  // zb
-  attrs.clear();
-  attrs["axis"]          = "Z";
-  attrs["long_name"]     = "Z-coordinate in bedrock";
-  // PROPOSED: attrs["standard_name"] = "projection_z_coordinate_in_lithosphere";
-  attrs["units"]         = "m";
-  attrs["positive"]      = "up";
-  ierr = create_dimension("zb", grid->Mbz, attrs, dimid, zb); CHKERRQ(ierr);
-
-  // 
-
-  ierr = data_mode(); CHKERRQ(ierr); 
-
-  // set values:
-  // Note that the 't' dimension is not modified: it is handled by the append_time method.
-    
-  ierr = put_dimension(y, grid->y); CHKERRQ(ierr);
-  ierr = put_dimension(x, grid->x); CHKERRQ(ierr);
-  ierr = put_dimension(z, grid->zlevels); CHKERRQ(ierr);
-  ierr = put_dimension(zb, grid->zblevels); CHKERRQ(ierr);
+  ierr = create_dimension("t", NC_UNLIMITED, attrs, dimid, varid); CHKERRQ(ierr);
 
   return 0;
 }

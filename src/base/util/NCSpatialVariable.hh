@@ -41,7 +41,8 @@ public:
   PetscErrorCode define(const NCTool &nc, int &varid, nc_type nctype,
                         bool write_in_glaciological_units) const;
 
-  mutable map<string,string> dimensions;
+  mutable map<string,string> dimensions,
+    x_attrs, y_attrs, z_attrs;
   bool time_independent;        //!< a variable in a NetCDF file will not
                                 //! depend on 't' if this is true.
 protected:
@@ -51,6 +52,7 @@ protected:
   PetscErrorCode report_range(Vec v, bool found_by_standard_name);
   PetscErrorCode change_units(Vec v, utUnit *from, utUnit *to);
   PetscErrorCode check_range(Vec v);
+  PetscErrorCode define_dimensions(const NCTool &nc) const;
 };
 
 #endif	// __NCSpatialVariable

@@ -183,48 +183,9 @@ PetscErrorCode NCTool::find_variable(string short_name, int *varid, bool &exists
   This function allocates arrays z_levels and zb_levels, and they have to be
   freed by the caller (using delete[]).
  */
-PetscErrorCode NCTool::get_vertical_dims(vector<double> &z_levels, vector<double> &zb_levels) const {
-  int stat;
-  int z_id, zb_id, z_len, zb_len;
-  size_t zero  = 0, nc_z_len, nc_zb_len;
-
-  stat = get_dim_length("z", &z_len); CHKERRQ(stat);
-  stat = get_dim_length("zb", &zb_len); CHKERRQ(stat);
-
-  z_levels.resize(z_len);
-  zb_levels.resize(zb_len);
-
-  nc_z_len  = (size_t) z_len;
-  nc_zb_len = (size_t) zb_len;
-
-  if (rank == 0) {
-    stat = nc_inq_varid(ncid, "z", &z_id);
-    if (stat != NC_NOERR) {
-      stat = PetscPrintf(com, "PISM ERROR: Can't find the 'z' coordinate variable.\n"); CHKERRQ(stat);
-      PISMEnd();
-    }
-    
-    stat = nc_inq_varid(ncid, "zb", &zb_id);
-    if (stat != NC_NOERR) {
-      stat = PetscPrintf(com, "PISM ERROR: Can't find the 'zb' coordinate variable.\n"); CHKERRQ(stat);
-      PISMEnd();
-    }
-
-    stat = data_mode(); CHKERRQ(stat); 
-
-    stat = nc_get_vara_double(ncid, z_id, &zero, &nc_z_len, z_levels.data());
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-    stat = nc_get_vara_double(ncid, zb_id, &zero, &nc_zb_len, zb_levels.data());
-    CHKERRQ(check_err(stat,__LINE__,__FILE__));
-  }
-
-  MPI_Bcast(z_levels.data(), z_len, MPI_DOUBLE, 0, com);
-  MPI_Bcast(zb_levels.data(), zb_len, MPI_DOUBLE, 0, com);
-  return 0;
-}
 
 //! Put the variable for a dimension in a NetCDF file.  Makes no assumption about spacing.
-PetscErrorCode NCTool::put_dimension(int varid, vector<double> &vals) const {
+PetscErrorCode NCTool::put_dimension(int varid, const vector<double> &vals) const {
   PetscErrorCode ierr;
   int stat;
 

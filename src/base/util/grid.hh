@@ -102,10 +102,8 @@ public:
   PetscErrorCode createDA();  // destructor checks if DA was created, and destroys
   PetscErrorCode createDA(PetscInt procs_x, PetscInt procs_y,
 			  PetscInt* &lx, PetscInt* &ly);
-  PetscErrorCode set_vertical_levels(vector<double> z_levels, vector<double> zb_levels);
+  PetscErrorCode set_vertical_levels(vector<double> z_levels);
   PetscErrorCode compute_vertical_levels();
-  PetscErrorCode compute_ice_vertical_levels();
-  PetscErrorCode compute_bed_vertical_levels();
   PetscErrorCode compute_horizontal_spacing();
   void compute_point_neighbors(PetscReal x, PetscReal y,
                                PetscInt &i, PetscInt &j);
@@ -130,32 +128,26 @@ public:
     ys,                         //!< starting y-index of a processor sub-domain
     ym; //!< number of grid points (in the y-direction) in a processor sub-domain
 
-  vector<double> zlevels, //!< vertical grid levels in the ice; correspond to the storage grid
-    zblevels; //!< vertical grid levels in the bedrock; correspond to the storage grid
+  vector<double> zlevels; //!< vertical grid levels in the ice; correspond to the storage grid
 
   vector<double> x,             //!< x-coordinates of grid points
     y;          //!< y-coordinates of grid points
 
   // Fine vertical grid and the interpolation setup:
-  vector<double> zlevels_fine,   //!< levels of the fine vertical grid in the ice
-    zblevels_fine;             //!< levels of the fine vertical grid in the bedrock
+  vector<double> zlevels_fine;   //!< levels of the fine vertical grid in the ice
   PetscReal   dz_fine;                    //!< spacing of the fine vertical grid
-  PetscInt    Mz_fine,          //!< number of levels of the fine vertical grid in the ice
-    Mbz_fine;                   //!< number of levels of the fine vertical grid in the bedrock
+  PetscInt    Mz_fine;          //!< number of levels of the fine vertical grid in the ice
 
   // Array ice_storage2fine contains indices of the ice storage vertical grid
   // that are just below a level of the fine grid. I.e. ice_storage2fine[k] is
   // the storage grid level just below fine-grid level k (zlevels_fine[k]).
   // Similarly for other arrays below.
-  vector<int> ice_storage2fine, ice_fine2storage,
-    bed_storage2fine, bed_fine2storage;
+  vector<int> ice_storage2fine, ice_fine2storage;
 
-  SpacingType ice_vertical_spacing, bed_vertical_spacing;
+  SpacingType ice_vertical_spacing;
   Periodicity periodicity;
   PetscScalar dzMIN,            //!< minimal vertical spacing of the storage grid in the ice
     dzMAX;                      //!< maximal vertical spacing of the storage grid in the ice
-  PetscScalar dzbMIN,           //!< minimal vertical spacing of the storage grid in the bedrock
-    dzbMAX;                     //!< maximal vertical spacing of the storage grid in the bedrock
 
   PetscScalar x0,               //!< x-coordinate of the grid center
     y0;	   //!< y-coordinate of the grid center
@@ -175,11 +167,9 @@ public:
   PetscScalar dx,               //!< horizontal grid spacing
     dy;                         //!< horizontal grid spacing
 
-  PetscScalar Lz,      //!< extent of the ice in z-direction (m)
-    Lbz;               //!< extent of the bedrock in z-direction (m)
+  PetscScalar Lz;      //!< extent of the ice in z-direction (m)
 
-  PetscInt    Mz, //!< number of grid points in z-direction in the ice
-    Mbz; //!< number of grid points in z-direction in the bedrock
+  PetscInt    Mz; //!< number of grid points in z-direction in the ice
 
   PetscInt initial_Mz; //!< initial number of vertical grid levels; used by the grid extension code
 

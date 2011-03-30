@@ -33,7 +33,6 @@ public:
   PetscErrorCode model_state_setup();
 
   PetscErrorCode test_IceModelVec3();
-  PetscErrorCode test_IceModelVec3Bedrock();
   PetscErrorCode test_IceModelVec2T();
   PetscErrorCode test_IceModelVec2V();
   PetscErrorCode test_dof1comm();

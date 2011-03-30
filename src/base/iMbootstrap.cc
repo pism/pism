@@ -265,9 +265,6 @@ PetscErrorCode IceModel::putTempAtDepth() {
   PetscErrorCode  ierr;
 
   PetscScalar *T = new PetscScalar[grid.Mz];
-
-  double ocean_rho = config.get("sea_water_density");
-  double bed_thermal_k = config.get("bedrock_thermal_conductivity");
   const bool do_cold = config.get_flag("do_cold_ice_methods");
 
   if (surface != NULL) {
@@ -288,7 +285,6 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr = vGhf.begin_access(); CHKERRQ(ierr);
 
   ierr = result->begin_access(); CHKERRQ(ierr);
-  ierr = Tb3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       const PetscScalar HH = vH(i,j);
@@ -308,13 +304,6 @@ PetscErrorCode IceModel::putTempAtDepth() {
       }
       for (PetscInt k = ks; k < grid.Mz; k++) // above ice
         T[k] = artm(i,j);
-
-      // set temp within bedrock; if floating then top of bedrock sees ocean,
-      //   otherwise it sees the temperature of the base of the ice
-      const PetscScalar floating_base = - (ice->rho/ocean_rho) * vH(i,j); // FIXME task #7297
-      const PetscScalar T_top_bed = (vbed(i,j) < floating_base)
-        ? ice->triple_point_temp : T[0]; // FIXME: when floating (first case), should see sea-water pressure-melting temperature
-      ierr = bootstrapSetBedrockColumnTemp(i,j,T_top_bed,vGhf(i,j),bed_thermal_k); CHKERRQ(ierr);
       
       if (!do_cold) {
 	for (PetscInt k = 0; k < grid.Mz; ++k) {
@@ -334,7 +323,6 @@ PetscErrorCode IceModel::putTempAtDepth() {
   ierr =   vbed.end_access(); CHKERRQ(ierr);
   ierr =   vGhf.end_access(); CHKERRQ(ierr);
   ierr = result->end_access(); CHKERRQ(ierr);
-  ierr =    Tb3.end_access(); CHKERRQ(ierr);
   ierr =   artm.end_access(); CHKERRQ(ierr);
 
   delete [] T;
@@ -346,29 +334,6 @@ PetscErrorCode IceModel::putTempAtDepth() {
     ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
   }
 
-  return 0;
-}
-
-
-//! Set the temperatures in a column of bedrock based on a temperature at the top and a geothermal flux.
-/*! 
-This procedure sets the temperatures in the bedrock that would be correct
-for our model in steady state.  In steady state there would be a temperature 
-at the top of the bed and a flux condition at the bottom
-and the temperatures would be linear in between.
-
-Call <tt>Tb3.begin_access()</tt> before and 
-<tt>Tb3.end_access()</tt> after this routine.
- */
-PetscErrorCode IceModel::bootstrapSetBedrockColumnTemp(PetscInt i, PetscInt j,
-						       PetscScalar Ttopbedrock, PetscScalar geothermflux,
-						       PetscScalar bed_thermal_k) {
-  PetscScalar *Tb;
-  Tb = new PetscScalar[grid.Mbz];
-  for (PetscInt kb = 0; kb < grid.Mbz; kb++)
-    Tb[kb] = Ttopbedrock - (geothermflux / bed_thermal_k) * grid.zblevels[kb];
-  PetscErrorCode ierr = Tb3.setInternalColumn(i,j,Tb); CHKERRQ(ierr);
-  delete [] Tb;
   return 0;
 }
 

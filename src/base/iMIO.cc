@@ -484,11 +484,7 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     for (i = vars.begin(); i != vars.end(); ++i) {
       IceModelVec *v = variables.get(*i);
 
-      if (v == NULL) {
-        ierr = PetscPrintf(grid.com, "PISM ERROR: unknown variable name: %s\n",
-                           (*i).c_str()); CHKERRQ(ierr);
-        PISMEnd();
-      }
+      if (v == NULL) continue;
 
       string pism_intent = v->string_attr("pism_intent");
       if (pism_intent != "model_state") {

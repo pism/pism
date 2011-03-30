@@ -75,9 +75,6 @@ add_library (pismbase
   base/pism_signal.c
   base/materials.cc
   base/columnSystem.cc
-  base/energy/bedrockOnlySystem.cc
-  base/energy/combinedSystem.cc
-  base/energy/iceenthOnlySystem.cc
   base/energy/bedrockThermalUnit.cc
   base/energy/enthSystem.cc
   base/energy/tempSystem.cc

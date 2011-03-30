@@ -62,18 +62,14 @@ PetscErrorCode IceCompModel::initTestFG() {
   ierr = vMask.set(MASK_GROUNDED); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
 
-  PetscScalar *T, *Tb;
+  PetscScalar *T;
   T = new PetscScalar[grid.Mz];
-  Tb = new PetscScalar[grid.Mbz];
 
   ierr = acab.get_array(accum); CHKERRQ(ierr);
   ierr = artm.get_array(Ts); CHKERRQ(ierr);
 
   ierr = vH.get_array(H); CHKERRQ(ierr);
   ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = Tb3.begin_access(); CHKERRQ(ierr);
-
-  double bed_thermal_k = config.get("bedrock_thermal_conductivity");
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -96,16 +92,11 @@ PetscErrorCode IceCompModel::initTestFG() {
       }
       ierr = T3.setInternalColumn(i,j,T); CHKERRQ(ierr);
 
-      // fill with basal temp increased by geothermal flux
-      for (PetscInt k = 0; k < grid.Mbz; k++)
-        Tb[k] = T[0] - (Ggeo / bed_thermal_k) * grid.zblevels[k];
-      ierr = Tb3.setInternalColumn(i,j,Tb); CHKERRQ(ierr);
     }
   }
 
   ierr =     vH.end_access(); CHKERRQ(ierr);
   ierr =     T3.end_access(); CHKERRQ(ierr);
-  ierr =    Tb3.end_access(); CHKERRQ(ierr);
 
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = artm.end_access(); CHKERRQ(ierr);
@@ -119,7 +110,7 @@ PetscErrorCode IceCompModel::initTestFG() {
   ierr = vH.copy_to(vh); CHKERRQ(ierr);
 
   delete [] dummy1;  delete [] dummy2;  delete [] dummy3;  delete [] dummy4;
-  delete [] T;  delete [] Tb;
+  delete [] T;
   
   return 0;
 }
@@ -343,11 +334,20 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
 
   PetscScalar    maxTerr = 0.0, avTerr = 0.0, avcount = 0.0;
   PetscScalar    maxTberr = 0.0, avTberr = 0.0, avbcount = 0.0;
-  const PetscInt    Mz = grid.Mz, Mbz = grid.Mbz;
+  const PetscInt    Mz = grid.Mz;
  
   PetscScalar    *Tex, *Tbex, *T, *Tb;
   PetscScalar    FF;
   Tex = new PetscScalar[Mz];  
+
+  IceModelVec3BTU *bedrock_temp;
+
+  BTU_Verification *my_btu = dynamic_cast<BTU_Verification*>(btu);
+  if (my_btu == NULL) SETERRQ(1, "my_btu == NULL");
+  ierr = my_btu->get_temp(bedrock_temp); CHKERRQ(ierr);
+
+  vector<double> zblevels = bedrock_temp->get_levels();
+  int Mbz = zblevels.size();
   Tbex = new PetscScalar[Mbz];
 
   switch (testname) {
@@ -357,7 +357,7 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
                       (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
       }
       for (PetscInt k = 0; k < Mbz; k++) {
-        ierr = exactK(grid.year * secpera, grid.zblevels[k], &Tbex[k], &FF,
+        ierr = exactK(grid.year * secpera, zblevels[k], &Tbex[k], &FF,
                       (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
       }
       break;
@@ -368,7 +368,7 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
              CHKERRQ(ierr);
       }
       for (PetscInt k = 0; k < Mbz; k++) {
-        ierr = exactO(grid.zblevels[k], &Tbex[k], &dum1, &dum2, &dum3, &dum4);
+        ierr = exactO(zblevels[k], &Tbex[k], &dum1, &dum2, &dum3, &dum4);
              CHKERRQ(ierr);
       }
       break;
@@ -376,10 +376,10 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
   }
     
   ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = Tb3.begin_access(); CHKERRQ(ierr);
+  ierr = bedrock_temp->begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      ierr = Tb3.getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
+      ierr = bedrock_temp->getInternalColumn(i,j,&Tb); CHKERRQ(ierr);
       for (PetscInt kb = 0; kb < Mbz; kb++) { 
         const PetscScalar Tberr = PetscAbs(Tb[kb] - Tbex[kb]);
         maxTberr = PetscMax(maxTberr,Tberr);
@@ -396,7 +396,7 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
     }
   }
   ierr = T3.end_access(); CHKERRQ(ierr);
-  ierr = Tb3.end_access(); CHKERRQ(ierr);
+  ierr = bedrock_temp->end_access(); CHKERRQ(ierr);
 
   delete [] Tex;  delete [] Tbex;
   
@@ -638,14 +638,12 @@ PetscErrorCode IceCompModel::computeBasalMeltRateErrors(
 
 PetscErrorCode IceCompModel::fillTemperatureSolnTestsKO() {
   PetscErrorCode    ierr;
-  const PetscInt    Mz = grid.Mz, 
-                    Mbz = grid.Mbz;
+  const PetscInt    Mz = grid.Mz;
 
-  PetscScalar       *Tcol, *Tbcol;
+  PetscScalar       *Tcol;
   PetscScalar       dum1, dum2, dum3, dum4;
   PetscScalar    FF;
   Tcol = new PetscScalar[Mz];
-  Tbcol = new PetscScalar[Mbz];
 
   // evaluate exact solution in a column; all columns are the same
   switch (testname) {
@@ -654,19 +652,10 @@ PetscErrorCode IceCompModel::fillTemperatureSolnTestsKO() {
         ierr = exactK(grid.year * secpera, grid.zlevels[k], &Tcol[k], &FF,
                       (bedrock_is_ice_forK==PETSC_TRUE)); CHKERRQ(ierr);
       }
-      for (PetscInt k=0; k<Mbz; k++) {
-        if (exactK(grid.year * secpera, grid.zblevels[k], &Tbcol[k], &FF,
-                   (bedrock_is_ice_forK==PETSC_TRUE)))
-          SETERRQ1(1,"exactK() reports that level %9.7f is below B0 = -1000.0 m\n",
-                   grid.zblevels[k]);
-      }
       break;
     case 'O':
       for (PetscInt k=0; k<Mz; k++) {
         ierr = exactO(grid.zlevels[k], &Tcol[k], &dum1, &dum2, &dum3, &dum4); CHKERRQ(ierr);
-      }
-      for (PetscInt k=0; k<Mbz; k++) {
-        ierr = exactO(grid.zblevels[k], &Tbcol[k], &dum1, &dum2, &dum3, &dum4); CHKERRQ(ierr);
       }
       break;
     default:  SETERRQ(2,"only fills temperature solutions for tests K and O\n");
@@ -674,19 +663,16 @@ PetscErrorCode IceCompModel::fillTemperatureSolnTestsKO() {
 
   // copy column values into 3D arrays
   ierr = T3.begin_access(); CHKERRQ(ierr);
-  ierr = Tb3.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       ierr = T3.setInternalColumn(i,j,Tcol); CHKERRQ(ierr);
-      ierr = Tb3.setInternalColumn(i,j,Tbcol); CHKERRQ(ierr);
     }
   }
   ierr = T3.end_access(); CHKERRQ(ierr);
-  ierr = Tb3.end_access(); CHKERRQ(ierr);
 
-  delete [] Tcol;  delete [] Tbcol;
+  delete [] Tcol;
 
-  // only communicate T (as Tb will not be horizontally differentiated)
+  // communicate T
   ierr = T3.beginGhostComm(); CHKERRQ(ierr);
   ierr = T3.endGhostComm(); CHKERRQ(ierr);
   return 0;
@@ -723,3 +709,50 @@ PetscErrorCode IceCompModel::initTestsKO() {
   return 0;
 }
 
+PetscErrorCode BTU_Verification::get_temp(IceModelVec3BTU* &result) {
+  result = &temp;
+  return 0;
+}
+
+PetscErrorCode BTU_Verification::bootstrap() {
+  PetscErrorCode ierr;
+
+  if (Mbz < 2) return 0;
+
+  vector<double> Tbcol(Mbz),
+    zlevels = temp.get_levels();
+  PetscScalar       dum1, dum2, dum3, dum4;
+  PetscScalar    FF;
+
+  // evaluate exact solution in a column; all columns are the same
+  switch (testname) {
+    case 'K':
+      for (PetscInt k=0; k<Mbz; k++) {
+        if (exactK(grid.year * secpera, zlevels[k], &Tbcol[k], &FF,
+                   (bedrock_is_ice==PETSC_TRUE)))
+          SETERRQ1(1,"exactK() reports that level %9.7f is below B0 = -1000.0 m\n",
+                   zlevels[k]);
+      }
+      break;
+    case 'O':
+      for (PetscInt k=0; k<Mbz; k++) {
+        ierr = exactO(zlevels[k], &Tbcol[k], &dum1, &dum2, &dum3, &dum4); CHKERRQ(ierr);
+      }
+      break;
+    default:
+      {
+        ierr = PISMBedThermalUnit::bootstrap(); CHKERRQ(ierr);
+      }
+  }
+
+  // copy column values into 3D arrays
+  ierr = temp.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = temp.setInternalColumn(i,j,Tbcol.data()); CHKERRQ(ierr);
+    }
+  }
+  ierr = temp.end_access(); CHKERRQ(ierr);
+
+  return 0;
+}

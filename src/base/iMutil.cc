@@ -197,7 +197,7 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   for (int j = 0; j < N; j++)
     new_zlevels.push_back(grid.Lz + dz_top * (j + 1));
 
-  ierr = grid.set_vertical_levels(new_zlevels, grid.zblevels); CHKERRQ(ierr);
+  ierr = grid.set_vertical_levels(new_zlevels); CHKERRQ(ierr);
 
   // Done with the grid. Now we need to extend IceModelVec3s.
 

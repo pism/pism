@@ -35,9 +35,6 @@ public:
                                 
   virtual PetscErrorCode get_layer_depth(PetscReal &depth); //!< Return -Lbz value.
   virtual PetscErrorCode get_spacing(PetscReal &dzb);
-
-  virtual PetscErrorCode define(const NCTool &nc, nc_type output_datatype);
-
 private:
   PetscReal Lbz;
   bool good_init();
@@ -119,7 +116,6 @@ public:
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
 
   virtual PetscErrorCode get_upward_geothermal_flux(IceModelVec2S &result);
-
 protected:
   virtual PetscErrorCode allocate(int Mbz, double Lbz);
 

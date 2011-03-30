@@ -218,7 +218,7 @@ public:
   nc_type output_data_type;            //!< Corresponding NetCDF data type.
 protected:
   vector<double> zlevels;
-  int n_levels;                 // grid.Mz or grid.Mbz
+  int n_levels;                 //!< number of vertical levels
 
   bool shallow_copy;            //!< True if this IceModelVec is a shallow copy.
   Vec  v;                       //!< Internal storage
@@ -457,39 +457,6 @@ public:
 protected:
   virtual PetscErrorCode  extend_vertically_private(int old_Mz);
 };
-
-//! Class for a 3d DA-based Vec for bedrock (lithosphere) scalar quantities in IceModel.
-class IceModelVec3Bedrock : public IceModelVec3D {
-public:
-  IceModelVec3Bedrock() {}
-
-  virtual ~IceModelVec3Bedrock() {}
-
-  virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[], bool local,
-                                int stencil_width = 1);
-  PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsIN);
-  PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsOUT);
-  // PetscErrorCode  getValColumnPL(PetscInt i, PetscInt j, PetscInt ks, PetscScalar *valsOUT);
-};
-
-/*
-// FIXME: We might need a IceModelVec3V (3D-distributed horizontal velocity) class.
-
-//! This class is for storing 3D scalar quantities on the grid staggered in
-//! horizontal directions.
-class IceModelVec3Stag : public IceModelVec {
-public:
-  IceModelVec3Stag();
-  virtual ~IceModelVec3Stag();
-
-  virtual PetscErrorCode  create(IceGrid &mygrid, const char my_short_name[],
-				 bool local, int stencil_width = 1);
-  virtual PetscErrorCode  begin_access();
-  virtual PetscErrorCode  end_access();
-  virtual PetscErrorCode  getInternalColumn(PetscInt i, PetscInt j,
-                                            PetscScalar** &column);
-};
-*/
 
 #endif /* __IceModelVec_hh */
 

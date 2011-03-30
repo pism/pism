@@ -45,10 +45,10 @@ Call sequence like this:
   }
 \endcode
  */
-class tempSystemCtx_new : public columnSystemCtx {
+class tempSystemCtx : public columnSystemCtx {
 
 public:
-  tempSystemCtx_new(PetscInt my_Mz);
+  tempSystemCtx(PetscInt my_Mz);
   PetscErrorCode initAllColumns();
   PetscErrorCode setSchemeParamsThisColumn(
                      PismMask my_mask, bool my_isMarginal, PetscScalar my_lambda);  

@@ -144,8 +144,8 @@ int main(int argc, char *argv[]) {
 
     // create grid and set defaults
     IceGrid grid(com, rank, size, config);
-    grid.Mbz = 11;
-    grid.Lbz = 1000.0;
+    config.set("grid_Mbz", 11); 
+    config.set("grid_Lbz", 1000); 
     grid.Mz = 41;
     grid.Lz = 4000.0;
     grid.Mx = 3;
@@ -168,10 +168,6 @@ int main(int argc, char *argv[]) {
       ierr = PISMOptionsReal("-dt", "Time-step, in years", dt_years, flag); CHKERRQ(ierr);
       ierr = PISMOptionsInt("-Mz", "number of vertical layers in ice", grid.Mz, flag); CHKERRQ(ierr);
       ierr = PISMOptionsReal("-Lz", "height of ice/atmosphere boxr", grid.Lz, flag); CHKERRQ(ierr);
-      // -Mbz is ALSO checked by IceModelVec3BTU
-      ierr = PISMOptionsInt("-Mbz", "number of vertical layers in bedrock thermal layer", grid.Mbz, flag); CHKERRQ(ierr);
-      // -Lbz is ALSO checked by IceModelVec3BTU
-      ierr = PISMOptionsReal("-Lbz", "thickness of bedrock thermal layer", grid.Lbz, flag); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -179,7 +175,6 @@ int main(int argc, char *argv[]) {
     grid.compute_nprocs();
     grid.compute_ownership_ranges();
     ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
-    if (grid.Mbz < 1) grid.Mbz = 1;  // FIXME: just to protect current IceGrid init requirement; removable ...
     ierr = grid.compute_vertical_levels(); CHKERRQ(ierr);
     ierr = grid.createDA(); CHKERRQ(ierr);
 
@@ -265,7 +260,7 @@ int main(int argc, char *argv[]) {
     ierr = ghf->shift(+FF); CHKERRQ(ierr); // shift it back for writing
     avghferr /= (grid.Mx * grid.My);
     ierr = verbPrintf(2,grid.com, 
-                      "case Mbz = %d, dt = %.5f:\n", grid.Mbz, dt_years); CHKERRQ(ierr);
+                      "case dt = %.5f:\n", dt_years); CHKERRQ(ierr);
     ierr = verbPrintf(1,grid.com, 
                       "NUMERICAL ERRORS in upward heat flux at z=0 relative to exact solution:\n");
                       CHKERRQ(ierr);

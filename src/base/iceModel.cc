@@ -176,14 +176,6 @@ PetscErrorCode IceModel::createVecs() {
     ierr = variables.add(tau3); CHKERRQ(ierr);
   }
 
-  // bedrock temperature
-  ierr = Tb3.create(grid,"litho_temp", false); CHKERRQ(ierr);
-  // PROPOSED standard_name = lithosphere_temperature
-  ierr = Tb3.set_attrs("model_state", "lithosphere (bedrock) temperature",
-		       "K", ""); CHKERRQ(ierr);
-  ierr = Tb3.set_attr("valid_min", 0.0); CHKERRQ(ierr);
-  ierr = variables.add(Tb3); CHKERRQ(ierr);
-
   // ice upper surface elevation
   ierr = vh.create(grid, "usurf", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = vh.set_attrs("diagnostic", "ice upper surface elevation",
