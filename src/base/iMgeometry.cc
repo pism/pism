@@ -45,7 +45,7 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
 	ierr = identifyNotAnIceBerg(); CHKERRQ(ierr);
 	ierr = killIceBergs(); CHKERRQ(ierr);	
 	if (config.get_flag("do_eigen_calving") || config.get_flag("do_thickness_calving")) {
-    ierr = killEasyIceBergs(); CHKERRQ(ierr);
+      ierr = killEasyIceBergs(); CHKERRQ(ierr);
 	}
   }
 
