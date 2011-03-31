@@ -615,6 +615,18 @@ PetscErrorCode PISMIO::get_grid(string filename, string var_name) {
 
   ierr = get_grid_info(var_name, gi); CHKERRQ(ierr);
 
+  // if we have no vertical grid information, create a fake 2-level vertical grid.
+  if (gi.zlevels.size() < 2) {
+    double Lz = grid->config.get("grid_Lz");
+    ierr = verbPrintf(3, com,
+                      "WARNING: Can't determine vertical grid information using '%s' in %s'\n"
+                      "         Using 2 levels and Lz of %3.3fm\n",
+                      var_name.c_str(), filename.c_str(), Lz); CHKERRQ(ierr);
+
+    gi.zlevels.push_back(0);
+    gi.zlevels.push_back(Lz);
+  }
+
   grid->Mx = gi.x_len;
   grid->My = gi.y_len;
   grid->Lx = gi.Lx;
