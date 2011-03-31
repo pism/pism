@@ -107,9 +107,9 @@ PALEOSTARTYEAR=-125000
 
 # grids
 VDIMS="-Lz 4000 -Lbz 2000"
-COARSEVGRID="${VDIMS} -Mz 101 -Mbz 51 -z_spacing equal -zb_spacing equal"
-FINEVGRID="${VDIMS} -Mz 201 -Mbz 101 -z_spacing equal -zb_spacing equal"
-FINESTVGRID="${VDIMS} -Mz 301 -Mbz 151 -z_spacing equal -zb_spacing equal"
+COARSEVGRID="${VDIMS} -Mz 101 -Mbz 51 -z_spacing equal"
+FINEVGRID="${VDIMS} -Mz 201 -Mbz 101 -z_spacing equal"
+FINESTVGRID="${VDIMS} -Mz 301 -Mbz 151 -z_spacing equal"
 TWENTYKMGRID="-Mx 76 -My 141 ${COARSEVGRID}"
 TENKMGRID="-Mx 151 -My 281 ${FINEVGRID}"
 FIVEKMGRID="-Mx 301 -My 561 ${FINESTVGRID}"

@@ -11,19 +11,19 @@ files="test-K-out.txt verify.nc verify.nc~"
 rm -f $files
 
 # run test K
-OPTS="-test K -Mx 4 -My 4 -y 13000.0 -Lbz 1000 -verbose 1 -o_size small"
-$PISM_PATH/pismv -Mz 41 -Mbz 11 $OPTS  > test-K-out.txt
-$PISM_PATH/pismv -Mz 81 -Mbz 21 $OPTS >> test-K-out.txt
+OPTS="-test K -Mx 4 -My 4 -y 13000.0 -Lbz 1000 -z_spacing equal -verbose 1 -o_size small"
+$PISM_PATH/pismv -Mz 41 -Mbz 11 -max_dt 60.0 $OPTS  > test-K-out.txt
+$PISM_PATH/pismv -Mz 81 -Mbz 21 -max_dt 30.0 $OPTS >> test-K-out.txt
 
 # compare results
 diff test-K-out.txt -  <<END-OF-OUTPUT
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 temp      :        maxT         avT       maxTb        avTb
-               0.436647    0.165911    0.878458    0.633755
+               0.046197    0.009550    0.043415    0.030336
 NUM ERRORS DONE
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 temp      :        maxT         avT       maxTb        avTb
-               0.128707    0.037709    0.290305    0.196936
+               0.045014    0.008543    0.045004    0.028673
 NUM ERRORS DONE
 END-OF-OUTPUT
 
