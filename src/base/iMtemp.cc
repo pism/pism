@@ -26,18 +26,17 @@
 
 //! Manage the solution of the energy equation, and related parallel communication.
 /*!
-Normally calls the method enthalpyAndDrainageStep().  Calls temperatureStep() if
-do_cold_ice_methods == true.
-
-This method (energyStep()) \e must update these four fields:
+This method updates three fields:
   - IceModelVec3 Enth3
-  - IceModelVec3Bedrock Tb3  FIXME: not once PISMBedThermalUnit working
-  - IceModelVec2 vbasalMeltRate
+  - IceModelVec2 vbmr
   - IceModelVec2 vHmelt
-That is, energyStep() is in charge of calling other methods that update, and
+That is, energyStep() is in charge of calling other methods that actually update, and
 then it is in charge of doing the ghost communication as needed.  If
 do_cold_ice_methods == true, then energyStep() must also update this field
   - IceModelVec3 T3
+
+Normally calls the method enthalpyAndDrainageStep().  Calls temperatureStep() if
+do_cold_ice_methods == true.
  */
 PetscErrorCode IceModel::energyStep() {
   PetscErrorCode  ierr;
@@ -88,7 +87,7 @@ PetscErrorCode IceModel::energyStep() {
   }
 
   // Both cases above update the basal melt rate field; here we update its
-  // ghosts, which are needed to copute tauc locally
+  // ghosts, which are needed to compute tauc locally
   ierr = vbmr.beginGhostComm(); CHKERRQ(ierr);
   ierr = vbmr.endGhostComm(); CHKERRQ(ierr);
 
@@ -266,11 +265,11 @@ This method should be kept because it is worth having alternative physics, and
 
     An instance of tempSystemCtx is used to solve the tridiagonal system set-up here.
 
-    In this procedure four scalar fields are modified: vHmelt, vbmr, Tb3, and vWork3d.
-    But vbmr and Tb3 will never need to communicate ghosted values (horizontal 
-                                                                    stencil neighbors).  The ghosted values for T3 are updated from the values in vWork3d in the
-  communication done by energyStep().  There is a diffusion model for vHmelt in 
-  diffuseHmelt() which does communication for vHmelt.
+    In this procedure four scalar fields are modified: vHmelt, vbmr, and vWork3d.
+    But vbmr will never need to communicate ghosted values (horizontal stencil
+    neighbors).  The ghosted values for T3 are updated from the values in vWork3d in the
+    communication done by energyStep().  There is a diffusion model for vHmelt in 
+    diffuseHmelt() which does communication for vHmelt.
 
   The (older) scheme cold-ice-BOMBPROOF, implemented here, is very reliable, but there is
   still an extreme and rare fjord situation which causes trouble.  For example, it
@@ -294,7 +293,6 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
                       "\n  [entering temperatureStep(); fMz = %d, fdz = %5.3f]",
                       fMz, fdz); CHKERRQ(ierr);
 
-    // diagnostic/DEBUG; added for comparison to IceEnthalpyModel
     bool viewOneColumn;
     ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
@@ -456,7 +454,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             }
           }
 
-        }	// end of "// if there are enough points in bedrock&ice to bother ..."
+        }	// end of "if there are enough points in ice to bother ..."
 
         // prepare for melting/refreezing
         PetscScalar Hmeltnew = Hmelt[i][j];
@@ -488,7 +486,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             Tnew[k] = artm(i,j) - bulgeMax;  bulgeCount++;   }
         }
       
-        // insert solution for ice/rock interface (or base of ice shelf) segment
+        // insert solution for ice base segment
         if (ks > 0) {
           if (allowAboveMelting == PETSC_TRUE) { // ice/rock interface
             Tnew[0] = x[0];

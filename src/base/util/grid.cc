@@ -185,7 +185,7 @@ PetscErrorCode IceGrid::printInfo(const int verbosity) {
 }
 
 
-//! Print the vertical levels in \c zlevels[] and \c zblevels[] to stdout.
+//! Print the vertical levels in \c zlevels[] to stdout.
 PetscErrorCode IceGrid::printVertLevels(const int verbosity) {
   PetscErrorCode ierr;
   ierr = verbPrintf(verbosity,com,
@@ -220,10 +220,10 @@ PetscInt IceGrid::kBelowHeight(PetscScalar height) {
   return mcurr;
 }
 
-//! \brief From given vertical grid zlevels[], determine \c dzMIN, \c dzMAX, \c dzbMIN, \c dzbMAX and
-//! determine whether ice and bedrock vertical spacings are equal.
+//! \brief From given vertical grid zlevels[], determine \c dzMIN, \c dzMAX, and
+//! determine whether ice vertical spacings are equal.
 /*! The standard for equal vertical spacing in the ice is \f$10^{-8}\f$ m max
-  difference between \c dzMIN and \c dzMAX. Similar for the bedrock.
+  difference between \c dzMIN and \c dzMAX.
  */
 PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
 
@@ -414,7 +414,7 @@ PetscErrorCode IceGrid::createDA(PetscInt my_procs_x, PetscInt my_procs_y,
   return 0;
 }
 
-//! Sets grid vertical levels, Mz, Mbz, Lz and Lbz. Checks input for consistency.
+//! Sets grid vertical levels; sets Mz and Lz from input.  Checks input for consistency.
 PetscErrorCode IceGrid::set_vertical_levels(vector<double> new_zlevels) {
   PetscErrorCode ierr;
 
@@ -472,16 +472,15 @@ PetscErrorCode IceGrid::compute_horizontal_spacing() {
   return 0;
 }
 
-//! Computes fine vertical spacing in the ice and bedrock.
-/*! The computations in IceModel::temperatureStep() and IceModel::ageStep() use
-  a fine equally-spaced grid.
+//! Computes fine vertical spacing in the ice.
+/*! The computations in IceModel::temperatureStep(), IceModel::enthalpyDrainageStep()
+  and IceModel::ageStep() use a fine equally-spaced grid.
 
   This method computes the number of levels and the levels themselves so that
   fine equally-spaced grids in ice and bedrock have the same spacing (if
   bedrock is present).
 
-  Mapping to and from the storage grid occurs in IceModelVec3 and
-  IceModelVec3Bedrock methods.
+  Mapping to and from the storage grid occurs in IceModelVec3 methods.
 
   Note that the computational grid in the ice is allowed to exceed Lz; we need
   this to match spacings (see above). The temperature field is extrapolated to
@@ -625,7 +624,6 @@ PetscErrorCode IceGrid::report_parameters() {
   // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
   ierr = printInfo(3); CHKERRQ(ierr);
 
-  // if -verbose 5 then more stuff
   ierr = verbPrintf(5,com,
        "  REALLY verbose output on IceGrid:\n"); CHKERRQ(ierr);
   ierr = printVertLevels(5); CHKERRQ(ierr);

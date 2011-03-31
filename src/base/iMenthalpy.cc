@@ -278,15 +278,15 @@ PetscErrorCode copyColumn(PetscScalar *src, PetscScalar *dest, const PetscInt n)
 // do this to turn on code changes
 #define CHANGE_BASAL_MELT 0
 
-//! Update enthalpy field based on conservation of energy in ice and bedrock.
+//! Update ice enthalpy field based on conservation of energy.
 /*!
 This method is documented by the page \ref bombproofenth and by [\ref
 AschwandenBuelerBlatter].
 
-This method uses an instance of enthSystemCtx.
 
 This method updates IceModelVec3 vWork3d, IceModelVec2S vbmr, and 
 IceModelVec2S vHmelt.  No communication of ghosts is done for any of these fields.
+We use an instance of enthSystemCtx.
 
 Regarding drainage, see [\ref AschwandenBuelerBlatter] and references therein.
  */
@@ -301,7 +301,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       "PISM ERROR:  enthalpyAndDrainageStep() called but do_cold_ice_methods==true\n");
   }
 
-  // get fine grid levels in ice and bedrock; guaranteed dz=dzb
+  // get fine grid levels in ice
   PetscInt    fMz = grid.Mz_fine;  
   PetscScalar fdz = grid.dz_fine;
   vector<double> &fzlev = grid.zlevels_fine;
@@ -334,7 +334,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   bool viewOneColumn;
   ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
-  // FIXME: verbosity failure?: option "-verbose 4" does not generate true here?
   if (getVerbosityLevel() >= 4) {  // view: all column-independent constants correct?
     ierr = EC->viewConstants(NULL); CHKERRQ(ierr);
     ierr = esys.viewConstants(NULL, false); CHKERRQ(ierr);
@@ -419,7 +418,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       PetscScalar Enth_ks;
       ierr = EC->getEnthPermissive(artm(i,j), liqfrac_surface(i,j), p_ks,  Enth_ks); CHKERRQ(ierr);
 
-      // deal completely with columns with no ice; note vHmelt and vbmr need setting
+      // deal completely with columns with no ice; enthalpy, vHmelt, vbmr all need setting
       if (ice_free_column) {
         ierr = vWork3d.setColumn(i,j,Enth_ks); CHKERRQ(ierr);
         if (is_floating) {
@@ -718,5 +717,4 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   *liquifiedVol = ((double) liquifiedCount) * fdz * grid.dx * grid.dy;
   return 0;
 }
-
 

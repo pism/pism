@@ -221,9 +221,6 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
 }
 
 
-// FIXME:  init from file code is needed when running with IceModel, at least
-
-
 void PISMBedThermalUnit::add_vars_to_output(string /*keyword*/, set<string> &result) {
   if (temp.was_created()) {
     result.insert(temp.string_attr("short_name"));
@@ -294,7 +291,6 @@ This is unconditionally stable for a pure bedrock problem, and has a maximum pri
 
 FIXME:  now a trapezoid rule could be used
 */
-
 PetscErrorCode PISMBedThermalUnit::update(PetscReal t_years, PetscReal dt_years) {
   PetscErrorCode ierr;
 
@@ -303,17 +299,18 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal t_years, PetscReal dt_years)
   // as a derived class of PISMComponent_TS, has t,dt members which keep track
   // of last update time-interval; so we do some checks ...
   // CHECK: has the desired time-interval already been dealt with?
-  if ((fabs(t_years - t) < 1e-12) && (fabs(dt_years - dt) < 1e-12))
-    return 0;
+  if ((fabs(t_years - t) < 1e-12) && (fabs(dt_years - dt) < 1e-12))  return 0;
+
   // CHECK: is the desired time interval a forward step?; backward heat equation not good!
   if (dt_years < 0) {
      SETERRQ(1,"PISMBedThermalUnit::update() does not allow negative timesteps\n"); }
   // CHECK: is desired time-interval equal to [t_years,t_years+dt_years] where t_years = t + dt?
   if ((!gsl_isnan(t)) && (!gsl_isnan(dt))) { // this check should not fire on first use
     if (!(fabs(t_years - (t + dt) < 1e-12))) {
-     SETERRQ3(2,"PISMBedThermalUnit::update() requires next update to be contiguous with last;\n"
-                "situation: t = %f a, dt = %f a, t_years = %f a\n",
-              t,dt,t_years); }
+     SETERRQ4(2,"PISMBedThermalUnit::update() requires next update to be contiguous with last;\n"
+                "  stored:        t = %f a,       dt = %f a\n"
+                "  desired: t_years = %f a, dt_years = %f a\n",
+              t,dt,t_years,dt_years); }
   }
   // CHECK: is desired time-step too long?
   PetscScalar mydtyears;
