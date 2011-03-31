@@ -76,7 +76,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
 void IceModel::reset_counters() {
   CFLmaxdt = CFLmaxdt2D = 0.0;
   CFLviolcount = 0;
-  dtTempAge = 0.0;
+  dt_years_TempAge = 0.0;
   dt_from_diffus = dt_from_cfl = 0.0;
   dvoldt = gdHdtav = 0;
   gDmax = dvoldt = gdHdtav = 0;
@@ -548,7 +548,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //!  see determineTimeStep()
   ierr = determineTimeStep(do_energy); CHKERRQ(ierr);
 
-  dtTempAge += dt;
+  dt_years_TempAge += dt / secpera;
   // IceModel::dt,dtTempAge,grid.year are now set correctly according to
   //    mass-continuity-eqn-diffusivity criteria, horizontal CFL criteria, and
   //    other criteria from derived class additionalAtStartTimestep(), and from
@@ -583,8 +583,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   } else {
     stdout_flags += "$";
   }
-
-  dtTempAge = 0.0;
   
   grid.profiler->end(event_energy);
 
@@ -627,6 +625,10 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
 
   grid.year += dt / secpera;  // adopt the new time
+  if (updateAtDepth && do_energy) { // FIXME: must be same condition as "do the temperature step"
+    t_years_TempAge = grid.year;
+    dt_years_TempAge = 0.0;
+  }
 
   // end the flag line
   char tempstr[5];  snprintf(tempstr,5," %c", adaptReasonFlag);
@@ -678,7 +680,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   dt_force = -1.0;
   maxdt_temporary = -1.0;
   skipCountDown = 0;
-  dtTempAge = 0.0;
+  dt_years_TempAge = 0.0;
   dt = 0.0;
   PetscReal end_year = grid.end_year;
   
@@ -707,6 +709,7 @@ PismLogEventRegister("temp age calc",0,&tempEVENT);
   // re-initialize the model:
   global_attributes.set_string("history", "");
   grid.year = grid.start_year;
+  t_years_TempAge = grid.year;
   grid.end_year = end_year;
   ierr = model_state_setup(); CHKERRQ(ierr);
 

@@ -454,8 +454,8 @@ PetscErrorCode IceModel::diffuseHmelt() {
   //   solution has standard deviation \sigma = 20 km at time t = 1000 yrs;
   //   2 \sigma^2 = 4 K t
   const PetscScalar K = L * L / (2.0 * diffusion_time),
-                    Rx = K * dtTempAge / (grid.dx * grid.dx),
-                    Ry = K * dtTempAge / (grid.dy * grid.dy);
+                    Rx = K * (dt_years_TempAge * secpera) / (grid.dx * grid.dx),
+                    Ry = K * (dt_years_TempAge * secpera) / (grid.dy * grid.dy);
 
   // NOTE: restriction that
   //    1 - 2 R_x - 2 R_y \ge 0

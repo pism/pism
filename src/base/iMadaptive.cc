@@ -247,8 +247,8 @@ It is handled by temperatureAgeStep(), not here.
 PetscErrorCode IceModel::countCFLViolations(PetscScalar* CFLviol) {
   PetscErrorCode  ierr;
 
-  const PetscScalar cflx = grid.dx / dtTempAge,
-                    cfly = grid.dy / dtTempAge;
+  const PetscScalar cflx = grid.dx / (dt_years_TempAge * secpera),
+                    cfly = grid.dy / (dt_years_TempAge * secpera);
 
   PetscScalar *u, *v;
   IceModelVec3 *u3, *v3, *dummy;

@@ -173,7 +173,7 @@ PetscErrorCode IceModel::ageStep() {
   ageSystemCtx system(fMz); // linear system to solve in each column
   system.dx    = grid.dx;
   system.dy    = grid.dy;
-  system.dtAge = dtTempAge;
+  system.dtAge = dt_years_TempAge * secpera;
   system.dzEQ  = fdz;
   // pointers to values in current column
   system.u     = new PetscScalar[fMz];

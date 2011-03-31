@@ -183,7 +183,8 @@ protected:
 
   // parameters
   PetscReal   dt,     //!< mass continuity time step, s
-              dtTempAge,  //!< enthalpy/temperature and age time-steps in seconds
+              t_years_TempAge,  //!< time of last update for enthalpy/temperature
+              dt_years_TempAge,  //!< enthalpy/temperature and age time-steps
               maxdt_temporary, dt_force,
               CFLviolcount,    //!< really is just a count, but PetscGlobalSum requires this type
               dt_from_diffus, dt_from_cfl, CFLmaxdt, CFLmaxdt2D,

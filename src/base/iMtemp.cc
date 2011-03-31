@@ -54,7 +54,7 @@ PetscErrorCode IceModel::energyStep() {
   //   the z=0 value of geothermal flux when called inside temperatureStep() or
   //   enthalpyAndDrainageStep()
   ierr = get_bed_top_temp(bedtoptemp); CHKERRQ(ierr);
-  ierr = btu->update(grid.year, dtTempAge / secpera); CHKERRQ(ierr);  // has ptr to bedtoptemp
+  ierr = btu->update(t_years_TempAge, dt_years_TempAge); CHKERRQ(ierr);  // has ptr to bedtoptemp
 
   if (config.get_flag("do_cold_ice_methods")) {
     // new temperature values go in vTnew; also updates Hmelt:
@@ -122,12 +122,12 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
 
   // will need coupler fields in ice-free land and 
   if (surface != PETSC_NULL) {
-    ierr = surface->ice_surface_temperature(grid.year, dtTempAge / secpera, artm); CHKERRQ(ierr);
+    ierr = surface->ice_surface_temperature(t_years_TempAge, dt_years_TempAge, artm); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }
   if (ocean != PETSC_NULL) {
-    ierr = ocean->shelf_base_temperature(grid.year, dtTempAge / secpera, shelfbtemp); CHKERRQ(ierr);
+    ierr = ocean->shelf_base_temperature(t_years_TempAge, dt_years_TempAge, shelfbtemp); CHKERRQ(ierr);
   } else {
     SETERRQ(5,"PISM ERROR: ocean == PETSC_NULL");
   }
@@ -299,7 +299,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     tempSystemCtx system(fMz);
     system.dx              = grid.dx;
     system.dy              = grid.dy;
-    system.dtTemp          = dtTempAge; // same time step for temp and age, currently
+    system.dtTemp          = dt_years_TempAge * secpera; // same time step for temp and age, currently
     system.dzEQ            = fdz;
     system.ice_rho         = ice->rho;
     system.ice_c_p         = ice->c_p;
@@ -334,13 +334,13 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     PetscScalar  **Hmelt, **basalMeltRate;
   
     if (surface != PETSC_NULL) {
-      ierr = surface->ice_surface_temperature(grid.year, dtTempAge / secpera, artm); CHKERRQ(ierr);
+      ierr = surface->ice_surface_temperature(t_years_TempAge, dt_years_TempAge, artm); CHKERRQ(ierr);
     } else {
       SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
     }
     if (ocean != PETSC_NULL) {
-      ierr = ocean->shelf_base_mass_flux(grid.year, dtTempAge / secpera, shelfbmassflux); CHKERRQ(ierr);
-      ierr = ocean->shelf_base_temperature(grid.year, dtTempAge / secpera, shelfbtemp); CHKERRQ(ierr);
+      ierr = ocean->shelf_base_mass_flux(t_years_TempAge, dt_years_TempAge, shelfbmassflux); CHKERRQ(ierr);
+      ierr = ocean->shelf_base_temperature(t_years_TempAge, dt_years_TempAge, shelfbtemp); CHKERRQ(ierr);
     } else {
       SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
     }
@@ -534,7 +534,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
         } else {
           // rate of change of Hmelt[][];  can be negative (till water freeze-on)
           // Also note that this rate is calculated *before* limiting Hmelt.
-          basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / dtTempAge;
+          basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / (dt_years_TempAge * secpera);
         }
 
         if (vMask.is_floating(i,j)) {

@@ -31,6 +31,7 @@ const PetscScalar IceCompModel::LforFG = 750000; // m
 const PetscScalar IceCompModel::ApforG = 200; // m
 
 
+/*! Re-implemented so that we can add compensatory Sigma in Tests F and G. */
 PetscErrorCode IceCompModel::temperatureStep(
        PetscScalar* vertSacrCount, PetscScalar* bulgeCount) {
   PetscErrorCode  ierr;
@@ -347,7 +348,7 @@ PetscErrorCode IceCompModel::computeIceBedrockTemperatureErrors(
   ierr = my_btu->get_temp(bedrock_temp); CHKERRQ(ierr);
 
   vector<double> zblevels = bedrock_temp->get_levels();
-  int Mbz = zblevels.size();
+  int Mbz = (int)zblevels.size();
   Tbex = new PetscScalar[Mbz];
 
   switch (testname) {

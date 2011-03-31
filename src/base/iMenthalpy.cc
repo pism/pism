@@ -329,7 +329,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   Enthnew = new PetscScalar[fMz];  // new enthalpy in column
 
   enthSystemCtx esys(config, Enth3, fMz);
-  ierr = esys.initAllColumns(grid.dx, grid.dy, dtTempAge, fdz); CHKERRQ(ierr);
+  ierr = esys.initAllColumns(grid.dx, grid.dy, (dt_years_TempAge * secpera), fdz); CHKERRQ(ierr);
 
   bool viewOneColumn;
   ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
@@ -342,17 +342,17 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   // now get map-plane coupler fields: Dirichlet upper surface boundary and
   //    mass balance lower boundary under shelves
   if (surface != PETSC_NULL) {
-    ierr = surface->ice_surface_temperature(grid.year, dtTempAge / secpera, artm);
-    ierr = surface->ice_surface_liquid_water_fraction(grid.year, dtTempAge / secpera,
+    ierr = surface->ice_surface_temperature(t_years_TempAge, dt_years_TempAge, artm);
+    ierr = surface->ice_surface_liquid_water_fraction(t_years_TempAge, dt_years_TempAge,
                                                       liqfrac_surface); CHKERRQ(ierr);
     CHKERRQ(ierr);
   } else {
     SETERRQ(4,"PISM ERROR: surface == PETSC_NULL");
   }
   if (ocean != PETSC_NULL) {
-    ierr = ocean->shelf_base_mass_flux(grid.year, dtTempAge / secpera, shelfbmassflux);
+    ierr = ocean->shelf_base_mass_flux(t_years_TempAge, dt_years_TempAge, shelfbmassflux);
         CHKERRQ(ierr);
-    ierr = ocean->shelf_base_temperature(grid.year, dtTempAge / secpera, shelfbtemp);
+    ierr = ocean->shelf_base_temperature(t_years_TempAge, dt_years_TempAge, shelfbtemp);
         CHKERRQ(ierr);
   } else {
     SETERRQ(5,"PISM ERROR: ocean == PETSC_NULL");
@@ -556,9 +556,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
                                            : esys.u[0] * (ss.ij  - ss.im1) / grid.dx,
                  UpEnthv = (esys.v[0] < 0) ? esys.v[0] * (ss.jp1 -  ss.ij) / grid.dy
                                            : esys.v[0] * (ss.ij  - ss.jm1) / grid.dy;
-              rhs += dtTempAge * ((esys.Sigma[0] / ice_rho) - UpEnthu - UpEnthv);
+              rhs += (dt_years_TempAge * secpera) * ((esys.Sigma[0] / ice_rho) - UpEnthu - UpEnthv);
             }
-            const PetscScalar nuw0 = (dtTempAge / fdz) * esys.w[0];
+            const PetscScalar nuw0 = ((dt_years_TempAge * secpera) / fdz) * esys.w[0];
             a0 = 1 - nuw0;
             a1 = nuw0;
           } else {
@@ -595,7 +595,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       // thermodynamic basal melt rate causes water to be added to layer
       PetscScalar Hmeltnew = vHmelt(i,j);
       if (is_grounded) {
-        Hmeltnew += vbmr(i,j) * dtTempAge;
+        Hmeltnew += vbmr(i,j) * (dt_years_TempAge * secpera);
       }
 
       // drain ice segments; has result that Enthnew[] is ice with at most
@@ -626,7 +626,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       // in grounded case, add to both basal melt rate and Hmelt; if floating,
       // Hdrainedtotal is discarded because ocean determines basal melt rate
       if (is_grounded) {
-        vbmr(i,j) += Hdrainedtotal / dtTempAge;
+        vbmr(i,j) += Hdrainedtotal / (dt_years_TempAge * secpera);
         Hmeltnew += Hdrainedtotal;
 #if DEBUG_SHOW_BMELT == 1
         verbPrintf(3,grid.com,
@@ -666,12 +666,12 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           // refreeze case: if grounded base has become cold then put back ice at
           //   externally-set maximum rate; basal enthalpy not altered
           if ( (Enthnew[0] < esys.Enth_s[0]) && (vHmelt(i,j) > 0.0) ) {
-            if (vHmelt(i,j) > refreeze_rate * dtTempAge) {
+            if (vHmelt(i,j) > refreeze_rate * (dt_years_TempAge * secpera)) {
               vbmr(i,j) -= refreeze_rate;
-              vHmelt(i,j) -= refreeze_rate * dtTempAge;
+              vHmelt(i,j) -= refreeze_rate * (dt_years_TempAge * secpera);
             } else {
               // in this case we refreeze all available Hmelt
-              vbmr(i,j) -= vHmelt(i,j) / dtTempAge;
+              vbmr(i,j) -= vHmelt(i,j) / (dt_years_TempAge * secpera);
               vHmelt(i,j) = 0.0;
             }
           }
