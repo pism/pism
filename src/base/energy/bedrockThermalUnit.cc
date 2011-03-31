@@ -133,6 +133,8 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   string input_file;
   grid_info g;
 
+  t = dt = GSL_NAN;  // every re-init restarts the clock
+
   ierr = verbPrintf(2,grid.com,
       "* Initializing the bedrock thermal unit ... setting constants ...\n"); CHKERRQ(ierr);
 
@@ -151,7 +153,6 @@ PetscErrorCode PISMBedThermalUnit::init(PISMVars &vars) {
   bed_c   = config.get("bedrock_thermal_specific_heat_capacity");
   bed_k   = config.get("bedrock_thermal_conductivity");
   bed_D   = bed_k / (bed_rho * bed_c);
-
 
   ierr = PetscOptionsBegin(grid.com, "", "PISMBedThermalUnit options", ""); CHKERRQ(ierr);
   {
