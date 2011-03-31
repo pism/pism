@@ -84,14 +84,14 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   ierr =    vuplift.regrid(filename,  
                            config.get("bootstrapping_uplift_value_no_var")); CHKERRQ(ierr);
 
-  if (config.get_flag("part_grid") == true) {
+  if (config.get_flag("part_grid")) {
     // if part_grid is "on", set fields tracking contents of partially-filled
     // cells to zero. Note that the contents of these fields are
     // grid-dependent, so we don't want to read them from a bootstrapping file
     // using linear interpolation.
     //ierr = vHav.set(0.0); CHKERRQ(ierr);
     ierr = vHref.set(0.0); CHKERRQ(ierr);
-	if (config.get_flag("part_redist") == true) ierr = vHresidual.set(0.0); CHKERRQ(ierr);
+    if (config.get_flag("part_redist")) { ierr = vHresidual.set(0.0); CHKERRQ(ierr); }
   }
 
   if (config.get_flag("kill_icebergs")) {

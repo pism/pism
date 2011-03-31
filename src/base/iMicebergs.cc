@@ -27,9 +27,11 @@ Icebergs are, in this context, floating regions that are \e not attached, throug
 
 This method calls the routines is which first identify and then eliminate these icebergs.
 
-FIXME:  a fundamental aspect of the semantics here is not clear to me, namely how many times the iceberg-eliminate "sweep" might occur, and what properties control that?  for now, should there be some (low-verbosity) indication that it is occurring, such as when more than one sweep happened?
+FIXME:  a fundamental aspect of the semantics here is not clear to me (bueler), namely how many times the iceberg-eliminate "sweep" might occur, and what properties control that?  for now, should there be some (low-verbosity) indication that it is occurring, such as when more than one sweep happened?
 
-FIXME:  this package of methods may appropriately be a class, but in any case should have a regression
+FIXME:  this package of methods *might* appropriately be a class
+
+FIXME:  this package of routines *should* have a regression
 */
 PetscErrorCode IceModel::killIceBergs() {
   PetscErrorCode ierr;
@@ -37,7 +39,9 @@ PetscErrorCode IceModel::killIceBergs() {
   ierr = findIceBergCandidates(); CHKERRQ(ierr);
   ierr = identifyNotAnIceBerg(); CHKERRQ(ierr);
   ierr = killIdentifiedIceBergs(); CHKERRQ(ierr);
-  ierr = killEasyIceBergs(); CHKERRQ(ierr);  // FIXME:  should this happen here, after above?
+  if (config.get_flag("do_eigen_calving") || config.get_flag("do_thickness_calving")) {
+    ierr = killEasyIceBergs(); CHKERRQ(ierr);
+  }
   return 0;
 }
 
@@ -94,9 +98,7 @@ PetscErrorCode IceModel::findIceBergCandidates() {
   ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
   ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
 
-  //////////////////////////////////////////////////////////////////////////////////
   // set all floating points to ICEBERGMASK_ICEBERG_CAND
-	
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
 
@@ -114,7 +116,6 @@ PetscErrorCode IceModel::findIceBergCandidates() {
   ierr = vMask.end_access(); CHKERRQ(ierr); 
   ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
 
-  //////////////////////////////////////////////////////////////////////////////////
   // set borders of shelves/icebergs to ICEBERGMASK_STOP_ATTACHED or ICEBERGMASK_STOP_OCEAN respectively.
   ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
   ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);

@@ -39,16 +39,9 @@ PetscErrorCode IceModel::updateSurfaceElevationAndMask() {
   ierr = update_mask(); CHKERRQ(ierr);
   ierr = update_surface_elevation(); CHKERRQ(ierr);
 
-  if (config.get_flag("kill_icebergs") == true) {
-
-    ierr = findIceBergCandidates(); CHKERRQ(ierr);
-	ierr = identifyNotAnIceBerg(); CHKERRQ(ierr);
-	ierr = killIceBergs(); CHKERRQ(ierr);	
-	if (config.get_flag("do_eigen_calving") || config.get_flag("do_thickness_calving")) {
-      ierr = killEasyIceBergs(); CHKERRQ(ierr);
-	}
+  if (config.get_flag("kill_icebergs")) {
+    ierr = killIceBergs(); CHKERRQ(ierr);	
   }
-
 
   return 0;
 }
@@ -560,7 +553,7 @@ PetscErrorCode IceModel::massContExplicitStepPartGrids() {
 
  		  if (countIceNeighbors>0){ 
 	      Hav=Hav/countIceNeighbors;
-   	   	  if (config.get_flag("part_redist") == true) {	
+   	   	  if (config.get_flag("part_redist")) {	
    		   	const PetscReal  mslope = 2.4511e-18*grid.dx/(300*600/secpera);
    		  //    for declining front C/Q0 according to analytical flowline profile in vandeveen with v0=300m/yr and H0=600m	    
    		    Hav-=0.8*mslope*pow(Hav,5); //reduces the guess at the front
