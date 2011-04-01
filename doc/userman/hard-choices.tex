@@ -141,7 +141,16 @@ The number of positive degree days is computed as the magnitude of the temperatu
 The number of positive degree days is multiplied by a coefficient (config parameter \texttt{pdd_factor_snow}) to compute the amount of snow melted.  Of the melted snow, a fraction (\texttt{pdd_refreeze}) is kept as ice.  This ice, plus all unmelted snow (already measured as ice-equivalent) is added to the mass balance, unless the number of positive degree days exceeds that required to melt all of the snow.  In this latter case, in which there are excess positive degree days available for melting, the excess is multiplied by a coefficient (\texttt{pdd_factor_ice}) to compute how much ice is melted.  In this case actual ablation occurs at that location.
 
 In addition to this, one can use latitude- and July-air-temperature-dependent Greenland PDD model parameters $\beta_{\mathrm{ice}}$ and $\beta_{\mathrm{snow}}$ (formulas (6) and (7) in \cite{Faustoetal2009}) by adding the \intextoption{pdd_fausto}  option. See also configuration parameters with the \texttt{pdd_fausto} prefix.
+
+  \item \emph{Elevation-dependent temperature and mass balance} (\texttt{elevation})
+
+    FIXME: documentation coming soon.
+
+    Note: this surface model \emph{ignores} the atmosphere model selection made using the \texttt{-atmosphere} option.
+
 \end{itemize}
+
+
 
 The \texttt{forcing} modifier implements a surface mass balance adjustment mechanism forcing ice thickness to a target distribution at the end of the run; option \fileopt{force_to_thk} selects a file containing the target ice thickness field. Option \intextoption{force_to_thk_alpha} sets the $\alpha$ parameter. See the documentation  of \texttt{PSForceThickness::ice_surface_mass_flux()} for details.
 

@@ -320,6 +320,5 @@ protected:
 };
 
 
-
 #endif	// __PISMSurfaceModel_hh
 

@@ -1,6 +1,7 @@
 #include "PCFactory.hh"
 #include "PSExternal.hh"
 #include "PSDirectForcing.hh"
+#include "PSElevation.hh"
 #include "pism_const.hh"
 
 // Atmosphere
@@ -68,6 +69,10 @@ static void create_ps_constant_pik(IceGrid& g, const NCConfigVariable& conf, PIS
   result = new PSConstantPIK(g, conf);
 }
 
+static void create_ps_elevation(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
+  result = new PSElevation(g, conf);
+}
+
 static void create_ps_forcing(IceGrid& g, const NCConfigVariable& conf, PSModifier* &result) {
   result = new PSForceThickness(g, conf);
 }
@@ -82,6 +87,7 @@ void PSFactory::add_standard_types() {
   add_model("pdd",          &create_ps_temperatureindex); 
   add_model("given",        &create_ps_given); 
   add_model("pik", &create_ps_constant_pik);
+  add_model("elevation", &create_ps_elevation);
   set_default("simple");
 
   add_modifier("forcing",   &create_ps_forcing);
