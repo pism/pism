@@ -31,7 +31,7 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
   ierr = PetscOptionsBegin(grid.com, "", "Elevation-dependent surface model options", ""); CHKERRQ(ierr);
   {
     PetscInt Nparam= 7;
-    PetscReal inarray[7] = {-30, 6., 3.0, 3.0, 1500, 0., 3000.0};
+    PetscReal inarray[7] = {-30, 6., 3.0, 3.0, 1500., 0., 3000.0};
 
     ierr = PetscOptionsGetRealArray(PETSC_NULL, "-elevation_to_artm_and_acab", inarray, &Nparam, &elev_set);
     CHKERRQ(ierr);
@@ -93,13 +93,13 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
 
   ierr = verbPrintf(2, grid.com, 
                     "      surface mass balance (acab) is piecewise-linear function of surface altitue (usurf):\n"
-                    "                /  %5.2f m/yr        for               usurf < %3.2f m\n"
-                    "          acab =  %5.2f * usurf m/yr for   %3.2f m < usurf < %3.2f m\n"
-                    "               \\  %5.2f * usurf m/yr for   %3.2f m < usurf < %.f m\n"
-                    "                \\ %5.2f m/yr         for    %3.2f m < usurf\n",
+                    "                /  %5.2f m/a                    for            usurf < %3.f m\n"
+                    "          acab =  %5.2f m/a/km * (usurf-%3.f m) for   %3.f m < usurf < %3.f m\n"
+                    "               \\  %5.2f m/a/km * (usurf-%3.f m) for   %3.f m < usurf < %3.f m\n"
+                    "                \\ %5.2f m/a                     for   %3.f m < usurf\n",
                     dabdz / 1000 * (z_min - z_ELA), z_min,
-                    dabdz, z_min, z_ELA, 
-                    dacdz, z_ELA, z_max,
+                    dabdz, z_ELA, z_min, z_ELA, 
+                    dacdz, z_ELA, z_ELA, z_max,
                     dacdz / 1000 * (z_max - z_ELA), z_max); CHKERRQ(ierr);
 
 
@@ -109,6 +109,8 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
 PetscErrorCode PSElevation::ice_surface_mass_flux(PetscReal /*t_years*/, PetscReal /*dt_years*/,
 						 IceModelVec2S &result) {
   PetscErrorCode ierr;
+  PetscReal z_minELA = z_min - z_ELA;
+  PetscReal z_maxELA = z_max - z_ELA;
   string history  = "elevation-dependent surface mass balance\n";
 
   ierr = result.begin_access();   CHKERRQ(ierr);
@@ -118,7 +120,7 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(PetscReal /*t_years*/, PetscRe
       PetscReal z = (*usurf)(i,j);
       if (z < z_min)
         {
-          result(i,j) = dabdz/1000/secpera * (z_min - z_ELA);
+          result(i,j) = dabdz/1000/secpera * z_minELA;
         }
       else if ((z >= z_min) && (z < z_ELA))
         {
@@ -130,7 +132,7 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(PetscReal /*t_years*/, PetscRe
         }
       else if (z > z_max)
         {
-          result(i,j) = dacdz/1000/secpera * (z_max - z_ELA);
+          result(i,j) = dacdz/1000/secpera * z_maxELA;
         }
       else
         {
