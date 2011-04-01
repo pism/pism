@@ -49,8 +49,10 @@ PetscErrorCode PSDirectForcing::init(PISMVars &vars) {
                            bc_period, bc_period_set); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-bc_reference_year", "Boundary condition reference year",
                            bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-bc_lapse_rate", "Boundary condition lapse rate in Kelvin per kilometer",
-                           bc_lapse_rate, bc_lapse_rate_set); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-bc_artm_lapse_rate", "Boundary condition temperature lapse rate in Kelvin per kilometer",
+                           bc_artm_lapse_rate, bc_artm_lapse_rate_set); CHKERRQ(ierr);
+    ierr = PISMOptionsReal("-bc_acab_lapse_rate", "Boundary condition mass balance lapse rate in meters per year per kilometer",
+                           bc_acab_lapse_rate, bc_acab_lapse_rate_set); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-bc_time_average", "Enable time-averaging of boundary condition data",
                             enable_time_averaging); CHKERRQ(ierr);
   }
@@ -91,7 +93,7 @@ PetscErrorCode PSDirectForcing::init(PISMVars &vars) {
 
   mass_flux.strict_timestep_limit = ! enable_time_averaging;
 
-  if (bc_lapse_rate_set) {
+  if (bc_artm_lapse_rate_set) {
     ierr = verbPrintf(2,grid.com,
                       "    reading reference surface from %s ...\n",
                       filename.c_str()); CHKERRQ(ierr);
@@ -229,6 +231,29 @@ PetscErrorCode PSDirectForcing::ice_surface_mass_flux(PetscReal t_years, PetscRe
 
   ierr = mass_flux.copy_to(result); CHKERRQ(ierr); 
 
+  if (bc_acab_lapse_rate_set) {
+
+    PetscReal delta_acab;
+    ierr = vH->begin_access(); CHKERRQ(ierr);
+    ierr = result.begin_access();   CHKERRQ(ierr);
+    ierr = surface->begin_access();   CHKERRQ(ierr);
+    ierr = bc_surface.begin_access();   CHKERRQ(ierr);
+    for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
+      for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+	if ((*vH)(i,j) > 0) { // only correct artm if there is ice
+	  delta_acab = bc_acab_lapse_rate/1000/secpera * ((*surface)(i,j)-bc_surface(i,j))  ; 
+	  result(i,j) += delta_acab;
+	  ierr = verbPrintf(4, grid.com,"delta_artm=%f, bc_surf=%f, h=%f, artm=%f\n",delta_acab,bc_surface(i,j),(*surface)(i,j),result(i,j)); CHKERRQ(ierr);
+	}
+      }
+    }
+    ierr = bc_surface.end_access();   CHKERRQ(ierr);  
+    ierr = surface->end_access();   CHKERRQ(ierr);
+    ierr = result.end_access();   CHKERRQ(ierr);    
+    ierr = vH->begin_access(); CHKERRQ(ierr);
+  }
+
+
   return 0;
 }
 
@@ -252,7 +277,7 @@ PetscErrorCode PSDirectForcing::ice_surface_temperature(PetscReal t_years, Petsc
 
   ierr = temperature.copy_to(result); CHKERRQ(ierr); 
 
-  if (bc_lapse_rate_set) {
+  if (bc_artm_lapse_rate_set) {
 
     PetscReal delta_artm;
     ierr = vH->begin_access(); CHKERRQ(ierr);
@@ -262,7 +287,7 @@ PetscErrorCode PSDirectForcing::ice_surface_temperature(PetscReal t_years, Petsc
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 	if ((*vH)(i,j) > 0) { // only correct artm if there is ice
-	  delta_artm = bc_lapse_rate/1000 * ((*surface)(i,j)-bc_surface(i,j))  ; 
+	  delta_artm = bc_artm_lapse_rate/1000 * ((*surface)(i,j)-bc_surface(i,j))  ; 
 	  result(i,j) += delta_artm;
 	  ierr = verbPrintf(4, grid.com,"delta_artm=%f, bc_surf=%f, h=%f, artm=%f\n",delta_artm,bc_surface(i,j),(*surface)(i,j),result(i,j)); CHKERRQ(ierr);
 	}

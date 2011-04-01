@@ -53,8 +53,8 @@ public:
 protected:
   IceModelVec2S *surface, *vH;
   IceModelVec2T temperature, mass_flux, bc_surface;
-  PetscReal bc_period, bc_reference_year, bc_lapse_rate;
-  bool enable_time_averaging, bc_lapse_rate_set;
+  PetscReal bc_period, bc_reference_year, bc_artm_lapse_rate, bc_acab_lapse_rate;
+  bool enable_time_averaging, bc_artm_lapse_rate_set, bc_acab_lapse_rate_set;
 
   PetscReal my_mod(PetscReal input);
 };

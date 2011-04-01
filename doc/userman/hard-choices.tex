@@ -103,7 +103,9 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
     This model was created to force PISM with sampled (possibly periodic) climate data, e.g. using monthly records of \texttt{artm} and \texttt{acab}.
 
- Option \txtopt{bc_lapse_rate}{Kelvin per kilometer} corrects \texttt{artm} with respect to a reference surface \texttt{usurf} using a lapse rate. \texttt{usurf} must be present in \texttt{foo.nc}.
+ Option \txtopt{bc_artm_lapse_rate}{Kelvin per kilometer} corrects \texttt{artm} with respect to a reference surface \texttt{usurf} using a lapse rate. \texttt{usurf} must be present in \texttt{foo.nc}.
+
+ Option \txtopt{bc_acab_lapse_rate}{meters per year per kilometer} corrects \texttt{acab} with respect to a reference surface \texttt{usurf} using a lapse rate following [\href{http://www.truenuff.tv/glacierrace.php}{86}]. \texttt{usurf} must be present in \texttt{foo.nc}.
 
 Option \txtopt{bc_period}{years} makes PISM interpret data in \texttt{-bc_file} as periodic. In this case the time in the NetCDF file is understood as the time \emph{from the beginning of a period}, i.e. from the beginning of a year with \texttt{-bc_period 1}, from the beginning of a decade with \texttt{-bc_period 10}, etc.
 
