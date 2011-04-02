@@ -405,6 +405,7 @@ PetscErrorCode IceModelVec2S::has_nan() {
 }
 
 // IceModelVec2Mask
+// FIXME:  is this intended to be guaranteed?:  is_grounded(i,j) = !is_floating(i,j)
 
 //! Returns the mask value; does not check ownership.
 int IceModelVec2Mask::value(int i, int j) {

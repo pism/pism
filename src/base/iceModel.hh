@@ -157,12 +157,10 @@ protected:
         vtillphi,	//!< friction angle for till under grounded ice sheet;
                         //!< ghosted to be able to compute tauc "redundantly"
 
-  //vHav,			//!< average over the ice thickness of existing ice neighbors
-    vHref,			//!< accumulated mass advected to a partially filled grid cell
-    vHresidual,		//!< residual ice mass of a not any longer partially (fully) filled grid cell
-
-    vPrinStrain1,	//!< major principal component of horizontal strain-rate tensor
-    vPrinStrain2,	//!< minor principal component of horizontal strain-rate tensor
+        vHref,          //!< accumulated mass advected to a partially filled grid cell
+        vHresidual,     //!< residual ice mass of a not any longer partially (fully) filled grid cell
+        vPrinStrain1,   //!< major principal component of horizontal strain-rate tensor
+        vPrinStrain2,   //!< minor principal component of horizontal strain-rate tensor
 
     acab,		//!< accumulation/ablation rate; no ghosts
     artm,		//!< ice temperature at the ice surface but below firn; no ghosts
@@ -272,9 +270,18 @@ protected:
   virtual PetscErrorCode updateSurfaceElevationAndMask();
   virtual PetscErrorCode update_mask();
   virtual PetscErrorCode update_surface_elevation();
-  virtual PetscErrorCode massContExplicitStep();
-  virtual PetscErrorCode massContExplicitStepPartGrids();
+  // next four implement PIK logic for -part_grid; see Albrecht et al 2011
+  virtual PetscErrorCode velsPartGrid(
+       PetscReal Mo, PetscReal Me, PetscReal Mw, PetscReal Mn, PetscReal Ms,
+       PISMVector2 vrego, PISMVector2 vrege, PISMVector2 vregw, PISMVector2 vregn, PISMVector2 vregs,
+       PetscReal &velE, PetscReal &velW, PetscReal &velN, PetscReal &velS);
+  virtual PetscReal getHav(bool do_redist,
+                           PetscReal Me, PetscReal Mw, PetscReal Mn, PetscReal Ms,
+                           PetscReal He, PetscReal Hw, PetscReal Hn, PetscReal Hs); 
+  virtual PetscErrorCode redistResiduals();
   virtual PetscErrorCode calculateRedistResiduals();
+  virtual PetscErrorCode massContExplicitStep();
+  virtual PetscErrorCode massContExplicitStepPartGrids(); // FIXME: deprecated; the above should do the job now
 
   // see iMIO.cc
   virtual PetscErrorCode set_time_from_options();
