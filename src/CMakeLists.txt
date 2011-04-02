@@ -78,17 +78,20 @@ add_library (pismbase
   base/energy/bedrockThermalUnit.cc
   base/energy/enthSystem.cc
   base/energy/tempSystem.cc
-  base/iMIO.cc
   base/iMadaptive.cc
   base/iMage.cc
   base/iMbasal.cc
   base/iMbeddef.cc
   base/iMbootstrap.cc
+  base/iMcalving.cc
   base/iMdefaults.cc
   base/iMenthalpy.cc
   base/iMgeometry.cc
+  base/iMicebergs.cc
   base/iMinit.cc
+  base/iMIO.cc
   base/iMoptions.cc
+  base/iMpartgrid.cc
   base/iMreport.cc
   base/iMtemp.cc
   base/iMtimeseries.cc
@@ -96,8 +99,6 @@ add_library (pismbase
   base/iMviewers.cc
   base/iceModel.cc
   base/iceModel_diagnostics.cc
-  base/iMicebergs.cc
-  base/iMcalving.cc
 )
 target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance)
 

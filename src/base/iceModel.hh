@@ -243,6 +243,10 @@ protected:
   virtual PetscErrorCode putTempAtDepth();
   virtual PetscErrorCode setMaskSurfaceElevation_bootstrap();
 
+  // see iMcalving.cc
+  virtual PetscErrorCode eigenCalving();
+  virtual PetscErrorCode calvingAtThickness();
+
   // see iMdefaults.cc
   PetscErrorCode setDefaults();
 
@@ -270,7 +274,21 @@ protected:
   virtual PetscErrorCode updateSurfaceElevationAndMask();
   virtual PetscErrorCode update_mask();
   virtual PetscErrorCode update_surface_elevation();
-  // next four implement PIK logic for -part_grid; see Albrecht et al 2011
+  virtual PetscErrorCode massContExplicitStep();
+
+  // see iMicebergs.cc
+  virtual PetscErrorCode killIceBergs();           // call this one to do proper sequence
+  virtual PetscErrorCode findIceBergCandidates();
+  virtual PetscErrorCode identifyNotAnIceBerg();
+  virtual PetscErrorCode killIdentifiedIceBergs();
+  virtual PetscErrorCode killEasyIceBergs();       // FIXME: do we want this one to happen even if eigencalving does not happen?  should we be calling this one before any time that principle values need to be computed?
+
+  // see iMIO.cc
+  virtual PetscErrorCode set_time_from_options();
+  virtual PetscErrorCode dumpToFile(const char *filename);
+  virtual PetscErrorCode regrid();
+
+  // see iMpartgrid.cc
   virtual PetscErrorCode velsPartGrid(
        PetscReal Mo, PetscReal Me, PetscReal Mw, PetscReal Mn, PetscReal Ms,
        PISMVector2 vrego, PISMVector2 vrege, PISMVector2 vregw, PISMVector2 vregn, PISMVector2 vregs,
@@ -280,13 +298,8 @@ protected:
                            PetscReal He, PetscReal Hw, PetscReal Hn, PetscReal Hs); 
   virtual PetscErrorCode redistResiduals();
   virtual PetscErrorCode calculateRedistResiduals();
-  virtual PetscErrorCode massContExplicitStep();
-  virtual PetscErrorCode massContExplicitStepPartGrids(); // FIXME: deprecated; the above should do the job now
-
-  // see iMIO.cc
-  virtual PetscErrorCode set_time_from_options();
-  virtual PetscErrorCode dumpToFile(const char *filename);
-  virtual PetscErrorCode regrid();
+  // FIXME: following is deprecated; massContExplicitStep() in iMgeometry.cc should do the job now
+  virtual PetscErrorCode massContExplicitStepPartGrids(); 
 
   // see iMreport.cc
   virtual PetscErrorCode volumeArea(
@@ -337,18 +350,6 @@ protected:
   virtual PetscErrorCode check_maximum_thickness();
   virtual PetscErrorCode check_maximum_thickness_hook(const int old_Mz);
   virtual bool           issounding(const PetscInt i, const PetscInt j);
-
-
-  // see iMicebergs.cc
-  virtual PetscErrorCode killIceBergs();           // call this one to do proper sequence
-  virtual PetscErrorCode findIceBergCandidates();
-  virtual PetscErrorCode identifyNotAnIceBerg();
-  virtual PetscErrorCode killIdentifiedIceBergs();
-  virtual PetscErrorCode killEasyIceBergs();       // FIXME: do we want this one to happen even if eigencalving does not happen?  should we be calling this one before any time that principle values need to be computed?
-
-  // see iMcalving.cc
-  virtual PetscErrorCode eigenCalving();
-  virtual PetscErrorCode calvingAtThickness();
 
 protected:
   // working space (a convenience)
