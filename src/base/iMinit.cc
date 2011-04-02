@@ -734,5 +734,8 @@ PetscErrorCode  IceModel::set_time_from_options() {
   } else {
     grid.end_year = grid.start_year + config.get("run_length_years");
   }
+
+  t_years_TempAge = grid.year;
+
   return 0;
 }

@@ -26,7 +26,7 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
   ierr = verbPrintf(2, grid.com,
-     "* Initializing the constant-in-time surface processes model PSElevation. Setting...\n"); CHKERRQ(ierr);
+                    "* Initializing the constant-in-time surface processes model PSElevation. Setting...\n"); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "Elevation-dependent surface model options", ""); CHKERRQ(ierr);
   {
@@ -59,27 +59,25 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
 
   // get access to ice upper surface elevation
   usurf = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
-   if (!usurf) SETERRQ(12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
+  if (!usurf) SETERRQ(12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
 
 
   // allocate IceModelVecs for storing temperature and surface mass balance fields
 
-  ierr = acab.create(grid, "acab", false); CHKERRQ(ierr);
-  ierr = acab.set_attrs("climate_state",
-			"ice-equivalent surface mass balance (accumulation/ablation) rate",
-			"m s-1",
-			"land_ice_surface_specific_mass_balance"); // CF standard_name
-			CHKERRQ(ierr);
+  acab.init_2d("acab", grid);
+  acab.set_string("pism_intent", "diagnostic");
+  acab.set_string("long_name",
+                  "ice-equivalent surface mass balance (accumulation/ablation) rate");
+  acab.set_string("standard_name",
+                  "land_ice_surface_specific_mass_balance");
+  ierr = acab.set_units("m s-1"); CHKERRQ(ierr);
   ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  acab.write_in_glaciological_units = true;
 
-  ierr = artm.create(grid, "artm", false); CHKERRQ(ierr);
-  ierr = artm.set_attrs("climate_state",
-			"ice temperature at the ice surface",
-			"K",
-			""); CHKERRQ(ierr);
-
-
+  artm.init_2d("artm", grid);
+  artm.set_string("pism_intent", "diagnostic");
+  artm.set_string("long_name",
+                  "ice temperature at the ice surface");
+  ierr = artm.set_units("K"); CHKERRQ(ierr);
 
   // parameterizing the ice surface temperature 'artm'
   ierr = verbPrintf(2, grid.com,"    parameterizing the ice surface temperature 'artm' ... \n"); CHKERRQ(ierr);
@@ -180,15 +178,16 @@ void PSElevation::add_vars_to_output(string keyword, set<string> &result) {
 
 PetscErrorCode PSElevation::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
   PetscErrorCode ierr;
+  int varid;
 
   ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   if (set_contains(vars, "artm")) {
-    ierr = artm.define(nc, nctype); CHKERRQ(ierr);
+    ierr = artm.define(nc, varid, nctype, true); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "acab")) {
-    ierr = acab.define(nc, nctype); CHKERRQ(ierr);
+    ierr = acab.define(nc, varid, nctype, true); CHKERRQ(ierr);
   }
 
   return 0;
@@ -198,11 +197,23 @@ PetscErrorCode PSElevation::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
   if (set_contains(vars, "artm")) {
-    ierr = artm.write(filename.c_str()); CHKERRQ(ierr);
+    IceModelVec2S tmp;
+    ierr = tmp.create(grid, "artm", false); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(artm, 0); CHKERRQ(ierr);
+
+    ierr = ice_surface_temperature(t, dt, tmp); CHKERRQ(ierr);
+
+    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   if (set_contains(vars, "acab")) {
-    ierr = acab.write(filename.c_str()); CHKERRQ(ierr);
+    IceModelVec2S tmp;
+    ierr = tmp.create(grid, "acab", false); CHKERRQ(ierr);
+    ierr = tmp.set_metadata(acab, 0); CHKERRQ(ierr);
+
+    ierr = ice_surface_mass_flux(t, dt, tmp); CHKERRQ(ierr);
+
+    ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
   return 0;

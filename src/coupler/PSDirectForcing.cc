@@ -93,7 +93,7 @@ PetscErrorCode PSDirectForcing::init(PISMVars &vars) {
 
   mass_flux.strict_timestep_limit = ! enable_time_averaging;
 
-  if (bc_artm_lapse_rate_set) {
+  if (bc_artm_lapse_rate_set || bc_acab_lapse_rate_set) {
     ierr = verbPrintf(2,grid.com,
                       "    reading reference surface from %s ...\n",
                       filename.c_str()); CHKERRQ(ierr);
@@ -133,7 +133,9 @@ PetscErrorCode PSDirectForcing::update(PetscReal t_years, PetscReal dt_years) {
   dt = dt_years;
 
   ierr = temperature.update(t, dt); CHKERRQ(ierr);
-  ierr = bc_surface.update(t, dt); CHKERRQ(ierr);
+  if (bc_artm_lapse_rate_set || bc_acab_lapse_rate_set) {
+    ierr = bc_surface.update(t, dt); CHKERRQ(ierr);
+  }
   ierr = mass_flux.update(t, dt); CHKERRQ(ierr);
 
   return 0;
@@ -267,12 +269,18 @@ PetscErrorCode PSDirectForcing::ice_surface_temperature(PetscReal t_years, Petsc
   // "Periodize" the climate:
   t_years = my_mod(t_years);
 
+  if (bc_artm_lapse_rate_set) {
+    if (enable_time_averaging) {
+      ierr = bc_surface.average(t_years, dt_years); CHKERRQ(ierr);
+    } else {
+      ierr = bc_surface.get_record_years(t_years); CHKERRQ(ierr);
+    }
+  }
+
   if (enable_time_averaging) {
     ierr = temperature.average(t_years, dt_years); CHKERRQ(ierr);
-    ierr = bc_surface.average(t_years, dt_years); CHKERRQ(ierr);
   } else {
     ierr = temperature.get_record_years(t_years); CHKERRQ(ierr);
-    ierr = bc_surface.get_record_years(t_years); CHKERRQ(ierr);
   }
 
   ierr = temperature.copy_to(result); CHKERRQ(ierr); 

@@ -46,7 +46,7 @@ public:
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);
 protected:
-  IceModelVec2S acab, artm;
+  NCSpatialVariable acab, artm;
   IceModelVec2S *usurf;
   PetscReal T_ELA, z_ELA,z_min,z_max,dTdz,dacdz,dabdz;
   PetscTruth elev_set;
