@@ -42,7 +42,7 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
     z_artm_max = artmarray[3];
 
     PetscInt Nacabparam= 5;
-    PetscReal acabarray[5] = {-3,2.5,1100,1450,1700};
+    PetscReal acabarray[5] = {-3,3,1100,1500,1700};
 
     ierr = PetscOptionsGetRealArray(PETSC_NULL, "-acab", acabarray, &Nacabparam, &elev_acab_set);
     CHKERRQ(ierr);
@@ -57,10 +57,10 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   ierr = verbPrintf(3, grid.com,
-                    "     temperature at %2. m a.s.l. = %.2f deg C\n"
-                    "     temperature at %2. m a.s.l. = %.2f deg C\n"
-                    "     mass balance at and below %2. m a.s.l. = %.2f m/a\n"
-                    "     mass balance at and below %2. m a.s.l. = %.2f m/a\n"
+                    "     temperature at %.0f m a.s.l. = %.2f deg C\n"
+                    "     temperature at %.0f m a.s.l. = %.2f deg C\n"
+                    "     mass balance at and below %.0f m a.s.l. = %.2f m/a\n"
+                    "     mass balance at and below %.0f m a.s.l. = %.2f m/a\n"
                     "     equilibrium line altitude z_ELA = %.2f m a.s.l.\n",
                     z_artm_min, artm_min, z_artm_max, artm_max, z_acab_min, acab_min, z_acab_max, acab_max, z_ELA); CHKERRQ(ierr);
 
@@ -69,7 +69,7 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
   if (!usurf) SETERRQ(12, "ERROR: 'usurf' is not available or is wrong type in dictionary");
 
 
-  // allocate IceModelVecs for storing temperature and surface mass balance fields
+  // allocate NCSpatialVariables for storing temperature and surface mass balance fields
 
   acab.init_2d("acab", grid);
   acab.set_string("pism_intent", "diagnostic");
@@ -90,25 +90,25 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com,"    parameterizing the ice surface temperature 'artm' ... \n"); CHKERRQ(ierr);
   ierr = verbPrintf(2, grid.com, 
                     "      ice temperature at the ice surface (artm) is piecewise-linear function of surface altitude (usurf):\n"
-                    "            /  %2.2f                                 for   usurf < %.f\n"
-                    "      T = |  %5.2f + (usurf - %.f) * (%.2f / %.f)   for   %.f < topg < %.f\n"
-                    "            \\  %5.2f                                 for   %.f < usurf\n",
-                    artm_min, z_artm_min,
-                    artm_min, z_artm_min, artm_max - artm_min, z_artm_max - z_artm_min, z_artm_min, z_artm_max,
-                    artm_max, z_artm_max); CHKERRQ(ierr);
+                    "                 /  %2.2f K                            for            usurf < %.f m\n"
+                    "         artm = |   %5.2f K + %5.3f * (usurf - %.f m) for   %.f m < usurf < %.f m\n"
+                    "                 \\  %5.2f K                            for   %.f m < usurf\n",
+                    artm_min + 273.15, z_artm_min,
+                    artm_min + 273.15, (artm_max-artm_min)/(z_artm_max-z_artm_min), z_artm_min, z_artm_min, z_artm_max,
+                    artm_max + 273.13, z_artm_max); CHKERRQ(ierr);
 
   // parameterizing the ice surface mass balance 'acab'
   ierr = verbPrintf(2, grid.com,"    parameterizing the ice surface mass balance 'acab' ... \n"); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 
                     "      surface mass balance (acab) is piecewise-linear function of surface altitue (usurf):\n"
-                    "                /  %5.2f m/a                    for            usurf < %3.f m\n"
-                    "          acab =  (usurf-%3.f m) * (%.2f / %.f) for   %3.f m < usurf < %3.f m\n"
-                    "               \\ (usurf-%3.f m) * (%.2f / %.f) for   %3.f m < usurf < %3.f m\n"
-                    "                \\ %5.2f m/a                     for   %3.f m < usurf\n",
+                    "                  /  %5.2f m/a                       for          usurf < %3.f m\n"
+                    "          acab = |    %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
+                    "                  \\   %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
+                    "                   \\ %5.2f m/a                       for %3.f m < usurf\n",
                     acab_min, z_acab_min,
-                    z_acab_min, z_ELA, z_acab_min, z_ELA, 
-                    z_acab_max, z_ELA, z_ELA, z_acab_max,
+                    -acab_min/(z_ELA - z_acab_min),z_acab_min, z_acab_min, z_ELA, 
+                    acab_max/(z_acab_max - z_ELA),z_acab_max, z_ELA, z_acab_max, 
                     acab_max, z_acab_max); CHKERRQ(ierr);
 
 
@@ -147,7 +147,7 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(PetscReal /*t_years*/, PetscRe
         {
           SETERRQ(1,"HOW DID I GET HERE? ... ending...\n");
         }
-      ierr = verbPrintf(5, grid.com,"!!!!! z=%f, acab=%f\n",z,result(i,j)); CHKERRQ(ierr);
+      ierr = verbPrintf(5, grid.com,"!!!!! z=%.2f, acab=%.2f\n",z,result(i,j)*secpera); CHKERRQ(ierr);
     }
   }
   ierr = usurf->end_access();   CHKERRQ(ierr);
@@ -169,8 +169,23 @@ PetscErrorCode PSElevation::ice_surface_temperature(PetscReal /*t_years*/, Petsc
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {      
       PetscReal z = (*usurf)(i,j);
-      result(i,j) = artm_min + 273.15  + dTdz * z;
-      ierr = verbPrintf(5, grid.com,"!!!!! z=%f, artm=%f\n",z,result(i,j)); CHKERRQ(ierr);
+      if (z <= z_artm_min)
+        {
+          result(i,j) = 273.15 + artm_min;
+        }
+      else if ((z > z_artm_min) && (z < z_artm_max))
+        {
+          result(i,j) = 273.15 + artm_min + dTdz * (z - z_artm_min);    
+        }
+      else if (z >= z_artm_max)
+        {
+          result(i,j) = 273.15 + artm_max;
+        }
+      else
+        {
+          SETERRQ(1,"HOW DID I GET HERE? ... ending...\n");
+        }        
+      ierr = verbPrintf(5, grid.com,"!!!!! z=%.2f, artm_min=%.2f, dTdz=%.2f, dz=%.2f, artm=%.2f\n",z,artm_min+273.15,dTdz,z - z_artm_min,result(i,j)); CHKERRQ(ierr);
     }
   }
   ierr = usurf->end_access();   CHKERRQ(ierr);
@@ -224,7 +239,7 @@ PetscErrorCode PSElevation::write_variables(set<string> vars, string filename) {
     ierr = tmp.set_metadata(acab, 0); CHKERRQ(ierr);
 
     ierr = ice_surface_mass_flux(t, dt, tmp); CHKERRQ(ierr);
-
+    tmp.write_in_glaciological_units = true;
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }
 

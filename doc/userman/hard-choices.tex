@@ -146,11 +146,39 @@ In addition to this, one can use latitude- and July-air-temperature-dependent Gr
 
   \item \emph{Elevation-dependent temperature and mass balance} (\texttt{elevation})
 
-    This surface model parametrizes the ice surface temperature \texttt{artm} and the surface mass balance \texttt{artm} as a function of elevation of the ice upper surface.
+    This surface model parametrizes the ice surface temperature $T_{h}$ = \texttt{artm} and the surface mass balance $m$ = \texttt{acab} as a\emph{piecewise-linear} function of surface elevation $h$.
 
-    \txtopt{elevation_to_artm_and_acab}{\emph{list of 6 numbers}}
-
-    Thus PISM has a mechanism setting the ice surface temperature $T_{h}$ = \texttt{artm} and the surface mass balance $m$ = \texttt{acab} to a \emph{piecewise-linear} function of surface elevation $h$. 
+    The option \txtopt{artm}{\emph{list of 4 numbers}} determines the surface temperature using the 4 parameters $T_{\mathrm{min}}$, $T_{\mathrm{max}}$, $h_{\mathrm{min}}$, $h_{\mathrm{max}}$. Let
+    \begin{equation}
+      \mathrm{d}T/\mathrm{d}h = (T_{\text{max}} - T_{\text{min}}) / (h_{\text{max}} - h_{\text{min}})
+    \end{equation}
+    be the temperature gradient.  Then
+    \begin{equation}
+      T(x,y) = \begin{cases}
+        T_{\text{min}}, & h(x,y) \le h_{\text{min}}, \\
+        T_{\text{min}} + \mathrm{d}T/\mathrm{d}h\,(h(x,y) - h_{\text{min}}),
+        &  h_{\text{min}} < h(x,y) < h_{\text{max}}, \\
+        T_{\text{max}}, & h_{\text{max}} \le h(x,y). \end{cases}
+    \end{equation}
+    
+    The option \txtopt{acab}{\emph{list of 5 numbers}} determines the surface mass balance using the 5 parameters $m_{\mathrm{min}}$, $m_{\mathrm{max}}$, $h_{\mathrm{min}}$, $h_{\mathrm{ELA}}$, $h_{\mathrm{max}}$. Let
+    \begin{equation}
+      \mathrm{d}m_{\mathrm{abl}}/\mathrm{d}h = - m_{\text{min}} / (h_{\text{max}} - h_{\text{min}})
+    \end{equation}
+    and
+    \begin{equation}
+      \mathrm{d}m_{\mathrm{acl}}/\mathrm{d}h = m_{\text{max}} / (h_{\text{max}} - h_{\text{min}})
+    \end{equation}
+    be the mass balance gradient in the ablation and in the accumulation area, respectively.  Then
+    \begin{equation}
+      m(x,y) = \begin{cases}
+        m_{\text{min}}, & h(x,y) \le h_{\text{min}}, \\
+        \mathrm{d}m_{\mathrm{abl}}/\mathrm{d}h\,(h(x,y) - h_{\text{ELA}}),
+        &  h_{\text{min}} < h(x,y) < h_{\text{max}}, \\
+        \mathrm{d}m_{\mathrm{acl}}/\mathrm{d}h\,(h(x,y) - h_{\text{ELA}}),
+        &  h_{\text{min}} < h(x,y) < h_{\text{max}}, \\
+        m_{\text{max}}, & h_{\text{max}} \le h(x,y). \end{cases}
+    \end{equation}
 
     Note: this surface model \emph{ignores} the atmosphere model selection made using the \texttt{-atmosphere} option.
 

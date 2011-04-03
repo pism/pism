@@ -1,0 +1,20 @@
+netcdf pism_overrides {
+    variables:
+    byte pism_overrides;
+
+    pism_overrides:bed_smoother_range = 0.;
+    pism_overrides:bed_smoother_range_doc = "m; half-width of smoothing domain for PISMBedSmoother, in implementing [\\ref Schoofbasaltopg2003] bed roughness parameterization for SIA; set value to zero to turn off mechanism";
+
+    pism_overrides:hmelt_diffusion_distance = 10;
+    pism_overrides:hmelt_diffusion_distance_doc = "meters; diffusion distance for melt water thickness; see equation (11) in [\\ref BBssasliding]";
+
+    pism_overrides:hmelt_diffusion_time = 500.0;
+    pism_overrides:hmelt_diffusion_time_doc = "years; diffusion time for melt water thickness; see equation (11) in [\\ref BBssasliding]";
+
+    pism_overrides:liquid_water_fraction_max = 0.02;
+    pism_overrides:liquid_water_fraction_max_doc = "pure number; in enthalpy model, drain once omega reaches this value [\\ref Greve97Greenland]";
+
+    pism_overrides:summary_volarea_scale_factor_log10 = 0;
+    pism_overrides:summary_volarea_scale_factor_log10_doc = "; an integer; log base 10 of scale factor to use for volume and area in summary line to stdout";
+
+}
