@@ -150,31 +150,7 @@ In addition to this, one can use latitude- and July-air-temperature-dependent Gr
 
     \txtopt{elevation_to_artm_and_acab}{\emph{list of 6 numbers}}
 
-    Thus PISM has a mechanism setting the ice surface temperature $T_{h}$ = \texttt{artm} and the surface mass balance $m$ = \texttt{acab} to a \emph{piecewise-linear} function of surface elevation $h$ and 7 parameters: 
-    \begin{enumerate}
-      \item the surface temperature at the equilibrium line altitude $T_{\mathrm{ELA}}$ ($^{\circ}$C),
-      \item the temperature gradient $\mathrm{d}T/\mathrm{d}h$ ($^{\circ}$C/km),
-      \item the mass balance gradient in the ablation area $\mathrm{d}m_{\mathrm{abl}}/\mathrm{d}h$ (m/a/km),
-      \item the mass balance gradient in the accumulation area $\mathrm{d}m_{\mathrm{acc}}/\mathrm{d}h$ (m/a/km),
-      \item the equilibrium line altitude $h_{\mathrm{ELA}}$ (m), 
-      \item the minimum elevation $h_{\mathrm{min}}$ (m),
-      \item the maximum elevation $h_{\mathrm{max}}$ (m), 
-      \end{enumerate}
-      where $h=h(x,y)$ stands for the surface elevation. The ice surface temperature is then computed by
-      \begin{equation}
-        T_{h}(x,y) = T_{\text{ELA}} + (\text{d}T/\text{d}h) h(x,y)
-      \end{equation}
-      and the surface mass balance is calculated using
-      \begin{equation}
-        m(x,y) = \begin{cases}
-          \left(\mathrm{d}m_{\mathrm{abl}}/\mathrm{d}h\right) \left(h_{\mathrm{min}} - h_{\mathrm{ELA}}\right), & h(x,y) \le h_{\text{min}}, \\
-        \left(\mathrm{d}m_{\mathrm{abl}}/\mathrm{d}h\right) \left(h\left(x,y\right) - h_{\mathrm{ELA}}\right),
-        &  h_{\text{min}} < h(x,y) < h_{\text{ELA}}, \\
-        \left(\mathrm{d}m_{\mathrm{acc}}/\mathrm{d}h\right) \left(h\left(x,y\right) - h_{\mathrm{ELA}}\right),
-        &  h_{\text{ELA}} < h(x,y) < h_{\text{max}}, \\
-        \left(\mathrm{d}m_{\mathrm{acc}}/\mathrm{d}h\right) \left(h_{\mathrm{max}} - h_{\mathrm{ELA}}\right), & h_{\text{max}} \le h(x,y). \end{cases}
-    \end{equation}
-    If \texttt{-elevation_to_artm_and_acab} is omitted, the default values \texttt{-30,6.,3.0,3.0,1500,0.,3000} are used.
+    Thus PISM has a mechanism setting the ice surface temperature $T_{h}$ = \texttt{artm} and the surface mass balance $m$ = \texttt{acab} to a \emph{piecewise-linear} function of surface elevation $h$. 
 
     Note: this surface model \emph{ignores} the atmosphere model selection made using the \texttt{-atmosphere} option.
 

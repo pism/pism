@@ -48,8 +48,8 @@ public:
 protected:
   NCSpatialVariable acab, artm;
   IceModelVec2S *usurf;
-  PetscReal T_ELA, z_ELA,z_min,z_max,dTdz,dacdz,dabdz;
-  PetscTruth elev_set;
+  PetscReal artm_min, artm_max, z_artm_min, z_artm_max, acab_min, acab_max, z_acab_min, z_ELA, z_acab_max;
+  PetscTruth elev_artm_set, elev_acab_set;
 
 };
 
