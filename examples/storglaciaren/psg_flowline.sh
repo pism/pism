@@ -60,13 +60,13 @@ fi
 
 echo
 
-PCONFIG=sg_config.nc
+PCONFIG=psg_config.nc
 
 # cat prefix and exec together
 PISM="${PISM_PREFIX}${PISM_EXEC} -cts -config_override $PCONFIG"
 
 
-DATANAME=sg_flowline.nc
+DATANAME=storglaciaren_flowline.nc
 PISM_DATANAME=pism_$DATANAME
 INNAME=$PISM_DATANAME
 
@@ -107,7 +107,8 @@ uth=10
 TILLPHI="-plastic_phi $phi"
 EB="-e $e"
 PARAMS="$TILLPHI -pseudo_plastic_q $q -plastic_pwfrac 0.98 -pseudo_plastic_uthreshold $uth"
-FULLPHYS="-ssa_method fem -ssa_sliding -thk_eff $PARAMS $PETSCSTUFF"
+# Use the FEM solver for the SSA, as the FD solver show convergence issues
+FULLPHYS="-ssa_method fem -ssa_sliding -thk_eff $PARAMS"
 
 
 SMOOTHRUNLENGTH=1

@@ -1,4 +1,25 @@
 #!/usr/bin/env python
+#
+# Copyright (C) 2011 Andy Aschwanden
+# 
+# This file is part of PISM.
+# 
+# PISM is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
+# 
+# PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with PISM; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+
+
 import sys
 import time
 import numpy as np
@@ -17,39 +38,30 @@ from optparse import OptionParser
 
 __author__ = "Andy Aschwanden"
 
-# default values
-ISTEMP=False
+# Create PISM-readable input file from Storglaciaren DEM
 
 parser = OptionParser()
 parser.usage = "usage: %prog [options]"
 parser.description = "Preprocess Storglaciaren files."
-parser.add_option("-t", "--temperate",dest="istemp",action="store_true",
-                  help="sets upper surface boundary condition to temperate",default=ISTEMP)
 
 
 (options, args) = parser.parse_args()
-istemp = options.istemp
 
 
 # Create PISM-readable input file from Storglaciaren DEM
-# 05/13/09 AA started working on script
-# 05/14/09 AA reads and writes fields
-# 05/15/09 AA input field moved to ../data/
-# 05/20/09 AA x and y uses the Swedish grid (or should this go to lat/lon?)
-# 06/09/09 AA corrected handling of x,y coordinates, acab variable added
 
 
-write('UAF-Storglaciaren PISM project\n')
+write('------------------------------\n')
+write('PISM-Storglaciaren example\n')
 write('------------------------------\n')
 
 # data dir
-data_dir = '../data/'
+data_dir = './'
 # Bed and Surface DEMs for Storglaciaren
 XFile     = data_dir + 'X.txt'
 YFile     = data_dir + 'Y.txt'
 zBaseFile = data_dir + 'zBase.txt'
 zSurfFile = data_dir + 'zSurf.txt'
-MBFile    = data_dir + 'mb2001.txt'
 
 # load coordinate information. Note: Swedish grid (RT90) uses inverse notation
 # X -> northing, Y -> easting
@@ -80,15 +92,6 @@ try:
     write('Done.\n')
 except IOError:
     write('ERROR: File %s could not be found.\n' % zSurfFile)
-    exit(2)
-
-# load Annual Mass Balance 2001 (in meters)
-try:
-    write('Reading annual mass balance (2001) from %s: ' % MBFile)
-    MB = np.loadtxt(MBFile)
-    write('Done.\n')
-except IOError:
-    write('ERROR: File %s could not be found.\n' % MBFile)
     exit(2)
 
 # Grid size. DEM has 10m spacing.
@@ -127,8 +130,8 @@ projection = Proj(projRT90)
 longitude, latitude = projection(ee, nn, inverse=True)
 
 write("Coordinates of the lower-left grid corner:\n"
-      "  easting  = %f\n"
-      "  northing = %f\n"
+      "  easting  = %.0f\n"
+      "  northing = %.0f\n"
       "Grid size:\n"
       "  rows = %d\n"
       "  columns = %d\n" % (e0, n0, N, M))
@@ -141,7 +144,6 @@ thk_valid_min = 0.0
 bed = np.flipud(zBase)
 dem = np.flipud(zSurf) # ignored by bootstrapping
 thk = np.flipud(zSurf-zBase) # used for bootstrapping
-mb  = MB # no flip required
 
 # Replace NaNs with zeros
 thk = np.nan_to_num(thk)
@@ -151,27 +153,10 @@ thk = np.nan_to_num(thk)
 # (filtering)
 thk[thk<0] = 0
 
-# insert mild ablation where no data are available, off the glacier
-mb[thk<1] = -3.
-
-# Set boundary conditions
-# ------------------------------------------------------------------------------
-#
-# (A) Surface temperature for temperature equation bc
-T0    = 273.15 # K
-Tma   =  -6.0  # degC, mean annual air temperature at Tarfala
-zcts  = 1300   # m a.s.l.; altitude where CTS is at the surface, projected to topg
-zbts  = 1250   # m a.s.l.; altitude where CTS is at the base; just a wild guess
-
-if istemp:
-    artm  = np.zeros((M,N),float) + T0
-else:
-    artm  = np.zeros((M,N),float) + T0
-    artm[bed<zcts] = T0 + Tma # Scandinavian-type polythermal glacier
 
 
 # Output filename
-ncfile = 'pism_storglaciaren.nc'
+ncfile = 'pism_storglaciaren_3d.nc'
 
 # Write the data:
 nc = CDF(ncfile, "w",format='NETCDF3_CLASSIC') # for netCDF4 module
@@ -195,10 +180,8 @@ y[:] = northing
 
 
 def def_var(nc, name, units, fillvalue):
-    var = nc.createVariable(name, 'f', dimensions=("y", "x"))
+    var = nc.createVariable(name, 'f', dimensions=("y", "x"),fill_value=fillvalue)
     var.units = units
-    if (fillvalue != None):
-        var._FillValue = fillvalue
     return var
 
 lon_var = def_var(nc, "lon", "degrees_east", None)
@@ -212,33 +195,26 @@ lat_var[:] = latitude
 bed_var = def_var(nc, "topg", "m", fill_value)
 bed_var.valid_min = bed_valid_min
 bed_var.standard_name = "bedrock_altitude"
+bed_var.coordinates = "lat lon"
 bed_var[:] = bed
 
 thk_var = def_var(nc, "thk", "m", fill_value)
 thk_var.valid_min = thk_valid_min
 thk_var.standard_name = "land_ice_thickness"
+thk_var.coordinates = "lat lon"
 thk_var[:] = thk
 
 dem_var = def_var(nc, "usurf_from_dem", "m", fill_value)
+dem_var.standard_name = "surface_altitude"
+dem_var.coordinates = "lat lon"
 dem_var[:] = dem
 
-acab_var = def_var(nc, "acab", "m year-1", fill_value)
-acab_var.standard_name = "land_ice_surface_specific_mass_balance"
-acab_var[:] = mb
-
-artm_var = def_var(nc, "artm", "K", fill_value)
-artm_var[:] = artm
 
 # set global attributes
 nc.Conventions = "CF-1.4"
 historysep = ' '
 historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
 setattr(nc, 'history', historystr)
-
+nc.projection = projRT90
 nc.close()
-write('Done writing NetCDF file %s!\n' % ncfile)
-
-np.savetxt('acab2001.txt',mb)
-np.savetxt('thk.txt',thk)
-np.savetxt('topg.txt',bed)
-        
+write('Done writing NetCDF file %s!\n' % ncfile)        

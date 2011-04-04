@@ -2,7 +2,7 @@ ALL: userman
 
 parts := eismint-greenland.tex eismint-ross.tex getting-started.tex \
 	 modeling-choices.tex hard-choices.tex practical-usage.tex \
-	 simplified-geometry.tex verification.tex
+	 simplified-geometry.tex storglaciaren.tex verification.tex
 
 revision:
 	@svnversion > revision.tex

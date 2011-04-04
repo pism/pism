@@ -27,7 +27,7 @@ except:
 
 x,topg,thk = np.loadtxt('sg_35m_flowline.txt',unpack=True)
 
-output = 'sg_flowline.nc'
+output = 'storglaciaren_flowline.nc'
 
 # Write the data:
 print("Writing the data to '%s'... " % output)
