@@ -64,7 +64,7 @@ def permute(variable, output_order = ('t', 'z', 'zb', 'y', 'x')):
     if mapping:
         return np.transpose(variable[:], mapping)
     else:
-        return variable[:]              # do that it does not break processing "mapping"
+        return variable[:]              # so that it does not break processing "mapping"
 
 def copy_dim(nc1, nc2, name, direction):
     """Copy a dimension from nc1 to nc2."""

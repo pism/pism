@@ -11,18 +11,18 @@ endif()
 find_program(PYTHON_EXECUTABLE python DOC "python interpreter")
 
 if(PYTHON_EXECUTABLE)
-  # Note the extra lengths taken below to avoid the trailing newline in the output from python.
-  # The newline messes up the find_library command below, and maybe other stuff.  How do you
-  # get CMake to strip a newline?
-    execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "from sys import stdout; from distutils import sysconfig; stdout.write(sysconfig.get_python_inc())"
+    execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print sysconfig.get_python_inc()"
                      OUTPUT_VARIABLE PYTHON_INCLUDES
-                     RESULT_VARIABLE PYTHON_INCLUDES_NOT_FOUND)
-    execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "from sys import stdout; from distutils import sysconfig;   stdout.write(sysconfig.get_config_var('LIBPL'))"
+                     RESULT_VARIABLE PYTHON_INCLUDES_NOT_FOUND
+                     OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print sysconfig.get_config_var('LIBPL')"
                      OUTPUT_VARIABLE PYTHON_LIBDIR
-                     RESULT_VARIABLE PYTHON_LIBDIR_NOT_FOUND)
-    execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "from sys import stdout; from distutils import sysconfig; stdout.write(sysconfig.get_python_version())"
+                     RESULT_VARIABLE PYTHON_LIBDIR_NOT_FOUND
+                     OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process( COMMAND ${PYTHON_EXECUTABLE} -c "from distutils import sysconfig; print sysconfig.get_python_version()"
                      OUTPUT_VARIABLE PYTHON_VERSION
-                     RESULT_VARIABLE PYTHON_VERSION_NOT_FOUND)
+                     RESULT_VARIABLE PYTHON_VERSION_NOT_FOUND
+                     OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif()
 
 if(PYTHON_LIBDIR)

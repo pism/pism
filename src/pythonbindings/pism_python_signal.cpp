@@ -35,6 +35,7 @@ int pism_check_signal()
   {
     gSignalSet = 0;
   }
+  return 0;
 }
 
 void pism_sigint_handler(int sig)
