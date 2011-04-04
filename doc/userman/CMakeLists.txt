@@ -18,6 +18,7 @@ set (parts
   practical-usage.tex
   simplified-geometry.tex
   verification.tex
+  storglaciaren.tex
   )
 
 foreach (filename ${parts})
