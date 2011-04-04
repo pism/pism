@@ -31,6 +31,41 @@ import numpy as np
 from sys import argv,exit
 from time import asctime
 
+def get_slice(dimensions, x = None, y = None):
+    """Get an x- or y-slice of a variable."""        
+    All = slice(None)
+
+    if not dimensions: return All   # so that it does not break processing "mapping"
+
+    index_list = [All]*len(dimensions)
+
+    if x != None:
+        try: index_list[dimensions.index('x')] = x
+        except: pass
+
+    if y != None:
+        try: index_list[dimensions.index('y')] = y
+        except: pass
+
+    return index_list
+
+def permute(variable, output_order = ('t', 'z', 'zb', 'y', 'x')):
+    """Permute dimensions of a NetCDF variable to match the output storage order."""
+    input_dimensions = variable.dimensions
+
+    # filter out irrelevant dimensions
+    dimensions = filter(lambda(x): x in input_dimensions,
+                        output_order)
+
+    # create the mapping
+    mapping = map(lambda(x): dimensions.index(x),
+                  input_dimensions)
+
+    if mapping:
+        return np.transpose(variable[:], mapping)
+    else:
+        return variable[:]              # do that it does not break processing "mapping"
+
 def copy_dim(nc1, nc2, name, direction):
     """Copy a dimension from nc1 to nc2."""
     if (name == direction):
@@ -119,25 +154,10 @@ def collapse_var(nc, out, name, direction):
         
     copy_attributes(var1, var2)
 
-    # Note: the following depends on the current PISM variable storage order: (t, z, y, x)
     if direction == 'x':
-        if var1.ndim == 4:
-            var2[:] = var1[:, :, :, N]  # (t, z, y, x)
-        elif var1.ndim == 3:
-            var2[:] = var1[:, :, N]     # (t, y, x)
-        elif var1.ndim == 2:
-            var2[:] = var1[:, N]        # (y, x)
-        elif var1.ndim == 1:
-            var2[:] = var1[:]           # (t), (y) or (x)
+        var2[:] = var1[get_slice(var1.dimensions, x = N)]
     elif direction == 'y':
-        if var1.ndim == 4:
-            var2[:] = var1[:, :, N, :]
-        elif var1.ndim == 3:
-            var2[:] = var1[:, N, :]
-        elif var1.ndim == 2:
-            var2[:] = var1[N, :]
-        elif var1.ndim == 1:
-            var2[:] = var1[:]
+        var2[:] = var1[get_slice(var1.dimensions, y = N)]
 
 def expand_var(nc, out, name, direction):
     """Saves an expanded (according to 'direction')
@@ -170,27 +190,11 @@ def expand_var(nc, out, name, direction):
     var2 = out.createVariable(name, var1.dtype, dims)
     copy_attributes(var1, var2)
 
-    # Note: the following depends on the current PISM variable storage order: (t, z, y, x)
-    if direction == 'x':
-        if var1.ndim == 3:
-            for j in range(3):
-                var2[:,:,:,j] = var1[:,:,:]
-        elif var1.ndim == 2:
-            for j in range(3):
-                var2[:,:,j] = var1[:,:]
-        elif var1.ndim == 1:
-            for j in range(3):
-                var2[:,j] = var1[:]
-    elif direction == 'y':
-        if var1.ndim == 3:
-            for j in range(3):
-                var2[:,:,j,:] = var1[:,:,:]
-        elif var1.ndim == 2:
-            for j in range(3):
-                var2[:,j,:] = var1[:,:]
-        elif var1.ndim == 1:
-            for j in range(3):
-                var2[j,:] = var1[:]
+    for j in range(3):
+        if direction == 'x':
+            var2[get_slice(var2.dimensions, x=j)] = permute(var1)
+        elif direction == 'y':
+            var2[get_slice(var2.dimensions, y=j)] = permute(var1)
 
 parser = OptionParser()
 parser.usage = "usage: %prog -o foo.nc -d {x,y} {--collapse,--expand} file.nc"

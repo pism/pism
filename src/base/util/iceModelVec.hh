@@ -176,7 +176,7 @@ public:
   virtual PetscErrorCode  copy_to(IceModelVec &destination);
   virtual PetscErrorCode  copy_from(IceModelVec &source);
   virtual PetscErrorCode  has_nan();
-  virtual PetscErrorCode  set_name(const char name[], int component = 0);
+  virtual PetscErrorCode  set_name(string name, int component = 0);
   virtual PetscErrorCode  set_glaciological_units(string units);
   virtual PetscErrorCode  set_attr(string name, string value, int component = 0);
   virtual PetscErrorCode  set_attr(string name, double value, int component = 0);
@@ -190,12 +190,12 @@ public:
   virtual PetscErrorCode  set_metadata(NCSpatialVariable &var, int N);
   virtual bool            is_valid(PetscScalar a, int component = 0);
   virtual PetscErrorCode  define(const NCTool &nc, nc_type output_datatype);
-  virtual PetscErrorCode  write(const char filename[]);
-  virtual PetscErrorCode  write(const char filename[], nc_type nctype);
+  virtual PetscErrorCode  write(string filename);
+  virtual PetscErrorCode  write(string filename, nc_type nctype);
   virtual PetscErrorCode  dump(const char filename[]);
-  virtual PetscErrorCode  read(const char filename[], unsigned int time);
-  virtual PetscErrorCode  regrid(const char filename[], bool critical, int start = 0);
-  virtual PetscErrorCode  regrid(const char filename[], PetscScalar default_value);
+  virtual PetscErrorCode  read(string filename, unsigned int time);
+  virtual PetscErrorCode  regrid(string filename, bool critical, int start = 0);
+  virtual PetscErrorCode  regrid(string filename, PetscScalar default_value);
 
   virtual PetscErrorCode  begin_access();
   virtual PetscErrorCode  end_access();
@@ -273,15 +273,15 @@ public:
   virtual PetscErrorCode view(PetscInt viewer_size);
   virtual PetscErrorCode view(PetscViewer v1, PetscViewer v2);
   using IceModelVec::write;
-  virtual PetscErrorCode write(const char filename[], nc_type nctype);
-  virtual PetscErrorCode read(const char filename[], const unsigned int time);
-  virtual PetscErrorCode regrid(const char filename[], bool critical, int start = 0);
-  virtual PetscErrorCode regrid(const char filename[], PetscScalar default_value);
+  virtual PetscErrorCode write(string filename, nc_type nctype);
+  virtual PetscErrorCode read(string filename, const unsigned int time);
+  virtual PetscErrorCode regrid(string filename, bool critical, int start = 0);
+  virtual PetscErrorCode regrid(string filename, PetscScalar default_value);
   // component-wise access:
   virtual PetscErrorCode get_component(int n, IceModelVec2 &result);
   virtual PetscErrorCode set_component(int n, IceModelVec2 &source);
 protected:
-  virtual PetscErrorCode create(IceGrid &my_grid, const char my_short_name[], bool local,
+  virtual PetscErrorCode create(IceGrid &my_grid, string my_short_name, bool local,
                                 int stencil_width, int dof);
   PetscErrorCode get_component(int n, Vec result);
   PetscErrorCode set_component(int n, Vec source);
@@ -296,7 +296,7 @@ public:
   IceModelVec2S(const IceModelVec2S &other) : IceModelVec2(other) {}
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
-  virtual PetscErrorCode  create(IceGrid &my_grid, const char my_name[], bool local, int width = 1);
+  virtual PetscErrorCode  create(IceGrid &my_grid, string my_name, bool local, int width = 1);
   virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   PetscErrorCode  get_array(PetscScalar** &a);
@@ -353,7 +353,7 @@ public:
   ~IceModelVec2V() {}
 
   using IceModelVec2::create;
-  virtual PetscErrorCode create(IceGrid &my_grid, const char my_short_name[],
+  virtual PetscErrorCode create(IceGrid &my_grid, string my_short_name,
 				bool local, int stencil_width = 1);
 
   // I/O:
@@ -364,7 +364,7 @@ public:
   // Metadata, etc:
   using IceModelVec2::is_valid;
   virtual bool           is_valid(PetscScalar u, PetscScalar v);
-  virtual PetscErrorCode set_name(const char name[], int component = 0);
+  virtual PetscErrorCode set_name(string name, int component = 0);
 };
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.
@@ -376,7 +376,7 @@ public:
   IceModelVec2Stag() { dof = 2; vars.resize(dof); }
   IceModelVec2Stag(const IceModelVec2S &other) : IceModelVec2(other) {}
   using IceModelVec2::create;
-  virtual PetscErrorCode create(IceGrid &my_grid, const char my_name[], bool local, int width = 1);
+  virtual PetscErrorCode create(IceGrid &my_grid, string my_name, bool local, int width = 1);
   virtual PetscErrorCode get_array(PetscScalar*** &a);
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();
@@ -412,7 +412,7 @@ public:
   virtual PetscScalar    getValZ(PetscInt i, PetscInt j, PetscScalar z);
   virtual PetscErrorCode  isLegalLevel(PetscScalar z);
 protected:
-  virtual PetscErrorCode  allocate(IceGrid &mygrid, const char my_short_name[],
+  virtual PetscErrorCode  allocate(IceGrid &mygrid, string my_short_name,
                                    bool local, vector<double> levels, int stencil_width = 1);
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode has_nan();
@@ -429,7 +429,7 @@ public:
   IceModelVec3(const IceModelVec3 &other) : IceModelVec3D(other) {}
   virtual ~IceModelVec3() {}
 
-  virtual PetscErrorCode create(IceGrid &mygrid, const char my_short_name[],
+  virtual PetscErrorCode create(IceGrid &mygrid, string my_short_name,
                                 bool local, int stencil_width = 1);
 
   // need to call begin_access() before set...(i,j,...) or get...(i,j,...) *and* need call

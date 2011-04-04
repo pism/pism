@@ -27,7 +27,7 @@ IceModelVec2V::IceModelVec2V() : IceModelVec2() {
   reset_attrs(1);
 }
 
-PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, const char my_short_name[], bool local,
+PetscErrorCode  IceModelVec2V::create(IceGrid &my_grid, string my_short_name, bool local,
 				      int stencil_width) {
 
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, local,
@@ -77,7 +77,7 @@ bool IceModelVec2V::is_valid(PetscScalar U, PetscScalar V) {
   return vars[0].is_valid(U) && vars[1].is_valid(V);
 }
 
-PetscErrorCode IceModelVec2V::set_name(const char new_name[], int /*component = 0*/) {
+PetscErrorCode IceModelVec2V::set_name(string new_name, int /*component = 0*/) {
   string tmp = new_name;
   reset_attrs(0);
   reset_attrs(1);

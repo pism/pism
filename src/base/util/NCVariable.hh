@@ -102,8 +102,8 @@ class NCConfigVariable : public NCVariable {
 public:
   virtual PetscErrorCode print(PetscInt verbosity_threshhold) const;
   virtual PetscErrorCode print() const { print(4); return 0; };
-  virtual PetscErrorCode read(const char filename[]);
-  virtual PetscErrorCode write(const char filename[]) const;
+  virtual PetscErrorCode read(string filename);
+  virtual PetscErrorCode write(string filename) const;
   virtual string get_config_filename() const;
   virtual double get(string) const;
   virtual bool   get_flag(string) const;
@@ -129,8 +129,8 @@ protected:
 */
 class NCGlobalAttributes : public NCConfigVariable {
 public:
-  virtual PetscErrorCode read(const char filename[]);
-  virtual PetscErrorCode write(const char filename[]) const;
+  virtual PetscErrorCode read(string filename);
+  virtual PetscErrorCode write(string filename) const;
   virtual void prepend_history(string message);
 protected:
   virtual PetscErrorCode write_attributes(const NCTool &nc, int, nc_type, bool) const;
@@ -141,9 +141,9 @@ class NCTimeseries : public NCVariable {
 public:
   string dimension_name;        //!< the name of the NetCDF dimension this timeseries depends on
   void    init(string name, string dim_name, MPI_Comm c, PetscMPIInt r);
-  virtual PetscErrorCode read(const char filename[], vector<double> &data);
-  virtual PetscErrorCode write(const char filename[], size_t start, vector<double> &data, nc_type nctype = NC_DOUBLE);
-  virtual PetscErrorCode write(const char filename[], size_t start, double data, nc_type nctype = NC_DOUBLE);
+  virtual PetscErrorCode read(string filename, vector<double> &data);
+  virtual PetscErrorCode write(string filename, size_t start, vector<double> &data, nc_type nctype = NC_DOUBLE);
+  virtual PetscErrorCode write(string filename, size_t start, double data, nc_type nctype = NC_DOUBLE);
   virtual PetscErrorCode change_units(vector<double> &data, utUnit *from, utUnit *to);
   virtual PetscErrorCode report_range(vector<double> &data);
 

@@ -29,11 +29,11 @@ public:
   virtual void init_2d(string name, IceGrid &g);
   virtual void init_3d(string name, IceGrid &g, vector<double> &zlevels);
   virtual void set_levels(const vector<double> &levels);
-  virtual PetscErrorCode read(const char filename[], unsigned int time, Vec v);
+  virtual PetscErrorCode read(string filename, unsigned int time, Vec v);
   virtual PetscErrorCode reset();
-  virtual PetscErrorCode write(const char filename[], nc_type nctype,
+  virtual PetscErrorCode write(string filename, nc_type nctype,
 			       bool write_in_glaciological_units, Vec v);
-  virtual PetscErrorCode regrid(const char filename[], LocalInterpCtx *lic,
+  virtual PetscErrorCode regrid(string filename, LocalInterpCtx *lic,
 				bool critical, bool set_default_value,
 				PetscScalar default_value, Vec v);
   virtual PetscErrorCode to_glaciological_units(Vec v);

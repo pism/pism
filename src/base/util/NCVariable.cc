@@ -121,6 +121,11 @@ PetscErrorCode NCSpatialVariable::reset() {
   strings["coordinates"] = "lat lon";
   strings["grid_mapping"] = "mapping";
 
+  return 0;
+}
+
+NCSpatialVariable::NCSpatialVariable() {
+  grid = NULL;
   dimensions.clear();
   dimensions["x"] = "x";
   dimensions["y"] = "y";
@@ -142,11 +147,6 @@ PetscErrorCode NCSpatialVariable::reset() {
   z_attrs["units"]         = "m";
   z_attrs["positive"]      = "up";
 
-  return 0;
-}
-
-NCSpatialVariable::NCSpatialVariable() {
-  grid = NULL;
   reset();
 }
 
@@ -179,7 +179,7 @@ void NCSpatialVariable::set_levels(const vector<double> &levels) {
 //! Read a variable from a file into a \b global Vec v.
 /*! This also converts the data from input units to internal units if needed.
  */
-PetscErrorCode NCSpatialVariable::read(const char filename[], unsigned int time, Vec v) {
+PetscErrorCode NCSpatialVariable::read(string filename, unsigned int time, Vec v) {
   PetscErrorCode ierr;
   bool variable_exists;
   int varid;
@@ -202,7 +202,7 @@ PetscErrorCode NCSpatialVariable::read(const char filename[], unsigned int time,
     ierr = PetscPrintf(com,
 		      "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
 		       short_name.c_str(),
-		       strings["standard_name"].c_str(), filename);
+		       strings["standard_name"].c_str(), filename.c_str());
     CHKERRQ(ierr);
     PISMEnd();
   }
@@ -237,7 +237,7 @@ PetscErrorCode NCSpatialVariable::read(const char filename[], unsigned int time,
 /*!
   Defines a variable and converts the units if needed.
  */
-PetscErrorCode NCSpatialVariable::write(const char filename[], nc_type nctype,
+PetscErrorCode NCSpatialVariable::write(string filename, nc_type nctype,
 					bool write_in_glaciological_units, Vec v) {
   PetscErrorCode ierr;
   bool exists;
@@ -276,7 +276,7 @@ PetscErrorCode NCSpatialVariable::write(const char filename[], nc_type nctype,
   \li sets \c v to \c default_value if \c set_default_value == true and the variable was not found
   \li interpolation mask can be NULL if it is not used.
  */
-PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx *lic,
+PetscErrorCode NCSpatialVariable::regrid(string filename, LocalInterpCtx *lic,
 					 bool critical, bool set_default_value,
 					 PetscScalar default_value,
 					 Vec v) {
@@ -305,7 +305,7 @@ PetscErrorCode NCSpatialVariable::regrid(const char filename[], LocalInterpCtx *
       // SETERRQ1(1, "Variable '%s' was not found.\n", short_name);
       ierr = PetscPrintf(com,
 			"PISM ERROR: Can't find '%s' in the regridding file '%s'.\n",
-			 short_name.c_str(), filename);
+			 short_name.c_str(), filename.c_str());
       CHKERRQ(ierr);
       PISMEnd();
     }
@@ -887,7 +887,7 @@ bool NCVariable::is_valid(PetscScalar a) const {
 /*!
   Erases all the present parameters before reading.
  */
-PetscErrorCode NCConfigVariable::read(const char filename[]) {
+PetscErrorCode NCConfigVariable::read(string filename) {
 
   PetscErrorCode ierr;
   bool variable_exists;
@@ -906,7 +906,7 @@ PetscErrorCode NCConfigVariable::read(const char filename[]) {
     ierr = PetscPrintf(com,
 		       "PISM ERROR: configuration variable %s was not found in %s.\n"
 		       "            Exiting...\n",
-		       short_name.c_str(), filename); CHKERRQ(ierr);
+		       short_name.c_str(), filename.c_str()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -937,7 +937,7 @@ PetscErrorCode NCConfigVariable::read(const char filename[]) {
 }
 
 //! Write a config variable to a file (with all its attributes).
-PetscErrorCode NCConfigVariable::write(const char filename[]) const {
+PetscErrorCode NCConfigVariable::write(string filename) const {
   PetscErrorCode ierr;
   int varid;
   bool variable_exists;
@@ -1238,7 +1238,7 @@ void NCTimeseries::init(string n, string dim_name, MPI_Comm c, PetscMPIInt r) {
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
-PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
+PetscErrorCode NCTimeseries::read(string filename, vector<double> &data) {
 
   PetscErrorCode ierr;
   NCTool nc(com, rank);
@@ -1256,7 +1256,7 @@ PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
     ierr = PetscPrintf(com,
 		      "PISM ERROR: Can't find '%s' (%s) in '%s'.\n",
 		       short_name.c_str(),
-		       strings["standard_name"].c_str(), filename);
+		       strings["standard_name"].c_str(), filename.c_str());
     CHKERRQ(ierr);
     PISMEnd();
   }
@@ -1268,7 +1268,7 @@ PetscErrorCode NCTimeseries::read(const char filename[], vector<double> &data) {
     ierr = PetscPrintf(com,
 		       "PISM ERROR: Variable '%s' in '%s' depends on %d dimensions,\n"
 		       "            but a time-series variable can only depend on 1 dimension.\n",
-		       short_name.c_str(), filename, dimids.size()); CHKERRQ(ierr);
+		       short_name.c_str(), filename.c_str(), dimids.size()); CHKERRQ(ierr);
     PISMEnd();
   }
 
@@ -1372,7 +1372,7 @@ PetscErrorCode NCTimeseries::define(const NCTool &nc, int &varid, nc_type nctype
 }
 
 //! \brief Write a time-series \c data to a file.
-PetscErrorCode NCTimeseries::write(const char filename[], size_t start,
+PetscErrorCode NCTimeseries::write(string filename, size_t start,
 				   vector<double> &data, nc_type nctype) {
 
   PetscErrorCode ierr;
@@ -1406,7 +1406,7 @@ PetscErrorCode NCTimeseries::write(const char filename[], size_t start,
 }
 
 //! \brief Write a single value of a time-series to a file.
-PetscErrorCode NCTimeseries::write(const char filename[], size_t start,
+PetscErrorCode NCTimeseries::write(string filename, size_t start,
 				   double data, nc_type nctype) {
   vector<double> tmp(1);
   tmp[0] = data;
@@ -1458,7 +1458,7 @@ PetscErrorCode NCTimeseries::change_units(vector<double> &data, utUnit *from, ut
 }
 
 //! \brief Read global attributes from a file.
-PetscErrorCode NCGlobalAttributes::read(const char filename[]) {
+PetscErrorCode NCGlobalAttributes::read(string filename) {
   PetscErrorCode ierr;
   int nattrs;
   NCTool nc(com, rank);
@@ -1496,7 +1496,7 @@ PetscErrorCode NCGlobalAttributes::read(const char filename[]) {
 }
 
 //! Writes global attributes to a file by calling write_attributes().
-PetscErrorCode NCGlobalAttributes::write(const char filename[]) const {
+PetscErrorCode NCGlobalAttributes::write(string filename) const {
   PetscErrorCode ierr;
   NCTool nc(com, rank);
 

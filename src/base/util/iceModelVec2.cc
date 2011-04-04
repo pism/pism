@@ -27,13 +27,13 @@
 
 // methods for base class IceModelVec are in "iceModelVec.cc"
 
-PetscErrorCode  IceModelVec2S::create(IceGrid &my_grid, const char my_name[], bool local, int width) {
+PetscErrorCode  IceModelVec2S::create(IceGrid &my_grid, string my_name, bool local, int width) {
   if (!utIsInit()) {
     SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
   }
 
   if (v != PETSC_NULL) {
-    SETERRQ1(2,"IceModelVec2S with name='%s' already allocated\n", my_name);
+    SETERRQ1(2,"IceModelVec2S with name='%s' already allocated\n", my_name.c_str());
   }
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_name, local, width, dof); CHKERRQ(ierr);
   return 0;
@@ -139,7 +139,7 @@ PetscErrorCode IceModelVec2S::mask_by(IceModelVec2S &M, PetscScalar fill) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::write(const char filename[], nc_type nctype) {
+PetscErrorCode IceModelVec2::write(string filename, nc_type nctype) {
   PetscErrorCode ierr;
 
   ierr = checkAllocated(); CHKERRQ(ierr);
@@ -167,7 +167,7 @@ PetscErrorCode IceModelVec2::write(const char filename[], nc_type nctype) {
   return 0;
 }
 
-PetscErrorCode IceModelVec2::read(const char filename[], const unsigned int time) {
+PetscErrorCode IceModelVec2::read(string filename, const unsigned int time) {
   PetscErrorCode ierr;
 
   if ((dof == 1) && (localp == false)) {
@@ -198,7 +198,7 @@ PetscErrorCode IceModelVec2::read(const char filename[], const unsigned int time
   return 0;  
 }
 
-PetscErrorCode IceModelVec2::regrid(const char filename[], bool critical, int start) {
+PetscErrorCode IceModelVec2::regrid(string filename, bool critical, int start) {
   PetscErrorCode ierr;
   LocalInterpCtx *lic = NULL;
 
@@ -235,7 +235,7 @@ PetscErrorCode IceModelVec2::regrid(const char filename[], bool critical, int st
   return 0;
 }
 
-PetscErrorCode IceModelVec2::regrid(const char filename[], PetscScalar default_value) {
+PetscErrorCode IceModelVec2::regrid(string filename, PetscScalar default_value) {
   PetscErrorCode ierr;
   LocalInterpCtx *lic = NULL;
 
@@ -664,7 +664,7 @@ PetscErrorCode IceModelVec2::set_component(int n, IceModelVec2 &source) {
   return 0;
 }
 
-PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], bool local,
+PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, string my_name, bool local,
                                      int stencil_width, int my_dof) {
   PetscErrorCode ierr;
 
@@ -672,7 +672,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
     SETERRQ(1, "PISM ERROR: UDUNITS *was not* initialized.\n");
   }
   if (v != PETSC_NULL) {
-    SETERRQ1(2,"IceModelVec2 with name='%s' already allocated\n", my_name);
+    SETERRQ1(2,"IceModelVec2 with name='%s' already allocated\n", my_name.c_str());
   }
 
   dof  = my_dof;
@@ -706,7 +706,7 @@ PetscErrorCode  IceModelVec2::create(IceGrid &my_grid, const char my_name[], boo
 
 // IceModelVec2Stag
 
-PetscErrorCode  IceModelVec2Stag::create(IceGrid &my_grid, const char my_short_name[], bool local,
+PetscErrorCode  IceModelVec2Stag::create(IceGrid &my_grid, string my_short_name, bool local,
 					 int stencil_width) {
 
   PetscErrorCode ierr = IceModelVec2::create(my_grid, my_short_name, local,

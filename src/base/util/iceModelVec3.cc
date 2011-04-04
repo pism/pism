@@ -48,7 +48,7 @@ IceModelVec3D::IceModelVec3D(const IceModelVec3D &other)
 }
 
 //! Allocate a DA and a Vec from information in IceGrid.
-PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, const char my_name[],
+PetscErrorCode  IceModelVec3D::allocate(IceGrid &my_grid, string my_name,
                                         bool local, vector<double> levels, int stencil_width) {
   PetscErrorCode ierr;
   if (!utIsInit()) {
@@ -575,7 +575,7 @@ PetscErrorCode  IceModelVec3D::setInternalColumn(PetscInt i, PetscInt j, PetscSc
 }
 
 
-PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, const char my_name[], bool local,
+PetscErrorCode  IceModelVec3::create(IceGrid &my_grid, string my_name, bool local,
                                      int stencil_width) {
 
   PetscErrorCode ierr = IceModelVec3D::allocate(my_grid, my_name, local,

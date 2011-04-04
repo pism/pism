@@ -154,7 +154,7 @@ PetscErrorCode  IceModelVec::destroy() {
     ierr = VecDestroy(v); CHKERRQ(ierr);
     v = PETSC_NULL;
   }
-  if ((da != PETSC_NULL) && (dof > 1)) {
+  if ((da != PETSC_NULL) && (dof > 1 || n_levels > 1)) {
     ierr = DADestroy(da); CHKERRQ(ierr);
     da = PETSC_NULL;
   }
@@ -374,7 +374,7 @@ PetscErrorCode  IceModelVec::copy_from(IceModelVec &source) {
 }
 
 //! Sets the variable name to \c name and resets metadata.
-PetscErrorCode  IceModelVec::set_name(const char new_name[], int N) {
+PetscErrorCode  IceModelVec::set_name(string new_name, int N) {
   reset_attrs(N);
   
   if (N == 0)
@@ -476,7 +476,7 @@ PetscErrorCode IceModelVec::get_interp_context(string filename, LocalInterpCtx* 
 //! Gets an IceModelVec from a file \c filename, interpolating onto the current grid.
 /*! Stops if the variable was not found and \c critical == true.
  */
-PetscErrorCode IceModelVec::regrid(const char filename[], bool critical, int start) {
+PetscErrorCode IceModelVec::regrid(string filename, bool critical, int start) {
   PetscErrorCode ierr;
   Vec g;
   LocalInterpCtx *lic = NULL;
@@ -512,7 +512,7 @@ PetscErrorCode IceModelVec::regrid(const char filename[], bool critical, int sta
 //! Gets an IceModelVec from a file \c filename, interpolating onto the current grid.
 /*! Sets all the values to \c default_value if the variable was not found.
  */
-PetscErrorCode IceModelVec::regrid(const char filename[], PetscScalar default_value) {
+PetscErrorCode IceModelVec::regrid(string filename, PetscScalar default_value) {
   PetscErrorCode ierr;
   Vec g;
   LocalInterpCtx *lic = NULL;
@@ -545,7 +545,7 @@ PetscErrorCode IceModelVec::regrid(const char filename[], PetscScalar default_va
 }
 
 //! Reads appropriate NetCDF variable(s) into an IceModelVec.
-PetscErrorCode IceModelVec::read(const char filename[], const unsigned int time) {           
+PetscErrorCode IceModelVec::read(string filename, const unsigned int time) {           
   PetscErrorCode ierr;
   Vec g;
 
@@ -598,7 +598,7 @@ PetscErrorCode IceModelVec::set_metadata(NCSpatialVariable &var, int N) {
 }
 
 //! Writes an IceModelVec to a NetCDF file using the default output data type.
-PetscErrorCode IceModelVec::write(const char filename[]) {
+PetscErrorCode IceModelVec::write(string filename) {
   PetscErrorCode ierr;
 
   if (getVerbosityLevel() > 3) {
@@ -611,7 +611,7 @@ PetscErrorCode IceModelVec::write(const char filename[]) {
 }
 
 //! Writes an IceModelVec to a NetCDF file.
-PetscErrorCode IceModelVec::write(const char filename[], nc_type nctype) {
+PetscErrorCode IceModelVec::write(string filename, nc_type nctype) {
   PetscErrorCode ierr;
   Vec g;
 
