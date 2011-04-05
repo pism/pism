@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -45,6 +45,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   doAdaptTimeStep = PETSC_TRUE;
   basal = NULL;
   CFLviolcount = 0;
+  dt = 0.0;
 
   surface = NULL;
   ocean   = NULL;

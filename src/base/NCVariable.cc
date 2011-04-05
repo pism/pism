@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009, 2010, 2011 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -327,6 +327,8 @@ PetscErrorCode NCVariable::read_valid_range(const NCTool &nc, int varid) {
   // Never reset valid_min/max if any of them was set internally.
   if (has("valid_min") || has("valid_max"))
     return 0;
+
+  utClear(&input_units);
 
   // Read the units: The following code ignores the units in the input file if
   // a) they are absent :-) b) they are invalid c) they are not compatible with
