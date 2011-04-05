@@ -53,6 +53,23 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
     z_ELA = acabarray[3];
     z_acab_max = acabarray[4];
 
+    PetscInt Nlimitsparam= 2;
+    PetscReal limitsarray[2] = {0,0};
+
+    ierr = PetscOptionsGetRealArray(PETSC_NULL, "-acab_limits", limitsarray, &Nlimitsparam, &acab_limits_set);
+    CHKERRQ(ierr);
+
+    if (acab_limits_set)
+      {
+        acab_limit_min = limitsarray[0];
+        acab_limit_max = limitsarray[1];
+      }
+    else
+      {
+        acab_limit_min = acab_min;
+        acab_limit_max = acab_max;
+      }
+
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -100,16 +117,21 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
   // parameterizing the ice surface mass balance 'acab'
   ierr = verbPrintf(2, grid.com,"    parameterizing the ice surface mass balance 'acab' ... \n"); CHKERRQ(ierr);
 
+  if (acab_limits_set)
+    {
+      ierr = verbPrintf(2, grid.com,"    option '-acab_limits' seen, limiting upper and lower bounds ... \n"); CHKERRQ(ierr);
+    }
+
   ierr = verbPrintf(2, grid.com, 
                     "      surface mass balance (acab) is piecewise-linear function of surface altitue (usurf):\n"
                     "                  /  %5.2f m/a                       for          usurf < %3.f m\n"
                     "          acab = |    %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
                     "                  \\   %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
                     "                   \\ %5.2f m/a                       for %3.f m < usurf\n",
-                    acab_min, z_acab_min,
+                    acab_limit_min, z_acab_min,
                     -acab_min/(z_ELA - z_acab_min),z_acab_min, z_acab_min, z_ELA, 
                     acab_max/(z_acab_max - z_ELA),z_acab_max, z_ELA, z_acab_max, 
-                    acab_max, z_acab_max); CHKERRQ(ierr);
+                    acab_limit_max, z_acab_max); CHKERRQ(ierr);
 
 
   return 0;
@@ -129,7 +151,7 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(PetscReal /*t_years*/, PetscRe
       PetscReal z = (*usurf)(i,j);
       if (z < z_acab_min)
         {
-          result(i,j) = acab_min / secpera;
+          result(i,j) = acab_limit_min / secpera;
         }
       else if ((z >= z_acab_min) && (z < z_ELA))
         {
@@ -141,7 +163,7 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(PetscReal /*t_years*/, PetscRe
         }
       else if (z > z_acab_max)
         {
-          result(i,j) = acab_max / secpera;
+          result(i,j) = acab_limit_max / secpera;
         }
       else
         {

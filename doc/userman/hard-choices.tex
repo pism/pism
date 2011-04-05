@@ -179,6 +179,16 @@ In addition to this, one can use latitude- and July-air-temperature-dependent Gr
         &  h_{\text{min}} < h(x,y) < h_{\text{max}}, \\
         m_{\text{max}}, & h_{\text{max}} \le h(x,y). \end{cases}
     \end{equation}
+    The option \txtopt{acab_limits}{\emph{list of 2 numbers}} limits the mass balance below $h_{\mathrm{min}}$ to $m^{*}_{\mathrm{min}}$ and above $h_{\mathrm{max}}$ to $m^{*}_{\mathrm{max}}$, thus
+    \begin{equation}
+      m(x,y) = \begin{cases}
+        m^{*}_{\text{min}}, & h(x,y) \le h_{\text{min}}, \\
+        \mathrm{d}m_{\mathrm{abl}}/\mathrm{d}h\,(h(x,y) - h_{\text{ELA}}),
+        &  h_{\text{min}} < h(x,y) < h_{\text{max}}, \\
+        \mathrm{d}m_{\mathrm{acl}}/\mathrm{d}h\,(h(x,y) - h_{\text{ELA}}),
+        &  h_{\text{min}} < h(x,y) < h_{\text{max}}, \\
+        m^{*}_{\text{max}}, & h_{\text{max}} \le h(x,y). \end{cases}
+    \end{equation}
 
     Note: this surface model \emph{ignores} the atmosphere model selection made using the \texttt{-atmosphere} option.
 
