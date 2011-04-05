@@ -88,6 +88,7 @@ PetscErrorCode PALapseRates::mean_annual_temp(PetscReal /*t_years*/, PetscReal /
 PetscErrorCode PALapseRates::begin_pointwise_access() {
   PetscErrorCode ierr;
   ierr = PAConstant::begin_pointwise_access(); CHKERRQ(ierr);
+  ierr = usurf->begin_access(); CHKERRQ(ierr);
   ierr = f.begin_access(); CHKERRQ(ierr);
   return 0;
 }
@@ -95,6 +96,7 @@ PetscErrorCode PALapseRates::begin_pointwise_access() {
 PetscErrorCode PALapseRates::end_pointwise_access() {
   PetscErrorCode ierr;
   ierr = PAConstant::end_pointwise_access(); CHKERRQ(ierr);
+  ierr = usurf->end_access(); CHKERRQ(ierr);
   ierr = f.end_access(); CHKERRQ(ierr);
   return 0;
 }
