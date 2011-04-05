@@ -307,7 +307,17 @@ PetscErrorCode PISMBedThermalUnit::update(PetscReal t_years, PetscReal dt_years)
      SETERRQ(1,"PISMBedThermalUnit::update() does not allow negative timesteps\n"); }
   // CHECK: is desired time-interval equal to [t_years,t_years+dt_years] where t_years = t + dt?
   if ((!gsl_isnan(t)) && (!gsl_isnan(dt))) { // this check should not fire on first use
-    if (!(fabs(t_years - (t + dt) < 1e-12))) {
+    bool contiguous = true;
+
+    if (fabs(t + dt) < 1) {
+      if ( fabs(t_years - (t + dt)) >= 1e-12 ) // check if the absolute difference is small
+        contiguous = false;
+    } else {
+      if ( fabs(t_years - (t + dt)) / (t + dt) >= 1e-12 ) // check if the relative difference is small
+        contiguous = false;
+    }
+
+    if (contiguous == false) {
      SETERRQ4(2,"PISMBedThermalUnit::update() requires next update to be contiguous with last;\n"
                 "  stored:        t = %f a,       dt = %f a\n"
                 "  desired: t_years = %f a, dt_years = %f a\n",
