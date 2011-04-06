@@ -149,6 +149,12 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.scalar_from_option("max_low_temps", "max_low_temp_count"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("max_dt",        "maximum_time_step_years"); CHKERRQ(ierr);
+
+  if (config.get("maximum_time_step_years") <= 0) {
+    PetscPrintf(grid.com, "PISM ERROR: maximum_time_step_years has to be greater than 0.\n");
+    PISMEnd();
+  }
+
   ierr = config.scalar_from_option("mu_sliding",    "mu_sliding");              CHKERRQ(ierr);
 
   ierr = config.flag_from_option("mass", "do_mass_conserve"); CHKERRQ(ierr);

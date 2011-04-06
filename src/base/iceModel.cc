@@ -312,6 +312,8 @@ PetscErrorCode IceModel::createVecs() {
   vLongitude.time_independent = true;
   ierr = vLongitude.set_attr("coordinates", ""); CHKERRQ(ierr);
   ierr = vLongitude.set_attr("grid_mapping", ""); CHKERRQ(ierr);
+  ierr = vLongitude.set_attr("valid_min", -180.0); CHKERRQ(ierr);
+  ierr = vLongitude.set_attr("valid_max",  180.0); CHKERRQ(ierr);
   ierr = variables.add(vLongitude); CHKERRQ(ierr);
 
   // latitude
@@ -320,6 +322,8 @@ PetscErrorCode IceModel::createVecs() {
   vLatitude.time_independent = true;
   ierr = vLatitude.set_attr("coordinates", ""); CHKERRQ(ierr);
   ierr = vLatitude.set_attr("grid_mapping", ""); CHKERRQ(ierr);
+  ierr = vLatitude.set_attr("valid_min", -90.0); CHKERRQ(ierr);
+  ierr = vLatitude.set_attr("valid_max",  90.0); CHKERRQ(ierr);
   ierr = variables.add(vLatitude); CHKERRQ(ierr);
 
   if (config.get_flag("part_grid") == true) {

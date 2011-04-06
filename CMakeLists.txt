@@ -171,11 +171,11 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   mark_as_advanced (SWIG_DIR SWIG_EXECUTABLE SWIG_VERSION)
 
   execute_process(
-        COMMAND ${PYTHON_EXECUTABLE} -c "import sys, distutils.sysconfig; sys.stdout.write(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))"
-        OUTPUT_VARIABLE PISM_INSTALL_PYTHON_MODULE_DIR
-        )
+    COMMAND ${PYTHON_EXECUTABLE} -c "import distutils.sysconfig; print distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}')"
+    OUTPUT_VARIABLE PISM_INSTALL_PYTHON_MODULE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
   set(PISM_INSTALL_PYTHON_MODULE_DIR ${PISM_INSTALL_PYTHON_MODULE_DIR}
-      CACHE PATH "Python extension module installation directory.")
+    CACHE PATH "Python extension module installation directory." FORCE)
   
 endif ()
 

@@ -85,8 +85,6 @@ static PetscErrorCode set_eismint_greenland_params(MPI_Comm com,
     config.set_string("bed_deformation_model", "lc");
   }
 
-  config.set("mu_sliding", 0.0);  // no SIA-type sliding!; see [\ref RitzEISMINT]
-
   // use the EISMINT-Greenland value if no value in -boot_file file
   config.set("bootstrapping_geothermal_flux_value_no_var", 0.050);
 
