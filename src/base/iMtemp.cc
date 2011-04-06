@@ -538,8 +538,13 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
         }
 
         if (vMask.is_floating(i,j)) {
-          // if floating assume maximally saturated till
-          Hmelt[i][j] = hmelt_max;
+          if (vH(i,j) < 0.1) {
+            // truely no ice, so zero-out subglacial fields
+            Hmelt[i][j] = 0.0;
+          } else {
+            // if floating assume maximally saturated till to avoid "shock" if grounding line advances
+            Hmelt[i][j] = hmelt_max;
+          }
         } else {
           // limit Hmelt by default max and store
           Hmelt[i][j] = PetscMin(hmelt_max, Hmeltnew);

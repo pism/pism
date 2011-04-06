@@ -62,7 +62,7 @@ public:
 
 private:
   PetscInt     Mz;
-  PetscScalar  ice_rho, ice_c, ice_k, ice_nu,
+  PetscScalar  ice_rho, ice_c, ice_k, ice_K, ice_K0,
                dx, dy, dtTemp, dzEQ, nuEQ, iceK, iceRcold, iceRtemp;
   IceModelVec3 *Enth3;
   PetscScalar  lambda, Enth_ks, a0, a1, b;

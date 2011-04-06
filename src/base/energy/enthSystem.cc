@@ -39,9 +39,9 @@ enthSystemCtx::enthSystemCtx(
   ice_rho = config.get("ice_density");
   ice_c   = config.get("ice_specific_heat_capacity");
   ice_k   = config.get("ice_thermal_conductivity");
-  ice_nu  = config.get("enthalpy_temperate_diffusivity"); // diffusion in temperate ice
 
-  iceK = ice_k / (ice_rho * ice_c);
+  ice_K   = ice_k / ice_c;
+  ice_K0  = ice_K * config.get("enthalpy_temperate_conductivity_ratio");
 
   u      = new PetscScalar[Mz];
   v      = new PetscScalar[Mz];
@@ -80,8 +80,8 @@ PetscErrorCode enthSystemCtx::initAllColumns(
   dtTemp = my_dtTemp;
   dzEQ   = my_dzEQ;
   nuEQ     = dtTemp / dzEQ;
-  iceRcold = iceK * dtTemp / PetscSqr(dzEQ);
-  iceRtemp = ice_nu * dtTemp / PetscSqr(dzEQ);
+  iceRcold = (ice_K / ice_rho) * dtTemp / PetscSqr(dzEQ);
+  iceRtemp = (ice_K0 / ice_rho) * dtTemp / PetscSqr(dzEQ);
   return 0;
 }
 
@@ -154,14 +154,14 @@ PetscErrorCode enthSystemCtx::viewConstants(
                      "  dx,dy,dtTemp,dzEQ = %8.2f,%8.2f,%10.3e,%8.2f\n",
                      dx,dy,dtTemp,dzEQ); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-                     "  ice_rho,ice_c,ice_k,ice_nu = %10.3e,%10.3e,%10.3e,%10.3e\n",
-                     ice_rho,ice_c,ice_k,ice_nu); CHKERRQ(ierr);
+                     "  ice_rho,ice_c,ice_k,ice_K,ice_K0 = %10.3e,%10.3e,%10.3e,%10.3e,%10.3e\n",
+                     ice_rho,ice_c,ice_k,ice_K,ice_K0); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
                      "  nuEQ = %10.3e\n",
                      nuEQ); CHKERRQ(ierr);
   ierr = PetscViewerASCIIPrintf(viewer,
-                     "  iceK,iceRcold,iceRtemp = %10.3e,%10.3e,%10.3e,\n",
-		     iceK,iceRcold,iceRtemp); CHKERRQ(ierr);
+                     "  iceRcold,iceRtemp = %10.3e,%10.3e,\n",
+		     iceRcold,iceRtemp); CHKERRQ(ierr);
   if (show_col_dependent) {
     ierr = PetscViewerASCIIPrintf(viewer,
                      "for THIS column:\n"
@@ -228,7 +228,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
   // generic ice segment in k location (if any; only runs if ks >= 2)
   for (PetscInt k = 1; k < ks; k++) {
     const PetscScalar AA = nuEQ * w[k],
-                      R = (Enth[k] > Enth_s[k]) ? iceRtemp : iceRcold;
+                      R = (Enth[k] < Enth_s[k]) ? iceRcold : iceRtemp;
     if (w[k] >= 0.0) {  // velocity upward
       L[k] = - R - AA * (1.0 - lambda/2.0);
       D[k] = 1.0 + 2.0 * R + AA * (1.0 - lambda);
