@@ -307,7 +307,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   const PetscScalar
     p_air     = config.get("surface_pressure"),
     ice_K     = ice->k / ice->rho, // enthalpy-conductivity for cold ice
-    ice_K0    = ice_K * config.get("enthalpy_temperate_conductivity_ratio"),
     L         = config.get("water_latent_heat_fusion"),  // J kg-1
     omega_max = config.get("liquid_water_fraction_max"), // pure
     bulgeEnthMax  = config.get("enthalpy_cold_bulge_max"), // J kg-1
@@ -452,6 +451,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         }
 
         bool base_is_cold = (esys.Enth[0] < esys.Enth_s[0]);
+        const PetscScalar p1 = EC->getPressureFromDepth(vH(i,j) - fdz); // FIXME task #7297
+        const bool k1_istemperate = EC->isTemperate(esys.Enth[1], p1); // level  z = + \Delta z
 
         // can now determine melt, but only preliminarily because of drainage,
         //   from heat flux out of bedrock, heat flux into ice, and frictional heating
@@ -461,9 +462,13 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           if (base_is_cold) {
               vbmr(i,j) = 0.0;  // zero melt rate if cold base
           } else {
-            const PetscScalar p1 = EC->getPressureFromDepth(vH(i,j) - fdz); // FIXME task #7297
-            const bool k1_istemperate = EC->isTemperate(esys.Enth[1], p1); // level  z = + \Delta z
-            PetscScalar hf_up = - ((k1_istemperate) ? ice_K0 : ice_K) * (esys.Enth[1] - esys.Enth[0]) / fdz; //
+            PetscScalar hf_up;
+            if (k1_istemperate) {
+              const PetscScalar pbasal = EC->getPressureFromDepth(vH(i,j)); // FIXME task #7297
+              hf_up = - ice->k * (EC->getMeltingTemp(p1) - EC->getMeltingTemp(pbasal)) / fdz;
+            } else {
+              hf_up = - ice_K * (esys.Enth[1] - esys.Enth[0]) / fdz;
+            }
             vbmr(i,j) = ( (*Rb)(i,j) + G0(i,j) - hf_up ) / (ice->rho * L); // = - Mb / rho in paper
 #if DEBUG_SHOW_BMELT == 1
             verbPrintf(3,grid.com,
@@ -486,24 +491,29 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         ierr = esys.setBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);
 
         // ***** determine lowest-level equation at bottom of ice
-        //       see page documenting BOMBPROOF
+        //       see figure in efgis paper, and page documenting BOMBPROOF
         if (is_floating) {
-          // floating base: dirichlet application of known temperature from ocean coupler
+          // floating base: Dirichlet application of known temperature from ocean coupler
           // FIXME: this is assuming base of ice shelf has zero liquid fraction
           //        and is at cryostatic pressure; is this right?
           PetscScalar Enth0;
           ierr = EC->getEnthPermissive(shelfbtemp(i,j), 0.0, EC->getPressureFromDepth(vH(i,j)),
                                        Enth0); CHKERRQ(ierr);
-          ierr = esys.setLevel0EqnThisColumn(
-                   1.0,0.0,Enth0); CHKERRQ(ierr);
+          ierr = esys.setLevel0EqnThisColumn(1.0,0.0,Enth0); CHKERRQ(ierr);
         } else if (base_is_cold) {
-          // cold base case:  q . n = q_lith . n + F_b   and   q = - K_i \nabla H
+          // cold, grounded base case:  Neumann q . n = q_lith . n + F_b   and   q = - K_i \nabla H
           ierr = esys.setLevel0EqnThisColumn(
                    1.0,-1.0,(fdz / ice_K) * (G0(i,j) + (*Rb)(i,j))); CHKERRQ(ierr);
         } else {
-          // warm base case:  q . n = 0   and   q = - K_0 \nabla H
-          ierr = esys.setLevel0EqnThisColumn(
-                   1.0,-1.0,0.0); CHKERRQ(ierr);
+          // warm, grounded base case
+          if (k1_istemperate) {
+            // positive thickness of temperate ice:  Neumann q . n = 0 and q = - K_0 \nabla H
+            //   so H(k=1)-H(k=0) = 0
+            ierr = esys.setLevel0EqnThisColumn(1.0,-1.0,0.0); CHKERRQ(ierr);
+          } else {
+            // no thickness of temperate ice:  Dirichlet  H = H_s(pbasal)
+            ierr = esys.setLevel0EqnThisColumn(1.0,0.0,esys.Enth_s[0]); CHKERRQ(ierr);
+          }
         }
 
         ierr = esys.solveThisColumn(&Enthnew);
