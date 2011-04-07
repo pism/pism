@@ -209,6 +209,35 @@ dem_var.standard_name = "surface_altitude"
 dem_var.coordinates = "lat lon"
 dem_var[:] = dem
 
+# generate (somewhat) reasonable acab
+acab_max =  2.5 # m/a
+acab_min = -3.0 # m/a
+np.linspace(acab_max,acab_min,len(x))
+acab = np.ones_like(x)
+acab[:5] = 0
+acab[5:105] = np.linspace(acab_max,acab_min,100)
+acab[105:] = acab_min
+mb = np.zeros_like(bed)
+
+
+## acab_var = def_var(nc, "acab", "m year-1", fill_value)
+## acab_var.standard_name = "land_ice_surface_specific_mass_balance"
+## acab_var[:] = mb
+
+# Set boundary conditions
+# ------------------------------------------------------------------------------
+#
+# (A) Surface temperature for temperature equation bc
+T0    = 273.15 # K
+Tma   =  -6.0  # degC, mean annual air temperature at Tarfala
+zcts  = 1300   # m a.s.l.; altitude where CTS is at the surface, projected to topg
+zbts  = 1250   # m a.s.l.; altitude where CTS is at the base; just a wild guess
+
+artm  = np.zeros((M,N),float) + T0
+artm[bed<zcts] = T0 + Tma # Scandinavian-type polythermal glacier
+
+artm_var = def_var(nc, "artm", "K", fill_value)
+artm_var[:] = artm
 
 # set global attributes
 nc.Conventions = "CF-1.4"

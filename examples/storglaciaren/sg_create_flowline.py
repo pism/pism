@@ -53,4 +53,35 @@ bheatflx_var = nc.createVariable("bheatflx", 'f', dimensions=("x",))
 bheatflx_var.units = "W m-2";
 bheatflx_var[:] = qgeo*np.ones_like(x);
 
+# generate (somewhat) reasonable acab
+acab_max =  2.5 # m/a
+acab_min = -3.0 # m/a
+np.linspace(acab_max,acab_min,100)
+acab = np.ones_like(x)
+acab[:5] = 0
+acab[5:105] = np.linspace(acab_max,acab_min,100)
+acab[105:] = acab_min
+
+acab_var = nc.createVariable("acab", 'f', dimensions=("x",))
+acab_var.units = "m year-1";
+acab_var.standard_name = "land_ice_surface_specific_mass_balance"
+acab_var[:] = acab
+
+# Set boundary conditions
+# ------------------------------------------------------------------------------
+#
+# (A) Surface temperature for temperature equation bc
+T0    = 273.15 # K
+Tma   =  -5.0  # degC, mean annual air temperature at Tarfala
+zcts  = 1300   # m a.s.l.; altitude where CTS is at the surface, projected to topg
+zbts  = 1250   # m a.s.l.; altitude where CTS is at the base; just a wild guess
+
+
+artm = np.zeros_like(x) + T0
+artm[topg<zbts] = T0 + Tma
+artm_var = nc.createVariable("artm", 'f', dimensions=("x",))
+artm_var.units = "K";
+artm_var[:] = artm
+
+
 nc.close()

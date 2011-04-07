@@ -13,3 +13,12 @@ Storglaci{\"a}ren is a small valley glacier in northern Sweden (Figure~\ref{fig:
 \end{figure}
 
 The script \texttt{preprocess.sh} in \texttt{examples/storglaciaren} reads the digital elevation model from ASCII files and generates the necessary input files for both the 3-dimensional and the flow-line application. 
+
+The mean annual air temperature $T_{\mathrm{MA}}=-5^{\circ}$C at the nearby Tarfala Research Stations serves as the boundary condition for the conservation of energy scheme below the firn line. Above it, where the ice is temerate, we choose 0$^{\circ}$C. 
+
+
+
+\texttt{psg_flowline.sh} runs the flow-line application mode. The aim here model the steady-state configuration of the glacier given the following climatic conditions: \texttt{-surface elevation -acab -2.5,3.5,1100,1450,1660 -acab_limits -2.5,0}
+
+
+FIXME: Numerics of the flow-line application can make the KSP solver fail to converge. Compiling PETSc with a direct solver like mumps helps. The SSA doesn't know about grounded glaciers.

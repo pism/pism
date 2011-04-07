@@ -71,13 +71,18 @@ PISM_DATANAME=pism_$DATANAME
 INNAME=$PISM_DATANAME
 
 # coupler settings
-COUPLER="-surface elevation"
+COUPLER_ELEV="-surface elevation -artm -6,0,1325,1350 -acab -5,4.,1200,1400,1615 -acab_limits -5,0"
+COUPLER="-surface constant"
+COUPLER_FORCING="-surface constant,forcing"
+
+# force-to-thickness
+FTALPHA=0.05
 
 # grid parameters
-FINEGRID="-periodicity y -Mx 792 -My 3 -Mz 201 -Mbz 31 -Lz 500 -Lbz 300 -z_spacing equal -zb_spacing equal"  # 5 m grid
+FINEGRID="-periodicity y -Mx 792 -My 3 -Mz 201 -Lz 300 -z_spacing equal"  # 5 m grid
 FS=5
 FINESKIP=1500
-COARSEGRID="-periodicity y -Mx 114 -My 3 -Mz 51 -Mbz 31 -Lz 1000 -Lbz 300 -z_spacing equal -zb_spacing equal"  # 35 m grid
+COARSEGRID="-periodicity y -Mx 114 -My 3 -Mz 101 -Lz 500 -z_spacing equal"  # 35 m grid
 CS=35
 COARSESKIP=500
 
@@ -106,19 +111,24 @@ uth=10
 
 TILLPHI="-plastic_phi $phi"
 EB="-e $e"
-PARAMS="$TILLPHI -pseudo_plastic_q $q -plastic_pwfrac 0.98 -pseudo_plastic_uthreshold $uth"
+PARAMS="$TILLPHI -pseudo_plastic_q $q -plastic_pwfrac 0.9 -pseudo_plastic_uthreshold $uth"
+
+#PETSCSTUFF="-pc_type lu -pc_factor_mat_solver_package mumps"
+PETSCSTUFF="-pc_type asm -sub_pc_type lu -ksp_type lgmres -ksp_right_pc"
+#PETSCSTUFF="-pc_type asm -sub_pc_type lu -ksp_type lgmres -ksp_right_pc -view_map thk"
+
 # Use the FEM solver for the SSA, as the FD solver show convergence issues
-FULLPHYS="-ssa_method fem -ssa_sliding -thk_eff $PARAMS"
+FULLPHYS="-ssa_method fd -ssa_sliding -thk_eff $PARAMS $PETSCSTUFF"
 
 
 SMOOTHRUNLENGTH=1
-NOMASSRUNLENGTH=250
+NOMASSRUNLENGTH=500
 
-TSTIMESTEP=1
+STEP=1
 
-EXVARS="enthalpybase,temppabase,tempicethk,bmelt,bwat,usurf,csurf,mask,hardav" # add mask, so that check_stationarity.py ignores ice-free areas.
+EXVARS="enthalpybase,temppabase,tempicethk,bmelt,bwat,usurf,csurf,mask,hardav,thk" # add mask, so that check_stationarity.py ignores ice-free areas.
 
-PREFIX=psg
+PREFIX=psg_flowline_
 
 # bootstrap and do smoothing run to 1 year
 OUTNAME=$PREFIX${GS}m_pre$SMOOTHRUNLENGTH.nc
@@ -141,18 +151,42 @@ cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER \
 $PISM_DO $cmd
 
 
+# We use the force-to-thickness mechanism to infer the mass balance
+
 STARTYEAR=0
-RUNLENGTH=100
+RUNLENGTH=10
 ENDTIME=$(($STARTYEAR + $RUNLENGTH))
 INNAME=$OUTNAME
-OUTNAME=ssa.nc
+OUTNAME=ssa_ftt_${RUNLENGTH}a.nc
 OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
 TSNAME=ts_${OUTNAME}
-TSTIMES=$STARTYEAR:$TSTIMESTEP:$ENDTIME
+TSTIMES=$STARTYEAR:$STEP:$ENDTIME
 echo
-echo "$SCRIPTNAME  SIA run with force-to-thickness for $RUNLENGTH years on ${GS}m grid"
-cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER $FULLPHYS \
+echo "$SCRIPTNAME  SSA run with force-to-thickness for $RUNLENGTH years on ${GS}m grid"
+cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER_FORCING $TILLPHI $FULLPHYS\
+     -force_to_thk $INNAME -force_to_thk_alpha $FTALPHA \
      -ts_file $TSNAME -ts_times $TSTIMES \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
-$PISM_DO flowline.py -c -o $OUTNAME $OUTNAMEFULL
+$PISM_DO "flowline.py -c -o $OUTNAME $OUTNAMEFULL"
+
+
+STARTYEAR=0
+RUNLENGTH=10
+ENDTIME=$(($STARTYEAR + $RUNLENGTH))
+INNAME=$OUTNAMEFULL
+OUTNAME=ssa_${RUNLENGTH}a.nc
+OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
+TSNAME=ts_${OUTNAMEFULL}
+EXNAME=ex_${OUTNAMEFULL}
+TSTIMES=$STARTYEAR:$STEP:$ENDTIME
+EXTIMES=$STARTYEAR:$STEP:$ENDTIME
+
+echo
+echo "$SCRIPTNAME  SSA run with elevation-dependent mass balance for $RUNLENGTH years on ${GS}m grid"
+cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
+     -ts_file $TSNAME -ts_times $TSTIMES \
+     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
+     -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
+$PISM_DO $cmd
+$PISM_DO "flowline.py -c -o $OUTNAME $OUTNAMEFULL"
