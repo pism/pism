@@ -247,6 +247,11 @@ PetscErrorCode IceGrid::get_dzMIN_dzMAX_spacingtype() {
 //! \brief Computes the number of processors in the X- and Y-directions.
 void IceGrid::compute_nprocs() {
 
+  if (My <= 0) {
+    PetscPrintf(com, "PISM ERROR: 'My' is invalid. Exiting...\n");
+    PISMEnd();
+  }
+
   Nx = (PetscInt)(0.5 + sqrt(((double)Mx)*((double)size)/((double)My)));
 
   if (Nx == 0) Nx = 1;
@@ -320,19 +325,19 @@ PetscErrorCode IceGrid::createDA() {
   PetscErrorCode ierr;
 
   if (Mx < 3) {
-    SETERRQ(1, "IceGrid::set_horizontal_dims(): Mx has to be at least 3.");
+    SETERRQ(1, "IceGrid::createDA(): Mx has to be at least 3.");
   }
 
   if (My < 3) {
-    SETERRQ(2, "IceGrid::set_horizontal_dims(): My has to be at least 3.");
+    SETERRQ(2, "IceGrid::createDA(): My has to be at least 3.");
   }
 
   if (Lx <= 0) {
-    SETERRQ(3, "IceGrid::set_horizontal_dims(): Lx has to be positive.");
+    SETERRQ(3, "IceGrid::createDA(): Lx has to be positive.");
   }
 
   if (Ly <= 0) {
-    SETERRQ(3, "IceGrid::set_horizontal_dims(): Ly has to be positive.");
+    SETERRQ(3, "IceGrid::createDA(): Ly has to be positive.");
   }
 
   if (da2 != PETSC_NULL)
@@ -728,5 +733,40 @@ vector<PetscReal> IceGrid::compute_interp_weights(PetscReal X, PetscReal Y) {
   result[3] = alpha * (1 - beta);
 
   return result;
+}
+
+//! \brief Checks grid parameters usually set at bootstrapping for validity.
+void IceGrid::check_parameters() {
+
+  if (Mx < 3) {
+    PetscPrintf(com, "PISM ERROR: Mx has to be at least 3.\n");
+    PISMEnd();
+  }
+
+  if (My < 3) {
+    PetscPrintf(com, "PISM ERROR: My has to be at least 3.\n");
+    PISMEnd();
+  }
+
+  if (Mz < 2) {
+    PetscPrintf(com, "PISM ERROR: Mz must be at least 2.\n");
+    PISMEnd();
+  }
+
+  if (Lx <= 0) {
+    PetscPrintf(com, "PISM ERROR: Lx has to be positive.\n");
+    PISMEnd();
+  }
+
+  if (Ly <= 0) {
+    PetscPrintf(com, "PISM ERROR: Ly has to be positive.\n");
+    PISMEnd();
+  }
+
+  if (Lz <= 0) {
+    PetscPrintf(com, "PISM ERROR: Lz must be positive.\n");
+    PISMEnd();
+  }
+
 }
 

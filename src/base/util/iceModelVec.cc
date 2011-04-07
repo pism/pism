@@ -686,9 +686,11 @@ PetscErrorCode IceModelVec::checkCompatibility(const char* func, IceModelVec &ot
 
   ierr = VecGetSize(v, &X_size); CHKERRQ(ierr);
   ierr = VecGetSize(other.v, &Y_size); CHKERRQ(ierr);
-  if (X_size != Y_size)
-    SETERRQ3(1, "IceModelVec::%s(...): incompatible Vec sizes (called as %s.%s(...))\n",
-	     func, name.c_str(), func);
+  if (X_size != Y_size) {
+    PetscPrintf(grid->com, "foo\n");
+    SETERRQ4(1, "IceModelVec::%s(...): incompatible Vec sizes (called as %s.%s(%s))\n",
+	     func, name.c_str(), func, other.name.c_str());
+  }
 
 
   return 0;

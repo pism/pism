@@ -109,6 +109,8 @@ public:
                                PetscInt &i, PetscInt &j);
   vector<PetscReal> compute_interp_weights(PetscReal x, PetscReal y);
 
+  void check_parameters();
+
   void compute_nprocs();
   void compute_ownership_ranges();
   PetscErrorCode compute_viewer_size(int target, int &x, int &y);

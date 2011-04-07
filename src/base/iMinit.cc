@@ -382,6 +382,8 @@ PetscErrorCode IceModel::grid_setup() {
   // might need to know what year it is.
   ierr = set_time_from_options(); CHKERRQ(ierr);
 
+  grid.check_parameters();
+
   ierr = grid.createDA(); CHKERRQ(ierr);
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);

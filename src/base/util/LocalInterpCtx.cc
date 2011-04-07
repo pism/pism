@@ -70,7 +70,7 @@ LocalInterpCtx::LocalInterpCtx(grid_info g, IceGrid &grid) {
     PetscPrintf(com,
 		"    need  Lx < g.Lx,  but Lx = %5.4f km while g.Lx = %5.4f km\n"
 		"    ENDING ...\n",
-		Lx, g.Lx);
+		Lx/1000.0, g.Lx);
     PISMEnd();
   }
   if (g.Ly*slop < Ly) {
@@ -80,7 +80,7 @@ LocalInterpCtx::LocalInterpCtx(grid_info g, IceGrid &grid) {
     PetscPrintf(com,
 		"    need  Ly < g.Ly,  but Ly = %5.4f km while g.Ly = %5.4f km\n"
 		"    ENDING ...\n",
-		Ly, g.Ly);
+		Ly/1000.0, g.Ly);
    PISMEnd();
   }
 

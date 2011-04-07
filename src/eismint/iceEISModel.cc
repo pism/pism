@@ -60,9 +60,9 @@ PetscErrorCode IceEISModel::set_grid_defaults() {
 PetscErrorCode IceEISModel::set_expername_from_options() {
   PetscErrorCode      ierr;
 
-  string                eisIIexpername = "A";
-  char               temp;
-  bool          EISIIchosen;
+  string eisIIexpername = "A";
+  char temp = expername;
+  bool EISIIchosen;
   ierr = PISMOptionsString("-eisII", "EISMINT II experiment name",
 			   eisIIexpername, EISIIchosen);
             CHKERRQ(ierr);
