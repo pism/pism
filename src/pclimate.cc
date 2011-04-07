@@ -260,13 +260,11 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = usurf->write(filename, NC_FLOAT); CHKERRQ(ierr);
 
     // update surface and ocean models' outputs:
-    ierr = surface->ice_surface_mass_flux(pccyear, dt_update_years, *acab); CHKERRQ(ierr);
+    ierr = surface->update(pccyear, dt_update_years); CHKERRQ(ierr);
+    ierr = ocean->update(pccyear, dt_update_years); CHKERRQ(ierr);
 
-    ierr = surface->ice_surface_temperature(pccyear, dt_update_years, *artm); CHKERRQ(ierr);
-
-    ierr = ocean->shelf_base_temperature(pccyear, dt_update_years, *shelfbasetemp); CHKERRQ(ierr);
-
-    ierr = ocean->shelf_base_mass_flux(pccyear, dt_update_years, *shelfbasemassflux); CHKERRQ(ierr);
+    ierr = surface->ice_surface_mass_flux(*acab); CHKERRQ(ierr);
+    ierr = surface->ice_surface_temperature(*artm); CHKERRQ(ierr);
 
     ierr = acab->write(filename, NC_FLOAT); CHKERRQ(ierr);
     ierr = artm->write(filename, NC_FLOAT); CHKERRQ(ierr);

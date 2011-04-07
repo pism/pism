@@ -735,12 +735,12 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
 
   // note acab and shelfbmassflux are IceModelVec2S owned by IceModel
   if (surface != PETSC_NULL) {
-    ierr = surface->ice_surface_mass_flux(grid.year, dt / secpera, acab);
+    ierr = surface->ice_surface_mass_flux(acab);
     CHKERRQ(ierr);
   } else { SETERRQ(2,"PISM ERROR: surface == PETSC_NULL"); }
 
   if (ocean != PETSC_NULL) {
-    ierr = ocean->shelf_base_mass_flux(grid.year, dt / secpera, shelfbmassflux);
+    ierr = ocean->shelf_base_mass_flux(shelfbmassflux);
     CHKERRQ(ierr);
   } else { SETERRQ(2,"PISM ERROR: ocean == PETSC_NULL"); }
 

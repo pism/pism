@@ -216,19 +216,16 @@ PetscErrorCode PSDirectForcing::write_variables(set<string> vars, string filenam
 }
 
 
-PetscErrorCode PSDirectForcing::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-                                                      IceModelVec2S &result) {
+PetscErrorCode PSDirectForcing::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = update(t_years, dt_years); CHKERRQ(ierr); 
-
   // "Periodize" the climate:
-  t_years = my_mod(t_years);
+  t = my_mod(t);
 
   if (enable_time_averaging) {
-    ierr = mass_flux.average(t_years, dt_years); CHKERRQ(ierr);
+    ierr = mass_flux.average(t, dt); CHKERRQ(ierr);
   } else {
-    ierr = mass_flux.get_record_years(t_years); CHKERRQ(ierr);
+    ierr = mass_flux.get_record_years(t); CHKERRQ(ierr);
   }
 
   ierr = mass_flux.copy_to(result); CHKERRQ(ierr); 
@@ -260,27 +257,24 @@ PetscErrorCode PSDirectForcing::ice_surface_mass_flux(PetscReal t_years, PetscRe
 }
 
 
-PetscErrorCode PSDirectForcing::ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-                                                        IceModelVec2S &result) {
+PetscErrorCode PSDirectForcing::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = update(t_years, dt_years); CHKERRQ(ierr); 
-
   // "Periodize" the climate:
-  t_years = my_mod(t_years);
+  t = my_mod(t);
 
   if (bc_artm_lapse_rate_set) {
     if (enable_time_averaging) {
-      ierr = bc_surface.average(t_years, dt_years); CHKERRQ(ierr);
+      ierr = bc_surface.average(t, dt); CHKERRQ(ierr);
     } else {
-      ierr = bc_surface.get_record_years(t_years); CHKERRQ(ierr);
+      ierr = bc_surface.get_record_years(t); CHKERRQ(ierr);
     }
   }
 
   if (enable_time_averaging) {
-    ierr = temperature.average(t_years, dt_years); CHKERRQ(ierr);
+    ierr = temperature.average(t, dt); CHKERRQ(ierr);
   } else {
-    ierr = temperature.get_record_years(t_years); CHKERRQ(ierr);
+    ierr = temperature.get_record_years(t); CHKERRQ(ierr);
   }
 
   ierr = temperature.copy_to(result); CHKERRQ(ierr); 

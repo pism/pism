@@ -48,14 +48,12 @@ PetscErrorCode POConstant::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode POConstant::sea_level_elevation(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-					       PetscReal &result) {
+PetscErrorCode POConstant::sea_level_elevation(PetscReal &result) {
   result = sea_level;
   return 0;
 }
 
-PetscErrorCode POConstant::shelf_base_temperature(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						  IceModelVec2S &result) {
+PetscErrorCode POConstant::shelf_base_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   const PetscScalar T0 = config.get("water_triple_point_temperature"), // K
@@ -80,8 +78,7 @@ PetscErrorCode POConstant::shelf_base_temperature(PetscReal /*t_years*/, PetscRe
 }
 
 //! Computes mass flux in ice-equivalent m s-1, from assumption that basal heat flux rate converts to mass flux.
-PetscErrorCode POConstant::shelf_base_mass_flux(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						IceModelVec2S &result) {
+PetscErrorCode POConstant::shelf_base_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PetscReal L = config.get("water_latent_heat_fusion"),
     rho = config.get("ice_density"),
@@ -126,7 +123,7 @@ PetscErrorCode POConstant::write_variables(set<string> vars, string filename) {
     }
 
     ierr = tmp.set_metadata(shelfbtemp, 0); CHKERRQ(ierr);
-    ierr = shelf_base_temperature(0, 0, tmp); CHKERRQ(ierr);
+    ierr = shelf_base_temperature(tmp); CHKERRQ(ierr);
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
@@ -136,7 +133,7 @@ PetscErrorCode POConstant::write_variables(set<string> vars, string filename) {
     }
 
     ierr = tmp.set_metadata(shelfbmassflux, 0); CHKERRQ(ierr);
-    ierr = shelf_base_mass_flux(0, 0, tmp); CHKERRQ(ierr);
+    ierr = shelf_base_mass_flux(tmp); CHKERRQ(ierr);
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
@@ -195,12 +192,11 @@ PetscErrorCode POForcing::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode POForcing::sea_level_elevation(PetscReal t_years, PetscReal dt_years,
-					      PetscReal &result) {
+PetscErrorCode POForcing::sea_level_elevation(PetscReal &result) {
   PetscErrorCode ierr;
-  double T = t_years + 0.5 * dt_years;
+  double T = t + 0.5 * dt;
 
-  ierr = input_model->sea_level_elevation(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = input_model->sea_level_elevation(result); CHKERRQ(ierr);
 
   if (dSLforcing != NULL)
     result += (*dSLforcing)(T);
@@ -209,20 +205,18 @@ PetscErrorCode POForcing::sea_level_elevation(PetscReal t_years, PetscReal dt_ye
 }
 
 
-PetscErrorCode POForcing::shelf_base_temperature(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2S &result) {
+PetscErrorCode POForcing::shelf_base_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = input_model->shelf_base_temperature(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = input_model->shelf_base_temperature(result); CHKERRQ(ierr);
 
   return 0;
 }
 
-PetscErrorCode POForcing::shelf_base_mass_flux(PetscReal t_years, PetscReal dt_years,
-					       IceModelVec2S &result) {
+PetscErrorCode POForcing::shelf_base_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = input_model->shelf_base_mass_flux(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = input_model->shelf_base_mass_flux(result); CHKERRQ(ierr);
 
   return 0;
 }

@@ -215,8 +215,8 @@ PetscErrorCode IceModel::check_maximum_thickness() {
   // PISMSurfaceModel.
 
   if (surface != PETSC_NULL) {
-    ierr = surface->ice_surface_temperature(grid.year, 0.0, artm); CHKERRQ(ierr);
-    ierr = surface->ice_surface_liquid_water_fraction(grid.year, 0.0, liqfrac_surface); CHKERRQ(ierr);
+    ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
+    ierr = surface->ice_surface_liquid_water_fraction(liqfrac_surface); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }

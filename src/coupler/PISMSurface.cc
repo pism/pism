@@ -45,8 +45,7 @@ PetscErrorCode PISMSurfaceModel::init(PISMVars &vars) {
  * Basic surface models currently implemented in PISM do not model the mass of
  * the surface layer.
  */
-PetscErrorCode PISMSurfaceModel::mass_held_in_surface_layer(PetscReal /*t_years*/, PetscReal /*dt_years*/, 
-                                                            IceModelVec2S &result) {
+PetscErrorCode PISMSurfaceModel::mass_held_in_surface_layer(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = result.set(0.0); CHKERRQ(ierr);
@@ -61,8 +60,7 @@ PetscErrorCode PISMSurfaceModel::mass_held_in_surface_layer(PetscReal /*t_years*
  * Basic surface models currently implemented in PISM do not model surface
  * layer thickness.
  */
-PetscErrorCode PISMSurfaceModel::surface_layer_thickness(PetscReal /*t_years*/, PetscReal /*dt_years*/, 
-                                                         IceModelVec2S &result) {
+PetscErrorCode PISMSurfaceModel::surface_layer_thickness(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = result.set(0.0); CHKERRQ(ierr);
@@ -74,9 +72,7 @@ PetscErrorCode PISMSurfaceModel::surface_layer_thickness(PetscReal /*t_years*/, 
 /*!
  * Most PISM surface models return 0.
  */
-PetscErrorCode PISMSurfaceModel::ice_surface_liquid_water_fraction(PetscReal /*t_years*/,
-                                                                   PetscReal /*dt_years*/,
-                                                                   IceModelVec2S &result) {
+PetscErrorCode PISMSurfaceModel::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = result.set(0.0); CHKERRQ(ierr);
@@ -123,10 +119,9 @@ PetscErrorCode PSSimple::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSSimple::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-					       IceModelVec2S &result) {
+PetscErrorCode PSSimple::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = atmosphere->mean_precip(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = atmosphere->mean_precip(result); CHKERRQ(ierr);
 
   string history = result.string_attr("history");
   history = "re-interpreted precipitation as surface mass balance (PSSimple)\n" + history;
@@ -135,10 +130,9 @@ PetscErrorCode PSSimple::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_y
   return 0;
 }
 
-PetscErrorCode PSSimple::ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2S &result) {
+PetscErrorCode PSSimple::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = atmosphere->mean_annual_temp(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = atmosphere->mean_annual_temp(result); CHKERRQ(ierr);
 
   string history = result.string_attr("history");
   history = "re-interpreted mean annual 2 m air temperature as instantaneous ice temperature at the ice surface (PSSimple)\n" + history;
@@ -202,8 +196,7 @@ PetscErrorCode PSConstant::init(PISMVars &/*vars*/) {
   return 0;
 }
 
-PetscErrorCode PSConstant::ice_surface_mass_flux(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						 IceModelVec2S &result) {
+PetscErrorCode PSConstant::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
   string history  = "read from " + input_file + "\n";
 
@@ -213,8 +206,7 @@ PetscErrorCode PSConstant::ice_surface_mass_flux(PetscReal /*t_years*/, PetscRea
   return 0;
 }
 
-PetscErrorCode PSConstant::ice_surface_temperature(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						   IceModelVec2S &result) {
+PetscErrorCode PSConstant::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
   string history  = "read from " + input_file + "\n";
 
@@ -455,6 +447,12 @@ PetscErrorCode PSTemperatureIndex::update(PetscReal t_years, PetscReal dt_years)
   t  = t_years;
   dt = dt_years;
 
+  // This flag is set in pclimate to allow testing the model. It does not
+  // affect the normal operation of PISM.
+  if (config.get_flag("pdd_limit_timestep")) {
+    dt_years = PetscMin(dt_years, 1.0);
+  }
+
   if (pdd_annualize) {
     if (t_years + dt_years > next_pdd_update_year) {
       ierr = verbPrintf(3, grid.com, 
@@ -478,7 +476,7 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal t_years, PetscReal 
 
   // This is a point-wise (local) computation, so we can use "acab" to store
   // precipitation:
-  ierr = atmosphere->mean_precip(t_years, dt_years, acab); CHKERRQ(ierr);
+  ierr = atmosphere->mean_precip(acab); CHKERRQ(ierr);
 
   // set up air temperature time series
   PetscInt Nseries;
@@ -582,17 +580,8 @@ PetscErrorCode PSTemperatureIndex::update_internal(PetscReal t_years, PetscReal 
 }
 
 
-PetscErrorCode PSTemperatureIndex::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-							 IceModelVec2S &result) {
+PetscErrorCode PSTemperatureIndex::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
-
-  // This flag is set in pclimate to allow testing the model. It does not
-  // affect the normal operation of PISM.
-  if (config.get_flag("pdd_limit_timestep")) {
-    dt_years = PetscMin(dt_years, 1.0);
-  }
-
-  ierr = update(t_years, dt_years); CHKERRQ(ierr);
 
   ierr = acab.copy_to(result); CHKERRQ(ierr);
 
@@ -600,10 +589,9 @@ PetscErrorCode PSTemperatureIndex::ice_surface_mass_flux(PetscReal t_years, Pets
 }
 
 
-PetscErrorCode PSTemperatureIndex::ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-							   IceModelVec2S &result) {
+PetscErrorCode PSTemperatureIndex::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = atmosphere->mean_annual_temp(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = atmosphere->mean_annual_temp(result); CHKERRQ(ierr);
 
   string history = result.string_attr("history");
   history = "re-interpreted mean annual near-surface air temperature as instantaneous ice temperature at the ice surface\n" + history;
@@ -853,22 +841,21 @@ intended volume.
 \image html ivol_force_to_thk.png "\b Volume results from the -force_to_thk mechanism."
 \anchor ivol_force_to_thk
  */
-PetscErrorCode PSForceThickness::ice_surface_mass_flux(
-       PetscReal t_years, PetscReal dt_years, IceModelVec2S &result) {
+PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   // get the surface mass balance result from the next level up
-  ierr = input_model->ice_surface_mass_flux(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = input_model->ice_surface_mass_flux(result); CHKERRQ(ierr);
 
   ierr = verbPrintf(5, grid.com,
      "    updating surface mass balance using -force_to_thk mechanism ...");
      CHKERRQ(ierr);
     
   // force-to-thickness mechanism is only full-strength at end of run
-  const PetscScalar lambda = (t_years - grid.start_year) / (grid.end_year - grid.start_year);
+  const PetscScalar lambda = (t - grid.start_year) / (grid.end_year - grid.start_year);
   ierr = verbPrintf(5, grid.com,
 		    " (t_years = %.3f a, start_year = %.3f a, end_year = %.3f a, alpha = %.5f, lambda = %.3f)\n",
-		    t_years, grid.start_year , grid.end_year, alpha, lambda); CHKERRQ(ierr);
+		    t, grid.start_year , grid.end_year, alpha, lambda); CHKERRQ(ierr);
   if ((lambda < 0.0) || (lambda > 1.0)) {
     SETERRQ(4,"computed lambda (for -force_to_thk) out of range; in updateSurfMassFluxAndProvide()");
   }
@@ -898,11 +885,10 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(
 }
 
 //! Does not modify ice surface temperature.
-PetscErrorCode PSForceThickness::ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-							 IceModelVec2S &result) {
+PetscErrorCode PSForceThickness::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = input_model->ice_surface_temperature(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
 
   return 0;
 }

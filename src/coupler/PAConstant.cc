@@ -73,8 +73,7 @@ PetscErrorCode PAConstant::init(PISMVars &/*vars*/) {
   return 0;
 }
 
-PetscErrorCode PAConstant::mean_precip(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						   IceModelVec2S &result) {
+PetscErrorCode PAConstant::mean_precip(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   string precip_history = "read from " + input_file + "\n";
@@ -84,8 +83,7 @@ PetscErrorCode PAConstant::mean_precip(PetscReal /*t_years*/, PetscReal /*dt_yea
   return 0;
 }
 
-PetscErrorCode PAConstant::mean_annual_temp(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-							IceModelVec2S &result) {
+PetscErrorCode PAConstant::mean_annual_temp(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   string temp_history = "read from " + input_file + "\n";
@@ -114,11 +112,10 @@ PetscErrorCode PAConstant::temp_time_series(int i, int j, int N,
   return 0;
 }
 
-PetscErrorCode PAConstant::temp_snapshot(PetscReal t_years, PetscReal dt_years,
-					 IceModelVec2S &result) {
+PetscErrorCode PAConstant::temp_snapshot(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = mean_annual_temp(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = mean_annual_temp(result); CHKERRQ(ierr);
 
   return 0;
 }
@@ -160,7 +157,7 @@ PetscErrorCode PAConstant::write_variables(set<string> vars, string filename) {
     ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
     ierr = airtemp.set_metadata(airtemp_var, 0); CHKERRQ(ierr);
 
-    ierr = temp_snapshot(grid.year, 0, airtemp); CHKERRQ(ierr);
+    ierr = temp_snapshot(airtemp); CHKERRQ(ierr);
 
     ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
   }

@@ -53,7 +53,7 @@ PetscErrorCode IceModel::eigenCalving() {
   //} else { SETERRQ(1,"PISM ERROR: surface == NULL"); }
 
   if (ocean != NULL) {
-	ierr = ocean->sea_level_elevation(grid.year, dt / secpera, currentSeaLevel); CHKERRQ(ierr);
+	ierr = ocean->sea_level_elevation(currentSeaLevel); CHKERRQ(ierr);
     //ierr = ocean->shelf_base_mass_flux(grid.year, dt / secpera, shelfbmassflux); CHKERRQ(ierr);
   } else { SETERRQ(2,"PISM ERROR: ocean == NULL"); }
 
@@ -230,7 +230,7 @@ PetscErrorCode IceModel::calvingAtThickness() {
 
   PetscReal currentSeaLevel;
   if (ocean != NULL) {
-	ierr = ocean->sea_level_elevation(grid.year, dt / secpera, currentSeaLevel); CHKERRQ(ierr);
+	ierr = ocean->sea_level_elevation(currentSeaLevel); CHKERRQ(ierr);
   } else { SETERRQ(2,"PISM ERROR: ocean == NULL"); }
 
   const PetscScalar Hcalving=config.get("calving_at_thickness");

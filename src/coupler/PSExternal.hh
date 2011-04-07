@@ -68,10 +68,8 @@ public:
   { delete input; }
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}
 
-  virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-					       IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2S &result);
+  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
+  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
   virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
 protected:

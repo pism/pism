@@ -122,12 +122,12 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
 
   // will need coupler fields in ice-free land and 
   if (surface != PETSC_NULL) {
-    ierr = surface->ice_surface_temperature(t_years_TempAge, dt_years_TempAge, artm); CHKERRQ(ierr);
+    ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
   } else {
     SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
   }
   if (ocean != PETSC_NULL) {
-    ierr = ocean->shelf_base_temperature(t_years_TempAge, dt_years_TempAge, shelfbtemp); CHKERRQ(ierr);
+    ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
   } else {
     SETERRQ(5,"PISM ERROR: ocean == PETSC_NULL");
   }
@@ -334,13 +334,13 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     PetscScalar  **Hmelt, **basalMeltRate;
   
     if (surface != PETSC_NULL) {
-      ierr = surface->ice_surface_temperature(t_years_TempAge, dt_years_TempAge, artm); CHKERRQ(ierr);
+      ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
     } else {
       SETERRQ(1,"PISM ERROR: surface == PETSC_NULL");
     }
     if (ocean != PETSC_NULL) {
-      ierr = ocean->shelf_base_mass_flux(t_years_TempAge, dt_years_TempAge, shelfbmassflux); CHKERRQ(ierr);
-      ierr = ocean->shelf_base_temperature(t_years_TempAge, dt_years_TempAge, shelfbtemp); CHKERRQ(ierr);
+      ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
+      ierr = ocean->shelf_base_temperature(shelfbtemp); CHKERRQ(ierr);
     } else {
       SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
     }

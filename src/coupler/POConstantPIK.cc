@@ -49,14 +49,12 @@ PetscErrorCode POConstantPIK::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode POConstantPIK::sea_level_elevation(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-					       PetscReal &result) {
+PetscErrorCode POConstantPIK::sea_level_elevation(PetscReal &result) {
   result = sea_level;
   return 0;
 }
 
-PetscErrorCode POConstantPIK::shelf_base_temperature(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						  IceModelVec2S &result) {
+PetscErrorCode POConstantPIK::shelf_base_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   const PetscScalar T0 = config.get("water_triple_point_temperature"), // K
@@ -81,8 +79,7 @@ PetscErrorCode POConstantPIK::shelf_base_temperature(PetscReal /*t_years*/, Pets
 }
 
 //! Computes mass flux in ice-equivalent m s-1, from assumption that basal heat flux rate converts to mass flux.
-PetscErrorCode POConstantPIK::shelf_base_mass_flux(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						IceModelVec2S &result) {
+PetscErrorCode POConstantPIK::shelf_base_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   PetscReal L = config.get("water_latent_heat_fusion"),
@@ -164,7 +161,7 @@ PetscErrorCode POConstantPIK::write_variables(set<string> vars, string filename)
     }
 
     ierr = tmp.set_metadata(shelfbtemp, 0); CHKERRQ(ierr);
-    ierr = shelf_base_temperature(0, 0, tmp); CHKERRQ(ierr);
+    ierr = shelf_base_temperature(tmp); CHKERRQ(ierr);
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }
 
@@ -174,7 +171,7 @@ PetscErrorCode POConstantPIK::write_variables(set<string> vars, string filename)
     }
 
     ierr = tmp.set_metadata(shelfbmassflux, 0); CHKERRQ(ierr);
-    ierr = shelf_base_mass_flux(0, 0, tmp); CHKERRQ(ierr);
+    ierr = shelf_base_mass_flux(tmp); CHKERRQ(ierr);
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }
 

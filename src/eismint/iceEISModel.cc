@@ -386,9 +386,15 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
   ierr = vh.set(0.0); CHKERRQ(ierr);
   ierr = vH.set(0.0); CHKERRQ(ierr);
 
+  ierr = regrid(2); CHKERRQ(ierr);
+  
+  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
+
   // this IceModel bootstrap method should do right thing because of variable
   //   settings above and init of coupler above
   ierr = putTempAtDepth(); CHKERRQ(ierr);
+
+  ierr = regrid(3); CHKERRQ(ierr);
 
   return 0;
 }

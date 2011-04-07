@@ -38,10 +38,10 @@ public:
   // Does not have an atmosphere model.
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &/*dict*/) {}
 
-  virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2S &result);
+  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
+  { t = t_years; dt = dt_years; return 0; } // do nothing
+  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
+  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual void add_vars_to_output(string keyword, set<string> &result);

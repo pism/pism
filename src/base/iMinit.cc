@@ -421,14 +421,13 @@ PetscErrorCode IceModel::model_state_setup() {
 
   if (i_set) {
     ierr = initFromFile(filename.c_str()); CHKERRQ(ierr);
+
+    ierr = regrid(0); CHKERRQ(ierr);
+    // Check consistency of geometry after initialization:
+    ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
   } else {
     ierr = set_vars_from_options(); CHKERRQ(ierr);
   }
-
-  ierr = regrid(); CHKERRQ(ierr);
-
-  // Check consistency of geometry after initialization:
-  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr);
 
   // Initialize a bed deformation model (if needed); this should go after
   // the regrid() call.
@@ -606,14 +605,13 @@ PetscErrorCode IceModel::init_couplers() {
   ierr = verbPrintf(3, grid.com,
 		    "Initializing boundary models...\n"); CHKERRQ(ierr);
 
- if (surface != PETSC_NULL) {
-   ierr = surface->init(variables); CHKERRQ(ierr);
+  if (surface != PETSC_NULL) {
+    ierr = surface->init(variables); CHKERRQ(ierr);
   } else {  SETERRQ(2,"PISM ERROR: surface == PETSC_NULL");  }
 
- if (ocean != PETSC_NULL) {
-   ierr = ocean->init(variables); CHKERRQ(ierr);
+  if (ocean != PETSC_NULL) {
+    ierr = ocean->init(variables); CHKERRQ(ierr);
   } else {  SETERRQ(2,"PISM ERROR: ocean == PETSC_NULL");  }
-
 
   return 0;
 }

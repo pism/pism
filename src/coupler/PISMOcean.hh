@@ -33,12 +33,9 @@ public:
     sea_level = 0;
   }
   virtual ~PISMOceanModel() {};
-  virtual PetscErrorCode sea_level_elevation(PetscReal t_years, PetscReal dt_years,
-					     PetscReal &result) = 0;
-  virtual PetscErrorCode shelf_base_temperature(PetscReal t_years, PetscReal dt_years,
-						IceModelVec2S &result) = 0;
-  virtual PetscErrorCode shelf_base_mass_flux(PetscReal t_years, PetscReal dt_years,
-					      IceModelVec2S &result) = 0;
+  virtual PetscErrorCode sea_level_elevation(PetscReal &result) = 0;
+  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result) = 0;
+  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result) = 0;
 protected:
   PetscReal sea_level;
 };
@@ -51,12 +48,13 @@ public:
   POConstant(IceGrid &g, const NCConfigVariable &conf);
   virtual ~POConstant() {}
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode sea_level_elevation(PetscReal t_years, PetscReal dt_years,
-					     PetscReal &result);
-  virtual PetscErrorCode shelf_base_temperature(PetscReal t_years, PetscReal dt_years,
-						IceModelVec2S &result);
-  virtual PetscErrorCode shelf_base_mass_flux(PetscReal t_years, PetscReal dt_years,
-					      IceModelVec2S &result);
+
+  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
+  { t = t_years; dt = dt_years; return 0; } // do nothing
+
+  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
+  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
+  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc,
@@ -126,12 +124,11 @@ public:
   }
 
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode sea_level_elevation(PetscReal t_years, PetscReal dt_years,
-					     PetscReal &result);
-  virtual PetscErrorCode shelf_base_temperature(PetscReal t_years, PetscReal dt_years,
-						IceModelVec2S &result);
-  virtual PetscErrorCode shelf_base_mass_flux(PetscReal t_years, PetscReal dt_years,
-					      IceModelVec2S &result);
+  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
+  { t = t_years; dt = dt_years; return 0; } // do nothing
+  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
+  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
+  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 protected:
   string forcing_file;
   Timeseries *dSLforcing;	//!< sea level forcing time-series
@@ -148,12 +145,11 @@ public:
   POConstantPIK(IceGrid &g, const NCConfigVariable &conf);
   virtual ~POConstantPIK() {}
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode sea_level_elevation(PetscReal t_years, PetscReal dt_years,
-					     PetscReal &result);
-  virtual PetscErrorCode shelf_base_temperature(PetscReal t_years, PetscReal dt_years,
-						IceModelVec2S &result);
-  virtual PetscErrorCode shelf_base_mass_flux(PetscReal t_years, PetscReal dt_years,
-					      IceModelVec2S &result);
+  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
+  { t = t_years; dt = dt_years; return 0; } // do nothing
+  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
+  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
+  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
 
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc,

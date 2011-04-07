@@ -52,7 +52,7 @@ PetscErrorCode IceModel::update_mask() {
 
   if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal currentSeaLevel;
-  ierr = ocean->sea_level_elevation(grid.year, dt / secpera, currentSeaLevel); CHKERRQ(ierr);
+  ierr = ocean->sea_level_elevation(currentSeaLevel); CHKERRQ(ierr);
 
   bool use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded"),
     use_ssa_velocity = config.get_flag("use_ssa_velocity");
@@ -115,7 +115,7 @@ PetscErrorCode IceModel::update_surface_elevation() {
 
   if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal currentSeaLevel;
-  ierr = ocean->sea_level_elevation(grid.year, dt / secpera, currentSeaLevel); CHKERRQ(ierr);
+  ierr = ocean->sea_level_elevation(currentSeaLevel); CHKERRQ(ierr);
 
   bool is_dry_simulation = config.get_flag("is_dry_simulation");
 
@@ -246,11 +246,11 @@ PetscErrorCode IceModel::massContExplicitStep() {
     include_bmr_in_continuity = config.get_flag("include_bmr_in_continuity");
 
   if (surface != NULL) {
-    ierr = surface->ice_surface_mass_flux(grid.year, dt / secpera, acab); CHKERRQ(ierr);
+    ierr = surface->ice_surface_mass_flux(acab); CHKERRQ(ierr);
   } else { SETERRQ(1,"PISM ERROR: surface == NULL"); }
 
   if (ocean != NULL) {
-    ierr = ocean->shelf_base_mass_flux(grid.year, dt / secpera, shelfbmassflux); CHKERRQ(ierr);
+    ierr = ocean->shelf_base_mass_flux(shelfbmassflux); CHKERRQ(ierr);
   } else { SETERRQ(2,"PISM ERROR: ocean == NULL"); }
 
   IceModelVec2S vHnew = vWork2d[0];

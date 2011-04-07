@@ -42,11 +42,9 @@ public:
 
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 
-  virtual PetscErrorCode ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-					       IceModelVec2S &result);
+  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
 
-  virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2S &result);
+  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
 
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input)
   { delete input; }

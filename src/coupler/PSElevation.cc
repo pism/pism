@@ -137,8 +137,7 @@ PetscErrorCode PSElevation::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSElevation::ice_surface_mass_flux(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						 IceModelVec2S &result) {
+PetscErrorCode PSElevation::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
   PetscReal dabdz = -acab_min/(z_ELA - z_acab_min);
   PetscReal dacdz = acab_max/(z_acab_max - z_ELA);
@@ -180,8 +179,7 @@ PetscErrorCode PSElevation::ice_surface_mass_flux(PetscReal /*t_years*/, PetscRe
   return 0;
 }
 
-PetscErrorCode PSElevation::ice_surface_temperature(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						   IceModelVec2S &result) {
+PetscErrorCode PSElevation::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
   string history  = "elevation-dependent ice surface temperature \n";
 
@@ -250,7 +248,7 @@ PetscErrorCode PSElevation::write_variables(set<string> vars, string filename) {
     ierr = tmp.create(grid, "artm", false); CHKERRQ(ierr);
     ierr = tmp.set_metadata(artm, 0); CHKERRQ(ierr);
 
-    ierr = ice_surface_temperature(t, dt, tmp); CHKERRQ(ierr);
+    ierr = ice_surface_temperature(tmp); CHKERRQ(ierr);
 
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }
@@ -260,7 +258,7 @@ PetscErrorCode PSElevation::write_variables(set<string> vars, string filename) {
     ierr = tmp.create(grid, "acab", false); CHKERRQ(ierr);
     ierr = tmp.set_metadata(acab, 0); CHKERRQ(ierr);
 
-    ierr = ice_surface_mass_flux(t, dt, tmp); CHKERRQ(ierr);
+    ierr = ice_surface_mass_flux(tmp); CHKERRQ(ierr);
     tmp.write_in_glaciological_units = true;
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }

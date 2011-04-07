@@ -42,8 +42,7 @@ public:
 
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
 
-  virtual PetscErrorCode ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-						 IceModelVec2S &result);
+  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
 
 protected:
   IceModelVec2S *surface, *vH;

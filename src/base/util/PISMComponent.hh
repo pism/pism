@@ -161,8 +161,7 @@ public:
   { dt_years = -1; return 0; }
 
   //! Update a model, if necessary.
-  virtual PetscErrorCode update(PetscReal /*t_years*/, PetscReal /*dt_years*/)
-  { return 0; }
+  virtual PetscErrorCode update(PetscReal /*t_years*/, PetscReal /*dt_years*/) = 0;
 
 protected:
   PetscReal t,			//!< Last time used as an argument for the update() method.

@@ -35,15 +35,11 @@ public:
   PISMAtmosphereModel(IceGrid &g, const NCConfigVariable &conf)
     : PISMComponent_TS(g, conf) {};
 
-  //! \brief Sets result to the mean precipitation over the time interval
-  //! (t_years, t_years + dt_years), in m/s ice equivalent.
-  virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
-				     IceModelVec2S &result) = 0;
+  //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
+  virtual PetscErrorCode mean_precip(IceModelVec2S &result) = 0;
 
-  //! \brief Sets result to the mean annual near-surface air temperature corresponding
-  //! to the time interval (t_years, t_years + dt_years), in degrees Kelvin.
-  virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-					  IceModelVec2S &result) = 0;
+  //! \brief Sets result to the mean annual near-surface air temperature, in degrees Kelvin.
+  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result) = 0;
 
   virtual PetscErrorCode begin_pointwise_access() = 0;
   virtual PetscErrorCode end_pointwise_access() = 0;
@@ -54,10 +50,9 @@ public:
   //! begin_pointwise_access() and end_pointwise_access()
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values) = 0;
-  //! \brief Sets result to a snapshot of temperature for the interval
-  //! (t_years, dt_years).
-  virtual PetscErrorCode temp_snapshot(PetscReal t_years, PetscReal dt_years,
-				       IceModelVec2S &result) = 0;
+  //! \brief Sets result to a snapshot of temperature for the time
+  //! t_years. (For disgnostic purposes.)
+  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result) = 0;
 };
 
 
@@ -68,10 +63,10 @@ public:
   PAConstant(IceGrid &g, const NCConfigVariable &conf)
     : PISMAtmosphereModel(g, conf) {};
   virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
-				     IceModelVec2S &result);
-  virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-					  IceModelVec2S &result);
+  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
+  { t = t_years; dt = dt_years; return 0; } // do nothing
+  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
+  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
@@ -79,8 +74,7 @@ public:
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
-  virtual PetscErrorCode temp_snapshot(PetscReal t_years, PetscReal dt_years,
-				       IceModelVec2S &result);
+  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 protected:
   string input_file;
   IceModelVec2S precip, temperature;
@@ -96,22 +90,19 @@ class PAYearlyCycle : public PISMAtmosphereModel {
 public:
   PAYearlyCycle(IceGrid &g, const NCConfigVariable &conf)
     : PISMAtmosphereModel(g, conf) {}
-  virtual PetscErrorCode init(PISMVars &vars);	      // nb
+  virtual PetscErrorCode init(PISMVars &vars);
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   //! This method implements the parameterization.
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years) = 0;
-  virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
-				     IceModelVec2S &result);
-  virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-					  IceModelVec2S &result);
+  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
+  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result);
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values);
-  virtual PetscErrorCode temp_snapshot(PetscReal t_years, PetscReal dt_years,
-				       IceModelVec2S &result);
+  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 protected:
   PISMVars *variables;
   PetscScalar snow_temp_july_day;
@@ -140,8 +131,7 @@ public:
   }
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
-  virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
-				     IceModelVec2S &result);
+  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
 protected:
   bool paleo_precipitation_correction;
   Timeseries *dTforcing;
@@ -180,8 +170,7 @@ public:
   }
   virtual ~PALapseRates() {}
   virtual PetscErrorCode init(PISMVars &vars); 
-  virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-					  IceModelVec2S &result); 
+  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
   virtual PetscErrorCode begin_pointwise_access(); 
   virtual PetscErrorCode end_pointwise_access();   
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
@@ -240,16 +229,13 @@ public:
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
-  virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
-				     IceModelVec2S &result);
-  virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-					  IceModelVec2S &result); 
+  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
+  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();  
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values);
-  virtual PetscErrorCode temp_snapshot(PetscReal t_years, PetscReal dt_years,
-				       IceModelVec2S &result);
+  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 protected:
   Timeseries *dTforcing;
   DiagnosticTimeseries *delta_T; //!< for diagnostic time series output (-ts_vars?)

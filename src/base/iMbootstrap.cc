@@ -29,6 +29,40 @@ See chapter 4 of the User's Manual.  We read only 2D information from the bootst
 PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   PetscErrorCode  ierr;
 
+  // Bootstrap 2D fields:
+  ierr = bootstrap_2d(filename); CHKERRQ(ierr);
+
+  // Regrid 2D fields:
+  ierr = regrid(2); CHKERRQ(ierr);
+
+  // Check the consistency of geometry fields:
+  ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); 
+
+  // If ocean_kill is set, mark ice-free ocean with a special mask value:
+  ierr = mark_ocean_at_time_0(); CHKERRQ(ierr);
+
+  // Update couplers (because heuristics in bootstrap_3d() might need boundary
+  // conditions provided by couplers):
+  if (surface != NULL) {
+    ierr = surface->update(grid.year, 0); CHKERRQ(ierr);
+  } else SETERRQ(1, "surface == NULL");
+  if (ocean != NULL) {
+    ierr = ocean->update(grid.year, 0); CHKERRQ(ierr);
+  } else SETERRQ(1, "ocean == NULL");
+
+  // Fill 3D fields using heuristics:
+  ierr = bootstrap_3d(); CHKERRQ(ierr);
+
+  ierr = regrid(3); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode IceModel::bootstrap_2d(const char *filename) {
+  PetscErrorCode ierr;
+
   PISMIO nc(&grid);
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
 
@@ -61,7 +95,6 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
 		      "  WARNING: surface elevation 'usurf' found; IGNORING IT!\n");
 		      CHKERRQ(ierr);
   }
-
 
   ierr = verbPrintf(2, grid.com, 
 		    "  reading 2D model state variables by regridding ...\n"); CHKERRQ(ierr);
@@ -105,7 +138,6 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
     ierr = vPrinStrain2.set(0.0); CHKERRQ(ierr);
   }
 
-
   bool Lz_set;
   ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
   if ( !Lz_set ) {
@@ -124,8 +156,11 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
     CHKERRQ(ierr);
   }
 
-  // set mask and h; tell user what happened:
-  ierr = setMaskSurfaceElevation_bootstrap(); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode IceModel::bootstrap_3d() {
+  PetscErrorCode ierr;
 
   // set the initial age of the ice if appropriate
   if (config.get_flag("do_age")) {
@@ -146,83 +181,24 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
     CHKERRQ(ierr);
   }
 
-  ierr = verbPrintf(2, grid.com, "done reading %s; bootstrapping done\n",filename); CHKERRQ(ierr);
-
   return 0;
 }
 
-//! Determine surface and mask according to information in bootstrap file and options.
-/*!
-  grid.year has to be valid at the time of this call.
- */
-PetscErrorCode IceModel::setMaskSurfaceElevation_bootstrap() {
+PetscErrorCode IceModel::mark_ocean_at_time_0() {
   PetscErrorCode ierr;
 
-  bool do_ocean_kill = config.get_flag("ocean_kill");
+  if (config.get_flag("ocean_kill") == false) return 0;
 
-  double ocean_rho = config.get("sea_water_density");
-
-  ierr = verbPrintf(2, grid.com, 
-                    "  determining surface elevation by  usurf = topg + thk           (grounded ice)\n"
-                    "        and by flotation criterion  usurf = (1-rho_i/rho_w) thk  (floating ice)\n");
-  CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, grid.com,
-                    "  preliminary determination of mask for grounded/floating and sheet/dragging\n"); CHKERRQ(ierr);
-  if (do_ocean_kill) {
-    ierr = verbPrintf(2, grid.com,
-                      "    option -ocean_kill seen: floating ice mask=3; ice free ocean mask=7\n"); CHKERRQ(ierr);
-  }
-
-  if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
-  PetscReal currentSeaLevel;
-  ierr = ocean->sea_level_elevation(grid.year, 0, currentSeaLevel); CHKERRQ(ierr);
-           
-  ierr = vh.begin_access(); CHKERRQ(ierr);
-  ierr = vH.begin_access(); CHKERRQ(ierr);
-  ierr = vbed.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
-
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // take this opportunity to check that vH(i,j) >= 0
-      if (vH(i,j) < 0.0) {
-        SETERRQ3(2,"Thickness H=%5.4f is negative at point i=%d, j=%d",vH(i,j),i,j);
-      }
-      
-      if (vH(i,j) < 0.001) {  // if no ice
-        if (vbed(i,j) < 0.0) {
-          vh(i,j) = 0.0;
-          vMask(i,j) = do_ocean_kill ? MASK_OCEAN_AT_TIME_0 : MASK_ICE_FREE_OCEAN; // changed for clarity
-
-        } else {
-          vh(i,j) = vbed(i,j);
-          vMask(i,j) = MASK_GROUNDED;
-        } 
-      } else { // if positive ice thickness then check flotation criterion
-        const PetscScalar 
-          hgrounded = vbed(i,j) + vH(i,j),
-          hfloating = currentSeaLevel + (1.0 - ice->rho/ocean_rho) * vH(i,j); // FIXME task #7297
-        // check whether you are actually floating or grounded
-        if (hgrounded > hfloating) {
-          vh(i,j) = hgrounded; // actually grounded so set h
-          vMask(i,j) = MASK_GROUNDED;
-        } else {
-          vh(i,j) = hfloating; // actually floating so update h
-          vMask(i,j) = MASK_FLOATING;
-        }
-      }
+      if (vMask(i,j) == MASK_ICE_FREE_OCEAN)
+        vMask(i,j) = MASK_OCEAN_AT_TIME_0;
     }
   }
-
-  ierr =    vh.end_access(); CHKERRQ(ierr);
-  ierr =    vH.end_access(); CHKERRQ(ierr);
-  ierr =  vbed.end_access(); CHKERRQ(ierr);
   ierr = vMask.end_access(); CHKERRQ(ierr);
 
-  // go ahead and communicate mask and surface elev now; may be redundant communication?
-  ierr =    vh.beginGhostComm(); CHKERRQ(ierr);
-  ierr =    vh.endGhostComm(); CHKERRQ(ierr);
+  // Communicate mask values (just in case):
   ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
   ierr = vMask.endGhostComm(); CHKERRQ(ierr);
   return 0;
@@ -268,7 +244,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
   const bool do_cold = config.get_flag("do_cold_ice_methods");
 
   if (surface != NULL) {
-    ierr = surface->ice_surface_temperature(grid.year, 0.0, artm); CHKERRQ(ierr);
+    ierr = surface->ice_surface_temperature(artm); CHKERRQ(ierr);
   } else {
     SETERRQ(1, "PISM ERROR: surface == NULL");
   }

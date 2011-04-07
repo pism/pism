@@ -123,22 +123,16 @@ PetscErrorCode PSExternal::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSExternal::ice_surface_mass_flux(PetscReal t_years, PetscReal dt_years,
-                                            IceModelVec2S &result) {
+PetscErrorCode PSExternal::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
-
-  ierr = update(t_years, dt_years); CHKERRQ(ierr);
 
   ierr = acab.copy_to(result); CHKERRQ(ierr); 
 
   return 0;
 }
 
-PetscErrorCode PSExternal::ice_surface_temperature(PetscReal t_years, PetscReal dt_years,
-                                              IceModelVec2S &result) {
+PetscErrorCode PSExternal::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
-
-  ierr = update(t_years, dt_years); CHKERRQ(ierr);
 
   ierr = artm.copy_to(result); CHKERRQ(ierr); 
 

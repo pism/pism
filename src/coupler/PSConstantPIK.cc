@@ -84,8 +84,7 @@ PetscErrorCode PSConstantPIK::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PSConstantPIK::ice_surface_mass_flux(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						 IceModelVec2S &result) {
+PetscErrorCode PSConstantPIK::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
   string history  = "read from " + input_file + "\n";
 
@@ -95,8 +94,7 @@ PetscErrorCode PSConstantPIK::ice_surface_mass_flux(PetscReal /*t_years*/, Petsc
   return 0;
 }
 
-PetscErrorCode PSConstantPIK::ice_surface_temperature(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-						   IceModelVec2S &result) {
+PetscErrorCode PSConstantPIK::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
   string history  = "parmeterized ice surface temperature \n";
 

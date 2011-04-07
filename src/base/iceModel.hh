@@ -96,6 +96,11 @@ public:
 
   // see iMbootstrap.cc 
   virtual PetscErrorCode bootstrapFromFile(const char *fname);
+  virtual PetscErrorCode bootstrap_2d(const char *fname);
+  virtual PetscErrorCode bootstrap_3d();
+  virtual PetscErrorCode putTempAtDepth();
+  virtual PetscErrorCode mark_ocean_at_time_0();
+
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
@@ -239,10 +244,6 @@ protected:
   virtual PetscErrorCode bed_def_setup();
   virtual PetscErrorCode bed_def_step(bool &bed_changed);
 
-  // see iMbootstrap.cc 
-  virtual PetscErrorCode putTempAtDepth();
-  virtual PetscErrorCode setMaskSurfaceElevation_bootstrap();
-
   // see iMcalving.cc
   virtual PetscErrorCode eigenCalving();
   virtual PetscErrorCode calvingAtThickness();
@@ -286,7 +287,8 @@ protected:
   // see iMIO.cc
   virtual PetscErrorCode set_time_from_options();
   virtual PetscErrorCode dumpToFile(const char *filename);
-  virtual PetscErrorCode regrid();
+  virtual PetscErrorCode regrid(int dimensions);
+  virtual PetscErrorCode regrid_variables(string filename, set<string> regrid_vars, int ndims);
 
   // see iMpartgrid.cc
   virtual PetscErrorCode velsPartGrid(

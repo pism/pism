@@ -239,6 +239,7 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vGhf.set_attrs("climate_steady", "upward geothermal flux at bedrock surface",
 			"W m-2", ""); CHKERRQ(ierr);
   ierr = vGhf.set_glaciological_units("mW m-2");
+  vGhf.write_in_glaciological_units = true;
   vGhf.time_independent = true;
   ierr = variables.add(vGhf); CHKERRQ(ierr);
 
@@ -551,6 +552,11 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //! \li determine the time step according to a variety of stability criteria;
   //!  see determineTimeStep()
   ierr = determineTimeStep(do_energy); CHKERRQ(ierr);
+
+  //! \li Update surface and ocean models.
+  ierr = surface->update(grid.year, dt / secpera); CHKERRQ(ierr);
+  ierr = ocean->update(grid.year,   dt / secpera); CHKERRQ(ierr);
+
 
   dt_years_TempAge += dt / secpera;
   // IceModel::dt,dtTempAge,grid.year are now set correctly according to

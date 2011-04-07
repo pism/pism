@@ -277,35 +277,37 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
 
 PetscErrorCode IceRegionalModel::set_vars_from_options() {
   PetscErrorCode ierr;
+  PetscReal stripkm;
+  PetscTruth  nmstripSet;
 
   // base class reads the -boot_file option and does the bootstrapping:
   ierr = IceModel::set_vars_from_options(); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "IceRegionalModel", ""); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com, 
-     "* Initializing IceRegionalModel variables ...\n"); CHKERRQ(ierr);
+                    "* Initializing IceRegionalModel variables ...\n"); CHKERRQ(ierr);
 
   bool no_model_strip_set;
   ierr = PISMOptionsIsSet("-no_model_strip", no_model_strip_set); CHKERRQ(ierr);
   if (!no_model_strip_set) {
     ierr = PetscPrintf(grid.com,
-       "\nPISMO ERROR: option '-no_model_strip X' is REQUIRED if '-i' is not used.\n"
-         "   Executable pismo has no well-defined semantics without it!  Ending!!\n\n");
-         CHKERRQ(ierr);
+                       "\nPISMO ERROR: option '-no_model_strip X' is REQUIRED if '-i' is not used.\n"
+                       "   Executable pismo has no well-defined semantics without it!  Ending!!\n\n");
+    CHKERRQ(ierr);
     PISMEnd();
   }
 
-  PetscReal stripkm;
-  PetscTruth  nmstripSet;
   ierr = PetscOptionsReal("-no_model_strip",
 			  "Specifies the no-modeling boundary strip width, in km",
 			  "", 20.0,
 			  &stripkm, &nmstripSet); CHKERRQ(ierr);
 
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
   if (nmstripSet == PETSC_TRUE) {
     ierr = verbPrintf(2, grid.com,
-       "    option -no_model_strip read ... setting boundary strip width to %.2f km\n",
-       stripkm); CHKERRQ(ierr);
+                      "    option -no_model_strip read ... setting boundary strip width to %.2f km\n",
+                      stripkm); CHKERRQ(ierr);
     double strip = 1000.0*stripkm;
 
     ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
@@ -328,7 +330,6 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
     ierr = no_model_mask.endGhostComm(); CHKERRQ(ierr);
   }
 
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
 }
 

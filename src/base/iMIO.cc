@@ -434,25 +434,30 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     consistent with one standard purpose of regridding, which is to stick with
     current geometry through the downscaling procedure. Most of the time the user
     should carefully specify which variables to regrid.
+
+    This \c dimensions argument can be 2 (regrid 2D variables only), 3 (3D
+    only) and 0 (everything).
   */
-  PetscErrorCode IceModel::regrid() {
+  PetscErrorCode IceModel::regrid(int dimensions) {
     PetscErrorCode ierr;
-    string filename, tmp;
-    bool regridVarsSet, regrid_file_set;
-    PISMIO nc(&grid);
+    string filename;
+    bool regrid_vars_set, regrid_file_set;
+    vector<string> vars_vector;
 
-    ierr = PetscOptionsBegin(grid.com, PETSC_NULL,
-                             "Options controlling regridding",
+    if (! (dimensions == 0 ||
+           dimensions == 2 ||
+           dimensions == 3))
+      SETERRQ(1, "dimensions can only be 0, 2 or 3");
+
+    ierr = PetscOptionsBegin(grid.com, PETSC_NULL, "Options controlling regridding",
                              PETSC_NULL); CHKERRQ(ierr);
+    {
+      ierr = PISMOptionsString("-regrid_file", "Specifies the file to regrid from",
+                               filename, regrid_file_set); CHKERRQ(ierr);
 
-    // Get the regridding file name:
-    ierr = PISMOptionsString("-regrid_file", "Specifies the file to regrid from",
-                             filename, regrid_file_set); CHKERRQ(ierr);
-
-    ierr = PISMOptionsString("-regrid_vars", "Specifies the list of variable to regrid",
-                             tmp, regridVarsSet); CHKERRQ(ierr);
-
-    // Done with the options.
+      ierr = PISMOptionsStringArray("-regrid_vars", "Specifies the list of variables to regrid",
+                                    "", vars_vector, regrid_vars_set); CHKERRQ(ierr);
+    }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
     // Return if no regridding is requested:
@@ -460,14 +465,12 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
 
     ierr = verbPrintf(2, grid.com, "regridding from file %s ...\n",filename.c_str()); CHKERRQ(ierr);
 
-    string var_name;
     set<string> vars;
-    istringstream list(tmp);
-    if (regridVarsSet) {
-      // split the list; note that this also removes any duplicate entries
-      while (getline(list, var_name, ','))
-        vars.insert(var_name);
-    } else {
+    vector<string>::iterator j;
+    for (j = vars_vector.begin(); j != vars_vector.end(); ++j)
+      vars.insert(*j);
+
+    if (vars.empty()) {
       // defaults if user gives no regrid_vars list
       vars.insert("litho_temp");
 
@@ -480,96 +483,111 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
         vars.insert("enthalpy");
     }
 
-    set<string>::iterator i;
-    for (i = vars.begin(); i != vars.end(); ++i) {
-      IceModelVec *v = variables.get(*i);
-
-      if (v == NULL) continue;
-
-      string pism_intent = v->string_attr("pism_intent");
-      if (pism_intent != "model_state") {
-        ierr = verbPrintf(2, grid.com, "  WARNING: skipping '%s' (only model_state variables can be regridded)...\n",
-                          (*i).c_str()); CHKERRQ(ierr);
-        continue;
-      }
-
-      ierr = v->regrid(filename.c_str(), true); CHKERRQ(ierr);
-
-    }
-
-    return 0;
-  }
-
-  //! Initializes the snapshot-saving mechanism.
-  PetscErrorCode IceModel::init_snapshots() {
-    PetscErrorCode ierr;
-    bool save_at_set, save_to_set, split;
-    string tmp;
-    current_snapshot = 0;
-
-    ierr = PetscOptionsBegin(grid.com, "", "Options controlling the snapshot-saving mechanism", ""); CHKERRQ(ierr);
-    {
-      ierr = PISMOptionsString("-save_file", "Specifies a snapshot filename",
-                               snapshots_filename, save_to_set); CHKERRQ(ierr);
-
-      ierr = PISMOptionsString("-save_times", "Gives a list or a MATLAB-style range of times to save snapshots at",
-                               tmp, save_at_set); CHKERRQ(ierr);
-
-      ierr = PISMOptionsIsSet("-save_split", "Specifies whether to save snapshots to separate files",
-                              split); CHKERRQ(ierr);
-
-      ierr = set_output_size("-save_size", "Sets the 'size' of a snapshot file.",
-                             "small", snapshot_vars); CHKERRQ(ierr);
-    }
-    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-    if (save_to_set ^ save_at_set) {
-      ierr = PetscPrintf(grid.com,
-                         "PISM ERROR: you need to specify both -save_file and -save_times to save snapshots.\n");
-      CHKERRQ(ierr);
-      PISMEnd();
-    }
-
-    if (!save_to_set && !save_at_set) {
-      save_snapshots = false;
-      return 0;
-    }
-
-    ierr = parse_times(grid.com, tmp, snapshot_times);
-    if (ierr != 0) {
-      ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -save_times argument failed.\n"); CHKERRQ(ierr);
-      PISMEnd();
-    }
-
-    if (snapshot_times.size() == 0) {
-      PetscPrintf(grid.com, "PISM ERROR: no argument for -save_times option.\n");
-      PISMEnd();
-    }
-
-    save_snapshots = true;
-    snapshots_file_is_ready = false;
-    split_snapshots = false;
-
-    if (split) {
-      split_snapshots = true;
-    } else if (!ends_with(snapshots_filename, ".nc")) {
-      ierr = verbPrintf(2, grid.com,
-                        "PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
-      CHKERRQ(ierr);
-    }
-
-    if (split) {
-      ierr = verbPrintf(2, grid.com, "saving snapshots to '%s+year.nc'; ",
-                        snapshots_filename.c_str()); CHKERRQ(ierr);
+    if (dimensions == 0) {
+      ierr = regrid_variables(filename, vars, 2); CHKERRQ(ierr); 
+      ierr = regrid_variables(filename, vars, 3); CHKERRQ(ierr); 
     } else {
-      ierr = verbPrintf(2, grid.com, "saving snapshots to '%s'; ",
-                        snapshots_filename.c_str()); CHKERRQ(ierr);
+      ierr = regrid_variables(filename, vars, dimensions); CHKERRQ(ierr); 
     }
-
-    ierr = verbPrintf(2, grid.com, "times requested: %s\n", tmp.c_str()); CHKERRQ(ierr);
 
     return 0;
   }
+
+PetscErrorCode IceModel::regrid_variables(string filename, set<string> vars, int ndims) {
+  PetscErrorCode ierr;
+
+  set<string>::iterator i;
+  for (i = vars.begin(); i != vars.end(); ++i) {
+    IceModelVec *v = variables.get(*i);
+
+    if (v == NULL) continue;
+
+    if (v->grid_type() != ndims) continue;
+
+    string pism_intent = v->string_attr("pism_intent");
+    if (pism_intent != "model_state") {
+      ierr = verbPrintf(2, grid.com, "  WARNING: skipping '%s' (only model_state variables can be regridded)...\n",
+                        (*i).c_str()); CHKERRQ(ierr);
+      continue;
+    }
+
+    ierr = v->regrid(filename, true); CHKERRQ(ierr);
+  }
+
+  return 0;
+}
+
+
+//! Initializes the snapshot-saving mechanism.
+PetscErrorCode IceModel::init_snapshots() {
+  PetscErrorCode ierr;
+  bool save_times_set, save_file_set, split;
+  string tmp;
+  current_snapshot = 0;
+
+  ierr = PetscOptionsBegin(grid.com, "", "Options controlling the snapshot-saving mechanism", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-save_file", "Specifies a snapshot filename",
+                             snapshots_filename, save_file_set); CHKERRQ(ierr);
+
+    ierr = PISMOptionsString("-save_times", "Gives a list or a MATLAB-style range of times to save snapshots at",
+                             tmp, save_times_set); CHKERRQ(ierr);
+
+    ierr = PISMOptionsIsSet("-save_split", "Specifies whether to save snapshots to separate files",
+                            split); CHKERRQ(ierr);
+
+    ierr = set_output_size("-save_size", "Sets the 'size' of a snapshot file.",
+                           "small", snapshot_vars); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  if (save_file_set ^ save_times_set) {
+    ierr = PetscPrintf(grid.com,
+                       "PISM ERROR: you need to specify both -save_file and -save_times to save snapshots.\n");
+    CHKERRQ(ierr);
+    PISMEnd();
+  }
+
+  if (!save_file_set && !save_times_set) {
+    save_snapshots = false;
+    return 0;
+  }
+
+  ierr = parse_times(grid.com, tmp, snapshot_times);
+  if (ierr != 0) {
+    ierr = PetscPrintf(grid.com, "PISM ERROR: parsing the -save_times argument failed.\n"); CHKERRQ(ierr);
+    PISMEnd();
+  }
+
+  if (snapshot_times.size() == 0) {
+    PetscPrintf(grid.com, "PISM ERROR: no argument for -save_times option.\n");
+    PISMEnd();
+  }
+
+  save_snapshots = true;
+  snapshots_file_is_ready = false;
+  split_snapshots = false;
+
+  if (split) {
+    split_snapshots = true;
+  } else if (!ends_with(snapshots_filename, ".nc")) {
+    ierr = verbPrintf(2, grid.com,
+                      "PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
+    CHKERRQ(ierr);
+  }
+
+  if (split) {
+    ierr = verbPrintf(2, grid.com, "saving snapshots to '%s+year.nc'; ",
+                      snapshots_filename.c_str()); CHKERRQ(ierr);
+  } else {
+    ierr = verbPrintf(2, grid.com, "saving snapshots to '%s'; ",
+                      snapshots_filename.c_str()); CHKERRQ(ierr);
+  }
+
+  ierr = verbPrintf(2, grid.com, "times requested: %s\n", tmp.c_str()); CHKERRQ(ierr);
+
+  return 0;
+}
 
   //! Writes a snapshot of the model state (if necessary)
   PetscErrorCode IceModel::write_snapshot() {

@@ -336,17 +336,16 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   // now get map-plane coupler fields: Dirichlet upper surface boundary and
   //    mass balance lower boundary under shelves
   if (surface != PETSC_NULL) {
-    ierr = surface->ice_surface_temperature(t_years_TempAge, dt_years_TempAge, artm);
-    ierr = surface->ice_surface_liquid_water_fraction(t_years_TempAge, dt_years_TempAge,
-                                                      liqfrac_surface); CHKERRQ(ierr);
+    ierr = surface->ice_surface_temperature(artm);
+    ierr = surface->ice_surface_liquid_water_fraction(liqfrac_surface); CHKERRQ(ierr);
     CHKERRQ(ierr);
   } else {
     SETERRQ(4,"PISM ERROR: surface == PETSC_NULL");
   }
   if (ocean != PETSC_NULL) {
-    ierr = ocean->shelf_base_mass_flux(t_years_TempAge, dt_years_TempAge, shelfbmassflux);
+    ierr = ocean->shelf_base_mass_flux(shelfbmassflux);
         CHKERRQ(ierr);
-    ierr = ocean->shelf_base_temperature(t_years_TempAge, dt_years_TempAge, shelfbtemp);
+    ierr = ocean->shelf_base_temperature(shelfbtemp);
         CHKERRQ(ierr);
   } else {
     SETERRQ(5,"PISM ERROR: ocean == PETSC_NULL");

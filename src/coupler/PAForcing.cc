@@ -219,7 +219,7 @@ PetscErrorCode PAForcing::write_variables(set<string> vars,  string filename) {
     ierr = airtemp.create(grid, "airtemp_plus_forcing", false); CHKERRQ(ierr);
     ierr = airtemp.set_metadata(airtemp_var, 0); CHKERRQ(ierr);
 
-    ierr = temp_snapshot(T, 0, airtemp); CHKERRQ(ierr);
+    ierr = temp_snapshot(airtemp); CHKERRQ(ierr);
 
     ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
     vars.erase("airtemp_plus_forcing");
@@ -259,6 +259,8 @@ PetscErrorCode PAForcing::update(PetscReal t_years, PetscReal dt_years) {
   t  = t_years;
   dt = dt_years;
 
+  ierr = input_model->update(t_years, dt_years); CHKERRQ(ierr);
+
   if (temp_anomaly != NULL) {
     ierr = temp_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
   }
@@ -270,23 +272,21 @@ PetscErrorCode PAForcing::update(PetscReal t_years, PetscReal dt_years) {
   return 0;
 }
 
-PetscErrorCode PAForcing::mean_precip(PetscReal t_years, PetscReal dt_years,
-				      IceModelVec2S &result) {
+PetscErrorCode PAForcing::mean_precip(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = input_model->mean_precip(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = input_model->mean_precip(result); CHKERRQ(ierr);
 
   if (precip_anomaly != NULL) {
     string history = "added average over time-step of precipitation anomalies\n" + result.string_attr("history");
 
     double anomaly;
-    ierr = precip_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
 
     ierr = precip_anomaly->begin_access(); CHKERRQ(ierr);
     ierr = result.begin_access(); CHKERRQ(ierr);
     for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-	ierr = precip_anomaly->average(i, j, t_years, dt_years, anomaly); CHKERRQ(ierr);
+	ierr = precip_anomaly->average(i, j, t, dt, anomaly); CHKERRQ(ierr);
 	result(i,j) += anomaly;
       }
     }
@@ -299,11 +299,10 @@ PetscErrorCode PAForcing::mean_precip(PetscReal t_years, PetscReal dt_years,
   return 0;
 }
 
-PetscErrorCode PAForcing::mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-					   IceModelVec2S &result) {
+PetscErrorCode PAForcing::mean_annual_temp(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = input_model->mean_annual_temp(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = input_model->mean_annual_temp(result); CHKERRQ(ierr);
 
 // FIXME:  -dTforcing mechanism has mean_annual-needs-averaging-if-data-is-sub-annual
 //   issues like the ones below for -anomaly_temp; for the -anomaly_temp see commits
@@ -311,7 +310,7 @@ PetscErrorCode PAForcing::mean_annual_temp(PetscReal t_years, PetscReal dt_years
   if (dTforcing != NULL) {
     string history = "added the temperature offset\n" + result.string_attr("history");
 
-    double T = t_years + 0.5 * dt_years;
+    double T = t + 0.5 * dt;
     ierr = result.shift( (*dTforcing)(T) ); CHKERRQ(ierr);
 
     ierr = result.set_attr("history", history); CHKERRQ(ierr);
@@ -324,14 +323,14 @@ PetscErrorCode PAForcing::mean_annual_temp(PetscReal t_years, PetscReal dt_years
     // FIXME: if the anomaly is provided with a flag indicating it is already
     //        mean annual, then we could save some work
     
-    // average over the year starting at t_years
-    ierr = temp_anomaly->update(t_years, 1.0); CHKERRQ(ierr);
+    // average over the year starting at t
+    ierr = temp_anomaly->update(t, 1.0); CHKERRQ(ierr);
     PetscScalar av_ij;
     ierr = temp_anomaly->begin_access(); CHKERRQ(ierr);
     ierr = result.begin_access(); CHKERRQ(ierr);
     for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-        ierr = temp_anomaly->average(i,j,t_years,1.0,av_ij); CHKERRQ(ierr);
+        ierr = temp_anomaly->average(i,j,t,1.0,av_ij); CHKERRQ(ierr);
         result(i,j) += av_ij;
       }
     }
@@ -393,19 +392,17 @@ PetscErrorCode PAForcing::temp_time_series(int i, int j, int N,
   return 0;
 }
 
-PetscErrorCode PAForcing::temp_snapshot(PetscReal t_years, PetscReal dt_years,
-					IceModelVec2S &result) {
+PetscErrorCode PAForcing::temp_snapshot(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  double T = t_years + 0.5 * dt_years;
 
-  ierr = input_model->temp_snapshot(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = input_model->temp_snapshot(result); CHKERRQ(ierr);
 
   if (temp_anomaly != NULL) {
     string history = "added temperature anomalies at midpoint of time-step\n"
                      + result.string_attr("history");
 
-    ierr = temp_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
-    ierr = temp_anomaly->interp(T); CHKERRQ(ierr);
+    ierr = temp_anomaly->update(t, dt); CHKERRQ(ierr);
+    ierr = temp_anomaly->interp(t); CHKERRQ(ierr);
     ierr = result.add(1.0, *temp_anomaly); CHKERRQ(ierr);
 
     ierr = result.set_attr("history", history); CHKERRQ(ierr);
@@ -413,7 +410,7 @@ PetscErrorCode PAForcing::temp_snapshot(PetscReal t_years, PetscReal dt_years,
     string history = "added scalar temperature forcing at midpoint of time-step\n"
                      + result.string_attr("history");
 
-    ierr = result.shift( (*dTforcing)(T) ); CHKERRQ(ierr);
+    ierr = result.shift( (*dTforcing)(t) ); CHKERRQ(ierr);
     
     ierr = result.set_attr("history", history); CHKERRQ(ierr);
   }

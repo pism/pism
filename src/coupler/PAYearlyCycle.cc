@@ -120,7 +120,7 @@ PetscErrorCode PAYearlyCycle::write_variables(set<string> vars, string filename)
     ierr = airtemp.create(grid, "airtemp", false); CHKERRQ(ierr);
     ierr = airtemp.set_metadata(airtemp_var, 0); CHKERRQ(ierr);
 
-    ierr = temp_snapshot(t, dt, airtemp); CHKERRQ(ierr);
+    ierr = temp_snapshot(airtemp); CHKERRQ(ierr);
 
     ierr = airtemp.write(filename.c_str()); CHKERRQ(ierr);
   }
@@ -141,11 +141,8 @@ PetscErrorCode PAYearlyCycle::write_variables(set<string> vars, string filename)
 }
 
 //! Copies the stored precipitation field into result.
-PetscErrorCode PAYearlyCycle::mean_precip(PetscReal t_years, PetscReal dt_years,
-							 IceModelVec2S &result) {
+PetscErrorCode PAYearlyCycle::mean_precip(IceModelVec2S &result) {
   PetscErrorCode ierr;
-
-  ierr = update(t_years, dt_years); CHKERRQ(ierr);
 
   string precip_history = "read from " + precip_filename + "\n";
 
@@ -156,11 +153,8 @@ PetscErrorCode PAYearlyCycle::mean_precip(PetscReal t_years, PetscReal dt_years,
 }
 
 //! Copies the stored mean annual near-surface air temperature field into result.
-PetscErrorCode PAYearlyCycle::mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-							      IceModelVec2S &result) {
+PetscErrorCode PAYearlyCycle::mean_annual_temp(IceModelVec2S &result) {
   PetscErrorCode ierr;
-
-  ierr = update(t_years, dt_years); CHKERRQ(ierr);
 
   ierr = temp_ma.copy_to(result); CHKERRQ(ierr);
   ierr = result.set_attr("history",
@@ -185,17 +179,14 @@ PetscErrorCode PAYearlyCycle::temp_time_series(int i, int j, int N,
   return 0;
 }
 
-PetscErrorCode PAYearlyCycle::temp_snapshot(PetscReal t_years, PetscReal dt_years,
-				       IceModelVec2S &result) {
+PetscErrorCode PAYearlyCycle::temp_snapshot(IceModelVec2S &result) {
   PetscErrorCode ierr;
   const PetscReal
     radpersec = 2.0 * pi / secpera, // radians per second frequency for annual cycle
     sperd = 8.64e4, // exact number of seconds per day
     julydaysec = sperd * config.get("snow_temp_july_day");
 
-  ierr = update(t_years, dt_years); CHKERRQ(ierr);
-
-  double T = t_years + 0.5 * dt_years;
+  double T = t + 0.5 * dt;
 
   double t_sec = ( T - floor(T) ) * secpera; // time from the beginning of a year, in seconds
 
@@ -281,17 +272,16 @@ PetscErrorCode PA_SeaRISE_Greenland::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PA_SeaRISE_Greenland::mean_precip(PetscReal t_years, PetscReal dt_years,
-						IceModelVec2S &result) {
+PetscErrorCode PA_SeaRISE_Greenland::mean_precip(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = PAYearlyCycle::mean_precip(t_years, dt_years, result); CHKERRQ(ierr);
+  ierr = PAYearlyCycle::mean_precip(result); CHKERRQ(ierr);
 
   if ((dTforcing != NULL) && paleo_precipitation_correction) {
     string history = "added the paleo-precipitation correction\n" + result.string_attr("history");
 
     PetscReal precipexpfactor = config.get("precip_exponential_factor_for_temperature");
-    ierr = result.scale(exp( precipexpfactor * (*dTforcing)(t_years + 0.5 * dt_years) )); CHKERRQ(ierr);
+    ierr = result.scale(exp( precipexpfactor * (*dTforcing)(t + 0.5 * dt) )); CHKERRQ(ierr);
 
     ierr = result.set_attr("history", history); CHKERRQ(ierr);
   }

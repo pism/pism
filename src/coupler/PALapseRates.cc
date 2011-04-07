@@ -66,8 +66,7 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PALapseRates::mean_annual_temp(PetscReal /*t_years*/, PetscReal /*dt_years*/,
-					      IceModelVec2S &result) {
+PetscErrorCode PALapseRates::mean_annual_temp(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   ierr = result.begin_access(); CHKERRQ(ierr);

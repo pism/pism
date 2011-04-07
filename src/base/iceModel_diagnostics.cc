@@ -396,6 +396,7 @@ IceModel_temp_pa::IceModel_temp_pa(IceModel *m, IceGrid &g, PISMVars &my_vars)
   
   set_attrs("pressure-adjusted ice temperature (degrees above pressure-melting point)", "",
             "deg_C", "deg_C", 0);
+  vars[0].set("valid_max", 0);
 }
 
 PetscErrorCode IceModel_temp_pa::compute(IceModelVec* &output) {
@@ -715,6 +716,8 @@ IceModel_liqfrac::IceModel_liqfrac(IceModel *m, IceGrid &g, PISMVars &my_vars)
   
   set_attrs("liquid water fraction in ice (between 0 and 1)", "",
             "1", "1", 0);
+  vars[0].set("valid_min", 0);
+  vars[0].set("valid_max", 1);
 }
 
 PetscErrorCode IceModel_liqfrac::compute(IceModelVec* &output) {
@@ -920,7 +923,7 @@ PetscErrorCode IceModel_new_mask::compute(IceModelVec* &output) {
 
   if (model->ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
   PetscReal currentSeaLevel;
-  ierr = model->ocean->sea_level_elevation(grid.year, model->dt / secpera, currentSeaLevel); CHKERRQ(ierr);
+  ierr = model->ocean->sea_level_elevation(currentSeaLevel); CHKERRQ(ierr);
 
   double ocean_rho = model->config.get("sea_water_density");
 
