@@ -53,7 +53,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   // yield stress for basal till (plastic or pseudo-plastic model)
   ierr = tauc.create(grid, "tauc", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = tauc.set_attrs("diagnostic",  
-  "yield stress for basal till (plastic or pseudo-plastic model)", "Pa", ""); 
+  "yield stress for basal till (plastic or pseudo-plastic model)", "Pa", "");
       CHKERRQ(ierr);
   ierr = vars.add(tauc); CHKERRQ(ierr);
 
@@ -74,14 +74,14 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
             "Y-component of the SSA velocity boundary conditions", 
             "m s-1", "", 1); CHKERRQ(ierr);
   ierr = vel_bc.set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  ierr = vel_bc.set_attr("valid_min", -1e6/secpera, 0); CHKERRQ(ierr); 
-  ierr = vel_bc.set_attr("valid_max",  1e6/secpera, 0); CHKERRQ(ierr); 
-  ierr = vel_bc.set_attr("valid_min", -1e6/secpera, 1); CHKERRQ(ierr); 
-  ierr = vel_bc.set_attr("valid_max",  1e6/secpera, 1); CHKERRQ(ierr); 
-  ierr = vel_bc.set_attr("_FillValue", 2e6/secpera, 0); CHKERRQ(ierr); 
-  ierr = vel_bc.set_attr("_FillValue", 2e6/secpera, 1); CHKERRQ(ierr); 
+  ierr = vel_bc.set_attr("valid_min", convert(-1e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("valid_max", convert( 1e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("valid_min", convert(-1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("valid_max", convert( 1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("_FillValue",convert( 2e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
+  ierr = vel_bc.set_attr("_FillValue",convert( 2e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
   vel_bc.write_in_glaciological_units = true;
-  ierr = vel_bc.set(2e6/secpera); CHKERRQ(ierr); 
+  ierr = vel_bc.set(convert(2e6, "m/year", "m/second")); CHKERRQ(ierr);
   
   // grounded_dragging_floating integer mask
   ierr = ice_mask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
@@ -98,7 +98,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
     "ice_free_bedrock dragging_sheet floating ice_free_ocean ocean_at_time_zero");
              CHKERRQ(ierr);
   ice_mask.output_data_type = NC_BYTE;
-  ierr = vars.add(ice_mask); CHKERRQ(ierr);  
+  ierr = vars.add(ice_mask); CHKERRQ(ierr);
 
   ierr = ice_mask.set(MASK_GROUNDED); CHKERRQ(ierr);
 
@@ -113,7 +113,7 @@ PetscErrorCode SSATestCase::buildSSACoefficients()
   ierr = bc_mask.set_attr("flag_meanings",
                           "no_data dirichlet_bc_location"); CHKERRQ(ierr);
   bc_mask.output_data_type = NC_BYTE;
-  ierr = vars.add(bc_mask); CHKERRQ(ierr);  
+  ierr = vars.add(bc_mask); CHKERRQ(ierr);
   
   return 0;
 }
@@ -157,7 +157,7 @@ PetscErrorCode SSATestCase::run()
   ierr = verbPrintf(2,grid.com,"* Solving the SSA stress balance ...\n"); CHKERRQ(ierr);
 
   bool fast = false;
-  ierr = ssa->update(fast); CHKERRQ(ierr); 
+  ierr = ssa->update(fast); CHKERRQ(ierr);
 
   return 0;
 }
@@ -202,8 +202,8 @@ PetscErrorCode SSATestCase::report()
       // compute maximum errors
       const PetscScalar uerr = PetscAbsReal((*vel_ssa)(i,j).u - uexact);
       const PetscScalar verr = PetscAbsReal((*vel_ssa)(i,j).v - vexact);
-      avuerr = avuerr + uerr;      
-      avverr = avverr + verr;      
+      avuerr = avuerr + uerr;
+      avverr = avverr + verr;
       maxuerr = PetscMax(maxuerr,uerr);
       maxverr = PetscMax(maxverr,verr);
       const PetscScalar vecerr = sqrt(uerr * uerr + verr * verr);
@@ -256,7 +256,7 @@ PetscErrorCode SSATestCase::write(const string &filename)
   PISMIO pio(&grid);
   ierr = pio.open_for_writing(filename, false, true); CHKERRQ(ierr);
   ierr = pio.append_time(0.0); CHKERRQ(ierr);
-  ierr = pio.close(); CHKERRQ(ierr); 
+  ierr = pio.close(); CHKERRQ(ierr);
 
   ierr = surface.write(filename.c_str()); CHKERRQ(ierr);
   ierr = thickness.write(filename.c_str()); CHKERRQ(ierr);
@@ -309,7 +309,7 @@ PetscErrorCode init_shallow_grid(IceGrid &grid, PetscReal Lx,
   
   grid.compute_nprocs();
   grid.compute_ownership_ranges();
-  ierr = grid.compute_vertical_levels(); CHKERRQ(ierr); 
+  ierr = grid.compute_vertical_levels(); CHKERRQ(ierr);
   ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
   ierr = grid.createDA(); CHKERRQ(ierr);
 

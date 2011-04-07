@@ -135,7 +135,7 @@ PSB_cbar::PSB_cbar(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
 
   set_attrs("magnitude of vertically-integrated horizontal velocity of ice", "",
             "m s-1", "m year-1", 0);
-  vars[0].set("_FillValue", -0.01 / secpera);
+  vars[0].set("_FillValue", convert(-0.01, "m/year", "m/second"));
   vars[0].set("valid_min", 0.0);
 }
 
@@ -164,7 +164,7 @@ PetscErrorCode PSB_cbar::compute(IceModelVec* &output) {
   ierr = velbar_vec->magnitude(*result); CHKERRQ(ierr);
 
   // mask out ice-free areas:
-  ierr = result->mask_by(*thickness, -0.01 / secpera); CHKERRQ(ierr);
+  ierr = result->mask_by(*thickness, convert(-0.01, "m/year", "m/second")); CHKERRQ(ierr);
 
   delete tmp;
   output = result;
@@ -179,7 +179,7 @@ PSB_cflx::PSB_cflx(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
 
   set_attrs("magnitude of vertically-integrated horizontal flux of ice", "",
             "m2 s-1", "m2 year-1", 0);
-  vars[0].set("_FillValue", -0.01 / secpera);
+  vars[0].set("_FillValue", convert(-0.01, "m2/year", "m2/second"));
   vars[0].set("valid_min", 0.0);
 }
 
@@ -210,7 +210,7 @@ PetscErrorCode PSB_cflx::compute(IceModelVec* &output) {
   ierr = result->end_access(); CHKERRQ(ierr);
   ierr = thickness->end_access(); CHKERRQ(ierr);
 
-  ierr = result->mask_by(*thickness, -0.01 / secpera); CHKERRQ(ierr);
+  ierr = result->mask_by(*thickness, convert(-0.01, "m2/year", "m2/second")); CHKERRQ(ierr);
 
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
 
@@ -226,13 +226,13 @@ PSB_cbase::PSB_cbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
 
   set_attrs("magnitude of horizontal velocity of ice at base of ice", "",
             "m s-1", "m year-1", 0);
-  vars[0].set("_FillValue", -0.01 / secpera);
+  vars[0].set("_FillValue", convert(-0.01, "m/year", "m/second"));
   vars[0].set("valid_min", 0.0);
 }
 
 PetscErrorCode PSB_cbase::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-  PetscScalar fill_value = -0.01/secpera;
+  PetscScalar fill_value = convert(-0.01, "m/year", "m/second");
   IceModelVec3 *u3, *v3, *w3;
   IceModelVec2S tmp, *result, *thickness;
 
@@ -260,7 +260,7 @@ PetscErrorCode PSB_cbase::compute(IceModelVec* &output) {
 
 PSB_csurf::PSB_csurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMStressBalance>(m, g, my_vars) {
-  PetscReal fill_value = -0.01/secpera;
+  PetscReal fill_value = convert(-0.01, "m/year", "m/second");
   // set metadata:
   vars[0].init_2d("csurf", grid);
   
@@ -272,7 +272,7 @@ PSB_csurf::PSB_csurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
 
 PetscErrorCode PSB_csurf::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
-  PetscReal fill_value = -0.01/secpera;
+  PetscReal fill_value = convert(-0.01, "m/year", "m/second");
 
   IceModelVec3 *u3, *v3, *w3;
   IceModelVec2S tmp, *result, *thickness;
@@ -315,11 +315,11 @@ PSB_velsurf::PSB_velsurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   set_attrs("y-component of the horizontal velocity of ice at ice surface", "",
             "m s-1", "m year-1", 1);
 
-  vars[0].set("valid_min", -1e6/secpera);
-  vars[0].set("valid_max", 1e6/secpera);
+  vars[0].set("valid_min", convert(-1e6, "m/year", "m/second"));
+  vars[0].set("valid_max", convert(1e6, "m/year", "m/second"));
 
-  vars[1].set("valid_min", -1e6/secpera);
-  vars[1].set("valid_max", 1e6/secpera);
+  vars[1].set("valid_min", convert(-1e6, "m/year", "m/second"));
+  vars[1].set("valid_max", convert(1e6, "m/year", "m/second"));
 }
 
 PetscErrorCode PSB_velsurf::compute(IceModelVec* &output) {
@@ -358,8 +358,8 @@ PSB_wvel::PSB_wvel(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   
   set_attrs("vertical velocity of ice, relative to geoid", "",
             "m s-1", "m year-1", 0);
-  vars[0].set("valid_min", -1e6/secpera);
-  vars[0].set("valid_max", 1e6/secpera);
+  vars[0].set("valid_min", convert(-1e6, "m/year", "m/second"));
+  vars[0].set("valid_max", convert(1e6, "m/year", "m/second"));
 }
 
 PetscErrorCode PSB_wvel::compute(IceModelVec* &output) {
@@ -418,8 +418,8 @@ PSB_wvelsurf::PSB_wvelsurf(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   
   set_attrs("vertical velocity of ice at ice surface, relative to the geoid", "",
             "m s-1", "m year-1", 0);
-  vars[0].set("valid_min", -1e6/secpera);
-  vars[0].set("valid_max", 1e6/secpera);
+  vars[0].set("valid_min", convert(-1e6, "m/year", "m/second"));
+  vars[0].set("valid_max", convert(1e6, "m/year", "m/second"));
 }
 
 PetscErrorCode PSB_wvelsurf::compute(IceModelVec* &output) {
@@ -457,8 +457,8 @@ PSB_wvelbase::PSB_wvelbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   
   set_attrs("vertical velocity of ice at the base of ice, relative to the geoid", "",
             "m s-1", "m year-1", 0);
-  vars[0].set("valid_min", -1e6/secpera);
-  vars[0].set("valid_max", 1e6/secpera);
+  vars[0].set("valid_min", convert(-1e6, "m/year", "m/second"));
+  vars[0].set("valid_max", convert(1e6, "m/year", "m/second"));
 }
 
 PetscErrorCode PSB_wvelbase::compute(IceModelVec* &output) {
@@ -500,11 +500,11 @@ PSB_velbase::PSB_velbase(PISMStressBalance *m, IceGrid &g, PISMVars &my_vars)
   set_attrs("y-component of the horizontal velocity of ice at the base of ice", "",
             "m s-1", "m year-1", 1);
 
-  vars[0].set("valid_min", -1e6/secpera);
-  vars[0].set("valid_max", 1e6/secpera);
+  vars[0].set("valid_min", convert(-1e6, "m/year", "m/second"));
+  vars[0].set("valid_max", convert(1e6, "m/year", "m/second"));
 
-  vars[1].set("valid_min", -1e6/secpera);
-  vars[1].set("valid_max", 1e6/secpera);
+  vars[1].set("valid_min", convert(-1e6, "m/year", "m/second"));
+  vars[1].set("valid_max", convert(1e6, "m/year", "m/second"));
 }
 
 PetscErrorCode PSB_velbase::compute(IceModelVec* &output) {

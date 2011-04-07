@@ -215,7 +215,7 @@ PetscErrorCode grid_info::print(MPI_Comm com, int threshold) {
   ierr = verbPrintf(threshold, com, "  zb: %5d points, [%10.3f, %10.3f] m\n",
 		    zb_len, zb_min, zero); CHKERRQ(ierr);
   ierr = verbPrintf(threshold, com, "  t:  %5d points, last time = %.3f years\n\n",
-		    t_len, time/secpera); CHKERRQ(ierr);
+		    t_len, convert(time, "seconds", "years")); CHKERRQ(ierr);
   return 0;
 }
 

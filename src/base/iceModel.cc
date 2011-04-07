@@ -265,8 +265,8 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vdHdt.set_glaciological_units("m year-1");
   vdHdt.write_in_glaciological_units = true;
   const PetscScalar  huge_dHdt = 1.0e6;      // million m a-1 is out-of-range
-  ierr = vdHdt.set_attr("valid_min", -huge_dHdt / secpera); CHKERRQ(ierr);
-  ierr = vdHdt.set_attr("valid_max", huge_dHdt / secpera); CHKERRQ(ierr);
+  ierr = vdHdt.set_attr("valid_min", convert(-huge_dHdt, "m/year", "m/s")); CHKERRQ(ierr);
+  ierr = vdHdt.set_attr("valid_max", convert( huge_dHdt, "m/year", "m/s")); CHKERRQ(ierr);
   ierr = variables.add(vdHdt); CHKERRQ(ierr);
 
   // yield stress for basal till (plastic or pseudo-plastic model)

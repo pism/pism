@@ -88,10 +88,10 @@ PetscErrorCode read_riggs_and_compare(IceGrid &grid, PISMVars &vars, IceModelVec
     v   = vdata[k];
     ierr = verbPrintf(4,grid.com,
                       " RIGGS[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
-                      k,lat,lon,mag,u,v); CHKERRQ(ierr); 
+                      k,lat,lon,mag,u,v); CHKERRQ(ierr);
     const PetscScalar origdlat = (-5.42445 - (-12.3325)) / 110.0;
     const PetscScalar lowlat = -12.3325 - origdlat * 46.0;
-    const PetscScalar dlat = (-5.42445 - lowlat) / (float) (grid.My - 1);        
+    const PetscScalar dlat = (-5.42445 - lowlat) / (float) (grid.My - 1);
     const PetscScalar lowlon = -5.26168;
     const PetscScalar dlon = (3.72207 - lowlon) / (float) (grid.Mx - 1);
     const int         cj = (int) floor((lat - lowlat) / dlat);
@@ -102,7 +102,7 @@ PetscErrorCode read_riggs_and_compare(IceGrid &grid, PISMVars &vars, IceModelVec
       const PetscScalar cmag = sqrt(PetscSqr(cu)+PetscSqr(cv));
       ierr = verbPrintf(4,PETSC_COMM_SELF,
                         " PISM%d[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
-                        grid.rank,k,clat[ci][cj],clon[ci][cj],cmag,cu,cv); CHKERRQ(ierr); 
+                        grid.rank,k,clat[ci][cj],clon[ci][cj],cmag,cu,cv); CHKERRQ(ierr);
       if (mask->value(ci,cj) == MASK_FLOATING) {
         goodptcount += 1.0;
         ChiSqr += PetscSqr(u-cu)+PetscSqr(v-cv);
@@ -156,9 +156,9 @@ PetscErrorCode compute_errors(IceGrid &grid, PISMVars &vars, IceModelVec2V &vel_
   const PetscScalar area = grid.dx * grid.dy;
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = thickness->get_array(H); CHKERRQ(ierr);
-  ierr = obsAzimuth->get_array(azi); CHKERRQ(ierr);    
-  ierr = obsMagnitude->get_array(mag); CHKERRQ(ierr);    
-  ierr = obsAccurate->get_array(acc); CHKERRQ(ierr);    
+  ierr = obsAzimuth->get_array(azi); CHKERRQ(ierr);
+  ierr = obsMagnitude->get_array(mag); CHKERRQ(ierr);
+  ierr = obsAccurate->get_array(acc); CHKERRQ(ierr);
   ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
@@ -345,14 +345,14 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
                            "Y-component of the SSA velocity boundary conditions",
                            "m s-1", "", 1); CHKERRQ(ierr);
   ierr = vel_bc->set_glaciological_units("m year-1"); CHKERRQ(ierr);
-  ierr = vel_bc->set_attr("valid_min", -1e6/secpera, 0); CHKERRQ(ierr); 
-  ierr = vel_bc->set_attr("valid_max",  1e6/secpera, 0); CHKERRQ(ierr); 
-  ierr = vel_bc->set_attr("valid_min", -1e6/secpera, 1); CHKERRQ(ierr); 
-  ierr = vel_bc->set_attr("valid_max",  1e6/secpera, 1); CHKERRQ(ierr); 
-  ierr = vel_bc->set_attr("_FillValue", 2e6/secpera, 0); CHKERRQ(ierr); 
-  ierr = vel_bc->set_attr("_FillValue", 2e6/secpera, 1); CHKERRQ(ierr); 
+  ierr = vel_bc->set_attr("valid_min", convert(-1e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
+  ierr = vel_bc->set_attr("valid_max",  convert(1e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
+  ierr = vel_bc->set_attr("valid_min", convert(-1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
+  ierr = vel_bc->set_attr("valid_max",  convert(1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
+  ierr = vel_bc->set_attr("_FillValue", convert(2e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
+  ierr = vel_bc->set_attr("_FillValue", convert(2e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
   vel_bc->write_in_glaciological_units = true;
-  ierr = vel_bc->set(2e6/secpera); CHKERRQ(ierr); 
+  ierr = vel_bc->set(convert(2e6, "m/year", "m/second")); CHKERRQ(ierr);
   ierr = vars.add(*vel_bc); CHKERRQ(ierr);
 
   ierr = longitude->create(grid, "lon", true); CHKERRQ(ierr);
@@ -402,7 +402,7 @@ PetscErrorCode grid_setup(IceGrid &grid) {
 
     ierr = pio.open_for_reading(filename.c_str()); CHKERRQ(ierr);
     ierr = pio.get_grid_info("land_ice_thickness", g); CHKERRQ(ierr);
-    ierr = pio.close(); CHKERRQ(ierr); 
+    ierr = pio.close(); CHKERRQ(ierr);
     grid.Mx = g.x_len;
     grid.My = g.y_len;
     grid.Mz = 2;
@@ -423,7 +423,7 @@ PetscErrorCode grid_setup(IceGrid &grid) {
   grid.compute_ownership_ranges();
   ierr = grid.compute_horizontal_spacing(); CHKERRQ(ierr);
   ierr = grid.compute_vertical_levels(); CHKERRQ(ierr);
-  ierr = grid.createDA(); CHKERRQ(ierr); 
+  ierr = grid.createDA(); CHKERRQ(ierr);
 
   return 0;
 }
@@ -442,7 +442,7 @@ PetscErrorCode set_surface_elevation(PISMVars &vars, const NCConfigVariable &con
     ocean_rho = config.get("sea_water_density");
 
   ierr = thickness->copy_to(*surface); CHKERRQ(ierr);
-  ierr = surface->scale(1.0 - ice_rho / ocean_rho); CHKERRQ(ierr); 
+  ierr = surface->scale(1.0 - ice_rho / ocean_rho); CHKERRQ(ierr);
 
   return 0;
 }
@@ -480,7 +480,7 @@ PetscErrorCode read_input_data(IceGrid &grid, PISMVars &variables, const NCConfi
   // The CustomGlenIce flow law does not use it.
 
   // set the surface elevation:
-  ierr = set_surface_elevation(variables, config); CHKERRQ(ierr); 
+  ierr = set_surface_elevation(variables, config); CHKERRQ(ierr);
 
   // set the basal yield stress (does not matter; everything is floating)
   ierr = variables.get("tauc")->set(0.0); CHKERRQ(ierr);
@@ -505,7 +505,7 @@ PetscErrorCode write_results(ShallowStressBalance &ssa,
 
   ierr = pio.open_for_writing(filename, false, true); CHKERRQ(ierr);
   ierr = pio.append_time(0.0);
-  ierr = pio.close(); CHKERRQ(ierr); 
+  ierr = pio.close(); CHKERRQ(ierr);
 
   set<string>::iterator j = vars.begin();
   while (j != vars.end()) {
@@ -600,14 +600,14 @@ int main(int argc, char *argv[]) {
 
     IceGrid g(com, rank, size, config);
 
-    ierr = grid_setup(g); CHKERRQ(ierr); 
+    ierr = grid_setup(g); CHKERRQ(ierr);
     ierr = g.printInfo(1); CHKERRQ(ierr);
 
     PISMVars vars;
 
-    ierr = allocate_vars(g, vars); CHKERRQ(ierr); 
+    ierr = allocate_vars(g, vars); CHKERRQ(ierr);
 
-    ierr = read_input_data(g, vars, config); CHKERRQ(ierr); 
+    ierr = read_input_data(g, vars, config); CHKERRQ(ierr);
 
     CustomGlenIce ice(g.com, "", config);
 
@@ -656,15 +656,15 @@ int main(int argc, char *argv[]) {
     ierr = verbPrintf(3,com,ssa_stdout.c_str()); CHKERRQ(ierr);
     
     IceModelVec2V *vel_ssa;
-    ierr = ssa->get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr); 
+    ierr = ssa->get_advective_2d_velocity(vel_ssa); CHKERRQ(ierr);
 
     ierr = read_riggs_and_compare(g, vars, *vel_ssa); CHKERRQ(ierr);
 
-    ierr = compute_errors(g, vars, *vel_ssa); CHKERRQ(ierr); 
+    ierr = compute_errors(g, vars, *vel_ssa); CHKERRQ(ierr);
 
-    ierr = write_results(*ssa, g, vars); CHKERRQ(ierr); 
+    ierr = write_results(*ssa, g, vars); CHKERRQ(ierr);
     
-    ierr = deallocate_vars(vars); CHKERRQ(ierr); 
+    ierr = deallocate_vars(vars); CHKERRQ(ierr);
 
     delete ssa;
   }

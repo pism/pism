@@ -716,15 +716,17 @@ PetscErrorCode  IceModelVec::begin_access() {
 //! Checks if an IceModelVec is allocated and calls DAVecRestoreArray.
 PetscErrorCode  IceModelVec::end_access() {
   PetscErrorCode ierr;
-  access_counter--;
-
 #ifdef PISM_DEBUG
   ierr = checkAllocated(); CHKERRQ(ierr);
+
+  if (array == NULL)
+    SETERRQ(1, "IceModelVec::end_access(): a == NULL (looks like begin_acces() was not called)");
 
   if (access_counter < 0)
     SETERRQ(1, "IceModelVec::end_access(): access_counter < 0");
 #endif
 
+  access_counter--;
   if (access_counter == 0) {
     ierr = DAVecRestoreArray(da, v, &array); CHKERRQ(ierr);
     array = NULL;
