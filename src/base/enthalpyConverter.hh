@@ -26,9 +26,7 @@
 Use this way, for example within IceModel with NCConfigVariable config member:
 \code
   #include "enthalpyConverter.hh"
-  EnthalpyConverter EC(&config);  // this runs constructor, so make sure this
-                                  //   is done after the creation/initialization of
-                                  //   NCConfigVariable config
+  EnthalpyConverter EC(&config);  // runs constructor; do after initialization of NCConfigVariable config
   ...
   for (...) {
     ...
@@ -38,19 +36,21 @@ Use this way, for example within IceModel with NCConfigVariable config member:
 \endcode
 
 Some methods are functions which return the computed values or a boolean.  These
-do no error checking.  Others return PetscErrorCode (and set arguments).  These
-check either that the enthalpy is below that of liquid water, or that
-the temperature (in K) is positive.
+do no error checking.  Others return PetscErrorCode and the modify pass-by-reference
+arguments.  These check either that the enthalpy is below that of liquid water,
+or they check that the temperature (in K) is positive.
 
 Specifically, getAbsTemp() gives return value 1 if the input enthalpy exceeded
-that of liquid water, but puts the temperature of maximum-liquid-content 
-temperate ice into its computed value for T.  And getWaterFraction() gives
+that of liquid water, but it puts the temperature of
+temperate ice into its computed value for T.  Method getWaterFraction() gives
 return value of 1 under the same condition, but puts the maximum-liquid-content
 into its computed value for omega.
 
 The three methods that get the enthalpy from temperatures and liquid fractions, 
-namely getEnth(), getEnthPermissive(), getEnthAtWaterFraction(), are more strict about
-error checking.  They call SETERRQ() if there arguments are invalid.
+namely getEnth(), getEnthPermissive(), getEnthAtWaterFraction(), are more strict
+about error checking.  They call SETERRQ() if their arguments are invalid.
+
+This class is documented by [\ref AschwandenBuelerBlatter].
 */
 class EnthalpyConverter {
 public:
@@ -99,7 +99,6 @@ class ICMEnthalpyConverter : public EnthalpyConverter {
 public:
   ICMEnthalpyConverter(const NCConfigVariable &config) : EnthalpyConverter(config) {
     T_0 = 0.0;
-    // T_triple = 1.0e30;  // unreachable
     do_cold_ice_methods = true;
     // FIXME:  it *might* be nice to set these as overrides (?), but we have a "const"
     //   reference for config, and IceFlowLaw creates an EnthalpyConverter and
@@ -139,6 +138,7 @@ public:
                                                 double &E) const {
     E = getEnthalpyCTS(p); return 0; }
 
+  /*! */
   virtual bool isTemperate(double /*E*/, double /*p*/) const { return false; }
 };
 

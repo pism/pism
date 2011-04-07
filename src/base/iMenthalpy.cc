@@ -208,7 +208,7 @@ PetscErrorCode IceModel::getEnthalpyCTSColumn(PetscScalar p_air,
 }
 
 
-/******  next 3 are helper functions for enthalpyDrainageStep() ******/
+/******  next two are helper functions for enthalpyDrainageStep() ******/
 
 PetscErrorCode reportColumnSolveError(
     const PetscErrorCode solve_ierr, columnSystemCtx &sys, 
@@ -264,31 +264,18 @@ PetscErrorCode reportColumn(
 }
 
 
-PetscErrorCode copyColumn(PetscScalar *src, PetscScalar *dest, const PetscInt n) {
-  for (PetscInt k = 0; k < n; k++) {
-    dest[k] = src[k];
-  }
-  return 0;
-}
-
-
-// do this define to turn on messages
-#define DEBUG_SHOW_BMELT 0
-
-
 //! Update ice enthalpy field based on conservation of energy.
 /*!
 This method is documented by the page \ref bombproofenth and by [\ref
 AschwandenBuelerBlatter].
 
-
-This method updates IceModelVec3 vWork3d, IceModelVec2S vbmr, and 
+This method updates IceModelVec3 vWork3d = vEnthnew, IceModelVec2S vbmr, and 
 IceModelVec2S vHmelt.  No communication of ghosts is done for any of these fields.
+
 We use an instance of enthSystemCtx.
 
 Regarding drainage, see [\ref AschwandenBuelerBlatter] and references therein.
  */
-
 PetscErrorCode IceModel::enthalpyAndDrainageStep(
                       PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
                       PetscScalar* bulgeCount) {
@@ -351,9 +338,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
     SETERRQ(5,"PISM ERROR: ocean == PETSC_NULL");
   }
 
-  // FIXME: is it inefficient to create an IceModelVec2S here?
-  IceModelVec2S G0;
-  ierr = G0.create(grid, "bheatflx0", false); CHKERRQ(ierr);
+  IceModelVec2S G0 = vWork2d[0];
   ierr = G0.set_attrs("internal",
                       "upward geothermal flux at z=0", 
                       "W m-2", ""); CHKERRQ(ierr);
@@ -469,12 +454,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
               hf_up = - ice_K * (esys.Enth[1] - esys.Enth[0]) / fdz;
             }
             vbmr(i,j) = ( (*Rb)(i,j) + G0(i,j) - hf_up ) / (ice->rho * L); // = - Mb / rho in paper
-#if DEBUG_SHOW_BMELT == 1
-            verbPrintf(3,grid.com,
-               "\n [stage 1; i,j=%d,%d has warm base, is grounded;\n"
-               "             k1_istemperate=%d, G0=%.4f, hf_up=%.4f, Rb=%.4f, vbmr=%.6f(m/a)]",
-               i,j,k1_istemperate,G0(i,j),hf_up,(*Rb)(i,j),vbmr(i,j)*secpera);
-#endif
           }
         }
 
@@ -489,12 +468,11 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         ierr = esys.setSchemeParamsThisColumn(isMarginal, lambda); CHKERRQ(ierr);
         ierr = esys.setBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);
 
-        // ***** determine lowest-level equation at bottom of ice
-        //       see figure in efgis paper, and page documenting BOMBPROOF
+        // determine lowest-level equation at bottom of ice; see decision chart
+        //   in [\ref AschwandenBuelerBlatter], and page documenting BOMBPROOF
         if (is_floating) {
-          // floating base: Dirichlet application of known temperature from ocean coupler
-          // FIXME: this is assuming base of ice shelf has zero liquid fraction
-          //        and is at cryostatic pressure; is this right?
+          // floating base: Dirichlet application of known temperature from ocean
+          //   coupler; assumes base of ice shelf has zero liquid fraction
           PetscScalar Enth0;
           ierr = EC->getEnthPermissive(shelfbtemp(i,j), 0.0, EC->getPressureFromDepth(vH(i,j)),
                                        Enth0); CHKERRQ(ierr);
@@ -560,11 +538,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       if (vMask.is_grounded(i,j)) {
         vbmr(i,j) += Hdrainedtotal / (dt_years_TempAge * secpera);
         Hmeltnew += Hdrainedtotal;
-#if DEBUG_SHOW_BMELT == 1
-        verbPrintf(3,grid.com,
-               "\n [stage 2; i,j=%d,%d has vbmr=%.6f(m/a) from drainage]",
-               i,j,vbmr(i,j)*secpera);
-#endif
       }
 
       // Enthnew[] is finalized!:  apply bulge limiter and transfer column
@@ -589,12 +562,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO INFINITY AND BEYOND)!!
         vHmelt(i,j) = PetscMax(0.0, PetscMin(hmelt_max, Hmeltnew) );
       }
-
-#if DEBUG_SHOW_BMELT == 1
-      verbPrintf(3,grid.com,
-               "\n [stage 3; i,j=%d,%d has vbmr=%.6f(m/a) from drainage]",
-               i,j,vbmr(i,j)*secpera);
-#endif
 
       } // end explicit scoping
       

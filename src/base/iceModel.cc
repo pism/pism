@@ -211,8 +211,6 @@ PetscErrorCode IceModel::createVecs() {
   vMask.output_data_type = NC_BYTE;
   ierr = variables.add(vMask); CHKERRQ(ierr);
 
-
-
   // iceberg identifying integer mask
   if (config.get_flag("kill_icebergs")) {
     ierr = vIcebergMask.create(grid, "IcebergMask", true, WIDE_STENCIL); CHKERRQ(ierr);
@@ -357,7 +355,6 @@ PetscErrorCode IceModel::createVecs() {
     ierr = variables.add(vPrinStrain2); CHKERRQ(ierr);
 
   }
-
 
   // cell areas
   ierr = cell_area.create(grid, "cell_area", false); CHKERRQ(ierr);
