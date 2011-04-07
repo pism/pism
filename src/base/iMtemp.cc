@@ -345,11 +345,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
       SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");
     }
 
-    IceModelVec2S G0;
-    ierr = G0.create(grid, "bheatflx0", false); CHKERRQ(ierr);
-    ierr = G0.set_attrs("internal",
-                        "upward geothermal flux at z=0", 
-                        "W m-2", ""); CHKERRQ(ierr);
+    IceModelVec2S G0 = vWork2d[0];
+    ierr = G0.set_attrs("internal", "upward geothermal flux at z=0", "W m-2", ""); CHKERRQ(ierr);
     ierr = G0.set_glaciological_units("mW m-2");
     if (btu) {
       ierr = btu->get_upward_geothermal_flux(G0); CHKERRQ(ierr);
