@@ -26,6 +26,7 @@
 #include <set>
 #include "NCVariable.hh"
 
+
 // use namespace std BUT remove trivial namespace browser from doxygen-erated HTML source browser
 /// @cond NAMESPACE_BROWSER
 using namespace std;
@@ -85,6 +86,8 @@ PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],..
 
 void endPrintRank();
 
+void PISMEnd()  __attribute__((noreturn));
+
 string pism_timestamp();
 string pism_username_prefix();
 string pism_args_string();
@@ -94,6 +97,47 @@ bool ends_with(string str, string suffix);
 
 inline bool set_contains(set<string> S, string name) {
   return (S.find(name) != S.end());
+}
+
+//! \brief Convert a quantity from unit1 to unit2.
+/*!
+ * Example: convert(1, "m/year", "m/s").
+ *
+ * Please avoid using in computationally-intensive code.
+ */
+inline double convert(double value, const char spec1[], const char spec2[]) {
+  utUnit unit1, unit2;
+  double slope, intercept;
+  int errcode;
+
+  errcode = utScan(spec1, &unit1);
+  if (errcode != 0) {
+#ifdef PISM_DEBUG
+    PetscPrintf(MPI_COMM_SELF, "utScan failed trying to parse %s\n", spec1);
+    PISMEnd();
+#endif
+    return GSL_NAN;
+  }
+
+  errcode = utScan(spec2, &unit2);
+  if (errcode != 0) {
+#ifdef PISM_DEBUG
+    PetscPrintf(MPI_COMM_SELF, "utScan failed trying to parse %s\n", spec2);
+    PISMEnd();
+#endif
+    return GSL_NAN;
+  }
+
+  errcode = utConvert(&unit1, &unit2, &slope, &intercept);
+  if (errcode != 0) {
+#ifdef PISM_DEBUG
+    PetscPrintf(MPI_COMM_SELF, "utConvert failed trying to convert %s to %s\n", spec1, spec2);
+    PISMEnd();
+#endif
+    return GSL_NAN;
+  }
+
+  return value * slope + intercept;
 }
 
 // handy functions for processing options:
@@ -117,8 +161,6 @@ PetscErrorCode PISMOptionsRealArray(string option, string text,
 
 PetscErrorCode PISMOptionsIsSet(string option, bool &result);
 PetscErrorCode PISMOptionsIsSet(string option, string descr, bool &result);
-
-void PISMEnd()  __attribute__((noreturn));
 
 PetscErrorCode ignore_option(MPI_Comm com, const char name[]);
 PetscErrorCode check_old_option_and_stop(

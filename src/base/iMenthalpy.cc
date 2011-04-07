@@ -543,7 +543,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         const PetscScalar p     = EC->getPressureFromDepth(vH(i,j) - fzlev[k]); // FIXME task #7297
         PetscScalar omega;
         EC->getWaterFraction(Enthnew[k], p, omega);  // return code not checked;
-                                                     // we ignor E>E_l situation here
+                                                     // we ignore E>E_l situation here
         PetscScalar dHdrained;
         if (omega > omega_max) {
           // drain water:

@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
       ierr = bedtoptemp->begin_access(); CHKERRQ(ierr);
       for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
         for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-          PetscReal TT, FF; // Test K:  use TT, ignor FF
+          PetscReal TT, FF; // Test K:  use TT, ignore FF
           ierr = exactK(y * secpera, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
           (*bedtoptemp)(i,j) = TT;
         }
@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
     ierr = btu.get_upward_geothermal_flux(*ghf); CHKERRQ(ierr);
 
     // get, and tell stdout, the correct answer from Test K
-    PetscReal TT, FF; // Test K:  use FF, ignor TT
+    PetscReal TT, FF; // Test K:  use FF, ignore TT
     ierr = exactK(grid.end_year * secpera, 0.0, &TT, &FF, 0); CHKERRQ(ierr);
     ierr = verbPrintf(2,com,
         "  exact Test K reports upward heat flux at z=0, at end year %.2f, as G_0 = %.7f W m-2;\n",
