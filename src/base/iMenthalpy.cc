@@ -264,6 +264,29 @@ PetscErrorCode reportColumn(
 }
 
 
+#define OM1 0.01
+#define OM2 0.02
+#define OM3 0.03
+#define DR2 0.005
+#define DR3 0.05
+
+// hard-wired  D(omega)  calculation from [\ref AschwandenBuelerBlatter]
+PetscReal get_drainage_rate(PetscReal omega) {
+  if (omega > OM1) {
+    PetscReal D;  // = D(omega); see figure in [\ref AschwandenBuelerBlatter]
+    if (omega > OM2) {
+      if (omega > OM3) {
+        D = DR3;
+      } else
+        D = DR2 + (DR3 - DR2) * (omega - OM2) / OM1;
+    } else
+      D = DR2 * (omega - OM1) / OM1;
+    return D / secpera; // convert from a-1 to s-1
+  } else
+    return 0.0;
+}
+
+
 //! Update ice enthalpy field based on conservation of energy.
 /*!
 This method is documented by the page \ref bombproofenth and by [\ref
@@ -286,6 +309,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       "PISM ERROR:  enthalpyAndDrainageStep() called but do_cold_ice_methods==true\n");
   }
 
+  const PetscReal dt_secs = dt_years_TempAge * secpera;
+
   // get fine grid levels in ice
   PetscInt    fMz = grid.Mz_fine;  
   PetscScalar fdz = grid.dz_fine;
@@ -295,14 +320,12 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
     p_air     = config.get("surface_pressure"),
     ice_K     = ice->k / ice->rho, // enthalpy-conductivity for cold ice
     L         = config.get("water_latent_heat_fusion"),  // J kg-1
-    omega_max = config.get("liquid_water_fraction_max"), // pure
     bulgeEnthMax  = config.get("enthalpy_cold_bulge_max"), // J kg-1
     hmelt_max = config.get("hmelt_max");                 // m
 
-  IceModelVec2S *Rb;            // basal frictional heating
-  ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
-
+  IceModelVec2S *Rb;
   IceModelVec3 *u3, *v3, *w3, *Sigma3;
+  ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
   ierr = stress_balance->get_3d_velocity(u3, v3, w3); CHKERRQ(ierr);
   ierr = stress_balance->get_volumetric_strain_heating(Sigma3); CHKERRQ(ierr); 
 
@@ -310,7 +333,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   Enthnew = new PetscScalar[fMz];  // new enthalpy in column
 
   enthSystemCtx esys(config, Enth3, fMz);
-  ierr = esys.initAllColumns(grid.dx, grid.dy, (dt_years_TempAge * secpera), fdz); CHKERRQ(ierr);
+  ierr = esys.initAllColumns(grid.dx, grid.dy, dt_secs, fdz); CHKERRQ(ierr);
 
   bool viewOneColumn;
   ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
@@ -339,9 +362,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   }
 
   IceModelVec2S G0 = vWork2d[0];
-  ierr = G0.set_attrs("internal",
-                      "upward geothermal flux at z=0", 
-                      "W m-2", ""); CHKERRQ(ierr);
+  ierr = G0.set_attrs("internal","upward geothermal flux at z=0","W m-2", ""); CHKERRQ(ierr);
   ierr = G0.set_glaciological_units("mW m-2");
   if (btu) {
     ierr = btu->get_upward_geothermal_flux(G0); CHKERRQ(ierr);
@@ -377,7 +398,6 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
       // for fine grid; this should *not* be replaced by call to grid.kBelowHeight()
       const PetscInt ks = static_cast<PetscInt>(floor(vH(i,j)/fdz));
-
 #ifdef PISM_DEBUG
       // check if ks is valid
       if ((ks < 0) || (ks >= grid.Mz_fine)) {
@@ -504,39 +524,34 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       // thermodynamic basal melt rate causes water to be added to layer
       PetscScalar Hmeltnew = vHmelt(i,j);
       if (vMask.is_grounded(i,j)) {
-        Hmeltnew += vbmr(i,j) * (dt_years_TempAge * secpera);
+        Hmeltnew += vbmr(i,j) * dt_secs;
       }
 
-      // FIXME:  make drainage match paper
-      // drain ice segments; has result that Enthnew[] is ice with at most
-      //   omega_max liquid
+      // drain ice segments by mechanism in [\ref AschwandenBuelerBlatter]
       PetscScalar Hdrainedtotal = 0.0;
       for (PetscInt k=0; k < ks; k++) {
-        if (EC->isLiquified(Enthnew[k],EC->getPressureFromDepth(vH(i,j) - fzlev[k]))) { // FIXME task #7297
-          liquifiedCount++;
+        const PetscReal p = EC->getPressureFromDepth(vH(i,j) - fzlev[k]); // FIXME task #7297
+        PetscReal omega;
+        EC->getWaterFraction(Enthnew[k], p, omega);  // return code not checked; ignore E>E_l here
+        if (omega > 0.0) { // to avoid doing any more work if ice is cold
+          if (Enthnew[k] >= esys.Enth_s[k] + L) {
+            liquifiedCount++; // count these events ...
+            Enthnew[k] = esys.Enth_s[k] + L; //  but lose the energy
+          }
+          if (omega > 0.01) {
+            PetscReal fractiondrained = get_drainage_rate(omega) * dt_secs; // pure number
+            fractiondrained = PetscMin(fractiondrained, omega - 0.01); // only drain down to 0.01
+            Hdrainedtotal += fractiondrained * fdz;  // always a positive contribution
+            Enthnew[k] -= fractiondrained * L;
+            //ierr = EC->getEnthAtWaterFraction(0.01, p, Enthnew[k]); CHKERRQ(ierr);
+          }
         }
-        // if there is liquid water already, thus temperate, consider whether there
-        //   is enough to cause drainage;  FIXME: UNACCOUNTED ENERGY LOSS IF E>E_l
-        const PetscScalar p     = EC->getPressureFromDepth(vH(i,j) - fzlev[k]); // FIXME task #7297
-        PetscScalar omega;
-        EC->getWaterFraction(Enthnew[k], p, omega);  // return code not checked;
-                                                     // we ignore E>E_l situation here
-        PetscScalar dHdrained;
-        if (omega > omega_max) {
-          // drain water:
-          dHdrained = (omega - omega_max) * fdz;
-          // update enthalpy because omega == omega_max now:
-          ierr = EC->getEnthAtWaterFraction(omega_max, p, Enthnew[k]); CHKERRQ(ierr);
-        } else {
-          dHdrained = 0.0;
-        }                                       
-        Hdrainedtotal += dHdrained;  // always a positive contribution
       }
 
       // in grounded case, add to both basal melt rate and Hmelt; if floating,
       // Hdrainedtotal is discarded because ocean determines basal melt rate
       if (vMask.is_grounded(i,j)) {
-        vbmr(i,j) += Hdrainedtotal / (dt_years_TempAge * secpera);
+        vbmr(i,j) += Hdrainedtotal / dt_secs;
         Hmeltnew += Hdrainedtotal;
       }
 

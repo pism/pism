@@ -255,25 +255,10 @@ PetscReal GPBLDIce::softnessParameter_from_enth(
   } else { // temperate ice
     PetscReal omega;
     ierr = EC->getWaterFraction(enthalpy,pressure,omega);
-#if 0
-    if (ierr) {
-      PetscErrorPrintf(
-        "getWaterFraction() returned ierr>0 in GPBLDIce::softnessParameter_from_enth()\n");
-      endPrintRank();
-    }
-#endif
+    omega = PetscMin(omega,0.01); // as stated in \ref AschwandenBuelerBlatter, use the max here
     // next line implements eqn (23) in \ref AschwandenBlatter2009
     return softnessParameter_paterson_budd(T_0) * (1.0 + water_frac_coeff * omega);
   }
-#if 0
-  } else { // liquid water not allowed
-    PetscErrorPrintf("ERROR in GPBLDIce::softnessParameter_from_enth(): liquid water not allowed\n\n");
-    PetscErrorPrintf("values:  E=%.2f, p=%.2f, E_s=%.2f, E_l=%.2f",
-                     enthalpy,pressure,E_s,E_l);
-    endPrintRank();
-    return 0.0;
-  }
-#endif
 }
 
 // ThermoGlenIce
