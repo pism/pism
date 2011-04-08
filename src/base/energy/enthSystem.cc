@@ -26,12 +26,11 @@ enthSystemCtx::enthSystemCtx(
       : columnSystemCtx(my_Mz) {  // <- critical: sets size of sys
   Mz = my_Mz;
 
-  // set values so we can check if init was called
+  // set some values so we can check if init was called
   nuEQ     = -1.0;
   iceRcold = -1.0;
   iceRtemp = -1.0;
   lambda   = -1.0;
-  Enth_ks  = -1.0;
   a0 = GSL_NAN;
   a1 = GSL_NAN;
   b  = GSL_NAN;
@@ -107,8 +106,6 @@ PetscErrorCode enthSystemCtx::setBoundaryValuesThisColumn(
   if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {  SETERRQ(2,
      "setBoundaryValuesThisColumn() should only be called after\n"
      "  initAllColumns() in enthSystemCtx"); }
-  if (Enth_ks >= 0.0) {  SETERRQ(3,
-     "setBoundaryValuesThisColumn() called twice (?) in enthSystemCtx"); }
 #endif
   Enth_ks = my_Enth_surface;
   return 0;
@@ -185,7 +182,7 @@ PetscErrorCode enthSystemCtx::viewConstants(
 
 /*! \brief Solve the tridiagonal system, in a single column, which determines
 the new values of the ice enthalpy. */
-PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
+PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex) {
 #ifdef PISM_DEBUG
   if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {
     SETERRQ(2, "solveThisColumn() should only be called after\n"
@@ -193,13 +190,9 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
   if (lambda < 0.0) {
     SETERRQ(3, "solveThisColumn() should only be called after\n"
                "  setSchemeParamsThisColumn() in enthSystemCtx"); }
-  if (Enth_ks < 0.0) {
-    SETERRQ(4, "solveThisColumn() should only be called after\n"
-               "  setBoundaryValuesThisColumn() in enthSystemCtx"); }
   if ((gsl_isnan(a0)) || (gsl_isnan(a1)) || (gsl_isnan(b))) {
     SETERRQ(5, "solveThisColumn() should only be called after\n"
                "  setLevel0EqnThisColumn() in enthSystemCtx"); }
-
   if (gsl_isnan(u[0])) {
     SETERRQ(60, "solveThisColumn() called with invalid u[] in\n"
                "  enthSystemCtx"); }
@@ -259,12 +252,12 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
   }
 
   // solve it; note drainage is not addressed yet and post-processing may occur
-  PetscErrorCode retval = solveTridiagonalSystem(Mz, x);
+  pivoterrorindex = solveTridiagonalSystem(Mz, x);
 
-  if (!retval) {
+#ifdef PISM_DEBUG
+  if (pivoterrorindex == 0) {
     // if success, mark column as done by making scheme params and b.c.s invalid
     lambda  = -1.0;
-    Enth_ks = -1.0;
     a0 = GSL_NAN;
     a1 = GSL_NAN;
     b  = GSL_NAN;
@@ -276,6 +269,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x) {
     Enth_s[0] = GSL_NAN;
     Enth[0]   = GSL_NAN;
   }
-  return retval;
+#endif
+  return 0;
 }
 

@@ -164,8 +164,8 @@ PetscErrorCode columnSystemCtx::viewColumnValues(PetscViewer viewer,
   if (v==NULL) {
     SETERRQ1(2,"columnSystem ERROR: can't view '%s' by v=NULL pointer ... ending ...\n", info);
   }
-  if ((m<1) || (m>1000)) {
-    SETERRQ1(3,"columnSystem ERROR: can't view '%s' because m<1 or m>1000 column values ... ending ...\n",info);
+  if (m<1) {
+    SETERRQ1(3,"columnSystem ERROR: can't view '%s' because m<1 ... ending ...\n",info);
   }
 
   PetscTruth iascii;
@@ -188,7 +188,7 @@ PetscErrorCode columnSystemCtx::viewColumnValues(PetscViewer viewer,
 }
 
 
-//! View the tridiagonal matrix as a full matrix.  Unwise if size exceeds 20 or so. 
+//! View the tridiagonal matrix.  Views as a full matrix if nmax <= 120, otherwise by listing diagonals.
 /*! 
 Give first argument NULL to get standard out.  No binary viewer.
 
@@ -220,7 +220,6 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
     return 0;
   }
 
-//  if (nmax > 12) {
   if (nmax > 120) {
     ierr = PetscViewerASCIIPrintf(viewer,
       "\n\n<nmax > 120: matrix too big to display as full; viewing tridiagonal matrix '%s' by diagonals ...\n",info); CHKERRQ(ierr);

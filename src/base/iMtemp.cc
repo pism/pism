@@ -423,16 +423,16 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           ierr = system.setBasalBoundaryValuesThisColumn(G0(i,j),shelfbtemp(i,j),(*Rb)(i,j)); CHKERRQ(ierr);
 
           // solve the system for this column; melting not addressed yet
-          ierr = system.solveThisColumn(&x); // no CHKERRQ(ierr) immediately because:
-          if (ierr > 0) {
+          PetscErrorCode pivoterr;
+          ierr = system.solveThisColumn(&x, pivoterr); CHKERRQ(ierr);
+          if (pivoterr != 0) {
             PetscPrintf(grid.com,
-                        "PISM ERROR in IceModel::temperatureStep():\n"
-                        "   tridiagonal solve failed at (%d,%d) with zero pivot position %d\n"
+                        "\n\ntridiagonal solve failed at (%d,%d) with zero pivot position %d\n"
                         "   1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n"
-                        "   ENDING! ...\n",
+                        "   ENDING! ...\n\n",
                         i, j, ierr, system.norm1(ks+1), system.ddratio(ks+1));
-            PISMEnd();
-          } else { CHKERRQ(ierr); }
+            SETERRQ(1,"PISM ERROR in IceModel::temperatureStep()\n");
+          }
 
           // diagnostic/DEBUG; added for comparison to IceEnthalpyModel
           if (viewOneColumn) {

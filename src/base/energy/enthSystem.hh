@@ -49,7 +49,7 @@ public:
 
   PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
 
-  PetscErrorCode solveThisColumn(PetscScalar **x);
+  PetscErrorCode solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex);
 
 public:
   // arrays must be filled before calling solveThisColumn():

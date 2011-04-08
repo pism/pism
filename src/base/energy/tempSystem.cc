@@ -112,7 +112,7 @@ PetscErrorCode tempSystemCtx::setBasalBoundaryValuesThisColumn(
 }
 
 
-PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x) {
+PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex) {
   PetscErrorCode ierr;
   if (!initAllDone) {  SETERRQ(2,
      "solveThisColumn() should only be called after initAllColumns() in tempSystemCtx"); }
@@ -208,6 +208,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x) {
   basalBCsValid = false;
 
   // solve it; note melting not addressed yet
-  return solveTridiagonalSystem(ks+1,x);
+  pivoterrorindex = solveTridiagonalSystem(ks+1,x);
+  return 0;
 }
 

@@ -213,11 +213,11 @@ PetscErrorCode IceModel::getEnthalpyCTSColumn(PetscScalar p_air,
 PetscErrorCode reportColumnSolveError(
     const PetscErrorCode solve_ierr, columnSystemCtx &sys, 
     const char *prefix, const PetscInt i, const PetscInt j) {
+  PetscErrorCode ierr;
 
   char fname[PETSC_MAX_PATH_LEN];
   snprintf(fname, PETSC_MAX_PATH_LEN, "%s_i%d_j%d_zeropivot%d.m",
            prefix,i,j,solve_ierr);
-  PetscErrorCode ierr;
   ierr = PetscPrintf(PETSC_COMM_SELF,
     "\n\ntridiagonal solve in enthalpyAndDrainageStep(), for %sSystemCtx,\n"
         "   failed at (%d,%d) with zero pivot position %d\n"
@@ -513,70 +513,73 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           }
         }
 
-        ierr = esys.solveThisColumn(&Enthnew);
-        if (ierr) reportColumnSolveError(ierr, esys, "enth", i, j);
-        CHKERRQ(ierr);
+        // solve the system
+        PetscErrorCode pivoterr;
+        ierr = esys.solveThisColumn(&Enthnew,pivoterr); CHKERRQ(ierr);
+        if (pivoterr != 0) {
+          reportColumnSolveError(ierr, esys, "enth", i, j);
+          SETERRQ(1,"PISM ERROR in enthalpyDrainageStep()\n");
+        }
         if (viewOneColumn && issounding(i,j)) {
           ierr = reportColumn(grid.com, esys, "enth", 
                               i, j, Enthnew, fMz); CHKERRQ(ierr);
         }
 
-      // thermodynamic basal melt rate causes water to be added to layer
-      PetscScalar Hmeltnew = vHmelt(i,j);
-      if (vMask.is_grounded(i,j)) {
-        Hmeltnew += vbmr(i,j) * dt_secs;
-      }
+        // thermodynamic basal melt rate causes water to be added to layer
+        PetscScalar Hmeltnew = vHmelt(i,j);
+        if (vMask.is_grounded(i,j)) {
+          Hmeltnew += vbmr(i,j) * dt_secs;
+        }
 
-      // drain ice segments by mechanism in [\ref AschwandenBuelerBlatter]
-      PetscScalar Hdrainedtotal = 0.0;
-      for (PetscInt k=0; k < ks; k++) {
-        const PetscReal p = EC->getPressureFromDepth(vH(i,j) - fzlev[k]); // FIXME task #7297
-        PetscReal omega;
-        EC->getWaterFraction(Enthnew[k], p, omega);  // return code not checked; ignore E>E_l here
-        if (omega > 0.0) { // to avoid doing any more work if ice is cold
-          if (Enthnew[k] >= esys.Enth_s[k] + L) {
-            liquifiedCount++; // count these events ...
-            Enthnew[k] = esys.Enth_s[k] + L; //  but lose the energy
-          }
-          if (omega > 0.01) {
-            PetscReal fractiondrained = get_drainage_rate(omega) * dt_secs; // pure number
-            fractiondrained = PetscMin(fractiondrained, omega - 0.01); // only drain down to 0.01
-            Hdrainedtotal += fractiondrained * fdz;  // always a positive contribution
-            Enthnew[k] -= fractiondrained * L;
-            //ierr = EC->getEnthAtWaterFraction(0.01, p, Enthnew[k]); CHKERRQ(ierr);
+        // drain ice segments by mechanism in [\ref AschwandenBuelerBlatter]
+        PetscScalar Hdrainedtotal = 0.0;
+        for (PetscInt k=0; k < ks; k++) {
+          const PetscReal p = EC->getPressureFromDepth(vH(i,j) - fzlev[k]); // FIXME task #7297
+          PetscReal omega;
+          EC->getWaterFraction(Enthnew[k], p, omega);  // return code not checked; ignore E>E_l here
+          if (omega > 0.0) { // to avoid doing any more work if ice is cold
+            if (Enthnew[k] >= esys.Enth_s[k] + L) {
+              liquifiedCount++; // count these events ...
+              Enthnew[k] = esys.Enth_s[k] + L; //  but lose the energy
+            }
+            if (omega > 0.01) {
+              PetscReal fractiondrained = get_drainage_rate(omega) * dt_secs; // pure number
+              fractiondrained = PetscMin(fractiondrained, omega - 0.01); // only drain down to 0.01
+              Hdrainedtotal += fractiondrained * fdz;  // always a positive contribution
+              Enthnew[k] -= fractiondrained * L;
+              //ierr = EC->getEnthAtWaterFraction(0.01, p, Enthnew[k]); CHKERRQ(ierr);
+            }
           }
         }
-      }
 
-      // in grounded case, add to both basal melt rate and Hmelt; if floating,
-      // Hdrainedtotal is discarded because ocean determines basal melt rate
-      if (vMask.is_grounded(i,j)) {
-        vbmr(i,j) += Hdrainedtotal / dt_secs;
-        Hmeltnew += Hdrainedtotal;
-      }
-
-      // Enthnew[] is finalized!:  apply bulge limiter and transfer column
-      //   into vWork3d; communication will occur later
-      const PetscReal lowerEnthLimit = Enth_ks - bulgeEnthMax;
-      for (PetscInt k=0; k < ks; k++) {
-        if (Enthnew[k] < lowerEnthLimit) {
-          *bulgeCount += 1;      // count the columns which have very large cold 
-          Enthnew[k] = lowerEnthLimit;  // advection bulge ... and then actually
-                                        // limit how low the enthalpy
+        // in grounded case, add to both basal melt rate and Hmelt; if floating,
+        // Hdrainedtotal is discarded because ocean determines basal melt rate
+        if (vMask.is_grounded(i,j)) {
+          vbmr(i,j) += Hdrainedtotal / dt_secs;
+          Hmeltnew += Hdrainedtotal;
         }
-      }
-      ierr = vWork3d.setValColumnPL(i,j,Enthnew); CHKERRQ(ierr);
 
-      // finalize Hmelt value
-      if (is_floating) {
-        // if floating assume maximally saturated till to avoid "shock" if grounding line advances
-        // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
-        vHmelt(i,j) = hmelt_max;
-      } else {
-        // limit Hmelt to be in [0.0, hmelt_max]
-        // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO INFINITY AND BEYOND)!!
-        vHmelt(i,j) = PetscMax(0.0, PetscMin(hmelt_max, Hmeltnew) );
-      }
+        // Enthnew[] is finalized!:  apply bulge limiter and transfer column
+        //   into vWork3d; communication will occur later
+        const PetscReal lowerEnthLimit = Enth_ks - bulgeEnthMax;
+        for (PetscInt k=0; k < ks; k++) {
+          if (Enthnew[k] < lowerEnthLimit) {
+            *bulgeCount += 1;      // count the columns which have very large cold 
+            Enthnew[k] = lowerEnthLimit;  // limit advection bulge ... enthalpy not too low
+          }
+        }
+        ierr = vWork3d.setValColumnPL(i,j,Enthnew); CHKERRQ(ierr);
+
+        // finalize Hmelt value
+        if (is_floating) {
+          // if floating assume maximally saturated till to avoid "shock" if grounding line advances
+          // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!
+          vHmelt(i,j) = hmelt_max;
+        } else {
+          // limit Hmelt to be in [0.0, hmelt_max]
+          // UNACCOUNTED MASS & ENERGY (LATENT) LOSS (TO INFINITY AND BEYOND)!!
+          vHmelt(i,j) = PetscMax(0.0, PetscMin(hmelt_max, Hmeltnew) );
+        }
 
       } // end explicit scoping
       

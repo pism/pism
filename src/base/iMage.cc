@@ -27,7 +27,8 @@ class ageSystemCtx : public columnSystemCtx {
 public:
   ageSystemCtx(PetscInt my_Mz);
   PetscErrorCode initAllColumns();
-  PetscErrorCode solveThisColumn(PetscScalar **x);  
+
+  PetscErrorCode solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex);  
 
 public:
   // constants which should be set before calling initForAllColumns()
@@ -78,7 +79,7 @@ PetscErrorCode ageSystemCtx::initAllColumns() {
 }
 
 
-PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x) {
+PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex) {
   PetscErrorCode ierr;
   if (!initAllDone) {  SETERRQ(2,
      "solveThisColumn() should only be called after initAllColumns() in ageSystemCtx"); }
@@ -131,7 +132,8 @@ PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x) {
   }
 
   // solve it
-  return solveTridiagonalSystem(ks+1,x);
+  pivoterrorindex = solveTridiagonalSystem(ks+1,x);
+  return 0;
 }
 
 
@@ -210,16 +212,16 @@ PetscErrorCode IceModel::ageStep() {
         ierr = system.setIndicesAndClearThisColumn(i,j,fks); CHKERRQ(ierr);
 
         // solve the system for this column; call checks that params set
-        ierr = system.solveThisColumn(&x); // no "CHKERRQ(ierr)" because:
-        if (ierr > 0) {
+        PetscErrorCode pivoterr;
+        ierr = system.solveThisColumn(&x,pivoterr); CHKERRQ(ierr);
+        if (pivoterr != 0) {
           PetscPrintf(grid.com,
-            "PISM ERROR in IceModel::ageStep():\n"
-            "  tridiagonal solve failed at (%d,%d) with zero pivot position %d\n"
+            "\n\ntridiagonal solve failed at (%d,%d) with zero pivot position %d\n"
             "  1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n"
             "  ENDING! ...\n\n",
             i, j, ierr, system.norm1(fks+1), system.ddratio(fks+1));
-          PISMEnd();
-        } else { CHKERRQ(ierr); }
+          SETERRQ(1, "PISM ERROR in IceModel::ageStep()\n");
+        }
 
         // x[k] contains age for k=0,...,ks, but set age of ice above (and at) surface to zero years
         for (PetscInt k=fks+1; k<fMz; k++) {
