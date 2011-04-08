@@ -244,7 +244,7 @@ echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
 echo "$SCRIPTNAME      except bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
 cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE2NAME $FULLPHYS $COUPLER_FORCING \
      -ts_file $TSNAME -ts_times $PALEOSTARTYEAR:1:$ENDTIME \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $PALEOSTARTYEAR:500:$ENDTIME \
+     -extra_file $EXNAME -extra_vars $EXVARS -extra_times -124500:500:$ENDTIME \
      -ys $PALEOSTARTYEAR -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
@@ -263,7 +263,7 @@ cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHY
      -bed_def lc $COUPLER_FORCING\
      -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat  \
      -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $STARTTIME:500:$ENDTIME \
+     -extra_file $EXNAME -extra_vars $EXVARS -extra_times -19500:500:$ENDTIME \
      -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"
 $PISM_DO $cmd
 
