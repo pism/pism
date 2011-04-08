@@ -188,21 +188,18 @@ PetscErrorCode PADirectForcing::update(PetscReal t_years, PetscReal dt_years) {
   return 0;
 }
 
-PetscErrorCode PADirectForcing::mean_precip(PetscReal t_years, PetscReal dt_years,
-				      IceModelVec2S &result) {
+PetscErrorCode PADirectForcing::mean_precip(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   if (precip != NULL) {
     string history = "added average over time-step of precipitation\n" + result.string_attr("history");
 
     double anomaly;
-    ierr = precip->update(t_years, dt_years); CHKERRQ(ierr);
-
     ierr = precip->begin_access(); CHKERRQ(ierr);
     ierr = result.begin_access(); CHKERRQ(ierr);
     for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-	ierr = precip->average(i, j, t_years, dt_years, anomaly); CHKERRQ(ierr);
+	ierr = precip->average(i, j, t, dt, anomaly); CHKERRQ(ierr);
 	result(i,j) = anomaly;
       }
     }
@@ -215,8 +212,7 @@ PetscErrorCode PADirectForcing::mean_precip(PetscReal t_years, PetscReal dt_year
   return 0;
 }
 
-PetscErrorCode PADirectForcing::mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-					   IceModelVec2S &result) {
+PetscErrorCode PADirectForcing::mean_annual_temp(IceModelVec2S &result) {
   PetscErrorCode ierr;
   
   if (temp != NULL) {
@@ -224,13 +220,12 @@ PetscErrorCode PADirectForcing::mean_annual_temp(PetscReal t_years, PetscReal dt
                      + result.string_attr("history");
     
     // average over the year starting at t_years
-    ierr = temp->update(t_years, 1.0); CHKERRQ(ierr);
     PetscScalar av_ij;
     ierr = temp->begin_access(); CHKERRQ(ierr);
     ierr = result.begin_access(); CHKERRQ(ierr);
     for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-        ierr = temp->average(i,j,t_years,1.0,av_ij); CHKERRQ(ierr);
+        ierr = temp->average(i,j,t,1.0,av_ij); CHKERRQ(ierr);
         result(i,j) = av_ij;
       }
     }
@@ -280,17 +275,15 @@ PetscErrorCode PADirectForcing::temp_time_series(int i, int j, int N,
   return 0;
 }
 
-PetscErrorCode PADirectForcing::temp_snapshot(PetscReal t_years, PetscReal dt_years,
-					IceModelVec2S &result) {
+PetscErrorCode PADirectForcing::temp_snapshot(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  double T = t_years + 0.5 * dt_years;
+  double T = t + 0.5 * dt;
 
   string history = "added temperatures at midpoint of time-step\n"
     + result.string_attr("history");
   
-  ierr = temp->update(t_years, dt_years); CHKERRQ(ierr);
   ierr = temp->interp(T); CHKERRQ(ierr);
-  
+  ierr = temp->copy_to(result);
   ierr = result.set_attr("history", history); CHKERRQ(ierr);
 
   return 0;

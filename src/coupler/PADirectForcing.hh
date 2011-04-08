@@ -32,16 +32,13 @@ public:
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
-  virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
-				     IceModelVec2S &result);
-  virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
-					  IceModelVec2S &result); 
+  virtual PetscErrorCode mean_precip(IceModelVec2S &result);
+  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
   virtual PetscErrorCode begin_pointwise_access();
   virtual PetscErrorCode end_pointwise_access();  
   virtual PetscErrorCode temp_time_series(int i, int j, int N,
 					  PetscReal *ts, PetscReal *values);
-  virtual PetscErrorCode temp_snapshot(PetscReal t_years, PetscReal dt_years,
-				       IceModelVec2S &result);
+  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 protected:
   IceModelVec2T *temp, *precip;
 };
