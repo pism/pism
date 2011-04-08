@@ -86,7 +86,7 @@ public:
   // for the calving, etc.:
 
   //! \brief Get the largest and smallest eigenvalues of the strain rate tensor.
-  virtual PetscErrorCode get_principle_strain_rates(
+  virtual PetscErrorCode get_principal_strain_rates(
                 IceModelVec2S &result_e1, IceModelVec2S &result_e2);
 
   //! \brief Produce a report string for the standard output.

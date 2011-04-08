@@ -282,7 +282,7 @@ protected:
   virtual PetscErrorCode findIceBergCandidates();
   virtual PetscErrorCode identifyNotAnIceBerg();
   virtual PetscErrorCode killIdentifiedIceBergs();
-  virtual PetscErrorCode killEasyIceBergs();       // FIXME: do we want this one to happen even if eigencalving does not happen?  should we be calling this one before any time that principle values need to be computed?
+  virtual PetscErrorCode killEasyIceBergs();       // FIXME: do we want this one to happen even if eigencalving does not happen?  should we be calling this one before any time that principal values need to be computed?
 
   // see iMIO.cc
   virtual PetscErrorCode set_time_from_options();
@@ -292,16 +292,14 @@ protected:
 
   // see iMpartgrid.cc
   virtual PetscErrorCode velsPartGrid(
-       PetscReal Mo, PetscReal Me, PetscReal Mw, PetscReal Mn, PetscReal Ms,
+       int Mo, int Me, int Mw, int Mn, int Ms,
        PISMVector2 vrego, PISMVector2 vrege, PISMVector2 vregw, PISMVector2 vregn, PISMVector2 vregs,
        PetscReal &velE, PetscReal &velW, PetscReal &velN, PetscReal &velS);
   virtual PetscReal getHav(bool do_redist,
-                           PetscReal Me, PetscReal Mw, PetscReal Mn, PetscReal Ms,
+                           int Me, int Mw, int Mn, int Ms,
                            PetscReal He, PetscReal Hw, PetscReal Hn, PetscReal Hs); 
   virtual PetscErrorCode redistResiduals();
   virtual PetscErrorCode calculateRedistResiduals();
-  // FIXME: following is deprecated; massContExplicitStep() in iMgeometry.cc should do the job now
-  virtual PetscErrorCode massContExplicitStepPartGrids(); 
 
   // see iMreport.cc
   virtual PetscErrorCode volumeArea(

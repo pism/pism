@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -72,7 +72,7 @@ public:
   virtual PetscErrorCode get_D2(IceModelVec2S* &result)
   { result = &D2; return 0; }
 
-  virtual PetscErrorCode compute_principle_strain_rates(
+  virtual PetscErrorCode compute_principal_strain_rates(
                 IceModelVec2S &/*result_e1*/, IceModelVec2S &/*result_e2*/)
   { SETERRQ(1,"not implemented in base class"); return 0; }
 

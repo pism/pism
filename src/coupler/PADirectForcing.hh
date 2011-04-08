@@ -40,7 +40,7 @@ public:
 					  PetscReal *ts, PetscReal *values);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 protected:
-  IceModelVec2T *temp, *precip;
+  IceModelVec2T temp, precip;
 };
 
 #endif /* _PADIRECTFORCING_H_ */

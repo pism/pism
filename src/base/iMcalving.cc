@@ -30,7 +30,7 @@
 PetscErrorCode IceModel::eigenCalving() {
   const PetscScalar   dx = grid.dx, dy = grid.dy;
   PetscErrorCode ierr;
-  ierr = verbPrintf(4,grid.com,"######### applyCalvingRate is called \n");    CHKERRQ(ierr);
+  ierr = verbPrintf(4, grid.com, "######### applyCalvingRate is called \n");    CHKERRQ(ierr);
 
   // is ghost communication really needed here?
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
@@ -43,11 +43,11 @@ PetscErrorCode IceModel::eigenCalving() {
 
   const PetscScalar eigenCalvFactor = config.get("eigen_calving");
 
-  PetscReal currentSeaLevel;
+  PetscReal sea_level = 0;
 
   if (ocean != NULL) {
-    ierr = ocean->sea_level_elevation(currentSeaLevel); CHKERRQ(ierr);
-  } else { SETERRQ(2,"PISM ERROR: ocean == NULL"); }
+    ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
+  } else { SETERRQ(2, "PISM ERROR: ocean == NULL"); }
 
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
@@ -66,104 +66,104 @@ PetscErrorCode IceModel::eigenCalving() {
 
   if(dx != dy) {
     ierr = PetscPrintf(grid.com,
-                       "PISMPIK_ERROR: Calvingrate using a non-quadratic grid does not work (yet),"
+                       "PISMPIK_ERROR: Calvingrate using a non - quadratic grid does not work (yet), "
                        " since it has no direction!!!\n");
     PISMEnd();
   }
 
   // Compute sum/average of strain-rate eigenvalues in adjacent floating gird
   // cells to be used for eigencalving
-  PetscScalar eigen1=0.0,eigen2=0.0;
+  PetscScalar eigen1 = 0.0, eigen2 = 0.0;
 
   // Distance from calving front, where straine rate is evaluated
-  PetscInt fromedge=2;
+  PetscInt fromedge = 2;
 
   // Counting adjacent floating boxes (with distance "fromedge")
-  PetscInt countFromEdge=0;
+  PetscInt countFromEdge = 0;
 
   // Counting directly adjacent floating boxes
-  PetscInt countDirectNeighbors=0;
+  PetscInt countDirectNeighbors = 0;
 
-  // Neighbor-average ice thickness
-  PetscScalar Hav=0.0; // is calculated here as average over direct neighbors
+  // Neighbor - average ice thickness
+  PetscScalar Hav = 0.0; // is calculated here as average over direct neighbors
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
       // find partially filled or empty grid boxes on the icefree ocean, which
       // have floating ice neighbors after massContExplicitStep (mask not
       // updated)
       bool nextToNewFloatingCell =
-        ((vH(i+1,j)>0.0 && (vbed(i+1,j) < (currentSeaLevel - ice_rho/ocean_rho*vH(i+1,j)))) ||
-         (vH(i-1,j)>0.0 && (vbed(i-1,j) < (currentSeaLevel - ice_rho/ocean_rho*vH(i-1,j)))) ||
-         (vH(i,j+1)>0.0 && (vbed(i,j+1) < (currentSeaLevel - ice_rho/ocean_rho*vH(i,j+1)))) ||
-         (vH(i,j-1)>0.0 && (vbed(i,j-1) < (currentSeaLevel - ice_rho/ocean_rho*vH(i,j-1)))));
+        ((vH(i + 1, j) > 0.0 && (vbed(i + 1, j) < (sea_level - ice_rho / ocean_rho*vH(i + 1, j)))) ||
+         (vH(i - 1, j) > 0.0 && (vbed(i - 1, j) < (sea_level - ice_rho / ocean_rho*vH(i - 1, j)))) ||
+         (vH(i, j + 1) > 0.0 && (vbed(i, j + 1) < (sea_level - ice_rho / ocean_rho*vH(i, j + 1)))) ||
+         (vH(i, j - 1) > 0.0 && (vbed(i, j - 1) < (sea_level - ice_rho / ocean_rho*vH(i, j - 1)))));
 
-      bool hereEdge = ( vH(i,j) == 0.0 && vbed(i,j) < currentSeaLevel);
+      bool hereEdge = ( vH(i, j) == 0.0 && vbed(i, j) < sea_level);
 
-      Hav=0.0; eigen1=0.0; eigen2=0.0; countFromEdge=0, countDirectNeighbors=0;
+      Hav = 0.0; eigen1 = 0.0; eigen2 = 0.0; countFromEdge = 0, countDirectNeighbors = 0;
 
       if (hereEdge && nextToNewFloatingCell) {
 
-    	if (vMask(i+1,j) == MASK_FLOATING ) { countDirectNeighbors =1; Hav= vH(i+1,j); }
-        if (vMask(i-1,j) == MASK_FLOATING ) { countDirectNeighbors+=1; Hav+=vH(i-1,j); }
-        if (vMask(i,j+1) == MASK_FLOATING ) { countDirectNeighbors+=1; Hav+=vH(i,j+1); }
-        if (vMask(i,j-1) == MASK_FLOATING ) { countDirectNeighbors+=1; Hav+=vH(i,j-1); }
-        if (countDirectNeighbors>0) {
-          Hav=Hav/countDirectNeighbors;
+        if (vMask(i + 1, j) == MASK_FLOATING ) { countDirectNeighbors = 1; Hav = vH(i + 1, j); }
+        if (vMask(i - 1, j) == MASK_FLOATING ) { countDirectNeighbors += 1; Hav += vH(i - 1, j); }
+        if (vMask(i, j + 1) == MASK_FLOATING ) { countDirectNeighbors += 1; Hav += vH(i, j + 1); }
+        if (vMask(i, j - 1) == MASK_FLOATING ) { countDirectNeighbors += 1; Hav += vH(i, j - 1); }
+        if (countDirectNeighbors > 0) {
+          Hav = Hav / countDirectNeighbors;
         }
 
-        if (vMask(i+fromedge,j) == MASK_FLOATING ){
-          eigen1  = vPrinStrain1(i+fromedge,j); //Hav=vH(i+fromedge,j);
-          eigen2  = vPrinStrain2(i+fromedge,j); countFromEdge+=1;
+        if (vMask(i + fromedge, j) == MASK_FLOATING ){
+          eigen1 = vPrinStrain1(i + fromedge, j); //Hav = vH(i + fromedge, j);
+          eigen2 = vPrinStrain2(i + fromedge, j); countFromEdge += 1;
         }
-        if (vMask(i-fromedge,j) == MASK_FLOATING ){
-          eigen1  += vPrinStrain1(i-fromedge,j); //Hav+=vH(i-fromedge,j);
-          eigen2  += vPrinStrain2(i-fromedge,j); countFromEdge+=1;
+        if (vMask(i - fromedge, j) == MASK_FLOATING ){
+          eigen1 += vPrinStrain1(i - fromedge, j); //Hav += vH(i - fromedge, j);
+          eigen2 += vPrinStrain2(i - fromedge, j); countFromEdge += 1;
         }
-        if (vMask(i,j+fromedge) == MASK_FLOATING ){
-    	  eigen1  += vPrinStrain1(i,j+fromedge); //Hav+=vH(i,j+fromedge);
-    	  eigen2  += vPrinStrain2(i,j+fromedge); countFromEdge+=1;
+        if (vMask(i, j + fromedge) == MASK_FLOATING ){
+          eigen1 += vPrinStrain1(i, j + fromedge); //Hav += vH(i, j + fromedge);
+          eigen2 += vPrinStrain2(i, j + fromedge); countFromEdge += 1;
         }
-        if (vMask(i,j-fromedge) == MASK_FLOATING ){
-    	  eigen1  += vPrinStrain1(i,j-fromedge); //Hav+=vH(i,j-fromedge);
-    	  eigen2  += vPrinStrain2(i,j-fromedge); countFromEdge+=1;
+        if (vMask(i, j - fromedge) == MASK_FLOATING ){
+          eigen1 += vPrinStrain1(i, j - fromedge); //Hav += vH(i, j - fromedge);
+          eigen2 += vPrinStrain2(i, j - fromedge); countFromEdge += 1;
         }
-        if (countFromEdge>0) {
-          eigen1=eigen1/countFromEdge; eigen2=eigen2/countFromEdge;
-          //Hav=Hav/countFromEdge;
+        if (countFromEdge > 0) {
+          eigen1 = eigen1 / countFromEdge; eigen2 = eigen2 / countFromEdge;
+          //Hav = Hav / countFromEdge;
         }
 
 
-        PetscScalar calvrateHorizontal=0.0,
-          eigenCalvOffset=0.0; // if it's not exactly the zero line of
+        PetscScalar calvrateHorizontal = 0.0,
+          eigenCalvOffset = 0.0; // if it's not exactly the zero line of
                                // transition from compressive to extensive flow
                                // regime
 
         // calving law
         if ( eigen2 > eigenCalvOffset && eigen1 > 0.0) { // if spreading in all directions
-          calvrateHorizontal= eigenCalvFactor * eigen1 * (eigen2 - eigenCalvOffset);
-          // eigen1 * eigen2 has units [s^-2] and calvrateHorizontal [m*s^1]
+          calvrateHorizontal = eigenCalvFactor * eigen1 * (eigen2 - eigenCalvOffset);
+          // eigen1 * eigen2 has units [s^ - 2] and calvrateHorizontal [m*s^1]
           // hence, eigenCalvFactor has units [m*s]
-        } else calvrateHorizontal=0.0;
+        } else calvrateHorizontal = 0.0;
 
 
         // calculate mass loss with respect to the associated ice thickness and the grid size:
         PetscScalar calvrate = calvrateHorizontal * Hav / dx; // in m/s
 
         // apply calving rate at partially filled or empty grid cells
-        if (calvrate>0.0) {
-    	  //ierr = verbPrintf(5,grid.com,"!!! Calvrate=%f with Hav=%f at %d,%d \n",calvrate*secpera,Hav,i,j);
-          //PetscScalar Href_old = vHref(i,j);
-          //vDiffCalvRate(i,j) = 0.0;
-          vHref(i,j) -= calvrate * dt; // in m
-          if(vHref(i,j)<0.0) { // i.e. partially filled grid cell has completely calved off
-            vDiffCalvRate(i,j) = -vHref(i,j) /dt;// in m/s, means additional ice loss
+        if (calvrate > 0.0) {
+          //ierr = verbPrintf(5, grid.com, "!!! Calvrate=%f with Hav=%f at %d, %d \n", calvrate*secpera, Hav, i, j);
+          //PetscScalar Href_old = vHref(i, j);
+          //vDiffCalvRate(i, j) = 0.0;
+          vHref(i, j) -= calvrate * dt; // in m
+          if(vHref(i, j) < 0.0) { // i.e. partially filled grid cell has completely calved off
+            vDiffCalvRate(i, j) =  - vHref(i, j) / dt;// in m/s, means additional ice loss
           }
-     	  vHref(i,j)=0.0;
-     	  if(countDirectNeighbors>0){
-            vDiffCalvRate(i,j) = vDiffCalvRate(i,j)/countDirectNeighbors;
-     	  }
+          vHref(i, j) = 0.0;
+          if(countDirectNeighbors > 0){
+            vDiffCalvRate(i, j) = vDiffCalvRate(i, j) / countDirectNeighbors;
+          }
         }
       }
     }
@@ -174,31 +174,31 @@ PetscErrorCode IceModel::eigenCalving() {
   ierr = vDiffCalvRate.endGhostComm(); CHKERRQ(ierr);
 
   ierr = vDiffCalvRate.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
-      PetscScalar restCalvRate=0.0;
-      bool hereFloating = (vH(i,j) > 0.0 && (vbed(i,j) < (currentSeaLevel - ice_rho/ocean_rho*vH(i,j))));
+      PetscScalar restCalvRate = 0.0;
+      bool hereFloating = (vH(i, j) > 0.0 && (vbed(i, j) < (sea_level - ice_rho / ocean_rho*vH(i, j))));
 
       if (hereFloating &&
-          (vDiffCalvRate(i+1,j)>0.0 || vDiffCalvRate(i-1,j)>0.0 ||
-           vDiffCalvRate(i,j+1)>0.0 || vDiffCalvRate(i,j-1)>0.0 )) {
+          (vDiffCalvRate(i + 1, j) > 0.0 || vDiffCalvRate(i - 1, j) > 0.0 ||
+           vDiffCalvRate(i, j + 1) > 0.0 || vDiffCalvRate(i, j - 1) > 0.0 )) {
 
-        restCalvRate = (vDiffCalvRate(i+1,j) +
-                        vDiffCalvRate(i-1,j) +
-                        vDiffCalvRate(i,j+1) + 
-                        vDiffCalvRate(i,j-1));     // in m/s
+        restCalvRate = (vDiffCalvRate(i + 1, j) +
+                        vDiffCalvRate(i - 1, j) +
+                        vDiffCalvRate(i, j + 1) +
+                        vDiffCalvRate(i, j - 1));     // in m/s
 
-        vHref(i,j) = vH(i,j)- (restCalvRate * dt); // in m
+        vHref(i, j) = vH(i, j) - (restCalvRate * dt); // in m
 
-        //Hav = vH(i,j);
-        vHnew(i,j)=0.0;
+        //Hav = vH(i, j);
+        vHnew(i, j) = 0.0;
 
-        if(vHref(i,j) < 0.0) { // i.e. terminal floating ice grid cell has calved off completely.
-          // We do not account for further calving ice-inwards!
+        if(vHref(i, j) < 0.0) { // i.e. terminal floating ice grid cell has calved off completely.
+          // We do not account for further calving ice - inwards!
           // Alternatively CFL criterion for time stepping could be adjusted to maximum of calving rate.
           //Hav = 0.0;
-          vHref(i,j) = 0.0;
+          vHref(i, j) = 0.0;
         }
       }
     }
@@ -226,7 +226,7 @@ This calving condition applies for terminal floating ice shelf grid cells when t
 PetscErrorCode IceModel::calvingAtThickness() {
   //const PetscScalar   dx = grid.dx, dy = grid.dy;
   PetscErrorCode ierr;
-  ierr = verbPrintf(4,grid.com,"######### callvingAtThickness is called \n");    CHKERRQ(ierr);
+  ierr = verbPrintf(4, grid.com, "######### callvingAtThickness is called \n");    CHKERRQ(ierr);
 
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
   ierr = vH.endGhostComm(); CHKERRQ(ierr);
@@ -240,30 +240,30 @@ PetscErrorCode IceModel::calvingAtThickness() {
   ierr = vbed.begin_access(); CHKERRQ(ierr);
 
   double ocean_rho = config.get("sea_water_density"),
-    ice_rho   = config.get("ice_density");
+    ice_rho = config.get("ice_density");
 
-  PetscReal currentSeaLevel;
+  PetscReal sea_level;
   if (ocean != NULL) {
-    ierr = ocean->sea_level_elevation(currentSeaLevel); CHKERRQ(ierr);
-  } else { SETERRQ(2,"PISM ERROR: ocean == NULL"); }
+    ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
+  } else { SETERRQ(2, "PISM ERROR: ocean == NULL"); }
 
-  const PetscScalar Hcalving=config.get("calving_at_thickness");
-  //ierr = verbPrintf(3,grid.com,"!!! Hcalving=%f \n",Hcalving);
+  const PetscScalar Hcalving = config.get("calving_at_thickness");
+  //ierr = verbPrintf(3, grid.com, "!!! Hcalving=%f \n", Hcalving);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
-      bool hereFloating = (vH(i,j)>0.0 && (vbed(i,j) < (currentSeaLevel - ice_rho/ocean_rho * vH(i,j))));
-      bool icefreeOceanNeighbor = ( (vH(i+1,j)==0.0 && vbed(i+1,j) < currentSeaLevel) ||
-                                    (vH(i-1,j)==0.0 && vbed(i-1,j) < currentSeaLevel) ||
-                                    (vH(i,j+1)==0.0 && vbed(i,j+1) < currentSeaLevel) ||
-                                    (vH(i,j-1)==0.0 && vbed(i,j-1) < currentSeaLevel));
+      bool hereFloating = (vH(i, j) > 0.0 && (vbed(i, j) < (sea_level - ice_rho / ocean_rho * vH(i, j))));
+      bool icefreeOceanNeighbor = ( (vH(i + 1, j) == 0.0 && vbed(i + 1, j) < sea_level) ||
+                                    (vH(i - 1, j) == 0.0 && vbed(i - 1, j) < sea_level) ||
+                                    (vH(i, j + 1) == 0.0 && vbed(i, j + 1) < sea_level) ||
+                                    (vH(i, j - 1) == 0.0 && vbed(i, j - 1) < sea_level));
 
 
-      if (hereFloating && vH(i,j)<= Hcalving && icefreeOceanNeighbor) {
-        vHnew(i,j)=0.0;
-        //ierr = verbPrintf(3,grid.com,"!!! H=%f has calved off at %d,%d \n",vH(i,j),i,j);
-        //vMask(i,j)=MASK_ICE_FREE_OCEAN;
+      if (hereFloating && vH(i, j) <= Hcalving && icefreeOceanNeighbor) {
+        vHnew(i, j) = 0.0;
+        //ierr = verbPrintf(3, grid.com, "!!! H=%f has calved off at %d, %d \n", vH(i, j), i, j);
+        //vMask(i, j)=MASK_ICE_FREE_OCEAN;
       }
     }
   }

@@ -20,16 +20,12 @@
 
 PADirectForcing::PADirectForcing(IceGrid &g, const NCConfigVariable &conf)
   : PISMAtmosphereModel(g, conf) {
-  temp = NULL;
-  precip = NULL;
 }
 
 PADirectForcing::~PADirectForcing() {
-  delete temp;
-  delete precip;
 }
 
-PetscErrorCode PADirectForcing::init(PISMVars &vars) {
+PetscErrorCode PADirectForcing::init(PISMVars &/*vars*/) {
   PetscErrorCode ierr;
   PetscTruth bc_file_set;
   char bc_file[PETSC_MAX_PATH_LEN];
@@ -56,85 +52,67 @@ PetscErrorCode PADirectForcing::init(PISMVars &vars) {
   ierr = verbPrintf(2,grid.com,
                     "    reading air temperature from %s ...\n",
                     bc_file); CHKERRQ(ierr);
-  temp = new IceModelVec2T;
-  temp->set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
-  ierr = temp->create(grid, "artm", false); CHKERRQ(ierr);
-  ierr = temp->set_attrs("climate_forcing",
+  temp.set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
+  ierr = temp.create(grid, "artm", false); CHKERRQ(ierr);
+  ierr = temp.set_attrs("climate_forcing",
                                  "near-surface temperature",
                                  "Kelvin", ""); CHKERRQ(ierr);
-  ierr = temp->init(bc_file); CHKERRQ(ierr);
+  ierr = temp.init(bc_file); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com,
                     "    reading ice-equivalent precipitation rate from %s ...\n",
                     bc_file); CHKERRQ(ierr);
   
-  precip = new IceModelVec2T;
-  precip->set_n_records((unsigned int) config.get("climate_forcing_buffer_size")); 
-  ierr = precip->create(grid, "precip", false); CHKERRQ(ierr);
-  ierr = precip->set_attrs("climate_forcing",
+  precip.set_n_records((unsigned int) config.get("climate_forcing_buffer_size")); 
+  ierr = precip.create(grid, "precip", false); CHKERRQ(ierr);
+  ierr = precip.set_attrs("climate_forcing",
                                    "ice-equivalent precipitation rate",
                                    "m s-1", ""); CHKERRQ(ierr);
-  ierr = precip->init(bc_file); CHKERRQ(ierr);
-  ierr = precip->set_glaciological_units("m year-1");
-  precip->write_in_glaciological_units = true;
+  ierr = precip.init(bc_file); CHKERRQ(ierr);
+  ierr = precip.set_glaciological_units("m year-1");
+  precip.write_in_glaciological_units = true;
 
   return 0;
 }
 
 PetscErrorCode PADirectForcing::max_timestep(PetscReal t_years,
-				       PetscReal &dt_years) {
-  PetscErrorCode ierr;
+                                             PetscReal &dt_years) {
   PetscReal max_dt = -1;
   
-  if (temp != NULL) {
-    max_dt = temp->max_timestep(t_years);
+  max_dt = temp.max_timestep(t_years);
 
-    if (dt_years > 0) {
-      if (max_dt > 0)
-	dt_years = PetscMin(max_dt, dt_years);
-    }
-    else dt_years = max_dt;
+  if (dt_years > 0) {
+    if (max_dt > 0)
+      dt_years = PetscMin(max_dt, dt_years);
   }
+  else dt_years = max_dt;
 
-  if (precip != NULL) {
-    dt_years = precip->max_timestep(t_years);
+  dt_years = precip.max_timestep(t_years);
 
-    if (dt_years > 0) {
-      if (max_dt > 0)
-	dt_years = PetscMin(max_dt, dt_years);
-    }
-    else dt_years = max_dt;
+  if (dt_years > 0) {
+    if (max_dt > 0)
+      dt_years = PetscMin(max_dt, dt_years);
   }
+  else dt_years = max_dt;
 
   return 0;
 }
 
 void PADirectForcing::add_vars_to_output(string keyword, set<string> &result) {
   if (keyword == "big") {
-
-    if (temp != NULL)
-      result.insert("artm");
-
-    if (precip != NULL)
-      result.insert("precip");
+    result.insert("artm");
+    result.insert("precip");
   }
-
 }
 
 PetscErrorCode PADirectForcing::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
   PetscErrorCode ierr;
-  int varid;
 
-  if (temp != NULL) {
-    if (set_contains(vars, "artm")) {
-      ierr = temp->define(nc, nctype); CHKERRQ(ierr);
-    }
+  if (set_contains(vars, "artm")) {
+    ierr = temp.define(nc, nctype); CHKERRQ(ierr);
   }
-
-  if (precip != NULL) {
-    if (set_contains(vars, "precip")) {
-      ierr = precip->define(nc, nctype); CHKERRQ(ierr);
-    }
+  if (set_contains(vars, "precip")) {
+    ierr = precip.define(nc, nctype); CHKERRQ(ierr);
   }
 
   return 0;
@@ -145,23 +123,18 @@ PetscErrorCode PADirectForcing::write_variables(set<string> vars,  string filena
   PetscErrorCode ierr;
   double T = t + 0.5 * dt;
 
-  if (temp != NULL) {
-    if (set_contains(vars, "artm")) {
-      ierr = temp->update(T, 0); CHKERRQ(ierr);
-      ierr = temp->interp(T); CHKERRQ(ierr);
-      ierr = temp->write(filename.c_str()); CHKERRQ(ierr);
-      vars.erase("temp");
-    }
+  if (set_contains(vars, "artm")) {
+    ierr = temp.update(T, 0); CHKERRQ(ierr);
+    ierr = temp.interp(T); CHKERRQ(ierr);
+    ierr = temp.write(filename.c_str()); CHKERRQ(ierr);
+    vars.erase("temp");
   }
 
-  if (precip != NULL) {
-    if (set_contains(vars, "precip")) {
-      ierr = precip->update(T, 0); CHKERRQ(ierr);
-      ierr = precip->interp(T); CHKERRQ(ierr);
-      ierr = precip->write(filename.c_str()); CHKERRQ(ierr);
-      vars.erase("precip");
-    }
-
+  if (set_contains(vars, "precip")) {
+    ierr = precip.update(T, 0); CHKERRQ(ierr);
+    ierr = precip.interp(T); CHKERRQ(ierr);
+    ierr = precip.write(filename.c_str()); CHKERRQ(ierr);
+    vars.erase("precip");
   }
 
   return 0;
@@ -177,13 +150,9 @@ PetscErrorCode PADirectForcing::update(PetscReal t_years, PetscReal dt_years) {
   t  = t_years;
   dt = dt_years;
 
-  if (temp != NULL) {
-    ierr = temp->update(t_years, dt_years); CHKERRQ(ierr);
-  }
+  ierr = temp.update(t_years, dt_years); CHKERRQ(ierr);
 
-  if (precip != NULL) {
-    ierr = precip->update(t_years, dt_years); CHKERRQ(ierr);
-  }
+  ierr = precip.update(t_years, dt_years); CHKERRQ(ierr);
 
   return 0;
 }
@@ -191,23 +160,21 @@ PetscErrorCode PADirectForcing::update(PetscReal t_years, PetscReal dt_years) {
 PetscErrorCode PADirectForcing::mean_precip(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  if (precip != NULL) {
-    string history = "added average over time-step of precipitation\n" + result.string_attr("history");
+  string history = "added average over time-step of precipitation\n" + result.string_attr("history");
 
-    double anomaly;
-    ierr = precip->begin_access(); CHKERRQ(ierr);
-    ierr = result.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-	ierr = precip->average(i, j, t, dt, anomaly); CHKERRQ(ierr);
-	result(i,j) = anomaly;
-      }
+  double anomaly;
+  ierr = precip.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = precip.average(i, j, t, dt, anomaly); CHKERRQ(ierr);
+      result(i,j) = anomaly;
     }
-    ierr = result.end_access(); CHKERRQ(ierr);
-    ierr = precip->end_access(); CHKERRQ(ierr);
-
-    ierr = result.set_attr("history", history); CHKERRQ(ierr);
   }
+  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = precip.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_attr("history", history); CHKERRQ(ierr);
 
   return 0;
 }
@@ -215,62 +182,50 @@ PetscErrorCode PADirectForcing::mean_precip(IceModelVec2S &result) {
 PetscErrorCode PADirectForcing::mean_annual_temp(IceModelVec2S &result) {
   PetscErrorCode ierr;
   
-  if (temp != NULL) {
-    string history = "added annual average of temperature\n"
-                     + result.string_attr("history");
+  string history = "added annual average of temperature\n"
+    + result.string_attr("history");
     
-    // average over the year starting at t_years
-    PetscScalar av_ij;
-    ierr = temp->begin_access(); CHKERRQ(ierr);
-    ierr = result.begin_access(); CHKERRQ(ierr);
-    for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
-      for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
-        ierr = temp->average(i,j,t,1.0,av_ij); CHKERRQ(ierr);
-        result(i,j) = av_ij;
-      }
+  // average over the year starting at t_years
+  PetscScalar av_ij;
+  ierr = temp.begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  for (PetscInt i = grid.xs; i<grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j<grid.ys+grid.ym; ++j) {
+      ierr = temp.average(i,j,t,1.0,av_ij); CHKERRQ(ierr);
+      result(i,j) = av_ij;
     }
-    ierr = temp->end_access(); CHKERRQ(ierr);
-    ierr = result.end_access(); CHKERRQ(ierr);
-
-    ierr = result.set_attr("history", history); CHKERRQ(ierr);
   }
+  ierr = temp.end_access(); CHKERRQ(ierr);
+  ierr = result.end_access(); CHKERRQ(ierr);
+
+  ierr = result.set_attr("history", history); CHKERRQ(ierr);
 
   return 0;
 }
 
 PetscErrorCode PADirectForcing::begin_pointwise_access() {
   PetscErrorCode ierr;
-
-  if (temp != NULL) {
-    ierr = temp->begin_access(); CHKERRQ(ierr);
-  }
-
+  ierr = temp.begin_access(); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PADirectForcing::end_pointwise_access() {
   PetscErrorCode ierr;
-
-  if (temp != NULL) {
-    ierr = temp->end_access(); CHKERRQ(ierr);
-  }
-
+  ierr = temp.end_access(); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PADirectForcing::temp_time_series(int i, int j, int N,
-					   PetscReal *ts, PetscReal *values) {
+                                                 PetscReal *ts, PetscReal *values) {
   PetscErrorCode ierr;
-  
-  if (temp != NULL) {
-    PetscScalar *tmp = new PetscScalar[N];
+  PetscScalar *tmp = new PetscScalar[N];
 
-    ierr = temp->interp(i, j, N, ts, tmp); CHKERRQ(ierr);
+  ierr = temp.interp(i, j, N, ts, tmp); CHKERRQ(ierr);
 
-    for (PetscInt k = 0; k < N; k++)
-      values[k] = tmp[k];
-    delete tmp;
-  }
+  for (PetscInt k = 0; k < N; k++)
+    values[k] = tmp[k];
+
+  delete tmp;
 
   return 0;
 }
@@ -282,8 +237,8 @@ PetscErrorCode PADirectForcing::temp_snapshot(IceModelVec2S &result) {
   string history = "added temperatures at midpoint of time-step\n"
     + result.string_attr("history");
   
-  ierr = temp->interp(T); CHKERRQ(ierr);
-  ierr = temp->copy_to(result);
+  ierr = temp.interp(T); CHKERRQ(ierr);
+  ierr = temp.copy_to(result);
   ierr = result.set_attr("history", history); CHKERRQ(ierr);
 
   return 0;

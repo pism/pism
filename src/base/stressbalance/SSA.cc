@@ -229,7 +229,7 @@ Though there are two eigenvalues, such do not form a vector, so the output is no
 an IceModelVec2V, though it could be a std::vector<IceModelVec2S> or such.
 
 Note that \c result_e1 >= \c result_e2, but there is no necessary relation between 
-the magnitudes, and either principle strain rate could be negative or positive.
+the magnitudes, and either principal strain rate could be negative or positive.
 
 Result can be used in a calving law, e.g. eigencalving (PIK).
 
@@ -237,7 +237,7 @@ FIXME:  makes decisions based on thickness that might better use mask?
 
 FIXME:  need to answer: strain rates will be derived from SSA velocities. Is there ghost communication needed?
 */
-PetscErrorCode SSA::compute_principle_strain_rates(
+PetscErrorCode SSA::compute_principal_strain_rates(
                       IceModelVec2S &result_e1, IceModelVec2S &result_e2) {
   PetscErrorCode ierr;
   PetscScalar    dx = grid.dx, dy = grid.dy;
