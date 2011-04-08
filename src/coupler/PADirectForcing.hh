@@ -22,35 +22,28 @@
 #include "PISMAtmosphere.hh"
 #include "iceModelVec2T.hh"
 
-class PADirectForcing : public PISMAtmosphereModel
-{
+class PADirectForcing : public PISMAtmosphereModel {
 public:
-  PADirectForcing(IceGrid &g, const NCConfigVariable &conf)
-    : PISMAtmosphereModel(g, conf) {}
-
-  virtual ~PADirectForcing() {}
-
-  virtual PetscErrorCode init(PISMVars &vars);
-
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
-
+  PADirectForcing(IceGrid &g, const NCConfigVariable &conf);
+  virtual ~PADirectForcing();
   virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
-
+  virtual PetscErrorCode init(PISMVars &vars);
   virtual void add_vars_to_output(string keyword, set<string> &result);
-
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
-
   virtual PetscErrorCode write_variables(set<string> vars, string filename);
-
-  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-
+  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+  virtual PetscErrorCode mean_precip(PetscReal t_years, PetscReal dt_years,
+				     IceModelVec2S &result);
+  virtual PetscErrorCode mean_annual_temp(PetscReal t_years, PetscReal dt_years,
+					  IceModelVec2S &result); 
+  virtual PetscErrorCode begin_pointwise_access();
+  virtual PetscErrorCode end_pointwise_access();  
+  virtual PetscErrorCode temp_time_series(int i, int j, int N,
+					  PetscReal *ts, PetscReal *values);
+  virtual PetscErrorCode temp_snapshot(PetscReal t_years, PetscReal dt_years,
+				       IceModelVec2S &result);
 protected:
-  IceModelVec2S *surface, *vH;
-  IceModelVec2T temperature, mass_flux, bc_surface;
-  PetscReal bc_period, bc_reference_year, bc_artm_lapse_rate, bc_acab_lapse_rate;
-  bool enable_time_averaging, bc_artm_lapse_rate_set, bc_acab_lapse_rate_set;
-
-  PetscReal my_mod(PetscReal input);
+  IceModelVec2T *temp, *precip;
 };
 
 #endif /* _PADIRECTFORCING_H_ */

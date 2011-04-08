@@ -17,6 +17,7 @@ set (parts
   modeling-choices.tex
   practical-usage.tex
   simplified-geometry.tex
+  storglaciaren.tex
   verification.tex
   storglaciaren.tex
   )

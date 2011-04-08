@@ -106,6 +106,7 @@ target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalanc
 add_library (pismboundary
   coupler/PAConstant.cc
   coupler/PAForcing.cc
+  coupler/PADirectForcing.cc
   coupler/PALapseRates.cc
   coupler/PAYearlyCycle.cc
   coupler/PCFactory.cc

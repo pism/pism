@@ -1,12 +1,17 @@
 #include "PCFactory.hh"
 #include "PSExternal.hh"
 #include "PSDirectForcing.hh"
+#include "PADirectForcing.hh"
 #include "PSElevation.hh"
 #include "pism_const.hh"
 
 // Atmosphere
 static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
   result = new PAConstant(g, conf);
+}
+
+static void create_pa_given(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
+  result = new PADirectForcing(g, conf);
 }
 
 static void create_pa_searise_greenland(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
@@ -23,6 +28,7 @@ static void create_pa_forcing(IceGrid& g, const NCConfigVariable& conf, PAModifi
 
 void PAFactory::add_standard_types() {
   add_model("constant",          &create_pa_constant);
+  add_model("given",          &create_pa_given);
   add_model("searise_greenland", &create_pa_searise_greenland);
   add_model("temp_lapse_rate",   &create_pa_lapse_rates);
   set_default("constant");
