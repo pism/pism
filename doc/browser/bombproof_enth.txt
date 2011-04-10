@@ -4,106 +4,111 @@
 
 One of the essential goals for any thermomechanically-coupled numerical ice sheet model is a completely bombproof numerical scheme for the advection-conduction-reaction problem for the conservation of energy within the ice.  "Bombproof" means being as stable as possible in as many realistic modeling contexts as possible.  PISM's scheme is observed to be highly robust in practice, but it is also provably stable in a significant range of circumstances.  The scheme is special to shallow ice sheets because it makes specific tradeoff choices with respect to vertical velocity.  It is generic and low order in how it treats horizontal velocity.  In this page we state the scheme, prove its stability properties, and address the basal boundary condition.
 
-Accuracy is necessarily a second goal.  Our shallow scheme has truncation error \f$O(\Delta z^2)\f$ in many circumstances, though it reverts to lower order in \f$\Delta z\f$ when it "detects trouble" in the form of large vertical velocities.  Overall the scheme has  order \f$O(\Delta t,\Delta x,\Delta y, \Delta z^2)\f$ in circumstances where the vertical ice flow velocity is small enough, relative to conductivity, and otherwise reverts to order \f$O(\Delta t,\Delta x,\Delta y, \Delta z^1)\f$.
+The scheme is conditionally-stable.  The length of the time step is limited only by the maximum magnitude of the horizontal velocities within the ice, %i.e. horizontal CFL.  This condition for stability is included in the PISM adaptive time-stepping technique.
 
-We describe the conservation of energy problem for the ice is in terms of an enthalpy field [\ref AschwandenBuelerBlatter].  The current finite difference scheme supercedes the PISM scheme for the temperature equation described in the appendices of [\ref BBL].  (That scheme is robust but it has a CFL condition on \e vertical advection, an avoidable time step restriction.  The CFL condition on \e horizontal advection remains in the new scheme, however.)  Our numerical scheme for the 3D conservation of energy equation is conditionally-stable, and in fact the length of the time step is limited only by the maximum magnitude of the horizontal velocities within the ice, %i.e. horizontal CFL.  This condition for stability is included in the PISM adaptive time-stepping technique.
+Accuracy is necessarily a second goal.  Our shallow scheme has truncation error \f$O(\Delta z^2)\f$ in many circumstances, though it reverts to lower order when it "detects trouble" in the form of large vertical velocities.  Overall the scheme has  order \f$O(\Delta t,\Delta x,\Delta y, \Delta z^2)\f$ in circumstances where the vertical ice flow velocity is small enough, relative to conductivity, and otherwise reverts to \f$O(\Delta t,\Delta x,\Delta y, \Delta z^1)\f$.
 
-The %region in which the conservation of energy equation needs to be solved changes over time.  This is an essential complicating factor in ice sheet modeling.  Also relevant is that the velocity field has a complicated provenance as it comes from some stress balance equations chosen at runtime.  These stress balances, especially with transitions in flow type, for instance at grounding lines, are incompletely understood when thermomechanically-coupled.  The stress balance could be the SIA, the SSA, a hybrid of these, and even a mix of these in different parts of the ice sheet/shelf system (or other stress balances in future PISM versions).  Thus we need to \e not make, and we will not make in proving stability, assumptions about the regularity of the velocity field in space or time, other than boundedness.
+The conservation of energy problem for the ice is in terms of an enthalpy field [\ref AschwandenBuelerBlatter].  The current scheme supercedes the cold-ice, temperature-based scheme described in the appendices of [\ref BBL] and in [\ref BBssasliding].  Compared to a cold-ice scheme, the enthalpy formulation does a better job of conserving energy, has a more-physical model for basal melt rate and drainage, and can model polythermal ice with any CTS topology [\ref AschwandenBuelerBlatter].  The finite difference implementation of the enthalpy method is robust and avoids the CFL condition on vertical advection which was present in the older, cold-ice scheme.
 
-Nor do we want the numerical scheme for advection to need any information about the velocity except its value at the beginning of the time step, and indeed the conservation of energy timestep is assumed to be split from the mass continuity time step.  Thus we have not considered implementing a scheme which requires the Jacobian of the velocity field with respect to changes in enthalpy, for example.  At very least we cannot implement a fully-implicit scheme without some blind iteration (%e.g. with no guarantee of convergence of the iteration).  The scheme we propose involves no such iteration.
+The bedrock thermal problem is solved by splitting the timestep into an update of the bedrock temperature field, assuming the ice base is as constant temperature, and an update of the ice enthalpy field, by the BOMBPROOF scheme here, assuming the upward heat flux from the bedrock layer is constant during the timestep.  For more on the implementation, see the PISMBedThermalUnit class.
+
+The region in which the conservation of energy equation needs to be solved changes over time.  This is an essential complicating factor in ice sheet modeling.  Also relevant is that the velocity field has a complicated provenance as it comes from different stress balance equations chosen at runtime.  These stress balances, especially with transitions in flow type, for instance at grounding lines, are incompletely understood when thermomechanically-coupled.  (The ShallowStressBalance instance owned by IceModel could be the SIA, the SSA, a hybrid of these, or other stress balances in future PISM versions.)  We will therefore not make, in proving stability, assumptions about the regularity of the velocity field in space or time other than boundedness.
+
+Nor do we want the numerical scheme for advection to need any information about the velocity except its value at the beginning of the time step.  Thus the conservation of energy timestep is assumed to be split from the mass continuity time step and its associated stress balance solve.  We have not considered implementing a scheme which requires the Jacobian of the velocity field with respect to changes in enthalpy, for example.  At very least such a fully-implicit scheme would require blind iteration (%e.g. with no guarantee of convergence of the iteration).  The scheme we propose involves no such iteration.
 
 
 \section iceequations Conservation of energy in a shallow ice sheet
 
-In our enthalpy formulation [\ref AschwandenBuelerBlatter, and references therein], the ice sheet is regarded as a mixture of two phases, so that both cold ice (pure solid) and temperate ice (some liquid within the solid ice matrix) can be modeled.  The ice mixture specific enthalpy field \f$E(x,y,z,t)\f$ has units \f$\text{J}\,\text{kg}^{-1}\f$; note that within the PISM documentation the symbol \f$H\f$ is used for ice thickness so we use \f$E\f$ for enthalpy here and in the PISM source code.  The conservation of energy equation is
+In an enthalpy formulation [\ref AschwandenBuelerBlatter, and references therein], the ice sheet is regarded as a mixture of two phases, solid and liquid, so that both cold and temperate ice with liquid ice matrix can be modeled.  The specific enthalpy field of the ice mixture is denoted \f$E(x,y,z,t)\f$ and has units \f$\text{J}\,\text{kg}^{-1}\f$.  (Within the PISM documentation the symbol \f$H\f$ is used for ice thickness so we use \f$E\f$ for enthalpy here and in the PISM source code versus "H" in [\ref AschwandenBuelerBlatter].)  The conservation of energy equation is
 \anchor basicEnergy
   \f[ \rho \frac{dE}{dt} = -\nabla \cdot \mathbf{q} + Q,\tag{basicEnergy} \f]
-where \f$\rho\f$ is the mixture density.  (The mixture density is assumed to be the same as ice density even if there is a nonzero liquid fraction, and the mixture is assumed to be incompressible [\ref AschwandenBuelerBlatter].)  The left and right sides of equation (\ref basicEnergy), and also the quantity \f$Q\f$, have units \f$J\,\text{s}^{-1}\,\text{m}^{-3}\f$.  Note \f$dE/dt\f$ stands for the material derivative of the enthalpy field, so the expanded form of (\ref basicEnergy) is
-  \f[ \rho \left(\frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E\right)
-        = -\nabla \cdot \mathbf{q} + Q, \f]
-where \f$\mathbf{U}\f$ is the three dimensional velocity, thus advection is included.
+where \f$\rho\f$ is the mixture density.  The mixture density is assumed to be the same as ice density even if there is a nonzero liquid fraction, and the mixture is assumed to be incompressible [\ref AschwandenBuelerBlatter].  The left and right sides of equation (\ref basicEnergy), and thus the quantity \f$Q\f$, have units \f$J\,\text{s}^{-1}\,\text{m}^{-3} = \text{W}\,\text{m}^{-3}\f$.
 
-The heat flux in cold ice and temperate ice is
+Neglecting the dependence of conductivity and heat capacity on temperature [\ref AschwandenBuelerBlatter], the heat flux in cold ice and temperate ice is
 \anchor heatflux
   \f[ \mathbf{q} = \begin{cases}
                       - k_i c_i^{-1} \nabla E, & \text{cold ice}, \\
-                      0, & \text{temperate ice}, \tag{heatflux} \\
+                      - K_0 \nabla E, & \text{temperate ice}, \tag{heatflux} \\
                    \end{cases} \f]
-where \f$k_i,c_i\f$ are constant.  In fact we may consider nonzero flux in the temperate ice case, either conceptualized as a regularization of the "real" equation, or as a flux of latent heat carried by liquid water.
+where \f$k_i,c_i,K_0\f$ are constant [\ref AschwandenBuelerBlatter].  The nonzero flux in the temperate ice case, may be conceptualized as a regularization of the "real" equation, or as a flux of latent heat carried by liquid water.  Also, \f$dE/dt\f$ stands for the material derivative of the enthalpy field, so the expanded form of (\ref basicEnergy) is
+  \f[ \rho \left(\frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E\right)
+        = \nabla \cdot \left(\left\{\begin{matrix} k_i c_i^{-1} \\ K_0 \end{matrix}\right\} \nabla E \right) + Q, \f]
+where \f$\mathbf{U}\f$ is the three dimensional velocity.  Thus advection is included.
 
-The additive quantity \f$Q\f$ is the dissipation (strain-rate) heating.  Without making any shallow approximations, the exact formula for this is
-  \f[ Q = \sum_{i,j=1}^3 D_{ij} \tau_{ij} \f] 
-where \f$D_{ij}\f$ is the strain rate tensor and \f$\tau_{ij}\f$ is the deviatoric stress tensor.  References [\ref BBL, \ref BBssasliding] address how this term is computed in PISM, according to the shallow stress balance approximations; see method PISMStressBalance::get_volumetric_strain_heating().  (Note \f$Q\f$ was called \f$\Sigma\f$ in the just-mentioned references and in many places in the source code.)
+The additive quantity \f$Q\f$ is the dissipation (strain-rate) heating,
+  \f[ Q = \sum_{i,j=1}^3 D_{ij} \tau_{ij} \f]
+where \f$D_{ij}\f$ is the strain rate tensor and \f$\tau_{ij}\f$ is the deviatoric stress tensor.  Reference [\ref BBssasliding] addresses how this term is computed in PISM, according to the shallow stress balance approximations; see method PISMStressBalance::get_volumetric_strain_heating().  (\f$Q\f$ is called \f$\Sigma\f$ in [\ref BBL, \ref BBssasliding] and in many places in the source code.)
 
-In a sliding model with an ice-bedrock interface, friction from sliding also is a source of heating.  It has units of W m-2 = J s-1 m-2, that is, the same units as the heat flux \f$\mathbf{q}\f$ above.  In formulas we write
+Friction from sliding also is a source of heating.  It has units of W m-2 = J s-1 m-2, that is, the same units as the heat flux \f$\mathbf{q}\f$ above.  In formulas we write
   \f[ F_b = - \tau_b \cdot \mathbf{u}_b, \f]
-where \f$\tau_b\f$ is the basal shear stress and \f$\mathbf{u}_b\f$ is the basal sliding velocity.  The basal shear stress is oppositely-directed to the basal velocity.  (For example, in the plastic case \f$\tau_b = - \tau_c \mathbf{u}_b / |\mathbf{u}_b|\f$ where \f$\tau_c\f$ is a positive scalar, the yield stress.)  See method PISMStressBalance::get_basal_frictional_heating().  The friction heating is concentrated at \f$z=0\f$, and it enters into the basal boundary condition, the flux jump condition addressed in section \ref melt below.
+where \f$\tau_b\f$ is the basal shear stress and \f$\mathbf{u}_b\f$ is the basal sliding velocity; the basal shear stress is oppositely-directed to the basal velocity.  For example, in the plastic case \f$\tau_b = - \tau_c \mathbf{u}_b / |\mathbf{u}_b|\f$ where \f$\tau_c\f$ is a positive scalar, the yield stress.  See method PISMStressBalance::get_basal_frictional_heating().  The friction heating is concentrated at \f$z=0\f$, and it enters into the basal boundary condition and melt rate calculation, addressed in section \ref melt below.
 
-We use a shallow approximation of equation (\ref basicEnergy).  It lacks horizontal
+We use a shallow approximation of equation (\ref basicEnergy) which lacks horizontal
 conduction terms  [\ref Fowler].  For the initial analysis of the core BOMBPROOF
-scheme, we specialize to cold ice and we do not consider the bedrock thermal layer,
-which is returned to later (below).  Therefore, within cold ice, the coefficient in the heat
+scheme, we specialize to cold ice.  Within cold ice, the coefficient in the heat
 flux is constant, so
   \f[ \nabla \cdot \mathbf{q} = - k_i c_i^{-1} \frac{\partial^2 E}{\partial z^2}. \f]
 Therefore the equation we initially analyze is
-
 \anchor basicShallow
 \f[
 \rho_i \left(\frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E\right) = k_i c_i^{-1} \frac{\partial^2 E}{\partial z^2} + Q,\tag{basicShallow}
 \f]
 
-We will assume, of course, that \f$\rho_i\f$ and \f$c_i\f$ are positive.
-
-We will be focusing on the direction in which the enthalpy and temperature has largest spatial gradient, 
-namely with respect to the vertical coordinate \f$z\f$.  Rewriting equation (\ref basicShallow)
-to emphasize the vertical terms we have
-
+We focus the analysis on the direction in which the enthalpy has largest derivative, 
+namely with respect to the vertical coordinate \f$z\f$.  Rewriting equation
+(\ref basicShallow) to emphasize the vertical terms we have
 \anchor vertProblem
-\f{align*}
+\f[
 \rho_i \left(\frac{\partial E}{\partial t} + w \frac{\partial E}{\partial z}\right) 
-     &= k_i c_i^{-1}  \frac{\partial^2 E}{\partial z^2} + \Phi \tag{vertProblem}
- \f}
+     = k_i c_i^{-1}  \frac{\partial^2 E}{\partial z^2} + \Phi \tag{vertProblem}
+\f]
 where
 \f[
 \Phi = Q - \rho_i \left(u \frac{\partial E}{\partial x}
                          + v \frac{\partial E}{\partial y}\right)
 \f]
 
-We will assume that in ice sheet modeling situations the surface enthalpy
-\f$E_s(t,x,y)\f$ (K) and the geothermal flux \f$G(t,x,y)\f$ (W m-2) at level \f$z=0\f$
-are given; the latter is the output of the PISMBedThermalUnit object, and it may
+We assume that the surface enthalpy
+\f$E_s(t,x,y)\f$ (K) and the geothermal flux \f$G(t,x,y)\f$ (W m-2) at \f$z=0\f$
+are given.  (The latter is the output of the PISMBedThermalUnit object, and it may
 come from an evolving temperature field within the upper crust, the bedrock layer.
-If a surface temperature is given then it will be converted by the EnthalpyConverter
-class.  The boundary conditions to problem (\ref vertProblem) are, therefore,
+If a surface temperature is given then it will be converted to enthalpy by the
+EnthalpyConverter class.)  Thus the boundary conditions to problem (\ref vertProblem)
+are, therefore,
 \anchor columnbcs
 \f[
-E(t,z=H), \qquad -k_i c_i^{-1} \frac{\partial E}{\partial z}\Big|_{z=0} = G.\tag{columnbcs}
+E(t,x,y,z=H)=E_s(t,x,y), \qquad -k_i c_i^{-1} \frac{\partial E}{\partial z}\Big|_{z=0} = G.\tag{columnbcs}
 \f]
-FIXME: the lower boundary condition is more interesting; see [\ref AschwandenBuelerBlatter]
+
+For a temperate ice base, including any ice base below which there is liquid water,
+the lower boundary condition is more interesting.  It is addressed below in section
+\ref melt.
 
 \section corebombproof The core BOMBPROOF scheme
 
-For the discussion of the numerical scheme below, let \f$E_{ijk}^n\f$ be our approximation to 
-the exact enthalpy \f$E\f$ at the grid point with coordinates \f$(x_i,y_j,z_k)\f$ at 
-time \f$t_n\f$.  When \f$i,j\f$ are uninteresting we will suppress them and write \f$E_k^n\f$.  
-We will use similar notation for numerical approximations to the other quantities, including
-velocity components \f$u,v,w\f$ and \f$\Phi\f$.  We put the horizontal advection terms in 
-the source term \f$\Phi\f$ because we treat them explicitly, evaluating at time \f$t_n\f$.
-(Implicit or semi-implicit treatment of horizontal advection would
-require a coupled system distributed across processors.  That kind of numerical difficulty
-can be avoided, even given the other constraints on accuracy and implementation.)
+For the discussion of the numerical scheme below, let \f$E_{ijk}^n\f$ be our
+approximation to the exact enthalpy \f$E\f$ at the grid point with coordinates
+\f$(x_i,y_j,z_k)\f$ at time \f$t_n\f$.  When \f$i,j\f$ are uninteresting we 
+suppress them and write \f$E_k^n\f$, and we will use similar notation for numerical
+approximations to the other quantities.  We put the horizontal advection terms in 
+the source term \f$\Phi\f$ because we treat them explicitly, evaluating at time
+\f$t_n\f$.  (Implicit or semi-implicit treatment of horizontal advection would
+require a coupled system distributed across processors, a difficulty which is
+currently avoided.)
 
-The scheme we use for horizontal advection is explicit first-order upwinding.  There is a CFL condition for the scheme to be stable, in the absence of conduction, and it is based on the magnitude of the horizontal velocity components.  To state the upwind scheme itself, let
-  \f[\Up{f_{\bullet}}{\alpha_i} = \begin{cases}
-                                     f_i-f_{i-1}, & \alpha_i\ge 0, \\
-                                     f_{i+1}-f_i, & \alpha_i<0.
+The scheme we use for horizontal advection is explicit first-order upwinding.
+There is a CFL condition for the scheme to be stable, in the absence of conduction,
+based on the magnitude of the horizontal velocity components.  To state the upwind
+scheme itself, let
+  \f[\Up{f_{\bullet}}{\alpha} = \begin{cases}
+                                     f_i-f_{i-1}, & \alpha \ge 0, \\
+                                     f_{i+1}-f_i, & \alpha < 0.
                                   \end{cases}\f]
 The approximate horizontal advection terms, and thus the approximation to the whole
 term \f$\Phi\f$, are
 	\f[\Phi_{ijk}^n = \Sigma_{ijk}^n - \rho_i 
 	                   \left( u_{ijk}^n\,\frac{\Up{E_{\bullet jk}^n}{u_{ijk}^n}}{\Delta x}
 	                          + v_{ijk}^n\,\frac{\Up{E_{i\bullet k}^n}{v_{ijk}^n}}{\Delta y} \right).\f]
-
 The CFL stability condition for this part of the scheme is
 \anchor CFL
 \f[
@@ -115,16 +120,13 @@ maximum of velocity magnitudes.  This produces a time step restriction based on
 the above CFL condition.  Then IceModel::determineTimeStep() 
 implements adaptive time-stepping based on this and other stability criteria.
 
-In the analysis below we will assume an equally-spaced grid \f$z_0,\dots,z_{M_z}\f$
+In the analysis below we assume an equally-spaced grid \f$z_0,\dots,z_{M_z}\f$
 with \f$\Delta z = z_{k+1} - z_k\f$.  In fact PISM has a remapping scheme in each 
 column, wherein the enthalpy in a column of ice is stored on an unequally-spaced 
 vertical grid, but is mapped to a fine, equally-spaced grid for the conservation
 of energy computation described here.  (Similar structure applies to the age
 computation.  See procedures IceModel::enthalpyAndDrainageStep() and
-IceModel::ageStep(), and see the IceModelVec3D class and
-IceGrid.  Options -z_spacing and -zb_spacing allow
-choosing unequally-spaced storage vertical grids in ice and bedrock,
-respectively.)
+IceModel::ageStep().)
 
 The \f$z\f$ derivative terms in (\ref vertProblem) will be approximated implicitly.  Let \f$\lambda\f$ be in the interval \f$0 \le \lambda \le 1\f$.  Suppressing indices \f$i,j\f$, the approximation to (\ref vertProblem) is
 \anchor bombone
@@ -136,22 +138,28 @@ The \f$z\f$ derivative terms in (\ref vertProblem) will be approximated implicit
      &= k_i c_i^{-1}\, \frac{E_{k+1}^{n+1} - 2 E_{k}^{n+1} + E_{k-1}^{n+1}}{\Delta z^2} + \Phi_k^n. \tag{bombone}
 \f}
 
-Equation (\ref bombone), along with a determination of \f$\lambda\f$ by (\ref lambdachoice) below, is the scheme BOMBPROOF.  It includes two approximations of vertical advection, combined with nonnegative coefficients which sum to one.  Both approximations are (semi-)implicit, but the centered formula has higher accuracy,
+Equation (\ref bombone), along with a determination of \f$\lambda\f$ by
+(\ref lambdachoice) below, is the scheme BOMBPROOF.  It includes two approximations
+of vertical advection,  implicit centered difference  (\f$\lambda = 1\f$) and
+implicit first-order upwinding (\f$\lambda=0\f$).  They are combined using
+nonnegative coefficients which sum to one, a convex combination.  The centered
+formula has higher accuracy,
 	\f[w_k^n \frac{E_{k+1}^{n+1} - E_{k-1}^{n+1}}{2 \Delta z}
 	   = w \frac{\partial E}{\partial z} + O(\Delta t,\Delta z^2),\f]
 while the first order upwind formula has lower accuracy,
 	\f[w_k^{n} \frac{\Up{E_{\bullet}^{n+1}}{w_k^{n}}}{\Delta z}
 	   = w \frac{\partial E}{\partial z} + O(\Delta t,\Delta z).\f]
-We prefer for accuracy reasons to use the centered formula when possible, because it has higher order truncation error.  We only include (implicit) upwinding when it is needed for its added stability benefits.
+Thus we prefer to use the centered formula when possible, but we apply (implicit)
+upwinding when it is needed for its added stability benefits.
 
-Let
+We now rewrite (\ref bombone) for computational purposes as one of a system of equations 
+for the unknowns \f$\{E_k^{n+1}\}\f$.  In this system the coefficients will be
+scaled so that the diagonal entries of the matrix have limit one as
+\f$\Delta t\to 0\f$.  Let
 	\f[ \nu = \frac{\Delta t}{\Delta z},
 	 \qquad \text{and} \qquad R = \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}.\f]
-We now rewrite (\ref bombone) for computational purposes as one of a system of equations 
-for the unknowns \f$\{E_k^{n+1}\}\f$.  In the new system the coefficients will be
-scaled so that the diagonal entries of the matrix have limit one as
-\f$\Delta t\to 0\f$.  That is, we multiply equation (\ref bombone) by
-\f$\Delta t\f$, divide it by \f$\rho_i\f$, and rearrange:
+Now multiply equation (\ref bombone) by \f$\Delta t\f$, divide it by \f$\rho_i\f$,
+and rearrange:
 \anchor bombtwo
 \f{align*}
 &\left(-R - \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) E_{k-1}^{n+1}  
@@ -159,18 +167,17 @@ scaled so that the diagonal entries of the matrix have limit one as
 &\qquad\qquad + \left(-R + \nu w_k^n \uppair{\lambda/2}{1-\lambda/2} \right) E_{k+1}^{n+1}
     = E_k^n + \Delta t \rho_i^{-1}\Phi_k^n 
 \f}
-Here \f$\uppair{a}{b} = a\f$ when \f$w_k^n\ge 0\f$ and \f$\uppair{a}{b} = b\f$ when \f$w_k^n < 0\f$.
+Here \f$\uppair{a}{b} = a\f$ when \f$w_k^n\ge 0\f$ and \f$\uppair{a}{b} = b\f$
+when \f$w_k^n < 0\f$.
 
-Equations (\ref bombone) or (\ref bombtwo) each combine two unconditionally 
-stable ways of approximating vertical advection, namely implicit centered difference 
-(\f$\lambda = 1\f$) and implicit first-order upwinding (\f$\lambda=0\f$).  The combination 
-is "convex" because the coefficients are nonnegative and sum to one.
+Equation (\ref bombtwo) has coefficients which are scaled to have no units.  It is 
+ready to be put in the system managed by enthSystemCtx.
 
-Regarding scaling of the equations and units, Equation (\ref bombtwo)
-has coefficients which are scaled to have no units.  Equation (\ref bombtwo) is 
-ready to be put in the system managed by an enthSystemCtx instance.
-
-One way of stating the stability of first-order upwinding is to say it satisfies a  "maximum principle" [\ref MortonMayers].  An example of a maximum principle for this kind of finite difference scheme is that if \f$U_{k-1}^n,U_k^n,U_{k+1}^n\f$ are adjacent gridded values of some abstract quantity at time step \f$t_n\f$, and if the next value satisfies the scheme
+One way of stating the stability of first-order upwinding is to say it satisfies
+a  "maximum principle" [\ref MortonMayers].  An example of a maximum principle
+for this kind of finite difference scheme is that if \f$U_{k-1}^n,U_k^n,U_{k+1}^n\f$
+are adjacent gridded values of some abstract quantity at time step \f$t_n\f$, and
+if the next value satisfies the scheme
 \anchor abstractexplicit
 \f{equation}
   U_k^{n+1} = C_{-1} U_{k-1}^n + C_0 U_k^n + C_{+1} U_{k+1}^n \tag{abstractexplicit}
@@ -178,7 +185,7 @@ One way of stating the stability of first-order upwinding is to say it satisfies
 for <i>nonnegative</i> coefficients \f$C_i\f$ summing to one, \f$C_{-1} + C_0 + C_{+1} = 1\f$,  then it follows by the triangle inequality that
 	\f[\min\{|U_{k-1}^n|, |U_k^n|, |U_{k+1}^n|\} 
 	       \le |U_k^{n+1}| \le \max\{|U_{k-1}^n|, |U_k^n|, |U_{k+1}^n|\}.\f]
-Thus a "wiggle" cannot appear in \f$\{U_k^{n+1}\}\f$ this abstract explicit scheme from smoother values \f$\{U_k^n\}\f$.  The proof below shows the corresponding "wiggle-free" property for scheme (\ref bombtwo).
+Thus a "wiggle" cannot appear in \f$\{U_k^{n+1}\}\f$ if previous values \f$\{U_k^n\}\f$ were smoother.  The proof below shows the corresponding "wiggle-free" property for scheme (\ref bombtwo).
 
 However, the pure implicit centered difference scheme (\f$\lambda=1\f$), namely
 \anchor centered
@@ -234,7 +241,7 @@ a growth factor less than one for all modes on the grid.
 \subsection remark Remarks.
 The phrases <i>maximum principle</i> and <i>von Neumann analysis</i> will be precisely illustrated in the following proof.  Both approaches are in [\ref MortonMayers].  There is additional information on the von Neumann analysis of implicit finite difference methods for advection in [\ref Strikwerda].
 
-These statements also apply in case \f$k_i=0\f$, in which case (\ref lambdachoice) implies \f$\lambda=0\f$, and the method reduces to implicit first-order upwinding.  (Implicit first-order upwinding has properties 1 and 2 [\ref Strikwerda].)  The case \f$k_i=0\f$ is relevant because it applies to temperate ice in which there is no assumed enthalpy conduction.  (One reasonable model for temperate ice is to assume no transport of the liquid fraction, whether diffusive transport or otherwise, and to ignore conduction along the temperature gradient, because the gradient is only from pressure-melting temperature differences.)
+These statements also apply in case \f$k_i=0\f$, in which case (\ref lambdachoice) implies \f$\lambda=0\f$, and the method reduces to implicit first-order upwinding.  (Implicit first-order upwinding has properties 1 and 2 [\ref Strikwerda].)  The case \f$k_i=0\f$ is relevant because it applies to the least-transport model of temperate ice in which there is zero enthalpy conduction.  (One reasonable model for temperate ice is to assume no transport of the liquid fraction, whether diffusive transport or otherwise, and to ignore conduction along the temperature gradient, because the gradient is only from pressure-melting temperature differences.)
 
 \subsection proofone Proof of 1.
 
@@ -356,219 +363,17 @@ to put it mildly, but theorem 2.2.3 of [\ref Strikwerda] is one interesting case
 is not adequate to the job because of the strongly-nonlinear dependence of \f$\Phi\f$
 on the temperature \f$T\f$ [\ref BBL].
 
-Nonetheless the maximum principle is a highly-desirable form of stability because we can exclude "wiggles" from the finite difference approximations of the conductive and advective terms, even if the complete physics, with strain heating in particular, is not yet shown to be non-explosive [\ref BBL].  Recall that, because we use first-order upwinding on the horizontal advection terms, we can expect maximum principle-type stability behavior of the whole three-dimensional scheme.
+Nonetheless the maximum principle is a highly-desirable form of stability because we can exclude "wiggles" from the finite difference approximations of the conductive and advective terms, even if the complete physics, with strain heating in particular, is not yet shown to be non-explosive.  Because the complete physics includes the appearance of the famous "spokes" of EISMINT II, for example, a maximum principle cannot apply too literally.  Indeed there is an underlying fluid instability [\ref BBL], one that means the solution of the continuum equations can include growing "wiggles" which are fluid features (though not at the grid-based spatial frequency of the usual numerical wiggles).  Recall that, because we use first-order upwinding on the horizontal advection terms, we can expect maximum principle-type stability behavior of the whole three-dimensional scheme.
 
 
-FIXME:  FROM HERE DOWN IT IS OLD CRAP THAT SHOULD BE REPLACED MOSTLY BY A REFERENCE TO \ref AschwandenBuelerBlatter
+\section melt Temperate basal boundary condition, and computing the basal melt rate
 
-
-\section melt Heat flux jump and melt rate at ice base
-
-At the bottom of grounded ice, a certain amount of heat comes out of the earth and either enters the ice through conduction or melts the base of the ice.  See the documentation for PISMBedThermalUnit.
-
-If the ice sheet is sliding then additional heat is generated at the contact of the ice and the underlying material.  Because the PISM user may or may not want a bedrock thermal layer, because the basal ice may be cold (below the pressure-melting temperature) or temperate, and because the ice might be grounded or floating, we see there are a number of cases to consider and approximate by finite differences.
-
-Equations (5.40) and (9.134) of \ref GreveBlatter2009, which are identical, give a common framework describing the jump in conductive heat flux in both the cold and temperate cases, however:
-\anchor meltheuristic
-\f{equation*}
-\left(\begin{matrix}\text{conductive heat flux} \\ \text{from bedrock}\end{matrix}\right) - \left(\begin{matrix}\text{conductive heat flux} \\ \text{into the base of the ice}\end{matrix}\right) = \left(\text{heat lost to melt rate}\right) - \left(\text{heat gained from friction}\right)
-\f}
-In particular, if there is zero basal melt rate and no sliding, so that both terms on the right are zero, then the heat flux is a continuous vector quantity across the ice/bedrock interface.  Otherwise the above equation describes the heat flux jump.
-
-In symbols, let \f$M\f$ be the basal melt rate, positive when ice is being turned into liquid, and \f$L\f$ be the latent heat of fusion of water.  We use a small-slope assumption for the base, namely we assume that the normal direction to the ice base is the \f$z\f$ direction.  Recall that
-  \f[ F_b = - \tau_b \cdot \mathbf{u}_b \f]
-is the heating rate from friction.  With this notation, the right hand side has the same form for all grounded cases:
-\anchor melteqn
-\f{align*}
-\left(\begin{matrix}\text{conductive heat flux} \\ \text{from bedrock}\end{matrix}\right) - \left(\begin{matrix}\text{conductive heat flux} \\ \text{into the base of the ice}\end{matrix}\right) &= \rho_i L M - F_b
-\f}
-Zero sliding is, of course, a possible condition for the velocities going into BOMBPROOF.
-
-Though the frictional heating rate from sliding is determined before doing the time step for conservation of energy, the melt rate is \e not known until the conservation of energy boundary value problem is solved.  Thus \f$M\f$ is an unknown below.  Ideally the melt rate produced thermodynamically here would be consistent with the same quantity used as the lower boundary condition determining vertical velocity from incompressibility (see IceModel::vertVelocityFromIncompressibility()) at the same time step.  For now, however, we treat the column ice velocity as known at the beginning of the step, even though it actually came from the calculation of the melt rate at the previous step.  As a consequence, for now we accept an \f$O(\Delta t)\f$ error by not iterating to solve this consistency relation.  In the tables below, \f$w(0^+)\f$ is the vertical ice velocity at the bottom ice grid location, and it came from the previous time step, as the melt/refreeze rate.
-
-The following tables detail the cases.  In the linear systems which we solve at each time step in each column of ice, each of the cases below becomes one or two tridiagonal matrices with diagonal dominance.  Since the size and number (one or two) of such systems varies according to the cases, the code is nontrivial to understand.  In particular, when there is a bedrock thermal layer but the base is cold we solve a single system of size <code>Mz + Mbz -1</code>, while if there is a bedrock layer but the base is melting then we solve two systems, the one in ice of size \c Mz and the one in bedrock of size \c Mbz.  The comments in the table below are intended to illuminate this aspect.
-
-In every case below, \f$T(0^-)\f$ should be understood as the temperature at the top of the bedrock, while \f$E(0^+)\f$ is the enthalpy at the bottom of the ice.  The special normalizing value \f$E_s(0^+)\f$ is the enthalpy value which CTS ice would have at that pressure; see EnthalpyConverter.  In particular, \f$c_i^{-1} E_s(0^+)\f$ is the pressure-melting temperature at the base of the ice.  Recall \f$G\f$ is geothermal flux.
-
-\subsection wbedrockcase case: grounded WITH bedrock thermal layer (Mbz>1)
-
-<table border>
-<tr>
-    <td width="20%"> <b>condition on ice base</b>  </td>
-    <td width="20%"> \b continuum \b equations </td>
-    <td> \b comments </td>
-</tr>
-<tr>
-    <td> cold ice base: 
-         <p> \f$E(0^+)<E_s(0^+)\f$ </p> </td>
-    <td> \f[ \begin{matrix}
-         T(0^-) = c_i^{-1} E(0^+) \\ \\
-         -k_b \frac{\partial T}{\partial z}\Big|_{z=0^-} + k_i c_i^{-1}\frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 - F_b
-         \end{matrix} \f] </td>
-    <td> <p> The first equation, continuity of temperature, allows the second
-         equation to be written with just three unknowns, E[1], E[0], 
-         and Tb[Mbz-2].  The resulting equation appears in the middle of the
-         "large" system for the whole ice and bedrock column.  In particular, it says
-       \f[  - \frac{k_b}{\Delta z_b} T_{Mbz-2}^{n+1}
-              + \left(\frac{k_b}{\Delta z_b} + \frac{k_i}{\Delta z}\right) \frac{1}{c_i} E_0^{n+1}
-              - \frac{k_i}{\Delta z} \frac{1}{c_i} E_1^{n+1} = F_b. \f]
-         However, the next level down into the bedrock is also affected by the
-         coincidence of the top bedrock layer and the bottom ice layer.  In
-         particular, instead of equation (\ref bedrockeqn) we have
-     \f[ -R_b T_{Mbz-3}^{n+1} + \left(1 + 2 R_b\right) T_{Mbz-2}^{n+1}
-               - R_b \frac{1}{c_i} E_0^{n+1} = T_{Mbz-2}^n, \f]
-         </p>
-         <p>
-         FIXME:  It follows that the restriction fMbz\f$\ne 2\f$ is used to make sense of
-         this.  This guarantees that if there is a bedrock layer then "fMbz-3"
-         is an allocated location.
-         </p>
-    
-         <p>The system to solve is then tridiagonal and has unknowns 
-         Tb[0] .. Tb[Mbz-2] E[0] .. E[Mz-1] and size Mbz + Mz -1.  
-         The top-of-bedrock temperature Tb[Mbz-1] is \e not one of the 
-         unknowns in the system, but is post-computed by the first equation.  </p>
-         
-         <p>In this case the basal melt rate \f$M\f$ is zero (except for refreeze
-         possibility addressed below).</p>
-         
-         <p>If the ice is floating then we are not in this case.</p></td>
-</tr> 
-<tr>
-    <td> temperate ice base with downward column velocity:  
-         <p>  \f$E(0^+) \ge E_s(0^+)\f$ and \f$ w(0^+) < 0\f$</p> 
-    </td>
-    <td> \f[ \begin{matrix}
-         \rho_i \left(\frac{\partial E}{\partial t}\Big|_{z=0^+} + w(0^+)\frac{\partial E}{\partial z}\Big|_{z=0^+}\right) =  \Phi(0^+) \\ \\
-         T(0^-) = c_i^{-1} E_s(0^+)  \\ \\
-         -k_b \frac{\partial T}{\partial z}\Big|_{z=0^-} - 0 = \rho_i L M - F_b
-         \end{matrix} \f] </td>
-    <td> <p> The first equation is no boundary condition at all because, in this case of temperate ice base, we assume zero enthalpy conductivity, so the problem is hyperbolic in the ice.  The equation is the no-conduction form of (\ref vertProblem), at the base of the ice.  We believe this gives a well-posed ice enthalpy problem.</p>
-    <p> We upwind implicitly so the discretized form looks like
-    \f[ (1-\nu w(0^+)) E_0^{n+1} + \nu w(0^+) E_1^{n+1} = E_0^n + \Delta t \rho_i^{-1} \Phi_0^n, \f]
-where \f$\nu=\Delta t/\Delta z\f$ and \f$E_0^{n+1} = \f$E[0] and \f$E_1^{n+1}=\f$E[1].  That is, we have the \f$R=0\f$, \f$\lambda=0\f$, \f$k=0\f$ case of (\ref bombtwo), in the downward velocity case.  This produces a diagonally-dominant tridiagonal system with unknowns E[0] .. E[Mz-1] and size Mz.  </p>
-         <p>The second equation implies that the bedrock thermal problem is well-posed by itself, with Dirichlet condition at the top and Neumann at the bottom.  So we solve it in a system of size Mbz for unknowns Tb[0] .. Tb[Mbz-1].  From the solution Tb[] we compute heat flux out of the top of the bedrock layer, and the third equation gives us the basal melt rate \f$M\f$.  </p>
-         <p>If the ice is floating then the second equation is replaced by \f$T(0^-) = T_{sb}\f$, but this is still a Dirichlet condition for the temperature in the bedrock.  The third equation is short-circuited: we get the basal melt rate \f$M\f$ as supplied by by PISMOceanModel::shelf_base_mass_flux().</p>  </td>
-</tr> 
-<tr>
-    <td> temperate ice base with upward column velocity:  
-         <p>  \f$E(0^+) \ge E_s(0^+)\f$ and \f$ w(0^+) \ge 0\f$</p>
-    </td>
-    <td> \f[ \begin{matrix}
-         E\Big|_{z=0^+} = E_s(0^+) \\ \\
-         T(0^-) = c_i^{-1} E_s(0^+)  \\ \\
-         -k_b \frac{\partial T}{\partial z}\Big|_{z=0^-} - 0 = \rho_i L M - F_b
-         \end{matrix} \f] </td>
-    <td> <p> The first equation is a Dirichlet condition for the ice enthalpy problem.  We are assuming here that any ice advected upward into the ice column "comes in" as pressure-melting temperature ice with zero liquid fraction, if the ice base was temperate at the last time step.  Note that this case occurs if either there was exactly no melt in the previous time step, or if there was refreeze in the previous time step.  The result is a tridiagonal system with unknowns E[0] .. E[Mz-1] and size Mz.  </p>
-         <p>The second and third equations have the same interpretation as the case immediately above.  </p> 
-         <p>If the ice is floating then the same comments as the in the case immediately above, about the second and third equations, apply.</p></td>
-</tr> 
-</table>
-
-
-\subsection nobedrockcase case: grounded with NO bedrock thermal layer (Mbz=1)
-
-<table border>
-<tr>
-    <td width="20%"> <b>condition on ice base</b>  </td>
-    <td width="20%"> \b continuum \b equations </td>
-    <td> \b comments </td>
-</tr>
-<tr>
-    <td> cold ice base: 
-         <p> \f$E(0^+)<E_s(0^+)\f$ </p> </td>
-    <td> \f[ \begin{matrix}
-         T(0^-) = c_i^{-1} E(0^+) \\ \\
-         G + k_i c_i^{-1}\frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 - F_b
-         \end{matrix} \f] </td>
-    <td> <p> The second equation is a Neumann condition for the enthalpy problem,
-         and becomes
-            \f[ E_0^{n+1} - E_1^{n+1}
-                  = \frac{c_i \Delta z}{k_i} \left(F_b + G\right). \f]
-         The system has unknowns E[0] .. E[Mz-1] and size Mz. </p>
-         <p> The first equation then computes Tb[0]. </p>
-         
-         <p>In this case the basal melt rate \f$M\f$ is zero (except for refreeze
-         possibility addressed below).</p>
-
-         <p> If the ice is floating then we are not in this case.</p></td>
-</tr> 
-<tr>
-    <td> temperate ice base with downward column velocity:  
-         <p>  \f$E(0^+) \ge E_s(0^+)\f$ and \f$ w(0^+) < 0\f$</p>
-    </td>
-    <td> \f[ \begin{matrix}
-         \frac{\partial E}{\partial t}\Big|_{z=0^+} + w(0^+)\frac{\partial E}{\partial z}\Big|_{z=0^+} = 0 \\ \\
-         T(0^-) = c_i^{-1} E_s(0^+)  \\ \\
-         G - 0 = \rho_i L M - F_b
-         \end{matrix} \f] </td>
-    <td> <p> The first equation has exactly the same interpretation as in the corresponding with-bedrock case above. </p>
-    <p> The temperature Tb[0] at the top of the bedrock is computed by the second equation.  The melt rate \f$M\f$ can be set immediately from the third equation. </p> 
-    <p>If the ice is floating then the second equation is replaced by \f$T(0^-) = T_{sb}\f$, directly giving Tb[0].  The third equation is short-circuited: we get the basal melt rate \f$M\f$ as supplied by by PISMOceanModel::shelf_base_mass_flux().</p></td>
-</tr> 
-<tr>
-    <td> temperate ice base with upward column velocity:  
-         <p>  \f$E(0^+) \ge E_s(0^+)\f$ and \f$ w(0^+) \ge 0\f$</p>
-    </td>
-    <td> \f[ \begin{matrix}
-         E\Big|_{z=0^+} = E_s(0^+) \\ \\
-         T(0^-) = c_i^{-1} E_s(0^+)  \\ \\
-         G - 0 = \rho_i L M - F_b
-         \end{matrix} \f] </td>
-    <td> <p> The first equation  has exactly the same interpretation as in the corresponding with-bedrock case above. </p>
-         <p>The second and third equations have the same interpretation as the case immediately above.  </p> 
-         <p>If the ice is floating then the same comments as the in the case immediately above, about the second and third equations, apply.</p></td>
-</tr> 
-</table>
-
-
-\subsection addedreg An additional regularization in the warm base case
-
-In the cases above where the base of the ice is at the pressure-melting temperature, and when the velocity at the base of the ice is downward, an additional regularization is allowed, and used by default.  In such cases, without any regularization, the sign of the vertical velocity at the bottom of the ice at the last time step determines the type of boundary condition:  If \f$w(0)<0\f$ then an outflow boundary condition is applied, while when \f$w(0)\ge 0\f$ then a Dirichlet boundary condition is applied.
-
-In the case where the basal ice is temperate, but the ice above is cold, part of the geothermal heat flux can enter the ice. We use the configuration parameter \c warm_base_flux_enthalpy_fraction to define the fraction of heat flux into the ice base.  We do this by combining the corresponding equations in the tridiagonal system.
-
-Set \c warm_base_flux_enthalpy_fraction to zero to remove this regularization.
-
-
-\subsection refreeze Allowing a refreeze rate
-
-The scheme described above generates only positive basal melt rates at grounded
-locations because \f$G>0\f$ and \f$F_b \ge 0\f$.  In fact, when the base is temperate,
-   \f[ M = \frac{G + F_b}{\rho_i L} > 0 \f]
-while in the case of cold base we directly set
-   \f[ M = 0. \f]
-(In the case of a bedrock layer, instead of the geothermal flux \f$G\f$, actually
-\f$\tilde G = -k_b (\partial T/\partial z)|_{z=0^-}\f$ is used to compute
-\f$M\f$.  Thus in theory this quantity could come out negative, but in
-practice it is always positive.)
-
-Suppose a positive thickness stored layer of basal water (stored water thickness = 
-IceModelVec2 IceModel::vHmelt) develops at a grounded location, from a
-melting temperate base.  Then, either because conditions changed in time or
-though the vHmelt diffusion mechanism (IceModel::diffuseHmelt()), suppose this
-grounded location develops a cold ice base.  It could still have a positive
-vHmelt value.  In this case it seems reasonable that refreeze would occur.
-
-Such refreeze is allowed but there is currently no method by which the latent
-heat of the refreeze returns to the ice.  The configuration parameter
-\c cold_base_refreeze_rate gives the maximum rate at which the refreeze occurs, as
-a ice-thickness-per-time rate.  The default is 2 cm yr-1.  This rate is added to
-the basal melt rate after it is already computed, if the new basal temperature 
-is below the pressure-melting point and if vHmelt is positive, but refreeze
-stops when vHmelt is "used up".  Mass is conserved by
-this mechanism.  By this mechanism, locations with cold base, after having a
-temperate weak base, return in time to having a strong base.
-See IceModel::enthalpyAndDrainageStep() for more details.
-
-Set \c cold_base_refreeze_rate to zero to remove this mechanism.
+At the bottom of grounded ice, a certain amount of heat comes out of the earth and either enters the ice through conduction or melts the base of the ice.  On the one hand, see the documentation for PISMBedThermalUnit for the model of how much comes out of the earth.  On the other hand, \ref AschwandenBuelerBlatter includes a careful analysis of the subglacial layer equation and the corresponding boundary conditions and basal melt rate calculation, and the reader should consult that reference.
 
 
 \subsection refloating Regarding the floating case
 
 The shelf base temperature \f$T_{sb}\f$ is supplied by PISMOceanModel::shelf_base_temperature().  The melt rate \f$M\f$ is supplied as a boundary condition from the ocean model by PISMOceanModel::shelf_base_mass_flux().  Note that we make the possibly-peculiar physical choice that the shelf base temperature is used as the temperature at the <i>top of the bedrock</i>, which is actually the bottom of the ocean.  This choice means that there should be no abrupt changes in top-of-bedrock heat flux as the grounding line moves.  This choice also means that the conservation of energy code does not need to know about the bedrock topography or the elevation of sea level.  (In the future there could be a PISMOceanModel::subshelf_bed_temperature() routine.)
-
-
 
 
 */  /* <--- IF END-OF-COMMENT LOST, CONFUSION RESULTS ... */

@@ -220,16 +220,24 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
 
   // generic ice segment in k location (if any; only runs if ks >= 2)
   for (PetscInt k = 1; k < ks; k++) {
-    const PetscScalar AA = nuEQ * w[k],
-                      R = (Enth[k] < Enth_s[k]) ? iceRcold : iceRtemp;
+    const PetscScalar
+        Rl = (Enth[k-1] < Enth_s[k-1]) ? iceRcold : iceRtemp,
+        Rc = (Enth[k] < Enth_s[k]) ? iceRcold : iceRtemp,
+        Rr = (Enth[k+1] < Enth_s[k+1]) ? iceRcold : iceRtemp,
+        Rminus = 0.5 * (Rl + Rc),
+        Rplus  = 0.5 * (Rc + Rr);
+    L[k] = - Rminus;
+    D[k] = 1.0 + Rminus + Rplus;
+    U[k] = - Rplus;
+    const PetscScalar AA = nuEQ * w[k];
     if (w[k] >= 0.0) {  // velocity upward
-      L[k] = - R - AA * (1.0 - lambda/2.0);
-      D[k] = 1.0 + 2.0 * R + AA * (1.0 - lambda);
-      U[k] = - R + AA * (lambda/2.0);
+      L[k] -= AA * (1.0 - lambda/2.0);
+      D[k] += AA * (1.0 - lambda);
+      U[k] += AA * (lambda/2.0);
     } else {            // velocity downward
-      L[k] = - R - AA * (lambda/2.0);
-      D[k] = 1.0 + 2.0 * R - AA * (1.0 - lambda);
-      U[k] = - R + AA * (1.0 - lambda/2.0);
+      L[k] -= AA * (lambda/2.0);
+      D[k] -= AA * (1.0 - lambda);
+      U[k] += AA * (1.0 - lambda/2.0);
     }
     rhs[k] = Enth[k];
     if (!ismarginal) {
