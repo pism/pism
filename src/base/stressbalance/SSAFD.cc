@@ -28,12 +28,12 @@ SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
 
 //! \brief Allocate objects specific to the SSAFD object.
 /*!
-Because the FD implementation of the FD uses Picard iteration, a PETSc KSP
-and Mat are used directly.  In particular we set up a \f$A =\f$
-(Mat SSAStiffnessMatrix) and a \f$b = \f$ (Vec SSARHS) and iteratively solve
+Because the FD implementation of the SSA uses Picard iteration, a PETSc KSP
+and Mat are used directly.  In particular we set up \f$A\f$
+(Mat SSAStiffnessMatrix) and a \f$b\f$ (= Vec SSARHS) and iteratively solve
 linear systems
   \f[ A x = b \f]
-where \f$x = \f$ (Vec SSAX).  A PETSc SNES object is never created.
+where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
 PetscErrorCode SSAFD::allocate_fd() {
   PetscErrorCode ierr;
@@ -115,23 +115,20 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
 }
 
 //! \brief Computes the right-hand side ("rhs") of the linear problem for the
-//! finite-difference implementation of the SSA equations.
+//! Picard iteration and finite-difference implementation of the SSA equations.
 /*! 
 The right side of the SSA equations is just the driving stress term
    \f[ - \rho g H \nabla h. \f]
 The basal stress is put on the left side of the system.  This method builds the
 discrete approximation of the right side.  For more about the discretization
-of the SSA equations, see comments for assembleSSAMatrix().
+of the SSA equations, see comments for assemble_matrix().
 
 The values of the driving stress on the i,j grid come from a call to
-computeDrivingStress().
+compute_driving_stress().
 
-Grid points with mask value 1 correspond to the trivial equations
-   \f[ \bar u_{ij} = \frac{uvbar(i-1,j,0) + uvbar(i,j,0)}{2}, \f]
-and similarly for \f$\bar v_{ij}\f$.  That is, the vertically-averaged
-horizontal velocity is already known for these points because it was either 
-computed (on the staggered grid) using the SIA or was set by the -ssaBC
-mechanism.
+In the case of Dirichlet boundary conditions, the entries on the right-hand side
+come from known velocity values.  The fields vel_bc and bc_locations are used for
+this.
  */
 PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   PetscErrorCode ierr;
@@ -180,46 +177,45 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   return 0;
 }
 
-//! \brief Assemble the left-hand side matrix for the finite difference implementation
-//! of the SSA equations.
+//! \brief Assemble the left-hand side matrix for the KSP-based, Picard iteration,
+//! and finite difference implementation of the SSA equations.
 /*! 
-The SSA equations are in their clearest divergence form
-    \f[ - \frac{\partial T_{ij}}{\partial x_j} - \tau_{(b)i} = f_i \f]
-where \f$i,j\f$ range over \f$x,y\f$, \f$T_{ij}\f$ is a depth-integrated viscous
-stress tensor (%i.e. equation (2.6) in [\ref SchoofStream]; also [\ref Morland]).
-These equations determine velocity in a more-or-less elliptic manner.
-Here \f$\tau_{(b)i}\f$ are the components of the basal shear stress applied to
-the base of the ice and \f$f_i\f$ is the driving shear stress,
-    \f[ f_i = - \rho g H \frac{\partial h}{\partial x_i}. \f]
-Here \f$H\f$ is the ice thickness and \f$h\f$ is the elevation of the surface of
-the ice.
-
-More concretely, the SSA equations are
+Recall the SSA equations are
 \f{align*}
- - 2 \left[\bar\nu H \left(2 u_x + v_y\right)\right]_x
-        - \left[\bar\nu H \left(u_y + v_x\right)\right]_y
+ - 2 \left[\nu H \left(2 u_x + v_y\right)\right]_x
+        - \left[\nu H \left(u_y + v_x\right)\right]_y
         - \tau_{(b)1}  &= - \rho g H h_x, \\
-   - \left[\bar\nu H \left(u_y + v_x\right)\right]_x
-        - 2 \left[\bar\nu H \left(u_x + 2 v_y\right)\right]_y
+   - \left[\nu H \left(u_y + v_x\right)\right]_x
+        - 2 \left[\nu H \left(u_x + 2 v_y\right)\right]_y
         - \tau_{(b)2}  &= - \rho g H h_y, 
 \f}
 where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the
-\f$y\f$-component of the velocity.  Note \f$\bar\nu\f$ is the vertically-averaged
-effective viscosity of the ice.
+\f$y\f$-component of the velocity.
+
+The coefficient \f$\nu\f$ is the vertically-averaged effective viscosity.
+(The product \f$\nu H\f$ is computed by compute_nuH_staggered().)
+The Picard iteration idea is that, to solve the nonlinear equations in which
+the effective viscosity depends on the velocity, we freeze the effective
+viscosity using its value at the current estimate of the velocity and we solve
+the linear equations which come from this viscosity.  In abstract symbols, the
+Picard iteration replaces the above nonlinear SSA equations by a sequence of
+linear problems
+	\f[ A(U^{(k)}) U^{(k+1)} = b \f]
+where \f$A(U)\f$ is the matrix from discretizing the SSA equations supposing 
+the viscosity is a function of known velocities \f$U\f$, and where \f$U^{(k)}\f$
+denotes the \f$k\f$th iterate in the process.  The current method assembles \f$A(U)\f$.
 
 For ice shelves \f$\tau_{(b)i} = 0\f$ [\ref MacAyealetal].
 For ice streams with a basal till modelled as a plastic material,
 \f$\tau_{(b)i} = - \tau_c u_i/|\mathbf{u}|\f$ where 
-\f$\mathbf{u} = (u,v)\f$, \f$|\mathbf{u}| = \left(u^2 + v^2\right)^{1/2}\f$.
-Here \f$\tau_c(t,x,y)\f$ is the yield stress of the till [\ref SchoofStream].
+\f$\mathbf{u} = (u,v)\f$, \f$|\mathbf{u}| = \left(u^2 + v^2\right)^{1/2}\f$, where
+\f$\tau_c(t,x,y)\f$ is the yield stress of the till [\ref SchoofStream].
 More generally, ice streams can be modeled with a pseudo-plastic basal till;
-see initBasalTillModel() and updateYieldStressUsingBasalWater() and
-[\ref BKAJS].
-
-The pseudo-plastic till model includes all power law sliding relations 
-[\ref BKAJS], and in particular it includes modeling the basal till as a linearly-viscous 
-material, \f$\tau_{(b)i} = - \beta u_i\f$ where \f$\beta\f$ is the basal drag
-(friction) parameter [\ref MacAyeal].  PISM assumes that the basal shear
+see IceModel::initBasalTillModel() and IceModel::updateYieldStressUsingBasalWater()
+and reference [\ref BKAJS].  The pseudo-plastic till model includes all power law
+sliding relations and the linearly-viscous model for sliding,
+\f$\tau_{(b)i} = - \beta u_i\f$ where \f$\beta\f$ is the basal drag
+(friction) parameter [\ref MacAyeal].  In any case, PISM assumes that the basal shear
 stress can be factored this way, <i>even if the coefficient depends on the
 velocity</i>, \f$\beta(u,v)\f$.  Such factoring is possible even in the case of
 (regularized) plastic till.  This scalar coefficient \f$\beta\f$ is what is
@@ -236,7 +232,7 @@ The numerical method is finite difference.  Suppose we use difference notation
 \f$\delta_{+x}f^{i,j} = f^{i+1,j}-f^{i,j}\f$, 
 \f$\delta_{-x}f^{i,j} = f^{i,j}-f^{i-1,j}\f$, and 
 \f$\Delta_{x}f^{i,j} = f^{i+1,j}-f^{i-1,j}\f$, and corresponding notation for
-\f$y\f$ differences, and that we write \f$N = \bar\nu\f$ then the first of the 
+\f$y\f$ differences, and that we write \f$N = \nu H\f$ then the first of the 
 two "concrete" SSA equations above has this discretization:
 \f{align*}
 - &2 \frac{N^{i+\frac{1}{2},j}}{\Delta x} \left[2\frac{\delta_{+x}u^{i,j}}{\Delta x} + \frac{\Delta_{y} v^{i+1,j} + \Delta_{y} v^{i,j}}{4 \Delta y}\right] + 2 \frac{N^{i-\frac{1}{2},j}}{\Delta x} \left[2\frac{\delta_{-x}u^{i,j}}{\Delta x} + \frac{\Delta_y v^{i,j} + \Delta_y v^{i-1,j}}{4 \Delta y}\right] \\
@@ -261,6 +257,8 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   // next constant not too sensitive, but must match value in assembleSSARhs():
   const PetscScalar   scaling = 1.0e9;  // comparable to typical beta for an ice stream
+  const PetscScalar   beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
+
   IceModelVec2V vel = velocity;         // a shortcut
 
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
@@ -325,13 +323,20 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
         /*               */ -4*c10/dy2 };
 
       /* Dragging ice experiences friction at the bed determined by the
-       *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
-       *    or linear friction law according to basal->drag(), which gets called
-       *    by basalDragx(),basalDragy().  */
-      if (include_basal_shear && (mask->value(i,j) == MASK_GROUNDED)) {
-        // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
-        valU[5] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
-        valV[7] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+       *    IceBasalResistancePlasticLaw::drag() methods.  These may be a plastic,
+       *    pseudo-plastic, or linear friction law.  Dragging is done implicitly
+       *    (i.e. on left side of SSA eqns).  */
+      if (include_basal_shear) {
+        PetscReal beta;
+        if (mask->value(i,j) == MASK_GROUNDED) {
+          beta = basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+        } else if (mask->value(i,j) == MASK_ICE_FREE_BEDROCK) {
+          // apply drag even in this case, to help with margins; not ice free areas
+          //   already have a strength extension
+          beta = beta_ice_free_bedrock;
+        }
+        valU[5] += beta;
+        valV[7] += beta;
       }
 
       // build "u" equation: NOTE TRANSPOSE
@@ -410,53 +415,49 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
 
 //! \brief Compute the vertically-averaged horizontal velocity from the shallow
-//! shelf approximation (SSA).
+//! shelf approximation.
 /*!
-This is the main procedure implementing the SSA.  
+This is the main procedure in the SSAFD.  It manages the nonlinear solve process
+and the Picard iteration.
 
 The outer loop (over index \c k) is the nonlinear iteration.  In this loop the effective 
-viscosity is computed by computeEffectiveViscosity() and then the linear system is 
+viscosity is computed by compute_nuH_staggered() and then the linear system is 
 set up and solved.
 
-This procedure creates a PETSC \c KSP, it calls assembleSSAMatrix() and assembleSSARhs() 
-to store the linear system in the \c KSP, and then calls the PETSc procedure KSPSolve()
-to solve the linear system.  
-
+Specifically, we call the PETSc procedure KSPSolve() to solve the linear system.
 Solving the linear system is also a loop, an iteration, but it occurs
-inside KSPSolve().  This inner loop is controlled by PETSc but the user can set the option 
-<tt>-ksp_rtol</tt>, in particular, and that tolerance controls when the inner loop terminates.
+inside KSPSolve().  The user has full control of the KSP solve through the PETSc
+interface.  The default choicess for KSP type <tt>-ksp_type</tt> and preconditioner type
+<tt>-pc_type</tt> are GMRES(30) for the former and block Jacobi with ILU on the
+blocks for the latter.  The defaults usually work.  These choices are important
+but poorly understood.  The eigenvalues of the linearized
+SSA vary with ice sheet geometry and temperature in ways that are not well-studied.
+Nonetheless these eigenvalues determine the convergence of 
+this (inner) linear iteration.  A well-chosen preconditioner can put the eigenvalues
+in the right place so that the KSP can converge quickly.
 
-Note that <tt>-ksp_type</tt> can be used to choose the \c KSP.  This will set 
-which type of linear iterative method is used.  The KSP choice is important
-but poorly understood because the eigenvalues of the linearized SSA are not 
-well understood.  Nonetheless these eigenvalues determine the convergence of 
-this (inner) linear iteration.  The default KSP is GMRES(30).
-
-Note that <tt>-pc_type</tt> will set which preconditioner to use; the default 
-is ILU.  A well-chosen preconditioner can put the eigenvalues in the right
-place so that the KSP can converge quickly.  The preconditioner is also
-important because it will behave differently on different numbers of
+The preconditioner will behave differently on different numbers of
 processors.  If the user wants the results of SSA calculations to be 
-independent of the number of processors, then <tt>-pc_type none</tt> should
+independent of the number of processors, then <tt>-pc_type none</tt> could
 be used, but performance will be poor.
 
 If you want to test different KSP methods, it may be helpful to see how many 
 iterations were necessary.  Use <tt>-ksp_monitor</tt>.
 Initial testing implies that CGS takes roughly half the iterations of 
 GMRES(30), but is not significantly faster because the iterations are each 
-roughly twice as slow.  Furthermore, ILU and BJACOBI seem roughly equivalent
-as preconditioners.
+roughly twice as slow.  The outputs of PETSc options <tt>-ksp_monitor_singular_value</tt>,
+<tt>-ksp_compute_eigenvalues</tt> and <tt>-ksp_plot_eigenvalues -draw_pause N</tt>
+(the last holds plots for N seconds) may be useful to diagnose.
 
 The outer loop terminates when the effective viscosity is no longer changing 
-much, according to the tolerance set by the option <tt>-ssa_rtol</tt>.  (The 
-outer loop also terminates when a maximum number of iterations is exceeded.)
+much, according to the tolerance set by the option <tt>-ssa_rtol</tt>.  The 
+outer loop also terminates when a maximum number of iterations is exceeded.
 We save the velocity from the last time step in order to have a better estimate
 of the effective viscosity than the u=v=0 result.
 
-In truth there is an "outer outer" loop (over index \c l).  This one manages an
-attempt to over-regularize the effective viscosity so that the nonlinear
-iteration (the "outer" loop over \c k) has a chance to converge if it doesn't 
-converge with the default regularization.
+In truth there is an "outer outer" loop (over index \c l).  This attempts to
+over-regularize the effective viscosity if the nonlinear iteration (the "outer"
+loop over \c k) is not converging with the default regularization.
  */
 PetscErrorCode SSAFD::solve() {
   PetscErrorCode ierr;
@@ -468,10 +469,10 @@ PetscErrorCode SSAFD::solve() {
   stdout_ssa = "";
 
   bool write_ssa_system_to_matlab = config.get_flag("write_ssa_system_to_matlab");
-  PetscReal ssaRelativeTolerance = config.get("ssa_relative_convergence"),
-            epsilon              = config.get("epsilon_ssa");
+  PetscReal ssaRelativeTolerance = config.get("ssafd_relative_convergence"),
+            epsilon              = config.get("epsilon_ssafd");
 
-  PetscInt ssaMaxIterations = static_cast<PetscInt>(config.get("max_iterations_ssa"));
+  PetscInt ssaMaxIterations = static_cast<PetscInt>(config.get("max_iterations_ssafd"));
   
   ierr = velocity.copy_to(velocity_old); CHKERRQ(ierr);
 
@@ -670,7 +671,7 @@ PetscErrorCode SSAFD::writeSSAsystemMatlab() {
   return 0;
 }
 
-//! \brief Compute the norm of nuH and the change in nuH.
+//! \brief Compute the norm of nu H and the change in nu H.
 /*!
 Verification and PST experiments
 suggest that an \f$L^1\f$ criterion for convergence is best.  For verification
@@ -678,7 +679,7 @@ there seems to be little difference, presumably because the solutions are smooth
 and the norms are roughly equivalent on a subspace of smooth functions.  For PST,
 the \f$L^1\f$ criterion gives faster runs with essentially the same results.
 Presumably that is because rapid (temporal and spatial) variation in 
-\f$\bar\nu H\f$ occurs at margins, occupying very few horizontal grid cells.
+\f$\nu H\f$ occurs at margins, occupying very few horizontal grid cells.
 For the significant (e.g.~in terms of flux) parts of the flow, it is o.k. to ignore
 a bit of bad behavior at these few places, and \f$L^1\f$ ignores it more than
 \f$L^2\f$ (much less \f$L^\infty\f$, which might not work at all).
@@ -790,10 +791,9 @@ This integral is approximately computed by the trapezoid rule.
 In fact the entire effective viscosity is regularized by adding a constant.
 The regularization constant \f$\epsilon\f$ is an argument to this procedure.
 
-Also we put \f$\bar\nu H = \f$\c constantNuHForSSA anywhere the ice is thinner
-than \c min_thickness_SSA.  The geometry is not changed, but this has the effect 
-of producing a shelf extension in ice free ocean, which affects the driving stress
-and the force balance at the calving front.
+In this implementation we set \f$\nu H = \f$ to a constant anywhere the ice is
+thinner than a certain minimum.  See SSAStrengthExtension and compare how SSAFD_PIK
+handles this issue.
  */
 PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal epsilon) {
   PetscErrorCode ierr;
@@ -873,10 +873,8 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
   return 0;
 }
 
-//! \brief Update the nuH viewer.
-/*!
- * Updates the run-time viewer of log10(nuH).
- */
+
+//! Update the nuH viewer, which shows log10(nu H).
 PetscErrorCode SSAFD::update_nuH_viewers() {
   PetscErrorCode ierr;
   IceModelVec2S tmp;

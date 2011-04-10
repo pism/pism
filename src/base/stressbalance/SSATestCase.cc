@@ -126,9 +126,9 @@ PetscErrorCode SSATestCase::init(PetscInt Mx, PetscInt My, SSAFactory ssafactory
 
   // Set options from command line.  
   // FIXME (DAM 2/17/11):  These are currently only looked at by the finite difference solver.
-  ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssa"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssa"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("ssa_rtol", "ssa_relative_convergence"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssafd"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssafd"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("ssa_rtol", "ssafd_relative_convergence"); CHKERRQ(ierr);
   
   // Subclass builds grid.
   ierr = initializeGrid(Mx,My);

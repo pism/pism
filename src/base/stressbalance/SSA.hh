@@ -100,7 +100,36 @@ typedef SSA * (*SSAFactory)(IceGrid &, IceBasalResistancePlasticLaw &,
               IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
 
 
-//! PISM's SSA solver
+//! PISM's SSA solver.
+/*!
+An object of this type solves equations for the vertically-constant horizontal
+velocity of ice that is sliding over land or is floating.  The equations are, in
+their clearest divergence form
+    \f[ - \frac{\partial T_{ij}}{\partial x_j} - \tau_{(b)i} = f_i \f]
+where \f$i,j\f$ range over \f$x,y\f$, \f$T_{ij}\f$ is a depth-integrated viscous
+stress tensor (%i.e. equation (2.6) in [\ref SchoofStream]).
+These equations determine velocity in a more-or-less elliptic manner.
+Here \f$\tau_{(b)i}\f$ are the components of the basal shear stress applied to
+the base of the ice.  The right-hand side \f$f_i\f$ is the driving shear stress,
+    \f[ f_i = - \rho g H \frac{\partial h}{\partial x_i}. \f]
+Here \f$H\f$ is the ice thickness and \f$h\f$ is the elevation of the surface of
+the ice.  More concretely, the SSA equations are
+\f{align*}
+ - 2 \left[\nu H \left(2 u_x + v_y\right)\right]_x
+        - \left[\nu H \left(u_y + v_x\right)\right]_y
+        - \tau_{(b)1}  &= - \rho g H h_x, \\
+   - \left[\nu H \left(u_y + v_x\right)\right]_x
+        - 2 \left[\nu H \left(u_x + 2 v_y\right)\right]_y
+        - \tau_{(b)2}  &= - \rho g H h_y, 
+\f}
+where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the
+\f$y\f$-component of the velocity [\ref MacAyeal, \ref Morland, \ref WeisGreveHutter].
+
+Derived classes actually implement numerical methods to solve these equations.
+This class is virtual, but it actually implements some helper functions believed
+to be common to all implementations (%i.e. regular grid implementations) and it
+provides the basic fields.
+ */
 class SSA : public ShallowStressBalance
 {
   friend class SSA_taud;

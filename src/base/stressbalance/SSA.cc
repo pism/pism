@@ -231,7 +231,7 @@ an IceModelVec2V, though it could be a std::vector<IceModelVec2S> or such.
 Note that \c result_e1 >= \c result_e2, but there is no necessary relation between 
 the magnitudes, and either principal strain rate could be negative or positive.
 
-Result can be used in a calving law, e.g. eigencalving (PIK).
+Result can be used in a calving law, for example in eigencalving (PIK).
 
 FIXME:  makes decisions based on thickness that might better use mask?
 
@@ -347,15 +347,11 @@ Computes the driving stress at the base of the ice:
 If configuration parameter \c surface_gradient_method = \c eta then the surface gradient
 \f$\nabla h\f$ is computed by the gradient of the
 transformed variable  \f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$).
-Because this quantity is more regular at ice sheet margins, we get a 
+The idea is that this quantity is more regular at ice sheet margins, and so we get a 
 better surface gradient.  When the thickness at a grid point is very small
 (below \c minThickEtaTransform in the procedure), the formula is slightly 
-modified to give a lower driving stress.
-
-In floating parts the surface gradient is always computed by the \c mahaffy formula.
- 
-Saves it in user supplied Vecs \c vtaudx and \c vtaudy, which are treated 
-as global.  (I.e. we do not communicate ghosts.)
+modified to give a lower driving stress.  The transformation is not used in
+floating ice.
  */
 PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
   PetscErrorCode ierr;

@@ -271,9 +271,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 				   "-ssa_sliding' or '-ssa_floating_only"); CHKERRQ(ierr);
   ierr = check_old_option_and_stop(grid.com, "-plastic", "-ssa_sliding"); CHKERRQ(ierr);
 
-  ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssa"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssa"); CHKERRQ(ierr);
-  ierr = config.scalar_from_option("ssa_rtol", "ssa_relative_convergence"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("ssa_eps",  "epsilon_ssafd"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("ssa_maxi", "max_iterations_ssafd"); CHKERRQ(ierr);
+  ierr = config.scalar_from_option("ssa_rtol", "ssafd_relative_convergence"); CHKERRQ(ierr);
   
   // option to save linear system in Matlab-readable ASCII format at end of each
   // numerical solution of SSA equations; can be given with or without filename prefix
