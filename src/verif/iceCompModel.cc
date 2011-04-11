@@ -1253,6 +1253,34 @@ PetscErrorCode IceCompModel::reportErrors() {
   return 0;
 }
 
+//! \brief Initialize test V.
+/*
+ Try 
+
+ pismv -test V -y 1000 -part_grid -ssa_method fd_pik -o fig4-blue.nc
+ pismv -test V -y 1000 -part_grid -ssa_method fd -o fig4-green.nc
+ 
+ to try to reproduce Figure 4.
+
+ Try
+
+ pismv -test V -y 3000 -ssa_method fd_pik -o fig5.nc -calving_at_thickness 250 -part_grid
+
+ with -Mx 51, -Mx 101, -Mx 201 for figure 5,
+
+ pismv -test V -y 300 -ssa_method fd -o fig6-ab.nc
+
+ for 6a and 6b,
+
+ pismv -test V -y 300 -ssa_method fd_pik -part_grid -o fig6-cd.nc
+
+ for 6c and 6d,
+
+ pismv -test V -y 300 -ssa_method fd_pik -part_grid -part_redist -o fig6-ef.nc
+
+ for 6e and 6f.
+
+ */
 PetscErrorCode IceCompModel::test_V_init() {
   PetscErrorCode ierr;
 

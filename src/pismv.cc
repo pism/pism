@@ -110,8 +110,7 @@ int main(int argc, char *argv[]) {
     ThermoGlenArrIce* tgaice = dynamic_cast<ThermoGlenArrIce*>(mComp.getIceFlowLaw());
     if (dontReport == PETSC_FALSE) {
 
-      if (testname != "V" &&
-          !IceFlowLawIsPatersonBuddCold(tgaice, config) &&
+      if (testname != "V" && !IceFlowLawIsPatersonBuddCold(tgaice, config) &&
           ((testname == "F") || (testname == "G"))) {
         ierr = verbPrintf(1,com, 
                           "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type arr')\n"
