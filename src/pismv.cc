@@ -107,10 +107,11 @@ int main(int argc, char *argv[]) {
     ierr = mComp.run(); CHKERRQ(ierr);
     ierr = verbPrintf(2,com, "done with run\n"); CHKERRQ(ierr);
 
-    ThermoGlenArrIce*   tgaice = dynamic_cast<ThermoGlenArrIce*>(mComp.getIceFlowLaw());
+    ThermoGlenArrIce* tgaice = dynamic_cast<ThermoGlenArrIce*>(mComp.getIceFlowLaw());
     if (dontReport == PETSC_FALSE) {
 
-      if (!IceFlowLawIsPatersonBuddCold(tgaice, config) &&
+      if (testname != "V" &&
+          !IceFlowLawIsPatersonBuddCold(tgaice, config) &&
           ((testname == "F") || (testname == "G"))) {
         ierr = verbPrintf(1,com, 
                           "pismv WARNING: flow law must be cold part of Paterson-Budd ('-ice_type arr')\n"

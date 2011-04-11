@@ -75,6 +75,21 @@ PetscErrorCode IceCompModel::createVecs() {
   ierr = variables.add(acab); CHKERRQ(ierr); 
   ierr = variables.add(artm); CHKERRQ(ierr); 
 
+  if (testname == 'V') {
+    ierr = bc_mask.create(grid, "bc_mask", false); CHKERRQ(ierr);
+    ierr = bc_mask.set_attrs("model_state", "SSA Dirichlet BC locations", "", ""); CHKERRQ(ierr);
+    bc_mask.time_independent = true;
+    ierr = variables.add(bc_mask); CHKERRQ(ierr);
+
+    ierr = bc_vel.create(grid, "_bc", false); CHKERRQ(ierr);
+    ierr = bc_vel.set_attrs("model_state", "X-component of the SSA Dirichlet BC", "m s-1", "", 0); CHKERRQ(ierr);
+    ierr = bc_vel.set_attrs("model_state", "Y-component of the SSA Dirichlet BC", "m s-1", "", 1); CHKERRQ(ierr);
+    bc_vel.time_independent = true;
+    ierr = bc_vel.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+    bc_vel.write_in_glaciological_units = true;
+    ierr = variables.add(bc_vel); CHKERRQ(ierr);
+  }
+
   return 0;
 }
 
@@ -122,6 +137,11 @@ PetscErrorCode IceCompModel::set_grid_defaults() {
     grid.periodicity = XY_PERIODIC;
     grid.ice_vertical_spacing = QUADRATIC;
     break;
+  case 'V':
+    grid.My = 3;                // it's a flow-line setup
+    grid.Lx = 500e3;            // 500 km long
+    grid.periodicity = Y_PERIODIC;
+    break;
   default:
     ierr = PetscPrintf(grid.com, "IceCompModel ERROR : desired test not implemented\n");
     CHKERRQ(ierr);
@@ -143,7 +163,7 @@ PetscErrorCode IceCompModel::setFromOptions() {
   if (flag) {
     exactOnly = PETSC_TRUE;
     ierr = verbPrintf(1,grid.com, "!!EXACT SOLUTION ONLY, NO NUMERICAL SOLUTION!!\n");
-             CHKERRQ(ierr);
+    CHKERRQ(ierr);
   }
 
   // These ifs are here (and not in the constructor or init_physics()) because
@@ -180,8 +200,33 @@ PetscErrorCode IceCompModel::setFromOptions() {
     allowAboveMelting = PETSC_TRUE; // tests other than K
   }
 
-  // Set the default for IceCompModel:
-  ierr = iceFactory.setType(ICE_ARR); CHKERRQ(ierr);
+  if (testname == 'V') {
+
+    // no sub-shelf melting
+    config.set_flag("include_bmr_in_continuity", false); 
+
+    // this test is isothermal
+    config.set_flag("do_temp", false);
+
+    // do use the SIA stress balance
+    config.set_flag("do_sia", false);
+
+    // do use the SSA solver
+    config.set_flag("use_ssa_velocity", true);
+
+    // compute surface gradient inward
+    config.set_flag("compute_surf_grad_inward_ssa", true); 
+
+    // this certainly is not a "dry silumation"
+    config.set_flag("is_dry_simulation", false);
+
+    // use CustomGlenIce, which allows easy setting of ice hardness
+    ierr = iceFactory.setType(ICE_CUSTOM); CHKERRQ(ierr);
+  } else {
+    // Set the default for IceCompModel:
+    ierr = iceFactory.setType(ICE_ARR); CHKERRQ(ierr);
+  }
+
   config.set_flag("do_cold_ice_methods", true);
 
   ierr = IceModel::setFromOptions();CHKERRQ(ierr);
@@ -206,15 +251,25 @@ PetscErrorCode IceCompModel::init_physics() {
   // default set above) and create the IceFlowLaw object.
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
-  // check on whether the options (already checked) chose the right IceFlowLaw for verification;
-  //   need to have a tempFromSoftness() procedure as well as the need for the right
-  //   flow law to have the errors make sense
-  tgaIce = dynamic_cast<ThermoGlenArrIce*>(ice);
-  if (!tgaIce) SETERRQ(1,"IceCompModel requires ThermoGlenArrIce or a derived class");
-  if (IceFlowLawIsPatersonBuddCold(ice, config) == PETSC_FALSE) {
-    ierr = verbPrintf(1, grid.com, 
-       "WARNING: user set -gk; default flow law should be -ice_type arr for IceCompModel\n");
-    CHKERRQ(ierr);
+
+  if (testname != 'V') {
+    // check on whether the options (already checked) chose the right IceFlowLaw for verification;
+    //   need to have a tempFromSoftness() procedure as well as the need for the right
+    //   flow law to have the errors make sense
+    tgaIce = dynamic_cast<ThermoGlenArrIce*>(ice);
+    if (!tgaIce) SETERRQ(1,"IceCompModel requires ThermoGlenArrIce or a derived class");
+    if (IceFlowLawIsPatersonBuddCold(ice, config) == PETSC_FALSE) {
+      ierr = verbPrintf(1, grid.com, 
+                        "WARNING: user set -gk; default flow law should be -ice_type arr for IceCompModel\n");
+      CHKERRQ(ierr);
+    }
+  }
+
+  if (testname == 'V') {
+    CustomGlenIce *ice_custom = dynamic_cast<CustomGlenIce*>(ice);
+    if (ice_custom == NULL) SETERRQ(1, "test V requires using CustomGlenIce");
+
+    ice_custom->setHardness(1.9e8);
   }
 
   if (testname == 'E') {
@@ -229,7 +284,7 @@ PetscErrorCode IceCompModel::init_physics() {
 
   f = ice->rho / config.get("lithosphere_density");  // for simple isostasy
 
-  if (testname != 'K') {
+  if (testname != 'K' && testname != 'V') {
     // now make bedrock have same material properties as ice
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
@@ -243,8 +298,8 @@ PetscErrorCode IceCompModel::init_physics() {
 
   if ( (testname == 'H') && bed_def_model != "iso" ) {
     ierr = verbPrintf(1,grid.com, 
-           "IceCompModel WARNING: Test H should be run with option\n"
-           "  '-bed_def iso'  for the reported errors to be correct.\n"); CHKERRQ(ierr);
+                      "IceCompModel WARNING: Test H should be run with option\n"
+                      "  '-bed_def iso'  for the reported errors to be correct.\n"); CHKERRQ(ierr);
   }
 
   // this switch changes Test K to make material properties for bedrock the same as for ice
@@ -253,15 +308,15 @@ PetscErrorCode IceCompModel::init_physics() {
   if (biiSet == PETSC_TRUE) {
     if (testname == 'K') {
       ierr = verbPrintf(1,grid.com,
-         "setting material properties of bedrock to those of ice in Test K\n"); CHKERRQ(ierr);
+                        "setting material properties of bedrock to those of ice in Test K\n"); CHKERRQ(ierr);
       config.set("bedrock_thermal_density", tgaIce->rho);
       config.set("bedrock_thermal_conductivity", tgaIce->k);
       config.set("bedrock_thermal_specific_heat_capacity", tgaIce->c_p);
       bedrock_is_ice_forK = PETSC_TRUE;
     } else {
       ierr = verbPrintf(1,grid.com,
-         "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
-         CHKERRQ(ierr);
+                        "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
+      CHKERRQ(ierr);
     }
   }
 
@@ -308,6 +363,9 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
     break;
   case 'L':
     ierr = initTestL(); CHKERRQ(ierr);
+    break;
+  case 'V':
+    ierr = test_V_init(); CHKERRQ(ierr);
     break;
   default:  SETERRQ(1,"Desired test not implemented by IceCompModel.\n");
   }
@@ -641,9 +699,16 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
   volexact = 0; areaexact = 0; domeHexact = 0;
   Herr = 0; avHerr=0; etaerr = 0;
 
+  double
+    seawater_density = config.get("sea_water_density"),
+    B0 = ice->hardnessParameter_from_enth(0, 0), // enthalpy and pressure do not matter here
+    C = pow(ice->rho * standard_gravity * (1.0 - ice->rho/seawater_density) / (4 * B0), 3),
+    H0 = 600.0, v0 = convert(300.0, "m/year", "m/second"),
+    Q0 = H0 * v0;
+
   // area of grid square in square km:
   const PetscScalar   a = grid.dx * grid.dy * 1e-3 * 1e-3;
-  const PetscScalar   m = (2.0 * tgaIce->exponent() + 2.0) / tgaIce->exponent();
+  const PetscScalar   m = (2.0 * ice->exponent() + 2.0) / ice->exponent();
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       if (H[i][j] > 0) {
@@ -698,6 +763,11 @@ PetscErrorCode IceCompModel::computeGeometryErrors(
         case 'L':
           Hexact = HexactL[i][j];
           break;
+      case 'V':
+        {
+          Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
+        }
+        break;
         default:  SETERRQ(1,"test must be A, B, C, D, E, F, G, H, K, L, or O");
       }
 
@@ -803,8 +873,8 @@ PetscErrorCode IceCompModel::additionalAtStartTimestep() {
   PetscErrorCode    ierr;
   
   ierr = verbPrintf(5,grid.com,
-               "additionalAtStartTimestep() in IceCompModel entered with test %c",
-               testname); CHKERRQ(ierr);
+                    "additionalAtStartTimestep() in IceCompModel entered with test %c",
+                    testname); CHKERRQ(ierr);
 
   if (exactOnly == PETSC_TRUE)
     dt_force = config.get("maximum_time_step_years") * secpera;
@@ -814,16 +884,19 @@ PetscErrorCode IceCompModel::additionalAtStartTimestep() {
     return 0;
 
   switch (testname) {
-    case 'C':
-    case 'D':
-    case 'H':
-      ierr = getCompSourcesTestCDH();
-      break;
-    case 'F':
-    case 'G':
-      ierr = getCompSourcesTestFG();  // see iCMthermo.cc
-      break;
-    default:  SETERRQ(1,"only tests CDHFG have comp source update at start time step\n");
+  case 'C':
+  case 'D':
+  case 'H':
+    ierr = getCompSourcesTestCDH();
+    break;
+  case 'F':
+  case 'G':
+    ierr = getCompSourcesTestFG();  // see iCMthermo.cc
+    break;
+  case 'V':
+    ierr = test_V_set_thickness_bc(); CHKERRQ(ierr);
+    break;
+  default:  SETERRQ(1,"only tests CDHFG have comp source update at start time step\n");
   }
 
   return 0;
@@ -834,8 +907,8 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
   PetscErrorCode    ierr;
   
   ierr = verbPrintf(5,grid.com,
-               "additionalAtEndTimestep() in IceCompModel entered with test %c",testname);
-               CHKERRQ(ierr);
+                    "additionalAtEndTimestep() in IceCompModel entered with test %c",testname);
+  CHKERRQ(ierr);
 
   // do nothing at the end of the time step unless the user has asked for the 
   // exact solution to overwrite the numerical solution
@@ -852,31 +925,31 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
   //           NetCDF, in particular dHdt is not recomputed before being written
   //           into the output file, so it is actually numerical
   switch (testname) {
-    case 'A':
-    case 'B':
-    case 'C':
-    case 'D':
-    case 'H':
-      ierr = fillSolnTestABCDH(); CHKERRQ(ierr);
-      break;
-    case 'E':
-      ierr = fillSolnTestE(); CHKERRQ(ierr);
-      break;
-    case 'F':
-    case 'G':
-      ierr = fillSolnTestFG(); CHKERRQ(ierr); // see iCMthermo.cc
-      break;
-    case 'K':
-      ierr = fillTemperatureSolnTestsKO(); CHKERRQ(ierr); // see iCMthermo.cc
-      break;
-    case 'O':
-      ierr = fillTemperatureSolnTestsKO(); CHKERRQ(ierr); // see iCMthermo.cc
-      ierr = fillBasalMeltRateSolnTestO(); CHKERRQ(ierr); // see iCMthermo.cc
-      break;
-    case 'L':
-      ierr = fillSolnTestL(); CHKERRQ(ierr);
-      break;
-    default:  SETERRQ(1,"unknown testname in IceCompModel");
+  case 'A':
+  case 'B':
+  case 'C':
+  case 'D':
+  case 'H':
+    ierr = fillSolnTestABCDH(); CHKERRQ(ierr);
+    break;
+  case 'E':
+    ierr = fillSolnTestE(); CHKERRQ(ierr);
+    break;
+  case 'F':
+  case 'G':
+    ierr = fillSolnTestFG(); CHKERRQ(ierr); // see iCMthermo.cc
+    break;
+  case 'K':
+    ierr = fillTemperatureSolnTestsKO(); CHKERRQ(ierr); // see iCMthermo.cc
+    break;
+  case 'O':
+    ierr = fillTemperatureSolnTestsKO(); CHKERRQ(ierr); // see iCMthermo.cc
+    ierr = fillBasalMeltRateSolnTestO(); CHKERRQ(ierr); // see iCMthermo.cc
+    break;
+  case 'L':
+    ierr = fillSolnTestL(); CHKERRQ(ierr);
+    break;
+  default:  SETERRQ(1,"unknown testname in IceCompModel");
   }
 
   return 0;
@@ -975,7 +1048,7 @@ PetscErrorCode IceCompModel::reportErrors() {
     ierr = verbPrintf(1,grid.com, 
             "geometry  :    prcntVOL        maxH         avH   relmaxETA\n");
             CHKERRQ(ierr);  // no longer reporting centerHerr
-    const PetscScalar   m = (2.0 * tgaIce->exponent() + 2.0) / tgaIce->exponent();
+    const PetscScalar   m = (2.0 * ice->exponent() + 2.0) / ice->exponent();
     ierr = verbPrintf(1,grid.com, "           %12.6f%12.6f%12.6f%12.6f\n",
                       100*volerr/volexact, maxHerr, avHerr,
                       maxetaerr/pow(domeHexact,m)); CHKERRQ(ierr);
@@ -1180,3 +1253,61 @@ PetscErrorCode IceCompModel::reportErrors() {
   return 0;
 }
 
+PetscErrorCode IceCompModel::test_V_init() {
+  PetscErrorCode ierr;
+
+  // initialize temperature; the value used does not matter
+  ierr = artm.set(273.15); CHKERRQ(ierr);
+
+  // initialize mass balance:
+  ierr = acab.set(0.0); CHKERRQ(ierr); 
+
+  // initialize the bed topography
+  ierr = vbed.set(-1000); CHKERRQ(ierr);
+
+  // set SSA boundary conditions:
+  PetscReal upstream_velocity = convert(300.0, "m/year", "m/second");
+
+  ierr = bc_mask.begin_access(); CHKERRQ(ierr);
+  ierr = bc_vel.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if (i <= 2) {
+        bc_mask(i,j) = 1;
+        bc_vel(i,j).u  = upstream_velocity;
+        bc_vel(i,j).v  = 0;
+      } else {
+        bc_mask(i,j) = 0;
+        bc_vel(i,j).u  = 0;
+        bc_vel(i,j).v  = 0;
+      }
+    }
+  }
+  ierr = bc_vel.end_access(); CHKERRQ(ierr);
+  ierr = bc_mask.end_access(); CHKERRQ(ierr);
+
+  ShallowStressBalance *ssa = stress_balance->get_stressbalance(); CHKERRQ(ierr);
+  ierr = ssa->set_boundary_conditions(bc_mask, bc_vel); CHKERRQ(ierr);
+
+  return 0;
+}
+
+//! \brief Reset upstream thickness B.C.
+PetscErrorCode IceCompModel::test_V_set_thickness_bc() {
+  PetscErrorCode ierr;
+  PetscReal upstream_thk = 600.0;
+
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if (i <= 2) {
+        vH(i,j) = upstream_thk;
+      }      
+    }
+  }
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vH.endGhostComm(); CHKERRQ(ierr);
+  return 0;
+}

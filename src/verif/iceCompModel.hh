@@ -108,6 +108,11 @@ protected:
   PetscErrorCode computeBasalMeltRateErrors( // test O only
                    PetscScalar &gmaxbmelterr, PetscScalar &gminbmelterr);
 
+  // using Van der Veen's exact solution to test CFBC and the part-grid code
+  PetscErrorCode test_V_init();
+  PetscErrorCode test_V_set_thickness_bc();
+  IceModelVec2Mask bc_mask;
+  IceModelVec2V bc_vel;
 
 private:
   PetscScalar        f;       // ratio of ice density to bedrock density
