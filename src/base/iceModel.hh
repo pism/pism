@@ -19,6 +19,20 @@
 #ifndef __iceModel_hh
 #define __iceModel_hh
 
+//! \file iceModel.hh Definition of class IceModel.
+/*! \file iceModel.hh
+IceModel is a big class which is an ice flow model.  It contains all parts that
+are not well-defined, separated components.  Such components are better places
+to put sub-models that have a clear, general interface to the rest of an ice
+sheet model.
+
+IceModel has pointers to well-defined components, when they exist.
+
+IceModel generally interprets user options, and initializes components based on
+such options.  It manages the initialization sequences (%e.g. a restart from a
+file containing a complete model state, versus bootstrapping).
+ */
+
 #include <signal.h>
 #include <gsl/gsl_rng.h>
 #include <petscsnes.h>
@@ -230,6 +244,9 @@ protected:
   virtual PetscErrorCode determineTimeStep(const bool doTemperatureCFL);
   virtual PetscErrorCode countCFLViolations(PetscScalar* CFLviol);
 
+  // see iMage.cc
+  virtual PetscErrorCode ageStep();
+
   // see iMbasal.cc: all relate to grounded SSA
   virtual PetscErrorCode initBasalTillModel();
   virtual PetscErrorCode computePhiFromBedElevation();
@@ -250,6 +267,13 @@ protected:
 
   // see iMdefaults.cc
   PetscErrorCode setDefaults();
+
+  // see iMenergy.cc
+  virtual PetscErrorCode energyStep();
+  virtual PetscErrorCode get_bed_top_temp(IceModelVec2S &result);
+  virtual bool checkThinNeigh(
+       PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
+       PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE);
 
   // see iMenthalpy.cc
   virtual PetscErrorCode compute_enthalpy_cold(IceModelVec3 &temperature, IceModelVec3 &result);
@@ -332,15 +356,10 @@ protected:
   virtual PetscErrorCode compute_by_name(string name, PetscScalar &result);
   
   // see iMtemp.cc
-  virtual PetscErrorCode energyStep();
-  virtual PetscErrorCode get_bed_top_temp(IceModelVec2S &result);
-  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
-  virtual PetscErrorCode ageStep();
-  virtual bool checkThinNeigh(PetscScalar E, PetscScalar NE, PetscScalar N, PetscScalar NW, 
-                      PetscScalar W, PetscScalar SW, PetscScalar S, PetscScalar SE);
   virtual PetscErrorCode excessToFromBasalMeltLayer(
                       const PetscScalar rho_c, const PetscScalar z, const PetscScalar dz,
                       PetscScalar *Texcess, PetscScalar *Hmelt);
+  virtual PetscErrorCode temperatureStep(PetscScalar* vertSacrCount, PetscScalar* bulgeCount);
 
   // see iMutil.cc
   virtual int            endOfTimeStepHook();

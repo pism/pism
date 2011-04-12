@@ -246,6 +246,8 @@ class FEDOFMap
 public:
   FEDOFMap() {};
   
+  virtual ~FEDOFMap() {};
+
   virtual void extractLocalDOFs(PetscInt i, PetscInt j, PetscReal const*const*xg, PetscReal *x) const;
   virtual void extractLocalDOFs(PetscInt i, PetscInt j, PISMVector2 const*const*xg, PISMVector2 *x) const;
 

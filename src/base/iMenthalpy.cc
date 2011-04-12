@@ -19,6 +19,10 @@
 #include "iceModel.hh"
 #include "enthSystem.hh"
 
+
+//! \file iMenthalpy.cc Methods of IceModel which implement the enthalpy formulation of conservation of energy.
+
+
 //! Compute Enth3 from temperature T3 by assuming the ice has zero liquid fraction.
 /*!
 First this method makes sure the temperatures is at most the pressure-melting
