@@ -25,6 +25,7 @@ SSA *SSAFD_PIKFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
   return new SSAFD_PIK(g,b,i,ec,c);
 }
 
+/*! */
 PetscErrorCode SSAFD_PIK::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = SSAFD::init(vars); CHKERRQ(ierr);
@@ -34,6 +35,7 @@ PetscErrorCode SSAFD_PIK::init(PISMVars &vars) {
   return 0;
 }
 
+/*! */
 PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
   PetscErrorCode ierr;
 
@@ -357,6 +359,7 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
 }
 
 
+/*! */
 PetscErrorCode SSAFD_PIK::assemble_rhs(Vec rhs) {
   PetscErrorCode ierr;
 
@@ -496,6 +499,4 @@ PetscErrorCode SSAFD_PIK::assemble_rhs(Vec rhs) {
 	
   return 0;
 }
-
-
 
