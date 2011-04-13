@@ -174,7 +174,9 @@ to 1 at one vertex and equal to zero at the remainder.
 The FEShapeQ1 class consolodates the computation of the values and
 derivatives of these basis functions. */
 class FEShapeQ1 {
-public: 
+public:
+  virtual ~FEShapeQ1() {}
+
   //! Compute values and derivatives of the shape function supported at node 0
   static void shape0(PetscReal x, PetscReal y, FEFunctionGerm *value)
   {
