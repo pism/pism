@@ -268,27 +268,37 @@ PetscErrorCode reportColumn(
 }
 
 
-#define OM1 0.01
-#define OM2 0.02
-#define OM3 0.03
-#define DR2 0.005
-#define DR3 0.05
+//! Compute the rate of drainage D(omega) for temperate ice.
+class DrainageCalculator {
 
-// hard-wired  D(omega)  calculation from [\ref AschwandenBuelerBlatter]
-PetscReal get_drainage_rate(PetscReal omega) {
-  if (omega > OM1) {
-    PetscReal D;  // = D(omega); see figure in [\ref AschwandenBuelerBlatter]
-    if (omega > OM2) {
-      if (omega > OM3) {
-        D = DR3;
+public:
+  DrainageCalculator(const NCConfigVariable &config) {
+    OM1 = config.get("drainage_target_water_frac"); // 0.01
+    OM2 = 2.0 * OM1;
+    OM3 = 3.0 * OM1;
+    DR3 = config.get("drainage_max_rate"); // 0.05 a-1 
+    DR2 = 0.1 * DR3;
+  }
+  virtual ~DrainageCalculator() {}
+
+  //! Return D(omega), as in figure in [\ref AschwandenBuelerBlatter].
+  virtual PetscReal get_drainage_rate(PetscReal omega) {
+    if (omega > OM1) {
+      if (omega > OM2) {
+        if (omega > OM3) {
+          return DR3;
+        } else
+          return DR2 + (DR3 - DR2) * (omega - OM2) / OM1;
       } else
-        D = DR2 + (DR3 - DR2) * (omega - OM2) / OM1;
-    } else
-      D = DR2 * (omega - OM1) / OM1;
-    return D / secpera; // convert from a-1 to s-1
-  } else
-    return 0.0;
-}
+        return DR2 * (omega - OM1) / OM1;
+    } else {
+      return 0.0;
+    }
+  }
+
+private:
+  PetscReal OM1, OM2, OM3, DR2, DR3;
+};
 
 
 //! Update ice enthalpy field based on conservation of energy.
@@ -327,6 +337,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
     bulgeEnthMax  = config.get("enthalpy_cold_bulge_max"), // J kg-1
     hmelt_max = config.get("hmelt_max");                 // m
 
+  DrainageCalculator dc(config);
+  
   IceModelVec2S *Rb;
   IceModelVec3 *u3, *v3, *w3, *Sigma3;
   ierr = stress_balance->get_basal_frictional_heating(Rb); CHKERRQ(ierr);
@@ -535,7 +547,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           Hmeltnew += vbmr(i,j) * dt_secs;
         }
 
-        // drain ice segments by mechanism in [\ref AschwandenBuelerBlatter]
+        // drain ice segments by mechanism in [\ref AschwandenBuelerBlatter],
+        //   using DrainageCalculator dc
         PetscScalar Hdrainedtotal = 0.0;
         for (PetscInt k=0; k < ks; k++) {
           const PetscReal p = EC->getPressureFromDepth(vH(i,j) - fzlev[k]); // FIXME task #7297
@@ -547,7 +560,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
               Enthnew[k] = esys.Enth_s[k] + L; //  but lose the energy
             }
             if (omega > 0.01) {
-              PetscReal fractiondrained = get_drainage_rate(omega) * dt_secs; // pure number
+              PetscReal fractiondrained = dc.get_drainage_rate(omega) * dt_secs; // pure number
               fractiondrained = PetscMin(fractiondrained, omega - 0.01); // only drain down to 0.01
               Hdrainedtotal += fractiondrained * fdz;  // always a positive contribution
               Enthnew[k] -= fractiondrained * L;

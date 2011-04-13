@@ -416,6 +416,15 @@ netcdf pism_config {
     pism_config:gpbld_water_frac_coeff = 184.0;
     pism_config:gpbld_water_frac_coeff_doc = "; coefficient in Glen-Paterson-Budd flow law for extra dependence of softness on liquid water fraction (omega) [\\ref AschwandenBlatter, \\ref LliboutryDuval1985]";
 
+    pism_config:gpbld_water_frac_observed_limit = 0.01;
+    pism_config:gpbld_water_frac_observed_limit_doc = "; maximum value of liquid water fraction omega for which softness values are parameterized by [\\ref LliboutryDuval1985]; used in Glen-Paterson-Budd-Lliboutry-Duval flow law; compare [\\ref AschwandenBuelerBlatter]";
+
+    pism_config:drainage_target_water_frac = 0.01;
+    pism_config:drainage_target_water_frac_doc = "; liquid water fraction (omega) above which drainage occurs, but below which there is no drainage; see [\\ref AschwandenBuelerBlatter]";
+
+    pism_config:drainage_max_rate = 1.58443823077064e-09;
+    pism_config:drainage_max_rate_doc = "s-1; = 0.05 a-1; maximum rate at which liquid water fraction in temperate ice could possibly drain; see [\\ref AschwandenBuelerBlatter]";
+
     pism_config:fresh_water_density = 1000.0;
     pism_config:fresh_water_density_doc = "kg m-3;";
    

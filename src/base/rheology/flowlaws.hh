@@ -119,7 +119,7 @@ public:
   virtual PetscReal softnessParameter_from_enth(PetscReal enthalpy,
                                                 PetscReal pressure) const;
 protected:
-  PetscReal T_0, water_frac_coeff;
+  PetscReal T_0, water_frac_coeff, water_frac_observed_limit;
 };
 
 //! Derived class of IceFlowLaw for Paterson-Budd (1982)-Glen ice.

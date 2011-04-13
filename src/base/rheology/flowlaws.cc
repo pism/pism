@@ -205,8 +205,10 @@ This constructor just sets flow law factor for nonzero water content, from
  */
 GPBLDIce::GPBLDIce(MPI_Comm c,const char pre[],
                    const NCConfigVariable &config) : IceFlowLaw(c,pre,config) {
-  T_0  = config.get("water_triple_point_temperature");    // K
-  water_frac_coeff = config.get("gpbld_water_frac_coeff");                
+  T_0              = config.get("water_triple_point_temperature");    // K
+  water_frac_coeff = config.get("gpbld_water_frac_coeff");  
+  water_frac_observed_limit
+                   = config.get("gpbld_water_frac_observed_limit");              
 }
 
 PetscErrorCode GPBLDIce::setFromOptions() {
@@ -218,8 +220,14 @@ PetscErrorCode GPBLDIce::setFromOptions() {
   {
     ierr = PetscOptionsReal("-ice_gpbld_water_frac_coeff",
                             "coefficient of softness factor in temperate ice,"
-                            " as function of liquid water fraction (no units)",
+                            " as function of liquid water fraction; no units",
                             "",water_frac_coeff,&water_frac_coeff,NULL); CHKERRQ(ierr);
+    ierr = PetscOptionsReal("-ice_gpbld_water_frac_observed_limit",
+                            "maximum value of liquid water fraction 'omega' for"
+                            " which softness values are parameterized by Lliboutry and"
+                            " Duval (1985); no units",
+                            "",water_frac_observed_limit,&water_frac_observed_limit,NULL);
+                            CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   return 0;
@@ -255,7 +263,8 @@ PetscReal GPBLDIce::softnessParameter_from_enth(
   } else { // temperate ice
     PetscReal omega;
     ierr = EC->getWaterFraction(enthalpy,pressure,omega);
-    omega = PetscMin(omega,0.01); // as stated in \ref AschwandenBuelerBlatter, use the max here
+    // as stated in \ref AschwandenBuelerBlatter, cap omega at max of observations:
+    omega = PetscMin(omega,water_frac_observed_limit); 
     // next line implements eqn (23) in \ref AschwandenBlatter2009
     return softnessParameter_paterson_budd(T_0) * (1.0 + water_frac_coeff * omega);
   }
