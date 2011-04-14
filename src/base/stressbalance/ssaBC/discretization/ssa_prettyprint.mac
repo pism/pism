@@ -1,0 +1,120 @@
+/* Tell Maxima how to pretty-print the following: */
+texput(dx, "\\Delta x")$
+texput(dy, "\\Delta y")$
+texput(D_x, "\\Delta_x")$
+texput(D_y, "\\Delta_y")$
+texput(d_px, "\\delta_{+x}")$
+texput(d_mx, "\\delta_{-x}")$
+texput(d_py, "\\delta_{+y}")$
+texput(d_my, "\\delta_{-y}")$
+texput(c_w, "c_{w}")$
+texput(c_e, "c_{e}")$
+texput(c_n, "c_{n}")$
+texput(c_s, "c_{s}")$
+
+/* Expression simplification library */
+load(scifac)$
+
+/* Load the definition of the SSA discretization from ssa.mac */
+load("ssa.mac")$
+
+/* Print discretizations */
+
+file : openw("formulas.tex")$
+
+/* The left hand side of the first equation */
+printf(file, "\\newcommand{\\lhsI}{~%")$
+for n: 1 thru 4 do (printf(file, "&\\displaystyle ~a& \\\\~%", tex1(part(lhs1, n))))$
+printf(file, "}~%")$
+
+/* The left hand side of the second equation */
+printf(file, "\\newcommand{\\lhsII}{~%")$
+for n: 1 thru 4 do (printf(file, "&\\displaystyle ~a& \\\\~%", tex1(part(lhs2, n))))$
+printf(file, "}~%")$
+
+/* Define weights and differences for pretty-printing (we don't need to use
+actual definitions yet */
+a_p(var) := w[part(var,1) + 1/2, part(var,2)]$
+a_m(var) := w[part(var,1) - 1/2, part(var,2)]$
+b_p(var) := w[part(var,1), part(var,2) + 1/2]$
+b_m(var) := w[part(var,1), part(var,2) - 1/2]$
+
+d_px(foo) := a_p(foo) * delta[\+x](foo)$
+d_mx(foo) := a_m(foo) * delta[\-x](foo)$
+
+d_py(foo) := b_p(foo) * delta[\+y](foo)$
+d_my(foo) := b_m(foo) * delta[\-y](foo)$
+
+/* centered differences defined as sums of one-sided differences with weights */
+D_x(foo) := d_px(foo) + d_mx(foo)$
+D_y(foo) := d_py(foo) + d_my(foo)$
+
+/* The left hand side of the first equation, expanded half way */
+printf(file, "\\newcommand{\\lhsIII}{~%")$
+for n: 1 thru 4 do (printf(file, "&\\displaystyle ~a& \\\\~%", tex1(part(''lhs1, n))))$
+printf(file, "}~%")$
+
+/* Compute coefficients: */
+
+/* This macro defines a LaTeX command "name" and prints coefficients of a
+variable "var" simplified using the function "func".
+
+This is designed to go inside a "tabular" environment.
+*/
+coeffs_grid(name, var, func) := block(
+  printf(file, "\\newcommand{\\~a}{~%", name),
+  printf(file, "&-1 & 0 & 1 \\\\\\hline~%"), /* i indices */
+  for n: 1 step -1 thru -1 do (
+    printf(file, "\\hline~%"),
+    printf(file, "$~d$ &", n), /* j indices */
+    printf(file, "$\\displaystyle ~a$ &",      tex1(func(var[-1,n]))),
+    printf(file, "$\\displaystyle ~a$ &",      tex1(func(var[ 0,n]))),
+    printf(file, "$\\displaystyle ~a$ \\\\~%", tex1(func(var[ 1,n])))
+    ),
+  printf(file, "}~%")
+  )$
+
+/* This macro defines a LaTeX command "name" and prints coefficient of a
+variable "var" using "sup" as the superscript.
+
+This is designed to go inside a "eqnarray" environment.
+*/
+coeffs_list(name, sup, var) := block(
+  printf(file, "\\newcommand{\\~a}{~%", name),
+  for m: -1 thru 1 do (
+    for n: -1 thru 1 do (
+      printf(file, "C^{~a}_{~d,~d} &=& \\displaystyle ~a \\\\~%",
+        sup, m, n, tex1(gcfac(part(var[m,n],1)))),
+      printf(file, "&+& \\displaystyle ~a \\\\~%",
+        tex1(gcfac(part(var[m,n],2))))
+      )
+    ),
+  printf(file, "}~%")
+  )$
+
+/* First in the interior */
+interior : true;
+load("ssa_coeffs.mac")$
+
+/* u */
+coeffs_grid("CUfirstInterior",  c1u, gcfac)$
+coeffs_grid("CUsecondInterior", c2u, ratsimp)$
+
+/* v  */
+coeffs_grid("CVfirstInterior",  c1v, ratsimp)$
+coeffs_grid("CVsecondInterior", c2v, gcfac)$
+
+/* Now at the boundary */
+interior : false;
+load("ssa_coeffs.mac")$
+
+/* u */
+coeffs_grid("CUfirstMargin",  c1u, gcfac)$
+coeffs_list("CUsecondMargin", "u,2", c2u)$
+
+/* v  */
+coeffs_list("CVfirstMargin",  "v,1", c1v)$
+coeffs_grid("CVsecondMargin", c2v, gcfac)$
+
+/* Close the file */
+close(file)$

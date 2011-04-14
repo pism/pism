@@ -1,0 +1,72 @@
+isolate_wrt_times:true$
+
+/* weights */
+a_p(var) := w[part(var,1) + 1/2, part(var,2)]$
+a_m(var) := w[part(var,1) - 1/2, part(var,2)]$
+b_p(var) := w[part(var,1), part(var,2) + 1/2]$
+b_m(var) := w[part(var,1), part(var,2) - 1/2]$
+
+/* one-sided differences with weights */
+d_px(foo) := a_p(foo) * (part(foo,0)[part(foo,1) + 1, part(foo,2)] - part(foo,0)[part(foo,1), part(foo,2)])$
+d_mx(foo) := a_m(foo) * (part(foo,0)[part(foo,1), part(foo,2)] - part(foo,0)[part(foo,1) - 1, part(foo,2)])$
+
+d_py(foo) := b_p(foo) * (part(foo,0)[part(foo,1), part(foo,2) + 1] - part(foo,0)[part(foo,1), part(foo,2)])$
+d_my(foo) := b_m(foo) * (part(foo,0)[part(foo,1), part(foo,2)] - part(foo,0)[part(foo,1), part(foo,2) - 1])$
+
+/* centered differences defined as sums of one-sided differences with weights */
+D_x(foo) := d_px(foo) + d_mx(foo)$
+D_y(foo) := d_py(foo) + d_my(foo)$
+
+load("ssa.mac")$
+
+denominator : (4 * dx**2 * dy**2)$
+
+/* Clear the denominator */
+e1 : ''lhs1 * denominator, expand;
+e2 : ''lhs2 * denominator, expand;
+
+/* define weights to be equal to 1 in the interior; give them PIK names otherwise */
+a_ones : [w[i+1/2,j] = 1,
+          w[i-1/2,j] = 1,
+          w[i,j+1/2] = 1,
+          w[i,j-1/2] = 1,
+          N[i+1/2,j] = c_e,
+          N[i-1/2,j] = c_w,
+          N[i,j+1/2] = c_n,
+          N[i,j-1/2] = c_s,
+          w[i-1/2,j+1] = 1,
+          w[i+1/2,j+1] = 1,
+          w[i+1,j+1/2] = 1,
+          w[i+1,j-1/2] = 1,
+          w[i+1/2,j-1] = 1,
+          w[i-1/2,j-1] = 1,
+          w[i-1,j-1/2] = 1,
+          w[i-1,j+1/2] = 1]$
+
+a_names : [w[i+1/2,j] = aPP,
+           w[i-1/2,j] = aMM,
+           w[i,j+1/2] = bPP,
+           w[i,j-1/2] = bMM,
+           N[i+1/2,j] = c_e,
+           N[i-1/2,j] = c_w,
+           N[i,j+1/2] = c_n,
+           N[i,j-1/2] = c_s,
+           w[i-1/2,j+1] = aMn,
+           w[i+1/2,j+1] = aPn,
+           w[i+1,j+1/2] = bPe,
+           w[i+1,j-1/2] = bMe,
+           w[i+1/2,j-1] = aPs,
+           w[i-1/2,j-1] = aMs,
+           w[i-1,j-1/2] = bMw,
+           w[i-1,j+1/2] = bPw]$
+
+if interior then (e1 : at(e1, a_ones), e2 : at(e2, a_ones))
+else (e1 : at(e1, a_names), e2 : at(e2, a_names))$
+
+/* Finally compute coefficients: */
+for m: -1 thru 1 do (for n: -1 thru 1 do (c1u[m,n] : combine(expand(coeff(e1, u[i+m,j+n]) / denominator))));
+for m: -1 thru 1 do (for n: -1 thru 1 do (c1v[m,n] : combine(expand(coeff(e1, v[i+m,j+n]) / denominator))));
+
+for m: -1 thru 1 do (for n: -1 thru 1 do (c2u[m,n] : combine(expand(coeff(e2, u[i+m,j+n]) / denominator))));
+for m: -1 thru 1 do (for n: -1 thru 1 do (c2v[m,n] : combine(expand(coeff(e2, v[i+m,j+n]) / denominator))));
+

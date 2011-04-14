@@ -1,0 +1,112 @@
+\newcommand{\lhsI}{
+&\displaystyle -{{2\,w_{i+{{1}\over{2}},j}\,N_{i+{{1}\over{2}},j}\,\left({{\Delta_y\left(v_{i+1,j}\right)+\Delta_y\left(v_{i,j}\right)}\over{4\,\Delta y}}+{{2\,\delta_{+x}\left(u_{i,j}\right)}\over{\Delta x}}\right)}\over{\Delta x}}& \\
+&\displaystyle -{{w_{i,j+{{1}\over{2}}}\,N_{i,j+{{1}\over{2}}}\,\left({{\Delta_x\left(v_{i,j+1}\right)+\Delta_x\left(v_{i,j}\right)}\over{4\,\Delta x}}+{{\delta_{+y}\left(u_{i,j}\right)}\over{\Delta y}}\right)}\over{\Delta y}}& \\
+&\displaystyle {{2\,w_{i-{{1}\over{2}},j}\,N_{i-{{1}\over{2}},j}\,\left({{\Delta_y\left(v_{i,j}\right)+\Delta_y\left(v_{i-1,j}\right)}\over{4\,\Delta y}}+{{2\,\delta_{-x}\left(u_{i,j}\right)}\over{\Delta x}}\right)}\over{\Delta x}}& \\
+&\displaystyle {{w_{i,j-{{1}\over{2}}}\,N_{i,j-{{1}\over{2}}}\,\left({{\Delta_x\left(v_{i,j}\right)+\Delta_x\left(v_{i,j-1}\right)}\over{4\,\Delta x}}+{{\delta_{-y}\left(u_{i,j}\right)}\over{\Delta y}}\right)}\over{\Delta y}}& \\
+}
+\newcommand{\lhsII}{
+&\displaystyle -{{w_{i+{{1}\over{2}},j}\,N_{i+{{1}\over{2}},j}\,\left({{\Delta_y\left(u_{i+1,j}\right)+\Delta_y\left(u_{i,j}\right)}\over{4\,\Delta y}}+{{\delta_{+x}\left(v_{i,j}\right)}\over{\Delta x}}\right)}\over{\Delta x}}& \\
+&\displaystyle -{{2\,w_{i,j+{{1}\over{2}}}\,N_{i,j+{{1}\over{2}}}\,\left({{\Delta_x\left(u_{i,j+1}\right)+\Delta_x\left(u_{i,j}\right)}\over{4\,\Delta x}}+{{2\,\delta_{+y}\left(v_{i,j}\right)}\over{\Delta y}}\right)}\over{\Delta y}}& \\
+&\displaystyle {{2\,w_{i,j-{{1}\over{2}}}\,N_{i,j-{{1}\over{2}}}\,\left({{2\,\delta_{-y}\left(v_{i,j}\right)}\over{\Delta y}}+{{\Delta_x\left(u_{i,j}\right)+\Delta_x\left(u_{i,j-1}\right)}\over{4\,\Delta x}}\right)}\over{\Delta y}}& \\
+&\displaystyle {{w_{i-{{1}\over{2}},j}\,N_{i-{{1}\over{2}},j}\,\left({{\delta_{-x}\left(v_{i,j}\right)}\over{\Delta x}}+{{\Delta_y\left(u_{i,j}\right)+\Delta_y\left(u_{i-1,j}\right)}\over{4\,\Delta y}}\right)}\over{\Delta x}}& \\
+}
+\newcommand{\lhsIII}{
+&\displaystyle -{{2\,w_{i+{{1}\over{2}},j}\,N_{i+{{1}\over{2}},j}\,\left({{w_{i+1,j-{{1}\over{2}}}\,\delta_{{\it -y}}(v_{i+1,j})+w_{i+1,j+{{1}\over{2}}}\,\delta_{{\it +y}}(v_{i+1,j})+w_{i,j-{{1}\over{2}}}\,\delta_{{\it -y}}(v_{i,j})+w_{i,j+{{1}\over{2}}}\,\delta_{{\it +y}}(v_{i,j})}\over{4\,\Delta y}}+{{2\,w_{i+{{1}\over{2}},j}\,\delta_{{\it +x}}(u_{i,j})}\over{\Delta x}}\right)}\over{\Delta x}}& \\
+&\displaystyle -{{w_{i,j+{{1}\over{2}}}\,N_{i,j+{{1}\over{2}}}\,\left({{w_{i-{{1}\over{2}},j+1}\,\delta_{{\it -x}}(v_{i,j+1})+w_{i+{{1}\over{2}},j+1}\,\delta_{{\it +x}}(v_{i,j+1})+w_{i-{{1}\over{2}},j}\,\delta_{{\it -x}}(v_{i,j})+w_{i+{{1}\over{2}},j}\,\delta_{{\it +x}}(v_{i,j})}\over{4\,\Delta x}}+{{w_{i,j+{{1}\over{2}}}\,\delta_{{\it +y}}(u_{i,j})}\over{\Delta y}}\right)}\over{\Delta y}}& \\
+&\displaystyle {{2\,w_{i-{{1}\over{2}},j}\,N_{i-{{1}\over{2}},j}\,\left({{w_{i,j-{{1}\over{2}}}\,\delta_{{\it -y}}(v_{i,j})+w_{i,j+{{1}\over{2}}}\,\delta_{{\it +y}}(v_{i,j})+w_{i-1,j-{{1}\over{2}}}\,\delta_{{\it -y}}(v_{i-1,j})+w_{i-1,j+{{1}\over{2}}}\,\delta_{{\it +y}}(v_{i-1,j})}\over{4\,\Delta y}}+{{2\,w_{i-{{1}\over{2}},j}\,\delta_{{\it -x}}(u_{i,j})}\over{\Delta x}}\right)}\over{\Delta x}}& \\
+&\displaystyle {{w_{i,j-{{1}\over{2}}}\,N_{i,j-{{1}\over{2}}}\,\left({{w_{i-{{1}\over{2}},j}\,\delta_{{\it -x}}(v_{i,j})+w_{i+{{1}\over{2}},j}\,\delta_{{\it +x}}(v_{i,j})+w_{i-{{1}\over{2}},j-1}\,\delta_{{\it -x}}(v_{i,j-1})+w_{i+{{1}\over{2}},j-1}\,\delta_{{\it +x}}(v_{i,j-1})}\over{4\,\Delta x}}+{{w_{i,j-{{1}\over{2}}}\,\delta_{{\it -y}}(u_{i,j})}\over{\Delta y}}\right)}\over{\Delta y}}& \\
+}
+\newcommand{\CUfirstInterior}{
+&-1 & 0 & 1 \\\hline
+\hline
+$1$ &$\displaystyle 0$ &$\displaystyle -{{c_{n}}\over{\Delta y^2}}$ &$\displaystyle 0$ \\
+\hline
+$0$ &$\displaystyle -{{4\,c_{w}}\over{\Delta x^2}}$ &$\displaystyle {{c_{s}+c_{n}}\over{\Delta y^2}}+{{4\,\left(c_{w}+c_{e}\right)}\over{\Delta x^2}}$ &$\displaystyle -{{4\,c_{e}}\over{\Delta x^2}}$ \\
+\hline
+$-1$ &$\displaystyle 0$ &$\displaystyle -{{c_{s}}\over{\Delta y^2}}$ &$\displaystyle 0$ \\
+}
+\newcommand{\CUsecondInterior}{
+&-1 & 0 & 1 \\\hline
+\hline
+$1$ &$\displaystyle {{c_{w}+2\,c_{n}}\over{4\,\Delta x\,\Delta y}}$ &$\displaystyle {{c_{w}-c_{e}}\over{4\,\Delta x\,\Delta y}}$ &$\displaystyle -{{2\,c_{n}+c_{e}}\over{4\,\Delta x\,\Delta y}}$ \\
+\hline
+$0$ &$\displaystyle -{{c_{s}-c_{n}}\over{2\,\Delta x\,\Delta y}}$ &$\displaystyle 0$ &$\displaystyle {{c_{s}-c_{n}}\over{2\,\Delta x\,\Delta y}}$ \\
+\hline
+$-1$ &$\displaystyle -{{c_{w}+2\,c_{s}}\over{4\,\Delta x\,\Delta y}}$ &$\displaystyle -{{c_{w}-c_{e}}\over{4\,\Delta x\,\Delta y}}$ &$\displaystyle {{2\,c_{s}+c_{e}}\over{4\,\Delta x\,\Delta y}}$ \\
+}
+\newcommand{\CVfirstInterior}{
+&-1 & 0 & 1 \\\hline
+\hline
+$1$ &$\displaystyle {{2\,c_{w}+c_{n}}\over{4\,\Delta x\,\Delta y}}$ &$\displaystyle {{c_{w}-c_{e}}\over{2\,\Delta x\,\Delta y}}$ &$\displaystyle -{{c_{n}+2\,c_{e}}\over{4\,\Delta x\,\Delta y}}$ \\
+\hline
+$0$ &$\displaystyle -{{c_{s}-c_{n}}\over{4\,\Delta x\,\Delta y}}$ &$\displaystyle 0$ &$\displaystyle {{c_{s}-c_{n}}\over{4\,\Delta x\,\Delta y}}$ \\
+\hline
+$-1$ &$\displaystyle -{{2\,c_{w}+c_{s}}\over{4\,\Delta x\,\Delta y}}$ &$\displaystyle -{{c_{w}-c_{e}}\over{2\,\Delta x\,\Delta y}}$ &$\displaystyle {{c_{s}+2\,c_{e}}\over{4\,\Delta x\,\Delta y}}$ \\
+}
+\newcommand{\CVsecondInterior}{
+&-1 & 0 & 1 \\\hline
+\hline
+$1$ &$\displaystyle 0$ &$\displaystyle -{{4\,c_{n}}\over{\Delta y^2}}$ &$\displaystyle 0$ \\
+\hline
+$0$ &$\displaystyle -{{c_{w}}\over{\Delta x^2}}$ &$\displaystyle {{4\,\left(c_{s}+c_{n}\right)}\over{\Delta y^2}}+{{c_{w}+c_{e}}\over{\Delta x^2}}$ &$\displaystyle -{{c_{e}}\over{\Delta x^2}}$ \\
+\hline
+$-1$ &$\displaystyle 0$ &$\displaystyle -{{4\,c_{s}}\over{\Delta y^2}}$ &$\displaystyle 0$ \\
+}
+\newcommand{\CUfirstMargin}{
+&-1 & 0 & 1 \\\hline
+\hline
+$1$ &$\displaystyle 0$ &$\displaystyle -{{c_{n}\,{\it bPP}^2}\over{\Delta y^2}}$ &$\displaystyle 0$ \\
+\hline
+$0$ &$\displaystyle -{{4\,c_{w}\,{\it aMM}^2}\over{\Delta x^2}}$ &$\displaystyle {{c_{n}\,{\it bPP}^2+c_{s}\,{\it bMM}^2}\over{\Delta y^2}}+{{4\,\left(c_{e}\,{\it aPP}^2+c_{w}\,{\it aMM}^2\right)}\over{\Delta x^2}}$ &$\displaystyle -{{4\,c_{e}\,{\it aPP}^2}\over{\Delta x^2}}$ \\
+\hline
+$-1$ &$\displaystyle 0$ &$\displaystyle -{{c_{s}\,{\it bMM}^2}\over{\Delta y^2}}$ &$\displaystyle 0$ \\
+}
+\newcommand{\CUsecondMargin}{
+C^{u,2}_{-1,-1} &=& \displaystyle -{{c_{w}\,{\it aMM}\,{\it bMw}}\over{4\,\Delta x\,\Delta y}} \\
+&+& \displaystyle -{{c_{s}\,{\it aMs}\,{\it bMM}}\over{2\,\Delta x\,\Delta y}} \\
+C^{u,2}_{-1,0} &=& \displaystyle {{c_{w}\,{\it aMM}\,\left({\it bMw}-{\it bPw}\right)}\over{4\,\Delta x\,\Delta y}} \\
+&+& \displaystyle {{{\it aMM}\,\left(c_{n}\,{\it bPP}-c_{s}\,{\it bMM}\right)}\over{2\,\Delta x\,\Delta y}} \\
+C^{u,2}_{-1,1} &=& \displaystyle {{c_{w}\,{\it aMM}\,{\it bPw}}\over{4\,\Delta x\,\Delta y}} \\
+&+& \displaystyle {{c_{n}\,{\it aMn}\,{\it bPP}}\over{2\,\Delta x\,\Delta y}} \\
+C^{u,2}_{0,-1} &=& \displaystyle {{c_{s}\,\left({\it aMs}-{\it aPs}\right)\,{\it bMM}}\over{2\,\Delta x\,\Delta y}} \\
+&+& \displaystyle {{\left(c_{e}\,{\it aPP}-c_{w}\,{\it aMM}\right)\,{\it bMM}}\over{4\,\Delta x\,\Delta y}} \\
+C^{u,2}_{0,0} &=& \displaystyle {{c_{n}\,\left({\it aPP}-{\it aMM}\right)\,{\it bPP}+c_{s}\,\left({\it aMM}-{\it aPP}\right)\,{\it bMM}}\over{2\,\Delta x\,\Delta y}} \\
+&+& \displaystyle {{\left(c_{e}\,{\it aPP}-c_{w}\,{\it aMM}\right)\,{\it bPP}+\left(c_{w}\,{\it aMM}-c_{e}\,{\it aPP}\right)\,{\it bMM}}\over{4\,\Delta x\,\Delta y}} \\
+C^{u,2}_{0,1} &=& \displaystyle {{c_{n}\,\left({\it aPn}-{\it aMn}\right)\,{\it bPP}}\over{2\,\Delta x\,\Delta y}} \\
+&+& \displaystyle {{\left(c_{w}\,{\it aMM}-c_{e}\,{\it aPP}\right)\,{\it bPP}}\over{4\,\Delta x\,\Delta y}} \\
+C^{u,2}_{1,-1} &=& \displaystyle {{c_{e}\,{\it aPP}\,{\it bMe}}\over{4\,\Delta x\,\Delta y}} \\
+&+& \displaystyle {{c_{s}\,{\it aPs}\,{\it bMM}}\over{2\,\Delta x\,\Delta y}} \\
+C^{u,2}_{1,0} &=& \displaystyle {{c_{e}\,{\it aPP}\,\left({\it bPe}-{\it bMe}\right)}\over{4\,\Delta x\,\Delta y}} \\
+&+& \displaystyle {{{\it aPP}\,\left(c_{s}\,{\it bMM}-c_{n}\,{\it bPP}\right)}\over{2\,\Delta x\,\Delta y}} \\
+C^{u,2}_{1,1} &=& \displaystyle -{{c_{e}\,{\it aPP}\,{\it bPe}}\over{4\,\Delta x\,\Delta y}} \\
+&+& \displaystyle -{{c_{n}\,{\it aPn}\,{\it bPP}}\over{2\,\Delta x\,\Delta y}} \\
+}
+\newcommand{\CVfirstMargin}{
+C^{v,1}_{-1,-1} &=& \displaystyle -{{c_{w}\,{\it aMM}\,{\it bMw}}\over{2\,\Delta x\,\Delta y}} \\
+&+& \displaystyle -{{c_{s}\,{\it aMs}\,{\it bMM}}\over{4\,\Delta x\,\Delta y}} \\
+C^{v,1}_{-1,0} &=& \displaystyle {{c_{w}\,{\it aMM}\,\left({\it bMw}-{\it bPw}\right)}\over{2\,\Delta x\,\Delta y}} \\
+&+& \displaystyle {{{\it aMM}\,\left(c_{n}\,{\it bPP}-c_{s}\,{\it bMM}\right)}\over{4\,\Delta x\,\Delta y}} \\
+C^{v,1}_{-1,1} &=& \displaystyle {{c_{w}\,{\it aMM}\,{\it bPw}}\over{2\,\Delta x\,\Delta y}} \\
+&+& \displaystyle {{c_{n}\,{\it aMn}\,{\it bPP}}\over{4\,\Delta x\,\Delta y}} \\
+C^{v,1}_{0,-1} &=& \displaystyle {{c_{s}\,\left({\it aMs}-{\it aPs}\right)\,{\it bMM}}\over{4\,\Delta x\,\Delta y}} \\
+&+& \displaystyle {{\left(c_{e}\,{\it aPP}-c_{w}\,{\it aMM}\right)\,{\it bMM}}\over{2\,\Delta x\,\Delta y}} \\
+C^{v,1}_{0,0} &=& \displaystyle {{c_{n}\,\left({\it aPP}-{\it aMM}\right)\,{\it bPP}+c_{s}\,\left({\it aMM}-{\it aPP}\right)\,{\it bMM}}\over{4\,\Delta x\,\Delta y}} \\
+&+& \displaystyle {{\left(c_{e}\,{\it aPP}-c_{w}\,{\it aMM}\right)\,{\it bPP}+\left(c_{w}\,{\it aMM}-c_{e}\,{\it aPP}\right)\,{\it bMM}}\over{2\,\Delta x\,\Delta y}} \\
+C^{v,1}_{0,1} &=& \displaystyle {{c_{n}\,\left({\it aPn}-{\it aMn}\right)\,{\it bPP}}\over{4\,\Delta x\,\Delta y}} \\
+&+& \displaystyle {{\left(c_{w}\,{\it aMM}-c_{e}\,{\it aPP}\right)\,{\it bPP}}\over{2\,\Delta x\,\Delta y}} \\
+C^{v,1}_{1,-1} &=& \displaystyle {{c_{e}\,{\it aPP}\,{\it bMe}}\over{2\,\Delta x\,\Delta y}} \\
+&+& \displaystyle {{c_{s}\,{\it aPs}\,{\it bMM}}\over{4\,\Delta x\,\Delta y}} \\
+C^{v,1}_{1,0} &=& \displaystyle {{c_{e}\,{\it aPP}\,\left({\it bPe}-{\it bMe}\right)}\over{2\,\Delta x\,\Delta y}} \\
+&+& \displaystyle {{{\it aPP}\,\left(c_{s}\,{\it bMM}-c_{n}\,{\it bPP}\right)}\over{4\,\Delta x\,\Delta y}} \\
+C^{v,1}_{1,1} &=& \displaystyle -{{c_{e}\,{\it aPP}\,{\it bPe}}\over{2\,\Delta x\,\Delta y}} \\
+&+& \displaystyle -{{c_{n}\,{\it aPn}\,{\it bPP}}\over{4\,\Delta x\,\Delta y}} \\
+}
+\newcommand{\CVsecondMargin}{
+&-1 & 0 & 1 \\\hline
+\hline
+$1$ &$\displaystyle 0$ &$\displaystyle -{{4\,c_{n}\,{\it bPP}^2}\over{\Delta y^2}}$ &$\displaystyle 0$ \\
+\hline
+$0$ &$\displaystyle -{{c_{w}\,{\it aMM}^2}\over{\Delta x^2}}$ &$\displaystyle {{4\,\left(c_{n}\,{\it bPP}^2+c_{s}\,{\it bMM}^2\right)}\over{\Delta y^2}}+{{c_{e}\,{\it aPP}^2+c_{w}\,{\it aMM}^2}\over{\Delta x^2}}$ &$\displaystyle -{{c_{e}\,{\it aPP}^2}\over{\Delta x^2}}$ \\
+\hline
+$-1$ &$\displaystyle 0$ &$\displaystyle -{{4\,c_{s}\,{\it bMM}^2}\over{\Delta y^2}}$ &$\displaystyle 0$ \\
+}

@@ -1,0 +1,66 @@
+/* This macro prints coefficients, taking care to replace powers and products
+with shortcuts. This is necessary because Maxima prints x raised to the power n
+as x^n, which does not match C syntax. */
+print_coeffs(var) := block(
+  for r: 1 step -1 thru -1 do (
+    for c:-1 thru 1 do (
+      printf(file, " ~a, ",
+        subst([dx^2 = dx2,
+               dy^2 = dy2,
+               4*dx*dy = d4,
+               2*dx*dy = d2,
+               aPP^2 = aPP,
+               aMM^2 = aMM,
+               bPP^2 = bPP,
+               bMM^2 = bMM],
+          var[c,r]))
+      ),
+    printf(file, "~%")
+    )
+  )$
+
+print_code(file_name, interior) := block(
+  load("ssa_coeffs.mac"),
+  
+  file : openw(file_name),
+  
+  /* Define shortcuts */
+  printf(file, "const PetscReal dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;~%~%"),
+  
+  /* Coefficients of the discretization of the first equation; u first, then v. */
+  printf(file, "PetscReal eq1[] = {~%"),
+  print_coeffs(c1u),
+  print_coeffs(c1v),
+  printf(file, "};~%~%"),
+  
+  /* Coefficients of the discretization of the second equation; u first, then v. */
+  printf(file, "PetscReal eq2[] = {~%"),
+  print_coeffs(c2u),
+  print_coeffs(c2v),
+  printf(file, "};~%~%"),
+  
+  /* i indices */
+  printf(file, "const PetscReal I[] = {~%"),
+  for r: 1 step -1 thru -1 do (
+    for c: -1 thru 1 do (
+      printf(file, " ~a, ", i+c)
+      ),
+    printf(file, "~%")
+    ),
+  printf(file, "};~%~%"),
+  
+  /* j indices */
+  printf(file, "const PetscReal J[] = {~%"),
+  for r: 1 step -1 thru -1 do (
+    for c: -1 thru 1 do (
+      printf(file, " ~a, ", j+r)
+      ),
+    printf(file, "~%")
+    ),
+  printf(file, "};~%~%"),
+  
+  close(file)
+  )$
+
+print_code("ssafd_code.cc", true)$
+print_code("ssafd_pik_code.cc", false)$
