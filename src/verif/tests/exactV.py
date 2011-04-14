@@ -6,16 +6,14 @@
 from pylab import *
 
 secpera = 3.15569259747e7               # seconds per year
-rho_sw = 1028                           # sea water density
-rho_ice = 910                           # ice density
+rho_sw = 1028.0                         # sea water density
+rho_ice = 910.0                         # ice density
 standard_gravity = 9.81                 # g
 B0 = 1.9e8                              # ice hardness
 
 # "typical constant ice parameter" as defined in the paper and in Van der
 # Veen's "Fundamentals of Glacier Dynamics", 1999
-C0 = (rho_ice * standard_gravity * (1.0 - rho_ice/rho_sw) / (4 * B0))**3
-
-C = 2.45e-18                            # from the paper; does not match
+C = (rho_ice * standard_gravity * (1.0 - rho_ice/rho_sw) / (4 * B0))**3
 
 # upstream ice thickness
 H0 = 600.0                              # meters
