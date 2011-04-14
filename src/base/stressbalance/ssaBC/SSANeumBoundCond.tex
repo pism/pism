@@ -2,6 +2,7 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{dsfont}
+\usepackage{comment}
 \usepackage{subfigure}
 \usepackage[english]{babel}
 \usepackage[top=3cm, bottom=3cm, left=3cm, right=3cm]{geometry}   
@@ -136,33 +137,33 @@ Obviously, there is no need to normalize the `normal vector' $\mathbf{n}$.
 \end{align}
 \noindent In the first step of discretization the outer derivatives of \eqref{SSA1} yield:
 \begin{align}
-\frac{2}{\Delta x}N|_{i+\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i+\frac{1}{2}}^j
-- \frac{2}{\Delta x}N|_{i-\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i-\frac{1}{2}}^j \nonumber \\
-+ \frac{1}{\Delta y}N|_i^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j+\frac{1}{2}} 
-- \frac{1}{\Delta y}N|_i^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j-\frac{1}{2}} 
+\frac{2}{\Delta x}(\bar{\nu} H)|_{i+\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i+\frac{1}{2}}^j
+- \frac{2}{\Delta x}(\bar{\nu} H)|_{i-\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i-\frac{1}{2}}^j \nonumber \\
++ \frac{1}{\Delta y}(\bar{\nu} H)|_i^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j+\frac{1}{2}} 
+- \frac{1}{\Delta y}(\bar{\nu} H)|_i^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j-\frac{1}{2}} 
 &= \rho gH \frac{\partial h}{\partial x} \label{SSA1_dis1} 
 \end{align}
 If one or more of the four nearest neighbors of the shelf box under consideration $[i,j]$ is an partially filled grid cell or ice-free ocean (\cite{Albrecht_Martin10}), the boundary between these two boxes will be a calving front and evaluating the boundary condition at these points allows to substitute the whole block which is calculated at this point:
 \begin{itemize} 
 \item calving front at $[i+\frac{1}{2},j]$: $\hat{n}=(1,0)$: 
 \begin{align}
-N|_{i+\frac{1}{2}}^j\left(2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i+\frac{1}{2}}^j &= \tau_{ocean} \nonumber \\
-N|_{i+\frac{1}{2}}^j\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i+\frac{1}{2}}^j &= 0
+(\bar{\nu} H)|_{i+\frac{1}{2}}^j\left(2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i+\frac{1}{2}}^j &= \tau_{ocean} \nonumber \\
+(\bar{\nu} H)|_{i+\frac{1}{2}}^j\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i+\frac{1}{2}}^j &= 0
 \end{align}
 \item calving front at $[i-\frac{1}{2},j]$: $\hat{n}=(-1,0)$: 
 \begin{align}
-N|_{i-\frac{1}{2}}^j\left(2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i-\frac{1}{2}}^j &= \tau_{ocean} \nonumber \\
-N|_{i-\frac{1}{2}}^j\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i-\frac{1}{2}}^j &= 0
+(\bar{\nu} H)|_{i-\frac{1}{2}}^j\left(2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i-\frac{1}{2}}^j &= \tau_{ocean} \nonumber \\
+(\bar{\nu} H)|_{i-\frac{1}{2}}^j\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i-\frac{1}{2}}^j &= 0
 \end{align}
 \item calving front at $[i,j+\frac{1}{2}]$: $\hat{n}=(0,1)$: 
 \begin{align}
-N|_{i}^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i}^{j+\frac{1}{2}} &= 0 \nonumber \\
-N|_{i}^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial x} + 2\frac{\partial v}{\partial y} \right)_{i}^{j+\frac{1}{2}} &= \tau_{ocean}
+(\bar{\nu} H)|_{i}^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i}^{j+\frac{1}{2}} &= 0 \nonumber \\
+(\bar{\nu} H)|_{i}^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial x} + 2\frac{\partial v}{\partial y} \right)_{i}^{j+\frac{1}{2}} &= \tau_{ocean}
 \end{align}
 \item calving front at $[i,j-\frac{1}{2}]$: $\hat{n}=(0,-1)$: 
 \begin{align}
-N|_{i}^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i}^{j-\frac{1}{2}} &= 0 \nonumber \\
-N|_{i}^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial x} + 2\frac{\partial v}{\partial y} \right)_{i}^{j-\frac{1}{2}} &= \tau_{ocean}
+(\bar{\nu} H)|_{i}^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial y} + \frac{\partial v}{\partial x} \right)_{i}^{j-\frac{1}{2}} &= 0 \nonumber \\
+(\bar{\nu} H)|_{i}^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial x} + 2\frac{\partial v}{\partial y} \right)_{i}^{j-\frac{1}{2}} &= \tau_{ocean}
 \end{align}
 \end{itemize}
 \begin{figure}[htb]
@@ -174,20 +175,20 @@ N|_{i}^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial x} + 2\frac{\partial v}{\
 \end{figure}
 By rewriting equation \eqref{SSA1_dis1} with booleans $a_+, a_-, b_+, b_-$ equal zero if the boundary is a calving front and one otherwise (see Fig.~\ref{result3}), these boundary conditions can be taken into account:
 \begin{align}
-&\qquad a_+\frac{2}{\Delta x}N|_{i+\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i+\frac{1}{2}}^j
-- a_-\frac{2}{\Delta x}N|_{i-\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i-\frac{1}{2}}^j \nonumber \\
-+ &\qquad b_+\frac{1}{\Delta y}N|_i^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j+\frac{1}{2}} 
-- b_-\frac{1}{\Delta y}N|_i^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j-\frac{1}{2}} \nonumber \\
+&\qquad a_+\frac{2}{\Delta x}(\bar{\nu} H)|_{i+\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i+\frac{1}{2}}^j
+- a_-\frac{2}{\Delta x}(\bar{\nu} H)|_{i-\frac{1}{2}}^j\left( 2\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} \right)_{i-\frac{1}{2}}^j \nonumber \\
++ &\qquad b_+\frac{1}{\Delta y}(\bar{\nu} H)|_i^{j+\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j+\frac{1}{2}} 
+- b_-\frac{1}{\Delta y}(\bar{\nu} H)|_i^{j-\frac{1}{2}}\left(\frac{\partial u}{\partial y}+\frac{\partial v}{\partial x}\right)_i^{j-\frac{1}{2}} \nonumber \\
 = &\qquad \rho gH \frac{\partial h}{\partial x} + (a_+ - a_-)\frac{2}{\Delta x}\tau_{ocean} \label{SSA1_dis2}
 \end{align}
-Next, the calculation of the velocity gradients in \eqref{SSA1_dis2} is further specified by rewriting these in a way that allows to calculate the velocity derivatives as differential quotient between two neighboring points:
+Next, the calculation of the velocity gradients in \eqref{SSA1_dis2} is further specified by rewriting these in a way that allows to calculate the velocity derivatives as differential quotient between two neighboring points
 \begin{align}
 &\qquad a_+\frac{4}{\Delta x}(\bar{\nu}H)|_{i+\frac{1}{2}}^j\left[\frac{\partial u}{\partial x}_{i+\frac{1}{2}}^j + \frac{1}{8}\left( b_{+E}\frac{\partial v}{\partial y}_{i+1}^{j+\frac{1}{2}}+b_{-E}\frac{\partial v}{\partial y}_{i+1}^{j-\frac{1}{2}}+b_+\frac{\partial v}{\partial y}_{i}^{j+\frac{1}{2}}+b_-\frac{\partial v}{\partial y}_{i}^{j-\frac{1}{2}}  \right) \right] \nonumber \\
 - &\qquad a_-\frac{4}{\Delta x}(\bar{\nu}H)|_{i-\frac{1}{2}}^j\left[\frac{\partial u}{\partial x}_{i-\frac{1}{2}}^j + \frac{1}{8}\left( b_+\frac{\partial v}{\partial y}_{i}^{j+\frac{1}{2}} + b_-\frac{\partial v}{\partial y}_{i}^{j-\frac{1}{2}} + b_{+W}\frac{\partial v}{\partial y}_{i-1}^{j+\frac{1}{2}} + b_{-W}\frac{\partial v}{\partial y}_{i-1}^{j-\frac{1}{2}} \right) \right] \nonumber \\
 + &\qquad b_+\frac{1}{\Delta y}(\bar{\nu}H)|_i^{j+\frac{1}{2}}\left[\frac{\partial u}{\partial y}_i^{j+\frac{1}{2}}+\frac{1}{4}\left( a_{+N}\frac{\partial v}{\partial x}_{i+\frac{1}{2}}^{j+1} + a_+\frac{\partial v}{\partial x}_{i+\frac{1}{2}}^{j} + a_{-N}\frac{\partial v}{\partial x}_{i-\frac{1}{2}}^{j+1} + a_-\frac{\partial v}{\partial x}_{i-\frac{1}{2}}^{j} \right) \right] \nonumber \\
 - &\qquad b_-\frac{1}{\Delta y} (\bar{\nu}H)|_i^{j-\frac{1}{2}} \left[\frac{\partial u}{\partial y}_i^{j-\frac{1}{2}}+\frac{1}{4}\left( a_+\frac{\partial v}{\partial x}_{i+\frac{1}{2}}^{j} + a_{+S}\frac{\partial v}{\partial x}_{i+\frac{1}{2}}^{j-1} + a_-\frac{\partial v}{\partial x}_{i-\frac{1}{2}}^{j} + a_{-S}\frac{\partial v}{\partial x}_{i-\frac{1}{2}}^{j-1} \right) \right] \nonumber \\
 %%
-= &\qquad \rho gH \frac{\partial h}{\partial x} + (a_+ - a_-)\frac{2}{\Delta x}\tau_{ocean} \label{SSA1_dis3}
+= &\qquad \rho gH \frac{\partial h}{\partial x} + (a_+ - a_-)\frac{2}{\Delta x}\tau_{ocean}. \label{SSA1_dis3}
 \end{align}
 Again, the coefficients $a_{\pm N,S}$, $b_{\pm E,W}$ etc. are determined by the nature of the boundary between the two points used to calculate the differential quotient: zero if it is a calving front boundary and one if it is an ice-ice boundary. Thus an ice-inward scheme is used to calculate gradients, justified by assuming that the only influence of the ocean on the shelf is by exerting the extra pressure introduced on the right hand side of equation \eqref{SSA1_dis3}.\newline
 \newline
@@ -206,7 +207,20 @@ With $c_{01}=(\bar{\nu}H)|_{i+\frac{1}{2}}^j, c_{00}=(\bar{\nu}H)|_{i-\frac{1}{2
 = &\qquad \rho gH_{i}^{j} \left(\frac{a_+(h_{i+1}^{j}-h_{i}^{j})+a_-(h_{i}^{j}-h_{i-1}^{j})}{(a_++a_-)\Delta x}\right) + (a_+ - a_-)\frac{2}{\Delta x}\tau_{ocean}. \label{SSA1_dis4}
 \end{align}
 The coefficients enter the matrix to calculate SSA-velocities for a given right-hand side of the equation. The second SSA-equation \eqref{SSA2} is discretized accordingly.
+The beauty is, that if there is any boundary between the neighbor cells, the stencil is identical with the default stencil used for the interior of the SSA-domain.\newline
+However, as mentioned in \cite{Winkelmann_Martin10}, there is an inconsistency regarding the mixed derivatives. For the example of Fig.~\ref{result3}, we get for the left hand side of the grid cell $a_-=b_{+W}=b_+=1, b_-=b_{-W}=0$ and hence the second term of Eq.~\eqref{SSA1_dis3} turns into
+\begin{align}
+-\frac{2}{\Delta x}(\bar{\nu}H)|_{i-\frac{1}{2}}^j\left[2\frac{\partial u}{\partial x}_{i-\frac{1}{2}}^j + \frac{1}{4}\left( \frac{\partial v}{\partial y}_{i}^{j+\frac{1}{2}} + 0 + \frac{\partial v}{\partial y}_{i-1}^{j+\frac{1}{2}} + 0 \right) \right].
+\label{SSA1_dis3b}
+\end{align}
+%\begin{comment}
+The part in round parantheses means an average over the adjacent derivatives $\frac{\partial v}{\partial y}$. If one of theses derivatives does not exist due to a boundary between adjacent neighbors, it will vanish and not substituted by a pressure term on the right-hand side. It would be actually more reasonable to calculate the average by dividing by $(b_{+W}+b_++b_-+b_{-W}>0)$ instead of dividing by a constant $4$, and we would get
+\begin{align}
+-\frac{2}{\Delta x}(\bar{\nu}H)|_{i-\frac{1}{2}}^j\left[2\frac{\partial u}{\partial x}_{i-\frac{1}{2}}^j + \frac{1}{2}\left( \frac{\partial v}{\partial y}_{i}^{j+\frac{1}{2}} + \frac{\partial v}{\partial y}_{i-1}^{j+\frac{1}{2}}\right) \right].
+\label{SSA1_dis3c}
+\end{align}
 
+%\end{comment}
 
 \begin{thebibliography}{9}
 
@@ -228,7 +242,7 @@ The Potsdam Parallel Ice Sheet Model (PISM-PIK), Part II: Dynamical Equilibrium 
 
 %\bibitem{MacAyeal96} MacAyeal, D. R., V. Rommelaere, P. Huybrechts, C. L. Hulbe, J. Determan, and C. Ritz. “An ice-shelf model test based on the Ross Ice Shell, Antarctica.” Annals of Glaciology 23 (1996): 46–51.
 
-%\bibitem{Weis01} Weis, M. “Theory and finite element analysis of shallow ice shelves” (2001).
+\bibitem{Weis01} Weis, M. “Theory and finite element analysis of shallow ice shelves” (2001).
 
 
 \end{thebibliography}
