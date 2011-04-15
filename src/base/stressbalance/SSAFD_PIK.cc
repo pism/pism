@@ -110,10 +110,10 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
 	
         const PetscScalar dx2 = dx*dx, d4 = dx*dy*4, dy2 = dy*dy;
 		
-        const PetscScalar c00 = nuH(i-1,j,0);
-        const PetscScalar c01 = nuH(i,j,0);
-        const PetscScalar c10 = nuH(i,j-1,1);
-        const PetscScalar c11 = nuH(i,j,1);
+        const PetscScalar c_w = nuH(i-1,j,0);
+        const PetscScalar c_e = nuH(i,j,0);
+        const PetscScalar c_s = nuH(i,j-1,1);
+        const PetscScalar c_n = nuH(i,j,1);
 
         //in i-direction 
         PetscInt 	aMn=1, aPn=1,
@@ -156,22 +156,22 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
 
         PetscScalar valU[] = {
 
-          /*                                           */ -bPP*c11/dy2,
-          (2*bPw*aMM*c00+aMn*bPP*c11)/d4,                 (2*bPP*(c00*aMM-c01*aPP)+c11*bPP*(aPn-aMn))/d4,                -(2*bPe*aPP*c01+aPn*bPP*c11)/d4,
-          -4*aMM*c00/dx2,                                  4*(aPP*c01+aMM*c00)/dx2+(bPP*c11+bMM*c10)/dy2,                 -4*aPP*c01/dx2,
-          (aMM*(bPP*c11-bMM*c10)+2*c00*aMM*(bMw-bPw))/d4, (2*(c01*aPP-c00*aMM)*(bPP-bMM)+(c11*bPP-c10*bMM)*(aPP-aMM))/d4, (aPP*(c10*bMM-c11*bPP)+2*c01*aPP*(bPe-bMe))/d4,
-          /*                                           */ -bMM*c10/dy2,
-          -(2*bMw*aMM*c00+aMs*bMM*c10)/d4,                (2*bMM*(aPP*c01-c00*aMM)+c10*bMM*(aMs-aPs))/d4,                 (2*bMe*aPP*c01+aPs*bMM*c10)/d4};
+          /*                                           */ -bPP*c_n/dy2,
+          (2*bPw*aMM*c_w+aMn*bPP*c_n)/d4,                 (2*bPP*(c_w*aMM-c_e*aPP)+c_n*bPP*(aPn-aMn))/d4,                -(2*bPe*aPP*c_e+aPn*bPP*c_n)/d4,
+          -4*aMM*c_w/dx2,                                  4*(aPP*c_e+aMM*c_w)/dx2+(bPP*c_n+bMM*c_s)/dy2,                 -4*aPP*c_e/dx2,
+          (aMM*(bPP*c_n-bMM*c_s)+2*c_w*aMM*(bMw-bPw))/d4, (2*(c_e*aPP-c_w*aMM)*(bPP-bMM)+(c_n*bPP-c_s*bMM)*(aPP-aMM))/d4, (aPP*(c_s*bMM-c_n*bPP)+2*c_e*aPP*(bPe-bMe))/d4,
+          /*                                           */ -bMM*c_s/dy2,
+          -(2*bMw*aMM*c_w+aMs*bMM*c_s)/d4,                (2*bMM*(aPP*c_e-c_w*aMM)+c_s*bMM*(aMs-aPs))/d4,                 (2*bMe*aPP*c_e+aPs*bMM*c_s)/d4};
 
 
         PetscScalar valV[] = {
 
-          (2*aMn*bPP*c11+bPw*aMM*c00)/d4,                 (bPP*(c00*aMM-aPP*c01)+2*c11*bPP*(aPn-aMn))/d4,                -(2*aPn*bPP*c11+bPe*aPP*c01)/d4,
-          /*                                           */ -4*bPP*c11/dy2,
-          (2*aMM*(bPP*c11-c10*bMM)+c00*aMM*(bMw-bPw))/d4, (2*(bPP*c11-c10*bMM)*(aPP-aMM)+(aPP*c01-c00*aMM)*(bPP-bMM))/d4, (2*aPP*(c10*bMM-c11*bPP)+c01*aPP*(bPe-bMe))/d4,
-          -aMM*c00/dx2,                                    4*(bPP*c11+bMM*c10)/dy2+(aPP*c01+aMM*c00)/dx2,                 -aPP*c01/dx2,
-          -(2*aMs*bMM*c10+bMw*aMM*c00)/d4,                (bMM*(aPP*c01-c00*aMM)+2*c10*bMM*(aMs-aPs))/d4,                 (2*aPs*bMM*c10+bMe*aPP*c01)/d4,
-          /*                                           */ -4*bMM*c10/dy2 };
+          (2*aMn*bPP*c_n+bPw*aMM*c_w)/d4,                 (bPP*(c_w*aMM-aPP*c_e)+2*c_n*bPP*(aPn-aMn))/d4,                -(2*aPn*bPP*c_n+bPe*aPP*c_e)/d4,
+          /*                                           */ -4*bPP*c_n/dy2,
+          (2*aMM*(bPP*c_n-c_s*bMM)+c_w*aMM*(bMw-bPw))/d4, (2*(bPP*c_n-c_s*bMM)*(aPP-aMM)+(aPP*c_e-c_w*aMM)*(bPP-bMM))/d4, (2*aPP*(c_s*bMM-c_n*bPP)+c_e*aPP*(bPe-bMe))/d4,
+          -aMM*c_w/dx2,                                    4*(bPP*c_n+bMM*c_s)/dy2+(aPP*c_e+aMM*c_w)/dx2,                 -aPP*c_e/dx2,
+          -(2*aMs*bMM*c_s+bMw*aMM*c_w)/d4,                (bMM*(aPP*c_e-c_w*aMM)+2*c_s*bMM*(aMs-aPs))/d4,                 (2*aPs*bMM*c_s+bMe*aPP*c_e)/d4,
+          /*                                           */ -4*bMM*c_s/dy2 };
 
 
 
@@ -242,34 +242,34 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
       } else {
         const PetscScalar dx2 = dx*dx, d4 = dx*dy*4, dy2 = dy*dy;
         /* Provide shorthand for the following staggered coefficients  nu H:
-         *      c11
-         *  c00     c01
-         *      c10
+         *      c_n
+         *  c_w     c_e
+         *      c_s
          * Note that the positive i (x) direction is right and the positive j (y)
          * direction is up. */
-        const PetscScalar c00 = nuH(i-1,j,0);
-        const PetscScalar c01 = nuH(i,j,0);
-        const PetscScalar c10 = nuH(i,j-1,1);
-        const PetscScalar c11 = nuH(i,j,1);
+        const PetscScalar c_w = nuH(i-1,j,0);
+        const PetscScalar c_e = nuH(i,j,0);
+        const PetscScalar c_s = nuH(i,j-1,1);
+        const PetscScalar c_n = nuH(i,j,1);
 
         const PetscInt sten = 13;
         MatStencil  row, col[sten];
 
         /* start with the values at the points */
         PetscScalar valU[] = {
-          /*               */ -c11/dy2,
-          (2*c00+c11)/d4,     2*(c00-c01)/d4,                 -(2*c01+c11)/d4,
-          -4*c00/dx2,         4*(c01+c00)/dx2+(c11+c10)/dy2,  -4*c01/dx2,
-          (c11-c10)/d4,                                       (c10-c11)/d4,
-          /*               */ -c10/dy2,
-          -(2*c00+c10)/d4,    2*(c01-c00)/d4,                 (2*c01+c10)/d4 };
+          /*               */ -c_n/dy2,
+          (2*c_w+c_n)/d4,     2*(c_w-c_e)/d4,                 -(2*c_e+c_n)/d4,
+          -4*c_w/dx2,         4*(c_e+c_w)/dx2+(c_n+c_s)/dy2,  -4*c_e/dx2,
+          (c_n-c_s)/d4,                                       (c_s-c_n)/d4,
+          /*               */ -c_s/dy2,
+          -(2*c_w+c_s)/d4,    2*(c_e-c_w)/d4,                 (2*c_e+c_s)/d4 };
         PetscScalar valV[] = {
-          (2*c11+c00)/d4,     (c00-c01)/d4,                   -(2*c11+c01)/d4,
-          /*               */ -4*c11/dy2,
-          2*(c11-c10)/d4,                                     2*(c10-c11)/d4,
-          -c00/dx2,           4*(c11+c10)/dy2+(c01+c00)/dx2,  -c01/dx2,
-          -(2*c10+c00)/d4,    (c01-c00)/d4,                   (2*c10+c01)/d4,
-          /*               */ -4*c10/dy2 };
+          (2*c_n+c_w)/d4,     (c_w-c_e)/d4,                   -(2*c_n+c_e)/d4,
+          /*               */ -4*c_n/dy2,
+          2*(c_n-c_s)/d4,                                     2*(c_s-c_n)/d4,
+          -c_w/dx2,           4*(c_n+c_s)/dy2+(c_e+c_w)/dx2,  -c_e/dx2,
+          -(2*c_s+c_w)/d4,    (c_e-c_w)/d4,                   (2*c_s+c_e)/d4,
+          /*               */ -4*c_s/dy2 };
 
         /* Dragging ice experiences friction at the bed determined by the
          *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,

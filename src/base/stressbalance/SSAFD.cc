@@ -293,34 +293,34 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
       const PetscScalar dx2 = dx*dx, d4 = dx*dy*4, dy2 = dy*dy;
       /* Provide shorthand for the following staggered coefficients  nu H:
-       *      c11
-       *  c00     c01
-       *      c10
+       *      c_n
+       *  c_w     c_e
+       *      c_s
        * Note that the positive i (x) direction is right and the positive j (y)
        * direction is up. */
-      const PetscScalar c00 = nuH(i-1,j,0);
-      const PetscScalar c01 = nuH(i,j,0);
-      const PetscScalar c10 = nuH(i,j-1,1);
-      const PetscScalar c11 = nuH(i,j,1);
+      const PetscScalar c_w = nuH(i-1,j,0);
+      const PetscScalar c_e = nuH(i,j,0);
+      const PetscScalar c_s = nuH(i,j-1,1);
+      const PetscScalar c_n = nuH(i,j,1);
 
       const PetscInt sten = 13;
       MatStencil  row, col[sten];
 
       /* start with the values at the points */
       PetscScalar valU[] = {
-        /*               */ -c11/dy2,
-        (2*c00+c11)/d4,     2*(c00-c01)/d4,                 -(2*c01+c11)/d4,
-        -4*c00/dx2,         4*(c01+c00)/dx2+(c11+c10)/dy2,  -4*c01/dx2,
-        (c11-c10)/d4,                                       (c10-c11)/d4,
-        /*               */ -c10/dy2,
-        -(2*c00+c10)/d4,    2*(c01-c00)/d4,                 (2*c01+c10)/d4 };
+        /*               */ -c_n/dy2,
+        (2*c_w+c_n)/d4,     2*(c_w-c_e)/d4,                 -(2*c_e+c_n)/d4,
+        -4*c_w/dx2,         4*(c_e+c_w)/dx2+(c_n+c_s)/dy2,  -4*c_e/dx2,
+        (c_n-c_s)/d4,                                       (c_s-c_n)/d4,
+        /*               */ -c_s/dy2,
+        -(2*c_w+c_s)/d4,    2*(c_e-c_w)/d4,                 (2*c_e+c_s)/d4 };
       PetscScalar valV[] = {
-        (2*c11+c00)/d4,     (c00-c01)/d4,                   -(2*c11+c01)/d4,
-        /*               */ -4*c11/dy2,
-        2*(c11-c10)/d4,                                     2*(c10-c11)/d4,
-        -c00/dx2,           4*(c11+c10)/dy2+(c01+c00)/dx2,  -c01/dx2,
-        -(2*c10+c00)/d4,    (c01-c00)/d4,                   (2*c10+c01)/d4,
-        /*               */ -4*c10/dy2 };
+        (2*c_n+c_w)/d4,     (c_w-c_e)/d4,                   -(2*c_n+c_e)/d4,
+        /*               */ -4*c_n/dy2,
+        2*(c_n-c_s)/d4,                                     2*(c_s-c_n)/d4,
+        -c_w/dx2,           4*(c_n+c_s)/dy2+(c_e+c_w)/dx2,  -c_e/dx2,
+        -(2*c_s+c_w)/d4,    (c_e-c_w)/d4,                   (2*c_s+c_e)/d4,
+        /*               */ -4*c_s/dy2 };
 
       /* Dragging ice experiences friction at the bed determined by the
        *    IceBasalResistancePlasticLaw::drag() methods.  These may be a plastic,
