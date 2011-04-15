@@ -18,8 +18,8 @@
 
 #include "SSAFD.hh"
 
-SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b, 
-                IceFlowLaw &i, EnthalpyConverter &ec, 
+SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
+                IceFlowLaw &i, EnthalpyConverter &ec,
                 const NCConfigVariable &c)
 {
   return new SSAFD(g,b,i,ec,c);
@@ -58,7 +58,7 @@ PetscErrorCode SSAFD::allocate_fd() {
   ierr = hardness.set_attrs("diagnostic",
                             "vertically-averaged ice hardness",
                             unitstr, ""); CHKERRQ(ierr);
-  
+
   ierr = nuH.create(grid, "nuH", true); CHKERRQ(ierr);
   ierr = nuH.set_attrs("internal",
                        "ice thickness times effective viscosity",
@@ -91,7 +91,7 @@ PetscErrorCode SSAFD::deallocate_fd() {
   if (SSARHS != PETSC_NULL) {
     ierr = VecDestroy(SSARHS); CHKERRQ(ierr);
   }
-  
+
   return 0;
 }
 
@@ -116,7 +116,7 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
 
 //! \brief Computes the right-hand side ("rhs") of the linear problem for the
 //! Picard iteration and finite-difference implementation of the SSA equations.
-/*! 
+/*!
 The right side of the SSA equations is just the driving stress term
    \f[ - \rho g H \nabla h. \f]
 The basal stress is put on the left side of the system.  This method builds the
@@ -167,7 +167,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
     ierr = bc_locations->end_access(); CHKERRQ(ierr);
     ierr = vel_bc->end_access(); CHKERRQ(ierr);
   }
-  
+
   ierr = taud.end_access(); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(SSADA,rhs,&rhs_uv); CHKERRQ(ierr);
 
@@ -179,7 +179,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
 //! \brief Assemble the left-hand side matrix for the KSP-based, Picard iteration,
 //! and finite difference implementation of the SSA equations.
-/*! 
+/*!
 Recall the SSA equations are
 \f{align*}
  - 2 \left[\nu H \left(2 u_x + v_y\right)\right]_x
@@ -187,7 +187,7 @@ Recall the SSA equations are
         - \tau_{(b)1}  &= - \rho g H h_x, \\
    - \left[\nu H \left(u_y + v_x\right)\right]_x
         - 2 \left[\nu H \left(u_x + 2 v_y\right)\right]_y
-        - \tau_{(b)2}  &= - \rho g H h_y, 
+        - \tau_{(b)2}  &= - \rho g H h_y,
 \f}
 where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the
 \f$y\f$-component of the velocity.
@@ -201,13 +201,13 @@ the linear equations which come from this viscosity.  In abstract symbols, the
 Picard iteration replaces the above nonlinear SSA equations by a sequence of
 linear problems
 	\f[ A(U^{(k)}) U^{(k+1)} = b \f]
-where \f$A(U)\f$ is the matrix from discretizing the SSA equations supposing 
+where \f$A(U)\f$ is the matrix from discretizing the SSA equations supposing
 the viscosity is a function of known velocities \f$U\f$, and where \f$U^{(k)}\f$
 denotes the \f$k\f$th iterate in the process.  The current method assembles \f$A(U)\f$.
 
 For ice shelves \f$\tau_{(b)i} = 0\f$ [\ref MacAyealetal].
 For ice streams with a basal till modelled as a plastic material,
-\f$\tau_{(b)i} = - \tau_c u_i/|\mathbf{u}|\f$ where 
+\f$\tau_{(b)i} = - \tau_c u_i/|\mathbf{u}|\f$ where
 \f$\mathbf{u} = (u,v)\f$, \f$|\mathbf{u}| = \left(u^2 + v^2\right)^{1/2}\f$, where
 \f$\tau_c(t,x,y)\f$ is the yield stress of the till [\ref SchoofStream].
 More generally, ice streams can be modeled with a pseudo-plastic basal till;
@@ -229,10 +229,10 @@ there seems to be an analogous effect in the plastic till case.
 
 This method assembles the matrix for the left side of the above SSA equations.
 The numerical method is finite difference.  Suppose we use difference notation
-\f$\delta_{+x}f^{i,j} = f^{i+1,j}-f^{i,j}\f$, 
-\f$\delta_{-x}f^{i,j} = f^{i,j}-f^{i-1,j}\f$, and 
+\f$\delta_{+x}f^{i,j} = f^{i+1,j}-f^{i,j}\f$,
+\f$\delta_{-x}f^{i,j} = f^{i,j}-f^{i-1,j}\f$, and
 \f$\Delta_{x}f^{i,j} = f^{i+1,j}-f^{i-1,j}\f$, and corresponding notation for
-\f$y\f$ differences, and that we write \f$N = \nu H\f$ then the first of the 
+\f$y\f$ differences, and that we write \f$N = \nu H\f$ then the first of the
 two "concrete" SSA equations above has this discretization:
 \f{align*}
 - &2 \frac{N^{i+\frac{1}{2},j}}{\Delta x} \left[2\frac{\delta_{+x}u^{i,j}}{\Delta x} + \frac{\Delta_{y} v^{i+1,j} + \Delta_{y} v^{i,j}}{4 \Delta y}\right] + 2 \frac{N^{i-\frac{1}{2},j}}{\Delta x} \left[2\frac{\delta_{-x}u^{i,j}}{\Delta x} + \frac{\Delta_y v^{i,j} + \Delta_y v^{i-1,j}}{4 \Delta y}\right] \\
@@ -243,7 +243,7 @@ As a picture, see Figure \ref ssastencil.
 \image html ssastencil.png "\b ssastencil:  Stencil for our finite difference discretization of the first of the two scalar SSA equations.  Triangles show staggered grid points where N = nu * H is evaluated.  Circles and squares show where u and v are approximated, respectively."
 \anchor ssastencil
 
-It follows immediately that the matrix we assemble in the current method has 
+It follows immediately that the matrix we assemble in the current method has
 13 nonzeros entries per row because, for this first SSA equation, there are 5
 grid values of \f$u\f$ and 8 grid values of \f$v\f$ used in this scheme.  For
 the second equation we also have 13 nonzeros per row.
@@ -277,124 +277,124 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
+      // Handle the easy case: provided Dirichlet boundary conditions
       if (vel_bc && bc_locations && bc_locations->value(i,j) == 1) {
-        // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
-        //   this is where boundary value to SSA is set
+        // set diagonal entry to one; RHS entry will be known velocity;
         MatStencil  row, col;
-        row.j = i; row.i = j; row.c = 0;
-        col.j = i; col.i = j; col.c = 0;
+        row.j = i; row.i = j;
+        col.j = i; col.i = j;
+
+        row.c = 0; col.c = 0;
         ierr = MatSetValuesStencil(A,1,&row,1,&col,&scaling,INSERT_VALUES); CHKERRQ(ierr);
-        row.c = 1;
-        col.c = 1;
+
+        row.c = 1; col.c = 1;
         ierr = MatSetValuesStencil(A,1,&row,1,&col,&scaling,INSERT_VALUES); CHKERRQ(ierr);
 
         continue;
       }
 
-      const PetscScalar dx2 = dx*dx, d4 = dx*dy*4, dy2 = dy*dy;
       /* Provide shorthand for the following staggered coefficients  nu H:
        *      c_n
        *  c_w     c_e
        *      c_s
-       * Note that the positive i (x) direction is right and the positive j (y)
-       * direction is up. */
+       */
       const PetscScalar c_w = nuH(i-1,j,0);
       const PetscScalar c_e = nuH(i,j,0);
       const PetscScalar c_s = nuH(i,j-1,1);
       const PetscScalar c_n = nuH(i,j,1);
 
-      const PetscInt sten = 13;
-      MatStencil  row, col[sten];
+      // We use DAGetMatrix to obtain the SSA matrix, which means that all 18
+      // non-zeros get allocated, even though we use only 13 (or 14). The
+      // remaining 5 (or 4) coefficients are zeros, but we set them anyway,
+      // because this makes the code easier to understand.
+      const PetscInt sten = 18;
+      MatStencil row, col[sten];
 
-      /* start with the values at the points */
-      PetscScalar valU[] = {
-        /*               */ -c_n/dy2,
-        (2*c_w+c_n)/d4,     2*(c_w-c_e)/d4,                 -(2*c_e+c_n)/d4,
-        -4*c_w/dx2,         4*(c_e+c_w)/dx2+(c_n+c_s)/dy2,  -4*c_e/dx2,
-        (c_n-c_s)/d4,                                       (c_s-c_n)/d4,
-        /*               */ -c_s/dy2,
-        -(2*c_w+c_s)/d4,    2*(c_e-c_w)/d4,                 (2*c_e+c_s)/d4 };
-      PetscScalar valV[] = {
-        (2*c_n+c_w)/d4,     (c_w-c_e)/d4,                   -(2*c_n+c_e)/d4,
-        /*               */ -4*c_n/dy2,
-        2*(c_n-c_s)/d4,                                     2*(c_s-c_n)/d4,
-        -c_w/dx2,           4*(c_n+c_s)/dy2+(c_e+c_w)/dx2,  -c_e/dx2,
-        -(2*c_s+c_w)/d4,    (c_e-c_w)/d4,                   (2*c_s+c_e)/d4,
-        /*               */ -4*c_s/dy2 };
+      /* begin Maxima-generated code */
+      const PetscReal dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;
+
+      /* Coefficients of the discretization of the first equation; u first, then v. */
+      PetscReal eq1[] = {
+        0,  -c_n/dy2,  0,
+        -4*c_w/dx2,  (c_s+c_n)/dy2+(4*c_w+4*c_e)/dx2,  -4*c_e/dx2,
+        0,  -c_s/dy2,  0,
+        c_n/d4+c_w/d2,  (c_w-c_e)/d2,  -c_n/d4-c_e/d2,
+        (c_n-c_s)/d4,  0,  (c_s-c_n)/d4,
+        -c_s/d4-c_w/d2,  (c_e-c_w)/d2,  c_s/d4+c_e/d2,
+      };
+
+      /* Coefficients of the discretization of the second equation; u first, then v. */
+      PetscReal eq2[] = {
+        c_w/d4+c_n/d2,  (c_w-c_e)/d4,  -c_e/d4-c_n/d2,
+        (c_n-c_s)/d2,  0,  (c_s-c_n)/d2,
+        -c_w/d4-c_s/d2,  (c_e-c_w)/d4,  c_e/d4+c_s/d2,
+        0,  -4*c_n/dy2,  0,
+        -c_w/dx2,  (4*c_s+4*c_n)/dy2+(c_w+c_e)/dx2,  -c_e/dx2,
+        0,  -4*c_s/dy2,  0,
+      };
+
+      /* i indices */
+      const PetscInt I[] = {
+        i-1,  i,  i+1,
+        i-1,  i,  i+1,
+        i-1,  i,  i+1,
+        i-1,  i,  i+1,
+        i-1,  i,  i+1,
+        i-1,  i,  i+1,
+      };
+
+      /* j indices */
+      const PetscInt J[] = {
+        j+1,  j+1,  j+1,
+        j,  j,  j,
+        j-1,  j-1,  j-1,
+        j+1,  j+1,  j+1,
+        j,  j,  j,
+        j-1,  j-1,  j-1,
+      };
+
+      /* component indices */
+      const PetscInt C[] = {
+        0,  0,  0,
+        0,  0,  0,
+        0,  0,  0,
+        1,  1,  1,
+        1,  1,  1,
+        1,  1,  1,
+      };
+      /* end Maxima-generated code */
 
       /* Dragging ice experiences friction at the bed determined by the
        *    IceBasalResistancePlasticLaw::drag() methods.  These may be a plastic,
        *    pseudo-plastic, or linear friction law.  Dragging is done implicitly
        *    (i.e. on left side of SSA eqns).  */
+      PetscReal beta = 0.0;
       if (include_basal_shear) {
         if (mask->value(i,j) == MASK_GROUNDED) {
-          PetscReal beta = basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
-          valU[5] += beta;
-          valV[7] += beta;
+          beta = basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
         } else if (mask->value(i,j) == MASK_ICE_FREE_BEDROCK) {
           // apply drag even in this case, to help with margins; not ice free areas
           //   already have a strength extension
-          valU[5] += beta_ice_free_bedrock;
-          valV[7] += beta_ice_free_bedrock;
+          beta = beta_ice_free_bedrock;
         }
       }
 
-      // build "u" equation: NOTE TRANSPOSE
-      row.j = i; row.i = j; row.c = 0;
-      const PetscInt UI[] = {
-        /*       */ i,
-        i-1,        i,          i+1,
-        i-1,        i,          i+1,
-        i-1,                    i+1,
-        /*       */ i,
-        i-1,        i,          i+1};
-      const PetscInt UJ[] = {
-        /*       */ j+1,
-        j+1,        j+1,        j+1,
-        j,          j,          j,
-        j,                      j,
-        /*       */ j-1,
-        j-1,        j-1,        j-1};
-      const PetscInt UC[] = {
-        /*       */ 0,
-        1,          1,          1,
-        0,          0,          0,
-        1,                      1,
-        /*       */ 0,
-        1,          1,          1};
-      for (PetscInt m=0; m<sten; m++) {
-        col[m].j = UI[m]; col[m].i = UJ[m], col[m].c = UC[m];
-      }
-      ierr = MatSetValuesStencil(A,1,&row,sten,col,valU,INSERT_VALUES); CHKERRQ(ierr);
+      eq1[4]  += beta;          //  4 is the index of the u[i,j] coefficient in eq1
+      eq2[13] += beta;          // 13 is the index of the v[i,j] coefficient in eq2
 
-      // build "v" equation: NOTE TRANSPOSE
-      row.j = i; row.i = j; row.c = 1;
-      const PetscInt VI[] = {
-        i-1,        i,          i+1,
-        /*       */ i,
-        i-1,                    i+1,
-        i-1,        i,          i+1,
-        i-1,        i,          i+1,
-        /*       */ i};
-      const PetscInt VJ[] = {
-        j+1,        j+1,        j+1,
-        /*       */ j+1,
-        j,                      j,
-        j,          j,          j,
-        j-1,        j-1,        j-1,
-        /*       */ j-1};
-      const PetscInt VC[] = {
-        0,          0,          0,
-        /*       */ 1,
-        0,                      0,
-        1,          1,          1,
-        0,          0,          0,
-        /*       */ 1};
-      for (PetscInt m=0; m<sten; m++) {
-        col[m].j = VI[m]; col[m].i = VJ[m], col[m].c = VC[m];
+      // build equations: NOTE TRANSPOSE
+      row.j = i; row.i = j;
+      for (PetscInt m = 0; m < sten; m++) {
+        col[m].j = I[m]; col[m].i = J[m]; col[m].c = C[m];
       }
-      ierr = MatSetValuesStencil(A,1,&row,sten,col,valV,INSERT_VALUES); CHKERRQ(ierr);
 
+      // set coefficients of the first equation:
+      row.c = 0;
+      ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq1, INSERT_VALUES); CHKERRQ(ierr);
+
+      // set coefficients of the second equation:
+      row.c = 1;
+      ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES); CHKERRQ(ierr);
     }
   }
 
@@ -403,8 +403,8 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   }
 
   ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = vel.end_access(); CHKERRQ(ierr);  
-  ierr = tauc->end_access(); CHKERRQ(ierr);  
+  ierr = vel.end_access(); CHKERRQ(ierr);
+  ierr = tauc->end_access(); CHKERRQ(ierr);
   ierr = nuH.end_access(); CHKERRQ(ierr);
 
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -413,7 +413,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   ierr = MatSetOption(A,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
 #endif
 
-  return 0; 
+  return 0;
   }
 
 
@@ -423,8 +423,8 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 This is the main procedure in the SSAFD.  It manages the nonlinear solve process
 and the Picard iteration.
 
-The outer loop (over index \c k) is the nonlinear iteration.  In this loop the effective 
-viscosity is computed by compute_nuH_staggered() and then the linear system is 
+The outer loop (over index \c k) is the nonlinear iteration.  In this loop the effective
+viscosity is computed by compute_nuH_staggered() and then the linear system is
 set up and solved.
 
 Specifically, we call the PETSc procedure KSPSolve() to solve the linear system.
@@ -435,25 +435,25 @@ interface.  The default choicess for KSP type <tt>-ksp_type</tt> and preconditio
 blocks for the latter.  The defaults usually work.  These choices are important
 but poorly understood.  The eigenvalues of the linearized
 SSA vary with ice sheet geometry and temperature in ways that are not well-studied.
-Nonetheless these eigenvalues determine the convergence of 
+Nonetheless these eigenvalues determine the convergence of
 this (inner) linear iteration.  A well-chosen preconditioner can put the eigenvalues
 in the right place so that the KSP can converge quickly.
 
 The preconditioner will behave differently on different numbers of
-processors.  If the user wants the results of SSA calculations to be 
+processors.  If the user wants the results of SSA calculations to be
 independent of the number of processors, then <tt>-pc_type none</tt> could
 be used, but performance will be poor.
 
-If you want to test different KSP methods, it may be helpful to see how many 
+If you want to test different KSP methods, it may be helpful to see how many
 iterations were necessary.  Use <tt>-ksp_monitor</tt>.
-Initial testing implies that CGS takes roughly half the iterations of 
-GMRES(30), but is not significantly faster because the iterations are each 
+Initial testing implies that CGS takes roughly half the iterations of
+GMRES(30), but is not significantly faster because the iterations are each
 roughly twice as slow.  The outputs of PETSc options <tt>-ksp_monitor_singular_value</tt>,
 <tt>-ksp_compute_eigenvalues</tt> and <tt>-ksp_plot_eigenvalues -draw_pause N</tt>
 (the last holds plots for N seconds) may be useful to diagnose.
 
-The outer loop terminates when the effective viscosity is no longer changing 
-much, according to the tolerance set by the option <tt>-ssa_rtol</tt>.  The 
+The outer loop terminates when the effective viscosity is no longer changing
+much, according to the tolerance set by the option <tt>-ssa_rtol</tt>.  The
 outer loop also terminates when a maximum number of iterations is exceeded.
 We save the velocity from the last time step in order to have a better estimate
 of the effective viscosity than the u=v=0 result.
@@ -476,7 +476,7 @@ PetscErrorCode SSAFD::solve() {
             epsilon              = config.get("epsilon_ssafd");
 
   PetscInt ssaMaxIterations = static_cast<PetscInt>(config.get("max_iterations_ssafd"));
-  
+
   ierr = velocity.copy_to(velocity_old); CHKERRQ(ierr);
 
   // computation of RHS only needs to be done once; does not depend on
@@ -490,7 +490,7 @@ PetscErrorCode SSAFD::solve() {
 
     ierr = update_nuH_viewers(); CHKERRQ(ierr);
     // iterate on effective viscosity: "outer nonlinear iteration":
-    for (PetscInt k = 0; k < ssaMaxIterations; ++k) { 
+    for (PetscInt k = 0; k < ssaMaxIterations; ++k) {
       if (getVerbosityLevel() > 2) {
         char tempstr[50] = "";  snprintf(tempstr,50, "  %d,%2d:", l, k);
         stdout_ssa += tempstr;
@@ -511,7 +511,7 @@ PetscErrorCode SSAFD::solve() {
       // report to standard out about iteration
       ierr = KSPGetConvergedReason(SSAKSP, &reason); CHKERRQ(ierr);
       if (reason < 0) {
-        ierr = verbPrintf(1,grid.com, 
+        ierr = verbPrintf(1,grid.com,
             "\n\n\nPISM ERROR:  KSPSolve() reports 'diverged'; reason = %d = '%s';\n"
                   "  see PETSc man page for KSPGetConvergedReason();   ENDING ...\n\n",
             reason,KSPConvergedReasons[reason]); CHKERRQ(ierr);
@@ -525,7 +525,7 @@ PetscErrorCode SSAFD::solve() {
 
       // Communicate so that we have stencil width for evaluation of effective
       //   viscosity on next "outer" iteration (and geometry etc. if done):
-      ierr = velocity.copy_from(SSAX); CHKERRQ(ierr); 
+      ierr = velocity.copy_from(SSAX); CHKERRQ(ierr);
 
       ierr = velocity.beginGhostComm(); CHKERRQ(ierr);
       ierr = velocity.endGhostComm(); CHKERRQ(ierr);
@@ -536,7 +536,7 @@ PetscErrorCode SSAFD::solve() {
       ierr = compute_nuH_norm(norm, normChange); CHKERRQ(ierr);
       if (getVerbosityLevel() > 2) {
         char tempstr[100] = "";
-        snprintf(tempstr,100, "|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n", 
+        snprintf(tempstr,100, "|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
                          norm, normChange/norm);
         stdout_ssa += tempstr;
       }
@@ -564,9 +564,9 @@ PetscErrorCode SSAFD::solve() {
        ierr = velocity.copy_from(velocity_old); CHKERRQ(ierr);
        epsilon *= DEFAULT_EPSILON_MULTIPLIER_SSA;
     } else {
-       SETERRQ1(1, 
+       SETERRQ1(1,
          "Effective viscosity not converged after %d iterations; epsilon=0.0.\n"
-         "  Stopping.\n", 
+         "  Stopping.\n",
          ssaMaxIterations);
     }
 
@@ -608,7 +608,7 @@ PetscErrorCode SSAFD::writeSSAsystemMatlab() {
   strcpy(file_name,"pism_SSAFD");
   snprintf(yearappend, PETSC_MAX_PATH_LEN, "_y%.0f.m", grid.year);
   strcat(file_name,yearappend);
-  ierr = verbPrintf(2, grid.com, 
+  ierr = verbPrintf(2, grid.com,
              "writing Matlab-readable file for SSAFD system A xsoln = rhs to file `%s' ...\n",
              file_name); CHKERRQ(ierr);
   ierr = PetscViewerCreate(grid.com, &viewer);CHKERRQ(ierr);
@@ -618,7 +618,7 @@ PetscErrorCode SSAFD::writeSSAsystemMatlab() {
 
   // get the command which started the run
   string cmdstr = pism_args_string();
-  
+
   // save linear system; gives system A xsoln = rhs at last (nonlinear) iteration of SSA
   ierr = PetscViewerASCIIPrintf(viewer,
     "%% A PISM linear system report for the finite difference implementation\n"
@@ -656,13 +656,13 @@ PetscErrorCode SSAFD::writeSSAsystemMatlab() {
   ierr = thickness->view_matlab(viewer); CHKERRQ(ierr);
   ierr = surface->view_matlab(viewer); CHKERRQ(ierr);
 
-  ierr = nuH.get_component(0, component); CHKERRQ(ierr); 
+  ierr = nuH.get_component(0, component); CHKERRQ(ierr);
   ierr = component.set_name("nuH_0"); CHKERRQ(ierr);
-  ierr = component.set_attr("long_name", 
+  ierr = component.set_attr("long_name",
     "effective viscosity times thickness (i offset) at current time step"); CHKERRQ(ierr);
   ierr = component.view_matlab(viewer); CHKERRQ(ierr);
 
-  ierr = nuH.get_component(0, component); CHKERRQ(ierr); 
+  ierr = nuH.get_component(0, component); CHKERRQ(ierr);
   ierr = component.set_name("nuH_1"); CHKERRQ(ierr);
   ierr = component.set_attr("long_name",
     "effective viscosity times thickness (j offset) at current time step"); CHKERRQ(ierr);
@@ -681,7 +681,7 @@ suggest that an \f$L^1\f$ criterion for convergence is best.  For verification
 there seems to be little difference, presumably because the solutions are smooth
 and the norms are roughly equivalent on a subspace of smooth functions.  For PST,
 the \f$L^1\f$ criterion gives faster runs with essentially the same results.
-Presumably that is because rapid (temporal and spatial) variation in 
+Presumably that is because rapid (temporal and spatial) variation in
 \f$\nu H\f$ occurs at margins, occupying very few horizontal grid cells.
 For the significant (e.g.~in terms of flux) parts of the flow, it is o.k. to ignore
 a bit of bad behavior at these few places, and \f$L^1\f$ ignores it more than
@@ -721,12 +721,12 @@ PetscErrorCode SSAFD::compute_hardav_staggered(IceModelVec2Stag &result) {
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = enthalpy->begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  
+
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       ierr = enthalpy->getInternalColumn(i,j,&E_ij); CHKERRQ(ierr);
       for (PetscInt o=0; o<2; o++) {
-        const PetscInt oi = 1-o, oj=o;  
+        const PetscInt oi = 1-o, oj=o;
         const PetscScalar H = 0.5 * ((*thickness)(i,j) + (*thickness)(i+oi,j+oj));
 
         if (H == 0) {
@@ -739,9 +739,9 @@ PetscErrorCode SSAFD::compute_hardav_staggered(IceModelVec2Stag &result) {
         for (int k = 0; k < grid.Mz; ++k) {
           E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
-        
+
         result(i,j,o) = ice.averagedHardness_from_enth(H, grid.kBelowHeight(H),
-                                                       grid.zlevels.data(), E); CHKERRQ(ierr); 
+                                                       grid.zlevels.data(), E); CHKERRQ(ierr);
       } // o
     }   // j
   }     // i
@@ -756,34 +756,34 @@ PetscErrorCode SSAFD::compute_hardav_staggered(IceModelVec2Stag &result) {
 
 //! \brief Compute the product of ice thickness and effective viscosity (on the
 //! staggered grid).
-/*! 
+/*!
 In PISM the product \f$\nu H\f$ can be
   - constant, or
   - can be computed with a constant ice hardness \f$\bar B\f$ (temperature-independent)
-    but with dependence of the viscosity on the strain rates, or 
+    but with dependence of the viscosity on the strain rates, or
   - it can depend on the strain rates \e and have a vertically-averaged ice
     hardness depending on temperature or enthalpy.
 
-The flow law in ice stream and ice shelf regions must, for now, be a 
+The flow law in ice stream and ice shelf regions must, for now, be a
 (temperature-dependent) Glen law.  This is the only flow law we know how to
 convert to ``viscosity form''.  More general forms like Goldsby-Kohlstedt are
 not yet inverted.
 
 The viscosity form of a Glen law is
    \f[ \nu(T^*,D) = \frac{1}{2} B(T^*) D^{(1/n)-1}\, D_{ij} \f]
-where 
+where
    \f[  D_{ij} = \frac{1}{2} \left(\frac{\partial U_i}{\partial x_j} +
                                    \frac{\partial U_j}{\partial x_i}\right) \f]
-is the strain rate tensor and \f$B\f$ is an ice hardness related to 
+is the strain rate tensor and \f$B\f$ is an ice hardness related to
 the ice softness \f$A(T^*)\f$ by
    \f[ B(T^*)=A(T^*)^{-1/n}  \f]
 in the case of a temperature dependent Glen-type law.  (Here \f$T^*\f$ is the
 pressure-adjusted temperature.)
 
 The effective viscosity is then
-   \f[ \nu = \frac{\bar B}{2} \left[\left(\frac{\partial u}{\partial x}\right)^2 + 
-                               \left(\frac{\partial v}{\partial y}\right)^2 + 
-                               \frac{\partial u}{\partial x} \frac{\partial v}{\partial y} + 
+   \f[ \nu = \frac{\bar B}{2} \left[\left(\frac{\partial u}{\partial x}\right)^2 +
+                               \left(\frac{\partial v}{\partial y}\right)^2 +
+                               \frac{\partial u}{\partial x} \frac{\partial v}{\partial y} +
                                \frac{1}{4} \left(\frac{\partial u}{\partial y}
                                                  + \frac{\partial v}{\partial x}\right)^2
                                \right]^{(1-n)/(2n)}  \f]
@@ -849,12 +849,12 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
 
         if (! finite(result(i,j,o)) || false) {
           ierr = PetscPrintf(grid.com, "nuH[%d][%d][%d] = %e\n", o, i, j, result(i,j,o));
-          CHKERRQ(ierr); 
-          ierr = PetscPrintf(grid.com, "  u_x, u_y, v_x, v_y = %e, %e, %e, %e\n", 
+          CHKERRQ(ierr);
+          ierr = PetscPrintf(grid.com, "  u_x, u_y, v_x, v_y = %e, %e, %e, %e\n",
                              u_x, u_y, v_x, v_y);
           CHKERRQ(ierr);
         }
-          
+
         // We ensure that nuH is bounded below by a positive constant.
         result(i,j,o) += epsilon;
 
@@ -891,7 +891,7 @@ PetscErrorCode SSAFD::update_nuH_viewers() {
 
   ierr = nuH.begin_access(); CHKERRQ(ierr);
   ierr = tmp.begin_access(); CHKERRQ(ierr);
-  
+
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       PetscReal avg_nuH = 0.5 * (nuH(i,j,0) + nuH(i,j,1));

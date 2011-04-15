@@ -22,18 +22,20 @@ load("ssa.mac")$
 
 file : openw("formulas.tex")$
 
+set_tex_environment_default("&\\displaystyle ", " & \\\\")$
+
 /* The left hand side of the first equation */
 printf(file, "\\newcommand{\\lhsI}{~%")$
-for n: 1 thru 4 do (printf(file, "&\\displaystyle ~a& \\\\~%", tex1(part(lhs1, n))))$
+for n: 1 thru 4 do tex(part(lhs1, n), file)$
 printf(file, "}~%")$
 
 /* The left hand side of the second equation */
 printf(file, "\\newcommand{\\lhsII}{~%")$
-for n: 1 thru 4 do (printf(file, "&\\displaystyle ~a& \\\\~%", tex1(part(lhs2, n))))$
+for n: 1 thru 4 do tex(part(lhs2, n), file)$
 printf(file, "}~%")$
 
 /* Define weights and differences for pretty-printing (we don't need to use
-actual definitions yet */
+actual definitions yet) */
 a_p(var) := w[part(var,1) + 1/2, part(var,2)]$
 a_m(var) := w[part(var,1) - 1/2, part(var,2)]$
 b_p(var) := w[part(var,1), part(var,2) + 1/2]$
@@ -51,7 +53,7 @@ D_y(foo) := d_py(foo) + d_my(foo)$
 
 /* The left hand side of the first equation, expanded half way */
 printf(file, "\\newcommand{\\lhsIII}{~%")$
-for n: 1 thru 4 do (printf(file, "&\\displaystyle ~a& \\\\~%", tex1(part(''lhs1, n))))$
+for n: 1 thru 4 do tex(part(''lhs1, n), file)$
 printf(file, "}~%")$
 
 /* Compute coefficients: */
@@ -62,14 +64,15 @@ variable "var" simplified using the function "func".
 This is designed to go inside a "tabular" environment.
 */
 coeffs_grid(name, var, func) := block(
+  set_tex_environment_default("&$\\displaystyle ", "$"),
   printf(file, "\\newcommand{\\~a}{~%", name),
   printf(file, "&-1 & 0 & 1 \\\\\\hline~%"), /* i indices */
   for n: 1 step -1 thru -1 do (
-    printf(file, "\\hline~%"),
-    printf(file, "$~d$ &", n), /* j indices */
-    printf(file, "$\\displaystyle ~a$ &",      tex1(func(var[-1,n]))),
-    printf(file, "$\\displaystyle ~a$ &",      tex1(func(var[ 0,n]))),
-    printf(file, "$\\displaystyle ~a$ \\\\~%", tex1(func(var[ 1,n])))
+    printf(file, "\\hline~%$~d$~%", n),
+
+    for m:-1 thru 1 do tex(func(var[m,n]), file),
+    
+    printf(file, "\\\\~%")
     ),
   printf(file, "}~%")
   )$

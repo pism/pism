@@ -1,8 +1,14 @@
-all:
+all: pdf
+
+pdf: formulas.tex
+	pdflatex ssa-discretization.tex
+	pdflatex ssa-discretization.tex
+
+formulas.tex:
 	maxima -b ssa_prettyprint.mac
+
+code:
 	maxima -b ssa_code.mac
-	pdflatex ssa-discretization.tex
-	pdflatex ssa-discretization.tex
 
 clean:
 	rm -f *.pdf *.aux *.log *.rel
