@@ -327,16 +327,16 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
        *    pseudo-plastic, or linear friction law.  Dragging is done implicitly
        *    (i.e. on left side of SSA eqns).  */
       if (include_basal_shear) {
-        PetscReal beta;
         if (mask->value(i,j) == MASK_GROUNDED) {
-          beta = basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+          PetscReal beta = basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
+          valU[5] += beta;
+          valV[7] += beta;
         } else if (mask->value(i,j) == MASK_ICE_FREE_BEDROCK) {
           // apply drag even in this case, to help with margins; not ice free areas
           //   already have a strength extension
-          beta = beta_ice_free_bedrock;
+          valU[5] += beta_ice_free_bedrock;
+          valV[7] += beta_ice_free_bedrock;
         }
-        valU[5] += beta;
-        valV[7] += beta;
       }
 
       // build "u" equation: NOTE TRANSPOSE
