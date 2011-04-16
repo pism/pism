@@ -156,6 +156,8 @@ PetscErrorCode columnSystemCtx::setIndicesAndClearThisColumn(
 Give first argument NULL to get standard out.  No binary viewer.
 
 Give description string as \c info argument.
+
+Result should be executable as Matlab/Octave script.
  */
 PetscErrorCode columnSystemCtx::viewColumnValues(PetscViewer viewer,
                                                  PetscScalar *v, PetscInt m, const char* info) const {
@@ -176,14 +178,21 @@ PetscErrorCode columnSystemCtx::viewColumnValues(PetscViewer viewer,
   if (!iascii) { SETERRQ(1,"Only ASCII viewer for ColumnSystem\n"); }
 
   ierr = PetscViewerASCIIPrintf(viewer,
-     "\n<viewing ColumnSystem column object with description '%s':\n"
-      "  k     value\n",info); CHKERRQ(ierr);
+     "\n%% viewing ColumnSystem column object with description '%s' (columns  [k value])\n",
+     info); CHKERRQ(ierr);
+  ierr = PetscViewerASCIIPrintf(viewer,
+      "%s_with_index = [...\n",info); CHKERRQ(ierr);
   for (PetscInt k=0; k<m; k++) {
     ierr = PetscViewerASCIIPrintf(viewer,
-      "  %5d %12.5e\n",k,v[k]); CHKERRQ(ierr);
+      "  %5d %.12f",k,v[k]); CHKERRQ(ierr);
+    if (k == m-1) { 
+      ierr = PetscViewerASCIIPrintf(viewer, "];\n"); CHKERRQ(ierr);
+    } else {
+      ierr = PetscViewerASCIIPrintf(viewer, ";\n"); CHKERRQ(ierr);
+    }
   }
   ierr = PetscViewerASCIIPrintf(viewer,
-      "end viewing>\n"); CHKERRQ(ierr);
+      "%s = %s_with_index(:,2);\n\n",info,info); CHKERRQ(ierr);
   return 0;
 }
 
@@ -220,9 +229,9 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
     return 0;
   }
 
-  if (nmax > 120) {
+  if (nmax > 500) {
     ierr = PetscViewerASCIIPrintf(viewer,
-      "\n\n<nmax > 120: matrix too big to display as full; viewing tridiagonal matrix '%s' by diagonals ...\n",info); CHKERRQ(ierr);
+      "\n\n<nmax > 500: matrix too big to display as full; viewing tridiagonal matrix '%s' by diagonals ...\n",info); CHKERRQ(ierr);
     char diag_info[PETSC_MAX_PATH_LEN];
     snprintf(diag_info,PETSC_MAX_PATH_LEN, "super-diagonal U for system '%s'", info);
     ierr = viewColumnValues(viewer,U,nmax-1,diag_info); CHKERRQ(ierr);
@@ -232,33 +241,36 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
     ierr = viewColumnValues(viewer,Lp,nmax-1,diag_info); CHKERRQ(ierr);
   } else {
     ierr = PetscViewerASCIIPrintf(viewer,
-        "\n<viewing ColumnSystem tridiagonal matrix, '%s':\n",info); CHKERRQ(ierr);
+        "\n%s = [...\n",info); CHKERRQ(ierr);
     for (PetscInt k=0; k<nmax; k++) {    // k+1 is row  (while j+1 is column)
       if (k == 0) {              // viewing first row
-        ierr = PetscViewerASCIIPrintf(viewer,"%10.7f %10.7f ",D[k],U[k]); CHKERRQ(ierr);
+        ierr = PetscViewerASCIIPrintf(viewer,"%.12f %.12f ",D[k],U[k]); CHKERRQ(ierr);
         for (PetscInt n=2; n<nmax; n++) {
-          ierr = PetscViewerASCIIPrintf(viewer,"%10.7f ",0.0); CHKERRQ(ierr);
+          ierr = PetscViewerASCIIPrintf(viewer,"%3.1f ",0.0); CHKERRQ(ierr);
         }
       } else if (k < nmax-1) {   // viewing generic row
         for (PetscInt n=0; n<k-1; n++) {
-          ierr = PetscViewerASCIIPrintf(viewer,"%10.7f ",0.0); CHKERRQ(ierr);
+          ierr = PetscViewerASCIIPrintf(viewer,"%3.1f ",0.0); CHKERRQ(ierr);
         }
-        ierr = PetscViewerASCIIPrintf(viewer,"%10.7f %10.7f %10.7f ",L[k],D[k],U[k]); CHKERRQ(ierr);
+        ierr = PetscViewerASCIIPrintf(viewer,"%.12f %.12f %.12f ",L[k],D[k],U[k]); CHKERRQ(ierr);
         for (PetscInt n=k+2; n<nmax; n++) {
-          ierr = PetscViewerASCIIPrintf(viewer,"%10.7f ",0.0); CHKERRQ(ierr);
+          ierr = PetscViewerASCIIPrintf(viewer,"%3.1f ",0.0); CHKERRQ(ierr);
         }
       } else {                   // viewing last row
         for (PetscInt n=0; n<k-1; n++) {
-          ierr = PetscViewerASCIIPrintf(viewer,"%10.7f ",0.0); CHKERRQ(ierr);
+          ierr = PetscViewerASCIIPrintf(viewer,"%3.1f ",0.0); CHKERRQ(ierr);
         }
-        ierr = PetscViewerASCIIPrintf(viewer,"%10.7f %10.7f ",L[k],D[k]); CHKERRQ(ierr);
+        ierr = PetscViewerASCIIPrintf(viewer,"%.12f %.12f ",L[k],D[k]); CHKERRQ(ierr);
       }
-      ierr = PetscViewerASCIIPrintf(viewer,"\n"); CHKERRQ(ierr);  // end of row
+      
+      if (k == nmax-1) {
+        ierr = PetscViewerASCIIPrintf(viewer,"];\n\n"); CHKERRQ(ierr);  // end final row
+      } else {
+        ierr = PetscViewerASCIIPrintf(viewer,";\n"); CHKERRQ(ierr);  // end of generic row
+      }
     }
   }
   
-  ierr = PetscViewerASCIIPrintf(viewer,
-      "end viewing tridiagonal matrix>\n"); CHKERRQ(ierr);
   return 0;
 }
 
@@ -266,12 +278,39 @@ PetscErrorCode columnSystemCtx::viewMatrix(PetscViewer viewer, const char* info)
 //! View the tridiagonal system A x = b, both A as a full matrix and b as a vector.  Unwise if size exceeds 20 or so. 
 /*! 
 Calls viewMatrix() to view A and viewColumnValues() to view right-hand-side b.
+
+An example of the use of this procedure is from <c>examples/searise-greenland/</c>.
+We look at the tridiagonal 
+First run spinup.sh (FIXME: which was modified to have equal spacing in z, when I did this example)
+to generate \c g20km_steady.nc.  Then:
+
+\code
+  $ pismr -ocean_kill -e 3 -atmosphere searise_greenland -surface pdd -config_override  config_269.0_0.001_0.80_-0.500_9.7440.nc \
+    -no_mass -y 1 -i g20km_steady.nc -view_sys -id 19 -jd 79
+
+    ...
+
+  $ octave -q
+  >> enth_i19_j79
+  >> whos
+
+    ...
+
+  >> A=system; b = system_rhs; x = solution_x;
+  >> norm(x - (A\b))/norm(x)
+  ans =  1.4823e-13
+  >> cond(A)
+  ans =  2.6190
+\endcode
+
+Of course we can also do \c spy(A) and look at individual entries, and row and
+column sums, and so on.
  */
 PetscErrorCode columnSystemCtx::viewSystem(PetscViewer viewer, const char* info) const {
   PetscErrorCode ierr;
   ierr = viewMatrix(viewer,info); CHKERRQ(ierr);
   char  rhs_info[PETSC_MAX_PATH_LEN];
-  snprintf(rhs_info,PETSC_MAX_PATH_LEN, "right-hand side vector for system '%s'", info);
+  snprintf(rhs_info,PETSC_MAX_PATH_LEN, "%s_rhs", info);
   ierr = viewColumnValues(viewer,rhs,nmax,rhs_info); CHKERRQ(ierr);
   return 0;
 }

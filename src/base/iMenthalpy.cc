@@ -258,10 +258,10 @@ PetscErrorCode reportColumn(
   ierr = PetscViewerFileSetName(viewer, fname);CHKERRQ(ierr);
 
   ierr = PetscViewerASCIIPrintf(viewer,
-        "   1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n",
+        "%%   1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n",
         sys.norm1(n), sys.ddratio(n)); CHKERRQ(ierr);
   ierr = sys.viewSystem(viewer,"system"); CHKERRQ(ierr);
-  ierr = sys.viewColumnValues(viewer, x, n, "solution x"); CHKERRQ(ierr);
+  ierr = sys.viewColumnValues(viewer, x, n, "solution_x"); CHKERRQ(ierr);
 
   ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
   return 0;

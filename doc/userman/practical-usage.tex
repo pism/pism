@@ -367,9 +367,9 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
 \subsection{Run-time diagnostic viewers}
 \label{sec:diagnostic-viewers}
 \optsection{Run-time diagnostic viewers}
-Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.
-All the quantities listed in table \ref{tab:extra-vars} are available.
+Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.  All the quantities listed in table \ref{tab:extra-vars} are available.  Additionally, a couple of diagnostic quantities are \emph{only} available as run-time viewers; these are shown in table \ref{tab:special-diag-viewers}.
 
+% FIXME: is this sentence right?:
 Note that (for performance and implementation reasons) map and slice viewers
 are transposed.
 
@@ -408,7 +408,8 @@ $ pismr -i input.nc -y 1000 -o output.nc -view_sounding temp
 shows the dependence of the ice temperature on $z$ (more precisely, on the
 number of the vertical grid layer) at the center of the domain. One can use options \texttt{-id} and \texttt{-jd} to choose a different point.
 
-The handful of diagnostic quantities which are \emph{only} available as run-time viewers are shown in table \ref{tab:special-diag-viewers}.
+Related to soundings, one can expose all the linear systems being solved in ice columns by using \texttt{-view_sys} along with the sounding location (\texttt{-id XX} and \texttt{-jd YY}).  For example, if the enthalpy formulation is in use then a \Matlab-format text file \texttt{enth_iXX_jYY.m} will be generated at each time step.  % FIXME:  add year to file name?
+This text file can be run as a script in \Matlab.  The linear system will be stored in a matrix, a right-hand-side vector, and the solution in a solution vector.  This way these linear systems can be checked for debugging purposes.
 
 \begin{table}[ht]
   \caption{Special run-time-only diagnostic viewers}
