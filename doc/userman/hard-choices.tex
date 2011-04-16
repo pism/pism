@@ -47,7 +47,7 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
 \subsubsection{PISM atmosphere models}
 \label{sec:pism-atmosphere}
-\optsection{Climate (boundary) models!\texttt{-atmosphere} [searise_greenland, constant, temp_lapse_rate, forcing]}
+\optsection{Climate (boundary) models!\texttt{-atmosphere} [searise_greenland, constant, given,temp_lapse_rate, forcing]}
 
 \begin{itemize}
   \item \emph{SeaRISE-Greenland} (\texttt{searise_greenland}, the default)
@@ -62,12 +62,21 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
     This atmosphere model reads the snow precipitation (variable \texttt{precip}) and the mean annual near-surface air temperature (variable \texttt{temp_ma}) and provides them to a surface model.
 
+  \item \emph{Reading atmosphere boundary conditions from a file} (\texttt{given})
+
+    This atmosphere model is similar to \texttt{constant} in that it uses \texttt{artm} and \texttt{precip} fields given by the user by providing them directly to the surface model. The name of the file PISM will read \texttt{artm} and \texttt{precip} from is specified using the \fileopt{bc_file} option.
+
+    A file \texttt{foo.nc} used with \texttt{-atmosphere given -bc_file foo.nc} should contain several records;\footnote{If this file contains one record (i.e. fields corresponding to one time value only), \texttt{-atmosphere given} is essentially equivalent to \texttt{-atmosphere constant}.} the time variable (\texttt{'t'}) should describe what model time these records correspond to.
+
+    This model was created to force PISM with sampled (possibly periodic) climate data, e.g. using monthly records of \texttt{artm} and \texttt{acab}.
+
   \item \emph{Constant precipitation using a temperature lapse rate} (\texttt{temp_lapse_rate})
     
     This atmosphere model also uses a constant (time-independent) precipitation field (\texttt{precip}) and requires the mean annual near-surface air temperature (\texttt{temp_ma}) to be present in an input file. In addition to this, it dynamically corrects air temperature using a location-independent elevation lapse rate specified using the \intextoption{lapse_rate} command-line option (in units of degrees Celsius per meter).
- \end{itemize}
 
-  The atmosphere \texttt{forcing} modifier implements temperature forcing using scalar offsets and also a mechanism applying precipitation and temperature anomalies.
+  \end{itemize}
+  
+The atmosphere \texttt{forcing} modifier implements temperature forcing using scalar offsets and also a mechanism applying precipitation and temperature anomalies.
   \begin{itemize}
   \item \fileopt{dTforcing} specifies a file containing scalar temperature offsets (variable \texttt{delta_T}), 
   \item \fileopt{anomaly_temp} specifies a file containing spatially-variable near-surface air temperature anomalies (variable \texttt{temp_anomaly}), and
@@ -80,7 +89,7 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
 \subsubsection{PISM surface (snow) process models}
 \label{sec:pism-surface-snow}
-\optsection{Climate (boundary) models!\texttt{-surface} [simple, constant, given, pdd, forcing]}
+\optsection{Climate (boundary) models!\texttt{-surface} [simple, constant, elevation, given, pdd, forcing]}
 
 \begin{itemize}
   \item \emph{The ``invisible'' model} (\texttt{simple}, the default)
@@ -98,51 +107,6 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
   \item \emph{Reading top-surface boundary conditions from a file} (\texttt{given})
 
     This surface model is similar to \texttt{constant} in that it uses \texttt{artm} and \texttt{acab} fields given by the user by providing them directly to the ice dynamics model. The name of the file PISM will read \texttt{artm} and \texttt{acab} from is specified using the \fileopt{bc_file} option.
-
-    A file \texttt{foo.nc} used with \texttt{-surface given -bc_file foo.nc} should contain several records;\footnote{If this file contains one record (i.e. fields corresponding to one time value only), \texttt{-surface given} is essentially equivalent to \texttt{-surface constant}.} the time variable (\texttt{'t'}) should describe what model time these records correspond to.
-
-    This model was created to force PISM with sampled (possibly periodic) climate data, e.g. using monthly records of \texttt{artm} and \texttt{acab}.
-
- Option \txtopt{bc_artm_lapse_rate}{Kelvin per kilometer} corrects \texttt{artm} with respect to a reference surface \texttt{usurf} using a lapse rate. \texttt{usurf} must be present in \texttt{foo.nc}.
-
- Option \txtopt{bc_acab_lapse_rate}{meters per year per kilometer} corrects \texttt{acab} with respect to a reference surface \texttt{usurf} using a lapse rate following [\href{http://www.truenuff.tv/glacierrace.php}{86}]. \texttt{usurf} must be present in \texttt{foo.nc}.
-
-Option \txtopt{bc_period}{years} makes PISM interpret data in \texttt{-bc_file} as periodic. In this case the time in the NetCDF file is understood as the time \emph{from the beginning of a period}, i.e. from the beginning of a year with \texttt{-bc_period 1}, from the beginning of a decade with \texttt{-bc_period 10}, etc.
-
-For example, to use monthly records and period of 1 year, create a file (say, ``\texttt{foo.nc}'') with 12 records. The variable \texttt{'t'} should contain 0, 1, 2, 3, \dots, 11 and have the units of ``month'' (you can use other units, too). Then, run
-\begin{verbatim}
-$ pimsr -surface given -bc_file foo.nc -bc_period 1
-\end{verbatim}%$
-
-To force PISM using monthly records with longer periods, just add more records to the \texttt{-bc_file}  and change the \texttt{-bc_period} value.
-
-\noindent Notes:
-\begin{itemize}
-\item PISM can handle files with virtually any number of records: it will
-  read and store in memory at most \texttt{climate_forcing_buffer_size} records
-  at any given time (default: 60, or 5 years' worth of monthly fields).
-\item this surface model \emph{ignores} the atmosphere model selection made
-  using the \texttt{-atmosphere} option,
-\item when preparing a file for use with this model, it is best to use the \texttt{t,x,y} variable storage order: files using this order can be read in faster than ones using the \texttt{t,y,x} order, for reasons explained in section \ref{sec:pism-io-performance}.
-
-To change the storage order in a NetCDF file, use \texttt{ncpdq}:
-\begin{verbatim}
-$ ncpdq -a t,x,y input.nc output.nc
-\end{verbatim}%$
-will copy data from \texttt{input.nc} into \texttt{output.nc}, changing the storage order to \texttt{t,x,y} at the same time.
-\end{itemize}
-
- \item \emph{Temperature-index (positive degree-day) scheme} (\texttt{pdd}) \index{temperature-index surface processes model} \index{positive degree day surface processes model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model} 
-
-   The default PDD used by PISM, turned on by option \texttt{-surface pdd}, is based on \cite{CalovGreve05} and EISMINT-Greenland intercomparison (section \ref{sec:eismint-greenland} and \cite{RitzEISMINT}).  It also implements latitude- and mean July temperature dependent ice and snow factors using formulas in \cite{Faustoetal2009}.
-
-   Our PDD implementation is meant to be used with an atmosphere model implementing a cosine yearly cycle such as \texttt{searise_greenland}, but is not restricted to parameterizations like this one. A PDD generally adds ``white noise'' to the seasonal cycle to simulate additional daily variability associated to the vagaries of weather.  This additional random variation is quite significant, as the seasonal cycle may never reach the melting point but that point may be reached with some probability, in the presence of the daily variability, and thus melt may occur.  Concretely, a normally-distributed, mean zero random temperature increment is added to the seasonal cycle.  The standard deviation of the daily variability is controlled by the \intextoption{pdd_std_dev} option (and the corresponding config. parameter), and defaults to 2.53 degrees \cite{Faustoetal2009}. There is no assumed spatial correlation of daily variability.
-
-The number of positive degree days is computed as the magnitude of the temperature excursion above $0\!\phantom{|}^\circ \text{C}$ multiplied by the duration (in days) when it is above zero.  In PISM there are actually two methods for computing the number of positive degree days.  The first computes only the expected value, by the method described in \cite{CalovGreve05}.  This is the default when a PDD is chosen (i.e.~option \texttt{-surface pdd}).  The second is a monte carlo simulation of the white noise itself, chosen by adding the option \intextoption{pdd_rand}.  This monte carlo simulation adds the same daily variation at every point, though the seasonal cycle is (generally) location dependent.  If repeatable randomness is desired use \intextoption{pdd_rand_repeatable} instead of \texttt{-pdd_rand}.
-
-The number of positive degree days is multiplied by a coefficient (config parameter \texttt{pdd_factor_snow}) to compute the amount of snow melted.  Of the melted snow, a fraction (\texttt{pdd_refreeze}) is kept as ice.  This ice, plus all unmelted snow (already measured as ice-equivalent) is added to the mass balance, unless the number of positive degree days exceeds that required to melt all of the snow.  In this latter case, in which there are excess positive degree days available for melting, the excess is multiplied by a coefficient (\texttt{pdd_factor_ice}) to compute how much ice is melted.  In this case actual ablation occurs at that location.
-
-In addition to this, one can use latitude- and July-air-temperature-dependent Greenland PDD model parameters $\beta_{\mathrm{ice}}$ and $\beta_{\mathrm{snow}}$ (formulas (6) and (7) in \cite{Faustoetal2009}) by adding the \intextoption{pdd_fausto}  option. See also configuration parameters with the \texttt{pdd_fausto} prefix.
 
   \item \emph{Elevation-dependent temperature and mass balance} (\texttt{elevation})
 
@@ -191,6 +155,51 @@ In addition to this, one can use latitude- and July-air-temperature-dependent Gr
     \end{equation}
 
     Note: this surface model \emph{ignores} the atmosphere model selection made using the \texttt{-atmosphere} option.
+
+    A file \texttt{foo.nc} used with \texttt{-surface given -bc_file foo.nc} should contain several records;\footnote{If this file contains one record (i.e. fields corresponding to one time value only), \texttt{-surface given} is essentially equivalent to \texttt{-surface constant}.} the time variable (\texttt{'t'}) should describe what model time these records correspond to.
+
+    This model was created to force PISM with sampled (possibly periodic) climate data, e.g. using monthly records of \texttt{artm} and \texttt{acab}.
+
+ Option \txtopt{bc_artm_lapse_rate}{Kelvin per kilometer} corrects \texttt{artm} with respect to a reference surface \texttt{usurf} using a lapse rate. \texttt{usurf} must be present in \texttt{foo.nc}.
+
+ Option \txtopt{bc_acab_lapse_rate}{meters per year per kilometer} corrects \texttt{acab} with respect to a reference surface \texttt{usurf} using a lapse rate following [\href{http://www.truenuff.tv/glacierrace.php}{86}]. \texttt{usurf} must be present in \texttt{foo.nc}.
+
+Option \txtopt{bc_period}{years} makes PISM interpret data in \texttt{-bc_file} as periodic. In this case the time in the NetCDF file is understood as the time \emph{from the beginning of a period}, i.e. from the beginning of a year with \texttt{-bc_period 1}, from the beginning of a decade with \texttt{-bc_period 10}, etc.
+
+For example, to use monthly records and period of 1 year, create a file (say, ``\texttt{foo.nc}'') with 12 records. The variable \texttt{'t'} should contain 0, 1, 2, 3, \dots, 11 and have the units of ``month'' (you can use other units, too). Then, run
+\begin{verbatim}
+$ pimsr -surface given -bc_file foo.nc -bc_period 1
+\end{verbatim}%$
+
+To force PISM using monthly records with longer periods, just add more records to the \texttt{-bc_file}  and change the \texttt{-bc_period} value.
+
+\noindent Notes:
+\begin{itemize}
+\item PISM can handle files with virtually any number of records: it will
+  read and store in memory at most \texttt{climate_forcing_buffer_size} records
+  at any given time (default: 60, or 5 years' worth of monthly fields).
+\item this surface model \emph{ignores} the atmosphere model selection made
+  using the \texttt{-atmosphere} option,
+\item when preparing a file for use with this model, it is best to use the \texttt{t,x,y} variable storage order: files using this order can be read in faster than ones using the \texttt{t,y,x} order, for reasons explained in section \ref{sec:pism-io-performance}.
+
+To change the storage order in a NetCDF file, use \texttt{ncpdq}:
+\begin{verbatim}
+$ ncpdq -a t,x,y input.nc output.nc
+\end{verbatim}%$
+will copy data from \texttt{input.nc} into \texttt{output.nc}, changing the storage order to \texttt{t,x,y} at the same time.
+\end{itemize}
+
+ \item \emph{Temperature-index (positive degree-day) scheme} (\texttt{pdd}) \index{temperature-index surface processes model} \index{positive degree day surface processes model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model} 
+
+   The default PDD used by PISM, turned on by option \texttt{-surface pdd}, is based on \cite{CalovGreve05} and EISMINT-Greenland intercomparison (section \ref{sec:eismint-greenland} and \cite{RitzEISMINT}).  It also implements latitude- and mean July temperature dependent ice and snow factors using formulas in \cite{Faustoetal2009}.
+
+   Our PDD implementation is meant to be used with an atmosphere model implementing a cosine yearly cycle such as \texttt{searise_greenland}, but is not restricted to parameterizations like this one. A PDD generally adds ``white noise'' to the seasonal cycle to simulate additional daily variability associated to the vagaries of weather.  This additional random variation is quite significant, as the seasonal cycle may never reach the melting point but that point may be reached with some probability, in the presence of the daily variability, and thus melt may occur.  Concretely, a normally-distributed, mean zero random temperature increment is added to the seasonal cycle.  The standard deviation of the daily variability is controlled by the \intextoption{pdd_std_dev} option (and the corresponding config. parameter), and defaults to 2.53 degrees \cite{Faustoetal2009}. There is no assumed spatial correlation of daily variability.
+
+The number of positive degree days is computed as the magnitude of the temperature excursion above $0\!\phantom{|}^\circ \text{C}$ multiplied by the duration (in days) when it is above zero.  In PISM there are actually two methods for computing the number of positive degree days.  The first computes only the expected value, by the method described in \cite{CalovGreve05}.  This is the default when a PDD is chosen (i.e.~option \texttt{-surface pdd}).  The second is a monte carlo simulation of the white noise itself, chosen by adding the option \intextoption{pdd_rand}.  This monte carlo simulation adds the same daily variation at every point, though the seasonal cycle is (generally) location dependent.  If repeatable randomness is desired use \intextoption{pdd_rand_repeatable} instead of \texttt{-pdd_rand}.
+
+The number of positive degree days is multiplied by a coefficient (config parameter \texttt{pdd_factor_snow}) to compute the amount of snow melted.  Of the melted snow, a fraction (\texttt{pdd_refreeze}) is kept as ice.  This ice, plus all unmelted snow (already measured as ice-equivalent) is added to the mass balance, unless the number of positive degree days exceeds that required to melt all of the snow.  In this latter case, in which there are excess positive degree days available for melting, the excess is multiplied by a coefficient (\texttt{pdd_factor_ice}) to compute how much ice is melted.  In this case actual ablation occurs at that location.
+
+In addition to this, one can use latitude- and July-air-temperature-dependent Greenland PDD model parameters $\beta_{\mathrm{ice}}$ and $\beta_{\mathrm{snow}}$ (formulas (6) and (7) in \cite{Faustoetal2009}) by adding the \intextoption{pdd_fausto}  option. See also configuration parameters with the \texttt{pdd_fausto} prefix.
 
 \end{itemize}
 
