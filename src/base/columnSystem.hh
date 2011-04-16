@@ -19,6 +19,7 @@
 #ifndef __columnSystem_hh
 #define __columnSystem_hh
 
+#include <string>
 #include <petsc.h>
 #include "iceModelVec.hh"
 
@@ -38,17 +39,22 @@ the system in each column.
 class columnSystemCtx {
 
 public:
-  columnSystemCtx(PetscInt my_nmax);
+  columnSystemCtx(PetscInt my_nmax, string my_prefix);
   ~columnSystemCtx();
 
   PetscErrorCode setIndicesAndClearThisColumn(PetscInt i, PetscInt j, PetscInt ks);  
 
   PetscScalar    norm1(const PetscInt n) const;
   PetscScalar    ddratio(const PetscInt n) const;
-  PetscErrorCode viewColumnValues(PetscViewer viewer, 
+
+  PetscErrorCode viewVectorValues(PetscViewer viewer,
                                   PetscScalar *v, PetscInt m, const char* info) const;
   PetscErrorCode viewMatrix(PetscViewer viewer, const char* info) const;
-  PetscErrorCode viewSystem(PetscViewer viewer, const char* info) const;
+  PetscErrorCode viewSystem(PetscViewer viewer) const;
+
+  PetscErrorCode reportColumnZeroPivotErrorMFile(const PetscErrorCode errindex);
+  PetscErrorCode viewColumnInfoMFile(PetscScalar *x, PetscInt n);
+  PetscErrorCode viewColumnInfoMFile(char *filename, PetscScalar *x, PetscInt n);
 
 protected:
   PetscInt    nmax;
@@ -61,6 +67,7 @@ protected:
   
 private:
   bool        indicesValid;
+  string      prefix;
   PetscErrorCode resetColumn();
 };
 

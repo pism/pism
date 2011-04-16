@@ -138,7 +138,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     bool viewOneColumn;
     ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
 
-    tempSystemCtx system(fMz);
+    tempSystemCtx system(fMz, "temperature");
     system.dx              = grid.dx;
     system.dy              = grid.dy;
     system.dtTemp          = dt_years_TempAge * secpera; // same time step for temp and age, currently
@@ -267,30 +267,20 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           // solve the system for this column; melting not addressed yet
           PetscErrorCode pivoterr;
           ierr = system.solveThisColumn(&x, pivoterr); CHKERRQ(ierr);
-          if (pivoterr != 0) {
-            PetscPrintf(grid.com,
-                        "\n\ntridiagonal solve failed at (%d,%d) with zero pivot position %d\n"
-                        "   1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n"
-                        "   ENDING! ...\n\n",
-                        i, j, ierr, system.norm1(ks+1), system.ddratio(ks+1));
-            SETERRQ(1,"PISM ERROR in IceModel::temperatureStep()\n");
-          }
 
-          // diagnostic/DEBUG; added for comparison to IceEnthalpyModel
-          if (viewOneColumn) {
-            if ((i==id) && (j==jd)) {
-              ierr = verbPrintf(1,grid.com,
-                                "\nin IceModel::temperatureStep();\n"
-                                "   fMz = %d, fdz = %5.3f, ks = %d\n\n",
-                                fMz, fdz, ks); CHKERRQ(ierr);
-              ierr = verbPrintf(1,grid.com,
-                                "viewing system and solution at (i,j)=(%d,%d):\n", i, j); CHKERRQ(ierr);
-              ierr = verbPrintf(1,grid.com,
-                                "   1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n",
-                                system.norm1(ks+1), system.ddratio(ks+1)); CHKERRQ(ierr);
-              ierr = system.viewSystem(NULL,"system"); CHKERRQ(ierr);
-              ierr = system.viewColumnValues(NULL, x, fMz, "solution x"); CHKERRQ(ierr);
-            }
+          if (pivoterr != 0) {
+            ierr = PetscPrintf(PETSC_COMM_SELF,
+              "\n\ntridiagonal solve of tempSystemCtx in temperatureStep() FAILED at (%d,%d)\n"
+                  " with zero pivot position %d; viewing system to m-file ... \n",
+              i, j, pivoterr); CHKERRQ(ierr);
+            ierr = system.reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
+            SETERRQ(1,"PISM ERROR in temperatureStep()\n");
+          }
+          if (viewOneColumn && issounding(i,j)) {
+            ierr = PetscPrintf(grid.com,
+              "\n\nin temperatureStep(): viewing tempSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
+              i, j); CHKERRQ(ierr);
+            ierr = system.viewColumnInfoMFile(x, fMz); CHKERRQ(ierr);
           }
 
         }	// end of "if there are enough points in ice to bother ..."

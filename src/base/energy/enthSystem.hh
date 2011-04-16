@@ -33,7 +33,7 @@ the user of this class sets the lowest-level (z=0) equation.
 class enthSystemCtx : public columnSystemCtx {
 
 public:
-  enthSystemCtx(const NCConfigVariable &config, IceModelVec3 &my_Enth3, int my_Mz);
+  enthSystemCtx(const NCConfigVariable &config, IceModelVec3 &my_Enth3, int my_Mz, string my_prefix);
   ~enthSystemCtx();
 
   PetscErrorCode initAllColumns(

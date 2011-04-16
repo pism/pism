@@ -25,7 +25,7 @@
 class ageSystemCtx : public columnSystemCtx {
 
 public:
-  ageSystemCtx(PetscInt my_Mz);
+  ageSystemCtx(PetscInt my_Mz, string my_prefix);
   PetscErrorCode initAllColumns();
 
   PetscErrorCode solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex);  
@@ -48,8 +48,8 @@ protected: // used internally
 };
 
 
-ageSystemCtx::ageSystemCtx(PetscInt my_Mz)
-      : columnSystemCtx(my_Mz) { // size of system is Mz
+ageSystemCtx::ageSystemCtx(PetscInt my_Mz, string my_prefix)
+      : columnSystemCtx(my_Mz, my_prefix) { // size of system is Mz
   initAllDone = false;
   // set values so we can check if init was called on all
   dx = -1.0;
@@ -172,7 +172,10 @@ PetscErrorCode IceModel::ageStep() {
   PetscScalar *x;  
   x = new PetscScalar[fMz]; // space for solution
 
-  ageSystemCtx system(fMz); // linear system to solve in each column
+  bool viewOneColumn;
+  ierr = PISMOptionsIsSet("-view_sys", viewOneColumn); CHKERRQ(ierr);
+
+  ageSystemCtx system(fMz, "age"); // linear system to solve in each column
   system.dx    = grid.dx;
   system.dy    = grid.dy;
   system.dtAge = dt_years_TempAge * secpera;
@@ -214,13 +217,20 @@ PetscErrorCode IceModel::ageStep() {
         // solve the system for this column; call checks that params set
         PetscErrorCode pivoterr;
         ierr = system.solveThisColumn(&x,pivoterr); CHKERRQ(ierr);
+
         if (pivoterr != 0) {
-          PetscPrintf(grid.com,
-            "\n\ntridiagonal solve failed at (%d,%d) with zero pivot position %d\n"
-            "  1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n"
-            "  ENDING! ...\n\n",
-            i, j, ierr, system.norm1(fks+1), system.ddratio(fks+1));
-          SETERRQ(1, "PISM ERROR in IceModel::ageStep()\n");
+          ierr = PetscPrintf(PETSC_COMM_SELF,
+            "\n\ntridiagonal solve of ageSystemCtx in ageStep() FAILED at (%d,%d)\n"
+                " with zero pivot position %d; viewing system to m-file ... \n",
+            i, j, pivoterr); CHKERRQ(ierr);
+          ierr = system.reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
+          SETERRQ(1,"PISM ERROR in ageStep()\n");
+        }
+        if (viewOneColumn && issounding(i,j)) {
+          ierr = PetscPrintf(PETSC_COMM_SELF,
+            "\n\nin ageStep(): viewing ageSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
+            i, j); CHKERRQ(ierr);
+          ierr = system.viewColumnInfoMFile(x, fMz); CHKERRQ(ierr);
         }
 
         // x[k] contains age for k=0,...,ks, but set age of ice above (and at) surface to zero years

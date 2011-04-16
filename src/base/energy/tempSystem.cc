@@ -22,8 +22,8 @@
 #include "tempSystem.hh"
 
 
-tempSystemCtx::tempSystemCtx(PetscInt my_Mz)
-      : columnSystemCtx(my_Mz) {
+tempSystemCtx::tempSystemCtx(PetscInt my_Mz, string my_prefix)
+      : columnSystemCtx(my_Mz, my_prefix) {
   Mz = my_Mz;
   // set flags to indicate nothing yet set
   initAllDone = false;

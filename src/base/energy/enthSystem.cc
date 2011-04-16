@@ -22,8 +22,8 @@
 
 
 enthSystemCtx::enthSystemCtx(
-    const NCConfigVariable &config, IceModelVec3 &my_Enth3, int my_Mz)
-      : columnSystemCtx(my_Mz) {  // <- critical: sets size of sys
+    const NCConfigVariable &config, IceModelVec3 &my_Enth3, int my_Mz, string my_prefix)
+      : columnSystemCtx(my_Mz, my_prefix) {  // <- critical: sets size of sys
   Mz = my_Mz;
 
   // set some values so we can check if init was called

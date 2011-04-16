@@ -48,7 +48,7 @@ Call sequence like this:
 class tempSystemCtx : public columnSystemCtx {
 
 public:
-  tempSystemCtx(PetscInt my_Mz);
+  tempSystemCtx(PetscInt my_Mz, string my_prefix);
   PetscErrorCode initAllColumns();
   PetscErrorCode setSchemeParamsThisColumn(
                      PismMask my_mask, bool my_isMarginal, PetscScalar my_lambda);  

@@ -212,62 +212,6 @@ PetscErrorCode IceModel::getEnthalpyCTSColumn(PetscScalar p_air,
 }
 
 
-/******  next two are helper functions for enthalpyDrainageStep() ******/
-
-PetscErrorCode reportColumnSolveError(
-    const PetscErrorCode solve_ierr, columnSystemCtx &sys, 
-    const char *prefix, const PetscInt i, const PetscInt j) {
-  PetscErrorCode ierr;
-
-  char fname[PETSC_MAX_PATH_LEN];
-  snprintf(fname, PETSC_MAX_PATH_LEN, "%s_i%d_j%d_zeropivot%d.m",
-           prefix,i,j,solve_ierr);
-  ierr = PetscPrintf(PETSC_COMM_SELF,
-    "\n\ntridiagonal solve in enthalpyAndDrainageStep(), for %sSystemCtx,\n"
-        "   failed at (%d,%d) with zero pivot position %d\n"
-        "   viewing system to file %s ... \n",
-        prefix, i, j, solve_ierr, fname); CHKERRQ(ierr);
-  PetscViewer viewer;
-  ierr = PetscViewerCreate(PETSC_COMM_SELF, &viewer);CHKERRQ(ierr);
-  ierr = PetscViewerSetType(viewer, PETSC_VIEWER_ASCII);CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
-  ierr = PetscViewerFileSetName(viewer, fname);CHKERRQ(ierr);
-  ierr = sys.viewSystem(viewer,"system"); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
-PetscErrorCode reportColumn(
-    MPI_Comm com, columnSystemCtx &sys,
-    const char *prefix, const PetscInt i, const PetscInt j,
-    PetscScalar *x, PetscInt n) {
-
-  char fname[PETSC_MAX_PATH_LEN];
-  snprintf(fname, PETSC_MAX_PATH_LEN, "%s_i%d_j%d.m", prefix,i,j);
-  PetscErrorCode ierr;
-  ierr = PetscPrintf(com,
-    "\n\nviewing %s system and solution at (i,j)=(%d,%d):\n"
-        "   viewing system to file %s ... \n\n\n",
-        prefix, i, j, fname); CHKERRQ(ierr);
-  PetscViewer viewer;
-  ierr = PetscViewerCreate(com, &viewer);CHKERRQ(ierr);
-  ierr = PetscViewerSetType(viewer, PETSC_VIEWER_ASCII);CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
-  ierr = PetscViewerFileSetName(viewer, fname);CHKERRQ(ierr);
-
-  ierr = PetscViewerASCIIPrintf(viewer,
-        "%%   1-norm = %.3e  and  diagonal-dominance ratio = %.5f\n",
-        sys.norm1(n), sys.ddratio(n)); CHKERRQ(ierr);
-  ierr = sys.viewSystem(viewer,"system"); CHKERRQ(ierr);
-  ierr = sys.viewColumnValues(viewer, x, n, "solution_x"); CHKERRQ(ierr);
-
-  ierr = PetscViewerDestroy(viewer); CHKERRQ(ierr);
-  return 0;
-}
-
-
 //! Compute the rate of drainage D(omega) for temperate ice.
 class DrainageCalculator {
 
@@ -348,7 +292,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
   PetscScalar *Enthnew;
   Enthnew = new PetscScalar[fMz];  // new enthalpy in column
 
-  enthSystemCtx esys(config, Enth3, fMz);
+  enthSystemCtx esys(config, Enth3, fMz, "enth");
   ierr = esys.initAllColumns(grid.dx, grid.dy, dt_secs, fdz); CHKERRQ(ierr);
 
   bool viewOneColumn;
@@ -533,12 +477,18 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         PetscErrorCode pivoterr;
         ierr = esys.solveThisColumn(&Enthnew,pivoterr); CHKERRQ(ierr);
         if (pivoterr != 0) {
-          reportColumnSolveError(ierr, esys, "enth", i, j);
+          ierr = PetscPrintf(PETSC_COMM_SELF,
+            "\n\ntridiagonal solve of enthSystemCtx in enthalpyAndDrainageStep() FAILED at (%d,%d)\n"
+                " with zero pivot position %d; viewing system to m-file ... \n",
+            i, j, pivoterr); CHKERRQ(ierr);
+          ierr = esys.reportColumnZeroPivotErrorMFile(pivoterr); CHKERRQ(ierr);
           SETERRQ(1,"PISM ERROR in enthalpyDrainageStep()\n");
         }
         if (viewOneColumn && issounding(i,j)) {
-          ierr = reportColumn(grid.com, esys, "enth", 
-                              i, j, Enthnew, fMz); CHKERRQ(ierr);
+          ierr = PetscPrintf(PETSC_COMM_SELF,
+            "\n\nin enthalpyAndDrainageStep(): viewing enthSystemCtx at (i,j)=(%d,%d) to m-file ... \n\n",
+            i, j); CHKERRQ(ierr);
+          ierr = esys.viewColumnInfoMFile(Enthnew, fMz); CHKERRQ(ierr);
         }
 
         // thermodynamic basal melt rate causes water to be added to layer
