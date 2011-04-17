@@ -40,7 +40,6 @@ FEElementMap::FEElementMap(const IceGrid &g)
   
   if( !(g.periodicity & X_PERIODIC) )
   {
-    verbPrintf(1,g.com,"not X-periodic!\n");
     // Leftmost element has x-index 0.
     if(xs < 0){
       xs = 0;
