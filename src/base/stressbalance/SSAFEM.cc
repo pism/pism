@@ -39,15 +39,12 @@ PetscErrorCode SSAFEM::allocate_fem() {
   ierr = DAGetMatrix(SSADA, "baij", &J); CHKERRQ(ierr);
 
   ierr = SNESCreate(grid.com,&snes);CHKERRQ(ierr);
-  // ierr = SNESSetOptionsPrefix(snes,((PetscObject)this)->prefix);CHKERRQ(ierr);
 
-  // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
-  // methods via SSAFEFunction and SSAFEJ
-  ierr = DASetLocalFunction(SSADA,(DALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
-  ierr = DASetLocalJacobian(SSADA,(DALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
-  callback_data.da = SSADA;  callback_data.ssa = this;
-  ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data);CHKERRQ(ierr);
-  ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data);CHKERRQ(ierr);
+  // Default of maximum 200 iterations; possibly overridded by commandline
+  PetscInt snes_max_it = 200;
+  ierr = SNESSetTolerances(snes,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT,
+                           snes_max_it,PETSC_DEFAULT);
+  // ierr = SNESSetOptionsPrefix(snes,((PetscObject)this)->prefix);CHKERRQ(ierr);
 
   ierr = SNESSetFromOptions(snes);CHKERRQ(ierr);
 
@@ -124,7 +121,6 @@ PetscErrorCode SSAFEM::solve()
   char           filename[PETSC_MAX_PATH_LEN];
   PetscTruth     flg;
 
-  PetscFunctionBegin;
   ierr = PetscOptionsGetString(NULL, "-ssa_view", filename,
                                PETSC_MAX_PATH_LEN, &flg); CHKERRQ(ierr);
   if (flg) {
@@ -138,6 +134,14 @@ PetscErrorCode SSAFEM::solve()
     ierr = VecView(SSAX,viewer);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
   }
+
+  // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
+  // methods via SSAFEFunction and SSAFEJ
+  ierr = DASetLocalFunction(SSADA,(DALocalFunction1)SSAFEFunction);CHKERRQ(ierr);
+  ierr = DASetLocalJacobian(SSADA,(DALocalFunction1)SSAFEJacobian);CHKERRQ(ierr);
+  callback_data.da = SSADA;  callback_data.ssa = this;
+  ierr = SNESSetFunction(snes, r,    SNESDAFormFunction,   &callback_data);CHKERRQ(ierr);
+  ierr = SNESSetJacobian(snes, J, J, SNESDAComputeJacobian,&callback_data);CHKERRQ(ierr);
 
   stdout_ssa = "";
   if (getVerbosityLevel() >= 2) 
@@ -177,7 +181,7 @@ PetscErrorCode SSAFEM::solve()
     ierr = VecView(SSAX,viewer);CHKERRQ(ierr);
     ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
   }
-  PetscFunctionReturn(0);
+  return 0;
 }
 
 //! Initialize stored data from the coefficients in the SSA.  Called by SSAFEM::solve.
@@ -202,7 +206,7 @@ PetscErrorCode SSAFEM::setup()
   {
     Enth_q[q] = new PetscReal[Mz];
   }
-
+  
   ierr = enthalpy->begin_access();CHKERRQ(ierr);
   ierr = surface->get_array(h);CHKERRQ(ierr);
   ierr = thickness->get_array(H);CHKERRQ(ierr);
@@ -271,7 +275,6 @@ PetscErrorCode SSAFEM::setup()
         {
           SETERRQ(1,"hardness made a NaN!");
         }
-
       }
     }
   }
@@ -285,6 +288,7 @@ PetscErrorCode SSAFEM::setup()
   {
     delete [] Enth_q[q];
   }
+
   return 0;
 }
 
@@ -312,7 +316,7 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
   *nuH  *=  2;
   if (dNuH) *dNuH *= 2;
   
-  if (Floating(ice,ocean_rho,feS->H,feS->b)) {
+  if (Floating(ice,ocean_rho,feS->H,feS->b) ) {
     // The ice is floating here so there is no friction. Note that the purpose
     // of checking flotation this way is to get subgrid resolution of stress in
     // the vicinity of the grounding line. According to Goldberg et. al. 2009
@@ -480,6 +484,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
     }
     ierr = PetscSynchronizedFlush(grid.com);CHKERRQ(ierr);
   }
+
   return 0;
 }
 
@@ -632,13 +637,32 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
   PetscTruth monitor_jacobian;
   ierr = PetscOptionsHasName(NULL,"-ssa_monitor_jacobian",&monitor_jacobian);CHKERRQ(ierr);
   if (monitor_jacobian) {
-    ierr = PetscPrintf(grid.com,
-                       "SSA Jacobian\n");
-    CHKERRQ(ierr);
-    ierr = MatView(Jac,PETSC_VIEWER_STDOUT_WORLD);
+    PetscViewer    viewer;
+    
+    char           file_name[PETSC_MAX_PATH_LEN];
+    PetscInt iter;
+    ierr = SNESGetIterationNumber(snes,&iter);
+    snprintf(file_name,  PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m",iter);
+
+      ierr = verbPrintf(2, grid.com, 
+                 "writing Matlab-readable file for SSAFEM system A xsoln = rhs to file `%s' ...\n",
+                 file_name); CHKERRQ(ierr);
+      ierr = PetscViewerCreate(grid.com, &viewer);CHKERRQ(ierr);
+      ierr = PetscViewerSetType(viewer, PETSC_VIEWER_ASCII);CHKERRQ(ierr);
+      ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);CHKERRQ(ierr);
+      ierr = PetscViewerFileSetName(viewer, file_name);CHKERRQ(ierr);
+      
+      ierr = PetscObjectSetName((PetscObject) Jac,"A"); CHKERRQ(ierr);
+      ierr = MatView(Jac, viewer);CHKERRQ(ierr);
+
+    // ierr = PetscPrintf(grid.com,
+    //                    "SSA Jacobian\n");
+    // CHKERRQ(ierr);
+    // ierr = MatView(Jac,PETSC_VIEWER_STDOUT_WORLD);
   }
 
   ierr = MatSetOption(Jac,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);
+
 
   PetscFunctionReturn(0);
 }

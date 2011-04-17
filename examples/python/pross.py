@@ -35,13 +35,13 @@ DEFAULT_nuH = DEFAULT_MIN_THICKNESS * DEFAULT_CONSTANT_HARDNESS_FOR_SSA / \
 #          30 MPa yr for \bar\nu
 
 class pross(PISM.ssa.SSATestCase):
-  def __init__(self,comm,rank,size,config,Mx,My,boot_file,riggs_file):
+  def __init__(self,Mx,My,boot_file,riggs_file):
     # Set the file names so that grid construction knows where to find
     # the boot_file
     self.boot_file = boot_file
     self.riggs_file = riggs_file
 
-    PISM.ssa.SSATestCase.__init__(self,comm,rank,size,config,Mx,My)
+    PISM.ssa.SSATestCase.__init__(self,Mx,My)
 
     # the superclass built us a grid.
     grid = self.grid
@@ -229,43 +229,44 @@ number of RIGGS points in computed ice shelf region = %8.2f""", length , g_goodp
 
 
 # The main code for a run follows:
+if __name__ == '__main__':
+  context = PISM.Context()
+  com = context.com
 
-com = PETSc.COMM_WORLD
-rank = PETSc.Comm.getRank(com)
-size = PETSc.Comm.getSize(com)
-
-PISM.set_abort_on_sigint(True)
-PISM.verbosityLevelFromOptions()
-PISM.verbPrintf(2,com,"PROSS %s (EISMINT-Ross diagnostic velocity computation mode)\n", PISM.PISM_Revision) 
-PISM.stop_on_version_option()
-usage = \
-"""  pross -boot_file IN.nc -Mx number -My number [-o file.nc] [-riggs file.nc]
-where:
--boot_file  IN.nc is input file in NetCDF format: contains PISM-written model state
-  -Mx         number of grid points in the x direction
-  -My         number of grid points in the y direction
-  -riggs      read RIGGS data from a file
-notes:
-  * -boot_file is required
+  PISM.set_abort_on_sigint(True)
+  PISM.verbosityLevelFromOptions()
+  PISM.verbPrintf(2,com,"PROSS %s (EISMINT-Ross diagnostic velocity computation mode)\n",
+                  PISM.PISM_Revision) 
+  PISM.stop_on_version_option()
+  usage = \
+"""pross -boot_file IN.nc -Mx number -My number [-o file.nc] [-riggs file.nc]
+  where:
+    -boot_file  IN.nc is input file in NetCDF format: 
+                contains PISM-written model state
+    -Mx         number of grid points in the x direction
+    -My         number of grid points in the y direction
+    -riggs      read RIGGS data from a file
+  notes:
+    * -boot_file is required
 """
 
-PISM.show_usage_check_req_opts(com,"pross",["-boot_file"],usage)
+  PISM.show_usage_check_req_opts(com,"pross",["-boot_file"],usage)
 
-config = PISM.NCConfigVariable(); overrides = PISM.NCConfigVariable();
-PISM.init_config(com, rank, config, overrides)
-config.set_flag("use_ssa_velocity", True)
-config.set_flag("use_ssa_when_grounded", False)
-config.set_flag("use_constant_nuh_for_ssa", False)
-config.set("epsilon_ssa", 0.0)
+  config = context.config()
+  config.set_flag("use_ssa_velocity", True)
+  config.set_flag("use_ssa_when_grounded", False)
+  config.set_flag("use_constant_nuh_for_ssa", False)
+  config.set("epsilon_ssafd", 0.0)
 
-for o in PISM.OptionsGroup(com,"","PROSS"):
-  Mx = PISM.optionsInt("-Mx","Number of grid points in the X-direction",default=None)
-  My = PISM.optionsInt("-My","Number of grid points in the X-direction",default=None)
-  boot_file = PISM.optionsString("-boot_file","file to bootstrap from")
-  riggs_file = PISM.optionsString("-riggs","file with riggs measurements")
-  output_file = PISM.optionsString("-o","output file",default="ross_computed.nc")
+  for o in PISM.OptionsGroup(com,"","PROSS"):
+    Mx = PISM.optionsInt("-Mx","Number of grid points in the X-direction",default=None)
+    My = PISM.optionsInt("-My","Number of grid points in the X-direction",default=None)
+    boot_file = PISM.optionsString("-boot_file","file to bootstrap from")
+    riggs_file = PISM.optionsString("-riggs","file with riggs measurements")
+    output_file = PISM.optionsString("-o","output file",default="ross_computed.nc")
 
-test_case = pross(com,rank,size,config,Mx,My,boot_file,riggs_file)
-test_case.solve()
-test_case.report()
-test_case.write(output_file)
+  test_case = pross(Mx,My,boot_file,riggs_file)
+  test_case.solve()
+  test_case.report()
+  test_case.write(output_file)
+

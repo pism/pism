@@ -264,6 +264,8 @@ public:
   void localToGlobal(PetscInt k, PetscInt *i, PetscInt *j);
 
   virtual void addLocalResidualBlock(const PISMVector2 *y, PISMVector2 **yg);
+  virtual void addLocalResidualBlock(const PetscScalar *y, PetscScalar **yg);
+
   virtual PetscErrorCode addLocalJacobianBlock(const PetscReal *K, Mat J);
   virtual PetscErrorCode setJacobianDiag(PetscInt i, PetscInt j, const PetscReal *K, Mat J);
 
@@ -377,7 +379,7 @@ public:
   
   FEQuadrature();
 
-  void init(const IceGrid &g); // FIXME Allow a length scale to be specified.
+  void init(const IceGrid &g,PetscScalar L=1.); // FIXME Allow a length scale to be specified.
 
   const FEFunctionGerm (*testFunctionValues())[Nq];  
   const FEFunctionGerm *testFunctionValues(PetscInt q);
@@ -392,6 +394,7 @@ public:
 
   void computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals);
   void computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals, PetscReal (*Dv)[3]);  
+  void computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals, PISMVector2 *dx, PISMVector2 *dy);  
   void computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, PISMVector2 const*const*xg,  
                                    PISMVector2 *vals);
   void computeTrialFunctionValues( PetscInt i, PetscInt j, const FEDOFMap &dof, PISMVector2 const*const*xg,  

@@ -92,22 +92,17 @@ class testj(PISM.ssa.SSAExactTestCase):
 
 
 # The main code for a run follows:
+if __name__ == '__main__':
+  context = PISM.Context()
 
-com  = PETSc.COMM_WORLD
-rank = PETSc.Comm.getRank(com)
-size = PETSc.Comm.getSize(com)
+  for o in PISM.OptionsGroup(context.com,"","Test J"):
+    Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
+    My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
+    output_file = PISM.optionsString("-o","output file",default="testj.nc")
+    verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
 
-config = PISM.NCConfigVariable(); overrides = PISM.NCConfigVariable();
-
-for o in PISM.OptionsGroup(com,"","Test J"):
-  Mx = PISM.optionsInt("-Mx","Number of grid points in x-direction",default=61)
-  My = PISM.optionsInt("-My","Number of grid points in y-direction",default=61)
-  output_file = PISM.optionsString("-o","output file",default="testj.nc")
-  verbosity = PISM.optionsInt("-verbose","verbosity level",default=3)
-
-PISM.init_config(com, rank, config, overrides)
-PISM.setVerbosityLevel(verbosity)
-tc = testj(com,rank,size,config,Mx,My)
-tc.solve()
-tc.report()
-tc.write(output_file)
+  PISM.setVerbosityLevel(verbosity)
+  tc = testj(Mx,My)
+  tc.solve()
+  tc.report()
+  tc.write(output_file)

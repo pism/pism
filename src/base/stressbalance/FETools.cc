@@ -40,6 +40,7 @@ FEElementMap::FEElementMap(const IceGrid &g)
   
   if( !(g.periodicity & X_PERIODIC) )
   {
+    verbPrintf(1,g.com,"not X-periodic!\n");
     // Leftmost element has x-index 0.
     if(xs < 0){
       xs = 0;
@@ -155,6 +156,13 @@ void FEDOFMap::addLocalResidualBlock(const PISMVector2 *y, PISMVector2 **yg)
     yg[m_row[k].j][m_row[k].i].v += y[k].v;
   }
 }
+void FEDOFMap::addLocalResidualBlock(const PetscScalar *y, PetscScalar **yg)
+{
+  for (int k=0; k<Nk; k++) {
+    if (m_row[k].i == kDofInvalid || m_row[k].j == kDofInvalid) continue;
+    yg[m_row[k].j][m_row[k].i] += y[k];
+  }
+}
 
 //! Add the contributions of an element-local Jacobian to the global Jacobian vector.
 /*! The element-local Jacobian should be givnen as a row-major array of Nk*Nk values in the
@@ -196,12 +204,12 @@ void FEQuadrature::getWeightedJacobian(PetscReal *jxw)
 }
 
 //! Obtain the weights \f$w_q\f$ for quadrature.
-void FEQuadrature::init(const IceGrid &grid)
+void FEQuadrature::init(const IceGrid &grid,PetscScalar L)
 {
   // Since we use uniform cartesian coordinates, the Jacobian is constant and diagonal on every element.
   // Note that the reference element is \f$ [-1,1]^2 \f$ hence the extra factor of 1/2.
-  PetscReal jacobian_x = 0.5*grid.dx;///ref.Length();
-  PetscReal jacobian_y = 0.5*grid.dy;///ref.Length();
+  PetscReal jacobian_x = 0.5*grid.dx/L;///ref.Length();
+  PetscReal jacobian_y = 0.5*grid.dy/L;///ref.Length();
   m_jacobianDet = jacobian_x*jacobian_y;
 
   FEShapeQ1 shape;
@@ -325,6 +333,31 @@ void FEQuadrature::computeTrialFunctionValues( const PISMVector2 *x,  PISMVector
     }
   }  
 }
+
+/*! \brief Compute the values and symmetric gradient at the quadrature points of a vector-valued 
+finite-element function with element-local degrees of freedom \a x.*/
+/*! There should be room for FEQuadrature::Nq values in the output vectors \a vals, \ dx, and \a dy. 
+Each element of \a dx is the derivative of the vector-valued finite-element function in the x direction,
+and similarly for \a dy.
+*/
+void FEQuadrature::computeTrialFunctionValues( const PISMVector2 *x,  PISMVector2 *vals, PISMVector2 *dx, PISMVector2 *dy)
+{
+  for (int q=0; q<Nq; q++) {
+    vals[q].u = 0; vals[q].v = 0;
+    dx[q].u = 0; dx[q].v = 0;
+    dy[q].u = 0; dy[q].v = 0;
+    const FEFunctionGerm *test = m_germs[q];
+    for(int k=0; k<Nk; k++) {
+      vals[q].u += test[k].val * x[k].u;
+      vals[q].v += test[k].val * x[k].v;
+      dx[q].u += test[k].dx * x[k].u;
+      dx[q].v += test[k].dx * x[k].v;
+      dy[q].u += test[k].dy * x[k].u;
+      dy[q].v += test[k].dy * x[k].v;
+    }
+  }    
+}
+  
 
 /*! \brief Compute the values at the quadrature points of a vector-valued 
 finite-element function on element (\a i,\a j) with global degrees of freedom \a xg.*/

@@ -31,6 +31,8 @@
 #include "stressbalance/SSAFEM.hh"
 #include "stressbalance/SSAFD.hh"
 #include "pism_python.hh"
+#include "iceModel.hh"
+#include "SNESProblem.hh"
 %}
 
 // SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it
@@ -176,13 +178,13 @@ typedef int PetscInt; // YUCK.
 
 %apply vector<PetscInt> & OUTPUT {vector<PetscInt> &result};
 %apply vector<PetscReal> & OUTPUT {vector<PetscReal> &result};
+%apply vector<string> & OUTPUT {vector<string> & result};
  
 %apply int &OUTPUT {int &result}
 
 %apply PetscInt & OUTPUT {PetscInt & result};
 %apply PetscReal & OUTPUT {PetscReal & result};
 %apply bool & OUTPUT {bool & is_set, bool & result, bool & flag};
-%apply vector<PetscInt> & OUTPUT {vector<PetscInt> & result};
 
 
 %Pism_pointer_reference_is_always_output(IceModelVec2S)
@@ -286,7 +288,12 @@ typedef int PetscInt; // YUCK.
         for i in xrange(self.xs,self.xs+self.xm):
             for j in xrange(self.ys,self.ys+self.ym):
                 yield (i,j)
+    def points_with_ghosts(self,nGhosts=0):
+        for i in xrange(self.xs-nGhosts,self.xs+self.xm+nGhosts):
+            for j in xrange(self.ys-nGhosts,self.ys+self.ym+nGhosts):
+                yield (i,j)
     }
+
 }
 
 // FIXME: the the following code blocks there are explicit calls to Py????_Check.  There seems to 
@@ -359,7 +366,9 @@ typedef int PetscInt; // YUCK.
 }
 
 
-
+%include "stressbalance/SNESProblem.hh"
+%template(SNESScalarProblem) SNESProblem<1,PetscScalar>;
+%template(SNESVectorProblem) SNESProblem<2,PISMVector2>;
 
 // Now the header files for the PISM source code we want to wrap.
 // By default, SWIG does not wrap stuff included from an include file,
@@ -381,6 +390,8 @@ typedef int PetscInt; // YUCK.
 %include "rheology/flowlaws.hh"
 %include "EnthalpyConverter.hh"
 %include "stressbalance/ShallowStressBalance.hh"
+
+%include "iceModel.hh"
 
 // The template used in SSA.hh needs to be instantiated in SWIG before
 // it is used.
