@@ -237,8 +237,8 @@ FIXME:  makes decisions based on thickness that might better use mask?
 
 FIXME:  need to answer: strain rates will be derived from SSA velocities. Is there ghost communication needed?
 */
-PetscErrorCode SSA::compute_principal_strain_rates(
-                      IceModelVec2S &result_e1, IceModelVec2S &result_e2) {
+PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
+                                                   IceModelVec2S &result_e2) {
   PetscErrorCode ierr;
   PetscScalar    dx = grid.dx, dy = grid.dy;
 
@@ -250,6 +250,13 @@ PetscErrorCode SSA::compute_principal_strain_rates(
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+
+      if ( velocity(i,j).u == 0.0 || velocity(i,j).v == 0.0) {
+        result_e1(i,j) = 0.0;
+        result_e2(i,j) = 0.0;
+        continue;
+      }
+
       //centered difference scheme; strain in units s-1
       PetscScalar
         u_x = (velocity(i+1,j).u - velocity(i-1,j).u) / (2 * dx),
@@ -257,46 +264,43 @@ PetscErrorCode SSA::compute_principal_strain_rates(
         v_x = (velocity(i+1,j).v - velocity(i-1,j).v) / (2 * dx),
         v_y = (velocity(i,j+1).v - velocity(i,j-1).v) / (2 * dy);
 
-      result_e1(i,j) = 0.0;
-      result_e2(i,j) = 0.0;
-      if ( velocity(i,j).u != 0.0 && velocity(i,j).v != 0.0) {
-    	  //inward scheme at the ice-shelf front
-    	  if (H(i+1,j)==0.0) {
-    	    u_x = (velocity(i,j).u - velocity(i-1,j).u) / dx;
-    	    v_x = (velocity(i,j).v - velocity(i-1,j).v) / dx;
-    	  }
-    	  if (H(i-1,j)==0.0) {
-    	    u_x = (velocity(i+1,j).u - velocity(i,j).u) / dx;
-    	    v_x = (velocity(i+1,j).v - velocity(i,j).v) / dx;
-    	  }
-    	  if (H(i-1,j)==0.0) {
-    	    u_y = (velocity(i,j).u - velocity(i,j-1).u) / dy;
-    	    v_y = (velocity(i,j).v - velocity(i,j-1).v) / dy;
-    	  }
-    	  if (H(i-1,j)==0.0) {
-    	    u_y = (velocity(i,j+1).u - velocity(i,j).u) / dy;
-    	    v_y = (velocity(i,j+1).v - velocity(i,j).v) / dy;
-    	  }
-
-    	  // ice nose case
-    	  if (H(i,j-1)==0.0 && H(i,j+1)==0.0) {
-    	    u_y = 0.0;
-    	    v_y = 0.0;
-    	  }
-    	  if (H(i+1,j)==0.0 && H(i-1,j)==0.0) {
-    	    u_x = 0.0;
-    	    v_x = 0.0;
-    	  }
-
-    	  const PetscScalar A   = 0.5 * (u_x + v_y),  // A = (1/2) trace(D)
-    	                    B   = 0.5 * (u_x - v_y),
-    	                    Dxy = 0.5 * (v_x + u_y),  // B^2 = A^2 - u_x v_y
-    	                    q   = sqrt(PetscSqr(B) + PetscSqr(Dxy));
-    	  result_e1(i,j) = A + q;
-    	  result_e2(i,j) = A - q; // q >= 0 so e1 >= e2
+      //inward scheme at the ice-shelf front
+      if (H(i+1,j)==0.0) {
+        u_x = (velocity(i,j).u - velocity(i-1,j).u) / dx;
+        v_x = (velocity(i,j).v - velocity(i-1,j).v) / dx;
       }
-    }
-  }
+      if (H(i-1,j)==0.0) {
+        u_x = (velocity(i+1,j).u - velocity(i,j).u) / dx;
+        v_x = (velocity(i+1,j).v - velocity(i,j).v) / dx;
+      }
+      if (H(i-1,j)==0.0) {
+        u_y = (velocity(i,j).u - velocity(i,j-1).u) / dy;
+        v_y = (velocity(i,j).v - velocity(i,j-1).v) / dy;
+      }
+      if (H(i-1,j)==0.0) {
+        u_y = (velocity(i,j+1).u - velocity(i,j).u) / dy;
+        v_y = (velocity(i,j+1).v - velocity(i,j).v) / dy;
+      }
+
+      // ice nose case
+      if (H(i,j-1)==0.0 && H(i,j+1)==0.0) {
+        u_y = 0.0;
+        v_y = 0.0;
+      }
+      if (H(i+1,j)==0.0 && H(i-1,j)==0.0) {
+        u_x = 0.0;
+        v_x = 0.0;
+      }
+
+      const PetscScalar A = 0.5 * (u_x + v_y),  // A = (1/2) trace(D)
+        B   = 0.5 * (u_x - v_y),
+        Dxy = 0.5 * (v_x + u_y),  // B^2 = A^2 - u_x v_y
+        q   = sqrt(PetscSqr(B) + PetscSqr(Dxy));
+      result_e1(i,j) = A + q;
+      result_e2(i,j) = A - q; // q >= 0 so e1 >= e2
+
+    } // j
+  }   // i
 
   ierr = velocity.end_access(); CHKERRQ(ierr);
   ierr = H.end_access(); CHKERRQ(ierr);

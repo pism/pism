@@ -66,72 +66,78 @@ PetscErrorCode IceModel::eigenCalving() {
 
   if(dx != dy) {
     ierr = PetscPrintf(grid.com,
-                       "PISMPIK_ERROR: Calvingrate using a non - quadratic grid does not work (yet), "
+                       "PISMPIK_ERROR: Calvingrate using a non-quadratic grid does not work (yet), "
                        " since it has no direction!!!\n");
     PISMEnd();
   }
 
-  // Compute sum/average of strain-rate eigenvalues in adjacent floating gird
-  // cells to be used for eigencalving
-  PetscScalar eigen1 = 0.0, eigen2 = 0.0;
-
-  // Distance from calving front, where straine rate is evaluated
-  PetscInt fromedge = 2;
-
-  // Counting adjacent floating boxes (with distance "fromedge")
-  PetscInt countFromEdge = 0;
-
-  // Counting directly adjacent floating boxes
-  PetscInt countDirectNeighbors = 0;
-
-  // Neighbor - average ice thickness
-  PetscScalar Hav = 0.0; // is calculated here as average over direct neighbors
+  // Distance from calving front where straine rate is evaluated
+  PetscInt offset = 2;
 
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+      // Average of strain-rate eigenvalues in adjacent floating gird cells to
+      // be used for eigencalving
+      PetscScalar eigen1 = 0.0, eigen2 = 0.0;
+
+      // Number of directly adjacent floating boxes
+      PetscInt N = 0;
+
+      // Neighbor-averaged ice thickness
+      PetscScalar H_average = 0.0; // is calculated here as average over direct neighbors
+
+      // Counting adjacent floating boxes (with distance "offset")
+      PetscInt M = 0;
 
       // find partially filled or empty grid boxes on the icefree ocean, which
       // have floating ice neighbors after massContExplicitStep (mask not
       // updated)
-      bool nextToNewFloatingCell =
+      bool next_to_floating =
         ((vH(i + 1, j) > 0.0 && (vbed(i + 1, j) < (sea_level - ice_rho / ocean_rho*vH(i + 1, j)))) ||
          (vH(i - 1, j) > 0.0 && (vbed(i - 1, j) < (sea_level - ice_rho / ocean_rho*vH(i - 1, j)))) ||
          (vH(i, j + 1) > 0.0 && (vbed(i, j + 1) < (sea_level - ice_rho / ocean_rho*vH(i, j + 1)))) ||
          (vH(i, j - 1) > 0.0 && (vbed(i, j - 1) < (sea_level - ice_rho / ocean_rho*vH(i, j - 1)))));
 
-      bool hereEdge = ( vH(i, j) == 0.0 && vbed(i, j) < sea_level);
+      bool ice_free_ocean = ( vH(i, j) == 0.0 && vbed(i, j) < sea_level );
 
-      Hav = 0.0; eigen1 = 0.0; eigen2 = 0.0; countFromEdge = 0, countDirectNeighbors = 0;
+      H_average = 0.0; eigen1 = 0.0; eigen2 = 0.0; M = 0, N = 0;
 
-      if (hereEdge && nextToNewFloatingCell) {
+      if (ice_free_ocean && next_to_floating) {
 
-        if (vMask(i + 1, j) == MASK_FLOATING ) { countDirectNeighbors = 1; Hav = vH(i + 1, j); }
-        if (vMask(i - 1, j) == MASK_FLOATING ) { countDirectNeighbors += 1; Hav += vH(i - 1, j); }
-        if (vMask(i, j + 1) == MASK_FLOATING ) { countDirectNeighbors += 1; Hav += vH(i, j + 1); }
-        if (vMask(i, j - 1) == MASK_FLOATING ) { countDirectNeighbors += 1; Hav += vH(i, j - 1); }
-        if (countDirectNeighbors > 0) {
-          Hav = Hav / countDirectNeighbors;
+        if (vMask(i + 1, j) == MASK_FLOATING ) { N += 1; H_average += vH(i + 1, j); }
+        if (vMask(i - 1, j) == MASK_FLOATING ) { N += 1; H_average += vH(i - 1, j); }
+        if (vMask(i, j + 1) == MASK_FLOATING ) { N += 1; H_average += vH(i, j + 1); }
+        if (vMask(i, j - 1) == MASK_FLOATING ) { N += 1; H_average += vH(i, j - 1); }
+        if (N > 0)
+          H_average /= N;
+
+        if (vMask(i + offset, j) == MASK_FLOATING ){
+          eigen1 += vPrinStrain1(i + offset, j);
+          eigen2 += vPrinStrain2(i + offset, j);
+          M += 1;
         }
 
-        if (vMask(i + fromedge, j) == MASK_FLOATING ){
-          eigen1 = vPrinStrain1(i + fromedge, j); //Hav = vH(i + fromedge, j);
-          eigen2 = vPrinStrain2(i + fromedge, j); countFromEdge += 1;
+        if (vMask(i - offset, j) == MASK_FLOATING ){
+          eigen1 += vPrinStrain1(i - offset, j);
+          eigen2 += vPrinStrain2(i - offset, j);
+          M += 1;
         }
-        if (vMask(i - fromedge, j) == MASK_FLOATING ){
-          eigen1 += vPrinStrain1(i - fromedge, j); //Hav += vH(i - fromedge, j);
-          eigen2 += vPrinStrain2(i - fromedge, j); countFromEdge += 1;
+
+        if (vMask(i, j + offset) == MASK_FLOATING ){
+          eigen1 += vPrinStrain1(i, j + offset);
+          eigen2 += vPrinStrain2(i, j + offset);
+          M += 1;
         }
-        if (vMask(i, j + fromedge) == MASK_FLOATING ){
-          eigen1 += vPrinStrain1(i, j + fromedge); //Hav += vH(i, j + fromedge);
-          eigen2 += vPrinStrain2(i, j + fromedge); countFromEdge += 1;
+
+        if (vMask(i, j - offset) == MASK_FLOATING ){
+          eigen1 += vPrinStrain1(i, j - offset);
+          eigen2 += vPrinStrain2(i, j - offset);
+          M += 1;
         }
-        if (vMask(i, j - fromedge) == MASK_FLOATING ){
-          eigen1 += vPrinStrain1(i, j - fromedge); //Hav += vH(i, j - fromedge);
-          eigen2 += vPrinStrain2(i, j - fromedge); countFromEdge += 1;
-        }
-        if (countFromEdge > 0) {
-          eigen1 = eigen1 / countFromEdge; eigen2 = eigen2 / countFromEdge;
-          //Hav = Hav / countFromEdge;
+
+        if (M > 0) {
+          eigen1 /= M;
+          eigen2 /= M;
         }
 
 
@@ -147,13 +153,11 @@ PetscErrorCode IceModel::eigenCalving() {
           // hence, eigenCalvFactor has units [m*s]
         } else calvrateHorizontal = 0.0;
 
-
         // calculate mass loss with respect to the associated ice thickness and the grid size:
-        PetscScalar calvrate = calvrateHorizontal * Hav / dx; // in m/s
+        PetscScalar calvrate = calvrateHorizontal * H_average / dx; // in m/s
 
         // apply calving rate at partially filled or empty grid cells
         if (calvrate > 0.0) {
-          //ierr = verbPrintf(5, grid.com, "!!! Calvrate=%f with Hav=%f at %d, %d \n", calvrate*secpera, Hav, i, j);
           //PetscScalar Href_old = vHref(i, j);
           //vDiffCalvRate(i, j) = 0.0;
           vHref(i, j) -= calvrate * dt; // in m
@@ -161,8 +165,8 @@ PetscErrorCode IceModel::eigenCalving() {
             vDiffCalvRate(i, j) =  - vHref(i, j) / dt;// in m/s, means additional ice loss
           }
           vHref(i, j) = 0.0;
-          if(countDirectNeighbors > 0){
-            vDiffCalvRate(i, j) = vDiffCalvRate(i, j) / countDirectNeighbors;
+          if(N > 0){
+            vDiffCalvRate(i, j) = vDiffCalvRate(i, j) / N;
           }
         }
       }
