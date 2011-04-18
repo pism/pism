@@ -303,9 +303,16 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.scalar_from_option("thk_eff_H_low","thk_eff_H_low");  CHKERRQ(ierr);
   // pure number :
   ierr = config.scalar_from_option("thk_eff_reduced","thk_eff_reduced");  CHKERRQ(ierr);
+  
+  ierr = config.string_from_option("title", "run_title"); CHKERRQ(ierr);
+  ierr = config.string_from_option("institution", "institution"); CHKERRQ(ierr);
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
+  global_attributes.set_string("title", config.get_string("run_title"));
+  global_attributes.set_string("institution", config.get_string("institution"));
+  global_attributes.set_string("command", pism_args_string());
+  
   return 0;
 }
 

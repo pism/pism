@@ -475,6 +475,12 @@ netcdf pism_config {
 
 // Strings:
 
+   pism_config:run_title = "";
+   pism_config:run_title_doc = "Free-form string containing a concise description of the current run. This string is written to output files as the 'title' global attribute.";
+
+   pism_config:institution = "";
+   pism_config:institution_doc = "Institution name. This string is written to output files as the 'institution' global attribute.";
+
    pism_config:reference_date = "1-1-1";
    pism_config:reference_date_doc = "year-month-day; reference date used in PISM output files";
 

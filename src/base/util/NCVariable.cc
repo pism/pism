@@ -1155,6 +1155,20 @@ PetscErrorCode NCConfigVariable::scalar_from_option(string name, string paramete
   return 0;
 }
 
+PetscErrorCode NCConfigVariable::string_from_option(string name, string parameter) {
+  PetscErrorCode ierr;
+  string value = get_string(parameter);
+  bool flag;
+  
+  ierr = PISMOptionsString("-" + name,
+                           get_string(parameter + "_doc"),
+                           value, flag); CHKERRQ(ierr);
+  if (flag)
+    this->set_string(parameter, value);
+  
+  return 0;
+}
+
 //! Print all the attributes of a configuration variable.
 PetscErrorCode NCConfigVariable::print(PetscInt vt) const {
   PetscErrorCode ierr;

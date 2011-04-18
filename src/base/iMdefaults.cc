@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -65,7 +65,6 @@ PetscErrorCode IceModel::setDefaults() {
   // frequently used physical constants and parameters:
   standard_gravity = config.get("standard_gravity");
 
-  // ssa_velocities_are_valid might get overwritten while reading an -i file
   global_attributes.set_string("Conventions", "CF-1.4");
   global_attributes.set_string("source", string("PISM ") + PISM_Revision);
 

@@ -111,6 +111,7 @@ public:
   virtual void   set_flag(string, bool);
   virtual PetscErrorCode flag_from_option(string, string);
   virtual PetscErrorCode scalar_from_option(string, string);
+  virtual PetscErrorCode string_from_option(string, string);
   virtual void import_from(const NCConfigVariable &other);
   virtual void update_from(const NCConfigVariable &other);
 

@@ -471,9 +471,15 @@ string pism_args_string() {
   char **argv;
   PetscGetArgs(&argc, &argv);
 
-  string cmdstr;
-  for (int j = 0; j < argc; j++)
-    cmdstr += string(" ") + argv[j];
+  string cmdstr, argument;
+  for (int j = 0; j < argc; j++) {
+    argument = argv[j];
+
+    // enclose arguments containing spaces with double quotes:
+    if (argument.find(" ") != string::npos) argument = "\"" + argument + "\"";
+
+    cmdstr += string(" ") + argument;
+  }
   cmdstr += "\n";
 
   return cmdstr;
