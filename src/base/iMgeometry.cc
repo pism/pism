@@ -346,7 +346,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
         //   X = vHref_old + (M - S) * dt * X / Hav.
         // where M = acab and S = shelfbaseflux for floating ice.  Solving for X we get
         //   X = vHref_old / (1.0 - (M - S) * dt * Hav))
-        vHref(i, j) = vHref(i, j) / (1.0 - (acab(i,i) - S) * dt / Hav);
+        vHref(i, j) = vHref(i, j) / (1.0 - (acab(i, j) - S) * dt / Hav);
 
         const PetscScalar coverageRatio = vHref(i, j) / Hav;
 
