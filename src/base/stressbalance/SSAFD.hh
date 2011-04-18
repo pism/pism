@@ -63,11 +63,14 @@ protected:
 
   virtual PetscErrorCode update_nuH_viewers();
 
+  virtual PetscErrorCode set_diagonal_matrix_entry(Mat A, int i, int j,
+                                                   PetscScalar value, InsertMode mode);
   // objects used internally
   IceModelVec2Stag hardness, nuH, nuH_old;
   KSP SSAKSP;
   Mat SSAStiffnessMatrix;
   Vec SSARHS;
+  bool use_cfbc;
 
   bool view_nuh;
   PetscViewer nuh_viewer;
@@ -79,7 +82,7 @@ class SSAFD_PIK : public SSAFD
 {
 public:
   SSAFD_PIK(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
-             const NCConfigVariable &c)
+            const NCConfigVariable &c)
     : SSAFD(g, b, i, e, c) {}
   virtual ~SSAFD_PIK() {}
 

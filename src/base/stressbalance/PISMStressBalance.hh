@@ -24,6 +24,7 @@
 #include "ShallowStressBalance.hh"
 #include "SSB_Modifier.hh"
 #include "PISMDiagnostic.hh"
+#include "PISMOcean.hh"
 
 //! The class defining PISM's interface to the shallow stress balance code.
 class PISMStressBalance : public PISMComponent_Diag
@@ -31,7 +32,7 @@ class PISMStressBalance : public PISMComponent_Diag
   friend class PSB_taud_mag;
 public:
   PISMStressBalance(IceGrid &g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod,
-                    const NCConfigVariable &config);
+                    PISMOceanModel *ocean, const NCConfigVariable &config);
   virtual ~PISMStressBalance();
 
   //! \brief Initialize the PISMStressBalance object.
@@ -118,6 +119,7 @@ protected:
 
   ShallowStressBalance *stress_balance;
   SSB_Modifier *modifier;
+  PISMOceanModel *ocean;
 };
 
 #endif /* _PISMSTRESSBALANCE_H_ */

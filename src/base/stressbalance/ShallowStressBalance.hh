@@ -37,6 +37,7 @@ public:
   {
     vel_bc = NULL; bc_locations = NULL; variables = NULL;
     max_u = max_v = 0.0;
+    sea_level = 0;
     allocate();
   }
 
@@ -54,6 +55,11 @@ public:
     bc_locations = &locations;
     return 0;
   }
+
+  //! \brief Set the sea level used to check for floatation. (Units: meters,
+  //! relative to the geoid.)
+  void set_sea_level_elevation(PetscReal new_sea_level)
+  { sea_level = new_sea_level; }
 
   // interface to the data provided by the stress balance object:
 
@@ -88,6 +94,7 @@ public:
 protected:
   virtual PetscErrorCode allocate();
 
+  PetscReal sea_level;
   PISMVars *variables;
   IceBasalResistancePlasticLaw &basal;
   IceFlowLaw &ice;

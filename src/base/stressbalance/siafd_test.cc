@@ -436,6 +436,7 @@ int main(int argc, char *argv[]) {
 
     PISMStressBalance stress_balance(grid,
                                      trivial_stress_balance, sia,
+                                     NULL, // no ocean model
                                      config);
 
     // fill the fields:

@@ -18,8 +18,8 @@
 
 #include "SSAFD.hh"
 
-SSA *SSAFD_PIKFactory(IceGrid &g, IceBasalResistancePlasticLaw &b, 
-                IceFlowLaw &i, EnthalpyConverter &ec, 
+SSA *SSAFD_PIKFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
+                IceFlowLaw &i, EnthalpyConverter &ec,
                 const NCConfigVariable &c)
 {
   return new SSAFD_PIK(g,b,i,ec,c);
@@ -30,7 +30,7 @@ PetscErrorCode SSAFD_PIK::init(PISMVars &vars) {
   PetscErrorCode ierr;
   ierr = SSAFD::init(vars); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com,
-                    "  [... including PIK CFBC implementation]\n"); CHKERRQ(ierr);  
+                    "  [... including PIK CFBC implementation]\n"); CHKERRQ(ierr);
 
   return 0;
 }
@@ -61,91 +61,71 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
     ierr = bc_locations->begin_access(); CHKERRQ(ierr);
   }
 
-  //IceModelVec2S &thk = *thickness; 
+  //IceModelVec2S &thk = *thickness;
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   //ierr = bed->begin_access(); CHKERRQ(ierr);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
+  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
-      PetscScalar   Ho = (*thickness)(i,j),
-        He = (*thickness)(i+1,j),
-        Hw = (*thickness)(i-1,j),
-        Hn = (*thickness)(i,j+1),
-        Hs = (*thickness)(i,j-1);				
-		
-      PetscTruth onIcefreeOcean=PETSC_FALSE;
-      if (Ho<=1.0) {  
-        onIcefreeOcean=PETSC_TRUE;
-      }		
-	
-      PetscTruth atBoundary=PETSC_FALSE;
-      if (Ho>100.0 && (He<=1.0 || Hw<=1.0 || Hs<=1.0 || Hn<=1.0)) {  //defined so far via ice thickness
-        atBoundary=PETSC_TRUE;
-      }
+      PetscScalar H_ij = (*thickness)(i,j),
+        H_e = (*thickness)(i + 1,j),
+        H_w = (*thickness)(i - 1,j),
+        H_n = (*thickness)(i,j + 1),
+        H_s = (*thickness)(i,j - 1);
+
+      bool onIcefreeOcean = H_ij <= 1.0;
+
+      //defined so far via ice thickness
+      bool atBoundary = H_ij > 100.0 && (H_e <= 1.0 || H_w <= 1.0 || H_s <= 1.0 || H_n <= 1.0);
 
       if (vel_bc && bc_locations && bc_locations->value(i,j) == 1) {
         // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
         //   this is where boundary value to SSA is set
-        MatStencil  row, col;
-        row.j = i; row.i = j; row.c = 0;
-        col.j = i; col.i = j; col.c = 0;
-        ierr = MatSetValuesStencil(A,1,&row,1,&col,&scaling,INSERT_VALUES); CHKERRQ(ierr);
-        row.c = 1;
-        col.c = 1;
-        ierr = MatSetValuesStencil(A,1,&row,1,&col,&scaling,INSERT_VALUES); CHKERRQ(ierr);
-
+        ierr = set_diagonal_matrix_entry(A, i, j, scaling, INSERT_VALUES); CHKERRQ(ierr);
         continue;
       }
 
       if (onIcefreeOcean) { // vanish ice velocities on the ice free ocean
-        MatStencil  row, col;
-        row.j = i; row.i = j; row.c = 0;
-        col.j = i; col.i = j; col.c = 0;
-        ierr = MatSetValuesStencil(A,1,&row,1,&col,&scaling,INSERT_VALUES); CHKERRQ(ierr);
-        row.c = 1;
-        col.c = 1;
-        ierr = MatSetValuesStencil(A,1,&row,1,&col,&scaling,INSERT_VALUES); CHKERRQ(ierr);
-      } else if (atBoundary) { 
-	
+        ierr = set_diagonal_matrix_entry(A, i, j, scaling, INSERT_VALUES); CHKERRQ(ierr);
+        continue;
+      }
+
+      if (atBoundary) {
         const PetscScalar dx2 = dx*dx, d4 = dx*dy*4, dy2 = dy*dy;
-		
-        const PetscScalar c_w = nuH(i-1,j,0);
-        const PetscScalar c_e = nuH(i,j,0);
-        const PetscScalar c_s = nuH(i,j-1,1);
-        const PetscScalar c_n = nuH(i,j,1);
 
-        //in i-direction 
-        PetscInt 	aMn=1, aPn=1,
-          aMM=1, aPP=1,
-          aMs=1, aPs=1;
-	
-        //in -j-direction
-        PetscInt 	bPw=1, bPP=1, bPe=1,
-          bMw=1, bMM=1, bMe=1;
+        const PetscScalar c_w = nuH(i - 1, j, 0);
+        const PetscScalar c_e = nuH(i, j, 0);
+        const PetscScalar c_s = nuH(i, j - 1, 1);
+        const PetscScalar c_n = nuH(i, j, 1);
 
+        //in i-direction
+        PetscInt aMn = 1, aPn = 1, aMM = 1, aPP = 1, aMs = 1, aPs = 1;
+
+        //in j-direction
+        PetscInt bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
 
         //direct adjacent neighbors
-        if (He<=1.0) aPP=0;
-        if (Hw<=1.0) aMM=0;
-        if (Hn<=1.0) bPP=0;
-        if (Hs<=1.0) bMM=0;
-	
+        if (H_e <= 1.0) aPP = 0;
+        if (H_w <= 1.0) aMM = 0;
+        if (H_n <= 1.0) bPP = 0;
+        if (H_s <= 1.0) bMM = 0;
+
         //neighbors in the corners
-        PetscScalar Hne = (*thickness)(i+1,j+1),
-          Hse = (*thickness)(i+1,j-1),
-          Hnw = (*thickness)(i-1,j+1),
-          Hsw = (*thickness)(i-1,j-1);
+        PetscScalar H_ne = (*thickness)(i + 1,j + 1),
+          H_se = (*thickness)(i + 1,j - 1),
+          H_nw = (*thickness)(i - 1,j + 1),
+          H_sw = (*thickness)(i - 1,j - 1);
 
         //for the each single boundary to decide, which derivative to drop
-        if (Hn<=1.0 || Hne<=1.0) aPn=0;
-        if (He<=1.0 || Hne<=1.0) bPe=0;
-        if (He<=1.0 || Hse<=1.0) bMe=0;
-        if (Hs<=1.0 || Hse<=1.0) aPs=0;
-        if (Hs<=1.0 || Hsw<=1.0) aMs=0;
-        if (Hw<=1.0 || Hsw<=1.0) bMw=0;
-        if (Hw<=1.0 || Hnw<=1.0) bPw=0;
-        if (Hn<=1.0 || Hnw<=1.0) aMn=0;
+        if (H_n <= 1.0 || H_ne <= 1.0) aPn = 0;
+        if (H_e <= 1.0 || H_ne <= 1.0) bPe = 0;
+        if (H_e <= 1.0 || H_se <= 1.0) bMe = 0;
+        if (H_s <= 1.0 || H_se <= 1.0) aPs = 0;
+        if (H_s <= 1.0 || H_sw <= 1.0) aMs = 0;
+        if (H_w <= 1.0 || H_sw <= 1.0) bMw = 0;
+        if (H_w <= 1.0 || H_nw <= 1.0) bPw = 0;
+        if (H_n <= 1.0 || H_nw <= 1.0) aMn = 0;
 
         const PetscInt sten = 14;//one more than default
         MatStencil  row, col[sten];
@@ -237,7 +217,7 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
           col[m].j = VI[m]; col[m].i = VJ[m], col[m].c = VC[m];
         }
         ierr = MatSetValuesStencil(A,1,&row,sten,col,valV,INSERT_VALUES); CHKERRQ(ierr);
-	
+
 	//the rest is just a copy of SSAFD
       } else {
         const PetscScalar dx2 = dx*dx, d4 = dx*dy*4, dy2 = dy*dy;
@@ -344,9 +324,9 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
     ierr = bc_locations->end_access(); CHKERRQ(ierr);
   }
 
-  ierr = vel.end_access(); CHKERRQ(ierr);  
+  ierr = vel.end_access(); CHKERRQ(ierr);
   ierr = mask->end_access(); CHKERRQ(ierr);
-  ierr = tauc->end_access(); CHKERRQ(ierr);  
+  ierr = tauc->end_access(); CHKERRQ(ierr);
   ierr = nuH.end_access(); CHKERRQ(ierr);
 
   ierr = thickness->end_access(); CHKERRQ(ierr);
@@ -363,13 +343,13 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
 PetscErrorCode SSAFD_PIK::assemble_rhs(Vec rhs) {
   PetscErrorCode ierr;
 
-  ierr = verbPrintf(3,grid.com, "SSAFD_PIK:assemble_rhs is called\n"); CHKERRQ(ierr);
+  ierr = verbPrintf(3, grid.com, "SSAFD_PIK:assemble_rhs is called\n"); CHKERRQ(ierr);
 
-  const PetscScalar   dx=grid.dx, dy=grid.dy;
-  PISMVector2     **rhs_uv;
+  const double dx = grid.dx, dy = grid.dy;
+  PISMVector2 **rhs_uv;
 
   // next constant not too sensitive, but must match value in assembleSSAMatrix():
-  const PetscScalar   scaling = 1.0e9;  // comparable to typical beta for an ice stream;
+  const double scaling = 1.0e9; // comparable to typical beta for an ice stream;
 
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
@@ -377,126 +357,110 @@ PetscErrorCode SSAFD_PIK::assemble_rhs(Vec rhs) {
   ierr = compute_driving_stress(taud); CHKERRQ(ierr);
 
   ierr = taud.begin_access(); CHKERRQ(ierr);
-  ierr = DAVecGetArray(SSADA,rhs,&rhs_uv); CHKERRQ(ierr);
-  	
+  ierr = DAVecGetArray(SSADA, rhs, &rhs_uv); CHKERRQ(ierr);
+
   if (vel_bc && bc_locations) {
     ierr = vel_bc->begin_access(); CHKERRQ(ierr);
     ierr = bc_locations->begin_access(); CHKERRQ(ierr);
   }
-	
+
   ierr = thickness->begin_access(); CHKERRQ(ierr);
   ierr = bed->begin_access(); CHKERRQ(ierr);
+  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+      double H_ij = (*thickness)(i, j),
+        H_e = (*thickness)(i + 1, j),
+        H_w = (*thickness)(i - 1, j),
+        H_n = (*thickness)(i, j + 1),
+        H_s = (*thickness)(i, j - 1);
 
+      bool ice_free = (H_ij <= 1.0);
+      bool boundary = H_ij > 100.0 &&
+        (H_e <= 1.0 || H_w <= 1.0 || H_s <= 1.0 || H_n <= 1.0);
 
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      PetscScalar   	Ho = (*thickness)(i,j),
-        He = (*thickness)(i+1,j),
-        Hw = (*thickness)(i-1,j),
-        Hn = (*thickness)(i,j+1),
-        Hs = (*thickness)(i,j-1);				
-		
-      PetscTruth onIcefreeOcean=PETSC_FALSE;
-      if (Ho<=1.0) {  
-        onIcefreeOcean=PETSC_TRUE;
-      }			
-      PetscTruth atBoundary=PETSC_FALSE;
-      if (Ho>100.0 && (He<=1.0 || Hw<=1.0 || Hs<=1.0 || Hn<=1.0)) {  
-        atBoundary=PETSC_TRUE;
+      if (vel_bc && (bc_locations->value(i, j) == 1)) {
+        rhs_uv[i][j].u = scaling * (*vel_bc)(i, j).u;
+        rhs_uv[i][j].v = scaling * (*vel_bc)(i, j).v;
+        continue;
       }
 
-      if (vel_bc && (bc_locations->value(i,j) == 1)) {
-        rhs_uv[i][j].u = scaling * (*vel_bc)(i,j).u;
-        rhs_uv[i][j].v = scaling * (*vel_bc)(i,j).v;
-        
-        continue;
-      }	
-	
-      if (onIcefreeOcean) {
+      if (ice_free) {
         rhs_uv[i][j].u = 0.0;
         rhs_uv[i][j].v = 0.0;
-      } else if (atBoundary) {
-        PetscInt aMM=1, aPP=1, bMM=1,bPP=1;
+        continue;
+      }
+
+      if (boundary) {
+        PetscInt aMM = 1, aPP = 1, bMM = 1, bPP = 1;
         //direct adjacent neighbors
-        if (He<=1.0) aPP=0;
-        if (Hw<=1.0) aMM=0;
-        if (Hn<=1.0) bPP=0;
-        if (Hs<=1.0) bMM=0;
-	
+        if (H_e <= 1.0) aPP = 0;
+        if (H_w <= 1.0) aMM = 0;
+        if (H_n <= 1.0) bPP = 0;
+        if (H_s <= 1.0) bMM = 0;
+
         const double standard_gravity = config.get("standard_gravity");
         double ocean_rho = config.get("sea_water_density");
-	
-        const 	PetscScalar icepressure = ice.rho * standard_gravity * Ho;	  
-        PetscScalar oceanpressure;
-	
-        //if (ocean == PETSC_NULL) {  SETERRQ(1,"PISM ERROR: ocean == PETSC_NULL");  }
-        PetscReal currentSeaLevel=0.0; //FIXME
-        //ierr = ocean->sea_level_elevation(grid.year, dt / secpera, currentSeaLevel); CHKERRQ(ierr);
-	
-        const PetscScalar 	hgrounded = (*bed)(i,j) + Ho,
-          hfloating = currentSeaLevel + (1.0 - ice.rho/ocean_rho) * Ho,
-          Ho2 = Ho*Ho;
-							
-        PetscScalar	ho=0.0,
-          tdx=0.0, tdy=0.0;
-	
-        if (Ho>0.0 && (*bed)(i,j)<(currentSeaLevel-(ice.rho/ocean_rho) * Ho)) {
+
+        const double ice_pressure = ice.rho * standard_gravity * H_ij;
+        double ocean_pressure;
+
+        const double h_grounded = (*bed)(i,j) + H_ij,
+          h_floating = sea_level + (1.0 - ice.rho / ocean_rho) * H_ij,
+          H_ij2 = H_ij*H_ij;
+
+        double h_ij = 0.0, tdx = 0.0, tdy = 0.0;
+
+        if (H_ij > 0.0 && (*bed)(i,j) < (sea_level - (ice.rho / ocean_rho) * H_ij)) {
           //calving front boundary condition for floating shelf
-          oceanpressure = 0.5 * ice.rho * standard_gravity * (1-(ice.rho/ocean_rho))*Ho2;
-          // this is not really the oceanpressure, but the difference between
-          // oceanpressure and isotrop.normal stresses (=pressure) from within
+          ocean_pressure = 0.5 * ice.rho * standard_gravity * (1 - (ice.rho / ocean_rho))*H_ij2;
+          // this is not really the ocean_pressure, but the difference between
+          // ocean_pressure and isotrop.normal stresses (=pressure) from within
           // the ice
-          ho=hfloating;
-          //ierr = verbPrintf(3,grid.com, "SSAFD_PIK_INFO: oceanpressure at i=%d,j=%d equals=%e\n",i,j,oceanpressure); CHKERRQ(ierr);
-        } else { 
-          ho=hgrounded;
-          if( (*bed)(i,j) >= currentSeaLevel){//boundary condition for cliff --> zero stress = oceanpressure
-            oceanpressure = 0.5 * ice.rho * standard_gravity * Ho2;
+          h_ij = h_floating;
+        } else {
+          h_ij = h_grounded;
+          if( (*bed)(i,j) >= sea_level){//boundary condition for cliff --> zero stress = ocean_pressure
+            ocean_pressure = 0.5 * ice.rho * standard_gravity * H_ij2;
             // this is not 'zero' because the isotrop.normal stresses
             // (=pressure) from within the ice figures on RHS
           }else{//boundary condition for marine terminating glacier
-            oceanpressure = 0.5 * ice.rho * standard_gravity * 
-              (Ho2-(ocean_rho/ice.rho)*(currentSeaLevel-(*bed)(i,j))*(currentSeaLevel-(*bed)(i,j)));
+            ocean_pressure = 0.5 * ice.rho * standard_gravity *
+              (H_ij2 - (ocean_rho / ice.rho)*(sea_level - (*bed)(i,j))*(sea_level - (*bed)(i,j)));
           }
         }
-	
-	
-	
-        if (aPP==0 && aMM==1) tdx= icepressure*ho/dx; //here we take the direct gradient at the boundary (not centered)
-        else if (aMM==0 && aPP==1) tdx= -icepressure*ho/dx;
-        else if (aPP==0 && aMM==0) tdx= 0; //in case of some kind of ice nose, or ice bridge
-	
-        if (bPP==0 && bMM==1) tdy= icepressure*ho/dy;
-        else if (bMM==0 && bPP==1) tdy= -icepressure*ho/dy;
-        else if (bPP==0 && bMM==0) tdy= 0;
-	
-        rhs_uv[i][j].u = tdx-(aMM-aPP)*oceanpressure/dx;
-        rhs_uv[i][j].v = tdy-(bMM-bPP)*oceanpressure/dy;
-	
-	//the rest is just a copy of SSAFD
-      } else {
-	// usual case: use already computed driving stress
-        rhs_uv[i][j].u = taud(i,j).u;
-        rhs_uv[i][j].v = taud(i,j).v;
+
+
+        //here we take the direct gradient at the boundary (not centered)
+        if (aPP == 0 && aMM == 1) tdx = ice_pressure*h_ij / dx;
+        else if (aMM == 0 && aPP == 1) tdx = -ice_pressure*h_ij / dx;
+        else if (aPP == 0 && aMM == 0) tdx = 0; //in case of some kind of ice nose, or ice bridge
+
+        if (bPP == 0 && bMM == 1) tdy = ice_pressure*h_ij / dy;
+        else if (bMM == 0 && bPP == 1) tdy = -ice_pressure*h_ij / dy;
+        else if (bPP == 0 && bMM == 0) tdy = 0;
+
+        rhs_uv[i][j].u = tdx - (aMM - aPP)*ocean_pressure / dx;
+        rhs_uv[i][j].v = tdy - (bMM - bPP)*ocean_pressure / dy;
+
+        continue;
       }
+
+      // usual case: use already computed driving stress
+      rhs_uv[i][j].u = taud(i,j).u;
+      rhs_uv[i][j].v = taud(i,j).v;
     }
   }
-	
-	
+  ierr = thickness->end_access(); CHKERRQ(ierr);
+  ierr = bed->end_access(); CHKERRQ(ierr);
+
   if (vel_bc) {
     ierr = bc_locations->end_access(); CHKERRQ(ierr);
     ierr = vel_bc->end_access(); CHKERRQ(ierr);
   }
-	
-  ierr = thickness->end_access(); CHKERRQ(ierr);
-  ierr = bed->end_access(); CHKERRQ(ierr);
 
   ierr = taud.end_access(); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(SSADA,rhs,&rhs_uv); CHKERRQ(ierr);
 
-  ierr = VecAssemblyBegin(rhs); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(rhs); CHKERRQ(ierr);
-	
   return 0;
 }
 

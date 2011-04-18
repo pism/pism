@@ -21,8 +21,9 @@
 PISMStressBalance::PISMStressBalance(IceGrid &g,
                                      ShallowStressBalance *sb,
                                      SSB_Modifier *ssb_mod,
+                                     PISMOceanModel *ocean_model,
                                      const NCConfigVariable &conf)
-  : PISMComponent_Diag(g, conf), stress_balance(sb), modifier(ssb_mod) {
+  : PISMComponent_Diag(g, conf), stress_balance(sb), modifier(ssb_mod), ocean(ocean_model) {
 
   basal_melt_rate = NULL;
   variables = NULL;
@@ -82,6 +83,13 @@ PetscErrorCode PISMStressBalance::update(bool fast) {
   IceModelVec2V *velocity_2d;
   IceModelVec2S *D2;
   IceModelVec3  *u, *v;
+
+  // Tell the ShallowStressBalance object about the current sea level:
+  if (ocean) {
+    PetscReal sea_level;
+    ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
+    stress_balance->set_sea_level_elevation(sea_level);
+  }
 
   ierr = stress_balance->update(fast); CHKERRQ(ierr);
 

@@ -278,7 +278,7 @@ PetscErrorCode IceCompModel::init_physics() {
     ShallowStressBalance *ssb = new SIA_Sliding(grid, *basal, *ice, *EC, config);
     SIAFD *sia = new SIAFD(grid, *ice, *EC, config);
 
-    stress_balance = new PISMStressBalance(grid, ssb, sia, config);
+    stress_balance = new PISMStressBalance(grid, ssb, sia, NULL, config);
     ierr = stress_balance->init(variables); CHKERRQ(ierr);
   }
 
