@@ -380,7 +380,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       // Handle the easy case: provided Dirichlet boundary conditions
       if (vel_bc && bc_locations && bc_locations->value(i,j) == 1) {
         // set diagonal entry to one; RHS entry will be known velocity;
-        ierr = set_diagonal_matrix_entry(A, i, j, scaling, INSERT_VALUES); CHKERRQ(ierr); 
+        ierr = set_diagonal_matrix_entry(A, i, j, scaling); CHKERRQ(ierr); 
         continue;
       }
 
@@ -414,7 +414,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
         bool ice_free = H_ij <= 1.0; // FIXME: use mask
 
         if (ice_free) { // we set ice velocities on the ice free ocean to zero
-          ierr = set_diagonal_matrix_entry(A, i, j, scaling, INSERT_VALUES); CHKERRQ(ierr);
+          ierr = set_diagonal_matrix_entry(A, i, j, scaling); CHKERRQ(ierr);
           continue;
         }
 
@@ -500,20 +500,6 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       };
       /* end Maxima-generated code */
 
-      // build equations: NOTE TRANSPOSE
-      row.j = i; row.i = j;
-      for (PetscInt m = 0; m < sten; m++) {
-        col[m].j = I[m]; col[m].i = J[m]; col[m].c = C[m];
-      }
-
-      // set coefficients of the first equation:
-      row.c = 0;
-      ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq1, INSERT_VALUES); CHKERRQ(ierr);
-
-      // set coefficients of the second equation:
-      row.c = 1;
-      ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES); CHKERRQ(ierr);
-
       /* Dragging ice experiences friction at the bed determined by the
        *    IceBasalResistancePlasticLaw::drag() methods.  These may be a plastic,
        *    pseudo-plastic, or linear friction law.  Dragging is done implicitly
@@ -528,7 +514,24 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
           beta = beta_ice_free_bedrock;
         }
       }
-      ierr = set_diagonal_matrix_entry(A, i, j, beta, ADD_VALUES); CHKERRQ(ierr);
+
+      // add beta to diagonal entries
+      eq1[4]  += beta;
+      eq2[13] += beta;
+
+      // build equations: NOTE TRANSPOSE
+      row.j = i; row.i = j;
+      for (PetscInt m = 0; m < sten; m++) {
+        col[m].j = I[m]; col[m].i = J[m]; col[m].c = C[m];
+      }
+
+      // set coefficients of the first equation:
+      row.c = 0;
+      ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq1, INSERT_VALUES); CHKERRQ(ierr);
+
+      // set coefficients of the second equation:
+      row.c = 1;
+      ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES); CHKERRQ(ierr);
     }
   }
 
@@ -945,13 +948,10 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
   ierr = hardness.begin_access(); CHKERRQ(ierr);
   ierr = thickness->begin_access(); CHKERRQ(ierr);
 
-  bool do_ssa_enhancement = false;
   PetscScalar ssa_enhancement_factor=1.0;
 
-  if (config.get_flag("do_ssa_enhancement")) {
-	ssa_enhancement_factor=config.get("ssa_enhancement_factor");
-	do_ssa_enhancement = true;
-  }
+  if (config.get_flag("do_ssa_enhancement"))
+    ssa_enhancement_factor=config.get("ssa_enhancement_factor");
 
   const PetscScalar dx = grid.dx, dy = grid.dy;
 
@@ -996,9 +996,9 @@ PetscErrorCode SSAFD::compute_nuH_staggered(IceModelVec2Stag &result, PetscReal 
         // We ensure that nuH is bounded below by a positive constant.
         result(i,j,o) += epsilon;
 
-        if (do_ssa_enhancement) {
-        	result(i,j,o) = result(i,j,o)/ssa_enhancement_factor;
-        }
+        // include the SSA enhancement factor; in most cases ssa_enhancement_factor is 1
+        result(i,j,o) /= ssa_enhancement_factor;
+
       } // j
     } // i
   } // o
@@ -1054,17 +1054,17 @@ PetscErrorCode SSAFD::update_nuH_viewers() {
 }
 
 PetscErrorCode SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
-                                                PetscScalar value, InsertMode mode) {
+                                                PetscScalar value) {
   PetscErrorCode ierr;
   MatStencil row, col;
   row.j = i; row.i = j;
   col.j = i; col.i = j;
 
   row.c = 0; col.c = 0;
-  ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, mode); CHKERRQ(ierr);
+  ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, INSERT_VALUES); CHKERRQ(ierr);
 
   row.c = 1; col.c = 1;
-  ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, mode); CHKERRQ(ierr);
+  ierr = MatSetValuesStencil(A, 1, &row, 1, &col, &value, INSERT_VALUES); CHKERRQ(ierr);
 
   return 0;
 }

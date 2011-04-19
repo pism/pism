@@ -82,12 +82,12 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
       if (vel_bc && bc_locations && bc_locations->value(i,j) == 1) {
         // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
         //   this is where boundary value to SSA is set
-        ierr = set_diagonal_matrix_entry(A, i, j, scaling, INSERT_VALUES); CHKERRQ(ierr);
+        ierr = set_diagonal_matrix_entry(A, i, j, scaling); CHKERRQ(ierr);
         continue;
       }
 
       if (onIcefreeOcean) { // vanish ice velocities on the ice free ocean
-        ierr = set_diagonal_matrix_entry(A, i, j, scaling, INSERT_VALUES); CHKERRQ(ierr);
+        ierr = set_diagonal_matrix_entry(A, i, j, scaling); CHKERRQ(ierr);
         continue;
       }
 

@@ -64,7 +64,7 @@ protected:
   virtual PetscErrorCode update_nuH_viewers();
 
   virtual PetscErrorCode set_diagonal_matrix_entry(Mat A, int i, int j,
-                                                   PetscScalar value, InsertMode mode);
+                                                   PetscScalar value);
   // objects used internally
   IceModelVec2Stag hardness, nuH, nuH_old;
   KSP SSAKSP;
