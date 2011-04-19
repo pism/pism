@@ -583,9 +583,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //!  energyStep()
   if (updateAtDepth && do_energy) { // do the temperature step
     ierr = energyStep(); CHKERRQ(ierr);
-    if (updateHmelt == PETSC_TRUE) {
-      ierr = diffuseHmelt(); CHKERRQ(ierr);
-    }
     stdout_flags += "t";
   } else {
     stdout_flags += "$";
@@ -607,16 +604,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //! \li update the thickness of the ice according to the mass conservation
   //!  model; see massContExplicitStep()
   if (do_mass_continuity) {
-// FIXME: the following was how massContExplicitStepPartGrids() *was* called; these lines should be deleted
-#if 0
-	if (config.get_flag("part_grid")==true) {
-    	ierr = massContExplicitStepPartGrids(); CHKERRQ(ierr); // update H treat partially filled grid cells at ice front
-	} else {
-		ierr = massContExplicitStep(); CHKERRQ(ierr); // update H
-	}
-#else
     ierr = massContExplicitStep(); CHKERRQ(ierr); // update H
-#endif
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
     if ((do_skip == PETSC_TRUE) && (skipCountDown > 0))
       skipCountDown--;

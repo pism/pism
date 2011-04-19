@@ -157,6 +157,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
     //   or bedrock can be lower than surface temperature
     const PetscScalar bulgeMax  = config.get("enthalpy_cold_bulge_max") / ice->c_p;
 
+    const PetscReal hmelt_decay_rate = config.get("hmelt_decay_rate");  // m s-1
+
     PetscScalar *Tnew;
     // pointers to values in current column
     system.u     = new PetscScalar[fMz];
@@ -366,6 +368,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / (dt_years_TempAge * secpera);
         }
 
+        // finalize Hmelt value
+        Hmeltnew -= hmelt_decay_rate * (dt_years_TempAge * secpera);
         if (vMask.is_floating(i,j)) {
           if (vH(i,j) < 0.1) {
             // truely no ice, so zero-out subglacial fields

@@ -60,6 +60,19 @@ file containing a complete model state, versus bootstrapping).
 using namespace std;
 /// @endcond
 
+
+// FIXME: this should be put with the iMbasal.cc submodel:
+//! Local copy of parameters used by IceModel::getBasalWaterPressure().
+struct BWPparams {
+  bool      usebmr,
+            usethkeff;
+  PetscReal bmr_scale,
+            thkeff_reduce,
+            thkeff_H_high,
+            thkeff_H_low;
+};
+
+
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
 class IceModel {
   // The following classes implement various diagnostic computations.
@@ -252,9 +265,9 @@ protected:
   virtual PetscErrorCode computePhiFromBedElevation();
   virtual PetscScalar    getBasalWaterPressure(
                            PetscScalar thk, PetscScalar bwat, PetscScalar bmr,
-                           PetscScalar frac, PetscScalar hmelt_max) const;
+                           PetscScalar frac, PetscScalar hmelt_max,
+                           BWPparams &param) const;
   virtual PetscErrorCode updateYieldStressUsingBasalWater();
-  virtual PetscErrorCode diffuseHmelt();
 
   // see iMbeddef.cc
   PetscScalar last_bed_def_update;

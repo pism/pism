@@ -20,10 +20,26 @@
 #include <petscda.h>
 #include "iceModel.hh"
 
-/*
-This file collects procedures related to SSA-as-sliding law in grounded
-areas.
-*/
+//! \file iMbasal.cc  A minimal hydrology model and basal strength model, for a SSA-type sliding law.  
+/*! \file iMbasal.cc
+The output variable of this submodel is vtauc.  It is used in the SSA objects.
+
+The "dry" strength of the (notional) till is a state variable, but private to 
+the submodel: vtillphi.  Its initialization is nontrivial: either -topg_to_phi
+heuristic or inverse modeling (to be implemented ...).  Currently vtillphi does
+not evolve during the run.
+
+This submodel uses vHmelt as an input at each update.  A basal water pressure is
+computed from vHmelt, then that basal water pressure is combined with vtillphi
+to compute an updated vtauc.
+
+This submodel is inactive in floating areas.
+
+FIXME:  could be turned into a class, perhaps "PISMBasalResistance"
+
+FIXME:  a derived class would run the inverse model to initialize vtillphi
+ */
+
 
 //! Initialize the pseudo-plastic till mechanical model.
 /*! 
@@ -243,7 +259,8 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
 }
 
 
-//! Compute modeled pressure in subglacial liquid water using thickness of water layer, and possibly the melt rate, at the base.
+//! \brief Compute modeled pressure in subglacial liquid water using thickness
+//! \brief   of water layer, and possibly the melt rate, at the base.
 /*!
 This procedure provides a simple model of basal water pressure \f$p_w\f$, which
 is modeled as a function of the thickness of the basal stored water plus 
@@ -292,14 +309,11 @@ till is computed by these lines, which are recommended for this purpose:
 
   p_eff  = p_over - getBasalWaterPressure(thk, bwat, bmr, frac, hmelt_max);
 </code>
-
-FIXME: this is called at \b every grid point, so config.get(...) calls should
-be moved out of here (they are slow). This can be done by creating an object
-representing a model of the basal water pressure, for example.
  */
 PetscScalar IceModel::getBasalWaterPressure(PetscScalar thk, PetscScalar bwat,
 				            PetscScalar bmr, PetscScalar frac,
-				            PetscScalar hmelt_max) const {
+				            PetscScalar hmelt_max,
+				            BWPparams &param) const {
 
   if (bwat > hmelt_max + 1.0e-6) {
     PetscPrintf(grid.com,
@@ -308,40 +322,31 @@ PetscScalar IceModel::getBasalWaterPressure(PetscScalar thk, PetscScalar bwat,
     PISMEnd();
   }
 
-  static const bool
-    usebmr        = config.get_flag("bmr_enhance_basal_water_pressure"),
-    usethkeff     = config.get_flag("thk_eff_basal_water_pressure");
-  static const PetscScalar
-    bmr_scale     = config.get("bmr_enhance_scale"),
-    thkeff_reduce = config.get("thk_eff_reduced"),
-    thkeff_H_high = config.get("thk_eff_H_high"),
-    thkeff_H_low  = config.get("thk_eff_H_low");
-
   // the model; note  0 <= p_pw <= frac * p_overburden
   //   because  0 <= bwat <= hmelt_max
   const PetscScalar p_overburden = ice->rho * standard_gravity * thk; // FIXME task #7297
   PetscScalar  p_pw = frac * (bwat / hmelt_max) * p_overburden;
 
-  if (usebmr) {
+  if (param.usebmr) {
     // add to pressure from instantaneous basal melt rate;
     //   note  (additional) <= (1.0 - frac) * p_overburden so
     //   0 <= p_pw <= p_overburden
-    p_pw += ( 1.0 - exp( - PetscMax(0.0,bmr) / bmr_scale ) )
+    p_pw += ( 1.0 - exp( - PetscMax(0.0,bmr) / param.bmr_scale ) )
             * (1.0 - frac) * p_overburden;
   }
 
-  if (usethkeff) {
+  if (param.usethkeff) {
     // ice thickness is surrogate for distance to margin; near margin the till
     //   is presumably better drained so we reduce the water pressure
-    if (thk < thkeff_H_high) {
-      if (thk <= thkeff_H_low) {
-        p_pw *= thkeff_reduce;
+    if (thk < param.thkeff_H_high) {
+      if (thk <= param.thkeff_H_low) {
+        p_pw *= param.thkeff_reduce;
       } else {
         // case Hlow < thk < Hhigh; use linear to connect (Hlow, reduced * p_pw)
         //   to (Hhigh, 1.0 * p_w)
-        p_pw *= thkeff_reduce
-                + (1.0 - thkeff_reduce)
-                    * (thk - thkeff_H_low) / (thkeff_H_high - thkeff_H_low);
+        p_pw *= param.thkeff_reduce
+                + (1.0 - param.thkeff_reduce)
+                    * (thk - param.thkeff_H_low) / (param.thkeff_H_high - param.thkeff_H_low);
       }
     }
   }
@@ -387,6 +392,14 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
   }
 
   if (holdTillYieldStress == PETSC_FALSE) { // usual case: use Hmelt to determine tauc
+    BWPparams p;
+    p.usebmr        = config.get_flag("bmr_enhance_basal_water_pressure");
+    p.usethkeff     = config.get_flag("thk_eff_basal_water_pressure");
+    p.bmr_scale     = config.get("bmr_enhance_scale");
+    p.thkeff_reduce = config.get("thk_eff_reduced");
+    p.thkeff_H_high = config.get("thk_eff_H_high");
+    p.thkeff_H_low  = config.get("thk_eff_H_low");
+
     PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
       till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
       hmelt_max = config.get("hmelt_max");
@@ -409,7 +422,7 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
           const PetscScalar
             p_over = ice->rho * standard_gravity * vH(i,j), // FIXME task #7297
             p_w    = getBasalWaterPressure(vH(i,j), vHmelt(i,j), // FIXME task #7297
-                       vbmr(i,j), till_pw_fraction, hmelt_max),
+                       vbmr(i,j), till_pw_fraction, hmelt_max, p),
             N      = p_over - p_w;  // effective pressure on till
 
           vtauc(i,j) = till_c_0 + N * tan((pi/180.0) * vtillphi(i,j));
@@ -431,64 +444,6 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
     const PetscScalar q = config.get("pseudo_plastic_q");
     vtauc.scale(1.0 / pow(A,q));
   }
-
-  return 0;
-}
-
-
-
-//! Apply explicit time step for pure diffusion to basal layer of melt water.
-/*!
-See \ref BBssasliding .
-
-Uses vWork2d[0] to temporarily store new values for Hmelt.
- */
-PetscErrorCode IceModel::diffuseHmelt() {
-  PetscErrorCode  ierr;
-
-  const PetscScalar
-    L = config.get("hmelt_diffusion_distance"),
-    diffusion_time = config.get("hmelt_diffusion_time") * secpera; // convert to seconds
-
-  // diffusion constant K in u_t = K \nabla^2 u is chosen so that fundmental
-  //   solution has standard deviation \sigma = 20 km at time t = 1000 yrs;
-  //   2 \sigma^2 = 4 K t
-  const PetscScalar K = L * L / (2.0 * diffusion_time),
-                    Rx = K * (dt_years_TempAge * secpera) / (grid.dx * grid.dx),
-                    Ry = K * (dt_years_TempAge * secpera) / (grid.dy * grid.dy);
-
-  // NOTE: restriction that
-  //    1 - 2 R_x - 2 R_y \ge 0
-  // is a maximum principle restriction; therefore new Hmelt will be between
-  // zero and hmelt_max if old Hmelt has that property
-  const PetscScalar oneM4R = 1.0 - 2.0 * Rx - 2.0 * Ry;
-  if (oneM4R <= 0.0) {
-    SETERRQ(1,
-       "diffuseHmelt() has 1 - 2Rx - 2Ry <= 0 so explicit method for diffusion unstable\n"
-       "  (timestep restriction believed so rare that is not part of adaptive scheme)");
-  }
-
-  // communicate ghosted values so neighbors are valid (temperatureStep and
-  // enthalpyAndDrainageStep modify vHmelt, but do not update ghosts).
-  ierr = vHmelt.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vHmelt.endGhostComm(); CHKERRQ(ierr);
-
-  PetscScalar **Hmelt, **Hmeltnew; 
-  ierr = vHmelt.get_array(Hmelt); CHKERRQ(ierr);
-  ierr = vWork2d[0].get_array(Hmeltnew); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      Hmeltnew[i][j] = oneM4R * Hmelt[i][j]
-                       + Rx * (Hmelt[i+1][j] + Hmelt[i-1][j])
-                       + Ry * (Hmelt[i][j+1] + Hmelt[i][j-1]);
-    }
-  }
-  ierr = vHmelt.end_access(); CHKERRQ(ierr);
-  ierr = vWork2d[0].end_access(); CHKERRQ(ierr);
-
-  // finally copy new into vHmelt (and communicate ghosted values at the same time)
-  ierr = vWork2d[0].beginGhostComm(vHmelt); CHKERRQ(ierr);
-  ierr = vWork2d[0].endGhostComm(vHmelt); CHKERRQ(ierr);
 
   return 0;
 }

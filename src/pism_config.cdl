@@ -158,11 +158,8 @@ netcdf pism_config {
     pism_config:hmelt_max = 2.0;
     pism_config:hmelt_max_doc = "meters; maximum thickness of the basal melt water layer";
 
-    pism_config:hmelt_diffusion_distance = 2e4;
-    pism_config:hmelt_diffusion_distance_doc = "meters; diffusion distance for melt water thickness; see equation (11) in [\\ref BBssasliding]";
-
-    pism_config:hmelt_diffusion_time = 1000.0;
-    pism_config:hmelt_diffusion_time_doc = "years; diffusion time for melt water thickness; see equation (11) in [\\ref BBssasliding]";
+    pism_config:hmelt_decay_rate = 3.16887646154128e-11;
+    pism_config:hmelt_decay_rate_doc = "m s-1; = 1 m per 1000 years; rate at which bwat is reduced to zero, in absence of other effects like basal melt rate";
 
     pism_config:minimum_temperature_for_sliding = 273.0;
     pism_config:minimum_temperature_for_sliding_doc = "K; This is less than water_triple_point_temperature.  If ice base is above this value then decide to do SIA sliding, if that mechanism is active at all.";

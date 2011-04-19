@@ -279,6 +279,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
     ice_K     = ice->k / ice->rho, // enthalpy-conductivity for cold ice
     L         = config.get("water_latent_heat_fusion"),  // J kg-1
     bulgeEnthMax  = config.get("enthalpy_cold_bulge_max"), // J kg-1
+    hmelt_decay_rate = config.get("hmelt_decay_rate"),   // m s-1
     hmelt_max = config.get("hmelt_max");                 // m
 
   DrainageCalculator dc(config);
@@ -538,6 +539,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         ierr = vWork3d.setValColumnPL(i,j,Enthnew); CHKERRQ(ierr);
 
         // finalize Hmelt value
+        Hmeltnew -= hmelt_decay_rate * dt_secs;
         if (is_floating) {
           // if floating assume maximally saturated till to avoid "shock" if grounding line advances
           // UNACCOUNTED MASS & ENERGY (LATENT) LOSS/GAIN (TO/FROM OCEAN)!!

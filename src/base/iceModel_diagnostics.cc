@@ -194,6 +194,13 @@ PetscErrorCode IceModel_bwp::compute(IceModelVec* &output) {
     alpha     = model->config.get("till_pw_fraction"),
     wmax      = model->config.get("hmelt_max"),
     fillval   = -0.01;
+  BWPparams p;
+  p.usebmr        = model->config.get_flag("bmr_enhance_basal_water_pressure");
+  p.usethkeff     = model->config.get_flag("thk_eff_basal_water_pressure");
+  p.bmr_scale     = model->config.get("bmr_enhance_scale");
+  p.thkeff_reduce = model->config.get("thk_eff_reduced");
+  p.thkeff_H_high = model->config.get("thk_eff_H_high");
+  p.thkeff_H_low  = model->config.get("thk_eff_H_low");
 
   ierr = model->vH.begin_access(); CHKERRQ(ierr);
   ierr = model->vHmelt.begin_access(); CHKERRQ(ierr);
@@ -205,7 +212,7 @@ PetscErrorCode IceModel_bwp::compute(IceModelVec* &output) {
         (*result)(i,j) = model->getBasalWaterPressure(model->vH(i,j), // FIXME task #7297
                                                    model->vHmelt(i,j),
                                                    model->vbmr(i,j),
-                                                   alpha, wmax);
+                                                   alpha, wmax, p);
       } else { // put negative value below valid range
         (*result)(i,j) = fillval;
       }
