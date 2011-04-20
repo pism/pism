@@ -83,7 +83,7 @@ public:
   virtual PetscErrorCode write_history(string history, bool overwrite = false) const;
   virtual bool check_dimension(string dim, int len) const;
 
-  virtual PetscErrorCode get_dim_length(string name, int *len) const;
+  virtual PetscErrorCode get_dim_length(string name, unsigned int *len) const;
   virtual PetscErrorCode get_dim_limits(string name, double *min, double *max) const;
 
   virtual PetscErrorCode get_dimension(string name, vector<double> &result) const;
@@ -100,6 +100,7 @@ public:
   virtual PetscErrorCode get_att_double(int varid, string name, vector<double> &result) const;
   virtual PetscErrorCode get_units(int varid, bool &has_units, utUnit &units) const;
   virtual PetscErrorCode get_nrecords(int &nrecords) const;
+  virtual PetscErrorCode get_nrecords(string varname, unsigned int &nrecords) const;
   virtual PetscErrorCode set_attrs(int varid, map<string,string> attrs) const;
   virtual PetscErrorCode create_dimension(string name, int length, map<string,string> attrs,
                                           int &dimid, int &varid) const;

@@ -71,11 +71,23 @@ PetscErrorCode PSDirectForcing::init(PISMVars &vars) {
     bc_reference_year = 0;
   }
 
+  unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size"),
+    artm_n_records = 1, acab_n_records = 1;
+  
+  NCTool nc(grid.com, grid.rank);
+  ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+  ierr = nc.get_nrecords("artm", artm_n_records); CHKERRQ(ierr); 
+  ierr = nc.get_nrecords("acab", acab_n_records); CHKERRQ(ierr); 
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  artm_n_records = PetscMin(artm_n_records, buffer_size);
+  acab_n_records = PetscMin(acab_n_records, buffer_size);
+
   ierr = verbPrintf(2,grid.com,
                     "    reading boundary conditions from %s ...\n",
                     filename.c_str()); CHKERRQ(ierr);
 
-  temperature.set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
+  temperature.set_n_records(artm_n_records);
   ierr = temperature.create(grid, "artm", false); CHKERRQ(ierr);
   ierr = temperature.set_attrs("climate_forcing",
                                "temperature of the ice at the ice surface but below firn processes",
@@ -84,7 +96,7 @@ PetscErrorCode PSDirectForcing::init(PISMVars &vars) {
 
   temperature.strict_timestep_limit = ! enable_time_averaging;
 
-  mass_flux.set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
+  mass_flux.set_n_records(acab_n_records);
   ierr = mass_flux.create(grid, "acab", false); CHKERRQ(ierr);
   ierr = mass_flux.set_attrs("climate_forcing",
                              "ice-equivalent surface mass balance (accumulation/ablation) rate",

@@ -235,7 +235,7 @@ PetscErrorCode PSExternal::write_coupling_fields() {
   // Determine if the file is empty; if it is, create dimenstions and
   // dimensional variables, otherwise overwrite the time stored in the time
   // variable.
-  int t_len;
+  unsigned int t_len;
   ierr = nc.get_dim_length("t", &t_len); CHKERRQ(ierr);
 
   if (t_len == 0) {

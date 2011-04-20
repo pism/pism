@@ -362,7 +362,7 @@ PetscErrorCode NCTool::open_for_writing(string filename) {
 }
 
 //! Finds the length of a dimension. Returns 0 if failed.
-PetscErrorCode NCTool::get_dim_length(string name, int *len) const {
+PetscErrorCode NCTool::get_dim_length(string name, unsigned int *len) const {
   int stat, dim_id;
   
   if (rank == 0) {
@@ -415,7 +415,8 @@ PetscErrorCode NCTool::get_nrecords(int &nrecords) const {
  */
 PetscErrorCode NCTool::get_dim_limits(string name, double *min, double *max) const {
   PetscErrorCode ierr;
-  int len = 0, varid = -1;
+  unsigned int len = 0;
+  int varid = -1;
   bool variable_exists = false;
   size_t start = 0, count;
   double range[2] = {0, 0};
@@ -442,7 +443,7 @@ PetscErrorCode NCTool::get_dim_limits(string name, double *min, double *max) con
 
       range[0] = data[0];
       range[1] = data[0];
-      for (int j = 1; j < len; j++) {
+      for (unsigned int j = 1; j < len; j++) {
 	range[0] = PetscMin(data[j], range[0]);
 	range[1] = PetscMax(data[j], range[1]);
       }
@@ -521,7 +522,8 @@ PetscErrorCode NCTool::get_dim_limits(string name, double *min, double *max) con
 //! \brief Reads a coordinate variable.
 PetscErrorCode NCTool::get_dimension(string name, vector<double> &result) const {
   PetscErrorCode ierr;
-  int len = 0, varid = -1;
+  unsigned int len = 0;
+  int varid = -1;
   bool variable_exists = false;
   size_t start = 0, count;
 
@@ -600,7 +602,7 @@ PetscErrorCode NCTool::get_dimension(string name, vector<double> &result) const 
     }
 
     result.resize(len);
-    for (int i = 0; i < len; ++i)
+    for (unsigned int i = 0; i < len; ++i)
       result[i] = intercept + data[i]*slope;
 
     delete [] data;
@@ -1031,6 +1033,40 @@ PetscErrorCode NCTool::inq_dimtype(string name, AxisType &result) const {
 
   // we have no clue:
   result = UNKNOWN_AXIS;
+  return 0;
+}
+
+//! \brief Get the number of records of variable \c varname.
+PetscErrorCode NCTool::get_nrecords(string varname, unsigned int &nrecords) const {
+  PetscErrorCode ierr;
+
+  bool exists;
+  int varid;
+  vector<int> dimids;
+
+  ierr = find_variable(varname, &varid, exists); CHKERRQ(ierr);
+  
+  if (!exists) {
+    nrecords = 0;
+    return 0;
+  }
+
+  ierr = inq_dimids(varid, dimids); CHKERRQ(ierr);
+
+  for (unsigned int i = 0; i < dimids.size(); ++i) {
+    AxisType dimtype;
+    string dimname;
+    
+    ierr = inq_dimname(dimids[i], dimname); CHKERRQ(ierr);
+    ierr = inq_dimtype(dimname, dimtype); CHKERRQ(ierr);
+
+    if (dimtype == T_AXIS) {
+      ierr = get_dim_length(dimname, &nrecords); CHKERRQ(ierr);
+      return 0;
+    }
+  }
+
+  nrecords = 1;
   return 0;
 }
 

@@ -124,14 +124,10 @@ and \c delta entries in the struct will not be meaningful.
   // interval (xbdy_tgt[0], -g.Lx), which is the number of points to skip in
   // the X-direction, and therefore the index of the first needed point
   // (because indices start at zero).
-  start[X] = (int)floor((xbdy_tgt[0] - (-g.Lx)) / delta[X] - 0.5);
+  start[X] = (unsigned)PetscMax(floor((xbdy_tgt[0] - (-g.Lx)) / delta[X] - 0.5), 0);
 
   // Same in the Y-direction.
-  start[Y] = (int)floor((ybdy_tgt[0] - (-g.Ly)) / delta[Y] - 0.5);
-
-  // be sure the start[X] and start[Y] are not too small:
-  if (start[X] < 0) start[X] = 0;
-  if (start[Y] < 0) start[Y] = 0;
+  start[Y] = (unsigned)PetscMax(floor((ybdy_tgt[0] - (-g.Ly)) / delta[Y] - 0.5), 0);
 
   start[Z] = 0;			// start at base of ice
 

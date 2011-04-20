@@ -278,7 +278,7 @@ PetscErrorCode DiagnosticTimeseries::interp(double T) {
 PetscErrorCode DiagnosticTimeseries::flush() {
   PetscErrorCode ierr;
   NCTool nc(com, rank);
-  int len;
+  unsigned int len;
 
   // return cleanly if this DiagnosticTimeseries object was created but never
   // used:
@@ -292,7 +292,7 @@ PetscErrorCode DiagnosticTimeseries::flush() {
   ierr = nc.get_dim_length(dimension.short_name.c_str(), &len); CHKERRQ(ierr);
   ierr = nc.close(); CHKERRQ(ierr);
 
-  if (len == (int)start) {
+  if (len == (unsigned int)start) {
     ierr = dimension.write(output_filename.c_str(), start, time);   CHKERRQ(ierr);
   }
   ierr = var.write(output_filename.c_str(), start, values); CHKERRQ(ierr);

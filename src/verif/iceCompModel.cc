@@ -999,7 +999,7 @@ PetscErrorCode IceCompModel::reportErrors() {
      "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n");
   CHKERRQ(ierr);
 
-  int start;
+  unsigned int start;
   char filename[TEMPORARY_STRING_LENGTH];
   PetscTruth netcdf_report;
   NCTimeseries err;

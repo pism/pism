@@ -210,7 +210,7 @@ PetscErrorCode PISMIO::put_var(const int varid, Vec g, int z_count) const {
   grid->profiler->begin(event_write);
 
   // Fill start and count arrays:
-  int t;
+  unsigned int t;
   ierr = get_dim_length("t", &t); CHKERRQ(ierr);
   t = t - 1;
 

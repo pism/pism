@@ -48,11 +48,23 @@ PetscErrorCode PADirectForcing::init(PISMVars &/*vars*/) {
     PetscPrintf(grid.com, "PISM ERROR: option -bc_file is required.\n");
     PISMEnd();
   }
+
+  unsigned int buffer_size = (unsigned int) config.get("climate_forcing_buffer_size"),
+    artm_n_records = 1, precip_n_records = 1;
+  
+  NCTool nc(grid.com, grid.rank);
+  ierr = nc.open_for_reading(bc_file); CHKERRQ(ierr);
+  ierr = nc.get_nrecords("artm", artm_n_records); CHKERRQ(ierr); 
+  ierr = nc.get_nrecords("precip", precip_n_records); CHKERRQ(ierr); 
+  ierr = nc.close(); CHKERRQ(ierr);
+
+  artm_n_records = PetscMin(artm_n_records, buffer_size);
+  precip_n_records = PetscMin(precip_n_records, buffer_size);
   
   ierr = verbPrintf(2,grid.com,
                     "    reading air temperature from %s ...\n",
                     bc_file); CHKERRQ(ierr);
-  temp.set_n_records((unsigned int) config.get("climate_forcing_buffer_size"));
+  temp.set_n_records(artm_n_records);
   ierr = temp.create(grid, "artm", false); CHKERRQ(ierr);
   ierr = temp.set_attrs("climate_forcing",
                                  "near-surface temperature",
@@ -63,7 +75,7 @@ PetscErrorCode PADirectForcing::init(PISMVars &/*vars*/) {
                     "    reading ice-equivalent precipitation rate from %s ...\n",
                     bc_file); CHKERRQ(ierr);
   
-  precip.set_n_records((unsigned int) config.get("climate_forcing_buffer_size")); 
+  precip.set_n_records(precip_n_records); 
   ierr = precip.create(grid, "precip", false); CHKERRQ(ierr);
   ierr = precip.set_attrs("climate_forcing",
                                    "ice-equivalent precipitation rate",

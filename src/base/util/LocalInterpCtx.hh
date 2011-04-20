@@ -25,7 +25,7 @@
 class grid_info {
 public:
   // dimension lengths
-  int t_len, x_len, y_len, z_len,
+  unsigned int t_len, x_len, y_len, z_len,
     zb_len;                 // DEPRECATED
   double time,			//!< current time (seconds)
     x0,				//!< x-coordinate of the grid center
@@ -78,7 +78,7 @@ The arrays \c start and \c count have 5 integer entries, corresponding to the di
 class LocalInterpCtx {
 public:
   double fstart[3], delta[3];
-  int start[4], count[4];    // Indices in netCDF file.
+  unsigned int start[4], count[4];    // Indices in netCDF file.
   double *a;		     //!< temporary buffer
   int a_len;		     //!< the size of the buffer
   vector<double> zlevels;
