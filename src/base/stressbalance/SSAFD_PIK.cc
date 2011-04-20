@@ -44,8 +44,6 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
   // put the new matrix assembly here
 
   const PetscScalar   dx=grid.dx, dy=grid.dy;
-  // next constant not too sensitive, but must match value in assembleSSARhs():
-  const PetscScalar   scaling = 1.0e9;  // comparable to typical beta for an ice stream
   IceModelVec2V vel = velocity;         // a shortcut
 
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
@@ -347,9 +345,6 @@ PetscErrorCode SSAFD_PIK::assemble_rhs(Vec rhs) {
 
   const double dx = grid.dx, dy = grid.dy;
   PISMVector2 **rhs_uv;
-
-  // next constant not too sensitive, but must match value in assembleSSAMatrix():
-  const double scaling = 1.0e9; // comparable to typical beta for an ice stream;
 
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 

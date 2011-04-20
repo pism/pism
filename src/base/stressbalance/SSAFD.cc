@@ -71,6 +71,8 @@ PetscErrorCode SSAFD::allocate_fd() {
 
   use_cfbc = false;
 
+  scaling = 1.0e9;  // comparable to typical beta for an ice stream;
+
   // The nuH viewer:
   view_nuh = false;
   nuh_viewer_size = 300;
@@ -144,8 +146,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   PISMVector2 **rhs_uv;
   const double dx = grid.dx, dy = grid.dy;
 
-  // next constant not too sensitive, but must match value in assembleSSAMatrix():
-  const PetscScalar scaling = 1.0e9;  // comparable to typical beta for an ice stream;
+  const double standard_gravity = config.get("standard_gravity"),
+    ocean_rho = config.get("sea_water_density");
 
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
@@ -200,9 +202,6 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
           if (H_n <= 1.0) bPP = 0;
           if (H_s <= 1.0) bMM = 0;
 
-          const double standard_gravity = config.get("standard_gravity"),
-            ocean_rho = config.get("sea_water_density");
-
           double ice_pressure = ice.rho * standard_gravity * H_ij,
             ocean_pressure;
 
@@ -246,8 +245,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
           continue;
         } // end of "if (boundary)"
 
-        // if we reached this point, then CFBC are enabled, but we are in the
-        // interior of a sheet or shelf, see "usual case" below
+        // If we reached this point, then CFBC are enabled, but we are in the
+        // interior of a sheet or shelf. See "usual case" below.
 
       }   // end of "if (use_cfbc)"
 
@@ -351,8 +350,6 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   PetscErrorCode  ierr;
 
   const PetscScalar   dx=grid.dx, dy=grid.dy;
-  // next constant not too sensitive, but must match value in assembleSSARhs():
-  const PetscScalar   scaling = 1.0e9;  // comparable to typical beta for an ice stream
   const PetscScalar   beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
 
   IceModelVec2V vel = velocity;         // a shortcut

@@ -71,6 +71,7 @@ protected:
   Mat SSAStiffnessMatrix;
   Vec SSARHS;
   bool use_cfbc;
+  PetscScalar scaling;
 
   bool view_nuh;
   PetscViewer nuh_viewer;
