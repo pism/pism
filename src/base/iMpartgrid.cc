@@ -1,4 +1,4 @@
-// Copyright (C) 2011 Torsten Albrecht and Ed Bueler
+// Copyright (C) 2011 Torsten Albrecht and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,51 +29,40 @@
 /*!
   In the finite volume interpretation, these are normal velocities at the faces
   of the cell.  The method avoids differencing velocities from ice free ocean locations.
-
-  The outputs are vel_E, vel_W, vel_N, vel_S.
 */
-PetscErrorCode IceModel::velsPartGrid(int M_ij, 
-                                      int M_e, int M_w, 
-                                      int M_n, int M_s, 
-                                      PISMVector2 vreg_ij, 
-                                      PISMVector2 vreg_e, PISMVector2 vreg_w, 
-                                      PISMVector2 vreg_n, PISMVector2 vreg_s, 
-                                      PetscReal &vel_E, PetscReal &vel_W, 
-                                      PetscReal &vel_N, PetscReal &vel_S) {
-  const bool oneneighboricefree = (M_e > MASK_FLOATING ||
-                                   M_w > MASK_FLOATING ||
-                                   M_n > MASK_FLOATING ||
-                                   M_s > MASK_FLOATING), 
-    oneneighboricefilled = (M_e <= MASK_FLOATING ||
-                            M_w <= MASK_FLOATING ||
-                            M_n <= MASK_FLOATING ||
-                            M_s <= MASK_FLOATING);
+PetscErrorCode IceModel::velsPartGrid(planeStar<int> M,
+                                      planeStar<PISMVector2> vreg,
+                                      planeStar<PetscScalar> &vel) {
+  const bool oneneighboricefree = (M.e > MASK_FLOATING || M.w > MASK_FLOATING ||
+                                   M.n > MASK_FLOATING || M.s > MASK_FLOATING), 
 
-  //case1: [i][j] in the middle of ice or bedrock: default scheme
-  if (M_ij <= MASK_FLOATING && (!oneneighboricefree)) {
-    // compute (i, j) - centered "face" velocity components by average
-    vel_E = 0.5 * (vreg_ij.u + vreg_e.u);
-    vel_W = 0.5 * (vreg_w.u + vreg_ij.u);
-    vel_N = 0.5 * (vreg_ij.v + vreg_n.v);
-    vel_S = 0.5 * (vreg_s.v + vreg_ij.v);
-    //case2: [i][j] on floating or grounded ice, but next to a ice - free ocean grid cell
-  } else if (M_ij <= MASK_FLOATING && (oneneighboricefree)) {
-    vel_E = (M_e > MASK_FLOATING ? vreg_ij.u : 0.5 * (vreg_ij.u + vreg_e.u));
-    vel_W = (M_w > MASK_FLOATING ? vreg_ij.u : 0.5 * (vreg_w.u + vreg_ij.u));
-    vel_N = (M_n > MASK_FLOATING ? vreg_ij.v : 0.5 * (vreg_ij.v + vreg_n.v));
-    vel_S = (M_s > MASK_FLOATING ? vreg_ij.v : 0.5 * (vreg_s.v + vreg_ij.v));
-    //case3: [i][j] on ice - free ocean (or partially filled), but next to ice grid cell
-  } else if (M_ij > MASK_FLOATING && (oneneighboricefilled)) {
-    vel_E = (M_e <= MASK_FLOATING ? vreg_e.u : 0.0);
-    vel_W = (M_w <= MASK_FLOATING ? vreg_w.u : 0.0);
-    vel_N = (M_n <= MASK_FLOATING ? vreg_n.v : 0.0);
-    vel_S = (M_s <= MASK_FLOATING ? vreg_s.v : 0.0);
-    //case4: [i][j] on ice - free ocean, and no ice neighbors, and else
+    oneneighboricefilled = (M.e <= MASK_FLOATING || M.w <= MASK_FLOATING ||
+                            M.n <= MASK_FLOATING || M.s <= MASK_FLOATING);
+
+  if (M.ij <= MASK_FLOATING && (!oneneighboricefree)) {
+    //case1: [i][j] in the middle of ice or bedrock: default scheme
+    vel.e = 0.5 * (vreg.ij.u + vreg.e.u);
+    vel.w = 0.5 * (vreg.w.u + vreg.ij.u);
+    vel.n = 0.5 * (vreg.ij.v + vreg.n.v);
+    vel.s = 0.5 * (vreg.s.v + vreg.ij.v);
+  } else if (M.ij <= MASK_FLOATING && (oneneighboricefree)) {
+    //case2: [i][j] on floating or grounded ice, but next to a ice-free ocean grid cell
+    vel.e = (M.e > MASK_FLOATING ? vreg.ij.u : 0.5 * (vreg.ij.u + vreg.e.u));
+    vel.w = (M.w > MASK_FLOATING ? vreg.ij.u : 0.5 * (vreg.w.u + vreg.ij.u));
+    vel.n = (M.n > MASK_FLOATING ? vreg.ij.v : 0.5 * (vreg.ij.v + vreg.n.v));
+    vel.s = (M.s > MASK_FLOATING ? vreg.ij.v : 0.5 * (vreg.s.v + vreg.ij.v));
+  } else if (M.ij > MASK_FLOATING && (oneneighboricefilled)) {
+    //case3: [i][j] on ice-free ocean (or partially filled), but next to ice grid cell
+    vel.e = (M.e <= MASK_FLOATING ? vreg.e.u : 0.0);
+    vel.w = (M.w <= MASK_FLOATING ? vreg.w.u : 0.0);
+    vel.n = (M.n <= MASK_FLOATING ? vreg.n.v : 0.0);
+    vel.s = (M.s <= MASK_FLOATING ? vreg.s.v : 0.0);
   } else {
-    vel_E = 0.0;
-    vel_W = 0.0;
-    vel_N = 0.0;
-    vel_S = 0.0;
+    //case4: [i][j] on ice - free ocean, and no ice neighbors
+    vel.e = 0.0;
+    vel.w = 0.0;
+    vel.n = 0.0;
+    vel.s = 0.0;
   }
 
   return 0;
@@ -88,20 +77,18 @@ PetscErrorCode IceModel::velsPartGrid(int M_ij,
   FIXME: does not account for grounded tributaries: thin ice shelves may
   evolve from grounded tongue
 */
-PetscReal IceModel::getHav(bool do_redist, 
-                           int M_e, int M_w, int M_n, int M_s, 
-                           PetscReal H_e, PetscReal H_w, PetscReal H_n, PetscReal H_s) {
+PetscReal IceModel::get_average_thickness(bool do_redist, planeStar<int> M, planeStar<PetscScalar> H) {
 
   // get mean ice thickness over adjacent floating ice shelf neighbors
   PetscReal H_average = 0.0;
   PetscInt N = 0;
-  if (M_e == MASK_FLOATING) { H_average += H_e; N++; }
-  if (M_w == MASK_FLOATING) { H_average += H_w; N++; }
-  if (M_n == MASK_FLOATING) { H_average += H_n; N++; }
-  if (M_s == MASK_FLOATING) { H_average += H_s; N++; }
+  if (M.e == MASK_FLOATING) { H_average += H.e; N++; }
+  if (M.w == MASK_FLOATING) { H_average += H.w; N++; }
+  if (M.n == MASK_FLOATING) { H_average += H.n; N++; }
+  if (M.s == MASK_FLOATING) { H_average += H.s; N++; }
 
   if (N == 0) {
-    SETERRQ(1, "N == 0;  call me only if a neighbor is floating!\n");
+    SETERRQ(1, "N == 0;  call this only if a neighbor is floating!\n");
   }
 
   H_average = H_average / N;
@@ -170,22 +157,27 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
       // first step: distributing residual ice masses
       if (vHresidual(i, j) > 0.0) {
+        
+        planeStar<PetscScalar> thk = vH.star(i, j),
+          bed = vbed.star(i, j);
 
         PetscInt N = 0; // counting empty / partially filled neighbors
-        PetscTruth exEast = PETSC_FALSE, exWest = PETSC_FALSE, exNorth = PETSC_FALSE, exSouth = PETSC_FALSE;
+        planeStar<bool> neighbors;
+        neighbors.e = neighbors.w = neighbors.n = neighbors.s = false;
 
         // check for partially filled / empty grid cell neighbors (mask not updated yet, but vH is)
-        if (vH(i + 1, j) == 0.0 && vbed(i + 1, j) < sea_level) {N += 1; exEast = PETSC_TRUE;}
-        if (vH(i - 1, j) == 0.0 && vbed(i - 1, j) < sea_level) {N += 1; exWest = PETSC_TRUE;}
-        if (vH(i, j + 1) == 0.0 && vbed(i, j + 1) < sea_level) {N += 1; exNorth = PETSC_TRUE;}
-        if (vH(i, j - 1) == 0.0 && vbed(i, j - 1) < sea_level) {N += 1; exSouth = PETSC_TRUE;}
+        if (thk.e == 0.0 && bed.e < sea_level) {N++; neighbors.e = true;}
+        if (thk.w == 0.0 && bed.w < sea_level) {N++; neighbors.w = true;}
+        if (thk.n == 0.0 && bed.n < sea_level) {N++; neighbors.n = true;}
+        if (thk.s == 0.0 && bed.s < sea_level) {N++; neighbors.s = true;}
 
         if (N > 0 && vH(i, j) > minHRedist)  {
-          //remainder ice mass will be redistributed equally to all adjacent imfrac boxes (is there a more physical way?)
-          if (exEast) vHref(i + 1, j) += vHresidual(i, j) / N;
-          if (exWest) vHref(i - 1, j) += vHresidual(i, j) / N;
-          if (exNorth) vHref(i, j + 1) += vHresidual(i, j) / N;
-          if (exSouth) vHref(i, j - 1) += vHresidual(i, j) / N;
+          //remainder ice mass will be redistributed equally to all adjacent
+          //imfrac boxes (is there a more physical way?)
+          if (neighbors.e) vHref(i + 1, j) += vHresidual(i, j) / N;
+          if (neighbors.w) vHref(i - 1, j) += vHresidual(i, j) / N;
+          if (neighbors.n) vHref(i, j + 1) += vHresidual(i, j) / N;
+          if (neighbors.s) vHref(i, j - 1) += vHresidual(i, j) / N;
 
           vHresidualnew(i, j) = 0.0;
         } else {
@@ -203,8 +195,9 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
 
 
-  double  ocean_rho = config.get("sea_water_density");
-  double  ice_rho = config.get("ice_density");
+  double  ocean_rho = config.get("sea_water_density"),
+    ice_rho = config.get("ice_density"),
+    C = ice_rho / ocean_rho;
   PetscScalar     H_average;
   PetscScalar     Hcut = 0.0;
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
@@ -216,14 +209,13 @@ PetscErrorCode IceModel::calculateRedistResiduals() {
         H_average = 0.0;
         PetscInt N = 0; // number of full floating ice neighbors (mask not yet updated)
 
-        if (vH(i + 1, j) > 0.0 && (vbed(i + 1, j) < (sea_level - ice_rho / ocean_rho*vH(i + 1, j))))
-          { H_average += vH(i + 1, j); N += 1;}
-        if (vH(i - 1, j) > 0.0 && (vbed(i - 1, j) < (sea_level - ice_rho / ocean_rho*vH(i - 1, j))))
-          { H_average += vH(i - 1, j); N += 1;}
-        if (vH(i, j + 1) > 0.0 && (vbed(i, j + 1) < (sea_level - ice_rho / ocean_rho*vH(i, j + 1))))
-          { H_average += vH(i, j + 1); N += 1;}
-        if (vH(i, j - 1) > 0.0 && (vbed(i, j - 1) < (sea_level - ice_rho / ocean_rho*vH(i, j - 1))))
-          { H_average += vH(i, j - 1); N += 1;}
+        planeStar<PetscScalar> thk = vH.star(i, j),
+          bed = vbed.star(i, j);
+
+        if (thk.e > 0.0 && bed.e < sea_level - C * thk.e) { N++; H_average += thk.e; }
+        if (thk.w > 0.0 && bed.w < sea_level - C * thk.w) { N++; H_average += thk.w; }
+        if (thk.n > 0.0 && bed.n < sea_level - C * thk.n) { N++; H_average += thk.n; }
+        if (thk.s > 0.0 && bed.s < sea_level - C * thk.s) { N++; H_average += thk.s; }
 
         if (N > 0){
           H_average = H_average / N;

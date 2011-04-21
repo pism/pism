@@ -194,7 +194,7 @@ PetscErrorCode SSA::compute_D2(IceModelVec2S &result) {
   
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (mask->value(i,j) == MASK_GROUNDED) {
+      if (mask->as_int(i,j) == MASK_GROUNDED) {
         const PetscScalar 
           u_x   = (velocity(i+1,j).u - velocity(i-1,j).u)/(2*dx),
           u_y   = (velocity(i,j+1).u - velocity(i,j-1).u)/(2*dy),
@@ -444,7 +444,7 @@ PetscErrorCode SSA::compute_maximum_velocity() {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       // the following conditionals, both -ocean_kill and -float_kill, are also applied in 
       //   IceModel::massContExplicitStep() when zeroing thickness
-      const bool ignorableOcean = ( do_ocean_kill && (mask->value(i,j) == MASK_OCEAN_AT_TIME_0) )
+      const bool ignorableOcean = ( do_ocean_kill && (mask->as_int(i,j) == MASK_OCEAN_AT_TIME_0) )
 	|| ( floating_ice_killed && mask->is_floating(i,j) );
   
       if (!ignorableOcean) {

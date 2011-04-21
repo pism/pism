@@ -77,7 +77,7 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
       //defined so far via ice thickness
       bool atBoundary = H_ij > 100.0 && (H_e <= 1.0 || H_w <= 1.0 || H_s <= 1.0 || H_n <= 1.0);
 
-      if (vel_bc && bc_locations && bc_locations->value(i,j) == 1) {
+      if (vel_bc && bc_locations && bc_locations->as_int(i,j) == 1) {
         // set diagonal entry to one; RHS entry will be known (e.g. SIA) velocity;
         //   this is where boundary value to SSA is set
         ierr = set_diagonal_matrix_entry(A, i, j, scaling); CHKERRQ(ierr);
@@ -153,7 +153,7 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
 
 
 
-    	if (include_basal_shear && (mask->value(i,j) == MASK_GROUNDED)) {
+    	if (include_basal_shear && (mask->as_int(i,j) == MASK_GROUNDED)) {
           // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
           valU[5] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
           valV[8] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);// without bc it would be the 7th point of the stencil
@@ -253,7 +253,7 @@ PetscErrorCode SSAFD_PIK::assemble_matrix(bool include_basal_shear, Mat A) {
          *    basalDrag[x|y]() methods.  These may be a plastic, pseudo-plastic,
          *    or linear friction law according to basal->drag(), which gets called
          *    by basalDragx(),basalDragy().  */
-        if (include_basal_shear && (mask->value(i,j) == MASK_GROUNDED)) {
+        if (include_basal_shear && (mask->as_int(i,j) == MASK_GROUNDED)) {
           // Dragging is done implicitly (i.e. on left side of SSA eqns for u,v).
           valU[5] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
           valV[7] += basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
@@ -373,7 +373,7 @@ PetscErrorCode SSAFD_PIK::assemble_rhs(Vec rhs) {
       bool boundary = H_ij > 100.0 &&
         (H_e <= 1.0 || H_w <= 1.0 || H_s <= 1.0 || H_n <= 1.0);
 
-      if (vel_bc && (bc_locations->value(i, j) == 1)) {
+      if (vel_bc && (bc_locations->as_int(i, j) == 1)) {
         rhs_uv[i][j].u = scaling * (*vel_bc)(i, j).u;
         rhs_uv[i][j].v = scaling * (*vel_bc)(i, j).v;
         continue;

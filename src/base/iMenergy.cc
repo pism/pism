@@ -140,7 +140,7 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       if (vMask.is_grounded(i,j)) {
-        if (vMask.value(i,j) == MASK_ICE_FREE_BEDROCK) { // no ice: sees air temp
+        if (vMask.as_int(i,j) == MASK_ICE_FREE_BEDROCK) { // no ice: sees air temp
           result(i,j) = artm(i,j);
         } else { // ice: sees temp of base of ice
           const PetscReal pressure = EC->getPressureFromDepth(vH(i,j));

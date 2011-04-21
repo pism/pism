@@ -559,7 +559,7 @@ PetscErrorCode SSAFEM_Forward::assemble_T_rhs( PISMVector2 **gvel, PetscReal **g
     // Enforce Dirichlet conditions strongly
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (bc_locations->value(i,j) == 1) {
+        if (bc_locations->as_int(i,j) == 1) {
           // Enforce explicit homogeneous dirichlet data.
           grhs[i][j].u = 0;
           grhs[i][j].v = 0;
@@ -641,7 +641,7 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2
     // Enforce Dirichlet conditions strongly
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (bc_locations->value(i,j) == 1) {
+        if (bc_locations->as_int(i,j) == 1) {
           // Enforce explicit homogeneous dirichlet data.
           RHS[i][j].u = 0;
           RHS[i][j].v = 0;

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Torsten Albrecht
+// Copyright (C) 2004--2011 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -75,10 +75,9 @@ PetscErrorCode IceModel::findIceBergCandidates() {
   ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
   ierr = vbed.begin_access(); CHKERRQ(ierr);
 
-  //const PetscScalar a = grid.dx * grid.dy * 1e-3 * 1e-3; // area unit (km^2)
-  PetscReal currentSeaLevel;
+  PetscReal sea_level;
   if (ocean != NULL) {
-    ierr = ocean->sea_level_elevation(currentSeaLevel); CHKERRQ(ierr);
+    ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
   } else { SETERRQ(2, "PISM ERROR: ocean == NULL"); }
 
   double ocean_rho = config.get("sea_water_density"),
@@ -88,7 +87,7 @@ PetscErrorCode IceModel::findIceBergCandidates() {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
       const PetscScalar hgrounded = vbed(i, j) + vH(i, j),
-        hfloating = currentSeaLevel + (1.0 - ice_rho / ocean_rho) * vH(i, j);
+        hfloating = sea_level + (1.0 - ice_rho / ocean_rho) * vH(i, j);
 
       //cut of border of computational domain
       if (hgrounded < hfloating && (i <= 0 || i >= Mx - 1 || j <= 0 || j >= My - 1)) {
@@ -142,17 +141,22 @@ PetscErrorCode IceModel::findIceBergCandidates() {
 
       if (vIcebergMask(i, j) == ICEBERGMASK_NOT_SET) {
 
-        bool neighbor_is_candidate = ( vIcebergMask(i + 1, j) == ICEBERGMASK_ICEBERG_CAND ||
+        planeStar<int> mask = vIcebergMask.int_star(i, j);
+
+        bool neighbor_is_candidate = ( mask.e == ICEBERGMASK_ICEBERG_CAND ||
+                                       mask.w == ICEBERGMASK_ICEBERG_CAND ||
+                                       mask.n == ICEBERGMASK_ICEBERG_CAND ||
+                                       mask.s == ICEBERGMASK_ICEBERG_CAND ||
+                                       // checks below should not be needed
                                        vIcebergMask(i + 1, j + 1) == ICEBERGMASK_ICEBERG_CAND ||
                                        vIcebergMask(i + 1, j - 1) == ICEBERGMASK_ICEBERG_CAND ||
-                                       vIcebergMask(i, j + 1) == ICEBERGMASK_ICEBERG_CAND ||
-                                       vIcebergMask(i, j - 1) == ICEBERGMASK_ICEBERG_CAND ||
                                        vIcebergMask(i - 1, j + 1) == ICEBERGMASK_ICEBERG_CAND ||
-                                       vIcebergMask(i - 1, j) == ICEBERGMASK_ICEBERG_CAND ||
                                        vIcebergMask(i - 1, j - 1) == ICEBERGMASK_ICEBERG_CAND);
 
-        if (vMask(i, j) < MASK_FLOATING && neighbor_is_candidate) vIcebergMask(i, j) = ICEBERGMASK_STOP_ATTACHED;
-        else if (vMask(i, j) > MASK_FLOATING && neighbor_is_candidate) vIcebergMask(i, j) = ICEBERGMASK_STOP_OCEAN;
+        if (vMask(i, j) < MASK_FLOATING && neighbor_is_candidate)
+          vIcebergMask(i, j) = ICEBERGMASK_STOP_ATTACHED;
+        else if (vMask(i, j) > MASK_FLOATING && neighbor_is_candidate)
+          vIcebergMask(i, j) = ICEBERGMASK_STOP_OCEAN;
 
       }
     }
@@ -182,38 +186,46 @@ PetscErrorCode IceModel::identifyNotAnIceBerg() {
   ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
   ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
 
-  PetscTruth checkingNoIceBergs = PETSC_TRUE;
+  bool done = false;
   PetscInt loopcount = 0;
-  while(checkingNoIceBergs == PETSC_TRUE){
-    ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
+  while(! done){
 
-    checkingNoIceBergs = PETSC_FALSE;
+    done = true;
+
+    ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
     for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
       for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
-        bool attached_to_grounded = (vIcebergMask(i, j + 1) == ICEBERGMASK_STOP_ATTACHED ||
-                                     vIcebergMask(i, j - 1) == ICEBERGMASK_STOP_ATTACHED ||
-                                     vIcebergMask(i + 1, j) == ICEBERGMASK_STOP_ATTACHED ||
-                                     vIcebergMask(i - 1, j) == ICEBERGMASK_STOP_ATTACHED),
+        planeStar<int> mask = vIcebergMask.int_star(i, j);
 
-          attached_to_no_iceberg = (vIcebergMask(i, j + 1) == ICEBERGMASK_NO_ICEBERG ||
-                                    vIcebergMask(i, j - 1) == ICEBERGMASK_NO_ICEBERG ||
-                                    vIcebergMask(i + 1, j) == ICEBERGMASK_NO_ICEBERG ||
-                                    vIcebergMask(i - 1, j) == ICEBERGMASK_NO_ICEBERG);
+        bool attached_to_grounded = (mask.e == ICEBERGMASK_STOP_ATTACHED ||
+                                     mask.w == ICEBERGMASK_STOP_ATTACHED ||
+                                     mask.n == ICEBERGMASK_STOP_ATTACHED ||
+                                     mask.s == ICEBERGMASK_STOP_ATTACHED),
 
-        if (vIcebergMask(i, j) == ICEBERGMASK_ICEBERG_CAND && (attached_to_grounded || attached_to_no_iceberg)) {
+          attached_to_no_iceberg = (mask.e == ICEBERGMASK_NO_ICEBERG ||
+                                    mask.w == ICEBERGMASK_NO_ICEBERG ||
+                                    mask.n == ICEBERGMASK_NO_ICEBERG ||
+                                    mask.s == ICEBERGMASK_NO_ICEBERG);
+
+        if (vIcebergMask(i, j) == ICEBERGMASK_ICEBERG_CAND &&
+            (attached_to_grounded || attached_to_no_iceberg)) {
 
           vIcebergMask(i, j) = ICEBERGMASK_NO_ICEBERG;
-          checkingNoIceBergs = PETSC_TRUE;
+          done = false;
         }
 
       }
     }
     ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
+
     /* xxxGhostComm() are collective operations. They must be invoked if anything changed on any processor.
      * Thus, collect here the checkingNoIceBergs flags from all processors and compute the global logical OR
      */
-    MPI_Allreduce(MPI_IN_PLACE, &checkingNoIceBergs, 1, MPI_INT, MPI_LOR, grid.com);
+    int flag = done;
+    MPI_Allreduce(MPI_IN_PLACE, &flag, 1, MPI_INT, MPI_LOR, grid.com);
+    done = flag;
+
     ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
     ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
     loopcount += 1;
@@ -299,10 +311,10 @@ PetscErrorCode IceModel::killEasyIceBergs() {
   ierr = vh.begin_access(); CHKERRQ(ierr);
   ierr = vbed.begin_access(); CHKERRQ(ierr);
 
-  PetscReal currentSeaLevel;
+  PetscReal sea_level;
   if (ocean != NULL) {
     //ierr = ocean->shelf_base_mass_flux(grid.year, dt / secpera, shelfbmassflux); CHKERRQ(ierr);
-    ierr = ocean->sea_level_elevation(currentSeaLevel); CHKERRQ(ierr);
+    ierr = ocean->sea_level_elevation(sea_level); CHKERRQ(ierr);
   } else { SETERRQ(2, "PISM ERROR: ocean == NULL"); }
 
   double ocean_rho = config.get("sea_water_density"),
@@ -316,40 +328,45 @@ PetscErrorCode IceModel::killEasyIceBergs() {
   // fl x fl   OR   o x o   OR   o  x fl
   // o  o  o        o o o        o  o  o
 
+  PetscReal C = (1.0 - ice_rho / ocean_rho);
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
+      planeStar<PetscScalar> thk = vH.star(i, j),
+        bed = vbed.star(i, j);
+
       // instead of updating surface elevation, counting here floating or icefree neighbors
-      const PetscScalar hgrounded = vbed(i, j) + vH(i, j),
-        hfloating = currentSeaLevel + (1.0 - ice_rho / ocean_rho) * vH(i, j);
+      const PetscScalar hgrounded = bed.ij + thk.ij,
+        hfloating = sea_level + (1.0 - ice_rho / ocean_rho) * thk.ij;
 
       if (vH(i, j) > 0.0 && hgrounded < hfloating) { //is floating ice shelf
 
         const PetscScalar
-          hgrounded_eb = vbed(i + 1, j) + vH(i + 1, j),
-          hfloating_eb = currentSeaLevel + (1.0 - ice_rho / ocean_rho) * vH(i + 1, j),
-          hgrounded_wb = vbed(i - 1, j) + vH(i - 1, j),
-          hfloating_wb = currentSeaLevel + (1.0 - ice_rho / ocean_rho) * vH(i - 1, j),
-          hgrounded_nb = vbed(i, j + 1) + vH(i, j + 1),
-          hfloating_nb = currentSeaLevel + (1.0 - ice_rho / ocean_rho) * vH(i, j + 1),
-          hgrounded_sb = vbed(i, j - 1) + vH(i, j - 1),
-          hfloating_sb = currentSeaLevel + (1.0 - ice_rho / ocean_rho) * vH(i, j - 1);
+          hgrounded_eb = bed.e + thk.e,
+          hfloating_eb = sea_level + C * thk.e,
+          hgrounded_wb = bed.w + thk.w,
+          hfloating_wb = sea_level + C * thk.w,
+          hgrounded_nb = bed.n + thk.n,
+          hfloating_nb = sea_level + C * thk.n,
+          hgrounded_sb = bed.s + thk.s,
+          hfloating_sb = sea_level + C * thk.s;
 
         PetscInt jcount = 0, icount = 0; // grid-cell wide floating ice nose
+
         if (vH(i + 1, j + 1) == 0.0) {jcount += 1; icount += 1;}
         if (vH(i + 1, j - 1) == 0.0) {jcount += 1; icount += 1;}
         if (vH(i - 1, j + 1) == 0.0) {jcount += 1; icount += 1;}
         if (vH(i - 1, j - 1) == 0.0) {jcount += 1; icount += 1;}
-        if (vH(i + 1, j) == 0.0) jcount += 1;
-        if (vH(i - 1, j) == 0.0) jcount += 1;
-        if (vH(i, j + 1) == 0.0) icount += 1;
-        if (vH(i, j - 1) == 0.0) icount += 1;
+
+        if (thk.e == 0.0) jcount += 1;
+        if (thk.w == 0.0) jcount += 1;
+        if (thk.n == 0.0) icount += 1;
+        if (thk.s == 0.0) icount += 1;
 
         if ((icount == 6 && hgrounded_eb < hfloating_eb && hgrounded_wb < hfloating_wb) ||
             (jcount == 6 && hgrounded_nb < hfloating_nb && hgrounded_sb < hfloating_sb)) {
 
           vHnew(i, j) = 0.0;
-          //vh(i, j) = hfloating; // why?
           vh(i, j) = 0.0;
           vMask(i, j) = MASK_ICE_FREE_OCEAN;
           PetscPrintf(PETSC_COMM_SELF,
@@ -379,13 +396,16 @@ PetscErrorCode IceModel::killEasyIceBergs() {
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
+      planeStar<PetscScalar> thk = vH.star(i, j);
+
       // instead of updating surface elevation, counting here floating or icefree neighbors
-      const PetscScalar hgrounded = vbed(i, j) + vH(i, j),
-        hfloating = currentSeaLevel + (1.0 - ice_rho / ocean_rho) * vH(i, j);
+      const PetscScalar hgrounded = vbed(i, j) + thk.ij,
+        hfloating = sea_level + C * thk.ij;
 
-      bool all_4neighbors_iceless = (vH(i + 1, j) == 0.0 && vH(i - 1, j) == 0.0 && vH(i, j + 1) == 0.0 && vH(i, j - 1) == 0.0);
+      bool all_4neighbors_icefree = (thk.e == 0.0 && thk.w == 0.0 &&
+                                     thk.n == 0.0 && thk.s == 0.0);
 
-      if (vH(i, j) > 0.0 && hgrounded < hfloating && all_4neighbors_iceless) {
+      if (thk.ij > 0.0 && hgrounded < hfloating && all_4neighbors_icefree) {
         vHnew(i, j) = 0.0;
         //vHnew2(i, j) = 0.0;
         //vh(i, j) = hfloating; // why?
@@ -412,15 +432,13 @@ PetscErrorCode IceModel::killEasyIceBergs() {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
       // instead of updating surface elevation, counting here floating or icefree neighbors
-      //FIXME: unused var: const PetscScalar hgrounded = vbed(i, j) + vH(i, j),
-      //FIXME: unused var: hfloating = currentSeaLevel + (1.0 - ice_rho / ocean_rho) * vH(i, j);
 
-      bool all_4neighbors_iceless = (vH(i + 1, j) == 0.0 &&
+      bool all_4neighbors_icefree = (vH(i + 1, j) == 0.0 &&
                                      vH(i - 1, j) == 0.0 &&
                                      vH(i, j + 1) == 0.0 &&
                                      vH(i, j - 1) == 0.0);
       // What about firstStepAfterInit?
-      if (vHref(i, j) > 0.0 && all_4neighbors_iceless) {
+      if (vHref(i, j) > 0.0 && all_4neighbors_icefree) {
         vHref(i, j) = 0.0;
         //vMask(i, j) = MASK_ICE_FREE_OCEAN;
         PetscPrintf(PETSC_COMM_SELF,

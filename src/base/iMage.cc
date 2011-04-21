@@ -86,13 +86,13 @@ PetscErrorCode ageSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pi
 
   // set up system: 0 <= k < ks
   for (PetscInt k = 0; k < ks; k++) {
-    planeStar ss;  // note ss.ij = tau[k]
+    planeStar<PetscScalar> ss;  // note ss.ij = tau[k]
     ierr = tau3->getPlaneStar_fine(i,j,k,&ss); CHKERRQ(ierr);
     // do lowest-order upwinding, explicitly for horizontal
-    rhs[k] =  (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx
-                         : u[k] * (ss.ij  - ss.im1) / dx;
-    rhs[k] += (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy
-                         : v[k] * (ss.ij  - ss.jm1) / dy;
+    rhs[k] =  (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx
+                         : u[k] * (ss.ij  - ss.w) / dx;
+    rhs[k] += (v[k] < 0) ? v[k] * (ss.n -  ss.ij) / dy
+                         : v[k] * (ss.ij  - ss.s) / dy;
     // note it is the age eqn: dage/dt = 1.0 and we have moved the hor.
     //   advection terms over to right:
     rhs[k] = ss.ij + dtAge * (1.0 - rhs[k]);

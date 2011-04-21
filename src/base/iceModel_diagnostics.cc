@@ -968,32 +968,28 @@ PetscErrorCode IceModel_new_mask::compute(IceModelVec* &output) {
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
 
-      int mask_ij = result->value(i,j),
-        mask_e = result->value(i + 1, j),
-        mask_w = result->value(i - 1, j),
-        mask_n = result->value(i, j + 1),
-        mask_s = result->value(i, j - 1);
+      planeStar<int> mask = result->int_star(i,j);
 
       // check if a point is in the interior of a region covered with ice:
       bool ice_filled_interior =
-        (mask_ij & FLAG_IS_FULL) &&
-        (mask_e  & FLAG_IS_FULL) &&
-        (mask_w  & FLAG_IS_FULL) &&
-        (mask_s  & FLAG_IS_FULL) &&
-        (mask_n  & FLAG_IS_FULL);
+        (mask.ij & FLAG_IS_FULL) &&
+        (mask.e  & FLAG_IS_FULL) &&
+        (mask.w  & FLAG_IS_FULL) &&
+        (mask.s  & FLAG_IS_FULL) &&
+        (mask.n  & FLAG_IS_FULL);
 
       // check if a point is in the interior of an ice-free region:
       bool ice_free_interior =
-        (! (mask_ij & FLAG_IS_FULL) ) &&
-        (! (mask_e  & FLAG_IS_FULL) ) &&
-        (! (mask_w  & FLAG_IS_FULL) ) &&
-        (! (mask_s  & FLAG_IS_FULL) ) &&
-        (! (mask_n  & FLAG_IS_FULL) );
+        (! (mask.ij & FLAG_IS_FULL) ) &&
+        (! (mask.e  & FLAG_IS_FULL) ) &&
+        (! (mask.w  & FLAG_IS_FULL) ) &&
+        (! (mask.s  & FLAG_IS_FULL) ) &&
+        (! (mask.n  & FLAG_IS_FULL) );
       
       if (ice_filled_interior || ice_free_interior)
-        mask_ij = mask_ij | FLAG_IS_INTERIOR;
+        mask.ij = mask.ij | FLAG_IS_INTERIOR;
 
-      (*result)(i,j) = mask_ij;
+      (*result)(i,j) = mask.ij;
     }
   }
 

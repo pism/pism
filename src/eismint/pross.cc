@@ -103,7 +103,7 @@ PetscErrorCode read_riggs_and_compare(IceGrid &grid, PISMVars &vars, IceModelVec
       ierr = verbPrintf(4,PETSC_COMM_SELF,
                         " PISM%d[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
                         grid.rank,k,clat[ci][cj],clon[ci][cj],cmag,cu,cv); CHKERRQ(ierr);
-      if (mask->value(ci,cj) == MASK_FLOATING) {
+      if (mask->as_int(ci,cj) == MASK_FLOATING) {
         goodptcount += 1.0;
         ChiSqr += PetscSqr(u-cu)+PetscSqr(v-cv);
       }

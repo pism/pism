@@ -170,7 +170,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
-      if (vel_bc && (bc_locations->value(i, j) == 1)) {
+      if (vel_bc && (bc_locations->as_int(i, j) == 1)) {
         rhs_uv[i][j].u = scaling * (*vel_bc)(i, j).u;
         rhs_uv[i][j].v = scaling * (*vel_bc)(i, j).v;
         continue;
@@ -375,7 +375,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
       // Handle the easy case: provided Dirichlet boundary conditions
-      if (vel_bc && bc_locations && bc_locations->value(i,j) == 1) {
+      if (vel_bc && bc_locations && bc_locations->as_int(i,j) == 1) {
         // set diagonal entry to one; RHS entry will be known velocity;
         ierr = set_diagonal_matrix_entry(A, i, j, scaling); CHKERRQ(ierr); 
         continue;
@@ -503,9 +503,9 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
        *    (i.e. on left side of SSA eqns).  */
       PetscReal beta = 0.0;
       if (include_basal_shear) {
-        if (mask->value(i,j) == MASK_GROUNDED) {
+        if (mask->as_int(i,j) == MASK_GROUNDED) {
           beta = basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
-        } else if (mask->value(i,j) == MASK_ICE_FREE_BEDROCK) {
+        } else if (mask->as_int(i,j) == MASK_ICE_FREE_BEDROCK) {
           // apply drag even in this case, to help with margins; note ice free
           // areas already have a strength extension
           beta = beta_ice_free_bedrock;

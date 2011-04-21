@@ -106,7 +106,7 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // the following conditionals, both -ocean_kill and -float_kill, are also applied in 
       //   IceModel::massContExplicitStep() when zeroing thickness
-      const bool ignorableOcean = ( do_ocean_kill && (vMask.value(i,j) == MASK_OCEAN_AT_TIME_0) )
+      const bool ignorableOcean = ( do_ocean_kill && (vMask.as_int(i,j) == MASK_OCEAN_AT_TIME_0) )
 	|| ( floating_ice_killed && vMask.is_floating(i,j) );
       if (!ignorableOcean) {
         PetscScalar denom = PetscAbs(vel[i][j].u)/grid.dx + PetscAbs(vel[i][j].v)/grid.dy;

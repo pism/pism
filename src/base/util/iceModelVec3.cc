@@ -269,7 +269,7 @@ PetscScalar IceModelVec3D::getValZ(PetscInt i, PetscInt j, PetscScalar z) {
 
 //! Return values on planar star stencil of scalar quantity at level z (by linear interpolation).
 PetscErrorCode   IceModelVec3::getPlaneStarZ(PetscInt i, PetscInt j, PetscScalar z,
-					     planeStar *star) {
+					     planeStar<PetscScalar> *star) {
 #ifdef PISM_DEBUG
   PetscErrorCode ierr;
   ierr = checkHaveArray();  CHKERRQ(ierr);
@@ -302,16 +302,16 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(PetscInt i, PetscInt j, PetscScalar
 
   if (kbz < n_levels - 1) {
     star->ij  = arr[i][j][kbz]   + incr * (arr[i][j][kbz + 1]   - arr[i][j][kbz]);
-    star->ip1 = arr[i+1][j][kbz] + incr * (arr[i+1][j][kbz + 1] - arr[i+1][j][kbz]);
-    star->im1 = arr[i-1][j][kbz] + incr * (arr[i-1][j][kbz + 1] - arr[i-1][j][kbz]);
-    star->jp1 = arr[i][j+1][kbz] + incr * (arr[i][j+1][kbz + 1] - arr[i][j+1][kbz]);
-    star->jm1 = arr[i][j-1][kbz] + incr * (arr[i][j-1][kbz + 1] - arr[i][j-1][kbz]);
+    star->e = arr[i+1][j][kbz] + incr * (arr[i+1][j][kbz + 1] - arr[i+1][j][kbz]);
+    star->w = arr[i-1][j][kbz] + incr * (arr[i-1][j][kbz + 1] - arr[i-1][j][kbz]);
+    star->n = arr[i][j+1][kbz] + incr * (arr[i][j+1][kbz + 1] - arr[i][j+1][kbz]);
+    star->s = arr[i][j-1][kbz] + incr * (arr[i][j-1][kbz + 1] - arr[i][j-1][kbz]);
   } else {
     star->ij  = arr[i][j][kbz];
-    star->ip1 = arr[i+1][j][kbz];
-    star->im1 = arr[i-1][j][kbz];
-    star->jp1 = arr[i][j+1][kbz];
-    star->jm1 = arr[i][j-1][kbz];
+    star->e = arr[i+1][j][kbz];
+    star->w = arr[i-1][j][kbz];
+    star->n = arr[i][j+1][kbz];
+    star->s = arr[i][j-1][kbz];
   }
 
   return 0;
@@ -319,23 +319,23 @@ PetscErrorCode   IceModelVec3::getPlaneStarZ(PetscInt i, PetscInt j, PetscScalar
 
 //! Gets a map-plane star stencil directly from the storage grid.
 PetscErrorCode IceModelVec3::getPlaneStar(PetscInt i, PetscInt j, PetscInt k,
-						  planeStar *star) {
+						  planeStar<PetscScalar> *star) {
   check_array_indices(i, j);
 
   PetscScalar ***arr = (PetscScalar***) array;
 
   star->ij  = arr[i][j][k];
-  star->ip1 = arr[i+1][j][k];
-  star->im1 = arr[i-1][j][k];
-  star->jp1 = arr[i][j+1][k];
-  star->jm1 = arr[i][j-1][k];
+  star->e = arr[i+1][j][k];
+  star->w = arr[i-1][j][k];
+  star->n = arr[i][j+1][k];
+  star->s = arr[i][j-1][k];
 
   return 0;
 }
 
 //! Gets a map-plane star stencil on the fine vertical grid.
 PetscErrorCode IceModelVec3::getPlaneStar_fine(PetscInt i, PetscInt j, PetscInt k,
-					       planeStar *star) {
+					       planeStar<PetscScalar> *star) {
   check_array_indices(i, j);
 
   PetscInt kbz = grid->ice_storage2fine[k];
@@ -346,10 +346,10 @@ PetscErrorCode IceModelVec3::getPlaneStar_fine(PetscInt i, PetscInt j, PetscInt 
     PetscScalar ***arr = (PetscScalar***) array;
 
     star->ij  = arr[i][j][kbz]   + incr * (arr[i][j][kbz + 1]   - arr[i][j][kbz]);
-    star->ip1 = arr[i+1][j][kbz] + incr * (arr[i+1][j][kbz + 1] - arr[i+1][j][kbz]);
-    star->im1 = arr[i-1][j][kbz] + incr * (arr[i-1][j][kbz + 1] - arr[i-1][j][kbz]);
-    star->jp1 = arr[i][j+1][kbz] + incr * (arr[i][j+1][kbz + 1] - arr[i][j+1][kbz]);
-    star->jm1 = arr[i][j-1][kbz] + incr * (arr[i][j-1][kbz + 1] - arr[i][j-1][kbz]);
+    star->e = arr[i+1][j][kbz] + incr * (arr[i+1][j][kbz + 1] - arr[i+1][j][kbz]);
+    star->w = arr[i-1][j][kbz] + incr * (arr[i-1][j][kbz + 1] - arr[i-1][j][kbz]);
+    star->n = arr[i][j+1][kbz] + incr * (arr[i][j+1][kbz + 1] - arr[i][j+1][kbz]);
+    star->s = arr[i][j-1][kbz] + incr * (arr[i][j-1][kbz + 1] - arr[i][j-1][kbz]);
   } else {
     return getPlaneStar(i, j, kbz, star);
   }

@@ -256,13 +256,9 @@ protected:
 
 
 //! \brief Star stencil points (in the map-plane).
+template <typename T>
 struct planeStar {
-  PetscScalar ij, ip1, im1, jp1, jm1;
-};
-
-//! \brief Box stencil points (in the map-plane).
-struct planeBox {
-  PetscScalar ij, ip1, im1, jp1, jm1, ip1jp1, im1jp1, ip1jm1, im1jm1;
+  T ij, e, w, n, s;
 };
 
 //! Class for a 2d DA-based Vec.
@@ -314,8 +310,34 @@ public:
   virtual PetscScalar diff_x_p(int i, int j);
   virtual PetscScalar diff_y_p(int i, int j);
   virtual PetscErrorCode view_matlab(PetscViewer my_viewer);
-  virtual PetscScalar& operator() (int i, int j);
   virtual PetscErrorCode has_nan();
+
+  //! Provides access (both read and write) to the internal PetscScalar array.
+  /*!
+    Note that i corresponds to the x direction and j to the y.
+  */
+  virtual inline PetscScalar& operator() (int i, int j) {
+    check_array_indices(i, j);
+    return static_cast<PetscScalar**>(array)[i][j];
+  }
+
+  virtual inline planeStar<PetscScalar> star(int i, int j) {
+    check_array_indices(i, j);
+    check_array_indices(i+1, j);
+    check_array_indices(i-1, j);
+    check_array_indices(i, j+1);
+    check_array_indices(i, j-1);
+
+    planeStar<PetscScalar> result;
+  
+    result.ij = operator()(i,j);
+    result.e =  operator()(i+1,j);
+    result.w =  operator()(i-1,j);
+    result.n =  operator()(i,j+1);
+    result.s =  operator()(i,j-1);
+
+    return result;
+  }
 };
 
 
@@ -323,7 +345,29 @@ public:
 //! floating-point scalars (instead of integers).
 class IceModelVec2Mask : public IceModelVec2S {
 public:
-  virtual int value(int i, int j);	  // returns the mask value (as an integer)
+  virtual inline int as_int(int i, int j) {
+    check_array_indices(i, j);
+    const PetscScalar **a = (const PetscScalar**) array;
+    return static_cast<int>(floor(a[i][j] + 0.5));
+  }
+
+  virtual inline planeStar<int> int_star(int i, int j) {
+    check_array_indices(i, j);
+    check_array_indices(i+1, j);
+    check_array_indices(i-1, j);
+    check_array_indices(i, j+1);
+    check_array_indices(i, j-1);
+
+    planeStar<int> result;
+    result.ij = as_int(i,j);
+    result.e =  as_int(i+1,j);
+    result.w =  as_int(i-1,j);
+    result.n =  as_int(i,j+1);
+    result.s =  as_int(i,j-1);
+
+    return result;
+  }
+
   virtual bool is_grounded(int i, int j); // checks for MASK_GROUNDED or MASK_ICE_FREE_BEDROCK
   virtual bool is_floating(int i, int j); // checks for MASK_FLOATING || MASK_FLOATING_OCEAN0
   virtual PetscErrorCode fill_where_grounded(IceModelVec2S &v, const PetscScalar fillval);
@@ -361,6 +405,25 @@ public:
   virtual PetscErrorCode get_array(PISMVector2 ** &a);
   virtual PetscErrorCode magnitude(IceModelVec2S &result);
   virtual PISMVector2&   operator()(int i, int j);
+
+  virtual inline planeStar<PISMVector2> star(int i, int j) {
+    check_array_indices(i, j);
+    check_array_indices(i+1, j);
+    check_array_indices(i-1, j);
+    check_array_indices(i, j+1);
+    check_array_indices(i, j-1);
+
+    planeStar<PISMVector2> result;
+  
+    result.ij = operator()(i,j);
+    result.e =  operator()(i+1,j);
+    result.w =  operator()(i-1,j);
+    result.n =  operator()(i,j+1);
+    result.s =  operator()(i,j-1);
+
+    return result;
+  }
+
   // Metadata, etc:
   using IceModelVec2::is_valid;
   virtual bool           is_valid(PetscScalar u, PetscScalar v);
@@ -374,7 +437,7 @@ public:
 class IceModelVec2Stag : public IceModelVec2 {
 public:
   IceModelVec2Stag() { dof = 2; vars.resize(dof); }
-  IceModelVec2Stag(const IceModelVec2S &other) : IceModelVec2(other) {}
+  IceModelVec2Stag(const IceModelVec2Stag &other) : IceModelVec2(other) {}
   using IceModelVec2::create;
   virtual PetscErrorCode create(IceGrid &my_grid, string my_name, bool local, int width = 1);
   virtual PetscErrorCode get_array(PetscScalar*** &a);
@@ -441,11 +504,11 @@ public:
   PetscErrorCode  setValColumnPL(PetscInt i, PetscInt j, PetscScalar *valsIN);
 
   PetscErrorCode  getPlaneStarZ(PetscInt i, PetscInt j, PetscScalar z,
-                                planeStar *star);
+                                planeStar<PetscScalar> *star);
   PetscErrorCode  getPlaneStar_fine(PetscInt i, PetscInt j, PetscInt k,
-				    planeStar *star);
+				    planeStar<PetscScalar> *star);
   PetscErrorCode  getPlaneStar(PetscInt i, PetscInt j, PetscInt k,
-			       planeStar *star);
+			       planeStar<PetscScalar> *star);
 
   PetscErrorCode  getHorSlice(Vec &gslice, PetscScalar z); // used in iMmatlab.cc
   PetscErrorCode  getHorSlice(IceModelVec2S &gslice, PetscScalar z);

@@ -461,7 +461,7 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
     // Enforce Dirichlet conditions strongly
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (bc_locations->value(i,j) == 1) {
+        if (bc_locations->as_int(i,j) == 1) {
           // Enforce explicit dirichlet data.
           yg[i][j].u = dirichletScale * (xg[i][j].u - BC_vel[i][j].u);
           yg[i][j].v = dirichletScale * (xg[i][j].v - BC_vel[i][j].v);
@@ -618,7 +618,7 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
   if (bc_locations && vel_bc) {
     for (i=grid.xs; i<grid.xs+grid.xm; i++) {
       for (j=grid.ys; j<grid.ys+grid.ym; j++) {
-        if (bc_locations->value(i,j) == 1) {
+        if (bc_locations->as_int(i,j) == 1) {
           const PetscReal ident[4] = {dirichletScale,0,0,dirichletScale};
           MatStencil row;
           // FIXME: Transpose shows up here!

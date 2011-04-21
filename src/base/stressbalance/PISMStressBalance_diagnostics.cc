@@ -103,6 +103,12 @@ PetscErrorCode PSB_velbar::compute(IceModelVec* &output) {
       // an ice-filled cell:
       ierr = u3->getInternalColumn(i, j, &u_ij); CHKERRQ(ierr);
       ierr = v3->getInternalColumn(i, j, &v_ij); CHKERRQ(ierr);
+
+      if (thk <= grid.zlevels[1]) {
+        (*result)(i,j).u = u_ij[0];
+        (*result)(i,j).v = v_ij[0];
+        continue;
+      }
       
       for (int k = 1; k <= ks; ++k) {
         u_sum += (grid.zlevels[k] - grid.zlevels[k-1]) * (u_ij[k] + u_ij[k-1]);

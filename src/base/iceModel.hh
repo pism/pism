@@ -328,13 +328,10 @@ protected:
   virtual PetscErrorCode regrid_variables(string filename, set<string> regrid_vars, int ndims);
 
   // see iMpartgrid.cc
-  virtual PetscErrorCode velsPartGrid(
-       int Mo, int Me, int Mw, int Mn, int Ms,
-       PISMVector2 vrego, PISMVector2 vrege, PISMVector2 vregw, PISMVector2 vregn, PISMVector2 vregs,
-       PetscReal &velE, PetscReal &velW, PetscReal &velN, PetscReal &velS);
-  virtual PetscReal getHav(bool do_redist,
-                           int Me, int Mw, int Mn, int Ms,
-                           PetscReal He, PetscReal Hw, PetscReal Hn, PetscReal Hs); 
+  PetscErrorCode velsPartGrid(planeStar<int> M, planeStar<PISMVector2> vreg,
+                              planeStar<PetscScalar> &vel_output);
+  PetscReal get_average_thickness(bool do_redist, planeStar<int> M,
+                                  planeStar<PetscScalar> H);
   virtual PetscErrorCode redistResiduals();
   virtual PetscErrorCode calculateRedistResiduals();
 

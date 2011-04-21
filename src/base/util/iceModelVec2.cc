@@ -359,17 +359,6 @@ PetscErrorCode IceModelVec2S::view_matlab(PetscViewer my_viewer) {
   return 0;
 }
 
-
-//! Provides access (both read and write) to the internal PetscScalar array.
-/*!
-  Note that i corresponds to the x direction and j to the y.
- */
-PetscScalar& IceModelVec2S::operator() (int i, int j) {
-  check_array_indices(i, j);
-  return static_cast<PetscScalar**>(array)[i][j];
-}
-
-
 //! Checks if the current IceModelVec2S has NANs and reports if it does.
 /*! Up to a fixed number of messages are printed at stdout.  Returns the full
  count of NANs (which is a nonzero) on this rank. */
@@ -407,21 +396,15 @@ PetscErrorCode IceModelVec2S::has_nan() {
 // IceModelVec2Mask
 // FIXME:  is this intended to be guaranteed?:  is_grounded(i,j) = !is_floating(i,j)
 
-//! Returns the mask value; does not check ownership.
-int IceModelVec2Mask::value(int i, int j) {
-  const PetscScalar **a = (const PetscScalar**) array;
-  return static_cast<int>(floor(a[i][j] + 0.5));
-}
-
 bool IceModelVec2Mask::is_grounded(int i, int j) {
-  const int m = value(i, j);
+  const int m = as_int(i, j);
 
   return (m == MASK_GROUNDED) || (m == MASK_ICE_FREE_BEDROCK);
 }
 
 
 bool IceModelVec2Mask::is_floating(int i, int j) {
-  const int m = value(i, j);
+  const int m = as_int(i, j);
 
   return (m == MASK_FLOATING) || (m == MASK_ICE_FREE_OCEAN) || (m == MASK_OCEAN_AT_TIME_0);
 }

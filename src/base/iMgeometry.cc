@@ -74,7 +74,7 @@ PetscErrorCode IceModel::update_mask() {
         ice_free = vH(i, j) < 0.01;
 
       // points marked as "ocean at time zero" are not updated
-      if (vMask.value(i, j) == MASK_OCEAN_AT_TIME_0)
+      if (vMask.as_int(i, j) == MASK_OCEAN_AT_TIME_0)
         continue;
 
       if (is_floating) {
@@ -137,7 +137,7 @@ PetscErrorCode IceModel::update_surface_elevation() {
 	continue;		// go to the next grid point
       }
 
-      if (vMask.value(i, j) == MASK_OCEAN_AT_TIME_0) {
+      if (vMask.as_int(i, j) == MASK_OCEAN_AT_TIME_0) {
         // mask takes priority over bed in this case (note sea level may change).
         // Example Greenland case: if mask say Ellesmere is OCEAN0,
         //   then never want ice on Ellesmere.
@@ -292,38 +292,35 @@ PetscErrorCode IceModel::massContExplicitStep() {
       }
 
       // get non-diffusive velocities according to old or -part_grid scheme
-      const int M_ij = vMask.value(i, j),
-        M_e = vMask.value(i + 1, j), M_w = vMask.value(i - 1, j),
-        M_n = vMask.value(i, j + 1), M_s = vMask.value(i, j - 1);
-      PetscScalar vel_E, vel_W, vel_N, vel_S;
+      planeStar<int> M = vMask.int_star(i, j);
+      planeStar<PetscScalar> v;
+
       if (do_part_grid) {
-        ierr = velsPartGrid(M_ij, M_e, M_w, M_n, M_s,
-                            vel(i, j), vel(i + 1, j), vel(i - 1, j), vel(i, j + 1), vel(i, j - 1),
-                            vel_E, vel_W, vel_N, vel_S); CHKERRQ(ierr);
+        ierr = velsPartGrid(M, vel.star(i, j), v); CHKERRQ(ierr);
       } else {
         // just compute (i, j)-centered "face" velocity components by average
-        vel_E = 0.5 * (vel(i, j).u + vel(i + 1, j).u);
-        vel_W = 0.5 * (vel(i - 1, j).u + vel(i, j).u);
-        vel_N = 0.5 * (vel(i, j).v + vel(i, j + 1).v);
-        vel_S = 0.5 * (vel(i, j - 1).v + vel(i, j).v);
+        v.e = 0.5 * (vel(i, j).u + vel(i + 1, j).u);
+        v.w = 0.5 * (vel(i - 1, j).u + vel(i, j).u);
+        v.n = 0.5 * (vel(i, j).v + vel(i, j + 1).v);
+        v.s = 0.5 * (vel(i, j - 1).v + vel(i, j).v);
       }
 
       // membrane stress (and/or basal sliding) part: upwind by staggered grid
       // PIK method;  this is   \nabla \cdot [(u, v) H]
-      divQ += (  vel_E * (vel_E > 0 ? vH(i, j) : vH(i + 1, j))
-                 - vel_W * (vel_W > 0 ? vH(i - 1, j) : vH(i, j)) ) / dx;
-      divQ += (  vel_N * (vel_N > 0 ? vH(i, j) : vH(i, j + 1))
-                 - vel_S * (vel_S > 0 ? vH(i, j - 1) : vH(i, j)) ) / dy;
+      divQ += (  v.e * (v.e > 0 ? vH(i, j) : vH(i + 1, j))
+                 - v.w * (v.w > 0 ? vH(i - 1, j) : vH(i, j)) ) / dx;
+      divQ += (  v.n * (v.n > 0 ? vH(i, j) : vH(i, j + 1))
+                 - v.s * (v.s > 0 ? vH(i, j - 1) : vH(i, j)) ) / dy;
 
       // decide whether to apply Albrecht et al 2011 subgrid-scale parameterization (-part_grid)
-      const bool adjacenttofloating = (M_e == MASK_FLOATING ||
-                                       M_w == MASK_FLOATING ||
-                                       M_n == MASK_FLOATING ||
-                                       M_s == MASK_FLOATING),
-        adjacenttogrounded = (M_e < MASK_FLOATING ||
-                              M_w < MASK_FLOATING ||
-                              M_n < MASK_FLOATING ||
-                              M_s < MASK_FLOATING);
+      const bool adjacent_to_floating = (M.e == MASK_FLOATING ||
+                                       M.w == MASK_FLOATING ||
+                                       M.n == MASK_FLOATING ||
+                                       M.s == MASK_FLOATING),
+        adjacent_to_grounded = (M.e < MASK_FLOATING ||
+                              M.w < MASK_FLOATING ||
+                              M.n < MASK_FLOATING ||
+                              M.s < MASK_FLOATING);
 
       PetscReal S = 0.0;
       if (include_bmr_in_continuity) {
@@ -334,32 +331,31 @@ PetscErrorCode IceModel::massContExplicitStep() {
       }
 
       // case where we apply -part_grid
-      if ((do_part_grid) && (M_ij > MASK_FLOATING) && (adjacenttofloating)) {
+      if ((do_part_grid) && (M.ij > MASK_FLOATING) && (adjacent_to_floating)) {
         vHref(i, j) -= divQ * dt;
-        PetscReal Hav = getHav(do_redist, M_e, M_w, M_n, M_s,
-                               vH(i + 1, j), vH(i - 1, j), vH(i, j + 1), vH(i, j - 1));
+        PetscReal H_average = get_average_thickness(do_redist, M, vH.star(i, j));
 
         // To calculate the surface balance contribution with respect to the
         // coverage ratio, let  X = vHref_new  be the new value of Href.  We assume
         //   X = vHref_old + (M - S) * dt * coverageRatio
         // equivalently
-        //   X = vHref_old + (M - S) * dt * X / Hav.
+        //   X = vHref_old + (M - S) * dt * X / H_average.
         // where M = acab and S = shelfbaseflux for floating ice.  Solving for X we get
-        //   X = vHref_old / (1.0 - (M - S) * dt * Hav))
-        vHref(i, j) = vHref(i, j) / (1.0 - (acab(i, j) - S) * dt / Hav);
+        //   X = vHref_old / (1.0 - (M - S) * dt * H_average))
+        vHref(i, j) = vHref(i, j) / (1.0 - (acab(i, j) - S) * dt / H_average);
 
-        const PetscScalar coverageRatio = vHref(i, j) / Hav;
+        const PetscScalar coverageRatio = vHref(i, j) / H_average;
 
         if (coverageRatio > 1.0) { // partially filled grid cell is considered to be full
-          if (do_redist) {  vHresidual(i, j) = vHref(i, j) - Hav;  } //residual ice thickness
-          vHnew(i, j) = Hav; // gets a "real" ice thickness
+          if (do_redist) {  vHresidual(i, j) = vHref(i, j) - H_average;  } //residual ice thickness
+          vHnew(i, j) = H_average; // gets a "real" ice thickness
           vHref(i, j) = 0.0;
         } else {
           vHnew(i, j) = 0.0; // no change from vH value, actually
           // vHref(i, j) not changed
         }
 
-      } else if ( (M_ij <= MASK_FLOATING) || ((M_ij > MASK_FLOATING) && (adjacenttogrounded)) ) {
+      } else if ( (M.ij <= MASK_FLOATING) || ((M.ij > MASK_FLOATING) && (adjacent_to_grounded)) ) {
         // grounded/floating default case, and case of ice-free ocean adjacent to grounded
         vHnew(i, j) += (acab(i, j) - S - divQ) * dt; // include M
       } else {
@@ -378,7 +374,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
       // force zero thickness at points which were originally ocean (if "-ocean_kill");
       //   this is calving at original calving front location
-      if ( do_ocean_kill && (vMask.value(i, j) == MASK_OCEAN_AT_TIME_0) ) {
+      if ( do_ocean_kill && (vMask.as_int(i, j) == MASK_OCEAN_AT_TIME_0) ) {
         my_ocean_kill_flux -= vHnew(i, j);
         vHnew(i, j) = 0.0;
       }

@@ -241,12 +241,12 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
     }
     rhs[k] = Enth[k];
     if (!ismarginal) {
-      planeStar ss;
+      planeStar<PetscScalar> ss;
       Enth3->getPlaneStar_fine(i,j,k,&ss);
-      const PetscScalar UpEnthu = (u[k] < 0) ? u[k] * (ss.ip1 -  ss.ij) / dx :
-                                               u[k] * (ss.ij  - ss.im1) / dx;
-      const PetscScalar UpEnthv = (v[k] < 0) ? v[k] * (ss.jp1 -  ss.ij) / dy :
-                                               v[k] * (ss.ij  - ss.jm1) / dy;
+      const PetscScalar UpEnthu = (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx :
+                                               u[k] * (ss.ij  - ss.w) / dx;
+      const PetscScalar UpEnthv = (v[k] < 0) ? v[k] * (ss.n -  ss.ij) / dy :
+                                               v[k] * (ss.ij  - ss.s) / dy;
       rhs[k] += dtTemp * ((Sigma[k] / ice_rho) - UpEnthu - UpEnthv);
     }
   }

@@ -756,7 +756,7 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
         const PetscScalar alpha_squared =
           PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o));
 
-        int M = mask->value(i,j);
+        int M = mask->as_int(i,j);
 
         // in the ice:
         for (PetscInt k=0; k<=ks; ++k) {

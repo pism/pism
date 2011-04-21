@@ -258,7 +258,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           //   and strain heating if isMarginal
           const bool isMarginal = checkThinNeigh(vH(i+1,j),vH(i+1,j+1),vH(i,j+1),vH(i-1,j+1),
                                                  vH(i-1,j),vH(i-1,j-1),vH(i,j-1),vH(i+1,j-1));
-          PismMask mask_value = static_cast<PismMask>(vMask.value(i,j));
+          PismMask mask_value = static_cast<PismMask>(vMask.as_int(i,j));
           ierr = system.setSchemeParamsThisColumn(mask_value, isMarginal, lambda);
           CHKERRQ(ierr);  
 
@@ -310,7 +310,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             ierr = PetscPrintf(PETSC_COMM_SELF,
                                "  [[too low (<200) ice segment temp T = %f at %d,%d,%d;"
                                " proc %d; mask=%d; w=%f]]\n",
-                               Tnew[k],i,j,k,grid.rank,vMask.value(i,j),system.w[k]*secpera); CHKERRQ(ierr);
+                               Tnew[k],i,j,k,grid.rank,vMask.as_int(i,j),system.w[k]*secpera); CHKERRQ(ierr);
             myLowTempCount++;
           }
           if (Tnew[k] < artm(i,j) - bulgeMax) {
@@ -340,7 +340,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             ierr = PetscPrintf(PETSC_COMM_SELF,
                                "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                                " proc %d; mask=%d; w=%f]]\n",
-                               Tnew[0],i,j,grid.rank,vMask.value(i,j),system.w[0]*secpera); CHKERRQ(ierr);
+                               Tnew[0],i,j,grid.rank,vMask.as_int(i,j),system.w[0]*secpera); CHKERRQ(ierr);
             myLowTempCount++;
           }
           if (Tnew[0] < artm(i,j) - bulgeMax) {
