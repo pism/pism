@@ -18,7 +18,7 @@
 
 #include "SSAFEM.hh"
 #include "FETools.hh"
-#include <cmath>
+#include "IceMarginGeometry.hh"
 
 SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b, 
                 IceFlowLaw &i, EnthalpyConverter &ec, 
@@ -34,6 +34,7 @@ PetscErrorCode SSAFEM::allocate_fem() {
   dirichletScale = 1.0;
   ocean_rho = config.get("sea_water_density");
   earth_grav = config.get("standard_gravity");
+  m_beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
 
   ierr = DACreateGlobalVector(SSADA, &r);CHKERRQ(ierr);
   ierr = DAGetMatrix(SSADA, "baij", &J); CHKERRQ(ierr);
@@ -104,6 +105,7 @@ PetscErrorCode SSAFEM::setFromOptions()
 
   PetscFunctionBegin;
   ierr = PetscOptionsHead("SSA FEM options");CHKERRQ(ierr);
+  dirichletScale = 1.0e9;
   ierr = PetscOptionsReal("-ssa_fe_dirichlet_scale",
                           "Enforce Dirichlet conditions with this additional scaling",
                           "",
@@ -207,6 +209,8 @@ PetscErrorCode SSAFEM::setup()
     Enth_q[q] = new PetscReal[Mz];
   }
   
+  IceMarginGeometry margin(sea_level,ice,config);
+  
   ierr = enthalpy->begin_access();CHKERRQ(ierr);
   ierr = surface->get_array(h);CHKERRQ(ierr);
   ierr = thickness->get_array(H);CHKERRQ(ierr);
@@ -230,12 +234,14 @@ PetscErrorCode SSAFEM::setup()
       const PetscInt ij = element_index.flatten(i,j);
       FEStoreNode *feS = &feStore[4*ij];
       for (q=0; q<4; q++) {
-        feS[q].h  = hq[q];
         feS[q].H  = Hq[q];
         feS[q].b  = bq[q];
         feS[q].tauc = taucq[q];
         feS[q].hx = hxq[q];
         feS[q].hy = hyq[q];
+
+        PetscReal notUsed;
+        margin.computeGeometry(feS[q].b,feS[q].H,&feS[q].mask,&notUsed);
       }
 
       // In the following, we obtain the averaged hardness value from enthalpy by 
@@ -271,10 +277,6 @@ PetscErrorCode SSAFEM::setup()
         // Evaluate column integrals in flow law at every quadrature point's column
         feS[q].B = ice.averagedHardness_from_enth(feS[q].H, grid.kBelowHeight(feS[q].H),
                                                   grid.zlevels.data(), Enth_q[q]);
-        if( std::isinf( feS[q].B ) )  // why not use isnan() here?
-        {
-          SETERRQ(1,"hardness made a NaN!");
-        }
       }
     }
   }
@@ -316,18 +318,17 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
   *nuH  *=  2;
   if (dNuH) *dNuH *= 2;
   
-  if (Floating(ice,ocean_rho,feS->H,feS->b) ) {
-    // The ice is floating here so there is no friction. Note that the purpose
-    // of checking flotation this way is to get subgrid resolution of stress in
-    // the vicinity of the grounding line. According to Goldberg et. al. 2009
-    // (probably will be published in 2009...) this is important to loosen the
-    // resolution requirements near the grounding line.
-    *beta = 0;
-    if (dbeta) *dbeta = 0;
-  } else {
+  if(feS->mask == MASK_GROUNDED )
+  {
     basal.dragWithDerivative(feS->tauc,u->u,u->v,beta,dbeta);
+  } else {
+    *beta = 0;
+    if(feS->mask == MASK_ICE_FREE_BEDROCK)
+    {
+      *beta = m_beta_ice_free_bedrock;
+    }
+    if(dbeta) *dbeta = 0;
   }
- 
   return 0;
 }
 
@@ -488,18 +489,22 @@ PetscErrorCode SSAFEM::compute_local_function(DALocalInfo *info, const PISMVecto
   return 0;
 }
 
+
+
 //! Implements the callback for computing the SNES local Jacobian.
 /*! Compute the Jacobian \f[J_{ij}{kl} \frac{d r_{ij}}{d x_{kl}}= G(x,\psi_{ij}) \f] 
 where \f$G\f$ is the weak form of the SSA, \f$x\f$ is the current approximate solution, and 
 the \f$\psi_{ij}\f$ are test functions. */
 PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVector2 **xg, Mat Jac )
 {
+
   PetscReal      **bc_mask;
   PISMVector2    **BC_vel;
   PetscInt         i,j;
   PetscErrorCode   ierr;
 
-  (void) info; // Avoid compiler warning.
+  // Avoid compiler warning.
+  (void) info;
 
   // Zero out the Jacobian in preparation for updating it.
   ierr = MatZeroEntries(Jac);CHKERRQ(ierr);
@@ -654,11 +659,6 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
       
       ierr = PetscObjectSetName((PetscObject) Jac,"A"); CHKERRQ(ierr);
       ierr = MatView(Jac, viewer);CHKERRQ(ierr);
-
-    // ierr = PetscPrintf(grid.com,
-    //                    "SSA Jacobian\n");
-    // CHKERRQ(ierr);
-    // ierr = MatView(Jac,PETSC_VIEWER_STDOUT_WORLD);
   }
 
   ierr = MatSetOption(Jac,MAT_NEW_NONZERO_LOCATION_ERR,PETSC_TRUE);CHKERRQ(ierr);

@@ -29,6 +29,7 @@
 #include "Timeseries.hh"
 #include "exactTestsIJ.h"
 #include "stressbalance/SSAFEM.hh"
+#include "stressbalance/SSAFEM_Forward.hh"
 #include "stressbalance/SSAFD.hh"
 #include "pism_python.hh"
 #include "iceModel.hh"
@@ -113,6 +114,7 @@ typedef int PetscInt; // YUCK.
 %Pism_reference_output_typemaps(TYPE);
 %apply TYPE & OUTPUT { TYPE &}
 %enddef
+
 
 
 %typemap(in, numinputs=0,noblock=1) bool & OUTPUT (bool temp = false) {
@@ -328,9 +330,10 @@ typedef int PetscInt; // YUCK.
     SWIG_AsVal(int)($input,&tmp);
     $1 = static_cast<nc_type>(tmp);
 }
-%typemap(typecheck) nc_type {
+%typemap(typecheck,precedence=SWIG_TYPECHECK_INTEGER) nc_type {
     $1 = PyInt_Check($input);
 }
+
 // Copied straight from netcdf.h  I wonder if there is a more elegant way to do this, without dragging in everything
 // else from netcdf.h
 #define	NC_NAT 	        0	/* NAT = 'Not A Type' (c.f. NaN) */
@@ -399,6 +402,7 @@ typedef int PetscInt; // YUCK.
 %include "stressbalance/SSA.hh"
 
 %include "stressbalance/SSAFEM.hh"
+%include "stressbalance/SSAFEM_Forward.hh"
 %include "stressbalance/SSAFD.hh"
 %include "pism_python.hh"
 

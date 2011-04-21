@@ -26,38 +26,10 @@
 
 //! Storage for SSA coefficients at a quadrature point.
 struct FEStoreNode {
-  PetscReal h,H,tauc,hx,hy,b,B;
+  PetscReal H,tauc,hx,hy,b,B;
+  PetscInt mask;
 };
 
-
-/*
-//! Currently unused class that may be used to implement nondimensionalization in SSAFEM.
-class PismRef {
-public:
-  PismRef() {
-    length = 1;
-    height = 1;
-    time = 1;
-    pressure = 1;
-  }
-  PetscReal Length() const { return length; }
-  PetscReal Area() const { return length*length; }
-  PetscReal Height() const { return height; }
-  PetscReal Time() const { return time; }
-  PetscReal Velocity() const { return length/time; }
-  PetscReal VerticalVelocity() const { return height/time; }
-  PetscReal StrainRate() const { return 1/time; }
-  PetscReal Velocity2() const { PetscReal v = Velocity(); return 1.0; }
-  PetscReal StrainRate2() const { PetscReal s = StrainRate(); return 1.0; }
-  PetscReal Slope() const { return height / length; }
-  PetscReal Pressure() const { return pressure; }
-  PetscReal DrivingStress() const { return Pressure() * Slope(); }
-  PetscReal IntegratedViscosity() const { return DrivingStress() * Length() / StrainRate(); }
-  PetscReal Drag() const { return DrivingStress() / Velocity(); }
-private:
-  PetscReal length,height,time,pressure;
-};
-*/
 
 class SSAFEM;
 
@@ -140,7 +112,7 @@ protected:
   PetscReal    dirichletScale;
   PetscReal    ocean_rho;
   PetscReal    earth_grav;
-  // PismRef      ref;
+  PetscReal    m_beta_ice_free_bedrock;
 
   FEElementMap element_index;
   FEQuadrature quadrature;

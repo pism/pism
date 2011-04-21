@@ -21,6 +21,7 @@ add_library (pismutil
   base/util/pism_default_config.cc
   base/enthalpyConverter.cc
   base/pism_revision.cc
+  base/IceMarginGeometry.cc
   )
 target_link_libraries (pismutil pismudunits ${Pism_EXTERNAL_LIBS})
 add_dependencies (pismutil pism_config)

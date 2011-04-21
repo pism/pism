@@ -35,6 +35,11 @@ FEElementMap::FEElementMap(const IceGrid &g)
   ys= g.ys-1;                    // Start at ghost at the bottom.
   PetscInt yf = g.ys + g.ym - 1; // End at ghost at the top.
 
+  lxs = g.xs;
+  PetscInt lxf = lxs + g.xm - 1;
+  lys = g.ys;
+  PetscInt lyf = lys + g.ym - 1;
+
   // Now correct if needed. The only way there will not be ghosts is if the 
   // grid is not periodic and we are up against the grid boundary.
   
@@ -47,7 +52,8 @@ FEElementMap::FEElementMap(const IceGrid &g)
     // Rightmost vertex has index g.Mx-1, so the rightmost element has index g.Mx-2
     if(xf > g.Mx-2)
     {
-      xf = g.Mx-2;
+      xf  = g.Mx-2;
+      lxf = g.Mx-2;
     }
   }
 
@@ -60,13 +66,17 @@ FEElementMap::FEElementMap(const IceGrid &g)
     // Topmost vertex has index g.My-1, so the topmost element has index g.My-2
     if(yf > g.My-2)
     {
-      yf = g.My-2;
+      yf  = g.My-2;
+      lyf = g.My-2;
     }
   }
   
   // Tally up the number of elements in each direction
   xm = xf-xs+1;
   ym = yf-ys+1;
+  lxm = lxf-lxs+1;
+  lym = lyf-lys+1;
+
 }
 
 

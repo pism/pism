@@ -331,10 +331,17 @@ public:
     return (i-xs)*ym+(j-ys);
   }
   
+  bool is_local_element(PetscInt i, PetscInt j, const IceGrid &g);
+  
   PetscInt xs, //!< x-coordinate of the first element to loop over.
            xm, //!< total number of elements to loop over in the x-direction.
            ys, //!< y-coordinate of the first element to loop over.
-           ym; //!< total number of elements to loop over in the y-direction.  
+           ym, //!< total number of elements to loop over in the y-direction. 
+           lxs, //!< x-index of the first local element.
+           lxm, //!< total number local elements in x direction.
+           lys, //!< y-index of the first local element.
+           lym; //!< total number local elements in y direction.
+
 };
 
 //! Numerical integration of finite element functions.
@@ -418,11 +425,5 @@ protected:
   PISMVector2 m_tmpVector[Nk];
 };
 
-
-
-// Returns true if bed<0 and the mass of a column of ice of height H  is less than the mass of
-// a column of (sea-)water of height |bed|.
-PetscTruth Floating(const IceFlowLaw &ice, PetscScalar ocean_rho,
-                          PetscReal H, PetscReal bed);
 
 #endif/* _FETOOLS_H_*/
