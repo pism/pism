@@ -6,7 +6,8 @@
 
 shopt -s nullglob  # don't return list of files if none found
 
-set -x
+set -x  # show commands
+set -e  # exit on error
 
 for file in *_ss
 do
