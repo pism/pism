@@ -68,6 +68,8 @@ PetscErrorCode IceModel::set_grid_defaults() {
   vector<string> names;
   names.push_back("land_ice_thickness");
   names.push_back("bedrock_altitude");
+  names.push_back("thk");
+  names.push_back("topg");
   for (unsigned int i = 0; i < names.size(); ++i) {
     ierr = nc.get_grid_info(names[i], gi);
     if (ierr == 0) break;
