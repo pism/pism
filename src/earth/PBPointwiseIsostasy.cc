@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,8 @@ PetscErrorCode PBPointwiseIsostasy::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com,
 		    "* Initializing the pointwise isostasy bed deformation model...\n"); CHKERRQ(ierr);
 
-  ierr = thk->copy_to(thk_last); CHKERRQ(ierr);
+  ierr = thk->copy_to(thk_last);   CHKERRQ(ierr);
+  ierr = topg->copy_to(topg_last); CHKERRQ(ierr);
 
   return 0;
 }
