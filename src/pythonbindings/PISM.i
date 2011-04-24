@@ -70,6 +70,7 @@ namespace std {
 // If so, maybe just copy the code block from petscmath.h here for the PetscReal typedefs.
 typedef double PetscReal; // YUCK.
 typedef int PetscInt; // YUCK.
+typedef int NormType; // YUCK.
 
 
 // Why did I include this?
@@ -186,6 +187,7 @@ typedef int PetscInt; // YUCK.
 
 %apply PetscInt & OUTPUT {PetscInt & result};
 %apply PetscReal & OUTPUT {PetscReal & result};
+%apply PetscReal & OUTPUT {PetscReal & out};
 %apply bool & OUTPUT {bool & is_set, bool & result, bool & flag};
 
 

@@ -24,8 +24,9 @@ PetscErrorCode SSAFEM_Forward::allocate_ksp()
 
   // Storage for vector unknowns.
   ierr = DAGetMatrix(SSADA, "baij", &m_MatA); CHKERRQ(ierr);
-  // ierr = DACreateLocalVector(SSADA, &m_VecU); CHKERRQ(ierr);
-  ierr = DACreateGlobalVector(SSADA, &m_VecZ); CHKERRQ(ierr);
+  ierr = DACreateLocalVector(SSADA, &m_VecU); CHKERRQ(ierr);
+  ierr = DACreateGlobalVector(SSADA, &m_VecZ2); CHKERRQ(ierr);
+  ierr = DACreateLocalVector(SSADA, &m_VecZ); CHKERRQ(ierr);
   ierr = DACreateGlobalVector(SSADA, &m_VecRHS2); CHKERRQ(ierr);
 
   // Storage for scalar unknowns.
@@ -35,12 +36,16 @@ PetscErrorCode SSAFEM_Forward::allocate_ksp()
   ierr = DACreateGlobalVector(grid.da2, &m_VecV); CHKERRQ(ierr);
   
   ierr = KSPCreate(grid.com, &m_KSP); CHKERRQ(ierr);
+  PetscReal ksp_rtol = 1e-12;
+  ierr = KSPSetTolerances(m_KSP,ksp_rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
   PC pc;
   ierr = KSPGetPC(m_KSP,&pc); CHKERRQ(ierr);
   ierr = PCSetType(pc,PCBJACOBI); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(m_KSP); CHKERRQ(ierr);
 
+
   ierr = KSPCreate(grid.com, &m_KSP_B); CHKERRQ(ierr);
+  ierr = KSPSetTolerances(m_KSP_B,ksp_rtol,PETSC_DEFAULT,PETSC_DEFAULT,PETSC_DEFAULT);
   PC pc_B;
   ierr = KSPGetPC(m_KSP_B,&pc_B); CHKERRQ(ierr);
   ierr = PCSetType(pc_B,PCBJACOBI); CHKERRQ(ierr);
@@ -69,6 +74,10 @@ PetscErrorCode SSAFEM_Forward::deallocate_ksp()
     ierr = MatDestroy(m_MatB); CHKERRQ(ierr);
   }
 
+  if (m_VecU != PETSC_NULL) {
+    ierr = VecDestroy(m_VecU); CHKERRQ(ierr);
+  }
+
   if (m_VecRHS2 != PETSC_NULL) {
     ierr = VecDestroy(m_VecRHS2); CHKERRQ(ierr);
   }
@@ -79,6 +88,10 @@ PetscErrorCode SSAFEM_Forward::deallocate_ksp()
 
   if (m_VecZ != PETSC_NULL) {
     ierr = VecDestroy(m_VecZ); CHKERRQ(ierr);
+  }
+
+  if (m_VecZ2 != PETSC_NULL) {
+    ierr = VecDestroy(m_VecZ2); CHKERRQ(ierr);
   }
 
   if (m_VecV != PETSC_NULL) {
@@ -156,6 +169,12 @@ PetscErrorCode SSAFEM_Forward::solveF_core()
         "SSAFEM solve failed to converge (SNES reason %s)\n\n", SNESConvergedReasons[reason]);
     }
     verbPrintf(2,grid.com,"SSAFEM solve converged (SNES reason %s)\n\n", SNESConvergedReasons[reason]);
+
+    ierr =  DAGlobalToLocalBegin(SSADA, SSAX, INSERT_VALUES, m_VecU);  CHKERRQ(ierr);
+    ierr =   DAGlobalToLocalEnd(SSADA, SSAX, INSERT_VALUES, m_VecU);  CHKERRQ(ierr);
+    // ierr = DALocalToLocalBegin(SSADA, m_VecU, INSERT_VALUES, m_VecU);  CHKERRQ(ierr);
+    // ierr = DALocalToLocalEnd(SSADA, m_VecU, INSERT_VALUES, m_VecU);  CHKERRQ(ierr);
+    
     m_forward_F_needed = false;
   }  
   return 0;
@@ -189,33 +208,18 @@ PetscErrorCode SSAFEM_Forward::solveT( IceModelVec2S &dtauc, IceModelVec2V &resu
   }
 
   dtauc.get_array(dtauc_a);  
-  ierr = DAVecGetArray(SSADA,SSAX,&vel); CHKERRQ(ierr);
+  ierr = DAVecGetArray(SSADA,m_VecU,&vel); CHKERRQ(ierr);
   ierr = DAVecGetArray(SSADA,m_VecRHS2,&rhs); CHKERRQ(ierr);
-
   ierr = assemble_T_rhs(vel,dtauc_a,rhs); CHKERRQ(ierr);
-
   dtauc.end_access();
-  ierr = DAVecRestoreArray(SSADA, SSAX, &vel); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(SSADA, m_VecU, &vel); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(SSADA, m_VecRHS2, &rhs); CHKERRQ(ierr);
 
-  PetscTruth monitorFunction;
-  ierr = PetscOptionsHasName(NULL,"-ssaf_monitor_Trhs",&monitorFunction);CHKERRQ(ierr);
-  if (monitorFunction) {
-    PetscViewer    viewer;
-    ierr = PetscViewerCreate(grid.com, &viewer);CHKERRQ(ierr);
-    ierr = PetscViewerSetType(viewer, PETSC_VIEWER_ASCII);CHKERRQ(ierr);
-    dtauc.copy_to(m_VecV);
-    ierr = VecView(m_VecV,viewer);
-    
-    // ierr = MatView(m_MatA,viewer); CHKERRQ(ierr);
-    ierr = PetscViewerDestroy(viewer);CHKERRQ(ierr);
-    
-  }
 
 
   // call PETSc to solve linear system by iterative method.
   ierr = KSPSetOperators(m_KSP, m_MatA, m_MatA, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-  ierr = KSPSolve(m_KSP, m_VecRHS2, m_VecZ); CHKERRQ(ierr); // SOLVE
+  ierr = KSPSolve(m_KSP, m_VecRHS2, m_VecZ2); CHKERRQ(ierr); // SOLVE
 
   ierr = KSPGetConvergedReason(m_KSP, &reason); CHKERRQ(ierr);
   if (reason < 0) {
@@ -228,7 +232,7 @@ PetscErrorCode SSAFEM_Forward::solveT( IceModelVec2S &dtauc, IceModelVec2V &resu
   }
 
   // Extract the solution and communicate.
-  ierr = result.copy_from(m_VecZ); CHKERRQ(ierr);
+  ierr = result.copy_from(m_VecZ2); CHKERRQ(ierr);
   ierr = result.beginGhostComm(); CHKERRQ(ierr);
   ierr = result.endGhostComm(); CHKERRQ(ierr);  
   
@@ -245,6 +249,9 @@ PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2
   PISMVector2 **Z;
   PetscScalar **RHS;
 
+  PetscReal norm;
+  PetscReal normsq;
+
   // Solve the nonlinear forward problem if this has not yet been done.
   ierr = solveF_core(); CHKERRQ(ierr);
 
@@ -254,18 +261,29 @@ PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2
     assemble_T_matrix();
   }
 
+  ierr = rangeIP(residual,residual,&normsq); CHKERRQ(ierr);
+  verbPrintf(1,grid.com,"<residual,residual> at start of step 1 %g\n",normsq);
+
   // Assemble the right-hand side for the first step.
   residual.get_array(R);  
   ierr = DAVecGetArray(SSADA,m_VecRHS2,&RHS2); CHKERRQ(ierr);  
   ierr = assemble_TStarA_rhs(R,RHS2); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(SSADA, m_VecRHS2, &RHS2); CHKERRQ(ierr);
   residual.end_access();
+
+  ierr = VecNorm(m_VecRHS2,NORM_INFINITY,&norm); CHKERRQ(ierr);
   
+  Vec tmp;
+  PetscReal ip;
+  ierr = DACreateGlobalVector(SSADA, &tmp); CHKERRQ(ierr);  
+  residual.copy_to(tmp)  ;
+  ierr = VecDot(m_VecRHS2,tmp,&ip); CHKERRQ(ierr);  
+  ierr = VecDestroy(tmp); CHKERRQ(ierr);
+  verbPrintf(1,grid.com,"<r,rzero> at start of step 1 %g\n",ip);
 
   // call PETSc to solve linear system by iterative method.
   ierr = KSPSetOperators(m_KSP, m_MatA, m_MatA, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
-  ierr = KSPSolve(m_KSP, m_VecRHS2, m_VecZ); CHKERRQ(ierr); // SOLVE
-  
+  ierr = KSPSolve(m_KSP, m_VecRHS2, m_VecZ2); CHKERRQ(ierr); // SOLVE
   ierr = KSPGetConvergedReason(m_KSP, &reason); CHKERRQ(ierr);
   if (reason < 0) {
     SETERRQ1(1, 
@@ -275,17 +293,31 @@ PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2
   {
     verbPrintf(2,grid.com,"SSAFEM_Forward::solveTStarA converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
   }
+
+
+  ierr = DAGlobalToLocalBegin(SSADA, m_VecZ2, INSERT_VALUES, m_VecZ);  CHKERRQ(ierr);
+  ierr = DAGlobalToLocalEnd(SSADA, m_VecZ2, INSERT_VALUES, m_VecZ);  CHKERRQ(ierr);
+
+  ierr = rangeIP(m_VecZ,m_VecZ,&normsq); CHKERRQ(ierr);
+  verbPrintf(1,grid.com,"<Z,Z> at end %g\n",normsq);
   
+
   // Assemble the right-hand side for the second step.
   ierr = DAVecGetArray(SSADA,m_VecZ,&Z); CHKERRQ(ierr);  
-  ierr = DAVecGetArray(SSADA,SSAX,&U); CHKERRQ(ierr);  
+  ierr = DAVecGetArray(SSADA,m_VecU,&U); CHKERRQ(ierr);  
   ierr = DAVecGetArray(grid.da2,m_VecRHS,&RHS); CHKERRQ(ierr);  
-  ierr = assemble_TStarB_rhs(Z,U,RHS); CHKERRQ(ierr);
-  
+  ierr = assemble_TStarB_rhs(Z,U,RHS); CHKERRQ(ierr);  
   ierr = DAVecRestoreArray(grid.da2,m_VecRHS,&RHS); CHKERRQ(ierr);  
-  ierr = DAVecRestoreArray(SSADA,SSAX,&U); CHKERRQ(ierr);  
+  ierr = DAVecRestoreArray(SSADA,m_VecU,&U); CHKERRQ(ierr);  
   ierr = DAVecRestoreArray(SSADA,m_VecZ,&Z); CHKERRQ(ierr);  
-  
+
+
+  ierr = DACreateGlobalVector(grid.da2, &tmp); CHKERRQ(ierr);  
+  ierr = VecSet(tmp,1.);
+  ierr = VecDot(tmp,m_VecRHS,&ip); CHKERRQ(ierr);
+  ierr = VecDestroy(tmp); CHKERRQ(ierr);
+  verbPrintf(1,grid.com,"integral of rhs at start of step 2 %g\n",ip);
+
   // call PETSc to solve linear system by iterative method.
   ierr = KSPSetOperators(m_KSP_B, m_MatB, m_MatB, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
   ierr = KSPSolve(m_KSP_B, m_VecRHS, m_VecV); CHKERRQ(ierr); // SOLVE
@@ -298,6 +330,8 @@ PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2
     verbPrintf(2,grid.com,"SSAFEM_Forward::solveTStarB converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
   }
   
+  // ierr = domainIP(m_VecV,m_VecV,&normsq); CHKERRQ(ierr);
+  // verbPrintf(1,grid.com,"<V,V> at end of step 2 %g\n",normsq);
   
   // Extract the solution and communicate.
   ierr = result.copy_from(m_VecV); CHKERRQ(ierr);
@@ -312,12 +346,12 @@ PetscErrorCode SSAFEM_Forward::assemble_T_matrix()
   PISMVector2 **vel;
   PetscErrorCode ierr;
 
-  ierr = DAVecGetArray(SSADA,SSAX,&vel); CHKERRQ(ierr);
+  ierr = DAVecGetArray(SSADA,m_VecU,&vel); CHKERRQ(ierr);
   
   DALocalInfo *info = NULL;
   ierr = compute_local_jacobian(info,const_cast<const PISMVector2**>(vel),m_MatA);
   
-  ierr = DAVecRestoreArray(SSADA, SSAX, &vel); CHKERRQ(ierr);
+  ierr = DAVecRestoreArray(SSADA, m_VecU, &vel); CHKERRQ(ierr);
   return 0;
 }
 
@@ -372,8 +406,56 @@ PetscErrorCode SSAFEM_Forward::assemble_DomainNorm_matrix()
   return 0;
 }
 
-PetscErrorCode SSAFEM_Forward::domainIP(IceModelVec2S &avec, IceModelVec2S &bvec, PetscScalar *OUTPUT)
+PetscErrorCode SSAFEM_Forward::domainIP(Vec a, Vec b, PetscScalar *OUTPUT)
 {
+  PetscErrorCode ierr;
+  PetscScalar **A, **B;
+  ierr = DAVecGetArray(grid.da2,a,&A); CHKERRQ(ierr);  
+  ierr = DAVecGetArray(grid.da2,b,&B); CHKERRQ(ierr);  
+  ierr = domainIP_core(A,B,OUTPUT);
+  ierr = DAVecRestoreArray(grid.da2,a,&A); CHKERRQ(ierr);  
+  ierr = DAVecRestoreArray(grid.da2,b,&B); CHKERRQ(ierr);  
+  return 0;
+}
+PetscErrorCode SSAFEM_Forward::domainIP(IceModelVec2S &a, IceModelVec2S &b, PetscScalar *OUTPUT)
+{
+  PetscErrorCode ierr;
+  PetscReal **A, **B;
+  ierr = a.get_array(A); CHKERRQ(ierr);
+  ierr = b.get_array(B); CHKERRQ(ierr);
+  ierr = domainIP_core(A,B,OUTPUT);
+  ierr = a.end_access(); CHKERRQ(ierr);
+  ierr = b.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode SSAFEM_Forward::rangeIP(Vec a, Vec b, PetscScalar *OUTPUT)
+{
+  PetscErrorCode ierr;
+  PISMVector2 **A, **B;
+  ierr = DAVecGetArray(SSADA,a,&A); CHKERRQ(ierr);  
+  ierr = DAVecGetArray(SSADA,b,&B); CHKERRQ(ierr);  
+  ierr = rangeIP_core(A,B,OUTPUT);
+  ierr = DAVecRestoreArray(SSADA,a,&A); CHKERRQ(ierr);  
+  ierr = DAVecRestoreArray(SSADA,b,&B); CHKERRQ(ierr);  
+  return 0;
+}
+
+PetscErrorCode SSAFEM_Forward::rangeIP(IceModelVec2V &a, IceModelVec2V &b, PetscScalar *OUTPUT)
+{
+  PetscErrorCode ierr;
+  PISMVector2 **A, **B;
+  ierr = a.get_array(A); CHKERRQ(ierr);
+  ierr = b.get_array(B); CHKERRQ(ierr);
+  ierr = rangeIP_core(A,B,OUTPUT);
+  ierr = a.end_access(); CHKERRQ(ierr);
+  ierr = b.end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+PetscErrorCode SSAFEM_Forward::domainIP_core(PetscReal **A, PetscReal**B, PetscScalar *OUTPUT)
+{
+
   // Just L2 matrix for now.
   PetscInt         i,j;
   PetscErrorCode   ierr;
@@ -381,11 +463,7 @@ PetscErrorCode SSAFEM_Forward::domainIP(IceModelVec2S &avec, IceModelVec2S &bvec
   // The value of the inner product.
   PetscReal IP = 0;
 
-  PetscReal **A, **B;
   PetscReal a[FEQuadrature::Nq], b[FEQuadrature::Nq];
-
-  avec.get_array(A);
-  bvec.get_array(B);
 
   // Jacobian times weights for quadrature.
   PetscScalar JxW[FEQuadrature::Nq];
@@ -405,25 +483,18 @@ PetscErrorCode SSAFEM_Forward::domainIP(IceModelVec2S &avec, IceModelVec2S &bvec
   } // i
   
   ierr = PetscGlobalSum(&IP, OUTPUT, grid.com); CHKERRQ(ierr);
-
-  avec.end_access();
-  bvec.end_access();
   return 0;
 }
 
-PetscErrorCode SSAFEM_Forward::rangeIP(IceModelVec2V &avec, IceModelVec2V &bvec, PetscScalar *OUTPUT)
+PetscErrorCode SSAFEM_Forward::rangeIP_core(PISMVector2 **A, PISMVector2**B, PetscScalar *OUTPUT)
 {
   PetscInt         i,j;
   PetscErrorCode   ierr;
 
-  // The value of the inner product.
+  // The value of the inner product on the local part of the domain.
   PetscReal IP = 0;
 
-  PISMVector2 **A, **B;
   PISMVector2 a[FEQuadrature::Nq], b[FEQuadrature::Nq];
-
-  avec.get_array(A);
-  bvec.get_array(B);
 
   // Jacobian times weights for quadrature.
   PetscScalar JxW[FEQuadrature::Nq];
@@ -434,18 +505,24 @@ PetscErrorCode SSAFEM_Forward::rangeIP(IceModelVec2V &avec, IceModelVec2V &bvec,
            ys = element_index.lys, ym = element_index.lym;
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
-      quadrature.computeTrialFunctionValues(i,j,dofmap,A,a);
-      quadrature.computeTrialFunctionValues(i,j,dofmap,B,b);
+      PISMVector2 tmp[FEQuadrature::Nq];
+      dofmap.extractLocalDOFs(i,j,A,tmp);
+      quadrature.computeTrialFunctionValues(tmp,a);
+      dofmap.extractLocalDOFs(i,j,B,tmp);
+      quadrature.computeTrialFunctionValues(tmp,b);
+      
+      // quadrature.computeTrialFunctionValues(i,j,dofmap,A,a);
+      // quadrature.computeTrialFunctionValues(i,j,dofmap,B,b);
       for (PetscInt q=0; q<FEQuadrature::Nq; q++) {
-        IP += JxW[q]*(a[q].u*b[q].u+a[q].v+b[q].v);
+        IP += JxW[q]*(a[q].u*b[q].u + a[q].v*b[q].v);
       } // q
     } // j
   } // i
   
+  PetscReal area = 4*grid.Lx*grid.Ly;
+  IP /= area;
   ierr = PetscGlobalSum(&IP, OUTPUT, grid.com); CHKERRQ(ierr);
 
-  avec.end_access();
-  bvec.end_access();
   return 0;
 }
 
@@ -489,8 +566,7 @@ PetscErrorCode SSAFEM_Forward::assemble_T_rhs( PISMVector2 **gvel, PetscReal **g
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
       // Storage for element-local data
-      PISMVector2     x[4],y[4]; 
-      PetscReal       w[4];
+      PISMVector2     y[4]; 
 
       // Index into coefficient storage in feStore
       const PetscInt ij = element_index.flatten(i,j);
@@ -498,19 +574,12 @@ PetscErrorCode SSAFEM_Forward::assemble_T_rhs( PISMVector2 **gvel, PetscReal **g
       // Initialize the map from global to local degrees of freedom for this element.
       dofmap.reset(i,j,grid);
 
-      // Obtain the value of the solution at the adjacent nodes to the element.
-      dofmap.extractLocalDOFs(i,j,gvel,x);
-
       // These values now need to be adjusted if some nodes in the element have
       // Dirichlet data.
       if(bc_locations && vel_bc) {
         dofmap.extractLocalDOFs(i,j,bc_mask,local_bc_mask);
         for (k=0; k<4; k++) {
           if (PismIntMask(local_bc_mask[k]) == 1) { // Dirichlet node
-            PetscInt ii, jj;
-            dofmap.localToGlobal(k,&ii,&jj);
-            x[k].u = 0;
-            x[k].v = 0;
             // Mark any kind of Dirichlet node as not to be touched
             dofmap.markRowInvalid(k);
             dofmap.markColInvalid(k);
@@ -518,10 +587,9 @@ PetscErrorCode SSAFEM_Forward::assemble_T_rhs( PISMVector2 **gvel, PetscReal **g
         }
       }
 
-      quadrature.computeTrialFunctionValues(x,u);
-
-      dofmap.extractLocalDOFs(i,j,gdtauc,w);
-      quadrature.computeTrialFunctionValues(w,dtauc);
+      // Obtain the value of the solution at the adjacent nodes to the element.
+      quadrature.computeTrialFunctionValues(i,j,dofmap,gvel,u);
+      quadrature.computeTrialFunctionValues(i,j,dofmap,gdtauc,dtauc);
 
       // Zero out the element-local residual in prep for updating it.
       for(k=0;k<FEQuadrature::Nk;k++){ 
@@ -586,6 +654,8 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2
     }
   }
 
+  PetscReal area = 4*grid.Lx*grid.Ly;
+
   // Start access of Dirichlet data, if present.
   if (bc_locations && vel_bc) {
     ierr = bc_locations->get_array(bc_mask);CHKERRQ(ierr);
@@ -594,6 +664,10 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2
   // Jacobian times weights for quadrature.
   PetscScalar JxW[FEQuadrature::Nq];
   quadrature.getWeightedJacobian(JxW);
+
+  // Flags for each vertex in an element that determine if explicit Dirichlet data has
+  // been set.
+  PetscReal local_bc_mask[FEQuadrature::Nk];
 
   // Storage for R at quadrature points.
   PISMVector2 res[FEQuadrature::Nq];
@@ -607,14 +681,27 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2
   for (i=xs; i<xs+xm; i++) {
     for (j=ys; j<ys+ym; j++) {
       // Storage for element-local data
-      PISMVector2 x[FEQuadrature::Nk], y[FEQuadrature::Nk];
+      PISMVector2 y[FEQuadrature::Nk];
 
       // Initialize the map from global to local degrees of freedom for this element.
       dofmap.reset(i,j,grid);
 
+
+      // These values now need to be adjusted if some nodes in the element have
+      // Dirichlet data.
+      if(bc_locations && vel_bc) {
+        dofmap.extractLocalDOFs(i,j,bc_mask,local_bc_mask);
+        for (k=0; k<4; k++) {
+          if (PismIntMask(local_bc_mask[k]) == 1) { // Dirichlet node
+            // Mark any kind of Dirichlet node as not to be touched
+            dofmap.markRowInvalid(k);
+            dofmap.markColInvalid(k);
+          }
+        }
+      }
+
       // Obtain the value of the solution at the adjacent nodes to the element.
-      dofmap.extractLocalDOFs(i,j,R,x);
-      quadrature.computeTrialFunctionValues(x,res);
+      quadrature.computeTrialFunctionValues(i,j,dofmap,R,res);
 
       // Zero out the element-local residual in prep for updating it.
       for(k=0;k<FEQuadrature::Nk;k++){ 
@@ -622,10 +709,10 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarA_rhs( PISMVector2 **R, PISMVector2
       }
 
       for (q=0; q<FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.
-        const FEFunctionGerm &testqk = test[q][k];
         // Coefficients and weights for this quadrature point.
-        const PetscReal    jw  = JxW[q];
+        const PetscReal    jw  = JxW[q]/area;
         for(k=0; k<FEQuadrature::Nk;k++) {  // loop over the test functions.
+          const FEFunctionGerm &testqk = test[q][k];
           y[k].u += jw*testqk.val*res[q].u;
           y[k].v += jw*testqk.val*res[q].v;
         }
@@ -660,7 +747,6 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarB_rhs( PISMVector2 **Z,
                                                     PetscScalar **RHS)
 {
   PetscInt         i,j,k,q;
-  PetscErrorCode   ierr;
 
   // Zero out the portion of the function we are responsible for computing.
   for (i=grid.xs; i<grid.xs+grid.xm; i++) {
@@ -707,7 +793,6 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarB_rhs( PISMVector2 **Z,
       }
 
       for (q=0; q<FEQuadrature::Nq; q++) {     // loop over quadrature points on this element.
-        const FEFunctionGerm &testqk = test[q][k];
         // Coefficients and weights for this quadrature point.
         const FEStoreNode *feS = &feStore[ij*FEQuadrature::Nq+q];
         const PetscReal    jw  = JxW[q];
@@ -720,6 +805,7 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarB_rhs( PISMVector2 **Z,
         // dbeta_dtauc *= exp(dtauc[q]) 
 
         for(k=0; k<FEQuadrature::Nk;k++) {  // loop over the test functions.
+          const FEFunctionGerm &testqk = test[q][k];
           y[k] -= jw*notquitebeta*testqk.val*(u[q].u*z[q].u+u[q].v*z[q].v);
         }
       } // q
@@ -729,9 +815,5 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarB_rhs( PISMVector2 **Z,
   } // i-loop
   return 0;  
 
-  ierr = MatAssemblyBegin(m_MatB,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(m_MatB,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-
-  return 0;
 }
 

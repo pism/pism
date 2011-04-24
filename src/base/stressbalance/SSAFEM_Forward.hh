@@ -30,7 +30,8 @@ public:
                  EnthalpyConverter &e,
                  const NCConfigVariable &c) 
            : SSAFEM(g,b,i,e,c), 
-             m_KSP(0), m_MatA(0), m_MatB(0), 
+             m_KSP(0), m_KSP_B(0), m_MatA(0), m_MatB(0),
+             m_VecU(0), m_VecZ2(0),
              m_VecZ(0), m_VecRHS2(0),
              m_VecV(0), m_VecRHS(0),
              m_reassemble_T_matrix_needed(true),
@@ -63,7 +64,15 @@ public:
 
   PetscErrorCode rangeIP(IceModelVec2V &a, IceModelVec2V &b, PetscScalar *OUTPUT);
 
+  PetscErrorCode domainIP(Vec a, Vec b, PetscScalar *OUTPUT);
+
+  PetscErrorCode rangeIP(Vec a, Vec b, PetscScalar *OUTPUT);
+
 protected:
+
+  PetscErrorCode domainIP_core(PetscReal **A, PetscReal**B, PetscScalar *OUTPUT);
+
+  PetscErrorCode rangeIP_core(PISMVector2 **A, PISMVector2**B, PetscScalar *OUTPUT);
   
   PetscErrorCode solveF_core();
 
@@ -82,8 +91,9 @@ protected:
   KSP m_KSP, m_KSP_B;
   //! Matrices involved in T and T*
   Mat m_MatA, m_MatB;
+  Vec m_VecU;
   //! Left- and right-hand side for linear vector problems.
-  Vec m_VecZ, m_VecRHS2;
+  Vec m_VecZ2, m_VecZ, m_VecRHS2;
   //! Left- and right-hand side for linear scalar problems.
   Vec m_VecV, m_VecRHS;
 
