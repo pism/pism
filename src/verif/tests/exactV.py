@@ -9,7 +9,7 @@ from os import system
 try:
     from netCDF4 import Dataset as NC
 except:
-    from netCDF4 import Dataset as NC
+    from netCDF3 import Dataset as NC
 
 def permute(variable, output_order = ('t', 'z', 'zb', 'y', 'x')):
     """Permute dimensions of a NetCDF variable to match the output storage order."""

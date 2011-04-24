@@ -410,8 +410,8 @@ netcdf pism_config {
     pism_config:enthalpy_temperate_conductivity_ratio = 0.1;
     pism_config:enthalpy_temperate_conductivity_ratio_doc = "pure number; K in cold ice is multiplied by this fraction to give K0 in [\\ref AschwandenBuelerBlatter]";
                               
-    pism_config:gpbld_water_frac_coeff = 184.0;
-    pism_config:gpbld_water_frac_coeff_doc = "; coefficient in Glen-Paterson-Budd flow law for extra dependence of softness on liquid water fraction (omega) [\\ref AschwandenBlatter, \\ref LliboutryDuval1985]";
+    pism_config:gpbld_water_frac_coeff = 181.25;
+    pism_config:gpbld_water_frac_coeff_doc = "; coefficient in Glen-Paterson-Budd flow law for extra dependence of softness on liquid water fraction (omega) [\\ref GreveBlatter2009, \\ref LliboutryDuval1985]";
 
     pism_config:gpbld_water_frac_observed_limit = 0.01;
     pism_config:gpbld_water_frac_observed_limit_doc = "; maximum value of liquid water fraction omega for which softness values are parameterized by [\\ref LliboutryDuval1985]; used in Glen-Paterson-Budd-Lliboutry-Duval flow law; compare [\\ref AschwandenBuelerBlatter]";

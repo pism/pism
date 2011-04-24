@@ -6,8 +6,8 @@ static const char help[] =
 "  ./bodvardsson -snes_fd -da_grid_x 181 -snes_monitor\n"
 "This runs show success with matrix-free, no preconditioner:\n"
 "  ./bodvardsson -snes_mf -da_grid_x 181 -snes_monitor -bod_exact_init\n"
-"Visualization and low resolution:\n"
-"  ./bodvardsson -snes_mf -da_grid_x 16 -snes_monitor -snes_monitor_solution -draw_pause 1\n"
+"Visualization:\n"
+"  ./bodvardsson -snes_fd -da_grid_x 201 -snes_monitor -snes_monitor_solution -draw_pause 1\n"
 "See conv.sh for convergence graph.  Add option -upwind1 to see first-order upwinding.\n"
 "TO DO:  * add Picard or Jacobian\n"
 "        * reasonable initial guesses\n";
