@@ -26,7 +26,7 @@ except:
 nc = Dataset("ivol.nc", 'r')
 ivol = nc.variables['ivol'][:]
 ivol_max = ivol.max()
-threshold = 10**(floor(log10(ivol_max)) - 14) # 14 digits of accuracy
+threshold = 10**(floor(log10(ivol_max)) - 12) # 12 digits of accuracy
 diff_max = diff(ivol).max()
 
 if diff_max < threshold:

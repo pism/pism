@@ -65,3 +65,4 @@ inline void IceMarginGeometry::computeGeometry(PetscReal bed, PetscReal thicknes
 
 
 #endif
+
