@@ -140,13 +140,12 @@ double EnthalpyConverter::getCTS(double E, double p) const {
 
 //! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
 bool EnthalpyConverter::isTemperate(double E, double p) const {
-  const double E_s = getEnthalpyCTS(p);
   if (do_cold_ice_methods) {
-      double E_tol;
-      getEnthPermissive(T_tol,0.0,p,E_tol);
-      return ( E >= E_s - E_tol);
+      double T_pa;
+      getPATemp(E, p, T_pa);
+      return (T_pa >= T_triple - T_tol);
   } else
-      return (E >= E_s);
+      return (E >= getEnthalpyCTS(p));
 }
 
 
