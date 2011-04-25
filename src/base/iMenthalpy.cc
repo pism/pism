@@ -527,7 +527,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           Hmeltnew += Hdrainedtotal;
         }
 
-        // Enthnew[] is finalized!:  apply bulge limiter and transfer column
+        // finalize Enthnew[]:  apply bulge limiter and transfer column
         //   into vWork3d; communication will occur later
         const PetscReal lowerEnthLimit = Enth_ks - bulgeEnthMax;
         for (PetscInt k=0; k < ks; k++) {

@@ -145,7 +145,9 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
         } else { // ice: sees temp of base of ice
           const PetscReal pressure = EC->getPressureFromDepth(vH(i,j));
           PetscReal temp;
-          ierr = EC->getAbsTemp(result(i,j), pressure, temp); CHKERRQ(ierr);
+          // ignor return code when getting temperature: we are committed to
+          //   this enthalpy field
+          EC->getAbsTemp(result(i,j), pressure, temp);
           result(i,j) = temp;
         }
       } else { // floating: apply shelf base temp as top of bedrock temp
