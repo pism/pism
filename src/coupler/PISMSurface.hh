@@ -25,7 +25,7 @@
 #include "PISMAtmosphere.hh"
 #include "localMassBalance.hh"
 
-class PISMSurfaceModel : public PISMComponent_TS {
+class PISMSurfaceModel : virtual public PISMComponent_TS {
 public:
   PISMSurfaceModel(IceGrid &g, const NCConfigVariable &conf)
     : PISMComponent_TS(g, conf)
@@ -61,7 +61,7 @@ verification.
 class PSDummy : public PISMSurfaceModel {
 public:
   PSDummy(IceGrid &g, const NCConfigVariable &conf)
-    : PISMSurfaceModel(g, conf)
+    : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf)
   {};
 
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input)
@@ -102,7 +102,7 @@ energy scheme for the ice fluid is exactly the 2m air temperature.
 class PSSimple : public PISMSurfaceModel {
 public:
   PSSimple(IceGrid &g, const NCConfigVariable &conf)
-    : PISMSurfaceModel(g, conf) {};
+    : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf) {};
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
   { t = t_years; dt = dt_years; return 0; } // do nothing
@@ -137,7 +137,7 @@ surface processes model.
 class PSConstant : public PISMSurfaceModel {
 public:
   PSConstant(IceGrid &g, const NCConfigVariable &conf)
-    : PISMSurfaceModel(g, conf)
+    : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf)
   {};
 
   virtual PetscErrorCode init(PISMVars &vars);
@@ -232,22 +232,22 @@ upper surface temperature "just before" it gets to the ice itself.
 class PSModifier : public PISMSurfaceModel {
 public:
   PSModifier(IceGrid &g, const NCConfigVariable &conf)
-    : PISMSurfaceModel(g, conf)
-  { input_model = NULL; }
+    : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf)
+  { input_surface_model = NULL; }
 
   virtual ~PSModifier()
-  { delete input_model; }
+  { delete input_surface_model; }
 
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict)
-  { input_model->get_diagnostics(dict); }
+  { input_surface_model->get_diagnostics(dict); }
 
   virtual void attach_input(PISMSurfaceModel *input);
   virtual void add_vars_to_output(string key, set<string> &result) {
-    if (input_model != NULL)
-      input_model->add_vars_to_output(key, result);
+    if (input_surface_model != NULL)
+      input_surface_model->add_vars_to_output(key, result);
   }
 protected:
-  PISMSurfaceModel *input_model;
+  PISMSurfaceModel *input_surface_model;
 };
 
 
@@ -256,7 +256,7 @@ protected:
 class PSForceThickness : public PSModifier {
 public:
   PSForceThickness(IceGrid &g, const NCConfigVariable &conf)
-    : PSModifier(g, conf)
+    : PISMComponent_TS(g, conf), PSModifier(g, conf)
   {
     ice_thickness = NULL;
     alpha = config.get("force_to_thickness_alpha");
@@ -289,7 +289,7 @@ protected:
 class PSConstantPIK : public PISMSurfaceModel {
 public:
   PSConstantPIK(IceGrid &g, const NCConfigVariable &conf)
-    : PISMSurfaceModel(g, conf)
+    : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf)
   {};
 
   virtual PetscErrorCode init(PISMVars &vars);

@@ -27,7 +27,7 @@
 class PSElevation : public PISMSurfaceModel {
 public:
   PSElevation(IceGrid &g, const NCConfigVariable &conf)
-    : PISMSurfaceModel(g, conf)
+    : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf)
   {};
 
   virtual PetscErrorCode init(PISMVars &vars);

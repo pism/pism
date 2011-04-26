@@ -19,7 +19,7 @@
 #include "PADirectForcing.hh"
 
 PADirectForcing::PADirectForcing(IceGrid &g, const NCConfigVariable &conf)
-  : PISMAtmosphereModel(g, conf) {
+  : PISMComponent_TS(g, conf), PISMAtmosphereModel(g, conf) {
 }
 
 PADirectForcing::~PADirectForcing() {

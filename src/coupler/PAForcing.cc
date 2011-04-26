@@ -20,7 +20,7 @@
 #include "PISMAtmosphere.hh"
 
 PAForcing::PAForcing(IceGrid &g, const NCConfigVariable &conf)
-  : PAModifier(g, conf) {
+  : PISMComponent_TS(g, conf), PAModifier(g, conf) {
   dTforcing = NULL;
   delta_T = NULL;
   temp_anomaly = NULL;
@@ -41,7 +41,7 @@ PetscErrorCode PAForcing::init(PISMVars &vars) {
     precip_anomalies_file[PETSC_MAX_PATH_LEN],
     dT_file[PETSC_MAX_PATH_LEN];
 
-  ierr = input_model->init(vars); CHKERRQ(ierr);
+  ierr = input_atmosphere_model->init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
      "* Initializing air temperature and precipitation forcing...\n"); CHKERRQ(ierr);
@@ -145,7 +145,7 @@ PetscErrorCode PAForcing::max_timestep(PetscReal t_years,
   PetscErrorCode ierr;
   PetscReal max_dt = -1;
   
-  ierr = input_model->max_timestep(t_years, dt_years); CHKERRQ(ierr);
+  ierr = input_atmosphere_model->max_timestep(t_years, dt_years); CHKERRQ(ierr);
 
   if (temp_anomaly != NULL) {
     max_dt = temp_anomaly->max_timestep(t_years);
@@ -181,14 +181,14 @@ void PAForcing::add_vars_to_output(string keyword, set<string> &result) {
       result.insert("precip_anomaly");
   }
 
-  input_model->add_vars_to_output(keyword, result);
+  input_atmosphere_model->add_vars_to_output(keyword, result);
 }
 
 PetscErrorCode PAForcing::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
   PetscErrorCode ierr;
   int varid;
 
-  ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  ierr = input_atmosphere_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   if (set_contains(vars, "airtemp_plus_forcing")) {
     ierr = airtemp_var.define(nc, varid, nctype, false); CHKERRQ(ierr);
@@ -244,7 +244,7 @@ PetscErrorCode PAForcing::write_variables(set<string> vars,  string filename) {
 
   }
 
-  ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
+  ierr = input_atmosphere_model->write_variables(vars, filename); CHKERRQ(ierr);
 
   return 0;
 }
@@ -259,7 +259,7 @@ PetscErrorCode PAForcing::update(PetscReal t_years, PetscReal dt_years) {
   t  = t_years;
   dt = dt_years;
 
-  ierr = input_model->update(t_years, dt_years); CHKERRQ(ierr);
+  ierr = input_atmosphere_model->update(t_years, dt_years); CHKERRQ(ierr);
 
   if (temp_anomaly != NULL) {
     ierr = temp_anomaly->update(t_years, dt_years); CHKERRQ(ierr);
@@ -275,7 +275,7 @@ PetscErrorCode PAForcing::update(PetscReal t_years, PetscReal dt_years) {
 PetscErrorCode PAForcing::mean_precip(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = input_model->mean_precip(result); CHKERRQ(ierr);
+  ierr = input_atmosphere_model->mean_precip(result); CHKERRQ(ierr);
 
   if (precip_anomaly != NULL) {
     string history = "added average over time-step of precipitation anomalies\n" + result.string_attr("history");
@@ -302,7 +302,7 @@ PetscErrorCode PAForcing::mean_precip(IceModelVec2S &result) {
 PetscErrorCode PAForcing::mean_annual_temp(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = input_model->mean_annual_temp(result); CHKERRQ(ierr);
+  ierr = input_atmosphere_model->mean_annual_temp(result); CHKERRQ(ierr);
 
 // FIXME:  -dTforcing mechanism has mean_annual-needs-averaging-if-data-is-sub-annual
 //   issues like the ones below for -anomaly_temp; for the -anomaly_temp see commits
@@ -346,7 +346,7 @@ PetscErrorCode PAForcing::mean_annual_temp(IceModelVec2S &result) {
 PetscErrorCode PAForcing::begin_pointwise_access() {
   PetscErrorCode ierr;
 
-  ierr = input_model->begin_pointwise_access(); CHKERRQ(ierr);
+  ierr = input_atmosphere_model->begin_pointwise_access(); CHKERRQ(ierr);
 
   if (temp_anomaly != NULL) {
     ierr = temp_anomaly->begin_access(); CHKERRQ(ierr);
@@ -358,7 +358,7 @@ PetscErrorCode PAForcing::begin_pointwise_access() {
 PetscErrorCode PAForcing::end_pointwise_access() {
   PetscErrorCode ierr;
 
-  ierr = input_model->end_pointwise_access(); CHKERRQ(ierr);
+  ierr = input_atmosphere_model->end_pointwise_access(); CHKERRQ(ierr);
 
   if (temp_anomaly != NULL) {
     ierr = temp_anomaly->end_access(); CHKERRQ(ierr);
@@ -371,7 +371,7 @@ PetscErrorCode PAForcing::temp_time_series(int i, int j, int N,
 					   PetscReal *ts, PetscReal *values) {
   PetscErrorCode ierr;
   
-  ierr = input_model->temp_time_series(i, j, N, ts, values); CHKERRQ(ierr);
+  ierr = input_atmosphere_model->temp_time_series(i, j, N, ts, values); CHKERRQ(ierr);
 
   if (dTforcing != NULL) {
     for (PetscInt k = 0; k < N; k++)
@@ -395,7 +395,7 @@ PetscErrorCode PAForcing::temp_time_series(int i, int j, int N,
 PetscErrorCode PAForcing::temp_snapshot(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = input_model->temp_snapshot(result); CHKERRQ(ierr);
+  ierr = input_atmosphere_model->temp_snapshot(result); CHKERRQ(ierr);
 
   if (temp_anomaly != NULL) {
     string history = "added temperature anomalies at midpoint of time-step\n"

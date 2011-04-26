@@ -255,16 +255,16 @@ PetscErrorCode PSConstant::write_variables(set<string> vars, string filename) {
 ///// PISM Surface model modifier.
 
 void PSModifier::attach_input(PISMSurfaceModel *input) {
-  if (input_model != NULL) {
-    delete input_model;
+  if (input_surface_model != NULL) {
+    delete input_surface_model;
   }
-  input_model = input;
+  input_surface_model = input;
 }
 
 ///// PISM surface model implementing a PDD scheme.
 
 PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const NCConfigVariable &conf)
-  : PISMSurfaceModel(g, conf) {
+  : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf) {
   mbscheme = NULL;
   faustogreve = NULL;
   base_ddf.snow = config.get("pdd_factor_snow");
@@ -663,7 +663,7 @@ PetscErrorCode PSTemperatureIndex::write_variables(set<string> vars, string file
 ///// "Force-to-thickness" mechanism
 
 void PSForceThickness::attach_atmosphere_model(PISMAtmosphereModel *input) {
-  input_model->attach_atmosphere_model(input);
+  input_surface_model->attach_atmosphere_model(input);
 }
 
 PetscErrorCode PSForceThickness::init(PISMVars &vars) {
@@ -673,7 +673,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   PetscScalar fttalpha;
   PetscTruth  fttalphaSet;
 
-  ierr = input_model->init(vars); CHKERRQ(ierr);
+  ierr = input_surface_model->init(vars); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "Surface model forcing", ""); CHKERRQ(ierr);
 
@@ -845,7 +845,7 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
   // get the surface mass balance result from the next level up
-  ierr = input_model->ice_surface_mass_flux(result); CHKERRQ(ierr);
+  ierr = input_surface_model->ice_surface_mass_flux(result); CHKERRQ(ierr);
 
   ierr = verbPrintf(5, grid.com,
      "    updating surface mass balance using -force_to_thk mechanism ...");
@@ -888,7 +888,7 @@ PetscErrorCode PSForceThickness::ice_surface_mass_flux(IceModelVec2S &result) {
 PetscErrorCode PSForceThickness::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
+  ierr = input_surface_model->ice_surface_temperature(result); CHKERRQ(ierr);
 
   return 0;
 }
@@ -908,7 +908,7 @@ PetscErrorCode PSForceThickness::max_timestep(PetscReal t_years, PetscReal &dt_y
   PetscErrorCode ierr;
   PetscReal max_dt = 2.0 / (alpha * secpera);
   
-  ierr = input_model->max_timestep(t_years, dt_years); CHKERRQ(ierr);
+  ierr = input_surface_model->max_timestep(t_years, dt_years); CHKERRQ(ierr);
 
   if (dt_years > 0) {
     if (max_dt > 0)
@@ -921,8 +921,8 @@ PetscErrorCode PSForceThickness::max_timestep(PetscReal t_years, PetscReal &dt_y
 
 //! Adds ftt_modified_acab to "big" output files.
 void PSForceThickness::add_vars_to_output(string key, set<string> &result) {
-  if (input_model != NULL)
-    input_model->add_vars_to_output(key, result);
+  if (input_surface_model != NULL)
+    input_surface_model->add_vars_to_output(key, result);
 
   if (key == "big") {
     result.insert("ftt_modified_acab");
@@ -949,7 +949,7 @@ PetscErrorCode PSForceThickness::define_variables(set<string> vars, const NCTool
 PetscErrorCode PSForceThickness::write_variables(set<string> vars, string filename) {
   PetscErrorCode ierr;
 
-  ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
+  ierr = input_surface_model->write_variables(vars, filename); CHKERRQ(ierr);
 
   if (set_contains(vars, "ftt_modified_acab")) {
     ierr = ftt_modified_acab.write(filename.c_str()); CHKERRQ(ierr); 

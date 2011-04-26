@@ -30,7 +30,7 @@
 /////                      to the PISMSurfaceModel below
 
 //! A purely virtual class defining the interface of a PISM Atmosphere Model.
-class PISMAtmosphereModel : public PISMComponent_TS {
+class PISMAtmosphereModel : virtual public PISMComponent_TS {
 public:
   PISMAtmosphereModel(IceGrid &g, const NCConfigVariable &conf)
     : PISMComponent_TS(g, conf) {};
@@ -61,7 +61,7 @@ public:
 class PAConstant : public PISMAtmosphereModel {
 public:
   PAConstant(IceGrid &g, const NCConfigVariable &conf)
-    : PISMAtmosphereModel(g, conf) {};
+    : PISMComponent_TS(g, conf), PISMAtmosphereModel(g, conf) {};
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
   { t = t_years; dt = dt_years; return 0; } // do nothing
@@ -89,7 +89,7 @@ protected:
 class PAYearlyCycle : public PISMAtmosphereModel {
 public:
   PAYearlyCycle(IceGrid &g, const NCConfigVariable &conf)
-    : PISMAtmosphereModel(g, conf) {}
+    : PISMComponent_TS(g, conf), PISMAtmosphereModel(g, conf) {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
@@ -119,7 +119,7 @@ protected:
 class PA_SeaRISE_Greenland : public PAYearlyCycle {
 public:
   PA_SeaRISE_Greenland(IceGrid &g, const NCConfigVariable &conf)
-    : PAYearlyCycle(g, conf)
+    : PISMComponent_TS(g, conf), PAYearlyCycle(g, conf)
   {
     paleo_precipitation_correction = false;
     dTforcing = NULL;
@@ -163,7 +163,7 @@ Class PALapseRates implements this lapse-rate correction mechanism.
 class PALapseRates : public PAConstant {
 public:
   PALapseRates(IceGrid &g, const NCConfigVariable &conf)
-    : PAConstant(g, conf)
+    : PISMComponent_TS(g, conf), PAConstant(g, conf)
   {
     gamma = 0;
     usurf = NULL;
@@ -186,26 +186,26 @@ protected:
 class PAModifier : public PISMAtmosphereModel {
 public:
   PAModifier(IceGrid &g, const NCConfigVariable &conf)
-    : PISMAtmosphereModel(g, conf)
-  { input_model = NULL; }
+    : PISMComponent_TS(g, conf), PISMAtmosphereModel(g, conf)
+  { input_atmosphere_model = NULL; }
 
   virtual ~PAModifier()
-  { delete input_model; }
+  { delete input_atmosphere_model; }
 
   virtual void attach_input(PISMAtmosphereModel *input) {
-    if (input_model != NULL)  delete input_model;
-    input_model = input;
+    if (input_atmosphere_model != NULL)  delete input_atmosphere_model;
+    input_atmosphere_model = input;
   }
 
   virtual void add_vars_to_output(string key, set<string> &result) {
-    if (input_model != NULL)  input_model->add_vars_to_output(key, result);
+    if (input_atmosphere_model != NULL)  input_atmosphere_model->add_vars_to_output(key, result);
   }
 
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict)
-  { input_model->get_diagnostics(dict); }
+  { input_atmosphere_model->get_diagnostics(dict); }
 
 protected:
-  PISMAtmosphereModel *input_model;
+  PISMAtmosphereModel *input_atmosphere_model;
 };
 
 //! \brief A class implementing an "atmosphere modifier" model applying forcing data
