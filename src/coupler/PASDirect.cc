@@ -280,6 +280,11 @@ PetscErrorCode PASDirect::ice_surface_mass_flux(IceModelVec2S &result) {
   ierr = mass_flux.copy_to(result); CHKERRQ(ierr); 
 
   if (bc_acab_lapse_rate_set) {
+    if (enable_time_averaging) {
+      ierr = bc_surface.average(t, dt); CHKERRQ(ierr);
+    } else {
+      ierr = bc_surface.get_record_years(t); CHKERRQ(ierr);
+    }
 
     PetscReal delta_acab;
     ierr = vH->begin_access(); CHKERRQ(ierr);
@@ -310,14 +315,6 @@ PetscErrorCode PASDirect::ice_surface_temperature(IceModelVec2S &result) {
   // "Periodize" the climate:
   t = my_mod(t);
 
-  if (bc_artm_lapse_rate_set) {
-    if (enable_time_averaging) {
-      ierr = bc_surface.average(t, dt); CHKERRQ(ierr);
-    } else {
-      ierr = bc_surface.get_record_years(t); CHKERRQ(ierr);
-    }
-  }
-
   if (enable_time_averaging) {
     ierr = temperature.average(t, dt); CHKERRQ(ierr);
   } else {
@@ -327,6 +324,11 @@ PetscErrorCode PASDirect::ice_surface_temperature(IceModelVec2S &result) {
   ierr = temperature.copy_to(result); CHKERRQ(ierr); 
 
   if (bc_artm_lapse_rate_set) {
+    if (enable_time_averaging) {
+      ierr = bc_surface.average(t, dt); CHKERRQ(ierr);
+    } else {
+      ierr = bc_surface.get_record_years(t); CHKERRQ(ierr);
+    }
 
     PetscReal delta_artm;
     ierr = vH->begin_access(); CHKERRQ(ierr);
@@ -338,7 +340,6 @@ PetscErrorCode PASDirect::ice_surface_temperature(IceModelVec2S &result) {
 	if ((*vH)(i,j) > 0) { // only correct artm if there is ice
 	  delta_artm = bc_artm_lapse_rate/1000 * ((*surface)(i,j)-bc_surface(i,j))  ; 
 	  result(i,j) += delta_artm;
-	  ierr = verbPrintf(4, grid.com,"delta_artm=%f, bc_surf=%f, h=%f, artm=%f\n",delta_artm,bc_surface(i,j),(*surface)(i,j),result(i,j)); CHKERRQ(ierr);
 	}
       }
     }
