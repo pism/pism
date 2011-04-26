@@ -102,13 +102,9 @@ will run for 10000 years, saving total ice volume and grounded ice area to \text
 
 Note that, similarly to the snapshot-saving code, this mechanism does not affect adaptive time-stepping.  Here, however, PISM will save exactly the number of time-series records requested, \emph{linearly interpolated onto requested times}.
 
-PISM buffers time-series data and writes it at the end of the run or once 10000
-values are stored, whichever comes first. Sending an \texttt{USR1} (or
-\texttt{USR2}) signal to a PISM process flushes these buffers, making it
-possible to monitor the run. (See section \ref{subsect:signal} for more about
-PISM's signal handling.)
+Omitting the \texttt{-ts_vars} option makes PISM save a default list of variables, as listed in table \ref{tab:time-series}.  Because scalar time-series take very little storage space, compared to spatially-varying data, this is usually a reasonable choice.
 
-Omitting the \texttt{-ts_vars} option makes PISM save \emph{all} the variables listed in table \ref{tab:time-series}.  Because scalar time-series take very little storage space, compared to spatially-varying data, this is usually a reasonable choice.
+The non-default variables listed in table \ref{tab:time-series} can be harder to interpret.  They are all time derivatives of PISM quantities.  They are correctly-computed at the user-specified times, but, unless very fine temporal resolution is used when reporting them, they may sample the fast (e.g.~subannual) variability of the PISM model state so infrequently that the resulting time series is unusable.  For example, consider options \texttt{-ts_times 0:10:100000 -ts_vars divoldt,ivol} in the case of SeaRISE-Greenland, which has an annual cycle driving its surface mass balance.  In this case the value \texttt{divoldt} will always be positive, at the user-specified times, \emph{because in January the ice sheet is always gaining volume}.  (Note that integer years mean 1 January.)  Thus a flat \texttt{ivol} time series and a flat but significantly-positive \texttt{divoldt} is expected and correct, at the above times, even when the ice sheet model is in steady state, when the yearly-averaged \texttt{divoldt} is nearly zero.
 
 If the file \texttt{foo.nc}, specified by \texttt{-ts_file foo.nc}, already exists then by default the existing file will be moved to \texttt{foo.nc~} and the new time series will go into \texttt{foo.nc}.  To append the time series onto the end of the existing file, use option \texttt{-ts_append}.
 
@@ -118,6 +114,12 @@ using stored latitude and longitude fields and the WGS84 reference ellipsoid.
 This allows us to compute areas and volumes (see table \ref{tab:time-series})
 more accurately.
 
+PISM buffers time-series data and writes it at the end of the run or once 10000
+values are stored, whichever comes first. Sending an \texttt{USR1} (or
+\texttt{USR2}) signal to a PISM process flushes these buffers, making it
+possible to monitor the run. (See section \ref{subsect:signal} for more about
+PISM's signal handling.)
+
 \begin{table}[h]
   \caption{Command-line options controlling saving scalar time-series}
   \centering
@@ -126,7 +128,7 @@ more accurately.
     \midrule
     \fileopt{ts_file} & Specifies the file to save to.\\
     \timeopt{ts_times} & Specifies times to save at either as a MATLAB-style range $a:\Delta t:b$ or a comma-separated list. \\
-    \listopt{ts_vars} & Comma-separated list of variables, see table~\ref{tab:time-series}. Omitting this option is equivalent to listing all the possible variables.\\
+    \listopt{ts_vars} & Comma-separated list of variables, see table~\ref{tab:time-series}. Omitting this option is equivalent to listing the default variables.\\
     \intextoption{ts_append} & Append time series to file if it already exists.  No effect if file does not yet exist. \\
     \bottomrule
   \end{tabular}
@@ -134,7 +136,7 @@ more accurately.
 \end{table}
 
 \begin{table}[ht]
-  \caption{Scalar time-series supported by PISM}
+  \caption{Scalar time-series supported by PISM.  Names above the horizontal line are written by default when \texttt{-ts_vars} is omitted.  For each variable named \dots\texttt{_flux}, positive values mean ice sheet mass gain.}
   \centering
   \begin{tabular}{p{0.4\linewidth}p{0.1\linewidth}p{0.4\linewidth}}\toprule
    \textbf{Variable name} & \textbf{Units} & \textbf{Description}\\
@@ -147,13 +149,18 @@ more accurately.
     \texttt{iareatempf} & m$^{2}$ & area fraction covered by temperate ice \\
     \texttt{iareag} & m$^{2}$ & area covered by grounded ice\\
     \texttt{iareaf} & m$^{2}$ & area covered by floating ice\\
-    \texttt{dt} & years & mass-continuity time-step\\
+    \texttt{imass} & kg & total mass of ice sheet \\
+    \texttt{ienthalpy} & J & total internal energy (enthalpy) of ice sheet \\
+    \texttt{dt} & years & mass-continuity time-step\\ \hline
+
     \texttt{divoldt} & m$^{3}\,$s$^{-1}$ & ice volume rate of change\\
-    \texttt{dimassdt} & kg$^{3}\,$s$^{-1}$ & ice mass rate of change\\
-    \texttt{total_surface_ice_flux} & kg$^{3}\,$s$^{-1}$ & total surface ice flux \\
-    \texttt{total_basal_ice_flux} & kg$^{3}$\,s$^{-1}$ & total basal ice flux \\
-    \texttt{total_sub_shelf_ice_flux} & kg$^{3}\,$s$^{-1}$  & total sub-ice-shelf ice flux \\
-    \texttt{ienthalpy} & J & total ice enthalpy\\
+    \texttt{dimassdt} & kg s$^{-1}$ & ice mass rate of change\\
+    \texttt{surface_ice_flux} & kg s$^{-1}$ & total surface ice flux \\
+    \texttt{basal_ice_flux} & kg s$^{-1}$ & total basal ice flux \\
+    \texttt{sub_shelf_ice_flux} & kg s$^{-1}$  & total sub-ice-shelf ice flux \\
+    \texttt{nonneg_rule_flux} & kg s$^{-1}$  & total ice flux from application of $H\ge 0$ constraint on ice thickness \\
+    \texttt{ocean_kill_flux} & kg s$^{-1}$  & total ice flux from application of \texttt{-ocean_kill} option  \\
+    \texttt{float_kill_flux} & kg s$^{-1}$  & total ice flux from application of \texttt{-float_kill} option  \\
     \bottomrule
   \end{tabular}
  \label{tab:time-series}

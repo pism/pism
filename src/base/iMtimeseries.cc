@@ -89,7 +89,7 @@ PetscErrorCode IceModel::init_timeseries() {
       ts_vars.insert(var_name);
 
   } else {
-    var_name = config.get_string("ts_variables");
+    var_name = config.get_string("ts_default_variables");
     istringstream arg(var_name);
   
     while (getline(arg, var_name, ' ')) {
@@ -309,6 +309,8 @@ PetscErrorCode IceModel::create_timeseries() {
     timeseries.push_back(delta_t);
   }
 
+  // The following are in  config.get("ts_bad_set")  list.
+
   if (find(ts_vars.begin(), ts_vars.end(), "divoldt") != ts_vars.end()) {
     DiagnosticTimeseries *divoldt = new DiagnosticTimeseries(&grid, "divoldt", "t");
 
@@ -340,7 +342,7 @@ PetscErrorCode IceModel::create_timeseries() {
     tsif->set_dimension_units(time_units, "");
     tsif->output_filename = ts_filename;
 
-    tsif->set_attr("long_name", "total over domain of top surface ice mass flux");
+    tsif->set_attr("long_name", "total over ice domain of top surface ice mass flux");
     tsif->set_attr("comment", "positive means ice gain");
 
     timeseries.push_back(tsif);
@@ -353,7 +355,7 @@ PetscErrorCode IceModel::create_timeseries() {
     tbif->set_dimension_units(time_units, "");
     tbif->output_filename = ts_filename;
 
-    tbif->set_attr("long_name", "total over domain of basal surface ice mass flux");
+    tbif->set_attr("long_name", "total over ice domain of basal surface ice mass flux");
     tbif->set_attr("comment", "positive means ice gain");
 
     timeseries.push_back(tbif);
@@ -366,7 +368,7 @@ PetscErrorCode IceModel::create_timeseries() {
     tssif->set_dimension_units(time_units, "");
     tssif->output_filename = ts_filename;
 
-    tssif->set_attr("long_name", "total over domain of sub-ice-shelf ice mass flux");
+    tssif->set_attr("long_name", "total over ice domain of sub-ice-shelf ice mass flux");
     tssif->set_attr("comment", "positive means ice gain");
 
     timeseries.push_back(tssif);
@@ -379,7 +381,7 @@ PetscErrorCode IceModel::create_timeseries() {
     ts->set_dimension_units(time_units, "");
     ts->output_filename = ts_filename;
 
-    ts->set_attr("long_name", "total over domain of ice mass gain by application of non-negative thickness rule");
+    ts->set_attr("long_name", "total over ice domain of ice mass gain by application of non-negative thickness rule");
     ts->set_attr("comment", "positive means ice gain");
 
     timeseries.push_back(ts);
@@ -392,7 +394,7 @@ PetscErrorCode IceModel::create_timeseries() {
     ts->set_dimension_units(time_units, "");
     ts->output_filename = ts_filename;
 
-    ts->set_attr("long_name", "total over domain of ice mass gain by calving by application of -ocean_kill mechanism");
+    ts->set_attr("long_name", "total over ice domain of ice mass gain by calving by application of -ocean_kill mechanism");
     ts->set_attr("comment", "positive means ice gain");
 
     timeseries.push_back(ts);
@@ -405,10 +407,26 @@ PetscErrorCode IceModel::create_timeseries() {
     ts->set_dimension_units(time_units, "");
     ts->output_filename = ts_filename;
 
-    ts->set_attr("long_name", "total over domain of ice mass gain by calving by application of -float_kill mechanism");
+    ts->set_attr("long_name", "total over ice domain of ice mass gain by calving by application of -float_kill mechanism");
     ts->set_attr("comment", "positive means ice gain");
 
     timeseries.push_back(ts);
+  }
+
+  // as noted above, the variables listed in the bad_set may require a user to 
+  // very carefully interpret; thus the need to add a warning
+  string warning = config.get_string("ts_bad_set_warning"),
+         tmp;
+  istringstream arg(config.get_string("ts_bad_set_variables")); // string becomes stream
+  set<string> bad_vars;
+  while (getline(arg, tmp, ' ')) {
+    if (!tmp.empty()) // this ignores multiple spaces separating variable names
+      bad_vars.insert(tmp);
+  }
+  for (size_t i = 0; i < timeseries.size(); i++) {
+    if (set_contains(bad_vars,timeseries[i]->short_name)) {
+      timeseries[i]->set_attr("interpretation_warning", warning);
+    }
   }
 
   return 0;
