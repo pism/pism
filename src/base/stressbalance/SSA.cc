@@ -94,6 +94,15 @@ PetscErrorCode SSA::init(PISMVars &vars) {
     ierr = velocity.set(0.0); CHKERRQ(ierr); // default initial guess
   }
 
+  if (config.get_flag("dirichlet_bc")) {
+
+      bc_locations = dynamic_cast<IceModelVec2Mask*>(vars.get("bcflag"));
+	  if (bc_locations == NULL) SETERRQ(1, "bc_locations is not available");
+
+	   vel_bc = dynamic_cast<IceModelVec2V*>(vars.get("velbar"));
+	   if (vel_bc == NULL) SETERRQ(1, "velbar is not available");
+  }
+
   event_ssa = grid.profiler->create("ssa_update", "time spent solving the SSA");
 
   return 0;

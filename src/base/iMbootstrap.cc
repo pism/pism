@@ -138,6 +138,15 @@ PetscErrorCode IceModel::bootstrap_2d(const char *filename) {
     ierr = vPrinStrain2.set(0.0); CHKERRQ(ierr);
   }
 
+  if (config.get_flag("dirichlet_bc")) {
+    ierr = vBCMask.regrid(filename,
+                             config.get("bootstrapping_BCMask_value_no_var")); CHKERRQ(ierr);
+    ierr = vBCvel.regrid(filename,
+                             config.get("bootstrapping_BCvel_value_no_var")); CHKERRQ(ierr);
+  }
+
+
+
   bool Lz_set;
   ierr = PISMOptionsIsSet("-Lz", Lz_set); CHKERRQ(ierr);
   if ( !Lz_set ) {

@@ -204,7 +204,12 @@ protected:
 	
  
   IceModelVec2Mask vMask, //!< mask for flow type with values SHEET, DRAGGING, FLOATING
-    vIcebergMask; //!< mask for iceberg identification
+    vIcebergMask, //!< mask for iceberg identification
+
+	vBCMask; //!< mask to determine Dirichlet boundary locations
+ 
+  IceModelVec2V vBCvel; //!< Dirichlet boundary velocities
+
 
   IceModelVec3
         T3,		//!< absolute temperature of ice; K (ghosted)

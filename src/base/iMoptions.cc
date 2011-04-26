@@ -96,6 +96,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PISMOptionsIsSet("-eigen_calving", flag);  CHKERRQ(ierr);
   if (flag)  config.set_flag("do_eigen_calving", true);
 
+  ierr = config.flag_from_option("dirichlet_bc", "dirichlet_bc"); CHKERRQ(ierr);
+
 
   bool gradient_set;
   string keyword;

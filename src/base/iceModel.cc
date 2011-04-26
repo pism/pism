@@ -356,6 +356,41 @@ PetscErrorCode IceModel::createVecs() {
 
   }
 
+if (config.get_flag("dirichlet_bc") == true) {
+    // bc_locations
+	  ierr = vBCMask.create(grid, "bcflag", true, WIDE_STENCIL); CHKERRQ(ierr);
+      ierr = vBCMask.set_attrs("model_state", "Dirichlet boundary mask",
+       			 "", ""); CHKERRQ(ierr);
+      vector<double> bc_mask_values(2);
+      bc_mask_values[0] = 0;
+      bc_mask_values[1] = 1;
+      ierr = vBCMask.set_attr("flag_values", bc_mask_values); CHKERRQ(ierr);
+      ierr = vBCMask.set_attr("flag_meanings", "no_data bc_condition"); CHKERRQ(ierr);
+      vBCMask.output_data_type = NC_BYTE;
+      ierr = variables.add(vBCMask); CHKERRQ(ierr);
+
+
+     // vel_bc
+     ierr = vBCvel.create(grid, "bar", true, WIDE_STENCIL); CHKERRQ(ierr); // ubar and vbar
+     ierr = vBCvel.set_attrs("model_state",
+                              "X-component of the SSA velocity boundary conditions",
+                              "m s-1", "", 0); CHKERRQ(ierr);
+     ierr = vBCvel.set_attrs("model_state",
+                              "Y-component of the SSA velocity boundary conditions",
+                              "m s-1", "", 1); CHKERRQ(ierr);
+     ierr = vBCvel.set_glaciological_units("m year-1"); CHKERRQ(ierr);
+     ierr = vBCvel.set_attr("valid_min", convert(-1e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
+     ierr = vBCvel.set_attr("valid_max",  convert(1e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
+     ierr = vBCvel.set_attr("valid_min", convert(-1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
+     ierr = vBCvel.set_attr("valid_max",  convert(1e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
+     ierr = vBCvel.set_attr("_FillValue", convert(2e6, "m/year", "m/second"), 0); CHKERRQ(ierr);
+     ierr = vBCvel.set_attr("_FillValue", convert(2e6, "m/year", "m/second"), 1); CHKERRQ(ierr);
+     //just for diagnostics...
+     ierr = variables.add(vBCvel); CHKERRQ(ierr);
+
+  }
+
+
   // cell areas
   ierr = cell_area.create(grid, "cell_area", false); CHKERRQ(ierr);
   ierr = cell_area.set_attrs("diagnostic", "cell areas", "m2", ""); CHKERRQ(ierr);

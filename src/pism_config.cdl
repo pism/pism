@@ -88,7 +88,19 @@ netcdf pism_config {
     pism_config:force_full_diagnostics = "no";
     pism_config:force_full_diagnostics_doc = "Force full diagnostic output (adds 3D velocity fields and velocity components at the surface";
 
+	pism_config:dirichlet_bc = "no";
+	pism_config:dirichlet_bc_doc = "apply Dirichlet boundary condition";
+
+
     // parameters:
+
+	pism_config:bootstrapping_BCMask_value_no_var = 0.0;
+	pism_config:bootstrapping_BCMask_value_no_var_doc = "; mask for dirichlet boundary condition";
+     
+	pism_config:bootstrapping_BCvel_value_no_var = 100.0;
+	pism_config:bootstrapping_BCvel_value_no_var_doc = "; dirichlet boundary condition";
+
+
     pism_config:bootstrapping_H_value_no_var = 0.0;
     pism_config:bootstrapping_H_value_no_var_doc = "m; thickness value to use if thk (land_ice_thickness) variable is absent in bootstrapping file";
     

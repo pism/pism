@@ -214,8 +214,9 @@ This method should only be called if everything but the basal boundary condition
 is already set.
  */
 PetscErrorCode enthSystemCtx::setNeumannBasal(PetscScalar Y) {
+ PetscErrorCode ierr;
 #ifdef PISM_DEBUG
-  PetscErrorCode ierr;
+
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
   if ((!gsl_isnan(a0)) || (!gsl_isnan(a1)) || (!gsl_isnan(b))) {
     SETERRQ(1, "setting basal boundary conditions twice in enthSystemCtx");

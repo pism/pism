@@ -171,6 +171,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
       if (vel_bc && (bc_locations->as_int(i, j) == 1)) {
+		 //ierr = verbPrintf(2,grid.com,
+		 //   	                      "!!!!! boundary u-velocity=%e\n at %d,%d",(*vel_bc)(i, j).u,i,j); CHKERRQ(ierr);
         rhs_uv[i][j].u = scaling * (*vel_bc)(i, j).u;
         rhs_uv[i][j].v = scaling * (*vel_bc)(i, j).v;
         continue;
