@@ -140,7 +140,7 @@ bool IceModelVec::was_created() {
 }
 
 //! Returns the grid type of an IceModelVec. (This is the way to figure out if an IceModelVec is 2D or 3D).
-int IceModelVec::grid_type() {
+int IceModelVec::get_ndims() {
   if (zlevels.size() > 1) return 3;
 
   return 2;

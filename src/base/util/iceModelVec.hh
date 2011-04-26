@@ -55,7 +55,7 @@
  \endcode
 
  ("Has ghosts" means "can be used in computations using map-plane neighbors
- or grid points.)
+ of grid points.)
 
  It is usually a good idea to set variable metadata right after creating it.
  The method set_attrs() is used throughout PISM to set commonly used
@@ -156,11 +156,14 @@ public:
   virtual ~IceModelVec();
 
   virtual bool            was_created();
-  virtual int             grid_type();
+  virtual IceGrid*        get_grid() { return grid; }
+  virtual int             get_ndims();
   //! \brief Returns the number of degrees of freedom per grid point.
   virtual int             get_dof() { return dof; }
-  virtual int             get_n_levels() { return n_levels; }
+  virtual int             get_stencil_width() { return da_stencil_width; }
+  virtual int             get_nlevels() { return n_levels; }
   virtual vector<double>  get_levels() { return zlevels; }
+  virtual bool            has_ghosts() { return localp; }
 
   virtual PetscErrorCode  range(PetscReal &min, PetscReal &max);
   virtual PetscErrorCode  norm(NormType n, PetscReal &out);
@@ -277,7 +280,7 @@ public:
   virtual PetscErrorCode get_component(int n, IceModelVec2 &result);
   virtual PetscErrorCode set_component(int n, IceModelVec2 &source);
 protected:
-  virtual PetscErrorCode create(IceGrid &my_grid, string my_short_name, bool local,
+  virtual PetscErrorCode create(IceGrid &my_grid, string my_short_name, bool has_ghosts,
                                 int stencil_width, int dof);
   PetscErrorCode get_component(int n, Vec result);
   PetscErrorCode set_component(int n, Vec source);
@@ -292,7 +295,7 @@ public:
   IceModelVec2S(const IceModelVec2S &other) : IceModelVec2(other) {}
   // does not need a copy constructor, because it does not add any new data members
   using IceModelVec2::create;
-  virtual PetscErrorCode  create(IceGrid &my_grid, string my_name, bool local, int width = 1);
+  virtual PetscErrorCode  create(IceGrid &my_grid, string my_name, bool has_ghosts, int width = 1);
   virtual PetscErrorCode  put_on_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   virtual PetscErrorCode  get_from_proc0(Vec onp0, VecScatter ctx, Vec g2, Vec g2natural);
   PetscErrorCode  get_array(PetscScalar** &a);
@@ -398,7 +401,7 @@ public:
 
   using IceModelVec2::create;
   virtual PetscErrorCode create(IceGrid &my_grid, string my_short_name,
-				bool local, int stencil_width = 1);
+				bool has_ghosts, int stencil_width = 1);
 
   // I/O:
   using IceModelVec2::write;
@@ -439,7 +442,7 @@ public:
   IceModelVec2Stag() { dof = 2; vars.resize(dof); }
   IceModelVec2Stag(const IceModelVec2Stag &other) : IceModelVec2(other) {}
   using IceModelVec2::create;
-  virtual PetscErrorCode create(IceGrid &my_grid, string my_name, bool local, int width = 1);
+  virtual PetscErrorCode create(IceGrid &my_grid, string my_name, bool has_ghosts, int width = 1);
   virtual PetscErrorCode get_array(PetscScalar*** &a);
   virtual PetscErrorCode begin_access();
   virtual PetscErrorCode end_access();
@@ -476,7 +479,7 @@ public:
   virtual PetscErrorCode  isLegalLevel(PetscScalar z);
 protected:
   virtual PetscErrorCode  allocate(IceGrid &mygrid, string my_short_name,
-                                   bool local, vector<double> levels, int stencil_width = 1);
+                                   bool has_ghosts, vector<double> levels, int stencil_width = 1);
   virtual PetscErrorCode destroy();
   virtual PetscErrorCode has_nan();
 
@@ -493,7 +496,7 @@ public:
   virtual ~IceModelVec3() {}
 
   virtual PetscErrorCode create(IceGrid &mygrid, string my_short_name,
-                                bool local, int stencil_width = 1);
+                                bool has_ghosts, int stencil_width = 1);
 
   // need to call begin_access() before set...(i,j,...) or get...(i,j,...) *and* need call
   // end_access() afterward

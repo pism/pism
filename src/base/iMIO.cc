@@ -502,7 +502,7 @@ PetscErrorCode IceModel::regrid_variables(string filename, set<string> vars, int
 
     if (v == NULL) continue;
 
-    if (v->grid_type() != ndims) continue;
+    if (v->get_ndims() != ndims) continue;
 
     string pism_intent = v->string_attr("pism_intent");
     if (pism_intent != "model_state") {
