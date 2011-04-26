@@ -368,7 +368,7 @@ Nonetheless the maximum principle is a highly-desirable form of stability becaus
 
 \section melt Temperate basal boundary condition, and computing the basal melt rate
 
-At the bottom of grounded ice, a certain amount of heat comes out of the earth and either enters the ice through conduction or melts the base of the ice.  On the one hand, see the documentation for PISMBedThermalUnit for the model of how much comes out of the earth.  On the other hand, \ref AschwandenBuelerBlatter includes a careful analysis of the subglacial layer equation and the corresponding boundary conditions and basal melt rate calculation, and the reader should consult that reference.
+At the bottom of grounded ice, a certain amount of heat comes out of the earth and either enters the ice through conduction or melts the base of the ice.  On the one hand, see the documentation for PISMBedThermalUnit for the model of how much comes out of the earth.  On the other hand, [\ref AschwandenBuelerBlatter] includes a careful analysis of the subglacial layer equation and the corresponding boundary conditions and basal melt rate calculation, and the reader should consult that reference.
 
 
 \subsection refloating Regarding the floating case

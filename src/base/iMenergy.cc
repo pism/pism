@@ -146,7 +146,8 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
           const PetscReal pressure = EC->getPressureFromDepth(vH(i,j));
           PetscReal temp;
           // ignor return code when getting temperature: we are committed to
-          //   this enthalpy field
+          //   this enthalpy field; getAbsTemp() only returns temperatures at or
+          //   below pressure melting
           EC->getAbsTemp(result(i,j), pressure, temp);
           result(i,j) = temp;
         }

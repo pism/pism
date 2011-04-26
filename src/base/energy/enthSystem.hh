@@ -44,8 +44,8 @@ public:
       const bool my_ismarginal, const PetscScalar my_lambda);  
   PetscErrorCode setBoundaryValuesThisColumn(
       const PetscScalar my_Enth_surface);
-  PetscErrorCode setLevel0EqnThisColumn(
-      const PetscScalar my_a0, const PetscScalar my_a1, const PetscScalar my_b);
+  PetscErrorCode setDirichletBasal(PetscScalar Y);
+  PetscErrorCode setNeumannBasal(PetscScalar Y);
 
   PetscErrorCode viewConstants(PetscViewer viewer, bool show_col_dependent);
 
@@ -67,6 +67,8 @@ private:
   IceModelVec3 *Enth3;
   PetscScalar  lambda, Enth_ks, a0, a1, b;
   bool         ismarginal;
+
+  PetscErrorCode checkReadyToSolve();
 };
 
 #endif   //  ifndef __enthSystem_hh

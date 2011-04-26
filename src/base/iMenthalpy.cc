@@ -276,7 +276,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
   const PetscScalar
     p_air     = config.get("surface_pressure"),
-    ice_K     = ice->k / ice->rho, // enthalpy-conductivity for cold ice
+    ice_K     = ice->k / ice->c_p, // enthalpy-conductivity for cold ice
     L         = config.get("water_latent_heat_fusion"),  // J kg-1
     bulgeEnthMax  = config.get("enthalpy_cold_bulge_max"), // J kg-1
     hmelt_decay_rate = config.get("hmelt_decay_rate"),   // m s-1
@@ -457,20 +457,19 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           PetscScalar Enth0;
           ierr = EC->getEnthPermissive(shelfbtemp(i,j), 0.0, EC->getPressureFromDepth(vH(i,j)),
                                        Enth0); CHKERRQ(ierr);
-          ierr = esys.setLevel0EqnThisColumn(1.0,0.0,Enth0); CHKERRQ(ierr);
+          ierr = esys.setDirichletBasal(Enth0); CHKERRQ(ierr);
         } else if (base_is_cold) {
           // cold, grounded base case:  Neumann q . n = q_lith . n + F_b   and   q = - K_i \nabla H
-          ierr = esys.setLevel0EqnThisColumn(
-                   1.0,-1.0,(fdz / ice_K) * (G0(i,j) + (*Rb)(i,j))); CHKERRQ(ierr);
+          ierr = esys.setNeumannBasal(- (G0(i,j) + (*Rb)(i,j)) / ice_K); CHKERRQ(ierr);
         } else {
           // warm, grounded base case
           if (k1_istemperate) {
             // positive thickness of temperate ice:  Neumann q . n = 0 and q = - K_0 \nabla H
             //   so H(k=1)-H(k=0) = 0
-            ierr = esys.setLevel0EqnThisColumn(1.0,-1.0,0.0); CHKERRQ(ierr);
+            ierr = esys.setNeumannBasal(0.0); CHKERRQ(ierr);
           } else {
             // no thickness of temperate ice:  Dirichlet  H = H_s(pbasal)
-            ierr = esys.setLevel0EqnThisColumn(1.0,0.0,esys.Enth_s[0]); CHKERRQ(ierr);
+            ierr = esys.setDirichletBasal(esys.Enth_s[0]); CHKERRQ(ierr);
           }
         }
 

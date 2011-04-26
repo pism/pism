@@ -112,25 +112,6 @@ PetscErrorCode enthSystemCtx::setBoundaryValuesThisColumn(
 }
 
 
-//! Set coefficients in equation \f$a_0 E_0^{n+1} + a_1 E_1^{n+1} = b\f$ at base of ice.
-PetscErrorCode enthSystemCtx::setLevel0EqnThisColumn(
-      const PetscScalar my_a0, const PetscScalar my_a1, const PetscScalar my_b) {
-#ifdef PISM_DEBUG
-  if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {
-    SETERRQ(1, "setLevel0EqnThisColumn() should only be called after\n"
-               "  initAllColumns() in enthSystemCtx");
-  }
-  if ((!gsl_isnan(a0)) || (!gsl_isnan(a1)) || (!gsl_isnan(b))) {
-    SETERRQ(2, "setLevel0EqnThisColumn() called twice ? in enthSystemCtx");
-  }
-#endif
-  a0 = my_a0;
-  a1 = my_a1;
-  b  = my_b;
-  return 0;
-}
-
-
 PetscErrorCode enthSystemCtx::viewConstants(
                      PetscViewer viewer, bool show_col_dependent) {
   PetscErrorCode ierr;
@@ -180,39 +161,100 @@ PetscErrorCode enthSystemCtx::viewConstants(
 }
 
 
+PetscErrorCode enthSystemCtx::checkReadyToSolve() {
+  if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {
+    SETERRQ(2,  "not ready to solve: need initAllColumns() in enthSystemCtx"); }
+  if (lambda < 0.0) {
+    SETERRQ(3,  "not ready to solve: need setSchemeParamsThisColumn() in enthSystemCtx"); }
+  if (gsl_isnan(u[0])) {
+    SETERRQ(60, "not ready to solve: invalid u[] in enthSystemCtx"); }
+  if (gsl_isnan(v[0])) {
+    SETERRQ(61, "not ready to solve: invalid v[] in enthSystemCtx"); }
+  if (gsl_isnan(w[0])) {
+    SETERRQ(62, "not ready to solve: invalid w[] in enthSystemCtx"); }
+  if (gsl_isnan(Sigma[0])) {
+    SETERRQ(63, "not ready to solve: invalid Sigma[] in enthSystemCtx"); }
+  if (gsl_isnan(Enth_s[0])) {
+    SETERRQ(64, "not ready to solve: invalid Enth_s[] in enthSystemCtx"); }
+  if (gsl_isnan(Enth[0])) {
+    SETERRQ(65, "not ready to solve: invalid Enth[] in enthSystemCtx"); }
+  return 0;
+}
+
+
+//! Set coefficients in discrete equation for \f$E = Y\f$ at base of ice.
+/*!
+This method should only be called if everything but the basal boundary condition
+is already set.
+ */
+PetscErrorCode enthSystemCtx::setDirichletBasal(PetscScalar Y) {
+#ifdef PISM_DEBUG
+  PetscErrorCode ierr;
+  ierr = checkReadyToSolve(); CHKERRQ(ierr);
+  if ((!gsl_isnan(a0)) || (!gsl_isnan(a1)) || (!gsl_isnan(b))) {
+    SETERRQ(1, "setting basal boundary conditions twice in enthSystemCtx");
+  }
+#endif
+  a0 = 1.0;
+  a1 = 0.0;
+  b  = Y;
+  return 0;
+}
+
+
+//! Set coefficients in discrete equation for \f$\partial E / \partial z = Y\f$ at base of ice.
+/*!
+This method combines the Neumann boundary condition with the differential equation.
+The vertical advection part is zeroed-out.  The error in the pure conductive and
+smooth conductivity case is \f$O(\Delta z^2)\f$.
+
+This code is near-duplication of code in solveThisColumn() below.
+
+This method should only be called if everything but the basal boundary condition
+is already set.
+ */
+PetscErrorCode enthSystemCtx::setNeumannBasal(PetscScalar Y) {
+#ifdef PISM_DEBUG
+  PetscErrorCode ierr;
+  ierr = checkReadyToSolve(); CHKERRQ(ierr);
+  if ((!gsl_isnan(a0)) || (!gsl_isnan(a1)) || (!gsl_isnan(b))) {
+    SETERRQ(1, "setting basal boundary conditions twice in enthSystemCtx");
+  }
+#endif
+  const PetscScalar
+      Rc = (Enth[0] < Enth_s[0]) ? iceRcold : iceRtemp,
+      Rr = (Enth[1] < Enth_s[1]) ? iceRcold : iceRtemp,
+      Rminus = Rc,
+      Rplus  = 0.5 * (Rc + Rr);
+  a0 = 1.0 + Rminus + Rplus;  // = D[0]
+  a1 = - Rminus - Rplus;      // = U[0]
+  const PetscScalar X = - 2.0 * dzEQ * Y;  // E(-dz) = E(+dz) + X
+  // zero vertical velocity contribution
+  b = Enth[0] + Rminus * X;   // = rhs[0]
+  if (!ismarginal) {
+    planeStar<PetscScalar> ss;
+    ierr = Enth3->getPlaneStar_fine(i,j,0,&ss); CHKERRQ(ierr);
+    const PetscScalar UpEnthu = (u[0] < 0) ? u[0] * (ss.e -  ss.ij) / dx :
+                                             u[0] * (ss.ij  - ss.w) / dx;
+    const PetscScalar UpEnthv = (v[0] < 0) ? v[0] * (ss.n -  ss.ij) / dy :
+                                             v[0] * (ss.ij  - ss.s) / dy;
+    b += dtTemp * ((Sigma[0] / ice_rho) - UpEnthu - UpEnthv);  // = rhs[0]
+  }
+  return 0;
+}
+
+
 /*! \brief Solve the tridiagonal system, in a single column, which determines
 the new values of the ice enthalpy. */
 PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &pivoterrorindex) {
+  PetscErrorCode ierr;
 #ifdef PISM_DEBUG
-  if ((nuEQ < 0.0) || (iceRcold < 0.0) || (iceRtemp < 0.0)) {
-    SETERRQ(2, "solveThisColumn() should only be called after\n"
-               "  initAllColumns() in enthSystemCtx"); }
-  if (lambda < 0.0) {
-    SETERRQ(3, "solveThisColumn() should only be called after\n"
-               "  setSchemeParamsThisColumn() in enthSystemCtx"); }
+  ierr = checkReadyToSolve(); CHKERRQ(ierr);
   if ((gsl_isnan(a0)) || (gsl_isnan(a1)) || (gsl_isnan(b))) {
-    SETERRQ(5, "solveThisColumn() should only be called after\n"
-               "  setLevel0EqnThisColumn() in enthSystemCtx"); }
-  if (gsl_isnan(u[0])) {
-    SETERRQ(60, "solveThisColumn() called with invalid u[] in\n"
-               "  enthSystemCtx"); }
-  if (gsl_isnan(v[0])) {
-    SETERRQ(61, "solveThisColumn() called with invalid v[] in\n"
-               "  enthSystemCtx"); }
-  if (gsl_isnan(w[0])) {
-    SETERRQ(62, "solveThisColumn() called with invalid w[] in\n"
-               "  enthSystemCtx"); }
-  if (gsl_isnan(Sigma[0])) {
-    SETERRQ(63, "solveThisColumn() called with invalid Sigma[] in\n"
-               "  enthSystemCtx"); }
-  if (gsl_isnan(Enth_s[0])) {
-    SETERRQ(64, "solveThisColumn() called with invalid Enth_s[] in\n"
-               "  enthSystemCtx"); }
-  if (gsl_isnan(Enth[0])) {
-    SETERRQ(65, "solveThisColumn() called with invalid Enth[] in\n"
-               "  enthSystemCtx"); }
+    SETERRQ(1, "solveThisColumn() should only be called after\n"
+               "  setting basal boundary condition in enthSystemCtx"); }
 #endif
-  // k=0 equation must be supplied to avoid making decisions here
+  // k=0 equation is already established
   // L[0] = 0.0;  // not allocated
   D[0] = a0;
   U[0] = a1;
@@ -242,7 +284,7 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
     rhs[k] = Enth[k];
     if (!ismarginal) {
       planeStar<PetscScalar> ss;
-      Enth3->getPlaneStar_fine(i,j,k,&ss);
+      ierr = Enth3->getPlaneStar_fine(i,j,k,&ss); CHKERRQ(ierr);
       const PetscScalar UpEnthu = (u[k] < 0) ? u[k] * (ss.e -  ss.ij) / dx :
                                                u[k] * (ss.ij  - ss.w) / dx;
       const PetscScalar UpEnthv = (v[k] < 0) ? v[k] * (ss.n -  ss.ij) / dy :
