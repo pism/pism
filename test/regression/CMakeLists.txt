@@ -55,13 +55,9 @@ pism_test (verif_test_G_regress_thermo_SIA_time_SMB test_18.sh)
 
 pism_test (verif_test_I_SSAFD_regress_SSA_plastic ssa/ssa_testi_fd.sh)
 
-pism_test (verif_test_I_SSAFD_PIK_regress_SSA_plastic ssa/ssa_testi_fd_pik.sh)
-
 pism_test (verif_test_I_SSAFEM_regress_SSA_plastic ssa/ssa_testi_fem.sh)
 
 pism_test (verif_test_J_SSAFD_regress_linear_SSA_floating ssa/ssa_testj_fd.sh)
-
-pism_test (verif_test_J_SSAFD_PIK_regress_linear_SSA_floating ssa/ssa_testj_fd_pik.sh)
 
 pism_test (verif_test_J_SSAFEM_regress_linear_SSA_floating ssa/ssa_testj_fem.sh)
 
