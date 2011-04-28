@@ -122,6 +122,8 @@ PetscErrorCode SSAFEM::solve()
   PetscViewer    viewer;
   char           filename[PETSC_MAX_PATH_LEN];
   PetscTruth     flg;
+  
+  m_epsilon_ssa = config.get("epsilon_ssafd");
 
   ierr = PetscOptionsGetString(NULL, "-ssa_view", filename,
                                PETSC_MAX_PATH_LEN, &flg); CHKERRQ(ierr);
@@ -313,6 +315,7 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
   } else {
     ice.effectiveViscosity_with_derivative(feS->B, Du, nuH, dNuH);
     *nuH  *= feS->H;
+    *nuH += m_epsilon_ssa;
     if (dNuH) *dNuH *= feS->H;
   }
   *nuH  *=  2;
@@ -596,6 +599,10 @@ PetscErrorCode SSAFEM::compute_local_jacobian(DALocalInfo *info, const PISMVecto
             cux = (2*Dwq[0]+Dwq[1])*dx + Dwq[2]*dy,
             cuy = (2*Dwq[1]+Dwq[0])*dy + Dwq[2]*dx;
             
+            if(nuH==0)
+            {
+              verbPrintf(1,grid.com,"nuh=0 i %d j %d q %d k %d\n",i,j,q,k);
+            }
             // u-u coupling
             K[k*16+l*2]     += jw*(beta*ht*h + dbeta*bvx*bux + nuH*(2*dxt*dx + dyt*0.5*dy) + dNuH*cvx*cux);
             // u-v coupling

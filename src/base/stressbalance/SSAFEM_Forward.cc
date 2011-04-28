@@ -31,7 +31,6 @@ PetscErrorCode SSAFEM_Forward::allocate_ksp()
 
   // Storage for scalar unknowns.
   ierr = DAGetMatrix(grid.da2, "baij", &m_MatB); CHKERRQ(ierr);
-  printf("After making B: %ld\n",(long int)m_MatB);
   ierr = DACreateGlobalVector(grid.da2, &m_VecRHS); CHKERRQ(ierr);
   ierr = DACreateGlobalVector(grid.da2, &m_VecV); CHKERRQ(ierr);
   
@@ -105,6 +104,7 @@ PetscErrorCode SSAFEM_Forward::set_initial_velocity_guess(  IceModelVec2V &v )
 {
   PetscErrorCode ierr;
   ierr = v.copy_to(SSAX); CHKERRQ(ierr);
+  m_reassemble_T_matrix_needed = true;
   return 0;
 }
 
@@ -168,7 +168,7 @@ PetscErrorCode SSAFEM_Forward::solveF_core()
       SETERRQ1(1, 
         "SSAFEM solve failed to converge (SNES reason %s)\n\n", SNESConvergedReasons[reason]);
     }
-    verbPrintf(2,grid.com,"SSAFEM solve converged (SNES reason %s)\n\n", SNESConvergedReasons[reason]);
+    verbPrintf(3,grid.com,"SSAFEM solve converged (SNES reason %s)\n\n", SNESConvergedReasons[reason]);
 
     ierr =  DAGlobalToLocalBegin(SSADA, SSAX, INSERT_VALUES, m_VecU);  CHKERRQ(ierr);
     ierr =   DAGlobalToLocalEnd(SSADA, SSAX, INSERT_VALUES, m_VecU);  CHKERRQ(ierr);
@@ -228,7 +228,7 @@ PetscErrorCode SSAFEM_Forward::solveT( IceModelVec2S &dtauc, IceModelVec2V &resu
   }
   else  
   {
-    verbPrintf(2,grid.com,"SSAFEM_Forward::solveT converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
+    verbPrintf(4,grid.com,"SSAFEM_Forward::solveT converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
   }
 
   // Extract the solution and communicate.
@@ -249,9 +249,6 @@ PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2
   PISMVector2 **Z;
   PetscScalar **RHS;
 
-  PetscReal norm;
-  PetscReal normsq;
-
   // Solve the nonlinear forward problem if this has not yet been done.
   ierr = solveF_core(); CHKERRQ(ierr);
 
@@ -261,25 +258,12 @@ PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2
     assemble_T_matrix();
   }
 
-  ierr = rangeIP(residual,residual,&normsq); CHKERRQ(ierr);
-  verbPrintf(1,grid.com,"<residual,residual> at start of step 1 %g\n",normsq);
-
   // Assemble the right-hand side for the first step.
   residual.get_array(R);  
   ierr = DAVecGetArray(SSADA,m_VecRHS2,&RHS2); CHKERRQ(ierr);  
   ierr = assemble_TStarA_rhs(R,RHS2); CHKERRQ(ierr);
   ierr = DAVecRestoreArray(SSADA, m_VecRHS2, &RHS2); CHKERRQ(ierr);
   residual.end_access();
-
-  ierr = VecNorm(m_VecRHS2,NORM_INFINITY,&norm); CHKERRQ(ierr);
-  
-  Vec tmp;
-  PetscReal ip;
-  ierr = DACreateGlobalVector(SSADA, &tmp); CHKERRQ(ierr);  
-  residual.copy_to(tmp)  ;
-  ierr = VecDot(m_VecRHS2,tmp,&ip); CHKERRQ(ierr);  
-  ierr = VecDestroy(tmp); CHKERRQ(ierr);
-  verbPrintf(1,grid.com,"<r,rzero> at start of step 1 %g\n",ip);
 
   // call PETSc to solve linear system by iterative method.
   ierr = KSPSetOperators(m_KSP, m_MatA, m_MatA, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
@@ -291,16 +275,12 @@ PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2
   }
   else  
   {
-    verbPrintf(2,grid.com,"SSAFEM_Forward::solveTStarA converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
+    verbPrintf(4,grid.com,"SSAFEM_Forward::solveTStarA converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
   }
 
 
   ierr = DAGlobalToLocalBegin(SSADA, m_VecZ2, INSERT_VALUES, m_VecZ);  CHKERRQ(ierr);
   ierr = DAGlobalToLocalEnd(SSADA, m_VecZ2, INSERT_VALUES, m_VecZ);  CHKERRQ(ierr);
-
-  ierr = rangeIP(m_VecZ,m_VecZ,&normsq); CHKERRQ(ierr);
-  verbPrintf(1,grid.com,"<Z,Z> at end %g\n",normsq);
-  
 
   // Assemble the right-hand side for the second step.
   ierr = DAVecGetArray(SSADA,m_VecZ,&Z); CHKERRQ(ierr);  
@@ -312,12 +292,6 @@ PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2
   ierr = DAVecRestoreArray(SSADA,m_VecZ,&Z); CHKERRQ(ierr);  
 
 
-  ierr = DACreateGlobalVector(grid.da2, &tmp); CHKERRQ(ierr);  
-  ierr = VecSet(tmp,1.);
-  ierr = VecDot(tmp,m_VecRHS,&ip); CHKERRQ(ierr);
-  ierr = VecDestroy(tmp); CHKERRQ(ierr);
-  verbPrintf(1,grid.com,"integral of rhs at start of step 2 %g\n",ip);
-
   // call PETSc to solve linear system by iterative method.
   ierr = KSPSetOperators(m_KSP_B, m_MatB, m_MatB, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
   ierr = KSPSolve(m_KSP_B, m_VecRHS, m_VecV); CHKERRQ(ierr); // SOLVE
@@ -327,12 +301,9 @@ PetscErrorCode SSAFEM_Forward::solveTStar( IceModelVec2V &residual, IceModelVec2
       "SSAFEM_Forward::solveTStarB solve failed to converge (KSP reason %s)\n\n", KSPConvergedReasons[reason]);
   }
   else  {
-    verbPrintf(2,grid.com,"SSAFEM_Forward::solveTStarB converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
+    verbPrintf(4,grid.com,"SSAFEM_Forward::solveTStarB converged (KSP reason %s)\n", KSPConvergedReasons[reason] );
   }
-  
-  // ierr = domainIP(m_VecV,m_VecV,&normsq); CHKERRQ(ierr);
-  // verbPrintf(1,grid.com,"<V,V> at end of step 2 %g\n",normsq);
-  
+    
   // Extract the solution and communicate.
   ierr = result.copy_from(m_VecV); CHKERRQ(ierr);
   ierr = result.beginGhostComm(); CHKERRQ(ierr);

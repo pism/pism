@@ -34,6 +34,7 @@
 #include "pism_python.hh"
 #include "iceModel.hh"
 #include "SNESProblem.hh"
+#include "IceMarginGeometry.hh"
 %}
 
 // SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it
@@ -296,8 +297,11 @@ typedef int NormType; // YUCK.
         for i in xrange(self.xs-nGhosts,self.xs+self.xm+nGhosts):
             for j in xrange(self.ys-nGhosts,self.ys+self.ym+nGhosts):
                 yield (i,j)
+    def coords(self):
+        for i in xrange(self.xs,self.xs+self.xm):
+            for j in xrange(self.ys,self.ys+self.ym):
+                yield (i,j,self.x[i],self.y[j])
     }
-
 }
 
 // FIXME: the the following code blocks there are explicit calls to Py????_Check.  There seems to 
@@ -405,6 +409,7 @@ typedef int NormType; // YUCK.
 
 %include "stressbalance/SSAFEM.hh"
 %include "stressbalance/SSAFEM_Forward.hh"
+%include "IceMarginGeometry.hh"
 %include "stressbalance/SSAFD.hh"
 %include "pism_python.hh"
 

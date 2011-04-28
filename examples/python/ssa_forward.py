@@ -275,6 +275,39 @@ if __name__ == '__main__':
     boot_file = PISM.optionsString("-i","file to bootstrap from")
     output_file = PISM.optionsString("-o","output file",default="ssa_forward.nc")
 
+  # // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
+  # // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
+  # // Note: option is given in kPa.
+  config.scalar_from_option("plastic_c0", "till_c_0");
+
+  # // till_pw_fraction is a parameter in the computation of the till yield stress tau_c
+  # // from the thickness of the basal melt water; see updateYieldStressFromHmelt()
+  # // option a pure number (a fraction); no conversion
+  config.scalar_from_option("plastic_pwfrac", "till_pw_fraction")
+
+  # // controls regularization of plastic basal sliding law
+  config.scalar_from_option("plastic_reg", "plastic_regularization")
+
+  # // "friction angle" in degrees
+  config.scalar_from_option("plastic_phi", "default_till_phi")
+
+  # // use pseudo plastic instead of pure plastic; see iMbasal.cc
+  config.flag_from_option("pseudo_plastic", "do_pseudo_plastic_till")
+
+  # // power in denominator on pseudo_plastic_uthreshold; typical is q=0.25; q=0 is pure plastic
+  config.scalar_from_option("pseudo_plastic_q", "pseudo_plastic_q")
+  if PISM.optionsIsSet("-pseudo_plastic_q"):
+    1/0
+    config.set_flag("do_pseudo_plastic_till", True)
+
+  # // threshold; at this velocity tau_c is basal shear stress
+  config.scalar_from_option("pseudo_plastic_uthreshold", "pseudo_plastic_uthreshold")
+  if PISM.optionsIsSet("-pseudo_plastic_uthreshold", flag):
+    config.set_flag("do_pseudo_plastic_till", True);
+
+
+  self.config.flag_from_option("thk_eff", "thk_eff_basal_water_pressure")
+
   test_case = ssa_forward(Mx,My,boot_file)
   test_case.grid.printInfo(1)
   test_case.grid.periodicity = PISM.XY_PERIODIC

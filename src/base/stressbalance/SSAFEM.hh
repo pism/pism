@@ -113,6 +113,7 @@ protected:
   PetscReal    ocean_rho;
   PetscReal    earth_grav;
   PetscReal    m_beta_ice_free_bedrock;
+  PetscReal    m_epsilon_ssa;
 
   FEElementMap element_index;
   FEQuadrature quadrature;

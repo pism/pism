@@ -43,11 +43,12 @@ class testi(PISM.ssa.SSAExactTestCase):
 
   def initPhysics(self):
     config = self.config
+    do_pseudo_plastic = True
+    plastic_q = 0.
     self.basal = PISM.IceBasalResistancePlasticLaw(
-         config.get("plastic_regularization") / PISM.secpera,
-         config.get_flag("do_pseudo_plastic_till"),
-         config.get("pseudo_plastic_q"),
-         config.get("pseudo_plastic_uthreshold") / PISM.secpera);
+      config.get("plastic_regularization") / PISM.secpera,
+      do_pseudo_plastic, plastic_q,
+      config.get("pseudo_plastic_uthreshold") / PISM.secpera);
 
     self.ice = PISM.CustomGlenIce(self.grid.com, "", config);
     self.ice.setHardness(B_schoof)

@@ -47,7 +47,8 @@ class testj(PISM.ssa.SSAExactTestCase):
     solver.allocateBCs()
 
     solver.tauc.set(0.0) # irrelevant for test J
-    solver.bed.set(0.0) # assures shelf is floating
+    solver.bed.set(0.0) 
+    solver.ice_mask.set(PISM.MASK_FLOATING)
     solver.bc_mask.set(0) # No dirichlet data.
 
     solver.enthalpy.set(528668.35); # arbitrary; corresponds to 263.15 Kelvin at depth=0.

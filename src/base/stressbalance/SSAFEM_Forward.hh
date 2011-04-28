@@ -21,6 +21,7 @@
 
 #include "SSAFEM.hh"
 
+//! Forward problem for the map from yeild stress to velocities in the SSA
 class SSAFEM_Forward : public SSAFEM
 {
 

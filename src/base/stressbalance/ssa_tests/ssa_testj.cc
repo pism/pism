@@ -81,7 +81,7 @@ PetscErrorCode SSATestCaseJ::initializeSSACoefficients()
   PetscErrorCode ierr;
   ierr = tauc.set(0.0); CHKERRQ(ierr);    // irrelevant for test J
   ierr = bed.set(0.0); CHKERRQ(ierr); // assures shelf is floating
-  ierr = bc_mask.set(MASK_FLOATING); CHKERRQ(ierr);
+  ierr = ice_mask.set(MASK_FLOATING); CHKERRQ(ierr);
   ierr = enthalpy.set(528668.35); 
         CHKERRQ(ierr); // arbitrary; corresponds to 263.15 Kelvin at depth=0.
 
