@@ -68,6 +68,8 @@ PetscErrorCode PALapseRates::mean_annual_temp(PetscReal /*t_years*/, PetscReal /
   ierr = f.end_access(); CHKERRQ(ierr);
   ierr = usurf->end_access(); CHKERRQ(ierr);
 
+  ierr = result.set_attr("history", "computed using a constant-in-time temperature field read from a file and a lapse-rate correction"); CHKERRQ(ierr);
+
   return 0;
 }
  
@@ -102,7 +104,7 @@ PetscErrorCode PALapseRates::write_model_state(PetscReal t_years, PetscReal dt_y
   ierr = snowprecip.write(filename.c_str()); CHKERRQ(ierr);
 
   IceModelVec2S temp_ma;
-  ierr = temp_ma.create(grid, "airtemp_ma", false); CHKERRQ(ierr); // FIXME! choose the right name
+  ierr = temp_ma.create(grid, "temp_ma", false); CHKERRQ(ierr); // FIXME! choose the right name
   ierr = temp_ma.set_attrs(
             "climate_state",
             "mean annual near-surface air temperature",
