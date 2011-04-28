@@ -595,7 +595,6 @@ int main(int argc, char *argv[]) {
     SSAFactory ssafactory;
     if(ssa_method == "fem") ssafactory = SSAFEMFactory;
     else if(ssa_method == "fd") ssafactory = SSAFDFactory;
-    else if(ssa_method == "fd_pik") ssafactory = SSAFD_PIKFactory;
     else { /* can't happen */ }
 
     IceGrid g(com, rank, size, config);

@@ -84,29 +84,9 @@ protected:
   PetscInt nuh_viewer_size;
 };
 
-//! \brief A derived class implementing PIK's calving frong boundary conditions.
-class SSAFD_PIK : public SSAFD
-{
-public:
-  SSAFD_PIK(IceGrid &g, IceBasalResistancePlasticLaw &b, IceFlowLaw &i, EnthalpyConverter &e,
-            const NCConfigVariable &c)
-    : SSAFD(g, b, i, e, c) {}
-  virtual ~SSAFD_PIK() {}
-
-  virtual PetscErrorCode init(PISMVars &vars);
-
-  virtual PetscErrorCode assemble_matrix(bool include_basal_shear, Mat A);
-  virtual PetscErrorCode assemble_rhs(Vec rhs);
-};
-
-
 //! Constructs a new SSAFD
 SSA * SSAFDFactory(IceGrid &, IceBasalResistancePlasticLaw &, 
                   IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
-
-//! Constructs a new SSAFD_PIK
-SSA * SSAFD_PIKFactory(IceGrid &, IceBasalResistancePlasticLaw &, 
-                       IceFlowLaw &, EnthalpyConverter &, const NCConfigVariable &);
 
 #endif /* _SSAFD_H_ */
 

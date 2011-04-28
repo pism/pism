@@ -228,7 +228,6 @@ int main(int argc, char *argv[]) {
     SSAFactory ssafactory;
     if(driver == "fem") ssafactory = SSAFEMFactory;
     else if(driver == "fd") ssafactory = SSAFDFactory;
-    else if(driver == "fd_pik") ssafactory = SSAFD_PIKFactory;
     else { /* can't happen */ }
 
     SSATestCaseExp testcase(com,rank,size,config);
