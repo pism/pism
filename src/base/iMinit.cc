@@ -277,7 +277,20 @@ PetscErrorCode IceModel::grid_setup() {
 			filename.c_str()); CHKERRQ(ierr);
     }
 
-    ierr = nc.get_grid(filename, "enthalpy");   CHKERRQ(ierr);
+    vector<string> names;
+    names.push_back("enthalpy");
+    names.push_back("temp");
+    for (unsigned int i = 0; i < names.size(); ++i) {
+      ierr = nc.get_grid(filename, names[i]);
+      if (ierr == 0) break;
+    }
+
+    if (ierr != 0) {
+      PetscPrintf(grid.com, "PISM ERROR: file %s has neither enthalpy nor temperature in it!\n",
+                  filename.c_str()); CHKERRQ(ierr);
+      PISMEnd();
+    }
+
     grid.start_year = grid.year; // can be overridden using the -ys option
 
     // These options are ignored because we're getting *all* the grid

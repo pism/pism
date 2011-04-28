@@ -613,7 +613,13 @@ PetscErrorCode PISMIO::get_grid(string filename, string var_name) {
 
   ierr = open_for_reading(filename); CHKERRQ(ierr);
 
-  ierr = get_grid_info(var_name, gi); CHKERRQ(ierr);
+  ierr = get_grid_info(var_name, gi);
+  // Close the file and return 1 if the variable could not be found. We don't
+  // use CHKERRQ(ierr) to let the caller handle this error.
+  if (ierr != 0) {
+    close();
+    return 1;
+  }
 
   // if we have no vertical grid information, create a fake 2-level vertical grid.
   if (gi.zlevels.size() < 2) {
