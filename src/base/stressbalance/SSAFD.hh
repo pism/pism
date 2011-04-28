@@ -69,7 +69,7 @@ protected:
 
   virtual bool is_ice_free(int mask);
 
-  virtual bool is_cfbc_location(int i, int j);
+  virtual bool is_marginal(int i, int j);
 
   // objects used internally
   IceModelVec2Stag hardness, nuH, nuH_old;

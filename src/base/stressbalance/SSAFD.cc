@@ -196,7 +196,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
           continue;
         }
 
-        if (is_cfbc_location(i, j)) {
+        if (is_marginal(i, j)) {
           PetscInt aMM = 1, aPP = 1, bMM = 1, bPP = 1;
           // direct neighbors
           if (is_ice_free(M_e)) aPP = 0;
@@ -214,7 +214,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
           //double h_ij = 0.0, tdx = 0.0, tdy = 0.0;
           double h_ij = 0.0, tdx = taud(i, j).u, tdy = taud(i, j).v;
 
-          if (H_ij > 0.0 && (*bed)(i,j) < (sea_level - (ice.rho / ocean_rho) * H_ij)) {
+          if ((*bed)(i,j) < (sea_level - (ice.rho / ocean_rho) * H_ij)) {
             //calving front boundary condition for floating shelf
             ocean_pressure = 0.5 * ice.rho * standard_gravity * (1 - (ice.rho / ocean_rho))*H_ij2;
             // this is not really the ocean_pressure, but the difference between
@@ -223,11 +223,14 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
             h_ij = h_floating;
           } else {
             h_ij = h_grounded;
-            if( (*bed)(i,j) >= sea_level) {//boundary condition for cliff --> zero stress = ocean_pressure
+            if( (*bed)(i,j) >= sea_level) {
+              // boundary condition for a "cliff" (grounded ice next to
+              // ice-free ocean) or grounded margin.
               ocean_pressure = 0.5 * ice.rho * standard_gravity * H_ij2;
               // this is not 'zero' because the isotrop.normal stresses
               // (=pressure) from within the ice figures on RHS
-            } else {//boundary condition for marine terminating glacier
+            } else {
+              // boundary condition for marine terminating glacier
               ocean_pressure = 0.5 * ice.rho * standard_gravity *
                 (H_ij2 - (ocean_rho / ice.rho)*(sea_level - (*bed)(i,j))*(sea_level - (*bed)(i,j)));
             }
@@ -243,12 +246,14 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
           else if (bMM == 0 && bPP == 1) tdy = -ice_pressure*h_ij / dy;
           else if (bPP == 0 && bMM == 0) tdy = 0;
 
+          // Note that if the current cell is "marginal" but not a CFBC
+          // location, the following two lines are equaivalent to the "usual
+          // case" below.
           rhs_uv[i][j].u = tdx - (aMM - aPP)*ocean_pressure / dx;
           rhs_uv[i][j].v = tdy - (bMM - bPP)*ocean_pressure / dy;
 
-
           continue;
-        } // end of "if (is_cfbc_location(i, j))"
+        } // end of "if (is_marginal(i, j))"
 
         // If we reached this point, then CFBC are enabled, but we are in the
         // interior of a sheet or shelf. See "usual case" below.
@@ -426,7 +431,9 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
           continue;
         }
 
-        if (is_cfbc_location(i, j)) {
+        if (is_marginal(i, j)) {
+          // If at least one of the following four conditions is "true", we're
+          // at a CFBC location.
           if (is_ice_free(M_e)) aPP = 0;
           if (is_ice_free(M_w)) aMM = 0;
           if (is_ice_free(M_n)) bPP = 0;
@@ -1064,28 +1071,43 @@ PetscErrorCode SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
 }
 
 //! Uses provided mask value to check if a cell is ice-free.
+/*!
+ * This method ensures that checks in assemble_rhs() and assemble_matrix() are
+ * consistent.
+ */
 bool SSAFD::is_ice_free(int mask_value) {
   return mask_value == MASK_ICE_FREE_BEDROCK || mask_value == MASK_ICE_FREE_OCEAN;
 }
 
-//! \brief Checks if a cell is a CFBC location.
+//! \brief Checks if a cell is near or at the ice front.
 /*!
  * You need to call mask->begin_access() before and mask->end_access() after using this.
+ *
+ * Note that a cell is a CFBC location of one of four direct neighbors is ice-free.
+ * 
+ * If one of the diagonal neighbors is ice-free we don't use the CFBC, but we
+ * do need to compute weights used in the SSA discretization (see
+ * assemble_matrix()) to avoid differentiating across interfaces between icy
+ * and ice-free cells.
+ *
+ * This method ensures that checks in assemble_rhs() and assemble_matrix() are
+ * consistent.
  */
-bool SSAFD::is_cfbc_location(int i, int j) {
+bool SSAFD::is_marginal(int i, int j) {
   const PetscInt M_ij = mask->as_int(i,j),
+    // direct neighbors
     M_e = mask->as_int(i + 1,j),
     M_w = mask->as_int(i - 1,j),
     M_n = mask->as_int(i,j + 1),
-    M_s = mask->as_int(i,j - 1);
-
-  // Note: boundary conditions are applied at grid locations corresponding to
-  // cells adjacent to ice-free land or ice-free ocean, i.e. ones for which at
-  // least one of four (sic! not 8) neighbors is ice-free.
-  // 
-  // See ssaBC/SSANeumBoundCond.tex for details.
+    M_s = mask->as_int(i,j - 1),
+    // "diagonal" neighbors
+    M_ne = mask->as_int(i + 1,j + 1),
+    M_se = mask->as_int(i + 1,j - 1),
+    M_nw = mask->as_int(i - 1,j + 1),
+    M_sw = mask->as_int(i - 1,j - 1);
   
   return (!is_ice_free(M_ij)) &&
-    (is_ice_free(M_e) || is_ice_free(M_w) || is_ice_free(M_n) || is_ice_free(M_s));
+    (is_ice_free(M_e) || is_ice_free(M_w) || is_ice_free(M_n) || is_ice_free(M_s) ||
+     is_ice_free(M_ne) || is_ice_free(M_se) || is_ice_free(M_nw) || is_ice_free(M_sw));
 }
 
