@@ -600,15 +600,27 @@ PetscErrorCode IceModel::write_extras() {
     return 0;
 
   // do we need to save *now*?
-  if ( (grid.year >= extra_times[current_extra]) &&
-       (current_extra < extra_times.size()) ) {
+  if ( current_extra < extra_times.size() && grid.year >= extra_times[current_extra] ) {
     saving_after = extra_times[current_extra];
 
-    while ((current_extra < extra_times.size()) && 
-           (extra_times[current_extra] <= grid.year))
+    while (current_extra < extra_times.size() && extra_times[current_extra] <= grid.year)
       current_extra++;
   } else {
     // we don't need to save now, so just return
+    return 0;
+  }
+
+  if (saving_after < grid.start_year) {
+    // Suppose a user tells PISM to write data at times 0:1000:10000. Suppose
+    // also that PISM writes a backup file at year 2500 and gets stopped.
+    // 
+    // When restarted, PISM will decide that it's time to write data for time
+    // 2000, but
+    // * that record was written already and
+    // * PISM will end up writing at year 2500, producing a file containing one
+    //   more record than necessary.
+    // 
+    // This check makes sure that this never happens.
     return 0;
   }
 
