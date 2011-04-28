@@ -278,6 +278,13 @@ PetscErrorCode IceModel::massContExplicitStep() {
       ierr = vHresidual.set(0.0); CHKERRQ(ierr);
     }
   }
+  const bool dirichlet_bc = config.get_flag("dirichlet_bc");
+  if (dirichlet_bc) {
+	  ierr = vBCMask.begin_access();  CHKERRQ(ierr);
+	  ierr = vBCvel.begin_access();  CHKERRQ(ierr);
+	  ierr = vbed.begin_access();  CHKERRQ(ierr);
+  }
+
 
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
@@ -303,6 +310,15 @@ PetscErrorCode IceModel::massContExplicitStep() {
         v.w = 0.5 * (vel(i - 1, j).u + vel(i, j).u);
         v.n = 0.5 * (vel(i, j).v + vel(i, j + 1).v);
         v.s = 0.5 * (vel(i, j - 1).v + vel(i, j).v);
+      }
+      if (dirichlet_bc) {
+    	  //the staggered velocities have to be adjusted to Dirichlet boundary conditions
+    	  if (vBCMask.as_int(i,j) == 0) {
+        	  if (vBCMask.as_int(i+1,j) == 1) v.e = vBCvel(i + 1, j).u;
+        	  if (vBCMask.as_int(i-1,j) == 1) v.w = vBCvel(i - 1, j).u;
+        	  if (vBCMask.as_int(i,j+1) == 1) v.n = vBCvel(i, j + 1).v;
+        	  if (vBCMask.as_int(i,j-1) == 1) v.s = vBCvel(i, j - 1).v;
+    	  }
       }
 
       // membrane stress (and/or basal sliding) part: upwind by staggered grid
@@ -363,6 +379,18 @@ PetscErrorCode IceModel::massContExplicitStep() {
         vHnew(i, j) = 0.0;
       }
 
+      if (dirichlet_bc) {
+    	  if (vBCMask.as_int(i,j) == 1) {
+    		  vHnew(i, j) = vH(i,j);
+    	  }
+
+      }
+
+	 // if (i==25 && j>=25) {
+	//	  ierr = verbPrintf(2,grid.com,
+	//	      "!!!!! H=%f,  mask=%d at %d,%d\n",vHnew(i, j),vMask.as_int(i,j),i,j); CHKERRQ(ierr);
+	 // }
+
       // apply free boundary rule: negative thickness becomes zero
       if (vHnew(i, j) < 0) {
         my_nonneg_rule_flux += ( - vHnew(i, j));
@@ -403,6 +431,12 @@ PetscErrorCode IceModel::massContExplicitStep() {
     if (do_redist) {
       ierr = vHresidual.end_access(); CHKERRQ(ierr);
     }
+  }
+  if (dirichlet_bc) {
+	  ierr = vBCMask.end_access();  CHKERRQ(ierr);
+	  ierr = vBCvel.end_access();  CHKERRQ(ierr);
+	  ierr = vbed.end_access();  CHKERRQ(ierr);
+
   }
 
   // flux accounting

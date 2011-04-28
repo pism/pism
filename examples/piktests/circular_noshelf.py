@@ -11,8 +11,16 @@ try:
 except:
     from netCDF3 import Dataset as NC
 
-WRIT_FILE = 'circular_with_shelf_12km.nc'
-SECPERA = 3.1556926e7
+WRIT_FILE = 'circular_noshelf.nc'
+SECPERA = 3.15569259747e7               # seconds per yea
+standard_gravity = 9.81                 # g
+B0 = 1.9e8                              # ice hardness
+
+rho_ice	  =  910.0 # in kg/m^3
+rho_ocean = 1028.0 # in kg/m^3
+# "typical constant ice parameter" as defined in the paper and in Van der
+# Veen's "Fundamentals of Glacier Dynamics", 1999
+C = (rho_ice * standard_gravity * (1.0 - rho_ice/rho_ocean) / (4 * B0))**3
 
 
 #### command line arguments ####
@@ -31,34 +39,22 @@ except getopt.GetoptError:
 ### CONSTANTS ###
 MxNEW = 301 # should be odd number
 MyNEW = 301
-sizeofdomain=3600.0
+sizeofdomain=1000.0
 dxNEW = sizeofdomain/(MxNEW-1)*1000.0 # meters
 dyNEW = sizeofdomain/(MyNEW-1)*1000.0 # meters
 print "dx = %.2f km, dy = %.2f km" % (dxNEW/1000.0,dyNEW/1000.0)
 
-rho_ice	  =  910.0 # in kg/m^3
-rho_ocean = 1028.0 # in kg/m^3 
-
+vel_bc=300 # m/yr
 accuRate= 0.3
 
 imiddle = (MxNEW-1)/2
 jmiddle = (MyNEW-1)/2
 
-thk_max = 4000.0 # maximal ice thickness in m
-thk_cf  =  200.0 # ice thickness at calving front
 topg_min = -3000.0  # for practical reasons (e.g. viewing), we don't need it too deep
 
-i_cf_m = dxNEW * (MxNEW-1) / 6 # at 600 km
-j_cf_m = dyNEW * (MyNEW-1) / 6 # at 600 km
-r_cf = math.sqrt((i_cf_m**2)+(j_cf_m**2)) # calving front position in m
-
+r_cf = 0.3e6
 gl_tol = 50.0 # tolerance for finding grounding line, depends on coarseness of the grid
 
-# for slope of bed; shape from MISMIP
-n  = 		    (729.0)
-m2 = (- 2184.80/(750.0)**2)
-m4 =   (1031.72/(750.0)**4)
-m6 = (-  151.72/(750.0)**6)
 
 
 ### CREATE ARRAYS which will go in output ###
@@ -67,8 +63,16 @@ bed    = zeros((MxNEW, MyNEW), float32)		# topography -> bedrock surface elevati
 Ts     = zeros((MxNEW, MyNEW), float32)		# surface temperature
 accum  = zeros((MxNEW, MyNEW), float32)		# accumulation/ ablation
 
+bcflag  = zeros((MxNEW, MyNEW), float32)		# accumulation/ ablation
+ubar  = zeros((MxNEW, MyNEW), float32)		# accumulation/ ablation
+vbar  = zeros((MxNEW, MyNEW), float32)		# accumulation/ ablation
+
 x=linspace(-sizeofdomain/2*1000.0,sizeofdomain/2*1000.0,MxNEW)
 y=linspace(-sizeofdomain/2*1000.0,sizeofdomain/2*1000.0,MyNEW)
+
+### GROUNDING LINE RADIUS ###
+r_gl = 0.25e6
+
 
 ### BEDROCK AND ICE THICKNESS ###
 for i in range(MxNEW):
@@ -81,39 +85,54 @@ for i in range(MxNEW):
 	jnew_m = dyNEW * jnew # jnew in meters
 	radius = math.sqrt((inew_m**2)+(jnew_m**2)) # radius in m
 
-	### set bedrock as in MISMIP experiment ###
-	s = radius/1000.0
-	bed[i,j] = (n + m2*s**2 + m4*s**4 + m6*s**6) # in m
-	if bed[i,j] < topg_min:
-	        bed[i,j] = topg_min
+	if radius < r_gl:	
+		bed[i,j]=100.0
+	else: 
+		bed[i,j]=topg_min
 	
-	### set thickness ###
-	a = -(thk_cf - thk_max)/(r_cf)**4
-	b = 2*(thk_cf - thk_max)/(r_cf)**2
-	c = thk_max
+	H0=600
+	Q0=300*600/SECPERA
+
 	
-	if (radius <= r_cf): 
-		thk[i,j] = a * (radius)**4 + b* (radius)**2 + c
+	if (radius <= r_cf and radius >r_gl): 
+		#thk[i,j] = (4.0 * C / Q0 * (radius-r_gl) + 1 / H0**4)**(-0.25)
+		if (thk[i,j]>600.0):
+			thk[i,j]=600.0
+	elif (radius <= r_gl):
+		thk[i,j] = 0.0
 	else: 
 		thk[i,j] = 0.0
 	
 	### set accumulation in m/s ###
-	accum[i,j] = accuRate / SECPERA
+	if (radius > r_gl):
+		accum[i,j] = accuRate / SECPERA
 	
 	### set surface temperature ###
 	Ts[i,j] = 247.0
 
 
-### GROUNDING LINE RADIUS ###
+### set bcmask and dirichelt boundary conditions ###
 for i in range(MxNEW):
-	# flotation criterion: grounding line is where
-	#    bed(r_gl) + thk(r_gl) = (1.0 - rho_ice/rho_ocean) * thk (r_gl)
-	hgrounded = bed[i,jmiddle] + thk[i,jmiddle]
-	hfloating = (1.0 - rho_ice / rho_ocean) * thk [i,jmiddle]	
-	if (abs(hgrounded - hfloating) < gl_tol):
-		#print "  grounding line found at ", i, jmiddle
-		r_gl = math.sqrt((dxNEW*(i - imiddle))**2) # radius in m
-print "grounding line radius = %.2f km" % (r_gl/1000.0)
+  for j in range(MyNEW):
+	### polar coordinates ###
+	inew = i - imiddle
+	jnew = j - jmiddle
+	inew_m = dxNEW * inew # inew in meters
+	jnew_m = dyNEW * jnew # jnew in meters
+	radius = math.sqrt((inew_m**2)+(jnew_m**2)) # radius in m
+	width = dxNEW*3
+	
+	if (radius <= r_gl-width): 
+		bcflag[i,j] = 1.0
+	elif (radius <= r_gl):
+		bcflag[i,j] = 1.0
+		ubar[i,j] = vel_bc/SECPERA*inew_m/radius
+		vbar[i,j] = vel_bc/SECPERA*jnew_m/radius
+		thk[i,j] = 600.0
+		bed[i,j] = topg_min
+
+	else: 
+		bcflag[i,j] = 0.0
 
 
 ##### define dimensions in NetCDF file #####
@@ -153,6 +172,21 @@ vars = {'x': ['m',
 	      'land_ice_surface_specific_mass_balance',
 	      0.2/SECPERA,
 	      accum],
+	'bcflag': ['',
+		  'bcflag',
+		  'bcflag',
+		   0.0,
+		   bcflag],
+    'ubar': ['m s-1',
+	  	  'ubar',
+		  'ubar',
+		   0.0,
+		   vbar],
+	'vbar': ['m s-1',
+		   'vbar',
+		   'vbar',
+		    0.0,
+		    ubar],
 	}
 
 

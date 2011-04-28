@@ -22,6 +22,7 @@
 #include "SSA.hh"
 #include <petscksp.h>
 
+
 //! PISM's SSA solver: the finite difference implementation
 class SSAFD : public SSA
 {

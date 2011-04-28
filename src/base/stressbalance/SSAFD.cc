@@ -165,6 +165,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   if (use_cfbc) {
     ierr = thickness->begin_access(); CHKERRQ(ierr);
     ierr = bed->begin_access(); CHKERRQ(ierr);
+	ierr = mask->begin_access(); CHKERRQ(ierr);
   }
 
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
@@ -178,14 +179,23 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
         continue;
       }
 
-      if (use_cfbc) {
-        double H_ij = (*thickness)(i, j),
-          H_e = (*thickness)(i + 1, j),
-          H_w = (*thickness)(i - 1, j),
-          H_n = (*thickness)(i, j + 1),
-          H_s = (*thickness)(i, j - 1);
 
-        bool ice_free = (H_ij <= 1.0);
+        if (use_cfbc) {
+            PetscScalar H_ij = (*thickness)(i,j);
+            PetscInt M_ij = (*mask)(i,j),
+            M_e = (*mask)(i + 1,j),
+            M_w = (*mask)(i - 1,j),
+            M_n = (*mask)(i,j + 1),
+            M_s = (*mask)(i,j - 1),
+            M_ne = (*mask)(i + 1,j + 1),
+            M_se = (*mask)(i + 1,j - 1),
+            M_nw = (*mask)(i - 1,j + 1),
+            M_sw = (*mask)(i - 1,j - 1);
+
+
+        //bool ice_free = H_ij <= 1.0; // FIXME: use mask
+		bool ice_free = (M_ij == MASK_ICE_FREE_OCEAN || M_ij == MASK_ICE_FREE_BEDROCK);
+
 
         if (ice_free) {
           rhs_uv[i][j].u = 0.0;
@@ -193,16 +203,26 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
           continue;
         }
 
-        bool boundary = H_ij > 100.0 &&
-          (H_e <= 1.0 || H_w <= 1.0 || H_s <= 1.0 || H_n <= 1.0);
+        bool boundary = M_ij <= MASK_FLOATING &&
+						(M_e == MASK_ICE_FREE_OCEAN ||
+        				 M_w == MASK_ICE_FREE_OCEAN ||
+        				 M_s == MASK_ICE_FREE_OCEAN ||
+        				 M_n == MASK_ICE_FREE_OCEAN ||
+        				 M_ne == MASK_ICE_FREE_OCEAN ||
+        				 M_se == MASK_ICE_FREE_OCEAN ||
+        				 M_nw == MASK_ICE_FREE_OCEAN ||
+        				 M_sw == MASK_ICE_FREE_OCEAN);
+
 
         if (boundary) {
-          PetscInt aMM = 1, aPP = 1, bMM = 1, bPP = 1;
-          // direct neighbors
-          if (H_e <= 1.0) aPP = 0;
-          if (H_w <= 1.0) aMM = 0;
-          if (H_n <= 1.0) bPP = 0;
-          if (H_s <= 1.0) bMM = 0;
+        	PetscInt aMM = 1, aPP = 1, bMM = 1, bPP = 1;
+        	// direct neighbors
+           if (M_e == MASK_ICE_FREE_OCEAN) aPP = 0;
+           if (M_w == MASK_ICE_FREE_OCEAN) aMM = 0;
+           if (M_n == MASK_ICE_FREE_OCEAN) bPP = 0;
+           if (M_s == MASK_ICE_FREE_OCEAN) bMM = 0;
+
+
 
           double ice_pressure = ice.rho * standard_gravity * H_ij,
             ocean_pressure;
@@ -211,7 +231,9 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
             h_floating = sea_level + (1.0 - ice.rho / ocean_rho) * H_ij,
             H_ij2 = H_ij*H_ij;
 
-          double h_ij = 0.0, tdx = 0.0, tdy = 0.0;
+          //double h_ij = 0.0, tdx = 0.0, tdy = 0.0;
+          double h_ij = 0.0, tdx = taud(i, j).u, tdy = taud(i, j).v;
+
 
           if (H_ij > 0.0 && (*bed)(i,j) < (sea_level - (ice.rho / ocean_rho) * H_ij)) {
             //calving front boundary condition for floating shelf
@@ -233,6 +255,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
           }
 
           //here we take the direct gradient at the boundary (not centered)
+
           if (aPP == 0 && aMM == 1) tdx = ice_pressure*h_ij / dx;
           else if (aMM == 0 && aPP == 1) tdx = -ice_pressure*h_ij / dx;
           else if (aPP == 0 && aMM == 0) tdx = 0; //in case of some kind of ice nose, or ice bridge
@@ -243,6 +266,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
           rhs_uv[i][j].u = tdx - (aMM - aPP)*ocean_pressure / dx;
           rhs_uv[i][j].v = tdy - (bMM - bPP)*ocean_pressure / dy;
+
 
           continue;
         } // end of "if (boundary)"
@@ -261,6 +285,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   if (use_cfbc) {
     ierr = thickness->end_access(); CHKERRQ(ierr);
     ierr = bed->end_access(); CHKERRQ(ierr);
+    ierr = mask->end_access(); CHKERRQ(ierr);
   }
 
   if (vel_bc && bc_locations) {
@@ -369,10 +394,6 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
     ierr = bc_locations->begin_access(); CHKERRQ(ierr);
   }
 
-  if (use_cfbc) {
-    ierr = thickness->begin_access(); CHKERRQ(ierr);
-  }
-
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -404,44 +425,59 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       PetscInt bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
 
       if (use_cfbc) {
-        PetscScalar H_ij = (*thickness)(i,j),
-          H_e = (*thickness)(i + 1,j),
-          H_w = (*thickness)(i - 1,j),
-          H_n = (*thickness)(i,j + 1),
-          H_s = (*thickness)(i,j - 1);
+        PetscInt M_ij = (*mask)(i,j),
+          M_e = (*mask)(i + 1,j),
+          M_w = (*mask)(i - 1,j),
+          M_n = (*mask)(i,j + 1),
+          M_s = (*mask)(i,j - 1),
 
-        bool ice_free = H_ij <= 1.0; // FIXME: use mask
+          M_ne = (*mask)(i + 1,j + 1),
+          M_se = (*mask)(i + 1,j - 1),
+          M_nw = (*mask)(i - 1,j + 1),
+          M_sw = (*mask)(i - 1,j - 1);
+
+
+        //bool ice_free = H_ij <= 1.0; // FIXME: use mask
+		bool ice_free = (M_ij == MASK_ICE_FREE_OCEAN || M_ij == MASK_ICE_FREE_BEDROCK);
 
         if (ice_free) { // we set ice velocities on the ice free ocean to zero
           ierr = set_diagonal_matrix_entry(A, i, j, scaling); CHKERRQ(ierr);
           continue;
         }
 
-        // defined via ice thickness; we should use mask instead
-        bool boundary = H_ij > 100.0 && (H_e <= 1.0 || H_w <= 1.0 || H_s <= 1.0 || H_n <= 1.0);
+        bool boundary = M_ij <= MASK_FLOATING &&
+						(M_e == MASK_ICE_FREE_OCEAN ||
+        				 M_w == MASK_ICE_FREE_OCEAN ||
+        				 M_s == MASK_ICE_FREE_OCEAN ||
+        				 M_n == MASK_ICE_FREE_OCEAN ||
+        				 M_ne == MASK_ICE_FREE_OCEAN ||
+        				 M_se == MASK_ICE_FREE_OCEAN ||
+        				 M_nw == MASK_ICE_FREE_OCEAN ||
+        				 M_sw == MASK_ICE_FREE_OCEAN);
 
         if (boundary) {
+          //ierr = verbPrintf(2,grid.com,"!!!!! boundary at %d,%d\n",i,j); CHKERRQ(ierr);
           // direct neighbors
-          if (H_e <= 1.0) aPP = 0;
-          if (H_w <= 1.0) aMM = 0;
-          if (H_n <= 1.0) bPP = 0;
-          if (H_s <= 1.0) bMM = 0;
+          if (M_e == MASK_ICE_FREE_OCEAN) aPP = 0;
+          if (M_w == MASK_ICE_FREE_OCEAN) aMM = 0;
+          if (M_n == MASK_ICE_FREE_OCEAN) bPP = 0;
+          if (M_s == MASK_ICE_FREE_OCEAN) bMM = 0;
 
           // "diagonal" neighbors
-          PetscScalar H_ne = (*thickness)(i + 1,j + 1),
-            H_se = (*thickness)(i + 1,j - 1),
-            H_nw = (*thickness)(i - 1,j + 1),
-            H_sw = (*thickness)(i - 1,j - 1);
+          //PetscInt M_ne = (*mask)(i + 1,j + 1),
+          //  M_se = (*mask)(i + 1,j - 1),
+          //  M_nw = (*mask)(i - 1,j + 1),
+          //  M_sw = (*mask)(i - 1,j - 1);
 
           // decide whether to use centered or one-sided differences
-          if (H_n <= 1.0 || H_ne <= 1.0) aPn = 0;
-          if (H_e <= 1.0 || H_ne <= 1.0) bPe = 0;
-          if (H_e <= 1.0 || H_se <= 1.0) bMe = 0;
-          if (H_s <= 1.0 || H_se <= 1.0) aPs = 0;
-          if (H_s <= 1.0 || H_sw <= 1.0) aMs = 0;
-          if (H_w <= 1.0 || H_sw <= 1.0) bMw = 0;
-          if (H_w <= 1.0 || H_nw <= 1.0) bPw = 0;
-          if (H_n <= 1.0 || H_nw <= 1.0) aMn = 0;
+          if (M_n == MASK_ICE_FREE_OCEAN || M_ne == MASK_ICE_FREE_OCEAN) aPn = 0;
+          if (M_e == MASK_ICE_FREE_OCEAN || M_ne == MASK_ICE_FREE_OCEAN) bPe = 0;
+          if (M_e == MASK_ICE_FREE_OCEAN || M_se == MASK_ICE_FREE_OCEAN) bMe = 0;
+          if (M_s == MASK_ICE_FREE_OCEAN || M_se == MASK_ICE_FREE_OCEAN) aPs = 0;
+          if (M_s == MASK_ICE_FREE_OCEAN || M_sw == MASK_ICE_FREE_OCEAN) aMs = 0;
+          if (M_w == MASK_ICE_FREE_OCEAN || M_sw == MASK_ICE_FREE_OCEAN) bMw = 0;
+          if (M_w == MASK_ICE_FREE_OCEAN || M_nw == MASK_ICE_FREE_OCEAN) bPw = 0;
+          if (M_n == MASK_ICE_FREE_OCEAN || M_nw == MASK_ICE_FREE_OCEAN) aMn = 0;
         }
       } // end of "if (use_cfbc)"
 
@@ -532,10 +568,6 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       row.c = 1;
       ierr = MatSetValuesStencil(A, 1, &row, sten, col, eq2, INSERT_VALUES); CHKERRQ(ierr);
     }
-  }
-
-  if (use_cfbc) {
-    ierr = thickness->end_access(); CHKERRQ(ierr);
   }
 
   if (vel_bc && bc_locations) {

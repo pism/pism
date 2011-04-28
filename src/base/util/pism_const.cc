@@ -26,6 +26,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <string.h>
+
 //! \brief PISM verbosity level; determines how much gets printed to the
 //! standard out.
 static PetscInt verbosityLevel;
