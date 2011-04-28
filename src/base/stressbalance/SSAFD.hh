@@ -66,6 +66,11 @@ protected:
 
   virtual PetscErrorCode set_diagonal_matrix_entry(Mat A, int i, int j,
                                                    PetscScalar value);
+
+  virtual bool is_ice_free(int mask);
+
+  virtual bool is_cfbc_location(int i, int j);
+
   // objects used internally
   IceModelVec2Stag hardness, nuH, nuH_old;
   KSP SSAKSP;

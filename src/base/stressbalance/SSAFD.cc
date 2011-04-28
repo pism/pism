@@ -165,64 +165,44 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   if (use_cfbc) {
     ierr = thickness->begin_access(); CHKERRQ(ierr);
     ierr = bed->begin_access(); CHKERRQ(ierr);
-	ierr = mask->begin_access(); CHKERRQ(ierr);
+    ierr = mask->begin_access(); CHKERRQ(ierr);
   }
 
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
       if (vel_bc && (bc_locations->as_int(i, j) == 1)) {
-		 //ierr = verbPrintf(2,grid.com,
-		 //   	                      "!!!!! boundary u-velocity=%e\n at %d,%d",(*vel_bc)(i, j).u,i,j); CHKERRQ(ierr);
         rhs_uv[i][j].u = scaling * (*vel_bc)(i, j).u;
         rhs_uv[i][j].v = scaling * (*vel_bc)(i, j).v;
         continue;
       }
 
 
-        if (use_cfbc) {
-            PetscScalar H_ij = (*thickness)(i,j);
-            PetscInt M_ij = (*mask)(i,j),
-            M_e = (*mask)(i + 1,j),
-            M_w = (*mask)(i - 1,j),
-            M_n = (*mask)(i,j + 1),
-            M_s = (*mask)(i,j - 1),
-            M_ne = (*mask)(i + 1,j + 1),
-            M_se = (*mask)(i + 1,j - 1),
-            M_nw = (*mask)(i - 1,j + 1),
-            M_sw = (*mask)(i - 1,j - 1);
+      if (use_cfbc) {
+        PetscScalar H_ij = (*thickness)(i,j);
+        PetscInt M_ij = mask->as_int(i,j),
+          M_e = mask->as_int(i + 1,j),
+          M_w = mask->as_int(i - 1,j),
+          M_n = mask->as_int(i,j + 1),
+          M_s = mask->as_int(i,j - 1);
 
-
-        //bool ice_free = H_ij <= 1.0; // FIXME: use mask
-		bool ice_free = (M_ij == MASK_ICE_FREE_OCEAN || M_ij == MASK_ICE_FREE_BEDROCK);
-
-
-        if (ice_free) {
+        // Note: this sets velocities at both ice-free ocean and ice-free
+        // bedrock to zero. This means that we need to set boundary conditions
+        // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
+        // to be consistent.
+        if (is_ice_free(M_ij)) {
           rhs_uv[i][j].u = 0.0;
           rhs_uv[i][j].v = 0.0;
           continue;
         }
 
-        bool boundary = M_ij <= MASK_FLOATING &&
-						(M_e == MASK_ICE_FREE_OCEAN ||
-        				 M_w == MASK_ICE_FREE_OCEAN ||
-        				 M_s == MASK_ICE_FREE_OCEAN ||
-        				 M_n == MASK_ICE_FREE_OCEAN ||
-        				 M_ne == MASK_ICE_FREE_OCEAN ||
-        				 M_se == MASK_ICE_FREE_OCEAN ||
-        				 M_nw == MASK_ICE_FREE_OCEAN ||
-        				 M_sw == MASK_ICE_FREE_OCEAN);
-
-
-        if (boundary) {
-        	PetscInt aMM = 1, aPP = 1, bMM = 1, bPP = 1;
-        	// direct neighbors
-           if (M_e == MASK_ICE_FREE_OCEAN) aPP = 0;
-           if (M_w == MASK_ICE_FREE_OCEAN) aMM = 0;
-           if (M_n == MASK_ICE_FREE_OCEAN) bPP = 0;
-           if (M_s == MASK_ICE_FREE_OCEAN) bMM = 0;
-
-
+        if (is_cfbc_location(i, j)) {
+          PetscInt aMM = 1, aPP = 1, bMM = 1, bPP = 1;
+          // direct neighbors
+          if (is_ice_free(M_e)) aPP = 0;
+          if (is_ice_free(M_w)) aMM = 0;
+          if (is_ice_free(M_n)) bPP = 0;
+          if (is_ice_free(M_s)) bMM = 0;
 
           double ice_pressure = ice.rho * standard_gravity * H_ij,
             ocean_pressure;
@@ -233,7 +213,6 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
           //double h_ij = 0.0, tdx = 0.0, tdy = 0.0;
           double h_ij = 0.0, tdx = taud(i, j).u, tdy = taud(i, j).v;
-
 
           if (H_ij > 0.0 && (*bed)(i,j) < (sea_level - (ice.rho / ocean_rho) * H_ij)) {
             //calving front boundary condition for floating shelf
@@ -269,7 +248,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
 
           continue;
-        } // end of "if (boundary)"
+        } // end of "if (is_cfbc_location(i, j))"
 
         // If we reached this point, then CFBC are enabled, but we are in the
         // interior of a sheet or shelf. See "usual case" below.
@@ -379,7 +358,8 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   const PetscScalar   beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
 
-  IceModelVec2V vel = velocity;         // a shortcut
+  // shortcut:
+  IceModelVec2V &vel = velocity;
 
   ierr = MatZeroEntries(A); CHKERRQ(ierr);
 
@@ -399,7 +379,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
       // Handle the easy case: provided Dirichlet boundary conditions
       if (vel_bc && bc_locations && bc_locations->as_int(i,j) == 1) {
-        // set diagonal entry to one; RHS entry will be known velocity;
+        // set diagonal entry to one (scaled); RHS entry will be known velocity;
         ierr = set_diagonal_matrix_entry(A, i, j, scaling); CHKERRQ(ierr); 
         continue;
       }
@@ -425,59 +405,42 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       PetscInt bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
 
       if (use_cfbc) {
-        PetscInt M_ij = (*mask)(i,j),
-          M_e = (*mask)(i + 1,j),
-          M_w = (*mask)(i - 1,j),
-          M_n = (*mask)(i,j + 1),
-          M_s = (*mask)(i,j - 1),
+        PetscInt M_ij = mask->as_int(i,j),
+          // direct neighbors
+          M_e = mask->as_int(i + 1,j),
+          M_w = mask->as_int(i - 1,j),
+          M_n = mask->as_int(i,j + 1),
+          M_s = mask->as_int(i,j - 1),
+          // "diagonal" neighbors
+          M_ne = mask->as_int(i + 1,j + 1),
+          M_se = mask->as_int(i + 1,j - 1),
+          M_nw = mask->as_int(i - 1,j + 1),
+          M_sw = mask->as_int(i - 1,j - 1);
 
-          M_ne = (*mask)(i + 1,j + 1),
-          M_se = (*mask)(i + 1,j - 1),
-          M_nw = (*mask)(i - 1,j + 1),
-          M_sw = (*mask)(i - 1,j - 1);
-
-
-        //bool ice_free = H_ij <= 1.0; // FIXME: use mask
-		bool ice_free = (M_ij == MASK_ICE_FREE_OCEAN || M_ij == MASK_ICE_FREE_BEDROCK);
-
-        if (ice_free) { // we set ice velocities on the ice free ocean to zero
+        // Note: this sets velocities at both ice-free ocean and ice-free
+        // bedrock to zero. This means that we need to set boundary conditions
+        // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
+        // to be consistent.
+        if (is_ice_free(M_ij)) {
           ierr = set_diagonal_matrix_entry(A, i, j, scaling); CHKERRQ(ierr);
           continue;
         }
 
-        bool boundary = M_ij <= MASK_FLOATING &&
-						(M_e == MASK_ICE_FREE_OCEAN ||
-        				 M_w == MASK_ICE_FREE_OCEAN ||
-        				 M_s == MASK_ICE_FREE_OCEAN ||
-        				 M_n == MASK_ICE_FREE_OCEAN ||
-        				 M_ne == MASK_ICE_FREE_OCEAN ||
-        				 M_se == MASK_ICE_FREE_OCEAN ||
-        				 M_nw == MASK_ICE_FREE_OCEAN ||
-        				 M_sw == MASK_ICE_FREE_OCEAN);
-
-        if (boundary) {
-          //ierr = verbPrintf(2,grid.com,"!!!!! boundary at %d,%d\n",i,j); CHKERRQ(ierr);
-          // direct neighbors
-          if (M_e == MASK_ICE_FREE_OCEAN) aPP = 0;
-          if (M_w == MASK_ICE_FREE_OCEAN) aMM = 0;
-          if (M_n == MASK_ICE_FREE_OCEAN) bPP = 0;
-          if (M_s == MASK_ICE_FREE_OCEAN) bMM = 0;
-
-          // "diagonal" neighbors
-          //PetscInt M_ne = (*mask)(i + 1,j + 1),
-          //  M_se = (*mask)(i + 1,j - 1),
-          //  M_nw = (*mask)(i - 1,j + 1),
-          //  M_sw = (*mask)(i - 1,j - 1);
+        if (is_cfbc_location(i, j)) {
+          if (is_ice_free(M_e)) aPP = 0;
+          if (is_ice_free(M_w)) aMM = 0;
+          if (is_ice_free(M_n)) bPP = 0;
+          if (is_ice_free(M_s)) bMM = 0;
 
           // decide whether to use centered or one-sided differences
-          if (M_n == MASK_ICE_FREE_OCEAN || M_ne == MASK_ICE_FREE_OCEAN) aPn = 0;
-          if (M_e == MASK_ICE_FREE_OCEAN || M_ne == MASK_ICE_FREE_OCEAN) bPe = 0;
-          if (M_e == MASK_ICE_FREE_OCEAN || M_se == MASK_ICE_FREE_OCEAN) bMe = 0;
-          if (M_s == MASK_ICE_FREE_OCEAN || M_se == MASK_ICE_FREE_OCEAN) aPs = 0;
-          if (M_s == MASK_ICE_FREE_OCEAN || M_sw == MASK_ICE_FREE_OCEAN) aMs = 0;
-          if (M_w == MASK_ICE_FREE_OCEAN || M_sw == MASK_ICE_FREE_OCEAN) bMw = 0;
-          if (M_w == MASK_ICE_FREE_OCEAN || M_nw == MASK_ICE_FREE_OCEAN) bPw = 0;
-          if (M_n == MASK_ICE_FREE_OCEAN || M_nw == MASK_ICE_FREE_OCEAN) aMn = 0;
+          if (is_ice_free(M_n) || is_ice_free(M_ne)) aPn = 0;
+          if (is_ice_free(M_e) || is_ice_free(M_ne)) bPe = 0;
+          if (is_ice_free(M_e) || is_ice_free(M_se)) bMe = 0;
+          if (is_ice_free(M_s) || is_ice_free(M_se)) aPs = 0;
+          if (is_ice_free(M_s) || is_ice_free(M_sw)) aMs = 0;
+          if (is_ice_free(M_w) || is_ice_free(M_sw)) bMw = 0;
+          if (is_ice_free(M_w) || is_ice_free(M_nw)) bPw = 0;
+          if (is_ice_free(M_n) || is_ice_free(M_nw)) aMn = 0;
         }
       } // end of "if (use_cfbc)"
 
@@ -586,7 +549,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 #endif
 
   return 0;
-  }
+}
 
 
 //! \brief Compute the vertically-averaged horizontal velocity from the shallow
@@ -1099,3 +1062,30 @@ PetscErrorCode SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
 
   return 0;
 }
+
+//! Uses provided mask value to check if a cell is ice-free.
+bool SSAFD::is_ice_free(int mask_value) {
+  return mask_value == MASK_ICE_FREE_BEDROCK || mask_value == MASK_ICE_FREE_OCEAN;
+}
+
+//! \brief Checks if a cell is a CFBC location.
+/*!
+ * You need to call mask->begin_access() before and mask->end_access() after using this.
+ */
+bool SSAFD::is_cfbc_location(int i, int j) {
+  const PetscInt M_ij = mask->as_int(i,j),
+    M_e = mask->as_int(i + 1,j),
+    M_w = mask->as_int(i - 1,j),
+    M_n = mask->as_int(i,j + 1),
+    M_s = mask->as_int(i,j - 1);
+
+  // Note: boundary conditions are applied at grid locations corresponding to
+  // cells adjacent to ice-free land or ice-free ocean, i.e. ones for which at
+  // least one of four (sic! not 8) neighbors is ice-free.
+  // 
+  // See ssaBC/SSANeumBoundCond.tex for details.
+  
+  return (!is_ice_free(M_ij)) &&
+    (is_ice_free(M_e) || is_ice_free(M_w) || is_ice_free(M_n) || is_ice_free(M_s));
+}
+
