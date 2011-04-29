@@ -276,7 +276,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
   const PetscScalar
     p_air     = config.get("surface_pressure"),
-    ice_K     = ice->k / ice->c_p, // enthalpy-conductivity for cold ice
+    ice_k     = config.get("ice_thermal_conductivity"),
+    ice_c     = config.get("ice_specific_heat_capacity"),
+    ice_K     = ice_k / ice_c, // enthalpy-conductivity for cold ice
     L         = config.get("water_latent_heat_fusion"),  // J kg-1
     bulgeEnthMax  = config.get("enthalpy_cold_bulge_max"), // J kg-1
     hmelt_decay_rate = config.get("hmelt_decay_rate"),   // m s-1
@@ -434,7 +436,11 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
             } else {
               hf_up = - ice_K * (esys.Enth[1] - esys.Enth[0]) / fdz;
             }
-            vbmr(i,j) = ( (*Rb)(i,j) + G0(i,j) - hf_up ) / (ice->rho * L); // = - Mb / rho in paper
+            // compute basal melt rate from flux balance; vbmr = - Mb / rho in
+            //   efgis paper; after we compute it we make sure there is no
+            //   refreeze if there is no available basal water
+            vbmr(i,j) = ( (*Rb)(i,j) + G0(i,j) - hf_up ) / (ice->rho * L);
+            if ((vHmelt(i,j) <= 0) && (vbmr(i,j) < 0))    vbmr(i,j) = 0.0;
           }
         }
 
