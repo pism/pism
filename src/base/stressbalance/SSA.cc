@@ -189,9 +189,7 @@ PetscErrorCode SSA::update(bool fast) {
 
 //! \brief Compute the D2 term for the strain heating computation.
 /*!
-  Only computes where grounded, because of application.  FIXME: is this right?
-
-  Documented in [\ref BBssasliding].
+Documented in [\ref BBssasliding].
  */
 PetscErrorCode SSA::compute_D2(IceModelVec2S &result) {
   PetscErrorCode ierr;
@@ -199,27 +197,17 @@ PetscErrorCode SSA::compute_D2(IceModelVec2S &result) {
 
   ierr = velocity.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
-  ierr = mask->begin_access(); CHKERRQ(ierr);
-  
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (mask->as_int(i,j) == MASK_GROUNDED) {
-        const PetscScalar 
+      const PetscScalar 
           u_x   = (velocity(i+1,j).u - velocity(i-1,j).u)/(2*dx),
           u_y   = (velocity(i,j+1).u - velocity(i,j-1).u)/(2*dy),
           v_x   = (velocity(i+1,j).v - velocity(i-1,j).v)/(2*dx),
-          v_y   = (velocity(i,j+1).v - velocity(i,j-1).v)/(2*dy),
-          D2ssa = PetscSqr(u_x) + PetscSqr(v_y) + u_x * v_y
-          + PetscSqr(0.5*(u_y + v_x));
-
-        result(i,j) = D2ssa;
-      } else {
-        result(i,j) = 0.0;
-      }
+          v_y   = (velocity(i,j+1).v - velocity(i,j-1).v)/(2*dy);
+      result(i,j) = PetscSqr(u_x) + PetscSqr(v_y) + u_x * v_y 
+                      + PetscSqr(0.5*(u_y + v_x));
     }
   }
-
-  ierr = mask->end_access(); CHKERRQ(ierr);
   ierr = result.end_access(); CHKERRQ(ierr);
   ierr = velocity.end_access(); CHKERRQ(ierr);
   return 0;
