@@ -168,6 +168,7 @@ cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER_FORCING $TILLPHI 
      -ts_file $TSNAME -ts_times $TSTIMES \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
+echo
 $PISM_DO "flowline.py -c -o $OUTNAME $OUTNAMEFULL"
 
 
@@ -189,6 +190,7 @@ cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
      -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
+echo
 $PISM_DO "flowline.py -c -o $OUTNAME $OUTNAMEFULL"
 
 
@@ -213,4 +215,5 @@ cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
      -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
+echo
 $PISM_DO "flowline.py -c -o $OUTNAME $OUTNAMEFULL"

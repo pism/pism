@@ -14,11 +14,16 @@ Storglaci{\"a}ren is a small valley glacier in northern Sweden (Figure~\ref{fig:
 
 The script \texttt{preprocess.sh} in \texttt{examples/storglaciaren} reads the digital elevation model from ASCII files and generates the necessary input files for both the 3-dimensional and the flow-line application. 
 
-The mean annual air temperature $T_{\mathrm{MA}}=-5^{\circ}$C at the nearby Tarfala Research Stations serves as the boundary condition for the conservation of energy scheme below the firn line. Above it, where the ice is temperate, we choose 0$^{\circ}$C. 
+The mean annual air temperature $T_{\mathrm{MA}}=-6^{\circ}$C at the nearby Tarfala Research Stations serves as the boundary condition for the conservation of energy scheme below the firn line. Above it, where the ice is temperate, we choose 0$^{\circ}$C. 
+
+\texttt{psg_flowline.sh} runs the flow-line application mode. The first two runs smooth the surface and create a more credible enthalpy field. In this example we want to infer the mass balance that has the present day geometry as a steady-state (for now, we ignore the fact that Storglaci{\"a}ren is probably not in a steady-state). As demonstrated in the third run, we can use PISM's mass balance modifier \texttt{-surface constant,forcing -force_to_thk psg_flowline_35m_steady.nc -force_to_thk_alpha 0.05}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=5.in,keepaspectratio=true]{sg-flowline-ftt-result}
+  \caption{Storglaci{\"a}ren, northern Sweden. Upper panel: horizontal surface velocity along flowline in meters per year. Lower panel: thermal structure. Red colors indicate liquid water content, blue colors are temperature in degrees Celsius}
+  \label{fig:storglaciaren}
+\end{figure}
 
 
-
-\texttt{psg_flowline.sh} runs the flow-line application mode. The aim here model the steady-state configuration of the glacier given the following climatic conditions: \texttt{-surface elevation -acab -2.5,3.5,1100,1450,1660 -acab_limits -2.5,0}
-
-
-FIXME: Numerics of the flow-line application can make the KSP solver fail to converge. Compiling PETSc with a direct solver like mumps helps. The SSA doesn't know about grounded glaciers.
+The aim here model the steady-state configuration of the glacier given the following climatic conditions: \texttt{-surface elevation -acab -2.5,3.5,1100,1450,1660 -acab_limits -2.5,0}

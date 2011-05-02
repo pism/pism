@@ -80,15 +80,18 @@ plt.ylabel("velocity [m a$^{-1}$]")
 plt.setp(axUpper, xticks=[])
 ## Contour level of the CTS
 cts_level = [1,1]
-liqfrac_levels = np.arange(0,2.1,.25)
-temppa_levels = np.arange(-6,0,1)
+liqfrac_levels = np.arange(0,1.5,.25)
+#temppa_levels = np.arange(-6,0,1)
+temppa_levels = [-6,-5,-4,-3,-2,-1,-.0001]
 
 axLower.plot(x,b,color='black', lw = 1.5)
 axLower.plot(x,s,color='black', lw = 1.5)
-c1=axLower.contourf(xx,zz,liqfrac*100,liqfrac_levels,cmap=plt.cm.Reds,lw = 1)
+c1=axLower.pcolor(xx,zz,liqfrac*100,cmap=plt.cm.Reds,vmin=0.5)
 plt.colorbar(mappable=c1,ax=axLower,orientation='horizontal',pad=0.05,shrink=0.75)
-c2=axLower.contourf(xx,zz,temppa,temppa_levels,cmap=plt.cm.Blues_r,lw = 1)
-plt.colorbar(mappable=c2,ax=axLower,orientation='horizontal',pad=0.20,shrink=0.75)
+#c2=axLower.contourf(xx,zz,temppa,temppa_levels,cmap=plt.cm.Blues_r,lw = 1)
+c2=axLower.pcolor(xx,zz,temppa,cmap=plt.cm.Blues_r,vmin=-6,vmax=0)
+c3=axLower.pcolor(xx,zz,liqfrac*100,cmap=plt.cm.Reds,vmin=0.01)
+plt.colorbar(mappable=c2,ax=axLower,orientation='horizontal',ticks=[-6,-5,-4,-3,-2,-1,0],pad=0.20,shrink=0.75)
 axLower.contour(xx,zz,cts,cts_level,colors='black',linestyles='dashed',lw = 1)
 axLower.axis([-250, 3500, 1100, 1800])
 plt.xlabel("distance from bergschrund [m]")
