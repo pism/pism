@@ -52,7 +52,7 @@ public:
   /*!
    * Does not affect the SIA computation.
    */
-  virtual PetscErrorCode set_boundary_conditions(IceModelVec2Mask &locations,
+  virtual PetscErrorCode set_boundary_conditions(IceModelVec2Int &locations,
                                                  IceModelVec2V &velocities);
 
   virtual PetscErrorCode set_basal_melt_rate(IceModelVec2S *bmr);

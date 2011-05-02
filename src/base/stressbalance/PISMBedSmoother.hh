@@ -82,7 +82,7 @@ public:
   virtual PetscErrorCode get_smoothing_domain(PetscInt &Nx_out, PetscInt &Ny_out);
   virtual PetscInt       get_max_ghosts() { return maxGHOSTS; }
 
-  virtual PetscErrorCode get_smoothed_thk(IceModelVec2S usurf, IceModelVec2S thk, IceModelVec2Mask mask,
+  virtual PetscErrorCode get_smoothed_thk(IceModelVec2S usurf, IceModelVec2S thk, IceModelVec2Int mask,
                                           PetscInt GHOSTS, IceModelVec2S *thksmooth);
   virtual PetscErrorCode get_theta(IceModelVec2S usurf, PetscReal n,
                                    PetscInt GHOSTS, IceModelVec2S *theta);

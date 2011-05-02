@@ -18,6 +18,7 @@
 
 #include "iceModel_diagnostics.hh"
 #include "PISMDiagnostic.hh"
+#include "Mask.hh"
 
 
 PetscErrorCode IceModel::init_diagnostics() {
@@ -223,7 +224,9 @@ PetscErrorCode IceModel_bwp::compute(IceModelVec* &output) {
   ierr = model->vbmr.end_access(); CHKERRQ(ierr);
   ierr = result->end_access(); CHKERRQ(ierr);
 
-  ierr = model->vMask.fill_where_floating(*result, fillval); CHKERRQ(ierr);
+  MaskQuery m(model->vMask);
+
+  ierr = m.fill_where_floating(*result, fillval); CHKERRQ(ierr);
   
   output = result;
   return 0;
@@ -923,7 +926,7 @@ IceModel_new_mask::IceModel_new_mask(IceModel *m, IceGrid &g, PISMVars &my_vars)
 PetscErrorCode IceModel_new_mask::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   
-  IceModelVec2Mask *result = new IceModelVec2Mask;
+  IceModelVec2Int *result = new IceModelVec2Int;
   ierr = result->create(grid, "new_mask", true); CHKERRQ(ierr);
   ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
   result->write_in_glaciological_units = true;

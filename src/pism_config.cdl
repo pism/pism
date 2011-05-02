@@ -60,7 +60,7 @@ netcdf pism_config {
     pism_config:bed_deformation_model_doc = "Selects a bed deformation model to use; possible choices are 'none', 'iso' (point-wise isostasy), 'lc' (see [\\ref LingleClark], requires FFTW3).";
 
     pism_config:ocean_kill  = "false";
-    pism_config:ocean_kill_doc = "If used with input from a NetCDF initialization file which has ice-free ocean mask (value MASK_FLOATING_OCEAN0=7), will zero out ice thicknesses in areas that were ice-free ocean at time zero. This is calving at the location of the original calving front.";
+    pism_config:ocean_kill_doc = "If used with input from a NetCDF initialization file which has ice-free ocean mask, will zero out ice thicknesses in areas that were ice-free ocean at time zero. This is calving at the location of the original calving front.";
 
     pism_config:floating_ice_killed = "false";
     pism_config:floating_ice_killed_doc = "If ice is (or becomes) floating then it is set to thickness zero. This is calving at the grounding line.";

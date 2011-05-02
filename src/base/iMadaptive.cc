@@ -18,7 +18,7 @@
 
 #include "iceModel.hh"
 #include <petscvec.h>
-
+#include "Mask.hh"
 
 //! Compute the maximum velocities for time-stepping and reporting to user.
 /*!
@@ -97,6 +97,8 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   bool do_ocean_kill = config.get_flag("ocean_kill"),
     floating_ice_killed = config.get_flag("floating_ice_killed");
 
+  MaskQuery mask(vMask);
+
   IceModelVec2V *vel_advective;
   ierr = stress_balance->get_advective_2d_velocity(vel_advective); CHKERRQ(ierr); 
 
@@ -106,8 +108,8 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       // the following conditionals, both -ocean_kill and -float_kill, are also applied in 
       //   IceModel::massContExplicitStep() when zeroing thickness
-      const bool ignorableOcean = ( do_ocean_kill && (vMask.as_int(i,j) == MASK_OCEAN_AT_TIME_0) )
-	|| ( floating_ice_killed && vMask.is_floating(i,j) );
+      const bool ignorableOcean = ( do_ocean_kill && mask.ocean_at_time_0(i, j) )
+	|| ( floating_ice_killed && mask.ocean(i,j) );
       if (!ignorableOcean) {
         PetscScalar denom = PetscAbs(vel[i][j].u)/grid.dx + PetscAbs(vel[i][j].v)/grid.dy;
         denom += (0.01/secpera)/(grid.dx + grid.dy);  // make sure it's pos.

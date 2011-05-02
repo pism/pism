@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SIA_Sliding.hh"
+#include "Mask.hh"
 
 PetscErrorCode SIA_Sliding::allocate() {
   PetscErrorCode ierr;
@@ -50,7 +51,7 @@ PetscErrorCode SIA_Sliding::init(PISMVars &vars) {
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
 
-  mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
+  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(1, "mask is not available");
 
   surface = dynamic_cast<IceModelVec2S*>(vars.get("surface_altitude"));
@@ -89,6 +90,8 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
   double mu_sliding = config.get("mu_sliding");
   double minimum_temperature_for_sliding = config.get("minimum_temperature_for_sliding");
 
+  MaskQuery m(*mask);
+
   ierr = h_x.begin_access(); CHKERRQ(ierr);
   ierr = h_y.begin_access(); CHKERRQ(ierr);
 
@@ -101,7 +104,7 @@ PetscErrorCode SIA_Sliding::update(bool /*fast*/) {
   ierr = basal_frictional_heating.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; i++) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; j++) {
-      if (mask->is_floating(i,j)) {
+      if (m.ocean(i,j)) {
         velocity(i,j).u = 0.0;
         velocity(i,j).v = 0.0;
         basal_frictional_heating(i,j) = 0.0;

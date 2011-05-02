@@ -43,7 +43,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode compute_surface_gradient(IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
 protected:
-  IceModelVec2Mask *no_model_mask;    
+  IceModelVec2Int *no_model_mask;    
 };
 
 PetscErrorCode SIAFD_Regional::init(PISMVars &vars) {
@@ -53,7 +53,7 @@ PetscErrorCode SIAFD_Regional::init(PISMVars &vars) {
 
   ierr = verbPrintf(2,grid.com,"  using the regional version of the SIA solver...\n"); CHKERRQ(ierr);
 
-  no_model_mask = dynamic_cast<IceModelVec2Mask*>(vars.get("no_model_mask"));
+  no_model_mask = dynamic_cast<IceModelVec2Int*>(vars.get("no_model_mask"));
   if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
 
   return 0;
@@ -99,7 +99,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode compute_driving_stress(IceModelVec2V &taud);
 protected:
-  IceModelVec2Mask *no_model_mask;    
+  IceModelVec2Int *no_model_mask;    
 };
 
 PetscErrorCode SSAFD_Regional::init(PISMVars &vars) {
@@ -108,7 +108,7 @@ PetscErrorCode SSAFD_Regional::init(PISMVars &vars) {
 
   ierr = verbPrintf(2,grid.com,"  using the regional version of the SSA solver...\n"); CHKERRQ(ierr);
 
-  no_model_mask = dynamic_cast<IceModelVec2Mask*>(vars.get("no_model_mask"));
+  no_model_mask = dynamic_cast<IceModelVec2Int*>(vars.get("no_model_mask"));
   if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
   
   return 0;
@@ -146,7 +146,7 @@ protected:
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode init_physics();
 private:
-  IceModelVec2Mask   no_model_mask;    
+  IceModelVec2Int   no_model_mask;    
 };
 
 PetscErrorCode IceRegionalModel::createVecs() {

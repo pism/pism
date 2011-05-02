@@ -21,6 +21,7 @@
 #include "SSAFEM.hh"
 #include "PISMIO.hh"
 #include "Timeseries.hh"
+#include "Mask.hh"
 
 static char help[] =
   "Driver for EISMINT-Ross diagnostic velocity computation in ice shelf.\n"
@@ -39,7 +40,7 @@ PetscErrorCode read_riggs_and_compare(IceGrid &grid, PISMVars &vars, IceModelVec
     return 0;
 
   IceModelVec2S *longitude, *latitude;
-  IceModelVec2Mask *mask;
+  IceModelVec2Int *mask;
 
   longitude = dynamic_cast<IceModelVec2S*>(vars.get("longitude"));
   if (longitude == NULL) SETERRQ(1, "longitude is not available");
@@ -47,7 +48,7 @@ PetscErrorCode read_riggs_and_compare(IceGrid &grid, PISMVars &vars, IceModelVec
   latitude = dynamic_cast<IceModelVec2S*>(vars.get("latitude"));
   if (latitude == NULL) SETERRQ(1, "latitude is not available");
 
-  mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
+  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(1, "mask is not available");
 
   ierr = verbPrintf(2,grid.com,"comparing to RIGGS data in %s ...\n",
@@ -76,6 +77,8 @@ PetscErrorCode read_riggs_and_compare(IceGrid &grid, PISMVars &vars, IceModelVec
   ierr =   udata.read(riggsfile); CHKERRQ(ierr);
   ierr =   vdata.read(riggsfile); CHKERRQ(ierr);
       
+  MaskQuery M(*mask);
+
   // same length for all vars here
   len = latdata.length();
   PetscScalar  goodptcount = 0.0, ChiSqr = 0.0;
@@ -103,7 +106,7 @@ PetscErrorCode read_riggs_and_compare(IceGrid &grid, PISMVars &vars, IceModelVec
       ierr = verbPrintf(4,PETSC_COMM_SELF,
                         " PISM%d[%3d]: lat = %7.3f, lon = %7.3f, mag = %7.2f, u = %7.2f, v = %7.2f\n",
                         grid.rank,k,clat[ci][cj],clon[ci][cj],cmag,cu,cv); CHKERRQ(ierr);
-      if (mask->as_int(ci,cj) == MASK_FLOATING) {
+      if (M.floating_ice(ci, cj)) {
         goodptcount += 1.0;
         ChiSqr += PetscSqr(u-cu)+PetscSqr(v-cv);
       }
@@ -136,9 +139,9 @@ PetscErrorCode compute_errors(IceGrid &grid, PISMVars &vars, IceModelVec2V &vel_
   PetscScalar  **azi, **mag, **acc, **H;
 
   IceModelVec2S *thickness, *obsAzimuth, *obsMagnitude, *obsAccurate;
-  IceModelVec2Mask *mask;
+  IceModelVec2Int *mask;
 
-  mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
+  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(1, "mask is not available");
 
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
@@ -153,6 +156,8 @@ PetscErrorCode compute_errors(IceGrid &grid, PISMVars &vars, IceModelVec2V &vel_
   obsAccurate = dynamic_cast<IceModelVec2S*>(vars.get("accur"));
   if (obsAccurate == NULL) SETERRQ(1, "accur is not available");
 
+  MaskQuery m(*mask);
+
   const PetscScalar area = grid.dx * grid.dy;
   ierr = mask->begin_access(); CHKERRQ(ierr);
   ierr = thickness->get_array(H); CHKERRQ(ierr);
@@ -162,7 +167,7 @@ PetscErrorCode compute_errors(IceGrid &grid, PISMVars &vars, IceModelVec2V &vel_
   ierr = vel_ssa.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (mask->is_floating(i,j) && (H[i][j] > 1.0)) {
+      if (m.ocean(i,j) && (H[i][j] > 1.0)) {
         const PetscScalar ccomputed = vel_ssa(i,j).magnitude();
         maxcComputed = PetscMax(maxcComputed,ccomputed);
         if (PetscAbs(acc[i][j] - 1.0) < 0.1) {
@@ -239,7 +244,7 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
 
   IceModelVec2S *obsAzimuth, *obsMagnitude, *obsAccurate,
     *thickness, *surface, *bed, *tauc, *longitude, *latitude;
-  IceModelVec2Mask *mask, *bc_mask;
+  IceModelVec2Int *mask, *bc_mask;
   IceModelVec2V *vel_bc;
   IceModelVec3 *enthalpy;
 
@@ -253,8 +258,8 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
   longitude = new IceModelVec2S;
   latitude = new IceModelVec2S;
 
-  mask = new IceModelVec2Mask;
-  bc_mask = new IceModelVec2Mask;
+  mask = new IceModelVec2Int;
+  bc_mask = new IceModelVec2Int;
 
   vel_bc = new IceModelVec2V;
 
@@ -636,9 +641,9 @@ int main(int argc, char *argv[]) {
 
     ierr = ssa->init(vars); CHKERRQ(ierr);
 
-    IceModelVec2Mask *bc_mask;
+    IceModelVec2Int *bc_mask;
     IceModelVec2V *bc_vel;
-    bc_mask = dynamic_cast<IceModelVec2Mask*>(vars.get("bcflag"));
+    bc_mask = dynamic_cast<IceModelVec2Int*>(vars.get("bcflag"));
     if (bc_mask == NULL) SETERRQ(1, "bcflag is not available");
 
     bc_vel = dynamic_cast<IceModelVec2V*>(vars.get("velbar"));

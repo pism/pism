@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SIAFD.hh"
+#include "Mask.hh"
 
 //! \brief Allocate the SIAFD module.
 PetscErrorCode SIAFD::allocate() {
@@ -58,7 +59,7 @@ PetscErrorCode SIAFD::init(PISMVars &vars) {
   ierr = verbPrintf(2, grid.com,
                     "* Initializing the SIA stress balance modifier...\n"); CHKERRQ(ierr);
 
-  mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
+  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(1, "mask is not available");
 
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
@@ -733,6 +734,8 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
   ierr = thk_smooth.begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
 
+  MaskQuery M(*mask);
+
   double enhancement_factor = config.get("enhancement_factor"),
     n_glen  = ice.exponent(),
     Sig_pow = (1.0 + n_glen) / (2.0 * n_glen);
@@ -756,8 +759,6 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
         const PetscScalar alpha_squared =
           PetscSqr(h_x(i,j,o)) + PetscSqr(h_y(i,j,o));
 
-        int M = mask->as_int(i,j);
-
         // in the ice:
         for (PetscInt k=0; k<=ks; ++k) {
           PetscReal depth = thk - grid.zlevels[k];
@@ -767,7 +768,7 @@ PetscErrorCode SIAFD::compute_sigma(IceModelVec2S *D2_input,
             BofT = ice.hardnessParameter_from_enth(E[k], pressure) * pow(enhancement_factor,-1/n_glen),
             D2_ssa = (*D2_input)(i,j);
 
-          if (M == MASK_GROUNDED) {
+          if (M.grounded_ice(i, j)) {
             // combine SIA and SSA contributions
             PetscReal D2_sia = pow(sigma_sia / (2 * BofT), 1.0 / Sig_pow);
             sigma_ij[k] = 2.0 * BofT * pow(D2_sia + D2_ssa, Sig_pow);

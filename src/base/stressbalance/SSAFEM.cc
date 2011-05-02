@@ -18,7 +18,7 @@
 
 #include "SSAFEM.hh"
 #include "FETools.hh"
-#include "IceMarginGeometry.hh"
+#include "Mask.hh"
 
 SSA *SSAFEMFactory(IceGrid &g, IceBasalResistancePlasticLaw &b, 
                 IceFlowLaw &i, EnthalpyConverter &ec, 
@@ -211,7 +211,7 @@ PetscErrorCode SSAFEM::setup()
     Enth_q[q] = new PetscReal[Mz];
   }
   
-  IceMarginGeometry margin(sea_level,ice,config);
+  GeometryCalculator gc(sea_level, ice, config);
   
   ierr = enthalpy->begin_access();CHKERRQ(ierr);
   ierr = surface->get_array(h);CHKERRQ(ierr);
@@ -242,8 +242,7 @@ PetscErrorCode SSAFEM::setup()
         feS[q].hx = hxq[q];
         feS[q].hy = hyq[q];
 
-        PetscReal notUsed;
-        margin.computeGeometry(feS[q].b,feS[q].H,&feS[q].mask,&notUsed);
+        feS[q].mask = gc.mask(feS[q].b, feS[q].H);
       }
 
       // In the following, we obtain the averaged hardness value from enthalpy by 
@@ -309,6 +308,9 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
                                                   PetscReal *nuH, PetscReal *dNuH,
                                                   PetscReal *beta, PetscReal *dbeta)
 {
+
+  Mask M;
+  
   if (feS->H < strength_extension->get_min_thickness()) {
     *nuH = strength_extension->get_notional_strength();
     if (dNuH) *dNuH = 0;
@@ -321,12 +323,12 @@ inline PetscErrorCode SSAFEM::PointwiseNuHAndBeta(const FEStoreNode *feS,
   *nuH  *=  2;
   if (dNuH) *dNuH *= 2;
   
-  if(feS->mask == MASK_GROUNDED )
+  if( M.grounded_ice(feS->mask) )
   {
     basal.dragWithDerivative(feS->tauc,u->u,u->v,beta,dbeta);
   } else {
     *beta = 0;
-    if(feS->mask == MASK_ICE_FREE_BEDROCK)
+    if( M.ice_free_land(feS->mask) )
     {
       *beta = m_beta_ice_free_bedrock;
     }

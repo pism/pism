@@ -195,7 +195,7 @@ PetscErrorCode enthalpy_from_temperature_cold(EnthalpyConverter &EC,
 PetscErrorCode setInitStateF(IceGrid &grid,
                              EnthalpyConverter &EC,
                              IceModelVec2S *bed,
-                             IceModelVec2Mask *mask,
+                             IceModelVec2Int *mask,
                              IceModelVec2S *surface,
                              IceModelVec2S *thickness,
                              IceModelVec3 *enthalpy) {
@@ -361,7 +361,7 @@ int main(int argc, char *argv[]) {
     ICMEnthalpyConverter EC(config);
 
     IceModelVec2S vh, vH, vbed, vtauc;
-    IceModelVec2Mask vMask;
+    IceModelVec2Int vMask;
     IceModelVec3 enthalpy,
       age;                      // is not used (and need not be allocated)
     const PetscInt WIDE_STENCIL = grid.max_stencil_width;

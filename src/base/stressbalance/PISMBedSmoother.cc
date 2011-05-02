@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMBedSmoother.hh"
+#include "Mask.hh"
 
 
 PISMBedSmoother::PISMBedSmoother(
@@ -331,11 +332,13 @@ Call preprocess_bed() first.
  */
 PetscErrorCode PISMBedSmoother::get_smoothed_thk(IceModelVec2S usurf,
                                                  IceModelVec2S thk,
-                                                 IceModelVec2Mask mask,
+                                                 IceModelVec2Int mask,
                                                  PetscInt GHOSTS,
                                                  IceModelVec2S *thksmooth) { 
   PetscErrorCode ierr;  
-  
+
+  MaskQuery M(mask);
+
   if (GHOSTS > maxGHOSTS) {
     SETERRQ2(1,"PISM ERROR:  PISMBedSmoother fields do not have stencil\n"
                "  width sufficient to fill thksmooth with GHOSTS=%d;\n"
@@ -361,7 +364,7 @@ PetscErrorCode PISMBedSmoother::get_smoothed_thk(IceModelVec2S usurf,
       } else if (maxtl(i,j) >= thk(i,j)) {
         thks[i][j] = thk(i,j);
       } else {
-        if (mask.is_grounded(i,j)) {
+        if (M.grounded(i,j)) {
           // if grounded, compute smoothed thickness as the difference of ice
           // surface elevation and smoothed bed elevation
           const PetscScalar thks_try = usurf(i,j) - topgsmooth(i,j);

@@ -94,7 +94,7 @@ PetscErrorCode SIAFD_thksmooth::compute(IceModelVec* &output) {
   PetscErrorCode ierr;
   PetscInt WIDE_STENCIL = grid.max_stencil_width;
   IceModelVec2S *result, *surface, *thickness;
-  IceModelVec2Mask *mask;
+  IceModelVec2Int *mask;
 
   result = new IceModelVec2S;
   ierr = result->create(grid, "thksmooth", true, WIDE_STENCIL); CHKERRQ(ierr);
@@ -106,7 +106,7 @@ PetscErrorCode SIAFD_thksmooth::compute(IceModelVec* &output) {
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
 
-  mask = dynamic_cast<IceModelVec2Mask*>(variables.get("mask"));
+  mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
   if (mask == NULL) SETERRQ(1, "mask is not available");
 
   ierr = model->bed_smoother->get_smoothed_thk(*surface, *thickness, *mask, WIDE_STENCIL,

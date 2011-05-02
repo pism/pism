@@ -17,10 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <petsc.h>
-#include "pism_const.hh"   // e.g. MASK_FLOATING
+#include "pism_const.hh"
 #include "iceModelVec.hh"
 #include "tempSystem.hh"
-
+#include "Mask.hh"
 
 tempSystemCtx::tempSystemCtx(PetscInt my_Mz, string my_prefix)
       : columnSystemCtx(my_Mz, my_prefix) {
@@ -123,13 +123,15 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
   if (!basalBCsValid) {  SETERRQ(3,
      "solveThisColumn() should only be called after setBasalBoundaryValuesThisColumn() in tempSystemCtx"); }
 
+  Mask M;
+
   // bottom of ice; k=0 eqn
   if (ks == 0) { // no ice; set T[0] to surface temp if grounded
     // note L[0] not allocated 
     D[0] = 1.0;
     U[0] = 0.0;
     // if floating and no ice then worry only about bedrock temps
-    if (mask >= MASK_FLOATING) {
+    if (M.ocean(mask)) {
       // essentially no ice but floating ... ask PISMOceanCoupler
       rhs[0] = Tshelfbase;
     } else { // top of bedrock sees atmosphere
@@ -137,7 +139,7 @@ PetscErrorCode tempSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
     }
   } else { // ks > 0; there is ice
     // for w, always difference *up* from base, but make it implicit
-    if (mask >= MASK_FLOATING) {
+    if (M.ocean(mask)) {
       // just apply Dirichlet condition to base of column of ice in an ice shelf
       // note L[0] not allocated 
       D[0] = 1.0;

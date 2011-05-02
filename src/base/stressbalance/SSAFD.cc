@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SSAFD.hh"
+#include "Mask.hh"
 
 SSA *SSAFDFactory(IceGrid &g, IceBasalResistancePlasticLaw &b,
                 IceFlowLaw &i, EnthalpyConverter &ec,
@@ -146,6 +147,8 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
   PISMVector2 **rhs_uv;
   const double dx = grid.dx, dy = grid.dy;
 
+  Mask M;
+
   const double standard_gravity = config.get("standard_gravity"),
     ocean_rho = config.get("sea_water_density");
 
@@ -190,7 +193,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
         // bedrock to zero. This means that we need to set boundary conditions
         // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
         // to be consistent.
-        if (is_ice_free(M_ij)) {
+        if (M.ice_free(M_ij)) {
           rhs_uv[i][j].u = 0.0;
           rhs_uv[i][j].v = 0.0;
           continue;
@@ -199,10 +202,10 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
         if (is_marginal(i, j)) {
           PetscInt aMM = 1, aPP = 1, bMM = 1, bPP = 1;
           // direct neighbors
-          if (is_ice_free(M_e)) aPP = 0;
-          if (is_ice_free(M_w)) aMM = 0;
-          if (is_ice_free(M_n)) bPP = 0;
-          if (is_ice_free(M_s)) bMM = 0;
+          if (M.ice_free(M_e)) aPP = 0;
+          if (M.ice_free(M_w)) aMM = 0;
+          if (M.ice_free(M_n)) bPP = 0;
+          if (M.ice_free(M_s)) bMM = 0;
 
           double ice_pressure = ice.rho * standard_gravity * H_ij,
             ocean_pressure;
@@ -375,6 +378,8 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
   ierr = vel.begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
 
+  Mask M;
+
   if (vel_bc && bc_locations) {
     ierr = bc_locations->begin_access(); CHKERRQ(ierr);
   }
@@ -409,8 +414,10 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
       PetscInt aMn = 1, aPn = 1, aMM = 1, aPP = 1, aMs = 1, aPs = 1;
       PetscInt bPw = 1, bPP = 1, bPe = 1, bMw = 1, bMM = 1, bMe = 1;
 
+      PetscInt M_ij = mask->as_int(i,j);
+
       if (use_cfbc) {
-        PetscInt M_ij = mask->as_int(i,j),
+        int
           // direct neighbors
           M_e = mask->as_int(i + 1,j),
           M_w = mask->as_int(i - 1,j),
@@ -426,7 +433,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
         // bedrock to zero. This means that we need to set boundary conditions
         // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
         // to be consistent.
-        if (is_ice_free(M_ij)) {
+        if (M.ice_free(M_ij)) {
           ierr = set_diagonal_matrix_entry(A, i, j, scaling); CHKERRQ(ierr);
           continue;
         }
@@ -434,20 +441,20 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
         if (is_marginal(i, j)) {
           // If at least one of the following four conditions is "true", we're
           // at a CFBC location.
-          if (is_ice_free(M_e)) aPP = 0;
-          if (is_ice_free(M_w)) aMM = 0;
-          if (is_ice_free(M_n)) bPP = 0;
-          if (is_ice_free(M_s)) bMM = 0;
+          if (M.ice_free(M_e)) aPP = 0;
+          if (M.ice_free(M_w)) aMM = 0;
+          if (M.ice_free(M_n)) bPP = 0;
+          if (M.ice_free(M_s)) bMM = 0;
 
           // decide whether to use centered or one-sided differences
-          if (is_ice_free(M_n) || is_ice_free(M_ne)) aPn = 0;
-          if (is_ice_free(M_e) || is_ice_free(M_ne)) bPe = 0;
-          if (is_ice_free(M_e) || is_ice_free(M_se)) bMe = 0;
-          if (is_ice_free(M_s) || is_ice_free(M_se)) aPs = 0;
-          if (is_ice_free(M_s) || is_ice_free(M_sw)) aMs = 0;
-          if (is_ice_free(M_w) || is_ice_free(M_sw)) bMw = 0;
-          if (is_ice_free(M_w) || is_ice_free(M_nw)) bPw = 0;
-          if (is_ice_free(M_n) || is_ice_free(M_nw)) aMn = 0;
+          if (M.ice_free(M_n) || M.ice_free(M_ne)) aPn = 0;
+          if (M.ice_free(M_e) || M.ice_free(M_ne)) bPe = 0;
+          if (M.ice_free(M_e) || M.ice_free(M_se)) bMe = 0;
+          if (M.ice_free(M_s) || M.ice_free(M_se)) aPs = 0;
+          if (M.ice_free(M_s) || M.ice_free(M_sw)) aMs = 0;
+          if (M.ice_free(M_w) || M.ice_free(M_sw)) bMw = 0;
+          if (M.ice_free(M_w) || M.ice_free(M_nw)) bPw = 0;
+          if (M.ice_free(M_n) || M.ice_free(M_nw)) aMn = 0;
         }
       } // end of "if (use_cfbc)"
 
@@ -511,9 +518,9 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
        *    (i.e. on left side of SSA eqns).  */
       PetscReal beta = 0.0;
       if (include_basal_shear) {
-        if (mask->as_int(i,j) == MASK_GROUNDED) {
+        if (M.grounded_ice(M_ij)) {
           beta = basal.drag((*tauc)(i,j), vel(i,j).u, vel(i,j).v);
-        } else if (mask->as_int(i,j) == MASK_ICE_FREE_BEDROCK) {
+        } else if (M.ice_free_land(M_ij)) {
           // apply drag even in this case, to help with margins; note ice free
           // areas already have a strength extension
           beta = beta_ice_free_bedrock;
@@ -1070,15 +1077,6 @@ PetscErrorCode SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j,
   return 0;
 }
 
-//! Uses provided mask value to check if a cell is ice-free.
-/*!
- * This method ensures that checks in assemble_rhs() and assemble_matrix() are
- * consistent.
- */
-bool SSAFD::is_ice_free(int mask_value) {
-  return mask_value == MASK_ICE_FREE_BEDROCK || mask_value == MASK_ICE_FREE_OCEAN;
-}
-
 //! \brief Checks if a cell is near or at the ice front.
 /*!
  * You need to call mask->begin_access() before and mask->end_access() after using this.
@@ -1105,9 +1103,11 @@ bool SSAFD::is_marginal(int i, int j) {
     M_se = mask->as_int(i + 1,j - 1),
     M_nw = mask->as_int(i - 1,j + 1),
     M_sw = mask->as_int(i - 1,j - 1);
+
+  Mask M;
   
-  return (!is_ice_free(M_ij)) &&
-    (is_ice_free(M_e) || is_ice_free(M_w) || is_ice_free(M_n) || is_ice_free(M_s) ||
-     is_ice_free(M_ne) || is_ice_free(M_se) || is_ice_free(M_nw) || is_ice_free(M_sw));
+  return (!M.ice_free(M_ij)) &&
+    (M.ice_free(M_e) || M.ice_free(M_w) || M.ice_free(M_n) || M.ice_free(M_s) ||
+     M.ice_free(M_ne) || M.ice_free(M_se) || M.ice_free(M_nw) || M.ice_free(M_sw));
 }
 

@@ -477,8 +477,6 @@ PetscErrorCode IceCompModel::initTestL() {
   ierr =   T3.set(T0); CHKERRQ(ierr);
   ierr = vGhf.set(Ggeo); CHKERRQ(ierr);
   
-  ierr = vMask.set(MASK_GROUNDED); CHKERRQ(ierr);
-
   // setup to evaluate test L; requires solving an ODE numerically using sorted list
   //   of radii, sorted in decreasing radius order
   const int  MM = grid.xm * grid.ym;

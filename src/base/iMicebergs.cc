@@ -19,6 +19,7 @@
 #include <cmath>
 #include <petscda.h>
 #include "iceModel.hh"
+#include "Mask.hh"
 
 
 //! \brief Identify and eliminate free-floating icebergs, which cause
@@ -115,11 +116,13 @@ PetscErrorCode IceModel::findIceBergCandidates() {
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
 
+  MaskQuery M(vMask);
+
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
       if (vIcebergMask(i, j) == ICEBERGMASK_NOT_SET) {
-        if (vMask(i, j) == MASK_FLOATING){
+        if (M.floating_ice(i, j)) {
           vIcebergMask(i, j) = ICEBERGMASK_ICEBERG_CAND;
         }
 
@@ -153,9 +156,9 @@ PetscErrorCode IceModel::findIceBergCandidates() {
                                        vIcebergMask(i - 1, j + 1) == ICEBERGMASK_ICEBERG_CAND ||
                                        vIcebergMask(i - 1, j - 1) == ICEBERGMASK_ICEBERG_CAND);
 
-        if (vMask(i, j) < MASK_FLOATING && neighbor_is_candidate)
+        if (M.grounded(i, j) && neighbor_is_candidate)
           vIcebergMask(i, j) = ICEBERGMASK_STOP_ATTACHED;
-        else if (vMask(i, j) > MASK_FLOATING && neighbor_is_candidate)
+        else if (M.ice_free_ocean(i, j) && neighbor_is_candidate)
           vIcebergMask(i, j) = ICEBERGMASK_STOP_OCEAN;
 
       }

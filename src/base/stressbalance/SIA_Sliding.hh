@@ -57,7 +57,7 @@ protected:
                                        PetscScalar H, PetscScalar T,
                                        PetscScalar /*alpha*/, PetscScalar mu,
                                        PetscScalar min_T) const;
-  IceModelVec2Mask *mask;
+  IceModelVec2Int *mask;
   IceModelVec2S *thickness, *surface, *bed, work_2d;
   IceModelVec3 *enthalpy;
   IceModelVec2Stag work_2d_stag[2]; // for the surface gradient

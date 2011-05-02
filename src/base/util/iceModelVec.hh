@@ -346,7 +346,7 @@ public:
 
 //! \brief A simple class "hiding" the fact that the mask is stored as
 //! floating-point scalars (instead of integers).
-class IceModelVec2Mask : public IceModelVec2S {
+class IceModelVec2Int : public IceModelVec2S {
 public:
   virtual inline int as_int(int i, int j) {
     check_array_indices(i, j);
@@ -370,11 +370,6 @@ public:
 
     return result;
   }
-
-  virtual bool is_grounded(int i, int j); // checks for MASK_GROUNDED or MASK_ICE_FREE_BEDROCK
-  virtual bool is_floating(int i, int j); // checks for MASK_FLOATING || MASK_FLOATING_OCEAN0
-  virtual PetscErrorCode fill_where_grounded(IceModelVec2S &v, const PetscScalar fillval);
-  virtual PetscErrorCode fill_where_floating(IceModelVec2S &v, const PetscScalar fillval);
 };
 
 //! \brief A class representing a horizontal velocity at a certain grid point.

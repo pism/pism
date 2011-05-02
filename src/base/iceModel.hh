@@ -203,7 +203,7 @@ protected:
 
 	
  
-  IceModelVec2Mask vMask, //!< mask for flow type with values SHEET, DRAGGING, FLOATING
+  IceModelVec2Int vMask, //!< mask for flow type with values SHEET, DRAGGING, FLOATING
     vIcebergMask, //!< mask for iceberg identification
 
 	vBCMask; //!< mask to determine Dirichlet boundary locations
@@ -333,8 +333,9 @@ protected:
   virtual PetscErrorCode regrid_variables(string filename, set<string> regrid_vars, int ndims);
 
   // see iMpartgrid.cc
-  PetscErrorCode velsPartGrid(planeStar<int> M, planeStar<PISMVector2> vreg,
-                              planeStar<PetscScalar> &vel_output);
+  PetscErrorCode cell_interface_velocities(bool do_part_grid,
+                                           int i, int j,
+                                           planeStar<PetscScalar> &vel_output);
   PetscReal get_average_thickness(bool do_redist, planeStar<int> M,
                                   planeStar<PetscScalar> H);
   virtual PetscErrorCode redistResiduals();

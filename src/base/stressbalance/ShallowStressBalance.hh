@@ -48,7 +48,7 @@ public:
   virtual PetscErrorCode init(PISMVars &vars)
   { variables = &vars; return 0; }
 
-  virtual PetscErrorCode set_boundary_conditions(IceModelVec2Mask &locations,
+  virtual PetscErrorCode set_boundary_conditions(IceModelVec2Int &locations,
                                                  IceModelVec2V &velocities)
   { 
     vel_bc = &velocities;
@@ -101,7 +101,7 @@ protected:
   EnthalpyConverter &EC;
 
   IceModelVec2V velocity, *vel_bc;
-  IceModelVec2Mask *bc_locations;
+  IceModelVec2Int *bc_locations;
   IceModelVec2S basal_frictional_heating, D2;
   PetscReal max_u, max_v;
 };

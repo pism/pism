@@ -63,7 +63,7 @@ PetscErrorCode PISMStressBalance::init(PISMVars &vars) {
   return 0;
 }
 
-PetscErrorCode PISMStressBalance::set_boundary_conditions(IceModelVec2Mask &locations,
+PetscErrorCode PISMStressBalance::set_boundary_conditions(IceModelVec2Int &locations,
                                                           IceModelVec2V &velocities) {
   PetscErrorCode ierr;
   ierr = stress_balance->set_boundary_conditions(locations, velocities); CHKERRQ(ierr);

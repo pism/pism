@@ -112,7 +112,7 @@ protected:
   IceModelVec2S  surface, thickness, bed, tauc;
   IceModelVec3 enthalpy;
   IceModelVec2V vel_bc;
-  IceModelVec2Mask ice_mask, bc_mask;
+  IceModelVec2Int ice_mask, bc_mask;
 
   SSA *ssa;
 

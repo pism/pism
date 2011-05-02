@@ -21,7 +21,7 @@
 #include <petscda.h>
 #include "iceModel.hh"
 #include "pism_signal.h"
-
+#include "Mask.hh"
 
 //! \brief Uses principal strain rates to apply "eigencalving" with constant K.
 /*!
@@ -74,6 +74,8 @@ PetscErrorCode IceModel::eigenCalving() {
   // Distance from calving front where straine rate is evaluated
   PetscInt offset = 2;
 
+  MaskQuery mask(vMask);
+
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
       // Average of strain-rate eigenvalues in adjacent floating gird cells to
@@ -104,32 +106,32 @@ PetscErrorCode IceModel::eigenCalving() {
 
       if (ice_free_ocean && next_to_floating) {
 
-        if (vMask(i + 1, j) == MASK_FLOATING ) { N += 1; H_average += vH(i + 1, j); }
-        if (vMask(i - 1, j) == MASK_FLOATING ) { N += 1; H_average += vH(i - 1, j); }
-        if (vMask(i, j + 1) == MASK_FLOATING ) { N += 1; H_average += vH(i, j + 1); }
-        if (vMask(i, j - 1) == MASK_FLOATING ) { N += 1; H_average += vH(i, j - 1); }
+        if ( mask.floating_ice(i + 1, j) ) { N += 1; H_average += vH(i + 1, j); }
+        if ( mask.floating_ice(i - 1, j) ) { N += 1; H_average += vH(i - 1, j); }
+        if ( mask.floating_ice(i, j + 1) ) { N += 1; H_average += vH(i, j + 1); }
+        if ( mask.floating_ice(i, j - 1) ) { N += 1; H_average += vH(i, j - 1); }
         if (N > 0)
           H_average /= N;
 
-        if (vMask(i + offset, j) == MASK_FLOATING ){
+        if ( mask.floating_ice(i + offset, j) ){
           eigen1 += vPrinStrain1(i + offset, j);
           eigen2 += vPrinStrain2(i + offset, j);
           M += 1;
         }
 
-        if (vMask(i - offset, j) == MASK_FLOATING ){
+        if ( mask.floating_ice(i - offset, j) ){
           eigen1 += vPrinStrain1(i - offset, j);
           eigen2 += vPrinStrain2(i - offset, j);
           M += 1;
         }
 
-        if (vMask(i, j + offset) == MASK_FLOATING ){
+        if ( mask.floating_ice(i, j + offset) ){
           eigen1 += vPrinStrain1(i, j + offset);
           eigen2 += vPrinStrain2(i, j + offset);
           M += 1;
         }
 
-        if (vMask(i, j - offset) == MASK_FLOATING ){
+        if ( mask.floating_ice(i, j - offset) ){
           eigen1 += vPrinStrain1(i, j - offset);
           eigen2 += vPrinStrain2(i, j - offset);
           M += 1;
@@ -266,8 +268,6 @@ PetscErrorCode IceModel::calvingAtThickness() {
 
       if (hereFloating && vH(i, j) <= Hcalving && icefreeOceanNeighbor) {
         vHnew(i, j) = 0.0;
-        //ierr = verbPrintf(3, grid.com, "!!! H=%f has calved off at %d, %d \n", vH(i, j), i, j);
-        //vMask(i, j)=MASK_ICE_FREE_OCEAN;
       }
     }
   }

@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "iceModel.hh"
+#include "Mask.hh"
 
 //! \file iMenergy.cc Methods of IceModel which address conservation of energy.  Common to enthalpy (polythermal) and temperature (cold-ice) methods.
 
@@ -132,6 +133,8 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
   // start by grabbing 2D basal enthalpy field at z=0; converted to temperature if needed, below
   ierr = Enth3.getHorSlice(result, 0.0); CHKERRQ(ierr);
 
+  MaskQuery mask(vMask);
+
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
@@ -139,8 +142,8 @@ PetscErrorCode IceModel::get_bed_top_temp(IceModelVec2S &result) {
   ierr = shelfbtemp.begin_access(); CHKERRQ(ierr);
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (vMask.is_grounded(i,j)) {
-        if (vMask.as_int(i,j) == MASK_ICE_FREE_BEDROCK) { // no ice: sees air temp
+      if (mask.grounded(i,j)) {
+        if (mask.ice_free(i,j)) { // no ice: sees air temp
           result(i,j) = artm(i,j);
         } else { // ice: sees temp of base of ice
           const PetscReal pressure = EC->getPressureFromDepth(vH(i,j));

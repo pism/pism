@@ -18,6 +18,7 @@
 
 #include "iceModel.hh"
 #include "tempSystem.hh"
+#include "Mask.hh"
 
 
 //! \file iMtemp.cc Methods of IceModel which implement the cold-ice, temperature-based formulation of conservation of energy.
@@ -231,6 +232,8 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
 
     PetscReal hmelt_max = config.get("hmelt_max");
 
+    MaskQuery mask(vMask);
+
     for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
       for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -324,7 +327,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
             const PetscScalar Tpmp = ice->triple_point_temp - ice->beta_CC_grad * vH(i,j); // FIXME task #7297
             PetscScalar Texcess = x[0] - Tpmp; // positive or negative
-            if (vMask.is_floating(i,j)) {
+            if (mask.ocean(i,j)) {
               // when floating, only half a segment has had its temperature raised
               // above Tpmp
               excessToFromBasalMeltLayer(rho_c_I/2, 0.0, fdz, &Texcess, &Hmeltnew);
@@ -359,7 +362,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
 
         // basalMeltRate[][] is rate of mass loss at bottom of ice everywhere;
         //   note massContExplicitStep() calls PISMOceanCoupler separately
-        if (vMask.is_floating(i,j)) {
+        if (mask.ocean(i,j)) {
           // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)
           basalMeltRate[i][j] = shelfbmassflux(i,j); // set by PISMOceanCoupler
         } else {
@@ -370,7 +373,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
 
         // finalize Hmelt value
         Hmeltnew -= hmelt_decay_rate * (dt_years_TempAge * secpera);
-        if (vMask.is_floating(i,j)) {
+        if (mask.ocean(i,j)) {
           if (vH(i,j) < 0.1) {
             // truely no ice, so zero-out subglacial fields
             Hmelt[i][j] = 0.0;

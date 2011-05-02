@@ -23,6 +23,7 @@
 #include "iceModel.hh"
 #include "iceMISMIPModel.hh"
 #include "SSA.hh"
+#include "Mask.hh"
 
 PetscErrorCode MISMIPBasalResistanceLaw::printInfo(int verbthresh, MPI_Comm com) {
   PetscErrorCode ierr;
@@ -618,9 +619,11 @@ PetscErrorCode IceMISMIPModel::calving() {
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
 
+  MaskQuery mask(vMask);
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (vMask.is_floating(i,j)) {
+      if (mask.ocean(i,j)) {
         if (vH(i,j) < calving_thk_min) {
           vH(i,j) = 0.0;
         } else if ( (vH(i,j) == 0.0) && 
@@ -861,6 +864,8 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
 
   IceModelVec2V *vel_bar = dynamic_cast<IceModelVec2V*>(tmp);
 
+  MaskQuery mask(vMask);
+
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vH.begin_access(); CHKERRQ(ierr);
   ierr = vel_bar->begin_access(); CHKERRQ(ierr);
@@ -873,14 +878,14 @@ PetscErrorCode IceMISMIPModel::getRoutineStats() {
       // grounding line xg is largest  x  so that  mask(i,j) != FLOATING
       //       and mask(i+1,j) == FLOATING
       if ( (ifrom0 > 0.0) && (vH(i,j) > 0.0) 
-           && vMask.is_grounded(i,j)
-	   && vMask.is_floating(i+1,j) ) {
+           && mask.grounded(i,j)
+	   && mask.ocean(i+1,j) ) {
         ig = PetscMax(ig,static_cast<PetscScalar>(i));
       }
 
       if ((ifrom0 > 0) && (vH(i,j) > 0.0)) {
         if ((*vel_bar)(i,j).u > maxubar)  maxubar = (*vel_bar)(i,j).u;
-        if (vMask.is_grounded(i,j)) {
+        if (mask.grounded(i,j)) {
           Ngrounded += 1.0;
           avubargrounded += (*vel_bar)(i,j).u;
         } else {

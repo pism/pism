@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SSA.hh"
+#include "Mask.hh"
 
 SSA::SSA(IceGrid &g, IceBasalResistancePlasticLaw &b,
          IceFlowLaw &i, EnthalpyConverter &e,
@@ -43,7 +44,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
 
   ierr = verbPrintf(2,grid.com,"* Initializing the SSA stress balance...\n"); CHKERRQ(ierr);
 
-  mask = dynamic_cast<IceModelVec2Mask*>(vars.get("mask"));
+  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
   if (mask == NULL) SETERRQ(1, "mask is not available");
 
   thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
@@ -96,7 +97,7 @@ PetscErrorCode SSA::init(PISMVars &vars) {
 
   if (config.get_flag("dirichlet_bc")) {
 
-      bc_locations = dynamic_cast<IceModelVec2Mask*>(vars.get("bcflag"));
+      bc_locations = dynamic_cast<IceModelVec2Int*>(vars.get("bcflag"));
 	  if (bc_locations == NULL) SETERRQ(1, "bc_locations is not available");
 
 	   vel_bc = dynamic_cast<IceModelVec2V*>(vars.get("velbar"));
@@ -314,6 +315,8 @@ PetscErrorCode SSA::compute_principal_strain_rates(IceModelVec2S &result_e1,
 PetscErrorCode SSA::compute_basal_frictional_heating(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
+  MaskQuery m(*mask);
+
   ierr = velocity.begin_access(); CHKERRQ(ierr);
   ierr = result.begin_access(); CHKERRQ(ierr);
   ierr = tauc->begin_access(); CHKERRQ(ierr);
@@ -321,7 +324,7 @@ PetscErrorCode SSA::compute_basal_frictional_heating(IceModelVec2S &result) {
   
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      if (mask->is_floating(i,j)) {
+      if (m.ocean(i,j)) {
         result(i,j) = 0.0;
       } else {
         const PetscScalar 
@@ -375,6 +378,8 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
   ierr =      mask->begin_access();  CHKERRQ(ierr);
   ierr =        thk.begin_access();  CHKERRQ(ierr);
 
+  MaskQuery m(*mask);
+
   ierr = result.begin_access(); CHKERRQ(ierr);
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
@@ -386,7 +391,7 @@ PetscErrorCode SSA::compute_driving_stress(IceModelVec2V &result) {
       } else {
         PetscScalar h_x = 0.0, h_y = 0.0;
         // FIXME: we need to handle grid periodicity correctly.
-        if (mask->is_grounded(i,j) && (use_eta == true)) {
+        if (m.grounded(i,j) && (use_eta == true)) {
 	        // in grounded case, differentiate eta = H^{8/3} by chain rule
           if (thk(i,j) > 0.0) {
             const PetscScalar myH = (thk(i,j) < minThickEtaTransform ?
@@ -437,12 +442,14 @@ PetscErrorCode SSA::compute_maximum_velocity() {
   ierr = velocity.begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
   
+  MaskQuery m(*mask);
+
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
       // the following conditionals, both -ocean_kill and -float_kill, are also applied in 
       //   IceModel::massContExplicitStep() when zeroing thickness
-      const bool ignorableOcean = ( do_ocean_kill && (mask->as_int(i,j) == MASK_OCEAN_AT_TIME_0) )
-	|| ( floating_ice_killed && mask->is_floating(i,j) );
+      const bool ignorableOcean = ( do_ocean_kill && m.ocean_at_time_0(i, j) )
+	|| ( floating_ice_killed && m.ocean(i,j) );
   
       if (!ignorableOcean) {
         my_max_u = PetscMax(my_max_u, PetscAbs(velocity(i,j).u));

@@ -20,7 +20,7 @@
 #include <cstring>
 #include <petscda.h>
 #include "iceModel.hh"
-
+#include "Mask.hh"
 
 // methods implementing PIK logic for -part_grid; see Albrecht et al 2011
 
@@ -30,35 +30,46 @@
   In the finite volume interpretation, these are normal velocities at the faces
   of the cell.  The method avoids differencing velocities from ice free ocean locations.
 */
-PetscErrorCode IceModel::velsPartGrid(planeStar<int> M,
-                                      planeStar<PISMVector2> vreg,
-                                      planeStar<PetscScalar> &vel) {
-  const bool oneneighboricefree = (M.e > MASK_FLOATING || M.w > MASK_FLOATING ||
-                                   M.n > MASK_FLOATING || M.s > MASK_FLOATING), 
+PetscErrorCode IceModel::cell_interface_velocities(bool do_part_grid,
+                                                   int i, int j,
+                                                   planeStar<PetscScalar> &vel) {
+  PetscErrorCode ierr;
+  IceModelVec2V *vel_advective;
+  ierr = stress_balance->get_advective_2d_velocity(vel_advective); CHKERRQ(ierr);
 
-    oneneighboricefilled = (M.e <= MASK_FLOATING || M.w <= MASK_FLOATING ||
-                            M.n <= MASK_FLOATING || M.s <= MASK_FLOATING);
+  MaskQuery M(vMask);
+  planeStar<PISMVector2> vreg = vel_advective->star(i, j);
 
-  if (M.ij <= MASK_FLOATING && (!oneneighboricefree)) {
-    //case1: [i][j] in the middle of ice or bedrock: default scheme
+  if (!do_part_grid) {
+    // just compute (i, j) - centered "face" velocity components by average
     vel.e = 0.5 * (vreg.ij.u + vreg.e.u);
     vel.w = 0.5 * (vreg.w.u + vreg.ij.u);
     vel.n = 0.5 * (vreg.ij.v + vreg.n.v);
     vel.s = 0.5 * (vreg.s.v + vreg.ij.v);
-  } else if (M.ij <= MASK_FLOATING && (oneneighboricefree)) {
-    //case2: [i][j] on floating or grounded ice, but next to a ice-free ocean grid cell
-    vel.e = (M.e > MASK_FLOATING ? vreg.ij.u : 0.5 * (vreg.ij.u + vreg.e.u));
-    vel.w = (M.w > MASK_FLOATING ? vreg.ij.u : 0.5 * (vreg.w.u + vreg.ij.u));
-    vel.n = (M.n > MASK_FLOATING ? vreg.ij.v : 0.5 * (vreg.ij.v + vreg.n.v));
-    vel.s = (M.s > MASK_FLOATING ? vreg.ij.v : 0.5 * (vreg.s.v + vreg.ij.v));
-  } else if (M.ij > MASK_FLOATING && (oneneighboricefilled)) {
-    //case3: [i][j] on ice-free ocean (or partially filled), but next to ice grid cell
-    vel.e = (M.e <= MASK_FLOATING ? vreg.e.u : 0.0);
-    vel.w = (M.w <= MASK_FLOATING ? vreg.w.u : 0.0);
-    vel.n = (M.n <= MASK_FLOATING ? vreg.n.v : 0.0);
-    vel.s = (M.s <= MASK_FLOATING ? vreg.s.v : 0.0);
+
+    return 0;
+  }
+
+  if (M.icy(i, j) && (!M.ice_margin(i, j))) {
+    // in the middle of ice or bedrock
+    vel.e = 0.5 * (vreg.ij.u + vreg.e.u);
+    vel.w = 0.5 * (vreg.w.u + vreg.ij.u);
+    vel.n = 0.5 * (vreg.ij.v + vreg.n.v);
+    vel.s = 0.5 * (vreg.s.v + vreg.ij.v);
+  } else if (M.ice_margin(i, j)) {
+    // on floating or grounded ice, but next to a ice-free grid cell
+    vel.e = (M.ice_free(i + 1, j) ? vreg.ij.u : 0.5 * (vreg.ij.u + vreg.e.u));
+    vel.w = (M.ice_free(i - 1, j) ? vreg.ij.u : 0.5 * (vreg.w.u + vreg.ij.u));
+    vel.n = (M.ice_free(i, j + 1) ? vreg.ij.v : 0.5 * (vreg.ij.v + vreg.n.v));
+    vel.s = (M.ice_free(i, j - 1) ? vreg.ij.v : 0.5 * (vreg.s.v + vreg.ij.v));
+  } else if (M.next_to_floating_ice(i, j)) {
+    // on an ice-free (or partially filled) cell next to an icy grid cell
+    vel.e = (M.icy(i + 1, j) ? vreg.e.u : 0.0);
+    vel.w = (M.icy(i - 1, j) ? vreg.w.u : 0.0);
+    vel.n = (M.icy(i, j + 1) ? vreg.n.v : 0.0);
+    vel.s = (M.icy(i, j - 1) ? vreg.s.v : 0.0);
   } else {
-    //case4: [i][j] on ice - free ocean, and no ice neighbors
+    // on ice-free ocean or land and no ice neighbors
     vel.e = 0.0;
     vel.w = 0.0;
     vel.n = 0.0;
@@ -71,8 +82,7 @@ PetscErrorCode IceModel::velsPartGrid(planeStar<int> M,
 
 //! For ice-free (or partially-filled) cells adjacent to "full" floating cells, update Href.
 /*!
-  Should only be called if one of the neighbors is floating, i.e. only if at
-  least one of M_e, M_w, M_n, M_s is MASK_FLOATING.
+  Should only be called if one of the neighbors is floating.
 
   FIXME: does not account for grounded tributaries: thin ice shelves may
   evolve from grounded tongue
@@ -82,10 +92,12 @@ PetscReal IceModel::get_average_thickness(bool do_redist, planeStar<int> M, plan
   // get mean ice thickness over adjacent floating ice shelf neighbors
   PetscReal H_average = 0.0;
   PetscInt N = 0;
-  if (M.e == MASK_FLOATING) { H_average += H.e; N++; }
-  if (M.w == MASK_FLOATING) { H_average += H.w; N++; }
-  if (M.n == MASK_FLOATING) { H_average += H.n; N++; }
-  if (M.s == MASK_FLOATING) { H_average += H.s; N++; }
+  Mask m;
+
+  if (m.floating_ice(M.e)) { H_average += H.e; N++; }
+  if (m.floating_ice(M.w)) { H_average += H.w; N++; }
+  if (m.floating_ice(M.n)) { H_average += H.n; N++; }
+  if (m.floating_ice(M.s)) { H_average += H.s; N++; }
 
   if (N == 0) {
     SETERRQ(1, "N == 0;  call this only if a neighbor is floating!\n");

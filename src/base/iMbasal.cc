@@ -19,6 +19,7 @@
 #include <cmath>
 #include <petscda.h>
 #include "iceModel.hh"
+#include "Mask.hh"
 
 //! \file iMbasal.cc  A minimal hydrology model and basal strength model, for a SSA-type sliding law.  
 /*! \file iMbasal.cc
@@ -228,13 +229,15 @@ PetscErrorCode IceModel::computePhiFromBedElevation() {
                       phi_ocean); CHKERRQ(ierr);
   }
 
+  MaskQuery m(vMask);
+
   PetscReal slope = (phi_max - phi_min) / (topg_max - topg_min);
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vbed.begin_access(); CHKERRQ(ierr);
   ierr = vtillphi.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if ((!vMask.is_floating(i,j)) || (Nparam < 5)) {
+      if (m.grounded(i,j) || (Nparam < 5)) {
         if (vbed(i,j) <= topg_min) {
           vtillphi(i,j) = phi_min;
         } else if (vbed(i,j) >= topg_max) {
@@ -411,12 +414,14 @@ PetscErrorCode IceModel::updateYieldStressUsingBasalWater() {
     ierr =     vbmr.begin_access(); CHKERRQ(ierr);
     ierr = vtillphi.begin_access(); CHKERRQ(ierr);
 
+    MaskQuery m(vMask);
+
     PetscInt GHOSTS = grid.max_stencil_width;
     for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
       for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-        if (vMask.is_floating(i,j)) {
+        if (m.ocean(i,j)) {
           vtauc(i,j) = 0.0;  
-        } else if (vH(i,j) == 0.0) {
+        } else if (m.ice_free(i,j)) {
           vtauc(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar if no ice
         } else { // grounded and there is some ice
           const PetscScalar

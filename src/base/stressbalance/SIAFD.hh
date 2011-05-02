@@ -74,7 +74,7 @@ protected:
 
   // pointers to input fields:
   IceModelVec2S *bed, *thickness, *surface;
-  IceModelVec2Mask *mask;
+  IceModelVec2Int *mask;
   IceModelVec3 *age, *enthalpy;
 
   // temporary storage:

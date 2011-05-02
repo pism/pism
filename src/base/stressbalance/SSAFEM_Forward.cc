@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SSAFEM_Forward.hh"
+#include "Mask.hh"
 
 PetscErrorCode SSAFEM_Forward::allocate_ksp()
 {
@@ -530,6 +531,7 @@ PetscErrorCode SSAFEM_Forward::assemble_T_rhs( PISMVector2 **gvel, PetscReal **g
   // Flags for each vertex in an element that determine if explicit Dirichlet data has
   // been set.
   PetscReal local_bc_mask[FEQuadrature::Nk];
+  Mask M;
 
   // Iterate over the elements.
   PetscInt xs = element_index.xs, xm = element_index.xm,
@@ -575,7 +577,7 @@ PetscErrorCode SSAFEM_Forward::assemble_T_rhs( PISMVector2 **gvel, PetscReal **g
 
         // Determine dbeta/dtauc at the quadrature point
         PetscReal dbeta_dtauc = 0;
-        if(feS->mask == MASK_GROUNDED ) {
+        if( M.grounded_ice(feS->mask) ) {
           dbeta_dtauc = basal.drag(dtauc[q],u[q].u,u[q].v);
         }
         // dbeta_dtauc *= exp(dtauc[q]) 
@@ -737,6 +739,8 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarB_rhs( PISMVector2 **Z,
   // An Nq by Nk array of test function values.
   const FEFunctionGerm (*test)[FEQuadrature::Nk] = quadrature.testFunctionValues();
 
+  Mask M;
+
   // Iterate over the elements.
   PetscInt xs = element_index.xs, xm = element_index.xm,
            ys = element_index.ys, ym = element_index.ym;
@@ -770,7 +774,7 @@ PetscErrorCode SSAFEM_Forward::assemble_TStarB_rhs( PISMVector2 **Z,
 
         // Determine "beta" at the quadrature point
         PetscReal notquitebeta = 0;
-        if(feS->mask == MASK_GROUNDED ) {
+        if( M.grounded_ice(feS->mask) ) {
           notquitebeta = basal.drag(1.,u[q].u,u[q].v);
         }
         // dbeta_dtauc *= exp(dtauc[q]) 

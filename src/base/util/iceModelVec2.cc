@@ -23,7 +23,7 @@
 
 #include "iceModelVec.hh"
 
-// this file contains methods for derived classes IceModelVec2S and IceModelVec2Mask
+// this file contains methods for derived classes IceModelVec2S and IceModelVec2Int
 
 // methods for base class IceModelVec are in "iceModelVec.cc"
 
@@ -391,59 +391,6 @@ PetscErrorCode IceModelVec2S::has_nan() {
 
   ierr = PetscSynchronizedFlush(grid->com); CHKERRQ(ierr);
   return retval;
-}
-
-// IceModelVec2Mask
-// FIXME:  is this intended to be guaranteed?:  is_grounded(i,j) = !is_floating(i,j)
-
-bool IceModelVec2Mask::is_grounded(int i, int j) {
-  const int m = as_int(i, j);
-
-  return (m == MASK_GROUNDED) || (m == MASK_ICE_FREE_BEDROCK);
-}
-
-
-bool IceModelVec2Mask::is_floating(int i, int j) {
-  const int m = as_int(i, j);
-
-  return (m == MASK_FLOATING) || (m == MASK_ICE_FREE_OCEAN) || (m == MASK_OCEAN_AT_TIME_0);
-}
-
-PetscErrorCode IceModelVec2Mask::fill_where_grounded(IceModelVec2S &result, const PetscScalar fillval) {
-  PetscErrorCode ierr;
-
-  ierr = begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      if (is_grounded(i,j)) {
-        result(i,j) = fillval;
-      }
-    }
-  }
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = end_access(); CHKERRQ(ierr);
-  
-  return 0;
-}
-
-
-PetscErrorCode IceModelVec2Mask::fill_where_floating(IceModelVec2S &result, const PetscScalar fillval) {
-  PetscErrorCode ierr;
-
-  ierr = begin_access(); CHKERRQ(ierr);
-  ierr = result.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid->xs; i<grid->xs+grid->xm; ++i) {
-    for (PetscInt j=grid->ys; j<grid->ys+grid->ym; ++j) {
-      if (is_floating(i,j)) {
-        result(i,j) = fillval;
-      }
-    }
-  }
-  ierr = result.end_access(); CHKERRQ(ierr);
-  ierr = end_access(); CHKERRQ(ierr);
-  
-  return 0;
 }
 
 //! \brief Returns the x-derivative at i,j approximated using centered finite

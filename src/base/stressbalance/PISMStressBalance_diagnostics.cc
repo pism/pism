@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "PISMStressBalance_diagnostics.hh"
+#include "Mask.hh"
 
 void PISMStressBalance::get_diagnostics(map<string, PISMDiagnostic*> &dict) {
 
@@ -801,7 +802,7 @@ PetscErrorCode PSB_taud_mag::compute(IceModelVec* &output) {
   result->write_in_glaciological_units = true;
 
   IceModelVec2S *thickness, *surface, *bed;
-  IceModelVec2Mask *mask;
+  IceModelVec2Int *mask;
 
   thickness = dynamic_cast<IceModelVec2S*>(variables.get("land_ice_thickness"));
   if (thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
@@ -812,7 +813,7 @@ PetscErrorCode PSB_taud_mag::compute(IceModelVec* &output) {
   bed = dynamic_cast<IceModelVec2S*>(variables.get("bedrock_altitude"));
   if (bed == NULL) SETERRQ(1, "bedrock_altitude is not available");
 
-  mask = dynamic_cast<IceModelVec2Mask*>(variables.get("mask"));
+  mask = dynamic_cast<IceModelVec2Int*>(variables.get("mask"));
   if (mask == NULL) SETERRQ(1, "mask is not available");
 
   IceModelVec2S &thk = *thickness; // to improve readability (below)
@@ -827,6 +828,8 @@ PetscErrorCode PSB_taud_mag::compute(IceModelVec* &output) {
   PetscReal standard_gravity = model->config.get("standard_gravity"),
     ice_density = model->config.get("ice_density");
   bool use_eta = (model->config.get_string("surface_gradient_method") == "eta");
+
+  MaskQuery M(*mask);
 
   ierr =   surface->begin_access();    CHKERRQ(ierr);
   ierr =       bed->begin_access();  CHKERRQ(ierr);
@@ -845,7 +848,7 @@ PetscErrorCode PSB_taud_mag::compute(IceModelVec* &output) {
       } else {
         PetscScalar h_x = 0.0, h_y = 0.0;
         // FIXME: we need to handle grid periodicity correctly.
-        if (mask->is_grounded(i,j) && (use_eta == true)) {
+        if (M.grounded(i,j) && (use_eta == true)) {
 	        // in grounded case, differentiate eta = H^{8/3} by chain rule
           if (thk(i,j) > 0.0) {
             const PetscScalar myH = (thk(i,j) < minThickEtaTransform ?

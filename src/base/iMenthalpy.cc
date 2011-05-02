@@ -18,6 +18,7 @@
 
 #include "iceModel.hh"
 #include "enthSystem.hh"
+#include "Mask.hh"
 
 
 //! \file iMenthalpy.cc Methods of IceModel which implement the enthalpy formulation of conservation of energy.
@@ -356,6 +357,8 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
   PetscInt liquifiedCount = 0;
 
+  MaskQuery mask(vMask);
+
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
 
@@ -373,7 +376,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 #endif
 
       const bool ice_free_column = (ks == 0),
-                 is_floating     = vMask.is_floating(i,j);
+                 is_floating     = mask.ocean(i,j);
 
       // enthalpy and pressures at top of ice
       const PetscScalar p_ks = EC->getPressureFromDepth(vH(i,j) - fzlev[ks]); // FIXME task #7297
@@ -499,7 +502,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
         // thermodynamic basal melt rate causes water to be added to layer
         PetscScalar Hmeltnew = vHmelt(i,j);
-        if (vMask.is_grounded(i,j)) {
+        if (mask.grounded(i,j)) {
           Hmeltnew += vbmr(i,j) * dt_secs;
         }
 
@@ -527,7 +530,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
 
         // in grounded case, add to both basal melt rate and Hmelt; if floating,
         // Hdrainedtotal is discarded because ocean determines basal melt rate
-        if (vMask.is_grounded(i,j)) {
+        if (mask.grounded(i,j)) {
           vbmr(i,j) += Hdrainedtotal / dt_secs;
           Hmeltnew += Hdrainedtotal;
         }
