@@ -190,3 +190,27 @@ cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
 $PISM_DO "flowline.py -c -o $OUTNAME $OUTNAMEFULL"
+
+
+
+COUPLER_ELEV="-surface elevation -artm -6,0,1325,1350 -acab -3,2.5.,1200,1450,1615 -acab_limits -3,0"
+
+STARTYEAR=0
+RUNLENGTH=25
+ENDTIME=$(($STARTYEAR + $RUNLENGTH))
+INNAME=$OUTNAMEFULL
+OUTNAME=ssa_${RUNLENGTH}a.nc
+OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
+TSNAME=ts_${OUTNAMEFULL}
+EXNAME=ex_${OUTNAMEFULL}
+TSTIMES=$STARTYEAR:$STEP:$ENDTIME
+EXTIMES=$STARTYEAR:$STEP:$ENDTIME
+
+echo
+echo "$SCRIPTNAME  SSA run with elevation-dependent mass balance for $RUNLENGTH years on ${GS}m grid"
+cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
+     -ts_file $TSNAME -ts_times $TSTIMES \
+     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
+     -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
+$PISM_DO $cmd
+$PISM_DO "flowline.py -c -o $OUTNAME $OUTNAMEFULL"
