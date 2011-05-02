@@ -34,7 +34,7 @@
 #include "pism_python.hh"
 #include "iceModel.hh"
 #include "SNESProblem.hh"
-#include "IceMarginGeometry.hh"
+#include "Mask.hh"
 %}
 
 // SWIG doesn't know about __atribute__ (used, e.g. in pism_const.hh) so we make it ignore it
@@ -409,8 +409,8 @@ typedef int NormType; // YUCK.
 
 %include "stressbalance/SSAFEM.hh"
 %include "stressbalance/SSAFEM_Forward.hh"
-%include "IceMarginGeometry.hh"
 %include "stressbalance/SSAFD.hh"
+%include "Mask.hh"
 %include "pism_python.hh"
 
 
