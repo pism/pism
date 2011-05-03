@@ -397,7 +397,7 @@ typedef int NormType; // YUCK.
 %include "materials.hh"
 %include "LocalInterpCtx.hh"
 %include "rheology/flowlaws.hh"
-%include "EnthalpyConverter.hh"
+%include "enthalpyConverter.hh"
 %include "stressbalance/ShallowStressBalance.hh"
 
 %include "iceModel.hh"
