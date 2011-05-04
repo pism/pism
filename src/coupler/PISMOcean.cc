@@ -140,16 +140,6 @@ PetscErrorCode POConstant::write_variables(set<string> vars, string filename) {
   return 0;
 }
 
-
-///// POModifier
-
-void POModifier::attach_input(PISMOceanModel *input) {
-  if (input_model != NULL)
-    delete input_model;
-
-  input_model = input;
-}
-
 ///// POForcing
 
 PetscErrorCode POForcing::init(PISMVars &vars) {

@@ -77,9 +77,9 @@ PetscErrorCode PASDirect::init(PISMVars &vars) {
   
   NCTool nc(grid.com, grid.rank);
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-  ierr = nc.get_nrecords("artm", artm_n_records); CHKERRQ(ierr); 
-  ierr = nc.get_nrecords("acab", acab_n_records); CHKERRQ(ierr); 
-  ierr = nc.get_nrecords("usurf", usurf_n_records); CHKERRQ(ierr); 
+  ierr = nc.get_nrecords("artm", "", artm_n_records); CHKERRQ(ierr); 
+  ierr = nc.get_nrecords("acab", "", acab_n_records); CHKERRQ(ierr); 
+  ierr = nc.get_nrecords("usurf", "surface_altitude", usurf_n_records); CHKERRQ(ierr); 
   ierr = nc.close(); CHKERRQ(ierr);
 
   artm_n_records  = PetscMin(artm_n_records, buffer_size);

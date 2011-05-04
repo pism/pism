@@ -100,7 +100,8 @@ public:
   virtual PetscErrorCode get_att_double(int varid, string name, vector<double> &result) const;
   virtual PetscErrorCode get_units(int varid, bool &has_units, utUnit &units) const;
   virtual PetscErrorCode get_nrecords(int &nrecords) const;
-  virtual PetscErrorCode get_nrecords(string varname, unsigned int &nrecords) const;
+  virtual PetscErrorCode get_nrecords(string short_name, string std_name,
+                                      unsigned int &nrecords) const;
   virtual PetscErrorCode set_attrs(int varid, map<string,string> attrs) const;
   virtual PetscErrorCode create_dimension(string name, int length, map<string,string> attrs,
                                           int &dimid, int &varid) const;

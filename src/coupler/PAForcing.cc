@@ -19,8 +19,8 @@
 
 #include "PISMAtmosphere.hh"
 
-PAForcing::PAForcing(IceGrid &g, const NCConfigVariable &conf)
-  : PISMComponent_TS(g, conf), PAModifier(g, conf) {
+PAForcing::PAForcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel *input)
+  : PISMComponent_TS(g, conf), PAModifier(g, conf, input) {
   dTforcing = NULL;
   delta_T = NULL;
   temp_anomaly = NULL;

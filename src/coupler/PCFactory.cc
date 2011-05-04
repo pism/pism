@@ -4,6 +4,7 @@
 #include "PADirectForcing.hh"
 #include "PSElevation.hh"
 #include "pism_const.hh"
+#include "PASLapseRates.hh"
 
 // Atmosphere
 static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
@@ -18,22 +19,22 @@ static void create_pa_searise_greenland(IceGrid& g, const NCConfigVariable& conf
   result = new PA_SeaRISE_Greenland(g, conf);
 }
 
-static void create_pa_lapse_rates(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
-  result = new PALapseRates(g, conf);
+static void create_pa_lapse_rates(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel *input, PAModifier* &result) {
+  result = new PALapseRates(g, conf, input);
 }
 
-static void create_pa_forcing(IceGrid& g, const NCConfigVariable& conf, PAModifier* &result) {
-  result = new PAForcing(g, conf);
+static void create_pa_forcing(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel *input, PAModifier* &result) {
+  result = new PAForcing(g, conf, input);
 }
 
 void PAFactory::add_standard_types() {
   add_model("constant",          &create_pa_constant);
   add_model("given",          &create_pa_given);
   add_model("searise_greenland", &create_pa_searise_greenland);
-  add_model("temp_lapse_rate",   &create_pa_lapse_rates);
   set_default("constant");
 
-  add_modifier("forcing",        &create_pa_forcing);
+  add_modifier("forcing",    &create_pa_forcing);
+  add_modifier("lapse_rate", &create_pa_lapse_rates);
 }
 
 
@@ -46,8 +47,8 @@ static void create_po_pik(IceGrid& g, const NCConfigVariable& conf, PISMOceanMod
   result = new POConstantPIK(g, conf);
 }
 
-static void create_po_forcing(IceGrid& g, const NCConfigVariable& conf, POModifier* &result) {
-  result = new POForcing(g, conf);
+static void create_po_forcing(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel *input, POModifier* &result) {
+  result = new POForcing(g, conf, input);
 }
 
 void POFactory::add_standard_types() {
@@ -79,8 +80,12 @@ static void create_ps_elevation(IceGrid& g, const NCConfigVariable& conf, PISMSu
   result = new PSElevation(g, conf);
 }
 
-static void create_ps_forcing(IceGrid& g, const NCConfigVariable& conf, PSModifier* &result) {
-  result = new PSForceThickness(g, conf);
+static void create_ps_forcing(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel *input, PSModifier* &result) {
+  result = new PSForceThickness(g, conf, input);
+}
+
+static void create_ps_lapse_rates(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel *input, PSModifier* &result) {
+  result = new PSLapseRates(g, conf, input);
 }
 
 static void create_ps_given(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
@@ -97,4 +102,5 @@ void PSFactory::add_standard_types() {
   set_default("simple");
 
   add_modifier("forcing",   &create_ps_forcing);
+  add_modifier("lapse_rate", &create_ps_lapse_rates);
 }

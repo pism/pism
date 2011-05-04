@@ -68,14 +68,13 @@ protected:
 //! A class defining the interface of a PISM ocean model modifier.
 class POModifier : public PISMOceanModel {
 public:
-  POModifier(IceGrid &g, const NCConfigVariable &conf)
-    : PISMOceanModel(g, conf)
-  { input_model = NULL; }
+  POModifier(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel *input)
+    : PISMOceanModel(g, conf), input_model(input)
+  {}
 
   virtual ~POModifier()
   { delete input_model; }
 
-  virtual void attach_input(PISMOceanModel *input);
   virtual void add_vars_to_output(string key, set<string> &result) {
     if (input_model != NULL)
       input_model->add_vars_to_output(key, result);
@@ -110,8 +109,8 @@ protected:
 //! A class implementing sea level forcing.
 class POForcing : public POModifier {
 public:
-  POForcing(IceGrid &g, const NCConfigVariable &conf)
-    : POModifier(g, conf)
+  POForcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel *input)
+    : POModifier(g, conf, input)
   {
     dSLforcing = NULL;
     delta_sea_level = NULL;

@@ -51,7 +51,8 @@ PetscErrorCode PSDirectForcing::init(PISMVars &vars) {
                            bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
     ierr = PISMOptionsReal("-bc_artm_lapse_rate", "Boundary condition temperature lapse rate in Kelvin per kilometer",
                            bc_artm_lapse_rate, bc_artm_lapse_rate_set); CHKERRQ(ierr);
-    ierr = PISMOptionsReal("-bc_acab_lapse_rate", "Boundary condition mass balance lapse rate in meters per year per kilometer",
+    ierr = PISMOptionsReal("-bc_acab_lapse_rate",
+                           "Boundary condition mass balance lapse rate in meters per year per kilometer",
                            bc_acab_lapse_rate, bc_acab_lapse_rate_set); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-bc_time_average", "Enable time-averaging of boundary condition data",
                             enable_time_averaging); CHKERRQ(ierr);
@@ -76,8 +77,8 @@ PetscErrorCode PSDirectForcing::init(PISMVars &vars) {
   
   NCTool nc(grid.com, grid.rank);
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
-  ierr = nc.get_nrecords("artm", artm_n_records); CHKERRQ(ierr); 
-  ierr = nc.get_nrecords("acab", acab_n_records); CHKERRQ(ierr); 
+  ierr = nc.get_nrecords("artm", "", artm_n_records); CHKERRQ(ierr); 
+  ierr = nc.get_nrecords("acab", "", acab_n_records); CHKERRQ(ierr); 
   ierr = nc.close(); CHKERRQ(ierr);
 
   artm_n_records = PetscMin(artm_n_records, buffer_size);

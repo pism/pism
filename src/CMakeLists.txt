@@ -108,7 +108,7 @@ add_library (pismboundary
   coupler/PAConstant.cc
   coupler/PAForcing.cc
   coupler/PADirectForcing.cc
-  coupler/PALapseRates.cc
+  coupler/PASLapseRates.cc
   coupler/PAYearlyCycle.cc
   coupler/PCFactory.cc
   coupler/PISMOcean.cc

@@ -105,7 +105,13 @@ public:
     : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf) {};
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
-  { t = t_years; dt = dt_years; return 0; } // do nothing
+  {
+    t = t_years; dt = dt_years;
+    if (atmosphere) {
+      PetscErrorCode ierr = atmosphere->update(t_years, dt_years); CHKERRQ(ierr);
+    }
+    return 0;
+  }
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
   virtual void add_vars_to_output(string keyword, set<string> &result);
@@ -231,17 +237,20 @@ upper surface temperature "just before" it gets to the ice itself.
 */
 class PSModifier : public PISMSurfaceModel {
 public:
-  PSModifier(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf)
-  { input_surface_model = NULL; }
+  PSModifier(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel *input)
+    : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf), input_surface_model(input)
+  {}
 
   virtual ~PSModifier()
   { delete input_surface_model; }
 
+  virtual void attach_atmosphere_model(PISMAtmosphereModel *input) {
+    input_surface_model->attach_atmosphere_model(input);
+  }
+
   virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict)
   { input_surface_model->get_diagnostics(dict); }
 
-  virtual void attach_input(PISMSurfaceModel *input);
   virtual void add_vars_to_output(string key, set<string> &result) {
     if (input_surface_model != NULL)
       input_surface_model->add_vars_to_output(key, result);
@@ -255,8 +264,8 @@ protected:
 //! ice thickness to a given target by the end of the run.
 class PSForceThickness : public PSModifier {
 public:
-  PSForceThickness(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), PSModifier(g, conf)
+  PSForceThickness(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel *input)
+    : PISMComponent_TS(g, conf), PSModifier(g, conf, input)
   {
     ice_thickness = NULL;
     alpha = config.get("force_to_thickness_alpha");
@@ -266,7 +275,11 @@ public:
   virtual ~PSForceThickness() {}
   PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
-  { t = t_years; dt = dt_years; return 0; } // do nothing
+  {
+    t = t_years; dt = dt_years;
+    PetscErrorCode ierr = input_surface_model->update(t_years, dt_years); CHKERRQ(ierr);
+    return 0;
+  }
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);

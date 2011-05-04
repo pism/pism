@@ -138,64 +138,16 @@ protected:
   IceModelVec2S *lat, *lon, *surfelev;
 };
 
-
-//! A class implementing a simple atmospheric lapse rate model.
-/*!
-  Let \f$T\f$ be the temperature and \f$h\f$ the surface elevation. Then the lapse rate \f$\gamma\f$ is
-\f[
-\gamma = -\frac{dT}{dh}.
-\f]
-This equation can be solved exactly, to obtain
-\f[
-T(h) = -\gamma \cdot h + f,
-\f]
-or
-\f[
-T(x,y) = -\gamma \cdot h(x,y) + f(x,y),
-\f]
-where \f$f(x,y)\f$ is the initial condition. We have
-\f[
-f(x,y) = T_0(x,y) + \gamma\cdot h_0(x,y).
-\f]
-
-Class PALapseRates implements this lapse-rate correction mechanism.
- */
-class PALapseRates : public PAConstant {
-public:
-  PALapseRates(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), PAConstant(g, conf)
-  {
-    gamma = 0;
-    usurf = NULL;
-  }
-  virtual ~PALapseRates() {}
-  virtual PetscErrorCode init(PISMVars &vars); 
-  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result); 
-  virtual PetscErrorCode begin_pointwise_access(); 
-  virtual PetscErrorCode end_pointwise_access();   
-  virtual PetscErrorCode temp_time_series(int i, int j, int N,
-					  PetscReal *ts, PetscReal *values); 
-protected:
-  PetscReal gamma;
-  IceModelVec2S f, *usurf;
-};
-
-
 ///// PAModifier: classes which modify outputs of PISMAtmosphereModel and its derived classes
 
 class PAModifier : public PISMAtmosphereModel {
 public:
-  PAModifier(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), PISMAtmosphereModel(g, conf)
-  { input_atmosphere_model = NULL; }
+  PAModifier(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel *input)
+    : PISMComponent_TS(g, conf), PISMAtmosphereModel(g, conf), input_atmosphere_model(input)
+  {}
 
   virtual ~PAModifier()
   { delete input_atmosphere_model; }
-
-  virtual void attach_input(PISMAtmosphereModel *input) {
-    if (input_atmosphere_model != NULL)  delete input_atmosphere_model;
-    input_atmosphere_model = input;
-  }
 
   virtual void add_vars_to_output(string key, set<string> &result) {
     if (input_atmosphere_model != NULL)  input_atmosphere_model->add_vars_to_output(key, result);
@@ -221,7 +173,7 @@ rain (if that's the model ...) using (for example) the 2m air temperature.
  */
 class PAForcing : public PAModifier {
 public:
-  PAForcing(IceGrid &g, const NCConfigVariable &conf);
+  PAForcing(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel *input);
   virtual ~PAForcing();
   virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years);
   virtual PetscErrorCode init(PISMVars &vars);

@@ -252,15 +252,6 @@ PetscErrorCode PSConstant::write_variables(set<string> vars, string filename) {
   return 0;
 }
 
-///// PISM Surface model modifier.
-
-void PSModifier::attach_input(PISMSurfaceModel *input) {
-  if (input_surface_model != NULL) {
-    delete input_surface_model;
-  }
-  input_surface_model = input;
-}
-
 ///// PISM surface model implementing a PDD scheme.
 
 PSTemperatureIndex::PSTemperatureIndex(IceGrid &g, const NCConfigVariable &conf)

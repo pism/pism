@@ -54,8 +54,8 @@ PetscErrorCode PADirectForcing::init(PISMVars &/*vars*/) {
   
   NCTool nc(grid.com, grid.rank);
   ierr = nc.open_for_reading(bc_file); CHKERRQ(ierr);
-  ierr = nc.get_nrecords("artm", artm_n_records); CHKERRQ(ierr); 
-  ierr = nc.get_nrecords("precip", precip_n_records); CHKERRQ(ierr); 
+  ierr = nc.get_nrecords("artm",   "", artm_n_records); CHKERRQ(ierr); 
+  ierr = nc.get_nrecords("precip", "", precip_n_records); CHKERRQ(ierr); 
   ierr = nc.close(); CHKERRQ(ierr);
 
   artm_n_records = PetscMin(artm_n_records, buffer_size);

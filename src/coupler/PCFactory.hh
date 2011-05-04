@@ -41,7 +41,7 @@ public:
     model_list += "]";
 
     // build a list of available modifiers:
-    typename map<string,void(*)(IceGrid&, const NCConfigVariable&, Modifier*&)>::iterator p;
+    typename map<string,void(*)(IceGrid&, const NCConfigVariable&, Model*, Modifier*&)>::iterator p;
     p = modifiers.begin();
     modifier_list = "[" + (p++)->first;
     for(; p != modifiers.end(); p++) {
@@ -84,7 +84,7 @@ public:
 
     // process remaining arguments:
     while (j != choices.end()) {
-      void (*M) (IceGrid&, const NCConfigVariable&, Modifier*&);
+      void (*M) (IceGrid&, const NCConfigVariable&, Model*, Modifier*&);
       Modifier *mod;
 
       M = modifiers[*j];
@@ -96,9 +96,8 @@ public:
 	PISMEnd();
       }
 
-      (*M)(grid, config, mod);
+      (*M)(grid, config, result, mod);
 
-      mod->attach_input(result);
       result = mod;
 
       ++j;
@@ -112,7 +111,7 @@ public:
     models[name] = func;
   }
 
-  virtual void add_modifier(string name, void(*func)(IceGrid&, const NCConfigVariable&, Modifier*&)) {
+  virtual void add_modifier(string name, void(*func)(IceGrid&, const NCConfigVariable&, Model*, Modifier*&)) {
     modifiers[name] = func;
   }
 
@@ -137,7 +136,7 @@ protected:
   virtual void add_standard_types() {}
   string default_type, option;
   map<string,void(*)(IceGrid&, const NCConfigVariable&, Model*&)> models;
-  map<string,void(*)(IceGrid&, const NCConfigVariable&, Modifier*&)> modifiers;
+  map<string,void(*)(IceGrid&, const NCConfigVariable&, Model*, Modifier*&)> modifiers;
   IceGrid& grid;
   const NCConfigVariable& config;
 };

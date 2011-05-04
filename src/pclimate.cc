@@ -266,12 +266,14 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = surface->ice_surface_mass_flux(*acab); CHKERRQ(ierr);
     ierr = surface->ice_surface_temperature(*artm); CHKERRQ(ierr);
 
-    ierr = acab->write(filename, NC_FLOAT); CHKERRQ(ierr);
-    ierr = artm->write(filename, NC_FLOAT); CHKERRQ(ierr);
-
     // ask ocean and surface models to write variables:
     ierr = surface->write_variables(vars_to_write, filename); CHKERRQ(ierr);
     ierr = ocean->write_variables(vars_to_write, filename); CHKERRQ(ierr);
+
+    // Thos ensures that even if a surface model wrote artm and acab we
+    // over-write them with values that were actually used by IceModel.
+    ierr = acab->write(filename, NC_FLOAT); CHKERRQ(ierr);
+    ierr = artm->write(filename, NC_FLOAT); CHKERRQ(ierr);
   }
   ierr = verbPrintf(2,com,"\n"); CHKERRQ(ierr);
 

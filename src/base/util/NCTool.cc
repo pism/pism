@@ -1037,14 +1037,15 @@ PetscErrorCode NCTool::inq_dimtype(string name, AxisType &result) const {
 }
 
 //! \brief Get the number of records of variable \c varname.
-PetscErrorCode NCTool::get_nrecords(string varname, unsigned int &nrecords) const {
+PetscErrorCode NCTool::get_nrecords(string short_name, string standard_name,
+                                    unsigned int &nrecords) const {
   PetscErrorCode ierr;
 
   bool exists;
   int varid;
   vector<int> dimids;
 
-  ierr = find_variable(varname, &varid, exists); CHKERRQ(ierr);
+  ierr = find_variable(short_name, standard_name, &varid, exists); CHKERRQ(ierr);
   
   if (!exists) {
     nrecords = 0;
