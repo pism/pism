@@ -30,6 +30,7 @@ public:
     : PISMComponent_TS(g, conf), Modifier(g, conf, in), input(in)
   {
     surface = thk = NULL;
+    temp_lapse_rate = 0;
   }
 
   virtual ~PLapseRates() {}
@@ -103,7 +104,7 @@ public:
 protected:
   IceModelVec2T reference_surface;
   IceModelVec2S *surface, *thk;
-  PetscReal bc_period, bc_reference_year;
+  PetscReal bc_period, bc_reference_year, temp_lapse_rate;
   bool enable_time_averaging;
   Model *input;
 
@@ -111,7 +112,7 @@ protected:
   {
     PetscErrorCode ierr;
     string filename;
-    bool bc_file_set, bc_period_set, bc_ref_year_set;
+    bool bc_file_set, bc_period_set, bc_ref_year_set, temp_lapse_rate_set;
 
     IceGrid &g = Modifier::grid;
 
@@ -127,6 +128,9 @@ protected:
                              bc_reference_year, bc_ref_year_set); CHKERRQ(ierr);
       ierr = PISMOptionsIsSet("-bc_time_average", "Enable time-averaging of boundary condition data",
                               enable_time_averaging); CHKERRQ(ierr);
+      ierr = PISMOptionsReal("-temp_lapse_rate",
+                             "Elevation lapse rate for the temperature, in K per km",
+                             temp_lapse_rate, temp_lapse_rate_set); CHKERRQ(ierr);
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -221,8 +225,7 @@ public:
   PSLapseRates(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
     : PISMComponent_TS(g, conf), PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in)
   {
-    artm_lapse_rate = 0;
-    acab_lapse_rate = 0;
+    smb_lapse_rate = 0;
   }
 
   virtual ~PSLapseRates() {}
@@ -234,7 +237,7 @@ public:
   virtual PetscErrorCode mass_held_in_surface_layer(IceModelVec2S &result);
   virtual PetscErrorCode surface_layer_thickness(IceModelVec2S &result);
 protected:
-  PetscReal artm_lapse_rate, acab_lapse_rate;
+  PetscReal smb_lapse_rate;
 };
 
 class PALapseRates : public PLapseRates<PISMAtmosphereModel,PAModifier>
@@ -243,7 +246,6 @@ public:
   PALapseRates(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
     : PISMComponent_TS(g, conf), PLapseRates<PISMAtmosphereModel,PAModifier>(g, conf, in)
   {
-    temp_lapse_rate = 0;
     precip_lapse_rate = 0;
   }
 
@@ -261,7 +263,7 @@ public:
                                           PetscReal *ts, PetscReal *values);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 protected:
-  PetscReal temp_lapse_rate, precip_lapse_rate;
+  PetscReal precip_lapse_rate;
 };
 
 #endif /* _PASLAPSERATES_H_ */

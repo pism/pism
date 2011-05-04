@@ -7,6 +7,7 @@
 \newcommand{\PISMREV}{revision \input{revision.tex}}
 \newcommand{\PETSCREL}{3.1}
 \newcommand{\PISMDOWNLOADMSG}{Get development version of PISM source code: \quad\texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev} \quad}
+\newcommand{\PISMBROWSERURL}{http://www.pism-docs.org/wiki/doku.php?id=browser}
 
 %\addtolength\topmargin{-.1in}
 \addtolength\textheight{0.75in}
@@ -166,7 +167,7 @@ Dave Covey, Don Bahls, and Greg Newby have supported our hardware, software, and
 Thanks to the many PISM users around the world, including
 
 \begin{quote}
-Tolly Adalgeirsdottir, Antje Fitzner, Nick Golledge, Marika Habermann, Tore Hattermann, Marianne Madsen, Malou Maris, Art Mahoney, Kent Overstreet, Sebastian Simonsen, Anne Solgaard, Ben Sperisen, Ward van Pelt, Martin Truffer, Shuting Yang, Ryan Woodard
+Tolly Adalgeirsdottir, Antje Fitzner, Nick Golledge, Marijke Habermann, Tore Hattermann, Marianne Madsen, Malou Maris, Art Mahoney, Kent Overstreet, Sebastian Simonsen, Anne Solgaard, Ben Sperisen, Ward van Pelt, Martin Truffer, Shuting Yang, Ryan Woodard
 \end{quote}
 
 \noindent for helpful comments and questions on PISM and this \emph{Manual}.
@@ -196,7 +197,7 @@ This \emph{User's Manual} describes how to run PISM using certain publicly-avail
 
 Users who want to understand how PISM works, extend PISM, and/or generally advance the science of ice sheets will need to go beyond what is described here.  For such users there is a \emph{C++ Class Browser}\index{PISM!\emph{C++ Class Browser (HTML)}}.  It gives a complete view of the class/object structure of the PISM source code.  It is the best tool for the job of modifying and supplementing PISM by writing derived classes.  See
 \begin{center}
-  \url{http://www.pism-docs.org/doxy/html/index.html}
+  \url{\PISMBROWSERURL}
 \end{center}
 
 \vspace{.4in}
@@ -294,7 +295,7 @@ Although it begins to expose the internals of PISM, we think it is also helpful 
 \end{table}
 
 
-\subsection{Evolutionary and diagnostic modeling} \label{subsect:basicmodes}\index{PISM!evolution run}\index{PISM!diagnostic run}    The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time as similarly as possible to the modeled ice sheet.  Such a goal assumes one has the right climate inputs and parameter choices at each time step.  For predictive purposes, it also assumes one has the right initial conditions, adequately describing the present state of the ice sheet.  This last assumption is rarely satisfied.  Instead, heuristics must be used to minimally-initialize an ice sheet model, before a possible stage of paleo-climate driven spinup; see section \ref{sect:boot}.
+\subsection{Evolutionary and diagnostic modeling} \label{subsect:basicmodes}\index{PISM!evolution run}\index{PISM!diagnostic run}    The main goal of a numerical ice sheet model like PISM is to be a dynamical system which evolves over time as similarly as possible to the modeled ice sheet.  Such a goal assumes one has the right climate inputs and parameter choices at each time step.  For predictive purposes, it also assumes one has the right initial conditions, adequately describing the present state of the ice sheet.  This last assumption is rarely satisfied.  Instead, heuristics must be used to minimally-initialize an ice sheet model, before a possible stage of paleo-climate driven spin-up; see section \ref{sect:boot}.
 
 Underlying an ice sheet model like PISM are evolution-in-time partial differential equations.  PISM solves these by taking small time steps.  ``Small'' time steps vary from hundredths to many model years, depending primarily on grid resolution and modeled ice flow speed.  Time steps are chosen adaptively in PISM, according to the stability criteria of the several numerical methods.
 
@@ -343,7 +344,8 @@ Figure~\ref{fig:climate-inputs} illustrates that any PISM ice sheet model has an
 
 Regarding the base of the ice, as described in section \ref{subsect:beddef} PISM also includes an optional bed deformation component approximating the movement of the Earth's crust and upper mantle in response to changing ice load.   Furthermore the temperature of the layer of bedrock in contact with grounded ice is included in the conservation of energy model.  In this sense everything below the black dashed line (i.e.~ice and bedrock) is ``owned'' by PISM.  This fact adds two more boundary interfaces for the ice dynamics core: sub-ice-shelf/ocean (shown in blue) and the bottom of the bedrock thermal layer (not shown).
 
-The PISM ice dynamics core would like to be able to get these fields directly from observations or measurements, or directly from a GCM.  In many realistic modeling situations, however, PISM code must be used for all or part of the surface processes modeling necessary to provide the ice-dynamics core with the ``right'' fields.  Due to differences in model resolutions and required down-scaling, this need for some PISM-based boundary-processes modeling includes cases where PISM is coupled to a GCM.  In the kind of ``offline'' runs described in this \emph{Manual}, boundary processes are modeled, even if trivially.
+The PISM ice dynamics core would like to be able to get fields listed in Table
+\ref{tab:ice-dynamics-bc} directly from observations or measurements, or directly from a GCM.  In many realistic modeling situations, however, PISM code must be used for all or part of the surface processes modeling necessary to provide the ice-dynamics core with the ``right'' fields.  Due to differences in model resolutions and required down-scaling, this need for some PISM-based boundary-processes modeling includes cases where PISM is coupled to a GCM.  In the kind of ``offline'' runs described in this \emph{Manual}, boundary processes are modeled, even if trivially.
 
 Thus, to be able to use the data that \emph{is} available, an ice-sheet model has to
 have additional components that are responsible for modeling surface (snow)
@@ -357,15 +359,14 @@ couple PISM to a climate model.
 
 Users wishing to customize PISM's climate inputs should see the \emph{PISM
   Source Browser}, e.g.~at
-\url{http://www.pism-docs.org/doxy/html/index.html} and the documentation
+\url{\PISMBROWSERURL} and the documentation
 of \emph{PISMSurfaceModel}, \emph{PISMAtmosphereModel} and
 \emph{PISMOceanModel} therein.  Also, section \ref{sec:eismint-greenland} describes a
 modeling example using a non-standard air temperature parameterization. Looking
-at \texttt{pgrn.cc} and \texttt{pgrn_atmosphere.cc} may be a reasonable
+at source files \texttt{pgrn.cc} and \texttt{pgrn_atmosphere.cc} may be a reasonable
 start.
 
-Note that figure~\ref{fig:climate-inputs} includes an interface that was not
-mentioned yet, the one between the surface layer and the air (red dashed line).
+Note that figure~\ref{fig:climate-inputs} includes an interface between the surface layer and the air (red dashed line).
 Unlike the ones listed in table~\ref{tab:ice-dynamics-bc}, this interface
 \emph{may not even be present in some PISM configurations:} the ice dynamics
 core of PISM only ``knows'' about mediums bordering ice and bedrock. A pair
@@ -457,13 +458,30 @@ Subsection \ref{sec:eismint-greenland} shows bootstrapping for the EISMINT-Green
 \subsubsection*{\texttt{-boot_file} file format}
 \label{sec:bootstrapping-format}  Allowed formats for a bootstrapping file are relatively simple to describe. 
 \begin{enumerate}
-\item The NetCDF dimensions \texttt{x} and \texttt{y} and corresponding variables must be present and have the meanings of projection X coordinate and projection Y coordinate.
-\item Coordinate variables \texttt{x} and \texttt{y} have to be strictly increasing.
-\item All three-dimensional variables (depending on \texttt{x,y,z} or \texttt{x,y,zb}) will be ignored in bootstrapping.
-\item The \texttt{standard_name} attribute is used to identify a variable, so the names of variables do not need to match the corresponding variables in a PISM output file.
-\item PISM expects all the input fields (NetCDF variables) to be in MKS \emph{or} to have the units specified using the \texttt{units} attribute.  PISM uses a library called UDUNITS\index{PISM!uses UDUNITS when reading NetCDF files}\index{UDUNITS} to convert data present in an input file to MKS.   This means that having ice thickness in feet or kilometers, or temperature in Celsius for example, is allowed.
-\item Any two-dimensional variable (depending on \texttt{x,y}) may be missing.  For those missing variables some heuristic will be applied.  See table \ref{tab:modelhierarchy} for a sketch of the data necessary for bootstrapping, and \texttt{src/base/iMbootstrap.cc} for all further details.
-\item Surface elevation is ignored if present.  Users with surface elevation and bed elevation data should produce an ice thickness variable, with \texttt{standard_name} = \texttt{land_ice_thickness} for bootstrapping.  The bed elevation (topography) is read by \texttt{standard_name} = \texttt{bedrock_altitude}.
+\item NetCDF variables should have the \texttt{units} containing the
+  UDUNITS-compatible string. If this attribute is missing, PISM will assume
+  that a field uses MKS units.\footnote{PISM uses a library called UDUNITS\index{PISM!uses UDUNITS when reading NetCDF files}\index{UDUNITS} to convert data present in an input file to MKS.   This means that having ice thickness in feet or kilometers, or temperature in Celsius for example, is allowed.}
+\item NetCDF coordinate variables should have \texttt{standard_name} or
+  \texttt{axis} attributes. These are used to
+  determine which \emph{spatial} dimension a NetCDF dimension corresponds to;
+  please see a \texttt{ncdump -h} output from a PISM output file for an example. (This implies
+  that \texttt{x} and \texttt{y} dimensions need not be called ``\texttt{x}''
+  and ``\texttt{y}''.
+\item Coordinate variables have to be strictly increasing.
+\item All three-dimensional variables will be ignored in bootstrapping.
+\item The \texttt{standard_name} attribute is used to identify a variable, so
+  the names of variables do not need to match the corresponding variables in a
+  PISM output file. Please see \url{\PISMBROWSERURL} for a list of CF standard
+  names used in PISM.
+\item Any two-dimensional variable except bed topography and ice thickness may
+  be missing. For those missing variables some heuristic will be applied. See
+  table \ref{tab:modelhierarchy} for a sketch of the data necessary for
+  bootstrapping, and \texttt{src/base/iMbootstrap.cc} for all further details.
+\item Surface elevation is ignored if present. Users with surface elevation and
+  bed elevation data should produce an ice thickness variable, with
+  \texttt{standard_name} = \texttt{land_ice_thickness} for bootstrapping. The
+  bed elevation (topography) is read by \texttt{standard_name} =
+  \texttt{bedrock_altitude}.
 \end{enumerate}
 
 \subsection{For programmers deriving/modifying PISM:  Initialization sequence}  As described already, there are three ways to start PISM,\begin{itemize}

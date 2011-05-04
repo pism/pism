@@ -43,11 +43,11 @@ $ pismr -i foo.nc -atmosphere searise_greenland,forcing \
 \end{verbatim}%$
 chooses a combination of the SeaRISE-Greenland atmosphere model (see below), modified by an ice-core-derived paleo-temperature forcing (shift), and a positive degree-day (PDD) local surface mass balance model.  Because it is not mentioned, the ocean model is the default one (\texttt{-ocean constant}).
 
-Each of PISM boundary model types currently has one ``modifier'' available; the corresponding keyword is \texttt{forcing}. Please see below for details.
+Atmosphere and surface models have two ``modifiers'' available; the corresponding keywords are \texttt{forcing} and \texttt{lapse_rate}. The ocean model supports the \texttt{forcing} modifier only. Please see below for details.
 
 \subsubsection{PISM atmosphere models}
 \label{sec:pism-atmosphere}
-\optsection{Climate (boundary) models!\texttt{-atmosphere} [searise_greenland, constant, given,temp_lapse_rate, forcing]}
+\optsection{Climate (boundary) models!\texttt{-atmosphere} [searise_greenland, constant, given, lapse_rate, forcing]}
 
 \begin{itemize}
   \item \emph{SeaRISE-Greenland} (\texttt{searise_greenland}, the default)
@@ -60,7 +60,7 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
  \item \emph{Constant in time} (\texttt{constant})
 
-    This atmosphere model reads the snow precipitation (variable \texttt{precip}) and the mean annual near-surface air temperature (variable \texttt{temp_ma}) and provides them to a surface model.
+    This atmosphere model reads the snow precipitation (variable \texttt{precip}) and the mean annual near-surface air temperature (variable \texttt{artm}) and provides them to a surface model.
 
   \item \emph{Reading atmosphere boundary conditions from a file} (\texttt{given})
 
@@ -68,15 +68,13 @@ Each of PISM boundary model types currently has one ``modifier'' available; the 
 
     A file \texttt{foo.nc} used with \texttt{-atmosphere given -bc_file foo.nc} should contain several records;\footnote{If this file contains one record (i.e. fields corresponding to one time value only), \texttt{-atmosphere given} is essentially equivalent to \texttt{-atmosphere constant}.} the time variable (\texttt{'t'}) should describe what model time these records correspond to.
 
-    This model was created to force PISM with sampled (possibly periodic) climate data, e.g. using monthly records of \texttt{artm} and \texttt{acab}.
-
-  \item \emph{Constant precipitation using a temperature lapse rate} (\texttt{temp_lapse_rate})
-    
-    This atmosphere model also uses a constant (time-independent) precipitation field (\texttt{precip}) and requires the mean annual near-surface air temperature (\texttt{temp_ma}) to be present in an input file. In addition to this, it dynamically corrects air temperature using a location-independent elevation lapse rate specified using the \intextoption{lapse_rate} command-line option (in units of degrees Celsius per meter).
+    This model was created to force PISM with sampled (possibly periodic) climate data, e.g. using monthly records of \texttt{artm} and \texttt{precip}.
 
   \end{itemize}
-  
-The atmosphere \texttt{forcing} modifier implements temperature forcing using scalar offsets and also a mechanism applying precipitation and temperature anomalies.
+
+  Currently there are two ``modifiers'' one can use with an atmosphere model.
+
+  The atmosphere \texttt{forcing} modifier implements temperature forcing using scalar offsets and also a mechanism applying precipitation and temperature anomalies.
   \begin{itemize}
   \item \fileopt{dTforcing} specifies a file containing scalar temperature offsets (variable \texttt{delta_T}), 
   \item \fileopt{anomaly_temp} specifies a file containing spatially-variable near-surface air temperature anomalies (variable \texttt{temp_anomaly}), and
@@ -85,7 +83,21 @@ The atmosphere \texttt{forcing} modifier implements temperature forcing using sc
 
   Options \texttt{-anomaly_temp} and \texttt{-anomaly_precip} can be used to set up a PISM run using a GCM output, essentially achieving one-way coupling. See also the \texttt{-surface given} option, below.
 
-  Note that only one air temperature forcing mechanism can be used at any time.  %FIXME:  why?  esp. under r1281, should we allow "-dTforcing foo.nc -anomaly_temp bar.nc"?
+  Note that only one air temperature forcing mechanism can be used at any time. 
+%FIXME:  why?  esp. under r1281, should we allow "-dTforcing foo.nc -anomaly_temp bar.nc"?
+
+  The \texttt{lapse_rate} modifier allows correcting air temperature and precipitation using elevation lapse rates. It uses the following options.
+  \begin{itemize}
+  \item \fileopt{bc_file} specifies the file containing the reference surface elevation field (standard name: \texttt{surface_altitude}). This file can contain several surface elevation records to use lapse rate corrections relative to time-dependent surface. If one record is provided, the reference surface elevation is assumed to be time-independent.
+  \item \intextoption{bc_period} gives the period, in model years, to use when interpreting data in the file given with \texttt{-bc_file},
+  \item \intextoption{bc_reference_year} takes the time $T$ in model years. The record for $t$ years in \texttt{-bc_file} is interpreted as corresponding to $t$ years since $T$.
+  \item \intextoption{bc_time_average} enables interpolating (and in some cases, averaging) B.C. data in time.
+  \item \intextoption{temp_lapse_rate} gives the temperature lapse rate, in $K/km$. Note that we use the following definition of the temperature lapse rate:
+    \begin{displaymath}
+      \gamma = -\frac{dT}{dz}.
+    \end{displaymath}
+  \item \intextoption{precip_lapse_rate} gives the precipitation lapse rate, in $m/year/km$. Here $\gamma = -\frac{dM}{dz}$.
+  \end{itemize}
 
 \subsubsection{PISM surface (snow) process models}
 \label{sec:pism-surface-snow}
@@ -108,9 +120,42 @@ The atmosphere \texttt{forcing} modifier implements temperature forcing using sc
 
     This surface model is similar to \texttt{constant} in that it uses \texttt{artm} and \texttt{acab} fields given by the user by providing them directly to the ice dynamics model. The name of the file PISM will read \texttt{artm} and \texttt{acab} from is specified using the \fileopt{bc_file} option.
 
+    A file \texttt{foo.nc} used with \texttt{-surface given -bc_file foo.nc} should contain several records;\footnote{If this file contains one record (i.e. fields corresponding to one time value only), \texttt{-surface given} is essentially equivalent to \texttt{-surface constant}.} the time variable (\texttt{'t'}) should describe what model time these records correspond to.
+
+    This model was created to force PISM with sampled (possibly periodic) climate data, e.g. using monthly records of \texttt{artm} and \texttt{acab}.
+
+ Option \txtopt{bc_artm_lapse_rate}{Kelvin per kilometer} corrects \texttt{artm} with respect to a reference surface \texttt{usurf} using a lapse rate. \texttt{usurf} must be present in \texttt{foo.nc}.
+
+ Option \txtopt{bc_acab_lapse_rate}{meters per year per kilometer} corrects \texttt{acab} with respect to a reference surface \texttt{usurf} using a lapse rate following [\href{http://www.truenuff.tv/glacierrace.php}{86}]. \texttt{usurf} must be present in \texttt{foo.nc}.
+
+Option \txtopt{bc_period}{years} makes PISM interpret data in \texttt{-bc_file} as periodic. In this case the time in the NetCDF file is understood as the time \emph{from the beginning of a period}, i.e. from the beginning of a year with \texttt{-bc_period 1}, from the beginning of a decade with \texttt{-bc_period 10}, etc.
+
+For example, to use monthly records and period of 1 year, create a file (say, ``\texttt{foo.nc}'') with 12 records. The variable \texttt{'t'} should contain 0, 1, 2, 3, \dots, 11 and have the units of ``month'' (you can use other units, too). Then, run
+\begin{verbatim}
+$ pimsr -surface given -bc_file foo.nc -bc_period 1
+\end{verbatim}%$
+
+To force PISM using monthly records with longer periods, just add more records to the \texttt{-bc_file}  and change the \texttt{-bc_period} value.
+
+\noindent Notes:
+\begin{itemize}
+\item PISM can handle files with virtually any number of records: it will
+  read and store in memory at most \texttt{climate_forcing_buffer_size} records
+  at any given time (default: 60, or 5 years' worth of monthly fields).
+\item this surface model \emph{ignores} the atmosphere model selection made
+  using the \texttt{-atmosphere} option,
+\item when preparing a file for use with this model, it is best to use the \texttt{t,x,y} variable storage order: files using this order can be read in faster than ones using the \texttt{t,y,x} order, for reasons explained in section \ref{sec:pism-io-performance}.
+
+To change the storage order in a NetCDF file, use \texttt{ncpdq}:
+\begin{verbatim}
+$ ncpdq -a t,x,y input.nc output.nc
+\end{verbatim}%$
+will copy data from \texttt{input.nc} into \texttt{output.nc}, changing the storage order to \texttt{t,x,y} at the same time.
+\end{itemize}
+
   \item \emph{Elevation-dependent temperature and mass balance} (\texttt{elevation})
 
-    This surface model parametrizes the ice surface temperature $T_{h}$ = \texttt{artm} and the surface mass balance $m$ = \texttt{acab} as a\emph{piecewise-linear} function of surface elevation $h$.
+    This surface model parametrizes the ice surface temperature $T_{h}$ = \texttt{artm} and the surface mass balance $m$ = \texttt{acab} as \emph{piecewise-linear} functions of surface elevation $h$.
 
     The option \txtopt{artm}{\emph{list of 4 numbers}} determines the surface temperature using the 4 parameters $T_{\mathrm{min}}$, $T_{\mathrm{max}}$, $h_{\mathrm{min}}$, $h_{\mathrm{max}}$. Let
     \begin{equation}
@@ -156,39 +201,6 @@ The atmosphere \texttt{forcing} modifier implements temperature forcing using sc
 
     Note: this surface model \emph{ignores} the atmosphere model selection made using the \texttt{-atmosphere} option.
 
-    A file \texttt{foo.nc} used with \texttt{-surface given -bc_file foo.nc} should contain several records;\footnote{If this file contains one record (i.e. fields corresponding to one time value only), \texttt{-surface given} is essentially equivalent to \texttt{-surface constant}.} the time variable (\texttt{'t'}) should describe what model time these records correspond to.
-
-    This model was created to force PISM with sampled (possibly periodic) climate data, e.g. using monthly records of \texttt{artm} and \texttt{acab}.
-
- Option \txtopt{bc_artm_lapse_rate}{Kelvin per kilometer} corrects \texttt{artm} with respect to a reference surface \texttt{usurf} using a lapse rate. \texttt{usurf} must be present in \texttt{foo.nc}.
-
- Option \txtopt{bc_acab_lapse_rate}{meters per year per kilometer} corrects \texttt{acab} with respect to a reference surface \texttt{usurf} using a lapse rate following [\href{http://www.truenuff.tv/glacierrace.php}{86}]. \texttt{usurf} must be present in \texttt{foo.nc}.
-
-Option \txtopt{bc_period}{years} makes PISM interpret data in \texttt{-bc_file} as periodic. In this case the time in the NetCDF file is understood as the time \emph{from the beginning of a period}, i.e. from the beginning of a year with \texttt{-bc_period 1}, from the beginning of a decade with \texttt{-bc_period 10}, etc.
-
-For example, to use monthly records and period of 1 year, create a file (say, ``\texttt{foo.nc}'') with 12 records. The variable \texttt{'t'} should contain 0, 1, 2, 3, \dots, 11 and have the units of ``month'' (you can use other units, too). Then, run
-\begin{verbatim}
-$ pimsr -surface given -bc_file foo.nc -bc_period 1
-\end{verbatim}%$
-
-To force PISM using monthly records with longer periods, just add more records to the \texttt{-bc_file}  and change the \texttt{-bc_period} value.
-
-\noindent Notes:
-\begin{itemize}
-\item PISM can handle files with virtually any number of records: it will
-  read and store in memory at most \texttt{climate_forcing_buffer_size} records
-  at any given time (default: 60, or 5 years' worth of monthly fields).
-\item this surface model \emph{ignores} the atmosphere model selection made
-  using the \texttt{-atmosphere} option,
-\item when preparing a file for use with this model, it is best to use the \texttt{t,x,y} variable storage order: files using this order can be read in faster than ones using the \texttt{t,y,x} order, for reasons explained in section \ref{sec:pism-io-performance}.
-
-To change the storage order in a NetCDF file, use \texttt{ncpdq}:
-\begin{verbatim}
-$ ncpdq -a t,x,y input.nc output.nc
-\end{verbatim}%$
-will copy data from \texttt{input.nc} into \texttt{output.nc}, changing the storage order to \texttt{t,x,y} at the same time.
-\end{itemize}
-
  \item \emph{Temperature-index (positive degree-day) scheme} (\texttt{pdd}) \index{temperature-index surface processes model} \index{positive degree day surface processes model} \index{PDD (positive degree day model)} \index{PISM!default positive degree day model} 
 
    The default PDD used by PISM, turned on by option \texttt{-surface pdd}, is based on \cite{CalovGreve05} and EISMINT-Greenland intercomparison (section \ref{sec:eismint-greenland} and \cite{RitzEISMINT}).  It also implements latitude- and mean July temperature dependent ice and snow factors using formulas in \cite{Faustoetal2009}.
@@ -203,9 +215,21 @@ In addition to this, one can use latitude- and July-air-temperature-dependent Gr
 
 \end{itemize}
 
-
-
 The \texttt{forcing} modifier implements a surface mass balance adjustment mechanism forcing ice thickness to a target distribution at the end of the run; option \fileopt{force_to_thk} selects a file containing the target ice thickness field. Option \intextoption{force_to_thk_alpha} sets the $\alpha$ parameter. See the documentation  of \texttt{PSForceThickness::ice_surface_mass_flux()} for details.
+
+  The \texttt{lapse_rate} modifier allows correcting ice-surface temperature and surface mass balance using elevation lapse rates. It uses the following options.
+  \begin{itemize}
+  \item \fileopt{bc_file} specifies the file containing the reference surface elevation field (standard name: \texttt{surface_altitude}). This file can contain several surface elevation records to use lapse rate corrections relative to time-dependent surface. If one record is provided, the reference surface elevation is assumed to be time-independent.
+  \item \intextoption{bc_period} gives the period, in model years, to use when interpreting data in the file given with \texttt{-bc_file},
+  \item \intextoption{bc_reference_year} takes the time $T$ in model years. The record for $t$ years in \texttt{-bc_file} is interpreted as corresponding to $t$ years since $T$.
+  \item \intextoption{bc_time_average} enables interpolating (and in some cases, averaging) B.C. data in time.
+  \item \intextoption{temp_lapse_rate} gives the temperature lapse rate, in $K/km$. Note that we use the following definition of the temperature lapse rate:
+    \begin{displaymath}
+      \gamma = -\frac{dT}{dz}.
+    \end{displaymath}
+  \item \intextoption{smb_lapse_rate} gives the surface mass balance lapse rate, in $m/year/km$. Here, $\gamma=-\frac{dM}{dz}$.
+  \end{itemize}
+
 
 \subsubsection{PISM ocean models}
 \label{sec:pism-ocean-models}
