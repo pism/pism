@@ -184,7 +184,8 @@ typedef int NormType; // YUCK.
 %apply vector<PetscReal> & OUTPUT {vector<PetscReal> &result};
 %apply vector<string> & OUTPUT {vector<string> & result};
  
-%apply int &OUTPUT {int &result}
+%apply int &OUTPUT {int &result};
+%apply int *OUTPUT {int *out_mask};
 
 %apply PetscInt & OUTPUT {PetscInt & result};
 %apply PetscReal & OUTPUT {PetscReal & result};
