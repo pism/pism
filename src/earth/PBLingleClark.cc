@@ -189,10 +189,10 @@ PetscErrorCode PBLingleClark::correct_topg() {
 
   ierr = nc.find_variable("topg_initial", NULL, topg_initial_exists); CHKERRQ(ierr);
   ierr = nc.find_variable("topg", NULL, topg_exists); CHKERRQ(ierr);
+  ierr = nc.close(); CHKERRQ(ierr);
 
   // Stop if the regridding file does not have both topg and topg_initial.
   if ( !(topg_initial_exists && topg_exists) ) {
-    ierr = nc.close(); CHKERRQ(ierr);
     return 0;
   }
 
@@ -206,7 +206,6 @@ PetscErrorCode PBLingleClark::correct_topg() {
       if (regrid_vars[i] == "topg") {
         ierr = verbPrintf(2, grid.com,
                           "  Bed elevation correction requested, but -regrid_vars contains topg...\n"); CHKERRQ(ierr); 
-        ierr = nc.close(); CHKERRQ(ierr);
         return 0;
       }
     }

@@ -69,7 +69,11 @@ public:
     SSA(g,b,i,e,c), element_index(g)
   {
     quadrature.init(grid);
-    allocate_fem();  // can't be done by allocate() since constructor is not virtual
+    PetscErrorCode ierr = allocate_fem();
+    if (ierr != 0) {
+      PetscPrintf(grid.com, "FATAL ERROR: SSAFEM allocation failed.\n");
+      PISMEnd();
+    }
   }
 
   virtual ~SSAFEM()

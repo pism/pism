@@ -31,12 +31,20 @@ public:
         const NCConfigVariable &c) :
     SSA(g,b,i,e,c)
   {
-    allocate_fd();  // can't be done by allocate() since constructor is not virtual
+    PetscErrorCode ierr = allocate_fd();
+    if (ierr != 0) {
+      PetscPrintf(grid.com, "FATAL ERROR: SSAFD allocation failed.\n");
+      PISMEnd();
+    }
   }
 
   virtual ~SSAFD()
   {
-    deallocate_fd();
+    PetscErrorCode ierr = deallocate_fd();
+    if (ierr != 0) {
+      PetscPrintf(grid.com, "FATAL ERROR: SSAFD de-allocation failed.\n");
+      PISMEnd();
+    }
   }
 
   virtual PetscErrorCode init(PISMVars &vars);

@@ -641,8 +641,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   if (do_mass_continuity) {
     ierr = massContExplicitStep(); CHKERRQ(ierr); // update H
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
-    if ((do_skip == PETSC_TRUE) && (skipCountDown > 0))
-      skipCountDown--;
     stdout_flags += "h";
   } else {
     stdout_flags += "$";
@@ -657,6 +655,9 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   //! \li call additionalAtEndTimestep() to let derived classes do more
   ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
+
+  if (do_skip == PETSC_TRUE && skipCountDown > 0)
+    skipCountDown--;
 
   grid.year += dt / secpera;  // adopt the new time
   if (updateAtDepth && do_energy) { // FIXME: must be same condition as "do the temperature step"

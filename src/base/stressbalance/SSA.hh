@@ -140,7 +140,11 @@ public:
   SSAStrengthExtension *strength_extension;
 
   virtual ~SSA() { 
-    deallocate();
+    PetscErrorCode ierr = deallocate();
+    if (ierr != 0) {
+      PetscPrintf(grid.com, "FATAL ERROR: SSAFD de-allocation failed.\n");
+      PISMEnd();
+    }
     delete strength_extension;
   }
 
