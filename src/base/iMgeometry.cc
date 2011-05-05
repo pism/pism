@@ -297,8 +297,15 @@ PetscErrorCode IceModel::massContExplicitStep() {
       // decide whether to apply Albrecht et al 2011 subgrid-scale parameterization (-part_grid)
 
       // case where we apply -part_grid
+	  //if (do_part_grid && mask.next_to_floating_ice(i, j) && mask.next_to_grounded_ice(i, j)) {
       if (do_part_grid && mask.next_to_floating_ice(i, j)) {
         vHref(i, j) -= divQ * dt;
+		if (vHref(i, j) < 0.0) { 
+			my_nonneg_rule_flux += ( - vHref(i, j));
+			vHref(i, j) = 0.0;
+			ierr = verbPrintf(2, grid.com,"!!! PISM_WARNING: vHref is negative at i=%d, j=%d\n",i,j); CHKERRQ(ierr);
+		}
+
         PetscReal H_average = get_average_thickness(do_redist, M, vH.star(i, j));
 
         // To calculate the surface balance contribution with respect to the
@@ -308,7 +315,12 @@ PetscErrorCode IceModel::massContExplicitStep() {
         //   X = vHref_old + (M - S) * dt * X / H_average.
         // where M = acab and S = shelfbaseflux for floating ice.  Solving for X we get
         //   X = vHref_old / (1.0 - (M - S) * dt * H_average))
-        vHref(i, j) = vHref(i, j) / (1.0 - (acab(i, j) - S) * dt / H_average);
+        if ((acab(i, j) - S) * dt < H_average) {
+			vHref(i, j) = vHref(i, j) / (1.0 - (acab(i, j) - S) * dt / H_average);
+		} else {
+			ierr = verbPrintf(4, grid.com,"!!! PISM_WARNING: H_average is smaller than surface mass balance at i=%d, j=%d.\n",i,j); CHKERRQ(ierr);
+		}
+
 
         const PetscScalar coverageRatio = vHref(i, j) / H_average;
 
@@ -443,7 +455,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
   }
 
   // FIXME: maybe calving should be applied *before* the redistribution part?
-  if (config.get_flag("do_eigen_calving")) {
+  if (config.get_flag("do_eigen_calving") && config.get_flag("use_ssa_velocity")) {
     ierr = stress_balance->get_principal_strain_rates(vPrinStrain1, vPrinStrain2); CHKERRQ(ierr);
     ierr = eigenCalving(); CHKERRQ(ierr);
   }
