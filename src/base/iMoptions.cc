@@ -314,7 +314,14 @@ PetscErrorCode  IceModel::setFromOptions() {
   global_attributes.set_string("title", config.get_string("run_title"));
   global_attributes.set_string("institution", config.get_string("institution"));
   global_attributes.set_string("command", pism_args_string());
-  
+
+  if (!config.get_flag("do_mass_conserve") && config.get_flag("do_skip")) {
+    ierr = verbPrintf(2, grid.com,
+                      "PISM WARNING: Both -skip and -no_mass are set.\n"
+                      "              -skip only makes sense in runs updating ice geometry.\n"); CHKERRQ(ierr);
+
+  }
+
   return 0;
 }
 

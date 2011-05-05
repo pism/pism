@@ -157,6 +157,12 @@ protected:
 
     ref_surface_n_records = PetscMin(ref_surface_n_records, buffer_size);
 
+    if (ref_surface_n_records == 0) {
+      PetscPrintf(g.com, "PISM ERROR: can't find reference surface elevation (usurf) in %s.\n",
+                  filename.c_str());
+      PISMEnd();
+    }
+
     ierr = verbPrintf(2,g.com,
                       "    reading reference surface elevation from %s ...\n",
                       filename.c_str()); CHKERRQ(ierr);

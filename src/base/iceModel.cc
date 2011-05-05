@@ -641,6 +641,21 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   if (do_mass_continuity) {
     ierr = massContExplicitStep(); CHKERRQ(ierr); // update H
     ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); // update h and mask
+
+    // Note that there are three adaptive time-stepping criteria. Two of them
+    // (using max. diffusion and 2D CFL) are limiting the mass-continuity
+    // time-step and the third (3D CFL) limits the energy and age time-steps.
+
+    // The mass-continuity time-step is usually smaller, and the skipping
+    // mechanism lets us do several mass-continuity steps for each energy step.
+
+    // When -no_mass is set, mass-continuity-related time-step restrictions are
+    // disabled, making "skipping" unnecessary.
+
+    // This is why the following two lines appear here and are executed only
+    // if do_mass_continuity == true.
+    if (do_skip == PETSC_TRUE && skipCountDown > 0)
+      skipCountDown--;
     stdout_flags += "h";
   } else {
     stdout_flags += "$";
@@ -655,9 +670,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   //! \li call additionalAtEndTimestep() to let derived classes do more
   ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
-
-  if (do_skip == PETSC_TRUE && skipCountDown > 0)
-    skipCountDown--;
 
   grid.year += dt / secpera;  // adopt the new time
   if (updateAtDepth && do_energy) { // FIXME: must be same condition as "do the temperature step"
