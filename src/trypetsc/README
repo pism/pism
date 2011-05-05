@@ -1,41 +1,24 @@
-This directory contains example PETSc source codes, some 
-copied straight from PETSc (like the Bratu example, in different PETSc
-versions).  Others are by the PISM authors but are close
-to PETSc example codes anyway.  All of these examples relate to "PETSc-
-technicalities" of relevance to PISM.
+This directory contains simple example PETSc source codes.  They are by
+the PISM authors but are close to PETSc example codes anyway.  All of these
+examples relate to "PETSc-technicalities" of relevance to PISM.
 
-The makefile documents where the various codes came from.
-
-Compiling and running these allows a user to test whether PETSc
-itself is installed properly, as a way of testing
-PETSc before building PISM.
-
-The following usage examples should work if PETSc 2.3.3 or 3.0.? or 3.1.?
-is installed properly, even if other libraries needed by PISM are not yet
-installed (e.g. NetCDF, FFTW).
-
+Compiling and running these allows a user to test whether PETSc itself is
+installed properly, as a way of testing PETSc before building PISM.
+These examples should compile under PETSc 2.3.3 or 3.0.0 or 3.1.?
+is installed properly.  These examples do not depend on other libraries needed
+by PISM, such as NetCDF and FFTW.
 
 -----------------------
-REGARDING PETSC VERSIONS
+EXAMPLE for testing PETSc installation
 -----------------------
 
-The makefile in this directory demostrates how we determine which make
-system to use.  There is at least one significant difference between the
-make system in PETSc 2.3.3 and 3.0.0.  Also incompatibilities in the API.
-If using 3.0.0 try:
-
-$ make ex5_petsc3
-$ ./ex5_petsc3
-Number of Newton iterations = 4
-
-Note poisson.c has a precompiler directive to work under either 2.3.3 
-or 3.0.0.  localVecMax.c works unmodified under either.
-
-Here is an example only for 2.3.3 or earlier:
-
-$ make ex5_petsc2  # Bratu DA/SNES example from PETSc
-$ ./ex5_petsc2
-Number of Newton iterations = 4
+$ make poisson
+$ ./poisson
+entering FormJacobianLocal() ...
+entering FormJacobianLocal() ...
+ 10 x  10 grid: number of Newton iterations = 2
+                max abs(residual) = |residual|_infty = 1.653e-11
+                max abs(u_NUM-u_EXACT) = |u_NUM-u_EXACT|_infty = 3.614e-02
 
 
 -----------------------

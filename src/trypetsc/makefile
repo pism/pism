@@ -1,25 +1,36 @@
 # this makefile is an abbreviated form of src/snes/examples/tutorials/makefile
 
-#MANSEC          = KSP SNES
+ALL: lapbasic lapdof2 poisson localVecMax ex2_printsome
 
-PETSC3_BASE := $(wildcard ${PETSC_DIR}/conf/base)
-# PETSC3_BASE is empty string if not 3.0.0
-ifeq ($(strip $(PETSC3_BASE)),) 
-  # include file which is only present in 2.3.3 and earlier
-  HAVE_PETSC3 ?= 0
-  include ${PETSC_DIR}/bmake/common/base
+# Get PETSc environment and rules:
+PETSC3_VARIABLES := $(wildcard ${PETSC_DIR}/conf/variables)
+# PETSC3_VARIABLES is empty string if not 3.1
+ifeq ($(strip $(PETSC3_VARIABLES)),) 
+  # try file which is only present in 3.0.0
+  PETSC3_BASE := $(wildcard ${PETSC_DIR}/conf/base)
+  ifeq ($(strip $(PETSC3_BASE)),) 
+    # case of 2.3.3, etc.
+    HAVE_PETSC3 ?= 0
+    include ${PETSC_DIR}/bmake/common/base
+  else
+    # include file which is only present in 3.0.0
+    HAVE_PETSC3 ?= 1
+    include ${PETSC_DIR}/conf/base
+  endif
 else
-  # include file which is only present in 3.0.0 and later
+  # include files which are only present in 3.1 and later
   HAVE_PETSC3 ?= 1
-  include ${PETSC_DIR}/conf/base
+  include ${PETSC_DIR}/conf/variables
+  include ${PETSC_DIR}/conf/rules
 endif
 
 # Compiler flags:
 CFLAGS += -DHAVE_PETSC3=${HAVE_PETSC3} -g
 
 
-# this example is very comparable to src/ksp/ksp/examples/tutorials/ex46.c
-# in the petsc-dev tree
+# these examples are related to examples in the src/ksp/ksp/examples/tutorials/ and
+# src/snes/examples/tutorials/ directories in a PETSC source release
+
 lapbasic: lapbasic.o  chkopts
 	-${CLINKER} -o lapbasic lapbasic.o ${PETSC_KSP_LIB}
 	${RM} lapbasic.o
@@ -35,14 +46,6 @@ poisson: poisson.o  chkopts
 localVecMax: localVecMax.o  chkopts
 	-${CLINKER} -o localVecMax localVecMax.o ${PETSC_KSP_LIB}
 	${RM} localVecMax.o
-
-ex5_petsc2: ex5_petsc2.o chkopts
-	-${CLINKER} -o ex5_petsc2 ex5_petsc2.o ${PETSC_SNES_LIB}
-	${RM} ex5_petsc2.o
-
-ex5_petsc3: ex5_petsc3.o chkopts
-	-${CLINKER} -o ex5_petsc3 ex5_petsc3.o ${PETSC_SNES_LIB}
-	${RM} ex5_petsc3.o
 
 ex2_printsome: ex2_printsome.o   chkopts
 	-${CLINKER} -o ex2_printsome ex2_printsome.o  ${PETSC_SYS_LIB}
