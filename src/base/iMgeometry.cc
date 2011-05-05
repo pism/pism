@@ -297,7 +297,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
       // decide whether to apply Albrecht et al 2011 subgrid-scale parameterization (-part_grid)
 
       // case where we apply -part_grid
-	  //if (do_part_grid && mask.next_to_floating_ice(i, j) && mask.next_to_grounded_ice(i, j)) {
+	  //if (do_part_grid && mask.next_to_floating_ice(i, j) && !mask.next_to_grounded_ice(i, j)) {
       if (do_part_grid && mask.next_to_floating_ice(i, j)) {
         vHref(i, j) -= divQ * dt;
 		if (vHref(i, j) < 0.0) { 
