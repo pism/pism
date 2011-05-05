@@ -416,11 +416,14 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
                                     &lambda, &esys.Enth_s); CHKERRQ(ierr);
         if (lambda < 1.0)  *vertSacrCount += 1; // count columns with lambda < 1
 
-        if (vHmelt(i,j) > 0.0) { // if there is basal water, force base enthalpy up to pressure-melting
+        // if there is subglacial water, don't allow ice base enthalpy to be below
+        // pressure-melting; that is, assume subglacial water is at the pressure-
+        // melting temperature and enforce continuity of temperature
+        if ((vHmelt(i,j) > 0.0) && (esys.Enth[0] < esys.Enth_s[0])) { 
           esys.Enth[0] = esys.Enth_s[0];
         }
 
-        bool base_is_cold = (esys.Enth[0] < esys.Enth_s[0]);
+        const bool base_is_cold = (esys.Enth[0] < esys.Enth_s[0]);
         const PetscScalar p1 = EC->getPressureFromDepth(vH(i,j) - fdz); // FIXME task #7297
         const bool k1_istemperate = EC->isTemperate(esys.Enth[1], p1); // level  z = + \Delta z
 
