@@ -107,8 +107,8 @@ target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalanc
 add_library (pismboundary
   coupler/PAConstant.cc
   coupler/PAForcing.cc
-  coupler/PADirectForcing.cc
   coupler/PASLapseRates.cc
+  coupler/PASDirectForcing.cc
   coupler/PAYearlyCycle.cc
   coupler/PCFactory.cc
   coupler/PISMOcean.cc
@@ -116,11 +116,9 @@ add_library (pismboundary
   coupler/iceModelVec2T.cc
   coupler/localMassBalance.cc
   coupler/PSExternal.cc
-  coupler/PSDirectForcing.cc
   coupler/PSElevation.cc
   coupler/PSConstantPIK.cc
   coupler/POConstantPIK.cc
-  coupler/PASDirect.cc
   )
 target_link_libraries (pismboundary pismutil)
 

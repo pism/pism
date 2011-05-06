@@ -63,8 +63,8 @@ void IceModelVec2T::set_n_records(unsigned int N) {
   n_records = N;
 }
 
-PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, const char my_short_name[],
-				     bool local, int width) {
+PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, string my_short_name,
+                                     bool local, int width) {
   PetscErrorCode ierr;
 
   if (local) {

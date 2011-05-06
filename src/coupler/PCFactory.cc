@@ -1,10 +1,28 @@
+// Copyright (C) 2010, 2011 Constantine Khroulev and Torsten Albrecht
+//
+// This file is part of PISM.
+//
+// PISM is free software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the Free Software
+// Foundation; either version 2 of the License, or (at your option) any later
+// version.
+//
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License
+// along with PISM; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
 #include "PCFactory.hh"
 #include "PSExternal.hh"
-#include "PSDirectForcing.hh"
-#include "PADirectForcing.hh"
+#include "PASDirectForcing.hh"
 #include "PSElevation.hh"
 #include "pism_const.hh"
 #include "PASLapseRates.hh"
+#include "PASDirectForcing.hh"
 
 // Atmosphere
 static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
@@ -29,7 +47,7 @@ static void create_pa_forcing(IceGrid& g, const NCConfigVariable& conf, PISMAtmo
 
 void PAFactory::add_standard_types() {
   add_model("constant",          &create_pa_constant);
-  add_model("given",          &create_pa_given);
+  add_model("given",             &create_pa_given);
   add_model("searise_greenland", &create_pa_searise_greenland);
   set_default("constant");
 
@@ -52,11 +70,11 @@ static void create_po_forcing(IceGrid& g, const NCConfigVariable& conf, PISMOcea
 }
 
 void POFactory::add_standard_types() {
-  add_model("constant",     &create_po_constant);
-  add_model("pik",     &create_po_pik);
+  add_model("constant", &create_po_constant);
+  add_model("pik",      &create_po_pik);
   set_default("constant");
 
-  add_modifier("forcing",   &create_po_forcing);
+  add_modifier("forcing", &create_po_forcing);
 }
 
 // Surface
@@ -93,14 +111,14 @@ static void create_ps_given(IceGrid& g, const NCConfigVariable& conf, PISMSurfac
 }
 
 void PSFactory::add_standard_types() {
-  add_model("constant",     &create_ps_constant);
-  add_model("simple",       &create_ps_simple);
-  add_model("pdd",          &create_ps_temperatureindex); 
-  add_model("given",        &create_ps_given); 
-  add_model("pik", &create_ps_constant_pik);
-  add_model("elevation", &create_ps_elevation);
+  add_model("constant",      &create_ps_constant);
+  add_model("simple",        &create_ps_simple);
+  add_model("pdd",           &create_ps_temperatureindex); 
+  add_model("given",         &create_ps_given); 
+  add_model("pik",           &create_ps_constant_pik);
+  add_model("elevation",     &create_ps_elevation);
   set_default("simple");
 
-  add_modifier("forcing",   &create_ps_forcing);
+  add_modifier("forcing",    &create_ps_forcing);
   add_modifier("lapse_rate", &create_ps_lapse_rates);
 }
