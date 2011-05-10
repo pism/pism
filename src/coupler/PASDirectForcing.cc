@@ -16,6 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// Implementation of surface and atmosphere models reading spatially-variable
+// time-dependent B.C. data from a file (-surface given and -atmosphere given).
+
 #include "PASDirectForcing.hh"
 
 PetscErrorCode PSDirectForcing::init(PISMVars &) {

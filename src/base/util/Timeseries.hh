@@ -83,6 +83,7 @@ public:
   PetscErrorCode write(const char filename[]);
   double operator()(double time);
   double operator[](unsigned int j) const;
+  double average(double t, double dt, unsigned int N);
   PetscErrorCode append(double time, double value);
   int length();
   PetscErrorCode set_attr(string name, double value);

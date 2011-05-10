@@ -30,7 +30,7 @@
 /////                      to the PISMSurfaceModel below
 
 //! A purely virtual class defining the interface of a PISM Atmosphere Model.
-class PISMAtmosphereModel : virtual public PISMComponent_TS {
+class PISMAtmosphereModel : public PISMComponent_TS {
 public:
   PISMAtmosphereModel(IceGrid &g, const NCConfigVariable &conf)
     : PISMComponent_TS(g, conf) {};
@@ -61,7 +61,7 @@ public:
 class PAConstant : public PISMAtmosphereModel {
 public:
   PAConstant(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), PISMAtmosphereModel(g, conf) {};
+    : PISMAtmosphereModel(g, conf) {};
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
   { t = t_years; dt = dt_years; return 0; } // do nothing
@@ -89,7 +89,7 @@ protected:
 class PAYearlyCycle : public PISMAtmosphereModel {
 public:
   PAYearlyCycle(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), PISMAtmosphereModel(g, conf) {}
+    : PISMAtmosphereModel(g, conf) {}
   virtual PetscErrorCode init(PISMVars &vars);
   virtual void add_vars_to_output(string keyword, set<string> &result);
   virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype);
@@ -119,7 +119,7 @@ protected:
 class PA_SeaRISE_Greenland : public PAYearlyCycle {
 public:
   PA_SeaRISE_Greenland(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), PAYearlyCycle(g, conf)
+    : PAYearlyCycle(g, conf)
   {
     paleo_precipitation_correction = false;
     dTforcing = NULL;
@@ -138,32 +138,55 @@ protected:
   IceModelVec2S *lat, *lon, *surfelev;
 };
 
-///// PAModifier: classes which modify outputs of PISMAtmosphereModel and its derived classes
-
-class PAModifier : public PISMAtmosphereModel {
+class PAModifier : public Modifier<PISMAtmosphereModel>
+{
 public:
-  PAModifier(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel *input)
-    : PISMComponent_TS(g, conf), PISMAtmosphereModel(g, conf), input_atmosphere_model(input)
-  {}
+  PAModifier(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
+    : Modifier<PISMAtmosphereModel>(g, conf, in) {}
+  virtual ~PAModifier() {}
 
-  virtual ~PAModifier()
-  { delete input_atmosphere_model; }
-
-  virtual void add_vars_to_output(string key, set<string> &result) {
-    if (input_atmosphere_model != NULL)  input_atmosphere_model->add_vars_to_output(key, result);
+  virtual PetscErrorCode mean_precip(IceModelVec2S &result)
+  {
+    PetscErrorCode ierr = input_model->mean_precip(result); CHKERRQ(ierr);
+    return 0;
   }
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict)
-  { input_atmosphere_model->get_diagnostics(dict); }
+  virtual PetscErrorCode mean_annual_temp(IceModelVec2S &result)
+  {
+    PetscErrorCode ierr = input_model->mean_annual_temp(result); CHKERRQ(ierr);
+    return 0;
+  }
 
-protected:
-  PISMAtmosphereModel *input_atmosphere_model;
+  virtual PetscErrorCode begin_pointwise_access()
+  {
+    PetscErrorCode ierr = input_model->begin_pointwise_access(); CHKERRQ(ierr);
+    return 0;
+  }
+
+  virtual PetscErrorCode end_pointwise_access()
+  {
+    PetscErrorCode ierr = input_model->end_pointwise_access(); CHKERRQ(ierr);
+    return 0;
+  }
+  
+  virtual PetscErrorCode temp_time_series(int i, int j, int N,
+					  PetscReal *ts, PetscReal *values)
+  {
+    PetscErrorCode ierr = input_model->temp_time_series(i, j, N, ts, values); CHKERRQ(ierr);
+    return 0;
+  }
+
+  virtual PetscErrorCode temp_snapshot(IceModelVec2S &result)
+  {
+    PetscErrorCode ierr = input_model->temp_snapshot(result); CHKERRQ(ierr);
+    return 0;
+  }
 };
 
 //! \brief A class implementing an "atmosphere modifier" model applying forcing data
 //! (anomalies, temperature offsets...) to results of another PISM atmosphere model.
 /*!
-Processes command-line options -dTforcing, -anomaly_temp, -anomaly_precip.
+Processes command-line options -anomaly_temp, -anomaly_precip.
 
 The temperature anomaly should be interpreted as a change to the \e air temperature,
 for example at 2m.  An underlying PISMSurfaceModel is in charge of producing an
@@ -189,8 +212,6 @@ public:
 					  PetscReal *ts, PetscReal *values);
   virtual PetscErrorCode temp_snapshot(IceModelVec2S &result);
 protected:
-  Timeseries *dTforcing;
-  DiagnosticTimeseries *delta_T; //!< for diagnostic time series output (-ts_vars?)
   IceModelVec2T *temp_anomaly, *precip_anomaly;
   NCSpatialVariable airtemp_var;
 };

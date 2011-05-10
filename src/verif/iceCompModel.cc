@@ -72,8 +72,6 @@ PetscErrorCode IceCompModel::createVecs() {
   // PSDummy is used):
   ierr = artm.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
   ierr = acab.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
-  ierr = variables.add(acab); CHKERRQ(ierr); 
-  ierr = variables.add(artm); CHKERRQ(ierr); 
 
   if (testname == 'V') {
     ierr = bc_mask.create(grid, "bc_mask", false); CHKERRQ(ierr);

@@ -17,7 +17,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// Implementation of the constant-in-time ocean model.
+
 #include "PISMOcean.hh"
+
 POConstant::POConstant(IceGrid &g, const NCConfigVariable &conf)
   : PISMOceanModel(g, conf) {
 
@@ -136,77 +139,6 @@ PetscErrorCode POConstant::write_variables(set<string> vars, string filename) {
     ierr = shelf_base_mass_flux(tmp); CHKERRQ(ierr);
     ierr = tmp.write(filename.c_str()); CHKERRQ(ierr);
   }
-
-  return 0;
-}
-
-///// POForcing
-
-PetscErrorCode POForcing::init(PISMVars &vars) {
-  PetscErrorCode ierr;
-  bool optSet;
-  string dSLfile;
-
-  ierr = input_model->init(vars); CHKERRQ(ierr);
-
-  ierr = verbPrintf(2, grid.com, "* Initializing sea level forcing...\n"); CHKERRQ(ierr);
-
-  ierr = PetscOptionsBegin(grid.com, "", "Sea level forcing options", ""); CHKERRQ(ierr);
-  {
-    ierr = PISMOptionsString("-dSLforcing", "Sea level forcing file",
-			     dSLfile, optSet); CHKERRQ(ierr);
-  }
-  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
-
-  if (optSet == PETSC_TRUE) {
-
-    dSLforcing = new Timeseries(grid.com, grid.rank, "delta_sea_level", "t");
-    ierr = dSLforcing->set_units("m", ""); CHKERRQ(ierr);
-    ierr = dSLforcing->set_dimension_units("years", ""); CHKERRQ(ierr);
-    ierr = dSLforcing->set_attr("long_name", "sea level elevation offsets"); CHKERRQ(ierr);
-
-    ierr = verbPrintf(2, grid.com, 
-		      "  reading delta sea level data from forcing file %s ...\n", 
-		      dSLfile.c_str()); CHKERRQ(ierr);
-    ierr = dSLforcing->read(dSLfile.c_str()); CHKERRQ(ierr);
-
-    delta_sea_level = new DiagnosticTimeseries(grid.com, grid.rank, "delta_sea_level", "t");
-    ierr = delta_sea_level->set_units("m", ""); CHKERRQ(ierr);
-    ierr = delta_sea_level->set_dimension_units("years", ""); CHKERRQ(ierr);
-    ierr = delta_sea_level->set_attr("long_name", "sea level elevation offsets"); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2, grid.com, "NOTE: -dSLforcing option is not set. Forcing is inactive...\n"); CHKERRQ(ierr);
-    PISMEnd();
-  }
-
-  return 0;
-}
-
-PetscErrorCode POForcing::sea_level_elevation(PetscReal &result) {
-  PetscErrorCode ierr;
-  double T = t + 0.5 * dt;
-
-  ierr = input_model->sea_level_elevation(result); CHKERRQ(ierr);
-
-  if (dSLforcing != NULL)
-    result += (*dSLforcing)(T);
-
-  return 0;
-}
-
-
-PetscErrorCode POForcing::shelf_base_temperature(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  ierr = input_model->shelf_base_temperature(result); CHKERRQ(ierr);
-
-  return 0;
-}
-
-PetscErrorCode POForcing::shelf_base_mass_flux(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-
-  ierr = input_model->shelf_base_mass_flux(result); CHKERRQ(ierr);
 
   return 0;
 }

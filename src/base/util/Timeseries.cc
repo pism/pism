@@ -155,6 +155,24 @@ double Timeseries::operator[](unsigned int j) const {
   return values[j];
 }
 
+//! \brief Compute an average of a time-series over interval (t,t+dt) using
+//! trapezoidal rule with N sub-intervals.
+double Timeseries::average(double t, double dt, unsigned int N) {
+  vector<double> V(N+1);
+ 
+  for (unsigned int i = 0; i < N+1; ++i) {
+    double t_i = t + (dt / N) * i;
+    V[i] = (*this)(t_i);
+  }
+
+  double sum = 0;
+  for (unsigned int i = 0; i < N; ++i) {
+    sum += V[i] + V[i+1];
+  }
+
+  return sum / (2*N);
+}
+
 //! Append a pair (t,v) to the timeseries.
 PetscErrorCode Timeseries::append(double t, double v) {
   time.push_back(t);

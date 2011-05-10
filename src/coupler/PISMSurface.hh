@@ -25,7 +25,7 @@
 #include "PISMAtmosphere.hh"
 #include "localMassBalance.hh"
 
-class PISMSurfaceModel : virtual public PISMComponent_TS {
+class PISMSurfaceModel : public PISMComponent_TS {
 public:
   PISMSurfaceModel(IceGrid &g, const NCConfigVariable &conf)
     : PISMComponent_TS(g, conf)
@@ -54,14 +54,14 @@ protected:
 
 //! A do-nothing (dummy) surface model. <b> Please avoid using it for real modeling! </b>
 /*!
-This dummy class is used, for example, when an internal formula generates the
-surface mass balance.  A specific case is the manufactured solutions used in
-verification.
+  This dummy class is used, for example, when an internal (with respect to
+  IceModel) formula generates the surface mass balance. A specific case is the
+  manufactured solutions used in verification.
 */
 class PSDummy : public PISMSurfaceModel {
 public:
   PSDummy(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf)
+    : PISMSurfaceModel(g, conf)
   {};
 
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input)
@@ -102,7 +102,7 @@ energy scheme for the ice fluid is exactly the 2m air temperature.
 class PSSimple : public PISMSurfaceModel {
 public:
   PSSimple(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf) {};
+    : PISMSurfaceModel(g, conf) {};
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
   {
@@ -143,7 +143,7 @@ surface processes model.
 class PSConstant : public PISMSurfaceModel {
 public:
   PSConstant(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf)
+    : PISMSurfaceModel(g, conf)
   {};
 
   virtual PetscErrorCode init(PISMVars &vars);
@@ -223,7 +223,6 @@ protected:
   PetscReal next_pdd_update_year;
 };
 
-
 //! \brief A base class for mechanisms which modify the results of a surface
 //! processes model (an instance of PISMSurfaceModel) before they reach the ice.
 /*! 
@@ -235,37 +234,54 @@ generates surface mass balance and ice upper surface temperature, then instances
 of this PSModifier class can be used to modify the surface mass balance and ice
 upper surface temperature "just before" it gets to the ice itself.
 */
-class PSModifier : public PISMSurfaceModel {
+class PSModifier : public Modifier<PISMSurfaceModel>
+{
 public:
-  PSModifier(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel *input)
-    : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf), input_surface_model(input)
-  {}
+  PSModifier(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
+    : Modifier<PISMSurfaceModel>(g, conf, in) {}
+  virtual ~PSModifier() {}
 
-  virtual ~PSModifier()
-  { delete input_surface_model; }
-
-  virtual void attach_atmosphere_model(PISMAtmosphereModel *input) {
-    input_surface_model->attach_atmosphere_model(input);
+  virtual void attach_atmosphere_model(PISMAtmosphereModel *in) {
+    input_model->attach_atmosphere_model(in);
   }
 
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict)
-  { input_surface_model->get_diagnostics(dict); }
-
-  virtual void add_vars_to_output(string key, set<string> &result) {
-    if (input_surface_model != NULL)
-      input_surface_model->add_vars_to_output(key, result);
+  virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result)
+  {
+    PetscErrorCode ierr = input_model->ice_surface_mass_flux(result); CHKERRQ(ierr);
+    return 0;
   }
-protected:
-  PISMSurfaceModel *input_surface_model;
+
+  virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result)
+  {
+    PetscErrorCode ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
+    return 0;
+  }
+
+  virtual PetscErrorCode ice_surface_liquid_water_fraction(IceModelVec2S &result)
+  {
+    PetscErrorCode ierr = input_model->ice_surface_liquid_water_fraction(result); CHKERRQ(ierr);
+    return 0;
+  }
+
+  virtual PetscErrorCode mass_held_in_surface_layer(IceModelVec2S &result)
+  {
+    PetscErrorCode ierr = input_model->mass_held_in_surface_layer(result); CHKERRQ(ierr);
+    return 0;
+  }
+
+  virtual PetscErrorCode surface_layer_thickness(IceModelVec2S &result)
+  {
+    PetscErrorCode ierr = input_model->surface_layer_thickness(result); CHKERRQ(ierr);
+    return 0;
+  }
 };
-
 
 //! A class implementing a modified surface mass balance which forces
 //! ice thickness to a given target by the end of the run.
 class PSForceThickness : public PSModifier {
 public:
   PSForceThickness(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel *input)
-    : PISMComponent_TS(g, conf), PSModifier(g, conf, input)
+    : PSModifier(g, conf, input)
   {
     ice_thickness = NULL;
     alpha = config.get("force_to_thickness_alpha");
@@ -274,12 +290,6 @@ public:
 
   virtual ~PSForceThickness() {}
   PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
-  {
-    t = t_years; dt = dt_years;
-    PetscErrorCode ierr = input_surface_model->update(t_years, dt_years); CHKERRQ(ierr);
-    return 0;
-  }
   virtual void attach_atmosphere_model(PISMAtmosphereModel *input);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
@@ -302,7 +312,7 @@ protected:
 class PSConstantPIK : public PISMSurfaceModel {
 public:
   PSConstantPIK(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf)
+    : PISMSurfaceModel(g, conf)
   {};
 
   virtual PetscErrorCode init(PISMVars &vars);

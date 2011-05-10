@@ -16,6 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// Implementation of "surface", "atmosphere" and "ocean" model factories: C++
+// classes processing -surface, -atmosphere and -ocean command-line options,
+// creating corresponding models and stringing them together to get requested
+// data-flow.
+
 #include "PCFactory.hh"
 #include "PSExternal.hh"
 #include "PASDirectForcing.hh"
@@ -23,6 +28,7 @@
 #include "pism_const.hh"
 #include "PASLapseRates.hh"
 #include "PASDirectForcing.hh"
+#include "PScalarForcing.hh"
 
 // Atmosphere
 static void create_pa_constant(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel* &result) {
@@ -37,12 +43,19 @@ static void create_pa_searise_greenland(IceGrid& g, const NCConfigVariable& conf
   result = new PA_SeaRISE_Greenland(g, conf);
 }
 
-static void create_pa_lapse_rates(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel *input, PAModifier* &result) {
+static void create_pa_lapse_rates(IceGrid& g, const NCConfigVariable& conf,
+                                  PISMAtmosphereModel *input, PAModifier* &result) {
   result = new PALapseRates(g, conf, input);
 }
 
-static void create_pa_forcing(IceGrid& g, const NCConfigVariable& conf, PISMAtmosphereModel *input, PAModifier* &result) {
+static void create_pa_anomalies(IceGrid& g, const NCConfigVariable& conf,
+                                PISMAtmosphereModel *input, PAModifier* &result) {
   result = new PAForcing(g, conf, input);
+}
+
+static void create_pa_dTforcing(IceGrid& g, const NCConfigVariable& conf,
+                                PISMAtmosphereModel *input, PAModifier* &result) {
+  result = new PAdTforcing(g, conf, input);
 }
 
 void PAFactory::add_standard_types() {
@@ -51,7 +64,8 @@ void PAFactory::add_standard_types() {
   add_model("searise_greenland", &create_pa_searise_greenland);
   set_default("constant");
 
-  add_modifier("forcing",    &create_pa_forcing);
+  add_modifier("anomalies",    &create_pa_anomalies);
+  add_modifier("dTforcing",    &create_pa_dTforcing);
   add_modifier("lapse_rate", &create_pa_lapse_rates);
 }
 
@@ -66,7 +80,7 @@ static void create_po_pik(IceGrid& g, const NCConfigVariable& conf, PISMOceanMod
 }
 
 static void create_po_forcing(IceGrid& g, const NCConfigVariable& conf, PISMOceanModel *input, POModifier* &result) {
-  result = new POForcing(g, conf, input);
+  result = new POdSLforcing(g, conf, input);
 }
 
 void POFactory::add_standard_types() {
@@ -74,7 +88,7 @@ void POFactory::add_standard_types() {
   add_model("pik",      &create_po_pik);
   set_default("constant");
 
-  add_modifier("forcing", &create_po_forcing);
+  add_modifier("dSLforcing", &create_po_forcing);
 }
 
 // Surface
@@ -98,16 +112,23 @@ static void create_ps_elevation(IceGrid& g, const NCConfigVariable& conf, PISMSu
   result = new PSElevation(g, conf);
 }
 
-static void create_ps_forcing(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel *input, PSModifier* &result) {
+static void create_ps_forcing(IceGrid& g, const NCConfigVariable& conf,
+                              PISMSurfaceModel *input, PSModifier* &result) {
   result = new PSForceThickness(g, conf, input);
 }
 
-static void create_ps_lapse_rates(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel *input, PSModifier* &result) {
+static void create_ps_lapse_rates(IceGrid& g, const NCConfigVariable& conf,
+                                  PISMSurfaceModel *input, PSModifier* &result) {
   result = new PSLapseRates(g, conf, input);
 }
 
 static void create_ps_given(IceGrid& g, const NCConfigVariable& conf, PISMSurfaceModel* &result) {
   result = new PSDirectForcing(g, conf);
+}
+
+static void create_ps_dTforcing(IceGrid& g, const NCConfigVariable& conf,
+                                PISMSurfaceModel *input, PSModifier* &result) {
+  result = new PSdTforcing(g, conf, input);
 }
 
 void PSFactory::add_standard_types() {
@@ -120,5 +141,6 @@ void PSFactory::add_standard_types() {
   set_default("simple");
 
   add_modifier("forcing",    &create_ps_forcing);
+  add_modifier("dTforcing",  &create_ps_dTforcing);
   add_modifier("lapse_rate", &create_ps_lapse_rates);
 }

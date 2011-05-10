@@ -16,18 +16,22 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// Implementation of lapse rate corrections for
+// * ice-surface temperature and ice-surface mass balance (-surface ...,lapse_rate) and
+// * near-surface air temperature and precipitation (-atmosphere ...,lapse_rate).
+
 #ifndef _PASLAPSERATES_H_
 #define _PASLAPSERATES_H_
 
-#include "PISMAtmosphere.hh"
 #include "PISMSurface.hh"
+#include "PISMAtmosphere.hh"
 
-template <class Model, class Modifier>
-class PLapseRates : public Modifier
+template <class Model, class Mod>
+class PLapseRates : public Mod
 {
 public:
   PLapseRates(IceGrid &g, const NCConfigVariable &conf, Model* in)
-    : PISMComponent_TS(g, conf), Modifier(g, conf, in), input(in)
+    : Mod(g, conf, in)
   {
     surface = thk = NULL;
     temp_lapse_rate = 0;
@@ -39,8 +43,8 @@ public:
   {
     PetscErrorCode ierr;
 
-    PetscReal &m_t = Modifier::t;
-    PetscReal &m_dt = Modifier::dt;
+    PetscReal &m_t = Mod::t;
+    PetscReal &m_dt = Mod::dt;
 
     // "Periodize" the climate:
     t_years = my_mod(t_years);
@@ -52,7 +56,7 @@ public:
     m_t = t_years;
     m_dt = dt_years;
 
-    ierr = input->update(t_years, dt_years); CHKERRQ(ierr);
+    ierr = Mod::input_model->update(t_years, dt_years); CHKERRQ(ierr);
 
     ierr = reference_surface.update(m_t, m_dt); CHKERRQ(ierr);
 
@@ -72,7 +76,7 @@ public:
     // "Periodize" the climate:
     t_years = my_mod(t_years);
 
-    ierr = input->max_timestep(t_years, dt_years); CHKERRQ(ierr);
+    ierr = Mod::input_model->max_timestep(t_years, dt_years); CHKERRQ(ierr);
 
     max_dt = reference_surface.max_timestep(t_years);
 
@@ -91,32 +95,23 @@ public:
     return 0;
   }
 
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
-    PetscErrorCode ierr = input->define_variables(vars, nc, nctype); CHKERRQ(ierr);
-    return 0;
-  }
-
-  virtual PetscErrorCode write_variables(set<string> vars, string filename) {
-    PetscErrorCode ierr = input->write_variables(vars, filename); CHKERRQ(ierr);
-    return 0;
-  }
-
 protected:
   IceModelVec2T reference_surface;
   IceModelVec2S *surface, *thk;
   PetscReal bc_period, bc_reference_year, temp_lapse_rate;
   bool enable_time_averaging;
-  Model *input;
 
-  virtual PetscErrorCode common_init(PISMVars &vars)
+  virtual PetscErrorCode init_internal(PISMVars &vars)
   {
     PetscErrorCode ierr;
     string filename;
     bool bc_file_set, bc_period_set, bc_ref_year_set, temp_lapse_rate_set;
 
-    IceGrid &g = Modifier::grid;
+    IceGrid &g = Mod::grid;
 
     enable_time_averaging = false;
+    bc_period = 0;
+    bc_reference_year = 0;
 
     ierr = PetscOptionsBegin(g.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
     {
@@ -139,15 +134,7 @@ protected:
       PISMEnd();
     }
 
-    if (bc_period_set == false) {
-      bc_period = 0;
-    }
-
-    if (bc_ref_year_set == false) {
-      bc_reference_year = 0;
-    }
-
-    unsigned int buffer_size = (unsigned int) Modifier::config.get("climate_forcing_buffer_size"),
+    unsigned int buffer_size = (unsigned int) Mod::config.get("climate_forcing_buffer_size"),
       ref_surface_n_records = 1;
 
     NCTool nc(g.com, g.rank);
@@ -197,7 +184,7 @@ protected:
     ierr = reference_surface.begin_access(); CHKERRQ(ierr);
     ierr = result.begin_access(); CHKERRQ(ierr);
     
-    IceGrid &g = Modifier::grid;
+    IceGrid &g = Mod::grid;
 
     for (PetscInt   i = g.xs; i < g.xs + g.xm; ++i) {
       for (PetscInt j = g.ys; j < g.ys + g.ym; ++j) {
@@ -222,14 +209,15 @@ protected:
     PetscReal delta = in - bc_reference_year;
 
     // compute delta mod bc_period:
-    return delta - floor(delta / bc_period) * bc_period;}
+    return delta - floor(delta / bc_period) * bc_period;
+  }
 };
 
 class PSLapseRates : public PLapseRates<PISMSurfaceModel,PSModifier>
 {
 public:
   PSLapseRates(IceGrid &g, const NCConfigVariable &conf, PISMSurfaceModel* in)
-    : PISMComponent_TS(g, conf), PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in)
+    : PLapseRates<PISMSurfaceModel,PSModifier>(g, conf, in)
   {
     smb_lapse_rate = 0;
   }
@@ -239,9 +227,6 @@ public:
   virtual PetscErrorCode init(PISMVars &vars);
   virtual PetscErrorCode ice_surface_mass_flux(IceModelVec2S &result);
   virtual PetscErrorCode ice_surface_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode ice_surface_liquid_water_fraction(IceModelVec2S &result);
-  virtual PetscErrorCode mass_held_in_surface_layer(IceModelVec2S &result);
-  virtual PetscErrorCode surface_layer_thickness(IceModelVec2S &result);
 protected:
   PetscReal smb_lapse_rate;
 };
@@ -250,7 +235,7 @@ class PALapseRates : public PLapseRates<PISMAtmosphereModel,PAModifier>
 {
 public:
   PALapseRates(IceGrid &g, const NCConfigVariable &conf, PISMAtmosphereModel* in)
-    : PISMComponent_TS(g, conf), PLapseRates<PISMAtmosphereModel,PAModifier>(g, conf, in)
+    : PLapseRates<PISMAtmosphereModel,PAModifier>(g, conf, in)
   {
     precip_lapse_rate = 0;
   }

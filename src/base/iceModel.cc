@@ -168,7 +168,7 @@ PetscErrorCode IceModel::createVecs() {
   if (config.get_flag("do_age")) {
     ierr = tau3.create(grid, "age", true, WIDE_STENCIL); CHKERRQ(ierr);
     // PROPOSED standard_name = land_ice_age
-    ierr = tau3.set_attrs("diagnostic", "age of ice",
+    ierr = tau3.set_attrs("model_state", "age of ice",
                           "s", ""); CHKERRQ(ierr);
     ierr = tau3.set_glaciological_units("years");
     tau3.write_in_glaciological_units = true;
@@ -415,8 +415,7 @@ if (config.get_flag("dirichlet_bc") == true) {
   ierr = acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
   acab.write_in_glaciological_units = true;
   acab.set_attr("comment", "positive values correspond to ice gain");
-  // do not add; boundary models are in charge here
-  // ierr = variables.add(acab); CHKERRQ(ierr);
+  ierr = variables.add(acab); CHKERRQ(ierr);
 
   // annual mean air temperature at "ice surface", at level below all firn
   //   processes (e.g. "10 m" or ice temperatures)
@@ -427,8 +426,7 @@ if (config.get_flag("dirichlet_bc") == true) {
             "K", 
             "");  // PROPOSED CF standard_name = land_ice_surface_temperature_below_firn
   CHKERRQ(ierr);
-  // do not add; boundary models are in charge here
-  // ierr = variables.add(artm); CHKERRQ(ierr);
+  ierr = variables.add(artm); CHKERRQ(ierr);
 
   ierr = liqfrac_surface.create(grid, "liqfrac_surface", false); CHKERRQ(ierr);
   ierr = liqfrac_surface.set_attrs("climate_from_PISMSurfaceModel",

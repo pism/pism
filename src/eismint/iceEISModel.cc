@@ -40,8 +40,6 @@ PetscErrorCode IceEISModel::createVecs() {
   // PSDummy is used):
   ierr = artm.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
   ierr = acab.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
-  ierr = variables.add(acab); CHKERRQ(ierr); 
-  ierr = variables.add(artm); CHKERRQ(ierr); 
 
   return 0;
 }

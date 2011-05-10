@@ -45,7 +45,7 @@ protected:
 class PSExternal : public PISMSurfaceModel {
 public:
   PSExternal(IceGrid &g, const NCConfigVariable &conf, MPI_Comm my_inter_comm)
-    : PISMComponent_TS(g, conf), PISMSurfaceModel(g, conf)
+    : PISMSurfaceModel(g, conf)
   {
     update_interval = 1;        // years
     ebm_update_interval = 0.5 * update_interval;
@@ -97,7 +97,7 @@ class PSExternal_ALR : public PSExternal
 {
 public:
   PSExternal_ALR(IceGrid &g, const NCConfigVariable &conf, MPI_Comm my_inter_comm)
-    : PISMComponent_TS(g, conf), PSExternal(g, conf, my_inter_comm)
+    : PSExternal(g, conf, my_inter_comm)
   {
     gamma = 0;                  // essentially disables the lapse rate correction
   }

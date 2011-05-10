@@ -73,12 +73,8 @@ PetscErrorCode IceModelVec2T::create(IceGrid &my_grid, string my_short_name,
 
   ierr = IceModelVec2S::create(my_grid, my_short_name, false, width); CHKERRQ(ierr);
 
-  // create the 3D DA:
-  ierr = DACreate3d(my_grid.com, DA_YZPERIODIC, DA_STENCIL_STAR,
-		    n_records, grid->My, grid->Mx,
-		    1,         grid->Ny, grid->Nx,
-		    1, 1,	// dof and stencil width
-                    PETSC_NULL, PETSC_NULL, PETSC_NULL, &da3); CHKERRQ(ierr);
+  // create the DA:
+  ierr = create_2d_da(da3, n_records, 1); CHKERRQ(ierr);
 
   // allocate the 3D Vec:
   ierr = DACreateGlobalVector(da3, &v3); CHKERRQ(ierr);
@@ -111,19 +107,26 @@ PetscErrorCode IceModelVec2T::get_array3(PetscScalar*** &a3) {
 }
 
 PetscErrorCode IceModelVec2T::begin_access() {
-  PetscErrorCode ierr = IceModelVec2S::begin_access(); CHKERRQ(ierr);
-  if (array3 == NULL) {
-    ierr = DAVecGetArray(da3, v3, &array3); CHKERRQ(ierr);
+  PetscErrorCode ierr;
+  if (access_counter == 0) {
+    ierr = DAVecGetArrayDOF(da3, v3, &array3); CHKERRQ(ierr);
   }
+
+  // this call will increment the access_counter
+  ierr = IceModelVec2S::begin_access(); CHKERRQ(ierr);
+  
   return 0;
 }
 
 PetscErrorCode IceModelVec2T::end_access() {
+  // this call will decrement the access_counter
   PetscErrorCode ierr = IceModelVec2S::end_access(); CHKERRQ(ierr);
-  if (array3 != NULL) {
-    ierr = DAVecRestoreArray(da3, v3, &array3); CHKERRQ(ierr);
+
+  if (access_counter == 0) {
+    ierr = DAVecRestoreArrayDOF(da3, v3, &array3); CHKERRQ(ierr);
     array3 = PETSC_NULL;
   }
+
   return 0;
 }
 

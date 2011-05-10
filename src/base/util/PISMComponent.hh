@@ -168,4 +168,64 @@ protected:
     dt;				//!< Last time-step used as an argument for the update() method.
 };
 
+//! \brief This template allows creating PISMComponent_TS (PISMAtmosphereModel,
+//! PISMSurfaceModel and PISMOceanModel) modifiers with minimum effort.
+/*!
+ * A specialization of this template will implement all important methods
+ * except init(). This means that to create a complete modifier, one needs to
+ * re-implement interesting methods, without worrying about preserving
+ * modifier's "transparency".
+ */
+template<class Model>
+class Modifier : public Model
+{
+public:
+  Modifier(IceGrid &g, const NCConfigVariable &conf, Model* in)
+    : Model(g, conf), input_model(in) {}
+  virtual ~Modifier()
+  {
+    delete input_model;
+  }
+
+  virtual void add_vars_to_output(string keyword, set<string> &result)
+  {
+    input_model->add_vars_to_output(keyword, result);
+  }
+
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc,
+                                          nc_type nctype)
+  {
+    PetscErrorCode ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    return 0;
+  }
+
+  virtual PetscErrorCode write_variables(set<string> vars, string filename)
+  {
+    PetscErrorCode ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
+    return 0;
+  }
+
+  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict)
+  {
+    input_model->get_diagnostics(dict);
+  }
+
+  virtual PetscErrorCode max_timestep(PetscReal t_years, PetscReal &dt_years)
+  {
+    PetscErrorCode ierr = input_model->max_timestep(t_years, dt_years); CHKERRQ(ierr);
+    return 0;
+  }
+
+  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
+  {
+    Model::t = t_years;
+    Model::dt = dt_years;
+    PetscErrorCode ierr = input_model->update(t_years, dt_years); CHKERRQ(ierr);
+    return 0;
+  }
+
+protected:
+  Model *input_model;
+};
+
 #endif // __PISMComponent_hh

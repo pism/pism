@@ -16,6 +16,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// Implementation of lapse rate corrections for
+// * ice-surface temperature and ice-surface mass balance (-surface ...,lapse_rate) and
+// * near-surface air temperature and precipitation (-atmosphere ...,lapse_rate).
+
 #include "PASLapseRates.hh"
 
 /// Surface
@@ -24,12 +28,12 @@ PetscErrorCode PSLapseRates::init(PISMVars &vars) {
   PetscErrorCode ierr;
   bool smb_lapse_rate_set;
 
-  ierr = input->init(vars); CHKERRQ(ierr);
+  ierr = input_model->init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
                     "  [using temperature and mass balance lapse corrections]\n"); CHKERRQ(ierr);
 
-  ierr = common_init(vars); CHKERRQ(ierr);
+  ierr = init_internal(vars); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
   {
@@ -53,33 +57,15 @@ PetscErrorCode PSLapseRates::init(PISMVars &vars) {
 
 PetscErrorCode PSLapseRates::ice_surface_mass_flux(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = input->ice_surface_mass_flux(result); CHKERRQ(ierr);
+  ierr = input_model->ice_surface_mass_flux(result); CHKERRQ(ierr);
   ierr = lapse_rate_correction(result, smb_lapse_rate); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PSLapseRates::ice_surface_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = input->ice_surface_temperature(result); CHKERRQ(ierr);
+  ierr = input_model->ice_surface_temperature(result); CHKERRQ(ierr);
   ierr = lapse_rate_correction(result, temp_lapse_rate); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode PSLapseRates::ice_surface_liquid_water_fraction(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = input->ice_surface_liquid_water_fraction(result); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode PSLapseRates::mass_held_in_surface_layer(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = input->mass_held_in_surface_layer(result); CHKERRQ(ierr);
-  return 0;
-}
-
-PetscErrorCode PSLapseRates::surface_layer_thickness(IceModelVec2S &result) {
-  PetscErrorCode ierr;
-  ierr = input->surface_layer_thickness(result); CHKERRQ(ierr);
   return 0;
 }
 
@@ -89,12 +75,12 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
   PetscErrorCode ierr;
   bool precip_lapse_rate_set;
 
-  ierr = input->init(vars); CHKERRQ(ierr);
+  ierr = input_model->init(vars); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com,
                     "  [using air temperature and precipitation lapse corrections]\n"); CHKERRQ(ierr);
 
-  ierr = common_init(vars); CHKERRQ(ierr);
+  ierr = init_internal(vars); CHKERRQ(ierr);
 
   ierr = PetscOptionsBegin(grid.com, "", "Lapse rate options", ""); CHKERRQ(ierr);
   {
@@ -119,14 +105,14 @@ PetscErrorCode PALapseRates::init(PISMVars &vars) {
 
 PetscErrorCode PALapseRates::mean_precip(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = input->mean_precip(result); CHKERRQ(ierr);
+  ierr = input_model->mean_precip(result); CHKERRQ(ierr);
   ierr = lapse_rate_correction(result, precip_lapse_rate); CHKERRQ(ierr);
   return 0;
 }
 
 PetscErrorCode PALapseRates::mean_annual_temp(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = input->mean_annual_temp(result); CHKERRQ(ierr);
+  ierr = input_model->mean_annual_temp(result); CHKERRQ(ierr);
   ierr = lapse_rate_correction(result, temp_lapse_rate); CHKERRQ(ierr);
   return 0;
 }
@@ -134,7 +120,7 @@ PetscErrorCode PALapseRates::mean_annual_temp(IceModelVec2S &result) {
 
 PetscErrorCode PALapseRates::begin_pointwise_access() {
   PetscErrorCode ierr;
-  ierr = input->begin_pointwise_access(); CHKERRQ(ierr);
+  ierr = input_model->begin_pointwise_access(); CHKERRQ(ierr);
   ierr = reference_surface.begin_access(); CHKERRQ(ierr);
   ierr = surface->begin_access(); CHKERRQ(ierr);
   return 0;
@@ -142,7 +128,7 @@ PetscErrorCode PALapseRates::begin_pointwise_access() {
 
 PetscErrorCode PALapseRates::end_pointwise_access() {
   PetscErrorCode ierr;
-  ierr = input->end_pointwise_access(); CHKERRQ(ierr);
+  ierr = input_model->end_pointwise_access(); CHKERRQ(ierr);
   ierr = reference_surface.end_access(); CHKERRQ(ierr);
   ierr = surface->end_access(); CHKERRQ(ierr);
   return 0;
@@ -153,6 +139,8 @@ PetscErrorCode PALapseRates::temp_time_series(int i, int j, int N,
                                               PetscReal *ts, PetscReal *values) {
   PetscErrorCode ierr;
   vector<PetscScalar> usurf(N);
+
+  ierr = input_model->temp_time_series(i, j, N, ts, values); CHKERRQ(ierr);
 
   ierr = reference_surface.interp(i, j, N, ts, usurf.data()); CHKERRQ(ierr);
 
@@ -165,7 +153,7 @@ PetscErrorCode PALapseRates::temp_time_series(int i, int j, int N,
 
 PetscErrorCode PALapseRates::temp_snapshot(IceModelVec2S &result) {
   PetscErrorCode ierr;
-  ierr = input->temp_snapshot(result); CHKERRQ(ierr);
+  ierr = input_model->temp_snapshot(result); CHKERRQ(ierr);
   ierr = lapse_rate_correction(result, temp_lapse_rate); CHKERRQ(ierr);
   return 0;
 }

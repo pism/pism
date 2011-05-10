@@ -66,76 +66,6 @@ protected:
 };
 
 //! A class defining the interface of a PISM ocean model modifier.
-class POModifier : public PISMOceanModel {
-public:
-  POModifier(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel *input)
-    : PISMOceanModel(g, conf), input_model(input)
-  {}
-
-  virtual ~POModifier()
-  { delete input_model; }
-
-  virtual void add_vars_to_output(string key, set<string> &result) {
-    if (input_model != NULL)
-      input_model->add_vars_to_output(key, result);
-  }
-
-  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc,
-                                          nc_type nctype) {
-    PetscErrorCode ierr;
-    if (input_model != NULL) {
-      ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
-    }
-    return 0;
-  }
-
-  virtual PetscErrorCode write_variables(set<string> vars, string filename) {
-    PetscErrorCode ierr;
-    if (input_model != NULL) {
-      ierr = input_model->write_variables(vars, filename); CHKERRQ(ierr);
-    }
-    return 0;
-  }
-
-  virtual void get_diagnostics(map<string, PISMDiagnostic*> &dict) {
-    if (input_model)
-      input_model->get_diagnostics(dict);
-  }
-
-protected:
-  PISMOceanModel *input_model;
-};
-
-//! A class implementing sea level forcing.
-class POForcing : public POModifier {
-public:
-  POForcing(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel *input)
-    : POModifier(g, conf, input)
-  {
-    dSLforcing = NULL;
-    delta_sea_level = NULL;
-  }
-
-  virtual ~POForcing()
-  {
-    delete dSLforcing;
-    delete delta_sea_level;
-  }
-
-  virtual PetscErrorCode init(PISMVars &vars);
-  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years)
-  { t = t_years; dt = dt_years; return 0; } // do nothing
-  virtual PetscErrorCode sea_level_elevation(PetscReal &result);
-  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result);
-  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result);
-protected:
-  string forcing_file;
-  Timeseries *dSLforcing;	//!< sea level forcing time-series
-  DiagnosticTimeseries *delta_sea_level;
-};
-
-
-
 
 //! \brief A class implementing an ocean model.
 //! Parameterization of sub-shelf melting with respect to sub-shelf heat flux like in Beckmann_Goosse 2003
@@ -159,6 +89,32 @@ protected:
   NCSpatialVariable shelfbmassflux, shelfbtemp;
 };
 
+class POModifier : public Modifier<PISMOceanModel>
+{
+public:
+  POModifier(IceGrid &g, const NCConfigVariable &conf, PISMOceanModel* in)
+    : Modifier<PISMOceanModel>(g, conf, in) {}
+  virtual ~POModifier() {}
+
+  virtual PetscErrorCode sea_level_elevation(PetscReal &result)
+  {
+    PetscErrorCode ierr = input_model->sea_level_elevation(result); CHKERRQ(ierr);
+    return 0;
+  }
+
+  virtual PetscErrorCode shelf_base_temperature(IceModelVec2S &result)
+  {
+    PetscErrorCode ierr = input_model->shelf_base_temperature(result); CHKERRQ(ierr);
+    return 0;
+  }
+
+  virtual PetscErrorCode shelf_base_mass_flux(IceModelVec2S &result)
+  {
+    PetscErrorCode ierr = input_model->shelf_base_mass_flux(result); CHKERRQ(ierr);
+    return 0;
+  }
+
+};
 
 
 #endif	// __PISMOceanModel_hh

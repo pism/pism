@@ -16,6 +16,7 @@ add_library (pismutil
   base/util/iceModelVec2.cc
   base/util/iceModelVec2V.cc
   base/util/iceModelVec3.cc
+  base/util/iceModelVec2T.cc
   base/util/NCTool.cc
   base/util/pism_const.cc
   base/util/pism_default_config.cc
@@ -109,11 +110,11 @@ add_library (pismboundary
   coupler/PAForcing.cc
   coupler/PASLapseRates.cc
   coupler/PASDirectForcing.cc
+  coupler/PScalarForcing.cc
   coupler/PAYearlyCycle.cc
   coupler/PCFactory.cc
   coupler/PISMOcean.cc
   coupler/PISMSurface.cc
-  coupler/iceModelVec2T.cc
   coupler/localMassBalance.cc
   coupler/PSExternal.cc
   coupler/PSElevation.cc

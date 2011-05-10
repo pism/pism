@@ -16,6 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// Implementation of surface and atmosphere models reading spatially-variable
+// time-dependent B.C. data from a file (-surface given and -atmosphere given).
+
 #ifndef _PASDIRECTFORCING_H_
 #define _PASDIRECTFORCING_H_
 
@@ -28,7 +31,7 @@ class PDirectForcing : public Model
 {
 public:
   PDirectForcing(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), Model(g, conf) {}
+    : Model(g, conf) {}
 
   virtual ~PDirectForcing() {}
 
@@ -193,7 +196,7 @@ class PSDirectForcing : public PDirectForcing<PISMSurfaceModel>
 {
 public:
   PSDirectForcing(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), PDirectForcing<PISMSurfaceModel>(g, conf)
+    : PDirectForcing<PISMSurfaceModel>(g, conf)
   {
     temp_name = "artm";
     smb_name = "acab";
@@ -214,7 +217,7 @@ class PADirectForcing : public PDirectForcing<PISMAtmosphereModel>
 {
 public:
   PADirectForcing(IceGrid &g, const NCConfigVariable &conf)
-    : PISMComponent_TS(g, conf), PDirectForcing<PISMAtmosphereModel>(g, conf)
+    : PDirectForcing<PISMAtmosphereModel>(g, conf)
   {
     temp_name = "artm";
     smb_name  = "precip";

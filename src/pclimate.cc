@@ -232,6 +232,12 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
         filename); CHKERRQ(ierr);
   }
 
+  DiagnosticTimeseries sea_level(grid, "sea_level", "t");
+  sea_level.set_units("m", "m");
+  sea_level.set_dimension_units("years", "");
+  sea_level.output_filename = filename;
+  sea_level.set_attr("long_name", "sea level elevation");
+
   PetscScalar use_dt_years = dt_years;
 
   set<string> vars_to_write;
@@ -266,11 +272,17 @@ static PetscErrorCode writePCCStateAtTimes(PISMVars &variables,
     ierr = surface->ice_surface_mass_flux(*acab); CHKERRQ(ierr);
     ierr = surface->ice_surface_temperature(*artm); CHKERRQ(ierr);
 
+    PetscReal current_sea_level;
+    ierr = ocean->sea_level_elevation(current_sea_level); CHKERRQ(ierr);
+
+    sea_level.append(pccyear, current_sea_level);
+    sea_level.interp(pccyear);
+
     // ask ocean and surface models to write variables:
     ierr = surface->write_variables(vars_to_write, filename); CHKERRQ(ierr);
     ierr = ocean->write_variables(vars_to_write, filename); CHKERRQ(ierr);
 
-    // Thos ensures that even if a surface model wrote artm and acab we
+    // This ensures that even if a surface model wrote artm and acab we
     // over-write them with values that were actually used by IceModel.
     ierr = acab->write(filename, NC_FLOAT); CHKERRQ(ierr);
     ierr = artm->write(filename, NC_FLOAT); CHKERRQ(ierr);

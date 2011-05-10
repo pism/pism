@@ -16,6 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+// Implementation of "surface", "atmosphere" and "ocean" model factories: C++
+// classes processing -surface, -atmosphere and -ocean command-line options,
+// creating corresponding models and stringing them together to get requested
+// data-flow.
+
 #include "PISMAtmosphere.hh"
 #include "PISMSurface.hh"
 #include "PISMOcean.hh"
