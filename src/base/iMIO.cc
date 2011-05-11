@@ -336,7 +336,24 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     ierr = Enth3.set_attr("pism_intent", "diagnostic"); CHKERRQ(ierr);
   }
 
+
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
+
+  // check if the input file has Href; set its pism_intent to "diagnostic" and
+  // set the field itself to 0 if it is not present
+  if (config.get_flag("part_grid")) {
+    bool exists;
+    ierr = nc.find_variable("Href", NULL, exists); CHKERRQ(ierr);
+    
+    if (!exists) {
+      ierr = verbPrintf(2, grid.com,
+                        "PISM WARNING: Href not found in %s. Setting it to zero...\n",
+                        filename); CHKERRQ(ierr);
+
+      ierr = vHref.set_attr("pism_intent", "diagnostic"); CHKERRQ(ierr);
+      ierr = vHref.set(0.0); CHKERRQ(ierr);
+    }
+  }
 
   // Find the index of the last record in the file:
   int last_record;
@@ -413,6 +430,11 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     // "model_state" or "diagnostic" depending on the "do_cold_ice_methods"
     // config parameter).
     ierr = Enth3.set_attr("pism_intent", enthalpy_pism_intent); CHKERRQ(ierr);
+  }
+
+  // re-set Href's pism_intent attribute
+  if (config.get_flag("part_grid")) {
+    ierr = vHref.set_attr("pism_intent", "model_state"); CHKERRQ(ierr);
   }
 
   string history;

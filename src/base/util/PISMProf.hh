@@ -42,6 +42,7 @@ public:
   PetscLogDouble start_time;	//!< event start time
   double total_time;		//!< total time spent in an event; includes
 				//!< time spent doing nothing
+  PetscLogEvent petsc_event;
 };
 
 //! PISM profiler class.

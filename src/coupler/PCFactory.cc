@@ -64,7 +64,7 @@ void PAFactory::add_standard_types() {
   add_model("searise_greenland", &create_pa_searise_greenland);
   set_default("constant");
 
-  add_modifier("anomalies",    &create_pa_anomalies);
+  add_modifier("anomaly",    &create_pa_anomalies);
   add_modifier("dTforcing",    &create_pa_dTforcing);
   add_modifier("lapse_rate", &create_pa_lapse_rates);
 }

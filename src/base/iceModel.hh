@@ -450,9 +450,7 @@ protected:
   map<string,PetscViewer> viewers;
 
 private:
-  // for event logging (profiling); see run() and velocity()
-  int siaEVENT, ssaEVENT, velmiscEVENT, beddefEVENT, massbalEVENT, tempEVENT;
-  PetscLogDouble start_time;
+  PetscLogDouble start_time;    // this is used in the wall-clock-time backup code
 
   int event_step,		//!< total time spent doing time-stepping
     event_velocity,		//!< total velocity computation

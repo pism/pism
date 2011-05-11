@@ -19,8 +19,12 @@ PETSC_DIR and PETSC_ARCH are set properly.
 To install PISM locally (in the PISM source tree), do
 
   $ cd pism-dev
-  $ make
+  $ export PISM_INSTALL_PREFIX=${PWD}
   $ export PATH=${PWD}/bin:${PATH}
+  $ mkdir -p build
+  $ cd build
+  $ cmake ..
+  $ make install
 
 You can check that PISM executables can be found by running:
 
@@ -42,7 +46,9 @@ With 2 processes:
 To get source code updates including bug fixes, and build and install them, do
 
   $ svn up
-  $ make
+  $ make -C build install
+
+in the PISM source directory.
 
 Please see the Installation Manual for more information on the build process.
 

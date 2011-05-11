@@ -25,6 +25,7 @@ PISMEvent::PISMEvent() {
   start_time = -1;
   total_time = 0;
   parent = -1;
+  petsc_event = 0;
 }
 
 /// PISMProf
@@ -36,6 +37,12 @@ PISMProf::PISMProf(MPI_Comm c, PetscMPIInt r, PetscMPIInt s) {
   Ny = 1;
   current_event = -1;
 }
+
+#if PETSC_VERSION_MAJOR >= 3
+# define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((name),(cookie),(event))
+#else
+# define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((event),(name),(cookie))
+#endif
 
 //! Create a profiling event.
 /*!
@@ -50,6 +57,7 @@ int PISMProf::create(string name, string description) {
 
   tmp.name = name;
   tmp.description = description;
+  PismLogEventRegister(name.c_str(), 0, &tmp.petsc_event);
 
   events.push_back(tmp);
 
@@ -83,6 +91,7 @@ void PISMProf::begin(int index) {
   event.parent = current_event;
 
   PetscGetTime(&event.start_time);
+  PetscLogEventBegin(event.petsc_event, 0, 0, 0, 0);
 
   current_event = index;
 }
@@ -97,6 +106,7 @@ void PISMProf::end(int /*index*/) {
   PISMEvent &event = events[current_event];
 
   PetscGetTime(&time);
+  PetscLogEventEnd(event.petsc_event, 0, 0, 0, 0);
 
   event.total_time += (time - event.start_time);
 

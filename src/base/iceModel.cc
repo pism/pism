@@ -523,8 +523,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
       maxdt_temporary = extras_dt;
   }
 
-  PetscLogEventBegin(beddefEVENT,0,0,0,0);
-
   grid.profiler->begin(event_beddef);
 
   //! \li compute the bed deformation, which only depends on current thickness
@@ -538,8 +536,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   } else stdout_flags += " ";
   
   grid.profiler->end(event_beddef);
-
-  PetscLogEventEnd(beddefEVENT,0,0,0,0);
 
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (use_ssa_when_grounded) {
@@ -594,8 +590,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //    other criteria from derived class additionalAtStartTimestep(), and from
   //    "-skip" mechanism
 
-  PetscLogEventBegin(tempEVENT,0,0,0,0);
-
   grid.profiler->begin(event_age);
   
   //! \li update the age of the ice (if appropriate)
@@ -623,14 +617,10 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   
   grid.profiler->end(event_energy);
 
-  PetscLogEventEnd(tempEVENT,0,0,0,0);
-
   //! \li compute fluxes through ice boundaries; this method frequently updates
   //! the surface process models pre-emptively, so that massContExplicitStep()
   //! does not do that work again
   ierr = ice_mass_bookkeeping(); CHKERRQ(ierr);
-
-  PetscLogEventBegin(massbalEVENT,0,0,0,0);
 
   grid.profiler->begin(event_mass);
 
@@ -663,8 +653,6 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   }
   
   grid.profiler->end(event_mass);
-
-  PetscLogEventEnd(massbalEVENT,0,0,0,0);
 
   //! \li call additionalAtEndTimestep() to let derived classes do more
   ierr = additionalAtEndTimestep(); CHKERRQ(ierr);
@@ -701,18 +689,6 @@ PetscErrorCode IceModel::run() {
     do_age = config.get_flag("do_age"),
     do_skip = config.get_flag("do_skip"),
     use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
-
-#if PETSC_VERSION_MAJOR >= 3
-# define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((name),(cookie),(event))
-#else
-# define PismLogEventRegister(name,cookie,event) PetscLogEventRegister((event),(name),(cookie))
-#endif
-PismLogEventRegister("sia velocity", 0,&siaEVENT);
-PismLogEventRegister("ssa velocity", 0,&ssaEVENT);
-PismLogEventRegister("misc vel calc",0,&velmiscEVENT);
-PismLogEventRegister("bed deform",   0,&beddefEVENT);
-PismLogEventRegister("mass bal calc",0,&massbalEVENT);
-PismLogEventRegister("temp age calc",0,&tempEVENT);
 
   // do a one-step diagnostic run:
   ierr = verbPrintf(2,grid.com,
