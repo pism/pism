@@ -406,7 +406,7 @@ $  PISM_INSTALL_PREFIX=~/pism cmake ..
 $  make install
 \end{verbatim}%$
 
-  This will configure PISM to be installed in \texttt{~/pism/bin}, \texttt{~/pism/lib/pism} and \texttt{~/pism/share/doc}, then
+  This will configure PISM to be installed in \texttt{\textasciitilde/pism/bin}, \texttt{\textasciitilde/pism/lib/pism} and \texttt{\textasciitilde/pism/share/doc}, then
   compile and install all its executables and scripts.
 
 If your operating system does not support shared libraries\footnote{This might be necessary if you're building on a Cray XT5 or a Sun Opteron Cluster, for example.}, then set \texttt{BUILD_SHARED_LIBS} to ``OFF''. This can be done by
@@ -460,14 +460,7 @@ for Fink.
 \item Note that it is not necessary to install Python, as it is bundled with the operating system (as are BLAS, LAPACK, OpenMPI
   and Subversion).
 
-  One way to get SciPy et al to work on an Intel-based Mac with Mac OS X is to use SciPy Superpack from
-  \url{http://macinscience.org/?page_id=6/}. This package includes \texttt{numpy}, \texttt{SciPy} and \texttt{matplotlib}, as well
-  as \texttt{ipython}, a very useful interactive Python shell.
-
-  
-  Using \href{http://www.enthought.com/}{Enthought Python Distributions} is another option.
-  \href{http://www.enthought.com/}{Enthought Python Distributions (EPD)} is free for Academic use and may be used both on PowerPC and
-  Intel-based Macs, while SciPy Superpack only supports Intel machines.
+  Some PISM scripts use Scipy. It is possible to install it using MacPorts,  using \href{http://www.enthought.com/}{Enthought Python Distributions} is another option.
 
 \item  If you're using MacPorts, do
 \begin{verbatim}
@@ -481,7 +474,7 @@ $  fink install netcdf gsl fftw3
 \end{verbatim}
 
 \item At this point, all the PISM prerequisites except PETSc are installed. Download the latest PETSc tarball from the
-  \href{http://www.mcs.anl.gov/petsc/petsc-as/}{PETSc website}\footnote{Version 3 or 3.1 is recommended; 2.3.3 will work, but building it on Mac OS X is tricky.}. Untar, then change to the directory just created.
+  \href{http://www.mcs.anl.gov/petsc/petsc-as/}{PETSc website}. Untar, then change to the directory just created.
 The next three commands completed the PETSc installation:
 \begin{verbatim}
 $  export PETSC_DIR=$PWD; export PETSC_ARCH=macosx;
@@ -560,7 +553,9 @@ $ make test
 
 \subsubsection*{Next steps}  Start with the \emph{User's Manual}, which has a ``Getting started'' section.  A copy is on-line at the PISM homepage and documentation page \href{http://www.pism-docs.org/}{\t{www.pism-docs.org}}, along with a source code \emph{Browser} (HTML).  Completely up-to-date documentation can be built from \LaTeX~source in the \texttt{doc/} sub-directory, as described in the last section.
 
-A final reminder with respect to installation:  Let's assume you have checked out a copy of PISM using Subversion, as in step \ref{getPISMstep} above.  You can update your copy of PISM to the latest version by \texttt{make update} in the PISM directory.
+A final reminder with respect to installation:  Let's assume you have checked out a copy of PISM using Subversion, as in step
+\ref{getPISMstep} above.  You can update your copy of PISM to the latest version by running \texttt{svn up} in the PISM directory
+and \texttt{make install} in your build directory.
 
 
 \newpage
@@ -569,7 +564,15 @@ A final reminder with respect to installation:  Let's assume you have checked ou
 
 If you're lucky, you might be able to install all the Python packages mentioned in section \ref{sec:prerequisites} using a package manager. On the other hand, the Python packages below are not currently available in Debian package repositories. They are easy to install using Python \texttt{setuptools}, however; these tools are included with recent versions of Python.  And you might not be using a package manager!
 
-\subsubsection*{Python module \texttt{netCDF3}, from package \texttt{netcdf4-python}}  You can skip this paragraph if you have \href{http://www.enthought.com/}{Enthought Python Distributions} installed. Typical users have NetCDF 3.6.2.  You can install \texttt{netcdf4-python}, to get \texttt{netCDF3} needed by PISM scripts, by downloading a tarball from the project homepage \url{http://code.google.com/p/netcdf4-python/}.  Go to that site to identify the latest one, and download with a web browser or do something like the following, using the appropriate version number:
+\subsubsection*{Python module \texttt{netCDF3}, from package \texttt{netcdf4-python}}  You can skip this paragraph if you have
+\href{http://www.enthought.com/}{Enthought Python Distributions} installed.
+
+If you have NetCDF 3.6.2, you will need to download version 0.9.3 of \texttt{netcdf4-python} (later versions do not have the
+\texttt{netCDF3} module). Recent versions require HDF5 1.8.6 and NetCDF-4 4.1.2.
+
+To install \texttt{netcdf4-python} providing get \texttt{netCDF3} or \texttt{netCDF4} modules needed by PISM scripts, download a
+tarball from the project homepage \url{http://code.google.com/p/netcdf4-python/}.
+
 \begin{verbatim}
 $  wget http://netcdf4-python.googlecode.com/files/netCDF4-NUMBER.tar.gz
 $  tar -xvf netCDF4-NUMBER.tar.gz
@@ -585,13 +588,15 @@ Under Mac OS X,
 \begin{verbatim}
 $  sudo NETCDF3_DIR=/opt/local/ python setup-nc3.py install
 \end{verbatim}
+
 If you actually use NetCDF 4.0,
 \begin{verbatim}
 $  sudo NETCDF4_DIR=/usr/ HDF5_DIR=/usr/ python setup.py install
-\end{verbatim}
+\end{verbatim}%$
 assuming that HDF5 and NetCDF were installed in the \texttt{/usr/} tree.
 
-The scripts in directories \texttt{util/}, \texttt{examples/eisgreen}, \texttt{examples/eisross}, \texttt{examples/mismip}, and so on, which need \texttt{netCDF3}, should now work.
+The scripts in directories \texttt{util/}, \texttt{examples/eisgreen}, \texttt{examples/eisross}, \texttt{examples/mismip}, and so
+on, which need \texttt{netCDF3} or \texttt{netCDF4}, should now work.
 
 
 \subsubsection*{Python package \texttt{scikits.delaunay}}  One PISM script, \texttt{examples/eisross/ross_plot.py}, needs this. \href{http://www.enthought.com/}{Enthought Python Distributions} users do (make sure you have version 6.0 or greater): 

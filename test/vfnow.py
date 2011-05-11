@@ -40,8 +40,9 @@ class PISMVerificationTest:
     Mbz = [1] * N
     ## extra options (such as -y, -ys, -ssa_rtol)
     opts = ""                   
-        
-    def build_command(self, executable, level):
+    executable = "pismv"
+    
+    def build_command(self, exec_prefix, level):
         M = zip(self.Mx, self.My, self.Mz, self.Mbz)
 
         if level > len(M):
@@ -50,7 +51,7 @@ class PISMVerificationTest:
             return ""
 
         grid_options = "-Mx %d -My %d -Mz %d -Mbz %d" % M[level - 1]
-        return "%s -test %s %s %s" % (executable, self.name, grid_options, self.opts)
+        return "%s%s -test %s %s %s" % (exec_prefix, self.executable, self.name, grid_options, self.opts)
 
 def run_test(executable, name, level, extra_options = "", debug = False):
     try:
@@ -189,7 +190,8 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     I.path = "(refine dy=5000,1250,312.5,78.13,19.53,m, My=49,193,769,3073,12289)"
     I.Mx   = [5] * 5
     I.My   = [49, 193, 769, 3073, 12289]
-    I.opts = "-ssa_rtol %1.e -ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
+    I.executable = "ssa_testi"
+    I.opts = "-ssa_method fd -ssa_rtol %1.e -ksp_rtol %1.e" % (SSARTOL, KSPRTOL)
     tests['I'] = I
     # J
     J = PISMVerificationTest()
@@ -199,7 +201,8 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     J.Mx   = [49, 98, 196, 392, 784]
     J.My   = J.Mx
     J.Mz   = [11] * 5
-    J.opts = "-pc_type asm -sub_pc_type lu -ksp_rtol %1.e" % KSPRTOL
+    J.executable = "ssa_testj"
+    J.opts = "-ssa_method fd -pc_type asm -sub_pc_type lu -ksp_rtol %1.e" % KSPRTOL
     tests['J'] = J
     # K
     K = PISMVerificationTest()
@@ -354,22 +357,22 @@ if nproc > 1:
   predo = "%s %d " % (mpi, nproc)
 else:
   predo = ""
-executable = predo + prefix + 'pismv'
+exec_prefix = predo + prefix
 
 tests = define_refinement_paths(KSPRTOL, SSARTOL)
 
 if do_userman:
-    print " VFNOW.PY: test(s) %s, using '%s'\n" % (userman_tests, executable) + \
+    print " VFNOW.PY: test(s) %s, using '%s...'\n" % (userman_tests, exec_prefix) + \
           "           and ignoring options -t and -l" 
     for test in userman_tests:
         N = len(tests[test].Mx)
         for j in range(1, N + 1):
-            run_test(executable, test, j, extra_options, debug)
+            run_test(exec_prefix, test, j, extra_options, debug)
 else:
-    print " VFNOW.PY: test(s) %s, %d refinement level(s), using '%s'" % (
-        test_names, levels, executable)
+    print " VFNOW.PY: test(s) %s, %d refinement level(s), using '%s...'" % (
+        test_names, levels, exec_prefix)
 
     for test in test_names:
         for j in range(1, levels + 1):
-            run_test(executable, test, j, extra_options, debug)
+            run_test(exec_prefix, test, j, extra_options, debug)
 

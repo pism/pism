@@ -68,8 +68,8 @@ E & \texttt{pismv -test E -Mx 61 -My 61 -Mz 11 -y 25000}  \\
 F & \texttt{pismv -test F -Mx 61 -My 61 -Mz 61 -y 25000}  \\
 G & \texttt{pismv -test G -Mx 61 -My 61 -Mz 61 -y 25000}  \\
 H & \texttt{pismv -test H -Mx 61 -My 61 -Mz 11 -y 40034 -bed_def_iso} \\
-I & \texttt{pismv -test I -Mx 500 -My 5 -ssa_rtol 1e-6 -ksp_rtol 1e-11} \\
-J & \texttt{pismv -test J -Mx 60 -My 60 -Mz 11 -ksp_rtol 1e-12} \\
+I & \texttt{ssa_testi -ssa_method fd -Mx 5 -My 500 -ssa_rtol 1e-6 -ksp_rtol 1e-11 } \\
+J & \texttt{ssa_testj -ssa_method fd -Mx 60 -My 60 -Mz 11 -ksp_rtol 1e-12} \\
 K & \texttt{pismv -test K -Mx 6 -My 6 -Mz 401 -Mbz 101 -y 130000} \\
 L & \texttt{pismv -test L -Mx 61 -My 61 -Mz 31 -y 25000} \\
 \bottomrule
