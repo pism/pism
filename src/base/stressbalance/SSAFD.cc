@@ -42,7 +42,7 @@ PetscErrorCode SSAFD::allocate_fd() {
   // note SSADA and SSAX are allocated in SSA::allocate()
   ierr = VecDuplicate(SSAX, &SSARHS); CHKERRQ(ierr);
 
-  ierr = DAGetMatrix(SSADA, MATMPIAIJ, &SSAStiffnessMatrix); CHKERRQ(ierr);
+  ierr = DAGetMatrix(SSADA, MATAIJ, &SSAStiffnessMatrix); CHKERRQ(ierr);
 
   ierr = KSPCreate(grid.com, &SSAKSP); CHKERRQ(ierr);
   // the default PC type somehow is ILU, which now fails (?) while block jacobi

@@ -777,10 +777,10 @@ Now we address controls on how PETSc solves systems of linear equations, which u
 Especially for solving the SSA equations with high resolution on multiple processors, it is recommended that the option \intextoption{ksp_rtol} be set lower than its default value of $10^{-5}$.  For example, 
 
 \begin{verbatim}
-$  mpiexec -n 8 pismv -test I -Mx 5 -My 769
+$  mpiexec -n 8 ssa_testi -Mx 3 -My 769 -ssa_method fd
 \end{verbatim}
 
-\noindent works poorly on a certain machine, but adding ``\verb|-ksp_rtol 1e-10|'' works fine.
+\noindent fails to converge on a certain machine, but adding ``\verb|-ksp_rtol 1e-10|'' works fine.
 
 There is also the question of solver \emph{type}, using option \intextoption{ksp_type}.  Based on one processor evidence from \texttt{pismv -test I}, the following are possible choices in the sense that they work and allow convergence at some reasonable rate: \t{cg}, \t{bicg}, \t{gmres}, \t{bcgs}, \t{cgs}, \t{tfqmr}, \t{tcqmr}, and \t{cr}.  It appears \t{bicg}, \t{gmres}, \t{bcgs}, and \t{tfqmr}, at least, are all among the best.  The default is \t{gmres}.
 
