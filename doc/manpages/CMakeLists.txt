@@ -1,4 +1,4 @@
-find_program(RST2MAN NAMES rst2man.py rst2man-2.6.py)
+find_program(RST2MAN NAMES rst2man rst2man.py rst2man-2.6.py)
 mark_as_advanced(RST2MAN)
 
 if (RST2MAN)
