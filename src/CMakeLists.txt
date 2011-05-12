@@ -214,7 +214,7 @@ add_custom_command (OUTPUT pism_config.nc
 add_custom_target (pism_config DEPENDS pism_config.nc)
 
 install (TARGETS
-  pismr pismo pisms pismv pgrn pclimate ## executables
+  pismr pismo pisms pismv pgrn pclimate pismebm ## executables
   pismutil pismboundary pismverif pismbase pismflowlaws pismearth pismudunits # libraries
   RUNTIME DESTINATION ${Pism_BIN_DIR}
   LIBRARY DESTINATION ${Pism_LIB_DIR}
