@@ -18,7 +18,7 @@ if (RST2MAN)
 
   add_manpages("pismr;pisms;pismv;pgrn;pross")
 
-  add_custom_target(manpages
+  add_custom_target(manpages ALL
     DEPENDS pismr.1 pisms.1 pismv.1 pgrn.1 pross.1)
 
 endif()

@@ -10,6 +10,9 @@ override_dh_auto_configure:
 	mkdir -p debian/builddir
 	cd debian/builddir && cmake ../.. -DPism_BUILD_DEBIAN_PACKAGE:BOOL=ON
 
+override_dh_auto_test:
+	echo "Skipping software tests"
+
 %:
 	+dh --builddirectory=debian/builddir $@
 
