@@ -16,7 +16,7 @@ echo "# PISM Storglaciaren Flow Line Model"
 echo "# =================================================================================="
 echo
 
-set -e  # exit on error
+set -e # exit on error
 
 NN=2  # default number of processors
 if [ $# -gt 0 ] ; then  # if user says "psg_flowline.sh 8" then NN = 8
@@ -71,7 +71,6 @@ PISM_DATANAME=pism_$DATANAME
 INNAME=$PISM_DATANAME
 
 # coupler settings
-COUPLER_ELEV="-surface elevation -artm -6,0,1325,1350 -acab -5,4.,1200,1400,1615 -acab_limits -5,0"
 COUPLER="-surface constant"
 COUPLER_FORCING="-surface constant,forcing"
 
@@ -81,10 +80,10 @@ FTALPHA=0.05
 # grid parameters
 FINEGRID="-periodicity y -Mx 792 -My 3 -Mz 201 -Lz 300 -z_spacing equal"  # 5 m grid
 FS=5
-FINESKIP=1500
+FINESKIP=5000
 COARSEGRID="-periodicity y -Mx 114 -My 3 -Mz 101 -Lz 500 -z_spacing equal"  # 35 m grid
 CS=35
-COARSESKIP=500
+COARSESKIP=1000
 
 GRID=$COARSEGRID
 SKIP=$COARSESKIP
@@ -117,9 +116,7 @@ PARAMS="$TILLPHI -pseudo_plastic_q $q -plastic_pwfrac 0.9 -pseudo_plastic_uthres
 PETSCSTUFF="-pc_type asm -sub_pc_type lu -ksp_type lgmres -ksp_right_pc"
 #PETSCSTUFF="-pc_type asm -sub_pc_type lu -ksp_type lgmres -ksp_right_pc -view_map thk"
 
-# Use the FEM solver for the SSA, as the FD solver show convergence issues
-FULLPHYS="-ssa_method fd -ssa_sliding -thk_eff $PARAMS $PETSCSTUFF"
-
+FULLPHYS="-ssa_sliding -thk_eff $PARAMS $PETSCSTUFF"
 
 SMOOTHRUNLENGTH=1
 NOMASSRUNLENGTH=500
@@ -169,33 +166,10 @@ cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER_FORCING $TILLPHI 
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo
-$PISM_DO "flowline.py -c -o $OUTNAME $OUTNAMEFULL"
+$PISM_DO flowline.py -c -o $OUTNAME $OUTNAMEFULL
 
 
-STARTYEAR=0
-RUNLENGTH=10
-ENDTIME=$(($STARTYEAR + $RUNLENGTH))
-INNAME=$OUTNAMEFULL
-OUTNAME=ssa_${RUNLENGTH}a.nc
-OUTNAMEFULL=$PREFIX${GS}m_$OUTNAME
-TSNAME=ts_${OUTNAMEFULL}
-EXNAME=ex_${OUTNAMEFULL}
-TSTIMES=$STARTYEAR:$STEP:$ENDTIME
-EXTIMES=$STARTYEAR:$STEP:$ENDTIME
-
-echo
-echo "$SCRIPTNAME  SSA run with elevation-dependent mass balance for $RUNLENGTH years on ${GS}m grid"
-cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
-     -ts_file $TSNAME -ts_times $TSTIMES \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
-     -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
-$PISM_DO $cmd
-echo
-$PISM_DO "flowline.py -c -o $OUTNAME $OUTNAMEFULL"
-
-
-
-COUPLER_ELEV="-surface elevation -artm -6,0,1325,1350 -acab -3,2.5.,1200,1450,1615 -acab_limits -3,0"
+COUPLER_ELEV="-surface elevation -artm -6,0,1395,1400 -acab -3,2.5.,1200,1450,1615 -acab_limits -3,0"
 
 STARTYEAR=0
 RUNLENGTH=25
@@ -216,4 +190,4 @@ cmd="$PISM_MPIDO $NN $PISM $EB -skip $SKIP -i $INNAME $COUPLER_ELEV $FULLPHYS \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo
-$PISM_DO "flowline.py -c -o $OUTNAME $OUTNAMEFULL"
+$PISM_DO flowline.py -c -o $OUTNAME $OUTNAMEFULL

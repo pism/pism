@@ -48,6 +48,11 @@ thk_var.units = "m";
 thk_var.standard_name = "land_ice_thickness"
 thk_var[:] = thk
 
+usurf_var = nc.createVariable("usurf", 'f', dimensions=("x",))
+usurf_var.units = "m";
+usurf_var.standard_name = "surface_altitude"
+usurf_var[:] = topg+thk
+
 qgeo = 0.042
 bheatflx_var = nc.createVariable("bheatflx", 'f', dimensions=("x",))
 bheatflx_var.units = "W m-2";
@@ -71,16 +76,14 @@ acab_var[:] = acab
 # ------------------------------------------------------------------------------
 #
 # (A) Surface temperature for temperature equation bc
-T0    = 273.15 # K
-Tma   =  -5.0  # degC, mean annual air temperature at Tarfala
-zcts  = 1300   # m a.s.l.; altitude where CTS is at the surface, projected to topg
-zbts  = 1250   # m a.s.l.; altitude where CTS is at the base; just a wild guess
+Tma   =  -6.0  # degC, mean annual air temperature at Tarfala
+zcts  = 1400   # m a.s.l.; altitude where CTS is at the surface
 
 
-artm = np.zeros_like(x) + T0
-artm[topg<zbts] = T0 + Tma
+artm = np.zeros_like(x)
+artm[(topg+thk)<zcts] = Tma
 artm_var = nc.createVariable("artm", 'f', dimensions=("x",))
-artm_var.units = "K";
+artm_var.units = "deg_C";
 artm_var[:] = artm
 
 
