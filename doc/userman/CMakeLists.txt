@@ -15,6 +15,7 @@ set (parts
   hard-choices.tex
   manual.tex
   modeling-choices.tex
+  pism-pik.tex
   practical-usage.tex
   simplified-geometry.tex
   storglaciaren.tex

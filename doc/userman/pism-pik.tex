@@ -1,0 +1,80 @@
+
+\section{PISM-PIK improvements for marine ice sheet modeling}
+\label{sec:pism-pik}
+\index{PISM!PISM-PIK}
+\optsection{PISM-PIK}
+
+References \cite{Albrechtetal2011} and \cite{Winkelmannetal2010TCD} describe improvements to the grounded, SSA-as-a-sliding law model of \cite{BBssasliding}.  These improvements make PISM an effective Antarctic model, as demonstrated by \cite{Martinetal2010TCD,Levermann2011}.  Because these improvements had a separate existence as the PISM-PIK model from 2009--2010, we call them the ``\emph{PISM-PIK improvements}'' here.
+
+These model improvements all related to the stress balance and geometry changes that apply at the vertical calving face of floating ice shelves.  The physics at such calving fronts is very different from elsewhere on an ice sheet, because the flow is nothing like the lubrication flow addressed by the SIA, and nor is the physics like the sliding flow in the interior of an ice domain, where sliding alters geometry according to the basic mass continuity equation.  The correct physics at the calving front can be thought of as certain modifications to the mass continuity equation and to the SSA stress balance equation.  The code implementing the PISM-PIK improvements makes these highly-nontrivial modifications of the finite difference/volume equations in PISM.
+
+\subsection{Partially-filled cells at the boundaries of ice shelves}
+\label{sec:part-grid}
+
+Albrecht et al \cite{Albrechtetal2011} argue that correct movement of the calving front, assuming for the moment that ice velocities are correctly determined (see below), essentially requires tracking some cells as being partially-filled.  If the calving front is moving forward, for example, it is not correct to add a little mass to the next cell as if that next cell was filled with a thin layer of ice.  The PISM-PIK mechanism adds mass to the partially-filled cell which the advancing front enters, but the equations determining the velocities are only sensitive to ``fully-filled'' cells for which the cell value of the thickness is completely meaning.  Advection is controlled by values of velocity in fully-filled cells.
+
+The PISM options to turn on this mechanism are in Table \ref{tab:pism-pik-part-grid}.
+
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{lp{0.7\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \intextoption{cfbc} & \\
+    \intextoption{kill_icebergs} & \\
+    \intextoption{part_grid} & \\
+    \intextoption{part_redist} &  \\ \hline
+    \intextoption{pik} & equivalent to option combination ``\texttt{-cfbc -kill_icebergs -part_grid -part_redist}'' \\
+    \\\bottomrule
+ \end{tabular}
+  \caption{Options which turn on the PISM-PIK calving-front stress boundary condition, partially-filled cell mechanism, and iceberg-removal mechanism.}
+  \label{tab:pism-pik-part-grid}
+\end{table}
+
+
+\subsection{Stress condition at calving fronts}
+\label{sec:cfbc}
+
+FIXME: brief text on cfbc
+
+
+
+\subsection{Iceberg removal}
+\label{sec:kill-icebergs}
+
+FIXME: brief text on -killicebergs
+
+
+
+
+\subsection{Calving}
+\label{sec:calving}
+\optsection{Calving}
+
+FIXME: text on eigen-calving
+
+PISM also includes two very basic calving mechanisms (Table \ref{tab:calving}).  Option \intextoption{float_kill} removes (calves) any ice that satisfies the flotation criterion; this option means there are no ice shelves in the model at all.    Option \intextoption{ocean_kill} is based on the mask values at the beginning of the run; any locations which were ice-free ocean at the beginning of the run are places where floating ice is removed.
+
+\begin{table}[ht]
+  \centering
+  \begin{tabular}{lp{0.7\linewidth}}
+    \\\toprule
+    \textbf{Option} & \textbf{Description}
+    \\\midrule
+    \intextoption{calving_at_thickness} & FIXME\\
+    \intextoption{eigen_calving} & FIXME\\
+    \intextoption{float_kill} & All floating ice is calved off immediately.\\
+    \intextoption{ocean_kill} & All ice flowing into grid cells marked as \texttt{MASK_FLOATING_AT_TIME_0} is calved off.
+    \\\bottomrule
+ \end{tabular}
+  \caption{Calving options}
+  \label{tab:calving}
+\end{table}
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "manual"
+%%% End: 
+
+% LocalWords:  html PISM PISM's

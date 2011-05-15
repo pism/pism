@@ -303,11 +303,7 @@ pisms -eisII I -ssa_sliding -track_Hmelt -Mx 91 -My 91 -Mz 51 \
       -topg_to_phi 5.0,15.0,0.0,1000.0 -y 12000
 \end{verbatim}
 
-A final note on basal sliding is in order.  There can be sliding in the SIA stress balance model (paradigm) itself.  \emph{This kind of sliding is not recommended}, which is why it is currently disabled in PISM.
-
-Within PISM there is an implementation of SIA-based sliding for the verification test E, see \texttt{SIA_Sliding.cc}. PISM does \emph{not} support this sliding mode in other contexts.
-
-Outside of PISM the SIA sliding mechanism appears in ISMIP-HEINO \cite{Calovetal2009HEINOfinal} and many other SIA-based modeling efforts.
+A final note on basal sliding is in order.  There can be sliding in the SIA stress balance model (paradigm) itself, where the velocity of sliding is a direct function of the driving stress.  Such a SIA sliding mechanism appears in ISMIP-HEINO \cite{Calovetal2009HEINOfinal} and many other SIA-based modeling efforts in the literature.  \emph{This kind of sliding is not recommended, as it does not make sense to regard the driving stress as the local generator of flow if the bed is not holding all of that stress.}  Within PISM there is an implementation of SIA-based sliding for the verification test E, see \texttt{SIA_Sliding.cc}.  PISM does \emph{not} support this sliding mode in other contexts.  
 
 % undocumented options/config. parameters
 % base/iMoptions.cc:  "thk_eff" : "thk_eff_basal_water_pressure"
@@ -317,29 +313,6 @@ Outside of PISM the SIA sliding mechanism appears in ISMIP-HEINO \cite{Calovetal
 % base/iMoptions.cc:  "bmr_enhance" : "bmr_enhance_basal_water_pressure"
 % base/iMoptions.cc:  "bmr_enhance_scale" : "bmr_enhance_scale"
 
-%The scripts in \t{examples/pst} perform the experiments described in \cite{BBssasliding}, and represent the most thorough test of these mechanisms.
-% Test I in the verification suite\index{verification tests} uses an exact solution to the Schoof model.
-
-
-\subsection{Calving}
-\label{sec:calving}
-\optsection{Calving}
-
-PISM includes two very basic calving mechanisms activated using options in Table \ref{tab:calving}.  Implementing other more physically-motivated calving laws (e.g.~\cite{Levermannetalsubmitted}) is planned for future versions of PISM.
-
-\begin{table}
-  \centering
-  \begin{tabular}{lp{0.7\linewidth}}
-    \\\toprule
-    \textbf{Option} & \textbf{Description}
-    \\\midrule
-    \intextoption{float_kill} & All floating ice is calved off immediately.\\
-    \intextoption{ocean_kill} & All ice flowing into grid cells marked as \texttt{MASK_FLOATING_AT_TIME_0} is calved off.
-    \\\bottomrule
- \end{tabular}
-  \caption{Calving options}
-  \label{tab:calving}
-\end{table}
 
 %%% Local Variables: 
 %%% mode: latex

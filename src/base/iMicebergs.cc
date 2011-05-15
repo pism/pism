@@ -23,7 +23,7 @@
 
 
 //! \brief Identify and eliminate free-floating icebergs, which cause
-//! well-posedness problems for stress solvers.
+//! well-posedness (invertibility) problems for stress solvers.
 /*!
 
  * Icebergs are, in this context, floating regions that are \e not attached,
@@ -34,7 +34,7 @@
  * errors, they lead to extremely small time steps and can eventually cause a
  * KSP-ERROR.
 
- * This method calls the routines is which first identify and then eliminate these icebergs.
+ * This method calls the routines which identify and then eliminate these icebergs.
 
  * FIXME: a fundamental aspect of the semantics here is not clear to me
  * (bueler), namely how many times the iceberg-eliminate "sweep" might occur,
@@ -52,9 +52,7 @@ PetscErrorCode IceModel::killIceBergs() {
   ierr = findIceBergCandidates(); CHKERRQ(ierr);
   ierr = identifyNotAnIceBerg(); CHKERRQ(ierr);
   ierr = killIdentifiedIceBergs(); CHKERRQ(ierr);
-  if (config.get_flag("do_eigen_calving") || config.get_flag("do_thickness_calving")) {
-    ierr = killEasyIceBergs(); CHKERRQ(ierr);
-  }
+  ierr = killEasyIceBergs(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -68,7 +66,7 @@ PetscErrorCode IceModel::killIceBergs() {
 PetscErrorCode IceModel::findIceBergCandidates() {
   PetscErrorCode ierr;
 
-  ierr = verbPrintf(4, grid.com, "######### findIceBergCandidates is called \n"); CHKERRQ(ierr);
+  ierr = verbPrintf(4, grid.com, "PISM-PIK INFO: findIceBergCandidates is called \n"); CHKERRQ(ierr);
 
   const PetscInt Mx = grid.Mx, My = grid.My;
   ierr = vH.begin_access(); CHKERRQ(ierr);
@@ -175,12 +173,10 @@ PetscErrorCode IceModel::findIceBergCandidates() {
 }
 
 
-
-
 PetscErrorCode IceModel::identifyNotAnIceBerg() {
   PetscErrorCode ierr;
 
-  ierr = verbPrintf(4, grid.com, "######### identifyNotAnIceBerg is called \n"); CHKERRQ(ierr);
+  ierr = verbPrintf(4, grid.com, "PISM-PIK INFO: identifyNotAnIceBerg is called \n"); CHKERRQ(ierr);
 
   // this communication of ghostvalues is done here to make sure that asking
   // about neighbouring values in this routine doesn't lead to inconsistencies
@@ -235,8 +231,8 @@ PetscErrorCode IceModel::identifyNotAnIceBerg() {
   }
 
   ierr = verbPrintf(5, grid.com,
-                    "!!! %d loop(s) were needed to identify whether there are icebergs \n", loopcount);
-  CHKERRQ(ierr);
+    "PISM-PIK INFO:  %d loop(s) were needed to identify whether there are icebergs \n",
+    loopcount); CHKERRQ(ierr);
 
   return 0;
 }
@@ -251,7 +247,7 @@ PetscErrorCode IceModel::identifyNotAnIceBerg() {
 PetscErrorCode IceModel::killIdentifiedIceBergs() {
   PetscErrorCode ierr;
 
-  ierr = verbPrintf(4, grid.com, "######### killIceBergs is called \n"); CHKERRQ(ierr);
+  ierr = verbPrintf(4, grid.com, "PISM-PIK INFO:  killIceBergs is called \n"); CHKERRQ(ierr);
 
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   ierr = vIcebergMask.begin_access(); CHKERRQ(ierr);
@@ -261,16 +257,16 @@ PetscErrorCode IceModel::killIdentifiedIceBergs() {
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
 
-      if (vIcebergMask(i, j) != ICEBERGMASK_ICEBERG_CAND) // actually it's not a candidate any more, it is an iceberg!
-        continue;
+      if (vIcebergMask(i, j) == ICEBERGMASK_ICEBERG_CAND) { // actually it's not a candidate any more, it is an iceberg!
+         vH(i, j) = 0.0;
+         vh(i, j) = 0.0;
+         vMask(i, j) = MASK_ICE_FREE_OCEAN;
+         // FIXME: this occurs regardless of verbosity
+         PetscSynchronizedPrintf(grid.com, 
+                     "PISM-PIK INFO: [rank %d] killed iceberg at i=%d, j=%d\n", 
+                     grid.rank, i, j);
+      }
 
-      vH(i, j) = 0.0;
-
-      vh(i, j) = 0.0;
-
-      vMask(i, j) = MASK_ICE_FREE_OCEAN;
-
-      PetscPrintf(PETSC_COMM_SELF, "PISMPIK_INFO: [rank %d] killed iceberg at i=%d, j=%d\n", grid.rank, i, j);
     }
   }
 
@@ -300,10 +296,7 @@ PetscErrorCode IceModel::killIdentifiedIceBergs() {
 PetscErrorCode IceModel::killEasyIceBergs() {
   PetscErrorCode ierr;
 
-  ierr = verbPrintf(4, grid.com, "######### killEasyIceBergs is called \n"); CHKERRQ(ierr);
-
-  //ierr = vH.beginGhostComm(); CHKERRQ(ierr);
-  //ierr = vH.endGhostComm(); CHKERRQ(ierr);
+  ierr = verbPrintf(4, grid.com, "PISM-PIK INFO:  killEasyIceBergs is called \n"); CHKERRQ(ierr);
 
   IceModelVec2S vHnew = vWork2d[0];
   ierr = vH.copy_to(vHnew); CHKERRQ(ierr);
@@ -372,19 +365,17 @@ PetscErrorCode IceModel::killEasyIceBergs() {
           vHnew(i, j) = 0.0;
           vh(i, j) = 0.0;
           vMask(i, j) = MASK_ICE_FREE_OCEAN;
-          PetscPrintf(PETSC_COMM_SELF,
-                      "PISMPIK_INFO: [rank %d] cut off nose or one - box-iceberg at i=%d, j=%d\n",
-                      grid.rank, i, j);
+          // FIXME: this occurs regardless of verbosity
+          PetscSynchronizedPrintf(grid.com, 
+            "PISM-PIK INFO: [rank %d] cut off nose or one-box-iceberg at i=%d, j=%d\n",
+            grid.rank, i, j);
         }
       }
     }
   }
-
-  //ierr = vbed.end_access(); CHKERRQ(ierr);
-  //ierr = vMask.end_access(); CHKERRQ(ierr);
-  //ierr = vh.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
+
   // finally copy vHnew into vH and communicate ghosted values
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
@@ -414,7 +405,10 @@ PetscErrorCode IceModel::killEasyIceBergs() {
         //vh(i, j) = hfloating; // why?
         vh(i, j) = 0.0;
         vMask(i, j) = MASK_ICE_FREE_OCEAN;
-        PetscPrintf(PETSC_COMM_SELF, "PISMPIK_INFO: [rank %d] killed isolated one-box-iceberg at i=%d, j=%d\n", grid.rank, i, j);
+        // FIXME: this occurs regardless of verbosity
+        PetscSynchronizedPrintf(grid.com,
+          "PISM-PIK INFO: [rank %d] killed isolated one-box-iceberg at i=%d, j=%d\n",
+          grid.rank, i, j);
       }
     }
   }
@@ -444,9 +438,10 @@ PetscErrorCode IceModel::killEasyIceBergs() {
       if (vHref(i, j) > 0.0 && all_4neighbors_icefree) {
         vHref(i, j) = 0.0;
         //vMask(i, j) = MASK_ICE_FREE_OCEAN;
-        PetscPrintf(PETSC_COMM_SELF,
-                    "PISMPIK_INFO: [rank %d] killed lonely partially filled grid cell at i = %d, j = %d\n",
-                    grid.rank, i, j);
+        // FIXME: this occurs regardless of verbosity
+        PetscSynchronizedPrintf(grid.com, 
+          "PISM-PIK INFO: [rank %d] killed lonely partially filled grid cell at i = %d, j = %d\n",
+          grid.rank, i, j);
       }
     }
   }
@@ -457,6 +452,9 @@ PetscErrorCode IceModel::killEasyIceBergs() {
   ierr = vHref.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
   ierr = vHnew.end_access(); CHKERRQ(ierr);
+
+  PetscSynchronizedFlush(grid.com);  // at this point we actually get output from
+                                     //   above calls to PetscSynchronizedPrintf()
 
   ierr = vHnew.beginGhostComm(vH); CHKERRQ(ierr);
   ierr = vHnew.endGhostComm(vH); CHKERRQ(ierr);
@@ -472,5 +470,4 @@ PetscErrorCode IceModel::killEasyIceBergs() {
 
   return 0;
 }
-
 

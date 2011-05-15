@@ -70,8 +70,6 @@ PetscErrorCode SSAFD::allocate_fd() {
                            "ice thickness times effective viscosity (before an update)",
                            "Pa s m", ""); CHKERRQ(ierr);
 
-  use_cfbc = false;
-
   scaling = 1.0e9;  // comparable to typical beta for an ice stream;
 
   // The nuH viewer:
@@ -113,14 +111,12 @@ PetscErrorCode SSAFD::init(PISMVars &vars) {
                           nuh_viewer_size, flag); CHKERRQ(ierr);
     ierr = PISMOptionsIsSet("-ssa_view_nuh", "Enable the SSAFD nuH runtime viewer",
                             view_nuh); CHKERRQ(ierr);
-    ierr = PISMOptionsIsSet("-cfbc", "Enable PIK Calving Front Boundary Conditions",
-                            use_cfbc); CHKERRQ(ierr);
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  if (use_cfbc) {
+  if (config.get_flag("calving_front_stress_boundary_condition")) {
     ierr = verbPrintf(2,grid.com,
-                      "  [... including PIK CFBC implementation]\n"); CHKERRQ(ierr);
+      "  using PISM-PIK calving-front stress boundary condition ...\n"); CHKERRQ(ierr);
   }
 
   return 0;
@@ -151,6 +147,7 @@ PetscErrorCode SSAFD::assemble_rhs(Vec rhs) {
 
   const double standard_gravity = config.get("standard_gravity"),
     ocean_rho = config.get("sea_water_density");
+  const bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
 
   ierr = VecSet(rhs, 0.0); CHKERRQ(ierr);
 
@@ -365,6 +362,7 @@ PetscErrorCode SSAFD::assemble_matrix(bool include_basal_shear, Mat A) {
 
   const PetscScalar   dx=grid.dx, dy=grid.dy;
   const PetscScalar   beta_ice_free_bedrock = config.get("beta_ice_free_bedrock");
+  const bool use_cfbc = config.get_flag("calving_front_stress_boundary_condition");
 
   // shortcut:
   IceModelVec2V &vel = velocity;

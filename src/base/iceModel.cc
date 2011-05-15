@@ -214,19 +214,20 @@ PetscErrorCode IceModel::createVecs() {
   // iceberg identifying integer mask
   if (config.get_flag("kill_icebergs")) {
     ierr = vIcebergMask.create(grid, "IcebergMask", true, WIDE_STENCIL); CHKERRQ(ierr);
-    ierr = vIcebergMask.set_attrs("model_state", "iceberg identifying integer mask",
-			 "", ""); CHKERRQ(ierr);
-  	vector<double> icebergmask_values(5);
+    ierr = vIcebergMask.set_attrs("internal", 
+                                  "iceberg-identifying integer mask",
+                                  "", ""); CHKERRQ(ierr);
+    vector<double> icebergmask_values(5);
     icebergmask_values[0] = ICEBERGMASK_NO_ICEBERG;
     icebergmask_values[1] = ICEBERGMASK_NOT_SET;
     icebergmask_values[2] = ICEBERGMASK_ICEBERG_CAND;
     icebergmask_values[3] = ICEBERGMASK_STOP_OCEAN;
     icebergmask_values[4] = ICEBERGMASK_STOP_ATTACHED;
-	//more values to identify lakes
+    //more values to identify lakes?
 
     ierr = vIcebergMask.set_attr("flag_values", icebergmask_values); CHKERRQ(ierr);
     ierr = vIcebergMask.set_attr("flag_meanings",
-			"no_iceberg not_set iceberg_candidate ocean_boundary grounded_boudary"); CHKERRQ(ierr);
+      "no_iceberg not_set iceberg_candidate ocean_boundary grounded_boudary"); CHKERRQ(ierr);
     vIcebergMask.output_data_type = NC_BYTE;
     ierr = variables.add(vIcebergMask); CHKERRQ(ierr);
   }
@@ -342,21 +343,19 @@ PetscErrorCode IceModel::createVecs() {
   }
 
   if (config.get_flag("do_eigen_calving") == true) {
-    // PrinStrain1
     ierr = vPrinStrain1.create(grid, "edot_1", true); CHKERRQ(ierr);
-    ierr = vPrinStrain1.set_attrs("model_state", "major principal component of horizontal strain-rate",
-                           "1/s", ""); CHKERRQ(ierr);
+    ierr = vPrinStrain1.set_attrs("internal", 
+                                  "major principal component of horizontal strain-rate",
+                                  "1/s", ""); CHKERRQ(ierr);
     ierr = variables.add(vPrinStrain1); CHKERRQ(ierr);
-
-    // PrinStrain2
     ierr = vPrinStrain2.create(grid, "edot_2", true); CHKERRQ(ierr);
-    ierr = vPrinStrain2.set_attrs("model_state", "minor principal component of horizontal strain-rate",
-                           "1/s", ""); CHKERRQ(ierr);
+    ierr = vPrinStrain2.set_attrs("internal",
+                                  "minor principal component of horizontal strain-rate",
+                                  "1/s", ""); CHKERRQ(ierr);
     ierr = variables.add(vPrinStrain2); CHKERRQ(ierr);
-
   }
 
-if (config.get_flag("dirichlet_bc") == true) {
+  if (config.get_flag("dirichlet_bc") == true) {
     // bc_locations
 	  ierr = vBCMask.create(grid, "bcflag", true, WIDE_STENCIL); CHKERRQ(ierr);
       ierr = vBCMask.set_attrs("model_state", "Dirichlet boundary mask",

@@ -38,6 +38,9 @@ netcdf pism_config {
     pism_config:do_superpose = "yes";
     pism_config:do_superpose_doc = "Combine the velocity ﬁelds from the SIA and SSA models as in [\\ref BBssasliding]. Only effective if used with -ssa_sliding.";
 
+    pism_config:calving_front_stress_boundary_condition = "no";
+    pism_config:calving_front_stress_boundary_condition_doc = "Apply CFBC condition as in [\\ref Albrechtetal2011, \\ref Winkelmanetal2010TCD].  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in [\\ref BBssasliding].";
+
     pism_config:part_grid = "no";
     pism_config:part_grid_doc = "apply partially filled grid cell scheme";
 
@@ -544,7 +547,7 @@ netcdf pism_config {
    pism_config:WGS84_semiminor_axis = 6356752.314245;
    pism_config:WGS84_semiminor_axis_doc = "m; WGS84 reference ellipsoid semi-minor axis";
 
-   pism_config:output_medium = "acab artm cbar cbase csurf cflx dHdt diffusivity schoofs_theta tauc taud thksmooth topgsmooth usurf wvelsurf temp enthalpy";
+   pism_config:output_medium = "acab artm cbar cbase csurf cflx dHdt diffusivity schoofs_theta tauc taud thksmooth topgsmooth usurf wvelsurf temp enthalpy IcebergMask edot_1 edot_2";
    pism_config:output_medium_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size is selected. Does not include fields written by boundary models.";
 
    pism_config:output_big = "acab age artm bfrict bheatflx bmelt bwat bwp cbar cbase cell_area cflx csurf dbdt dHdt dhdt diffusivity enthalpy enthalpybase enthalpysurf hardav lat liqfrac litho_temp lon mask rank schoofs_theta tauc taud_mag temp tempbase tempsurf temp_pa temppabase tempicethk tempicethk_basal thk thksmooth tillphi topg topgsmooth velbase velsurf velbar usurf uvel vvel wvel wvel_rel wvelbase wvelsurf new_mask";

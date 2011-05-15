@@ -82,7 +82,6 @@ protected:
   KSP SSAKSP;
   Mat SSAStiffnessMatrix;
   Vec SSARHS;
-  bool use_cfbc;
   PetscScalar scaling;
 
   bool view_nuh;

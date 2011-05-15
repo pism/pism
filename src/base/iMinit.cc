@@ -541,6 +541,19 @@ PetscErrorCode IceModel::init_physics() {
     ierr = ice->setFromOptions(); CHKERRQ(ierr);
   }
 
+  // a report on whether PISM-PIK modifications of IceModel are in use
+  const bool pg   = config.get_flag("part_grid"),
+             pr   = config.get_flag("part_redist"),
+             ki   = config.get_flag("kill_icebergs");
+  if (pg || pr || ki) {
+    ierr = verbPrintf(2, grid.com,
+        "  PISM-PIK mass/geometry methods are in use:  "); CHKERRQ(ierr);
+  }
+  if (pg)   { ierr = verbPrintf(2, grid.com, "part_grid,"); CHKERRQ(ierr); }
+  if (pr)   { ierr = verbPrintf(2, grid.com, "part_redist,"); CHKERRQ(ierr); }
+  if (ki)   { ierr = verbPrintf(2, grid.com, "kill_icebergs"); CHKERRQ(ierr); }
+  if (pg || pr || ki)   { ierr = verbPrintf(2, grid.com, "\n"); CHKERRQ(ierr); }
+
   // Create the stress balance object:
   PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q"),
     pseudo_plastic_uthreshold = config.get("pseudo_plastic_uthreshold") / secpera,

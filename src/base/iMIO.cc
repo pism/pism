@@ -347,8 +347,8 @@ PetscErrorCode IceModel::initFromFile(const char *filename) {
     
     if (!exists) {
       ierr = verbPrintf(2, grid.com,
-                        "PISM WARNING: Href not found in %s. Setting it to zero...\n",
-                        filename); CHKERRQ(ierr);
+        "PISM WARNING: Href for PISM-PIK -part_grid not found in %s. Setting it to zero...\n",
+        filename); CHKERRQ(ierr);
 
       ierr = vHref.set_attr("pism_intent", "diagnostic"); CHKERRQ(ierr);
       ierr = vHref.set(0.0); CHKERRQ(ierr);

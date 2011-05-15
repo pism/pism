@@ -82,6 +82,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = PISMOptionsIsSet("-calving_at_thickness", flag);  CHKERRQ(ierr);
   if (flag)  config.set_flag("do_thickness_calving", true);
 
+  ierr = config.flag_from_option("cfbc", "calving_front_stress_boundary_condition"); CHKERRQ(ierr);
+
   // if set, use old IceModel::temperatureStep(), and set enthalpy as though
   //   ice is cold
   ierr = config.flag_from_option("cold", "do_cold_ice_methods"); CHKERRQ(ierr);
@@ -186,6 +188,15 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.flag_from_option("part_grid", "part_grid"); CHKERRQ(ierr);
 
   ierr = config.flag_from_option("part_redist", "part_redist"); CHKERRQ(ierr);
+
+  // option "-pik" turns on a suite of PISMPIK effects (but not -eigen_calving)
+  ierr = PISMOptionsIsSet("-pik", "enable suite of PISM-PIK mechanisms", flag); CHKERRQ(ierr);
+  if (flag) {
+    config.set_flag("calving_front_stress_boundary_condition", true);
+    config.set_flag("part_grid", true);
+    config.set_flag("part_redist", true);
+    config.set_flag("kill_icebergs", true);
+  }
 
   // plastic_till_c_0 is a parameter in the computation of the till yield stress tau_c
   // from the thickness of the basal melt water; see updateYieldStressFromHmelt()

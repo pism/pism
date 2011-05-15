@@ -64,14 +64,14 @@ PetscErrorCode IceModel::eigenCalving() {
   ierr = vDiffCalvRate.set(0.0); CHKERRQ(ierr);
   ierr = vDiffCalvRate.begin_access(); CHKERRQ(ierr);
 
-  if(dx != dy) {
+  if (dx != dy) {
     ierr = PetscPrintf(grid.com,
-                       "PISMPIK_ERROR: Calvingrate using a non-quadratic grid does not work (yet), "
-                       " since it has no direction!!!\n");
+      "PISMPIK_ERROR: -eigen_calving using a non-square grid cell does not work (yet);\n"
+      "  since it has no direction!!!\n");
     PISMEnd();
   }
 
-  // Distance from calving front where straine rate is evaluated
+  // Distance from calving front where strain rate is evaluated
   PetscInt offset = 2;
 
   MaskQuery mask(vMask);
