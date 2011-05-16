@@ -27,8 +27,8 @@
 //! Helper function for initializing a grid with the given dimensions and periodicity.
 //! The grid is shallow (3 z-layers).
 PetscErrorCode init_shallow_grid(IceGrid &grid, 
-                                      PetscReal Lx, PetscReal Ly, 
-                                             PetscInt Mx, PetscInt My, Periodicity p);
+                                 PetscReal Lx, PetscReal Ly, 
+                                 PetscInt Mx, PetscInt My, Periodicity p);
 
 
 

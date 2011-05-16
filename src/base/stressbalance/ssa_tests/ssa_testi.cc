@@ -211,7 +211,6 @@ int main(int argc, char *argv[]) {
     set<string> ssa_choices;
     ssa_choices.insert("fem");
     ssa_choices.insert("fd");
-    ssa_choices.insert("fd_pik");
     string driver = "fem";
 
     ierr = PetscOptionsBegin(com, "", "SSA_TESTI options", ""); CHKERRQ(ierr);

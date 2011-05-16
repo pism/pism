@@ -16,6 +16,9 @@ if (Pism_BUILD_EXTRA_EXECS)
     add_executable (ssa_test_plug ssa_test_plug.cc ../../materials.cc)
     target_link_libraries (ssa_test_plug pismstressbalance)
 
-    install (TARGETS  ssa_testi ssa_testj ssa_test_const ssa_test_linear ssa_test_plug 
+    add_executable (ssa_test_cfbc ssa_test_cfbc.cc ../../materials.cc)
+    target_link_libraries (ssa_test_cfbc pismstressbalance)
+
+    install (TARGETS  ssa_testi ssa_testj ssa_test_const ssa_test_linear ssa_test_plug ssa_test_cfbc
       DESTINATION ${Pism_BIN_DIR})
 endif ()
