@@ -16,9 +16,9 @@ if (RST2MAN)
     endforeach(name)
   endmacro(add_manpages)
 
-  add_manpages("pismr;pisms;pismv;pgrn;pross")
+  add_manpages("pismr;pisms;pismv;pgrn;pross;pclimate")
 
   add_custom_target(manpages ALL
-    DEPENDS pismr.1 pisms.1 pismv.1 pgrn.1 pross.1)
+    DEPENDS pismr.1 pisms.1 pismv.1 pgrn.1 pross.1 pclimate.1)
 
 endif()
