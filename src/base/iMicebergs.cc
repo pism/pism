@@ -178,10 +178,11 @@ PetscErrorCode IceModel::identifyNotAnIceBerg() {
 
   ierr = verbPrintf(4, grid.com, "PISM-PIK INFO: identifyNotAnIceBerg is called \n"); CHKERRQ(ierr);
 
-  // this communication of ghostvalues is done here to make sure that asking
+  // this communication of ghost values is done here to make sure that asking
   // about neighbouring values in this routine doesn't lead to inconsistencies
   // in parallel computation, if the neighbour belongs to another processor
   // domain.
+  // FIXME: this is probably redundant
   ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
   ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
 
@@ -218,15 +219,15 @@ PetscErrorCode IceModel::identifyNotAnIceBerg() {
     }
     ierr = vIcebergMask.end_access(); CHKERRQ(ierr);
 
-    /* xxxGhostComm() are collective operations. They must be invoked if anything changed on any processor.
-     * Thus, collect here the checkingNoIceBergs flags from all processors and compute the global logical OR
-     */
-    int flag = done;
-    MPI_Allreduce(MPI_IN_PLACE, &flag, 1, MPI_INT, MPI_LOR, grid.com);
-    done = flag;
-
     ierr = vIcebergMask.beginGhostComm(); CHKERRQ(ierr);
     ierr = vIcebergMask.endGhostComm(); CHKERRQ(ierr);
+
+    // We're "done" only if the iceberg mask stopped changing on *all*
+    // processor sub-domains.
+    int flag = done;
+    MPI_Allreduce(MPI_IN_PLACE, &flag, 1, MPI_INT, MPI_LAND, grid.com);
+    done = flag;
+
     loopcount += 1;
   }
 
