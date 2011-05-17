@@ -103,6 +103,7 @@ PetscErrorCode IceModel::initBasalTillModel() {
   PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q");
 
   ierr = vtauc.set(config.get("default_tauc")); CHKERRQ(ierr);
+  ierr = vtillphi.set(config.get("default_till_phi")); CHKERRQ(ierr);
 
   bool topgphiSet,svphiSet, plastic_phi_set;
   string filename;
@@ -140,10 +141,6 @@ PetscErrorCode IceModel::initBasalTillModel() {
   if (topgphiSet && plastic_phi_set) {
     PetscPrintf(grid.com, "ERROR: only one of -plastic_phi and -topg_to_phi is allowed.\n");
     PISMEnd();
-  }
-
-  if (plastic_phi_set) {
-    ierr = vtillphi.set(config.get("default_till_phi")); CHKERRQ(ierr);
   }
 
   if (svphiSet) {

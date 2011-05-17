@@ -45,11 +45,11 @@ static double H_exact(double x)
 }
 
 // theoretical location of the calving front
-static double x_cfbc(double t)
-{
-  const double Q0 = V0*H0;
-  return Q0 / (4*C) * (pow(3*C*t + 1/pow(H0,3),4.0/3.0) - 1/pow(H0,4));
-}
+// static double x_cfbc(double t)
+// {
+//   const double Q0 = V0*H0;
+//   return Q0 / (4*C) * (pow(3*C*t + 1/pow(H0,3),4.0/3.0) - 1/pow(H0,4));
+// }
 
 // velocity profile; corresponds to constant flux
 static double u_exact(double x)
@@ -122,15 +122,14 @@ PetscErrorCode SSATestCaseCFBC::initializeSSACoefficients()
   ierr = vel_bc.begin_access(); CHKERRQ(ierr);
   ierr = ice_mask.begin_access(); CHKERRQ(ierr);
   
-  double x_max = x_cfbc(T*secpera);
   double ocean_rho = config.get("sea_water_density");
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar x = grid.x[i] + grid.Lx;
+      const PetscScalar x = grid.x[i];
       
-      if (x <= x_max) {
-        thickness(i, j) = H_exact(x);
+      if (x <= 0) {
+        thickness(i, j) = H_exact(x + grid.Lx);
         ice_mask(i, j)  = MASK_FLOATING;
       } else {
         thickness(i, j) = 0;
@@ -179,10 +178,8 @@ PetscErrorCode SSATestCaseCFBC::exactSolution(PetscInt /*i*/, PetscInt /*j*/,
                                               PetscReal x, PetscReal /*y*/,
                                               PetscReal *u, PetscReal *v)
 {
-  x = x + grid.Lx;
-
-  if (x <= x_cfbc(T*secpera)) {
-    *u = u_exact(x);
+  if (x <= 0) {
+    *u = u_exact(x + grid.Lx);
   } else {
     *u = 0;
   }

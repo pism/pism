@@ -335,6 +335,7 @@ int main(int argc, char *argv[]) {
       "and set up the models:\n"
       "  -atmosphere    Chooses an atmosphere model; see User's Manual\n"
       "  -surface       Chooses a surface model; see User's Manual\n"
+      "  -ocean         Chooses an ocean model; see User's Manual\n"
       ); CHKERRQ(ierr);
 
     // read the config option database:
