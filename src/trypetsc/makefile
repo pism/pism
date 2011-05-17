@@ -1,6 +1,6 @@
 # this makefile is similar to that in src/snes/examples/tutorials/makefile
 
-all: printsome lapbasic lapdof2 poisson localVecMax
+all: printsome lapbasic lapdof2 poisson localVecMax mgpoisson
 
 include ${PETSC_DIR}/conf/variables
 include ${PETSC_DIR}/conf/rules
@@ -20,6 +20,10 @@ lapbasic: lapbasic.o  chkopts
 lapdof2: lapdof2.o  chkopts
 	-${CLINKER} -o lapdof2 lapdof2.o ${PETSC_KSP_LIB}
 	${RM} lapdof2.o
+
+mgpoisson: mgpoisson.o  chkopts
+	-${CLINKER} -o mgpoisson mgpoisson.o ${PETSC_KSP_LIB}
+	${RM} mgpoisson.o
 
 poisson: poisson.o  chkopts
 	-${CLINKER} -o poisson poisson.o ${PETSC_SNES_LIB}
