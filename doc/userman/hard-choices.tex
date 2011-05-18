@@ -38,7 +38,7 @@ Command-line options \texttt{-atmosphere}, \texttt{-surface} and \texttt{-ocean}
 
 For example,
 \begin{verbatim}
-$ pismr -i foo.nc -atmosphere searise_greenland,forcing \
+$ pismr -i foo.nc -atmosphere searise_greenland,dTforcing \
         -dTforcing delta_T.nc -surface pdd
 \end{verbatim}%$
 chooses a combination of the SeaRISE-Greenland atmosphere model (see below), modified by an ice-core-derived paleo-temperature forcing (shift), and a positive degree-day (PDD) local surface mass balance model.  Because it is not mentioned, the ocean model is the default one (\texttt{-ocean constant}).
@@ -239,7 +239,7 @@ PISM includes one simple ocean model: \texttt{constant}, providing constant (bot
 
   The ocean \texttt{forcing} modifier implements sea level forcing. The command-line option \fileopt{dSLforcing} is used to specify the file containing sea level offsets:
 \begin{verbatim}
-$ pismr -i in.nc -ocean constant,forcing -dSLforcing delta_SL.nc
+$ pismr -i in.nc -ocean constant,dSLforcing -dSLforcing delta_SL.nc
 \end{verbatim}%$
 uses \texttt{delta_SL.nc}
 

@@ -377,7 +377,7 @@ Table \ref{tab:snapshot-opts} lists the options related to saving snapshots of t
 Basic graphical views of the changing state of a PISM ice model are available at the command line by using options listed in table \ref{tab:diag-viewers}.  All the quantities listed in table \ref{tab:extra-vars} are available.  Additionally, a couple of diagnostic quantities are \emph{only} available as run-time viewers; these are shown in table \ref{tab:special-diag-viewers}.
 
 % FIXME: is this sentence right?:
-Note that (for performance and implementation reasons) map and slice viewers
+Note that (for performance and implementation reasons) map viewers
 are transposed.
 
 \begin{table}[ht]
@@ -388,7 +388,7 @@ are transposed.
     \textbf{Option} & \textbf{Description}\\
     \midrule
     \listopt{view_map} & Turns on map-plane views of one or several variables, see tables \ref{tab:extra-vars}  \\
-    \txtopt{viewer_size}{number} & desired viewer size, in pixels\\
+    \txtopt{view_size}{number} & desired viewer size, in pixels\\
     \listopt{view_sounding} &Turns on sounding viewers showing values in a column\\
     \txtopt{id}{row} & Sounding row-index\\
     \txtopt{jd}{column} & Sounding column-index\\

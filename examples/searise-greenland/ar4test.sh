@@ -11,7 +11,7 @@
 mpiexec -n 8 pismr -ocean_kill -e 3 -skip 5 \
   -ssa_sliding -thk_eff -pseudo_plastic_q 0.25 -plastic_pwfrac 0.98 -bed_def lc \
   -i g20km_0.nc -ocean constant \
-  -atmosphere searise_greenland,forcing -surface pdd -pdd_fausto \
+  -atmosphere searise_greenland,dTforcing -surface pdd -pdd_fausto \
   -anomaly_temp ar4_temp_anomaly.nc \
   -anomaly_precip ar4_precip_anomaly.nc \
   -ys 0 -ye 500 -ts_file ts_ar4_y500.nc -ts_times 0:5:500 \

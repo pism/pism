@@ -265,7 +265,7 @@ The next experiment starts from the end of the steady state SSL2 run above.  Rec
 The script \texttt{ccl3.sh} runs the CCL3 experiment for the full 250ka period, with this single command
 \begin{verbatim}
 mpiexec -n 8 pgrn -ccl3 -skip 10 -i green_ssl2_110ka.nc -ys -249900 -ye 0 \
-        -atmosphere eismint_greenland,forcing -ocean constant,forcing \
+        -atmosphere eismint_greenland,dTforcing -ocean constant,dSLforcing \
         -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc \
         -save_file snaps_ccl3.nc -save_times -240000:10000:-10000 \
         -ts_file vol_ccl3.nc -ts_vars ivol -ts_times -249900:100:0 \
@@ -347,10 +347,10 @@ Here are two things to notice:
 
 \bigskip
 We can also test the surface temperature forcing code with the following command.
-% pclimate -i green20km_y1.nc -o dT_movie.nc -atmosphere eismint_greenland,forcing -dTforcing grip_dT.nc -ys -2.5e5 -ye 0 -dt 2000
+% pclimate -i green20km_y1.nc -o dT_movie.nc -atmosphere eismint_greenland,dTforcing -dTforcing grip_dT.nc -ys -2.5e5 -ye 0 -dt 2000
 \begin{verbatim}
 $ pclimate -i green20km_y1.nc -o dT_movie.nc \
-           -atmosphere eismint_greenland,forcing -dTforcing grip_dT.nc \
+           -atmosphere eismint_greenland,dTforcing -dTforcing grip_dT.nc \
            -ys -2.5e5 -ye 0 -dt 2000
 \end{verbatim}%$
 The output \texttt{dT_movie.nc} and \texttt{grip_dT.nc} mentioned in section above were used to create figure \ref{fig:artm-timeseries}.
@@ -367,11 +367,11 @@ This figure shows the GRIP temperature offsets (top graph; compare to figure \re
 \begin{comment}
   FIXME: Variable acab in following is worth looking at. It looks right and it
   may be possible to compare to other paleo-limate studies:
-% pclimate -i green20km_y1.nc -o bar.nc -ys -125000.0 -ye -0.0 -dt 1000.0  -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc -atmosphere eismint_greenland,forcing -surface pdd -ocean constant,forcing
+% pclimate -i green20km_y1.nc -o bar.nc -ys -125000.0 -ye -0.0 -dt 1000.0  -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc -atmosphere eismint_greenland,dTforcing -surface pdd -ocean constant,dSLforcing
 \begin{verbatim}
 $ pclimate -i green20km_y1.nc -o bar.nc -ys -125000.0 -ye -0.0 -dt 1000.0 \
            -dTforcing grip_dT.nc -dSLforcing specmap_dSL.nc \
-           -atmosphere eismint_greenland,forcing -surface pdd -ocean constant,forcing
+           -atmosphere eismint_greenland,dTforcing -surface pdd -ocean constant,dSLforcing
 \end{verbatim}%$
 \end{comment}
 

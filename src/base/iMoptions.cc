@@ -265,21 +265,6 @@ PetscErrorCode  IceModel::setFromOptions() {
     config.set_flag("use_ssa_when_grounded", true);
   }
 
-  // check if -super is set and warn if it has no effect:
-  ierr = PISMOptionsIsSet("-super", flag); CHKERRQ(ierr);
-  if (flag && (config.get_flag("use_ssa_when_grounded") == false)) {
-    ierr = verbPrintf(2, grid.com,
-		      "PISM WARNING: option -super has no effect "
-		      "if use_ssa_when_grounded is not set.\n"); CHKERRQ(ierr);
-  }
-  ierr = PISMOptionsIsSet("-no_super", flag); CHKERRQ(ierr);
-  if (flag && (config.get_flag("use_ssa_when_grounded") == false)) {
-    ierr = verbPrintf(2, grid.com,
-		      "PISM WARNING: option -no_super has no effect "
-		      "if use_ssa_when_grounded is not set.\n"); CHKERRQ(ierr);
-  }
-  ierr = config.flag_from_option("super", "do_superpose"); CHKERRQ(ierr);
-
   ierr = check_old_option_and_stop(grid.com, "-ssa",
 				   "-ssa_sliding' or '-ssa_floating_only"); CHKERRQ(ierr);
   ierr = check_old_option_and_stop(grid.com, "-plastic", "-ssa_sliding"); CHKERRQ(ierr);
