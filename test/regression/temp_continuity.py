@@ -12,13 +12,16 @@ except:
 pism_path=argv[1]
 mpiexec=argv[2]
 
-print "Testing: temperature continuity at ice-bed interface (cold case)."
+print "Testing: temperature continuity at ice-bed interface (polythermal case)."
+
+e = system("%s %s/pismv -test F -y 10 -verbose 1 -o bar.nc" % (mpiexec, pism_path))
+if e != 0:
+  exit(1)
 
 deltas = []
-dts = [2, 1, 0.5]
+dts = [200, 100]
 for dt in dts:
-    e = system("%s %s/pisms -eisII A -Mx 16 -My 16 -Mz 31 -Lbz 1000 -Mbz 11 -y 100 -o foo.nc -max_dt %f" %
-               (mpiexec, pism_path, dt))
+    e = system("%s %s/pisms -eisII B -y 5000 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -no_cold -regrid_file bar.nc -regrid_vars thk -verbose 1 -max_dt %f -o foo.nc" % (mpiexec, pism_path, dt))
     if e != 0:
         exit(1)
 
@@ -46,5 +49,6 @@ for (dt, delta) in zip(dts, deltas):
 if any(diff(deltas) > 0):
     exit(1)
 
-system("rm foo.nc foo.nc~ temp.nc litho_temp.nc")
+system("rm foo.nc foo.nc~ bar.nc temp.nc litho_temp.nc")
 exit(0)
+
