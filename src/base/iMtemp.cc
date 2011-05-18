@@ -360,31 +360,29 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
         // transfer column into vWork3d; communication later
         ierr = vWork3d.setValColumnPL(i,j,Tnew); CHKERRQ(ierr);
 
-        // basalMeltRate[][] is rate of mass loss at bottom of ice everywhere;
-        //   note massContExplicitStep() calls PISMOceanCoupler separately
+        // basalMeltRate[][] is rate of mass loss at bottom of ice; finalize it and Hmelt
+        //   note massContExplicitStep() calls PISMOceanCoupler; FIXME: does there
+        //   need to be a check that shelfbmassflux(i,j) is up to date?
         if (mask.ocean(i,j)) {
-          // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)
-          basalMeltRate[i][j] = shelfbmassflux(i,j); // set by PISMOceanCoupler
-        } else {
-          // rate of change of Hmelt[][];  can be negative (till water freeze-on)
-          // Also note that this rate is calculated *before* limiting Hmelt.
-          basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / (dt_years_TempAge * secpera);
-        }
-
-        // finalize Hmelt value
-        Hmeltnew -= hmelt_decay_rate * (dt_years_TempAge * secpera);
-        if (mask.ocean(i,j)) {
-          if (vH(i,j) < 0.1) {
-            // truely no ice, so zero-out subglacial fields
-            Hmelt[i][j] = 0.0;
-          } else {
-            // if floating assume maximally saturated till to avoid "shock" if grounding line advances
+          if (mask.icy(i,j)) {
+            // rate of mass loss at bottom of ice shelf;  can be negative (marine freeze-on)
+            basalMeltRate[i][j] = shelfbmassflux(i,j); // set by PISMOceanCoupler
+            // if floating ice is present assume maximally saturated till to avoid "shock" if
+            //   grounding line advances
             Hmelt[i][j] = hmelt_max;
+          } else {
+            basalMeltRate[i][j] = 0.0;
+            Hmelt[i][j] = 0.0;
           }
         } else {
-          // limit Hmelt by default max and store
-          Hmelt[i][j] = PetscMin(hmelt_max, Hmeltnew);
-      }
+          // basalMeltRate is rate of change of Hmelt[][];  can be negative
+          //   (subglacial water freezes-on); note this rate is calculated
+          //   *before* limiting Hmelt.
+          basalMeltRate[i][j] = (Hmeltnew - Hmelt[i][j]) / (dt_years_TempAge * secpera);
+          // model loss to undetermined exterior:
+          Hmeltnew -= hmelt_decay_rate * (dt_years_TempAge * secpera);  
+          Hmelt[i][j] = PetscMin(hmelt_max, PetscMax(Hmeltnew, 0.0));
+        }
 
     } 
   }

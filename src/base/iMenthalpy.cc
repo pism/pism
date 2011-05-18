@@ -386,9 +386,9 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
       // deal completely with columns with no ice; enthalpy, vHmelt, vbmr all need setting
       if (ice_free_column) {
         ierr = vWork3d.setColumn(i,j,Enth_ks); CHKERRQ(ierr);
-        if ((vH(i,j) > 0.1) &&  (is_floating)) {
-          // ks == 0, but we have ice (though not enough to do an ice column solve)
-          // if floating then assume-maximally saturated till to avoid "shock" if grounding line advances
+        if (mask.floating_ice(i,j)) {
+          // if floating then assume-maximally saturated till to avoid "shock"
+          //   when grounding line advances
           vHmelt(i,j) = hmelt_max;
           vbmr(i,j) = shelfbmassflux(i,j);
         } else {
