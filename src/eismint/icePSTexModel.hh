@@ -50,21 +50,7 @@ protected:
   char exper_chosen_name[10];
   int exper_chosen;
   
-  PetscErrorCode init_mask_phi();
   PetscErrorCode setBedElev();
-  PetscErrorCode setTillPhi();
-
-  int sectorNumberP2(const PetscScalar x, const PetscScalar y);
-  bool inStream(const PetscScalar angle, const PetscScalar width,
-               const PetscScalar x, const PetscScalar y,
-               PetscScalar &x_loc, PetscScalar &y_loc);
-  bool inStreamNbhd(bool strictly_in_stream,
-               const PetscScalar angle, const PetscScalar width,
-               const PetscScalar x, const PetscScalar y,
-               PetscScalar &x_loc, PetscScalar &y_loc);
-  PetscScalar phiLocal(const PetscScalar width, 
-         const PetscScalar x, const PetscScalar y,
-         const PetscScalar STRONG, const PetscScalar UP, const PetscScalar DOWN);
 
   // PST scalar diagnostic series
   PetscErrorCode prepare_series();
@@ -75,6 +61,25 @@ protected:
      *maxcbar,                           // max speed anywhere
      *avup0, *avup1, *avup2, *avup3,     // upstream speeds; avup3 not written for P3
      *avdwn0, *avdwn1, *avdwn2, *avdwn3; // downstream speeds; avdwn3 DITTO
+};
+
+class PSTYieldStress : public PISMDefaultYieldStress
+{
+public:
+  PSTYieldStress(IceGrid &g, const NCConfigVariable &conf, int e, string name)
+    : PISMDefaultYieldStress(g, conf),
+      experiment(e), experiment_name(name) {}
+  virtual ~PSTYieldStress() {}
+
+  virtual PetscErrorCode init(PISMVars &vars);
+protected:
+  int experiment;
+  string experiment_name;
+  PetscErrorCode init_till_phi();
+  PetscScalar phiLocal(const PetscScalar width, 
+         const PetscScalar x, const PetscScalar y,
+         const PetscScalar STRONG, const PetscScalar UP, const PetscScalar DOWN);
+  int sectorNumberP2(const PetscScalar x, const PetscScalar y);
 };
 
 #endif /* __icePSTexModel_hh */

@@ -42,6 +42,7 @@ IceModel::IceModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_ov
   signal(SIGUSR1, pism_signal_handler);
   signal(SIGUSR2, pism_signal_handler);
 
+  basal_yield_stress = NULL;
   basal = NULL;
 
   stress_balance = NULL;
@@ -297,15 +298,6 @@ PetscErrorCode IceModel::createVecs() {
   vbmr.set_attr("comment", "positive basal melt rate corresponds to ice loss");
   ierr = variables.add(vbmr); CHKERRQ(ierr);
 
-  // friction angle for till under grounded ice sheet
-  ierr = vtillphi.create(grid, "tillphi", true, WIDE_STENCIL);
-  // ghosted to allow the "redundant" computation of tauc
-  // PROPOSED standard_name = land_ice_basal_material_friction_angle
-  ierr = vtillphi.set_attrs("climate_steady", "friction angle for till under grounded ice sheet",
-			    "degrees", ""); CHKERRQ(ierr);
-  vtillphi.time_independent = true;
-  ierr = variables.add(vtillphi); CHKERRQ(ierr);
-
   // longitude
   ierr = vLongitude.create(grid, "lon", true); CHKERRQ(ierr);
   ierr = vLongitude.set_attrs("mapping", "longitude", "degree_east", "longitude"); CHKERRQ(ierr);
@@ -538,7 +530,10 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
 
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (use_ssa_when_grounded) {
-    ierr = updateYieldStressUsingBasalWater();  CHKERRQ(ierr);
+    if (basal_yield_stress) {
+      ierr = basal_yield_stress->update(grid.year, dt / secpera); CHKERRQ(ierr);
+      ierr = basal_yield_stress->basal_material_yield_stress(vtauc); CHKERRQ(ierr);
+    }
     stdout_flags += "y";
   } else stdout_flags += "$";
 

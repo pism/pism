@@ -458,11 +458,9 @@ PetscErrorCode IceModel::model_state_setup() {
     ierr = btu->init(variables); CHKERRQ(ierr);
   }
 
-  // init basal till model, possibly inverting for phi, if desired;
-  //   reads options "-topg_to_phi phi_min,phi_max,phi_ocean,topg_min,topg_max"
-  //   or "-surf_vel_to_phi foo.nc";
-  //   initializes IceBasalResistancePlasticLaw* basal; sets fields vtauc, vtillphi
-  ierr = initBasalTillModel(); CHKERRQ(ierr);
+  if (basal_yield_stress) {
+    ierr = basal_yield_stress->init(variables); CHKERRQ(ierr);
+  }
 
   ierr = stampHistoryCommand(); CHKERRQ(ierr);
 
@@ -562,7 +560,10 @@ PetscErrorCode IceModel::init_physics() {
   bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till"),
     use_ssa_velocity = config.get_flag("use_ssa_velocity"),
     do_sia = config.get_flag("do_sia");
-  
+
+  if (basal_yield_stress == NULL)
+    basal_yield_stress = new PISMDefaultYieldStress(grid, config);
+
   if (basal == NULL)
     basal = new IceBasalResistancePlasticLaw(plastic_regularization, do_pseudo_plastic_till, 
                                              pseudo_plastic_q, pseudo_plastic_uthreshold);

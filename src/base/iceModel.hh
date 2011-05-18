@@ -40,6 +40,7 @@ file containing a complete model state, versus bootstrapping).
 
 #include "flowlaw_factory.hh"   // IceFlowLawFactory and friends
 #include "materials.hh"         // IceBasalResistancePlasticLaw
+#include "PISMYieldStress.hh"
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"
 #include "grid.hh"
@@ -59,18 +60,6 @@ file containing a complete model state, versus bootstrapping).
 /// @cond NAMESPACE_BROWSER
 using namespace std;
 /// @endcond
-
-
-// FIXME: this should be put with the iMbasal.cc submodel:
-//! Local copy of parameters used by IceModel::getBasalWaterPressure().
-struct BWPparams {
-  bool      usebmr,
-            usethkeff;
-  PetscReal bmr_scale,
-            thkeff_reduce,
-            thkeff_H_high,
-            thkeff_H_low;
-};
 
 
 //! The base class for PISM.  Contains all essential variables, parameters, and flags for modelling an ice sheet.
@@ -159,6 +148,8 @@ protected:
 
   IceFlowLawFactory     iceFactory;
   IceFlowLaw            *ice;
+
+  PISMYieldStress *basal_yield_stress;
   IceBasalResistancePlasticLaw *basal;
 
   EnthalpyConverter *EC;
@@ -186,7 +177,6 @@ protected:
         vuplift,	//!< bed uplift rate; ghosted to simplify the code computing it
         vGhf,		//!< geothermal flux; no ghosts
         bedtoptemp,     //!< temperature seen by bedrock thermal layer, if present; no ghosts
-        vtillphi,	//!< friction angle for till under grounded ice sheet;
                         //!< ghosted to be able to compute tauc "redundantly"
 
         vHref,          //!< accumulated mass advected to a partially filled grid cell
@@ -264,15 +254,6 @@ protected:
 
   // see iMage.cc
   virtual PetscErrorCode ageStep();
-
-  // see iMbasal.cc: all relate to grounded SSA
-  virtual PetscErrorCode initBasalTillModel();
-  virtual PetscErrorCode computePhiFromBedElevation();
-  virtual PetscScalar    getBasalWaterPressure(
-                           PetscScalar thk, PetscScalar bwat, PetscScalar bmr,
-                           PetscScalar frac, PetscScalar hmelt_max,
-                           BWPparams &param) const;
-  virtual PetscErrorCode updateYieldStressUsingBasalWater();
 
   // see iMbeddef.cc
   PetscScalar last_bed_def_update;

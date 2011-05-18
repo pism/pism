@@ -367,6 +367,9 @@ PetscErrorCode IceModel::set_output_size(string option,
   if (btu != NULL)
     btu->add_vars_to_output(keyword, result);
 
+  if (basal_yield_stress != NULL)
+    basal_yield_stress->add_vars_to_output(keyword, result);
+
   // Ask the stress balance module to add more variables:
   if (stress_balance != NULL)
     stress_balance->add_vars_to_output(keyword, result);

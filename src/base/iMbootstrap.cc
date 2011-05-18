@@ -109,8 +109,6 @@ PetscErrorCode IceModel::bootstrap_2d(const char *filename) {
                            config.get("bootstrapping_Hmelt_value_no_var")); CHKERRQ(ierr);
   ierr =       vbmr.regrid(filename,  
                            config.get("bootstrapping_bmelt_value_no_var")); CHKERRQ(ierr);
-  ierr =   vtillphi.regrid(filename,  
-                           config.get("bootstrapping_tillphi_value_no_var")); CHKERRQ(ierr);
   ierr =       vGhf.regrid(filename,  
                            config.get("bootstrapping_geothermal_flux_value_no_var"));
   CHKERRQ(ierr);

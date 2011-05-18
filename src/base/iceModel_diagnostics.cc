@@ -24,7 +24,6 @@
 PetscErrorCode IceModel::init_diagnostics() {
 
   // Add IceModel diagnostics:
-  diagnostics["bwp"]              = new IceModel_bwp(this, grid, variables);
   diagnostics["cts"]              = new IceModel_cts(this, grid, variables);
   diagnostics["dhdt"]             = new IceModel_dhdt(this, grid, variables);
   diagnostics["enthalpybase"]     = new IceModel_enthalpybase(this, grid, variables);
@@ -54,6 +53,10 @@ PetscErrorCode IceModel::init_diagnostics() {
   // Get diagnostics supported by the bed deformation model:
   if (beddef) {
     beddef->get_diagnostics(diagnostics);
+  }
+
+  if (basal_yield_stress) {
+    basal_yield_stress->get_diagnostics(diagnostics);
   }
 
   int threshold = 5;
@@ -156,78 +159,6 @@ PetscErrorCode IceModel_rank::compute(IceModelVec* &output) {
       (*result)(i,j) = grid.rank;
   ierr = result->end_access();
 
-  output = result;
-  return 0;
-}
-
-//! Computes the subglacial (basal) water pressure
-IceModel_bwp::IceModel_bwp(IceModel *m, IceGrid &g, PISMVars &my_vars)
-  : PISMDiag<IceModel>(m, g, my_vars) {
-  
-  // set metadata:
-  vars[0].init_2d("bwp", grid);
-  set_attrs("subglacial (pore) water pressure", "", "Pa", "Pa", 0);
-  vars[0].set("_FillValue", -0.01);
-  vars[0].set("valid_min", 0);
-}
-
-/*!
-  \f[p_w = \alpha\, \frac{w}{w_{\text{max}}}\, \rho\, g\, H,\f]
-  where 
-
-  - \f$\alpha\f$ is the till pore water fraction (till_pw_fraction),
-  - \f$w\f$ is the effective thickness of subglacial melt water (bwat)
-  - \f$w_{\text{max}}\f$ is the maximum allowed value for \f$w\f$ (hmelt_max),
-  - \f$\rho\f$ is the ice density (ice_density)
-  - \f$H\f$ is the ice thickness (thk)
-
-Result is set to invalid (_FillValue) where the ice is floating, there being
-no meaning to the above calculation.
- */
-PetscErrorCode IceModel_bwp::compute(IceModelVec* &output) {
-  PetscErrorCode ierr;
-
-  IceModelVec2S *result = new IceModelVec2S;
-  ierr = result->create(grid, "bwp", false); CHKERRQ(ierr);
-  ierr = result->set_metadata(vars[0], 0); CHKERRQ(ierr);
-
-  const PetscScalar
-    alpha     = model->config.get("till_pw_fraction"),
-    wmax      = model->config.get("hmelt_max"),
-    fillval   = -0.01;
-  BWPparams p;
-  p.usebmr        = model->config.get_flag("bmr_enhance_basal_water_pressure");
-  p.usethkeff     = model->config.get_flag("thk_eff_basal_water_pressure");
-  p.bmr_scale     = model->config.get("bmr_enhance_scale");
-  p.thkeff_reduce = model->config.get("thk_eff_reduced");
-  p.thkeff_H_high = model->config.get("thk_eff_H_high");
-  p.thkeff_H_low  = model->config.get("thk_eff_H_low");
-
-  ierr = model->vH.begin_access(); CHKERRQ(ierr);
-  ierr = model->vHmelt.begin_access(); CHKERRQ(ierr);
-  ierr = model->vbmr.begin_access(); CHKERRQ(ierr);
-  ierr = result->begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (model->vH(i,j) > 0.0) {
-        (*result)(i,j) = model->getBasalWaterPressure(model->vH(i,j), // FIXME task #7297
-                                                   model->vHmelt(i,j),
-                                                   model->vbmr(i,j),
-                                                   alpha, wmax, p);
-      } else { // put negative value below valid range
-        (*result)(i,j) = fillval;
-      }
-    }
-  }
-  ierr = model->vH.end_access(); CHKERRQ(ierr);
-  ierr = model->vHmelt.end_access(); CHKERRQ(ierr);
-  ierr = model->vbmr.end_access(); CHKERRQ(ierr);
-  ierr = result->end_access(); CHKERRQ(ierr);
-
-  MaskQuery m(model->vMask);
-
-  ierr = m.fill_where_floating(*result, fillval); CHKERRQ(ierr);
-  
   output = result;
   return 0;
 }

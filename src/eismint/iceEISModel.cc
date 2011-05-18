@@ -377,8 +377,6 @@ PetscErrorCode IceEISModel::set_vars_from_options() {
 
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no expers have uplift at start
 
-  ierr = vtillphi.set(config.get("default_till_phi")); CHKERRQ(ierr);
-
   // if no -i file then starts with zero ice
   ierr = vh.set(0.0); CHKERRQ(ierr);
   ierr = vH.set(0.0); CHKERRQ(ierr);

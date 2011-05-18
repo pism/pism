@@ -167,6 +167,10 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
       ierr = btu->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     }
 
+    if (basal_yield_stress != NULL) {
+      ierr = basal_yield_stress->define_variables(vars, nc, nctype); CHKERRQ(ierr);
+    }
+
     if (stress_balance != NULL) {
       ierr = stress_balance->define_variables(vars, nc, nctype); CHKERRQ(ierr);
     } else {
@@ -210,6 +214,10 @@ PetscErrorCode IceModel::write_variables(const char *filename, set<string> vars,
   // Write PISMBedThermalUnit variables:
   if (btu != NULL) {
     ierr = btu->write_variables(vars, filename); CHKERRQ(ierr);
+  }
+
+  if (basal_yield_stress != NULL) {
+    ierr = basal_yield_stress->write_variables(vars, filename); CHKERRQ(ierr);
   }
 
   // Write stress balance-related variables:

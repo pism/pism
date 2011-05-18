@@ -1,4 +1,13 @@
-include_directories (base earth coupler udunits base/stressbalance base/util base/energy base/rheology)
+include_directories (
+  base
+  earth
+  coupler
+  udunits
+  base/stressbalance
+  base/util
+  base/energy
+  base/rheology
+  base/basal_strength)
 
 # Computation grid, I/O, profiling, PISM "component" interface, miscellaneous
 # utility functions and classes plus the "enthalpy converter" (which is used
@@ -74,14 +83,12 @@ target_link_libraries (pismflowlaws pismutil pismudunits ${Pism_EXTERNAL_LIBS})
 # (using other PISM libraries and a good deal of non-trivial code).
 add_library (pismbase
   base/pism_signal.c
-  base/materials.cc
   base/columnSystem.cc
   base/energy/bedrockThermalUnit.cc
   base/energy/enthSystem.cc
   base/energy/tempSystem.cc
   base/iMadaptive.cc
   base/iMage.cc
-  base/iMbasal.cc
   base/iMbeddef.cc
   base/iMbootstrap.cc
   base/iMcalving.cc
@@ -101,6 +108,8 @@ add_library (pismbase
   base/iMviewers.cc
   base/iceModel.cc
   base/iceModel_diagnostics.cc
+  base/basal_strength/PISMYieldStress.cc
+  base/materials.cc
 )
 target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance)
 

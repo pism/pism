@@ -356,6 +356,8 @@ PetscErrorCode IceMISMIPModel::init_physics() {
   delete basal;
   basal = new MISMIPBasalResistanceLaw(m_MISMIP, C_MISMIP, regularize_MISMIP);
 
+  config.set("default_till_phi", 0); 
+
   // let the base class create the ice and process its options:
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
@@ -465,7 +467,6 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
 
   ierr = vbmr.set(0.0); CHKERRQ(ierr);
   ierr = vGhf.set(0.0); CHKERRQ(ierr);
-  ierr = vtillphi.set(0.0); CHKERRQ(ierr);
 
   ierr = artm.set(ice->triple_point_temp); CHKERRQ(ierr);
   ierr = acab.set(0.3/secpera); CHKERRQ(ierr);

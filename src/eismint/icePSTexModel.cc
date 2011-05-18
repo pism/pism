@@ -92,6 +92,38 @@ ExperDescription e[Nexpers] = {
 
 PetscScalar stream_angle_P2[3] = {0.0, 100.0, 225.0};  // degrees
 
+//! Say whether we are in the stream (strictly or not), and give local coords.
+static bool inStreamNbhd(bool strictly_in_stream,
+                         const PetscScalar angle, const PetscScalar width,
+                         const PetscScalar x, const PetscScalar y,
+                         PetscScalar &x_loc, PetscScalar &y_loc) {
+  const PetscScalar sinrot = sin(angle),
+                    cosrot = cos(angle);
+  x_loc =  cosrot * x + sinrot * y - stream_offset;
+  y_loc = -sinrot * x + cosrot * y;
+  if (strictly_in_stream) {
+    //if ( (x_loc > 0.0) && (fabs(y_loc) < width / 2.0) )
+    if ( (x_loc > -1.0) && (fabs(y_loc) < width / 2.0) )
+      return true;
+    else
+      return false;
+  } else {
+    //if ( (x_loc > - xi_slop * stream_change)
+    if ( (x_loc > - xi_slop * stream_change - 1.0)
+         && (fabs(y_loc) < (1.0 + eta_slop) * (width / 2.0)) )
+      return true;
+    else
+      return false;
+  }
+}
+
+
+//! Say whether we are strictly in the stream, and give local coords.
+static bool inStream(const PetscScalar angle, const PetscScalar width,
+                            const PetscScalar x, const PetscScalar y,
+                            PetscScalar &x_loc, PetscScalar &y_loc) {
+  return inStreamNbhd(true, angle,width, x,y, x_loc,y_loc);
+}
 
 IcePSTexModel::IcePSTexModel(IceGrid &g, NCConfigVariable &conf, NCConfigVariable &conf_overrides)
   : IceEISModel(g, conf, conf_overrides) {  // do almost nothing; derived need constructors
@@ -275,6 +307,7 @@ PetscErrorCode IcePSTexModel::init_physics() {
   PetscErrorCode ierr;
 
   updateHmelt = PETSC_TRUE;
+  config.set("default_till_phi", DEFAULT_PHI_STRONG); 
   config.set_flag("include_bmr_in_continuity", true);
   config.set_flag("use_eta_transformation", true);
 
@@ -286,6 +319,9 @@ PetscErrorCode IcePSTexModel::init_physics() {
     config.set_flag("use_ssa_velocity", true);
     config.set_flag("use_ssa_when_grounded", true);
   }  
+
+  delete basal_yield_stress;
+  basal_yield_stress = new PSTYieldStress(grid, config, exper_chosen, exper_chosen_name);
 
   ierr = IceModel::init_physics(); CHKERRQ(ierr);
 
@@ -306,18 +342,6 @@ PetscErrorCode IcePSTexModel::init_physics() {
 }
 
 
-PetscErrorCode IcePSTexModel::init_mask_phi() {
-  PetscErrorCode ierr;
-
-  ierr = verbPrintf(2,grid.com,
-    "  setting phi = (till friction angle) for PST exper '%s' ...\n", exper_chosen_name);
-    CHKERRQ(ierr);
-  ierr = setTillPhi(); CHKERRQ(ierr);
-
-  return 0;
-}
-
-
 PetscErrorCode IcePSTexModel::initFromFile(const char *fname) {
   PetscErrorCode      ierr;
 
@@ -330,8 +354,6 @@ PetscErrorCode IcePSTexModel::initFromFile(const char *fname) {
   ierr = verbPrintf(2,grid.com,
     "  values of mask and phi = (till friction angle) in file will be ignored ...\n");
     CHKERRQ(ierr);
-
-  ierr = init_mask_phi(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2,grid.com, 
     "  bed topography from file is kept ...\n"); CHKERRQ(ierr);
@@ -348,62 +370,12 @@ PetscErrorCode IcePSTexModel::set_vars_from_options() {
   ierr = verbPrintf(2,grid.com, 
     "setting variables for PST experiment %s ...\n", exper_chosen_name); CHKERRQ(ierr);
 
-  ierr = init_mask_phi(); CHKERRQ(ierr);
-
   ierr = setBedElev(); CHKERRQ(ierr);
+
   ierr = verbPrintf(2,grid.com,
     "  bed topography set for PST exper '%s' ...\n", exper_chosen_name); CHKERRQ(ierr);
 
   return 0;
-}
-
-
-int IcePSTexModel::sectorNumberP2(const PetscScalar x, const PetscScalar y) {
-  if (x > 0.0) {
-    if (y < x)
-      return 0;
-    else
-      return 1;
-  } else {
-    if (y < 0.0)
-      return 2;
-    else 
-      return 1;
-  }
-}
-
-
-//! Say whether we are in the stream (strictly or not), and give local coords.
-bool IcePSTexModel::inStreamNbhd(bool strictly_in_stream,
-                            const PetscScalar angle, const PetscScalar width,
-                            const PetscScalar x, const PetscScalar y,
-                            PetscScalar &x_loc, PetscScalar &y_loc) {
-  const PetscScalar sinrot = sin(angle),
-                    cosrot = cos(angle);
-  x_loc =  cosrot * x + sinrot * y - stream_offset;
-  y_loc = -sinrot * x + cosrot * y;
-  if (strictly_in_stream) {
-    //if ( (x_loc > 0.0) && (fabs(y_loc) < width / 2.0) )
-    if ( (x_loc > -1.0) && (fabs(y_loc) < width / 2.0) )
-      return true;
-    else
-      return false;
-  } else {
-    //if ( (x_loc > - xi_slop * stream_change)
-    if ( (x_loc > - xi_slop * stream_change - 1.0)
-         && (fabs(y_loc) < (1.0 + eta_slop) * (width / 2.0)) )
-      return true;
-    else
-      return false;
-  }
-}
-
-
-//! Say whether we are strictly in the stream, and give local coords.
-bool IcePSTexModel::inStream(const PetscScalar angle, const PetscScalar width,
-                            const PetscScalar x, const PetscScalar y,
-                            PetscScalar &x_loc, PetscScalar &y_loc) {
-  return inStreamNbhd(true, angle,width, x,y, x_loc,y_loc);
 }
 
 
@@ -413,7 +385,6 @@ PetscErrorCode IcePSTexModel::setBedElev() {
   const PetscScalar    width = 200.0e3,  // trough width = 200km; not the same
                                          //   as stream width
                        plateau = 2000.0;
-  const PetscScalar    dx = grid.dx, dy = grid.dy;
   PetscScalar x_loc, y_loc;
 
   ierr = vbed.set(plateau); CHKERRQ(ierr);
@@ -422,8 +393,7 @@ PetscErrorCode IcePSTexModel::setBedElev() {
 
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar x = -grid.Ly + dy * j,  // note reversal
-                        y = -grid.Lx + dx * i;
+      const PetscScalar x = grid.x[i], y = grid.y[j];
       // note we treat exper P2 like others; it is flat anyway (slope=0)
       for (PetscInt m=0; m<4; m++) {
         PetscScalar drop = e[exper_chosen].bed_end_depth[m],
@@ -439,86 +409,6 @@ PetscErrorCode IcePSTexModel::setBedElev() {
   // communicate b because it will be horizontally differentiated
   ierr = vbed.beginGhostComm(); CHKERRQ(ierr);
   ierr = vbed.endGhostComm(); CHKERRQ(ierr);
-  return 0;
-}
-
-
-//! Compute the till friction angle in local strip coordinates.
-PetscScalar IcePSTexModel::phiLocal(const PetscScalar width,
-              const PetscScalar x, const PetscScalar y,
-              const PetscScalar STRONG, 
-              const PetscScalar UP, const PetscScalar DOWN) {
-
-  const PetscScalar eta   = y / (width/2.0),   // normalized local y
-                    xi    = x / stream_change; // normalized local x
-
-  // compute lambda(eta) which is even and in [0,1]
-  PetscScalar lambda = 0.0; // for big eta
-  if (PetscAbs(eta) <= 1.0 - eta_slop)
-    lambda = 1.0;
-  else if (PetscAbs(eta) < 1.0 + eta_slop)
-    lambda = 0.5 - 0.5 * sin((pi/2.0) * (PetscAbs(eta) - 1.0) / eta_slop);
-
-  if (x > stream_change)
-    return DOWN * lambda + STRONG * (1.0 - lambda); // downstream value
-  else { // f(xi) is for upstream part only
-    PetscScalar f = STRONG;
-    if (xi >= xi_slop)
-      f = UP;
-    else if (xi > - xi_slop) {
-      const PetscScalar fav = 0.5 * (STRONG + UP);
-      f = fav - 0.5 * (STRONG - UP) * sin((pi/2.0) * (xi / xi_slop));
-    }
-    return f * lambda + STRONG * (1.0 - lambda); // upstream value
-  }
-}
-
-
-
-PetscErrorCode IcePSTexModel::setTillPhi() {
-  PetscErrorCode ierr;
-  
-  const PetscScalar    dx = grid.dx, dy = grid.dy;
-  PetscScalar          x_loc, y_loc;
-
-  ierr = vtillphi.set(DEFAULT_PHI_STRONG); CHKERRQ(ierr);
-
-  if (exper_chosen <= 1)
-    return 0;  // nothing further for P0A and P0I
-
-  ierr = vtillphi.begin_access(); CHKERRQ(ierr);
-
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      const PetscScalar x = -grid.Ly + dy * j,  // note reversal
-                        y = -grid.Lx + dx * i;
-      if (exper_chosen == 3) { // experiment P2
-        const PetscScalar width = e[exper_chosen].stream_width[0] * 1000.0;
-        for (PetscInt m=0; m<3; m++) {
-          if (inStreamNbhd(false,(pi/180.0) * stream_angle_P2[m],width,x,y,x_loc,y_loc))
-            vtillphi(i,j) = phiLocal(width,x_loc,y_loc,DEFAULT_PHI_STRONG,
-				     e[exper_chosen].upstream_phi[m],
-				     e[exper_chosen].downstream_phi[m]);
-        }
-      } else {
-        for (PetscInt m=0; m<4; m++) { // go through four sectors
-          const PetscScalar width = e[exper_chosen].stream_width[m] * 1000.0;
-          if (inStreamNbhd(false,(pi/2.0)*m,width,x,y,x_loc,y_loc)) {
-            vtillphi(i,j) = phiLocal(width,x_loc,y_loc,DEFAULT_PHI_STRONG,
-				     e[exper_chosen].upstream_phi[m],
-				     e[exper_chosen].downstream_phi[m]);
-          }          
-        }
-      }
-    }
-  }
-
-  ierr = vtillphi.end_access(); CHKERRQ(ierr);
-
-  // communicate ghosts so that the tauc computation can be performed locally
-  // (including ghosts of tauc, that is)
-  ierr = vtillphi.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vtillphi.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 
@@ -648,4 +538,107 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
   return 0;
 }
 
+PetscErrorCode PSTYieldStress::init(PISMVars &vars) {
+  PetscErrorCode ierr;
 
+  ierr = PISMDefaultYieldStress::init(vars); CHKERRQ(ierr);
+
+  ierr = verbPrintf(2,grid.com,
+                    "  setting phi = (till friction angle) for PST exper '%s' ...\n", experiment_name.c_str());
+  CHKERRQ(ierr);
+
+  ierr = init_till_phi(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+PetscErrorCode PSTYieldStress::init_till_phi() {
+  PetscErrorCode ierr;
+
+  const PetscScalar    dx = grid.dx, dy = grid.dy;
+  PetscScalar          x_loc, y_loc;
+
+  if (experiment <= 1)
+    return 0;  // nothing further for P0A and P0I
+
+  ierr = till_phi.begin_access(); CHKERRQ(ierr);
+
+  for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys + grid.ym; ++j) {
+      const PetscScalar x = -grid.Ly + dy * j, // note reversal
+                        y = -grid.Lx + dx * i;
+      if (experiment == 3) { // experiment P2
+        const PetscScalar width = e[experiment].stream_width[0] * 1000.0;
+        for (PetscInt m = 0; m < 3; m++) {
+          if (inStreamNbhd(false, (pi / 180.0) * stream_angle_P2[m], width, x, y, x_loc, y_loc))
+            till_phi(i, j) = phiLocal(width, x_loc, y_loc, DEFAULT_PHI_STRONG,
+                                     e[experiment].upstream_phi[m],
+                                     e[experiment].downstream_phi[m]);
+        }
+      } else {
+        for (PetscInt m = 0; m < 4; m++) { // go through four sectors
+          const PetscScalar width = e[experiment].stream_width[m] * 1000.0;
+          if (inStreamNbhd(false, (pi / 2.0)*m, width, x, y, x_loc, y_loc)) {
+            till_phi(i, j) = phiLocal(width, x_loc, y_loc, DEFAULT_PHI_STRONG,
+                                     e[experiment].upstream_phi[m],
+                                     e[experiment].downstream_phi[m]);
+          }
+        }
+      }
+    }
+  }
+
+  ierr = till_phi.end_access(); CHKERRQ(ierr);
+
+  // communicate ghosts so that the tauc computation can be performed locally
+  // (including ghosts of tauc, that is)
+  ierr = till_phi.beginGhostComm(); CHKERRQ(ierr);
+  ierr = till_phi.endGhostComm(); CHKERRQ(ierr);
+
+  return 0;
+}
+
+int PSTYieldStress::sectorNumberP2(const PetscScalar x, const PetscScalar y) {
+  if (x > 0.0) {
+    if (y < x)
+      return 0;
+    else
+      return 1;
+  } else {
+    if (y < 0.0)
+      return 2;
+    else 
+      return 1;
+  }
+}
+
+
+//! Compute the till friction angle in local strip coordinates.
+PetscScalar PSTYieldStress::phiLocal(const PetscScalar width,
+              const PetscScalar x, const PetscScalar y,
+              const PetscScalar STRONG, 
+              const PetscScalar UP, const PetscScalar DOWN) {
+
+  const PetscScalar eta   = y / (width/2.0),   // normalized local y
+                    xi    = x / stream_change; // normalized local x
+
+  // compute lambda(eta) which is even and in [0,1]
+  PetscScalar lambda = 0.0; // for big eta
+  if (PetscAbs(eta) <= 1.0 - eta_slop)
+    lambda = 1.0;
+  else if (PetscAbs(eta) < 1.0 + eta_slop)
+    lambda = 0.5 - 0.5 * sin((pi/2.0) * (PetscAbs(eta) - 1.0) / eta_slop);
+
+  if (x > stream_change)
+    return DOWN * lambda + STRONG * (1.0 - lambda); // downstream value
+  else { // f(xi) is for upstream part only
+    PetscScalar f = STRONG;
+    if (xi >= xi_slop)
+      f = UP;
+    else if (xi > - xi_slop) {
+      const PetscScalar fav = 0.5 * (STRONG + UP);
+      f = fav - 0.5 * (STRONG - UP) * sin((pi/2.0) * (xi / xi_slop));
+    }
+    return f * lambda + STRONG * (1.0 - lambda); // upstream value
+  }
+}

@@ -329,7 +329,6 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
   ierr = stop_if_set(grid.com, "-boot_file"); CHKERRQ(ierr);
 
   ierr = SigmaComp3.set(0.0); CHKERRQ(ierr);
-  ierr = vtillphi.set(config.get("default_till_phi")); CHKERRQ(ierr);
 
   ierr = verbPrintf(3,grid.com, "initializing Test %c from formulas ...\n",testname);  CHKERRQ(ierr);
 

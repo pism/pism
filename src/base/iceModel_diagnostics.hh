@@ -37,14 +37,6 @@ public:
   virtual PetscErrorCode compute(IceModelVec* &result);
 };
 
-//! \brief Computes basal (pore) water pressure.
-class IceModel_bwp : public PISMDiag<IceModel>
-{
-public:
-  IceModel_bwp(IceModel *m, IceGrid &g, PISMVars &my_vars);
-  virtual PetscErrorCode compute(IceModelVec* &result);
-};
-
 //! \brief Computes CTS, CTS = E/E_s(p).
 class IceModel_cts : public PISMDiag<IceModel>
 {
