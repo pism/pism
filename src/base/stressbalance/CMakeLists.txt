@@ -22,7 +22,7 @@ target_link_libraries (pismstressbalance pismutil pismflowlaws)
 install (TARGETS pismstressbalance DESTINATION ${Pism_LIB_DIR})
 
 if (Pism_BUILD_EXTRA_EXECS)
-  add_executable (siafd_test siafd_test.cc ../../verif/tests/exactTestsFG.c ../materials.cc)
+  add_executable (siafd_test siafd_test.cc ../../verif/tests/exactTestsFG.c ../basal_strength/basal_resistance.cc)
   target_link_libraries (siafd_test pismstressbalance)
 
   install (TARGETS siafd_test DESTINATION ${Pism_BIN_DIR})

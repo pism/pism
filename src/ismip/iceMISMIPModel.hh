@@ -21,7 +21,7 @@
 
 #include <petscvec.h>
 #include "grid.hh"
-#include "materials.hh"
+#include "basal_resistance.hh"
 #include "iceModel.hh"
 
 

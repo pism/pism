@@ -57,21 +57,20 @@ where \f$\tau_b=(\tau_{(b)x},\tau_{(b)y})\f$ is the basal shear stress and
 \f$\tau_c(t,x,y)\f$ the \e pseudo \e yield \e stress.  The constant
 \f$U_{\mathtt{th}}\f$ is the \e threshhold \e speed, and \f$q\f$ is the \e pseudo
 \e plasticity \e exponent.  See IceBasalResistancePlasticLaw::drag().  See also
-updateYieldStressUsingBasalWater() and getBasalWaterPressure() and diffuseHmelt()
-for important model equations.  
+basal_material_yield_stress() and basal_water_pressure() for important model equations.  
 
 Because the strength of the saturated till material is modeled by a Mohr-Coulomb
 relation [\ref Paterson, \ref SchoofStream],
     \f[   \tau_c = c_0 + (\tan \varphi) N, \f]
 where \f$N = \rho g H - p_w\f$ is the effective pressure on the till (see
-getBasalWaterPressure()), the determination of the till friction angle
+basal_water_pressure()), the determination of the till friction angle
 \f$\varphi(x,y)\f$  is important.  The till friction angle is assumed to be a
 time-independent factor which describes the strength of the unsaturated "dry"
 till material.  Thus it is assumed to change more slowly than the basal water 
 pressure.  It follows that it changes more slowly than the yield stress and/or
 the basal shear stress.
 
-The current method determines the map of till friction angle \c vtillphi
+The current method determines the map of till friction angle \c tillphi
 according to options.  Option \c -topg_to_phi causes call to
 topg_to_phi().  If neither option is given, the current method
 leaves \c tillphi unchanged, and thus either in its read-in-from-file state or 
@@ -94,7 +93,7 @@ this incomplete stress balance.)  Thus the pseudo yield stress
   \f[ |\mathbf{U}| = \frac{C}{\tau_c^{1/q}} \f]
 for some (geometry-dependent) constant \f$C\f$.  Multiplying \f$|\mathbf{U}|\f$
 by \f$A\f$ in this equation corresponds to dividing \f$\tau_c\f$ by \f$A^q\f$.
-The current method sets-up the mechanism, and updateYieldStressUsingBasalWater()
+The current method sets up the mechanism, and basal_material_yield_stress()
 actually computes it.  Note that the mechanism has no effect whatsoever if 
 \f$q=0\f$, which is the purely plastic case. In that case there is \e no direct
 relation between the yield stress and the sliding velocity, and the difference 
@@ -102,7 +101,8 @@ between the driving stress and the yield stress is entirely held by the membrane
 stresses.  (There is also no singular mathematical operation as \f$A^q = A^0 = 1\f$.)
 */
 
-PetscErrorCode PISMDefaultYieldStress::init(PISMVars &vars) {
+PetscErrorCode PISMDefaultYieldStress::init(PISMVars &vars)
+{
   PetscErrorCode ierr;
   PetscScalar pseudo_plastic_q = config.get("pseudo_plastic_q");
   bool topg_to_phi_set, plastic_phi_set, bootstrap, i_set;
@@ -273,12 +273,9 @@ See [\ref Paterson] table 8.1) regarding values of \f$c_0\f$.
 Option  \c -plastic_c0 controls it.
 
 The major concern with this is the model for basal water pressure \f$p_w\f$.  
-See getBasalWaterPressure().  See also [\ref BBssasliding] for a discussion
+See basal_water_pressure().  See also [\ref BBssasliding] for a discussion
 of a complete model using these tools.
 
-Note that IceModel::updateSurfaceElevationAndMask() also
-checks whether use_ssa_when_grounded is true and if so it sets all mask points to
-DRAGGING.
  */
 PetscErrorCode PISMDefaultYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
   PetscErrorCode ierr;
@@ -494,7 +491,7 @@ till is computed by these lines, which are recommended for this purpose:
 <code>
   p_over = ice->rho * standard_gravity * thk;  // the pressure of the weight of the ice
 
-  p_eff  = p_over - getBasalWaterPressure(thk, bwat, bmr, frac, hmelt_max);
+  p_eff  = p_over - basal_water_pressure(thk, bwat, bmr, frac, hmelt_max);
 </code>
  */
 PetscScalar PISMDefaultYieldStress::basal_water_pressure(PetscScalar thk, PetscScalar bwat,

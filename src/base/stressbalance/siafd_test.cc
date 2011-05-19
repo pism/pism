@@ -30,7 +30,7 @@ static char help[] =
 #include "PISMStressBalance.hh"
 #include "SIAFD.hh"
 #include "exactTestsFG.h"
-#include "materials.hh"
+#include "basal_resistance.hh"
 
 PetscErrorCode computeSigmaErrors(IceModelVec3 &Sigma,
                                   IceModelVec2S &thickness,

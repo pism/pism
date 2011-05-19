@@ -395,7 +395,7 @@ typedef int NormType; // YUCK.
 %include "PISMIO.hh"
 %include "PISMDiagnostic.hh"
 %include "PISMComponent.hh"
-%include "materials.hh"
+%include "basal_resistance.hh"
 %include "LocalInterpCtx.hh"
 %include "rheology/flowlaws.hh"
 %include "enthalpyConverter.hh"

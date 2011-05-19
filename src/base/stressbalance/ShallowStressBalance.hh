@@ -23,7 +23,7 @@
 #include "iceModelVec.hh"
 #include "PISMVars.hh"
 #include "flowlaws.hh"
-#include "materials.hh"
+#include "basal_resistance.hh"
 #include "enthalpyConverter.hh"
 
 //! Shallow stress balance (such as the SSA).

@@ -22,7 +22,7 @@
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
 #include "PISMVars.hh"
-#include "materials.hh"
+#include "basal_resistance.hh"
 
 //! Class for a 3d DA-based Vec for PISMBedThermalUnit.
 class IceModelVec3BTU : public IceModelVec3D {

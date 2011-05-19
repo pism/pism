@@ -21,7 +21,7 @@
 
 #include <petsc.h>
 #include "grid.hh"
-#include "materials.hh"
+#include "basal_resistance.hh"
 #include "iceEISModel.hh"
 
 //! Derived class for Plastic till ice Stream with Thermocoupling (PST) experiments.

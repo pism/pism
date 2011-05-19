@@ -39,7 +39,7 @@ file containing a complete model state, versus bootstrapping).
 #include <petsctime.h>		// PetscGetTime()
 
 #include "flowlaw_factory.hh"   // IceFlowLawFactory and friends
-#include "materials.hh"         // IceBasalResistancePlasticLaw
+#include "basal_resistance.hh"  // IceBasalResistancePlasticLaw
 #include "PISMYieldStress.hh"
 #include "pism_const.hh"
 #include "enthalpyConverter.hh"

@@ -109,7 +109,7 @@ add_library (pismbase
   base/iceModel.cc
   base/iceModel_diagnostics.cc
   base/basal_strength/PISMYieldStress.cc
-  base/materials.cc
+  base/basal_strength/basal_resistance.cc
 )
 target_link_libraries (pismbase pismearth pismboundary pismutil pismstressbalance)
 

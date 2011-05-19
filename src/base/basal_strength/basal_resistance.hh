@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2010 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2011 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __materials_hh
-#define __materials_hh
+#ifndef __basal_resistance_hh
+#define __basal_resistance_hh
 
 #include <petsc.h>
 
@@ -42,5 +42,5 @@ public:
   bool pseudo_plastic;
 };
 
-#endif /* __materials_hh */
+#endif /* __basal_resistance_hh */
 
