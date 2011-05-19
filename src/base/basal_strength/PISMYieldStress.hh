@@ -22,7 +22,6 @@
 #include "PISMComponent.hh"
 #include "iceModelVec.hh"
 
-// FIXME: this should be put with the iMbasal.cc submodel:
 //! Local copy of parameters used by IceModel::getBasalWaterPressure().
 struct BWPparams {
   bool usebmr,
@@ -47,7 +46,7 @@ public:
   virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result) = 0;
 };
 
-//! \brief The PISM's default basal yield stress model.
+//! \brief PISM's default basal yield stress model.
 class PISMDefaultYieldStress : public PISMYieldStress
 {
   friend class PYS_bwp;
@@ -110,7 +109,7 @@ protected:
                                            PetscScalar hmelt_max);
 };
 
-//! \brief Computes basal (pore) water pressure.
+//! \brief Computes basal (pore) water pressure using a highly-simplified model.
 class PYS_bwp : public PISMDiag<PISMDefaultYieldStress>
 {
 public:

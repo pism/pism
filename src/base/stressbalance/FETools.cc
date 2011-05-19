@@ -186,7 +186,7 @@ PetscErrorCode FEDOFMap::addLocalJacobianBlock(const PetscReal *K, Mat J)
 /*! This is an unhappy hack for supporting Dirichlet constrained degrees of freedom.
 In the scalar valued case, \a K should point to a single value, and in the vector case,
 it should point to 4 (=2x2) values for the (2x2) block correspoinding to to u-u, u-v, v-u, and v-v
-interactions at grid point (\a i, \aj).  Sheesh.*/
+interactions at grid point (\a i, \a j).  Sheesh.*/
 PetscErrorCode FEDOFMap::setJacobianDiag(PetscInt i, PetscInt j, const PetscReal*K, Mat J)
 {
   MatStencil row;

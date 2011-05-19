@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2011 Andy Aschwanden and Ed Bueler
+# Copyright (C) 2009-2011 The PISM Authors
 
 # PISM SeaRISE Greenland
 #
 # before using this script, run preprocess.sh to download and adjust metadata
 # on SeaRISE "Present Day Greenland" master dataset
 #
-# recommended way to run with N processors is " ./spinup.sh N >& out.psea & "
-# which gives a viewable (with "less", for example) transcript in out.psea
+# recommended way to run with N processors is " ./spinup.sh N >& out.spinup & "
+# which gives a viewable (with "less", for example) transcript in out.spinup
 
 if [ -n "${SCRIPTNAME:+1}" ] ; then
   echo "[SCRIPTNAME=$SCRIPTNAME (already set)]"

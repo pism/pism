@@ -19,17 +19,22 @@
 #include "PISMYieldStress.hh"
 #include "Mask.hh"
 
+//! \file PISMYieldStress.cc  Process model which computes pseudo-plastic yield stress for the subglacial layer.
 /*! \file PISMYieldStress.cc
-The output variable of this submodel is tauc.  It is used in the SSA objects.
+The output variable of this submodel is \c tauc, the pseudo-plastic yield stress 
+field that is used in the ShallowStressBalance (=SSA in 2011) objects.
 
-The "dry" strength of the (notional) till is a state variable, but private to
-the submodel: tillphi. Its initialization is nontrivial: either -topg_to_phi
-heuristic or inverse modeling (to be implemented ...). Currently tillphi does
+In the default implementation PISMDefaultYieldStress [\ref BBssasliding], the
+"dry" strength of the (notional) till is a state variable, but private to the
+submodel, namely \c tillphi.
+
+Its initialization is nontrivial: either -topg_to_phi
+heuristic or inverse modeling (to be implemented ...). Currently \c tillphi does
 not evolve during the run.
 
-This submodel uses vHmelt as an input at each update. A basal water pressure is
-computed from vHmelt, then that basal water pressure is combined with tillphi
-to compute an updated tauc.
+This submodel uses vHmelt = \c bwat as an input at each update.  Basal water pressure
+\c bwp is computed from vHmelt, then that pressure is combined with tillphi
+to compute an updated \c tauc by the Mohr-Coulomb criterion.
 
 This submodel is inactive in floating areas.
 */
@@ -59,46 +64,23 @@ where \f$\tau_b=(\tau_{(b)x},\tau_{(b)y})\f$ is the basal shear stress and
 \e plasticity \e exponent.  See IceBasalResistancePlasticLaw::drag().  See also
 basal_material_yield_stress() and basal_water_pressure() for important model equations.  
 
-Because the strength of the saturated till material is modeled by a Mohr-Coulomb
+The strength of the saturated till material is modeled by a Mohr-Coulomb
 relation [\ref Paterson, \ref SchoofStream],
     \f[   \tau_c = c_0 + (\tan \varphi) N, \f]
 where \f$N = \rho g H - p_w\f$ is the effective pressure on the till (see
-basal_water_pressure()), the determination of the till friction angle
-\f$\varphi(x,y)\f$  is important.  The till friction angle is assumed to be a
+basal_water_pressure()),
+
+The determination of the till friction angle \f$\varphi(x,y)\f$  is important.
+It is assumed in this default model to be a
 time-independent factor which describes the strength of the unsaturated "dry"
 till material.  Thus it is assumed to change more slowly than the basal water 
-pressure.  It follows that it changes more slowly than the yield stress and/or
+pressure, and it follows that it changes more slowly than the yield stress and
 the basal shear stress.
 
-The current method determines the map of till friction angle \c tillphi
-according to options.  Option \c -topg_to_phi causes call to
-topg_to_phi().  If neither option is given, the current method
-leaves \c tillphi unchanged, and thus either in its read-in-from-file state or 
-with a default constant value from the config file.
-
-The current method reads the experimental parameter option \c -sliding_scale.
-A scale factor of \f$A\f$ is intended to increase basal sliding rate by
-\f$A\f$.  It would have exactly this effect \e if the driving stress were
-\e hypothetically completely held by the basal resistance.  Thus this scale factor
-is used to reduce (if \c -sliding_scale \f$A\f$ with \f$A > 1\f$) or increase
-(if \f$A < 1\f$) the value of the (pseudo-) yield stress \c tauc.  The concept
-behind this is described at
-http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet#Initial_Experiment_-_E1_-_Increased_Basal_Lubrication.
-Specifically, the concept behind this mechanism is to suppose equality of driving
-and basal shear stresses,
-    \f[ \rho g H \nabla h = \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U}. \f]
-(<i>For emphasis:</i> The membrane stress held by the ice itself is missing from
-this incomplete stress balance.)  Thus the pseudo yield stress
-\f$\tau_c\f$ would be related to the sliding speed \f$|\mathbf{U}|\f$ by
-  \f[ |\mathbf{U}| = \frac{C}{\tau_c^{1/q}} \f]
-for some (geometry-dependent) constant \f$C\f$.  Multiplying \f$|\mathbf{U}|\f$
-by \f$A\f$ in this equation corresponds to dividing \f$\tau_c\f$ by \f$A^q\f$.
-The current method sets up the mechanism, and basal_material_yield_stress()
-actually computes it.  Note that the mechanism has no effect whatsoever if 
-\f$q=0\f$, which is the purely plastic case. In that case there is \e no direct
-relation between the yield stress and the sliding velocity, and the difference 
-between the driving stress and the yield stress is entirely held by the membrane
-stresses.  (There is also no singular mathematical operation as \f$A^q = A^0 = 1\f$.)
+Option \c -topg_to_phi causes call to topg_to_phi() at the beginning of the run.
+This determines the map of \f$\varphi(x,y)\f$.  If this option is note given,
+the current method leaves \c tillphi unchanged, and thus either in its
+read-in-from-file state or with a default constant value from the config file.
 */
 
 PetscErrorCode PISMDefaultYieldStress::init(PISMVars &vars)
@@ -256,7 +238,7 @@ PetscErrorCode PISMDefaultYieldStress::update(PetscReal t_years, PetscReal dt_ye
 //! Update the till yield stress for the pseudo-plastic till SSA model.
 /*!
 Updates based on modeled basal water pressure.  We implement
-formula (2.4) in [\ref SchoofStream],
+formula (2.4) in [\ref SchoofStream], the Mohr-Coulomb criterion:
     \f[   \tau_c = \mu (\rho g H - p_w), \f]
 where \f$\tau_c\f$ is the till yield stress, \f$\rho g H\f$ is the ice over-burden
 pressure (in the shallow approximation), \f$p_w\f$ is the modeled
@@ -269,8 +251,8 @@ We modify Schoof's formula by allowing a small till cohesion \f$c_0\f$
 and by expressing the coefficient as the tangent of a till friction angle
 \f$\varphi\f$:
     \f[   \tau_c = c_0 + (\tan \varphi) N. \f]
-See [\ref Paterson] table 8.1) regarding values of \f$c_0\f$.
-Option  \c -plastic_c0 controls it.
+Option  \c -plastic_c0 controls it \f$c_0\f$; see [\ref Paterson] table 8.1
+regarding values.
 
 The major concern with this is the model for basal water pressure \f$p_w\f$.  
 See basal_water_pressure().  See also [\ref BBssasliding] for a discussion
@@ -287,7 +269,8 @@ PetscErrorCode PISMDefaultYieldStress::basal_material_yield_stress(IceModelVec2S
   }
 
 
-  PetscScalar till_pw_fraction = config.get("till_pw_fraction"),
+  const PetscScalar
+    till_pw_fraction = config.get("till_pw_fraction"),
     till_c_0 = config.get("till_c_0") * 1e3, // convert from kPa to Pa
     hmelt_max = config.get("hmelt_max"),
     ice_density = config.get("ice_density"),
@@ -331,7 +314,30 @@ PetscErrorCode PISMDefaultYieldStress::basal_material_yield_stress(IceModelVec2S
   ierr = basal_melt_rate->end_access(); CHKERRQ(ierr);
   ierr = basal_water_thickness->end_access(); CHKERRQ(ierr);
 
-  // scale tauc if desired
+/* scale tauc if desired:
+A scale factor of \f$A\f$ is intended to increase basal sliding rate by
+\f$A\f$.  It would have exactly this effect \e if the driving stress were
+\e hypothetically completely held by the basal resistance.  Thus this scale factor
+is used to reduce (if \c -sliding_scale \f$A\f$ with \f$A > 1\f$) or increase
+(if \f$A < 1\f$) the value of the (pseudo-) yield stress \c tauc.  The concept
+behind this is described at
+http://websrv.cs.umt.edu/isis/index.php/Category_1:_Whole_Ice_Sheet#Initial_Experiment_-_E1_-_Increased_Basal_Lubrication.
+Specifically, the concept behind this mechanism is to suppose equality of driving
+and basal shear stresses,
+    \f[ \rho g H \nabla h = \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U}. \f]
+(<i>For emphasis:</i> The membrane stress held by the ice itself is missing from
+this incomplete stress balance.)  Thus the pseudo yield stress
+\f$\tau_c\f$ would be related to the sliding speed \f$|\mathbf{U}|\f$ by
+  \f[ |\mathbf{U}| = \frac{C}{\tau_c^{1/q}} \f]
+for some (geometry-dependent) constant \f$C\f$.  Multiplying \f$|\mathbf{U}|\f$
+by \f$A\f$ in this equation corresponds to dividing \f$\tau_c\f$ by \f$A^q\f$.
+The current method sets-up the mechanism, and updateYieldStressUsingBasalWater()
+actually computes it.  Note that the mechanism has no effect whatsoever if 
+\f$q=0\f$, which is the purely plastic case. In that case there is \e no direct
+relation between the yield stress and the sliding velocity, and the difference 
+between the driving stress and the yield stress is entirely held by the membrane
+stresses.  (There is also no singular mathematical operation as \f$A^q = A^0 = 1\f$.)
+*/
   if (sliding_scale > 0.0) {
     const PetscScalar q = config.get("pseudo_plastic_q");
     result.scale(1.0 / pow(sliding_scale, q));
@@ -443,26 +449,30 @@ PetscErrorCode PISMDefaultYieldStress::topg_to_phi() {
   return 0;
 }
 
-//! \brief Compute modeled pressure in subglacial liquid water using thickness
-//! \brief   of water layer, and possibly the melt rate, at the base.
+//! \brief Compute modeled pressure in subglacial liquid water using thickness of subglacial water layer.
 /*!
-This procedure provides a simple model of basal water pressure \f$p_w\f$, which
-is modeled as a function of the thickness of the basal stored water plus 
-(optionally) the basal melt rate.
+Inputs are \c bwat, the thickness of basal water, and \c bmr, the basal melt rate.
+The output is \f$p_w\f$ the basal water pressure.
 
-Input \c bwat is thickness of basal water.  Input \c bmr is the basal melt rate.
-Because both \c bwat and \c bmr are zero at points where base of ice is 
+The basic model is
+\f{align*}
+  p_{over} = \rho g H, \\
+  p_w = \alpha\, \frac{w}{w_{\text{max}}}\, p_{over}
+\f}
+where 
+  - \f$\rho\f$ is the ice density (ice_density) and \f$g\f$ is gravity,
+  - \f$H\f$ is the ice thickness (thk),
+  - \f$p_{over}\f$ is the ice overburden pressure,
+  - \f$\alpha\f$ is the till pore water fraction (till_pw_fraction),
+  - \f$w\f$ is the effective thickness of subglacial melt water (bwat), and
+  - \f$w_{\text{max}}\f$ is the maximum allowed value for \f$w\f$ (hmelt_max).
+
+If flags \c p.usebmr or \c p.usethkeff are set then this formula is modified;
+see the code below for details.
+
+Because both \c bmr and \c bwat are zero at points where base of ice is 
 below the pressure-melting temperature, the modeled basal water pressure is
 zero when the base is frozen.
-
-The inequality \c bwat \f$\le\f$ \c hmelt_max is required at input, and an
-error is thrown if not.
-
-Regarding the physics, compare the water pressure computed by formula (4) in
-[\ref Ritzetal2001], where the pressure is a function of sea level and bed
-elevation.  Also, the method using "elevation of the bed at the grounding line"
-as in [\ref LingleBrown1987] is not implementable because that elevation is
-at an unknowable location.  (We are not doing a flow line model!)
 
 Several options control the water pressure model:
   - \c -[no_]\c bmr_enhance  toggle the basal melt rate dependency in water
@@ -485,14 +495,21 @@ Several options control the water pressure model:
                            default is 1000 m; must set \c -thk_eff for this to
                            have any effect
 
-At several places in the code the effective pressure on the mineral part of the
-till is computed by these lines, which are recommended for this purpose:
+If the effective pressure on the subglacial layer is needed, then these lines are
+recommended for this purpose:
+\verbatim
+  p_over = ice->rho * standard_gravity * thk;  // overburden pressure
+  p_eff  = p_over - getBasalWaterPressure(thk, bwat, bmr, frac, hmelt_max);
+\endverbatim
 
-<code>
-  p_over = ice->rho * standard_gravity * thk;  // the pressure of the weight of the ice
+The inequality \c bwat \f$\le\f$ \c hmelt_max is required at input, and an
+error is thrown if not.
 
-  p_eff  = p_over - basal_water_pressure(thk, bwat, bmr, frac, hmelt_max);
-</code>
+Regarding the physics, compare the water pressure computed by formula (4) in
+[\ref Ritzetal2001], where the pressure is a function of sea level and bed
+elevation.  A method using "elevation of the bed at the grounding line",
+as in [\ref LingleBrown1987] is not implementable because that elevation is
+at an unknowable location.  (We are not doing a flow line model!)
  */
 PetscScalar PISMDefaultYieldStress::basal_water_pressure(PetscScalar thk, PetscScalar bwat,
                                                   PetscScalar bmr, PetscScalar frac,
@@ -504,8 +521,7 @@ PetscScalar PISMDefaultYieldStress::basal_water_pressure(PetscScalar thk, PetscS
     PISMEnd();
   }
 
-  // the model; note 0 <= p_pw <= frac * p_overburden
-  // because  0 <= bwat <= hmelt_max
+  // the model; note 0 <= p_pw <= frac * p_overburden because  0 <= bwat <= hmelt_max
   const PetscScalar p_overburden = p.ice_density * p.standard_gravity * thk; // FIXME task #7297
   PetscScalar p_pw = frac * (bwat / hmelt_max) * p_overburden;
 
@@ -536,6 +552,7 @@ PetscScalar PISMDefaultYieldStress::basal_water_pressure(PetscScalar thk, PetscS
   return p_pw;
 }
 
+
 PYS_bwp::PYS_bwp(PISMDefaultYieldStress *m, IceGrid &g, PISMVars &my_vars)
   : PISMDiag<PISMDefaultYieldStress>(m, g, my_vars) {
   
@@ -546,15 +563,9 @@ PYS_bwp::PYS_bwp(PISMDefaultYieldStress *m, IceGrid &g, PISMVars &my_vars)
   vars[0].set("valid_min", 0);
 }
 
-/*!
-  \f[p_w = \alpha\, \frac{w}{w_{\text{max}}}\, \rho\, g\, H,\f]
-  where 
 
-  - \f$\alpha\f$ is the till pore water fraction (till_pw_fraction),
-  - \f$w\f$ is the effective thickness of subglacial melt water (bwat)
-  - \f$w_{\text{max}}\f$ is the maximum allowed value for \f$w\f$ (hmelt_max),
-  - \f$\rho\f$ is the ice density (ice_density)
-  - \f$H\f$ is the ice thickness (thk)
+/*!
+Calls PISMDefaultYieldStress::basal_water_pressure() to actually compute it.
 
 Result is set to invalid (_FillValue) where the ice is floating, there being
 no meaning to the above calculation.
@@ -600,3 +611,4 @@ PetscErrorCode PYS_bwp::compute(IceModelVec* &output) {
   output = result;
   return 0;
 }
+

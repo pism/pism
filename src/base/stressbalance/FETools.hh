@@ -36,7 +36,7 @@ at the level of ?????.  The following is a reminder of the method that also
 gives the background for the how to implement it on an IceGrid with the tools in this 
 module.
 
-The IceGrid domain \Omega is decomposed into a grid of rectangular physical elements indexed by indices (i,j):
+The IceGrid domain \f$\Omega\f$ is decomposed into a grid of rectangular physical elements indexed by indices (i,j):
 
 \verbatim
   (0,1)   (1,1)

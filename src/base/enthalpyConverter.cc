@@ -150,7 +150,7 @@ bool EnthalpyConverter::isTemperate(double E, double p) const {
 
 
 //! Get absolute (not pressure-adjusted) ice temperature (K) from enthalpy and pressure.
-/*! From \ref AschwandenBuelerBlatter,
+/*! From \ref AschwandenBuelerKhroulevBlatter,
      \f[ T= T(E,p) = \begin{cases} 
                        c_i^{-1} E + T_0,  &  E < E_s(p), \\
                        T_m(p),            &  E_s(p) \le E < E_l(p).
@@ -191,7 +191,7 @@ PetscErrorCode EnthalpyConverter::getPATemp(double E, double p, double &T_pa) co
 
 //! Get liquid water fraction from enthalpy and pressure.
 /*!
-From \ref AschwandenBuelerBlatter,
+From \ref AschwandenBuelerKhroulevBlatter,
    \f[ \omega(E,p) = \begin{cases}  0.0,            & E \le E_s(p), \\
                                     (E-E_s(p)) / L, & E_s(p) < E < E_l(p).
                      \end{cases} \f]
@@ -225,7 +225,7 @@ bool EnthalpyConverter::isLiquified(double E, double p) const {
 
 //! Compute enthalpy from absolute temperature, liquid water fraction, and pressure.
 /*! This is an inverse function to the functions \f$T(E,p)\f$ and
-\f$\omega(E,p)\f$ [\ref AschwandenBuelerBlatter].  It returns:
+\f$\omega(E,p)\f$ [\ref AschwandenBuelerKhroulevBlatter].  It returns:
   \f[E(T,\omega,p) =
        \begin{cases}
          c_i (T - T_0),     & T < T_m(p) \quad\text{and}\quad \omega = 0, \\

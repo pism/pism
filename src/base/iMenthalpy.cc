@@ -226,7 +226,7 @@ public:
   }
   virtual ~DrainageCalculator() {}
 
-  //! Return D(omega), as in figure in [\ref AschwandenBuelerBlatter].
+  //! Return D(omega), as in figure in [\ref AschwandenBuelerKhroulevBlatter].
   virtual PetscReal get_drainage_rate(PetscReal omega) {
     if (omega > OM1) {
       if (omega > OM2) {
@@ -249,14 +249,14 @@ private:
 //! Update ice enthalpy field based on conservation of energy.
 /*!
 This method is documented by the page \ref bombproofenth and by [\ref
-AschwandenBuelerBlatter].
+AschwandenBuelerKhroulevBlatter].
 
 This method updates IceModelVec3 vWork3d = vEnthnew, IceModelVec2S vbmr, and 
 IceModelVec2S vHmelt.  No communication of ghosts is done for any of these fields.
 
 We use an instance of enthSystemCtx.
 
-Regarding drainage, see [\ref AschwandenBuelerBlatter] and references therein.
+Regarding drainage, see [\ref AschwandenBuelerKhroulevBlatter] and references therein.
  */
 PetscErrorCode IceModel::enthalpyAndDrainageStep(
                       PetscScalar* vertSacrCount, PetscScalar* liquifiedVol,
@@ -462,7 +462,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         ierr = esys.setBoundaryValuesThisColumn(Enth_ks); CHKERRQ(ierr);
 
         // determine lowest-level equation at bottom of ice; see decision chart
-        //   in [\ref AschwandenBuelerBlatter], and page documenting BOMBPROOF
+        //   in [\ref AschwandenBuelerKhroulevBlatter], and page documenting BOMBPROOF
         if (is_floating) {
           // floating base: Dirichlet application of known temperature from ocean
           //   coupler; assumes base of ice shelf has zero liquid fraction
@@ -509,7 +509,7 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
           Hmeltnew += vbmr(i,j) * dt_secs;
         }
 
-        // drain ice segments by mechanism in [\ref AschwandenBuelerBlatter],
+        // drain ice segments by mechanism in [\ref AschwandenBuelerKhroulevBlatter],
         //   using DrainageCalculator dc
         PetscScalar Hdrainedtotal = 0.0;
         for (PetscInt k=0; k < ks; k++) {

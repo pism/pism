@@ -36,7 +36,7 @@ netcdf pism_config {
     pism_config:do_pseudo_plastic_till_doc = "Use the pseudo-plastic till model.";
 
     pism_config:calving_front_stress_boundary_condition = "no";
-    pism_config:calving_front_stress_boundary_condition_doc = "Apply CFBC condition as in [\\ref Albrechtetal2011, \\ref Winkelmanetal2010TCD].  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in [\\ref BBssasliding].";
+    pism_config:calving_front_stress_boundary_condition_doc = "Apply CFBC condition as in [\\ref Albrechtetal2011, \\ref Winkelmannetal2010TCD].  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in [\\ref BBssasliding].";
 
     pism_config:part_grid = "no";
     pism_config:part_grid_doc = "apply partially filled grid cell scheme";
@@ -420,19 +420,19 @@ netcdf pism_config {
     pism_config:enthalpy_cold_bulge_max_doc = "J kg-1; = (2009 J kg-1 K-1) * (30 K); maximum amount by which advection can reduce the enthalpy of a column of ice below its surface enthalpy value";
                               
     pism_config:enthalpy_temperate_conductivity_ratio = 0.1;
-    pism_config:enthalpy_temperate_conductivity_ratio_doc = "pure number; K in cold ice is multiplied by this fraction to give K0 in [\\ref AschwandenBuelerBlatter]";
+    pism_config:enthalpy_temperate_conductivity_ratio_doc = "pure number; K in cold ice is multiplied by this fraction to give K0 in [\\ref AschwandenBuelerKhroulevBlatter]";
                               
     pism_config:gpbld_water_frac_coeff = 181.25;
     pism_config:gpbld_water_frac_coeff_doc = "; coefficient in Glen-Paterson-Budd flow law for extra dependence of softness on liquid water fraction (omega) [\\ref GreveBlatter2009, \\ref LliboutryDuval1985]";
 
     pism_config:gpbld_water_frac_observed_limit = 0.01;
-    pism_config:gpbld_water_frac_observed_limit_doc = "; maximum value of liquid water fraction omega for which softness values are parameterized by [\\ref LliboutryDuval1985]; used in Glen-Paterson-Budd-Lliboutry-Duval flow law; compare [\\ref AschwandenBuelerBlatter]";
+    pism_config:gpbld_water_frac_observed_limit_doc = "; maximum value of liquid water fraction omega for which softness values are parameterized by [\\ref LliboutryDuval1985]; used in Glen-Paterson-Budd-Lliboutry-Duval flow law; compare [\\ref AschwandenBuelerKhroulevBlatter]";
 
     pism_config:drainage_target_water_frac = 0.01;
-    pism_config:drainage_target_water_frac_doc = "; liquid water fraction (omega) above which drainage occurs, but below which there is no drainage; see [\\ref AschwandenBuelerBlatter]";
+    pism_config:drainage_target_water_frac_doc = "; liquid water fraction (omega) above which drainage occurs, but below which there is no drainage; see [\\ref AschwandenBuelerKhroulevBlatter]";
 
     pism_config:drainage_max_rate = 1.58443823077064e-09;
-    pism_config:drainage_max_rate_doc = "s-1; = 0.05 a-1; maximum rate at which liquid water fraction in temperate ice could possibly drain; see [\\ref AschwandenBuelerBlatter]";
+    pism_config:drainage_max_rate_doc = "s-1; = 0.05 a-1; maximum rate at which liquid water fraction in temperate ice could possibly drain; see [\\ref AschwandenBuelerKhroulevBlatter]";
 
     pism_config:fresh_water_density = 1000.0;
     pism_config:fresh_water_density_doc = "kg m-3;";

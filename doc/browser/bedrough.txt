@@ -2,19 +2,15 @@
 
 \section justify An explanation
 
-PISM stable0.3 (i.e.~early 2010) is not as fast as we want.  This is especially noticable for rough beds.  There is no reason to believe that the physical model is doing something wrong, but the effect of roughness is a loss of performance because the time-stepping mechanism is slowed by high diffusivities.  The ice sheet tends to evolve to have high diffusivities even when they are not present early in the run.  These effects are noticable and significant in the major PISM worked examples:
-- the <A HREF="http://www.pism-docs.org/wiki/doku.php?id=worked-searise-greenland">SeaRISE-Greenland model using present-day data, including recent CReSIS radar data, on 5km and finer grid resolution</A>, and
-- the <A HREF="http://www.pism-docs.org/wiki/doku.php?id=worked-searise-antarctica-uaf">SeaRISE-Antarctica demo model using 10km grid resolution</A>.
-
 If the bed elevation \c topg is smoothed by preprocessing then we observe a reduction in the peak values of the SIA diffusivities.  From such smoothing there is (generically) also a reduction in the peak magnitudes of horizontal velocities from both the SIA and SSA models.  The major consequence of these reductions, through the adaptive time-stepping mechanism, is that PISM can take longer time steps and thus that it can complete model runs in shorter time.
 
-Large peak diffusivities coming from bed roughness are located (generically) at margin locations where the ice is on, or has flowed into, fjord-like bed topography.  At coarser resolutions (%e.g. 20km and up), it appears that the effect of increasing bed roughness is not as severe as at finer resolutions (%e.g. 10km, 5km and finer).  While it is true that the shallow models we use--SIA and SSA models--are missing significant stress gradients at the same margin locations which have large bed slopes, here we are emphasizing the performance "hit" which the whole model experiences if some small part of the ice sheet is on rough bed.  That part therefore is not well-modeled anyway, compared to the majority of the ice sheet.  (Switching to full Stokes or Blatter higher order models would probably mean a gain in the balanced stress components \e and a loss of the ability to model the ice sheet at high resolution.  There is always a tradeoff between \e completeness of the continuum model and usable \e resolution needed to resolve the features of the real ice sheet.)
+Large peak diffusivities coming from bed roughness are located (generically) at margin locations where the ice is on, or has flowed onto, fjord-like bed topography.  At coarser resolutions (%e.g. 20km and up), it appears that the effect of increasing bed roughness is not as severe as at finer resolutions (%e.g. 10km, 5km and finer).  Of course it is true that the shallow models we use, namely the SIA and SSA models, are missing significant stress gradients at the same margin locations which have large bed slopes.
 
-There exists, however, a theory which addresses exactly this situation for the SIA model, and explains that one \e should use a smoothed bed if one also lowers the SIA diffusivity.  This theory both explains how to improve the SIA model to handle bed roughness more correctly, because it parameterizes the effects of "higher-order" stresses which act on the ice as it flows over bed topography.  Specifically it shows the way to a double performance boost for PISM:
+Here we are emphasizing the performance "hit" which the whole model experiences if some small part of the ice sheet is on a rough bed.  That part therefore is not well-modeled anyway, compared to the majority of the ice sheet.  (Switching to full Stokes or Blatter higher order models without major spatial adaptivity would probably imply a gain in the balanced stress components \e and a loss of the ability to model the ice sheet at high resolution.  There is a tradeoff between completeness of the continuum model and usable resolution needed to resolve the features of the real ice sheet.)
+
+There exists a theory which addresses exactly this situation for the SIA model, and explains rigorously that one should use a smoothed bed in that model.  But with an associated reduction in diffusivity.  This theory explains how to improve the SIA model to handle bed roughness more correctly, because it parameterizes the effects of "higher-order" stresses which act on the ice as it flows over bed topography.  Specifically it shows the way to a double performance boost for PISM:
 -# smoothed beds give longer time steps directly, and
 -# the parameterized effect of the local bed roughness is to further reduce the diffusivity, giving even longer time-steps.
-
-How could we have missed this theory until now?
 
 
 \section schoofstheory Theory
@@ -28,7 +24,7 @@ In order to describe the Schoof scheme using PISM notation, we start by recallin
 Within PISM this equation is handled by IceModel::massContExplicitStep().  Recall that \f$M-S\f$ is the mass balance added to the ice column per time.  (It plays no further role here.)  In the SIA case with zero basal sliding, the horizontal mass flux is
   \f[ \mathbf{q} = - D_{SIA} \nabla h, \f]
 where \f$D_{SIA}\ge 0\f$ is given next.  Thus the mass continuity equation is \e diffusive.  The diffusivity \f$D_{SIA}\f$ is a function of the ice geometry and the ice flow law.  In the isothermal Glen power law (power \f$= n\f$) case we recall
-  \f[ D_{SIA} = \Gamma H^{n+2} |\nabla h|^{n-1} \tag{siadiffusivity} \f]
+  \f[ D_{SIA} = \Gamma H^{n+2} |\nabla h|^{n-1}\tag{siadiffusivity} \f]
 where \f$\Gamma = 2 A (\rho g)^n / (n+2)\f$ [%c.f. details in \ref BLKCB].
 
 Consider now the "original" bed topography \f$b_0(x_1,x_2)\f$, which we assume for the moment is independent of time.  (Time-independence is not actually critical, and such a restriction can be removed.)  We will use \f$x_1,x_2\f$ to denote the horizontal model coordinates, though they are denoted \f$x,y\f$ elsewhere in these PISM docs.  Suppose a locally-smoothed bed is computed by averaging \f$b_0\f$ over a rectangular region of sides \f$2\lambda_1\f$ by \f$2\lambda_2\f$, namely:

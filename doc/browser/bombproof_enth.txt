@@ -8,7 +8,7 @@ The scheme is conditionally-stable.  The length of the time step is limited only
 
 Accuracy is necessarily a second goal.  Our shallow scheme has truncation error \f$O(\Delta z^2)\f$ in many circumstances, though it reverts to lower order when it "detects trouble" in the form of large vertical velocities.  Overall the scheme has  order \f$O(\Delta t,\Delta x,\Delta y, \Delta z^2)\f$ in circumstances where the vertical ice flow velocity is small enough, relative to conductivity, and otherwise reverts to \f$O(\Delta t,\Delta x,\Delta y, \Delta z^1)\f$.
 
-The conservation of energy problem for the ice is in terms of an enthalpy field [\ref AschwandenBuelerBlatter].  The current scheme supercedes the cold-ice, temperature-based scheme described in the appendices of [\ref BBL] and in [\ref BBssasliding].  Compared to a cold-ice scheme, the enthalpy formulation does a better job of conserving energy, has a more-physical model for basal melt rate and drainage, and can model polythermal ice with any CTS topology [\ref AschwandenBuelerBlatter].  The finite difference implementation of the enthalpy method is robust and avoids the CFL condition on vertical advection which was present in the older, cold-ice scheme.
+The conservation of energy problem for the ice is in terms of an enthalpy field [\ref AschwandenBuelerKhroulevBlatter].  The current scheme supercedes the cold-ice, temperature-based scheme described in the appendices of [\ref BBL] and in [\ref BBssasliding].  Compared to a cold-ice scheme, the enthalpy formulation does a better job of conserving energy, has a more-physical model for basal melt rate and drainage, and can model polythermal ice with any CTS topology [\ref AschwandenBuelerKhroulevBlatter].  The finite difference implementation of the enthalpy method is robust and avoids the CFL condition on vertical advection which was present in the older, cold-ice scheme.
 
 The bedrock thermal problem is solved by splitting the timestep into an update of the bedrock temperature field, assuming the ice base is as constant temperature, and an update of the ice enthalpy field, by the BOMBPROOF scheme here, assuming the upward heat flux from the bedrock layer is constant during the timestep.  For more on the implementation, see the PISMBedThermalUnit class.
 
@@ -19,18 +19,18 @@ Nor do we want the numerical scheme for advection to need any information about 
 
 \section iceequations Conservation of energy in a shallow ice sheet
 
-In an enthalpy formulation [\ref AschwandenBuelerBlatter, and references therein], the ice sheet is regarded as a mixture of two phases, solid and liquid, so that both cold and temperate ice with liquid ice matrix can be modeled.  The specific enthalpy field of the ice mixture is denoted \f$E(x,y,z,t)\f$ and has units \f$\text{J}\,\text{kg}^{-1}\f$.  (Within the PISM documentation the symbol \f$H\f$ is used for ice thickness so we use \f$E\f$ for enthalpy here and in the PISM source code versus "H" in [\ref AschwandenBuelerBlatter].)  The conservation of energy equation is
+In an enthalpy formulation [\ref AschwandenBuelerKhroulevBlatter, and references therein], the ice sheet is regarded as a mixture of two phases, solid and liquid, so that both cold and temperate ice with liquid ice matrix can be modeled.  The specific enthalpy field of the ice mixture is denoted \f$E(x,y,z,t)\f$ and has units \f$\text{J}\,\text{kg}^{-1}\f$.  (Within the PISM documentation the symbol \f$H\f$ is used for ice thickness so we use \f$E\f$ for enthalpy here and in the PISM source code versus "H" in [\ref AschwandenBuelerKhroulevBlatter].)  The conservation of energy equation is
 \anchor basicEnergy
   \f[ \rho \frac{dE}{dt} = -\nabla \cdot \mathbf{q} + Q,\tag{basicEnergy} \f]
-where \f$\rho\f$ is the mixture density.  The mixture density is assumed to be the same as ice density even if there is a nonzero liquid fraction, and the mixture is assumed to be incompressible [\ref AschwandenBuelerBlatter].  The left and right sides of equation (\ref basicEnergy), and thus the quantity \f$Q\f$, have units \f$J\,\text{s}^{-1}\,\text{m}^{-3} = \text{W}\,\text{m}^{-3}\f$.
+where \f$\rho\f$ is the mixture density.  The mixture density is assumed to be the same as ice density even if there is a nonzero liquid fraction, and the mixture is assumed to be incompressible [\ref AschwandenBuelerKhroulevBlatter].  The left and right sides of equation (\ref basicEnergy), and thus the quantity \f$Q\f$, have units \f$J\,\text{s}^{-1}\,\text{m}^{-3} = \text{W}\,\text{m}^{-3}\f$.
 
-Neglecting the dependence of conductivity and heat capacity on temperature [\ref AschwandenBuelerBlatter], the heat flux in cold ice and temperate ice is
+Neglecting the dependence of conductivity and heat capacity on temperature [\ref AschwandenBuelerKhroulevBlatter], the heat flux in cold ice and temperate ice is
 \anchor heatflux
   \f[ \mathbf{q} = \begin{cases}
                       - k_i c_i^{-1} \nabla E, & \text{cold ice}, \\
                       - K_0 \nabla E, & \text{temperate ice}, \tag{heatflux} \\
                    \end{cases} \f]
-where \f$k_i,c_i,K_0\f$ are constant [\ref AschwandenBuelerBlatter].  The nonzero flux in the temperate ice case, may be conceptualized as a regularization of the "real" equation, or as a flux of latent heat carried by liquid water.  Also, \f$dE/dt\f$ stands for the material derivative of the enthalpy field, so the expanded form of (\ref basicEnergy) is
+where \f$k_i,c_i,K_0\f$ are constant [\ref AschwandenBuelerKhroulevBlatter].  The nonzero flux in the temperate ice case, may be conceptualized as a regularization of the "real" equation, or as a flux of latent heat carried by liquid water.  Also, \f$dE/dt\f$ stands for the material derivative of the enthalpy field, so the expanded form of (\ref basicEnergy) is
   \f[ \rho \left(\frac{\partial E}{\partial t} + \mathbf{U}\cdot \nabla E\right)
         = \nabla \cdot \left(\left\{\begin{matrix} k_i c_i^{-1} \\ K_0 \end{matrix}\right\} \nabla E \right) + Q, \f]
 where \f$\mathbf{U}\f$ is the three dimensional velocity.  Thus advection is included.
@@ -368,7 +368,7 @@ Nonetheless the maximum principle is a highly-desirable form of stability becaus
 
 \section melt Temperate basal boundary condition, and computing the basal melt rate
 
-At the bottom of grounded ice, a certain amount of heat comes out of the earth and either enters the ice through conduction or melts the base of the ice.  On the one hand, see the documentation for PISMBedThermalUnit for the model of how much comes out of the earth.  On the other hand, [\ref AschwandenBuelerBlatter] includes a careful analysis of the subglacial layer equation and the corresponding boundary conditions and basal melt rate calculation, and the reader should consult that reference.
+At the bottom of grounded ice, a certain amount of heat comes out of the earth and either enters the ice through conduction or melts the base of the ice.  On the one hand, see the documentation for PISMBedThermalUnit for the model of how much comes out of the earth.  On the other hand, [\ref AschwandenBuelerKhroulevBlatter] includes a careful analysis of the subglacial layer equation and the corresponding boundary conditions and basal melt rate calculation, and the reader should consult that reference.
 
 
 \subsection refloating Regarding the floating case

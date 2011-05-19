@@ -538,6 +538,7 @@ PetscErrorCode IcePSTexModel::additionalAtEndTimestep() {
   return 0;
 }
 
+/*! */
 PetscErrorCode PSTYieldStress::init(PISMVars &vars) {
   PetscErrorCode ierr;
 
