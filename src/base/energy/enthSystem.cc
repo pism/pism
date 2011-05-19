@@ -50,14 +50,6 @@ enthSystemCtx::enthSystemCtx(
   Enth_s = new PetscScalar[Mz];  // enthalpy of pressure-melting-point
 
   Enth3 = &my_Enth3;  // points to IceModelVec3
-
-  // invalidate column inputs
-  u[0]      = GSL_NAN;
-  v[0]      = GSL_NAN;
-  w[0]      = GSL_NAN;
-  Sigma[0]  = GSL_NAN;
-  Enth_s[0] = GSL_NAN;
-  Enth[0]   = GSL_NAN;
 }
 
 
@@ -166,18 +158,6 @@ PetscErrorCode enthSystemCtx::checkReadyToSolve() {
     SETERRQ(2,  "not ready to solve: need initAllColumns() in enthSystemCtx"); }
   if (lambda < 0.0) {
     SETERRQ(3,  "not ready to solve: need setSchemeParamsThisColumn() in enthSystemCtx"); }
-  if (gsl_isnan(u[0])) {
-    SETERRQ(60, "not ready to solve: invalid u[] in enthSystemCtx"); }
-  if (gsl_isnan(v[0])) {
-    SETERRQ(61, "not ready to solve: invalid v[] in enthSystemCtx"); }
-  if (gsl_isnan(w[0])) {
-    SETERRQ(62, "not ready to solve: invalid w[] in enthSystemCtx"); }
-  if (gsl_isnan(Sigma[0])) {
-    SETERRQ(63, "not ready to solve: invalid Sigma[] in enthSystemCtx"); }
-  if (gsl_isnan(Enth_s[0])) {
-    SETERRQ(64, "not ready to solve: invalid Enth_s[] in enthSystemCtx"); }
-  if (gsl_isnan(Enth[0])) {
-    SETERRQ(65, "not ready to solve: invalid Enth[] in enthSystemCtx"); }
   return 0;
 }
 
@@ -216,7 +196,6 @@ is already set.
 PetscErrorCode enthSystemCtx::setNeumannBasal(PetscScalar Y) {
  PetscErrorCode ierr;
 #ifdef PISM_DEBUG
-
   ierr = checkReadyToSolve(); CHKERRQ(ierr);
   if ((!gsl_isnan(a0)) || (!gsl_isnan(a1)) || (!gsl_isnan(b))) {
     SETERRQ(1, "setting basal boundary conditions twice in enthSystemCtx");
@@ -307,18 +286,11 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
 
 #ifdef PISM_DEBUG
   if (pivoterrorindex == 0) {
-    // if success, mark column as done by making scheme params and b.c.s invalid
+    // if success, mark column as done by making scheme params and b.c. coeffs invalid
     lambda  = -1.0;
     a0 = GSL_NAN;
     a1 = GSL_NAN;
     b  = GSL_NAN;
-    // invalidate column inputs
-    u[0]      = GSL_NAN;
-    v[0]      = GSL_NAN;
-    w[0]      = GSL_NAN;
-    Sigma[0]  = GSL_NAN;
-    Enth_s[0] = GSL_NAN;
-    Enth[0]   = GSL_NAN;
   }
 #endif
   return 0;

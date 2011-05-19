@@ -513,20 +513,19 @@ PetscErrorCode IceModel::enthalpyAndDrainageStep(
         //   using DrainageCalculator dc
         PetscScalar Hdrainedtotal = 0.0;
         for (PetscInt k=0; k < ks; k++) {
-          const PetscReal p = EC->getPressureFromDepth(vH(i,j) - fzlev[k]); // FIXME task #7297
-          PetscReal omega;
-          EC->getWaterFraction(Enthnew[k], p, omega);  // return code not checked; ignore E>E_l here
-          if (omega > 0.0) { // to avoid doing any more work if ice is cold
-            if (Enthnew[k] >= esys.Enth_s[k] + L) {
-              liquifiedCount++; // count these events ...
-              Enthnew[k] = esys.Enth_s[k] + L; //  but lose the energy
+          if (Enthnew[k] > esys.Enth_s[k]) { // avoid doing any more work if cold
+            if (Enthnew[k] >= esys.Enth_s[k] + 0.5 * L) {
+              liquifiedCount++; // count these rare events ...
+              Enthnew[k] = esys.Enth_s[k] + 0.5 * L; //  but lose the energy
             }
+            const PetscReal p = EC->getPressureFromDepth(vH(i,j) - fzlev[k]); // FIXME task #7297
+            PetscReal omega;
+            EC->getWaterFraction(Enthnew[k], p, omega);  // return code not checked
             if (omega > 0.01) {
               PetscReal fractiondrained = dc.get_drainage_rate(omega) * dt_secs; // pure number
               fractiondrained = PetscMin(fractiondrained, omega - 0.01); // only drain down to 0.01
               Hdrainedtotal += fractiondrained * fdz;  // always a positive contribution
               Enthnew[k] -= fractiondrained * L;
-              //ierr = EC->getEnthAtWaterFraction(0.01, p, Enthnew[k]); CHKERRQ(ierr);
             }
           }
         }
