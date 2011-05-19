@@ -57,7 +57,7 @@ IceFlowLaw::IceFlowLaw(MPI_Comm c,const char pre[], const NCConfigVariable &conf
   k            = config.get("ice_thermal_conductivity");
   c_p          = config.get("ice_specific_heat_capacity");
   latentHeat   = config.get("water_latent_heat_fusion");
-  triple_point_temp = config.get("water_triple_point_temperature");
+  melting_point_temp = config.get("water_melting_point_temperature");
   n            = config.get("Glen_exponent");
 
   A_cold = config.get("Paterson-Budd_A_cold");
@@ -205,7 +205,7 @@ This constructor just sets flow law factor for nonzero water content, from
  */
 GPBLDIce::GPBLDIce(MPI_Comm c,const char pre[],
                    const NCConfigVariable &config) : IceFlowLaw(c,pre,config) {
-  T_0              = config.get("water_triple_point_temperature");    // K
+  T_0              = config.get("water_melting_point_temperature");    // K
   water_frac_coeff = config.get("gpbld_water_frac_coeff");  
   water_frac_observed_limit
                    = config.get("gpbld_water_frac_observed_limit");              

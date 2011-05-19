@@ -461,14 +461,14 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   // none use Goldsby-Kohlstedt or do age calc
 
   ierr = vuplift.set(0.0); CHKERRQ(ierr);  // no bed deformation
-  ierr =  T3.set(ice->triple_point_temp); CHKERRQ(ierr);
+  ierr =  T3.set(ice->melting_point_temp); CHKERRQ(ierr);
 
   ierr = vH.set(initialthickness); CHKERRQ(ierr);
 
   ierr = vbmr.set(0.0); CHKERRQ(ierr);
   ierr = vGhf.set(0.0); CHKERRQ(ierr);
 
-  ierr = artm.set(ice->triple_point_temp); CHKERRQ(ierr);
+  ierr = artm.set(ice->melting_point_temp); CHKERRQ(ierr);
   ierr = acab.set(0.3/secpera); CHKERRQ(ierr);
 
   ierr = setBed(); CHKERRQ(ierr);

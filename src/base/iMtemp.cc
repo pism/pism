@@ -299,7 +299,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
             Tnew[k] = x[k];
           } else {
             const PetscScalar 
-              Tpmp = ice->triple_point_temp - ice->beta_CC_grad * (vH(i,j) - fzlev[k]); // FIXME task #7297
+              Tpmp = ice->melting_point_temp - ice->beta_CC_grad * (vH(i,j) - fzlev[k]); // FIXME task #7297
             if (x[k] > Tpmp) {
               Tnew[k] = Tpmp;
               PetscScalar Texcess = x[k] - Tpmp; // always positive
@@ -325,7 +325,7 @@ PetscErrorCode IceModel::temperatureStep(PetscScalar* vertSacrCount, PetscScalar
           if (allowAboveMelting == PETSC_TRUE) { // ice/rock interface
             Tnew[0] = x[0];
           } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
-            const PetscScalar Tpmp = ice->triple_point_temp - ice->beta_CC_grad * vH(i,j); // FIXME task #7297
+            const PetscScalar Tpmp = ice->melting_point_temp - ice->beta_CC_grad * vH(i,j); // FIXME task #7297
             PetscScalar Texcess = x[0] - Tpmp; // positive or negative
             if (mask.ocean(i,j)) {
               // when floating, only half a segment has had its temperature raised

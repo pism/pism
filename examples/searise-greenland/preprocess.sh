@@ -59,3 +59,9 @@ ncatted -O -a units,t,a,c,"years since 1-1-1" $SLSERIES
 echo "  PISM-readable paleo-sea-level file $SLSERIES created from $DATANAME"
 echo "    (for option -dSLforcing)"
 echo
+
+echo
+echo "fetching anomaly files"
+URL=http://www.pism-docs.org/download
+wget -nc ${URL}/ar4_precip_anomaly.nc
+wget -nc ${URL}/ar4_temp_anomaly.nc

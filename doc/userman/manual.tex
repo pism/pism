@@ -97,7 +97,7 @@
 %    {\Large Constantine Khroulev \\ Ed Bueler \\ Andy Aschwanden \\ Jed Brown \\ Nathan Shemonski}
     \vspace{1cm}
 
-    \includegraphics[width=4in,keepaspectratio=true]{grn-grl-csurf}
+    \includegraphics[width=3.3in,keepaspectratio=true]{grn-grl-csurf}
     \vfill
 
     \small Support by email: \texttt{help\@@pism-docs.org}. 
@@ -143,6 +143,9 @@ PISM is a joint project between developers in the ice sheet modeling group at th
 Users will reach the \underline{underlined} UAF-based developers listed above by using the email address
 
 \centerline{ \texttt{help\@@pism-docs.org}.  }
+
+\bigskip\bigskip
+\noindent \textsc{Front page}: Magnitude of horizontal surface velocy as simulated by PISM employing a horizontal grid resolution of 2\,km. Visualization done with IDV.
 
 \vfill
 
@@ -287,7 +290,7 @@ Although it begins to expose the internals of PISM, we think it is also helpful 
 \emph{balance velocities} \small & \emph{steady state}; ice flows down surface gradient \cite{JoughinetalGrBal97} & \nolist{same as above, plus:}  \begin{tightlist} \item surface mass balance \item initial ice thickness \end{tightlist} \\
 \textsc{isothermal SIA} & non-sliding lubrication flow, fixed softness \cite{BLKCB,EISMINT96} & \nolist{same as above, but time-dependence is allowed} \\
 \textsc{thermo-coupled SIA} & non-sliding lubrication flow, temperature-dependent softness \cite{BBL,EISMINT00} & \nolist{same as above, plus:} \begin{tightlist} \item surface temperature \item geothermal flux \end{tightlist} \\
-\textsc{polythermal SIA} & same, but allowing $>0$ liquid water in temperate ice; conserves energy better \cite{AschwandenBlatter,Greve} \vspace{2mm} & \nolist{same as above} \\
+\textsc{polythermal SIA} & same, but allowing $>0$ liquid water in temperate ice; conserves energy better \cite{AschwandenBuelerKhroulevBlatter,Greve} \vspace{2mm} & \nolist{same as above} \\
 \textsc{SIA + SSA hybrid} & SSA as a sliding law for thermo-coupled SIA \cite{BBssasliding}; polythermal is the default & \nolist{same as above, plus:} \begin{tightlist} \item basal layer (``till'') strength \end{tightlist} \\
 \emph{Blatter-Pattyn} \small & ``higher-order'', bridging stresses \cite{Blatter,Pattyn03,SchoofCoulombBlatter} & \nolist{same as above} \\ \hline
 \end{tabular}

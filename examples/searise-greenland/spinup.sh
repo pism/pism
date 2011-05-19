@@ -1,6 +1,10 @@
 #!/bin/bash
 
+<<<<<<< HEAD
 # Copyright (C) 2009-2011 The PISM Authors
+=======
+# Copyright (C) 2009-2011 Andy Aschwanden and Ed Bueler
+>>>>>>> - updated SeaRISE Greenland "Getting Started" example. Figures show, so far, results from 20km runs. Added AR4 climate forcing run. Will need some more fiddling with text and figures once 10km results become available.
 
 # PISM SeaRISE Greenland
 #
@@ -115,9 +119,9 @@ TENKMGRID="-Mx 151 -My 281 ${FINEVGRID}"
 FIVEKMGRID="-Mx 301 -My 561 ${FINESTVGRID}"
 
 # skips
-SKIPTWENTYKM=5
-SKIPTENKM=20
-SKIPFIVEKM=50
+SKIPTWENTYKM=10
+SKIPTENKM=50
+SKIPFIVEKM=200
 
 # defaults to coarse grid choices
 COARSEGRID=$TWENTYKMGRID
@@ -127,7 +131,7 @@ FINESKIP=$SKIPTWENTYKM
 CS=20 # km
 FS=20 # km
 
-COARSEENDTIME=-20000 # BP
+COARSEENDTIME=-10000 # BP
 
 echo ""
 if [ $# -gt 1 ] ; then
@@ -163,10 +167,9 @@ echo "$SCRIPTNAME       fine grid = '$FINEGRID' (= $FS km)"
 PISM="${PISM_PREFIX}${PISM_EXEC} -ocean_kill -e 3"
 
 # coupler settings for pre-spinup
-TUNEDCLIMATE="-config_override config_269.0_0.001_0.80_-0.500_9.7440.nc"
-COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd ${TUNEDCLIMATE}"
+COUPLER_SIMPLE="-atmosphere searise_greenland -surface pdd -pdd_fausto"
 # coupler settings for spin-up (i.e. with forcing)
-COUPLER_FORCING="-atmosphere searise_greenland,dTforcing -surface pdd ${TUNEDCLIMATE} -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES"
+COUPLER_FORCING="-atmosphere searise_greenland,dTforcing -surface pdd -pdd_fausto -paleo_precip -dTforcing $PISM_TEMPSERIES -ocean constant,dSLforcing -dSLforcing $PISM_SLSERIES"
 
 # default choices in parameter study; see Bueler & Brown (2009) re "tillphi"
 TILLPHI="-topg_to_phi 5.0,20.0,-300.0,700.0,10.0"
@@ -219,30 +222,22 @@ EXVARS="diffusivity,temppabase,bmelt,csurf,hardav,mask" # check_stationarity.py 
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA run to achieve approximate temperature equilibrium, for ${NOMASSSIARUNLENGTH}a"
 cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE0NAME $COUPLER_SIMPLE \
-  -no_mass -y ${NOMASSSIARUNLENGTH} \
+  -no_mass -ys 0 -y ${NOMASSSIARUNLENGTH} \
   -extra_file $EX1NAME -extra_vars $EXVARS -extra_times $EXTIMES -o $PRE1NAME"
 $PISM_DO $cmd
-
-# smoothing for 100 years
-PRE2NAME=g${CS}km_SIA.nc
-echo
-echo "$SCRIPTNAME  smoothing with SIA for ${SMOOTHRUNLENGTH}a"
-cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE1NAME $COUPLER_SIMPLE -y $SMOOTHRUNLENGTH -o $PRE2NAME"
-$PISM_DO $cmd
-
 
 
 # pre-spinup done; ready to use paleoclimate forcing for real spinup ...
 
 ENDTIME=$COARSEENDTIME
-OUTNAME=g${CS}km_m20ka.nc
-TSNAME=ts_g${CS}km_m20ka.nc
-EXNAME=ex_g${CS}km_m20ka.nc
+OUTNAME=g${CS}km_m10ka.nc
+TSNAME=ts_g${CS}km_m10ka.nc
+EXNAME=ex_g${CS}km_m10ka.nc
 EXVARS="diffusivity,temppabase,bmelt,csurf,hardav,mask,dHdt,cbase,tauc"
 echo
 echo "$SCRIPTNAME  paleo-climate forcing run with full physics,"
-echo "$SCRIPTNAME      except bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
-cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE2NAME $FULLPHYS $COUPLER_FORCING \
+echo "$SCRIPTNAME      including bed deformation, from $PALEOSTARTYEAR a to ${ENDTIME}a"
+cmd="$PISM_MPIDO $NN $PISM -skip $COARSESKIP -i $PRE1NAME $FULLPHYS -bed_def lc $COUPLER_FORCING \
      -ts_file $TSNAME -ts_times $PALEOSTARTYEAR:1:$ENDTIME \
      -extra_file $EXNAME -extra_vars $EXVARS -extra_times -124500:500:$ENDTIME \
      -ys $PALEOSTARTYEAR -ye $ENDTIME -o $OUTNAME"
@@ -258,10 +253,11 @@ TSNAME=ts_g${FS}km_0.nc
 EXNAME=ex_g${FS}km_0.nc
 echo
 echo "$SCRIPTNAME  regrid to fine grid and do paleo-climate forcing run with full physics,"
-echo "$SCRIPTNAME      including bed deformation, from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
+echo "$SCRIPTNAME      including bed deformation and modified surface mass balance,"
+echo "$SCRIPTNAME      from ${STARTTIME}a BPE to ${ENDTIME}a BPE"
 cmd="$PISM_MPIDO $NN $PISM -skip $FINESKIP -boot_file $INNAME $FINEGRID $FULLPHYS \
-     -bed_def lc $COUPLER_FORCING\
-     -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat  \
+     -bed_def lc $COUPLER_FORCING \
+     -regrid_file $STARTNAME -regrid_vars litho_temp,thk,enthalpy,bwat -regrid_bed_special  \
      -ts_file $TSNAME -ts_times $STARTTIME:1:$ENDTIME \
      -extra_file $EXNAME -extra_vars $EXVARS -extra_times -19500:500:$ENDTIME \
      -ys $STARTTIME -ye $ENDTIME -o $OUTNAME"

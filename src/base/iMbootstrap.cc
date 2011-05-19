@@ -279,7 +279,7 @@ PetscErrorCode IceModel::putTempAtDepth() {
       const PetscScalar alpha = (g / (2.0 * HH * ice->k)) - 2.0 * HH * HH * beta;
       for (PetscInt k = 0; k < ks; k++) {
         const PetscScalar depth = HH - grid.zlevels[k];
-        const PetscScalar Tpmp = ice->triple_point_temp - ice->beta_CC_grad * depth;
+        const PetscScalar Tpmp = ice->melting_point_temp - ice->beta_CC_grad * depth;
         const PetscScalar d2 = depth * depth;
 
         T[k] = PetscMin(Tpmp,artm(i,j) + alpha * d2 + beta * d2 * d2);

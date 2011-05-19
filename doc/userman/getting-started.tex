@@ -57,14 +57,12 @@ For the rest of this example, we assume you have a workstation with 8 cores, but
 The script \texttt{spinup.sh} starts by ``bootstrapping.''  This term describes the creation, by heuristics and simplified models, of the kind of full initial conditions needed for the evolving, time-dependent model.  Concretely, the first 100 model year run with 8 processes will look like this (\emph{but there is no need to type here!}):
 \small
 \begin{verbatim}
-  mpiexec -n 8 pismr -ocean_kill -e 3 -skip 5 -boot_file pism_Greenland_5km_v1.1.nc \
-    -Mx 76 -My 141 -Lz 4000 -Lbz 2000 -Mz 51 -Mbz 21 \
-    -atmosphere searise_greenland -surface pdd \
-    -config_override config_269.0_0.001_0.80_-0.500_9.7440.nc \
-    -y 100 -o g20km_pre100.nc
+mpiexec -n 8 pismr -ocean_kill -e 3 -skip 10 -boot_file pism_Greenland_5km_v1.1.nc \
+  -Mx 76 -My 141 -Lz 4000 -Lbz 2000 -Mz 51 -Mbz 21 \
+  -atmosphere searise_greenland -surface pdd -pdd_fausto -y 100 -o g20km_pre100.nc
 \end{verbatim}
 \normalsize
-The options describe a $76\times 141$ point grid in the horizontal, which gives 20 km grid spacing in both directions.  There are also important choices about the vertical extent and resolution of the computational grid; more on those later.  There is a long file name after the \verb|-config_override| command, and this corresponds to using PDD surface process model parameters which have been tuned to reproduce a more advanced model's values of the surface mass balance; FIXME see ???.
+The options describe a $76\times 141$ point grid in the horizontal, which gives 20 km grid spacing in both directions.  There are also important choices about the vertical extent and resolution of the computational grid; more on those later. 
 
 Now, instead of typing-in the above PISM command with all its options, get the run going by resetting the environment variable \texttt{PISM_DO} to empty, and running the script:
 \begin{verbatim}
@@ -81,7 +79,6 @@ After the completion of the first 100 model year run (\texttt{g20km_pre100.nc}),
 
 We sometimes call this early stage ``pre-spin-up'', a stage which follows on ``bootstrapping'' and comes before ``actual spin-up'' which uses the paleo-climatic data.  This ``pre-spin-up'' stage goes for 50,000 model years and yields the file \texttt{g20km_steady.nc} at the end.  Along the way the file \texttt{ex_g20km_steady.nc} is updated at every 500 model years, and it can be used to evaluate the degree to which we have reached a thermomechanically-coupled steady state.
 
-Before the start of the actual spin-up and its paleo-climate forcing, we add another short smoothing run which produces \texttt{g20km_SIA.nc} after 100 model years.  This model state has approximate thermomechanical equilibrium and has a surface geometry which is close to the present-day one, but the surface kinematical equation is also satisfied so the upper surface is now in motion.
 
 \begin{figure}[ht]
 \centering
@@ -92,42 +89,42 @@ Before the start of the actual spin-up and its paleo-climate forcing, we add ano
 \label{fig:sr-spinstart}
 \end{figure}
 
-The resulting model state in \texttt{g20km_SIA.nc} is our model for the state of the Greenland ice sheet at the beginning of the paleo-climate record provided in the SeaRISE data set, namely 125,000 B.P.  There is, obviously, great uncertainty in this model for the distant past of the Greenland ice sheet.  Two views of the 10km model grid version of this state are in Figure \ref{fig:sr-spinstart}.
+The resulting model state in \texttt{g20km_steady.nc} is our model for the state of the Greenland ice sheet at the beginning of the paleo-climate record provided in the SeaRISE data set, namely 125,000 B.P.  There is, obviously, great uncertainty in this model for the distant past of the Greenland ice sheet.  Two views of the 20\,km model grid version of this state are in Figure \ref{fig:sr-spinstart}.
 
 \begin{figure}[ht]
 \centering
 %  thk, cbase, csurf from g10km_0.nc
-\mbox{\includegraphics[width=2.25in,keepaspectratio=true]{thk}
-  \qquad \includegraphics[width=2.0in,keepaspectratio=true]{cbase}
-  \qquad \includegraphics[width=2.0in,keepaspectratio=true]{csurf}}
+\mbox{\includegraphics[width=2.in,keepaspectratio=true]{thk}
+  \qquad \includegraphics[width=2.in,keepaspectratio=true]{cbase}
+  \qquad \includegraphics[width=2.in,keepaspectratio=true]{csurf}}
 \caption{Model for the present-day Greenland ice sheet, based on spin-up over 125,000 model years using paleo-climate forcing.  Left: ice thickness (m).  Center: basal sliding velocity (m/a).  Right: surface velocity (m/a).}
 \label{fig:sr-spindone-map}
 \end{figure}
 
 
-The actual paleo-climate-driven spin-up starts from model state \texttt{g20km_SIA.nc}.  We turn on two new mechanisms, climatic forcing and improved stress balance.  There are two forms of climatic forcing. First, temperature offsets from GRIP core data which affect the snow temperature and thus the surface mass balance, so in warm periods there is more marginal ablation.  Additionally, sea levels from the SPECMAP cores affects which part of the ice are floating.  On the other hand, there is a more complete ice dynamics model with sliding controlled by a membrane stress balance.  Namely, the SIA+SSA hybrid model.
+The actual paleo-climate-driven spin-up starts from model state \texttt{g20km_steady.nc}.  We turn on three new mechanisms, climatic forcing, bed deformation, and improved stress balance.  There are two forms of climatic forcing. First, temperature offsets from GRIP core data which affect the snow temperature and thus the surface mass balance, so in warm periods there is more marginal ablation.  Additionally, sea levels from the SPECMAP cores affects which part of the ice are floating. Finally, we turn on the bed deformation model. On the other hand, there is a more complete ice dynamics model with sliding controlled by a membrane stress balance.  Namely, the SIA+SSA hybrid model.
 
-The run now goes from the SeaRISE-Greenland-chosen start time of -125,000 years to -20,000 years.  In this period, diagnostic outputs are written into \texttt{ex_g20km_m20ka.nc} at every 500 model years, and scalar time series including total ice volume are written into \texttt{ts_g20km_m20ka.nc} at every model year.  At the end of this period we get the model state file \texttt{g20km_m20ka.nc}.  Somewhat arbitrarily, at this point we turn on the bed deformation model and run to model year 0, the present time, saving the \texttt{g20km_0.nc} at the end.
+The run now goes from the SeaRISE-Greenland-chosen start time of -125,000 years to -10,000 years.  In this period, diagnostic outputs are written into \texttt{ex_g20km_m10ka.nc} at every 500 model years, and scalar time series including total ice volume are written into \texttt{ts_g20km_m10ka.nc} at every model year.  At the end of this period we get the model state file \texttt{g20km_m10ka.nc}. Unless you run \texttt{./spinup N 2}, the following run continues on the same grid from -10,000 years to present day, producing \texttt{g20km_0.nc}.
 
-The spun-up state \texttt{g20km_0.nc} is intended to be a good model for the Greenland ice sheet at the present day, and thus a basis on which to explore future ice sheet behavior.  Figure \ref{fig:sr-spindone-map} shows some fields from the 10km model grid version of this present-day state.  The ice sheet thickness and surface velocity should be compared to present-day observations \cite{BKAJS}, and parameter dependences in the spin-up process should be explored.
+The spun-up state \texttt{g20km_0.nc} is intended to be a model for the Greenland ice sheet at the present day, and thus a basis on which to explore future ice sheet behavior.  Figure \ref{fig:sr-spindone-map} shows some fields from the 20\,km model grid version of this present-day state.  The ice sheet thickness and surface velocity should be compared to present-day observations \cite{BKAJS}, and parameter dependences in the spin-up process should be explored.
 
 Over the course of the spin-up we have saved the modeled ice volume in ``time-series'' NetCDF files.  This important model output can be viewed by
 \begin{verbatim}
 $ ncview ts_g20km_m20ka.nc ts_g20km_0.nc
 \end{verbatim}
-\noindent Figure \ref{fig:sr-spindone-ivolboth} shows this ice volume time series for the whole spin-up.  We see the modeled volatility of ice volume in the late ``Eemian'' period, between -120,000 and -115,000 BPE in the SeaRISE version of the GRIP temperature data.  The Figure \ref{fig:sr-spindone-ivolboth} shows that over shorter periods, like the last 10,000 years before present, there are possibly-significant differences between the 10km and 20km runs.  FIXME: That the curves come so close together at time 0 is a coincidence, but both the 10km and 20km grid runs end with a volume about $3.5 \times 10^6\,\text{km}^3$, which is about 20\% higher than the present observed volume of $2.9 \times 10^6\,\text{km}^3$.
+\noindent Figure \ref{fig:sr-spindone-ivolboth} shows this ice volume time series for the whole spin-up.  We see the modeled volatility of ice volume in the late ``Eemian'' period, between -120,000 and -115,000 BPE in the SeaRISE version of the GRIP temperature data.
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=5.6in,keepaspectratio=true]{ivolboth}
-\caption{Time series of modeled ice sheet volume on 10km grid (red) and 20km grid (thin blue).  The inset shows slightly different modeled ice sheet volumes on the two grids in the final 10,000 year period before present.}
+\includegraphics[width=5.6in,keepaspectratio=true]{ivol}
+\caption{Time series of modeled ice sheet volume on 20km grid.}
 \label{fig:sr-spindone-ivolboth}
 \end{figure}
 
-The total run time for the complete 20km spin-up, which models 125,000 model years with ``full physics'' of the polythermal SIA+SSA hybrid type (section \ref{sect:dynamics}) uses about 60 processor-hours.  If done without membrane stresses (SIA only) this computational time is reduced.  The polythermal (vs ``cold'') physics choice has no significant performance disadvantage.
+The total run time for the complete 20\,km spin-up, which models 125,000 model years with ``full physics'' of the polythermal SIA+SSA hybrid type (section \ref{sect:dynamics}) uses about 60 processor-hours.  If done without membrane stresses (SIA only) this computational time is reduced.  The polythermal (vs ``cold'') physics choice has no significant performance disadvantage.
 
 
-\subsection{Going forward}  \label{subsect:forecastcaution}  In the same \verb|examples/searise-greenland| directory is a script \verb|forecast.sh|.  (FIXME: make it work by \verb|./forecast.sh g20km_0.nc|.)  It does a ``control'' run for 500 years into the future, initializing from the modeled present-day state and assuming a steady climate for the entire 500 year period.  Please run it, play with it, and modify it, but remember that it is merely a demonstration.
+\subsection{Going forward}  \label{subsect:forecastcaution}  In the same \verb|examples/searise-greenland| directory is a script \verb|forecast.sh|.  (If your spun-up state is called \texttt{g20km_0.nc}, then run  \verb|./forecast.sh 8 g20km_0.nc|, assuming you have 8 cores.  It does two runs for 100 years into the future, initializing from the modeled present-day state. The first run is a ``control''  run assuming steady climate for the entire 100 year period. The second runs uses AR4 climate forcing. Please run it, play with it, and modify it, but remember that it is merely a demonstration.
 
 Because ice sheets, and ice sheet models, have a ``memory'' of past climates, whether real or modeled, the results strongly depend on the nature of the spin-up process which preceded this ``forecast'' run.  Therefore, as already noted, it is critical to evaluate the quality of the spunup state, for example using present-day observations of surface velocity \cite{BKAJS}, and other observations including ice temperature in ice bore-holes.  Critical thinking about a broad range of modeling hypotheses is prerequisite to building models of future behavior.  Naive or casual use of PISM to generate ice sheet predictions is \emph{not} recommended!
 

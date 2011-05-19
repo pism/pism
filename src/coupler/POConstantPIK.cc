@@ -57,7 +57,7 @@ PetscErrorCode POConstantPIK::sea_level_elevation(PetscReal &result) {
 PetscErrorCode POConstantPIK::shelf_base_temperature(IceModelVec2S &result) {
   PetscErrorCode ierr;
 
-  const PetscScalar T0 = config.get("water_triple_point_temperature"), // K
+  const PetscScalar T0 = config.get("water_melting_point_temperature"), // K
     beta_CC_grad = config.get("beta_CC") * config.get("ice_density") * config.get("standard_gravity"), // K m-1
     ice_rho = config.get("ice_density"),
     sea_water_rho = config.get("sea_water_density");

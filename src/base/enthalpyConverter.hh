@@ -78,7 +78,7 @@ public:
   virtual PetscErrorCode getEnthAtWaterFraction(double omega, double p, double &E) const;
 
 protected:
-  double T_triple, L, c_i, rho_i, g, p_air, beta, T_tol;
+  double T_melting, L, c_i, rho_i, g, p_air, beta, T_tol;
   double T_0;
   bool   do_cold_ice_methods;
 };
@@ -104,7 +104,7 @@ public:
 
   /*! */
   virtual double getMeltingTemp(double /*p*/) const {
-    return T_triple; }
+    return T_melting; }
 
   /*! */
   virtual PetscErrorCode getAbsTemp(double E, double /*p*/,
