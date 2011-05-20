@@ -25,6 +25,7 @@ int main(int argc,char **argv)
   PetscErrorCode ierr;
   DMMG           *dmmg;
   PetscReal      norm;
+  PetscInt       mx,my;
   DA             da;
 
   PetscInitialize(&argc,&argv,(char *)0,help);
@@ -43,6 +44,9 @@ int main(int argc,char **argv)
   ierr = DMMGSetKSP(dmmg,ComputeRHS,ComputeMatrix);CHKERRQ(ierr);
 
   ierr = DMMGSetUp(dmmg);CHKERRQ(ierr);
+  ierr = DAGetInfo(DMMGGetDA(dmmg),0,&mx,&my,0,0,0,0,0,0,0,0);CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"fine grid is %d x %d points\n",mx,my);CHKERRQ(ierr);
+
   ierr = DMMGSolve(dmmg);CHKERRQ(ierr);
 
   ierr = MatMult(DMMGGetJ(dmmg),DMMGGetx(dmmg),DMMGGetr(dmmg));CHKERRQ(ierr);

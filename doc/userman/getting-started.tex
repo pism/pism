@@ -29,6 +29,8 @@ $ ./preprocess.sh
 \end{verbatim}
 \noindent The script \texttt{preprocess.sh}\footnote{\protect{This script requires \texttt{wget} and also NCO (NetCDF Operators; \url{http://nco.sourceforge.net/})}.} downloads the version 1.1 SeaRISE ``master'' present-day data set and adjusts it to make it PISM-readable.  It creates three new NetCDF files, each having small metadata changes so that they can be read by PISM.  These metadata can be listed by \texttt{ncdump -h}.  Two of the new files contain famous time-dependent paleo-climate records from ice core (\texttt{pism_dT.nc} has GRIP) and seabed core records (\texttt{pism_dSL.nc} has SPECMAP).
 
+Also the preprocess script downloads the SeaRISE summary versions of IPCC AR4 (2007) climate projections, namely files \texttt{ar4_precip_anomaly.nc} and \texttt{ar4_temp_anomaly.nc}.  These files are downloaded from \href{http://www.pism-docs.org/}{www.pism-docs.org}, but they are versions of the data at the SeaRISE page \url{http://websrv.cs.umt.edu/isis/index.php/Future_Climate_Data}.  These surface temperature and precipitation projections  are used in the script \texttt{forecast.sh} to demonstrate offline coupling (forcing) in subsection \ref{subsect:forecastcaution} below.
+
 Any of these NetCDF files can be viewed with \texttt{ncview} or other NetCDF visualization tools.  (See Table \ref{tab:NetCDFview} below.)  An application of IDV to the master data set produced Figure \ref{fig:sr-input}, for example.
 
 \begin{figure}[ht]
@@ -138,7 +140,7 @@ We most-regularly use \texttt{ncview} to look at NetCDF files.  Table \ref{tab:N
 \newcommand{\netcdftool}[1]{#1\index{NetCDF!tools!#1}}
 \begin{table}[ht]
 \centering
-\caption{Some tools for viewing and modifying NetCDF files.}\label{tab:NetCDFview} 
+\caption{Tools for viewing and modifying NetCDF files.}\label{tab:NetCDFview} 
 \small
 \begin{tabular}{llp{0.4\linewidth}}
   \\\toprule

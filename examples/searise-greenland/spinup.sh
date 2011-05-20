@@ -1,10 +1,6 @@
 #!/bin/bash
 
-<<<<<<< HEAD
 # Copyright (C) 2009-2011 The PISM Authors
-=======
-# Copyright (C) 2009-2011 Andy Aschwanden and Ed Bueler
->>>>>>> - updated SeaRISE Greenland "Getting Started" example. Figures show, so far, results from 20km runs. Added AR4 climate forcing run. Will need some more fiddling with text and figures once 10km results become available.
 
 # PISM SeaRISE Greenland
 #

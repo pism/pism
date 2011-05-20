@@ -88,6 +88,7 @@ FULLPHYS="-ssa_sliding -thk_eff ${PARAMS}"
 echo "$SCRIPTNAME      executable = '$PISM'"
 echo "$SCRIPTNAME    full physics = '$FULLPHYS'"
 echo "$SCRIPTNAME         coupler = '$COUPLER'"
+echo "$SCRIPTNAME coupler_anomaly = '$COUPLER_ANOMALY'"
 
 
 pismopts="$PISM_MPIDO $NN $PISM -skip $SKIP $FULLPHYS -bed_def lc"
@@ -103,7 +104,7 @@ OUTNAME=control_y${ENDTIME}.nc
 EXNAME=ex_$OUTNAME
 TSNAME=ts_$OUTNAME
 echo
-echo "$SCRIPTNAME  ${CS} km grid: control run from 0 to $ENDTIME years w save every 5 years:"
+echo "$SCRIPTNAME  ${CS} km grid: steady-climate control run from 0 to $ENDTIME years w save every 5 years:"
 echo
 cmd="$pismopts -i $PISM_SPUNUP $COUPLER -ye $ENDTIME \
   -extra_file $EXNAME -extra_times $EXTSTIMES $expackage \
@@ -116,7 +117,7 @@ OUTNAME=ar4_y${ENDTIME}.nc
 EXNAME=ex_$OUTNAME
 TSNAME=ts_$OUTNAME
 echo
-echo "$SCRIPTNAME  ${CS} km grid: control run from 0 to $ENDTIME years w save every 5 years:"
+echo "$SCRIPTNAME  ${CS} km grid: AR4-climate control run from 0 to $ENDTIME years w save every 5 years:"
 echo
 cmd="$pismopts -i $PISM_SPUNUP $COUPLER_ANOMALY -ye $ENDTIME \
   -anomaly_temp ar4_temp_anomaly.nc -anomalpy_precip ar4_precip_anomaly.nc \
@@ -124,5 +125,5 @@ cmd="$pismopts -i $PISM_SPUNUP $COUPLER_ANOMALY -ye $ENDTIME \
   -ts_file $TSNAME -ts_times $EXTSTIMES -o $OUTNAME"
 $PISM_DO $cmd
 echo
-echo "$SCRIPTNAME  AR4-climate run done"
+echo "$SCRIPTNAME  AR4-climate control run done"
 
