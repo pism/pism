@@ -112,10 +112,12 @@ class pross(PISM.ssa.SSATestCase):
     mag = self.obsMagnitude;
     acc = self.obsAccurate;
     vel_ssa = self.solver.solution();
+
+    m = PISM.MaskQuery(mask)
     
     with PISM.util.Access([mask,H,azi,mag,acc,vel_ssa]):
       for (i,j) in grid.points():
-        if mask.is_floating(i,j) and H[i,j] > 1.0:
+        if m.ocean(i,j) and H[i,j] > 1.0:
           ccomputed = vel_ssa[i,j].magnitude()
           maxcComputed = max(maxcComputed,ccomputed)
           if( abs(acc[i,j]-1.0) < 0.1):
