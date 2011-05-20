@@ -196,8 +196,8 @@ int main(int argc, char *argv[]) {
     if ((usage_set==PETSC_TRUE) || (help_set==PETSC_TRUE)) {
       PetscPrintf(com,
                   "\n"
-                  "usage of SSA_TESTJ:\n"
-                  "  run ssafe_test -Mx <number> -My <number> -ssa <fd|fem>\n"
+                  "usage of SSA_TEST_CONST:\n"
+                  "  run ssa_test_const -Mx <number> -My <number> -ssa_method <fd|fem>\n"
                   "\n");
     }
 

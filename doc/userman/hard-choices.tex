@@ -74,19 +74,16 @@ Atmosphere and surface models have two ``modifiers'' available; the correspondin
 
   Currently there are two ``modifiers'' one can use with an atmosphere model.
 
-  The atmosphere \texttt{forcing} modifier implements temperature forcing using scalar offsets and also a mechanism applying precipitation and temperature anomalies.
+  The atmosphere \texttt{dTforcing} modifier implements temperature forcing using scalar offsets and \texttt{anomaly} modifier a mechanism applying precipitation and temperature anomalies.
   \begin{itemize}
-  \item \fileopt{dTforcing} specifies a file containing scalar temperature offsets (variable \texttt{delta_T}), 
+  \item \fileopt{dTforcing} specifies a file containing scalar temperature offsets (for use with \texttt{dTforcing}, variable \texttt{delta_T}), 
   \item \fileopt{anomaly_temp} specifies a file containing spatially-variable near-surface air temperature anomalies (variable \texttt{temp_anomaly}), and
   \item \fileopt{anomaly_precip} specifies a file containing spatially-variable ice-equivalent precipitation anomalies (in units of thickness per time, variable \texttt{precip_anomaly}).
   \end{itemize}
 
   Options \texttt{-anomaly_temp} and \texttt{-anomaly_precip} can be used to set up a PISM run using a GCM output, essentially achieving one-way coupling. See also the \texttt{-surface given} option, below.
 
-  Note that only one air temperature forcing mechanism can be used at any time. 
-%FIXME:  why?  esp. under r1281, should we allow "-dTforcing foo.nc -anomaly_temp bar.nc"?
-
-  The \texttt{lapse_rate} modifier allows correcting air temperature and precipitation using elevation lapse rates. It uses the following options.
+ The \texttt{lapse_rate} modifier allows correcting air temperature and precipitation using elevation lapse rates. It uses the following options.
   \begin{itemize}
   \item \fileopt{bc_file} specifies the file containing the reference surface elevation field (standard name: \texttt{surface_altitude}). This file can contain several surface elevation records to use lapse rate corrections relative to time-dependent surface. If one record is provided, the reference surface elevation is assumed to be time-independent.
   \item \intextoption{bc_period} gives the period, in model years, to use when interpreting data in the file given with \texttt{-bc_file},
@@ -215,6 +212,8 @@ In addition to this, one can use latitude- and July-air-temperature-dependent Gr
 
 \end{itemize}
 
+The \texttt{dTforcing} modifier implements temperature forcing using scalar offsets and uses the \texttt{-dTforcing} option. This modifier is identical to the corresponding atmosphere modifier, but applies offsets at a different stage in the computation of top-surface boundary conditions needed by the ice dynamics core.
+
 The \texttt{forcing} modifier implements a surface mass balance adjustment mechanism forcing ice thickness to a target distribution at the end of the run; option \fileopt{force_to_thk} selects a file containing the target ice thickness field. Option \intextoption{force_to_thk_alpha} sets the $\alpha$ parameter. See the documentation  of \texttt{PSForceThickness::ice_surface_mass_flux()} for details.
 
   The \texttt{lapse_rate} modifier allows correcting ice-surface temperature and surface mass balance using elevation lapse rates. It uses the following options.
@@ -237,7 +236,7 @@ The \texttt{forcing} modifier implements a surface mass balance adjustment mecha
 
 PISM includes one simple ocean model: \texttt{constant}, providing constant (both in time and space) mass flux into the ocean and sea level elevation to PISM's ice flow core. The mass flux is controlled by the\\ \texttt{ocean_sub_shelf_heat_flux_into_ice} configuration parameter and the assumption that the mass flux is proportional to heat flux into ice.
 
-  The ocean \texttt{forcing} modifier implements sea level forcing. The command-line option \fileopt{dSLforcing} is used to specify the file containing sea level offsets:
+  The ocean \texttt{dSLforcing} modifier implements sea level forcing. The command-line option \fileopt{dSLforcing} is used to specify the file containing sea level offsets:
 \begin{verbatim}
 $ pismr -i in.nc -ocean constant,dSLforcing -dSLforcing delta_SL.nc
 \end{verbatim}%$
@@ -295,7 +294,7 @@ Actually the ``yield stress'' $\tau_c$ can be part of a power law model.  In fac
    $$\tau_b = \tau_c \frac{|\mathbf{u}|^{q-1}}{u_{\text{threshold}}^q}\, \mathbf{u}.$$
 Here $\tau_c$ corresponds to the variable \texttt{tauc} in PISM input and output files, $q$ is the power controlled by \texttt{-pseudo_plastic_q}, and the threshold velocity $u_{\text{threshold}}$ is controlled by \texttt{-pseudo_plastic_uthreshold}.  The purely plastic case is $q=0$---see \cite{SchoofStream} for precise interpretation---and the linear case is $q=1$, in which case the coefficient of velocity, $\tau_c/u_{\text{threshold}}$, is more commonly called $\beta$ or $\beta^2$ \cite{MacAyeal}.
 
-See \emph{Reference Manual}, source file \texttt{iMbasal.cc}, and \cite{BBssasliding,BKAJS} for more details.
+See \emph{PISM Source Code browser}, source file \texttt{iMbasal.cc}, and \cite{BBssasliding,BKAJS} for more details.
 
 The major example of \texttt{-ssa_sliding} usage is in the first section of this manual.  A made-up example, in which sliding happens in the ``trough'', is
 \begin{verbatim}

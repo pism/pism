@@ -88,7 +88,7 @@ to turn \texttt{bad.nc} (with an unspecified inconvenient storage order) into
 \texttt{good.nc} using the \texttt{t,z,y,x} order.
 
 You can also re-compile PISM to change the default storage order of PISM output
-files: look for the \texttt{Pism_FAST_WRITE} CMake flag.
+files: look for the \texttt{Pism_VARIABLE_ORDER} CMake flag.
 
 \subsection{Saving time series of scalar diagnostic quantities}\index{time-series}\index{PISM!saving time-series}
 \label{sec:saving-time-series}
@@ -238,7 +238,7 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \texttt{cflx} & m$^{2}$/year & magnitude of vertically-integrated horizontal flux of ice \\
     \texttt{csurf} & m/year & magnitude of horizontal velocity of ice at ice
     surface \\
-    \texttt{diffusivity} & m$^{2}$ / s & diffusivity coefficient $D$ in
+   \texttt{diffusivity} & m$^{2}$ / s & diffusivity coefficient $D$ in
     map-plane continuity equation; only makes sense in regions of shallow ice
     flow \\
     \texttt{dHdt} & m/year & rate of change of ice thickness \\
@@ -249,33 +249,34 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
     \texttt{hardav} & Pa s$^{1/n}$ & vertical average of ice hardness \\
     \texttt{lat} & degrees north& latitude \\
     \texttt{litho_temp} & K & lithosphere (bedrock) temperature\\
+    \texttt{liqfrac} & 1 & liquid water fraction \\
     \texttt{lon} & degrees east & longitude \\
     \texttt{mask} & none & grounded/dragging/floating integer mask \\
     \texttt{strainheat} & mW/m$^{3}$ & rate of strain heating in ice (dissipation heating) \\
     \texttt{SigmaComp} & mW/m$^{3}$ & rate of compensatory strain heating in ice (PISMV only)\\
     \texttt{tauc} & Pa & yield stress for basal till (plastic or pseudo-plastic model) \\
-    \texttt{taud} & Pa & magnitude of driving shear stress at base of ice \\
+    \texttt{taud_mag} & Pa & magnitude of driving shear stress at base of ice \\
+    \texttt{taud} & Pa & driving shear stress at base of ice (both components)\\
     \texttt{temp} & K & ice temperature \\
     \texttt{tempbase} & K & ice temperature at the ice base\\
     \texttt{temppabase} & $^{\circ}$C & pressure-adjusted ice temperature at the base of ice\\
     \texttt{temp_pa} & $^{\circ}$C & pressure-adjusted ice temperature \\
     \texttt{tempicethk} & m & thickness of the temperate ice \\
+    \texttt{tempicethk_basal} & m & thickness of the basal layer of temperate ice \\
     \texttt{tempsurf} & K & ice temperature at the ice surface\\
     \texttt{thk} & m & ice thickness\\
+    \texttt{thksmooth} & m & ice thickness relative to \texttt{topgsmooth} \\
     \texttt{tillphi} & degrees & friction angle for till under grounded ice sheet \\
     \texttt{topg} & m & bedrock surface elevation \\
-    \texttt{uvbar} & m/year & vertical mean of horizontal ice velocity (both components) \\
-    \texttt{uvbasal} & m/year & basal ice velocity (both components)\\
+    \texttt{topgsmooth} & m & smoothed bed elevation in Schoof's
+    \cite{Schoofbasaltopg2003} theory
+    of bed roughness in SIA \\
+    \texttt{velbar} & m/year & vertical mean of horizontal ice velocity (both components) \\
+    \texttt{velbase} & m/year & basal ice velocity (both components)\\
     \texttt{usurf} & m & ice upper surface elevation \\
     \texttt{uvel} & m/year & horizontal velocity of ice in the X direction \\
-    \texttt{uvelbase} & m/year & horizontal velocity of ice in the X direction
-    at the ice base\\
-    \texttt{uvelsurf} & m/year & horizontal velocity of ice in the X direction
-    at the ice surface\\
-   \texttt{vvelbase} & m/year & horizontal velocity of ice in the Y direction
-    at the ice base\\
-    \texttt{vvelsurf} & m/year & horizontal velocity of ice in the Y direction
-    at the ice surface\\
+   \texttt{velsurf} & m/year & horizontal ice velocity at the ice surface (both
+   components) \\
    \texttt{vvel} & m/year & horizontal velocity of ice in the Y direction \\
     \texttt{wvel_rel} & m/year & vertical velocity of ice \\
     \texttt{wvelbase} & m/year &vertical velocity of ice at the ice base\\
@@ -598,6 +599,7 @@ See table \ref{tab:regridvar} for the regriddable variables using
 \textbf{Name} & \textbf{Description}\\ \midrule
 \texttt{age} & age of ice\\
 \texttt{bwat} & effective thickness of subglacial melt water \\
+\texttt{bmelt} & basal melt rate \\
 \texttt{dbdt} & bedrock uplift rate \\
 \texttt{litho_temp} & lithosphere (bedrock) temperature \\
 \texttt{mask} & grounded/dragging/floating integer mask, see section \ref{subsect:floatmask} \\
@@ -895,7 +897,7 @@ if necessary). At year=15 an EBM will run to compute B.C. that will be
 read by PISM at year=20, etc.
 
 So, as long as an EBM takes less time per computation than PISM takes to step
-through $0.5*\mathtt{update_interval}$ years, PISM waits for an EBM exactly
+through $0.5$*\texttt{update_interval} years, PISM waits for an EBM exactly
 once, at the beginning of the run.
 
 Note that an EBM command executed by PISM can be a shell, Python, or any

@@ -265,7 +265,7 @@ We need to compute simulated random temperature each actual \e day, or at least 
 close as we can reasonably get.  Output \c N is number of days or number of days
 plus one.
 
-Thus this method ignors <tt>config.get("pdd_max_temperature_evals_per_year")</tt>,
+Thus this method ignores <tt>config.get("pdd_max_temperature_evals_per_year")</tt>,
 which is used in the base class PDDMassBalance.
 
 Implementation of getPDDSumFromTemperatureTimeSeries() requires returned

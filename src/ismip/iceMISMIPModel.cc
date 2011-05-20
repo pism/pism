@@ -476,6 +476,8 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
 
   ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
 
+  ierr = regrid(0); CHKERRQ(ierr);
+
   return 0;
 }
 
@@ -692,13 +694,13 @@ PetscErrorCode IceMISMIPModel::writeMISMIPFinalFiles() {
   if (   (rstats.dHdtnorm * secpera >= dHdtnorm_atol)
       || (PetscAbs(mstats.dxgdt) * secpera >= dxgdt_atol) ) {
     snprintf(str, sizeof(str),
-       "WARNING: MISMIP steady state criteria NOT achieved.\n");
+       "WARNING: one of the MISMIP steady state criteria NOT achieved.\n");
     ierr = verbPrintf(2,grid.com, "\nIceMISMIPModel: %s", str); CHKERRQ(ierr);
     stampHistory(str); 
   }
 
   snprintf(str, sizeof(str), 
-       "Stopping.  Completed timestep year=%.3f.  Writing MIMIP files.\n",
+       "Stopping.  Completed timestep year=%.3f.  Writing MISMIP files.\n",
        grid.year);
   ierr = verbPrintf(2,grid.com, "\nIceMISMIPModel: %s", str); CHKERRQ(ierr);
   stampHistory(str);

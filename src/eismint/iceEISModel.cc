@@ -142,15 +142,15 @@ PetscErrorCode IceEISModel::setFromOptions() {
 			 myMmax, paramSet); CHKERRQ(ierr);
   if (paramSet)     M_max = myMmax / secpera;
 
-  ierr = PISMOptionsReal("-Sb", "FIXME",
+  ierr = PISMOptionsReal("-Sb", "radial gradient of accumulation rate, (m/a)/km",
 			 mySb, paramSet); CHKERRQ(ierr);
   if (paramSet)     S_b = mySb * 1e-3 / secpera;
 
-  ierr = PISMOptionsReal("-ST", "FIXME",
+  ierr = PISMOptionsReal("-ST", "radial gradient of surface temperature, K/km",
 			 myST, paramSet); CHKERRQ(ierr);
   if (paramSet)     S_T = myST * 1e-3;
 
-  ierr = PISMOptionsReal("-Rel", "km; FIXME",
+  ierr = PISMOptionsReal("-Rel", "radial distance to equilibrium line, km",
 			 myRel, paramSet); CHKERRQ(ierr);
   if (paramSet)     R_el = myRel * 1e3;
 

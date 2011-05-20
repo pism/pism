@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
       PetscPrintf(com,
                   "\n"
                   "usage:\n"
-                  "  run %s -Mx <number> -My <number> -ssa <fd|fem>\n"
+                  "  run %s -Mx <number> -My <number> -ssa_method <fd|fem>\n"
                   "\n",argv[0]);
     }
 

@@ -8,7 +8,7 @@ configure_file (../ice_bib.bib ice-bib.bib COPYONLY)
 
 # Find all the .tex files in userman and copy them to the build directory
 
-set (parts
+set (latex_sources
   eismint-greenland.tex
   eismint-ross.tex
   getting-started.tex
@@ -23,7 +23,7 @@ set (parts
   storglaciaren.tex
   )
 
-foreach (filename ${parts})
+foreach (filename ${latex_sources})
   configure_file(${filename} ${filename} COPYONLY)
 endforeach()
 
@@ -34,6 +34,7 @@ foreach (format jpg png pdf)
     figs/*.${format})
 endforeach()
 foreach (filename ${jpg} ${png} ${pdf})
+  list(APPEND figures figs/${filename})
   configure_file(figs/${filename} figs/${filename} COPYONLY)
 endforeach()
 
@@ -47,7 +48,7 @@ add_custom_command (OUTPUT manual.pdf
   COMMAND ${PDFLATEX_COMPILER} manual.tex
   COMMAND ln -sf ${CMAKE_CURRENT_BINARY_DIR}/manual.pdf ${PROJECT_BINARY_DIR}/
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${parts})
+  DEPENDS ${latex_sources} ${figures})
 
 add_custom_target(userman ALL
   DEPENDS manual.pdf)

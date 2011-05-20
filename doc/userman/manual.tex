@@ -282,7 +282,10 @@ Although it begins to expose the internals of PISM, we think it is also helpful 
 \newcommand{\nolist}[1]{[\emph{#1}] \vspace{0.1in}}
 
 \begin{table}[ht]
-\caption{Hierarchy of current and planned flow models in PISM, for the grounded parts of ice sheets, from most to fewest simplifying assumptions \emph{and} from least to greatest need for boundary data.  The \emph{italicized} models are planned for future versions of PISM but are not implemented in \texttt{stable0.3}.}\label{tab:modelhierarchy} 
+\caption{Hierarchy of current and planned flow models in PISM, for the grounded
+  parts of ice sheets, from most to fewest simplifying assumptions \emph{and}
+  from least to greatest need for boundary data.  The \emph{italicized} models
+  are planned for future versions of PISM but are not implemented so far..}\label{tab:modelhierarchy} 
 \small\medskip
 \begin{tabular}{p{0.22\linewidth}p{0.40\linewidth}p{0.32\linewidth}}\hline
 \textbf{Model} & \textbf{Assumptions} & \textbf{Required data} \\ \hline
@@ -461,19 +464,19 @@ Subsection \ref{sec:eismint-greenland} shows bootstrapping for the EISMINT-Green
 \subsubsection*{\texttt{-boot_file} file format}
 \label{sec:bootstrapping-format}  Allowed formats for a bootstrapping file are relatively simple to describe. 
 \begin{enumerate}
-\item NetCDF variables should have the \texttt{units} containing the
+\item NetCDF variables should have the \texttt{units} containing a
   UDUNITS-compatible string. If this attribute is missing, PISM will assume
   that a field uses MKS units.\footnote{PISM uses a library called UDUNITS\index{PISM!uses UDUNITS when reading NetCDF files}\index{UDUNITS} to convert data present in an input file to MKS.   This means that having ice thickness in feet or kilometers, or temperature in Celsius for example, is allowed.}
 \item NetCDF coordinate variables should have \texttt{standard_name} or
   \texttt{axis} attributes. These are used to
   determine which \emph{spatial} dimension a NetCDF dimension corresponds to;
-  please see a \texttt{ncdump -h} output from a PISM output file for an example. (This implies
+  please see a \texttt{ncdump -h} output from a file produced by PISM for an example. (This implies
   that \texttt{x} and \texttt{y} dimensions need not be called ``\texttt{x}''
   and ``\texttt{y}''.
 \item Coordinate variables have to be strictly increasing.
 \item All three-dimensional variables will be ignored in bootstrapping.
 \item The \texttt{standard_name} attribute is used to identify a variable, so
-  the names of variables do not need to match the corresponding variables in a
+  the variable names need not match corresponding variables in a
   PISM output file. Please see \url{\PISMBROWSERURL} for a list of CF standard
   names used in PISM.
 \item Any two-dimensional variable except bed topography and ice thickness may

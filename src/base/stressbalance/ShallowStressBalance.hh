@@ -110,7 +110,7 @@ protected:
 //! Returns zero velocity field, zero friction heating, and zero for D^2.
 /*!
 This derived class might be used in the non-sliding SIA approximation.
-This implementation ignors any basal resistance fields (e.g. yield stress from
+This implementation ignores any basal resistance fields (e.g. yield stress from
 the IceModel or other user of this class).
  */
 class SSB_Trivial : public ShallowStressBalance

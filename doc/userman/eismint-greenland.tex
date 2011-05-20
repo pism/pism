@@ -82,9 +82,7 @@ $ pgrn -boot_file eis_green_smoothed.nc -Mx 83 -My 141 -Lz 4000 -Mz 51 -Lbz 2000
 \scriptsize
 \begin{quote}
 \begin{verbatim}
-FIXME:  far out of date!!
-
-PGRN revision 998:1212M trunk (PISM EISMINT-Greenland mode)
+PGRN trunk 0.3.1713 (PISM EISMINT-Greenland mode)
   setting flags equivalent to '-e 3 -ocean_kill'; user options may override ...
 Setting PDD parameters to EISMINT-Greenland values...
   pdd_factor_ice  = 0.00879 m (ice equivalent) K-1 day-1
@@ -93,14 +91,19 @@ Setting PDD parameters to EISMINT-Greenland values...
   pdd_std_dev     = 5.00000 K
   time dimension was not found; setting current year to 0.0 years
   setting flow law to polythermal type ...
+* Initializing bed smoother object with 5.000 km half-width ...
+* Initializing the SIA stress balance modifier...
 * Initializing Greenland atmosphere model based on the EISMINT Greenland (C. Ritz, 1997)
   air temperature parameterization and using stored time-independent precipitation...
-    reading mean annual ice-equivalent snow precipitation rate 'snowprecip'
+    reading mean annual ice-equivalent precipitation rate 'precip'
       from eis_green_smoothed.nc ... 
-  FOUND  snowprecip/ mean annual ice-equivalent snow precipitation rate          
+  FOUND  precip    / mean annual ice-equivalent precipitation rate
                    \ min,max =     0.030,    2.820 (m year-1)
-* Initializing the PDD-based surface (snow) processes model...
-  Using a PDD implementation based on an expectation integral.
+* Initializing the default temperature-index, PDD-based surface processes scheme.
+  Precipitation and 2m air temperature provided by atmosphere are inputs.
+  Surface mass balance and ice upper surface temperature are outputs.
+  See PISM User's Manual for control of degree-day factors.
+  Computing number of positive degree-days by: an expectation integral.
 * Initializing the constant ocean model...
 bootstrapping by PISM default method from file eis_green_smoothed.nc
   rescaling computational box for ice from -boot_file file and
@@ -108,28 +111,22 @@ bootstrapping by PISM default method from file eis_green_smoothed.nc
     [-820.00 km, 820.00 km] x [-1400.00 km, 1400.00 km] x [0 m, 4000.00 m]
   WARNING: surface elevation 'usurf' found; IGNORING IT!
   reading 2D model state variables by regridding ...
-  FOUND  lon       / standard_name=longitude                                                   
+  FOUND  lon       / standard_name=longitude 
                    \ min,max =   -94.194,   12.889 (degree_east)
-  FOUND  lat       / standard_name=latitude                                                    
+  FOUND  lat       / standard_name=latitude  
                    \ min,max =    58.275,   84.458 (degree_north)
-  FOUND  thk       / standard_name=land_ice_thickness                                          
+  FOUND  thk       / standard_name=land_ice_thickness
                    \ min,max =     0.000, 3200.000 (m)
-  FOUND  topg      / standard_name=bedrock_altitude                                            
+  FOUND  topg      / standard_name=bedrock_altitude
                    \ min,max = -3859.000, 2151.000 (m)
-  absent bwat      / effective thickness of subglacial melt water                
+  absent bwat      / effective thickness of subglacial melt water
                    \ not found; using default constant    0.00 (m)
-  absent bmelt     / ice basal melt rate in ice thickness per time               
+  absent bmelt     / ice basal melt rate in ice thickness per time
                    \ not found; using default constant    0.00 (m year-1)
-  absent tillphi   / friction angle for till under grounded ice sheet            
-                   \ not found; using default constant   15.00 (degrees)
-  absent bheatflx  / upward geothermal flux at bedrock surface                   
+  absent bheatflx  / upward geothermal flux at bedrock surface
                    \ not found; using default constant   50.00 (mW m-2)
-  absent dbdt      / bedrock uplift rate                                         
+  absent dbdt      / bedrock uplift rate
                    \ not found; using default constant    0.00 (m year-1)
-  determining surface elevation by  usurf = topg + thk           (grounded ice)
-        and by flotation criterion  usurf = (1-rho_i/rho_w) thk  (floating ice)
-  preliminary determination of mask for grounded/floating and sheet/dragging
-    option -ocean_kill seen: floating ice mask=3; ice free ocean mask=7
   filling in ice and bedrock temperatures using surface temps and quartic guess
   ice enthalpy set from temperature, as cold ice (zero liquid fraction)
 done reading eis_green_smoothed.nc; bootstrapping done
@@ -146,31 +143,32 @@ done reading eis_green_smoothed.nc; bootstrapping done
 \scriptsize
 \begin{quote}
 \begin{verbatim}
+* Initializing the bedrock thermal unit ... setting constants ...
+  bootstrapping to fill lithosphere temperatures in bedrock thermal layers,
+    using provided bedtoptemp and a linear function from provided geothermal flux ...
+  absent tillphi   / friction angle for till under grounded ice sheet
+                   \ not found; using default constant   15.00 (degrees)
 computational domain and grid:
-           spatial domain   1640.00 km x 2800.00 km x (4000.00 m + 2000.00 m bedrock)
+           spatial domain   1640.00 km x 2800.00 km x 4000.00 m
             time interval   [ 0.00 a, 1.00 a ]; run length = 1.0000 a
      horizontal grid cell   20.00 km x 20.00 km
   vertical spacing in ice   uneven, 51 levels, 21.200 m < dz < 138.800 m
-  vert spacing in bedrock   uneven, 21 levels, 16.875 m < dz < 183.125 m
-  initializing bed smoother object with chosen lambda = 5000.000 km half-width
-    for intended square smoothing domain ...
-    (bed smoother object reports effective lambdax = 20000.000 km, lambday = 20000.000 km)
 * Computing corrected cell areas using WGS84 datum...
 doing preliminary step to fill diagnostic quantities ...
 running forward ...
 P         YEAR:     ivol   iarea     thick0     temp0
 U        years 10^6_km^3 10^6_km^2        m         K
-S      0.00000:  2.82500  1.6708   3042.000  271.0047
- $ SIA v$th d (dt=0.15390)
-S      0.15390:  2.82512  2.1980   3041.914  271.0047
- $ SIA v$th d (dt=0.21156)
-S      0.36546:  2.82486  1.6728   3041.758  271.0047
- $ SIA v$th d (dt=0.24794)
-S      0.61340:  2.82493  1.7320   3041.554  271.0050
- $ SIA v$th d (dt=0.27587)
-S      0.88927:  2.82516  2.2300   3041.304  271.0050
- $ SIA v$th e (dt=0.11073)
-S      1.00000:  2.82525  2.2300   3041.205  271.0052
+S      0.00000:  2.86848  1.6924   3042.000  271.0047
+ $v$th d (dt=0.15391)
+S      0.15391:  2.86859  2.2584   3041.907  271.0047
+ $v$th d (dt=0.21700)
+S      0.37091:  2.86872  2.1592   3041.750  271.0048
+ $v$th d (dt=0.24986)
+S      0.62077:  2.86839  1.6940   3041.539  271.0050
+ $v$th d (dt=0.28176)
+S      0.90253:  2.86851  1.7946   3041.286  271.0052
+ $v$th e (dt=0.09747)
+S      1.00000:  2.86857  2.2584   3041.196  271.0052
 done with run ... 
 Writing model state to file `green20km_y1.nc'
 \end{verbatim}
@@ -307,8 +305,8 @@ $ pclimate -i green20km_y1.nc -atmosphere eismint_greenland -surface pdd \
 \end{verbatim}%$
 This produces the file \texttt{pddmovie.nc} with several variables: \texttt{acab}
 (instantaneous net ice equivalent accumulation (ablation) rate), \texttt{artm}
-(mean annual temperature at ice surface but below firn), \texttt{snowtemp???}
-(instantaneous surface temperature), \texttt{precip} (mean annual
+(mean annual temperature at ice surface but below firn), \texttt{airtemp}
+(instantaneous near-surface air temperature), \texttt{precip} (mean annual
 ice-equivalent precipitation rate) and some others.
 
 Variables \texttt{artm} and \texttt{precip} do not evolve over time because the 
@@ -317,8 +315,8 @@ formulas \cite{RitzEISMINT}, while the latter is part of the EISMINT-Greenland d
 itself.
 
 The other two variables were used to create figure \ref{fig:pddseries}, which
-shows the time-series of the accumulation rate (top graph) and the snow
-temperature (bottom graph) with the map view of the snow temperature at time 0
+shows the time-series of the accumulation rate (top graph) and the air
+temperature (bottom graph) with the map view of the air temperature at time 0
 over it. The cross on the latter shows (approximately) the location of the
 point used for the time-series.
 
@@ -330,17 +328,17 @@ Here are two things to notice:
   option; subsection \ref{sec:boundary-models}).
 
 \item Lows of the surface mass balance rate \texttt{acab} correspond to 
-  positive degree-days in the given period, because of highs of the snow 
-  temperature.  Recall the snow temperature graph does
+  positive degree-days in the given period, because of highs of the air
+  temperature.  Recall the air temperature graph does
   not show random daily variations.  Even though it has the maximum of about $266$
-  Kelvin, the parameterized instantaneous snow temperature can be above freezing.
+  Kelvin, the parameterized instantaneous air temperature can be above freezing.
   A positive value for positive degree-days is expected \cite{CalovGreve05}.
 \end{enumerate}
 
 \begin{figure}[ht]
   \centering
   \includegraphics[width=5in]{pdd-timeseries}
-  \caption{Time series of the surface mass balance rate and snow temperature. Map view 
+  \caption{Time series of the surface mass balance rate and near-surface air temperature. Map view 
            on the right shows the location chosen.}
   \label{fig:pddseries}
 \end{figure}
