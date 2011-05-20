@@ -109,6 +109,37 @@ protected:
                                            PetscScalar hmelt_max);
 };
 
+class PISMConstantYieldStress : public PISMYieldStress
+{
+public:
+  PISMConstantYieldStress(IceGrid &g, const NCConfigVariable &conf)
+    : PISMYieldStress(g, conf)
+  {
+    if (allocate() != 0) {
+      PetscPrintf(grid.com, "PISM ERROR: memory allocation failed in PISMConstantYieldStress constructor.\n");
+      PISMEnd();
+    }
+  }
+  virtual ~PISMConstantYieldStress() {}
+
+  virtual PetscErrorCode init(PISMVars &vars);
+
+  virtual void add_vars_to_output(string keyword, set<string> &result);
+
+  virtual PetscErrorCode define_variables(set<string> vars, const NCTool &nc,
+                                          nc_type nctype);
+
+  virtual PetscErrorCode write_variables(set<string> vars, string filename);
+
+  virtual PetscErrorCode update(PetscReal t_years, PetscReal dt_years);
+
+  virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
+protected:
+  IceModelVec2S tauc;
+  virtual PetscErrorCode allocate();
+  virtual PetscErrorCode regrid();
+};
+
 //! \brief Computes basal (pore) water pressure using a highly-simplified model.
 class PYS_bwp : public PISMDiag<PISMDefaultYieldStress>
 {

@@ -271,13 +271,15 @@ PetscErrorCode IceModel::createVecs() {
   ierr = vdHdt.set_attr("valid_max", convert( huge_dHdt, "m/year", "m/s")); CHKERRQ(ierr);
   ierr = variables.add(vdHdt); CHKERRQ(ierr);
 
-  // yield stress for basal till (plastic or pseudo-plastic model)
-  ierr = vtauc.create(grid, "tauc", true, WIDE_STENCIL); CHKERRQ(ierr);
-  // PROPOSED standard_name = land_ice_basal_material_yield_stress
-  ierr = vtauc.set_attrs("diagnostic", 
-             "yield stress for basal till (plastic or pseudo-plastic model)",
-	     "Pa", ""); CHKERRQ(ierr);
-  ierr = variables.add(vtauc); CHKERRQ(ierr);
+  if (config.get_flag("use_ssa_velocity")) {
+    // yield stress for basal till (plastic or pseudo-plastic model)
+    ierr = vtauc.create(grid, "tauc", true, WIDE_STENCIL); CHKERRQ(ierr);
+    // PROPOSED standard_name = land_ice_basal_material_yield_stress
+    ierr = vtauc.set_attrs("diagnostic", 
+                           "yield stress for basal till (plastic or pseudo-plastic model)",
+                           "Pa", ""); CHKERRQ(ierr);
+    ierr = variables.add(vtauc); CHKERRQ(ierr);
+  }
 
   // bedrock uplift rate
   ierr = vuplift.create(grid, "dbdt", true, WIDE_STENCIL); CHKERRQ(ierr);

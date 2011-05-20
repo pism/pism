@@ -41,7 +41,7 @@ instances, including -pdd... and -d?forcing options.
 PetscErrorCode  IceModel::setFromOptions() {
   PetscErrorCode ierr;
 
-  bool flag, myssaSystemToASCIIMatlab, myholdTillYieldStress, realageSet;
+  bool flag, myssaSystemToASCIIMatlab, realageSet;
 
   ierr = verbPrintf(3, grid.com,
 		    "Processing physics-related command-line options...\n"); CHKERRQ(ierr);
@@ -135,9 +135,6 @@ PetscErrorCode  IceModel::setFromOptions() {
     config.set_flag("compute_grain_size_using_age", true);
     ierr = iceFactory.setType(ICE_HYBRID);CHKERRQ(ierr);
   }
-
-  ierr = PISMOptionsIsSet("-hold_tauc", myholdTillYieldStress); CHKERRQ(ierr);
-  if (myholdTillYieldStress == PETSC_TRUE)    holdTillYieldStress = PETSC_TRUE;
 
   ierr = PISMOptionsInt("-id", "Specifies the sounding row", id, flag); CHKERRQ(ierr);
 

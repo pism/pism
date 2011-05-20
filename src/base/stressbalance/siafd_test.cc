@@ -360,7 +360,7 @@ int main(int argc, char *argv[]) {
     ThermoGlenArrIce ice(grid.com, "", config);
     ICMEnthalpyConverter EC(config);
 
-    IceModelVec2S vh, vH, vbed, vtauc;
+    IceModelVec2S vh, vH, vbed;
     IceModelVec2Int vMask;
     IceModelVec3 enthalpy,
       age;                      // is not used (and need not be allocated)

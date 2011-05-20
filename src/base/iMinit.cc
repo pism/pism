@@ -541,11 +541,11 @@ PetscErrorCode IceModel::init_physics() {
 
   // a report on whether PISM-PIK modifications of IceModel are in use
   const bool pg   = config.get_flag("part_grid"),
-             pr   = config.get_flag("part_redist"),
-             ki   = config.get_flag("kill_icebergs");
+    pr   = config.get_flag("part_redist"),
+    ki   = config.get_flag("kill_icebergs");
   if (pg || pr || ki) {
     ierr = verbPrintf(2, grid.com,
-        "  PISM-PIK mass/geometry methods are in use:  "); CHKERRQ(ierr);
+                      "  PISM-PIK mass/geometry methods are in use:  "); CHKERRQ(ierr);
   }
   if (pg)   { ierr = verbPrintf(2, grid.com, "part_grid,"); CHKERRQ(ierr); }
   if (pr)   { ierr = verbPrintf(2, grid.com, "part_redist,"); CHKERRQ(ierr); }
@@ -561,8 +561,19 @@ PetscErrorCode IceModel::init_physics() {
     use_ssa_velocity = config.get_flag("use_ssa_velocity"),
     do_sia = config.get_flag("do_sia");
 
-  if (basal_yield_stress == NULL)
-    basal_yield_stress = new PISMDefaultYieldStress(grid, config);
+  if (use_ssa_velocity) {
+    // decide which basal yield stress model to use:
+    if (basal_yield_stress == NULL) {
+      bool hold_tauc;
+      ierr = PISMOptionsIsSet("-hold_tauc", hold_tauc); CHKERRQ(ierr);
+    
+      if (hold_tauc) {
+        basal_yield_stress = new PISMConstantYieldStress(grid, config);
+      } else {
+        basal_yield_stress = new PISMDefaultYieldStress(grid, config);
+      }
+    }
+  }
 
   if (basal == NULL)
     basal = new IceBasalResistancePlasticLaw(plastic_regularization, do_pseudo_plastic_till, 

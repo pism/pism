@@ -42,7 +42,7 @@ This submodel is inactive in floating areas.
 PetscErrorCode PISMDefaultYieldStress::allocate() {
   PetscErrorCode ierr;
 
-  ierr = till_phi.create(grid, "tillphi", true); CHKERRQ(ierr);
+  ierr = till_phi.create(grid, "tillphi", true, grid.max_stencil_width); CHKERRQ(ierr);
   ierr = till_phi.set_attrs("model_state",
                             "friction angle for till under grounded ice sheet",
                             "degrees", ""); CHKERRQ(ierr);
@@ -93,7 +93,22 @@ PetscErrorCode PISMDefaultYieldStress::init(PISMVars &vars)
 
   variables = &vars;
 
-  ierr = till_phi.set(config.get("default_till_phi")); CHKERRQ(ierr);
+  ierr = verbPrintf(2, grid.com, "* Initializing the default basal yield stress model...\n"); CHKERRQ(ierr);
+
+  basal_water_thickness = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
+  if (basal_water_thickness == NULL) SETERRQ(1, "bwat is not available");
+
+  basal_melt_rate = dynamic_cast<IceModelVec2S*>(vars.get("bmelt"));
+  if (basal_melt_rate == NULL) SETERRQ(1, "bmelt is not available");
+
+  ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
+  if (ice_thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
+
+  bed_topography = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
+  if (bed_topography == NULL) SETERRQ(1, "bedrock_altitude is not available");
+
+  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
+  if (mask == NULL) SETERRQ(1, "mask is not available");
 
   ierr = PetscOptionsBegin(grid.com, "", "Options controlling the basal till yield stress model", ""); CHKERRQ(ierr);
   {
@@ -126,7 +141,27 @@ PetscErrorCode PISMDefaultYieldStress::init(PISMVars &vars)
   }
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  if (i_set || bootstrap) {
+
+  if (topg_to_phi_set && plastic_phi_set) {
+    PetscPrintf(grid.com, "ERROR: only one of -plastic_phi and -topg_to_phi is allowed.\n");
+    PISMEnd();
+  }
+
+  if (plastic_phi_set) {
+
+    ierr = till_phi.set(config.get("default_till_phi")); CHKERRQ(ierr);
+
+  } else if (topg_to_phi_set) {
+
+    ierr = verbPrintf(2, grid.com,
+                      "option -topg_to_phi seen; creating till friction angle map from bed elevation...\n");
+    CHKERRQ(ierr);
+
+    // note option -topg_to_phi will be read again to get comma separated array of parameters
+    ierr = topg_to_phi(); CHKERRQ(ierr);
+
+  } else if (i_set || bootstrap) {
+
     ierr = find_pism_input(filename, bootstrap, start); CHKERRQ(ierr);
 
     if (i_set) {
@@ -135,34 +170,6 @@ PetscErrorCode PISMDefaultYieldStress::init(PISMVars &vars)
       ierr = till_phi.regrid(filename,
                              config.get("bootstrapping_tillphi_value_no_var")); CHKERRQ(ierr);
     }
-  }
-
-  if (topg_to_phi_set && plastic_phi_set) {
-    PetscPrintf(grid.com, "ERROR: only one of -plastic_phi and -topg_to_phi is allowed.\n");
-    PISMEnd();
-  }
-
-  basal_water_thickness = dynamic_cast<IceModelVec2S*>(vars.get("bwat"));
-  if (basal_water_thickness == NULL) SETERRQ(1, "bwat is not available");
-
-  basal_melt_rate = dynamic_cast<IceModelVec2S*>(vars.get("bmelt"));
-  if (basal_melt_rate == NULL) SETERRQ(1, "bmelt is not available");
-
-  ice_thickness = dynamic_cast<IceModelVec2S*>(vars.get("land_ice_thickness"));
-  if (ice_thickness == NULL) SETERRQ(1, "land_ice_thickness is not available");
-
-  bed_topography = dynamic_cast<IceModelVec2S*>(vars.get("bedrock_altitude"));
-  if (bed_topography == NULL) SETERRQ(1, "bedrock_altitude is not available");
-
-  mask = dynamic_cast<IceModelVec2Int*>(vars.get("mask"));
-  if (mask == NULL) SETERRQ(1, "mask is not available");
-
-  if (topg_to_phi_set) {
-    ierr = verbPrintf(2, grid.com,
-                      "option -topg_to_phi seen; creating till friction angle map from bed elevation...\n");
-    CHKERRQ(ierr);
-    // note option -topg_to_phi will be read again to get comma separated array of parameters
-    ierr = topg_to_phi(); CHKERRQ(ierr);
   }
 
   ierr = regrid(); CHKERRQ(ierr);

@@ -49,8 +49,6 @@ PetscErrorCode IceModel::setDefaults() {
 
   executable_short_name = "pism"; // drivers typically override this
 
-  holdTillYieldStress       = PETSC_FALSE;
-  
   shelvesDragToo = PETSC_FALSE;
   
   // set maximum |u|,|v|,|w| in ice to an (obviously) invalid number
