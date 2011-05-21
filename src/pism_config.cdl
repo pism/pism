@@ -1,7 +1,9 @@
 netcdf pism_config {
     variables:
     byte pism_config;
+
     // boolean flags:
+
     pism_config:force_output_times = "yes";
     pism_config:force_output_times_doc = "Modify the time-stepping mechanism to hit times requested using -extra_times and -ts_times.";
 
@@ -25,6 +27,9 @@ netcdf pism_config {
 
     pism_config:do_skip = "no";
     pism_config:do_skip_doc = "Use the temperature, age, and SSA stress balance computation skipping mechanism.";
+
+    pism_config:count_time_steps = "no";
+    pism_config:count_time_steps_doc = "If yes, IceModel::run() will count the number of time steps it took.  Sometimes useful for performance evaluation.  Counts all steps, regardless of whether processes (mass continuity, energy, velocity, ...) occurred within the step.";
 
     pism_config:ssa_method = "fd";
     pism_config:ssa_method_doc = "Algorithm for computing the SSA solution; choose from 'fd' and 'fem'.";

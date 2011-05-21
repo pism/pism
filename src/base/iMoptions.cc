@@ -88,6 +88,8 @@ PetscErrorCode  IceModel::setFromOptions() {
   //   ice is cold
   ierr = config.flag_from_option("cold", "do_cold_ice_methods"); CHKERRQ(ierr);
 
+  ierr = config.flag_from_option("count_steps", "count_time_steps"); CHKERRQ(ierr);
+
   ierr = config.scalar_from_option("e", "enhancement_factor"); CHKERRQ(ierr);
 
   ierr = config.scalar_from_option("e_ssa", "ssa_enhancement_factor"); CHKERRQ(ierr);

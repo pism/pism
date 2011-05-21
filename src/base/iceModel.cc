@@ -685,6 +685,7 @@ PetscErrorCode IceModel::run() {
     do_age = config.get_flag("do_age"),
     do_skip = config.get_flag("do_skip"),
     use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
+  int stepcount = (config.get_flag("count_time_steps")) ? 0 : -1;
 
   // do a one-step diagnostic run:
   ierr = verbPrintf(2,grid.com,
@@ -771,6 +772,7 @@ PetscErrorCode IceModel::run() {
 
     ierr = update_viewers(); CHKERRQ(ierr);
 
+    if (stepcount >= 0) stepcount++;
     if (endOfTimeStepHook() != 0) break;
   } // end of the time-stepping loop
 
@@ -781,6 +783,12 @@ PetscErrorCode IceModel::run() {
   if (pause_time > 0) {
     ierr = verbPrintf(2,grid.com,"pausing for %d secs ...\n",pause_time); CHKERRQ(ierr);
     ierr = PetscSleep(pause_time); CHKERRQ(ierr);
+  }
+
+  if (stepcount >= 0) {
+    ierr = verbPrintf(1,grid.com,
+              "count_time_steps:  run() took %d steps\naverage dt = %.6f years\n",
+              stepcount,(grid.end_year-grid.start_year)/(double)stepcount); CHKERRQ(ierr);
   }
 
   return 0;
