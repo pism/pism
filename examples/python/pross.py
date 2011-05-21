@@ -241,7 +241,9 @@ if __name__ == '__main__':
                   PISM.PISM_Revision) 
   PISM.stop_on_version_option()
   usage = \
-"""pross -boot_file IN.nc -Mx number -My number [-o file.nc] [-riggs file.nc]
+"""  pross.py -boot_file IN.nc -Mx number -My number [-o file.nc] [-riggs file.nc]
+  or (at python prompt)
+    run pross -boot_file IN.nc -Mx number -My number [-o file.nc] [-riggs file.nc]
   where:
     -boot_file  IN.nc is input file in NetCDF format: 
                 contains PISM-written model state

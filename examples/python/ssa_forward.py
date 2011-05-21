@@ -227,7 +227,9 @@ if __name__ == '__main__':
   PISM.verbPrintf(2,PISM.Context().com,"SSA forward model.\n")
   PISM.stop_on_version_option()
   usage = \
-  """  ssa_forward -i IN.nc -Mx number -My number [-o file.nc]
+"""  ssa_forward.py -i IN.nc -Mx number -My number [-o file.nc]
+  or (at python prompt)
+    run ssa_forward -i IN.nc -Mx number -My number [-o file.nc]
   where:
     -i      IN.nc is input file in NetCDF format: contains PISM-written model state
     -Mx     number of grid points in the x direction
