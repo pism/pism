@@ -260,14 +260,14 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
     PISMEnd();
   } 
 
+  // at this point we *do* have a no_model_mask variable; now warn user if they
+  //   had a -no_model_strip option set; we are going to ignor that option
   bool no_model_strip_set;
   ierr = PISMOptionsIsSet("-no_model_strip", no_model_strip_set); CHKERRQ(ierr);
-  if (!no_model_strip_set) {
+  if (no_model_strip_set) {
     ierr = PetscPrintf(grid.com,
-       "\nPISMO minor WARNING: option '-no_model_strip X' seen.  Value X ignored\n"
-         "because no_model_mask variable read from input file.  Proceeding ...\n\n");
-         CHKERRQ(ierr);
-    PISMEnd();
+      "\nPISMO WARNING: option '-no_model_strip' or '-no_model_strip X' seen.  Value X ignored\n"
+      "  because no_model_mask variable was read from input file.  Proceeding ...\n\n"); CHKERRQ(ierr);
   }
 
   ierr = nc.close(); CHKERRQ(ierr);
@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
       "notes:\n"
       "  * one of -i or -boot_file is required\n"
       "  * if -boot_file is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
-    if ((iset == PETSC_FALSE) && (bfset == PETSC_FALSE)) {
+    if ((!iset) && (!bfset)) {
       ierr = PetscPrintf(com,
          "\nPISM ERROR: one of options -i,-boot_file is required\n\n"); CHKERRQ(ierr);
       ierr = show_usage_and_quit(com, "pismo", usage.c_str()); CHKERRQ(ierr);
@@ -377,10 +377,11 @@ int main(int argc, char *argv[]) {
     NCConfigVariable config, overrides;
     ierr = init_config(com, rank, config, overrides); CHKERRQ(ierr);
 
+    // initialize the ice dynamics model
     IceGrid g(com, rank, size, config);
     IceRegionalModel m(g, config, overrides);
 
-    // Initialize boundary models:
+    // initialize boundary models
     PAFactory pa(g, config);
     PISMAtmosphereModel *atmosphere;
 
@@ -414,3 +415,4 @@ int main(int argc, char *argv[]) {
   ierr = PetscFinalize(); CHKERRQ(ierr);
   return 0;
 }
+
