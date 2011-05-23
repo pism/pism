@@ -273,16 +273,19 @@ PetscErrorCode enthSystemCtx::solveThisColumn(PetscScalar **x, PetscErrorCode &p
     }
   }
 
-  // air above
-  for (PetscInt k = ks; k < Mz; k++) {
-    if (k > 0) L[k] = 0.0;
-    D[k] = 1.0;
-    if (k < Mz-1) U[k] = 0.0;
-    rhs[k] = Enth_ks;
-  }
+  // set Dirichlet boundary condition at top
+  if (ks > 0) L[ks] = 0.0;
+  D[ks] = 1.0;
+  if (ks < Mz-1) U[ks] = 0.0;
+  rhs[ks] = Enth_ks;
 
   // solve it; note drainage is not addressed yet and post-processing may occur
-  pivoterrorindex = solveTridiagonalSystem(Mz, x);
+  pivoterrorindex = solveTridiagonalSystem(ks+1, x);
+
+  // air above
+  for (PetscInt k = ks+1; k < Mz; k++) {
+    (*x)[k] = Enth_ks;
+  }
 
 #ifdef PISM_DEBUG
   if (pivoterrorindex == 0) {
