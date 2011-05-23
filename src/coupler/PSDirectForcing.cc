@@ -1,4 +1,4 @@
-// Copyright (C) 2010 Constantine Khroulev
+// Copyright (C) 2010, 2011 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -103,13 +103,7 @@ PetscErrorCode PSDirectForcing::max_timestep(PetscReal t_years, PetscReal &dt_ye
   // "Periodize" the climate:
   t_years = my_mod(t_years);
 
-  max_dt = temperature.max_timestep(t_years);
-
-  if (dt_years > 0) {
-    if (max_dt > 0)
-      dt_years = PetscMin(max_dt, dt_years);
-  }
-  else dt_years = max_dt;
+  dt_years = temperature.max_timestep(t_years);
 
   max_dt = mass_flux.max_timestep(t_years);
 
