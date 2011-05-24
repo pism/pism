@@ -2,32 +2,31 @@
 \section{Making \emph{HARD} Modeling Choices}
 \label{sec:hard-choices}
 
-Most uses of an ice sheet model depend on very careful modeling choices in situations where there are considerable uncertainties \emph{and} the model results depend strongly on those choices.  In these and other cases there may be, at the present state of knowledge, \emph{no clear default values} that a good ice sheet model can provide.
+Most uses of an ice sheet model depend on careful modeling choices in situations where there are considerable uncertainties \emph{and} the model results depend strongly on those choices.  There may be, at the present state of knowledge, \emph{no clear default values} that PISM can provide.
 
-The current section collects some of the modeling choices which have this ``hard'' flavor.  The options related to these choices are known to be \emph{not} sufficient for all users.  These are modeling choices for which \emph{we know} the user may have to do a great deal more hard work than just choose among PISM runtime options.
-
-Here are real example cases where user have worked hard:
+The current section collects some modeling choices which have this ``hard'' flavor.  The available PISM options related to these choices are known to be \emph{not} sufficient for all users.  These are modeling choices for which \emph{we know} the user may have to do a great deal more hard work than just choose among PISM runtime options.  Here are real example cases where users have worked hard:
 \begin{itemize}
-\item carefully make use of available data, in order to choose parameters for existing PISM models; these parameters will then override PISM defaults; 
+\item User was required to make use of available data in order to choose parameters for existing PISM models.  These parameters will then override PISM defaults:
 \begin{center} % our UAF current situation with Greenland
 \fbox{ \begin{minipage}[t]{5.0in}
 \emph{Example}.  Use regional atmosphere model output to identify PDD parameters suitable for modeling surface mass balance on a particular ice sheet.  Then supply these parameters to PISM by a \texttt{-config\_override} file.
 \end{minipage} }
 \end{center}
-\item write code, including code which might modify current PISM internals, either to add additional processes or to ``correct'' PISM default process models; or 
+\item User was required to write code, including code which modified current PISM internals, either to add additional processes or to ``correct'' PISM default process models; or 
 \begin{center} % e.g. harder case is Potsdam marine ice sheet mods
 \fbox{ \begin{minipage}[t]{5.0in}
 \emph{Example}.  Add a new sub-ice-shelf melt model by modifying C++ code in the \texttt{src/coupler/} directory.
 \end{minipage} }
 \end{center}
-\item deliberately simplify the model in use, instead of ``throwing in the kitchen sink''.
+\item User deliberately simplified the model in use, instead of the default which was ``throwing in the kitchen sink''.
 \begin{center} % Nick's -hold_tauc choice
 \fbox{ \begin{minipage}[t]{5.0in}
 \emph{Example}.  Instead of using the PISM default mechanism connecting basal melt rate and basal strength, bypass this mechanism and impose a map of yield stress \texttt{tauc} directly.
 \end{minipage} }
 \end{center}
 \end{itemize}
-Obviously there is no actual clear distinction between the ``hard'' choices in this section and the ``easy'' ones in the previous section, but the subsections here cover issues for which the PISM developers will have a hard time supplying easy answers.
+
+Obviously there is no actual clear distinction between the ``hard'' choices in this section and the ``easy'' ones in the previous section, but the subsections here cover issues for which the PISM developers have a hard time supplying easy answers!
 
 \subsection{Setting up PISM boundary (atmosphere, surface and ocean) models}
 \label{sec:boundary-models}
@@ -96,16 +95,14 @@ Atmosphere and surface models have two ``modifiers'' available; the correspondin
   \item \intextoption{precip_lapse_rate} gives the precipitation lapse rate, in $m/year/km$. Here $\gamma = -\frac{dM}{dz}$.
   \end{itemize}
 
-\subsubsection{PISM surface (snow) process models}
+\subsubsection{PISM surface mass and energy process models}
 \label{sec:pism-surface-snow}
 \optsection{Climate (boundary) models!\texttt{-surface} [simple, constant, elevation, given, pdd, forcing]}
 
 \begin{itemize}
   \item \emph{The ``invisible'' model} (\texttt{simple}, the default)
 
-    This is the simplest ``surface model'' available in PISM.  Its job is to re-interpret  precipitation as mass flux into the ice.  It also re-interprets mean annual near-surface (2m) air temperature as the temperature of the ice at the depth at which firn processes cease to change the temperature of the ice.  (I.e.~the temperature \emph{below} the firn.)  This implies that there is no melt.
-
-    Though primitive, this model may be desired in cold environments (e.g.~East Antarctic ice sheet) in which melt is negligible and heat from firn processes is ignored.
+    This is the simplest ``surface model'' available in PISM.  Its job is to re-interpret  precipitation as surface mass flux (balance), and to re-interprets mean annual near-surface (2m) air temperature as the temperature of the ice at the depth at which firn processes cease to change the temperature of the ice.  (I.e.~the temperature \emph{below} the firn.)  This implies that there is no melt.  Though primitive, this model may be desired in cold environments (e.g.~East Antarctic ice sheet) in which melt is negligible and heat from firn processes is ignored.
 
   \item \emph{Constant in time} (\texttt{constant})
 
@@ -214,7 +211,19 @@ In addition to this, one can use latitude- and July-air-temperature-dependent Gr
 
 The \texttt{dTforcing} modifier implements temperature forcing using scalar offsets and uses the \texttt{-dTforcing} option. This modifier is identical to the corresponding atmosphere modifier, but applies offsets at a different stage in the computation of top-surface boundary conditions needed by the ice dynamics core.
 
-The \texttt{forcing} modifier implements a surface mass balance adjustment mechanism forcing ice thickness to a target distribution at the end of the run; option \fileopt{force_to_thk} selects a file containing the target ice thickness field. Option \intextoption{force_to_thk_alpha} sets the $\alpha$ parameter. See the documentation  of \texttt{PSForceThickness::ice_surface_mass_flux()} for details.
+The \texttt{forcing} modifier implements a surface mass balance adjustment mechanism which forces ice thickness to a target thickness distribution at the end of the run.  The idea behind this mechanism is that spinup of ice sheet models frequently requires the surface elevation to come close to measured values at the end of a run.  A simpler alternative to accomplish this, namely option \intextoption{no_mass}, represents an unmodeled, frequently large, violation of the mass continuity equation.
+
+In more detail, let $H_{\text{tar}}$ be the target thickness.  Let $H$ be the time-dependent model thickness.  Note that a surface model as described in this section produces the $M$ term in the mass continuity equation
+  $$\frac{\partial H}{\partial t} = M - S - \nabla\cdot \mathbf{q}.$$
+(Other details of this equation do not concern us here.)  Option \fileopt{force_to_thk} causes $M$ to be modified by a multiple of the difference between the target thickness and the current thickness,
+  $$\Delta M = \alpha (H_{\text{tar}} - H)$$
+where $\alpha>0$.  We are adding mass ($\Delta M>0$) where $H_{\text{tar}} > H$ and ablating where $H_{\text{tar}} < H$.  We make this mechanism stronger as the run goes on, as follows: if $t_s$ be the start time and $t_e$ the end time for the run then $\alpha=\alpha(t)$ where $\alpha(t) = \alpha_0 (t-t_s)/(t_e-t_s)$.
+
+Option \fileopt{force_to_thk} identifies the file containing the target ice thickness field.  A basic run modifying surface model \texttt{constant} would look like
+\begin{verbatim}
+$ pismr -i foo.nc -surface constant,forcing -force_to_thk bar.nc
+\end{verbatim}%$
+In this case \texttt{foo.nc} contains fields \texttt{acab} and \texttt{artm}, as normal for \texttt{-surface constant}, and \texttt{bar.nc} contains field \texttt{thk} which will serve as the target thickness.  Option \intextoption{force_to_thk_alpha} adjusts the value of $\alpha_0$, which has a default value specified in the \emph{Source Code Browser} \url{\PISMBROWSERURL}.
 
   The \texttt{lapse_rate} modifier allows correcting ice-surface temperature and surface mass balance using elevation lapse rates. It uses the following options.
   \begin{itemize}

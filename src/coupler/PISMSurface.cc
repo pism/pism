@@ -669,7 +669,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   ierr = PetscOptionsBegin(grid.com, "", "Surface model forcing", ""); CHKERRQ(ierr);
 
   ierr = PetscOptionsString("-force_to_thk",
-			    "Specifies the target thickness file",
+			    "Specifies the target thickness file for the force-to-thickness mechanism",
 			    "", "",
 			    fttfile, PETSC_MAX_PATH_LEN, &opt_set); CHKERRQ(ierr);
 
@@ -691,11 +691,11 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   if (!ice_thickness) SETERRQ(1, "ERROR: land_ice_thickness is not available");
 
   ierr = target_thickness.create(grid, "thk", false); CHKERRQ(ierr); // name to read by
-  ierr = target_thickness.set_attrs(
+  ierr = target_thickness.set_attrs( // set attributes for the read stage; see below for reset
      "climate_state", 
-     "target ice thickness (to be reached at the end of the run",
+     "target thickness for force-to-thickness mechanism (hit this at end of run)",
      "m", 
-     "land_ice_thickness"); CHKERRQ(ierr); // standard_name to read by
+     "land_ice_thickness"); CHKERRQ(ierr); // standard_name *to read by*
 
   ierr = ftt_mask.create(grid, "ftt_mask", false); CHKERRQ(ierr);
   ierr = ftt_mask.set_attrs(
@@ -708,7 +708,7 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   ierr = ftt_modified_acab.set_attrs(
      "diagnostic",
      "modified ice-equivalent surface mass balance (accumulation/ablation) rate;"
-       " result from force-to-thickness PSModifier",
+       " result from force-to-thickness mechanism (which is a PSModifier)",
      "m s-1", 
      ""); CHKERRQ(ierr); // no standard name
   ierr = ftt_modified_acab.set_glaciological_units("m year-1"); CHKERRQ(ierr);
@@ -751,11 +751,11 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
     write_ftt_mask = true;
   }
 
-  // reset name to avoid confusion; attributes again because lost by set_name().
-  ierr = target_thickness.set_name("target_thickness"); CHKERRQ(ierr);
+  // reset name to avoid confusion; set attributes again to overwrite "read by" choices above
+  ierr = target_thickness.set_name("ftt_target_thk"); CHKERRQ(ierr);
   ierr = target_thickness.set_attrs(
-    "",  // pism_intent unknown
-    "target thickness for force-to-thickness-spinup mechanism (hit this at end of run)",
+    "climate_state",
+    "target thickness for force-to-thickness mechanism (wants to hit this at end of run)",
     "m",
     "");  // no CF standard_name, to put it mildly
   CHKERRQ(ierr);
@@ -786,8 +786,7 @@ Let's assume \f$H(t_s)=H_0\f$.  This initial value problem has solution
 \f$H(t) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t-t_s)}\f$
 and so
   \f[ H(t_e) = H_{\text{tar}} + (H_0 - H_{\text{tar}}) e^{-\alpha (t_e-t_s)} \f]
-The constant \f$\alpha\f$ has a default value \c pism_config:force_to_thickness_alpha
-of \f$0.002\,\text{a}^{-1}\f$.
+The constant \f$\alpha\f$ has a default value \c pism_config:force_to_thickness_alpha.
 
 The final feature is that we turn on this mechanism so it is harshest near the end
 of the run.  In particular,
@@ -915,10 +914,9 @@ void PSForceThickness::add_vars_to_output(string key, set<string> &result) {
   if (input_model != NULL)
     input_model->add_vars_to_output(key, result);
 
-  if (key == "big") {
-    result.insert("ftt_modified_acab");
-    result.insert("fft_mask");
-  }
+  result.insert("ftt_modified_acab");
+  result.insert("fft_mask");
+  result.insert("fft_target_thk");
 }
 
 PetscErrorCode PSForceThickness::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
@@ -932,6 +930,10 @@ PetscErrorCode PSForceThickness::define_variables(set<string> vars, const NCTool
 
   if (set_contains(vars, "ftt_mask")) {
     ierr = ftt_mask.define(nc, nctype); CHKERRQ(ierr);
+  }  
+
+  if (set_contains(vars, "ftt_target_thk")) {
+    ierr = target_thickness.define(nc, nctype); CHKERRQ(ierr);
   }  
 
   return 0;
@@ -950,5 +952,10 @@ PetscErrorCode PSForceThickness::write_variables(set<string> vars, string filena
     ierr = ftt_mask.write(filename.c_str()); CHKERRQ(ierr); 
   }  
 
+  if (set_contains(vars, "ftt_target_thk")) {
+    ierr = target_thickness.write(filename.c_str()); CHKERRQ(ierr);
+  }  
+
   return 0;
 }
+
