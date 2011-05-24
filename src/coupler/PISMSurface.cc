@@ -919,8 +919,8 @@ void PSForceThickness::add_vars_to_output(string key, set<string> &result) {
     input_model->add_vars_to_output(key, result);
 
   result.insert("ftt_modified_acab");
-  result.insert("fft_mask");
-  result.insert("fft_target_thk");
+  result.insert("ftt_mask");
+  result.insert("ftt_target_thk");
 }
 
 PetscErrorCode PSForceThickness::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
