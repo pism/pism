@@ -692,17 +692,19 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
 
   ierr = target_thickness.create(grid, "thk", false); CHKERRQ(ierr); // name to read by
   ierr = target_thickness.set_attrs( // set attributes for the read stage; see below for reset
-     "climate_state", 
+     "diagnostic", 
      "target thickness for force-to-thickness mechanism (hit this at end of run)",
      "m", 
      "land_ice_thickness"); CHKERRQ(ierr); // standard_name *to read by*
+  target_thickness.write_in_glaciological_units = true;
 
   ierr = ftt_mask.create(grid, "ftt_mask", false); CHKERRQ(ierr);
   ierr = ftt_mask.set_attrs(
-     "climate_state",
+     "diagnostic",
      "mask specifying where to apply the force-to-thickness mechanism",
      "", ""); CHKERRQ(ierr); // no units and no standard name
   ierr = ftt_mask.set(1.0); CHKERRQ(ierr); // default: applied in whole domain
+  ftt_mask.write_in_glaciological_units = true;
 
   ierr = ftt_modified_acab.create(grid, "ftt_modified_acab", false); CHKERRQ(ierr);
   ierr = ftt_modified_acab.set_attrs(
@@ -741,24 +743,26 @@ PetscErrorCode PSForceThickness::init(PISMVars &vars) {
   ierr = nc.close(); CHKERRQ(ierr);
 
   ierr = verbPrintf(2, grid.com, 
-		    "    reading target thickness 'thk' from %s ...\n", fttfile); CHKERRQ(ierr); 
+		    "    reading target thickness 'thk' from %s ...\n"
+		    "    (this field will appear in output file as 'ftt_target_thk')\n",
+		    fttfile); CHKERRQ(ierr); 
   ierr = target_thickness.regrid(fttfile, true); CHKERRQ(ierr);
 
   if (mask_exists) {
     ierr = verbPrintf(2, grid.com, 
                       "    reading force-to-thickness mask 'ftt_mask' from %s ...\n", fttfile); CHKERRQ(ierr); 
     ierr = ftt_mask.regrid(fttfile, true); CHKERRQ(ierr);
-    write_ftt_mask = true;
   }
 
   // reset name to avoid confusion; set attributes again to overwrite "read by" choices above
   ierr = target_thickness.set_name("ftt_target_thk"); CHKERRQ(ierr);
   ierr = target_thickness.set_attrs(
-    "climate_state",
+    "diagnostic",
     "target thickness for force-to-thickness mechanism (wants to hit this at end of run)",
     "m",
     "");  // no CF standard_name, to put it mildly
-  CHKERRQ(ierr);
+    CHKERRQ(ierr);
+  target_thickness.write_in_glaciological_units = true;
 
   return 0;
 }
@@ -922,7 +926,7 @@ void PSForceThickness::add_vars_to_output(string key, set<string> &result) {
 PetscErrorCode PSForceThickness::define_variables(set<string> vars, const NCTool &nc, nc_type nctype) {
   PetscErrorCode ierr;
 
-  ierr = PISMSurfaceModel::define_variables(vars, nc, nctype); CHKERRQ(ierr);
+  ierr = input_model->define_variables(vars, nc, nctype); CHKERRQ(ierr);
 
   if (set_contains(vars, "ftt_modified_acab")) {
     ierr = ftt_modified_acab.define(nc, nctype); CHKERRQ(ierr); 

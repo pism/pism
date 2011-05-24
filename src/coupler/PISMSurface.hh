@@ -285,7 +285,6 @@ public:
   {
     ice_thickness = NULL;
     alpha = config.get("force_to_thickness_alpha");
-    write_ftt_mask = false;
   }
 
   virtual ~PSForceThickness() {}
@@ -300,7 +299,6 @@ public:
 protected:
   string input_file;
   PetscReal alpha;
-  bool write_ftt_mask;
   IceModelVec2S *ice_thickness;	//!< current ice thickness produced by IceModel.
   IceModelVec2S target_thickness, ftt_mask, ftt_modified_acab;
 };
