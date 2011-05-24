@@ -25,6 +25,7 @@
 #include "SIAFD.hh"
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
+#include "Mask.hh"
 
 //! Set default values of grid parameters.
 /*!
@@ -693,6 +694,7 @@ PetscErrorCode IceModel::misc_setup() {
   ierr = set_output_size("-o_size", "Sets the 'size' of an output file.",
 			 "medium", output_vars); CHKERRQ(ierr);
 
+  ierr = init_ocean_kill(); CHKERRQ(ierr);
   ierr = init_diagnostics(); CHKERRQ(ierr); 
   ierr = init_snapshots(); CHKERRQ(ierr);
   ierr = init_backups(); CHKERRQ(ierr);
@@ -774,6 +776,66 @@ PetscErrorCode  IceModel::set_time_from_options() {
   }
 
   t_years_TempAge = grid.year;
+
+  return 0;
+}
+
+//! \brief Initialize the mask used by the -ocean_kill code.
+PetscErrorCode IceModel::init_ocean_kill() {
+  PetscErrorCode ierr;
+  string filename;
+  bool flag;
+
+  if (!config.get_flag("ocean_kill"))
+    return 0;
+
+  ierr = PetscOptionsBegin(grid.com, "", "Fixed calving front options", ""); CHKERRQ(ierr);
+  {
+    ierr = PISMOptionsString("-ocean_kill", "Specifies a file to get -ocean_kill thickness from",
+                             filename, flag, true); CHKERRQ(ierr);
+  }
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  MaskQuery m(vMask);
+
+  IceModelVec2S thickness, *tmp;
+
+  if (filename.empty()) {
+    ierr = verbPrintf(2, grid.com,
+                      "* Using ice thickness at the beginning of the run\n"
+                      "  to set the fixed calving front location.\n"); CHKERRQ(ierr);
+    tmp = &vH;
+  } else {
+    ierr = verbPrintf(2, grid.com,
+                      "* Setting fixed calving front location using ice thickness from '%s'.\n",
+                      filename.c_str()); CHKERRQ(ierr);
+
+    ierr = thickness.create(grid, "thk", false); CHKERRQ(ierr);
+    ierr = thickness.set_attrs("temporary", "land ice thickness",
+                               "m", "land_ice_thickness"); CHKERRQ(ierr);
+    ierr = thickness.set_attr("valid_min", 0.0); CHKERRQ(ierr);
+  
+    ierr = thickness.regrid(filename, true); CHKERRQ(ierr);
+
+    tmp = &thickness;
+  }
+
+  ierr = ocean_kill_mask.begin_access(); CHKERRQ(ierr);
+  ierr = tmp->begin_access(); CHKERRQ(ierr);
+  ierr = vMask.begin_access(); CHKERRQ(ierr);
+    
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if ((*tmp)(i, j) > 0 || m.grounded(i, j) )
+        ocean_kill_mask(i, j) = 0;
+      else
+        ocean_kill_mask(i, j) = 1;
+    }
+  }
+    
+  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = tmp->end_access(); CHKERRQ(ierr);
+  ierr = ocean_kill_mask.end_access(); CHKERRQ(ierr);
 
   return 0;
 }

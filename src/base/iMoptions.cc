@@ -357,6 +357,9 @@ PetscErrorCode IceModel::set_output_size(string option,
   if (config.get_flag("do_age"))
     result.insert("age");
 
+  if (config.get_flag("ocean_kill"))
+    result.insert("ocean_kill_mask");
+
   if (config.get_flag("force_full_diagnostics"))
     keyword = "big";
 

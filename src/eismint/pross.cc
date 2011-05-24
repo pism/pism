@@ -318,15 +318,14 @@ PetscErrorCode allocate_vars(IceGrid &grid, PISMVars &vars) {
   ierr = mask->create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
   ierr = mask->set_attrs("model_state", "grounded_dragging_floating integer mask",
                          "", ""); CHKERRQ(ierr);
-  vector<double> mask_values(5);
+  vector<double> mask_values(4);
   mask_values[0] = MASK_ICE_FREE_BEDROCK;
   mask_values[1] = MASK_GROUNDED;
   mask_values[2] = MASK_FLOATING;
   mask_values[3] = MASK_ICE_FREE_OCEAN;
-  mask_values[4] = MASK_OCEAN_AT_TIME_0;
   ierr = mask->set_attr("flag_values", mask_values); CHKERRQ(ierr);
   ierr = mask->set_attr("flag_meanings",
-                        "ice_free_bedrock sheet dragging_sheet floating ice_free_ocean ocean_at_time_zero");
+                        "ice_free_bedrock sheet dragging_sheet floating ice_free_ocean");
   CHKERRQ(ierr);
   mask->output_data_type = NC_BYTE;
   ierr = vars.add(*mask); CHKERRQ(ierr);

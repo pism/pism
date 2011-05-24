@@ -30,8 +30,6 @@ public:
   ~Mask() {}
   //! \brief An ocean cell (floating ice or ice-free).
   inline bool ocean(int M) { return M >= MASK_FLOATING; }
-  //! \brief Cell was set as "ocean at time 0".
-  inline bool ocean_at_time_0(int M) { return M == MASK_OCEAN_AT_TIME_0; }
   //! \brief Grounded cell (grounded ice or ice-free).
   inline bool grounded(int M) { return !ocean(M); }
   //! \brief Ice-filled cell (grounded or floating).
@@ -111,8 +109,6 @@ public:
   MaskQuery(IceModelVec2Int &m) : mask(m) {}
   
   inline bool ocean(int i, int j) { return Mask::ocean(mask.as_int(i, j)); }
-
-  inline bool ocean_at_time_0(int i, int j) { return Mask::ocean_at_time_0(mask.as_int(i, j)); }
 
   inline bool grounded(int i, int j) { return !ocean(i, j); }
 

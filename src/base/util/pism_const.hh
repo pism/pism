@@ -43,11 +43,8 @@ enum PismMask {
   MASK_UNKNOWN          = -1,
   MASK_ICE_FREE_BEDROCK = 0,
   MASK_GROUNDED   = 2,
-  // all the floating mask values are strictly greater than the grounded ones;
-  // the criterion for floating is "mask >= MASK_FLOATING"
   MASK_FLOATING         = 3,
-  MASK_ICE_FREE_OCEAN   = 4,
-  MASK_OCEAN_AT_TIME_0  = 7
+  MASK_ICE_FREE_OCEAN   = 4
 };
 
 enum PISM_CELL_TYPE {
@@ -145,7 +142,7 @@ PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string text, set<string
 			       string default_value, string &result, bool &flag);
 
 PetscErrorCode PISMOptionsString(string option, string text,
-				 string &result, bool &flag);
+				 string &result, bool &flag, bool allow_empty_arg = false);
 PetscErrorCode PISMOptionsStringArray(string opt, string text, string default_value,
 				      vector<string>& result, bool &flag);
 

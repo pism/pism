@@ -65,11 +65,6 @@ PetscErrorCode IceModel::update_mask() {
   PetscInt GHOSTS = 2;
   for (PetscInt   i = grid.xs - GHOSTS; i < grid.xs+grid.xm + GHOSTS; ++i) {
     for (PetscInt j = grid.ys - GHOSTS; j < grid.ys+grid.ym + GHOSTS; ++j) {
-
-      // points marked as "ocean at time zero" are not updated
-      if (mask.ocean_at_time_0(i, j))
-        continue;
-
       vMask(i, j) = gc.mask(vbed(i, j), vH(i,j));
     } // inner for loop (j)
   } // outer for loop (i)
@@ -104,18 +99,6 @@ PetscErrorCode IceModel::update_surface_elevation() {
       if (vH(i, j) < 0) {
         SETERRQ2(1, "Thickness negative at point i=%d, j=%d", i, j);
       }
-
-      if (mask.ocean_at_time_0(i, j)) {
-        // mask takes priority over bed in this case (note sea level may change).
-        // Example Greenland case: if mask say Ellesmere is OCEAN0,
-        //   then never want ice on Ellesmere.
-        // If mask says OCEAN0 then don't change the mask and also don't change
-        // the thickness; massContExplicitStep() is in charge of that.
-        // Almost always the next line is equivalent to vh(i, j) = 0.
-        vh(i, j) = sea_level;  // ignore bed and treat it like deep ocean
-	continue;	      // go to the next grid point
-      }
-
       vh(i, j) = gc.surface(vbed(i, j), vH(i, j));
     }
   }
@@ -248,6 +231,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
     ierr = vbed.begin_access();  CHKERRQ(ierr);
   }
 
+  if (do_ocean_kill) {
+    ierr = ocean_kill_mask.begin_access(); CHKERRQ(ierr);
+  }
+
   MaskQuery mask(vMask);
 
   for (PetscInt i = grid.xs; i < grid.xs + grid.xm; ++i) {
@@ -358,7 +345,7 @@ PetscErrorCode IceModel::massContExplicitStep() {
 
       // force zero thickness at points which were originally ocean (if "-ocean_kill");
       //   this is calving at original calving front location
-      if ( do_ocean_kill && mask.ocean_at_time_0(i, j) ) {
+      if ( do_ocean_kill && ocean_kill_mask.as_int(i, j) == 1) {
         my_ocean_kill_flux -= vHnew(i, j);
         vHnew(i, j) = 0.0;
       }
@@ -393,6 +380,10 @@ PetscErrorCode IceModel::massContExplicitStep() {
     ierr = vBCMask.end_access();  CHKERRQ(ierr);
     ierr = vBCvel.end_access();  CHKERRQ(ierr);
     ierr = vbed.end_access();  CHKERRQ(ierr);
+  }
+
+  if (do_ocean_kill) {
+    ierr = ocean_kill_mask.end_access(); CHKERRQ(ierr);
   }
 
   // flux accounting

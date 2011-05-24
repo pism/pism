@@ -75,6 +75,8 @@ protected:
         PetscScalar &gmaxvecerr, PetscScalar &gavvecerr,
         PetscScalar &gmaxuberr, PetscScalar &gmaxvberr);
 
+  PetscErrorCode reset_thickness_tests_AE();
+
   // related to test L
   IceModelVec2S   vHexactL;
   PetscErrorCode initTestL();

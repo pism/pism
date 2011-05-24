@@ -38,9 +38,6 @@ PetscErrorCode IceModel::bootstrapFromFile(const char *filename) {
   // Check the consistency of geometry fields:
   ierr = updateSurfaceElevationAndMask(); CHKERRQ(ierr); 
 
-  // If ocean_kill is set, mark ice-free ocean with a special mask value:
-  ierr = mark_ocean_at_time_0(); CHKERRQ(ierr);
-
   // Update couplers (because heuristics in bootstrap_3d() might need boundary
   // conditions provided by couplers):
   if (surface != NULL) {
@@ -190,27 +187,6 @@ PetscErrorCode IceModel::bootstrap_3d() {
 
   return 0;
 }
-
-PetscErrorCode IceModel::mark_ocean_at_time_0() {
-  PetscErrorCode ierr;
-
-  if (config.get_flag("ocean_kill") == false) return 0;
-
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
-  for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
-    for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      if (vMask(i,j) == MASK_ICE_FREE_OCEAN)
-        vMask(i,j) = MASK_OCEAN_AT_TIME_0;
-    }
-  }
-  ierr = vMask.end_access(); CHKERRQ(ierr);
-
-  // Communicate mask values (just in case):
-  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
-  return 0;
-}
-
 
 //! Create a temperature field within ice and bedrock from given surface temperature and geothermal flux maps.
 /*!

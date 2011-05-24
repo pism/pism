@@ -112,7 +112,7 @@ private:
   mismipStatsType   mstats;
 
   PetscErrorCode  setBed();
-  PetscErrorCode  setMask();
+  PetscErrorCode  init_ocean_kill();
   PetscErrorCode  getMISMIPStats();
   PetscErrorCode  getRoutineStats();
 

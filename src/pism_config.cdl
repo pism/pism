@@ -549,10 +549,10 @@ netcdf pism_config {
    pism_config:WGS84_semiminor_axis = 6356752.314245;
    pism_config:WGS84_semiminor_axis_doc = "m; WGS84 reference ellipsoid semi-minor axis";
 
-   pism_config:output_medium = "acab artm cbar cbase csurf cflx dHdt diffusivity schoofs_theta tauc taud thksmooth topgsmooth usurf wvelsurf temp enthalpy IcebergMask edot_1 edot_2";
+   pism_config:output_medium = "acab artm cbar cbase csurf cflx dHdt diffusivity mask schoofs_theta tauc taud thksmooth topgsmooth usurf wvelsurf temp enthalpy IcebergMask edot_1 edot_2";
    pism_config:output_medium_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'medium' output size is selected. Does not include fields written by boundary models.";
 
-   pism_config:output_big = "acab age artm bfrict bheatflx bmelt bwat bwp cbar cbase cell_area cflx csurf dbdt dHdt dhdt diffusivity enthalpy enthalpybase enthalpysurf hardav lat liqfrac litho_temp lon mask rank schoofs_theta tauc taud_mag temp tempbase tempsurf temp_pa temppabase tempicethk tempicethk_basal thk thksmooth tillphi topg topgsmooth velbase velsurf velbar usurf uvel vvel wvel wvel_rel wvelbase wvelsurf new_mask";
+   pism_config:output_big = "acab age artm bfrict bheatflx bmelt bwat bwp cbar cbase cell_area cflx csurf dbdt dHdt dhdt diffusivity enthalpy enthalpybase enthalpysurf hardav lat liqfrac litho_temp lon mask ocean_kill_mask rank schoofs_theta tauc taud_mag temp tempbase tempsurf temp_pa temppabase tempicethk tempicethk_basal thk thksmooth tillphi topg topgsmooth velbase velsurf velbar usurf uvel vvel wvel wvel_rel wvelbase wvelsurf new_mask";
    pism_config:output_big_doc = "Space-separated list of variables to write to the output (in addition to model_state variables) if 'big' output size is selected. Does not include fields written by boundary models.";
 
    pism_config:ts_bad_set_warning = "WARNING: PISM will sample this quantity at user-specified times.  Fast (e.g. subannual) variability in any coupler-generated fluxes may make these sampled values unusable.";

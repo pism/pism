@@ -96,6 +96,7 @@ public:
   virtual PetscErrorCode allocate_internal_objects();
   virtual PetscErrorCode misc_setup();
   virtual PetscErrorCode init_diagnostics();
+  virtual PetscErrorCode init_ocean_kill();
 
   // see iceModel.cc
   PetscErrorCode init();
@@ -115,8 +116,6 @@ public:
   virtual PetscErrorCode bootstrap_2d(const char *fname);
   virtual PetscErrorCode bootstrap_3d();
   virtual PetscErrorCode putTempAtDepth();
-  virtual PetscErrorCode mark_ocean_at_time_0();
-
 
   // see iMoptions.cc
   virtual PetscErrorCode setFromOptions();
@@ -193,7 +192,9 @@ protected:
 
 	
  
-  IceModelVec2Int vMask, //!< mask for flow type with values SHEET, DRAGGING, FLOATING
+  IceModelVec2Int vMask, //!< \brief mask for flow type with values ice_free_bedrock,
+                         //!< grounded_ice, floating_ice, ice_free_ocean
+    ocean_kill_mask,     //!< mask used by the -ocean_kill code 
     vIcebergMask, //!< mask for iceberg identification
 
 	vBCMask; //!< mask to determine Dirichlet boundary locations

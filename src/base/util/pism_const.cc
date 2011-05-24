@@ -610,7 +610,7 @@ PetscErrorCode PISMOptionsList(MPI_Comm com, string opt, string description, set
 
 //! \brief Process a command-line option taking a string as an argument.
 PetscErrorCode PISMOptionsString(string option, string text,
-				 string &result, bool &is_set) {
+				 string &result, bool &is_set, bool allow_empty_arg) {
   PetscErrorCode ierr;
   char tmp[TEMPORARY_STRING_LENGTH];
   PetscTruth flag;
@@ -621,15 +621,19 @@ PetscErrorCode PISMOptionsString(string option, string text,
 
   is_set = (flag == PETSC_TRUE);
 
-  if (is_set && (strlen(tmp) == 0)) {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,
-                       "ERROR: command line option '%s' requires an argument.\n",
-                       option.c_str()); CHKERRQ(ierr);
-    PISMEnd();
+  if (is_set) {
+    if (strlen(tmp) == 0) {
+      if (allow_empty_arg)
+        result = "";
+      else {
+        ierr = PetscPrintf(PETSC_COMM_WORLD,
+                           "ERROR: command line option '%s' requires an argument.\n",
+                           option.c_str()); CHKERRQ(ierr);
+        PISMEnd();
+      }
+    } else
+      result = tmp;
   }
-
-  if (is_set)
-    result = tmp;
 
   return 0;
 }

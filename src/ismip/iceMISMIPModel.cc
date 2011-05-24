@@ -472,7 +472,6 @@ PetscErrorCode IceMISMIPModel::set_vars_from_options() {
   ierr = acab.set(0.3/secpera); CHKERRQ(ierr);
 
   ierr = setBed(); CHKERRQ(ierr);
-  ierr = setMask(); CHKERRQ(ierr);
 
   ierr = compute_enthalpy_cold(T3, Enth3); CHKERRQ(ierr);
 
@@ -578,12 +577,12 @@ PetscErrorCode IceMISMIPModel::setBed() {
 }
 
 
-PetscErrorCode IceMISMIPModel::setMask() {
+PetscErrorCode IceMISMIPModel::init_ocean_kill() {
   PetscErrorCode ierr;
 
   const PetscScalar calving_front = 1600.0e3;
 
-  ierr = vMask.begin_access(); CHKERRQ(ierr);
+  ierr = ocean_kill_mask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
     
@@ -591,20 +590,18 @@ PetscErrorCode IceMISMIPModel::setMask() {
                static_cast<PetscScalar>(i)-static_cast<PetscScalar>(grid.Mx - 1)/2.0;
       const PetscScalar x = grid.dx * ifrom0;
       if (PetscAbs(x) >= calving_front) {
-        vMask(i,j) = MASK_OCEAN_AT_TIME_0;
+        ocean_kill_mask(i,j) = 1;
       } else {
-        // note updateSurfaceElevationAndMask() will re-mark DRAGGING
-        //   as FLOATING if it is floating
-        vMask(i,j) = MASK_GROUNDED;
+        ocean_kill_mask(i,j) = 0;
       }
 
     }
   }
-  ierr = vMask.end_access(); CHKERRQ(ierr);
+  ierr = ocean_kill_mask.end_access(); CHKERRQ(ierr);
 
   // communicate it
-  ierr = vMask.beginGhostComm(); CHKERRQ(ierr);
-  ierr = vMask.endGhostComm(); CHKERRQ(ierr);
+  ierr = ocean_kill_mask.beginGhostComm(); CHKERRQ(ierr);
+  ierr = ocean_kill_mask.endGhostComm(); CHKERRQ(ierr);
   return 0;
 }
 

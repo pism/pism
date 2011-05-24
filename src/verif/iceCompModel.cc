@@ -182,13 +182,8 @@ PetscErrorCode IceCompModel::setFromOptions() {
   } else
     config.set_flag("do_temp", false);
 
-  if ((testname == 'A') || (testname == 'E')) {
-    config.set_flag("is_dry_simulation", true);
-    config.set_flag("ocean_kill", true);
-  } else {
-    config.set_flag("is_dry_simulation", true);
-    config.set_flag("ocean_kill", false);
-  }
+  config.set_flag("is_dry_simulation", true);
+  config.set_flag("ocean_kill", false);
 
   // special considerations for K and O wrt thermal bedrock and pressure-melting
   if ((testname == 'K') || (testname == 'O')) {
@@ -375,7 +370,6 @@ PetscErrorCode IceCompModel::set_vars_from_options() {
 PetscErrorCode IceCompModel::initTestABCDEH() {
   PetscErrorCode  ierr;
   PetscScalar     A0, T0, **H, **accum, dummy1, dummy2, dummy3;
-  const PetscScalar LforAE = 750e3; // m
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for ThermoGlenArrIce);
   // set all temps to this constant
@@ -389,9 +383,6 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
 
   ierr = acab.get_array(accum); CHKERRQ(ierr);
   ierr = vH.get_array(H); CHKERRQ(ierr);
-  if ((testname == 'A') || (testname == 'E')) {
-    ierr = vMask.begin_access(); CHKERRQ(ierr);
-  }
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
       PetscScalar xx = grid.x[i], yy = grid.y[j],
@@ -399,8 +390,6 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
       switch (testname) {
         case 'A':
           exactA(r,&H[i][j],&accum[i][j]);
-          if (r >= LforAE)
-            vMask(i,j) = MASK_OCEAN_AT_TIME_0;
           break;
         case 'B':
           exactB(grid.year*secpera,r,&H[i][j],&accum[i][j]);
@@ -413,8 +402,6 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
           break;
         case 'E':
           exactE(xx,yy,&H[i][j],&accum[i][j],&dummy1,&dummy2,&dummy3);
-          if (r >= LforAE)
-            vMask(i,j) = MASK_OCEAN_AT_TIME_0;
           break;
         case 'H':
           exactH(f,grid.year*secpera,r,&H[i][j],&accum[i][j]);
@@ -425,9 +412,6 @@ PetscErrorCode IceCompModel::initTestABCDEH() {
   }
   ierr = acab.end_access(); CHKERRQ(ierr);
   ierr = vH.end_access(); CHKERRQ(ierr);
-  if ((testname == 'A') || (testname == 'E')) {
-    ierr = vMask.end_access(); CHKERRQ(ierr);
-  }
 
   ierr = vH.beginGhostComm(); CHKERRQ(ierr);
   ierr = vH.endGhostComm(); CHKERRQ(ierr);
@@ -573,6 +557,26 @@ PetscErrorCode IceCompModel::getCompSourcesTestCDH() {
   ierr = acab.end_access(); CHKERRQ(ierr);
   return 0;
 }
+
+//! \brief Tests A and E have a thickness B.C. (ice_thickness == 0 outside a circle of radius 750km).
+PetscErrorCode IceCompModel::reset_thickness_tests_AE() {
+  PetscErrorCode ierr;
+  const PetscScalar LforAE = 750e3; // m
+
+  ierr = vH.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if (grid.radius(i, j) > LforAE)
+        vH(i, j) = 0;
+    }
+  }
+  ierr = vH.end_access(); CHKERRQ(ierr);
+
+  ierr = vH.beginGhostComm(); CHKERRQ(ierr);
+  ierr = vH.endGhostComm(); CHKERRQ(ierr);
+  return 0;
+}
+
 
 
 PetscErrorCode IceCompModel::fillSolnTestABCDH() {
@@ -875,7 +879,7 @@ PetscErrorCode IceCompModel::additionalAtStartTimestep() {
     dt_force = config.get("maximum_time_step_years") * secpera;
 
   // these have no changing boundary conditions or comp sources:
-  if (strchr("ABEKLO",testname) != NULL) 
+  if (strchr("AEBKLO",testname) != NULL) 
     return 0;
 
   switch (testname) {
@@ -904,6 +908,11 @@ PetscErrorCode IceCompModel::additionalAtEndTimestep() {
   ierr = verbPrintf(5,grid.com,
                     "additionalAtEndTimestep() in IceCompModel entered with test %c",testname);
   CHKERRQ(ierr);
+
+
+  if (testname == 'A' || testname == 'E') {
+    ierr = reset_thickness_tests_AE(); CHKERRQ(ierr);
+  }
 
   // do nothing at the end of the time step unless the user has asked for the 
   // exact solution to overwrite the numerical solution

@@ -196,19 +196,28 @@ PetscErrorCode IceModel::createVecs() {
 			"m", "bedrock_altitude"); CHKERRQ(ierr);
   ierr = variables.add(vbed); CHKERRQ(ierr);
 
+  if (config.get_flag("ocean_kill")) {
+    ierr = ocean_kill_mask.create(grid, "ocean_kill_mask", false); CHKERRQ(ierr);
+    ierr = ocean_kill_mask.set_attrs("internal",
+                                     "mask specifying fixed calving front locations",
+                                     "", ""); CHKERRQ(ierr);
+    ocean_kill_mask.time_independent = true;
+    ierr = variables.add(ocean_kill_mask); CHKERRQ(ierr);
+
+  }
+
   // grounded_dragging_floating integer mask
   ierr = vMask.create(grid, "mask", true, WIDE_STENCIL); CHKERRQ(ierr);
-  ierr = vMask.set_attrs("model_state", "grounded_dragging_floating integer mask",
+  ierr = vMask.set_attrs("diagnostic", "grounded_dragging_floating integer mask",
 			 "", ""); CHKERRQ(ierr);
-  vector<double> mask_values(5);
+  vector<double> mask_values(4);
   mask_values[0] = MASK_ICE_FREE_BEDROCK;
   mask_values[1] = MASK_GROUNDED;
   mask_values[2] = MASK_FLOATING;
   mask_values[3] = MASK_ICE_FREE_OCEAN;
-  mask_values[4] = MASK_OCEAN_AT_TIME_0;
   ierr = vMask.set_attr("flag_values", mask_values); CHKERRQ(ierr);
   ierr = vMask.set_attr("flag_meanings",
-			"ice_free_bedrock dragging_sheet floating ice_free_ocean ocean_at_time_zero"); CHKERRQ(ierr);
+			"ice_free_bedrock grounded_ice floating_ice ice_free_ocean"); CHKERRQ(ierr);
   vMask.output_data_type = NC_BYTE;
   ierr = variables.add(vMask); CHKERRQ(ierr);
 

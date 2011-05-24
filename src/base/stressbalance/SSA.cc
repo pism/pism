@@ -436,9 +436,6 @@ PetscErrorCode SSA::compute_maximum_velocity() {
   PetscReal my_max_u = 0.0,
     my_max_v = 0.0;
 
-  bool do_ocean_kill = config.get_flag("ocean_kill"),
-    floating_ice_killed = config.get_flag("floating_ice_killed");
-
   ierr = velocity.begin_access(); CHKERRQ(ierr);
   ierr = mask->begin_access(); CHKERRQ(ierr);
   
@@ -446,12 +443,7 @@ PetscErrorCode SSA::compute_maximum_velocity() {
 
   for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
     for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-      // the following conditionals, both -ocean_kill and -float_kill, are also applied in 
-      //   IceModel::massContExplicitStep() when zeroing thickness
-      const bool ignorableOcean = ( do_ocean_kill && m.ocean_at_time_0(i, j) )
-	|| ( floating_ice_killed && m.ocean(i,j) );
-  
-      if (!ignorableOcean) {
+      if (m.icy(i, j)) {
         my_max_u = PetscMax(my_max_u, PetscAbs(velocity(i,j).u));
         my_max_v = PetscMax(my_max_v, PetscAbs(velocity(i,j).v));
       }

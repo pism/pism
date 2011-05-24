@@ -94,9 +94,6 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   PISMVector2 **vel;
   PetscScalar locCFLmaxdt2D = config.get("maximum_time_step_years") * secpera;
 
-  bool do_ocean_kill = config.get_flag("ocean_kill"),
-    floating_ice_killed = config.get_flag("floating_ice_killed");
-
   MaskQuery mask(vMask);
 
   IceModelVec2V *vel_advective;
@@ -106,11 +103,7 @@ PetscErrorCode IceModel::computeMax2DSlidingSpeed() {
   ierr = vMask.begin_access(); CHKERRQ(ierr);
   for (PetscInt i=grid.xs; i<grid.xs+grid.xm; ++i) {
     for (PetscInt j=grid.ys; j<grid.ys+grid.ym; ++j) {
-      // the following conditionals, both -ocean_kill and -float_kill, are also applied in 
-      //   IceModel::massContExplicitStep() when zeroing thickness
-      const bool ignorableOcean = ( do_ocean_kill && mask.ocean_at_time_0(i, j) )
-	|| ( floating_ice_killed && mask.ocean(i,j) );
-      if (!ignorableOcean) {
+      if (mask.icy(i, j)) {
         PetscScalar denom = PetscAbs(vel[i][j].u)/grid.dx + PetscAbs(vel[i][j].v)/grid.dy;
         denom += (0.01/secpera)/(grid.dx + grid.dy);  // make sure it's pos.
         locCFLmaxdt2D = PetscMin(locCFLmaxdt2D,1.0/denom);

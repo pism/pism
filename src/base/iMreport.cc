@@ -767,8 +767,6 @@ PetscErrorCode IceModel::ice_mass_bookkeeping() {
 
       if (include_bmr_in_continuity) {
         if (mask.ocean(i,j)) {
-          // note: we are deliberately *not* including fluxes in
-          //   MASK_ICE_FREE_OCEAN and MASK_OCEAN_AT_TIME_0 areas
           my_total_sub_shelf_ice_flux -= shelfbmassflux(i,j) * cell_area(i,j); // note the "-="!
         } else {
           my_total_basal_ice_flux -= vbmr(i,j) * cell_area(i,j); // note the "-="!
