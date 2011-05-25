@@ -5,7 +5,7 @@
 \usepackage{graphicx}
 \usepackage[pdftex]{hyperref}
 \hypersetup{pdftitle={PISM Cheat Sheet}}
-\hypersetup{pdfauthor={PISM (help@pism-docs.org)}}
+\hypersetup{pdfauthor={PISM Authors (help@pism-docs.org)}}
 \hypersetup{pdfkeywords={cheat sheet, ice sheet model, parallel ice
     sheet model, }}
 \hypersetup{pdfsubject={get PISM sources at http://www.pism-docs.org}}
@@ -61,6 +61,7 @@
 \texttt{-o_size} & specifies the ``size'' of the output; \texttt{small} means
 ``only model state variables'', \texttt{medium} adds some
 diagnostic quantities, \texttt{big} saves \emph{every} supported diagnostic quantity\\
+\texttt{-backup_interval} & sets the automatic backup interval, in hours\\
 \tabletitle{Standard output} \\
 \texttt{-verbose} & selects stdout verbosity level; \mbox{0 -- silent}; \mbox{1 --
 errors only}; \mbox{2 -- the default}; \mbox{3,4,5 -- more}\\
@@ -84,7 +85,6 @@ errors only}; \mbox{2 -- the default}; \mbox{3,4,5 -- more}\\
   \texttt{-Mbz} & number of points in the z-direction in the bedrock\\
 \tabletitle{Vertical grid spacing} \\
  \texttt{-z_spacing} & vertical spacing in the ice; choose one of \texttt{quadratic} (default), \texttt{equal}\\
-  \texttt{-zb_spacing} & same as \texttt{-z_spacing}, in the bedrock\\
 \end{tabular}
 
 \section{Model time and time-stepping}
@@ -113,13 +113,15 @@ errors only}; \mbox{2 -- the default}; \mbox{3,4,5 -- more}\\
 \begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
 \texttt{-ssa_sliding} & use SSA as a sliding law\\
 \texttt{-ssa_floating_only} & use SSA for floating ice only\\
-\texttt{-eta} & use $\eta$ transformation in the surface gradient computation\\
+\texttt{-gradient} (\texttt{haseloff, mahaffy, eta})& select the surface
+gradient computation method\\
 \end{tabular}
 
 \section{Rheology}
 \label{sec:rheology}
 \begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
 \texttt{-e} & enhancement factor\\
+\texttt{-e_ssa} & enhancement factor for the SSA\\
 \texttt{-ice_type} & select a flow law; the default (polythermal) mode only
 supports \texttt{gpbld}, \texttt{-cold} mode allows selecting from \texttt{pb},
 \texttt{custom}, \texttt{hooke}, \texttt{arr}, \texttt{arrwarm},
@@ -131,8 +133,8 @@ supports \texttt{gpbld}, \texttt{-cold} mode allows selecting from \texttt{pb},
 \label{sec:basal-strength}
 \begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
 \texttt{-hold_tauc} & keep the current values of the till yield stress\\
-\texttt{-plastic_c0} & set the value of the till cohesion ($c_{0}$) in the
-plastic till model\\
+% \texttt{-plastic_c0} & set the value of the till cohesion ($c_{0}$) in the
+% plastic till model\\
 \texttt{-plastic_phi} & set the till friction angle (in degrees)\\
 \texttt{-plastic_pwfrac} & set the maximum pore water fraction\\
 \texttt{-pseudo_plastic_q} & set the exponent $q$ in the pseudo-plastic basal
@@ -170,17 +172,19 @@ elevation; arguments are $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}$, $b_{\math
 \begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
 \texttt{-atmosphere} & selects an atmosphere model; choose one of
 \mbox{\texttt{searise_greenland}}, \texttt{constant},
-\mbox{\texttt{temp_lapse_rate}}\\
+\mbox{\texttt{given}}\\
 \tabletitle{\texttt{searise_greenland} options}\\
 \texttt{-paleo_precip} & turn on SeaRISE-Greenland paleo-precipitation
 correction; use with \texttt{-dTforcing}\\
-\tabletitle{\texttt{temp_lapse_rate} options}\\
-\texttt{-lapse_rate} & set the lapse rate (in $^{\circ}$C/m)\\
-\tabletitle{Forcing} \\
+\tabletitle{\texttt{dTforcing} modifier options} \\
 \texttt{-dTforcing} & mean-annual air temperature forcing (ice-core-based,
 scalar)\\
+\tabletitle{\texttt{anomaly} modifier options}\\
 \texttt{-anomaly_precip} & precipitation forcing\\
 \texttt{-anomaly_temp} & mean-annual air temperature forcing\\
+\tabletitle{\texttt{lapse_rate} modifier options}\\
+\texttt{-precip_lapse_rate} & precipitation lapse rate\\
+\texttt{-temp_lapse_rate} & near-surface air temperature lapse rate
 \end{tabular}
 
 \section{Surface (snow) processes models}
@@ -188,16 +192,22 @@ scalar)\\
 
 \begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
   \texttt{-surface} & selects a surface (snow) processes model; choose one of
-  \texttt{simple}, \texttt{constant}, \texttt{pdd}\\
+  \texttt{simple}, \texttt{constant}, \texttt{pdd}, \texttt{given}\\
   \tabletitle{\texttt{pdd} options} \\
   \texttt{-pdd_fausto} & use Fausto et al (2009) Greenland PDD parameters\\
-  \texttt{-pdd_rand} & use a monte carlo simulation to simulate daily temperature variation\\
- \texttt{-pdd_rand_repeatable} & use a repeatable monte carlo simulation to simulate daily temperature variation\\
+ %  \texttt{-pdd_rand} & use a monte carlo simulation to simulate daily temperature variation\\
+ % \texttt{-pdd_rand_repeatable} & use a repeatable monte carlo simulation to simulate daily temperature variation\\
   \texttt{-pdd_std_dev} & set PDD standard deviation\\
-  \tabletitle{Forcing} \\
+\tabletitle{\texttt{forcing} modifier options}\\
   \texttt{-force_to_thk} & select a file with the target ice thickness
   distribution\\
-  \texttt{-force_to_thk_alpha} & set $\alpha$
+  \texttt{-force_to_thk_alpha} & set the $\alpha$ parameter\\
+\tabletitle{\texttt{dTforcing} modifier options}\\
+\texttt{-dTforcing} & ice surface temperature forcing (ice-core-based,
+scalar)\\
+\tabletitle{\texttt{lapse_rate} modifier options}\\
+\texttt{-precip_lapse_rate} & surface mass balance lapse rate\\
+\texttt{-temp_lapse_rate} & ice surface temperature lapse rate
 \end{tabular}
 
 \section{Ocean models}
@@ -206,18 +216,10 @@ scalar)\\
 \begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
 \texttt{-ocean} & selects an ocean model; the only (default) choice is
 \texttt{constant} \\
-\tabletitle{Forcing} \\
+\tabletitle{\texttt{dSLforcing} modifier options} \\
 \texttt{-dSLforcing} & sea level elevation forcing\\
 \end{tabular}
 
-\section{Simplified calving}
-\label{sec:calving}
-\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
-  \texttt{-float_kill} & calve off floating ice (calving at the grounding
-  line)\\
-\texttt{-ocean_kill} & calve off in ice in cells marked as ``ice-free
-ocean'' at start of run
-\end{tabular}
 
 \end{textblock}
 
@@ -227,7 +229,7 @@ ocean'' at start of run
   \begin{center}
     \hrulefill\\
     This cheat-sheet may be freely distributed under the terms of the GNU general
-    public licence --- Copyright \copyright\ 2010 by PISM --- v0.3 ---
+    public licence --- Copyright \copyright\ 2011 by PISM Authors --- v0.4 ---
     \href{http://www.pism-docs.org}{\texttt{www.pism-docs.org}}\\
     \PISMDOWNLOADMSG\\
     To print this cheat-sheet, set your printer to ``two-sided, short-edge binding''.
@@ -237,22 +239,39 @@ ocean'' at start of run
 
 \begin{textblock}{15}(0,0.8)
 
+\section{Calving and ice shelves}
+\label{sec:calving}
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+  \texttt{-float_kill} & calve off floating ice (calving at the grounding
+  line)\\
+\texttt{-ocean_kill} & calve off in ice in cells marked as ``ice-free
+ocean'' at start of run\\
+\texttt{-part_grid} & enables the ``partially-filled grid cell''
+parametrization of ice-shelf fronts\\
+\texttt{-part_redist} & enables the residual mass re-distribution code\\
+\texttt{-eigen_calving} & enables eigen-calving\\
+\texttt{-pik} & turns on \texttt{-part_grid}, \texttt{-part_redist} and
+\texttt{-eigen_calving}\\
+\texttt{-calving_at_thickness} (m) & enables calving at a given ice thickness\\
+\end{tabular}
+
 \section{Disabling PISM components}
 \label{sec:switches}
 \begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
 \texttt{-cold} & disable polythermal code and use temperature in the energy
 balance computation\\
 \texttt{-no_mass} & disable mass continuity computations; \mbox{default: on}\\
-\texttt{-no_temp} & disable energy balance computations: \mbox{default: on}
+\texttt{-no_temp} & disable energy balance computations; \mbox{default: on}\\
+\texttt{-no_sia} & disable SIA computations; \mbox{default: on}
 \end{tabular}
 
 \section{PISM configuration file}
 \label{sec:pism-config-file}
 \begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
-\texttt{-config} & read model flags and parameters from an alternative config file\\
-\texttt{-config_override} & select a file to use for overriding config
-settings; useful for parameter studies\\
-\texttt{-dump_config} & save configuration flags and parameters used in a run to a file
+\texttt{-config} & set an alternative config file\\
+\texttt{-config_override} & set a file overriding config
+settings\\
+\texttt{-dump_config} & save flags and parameters to a file
 \end{tabular}
 
 \section{Regridding}
@@ -264,26 +283,6 @@ settings; useful for parameter studies\\
   \texttt{thk}, \texttt{topg}\\
 \end{tabular}
 
-\section{Saving model snapshots}
-\label{sec:snapshots}
-\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
-\texttt{-save_file} & set the file save to\\
-\texttt{-save_times} & a range or list of times\\
-\texttt{-save_split} & save snapshots to separate files\\
-\texttt{-save_size} & adjust the ``size'' of a snapshot; select from
-\texttt{small}, \texttt{medium}, \texttt{big}. Compare to \texttt{-o_size}.
-\end{tabular}
-
-\section{Saving 2D and 3D diagnostics}
-\label{sec:extras}
-\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
-\texttt{-extra_file} & Specifies the file to save to.\\
-\texttt{-extra_times} & Specifies times to save at, similar to
-\texttt{-save_times} and \mbox{\texttt{-ts_times}}. \\
-\texttt{-extra_vars} & select (list) variables to save\\
-\texttt{-extra_split} & save time-series to separate files\\
-\texttt{-extra_append} & append to an existing file\\
-\end{tabular}
 
 \end{textblock}
 
@@ -297,22 +296,43 @@ settings; useful for parameter studies\\
   \texttt{-ts_append} & append to an existing file\\
 \end{tabular}
 
-\section{Diagnostic scalar time-series}
-\label{sec:scalar-time-series}
+\section{Saving 2D and 3D diagnostics}
+\label{sec:extras}
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+\texttt{-extra_file} & Specifies the file to save to.\\
+\texttt{-extra_times} & Specifies times to save at, similar to
+\texttt{-save_times} and \mbox{\texttt{-ts_times}}. \\
+\texttt{-extra_vars} & select (list) variables to save\\
+\texttt{-extra_split} & save time-series to separate files\\
+\texttt{-extra_append} & append to an existing file\\
+\end{tabular}
 
-\begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
-\texttt{ivol} & total ice volume\\
-\texttt{ivolcoldf} & cold ice volume fraction\\
-\texttt{ivoltempf} & temperate ice volume fraction\\
-\texttt{iarea} & total area covered by ice\\
-\texttt{iareatempf} & temperate ice area fraction\\
-\texttt{iareacoldf} & cold ice area fraction\\
-\texttt{iareag} & total area covered by grounded ice\\
-\texttt{iareaf} & total area covered by floating ice\\
-\texttt{ienthalpy} & total ice enthalpy\\
-\texttt{dt} & mass-continuity time step\\
-% \texttt{divoldt} & rate of change of the total ice volume\\
-% \texttt{dimassdt} & rate of change of the total ice mass\\
+% \section{Diagnostic scalar time-series}
+% \label{sec:scalar-time-series}
+
+% \begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
+% \texttt{ivol} & total ice volume\\
+% \texttt{ivolcoldf} & cold ice volume fraction\\
+% \texttt{ivoltempf} & temperate ice volume fraction\\
+% \texttt{iarea} & total area covered by ice\\
+% \texttt{iareatempf} & temperate ice area fraction\\
+% \texttt{iareacoldf} & cold ice area fraction\\
+% \texttt{iareag} & total area covered by grounded ice\\
+% \texttt{iareaf} & total area covered by floating ice\\
+% \texttt{ienthalpy} & total ice enthalpy\\
+% \texttt{dt} & mass-continuity time step\\
+% % \texttt{divoldt} & rate of change of the total ice volume\\
+% % \texttt{dimassdt} & rate of change of the total ice mass\\
+% \end{tabular}
+
+\section{Saving model snapshots}
+\label{sec:snapshots}
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+\texttt{-save_file} & set the file save to\\
+\texttt{-save_times} & a range or list of times\\
+\texttt{-save_split} & save snapshots to separate files\\
+\texttt{-save_size} & adjust the ``size'' of a snapshot; select from
+\texttt{small}, \texttt{medium}, \texttt{big}. Compare to \texttt{-o_size}.
 \end{tabular}
 
 \section{Run-time viewers}
@@ -320,8 +340,6 @@ settings; useful for parameter studies\\
 
 \begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
 \texttt{-view_map} & a list of 2D fields to view\\
-\texttt{-view_slice} & a list of 3D fields to view horizontal slices of\\
-\texttt{-view_slice_level} & set the horizontal slice level, in meters above
 the base of the ice\\
 \texttt{-viewer_size} & set the viewer size \\
 \texttt{-view_sounding} & a list of 3D fields to probe\\
@@ -362,7 +380,7 @@ in PETSc. Shows norm of residual versus iteration number.
   \texttt{lon} &  longitude \\
   \texttt{mask} &  grounded/dragging/floating integer mask \\
   \texttt{tauc} &  yield stress for basal till \\
-  \texttt{taud} &  magnitude of driving shear stress at base of ice \\
+  \texttt{taud} &  driving shear stress at base of ice \\
   \texttt{temp} &  ice temperature \\
   \texttt{temp_pa} &  pressure-adjusted ice temperature \\
   \texttt{tempbase} &  ice temperature at the ice base\\
@@ -373,10 +391,10 @@ in PETSc. Shows norm of residual versus iteration number.
   \texttt{topg} &  bedrock surface elevation \\
   \texttt{usurf} &  ice upper surface elevation \\
   \texttt{\{u,v\}vel} &  horizontal ice velocity in the X,Y direction \\
-  \texttt{uvbasal} &  horizontal  ice velocity at the ice base\\
-  \texttt{\{u,v\}velsurf} &  horizontal ice velocity in the X,Y direction
+  \texttt{velbase} &  horizontal  ice velocity at the ice base\\
+  \texttt{velsurf} &  horizontal ice velocity in the X,Y direction
   at the ice surface\\
-  \texttt{uvbar} &  vertical mean of horizontal ice velocity\\
+  \texttt{velbar} &  vertical mean of horizontal ice velocity\\
   \texttt{wvel} &  vertical ice velocity \\
   \texttt{wvelbase} &  vertical ice velocity at the ice base\\
   \texttt{wvelsurf} &  vertical ice velocity at the ice surface\\
