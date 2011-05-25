@@ -151,6 +151,20 @@ protected:
     temp_n_records = PetscMin(temp_n_records, buffer_size);
     smb_n_records  = PetscMin(smb_n_records, buffer_size);
 
+    if (temp_n_records < 1) {
+      PetscPrintf(Model::grid.com, "PISM ERROR: Can't find '%s' (%s) in %s.\n",
+                  temp_name.c_str(), temp_std_name.c_str(), filename.c_str());
+      PISMEnd();
+
+    }
+
+    if (smb_n_records < 1) {
+      PetscPrintf(Model::grid.com, "PISM ERROR: Can't find '%s' (%s) in %s.\n",
+                  smb_name.c_str(), smb_std_name.c_str(), filename.c_str());
+      PISMEnd();
+
+    }
+
     temp.set_n_records(temp_n_records);
     smb.set_n_records(smb_n_records);
 
