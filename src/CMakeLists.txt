@@ -259,9 +259,6 @@ if (Pism_BUILD_EXTRA_EXECS)
   add_executable (tryLCbd earth/tryLCbd.cc)
   target_link_libraries (tryLCbd pismearth)
 
-  add_executable (pismtests software_tests/pismtests.cc software_tests/iMtests.cc)
-  target_link_libraries (pismtests pismbase)
-
   add_executable (flowTable software_tests/flowTable.cc base/rheology/flowlaws.cc)
   target_link_libraries (flowTable pismutil)
 

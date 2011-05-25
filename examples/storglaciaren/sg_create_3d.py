@@ -58,10 +58,10 @@ write('------------------------------\n')
 # data dir
 data_dir = './'
 # Bed and Surface DEMs for Storglaciaren
-XFile     = data_dir + 'X.txt'
-YFile     = data_dir + 'Y.txt'
-zBaseFile = data_dir + 'zBase.txt'
-zSurfFile = data_dir + 'zSurf.txt'
+XFile     = data_dir + 'X.txt.gz'
+YFile     = data_dir + 'Y.txt.gz'
+zBaseFile = data_dir + 'zBase.txt.gz'
+zSurfFile = data_dir + 'zSurf.txt.gz'
 
 # load coordinate information. Note: Swedish grid (RT90) uses inverse notation
 # X -> northing, Y -> easting
