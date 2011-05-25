@@ -2,7 +2,7 @@ O.k.  So a gzipped tarball is kind of comforting to you.  Here is one
 last effort to suggest Subversion (svn).   If you checkout the stable
 release with svn, a la
   
-  svn co http://svn.gna.org/svn/pism/tags/stable0.3 pism0.3
+  svn co http://svn.gna.org/svn/pism/tags/stable0.4 pism0.4
 
 or similar then you can get bug fixes by just doing
 

@@ -75,7 +75,7 @@ Boston, MA 02110-1301 USA
 
 \section preamble Preamble
 
-In stable0.3, because of abstractions especially in IceModelVec and its derived
+In stable0.4, because of abstractions especially in IceModelVec and its derived
 classes, programmers building derived classes of IceModel now need minimal
 knowledge of PETSc and especially PETSc DAs.  What \e is important to know is
 that solving the SSA in parallel is relatively deep technology.  Very
