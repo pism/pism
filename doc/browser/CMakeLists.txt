@@ -53,9 +53,10 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
 
   # Create a compressed "base" browser
   add_custom_target (browser_base.tgz
-    DEPENDS browser_base
     COMMAND tar -czf browser_base.tgz html
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/base)
+
+  add_dependencies(browser_base.tgz browser_base)
 
   ### Util browser
   configure_file(doxyfile_util doxyfile_util)
@@ -69,9 +70,10 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
 
   # Create a compressed Util browser
   add_custom_target (browser_util.tgz
-    DEPENDS browser_util
     COMMAND tar -czf browser_util.tgz html
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/util)
+
+  add_dependencies(browser_util.tgz browser_util)
 
   # Install if Pism_BUILD_BROWSER is set
   if (Pism_BUILD_BROWSER)
