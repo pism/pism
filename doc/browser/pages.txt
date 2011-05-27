@@ -30,7 +30,7 @@ Just do <tt>"make browser_base"</tt> in the build directory.
 \li The website <a href="http://www.pism-docs.org/">www.pism-docs.org</a> is the
 \e root for all PISM information.
 
-\li The "PISM Utility classes" source code browser found online.  FIXME: need a link
+\li The "PISM Utility classes" source code browser found online. <a href="http://www.pism-docs.org/doxy/util/html/index.html">http://www.pism-docs.org/doxy/util/html/index.html</a>
 
 \li You can \e get \e help, send comments, or ask for new features by email to
 help@pism-docs.org.

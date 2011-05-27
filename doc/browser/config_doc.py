@@ -21,6 +21,13 @@ print """
 /*!
 \page config Configuration flags and parameters
 
+\htmlonly
+<p style="text-align: right">
+With four parameters I can fit an elephant, and with five I can make him wiggle his trunk.<br><br>
+John von Neumann
+</p>
+\endhtmlonly
+
 \par Notes
 - These flags and parameters are from pism_config.cdl in the src/ directory.
 - pism_config.cdl is converted to lib/pism_config.nc in the build process by ncgen.
