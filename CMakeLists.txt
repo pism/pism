@@ -1,7 +1,7 @@
 project (Pism)
 set (Pism_BRANCH "trunk")
 set (Pism_VERSION_MAJOR "0")
-set (Pism_VERSION_MINOR "3")
+set (Pism_VERSION_MINOR "4")
 
 cmake_minimum_required (VERSION 2.6.2)
 
