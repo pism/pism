@@ -8,7 +8,7 @@
 \hypersetup{pdfauthor={PISM Authors (help@pism-docs.org)}}
 \hypersetup{pdfkeywords={cheat sheet, ice sheet model, parallel ice
     sheet model, }}
-\hypersetup{pdfsubject={get PISM sources at http://www.pism-docs.org}}
+\hypersetup{pdfsubject={get PISM and its docs at http://www.pism-docs.org}}
 \hypersetup{colorlinks,
   plainpages=false, % only if colorlinks=true
   linkcolor=blue,   % only if colorlinks=true
@@ -24,8 +24,7 @@
 \TPGrid[10mm,5mm]{47}{20}      % 3 cols of width 15, plus 2 gaps width 1
 
 \newcommand{\PISMREV}{revision \input{revision.tex}}
-\newcommand{\PETSCREL}{2.3.3 or 3.0.0}
-\newcommand{\PISMDOWNLOADMSG}{Get development version of PISM source code: \texttt{svn co http://svn.gna.org/svn/pism/trunk pism-dev}}
+\newcommand{\PISMDOWNLOADMSG}{Get stable0.4 version of PISM source code: \texttt{svn co http://svn.gna.org/svn/pism/tags/stable0.4 pism0.4}}
 
 % Don't print section numbers
 \setcounter{secnumdepth}{0}
@@ -59,7 +58,7 @@
 \texttt{-boot_file} & selects a file to bootstrap from \\
 \texttt{-o} & selects an output file \\
 \texttt{-o_size} & specifies the ``size'' of the output; \texttt{small} means
-``only model state variables'', \texttt{medium} adds some
+``only model state variables'', \texttt{medium} adds a few common
 diagnostic quantities, \texttt{big} saves \emph{every} supported diagnostic quantity\\
 \texttt{-backup_interval} & sets the automatic backup interval, in hours\\
 \tabletitle{Standard output} \\
@@ -100,12 +99,20 @@ errors only}; \mbox{2 -- the default}; \mbox{3,4,5 -- more}\\
   are done\\
 \end{tabular}
 
-
-
 \end{textblock}
+
 
 \begin{textblock}{15}(16,0.8)
 
+\section{Disabling PISM computations}
+\label{sec:switches}
+\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
+\texttt{-cold} & disable polythermal code and use temperature in the energy
+computation\\
+\texttt{-no_mass} & disable mass continuity computations; \mbox{default: on}\\
+\texttt{-no_temp} & disable energy conservation computations; \mbox{default: on}\\
+\texttt{-no_sia} & disable SIA computations; \mbox{default: on}
+\end{tabular}
 
 \section{Stress balance}
 \label{sec:stress-balance}
@@ -113,6 +120,7 @@ errors only}; \mbox{2 -- the default}; \mbox{3,4,5 -- more}\\
 \begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
 \texttt{-ssa_sliding} & use SSA as a sliding law\\
 \texttt{-ssa_floating_only} & use SSA for floating ice only\\
+\texttt{-ssa_method} & default \texttt{fd}; alternative \texttt{fem} is experimental\\
 \texttt{-gradient} (\texttt{haseloff, mahaffy, eta})& select the surface
 gradient computation method\\
 \end{tabular}
@@ -147,19 +155,6 @@ elevation; arguments are $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}$, $b_{\math
 \end{tabular}
 
 
-\section{Age of the ice}
-\label{sec:age}
-\begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
-\texttt{-age} & compute age of the ice; \mbox{default: off}\\
-\end{tabular}
-
-\section{Bed deformation}
-\label{sec:bed-deformation}
-\begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
-  \texttt{-bed_def} & turns on a bed deformation model; choose one of \texttt{iso} (isostatic), \texttt{lc}~(Lingle-Clark);\\
-\end{tabular}
-
-
 
 \end{textblock}
 
@@ -177,8 +172,8 @@ elevation; arguments are $\phi_{\mathrm{min}}$, $\phi_{\mathrm{max}}$, $b_{\math
 \texttt{-paleo_precip} & turn on SeaRISE-Greenland paleo-precipitation
 correction; use with \texttt{-dTforcing}\\
 \tabletitle{\texttt{dTforcing} modifier options} \\
-\texttt{-dTforcing} & mean-annual air temperature forcing (ice-core-based,
-scalar)\\
+\texttt{-dTforcing} & mean-annual air temperature forcing (e.g~ice-core-based 
+scalar time series)\\
 \tabletitle{\texttt{anomaly} modifier options}\\
 \texttt{-anomaly_precip} & precipitation forcing\\
 \texttt{-anomaly_temp} & mean-annual air temperature forcing\\
@@ -187,11 +182,11 @@ scalar)\\
 \texttt{-temp_lapse_rate} & near-surface air temperature lapse rate
 \end{tabular}
 
-\section{Surface (snow) processes models}
+\section{Surface process models}
 \label{sec:surface-models}
 
 \begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
-  \texttt{-surface} & selects a surface (snow) processes model; choose one of
+  \texttt{-surface} & selects a surface mass, energy processes model; choose one of
   \texttt{simple}, \texttt{constant}, \texttt{pdd}, \texttt{given}\\
   \tabletitle{\texttt{pdd} options} \\
   \texttt{-pdd_fausto} & use Fausto et al (2009) Greenland PDD parameters\\
@@ -203,8 +198,8 @@ scalar)\\
   distribution\\
   \texttt{-force_to_thk_alpha} & set the $\alpha$ parameter\\
 \tabletitle{\texttt{dTforcing} modifier options}\\
-\texttt{-dTforcing} & ice surface temperature forcing (ice-core-based,
-scalar)\\
+\texttt{-dTforcing} & ice surface temperature forcing (e.g.~ice-core-based
+scalar time-series)\\
 \tabletitle{\texttt{lapse_rate} modifier options}\\
 \texttt{-precip_lapse_rate} & surface mass balance lapse rate\\
 \texttt{-temp_lapse_rate} & ice surface temperature lapse rate
@@ -217,7 +212,7 @@ scalar)\\
 \texttt{-ocean} & selects an ocean model; the only (default) choice is
 \texttt{constant} \\
 \tabletitle{\texttt{dSLforcing} modifier options} \\
-\texttt{-dSLforcing} & sea level elevation forcing\\
+\texttt{-dSLforcing} & sea level elevation forcing (scalar time-series)\\
 \end{tabular}
 
 
@@ -242,30 +237,32 @@ scalar)\\
 \section{Calving and ice shelves}
 \label{sec:calving}
 \begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
-  \texttt{-float_kill} & calve off floating ice (calving at the grounding
-  line)\\
-\texttt{-ocean_kill} & calve off in ice in cells marked as ``ice-free
+  \texttt{-float_kill} & calve off all floating ice; calving at the grounding
+  line\\
+\texttt{-ocean_kill} & calve off any floating ice in cells marked as ``ice-free
 ocean'' at start of run\\
 \texttt{-part_grid} & enables the ``partially-filled grid cell''
 parametrization of ice-shelf fronts\\
-\texttt{-part_redist} & enables the residual mass re-distribution code\\
-\texttt{-eigen_calving} & enables eigen-calving\\
+\texttt{-part_redist} & enables the residual mass re-distribution code; requires \texttt{-part_grid}\\
+\texttt{-eigen_calving} & enables eigen-calving; may use to set constant rate \\
 \texttt{-pik} & turns on \texttt{-part_grid}, \texttt{-part_redist} and
 \texttt{-eigen_calving}\\
 \texttt{-calving_at_thickness} (m) & enables calving at a given ice thickness\\
 \end{tabular}
 
-\section{Disabling PISM components}
-\label{sec:switches}
-\begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
-\texttt{-cold} & disable polythermal code and use temperature in the energy
-balance computation\\
-\texttt{-no_mass} & disable mass continuity computations; \mbox{default: on}\\
-\texttt{-no_temp} & disable energy balance computations; \mbox{default: on}\\
-\texttt{-no_sia} & disable SIA computations; \mbox{default: on}
+\section{Age of the ice}
+\label{sec:age}
+\begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
+\texttt{-age} & compute age of the ice; \mbox{default: off}\\
 \end{tabular}
 
-\section{PISM configuration file}
+\section{Bed deformation}
+\label{sec:bed-deformation}
+\begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
+  \texttt{-bed_def} & turns on a bed deformation model; choose one of \texttt{iso} (isostatic), \texttt{lc}~(Lingle-Clark);\\
+\end{tabular}
+
+\section{PISM configuration files}
 \label{sec:pism-config-file}
 \begin{tabular}{@{}p{0.3\linewidth}p{0.65\linewidth}@{}}
 \texttt{-config} & set an alternative config file\\
@@ -339,10 +336,9 @@ settings\\
 \label{sec:run-time-viewers}
 
 \begin{tabular}{@{}p{0.35\linewidth}p{0.6\linewidth}@{}}
-\texttt{-view_map} & a list of 2D fields to view\\
-the base of the ice\\
-\texttt{-viewer_size} & set the viewer size \\
-\texttt{-view_sounding} & a list of 3D fields to probe\\
+\texttt{-view_map} & a list of 2D map-plane fields to view\\
+\texttt{-viewer_size} & set the viewer size in pixels \\
+\texttt{-view_sounding} & a list of 3D fields to probe vertically \\
 \texttt{-id} & sounding row-index\\
 \texttt{-jd} & sounding column-index\\
 \texttt{-display} & Xwindows display; might be needed to use viewers with \texttt{mpiexec}\\
@@ -353,51 +349,50 @@ in PETSc. Shows norm of residual versus iteration number.
 \end{textblock}
 
 \begin{textblock}{15}(32,0.8)
-\section{Diagnostic 2D and 3D quantities}
+\section{Diagnostic 2D (3D) quantities}
 \label{sec:diagnostics}
 \begin{tabular}{@{}p{0.2\linewidth}p{0.7\linewidth}@{}}
   \texttt{acab} &  ice-equivalent surface mass balance\\
-  \texttt{age} &  age of ice \\
-  \texttt{artm} &  annual average ice temperature at ice surface (below firn processes)\\
+  \texttt{age} &  age of ice (3D) \\
+  \texttt{artm} &  annual average ice temperature at ice surface, below surface layer processes\\
   \texttt{bfrict} &  basal frictional heating from ice sliding \\
   \texttt{bheatflx} &  geothermal flux at bedrock surface \\
   \texttt{bmelt} &  ice basal melt rate\\
   \texttt{bwat} &  thickness of subglacial melt water \\
   \texttt{bwp} &  subglacial (pore) water pressure \\
-  \texttt{cbar} &  magnitude of vertically averaged horizontal ice velocity \\
-  \texttt{cbase} &  magnitude of horizontal ice velocity at the base\\
+  \texttt{cbar} &  magnitude of vertical mean of horizontal ice velocity \\
+  \texttt{cbase} &  magnitude of horizontal ice velocity at base\\
   \texttt{cell_area} & cell areas computed using WGS84 datum\\
   \texttt{cflx} &  magnitude of vertically-integrated horizontal flux of ice \\
-  \texttt{csurf} &  magnitude of horizontal ice velocity at ice surface \\
+  \texttt{csurf} &  magnitude of horizontal ice velocity at surface \\
   \texttt{dHdt} &  rate of change of ice thickness \\
   \texttt{dbdt} &  bedrock uplift rate \\
   \texttt{dhdt} &  rate of change of surface elevation \\
-  \texttt{enthalpybase} &  ice enthalpy at the ice base\\
-  \texttt{enthalpysurf} &  ice enthalpy at the ice surface\\
+  \texttt{enthalpybase} &  ice enthalpy at base\\
+  \texttt{enthalpysurf} &  ice enthalpy at surface\\
   \texttt{hardav} &  vertical average of ice hardness \\
   \texttt{lat} &  latitude \\
-  \texttt{litho_temp} &  lithosphere (bedrock) temperature\\
+  \texttt{litho_temp} &  lithosphere temperature (3D bedrock grid)\\
   \texttt{lon} &  longitude \\
   \texttt{mask} &  grounded/dragging/floating integer mask \\
   \texttt{tauc} &  yield stress for basal till \\
-  \texttt{taud} &  driving shear stress at base of ice \\
-  \texttt{temp} &  ice temperature \\
-  \texttt{temp_pa} &  pressure-adjusted ice temperature \\
-  \texttt{tempbase} &  ice temperature at the ice base\\
-  \texttt{temppabase} &  pressure-adjusted ice temperature at the base of ice\\
-  \texttt{tempsurf} &  ice temperature at the ice surface\\
+  \texttt{taud} &  driving shear stress at ice base \\
+  \texttt{temp} &  ice temperature (3D) \\
+  \texttt{temp_pa} &  pressure-adjusted ice temperature (3D) \\
+  \texttt{tempbase} &  ice temperature at base\\
+  \texttt{temppabase} &  pressure-adjusted ice temperature at base\\
+  \texttt{tempsurf} &  ice temperature at surface\\
   \texttt{thk} &  ice thickness\\
   \texttt{tillphi} &  till friction angle \\
   \texttt{topg} &  bedrock surface elevation \\
   \texttt{usurf} &  ice upper surface elevation \\
-  \texttt{\{u,v\}vel} &  horizontal ice velocity in the X,Y direction \\
-  \texttt{velbase} &  horizontal  ice velocity at the ice base\\
-  \texttt{velsurf} &  horizontal ice velocity in the X,Y direction
-  at the ice surface\\
-  \texttt{velbar} &  vertical mean of horizontal ice velocity\\
-  \texttt{wvel} &  vertical ice velocity \\
-  \texttt{wvelbase} &  vertical ice velocity at the ice base\\
-  \texttt{wvelsurf} &  vertical ice velocity at the ice surface\\
+  \texttt{\{u,v\}vel} &  horizontal ice velocity component (3D) \\
+  \texttt{\{u,v\}velbase} &  horizontal ice velocity at base\\
+  \texttt{\{u,v\}velsurf} &  horizontal ice velocity at surface\\
+  \texttt{\{u,v\}bar} &  vertical mean of horizontal ice velocity\\
+  \texttt{wvel} &  vertical ice velocity (3D) \\
+  \texttt{wvelbase} &  vertical ice velocity at base\\
+  \texttt{wvelsurf} &  vertical ice velocity at surface\\
   \end{tabular}
 
 \end{textblock}
