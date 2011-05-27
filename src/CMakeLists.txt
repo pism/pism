@@ -266,7 +266,7 @@ if (Pism_BUILD_EXTRA_EXECS)
   target_link_libraries (btutest pismutil)
 
   install (TARGETS
-    ${SIMPLE_EXECS} tryLCbd pismtests flowTable btutest
+    ${SIMPLE_EXECS} tryLCbd flowTable btutest
     RUNTIME DESTINATION ${Pism_BIN_DIR}
     LIBRARY DESTINATION ${Pism_LIB_DIR}
     ARCHIVE DESTINATION ${Pism_LIB_DIR})
