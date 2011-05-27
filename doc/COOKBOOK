@@ -14,33 +14,28 @@ Ed's cookbook for maintaining PISM:
    
    $ svn export pism-stable0.1/ pism-stable0.1.0           # TELL SVN TO MAKE A CLEAN COPY
    $ tar -cvzf pism-stable0.1.0.tar.gz pism-stable0.1.0/   # TAR IT UP
-   $ tar -tvf pism-stable0.1.0.tar.gz                      # CHECK IT FOR CONTENTS
-   $ gpg --detach pism-stable0.1.0.tar.gz                  # GENERATE .sig SIGNATURE FILE;
-                                                           # passphrase in wallet
-   $ scp pism-stable0.1.0.tar.gz pism-stable0.1.0.tar.gz.sig \
-        bueler@download.gna.org:/upload/pism/              # UPLOAD
-
+   $ tar -tvf pism-stable0.1.0.tar.gz                      # CHECK ITS CONTENTS
 
 2)  Which files do I need to keep up-to-date at www.pism-docs.org for stable docs?
 
-  These files:
-   
-     manual.pdf
-     installation.pdf
-     cheatsheet.pdf
+  These files: manual.pdf, installation.pdf, cheatsheet.pdf.
+  And a recent version of the source code browser, next.
 
-3)  How do I upload a recent version of the C++ class browser?
+3)  How do I upload a recent version of the source code browser?
 
   Build it, tar it, send to dogbert, then get on dogbert and unzip it in the right place:
   
-   $ [BUILD THE FULL BROWSER ... SEE FIXME? INSTRUCTIONS]
-   $ tar -cvzf browser_recent.tar.gz doxy/html/
+   $ cd 'pism build directory'
+   $ make browser_base                          # tools needed: doxygen, latex
+   $ cd doc/browser/base/                       # in the build dir
+   $ tar -cvzf browser_recent.tar.gz html/
    $ scp browser_recent.tar.gz bueler@dogbert.gi.alaska.edu:~bueler/pismdocs/
-   $ ssh -XY bueler@dogbert.gi.alaska.edu                   # ALIASED TO "dogbert"
-   $ rm -rf doxy/                                           # CLEAR OUT OLD
-   $ tar -xvf browser_recent.tar.gz                         # CREATES doxy/html/
+   $ ssh -XY bueler@dogbert.gi.alaska.edu
+   $ mv doxy/ doxy_olddate                      # SAVE OLD?
+   $ tar -xvf browser_recent.tar.gz             # CREATES doxy/html/
+   $ [FIXME: do same for browser_util]
    
-  Now try "firefox www.pism-docs.org/doxy/html/index.html" on remote machine.  If
+  Now try "firefox www.pism-docs.org/doxy/???FIXME/html/index.html" on remote machine.  If
   success, log off of dogbert.
 
  
@@ -65,7 +60,10 @@ Ed's cookbook for maintaining PISM:
   Another way to count is
 
   $ find -E src -regex ".*\.(cc|hh|c|h|py|sh)" | xargs wc -lc
+  
+  [note: "find" doesn't have a "-E" for me in ubuntu.  Ed]
 
   This gives 63270 lines and 2204839 characters, amounting to 27560 80-character lines.
 
   A big part of that is license messages and doxygen comments.
+

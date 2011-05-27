@@ -145,7 +145,7 @@ Users will reach the \underline{underlined} UAF-based developers listed above by
 \centerline{ \texttt{help\@@pism-docs.org}.  }
 
 \bigskip\bigskip
-\noindent \textsc{Front page}: Magnitude of horizontal surface velocy as simulated by PISM employing a horizontal grid resolution of 2\,km. Visualization done with IDV.
+\noindent \textsc{Front page}:  Magnitude of horizontal surface velocity from PISM run on a horizontal grid resolution of 2\,km.  Visualization by IDV.
 
 \vfill
 
@@ -412,6 +412,14 @@ they have chosen, without involving ice dynamics at all.
 \section{Initialization and bootstrapping}
 \label{sect:boot}  
 
+
+There are three ways to start PISM,\begin{itemize}
+\item the executables \texttt{pisms} and \texttt{pismv} initialize simplified-geometry experiments and verification tests, respectively, from formulas in the source code,
+\item \texttt{-i} reads a previously-saved PISM model state, a NetCDF file, and
+\item \texttt{-boot_file} reads an ``incomplete'' NetCDF file and uses heuristics to fill in needed fields.
+\end{itemize}
+Realistic modeling usually starts with the \texttt{-boot_file} option because real ice sheet observations are never complete initial conditions for ice sheet models.
+
 \subsection{Initialization from a saved model state}  ``Initialization''\index{initialization!from saved model state} has a specific, simple meaning in PISM.  If a previous PISM run has saved a NetCDF file using ``\texttt{-o}'' then that file will contain complete initial conditions for continuing the run.  The output file from the last run can be loaded with ``\texttt{-i}'': \index{executables!\texttt{pisms}}
 
 \begin{verbatim}
@@ -489,15 +497,6 @@ Subsection \ref{sec:eismint-greenland} shows bootstrapping for the EISMINT-Green
   bed elevation (topography) is read by \texttt{standard_name} =
   \texttt{bedrock_altitude}.
 \end{enumerate}
-
-\subsection{For programmers deriving/modifying PISM:  Initialization sequence}  As described already, there are three ways to start PISM,\begin{itemize}
-\item executables \texttt{pisms} and \texttt{pismv} initialize simplified-geometry experiments and verification tests, respectively, from formulas in the source code,
-\item \texttt{-i} reads a previously-saved PISM model state in NetCDF form, and
-\item \texttt{-boot_file} reads a NetCDF file and uses heuristics to fill in needed fields.
-\end{itemize}
-As a consequence of these options, and generally from the complexity of getting a computation started on a parallel computer, we observe that initializing PISM is one of the most error-prone parts of maintaining it.
-
-Thus initialization sequence is also an error-prone part of writing a derived class of \texttt{IceModel} to modify PISM's function.  The reader interested in doing so should see method \texttt{IceModel::init()} and also view the flow chart in \texttt{doc/initialization-sequence.png}.  Note that \texttt{init()} is \emph{not} \texttt{virtual}.  Derived classes can redefine the several methods which are called by \texttt{init()}, which are \texttt{virtual}.
 
 
 \clearpage\newpage
