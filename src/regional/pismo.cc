@@ -135,19 +135,94 @@ PetscErrorCode SSAFD_Regional::compute_driving_stress(IceModelVec2V &result) {
   return 0;
 }
 
+
+class PISMRegionalDefaultYieldStress : public PISMDefaultYieldStress
+{
+public:
+  PISMRegionalDefaultYieldStress(IceGrid &g, const NCConfigVariable &conf)
+    : PISMDefaultYieldStress(g, conf) {}
+  virtual ~PISMRegionalDefaultYieldStress() {}
+  virtual PetscErrorCode init(PISMVars &vars);
+  virtual PetscErrorCode basal_material_yield_stress(IceModelVec2S &result);
+protected:
+  IceModelVec2Int *no_model_mask;
+};
+
+
+PetscErrorCode PISMRegionalDefaultYieldStress::init(PISMVars &vars) {
+  PetscErrorCode ierr;
+  ierr = PISMDefaultYieldStress::init(vars); CHKERRQ(ierr);
+  ierr = verbPrintf(2,grid.com,
+    "  using the regional version of the PISMDefaultYieldStress object ...\n"); CHKERRQ(ierr);
+  no_model_mask = dynamic_cast<IceModelVec2Int*>(vars.get("no_model_mask"));
+  if (no_model_mask == NULL) SETERRQ(1, "no_model_mask is not available");
+  return 0;
+}
+
+
+PetscErrorCode PISMRegionalDefaultYieldStress::basal_material_yield_stress(IceModelVec2S &result) {
+  PetscErrorCode ierr;
+  
+  // do whatever you normally do
+  ierr = PISMDefaultYieldStress::basal_material_yield_stress(result); CHKERRQ(ierr);
+
+  // now set result=tauc to a big value in no_model_strip
+  ierr = no_model_mask->begin_access(); CHKERRQ(ierr);
+  ierr = result.begin_access(); CHKERRQ(ierr);
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      if ((*no_model_mask)(i,j) > 0.5) {
+        result(i,j) = 1000.0e3;  // large yield stress of 1000 kPa = 10 bar
+      }
+    }
+  }
+  ierr = result.end_access(); CHKERRQ(ierr);
+  ierr = no_model_mask->end_access(); CHKERRQ(ierr);
+  return 0;
+}
+
+
 class IceRegionalModel : public IceModel {
 public:
   IceRegionalModel(IceGrid &g, NCConfigVariable &c, NCConfigVariable &o)
      : IceModel(g,c,o) {};
-
 protected:
   virtual PetscErrorCode set_vars_from_options();
   virtual PetscErrorCode initFromFile(const char *filename);
   virtual PetscErrorCode createVecs();
   virtual PetscErrorCode init_physics();
+  virtual PetscErrorCode model_state_setup();
 private:
-  IceModelVec2Int   no_model_mask;    
+  IceModelVec2Int no_model_mask;    
+  PetscErrorCode  set_no_model_strip(PetscReal stripwidth);
 };
+
+
+//! Set no_model_mask variable to have value 1 in strip of width 'strip' m around edge of computational domain, and value 0 otherwise.
+PetscErrorCode IceRegionalModel::set_no_model_strip(PetscReal strip) {
+  PetscErrorCode ierr;
+
+    ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
+    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+        if ((grid.x[i] <= grid.x[0]+strip)
+            || (grid.x[i] >= grid.x[grid.Mx-1]-strip)) {
+          no_model_mask(i, j) = 1; CHKERRQ(ierr);
+        } else if ((grid.y[j] <= grid.y[0]+strip)
+                   || (grid.y[j] >= grid.y[grid.My-1]-strip)) {
+          no_model_mask(i, j) = 1; CHKERRQ(ierr);
+        } else {
+          no_model_mask(i, j) = 0; CHKERRQ(ierr);
+        }
+      }
+    }
+    ierr = no_model_mask.end_access(); CHKERRQ(ierr);
+
+    ierr = no_model_mask.beginGhostComm(); CHKERRQ(ierr);
+    ierr = no_model_mask.endGhostComm(); CHKERRQ(ierr);
+  return 0;
+}
+
 
 PetscErrorCode IceRegionalModel::createVecs() {
   PetscErrorCode ierr;
@@ -237,6 +312,7 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
   ierr = verbPrintf(2, grid.com,
      "* Initializing IceRegionalModel from NetCDF file '%s'...\n",
      filename); CHKERRQ(ierr);
+
   NCTool nc(grid.com, grid.rank);
   ierr = nc.open_for_reading(filename); CHKERRQ(ierr);
   int last_record;  // find index of the last record in the file
@@ -244,41 +320,52 @@ PetscErrorCode IceRegionalModel::initFromFile(const char *filename) {
   last_record -= 1;
   bool nmm_exists;
   ierr = nc.find_variable("no_model_mask", NULL, nmm_exists); CHKERRQ(ierr);
-
   if (nmm_exists) {
     ierr = verbPrintf(2,grid.com,
 	"  reading 'no_model_mask' from %s ...\n",
 	filename); CHKERRQ(ierr);
     // note: communication to fill stencil width should occur inside this call
     ierr = no_model_mask.read(filename, last_record); CHKERRQ(ierr);
-  } else {
-    ierr = verbPrintf(2,grid.com,
-	"IceRegionalModel/pismo ERROR: Option '-i' was used but input file %s does not\n"
-	"  contain 'no_model_mask' variable.  Executable pismo has no well-defined\n"
-	"  semantics without it!  Ending!!\n",
-	filename); CHKERRQ(ierr);
-    PISMEnd();
-  } 
+  }
+  ierr = nc.close(); CHKERRQ(ierr);
 
-  // at this point we *do* have a no_model_mask variable; now warn user if they
-  //   had a -no_model_strip option set; we are going to ignor that option
-  bool no_model_strip_set;
-  ierr = PISMOptionsIsSet("-no_model_strip", no_model_strip_set); CHKERRQ(ierr);
-  if (no_model_strip_set) {
-    ierr = PetscPrintf(grid.com,
-      "\nPISMO WARNING: option '-no_model_strip' or '-no_model_strip X' seen.  Value X ignored\n"
-      "  because no_model_mask variable was read from input file.  Proceeding ...\n\n"); CHKERRQ(ierr);
+  // at this point may or may not have a filled-in no_model_mask variable;
+  //   next try to create it from user option, which overrides input file
+  PetscReal stripkm;
+  bool nmm_realset;
+  ierr = PISMOptionsReal("-no_model_strip", 
+                         "width in km of strip near boundary in which modeling is turned off",
+			 stripkm, nmm_realset);
+  if (nmm_realset) {
+    ierr = verbPrintf(2, grid.com,
+      "    option -no_model_strip read ... setting boundary strip width to %.2f km\n",
+      stripkm); CHKERRQ(ierr);
+    ierr = set_no_model_strip(1000.0*stripkm); CHKERRQ(ierr);
+  } else {
+    if (nmm_exists) { // the o.k. case; we just need to warn if option is given without number
+      bool no_model_strip_set;
+      ierr = PISMOptionsIsSet("-no_model_strip", no_model_strip_set); CHKERRQ(ierr);
+      ierr = verbPrintf(2, grid.com,
+        "\nPISMO WARNING: option '-no_model_strip' seen with no real value.  Value X ignored\n"
+        "  because no_model_mask variable was read from input file.  Proceeding ...\n\n");
+        CHKERRQ(ierr);
+    } else { // bad case: we still don't have a no_model_mask and we have to fail
+      ierr = verbPrintf(1, grid.com,
+        "\nPISMO ERROR: option '-no_model_strip' not seen and no no_model_mask variable\n"
+        "  was read from input file.  ENDING ...\n\n");
+        CHKERRQ(ierr);
+      PISMEnd();
+    }
   }
 
-  ierr = nc.close(); CHKERRQ(ierr);
   return 0;
 }
 
 
 PetscErrorCode IceRegionalModel::set_vars_from_options() {
   PetscErrorCode ierr;
+  bool nmstripSet;
   PetscReal stripkm;
-  PetscTruth  nmstripSet;
 
   // base class reads the -boot_file option and does the bootstrapping:
   ierr = IceModel::set_vars_from_options(); CHKERRQ(ierr);
@@ -286,52 +373,41 @@ PetscErrorCode IceRegionalModel::set_vars_from_options() {
   ierr = PetscOptionsBegin(grid.com, "", "IceRegionalModel", ""); CHKERRQ(ierr);
   ierr = verbPrintf(2,grid.com, 
                     "* Initializing IceRegionalModel variables ...\n"); CHKERRQ(ierr);
-
-  bool no_model_strip_set;
-  ierr = PISMOptionsIsSet("-no_model_strip", no_model_strip_set); CHKERRQ(ierr);
-  if (!no_model_strip_set) {
-    ierr = PetscPrintf(grid.com,
-                       "\nPISMO ERROR: option '-no_model_strip X' is REQUIRED if '-i' is not used.\n"
-                       "   Executable pismo has no well-defined semantics without it!  Ending!!\n\n");
-    CHKERRQ(ierr);
-    PISMEnd();
-  }
-
-  ierr = PetscOptionsReal("-no_model_strip",
-			  "Specifies the no-modeling boundary strip width, in km",
-			  "", 20.0,
-			  &stripkm, &nmstripSet); CHKERRQ(ierr);
-
+  ierr = PISMOptionsReal("-no_model_strip", 
+                         "width in km of strip near boundary in which modeling is turned off",
+			 stripkm, nmstripSet);
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  if (nmstripSet == PETSC_TRUE) {
+  if (nmstripSet) {
     ierr = verbPrintf(2, grid.com,
-                      "    option -no_model_strip read ... setting boundary strip width to %.2f km\n",
-                      stripkm); CHKERRQ(ierr);
-    double strip = 1000.0*stripkm;
-
-    ierr = no_model_mask.begin_access(); CHKERRQ(ierr);
-    for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
-      for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
-        if ((grid.x[i] <= grid.x[0]+strip)
-            || (grid.x[i] >= grid.x[grid.Mx-1]-strip)) {
-          no_model_mask(i, j) = 1; CHKERRQ(ierr);
-        } else if ((grid.y[j] <= grid.y[0]+strip)
-                   || (grid.y[j] >= grid.y[grid.My-1]-strip)) {
-          no_model_mask(i, j) = 1; CHKERRQ(ierr);
-        } else {
-          no_model_mask(i, j) = 0; CHKERRQ(ierr);
-        }
-      }
-    }
-    ierr = no_model_mask.end_access(); CHKERRQ(ierr);
-
-    ierr = no_model_mask.beginGhostComm(); CHKERRQ(ierr);
-    ierr = no_model_mask.endGhostComm(); CHKERRQ(ierr);
+      "    option -no_model_strip read ... setting boundary strip width to %.2f km\n",
+      stripkm); CHKERRQ(ierr);
+    ierr = set_no_model_strip(1000.0*stripkm); CHKERRQ(ierr);
+  } else {
+    ierr = PetscPrintf(grid.com,
+      "\nPISMO ERROR: option '-no_model_strip X' is REQUIRED if '-i' is not used.\n"
+      "   pismo has no well-defined semantics without it!  ENDING ...\n\n"); CHKERRQ(ierr);
+    PISMEnd();
   }
-
   return 0;
 }
+
+
+PetscErrorCode IceRegionalModel::model_state_setup() {
+  PetscErrorCode ierr;
+  ierr = IceModel::model_state_setup();
+  if (basal_yield_stress) {
+    // delete the old one and re-init the new one that puts high yield stress
+    //   in strip around outside
+    delete basal_yield_stress;
+    PISMRegionalDefaultYieldStress *prdys;
+    prdys = new PISMRegionalDefaultYieldStress(grid, config);
+    ierr = prdys->init(variables); CHKERRQ(ierr);
+    basal_yield_stress = dynamic_cast<PISMYieldStress*>(prdys);
+  }
+  return 0;
+}
+
 
 int main(int argc, char *argv[]) {
   PetscErrorCode  ierr;
