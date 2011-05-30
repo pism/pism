@@ -66,9 +66,9 @@ PetscErrorCode  IceModel::setFromOptions() {
 
   ierr = config.flag_from_option("age", "do_age"); CHKERRQ(ierr);
 
-  ierr = config.flag_from_option("sia", "do_sia"); CHKERRQ(ierr);
-
   ierr = config.scalar_from_option("bed_smoother_range", "bed_smoother_range"); CHKERRQ(ierr);
+
+  ierr = config.flag_from_option("blatter", "do_blatter"); CHKERRQ(ierr);
 
   // see getBasalWaterPressure()
   ierr = config.flag_from_option("bmr_enhance", "bmr_enhance_basal_water_pressure");
@@ -236,6 +236,8 @@ PetscErrorCode  IceModel::setFromOptions() {
     CHKERRQ(ierr);
     PISMEnd();
   }
+
+  ierr = config.flag_from_option("sia", "do_sia"); CHKERRQ(ierr);
 
   // check -ssa_floating_only
   ierr = PISMOptionsIsSet("-ssa_floating_only", flag);  CHKERRQ(ierr);

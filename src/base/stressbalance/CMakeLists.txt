@@ -16,6 +16,7 @@ add_library (pismstressbalance
   FETools.cc
   SSATestCase.cc
   SIA_Sliding.cc
+  BlatterStressBalance.cc
 )
 target_link_libraries (pismstressbalance pismutil pismflowlaws)
 

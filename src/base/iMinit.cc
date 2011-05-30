@@ -25,6 +25,7 @@
 #include "SIAFD.hh"
 #include "SSAFD.hh"
 #include "SSAFEM.hh"
+#include "BlatterStressBalance.hh"
 #include "Mask.hh"
 
 //! Set default values of grid parameters.
@@ -560,9 +561,10 @@ PetscErrorCode IceModel::init_physics() {
 
   bool do_pseudo_plastic_till = config.get_flag("do_pseudo_plastic_till"),
     use_ssa_velocity = config.get_flag("use_ssa_velocity"),
+    do_blatter = config.get_flag("do_blatter"),
     do_sia = config.get_flag("do_sia");
 
-  if (use_ssa_velocity) {
+  if ((use_ssa_velocity) || (do_blatter)) {
     // decide which basal yield stress model to use:
     if (basal_yield_stress == NULL) {
       bool hold_tauc;
@@ -596,35 +598,36 @@ PetscErrorCode IceModel::init_physics() {
   // If both SIA and SSA are "on", the SIA and SSA velocities are always added
   // up (there is no switch saying "do the hybrid").
   if (stress_balance == NULL) {
-    ShallowStressBalance *my_stress_balance;
-
-    SSB_Modifier *modifier;
-    if (do_sia) {
-      modifier = new SIAFD(grid, *ice, *EC, config);
+    if (do_blatter) {
+      stress_balance = new BlatterStressBalance(grid, ocean, config);
     } else {
-      modifier = new SSBM_Trivial(grid, *ice, *EC, config);
-    }
-
-    if (use_ssa_velocity) {
-      string ssa_method = config.get_string("ssa_method");
-      if( ssa_method == "fd" ) {
-        my_stress_balance = new SSAFD(grid, *basal, *ice, *EC, config);
-      } else if(ssa_method == "fem") {
-        my_stress_balance = new SSAFEM(grid, *basal, *ice, *EC, config);
+      ShallowStressBalance *my_stress_balance;
+      if (use_ssa_velocity) {
+        string ssa_method = config.get_string("ssa_method");
+        if( ssa_method == "fd" ) {
+          my_stress_balance = new SSAFD(grid, *basal, *ice, *EC, config);
+        } else if(ssa_method == "fem") {
+          my_stress_balance = new SSAFEM(grid, *basal, *ice, *EC, config);
+        } else {
+          SETERRQ(1,"SSA algorithm flag should be one of \"fd\" or \"fem\"");
+        }
       } else {
-        SETERRQ(1,"SSA algorithm flag should be one of \"fd\" or \"fem\"");
+        my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
       }
-    } else {
-      my_stress_balance = new SSB_Trivial(grid, *basal, *ice, *EC, config);
+      SSB_Modifier *my_modifier;
+      if (do_sia) {
+        my_modifier = new SIAFD(grid, *ice, *EC, config);
+      } else {
+        my_modifier = new SSBM_Trivial(grid, *ice, *EC, config);
+      }
+      // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
+      stress_balance = new PISMStressBalance(grid, my_stress_balance,
+                                             my_modifier, ocean, config);
     }
-  
-    // ~PISMStressBalance() will de-allocate my_stress_balance and modifier.
-    stress_balance = new PISMStressBalance(grid, my_stress_balance,
-                                           modifier, ocean, config);
 
-    // Note that in PISM stress balance computations are diagnostic, i.e. do not
-    // have a state that changes in time. This means that this call can be here
-    // and not in model_state_setup() and we don't need to re-initialize after
+    // PISM stress balance computations are diagnostic, i.e. do not
+    // have a state that changes in time.  Therefore this call can be here
+    // and not in model_state_setup().  We don't need to re-initialize after
     // the "diagnostic time step".
     ierr = stress_balance->init(variables); CHKERRQ(ierr);
 

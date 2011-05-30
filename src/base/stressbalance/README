@@ -5,10 +5,8 @@ Here are some intended benefits:
    "large common block with inheritance" property of IceModel
 
 2. clarify and complete the semantics of setting boundary conditions to the SSA
-   (task #6567)
 
-3. make it easier to improve the SSA calculation by appropriate use of
-   SNES (task #4104)
+3. make it easier to improve the SSA calculation by appropriate use of SNES
    
 4. make it easier to use the SSA in inverse mode, and allow the implementation 
    of David's and Marijke's tools for such
