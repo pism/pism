@@ -615,7 +615,7 @@ PetscErrorCode IceModel::step(bool do_mass_continuity,
   //!  energyStep()
   if (updateAtDepth && do_energy) { // do the temperature step
     ierr = energyStep(); CHKERRQ(ierr);
-    stdout_flags += "t";
+    stdout_flags += "E";
   } else {
     stdout_flags += "$";
   }
@@ -690,7 +690,7 @@ PetscErrorCode IceModel::run() {
   PetscErrorCode  ierr;
 
   bool do_mass_conserve = config.get_flag("do_mass_conserve"),
-    do_temp = config.get_flag("do_temp"),
+    do_energy = config.get_flag("do_energy"),
     do_age = config.get_flag("do_age"),
     do_skip = config.get_flag("do_skip"),
     use_ssa_when_grounded = config.get_flag("use_ssa_when_grounded");
@@ -722,7 +722,7 @@ PetscErrorCode IceModel::run() {
 				       // greater than start_year
 
   
-  ierr = step(do_mass_conserve, do_temp, do_age,
+  ierr = step(do_mass_conserve, do_energy, do_age,
 	      do_skip, use_ssa_when_grounded); CHKERRQ(ierr);
 
   // print verbose messages according to user-set verbosity
@@ -751,10 +751,10 @@ PetscErrorCode IceModel::run() {
   ierr = verbPrintf(2,grid.com, "running forward ...\n"); CHKERRQ(ierr);
 
   stdout_flags.erase(); // clear it out
-  ierr = summaryPrintLine(PETSC_TRUE,do_temp, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
+  ierr = summaryPrintLine(PETSC_TRUE,do_energy, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); CHKERRQ(ierr);
   adaptReasonFlag = '$'; // no reason for no timestep
   reset_counters();
-  ierr = summary(do_temp); CHKERRQ(ierr);  // report starting state
+  ierr = summary(do_energy); CHKERRQ(ierr);  // report starting state
 
   // main loop for time evolution
   for (PetscScalar year = grid.start_year; year < grid.end_year; year += dt/secpera) {
@@ -763,12 +763,12 @@ PetscErrorCode IceModel::run() {
     dt_force = -1.0;
     maxdt_temporary = -1.0;
 
-    ierr = step(do_mass_conserve, do_temp, do_age,
+    ierr = step(do_mass_conserve, do_energy, do_age,
 		do_skip, use_ssa_when_grounded); CHKERRQ(ierr);
     
     // report a summary for major steps or the last one
     bool updateAtDepth = (skipCountDown == 0);
-    bool tempAgeStep = ( updateAtDepth && ((do_temp) || (do_age)) );
+    bool tempAgeStep = ( updateAtDepth && ((do_energy) || (do_age)) );
 
     const bool show_step = tempAgeStep || (adaptReasonFlag == 'e');
     ierr = summary(show_step); CHKERRQ(ierr);
