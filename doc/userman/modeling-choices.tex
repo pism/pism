@@ -254,25 +254,6 @@ There is one option which controls this mechanism: \intextoption{bed_smoother_ra
 
 PISM writes fields \texttt{topgsmooth}, \texttt{schoofs_theta}, \texttt{thksmooth} from this mechanism.  (Regarding the last, the thickness is never smoothed, but the thickness relative to the smoothed bedrock elevation, i.e.~the difference between the unsmoothed surface elevation and the smoothed bedrock elevation, is used internally in the mechanism.)
 
-\subsection{PIK marine ice sheet improvements} \label{subsect:pikshelves} \index{ice shelves} \index{grounding lines} \index{calving} \optsection{marine ice sheet improvements}
-
-Table \ref{tab:pikshelves} \emph{does not} need to be organized this way.  Pieces should be distributed throughout the manual as needed.  The descriptions are mere drafts.  Options \intextoption{ssa_method} \verb|fd_pik|$\big|$\verb|fd|$\big|$\verb|fem| and \intextoption{e_ssa} \verb|E| should be mentioned somewhere too.
-
-\begin{table}
-  \centering
-  \caption{Turning-on PIK improvements: PRELIMINARY LISTING JUST TO PUT IT SOMEWHERE}
- \begin{tabular}{p{0.3\linewidth}p{0.65\linewidth}}
-   \label{tab:pikshelves}\\\toprule
-   \textbf{Option} & \textbf{Description}\\\midrule
-\intextoption{calving_at_thickness} (50) & meters; provided for comparison purposes; calving occurs when thickness is below configuration parameter \verb|calving_at_thickness| \\
-\intextoption{eigencalving} (0) & (FIXME: units? default value?)  principle strain rates $\epsilon_+$ and $\epsilon_-$ are computed from SSA velocity solution, and calving occurs at rate $K\epsilon_+\epsilon_-$ at locations where $\epsilon_+>0$ and $\epsilon_->0$; constant $K$ is configuration parameter \verb|eigen_calving| \\
-\intextoption{kill_icebergs} & identify and eliminate free-floating icebergs, which cause well-posedness problems for the SSA stress balance solver \\
-\intextoption{part_grid} & allows ice shelf front to advance by a part of a grid cell, avoiding the development of unphysically-thinned ice shelves \\
-\intextoption{part_redist} & scheme which makes the \intextoption{part_grid} mechanism conserve mass \\
-\bottomrule
-\end{tabular}
-\end{table}
-
 
 \subsection{Earth deformation models} \label{subsect:beddef} \index{earth deformation} \index{PISM!earth deformation models, using}
 \optsection{Earth deformation models}
