@@ -1,4 +1,5 @@
 
+
 \section{PISM-PIK improvements for marine ice sheet modeling}
 \label{sec:pism-pik}
 \index{PISM!PISM-PIK}
@@ -11,9 +12,9 @@ These model improvements all related to the stress balance and geometry changes 
 \subsection{Partially-filled cells at the boundaries of ice shelves}
 \label{sec:part-grid}
 
-Albrecht et al \cite{Albrechtetal2011} argue that correct movement of the calving front, assuming for the moment that ice velocities are correctly determined (see below), essentially requires tracking some cells as being partially-filled.  If the calving front is moving forward, for example, it is not correct to add a little mass to the next cell as if that next cell was filled with a thin layer of ice.  The PISM-PIK mechanism adds mass to the partially-filled cell which the advancing front enters, but the equations determining the velocities are only sensitive to ``fully-filled'' cells for which the cell value of the thickness is completely meaning.  Advection is controlled by values of velocity in fully-filled cells.
+Albrecht et al \cite{Albrechtetal2011} argue that a correct movement of the ice shelf calving front on a finite-difference grid, assuming for the moment that ice velocities are correctly determined (see below), essentially requires tracking some cells as being partially-filled (option \intextoption{part_grid}). If the calving front is moving forward, for example, it is not correct to add a little mass to the next cell as if that next cell was filled with a thin layer of ice (which would smooth the steep ice front after a couple of time steps).  The PISM-PIK mechanism adds mass to the partially-filled cell which the advancing front enters and determines the coverage ratio according to the ice thickness of neighboring fully-filled ice shelf cells. When a cell becomes fully-filled in this sense the residual mass is redistributed to neighboring partially-filled or empty grid cells, if option \intextoption{part_redist} is set. The equations determining the velocities are only sensitive to ``fully-filled'' cells for which the cell value of the thickness is completely meaning. Advection is controlled by values of velocity in fully-filled cells. Adaptive time stepping (CFL criterium) limits the speed of ice front propagation.
 
-The PISM options to turn on this mechanism are in Table \ref{tab:pism-pik-part-grid}.
+A summary of PISM options to turn on the PISM-PIK mechanism are in Table \ref{tab:pism-pik-part-grid}.
 
 \begin{table}[ht]
   \centering
@@ -21,10 +22,12 @@ The PISM options to turn on this mechanism are in Table \ref{tab:pism-pik-part-g
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
-    \intextoption{cfbc} & \\
-    \intextoption{kill_icebergs} & \\
-    \intextoption{part_grid} & \\
-    \intextoption{part_redist} &  \\ \hline
+    \intextoption{part_grid} & allows ice shelf front to advance by a part of a grid cell, avoiding
+	the development of unphysically-thinned ice shelves\\
+    \intextoption{part_redist} &  scheme which makes the -part_grid mechanism conserve mass\\ 
+    \intextoption{cfbc} & applies the stress boundary condition along the ice shelf calving front.\\
+    \intextoption{kill_icebergs} & identify and eliminate free-floating icebergs, which cause well-posedness
+	problems for the SSA stress balance solver\\ \hline
     \intextoption{pik} & equivalent to option combination ``\texttt{-cfbc -kill_icebergs -part_grid -part_redist}'' \\
     \\\bottomrule
  \end{tabular}
@@ -35,26 +38,24 @@ The PISM options to turn on this mechanism are in Table \ref{tab:pism-pik-part-g
 
 \subsection{Stress condition at calving fronts}
 \label{sec:cfbc}
-
-FIXME: brief text on cfbc
-
-
-
-\subsection{Iceberg removal}
-\label{sec:kill-icebergs}
-
-FIXME: brief text on -killicebergs
-
-
-
+The vertically integrated force balance at floating calving fronts has been formulated by \cite{Morland} as
+\begin{equation}
+\int_{z_s-\frac{\rho}{\rho_w}H}^{z_s+(1-\frac{\rho}{\rho_w})H}\mathbf{\sigma}\cdot\mathbf{n}\;dz = \int_{z_s-\frac{\rho}{\rho_w}H}^{z_s}\rho_w g (z-z_s) \;\mathbf{n}\;dz.
+\label{MacAyeal2}
+\end{equation}
+with $\mathbf{n}$ being the horizontal normal vector pointing from the ice boundary oceanward, $\mathbf{\sigma}$ the \emph{Cauchy} stress tensor, $H$ the ice thickness and $\rho$ and $\rho_{w}$ the densities of ice and seawater, respectively, for a sea level of $z_s$. The integration limits on the right hand side of Eq.~\eqref{MacAyeal2} account for the pressure exerted by the ocean on that part of the shelf, which is below sea level (bending and torque neglected). The limits on the left hand side change for water-terminating outlet glacier or glacier fronts above sea level according to the bed topography. Applying the Glen constitutive relation (Sect.~\ref{sec:rheology}) Eq.~\eqref{MacAyeal2} can be written in terms of strain rates (velocity derivatives). The SSA stress balance in finite difference discretization is solved with an iterative matrix scheme. Certain matrix entries related to grid cells along the ice domain boundary (fully-filled) are replaced according to Eq.~\eqref{MacAyeal2} to apply the correct forces, when option \intextoption{cfbc} is set. More details can be found in \cite{Winkelmannetal2010TCD} and \cite{Albrechtetal2011}.  
 
 \subsection{Calving}
 \label{sec:calving}
 \optsection{Calving}
+As one of the first models PISM(-PIK) comes with a physically based 2D-calving parameterization, which has been developed by \cite{LevermannAlbrecht11}. Average calving rates, $c$, are evaluated based on the product of principal components of the horizontal strain rates, $\dot{\epsilon}_{_\pm}$, derived from SSA-velocities 
+\begin{equation}
+\label{eq: calv2}
+c \equiv k\; \dot{\epsilon}_{_+}\; \dot{\epsilon}_{_-}\quad\text{and}\quad\dot{\epsilon}_{_\pm}>0\:,
+\end{equation}
+with $k$ as a konfiguration parameter comprising material properties of the ice at the front. The actual strain rate pattern very much depends on the geometry and boundary conditions along the the confinements of an ice shelf (coast, ice rises, front position) and it provides information in which regions preexisting fractures are likely to propagate, forming rifts (in two directions), which ultimately may intersect leading to the release of icebergs. So far it is not intended to resolve individual rifts or calving events. This first-order approach produces structurally stable calving front positions (where calving rate balances terminal SSA velocity in average), which agree well with observations. In order to translate the calving rate into the mass transport scheme at the ice shelf terminus the partially-filled grid cell formulation (\label{sec:part-grid}) provides a suitable framework. Consistently to the front advance also the retreat of an ice shelf due to calving is limited to maximal one grid cell length per (adaptive) timestep. Hence, calving occurs step-wise with a calculated calving rate only valid for the actual calving front position. \newline
 
-FIXME: text on eigen-calving
-
-PISM also includes two very basic calving mechanisms (Table \ref{tab:calving}).  Option \intextoption{float_kill} removes (calves) any ice that satisfies the flotation criterion; this option means there are no ice shelves in the model at all.    Option \intextoption{ocean_kill} is based on the mask values at the beginning of the run; any locations which were ice-free ocean at the beginning of the run are places where floating ice is removed.
+PISM also includes three very basic calving mechanisms (Table \ref{tab:calving}). Option \intextoption{calving_at_thickness} is based on the observation that ice shelf calving fronts are commonly thicker than about 150--250\,m (even though the physical reasons are not clear yet). Accordingly, any floating ice is removed along the front (one grid cell per time step), which is thinner than $H_{\textrm{cr}}$.  Option \intextoption{float_kill} removes (calves) any ice that satisfies the flotation criterion; this option means there are no ice shelves in the model at all.  Option \intextoption{ocean_kill} is based on the mask values at the beginning of the run; any locations which were ice-free ocean at the beginning of the run are places where floating ice is removed.
 
 \begin{table}[ht]
   \centering
@@ -62,8 +63,8 @@ PISM also includes two very basic calving mechanisms (Table \ref{tab:calving}). 
     \\\toprule
     \textbf{Option} & \textbf{Description}
     \\\midrule
-    \intextoption{calving_at_thickness} & FIXME\\
-    \intextoption{eigen_calving} & FIXME\\
+    \intextoption{eigen_calving ($k$)} & Physically based calving parameterization based on strain rates pattern\\
+    \intextoption{calving_at_thickness ($H_{\textrm{cr}}$)} & Grid-cell wise calving depending on terminal ice thickness.\\
     \intextoption{float_kill} & All floating ice is calved off immediately.\\
     \intextoption{ocean_kill} & All ice flowing into grid cells marked as \texttt{MASK_FLOATING_AT_TIME_0} is calved off.
     \\\bottomrule
@@ -72,9 +73,16 @@ PISM also includes two very basic calving mechanisms (Table \ref{tab:calving}). 
   \label{tab:calving}
 \end{table}
 
+
+\subsection{Iceberg removal}
+\label{sec:kill-icebergs}
+The PISM-PIK calving mechanism remove ice along the seaward front of the ice shelf domain. This can lead to isolated grid cells of floating (or partially filled) ice or even a patch of floating ice (iceberg) fully surrounded by ice free ocean neighbors and hence detached from the feeding ice sheet. In such a situation the stress balance solver in SSA is not well posed any more. As a clean-up option \intextoption{kill-iceberg} identifies such regions by checking iteratively for grid neighbors (creating iceberg mask) and eliminates free-floating icebergs. 
+
+
 %%% Local Variables: 
 %%% mode: latex
 %%% TeX-master: "manual"
 %%% End: 
 
 % LocalWords:  html PISM PISM's
+
