@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2011 Torsten Albrecht
+// Copyright (C) 2004--2011 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -64,14 +64,14 @@ PetscErrorCode IceModel::eigenCalving() {
   ierr = vDiffCalvRate.set(0.0); CHKERRQ(ierr);
   ierr = vDiffCalvRate.begin_access(); CHKERRQ(ierr);
 
-  if (dx != dy) {
+  if (PetscAbs(dx - dy) > 1e-6) {
     ierr = PetscPrintf(grid.com,
       "PISMPIK_ERROR: -eigen_calving using a non-square grid cell does not work (yet);\n"
       "  since it has no direction!!!\n");
     PISMEnd();
   }
 
-  // Distance from calving front where strain rate is evaluated
+  // Distance (grid cells) from calving front where strain rate is evaluated
   PetscInt offset = 2;
 
   MaskQuery mask(vMask);
@@ -201,7 +201,7 @@ PetscErrorCode IceModel::eigenCalving() {
         vHnew(i, j) = 0.0;
 
         if(vHref(i, j) < 0.0) { // i.e. terminal floating ice grid cell has calved off completely.
-          // We do not account for further calving ice - inwards!
+          // We do not account for further calving ice-inwards!
           // Alternatively CFL criterion for time stepping could be adjusted to maximum of calving rate.
           //Hav = 0.0;
           vHref(i, j) = 0.0;
@@ -227,7 +227,10 @@ PetscErrorCode IceModel::eigenCalving() {
 
 
 /*!
-This calving condition applies for terminal floating ice shelf grid cells when their thickness is less than a threshold
+  This calving condition applies for terminal floating ice shelf grid cells
+  when their thickness is less than a threshold.
+
+  Requires -part_grid to be "on".
 */
 PetscErrorCode IceModel::calvingAtThickness() {
   //const PetscScalar   dx = grid.dx, dy = grid.dy;
