@@ -1549,13 +1549,70 @@ PetscErrorCode BlatterStressBalance::update(bool fast) {
 }
 
 
+PetscErrorCode BlatterStressBalance::get_max_2d_velocity(PetscReal &maxu, PetscReal &maxv) {
+  // FIXME:  evaluate for efficiency 
+  PetscErrorCode ierr;
+  ierr = uvbar.begin_access(); CHKERRQ(ierr);
+  PetscReal my_umax = 0, my_vmax = 0;
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      PISMVector2 bar = uvbar(i,j);
+      my_umax = PetscMax(my_umax, PetscAbs(bar.u));
+      my_vmax = PetscMax(my_vmax, PetscAbs(bar.v));
+    }
+  }
+  ierr = uvbar.end_access(); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&my_umax, &maxu, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&my_vmax, &maxv, grid.com); CHKERRQ(ierr);
+  return 0;
+}
+
 PetscErrorCode BlatterStressBalance::get_3d_velocity(IceModelVec3* &u_out, IceModelVec3* &v_out, IceModelVec3* &w_out) {
-  //PetscErrorCode ierr;
+  // FIXME:  this is probably not right; we need to interpolate from FEM nodal 
+  //   values to get IceModel grid values
   u_out = &u;
   v_out = &v;
   w_out = &w;
   return 0;
 }
+
+PetscErrorCode BlatterStressBalance::get_max_3d_velocity(PetscReal &maxu, PetscReal &maxv, PetscReal &maxw) {
+  // FIXME: this is probably not right *NOR* efficient.
+  // revise for correctness by looking at FEM nodal values of horizontal velocity
+  //   grid values on IceModel grid for vertical velocity
+  // revise for efficiency if: finding this max could be done earlier or as part of update() or
+  //   with less communication or better memory locality
+
+  PetscErrorCode ierr;
+  
+  ierr = u.begin_access(); CHKERRQ(ierr);
+  ierr = v.begin_access(); CHKERRQ(ierr);
+  ierr = w.begin_access(); CHKERRQ(ierr);
+  PetscReal my_umax = 0, my_vmax = 0, my_wmax = 0;
+  PetscReal *ucol,*vcol,*wcol;
+  for (PetscInt   i = grid.xs; i < grid.xs+grid.xm; ++i) {
+    for (PetscInt j = grid.ys; j < grid.ys+grid.ym; ++j) {
+      ierr = u.getInternalColumn(i, j, &ucol); CHKERRQ(ierr);
+      ierr = v.getInternalColumn(i, j, &vcol); CHKERRQ(ierr);
+      ierr = w.getInternalColumn(i, j, &wcol); CHKERRQ(ierr);
+      for (PetscInt k = 0; k < grid.Mz; ++k) {
+        my_umax = PetscMax(my_umax, PetscAbs(ucol[k]));
+        my_vmax = PetscMax(my_vmax, PetscAbs(vcol[k]));
+        my_wmax = PetscMax(my_wmax, PetscAbs(wcol[k]));
+      }
+    }
+  }
+  ierr = w.end_access(); CHKERRQ(ierr);
+  ierr = v.end_access(); CHKERRQ(ierr);
+  ierr = u.end_access(); CHKERRQ(ierr);  
+
+  ierr = PetscGlobalMax(&my_umax, &maxu, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&my_vmax, &maxv, grid.com); CHKERRQ(ierr);
+  ierr = PetscGlobalMax(&my_wmax, &maxw, grid.com); CHKERRQ(ierr);
+
+  return 0;
+}
+
 
 PetscErrorCode BlatterStressBalance::extend_the_grid(PetscInt old_Mz) {
   PetscErrorCode ierr;

@@ -83,41 +83,36 @@ public:
 
   virtual PetscErrorCode set_boundary_conditions(IceModelVec2Int &/*locations*/,
                                                  IceModelVec2V &/*velocities*/)
-      { SETERRQ(2,"not clear yet how to do this"); return 0; }
+      { SETERRQ(1,"not clear yet how to do this"); return 0; }
 
-  //! \brief Update all the fields: u,v,w,D2?,other?.  If fast == true then halt.
+  //! Update all the fields: u,v,w,uvbar,D2?,other?.  If fast == true then halt.
   virtual PetscErrorCode update(bool fast);
 
-  virtual PetscErrorCode get_advective_2d_velocity(IceModelVec2V* &/*result*/) 
-      { SETERRQ(3,"not implemented; implement by vertically-averaging u,v"); return 0; }
+  virtual PetscErrorCode get_advective_2d_velocity(IceModelVec2V* &result) 
+      { result = &uvbar; return 0; }
 
-  virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &/*result*/)
-      { SETERRQ(4,"not clear yet how to do this"); return 0; }
+  virtual PetscErrorCode get_diffusive_flux(IceModelVec2Stag* &result)
+      { PetscErrorCode ierr = result->set(0.0); CHKERRQ(ierr); return 0; }
 
-  virtual PetscErrorCode get_max_diffusivity(PetscReal &D)
-      { SETERRQ(5,"not clear yet how to do this");
-        D=0; return 0; }
+  virtual PetscErrorCode get_max_diffusivity(PetscReal &Dmax)
+      { Dmax = 0; return 0; }
 
-  virtual PetscErrorCode get_max_2d_velocity(PetscReal &maxu, PetscReal &maxv)
-      { SETERRQ(6,"not implemented; implement by get_advective_2d_velocity() and max"); 
-        maxu=maxv=0; return 0; }
+  virtual PetscErrorCode get_max_2d_velocity(PetscReal &maxu, PetscReal &maxv);
 
   virtual PetscErrorCode get_3d_velocity(IceModelVec3* &u_out, IceModelVec3* &v_out,
                                          IceModelVec3* &w_out);
 
-  virtual PetscErrorCode get_max_3d_velocity(PetscReal &maxu, PetscReal &maxv, PetscReal &maxw)
-      { SETERRQ(7,"not implemented; implement by getting max"); 
-        maxu=maxv=maxw=0; return 0; }
+  virtual PetscErrorCode get_max_3d_velocity(PetscReal &maxu, PetscReal &maxv, PetscReal &maxw);
 
   virtual PetscErrorCode get_basal_frictional_heating(IceModelVec2S* &/*result*/)
-      { SETERRQ(8,"not implemented; implement by doing it"); return 0; }
+      { SETERRQ(2,"not implemented; implement by doing it"); return 0; }
 
   virtual PetscErrorCode get_volumetric_strain_heating(IceModelVec3* &/*result*/)
-      { SETERRQ(9,"not implemented; implement by getting max"); return 0; }
+      { SETERRQ(3,"not implemented; implement by getting max"); return 0; }
 
   virtual PetscErrorCode get_principal_strain_rates(
                 IceModelVec2S &/*result_e1*/, IceModelVec2S &/*result_e2*/)
-      { SETERRQ(10,"not implemented; implement by vertical average"); return 0; }
+      { SETERRQ(4,"not implemented; implement by vertical average"); return 0; }
 
   virtual PetscErrorCode extend_the_grid(PetscInt old_Mz);
 
@@ -135,6 +130,15 @@ public:
 
 protected:
   IceModelVec3 u,v;
+  IceModelVec2V uvbar;
+
+// FIXME:  almost certainly this needs to be re-implemented to take values from
+//   FEM grid and integrate vertically to get vertical velocity values on 
+//   IceModel grid:
+// virtual PetscErrorCode compute_vertical_velocity(
+//                IceModelVec3 *u, IceModelVec3 *v, IceModelVec2S *bmr,
+//                IceModelVec3 &result);
+
 };
 
 #endif /* _BLATTERSTRESSBALANCE_H_ */

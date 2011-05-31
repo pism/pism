@@ -725,7 +725,8 @@ EXAMPLE_RECURSIVE      = NO
 # directories that contain image that are included in the documentation (see
 # the \image command).
 
-IMAGE_PATH             = ${PROJECT_SOURCE_DIR}/doc/userman/figs/
+IMAGE_PATH             = ${PROJECT_SOURCE_DIR}/doc/userman/figs/ \
+                         ${PROJECT_SOURCE_DIR}/src/base/stressbalance/figs
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program
@@ -1540,13 +1541,14 @@ DOT_IMAGE_FORMAT       = png
 # The tag DOT_PATH can be used to specify the path where the dot tool can be
 # found. If left blank, it is assumed the dot tool can be found in the path.
 
-DOT_PATH               = ${DOXYGEN_DOT_PATH}
+DOT_PATH               = 
 
 # The DOTFILE_DIRS tag can be used to specify one or more directories that
 # contain dot files that are included in the documentation (see the
 # \dotfile command).
 
-DOTFILE_DIRS           = ${PROJECT_SOURCE_DIR}/doc/browser/
+DOTFILE_DIRS           = ${PROJECT_SOURCE_DIR}/doc/browser/ \
+                         ${PROJECT_SOURCE_DIR}/src/base/stressbalance/figs/
 
 # The DOT_GRAPH_MAX_NODES tag can be used to set the maximum number of
 # nodes that will be shown in the graph. If the number of nodes in a graph
@@ -1594,3 +1596,4 @@ GENERATE_LEGEND        = YES
 # the various graphs.
 
 DOT_CLEANUP            = YES
+
