@@ -64,10 +64,10 @@ PetscErrorCode IceModel::eigenCalving() {
   ierr = vDiffCalvRate.set(0.0); CHKERRQ(ierr);
   ierr = vDiffCalvRate.begin_access(); CHKERRQ(ierr);
 
-  if (PetscAbs(dx - dy) > 1e-6) {
+  if (PetscAbs(dx - dy)/PetscMin(dx,dy) > 1e-2) {
     ierr = PetscPrintf(grid.com,
       "PISMPIK_ERROR: -eigen_calving using a non-square grid cell does not work (yet);\n"
-      "  since it has no direction!!!\n");
+                       "  since it has no direction!!!\n, dx = %f, dy = %f, rel. diff = %f",dx,dy,PetscAbs(dx - dy)/PetscMax(dx,dy));
     PISMEnd();
   }
 

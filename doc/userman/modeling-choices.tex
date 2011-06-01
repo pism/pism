@@ -20,7 +20,7 @@ The extent of the computational box, along with its bedrock extension downward, 
 
 \begin{center}
   \begin{tabular}{llp{0.7\linewidth}}
-    \\\toprule
+    \toprule
     \textbf{Option} & \textbf{Meaning}
     \\\midrule
     \txtopt{Lx}{(km)} & Half-width of the computational domain (in the $x$-direction) \\
@@ -74,7 +74,7 @@ Otherwise, one is allowed to specify the grid when PISM is started.  In particul
 \label{sec:time}
 \optsection{Grid!time}
 
-The following command-line options control PISM time.
+The following command-line options control PISM time:
 
 \begin{tabular}{lp{0.8\linewidth}}\\
 \toprule
@@ -85,8 +85,8 @@ The following command-line options control PISM time.
 \txtopt{ye}{(years)} & Model year at which to end the run.\\
 \bottomrule
 \end{tabular}
-
-The default value for the end year is the start year (\texttt{-ys} or initialized model time from file) plus the default or given (\texttt{-y}) run length.  If both \texttt{-ys} and \texttt{-ye} are used then the run length is set to the difference.  Using all three of \texttt{-ys}, \texttt{-y} and \texttt{-ys} is not allowed.
+\\[2em]
+\noindent The default value for the end year is the start year (\texttt{-ys} or initialized model time from file) plus the default or given (\texttt{-y}) run length.  If both \texttt{-ys} and \texttt{-ye} are used then the run length is set to the difference.  Using all three of \texttt{-ys}, \texttt{-y} and \texttt{-ys} is not allowed.
 
 
 \subsection{Diagnostic computations}
@@ -118,19 +118,19 @@ By default, PISM does not compute the age of the ice\index{PISM!modeling the age
 The possible values of the \t{mask}\index{mask} are given in Table \ref{tab:maskvals}.  The mask does not by itself determine ice dynamics.  For instance, when ice is floating (either value \texttt{MASK_FLOATING} or \texttt{MASK_FLOATING_AT_TIME_0}) the usual choice for ice dynamics is SSA, but the user can choose not to apply that model by not using either option \texttt{-ssa_floating_only} or \texttt{-ssa_sliding}.
 
 \begin{table}[ht]
-\centering
-\caption{The PISM mask\index{mask}, in combination with user options, determines the dynamical model.}\label{tab:maskvals} 
-\small
-\begin{tabular}{p{0.25\linewidth}p{0.65\linewidth}}
-\\\toprule
-\textbf{Mask value} & \textbf{Meaning}\\\midrule
-1=\texttt{MASK_SHEET} & ice is grounded (and only the SIA is always applied) \\
-2=\texttt{MASK_DRAGGING_SHEET} & ice is grounded (and the SSA is applied if option \texttt{-ssa} is given) \\
-3=\texttt{MASK_FLOATING} & ice is floating (and the SSA is applied if option \texttt{-ssa} is given) \\
-7=\texttt{MASK_FLOATING_AT_TIME_0} & same as \texttt{MASK_FLOATING}, but the grid point was ice free ocean at initialization of the model by \texttt{-boot_file}; ice with this value will calve off if option \texttt{-ocean_kill} is given.
-\\\bottomrule
-\end{tabular}
-\normalsize
+  \centering
+  \caption{The PISM mask\index{mask}, in combination with user options, determines the dynamical model.}\label{tab:maskvals} 
+  \small
+  \begin{tabular}{p{0.25\linewidth}p{0.65\linewidth}}
+    \toprule
+    \textbf{Mask value} & \textbf{Meaning}\\\midrule
+    1=\texttt{MASK_SHEET} & ice is grounded (and only the SIA is always applied) \\
+    2=\texttt{MASK_DRAGGING_SHEET} & ice is grounded (and the SSA is applied if option \texttt{-ssa} is given) \\
+    3=\texttt{MASK_FLOATING} & ice is floating (and the SSA is applied if option \texttt{-ssa} is given) \\
+    7=\texttt{MASK_FLOATING_AT_TIME_0} & same as \texttt{MASK_FLOATING}, but the grid point was ice free ocean at initialization of the model by \texttt{-boot_file}; ice with this value will calve off if option \texttt{-ocean_kill} is given.
+    \\\bottomrule
+  \end{tabular}
+  \normalsize
 \end{table}
 
 Assuming the geometry of the ice evolves (which can be turned off by option \texttt{-no_mass}), and assuming an ocean exists (which can be turned off by option \texttt{-dry}), then at each time step the mask changes by the flotation criterion.  Ice which becomes floating is marked as \texttt{MASK_FLOATING} while ice which becomes grounded is either marked as \texttt{MASK_SHEET} or \texttt{MASK_DRAGGING}.  The latter case occurs if the option \texttt{-ssa_sliding} is used, while otherwise all points are marked \texttt{MASK_SHEET}.

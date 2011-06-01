@@ -287,15 +287,18 @@ Although it begins to expose the internals of PISM, we think it is also helpful 
   from least to greatest need for boundary data.  The \emph{italicized} models
   are planned for future versions of PISM but are not implemented so far..}\label{tab:modelhierarchy} 
 \small\medskip
-\begin{tabular}{p{0.22\linewidth}p{0.40\linewidth}p{0.32\linewidth}}\hline
-\textbf{Model} & \textbf{Assumptions} & \textbf{Required data} \\ \hline
+\begin{tabular}{p{0.22\linewidth}p{0.40\linewidth}p{0.32\linewidth}}
+\toprule
+\textbf{Model} & \textbf{Assumptions} & \textbf{Required data} \\
+\midrule
 \vspace{2mm}  \emph{perfectly-plastic ice} \small & \vspace{2mm}\emph{steady state}; ice has shear stresses at or below a pre-determined ``yield stress''; requires location of ice sheet margin  \vspace{2mm} & \vspace{2mm} \begin{tightlist} \item bed elevation\end{tightlist} \\
 \emph{balance velocities} \small & \emph{steady state}; ice flows down surface gradient \cite{JoughinetalGrBal97} & \nolist{same as above, plus:}  \begin{tightlist} \item surface mass balance \item initial ice thickness \end{tightlist} \\
 \textsc{isothermal SIA} & non-sliding lubrication flow, fixed softness \cite{BLKCB,EISMINT96} & \nolist{same as above, but time-dependence is allowed} \\
 \textsc{thermo-coupled SIA} & non-sliding lubrication flow, temperature-dependent softness \cite{BBL,EISMINT00} & \nolist{same as above, plus:} \begin{tightlist} \item surface temperature \item geothermal flux \end{tightlist} \\
 \textsc{polythermal SIA} & same, but allowing $>0$ liquid water in temperate ice; conserves energy better \cite{AschwandenBuelerKhroulevBlatter,Greve} \vspace{2mm} & \nolist{same as above} \\
 \textsc{SIA + SSA hybrid} & SSA as a sliding law for thermo-coupled SIA \cite{BBssasliding}; polythermal is the default & \nolist{same as above, plus:} \begin{tightlist} \item basal layer (``till'') strength \end{tightlist} \\
-\emph{Blatter-Pattyn} \small & ``higher-order'', bridging stresses \cite{Blatter,Pattyn03,SchoofCoulombBlatter} & \nolist{same as above} \\ \hline
+\emph{Blatter-Pattyn} \small & ``higher-order'', bridging stresses \cite{Blatter,Pattyn03,SchoofCoulombBlatter} & \nolist{same as above} \\
+\bottomrule
 \end{tabular}
 \normalsize
 \end{table}
@@ -334,18 +337,18 @@ Figure~\ref{fig:climate-inputs} illustrates that any PISM ice sheet model has an
 
 \begin{table}[h]
   \centering
-  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\\
-    \hline
+  \caption{Boundary conditions required by PISM's ice dynamics core; see figure
+  \ref{fig:climate-inputs}}
+  \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}
+    \toprule
     \textbf{Boundary} & \textbf{Necessary conditions}\\
-    \hline
+    \midrule
     Top ice surface (below firn) (\textcolor{green}{green})& Ice temperature (or enthalpy) and mass flux into the ice\\
     Bottom surface of the thermal bed layer (not shown) & Geothermal flux\\
     Ice shelf basal surface (\textcolor{blue}{blue})& Mass flux into the ocean and ice boundary temperature\\
-   \hline
+   \bottomrule
   \end{tabular}
-  \caption{Boundary conditions required by PISM's ice dynamics core; see figure
-  \ref{fig:climate-inputs}}
-  \label{tab:ice-dynamics-bc}
+ \label{tab:ice-dynamics-bc}
 \end{table}
 
 Regarding the base of the ice, as described in section \ref{subsect:beddef} PISM also includes an optional bed deformation component approximating the movement of the Earth's crust and upper mantle in response to changing ice load.   Furthermore the temperature of the layer of bedrock in contact with grounded ice is included in the conservation of energy model.  In this sense everything below the black dashed line (i.e.~ice and bedrock) is ``owned'' by PISM.  This fact adds two more boundary interfaces for the ice dynamics core: sub-ice-shelf/ocean (shown in blue) and the bottom of the bedrock thermal layer (not shown).

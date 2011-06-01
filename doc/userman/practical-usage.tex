@@ -12,10 +12,11 @@ PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table 
 
 \begin{table}[h]
   \centering
+  \caption{Basic NetCDF input and output options}
   \begin{tabular}{lp{0.6\linewidth}}
-    \\\toprule
-    \textbf{Option} & \textbf{Description}
-    \\\midrule
+    \toprule
+    \textbf{Option} & \textbf{Description} \\
+    \midrule
     \fileopt{i} & Chooses a PISM output file to restart from.  (``Restart'' because normally the first PISM run must come from data by bootstrapping (\intextoption{boot_file}) or using executables \texttt{pisms} or \texttt{pismv}.) \\
     \fileopt{o} & Chooses the output file name.  Default name is \texttt{unnamed.nc} under \texttt{pismr}, \texttt{simp_exper.nc} under \texttt{pisms}, and \texttt{verify.nc} under \texttt{pismv}.\\
     \txtopt{o_size}{[small, medium, big]} & Chooses the ``size'' of the output file to produce.
@@ -25,11 +26,10 @@ PISM is a program that reads NetCDF files and then outputs NetCDF files.  Table 
     \ref{tab:extra-vars}).  Configuration variables \texttt{output_medium} and \texttt{output_big} list the written variables for those sizes. \\
     \intextoption{dontreadSSAvels} & Turns off reading the \texttt{ubar_ssa}
     and \texttt{vbar_ssa} velocities saved by a previous
-    \texttt{-ssa_floating_only} or \texttt{-ssa_sliding} run.
-    \\\bottomrule
+    \texttt{-ssa_floating_only} or \texttt{-ssa_sliding} run. \\
+    \bottomrule
  \end{tabular}
-  \caption{Basic NetCDF input and output options}
-  \label{tab:input-output-options}
+ \label{tab:input-output-options}
 \end{table}
 
 Table \ref{tab:stdout} gives a summary of PISM's options controlling
@@ -37,23 +37,23 @@ what is printed to the standard output.  This includes the \texttt{-help} and \t
 
 \begin{table}[ht]
   \centering
+  \caption{Options controlling PISM's standard output}
   \begin{tabular}{lp{0.7\linewidth}}
-  \\\toprule
-    \textbf{Option} & \textbf{Description}
-    \\\midrule
- \intextoption{help} & Gives PISM help message and then a brief description of many PISM and PETSc options.  The run occurs as usual according to the other options, while the option documentation does not get listed if the run didn't get started properly.\\
- \intextoption{info} & Gives almost-always excessive information about PETSc operations during run.  Option \texttt{-verbose} is generally more useful for users. \\
+    \toprule
+    \textbf{Option} & \textbf{Description} \\
+    \midrule
+    \intextoption{help} & Gives PISM help message and then a brief description of many PISM and PETSc options.  The run occurs as usual according to the other options, while the option documentation does not get listed if the run didn't get started properly.\\
+    \intextoption{info} & Gives almost-always excessive information about PETSc operations during run.  Option \texttt{-verbose} is generally more useful for users. \\
     \intextoption{log_summary}  & At the end of the run gives a performance
     summary and also a synopsis of the PETSc configuration in use.\\
    \intextoption{pismversion} &   Show version number of PISM.\\
-    \intextoption{options_left} & Shows an options table which will indicate if
-    a user option was not read or was misspelled.\\
+   \intextoption{options_left} & Shows an options table which will indicate if
+   a user option was not read or was misspelled.\\
    \intextoption{usage} &   Short summary of PISM executable usage, without listing all the options, and without doing the run.\\
-    \intextoption{verbose} & Increased verbosity of standard output.  Usually given with an integer level; 0,1,2,3,4,5 are allowed.  At the extremes, \texttt{-verbose 0} produces no stdout at all, \texttt{-verbose 1} prints only warnings and a few high priority messages, and \texttt{-verbose 5} spews a lot of usually-undesirable stuff.  \texttt{-verbose 3} adds a bit more about initialization, especially.  If given without argument (``\texttt{-verbose}'') then sets level 3, while ``\texttt{-verbose 2}'' is the default.\\
+   \intextoption{verbose} & Increased verbosity of standard output.  Usually given with an integer level; 0,1,2,3,4,5 are allowed.  At the extremes, \texttt{-verbose 0} produces no stdout at all, \texttt{-verbose 1} prints only warnings and a few high priority messages, and \texttt{-verbose 5} spews a lot of usually-undesirable stuff.  \texttt{-verbose 3} adds a bit more about initialization, especially.  If given without argument (``\texttt{-verbose}'') then sets level 3, while ``\texttt{-verbose 2}'' is the default.\\
    \intextoption{version} &   Show version numbers of PETSc and of PISM.\\
-   \\\bottomrule
+   \bottomrule
   \end{tabular}
-  \caption{Options controlling PISM's standard output}
   \label{tab:stdout}
 \end{table}
 
@@ -121,8 +121,8 @@ possible to monitor the run. (See section \ref{subsect:signal} for more about
 PISM's signal handling.)
 
 \begin{table}[h]
+ \centering
   \caption{Command-line options controlling saving scalar time-series}
-  \centering
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \textbf{Option} & \textbf{Description} \\
     \midrule
@@ -136,11 +136,12 @@ PISM's signal handling.)
 \end{table}
 
 \begin{table}[ht]
-  \caption{Scalar time-series supported by PISM.  Names above the horizontal line are written by default when \texttt{-ts_vars} is omitted.  For each variable named \dots\texttt{_flux}, positive values mean ice sheet mass gain.}
   \centering
-  \begin{tabular}{p{0.4\linewidth}p{0.1\linewidth}p{0.4\linewidth}}\toprule
-   \textbf{Variable name} & \textbf{Units} & \textbf{Description}\\
-   \midrule
+  \caption{Scalar time-series supported by PISM.  Names above the horizontal line are written by default when \texttt{-ts_vars} is omitted.  For each variable named \dots\texttt{_flux}, positive values mean ice sheet mass gain.}
+  \begin{tabular}{p{0.4\linewidth}p{0.1\linewidth}p{0.4\linewidth}}
+    \toprule
+    \textbf{Variable name} & \textbf{Units} & \textbf{Description}\\
+    \midrule
     \texttt{ivol} &m$^{3}$ & total ice volume\\
     \texttt{ivolcoldf} &m$^{3}$ & cold ice volume fraction\\
     \texttt{ivoltempf} &m$^{3}$ & temperate ice volume fraction\\
@@ -151,8 +152,8 @@ PISM's signal handling.)
     \texttt{iareaf} & m$^{2}$ & area covered by floating ice\\
     \texttt{imass} & kg & total mass of ice sheet \\
     \texttt{ienthalpy} & J & total internal energy (enthalpy) of ice sheet \\
-    \texttt{dt} & years & mass-continuity time-step\\ \hline
-
+    \texttt{dt} & years & mass-continuity time-step\\ 
+    \midrule
     \texttt{divoldt} & m$^{3}\,$s$^{-1}$ & ice volume rate of change\\
     \texttt{dimassdt} & kg s$^{-1}$ & ice mass rate of change\\
     \texttt{surface_ice_flux} & kg s$^{-1}$ & total surface ice flux \\
@@ -188,8 +189,8 @@ Note that this mechanism modifies PISM's adaptive time-stepping scheme to save
 \emph{exactly} at the times requested (instead of using linear interpolation).
 
 \begin{table}[ht]
+ \centering
   \caption{Command-line options controlling extra diagnostic output}
-  \centering
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \textbf{Option} & \textbf{Description}\\
     \midrule
@@ -420,8 +421,8 @@ Related to soundings, one can expose all the linear systems being solved in ice 
 This text file can be run as a script in \Matlab.  The linear system will be stored in a matrix, a right-hand-side vector, and the solution in a solution vector.  This way these linear systems can be checked for debugging purposes.
 
 \begin{table}[ht]
-  \caption{Special run-time-only diagnostic viewers}
   \centering
+  \caption{Special run-time-only diagnostic viewers}
   \begin{tabular}{p{0.35\linewidth}p{0.55\linewidth}}\toprule
     \small
     \textbf{Variable name or an option} & \textbf{Description}\\\midrule
@@ -521,8 +522,8 @@ here. In addition to \texttt{-atmosphere}, \texttt{-surface}, \texttt{-ocean}
 and others, \texttt{pclimate} takes options listed in table \ref{tab:pclimate}.
 
 \begin{table}[ht]
-  \caption{\texttt{pclimate} command-line options}
   \centering
+  \caption{\texttt{pclimate} command-line options}
   \begin{tabular}{p{0.25\linewidth}p{0.7\linewidth}}\toprule
     \textbf{Option} & \textbf{Description}\\
     \midrule
@@ -593,23 +594,23 @@ See table \ref{tab:regridvar} for the regriddable variables using
 \texttt{-regrid_file}.  Only model state variables are regriddable, while climate and boundary data generally are not explicitly regriddable.  (Bootstrapping, however, allows the same general interpolation as this explicit regrid.)
 
 \begin{table}[ht]
-\centering
-\caption{Regriddable variables.\index{regrid}  Use \texttt{-regrid_vars} with these names.}\label{tab:regridvar}
-\begin{tabular}{ll}\toprule
-\textbf{Name} & \textbf{Description}\\ \midrule
-\texttt{age} & age of ice\\
-\texttt{bwat} & effective thickness of subglacial melt water \\
-\texttt{bmelt} & basal melt rate \\
-\texttt{dbdt} & bedrock uplift rate \\
-\texttt{litho_temp} & lithosphere (bedrock) temperature \\
-\texttt{mask} & grounded/dragging/floating integer mask, see section \ref{subsect:floatmask} \\
-\texttt{temp} & ice temperature \\
-\texttt{thk} & land ice thickness \\
-\texttt{topg} & bedrock surface elevation \\
-\texttt{enthalpy} & ice enthalpy\\
-\bottomrule
-\normalsize
-\end{tabular}
+  \centering
+  \caption{Regriddable variables.\index{regrid}  Use \texttt{-regrid_vars} with these names.}\label{tab:regridvar}
+  \begin{tabular}{ll}\toprule
+    \textbf{Name} & \textbf{Description}\\ \midrule
+    \texttt{age} & age of ice\\
+    \texttt{bwat} & effective thickness of subglacial melt water \\
+    \texttt{bmelt} & basal melt rate \\
+    \texttt{dbdt} & bedrock uplift rate \\
+    \texttt{litho_temp} & lithosphere (bedrock) temperature \\
+    \texttt{mask} & grounded/dragging/floating integer mask, see section \ref{subsect:floatmask} \\
+    \texttt{temp} & ice temperature \\
+    \texttt{thk} & land ice thickness \\
+    \texttt{topg} & bedrock surface elevation \\
+    \texttt{enthalpy} & ice enthalpy\\
+    \bottomrule
+    \normalsize
+  \end{tabular}
 \end{table}
 
 Here is another example: suppose you have an output of a PISM run on a fairly
@@ -724,10 +725,11 @@ Now we explain what the rest of the flags line, namely
 
 \begin{table}[ht]
   \centering
+  \caption{Options controlling time-stepping}
   \begin{tabular}{lp{0.7\linewidth}}
-    \\\toprule
-    \textbf{Option} & \textbf{Description}
-    \\\midrule
+    \toprule
+    \textbf{Option} & \textbf{Description} \\
+    \midrule
     \intextoption{adapt_ratio} & Adaptive time stepping ratio for the explicit
     scheme for the mass balance equation. \\
     \txtopt{max_dt}{(years)} & The maximum time-step in years.  The adaptive
@@ -746,8 +748,7 @@ Now we explain what the rest of the flags line, namely
     SSA calculation.\\
     \bottomrule
   \end{tabular}
-  \caption{Options controlling time-stepping}
-  \label{tab:time-stepping}
+ \label{tab:time-stepping}
 \end{table}
 
 \subsection{PETSC options for PISM users}\label{subsect:petscoptions}
@@ -795,7 +796,8 @@ Actually the KSP uses preconditioning.  This aspect of the solve is critical for
 
 \begin{table}[h]
   \centering
-  \begin{tabular}{p{0.35\linewidth}p{0.65\linewidth}}\\
+  \caption{Some scripts which help in using PISM.}
+  \begin{tabular}{p{0.35\linewidth}p{0.65\linewidth}}
     \toprule
     \textbf{Script} & \textbf{Function(s)}\\
     \midrule
@@ -812,8 +814,7 @@ Actually the KSP uses preconditioning.  This aspect of the solve is critical for
     create a simple NetCDF file PISM can bootstrap from\index{bootstrapping!preparing data using MATLAB}\\
    \bottomrule
   \end{tabular}
-  \caption{Some scripts which help in using PISM.}
-  \label{tab:scripts-overview}
+ \label{tab:scripts-overview}
 \end{table}
 
 \subsection{Experimental: coupling PISM to an external surface model}
@@ -859,10 +860,11 @@ It can run on 2 and more processors (use \texttt{mpiexec -n XX} with
 
 \begin{table}[h]
   \centering
+  \caption{\texttt{pismebm} options}
   \begin{tabular}{lp{0.6\linewidth}}
-    \\\toprule
-    \textbf{Option} & \textbf{Description}
-    \\\midrule
+    \toprule
+    \textbf{Option} & \textbf{Description} \\
+    \midrule
     \txtopt{ebm_command}{``command''} & specifies a command that runs an EBM, enclosed in double quotes,\\
     \fileopt{ebm_input_file} & the file an EBM will read from\\
     \fileopt{ebm_output_file} & the file an EBM will produce and PISM will read \texttt{acab} and \texttt{artm} from\\
@@ -873,8 +875,7 @@ It can run on 2 and more processors (use \texttt{mpiexec -n XX} with
     \texttt{-ebm_output_file} and uses PISM code for the lapse-rate correction. 
    \\\bottomrule
  \end{tabular}
-  \caption{\texttt{pismebm} options}
-  \label{tab:pismebm-options}
+ \label{tab:pismebm-options}
 \end{table}
 
 So, if "\texttt{ebm -i ebm_in.nc -o ebm_out.nc}" is the command running an EBM,
