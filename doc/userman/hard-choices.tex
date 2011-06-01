@@ -262,6 +262,7 @@ Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of g
 
 \begin{table}
   \centering
+  \caption{Basal strength command-line options}
   \begin{tabular}{lp{0.6\linewidth}}
     \\\toprule
     \textbf{Option} & \textbf{Description}
@@ -276,8 +277,7 @@ Here $H$ is the ice thickness, $\rho$ the ice density, $g$ the acceleration of g
     \intextoption{hold_tauc} &   Keep the current values of the till yield stress $\tau_c$.  That is, do not update them by the default model using the stored basal melt water.  Only effective if \texttt{-ssa_sliding} is also set.
    \\\bottomrule
   \end{tabular}
-  \caption{Basal strength command-line options}
-  \label{tab:basal-strength}
+ \label{tab:basal-strength}
 \end{table}
 
 Option \texttt{-plastic_pwfrac} determines $\alpha$, the quantity controlling how $p_w$ is determined from the effective thickness of basal water, the quantity $w=$\texttt{bwat}.  The formula is $p_w = \alpha\, w \rho g H$.  See \cite{BKAJS}.
