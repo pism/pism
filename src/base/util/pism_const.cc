@@ -342,7 +342,7 @@ PetscErrorCode stop_on_version_option() {
   if ((vSet == false) && (pvSet == false))
     return 0;
 
-  PISMEnd();
+  PISMEndQuiet();
   return 0;
 }
 
@@ -377,7 +377,8 @@ PetscErrorCode show_usage_and_quit(
   ierr = stop_on_version_option(); CHKERRQ(ierr);
 
   ierr = just_show_usage(com, execname, usage); CHKERRQ(ierr);
-  PISMEnd();
+
+  PISMEndQuiet();
   return 0;
 }
 
@@ -847,4 +848,9 @@ void PISMEnd() {
     MPI_Finalize();
 
   exit(0);
+}
+
+void PISMEndQuiet() {
+  PetscOptionsSetValue("-options_left","no");
+  PISMEnd();
 }

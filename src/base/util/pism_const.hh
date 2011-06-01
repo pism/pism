@@ -84,6 +84,7 @@ PetscErrorCode verbPrintf(const int thresh, MPI_Comm comm,const char format[],..
 void endPrintRank();
 
 void PISMEnd()  __attribute__((noreturn));
+void PISMEndQuiet()  __attribute__((noreturn));
 
 string pism_timestamp();
 string pism_username_prefix();
