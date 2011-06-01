@@ -168,7 +168,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
   PetscErrorCode ierr;
 
   bool do_mass_conserve = config.get_flag("do_mass_conserve"),
-    do_temp = config.get_flag("do_temp");
+    do_energy = config.get_flag("do_energy");
 
   const PetscScalar timeToEnd = (grid.end_year - grid.year) * secpera;
   if (dt_force > 0.0) {
@@ -184,7 +184,7 @@ PetscErrorCode IceModel::determineTimeStep(const bool doTemperatureCFL) {
 
     adaptReasonFlag = 'm';
 
-    if ((do_temp == PETSC_TRUE) && (doTemperatureCFL == PETSC_TRUE)) {
+    if ((do_energy == PETSC_TRUE) && (doTemperatureCFL == PETSC_TRUE)) {
       // CFLmaxdt is set by computeMax3DVelocities() in call to velocity() iMvelocity.cc
       dt_from_cfl = CFLmaxdt;
       if (dt_from_cfl < dt) {

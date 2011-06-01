@@ -16,8 +16,8 @@ netcdf pism_config {
     pism_config:do_mass_conserve = "yes";
     pism_config:do_mass_conserve_doc = "Solve the mass conservation equation";
 
-    pism_config:do_temp = "yes";
-    pism_config:do_temp_doc = "Solve energy conservation equations.";
+    pism_config:do_energy = "yes";
+    pism_config:do_energy_doc = "Solve energy conservation equations.";
 
     pism_config:do_age = "no";
     pism_config:do_age_doc = "Solve age equation (advection equation for ice age).";

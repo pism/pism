@@ -290,7 +290,7 @@ PetscErrorCode  IceModel::setFromOptions() {
   ierr = config.scalar_from_option("summary_volarea_scale_factor_log10",
                                    "summary_volarea_scale_factor_log10"); CHKERRQ(ierr);
 
-  ierr = config.flag_from_option("temp", "do_temp"); CHKERRQ(ierr);
+  ierr = config.flag_from_option("energy", "do_energy"); CHKERRQ(ierr);
 
   // if set, makes the thickness affect the pore_pressure; near margin there
   //   is a reduction in basal water pressure, a conceptual drainage mechanism

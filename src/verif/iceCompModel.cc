@@ -174,13 +174,13 @@ PetscErrorCode IceCompModel::setFromOptions() {
     config.set_string("bed_deformation_model", "none");
 
   if ((testname == 'F') || (testname == 'G') || (testname == 'K') || (testname == 'O')) {
-    config.set_flag("do_temp", true);
+    config.set_flag("do_energy", true);
     // essentially turn off run-time reporting of extremely low computed
     // temperatures; *they will be reported as errors* anyway
     config.set("global_min_allowed_temp", 0.0);
     config.set("max_low_temp_count", 1000000);
   } else
-    config.set_flag("do_temp", false);
+    config.set_flag("do_energy", false);
 
   config.set_flag("is_dry_simulation", true);
   config.set_flag("ocean_kill", false);
@@ -199,7 +199,7 @@ PetscErrorCode IceCompModel::setFromOptions() {
     config.set_flag("include_bmr_in_continuity", false); 
 
     // this test is isothermal
-    config.set_flag("do_temp", false);
+    config.set_flag("do_energy", false);
 
     // do use the SIA stress balance
     config.set_flag("do_sia", false);

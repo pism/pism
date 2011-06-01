@@ -684,7 +684,7 @@ kill -TERM 8920
 At each time step the PISM standard output includes ``flags'' and then a summary of the model state using a few numbers.  A typical example is
 \small
 \begin{verbatim}
- y SIA v$th d (dt=1.07878 in 2 substeps; av dt_sub=0.53939)
+ y SIA v$Eh d (dt=1.07878 in 2 substeps; av dt_sub=0.53939)
   SSA:     4 outer iterations
 S  -3456.41429:  3.35908  2.1664   2748.786  271.2114
 \end{verbatim}
@@ -697,7 +697,7 @@ S         YEAR:     ivol   iarea     thick0     temp0
 \normalsize
 That is, we have the total ice volume, total ice area, and the thickness and basal temperature at the center of the computational domain.  A ``\texttt{U}'' line near the beginning of the standard output indicates the units.
 
-The characters ``\texttt{ y SIA v\$th}'' at the beginning of the flag line give a very terse description of which physical processes were modeled in that time step.  Both the SIA and SSA stress balances were solved, and the latter, which is the most computationally-expensive, describes its nonlinear iterations.
+The characters ``\texttt{ y SIA v\$Eh}'' at the beginning of the flag line give a very terse description of which physical processes were modeled in that time step.  Both the SIA and SSA stress balances were solved, and the latter, which is the most computationally-expensive, describes its nonlinear iterations.
 
 Now we explain what the rest of the flags line, namely
 
